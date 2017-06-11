@@ -871,7 +871,7 @@ stmt_result(backend *be, stmt *s, int nr)
 
 /* limit maybe atom nil */
 stmt *
-stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int last, int order)
+stmt_limit(backend *be, stmt *col, stmt *sel, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int last, int order)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -953,8 +953,14 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 			return NULL;
 		len = getDestVar(q);
 
-		q = newStmt(mb, algebraRef, subsliceRef);
-		q = pushArgument(mb, q, c);
+		if (sel) {
+			q = newStmt(mb, algebraRef, sliceRef);
+			assert(sel->nr >= 0);
+			q = pushArgument(mb, q, sel->nr);
+		} else {
+			q = newStmt(mb, algebraRef, subsliceRef);
+			q = pushArgument(mb, q, c);
+		}
 		q = pushArgument(mb, q, offset->nr);
 		q = pushArgument(mb, q, len);
 		if (q == NULL)
@@ -1619,8 +1625,26 @@ stmt_tinter(backend *be, stmt *op1, stmt *op2)
 	return NULL;
 }
 
+static InstrPtr
+join_args(MalBlkPtr mb, InstrPtr q, stmt *op1, stmt *sop1, stmt *op2, stmt *sop2)
+{
+	q = pushArgument(mb, q, op1->nr);
+	q = pushArgument(mb, q, op2->nr);
+	if (sop1) {
+		q = pushArgument(mb, q, sop1->nr);
+	} else {
+		q = pushNil(mb, q, TYPE_bat);
+	}
+	if (sop2) {
+		q = pushArgument(mb, q, sop2->nr);
+	} else {
+		q = pushNil(mb, q, TYPE_bat);
+	}
+	return q;
+}
+
 stmt *
-stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
+stmt_subjoin(backend *be, stmt *op1, stmt *sop1, stmt *op2, stmt *sop2, int anti, comp_type cmptype)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -1640,10 +1664,7 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 	case cmp_equal:
 		q = newStmt(mb, algebraRef, sjt);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, op1->nr);
-		q = pushArgument(mb, q, op2->nr);
-		q = pushNil(mb, q, TYPE_bat);
-		q = pushNil(mb, q, TYPE_bat);
+		q = join_args(mb, q, op1, sop1, op2, sop2);
 		q = pushBit(mb, q, FALSE);
 		q = pushNil(mb, q, TYPE_lng);
 		if (q == NULL)
@@ -1652,10 +1673,7 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 	case cmp_equal_nil: /* nil == nil */
 		q = newStmt(mb, algebraRef, sjt);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, op1->nr);
-		q = pushArgument(mb, q, op2->nr);
-		q = pushNil(mb, q, TYPE_bat);
-		q = pushNil(mb, q, TYPE_bat);
+		q = join_args(mb, q, op1, sop1, op2, sop2);
 		q = pushBit(mb, q, TRUE);
 		q = pushNil(mb, q, TYPE_lng);
 		if (q == NULL)
@@ -1664,10 +1682,7 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 	case cmp_notequal:
 		q = newStmt(mb, algebraRef, antijoinRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, op1->nr);
-		q = pushArgument(mb, q, op2->nr);
-		q = pushNil(mb, q, TYPE_bat);
-		q = pushNil(mb, q, TYPE_bat);
+		q = join_args(mb, q, op1, sop1, op2, sop2);
 		q = pushBit(mb, q, FALSE);
 		q = pushNil(mb, q, TYPE_lng);
 		if (q == NULL)
@@ -1679,10 +1694,7 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 	case cmp_gte:
 		q = newStmt(mb, algebraRef, thetajoinRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, op1->nr);
-		q = pushArgument(mb, q, op2->nr);
-		q = pushNil(mb, q, TYPE_bat);
-		q = pushNil(mb, q, TYPE_bat);
+		q = join_args(mb, q, op1, sop1, op2, sop2);
 		if (cmptype == cmp_lt)
 			q = pushInt(mb, q, -1);
 		else if (cmptype == cmp_lte)
@@ -1699,8 +1711,7 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 	case cmp_all:	/* aka cross table */
 		q = newStmt(mb, algebraRef, crossRef);
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, op1->nr);
-		q = pushArgument(mb, q, op2->nr);
+		q = join_args(mb, q, op1, sop1, op2, sop2);
 		if (q == NULL)
 			return NULL;
 		break;
@@ -1723,6 +1734,12 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 		return s;
 	}
 	return NULL;
+}
+
+stmt *
+stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
+{
+	return stmt_subjoin(be, op1, NULL, op2, NULL, anti, cmptype);
 }
 
 static InstrPtr 
@@ -2196,7 +2213,7 @@ stmt_set_nrcols(stmt *s)
 	node *n;
 	list *l = s->op4.lval;
 
-	assert(s->type == st_list);
+	assert(s->type == st_list || s->type == st_project);
 	for (n = l->h; n; n = n->next) {
 		stmt *f = n->data;
 
@@ -2208,6 +2225,16 @@ stmt_set_nrcols(stmt *s)
 	}
 	s->nrcols = nrcols;
 	s->key = key;
+}
+
+stmt *
+stmt_post_project(backend *be, stmt *sub, list *l)
+{
+	stmt *s = stmt_create(be->mvc->sa, st_project);
+	s->op1 = sub;
+	s->op4.lval = l;
+	stmt_set_nrcols(s);
+	return s;
 }
 
 stmt *

@@ -87,6 +87,19 @@ nr_of_bats(MalBlkPtr mb, InstrPtr p)
 	return cnt;
 }
 
+static int
+nr_of_cands(MalBlkPtr mb, InstrPtr p)
+{
+	int j,cnt=0;
+	for(j=p->retc+2; j<p->argc; j++) {
+		int type = getArgType(mb,p,j);
+		if (isaBatType(type) && getBatType(type) == TYPE_oid) 
+			cnt++;
+	}
+	return cnt;
+}
+
+
 /* some mat's have intermediates (with intermediate result variables), therefor
  * we pass the old output mat variable */
 inline static void
@@ -569,7 +582,7 @@ mat_projection(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 }
 
 static void
-mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
+mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int cm, int cn)
 {
 	int tpe = getArgType(mb,p, 0), j,k, nr = 1;
 	InstrPtr l = newInstruction(mb, matRef, packRef);
@@ -591,6 +604,8 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 				getArg(q,1) = newTmpVariable(mb, tpe);
 				getArg(q,2) = getArg(mat[m].mi,k);
 				getArg(q,3) = getArg(mat[n].mi,j);
+				if (cm >= 0) getArg(q,4) = getArg(mat[cm].mi,k);
+				if (cn >= 0) getArg(q,5) = getArg(mat[cn].mi,j);
 				pushInstruction(mb,q);
 	
 				propagatePartnr(ml, getArg(mat[m].mi, k), getArg(q,0), nr);
@@ -606,6 +621,7 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 		int mv = (m>=0)?m:n;
 		int av = (m<0);
 		int bv = (m>=0);
+		int cv = (m>=0 && cm>=0)?cm:cn;
 
 		for(k=1; k<mat[mv].mi->argc; k++) {
 			InstrPtr q = copyInstruction(p);
@@ -613,6 +629,7 @@ mat_join2(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 			getArg(q,0) = newTmpVariable(mb, tpe);
 			getArg(q,1) = newTmpVariable(mb, tpe);
 			getArg(q,p->retc+av) = getArg(mat[mv].mi, k);
+			if (cv >= 0) getArg(q,p->retc+av+2) = getArg(mat[cv].mi,k);
 			pushInstruction(mb,q);
 
 			propagatePartnr(ml, getArg(mat[mv].mi, k), getArg(q,av), k);
@@ -1564,7 +1581,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	mb->stop = 0;
 
 	for( i=0; i<oldtop; i++){
-		int bats = 0;
+		int bats = 0, cands = 0, cm = -1, cn = -1;
 		InstrPtr r;
 
 		p = old[i];
@@ -1584,6 +1601,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			continue;
 		}
 		bats = nr_of_bats(mb, p);
+		cands = nr_of_cands(mb, p);
 
 		/* (l,r) Join (L, R, ..)
 		 * 2 -> (l,r) equi/theta joins (l,r)
@@ -1591,24 +1609,28 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		 * NxM -> (l,r) filter-joins (l1,..,ln,r1,..,rm)
 		 */
 		if (match > 0 && isMatJoinOp(p) && 
-		    p->argc >= 3 && p->retc == 2 && bats >= 2) {
-			if (bats == 2) {
+		    p->argc >= 3 && p->retc == 2 && (bats-cands) >= 2) {
+			if ((bats-cands) == 2) {
 		   		m = is_a_mat(getArg(p,p->retc), &ml);
 		   		n = is_a_mat(getArg(p,p->retc+1), &ml);
-				mat_join2(mb, p, &ml, m, n);
+				cm = is_a_mat(getArg(p,p->retc+2), &ml);
+				cn = is_a_mat(getArg(p,p->retc+3), &ml);
+				mat_join2(mb, p, &ml, m, n, cm, cn);
 			} else {
+				assert(cands == 0);
 				mat_joinNxM(cntxt, mb, p, &ml, bats);
 			}
 			actions++;
 			continue;
 		}
 		if (match > 0 && isMatLeftJoinOp(p) && p->argc >= 3 && p->retc == 2 &&
-				match == 1 && bats == 2) {
+				match == 1 && (bats-cands) == 2) {
 		   	m = is_a_mat(getArg(p,p->retc), &ml);
 			n = -1;
 
 			if (m >= 0) {
-				mat_join2(mb, p, &ml, m, n);
+				cm = is_a_mat(getArg(p,p->retc+2), &ml);
+				mat_join2(mb, p, &ml, m, n, cm, -1);
 				actions++;
 				continue;
 			}

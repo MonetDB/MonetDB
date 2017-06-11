@@ -595,7 +595,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			cnt -= i;
 			o = l->hseqbase + BATcount(l);
 			i = binsearch_oid(NULL, 0, lcand, 0, cnt - 1, o, 1, 0);
-			cnt -= i;
+			//cnt -= i;
 
 			if (BATextend(r1, cnt) != GDK_SUCCEED)
 				goto bailout;

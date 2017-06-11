@@ -676,6 +676,42 @@ ALGcrossproduct2( bat *l, bat *r, const bat *left, const bat *right)
 }
 
 str
+ALGcrossproduct( bat *l, bat *r, const bat *left, const bat *right, const bat *sl, const bat *sr)
+{
+	BAT *L, *R, *SL = NULL, *SR = NULL, *bn1, *bn2;
+	gdk_return ret;
+
+	if ((L = BATdescriptor(*left)) == NULL) {
+		throw(MAL, "algebra.crossproduct", RUNTIME_OBJECT_MISSING);
+	}
+	if ((R = BATdescriptor(*right)) == NULL) {
+		BBPunfix(L->batCacheid);
+		throw(MAL, "algebra.crossproduct", RUNTIME_OBJECT_MISSING);
+	}
+	if (sl && *sl != bat_nil && (SL = BATdescriptor(*sl)) == NULL) {
+		BBPunfix(L->batCacheid);
+		BBPunfix(R->batCacheid);
+		throw(MAL, "algebra.crossproduct", RUNTIME_OBJECT_MISSING);
+	}
+	if (sr && *sr != bat_nil && (SR = BATdescriptor(*sr)) == NULL) {
+		BBPunfix(L->batCacheid);
+		BBPunfix(R->batCacheid);
+		BBPunfix(SL->batCacheid);
+		throw(MAL, "algebra.crossproduct", RUNTIME_OBJECT_MISSING);
+	}
+	ret = BATsubcross(&bn1, &bn2, L, R, SL, SR);
+	BBPunfix(L->batCacheid);
+	BBPunfix(R->batCacheid);
+	if (SL) BBPunfix(SL->batCacheid);
+	if (SR) BBPunfix(SR->batCacheid);
+	if (ret != GDK_SUCCEED)
+		throw(MAL, "algebra.crossproduct", GDK_EXCEPTION);
+	BBPkeepref(*l = bn1->batCacheid);
+	BBPkeepref(*r = bn2->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
 ALGprojection(bat *result, const bat *lid, const bat *rid)
 {
 	return ALGbinary(result, lid, rid, BATproject, "algebra.projection");

@@ -39,6 +39,7 @@ mal_export str ALGintersect(bat *r1, const bat *lid, const bat *rid, const bat *
 
 /* legacy join functions */
 mal_export str ALGcrossproduct2(bat *l, bat *r, const bat *lid, const bat *rid);
+mal_export str ALGcrossproduct(bat *l, bat *r, const bat *lid, const bat *rid, const bat *slid, const bat *srid);
 /* end legacy join functions */
 
 mal_export str ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

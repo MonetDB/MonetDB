@@ -23,6 +23,7 @@
 			assert(BATttype(s) == TYPE_oid);		\
 			if (BATcount(s) == 0) {				\
 				start = end = 0;			\
+				cnt = 0;				\
 			} else {					\
 				if (BATtdense(s)) {			\
 					start = (s)->tseqbase;		\
