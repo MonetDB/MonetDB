@@ -32,6 +32,7 @@ typedef struct mat {
 
 typedef struct matlist {
 	mat_t *v;
+	int *vars;		/* result variable is a mat */
 	int top;
 	int size;
 
@@ -50,11 +51,10 @@ mat_type( mat_t *mat, int n)
 }
 
 static int
-is_a_mat(int idx, matlist_t *ml){
-	int i;
-	for(i =0; i<ml->top; i++)
-		if (!ml->v[i].packed && ml->v[i].mv == idx) 
-			return i;
+is_a_mat(int idx, matlist_t *ml)
+{
+	if (ml->vars[idx] && !ml->v[ml->vars[idx]].packed)
+		return ml->vars[idx];
 	return -1;
 }
 
@@ -112,6 +112,7 @@ mat_add_var(matlist_t *ml, InstrPtr q, InstrPtr p, int var, mat_type_t type, int
 	dst->pm = parentmat;
 	dst->packed = 0;
 	dst->pushed = pushed;
+	ml->vars[var] = ml->top;
 	++ml->top;
 }
 
@@ -159,8 +160,11 @@ checksize(matlist_t *ml, int v)
 		ml->vsize *= 2;
 		ml->horigin = (int*) GDKrealloc(ml->horigin, sizeof(int)* ml->vsize);
 		ml->torigin = (int*) GDKrealloc(ml->torigin, sizeof(int)* ml->vsize);
-		for (i = sz; i < ml->vsize; i++) 
+		ml->vars = (int*) GDKrealloc(ml->vars, sizeof(int)* ml->vsize);
+		for (i = sz; i < ml->vsize; i++) {
 			ml->horigin[i] = ml->torigin[i] = -1;
+			ml->vars[i] = 0;
+		}
 	}
 }
 
@@ -1546,7 +1550,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	ml.vsize = mb->vsize;
 	ml.horigin = (int*) GDKmalloc(sizeof(int)* ml.vsize);
 	ml.torigin = (int*) GDKmalloc(sizeof(int)* ml.vsize);
-	if ( ml.v == NULL || ml.horigin == NULL || ml.torigin == NULL) {
+	ml.vars = (int*) GDKzalloc(sizeof(int)* ml.vsize);
+	if ( ml.v == NULL || ml.horigin == NULL || ml.torigin == NULL || ml.vars == NULL) {
 		goto cleanup;
 	}
 	for (i=0; i<ml.vsize; i++) 
@@ -1867,6 +1872,7 @@ cleanup:
 	if (ml.v) GDKfree(ml.v);
 	if (ml.horigin) GDKfree(ml.horigin);
 	if (ml.torigin) GDKfree(ml.torigin);
+	if (ml.vars) GDKfree(ml.vars);
     /* Defense line against incorrect plans */
     if( actions > 0){
         chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
