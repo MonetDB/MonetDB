@@ -30,6 +30,24 @@ typedef struct _allocated_region {
 static __thread allocated_region *allocated_regions;
 static __thread jmp_buf jump_buffer;
 
+typedef char *(*jitted_function)(void **inputs, void **outputs,
+								 malloc_function_ptr malloc);
+
+struct _cached_functions;
+typedef struct _cached_functions {
+	jitted_function function;
+	BUN expression_hash;
+	char* parameters;
+	void* dll_handle;
+	struct _cached_functions *next;
+} cached_functions;
+
+#define FUNCTION_CACHE_SIZE 128
+
+static cached_functions *function_cache[FUNCTION_CACHE_SIZE];
+static MT_Lock cache_lock;
+
+
 static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					bit grouped);
 
@@ -46,11 +64,9 @@ str CUDFevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str CUDFprelude(void *ret)
 {
 	(void)ret;
+	MT_lock_init(&cache_lock, "cache_lock");
 	return MAL_SUCCEED;
 }
-
-typedef char *(*jitted_function)(void **inputs, void **outputs,
-								 malloc_function_ptr malloc);
 
 static bool WriteDataToFile(FILE *f, const void *data, size_t data_size)
 {
@@ -278,12 +294,11 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	str *args = NULL;
 	str *output_names = NULL;
 	char *msg = MAL_SUCCEED;
-	char *funcname = "yet_another_c_function";
 	node *argnode;
 	int seengrp = FALSE;
 	FILE *f = NULL;
 	void *handle = NULL;
-	jitted_function func;
+	jitted_function func = NULL;
 	int ret;
 
 	FILE *compiler = NULL;
@@ -315,6 +330,11 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				: (GDKgetenv(cc_flag) ? GDKgetenv(cc_flag) : JIT_COMPILER_NAME);
 
 	const char *struct_prefix = "struct cudf_data_struct_";
+	const char* funcname;
+
+	BUN expression_hash = 0, funcname_hash = 0;
+	cached_functions* cached_function;
+	char* function_parameters = NULL;
 
 	(void)cntxt;
 
@@ -341,6 +361,8 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	} else {
 		sqlfun = *(sql_func **)getArgReference(stk, pci, pci->retc);
 	}
+
+	funcname = sqlfun ? sqlfun->base.name : "yet_another_c_function";
 
 	args = (str *)GDKzalloc(sizeof(str) * pci->argc);
 	output_names =
@@ -375,6 +397,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			argnode = argnode->next;
 		}
 	}
+
 	// name unnamed outputs
 	for (i = 0; i < (size_t)pci->retc; i++) {
 		if (!output_names[i]) {
@@ -409,11 +432,62 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		}
 	}
 
-	{
+	input_count = pci->argc - (pci->retc + ARG_OFFSET);
+	output_count = pci->retc;
+
+	// begin the compilation phase
+	// first look up if we have already compiled this function
+	expression_hash = 0;
+	GDK_STRHASH(exprStr, expression_hash);
+	GDK_STRHASH(funcname, funcname_hash);
+	funcname_hash = funcname_hash % FUNCTION_CACHE_SIZE;
+	function_parameters = GDKzalloc((input_count + output_count + 1) * sizeof(char));
+	if (!function_parameters) {
+		msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+		goto wrapup;
+	}
+	for(i = 0; i < input_count; i++) {
+		if (!isaBatType(getArgType(mb, pci, i))) {
+			function_parameters[i] = getArgType(mb, pci, i);
+		} else {
+			function_parameters[i] = getBatType(getArgType(mb, pci, i));
+		}
+	}
+	for(i = 0; i < output_count; i++) {
+		if (!isaBatType(getArgType(mb, pci, i))) {
+			function_parameters[input_count + i] = getArgType(mb, pci, i);
+		} else {
+			function_parameters[input_count + i] = getBatType(getArgType(mb, pci, i));
+		}
+	}
+
+	MT_lock_set(&cache_lock);
+	cached_function = function_cache[funcname_hash];
+	while(cached_function) {
+		if (cached_function->expression_hash == expression_hash &&
+			strcmp(cached_function->parameters, function_parameters) == 0) {
+			// this function matches our compiled function
+			// in both source code and parameters
+			// use the already compiled function instead of recompiling
+			func = cached_function->function;
+			break;
+		}
+		cached_function = cached_function->next;
+	}
+	MT_lock_unset(&cache_lock);
+
+	if (!func) {
+		// function was not found in the cache
+		// we have to compile it
+
+		// first generate the names	of the files
+		// we place the temporary files in the LEFTOVERS directory
+		// because this will be removed again upon server startup
 		const int RANDOM_NAME_SIZE = 32;
 		char *path = NULL;
 		const char *prefix = "LEFTOVERS" DIR_SEP_STR;
 		size_t prefix_size = strlen(prefix);
+		char *leftdirpath;
 
 		memcpy(buf, prefix, sizeof(char) * strlen(prefix));
 		// generate a random 32-character name for the temporary files
@@ -443,11 +517,9 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		}
 		strcpy(libname, path);
 		GDKfree(path);
-	}
 
-	// if leftovers directory does not exist, create it
-	{
-		char *leftdirpath = GDKfilepath(0, NULL, LEFTDIR, NULL);
+		// if LEFTOVERS directory does not exist, create it
+		leftdirpath = GDKfilepath(0, NULL, LEFTDIR, NULL);
 		if (!leftdirpath) {
 			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 			goto wrapup;
@@ -458,199 +530,216 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			goto wrapup;
 		}
 		GDKfree(leftdirpath);
-	}
 
-	// first generate the source file
-	f = fopen(fname, "w+");
-	if (!f) {
-		msg = createException(MAL, "cudf.eval",
-							  "Failed to open file for JIT compilation: %s",
-							  strerror(errno));
-		errno = 0;
-		goto wrapup;
-	}
+		// now generate the source file
+		f = fopen(fname, "w+");
+		if (!f) {
+			msg = createException(MAL, "cudf.eval",
+								  "Failed to open file for JIT compilation: %s",
+								  strerror(errno));
+			errno = 0;
+			goto wrapup;
+		}
 
-	// Include some standard C headers first
-	ATTEMPT_TO_WRITE_TO_FILE(f, "#include <stdio.h>\n");
-	ATTEMPT_TO_WRITE_TO_FILE(f, "#include <stdlib.h>\n");
-	// we include "cheader.h", but not directly to avoid having to deal with
-	// headers, etc...
-	// Instead it is embedded in a string (loaded from "cheader.text.h")
-	// this file contains the structures used for input/output arguments
-	ATTEMPT_TO_WRITE_TO_FILE(f, cheader_header_text);
-	// some monetdb-style typedefs to make it easier
-	ATTEMPT_TO_WRITE_TO_FILE(f, "typedef signed char bte;\n");
-	ATTEMPT_TO_WRITE_TO_FILE(f, "typedef short sht;\n");
-	ATTEMPT_TO_WRITE_TO_FILE(f, "typedef long long lng;\n");
-	ATTEMPT_TO_WRITE_TO_FILE(f, "typedef float flt;\n");
-	ATTEMPT_TO_WRITE_TO_FILE(f, "typedef double dbl;\n");
-	ATTEMPT_TO_WRITE_TO_FILE(f, "typedef char* str;\n");
-	// now we can exprStr for any preprocessor directives (#)
-	// we move these to the top of the file
-	{
-		int preprocessor_start = 0;
-		bool is_preprocessor_directive = false;
-		bool new_line = false;
-		for (i = 0; i < strlen(exprStr); i++) {
-			if (exprStr[i] == '\n') {
-				if (is_preprocessor_directive) {
-					// the previous line was a preprocessor directive
-					// write it to the file
-					ATTEMPT_TO_WRITE_DATA_TO_FILE(f,
-												  exprStr + preprocessor_start,
-												  i - preprocessor_start);
-					for (j = preprocessor_start; j < i; j++) {
-						// now overwrite the preprocessor directive in the
-						// expression string with spaces
-						exprStr[j] = ' ';
+		// include some standard C headers first
+		ATTEMPT_TO_WRITE_TO_FILE(f, "#include <stdio.h>\n");
+		ATTEMPT_TO_WRITE_TO_FILE(f, "#include <stdlib.h>\n");
+		// we include "cheader.h", but not directly to avoid having to deal with
+		// headers, etc...
+		// Instead it is embedded in a string (loaded from "cheader.text.h")
+		// this file contains the structures used for input/output arguments
+		ATTEMPT_TO_WRITE_TO_FILE(f, cheader_header_text);
+		// some monetdb-style typedefs to make it easier
+		ATTEMPT_TO_WRITE_TO_FILE(f, "typedef signed char bte;\n");
+		ATTEMPT_TO_WRITE_TO_FILE(f, "typedef short sht;\n");
+		ATTEMPT_TO_WRITE_TO_FILE(f, "typedef long long lng;\n");
+		ATTEMPT_TO_WRITE_TO_FILE(f, "typedef float flt;\n");
+		ATTEMPT_TO_WRITE_TO_FILE(f, "typedef double dbl;\n");
+		ATTEMPT_TO_WRITE_TO_FILE(f, "typedef char* str;\n");
+		// now we search exprStr for any preprocessor directives (#)
+		// we move these to the top of the file
+		// this allows the user to normally #include files
+		{
+			int preprocessor_start = 0;
+			bool is_preprocessor_directive = false;
+			bool new_line = false;
+			for (i = 0; i < strlen(exprStr); i++) {
+				if (exprStr[i] == '\n') {
+					if (is_preprocessor_directive) {
+						// the previous line was a preprocessor directive
+						// write it to the file
+						ATTEMPT_TO_WRITE_DATA_TO_FILE(f,
+													  exprStr + preprocessor_start,
+													  i - preprocessor_start);
+						for (j = preprocessor_start; j < i; j++) {
+							// now overwrite the preprocessor directive in the
+							// expression string with spaces
+							exprStr[j] = ' ';
+						}
 					}
+					is_preprocessor_directive = false;
+					new_line = true;
+				} else if (exprStr[i] == ' ' || exprStr[i] == '\t') {
+					// skip any spaces
+					continue;
+				} else if (new_line) {
+					if (exprStr[i] == '#') {
+						preprocessor_start = i;
+						is_preprocessor_directive = true;
+					}
+					new_line = false;
 				}
-				is_preprocessor_directive = false;
-				new_line = true;
-			} else if (exprStr[i] == ' ' || exprStr[i] == '\t') {
-				// skip any spaces
-				continue;
-			} else if (new_line) {
-				if (exprStr[i] == '#') {
-					preprocessor_start = i;
-					is_preprocessor_directive = true;
-				}
-				new_line = false;
 			}
 		}
-	}
 
-	// create the actual function
-	if (use_cpp) {
-		ATTEMPT_TO_WRITE_TO_FILE(f, "\nextern \"C\"");
-	}
-	ATTEMPT_TO_WRITE_TO_FILE(f, "\nchar* ");
-	ATTEMPT_TO_WRITE_TO_FILE(f, funcname);
-	ATTEMPT_TO_WRITE_TO_FILE(
-		f,
-		"(void** __inputs, void** __outputs, malloc_function_ptr malloc) {\n");
+		// create the actual function
+		if (use_cpp) {
+			// avoid name wrangling if we are compiling C++ code
+			ATTEMPT_TO_WRITE_TO_FILE(f, "\nextern \"C\"");
+		}
+		ATTEMPT_TO_WRITE_TO_FILE(f, "\nchar* ");
+		ATTEMPT_TO_WRITE_TO_FILE(f, funcname);
+		ATTEMPT_TO_WRITE_TO_FILE(
+			f,
+			"(void** __inputs, void** __outputs, malloc_function_ptr malloc) {\n");
 
-	// now we convert the input arguments from void** to the proper input/output
-	// of the function
-	// first convert the input
-	// FIXME: deal with SQL types
-	for (i = pci->retc + ARG_OFFSET; i < (size_t)pci->argc; i++) {
-		if (!isaBatType(getArgType(mb, pci, i))) {
-			// scalar input
-			int scalar_type = getArgType(mb, pci, i);
-			const char *tpe = GetTypeDefinition(scalar_type);
-			assert(tpe);
-			if (tpe) {
-				snprintf(buf, sizeof(buf), "%s %s = *((%s*)__inputs[%zu]);\n",
-						 tpe, args[i], tpe, i - (pci->retc + ARG_OFFSET));
-				ATTEMPT_TO_WRITE_TO_FILE(f, buf);
+		// now we convert the input arguments from void** to the proper input/output
+		// of the function
+		// first convert the input
+		for (i = pci->retc + ARG_OFFSET; i < (size_t)pci->argc; i++) {
+			if (!isaBatType(getArgType(mb, pci, i))) {
+				// scalar input
+				int scalar_type = getArgType(mb, pci, i);
+				const char *tpe = GetTypeDefinition(scalar_type);
+				assert(tpe);
+				if (tpe) {
+					snprintf(buf, sizeof(buf), "%s %s = *((%s*)__inputs[%zu]);\n",
+							 tpe, args[i], tpe, i - (pci->retc + ARG_OFFSET));
+					ATTEMPT_TO_WRITE_TO_FILE(f, buf);
+				}
+			} else {
+				int bat_type = getBatType(getArgType(mb, pci, i));
+				const char *tpe = GetTypeName(bat_type);
+				assert(tpe);
+				if (tpe) {
+					snprintf(buf, sizeof(buf),
+							 "%s%s %s = *((%s%s*)__inputs[%zu]);\n", struct_prefix,
+							 tpe, args[i], struct_prefix, tpe,
+							 i - (pci->retc + ARG_OFFSET));
+					ATTEMPT_TO_WRITE_TO_FILE(f, buf);
+				}
 			}
-		} else {
+		}
+		// output types
+		for (i = 0; i < (size_t)pci->retc; i++) {
 			int bat_type = getBatType(getArgType(mb, pci, i));
 			const char *tpe = GetTypeName(bat_type);
 			assert(tpe);
 			if (tpe) {
-				snprintf(buf, sizeof(buf),
-						 "%s%s %s = *((%s%s*)__inputs[%zu]);\n", struct_prefix,
-						 tpe, args[i], struct_prefix, tpe,
-						 i - (pci->retc + ARG_OFFSET));
+				snprintf(buf, sizeof(buf), "%s%s* %s = ((%s%s*)__outputs[%zu]);\n",
+						 struct_prefix, tpe, output_names[i], struct_prefix, tpe,
+						 i);
 				ATTEMPT_TO_WRITE_TO_FILE(f, buf);
 			}
 		}
-	}
-	// output types
-	// FIXME: deal with SQL types
-	for (i = 0; i < (size_t)pci->retc; i++) {
-		int bat_type = getBatType(getArgType(mb, pci, i));
-		const char *tpe = GetTypeName(bat_type);
-		assert(tpe);
-		if (tpe) {
-			snprintf(buf, sizeof(buf), "%s%s* %s = ((%s%s*)__outputs[%zu]);\n",
-					 struct_prefix, tpe, output_names[i], struct_prefix, tpe,
-					 i);
-			ATTEMPT_TO_WRITE_TO_FILE(f, buf);
+
+		ATTEMPT_TO_WRITE_TO_FILE(f, "\n");
+		// write the actual user defined code into the file
+		ATTEMPT_TO_WRITE_TO_FILE(f, exprStr);
+
+		ATTEMPT_TO_WRITE_TO_FILE(f, "\nreturn 0;\n}\n");
+
+		fclose(f);
+		f = NULL;
+
+		// now it's time to try to compile the code
+		// we use popen to capture any error output
+		snprintf(buf, sizeof(buf), "%s -c -fPIC %s %s -o %s 2>&1 >/dev/null",
+				 c_compiler, compilation_flags, fname, oname);
+		compiler = popen(buf, "r");
+		if (!compiler) {
+			msg = createException(MAL, "cudf.eval", "Failed popen");
+			goto wrapup;
+		}
+		// read the error stream into the error buffer until the compiler is done
+		while (fgets(error_buf, sizeof(error_buf) - 1, compiler)) {
+			size_t error_size = strlen(error_buf);
+			snprintf(total_error_buf + error_buffer_position,
+					 sizeof(total_error_buf) - error_buffer_position - 1, "%s",
+					 error_buf);
+			error_buffer_position += error_size;
+		}
+
+		compiler_return_code = pclose(compiler);
+		compiler = NULL;
+
+		if (compiler_return_code != 0) {
+			// failure in compiling the code
+			// report the failure to the user
+			msg = createException(MAL, "cudf.eval", "Failed to compile C UDF:\n%s",
+								  total_error_buf);
+			goto wrapup;
+		}
+		snprintf(buf, sizeof(buf), "%s %s -shared -o %s", c_compiler, oname,
+				 libname);
+		compiler = popen(buf, "r");
+		if (!compiler) {
+			msg = createException(MAL, "cudf.eval", "Failed popen");
+			goto wrapup;
+		}
+		while (fgets(error_buf, sizeof(error_buf) - 1, compiler)) {
+			size_t error_size = strlen(error_buf);
+			snprintf(total_error_buf + error_buffer_position,
+					 sizeof(total_error_buf) - error_buffer_position - 1, "%s",
+					 error_buf);
+			error_buffer_position += error_size;
+		}
+
+		compiler_return_code = pclose(compiler);
+		compiler = NULL;
+
+		if (compiler_return_code != 0) {
+			// failure in compiler
+			msg = createException(MAL, "cudf.eval", "Failed to link C UDF:\n%s",
+								  total_error_buf);
+			goto wrapup;
+		}
+
+		handle = dlopen(libname, RTLD_LAZY);
+		if (!handle) {
+			msg = createException(MAL, "cudf.eval",
+								  "Failed to open shared library: %s.", dlerror());
+			goto wrapup;
+		}
+		func = (jitted_function)dlsym(handle, funcname);
+		if (!func) {
+			msg = createException(MAL, "cudf.eval",
+								  "Failed to load function from library: %s.",
+								  dlerror());
+			goto wrapup;
+		}
+		// now that we have compiled this function
+		// store it in our function cache
+		{
+			cached_functions* new_entry = GDKmalloc(sizeof(cached_functions));
+			if (!new_entry) {
+				msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+				goto wrapup;
+			}
+			new_entry->function = func;
+			new_entry->expression_hash = expression_hash;
+			new_entry->parameters = function_parameters;
+			new_entry->dll_handle = handle;
+			function_parameters = NULL;
+			handle = NULL;
+			MT_lock_set(&cache_lock);
+			new_entry->next = function_cache[funcname_hash];
+			function_cache[funcname_hash] = new_entry;
+			MT_lock_unset(&cache_lock);
 		}
 	}
 
-	ATTEMPT_TO_WRITE_TO_FILE(f, "\n");
-	// write the actual user defined code into the file
-	ATTEMPT_TO_WRITE_TO_FILE(f, exprStr);
-
-	ATTEMPT_TO_WRITE_TO_FILE(f, "\nreturn 0;\n}\n");
-
-	fclose(f);
-	f = NULL;
-
-	// now it's time to try to compile the code
-	// we use popen to capture any error output
-	snprintf(buf, sizeof(buf), "%s -c -fPIC %s %s -o %s 2>&1 >/dev/null",
-			 c_compiler, compilation_flags, fname, oname);
-	compiler = popen(buf, "r");
-	if (!compiler) {
-		msg = createException(MAL, "cudf.eval", "Failed popen");
-		goto wrapup;
-	}
-	while (fgets(error_buf, sizeof(error_buf) - 1, compiler)) {
-		size_t error_size = strlen(error_buf);
-		snprintf(total_error_buf + error_buffer_position,
-				 sizeof(total_error_buf) - error_buffer_position - 1, "%s",
-				 error_buf);
-		error_buffer_position += error_size;
-	}
-
-	compiler_return_code = pclose(compiler);
-	compiler = NULL;
-
-	if (compiler_return_code != 0) {
-		// failure in compiling the code
-		// report the failure to the user
-		msg = createException(MAL, "cudf.eval", "Failed to compile C UDF:\n%s",
-							  total_error_buf);
-		goto wrapup;
-	}
-	snprintf(buf, sizeof(buf), "%s %s -shared -o %s", c_compiler, oname,
-			 libname);
-	compiler = popen(buf, "r");
-	if (!compiler) {
-		msg = createException(MAL, "cudf.eval", "Failed popen");
-		goto wrapup;
-	}
-	while (fgets(error_buf, sizeof(error_buf) - 1, compiler)) {
-		size_t error_size = strlen(error_buf);
-		snprintf(total_error_buf + error_buffer_position,
-				 sizeof(total_error_buf) - error_buffer_position - 1, "%s",
-				 error_buf);
-		error_buffer_position += error_size;
-	}
-
-	compiler_return_code = pclose(compiler);
-	compiler = NULL;
-
-	if (compiler_return_code != 0) {
-		// failure in compiler
-		msg = createException(MAL, "cudf.eval", "Failed to link C UDF:\n%s",
-							  total_error_buf);
-		goto wrapup;
-	}
-
-	handle = dlopen(libname, RTLD_LAZY);
-	if (!handle) {
-		msg = createException(MAL, "cudf.eval",
-							  "Failed to open shared library: %s.", dlerror());
-		goto wrapup;
-	}
-	func = (jitted_function)dlsym(handle, funcname);
-	if (!func) {
-		msg = createException(MAL, "cudf.eval",
-							  "Failed to load function from library: %s.",
-							  dlerror());
-		goto wrapup;
-	}
-
 	// now create the actual input/output parameters from the input bats
-	input_count = pci->argc - (pci->retc + ARG_OFFSET);
-	output_count = pci->retc;
-
 	if (input_count > 0) {
 		input_bats = GDKzalloc(sizeof(BAT *) * input_count);
 		inputs = GDKzalloc(sizeof(void *) * input_count);
@@ -1097,6 +1186,9 @@ wrapup:
 			}
 		}
 		GDKfree(outputs);
+	}
+	if (function_parameters) {
+		GDKfree(function_parameters);
 	}
 	// close the file handle
 	if (f) {
