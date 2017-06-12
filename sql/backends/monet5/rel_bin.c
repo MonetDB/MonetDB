@@ -1695,12 +1695,12 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	node *en = NULL, *n;
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *lsel = NULL, *rsel = NULL, *oleft = NULL, *oright = NULL;
 	stmt *ld = NULL, *rd = NULL;
-	int need_left = (rel->flag == LEFT_JOIN || rel->op == op_left || rel->op == op_full);
+	int need_left = (rel->flag == LEFT_JOIN);
 
 	if (rel->l) { /* first construct the left sub relation */
 		left = subrel_bin(be, rel->l, refs);
 		if (left && left->type == st_project) {
-			if (need_left) {
+			if (need_left || rel->op == op_left || rel->op == op_full) {
 				left = rel2bin_post_project(be, left);
 			} else {
 				printf("# JOIN Left post_project \n");
