@@ -53,4 +53,5 @@ distinct_minus_count_distinct.Bug-6296
 all_minus_count_star.Bug-6297
 simplify_math.Bug-6324
 push_subslice.Bug-6322
+crash-dce.Bug-6330
 delete_from_merge_table.Bug-3743
