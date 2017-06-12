@@ -54,7 +54,7 @@ CREATE TABLE sys.function_languages (
 language_id   SMALLINT NOT NULL PRIMARY KEY,
 language_name VARCHAR(20) NOT NULL UNIQUE);
 INSERT INTO sys.function_languages (language_id, language_name) VALUES
-(0, 'Internal C'), (1, 'MAL'), (2, 'SQL'), (3, 'R'), (4, 'C'), (5, 'Java'), (6, 'Python'), (7, 'Python Mapped');
+(0, 'Internal C'), (1, 'MAL'), (2, 'SQL'), (3, 'R'), (6, 'Python'), (7, 'Python Mapped'), (8, 'Python2'), (9, 'Python2 Mapped'), (10, 'Python3'), (11, 'Python3 Mapped');
 ALTER TABLE sys.function_languages SET READ ONLY;
 CREATE TABLE sys.key_types (
 key_type_id   SMALLINT NOT NULL PRIMARY KEY,
