@@ -15,7 +15,6 @@ CREATE FUNCTION capi04(inp STRING) RETURNS STRING LANGUAGE C {
 			result->data[i] = malloc(strlen(inp.data[i]) + 2);
 			strcpy(result->data[i] + 1, inp.data[i]);
 			result->data[i][0] = 'H';
-			printf("%s\n", result->data[i]);
 		}
 	}
 };

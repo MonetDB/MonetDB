@@ -87,6 +87,26 @@ Ready.
 #INSERT INTO integers VALUES (1), (2), (3), (4), (5);
 [ 5	]
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE FUNCTION capi03(inp INTEGER) RETURNS INTEGER LANGUAGE C {
+#	inp.data[0] = 10;
+#	result->initialize(result, inp.count);
+#	for(size_t i = 0; i < inp.count; i++) {
+#		result->data[i] = inp.data[i] * 2;
+#	}
+#};
+#CREATE TABLE integers(i INTEGER);
+#INSERT INTO integers VALUES (1), (2), (3), (4), (5);
+[ 5	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE FUNCTION capi03(inp INTEGER) RETURNS INTEGER LANGUAGE C {
+#	int x = *((int*)NULL);
+#};
+#CREATE TABLE integers(i INTEGER);
+#INSERT INTO integers VALUES (1), (2), (3), (4), (5);
+[ 5	]
+#ROLLBACK;
 
 # 17:24:55 >  
 # 17:24:55 >  "Done."

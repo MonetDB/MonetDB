@@ -223,6 +223,8 @@ static daytime time_from_data(cudf_data_time* ptr);
 static void data_from_timestamp(timestamp d, cudf_data_timestamp* ptr);
 static timestamp timestamp_from_data(cudf_data_timestamp* ptr);
 
+static char valid_path_characters[] = "abcdefghijklmnopqrstuvwxyz";
+
 static str
 CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	sql_func * sqlfun = NULL;
@@ -232,6 +234,7 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	char argbuf[64];
 	char buf[BUFSIZ];
 	char fname[BUFSIZ];
+	char oname[BUFSIZ];
 	char libname[BUFSIZ];
 	char error_buf[BUFSIZ];
 	char total_error_buf[8192];
@@ -358,9 +361,52 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 		}
 	}
 
-	// name of the source file and lib file that will be generated
-	snprintf(fname, BUFSIZ, "%s.c", funcname);
-	snprintf(libname, BUFSIZ, "lib%s%s", funcname, SO_EXT);
+	{
+		const int RANDOM_NAME_SIZE = 32;
+		char* path = NULL;
+		const char* prefix = "LEFTOVERS"DIR_SEP_STR;
+		size_t prefix_size = strlen(prefix);
+
+		memcpy(buf, prefix, sizeof(char) * strlen(prefix));
+		// generate a random 32-character name for the temporary files
+		for(i = prefix_size; i < prefix_size + RANDOM_NAME_SIZE; i++) {
+			buf[i] = valid_path_characters[rand() % (sizeof(valid_path_characters) - 1)];
+		}
+		buf[i] = '\0';
+		path = GDKfilepath(0, BATDIR, buf, "c");
+		if (!path) {
+			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+			goto wrapup;
+		}
+		strcpy(fname, path);
+		strcpy(oname, fname);
+		oname[strlen(oname) - 1] = 'o';
+		GDKfree(path);
+
+		memmove(buf + strlen(SO_PREFIX) + prefix_size, buf + prefix_size, i + 1 - prefix_size);
+		memcpy(buf + prefix_size, SO_PREFIX, sizeof(char) * strlen(SO_PREFIX));
+		path = GDKfilepath(0, BATDIR, buf, SO_EXT[0] == '.' ? SO_EXT + 1 : SO_EXT);
+		if (!path) {
+			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+			goto wrapup;
+		}
+		strcpy(libname, path);
+		GDKfree(path);
+	}
+
+	// if leftovers directory does not exist, create it
+	{
+		char* leftdirpath = GDKfilepath(0, NULL, LEFTDIR, NULL);
+		if (!leftdirpath) {
+			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+			goto wrapup;
+		}
+		if (mkdir(leftdirpath, 0755) < 0 && errno != EEXIST) {
+			msg = createException(MAL, "cudf.eval", "cannot create directory %s\n", leftdirpath);
+			goto wrapup;
+		}
+		GDKfree(leftdirpath);
+	}
 
 	// first generate the source file
 	f = fopen(fname, "w+");
@@ -468,7 +514,7 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 
 	// now it's time to try to compile the code
 	// we use popen to capture any error output
-	snprintf(buf, sizeof(buf), "%s -c -fPIC %s %s.c -o %s.o 2>&1 >/dev/null", c_compiler, compilation_flags, funcname, funcname);
+	snprintf(buf, sizeof(buf), "%s -c -fPIC %s %s -o %s 2>&1 >/dev/null", c_compiler, compilation_flags, fname, oname);
 	compiler = popen(buf, "r");
 	if (!compiler) {
 		msg = createException(MAL, "cudf.eval", "Failed popen");
@@ -490,7 +536,7 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 		msg = createException(MAL, "cudf.eval", "Failed to compile C UDF:\n%s", total_error_buf);
 		goto wrapup;
 	}
-	snprintf(buf, sizeof(buf), "%s %s.o -shared -o %s", c_compiler, funcname, libname);
+	snprintf(buf, sizeof(buf), "%s %s -shared -o %s", c_compiler, oname, libname);
 	compiler = popen(buf, "r");
 	if (!compiler) {
 		msg = createException(MAL, "cudf.eval", "Failed popen");

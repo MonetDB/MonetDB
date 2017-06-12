@@ -36,6 +36,12 @@ ERROR = !No data returned.
 MAPI  = (monetdb) /var/tmp/mtest-2836/.s.monetdb.35915
 QUERY = SELECT capi03(i) FROM integers;
 ERROR = !Something went wrong!
+MAPI  = (monetdb) /var/tmp/mtest-25067/.s.monetdb.39212
+QUERY = SELECT capi03(i) FROM integers;
+ERROR = !Attempting to write to the input or triggered a segfault/bus error
+MAPI  = (monetdb) /var/tmp/mtest-25067/.s.monetdb.39212
+QUERY = SELECT capi03(i) FROM integers;
+ERROR = !Attempting to write to the input or triggered a segfault/bus error
 
 # 17:24:55 >  
 # 17:24:55 >  "Done."
