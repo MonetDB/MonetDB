@@ -521,7 +521,10 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	}
 
 	// create the actual function
-	ATTEMPT_TO_WRITE_TO_FILE(f, "\nextern \"C\" char* ");
+	if (use_cpp) {
+		ATTEMPT_TO_WRITE_TO_FILE(f, "\nextern \"C\"");
+	}
+	ATTEMPT_TO_WRITE_TO_FILE(f, "\nchar* ");
 	ATTEMPT_TO_WRITE_TO_FILE(f, funcname);
 	ATTEMPT_TO_WRITE_TO_FILE(
 		f,
@@ -1015,9 +1018,20 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		GDKfree(outputs[i]);
 		outputs[i] = NULL;
 
-		// return the BAT from the
-		*getArgReference_bat(stk, pci, i) = b->batCacheid;
-		BBPkeepref(b->batCacheid);
+		// return the BAT from the function
+		if (isaBatType(getArgType(mb,pci,i))) {
+			*getArgReference_bat(stk, pci, i) = b->batCacheid;
+			//BBPkeepref(b->batCacheid);
+		} else {
+			// single value return, only for non-grouped aggregations
+			BATiter li = bat_iterator(b);
+			if (VALinit(&stk->stk[pci->argv[i]], bat_type,
+						BUNtail(li, 0)) == NULL) {
+				msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+				goto wrapup;
+			}
+			BBPunfix(b->batCacheid);
+		}
 	}
 
 wrapup:
