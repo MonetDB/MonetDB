@@ -22,6 +22,13 @@
 #include <unistd.h>
 #include <string.h>
 
+struct _allocated_region;
+typedef struct _allocated_region {
+	struct _allocated_region* next;
+} allocated_region;
+
+
+static __thread allocated_region* allocated_regions;
 static __thread jmp_buf jump_buffer;
 
 static str
@@ -125,7 +132,7 @@ clear_mprotect(void* addr, size_t len) {
 	}
 
 
-static void* wrapped_GDK_malloc(size_t size) {
+static void* jump_GDK_malloc(size_t size) {
 	void* ptr = GDKmalloc(size);
 	if (!ptr) {
 		longjmp(jump_buffer, 2);
@@ -133,11 +140,21 @@ static void* wrapped_GDK_malloc(size_t size) {
 	return ptr;
 }
 
+static void* wrapped_GDK_malloc(size_t size) {
+	allocated_region* region;
+	void* ptr = jump_GDK_malloc(size + sizeof(allocated_region));
+	region = (allocated_region*)ptr;
+	region->next = allocated_regions;
+	allocated_regions = region;
+	
+	return ptr + sizeof(allocated_region);
+}
+
 #define GENERATE_BASE_HEADERS(type, tpename) \
 static int tpename##_is_null(type value); \
 static void tpename##_initialize(struct cudf_data_struct_##tpename* self, size_t count) { \
 	self->count = count; \
-	self->data = wrapped_GDK_malloc(count * sizeof(self->null_value)); \
+	self->data = jump_GDK_malloc(count * sizeof(self->null_value)); \
 }
 
 #define GENERATE_BASE_FUNCTIONS(tpe, tpename) \
@@ -277,6 +294,8 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 	const char* struct_prefix = "struct cudf_data_struct_";
 
 	(void) cntxt;
+
+	allocated_regions = NULL;
 
 	// we need to be able to catch segfaults and bus errors
 	// so we can work with mprotect to prevent UDFs from changing
@@ -781,7 +800,7 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 			goto wrapup;
 		} else {
 			// we jumped here
-			msg = createException(MAL, "cudf.eval", "We longjumped here because of an error!.");
+			msg = createException(MAL, "cudf.eval", "We longjumped here because of an error, but we don't know which!");
 			goto wrapup;
 		}
 	}
@@ -903,9 +922,6 @@ CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit grouped) {
 					msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 					goto wrapup;
 				}
-				if (ptr != str_nil) {
-					GDKfree(source_base[j]);
-				}
 			}
 			GDKfree(data);
 		} else {
@@ -939,6 +955,11 @@ wrapup:
 		clear_mprotect(regions->addr, regions->len);
 		GDKfree(regions);
 		regions = next;
+	}
+	while(allocated_regions) {
+		allocated_region* next = allocated_regions->next;
+		GDKfree(allocated_regions);
+		allocated_regions = next;
 	}
 	// block segfaults and bus errors again after we exit
 	(void) pthread_sigmask(SIG_BLOCK, &signal_set, NULL);

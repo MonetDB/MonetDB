@@ -54,14 +54,10 @@ Ready.
 # loading sql script: 90_generator.sql
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
-Hello
-How
-Honestly?
-Hannes
 
-# 15:50:30 >  
-# 15:50:30 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20003" "--port=32751"
-# 15:50:30 >  
+# 12:56:26 >  
+# 12:56:26 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-37150" "--port=31836"
+# 12:56:26 >  
 
 #START TRANSACTION;
 #CREATE FUNCTION capi04(inp STRING) RETURNS STRING LANGUAGE C {
@@ -97,6 +93,35 @@ Hannes
 #		result->data[i][0] = 'h';
 #	}
 #};
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE FUNCTION capi04(inp STRING) RETURNS STRING LANGUAGE C {
+##include <string.h>
+#
+#	result->initialize(result, inp.count);
+#	for(size_t i = 0; i < inp.count; i++) {
+#		if (inp.is_null(inp.data[i])) {
+#			result->data[i] = result->null_value;
+#		} else {
+#			result->data[i] = malloc(strlen(inp.data[i]) + 2);
+#			strcpy(result->data[i] + 1, inp.data[i]);
+#			result->data[i] = "hello";
+#		}
+#	}
+#};
+#CREATE TABLE strings(i STRING);
+#INSERT INTO strings VALUES ('ello'), ('ow'), (NULL), ('onestly?'), ('annes');
+[ 5	]
+#SELECT capi04(i) FROM strings;
+% sys.L2 # table_name
+% L2 # name
+% clob # type
+% 5 # length
+[ "hello"	]
+[ "hello"	]
+[ NULL	]
+[ "hello"	]
+[ "hello"	]
 #ROLLBACK;
 
 # 15:50:31 >  
