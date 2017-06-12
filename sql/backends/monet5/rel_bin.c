@@ -1695,7 +1695,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	node *en = NULL, *n;
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *lsel = NULL, *rsel = NULL, *oleft = NULL, *oright = NULL;
 	stmt *ld = NULL, *rd = NULL;
-	int need_left = (rel->flag == LEFT_JOIN);
+	int need_left = (rel->flag == LEFT_JOIN || rel->op == op_left || rel->op == op_full);
 
 	if (rel->l) { /* first construct the left sub relation */
 		left = subrel_bin(be, rel->l, refs);
@@ -1713,11 +1713,14 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	if (rel->r) { /* first construct the right sub relation */
 		right = subrel_bin(be, rel->r, refs);
 		if (right && right->type == st_project) {
-			//right = rel2bin_post_project(be, right);
-			printf("# JOIN right post_project \n");
-			oright = right;
-			rsel = right->op1;
-			right = stmt_list(be, right->op4.lval);
+			if (rel->op == op_right || rel->op == op_full) {
+				right = rel2bin_post_project(be, right);
+			} else {
+				printf("# JOIN right post_project \n");
+				oright = right;
+				rsel = right->op1;
+				right = stmt_list(be, right->op4.lval);
+			}
 		}
 	}
 	if (!left || !right) 
