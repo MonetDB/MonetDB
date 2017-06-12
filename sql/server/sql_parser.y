@@ -1850,8 +1850,13 @@ func_def:
                 	lang = FUNC_LANG_PY;
                 }
             }
-			else if (l == 'C' || l == 'c')
-				lang = FUNC_LANG_C;
+			else if (l == 'C' || l == 'c') {
+                if (strcasecmp($10, "CPP") == 0) {
+					lang = FUNC_LANG_CPP;
+				} else {
+					lang = FUNC_LANG_C;
+				}
+			}
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;
 			else {
@@ -1923,8 +1928,13 @@ func_def:
                 	lang = FUNC_LANG_PY;
                 }
             }
-			else if (l == 'C' || l == 'c')
-				lang = FUNC_LANG_C;
+            else if (l == 'C' || l == 'c') {
+                if (strcasecmp($10, "CPP") == 0) {
+					lang = FUNC_LANG_CPP;
+				} else {
+					lang = FUNC_LANG_C;
+				}
+			}
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;
 			else {

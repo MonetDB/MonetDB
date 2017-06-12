@@ -7,21 +7,20 @@
 module capi;
 
 # The generic CUDF interface
-pattern eval(fptr:ptr,expr:str):any
+pattern eval(fptr:ptr,cpp:bit,expr:str):any
 address CUDFevalStd
 comment "Execute a simple CUDF script returning a single value";
 
-
-pattern eval(fptr:ptr,expr:str,arg:any...):any...
+pattern eval(fptr:ptr,cpp:bit,expr:str,arg:any...):any...
 address CUDFevalStd
 comment "Execute a simple CUDF script value";
 
 #grouped things
-pattern subeval_aggr(fptr:ptr,expr:str,arg:any...):any...
+pattern subeval_aggr(fptr:ptr,cpp:bit,expr:str,arg:any...):any...
 address CUDFevalAggr
 comment "grouped aggregates through CUDF";
 
-pattern eval_aggr(fptr:ptr,expr:str,arg:any...):any...
+pattern eval_aggr(fptr:ptr,cpp:bit,expr:str,arg:any...):any...
 address CUDFevalAggr
 comment "grouped aggregates through CUDF";
 
@@ -32,14 +31,14 @@ capi.prelude();
 # The SQL compiler needs these functions for bat-wise operations
 module batcapi;
 
-pattern eval(fptr:ptr,expr:str,arg:any...):any...
+pattern eval(fptr:ptr,cpp:bit,expr:str,arg:any...):any...
 address CUDFevalStd
 comment "Execute a simple CUDF script value";
 
-pattern subeval_aggr(fptr:ptr,expr:str,arg:any...):any...
+pattern subeval_aggr(fptr:ptr,cpp:bit,expr:str,arg:any...):any...
 address CUDFevalAggr
 comment "grouped aggregates through CUDF";
 
-pattern eval_aggr(fptr:ptr,expr:str,arg:any...):any...
+pattern eval_aggr(fptr:ptr,cpp:bit,expr:str,arg:any...):any...
 address CUDFevalAggr
 comment "grouped aggregates through CUDF";

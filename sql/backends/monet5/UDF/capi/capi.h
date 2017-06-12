@@ -39,8 +39,10 @@
 #define cudf_export extern
 #endif
 
-cudf_export str CUDFevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-cudf_export str CUDFevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+cudf_export str CUDFevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+							InstrPtr pci);
+cudf_export str CUDFevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+							 InstrPtr pci);
 cudf_export str CUDFprelude(void *ret);
 
 #endif /* _CUDF_LIB_ */

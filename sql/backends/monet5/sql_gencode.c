@@ -1021,6 +1021,7 @@ backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 	case FUNC_LANG_MAP_PY3:
 		return backend_create_map_py3_func(be, f);
 	case FUNC_LANG_C:
+	case FUNC_LANG_CPP:
 		return backend_create_c_func(be, f);
 	case FUNC_LANG_J:
 	default:
