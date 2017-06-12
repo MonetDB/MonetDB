@@ -311,6 +311,11 @@ MonetDB, you will very likely need this package.
 Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases
 Requires: %{name}-client%{?_isa} = %{version}-%{release}
+%if (0%{?fedora} >= 22)
+# tomograph executes these two:
+Recommends: /usr/bin/gs
+Recommends: /usr/bin/gnuplot
+%endif
 
 %description client-tools
 MonetDB is a database management system that is developed from a

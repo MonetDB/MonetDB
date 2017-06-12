@@ -1995,7 +1995,7 @@ rel_schemas(mvc *sql, symbol *s)
 
 		assert(l->h->next->type == type_int);
 		sname = get_schema_name(sql, sname, tname);
-		ret = rel_schema(sql->sa, DDL_DROP_VIEW, sname, tname, l->h->next->data.i_val);
+		ret = rel_schema(sql->sa, l->h->next->next->data.i_val ? DDL_DROP_VIEW_IF_EXISTS : DDL_DROP_VIEW, sname, tname, l->h->next->data.i_val);
 	} 	break;
 	case SQL_ALTER_TABLE:
 	{

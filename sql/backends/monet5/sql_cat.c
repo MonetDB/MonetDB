@@ -297,7 +297,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 }
 
 static char *
-drop_view(mvc *sql, char *sname, char *tname, int drop_action)
+drop_view(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 {
 	sql_table *t = NULL;
 	sql_schema *ss = NULL;
@@ -309,10 +309,12 @@ drop_view(mvc *sql, char *sname, char *tname, int drop_action)
 		ss = cur_schema(sql);
 
 	t = mvc_bind_table(sql, ss, tname);
-
 	if (!mvc_schema_privs(sql, ss) && !(isTempSchema(ss) && t && t->persistence == SQL_LOCAL_TEMP)) {
 		return sql_message("42000!DROP VIEW: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), ss->base.name);
 	} else if (!t) {
+		if(if_exists){
+			return MAL_SUCCEED;
+		}
 		return sql_message("42S02!DROP VIEW: unknown view '%s'", tname);
 	} else if (!isView(t)) {
 		return sql_message("42000!DROP VIEW: unable to drop view '%s': is a table", tname);
@@ -915,9 +917,13 @@ SQLdrop_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sname = *getArgReference_str(stk, pci, 1); 
 	str name = *getArgReference_str(stk, pci, 2);
 	int action = *getArgReference_int(stk, pci, 3);
+	int if_exists = 0; // should become an argument
 
 	initcontext();
-	msg = drop_view(sql, sname, name, action);
+	if( pci->argc > 4)
+		if_exists  = *getArgReference_int(stk, pci, 4);
+
+	msg = drop_view(sql, sname, name, action, if_exists);
 	return msg;
 }
 
