@@ -169,7 +169,7 @@ static void *wrapped_GDK_malloc(size_t size)
 	region->next = allocated_regions;
 	allocated_regions = region;
 
-	return ptr + sizeof(allocated_region);
+	return (char*)ptr + sizeof(allocated_region);
 }
 
 #define GENERATE_BASE_HEADERS(type, tpename)                                   \
@@ -571,6 +571,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 						ATTEMPT_TO_WRITE_DATA_TO_FILE(f,
 													  exprStr + preprocessor_start,
 													  i - preprocessor_start);
+						ATTEMPT_TO_WRITE_TO_FILE(f, "\n");
 						for (j = preprocessor_start; j < i; j++) {
 							// now overwrite the preprocessor directive in the
 							// expression string with spaces
