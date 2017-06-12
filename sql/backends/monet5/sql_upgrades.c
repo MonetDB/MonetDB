@@ -1416,7 +1416,7 @@ sql_update_jul2017(Client c, mvc *sql)
 			"language_id   SMALLINT NOT NULL PRIMARY KEY,\n"
 			"language_name VARCHAR(20) NOT NULL UNIQUE);\n"
 			"INSERT INTO sys.function_languages (language_id, language_name) VALUES\n"
-			"(0, 'Internal C'), (1, 'MAL'), (2, 'SQL'), (3, 'R'), (4, 'C'), (5, 'Java'), (6, 'Python'), (7, 'Python Mapped');\n"
+			"(0, 'Internal C'), (1, 'MAL'), (2, 'SQL'), (3, 'R'), (6, 'Python'), (7, 'Python Mapped'), (8, 'Python2'), (9, 'Python2 Mapped'), (10, 'Python3'), (11, 'Python3 Mapped');\n"
 			"ALTER TABLE sys.function_languages SET READ ONLY;\n"
 
 			"CREATE TABLE sys.key_types (\n"

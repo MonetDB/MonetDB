@@ -4346,10 +4346,14 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 		return rel_column_ref(sql, rel, se, f );
 	case SQL_NAME:
 		return rel_var_ref(sql, se->data.sval, 1);
+	case SQL_WITH: 
 	case SQL_SELECT: {
 		sql_rel *r;
 
-		r = rel_subquery(sql, NULL, se, ek, APPLY_JOIN);
+		if (se->token == SQL_WITH)
+			r = rel_with_query(sql, se);
+		else
+			r = rel_subquery(sql, NULL, se, ek, APPLY_JOIN);
 		if (r) {
 			sql_exp *e;
 

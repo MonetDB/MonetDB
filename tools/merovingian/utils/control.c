@@ -330,7 +330,7 @@ char* control_send(
 			rbuf[len - 1] = '\0';
 		}
 
-		if (strcmp(rbuf, "=OK") != 0 && strcmp(rbuf, "OK") != 0) {
+		if (strncmp(rbuf, "=OK", 3) != 0 && strncmp(rbuf, "OK", 2) != 0) {
 			buf = rbuf;
 			if (*buf == '!')
 				buf++;
