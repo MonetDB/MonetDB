@@ -1,3 +1,7 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Mon Jun 12 2017 Sjoerd Mullender <sjoerd@acm.org>
+- A bug was fixed in the implementation of the functions SQLTables in
+  the ODBC driver where not enough memory was allocated.
+

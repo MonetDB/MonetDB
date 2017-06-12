@@ -5656,6 +5656,21 @@ positional_exps_mark_used( sql_rel *rel, sql_rel *subrel )
 }
 
 static void
+exps_mark_dependent(sql_rel *rel)
+{
+	if (rel->exps) {
+		node *n;
+
+		for (n=rel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (e->used) 
+				exp_mark_used(rel, e);
+		}
+	}
+}
+
+static void
 exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
 {
 	int nr = 0;
@@ -5781,6 +5796,8 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 		if (proj && rel->l) {
 			exps_mark_used(sql->sa, rel, rel->l);
 			rel_mark_used(sql, rel->l, 0);
+		} else if (proj) {
+			exps_mark_dependent(rel);
 		}
 		break;
 	case op_update:

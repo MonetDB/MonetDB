@@ -300,8 +300,8 @@ typedef struct sql_arg {
 // this should probably be done in a better way
 #define FUNC_LANG_PY  6 /* create .. language PYTHON */
 #define FUNC_LANG_MAP_PY  7 /* create .. language PYTHON_MAP */
-#define FUNC_LANG_PY2  8 /* create .. language PYTHON */
-#define FUNC_LANG_MAP_PY2  9 /* create .. language PYTHON_MAP */
+#define FUNC_LANG_PY2  8 /* create .. language PYTHON2 */
+#define FUNC_LANG_MAP_PY2  9 /* create .. language PYTHON2_MAP */
 #define FUNC_LANG_PY3  10 /* create .. language PYTHON3 */
 #define FUNC_LANG_MAP_PY3  11 /* create .. language PYTHON3_MAP */
 #define FUNC_LANG_CPP   12 /* create .. language CPP */
