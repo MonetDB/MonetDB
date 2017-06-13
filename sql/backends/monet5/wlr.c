@@ -530,7 +530,7 @@ WLRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// we need to get rid of the escaped quote.
 	x = qtxt= (char*) GDKmalloc(strlen(qry) +1);
 	if( qtxt == NULL)
-		throw(SQL,"wlr.query","SQLSTATE HY001 !" MAL_MALLOC_FAIL);
+		throw(SQL,"wlr.query","SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	for(y = qry; *y; y++){
 		if( *y == '\\' ){
 			if( *(y+1) ==  '\'')
@@ -633,16 +633,16 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL)
-		throw(SQL, "sql.append", "SQLSTATE 3F000 !""Schema missing");
+		throw(SQL, "sql.append", "SQLSTATE 3F000 !""Schema missing %s",sname);
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
-		throw(SQL, "sql.append", "SQLSTATE 42S02 !""Table missing");
+		throw(SQL, "sql.append", "SQLSTATE 42S02 !""Table missing %s.%s",sname,tname);
 	// get the data into local BAT
 
 	tpe= getArgType(mb,pci,4);
 	ins = COLnew(0, tpe, 0, TRANSIENT);
 	if( ins == NULL){
-		throw(SQL,"WLRappend","SQLSTATE HY001 !" MAL_MALLOC_FAIL);
+		throw(SQL,"WLRappend","SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 
 	switch(ATOMstorage(tpe)){
@@ -705,15 +705,15 @@ WLRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL)
-		throw(SQL, "sql.append", "SQLSTATE 3F000 !""Schema missing");
+		throw(SQL, "sql.append", "SQLSTATE 3F000 !""Schema missing %s",sname);
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
-		throw(SQL, "sql.append", "SQLSTATE 42S02 !""Table missing");
+		throw(SQL, "sql.append", "SQLSTATE 42S02 !""Table missing %s.%s",sname,tname);
 	// get the data into local BAT
 
 	ins = COLnew(0, TYPE_oid, 0, TRANSIENT);
 	if( ins == NULL){
-		throw(SQL,"WLRappend","SQLSTATE HY001 !" MAL_MALLOC_FAIL);
+		throw(SQL,"WLRappend","SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 
 	for( i = 3; i < pci->argc; i++){
@@ -771,20 +771,20 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL)
-		throw(SQL, "sql.update", "SQLSTATE 3F000 !""Schema missing");
+		throw(SQL, "sql.update", "SQLSTATE 3F000 !""Schema missing %s",sname);
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
-		throw(SQL, "sql.update", "SQLSTATE 42S02 !""Table missing");
+		throw(SQL, "sql.update", "SQLSTATE 42S02 !""Table missing %s.%s",sname,tname);
 	// get the data into local BAT
 
 	tids = COLnew(0, TYPE_oid, 0, TRANSIENT);
 	if( tids == NULL){
-		throw(SQL,"WLRupdate","SQLSTATE HY001 !" MAL_MALLOC_FAIL);
+		throw(SQL,"WLRupdate","SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 	upd = COLnew(0, tpe, 0, TRANSIENT);
 	if( upd == NULL){
 		BBPunfix(((BAT *) tids)->batCacheid);
-		throw(SQL,"WLRupdate","SQLSTATE HY001 !" MAL_MALLOC_FAIL);
+		throw(SQL,"WLRupdate","SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
         if (BUNappend(tids, &o, FALSE) != GDK_SUCCEED) {
                 msg = createException(MAL, "WLRupdate", "BUNappend failed");
@@ -850,10 +850,10 @@ WLRclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	s = mvc_bind_schema(m, *sname);
 	if (s == NULL)
-		throw(SQL, "sql.clear_table", "SQLSTATE 3F000 !""Schema missing");
+		throw(SQL, "sql.clear_table", "SQLSTATE 3F000 !""Schema missing %s",*sname);
 	t = mvc_bind_table(m, s, *tname);
 	if (t == NULL)
-		throw(SQL, "sql.clear_table", "SQLSTATE 42S02 !""Table missing");
+		throw(SQL, "sql.clear_table", "SQLSTATE 42S02 !""Table missing %s.%s",*sname,*tname);
 	(void) mvc_clear_table(m, t);
 	return MAL_SUCCEED;
 }

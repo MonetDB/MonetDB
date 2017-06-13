@@ -636,7 +636,7 @@ wkbBox2D_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	}
 	//create a new BAT for the output
 	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("mbr"), BATcount(aBAT), TRANSIENT)) == NULL) {
-		ret = createException(MAL, "batgeom.wkbBox2D", "SQLSTATE ----- !""Error creating new BAT");
+		ret = createException(MAL, "batgeom.wkbBox2D", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		goto clean;
 	}
 
@@ -694,7 +694,7 @@ wkbContains_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	}
 	//create a new BAT for the output
 	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("bit"), BATcount(aBAT), TRANSIENT)) == NULL) {
-		ret = createException(MAL, "batgeom.Contains", "SQLSTATE ----- !""Error creating new BAT");
+		ret = createException(MAL, "batgeom.Contains", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		goto clean;
 	}
 
@@ -745,7 +745,7 @@ wkbContains_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.Contains", "SQLSTATE ----- !""Error creating new BAT");
+		throw(MAL, "batgeom.Contains", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BATs
@@ -790,7 +790,7 @@ wkbContains_bat_geom(bat *outBAT_id, bat *inBAT_id, wkb **geomWKB)
 	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("bit"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.Contains", "SQLSTATE ----- !""Error creating new BAT");
+		throw(MAL, "batgeom.Contains", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BATs
@@ -897,7 +897,7 @@ wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *
 	}
 	//create a new BAT for the output
 	if ((outBAT = COLnew(xBAT->hseqbase, ATOMindex("wkb"), BATcount(xBAT), TRANSIENT)) == NULL) {
-		ret = createException(MAL, "batgeom.wkbMakePoint", "SQLSTATE ----- !""Error creating new BAT");
+		ret = createException(MAL, "batgeom.wkbMakePoint", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		goto clean;
 	}
 
@@ -968,7 +968,7 @@ wkbSetSRID_bat(bat *outBAT_id, bat *inBAT_id, int *srid)
 	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("wkb"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.SetSRID", "SQLSTATE ----- !""Error creating new BAT");
+		throw(MAL, "batgeom.SetSRID", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BATs
@@ -1020,7 +1020,7 @@ wkbDistance_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	}
 	//create a new BAT for the output
 	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("dbl"), BATcount(aBAT), TRANSIENT)) == NULL) {
-		ret = createException(MAL, "batgeom.Distance", "SQLSTATE ----- !""Error creating new BAT");
+		ret = createException(MAL, "batgeom.Distance", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		goto clean;
 	}
 
@@ -1073,7 +1073,7 @@ wkbDistance_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 	//create a new BAT for the output
 	if ((outBAT = COLnew(inBAT->hseqbase, ATOMindex("dbl"), BATcount(inBAT), TRANSIENT)) == NULL) {
 		BBPunfix(inBAT->batCacheid);
-		throw(MAL, "batgeom.Distance", "SQLSTATE ----- !""Error creating new BAT");
+		throw(MAL, "batgeom.Distance", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BAT
@@ -1364,7 +1364,7 @@ wkbMakeLine_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
 		BBPunfix(aBAT->batCacheid);
 		BBPunfix(bBAT->batCacheid);
-		throw(MAL, "batgeom.MakeLine", "SQLSTATE ----- !""Error creating new BAT");
+		throw(MAL, "batgeom.MakeLine", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BATs
@@ -1427,7 +1427,7 @@ wkbUnion_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
 		BBPunfix(aBAT->batCacheid);
 		BBPunfix(bBAT->batCacheid);
-		throw(MAL, "batgeom.Union", "SQLSTATE ----- !""Error creating new BAT");
+		throw(MAL, "batgeom.Union", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 
 	//iterator over the BATs

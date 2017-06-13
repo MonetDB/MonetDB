@@ -68,14 +68,14 @@ batnil_2_timestamp(bat *res, const bat *bid)
 	dst = COLnew(b->hseqbase, TYPE_timestamp, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.2_timestamp", "SQLSTATE HY001 !" MAL_MALLOC_FAIL);
+		throw(SQL, "sql.2_timestamp", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		timestamp r = *timestamp_nil;
 		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.timestamp", "SQLSTATE HY001 !" MAL_MALLOC_FAIL);
+			throw(SQL, "sql.timestamp", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -98,7 +98,7 @@ batstr_2_timestamp(bat *res, const bat *bid)
 	dst = COLnew(b->hseqbase, TYPE_timestamp, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.2_timestamp", "SQLSTATE HY001 !" MAL_MALLOC_FAIL);
+		throw(SQL, "sql.2_timestamp", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		str v = (str) BUNtail(bi, p);
@@ -112,7 +112,7 @@ batstr_2_timestamp(bat *res, const bat *bid)
 		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.timestamp", "SQLSTATE HY001 !" MAL_MALLOC_FAIL);
+			throw(SQL, "sql.timestamp", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -163,14 +163,14 @@ batnil_2_daytime(bat *res, const bat *bid)
 	dst = COLnew(b->hseqbase, TYPE_daytime, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.2_daytime", "SQLSTATE HY001 !" MAL_MALLOC_FAIL);
+		throw(SQL, "sql.2_daytime", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		daytime r = daytime_nil;
 		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.timestamp", "SQLSTATE HY001 !" MAL_MALLOC_FAIL);
+			throw(SQL, "sql.timestamp", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -193,7 +193,7 @@ batstr_2_daytime(bat *res, const bat *bid)
 	dst = COLnew(b->hseqbase, TYPE_daytime, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.2_daytime", "SQLSTATE HY001 !" MAL_MALLOC_FAIL);
+		throw(SQL, "sql.2_daytime", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		str v = (str) BUNtail(bi, p);
@@ -207,7 +207,7 @@ batstr_2_daytime(bat *res, const bat *bid)
 		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.daytime", "SQLSTATE HY001 !" MAL_MALLOC_FAIL);
+			throw(SQL, "sql.daytime", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -268,14 +268,14 @@ batnil_2_date(bat *res, const bat *bid)
 	dst = COLnew(b->hseqbase, TYPE_date, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.2_date", "SQLSTATE HY001 !" MAL_MALLOC_FAIL);
+		throw(SQL, "sql.2_date", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		date r = date_nil;
 		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.date", "SQLSTATE HY001 !" MAL_MALLOC_FAIL);
+			throw(SQL, "sql.date", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -298,7 +298,7 @@ batstr_2_date(bat *res, const bat *bid)
 	dst = COLnew(b->hseqbase, TYPE_date, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.2_date", "SQLSTATE HY001 !" MAL_MALLOC_FAIL);
+		throw(SQL, "sql.2_date", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		str v = (str) BUNtail(bi, p);
@@ -312,7 +312,7 @@ batstr_2_date(bat *res, const bat *bid)
 		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.date", "SQLSTATE HY001 !" MAL_MALLOC_FAIL);
+			throw(SQL, "sql.date", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -364,7 +364,7 @@ batstr_2_sqlblob(bat *res, const bat *bid)
 	dst = COLnew(b->hseqbase, TYPE_sqlblob, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.2_sqlblob", "SQLSTATE HY001 !" MAL_MALLOC_FAIL);
+		throw(SQL, "sql.2_sqlblob", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		str v = (str) BUNtail(bi, p);
@@ -378,7 +378,7 @@ batstr_2_sqlblob(bat *res, const bat *bid)
 		if (BUNappend(dst, r, FALSE) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.blob", "SQLSTATE HY001 !" MAL_MALLOC_FAIL);
+			throw(SQL, "sql.blob", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		}
 		GDKfree(r);
 	}
@@ -399,7 +399,7 @@ SQLstr_cast_(str *res, mvc *m, int eclass, int d, int s, int has_tz, ptr p, int 
 			sz = 6;
 		r = GDKmalloc(sz);
 		if (r == NULL)
-			throw(SQL, "str_cast", "SQLSTATE HY001 !" MAL_MALLOC_FAIL);
+			throw(SQL, "str_cast", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		sz = convert2str(m, eclass, d, s, has_tz, p, tpe, &r, sz);
 	} else {
 		str v = (str) p;
@@ -407,7 +407,7 @@ SQLstr_cast_(str *res, mvc *m, int eclass, int d, int s, int has_tz, ptr p, int 
 		if (len == 0 || (sz >= 0 && sz <= len)) {
 			r = GDKstrdup(v);
 			if (r == NULL)
-				throw(SQL, "str_cast", "SQLSTATE HY001 !" MAL_MALLOC_FAIL);
+				throw(SQL, "str_cast", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		}
 	}
 	if ((len > 0 && sz > len) || sz < 0) {
@@ -418,7 +418,7 @@ SQLstr_cast_(str *res, mvc *m, int eclass, int d, int s, int has_tz, ptr p, int 
 		} else {
 			r = GDKstrdup(str_nil);
 			if (r == NULL)
-				throw(SQL, "str_cast", "SQLSTATE HY001 !" MAL_MALLOC_FAIL);
+				throw(SQL, "str_cast", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		}
 	}
 	*res = r;
@@ -477,7 +477,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	dst = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.str_cast", "SQLSTATE HY001 !" MAL_MALLOC_FAIL);
+		throw(SQL, "sql.str_cast", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		ptr v = (ptr) BUNtail(bi, p);
@@ -490,7 +490,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (BUNappend(dst, r, FALSE) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.str_cast", "SQLSTATE HY001 !" MAL_MALLOC_FAIL);
+			throw(SQL, "sql.str_cast", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		}
 		GDKfree(r);
 		r = NULL;

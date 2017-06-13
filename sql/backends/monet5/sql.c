@@ -488,13 +488,12 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	*res = 0;
 	if (mtype < 0 || mtype >= 255)
-		throw(SQL, "sql.setVariable", "SQLSTATE ----- !""failed");
+		throw(SQL, "sql.setVariable", "SQLSTATE ----- !""Variable type error");
 	if (strcmp("optimizer", varname) == 0) {
 		str newopt = *getArgReference_str(stk, pci, 3);
 		if (newopt) {
 			if (!isOptimizerPipe(newopt) && strchr(newopt, (int) ';') == 0) {
-				snprintf(buf, BUFSIZ, "optimizer '%s' unknown", newopt);
-				throw(SQL, "sql.setVariable", "SQLSTATE ----- !""%s", buf);
+				throw(SQL, "sql.setVariable", "SQLSTATE ----- !""optimizer %s unknown", newopt);
 			}
 			snprintf(buf, BUFSIZ, "user_%d", cntxt->idx);
 			if (!isOptimizerPipe(newopt) || strcmp(buf, newopt) == 0) {
@@ -540,7 +539,7 @@ getVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	if (mtype < 0 || mtype >= 255)
-		throw(SQL, "sql.getVariable", "SQLSTATE ----- !""failed");
+		throw(SQL, "sql.getVariable", "SQLSTATE ----- !""Variable type error");
 	a = stack_get_var(m, varname);
 	if (!a) {
 		char buf[BUFSIZ];
@@ -838,7 +837,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	b = mvc_bind(m, *sname, *tname, *cname, *access);
 	if (b && b->ttype != coltype)
-		throw(SQL,"sql.bind","SQLSTATE ----- !""tail type mismatch");
+		throw(SQL,"sql.bind","SQLSTATE ----- !""Column type mismatch");
 	if (b) {
 		if (pci->argc == (8 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int) {
 			BUN cnt = BATcount(b), psz;
@@ -945,7 +944,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	b = mvc_bind_idxbat(m, *sname, *tname, *iname, *access);
 	if (b && b->ttype != coltype)
-		throw(SQL,"sql.bind","SQLSTATE ----- !""tail type mismatch");
+		throw(SQL,"sql.bind","SQLSTATE ----- !""Column type mismatch");
 	if (b) {
 		if (pci->argc == (8 + upd) && getArgType(mb, pci, 6 + upd) == TYPE_int) {
 			BUN cnt = BATcount(b), psz;
@@ -1064,10 +1063,10 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		b =  (BAT*) ins;
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL)
-		throw(SQL, "sql.append", "SQLSTATE ----- !""Schema missing %s",sname);
+		throw(SQL, "sql.append", "SQLSTATE 3F000 !""Schema missing %s",sname);
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
-		throw(SQL, "sql.append", "SQLSTATE ----- !""Table missing %s",tname);
+		throw(SQL, "sql.append", "SQLSTATE 42S02 !""Table missing %s",tname);
 	if( b && BATcount(b) > 4096 && b->batPersistence == PERSISTENT)
 		BATmsync(b);
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
@@ -1125,13 +1124,13 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (s == NULL) {
 		BBPunfix(tids->batCacheid);
 		BBPunfix(upd->batCacheid);
-		throw(SQL, "sql.update", "SQLSTATE ----- !""Schema missing %s",sname);
+		throw(SQL, "sql.update", "SQLSTATE 3F000 !""Schema missing %s",sname);
 	}
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL) {
 		BBPunfix(tids->batCacheid);
 		BBPunfix(upd->batCacheid);
-		throw(SQL, "sql.update", "Table missing");
+		throw(SQL, "sql.update", "SQLSTATE 42S02! ""Table missing %s.%s",sname,tname);
 	}
 	if( upd && BATcount(upd) > 4096 && upd->batPersistence == PERSISTENT)
 		BATmsync(upd);
@@ -1167,10 +1166,10 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	s = mvc_bind_schema(m, *sname);
 	if (s == NULL)
-		throw(SQL, "sql.clear_table", "3F000!Schema missing");
+		throw(SQL, "sql.clear_table", "3F000!Schema missing %s", *sname);
 	t = mvc_bind_table(m, s, *tname);
 	if (t == NULL)
-		throw(SQL, "sql.clear_table", "42S02!Table missing");
+		throw(SQL, "sql.clear_table", "42S02!Table missing %s.%s", *sname,*tname);
 	*res = mvc_clear_table(m, t);
 	return MAL_SUCCEED;
 }
@@ -1204,10 +1203,10 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.delete", "SQLSTATE HY005 !""Cannot access column descriptor");
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL)
-		throw(SQL, "sql.delete", "SQLSTATE 3F000 !""Schema missing");
+		throw(SQL, "sql.delete", "SQLSTATE 3F000 !""Schema missing %s",sname);
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
-		throw(SQL, "sql.delete", "SQLSTATE 42S02 !""Table missing");
+		throw(SQL, "sql.delete", "SQLSTATE 42S02 !""Table missing %s.%s",sname,tname);
 	if( b && BATcount(b) > 4096 && b->batPersistence == PERSISTENT)
 		BATmsync(b);
 	store_funcs.delete_tab(m->session->tr, t, b, tpe);
@@ -1698,10 +1697,10 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL)
-		throw(SQL, "sql.tid", "SQLSTATE 3F000 !""Schema missing");
+		throw(SQL, "sql.tid", "SQLSTATE 3F000 !""Schema missing %s",sname);
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
-		throw(SQL, "sql.tid", "SQLSTATE 42S02 !""Table missing");
+		throw(SQL, "sql.tid", "SQLSTATE 42S02 !""Table missing %s.%s",sname,tname);
 	c = t->columns.set->h->data;
 
 	nr = store_funcs.count_col(tr, c, 1);
@@ -1779,7 +1778,7 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"sql.resultset", "SQLSTATE ----- !""Failed to access order column");
 	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 5), 1, b);
 	if (res < 0)
-		msg = createException(SQL, "sql.resultSet", "SQLSTATE ----- !""failed");
+		msg = createException(SQL, "sql.resultSet", "SQLSTATE ----- !""Result table construction failed");
 	BBPunfix(b->batCacheid);
 
 	tbl = BATdescriptor(tblId);
@@ -1811,7 +1810,7 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	/* now sent it to the channel cntxt->fdout */
 	if (mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res))
-		msg = createException(SQL, "sql.resultset", "SQLSTATE ----- !""failed");
+		msg = createException(SQL, "sql.resultset", "SQLSTATE ----- !""Result set construction failed");
   wrapup_result_set:
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
@@ -1871,7 +1870,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 11), 1, order);
 	t = m->results;
 	if (res < 0){
-		msg = createException(SQL, "sql.resultSet", "SQLSTATE ----- !""failed");
+		msg = createException(SQL, "sql.resultSet", "SQLSTATE ----- !""Result set construction failed");
 		goto wrapup_result_set1;
 	}
 
@@ -1950,7 +1949,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto wrapup_result_set1;
 	}
 	if (mvc_export_result(cntxt->sqlcontext, s, res))
-		msg = createException(SQL, "sql.resultset", "SQLSTATE ----- !""failed");
+		msg = createException(SQL, "sql.resultset", "SQLSTATE ----- !""Result set construction failed");
 	if( s != cntxt->fdout)
 		close_stream(s);
   wrapup_result_set1:
@@ -2013,10 +2012,10 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (ATOMextern(mtype))
 			v = *(ptr *) v;
 		if (mvc_result_value(m, tblname, colname, tpename, *digits++, *scaledigits++, v, mtype))
-			throw(SQL, "sql.rsColumn", "SQLSTATE ----- !" "failed");
+			throw(SQL, "sql.rsColumn", "SQLSTATE ----- !" "Result set construction failed");
 	}
 	if (mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res))
-		msg = createException(SQL, "sql.resultset", "SQLSTATE ----- !""failed");
+		msg = createException(SQL, "sql.resultset", "SQLSTATE ----- !""Result set construction failed");
   wrapup_result_set:
 	if( tbl) BBPunfix(tblId);
 	if( atr) BBPunfix(atrId);
@@ -2066,7 +2065,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	t = m->results;
 	if (res < 0){
-		msg = createException(SQL, "sql.resultSet", "SQLSTATE ----- !""failed");
+		msg = createException(SQL, "sql.resultSet", "SQLSTATE ----- !""Result set construction failed");
 		goto wrapup_result_set;
 	}
 
@@ -2130,7 +2129,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (ATOMextern(mtype))
 			v = *(ptr *) v;
 		if (mvc_result_value(m, tblname, colname, tpename, *digits++, *scaledigits++, v, mtype))
-			throw(SQL, "sql.rsColumn", "SQLSTATE ----- !" "failed");
+			throw(SQL, "sql.rsColumn", "SQLSTATE ----- !" "Result set construction failed");
 	}
 	/* now select the file channel */
 	if ( strcmp(filename,"stdout") == 0 )
@@ -2144,7 +2143,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto wrapup_result_set;
 	}
 	if (mvc_export_result(cntxt->sqlcontext, s, res))
-		msg = createException(SQL, "sql.resultset", "SQLSTATE ----- !""failed");
+		msg = createException(SQL, "sql.resultset", "SQLSTATE ----- !""Result set construction failed");
 	if( s != cntxt->fdout)
 		mnstr_close(s);
   wrapup_result_set:
@@ -2185,7 +2184,7 @@ mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	*res_id = mvc_result_table(m, mb->tag, *nr_cols, *qtype, order);
 	if (*res_id < 0)
-		res = createException(SQL, "sql.resultSet", "SQLSTATE ----- !""failed");
+		res = createException(SQL, "sql.resultSet", "SQLSTATE ----- !""Result set construction failed");
 	BBPunfix(order->batCacheid);
 	return res;
 }
@@ -2206,7 +2205,7 @@ mvc_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	s = mvc_bind_schema(m, dt_schema);
 	if (s == NULL)
-		throw(SQL, "sql.declared_table", "SQLSTATE 3F000 !""Schema missing");
+		throw(SQL, "sql.declared_table", "SQLSTATE 3F000 !""Schema missing %s",dt_schema);
 	(void) mvc_create_table(m, s, *name, tt_table, TRUE, SQL_DECLARED_TABLE, CA_DROP, 0);
 	*res_id = 0;
 	return MAL_SUCCEED;
@@ -2241,7 +2240,7 @@ mvc_declared_table_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 		sql_init_subtype(&tpe, type, 0, 0);
 	s = mvc_bind_schema(m, dt_schema);
 	if (s == NULL)
-		throw(SQL, "sql.declared_table_column", "SQLSTATE 3F000 !""Schema missing");
+		throw(SQL, "sql.declared_table_column", "SQLSTATE 3F000 !""Schema missing %s",dt_schema);
 	t = mvc_bind_table(m, s, *tname);
 	if (t == NULL)
 		throw(SQL, "sql.declared_table_column", "SQLSTATE 42S02 !""Table missing");
@@ -2264,7 +2263,7 @@ mvc_drop_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		return msg;
 	s = mvc_bind_schema(m, dt_schema);
 	if (s == NULL)
-		throw(SQL, "sql.drop", "SQLSTATE 3F000 !""Schema missing");
+		throw(SQL, "sql.drop", "SQLSTATE 3F000 !""Schema missing %s",dt_schema);
 	t = mvc_bind_table(m, s, *name);
 	if (t == NULL)
 		throw(SQL, "sql.drop", "SQLSTATE 42S02 !""Table missing");
@@ -2287,7 +2286,7 @@ mvc_drop_declared_tables_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 		return msg;
 	s = mvc_bind_schema(m, dt_schema);
 	if (s == NULL)
-		throw(SQL, "sql.drop", "SQLSTATE 3F000 !""Schema missing");
+		throw(SQL, "sql.drop", "SQLSTATE 3F000 !""Schema missing %s",dt_schema);
 	while (i && s->tables.set->t) {
 		t = s->tables.set->t->data;
 		(void) mvc_drop_table(m, s, t, 0);
@@ -2317,7 +2316,7 @@ mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = cntxt->sqlcontext;
 	error = mvc_export_affrows(b, b->out, nr, "", mb->tag);
 	if (error)
-		throw(SQL, "sql.affectedRows", "SQLSTATE ----- !""failed");
+		throw(SQL, "sql.affectedRows", "SQLSTATE ----- !""Result set construction failed");
 	return MAL_SUCCEED;
 }
 
@@ -2335,7 +2334,7 @@ mvc_export_head_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	b = cntxt->sqlcontext;
 	if (mvc_export_head(b, *s, *res_id, FALSE, TRUE))
-		throw(SQL, "sql.exportHead", "SQLSTATE ----- !""failed");
+		throw(SQL, "sql.exportHead", "SQLSTATE ----- !""Result set construction failed");
 	return MAL_SUCCEED;
 }
 
@@ -2355,9 +2354,9 @@ mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( pci->argc > 5){
 		res_id = getArgReference_int(stk, pci, 2);
 		if (mvc_export_result(b, cntxt->fdout, *res_id))
-			throw(SQL, "sql.exportResult", "SQLSTATE ----- !""failed");
+			throw(SQL, "sql.exportResult", "SQLSTATE ----- !""Result set construction failed");
 	} else if (mvc_export_result(b, *s, *res_id))
-		throw(SQL, "sql.exportResult", "SQLSTATE ----- !""failed");
+		throw(SQL, "sql.exportResult", "SQLSTATE ----- !""Result set construction failed");
 	return MAL_SUCCEED;
 }
 
@@ -2382,7 +2381,7 @@ mvc_export_chunk_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	b = cntxt->sqlcontext;
 	if (mvc_export_chunk(b, *s, *res_id, offset, nr))
-		throw(SQL, "sql.exportChunk", "SQLSTATE ----- !""failed");
+		throw(SQL, "sql.exportChunk", "SQLSTATE ----- !""Result set construction failed");
 	return NULL;
 }
 
@@ -2400,7 +2399,7 @@ mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		return msg;
 	b = cntxt->sqlcontext;
 	if (mvc_export_operation(b, b->out, ""))
-		throw(SQL, "sql.exportOperation", "SQLSTATE ----- !""failed");
+		throw(SQL, "sql.exportOperation", "SQLSTATE ----- !""Result set construction failed");
 	return NULL;
 }
 
@@ -2428,12 +2427,12 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// scalar values are single-column result sets
 	res_id = mvc_result_table(b->mvc, mb->tag, 1, 1, NULL);
 	if (mvc_result_value(b->mvc, *tn, *cn, *type, *digits, *scale, p, mtype))
-		throw(SQL, "sql.exportValue", "SQLSTATE ----- !""failed");
+		throw(SQL, "sql.exportValue", "SQLSTATE ----- !""Result set construction failed");
 	if (b->output_format == OFMT_NONE) {
 		return MAL_SUCCEED;
 	}
 	if (mvc_export_result(b, b->out, res_id) < 0) {
-		throw(SQL, "sql.exportValue", "SQLSTATE ----- !""failed");
+		throw(SQL, "sql.exportValue", "SQLSTATE ----- !""Result set construction failed");
 	}
 	return MAL_SUCCEED;
 }
@@ -2652,10 +2651,10 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		return msg;
 
 	if ((s = mvc_bind_schema(m, sname)) == NULL)
-		throw(SQL, "sql.import_table", "SQLSTATE 3F000 !""Schema missing");
+		throw(SQL, "sql.import_table", "SQLSTATE 3F000 !""Schema missing %s",sname);
 	t = mvc_bind_table(m, s, tname);
 	if (!t)
-		throw(SQL, "sql", "SQLSTATE 42S02 !""Table %s not found", tname);
+		throw(SQL, "sql", "SQLSTATE 42S02 !""Table missing %s", tname);
 	if (list_length(t->columns.set) != (pci->argc - (2 + pci->retc)))
 		throw(SQL, "sql", "SQLSTATE ----- !""Not enough columns in found");
 
@@ -3573,17 +3572,17 @@ sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	s = mvc_bind_schema(m, *sname);
 	if (s == NULL)
-		throw(SQL, "sql.rowid", "SQLSTATE 3F000 !""Schema missing");
+		throw(SQL, "sql.rowid", "SQLSTATE 3F000 !""Schema missing %s", *sname);
 	t = mvc_bind_table(m, s, *tname);
 	if (t == NULL)
-		throw(SQL, "sql.rowid", "SQLSTATE 42S02 !""Table missing");
+		throw(SQL, "sql.rowid", "SQLSTATE 42S02 !""Table missing %s.%s",*sname,*tname);
 	if (!s || !t || !t->columns.set->h)
-		throw(SQL, "calc.rowid", "SQLSTATE 42S22 !""Cannot find column");
+		throw(SQL, "calc.rowid", "SQLSTATE 42S22 !""Column missing %s.%s",*sname,*tname);
 	c = t->columns.set->h->data;
 	/* HACK, get insert bat */
 	b = store_funcs.bind_col(m->session->tr, c, RD_INS);
 	if( b == NULL)
-		throw(SQL,"sql.rowid", "SQLSTATE ----- !""Can not bind to column");
+		throw(SQL,"sql.rowid", "SQLSTATE HY005 !""Canot access column descriptor");
 	/* UGH (move into storage backends!!) */
 	d = c->data;
 	*rid = d->ibase + BATcount(b);
@@ -3773,13 +3772,13 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (bat
 		return msg;
 	s = mvc_bind_schema(m, *sch);
 	if (s == NULL)
-		throw(SQL, name, "SQLSTATE 3F000 !""Schema missing");
+		throw(SQL, name, "SQLSTATE 3F000 !""Schema missing %s",*sch);
 	t = mvc_bind_table(m, s, *tbl);
 	if (t == NULL)
-		throw(SQL, name, "SQLSTATE 42S02 !""Table missing");
+		throw(SQL, name, "SQLSTATE 42S02 !""Table missing %s.%s",*sch,*tbl);
 
 	if (m->user_id != USER_MONETDB)
-		throw(SQL, name, "SQLSTATE 42000 !""insufficient privileges");
+		throw(SQL, name, "SQLSTATE 42000 !""Insufficient privileges");
 	if ((!list_empty(t->idxs.set) || !list_empty(t->keys.set)))
 		throw(SQL, name, "SQLSTATE ---- !""%s not allowed on tables with indices", name + 4);
 	if (t->system)
@@ -3883,10 +3882,10 @@ SQLvacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	s = mvc_bind_schema(m, *sch);
 	if (s == NULL)
-		throw(SQL, "sql.vacuum", "SQLSTATE 3F000 !""Schema missing");
+		throw(SQL, "sql.vacuum", "SQLSTATE 3F000 !""Schema missing %s",*sch);
 	t = mvc_bind_table(m, s, *tbl);
 	if (t == NULL)
-		throw(SQL, "sql.vacuum", "SQLSTATE 42S02 !""Table missing");
+		throw(SQL, "sql.vacuum", "SQLSTATE 42S02 !""Table missing %s.%s",*sch,*tbl);
 
 	if (m->user_id != USER_MONETDB)
 		throw(SQL, "sql.vacuum", "SQLSTATE 42000 !""insufficient privileges");
@@ -3953,10 +3952,10 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	s = mvc_bind_schema(m, *sch);
 	if (s == NULL)
-		throw(SQL, "sql.drop_hash", "SQLSTATE 3F000 !""Schema missing");
+		throw(SQL, "sql.drop_hash", "SQLSTATE 3F000 !""Schema missing %s",*sch);
 	t = mvc_bind_table(m, s, *tbl);
 	if (t == NULL)
-		throw(SQL, "sql.drop_hash", "SQLSTATE 42S02 !""Table missing");
+		throw(SQL, "sql.drop_hash", "SQLSTATE 42S02 !""Table missing %s.%s",*sch, *tbl);
 
 	for (o = t->columns.set->h; o; o = o->next) {
 		c = o->data;

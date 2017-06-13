@@ -94,7 +94,7 @@ fill_bam_alig(str qname, sht flag, str rname, int pos,
 		c->l_qname = strlen(qname) + 1;
 		if(alloc_data(b, doff + c->l_qname) == NULL) {
 			throw(MAL, "fill_bam_alig",
-				"SQLSTATE HY001 !" MAL_MALLOC_FAIL " allignment %d", alignment_nr);
+				"SQLSTATE HY001 !"MAL_MALLOC_FAIL " allignment %d", alignment_nr);
 		}
 		memcpy(b->data + doff, qname, c->l_qname);
 		doff += c->l_qname;
@@ -132,7 +132,7 @@ fill_bam_alig(str qname, sht flag, str rname, int pos,
 			}
 			if (alloc_data(b, doff + c->n_cigar * 4) == NULL) {
 				throw(MAL, "fill_bam_alig",
-					"SQLSTATE HY001 !" MAL_MALLOC_FAIL " alignment nr %d", alignment_nr);
+					"SQLSTATE HY001 !"MAL_MALLOC_FAIL " alignment nr %d", alignment_nr);
 			}
 			cigar_enc = bam1_cigar(b);
 			for (i = 0, s = cigar; i != c->n_cigar; ++i) {
@@ -184,7 +184,7 @@ fill_bam_alig(str qname, sht flag, str rname, int pos,
 			p = (uint8_t*)alloc_data(b, doff + c->l_qseq + (c->l_qseq+1)/2);
 			if(p == NULL) {
 				throw(MAL, "fill_bam_alig",
-					"SQLSTATE HY001 !" MAL_MALLOC_FAIL " alignment nr %d", alignment_nr);
+					"SQLSTATE HY001 !"MAL_MALLOC_FAIL " alignment nr %d", alignment_nr);
 			}
 			p += doff;
 			memset(p, 0, (c->l_qseq+1)/2);
