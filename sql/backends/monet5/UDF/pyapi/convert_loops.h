@@ -504,7 +504,7 @@
 			}                                                                  \
 			utf8_string = GDKzalloc(utf8_size);                                \
 			if (utf8_string == NULL) {			\
-				msg = createException(MAL, "pyapi.eval", "SQLSTATE -----!"MAL_MALLOC_FAIL); \
+				msg = createException(MAL, "pyapi.eval", "SQLSTATE HY001 !"MAL_MALLOC_FAIL); \
 				goto wrapup;				\
 			}						\
 			for (iu = 0; iu < ret->count; iu++) {                              \

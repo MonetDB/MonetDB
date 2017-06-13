@@ -973,7 +973,7 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (header != NULL) LASHeader_Destroy(header);
 		if (reader != NULL) LASReader_Destroy(reader);
 		MT_lock_unset(&mt_lidar_lock);
-		msg = createException(MAL, "lidar.lidarload", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		msg = createException(MAL, "lidar.lidarload", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		return msg;
 	}
 

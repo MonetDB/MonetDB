@@ -208,7 +208,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 	args = (str *)GDKzalloc(pci->argc * sizeof(str));
 	pyreturn_values = GDKzalloc(pci->retc * sizeof(PyReturn));
 	if (args == NULL || pyreturn_values == NULL) {
-		throw(MAL, "pyapi.eval", "SQLSTATE ----- !"MAL_MALLOC_FAIL " arguments.");
+		throw(MAL, "pyapi.eval", "SQLSTATE HY001 !"MAL_MALLOC_FAIL " arguments.");
 	}
 
 	if ((pci->argc - (pci->retc + 2)) * sizeof(PyInput) > 0) {
@@ -218,7 +218,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 		if (pyinput_values == NULL) {
 			GDKfree(args);
 			GDKfree(pyreturn_values);
-			throw(MAL, "pyapi.eval", "SQLSTATE ----- !"MAL_MALLOC_FAIL " input values.");
+			throw(MAL, "pyapi.eval", "SQLSTATE HY001 !"MAL_MALLOC_FAIL " input values.");
 		}
 	}
 
@@ -338,7 +338,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 		mmap_sizes = GDKzalloc(mmap_count * sizeof(size_t));
 		if (mmap_ptrs == NULL || mmap_sizes == NULL) {
 			msg = createException(MAL, "pyapi.eval",
-								  "SQLSTATE ----- !"MAL_MALLOC_FAIL " mmap values.");
+								  "SQLSTATE HY001 !"MAL_MALLOC_FAIL " mmap values.");
 			goto wrapup;
 		}
 
@@ -458,7 +458,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 								GDKzalloc(sizeof(BAT *) * output->nr_cols);
 							if (!result_columns) {
 								msg = createException(MAL, "pyapi.eval",
-													  "SQLSTATE ----- !"MAL_MALLOC_FAIL
+													  "SQLSTATE HY001 !"MAL_MALLOC_FAIL
 													  " result column set.");
 								goto wrapup;
 							}
@@ -684,7 +684,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 			exprStr = GDKzalloc(length + 1);
 			if (exprStr == NULL) {
 				msg = createException(MAL, "pyapi.eval",
-									  "SQLSTATE ----- !"MAL_MALLOC_FAIL " function body string.");
+									  "SQLSTATE HY001 !"MAL_MALLOC_FAIL " function body string.");
 				goto wrapup;
 			}
 			if (fread(exprStr, 1, length, fp) != length) {
@@ -833,7 +833,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 			group_counts = GDKzalloc(group_count * sizeof(size_t));
 			if (group_counts == NULL) {
 				msg = createException(MAL, "pyapi.eval",
-									  "SQLSTATE ----- !"MAL_MALLOC_FAIL " group count array.");
+									  "SQLSTATE HY001 !"MAL_MALLOC_FAIL " group count array.");
 				goto aggrwrapup;
 			}
 
@@ -1287,12 +1287,12 @@ returnvalues:
 			if (bat_type != TYPE_str) {
 				if (VALinit(&stk->stk[pci->argv[i]], bat_type, Tloc(b, 0)) ==
 					NULL)
-					msg = createException(MAL, "pyapi.eval", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+					msg = createException(MAL, "pyapi.eval", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 			} else {
 				BATiter li = bat_iterator(b);
 				if (VALinit(&stk->stk[pci->argv[i]], bat_type,
 							BUNtail(li, 0)) == NULL)
-					msg = createException(MAL, "pyapi.eval", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+					msg = createException(MAL, "pyapi.eval", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 			}
 		}
 		if (argnode) {
@@ -1642,7 +1642,7 @@ static void ComputeParallelAggregation(AggrParams *p)
 				}
 
 				if (vararray == NULL) {
-					p->msg = createException(MAL, "pyapi.eval", "SQLSTATE ----- !"MAL_MALLOC_FAIL
+					p->msg = createException(MAL, "pyapi.eval", "SQLSTATE HY001 !"MAL_MALLOC_FAIL
 											 " to create NumPy array.");
 					goto wrapup;
 				}

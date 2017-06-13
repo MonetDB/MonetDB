@@ -232,7 +232,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 	if ((bws =
 		 (bam_wrapper *) GDKmalloc(nr_files * sizeof(bam_wrapper))) ==
 		NULL) {
-		msg = createException(MAL, "bam_loader", "SQLSTATE ---- !"MAL_MALLOC_FAIL);
+		msg = createException(MAL, "bam_loader", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
@@ -296,13 +296,13 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 	TO_LOG("<bam_loader> Creating reader threads...\n");
 	if ((reader_threads =
 		 (MT_Id *) GDKmalloc(nr_threads * sizeof(MT_Id))) == NULL) {
-		msg = createException(MAL, "bam_loader", "SQLSTATE ---- !"MAL_MALLOC_FAIL);
+		msg = createException(MAL, "bam_loader", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
 	if ((r_thread_data =
 		 create_reader_thread_data(bws, nr_files, nr_threads)) == NULL) {
-		msg = createException(MAL, "bam_loader", "SQLSTATE ---- !"MAL_MALLOC_FAIL);
+		msg = createException(MAL, "bam_loader", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
@@ -453,7 +453,7 @@ bam_loader_repos(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* Now malloc enough memory for filenames array */
 	if ((filenames = (str *) GDKmalloc(filecount * sizeof(str))) == NULL) {
 		msg = createException(MAL, "bam_loader_repos",
-					  "SQLSTATE ---- !"MAL_MALLOC_FAIL);
+					  "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
@@ -573,7 +573,7 @@ bam_loader_files(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* Now we can malloc the filenames array */
 	if ((filenames = (str *) GDKmalloc(nr_lines * sizeof(str))) == NULL) {
 		msg = createException(MAL, "bam_loader_files",
-					  "SQLSTATE ---- !"MAL_MALLOC_FAIL);
+					  "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 	/* Enables cleanup to check individual files */

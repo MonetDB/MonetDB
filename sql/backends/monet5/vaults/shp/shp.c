@@ -256,7 +256,7 @@ SHPattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	field_definitions = GDALWGetSimpleFieldDefinitions(shp_conn);
 	if (field_definitions == NULL) {
 		GDALWClose(&shp_conn);
-		return createException(MAL, "shp.attach", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		return createException(MAL, "shp.attach", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 	for (i=0 ; i<shp_conn.numFieldDefinitions ; i++) {
 		snprintf(buf, BUFSIZ, INSSHPDBF, shpid, field_definitions[i].fieldName, field_definitions[i].fieldType);
@@ -399,7 +399,7 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 			goto final;
 		}
 		if (!(mbb = (OGREnvelope*)GDKmalloc(sizeof(OGREnvelope)))) {
-			msg = createException(MAL, "shp.import", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+			msg = createException(MAL, "shp.import", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 			OGR_F_Destroy(geom);
 			goto final;
 		}
@@ -422,11 +422,11 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 	}
 	colsNum += shp_conn.numFieldDefinitions;
 	if(!(cols = (sql_column**)GDKmalloc(sizeof(sql_column*)*colsNum))) {
-		msg = createException(MAL, "shp.import", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		msg = createException(MAL, "shp.import", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		goto final;
 	}
 	if(!(colsBAT = (BAT**)GDKzalloc(sizeof(BAT*)*colsNum))) {
-		msg = createException(MAL, "shp.import", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		msg = createException(MAL, "shp.import", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		goto unfree2;
 	}
 	field_definitions = GDALWGetSimpleFieldDefinitions(shp_conn);
@@ -443,22 +443,22 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 		/*create the BAT */
 		if (strcmp(field_definitions[i].fieldType, "Integer") == 0) {
 			if(!(colsBAT[i] = COLnew(0, TYPE_int, rowsNum, PERSISTENT))) {
-				msg = createException(MAL, "shp.import", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+				msg = createException(MAL, "shp.import", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 				goto unfree4;
 			}
 		} else if (strcmp(field_definitions[i].fieldType, "Real") == 0) {
 			if(!(colsBAT[i] = COLnew(0, TYPE_dbl, rowsNum, PERSISTENT))) {
-				msg = createException(MAL, "shp.import", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+				msg = createException(MAL, "shp.import", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 				goto unfree4;
 			}
 		} else if (strcmp(field_definitions[i].fieldType, "Date") == 0) {
         	if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT))) {
-				msg = createException(MAL, "shp.import", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+				msg = createException(MAL, "shp.import", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 				goto unfree4;
 			}
 		} else {
 			if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT))) {
-				msg = createException(MAL, "shp.import", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+				msg = createException(MAL, "shp.import", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 				goto unfree4;
 			}
 		}
@@ -468,7 +468,7 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 		goto unfree4;
 	}
 	if(!(colsBAT[colsNum - 2] = COLnew(0, TYPE_int, rowsNum, PERSISTENT))) {
-		msg = createException(MAL, "shp.import", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		msg = createException(MAL, "shp.import", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		goto unfree4;
 	}
 	if(!(cols[colsNum - 1] = mvc_bind_column(m, data_table, "geom"))) {
@@ -476,7 +476,7 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 		goto unfree4;
 	}
 	if(!(colsBAT[colsNum - 1] = COLnew(0, ATOMindex("wkb"), rowsNum, PERSISTENT))) {
-		msg = createException(MAL, "shp.import", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		msg = createException(MAL, "shp.import", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		goto unfree4;
 	}
 
@@ -503,18 +503,18 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 				rc = BUNappend(colsBAT[i], OGR_F_GetFieldAsString(feature, i), TRUE);
 			}
 			if (rc != GDK_SUCCEED) {
-				msg = createException(MAL, "shp.import", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+				msg = createException(MAL, "shp.import", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 				goto unfree4;
 			}
 		}
 		if (BUNappend(colsBAT[colsNum - 2], &gidTemp, TRUE) != GDK_SUCCEED) {
-			msg = createException(MAL, "shp.import", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+			msg = createException(MAL, "shp.import", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 			goto unfree4;
 		}
 
 		len = OGR_G_WkbSize(geometry);
 		if (!(geomWKB = GDKmalloc(sizeof(wkb) - 1 + len))) {
-			msg = createException(MAL, "shp.import", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+			msg = createException(MAL, "shp.import", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 			OGR_F_Destroy(feature);
 			goto unfree4;
 		}
@@ -596,7 +596,7 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	if (OGR_G_ImportFromWkb(geom, (unsigned char*)g->data, g->len) != OGRERR_NONE)
 		return createException(MAL, "shp.import", "SQLSTATE ----- !""Could not intantiate the query polygon.");
 	if (!(mbb = (OGREnvelope*)GDKmalloc(sizeof(OGREnvelope)))) 
-		return createException(MAL, "shp.import", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		return createException(MAL, "shp.import", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	OGR_G_GetEnvelope(geom, mbb);
 	//FIXME: Take into account the coordinate reference system
 
@@ -653,9 +653,9 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		return createException(MAL, "shp.import", "SQLSTATE ----- !""Table '%s.%s' missing", sch_name, data_table_name);
 	colsNum += shp_conn.numFieldDefinitions;
 	if(!(cols = (sql_column**)GDKmalloc(sizeof(sql_column*)*colsNum)))
-			return createException(MAL, "shp.import", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+			return createException(MAL, "shp.import", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	if(!(colsBAT = (BAT**)GDKzalloc(sizeof(BAT*)*colsNum)))
-			return createException(MAL, "shp.import", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+			return createException(MAL, "shp.import", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	field_definitions = GDALWGetSimpleFieldDefinitions(shp_conn);
 	for(i = 0; i < colsNum - 2; i++) {
 		cols[i] = NULL;
@@ -667,22 +667,22 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		/*create the BAT */
 		if (strcmp(field_definitions[i].fieldType, "Integer") == 0) {
 			if(!(colsBAT[i] = COLnew(0, TYPE_int, rowsNum, PERSISTENT))) {
-				msg = createException(MAL, "shp.import", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+				msg = createException(MAL, "shp.import", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 				goto bailout;
 			}
 		} else if (strcmp(field_definitions[i].fieldType, "Real") == 0) {
 			if(!(colsBAT[i] = COLnew(0, TYPE_dbl, rowsNum, PERSISTENT))) {
-				msg = createException(MAL, "shp.import", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+				msg = createException(MAL, "shp.import", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 				goto bailout;
 			}
 		} else if (strcmp(field_definitions[i].fieldType, "Date") == 0) {
 			if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT))) {
-				msg = createException(MAL, "shp.import", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+				msg = createException(MAL, "shp.import", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 				goto bailout;
 			}
 		} else {
 			if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT))) {
-				msg = createException(MAL, "shp.import", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+				msg = createException(MAL, "shp.import", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 				goto bailout;
 			}
 		}
@@ -692,7 +692,7 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		goto bailout;
 	}
 	if(!(colsBAT[colsNum - 2] = COLnew(0, TYPE_int, rowsNum, PERSISTENT))) {
-		msg = createException(MAL, "shp.import", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		msg = createException(MAL, "shp.import", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	if(!(cols[colsNum - 1] = mvc_bind_column(m, data_table, "geom"))) {
@@ -700,7 +700,7 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		goto bailout;
 	}
 	if(!(colsBAT[colsNum - 1] = COLnew(0, ATOMindex("wkb"), rowsNum, PERSISTENT))) {
-		msg = createException(MAL, "shp.import", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		msg = createException(MAL, "shp.import", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
@@ -730,24 +730,24 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 				rc = BUNappend(colsBAT[i], OGR_F_GetFieldAsString(feature, i), TRUE);
 			}
 			if (rc != GDK_SUCCEED) {
-				msg = createException(MAL, "shp.import", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+				msg = createException(MAL, "shp.import", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 				goto bailout;
 			}
 		}
 	
 		if (BUNappend(colsBAT[colsNum - 2], &gidTemp, TRUE) != GDK_SUCCEED) {
-			msg = createException(MAL, "shp.import", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+			msg = createException(MAL, "shp.import", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 			goto bailout;
 		}
 
 		len = OGR_G_WkbSize(geometry);
 		if (!(geomWKB = GDKmalloc(sizeof(wkb) - 1 + len)))
-			return createException(MAL, "shp.import", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+			return createException(MAL, "shp.import", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		geomWKB->len = len;
 		geomWKB->srid = 0; //TODO: Add the real srid
 		OGR_G_ExportToWkb(geometry, wkbNDR, (unsigned char *)geomWKB->data);
 		if (BUNappend(colsBAT[colsNum - 1], geomWKB, TRUE) != GDK_SUCCEED) {
-			msg = createException(MAL, "shp.import", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+			msg = createException(MAL, "shp.import", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 			goto bailout;
 		}
 	}

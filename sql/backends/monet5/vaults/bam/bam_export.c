@@ -94,7 +94,7 @@ fill_bam_alig(str qname, sht flag, str rname, int pos,
 		c->l_qname = strlen(qname) + 1;
 		if(alloc_data(b, doff + c->l_qname) == NULL) {
 			throw(MAL, "fill_bam_alig",
-				FILL_BAM_ALIG_ERR MAL_MALLOC_FAIL, alignment_nr);
+				"SQLSTATE HY001 !" MAL_MALLOC_FAIL " allignment %d", alignment_nr);
 		}
 		memcpy(b->data + doff, qname, c->l_qname);
 		doff += c->l_qname;
@@ -132,7 +132,7 @@ fill_bam_alig(str qname, sht flag, str rname, int pos,
 			}
 			if (alloc_data(b, doff + c->n_cigar * 4) == NULL) {
 				throw(MAL, "fill_bam_alig",
-					FILL_BAM_ALIG_ERR MAL_MALLOC_FAIL, alignment_nr);
+					"SQLSTATE HY001 !" MAL_MALLOC_FAIL " alignment nr %d", alignment_nr);
 			}
 			cigar_enc = bam1_cigar(b);
 			for (i = 0, s = cigar; i != c->n_cigar; ++i) {
@@ -184,7 +184,7 @@ fill_bam_alig(str qname, sht flag, str rname, int pos,
 			p = (uint8_t*)alloc_data(b, doff + c->l_qseq + (c->l_qseq+1)/2);
 			if(p == NULL) {
 				throw(MAL, "fill_bam_alig",
-					FILL_BAM_ALIG_ERR MAL_MALLOC_FAIL, alignment_nr);
+					"SQLSTATE HY001 !" MAL_MALLOC_FAIL " alignment nr %d", alignment_nr);
 			}
 			p += doff;
 			memset(p, 0, (c->l_qseq+1)/2);
@@ -302,7 +302,7 @@ write_header(stream *output, bam_field fields[11])
 
 	/* Start by building the table with sequences */
 	if((sq_table = GDKmalloc(sq_table_size * sizeof(str))) == NULL) {
-		msg = createException(MAL, "write_header", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		msg = createException(MAL, "write_header", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
@@ -342,7 +342,7 @@ write_header(stream *output, bam_field fields[11])
 			int new_size = sq_table_size * 2;
 			str *tmp;
 			if((tmp = GDKrealloc(sq_table, new_size * sizeof(str))) == NULL) {
-				msg = createException(MAL, "write_header", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+				msg = createException(MAL, "write_header", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
 			sq_table = tmp;
@@ -352,7 +352,7 @@ write_header(stream *output, bam_field fields[11])
 
 		/* Insert chromosome */
 		if ((sq_table[sq_table_count] = GDKstrdup(cur)) == NULL) {
-			msg = createException(MAL, "write_header", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+			msg = createException(MAL, "write_header", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
 
@@ -519,7 +519,7 @@ bam_exportf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 	if((alig = bam_init1()) == NULL) {
-		throw(MAL, "bam_export", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		throw(MAL, "bam_export", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 
 	for (i=0; i<tuple_count; ++i) {

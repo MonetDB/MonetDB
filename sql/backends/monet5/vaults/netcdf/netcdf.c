@@ -35,7 +35,7 @@
 	tpe *databuf; \
 	res = COLnew(0, TYPE_##tpe, sz, TRANSIENT); \
 	if ( res == NULL ) \
-		return createException(MAL, "netcdf.importvar", "SQLSTATE ----- !"MAL_MALLOC_FAIL); \
+		return createException(MAL, "netcdf.importvar", "SQLSTATE HY001 !"MAL_MALLOC_FAIL); \
 	databuf = (tpe *)Tloc(res, 0); \
 	if ( (retval = nc_get_var_##ncdftpe(ncid, varid, databuf)) ) \
 		return createException(MAL, "netcdf.importvar", \
@@ -186,21 +186,21 @@ NCDFARRAYseries(bat *bid, bte start, bte step, int stop, int group, int series)
 
 		bn = COLnew(0, TYPE_bte, cnt, TRANSIENT);
 		if ( bn == NULL)
-			throw(MAL, "array.series", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+			throw(MAL, "array.series", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		array_series(sta, ste, sto, bte);
 	} else if (stop <= (int) GDK_sht_max) {
 		sht sta = (sht) start, ste = (sht) step, sto = (sht) stop;
 
 		bn = COLnew(0, TYPE_sht, cnt, TRANSIENT);
 		if ( bn == NULL)
-			throw(MAL, "array.series", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+			throw(MAL, "array.series", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		array_series(sta, ste, sto, sht);
 	} else {
 		int sta = (int) start, ste = (int) step, sto = (int) stop;
 
 		bn = COLnew(0, TYPE_int, cnt, TRANSIENT);
 		if ( bn == NULL)
-			throw(MAL, "array.series", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+			throw(MAL, "array.series", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		array_series(sta, ste, sto, int);
 	}
 
@@ -281,7 +281,7 @@ header: %s", nc_strerror(retval));
 
 	esc_str0 = SQLescapeString(fname);
 	if (!esc_str0) {
-		msg = createException(MAL, "netcdf.attach", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		msg = createException(MAL, "netcdf.attach", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		goto finish;
 	}
 	snprintf(buf, BUFSIZ, INSFILE, (int)fid, esc_str0);
@@ -299,7 +299,7 @@ header: %s", nc_strerror(retval));
 
 		esc_str0 = SQLescapeString(dname);
 		if (!esc_str0) {
-			msg = createException(MAL, "netcdf.attach", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+			msg = createException(MAL, "netcdf.attach", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 			goto finish;
 		}
 
@@ -326,7 +326,7 @@ header: %s", nc_strerror(retval));
 
 		esc_str0 = SQLescapeString(vname);
 		if (!esc_str0) {
-			msg = createException(MAL, "netcdf.attach", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+			msg = createException(MAL, "netcdf.attach", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 			goto finish;
 		}
 
@@ -360,13 +360,13 @@ header: %s", nc_strerror(retval));
 
 				esc_str0 = SQLescapeString(vname);
 				if (!esc_str0) {
-					msg = createException(MAL, "netcdf.attach", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+					msg = createException(MAL, "netcdf.attach", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 					goto finish;
 				}
 				esc_str1 = SQLescapeString(aname);
 				if (!esc_str1) {
 					GDKfree(esc_str0);
-					msg = createException(MAL, "netcdf.attach", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+					msg = createException(MAL, "netcdf.attach", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 					goto finish;
 				}
 				switch ( atype ) {
@@ -439,7 +439,7 @@ header: %s", nc_strerror(retval));
 
 		esc_str0 = SQLescapeString(aname);
 		if (!esc_str0) {
-			msg = createException(MAL, "netcdf.attach", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+			msg = createException(MAL, "netcdf.attach", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 			goto finish;
 		}
 

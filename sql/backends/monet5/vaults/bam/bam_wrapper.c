@@ -156,7 +156,7 @@ init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
 				  file_location);
 		}
 		if ((bw->sam.header = (str)GDKmalloc(bufsize * sizeof(char))) == NULL) {
-			throw(MAL, "init_bam_wrapper", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+			throw(MAL, "init_bam_wrapper", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		}
 		while (TRUE) {
 			int read = mnstr_readline(bw->sam.input, bw->sam.header + header_len, bufsize - header_len);
@@ -185,7 +185,7 @@ init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
 				str tmp;
 				bufsize *= 2;
 				if ((tmp = GDKrealloc(bw->sam.header, bufsize * sizeof(char))) == NULL) {
-					throw(MAL, "init_bam_wrapper", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+					throw(MAL, "init_bam_wrapper", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 				}
 				bw->sam.header = tmp;
 				if (mnstr_fsetpos(bw->sam.input, header_len) < 0) {
@@ -573,7 +573,7 @@ process_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 			 (bam_header_option *)
 			 GDKmalloc(sizeof(bam_header_option))) == NULL) {
 			throw(MAL, "process_header_line",
-				  "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+				  "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		}
 
 		/* indicate that no tag exists for this option */
@@ -582,7 +582,7 @@ process_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 			-1) {
 			GDKfree(opt);
 			throw(MAL, "process_header_line",
-				  "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+				  "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		}
 		/* option only has to point to a single
 		 * bam_header_option in this case */
@@ -594,7 +594,7 @@ process_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 	/* reserve enough space for the options (max 12 for RG) */
 	if ((ret_hl->options =
 		 GDKmalloc(12 * sizeof(bam_header_option))) == NULL) {
-		throw(MAL, "process_header_line", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		throw(MAL, "process_header_line", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 
 	/* Enables clear function to check individual options */
@@ -646,7 +646,7 @@ process_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 		if (read_string_until_delim(header, &opt->value, "\t\n\0", 3)
 			== -1) {
 			throw(MAL, "process_header_line",
-				  "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+				  "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		}
 	}
 
@@ -655,7 +655,7 @@ process_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 	opt = GDKrealloc(ret_hl->options,
 					 ret_hl->nr_options * sizeof(bam_header_option));
 	if (opt == NULL)
-		throw(MAL, "process_header_line", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		throw(MAL, "process_header_line", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	ret_hl->options = opt;
 
 	return MAL_SUCCEED;
@@ -1600,7 +1600,7 @@ bam1_t2alignment(bam_wrapper * bw, lng virtual_offset, bam1_t * a_in,
 	/* Start by making sure that the buffers in a_out are large enough */
 	if (!check_alignment_buffers
 		(bw, a_out, a_in->core.l_qname, a_in->core.n_cigar * 4, a_in->core.l_qseq)) {
-		throw(MAL, "process_alignment", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		throw(MAL, "process_alignment", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 
 	/* virtual_offset */
@@ -1735,7 +1735,7 @@ write_aux_str(bam_wrapper * bw, str aux, int aux_len, lng virtual_offset) {
 		type[0] = *(s+3);
 		s += 5;
 		if(read_string_until_delim(&s, &val, "\t\n\0", 3) < 0) {
-			throw(MAL, "write_aux_str", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+			throw(MAL, "write_aux_str", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		}
 		if((msg = write_aux(bw, tag, virtual_offset, type, val)) != MAL_SUCCEED) {
 			GDKfree(val);
@@ -2142,7 +2142,7 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 	if ((aligs =
 		 (alignment **) GDKmalloc(nr_aligs * sizeof(alignment *))) == NULL) {
 		msg = createException(MAL, "process_alignments",
-			"SQLSTATE ----- !"MAL_MALLOC_FAIL);
+			"SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
@@ -2153,7 +2153,7 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 		if ((aligs[i] = (alignment *)GDKmalloc(sizeof(alignment)))
 			== NULL) {
 			msg = createException(MAL, "process_alignments",
-				"SQLSTATE ----- !"MAL_MALLOC_FAIL);
+				"SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
 	}
@@ -2161,14 +2161,14 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 	for (i = 0; i < nr_aligs; ++i) {
 		if (!init_alignment(bw, aligs[i])) {
 			msg = createException(MAL, "process_alignments",
-				"SQLSTATE ----- !"MAL_MALLOC_FAIL);
+				"SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
 	}
 
 	if((alig = bam_init1()) == NULL) {
 		msg = createException(MAL, "process_alignments",
-			"SQLSTATE ----- !"MAL_MALLOC_FAIL);
+			"SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
@@ -2290,7 +2290,7 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 						GDKfree(aligs);
 						msg = createException(MAL,
 									  "process_alignments",
-									  "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+									  "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 						goto cleanup;
 					}
 					aligs = tmp;
@@ -2310,7 +2310,7 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 							msg = createException
 								(MAL,
 								 "process_alignments",
-								 "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+								 "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 							goto cleanup;
 						}
 					}

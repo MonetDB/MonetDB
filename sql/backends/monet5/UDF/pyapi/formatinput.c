@@ -23,7 +23,7 @@ PyObject *PyCodeObject_ParseString(char *string, char **msg)
 	size_t i, j;
 	hex[2] = '\0';
 	if (code_copy == NULL) {
-		*msg = createException(MAL, "pyapi.eval", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		*msg = createException(MAL, "pyapi.eval", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		return NULL;
 	}
 	// decode hex codes (e.g. \x00) in the string to the actual numeric
@@ -120,7 +120,7 @@ char *FormatCode(char *code, char **args, size_t argcount, size_t tabwidth,
 	statements_per_level =
 		(size_t *)GDKzalloc(max_indentation * sizeof(size_t));
 	if (indentation_levels == NULL || statements_per_level == NULL) {
-		*msg = createException(MAL, "pyapi.eval", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		*msg = createException(MAL, "pyapi.eval", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		goto finally;
 	}
 
@@ -224,14 +224,14 @@ char *FormatCode(char *code, char **args, size_t argcount, size_t tabwidth,
 					size_t *new_statements_per_level;
 					if (new_indentation == NULL) {
 						*msg =
-							createException(MAL, "pyapi.eval", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+							createException(MAL, "pyapi.eval", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 						goto finally;
 					}
 					new_statements_per_level =
 						GDKzalloc(2 * max_indentation * sizeof(size_t));
 					if (new_statements_per_level == NULL) {
 						*msg =
-							createException(MAL, "pyapi.eval", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+							createException(MAL, "pyapi.eval", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 						goto finally;
 					}
 
@@ -296,7 +296,7 @@ char *FormatCode(char *code, char **args, size_t argcount, size_t tabwidth,
 	// Allocate space for the function
 	newcode = GDKzalloc(size);
 	if (newcode == NULL) {
-		*msg = createException(MAL, "pyapi.eval", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		*msg = createException(MAL, "pyapi.eval", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		goto finally;
 	}
 	initial_spaces = 0;
