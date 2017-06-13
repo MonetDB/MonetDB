@@ -315,7 +315,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			cand = BATdescriptor(candid);
 			if (cand == NULL)
 				throw(MAL, "generator.subselect",
-				      RUNTIME_OBJECT_MISSING);
+				      "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 			cl = (oid *) Tloc(cand, 0);
 		}
 		i = 3;
@@ -594,7 +594,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 		if( cndid != bat_nil){
 			cand = BATdescriptor(cndid);
 			if( cand == NULL)
-				throw(MAL,"generator.subselect",RUNTIME_OBJECT_MISSING);
+				throw(MAL,"generator.subselect", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 			cl = (oid*) Tloc(cand,0);
 		} 
 		idx = 3;
@@ -738,14 +738,14 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	ret = getArgReference_bat(stk,pci,0);
 	b = BATdescriptor(bid = *getArgReference_bat(stk,pci,1));
 	if( b == NULL)
-		throw(MAL,"generator.projection",RUNTIME_OBJECT_MISSING);
+		throw(MAL,"generator.projection", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 
 	// if it does not exist we should fall back to the ordinary projection to try
 	// it might have been materialized already
 	if( p == NULL){
 		bn = BATdescriptor( *getArgReference_bat(stk,pci,2));
 		if( bn == NULL)
-			throw(MAL,"generator.projection",RUNTIME_OBJECT_MISSING);
+			throw(MAL,"generator.projection", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 		msg = ALGprojection(ret, &b->batCacheid, &bn->batCacheid);
 		return msg;
 	}
@@ -870,14 +870,14 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( p == NULL){
 		bl = BATdescriptor(*getArgReference_bat(stk,pci,2));
 		if( bl == NULL)
-			throw(MAL,"generator.join",RUNTIME_OBJECT_MISSING);
+			throw(MAL,"generator.join", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 	}
 	if ( q == NULL){
 		br = BATdescriptor(*getArgReference_bat(stk,pci,3));
 		if( br == NULL){
 			if (bl)
 				BBPunfix(bl->batCacheid);
-			throw(MAL,"generator.join",RUNTIME_OBJECT_MISSING);
+			throw(MAL,"generator.join", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 		}
 	}
 
@@ -1026,12 +1026,12 @@ str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	blow = BATdescriptor(*getArgReference_bat(stk,pci,3));
 	if( blow == NULL)
-		throw(MAL,"generator.rangejoin",RUNTIME_OBJECT_MISSING);
+		throw(MAL,"generator.rangejoin", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 
 	bhgh = BATdescriptor(*getArgReference_bat(stk,pci,4));
 	if( bhgh == NULL){
 		BBPunfix(blow->batCacheid);
-		throw(MAL,"generator.rangejoin",RUNTIME_OBJECT_MISSING);
+		throw(MAL,"generator.rangejoin", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 	}
 	li = *getArgReference_bit(stk,pci,5);
 	ri = *getArgReference_bit(stk,pci,6);

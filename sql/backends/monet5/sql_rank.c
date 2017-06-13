@@ -37,7 +37,7 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ptr v;
 			
 		if (!b)
-			throw(SQL, "sql.rank", "Cannot access descriptor");
+			throw(SQL, "sql.rank", "SQLSTATE HY005 !""Cannot access column descriptor");
 		cnt = (int)BATcount(b);
 		voidresultBAT(r, TYPE_bit, cnt, b, "Cannot create bat");
 		rp = (bit*)Tloc(r, 0);
@@ -98,7 +98,7 @@ SQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bit *np;
 			
 		if (!b)
-			throw(SQL, "sql.row_number", "Cannot access descriptor");
+			throw(SQL, "sql.row_number", "SQLSTATE HY005 !""Cannot access column descriptor");
 		cnt = (int)BATcount(b);
 	 	voidresultBAT(r, TYPE_int, cnt, b, "Cannot create bat");
 		rp = (int*)Tloc(r, 0);
@@ -107,7 +107,7 @@ SQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			p = BATdescriptor(*getArgReference_bat(stk, pci, 2));
 			if (!p) {
 				BBPunfix(b->batCacheid);
-				throw(SQL, "sql.row_number", "Cannot access descriptor");
+				throw(SQL, "sql.row_number", "SQLSTATE HY005 !""Cannot access column descriptor");
 			}
 			np = (bit*)Tloc(p, 0);
 			for(i=1,j=1; i<=cnt; i++, j++, np++, rp++) {
@@ -147,7 +147,7 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bit *np, *no;
 			
 		if (!b)
-			throw(SQL, "sql.rank", "Cannot access descriptor");
+			throw(SQL, "sql.rank", "SQLSTATE HY005 !""Cannot access column descriptor");
 		cnt = (int)BATcount(b);
 		voidresultBAT(r, TYPE_int, cnt, b, "Cannot create bat");
 		rp = (int*)Tloc(r, 0);
@@ -159,7 +159,7 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					BBPunfix(b->batCacheid);
 					if (p) BBPunfix(p->batCacheid);
 					if (o) BBPunfix(o->batCacheid);
-					throw(SQL, "sql.rank", "Cannot access descriptor");
+					throw(SQL, "sql.rank", "SQLSTATE HY005 !""Cannot access column descriptor");
 				}
 			        np = (bit*)Tloc(p, 0);
 			        no = (bit*)Tloc(o, 0);
@@ -176,7 +176,7 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				p = BATdescriptor(*getArgReference_bat(stk, pci, 2));
 				if (!p) {
 					BBPunfix(b->batCacheid);
-					throw(SQL, "sql.rank", "Cannot access descriptor");
+					throw(SQL, "sql.rank", "SQLSTATE HY005 !""Cannot access column descriptor");
 				}
 			        np = (bit*)Tloc(p, 0);
 				for(i=1,j=1,k=1; i<=cnt; i++, k++, np++, rp++) {
@@ -191,7 +191,7 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				o = BATdescriptor(*getArgReference_bat(stk, pci, 3));
 				if (!o) {
 					BBPunfix(b->batCacheid);
-					throw(SQL, "sql.rank", "Cannot access descriptor");
+					throw(SQL, "sql.rank", "SQLSTATE HY005 !""Cannot access column descriptor");
 				}
 			        no = (bit*)Tloc(o, 0);
 				for(i=1,j=1,k=1; i<=cnt; i++, k++, no++, rp++) {
@@ -232,7 +232,7 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bit *np, *no;
 			
 		if (!b)
-			throw(SQL, "sql.rank", "Cannot access descriptor");
+			throw(SQL, "sql.rank", "SQLSTATE HY005 !""Cannot access column descriptor");
 		cnt = (int)BATcount(b);
 		voidresultBAT(r, TYPE_int, cnt, b, "Cannot create bat");
 		rp = (int*)Tloc(r, 0);
@@ -244,7 +244,7 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					BBPunfix(b->batCacheid);
 					if (p) BBPunfix(p->batCacheid);
 					if (o) BBPunfix(o->batCacheid);
-					throw(SQL, "sql.rank", "Cannot access descriptor");
+					throw(SQL, "sql.rank", "SQLSTATE HY005 !""Cannot access column descriptor");
 				}
 			        np = (bit*)Tloc(p, 0);
 			        no = (bit*)Tloc(o, 0);
@@ -261,7 +261,7 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				p = BATdescriptor(*getArgReference_bat(stk, pci, 2));
 				if (!p) {
 					BBPunfix(b->batCacheid);
-					throw(SQL, "sql.rank", "Cannot access descriptor");
+					throw(SQL, "sql.rank", "SQLSTATE HY005 !""Cannot access column descriptor");
 				}
 			        np = (bit*)Tloc(p, 0);
 				for(i=1,j=1; i<=cnt; i++, np++, rp++) {
@@ -276,7 +276,7 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				o = BATdescriptor(*getArgReference_bat(stk, pci, 3));
 				if (!o) {
 					BBPunfix(b->batCacheid);
-					throw(SQL, "sql.rank", "Cannot access descriptor");
+					throw(SQL, "sql.rank", "SQLSTATE HY005 !""Cannot access column descriptor");
 				}
 			        no = (bit*)Tloc(o, 0);
 				for(i=1,j=1; i<=cnt; i++, no++, rp++) {

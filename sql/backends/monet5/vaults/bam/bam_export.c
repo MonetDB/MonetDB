@@ -264,7 +264,7 @@ bind_export_result(Client cntxt, MalBlkPtr mb, bam_field fields[11], int *tuple_
 			throw(MAL, "bind_export_result", "SQLSTATE ----- !""Could not find bam.export.%s column", fields[i].name);
 		}
 		if ((fields[i].b = store_funcs.bind_col(m->session->tr, fields[i].c, RDONLY)) == NULL) {
-		   throw(MAL, "bind_export_result", "SQLSTATE ----- !"RUNTIME_OBJECT_MISSING);
+		   throw(MAL, "bind_export_result", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 		}
 		cnt_tmp = BATcount(fields[i].b);
 		if (cnt_tmp <= 0) {

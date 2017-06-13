@@ -147,12 +147,12 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid)
 	TP2 *o;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2_,TP2)), "SQLSTATE ----- !""Cannot access descriptor");
+		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2_,TP2)), "SQLSTATE HY005 !""Cannot access descriptor");
 	}
 	bn = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql."STRNG(FUN(dec,TP1,_2_,TP2)), "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		throw(SQL, "sql."STRNG(FUN(dec,TP1,_2_,TP2)), "SQLSTATE HY001 !" MAL_MALLOC_FAIL);
 	}
 	o = (TP2 *) Tloc(bn, 0);
 	p = (TP1 *) Tloc(b, 0);
@@ -203,13 +203,13 @@ FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const int *
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2dec_,TP2)), "SQLSTATE ----- !""Cannot access descriptor");
+		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2dec_,TP2)), "SQLSTATE HY005 !""Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
 	bn = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), "SQLSTATE HY001 !" MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		TP1 val = * (TP1 *) BUNtail(bi, p);
@@ -231,7 +231,7 @@ FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const int *
 		if (BUNappend(bn, &r, FALSE) != GDK_SUCCEED) {
 			BBPunfix(bn->batCacheid);
 			BBPunfix(b->batCacheid);
-			throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+			throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), "SQLSTATE HY001 !" MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = bn->batCacheid);
@@ -248,13 +248,13 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_num2dec_,TP2)), "SQLSTATE ----- !""Cannot access descriptor");
+		throw(SQL, "batcalc."STRNG(FUN(,TP1,_num2dec_,TP2)), "SQLSTATE HY005 !""Cannot access descriptor");
 	}
 	bi = bat_iterator(b);
 	bn = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), "SQLSTATE HY001 !" MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		TP1 val = * (TP1 *) BUNtail(bi, p);
@@ -275,7 +275,7 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 		if (BUNappend(bn, &r, FALSE) != GDK_SUCCEED) {
 			BBPunfix(bn->batCacheid);
 			BBPunfix(b->batCacheid);
-			throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+			throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), "SQLSTATE HY001 !" MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = bn->batCacheid);

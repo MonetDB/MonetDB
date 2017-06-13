@@ -530,7 +530,7 @@ WLRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// we need to get rid of the escaped quote.
 	x = qtxt= (char*) GDKmalloc(strlen(qry) +1);
 	if( qtxt == NULL)
-		throw(SQL,"wlr.query","SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		throw(SQL,"wlr.query","SQLSTATE HY001 !" MAL_MALLOC_FAIL);
 	for(y = qry; *y; y++){
 		if( *y == '\\' ){
 			if( *(y+1) ==  '\'')
@@ -642,7 +642,7 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tpe= getArgType(mb,pci,4);
 	ins = COLnew(0, tpe, 0, TRANSIENT);
 	if( ins == NULL){
-		throw(SQL,"WLRappend","SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		throw(SQL,"WLRappend","SQLSTATE HY001 !" MAL_MALLOC_FAIL);
 	}
 
 	switch(ATOMstorage(tpe)){
@@ -713,7 +713,7 @@ WLRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	ins = COLnew(0, TYPE_oid, 0, TRANSIENT);
 	if( ins == NULL){
-		throw(SQL,"WLRappend","SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		throw(SQL,"WLRappend","SQLSTATE HY001 !" MAL_MALLOC_FAIL);
 	}
 
 	for( i = 3; i < pci->argc; i++){
@@ -779,12 +779,12 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	tids = COLnew(0, TYPE_oid, 0, TRANSIENT);
 	if( tids == NULL){
-		throw(SQL,"WLRupdate","SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		throw(SQL,"WLRupdate","SQLSTATE HY001 !" MAL_MALLOC_FAIL);
 	}
 	upd = COLnew(0, tpe, 0, TRANSIENT);
 	if( upd == NULL){
 		BBPunfix(((BAT *) tids)->batCacheid);
-		throw(SQL,"WLRupdate","SQLSTATE ----- !"MAL_MALLOC_FAIL);
+		throw(SQL,"WLRupdate","SQLSTATE HY001 !" MAL_MALLOC_FAIL);
 	}
         if (BUNappend(tids, &o, FALSE) != GDK_SUCCEED) {
                 msg = createException(MAL, "WLRupdate", "BUNappend failed");

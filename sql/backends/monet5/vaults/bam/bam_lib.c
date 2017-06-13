@@ -295,7 +295,7 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 			  *name);
 
 	if ((input = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bam_flag_bat", "SQLSTATE ----- !"RUNTIME_OBJECT_MISSING);
+		throw(MAL, "bam_flag_bat", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 
 	/* allocate result BAT */
 	output = COLnew(input->hseqbase, TYPE_bit, BATcount(input), TRANSIENT);
@@ -331,7 +331,7 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 	assert(ret != NULL && bid != NULL);									\
 																		\
 	if ((input = BATdescriptor(*bid)) == NULL)							\
-		throw(MAL, "reverse_seq_bat", "SQLSTATE ----- !"RUNTIME_OBJECT_MISSING);			\
+		throw(MAL, "reverse_seq_bat", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);			\
 																		\
 	/* allocate result BAT */											\
 	output = COLnew(input->hseqbase, TYPE_str, BATcount(input), TRANSIENT); \
@@ -393,7 +393,7 @@ seq_length_bat(bat * ret, bat * bid)
 	assert(ret != NULL && bid != NULL);
 
 	if ((input = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "seq_length_bat", "SQLSTATE ----- !"RUNTIME_OBJECT_MISSING);
+		throw(MAL, "seq_length_bat", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 
 	/* allocate result BAT */
 	output = COLnew(input->hseqbase, TYPE_int, BATcount(input), TRANSIENT);
@@ -438,7 +438,7 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 	if ((seqs = BATdescriptor(*alg_seq)) == NULL ||
 	    (poss = BATdescriptor(*alg_pos)) == NULL ||
 		(cigars = BATdescriptor(*alg_cigar)) == NULL) {
-		msg = createException(MAL, "seq_char_bat", "SQLSTATE ----- !"RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "seq_char_bat", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 		goto cleanup;
 	}
 

@@ -32,7 +32,7 @@ batstr_2time_timestamptz(bat *res, const bat *bid, const int *digits, int *tz)
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.str_2time_timestamp", "Cannot access descriptor");
+		throw(SQL, "batcalc.str_2time_timestamp", "SQLSTATE HY005 !""Cannot access column descriptor");
 	}
 	bi = bat_iterator(b);
 	dst = COLnew(b->hseqbase, TYPE_timestamp, BATcount(b), TRANSIENT);
@@ -79,7 +79,7 @@ battimestamp_2time_timestamp(bat *res, const bat *bid, const int *digits)
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.timestamp_2time_timestamp", "Cannot access descriptor");
+		throw(SQL, "batcalc.timestamp_2time_timestamp", "SQLSTATE HY005 !""Cannot access column descriptor");
 	}
 	bi = bat_iterator(b);
 	dst = COLnew(b->hseqbase, TYPE_timestamp, BATcount(b), TRANSIENT);
@@ -119,7 +119,7 @@ batnil_2time_timestamp(bat *res, const bat *bid, const int *digits)
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.nil_2time_timestamp", "Cannot access descriptor");
+		throw(SQL, "batcalc.nil_2time_timestamp", "SQLSTATE HY005 !""Cannot access column descriptor");
 	}
 	bi = bat_iterator(b);
 	dst = COLnew(b->hseqbase, TYPE_timestamp, BATcount(b), TRANSIENT);
@@ -159,7 +159,7 @@ batstr_2time_daytimetz(bat *res, const bat *bid, const int *digits, int *tz)
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.str_2time_daytime", "Cannot access descriptor");
+		throw(SQL, "batcalc.str_2time_daytime", "SQLSTATE HY005 !""Cannot access column descriptor");
 	}
 	bi = bat_iterator(b);
 	dst = COLnew(b->hseqbase, TYPE_daytime, BATcount(b), TRANSIENT);
@@ -206,7 +206,7 @@ batdaytime_2time_daytime(bat *res, const bat *bid, const int *digits)
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.daytime_2time_daytime", "Cannot access descriptor");
+		throw(SQL, "batcalc.daytime_2time_daytime", "SQLSTATE HY005 !""Cannot access column descriptor");
 	}
 	bi = bat_iterator(b);
 	dst = COLnew(b->hseqbase, TYPE_daytime, BATcount(b), TRANSIENT);
@@ -246,7 +246,7 @@ batnil_2time_daytime(bat *res, const bat *bid, const int *digits)
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.nil_2time_daytime", "Cannot access descriptor");
+		throw(SQL, "batcalc.nil_2time_daytime", "SQLSTATE HY005 !""Cannot access column descriptor");
 	}
 	bi = bat_iterator(b);
 	dst = COLnew(b->hseqbase, TYPE_daytime, BATcount(b), TRANSIENT);

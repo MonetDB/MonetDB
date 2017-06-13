@@ -216,7 +216,7 @@ SHPattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return createException(MAL, "shp.attach", "SQLSTATE ----- !""Catalog table missing\n");
 
 	if ((shp_conn_ptr = GDALWConnect((char *) fname)) == NULL) {
-		return createException(MAL, "shp.attach", "SQLSTATE ----- !""Missing shp file %s\n", fname);
+		return createException(MAL, "shp.attach", "SQLSTATE ----- !""Missing shape file %s\n", fname);
 	}
 	shp_conn = *shp_conn_ptr;
 
@@ -373,7 +373,7 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 
 	/* add the data on the file to the table */
 	if(!(shp_conn_ptr = GDALWConnect((char *) fname))) 
-		return createException(MAL, "shp.import", "SQLSTATE ----- !""Missing shp file %s\n", fname);
+		return createException(MAL, "shp.import", "SQLSTATE ----- !""Missing shape file %s\n", fname);
 	shp_conn = *shp_conn_ptr;
 
 	/*count the number of lines in the shape file */
@@ -638,7 +638,7 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* add the data on the file to the table */
 
 	if(!(shp_conn_ptr = GDALWConnect((char *) fname)))
-		return createException(MAL, "shp.import", "SQLSTATE ----- !""Missing shp file %s\n", fname);
+		return createException(MAL, "shp.import", "SQLSTATE ----- !""Missing shape file %s\n", fname);
 	shp_conn = *shp_conn_ptr;
 
 	/*count the number of lines in the shape file */

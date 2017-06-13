@@ -71,7 +71,7 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 
 	/* get argument BAT descriptor */
 	if ((v = BATdescriptor(*_v)) == NULL)
-		throw(MAL, "round", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "round", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 
 	/* more sanity checks */
 	if (v->ttype != TPE(TYPE)) {
@@ -200,7 +200,7 @@ bat_round_wrap(bat *_res, const bat *_v, const int *d, const int *s, const bte *
 
 	/* get argument BAT descriptor */
 	if ((v = BATdescriptor(*_v)) == NULL)
-		throw(MAL, "round", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "round", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 
 	/* more sanity checks */
 	if (v->ttype != TPE(TYPE)) {
@@ -355,7 +355,7 @@ batnil_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 	(void) d;
 	(void) sc;
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.nil_2dec_" STRING(TYPE), "Cannot access descriptor");
+		throw(SQL, "batcalc.nil_2dec_" STRING(TYPE), "SQLSTATE HY005 !""Cannot access column descriptor");
 	}
 	dst = COLnew(b->hseqbase, TPE(TYPE), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
@@ -384,7 +384,7 @@ batstr_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.str_2dec_" STRING(TYPE), "Cannot access descriptor");
+		throw(SQL, "batcalc.str_2dec_" STRING(TYPE), "SQLSTATE HY005 !""Cannot access column descriptor");
 	}
 	bi = bat_iterator(b);
 	dst = COLnew(b->hseqbase, TPE(TYPE), BATcount(b), TRANSIENT);
@@ -428,7 +428,7 @@ batstr_2num(bat *res, const bat *bid, const int *len)
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc.str_2num_" STRING(TYPE), "Cannot access descriptor");
+		throw(SQL, "batcalc.str_2num_" STRING(TYPE), "SQLSTATE HY005 !""Cannot access column descriptor");
 	}
 	bi = bat_iterator(b);
 	dst = COLnew(b->hseqbase, TPE(TYPE), BATcount(b), TRANSIENT);

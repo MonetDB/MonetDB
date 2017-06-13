@@ -58,7 +58,7 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 
 	/* get argument BAT descriptor */
 	if ((v = BATdescriptor(*_v)) == NULL)
-		throw(MAL, "round", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "round", "SQLSTATE HY002 !" RUNTIME_OBJECT_MISSING);
 
 	/* more sanity checks */
 	if (v->ttype != TPE(TYPE)) {
@@ -170,7 +170,7 @@ bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 
 	/* get argument BAT descriptor */
 	if ((v = BATdescriptor(*_v)) == NULL)
-		throw(MAL, "round", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "round", "SQLSTATE HY002 !" RUNTIME_OBJECT_MISSING);
 
 	/* more sanity checks */
 	if (v->ttype != TPE(TYPE)) {

@@ -435,7 +435,7 @@ SQLinitClient(Client c)
 		bstream *fdin;
 	
 		if( b == NULL)
-			throw(SQL,"sql.initClient","SQLSTATE ----- !"MAL_MALLOC_FAIL);
+			throw(SQL,"sql.initClient","SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 
 		buffer_init(b, _STRDUP(sqlinit), len);
 		fdin = bstream_create(buffer_rastream(b, "si"), b->len);
@@ -450,7 +450,7 @@ SQLinitClient(Client c)
 			m->reply_size = -1;
 		be = (void *) backend_create(m, c);
 		if( be == NULL)
-			throw(SQL,"sql.init", "SQLSTATE ----- !"MAL_MALLOC_FAIL);
+			throw(SQL,"sql.init", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	} else {
 		be = c->sqlcontext;
 		m = be->mvc;
@@ -972,7 +972,7 @@ SQLparser(Client c)
 		m->sa = sa_create();
 	if (!m->sa) {
 		c->mode = FINISHCLIENT;
-		throw(SQL, "SQLparser", "SQLSTATE ----- !"MAL_MALLOC_FAIL " for SQL allocator");
+		throw(SQL, "SQLparser", "SQLSTATE HY001 !"MAL_MALLOC_FAIL " for SQL allocator");
 	}
 
 	m->emode = m_normal;

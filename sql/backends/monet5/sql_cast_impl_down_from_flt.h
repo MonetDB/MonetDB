@@ -79,7 +79,7 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_num2dec_,TP2)), "Cannot access descriptor");
+		throw(SQL, "batcalc."STRNG(FUN(,TP1,_num2dec_,TP2)), "SQLSTATE HY005 !""Cannot access column descriptor");
 	}
 	bi = bat_iterator(b);
 	dst = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
