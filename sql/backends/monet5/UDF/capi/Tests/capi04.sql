@@ -45,8 +45,6 @@ CREATE FUNCTION capi04(inp STRING) RETURNS STRING LANGUAGE C {
 		if (inp.is_null(inp.data[i])) {
 			result->data[i] = result->null_value;
 		} else {
-			result->data[i] = malloc(strlen(inp.data[i]) + 2);
-			strcpy(result->data[i] + 1, inp.data[i]);
 			result->data[i] = "hello";
 		}
 	}

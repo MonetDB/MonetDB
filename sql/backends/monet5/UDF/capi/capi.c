@@ -151,8 +151,10 @@ static char *mprotect_region(void *addr, size_t len, int flags,
 	size_t actual_len = len;
 	if (len == 0)
 		return NULL;
-	// check if the region is page-aligned
 
+	// we must mprotect an entire page
+	// thus here we check if the region is page-aligned
+	// and if it is not, we page-align it
 	pagesize = getpagesize();
 	page_begin = (void *)((size_t)addr - (size_t)addr % pagesize);
 	if (page_begin != addr) {
@@ -420,8 +422,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	funcname = sqlfun ? sqlfun->base.name : "yet_another_c_function";
 
 	args = (str *)GDKzalloc(sizeof(str) * pci->argc);
-	output_names =
-		pci->retc > 0 ? (str *)GDKzalloc(sizeof(str) * pci->retc) : NULL;
+	output_names = (str *)GDKzalloc(sizeof(str) * pci->argc);
 	if (!args || !output_names) {
 		throw(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 	}
@@ -496,7 +497,17 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	GDK_STRHASH(exprStr, expression_hash);
 	GDK_STRHASH(funcname, funcname_hash);
 	funcname_hash = funcname_hash % FUNCTION_CACHE_SIZE;
-	function_parameters = GDKzalloc((input_count + output_count + 1) * sizeof(char));
+	j = 0;
+	for (i = 0; i < (size_t)pci->argc; i++) {
+		if (args[i]) {
+			j += strlen(args[i]);
+		}
+		if (output_names[i]) {
+			j += strlen(output_names[i]);
+		}
+	}
+
+	function_parameters = GDKzalloc((j + input_count + output_count + 1) * sizeof(char));
 	if (!function_parameters) {
 		msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 		goto wrapup;
@@ -513,6 +524,19 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			function_parameters[input_count + i] = getArgType(mb, pci, i);
 		} else {
 			function_parameters[input_count + i] = getBatType(getArgType(mb, pci, i));
+		}
+	}
+	j = input_count + output_count;
+	for (i = 0; i < (size_t)pci->argc; i++) {
+		if (args[i]) {
+			size_t len = strlen(args[i]);
+			memcpy(function_parameters + j, args[i], len);
+			j += len;
+		}
+		if (output_names[i]) {
+			size_t len = strlen(output_names[i]);
+			memcpy(function_parameters + j, output_names[i], len);
+			j += len;
 		}
 	}
 
