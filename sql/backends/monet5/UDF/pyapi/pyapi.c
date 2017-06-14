@@ -189,7 +189,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 #endif
 
 	if (!pyapiInitialized) {
-		throw(MAL, "pyapi.eval", "SQLSTATE ----- !""Embedded Python is enabled but an error was "
+		throw(MAL, "pyapi.eval", "SQLSTATE PY000 !""Embedded Python is enabled but an error was "
 								 "thrown during initialization.");
 	}
 	if (!grouped) {
@@ -276,7 +276,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 			if (b == NULL) {
 				msg = createException(
 					MAL, "pyapi.eval",
-					"SQLSTATE ----- !""The BAT passed to the function (argument #%d) is NULL.\n",
+					"SQLSTATE PY000 !""The BAT passed to the function (argument #%d) is NULL.\n",
 					i - (pci->retc + 2) + 1);
 				goto wrapup;
 			}
@@ -388,7 +388,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 									 // otherwise it can get stuck in the forked
 									 // child
 		if ((pid = fork()) < 0) {
-			msg = createException(MAL, "pyapi.eval", "SQLSTATE ----- !""Failed to fork process");
+			msg = createException(MAL, "pyapi.eval", "SQLSTATE PY000 !""Failed to fork process");
 			MT_lock_unset(&pyapiLock);
 
 			goto wrapup;
@@ -484,7 +484,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 										GDKfree(result_columns);
 										msg = createException(
 											MAL, "pyapi.eval",
-											"SQLSTATE ----- !""Failed to convert BAT.");
+											"SQLSTATE PY000 !""Failed to convert BAT.");
 										goto wrapup;
 									}
 									BBPunfix(b->batCacheid);
@@ -518,7 +518,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 								_connection_cleanup_result(output);
 								GDKchangesemval(query_sem, 1, 1, &msg);
 								msg = createException(MAL, "pyapi.eval",
-													  "SQLSTATE ----- !""eval failed");
+													  "SQLSTATE PY000 !""eval failed");
 								GDKfree(result_columns);
 								goto wrapup;
 							}
@@ -556,7 +556,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 					errno = 0;
 					msg = createException(
 						MAL, "waitpid",
-						"SQLSTATE ----- !""Error calling waitpid(%llu, &status, WNOHANG): %s",
+						"SQLSTATE PY000 !""Error calling waitpid(%llu, &status, WNOHANG): %s",
 						pid, err);
 					break;
 				}
@@ -574,11 +574,11 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 				if (descr->bat_size == 0) {
 					msg = createException(
 						MAL, "pyapi.eval",
-						"SQLSTATE ----- !""Failure in child process with unknown error.");
+						"SQLSTATE PY000 !""Failure in child process with unknown error.");
 				} else if (GDKinitmmap(mmap_id + 3, descr->bat_size,
 									   &mmap_ptrs[3], &mmap_sizes[3],
 									   &msg) == GDK_SUCCEED) {
-					msg = createException(MAL, "pyapi.eval", "SQLSTATE ----- !""%s",
+					msg = createException(MAL, "pyapi.eval", "SQLSTATE PY000 !""%s",
 										  (char *)mmap_ptrs[3]);
 				}
 				goto wrapup;
@@ -668,14 +668,14 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 			if (stat(address, &buffer) < 0) {
 				msg = createException(
 					MAL, "pyapi.eval",
-					"SQLSTATE ----- !""Could not find Python source file \"%s\".", address);
+					"SQLSTATE PY000 !""Could not find Python source file \"%s\".", address);
 				goto wrapup;
 			}
 			fp = fopen(address, "r");
 			if (fp == NULL) {
 				msg = createException(
 					MAL, "pyapi.eval",
-					"SQLSTATE ----- !""Could not open Python source file \"%s\".", address);
+					"SQLSTATE PY000 !""Could not open Python source file \"%s\".", address);
 				goto wrapup;
 			}
 			fseek(fp, 0, SEEK_END);
@@ -689,7 +689,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 			}
 			if (fread(exprStr, 1, length, fp) != length) {
 				msg = createException(MAL, "pyapi.eval",
-									  "SQLSTATE ----- !""Failed to read from file \"%s\".",
+									  "SQLSTATE PY000 !""Failed to read from file \"%s\".",
 									  address);
 				goto wrapup;
 			}
@@ -703,7 +703,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 	if (pycall == NULL && code_object == NULL) {
 		if (msg == NULL) {
 			msg = createException(MAL, "pyapi.eval",
-								  "SQLSTATE ----- !""Error while parsing Python code.");
+								  "SQLSTATE PY000 !""Error while parsing Python code.");
 		}
 		goto wrapup;
 	}
@@ -745,7 +745,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 		if (result_array == NULL) {
 			if (msg == MAL_SUCCEED) {
 				msg = createException(MAL, "pyapi.eval",
-									  "SQLSTATE ----- !""Failed to create Numpy Array from BAT.");
+									  "SQLSTATE PY000 !""Failed to create Numpy Array from BAT.");
 			}
 			goto wrapup;
 		}
@@ -918,7 +918,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 						}
 						default:
 							msg = createException(
-								MAL, "pyapi.eval", "SQLSTATE ----- !""Unrecognized BAT type %s",
+								MAL, "pyapi.eval", "SQLSTATE PY000 !""Unrecognized BAT type %s",
 								BatType_Format(input.bat_type));
 							goto aggrwrapup;
 							break;
@@ -968,7 +968,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 										   params, MT_THR_JOINABLE);
 					if (res != 0) {
 						msg = createException(MAL, "pyapi.eval",
-											  "SQLSTATE ----- !""Failed to start thread.");
+											  "SQLSTATE PY000 !""Failed to start thread.");
 						goto aggrwrapup;
 					}
 				}
@@ -1061,7 +1061,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 					}
 				} else {
 					msg = createException(MAL, "pyapi.eval",
-										  "SQLSTATE ----- !""Return value is a dictionary, but "
+										  "SQLSTATE PY000 !""Return value is a dictionary, but "
 										  "there is no sql function object, so "
 										  "we don't know the return value "
 										  "names and mapping cannot be done.");
@@ -1077,7 +1077,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 					PyObject *colname = PyList_GetItem(keys, i);
 					if (!PyString_CheckExact(colname)) {
 						msg = createException(MAL, "pyapi.eval",
-											  "SQLSTATE ----- !""Expected a string key in the "
+											  "SQLSTATE PY000 !""Expected a string key in the "
 											  "dictionary, but received an "
 											  "object of type %s",
 											  colname->ob_type->tp_name);
@@ -1096,7 +1096,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 				GDKfree(retnames);
 		} else if (varres) {
 			msg = createException(MAL, "pyapi.eval",
-								  "SQLSTATE ----- !""Expected a variable number return values, "
+								  "SQLSTATE PY000 !""Expected a variable number return values, "
 								  "but the return type was not a dictionary. "
 								  "We require the return type to be a "
 								  "dictionary for column naming purposes.");
@@ -1181,7 +1181,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 					NPY_ARRAY_CARRAY | NPY_ARRAY_FORCECAST, NULL);
 				if (new_array == NULL) {
 					msg = createException(MAL, "pyapi.eval",
-										  "SQLSTATE ----- !""Could not convert the returned "
+										  "SQLSTATE PY000 !""Could not convert the returned "
 										  "NPY_OBJECT array to the desired "
 										  "array of type %s.\n",
 										  BatType_Format(bat_type));
@@ -1445,11 +1445,11 @@ PYFUNCNAME(PyAPIprelude)(void *ret) {
 		marshal_module = PyImport_Import(tmp);
 		Py_DECREF(tmp);
 		if (marshal_module == NULL) {
-			return createException(MAL, "pyapi.eval", "SQLSTATE ----- !""Failed to load Marshal module.");
+			return createException(MAL, "pyapi.eval", "SQLSTATE PY000 !""Failed to load Marshal module.");
 		}
 		marshal_loads = PyObject_GetAttrString(marshal_module, "loads");
 		if (marshal_loads == NULL) {
-			return createException(MAL, "pyapi.eval", "SQLSTATE ----- !""Failed to load function \"loads\" from Marshal module.");
+			return createException(MAL, "pyapi.eval", "SQLSTATE PY000 !""Failed to load function \"loads\" from Marshal module.");
 		}
 		if (PyRun_SimpleString("import numpy") != 0) {
 			return PyError_CreateException("Failed to initialize embedded python", NULL);
@@ -1550,7 +1550,7 @@ char *PyError_CreateException(char *error_text, char *pycall)
 					}
 				}
 				lineinformation[pos] = '\0';
-				return createException(MAL, "pyapi.eval",  "SQLSTATE ----- !" "%s\n%s\n%s",
+				return createException(MAL, "pyapi.eval",  "SQLSTATE PY000 !" "%s\n%s\n%s",
 									   error_text, lineinformation,
 									   py_error_string);
 			}
@@ -1560,9 +1560,9 @@ char *PyError_CreateException(char *error_text, char *pycall)
 	}
 finally:
 	if (pycall == NULL)
-		return createException(MAL, "pyapi.eval", "SQLSTATE ----- !""%s\n%s", error_text,
+		return createException(MAL, "pyapi.eval", "SQLSTATE PY000 !""%s\n%s", error_text,
 							   py_error_string);
-	return createException(MAL, "pyapi.eval", "SQLSTATE ----- !""%s\n%s\n%s", error_text, pycall,
+	return createException(MAL, "pyapi.eval", "SQLSTATE PY000 !""%s\n%s\n%s", error_text, pycall,
 						   py_error_string);
 }
 

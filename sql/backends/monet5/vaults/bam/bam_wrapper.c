@@ -61,7 +61,7 @@ get_ordering(str ord)
 }
 
 
-#define ERR_INIT_BAM_WRAPPER "SQLSTATE ----- !""Could not initialize wrapper for BAM file '%s': "
+#define ERR_INIT_BAM_WRAPPER "SQLSTATE BA000 !""Could not initialize wrapper for BAM file '%s': "
 /**
  * Takes a bam_wrapper and initializes it. Note that in order for the
  * accompanying clear function to work, the bam_wrapper should be
@@ -510,7 +510,7 @@ typedef struct bam_header_line {
 } bam_header_line;
 
 
-#define ERR_PROCESS_HEADER_LINE "SQLSTATE ----- !""Could not parse a header line in BAM file '%s': "
+#define ERR_PROCESS_HEADER_LINE "SQLSTATE BA000 !""Could not parse a header line in BAM file '%s': "
 
 /**
  * Parses the next BAM header line from the given header.
@@ -1457,7 +1457,7 @@ typedef bit (*buffer_check)(alignment *, int);
 /**
  * Macro's for building alignment processing errors
  */
-#define ERR_PROCESS_ALIGNMENT "SQLSTATE ----- !""Could not process alignment for BAM file '%s': "
+#define ERR_PROCESS_ALIGNMENT "SQLSTATE BA000 !""Could not process alignment for BAM file '%s': "
 #define WRITE_ERR_PROCESS_ALIGNMENT(field) \
 	throw(MAL, "process_alignments", ERR_PROCESS_ALIGNMENT "Could not write field '%s' to binary file", bw->file_location, field)
 
@@ -1505,67 +1505,67 @@ next_sam_alignment(stream * input, lng virtual_offset,
 			 * the file just ended */
 			return MAL_SUCCEED;
 		}
-		throw(MAL, "next_sam_alignment", "SQLSTATE ----- !""Unexpected end of line (after qname)");
+		throw(MAL, "next_sam_alignment", "SQLSTATE BA000 !""Unexpected end of line (after qname)");
 	}
 
 	/* flag */
 	if (next_alignment_field(input, a, lngbuf, NULL, TRUE, &eol, eof) < 0 || eol || *eof) {
-		throw(MAL, "next_sam_alignment", "SQLSTATE ----- !""Unexpected end of line (after flag)");
+		throw(MAL, "next_sam_alignment", "SQLSTATE BA000 !""Unexpected end of line (after flag)");
 	}
 	a->flag = strtol(lngbuf, NULL, 10);
 
 	/* rname */
 	if (next_alignment_field(input, a, a->rname,
 			check_rname_rnext_buffers, TRUE, &eol, eof) < 0 || eol || *eof) {
-		throw(MAL, "next_sam_alignment", "SQLSTATE ----- !""Unexpected end of line (after rname)");
+		throw(MAL, "next_sam_alignment", "SQLSTATE BA000 !""Unexpected end of line (after rname)");
 	}
 
 	/* pos */
 	if (next_alignment_field(input, a, lngbuf, NULL, TRUE, &eol, eof) < 0 || eol || *eof) {
-		throw(MAL, "next_sam_alignment", "SQLSTATE ----- !""Unexpected end of line (after pos)");
+		throw(MAL, "next_sam_alignment", "SQLSTATE BA000 !""Unexpected end of line (after pos)");
 	}
 	a->pos = strtol(lngbuf, NULL, 10);
 
 	/* mapq */
 	if (next_alignment_field(input, a, lngbuf, NULL, TRUE, &eol, eof) < 0 || eol || *eof) {
-		throw(MAL, "next_sam_alignment", "SQLSTATE ----- !""Unexpected end of line (after mapq)");
+		throw(MAL, "next_sam_alignment", "SQLSTATE BA000 !""Unexpected end of line (after mapq)");
 	}
 	a->mapq = strtol(lngbuf, NULL, 10);
 
 	/* cigar */
 	if (next_alignment_field(input, a, a->cigar,
 			check_cigar_buffer, TRUE, &eol, eof) < 0 || eol || *eof) {
-		throw(MAL, "next_sam_alignment", "SQLSTATE ----- !""Unexpected end of line (after cigar)");
+		throw(MAL, "next_sam_alignment", "SQLSTATE BA000 !""Unexpected end of line (after cigar)");
 	}
 
 	/* rnext */
 	if (next_alignment_field(input, a, a->rnext,
 			check_rname_rnext_buffers, TRUE, &eol, eof) < 0 || eol || *eof) {
-		throw(MAL, "next_sam_alignment", "SQLSTATE ----- !""Unexpected end of line (after rnext)");
+		throw(MAL, "next_sam_alignment", "SQLSTATE BA000 !""Unexpected end of line (after rnext)");
 	}
 
 	/* pnext */
 	if (next_alignment_field(input, a, lngbuf, NULL, TRUE, &eol, eof) < 0 || eol || *eof) {
-		throw(MAL, "next_sam_alignment", "SQLSTATE ----- !""Unexpected end of line (after pnext)");
+		throw(MAL, "next_sam_alignment", "SQLSTATE BA000 !""Unexpected end of line (after pnext)");
 	}
 	a->pnext = strtol(lngbuf, NULL, 10);
 
 	/* tlen */
 	if (next_alignment_field(input, a, lngbuf, NULL, TRUE, &eol, eof) < 0 || eol || *eof) {
-		throw(MAL, "next_sam_alignment", "SQLSTATE ----- !""Unexpected end of line (after tlen)");
+		throw(MAL, "next_sam_alignment", "SQLSTATE BA000 !""Unexpected end of line (after tlen)");
 	}
 	a->tlen = strtol(lngbuf, NULL, 10);
 
 	/* seq */
 	if (next_alignment_field(input, a, a->seq,
 			check_seq_qual_buffers, TRUE, &eol, eof) < 0 || eol || *eof) {
-		throw(MAL, "next_sam_alignment", "SQLSTATE ----- !""Unexpected end of line (after seq)");
+		throw(MAL, "next_sam_alignment", "SQLSTATE BA000 !""Unexpected end of line (after seq)");
 	}
 
 	/* qual */
 	if (next_alignment_field(input, a, a->qual,
 			check_seq_qual_buffers, TRUE, &eol, eof) < 0) {
-		throw(MAL, "next_sam_alignment", "SQLSTATE ----- !""Could not read quality string (after qual)");
+		throw(MAL, "next_sam_alignment", "SQLSTATE BA000 !""Could not read quality string (after qual)");
 	}
 
 	/* aux */
@@ -1892,7 +1892,7 @@ write_aux_bam1_t(bam_wrapper * bw, bam1_t *alig, lng virtual_offset) {
 #define ERR_APPEND_ALIGNMENT(msg, fnc, field)		\
 	do {											\
 		msg = createException(MAL, fnc,									\
-							  "SQLSTATE ----- !""Could not append alignment from file '%s' to binary files: Could not write field '%s' to binary file", \
+							  "SQLSTATE BA000 !""Could not append alignment from file '%s' to binary files: Could not write field '%s' to binary file", \
 							  bw->file_location, field);				\
 		goto cleanup;													\
 	} while (0)

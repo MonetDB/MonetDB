@@ -58,7 +58,7 @@ PyObject *PyCodeObject_ParseString(char *string, char **msg)
 	if (code_object == NULL) {
 		PyErr_Print();
 		*msg = createException(MAL, "pyapi.eval",
-							   "SQLSTATE ----- !""Failed to marshal.loads() encoded object");
+							   "SQLSTATE PY000 !""Failed to marshal.loads() encoded object");
 		return NULL;
 	}
 	*msg = MAL_SUCCEED;
@@ -384,7 +384,7 @@ char *FormatCode(char *code, char **args, size_t argcount, size_t tabwidth,
 					// indentation_levels array or something happened to the
 					// code
 					*msg = createException(MAL, "pyapi.eval",
-										   "SQLSTATE ----- !""If you see this error something "
+										   "SQLSTATE PY000 !""If you see this error something "
 										   "went wrong in the code. Sorry.");
 					goto finally;
 				}
@@ -410,7 +410,7 @@ char *FormatCode(char *code, char **args, size_t argcount, size_t tabwidth,
 		// Something went wrong with our size computation, this also should
 		// never happen
 		*msg = createException(MAL, "pyapi.eval",
-							   "SQLSTATE ----- !""If you see this error something went wrong in "
+							   "SQLSTATE PY000 !""If you see this error something went wrong in "
 							   "the code (size computation). Sorry.");
 		goto finally;
 	}

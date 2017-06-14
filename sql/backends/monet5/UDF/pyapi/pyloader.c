@@ -31,7 +31,7 @@ str _loader_init(void)
 
 	if (PyType_Ready(&Py_ConnectionType) < 0)
 		return createException(MAL, "pyapi.eval",
-							   "SQLSTATE ----- !""Failed to initialize loader functions.");
+							   "SQLSTATE PY000 !""Failed to initialize loader functions.");
 	return msg;
 }
 
@@ -62,7 +62,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
     if (!PYFUNCNAME(PyAPIInitialized())) {
         throw(MAL, "pyapi.eval",
-              "SQLSTATE ----- !""Embedded Python is enabled but an error was thrown during initialization.");
+              "SQLSTATE PY000 !""Embedded Python is enabled but an error was thrown during initialization.");
     }
     sqlmorefun = *(sql_subfunc**) getArgReference(stk, pci, pci->retc);
     sqlfun = sqlmorefun->func;
@@ -109,7 +109,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		PyObject *val = NULL;
 		if (isaBatType(getArgType(mb, pci, i))) {
 			msg = createException(MAL, "pyapi.eval_loader",
-								  "SQLSTATE ----- !""Only scalar arguments are supported.");
+								  "SQLSTATE PY000 !""Only scalar arguments are supported.");
 			goto wrapup;
 		}
 		inp.scalar = true;
@@ -127,7 +127,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if (PyTuple_SetItem(pArgs, ai++, val) != 0) {
 			msg =
 				createException(MAL, "pyapi.eval_loader",
-								"SQLSTATE ----- !""Failed to set tuple (this shouldn't happen).");
+								"SQLSTATE PY000 !""Failed to set tuple (this shouldn't happen).");
 			goto wrapup;
 		}
 		// TODO deal with sql types
@@ -177,7 +177,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	if (!pycall && !code_object) {
 		if (msg == MAL_SUCCEED) {
 			msg = createException(MAL, "pyapi.eval_loader",
-								  "SQLSTATE ----- !""Error while parsing Python code.");
+								  "SQLSTATE PY000 !""Error while parsing Python code.");
 		}
 		goto wrapup;
 	}
@@ -245,7 +245,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 		if (retvals == 0) {
 			msg = createException(MAL, "pyapi.eval_loader",
-								  "SQLSTATE ----- !""No elements emitted by the loader.");
+								  "SQLSTATE PY000 !""No elements emitted by the loader.");
 			goto wrapup;
 		}
 	}

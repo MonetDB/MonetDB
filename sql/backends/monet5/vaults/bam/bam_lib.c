@@ -89,7 +89,7 @@ bam_flag(bit * ret, sht * flag, str * name)
 	k = flag_str2sht(*name);
 
 	if (k < 0)
-		throw(MAL, "bam_flag", "SQLSTATE ----- !""Unknown flag name given: %s\n",
+		throw(MAL, "bam_flag", "SQLSTATE BA000 !""Unknown flag name given: %s\n",
 			  *name);
 	*ret = kth_bit(*flag, k);
 	return MAL_SUCCEED;
@@ -176,7 +176,7 @@ reverse_qual(str * ret, str * qual)
 	str tmp; \
 	cnt = strtol(s, &tmp, 10); \
 	if(cnt <= 0 || s == tmp || *s == '\0') { \
-		throw(MAL, fn, "SQLSTATE ----- !""Could not parse CIGAR string"); \
+		throw(MAL, fn, "SQLSTATE BA000 !""Could not parse CIGAR string"); \
 	} \
 	s = tmp; \
 	op = *s++; \
@@ -291,7 +291,7 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 
 	k = flag_str2sht(*name);
 	if (k < 0)
-		throw(MAL, "bam_flag", "SQLSTATE ----- !""Unknown flag name given: %s\n",
+		throw(MAL, "bam_flag", "SQLSTATE BA000 !""Unknown flag name given: %s\n",
 			  *name);
 
 	if ((input = BATdescriptor(*bid)) == NULL)
@@ -444,7 +444,7 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 
 	if(BATcount(seqs) != BATcount(poss) || BATcount(seqs) != BATcount(cigars)) {
 		msg = createException(MAL, "seq_char_bat", 
-			"SQLSTATE ----- !""Misalignment in input BATs: "BUNFMT"/"BUNFMT"/"BUNFMT, 
+			"SQLSTATE BA000 !""Misalignment in input BATs: "BUNFMT"/"BUNFMT"/"BUNFMT, 
 			BATcount(poss), BATcount(seqs), BATcount(cigars));
 		goto cleanup;
 	}
