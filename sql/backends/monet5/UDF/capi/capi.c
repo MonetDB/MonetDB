@@ -247,6 +247,7 @@ GENERATE_BASE_FUNCTIONS(int, int);
 GENERATE_BASE_FUNCTIONS(lng, lng);
 GENERATE_BASE_FUNCTIONS(flt, flt);
 GENERATE_BASE_FUNCTIONS(dbl, dbl);
+GENERATE_BASE_FUNCTIONS(oid, oid);
 
 GENERATE_BASE_HEADERS(char *, str);
 GENERATE_BASE_HEADERS(cudf_data_date, date);
@@ -639,6 +640,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		ATTEMPT_TO_WRITE_TO_FILE(f, "typedef float flt;\n");
 		ATTEMPT_TO_WRITE_TO_FILE(f, "typedef double dbl;\n");
 		ATTEMPT_TO_WRITE_TO_FILE(f, "typedef char* str;\n");
+		ATTEMPT_TO_WRITE_TO_FILE(f, "typedef size_t oid;\n");
 		// now we search exprStr for any preprocessor directives (#)
 		// we move these to the top of the file
 		// this allows the user to normally #include files
@@ -896,7 +898,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			} else if (bat_type == TYPE_int) {
 				GENERATE_BAT_INPUT(input_bats[index], int);
 			} else if (bat_type == TYPE_oid) {
-				assert(0);
+				GENERATE_BAT_INPUT(input_bats[index], oid);
 			} else if (bat_type == TYPE_lng) {
 				GENERATE_BAT_INPUT(input_bats[index], lng);
 			} else if (bat_type == TYPE_flt) {
@@ -1075,7 +1077,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		} else if (bat_type == TYPE_int) {
 			GENERATE_BAT_OUTPUT(int);
 		} else if (bat_type == TYPE_oid) {
-			assert(0);
+			GENERATE_BAT_OUTPUT(oid);
 		} else if (bat_type == TYPE_lng) {
 			GENERATE_BAT_OUTPUT(lng);
 		} else if (bat_type == TYPE_flt) {
@@ -1479,7 +1481,7 @@ static const char *GetTypeDefinition(int type)
 	} else if (type == TYPE_int) {
 		tpe = "int";
 	} else if (type == TYPE_oid) {
-		assert(0);
+		tpe = "size_t";
 	} else if (type == TYPE_lng) {
 		tpe = "lng";
 	} else if (type == TYPE_flt) {
@@ -1513,7 +1515,7 @@ static const char *GetTypeName(int type)
 	} else if (type == TYPE_int) {
 		tpe = "int";
 	} else if (type == TYPE_oid) {
-		assert(0);
+		tpe = "oid";
 	} else if (type == TYPE_lng) {
 		tpe = "lng";
 	} else if (type == TYPE_flt) {
@@ -1548,7 +1550,7 @@ void *GetTypeData(int type, void *struct_ptr)
 	} else if (type == TYPE_int) {
 		data = ((struct cudf_data_struct_int *)struct_ptr)->data;
 	} else if (type == TYPE_oid) {
-		assert(0);
+		data = ((struct cudf_data_struct_oid *)struct_ptr)->data;
 	} else if (type == TYPE_lng) {
 		data = ((struct cudf_data_struct_lng *)struct_ptr)->data;
 	} else if (type == TYPE_flt) {
@@ -1582,7 +1584,7 @@ size_t GetTypeCount(int type, void *struct_ptr)
 	} else if (type == TYPE_int) {
 		count = ((struct cudf_data_struct_int *)struct_ptr)->count;
 	} else if (type == TYPE_oid) {
-		assert(0);
+		count = ((struct cudf_data_struct_oid *)struct_ptr)->count;
 	} else if (type == TYPE_lng) {
 		count = ((struct cudf_data_struct_lng *)struct_ptr)->count;
 	} else if (type == TYPE_flt) {

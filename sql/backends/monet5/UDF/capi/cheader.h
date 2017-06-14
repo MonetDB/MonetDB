@@ -46,4 +46,4 @@ DEFAULT_STRUCT_DEFINITION(cudf_data_date, date);
 DEFAULT_STRUCT_DEFINITION(cudf_data_time, time);
 DEFAULT_STRUCT_DEFINITION(cudf_data_timestamp, timestamp);
 DEFAULT_STRUCT_DEFINITION(cudf_data_blob, blob);
-DEFAULT_STRUCT_DEFINITION(double, decimal);
+DEFAULT_STRUCT_DEFINITION(size_t, oid);
