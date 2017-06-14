@@ -442,8 +442,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					nrcols = es->nrcols;
 				list_append(l,es);
 			}
+			/* TODO fix calc functions with selection vector 
 			if (sel && strcmp(sql_func_mod(f->func), "calc") == 0 && nrcols && strcmp(sql_func_imp(f->func), "ifthenelse") != 0)
 				list_append(l,sel);
+				*/
 		}
 		/*
 		if (strcmp(f->func->base.name, "identity") == 0) 
@@ -660,15 +662,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		}
 		if (swapped || !right)
  			r = exp_bin(be, re, left, NULL, grp, ext, cnt, sel, NULL);
-		else {
-			sql_exp *re = e->r;
-
-			if (rsel && re->type == e_column && strcmp(re->r, TID) == 0) {
-				r = rsel;
-				rsel = NULL;
-			} else
- 				r = exp_bin(be, re, right, NULL, grp, ext, cnt, rsel, NULL);
-		}
+		else
+ 			r = exp_bin(be, re, right, NULL, grp, ext, cnt, rsel, NULL);
 		if (!r && !swapped) {
  			r = exp_bin(be, re, left, NULL, grp, ext, cnt, sel, NULL);
 			is_select = 1;
@@ -1805,7 +1800,8 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 				}
 			}
 
-			s = exp_bin(be, e, left, right, NULL, NULL, NULL, lsel, rsel);
+			if (!s)
+				s = exp_bin(be, e, left, right, NULL, NULL, NULL, lsel, rsel);
 			if (!s) {
 				assert(0);
 				return NULL;
