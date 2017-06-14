@@ -1022,9 +1022,37 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					goto wrapup;
 				}
 			} else {
-				assert(0);
-				msg = createException(MAL, "cudf.eval", "Unknown input type");
-				goto wrapup;
+				// unsupported type: convert to string
+				BATiter li;
+				BUN p = 0, q = 0;
+				str mprotect_retval;
+				GENERATE_BAT_INPUT_BASE(input_bats[index], str);
+				bat_data->count = BATcount(input_bats[index]);
+				bat_data->null_value = NULL;
+				bat_data->data = GDKzalloc(sizeof(char *) * bat_data->count);
+				if (!bat_data->data) {
+					msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+					goto wrapup;
+				}
+				j = 0;
+
+				li = bat_iterator(input_bats[index]);
+				BATloop(input_bats[index], p, q)
+				{
+					void *t = BUNtail(li, p);
+					if (BATatoms[bat_type].atomCmp(t, BATatoms[bat_type].atomNull) == 0) {
+						bat_data->data[j] = NULL;
+					} else {
+						char* result = NULL;
+						int length = 0;
+						if (BATatoms[bat_type].atomToStr(&result, &length, t) == 0) {
+							msg = createException(MAL, "cudf.eval", "Failed to convert element to string");
+							goto wrapup;
+						}
+						bat_data->data[j] = result;
+					}
+					j++;
+				}
 			}
 		}
 		argnode = argnode ? argnode->next : NULL;
@@ -1065,9 +1093,8 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			bat_data->null_value.size = 0;
 			bat_data->null_value.data = NULL;
 		} else {
-			assert(0);
-			msg = createException(MAL, "cudf.eval", "Unknown output type");
-			goto wrapup;
+			// unsupported type, convert from string output
+			GENERATE_BAT_OUTPUT(str);
 		}
 		argnode = argnode ? argnode->next : NULL;
 	}
@@ -1143,8 +1170,6 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		GDKfree(regions);
 		regions = next;
 	}
-
-	// FIXME: deal with SQL types
 
 	// create the output bats from the returned results
 	for (i = 0; i < (size_t)pci->retc; i++) {
@@ -1274,10 +1299,35 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				GDKfree(current_blob);
 			}
 			GDKfree(data);
-		}  else {
-			msg = createException(MAL, "cudf.eval", "Unsupported output type");
-			BBPunfix(b->batCacheid);
-			goto wrapup;
+		} else {
+			char **source_base = (char **)data;
+			int len = 0;
+			void* element = NULL;
+			for (j = 0; j < count; j++) {
+				const char *ptr = source_base[j];
+				const void* appended_element;
+				if (!ptr || strcmp(ptr, str_nil) == 0) {
+					appended_element = (void*) BATatoms[bat_type].atomNull;
+				} else {
+					int len = 0;
+					if (BATatoms[bat_type].atomFromStr(ptr, &len, &element) == 0) {
+						msg = createException(MAL, "cudf.eval", "Failed to convert output element from string: %s", ptr);
+						goto wrapup;
+					}
+					appended_element = element;
+				}
+				if (BUNappend(b, appended_element, FALSE) != GDK_SUCCEED) {
+					if (element) {
+						GDKfree(element);
+					}
+					msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+					goto wrapup;
+				}
+			}
+			if (element) {
+				GDKfree(element);	
+			}
+			GDKfree(data);
 		}
 
 		// free the output value right now to prevent the internal data from
@@ -1347,6 +1397,32 @@ wrapup:
 	if (inputs) {
 		for (i = 0; i < (size_t)input_count; i++) {
 			if (inputs[i]) {
+				int bat_type = getBatType(getArgType(mb, pci, i));
+				if (bat_type == TYPE_str || 
+					bat_type == TYPE_date || 
+					bat_type == TYPE_daytime ||
+					bat_type == TYPE_timestamp || 
+					bat_type == TYPE_blob ||
+					bat_type == TYPE_sqlblob) {
+					// have to free input data
+					void *data = GetTypeData(bat_type, inputs[i]);
+					if (data) {
+						GDKfree(data);
+					}
+				} else if (bat_type > TYPE_str) {
+					// this type was converted to individually malloced strings
+					// we have to free all the individual strings 
+					char **data = (char**) GetTypeData(bat_type, inputs[i]);
+					size_t count = GetTypeCount(bat_type, inputs[i]);
+					for(j = 0; j < count; j++) {
+						if (data[j]) {
+							GDKfree(data[j]);
+						}
+					}
+					if (data) {
+						GDKfree(data);
+					}
+				}
 				GDKfree(inputs[i]);
 			}
 		}
@@ -1414,7 +1490,8 @@ static const char *GetTypeDefinition(int type)
 	} else if (type == TYPE_blob || type == TYPE_sqlblob) {
 		tpe = "cudf_data_blob";
 	} else {
-		assert(0);
+		// unsupported type: string
+		tpe = "char*";
 	}
 	return tpe;
 }
@@ -1447,7 +1524,8 @@ static const char *GetTypeName(int type)
 	} else if (type == TYPE_blob || type == TYPE_sqlblob) {
 		tpe = "blob";
 	} else {
-		assert(0);
+		// unsupported type: string
+		tpe = "str";
 	}
 	return tpe;
 }
@@ -1481,7 +1559,8 @@ void *GetTypeData(int type, void *struct_ptr)
 	}  else if (type == TYPE_blob || type == TYPE_sqlblob) {
 		data = ((struct cudf_data_struct_blob *)struct_ptr)->data;
 	} else {
-		assert(0);
+		// unsupported type: string
+		data = ((struct cudf_data_struct_str *)struct_ptr)->data;
 	}
 	return data;
 }
@@ -1514,7 +1593,8 @@ size_t GetTypeCount(int type, void *struct_ptr)
 	} else if (type == TYPE_blob || type == TYPE_sqlblob) {
 		count = ((struct cudf_data_struct_blob *)struct_ptr)->count;
 	} else {
-		assert(0);
+		// unsupported type: string
+		count = ((struct cudf_data_struct_str *)struct_ptr)->count;
 	}
 	return count;
 }
