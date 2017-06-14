@@ -858,7 +858,7 @@ sql_help(char *pattern, stream *toConsole, int pagewidth)
 	}
 
 	// provide summary of all major topics  (=search terms)
-	ncolumns = (int) maxlen > pagewidth ? 1 : pagewidth / maxlen;
+	ncolumns = (int) maxlen > pagewidth ? 1 : (int) (pagewidth / maxlen);
 	if (ncolumns > 1 && ncolumns * (int) maxlen + ncolumns - 1 > pagewidth)
 		ncolumns--;
 	step = total / ncolumns;
