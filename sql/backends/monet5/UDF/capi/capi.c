@@ -216,16 +216,31 @@ static void *jump_GDK_malloc(size_t size)
 	return ptr;
 }
 
-static void *wrapped_GDK_malloc(size_t size)
+static void* add_allocated_region(void* ptr)
 {
 	allocated_region *region;
-	void *ptr = jump_GDK_malloc(size + sizeof(allocated_region));
 	int tid = THRgettid();
 	region = (allocated_region *)ptr;
 	region->next = allocated_regions[tid];
 	allocated_regions[tid] = region;
-
 	return (char*)ptr + sizeof(allocated_region);
+}
+
+static void *wrapped_GDK_malloc(size_t size)
+{
+	allocated_region *region;
+	void *ptr = jump_GDK_malloc(size + sizeof(allocated_region));
+	return add_allocated_region(ptr);
+}
+
+static void *wrapped_GDK_malloc_nojump(size_t size)
+{
+	allocated_region *region;
+	void *ptr = GDKmalloc(size + sizeof(allocated_region));
+	if (!ptr) {
+		return NULL;
+	}
+	return add_allocated_region(ptr);
 }
 
 #define GENERATE_BASE_HEADERS(type, tpename)                                   \
@@ -272,17 +287,27 @@ GENERATE_BASE_HEADERS(cudf_data_blob, blob);
 		char *mprotect_retval;                                                 \
 		GENERATE_BAT_INPUT_BASE(b, tpe);                                       \
 		bat_data->count = BATcount(b);                                         \
-		bat_data->data = (tpe *)Tloc(b, 0);                                    \
 		bat_data->null_value = tpe##_nil;                                      \
-		mprotect_retval = mprotect_region(                                     \
-			bat_data->data, bat_data->count * sizeof(bat_data->null_value),    \
-			PROT_READ, &regions);                                              \
-		if (mprotect_retval) {                                                 \
-			msg = createException(MAL, "cudf.eval",                            \
-								  "Failed to mprotect region: %s",             \
-								  mprotect_retval);                            \
-			goto wrapup;                                                       \
-		}                                                                      \
+		if (b->tdense && !b->tnodense) { \
+			size_t it = 0; \
+			tpe val = b->T.seq; \
+			/* bat is dense, materialize it */ \
+			bat_data->data = wrapped_GDK_malloc_nojump(bat_data->count * sizeof(bat_data->null_value)); \
+			for(it = 0; it < bat_data->count; it++) { \
+				bat_data->data[it] = val++; \
+			} \
+		} else { \
+			bat_data->data = (tpe *)Tloc(b, 0);                                    \
+			mprotect_retval = mprotect_region(                                     \
+				bat_data->data, bat_data->count * sizeof(bat_data->null_value),    \
+				PROT_READ, &regions);                                              \
+			if (mprotect_retval) {                                                 \
+				msg = createException(MAL, "cudf.eval",                            \
+									  "Failed to mprotect region: %s",             \
+									  mprotect_retval);                            \
+				goto wrapup;                                                       \
+			}                                                                      \
+		} \
 	}
 
 #define GENERATE_BAT_OUTPUT_BASE(tpe)                                          \
@@ -1406,30 +1431,32 @@ wrapup:
 	if (inputs) {
 		for (i = 0; i < (size_t)input_count; i++) {
 			if (inputs[i]) {
-				int bat_type = getBatType(getArgType(mb, pci, i));
-				if (bat_type == TYPE_str || 
-					bat_type == TYPE_date || 
-					bat_type == TYPE_daytime ||
-					bat_type == TYPE_timestamp || 
-					bat_type == TYPE_blob ||
-					bat_type == TYPE_sqlblob) {
-					// have to free input data
-					void *data = GetTypeData(bat_type, inputs[i]);
-					if (data) {
-						GDKfree(data);
-					}
-				} else if (bat_type > TYPE_str) {
-					// this type was converted to individually malloced strings
-					// we have to free all the individual strings 
-					char **data = (char**) GetTypeData(bat_type, inputs[i]);
-					size_t count = GetTypeCount(bat_type, inputs[i]);
-					for(j = 0; j < count; j++) {
-						if (data[j]) {
-							GDKfree(data[j]);
+				if (isaBatType(getArgType(mb, pci, i))) {
+					int bat_type = getBatType(getArgType(mb, pci, i));
+					if (bat_type == TYPE_str || 
+						bat_type == TYPE_date || 
+						bat_type == TYPE_daytime ||
+						bat_type == TYPE_timestamp || 
+						bat_type == TYPE_blob ||
+						bat_type == TYPE_sqlblob) {
+						// have to free input data
+						void *data = GetTypeData(bat_type, inputs[i]);
+						if (data) {
+							GDKfree(data);
 						}
-					}
-					if (data) {
-						GDKfree(data);
+					} else if (bat_type > TYPE_str) {
+						// this type was converted to individually malloced strings
+						// we have to free all the individual strings 
+						char **data = (char**) GetTypeData(bat_type, inputs[i]);
+						size_t count = GetTypeCount(bat_type, inputs[i]);
+						for(j = 0; j < count; j++) {
+							if (data[j]) {
+								GDKfree(data[j]);
+							}
+						}
+						if (data) {
+							GDKfree(data);
+						}
 					}
 				}
 				GDKfree(inputs[i]);
@@ -1440,7 +1467,9 @@ wrapup:
 	// output data
 	if (outputs) {
 		for (i = 0; i < (size_t)output_count; i++) {
-			int bat_type = getBatType(getArgType(mb, pci, i));
+			int bat_type = isaBatType(getArgType(mb, pci, i)) ? 
+					getBatType(getArgType(mb, pci, i)) : 
+					getArgType(mb, pci, i);
 			if (outputs[i]) {
 				void *data = GetTypeData(bat_type, outputs[i]);
 				if (data) {
@@ -1473,7 +1502,7 @@ static const char *GetTypeDefinition(int type)
 {
 	const char *tpe = NULL;
 	if (type == TYPE_bit) {
-		tpe = "bool";
+		tpe = "signed char";
 	} else if (type == TYPE_bte) {
 		tpe = "signed char";
 	} else if (type == TYPE_sht) {
