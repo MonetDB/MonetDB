@@ -30,10 +30,10 @@ stderr of test 'incorrect_subquery_delete.Bug-3315` in directory 'sql/test/BugTr
 
 MAPI  = (monetdb) /var/tmp/mtest-312/.s.monetdb.32368
 QUERY = select a from y;
-ERROR = !SELECT: identifier 'a' unknown
-MAPI  = (monetdb) /var/tmp/mtest-312/.s.monetdb.32368
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: identifier 'a' unknown
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = delete from x where a in (select nonexistant from y);
-ERROR = !SELECT: identifier 'nonexistant' unknown
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: identifier 'nonexistant' unknown
 
 # 13:36:57 >  
 # 13:36:57 >  "Done."

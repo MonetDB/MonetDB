@@ -31,22 +31,22 @@ stderr of test 'cast_boolean_to_string.Bug-6110` in directory 'sql/test/BugTrack
 
 MAPI  = (monetdb) /var/tmp/mtest-8699/.s.monetdb.32925
 QUERY = SELECT val, valstr, cast(val as real) as cast2real FROM t_boolean order by val;
-ERROR = !types boolean(1,0) and real(24,0) are not equal for column 'val'
-MAPI  = (monetdb) /var/tmp/mtest-8806/.s.monetdb.33950
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !types boolean(1,0) and real(24,0) are not equal for column 'val'
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = SELECT val, valstr, cast(val as float) as cast2float FROM t_boolean order by val;
-ERROR = !types boolean(1,0) and double(53,0) are not equal for column 'val'
-MAPI  = (monetdb) /var/tmp/mtest-8806/.s.monetdb.33950
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !types boolean(1,0) and double(53,0) are not equal for column 'val'
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = SELECT val, valstr, cast(val as double) as cast2double FROM t_boolean order by val;
-ERROR = !types boolean(1,0) and double(53,0) are not equal for column 'val'
-MAPI  = (monetdb) /var/tmp/mtest-8806/.s.monetdb.33950
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !types boolean(1,0) and double(53,0) are not equal for column 'val'
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = SELECT val, valstr, cast(val as time) as cast2time FROM t_boolean order by val;
-ERROR = !types boolean(1,0) and time(1,0) are not equal for column 'val'
-MAPI  = (monetdb) /var/tmp/mtest-8806/.s.monetdb.33950
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !types boolean(1,0) and time(1,0) are not equal for column 'val'
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = SELECT val, valstr, cast(val as date) as cast2date FROM t_boolean order by val;
-ERROR = !types boolean(1,0) and date(0,0) are not equal for column 'val'
-MAPI  = (monetdb) /var/tmp/mtest-8806/.s.monetdb.33950
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !types boolean(1,0) and date(0,0) are not equal for column 'val'
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = SELECT val, valstr, cast(val as timestamp) as cast2timestamp FROM t_boolean order by val;
-ERROR = !types boolean(1,0) and timestamp(7,0) are not equal for column 'val'
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !types boolean(1,0) and timestamp(7,0) are not equal for column 'val'
 
 
 # 16:55:21 >  

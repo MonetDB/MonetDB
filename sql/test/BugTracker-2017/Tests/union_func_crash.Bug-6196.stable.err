@@ -29,10 +29,10 @@ stderr of test 'union_func_crash.Bug-6196` in directory 'sql/test/BugTracker-201
 
 MAPI  = (monetdb) /var/tmp/mtest-19682/.s.monetdb.30973
 QUERY = SELECT generate_series(1,4);
-ERROR = !SELECT: no such binary operator 'generate_series(tinyint,tinyint)'
-MAPI  = (monetdb) /var/tmp/mtest-19682/.s.monetdb.30973
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such binary operator 'generate_series(tinyint,tinyint)'
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = select ser(1, 4);
-ERROR = !SELECT: no such binary operator 'ser(tinyint,tinyint)'
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such binary operator 'ser(tinyint,tinyint)'
 
 # 13:40:29 >  
 # 13:40:29 >  "Done."

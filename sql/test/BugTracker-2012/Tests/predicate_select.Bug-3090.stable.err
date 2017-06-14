@@ -32,7 +32,7 @@ stderr of test 'predicate_select.Bug-3090` in directory 'sql/test/BugTracker-201
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select name, schema_id, query, type, system, commit_action, readonly, temporary from tbls where name;
-ERROR = !conversion of string 'schemas' to type bit failed.
+ERROR = !MALException:batcalc.bit:22018!conversion of string 'schemas' to type bit failed.
 
 
 # 18:53:13 >  

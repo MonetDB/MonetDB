@@ -32,38 +32,38 @@ stderr of test 'float-space-parse.Bug-3691` in directory 'sql/test/BugTracker-20
 
 MAPI  = (monetdb) /var/tmp/mtest-29417/.s.monetdb.34993
 QUERY = INSERT INTO DOUBLE_TBL(f1) VALUES (' ');
-ERROR = !conversion of string ' ' to type dbl failed.
-MAPI  = (monetdb) /var/tmp/mtest-29417/.s.monetdb.34993
+ERROR = !MALException:calc.dbl:22018!conversion of string ' ' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = INSERT INTO DOUBLE_TBL(f1) VALUES ('\t');
-ERROR = !conversion of string '	' to type dbl failed.
-MAPI  = (monetdb) /var/tmp/mtest-29417/.s.monetdb.34993
+ERROR = !MALException:calc.dbl:22018!conversion of string '	' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = INSERT INTO DOUBLE_TBL(f1) VALUES ('\n');
-ERROR = !conversion of string '
-        !' to type dbl failed.
-MAPI  = (monetdb) /var/tmp/mtest-29417/.s.monetdb.34993
+ERROR = !MALException:calc.dbl:22018!conversion of string '
+        !ERROR: ' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = INSERT INTO DOUBLE_TBL(f1) VALUES ('  \t  \t\t \n ');
-ERROR = !conversion of string '  	  		 
-        ! ' to type dbl failed.
-MAPI  = (monetdb) /var/tmp/mtest-29417/.s.monetdb.34993
+ERROR = !MALException:calc.dbl:22018!conversion of string '  	  		 
+        !ERROR:  ' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = INSERT INTO DOUBLE_TBL(f1) VALUES ('');
-ERROR = !conversion of string '' to type dbl failed.
-MAPI  = (monetdb) /var/tmp/mtest-29417/.s.monetdb.34993
+ERROR = !MALException:calc.dbl:22018!conversion of string '' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = INSERT INTO FLOAT_TBL(f1) VALUES (' ');
-ERROR = !conversion of string ' ' to type dbl failed.
-MAPI  = (monetdb) /var/tmp/mtest-29417/.s.monetdb.34993
+ERROR = !MALException:calc.dbl:22018!conversion of string ' ' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = INSERT INTO FLOAT_TBL(f1) VALUES ('\t');
-ERROR = !conversion of string '	' to type dbl failed.
-MAPI  = (monetdb) /var/tmp/mtest-29417/.s.monetdb.34993
+ERROR = !MALException:calc.dbl:22018!conversion of string '	' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = INSERT INTO FLOAT_TBL(f1) VALUES ('\n');
-ERROR = !conversion of string '
-        !' to type dbl failed.
-MAPI  = (monetdb) /var/tmp/mtest-29417/.s.monetdb.34993
+ERROR = !MALException:calc.dbl:22018!conversion of string '
+        !ERROR: ' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = INSERT INTO FLOAT_TBL(f1) VALUES ('  \t  \t\t \n ');
-ERROR = !conversion of string '  	  		 
-        ! ' to type dbl failed.
-MAPI  = (monetdb) /var/tmp/mtest-29417/.s.monetdb.34993
+ERROR = !MALException:calc.dbl:22018!conversion of string '  	  		 
+        !ERROR:  ' to type dbl failed.
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = INSERT INTO FLOAT_TBL(f1) VALUES ('');
-ERROR = !conversion of string '' to type dbl failed.
+ERROR = !MALException:calc.dbl:22018!conversion of string '' to type dbl failed.
 
 # 11:24:45 >  
 # 11:24:45 >  "Done."

@@ -32,7 +32,7 @@ stderr of test 'insert_into_merge_table_crash.Bug-3703` in directory 'sql/test/B
 
 MAPI  = (monetdb) /var/tmp/mtest-5390/.s.monetdb.38366
 QUERY = insert into m values (1);
-ERROR = !INSERT INTO: cannot insert into merge table 'm'
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !INSERT INTO: cannot insert into merge table 'm'
 
 # 16:55:06 >  
 # 16:55:06 >  "Done."

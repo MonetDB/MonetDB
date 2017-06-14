@@ -12,7 +12,7 @@ stderr of test 'having_clause_quirks.SF-947601` in directory 'sql/test/BugDay_20
 
 MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = select name from t947601 having 1=1;
-ERROR = !SELECT: cannot use non GROUP BY column 'name' in query results without an aggregate function
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: cannot use non GROUP BY column 'name' in query results without an aggregate function
 
 # 11:57:00 >  
 # 11:57:00 >  Done.

@@ -82,11 +82,11 @@ stderr of test 'varchar.SF-2471371` in directory 'sql/test/BugTracker-2008` itse
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = COPY 1 RECORDS INTO myvar_test FROM stdin USING DELIMITERS '|','\n' NULL as '';
         a|b2b
-ERROR = !Failed to import table 'myvar_test', line 1 field col2 'varchar(2)' expected in 'b2b'
-MAPI  = (monetdb) /var/tmp/mtest-19807/.s.monetdb.36283
+ERROR = !SQLException:importTable:SQLSTATE 42000 !Failed to import table 'myvar_test', line 1 field col2 'varchar(2)' expected in 'b2b'
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = COPY 1 RECORDS INTO myvar_test FROM stdin USING DELIMITERS '|','\n' NULL as '';
         aa|bb
-ERROR = !Failed to import table 'myvar_test', line 1 field col1 'varchar(1)' expected in 'aa'
+ERROR = !SQLException:importTable:SQLSTATE 42000 !Failed to import table 'myvar_test', line 1 field col1 'varchar(1)' expected in 'aa'
 
 # 14:48:55 >  
 # 14:48:55 >  Done.

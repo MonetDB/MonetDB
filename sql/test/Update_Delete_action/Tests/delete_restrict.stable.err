@@ -14,10 +14,10 @@ stderr of test 'delete_restrict` in directory 'sql/test/Update_Delete_action` it
 
 MAPI  = monetdb@sofia:38256
 QUERY = delete from t1;
-ERROR = !DELETE: FOREIGN KEY constraint 't2.t2_id_fkey' violated
-MAPI  = monetdb@sofia:38256
+ERROR = !SQLException:assert:SQLSTATE M0M29 !DELETE: FOREIGN KEY constraint 't2.t2_id_fkey' violated
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = delete from t1 where id > 2 and id < 5;
-ERROR = !DELETE: FOREIGN KEY constraint 't2.t2_id_fkey' violated
+ERROR = !SQLException:assert:SQLSTATE M0M29 !DELETE: FOREIGN KEY constraint 't2.t2_id_fkey' violated
 
 # 15:54:05 >  
 # 15:54:05 >  Done.
