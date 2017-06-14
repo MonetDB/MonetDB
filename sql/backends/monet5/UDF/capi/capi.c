@@ -263,6 +263,7 @@ GENERATE_BASE_HEADERS(cudf_data_blob, blob);
 	}                                                                          \
 	inputs[index] = bat_data;                                                  \
 	bat_data->is_null = tpe##_is_null;                                         \
+	bat_data->scale = argnode ? pow(10, ((sql_arg *)argnode->data)->type.scale) : 1;    \
 	bat_data->initialize = (void (*)(void *, size_t))tpe##_initialize;
 
 #define GENERATE_BAT_INPUT(b, tpe)                                             \
@@ -292,6 +293,7 @@ GENERATE_BASE_HEADERS(cudf_data_blob, blob);
 	}                                                                          \
 	outputs[index] = bat_data;                                                 \
 	bat_data->is_null = tpe##_is_null;                                         \
+	bat_data->scale = argnode ? pow(10, ((sql_arg *)argnode->data)->type.scale) : 1;    \
 	bat_data->initialize = (void (*)(void *, size_t))tpe##_initialize;
 
 #define GENERATE_BAT_OUTPUT(tpe)                                               \
@@ -838,6 +840,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		}
 	}
 	// create the inputs
+	argnode = sqlfun ? sqlfun->ops->h : NULL;
 	for (i = pci->retc + ARG_OFFSET; i < (size_t)pci->argc; i++) {
 		size_t index = i - (pci->retc + ARG_OFFSET);
 		if (!isaBatType(getArgType(mb, pci, i))) {
@@ -1024,7 +1027,10 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				goto wrapup;
 			}
 		}
+		argnode = argnode ? argnode->next : NULL;
 	}
+
+	argnode = sqlfun ? sqlfun->res->h : NULL;
 	// output types
 	for (i = 0; i < output_count; i++) {
 		size_t index = i;
@@ -1063,6 +1069,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			msg = createException(MAL, "cudf.eval", "Unknown output type");
 			goto wrapup;
 		}
+		argnode = argnode ? argnode->next : NULL;
 	}
 
 	// set up a longjmp point

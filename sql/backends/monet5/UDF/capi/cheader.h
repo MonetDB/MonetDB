@@ -30,6 +30,7 @@ typedef struct {
 		type *data;                                                            \
 		size_t count;                                                          \
 		type null_value;                                                       \
+		double scale;                                                          \
 		int (*is_null)(type value);                                            \
 		void (*initialize)(void *self, size_t count);                          \
 	}

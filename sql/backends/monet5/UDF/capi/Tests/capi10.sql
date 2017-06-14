@@ -1,5 +1,5 @@
 
-# test other SQL types
+# test blob type
 
 START TRANSACTION;
 
@@ -29,13 +29,15 @@ INSERT INTO blobs VALUES (BLOB '00FFFF00'), (NULL), (BLOB '');
 SELECT capi10(i) FROM blobs;
 
 DROP FUNCTION capi10;
-DROP TABLE blobs;
 
-
-# decimal
-
-# uuid
-
-# json
-
+# attempt to modify input of blobs
+CREATE FUNCTION capi10(inp BLOB) RETURNS BLOB LANGUAGE C {
+	result->initialize(result, inp.count);
+	for(size_t i = 0; i < inp.count; i++) {
+		if (inp.data[i].data && inp.data[i].size > 0) {
+			((char*)inp.data[i].data)[0] = 'h';
+		}
+	}
+};
+SELECT capi10(i) FROM blobs;
 ROLLBACK;
