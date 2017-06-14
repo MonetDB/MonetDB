@@ -292,6 +292,8 @@ GENERATE_BASE_HEADERS(cudf_data_blob, blob);
 		goto wrapup;                                                           \
 	}                                                                          \
 	outputs[index] = bat_data;                                                 \
+	bat_data->count = 0;                                                       \
+	bat_data->data = NULL;                                                     \
 	bat_data->is_null = tpe##_is_null;                                         \
 	bat_data->scale = argnode ? pow(10, ((sql_arg *)argnode->data)->type.scale) : 1;    \
 	bat_data->initialize = (void (*)(void *, size_t))tpe##_initialize;
@@ -299,8 +301,6 @@ GENERATE_BASE_HEADERS(cudf_data_blob, blob);
 #define GENERATE_BAT_OUTPUT(tpe)                                               \
 	{                                                                          \
 		GENERATE_BAT_OUTPUT_BASE(tpe);                                         \
-		bat_data->count = 0;                                                   \
-		bat_data->data = NULL;                                                 \
 		bat_data->null_value = (tpe)tpe##_nil;                                 \
 	}
 
@@ -910,6 +910,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				GENERATE_BAT_INPUT_BASE(input_bats[index], str);
 				bat_data->count = BATcount(input_bats[index]);
 				bat_data->data = GDKmalloc(sizeof(char *) * bat_data->count);
+				bat_data->null_value = NULL;
 				if (!bat_data->data) {
 					msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 					goto wrapup;
@@ -920,7 +921,11 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				BATloop(input_bats[index], p, q)
 				{
 					char *t = (char *)BUNtail(li, p);
-					bat_data->data[j] = t;
+					if (strcmp(t, str_nil) == 0) {
+						bat_data->data[j] = NULL;
+					} else {
+						bat_data->data[j] = t;	
+					}
 					j++;
 				}
 				// for string columns, mprotect the varheap of the BAT
@@ -1078,7 +1083,8 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		} else if (bat_type == TYPE_dbl) {
 			GENERATE_BAT_OUTPUT(dbl);
 		} else if (bat_type == TYPE_str) {
-			GENERATE_BAT_OUTPUT(str);
+			GENERATE_BAT_OUTPUT_BASE(str);
+			bat_data->null_value = NULL;
 		} else if (bat_type == TYPE_date) {
 			GENERATE_BAT_OUTPUT_BASE(date);
 			data_from_date(date_nil, &bat_data->null_value);
@@ -1094,7 +1100,8 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			bat_data->null_value.data = NULL;
 		} else {
 			// unsupported type, convert from string output
-			GENERATE_BAT_OUTPUT(str);
+			GENERATE_BAT_OUTPUT_BASE(str);
+			bat_data->null_value = NULL;
 		}
 		argnode = argnode ? argnode->next : NULL;
 	}
@@ -1254,7 +1261,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				if (!ptr) {
 					ptr = str_nil;
 				}
-				if (BUNappend(b, source_base[j], FALSE) != GDK_SUCCEED) {
+				if (BUNappend(b, ptr, FALSE) != GDK_SUCCEED) {
 					msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 					goto wrapup;
 				}
@@ -1664,7 +1671,9 @@ int timestamp_is_null(cudf_data_timestamp value)
 	return ts_isnil(timestamp_from_data(&value));
 }
 
-int str_is_null(char *value) { return strcmp(value, str_nil) == 0; }
+int str_is_null(char *value) {
+	return value == NULL;
+}
 
 int blob_is_null(cudf_data_blob value) {
 	return value.data == NULL;
