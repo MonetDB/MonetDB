@@ -2245,6 +2245,16 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					APPEND(r2, rcand[-(ssize_t)i]);
 				}
 			} while (--nl > 0);
+		} else if (rvals && equal_order && r->ttype == TYPE_void) {
+			if (r2->batCount > 0 &&
+			    r2->tdense &&
+			    ((oid *) r2->theap.base)[r2->batCount - 1] + 1 != ((oid*)rvals)[-(ssize_t)nr])
+				r2->tdense = 0;
+			do {
+				for (i = nr; i > 0; i--) {
+					APPEND(r2, ((oid*)rvals)[rstart -(ssize_t)i]);
+				}
+			} while (--nl > 0);
 		} else if (rcand) {
 			if (r2->batCount > 0 &&
 			    r2->tdense &&
