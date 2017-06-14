@@ -270,7 +270,7 @@ GENERATE_BASE_HEADERS(cudf_data_time, time);
 GENERATE_BASE_HEADERS(cudf_data_timestamp, timestamp);
 GENERATE_BASE_HEADERS(cudf_data_blob, blob);
 
-#define GENERATE_BAT_INPUT_BASE(b, tpe)                                        \
+#define GENERATE_BAT_INPUT_BASE(tpe)                                           \
 	struct cudf_data_struct_##tpe *bat_data =                                  \
 		GDKmalloc(sizeof(struct cudf_data_struct_##tpe));                      \
 	if (!bat_data) {                                                           \
@@ -285,7 +285,7 @@ GENERATE_BASE_HEADERS(cudf_data_blob, blob);
 #define GENERATE_BAT_INPUT(b, tpe)                                             \
 	{                                                                          \
 		char *mprotect_retval;                                                 \
-		GENERATE_BAT_INPUT_BASE(b, tpe);                                       \
+		GENERATE_BAT_INPUT_BASE(tpe);                                          \
 		bat_data->count = BATcount(b);                                         \
 		bat_data->null_value = tpe##_nil;                                      \
 		if (b->tdense && !b->tnodense) { \
@@ -421,6 +421,8 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	cached_functions* cached_function;
 	char* function_parameters = NULL;
 	int tid = THRgettid();
+	size_t input_size = 0;
+	bit non_grouped_aggregate = 0;
 
 	(void)cntxt;
 
@@ -517,6 +519,10 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			}
 		}
 	}
+	// non-grouped aggregates don't have the group list
+	// to allow users to write code for both grouped and non-grouped aggregates
+	// we create an "aggr_group" BAT for non-grouped aggregates
+	non_grouped_aggregate = grouped && !seengrp;
 
 	input_count = pci->argc - (pci->retc + ARG_OFFSET);
 	output_count = pci->retc;
@@ -741,6 +747,19 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				}
 			}
 		}
+		if (non_grouped_aggregate) {
+			// manually add "aggr_group" for non-grouped aggregates
+			int bat_type = TYPE_oid;
+			const char *tpe = GetTypeName(bat_type);
+			assert(tpe);
+			if (tpe) {
+				snprintf(buf, sizeof(buf),
+						 "%s%s %s = *((%s%s*)__inputs[%zu]);\n", struct_prefix,
+						 tpe, "aggr_group", struct_prefix, tpe,
+						 input_count);
+				ATTEMPT_TO_WRITE_TO_FILE(f, buf);
+			}
+		}
 		// output types
 		for (i = 0; i < (size_t)pci->retc; i++) {
 			int bat_type = getBatType(getArgType(mb, pci, i));
@@ -849,11 +868,11 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			MT_lock_unset(&cache_lock);
 		}
 	}
-
-	// now create the actual input/output parameters from the input bats
 	if (input_count > 0) {
-		input_bats = GDKzalloc(sizeof(BAT *) * input_count);
-		inputs = GDKzalloc(sizeof(void *) * input_count);
+		// add "aggr_group" for non-grouped aggregates
+		size_t extra_inputs = non_grouped_aggregate ? 1 : 0;
+		input_bats = GDKzalloc(sizeof(BAT *) * (input_count + extra_inputs));
+		inputs = GDKzalloc(sizeof(void *) * (input_count + extra_inputs));
 		if (!inputs || !input_bats) {
 			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 			goto wrapup;
@@ -934,7 +953,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				BATiter li;
 				BUN p = 0, q = 0;
 				str mprotect_retval;
-				GENERATE_BAT_INPUT_BASE(input_bats[index], str);
+				GENERATE_BAT_INPUT_BASE(str);
 				bat_data->count = BATcount(input_bats[index]);
 				bat_data->data = GDKmalloc(sizeof(char *) * bat_data->count);
 				bat_data->null_value = NULL;
@@ -968,7 +987,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				}
 			} else if (bat_type == TYPE_date) {
 				date *baseptr;
-				GENERATE_BAT_INPUT_BASE(input_bats[index], date);
+				GENERATE_BAT_INPUT_BASE(date);
 				bat_data->count = BATcount(input_bats[index]);
 				bat_data->data =
 					GDKmalloc(sizeof(bat_data->null_value) * bat_data->count);
@@ -984,7 +1003,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				data_from_date(date_nil, &bat_data->null_value);
 			} else if (bat_type == TYPE_daytime) {
 				daytime *baseptr;
-				GENERATE_BAT_INPUT_BASE(input_bats[index], time);
+				GENERATE_BAT_INPUT_BASE(time);
 				bat_data->count = BATcount(input_bats[index]);
 				bat_data->data =
 					GDKmalloc(sizeof(bat_data->null_value) * bat_data->count);
@@ -1000,7 +1019,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				data_from_time(daytime_nil, &bat_data->null_value);
 			} else if (bat_type == TYPE_timestamp) {
 				timestamp *baseptr;
-				GENERATE_BAT_INPUT_BASE(input_bats[index], timestamp);
+				GENERATE_BAT_INPUT_BASE(timestamp);
 				bat_data->count = BATcount(input_bats[index]);
 				bat_data->data =
 					GDKmalloc(sizeof(bat_data->null_value) * bat_data->count);
@@ -1018,7 +1037,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				BATiter li;
 				BUN p = 0, q = 0;
 				str mprotect_retval;
-				GENERATE_BAT_INPUT_BASE(input_bats[index], blob);
+				GENERATE_BAT_INPUT_BASE(blob);
 				bat_data->count = BATcount(input_bats[index]);
 				bat_data->data = GDKmalloc(sizeof(cudf_data_blob) * bat_data->count);
 				if (!bat_data->data) {
@@ -1058,7 +1077,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				BATiter li;
 				BUN p = 0, q = 0;
 				str mprotect_retval;
-				GENERATE_BAT_INPUT_BASE(input_bats[index], str);
+				GENERATE_BAT_INPUT_BASE(str);
 				bat_data->count = BATcount(input_bats[index]);
 				bat_data->null_value = NULL;
 				bat_data->data = GDKzalloc(sizeof(char *) * bat_data->count);
@@ -1086,9 +1105,19 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					j++;
 				}
 			}
+			input_size = BATcount(input_bats[index]) > input_size ? BATcount(input_bats[index]) : input_size;
 		}
 		argnode = argnode ? argnode->next : NULL;
 	}
+
+	if (non_grouped_aggregate) {
+		size_t index = input_count;
+		GENERATE_BAT_INPUT_BASE(oid);
+		bat_data->count = input_size;
+		bat_data->data = GDKzalloc(bat_data->count * sizeof(bat_data->null_value));
+		bat_data->null_value = oid_nil;
+	}
+
 
 	argnode = sqlfun ? sqlfun->res->h : NULL;
 	// output types
