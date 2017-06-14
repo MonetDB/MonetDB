@@ -45,16 +45,15 @@ DROP TABLE dates;
 CREATE FUNCTION capi02_randomize_time(d TIME) RETURNS TIME
 language C
 {
-	srand(1234);
 	result->initialize(result, d.count);
 	for(size_t i = 0; i < result->count; i++) {
 		if (d.is_null(d.data[i])) {
 			result->data[i] = result->null_value;
 		} else {
-			result->data[i].hours = rand() % 24;
-			result->data[i].minutes = rand() % 60;
-			result->data[i].seconds = rand() % 60;
-			result->data[i].ms = rand() % 1000;
+			result->data[i].hours = (i + 1234) % 24;
+			result->data[i].minutes = (i + 1234) % 60;
+			result->data[i].seconds = (i + 1234) % 60;
+			result->data[i].ms = (i + 1234) % 1000;
 		}
 	}
 };
@@ -77,7 +76,6 @@ DROP TABLE times;
 CREATE FUNCTION capi02_increment_timestamp(d TIMESTAMP) RETURNS TIMESTAMP
 language C
 {
-	srand(1234);
 	result->initialize(result, d.count);
 	for(size_t i = 0; i < result->count; i++) {
 		if (d.is_null(d.data[i])) {
@@ -87,10 +85,10 @@ language C
 			result->data[i].date.month = d.data[i].date.month;
 			result->data[i].date.day = d.data[i].date.day;
 
-			result->data[i].time.hours = rand() % 24;
-			result->data[i].time.minutes = rand() % 60;
-			result->data[i].time.seconds = rand() % 60;
-			result->data[i].time.ms = rand() % 1000;
+			result->data[i].time.hours = (i + 1234) % 24;
+			result->data[i].time.minutes = (i + 1234) % 60;
+			result->data[i].time.seconds = (i + 1234) % 60;
+			result->data[i].time.ms = (i + 1234) % 1000;
 		}
 	}
 };
