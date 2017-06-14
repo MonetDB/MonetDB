@@ -2703,7 +2703,10 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 						}
 					} else
 #endif
-						sql_help(line, toConsole);
+					{
+						setWidth();
+						sql_help(line, toConsole, pagewidth <= 0 ? DEFWIDTH : pagewidth);
+					}
 					continue;
 				}
 /* for later
