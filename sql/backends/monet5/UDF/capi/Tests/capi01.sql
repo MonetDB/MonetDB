@@ -5,8 +5,7 @@ CREATE FUNCTION capi01(inp INTEGER) RETURNS TABLE (i INTEGER, d DOUBLE)
 language C
 {
 #include <math.h>
-
-	size_t count = inp;
+	size_t count = inp.data[0];
 	i->initialize(i, count);
 	d->initialize(d, count);
 	for(size_t j = 0; j < count; j++) {
