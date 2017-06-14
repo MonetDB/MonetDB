@@ -467,6 +467,7 @@ Ready.
 [ "algebra",	"bandjoin",	"command algebra.bandjoin(l:bat[:any_1], r:bat[:any_1], sl:bat[:oid], sr:bat[:oid], c1:any_1, c2:any_1, li:bit, hi:bit, estimate:lng) (X_0:bat[:oid], X_1:bat[:oid]) ",	"ALGbandjoin;",	"Band join: values in l and r match if r - c1 <[=] l <[=] r + c2"	]
 [ "algebra",	"copy",	"command algebra.copy(b:bat[:any_1]):bat[:any_1] ",	"ALGcopy;",	"Returns physical copy of a BAT."	]
 [ "algebra",	"crossproduct",	"command algebra.crossproduct(left:bat[:any_1], right:bat[:any_2]) (l:bat[:oid], r:bat[:oid]) ",	"ALGcrossproduct2;",	"Returns 2 columns with all BUNs, consisting of the head-oids\n\t  from 'left' and 'right' for which there are BUNs in 'left'\n\t  and 'right' with equal tails"	]
+[ "algebra",	"crossproduct",	"command algebra.crossproduct(left:bat[:any_1], right:bat[:any_2], sl:bat[:oid], sr:bat[:oid]) (l:bat[:oid], r:bat[:oid]) ",	"ALGcrossproduct;",	"Returns 2 columns with all BUNs, consisting of the head-oids\n\t  from 'left' and 'right' for which there are BUNs in 'left'\n\t  and 'right' with equal tails"	]
 [ "algebra",	"difference",	"command algebra.difference(l:bat[:any_1], r:bat[:any_1], sl:bat[:oid], sr:bat[:oid], nil_matches:bit, estimate:lng):bat[:oid] ",	"ALGdifference;",	"Difference of l and r with candidate lists"	]
 [ "algebra",	"exist",	"command algebra.exist(b:bat[:any_1], val:any_1):bit ",	"ALGexist;",	"Returns whether 'val' occurs in b."	]
 [ "algebra",	"fetch",	"command algebra.fetch(b:bat[:any_1], x:oid):any_1 ",	"ALGfetchoid;",	"Returns the value of the BUN at x-th position with 0 <= x < b.count"	]
