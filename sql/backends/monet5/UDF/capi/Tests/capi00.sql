@@ -14,4 +14,6 @@ INSERT INTO integers VALUES (1), (2), (3), (4), (5);
 
 SELECT capi00(i) FROM integers;
 
+DROP FUNCTION capi00;
+
 ROLLBACK;

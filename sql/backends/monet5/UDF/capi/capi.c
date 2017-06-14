@@ -228,14 +228,12 @@ static void* add_allocated_region(void* ptr)
 
 static void *wrapped_GDK_malloc(size_t size)
 {
-	allocated_region *region;
 	void *ptr = jump_GDK_malloc(size + sizeof(allocated_region));
 	return add_allocated_region(ptr);
 }
 
 static void *wrapped_GDK_malloc_nojump(size_t size)
 {
-	allocated_region *region;
 	void *ptr = GDKmalloc(size + sizeof(allocated_region));
 	if (!ptr) {
 		return NULL;
@@ -1076,7 +1074,6 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				// unsupported type: convert to string
 				BATiter li;
 				BUN p = 0, q = 0;
-				str mprotect_retval;
 				GENERATE_BAT_INPUT_BASE(str);
 				bat_data->count = BATcount(input_bats[index]);
 				bat_data->null_value = NULL;
@@ -1372,7 +1369,6 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				if (!ptr || strcmp(ptr, str_nil) == 0) {
 					appended_element = (void*) BATatoms[bat_type].atomNull;
 				} else {
-					int len = 0;
 					if (BATatoms[bat_type].atomFromStr(ptr, &len, &element) == 0) {
 						msg = createException(MAL, "cudf.eval", "Failed to convert output element from string: %s", ptr);
 						goto wrapup;
