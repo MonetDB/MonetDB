@@ -76,9 +76,9 @@ Ready.
 % L2 # name
 % time # type
 % 8 # length
-[ 22:52:18	]
+[ 10:34:34	]
 [ NULL	]
-[ 13:38:50	]
+[ 12:36:36	]
 #DROP FUNCTION capi02_randomize_time;
 #DROP TABLE times;
 #CREATE FUNCTION capi02_increment_timestamp(d TIMESTAMP) RETURNS TIMESTAMP
@@ -104,9 +104,9 @@ Ready.
 % L2 # name
 % timestamp # type
 % 26 # length
-[ 1993-09-20 22:52:18.417000	]
+[ 1993-09-20 10:34:34.234000	]
 [ NULL	]
-[ 2001-03-10 13:38:50.913000	]
+[ 2001-03-10 12:36:36.236000	]
 #DROP FUNCTION capi02_increment_timestamp;
 #DROP TABLE times;
 #ROLLBACK;
