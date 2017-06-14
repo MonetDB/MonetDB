@@ -376,7 +376,7 @@ WLRinit(void)
 		return MAL_SUCCEED;
 	// time to continue the consolidation process in the background
 	if (MT_create_thread(&wlr_thread, WLRprocessScheduler, (void*) cntxt, MT_THR_JOINABLE) < 0) {
-			throw(SQL,"wlr.init","SQLSTATE ----- !""Starting wlr manager failed");
+			throw(SQL,"wlr.init","SQLSTATE 42000 !""Starting wlr manager failed");
 	}
 	GDKregister(wlr_thread);
 	return MAL_SUCCEED;
@@ -403,7 +403,7 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( getArgType(mb, pci, 1) == TYPE_str){
 			wlr_limit = -1;
 			if( strcmp(GDKgetenv("gdk_dbname"),*getArgReference_str(stk,pci,1)) == 0)
-				throw(SQL,"wlr.replicate","SQLSTATE ----- !""Master and replicate should be different");
+				throw(SQL,"wlr.replicate","SQLSTATE 42000 !""Master and replicate should be different");
 			strncpy(wlr_master, *getArgReference_str(stk,pci,1), IDLENGTH);
 		}
 	} else  {
@@ -512,7 +512,7 @@ WLRsetreplicabeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	new = *getArgReference_int(stk,pci,1);
 	if ( new < wlc_beat || new < 1)
-		throw(SQL,"replicatebeat","SQLSTATE ----- !""Cycle time should be larger then master or >= 1 second");
+		throw(SQL,"replicatebeat","SQLSTATE 42000 !""Cycle time should be larger then master or >= 1 second");
 	wlr_beat = new;
 	return MAL_SUCCEED;
 }

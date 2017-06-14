@@ -26,7 +26,7 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, int *columnType, int *columnSRID)
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batcalc.wkb", "SQLSTATE ---- !"RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batcalc.wkb", "SQLSTATE 38000 !"RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new BAT, aligned with input BAT
@@ -75,7 +75,7 @@ wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe)
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.wkbFromText", "SQLSTATE ---- !"RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batgeom.wkbFromText", "SQLSTATE 38000 !"RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new for the output BAT
@@ -129,7 +129,7 @@ wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.coordinateFromMBR", "SQLSTATE ---- !"RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batgeom.coordinateFromMBR", "SQLSTATE 38000 !"RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new BAT for the output
@@ -175,7 +175,7 @@ WKBtoSTRflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (char 
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, name, "SQLSTATE ----- !"RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new for the output BAT
@@ -242,7 +242,7 @@ WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (wkb **, wkb **), const 
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, name, "SQLSTATE ----- !"RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new for the output BAT
@@ -303,7 +303,7 @@ WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) 
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, name, "SQLSTATE ----- !"RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new for the output BAT
@@ -363,7 +363,7 @@ WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (bit *, wkb **), const c
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, name, "SQLSTATE ----- !"RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new for the output BAT
@@ -446,7 +446,7 @@ WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (int *, wkb **), const c
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, name, "SQLSTATE ----- !"RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new for the output BAT
@@ -510,7 +510,7 @@ WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (int *
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, name, "SQLSTATE ----- !"RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new for the output BAT
@@ -574,7 +574,7 @@ wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.wkbGetCoordinate", "SQLSTATE ----- !"RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batgeom.wkbGetCoordinate", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new for the output BAT
@@ -626,12 +626,12 @@ wkbBox2D_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 
 	//get the BATs
 	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL || (bBAT = BATdescriptor(*bBAT_id)) == NULL) {
-		ret = createException(MAL, "batgeom.wkbBox2D", "SQLSTATE ----- !""Problem retrieving BATs");
+		ret = createException(MAL, "batgeom.wkbBox2D", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 		goto clean;
 	}
 	//check if the BATs are aligned
 	if (aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT)) {
-		ret = createException(MAL, "batgeom.wkbBox2D", "SQLSTATE ----- !""BATs must be aligned");
+		ret = createException(MAL, "batgeom.wkbBox2D", "SQLSTATE 38000 !""Columns must be aligned");
 		goto clean;
 	}
 	//create a new BAT for the output
@@ -684,12 +684,12 @@ wkbContains_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 
 	//get the BATs
 	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL || (bBAT = BATdescriptor(*bBAT_id)) == NULL) {
-		ret = createException(MAL, "batgeom.Contains", "SQLSTATE ----- !""Problem retrieving BATs");
+		ret = createException(MAL, "batgeom.Contains", "SQLSTATE 38000 !""Problem retrieving BATs");
 		goto clean;
 	}
 	//check if the BATs are aligned
 	if (aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT)) {
-		ret = createException(MAL, "batgeom.Contains", "SQLSTATE ----- !""BATs must be aligned");
+		ret = createException(MAL, "batgeom.Contains", "SQLSTATE 38000 !""Columns must be aligned");
 		goto clean;
 	}
 	//create a new BAT for the output
@@ -739,7 +739,7 @@ wkbContains_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.Contains", "SQLSTATE ----- !""Problem retrieving BAT");
+		throw(MAL, "batgeom.Contains", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new BAT for the output
@@ -784,7 +784,7 @@ wkbContains_bat_geom(bat *outBAT_id, bat *inBAT_id, wkb **geomWKB)
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.Contains", "SQLSTATE ----- !""Problem retrieving BAT");
+		throw(MAL, "batgeom.Contains", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new BAT for the output
@@ -831,7 +831,7 @@ wkbFromWKB_bat(bat *outBAT_id, bat *inBAT_id)
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.wkb", "SQLSTATE ----- !"RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batgeom.wkb", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new BAT
@@ -878,13 +878,13 @@ wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *
 	str ret = MAL_SUCCEED;
 
 	if (*zmFlag == 11)
-		throw(MAL, "batgeom.wkbMakePoint", "SQLSTATE ----- !""POINTZM is not supported");
+		throw(MAL, "batgeom.wkbMakePoint", "SQLSTATE 38000 !""POINTZM is not supported");
 
 	//get the BATs
 	if ((xBAT = BATdescriptor(*xBAT_id)) == NULL || (yBAT = BATdescriptor(*yBAT_id)) == NULL || (*zmFlag == 10 && (zBAT = BATdescriptor(*zBAT_id)) == NULL)
 	    || (*zmFlag == 1 && (mBAT = BATdescriptor(*mBAT_id)) == NULL)) {
 
-		ret = createException(MAL, "batgeom.wkbMakePoint", "SQLSTATE ----- !""Problem retrieving BATs");
+		ret = createException(MAL, "batgeom.wkbMakePoint", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 		goto clean;
 	}
 	//check if the BATs are aligned
@@ -892,7 +892,7 @@ wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *
 	    BATcount(xBAT) != BATcount(yBAT) ||
 	    (zBAT && (xBAT->hseqbase != zBAT->hseqbase || BATcount(xBAT) != BATcount(zBAT))) ||
 	    (mBAT && (xBAT->hseqbase != mBAT->hseqbase || BATcount(xBAT) != BATcount(mBAT)))) {
-		ret = createException(MAL, "batgeom.wkbMakePoint", "SQLSTATE ----- !""BATs must be aligned");
+		ret = createException(MAL, "batgeom.wkbMakePoint", "SQLSTATE 38000 !""Columns must be aligned");
 		goto clean;
 	}
 	//create a new BAT for the output
@@ -962,7 +962,7 @@ wkbSetSRID_bat(bat *outBAT_id, bat *inBAT_id, int *srid)
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.SetSRID", "SQLSTATE ----- !""Problem retrieving BAT");
+		throw(MAL, "batgeom.SetSRID", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new BAT for the output
@@ -1010,12 +1010,12 @@ wkbDistance_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 
 	//get the BATs
 	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL || (bBAT = BATdescriptor(*bBAT_id)) == NULL) {
-		ret = createException(MAL, "batgeom.Distance", "SQLSTATE ----- !""Problem retrieving BATs");
+		ret = createException(MAL, "batgeom.Distance", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 		goto clean;
 	}
 	//check if the BATs are aligned
 	if (aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT)) {
-		ret = createException(MAL, "batgeom.Distance", "SQLSTATE ----- !""BATs must be aligned");
+		ret = createException(MAL, "batgeom.Distance", "SQLSTATE Columns !""Columns must be aligned");
 		goto clean;
 	}
 	//create a new BAT for the output
@@ -1067,7 +1067,7 @@ wkbDistance_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.Distance", "SQLSTATE ----- !""Problem retrieving BAT");
+		throw(MAL, "batgeom.Distance", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new BAT for the output
@@ -1124,18 +1124,18 @@ wkbFilter_bat(bat *aBATfiltered_id, bat *bBATfiltered_id, bat *aBAT_id, bat *bBA
 
 	//get the descriptor of the BAT
 	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL) {
-		throw(MAL, "batgeom.MBRfilter", "SQLSTATE ----- !"RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batgeom.MBRfilter", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 	}
 	if ((bBAT = BATdescriptor(*bBAT_id)) == NULL) {
 		BBPunfix(aBAT->batCacheid);
-		throw(MAL, "batgeom.MBRfilter", "SQLSTATE ----- !"RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batgeom.MBRfilter", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 	}
 
 	if (aBAT->hseqbase != bBAT->hseqbase ||	//the idxs of the headers of the BATs are not the same
 	    BATcount(aBAT) != BATcount(bBAT)) {	//the number of valid elements in the BATs are not the same
 		BBPunfix(aBAT->batCacheid);
 		BBPunfix(bBAT->batCacheid);
-		throw(MAL, "batgeom.MBRfilter", "SQLSTATE ----- !""The arguments must have dense and aligned heads");
+		throw(MAL, "batgeom.MBRfilter", "SQLSTATE 38000 !""The arguments must have dense and aligned heads");
 	}
 	//create two new BATs for the output
 	if ((aBATfiltered = COLnew(aBAT->hseqbase, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
@@ -1206,7 +1206,7 @@ wkbFilter_geom_bat(bat *BATfiltered_id, wkb **geomWKB, bat *BAToriginal_id)
 
 	//get the descriptor of the BAT
 	if ((BAToriginal = BATdescriptor(*BAToriginal_id)) == NULL) {
-		throw(MAL, "batgeom.MBRfilter", "SQLSTATE ----- !"RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batgeom.MBRfilter", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 	}
 
 	//create the new BAT
@@ -1290,7 +1290,7 @@ wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {
-		throw(MAL, "batgeom.mbr", "SQLSTATE ----- !"RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batgeom.mbr", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 	}
 
 	//create a new BAT for the output
@@ -1352,13 +1352,13 @@ wkbMakeLine_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 			BBPunfix(aBAT->batCacheid);
 		if (bBAT)
 			BBPunfix(bBAT->batCacheid);
-		throw(MAL, "batgeom.MakeLine", "SQLSTATE ----- !""Problem retrieving BATs");
+		throw(MAL, "batgeom.MakeLine", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 	}
 	//check if the BATs are aligned
 	if (aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT)) {
 		BBPunfix(aBAT->batCacheid);
 		BBPunfix(bBAT->batCacheid);
-		throw(MAL, "batgeom.MakeLine", "SQLSTATE ----- !""BATs must be aligned");
+		throw(MAL, "batgeom.MakeLine", "SQLSTATE 38000 !""Columns must be aligned");
 	}
 	//create a new BAT for the output
 	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {
@@ -1415,13 +1415,13 @@ wkbUnion_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 			BBPunfix(aBAT->batCacheid);
 		if (bBAT)
 			BBPunfix(bBAT->batCacheid);
-		throw(MAL, "batgeom.Union", "SQLSTATE ----- !""Problem retrieving BATs");
+		throw(MAL, "batgeom.Union", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
 	}
 	//check if the BATs are aligned
 	if (aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT)) {
 		BBPunfix(aBAT->batCacheid);
 		BBPunfix(bBAT->batCacheid);
-		throw(MAL, "batgeom.Union", "SQLSTATE ----- !""BATs must be aligned");
+		throw(MAL, "batgeom.Union", "SQLSTATE 38000 !""Columns must be aligned");
 	}
 	//create a new BAT for the output
 	if ((outBAT = COLnew(aBAT->hseqbase, ATOMindex("wkb"), BATcount(aBAT), TRANSIENT)) == NULL) {

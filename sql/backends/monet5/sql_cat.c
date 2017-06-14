@@ -463,10 +463,10 @@ drop_func(mvc *sql, char *sname, char *name, int fid, int type, int action)
 			sql_func *func = n->data;
 
 			if (!mvc_schema_privs(sql, s)) {
-				return sql_message("SQLSTATE ----- !""DROP %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
+				return sql_message("SQLSTATE 42000 !""DROP %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
 			}
 			if (!action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
-				return sql_message("SQLSTATE ----- !""DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
+				return sql_message("SQLSTATE 42000 !""DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
 
 			mvc_drop_func(sql, s, func, action);
 		}
@@ -476,14 +476,14 @@ drop_func(mvc *sql, char *sname, char *name, int fid, int type, int action)
 
 		if (!mvc_schema_privs(sql, s)) {
 			list_destroy(list_func);
-			return sql_message("SQLSTATE ----- !""DROP %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
+			return sql_message("SQLSTATE 42000 !""DROP %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
 		}
 		for (n = list_func->h; n; n = n->next) {
 			sql_func *func = n->data;
 
 			if (!action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, list_func)) {
 				list_destroy(list_func);
-				return sql_message("SQLSTATE ----- !""DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
+				return sql_message("SQLSTATE 42000 !""DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
 			}
 		}
 		mvc_drop_all_func(sql, s, list_func, action);
@@ -724,7 +724,7 @@ UPGcreate_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mvc_set_schema(sql, osname);
 	} else {
 		mvc_set_schema(sql, osname);
-		throw(SQL, "sql.catalog", "SQLSTATE ----- !""function creation failed '%s'", func);
+		throw(SQL, "sql.catalog", "SQLSTATE 42000 !""function creation failed '%s'", func);
 	}
 	return msg;
 }
@@ -756,7 +756,7 @@ UPGcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		mvc_set_schema(sql, osname);
 	} else {
 		mvc_set_schema(sql, osname);
-		throw(SQL, "sql.catalog", "SQLSTATE ----- !""view creation failed '%s'", view);
+		throw(SQL, "sql.catalog", "SQLSTATE 42000 !""view creation failed '%s'", view);
 	}
 	return msg;
 }

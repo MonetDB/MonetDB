@@ -46,7 +46,7 @@ str_2_timestamp(timestamp *res, const str *val)
 		if (p)
 			GDKfree(p);
 		snprintf(buf, BUFSIZ, "conversion of string '%s' failed", *val? *val:"");
-		throw(SQL, "timestamp", "SQLSTATE ----- !""%s", buf);
+		throw(SQL, "timestamp", "SQLSTATE 42000 !""%s", buf);
 	}
 	*res = *(timestamp *) p;
 	if (!ATOMextern(TYPE_timestamp)) {
@@ -141,7 +141,7 @@ str_2_daytime(daytime *res, const str *val)
 		if (p)
 			GDKfree(p);
 		snprintf(buf, BUFSIZ, "conversion of string '%s' failed", *val? *val:"");
-		throw(SQL, "daytime", "SQLSTATE ----- !""%s", buf);
+		throw(SQL, "daytime", "SQLSTATE 42000 !""%s", buf);
 	}
 	*res = *(daytime *) p;
 	if (!ATOMextern(TYPE_daytime)) {
@@ -236,7 +236,7 @@ str_2_date(date *res, const str *val)
 		if (p)
 			GDKfree(p);
 		snprintf(buf, BUFSIZ, "conversion of string '%s' failed", *val? *val:"");
-		throw(SQL, "date", "SQLSTATE ----- !""%s", buf);
+		throw(SQL, "date", "SQLSTATE 42000 !""%s", buf);
 	}
 	*res = *(date *) p;
 	if (!ATOMextern(TYPE_date)) {
@@ -333,7 +333,7 @@ str_2_sqlblob(sqlblob **res, const str *val)
 		if (p)
 			GDKfree(p);
 		snprintf(buf, BUFSIZ, "conversion of string '%s' failed", *val? *val:"");
-		throw(SQL, "sqlblob", "SQLSTATE ----- !""%s", buf);
+		throw(SQL, "sqlblob", "SQLSTATE 42000 !""%s", buf);
 	}
 	*res = (sqlblob *) p;
 	return MAL_SUCCEED;
