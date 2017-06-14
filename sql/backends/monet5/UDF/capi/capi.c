@@ -11,6 +11,7 @@
 #include "cheader.text.h"
 
 #include "mtime.h"
+#include "blob.h"
 
 #include <setjmp.h>
 #include <signal.h>
@@ -251,6 +252,7 @@ GENERATE_BASE_HEADERS(char *, str);
 GENERATE_BASE_HEADERS(cudf_data_date, date);
 GENERATE_BASE_HEADERS(cudf_data_time, time);
 GENERATE_BASE_HEADERS(cudf_data_timestamp, timestamp);
+GENERATE_BASE_HEADERS(cudf_data_blob, blob);
 
 #define GENERATE_BAT_INPUT_BASE(b, tpe)                                        \
 	struct cudf_data_struct_##tpe *bat_data =                                  \
@@ -977,6 +979,45 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					data_from_timestamp(baseptr[j], bat_data->data + j);
 				}
 				data_from_timestamp(*timestamp_nil, &bat_data->null_value);
+			} else if (bat_type == TYPE_blob || bat_type == TYPE_sqlblob) {
+				BATiter li;
+				BUN p = 0, q = 0;
+				str mprotect_retval;
+				GENERATE_BAT_INPUT_BASE(input_bats[index], blob);
+				bat_data->count = BATcount(input_bats[index]);
+				bat_data->data = GDKmalloc(sizeof(cudf_data_blob) * bat_data->count);
+				if (!bat_data->data) {
+					msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+					goto wrapup;
+				}
+				j = 0;
+
+				li = bat_iterator(input_bats[index]);
+				BATloop(input_bats[index], p, q)
+				{
+					blob *t = (blob *)BUNtail(li, p);
+					if (t->nitems == ~(size_t) 0) {
+						bat_data->data[j].size = 0;
+						bat_data->data[j].data = NULL;
+					} else {
+						bat_data->data[j].size = t->nitems;
+						bat_data->data[j].data = &t->data[0];
+					}
+					j++;
+				}
+				bat_data->null_value.size = 0;
+				bat_data->null_value.data = NULL;
+				// for blob columns, mprotect the varheap of the BAT
+				assert(input_bats[index]->tvheap);
+				mprotect_retval = mprotect_region(
+					input_bats[index]->tvheap->base,
+					input_bats[index]->tvheap->size, PROT_READ, &regions);
+				if (mprotect_retval) {
+					msg = createException(MAL, "cudf.eval",
+										  "Failed to mprotect region: %s",
+										  mprotect_retval);
+					goto wrapup;
+				}
 			} else {
 				assert(0);
 				msg = createException(MAL, "cudf.eval", "Unknown input type");
@@ -1013,6 +1054,10 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		} else if (bat_type == TYPE_timestamp) {
 			GENERATE_BAT_OUTPUT_BASE(timestamp);
 			data_from_timestamp(*timestamp_nil, &bat_data->null_value);
+		} else if (bat_type == TYPE_blob || bat_type == TYPE_sqlblob) {
+			GENERATE_BAT_OUTPUT_BASE(blob);
+			bat_data->null_value.size = 0;
+			bat_data->null_value.data = NULL;
 		} else {
 			assert(0);
 			msg = createException(MAL, "cudf.eval", "Unknown output type");
@@ -1183,7 +1228,46 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				}
 			}
 			GDKfree(data);
-		} else {
+		} else if (bat_type == TYPE_blob || bat_type == TYPE_sqlblob) {
+			cudf_data_blob *source_base = (cudf_data_blob*)data;
+			blob* current_blob = NULL;
+			size_t current_blob_maxsize = 0;
+			for (j = 0; j < count; j++) {
+				const cudf_data_blob blob = source_base[j];
+
+				if (!current_blob || current_blob_maxsize < blob.size) {
+					if (current_blob) {
+						GDKfree(current_blob);
+					}
+					current_blob_maxsize = blob.size;
+					current_blob = GDKmalloc(sizeof(size_t) + blob.size);
+					if (!current_blob) {
+						msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+						goto wrapup;
+					}
+				}
+
+				if (!blob.data) {
+					current_blob->nitems = ~(size_t) 0;
+				} else {
+					current_blob->nitems = blob.size;
+					memcpy(&current_blob->data[0], blob.data, blob.size);
+				}
+
+
+				if (BUNappend(b, current_blob, FALSE) != GDK_SUCCEED) {
+					if (current_blob) {
+						GDKfree(current_blob);	
+					}
+					msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+					goto wrapup;
+				}
+			}
+			if (current_blob) {
+				GDKfree(current_blob);
+			}
+			GDKfree(data);
+		}  else {
 			msg = createException(MAL, "cudf.eval", "Unsupported output type");
 			BBPunfix(b->batCacheid);
 			goto wrapup;
@@ -1320,6 +1404,8 @@ static const char *GetTypeDefinition(int type)
 		tpe = "cudf_data_time";
 	} else if (type == TYPE_timestamp) {
 		tpe = "cudf_data_timestamp";
+	} else if (type == TYPE_blob || type == TYPE_sqlblob) {
+		tpe = "cudf_data_blob";
 	} else {
 		assert(0);
 	}
@@ -1351,6 +1437,8 @@ static const char *GetTypeName(int type)
 		tpe = "time";
 	} else if (type == TYPE_timestamp) {
 		tpe = "timestamp";
+	} else if (type == TYPE_blob || type == TYPE_sqlblob) {
+		tpe = "blob";
 	} else {
 		assert(0);
 	}
@@ -1383,6 +1471,8 @@ void *GetTypeData(int type, void *struct_ptr)
 		data = ((struct cudf_data_struct_time *)struct_ptr)->data;
 	} else if (type == TYPE_timestamp) {
 		data = ((struct cudf_data_struct_timestamp *)struct_ptr)->data;
+	}  else if (type == TYPE_blob || type == TYPE_sqlblob) {
+		data = ((struct cudf_data_struct_blob *)struct_ptr)->data;
 	} else {
 		assert(0);
 	}
@@ -1414,6 +1504,8 @@ size_t GetTypeCount(int type, void *struct_ptr)
 		count = ((struct cudf_data_struct_time *)struct_ptr)->count;
 	} else if (type == TYPE_timestamp) {
 		count = ((struct cudf_data_struct_timestamp *)struct_ptr)->count;
+	} else if (type == TYPE_blob || type == TYPE_sqlblob) {
+		count = ((struct cudf_data_struct_blob *)struct_ptr)->count;
 	} else {
 		assert(0);
 	}
@@ -1486,3 +1578,7 @@ int timestamp_is_null(cudf_data_timestamp value)
 }
 
 int str_is_null(char *value) { return strcmp(value, str_nil) == 0; }
+
+int blob_is_null(cudf_data_blob value) {
+	return value.data == NULL;
+}

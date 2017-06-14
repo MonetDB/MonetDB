@@ -19,6 +19,11 @@ typedef struct {
 	cudf_data_time time;
 } cudf_data_timestamp;
 
+typedef struct {
+	size_t size;
+	void* data;
+} cudf_data_blob;
+
 #define DEFAULT_STRUCT_DEFINITION(type, typename)                              \
 	struct cudf_data_struct_##typename                                         \
 	{                                                                          \
@@ -39,3 +44,5 @@ DEFAULT_STRUCT_DEFINITION(char *, str);
 DEFAULT_STRUCT_DEFINITION(cudf_data_date, date);
 DEFAULT_STRUCT_DEFINITION(cudf_data_time, time);
 DEFAULT_STRUCT_DEFINITION(cudf_data_timestamp, timestamp);
+DEFAULT_STRUCT_DEFINITION(cudf_data_blob, blob);
+DEFAULT_STRUCT_DEFINITION(double, decimal);

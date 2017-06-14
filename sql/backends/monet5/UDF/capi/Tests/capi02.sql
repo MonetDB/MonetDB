@@ -1,6 +1,14 @@
 # Dates, times, timestamps
 START TRANSACTION;
 
+# dates
+# dates have the type
+#typedef struct {
+#	unsigned char day;
+#	unsigned char month;
+#	int year;
+#} cudf_data_date;
+
 CREATE FUNCTION capi02_increment_year(d DATE) RETURNS DATE
 language C
 {
@@ -24,6 +32,15 @@ SELECT capi02_increment_year(i) FROM dates;
 DROP FUNCTION capi02_increment_year;
 DROP TABLE dates;
 
+
+#time
+#time has the type:
+#typedef struct {
+#	unsigned int ms;
+#	unsigned char seconds;
+#	unsigned char minutes;
+#	unsigned char hours;
+#} cudf_data_time;
 
 CREATE FUNCTION capi02_randomize_time(d TIME) RETURNS TIME
 language C
@@ -50,6 +67,12 @@ SELECT capi02_randomize_time(i) FROM times;
 DROP FUNCTION capi02_randomize_time;
 DROP TABLE times;
 
+#timestamps
+#timestamps have the type:
+#typedef struct {
+#	cudf_data_date date;
+#	cudf_data_time time;
+#} cudf_data_timestamp;
 
 CREATE FUNCTION capi02_increment_timestamp(d TIMESTAMP) RETURNS TIMESTAMP
 language C
