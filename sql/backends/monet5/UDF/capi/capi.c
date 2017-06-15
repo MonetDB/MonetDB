@@ -16,7 +16,6 @@
 #include <setjmp.h>
 #include <signal.h>
 #include <stdio.h>
-#include <malloc.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <sys/mman.h>
@@ -348,7 +347,6 @@ const char *cpp_flag = "capi_cpp";
 
 static size_t GetTypeCount(int type, void *struct_ptr);
 static void *GetTypeData(int type, void *struct_ptr);
-static const char *GetTypeDefinition(int type);
 static const char *GetTypeName(int type);
 
 static void data_from_date(date d, cudf_data_date *ptr);
@@ -1519,42 +1517,6 @@ wrapup:
 		pclose(compiler);
 	}
 	return msg;
-}
-
-static const char *GetTypeDefinition(int type)
-{
-	const char *tpe = NULL;
-	if (type == TYPE_bit) {
-		tpe = "signed char";
-	} else if (type == TYPE_bte) {
-		tpe = "signed char";
-	} else if (type == TYPE_sht) {
-		tpe = "short";
-	} else if (type == TYPE_int) {
-		tpe = "int";
-	} else if (type == TYPE_oid) {
-		tpe = "size_t";
-	} else if (type == TYPE_lng) {
-		tpe = "lng";
-	} else if (type == TYPE_flt) {
-		tpe = "float";
-	} else if (type == TYPE_dbl) {
-		tpe = "double";
-	} else if (type == TYPE_str) {
-		tpe = "char*";
-	} else if (type == TYPE_date) {
-		tpe = "cudf_data_date";
-	} else if (type == TYPE_daytime) {
-		tpe = "cudf_data_time";
-	} else if (type == TYPE_timestamp) {
-		tpe = "cudf_data_timestamp";
-	} else if (type == TYPE_blob || type == TYPE_sqlblob) {
-		tpe = "cudf_data_blob";
-	} else {
-		// unsupported type: string
-		tpe = "char*";
-	}
-	return tpe;
 }
 
 static const char *GetTypeName(int type)
