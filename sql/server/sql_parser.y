@@ -6109,25 +6109,26 @@ void *sql_error( mvc * sql, int error_code, char *format, ... )
 
 int sqlerror(mvc * c, const char *err)
 {
-	char *sqlstate = "42000!";
 	if (err && *err == '\b') {
-		sqlstate = "";
+		(void)sql_error(c, 4,
+				"SQLSTATE %s: %s\n",
+				err, c->scanner.errstr + 1);
 		err++;
 	}
 	if (c->scanner.errstr) {
 		if (c->scanner.errstr[0] == '!')
 			(void)sql_error(c, 4,
-					"!%s%s: %s\n",
-					sqlstate, err, c->scanner.errstr + 1);
+					"SQLSTATE 42000 %s: %s\n",
+					err, c->scanner.errstr + 1);
 		else
 			(void)sql_error(c, 4,
-					"!%s%s: %s in \"%.80s\"\n",
-					sqlstate, err, c->scanner.errstr,
+					"%s: %s in \"%.80s\"\n",
+					 err, c->scanner.errstr,
 					QUERY(c->scanner));
 	} else
 		(void)sql_error(c, 4,
-				"!%s%s in: \"%.80s\"\n",
-				sqlstate, err, QUERY(c->scanner));
+				"%s in: \"%.80s\"\n",
+				err, QUERY(c->scanner));
 	return 1;
 }
 

@@ -30,7 +30,7 @@ stderr of test 'avg_needs_abort_on_error.Bug-3329` in directory 'sql/test/BugTra
 
 MAPI  = (monetdb) /var/tmp/mtest-18566/.s.monetdb.35358
 QUERY = drop test_avg;
-ERROR = !syntax error, unexpected IDENT in: "drop test_avg"
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT in: "drop test_avg"
 
 # 10:28:45 >  
 # 10:28:45 >  "Done."

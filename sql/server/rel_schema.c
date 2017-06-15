@@ -120,7 +120,7 @@ view_rename_columns( mvc *sql, char *name, sql_rel *sq, dlist *column_spec)
 			break;
 	}
 	if (n || m) 
-		return sql_error(sql, 02, "M0M03!Column lists do not match");
+		return sql_error(sql, 02, "SQLSTATE M0M03!Column lists do not match");
 	(void)name;
 	sq = rel_project(sql->sa, sq, l);
 	set_processed(sq);
@@ -154,7 +154,7 @@ as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec, const char
 			mvc_create_column(sql, t, cname, tp);
 		}
 		if (n || m) {
-			sql_error(sql, 01, "21S02!%s: number of columns does not match", msg);
+			sql_error(sql, 01, "SQLSTATE 21S02!%s: number of columns does not match", msg);
 			return -1;
 		}
 	} else {
@@ -371,7 +371,7 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 	} 	break;
 	}
 	if (res == SQL_ERR) {
-		(void) sql_error(sql, 02, "M0M03!unknown constraint (" PTRFMT ")->token = %s\n", PTRFMTCAST s, token2string(s->token));
+		(void) sql_error(sql, 02, "SQLSTATE M0M03!unknown constraint (" PTRFMT ")->token = %s\n", PTRFMTCAST s, token2string(s->token));
 	}
 	return res;
 }
@@ -458,7 +458,7 @@ column_option(
 	} 	break;
 	}
 	if (res == SQL_ERR) {
-		(void) sql_error(sql, 02, "M0M03!unknown column option (" PTRFMT ")->token = %s\n", PTRFMTCAST s, token2string(s->token));
+		(void) sql_error(sql, 02, "SQLSTATE M0M03!unknown column option (" PTRFMT ")->token = %s\n", PTRFMTCAST s, token2string(s->token));
 	}
 	return res;
 }
@@ -595,7 +595,7 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 		break;
 	}
 	if (res != SQL_OK) {
-		sql_error(sql, 02, "M0M03!table constraint type: wrong token (" PTRFMT ") = %s\n", PTRFMTCAST s, token2string(s->token));
+		sql_error(sql, 02, "SQLSTATE M0M03!table constraint type: wrong token (" PTRFMT ") = %s\n", PTRFMTCAST s, token2string(s->token));
 		return SQL_ERR;
 	}
 	return res;
@@ -619,7 +619,7 @@ table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 	}
 
 	if (res != SQL_OK) {
-		sql_error(sql, 02, "M0M03!table constraint: wrong token (" PTRFMT ") = %s\n", PTRFMTCAST s, token2string(s->token));
+		sql_error(sql, 02, "SQLSTATE M0M03!table constraint: wrong token (" PTRFMT ") = %s\n", PTRFMTCAST s, token2string(s->token));
 		return SQL_ERR;
 	}
 	return res;
@@ -800,14 +800,14 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		node *n;
 
 		if (sname && !(os = mvc_bind_schema(sql, sname))) {
-			sql_error(sql, 02, "3F000!CREATE TABLE: no such schema '%s'", sname);
+			sql_error(sql, 02, "SQLSTATE 3F000!CREATE TABLE: no such schema '%s'", sname);
 			return SQL_ERR;
 		}
 		if (!os)
 			os = ss;
 	       	ot = mvc_bind_table(sql, os, name);
 		if (!ot) {
-			sql_error(sql, 02, "3F000!CREATE TABLE: no such table '%s'", name);
+			sql_error(sql, 02, "SQLSTATE 3F000!CREATE TABLE: no such table '%s'", name);
 			return SQL_ERR;
 		}
 		for (n = ot->columns.set->h; n; n = n->next) {
@@ -841,7 +841,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			return SQL_ERR;
 		}
 		if (!drop_action && mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY, NULL)) {
-			sql_error(sql, 02, "2BM37!ALTER TABLE: cannot drop column '%s': there are database objects which depend on it\n", cname);
+			sql_error(sql, 02, "SQLSTATE 2BM37!ALTER TABLE: cannot drop column '%s': there are database objects which depend on it\n", cname);
 			return SQL_ERR;
 		}
 		if (!drop_action  && t->keys.set) {
@@ -852,7 +852,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				for (m = k->columns->h; m; m = m->next) {
 					sql_kc *kc = m->data;
 					if (strcmp(kc->c->base.name, cname) == 0) {
-						sql_error(sql, 02, "2BM37!ALTER TABLE: cannot drop column '%s': there are constraints which depend on it\n", cname);
+						sql_error(sql, 02, "SQLSTATE 2BM37!ALTER TABLE: cannot drop column '%s': there are constraints which depend on it\n", cname);
 						return SQL_ERR;
 					}
 				}
@@ -864,7 +864,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		assert(0);
 	}
 	if (res == SQL_ERR) {
-		sql_error(sql, 02, "M0M03!unknown table element (" PTRFMT ")->token = %s\n", PTRFMTCAST s, token2string(s->token));
+		sql_error(sql, 02, "SQLSTATE M0M03!unknown table element (" PTRFMT ")->token = %s\n", PTRFMTCAST s, token2string(s->token));
 		return SQL_ERR;
 	}
 	return res;
@@ -885,7 +885,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 
 	(void)create;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "3F000!CREATE TABLE: no such schema '%s'", sname);
+		return sql_error(sql, 02, "SQLSTATE 3F000!CREATE TABLE: no such schema '%s'", sname);
 
 	if (temp != SQL_PERSIST && tt == tt_table && 
 			commit_action == CA_COMMIT)
@@ -895,7 +895,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 		if (temp != SQL_PERSIST && tt == tt_table) {
 			s = mvc_bind_schema(sql, "tmp");
 			if (temp == SQL_LOCAL_TEMP && sname && strcmp(sname, s->base.name) != 0)
-				return sql_error(sql, 02, "3F000!CREATE TABLE: local tempory tables should be stored in the '%s' schema", s->base.name);
+				return sql_error(sql, 02, "SQLSTATE 3F000!CREATE TABLE: local tempory tables should be stored in the '%s' schema", s->base.name);
 		} else if (s == NULL) {
 			s = ss;
 		}
@@ -1006,7 +1006,7 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 (void)ss;
 	(void) check;		/* Stefan: unused!? */
 	if (sname && !(s = mvc_bind_schema(sql, sname))) 
-		return sql_error(sql, 02, "3F000!CREATE VIEW: no such schema '%s'", sname);
+		return sql_error(sql, 02, "SQLSTATE 3F000!CREATE VIEW: no such schema '%s'", sname);
 	if (s == NULL)
 		s = cur_schema(sql);
 
@@ -1022,7 +1022,7 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 			SelectNode *sn = (SelectNode *) query;
 
 			if (sn->limit)
-				return sql_error(sql, 01, "0A000!SQLSTATE 42000!CREATE VIEW: LIMIT not supported");
+				return sql_error(sql, 01, "SQLSTATE 42000!CREATE VIEW: LIMIT not supported");
 		}
 
 		sq = schema_selects(sql, s, query);
@@ -1037,7 +1037,7 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 				for (; n && m; n = n->next, m = m->next)
 					;
 				if (n || m) {
-					sql_error(sql, 01, "21S02!WITH CLAUSE: number of columns does not match");
+					sql_error(sql, 01, "SQLSTATE 21S02!WITH CLAUSE: number of columns does not match");
 					rel_destroy(sq);
 					return NULL;
 				}
@@ -1113,7 +1113,7 @@ rel_drop_type(mvc *sql, dlist *qname, int drop_action)
 	sql_schema *s = NULL;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname))) 
-		return sql_error(sql, 02, "3F000!DROP TYPE: no such schema '%s'", sname);
+		return sql_error(sql, 02, "SQLSTATE 3F000!DROP TYPE: no such schema '%s'", sname);
 	if (s == NULL)
 		s = cur_schema(sql);
 
@@ -1133,7 +1133,7 @@ rel_create_type(mvc *sql, dlist *qname, char *impl)
 	sql_schema *s = NULL;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname))) 
-		return sql_error(sql, 02, "3F000!CREATE TYPE: no such schema '%s'", sname);
+		return sql_error(sql, 02, "SQLSTATE 3F000!CREATE TYPE: no such schema '%s'", sname);
 	if (s == NULL)
 		s = cur_schema(sql);
 
@@ -1187,7 +1187,7 @@ rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements, int ignore
 	int auth_id = sql->role_id;
 
 	if (auth && (auth_id = sql_find_auth(sql, auth)) < 0) {
-		sql_error(sql, 02, "28000!CREATE SCHEMA: no such authorization '%s'", auth);
+		sql_error(sql, 02, "SQLSTATE 28000!CREATE SCHEMA: no such authorization '%s'", auth);
 		return NULL;
 	}
 	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN) {
@@ -1199,7 +1199,7 @@ rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements, int ignore
 	assert(name);
 	if (mvc_bind_schema(sql, name)) {
 		if (!ignore_in_use) {
-			sql_error(sql, 02, "3F000!CREATE SCHEMA: name '%s' already in use", name);
+			sql_error(sql, 02, "SQLSTATE 3F000!CREATE SCHEMA: name '%s' already in use", name);
 			return NULL;
 		} else {
 			return NULL;
@@ -1254,7 +1254,7 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te)
 	sql_table *t = NULL;
 
 	if (sname && !(s=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, "3F000!ALTER TABLE: no such schema '%s'", sname);
+		(void) sql_error(sql, 02, "SQLSTATE 3F000!ALTER TABLE: no such schema '%s'", sname);
 		return NULL;
 	}
 	if (!s)
@@ -1646,7 +1646,7 @@ rel_grant_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int gr
 		return rel_grant_func(sql, cur, obj_privs, qname, typelist, type, grantees, grant, grantor);
 	}
 	default:
-		return sql_error(sql, 02, "M0M03!Grant: unknown token %d", token);
+		return sql_error(sql, 02, "SQLSTATE M0M03!Grant: unknown token %d", token);
 	}
 }
 
@@ -1830,7 +1830,7 @@ rel_revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int g
 		return rel_revoke_func(sql, cur, obj_privs, qname, typelist, type, grantees, grant, grantor);
 	}
 	default:
-		return sql_error(sql, 02, "M0M03!Grant: unknown token %d", token);
+		return sql_error(sql, 02, "SQLSTATE M0M03!Grant: unknown token %d", token);
 	}
 }
 
@@ -1848,7 +1848,7 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 	char *tname = qname_table(qname);
 	       
 	if (sname && !(s = mvc_bind_schema(sql, sname))) 
-		return sql_error(sql, 02, "3F000!CREATE INDEX: no such schema '%s'", sname);
+		return sql_error(sql, 02, "SQLSTATE 3F000!CREATE INDEX: no such schema '%s'", sname);
 	if (!s) 
 		s = cur_schema(sql);
 	i = mvc_bind_idx(sql, s, iname);
@@ -1935,7 +1935,7 @@ rel_schemas(mvc *sql, symbol *s)
 	sql_rel *ret = NULL;
 
 	if (s->token != SQL_CREATE_TABLE && s->token != SQL_CREATE_VIEW && STORE_READONLY) 
-		return sql_error(sql, 06, "25006!schema statements cannot be executed on a readonly database.");
+		return sql_error(sql, 06, "SQLSTATE 25006!schema statements cannot be executed on a readonly database.");
 
 	switch (s->token) {
 	case SQL_CREATE_SCHEMA:
@@ -2117,7 +2117,7 @@ rel_schemas(mvc *sql, symbol *s)
 		ret = rel_drop_type(sql, l->h->data.lval, l->h->next->data.i_val);
 	} 	break;
 	default:
-		return sql_error(sql, 01, "M0M03!schema statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
+		return sql_error(sql, 01, "SQLSTATE M0M03!schema statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}
 
 	sql->type = Q_SCHEMA;

@@ -17,7 +17,7 @@ QUERY = alter table t2 add constraint id_p primary key(id_f);
 ERROR = !ParseException:SQLparser:SQLSTATE 42000!CONSTRAINT PRIMARY KEY: key 'id_p' already exists
 MAPI  = (monetdb) /var/tmp/mtest-15016/.s.monetdb.36297
 QUERY = alter table t1 drop id;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !2BM37!ALTER TABLE: cannot drop column 'id': there are database objects which depend on it
+ERROR = !ParseException:SQLparser:SQLSTATE 2BM37!ALTER TABLE: cannot drop column 'id': there are database objects which depend on it
 
 
 # 12:57:28 >  

@@ -332,7 +332,7 @@ global_variables(mvc *sql, char *user, char *schema)
 	return 0;
 }
 
-#define TRANS_ABORTED "!25005!current transaction is aborted (please ROLLBACK)\n"
+#define TRANS_ABORTED "!SQLSTATE 25005!current transaction is aborted (please ROLLBACK)\n"
 
 str
 handle_error(mvc *m, int pstatus, str msg)
