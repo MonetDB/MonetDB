@@ -505,7 +505,7 @@ SQLinitClient(Client c)
 			if (bstream_next(createdb_bstream) >= 0)
 				msg = SQLstatementIntern(c, &createdb_bstream->buf, "sql.init", TRUE, FALSE, NULL);
 			else
-				msg = createException(MAL, "createdb", "could not load inlined createdb script");
+				msg = createException(MAL, "createdb", "SQLSTATE 42000 ! Could not load inlined createdb script");
 
 			free(createdb_buf);
 			free(createdb_stream);
@@ -547,7 +547,7 @@ SQLinitClient(Client c)
 					sz = getFileSize(fd);
 					if (sz > (size_t) 1 << 29) {
 						mnstr_destroy(fd);
-						newmsg = createException(MAL, "createdb", "file %s too large to process", filename);
+						newmsg = createException(MAL, "createdb", "SQLSTATE 42000 !""File %s too large to process", filename);
 					} else {
 						bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz);
 						if (bfd && bstream_next(bfd) >= 0)
@@ -1016,10 +1016,10 @@ SQLparser(Client c)
 			m->session->ac_on_commit = m->session->auto_commit;
 			if (m->session->active) {
 				if (commit && mvc_commit(m, 0, NULL) < 0) {
-					msg = createException(SQL, "COMMIT", "commit failed while enabling auto_commit");
+					msg = createException(SQL, "COMMIT", "SQLSTATE 42000 !""Commit failed while enabling auto_commit");
 				} else if (!commit && mvc_rollback(m, 0, NULL) < 0) {
 					mnstr_printf(out, "!COMMIT: rollback failed while " "disabling auto_commit\n");
-					msg = createException(SQL, "COMMIT", "rollback failed while " "disabling auto_commit");
+					msg = createException(SQL, "COMMIT", "SQLSTATE 42000 !""rollback failed while " "disabling auto_commit");
 				}
 			}
 			in->pos = in->len;	/* HACK: should use parsed length */
@@ -1030,7 +1030,7 @@ SQLparser(Client c)
 		if (strncmp(in->buf + in->pos, "reply_size ", 11) == 0) {
 			v = (int) strtol(in->buf + in->pos + 11, NULL, 10);
 			if (v < -1) {
-				msg = createException(SQL, "SQLparser", "SQLSTATE 42000 !""reply_size cannot be negative");
+				msg = createException(SQL, "SQLparser", "SQLSTATE 42000 !""Reply_size cannot be negative");
 				goto finalize;
 			}
 			m->reply_size = v;
@@ -1047,11 +1047,11 @@ SQLparser(Client c)
 			c->mode = FINISHCLIENT;
 			return MAL_SUCCEED;
 		}
-		msg = createException(SQL, "SQLparser", "SQLSTATE 42000 !""unrecognized X command: %s\n", in->buf + in->pos);
+		msg = createException(SQL, "SQLparser", "SQLSTATE 42000 !""Unrecognized X command: %s\n", in->buf + in->pos);
 		goto finalize;
 	}
 	if (be->language !='S') {
-		msg = createException(SQL, "SQLparser", "SQLSTATE 42000 !""unrecognized language prefix: %ci\n", be->language);
+		msg = createException(SQL, "SQLparser", "SQLSTATE 42000 !""Unrecognized language prefix: %ci\n", be->language);
 		goto finalize;
 	}
 
@@ -1084,14 +1084,14 @@ SQLparser(Client c)
 		be->q = qc_find(m->qc, m->sym->data.lval->h->data.i_val);
 		if (!be->q) {
 			err = -1;
-			msg = createException(SQL, "EXEC", "07003!no prepared statement with id: %d\n", m->sym->data.lval->h->data.i_val);
+			msg = createException(SQL, "EXEC", "SQLSTATE 07003! ""No prepared statement with id: %d\n", m->sym->data.lval->h->data.i_val);
 			*m->errstr = 0;
 			msg = handle_error(m, pstatus, msg);
 			sqlcleanup(m, err);
 			goto finalize;
 		} else if (be->q->type != Q_PREPARE) {
 			err = -1;
-			msg = createException(SQL, "EXEC", "07005!: given handle id is not for a " "prepared statement: %d\n", m->sym->data.lval->h->data.i_val);
+			msg = createException(SQL, "EXEC", "SQLSTATE 07005 !""Given handle id is not for a " "prepared statement: %d\n", m->sym->data.lval->h->data.i_val);
 			*m->errstr = 0;
 			msg = handle_error(m, pstatus, msg);
 			sqlcleanup(m, err);

@@ -933,7 +933,7 @@ trimMalVariables(MalBlkPtr mb, MalStkPtr stk)
 		clrVarUsed(mb,i);
 	/* the return variable is also 'used' */
 	i = findVariable(mb, getFunctionId(mb->stmt[0]));
-	assert(i >=0);
+	/* assert(i >=0); Not necessary the cases for WLC */
 	setVarUsed(mb,i);
 	/* build the use table */
 	for (i = 0; i < mb->stop; i++) {
