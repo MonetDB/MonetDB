@@ -32,8 +32,8 @@ Ready.
 #declare return_id integer;
 #set return_id = -1;
 #select return_id;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 2 # length
 [ -1	]

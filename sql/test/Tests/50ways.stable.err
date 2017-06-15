@@ -97,15 +97,15 @@ QUERY = SELECT  DISTINCT S.SNAME
                                (SELECT * FROM SP
                                  WHERE SP.PNR = 'P2' ) ) AS POINTLESS
                                NATURAL JOIN S;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !42S22!SELECT: no such column 's.sname'
-MAPI  = (monetdb) /var/tmp/mtest-29803/.s.monetdb.33854
+ERROR = !ParseException:SQLparser:SQLSTATE 42S22!SELECT: no such column 's.sname'
+MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
 QUERY = SELECT  DISTINCT S.SNAME
               FROM  (  ( SELECT * FROM S )
                                INTERSECT CORRESPONDING BY ( SNR )
                                (SELECT * FROM SP
                                  WHERE SP.PNR = 'P2' ) ) AS POINTLESS
                                NATURAL JOIN S;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !42S22!SELECT: no such column 's.sname'
+ERROR = !ParseException:SQLparser:SQLSTATE 42S22!SELECT: no such column 's.sname'
 
 
 # 16:07:26 >  

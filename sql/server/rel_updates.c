@@ -289,7 +289,7 @@ check_table_columns(mvc *sql, sql_table *t, dlist *columns, char *op, char *tnam
 			if (c) {
 				list_append(collist, c);
 			} else {
-				return sql_error(sql, 02, "42S22!%s INTO: no such column '%s.%s'", op, tname, n->data.sval);
+				return sql_error(sql, 02, "SQLSTATE 42S22!%s INTO: no such column '%s.%s'", op, tname, n->data.sval);
 			}
 		}
 	} else {
@@ -376,7 +376,7 @@ static sql_table *
 insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname)
 {
 	if (!t) {
-		return sql_error(sql, 02, "42S02!%s: no such table '%s'", op, tname);
+		return sql_error(sql, 02, "SQLSTATE 42S02!%s: no such table '%s'", op, tname);
 	} else if (isView(t)) {
 		return sql_error(sql, 02, "%s: cannot %s view '%s'", op, opname, tname);
 	} else if (isMergeTable(t)) {
@@ -407,7 +407,7 @@ static sql_table *
 update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int is_delete)
 {
 	if (!t) {
-		return sql_error(sql, 02, "42S02!%s: no such table '%s'", op, tname);
+		return sql_error(sql, 02, "SQLSTATE 42S02!%s: no such table '%s'", op, tname);
 	} else if (isView(t)) {
 		return sql_error(sql, 02, "%s: cannot %s view '%s'", op, opname, tname);
 	} else if (isMergeTable(t)) {
@@ -828,7 +828,7 @@ update_check_column(mvc *sql, sql_table *t, sql_column *c, sql_exp *v, sql_rel *
 {
 	if (!c) {
 		rel_destroy(r);
-		return sql_error(sql, 02, "42S22!UPDATE: no such column '%s.%s'", t->base.name, cname);
+		return sql_error(sql, 02, "SQLSTATE 42S22!UPDATE: no such column '%s.%s'", t->base.name, cname);
 	}
 	if (!table_privs(sql, t, PRIV_UPDATE) && !sql_privilege(sql, sql->user_id, c->base.id, PRIV_UPDATE, 0)) 
 		return sql_error(sql, 02, "UPDATE: insufficient privileges for user '%s' to update table '%s' on column '%s'", stack_get_string(sql, "current_user"), t->base.name, cname);

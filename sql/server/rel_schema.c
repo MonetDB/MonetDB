@@ -148,7 +148,7 @@ as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec, const char
 			sql_subtype *tp = exp_subtype(e);
 
 			if (mvc_bind_column(sql, t, cname)) {
-				sql_error(sql, 01, "42S21!%s: duplicate column name %s", msg, cname);
+				sql_error(sql, 01, "SQLSTATE 42S21!%s: duplicate column name %s", msg, cname);
 				return -1;
 			}
 			mvc_create_column(sql, t, cname, tp);
@@ -168,7 +168,7 @@ as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec, const char
 			if (!cname)
 				cname = "v";
 			if (mvc_bind_column(sql, t, cname)) {
-				sql_error(sql, 01, "42S21!%s: duplicate column name %s", msg, cname);
+				sql_error(sql, 01, "SQLSTATE 42S21!%s: duplicate column name %s", msg, cname);
 				return -1;
 			}
 			mvc_create_column(sql, t, cname, tp);
@@ -284,7 +284,7 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 	int res = SQL_ERR;
 
 	if (!ss && (s->token != SQL_NULL && s->token != SQL_NOT_NULL)) {
-		(void) sql_error(sql, 02, "42000!CONSTRAINT: constraints on declared tables are not supported\n");
+		(void) sql_error(sql, 02, "SQLSTATE 42000!CONSTRAINT: constraints on declared tables are not supported\n");
 		return res;
 	}
 	switch (s->token) {
@@ -294,11 +294,11 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 		sql_key *k;
 
 		if (kt == pkey && t->pkey) {
-			(void) sql_error(sql, 02, "42000!CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
+			(void) sql_error(sql, 02, "SQLSTATE 42000!CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
 			return res;
 		}
 		if (name && mvc_bind_key(sql, ss, name)) {
-			(void) sql_error(sql, 02, "42000!CONSTRAINT PRIMARY KEY: key %s already exists", name);
+			(void) sql_error(sql, 02, "SQLSTATE 42000!CONSTRAINT PRIMARY KEY: key %s already exists", name);
 			return res;
 		}
 		k = (sql_key*)mvc_create_ukey(sql, t, name, kt);
@@ -321,7 +321,7 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 		assert(n->next->next->next->type == type_int);
 /*
 		if (isTempTable(t)) {
-			(void) sql_error(sql, 02, "42000!CONSTRAINT: constraints on temporary tables are not supported\n");
+			(void) sql_error(sql, 02, "SQLSTATE 42000!CONSTRAINT: constraints on temporary tables are not supported\n");
 			return res;
 		}
 */
@@ -332,11 +332,11 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 			rs = cur_schema(sql);
 		rt = _bind_table(t, ss, rs, rtname);
 		if (!rt) {
-			(void) sql_error(sql, 02, "42S02!CONSTRAINT FOREIGN KEY: no such table '%s'\n", rtname);
+			(void) sql_error(sql, 02, "SQLSTATE 42S02!CONSTRAINT FOREIGN KEY: no such table '%s'\n", rtname);
 			return res;
 		}
 		if (name && mvc_bind_key(sql, ss, name)) {
-			(void) sql_error(sql, 02, "42000!CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
+			(void) sql_error(sql, 02, "SQLSTATE 42000!CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
 			return res;
 		}
 
@@ -351,11 +351,11 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 			rk = &rt->pkey->k;
 		}
 		if (!rk) {
-			(void) sql_error(sql, 02, "42000!CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table %s.%s\n", rsname, rtname);
+			(void) sql_error(sql, 02, "SQLSTATE 42000!CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table %s.%s\n", rsname, rtname);
 			return res;
 		}
 		if (list_length(rk->columns) != 1) {
-			(void) sql_error(sql, 02, "42000!CONSTRAINT FOREIGN KEY: not all columns are handled\n");
+			(void) sql_error(sql, 02, "SQLSTATE 42000!CONSTRAINT FOREIGN KEY: not all columns are handled\n");
 			return res;
 		}
 		fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255);
@@ -421,7 +421,7 @@ column_option(
 		}
 	       	r = symbol2string(sql, s->data.sym, &err);
 		if (!r) {
-			(void) sql_error(sql, 02, "42000!incorrect default value '%s'\n", err?err:"");
+			(void) sql_error(sql, 02, "SQLSTATE 42000!incorrect default value '%s'\n", err?err:"");
 			if (err) _DELETE(err);
 			return SQL_ERR;
 		} else {
@@ -499,10 +499,10 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 	if (!ft && t->s == fs && strcmp(t->base.name, rtname) == 0)
 		ft = t;
 	if (!ft) {
-		sql_error(sql, 02, "42S02!CONSTRAINT FOREIGN KEY: no such table '%s'\n", rtname);
+		sql_error(sql, 02, "SQLSTATE 42S02!CONSTRAINT FOREIGN KEY: no such table '%s'\n", rtname);
 		return SQL_ERR;
 	} else if (list_find_name(t->keys.set, name)) {
-		sql_error(sql, 02, "42000!CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
+		sql_error(sql, 02, "SQLSTATE 42000!CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
 		return SQL_ERR;
 	} else {
 		sql_key *rk = NULL;
@@ -513,7 +513,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 
 		assert(n->next->next->next->next->type == type_int);
 		if (name && mvc_bind_key(sql, ss, name)) {
-			sql_error(sql, 02, "42000!Create Key failed, key '%s' already exists", name);
+			sql_error(sql, 02, "SQLSTATE 42000!Create Key failed, key '%s' already exists", name);
 			return SQL_ERR;
 		}
 		if (n->next->next->data.lval) {	/* find unique referenced key */
@@ -530,7 +530,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 			rk = &ft->pkey->k;
 		}
 		if (!rk) {
-			sql_error(sql, 02, "42000!CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table '%s'\n", ft->base.name);
+			sql_error(sql, 02, "SQLSTATE 42000!CONSTRAINT FOREIGN KEY: could not find referenced PRIMARY KEY in table '%s'\n", ft->base.name);
 			return SQL_ERR;
 		}
 		fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255);
@@ -540,13 +540,13 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 			sql_column *c = mvc_bind_column(sql, t, nm);
 
 			if (!c) {
-				sql_error(sql, 02, "42S22!CONSTRAINT FOREIGN KEY: no such column '%s' in table '%s'\n", nm, t->base.name);
+				sql_error(sql, 02, "SQLSTATE 42S22!CONSTRAINT FOREIGN KEY: no such column '%s' in table '%s'\n", nm, t->base.name);
 				return SQL_ERR;
 			}
 			mvc_create_fkc(sql, fk, c);
 		}
 		if (nms || fnms) {
-			sql_error(sql, 02, "42000!CONSTRAINT FOREIGN KEY: not all columns are handled\n");
+			sql_error(sql, 02, "SQLSTATE 42000!CONSTRAINT FOREIGN KEY: not all columns are handled\n");
 			return SQL_ERR;
 		}
 	}
@@ -566,11 +566,11 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 		sql_key *k;
 
 		if (kt == pkey && t->pkey) {
-			sql_error(sql, 02, "42000!CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
+			sql_error(sql, 02, "SQLSTATE 42000!CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
 			return SQL_ERR;
 		}
 		if (name && mvc_bind_key(sql, ss, name)) {
-			sql_error(sql, 02, "42000!CONSTRAINT %s: key '%s' already exists",
+			sql_error(sql, 02, "SQLSTATE 42000!CONSTRAINT %s: key '%s' already exists",
 					kt == pkey ? "PRIMARY KEY" : "UNIQUE", name);
 			return SQL_ERR;
 		}
@@ -581,7 +581,7 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 			sql_column *c = mvc_bind_column(sql, t, nm);
 
 			if (!c) {
-				sql_error(sql, 02, "42S22!CONSTRAINT %s: no such column '%s' for table '%s'",
+				sql_error(sql, 02, "SQLSTATE 42S22!CONSTRAINT %s: no such column '%s' for table '%s'",
 						kt == pkey ? "PRIMARY KEY" : "UNIQUE",
 						nm, t->base.name);
 				return SQL_ERR;
@@ -636,7 +636,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 (void)ss;
 	if (alter && !isTable(t)) {
-		sql_error(sql, 02, "42000!ALTER TABLE: cannot add column to VIEW '%s'\n", t->base.name);
+		sql_error(sql, 02, "SQLSTATE 42000!ALTER TABLE: cannot add column to VIEW '%s'\n", t->base.name);
 		return SQL_ERR;
 	}
 	if (l->h->next->next)
@@ -647,7 +647,7 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 		cs = find_sql_column(t, cname);
 		if (cs) {
-			sql_error(sql, 02, "42S21!%s TABLE: a column named '%s' already exists\n", (alter)?"ALTER":"CREATE", cname);
+			sql_error(sql, 02, "SQLSTATE 42S21!%s TABLE: a column named '%s' already exists\n", (alter)?"ALTER":"CREATE", cname);
 			return SQL_ERR;
 		}
 		cs = mvc_create_column(sql, t, cname, ctype);
@@ -701,7 +701,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 			msg = "drop constraint from"; 
 			break;
 		}
-		sql_error(sql, 02, "42000!ALTER TABLE: cannot %s %s '%s'\n",
+		sql_error(sql, 02, "SQLSTATE 42000!ALTER TABLE: cannot %s %s '%s'\n",
 				msg, 
 				isPartition(t)?"a PARTITION of a MERGE or REPLICA TABLE":
 				isMergeTable(t)?"MERGE TABLE":
@@ -725,7 +725,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		dlist *olist = n->next->data.lval;
 
 		if (!c) {
-			sql_error(sql, 02, "42S22!ALTER TABLE: no such column '%s'\n", cname);
+			sql_error(sql, 02, "SQLSTATE 42S22!ALTER TABLE: no such column '%s'\n", cname);
 			return SQL_ERR;
 		} else {
 			return column_options(sql, olist, ss, t, c);
@@ -740,12 +740,12 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		sql_column *c = mvc_bind_column(sql, t, cname);
 
 		if (!c) {
-			sql_error(sql, 02, "42S22!ALTER TABLE: no such column '%s'\n", cname);
+			sql_error(sql, 02, "SQLSTATE 42S22!ALTER TABLE: no such column '%s'\n", cname);
 			return SQL_ERR;
 		}
 		r = symbol2string(sql, sym, &err);
 		if (!r) {
-			(void) sql_error(sql, 02, "42000!incorrect default value '%s'\n", err?err:"");
+			(void) sql_error(sql, 02, "SQLSTATE 42000!incorrect default value '%s'\n", err?err:"");
 			if (err) _DELETE(err);
 			return SQL_ERR;
 		}
@@ -761,7 +761,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		sql_column *c = mvc_bind_column(sql, t, cname);
 
 		if (!c) {
-			sql_error(sql, 02, "42S22!ALTER TABLE: no such column '%s'\n", cname);
+			sql_error(sql, 02, "SQLSTATE 42S22!ALTER TABLE: no such column '%s'\n", cname);
 			return SQL_ERR;
 		}
 		mvc_storage(sql, c, storage_type);
@@ -776,7 +776,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		int null = (s->token != SQL_NOT_NULL);
 
 		if (!c) {
-			sql_error(sql, 02, "42S22!ALTER TABLE: no such column '%s'\n", cname);
+			sql_error(sql, 02, "SQLSTATE 42S22!ALTER TABLE: no such column '%s'\n", cname);
 			return SQL_ERR;
 		}
 		mvc_null(sql, c, null);
@@ -786,7 +786,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		char *cname = s->data.sval;
 		sql_column *c = mvc_bind_column(sql, t, cname);
 		if (!c) {
-			sql_error(sql, 02, "42S22!ALTER TABLE: no such column '%s'\n", cname);
+			sql_error(sql, 02, "SQLSTATE 42S22!ALTER TABLE: no such column '%s'\n", cname);
 			return SQL_ERR;
 		}
 		mvc_drop_default(sql,c);
@@ -825,19 +825,19 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 		assert(l->h->next->type == type_int);
 		if (col == NULL) {
-			sql_error(sql, 02, "42S22!ALTER TABLE: no such column '%s'\n", cname);
+			sql_error(sql, 02, "SQLSTATE 42S22!ALTER TABLE: no such column '%s'\n", cname);
 			return SQL_ERR;
 		}
 		if (cs_size(&t->columns) <= 1) {
-			sql_error(sql, 02, "42000!ALTER TABLE: cannot drop column '%s': table needs at least one column\n", cname);
+			sql_error(sql, 02, "SQLSTATE 42000!ALTER TABLE: cannot drop column '%s': table needs at least one column\n", cname);
 			return SQL_ERR;
 		}
 		if (t->system) {
-			sql_error(sql, 02, "42000!ALTER TABLE: cannot drop column '%s': table is a system table\n", cname);
+			sql_error(sql, 02, "SQLSTATE 42000!ALTER TABLE: cannot drop column '%s': table is a system table\n", cname);
 			return SQL_ERR;
 		}
 		if (isView(t)) {
-			sql_error(sql, 02, "42000!ALTER TABLE: cannot drop column '%s': '%s' is a view\n", cname, t->base.name);
+			sql_error(sql, 02, "SQLSTATE 42000!ALTER TABLE: cannot drop column '%s': '%s' is a view\n", cname, t->base.name);
 			return SQL_ERR;
 		}
 		if (!drop_action && mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY, NULL)) {
@@ -909,10 +909,10 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 			return NULL;
 		} else {
 			char *cd = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
-			return sql_error(sql, 02, "42S01!%s TABLE: name '%s' already in use", cd, name);
+			return sql_error(sql, 02, "SQLSTATE 42S01!%s TABLE: name '%s' already in use", cd, name);
 		}
 	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))){
-		return sql_error(sql, 02, "42000!CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_error(sql, 02, "SQLSTATE 42000!CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (table_elements_or_subquery->token == SQL_CREATE_TABLE) { 
 		/* table element list */
 		dnode *n;
@@ -921,7 +921,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 	       
 		if (tt == tt_remote) {
 			if (!mapiuri_valid(loc))
-				return sql_error(sql, 02, "42000!CREATE TABLE: incorrect uri '%s' for remote table '%s'", loc, name);
+				return sql_error(sql, 02, "SQLSTATE 42000!CREATE TABLE: incorrect uri '%s' for remote table '%s'", loc, name);
 			t = mvc_create_remote(sql, s, name, SQL_DECLARED_TABLE, loc);
 		} else {
 			t = mvc_create_table(sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
@@ -952,7 +952,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 			return NULL;
 
 		if ((tt == tt_merge_table || tt == tt_remote || tt == tt_replica_table) && with_data)
-			return sql_error(sql, 02, "42000!CREATE TABLE: cannot create %s table 'with data'", tt == tt_merge_table?"MERGE TABLE":tt == tt_remote?"REMOTE TABLE":"REPLICA TABLE");
+			return sql_error(sql, 02, "SQLSTATE 42000!CREATE TABLE: cannot create %s table 'with data'", tt == tt_merge_table?"MERGE TABLE":tt == tt_remote?"REMOTE TABLE":"REPLICA TABLE");
 
 		/* create table */
 		if ((t = mvc_create_table_as_subquery( sql, sq, s, name, column_spec, temp, commit_action)) == NULL) { 
@@ -1011,9 +1011,9 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 		s = cur_schema(sql);
 
 	if (create && mvc_bind_table(sql, s, name) != NULL) {
-		return sql_error(sql, 02, "42S01!CREATE VIEW: name '%s' already in use", name);
+		return sql_error(sql, 02, "SQLSTATE 42S01!CREATE VIEW: name '%s' already in use", name);
 	} else if (create && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP))) {
-		return sql_error(sql, 02, "42000!CREATE VIEW: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_error(sql, 02, "SQLSTATE 42000!CREATE VIEW: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (query) {
 		sql_rel *sq = NULL;
 		char *q = QUERY(sql->scanner);
@@ -1022,7 +1022,7 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 			SelectNode *sn = (SelectNode *) query;
 
 			if (sn->limit)
-				return sql_error(sql, 01, "0A000!42000!CREATE VIEW: LIMIT not supported");
+				return sql_error(sql, 01, "0A000!SQLSTATE 42000!CREATE VIEW: LIMIT not supported");
 		}
 
 		sq = schema_selects(sql, s, query);
@@ -1118,9 +1118,9 @@ rel_drop_type(mvc *sql, dlist *qname, int drop_action)
 		s = cur_schema(sql);
 
 	if (schema_bind_type(sql, s, name) == NULL) {
-		return sql_error(sql, 02, "42S01!DROP TYPE: type '%s' does not exist", name);
+		return sql_error(sql, 02, "SQLSTATE 42S01!DROP TYPE: type '%s' does not exist", name);
 	} else if (!mvc_schema_privs(sql, s)) {
-		return sql_error(sql, 02, "42000!DROP TYPE: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_error(sql, 02, "SQLSTATE 42000!DROP TYPE: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 	return rel_schema2(sql->sa, DDL_DROP_TYPE, s->base.name, name, drop_action);
 }
@@ -1138,9 +1138,9 @@ rel_create_type(mvc *sql, dlist *qname, char *impl)
 		s = cur_schema(sql);
 
 	if (schema_bind_type(sql, s, name) != NULL) {
-		return sql_error(sql, 02, "42S01!CREATE TYPE: name '%s' already in use", name);
+		return sql_error(sql, 02, "SQLSTATE 42S01!CREATE TYPE: name '%s' already in use", name);
 	} else if (!mvc_schema_privs(sql, s)) {
-		return sql_error(sql, 02, "42000!CREATE TYPE: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_error(sql, 02, "SQLSTATE 42000!CREATE TYPE: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 	return rel_schema3(sql->sa, DDL_CREATE_TYPE, s->base.name, name, impl);
 }
@@ -1191,7 +1191,7 @@ rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements, int ignore
 		return NULL;
 	}
 	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN) {
-		sql_error(sql, 02, "42000!CREATE SCHEMA: insufficient privileges for user '%s'", stack_get_string(sql, "current_user"));
+		sql_error(sql, 02, "SQLSTATE 42000!CREATE SCHEMA: insufficient privileges for user '%s'", stack_get_string(sql, "current_user"));
 		return NULL;
 	}
 	if (!name) 
@@ -1262,8 +1262,8 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te)
 
 	if ((t = mvc_bind_table(sql, s, tname)) == NULL) {
 		if (mvc_bind_table(sql, mvc_bind_schema(sql, "tmp"), tname) != NULL) 
-			return sql_error(sql, 02, "42S02!ALTER TABLE: not supported on TEMPORARY table '%s'", tname);
-		return sql_error(sql, 02, "42S02!ALTER TABLE: no such table '%s' in schema '%s'", tname, s->base.name);
+			return sql_error(sql, 02, "SQLSTATE 42S02!ALTER TABLE: not supported on TEMPORARY table '%s'", tname);
+		return sql_error(sql, 02, "SQLSTATE 42S02!ALTER TABLE: no such table '%s' in schema '%s'", tname, s->base.name);
 	} else {
 		node *n;
 		sql_rel *res = NULL, *r;
@@ -1541,7 +1541,7 @@ rel_grant_table(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *gr
 				break;
 			case SQL_EXECUTE:
 			default:
-				return sql_error(sql, 02, "42000!Cannot GRANT EXECUTE on table name %s", tname);
+				return sql_error(sql, 02, "SQLSTATE 42000!Cannot GRANT EXECUTE on table name %s", tname);
 			}
 
 			if ((op->token == SQL_SELECT || op->token == SQL_UPDATE) && op->data.lval) {
@@ -1581,7 +1581,7 @@ rel_grant_func(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *typ
 	if (!func) 
 		return NULL;
 	if (!func->s) 
-		return sql_error(sql, 02, "42000!Cannot GRANT EXECUTE on system function '%s'", fname);
+		return sql_error(sql, 02, "SQLSTATE 42000!Cannot GRANT EXECUTE on system function '%s'", fname);
 
 	for (gn = grantees->h; gn; gn = gn->next) {
 		dnode *opn;
@@ -1601,7 +1601,7 @@ rel_grant_func(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *typ
 			symbol *op = opn->data.sym;
 	
 			if (op->token != SQL_EXECUTE) 
-				return sql_error(sql, 02, "42000!Can only GRANT 'EXECUTE' on function '%s'", fname);
+				return sql_error(sql, 02, "SQLSTATE 42000!Can only GRANT 'EXECUTE' on function '%s'", fname);
 			if ((res = rel_list(sql->sa, res, rel_func_priv(sql->sa, s->base.name, func->base.id, grantee, PRIV_EXECUTE, grant, grantor, DDL_GRANT_FUNC))) == NULL) {
 				rel_destroy(res);
 				return NULL;
@@ -1724,7 +1724,7 @@ rel_revoke_table(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *g
 
 			case SQL_EXECUTE:
 			default:
-				return sql_error(sql, 02, "42000!Cannot GRANT EXECUTE on table name %s", tname);
+				return sql_error(sql, 02, "SQLSTATE 42000!Cannot GRANT EXECUTE on table name %s", tname);
 			}
 
 			if ((op->token == SQL_SELECT || op->token == SQL_UPDATE) && op->data.lval) {
@@ -1765,7 +1765,7 @@ rel_revoke_func(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *ty
 	if (!func) 
 		return NULL;
 	if (!func->s)
-		return sql_error(sql, 02, "42000!Cannot REVOKE EXECUTE on system function '%s'", fname);
+		return sql_error(sql, 02, "SQLSTATE 42000!Cannot REVOKE EXECUTE on system function '%s'", fname);
 	for (gn = grantees->h; gn; gn = gn->next) {
 		dnode *opn;
 		char *grantee = gn->data.sval;
@@ -1784,7 +1784,7 @@ rel_revoke_func(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *ty
 			symbol *op = opn->data.sym;
 
 			if (op->token != SQL_EXECUTE) 
-				return sql_error(sql, 02, "42000!Can only REVOKE EXECUTE on function name %s", fname);
+				return sql_error(sql, 02, "SQLSTATE 42000!Can only REVOKE EXECUTE on function name %s", fname);
 
 			if ((res = rel_list(sql->sa, res, rel_func_priv(sql->sa, s->base.name, func->base.id, grantee, PRIV_EXECUTE, grant, grantor, DDL_REVOKE_FUNC))) == NULL) {
 				rel_destroy(res);
@@ -1853,12 +1853,12 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 		s = cur_schema(sql);
 	i = mvc_bind_idx(sql, s, iname);
 	if (i) 
-		return sql_error(sql, 02, "42S11!CREATE INDEX: name '%s' already in use", iname);
+		return sql_error(sql, 02, "SQLSTATE 42S11!CREATE INDEX: name '%s' already in use", iname);
 	t = mvc_bind_table(sql, s, tname);
 	if (!t) {
-		return sql_error(sql, 02, "42S02!CREATE INDEX: no such table '%s'", tname);
+		return sql_error(sql, 02, "SQLSTATE 42S02!CREATE INDEX: no such table '%s'", tname);
 	} else if (isView(t)) {
-		return sql_error(sql, 02, "42S02!CREATE INDEX: cannot create index on view '%s'", tname);
+		return sql_error(sql, 02, "SQLSTATE 42S02!CREATE INDEX: cannot create index on view '%s'", tname);
 	}
 	sname = get_schema_name( sql, sname, tname);
 	nt = dup_sql_table(sql->sa, t);
@@ -1874,7 +1874,7 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 		sql_column *c = mvc_bind_column(sql, nt, n->data.sval);
 
 		if (!c) 
-			return sql_error(sql, 02, "42S22!CREATE INDEX: no such column '%s'", n->data.sval);
+			return sql_error(sql, 02, "SQLSTATE 42S22!CREATE INDEX: no such column '%s'", n->data.sval);
 		mvc_create_ic(sql, i, c);
 	}
 

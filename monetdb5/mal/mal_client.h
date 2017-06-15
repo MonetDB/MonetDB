@@ -15,7 +15,7 @@
 #include "mal_resolve.h"
 #include "mal_profiler.h"
 
-#define SCENARIO_PROPERTIES 7
+#define SCENARIO_PROPERTIES 8
 
 #define CONSOLE     0
 #define isAdministrator(X) (X==mal_clients)

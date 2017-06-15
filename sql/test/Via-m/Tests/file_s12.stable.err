@@ -78,7 +78,7 @@ QUERY = set return_id = i_add_video_file('dummy description',
                                          125,
                                          'codec 1',
                                          2000);
-ERROR = !conversion of string 'identifier4' to type lng failed.
+ERROR = !MALException:calc.lng:22018!conversion of string 'identifier4' to type lng failed.
 
 # 10:55:23 >  
 # 10:55:23 >  Done.

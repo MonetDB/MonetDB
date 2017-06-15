@@ -35,10 +35,10 @@ QUERY = GRANT role1 to bruce;
 ERROR = !GRANT: insufficient privileges to grant ROLE 'role1'
 MAPI  = (bruce) /var/tmp/mtest-16480/.s.monetdb.37363
 QUERY = SET role role1;
-ERROR = !Role (role1) missing
-MAPI  = (bruce) /var/tmp/mtest-16480/.s.monetdb.37363
+ERROR = !SQLException:sql.setVariable:SQLSTATE 42100 !Role (role1) missing
+MAPI  = (bruce) /var/tmp/mtest-27097/.s.monetdb.31804
 QUERY = select * from test;
-ERROR = !SELECT: access denied for bruce to table 's1.test'
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: access denied for bruce to table 's1.test'
 
 # 22:00:20 >  
 # 22:00:20 >  "Done."

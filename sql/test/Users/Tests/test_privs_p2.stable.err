@@ -30,16 +30,16 @@ stderr of test 'test_privs_p2` in directory 'sql/test/Users` itself:
 
 MAPI  = (my_user2) /var/tmp/mtest-14654/.s.monetdb.35552
 QUERY = select * from test;
-ERROR = !SELECT: access denied for my_user2 to table 'my_schema.test'
-MAPI  = (my_user2) /var/tmp/mtest-14654/.s.monetdb.35552
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: access denied for my_user2 to table 'my_schema.test'
+MAPI  = (my_user2) /var/tmp/mtest-27097/.s.monetdb.31804
 QUERY = insert into test values(1,1);
-ERROR = !INSERT INTO: insufficient privileges for user 'my_user2' to insert into table 'test'
-MAPI  = (my_user2) /var/tmp/mtest-14654/.s.monetdb.35552
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !INSERT INTO: insufficient privileges for user 'my_user2' to insert into table 'test'
+MAPI  = (my_user2) /var/tmp/mtest-27097/.s.monetdb.31804
 QUERY = update test set b = 2;
-ERROR = !UPDATE: insufficient privileges for user 'my_user2' to update table 'test' on column 'b'
-MAPI  = (my_user2) /var/tmp/mtest-14654/.s.monetdb.35552
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !UPDATE: insufficient privileges for user 'my_user2' to update table 'test' on column 'b'
+MAPI  = (my_user2) /var/tmp/mtest-27097/.s.monetdb.31804
 QUERY = delete from test;
-ERROR = !DELETE FROM: insufficient privileges for user 'my_user2' to delete from table 'test'
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !DELETE FROM: insufficient privileges for user 'my_user2' to delete from table 'test'
 
 # 13:35:21 >  
 # 13:35:21 >  "Done."

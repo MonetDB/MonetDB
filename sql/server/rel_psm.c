@@ -781,7 +781,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 		return sql_error(sql, 06, "schema statements cannot be executed on a readonly database.");
 			
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "3F000!CREATE %s%s: no such schema '%s'", KF, F, sname);
+		return sql_error(sql, 02, "SQLSTATE 3F000!CREATE %s%s: no such schema '%s'", KF, F, sname);
 	if (s == NULL)
 		s = cur_schema(sql);
 
@@ -1052,7 +1052,7 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type
 	char *KF = type==F_FILT?"FILTER ": type==F_UNION?"UNION ": "";
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "3F000!DROP %s%s: no such schema '%s'", KF, F, sname);
+		return sql_error(sql, 02, "SQLSTATE 3F000!DROP %s%s: no such schema '%s'", KF, F, sname);
 
 	if (s == NULL) 
 		s =  cur_schema(sql);
@@ -1083,7 +1083,7 @@ rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, int type)
 	char *kf = type==F_FILT?"filter ": type==F_UNION?"union ": "";
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "3F000!DROP %s%s: no such schema '%s'", KF, F, sname);
+		return sql_error(sql, 02, "SQLSTATE 3F000!DROP %s%s: no such schema '%s'", KF, F, sname);
 
 	if (s == NULL) 
 		s =  cur_schema(sql);
@@ -1152,7 +1152,7 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, dlist *t
 		sname = ss->base.name;
 
 	if (sname && !(ss = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "3F000!CREATE TRIGGER: no such schema '%s'", sname);
+		return sql_error(sql, 02, "SQLSTATE 3F000!CREATE TRIGGER: no such schema '%s'", sname);
 
 	if (opt_ref) {
 		dnode *dl = opt_ref->h;
@@ -1255,7 +1255,7 @@ drop_trigger(mvc *sql, dlist *qname)
 		sname = ss->base.name;
 
 	if (sname && !(ss = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "3F000!DROP TRIGGER: no such schema '%s'", sname);
+		return sql_error(sql, 02, "SQLSTATE 3F000!DROP TRIGGER: no such schema '%s'", sname);
 
 	if (!mvc_schema_privs(sql, ss)) 
 		return sql_error(sql, 02, "DROP TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), ss->base.name);
@@ -1349,12 +1349,12 @@ create_table_from_loader(mvc *sql, dlist *qname, symbol *fcall)
 	sql_rel *res = NULL;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "3F000!CREATE TABLE: no such schema '%s'", sname);
+		return sql_error(sql, 02, "SQLSTATE 3F000!CREATE TABLE: no such schema '%s'", sname);
 
 	if (mvc_bind_table(sql, s, tname)) {
-		return sql_error(sql, 02, "42S01!CREATE TABLE: name '%s' already in use", tname);
+		return sql_error(sql, 02, "SQLSTATE 42S01!CREATE TABLE: name '%s' already in use", tname);
 	} else if (!mvc_schema_privs(sql, s)){
-		return sql_error(sql, 02, "42000!CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		return sql_error(sql, 02, "SQLSTATE 42000!CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 
 	import = rel_value_exp(sql, &res, fcall, sql_sel, ek);
