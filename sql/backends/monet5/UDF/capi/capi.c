@@ -424,6 +424,9 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	size_t input_size = 0;
 	bit non_grouped_aggregate = 0;
 
+	size_t index = 0;
+	int bat_type = 0;
+
 	(void)cntxt;
 
 	actual_mprotected_regions[tid] = &regions;
@@ -726,7 +729,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		// of the function
 		// first convert the input
 		for (i = pci->retc + ARG_OFFSET; i < (size_t)pci->argc; i++) {
-			int bat_type = !isaBatType(getArgType(mb, pci, i))
+			bat_type = !isaBatType(getArgType(mb, pci, i))
 							   ? getArgType(mb, pci, i)
 							   : getBatType(getArgType(mb, pci, i));
 			const char *tpe = GetTypeName(bat_type);
@@ -741,7 +744,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		}
 		if (non_grouped_aggregate) {
 			// manually add "aggr_group" for non-grouped aggregates
-			int bat_type = TYPE_oid;
+			bat_type = TYPE_oid;
 			const char *tpe = GetTypeName(bat_type);
 			assert(tpe);
 			if (tpe) {
@@ -753,7 +756,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		}
 		// output types
 		for (i = 0; i < (size_t)pci->retc; i++) {
-			int bat_type = getBatType(getArgType(mb, pci, i));
+			bat_type = getBatType(getArgType(mb, pci, i));
 			const char *tpe = GetTypeName(bat_type);
 			assert(tpe);
 			if (tpe) {
@@ -882,8 +885,8 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	// create the inputs
 	argnode = sqlfun ? sqlfun->ops->h : NULL;
 	for (i = pci->retc + ARG_OFFSET; i < (size_t)pci->argc; i++) {
-		size_t index = i - (pci->retc + ARG_OFFSET);
-		int bat_type = getArgType(mb, pci, i);
+		index = i - (pci->retc + ARG_OFFSET);
+		bat_type = getArgType(mb, pci, i);
 		if (!isaBatType(bat_type)) {
 			// scalar input
 			// create a temporary BAT
@@ -1085,7 +1088,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	}
 
 	if (non_grouped_aggregate) {
-		size_t index = input_count;
+		index = input_count;
 		GENERATE_BAT_INPUT_BASE(oid);
 		bat_data->count = input_size;
 		bat_data->data =
@@ -1096,8 +1099,8 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	argnode = sqlfun ? sqlfun->res->h : NULL;
 	// output types
 	for (i = 0; i < output_count; i++) {
-		size_t index = i;
-		int bat_type = getBatType(getArgType(mb, pci, i));
+		index = i;
+		bat_type = getBatType(getArgType(mb, pci, i));
 		if (bat_type == TYPE_bit || bat_type == TYPE_bte) {
 			GENERATE_BAT_OUTPUT(bte);
 		} else if (bat_type == TYPE_sht) {
@@ -1151,18 +1154,16 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			msg = createException(MAL, "cudf.eval", "Attempting to write to "
 													"the input or triggered a "
 													"segfault/bus error");
-			goto wrapup;
 		} else if (ret == 2) {
 			msg = createException(MAL, "cudf.eval",
 								  "Malloc failure in internal function!");
-			goto wrapup;
 		} else {
 			// we jumped here
 			msg = createException(MAL, "cudf.eval", "We longjumped here "
 													"because of an error, but "
 													"we don't know which!");
-			goto wrapup;
 		}
+		goto wrapup;
 	}
 
 	// set up the signal handler for catching segfaults
@@ -1223,7 +1224,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 	// create the output bats from the returned results
 	for (i = 0; i < (size_t)pci->retc; i++) {
-		int bat_type = getBatType(getArgType(mb, pci, i));
+		bat_type = getBatType(getArgType(mb, pci, i));
 		size_t count;
 		void *data;
 		BAT *b;
@@ -1454,7 +1455,7 @@ wrapup:
 		for (i = 0; i < (size_t)input_count; i++) {
 			if (inputs[i]) {
 				if (isaBatType(getArgType(mb, pci, i))) {
-					int bat_type = getBatType(getArgType(mb, pci, i));
+					bat_type = getBatType(getArgType(mb, pci, i));
 					if (bat_type == TYPE_str || bat_type == TYPE_date ||
 						bat_type == TYPE_daytime ||
 						bat_type == TYPE_timestamp || bat_type == TYPE_blob ||
@@ -1488,7 +1489,7 @@ wrapup:
 	// output data
 	if (outputs) {
 		for (i = 0; i < (size_t)output_count; i++) {
-			int bat_type = isaBatType(getArgType(mb, pci, i))
+			bat_type = isaBatType(getArgType(mb, pci, i))
 							   ? getBatType(getArgType(mb, pci, i))
 							   : getArgType(mb, pci, i);
 			if (outputs[i]) {
