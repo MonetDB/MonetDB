@@ -1425,9 +1425,16 @@ PYFUNCNAME(PyAPIprelude)(void *ret) {
 	MT_lock_init(&queryLock, "query_lock");
 	MT_lock_set(&pyapiLock);
 	if (!pyapiInitialized) {
+#ifdef IS_PY3K
+		wchar_t* program = Py_DecodeLocale("mserver5", NULL);
+		wchar_t* argv[] = { program };
+#else
+		char* argv[] = {"mserver5"};
+#endif
 		str msg = MAL_SUCCEED;
 		PyObject *tmp;
 		Py_Initialize();
+		PySys_SetArgvEx(1, argv, 0);
 		_import_array();
 		msg = _connection_init();
 		if (msg != MAL_SUCCEED) {

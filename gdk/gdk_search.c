@@ -49,7 +49,7 @@
 
 #define VALUE(x)	(vars ?					\
 			 vars + VarHeapVal(vals, (x), width) :	\
-			 vals + ((x) * width))
+			 (const char *) vals + ((x) * width))
 
 #define BINSEARCHFUNC(TYPE)						\
 BUN									\
@@ -218,8 +218,8 @@ BINSEARCHFUNC(dbl)
  */
 BUN
 binsearch(const oid *restrict indir, oid offset,
-	  int type, const char *restrict vals, const char * restrict vars,
-	  int width, BUN lo, BUN hi, const char *restrict v,
+	  int type, const void *restrict vals, const char * restrict vars,
+	  int width, BUN lo, BUN hi, const void *restrict v,
 	  int ordering, int last)
 {
 	BUN mid;

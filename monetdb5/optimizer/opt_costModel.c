@@ -150,7 +150,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	//chkDeclarations(cntxt->fdout, mb);
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","costmodel",usec);
+    snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","costmodel",usec);
     newComment(mb,buf);
 	addtoMalBlkHistory(mb);
 
