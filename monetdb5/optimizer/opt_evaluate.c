@@ -246,10 +246,11 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	cntxt->itrace = debugstate;
 
     /* Defense line against incorrect plans */
-	/* Plan is unaffected */
+    if( actions){
 	chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
 	chkFlow(cntxt->fdout, mb);
 	chkDeclarations(cntxt->fdout, mb);
+    }
     
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
