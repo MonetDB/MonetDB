@@ -1606,11 +1606,11 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			if (rcand) {
 				if (rcand == rcandend) {
 					v = NULL; /* no more values */
-				} else if (roff != 0) {
+				} else if (rvals) {
+					v = VALUE(r, (equal_order ? rcand[0] : rcandend[-1]) - r->hseqbase);
+				} else {
 					rval = roff == lng_nil ? oid_nil : (oid) ((lng) (equal_order ? rcand[0] : rcandend[-1]) + roff);
 					v = &rval;
-				} else {
-					v = VALUE(r, (equal_order ? rcand[0] : rcandend[-1]) - r->hseqbase);
 				}
 			} else {
 				if (rstart == rend) {
