@@ -31,7 +31,7 @@ Ready.
 
 [(1,)]
 (2,)
-ParseException:SQLparser:SQLSTATE 42000 !!42000!syntax error, unexpected IDENT, expecting SELECT or '(' in: "( xyz"
+ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting SELECT or '(' in: "( xyz"
 
 [(3, 'three'), (7, 'seven')]
 2

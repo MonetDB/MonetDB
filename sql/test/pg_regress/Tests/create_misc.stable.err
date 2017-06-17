@@ -39,7 +39,7 @@ QUERY = CREATE TABLE Bprime AS
            FROM tenk1
            WHERE unique2 < 1000
         WITH DATA;
-ERROR = !ParseException:SQLparser:SQLSTATE 42S01!CREATE TABLE: name 'bprime' already in use
+ERROR = !ParseException:SQLparser:SQLSTATE 42S01 !CREATE TABLE: name 'bprime' already in use
 
 
 

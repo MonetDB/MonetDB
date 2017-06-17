@@ -29,7 +29,7 @@ stderr of test 'bincopycollist` in directory 'sql/test` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
 QUERY = COPY BINARY INTO intvals (a) FROM ('/export/scratch1/mk/malerrors/Linux/mTests/sql/test/bincopyint.bin');
-ERROR = !ParseException:SQLparser:SQLSTATE 42S22!COPY BINARY INTO: no such column 'intvals.a'
+ERROR = !ParseException:SQLparser:SQLSTATE 42S22 !COPY BINARY INTO: no such column 'intvals.a'
 
 # 17:04:53 >  
 # 17:04:53 >  "Done."

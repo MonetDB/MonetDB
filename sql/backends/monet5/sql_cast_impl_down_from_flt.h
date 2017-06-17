@@ -55,7 +55,7 @@ FUN(,TP1,_num2dec_,TP2)(TP2 *res, const TP1 *v, const int *d2, const int *s2)
 		inlen = (int) floor(log10(val)) + 1;
 	}
 	if (inlen + scale > precision)
-		throw(SQL, "convert", "22003!too many digits (%d > %d)",
+		throw(SQL, "convert", "SQLSTATE 22003 !""too many digits (%d > %d)",
 		      inlen + scale, precision);
 
 #ifndef TRUNCATE_NUMBERS

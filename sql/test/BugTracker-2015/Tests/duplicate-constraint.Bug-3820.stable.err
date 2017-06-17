@@ -41,7 +41,7 @@ QUERY = CREATE TABLE instrument (
             CONSTRAINT instrument_exchange_fk FOREIGN KEY (fk_exchange) REFERENCES exchange (pk_symbol),
             CONSTRAINT instrument_exchange_fk FOREIGN KEY (fk_exchange) REFERENCES exchange (pk_symbol),
             CONSTRAINT instrument_entity_fk FOREIGN KEY (fk_entity_uuid) REFERENCES entity (pk_uuid)
-ERROR = !ParseException:SQLparser:SQLSTATE 42000!CONSTRAINT FOREIGN KEY: key 'instrument_exchange_fk' already exists
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !CONSTRAINT FOREIGN KEY: key 'instrument_exchange_fk' already exists
 
 # 13:08:16 >  
 # 13:08:16 >  "Done."

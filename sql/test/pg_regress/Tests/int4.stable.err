@@ -58,10 +58,10 @@ QUERY = SELECT '' AS five, INT4_TBL.*;
 ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Column expression Table 'int4_tbl' unknown
 MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
 QUERY = SELECT 4! AS twenty_four;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !unexpected symbol (!)
-MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Unexpected symbol (!)
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT !!3 AS six;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !unexpected symbol (!)
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Unexpected symbol (!)
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

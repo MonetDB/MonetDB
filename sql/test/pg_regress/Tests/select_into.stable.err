@@ -34,21 +34,19 @@ QUERY = SELECT *
            INTO TABLE tmp1
            FROM onek
            WHERE onek.unique1 < 2;
-ERROR = !syntax error, unexpected TABLE in: "select *
-        !   into table tmp1"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting SCOLON in: "select *
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = DROP TABLE tmp1;
-ERROR = !DROP TABLE: no such table 'tmp1'
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+ERROR = !SQLException:sql.droptable:SQLSTATE 42S02 !DROP TABLE: no such table 'tmp1'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT *
            INTO TABLE tmp1
            FROM onek2
            WHERE onek2.unique1 < 2;
-ERROR = !syntax error, unexpected TABLE in: "select *
-        !   into table tmp1"
-MAPI  = (monetdb) /var/tmp/mtest-29915/.s.monetdb.37487
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting SCOLON in: "select *
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = DROP TABLE tmp1;
-ERROR = !DROP TABLE: no such table 'tmp1'
+ERROR = !SQLException:sql.droptable:SQLSTATE 42S02 !DROP TABLE: no such table 'tmp1'
 
 
 

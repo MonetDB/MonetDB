@@ -23,13 +23,13 @@ QUERY = create trigger test_6_2 after insert on t_6_2
 ERROR = !ParseException:SQLparser:SQLSTATE 42000 !CREATE TRIGGER: unknown table 't_6_2'
 MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
 QUERY = drop trigger test_6_1;
-ERROR = !SQLSTATE 3F000 !DROP TRIGGER: unknown trigger test_6_1
-MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
+ERROR = !SQLException:sql.drop_trigger:SQLSTATE 3F000 !DROP TRIGGER: unknown trigger test_6_1
+MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
 QUERY = drop trigger test_6_2;
-ERROR = !SQLSTATE 3F000 !DROP TRIGGER: unknown trigger test_6_2
-MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
+ERROR = !SQLException:sql.drop_trigger:SQLSTATE 3F000 !DROP TRIGGER: unknown trigger test_6_2
+MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
 QUERY = drop table t_6_2;
-ERROR = !SQLSTATE 42S02 !DROP TABLE: no such table 't_6_2'
+ERROR = !SQLException:sql.droptable:SQLSTATE 42S02 !DROP TABLE: no such table 't_6_2'
 
 # 14:14:18 >  
 # 14:14:18 >  Done.

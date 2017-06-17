@@ -57,10 +57,10 @@ SQLtransaction_release(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) chain;
 	if (sql->session->auto_commit == 1)
-		throw(SQL, "sql.trans", "3BM30!RELEASE SAVEPOINT: not allowed in auto commit mode");
+		throw(SQL, "sql.trans", "SQLSTATE 3BM30 !""RELEASE SAVEPOINT: not allowed in auto commit mode");
 	ret = mvc_release(sql, name);
 	if (ret < 0) {
-		snprintf(buf, BUFSIZ, "3B000!RELEASE SAVEPOINT: (%s) failed", name);
+		snprintf(buf, BUFSIZ, "SQLSTATE 3B000 !""RELEASE SAVEPOINT: (%s) failed", name);
 		throw(SQL, "sql.trans", "%s", buf);
 	}
 	return MAL_SUCCEED;
@@ -79,15 +79,15 @@ SQLtransaction_commit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (sql->session->auto_commit == 1) {
 		if (name)
-			throw(SQL, "sql.trans", "3BM30!SAVEPOINT: not allowed in auto commit mode");
+			throw(SQL, "sql.trans", "SQLSTATE 3BM30 !""SAVEPOINT: not allowed in auto commit mode");
 		else
-			throw(SQL, "sql.trans", "2DM30!COMMIT: not allowed in auto commit mode");
+			throw(SQL, "sql.trans", "SQLSTATE 2DM30 !""COMMIT: not allowed in auto commit mode");
 	}
 	ret = mvc_commit(sql, chain, name);
 	if (ret < 0 && !name)
-		throw(SQL, "sql.trans", "2D000!COMMIT: failed");
+		throw(SQL, "sql.trans", "SQLSTATE 2D000 !""COMMIT: failed");
 	if (ret < 0 && name)
-		throw(SQL, "sql.trans", "3B000!SAVEPOINT: (%s) failed", name);
+		throw(SQL, "sql.trans", "SQLSTATE 3B000 !""SAVEPOINT: (%s) failed", name);
 	return MAL_SUCCEED;
 }
 
@@ -98,17 +98,15 @@ SQLtransaction_rollback(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	int chain = *getArgReference_int(stk, pci, 1);
 	str name = *getArgReference_str(stk, pci, 2);
-	char buf[BUFSIZ];
 	int ret = 0;
 
 	initcontext();
 
 	if (sql->session->auto_commit == 1)
-		throw(SQL, "sql.trans", "2DM30!ROLLBACK: not allowed in auto commit mode");
+		throw(SQL, "sql.trans", "SQLSTATE 2DM30 !""ROLLBACK: not allowed in auto commit mode");
 	ret = mvc_rollback(sql, chain, name);
 	if (ret < 0 && name) {
-		snprintf(buf, BUFSIZ, "3B000!ROLLBACK TO SAVEPOINT: (%s) failed", name);
-		throw(SQL, "sql.trans", "%s", buf);
+		throw(SQL, "sql.trans", "SQLSTATE 3B000 !""ROLLBACK TO SAVEPOINT: (%s) failed", name);
 	}
 	return MAL_SUCCEED;
 }
@@ -124,7 +122,7 @@ SQLtransaction_begin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	initcontext();
 
 	if (sql->session->auto_commit == 0)
-		throw(SQL, "sql.trans", "25001!START TRANSACTION: cannot start a transaction within a transaction");
+		throw(SQL, "sql.trans", "SQLSTATE 25001 !""START TRANSACTION: cannot start a transaction within a transaction");
 	if (sql->session->active) {
 		mvc_rollback(sql, 0, NULL);
 	}
@@ -149,7 +147,7 @@ SQLtransaction2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	if (sql->session->auto_commit == 0)
-		throw(SQL, "sql.trans", "25001!START TRANSACTION: cannot start a transaction within a transaction");
+		throw(SQL, "sql.trans", "SQLSTATE 25001 !""START TRANSACTION: cannot start a transaction within a transaction");
 	if (sql->session->active) {
 		mvc_rollback(sql, 0, NULL);
 	}

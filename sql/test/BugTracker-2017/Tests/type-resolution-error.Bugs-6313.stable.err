@@ -40,8 +40,8 @@ QUERY = select auxiliary
         from sys.tablestoragemodel 
         where ((select r_regionkey from sys.region) is NULL)
           or ((select index_type_name from sys.index_types) is not NULL);
-ERROR = !ParseException:SQLparser:SQLSTATE 42S02!SELECT: no such table 'region'
-MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'region'
+MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
 QUERY = select
                   sample_69.f_table_catalog as c2
         from    

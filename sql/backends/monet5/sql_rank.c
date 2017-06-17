@@ -14,7 +14,7 @@
 		r = COLnew(b->hseqbase, tpe, cnt, TRANSIENT);	\
 		if (r == NULL) {				\
 			BBPunfix(b->batCacheid);		\
-			throw(MAL, err, MAL_MALLOC_FAIL);	\
+			throw(MAL, err, "SQLSTATE HY005 !"MAL_MALLOC_FAIL);	\
 		}						\
 		r->tsorted = 0;					\
 		r->trevsorted = 0;				\
@@ -88,7 +88,7 @@ SQLrow_number(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (pci->argc != 4 || 
 		(getArgType(mb, pci, 2) != TYPE_bit && getBatType(getArgType(mb, pci, 2)) != TYPE_bit) || 
 		(getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit)){
-		throw(SQL, "sql.row_number", "row_number(:any_1,:bit,:bit)");
+		throw(SQL, "sql.row_number", "SQLSTATE 42000 !""row_number(:any_1,:bit,:bit)");
 	}
 	(void)cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
@@ -137,7 +137,7 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (pci->argc != 4 || 
 		(getArgType(mb, pci, 2) != TYPE_bit && getBatType(getArgType(mb, pci, 2)) != TYPE_bit) || 
 		(getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit)){
-		throw(SQL, "sql.rank", "rank(:any_1,:bit,:bit)");
+		throw(SQL, "sql.rank", "SQLSTATE 42000 !""rank(:any_1,:bit,:bit)");
 	}
 	(void)cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
@@ -222,7 +222,7 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (pci->argc != 4 || 
 		(getArgType(mb, pci, 2) != TYPE_bit && getBatType(getArgType(mb, pci, 2)) != TYPE_bit) || 
 		(getArgType(mb, pci, 3) != TYPE_bit && getBatType(getArgType(mb, pci, 3)) != TYPE_bit)){
-		throw(SQL, "sql.rank", "rank(:any_1,:bit,:bit)");
+		throw(SQL, "sql.rank", "SQLSTATE 42000 !""rank(:any_1,:bit,:bit)");
 	}
 	(void)cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {

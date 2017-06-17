@@ -32,11 +32,11 @@ stderr of test 'types` in directory 'sql/test/mergetables` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-31544/.s.monetdb.34450
 QUERY = ALTER TABLE complete ADD TABLE part1;
-ERROR = !SQLSTATE 3F000 !ALTER MERGE TABLE: to be added table column type doesn't match MERGE TABLE definition
-MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
+ERROR = !SQLException:sql.relcheck_tables:SQLSTATE 3F000 !ALTER MERGE TABLE: to be added table column type doesn't match MERGE TABLE definition
+MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
 QUERY = ALTER TABLE complete ADD TABLE part2;
-ERROR = !SQLSTATE 3F000 !ALTER MERGE TABLE: to be added table column type doesn't match MERGE TABLE definition
-MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
+ERROR = !SQLException:sql.relcheck_tables:SQLSTATE 3F000 !ALTER MERGE TABLE: to be added table column type doesn't match MERGE TABLE definition
+MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
 QUERY = SELECT * FROM COMPLETE;
 ERROR = !ParseException:SQLparser:SQLSTATE 42000 !MERGE or REPLICA TABLE should have at least one table associated
 

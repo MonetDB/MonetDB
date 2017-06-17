@@ -84,7 +84,7 @@ QUERY = insert into foo values('12:12:12:99');
 ERROR = !SQLException:timestamp:SQLSTATE 22007 !Timestamp (12:12:12:99) has incorrect format
 MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
 QUERY = insert into foo values(timestamp '12:12:12:99');
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !!22007!incorrect timestamp value (12:12:12:99) in: "insert into foo values(timestamp '12:12:12:99')"
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (12:12:12:99) in: "insert into foo values(timestamp '12:12:12:99')"
 
 # 19:33:07 >  
 # 19:33:07 >  Done.

@@ -39,8 +39,8 @@ MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
 QUERY = 9
         
         select * from t_int;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !!42000!syntax error, unexpected sqlINT in: "9"
-MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected sqlINT in: "9"
+MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
 QUERY = copy 5 records into t_int from stdin delimiters ',','\n' NULL as '';
         1
         nil
@@ -50,7 +50,7 @@ QUERY = null
         abc
         
         select * from t_int;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !!42000!syntax error, unexpected sqlNULL in: "null"
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected sqlNULL in: "null"
 
 # 11:23:33 >  
 # 11:23:33 >  "Done."

@@ -66,7 +66,7 @@ FUN(,TP1,_dec2dec_,TP2) (TP2 *res, const int *S1, const TP1 *v, const int *d2, c
 	/* rounding is allowed */
 	inlen += (s2 - s1);
 	if (p && inlen > p) {
-		throw(SQL, "convert", "22003!too many digits (%d > %d)", inlen, p);
+		throw(SQL, "convert", "SQLSTATE 22003 !""too many digits (%d > %d)", inlen, p);
 	}
 
 	/* since the TP2 type is bigger than or equal to the TP1 type, it will

@@ -292,7 +292,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 
 	if (mvc_bind_table(sql, s, t->base.name)) {
 		char *cd = (temp == SQL_DECLARED_TABLE) ? "DECLARE" : "CREATE";
-		return sql_message("SQLSTATE 42S0 1""!%s TABLE: name '%s' already in use", cd, t->base.name);
+		return sql_message("SQLSTATE 42S01""!%s TABLE: name '%s' already in use", cd, t->base.name);
 	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))) {
 		return sql_message("SQLSTATE 42000 !""CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (temp == SQL_DECLARED_TABLE && !list_empty(t->keys.set)) {

@@ -36,8 +36,8 @@ QUERY = create function MyFunc2()
         	  insert into t values (1);
         	  return select count(*) from t;
         end;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000!CONSTRAINT: constraints on declared tables are not supported
-MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !CONSTRAINT: constraints on declared tables are not supported
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = select MyFunc2();
 ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such operator 'myfunc2'
 MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804

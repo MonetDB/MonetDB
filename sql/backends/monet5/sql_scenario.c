@@ -332,7 +332,7 @@ global_variables(mvc *sql, char *user, char *schema)
 	return 0;
 }
 
-#define TRANS_ABORTED "!SQLSTATE 25005!current transaction is aborted (please ROLLBACK)\n"
+#define TRANS_ABORTED "SQLSTATE 25005 !""Current transaction is aborted (please ROLLBACK)\n"
 
 str
 handle_error(mvc *m, int pstatus, str msg)
@@ -1060,7 +1060,7 @@ SQLparser(Client c)
 	    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
 		if (!err &&m->scanner.started)	/* repeat old errors, with a parsed query */
 			err = mvc_status(m);
-		if (err) {
+		if (err && m->errstr && *m->errstr) {
 			if( strstr(m->errstr,"SQLSTATE"))
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			else
@@ -1106,7 +1106,7 @@ SQLparser(Client c)
 
 		r = sql_symbol2relation(m, m->sym);
 
-		if (!r || (err = mvc_status(m) && m->type != Q_TRANS)) {
+		if (!r || (err = mvc_status(m) && m->type != Q_TRANS && m->errstr && *m->errstr)) {
 			if( strstr(m->errstr,"SQLSTATE"))
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			else
@@ -1194,7 +1194,10 @@ SQLparser(Client c)
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, NULL, oldvtop);
 			c->curprg->def->errors = 0;
-			msg = createException(PARSE, "SQLparser", "SQLSTATE M0M27 !""Semantic errors %s", m->errstr?m->errstr:"");
+			if( m->errstr && strstr(m->errstr,"SQLSTATE"))
+				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
+			else
+				msg = createException(PARSE, "SQLparser", "SQLSTATE M0M27 !""Semantic errors %s", m->errstr?m->errstr:"");
 			if( m->errstr)
 				*m->errstr = 0;
 		}
