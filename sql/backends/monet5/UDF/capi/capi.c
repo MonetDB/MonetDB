@@ -426,6 +426,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 	size_t index = 0;
 	int bat_type = 0;
+	const char* tpe = NULL;
 
 	(void)cntxt;
 
@@ -732,11 +733,11 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			bat_type = !isaBatType(getArgType(mb, pci, i))
 							   ? getArgType(mb, pci, i)
 							   : getBatType(getArgType(mb, pci, i));
-			const char *tpe = GetTypeName(bat_type);
+			tpe = GetTypeName(bat_type);
 			assert(tpe);
 			if (tpe) {
 				snprintf(buf, sizeof(buf),
-						 "%s%s %s = *((%s%s*)__inputs[%zu]);\n", struct_prefix,
+						 "\t%s%s %s = *((%s%s*)__inputs[%zu]);\n", struct_prefix,
 						 tpe, args[i], struct_prefix, tpe,
 						 i - (pci->retc + ARG_OFFSET));
 				ATTEMPT_TO_WRITE_TO_FILE(f, buf);
@@ -745,11 +746,11 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		if (non_grouped_aggregate) {
 			// manually add "aggr_group" for non-grouped aggregates
 			bat_type = TYPE_oid;
-			const char *tpe = GetTypeName(bat_type);
+			tpe = GetTypeName(bat_type);
 			assert(tpe);
 			if (tpe) {
 				snprintf(buf, sizeof(buf),
-						 "%s%s %s = *((%s%s*)__inputs[%zu]);\n", struct_prefix,
+						 "\t%s%s %s = *((%s%s*)__inputs[%zu]);\n", struct_prefix,
 						 tpe, "aggr_group", struct_prefix, tpe, input_count);
 				ATTEMPT_TO_WRITE_TO_FILE(f, buf);
 			}
@@ -757,11 +758,11 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		// output types
 		for (i = 0; i < (size_t)pci->retc; i++) {
 			bat_type = getBatType(getArgType(mb, pci, i));
-			const char *tpe = GetTypeName(bat_type);
+			tpe = GetTypeName(bat_type);
 			assert(tpe);
 			if (tpe) {
 				snprintf(buf, sizeof(buf),
-						 "%s%s* %s = ((%s%s*)__outputs[%zu]);\n", struct_prefix,
+						 "\t%s%s* %s = ((%s%s*)__outputs[%zu]);\n", struct_prefix,
 						 tpe, output_names[i], struct_prefix, tpe, i);
 				ATTEMPT_TO_WRITE_TO_FILE(f, buf);
 			}
@@ -1087,8 +1088,8 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		argnode = argnode ? argnode->next : NULL;
 	}
 
+	index = input_count;
 	if (non_grouped_aggregate) {
-		index = input_count;
 		GENERATE_BAT_INPUT_BASE(oid);
 		bat_data->count = input_size;
 		bat_data->data =
@@ -1224,10 +1225,11 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 	// create the output bats from the returned results
 	for (i = 0; i < (size_t)pci->retc; i++) {
-		bat_type = getBatType(getArgType(mb, pci, i));
 		size_t count;
 		void *data;
 		BAT *b;
+		bat_type = getBatType(getArgType(mb, pci, i));
+		
 		if (!outputs[i]) {
 			msg = createException(MAL, "cudf.eval", "No data returned.");
 			goto wrapup;
