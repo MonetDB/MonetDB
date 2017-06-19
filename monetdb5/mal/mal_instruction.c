@@ -929,7 +929,7 @@ trimMalVariables(MalBlkPtr mb, MalStkPtr stk)
 	InstrPtr q;
 
 	/* reset the use bit for all non-signature arguments */
-	for (i = 1; i < mb->vtop; i++) 
+	for (i = 0; i < mb->vtop; i++) 
 		clrVarUsed(mb,i);
 	/* the return variable is also 'used' */
 	//i = findVariable(mb, getFunctionId(mb->stmt[0]));

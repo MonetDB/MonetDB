@@ -1031,15 +1031,6 @@ backend_create_subaggr(backend *be, sql_subaggr *f)
 }
 
 void
-_rel_print(mvc *sql, sql_rel *rel) 
-{
-	list *refs = sa_list(sql->sa);
-	rel_print_refs(sql, GDKstdout, rel, 0, refs, 1);
-	rel_print_(sql, GDKstdout, rel, 0, refs, 1);
-	mnstr_printf(GDKstdout, "\n");
-}
-
-void
 rel_print(mvc *sql, sql_rel *rel, int depth) 
 {
 	list *refs = sa_list(sql->sa);
