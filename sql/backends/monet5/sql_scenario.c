@@ -1240,5 +1240,21 @@ SQLCacheRemove(Client c, str nme)
 
 str
 SQLcallback(Client c, str msg){
+	if(msg &&  (strstr(msg, "MALexception") || strstr(msg,"GDKexception"))) {
+		// massage the error to comply with SQL
+		char *s;
+		s= strchr(msg,(int)':');
+		if (s ) 
+			s= strchr(msg,(int)':');
+		if( s){
+			char newerr[1024];
+			s++;
+			strncpy(newerr, msg, s - msg);
+			newerr[s-msg] = 0;
+			snprintf(newerr + (s-msg), 1024 -(s-msg), "SQLSTATE HY020 !%s",s);
+			GDKfree(msg);
+			msg = GDKstrdup(newerr);
+		}
+	}
 	return MALcallback(c,msg);
 }
