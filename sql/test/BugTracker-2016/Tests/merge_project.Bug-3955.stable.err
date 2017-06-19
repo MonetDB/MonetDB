@@ -32,7 +32,7 @@ stderr of test 'merge_project.Bug-3955` in directory 'sql/test/BugTracker-2016` 
 
 MAPI  = (monetdb) /var/tmp/mtest-32041/.s.monetdb.36560
 QUERY = plan select * from r;
-ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors 
+ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors SyntaxException:RETURN missing
 
 # 14:00:10 >  
 # 14:00:10 >  "Done."

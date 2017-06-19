@@ -277,6 +277,7 @@ WLRprocess(void *arg)
 						printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
 						mvc_rollback(sql,0,NULL);
 						// cleanup
+						fprintFunction(stderr,mb,0,63);
 						resetMalBlk(mb, 1);
 						trimMalVariables(mb, NULL);
 						pc = 0;

@@ -34,10 +34,10 @@ stderr of test 'crash_on_alias.Bug-2798` in directory 'sql/test/BugTracker-2011`
 
 MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = plan SELECT a as d, SUM(b), (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
-ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors 
-MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
+ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors SyntaxException:RETURN missing
+MAPI  = (monetdb) /var/tmp/mtest-27265/.s.monetdb.39400
 QUERY = plan SELECT a as d, SUM(b) as e, (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
-ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors 
+ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors SyntaxException:RETURN missing
 
 # 14:09:56 >  
 # 14:09:56 >  Done.

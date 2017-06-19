@@ -85,7 +85,7 @@ QUERY = plan select col1
         from test02
         group by col1
         order by count(col1);
-ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors 
+ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors SyntaxException:RETURN missing
 
 # 14:06:10 >  
 # 14:06:10 >  Done.

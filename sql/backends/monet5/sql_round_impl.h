@@ -76,7 +76,7 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	/* more sanity checks */
 	if (v->ttype != TPE(TYPE)) {
 		BBPunfix(v->batCacheid);
-		throw(MAL, "round", "argument 1 must have a " STRING(TYPE) " tail");
+		throw(MAL, "round", "SQLSTATE 42000 !""Argument 1 must have a " STRING(TYPE) " tail");
 	}
 	cnt = BATcount(v);
 
@@ -84,7 +84,7 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	res = COLnew(0, TPE(TYPE), cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPunfix(v->batCacheid);
-		throw(MAL, "round", MAL_MALLOC_FAIL);
+		throw(MAL, "round", "SQLSTATE HY005 !"MAL_MALLOC_FAIL);
 	}
 
 	/* access columns as arrays */
@@ -205,7 +205,7 @@ bat_round_wrap(bat *_res, const bat *_v, const int *d, const int *s, const bte *
 	/* more sanity checks */
 	if (v->ttype != TPE(TYPE)) {
 		BBPunfix(v->batCacheid);
-		throw(MAL, "round", "argument 1 must have a " STRING(TYPE) " tail");
+		throw(MAL, "round", "SQLSTATE 42000 !""Argument 1 must have a " STRING(TYPE) " tail");
 	}
 	cnt = BATcount(v);
 
@@ -213,7 +213,7 @@ bat_round_wrap(bat *_res, const bat *_v, const int *d, const int *s, const bte *
 	res = COLnew(0, TPE(TYPE), cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPunfix(v->batCacheid);
-		throw(MAL, "round", MAL_MALLOC_FAIL);
+		throw(MAL, "round", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 
 	/* access columns as arrays */
@@ -294,9 +294,9 @@ str_2dec(TYPE *res, const str *val, const int *d, const int *sc)
 	value = 0;
 
 	if (digits < 0)
-		throw(SQL, STRING(TYPE), "decimal (%s) doesn't have format (%d.%d)", *val, *d, *sc);
+		throw(SQL, STRING(TYPE), "SQLSTATE 42000 !""Decimal (%s) doesn't have format (%d.%d)", *val, *d, *sc);
 	if (*d < 0 || *d >= (int) (sizeof(scales) / sizeof(scales[0])))
-		throw(SQL, STRING(TYPE), "decimal (%s) doesn't have format (%d.%d)", *val, *d, *sc);
+		throw(SQL, STRING(TYPE), "SQLSTATE 42000 !""Decimal (%s) doesn't have format (%d.%d)", *val, *d, *sc);
 
 	value = decimal_from_str(s, &end);
 	if (*s == '+' || *s == '-')
@@ -322,11 +322,11 @@ str_2dec(TYPE *res, const str *val, const int *d, const int *sc)
 		scale -= dff;
 		digits -= dff;
 		if (value >= scales[*d] || value <= -scales[*d]) {
-			throw(SQL, STRING(TYPE), "rounding of decimal (%s) doesn't fit format (%d.%d)", *val, *d, *sc);
+			throw(SQL, STRING(TYPE), "SQLSTATE 42000 !""Rounding of decimal (%s) doesn't fit format (%d.%d)", *val, *d, *sc);
 		}
 	}
 	if (value <= -scales[*d] || value >= scales[*d]  || *end) {
-		throw(SQL, STRING(TYPE), "decimal (%s) doesn't have format (%d.%d)", *val, *d, *sc);
+		throw(SQL, STRING(TYPE), "SQLSTATE 42000 !""Decimal (%s) doesn't have format (%d.%d)", *val, *d, *sc);
 	}
 	*res = (TYPE) value;
 	return MAL_SUCCEED;
@@ -360,14 +360,14 @@ batnil_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 	dst = COLnew(b->hseqbase, TPE(TYPE), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.dec_" STRING(TYPE), MAL_MALLOC_FAIL);
+		throw(SQL, "sql.dec_" STRING(TYPE), "SQLSTATE HY005 !"MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		TYPE r = NIL(TYPE);
 		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.dec_" STRING(TYPE), MAL_MALLOC_FAIL);
+			throw(SQL, "sql.dec_" STRING(TYPE), "SQLSTATE HY005 !"MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -390,7 +390,7 @@ batstr_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 	dst = COLnew(b->hseqbase, TPE(TYPE), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.dec_" STRING(TYPE), MAL_MALLOC_FAIL);
+		throw(SQL, "sql.dec_" STRING(TYPE), "SQLSTATE HY005 !"MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		str v = (str) BUNtail(bi, p);
@@ -404,7 +404,7 @@ batstr_2dec(bat *res, const bat *bid, const int *d, const int *sc)
 		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.dec_" STRING(TYPE), MAL_MALLOC_FAIL);
+			throw(SQL, "sql.dec_" STRING(TYPE), "SQLSTATE HY005 !"MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -434,7 +434,7 @@ batstr_2num(bat *res, const bat *bid, const int *len)
 	dst = COLnew(b->hseqbase, TPE(TYPE), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql.num_" STRING(TYPE), MAL_MALLOC_FAIL);
+		throw(SQL, "sql.num_" STRING(TYPE), "SQLSTATE HY005 !"MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		str v = (str) BUNtail(bi, p);
@@ -448,7 +448,7 @@ batstr_2num(bat *res, const bat *bid, const int *len)
 		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPreclaim(dst);
-			throw(SQL, "sql.num_" STRING(TYPE), MAL_MALLOC_FAIL);
+			throw(SQL, "sql.num_" STRING(TYPE), "SQLSTATE HY005 !"MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);

@@ -12,25 +12,25 @@ stderr of test 'grant_public.SF-1114580` in directory 'sql/test/BugDay_2005-11-0
 
 MAPI  = (monetdb) /var/tmp/mtest-15225/.s.monetdb.34050
 QUERY = GRANT UPDATE(dumdum) ON test1114580 TO PUBLIC;
-ERROR = !GRANT: table test1114580 has no column dumdum
-MAPI  = (monetdb) /var/tmp/mtest-15225/.s.monetdb.34050
+ERROR = !SQLException:sql.grant_table:SQLSTATE 42S22 !Table test1114580 has no column dumdum
+MAPI  = (monetdb) /var/tmp/mtest-25690/.s.monetdb.32684
 QUERY = GRANT INSERT ON test1114580 TO PUBLIC;
-ERROR = !GRANT: user/role 'public' already has this privilege
-MAPI  = (monetdb) /var/tmp/mtest-15225/.s.monetdb.34050
+ERROR = !SQLException:sql.grant:SQLSTATE 42M32 !User/role 'public' already has this privilege
+MAPI  = (monetdb) /var/tmp/mtest-25690/.s.monetdb.32684
 QUERY = GRANT INSERT ON test1114580 TO PUBLIC;
-ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-15225/.s.monetdb.34050
+ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-25690/.s.monetdb.32684
 QUERY = GRANT INSERT ON test1114580 TO PUBLIC;
-ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-15225/.s.monetdb.34050
+ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-25690/.s.monetdb.32684
 QUERY = REVOKE SELECT ON test1114580 FROM  PUBLIC;
-ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-15225/.s.monetdb.34050
+ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-25690/.s.monetdb.32684
 QUERY = REVOKE SELECT ON test1114580 FROM  PUBLIC;
-ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-15225/.s.monetdb.34050
+ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-25690/.s.monetdb.32684
 QUERY = REVOKE SELECT ON test1114580 TO PUBLIC;
-ERROR = !syntax error, unexpected TO, expecting FROM in: "revoke select on test1114580 to"
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected TO, expecting FROM in: "revoke select on test1114580 to"
 
 # 19:58:17 >  
 # 19:58:17 >  Done.

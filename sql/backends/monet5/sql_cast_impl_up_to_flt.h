@@ -102,7 +102,7 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid)
 	bn = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2_,TP2)), MAL_MALLOC_FAIL);
+		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2_,TP2)), "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 	o = (TP2 *) Tloc(bn, 0);
 	p = (TP1 *) Tloc(b, 0);
@@ -145,7 +145,7 @@ FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const int *
 	dst = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), MAL_MALLOC_FAIL);
+		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		TP1 *v = (TP1 *) BUNtail(bi, p);
@@ -159,7 +159,7 @@ FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const int *
 		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
 			BBPunfix(dst->batCacheid);
 			BBPunfix(b->batCacheid);
-			throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), MAL_MALLOC_FAIL);
+			throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -182,7 +182,7 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 	dst = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), MAL_MALLOC_FAIL);
+		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		TP1 *v = (TP1 *) BUNtail(bi, p);
@@ -196,7 +196,7 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
 			BBPunfix(dst->batCacheid);
 			BBPunfix(b->batCacheid);
-			throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), MAL_MALLOC_FAIL);
+			throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);

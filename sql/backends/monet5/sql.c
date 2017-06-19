@@ -512,6 +512,8 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		lng sgn = val_get_number(src);
 		if ((msg = sql_update_var(m, varname, src->val.sval, sgn)) != NULL) {
 			snprintf(buf, BUFSIZ, "%s", msg);
+			if( strstr(msg, "SQLSTATE"))
+				return msg;
 			_DELETE(msg);
 			throw(SQL, "sql.setVariable", "SQLSTATE 42100 !""%s", buf);
 		}
@@ -3253,7 +3255,7 @@ month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		break;
 #endif
 	default:
-		throw(ILLARG, "calc.month_interval", "Illegal argument");
+		throw(ILLARG, "calc.month_interval", "SQLSTATE 42000 !""Illegal argument");
 	}
 	switch (k) {
 	case iyear:
@@ -3262,7 +3264,7 @@ month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case imonth:
 		break;
 	default:
-		throw(ILLARG, "calc.month_interval", "Illegal argument");
+		throw(ILLARG, "calc.month_interval", "SQLSTATE 42000 !""Illegal argument");
 	}
 	*ret = r;
 	return MAL_SUCCEED;

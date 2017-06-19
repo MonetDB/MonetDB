@@ -36,7 +36,7 @@ QUERY = COPY 1 RECORDS INTO whatgoodisadatabaseifyoucannotimport FROM STDIN USIN
 ERROR = !SQLException:importTable:SQLSTATE 42000 !Failed to import table 'whatgoodisadatabaseifyoucannotimport', Column value 1 missing
 MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = SELECT * FROM whatgoodisadatabaseifyoucannotimport;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !!SQLException:sql.execute:!25005!current transaction is aborted (please ROLLBACK)
+ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
 
 # 10:18:58 >  
 # 10:18:58 >  "Done."

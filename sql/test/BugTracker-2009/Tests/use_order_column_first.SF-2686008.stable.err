@@ -77,10 +77,10 @@ stderr of test 'use_order_column_first.SF-2686008` in directory 'sql/test/BugTra
 
 MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = plan select a,b from sorted group by a,b;
-ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors 
-MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
+ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors SyntaxException:RETURN missing
+MAPI  = (monetdb) /var/tmp/mtest-27265/.s.monetdb.39400
 QUERY = plan select a,b from sorted group by b,a;
-ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors 
+ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors SyntaxException:RETURN missing
 
 # 13:59:55 >  
 # 13:59:55 >  Done.

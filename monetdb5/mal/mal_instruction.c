@@ -929,12 +929,12 @@ trimMalVariables(MalBlkPtr mb, MalStkPtr stk)
 	InstrPtr q;
 
 	/* reset the use bit for all non-signature arguments */
-	for (i = 0; i < mb->vtop; i++) 
+	for (i = 1; i < mb->vtop; i++) 
 		clrVarUsed(mb,i);
 	/* the return variable is also 'used' */
-	i = findVariable(mb, getFunctionId(mb->stmt[0]));
-	/* assert(i >=0); Not necessary the cases for WLC */
-	setVarUsed(mb,i);
+	//i = findVariable(mb, getFunctionId(mb->stmt[0]));
+	//assert(i >=0); 
+	//setVarUsed(mb,i);
 	/* build the use table */
 	for (i = 0; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);

@@ -173,7 +173,7 @@ SQLprelude(void *ret)
 		fprintf(stderr, "Fatal error during initialization:\n%s\n", tmp);
 		freeException(tmp);
 		if ((tmp = GDKerrbuf) && *tmp)
-			fprintf(stderr, "GDK reported: %s\n", tmp);
+			fprintf(stderr, "SQLSTATE 42000 !""GDK reported: %s\n", tmp);
 		fflush(stderr);
 		exit(1);
 	}
@@ -1066,8 +1066,8 @@ SQLparser(Client c)
 			else
 				msg = createException(PARSE, "SQLparser", "SQLSTATE 42000 !""%s", m->errstr);
 			*m->errstr = 0;
-			msg = handle_error(m, pstatus, msg);
 		}
+		msg = handle_error(m, pstatus, msg);
 		sqlcleanup(m, err);
 		goto finalize;
 	}
@@ -1190,19 +1190,26 @@ SQLparser(Client c)
 		//printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_ALL);
 		/* we know more in this case than chkProgram(c->fdout, c->usermodule, c->curprg->def); */
 		if (c->curprg->def->errors) {
+			msg = c->curprg->def->errors;
+			c->curprg->def->errors = 0;
 			/* restore the state */
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, NULL, oldvtop);
-			c->curprg->def->errors = 0;
-			if( m->errstr && strstr(m->errstr,"SQLSTATE"))
-				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
-			else
-				msg = createException(PARSE, "SQLparser", "SQLSTATE M0M27 !""Semantic errors %s", m->errstr?m->errstr:"");
-			if( m->errstr)
+			if (msg == NULL && m->errstr && *m->errstr){
+				if(strstr(m->errstr,"SQLSTATE"))
+					msg = createException(PARSE, "SQLparser", "%s", m->errstr);
+				else
+					msg = createException(PARSE, "SQLparser", "SQLSTATE M0M27 !""Semantic errors %s", m->errstr);
 				*m->errstr = 0;
+			} else if(msg) {
+				str newmsg;
+				newmsg = createException(PARSE, "SQLparser", "SQLSTATE M0M27 !""Semantic errors %s", msg);
+				GDKfree(msg);
+				msg = newmsg;
+			}
 		}
 	}
-      finalize:
+finalize:
 	if (msg)
 		sqlcleanup(m, 0);
 	return msg;

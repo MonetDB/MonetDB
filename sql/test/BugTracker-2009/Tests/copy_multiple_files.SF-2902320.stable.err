@@ -77,8 +77,8 @@ stderr of test 'copy_multiple_files.SF-2902320` in directory 'sql/test/BugTracke
 
 MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = plan copy into cm_tmp from '/file1','/file2';
-ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors 
-MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
+ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors SyntaxException:RETURN missing
+MAPI  = (monetdb) /var/tmp/mtest-27265/.s.monetdb.39400
 QUERY = plan copy into cm_tmp from '\file1','\file2';
 ERROR = !ParseException:SQLparser:SQLSTATE 42000 !COPY INTO: filename must have absolute path: \file1
 MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392

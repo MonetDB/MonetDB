@@ -25,31 +25,31 @@ Ready.
 # 16:00:22 >  
 
 #SELECT ST_Boundary(ST_GeomFromText('LINESTRING(1 1,0 0, -1 1)'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % geometry # type
 % 0 # length
 [ "MULTIPOINT (1 1, -1 1)"	]
 #SELECT ST_Boundary(ST_GeomFromText('POLYGON((1 1,0 0, -1 1, 1 1))'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % geometry # type
 % 0 # length
 [ "LINESTRING (1 1, 0 0, -1 1, 1 1)"	]
 #SELECT ST_Boundary(ST_GeomFromText('POLYGON((1 1 1,0 0 1, -1 1 1, 1 1 1))'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % geometry # type
 % 0 # length
 [ "LINESTRING Z (1 1 1, 0 0 1, -1 1 1, 1 1 1)"	]
 #SELECT ST_Boundary(ST_GeomFromText('MULTILINESTRING((1 1 1,0 0 0.5, -1 1 1),(1 1 0.5,0 0 0.5, -1 1 0.5, 1 1 0.5) )'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % geometry # type
 % 0 # length
 [ "MULTIPOINT Z (-1 1 1, 1 1 0.75)"	]
 #SELECT geom AS "GEOMETRY", ST_Boundary(geom) AS "BOUNDARY" FROM geometries where id<>12 and id<>13 and id<>24 and id<>25;
-% sys.L1,	sys.L2 # table_name
+% sys.L2,	sys.L4 # table_name
 % GEOMETRY,	BOUNDARY # name
 % geometry,	geometry # type
 % 0,	0 # length

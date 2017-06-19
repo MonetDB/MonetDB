@@ -41,6 +41,9 @@ MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.36655
 QUERY = record SELECT 'test';
 ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT in: "record"
         !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-25690/.s.monetdb.32684
+QUERY = SELECT query FROM history;
+ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
 
 
 # 15:49:19 >  
