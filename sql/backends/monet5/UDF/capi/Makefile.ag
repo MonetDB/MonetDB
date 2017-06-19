@@ -23,7 +23,7 @@ MTSAFE
 lib__capi = {
 	MODULE
 	DIR = libdir/monetdb5
-	SOURCES = capi.c capi.h
+	SOURCES = capi.c capi.h cheader.h cheader.text.h
 	LIBS = ../../../../../monetdb5/tools/libmonetdb5 \
 	       ../../../../../gdk/libbat \
 	$(MALLOC_LIBS)
