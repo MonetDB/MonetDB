@@ -53,7 +53,7 @@ mat_type( mat_t *mat, int n)
 static int
 is_a_mat(int idx, matlist_t *ml)
 {
-	if (ml->vars[idx] && !ml->v[ml->vars[idx]].packed)
+	if (ml->vars[idx] >= 0 && !ml->v[ml->vars[idx]].packed)
 		return ml->vars[idx];
 	return -1;
 }
@@ -112,7 +112,8 @@ mat_add_var(matlist_t *ml, InstrPtr q, InstrPtr p, int var, mat_type_t type, int
 	dst->pm = parentmat;
 	dst->packed = 0;
 	dst->pushed = pushed;
-	ml->vars[var] = ml->top;
+	if (ml->vars[var] < 0)
+		ml->vars[var] = ml->top;
 	++ml->top;
 }
 
@@ -124,30 +125,46 @@ mat_add(matlist_t *ml, InstrPtr q, mat_type_t type, const char *func)
 	//printf (" ml.top %d %s\n", ml.top, func);
 }
 
+static void
+matlist_pack(matlist_t *ml, int m)
+{
+	int i, idx = ml->v[m].mv;
+
+	assert(ml->v[m].packed  == 0);
+	ml->v[m].packed = 1;
+	ml->vars[idx] = -1;
+
+	for(i =0; i<ml->top; i++)
+		if (!ml->v[i].packed && ml->v[i].mv == idx) {
+			ml->vars[idx] = i;
+			break;
+		}
+}
+
 static void 
-mat_pack(MalBlkPtr mb, mat_t *mat, int m)
+mat_pack(MalBlkPtr mb, matlist_t *ml, int m)
 {
 	InstrPtr r;
 
-	if (mat[m].packed)
+	if (ml->v[m].packed)
 		return ;
 
-	if((mat[m].mi->argc-mat[m].mi->retc) == 1){
+	if((ml->v[m].mi->argc-ml->v[m].mi->retc) == 1){
 		/* simple assignment is sufficient */
 		r = newInstruction(mb, NULL, NULL);
-		getArg(r,0) = getArg(mat[m].mi,0);
-		getArg(r,1) = getArg(mat[m].mi,1);
+		getArg(r,0) = getArg(ml->v[m].mi,0);
+		getArg(r,1) = getArg(ml->v[m].mi,1);
 		r->retc = 1;
 		r->argc = 2;
 	} else {
 		int l;
 
 		r = newInstruction(mb, matRef, packRef);
-		getArg(r,0) = getArg(mat[m].mi, 0);
-		for(l=mat[m].mi->retc; l< mat[m].mi->argc; l++)
-			r= pushArgument(mb,r, getArg(mat[m].mi,l));
+		getArg(r,0) = getArg(ml->v[m].mi, 0);
+		for(l=ml->v[m].mi->retc; l< ml->v[m].mi->argc; l++)
+			r= pushArgument(mb,r, getArg(ml->v[m].mi,l));
 	}
-	mat[m].packed = 1;
+	matlist_pack(ml, m);
 	pushInstruction(mb, r);
 }
 
@@ -163,7 +180,7 @@ checksize(matlist_t *ml, int v)
 		ml->vars = (int*) GDKrealloc(ml->vars, sizeof(int)* ml->vsize);
 		for (i = sz; i < ml->vsize; i++) {
 			ml->horigin[i] = ml->torigin[i] = -1;
-			ml->vars[i] = 0;
+			ml->vars[i] = -1;
 		}
 	}
 }
@@ -327,7 +344,7 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 	}
 	mat_add_var(ml, r, NULL, getArg(r, 0), mat_type(mat, m),  -1, -1, pushed);
 	if (pushed)
-		mat[ml->top-1].packed = 1;
+		matlist_pack(ml, ml->top-1);
 	return r;
 }
 
@@ -1473,7 +1490,7 @@ mat_sample(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m)
 	pushArgument(mb, r, getArg(pck, 0));
 	pushInstruction(mb, r);
 
-	ml->v[piv].packed = 1;
+	matlist_pack(ml, piv);
 	ml->v[piv].type = mat_slc;
 }
 
@@ -1554,8 +1571,10 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	if ( ml.v == NULL || ml.horigin == NULL || ml.torigin == NULL || ml.vars == NULL) {
 		goto cleanup;
 	}
-	for (i=0; i<ml.vsize; i++) 
+	for (i=0; i<ml.vsize; i++) {
 		ml.horigin[i] = ml.torigin[i] = -1;
+		ml.vars[i] = -1;
+	}
 
 	slimit = mb->ssize;
 	size = (mb->stop * 1.2 < mb->ssize)? mb->ssize:(int)(mb->stop * 1.2);
@@ -1840,7 +1859,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 		for (k = p->retc; k<p->argc; k++) {
 			if((m=is_a_mat(getArg(p,k), &ml)) >= 0){
-				mat_pack(mb, ml.v, m);
+				mat_pack(mb, &ml, m);
 			}
 		}
 		pushInstruction(mb, copyInstruction(p));

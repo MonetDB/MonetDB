@@ -96,7 +96,7 @@ dataflowBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states)
 	int j;
 
 	if (p->token == ENDsymbol || p->barrier || isUnsafeFunction(p) || 
-	   (isMultiplex(p) && MANIFOLDtypecheck(cntxt,mb,p) == NULL) ){
+		(isMultiplex(p) && MANIFOLDtypecheck(cntxt,mb,p,0) == NULL) ){
 #ifdef DEBUG_OPT_DATAFLOW
 			fprintf(stderr,"#breakpoint on instruction\n");
 #endif

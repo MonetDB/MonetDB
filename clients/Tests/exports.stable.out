@@ -1274,7 +1274,7 @@ size_t MALrunningThreads(void);
 str MALstartDataflow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str MANIFOLDremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
-MALfcn MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci);
+MALfcn MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops);
 str MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str MATHbinary_ATAN2dbl(dbl *res, const dbl *a, const dbl *b);
 str MATHbinary_ATAN2flt(flt *res, const flt *a, const flt *b);
