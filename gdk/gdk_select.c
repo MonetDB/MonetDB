@@ -1056,7 +1056,8 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
  * v != nil, v1 != nil, v2 != nil, v1 < v2.
  *	tl	th	li	hi	anti	result list of OIDs for values
  *	-----------------------------------------------------------------
- *	nil	NULL	ignored	ignored	false	x = nil (only way to get nil)
+ *	nil	NULL	true	ignored	false	x = nil (only way to get nil)
+ *	nil	NULL	false	ignored	false	NOTHING
  *	nil	NULL	ignored	ignored	true	x != nil
  *	nil	nil	ignored	ignored	false	x != nil
  *	nil	nil	ignored	ignored	true	NOTHING
