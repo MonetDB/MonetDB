@@ -372,7 +372,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 	size_t i = 0, j = 0;
 	char argbuf[64];
-	char buf[BUFSIZ];
+	char buf[8192];
 	char fname[BUFSIZ];
 	char oname[BUFSIZ];
 	char libname[BUFSIZ];
@@ -821,6 +821,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					 sizeof(total_error_buf) - error_buffer_position - 1, "%s",
 					 error_buf);
 			error_buffer_position += error_size;
+			if (error_buffer_position >= sizeof(total_error_buf)) break;
 		}
 
 		compiler_return_code = pclose(compiler);
@@ -834,7 +835,11 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 								  total_error_buf);
 			goto wrapup;
 		}
-		snprintf(buf, sizeof(buf), "%s %s %s -shared -o %s", c_compiler, 
+
+		error_buffer_position = 0;
+		error_buf[0] = '\0';
+
+		snprintf(buf, sizeof(buf), "%s %s %s -shared -o %s 2>&1 >/dev/null", c_compiler, 
 			extra_ldflags ? extra_ldflags : "", oname, libname);
 		compiler = popen(buf, "r");
 		if (!compiler) {
@@ -847,6 +852,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					 sizeof(total_error_buf) - error_buffer_position - 1, "%s",
 					 error_buf);
 			error_buffer_position += error_size;
+			if (error_buffer_position >= sizeof(total_error_buf)) break;
 		}
 
 		compiler_return_code = pclose(compiler);
@@ -854,7 +860,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 		if (compiler_return_code != 0) {
 			// failure in compiler
-			msg = createException(MAL, "cudf.eval", "Failed to link C UDF:\n%s",
+			msg = createException(MAL, "cudf.eval", "Failed to link C UDF.\n%s",
 								  total_error_buf);
 			goto wrapup;
 		}
