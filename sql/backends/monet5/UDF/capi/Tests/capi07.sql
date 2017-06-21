@@ -3,12 +3,13 @@
 START TRANSACTION;
 
 CREATE AGGREGATE capi07(inp INTEGER) RETURNS BIGINT LANGUAGE C {
-	lng sum = 0;
-	for(size_t i = 0; i < inp.count; i++) {
-		sum += inp.data[i];
-	}
-	result->initialize(result, 1);
-	result->data[0] = sum;
+    size_t i;
+    lng sum = 0;
+    for(i = 0; i < inp.count; i++) {
+        sum += inp.data[i];
+    }
+    result->initialize(result, 1);
+    result->data[0] = sum;
 };
 
 CREATE TABLE integers(i INTEGER);

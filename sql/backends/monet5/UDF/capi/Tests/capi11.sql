@@ -10,8 +10,9 @@ START TRANSACTION;
 # to convert a constant back into the decimal: 10 * 10 = 100 (which is equal to )
 
 CREATE FUNCTION capi11(inp DECIMAL) RETURNS DECIMAL(11,1) LANGUAGE C {
+    size_t i;
     result->initialize(result, inp.count);
-    for(size_t i = 0; i < inp.count; i++) {
+    for(i = 0; i < inp.count; i++) {
         if (inp.data[i] == inp.null_value) {
             result->data[i] = result->null_value;
         } else {
@@ -29,8 +30,9 @@ DROP FUNCTION capi11;
 
 # to convert from a decimal to a double simply divide the value by the scale
 CREATE FUNCTION _dec2dbl(inp DECIMAL) RETURNS DOUBLE LANGUAGE C {
+    size_t i;
     result->initialize(result, inp.count);
-    for(size_t i = 0; i < inp.count; i++) {
+    for(i = 0; i < inp.count; i++) {
         if (inp.data[i] == inp.null_value) {
             result->data[i] = result->null_value;
         } else {
@@ -46,8 +48,9 @@ DROP FUNCTION _dec2dbl;
 
 # to convert a double value to a decimal multiply by the scale
 CREATE FUNCTION _dbl2dec(inp DOUBLE) RETURNS DECIMAL LANGUAGE C {
+    size_t i;
     result->initialize(result, inp.count);
-    for(size_t i = 0; i < inp.count; i++) {
+    for(i = 0; i < inp.count; i++) {
         result->data[i] = inp.data[i] * result->scale;
     }
 };

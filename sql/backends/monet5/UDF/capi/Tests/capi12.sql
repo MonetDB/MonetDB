@@ -3,8 +3,9 @@ START TRANSACTION;
 
 # oids
 CREATE FUNCTION capi12(inp OID) RETURNS BOOLEAN LANGUAGE C {
+    size_t i;
     result->initialize(result, inp.count);
-    for(size_t i = 0; i < inp.count; i++) {
+    for(i = 0; i < inp.count; i++) {
         if (inp.data[i] == inp.null_value) {
             result->data[i] = 0;
         } else {

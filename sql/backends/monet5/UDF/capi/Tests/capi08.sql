@@ -3,8 +3,9 @@
 START TRANSACTION;
 
 CREATE FUNCTION capi08(inp INTEGER) RETURNS INTEGER LANGUAGE C {
+    size_t i;
     result->initialize(result, inp.count);
-    for(size_t i = 0; i < inp.count; i++) {
+    for(i = 0; i < inp.count; i++) {
         result->data[i] = inp.data[i] * 2;
     }
 };
@@ -19,8 +20,9 @@ SELECT capi08(i) FROM integers;
 DROP FUNCTION capi08;
 
 CREATE FUNCTION capi08(inp DOUBLE) RETURNS DOUBLE LANGUAGE C {
+    size_t i;
     result->initialize(result, inp.count);
-    for(size_t i = 0; i < inp.count; i++) {
+    for(i = 0; i < inp.count; i++) {
         result->data[i] = inp.data[i] * 2;
     }
 };
@@ -33,8 +35,9 @@ SELECT capi08(i) FROM integers;
 
 DROP FUNCTION capi08;
 CREATE FUNCTION capi08(inp1 INTEGER, inp2 INTEGER) RETURNS INTEGER LANGUAGE C {
+    size_t i;
     result->initialize(result, inp1.count);
-    for(size_t i = 0; i < inp1.count; i++) {
+    for(i = 0; i < inp1.count; i++) {
         result->data[i] = inp1.data[i] / inp2.data[i];
     }
 };
@@ -43,8 +46,9 @@ SELECT capi08(i * 2, i) FROM integers;
 
 DROP FUNCTION capi08;
 CREATE FUNCTION capi08(inp2 INTEGER, inp1 INTEGER) RETURNS INTEGER LANGUAGE C {
+    size_t i;
     result->initialize(result, inp1.count);
-    for(size_t i = 0; i < inp1.count; i++) {
+    for(i = 0; i < inp1.count; i++) {
         result->data[i] = inp1.data[i] / inp2.data[i];
     }
 };

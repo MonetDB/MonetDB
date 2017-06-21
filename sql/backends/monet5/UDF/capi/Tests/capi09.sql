@@ -5,8 +5,9 @@ START TRANSACTION;
 # other (unsupported) types are simply converted to/from strings
 
 CREATE FUNCTION capi12(inp UUID) RETURNS UUID LANGUAGE C {
+    size_t i;
     result->initialize(result, inp.count);
-    for(size_t i = 0; i < inp.count; i++) {
+    for(i = 0; i < inp.count; i++) {
         if (inp.data[i] == inp.null_value) {
             result->data[i] = result->null_value;
         } else {

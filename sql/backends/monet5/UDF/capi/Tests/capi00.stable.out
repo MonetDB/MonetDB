@@ -73,16 +73,17 @@ Ready.
 #CREATE TABLE integers(i INTEGER);
 #INSERT INTO integers VALUES (1), (2), (3), (4), (5);
 [ 5	]
-#SELECT capi00(i) FROM integers;
-% sys.L2 # table_name
-% L2 # name
-% int # type
-% 2 # length
-[ 2	]
-[ 4	]
-[ 6	]
-[ 8	]
-[ 10	]
+#SELECT i, capi00(i) FROM integers;
+% sys.integers,	sys.L3 # table_name
+% i,	L3 # name
+% int,	int # type
+% 1,	2 # length
+[ 1,	2	]
+[ 2,	4	]
+[ 3,	6	]
+[ 4,	8	]
+[ 5,	10	]
+#DROP FUNCTION capi00;
 #ROLLBACK;
 
 # 11:56:00 >  

@@ -6,13 +6,15 @@ START TRANSACTION;
 CREATE FUNCTION capi06(inp INTEGER) RETURNS INTEGER LANGUAGE CPP {
 #include <vector>
 #include <algorithm>
+	size_t i;
+
     std::vector<int> elements;
-    for(size_t i = 0; i < inp.count; i++) {
+    for(i = 0; i < inp.count; i++) {
         elements.push_back(inp.data[i]);
     }
     std::sort(elements.begin(), elements.end());
     result->initialize(result, inp.count);
-    for(size_t i = 0; i < inp.count; i++) {
+    for(i = 0; i < inp.count; i++) {
         result->data[i] = elements[i];
     }
 };

@@ -4,24 +4,25 @@ START TRANSACTION;
 # dates
 # dates have the type
 #typedef struct {
-#	unsigned char day;
-#	unsigned char month;
-#	int year;
+#   unsigned char day;
+#   unsigned char month;
+#   int year;
 #} cudf_data_date;
 
 CREATE FUNCTION capi02_increment_year(d DATE) RETURNS DATE
 language C
 {
-	result->initialize(result, d.count);
-	for(size_t i = 0; i < result->count; i++) {
-		if (d.is_null(d.data[i])) {
-			result->data[i] = result->null_value;
-		} else {
-			result->data[i].year = d.data[i].year + 1;
-			result->data[i].month = d.data[i].month;
-			result->data[i].day = d.data[i].day;
-		}
-	}
+    size_t i;
+    result->initialize(result, d.count);
+    for(i = 0; i < result->count; i++) {
+        if (d.is_null(d.data[i])) {
+            result->data[i] = result->null_value;
+        } else {
+            result->data[i].year = d.data[i].year + 1;
+            result->data[i].month = d.data[i].month;
+            result->data[i].day = d.data[i].day;
+        }
+    }
 };
 
 
@@ -36,26 +37,27 @@ DROP TABLE dates;
 #time
 #time has the type:
 #typedef struct {
-#	unsigned int ms;
-#	unsigned char seconds;
-#	unsigned char minutes;
-#	unsigned char hours;
+#   unsigned int ms;
+#   unsigned char seconds;
+#   unsigned char minutes;
+#   unsigned char hours;
 #} cudf_data_time;
 
 CREATE FUNCTION capi02_randomize_time(d TIME) RETURNS TIME
 language C
 {
-	result->initialize(result, d.count);
-	for(size_t i = 0; i < result->count; i++) {
-		if (d.is_null(d.data[i])) {
-			result->data[i] = result->null_value;
-		} else {
-			result->data[i].hours = (i + 1234) % 24;
-			result->data[i].minutes = (i + 1234) % 60;
-			result->data[i].seconds = (i + 1234) % 60;
-			result->data[i].ms = (i + 1234) % 1000;
-		}
-	}
+    size_t i;
+    result->initialize(result, d.count);
+    for(i = 0; i < result->count; i++) {
+        if (d.is_null(d.data[i])) {
+            result->data[i] = result->null_value;
+        } else {
+            result->data[i].hours = (i + 1234) % 24;
+            result->data[i].minutes = (i + 1234) % 60;
+            result->data[i].seconds = (i + 1234) % 60;
+            result->data[i].ms = (i + 1234) % 1000;
+        }
+    }
 };
 
 
@@ -69,28 +71,29 @@ DROP TABLE times;
 #timestamps
 #timestamps have the type:
 #typedef struct {
-#	cudf_data_date date;
-#	cudf_data_time time;
+#   cudf_data_date date;
+#   cudf_data_time time;
 #} cudf_data_timestamp;
 
 CREATE FUNCTION capi02_increment_timestamp(d TIMESTAMP) RETURNS TIMESTAMP
 language C
 {
-	result->initialize(result, d.count);
-	for(size_t i = 0; i < result->count; i++) {
-		if (d.is_null(d.data[i])) {
-			result->data[i] = result->null_value;
-		} else {
-			result->data[i].date.year = d.data[i].date.year + 1;
-			result->data[i].date.month = d.data[i].date.month;
-			result->data[i].date.day = d.data[i].date.day;
+    size_t i;
+    result->initialize(result, d.count);
+    for(i = 0; i < result->count; i++) {
+        if (d.is_null(d.data[i])) {
+            result->data[i] = result->null_value;
+        } else {
+            result->data[i].date.year = d.data[i].date.year + 1;
+            result->data[i].date.month = d.data[i].date.month;
+            result->data[i].date.day = d.data[i].date.day;
 
-			result->data[i].time.hours = (i + 1234) % 24;
-			result->data[i].time.minutes = (i + 1234) % 60;
-			result->data[i].time.seconds = (i + 1234) % 60;
-			result->data[i].time.ms = (i + 1234) % 1000;
-		}
-	}
+            result->data[i].time.hours = (i + 1234) % 24;
+            result->data[i].time.minutes = (i + 1234) % 60;
+            result->data[i].time.seconds = (i + 1234) % 60;
+            result->data[i].time.ms = (i + 1234) % 1000;
+        }
+    }
 };
 
 
