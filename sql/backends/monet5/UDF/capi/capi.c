@@ -342,6 +342,9 @@ const char *debug_flag = "capi_use_debug";
 const char *cc_flag = "capi_cc";
 const char *cpp_flag = "capi_cpp";
 
+const char *cflags_pragma = "#pragma CFLAGS ";
+const char *ldflags_pragma = "#pragma LDFLAGS ";
+
 #define JIT_COMPILER_NAME "cc"
 #define JIT_CPP_COMPILER_NAME "c++"
 
@@ -407,6 +410,9 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 #else
 	int debug_build = true;
 #endif
+	char* extra_cflags = NULL;
+	char* extra_ldflags = NULL;
+
 
 	const char *compilation_flags = debug_build ? "-g -O0" : "-O2";
 	const char *c_compiler =
@@ -689,14 +695,35 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				if (exprStr[i] == '\n') {
 					if (is_preprocessor_directive) {
 						// the previous line was a preprocessor directive
-						// write it to the file
-						ATTEMPT_TO_WRITE_DATA_TO_FILE(f, exprStr +
-															 preprocessor_start,
-													  i - preprocessor_start);
-						ATTEMPT_TO_WRITE_TO_FILE(f, "\n");
+						// first check if it is one of our special preprocessor directives
+						if (i - preprocessor_start >= strlen(cflags_pragma) && 
+							memcmp(exprStr + preprocessor_start, cflags_pragma, strlen(cflags_pragma)) == 0) {
+							size_t cflags_characters = (i - preprocessor_start) - strlen(cflags_pragma);
+							if (cflags_characters > 0 && !extra_cflags) {
+								extra_cflags = GDKzalloc(cflags_characters + 1);
+								if (extra_cflags) {
+									memcpy(extra_cflags, exprStr + preprocessor_start + strlen(cflags_pragma), cflags_characters);
+								}
+							}
+						} else if (i - preprocessor_start >= strlen(ldflags_pragma) && 
+							memcmp(exprStr + preprocessor_start, ldflags_pragma, strlen(ldflags_pragma)) == 0) {
+							size_t ldflags_characters = (i - preprocessor_start) - strlen(ldflags_pragma);
+							if (ldflags_characters > 0 && !extra_ldflags) {
+								extra_ldflags = GDKzalloc(ldflags_characters + 1);
+								if (extra_ldflags) {
+									memcpy(extra_ldflags, exprStr + preprocessor_start + strlen(ldflags_pragma), ldflags_characters);
+								}
+							}
+						} else {
+							// regular preprocessor directive: write it to the file
+							ATTEMPT_TO_WRITE_DATA_TO_FILE(f, exprStr +
+																 preprocessor_start,
+														  i - preprocessor_start);
+							ATTEMPT_TO_WRITE_TO_FILE(f, "\n");
+						}
+						// now overwrite the preprocessor directive in the
+						// expression string with spaces
 						for (j = preprocessor_start; j < i; j++) {
-							// now overwrite the preprocessor directive in the
-							// expression string with spaces
 							exprStr[j] = ' ';
 						}
 					}
@@ -779,8 +806,8 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 		// now it's time to try to compile the code
 		// we use popen to capture any error output
-		snprintf(buf, sizeof(buf), "%s -c -fPIC %s %s -o %s 2>&1 >/dev/null",
-				 c_compiler, compilation_flags, fname, oname);
+		snprintf(buf, sizeof(buf), "%s %s -c -fPIC %s %s -o %s 2>&1 >/dev/null",
+				 c_compiler, extra_cflags ? extra_cflags : "", compilation_flags, fname, oname);
 		compiler = popen(buf, "r");
 		if (!compiler) {
 			msg = createException(MAL, "cudf.eval", "Failed popen");
@@ -807,8 +834,8 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 								  total_error_buf);
 			goto wrapup;
 		}
-		snprintf(buf, sizeof(buf), "%s %s -shared -o %s", c_compiler, oname,
-				 libname);
+		snprintf(buf, sizeof(buf), "%s %s %s -shared -o %s", c_compiler, 
+			extra_ldflags ? extra_ldflags : "", oname, libname);
 		compiler = popen(buf, "r");
 		if (!compiler) {
 			msg = createException(MAL, "cudf.eval", "Failed popen");
@@ -1518,6 +1545,12 @@ wrapup:
 	// close the compiler stream
 	if (compiler) {
 		pclose(compiler);
+	}
+	if (extra_cflags) {
+		GDKfree(extra_cflags);
+	}
+	if (extra_ldflags) {
+		GDKfree(extra_ldflags);
 	}
 	return msg;
 }
