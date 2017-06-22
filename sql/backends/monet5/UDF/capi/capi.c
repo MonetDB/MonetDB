@@ -434,6 +434,8 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	int bat_type = 0;
 	const char* tpe = NULL;
 
+	size_t extra_inputs = 0;
+
 	(void)cntxt;
 
 	actual_mprotected_regions[tid] = &regions;
@@ -901,7 +903,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	}
 	if (input_count > 0) {
 		// add "aggr_group" for non-grouped aggregates
-		size_t extra_inputs = non_grouped_aggregate ? 1 : 0;
+		extra_inputs = non_grouped_aggregate ? 1 : 0;
 		input_bats = GDKzalloc(sizeof(BAT *) * (input_count + extra_inputs));
 		inputs = GDKzalloc(sizeof(void *) * (input_count + extra_inputs));
 		if (!inputs || !input_bats) {
@@ -1484,6 +1486,14 @@ wrapup:
 			}
 		}
 		GDKfree(output_names);
+	}
+	if (input_bats) {
+		for(i = 0; i < input_count + extra_inputs; i++) {
+			if (input_bats[i]) {
+				BBPunfix(input_bats[i]->batCacheid);
+			}
+		}
+		GDKfree(input_bats);
 	}
 	// input data
 	if (inputs) {
