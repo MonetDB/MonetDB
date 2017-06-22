@@ -31,18 +31,124 @@ stderr of test 'pyapi3_25` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
 # 12:40:00 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21450" "--port=30737"
 # 12:40:00 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-14818/.s.monetdb.37353
-QUERY = SELECT * FROM pyapi25errortable();
-ERROR = !SELECT: no such table 'hopefullynonexistanttable'
-        !Python exception
-        !
-        !  1. def pyfun(_columns,_column_types,_conn):
-        !> 2.   _conn.execute('SELECT * FROM HOPEFULLYNONEXISTANTTABLE;')
-        !  3.   return 1
-        !  4. 
-        !SQL Query Failed: ParseException:SQLparser:42S02!SELECT: no such table 'hopefullynonexistanttable'
 
-# 12:40:01 >  
-# 12:40:01 >  "Done."
-# 12:40:01 >  
+# 18:08:03 >  
+# 18:08:03 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -i -e --host=/var/tmp/mtest-24131 --port=30465 < /Users/myth/Programs/MonetDB/sql/backends/monet5/UDF/pyapi3/../../Tests/pyapi25.sql
+# 18:08:03 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-24131/.s.monetdb.30465
+QUERY = SELECT pyapi25(i) FROM pyapi25table; #multiply by 3
+ERROR = !Python exception
+        !
+        !  1. def pyfun(i,_columns,_column_types,_conn):
+        !> 2.   res = _conn.execute('SELECT i FROM pyapi25multiplication;')
+        !  3.   return res['i'] * i
+        !  4.   return i
+        !Loopback queries are not supported in parallel.
+MAPI  = (monetdb) /var/tmp/mtest-24131/.s.monetdb.30465
+QUERY = UPDATE pyapi25multiplication SET i=10;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-24131/.s.monetdb.30465
+QUERY = SELECT pyapi25(i) FROM pyapi25table; #multiply by 10
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-24131/.s.monetdb.30465
+QUERY = DROP FUNCTION pyapi25;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-24131/.s.monetdb.30465
+QUERY = DROP TABLE pyapi25table;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-24131/.s.monetdb.30465
+QUERY = DROP TABLE pyapi25multiplication;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-24131/.s.monetdb.30465
+QUERY = CREATE TABLE pyapi25table(i integer);
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-24131/.s.monetdb.30465
+QUERY = INSERT INTO pyapi25table VALUES (1), (2), (3), (4);
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-24131/.s.monetdb.30465
+QUERY = CREATE FUNCTION pyapi25(i integer) returns integer
+        language PYTHON
+        {
+            _conn.execute('CREATE TABLE mytable(i INTEGER);')
+            _conn.execute('INSERT INTO mytable VALUES (1), (2), (3), (4);')
+            return i
+        };
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-24131/.s.monetdb.30465
+QUERY = SELECT pyapi25(i) FROM pyapi25table;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-24131/.s.monetdb.30465
+QUERY = CREATE FUNCTION pyapi25map(i integer) returns integer
+        language PYTHON_MAP
+        {
+            _conn.execute('UPDATE mytable SET i=i*10;')
+            return i
+        };
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-24131/.s.monetdb.30465
+QUERY = SELECT * FROM mytable; # 1,2,3,4
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-24131/.s.monetdb.30465
+QUERY = SELECT pyapi25map(i) FROM pyapi25table;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-24131/.s.monetdb.30465
+QUERY = SELECT * FROM mytable; # 10000, 20000, 30000, 40000 (*10 for every thread, 4 threads because there are 4 entries in pyapi25table)
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-24131/.s.monetdb.30465
+QUERY = CREATE TABLE pyapi25medians(mean DOUBLE);
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-24131/.s.monetdb.30465
+QUERY = CREATE FUNCTION pyapi25randomtable() returns TABLE(d DOUBLE) LANGUAGE PYTHON
+        {
+            numpy.random.seed(33)
+            return numpy.random.rand(1000000)
+        };
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-24131/.s.monetdb.30465
+QUERY = CREATE FUNCTION pyapi25mediancompute(d DOUBLE) RETURNS DOUBLE
+        language PYTHON_MAP
+        {
+            mean = numpy.mean(d)
+            _conn.execute('INSERT INTO pyapi25medians (mean) VALUES (%g);' % mean)
+            return 1
+        };
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-24131/.s.monetdb.30465
+QUERY = CREATE FUNCTION pyapi25checker(d DOUBLE) RETURNS BOOL LANGUAGE PYTHON {
+            actual_mean = numpy.mean(d)
+            numpy.random.seed(33)
+            expected_mean = numpy.mean(numpy.random.rand(1000000))
+            if numpy.abs(expected_mean - actual_mean) < 0.1:
+                print("Great success!")
+                return(True)
+            else:
+                print("Incorrect mean %g: expected %g" % (actual_mean, expected_mean))
+                print("Values:", d)
+                return(False)
+        };
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-24131/.s.monetdb.30465
+QUERY = CREATE TABLE randomtable AS SELECT * FROM pyapi25randomtable() WITH DATA;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-24131/.s.monetdb.30465
+QUERY = SELECT pyapi25mediancompute(d) FROM randomtable;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-24131/.s.monetdb.30465
+QUERY = SELECT pyapi25checker(mean) FROM pyapi25medians;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-24131/.s.monetdb.30465
+QUERY = CREATE FUNCTION pyapi25errortable() returns TABLE(d DOUBLE) LANGUAGE PYTHON_MAP
+        {
+            _conn.execute('SELECT * FROM HOPEFULLYNONEXISTANTTABLE;')
+            return 1
+        };
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-24131/.s.monetdb.30465
+QUERY = SELECT * FROM pyapi25errortable();
+ERROR = !current transaction is aborted (please ROLLBACK)
+
+# 18:08:03 >  
+# 18:08:03 >  "Done."
+# 18:08:03 >  
 
