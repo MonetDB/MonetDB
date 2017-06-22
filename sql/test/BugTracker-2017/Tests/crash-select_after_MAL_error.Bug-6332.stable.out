@@ -69,6 +69,14 @@ Ready.
 # 14:22:38 >  
 
 #CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#SELECT ALL + 93 + col0 FROM tab0 AS cor0;
+% sys. # table_name
+# sys.L2 # table_name
+% L # name
+# L2 # name
+% bigint # type
+% 1 # length
+#DROP TABLE tab0;
 
 # 14:22:39 >  
 # 14:22:39 >  "Done."
