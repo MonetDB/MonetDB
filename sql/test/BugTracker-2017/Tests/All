@@ -42,3 +42,4 @@ distinct_minus_count_distinct.Bug-6296
 all_minus_count_star.Bug-6297
 simplify_math.Bug-6324
 crash-dce.Bug-6330
+statistics_nils_not_eq_zero.Bug-6331
