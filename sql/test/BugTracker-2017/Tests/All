@@ -43,3 +43,4 @@ all_minus_count_star.Bug-6297
 simplify_math.Bug-6324
 crash-dce.Bug-6330
 statistics_nils_not_eq_zero.Bug-6331
+crash-select_after_MAL_error.Bug-6332
