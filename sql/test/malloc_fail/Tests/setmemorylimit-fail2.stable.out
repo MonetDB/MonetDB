@@ -1,0 +1,36 @@
+stdout of test 'setmemorylimit-fail` in directory 'sql/test/malloc_fail` itself:
+
+
+# 15:41:50 >  
+# 15:41:50 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38119" "--set" "mapi_usock=/var/tmp/mtest-56431/.s.monetdb.38119" "--set" "monet_prompt=" "--forcemito" "--dbpath=/Users/hannes/monetdb-install/var/MonetDB/mTests_sql_test_malloc_fail"
+# 15:41:50 >  
+
+# MonetDB 5 server v11.25.24
+# This is an unreleased version
+# Serving database 'mTests_sql_test_malloc_fail', using 4 threads
+# Compiled for x86_64-apple-darwin15.5.0/64bit with 128bit integers
+# Found 16.000 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dakar.da.cwi.nl:38119/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-56431/.s.monetdb.38119
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 15:41:50 >  
+# 15:41:50 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-56431" "--port=38119"
+# 15:41:50 >  
+
+#select name from tables where 1=0;
+% .tables # table_name
+% name # name
+% varchar # type
+% 0 # length
+
+# 15:41:50 >  
+# 15:41:50 >  "Done."
+# 15:41:50 >  
+
