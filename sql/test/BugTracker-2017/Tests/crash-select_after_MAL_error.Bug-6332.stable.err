@@ -1,0 +1,40 @@
+stderr of test 'crash-select_after_MAL_error.Bug-6332` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 14:22:37 >  
+# 14:22:37 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36959" "--set" "mapi_usock=/var/tmp/mtest-11002/.s.monetdb.36959" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2017" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 14:22:37 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch2/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 36959
+# cmdline opt 	mapi_usock = /var/tmp/mtest-11002/.s.monetdb.36959
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2017
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 536870922
+
+# 14:22:38 >  
+# 14:22:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11002" "--port=36959"
+# 14:22:38 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-11002/.s.monetdb.36959
+QUERY = SELECT DISTINCT col1 * + + col1 + + col2 * 0 / + - CAST ( + - col0 AS INTEGER ) AS col1 FROM tab0 cor0;
+ERROR = !TypeException:user.main[19]:'bat.append' undefined in:     bat.append(X_1274:bat[:lng],X_1280:bte);
+
+
+# 14:22:39 >  
+# 14:22:39 >  "Done."
+# 14:22:39 >  
+

@@ -1,19 +1,20 @@
-stdout of test 'pyapi29` in directory 'sql/backends/monet5` itself:
+stdout of test 'crash-dce.Bug-6330` in directory 'sql/test/BugTracker-2017` itself:
 
 
-# 14:25:18 >  
-# 14:25:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37152" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/raasveld/build/var/MonetDB/mTests_sql_backends_monet5" "--set" "embedded_r=yes" "--set" "embedded_py=true"
-# 14:25:18 >  
+# 13:53:44 >  
+# 13:53:44 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30094" "--set" "mapi_usock=/var/tmp/mtest-30656/.s.monetdb.30094" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2017" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 13:53:44 >  
 
-# MonetDB 5 server v11.24.0
+# MonetDB 5 server v11.25.24
 # This is an unreleased version
-# Serving database 'mTests_sql_backends_monet5', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
-# Found 15.589 GiB available main-memory.
+# Serving database 'mTests_sql_test_BugTracker-2017', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.588 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://lyon.da.cwi.nl:37152/
+# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:30094/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-30656/.s.monetdb.30094
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 # MonetDB/Python module loaded
@@ -35,7 +36,6 @@ Ready.
 # loading sql script: 21_dependency_functions.sql
 # loading sql script: 22_clients.sql
 # loading sql script: 23_skyserver.sql
-# loading sql script: 24_zorder.sql
 # loading sql script: 25_debug.sql
 # loading sql script: 26_sysmon.sql
 # loading sql script: 27_rejects.sql
@@ -51,6 +51,7 @@ Ready.
 # loading sql script: 51_sys_schema_extension.sql
 # loading sql script: 72_fits.sql
 # loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
 # loading sql script: 75_shp.sql
 # loading sql script: 75_storagemodel.sql
 # loading sql script: 80_statistics.sql
@@ -61,23 +62,18 @@ Ready.
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
 
-# 14:25:19 >  
-# 14:25:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=lyon" "--port=37152"
-# 14:25:19 >  
+# 13:53:45 >  
+# 13:53:45 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30656" "--port=30094"
+# 13:53:45 >  
 
-#START TRANSACTION;
-#CREATE TABLE mytable(i DOUBLE, d DOUBLE);
-#INSERT INTO mytable VALUES (1, 1), (2, 2), (3, 3), (4, 4), (5, 5);
-[ 5	]
-#CREATE FUNCTION myfunc() RETURNS TABLE(n STRING) LANGUAGE PYTHON_MAP {
-#   res = _conn.execute("SELECT max(d) FROM mytable;")
-#   result = dict()
-#   result['n'] = str(res)
-#   return result
-#};
-#ROLLBACK;
+#SELECT 45 - CASE + + 70 WHEN COUNT ( * ) + SUM ( DISTINCT 91 ) + MIN ( DISTINCT 41 ) / 65 THEN + 98 END * + - 0 - - COUNT ( * ) AS col0;
+% .L7 # table_name
+% col0 # name
+% hugeint # type
+% 2 # length
+[ 46	]
 
-# 14:25:20 >  
-# 14:25:20 >  "Done."
-# 14:25:20 >  
+# 13:53:46 >  
+# 13:53:46 >  "Done."
+# 13:53:46 >  
 
