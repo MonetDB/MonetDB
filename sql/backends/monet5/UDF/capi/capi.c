@@ -35,8 +35,6 @@ typedef struct _mprotected_region {
 	void *actual_addr;
 	size_t actual_len;
 
-	bool is_protected;
-
 	struct _mprotected_region *next;
 } mprotected_region;
 
@@ -113,7 +111,6 @@ static void handler(int sig, siginfo_t *si, void *unused)
 	// thus sometimes we mprotect a page where only part of the page
 	// should actually be protected. Thus for this case we check if the access
 	// was actually an error
-
 	if (actual_mprotected_regions[tid]) {
 		mprotected_region *region = *actual_mprotected_regions[tid];
 		while (region) {
@@ -132,13 +129,22 @@ static void handler(int sig, siginfo_t *si, void *unused)
 			region = region->next;
 		}
 	}
+
 	if (found_region && !actually_protected_area) {
 		// this is NOT an actually protected area
 		// thus the segfault/bus error is invalid
 		// the nasty part here is that we have to unprotect the entire page now
 		// thus opening us up to future modifications of the data
-		clear_mprotect(found_region->addr, found_region->len);
-		found_region->addr = NULL;
+
+		mprotected_region *region = *actual_mprotected_regions[tid];
+		while (region) {
+			if (si->si_addr >= region->addr &&
+				(char *)si->si_addr <= (char *)region->addr + region->len) {
+				// the address belongs to this mprotected region
+				clear_mprotect(found_region->addr, found_region->len);
+			}
+			region = region->next;
+		}
 	} else {
 		longjmp(jump_buffer[tid], 1);
 	}
@@ -177,7 +183,6 @@ static char *mprotect_region(void *addr, size_t len,
 	region->next = *regions;
 	region->actual_addr = actual_addr;
 	region->actual_len = actual_len;
-	region->is_protected = false;
 	*regions = region;
 	return NULL;
 }
@@ -386,16 +391,16 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	int seengrp = FALSE;
 	FILE *f = NULL;
 	void *handle = NULL;
-	jitted_function func = NULL;
+	jitted_function volatile func = NULL;
 	int ret;
 
 	FILE *compiler = NULL;
 	int compiler_return_code;
 
-	void **inputs = NULL;
-	size_t input_count = 0;
-	void **outputs = NULL;
-	size_t output_count = 0;
+	void ** volatile inputs = NULL;
+	size_t volatile input_count = 0;
+	void ** volatile outputs = NULL;
+	size_t volatile output_count = 0;
 	BAT **input_bats = NULL;
 	mprotected_region *regions = NULL, *region_iter = NULL;
 
@@ -425,7 +430,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 	BUN expression_hash = 0, funcname_hash = 0;
 	cached_functions *cached_function;
-	char *function_parameters = NULL;
+	char* volatile function_parameters = NULL;
 	int tid = THRgettid();
 	size_t input_size = 0;
 	bit non_grouped_aggregate = 0;
@@ -434,7 +439,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	int bat_type = 0;
 	const char* tpe = NULL;
 
-	size_t extra_inputs = 0;
+	size_t volatile extra_inputs = 0;
 
 	(void)cntxt;
 
@@ -1222,7 +1227,6 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		if (mprotect(region_iter->addr, region_iter->len, PROT_READ) < 0) {
 			goto wrapup;
 		}
-		region_iter->is_protected = true;
 		region_iter = region_iter->next;
 	}
 
@@ -1232,9 +1236,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	// clear any mprotected regions
 	while (regions) {
 		mprotected_region *next = regions->next;
-		if (regions->is_protected) {
-			clear_mprotect(regions->addr, regions->len);
-		}
+		clear_mprotect(regions->addr, regions->len);
 		GDKfree(regions);
 		regions = next;
 	}
@@ -1456,9 +1458,7 @@ wrapup:
 	// clear any mprotected regions
 	while (regions) {
 		mprotected_region *next = regions->next;
-		if (regions->is_protected) {
-			clear_mprotect(regions->addr, regions->len);
-		}
+		clear_mprotect(regions->addr, regions->len);
 		GDKfree(regions);
 		regions = next;
 	}
@@ -1497,7 +1497,7 @@ wrapup:
 	}
 	// input data
 	if (inputs) {
-		for (i = 0; i < (size_t)input_count; i++) {
+		for (i = 0; i < (size_t)input_count + extra_inputs; i++) {
 			if (inputs[i]) {
 				if (isaBatType(getArgType(mb, pci, i))) {
 					bat_type = getBatType(getArgType(mb, pci, i));
