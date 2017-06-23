@@ -2134,6 +2134,7 @@ int getHgeConstant(MalBlkPtr mb, hge val);
 int getIntConstant(MalBlkPtr mb, int val);
 int getLngConstant(MalBlkPtr mb, lng val);
 MalBlkPtr getMalBlkHistory(MalBlkPtr mb, int idx);
+MalBlkPtr getMalBlkOptimized(MalBlkPtr mb, str name);
 lng getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag);
 void getModuleList(Module **out, int *length);
 str getName(const char *nme);
