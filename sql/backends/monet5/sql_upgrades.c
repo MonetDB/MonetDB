@@ -823,90 +823,6 @@ sql_update_dec2016(Client c, mvc *sql)
 	return err;		/* usually MAL_SUCCEED */
 }
 
-/* older databases may have sys.median and sys.quantile aggregates on
- * decimal(1) which doesn't match plain decimal: fix those */
-#if 0
-static str
-sql_update_median(Client c, mvc *sql)
-{
-	char *q1 = "select id from sys.args where func_id in (select id from sys.functions where name = 'median' and schema_id = (select id from sys.schemas where name = 'sys')) and type = 'decimal' and type_digits = 1 and type_scale = 0 and number = 1;\n";
-	char *q2 = "select id from sys.args where func_id in (select id from sys.functions where name = 'median' and schema_id = (select id from sys.schemas where name = 'sys')) and type = 'date' and number = 1;\n";
-	size_t bufsize = 5000, pos = 0;
-	char *buf = GDKmalloc(bufsize), *err = NULL;
-	char *schema = stack_get_string(sql, "current_schema");
-	res_table *output;
-	BAT *b;
-	int needed = 0;
-
-	if( buf== NULL)
-		throw(SQL, "sql_update_median", MAL_MALLOC_FAIL);
-	pos += snprintf(buf + pos, bufsize - pos,
-			"set schema \"sys\";\n");
-	err = SQLstatementIntern(c, &q1, "update", 1, 0, &output);
-	if (err) {
-		GDKfree(buf);
-		return err;
-	}
-	b = BATdescriptor(output->cols[0].b);
-	if (b) {
-		if (BATcount(b) > 0) {
-			pos += snprintf(buf + pos, bufsize - pos,
-					"drop aggregate median(decimal(1));\n"
-					"create aggregate median(val DECIMAL) returns DECIMAL"
-					" external name \"aggr\".\"median\";\n"
-					"drop aggregate quantile(decimal(1), double);\n"
-					"create aggregate quantile(val DECIMAL, q DOUBLE) returns DECIMAL"
-					" external name \"aggr\".\"quantile\";\n");
-			needed = 1;
-		}
-		BBPunfix(b->batCacheid);
-	}
-	res_tables_destroy(output);
-	err = SQLstatementIntern(c, &q2, "update", 1, 0, &output);
-	if (err) {
-		GDKfree(buf);
-		return err;
-	}
-	b = BATdescriptor(output->cols[0].b);
-	if (b) {
-		if (BATcount(b) == 0) {
-			pos += snprintf(buf + pos, bufsize - pos,
-					"create aggregate median(val DATE) returns DATE"
-					" external name \"aggr\".\"median\";\n"
-					"create aggregate median(val TIME) returns TIME"
-					" external name \"aggr\".\"median\";\n"
-					"create aggregate median(val TIMESTAMP) returns TIMESTAMP"
-					" external name \"aggr\".\"median\";\n"
-#if 0
-					"create aggregate quantile(val DATE, q DOUBLE) returns DATE"
-					" external name \"aggr\".\"quantile\";\n"
-					"create aggregate quantile(val TIME, q DOUBLE) returns TIME"
-					" external name \"aggr\".\"quantile\";\n"
-					"create aggregate quantile(val TIMESTAMP, q DOUBLE) returns TIMESTAMP"
-					" external name \"aggr\".\"quantile\";\n"
-#endif
-		);
-			needed = 1;
-		}
-		BBPunfix(b->batCacheid);
-	}
-	res_tables_destroy(output);
-	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.systemfunctions (select id from sys.functions where name in ('median', 'quantile') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
-	if (schema)
-		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-	assert(pos < bufsize);
-	if (needed) {
-		printf("Running database upgrade commands:\n%s\n", buf);
-		err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
-	}
-
-	GDKfree(buf);
-
-	return err;		/* usually MAL_SUCCEED */
-}
-#endif
-
 static str
 sql_update_geom_jun2016_sp2(Client c, mvc *sql)
 {
@@ -1467,13 +1383,6 @@ SQLupgrades(Client c, mvc *m)
 			}
 		}
 	}
-
-	/*
-	if ((err = sql_update_median(c, m)) != NULL) {
-		fprintf(stderr, "!%s\n", err);
-		freeException(err);
-	}
-	*/
 
 	if (sql_find_subtype(&tp, "geometry", 0, 0) &&
 	    (f = sql_bind_func(m->sa, s, "mbr", &tp, NULL, F_FUNC)) != NULL &&
