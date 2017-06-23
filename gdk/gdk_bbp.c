@@ -1000,14 +1000,8 @@ heapinit(BAT *b, const char *buf, int *hashash, const char *HT, int bbpversion, 
 		GDKfatal("BBPinit: unknown properties are set: incompatible database\n");
 	*hashash = var & 2;
 	var &= ~2;
-	/* silently convert chr columns to bte */
-	if (strcmp(type, "chr") == 0)
-		strcpy(type, "bte");
-	/* silently convert wrd columns to int or lng */
-	else if (strcmp(type, "wrd") == 0)
-		strcpy(type, width == SIZEOF_INT ? "int" : "lng");
 #ifdef HAVE_HGE
-	else if (strcmp(type, "hge") == 0)
+	if (strcmp(type, "hge") == 0)
 		havehge = 1;
 #endif
 	if ((t = ATOMindex(type)) < 0) {
