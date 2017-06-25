@@ -27,9 +27,6 @@ stderr of test 'crash-dce.Bug-6330` in directory 'sql/test/BugTracker-2017` itse
 # 19:31:40 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22559" "--port=33270"
 # 19:31:40 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-22559/.s.monetdb.33270
-QUERY = SELECT 45 - - CASE + + 70 WHEN COUNT ( * ) + SUM ( DISTINCT 91 ) + MIN ( DISTINCT 41 ) / 65 THEN + 98 END * + - 0 - - COUNT ( * ) AS col0;
-ERROR = !TypeException:user.update[15]:'calc.-' undefined in:     X_114:sht := calc.-(X_113:bte);
 
 # 19:31:40 >  
 # 19:31:40 >  "Done."

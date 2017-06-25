@@ -70,9 +70,9 @@ Ready.
 
 #CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
 #SELECT DISTINCT col1 * + + col1 + + col2 * 0 / + - CAST ( + - col0 AS INTEGER ) AS col1 FROM tab0 cor0;
-% sys.L2 # table_name
+% sys.L3 # table_name
 % col1 # name
-% bigint # type
+% hugeint # type
 % 1 # length
 #SELECT ALL + 93 + col0 FROM tab0 AS cor0;
 % sys.L2 # table_name
