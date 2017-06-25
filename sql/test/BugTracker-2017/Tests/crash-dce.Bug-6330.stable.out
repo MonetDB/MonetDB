@@ -66,12 +66,18 @@ Ready.
 # 13:53:45 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30656" "--port=30094"
 # 13:53:45 >  
 
+#SELECT 45 - - CASE + + 70 WHEN COUNT ( * ) + SUM ( DISTINCT 91 ) + MIN ( DISTINCT 41 ) / 65 THEN + 98 END * + - 0 - - COUNT ( * ) AS col0;
+% .L7 # table_name
+% col0 # name
+% hugeint # type
+% 40 # length
+[ NULL	]
 #SELECT 45 - CASE + + 70 WHEN COUNT ( * ) + SUM ( DISTINCT 91 ) + MIN ( DISTINCT 41 ) / 65 THEN + 98 END * + - 0 - - COUNT ( * ) AS col0;
 % .L7 # table_name
 % col0 # name
 % hugeint # type
-% 2 # length
-[ 46	]
+% 40 # length
+[ NULL	]
 
 # 13:53:46 >  
 # 13:53:46 >  "Done."
