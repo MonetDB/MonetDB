@@ -79,92 +79,10 @@ static PyObject *_connection_execute(Py_ConnectionObject *self, PyObject *args)
 		} else {
 			Py_RETURN_NONE;
 		}
-	} else
-#ifdef HAVE_FORK
-	{
-		str msg;
-		char *query;
-#ifndef IS_PY3K
-		query = ((PyStringObject *)args)->ob_sval;
-#else
-		query = PyUnicode_AsUTF8(args);
-#endif
-		// This is a mapped process, we do not want forked processes to touch
-		// the database
-		// Only the main process may touch the database, so we ship the query
-		// back to the main process
-		// copy the query into shared memory and tell the main process there is
-		// a query to handle
-		strncpy(self->query_ptr->query, query, 8192);
-		self->query_ptr->pending_query = true;
-		// free the main process so it can work on the query
-		GDKchangesemval(self->query_sem, 0, 1, &msg);
-		// now wait for the main process to finish
-		GDKchangesemval(self->query_sem, 1, -1, &msg);
-		if (self->query_ptr->pending_query) {
-			// the query failed in the main process
-			//           life is hopeless
-			// there is no reason to continue to live
-			//                so we commit sudoku
-			exit(0);
-		}
-
-		if (self->query_ptr->memsize > 0) // check if there are return values
-		{
-			char *msg;
-			char *ptr;
-			PyObject *numpy_array;
-			size_t position = 0;
-			PyObject *result;
-			int i;
-
-			// get a pointer to the shared memory holding the return values
-			if (GDKinitmmap(self->query_ptr->mmapid + 0,
-							self->query_ptr->memsize, (void **)&ptr, NULL,
-							&msg) != GDK_SUCCEED) {
-				PyErr_Format(PyExc_Exception, "%s", msg);
-				return NULL;
-			}
-
-			result = PyDict_New();
-			for (i = 0; i < self->query_ptr->nr_cols; i++) {
-				BAT *b;
-				str colname;
-				PyInput input;
-				position += GDKbatread(ptr + position, &b, &colname);
-				// initialize the PyInput structure
-				input.bat = b;
-				input.count = BATcount(b);
-				input.bat_type = b->ttype;
-				input.scalar = false;
-				input.sql_subtype = NULL;
-
-				numpy_array =
-					PyMaskedArray_FromBAT(&input, 0, input.count, &msg, true);
-				if (!numpy_array) {
-					PyErr_Format(PyExc_Exception, "SQL Query Failed: %s",
-								 (msg ? msg : "<no error>"));
-					GDKreleasemmap(ptr, self->query_ptr->memsize,
-								   self->query_ptr->mmapid, &msg);
-					return NULL;
-				}
-				PyDict_SetItem(result, PyString_FromString(colname),
-							   numpy_array);
-				Py_DECREF(numpy_array);
-			}
-			GDKreleasemmap(ptr, self->query_ptr->memsize,
-						   self->query_ptr->mmapid, &msg);
-			return result;
-		}
-
-		Py_RETURN_NONE;
-	}
-#else
-	{
-		PyErr_Format(PyExc_Exception, "Mapped is not supported on Windows.");
+	} else {
+		PyErr_Format(PyExc_Exception, "Loopback queries are not supported in parallel.");
 		return NULL;
 	}
-#endif
 }
 
 static PyMethodDef _connectionObject_methods[] = {
