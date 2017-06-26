@@ -39,12 +39,6 @@
 
 static int
 pseudo(bat *ret, bat *ret2, BAT *bn, BAT *b) {
-	if (BATmode(bn,TRANSIENT) != GDK_SUCCEED ||
-		BATmode(b,TRANSIENT) != GDK_SUCCEED) {
-		return -1;
-	}
-	BATfakeCommit(b);
-	BATfakeCommit(bn);
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	*ret2 = b->batCacheid;

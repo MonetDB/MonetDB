@@ -28,6 +28,7 @@ Running database upgrade commands:
 set schema "sys";
 delete from sys._columns where table_id = (select id from sys._tables where name = 'connections' and schema_id = (select id from sys.schemas where name = 'sys'));
 delete from sys._tables where name = 'connections' and schema_id = (select id from sys.schemas where name = 'sys');
+update sys.functions set side_effect = false where name in ('like', 'ilike') and schema_id = (select id from sys.schemas where name = 'sys');
 drop function sys.malfunctions;
 create function sys.malfunctions() returns table("module" string, "function" string, "signature" string, "address" string, "comment" string) external name "manual"."functions";
 drop function sys.optimizer_stats();
@@ -38,27 +39,34 @@ create procedure profiler.setlimit(lim integer) external name profiler.setlimit;
 drop procedure profiler.setpoolsize;
 drop procedure profiler.setstream;
 insert into sys.systemfunctions (select id from sys.functions where name in ('getlimit', 'setlimit') and schema_id = (select id from sys.schemas where name = 'profiler') and id not in (select function_id from sys.systemfunctions));
+ALTER TABLE sys.keywords SET READ ONLY;
+ALTER TABLE sys.table_types SET READ ONLY;
+ALTER TABLE sys.dependency_types SET READ ONLY;
 CREATE TABLE sys.function_types (
 function_type_id   SMALLINT NOT NULL PRIMARY KEY,
 function_type_name VARCHAR(30) NOT NULL UNIQUE);
 INSERT INTO sys.function_types (function_type_id, function_type_name) VALUES
 (1, 'Scalar function'), (2, 'Procedure'), (3, 'Aggregate function'), (4, 'Filter function'), (5, 'Function returning a table'),
 (6, 'Analytic function'), (7, 'Loader function');
+ALTER TABLE sys.function_types SET READ ONLY;
 CREATE TABLE sys.function_languages (
 language_id   SMALLINT NOT NULL PRIMARY KEY,
 language_name VARCHAR(20) NOT NULL UNIQUE);
 INSERT INTO sys.function_languages (language_id, language_name) VALUES
-(0, 'Internal C'), (1, 'MAL'), (2, 'SQL'), (3, 'R'), (4, 'C'), (5, 'Java'), (6, 'Python'), (7, 'Python Mapped');
+(0, 'Internal C'), (1, 'MAL'), (2, 'SQL'), (3, 'R'), (6, 'Python'), (7, 'Python Mapped'), (8, 'Python2'), (9, 'Python2 Mapped'), (10, 'Python3'), (11, 'Python3 Mapped');
+ALTER TABLE sys.function_languages SET READ ONLY;
 CREATE TABLE sys.key_types (
 key_type_id   SMALLINT NOT NULL PRIMARY KEY,
 key_type_name VARCHAR(15) NOT NULL UNIQUE);
 INSERT INTO sys.key_types (key_type_id, key_type_name) VALUES
 (0, 'Primary Key'), (1, 'Unique Key'), (2, 'Foreign Key');
+ALTER TABLE sys.key_types SET READ ONLY;
 CREATE TABLE sys.index_types (
 index_type_id   SMALLINT NOT NULL PRIMARY KEY,
 index_type_name VARCHAR(25) NOT NULL UNIQUE);
 INSERT INTO sys.index_types (index_type_id, index_type_name) VALUES
 (0, 'Hash'), (1, 'Join'), (2, 'Order preserving hash'), (3, 'No-index'), (4, 'Imprint'), (5, 'Ordered');
+ALTER TABLE sys.index_types SET READ ONLY;
 CREATE TABLE sys.privilege_codes (
 privilege_code_id   INT NOT NULL PRIMARY KEY,
 privilege_code_name VARCHAR(30) NOT NULL UNIQUE);
@@ -67,6 +75,7 @@ INSERT INTO sys.privilege_codes (privilege_code_id, privilege_code_name) VALUES
 (3, 'SELECT,UPDATE'), (5, 'SELECT,INSERT'), (6, 'INSERT,UPDATE'), (7, 'SELECT,INSERT,UPDATE'),
 (9, 'SELECT,DELETE'), (10, 'UPDATE,DELETE'), (11, 'SELECT,UPDATE,DELETE'), (12, 'INSERT,DELETE'),
 (13, 'SELECT,INSERT,DELETE'), (14, 'INSERT,UPDATE,DELETE'), (15, 'SELECT,INSERT,UPDATE,DELETE');
+ALTER TABLE sys.privilege_codes SET READ ONLY;
 update sys._tables set system = true where name in ('function_languages', 'function_types', 'index_types', 'key_types', 'privilege_codes') and schema_id = (select id from sys.schemas where name = 'sys');
 drop procedure SHPload(integer);
 create procedure SHPload(fid integer) external name shp.import;

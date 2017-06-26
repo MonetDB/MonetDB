@@ -1,0 +1,51 @@
+stderr of test 'lateral02.Bug-6314` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 16:32:27 >  
+# 16:32:27 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36678" "--set" "mapi_usock=/var/tmp/mtest-27183/.s.monetdb.36678" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-old/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 16:32:27 >  
+
+# builtin opt 	gdk_dbpath = /home/niels/scratch/rc-old/Linux-x86_64/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 36678
+# cmdline opt 	mapi_usock = /var/tmp/mtest-27183/.s.monetdb.36678
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/niels/scratch/rc-old/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017
+# cmdline opt 	gdk_debug = 536870922
+
+# 16:32:27 >  
+# 16:32:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27183" "--port=36678"
+# 16:32:27 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-27183/.s.monetdb.36678
+QUERY = select
+          (select id from sys.schemas) as c0
+        from 
+          (select  subq_0.c3 as c4
+                  from 
+                    lateral (select
+                          ref_0.ndim as c3
+                        from 
+                          tmp._tables as sample_1
+                        where ((select index_type_id from sys.index_types) is not NULL)
+                          or (true)) as subq_0
+                  where (select n_regionkey from sys.nation) is not NULL) as subq_1
+              inner join sys.idxs as ref_1
+              on (subq_1.c2 = ref_1.id )
+            inner join sys.netcdf_attrs as sample_15
+ERROR = !SELECT: no such column 'ref_0.ndim'
+
+# 16:32:27 >  
+# 16:32:27 >  "Done."
+# 16:32:27 >  
+

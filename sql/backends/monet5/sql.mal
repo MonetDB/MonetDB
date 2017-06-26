@@ -339,10 +339,7 @@ inline function sql.subzero_or_one( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], 
 	c01 := calc.not(c0);
 	c1 := calc.>(m,1:lng);
 	c11 := calc.and(c01,c1);
-	ms := calc.str(m); 
-	msg := str.+("21000!zero_or_one: cardinality violation (", ms);
-	msg1 := str.+(msg, ">1)");
-	sql.assert(c11, msg1);
+	sql.assert(c11, "21000!zero_or_one: cardinality violation, scalar expression expected");
 	return zero_or_one := b;
 end sql.subzero_or_one;
 
@@ -358,10 +355,7 @@ inline function sql.all( b:bat[:any_1], gp:bat[:oid], gpe:bat[:oid], no_nil:bit)
 	c01 := calc.not(c0);
 	c1 := calc.>(m,1:lng);
 	c11 := calc.and(c01,c1);
-	ms := calc.str(m); 
-	msg := str.+("21000!zero_or_one: cardinality violation (", ms);
-	msg1 := str.+(msg, ">1)");
-	sql.assert(c11, msg1);
+	sql.assert(c11, "21000!zero_or_one: cardinality violation, scalar expression expected ");
 	return all := b;
 end sql.all;
 

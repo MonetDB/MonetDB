@@ -1,0 +1,54 @@
+stderr of test 'lateral.Bug-6310` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 16:49:27 >  
+# 16:49:27 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34067" "--set" "mapi_usock=/var/tmp/mtest-31693/.s.monetdb.34067" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-old/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 16:49:27 >  
+
+# builtin opt 	gdk_dbpath = /home/niels/scratch/rc-old/Linux-x86_64/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 34067
+# cmdline opt 	mapi_usock = /var/tmp/mtest-31693/.s.monetdb.34067
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/niels/scratch/rc-old/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017
+# cmdline opt 	gdk_debug = 536870922
+
+# 16:49:27 >  
+# 16:49:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-31693" "--port=34067"
+# 16:49:27 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-31693/.s.monetdb.34067
+QUERY = select
+          ref_0.message as c0
+        from
+          sys.rejects as ref_0,
+          lateral (select
+        		(select name from sys.objects)
+        		   as c0
+        	  from
+        		sys.args as sample_1
+        		  right join tmp._columns as ref_4
+        			  inner join sys.part as ref_6
+        				  inner join sys.types as sample_5
+        				  on (ref_6.p_comment = sample_5.systemname )
+        				right join sys.netcdf_vars as ref_7
+        				on (sample_5.digits = ref_7.var_id )
+        			  on (ref_4.name = sample_5.systemname )
+        			right join sys.user_role as sample_8
+        			  inner join sys.partsupp as ref_10
+ERROR = !cardinality violation, scalar value expected
+
+# 16:49:27 >  
+# 16:49:27 >  "Done."
+# 16:49:27 >  
+

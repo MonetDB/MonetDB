@@ -497,7 +497,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 #ifndef HAVE_NEXTAFTERF
 #define nextafter   _nextafter
-float nextafterf(float x, float y);
+#include "mutils.h"		/* nextafterf */
 #endif
 
 #define PREVVALUEbte(x) ((x) - 1)

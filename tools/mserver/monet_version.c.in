@@ -49,7 +49,7 @@ monet_version(void)
 		printf("This is an unreleased version\n");
 	printf("Copyright (c) 1993-July 2008 CWI\n"
 			"Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved\n");
-	printf("Visit http://www.monetdb.org/ for further information\n");
+	printf("Visit https://www.monetdb.org/ for further information\n");
 	printf("Found %.1fGiB available memory, %d available cpu core%s\n",
 			sz_mem_gb, cores, cores != 1 ? "s" : "");
 	/* don't want to GDKinit just for this

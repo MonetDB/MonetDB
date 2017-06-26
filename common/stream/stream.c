@@ -129,6 +129,7 @@
 
 #ifdef NATIVE_WIN32
 #define pclose _pclose
+#define fileno(fd) _fileno(fd)
 #endif
 
 #define UTF8BOM		"\xEF\xBB\xBF" /* UTF-8 encoding of Unicode BOM */
@@ -821,7 +822,7 @@ file_fsync(stream *s)
 	if (fp == NULL ||
 	    (s->access == ST_WRITE
 #ifdef NATIVE_WIN32
-	     && _commit(_fileno(fp)) < 0
+	     && _commit(fileno(fp)) < 0
 #else
 #ifdef HAVE_FDATASYNC
 	     && fdatasync(fileno(fp)) < 0
@@ -876,10 +877,6 @@ file_fsetpos(stream *s, lng p)
 #endif
 	return res;
 }
-
-#ifdef NATIVE_WIN32
-#define fileno(fd) _fileno(fd)
-#endif
 
 size_t
 getFileSize(stream *s)
@@ -2978,7 +2975,7 @@ file_rastream(FILE *fp, const char *name)
 		}
 	}
 #ifdef _MSC_VER
-	if (_fileno(fp) == 0 && _isatty(0)) {
+	if (fileno(fp) == 0 && isatty(0)) {
 		struct console *c = malloc(sizeof(struct console));
 		s->stream_data.p = c;
 		c->h = GetStdHandle(STD_INPUT_HANDLE);
@@ -3015,7 +3012,7 @@ file_wastream(FILE *fp, const char *name)
 	s->access = ST_WRITE;
 	s->type = ST_ASCII;
 #ifdef _MSC_VER
-	if ((_fileno(fp) == 1 || _fileno(fp) == 2) && _isatty(_fileno(fp))) {
+	if ((fileno(fp) == 1 || fileno(fp) == 2) && isatty(fileno(fp))) {
 		struct console *c = malloc(sizeof(struct console));
 		s->stream_data.p = c;
 		c->h = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -4469,7 +4466,7 @@ bs2_stealbuf(stream *ss)
 
 int 
 bs2_resizebuf(stream *ss, size_t bufsiz) {
-	size_t compress_bound;
+	ssize_t compress_bound;
 	bs2 *s = (bs2 *) ss->stream_data.p;
 	assert(ss->read == bs2_read);
 
@@ -5393,6 +5390,17 @@ getFile(stream *s)
 	return (FILE *) s->stream_data.p;
 }
 
+int
+getFileNo(stream *s)
+{
+	FILE *f;
+
+	f = getFile(s);
+	if (f == NULL)
+		return -1;
+	return fileno(f);
+}
+
 static ssize_t
 stream_blackhole_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
@@ -5436,11 +5444,11 @@ typedef struct {
 	char filler;
 	// state
 	size_t line_len;
-	char* in_buf;
-	char* out_buf;
+	char *in_buf;
+	char *out_buf;
 	size_t out_buf_start;
 	size_t out_buf_remaining;
-	char* nl_buf;
+	char nl_buf[1];
 } stream_fwf_data;
 
 
@@ -5450,10 +5458,11 @@ stream_fwf_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 	stream_fwf_data *fsd;
 	size_t to_write = cnt;
 	size_t buf_written = 0;
-	if (strcmp(s->name, STREAM_FWF_NAME) != 0 || elmsize != 1) {
+
+	fsd = (stream_fwf_data*) s->stream_data.p;
+	if (fsd == NULL || elmsize != 1) {
 		return -1;
 	}
-	fsd = (stream_fwf_data*) s->stream_data.p;
 
 	while (to_write > 0) {
 		// input conversion
@@ -5491,12 +5500,12 @@ stream_fwf_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 
 		// now we know something is in output_buf so deliver it
 		if (fsd->out_buf_remaining <= to_write) {
-			memcpy((char*)buf + buf_written, fsd->out_buf + fsd->out_buf_start, fsd->out_buf_remaining);
+			memcpy((char *) buf + buf_written, fsd->out_buf + fsd->out_buf_start, fsd->out_buf_remaining);
 			to_write -= fsd->out_buf_remaining;
 			buf_written += fsd->out_buf_remaining;
 			fsd->out_buf_remaining = 0;
 		} else {
-			memcpy((char*) buf + buf_written, fsd->out_buf + fsd->out_buf_start, to_write);
+			memcpy((char *) buf + buf_written, fsd->out_buf + fsd->out_buf_start, to_write);
 			fsd->out_buf_start += to_write;
 			fsd->out_buf_remaining -= to_write;
 			buf_written += to_write;
@@ -5510,25 +5519,35 @@ stream_fwf_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 static void
 stream_fwf_close(stream *s)
 {
-	if (strcmp(s->name, STREAM_FWF_NAME) == 0) {
+	stream_fwf_data *fsd = (stream_fwf_data*) s->stream_data.p;
+
+	if (fsd != NULL) {
 		stream_fwf_data *fsd = (stream_fwf_data*) s->stream_data.p;
 		mnstr_close(fsd->s);
+		mnstr_destroy(fsd->s);
 		free(fsd->widths);
 		free(fsd->in_buf);
 		free(fsd->out_buf);
-		free(fsd->nl_buf);
 		free(fsd);
+		s->stream_data.p = NULL;
 	}
-	// FIXME destroy(s);
 }
 
-stream*
+static void
+stream_fwf_destroy(stream *s)
+{
+	stream_fwf_close(s);
+	destroy(s);
+}
+
+stream *
 stream_fwf_create (stream *s, size_t num_fields, size_t *widths, char filler)
 {
 	stream *ns;
 	stream_fwf_data *fsd = malloc(sizeof(stream_fwf_data));
 	size_t i, out_buf_len;
-	if (!fsd) {
+
+	if (fsd == NULL) {
 		return NULL;
 	}
 	fsd->s = s;
@@ -5540,34 +5559,27 @@ stream_fwf_create (stream *s, size_t num_fields, size_t *widths, char filler)
 		fsd->line_len += widths[i];
 	}
 	fsd->in_buf = malloc(fsd->line_len);
-	if (!fsd->in_buf) {
+	if (fsd->in_buf == NULL) {
 		free(fsd);
 		return NULL;
 	}
 	out_buf_len = fsd->line_len * 3;
 	fsd->out_buf = malloc(out_buf_len);
-	if (!fsd->out_buf) {
+	if (fsd->out_buf == NULL) {
 		free(fsd->in_buf);
 		free(fsd);
 		return NULL;
 	}
 	fsd->out_buf_remaining = 0;
-	fsd->nl_buf = malloc(1);
-	if (!fsd->nl_buf) {
-		free(fsd->in_buf);
-		free(fsd->out_buf);
-		free(fsd);
-		return NULL;
-	}
 	if ((ns = create_stream(STREAM_FWF_NAME)) == NULL) {
 		free(fsd->in_buf);
 		free(fsd->out_buf);
-		free(fsd->nl_buf);
 		free(fsd);
 		return NULL;
 	}
 	ns->read = stream_fwf_read;
 	ns->close = stream_fwf_close;
+	ns->destroy = stream_fwf_destroy;
 	ns->write = NULL;
 	ns->flush = NULL;
 	ns->access = ST_READ;

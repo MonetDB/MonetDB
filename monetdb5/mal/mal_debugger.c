@@ -332,12 +332,19 @@ mdbLocateMalBlk(Client cntxt, MalBlkPtr mb, str b, stream *out)
 {
 	MalBlkPtr m = mb;
 	char *h = 0;
-	int idx = 0;
+	int idx = -1;
 
 	skipBlanc(cntxt, b);
 	/* start with function in context */
 	if (*b == '[') {
-		idx = atoi(b + 1);
+		if( !isdigit((int) *(b+1))){
+			m = getMalBlkOptimized(mb, b+1);
+			if( m ==0 )
+				mnstr_printf(cntxt->fdout,"Integer or optimizer named expected");
+			else
+				return m;
+		} else
+			idx = atoi(b + 1);
 		if( idx < 0)
 			return NULL;
 		return getMalBlkHistory(mb, idx);
@@ -354,7 +361,14 @@ mdbLocateMalBlk(Client cntxt, MalBlkPtr mb, str b, stream *out)
 		*fcnname = 0;
 		if ((h = strchr(fcnname + 1, '['))) {
 			*h = 0;
-			idx = atoi(h + 1);
+			if( !isdigit((int) *(h+1))){
+				m = getMalBlkOptimized(mb, h+1);
+				if( m ==0 )
+					mnstr_printf(cntxt->fdout,"Integer or optimizer named expected");
+				else
+					return m;
+			} else
+				idx = atoi(h + 1);
 			if( idx < 0)
 				return NULL;
 		}
@@ -1337,7 +1351,7 @@ mdbHelp(stream *f)
 	mnstr_printf(f, "list <obj>       -- list current program block\n");
 	mnstr_printf(f, "list #  [+#],-#  -- list current program block slice\n");
 	mnstr_printf(f, "List <obj> [#]   -- list with type information[slice]\n");
-	mnstr_printf(f, "list '['<step>']'-- list program block after optimizer step\n");
+	mnstr_printf(f, "list '['<name>']'-- list program block after optimizer <name> or <#>\n");
 	mnstr_printf(f, "List #  [+#],-#  -- list current program block slice\n");
 	mnstr_printf(f, "var  <obj>       -- print symbol table for module\n");
 	mnstr_printf(f, "optimizer <obj>  -- display optimizer steps\n");

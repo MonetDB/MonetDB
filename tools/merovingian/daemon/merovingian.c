@@ -334,13 +334,13 @@ main(int argc, char *argv[])
 	 * hardcoded bin-dir */
 	_mero_mserver = get_bin_path();
 	if (_mero_mserver != NULL) {
-		/* replace the trailing monetdbd by mserver5, fits nicely since
-		 * they happen to be of same length */
-		char *s = strrchr(_mero_mserver, '/');
-		if (s != NULL && strcmp(s + 1, "monetdbd") == 0) {
-			s++;
-			*s++ = 'm'; *s++ = 's'; *s++ = 'e'; *s++ = 'r';
-			*s++ = 'v'; *s++ = 'e'; *s++ = 'r'; *s++ = '5';
+		/* Find where the string monetdbd actually starts */
+		char *s = strstr(_mero_mserver, "monetdbd");
+		if (s != NULL && strncmp(s, "monetdbd", 8) == 0) {
+			/* Replace the 8 following characters with the characters mserver5.
+			 * This should work even if the executables have prefixes or
+			 * suffixes */
+			strncpy(s, "mserver5", 8);
 			if (stat(_mero_mserver, &sb) == -1)
 				_mero_mserver = NULL;
 		}

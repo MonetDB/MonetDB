@@ -66,19 +66,19 @@ Ready.
 # 23:38:44 >  
 
 #create table bug3923(i integer);
-#select "schema", "table", "column", "type", "mode", typewidth, hashes, phash, imprints, sorted from storage('sys','_tables');
-% .L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3 # table_name
-% schema,	table,	column,	type,	mode,	typewidth,	hashes,	phash,	imprints,	sorted # name
-% clob,	clob,	clob,	clob,	clob,	int,	bigint,	boolean,	bigint,	boolean # type
-% 3,	7,	13,	8,	8,	2,	1,	5,	1,	5 # length
-[ "sys",	"_tables",	"id",	"int",	"writable",	4,	0,	false,	0,	true	]
-[ "sys",	"_tables",	"name",	"varchar",	"writable",	9,	0,	false,	0,	false	]
-[ "sys",	"_tables",	"schema_id",	"int",	"writable",	4,	0,	false,	0,	NULL	]
-[ "sys",	"_tables",	"query",	"varchar",	"writable",	42,	0,	false,	0,	NULL	]
-[ "sys",	"_tables",	"type",	"smallint",	"writable",	2,	0,	false,	0,	NULL	]
-[ "sys",	"_tables",	"system",	"boolean",	"writable",	1,	0,	false,	0,	NULL	]
-[ "sys",	"_tables",	"commit_action",	"smallint",	"writable",	2,	0,	false,	0,	NULL	]
-[ "sys",	"_tables",	"access",	"smallint",	"writable",	2,	0,	false,	0,	true	]
+#select "schema", "table", "column", "type", "mode", typewidth, hashes, phash, imprints from storage('sys','_tables');
+% .L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3 # table_name
+% schema,	table,	column,	type,	mode,	typewidth,	hashes,	phash,	imprints # name
+% clob,	clob,	clob,	clob,	clob,	int,	bigint,	boolean,	bigint # type
+% 3,	7,	13,	8,	8,	2,	1,	5,	1 # length
+[ "sys",	"_tables",	"id",	"int",	"writable",	4,	0,	false,	0	]
+[ "sys",	"_tables",	"name",	"varchar",	"writable",	9,	0,	false,	0	]
+[ "sys",	"_tables",	"schema_id",	"int",	"writable",	4,	0,	false,	0	]
+[ "sys",	"_tables",	"query",	"varchar",	"writable",	42,	0,	false,	0	]
+[ "sys",	"_tables",	"type",	"smallint",	"writable",	2,	0,	false,	0	]
+[ "sys",	"_tables",	"system",	"boolean",	"writable",	1,	0,	false,	0	]
+[ "sys",	"_tables",	"commit_action",	"smallint",	"writable",	2,	0,	false,	0	]
+[ "sys",	"_tables",	"access",	"smallint",	"writable",	2,	0,	false,	0	]
 #update storagemodelinput set "count" =10000 where "table" ='bug3923';
 [ 1	]
 #update storagemodelinput set "distinct" =10 where "table" ='bug3923' and "column" ='i';
@@ -91,19 +91,19 @@ Ready.
 [ "sys",	"bug3923",	"i",	"int",	10000,	40000,	0,	0,	1200,	true,	true,	NULL,	0	]
 #drop table bug3923;
 #create table bug3923(i integer);
-#select "schema", "table", "column", "type", "mode", typewidth, hashes, phash, imprints, sorted from storage('sys','_tables');
-% .L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3 # table_name
-% schema,	table,	column,	type,	mode,	typewidth,	hashes,	phash,	imprints,	sorted # name
-% clob,	clob,	clob,	clob,	clob,	int,	bigint,	boolean,	bigint,	boolean # type
-% 3,	7,	13,	8,	8,	2,	1,	5,	1,	5 # length
-[ "sys",	"_tables",	"id",	"int",	"writable",	4,	0,	false,	0,	true	]
-[ "sys",	"_tables",	"name",	"varchar",	"writable",	9,	0,	false,	0,	false	]
-[ "sys",	"_tables",	"schema_id",	"int",	"writable",	4,	0,	false,	0,	NULL	]
-[ "sys",	"_tables",	"query",	"varchar",	"writable",	42,	0,	false,	0,	NULL	]
-[ "sys",	"_tables",	"type",	"smallint",	"writable",	2,	0,	false,	0,	false	]
-[ "sys",	"_tables",	"system",	"boolean",	"writable",	1,	0,	false,	0,	NULL	]
-[ "sys",	"_tables",	"commit_action",	"smallint",	"writable",	2,	0,	false,	0,	NULL	]
-[ "sys",	"_tables",	"access",	"smallint",	"writable",	2,	0,	false,	0,	true	]
+#select "schema", "table", "column", "type", "mode", typewidth, hashes, phash, imprints from storage('sys','_tables');
+% .L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3 # table_name
+% schema,	table,	column,	type,	mode,	typewidth,	hashes,	phash,	imprints # name
+% clob,	clob,	clob,	clob,	clob,	int,	bigint,	boolean,	bigint # type
+% 3,	7,	13,	8,	8,	2,	1,	5,	1 # length
+[ "sys",	"_tables",	"id",	"int",	"writable",	4,	0,	false,	0	]
+[ "sys",	"_tables",	"name",	"varchar",	"writable",	9,	0,	false,	0	]
+[ "sys",	"_tables",	"schema_id",	"int",	"writable",	4,	0,	false,	0	]
+[ "sys",	"_tables",	"query",	"varchar",	"writable",	42,	0,	false,	0	]
+[ "sys",	"_tables",	"type",	"smallint",	"writable",	2,	0,	false,	0	]
+[ "sys",	"_tables",	"system",	"boolean",	"writable",	1,	0,	false,	0	]
+[ "sys",	"_tables",	"commit_action",	"smallint",	"writable",	2,	0,	false,	0	]
+[ "sys",	"_tables",	"access",	"smallint",	"writable",	2,	0,	false,	0	]
 #update storagemodelinput set "count" =10000 where "table" ='bug3923';
 [ 1	]
 #update storagemodelinput set "distinct" =10 where "table" ='bug3923' and "column" ='i';

@@ -50,3 +50,8 @@ comment "return the densely ranked groups";
 command aggr.exist(b:bat[:any_2], h:any_1):bit 
 address ALGexist;
 
+command aggr.exist(b:bat[:any_2]):bit
+address SQLexist;
+
+command aggr.exist(v:any_2):bit
+address SQLexist_val;

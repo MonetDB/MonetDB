@@ -173,6 +173,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 	void **mmap_ptrs = NULL;
 	size_t *mmap_sizes = NULL;
 #endif
+	bit allow_loopback = !mapped;
 	bit varres;
 	int retcols;
 	bool gstate = 0;
@@ -423,128 +424,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 					goto wrapup;
 				}
 				if (sem_success) {
-					if (query_ptr->pending_query) {
-						// we have to handle a query for the forked process
-						res_table *output = NULL;
-						// we only perform one query at a time, otherwise bad
-						// things happen
-						// todo: we might only have to limit this to 'one query
-						// per client', rather than 'one query per pyapi'
-						MT_lock_set(&queryLock);
-						// execute the query
-						msg =
-							_connection_query(cntxt, query_ptr->query, &output);
-						if (msg != MAL_SUCCEED) {
-							MT_lock_unset(&queryLock);
-							GDKchangesemval(query_sem, 1, 1,
-											&msg); // free the forked process so
-												   // it can exit in case of
-												   // failure
-							goto wrapup;
-						}
-						MT_lock_unset(&queryLock);
-
-						query_ptr->memsize = 0;
-						query_ptr->nr_cols = 0;
-						query_ptr->mmapid = -1;
-
-						if (output != NULL && output->nr_cols > 0) {
-							// copy the return values into shared memory if
-							// there are any
-							size_t size = 0;
-							size_t position = 0;
-							char *result_ptr;
-							BAT **result_columns =
-								GDKzalloc(sizeof(BAT *) * output->nr_cols);
-							if (!result_columns) {
-								msg = createException(MAL, "pyapi.eval",
-													  MAL_MALLOC_FAIL
-													  " result column set.");
-								goto wrapup;
-							}
-
-							for (i = 0; i < output->nr_cols; i++) {
-								res_col col = output->cols[i];
-								BAT *b = BATdescriptor(col.b);
-								sql_subtype *subtype = &col.type;
-
-								// if the sql type is set, we have to do some
-								// conversion
-								// we do this before sending the BATs to the
-								// other process
-								if (!IsStandardBATType(b->ttype) ||
-									ConvertableSQLType(subtype)) {
-									BAT *ret_bat = NULL;
-									int ret_type;
-									msg = ConvertFromSQLType(
-										b, subtype, &ret_bat, &ret_type);
-									if (msg != MAL_SUCCEED) {
-										BBPunfix(b->batCacheid);
-										_connection_cleanup_result(output);
-										GDKfree(result_columns);
-										msg = createException(
-											MAL, "pyapi.eval",
-											"Failed to convert BAT.");
-										goto wrapup;
-									}
-									BBPunfix(b->batCacheid);
-									result_columns[i] = ret_bat;
-								} else {
-									result_columns[i] = b;
-								}
-							}
-
-							// first obtain the total size of the shared memory
-							// region
-							// the region is structured as
-							// [COLNAME][BAT][DATA]([VHEAP][VHEAPDATA])
-							for (i = 0; i < output->nr_cols; i++) {
-								res_col col = output->cols[i];
-								BAT *b = result_columns[i];
-								size += GDKbatcopysize(b, col.name);
-							}
-
-							query_ptr->memsize = size;
-							query_ptr->nr_cols = output->nr_cols;
-
-							// create the actual shared memory region
-							MT_lock_set(&pyapiLock);
-							query_ptr->mmapid = GDKuniqueid(1);
-							MT_lock_unset(&pyapiLock);
-
-							if (GDKinitmmap(query_ptr->mmapid + 0, size,
-											(void **)&result_ptr, NULL,
-											&msg) != GDK_SUCCEED) {
-								_connection_cleanup_result(output);
-								GDKchangesemval(query_sem, 1, 1, &msg);
-								msg = createException(MAL, "pyapi.eval",
-													  "eval failed");
-								GDKfree(result_columns);
-								goto wrapup;
-							}
-
-							// copy the data into the shared memory region
-							for (i = 0; i < output->nr_cols; i++) {
-								res_col col = output->cols[i];
-								BAT *b = result_columns[i];
-								result_ptr += GDKbatcopy(result_ptr + position,
-														 b, col.name);
-								BBPunfix(b->batCacheid);
-							}
-							GDKfree(result_columns);
-							// detach the main process from this piece of shared
-							// memory so the child process can delete it
-							_connection_cleanup_result(output);
-						}
-						// signal that we are finished processing this query
-						query_ptr->pending_query = false;
-						// after putting the return values in shared memory
-						// return control to the other process
-						GDKchangesemval(query_sem, 1, 1, &msg);
-						continue;
-					} else {
-						break;
-					}
+					break;
 				}
 				retcode = waitpid(pid, &status, WNOHANG);
 				if (retcode > 0)
@@ -718,9 +598,9 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 	pColumns = PyDict_New();
 	pColumnTypes = PyDict_New();
 #ifdef HAVE_FORK
-	pConnection = Py_Connection_Create(cntxt, mapped, query_ptr, query_sem);
+	pConnection = Py_Connection_Create(cntxt, !allow_loopback, query_ptr, query_sem);
 #else
-	pConnection = Py_Connection_Create(cntxt, 0, 0, 0);
+	pConnection = Py_Connection_Create(cntxt, !allow_loopback, 0, 0);
 #endif
 
 	// Now we will loop over the input BATs and convert them to python objects
@@ -1425,9 +1305,16 @@ PYFUNCNAME(PyAPIprelude)(void *ret) {
 	MT_lock_init(&queryLock, "query_lock");
 	MT_lock_set(&pyapiLock);
 	if (!pyapiInitialized) {
+#ifdef IS_PY3K
+		wchar_t* program = Py_DecodeLocale("mserver5", NULL);
+		wchar_t* argv[] = { program };
+#else
+		char* argv[] = {"mserver5"};
+#endif
 		str msg = MAL_SUCCEED;
 		PyObject *tmp;
 		Py_Initialize();
+		PySys_SetArgvEx(1, argv, 0);
 		_import_array();
 		msg = _connection_init();
 		if (msg != MAL_SUCCEED) {

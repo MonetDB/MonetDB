@@ -485,9 +485,10 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				InstrPtr r = copyInstruction(p);
 				InstrPtr s = copyInstruction(q);
 
+				rslices[getArg(p,0)] = 1; /* mark slice as rewriten */
 				/* keep new output of slice */
 				slices[getArg(s, 1)] = getArg(p, 0); 
-				rslices[getArg(p,0)] = 1;
+				rslices[getArg(q,0)] = 1; /* mark projectdelta as rewriten */
 				/* slice the candidates */
 				setFunctionId(r, sliceRef);
 				getArg(r, 0) = getArg(p, 0); 
@@ -498,11 +499,12 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				/* dummy result for the old q, will be removed by deadcode optimizer */
 				getArg(q, 0) = newTmpVariable(mb, getArgType(mb, q, 0));
 
-				getArg(s, 1) = getArg(r, 0); /* use result of subslice */
+				getArg(s, 1) = getArg(r, 0); /* use result of slice */
 				pushInstruction(mb, s);
 
 				freeInstruction(p);
 				old[i] = r; 
+
 				continue;
 			}
 		}
@@ -513,11 +515,31 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		 */
 		else if (getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef) {
 			int var = getArg(p, 1);
-			InstrPtr r = old[vars[var]];
+			InstrPtr r = old[vars[var]], q;
 			
-			if (r && isSlice(r) && rslices[getArg(p,1)] != 0 && getArg(r, 0) == getArg(p, 1)) {
-				InstrPtr q = newAssignment(mb);
+			if (r && isSlice(r) && rslices[var] && getArg(r, 0) == getArg(p, 1)) {
+				if (!rslices[getArg(p,2)]) { /* was the deltaproject rewriten (sliced) */
+					int col = getArg(p,2);
+					InstrPtr s = old[vars[col]], u = NULL;
 
+					if (s && getModuleId(s) == algebraRef && getFunctionId(s) == projectRef) {
+						col = getArg(s, 1);	
+						u = s;
+					 	s = old[vars[col]];
+					}
+					if (s && getModuleId(s) == sqlRef && getFunctionId(s) == projectdeltaRef) {
+						InstrPtr t = copyInstruction(s);
+
+						getArg(t, 1) = getArg(r, 0); /* use result of slice */
+						rslices[col] = 1;
+						pushInstruction(mb, t);
+						if (u) { /* add again */
+							t = copyInstruction(u);
+							pushInstruction(mb, t);
+						}
+					}
+				}
+				q = newAssignment(mb);
 				getArg(q, 0) = getArg(p, 0); 
 				(void) pushArgument(mb, q, getArg(p, 2));
 				actions++;

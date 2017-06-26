@@ -33,6 +33,9 @@ INSERT INTO sys.keywords (keyword) VALUES
 ('WHEN'), ('WHERE'), ('WHILE'), ('WITH'), ('WORK'), ('WRITE'),
 ('XMLAGG'), ('XMLATTRIBUTES'), ('XMLCOMMENT'), ('XMLCONCAT'), ('XMLDOCUMENT'), ('XMLELEMENT'), ('XMLFOREST'), ('XMLNAMESPACES'), ('XMLPARSE'), ('XMLPI'), ('XMLQUERY'), ('XMLSCHEMA'), ('XMLTEXT'), ('XMLVALIDATE');
 
+ALTER TABLE sys.keywords SET READ ONLY;
+
+
 CREATE TABLE sys.table_types (
     table_type_id   SMALLINT NOT NULL PRIMARY KEY,
     table_type_name VARCHAR(25) NOT NULL UNIQUE);
@@ -47,6 +50,8 @@ INSERT INTO sys.table_types (table_type_id, table_type_name) VALUES
   (20, 'GLOBAL TEMPORARY TABLE'),
   (30, 'LOCAL TEMPORARY TABLE');
 
+ALTER TABLE sys.table_types SET READ ONLY;
+
 
 CREATE TABLE sys.dependency_types (
     dependency_type_id   SMALLINT NOT NULL PRIMARY KEY,
@@ -56,6 +61,8 @@ CREATE TABLE sys.dependency_types (
 INSERT INTO sys.dependency_types (dependency_type_id, dependency_type_name) VALUES
   (1, 'SCHEMA'), (2, 'TABLE'), (3, 'COLUMN'), (4, 'KEY'), (5, 'VIEW'), (6, 'USER'), (7, 'FUNCTION'), (8, 'TRIGGER'),
   (9, 'OWNER'), (10, 'INDEX'), (11, 'FKEY'), (12, 'SEQUENCE'), (13, 'PROCEDURE'), (14, 'BE_DROPPED'), (15, 'TYPE');
+
+ALTER TABLE sys.dependency_types SET READ ONLY;
 
 
 CREATE TABLE sys.function_types (
@@ -67,14 +74,18 @@ INSERT INTO sys.function_types (function_type_id, function_type_name) VALUES
   (1, 'Scalar function'), (2, 'Procedure'), (3, 'Aggregate function'), (4, 'Filter function'), (5, 'Function returning a table'),
   (6, 'Analytic function'), (7, 'Loader function');
 
+ALTER TABLE sys.function_types SET READ ONLY;
+
 
 CREATE TABLE sys.function_languages (
     language_id   SMALLINT NOT NULL PRIMARY KEY,
     language_name VARCHAR(20) NOT NULL UNIQUE);
 
--- Values taken from sql/include/sql_catalog.h  see: #define FUNC_LANG_INT 0, FUNC_LANG_MAL 1, FUNC_LANG_SQL 2, FUNC_LANG_R 3, FUNC_LANG_C 4, FUNC_LANG_J 5, FUNC_LANG_PY 6, FUNC_LANG_MAP_PY 7.
+-- Values taken from sql/include/sql_catalog.h  see: #define FUNC_LANG_INT 0, FUNC_LANG_MAL 1, FUNC_LANG_SQL 2, FUNC_LANG_R 3, FUNC_LANG_PY 6, FUNC_LANG_MAP_PY 7, FUNC_LANG_PY2 8, FUNC_LANG_MAP_PY2 9, FUNC_LANG_PY3 10, FUNC_LANG_MAP_PY3 11.
 INSERT INTO sys.function_languages (language_id, language_name) VALUES
-  (0, 'Internal C'), (1, 'MAL'), (2, 'SQL'), (3, 'R'), (4, 'C'), (5, 'Java'), (6, 'Python'), (7, 'Python Mapped');
+  (0, 'Internal C'), (1, 'MAL'), (2, 'SQL'), (3, 'R'), (6, 'Python'), (7, 'Python Mapped'), (8, 'Python2'), (9, 'Python2 Mapped'), (10, 'Python3'), (11, 'Python3 Mapped');
+
+ALTER TABLE sys.function_languages SET READ ONLY;
 
 
 CREATE TABLE sys.key_types (
@@ -85,6 +96,8 @@ CREATE TABLE sys.key_types (
 INSERT INTO sys.key_types (key_type_id, key_type_name) VALUES
   (0, 'Primary Key'), (1, 'Unique Key'), (2, 'Foreign Key');
 
+ALTER TABLE sys.key_types SET READ ONLY;
+
 
 CREATE TABLE sys.index_types (
     index_type_id   SMALLINT NOT NULL PRIMARY KEY,
@@ -93,6 +106,8 @@ CREATE TABLE sys.index_types (
 -- Values taken from sql/include/sql_catalog.h  see typedef enum idx_type: hash_idx, join_idx, oph_idx, no_idx, imprints_idx, ordered_idx.
 INSERT INTO sys.index_types (index_type_id, index_type_name) VALUES
   (0, 'Hash'), (1, 'Join'), (2, 'Order preserving hash'), (3, 'No-index'), (4, 'Imprint'), (5, 'Ordered');
+
+ALTER TABLE sys.index_types SET READ ONLY;
 
 
 CREATE TABLE sys.privilege_codes (
@@ -106,4 +121,6 @@ INSERT INTO sys.privilege_codes (privilege_code_id, privilege_code_name) VALUES
   (3, 'SELECT,UPDATE'), (5, 'SELECT,INSERT'), (6, 'INSERT,UPDATE'), (7, 'SELECT,INSERT,UPDATE'),
   (9, 'SELECT,DELETE'), (10, 'UPDATE,DELETE'), (11, 'SELECT,UPDATE,DELETE'), (12, 'INSERT,DELETE'),
   (13, 'SELECT,INSERT,DELETE'), (14, 'INSERT,UPDATE,DELETE'), (15, 'SELECT,INSERT,UPDATE,DELETE');
+
+ALTER TABLE sys.privilege_codes SET READ ONLY;
 

@@ -229,9 +229,9 @@ INETtoString(str *retval, int *len, const inet *handle)
 {
 	const inet *value = (const inet *)handle;
 
-	if (*len < 19 || *retval == NULL) {
+	if (*len < 20 || *retval == NULL) {
 		GDKfree(*retval);
-		*retval = GDKmalloc(sizeof(char) * (*len = 19));
+		*retval = GDKmalloc(sizeof(char) * (*len = 20));
 		if( *retval == NULL)
 			return 0;
 	}
@@ -699,11 +699,11 @@ INETtext(str *retval, const inet *val)
 	if (in_isnil(val)) {
 		*retval = GDKstrdup(str_nil);
 	} else {
-		ip = GDKmalloc(sizeof(char) * 19);
+		ip = GDKmalloc(sizeof(char) * 20);
 		if( ip == NULL)
 			throw(MAL,"INETtext",MAL_MALLOC_FAIL);
 
-		snprintf(ip, sizeof(char) * 19, "%d.%d.%d.%d/%d",
+		snprintf(ip, sizeof(char) * 20, "%d.%d.%d.%d/%d",
 				val->q1, val->q2, val->q3, val->q4, val->mask);
 		*retval = ip;
 	}
@@ -752,23 +752,24 @@ INETabbrev(str *retval, const inet *val)
 		 * &:    00 00 00 00
 		 * all zero, thus no bits on the right side of the mask
 		 */
-		ip = GDKmalloc(sizeof(char) * 19);
+
+		ip = GDKmalloc(sizeof(char) * 20);
 		if (ip == NULL)
 			throw(MAL, "inet.abbrev", MAL_MALLOC_FAIL);
 
 		if (msk > 24) {
-			snprintf(ip, sizeof(char) * 19, "%d.%d.%d.%d/%d",
+			snprintf(ip, sizeof(char) * 20, "%d.%d.%d.%d/%d",
 					 val->q1, val->q2, val->q3, val->q4, val->mask);
 		} else if (msk > 16) {
-			snprintf(ip, sizeof(char) * 19, "%d.%d.%d/%d",
+			snprintf(ip, sizeof(char) * 20, "%d.%d.%d/%d",
 					 val->q1, val->q2, val->q3, val->mask);
 		} else if (msk > 8) {
-			snprintf(ip, sizeof(char) * 19, "%d.%d/%d",
+			snprintf(ip, sizeof(char) * 20, "%d.%d/%d",
 					 val->q1, val->q2, val->mask);
 		} else if (msk > 0) {
-			snprintf(ip, sizeof(char) * 19, "%d/%d", val->q1, val->mask);
+			snprintf(ip, sizeof(char) * 20, "%d/%d", val->q1, val->mask);
 		} else {
-			snprintf(ip, sizeof(char) * 19, "/0");
+			snprintf(ip, sizeof(char) * 20, "/0");
 		}
 
 		*retval = ip;

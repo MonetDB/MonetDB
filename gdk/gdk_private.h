@@ -88,7 +88,7 @@ __hidden int BBPselectfarm(int role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));
 __hidden void BBPunshare(bat b)
 	__attribute__((__visibility__("hidden")));
-__hidden BUN binsearch(const oid *restrict indir, oid offset, int type, const char *restrict vals, const char * restrict vars, int width, BUN lo, BUN hi, const char *restrict v, int ordering, int last)
+__hidden BUN binsearch(const oid *restrict indir, oid offset, int type, const void *restrict vals, const char * restrict vars, int width, BUN lo, BUN hi, const void *restrict v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
 __hidden BUN binsearch_bte(const oid *restrict indir, oid offset, const bte *restrict vals, BUN lo, BUN hi, bte v, int ordering, int last)
 	__attribute__((__visibility__("hidden")));
@@ -130,8 +130,8 @@ __hidden FILE *GDKfileopen(int farmid, const char *dir, const char *name, const 
 	__attribute__((__visibility__("hidden")));
 __hidden char *GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsize, storage_t mode)
 	__attribute__((__visibility__("hidden")));
-__hidden void GDKlog(_In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 1, 2)))
+__hidden void GDKlog(_In_z_ _Printf_format_string_ FILE * fl, const char *format, ...)
+	__attribute__((__format__(__printf__, 2, 3)))
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const char *dir2, const char *nme2, const char *ext2)
 	__attribute__ ((__warn_unused_result__))
@@ -267,6 +267,7 @@ typedef char long_str[IDLENGTH];	/* standard GDK static string */
 extern struct BBPfarm_t {
 	unsigned int roles;	/* bitmask of allowed roles */
 	const char *dirname;	/* farm directory */
+	FILE *lock_file;
 } BBPfarms[MAXFARMS];
 
 extern int BBP_dirty;	/* BBP table dirty? */

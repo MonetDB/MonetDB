@@ -93,6 +93,7 @@ SELECT * FROM sys.user_role WHERE login_id NOT IN (SELECT a.id FROM sys.auths a 
 SELECT * FROM sys.user_role WHERE role_id NOT IN (SELECT id FROM sys.auths);
 SELECT * FROM sys.user_role WHERE role_id NOT IN (SELECT a.id FROM sys.auths a WHERE a.name NOT IN (SELECT u.name FROM sys.users u));
 
+SELECT * FROM sys.privileges WHERE obj_id NOT IN (SELECT id FROM sys.schemas UNION ALL SELECT id FROM sys._tables UNION ALL SELECT id FROM sys._columns UNION ALL SELECT id FROM sys.functions);
 SELECT * FROM sys.privileges WHERE auth_id NOT IN (SELECT id FROM sys.auths);
 SELECT * FROM sys.privileges WHERE grantor NOT IN (SELECT id FROM sys.auths) AND grantor > 0;
 SELECT * FROM sys.privileges WHERE privileges NOT IN (SELECT privilege_code_id FROM sys.privilege_codes);

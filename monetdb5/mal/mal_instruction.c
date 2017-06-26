@@ -148,7 +148,6 @@ resizeMalBlk(MalBlkPtr mb, int elements)
 {
 	int i;
 
-	assert(mb->vsize >= mb->ssize);
 	if( elements > mb->ssize){
 		InstrPtr *ostmt = mb->stmt;
 		mb->stmt = (InstrPtr *) GDKrealloc(mb->stmt, elements * sizeof(InstrPtr));
@@ -347,9 +346,36 @@ MalBlkPtr
 getMalBlkHistory(MalBlkPtr mb, int idx)
 {
 	MalBlkPtr h = mb;
+
 	while (h && idx-- >= 0)
 		h = h->history;
 	return h ? h : mb;
+}
+
+// Localize the plan using the optimizer name
+MalBlkPtr
+getMalBlkOptimized(MalBlkPtr mb, str name)
+{
+	MalBlkPtr h = mb->history;
+	InstrPtr p;
+	int i= 0;
+	char buf[IDLENGTH]= {0}, *n;
+
+	if( name == 0)
+		return mb;
+	strncpy(buf,name, IDLENGTH);
+	n = strchr(buf,']');
+	if( n) *n = 0;
+	
+	while (h ){
+		for( i = 1; i< h->stop; i++){
+			p = getInstrPtr(h,i);
+			if( p->token == REMsymbol && strstr(getVarConstant(h, getArg(p,0)).val.sval, buf)  )
+				return h;
+		}
+		h = h->history;
+	}
+	return 0;
 }
 
 
@@ -1409,13 +1435,15 @@ void
 pushInstruction(MalBlkPtr mb, InstrPtr p)
 {
 	int i;
+	int extra;
 	InstrPtr q;
 
 	if (p == NULL)
 		return;
 
+	extra = mb->vsize - mb->vtop; // the extra variables already known
 	if (mb->stop + 1 >= mb->ssize) {
-		if( resizeMalBlk(mb, growBlk(mb->ssize)) ){
+		if( resizeMalBlk(mb, growBlk(mb->ssize) + extra) ){
 			/* perhaps we can continue with a smaller increment.
 			 * But the block remains marked as faulty.
 			 */
