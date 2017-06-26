@@ -401,7 +401,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	size_t volatile input_count = 0;
 	void ** volatile outputs = NULL;
 	size_t volatile output_count = 0;
-	BAT **input_bats = NULL;
+	BAT ** volatile input_bats = NULL;
 	mprotected_region *regions = NULL, *region_iter = NULL;
 
 	lng initial_output_count = -1;
