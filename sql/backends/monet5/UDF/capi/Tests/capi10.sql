@@ -31,15 +31,4 @@ SELECT capi10(i) FROM blobs;
 
 DROP FUNCTION capi10;
 
-# attempt to modify input of blobs
-CREATE FUNCTION capi10(inp BLOB) RETURNS BLOB LANGUAGE C {
-    size_t i;
-    result->initialize(result, inp.count);
-    for(i = 0; i < inp.count; i++) {
-        if (inp.data[i].data && inp.data[i].size > 0) {
-            ((char*)inp.data[i].data)[0] = 'h';
-        }
-    }
-};
-SELECT capi10(i) FROM blobs;
 ROLLBACK;

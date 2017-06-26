@@ -27,9 +27,6 @@ stderr of test 'capi04` in directory 'sql/backends/monet5/UDF/capi` itself:
 # 15:50:30 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20003" "--port=32751"
 # 15:50:30 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-20003/.s.monetdb.32751
-QUERY = SELECT capi04(i) FROM strings;
-ERROR = !Attempting to write to the input or triggered a segfault/bus error
 
 # 15:50:31 >  
 # 15:50:31 >  "Done."

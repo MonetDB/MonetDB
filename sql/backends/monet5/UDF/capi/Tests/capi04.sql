@@ -25,16 +25,6 @@ SELECT capi04(i) FROM strings;
 
 DROP FUNCTION capi04;
 
-# try to modify one of the input strings
-CREATE FUNCTION capi04(inp STRING) RETURNS STRING LANGUAGE C {
-    size_t i;
-    result->initialize(result, inp.count);
-    for(i = 0; i < inp.count; i++) {
-        result->data[i][0] = 'h';
-    }
-};
-
-SELECT capi04(i) FROM strings;
 ROLLBACK;
 
 START TRANSACTION;
