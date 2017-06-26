@@ -2695,13 +2695,13 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 			sql_exp *le = l->h->data;
 			sql_exp *re = l->h->next->data;
 			/* 0*a = 0 */
-			if (exp_is_atom(le) && exp_is_zero(sql, le)) {
+			if (exp_is_atom(le) && exp_is_zero(sql, le) && exp_is_not_null(sql, re)) {
 				(*changes)++;
 				exp_setname(sql->sa, le, exp_relname(e), exp_name(e));
 				return le;
 			}
 			/* a*0 = 0 */
-			if (exp_is_atom(re) && exp_is_zero(sql, re)) {
+			if (exp_is_atom(re) && exp_is_zero(sql, re) && exp_is_not_null(sql, le)) {
 				(*changes)++;
 				exp_setname(sql->sa, re, exp_relname(e), exp_name(e));
 				return re;
