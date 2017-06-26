@@ -804,14 +804,14 @@ sql_update_jul2017(Client c, mvc *sql)
 static str
 sql_create_comments_table(Client c)
 {
-	char *err;
+	char *err, *q1, *q2;
 
-	char *q1 = "CREATE TABLE sys.comments (id INTEGER, remark CLOB);\n";
+	q1 = "CREATE TABLE sys.comments (id INTEGER, remark CLOB);\n";
 	err = SQLstatementIntern(c, &q1, "update", 1, 0, NULL);
 	if (err)
 		return err;
 
-	char *q2 = "UPDATE sys._tables SET system = true WHERE name = 'comments' AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n";
+	q2 = "UPDATE sys._tables SET system = true WHERE name = 'comments' AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n";
 	return SQLstatementIntern(c, &q2, "update", 1, 0, NULL);
 }
 

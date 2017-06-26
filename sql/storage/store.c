@@ -5514,14 +5514,21 @@ sql_trans_end(sql_session *s)
 
 void
 sql_trans_comment(sql_trans *tr, int id, const char *remark) {
-	sql_schema *sys = find_sql_schema(tr, "sys");
+	sql_schema *sys;
+	sql_table *comments;
+	sql_column *id_col;
+	oid row;
+
+	sys = find_sql_schema(tr, "sys");
 	assert(sys);
-	sql_table *comments = find_sql_table(sys, "comments");
+
+	comments = find_sql_table(sys, "comments");
 	assert(comments);
-	sql_column *id_col = find_sql_column(comments, "id");
+
+	id_col = find_sql_column(comments, "id");
 	assert(id_col);
 
-	oid row = table_funcs.column_find_row(tr, id_col, &id, NULL);
+	row = table_funcs.column_find_row(tr, id_col, &id, NULL);
 	if (remark && strlen(remark) > 0) {
 		if (row == oid_nil) {
 			/* insert comment */
@@ -5542,14 +5549,21 @@ sql_trans_comment(sql_trans *tr, int id, const char *remark) {
 }
 
 void sql_trans_drop_any_comment(sql_trans *tr, int id) {
-	sql_schema *sys = find_sql_schema(tr, "sys");
+	sql_schema *sys;
+	sql_column *id_col;
+	sql_table *comments;
+	oid row;
+
+	sys = find_sql_schema(tr, "sys");
 	assert(sys);
-	sql_table *comments = find_sql_table(sys, "comments");
+
+	comments = find_sql_table(sys, "comments");
 	assert(comments);
-	sql_column *id_col = find_sql_column(comments, "id");
+
+	id_col = find_sql_column(comments, "id");
 	assert(id_col);
 
-	oid row = table_funcs.column_find_row(tr, id_col, &id, NULL);
+	row = table_funcs.column_find_row(tr, id_col, &id, NULL);
 	if (row != oid_nil) {
 		table_funcs.table_delete(tr, comments, row);
 	}

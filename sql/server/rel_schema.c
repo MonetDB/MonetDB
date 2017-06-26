@@ -1935,9 +1935,11 @@ rel_commentable_object(mvc *sql, symbol *catalog_object) {
 
 	switch (catalog_object->token) {
 		case SQL_SCHEMA: {
-			assert(catalog_object->type == type_string);
-			char *sname = catalog_object->data.sval;
+			char *sname;
 			sql_schema *s;
+
+			assert(catalog_object->type == type_string);
+			sname = catalog_object->data.sval;
 			if (!(s = mvc_bind_schema(sql, sname))) {
 				sql_error(sql, 02, "3F000!COMMENT ON:no such schema: %s", sname);
 				return 0;
@@ -1945,16 +1947,21 @@ rel_commentable_object(mvc *sql, symbol *catalog_object) {
 			return s->base.id;
 		}
 		case SQL_TABLE: {
+			dlist *qname;
+			sql_schema *s;
+			char *sname;
+			char *tname;
+			sql_table *t;
+
 			assert(catalog_object->type == type_list);
-			dlist *qname = catalog_object->data.lval;
-			sql_schema *s = cur_schema(sql);
-			char *sname = qname_schema(qname);
+			qname = catalog_object->data.lval;
+			s = cur_schema(sql);
+			sname = qname_schema(qname);
 			if (sname && !(s = mvc_bind_schema(sql, sname))) {
 				sql_error(sql, 02, "3F000!COMMENT ON:no such schema: %s", sname);
 				return 0;
 			}
-			char *tname = qname_table(qname);
-			sql_table *t;
+			tname = qname_table(qname);
 			if (!(t = mvc_bind_table(sql, s, tname))) {
 				sql_error(sql, 02, "3F000!COMMENT ON:no such table: %s.%s", s->base.name, tname);
 				return 0;
@@ -1963,8 +1970,13 @@ rel_commentable_object(mvc *sql, symbol *catalog_object) {
 		}
 		case SQL_COLUMN: {
 			char *sname, *tname, *cname;
+			dlist *colname;
+			sql_schema *s;
+			sql_table *t;
+			sql_column *c;
+
 			assert(catalog_object->type == type_list);
-			dlist *colname = catalog_object->data.lval;
+			colname = catalog_object->data.lval;
 			assert(colname->cnt == 2 || colname->cnt == 3);
 			assert(colname->h->type == type_string);
 			assert(colname->h->next->type == type_string);
@@ -1979,17 +1991,15 @@ rel_commentable_object(mvc *sql, symbol *catalog_object) {
 				assert(colname->h->next->next->type == type_string);
 				cname = colname->h->next->next->data.sval;
 			}
-			sql_schema *s = cur_schema(sql);
+			s = cur_schema(sql);
 			if (sname && !(s = mvc_bind_schema(sql, sname))) {
 				sql_error(sql, 02, "3F000!COMMENT ON:no such schema: %s", sname);
 				return 0;
 			}
-			sql_table *t;
 			if (!(t = mvc_bind_table(sql, s, tname))) {
 				sql_error(sql, 02, "3F000!COMMENT ON:no such table: %s.%s", s->base.name, tname);
 				return 0;
 			}
-			sql_column *c;
 			if (!(c = mvc_bind_column(sql, t, cname))) {
 				sql_error(sql, 02, "3F000!COMMENT ON:no such column: %s.%s", tname, cname);
 				return 0;
@@ -2199,11 +2209,14 @@ rel_schemas(mvc *sql, symbol *s)
 	case SQL_COMMENT:
 	{
 		dlist *l = s->data.lval;
-		assert(l->cnt == 2);
 		symbol *catalog_object = l->h->data.sym;
-		char *remark = l->h->next->data.sval;
+		char *remark;
+		sqlid id;
 
-		sqlid id = rel_commentable_object(sql, catalog_object);
+		assert(l->cnt == 2);
+		remark = l->h->next->data.sval;
+
+		id = rel_commentable_object(sql, catalog_object);
 		if (!id) {
 			/* rel_commentable_object has already set the error message so we don't have to */
 			return NULL;
