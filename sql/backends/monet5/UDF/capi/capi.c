@@ -246,6 +246,15 @@ static void *wrapped_GDK_malloc_nojump(size_t size)
 	return add_allocated_region(ptr);
 }
 
+static void *wrapped_GDK_zalloc_nojump(size_t size)
+{
+	void *ptr = GDKzalloc(size + sizeof(allocated_region));
+	if (!ptr) {
+		return NULL;
+	}
+	return add_allocated_region(ptr);
+}
+
 #define GENERATE_BASE_HEADERS(type, tpename)                                   \
 	static int tpename##_is_null(type value);                                  \
 	static void tpename##_initialize(struct cudf_data_struct_##tpename *self,  \
@@ -1132,9 +1141,13 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (non_grouped_aggregate) {
 		GENERATE_BAT_INPUT_BASE(oid);
 		bat_data->count = input_size;
-		bat_data->data =
-			GDKzalloc(bat_data->count * sizeof(bat_data->null_value));
 		bat_data->null_value = oid_nil;
+		bat_data->data =
+			wrapped_GDK_zalloc_nojump(bat_data->count * sizeof(bat_data->null_value));
+		if (!bat_data->data) {
+				msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+				goto wrapup;
+		}
 	}
 
 	argnode = sqlfun ? sqlfun->res->h : NULL;
