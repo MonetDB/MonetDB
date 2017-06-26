@@ -1000,14 +1000,8 @@ heapinit(BAT *b, const char *buf, int *hashash, const char *HT, int bbpversion, 
 		GDKfatal("BBPinit: unknown properties are set: incompatible database\n");
 	*hashash = var & 2;
 	var &= ~2;
-	/* silently convert chr columns to bte */
-	if (strcmp(type, "chr") == 0)
-		strcpy(type, "bte");
-	/* silently convert wrd columns to int or lng */
-	else if (strcmp(type, "wrd") == 0)
-		strcpy(type, width == SIZEOF_INT ? "int" : "lng");
 #ifdef HAVE_HGE
-	else if (strcmp(type, "hge") == 0)
+	if (strcmp(type, "hge") == 0)
 		havehge = 1;
 #endif
 	if ((t = ATOMindex(type)) < 0) {
@@ -1819,15 +1813,20 @@ BBPdump(void)
 			BBP_lrefs(i),
 			BBP_status(i),
 			b->batCount);
-		if (b->batSharecnt >0)
+		if (b->batSharecnt > 0)
 			fprintf(stderr, " shares=%d", b->batSharecnt);
+		if (b->batDirty)
+			fprintf(stderr, " Dirty");
+		if (b->batDirtydesc)
+			fprintf(stderr, " DirtyDesc");
 		if (b->theap.parentid) {
 			fprintf(stderr, " Theap -> %d", b->theap.parentid);
 		} else {
 			fprintf(stderr,
-				" Theap=[" SZFMT "," SZFMT "]",
+				" Theap=[" SZFMT "," SZFMT "]%s",
 				HEAPmemsize(&b->theap),
-				HEAPvmsize(&b->theap));
+				HEAPvmsize(&b->theap),
+				b->theap.dirty ? "(Dirty)" : "");
 			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 				cmem += HEAPmemsize(&b->theap);
 				cvm += HEAPvmsize(&b->theap);
@@ -1845,9 +1844,10 @@ BBPdump(void)
 					b->tvheap->parentid);
 			} else {
 				fprintf(stderr,
-					" Tvheap=[" SZFMT "," SZFMT "]",
+					" Tvheap=[" SZFMT "," SZFMT "]%s",
 					HEAPmemsize(b->tvheap),
-					HEAPvmsize(b->tvheap));
+					HEAPvmsize(b->tvheap),
+				b->tvheap->dirty ? "(Dirty)" : "");
 				if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 					cmem += HEAPmemsize(b->tvheap);
 					cvm += HEAPvmsize(b->tvheap);

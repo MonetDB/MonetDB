@@ -260,11 +260,6 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 				    "when 'timetz' then %d "
 				    "when 'tinyint' then %d "
 				    "when 'varchar' then %d "
-				    "when 'wrd' then "
-					 "case c.type_digits "
-					      "when 32 then %d "
-					      "when 64 then %d "
-					 "end "
 			       "end as data_type, "
 			       "case c.type "
 				    "when 'bigint' then 'BIGINT' "
@@ -303,11 +298,6 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 				    "when 'timetz' then 'TIME' "
 				    "when 'tinyint' then 'TINYINT' "
 				    "when 'varchar' then 'VARCHAR' "
-				    "when 'wrd' then "
-					 "case c.type_digits "
-					      "when 32 then 'INTEGER' "
-					      "when 64 then 'BIGINT' "
-					 "end "
 			       "end as type_name, "
 			       "case c.type "
 				    "when 'month_interval' then "
@@ -369,11 +359,6 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 				    "when 'varchar' then 6 * c.type_digits "
 				    "when 'double' then 24 "
 				    "when 'real' then 14 "
-				    "when 'wrd' then "
-					 "case c.type_digits "
-					      "when 32 then 11 "
-					      "when 64 then 20 "
-					 "end "
 				    "else c.type_digits "
 			       "end as buffer_length, "
 			       "case c.type "
@@ -396,11 +381,6 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 				    "when 'int' then 10 "
 				    "when 'smallint' then 5 "
 				    "when 'tinyint' then 3 "
-				    "when 'wrd' then "
-					 "case c.type_digits "
-					      "when 32 then 10 "
-					      "when 64 then 19 "
-					 "end "
 			       "end as decimal_digits, "
 			       "cast(%d as smallint) as pseudo_column "
 			 "from sys.schemas s, "
@@ -430,7 +410,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 			SQL_INTERVAL_MINUTE_TO_SECOND, SQL_INTERVAL_SECOND,
 			SQL_SMALLINT, SQL_TYPE_TIMESTAMP, SQL_TYPE_TIMESTAMP,
 			SQL_TYPE_TIME, SQL_TYPE_TIME, SQL_TINYINT,
-			SQL_WVARCHAR, SQL_INTEGER, SQL_BIGINT,
+			SQL_WVARCHAR,
 			/* pseudo_column: */
 			SQL_PC_NOT_PSEUDO);
 		assert(strlen(query) < 4300);

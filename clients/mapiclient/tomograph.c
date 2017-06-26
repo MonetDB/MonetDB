@@ -351,7 +351,6 @@ base_colors[NUM_COLORS] = {
 /*     9 */	{ 0, 0, "calc", "ifthenelse", 0 },
 /*     8 */	{ 0, 0, "sql", "copy_from", 0 },
 /*     8 */	{ 0, 0, "sql", "affectedRows", 0 },
-/*     8 */	{ 0, 0, "calc", "wrd", 0 },
 /*     8 */	{ 0, 0, "calc", "isnil", 0 },
 /*     7 */	{ 0, 0, "bat", "append", 0 },
 /*     6 */	{ 0, 0, "mat", "pack", 0 },

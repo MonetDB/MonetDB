@@ -148,7 +148,6 @@ resizeMalBlk(MalBlkPtr mb, int elements)
 {
 	int i;
 
-	assert(mb->vsize >= mb->ssize);
 	if( elements > mb->ssize){
 		InstrPtr *ostmt = mb->stmt;
 		mb->stmt = (InstrPtr *) GDKrealloc(mb->stmt, elements * sizeof(InstrPtr));
@@ -1436,13 +1435,15 @@ void
 pushInstruction(MalBlkPtr mb, InstrPtr p)
 {
 	int i;
+	int extra;
 	InstrPtr q;
 
 	if (p == NULL)
 		return;
 
+	extra = mb->vsize - mb->vtop; // the extra variables already known
 	if (mb->stop + 1 >= mb->ssize) {
-		if( resizeMalBlk(mb, growBlk(mb->ssize)) ){
+		if( resizeMalBlk(mb, growBlk(mb->ssize) + extra) ){
 			/* perhaps we can continue with a smaller increment.
 			 * But the block remains marked as faulty.
 			 */

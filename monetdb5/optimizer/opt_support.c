@@ -458,7 +458,7 @@ mayhaveSideEffects(Client cntxt, MalBlkPtr mb, InstrPtr p, int strict)
 		return TRUE;
 	if (getModuleId(p) != malRef || getFunctionId(p) != multiplexRef) 
 		return hasSideEffects(mb, p, strict);
-	if (MANIFOLDtypecheck(cntxt,mb,p) == NULL)
+	if (MANIFOLDtypecheck(cntxt,mb,p,1) == NULL)
 		return TRUE;
 	return FALSE;
 }

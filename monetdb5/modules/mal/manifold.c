@@ -195,7 +195,7 @@ bunins_failed:
  * to use this implementation instead of the MAL loop.
  */
 MALfcn
-MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
+MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops){
 	int i, k, tpe= 0;
 	InstrPtr q=0;
 	MalBlkPtr nmb;
@@ -237,7 +237,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci){
 	// Localize the underlying scalar operator
 	typeChecker(cntxt->fdout, cntxt->nspace, nmb, q, TRUE);
 	if (nmb->errors || q->fcn == NULL || q->token != CMDcall ||
-		(q->blk && q->blk->unsafeProp) )
+		(checkprops && q->blk && q->blk->unsafeProp) )
 		fcn = NULL;
 	else {
 		fcn = q->fcn;
@@ -266,7 +266,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str msg = MAL_SUCCEED;
 	MALfcn fcn;
 
-	fcn= MANIFOLDtypecheck(cntxt,mb,pci);
+	fcn= MANIFOLDtypecheck(cntxt,mb,pci,0);
 	if( fcn == NULL)
 		throw(MAL, "mal.manifold", "Illegal manifold function call");
 

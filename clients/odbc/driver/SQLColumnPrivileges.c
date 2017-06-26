@@ -147,39 +147,46 @@ MNDBColumnPrivileges(ODBCStmt *stmt,
 		      "t.name as table_name, "
 		      "c.name as column_name, "
 		      "case a.id "
-			   "when s.owner then '_SYSTEM' "
+			   "when s.owner "
+			   "then '_SYSTEM' "
 			   "else g.name "
 			   "end as grantor, "
 		      "case a.name "
-			   "when 'public' then 'PUBLIC' "
+			   "when 'public' "
+			   "then 'PUBLIC' "
 			   "else a.name "
 			   "end as grantee, "
-		      "case p.privileges "
-			   "when 1 then 'SELECT' "
-			   "when 2 then 'UPDATE' "
-			   "when 4 then 'INSERT' "
-			   "when 8 then 'DELETE' "
-			   "when 16 then 'EXECUTE' "
-			   "when 32 then 'GRANT' "
-			   "end as privilege, "
+		      "pc.privilege_code_name as privilege, "
 		      "case p.grantable "
-			   "when 1 then 'YES' "
-			   "when 0 then 'NO' "
-			   "end as is_grantable  "
-	       "from sys.schemas s, "
-		    "sys._tables t, "
-		    "sys._columns c, "
-		    "sys.auths a, "
-		    "sys.privileges p, "
-		    "sys.auths g, "
-		    "sys.env() e  "
+			   "when 1 "
+			   "then 'YES' "
+			   "when 0 "
+			   "then 'NO' "
+			   "end as is_grantable "
+	       "from sys.schemas as s, "
+		    "sys._tables as t, "
+		    "sys._columns as c, "
+		    "sys.auths as a, "
+		    "sys.privileges as p, "
+		    "sys.auths as g, "
+		    "sys.env() as e, "
+	       /* this can eventually be replaced by
+		* sys.privilege_codes as pc
+		* see 51_sys_schema_extensionl.sql */
+		    "(values (1, 'SELECT'), "
+			    "(2, 'UPDATE'), "
+			    "(4, 'INSERT'), "
+			    "(8, 'DELETE'), "
+			    "(16, 'EXECUTE'), "
+			    "(32, 'GRANT')) as pc(privilege_code_id, privilege_code_name) "
 	       "where p.obj_id = c.id and "
 		     "c.table_id = t.id and "
 		     "p.auth_id = a.id and "
 		     "t.schema_id = s.id and "
 		     "t.system = false and "
 		     "p.grantor = g.id and "
-		     "e.name = 'gdk_dbname'");
+		     "e.name = 'gdk_dbname' and "
+		     "p.privileges = pc.privilege_code_id");
 	assert(strlen(query) < 1100);
 	query_end += strlen(query_end);
 
@@ -211,7 +218,7 @@ MNDBColumnPrivileges(ODBCStmt *stmt,
 
 	/* add the ordering */
 	strcpy(query_end,
-	       " order by \"table_cat\", \"table_schem\", \"table_name\", \"column_name\", \"privilege\"");
+	       " order by table_cat, table_schem, table_name, column_name, privilege");
 	query_end += strlen(query_end);
 
 	/* query the MonetDB data dictionary tables */
