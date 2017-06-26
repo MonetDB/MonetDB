@@ -21,7 +21,7 @@ CREATE FUNCTION capi11(inp DECIMAL) RETURNS DECIMAL(11,1) LANGUAGE C {
     }
 };
 
-CREATE TABLE decimals(d DECIMAL(20,3));
+CREATE TABLE decimals(d DECIMAL(18,3));
 INSERT INTO decimals VALUES (10.3), (10.5), (NULL), (10.7);
 
 SELECT capi11(d) FROM decimals;
