@@ -1308,19 +1308,19 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		rel->exps = exps;
 		return rel;
 	case 'u':
-		if (j != op_basetable) {
+		if (j == op_basetable) {
 			*pos += (int) strlen("union");
 			j = op_union;
 		}
 		/* fall through */
 	case 'i':
-		if (j != op_basetable) {
+		if (j == op_basetable) {
 			*pos += (int) strlen("intersect");
 			j = op_inter;
 		}
 		/* fall through */
 	case 'e':
-		if (j != op_basetable) {
+		if (j == op_basetable) {
 			*pos += (int) strlen("except");
 			j = op_except;
 		}
