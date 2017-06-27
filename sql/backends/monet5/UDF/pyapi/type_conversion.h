@@ -43,6 +43,8 @@ size_t pyobject_get_size(PyObject *obj);
 //! Converts a PyObject to a str; the output string will be a newly allocated
 //! string (if *value == NULL) or stored in *value (if *value != NULL)
 str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value);
+//! Converts a PyObject to a blob
+str pyobject_to_blob(PyObject **ptr, size_t maxsize, blob **value);
 
 //using macros, create a number of str_to_<type>, unicode_to_<type> and pyobject_to_<type> functions (we are Java now)
 #define CONVERSION_FUNCTION_HEADER_FACTORY(tpe)          \
