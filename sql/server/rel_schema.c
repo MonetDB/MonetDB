@@ -1946,7 +1946,9 @@ rel_commentable_object(mvc *sql, symbol *catalog_object) {
 			}
 			return s->base.id;
 		}
-		case SQL_TABLE: {
+		case SQL_TABLE:
+			/* fall through */
+		case SQL_VIEW: {
 			dlist *qname;
 			sql_schema *s;
 			char *sname;
@@ -1963,7 +1965,7 @@ rel_commentable_object(mvc *sql, symbol *catalog_object) {
 			}
 			tname = qname_table(qname);
 			if (!(t = mvc_bind_table(sql, s, tname))) {
-				sql_error(sql, 02, "3F000!COMMENT ON:no such table: %s.%s", s->base.name, tname);
+				sql_error(sql, 02, "3F000!COMMENT ON:no such table or view: %s.%s", s->base.name, tname);
 				return 0;
 			}
 			return t->base.id;

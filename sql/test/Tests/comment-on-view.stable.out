@@ -1,0 +1,108 @@
+stdout of test 'comment-on-view` in directory 'sql/test` itself:
+
+
+# 16:43:53 >  
+# 16:43:53 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37613" "--set" "mapi_usock=/var/tmp/mtest-24105/.s.monetdb.37613" "--set" "monet_prompt=" "--forcemito" "--dbpath=/Users/joeri/monets/default/var/MonetDB/mTests_sql_test" "--set" "embedded_r=yes"
+# 16:43:53 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test', using 8 threads
+# Compiled for x86_64-apple-darwin16.6.0/64bit with 128bit integers
+# Found 16.000 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-62.eduroam.cwi.nl:37613/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-24105/.s.monetdb.37613
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 97_comments.sql
+# loading sql script: 99_system.sql
+
+# 16:43:54 >  
+# 16:43:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24105" "--port=37613"
+# 16:43:54 >  
+
+#DROP SCHEMA IF EXISTS sch;
+#CREATE SCHEMA sch;
+#SET SCHEMA sch;
+#CREATE TABLE origs AS SELECT id FROM sys.comments;
+#CREATE FUNCTION all_kinds_of_object()
+#RETURNS TABLE (id INTEGER, name VARCHAR(50), type VARCHAR(20))
+#RETURN TABLE (
+#        SELECT id, name, table_type_name
+#        FROM sys.tables, sys.table_types
+#        WHERE type = table_type_id
+#        UNION ALL
+#        SELECT id, name, 'SCHEMA'
+#        FROM sys.schemas
+#        UNION ALL
+#        SELECT c.id, t.name || '.' || c.name, 'COLUMN'
+#        FROM sys.columns AS c, sys.tables AS t
+#        WHERE c.table_id = t.id
+#);
+#CREATE FUNCTION new_comments()
+#RETURNS TABLE (name VARCHAR(30), source VARCHAR(20), remark CLOB)
+#RETURN TABLE (
+#        SELECT o.name, o.type, c.remark
+#        FROM sys.comments AS c LEFT JOIN all_kinds_of_object() AS o ON c.id = o.id
+#        WHERE c.id NOT IN (SELECT id FROM origs)
+#);
+#CREATE VIEW vivi AS SELECT * FROM sys.comments;
+#SELECT * FROM new_comments();
+% .L1,	.L1,	.L1 # table_name
+% name,	source,	remark # name
+% varchar,	varchar,	clob # type
+% 11,	6,	16 # length
+[ "vivi",	"VIEW",	"a view to a kill"	]
+[ "vivi.remark",	"COLUMN",	"remarkable"	]
+#DROP VIEW vivi;
+#SELECT * FROM new_comments();
+% .L1,	.L1,	.L1 # table_name
+% name,	source,	remark # name
+% varchar,	varchar,	clob # type
+% 0,	0,	0 # length
+
+# 16:43:54 >  
+# 16:43:54 >  "Done."
+# 16:43:54 >  
+

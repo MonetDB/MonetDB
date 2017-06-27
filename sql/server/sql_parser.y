@@ -5431,8 +5431,9 @@ comment_on_statement:
 	;
 
 catalog_object:
-	TABLE qname { $$ = _symbol_create_list( SQL_TABLE, $2); }
-	| SCHEMA ident { $$ = _symbol_create( SQL_SCHEMA, $2); }
+	  SCHEMA ident { $$ = _symbol_create( SQL_SCHEMA, $2); }
+	| TABLE qname { $$ = _symbol_create_list( SQL_TABLE, $2); }
+	| VIEW qname { $$ = _symbol_create_list( SQL_VIEW, $2); }
 	| COLUMN ident '.' ident
 	{ dlist *l = L();
 	  append_string(l, $2);
@@ -6032,6 +6033,7 @@ char *token2string(int token)
 	SQL(CHARSET);
 	SQL(SCHEMA);
 	SQL(TABLE);
+	SQL(VIEW);
 	SQL(TYPE);
 	SQL(CASE);
 	SQL(CAST);
