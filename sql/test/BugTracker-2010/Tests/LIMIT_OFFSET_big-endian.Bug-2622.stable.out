@@ -32,97 +32,97 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 35 # length
+% 39 # length
 project (
-| table(sys.oblo) [ oblo.a ] COUNT 
-) [ oblo.a ]
+| table(sys.oblo) [ "oblo"."a" ] COUNT 
+) [ "oblo"."a" ]
 #PLAN select * from oblo OFFSET 2;
 % .plan # table_name
 % rel # name
 % clob # type
-% 37 # length
+% 41 # length
 top N (
 | project (
-| | table(sys.oblo) [ oblo.a ] COUNT 
-| ) [ oblo.a ]
+| | table(sys.oblo) [ "oblo"."a" ] COUNT 
+| ) [ "oblo"."a" ]
 ) [ bigint "2" ]
 #PLAN select * from oblo LIMIT 2;
 % .plan # table_name
 % rel # name
 % clob # type
-% 37 # length
+% 41 # length
 top N (
 | project (
-| | table(sys.oblo) [ oblo.a ] COUNT 
-| ) [ oblo.a ]
+| | table(sys.oblo) [ "oblo"."a" ] COUNT 
+| ) [ "oblo"."a" ]
 ) [ bigint "2" ]
 #PLAN select * from oblo LIMIT 1 OFFSET 2;
 % .plan # table_name
 % rel # name
 % clob # type
-% 37 # length
+% 41 # length
 top N (
 | project (
-| | table(sys.oblo) [ oblo.a ] COUNT 
-| ) [ oblo.a ]
+| | table(sys.oblo) [ "oblo"."a" ] COUNT 
+| ) [ "oblo"."a" ]
 ) [ bigint "1", bigint "2" ]
 #PLAN select * from oblo LIMIT 2 OFFSET 1;
 % .plan # table_name
 % rel # name
 % clob # type
-% 37 # length
+% 41 # length
 top N (
 | project (
-| | table(sys.oblo) [ oblo.a ] COUNT 
-| ) [ oblo.a ]
+| | table(sys.oblo) [ "oblo"."a" ] COUNT 
+| ) [ "oblo"."a" ]
 ) [ bigint "2", bigint "1" ]
 #PLAN select * from oblo ORDER BY a;
 % .plan # table_name
 % rel # name
 % clob # type
-% 35 # length
+% 39 # length
 project (
-| table(sys.oblo) [ oblo.a ] COUNT 
-) [ oblo.a ] [ oblo.a ASC ]
+| table(sys.oblo) [ "oblo"."a" ] COUNT 
+) [ "oblo"."a" ] [ "oblo"."a" ASC ]
 #PLAN select * from oblo ORDER BY a OFFSET 2;
 % .plan # table_name
 % rel # name
 % clob # type
-% 37 # length
+% 41 # length
 top N (
 | project (
-| | table(sys.oblo) [ oblo.a ] COUNT 
-| ) [ oblo.a ] [ oblo.a ASC ]
+| | table(sys.oblo) [ "oblo"."a" ] COUNT 
+| ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
 ) [ bigint "2" ]
 #PLAN select * from oblo ORDER BY a LIMIT 2;
 % .plan # table_name
 % rel # name
 % clob # type
-% 37 # length
+% 41 # length
 top N (
 | project (
-| | table(sys.oblo) [ oblo.a ] COUNT 
-| ) [ oblo.a ] [ oblo.a ASC ]
+| | table(sys.oblo) [ "oblo"."a" ] COUNT 
+| ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
 ) [ bigint "2" ]
 #PLAN select * from oblo ORDER BY a LIMIT 2 OFFSET 1;
 % .plan # table_name
 % rel # name
 % clob # type
-% 37 # length
+% 41 # length
 top N (
 | project (
-| | table(sys.oblo) [ oblo.a ] COUNT 
-| ) [ oblo.a ] [ oblo.a ASC ]
+| | table(sys.oblo) [ "oblo"."a" ] COUNT 
+| ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
 ) [ bigint "2", bigint "1" ]
 #PLAN select * from oblo ORDER BY a LIMIT 1 OFFSET 2;
 % .plan # table_name
 % rel # name
 % clob # type
-% 37 # length
+% 41 # length
 top N (
 | project (
-| | table(sys.oblo) [ oblo.a ] COUNT 
-| ) [ oblo.a ] [ oblo.a ASC ]
+| | table(sys.oblo) [ "oblo"."a" ] COUNT 
+| ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
 ) [ bigint "1", bigint "2" ]
 #EXPLAIN select * from oblo;
 % .explain # table_name
