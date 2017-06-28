@@ -69,11 +69,14 @@ Ready.
 # 14:22:38 >  
 
 #CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#SELECT DISTINCT col1 * + + col1 + + col2 * 0 / + - CAST ( + - col0 AS INTEGER ) AS col1 FROM tab0 cor0;
+% sys.L3 # table_name
+% col1 # name
+% hugeint # type
+% 1 # length
 #SELECT ALL + 93 + col0 FROM tab0 AS cor0;
-% sys. # table_name
-# sys.L2 # table_name
-% L # name
-# L2 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 1 # length
 #DROP TABLE tab0;
