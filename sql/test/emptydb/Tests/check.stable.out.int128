@@ -6176,7 +6176,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"lng",	"bigint",	64,	1,	2,	7	]
 [ "sys",	"lng",	"decimal",	18,	1,	10,	10	]
 [ "sys",	"lng",	"sec_interval",	13,	1,	10,	9	]
-[ "sys",	"lng",	"wrd",	64,	1,	2,	7	]
 [ "sys",	"mbr",	"mbr",	0,	0,	0,	16	]
 [ "sys",	"oid",	"oid",	63,	0,	2,	6	]
 [ "sys",	"ptr",	"ptr",	0,	0,	0,	1	]

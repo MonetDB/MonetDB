@@ -5789,7 +5789,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"int",	"decimal",	9,	1,	10,	10	]
 [ "sys",	"int",	"int",	32,	1,	2,	7	]
 [ "sys",	"int",	"month_interval",	32,	0,	2,	8	]
-[ "sys",	"int",	"wrd",	32,	1,	2,	7	]
 [ "sys",	"json",	"json",	0,	0,	0,	16	]
 [ "sys",	"lng",	"bigint",	64,	1,	2,	7	]
 [ "sys",	"lng",	"decimal",	18,	1,	10,	10	]
