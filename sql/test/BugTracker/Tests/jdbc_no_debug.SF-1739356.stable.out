@@ -19,28 +19,28 @@ Ready.
 
 
 
-+--------------------------------------------------------------------+
++----------------------------------------------------------------------------+
 | rel                                                                                                                                                                                                                                                                       |
-+====================================================================+
++============================================================================+
 | project (                                                                                                                                                                                                                                                                 |
 | | group by (                                                                                                                                                                                                                                                              |
 | | | union (                                                                                                      |
 | | | | group by (                                                                                                 |
 | | | | | project (                                                                                                                                                                                                                                                         |
 | | | | | | select (                                                                                                                                                                                                                                                        |
-| | | | | | | table(sys._tables) [ _tables.id, _tables.type ] COUNT  |
-| | | | | | ) [ _tables.type != smallint "2" ]                       |
-| | | | | ) [ _tables.id as tables.id ]                              |
-| | | | ) [  ] [ sys.count() NOT NULL as L41.L41 ],                  |
+| | | | | | | table(sys._tables) [ "_tables"."id", "_tables"."type" ] COUNT  |
+| | | | | | ) [ "_tables"."type" != smallint "2" ]                           |
+| | | | | ) [ "_tables"."id" as "tables"."id" ]                              |
+| | | | ) [  ] [ sys.count() NOT NULL as "L41"."L41" ],                      |
 | | | | group by (                                                                                                 |
 | | | | | project (                                                                                                                                                                                                                                                         |
-| | | | | | table(tmp._tables) [ _tables.id ] COUNT                  |
-| | | | | ) [ _tables.id as tables.id ]                              |
-| | | | ) [  ] [ sys.count() NOT NULL as L41.L41 ]                   |
-| | | ) [ L41.L41 ]                                                  |
-| | ) [  ] [ sys.sum no nil (L41.L41) COUNT  as L41.L41 ]            |
-| ) [ L41 NOT NULL as L42.L41 ]                                      |
-+--------------------------------------------------------------------+
+| | | | | | table(tmp._tables) [ "_tables"."id" ] COUNT                      |
+| | | | | ) [ "_tables"."id" as "tables"."id" ]                              |
+| | | | ) [  ] [ sys.count() NOT NULL as "L41"."L41" ]                       |
+| | | ) [ "L41"."L41" ]                                                      |
+| | ) [  ] [ sys.sum no nil ("L41"."L41") COUNT  as "L41"."L41" ]            |
+| ) [ "L41" NOT NULL as "L42"."L41" ]                                        |
++----------------------------------------------------------------------------+
 18 rows
 Operation successful
 +-----------------------------------------------------------------------------------------------------+
@@ -73,29 +73,29 @@ Operation successful
 |     X_41:lng := aggr.sum(X_40);                                                                 |
 |     sql.resultSet(".L42","L41","bigint",64:int,0:int,7:int,X_41);                                   |
 | end user.s4_1;                                                                                   |
-| #inline               actions= 0 time=2 usec                                                        |
-| #remap                actions= 0 time=4 usec                                                        |
-| #costmodel            actions= 1 time=3 usec                                                        |
-| #coercion             actions= 1 time=10 usec                                                       |
-| #evaluate             actions= 0 time=5 usec                                                        |
-| #emptybind            actions= 0 time=11 usec                                                       |
-| #pushselect           actions= 4 time=42 usec                                                       |
-| #aliases              actions= 2 time=13 usec                                                       |
-| #mergetable           actions= 0 time=57 usec                                                       |
-| #deadcode             actions= 2 time=12 usec                                                       |
-| #aliases              actions= 0 time=8 usec                                                        |
-| #constants            actions= 1 time=12 usec                                                       |
-| #commonTerms          actions= 0 time=9 usec                                                        |
-| #projectionpath       actions= 0 time=5 usec                                                        |
-| #reorder              actions= 1 time=38 usec                                                       |
-| #deadcode             actions= 0 time=9 usec                                                        |
-| #reduce               actions=25 time=14 usec                                                       |
-| #matpack              actions= 0 time=5 usec                                                        |
-| #multiplex            actions= 0 time=4 usec                                                        |
-| #profiler             actions= 1 time=7 usec                                                        |
-| #candidates           actions= 1 time=2 usec                                                        |
-| #garbagecollector     actions= 1 time=24 usec                                                       |
-| #total                actions= 1 time=453 usec                                                      |
+| #inline               actions= 0 time=0 usec                                                        |
+| #remap                actions= 0 time=2 usec                                                        |
+| #costmodel            actions= 1 time=2 usec                                                        |
+| #coercion             actions= 1 time=5 usec                                                        |
+| #evaluate             actions= 0 time=3 usec                                                        |
+| #emptybind            actions= 0 time=6 usec                                                        |
+| #pushselect           actions= 4 time=25 usec                                                       |
+| #aliases              actions= 2 time=7 usec                                                        |
+| #mergetable           actions= 0 time=30 usec                                                       |
+| #deadcode             actions= 2 time=7 usec                                                        |
+| #aliases              actions= 0 time=5 usec                                                        |
+| #constants            actions= 1 time=6 usec                                                        |
+| #commonTerms          actions= 0 time=6 usec                                                        |
+| #projectionpath       actions= 0 time=3 usec                                                        |
+| #reorder              actions= 1 time=22 usec                                                       |
+| #deadcode             actions= 0 time=5 usec                                                        |
+| #reduce               actions=25 time=8 usec                                                        |
+| #matpack              actions= 0 time=3 usec                                                        |
+| #multiplex            actions= 0 time=2 usec                                                        |
+| #profiler             actions= 1 time=4 usec                                                        |
+| #candidates           actions= 1 time=1 usec                                                        |
+| #garbagecollector     actions= 1 time=14 usec                                                       |
+| #total                actions= 1 time=257 usec                                                      |
 +-----------------------------------------------------------------------------------------------------+
 50 rows
 
