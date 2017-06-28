@@ -1306,14 +1306,16 @@ command_get(int argc, char *argv[])
 		fprintf(stderr, "get: %s\n", e);
 		free(e);
 		exit(2);
-	} else if ( buf && strncmp(buf, "OK\n", 3) != 0) {
+	} else if (buf == NULL) {
+		fprintf(stderr, "get: malloc failed\n");
+		exit(2);
+	} else if (strncmp(buf, "OK\n", 3) != 0) {
 		fprintf(stderr, "get: %s\n", buf);
 		free(buf);
 		exit(1);
 	}
 	readPropsBuf(defprops, buf + 3);
-	if( buf) 
-		free(buf);
+	free(buf);
 
 	if (twidth > 0) {
 		/* name = 15 */
@@ -1331,6 +1333,9 @@ command_get(int argc, char *argv[])
 		if (e != NULL) {
 			fprintf(stderr, "get: %s\n", e);
 			free(e);
+			exit(2);
+		} else if (buf == NULL) {
+			fprintf(stderr, "get: malloc failed\n");
 			exit(2);
 		} else if (strncmp(buf, "OK\n", 3) != 0) {
 			fprintf(stderr, "get: %s\n", buf);
