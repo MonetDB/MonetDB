@@ -2461,7 +2461,8 @@ static sql_exp *
 math_unsafe_fixup( mvc *sql, sql_exp *e, sql_exp *cond, int lr )
 {
 	list *args = e->l;
-	if (args->h->next)
+
+	if (args && args->h && args->h->next)
 		return math_unsafe_fixup_binop(sql, e, args->h->data, args->h->next->data, cond, lr);
 	else
 		return math_unsafe_fixup_unop(sql, e, args->h->data, cond, lr);
