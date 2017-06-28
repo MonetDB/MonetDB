@@ -1182,7 +1182,9 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 
 		gexps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0);
 		skipWS(r, pos);
-		exps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 1);
+		exps = read_exps(sql, nrel, NULL, gexps, r, pos, '[', 1);
+		if (!exps)
+			return NULL;
 
 		rel = rel_groupby(sql, nrel, gexps);
 		rel->exps = exps;
