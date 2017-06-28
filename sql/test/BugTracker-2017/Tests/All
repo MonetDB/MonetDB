@@ -21,6 +21,7 @@ HAVE_NETCDF?rel2bin_project-assert.Bug-6080
 str2decimal.Bug-6206
 integer_addition_overflow.Bug-6205
 dce_bug-6177
+default-insert-update.Bug-6249
 crash_on_NULL_ptr.Bug-6130
 HAVE_SAMTOOLS?sqlsmith01
 HAVE_NETCDF?sqlsmith02
