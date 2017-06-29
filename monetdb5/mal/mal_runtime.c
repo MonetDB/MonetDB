@@ -210,10 +210,8 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Runt
 	pci->totticks += pci->ticks;
 	pci->calls++;
 	
-	if(malProfileMode > 0 ){
-		pci->wbytes = getVolume(stk, pci, 1);
+	if(malProfileMode > 0 )
 		profilerEvent(mb, stk, pci, FALSE, cntxt->username);
-	}
 	if( malProfileMode < 0){
 		/* delay profiling until you encounter start of MAL function */
 		if( getInstrPtr(mb,0) == pci)
