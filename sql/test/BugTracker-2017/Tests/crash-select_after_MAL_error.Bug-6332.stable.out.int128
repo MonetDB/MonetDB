@@ -8,7 +8,7 @@ stdout of test 'crash-select_after_MAL_error.Bug-6332` in directory 'sql/test/Bu
 # MonetDB 5 server v11.25.24
 # This is an unreleased version
 # Serving database 'mTests_sql_test_BugTracker-2017', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
 # Found 15.588 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
@@ -72,7 +72,7 @@ Ready.
 #SELECT DISTINCT col1 * + + col1 + + col2 * 0 / + - CAST ( + - col0 AS INTEGER ) AS col1 FROM tab0 cor0;
 % sys.L3 # table_name
 % col1 # name
-% bigint # type
+% hugeint # type
 % 1 # length
 #SELECT ALL + 93 + col0 FROM tab0 AS cor0;
 % sys.L2 # table_name
