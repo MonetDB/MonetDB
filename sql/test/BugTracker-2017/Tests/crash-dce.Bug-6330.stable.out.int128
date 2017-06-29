@@ -1,20 +1,20 @@
-stdout of test 'crash-select_after_MAL_error.Bug-6332` in directory 'sql/test/BugTracker-2017` itself:
+stdout of test 'crash-dce.Bug-6330` in directory 'sql/test/BugTracker-2017` itself:
 
 
-# 14:22:37 >  
-# 14:22:37 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36959" "--set" "mapi_usock=/var/tmp/mtest-11002/.s.monetdb.36959" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2017" "--set" "embedded_r=yes" "--set" "embedded_py=true"
-# 14:22:37 >  
+# 13:53:44 >  
+# 13:53:44 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30094" "--set" "mapi_usock=/var/tmp/mtest-30656/.s.monetdb.30094" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2017" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 13:53:44 >  
 
 # MonetDB 5 server v11.25.24
 # This is an unreleased version
 # Serving database 'mTests_sql_test_BugTracker-2017', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
 # Found 15.588 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
 # Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:36959/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11002/.s.monetdb.36959
+# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:30094/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-30656/.s.monetdb.30094
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 # MonetDB/Python module loaded
@@ -61,27 +61,25 @@ Ready.
 # loading sql script: 90_generator.sql
 # loading sql script: 90_generator_hge.sql
 # loading sql script: 99_system.sql
-#WARNING To speedup calc./ a bulk operator implementation is needed
-#    X_24965:bat[:lng] := mal.multiplex("calc":str,"/":str,0:bte,X_24964:bat[:int]);
 
-# 14:22:38 >  
-# 14:22:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11002" "--port=36959"
-# 14:22:38 >  
+# 13:53:45 >  
+# 13:53:45 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30656" "--port=30094"
+# 13:53:45 >  
 
-#CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
-#SELECT DISTINCT col1 * + + col1 + + col2 * 0 / + - CAST ( + - col0 AS INTEGER ) AS col1 FROM tab0 cor0;
-% sys.L3 # table_name
-% col1 # name
-% bigint # type
+#SELECT 45 - - CASE + + 70 WHEN COUNT ( * ) + SUM ( DISTINCT 91 ) + MIN ( DISTINCT 41 ) / 65 THEN + 98 END * + - 0 - - COUNT ( * ) AS col0;
+% .L7 # table_name
+% col0 # name
+% hugeint # type
 % 1 # length
-#SELECT ALL + 93 + col0 FROM tab0 AS cor0;
-% sys.L2 # table_name
-% L2 # name
-% bigint # type
+[ NULL	]
+#SELECT 45 - CASE + + 70 WHEN COUNT ( * ) + SUM ( DISTINCT 91 ) + MIN ( DISTINCT 41 ) / 65 THEN + 98 END * + - 0 - - COUNT ( * ) AS col0;
+% .L7 # table_name
+% col0 # name
+% hugeint # type
 % 1 # length
-#DROP TABLE tab0;
+[ NULL	]
 
-# 14:22:39 >  
-# 14:22:39 >  "Done."
-# 14:22:39 >  
+# 13:53:46 >  
+# 13:53:46 >  "Done."
+# 13:53:46 >  
 
