@@ -602,15 +602,17 @@ skipIdent( char *r, int *pos)
 static void
 skipIdentOrSymbol( char *r, int *pos)
 {
-	if (r[*pos] == '"') 
-		return skipIdent(r, pos);
-	while(r[*pos] && (isalnum(r[*pos]) || 
-			  r[*pos] == '_' || r[*pos] == '%' ||
-			  r[*pos] == '<' || r[*pos] == '>' || 
-			  r[*pos] == '/' || r[*pos] == '*' || 
-			  r[*pos] == '-' || r[*pos] == '+' || 
-			  r[*pos] == '~' || r[*pos] == '^' ))
-		(*pos)++;
+	if (r[*pos] == '"') {
+		skipIdent(r, pos);
+	} else {
+		while(r[*pos] && (isalnum(r[*pos]) ||
+				  r[*pos] == '_' || r[*pos] == '%' ||
+				  r[*pos] == '<' || r[*pos] == '>' ||
+				  r[*pos] == '/' || r[*pos] == '*' ||
+				  r[*pos] == '-' || r[*pos] == '+' ||
+				  r[*pos] == '~' || r[*pos] == '^' ))
+			(*pos)++;
+	}
 }
 
 static int
