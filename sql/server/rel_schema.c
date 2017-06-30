@@ -408,16 +408,17 @@ column_option(
 			if (e && is_atom(e->type)) {
 				atom *a = exp_value(sql, e, sql->args, sql->argc);
 
-				if(!atom_cast(sql->sa, a, &cs->type)) {
-					(void) sql_error(sql, 02, "42000!could not cast the default value to the column type\n");
-					return SQL_ERR;
+				if (atom_null(a)) {
+					mvc_default(sql, cs, NULL);
+					res = SQL_OK;
+					break;
 				}
 			}
 			/* reset error */
 			sql->session->status = 0;
 			sql->errstr[0] = '\0';
 		}
-		r = symbol2string(sql, s->data.sym, &err);
+	       	r = symbol2string(sql, s->data.sym, &err);
 		if (!r) {
 			(void) sql_error(sql, 02, "42000!incorrect default value '%s'\n", err?err:"");
 			if (err) _DELETE(err);
@@ -736,25 +737,14 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		char *cname = l->h->data.sval;
 		symbol *sym = l->h->next->data.sym;
 		sql_column *c = mvc_bind_column(sql, t, cname);
-		sql_exp *e = NULL;
 
 		if (!c) {
 			sql_error(sql, 02, "42S22!ALTER TABLE: no such column '%s'\n", cname);
 			return SQL_ERR;
 		}
-		e = rel_logical_value_exp(sql, NULL, sym, sql_sel);
-
-		if (e && is_atom(e->type)) {
-			atom *a = exp_value(sql, e, sql->args, sql->argc);
-
-			if(!atom_cast(sql->sa, a, &c->type)) {
-				(void) sql_error(sql, 02, "42S22!ALTER TABLE: could not cast the default value to the column type\n");
-				return SQL_ERR;
-			}
-		}
 		r = symbol2string(sql, sym, &err);
 		if (!r) {
-			(void) sql_error(sql, 02, "42S22!ALTER TABLE: incorrect default value '%s'\n", err?err:"");
+			(void) sql_error(sql, 02, "42000!incorrect default value '%s'\n", err?err:"");
 			if (err) _DELETE(err);
 			return SQL_ERR;
 		}
