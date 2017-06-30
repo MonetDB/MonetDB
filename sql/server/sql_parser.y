@@ -1550,7 +1550,7 @@ default:
  ;
 
 default_value:
-    atom 	{ $$ = $1; }
+    simple_scalar_exp 	{ $$ = $1; }
  ;
 
 column_constraint:
@@ -2888,7 +2888,6 @@ simple_atom:
 
 insert_atom:
     simple_atom
- |  DEFAULT		{ $$ = _symbol_create(SQL_DEFAULT, NULL ); }
  ;
 
 value:
@@ -2909,12 +2908,7 @@ assignment_commalist:
  ;
 
 assignment:
-   column '=' DEFAULT
-	{ dlist *l = L();
-	  append_symbol(l, _symbol_create(SQL_DEFAULT, NULL ) );
-	  append_string(l, $1);
-	  $$ = _symbol_create_list( SQL_ASSIGN, l); }
- |  column '=' search_condition
+   column '=' search_condition
 	{ dlist *l = L();
 	  append_symbol(l, $3 );
 	  append_string(l, $1);
