@@ -869,13 +869,9 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	refs = sa_list(m->sa);
 	rel = rel_read(m, *expr, &pos, refs);
-	if (!rel)
+	if (!rel || monet5_create_relational_function(m, *mod, *nme, rel, NULL, ops, 0) < 0)
 		throw(SQL, "sql.register", "Cannot register %s", buf);
-	if (rel) {
-		monet5_create_relational_function(m, *mod, *nme, rel, NULL, ops, 0);
-		rel_destroy(rel);
-	}
+	rel_destroy(rel);
 	sqlcleanup(m, 0);
 	return msg;
 }
-
