@@ -33,12 +33,18 @@ static PyObject *_connection_execute(Py_ConnectionObject *self, PyObject *args)
 		char *res = NULL;
 		char *query;
 #ifndef IS_PY3K
-		query = ((PyStringObject *)args)->ob_sval;
+		query = GDKstrdup(((PyStringObject *)args)->ob_sval);
 #else
-		query = PyUnicode_AsUTF8(args);
+		query = GDKstrdup(PyUnicode_AsUTF8(args));
 #endif
-
+		if (!query) {
+			PyErr_Format(PyExc_Exception, MAL_MALLOC_FAIL);
+			return NULL;
+		}
+Py_BEGIN_ALLOW_THREADS;
 		res = _connection_query(self->cntxt, query, &output);
+Py_END_ALLOW_THREADS;
+		GDKfree(query);
 		if (res != MAL_SUCCEED) {
 			PyErr_Format(PyExc_Exception, "SQL Query Failed: %s",
 						 (res ? res : "<no error>"));
