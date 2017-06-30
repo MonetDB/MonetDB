@@ -81,21 +81,24 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 51 # length
+% 65 # length
 project (
 | group by (
-| | table(sys.sorted) [ sorted.a, sorted.b ] COUNT 
-| ) [ sorted.a, sorted.b ] [ sorted.a, sorted.b ]
-) [ sorted.a, sorted.b ]
+| | table(sys.sorted) [ "sorted"."a", "sorted"."b" ] COUNT 
+| ) [ "sorted"."a", "sorted"."b" ] [ "sorted"."a", "sorted"."b" ]
+) [ "sorted"."a", "sorted"."b" ]
+#plan select a,b from sorted group by b,a;
 % .plan # table_name
 % rel # name
 % clob # type
-% 51 # length
+% 65 # length
 project (
 | group by (
-| | table(sys.sorted) [ sorted.a, sorted.b ] COUNT 
-| ) [ sorted.b, sorted.a ] [ sorted.b, sorted.a ]
-) [ sorted.a, sorted.b ]
+| | table(sys.sorted) [ "sorted"."a", "sorted"."b" ] COUNT 
+| ) [ "sorted"."b", "sorted"."a" ] [ "sorted"."b", "sorted"."a" ]
+) [ "sorted"."a", "sorted"."b" ]
+#drop table unsorted;
+#drop table sorted;
 
 # 13:59:55 >  
 # 13:59:55 >  Done.

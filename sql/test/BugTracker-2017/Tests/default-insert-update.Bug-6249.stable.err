@@ -1,0 +1,41 @@
+stderr of test 'default-insert-update.Bug-6249` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 11:11:43 >  
+# 11:11:43 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39704" "--set" "mapi_usock=/var/tmp/mtest-21586/.s.monetdb.39704" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/MonetDB-Dec2016/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 11:11:43 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/MonetDB-Dec2016/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 39704
+# cmdline opt 	mapi_usock = /var/tmp/mtest-21586/.s.monetdb.39704
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/MonetDB-Dec2016/BUILD/var/MonetDB/mTests_sql_test_BugTracker-2017
+# cmdline opt 	gdk_debug = 536870922
+
+# 11:11:43 >  
+# 11:11:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21586" "--port=39704"
+# 11:11:43 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-21586/.s.monetdb.39704
+QUERY = INSERT INTO test2 VALUES (1, 'a', DEFAULT, 'a'); --throw an error
+ERROR = !INSERT INTO: column 'c' has no valid default value
+MAPI  = (monetdb) /var/tmp/mtest-23398/.s.monetdb.31464
+QUERY = UPDATE test2 SET b = DEFAULT; --throw an error
+ERROR = !UPDATE: column 'b' has no valid default value
+
+
+# 11:11:43 >  
+# 11:11:43 >  "Done."
+# 11:11:43 >  
+

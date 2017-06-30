@@ -364,6 +364,8 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 			sql_subtype *t = tail_type(op);
 			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
 
+			if ((nr + 100) > len)
+				buf = GDKrealloc(buf, len*=2);
 			nr += snprintf(buf+nr, len-nr, "%s %s(%u,%u)%c", nme, t->type->sqlname, t->digits, t->scale, n->next?',':' ');
 		}
 		s = buf;

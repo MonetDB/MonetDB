@@ -203,6 +203,9 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 		}
 	} else {
 		switch (inp->bat_type) {
+			case TYPE_bit:
+				BAT_TO_NP(b, bit, NPY_INT8);
+				break;
 			case TYPE_bte:
 				BAT_TO_NP(b, bte, NPY_INT8);
 				break;

@@ -60,7 +60,7 @@ exist-bigint-missing.Bug-6315
 coalesc-limit.Bug-6316
 limit.Bug-6322
 simplify_math.Bug-6324
-push_subslice.Bug-6322
+HAVE_GEOM?push_subslice.Bug-6322
 create_table_as-missing_not_null.Bug-6329
 crash-dce.Bug-6330
 delete_from_merge_table.Bug-3743

@@ -356,6 +356,8 @@ main(int argc, char *argv[])
 	kv->val = strdup("no");
 	kv = findConfKey(_mero_db_props, "embedpy");
 	kv->val = strdup("no");
+	kv = findConfKey(_mero_db_props, "embedpy3");
+	kv->val = strdup("no");
 	kv = findConfKey(_mero_db_props, "nclients");
 	kv->val = strdup("64");
 	kv = findConfKey(_mero_db_props, "type");
