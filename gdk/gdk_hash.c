@@ -202,17 +202,16 @@ BATcheckhash(BAT *b)
 		Hash *h;
 		Heap *hp;
 		const char *nme = BBP_physical(b->batCacheid);
-		const char *ext = b->batCacheid > 0 ? "thash" : "hhash";
 		int fd;
 
 		b->thash = NULL;
 		if ((hp = GDKzalloc(sizeof(*hp))) != NULL &&
 		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) >= 0 &&
 		    (hp->filename = GDKmalloc(strlen(nme) + 12)) != NULL) {
-			sprintf(hp->filename, "%s.%s", nme, ext);
+			sprintf(hp->filename, "%s.thash", nme);
 
 			/* check whether a persisted hash can be found */
-			if ((fd = GDKfdlocate(hp->farmid, nme, "rb+", ext)) >= 0) {
+			if ((fd = GDKfdlocate(hp->farmid, nme, "rb+", "thash")) >= 0) {
 				size_t hdata[HASH_HEADER_SIZE];
 				struct stat st;
 
@@ -226,7 +225,7 @@ BATcheckhash(BAT *b)
 				    hdata[4] == (size_t) BATcount(b) &&
 				    fstat(fd, &st) == 0 &&
 				    st.st_size >= (off_t) (hp->size = hp->free = (hdata[1] + hdata[2]) * hdata[3] + HASH_HEADER_SIZE * SIZEOF_SIZE_T) &&
-				    HEAPload(hp, nme, ext, 0) == GDK_SUCCEED) {
+				    HEAPload(hp, nme, "thash", 0) == GDK_SUCCEED) {
 					h->lim = (BUN) hdata[1];
 					h->type = ATOMtype(b->ttype);
 					h->mask = (BUN) (hdata[2] - 1);
@@ -260,7 +259,7 @@ BATcheckhash(BAT *b)
 				GDKfree(h);
 				close(fd);
 				/* unlink unusable file */
-				GDKunlink(hp->farmid, BATDIR, nme, ext);
+				GDKunlink(hp->farmid, BATDIR, nme, "thash");
 			}
 			GDKfree(hp->filename);
 		}
@@ -338,7 +337,6 @@ BAThash(BAT *b, BUN masksize)
 		Hash *h = NULL;
 		Heap *hp;
 		const char *nme = BBP_physical(b->batCacheid);
-		const char *ext = b->batCacheid > 0 ? "thash" : "hhash";
 		BATiter bi = bat_iterator(b);
 
 		ALGODEBUG fprintf(stderr, "#BAThash: create hash(%s#" BUNFMT ");\n", BATgetId(b), BATcount(b));
@@ -350,7 +348,7 @@ BAThash(BAT *b, BUN masksize)
 			return GDK_FAIL;
 		}
 		hp->dirty = TRUE;
-		sprintf(hp->filename, "%s.%s", nme, ext);
+		sprintf(hp->filename, "%s.thash", nme);
 
 		/* cnt = 0, hopefully there is a proper capacity from
 		 * which we can derive enough information */
