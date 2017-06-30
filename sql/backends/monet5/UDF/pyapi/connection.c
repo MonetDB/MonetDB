@@ -19,10 +19,32 @@ CREATE_SQL_FUNCTION_PTR(str, create_table_from_emit);
 
 static PyObject *_connection_execute(Py_ConnectionObject *self, PyObject *args)
 {
-	if (!PyString_CheckExact(args)) {
+	char *query = NULL;
+#ifndef IS_PY3K
+	if (PyUnicode_CheckExact(args)) {
+		PyObject* str = PyUnicode_AsUTF8String(args);
+		if (!str) {
+			PyErr_Format(PyExc_Exception, "Unicode failure.");
+			return NULL;
+		}
+		query = GDKstrdup(((PyStringObject *)str)->ob_sval);
+		Py_DECREF(str);
+	} else
+#endif
+	if (PyString_CheckExact(args)) {
+#ifndef IS_PY3K
+		query = GDKstrdup(((PyStringObject *)args)->ob_sval);
+#else
+		query = GDKstrdup(PyUnicode_AsUTF8(args));
+#endif
+	} else {
 		PyErr_Format(PyExc_TypeError,
 					 "expected a query string, but got an object of type %s",
 					 Py_TYPE(args)->tp_name);
+		return NULL;
+	}
+	if (!query) {
+		PyErr_Format(PyExc_Exception, "%s", MAL_MALLOC_FAIL);
 		return NULL;
 	}
 	if (!self->mapped) {
@@ -31,16 +53,6 @@ static PyObject *_connection_execute(Py_ConnectionObject *self, PyObject *args)
 		PyObject *result;
 		res_table *output = NULL;
 		char *res = NULL;
-		char *query;
-#ifndef IS_PY3K
-		query = GDKstrdup(((PyStringObject *)args)->ob_sval);
-#else
-		query = GDKstrdup(PyUnicode_AsUTF8(args));
-#endif
-		if (!query) {
-			PyErr_Format(PyExc_Exception, MAL_MALLOC_FAIL);
-			return NULL;
-		}
 Py_BEGIN_ALLOW_THREADS;
 		res = _connection_query(self->cntxt, query, &output);
 Py_END_ALLOW_THREADS;
