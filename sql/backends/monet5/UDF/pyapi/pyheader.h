@@ -24,6 +24,7 @@
 #include "gdk_utils.h"
 #include "gdk_posix.h"
 #include "gdk.h"
+#include "blob.h"
 #include "sql_catalog.h"
 #include "sql_scenario.h"
 #include "sql_cast.h"

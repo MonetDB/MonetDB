@@ -2461,7 +2461,8 @@ static sql_exp *
 math_unsafe_fixup( mvc *sql, sql_exp *e, sql_exp *cond, int lr )
 {
 	list *args = e->l;
-	if (args->h->next)
+
+	if (args && args->h && args->h->next)
 		return math_unsafe_fixup_binop(sql, e, args->h->data, args->h->next->data, cond, lr);
 	else
 		return math_unsafe_fixup_unop(sql, e, args->h->data, cond, lr);
@@ -2695,13 +2696,13 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 			sql_exp *le = l->h->data;
 			sql_exp *re = l->h->next->data;
 			/* 0*a = 0 */
-			if (exp_is_atom(le) && exp_is_zero(sql, le)) {
+			if (exp_is_atom(le) && exp_is_zero(sql, le) && exp_is_not_null(sql, re)) {
 				(*changes)++;
 				exp_setname(sql->sa, le, exp_relname(e), exp_name(e));
 				return le;
 			}
 			/* a*0 = 0 */
-			if (exp_is_atom(re) && exp_is_zero(sql, re)) {
+			if (exp_is_atom(re) && exp_is_zero(sql, re) && exp_is_not_null(sql, le)) {
 				(*changes)++;
 				exp_setname(sql->sa, re, exp_relname(e), exp_name(e));
 				return re;

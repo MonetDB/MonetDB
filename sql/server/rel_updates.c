@@ -23,6 +23,12 @@ insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s)
 {
 	if (s->token == SQL_NULL) {
 		return exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
+	} else if (s->token == SQL_DEFAULT) {
+		if (c->def) {
+			return rel_parse_val(sql, sa_message(sql->sa, "select CAST(%s AS %s);", c->def, c->type.type->sqlname), sql->emode);
+		} else {
+			return sql_error(sql, 02, "INSERT INTO: column '%s' has no valid default value", c->base.name);
+		}
 	} else {
 		int is_last = 0;
 		exp_kind ek = {type_value, card_value, FALSE};
@@ -971,11 +977,19 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 				int status = sql->session->status;
 				exp_kind ek = {type_value, (single)?card_column:card_relation, FALSE};
 
-				if (single) 
+				if(single && a->token == SQL_DEFAULT) {
+					char *colname = assignment->h->next->data.sval;
+					sql_column *col = mvc_bind_column(sql, t, colname);
+					if (col->def) {
+						v = rel_parse_val(sql, sa_message(sql->sa, "select CAST(%s AS %s);", col->def, col->type.type->sqlname), sql->emode);
+					} else {
+						return sql_error(sql, 02, "UPDATE: column '%s' has no valid default value", col->base.name);
+					}
+				} else if (single) {
 					v = rel_value_exp(sql, &rel_val, a, sql_sel, ek);
-				else
+				} else {
 					rel_val = rel_subquery(sql, NULL, a, ek, APPLY_JOIN);
-
+				}
 				if (!v) {
 					sql->errstr[0] = 0;
 					sql->session->status = status;

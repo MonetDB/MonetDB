@@ -78,6 +78,46 @@ size_t pyobject_get_size(PyObject *obj)
 	return size;
 }
 
+
+str pyobject_to_blob(PyObject **ptr, size_t maxsize, blob **value) {
+	size_t size;
+	char* bytes_data;
+	PyObject *obj;
+	str msg = MAL_SUCCEED;
+	if (ptr == NULL || *ptr == NULL) {
+		msg = createException(MAL, "pyapi.eval", "Invalid PyObject.");
+		goto wrapup;
+	}
+	obj = *ptr;
+	
+	(void)maxsize;
+#ifndef IS_PY3K
+	if (PyString_CheckExact(obj)) {
+		size = PyString_Size(obj);
+		bytes_data = ((PyStringObject *)obj)->ob_sval;
+	} else
+#endif
+	if (PyByteArray_CheckExact(obj)) {
+		size = PyByteArray_Size(obj);
+		bytes_data = ((PyByteArrayObject *)obj)->ob_bytes;
+	} else {
+		msg = createException(
+			MAL, "pyapi.eval",
+			"Unrecognized Python object. Could not convert to blob.\n");
+		goto wrapup;
+	}
+
+	*value = GDKmalloc(sizeof(blob) + size);
+	if (!*value) {
+		msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL);
+		goto wrapup;
+	}
+	(*value)->nitems = size;
+	memcpy((*value)->data, bytes_data, size);
+wrapup:
+	return msg;
+}
+
 str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 {
 	PyObject *obj;

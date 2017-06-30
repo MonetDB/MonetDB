@@ -29,9 +29,6 @@ stderr of test 'crash-select_after_MAL_error.Bug-6332` in directory 'sql/test/Bu
 # 14:22:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11002" "--port=36959"
 # 14:22:38 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-11002/.s.monetdb.36959
-QUERY = SELECT DISTINCT col1 * + + col1 + + col2 * 0 / + - CAST ( + - col0 AS INTEGER ) AS col1 FROM tab0 cor0;
-ERROR = !TypeException:user.main[19]:'bat.append' undefined in:     bat.append(X_1274:bat[:lng],X_1280:bte);
 
 
 # 14:22:39 >  

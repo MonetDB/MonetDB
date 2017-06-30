@@ -25,6 +25,7 @@
 /* this function can be used to recreate the system tables (types,
  * functions, args) when internal types and/or functions have changed
  * (i.e. the ones in sql_types.c) */
+#ifdef HAVE_HGE			/* currently only used in sql_update_hugeint */
 static str
 sql_fix_system_tables(Client c, mvc *sql)
 {
@@ -182,6 +183,7 @@ sql_fix_system_tables(Client c, mvc *sql)
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
+#endif
 
 #ifdef HAVE_HGE
 static str
