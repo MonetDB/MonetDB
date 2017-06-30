@@ -1517,7 +1517,7 @@ default:
  ;
 
 default_value:
-    simple_scalar_exp 	{ $$ = $1; }
+    atom 	{ $$ = $1; }
  ;
 
 column_constraint:
