@@ -8,7 +8,7 @@ stdout of test 'crash-dce.Bug-6330` in directory 'sql/test/BugTracker-2017` itse
 # MonetDB 5 server v11.27.0
 # This is an unreleased version
 # Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Compiled for x86_64-unknown-linux-gnu/64bit
 # Found 7.331 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
 # Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
@@ -27,13 +27,13 @@ Ready.
 #SELECT 45 - - CASE + + 70 WHEN COUNT ( * ) + SUM ( DISTINCT 91 ) + MIN ( DISTINCT 41 ) / 65 THEN + 98 END * + - 0 - - COUNT ( * ) AS col0;
 % .L7 # table_name
 % col0 # name
-% hugeint # type
+% bigint # type
 % 1 # length
 [ NULL	]
 #SELECT 45 - CASE + + 70 WHEN COUNT ( * ) + SUM ( DISTINCT 91 ) + MIN ( DISTINCT 41 ) / 65 THEN + 98 END * + - 0 - - COUNT ( * ) AS col0;
 % .L7 # table_name
 % col0 # name
-% hugeint # type
+% bigeint # type
 % 1 # length
 [ NULL	]
 

@@ -157,8 +157,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 	} 	break;
 	case e_column: 
 		if (e->l)
-			mnstr_printf(fout, "%s.", (char*)e->l);
-		mnstr_printf(fout, "%s", (char*)e->r);
+			mnstr_printf(fout, "\"%s\".", (char*)e->l);
+		mnstr_printf(fout, "\"%s\"", (char*)e->r);
 		if (e->rname && e->name && e->l && e->r &&
 			strcmp(e->rname, e->l) == 0 &&
 			strcmp(e->name, e->r) == 0) 
@@ -224,8 +224,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, int comma, int alias)
 	if (e->name && alias) {
 		mnstr_printf(fout, " as ");
 		if (e->rname)
-			mnstr_printf(fout, "%s.", e->rname);
-		mnstr_printf(fout, "%s", e->name);
+			mnstr_printf(fout, "\"%s\".", e->rname);
+		mnstr_printf(fout, "\"%s\"", e->name);
 	}
 	if (comma)
 		mnstr_printf(fout, ", ");
@@ -588,20 +588,31 @@ skipWS( char *r, int *pos)
 static void
 skipIdent( char *r, int *pos)
 {
-	while(r[*pos] && (isalnum(r[*pos]) || r[*pos] == '_' || r[*pos] == '%'))
+	if (r[*pos] == '"') {
 		(*pos)++;
+		while(r[*pos] && r[*pos] != '"')
+			(*pos)++;
+		(*pos)++;
+	} else {
+		while(r[*pos] && (isalnum(r[*pos]) || r[*pos] == '_' || r[*pos] == '%'))
+			(*pos)++;
+	}
 }
 
 static void
 skipIdentOrSymbol( char *r, int *pos)
 {
-	while(r[*pos] && (isalnum(r[*pos]) || 
-			  r[*pos] == '_' || r[*pos] == '%' ||
-			  r[*pos] == '<' || r[*pos] == '>' || 
-			  r[*pos] == '/' || r[*pos] == '*' || 
-			  r[*pos] == '-' || r[*pos] == '+' || 
-			  r[*pos] == '~' || r[*pos] == '^' ))
-		(*pos)++;
+	if (r[*pos] == '"') {
+		skipIdent(r, pos);
+	} else {
+		while(r[*pos] && (isalnum(r[*pos]) ||
+				  r[*pos] == '_' || r[*pos] == '%' ||
+				  r[*pos] == '<' || r[*pos] == '>' ||
+				  r[*pos] == '/' || r[*pos] == '*' ||
+				  r[*pos] == '-' || r[*pos] == '+' ||
+				  r[*pos] == '~' || r[*pos] == '^' ))
+			(*pos)++;
+	}
 }
 
 static int
@@ -720,30 +731,32 @@ static sql_exp*
 exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos, int grp) 
 {
 	int f = -1;
-	int not = 1, old, d=0, s=0, unique = 0, no_nils = 0;
+	int not = 1, old, d=0, s=0, unique = 0, no_nils = 0, quote = 0;
 	char *tname, *cname = NULL, *e, *b = r + *pos, *st;
 	sql_exp *exp = NULL;
 	list *exps = NULL;
 	sql_subtype *tpe;
 
+	quote = (r[*pos] == '"');
+	b += quote;
 	skipIdent(r, pos);
-	e = r+*pos;
+	e = r+*pos-quote;
 	skipWS(r, pos);
 	switch(r[*pos]) {
-	/* ident */
 	case '.': 
 		*e = 0;
 		(*pos)++;
 		tname = b;
-		cname = r + *pos;
+		cname = r + *pos + quote;
 		skipIdentOrSymbol(r, pos);
-		e = r+*pos;
-		skipWS(r, pos);
+		e = r+*pos - quote;
 		old = *e;
 		*e = 0;
 		
 		tname = sa_strdup(sql->sa, tname);
 		cname = sa_strdup(sql->sa, cname);
+		*e = old;
+		skipWS(r, pos);
 		if (pexps)
 			exp = exps_bind_column2(pexps, tname, cname);
 		if (!exp && lrel) { 
@@ -753,7 +766,6 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 		} else if (!exp) {
 			exp = exp_column(sql->sa, tname, cname, NULL, CARD_ATOM, 1, (strchr(cname,'%') != NULL));
 		}
-		*e = old;
 		break;
 	/* atom */
 	case '(': 
@@ -942,30 +954,25 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 
 	/* as alias */
 	if (strncmp(r+*pos, "as", 2) == 0) {
-		int old;
 		(*pos)+=2;
 		skipWS(r, pos);
 
-		tname = r+*pos;
+		tname = r+*pos+1;
 		skipIdent(r, pos);
 		if (r[*pos] != '.') {
-			old = r[*pos];
-			r[*pos] = 0;
+			r[*pos-1] = 0;
 			cname = tname;
 			exp_setname(sql->sa, exp, NULL, cname);
-			r[*pos] = old;
 			skipWS(r, pos);
 		} else {
-			r[*pos] = 0;
+			r[*pos-1] = 0;
 			(*pos)++;
-			cname = r+*pos;
+			cname = r+*pos+1;
 			skipIdent(r, pos);
-			e = r+*pos;
+			e = r+*pos-1;
 			skipWS(r, pos);
-			old = *e;
 			*e = 0;
 			exp_setname(sql->sa, exp, tname, cname);
-			*e = old;
 		}
 	}
 	skipWS(r, pos);

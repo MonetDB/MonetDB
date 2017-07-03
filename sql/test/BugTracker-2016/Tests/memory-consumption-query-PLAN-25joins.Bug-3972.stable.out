@@ -89,7 +89,7 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 2297 # length
+% 2461 # length
 top N (
 | project (
 | | select (
@@ -118,59 +118,59 @@ top N (
 | | | | | | | | | | | | | | | | | | | | | | | | | left outer join (
 | | | | | | | | | | | | | | | | | | | | | | | | | | left outer join (
 | | | | | | | | | | | | | | | | | | | | | | | | | | | left outer join (
-| | | | | | | | | | | | | | | | | | | | | | | | | | | | table(sys.table1) [ table1.t1pkcol NOT NULL HASHCOL , table1.t1cola1, table1.t1cola11, table1.t1cola12, table1.t1cola82, table1.t1cola91, table1.t1cola101, table1.t1cola111, table1.t1cola112, table1.t1cola114, table1.t1colb1, table1.t1colb111, table1.t1colb112, table1.t1colb113, table1.t1colb114, table1.t1colc91, table1.t1cold1, table1.t1cold111, table1.t1cold112, table1.t1cold113 ] COUNT ,
-| | | | | | | | | | | | | | | | | | | | | | | | | | | | table(sys.table4) [ table4.t4cola1, table4.t4cola2, table4.t4cola111, table4.t4colb111, table4.t4colb112, table4.t4colb114, table4.t4colb115 ] COUNT 
-| | | | | | | | | | | | | | | | | | | | | | | | | | | ) [ table1.t1cola111 = table4.t4cola111 ],
-| | | | | | | | | | | | | | | | | | | | | | | | | | | table(sys.table2) [ table2.t2cola1, table2.t2cola10, table2.t2cola81, table2.t2cola82, table2.t2cola112, table2.t2cola113, table2.t2colc111, table2.t2colc112, table2.t2colc113, table2.t2colc114, table2.t2colc115 ] COUNT 
-| | | | | | | | | | | | | | | | | | | | | | | | | | ) [ table1.t1cola112 = table2.t2cola112 ],
-| | | | | | | | | | | | | | | | | | | | | | | | | | table(sys.table5) [ table5.t5cola1, table5.t5cola2, table5.t5cola3, table5.t5cola5, table5.t5cola81, table5.t5cola113, table5.t5colb113 ] COUNT 
-| | | | | | | | | | | | | | | | | | | | | | | | | ) [ table5.t5cola113 = table2.t2cola113 ],
-| | | | | | | | | | | | | | | | | | | | | | | | | table(sys.table6) [ table6.t6pkcol NOT NULL HASHCOL  as lookup1.t6pkcol ] COUNT 
-| | | | | | | | | | | | | | | | | | | | | | | | ) [ table1.t1cola114 = lookup1.t6pkcol NOT NULL HASHCOL  ],
-| | | | | | | | | | | | | | | | | | | | | | | | table(sys.table2) [ table2.t2colb111 as lookup2.t2colb111 ] COUNT 
-| | | | | | | | | | | | | | | | | | | | | | | ) [ table1.t1colb111 = lookup2.t2colb111 ],
-| | | | | | | | | | | | | | | | | | | | | | | table(sys.table5) [ table5.t5colb112 as lookup3.t5colb112 ] COUNT 
-| | | | | | | | | | | | | | | | | | | | | | ) [ table1.t1colb112 = lookup3.t5colb112 ],
-| | | | | | | | | | | | | | | | | | | | | | table(sys.table7) [ table7.t7colb113 as lookup4.t7colb113 ] COUNT 
-| | | | | | | | | | | | | | | | | | | | | ) [ table1.t1colb113 = lookup4.t7colb113 ],
-| | | | | | | | | | | | | | | | | | | | | table(sys.table8) [ table8.t8colb114 as lookup5.t8colb114 ] COUNT 
-| | | | | | | | | | | | | | | | | | | | ) [ table1.t1colb114 = lookup5.t8colb114 ],
-| | | | | | | | | | | | | | | | | | | | table(sys.table6) [ table6.t6pkcol NOT NULL HASHCOL  as lookup11.t6pkcol ] COUNT 
-| | | | | | | | | | | | | | | | | | | ) [ table4.t4colb111 = lookup11.t6pkcol NOT NULL HASHCOL  ],
-| | | | | | | | | | | | | | | | | | | table(sys.table2) [ table2.t2colb112 as lookup21.t2colb112 ] COUNT 
-| | | | | | | | | | | | | | | | | | ) [ table4.t4colb112 = lookup21.t2colb112 ],
-| | | | | | | | | | | | | | | | | | table(sys.table5) [ table5.t5pkcol NOT NULL HASHCOL  as lookup31.t5pkcol ] COUNT 
-| | | | | | | | | | | | | | | | | ) [ table5.t5colb113 = lookup31.t5pkcol NOT NULL HASHCOL  ],
-| | | | | | | | | | | | | | | | | table(sys.table7) [ table7.t7pkcol NOT NULL HASHCOL  as lookup41.t7pkcol ] COUNT 
-| | | | | | | | | | | | | | | | ) [ table4.t4colb114 = lookup41.t7pkcol NOT NULL HASHCOL  ],
-| | | | | | | | | | | | | | | | table(sys.table8) [ table8.t8pkcol NOT NULL HASHCOL  as lookup51.t8pkcol ] COUNT 
-| | | | | | | | | | | | | | | ) [ table4.t4colb115 = lookup51.t8pkcol NOT NULL HASHCOL  ],
-| | | | | | | | | | | | | | | table(sys.table6) [ table6.t6pkcol NOT NULL HASHCOL  as clookup1.t6pkcol ] COUNT 
-| | | | | | | | | | | | | | ) [ table2.t2colc111 = clookup1.t6pkcol NOT NULL HASHCOL  ],
-| | | | | | | | | | | | | | table(sys.table2) [ table2.t2pkcol NOT NULL HASHCOL  as clookup2.t2pkcol ] COUNT 
-| | | | | | | | | | | | | ) [ table2.t2colc112 = clookup2.t2pkcol NOT NULL HASHCOL  ],
-| | | | | | | | | | | | | table(sys.table5) [ table5.t5pkcol NOT NULL HASHCOL  as clookup3.t5pkcol ] COUNT 
-| | | | | | | | | | | | ) [ table2.t2colc113 = clookup3.t5pkcol NOT NULL HASHCOL  ],
-| | | | | | | | | | | | table(sys.table7) [ table7.t7pkcol NOT NULL HASHCOL  as clookup4.t7pkcol ] COUNT 
-| | | | | | | | | | | ) [ table2.t2colc114 = clookup4.t7pkcol NOT NULL HASHCOL  ],
-| | | | | | | | | | | table(sys.table8) [ table8.t8pkcol NOT NULL HASHCOL  as clookup5.t8pkcol ] COUNT 
-| | | | | | | | | | ) [ table2.t2colc115 = clookup5.t8pkcol NOT NULL HASHCOL  ],
-| | | | | | | | | | table(sys.table9) [ table9.t9pkcol NOT NULL HASHCOL , table9.t9cola1, table9.t9cola91, table9.t9cola111 ] COUNT 
-| | | | | | | | | ) [ table1.t1pkcol NOT NULL HASHCOL  = table9.t9cola111 ],
-| | | | | | | | | table(sys.table10) [ table10.t10pkcol NOT NULL HASHCOL , table10.t10cola1, table10.t10cola91 ] COUNT 
-| | | | | | | | ) [ table9.t9pkcol NOT NULL HASHCOL  = table10.t10pkcol NOT NULL HASHCOL  ],
-| | | | | | | | table(sys.table11) [ table11.t11pkcol NOT NULL HASHCOL , table11.t11cola91 ] COUNT 
-| | | | | | | ) [ table9.t9pkcol NOT NULL HASHCOL  = table11.t11pkcol NOT NULL HASHCOL  ],
-| | | | | | | table(sys.table3) [ table3.t3pkcol NOT NULL HASHCOL  as a1.t3pkcol, table3.t3cola1 as a1.t3cola1 ] COUNT 
-| | | | | | ) [ a1.t3pkcol NOT NULL HASHCOL  = table1.t1cold111 ],
-| | | | | | table(sys.table3) [ table3.t3pkcol NOT NULL HASHCOL  as a2.t3pkcol ] COUNT 
-| | | | | ) [ a2.t3pkcol NOT NULL HASHCOL  = table1.t1cold112 ],
-| | | | | table(sys.table3) [ table3.t3pkcol NOT NULL HASHCOL  as a3.t3pkcol ] COUNT 
-| | | | ) [ a3.t3pkcol NOT NULL HASHCOL  = table1.t1cold113 ],
-| | | | table(sys.table12) [ table12.t12cola1 ] COUNT 
-| | | ) [ table12.t12cola1 = table1.t1cola1 ]
-| | ) [ (((clob[char[table1.t1cold1]] as table1.t1cold1) FILTER ilike (clob "%a%", clob "")) or (((clob[char[table1.t1cola1]] as table1.t1cola1) FILTER ilike (clob "%a%", clob "")) or (((clob[char[table1.t1colb1]] as table1.t1colb1) FILTER ilike (clob "%a%", clob "")) or (((clob[char[table1.t1cola11]] as table1.t1cola11) FILTER ilike (clob "%business%", clob "")) or ((table1.t1colc91 >= timestamp(7)[char(19) "2016-03-21 05:00:00"]) or ((table1.t1cola101 = tinyint "1") or (((clob[char[table1.t1cola12]] as table1.t1cola12) FILTER ilike (clob "%Vijay%", clob "")) or (((clob[char[table2.t2cola1]] as table2.t2cola1) ! FILTER ilike (clob "%gmail%", clob ""), (clob[char[table2.t2cola1]] as table2.t2cola1) ! FILTER ilike (clob "%yahoo%", clob "")) or (((clob[char[table2.t2cola1]] as table2.t2cola1) FILTER ilike (clob "%efequitygroup.com%", clob "")) or ((table4.t4cola1 = clob "Customer") or ((sys.isnull(table4.t4cola2) = boolean "false") or ((table2.t2cola81 >= date "2009-08-31") or (((table5.t5cola1 = clob "BAT") or (((clob[char[table5.t5cola2]] as table5.t5cola2) FILTER ilike (clob "%AUSTRALIA%", clob "")) or ((clob[char[table5.t5cola2]] as table5.t5cola2) FILTER ilike (clob "%Monet%", clob ""), table5.t5cola3 = clob "Facebook", table5.t5cola5 = clob "new", table5.t5cola81 > date "2015-07-30"))) or ((table10.t10cola1 != clob "Completed", table9.t9cola1 = clob "Tasks", table9.t9cola91 >= timestamp(7)[char(19) "2012-01-01 04:32:27"], table10.t10cola91 <= timestamp(7)[char(19) "2013-01-01 04:32:27"]) or ((table9.t9cola1 = clob "Events", table11.t11cola91 >= timestamp(7)[char(19) "2012-01-01 04:32:27"], table11.t11cola91 <= timestamp(7)[char(19) "2013-01-01 04:32:27"]) or (table9.t9cola1 = clob "Calls", table10.t10cola91 >= timestamp(7)[char(19) "2012-01-01 04:32:27"], table10.t10cola91 <= timestamp(7)[char(19) "2013-01-01 04:32:27"]))))))))))))))), table1.t1cold111 in (bigint "15842000014793046", bigint "15842000017701488", bigint "15842000000024019", bigint "15842000000074007", bigint "15842000009358096", bigint "15842000010487625", bigint "15842000006731919", bigint "15842000002590112", bigint "15842000000019001", bigint "15842000014923682", bigint "15842000027547249")) or (table12.t12cola1 in (clob[bigint "15842000280111951"], clob[bigint "15842000280163015"])) ]
-| ) [ table1.t1pkcol NOT NULL HASHCOL , table1.t1cola82, table2.t2cola10, table1.t1cola1, table1.t1cola91, a1.t3cola1 ] [ table2.t2cola82 ]
+| | | | | | | | | | | | | | | | | | | | | | | | | | | | table(sys.table1) [ "table1"."t1pkcol" NOT NULL HASHCOL , "table1"."t1cola1", "table1"."t1cola11", "table1"."t1cola12", "table1"."t1cola82", "table1"."t1cola91", "table1"."t1cola101", "table1"."t1cola111", "table1"."t1cola112", "table1"."t1cola114", "table1"."t1colb1", "table1"."t1colb111", "table1"."t1colb112", "table1"."t1colb113", "table1"."t1colb114", "table1"."t1colc91", "table1"."t1cold1", "table1"."t1cold111", "table1"."t1cold112", "table1"."t1cold113" ] COUNT ,
+| | | | | | | | | | | | | | | | | | | | | | | | | | | | table(sys.table4) [ "table4"."t4cola1", "table4"."t4cola2", "table4"."t4cola111", "table4"."t4colb111", "table4"."t4colb112", "table4"."t4colb114", "table4"."t4colb115" ] COUNT 
+| | | | | | | | | | | | | | | | | | | | | | | | | | | ) [ "table1"."t1cola111" = "table4"."t4cola111" ],
+| | | | | | | | | | | | | | | | | | | | | | | | | | | table(sys.table2) [ "table2"."t2cola1", "table2"."t2cola10", "table2"."t2cola81", "table2"."t2cola82", "table2"."t2cola112", "table2"."t2cola113", "table2"."t2colc111", "table2"."t2colc112", "table2"."t2colc113", "table2"."t2colc114", "table2"."t2colc115" ] COUNT 
+| | | | | | | | | | | | | | | | | | | | | | | | | | ) [ "table1"."t1cola112" = "table2"."t2cola112" ],
+| | | | | | | | | | | | | | | | | | | | | | | | | | table(sys.table5) [ "table5"."t5cola1", "table5"."t5cola2", "table5"."t5cola3", "table5"."t5cola5", "table5"."t5cola81", "table5"."t5cola113", "table5"."t5colb113" ] COUNT 
+| | | | | | | | | | | | | | | | | | | | | | | | | ) [ "table5"."t5cola113" = "table2"."t2cola113" ],
+| | | | | | | | | | | | | | | | | | | | | | | | | table(sys.table6) [ "table6"."t6pkcol" NOT NULL HASHCOL  as "lookup1"."t6pkcol" ] COUNT 
+| | | | | | | | | | | | | | | | | | | | | | | | ) [ "table1"."t1cola114" = "lookup1"."t6pkcol" NOT NULL HASHCOL  ],
+| | | | | | | | | | | | | | | | | | | | | | | | table(sys.table2) [ "table2"."t2colb111" as "lookup2"."t2colb111" ] COUNT 
+| | | | | | | | | | | | | | | | | | | | | | | ) [ "table1"."t1colb111" = "lookup2"."t2colb111" ],
+| | | | | | | | | | | | | | | | | | | | | | | table(sys.table5) [ "table5"."t5colb112" as "lookup3"."t5colb112" ] COUNT 
+| | | | | | | | | | | | | | | | | | | | | | ) [ "table1"."t1colb112" = "lookup3"."t5colb112" ],
+| | | | | | | | | | | | | | | | | | | | | | table(sys.table7) [ "table7"."t7colb113" as "lookup4"."t7colb113" ] COUNT 
+| | | | | | | | | | | | | | | | | | | | | ) [ "table1"."t1colb113" = "lookup4"."t7colb113" ],
+| | | | | | | | | | | | | | | | | | | | | table(sys.table8) [ "table8"."t8colb114" as "lookup5"."t8colb114" ] COUNT 
+| | | | | | | | | | | | | | | | | | | | ) [ "table1"."t1colb114" = "lookup5"."t8colb114" ],
+| | | | | | | | | | | | | | | | | | | | table(sys.table6) [ "table6"."t6pkcol" NOT NULL HASHCOL  as "lookup11"."t6pkcol" ] COUNT 
+| | | | | | | | | | | | | | | | | | | ) [ "table4"."t4colb111" = "lookup11"."t6pkcol" NOT NULL HASHCOL  ],
+| | | | | | | | | | | | | | | | | | | table(sys.table2) [ "table2"."t2colb112" as "lookup21"."t2colb112" ] COUNT 
+| | | | | | | | | | | | | | | | | | ) [ "table4"."t4colb112" = "lookup21"."t2colb112" ],
+| | | | | | | | | | | | | | | | | | table(sys.table5) [ "table5"."t5pkcol" NOT NULL HASHCOL  as "lookup31"."t5pkcol" ] COUNT 
+| | | | | | | | | | | | | | | | | ) [ "table5"."t5colb113" = "lookup31"."t5pkcol" NOT NULL HASHCOL  ],
+| | | | | | | | | | | | | | | | | table(sys.table7) [ "table7"."t7pkcol" NOT NULL HASHCOL  as "lookup41"."t7pkcol" ] COUNT 
+| | | | | | | | | | | | | | | | ) [ "table4"."t4colb114" = "lookup41"."t7pkcol" NOT NULL HASHCOL  ],
+| | | | | | | | | | | | | | | | table(sys.table8) [ "table8"."t8pkcol" NOT NULL HASHCOL  as "lookup51"."t8pkcol" ] COUNT 
+| | | | | | | | | | | | | | | ) [ "table4"."t4colb115" = "lookup51"."t8pkcol" NOT NULL HASHCOL  ],
+| | | | | | | | | | | | | | | table(sys.table6) [ "table6"."t6pkcol" NOT NULL HASHCOL  as "clookup1"."t6pkcol" ] COUNT 
+| | | | | | | | | | | | | | ) [ "table2"."t2colc111" = "clookup1"."t6pkcol" NOT NULL HASHCOL  ],
+| | | | | | | | | | | | | | table(sys.table2) [ "table2"."t2pkcol" NOT NULL HASHCOL  as "clookup2"."t2pkcol" ] COUNT 
+| | | | | | | | | | | | | ) [ "table2"."t2colc112" = "clookup2"."t2pkcol" NOT NULL HASHCOL  ],
+| | | | | | | | | | | | | table(sys.table5) [ "table5"."t5pkcol" NOT NULL HASHCOL  as "clookup3"."t5pkcol" ] COUNT 
+| | | | | | | | | | | | ) [ "table2"."t2colc113" = "clookup3"."t5pkcol" NOT NULL HASHCOL  ],
+| | | | | | | | | | | | table(sys.table7) [ "table7"."t7pkcol" NOT NULL HASHCOL  as "clookup4"."t7pkcol" ] COUNT 
+| | | | | | | | | | | ) [ "table2"."t2colc114" = "clookup4"."t7pkcol" NOT NULL HASHCOL  ],
+| | | | | | | | | | | table(sys.table8) [ "table8"."t8pkcol" NOT NULL HASHCOL  as "clookup5"."t8pkcol" ] COUNT 
+| | | | | | | | | | ) [ "table2"."t2colc115" = "clookup5"."t8pkcol" NOT NULL HASHCOL  ],
+| | | | | | | | | | table(sys.table9) [ "table9"."t9pkcol" NOT NULL HASHCOL , "table9"."t9cola1", "table9"."t9cola91", "table9"."t9cola111" ] COUNT 
+| | | | | | | | | ) [ "table1"."t1pkcol" NOT NULL HASHCOL  = "table9"."t9cola111" ],
+| | | | | | | | | table(sys.table10) [ "table10"."t10pkcol" NOT NULL HASHCOL , "table10"."t10cola1", "table10"."t10cola91" ] COUNT 
+| | | | | | | | ) [ "table9"."t9pkcol" NOT NULL HASHCOL  = "table10"."t10pkcol" NOT NULL HASHCOL  ],
+| | | | | | | | table(sys.table11) [ "table11"."t11pkcol" NOT NULL HASHCOL , "table11"."t11cola91" ] COUNT 
+| | | | | | | ) [ "table9"."t9pkcol" NOT NULL HASHCOL  = "table11"."t11pkcol" NOT NULL HASHCOL  ],
+| | | | | | | table(sys.table3) [ "table3"."t3pkcol" NOT NULL HASHCOL  as "a1"."t3pkcol", "table3"."t3cola1" as "a1"."t3cola1" ] COUNT 
+| | | | | | ) [ "a1"."t3pkcol" NOT NULL HASHCOL  = "table1"."t1cold111" ],
+| | | | | | table(sys.table3) [ "table3"."t3pkcol" NOT NULL HASHCOL  as "a2"."t3pkcol" ] COUNT 
+| | | | | ) [ "a2"."t3pkcol" NOT NULL HASHCOL  = "table1"."t1cold112" ],
+| | | | | table(sys.table3) [ "table3"."t3pkcol" NOT NULL HASHCOL  as "a3"."t3pkcol" ] COUNT 
+| | | | ) [ "a3"."t3pkcol" NOT NULL HASHCOL  = "table1"."t1cold113" ],
+| | | | table(sys.table12) [ "table12"."t12cola1" ] COUNT 
+| | | ) [ "table12"."t12cola1" = "table1"."t1cola1" ]
+| | ) [ (((clob[char["table1"."t1cold1"]] as "table1"."t1cold1") FILTER ilike (clob "%a%", clob "")) or (((clob[char["table1"."t1cola1"]] as "table1"."t1cola1") FILTER ilike (clob "%a%", clob "")) or (((clob[char["table1"."t1colb1"]] as "table1"."t1colb1") FILTER ilike (clob "%a%", clob "")) or (((clob[char["table1"."t1cola11"]] as "table1"."t1cola11") FILTER ilike (clob "%business%", clob "")) or (("table1"."t1colc91" >= timestamp(7)[char(19) "2016-03-21 05:00:00"]) or (("table1"."t1cola101" = tinyint "1") or (((clob[char["table1"."t1cola12"]] as "table1"."t1cola12") FILTER ilike (clob "%Vijay%", clob "")) or (((clob[char["table2"."t2cola1"]] as "table2"."t2cola1") ! FILTER ilike (clob "%gmail%", clob ""), (clob[char["table2"."t2cola1"]] as "table2"."t2cola1") ! FILTER ilike (clob "%yahoo%", clob "")) or (((clob[char["table2"."t2cola1"]] as "table2"."t2cola1") FILTER ilike (clob "%efequitygroup.com%", clob "")) or (("table4"."t4cola1" = clob "Customer") or ((sys.isnull("table4"."t4cola2") = boolean "false") or (("table2"."t2cola81" >= date "2009-08-31") or ((("table5"."t5cola1" = clob "BAT") or (((clob[char["table5"."t5cola2"]] as "table5"."t5cola2") FILTER ilike (clob "%AUSTRALIA%", clob "")) or ((clob[char["table5"."t5cola2"]] as "table5"."t5cola2") FILTER ilike (clob "%Monet%", clob ""), "table5"."t5cola3" = clob "Facebook", "table5"."t5cola5" = clob "new", "table5"."t5cola81" > date "2015-07-30"))) or (("table10"."t10cola1" != clob "Completed", "table9"."t9cola1" = clob "Tasks", "table9"."t9cola91" >= timestamp(7)[char(19) "2012-01-01 04:32:27"], "table10"."t10cola91" <= timestamp(7)[char(19) "2013-01-01 04:32:27"]) or (("table9"."t9cola1" = clob "Events", "table11"."t11cola91" >= timestamp(7)[char(19) "2012-01-01 04:32:27"], "table11"."t11cola91" <= timestamp(7)[char(19) "2013-01-01 04:32:27"]) or ("table9"."t9cola1" = clob "Calls", "table10"."t10cola91" >= timestamp(7)[char(19) "2012-01-01 04:32:27"], "table10"."t10cola91" <= timestamp(7)[char(19) "2013-01-01 04:32:27"]))))))))))))))), "table1"."t1cold111" in (bigint "15842000014793046", bigint "15842000017701488", bigint "15842000000024019", bigint "15842000000074007", bigint "15842000009358096", bigint "15842000010487625", bigint "15842000006731919", bigint "15842000002590112", bigint "15842000000019001", bigint "15842000014923682", bigint "15842000027547249")) or ("table12"."t12cola1" in (clob[bigint "15842000280111951"], clob[bigint "15842000280163015"])) ]
+| ) [ "table1"."t1pkcol" NOT NULL HASHCOL , "table1"."t1cola82", "table2"."t2cola10", "table1"."t1cola1", "table1"."t1cola91", "a1"."t3cola1" ] [ "table2"."t2cola82" ]
 ) [ bigint "10", bigint "0" ]
 #ROLLBACK;
 

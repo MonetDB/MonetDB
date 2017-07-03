@@ -745,7 +745,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		}
 		r = symbol2string(sql, sym, &err);
 		if (!r) {
-			(void) sql_error(sql, 02, "42000!incorrect default value '%s'\n", err?err:"");
+			(void) sql_error(sql, 02, "42S22!ALTER TABLE: incorrect default value '%s'\n", err?err:"");
 			if (err) _DELETE(err);
 			return SQL_ERR;
 		}

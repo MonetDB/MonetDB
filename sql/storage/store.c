@@ -3398,6 +3398,7 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 
 		ft->base.wtime = ft->base.rtime = 0;
 		ft->cleared = 0;
+		ft->access = pft->access;
 		ok = reset_changeset( tr, &ft->columns, &pft->columns, &ft->base, (resetf) &reset_column, (dupfunc) &column_dup);
 		if (ok == LOG_OK)
 			ok = reset_changeset( tr, &ft->idxs, &pft->idxs, &ft->base, (resetf) &reset_idx, (dupfunc) &idx_dup);
@@ -3405,6 +3406,7 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 			ok = reset_changeset( tr, &ft->keys, &pft->keys, &ft->base, (resetf) NULL, (dupfunc) &key_dup);
 		if (ok == LOG_OK)
 			ok = reset_changeset( tr, &ft->triggers, &pft->triggers, &ft->base, (resetf) NULL, (dupfunc) &trigger_dup);
+		/* TODO reset_tables of tables */
 		return ok;
 	}
 	return LOG_OK;
