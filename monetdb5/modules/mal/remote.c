@@ -737,31 +737,38 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		}
 		mapi_close_handle(mhdl);
 	} else {
+		int l = 0;
 		str val = NULL;
 		char *tpe;
-		char qbuf[BUFSIZ + 1]; /* FIXME: this should be dynamic */
+		char qbuf[BUFSIZ + 1], *nbuf = qbuf;
 		if (ATOMvarsized(type)) {
-			ATOMformat(type, *(str *)value, &val);
+			l = ATOMformat(type, *(str *)value, &val);
 		} else {
-			ATOMformat(type, value, &val);
+			l = ATOMformat(type, value, &val);
 		}
 		tpe = getTypeIdentifier(type);
+		l += strlen(tpe) + strlen(ident) + 10;
+		if (l > BUFSIZ)
+			nbuf = GDKmalloc(l);
 		if (type <= TYPE_str)
-			snprintf(qbuf, BUFSIZ, "%s := %s:%s;\n", ident, val, tpe);
+			snprintf(nbuf, l, "%s := %s:%s;\n", ident, val, tpe);
 		else
-			snprintf(qbuf, BUFSIZ, "%s := \"%s\":%s;\n", ident, val, tpe);
-		qbuf[BUFSIZ] = '\0';
+			snprintf(nbuf, l, "%s := \"%s\":%s;\n", ident, val, tpe);
 		GDKfree(tpe);
 		GDKfree(val);
 #ifdef _DEBUG_REMOTE
-		mnstr_printf(cntxt->fdout, "#remote.put:%s:%s\n", c->name, qbuf);
+		mnstr_printf(cntxt->fdout, "#remote.put:%s:%s\n", c->name, nbuf);
 #endif
-		if ((tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf))
+		if ((tmp = RMTquery(&mhdl, "remote.put", c->mconn, nbuf))
 				!= MAL_SUCCEED)
 		{
+			if (nbuf != qbuf)
+				GDKfree(nbuf);
 			MT_lock_unset(&c->lock);
 			return tmp;
 		}
+		if (nbuf != qbuf)
+			GDKfree(nbuf);
 		mapi_close_handle(mhdl);
 	}
 	MT_lock_unset(&c->lock);
