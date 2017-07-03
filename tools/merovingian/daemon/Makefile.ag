@@ -39,14 +39,8 @@ bin_monetdbd = {
 			  multiplex-funnel.c multiplex-funnel.h \
 			  proxy.c proxy.h
 	LIBS = ../utils/libmeroutil \
-		   ../../../common/stream/libstream \
-		   ../../../clients/mapilib/libmapi \
-		   ../../../common/utils/libmcrypt \
-		   ../../../common/utils/libmsabaoth \
-		   ../../../common/utils/libmuuid \
 		   ../../../common/utils/libmutils \
 		   ../../../monetdb5/tools/libmonetdb5 \
-		   ../../../gdk/libbat \
 		   $(UUID_LIBS) \
 		   $(openssl_LIBS) \
 		   $(curl_LIBS) \
