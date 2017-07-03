@@ -243,9 +243,9 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 	va_start(va, t);
 	for (; n; n = n->next)
 	{
+		sql_column *c = n->data;
 		val = va_arg(va, void *);
 		if (!val) break;
-		sql_column *c = n->data;
 		store_funcs.append_col(tr, c, val, c->type.type->localtype);
 		cnt++;
 	}
