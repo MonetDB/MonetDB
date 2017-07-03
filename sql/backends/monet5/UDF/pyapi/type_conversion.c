@@ -107,7 +107,7 @@ str pyobject_to_blob(PyObject **ptr, size_t maxsize, blob **value) {
 		goto wrapup;
 	}
 
-	*value = GDKmalloc(sizeof(blob) + size);
+	*value = GDKmalloc(sizeof(blob) + size + 1);
 	if (!*value) {
 		msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL);
 		goto wrapup;
@@ -134,7 +134,7 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 
 	utf8_string = *value;
 	if (!utf8_string) {
-		utf8_string = (str)malloc(pyobject_get_size(obj) * sizeof(char));
+		utf8_string = (str)malloc(pyobject_get_size(obj) * sizeof(char) + 1);
 		if (!utf8_string) {
 			msg = createException(MAL, "pyapi.eval",
 								  MAL_MALLOC_FAIL "python string");
