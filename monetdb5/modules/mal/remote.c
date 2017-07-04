@@ -747,7 +747,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			l = ATOMformat(type, value, &val);
 		}
 		tpe = getTypeIdentifier(type);
-		l += strlen(tpe) + strlen(ident) + 10;
+		l += (int) (strlen(tpe) + strlen(ident) + 10);
 		if (l > BUFSIZ)
 			nbuf = GDKmalloc(l);
 		if (type <= TYPE_str)
