@@ -79,7 +79,7 @@ typedef struct  {
 	int tag;	// unique MAL block invocation tag
 	lng eventnr;// serial event number
 	int thread;	// worker thread involved
-	lng clk;	// usec since start of session
+	lng usec;	// usec since start of session
 	char *time;	// string rep of clock
 	lng clkticks;
 	lng ticks;
@@ -105,6 +105,9 @@ extern int debug;
 extern char *currentquery;
 
 extern void resetEventRecord(EventRecord *ev);
+extern void eventdump(void);
 extern int keyvalueparser(char *txt, EventRecord *ev);
+extern int lineparser(char *row, EventRecord *ev);
+extern void renderJSONevent(FILE *fd, EventRecord *ev, int notfirst);
 extern char *stripQuotes(char *currentquery);
 #endif /*_EVENT_PARSER_*/
