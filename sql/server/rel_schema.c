@@ -664,7 +664,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 	if (alter && 
 		(isView(t) || 
-		((isMergeTable(t) || isReplicaTable(t)) && (s->token != SQL_TABLE && s->token != SQL_DROP_TABLE && cs_size(&t->tables)>0)) || 
+		((isMergeTable(t) || isReplicaTable(t)) && (s->token != SQL_TABLE && s->token != SQL_DROP_TABLE && cs_size(&t->members)>0)) || 
 	  	(isTable(t) && (s->token == SQL_TABLE || s->token == SQL_DROP_TABLE)) ||
  		(isPartition(t) && (s->token == SQL_DROP_COLUMN || s->token == SQL_COLUMN || s->token == SQL_CONSTRAINT)))){
 		char *msg = "";

@@ -114,7 +114,7 @@ alter_table_add_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 		return sql_message("42S02!ALTER TABLE: cannot add table '%s.%s' to table '%s.%s'", psname, ptname, msname, mtname);
 	if (mt && pt) {
 		char *msg;
-		node *n = cs_find_id(&mt->tables, pt->base.id);
+		node *n = cs_find_id(&mt->members, pt->base.id);
 
 		if (n)
 			return sql_message("42S02!ALTER TABLE: table '%s.%s' is already part of the MERGE TABLE '%s.%s'", psname, ptname, msname, mtname);
@@ -142,7 +142,7 @@ alter_table_del_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 	if (mt && pt) {
 		node *n = NULL;
 
-		if (!pt || (n = cs_find_id(&mt->tables, pt->base.id)) == NULL)
+		if (!pt || (n = cs_find_id(&mt->members, pt->base.id)) == NULL)
 			return sql_message("42S02!ALTER TABLE: table '%s.%s' isn't part of the MERGE TABLE '%s.%s'", psname, ptname, msname, mtname);
 
 		sql_trans_del_table(sql->session->tr, mt, pt, drop_action);
