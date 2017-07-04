@@ -80,7 +80,7 @@ name_find_column( sql_rel *rel, char *rname, char *name, int pnr, sql_rel **bt )
 			if (strcmp(c->base.name, name) == 0) {
 				*bt = rel;
 				if (pnr < 0 || (c->t->p &&
-				    list_position(c->t->p->tables.set, c->t) == pnr))
+				    list_position(c->t->p->members.set, c->t) == pnr))
 					return c;
 			}
 		}
@@ -90,7 +90,7 @@ name_find_column( sql_rel *rel, char *rname, char *name, int pnr, sql_rel **bt )
 			if (strcmp(i->base.name, name+1 /* skip % */) == 0) {
 				*bt = rel;
 				if (pnr < 0 || (i->t->p &&
-				    list_position(i->t->p->tables.set, i->t) == pnr)) {
+				    list_position(i->t->p->members.set, i->t) == pnr)) {
 					sql_kc *c = i->columns->h->data;
 					return c->c;
 				}
@@ -4319,7 +4319,7 @@ rel_part_nr( sql_rel *rel, sql_exp *e )
 		return -1;
 	pp = c->t;
 	if (pp->p)
-		return list_position(pp->p->tables.set, pp);
+		return list_position(pp->p->members.set, pp);
 	return -1;
 }
 
@@ -4341,7 +4341,7 @@ rel_uses_part_nr( sql_rel *rel, sql_exp *e, int pnr )
 		c = exp_find_column(rel, e->r, pnr); 
 	if (c) {
 		sql_table *pp = c->t;
-		if (pp->p && list_position(pp->p->tables.set, pp) == pnr)
+		if (pp->p && list_position(pp->p->members.set, pp) == pnr)
 			return 1;
 	}
 	/* for projects we may need to do a rename! */
@@ -7617,13 +7617,13 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			char *tname = t->base.name;
 			list *cols = NULL, *low = NULL, *high = NULL;
 
-			if (list_empty(t->tables.set)) 
+			if (list_empty(t->members.set)) 
 				return rel;
 			if (sel) {
 				node *n;
 
 				/* no need to reduce the tables list */
-				if (list_length(t->tables.set) <= 1) 
+				if (list_length(t->members.set) <= 1) 
 					return sel;
 
 				cols = sa_list(sql->sa);
@@ -7678,7 +7678,7 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			}
 			assert(!rel_is_ref(rel));
 			(*changes)++;
-			if (t->tables.set) {
+			if (t->members.set) {
 				list *tables = sa_list(sql->sa);
 				node *nt;
 				int *pos = NULL, nr = list_length(rel->exps), first = 1;
@@ -7686,8 +7686,9 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 				/* rename (mostly the idxs) */
 				pos = SA_NEW_ARRAY(sql->sa, int, nr);
 				memset(pos, 0, sizeof(int)*nr);
-				for (nt = t->tables.set->h; nt; nt = nt->next) {
-					sql_table *pt = nt->data;
+				for (nt = t->members.set->h; nt; nt = nt->next) {
+					sql_part *pd = nt->data;
+					sql_table *pt = find_sql_table(t->s, pd->base.name);
 					sql_rel *prel = rel_basetable(sql, pt, tname);
 					node *n, *m;
 					int skip = 0, j;
@@ -7772,7 +7773,7 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 					tables = ntables;
 				}
 			}
-			if (nrel && list_length(t->tables.set) == 1) {
+			if (nrel && list_length(t->members.set) == 1) {
 				nrel = rel_project(sql->sa, nrel, rel->exps);
 			} else if (nrel)
 				nrel->exps = rel->exps;

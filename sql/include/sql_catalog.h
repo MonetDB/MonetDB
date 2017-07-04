@@ -489,6 +489,11 @@ typedef enum table_types {
 #define TABLE_READONLY	1
 #define TABLE_APPENDONLY	2
 
+typedef struct sql_part {
+	sql_base base;
+	struct sql_table *t; /* cached value */
+} sql_part;
+
 typedef struct sql_table {
 	sql_base base;
 	sht type;		/* table, view, etc */
@@ -504,7 +509,7 @@ typedef struct sql_table {
 	changeset idxs;
 	changeset keys;
 	changeset triggers;
-	changeset tables;
+	changeset members;
 	int drop_action;	/* only needed for alter drop table */
 
 	int cleared;		/* cleared in the current transaction */
