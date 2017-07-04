@@ -355,6 +355,8 @@ RMTgetId(char *buf, MalBlkPtr mb, InstrPtr p, int arg) {
 	if (mod == NULL)
 		mod = "user";
 	rt = getTypeIdentifier(getArgType(mb,p,arg));
+	if (rt == NULL)
+		throw(MAL, "remote.put", MAL_MALLOC_FAIL);
 
 	snprintf(buf, BUFSIZ, "rmt%d_%s_%s", idtag++, var, rt);
 
@@ -490,6 +492,8 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	   Since the put() encodes the type as known to the remote site
 	   we can simple compare it here */
 	rt = getTypeIdentifier(rtype);
+	if (rt == NULL)
+		throw(MAL, "remote.get", MAL_MALLOC_FAIL);
 	if (strcmp(ident + strlen(ident) - strlen(rt), rt)) {
 		tmp = createException(MAL, "remote.get", ILLEGAL_ARGUMENT
 			": remote object type %s does not match expected type %s",
@@ -678,7 +682,11 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	MT_lock_set(&c->lock);
 
 	/* get a free, typed identifier for the remote host */
-	RMTgetId(ident, mb, pci, 2);
+	tmp = RMTgetId(ident, mb, pci, 2);
+	if (tmp != MAL_SUCCEED) {
+		MT_lock_unset(&c->lock);
+		return tmp;
+	}
 
 	/* depending on the input object generate actions to store the
 	 * object remotely*/
@@ -701,6 +709,10 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		stream *sout;
 
 		tail = getTypeIdentifier(getBatType(type));
+		if (tail == NULL) {
+			MT_lock_unset(&c->lock);
+			throw(MAL, "remote.put", MAL_MALLOC_FAIL);
+		}
 
 		bid = *(bat *)value;
 		if (bid != 0) {
@@ -751,16 +763,29 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		int l = 0;
 		str val = NULL;
 		char *tpe;
-		char qbuf[BUFSIZ + 1], *nbuf = qbuf;
+		char qbuf[512], *nbuf = qbuf;
 		if (ATOMvarsized(type)) {
 			l = ATOMformat(type, *(str *)value, &val);
 		} else {
 			l = ATOMformat(type, value, &val);
 		}
+		if (l < 0) {
+			MT_lock_unset(&c->lock);
+			throw(MAL, "remote.put", GDK_EXCEPTION);
+		}
 		tpe = getTypeIdentifier(type);
+		if (tpe == NULL) {
+			MT_lock_unset(&c->lock);
+			GDKfree(val);
+			throw(MAL, "remote.put", MAL_MALLOC_FAIL);
+		}
 		l += (int) (strlen(tpe) + strlen(ident) + 10);
-		if (l > BUFSIZ)
-			nbuf = GDKmalloc(l);
+		if (l > (int) sizeof(qbuf) && (nbuf = GDKmalloc(l)) == NULL) {
+			MT_lock_unset(&c->lock);
+			GDKfree(val);
+			GDKfree(tpe);
+			throw(MAL, "remote.put", MAL_MALLOC_FAIL);
+		}
 		if (type <= TYPE_str)
 			snprintf(nbuf, l, "%s := %s:%s;\n", ident, val, tpe);
 		else
@@ -770,16 +795,13 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 #ifdef _DEBUG_REMOTE
 		fprintf(stderr, "#remote.put:%s:%s\n", c->name, nbuf);
 #endif
-		if ((tmp = RMTquery(&mhdl, "remote.put", c->mconn, nbuf))
-				!= MAL_SUCCEED)
-		{
-			if (nbuf != qbuf)
-				GDKfree(nbuf);
+		tmp = RMTquery(&mhdl, "remote.put", c->mconn, nbuf);
+		if (nbuf != qbuf)
+			GDKfree(nbuf);
+		if (tmp != MAL_SUCCEED) {
 			MT_lock_unset(&c->lock);
 			return tmp;
 		}
-		if (nbuf != qbuf)
-			GDKfree(nbuf);
 		mapi_close_handle(mhdl);
 	}
 	MT_lock_unset(&c->lock);
