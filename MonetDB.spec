@@ -407,7 +407,7 @@ Recommends: perl-DBD-monetdb >= 1.0
 Recommends: php-monetdb >= 1.0
 %endif
 Requires: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
-Requires: python-pymonetdb >= 1.0
+Requires: python-pymonetdb >= 1.0.6
 
 %description client-tests
 MonetDB is a database management system that is developed from a
@@ -591,6 +591,8 @@ Recommends: MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}
 %endif
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
+# versions up to 1.0.5 don't accept the queryid field in the result set
+Conflicts: python-pymonetdb < 1.0.6
 
 %description -n MonetDB5-server
 MonetDB is a database management system that is developed from a
