@@ -236,7 +236,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				// collect BAT variables garbage collected within the block 
 				if( !simple)
 					for( k=q->retc; k<q->argc; k++){
-						if (getState(states,q,k) == VAR2READ &&  getEndScope(mb,getArg(q,k)) == j  && isaBatType(getVarType(mb,getArg(q,k))) )
+						if (getState(states,q,k) & VAR2READ &&  getEndScope(mb,getArg(q,k)) == j  && isaBatType(getVarType(mb,getArg(q,k))) )
 								top = dflowGarbagesink(cntxt, mb, getArg(q,k), sink, top);
 					}
 			}
@@ -293,11 +293,11 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			setState(states, p,1, VARBLOCK);
 		for ( k = p->retc; k< p->argc; k++)
 		if( !isVarConstant(mb,getArg(p,k)) ){
-			if( getState(states, p, k) == VARREAD)
-				setState(states, p, k, VAR2READ);
+			if( getState(states, p, k) & VARREAD)
+				setState(states, p, k, (VARREAD | VAR2READ));
 			else
-			if( getState(states, p, k) == VARWRITE)
-				setState(states, p ,k, VARREAD);
+			if( getState(states, p, k) & VARWRITE)
+				setState(states, p ,k, (VARREAD | VARWRITE));
 		}
 #ifdef DEBUG_OPT_DATAFLOW
 		fprintf(stderr,"# variable states\n");
