@@ -4958,6 +4958,8 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek, int app
 					fnd = table_ref(sql, rel, n->data.sym, 0);
 				}
 				used = 1;
+				if (!fnd && lateral)
+					res = NULL;
 			}
 
 			if (!fnd)
