@@ -1355,7 +1355,7 @@ create_table_from_loader(mvc *sql, dlist *qname, symbol *fcall) {
 		return sql_error(sql, 02, "42000!CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 
-	rel = rel_loader_function(sql, fcall, &loader);
+	rel = rel_loader_function(sql, fcall, new_exp_list(sql->sa), &loader);
 	if (!rel || !loader) {
 		return NULL;
 	}
@@ -1364,7 +1364,6 @@ create_table_from_loader(mvc *sql, dlist *qname, symbol *fcall) {
 
 	if (sname) strcpy(loader->sname, sname);
 	if (tname) strcpy(loader->tname, tname);
-
 
 	return rel;
 }

@@ -5416,7 +5416,7 @@ schema_selects(mvc *sql, sql_schema *schema, symbol *s)
 }
 
 sql_rel *
-rel_loader_function(mvc* sql, symbol* fcall, sql_subfunc **loader_function) {
+rel_loader_function(mvc* sql, symbol* fcall, list *fexps, sql_subfunc **loader_function) {
 	list *exps = NULL, *tl;
 	exp_kind ek = { type_value, card_relation, TRUE };
 	sql_rel *sq = NULL;
@@ -5464,12 +5464,14 @@ rel_loader_function(mvc* sql, symbol* fcall, sql_subfunc **loader_function) {
 		for (en = sq->exps->h; en; en = en->next) {
 			sql_exp *e = en->data;
 
-			append(exps, e=exp_alias_or_copy(sql, tname, exp_name(e), NULL, e));
+			append(exps, e = exp_alias_or_copy(sql, tname, exp_name(e), NULL, e));
 			append(tl, exp_subtype(e));
 		}
 	}
 	if (sname)
 		s = mvc_bind_schema(sql, sname);
+
+	
 	sf = bind_func_(sql, s, fname, tl, F_LOADER);
 	if (!sf)
 		return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
@@ -5479,6 +5481,6 @@ rel_loader_function(mvc* sql, symbol* fcall, sql_subfunc **loader_function) {
 		*loader_function = sf;
 	}
 
-	return rel_table_func(sql->sa, sq, e, new_exp_list(sql->sa), (sq != NULL));
+	return rel_table_func(sql->sa, sq, e, fexps, (sq != NULL));
 }
 

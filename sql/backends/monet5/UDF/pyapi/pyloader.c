@@ -46,7 +46,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	char *pycall = NULL;
 	str *args = NULL;
 	char *msg = MAL_SUCCEED;
-	node *argnode, *n;
+	node *argnode, *n, *n2;
 	PyObject *pArgs = NULL, *pEmit = NULL,
 			 *pConnection; // this is going to be the parameter tuple
 	PyObject *code_object = NULL;
@@ -54,9 +54,9 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	bool gstate = 0;
 	int unnamedArgs = 0;
 	int argcount = pci->argc;
-	int retvals = pci->retc;
 	bool create_table = false;
 	BUN nval = 0;
+	int ncols = 0;
 
 	char *loader_additional_args[] = {"_emit", "_conn"};
 
@@ -150,21 +150,31 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		// TODO deal with sql types
 	}
 
+	getArg(pci, 0) = TYPE_void;
 	if (sqlmorefun->colnames) {
 		n = sqlmorefun->colnames->h;
-		cols = GDKzalloc(sizeof(sql_emit_col) * pci->retc);
+		n2 = sqlmorefun->coltypes->h;
+		ncols = list_length(sqlmorefun->colnames);
+		if (ncols == 0) {
+			msg = createException(MAL, "pyapi.eval_loader",
+								  "No columns supplied.");
+			goto wrapup;
+		}
+		cols = GDKzalloc(sizeof(sql_emit_col) * ncols);
 		if (!cols) {
 			msg = createException(MAL, "pyapi.eval_loader",
 								  MAL_MALLOC_FAIL "column list");
 			goto wrapup;
 		}
+		assert(list_length(sqlmorefun->colnames) == list_length(sqlmorefun->coltypes));
 		i = 0;
 		while (n) {
-			assert(i < pci->retc);
+			sql_subtype* tpe = (sql_subtype*) n2->data;
 			cols[i].name = GDKstrdup(*((char **)n->data));
 			n = n->next;
 			cols[i].b =
-				COLnew(0, getBatType(getArgType(mb, pci, i)), 0, TRANSIENT);
+				COLnew(0, tpe->type->localtype, 0, TRANSIENT);
+			n2 = n2->next;
 			cols[i].b->tnil = 0;
 			cols[i].b->tnonil = 0;
 			i++;
@@ -172,14 +182,13 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	} else {
 		// set the return value to the correct type to prevent MAL layers from
 		// complaining
-		getArg(pci, 0) = TYPE_void;
 		cols = NULL;
-		retvals = 0;
+		ncols = 0;
 		create_table = true;
 	}
 
 	pConnection = Py_Connection_Create(cntxt, 0, 0, 0);
-	pEmit = PyEmit_Create(cols, retvals);
+	pEmit = PyEmit_Create(cols, ncols);
 	if (!pConnection || !pEmit) {
 		msg = createException(MAL, "pyapi.eval_loader",
 							  MAL_MALLOC_FAIL "python object");
@@ -255,12 +264,12 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 		cols = ((PyEmitObject *)pEmit)->cols;
 		nval = ((PyEmitObject *)pEmit)->nvals;
-		retvals = (int)((PyEmitObject *)pEmit)->ncols;
+		ncols = (int)((PyEmitObject *)pEmit)->ncols;
 		Py_DECREF(pFunc);
 		Py_DECREF(pArgs);
 		pArgs = NULL;
 
-		if (retvals == 0) {
+		if (ncols == 0) {
 			msg = createException(MAL, "pyapi.eval_loader",
 								  "No elements emitted by the loader.");
 			goto wrapup;
@@ -269,34 +278,26 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 	gstate = Python_ReleaseGIL(gstate);
 
+	for (i = 0; i < ncols; i++) {
+		BAT *b = cols[i].b;
+		BATsetcount(b, nval);
+		b->tkey = 0;
+		b->tsorted = 0;
+		b->trevsorted = 0;
+	}
 	if (!create_table) {
-		for (i = 0; i < retvals; i++) {
-			BAT *b = cols[i].b;
-			BATsetcount(b, nval);
-			b->tkey = 0;
-			b->tsorted = 0;
-			b->trevsorted = 0;
-
-			*getArgReference_bat(stk, pci, i) = b->batCacheid;
-			cols[i].b = NULL;
-			BBPkeepref(b->batCacheid);
-		}
+		msg = _connection_append_to_table(cntxt, sqlmorefun->sname,
+									   sqlmorefun->tname, cols, ncols);
+		goto wrapup;
 	} else {
-		for (i = 0; i < retvals; i++) {
-			BAT *b = cols[i].b;
-			BATsetcount(b, nval);
-			b->tkey = 0;
-			b->tsorted = 0;
-			b->trevsorted = 0;
-		}
 		msg = _connection_create_table(cntxt, sqlmorefun->sname,
-									   sqlmorefun->tname, cols, retvals);
+									   sqlmorefun->tname, cols, ncols);
 		goto wrapup;
 	}
 
 wrapup:
 	if (cols) {
-		for (i = 0; i < retvals; i++) {
+		for (i = 0; i < ncols; i++) {
 			if (cols[i].b) {
 				BBPunfix(cols[i].b->batCacheid);
 			}

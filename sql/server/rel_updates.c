@@ -1525,27 +1525,19 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, int constraint
 }
 
 static sql_rel *
-copyfromloader(mvc *sql, dlist *qname, symbol *fcall)
-{
+copyfromloader(mvc *sql, dlist *qname, symbol *fcall) {
+	sql_schema *s = NULL;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
-
-	sql_schema *s = NULL;
-	sql_table *t = NULL;
-
-	node *n;
-	sql_rel res_obj ;
-	sql_rel *res = &res_obj;
-	list *exps = new_exp_list(sql->sa); //, *args = NULL;
-	sql_exp *import;
-	exp_kind ek = {type_value, card_loader, FALSE};
+	sql_subfunc *loader = NULL;
+	sql_rel* rel = NULL;
+	sql_table* t;
 
 	if (!copy_allowed(sql, 1)) {
 		(void) sql_error(sql, 02, "COPY INTO: insufficient privileges: "
 				"binary COPY INTO requires database administrator rights");
 		return NULL;
 	}
-
 	if (sname && !(s = mvc_bind_schema(sql, sname))) {
 		(void) sql_error(sql, 02, "3F000!COPY INTO: no such schema '%s'", sname);
 		return NULL;
@@ -1563,20 +1555,20 @@ copyfromloader(mvc *sql, dlist *qname, symbol *fcall)
 		return NULL;
 	}
 
-	import = rel_value_exp(sql, &res, fcall, sql_sel, ek);
-	if (!import) {
+	rel = rel_loader_function(sql, fcall, new_exp_list(sql->sa), &loader);
+	if (!rel || !loader) {
 		return NULL;
 	}
-	((sql_subfunc*) import->f)->res = table_column_types(sql->sa, t);
-	((sql_subfunc*) import->f)->colnames = table_column_names(sql->sa, t);
 
-	for (n = t->columns.set->h; n; n = n->next) {
-		sql_column *c = n->data;
-		append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
-	}
+	loader->sname = sname ? sa_zalloc(sql->sa, strlen(sname) + 1) : NULL;
+	loader->tname = tname ? sa_zalloc(sql->sa, strlen(tname) + 1) : NULL;
+	loader->coltypes = table_column_types(sql->sa, t);
+	loader->colnames = table_column_names(sql->sa, t);
 
-	res = rel_table_func(sql->sa, NULL, import, exps, 1);
-	return  rel_insert_table(sql, t, t->base.name, res);
+	if (sname) strcpy(loader->sname, sname);
+	if (tname) strcpy(loader->tname, tname);
+
+	return rel;
 }
 
 
@@ -1744,10 +1736,12 @@ rel_updates(mvc *sql, symbol *s)
 		break;
 	case SQL_COPYLOADER:
 	{
-		dlist *l = s->data.lval;
+	    dlist *l = s->data.lval;
+	    dlist *qname = l->h->data.lval;
+	    symbol *sym = l->h->next->data.sym;
 
-		ret = copyfromloader(sql, l->h->data.lval, l->h->next->data.sym);
-		sql->type = Q_UPDATE;
+	    ret = rel_psm_stmt(sql->sa, exp_rel(sql, copyfromloader(sql, qname, sym)));
+	    sql->type = Q_SCHEMA;
 	}
 		break;
 	case SQL_COPYTO:

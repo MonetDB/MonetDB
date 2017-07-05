@@ -32,6 +32,6 @@ extern sql_rel *rel_with_query(mvc *sql, symbol *q);
 extern sql_rel *table_ref(mvc *sql, sql_rel *rel, symbol *tableref, int lateral);
 
 
-extern sql_rel *rel_loader_function(mvc* sql, symbol* s, sql_subfunc **loader_function);
+extern sql_rel *rel_loader_function(mvc* sql, symbol* s, list *fexps, sql_subfunc **loader_function);
 
 #endif /*_REL_SELECT_H_*/

@@ -16,6 +16,7 @@
 CREATE_SQL_FUNCTION_PTR(void, SQLdestroyResult);
 CREATE_SQL_FUNCTION_PTR(str, SQLstatementIntern);
 CREATE_SQL_FUNCTION_PTR(str, create_table_from_emit);
+CREATE_SQL_FUNCTION_PTR(str, append_to_table_from_emit);
 
 static PyObject *_connection_execute(Py_ConnectionObject *self, PyObject *args)
 {
@@ -189,6 +190,12 @@ str _connection_create_table(Client cntxt, char *sname, char *tname,
 	return (*create_table_from_emit_ptr)(cntxt, sname, tname, columns, ncols);
 }
 
+str _connection_append_to_table(Client cntxt, char *sname, char *tname,
+							 sql_emit_col *columns, size_t ncols)
+{
+	return (*append_to_table_from_emit_ptr)(cntxt, sname, tname, columns, ncols);
+}
+
 PyObject *Py_Connection_Create(Client cntxt, bit mapped, QueryStruct *query_ptr,
 							   int query_sem)
 {
@@ -217,6 +224,7 @@ str _connection_init(void)
 	LOAD_SQL_FUNCTION_PTR(SQLdestroyResult);
 	LOAD_SQL_FUNCTION_PTR(SQLstatementIntern);
 	LOAD_SQL_FUNCTION_PTR(create_table_from_emit);
+	LOAD_SQL_FUNCTION_PTR(append_to_table_from_emit);
 
 	if (msg != MAL_SUCCEED) {
 		return msg;
