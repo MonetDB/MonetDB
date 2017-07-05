@@ -279,7 +279,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 		if (rel->l)
 			return rel_bind_column2(sql, rel->l, tname, cname, f);
 	} else if (is_apply(rel->op)) {
-		sql_exp *e = NULL;//exps_bind_column2(rel->exps, tname, cname);
+		sql_exp *e = NULL;
 
 		if (!e && rel->l)
 			e = rel_bind_column2(sql, rel->l, tname, cname, f);

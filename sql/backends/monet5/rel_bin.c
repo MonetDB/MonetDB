@@ -260,7 +260,7 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 }
 
 static stmt *
-value_list(backend *be, list *vals) 
+value_list(backend *be, list *vals, stmt *left, stmt *sel) 
 {
 	node *n;
 	stmt *s;
@@ -269,7 +269,7 @@ value_list(backend *be, list *vals)
 	s = stmt_temp(be, exp_subtype(vals->h->data));
 	for( n = vals->h; n; n = n->next) {
 		sql_exp *e = n->data;
-		stmt *i = exp_bin(be, e, NULL, NULL, NULL, NULL, NULL, NULL);
+		stmt *i = exp_bin(be, e, left, NULL, NULL, NULL, NULL, sel);
 
 		if (list_length(vals) == 1)
 			return i;
@@ -387,7 +387,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		} else if (e->r) { 		/* parameters */
 			s = stmt_var(be, sa_strdup(sql->sa, e->r), e->tpe.type?&e->tpe:NULL, 0, e->flag);
 		} else if (e->f) { 		/* values */
-			s = value_list(be, e->f);
+			s = value_list(be, e->f, left, sel);
 		} else { 			/* arguments */
 			s = stmt_varnr(be, e->flag, e->tpe.type?&e->tpe:NULL);
 		}

@@ -492,8 +492,16 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 						sql_column *c = m->data;
 						sql_rel *r = NULL;
 						sql_exp *ins = insert_value(sql, c, &r, n->data.sym);
-						if (!ins || r)
+						if (!ins) 
 							return NULL;
+						if (r && inner)
+							inner = rel_crossproduct(sql->sa, inner, r, op_join);
+						else if (r) 
+							inner = r;
+						if (inner && !ins->name) {
+							exp_label(sql->sa, ins, ++sql->label);
+							ins = exp_column(sql->sa, exp_relname(ins), exp_name(ins), exp_subtype(ins), ins->card, has_nil(ins), is_intern(ins));
+						}
 						list_append(vals_list, ins);
 					}
 				} else {
@@ -505,7 +513,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 						if (!ins)
 							return NULL;
 						if (r && inner)
-							inner = rel_crossproduct(sql->sa, inner,r, op_join);
+							inner = rel_crossproduct(sql->sa, inner, r, op_join);
 						else if (r) 
 							inner = r;
 						if (!ins->name)
