@@ -436,7 +436,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				if (!es) 
 					return NULL;
 
-				if (rows && en == exps->h)
+				if (rows && en == exps->h && f->func->type != F_LOADER)
 					es = stmt_const(be, rows, es);
 				if (es->nrcols > nrcols)
 					nrcols = es->nrcols;
@@ -1417,34 +1417,36 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 			return NULL;	
 		}
 		l = sa_list(sql->sa);
-		if (f->func->varres) {
-			for(i=0, en = rel->exps->h, n = f->res->h; en; en = en->next, n = n->next, i++ ) {
-				sql_exp *exp = en->data;
-				sql_subtype *st = n->data;
-				const char *rnme = exp->rname?exp->rname:exp->l;
-				stmt *s = stmt_rs_column(be, psub, i, st); 
-		
-				s = stmt_alias(be, s, rnme, exp->name);
-				list_append(l, s);
-			}
-		} else {
-			for(i = 0, n = f->func->res->h; n; n = n->next, i++ ) {
-				sql_arg *a = n->data;
-				stmt *s = stmt_rs_column(be, psub, i, &a->type); 
-				const char *rnme = exp_find_rel_name(op);
-	
-				s = stmt_alias(be, s, rnme, a->name);
-				list_append(l, s);
-			}
-			if (list_length(f->res) == list_length(f->func->res) + 1) {
-				/* add missing %TID% column */
-				sql_subtype *t = f->res->t->data;
-				stmt *s = stmt_rs_column(be, psub, i, t); 
-				const char *rnme = exp_find_rel_name(op);
-	
-				s = stmt_alias(be, s, rnme, TID);
-				list_append(l, s);
-			}
+		if (f->func->res) {
+				if (f->func->varres) {
+					for(i=0, en = rel->exps->h, n = f->res->h; en; en = en->next, n = n->next, i++ ) {
+						sql_exp *exp = en->data;
+						sql_subtype *st = n->data;
+						const char *rnme = exp->rname?exp->rname:exp->l;
+						stmt *s = stmt_rs_column(be, psub, i, st); 
+				
+						s = stmt_alias(be, s, rnme, exp->name);
+						list_append(l, s);
+					}
+				} else {
+					for(i = 0, n = f->func->res->h; n; n = n->next, i++ ) {
+						sql_arg *a = n->data;
+						stmt *s = stmt_rs_column(be, psub, i, &a->type); 
+						const char *rnme = exp_find_rel_name(op);
+			
+						s = stmt_alias(be, s, rnme, a->name);
+						list_append(l, s);
+					}
+					if (list_length(f->res) == list_length(f->func->res) + 1) {
+						/* add missing %TID% column */
+						sql_subtype *t = f->res->t->data;
+						stmt *s = stmt_rs_column(be, psub, i, t); 
+						const char *rnme = exp_find_rel_name(op);
+			
+						s = stmt_alias(be, s, rnme, TID);
+						list_append(l, s);
+					}
+				}
 		}
 		if (!rel->flag && sub && sub->nrcols) { 
 			assert(0);

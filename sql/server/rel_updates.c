@@ -1524,7 +1524,6 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, int constraint
 	return res;
 }
 
-
 static sql_rel *
 copyfromloader(mvc *sql, dlist *qname, symbol *fcall)
 {
@@ -1547,7 +1546,7 @@ copyfromloader(mvc *sql, dlist *qname, symbol *fcall)
 		return NULL;
 	}
 
-	if (sname && !(s=mvc_bind_schema(sql, sname))) {
+	if (sname && !(s = mvc_bind_schema(sql, sname))) {
 		(void) sql_error(sql, 02, "3F000!COPY INTO: no such schema '%s'", sname);
 		return NULL;
 	}

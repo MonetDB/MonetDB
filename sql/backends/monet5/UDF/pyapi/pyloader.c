@@ -105,22 +105,39 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	argnode = sqlfun && sqlfun->ops->cnt > 0 ? sqlfun->ops->h : NULL;
 	for (i = pci->retc + 2; i < argcount; i++) {
 		PyInput inp;
+		inp.bat = NULL;
+		inp.sql_subtype = NULL;
 
 		PyObject *val = NULL;
-		if (isaBatType(getArgType(mb, pci, i))) {
-			msg = createException(MAL, "pyapi.eval_loader",
-								  "Only scalar arguments are supported.");
-			goto wrapup;
-		}
-		inp.scalar = true;
-		inp.bat_type = getArgType(mb, pci, i);
-		inp.count = 1;
-		if (inp.bat_type == TYPE_str) {
-			inp.dataptr = getArgReference_str(stk, pci, i);
+		if (!isaBatType(getArgType(mb, pci, i))) {
+			inp.scalar = true;
+			inp.bat_type = getArgType(mb, pci, i);
+			inp.count = 1;
+			if (inp.bat_type == TYPE_str) {
+				inp.dataptr = getArgReference_str(stk, pci, i);
+			} else {
+				inp.dataptr = getArgReference(stk, pci, i);
+			}
+			val = PyArrayObject_FromScalar(&inp, &msg);
 		} else {
-			inp.dataptr = getArgReference(stk, pci, i);
+			BAT* b = BATdescriptor(*getArgReference_bat(stk, pci, i));
+			if (b == NULL) {
+				msg = createException(
+					MAL, "pyapi.eval",
+					"The BAT passed to the function (argument #%d) is NULL.\n",
+					i - (pci->retc + 2) + 1);
+				goto wrapup;
+			}
+			inp.scalar = false;
+			inp.count = BATcount(b);
+			inp.bat_type = ATOMstorage(getBatType(getArgType(mb, pci, i)));
+			inp.bat = b;
+
+			val = PyMaskedArray_FromBAT(
+				&inp, 0, inp.count, &msg,
+				false);
+			BBPunfix(inp.bat->batCacheid);
 		}
-		val = PyArrayObject_FromScalar(&inp, &msg);
 		if (msg != MAL_SUCCEED) {
 			goto wrapup;
 		}

@@ -5415,3 +5415,70 @@ schema_selects(mvc *sql, sql_schema *schema, symbol *s)
 	return res;
 }
 
+sql_rel *
+rel_loader_function(mvc* sql, symbol* fcall, sql_subfunc **loader_function) {
+	list *exps = NULL, *tl;
+	exp_kind ek = { type_value, card_relation, TRUE };
+	sql_rel *sq = NULL;
+	sql_exp *e = NULL;
+	symbol *sym = fcall;
+	dnode *l = sym->data.lval->h;
+	char *sname = qname_schema(l->data.lval);
+	char *fname = qname_fname(l->data.lval);
+	char *tname = NULL;
+	node *en;
+	sql_schema *s = sql->session->schema;
+	sql_subfunc* sf;
+		
+	tl = sa_list(sql->sa);
+	exps = new_exp_list(sql->sa);
+	if (l->next) { /* table call with subquery */
+		if (l->next->type == type_symbol && l->next->data.sym->token == SQL_SELECT) {
+			if (l->next->next != NULL)
+				return sql_error(sql, 02, "SELECT: '%s' requires a single sub query", fname);
+	       		sq = rel_subquery(sql, NULL, l->next->data.sym, ek, 0 /*apply*/);
+		} else if (l->next->type == type_symbol || l->next->type == type_list) {
+			dnode *n;
+			exp_kind iek = {type_value, card_column, TRUE};
+			list *exps = sa_list (sql->sa);
+
+			if (l->next->type == type_symbol)
+				n = l->next;
+			else 
+				n = l->next->data.lval->h;
+			for ( ; n; n = n->next) {
+				sql_exp *e = rel_value_exp(sql, NULL, n->data.sym, sql_sel, iek);
+
+				if (!e)
+					return NULL;
+				append(exps, e);
+			}
+			sq = rel_project(sql->sa, NULL, exps);
+		}
+
+		/* reset error */
+		sql->session->status = 0;
+		sql->errstr[0] = '\0';
+		if (!sq)
+			return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
+		for (en = sq->exps->h; en; en = en->next) {
+			sql_exp *e = en->data;
+
+			append(exps, e=exp_alias_or_copy(sql, tname, exp_name(e), NULL, e));
+			append(tl, exp_subtype(e));
+		}
+	}
+	if (sname)
+		s = mvc_bind_schema(sql, sname);
+	sf = bind_func_(sql, s, fname, tl, F_LOADER);
+	if (!sf)
+		return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
+	e = exp_op(sql->sa, exps, sf);
+
+	if (loader_function) {
+		*loader_function = sf;
+	}
+
+	return rel_table_func(sql->sa, sq, e, new_exp_list(sql->sa), (sq != NULL));
+}
+
