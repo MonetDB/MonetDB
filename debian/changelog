@@ -1,3 +1,222 @@
+monetdb (11.27.1) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3465: Request: add support for CREATE VIEW with ORDER BY clause
+  * BZ#3545: monetdb commands don't work with -h -P -p options (locally
+    and remotely)
+  * BZ#3996: select * from sys.connections always returns 0 rows. Expected
+    to see at least one row for the active connection.
+  * BZ#6187: Nested WITH queries not supported
+  * BZ#6225: Order of evaluation of the modulo operator
+  * BZ#6289: Crashes and hangs with remote tables
+  * BZ#6292: Runaway SQL optimizer in too many nested operators
+  * BZ#6310: Name resolution error (sqlsmith)
+  * BZ#6312: Object not found in LIMIT clause (sqlsmith)
+  * BZ#6313: Null type resolution in disjunction fails (sqlsmith)
+  * BZ#6319: Server crash on LATERAL (sqlsmith)
+  * BZ#6322: Crash on disjunction with LIMIT (sqlsmith)
+  * BZ#6323: Deadlock calling sys.bbp()
+  * BZ#6324: Sqlitelogictest crash in a IN query (8th)
+  * BZ#6327: The daemon does not respect the actual name of the mserver5
+    executable
+  * BZ#6330: Sqlitelogictest crash on a complex SELECT query
+  * BZ#6331: sys.statistics column "nils" always contains 0. Expected a
+    positive value for columns that have one or more nils/NULLs
+  * BZ#6332: Sqlitelogictest crash related to an undefined MAL function
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Wed, 05 Jul 2017 09:29:52 +0200
+
+monetdb (11.27.1) unstable; urgency=low
+
+  * merovingian: Added handling of a dbextra property per database at the daemon
+    level. The user can set the dbextra property for a database using the
+    command:  $ monetdb set dbextra=<path> <database> and the daemon will
+    make sure to start the new server using the correct
+    --dbextra parameter.
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Mon, 29 May 2017 09:29:52 +0200
+
+monetdb (11.27.1) unstable; urgency=low
+
+  * monetdb5: The "sub" prefix of many functions, both at the MAL and the C level,
+    has been removed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 29 May 2017 09:29:52 +0200
+
+monetdb (11.27.1) unstable; urgency=low
+
+  * MonetDB: Added a new server-side protocol implementation. The new protocol
+    is backwards compatible with the old protocol. Clients can choose
+    whether they want to use the old or the new protocol during the initial
+    handshake with the server. The new protocol is a binary column-based
+    protocol that is significantly faster than the old protocol when
+    transferring large result sets. In addition, the new protocol supports
+    compression using Snappy or LZ4.
+
+ -- Mark Raasveldt <m.raasveldt@cwi.nl>  Mon, 29 May 2017 09:29:52 +0200
+
+monetdb (11.27.1) unstable; urgency=low
+
+  * gdk: Improved error checking in the logger code (dealing with the write-ahead
+    log); changed return types a several functions from int to gdk_return
+    (i.e., they now return GDK_SUCCEED or GDK_FAIL).  The logger no longer
+    calls GDKfatal on error.  Instead the caller is responsible for dealing
+    with errors.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 29 May 2017 09:29:52 +0200
+
+monetdb (11.27.1) unstable; urgency=low
+
+  * sql: Made the operator precedence of % equal to those of * and /.  All three
+    are evaluated from left to right.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 29 May 2017 09:29:52 +0200
+
+monetdb (11.27.1) unstable; urgency=low
+
+  * MonetDB: Moved the sphinx extension module to its own repository.
+    See https://dev.monetdb.org/hg/MonetDB-sphinx/.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 29 May 2017 09:29:52 +0200
+
+monetdb (11.27.1) unstable; urgency=low
+
+  * gdk: BATsort may now create an order index as a by product.
+  * gdk: Quantile calculations now use the order index if available (and use
+    BATsort otherwise, producing an order index).
+  * gdk: Quantiles calculate a position in the sorted column.  If this position
+    is not an integer, we now choose the nearest position, favoring the
+    lower if the distance to the two adjacent positions is equal (round
+    down to nearest integer).
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 29 May 2017 09:29:52 +0200
+
+monetdb (11.27.1) unstable; urgency=low
+
+  * MonetDB: Removed GSL module: it's now a separate (extension) package.
+    See https://dev.monetdb.org/hg/MonetDB-gsl/.
+  * MonetDB: The PCRE library is now optional for systems that support POSIX regular
+    expressions.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 29 May 2017 09:29:52 +0200
+
+monetdb (11.27.1) unstable; urgency=low
+
+  * sql: Removed table sys.connections.  It was a remnant of an experimental
+    change that had already been removed in 2012.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 29 May 2017 09:29:52 +0200
+
+monetdb (11.27.1) unstable; urgency=low
+
+  * gdk: Removed function BATprintf.  Use BATprint or BATprintcolumns instead.
+  * gdk: Removed BATsave from the list of exported functions.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 29 May 2017 09:29:52 +0200
+
+monetdb (11.27.1) unstable; urgency=low
+
+  * MonetDB: Added 5 new sys schema tables: function_languages, function_types,
+    key_types, index_types and privilege_codes.  They are pre-loaded with
+    static content and contain descriptive names for the various integer
+    type and code values.  See also sql/scripts/51_sys_schema_extension.sql
+
+ -- Martin van Dinther <martin.van.dinther@monetdbsolutions.com>  Mon, 29 May 2017 09:29:52 +0200
+
+monetdb (11.27.1) unstable; urgency=low
+
+  * monetdb5: Changed the interfaces of the AUTH* functions: pass values, not pointers
+    to values.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 29 May 2017 09:29:52 +0200
+
+monetdb (11.27.1) unstable; urgency=low
+
+  * gdk: Replaced BBPincref/BBPdecref with BBPfix/BBPunfix for physical reference
+    count and BBPretain/BBPrelease for logical reference count maintenance.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 29 May 2017 09:29:52 +0200
+
+monetdb (11.27.1) unstable; urgency=low
+
+  * gdk: Removed automatic conversion of 32-bit OIDs to 64 bits on 64-bit
+    architectures.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 29 May 2017 09:29:52 +0200
+
+monetdb (11.27.1) unstable; urgency=low
+
+  * gdk: Removed functions OIDbase() and OIDnew().
+  * gdk: Removed talign field from BAT descriptor.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 29 May 2017 09:29:52 +0200
+
+monetdb (11.27.1) unstable; urgency=low
+
+  * monetdb5: Removed calc.setoid().
+  * monetdb5: group.subgroup is now called group.group if it is not refining a group.
+    Both group.group and group.subgroup now also have variants with a
+    candidate list.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 29 May 2017 09:29:52 +0200
+
+monetdb (11.27.1) unstable; urgency=low
+
+  * clients: The mclient and msqldump programs lost compatibility with old
+    mserver5 versions (pre 2014) which didn't have a "system" column in
+    the sys.schemas table.
+  * clients: The mclient and msqldump programs lost compatibility with ancient
+    mserver5 versions (pre 2011) which didn't have the sys.systemfunctions
+    table.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 29 May 2017 09:29:52 +0200
+
+monetdb (11.27.1) unstable; urgency=low
+
+  * gdk: BATappend now takes an optional (NULL if not used) candidate list for
+    the to-be-appended BAT.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 29 May 2017 09:29:52 +0200
+
+monetdb (11.27.1) unstable; urgency=low
+
+  * gdk: New function BATkeyed(BAT *b) that determines (possibly using a hash
+    table) whether all values in b are distinct.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 29 May 2017 09:29:52 +0200
+
+monetdb (11.27.1) unstable; urgency=low
+
+  * clients: Removed the "array" and "quick" functions from the mapi library.
+    To be precise, the removed functions are: mapi_execute_array,
+    mapi_fetch_field_array, mapi_prepare_array, mapi_query_array,
+    mapi_quick_query, mapi_quick_query_array, and mapi_quick_response.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 29 May 2017 09:29:52 +0200
+
+monetdb (11.27.1) unstable; urgency=low
+
+  * monetdb5: The allocation schemes for MAL blocks and Variables has been turned
+    into block-based.  This reduces the number of malloc()/free() calls.
+
+ -- Martin Kersten <mk@cwi.nl>  Mon, 29 May 2017 09:29:52 +0200
+
+monetdb (11.27.1) unstable; urgency=low
+
+  * sql: Protect against runaway profiler events If you hit a barrier block
+    during profiling, the JSON event log may quickly become unwieldy. Event
+    production is protected using a high water mark, which ensures that
+    never within the single execution of MAL block the instruction causes
+    excessive event records.
+
+ -- Martin Kersten <mk@cwi.nl>  Mon, 29 May 2017 09:29:52 +0200
+
+monetdb (11.27.1) unstable; urgency=low
+
+  * clients: Added a more elaborate \help command for SQL expressions.
+
+ -- Martin Kersten <mk@cwi.nl>  Mon, 29 May 2017 09:29:52 +0200
+
 monetdb (11.25.23) unstable; urgency=low
 
   * Rebuilt.
