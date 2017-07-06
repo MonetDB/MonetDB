@@ -61,3 +61,5 @@ statistics_nils_not_eq_zero.Bug-6331
 crash-select_after_MAL_error.Bug-6332
 handle-values-subqueries.Bug-6336
 spurious_errors.Bug-6344
+sample_accepts_arbitrary_word_as_prefix.Bug-6345
+
