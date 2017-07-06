@@ -430,26 +430,26 @@ find_func(mvc *sql, sql_schema *s, char *fname, int len, int type, sql_subfunc *
 }
 
 static sql_exp *
-find_table_function(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl)
+find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl, int type, sql_subfunc **sf)
 {
 	sql_exp *e = NULL;
-	sql_subfunc * sf = bind_func_(sql, s, fname, tl, F_UNION);
+	*sf = bind_func_(sql, s, fname, tl, type);
 
-	if (sf) {
-		e = exp_op(sql->sa, exps, sf);
+	if (*sf) {
+		e = exp_op(sql->sa, exps, *sf);
 	} else if (list_length(tl)) { 
 		sql_subfunc * prev = NULL;
 
-		while(!e && (sf = bind_member_func(sql, s, fname, tl->h->data, list_length(tl), prev)) != NULL) {
+		while(!e && (*sf = bind_member_func(sql, s, fname, tl->h->data, list_length(tl), prev)) != NULL) {
 			node *n, *m;
 			list *nexps;
 
-			prev = sf;
-			if (sf->func->vararg) {
-				e = exp_op(sql->sa, exps, sf);
+			prev = *sf;
+			if ((*sf)->func->vararg) {
+				e = exp_op(sql->sa, exps, *sf);
 			} else {
 	       			nexps = new_exp_list(sql->sa);
-				for (n = exps->h, m = sf->func->ops->h; n && m; n = n->next, m = m->next) {
+				for (n = exps->h, m = (*sf)->func->ops->h; n && m; n = n->next, m = m->next) {
 					sql_arg *a = m->data;
 					sql_exp *e = n->data;
 
@@ -471,20 +471,20 @@ find_table_function(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl)
 				}
 				e = NULL;
 				if (nexps) 
-					e = exp_op(sql->sa, nexps, sf);
+					e = exp_op(sql->sa, nexps, *sf);
 			}
 		}
 		prev = NULL;
-		while(!e && (sf = find_func(sql, s, fname, list_length(tl), F_UNION, prev)) != NULL) {
+		while(!e && (*sf = find_func(sql, s, fname, list_length(tl), type, prev)) != NULL) {
 			node *n, *m;
 			list *nexps;
 
-			prev = sf;
-			if (sf->func->vararg) {
-				e = exp_op(sql->sa, exps, sf);
+			prev = *sf;
+			if ((*sf)->func->vararg) {
+				e = exp_op(sql->sa, exps, *sf);
 			} else {
        				nexps = new_exp_list(sql->sa);
-				for (n = exps->h, m = sf->func->ops->h; n && m; n = n->next, m = m->next) {
+				for (n = exps->h, m = (*sf)->func->ops->h; n && m; n = n->next, m = m->next) {
 					sql_arg *a = m->data;
 					sql_exp *e = n->data;
 
@@ -506,11 +506,17 @@ find_table_function(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl)
 				}
 				e = NULL;
 				if (nexps) 
-					e = exp_op(sql->sa, nexps, sf);
+					e = exp_op(sql->sa, nexps, *sf);
 			}
 		}
 	}
 	return e;
+}
+static sql_exp*
+find_table_function(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl)
+{
+	sql_subfunc* sf = NULL;
+	return find_table_function_type(sql, s, fname, exps, tl, F_UNION, &sf);
 }
 
 static sql_rel *
@@ -5429,6 +5435,7 @@ rel_loader_function(mvc* sql, symbol* fcall, list *fexps, sql_subfunc **loader_f
 	node *en;
 	sql_schema *s = sql->session->schema;
 	sql_subfunc* sf;
+
 		
 	tl = sa_list(sql->sa);
 	exps = new_exp_list(sql->sa);
@@ -5471,11 +5478,11 @@ rel_loader_function(mvc* sql, symbol* fcall, list *fexps, sql_subfunc **loader_f
 	if (sname)
 		s = mvc_bind_schema(sql, sname);
 
-	
-	sf = bind_func_(sql, s, fname, tl, F_LOADER);
-	if (!sf)
+
+	e = find_table_function_type(sql, s, fname, exps, tl, F_LOADER, &sf);
+	if (!e || !sf) {
 		return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
-	e = exp_op(sql->sa, exps, sf);
+	}
 
 	if (loader_function) {
 		*loader_function = sf;
