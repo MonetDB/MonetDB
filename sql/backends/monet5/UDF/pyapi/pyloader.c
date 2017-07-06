@@ -105,10 +105,10 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	argnode = sqlfun && sqlfun->ops->cnt > 0 ? sqlfun->ops->h : NULL;
 	for (i = pci->retc + 2; i < argcount; i++) {
 		PyInput inp;
+		PyObject *val = NULL;
 		inp.bat = NULL;
 		inp.sql_subtype = NULL;
 
-		PyObject *val = NULL;
 		if (!isaBatType(getArgType(mb, pci, i))) {
 			inp.scalar = true;
 			inp.bat_type = getArgType(mb, pci, i);

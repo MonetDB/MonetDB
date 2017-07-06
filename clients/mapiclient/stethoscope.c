@@ -139,7 +139,7 @@ convertOldFormat(char *inputfile)
 {	FILE *fdin;
 	char basefile[BUFSIZ];
 	char buf[BUFSIZ]={0}, *response = buf, *e;
-	int first = 0, i, n, len;
+	int first = 0, i = 0, n, len;
 	EventRecord event;
 
 	fprintf(stderr, "Converting a file to JSON\n");
