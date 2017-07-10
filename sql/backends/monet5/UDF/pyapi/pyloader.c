@@ -36,7 +36,7 @@ str _loader_init(void)
 }
 
 static int
-list_length(list *l)
+pyapi_list_length(list *l)
 {
 	if (l)
 		return l->cnt;
@@ -162,7 +162,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	if (sqlmorefun->colnames) {
 		n = sqlmorefun->colnames->h;
 		n2 = sqlmorefun->coltypes->h;
-		ncols = list_length(sqlmorefun->colnames);
+		ncols = pyapi_list_length(sqlmorefun->colnames);
 		if (ncols == 0) {
 			msg = createException(MAL, "pyapi.eval_loader",
 								  "No columns supplied.");
@@ -174,7 +174,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 								  MAL_MALLOC_FAIL "column list");
 			goto wrapup;
 		}
-		assert(list_length(sqlmorefun->colnames) == list_length(sqlmorefun->coltypes));
+		assert(pyapi_list_length(sqlmorefun->colnames) == pyapi_list_length(sqlmorefun->coltypes));
 		i = 0;
 		while (n) {
 			sql_subtype* tpe = (sql_subtype*) n2->data;
