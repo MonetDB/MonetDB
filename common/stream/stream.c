@@ -1588,12 +1588,12 @@ open_xzstream(const char *filename, const char *flags)
 		return NULL;
 	}
 #ifdef HAVE__WFOPEN
-	{_
+	{
 		wchar_t *wfname = utf8towchar(filename);
 		wchar_t *wflags = utf8towchar(flags);
-		if (wfname != NULL) 
+		if (wfname != NULL)
 			xz->fp = _wfopen(wfname, wflags);
-		} else
+		else
 			xz->fp = NULL;
 		if (wfname)
 			free(wfname);
