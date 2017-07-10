@@ -35,6 +35,14 @@ str _loader_init(void)
 	return msg;
 }
 
+static int
+list_length(list *l)
+{
+	if (l)
+		return l->cnt;
+	return 0;
+}
+
 str 
 PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     sql_func * sqlfun;
