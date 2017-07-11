@@ -783,7 +783,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 # no _unitdir macro
 %exclude %{_prefix}/lib/systemd/system/monetdbd.service
 %endif
-%config(noreplace) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
+%config(noreplace) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
 %{_libdir}/monetdb5/autoload/??_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.sql
