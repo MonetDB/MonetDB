@@ -115,7 +115,6 @@ mat_add_var(matlist_t *ml, InstrPtr q, InstrPtr p, int var, mat_type_t type, int
 	if (ml->vars[var] < 0 || dst->type != mat_ext) {
 		if (ml->vars[var] >= 0) {
 			ml->v[ml->vars[var]].packed = 1;
-			ml->v[ml->vars[var]].pushed = 1;
 		}
 		ml->vars[var] = ml->top;
 	}
