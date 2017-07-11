@@ -132,7 +132,7 @@ str
 OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, limit, slimit, actions=0, *vars, *nvars = NULL, *slices = NULL, push_down_delta = 0, nr_topn = 0, nr_likes = 0;
-	char *rslices = NULL;
+	char *rslices = NULL, *oclean = NULL;
 	InstrPtr p, *old;
 	subselect_t subselects;
 	char buf[256];
@@ -459,12 +459,14 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	nvars = (int*) GDKzalloc(sizeof(int)* mb->vtop); 
 	slices = (int*) GDKzalloc(sizeof(int)* mb->vtop);
 	rslices = (char*) GDKzalloc(sizeof(char)* mb->vtop);
-	if (!nvars || !slices || !rslices || newMalBlkStmt(mb, mb->stop+(5*push_down_delta)) <0 ) {
+	oclean = (char*) GDKzalloc(sizeof(char)* mb->vtop);
+	if (!nvars || !slices || !rslices || !oclean || newMalBlkStmt(mb, mb->stop+(5*push_down_delta)) <0 ) {
 		mb->stmt = old;
 		GDKfree(vars);
 		GDKfree(nvars);
 		GDKfree(slices);
 		GDKfree(rslices);
+		GDKfree(oclean);
 		goto wrapup;
 	}
 	pushInstruction(mb,old[0]);
@@ -503,6 +505,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				    newTmpVariable(mb, getArgType(mb, s, 0));
 				getArg(s, 1) = getArg(r, 0); /* use result of slice */
 				pushInstruction(mb, s);
+				oclean[i] = 1;
+				actions++;
 				continue;
 			}
 		}
@@ -542,13 +546,21 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					}
 				}
 				q = newAssignment(mb);
-				getArg(q, 0) = nvars[getArg(p, 0)]; 
-				(void) pushArgument(mb, q, col);
+				getArg(q, 0) = getArg(p, 0); 
+				if (nvars[getArg(p,0)] > 0) {
+					assert(0);
+					getArg(q, 0) = nvars[getArg(p, 0)]; 
+				}
+				(void) pushArgument(mb, q, getArg(p, 2));
+				if (nvars[getArg(p, 2)] > 0)
+					getArg(q, 1) = nvars[getArg(p, 2)];
+				oclean[i] = 1;
 				actions++;
 				continue;
 			}
 		} else if (p->argc >= 2 && slices[getArg(p, 1)] != 0) {
 			/* use new slice candidate list */
+			assert(slices[getArg(p,1)] == nvars[getArg(p,1)]);
 			getArg(p, 1) = slices[getArg(p, 1)];
 		}
 		/* remap */
@@ -614,21 +626,24 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				u = pushArgument(mb, u, getArg(t,0));
 				u->typechk = TYPE_UNKNOWN;
 				pushInstruction(mb,u);	
-				freeInstruction(p);
-				old[i] = NULL;
+				oclean[i] = 1;
 				continue;
 			}
 		}
-		old[i] = NULL;
 		pushInstruction(mb,p);
 	}
-	for (i=1; i<limit; i++) 
+	for (j=1; j<i; j++)
+		if (old[j] && oclean[j])
+			freeInstruction(old[j]);
+	for (; i<limit; i++)
 		if (old[i])
-			pushInstruction(mb,old[i]);
+			freeInstruction(old[i]);
+			//pushInstruction(mb,old[i]);
 	GDKfree(vars);
 	GDKfree(nvars);
 	GDKfree(slices);
 	GDKfree(rslices);
+	GDKfree(oclean);
 	GDKfree(old);
 
     /* Defense line against incorrect plans */
