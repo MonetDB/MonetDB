@@ -1039,7 +1039,6 @@ rel_parse_value(backend *be, char *query, char emode)
 
 	m->caching = 0;
 	m->emode = emode;
-	// FIXME unchecked_malloc GDKmalloc can return NULL
 	b = (buffer*)GDKmalloc(sizeof(buffer));
 	if (b == 0)
 		return sql_error(m, 02, MAL_MALLOC_FAIL);
