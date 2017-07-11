@@ -32,7 +32,7 @@ Ready.
 % L2,	L5 # name
 % char,	bigint # type
 % 9,	3 # length
-[ "transient",	163	]
+[ "transient",	159	]
 #select 'persistent', count(*) from bbp() as bbp where kind like 'pers%';
 % .L2,	.L6 # table_name
 % L2,	L5 # name

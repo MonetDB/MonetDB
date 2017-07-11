@@ -3282,7 +3282,7 @@ opt_having_clause:
 
 
 search_condition:
-    and_exp OR search_condition
+    search_condition OR and_exp
 		{ dlist *l = L();
 		  append_symbol(l, $1);
 		  append_symbol(l, $3);
@@ -3291,7 +3291,7 @@ search_condition:
  ;
    
 and_exp:
-    pred_exp AND and_exp
+    and_exp AND pred_exp
 		{ dlist *l = L();
 		  append_symbol(l, $1);
 		  append_symbol(l, $3);
