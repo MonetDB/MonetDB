@@ -32,9 +32,6 @@ typedef struct _mprotected_region {
 	void *addr;
 	size_t len;
 
-	void *actual_addr;
-	size_t actual_len;
-
 	struct _mprotected_region *next;
 } mprotected_region;
 
@@ -96,58 +93,18 @@ static bool WriteTextToFile(FILE *f, const char *data)
 
 static void handler(int sig, siginfo_t *si, void *unused)
 {
-	int actually_protected_area = false;
-	mprotected_region *found_region = NULL;
 	int tid = THRgettid();
 
 	(void)sig;
 	(void)unused;
-	// we caught a segfault or bus error
-	// this can be either because
-	// (1) the function accessed a protected piece of memory
-	// (2) the function caused a segfault by e.g. dereferencing a NULL pointer
-	// in the first case, this *might* be a valid memory access
-	// this is because we are required to align our mprotects on page boundaries
-	// thus sometimes we mprotect a page where only part of the page
-	// should actually be protected. Thus for this case we check if the access
-	// was actually an error
-	if (actual_mprotected_regions[tid]) {
-		mprotected_region *region = *actual_mprotected_regions[tid];
-		while (region) {
-			if (si->si_addr >= region->addr &&
-				(char *)si->si_addr <= (char *)region->addr + region->len) {
-				// the address belongs to this mprotected region
-				found_region = region;
-				if (si->si_addr >= region->actual_addr &&
-					(char *)si->si_addr <=
-						(char *)region->actual_addr + region->actual_len) {
-					// and the address is actually supposed to be protected
-					actually_protected_area = true;
-					break;
-				}
-			}
-			region = region->next;
-		}
-	}
 
-	if (found_region && !actually_protected_area) {
-		// this is NOT an actually protected area
-		// thus the segfault/bus error is invalid
-		// the nasty part here is that we have to unprotect the entire page now
-		// thus opening us up to future modifications of the data
+	longjmp(jump_buffer[tid], 1);
+}
 
-		mprotected_region *region = *actual_mprotected_regions[tid];
-		while (region) {
-			if (si->si_addr >= region->addr &&
-				(char *)si->si_addr <= (char *)region->addr + region->len) {
-				// the address belongs to this mprotected region
-				clear_mprotect(found_region->addr, found_region->len);
-			}
-			region = region->next;
-		}
-	} else {
-		longjmp(jump_buffer[tid], 1);
-	}
+static bool can_mprotect_region(void* addr) {
+	int pagesize = getpagesize();
+	void* page_begin = (void *)((size_t)addr - (size_t)addr % pagesize);
+	return page_begin == addr;
 }
 
 static char *mprotect_region(void *addr, size_t len,
@@ -156,23 +113,10 @@ static char *mprotect_region(void *addr, size_t len,
 	mprotected_region *region;
 	int pagesize;
 	void *page_begin;
-	void *actual_addr = addr;
-	size_t actual_len = len;
 	if (len == 0)
 		return NULL;
 
-	// we must mprotect an entire page
-	// thus here we check if the region is page-aligned
-	// and if it is not, we page-align it
-	pagesize = getpagesize();
-	page_begin = (void *)((size_t)addr - (size_t)addr % pagesize);
-	if (page_begin != addr) {
-		// data is not page-aligned
-		len += ((size_t)addr - (size_t)page_begin);
-		addr = page_begin;
-	}
-	// page align len
-	len = len % pagesize == 0 ? len : len - len % pagesize + pagesize;
+	assert(can_mprotect_region(addr));
 
 	region = GDKmalloc(sizeof(mprotected_region));
 	if (!region) {
@@ -181,8 +125,6 @@ static char *mprotect_region(void *addr, size_t len,
 	region->addr = addr;
 	region->len = len;
 	region->next = *regions;
-	region->actual_addr = actual_addr;
-	region->actual_len = actual_len;
 	*regions = region;
 	return NULL;
 }
@@ -280,7 +222,9 @@ GENERATE_BASE_HEADERS(char *, str);
 GENERATE_BASE_HEADERS(cudf_data_date, date);
 GENERATE_BASE_HEADERS(cudf_data_time, time);
 GENERATE_BASE_HEADERS(cudf_data_timestamp, timestamp);
-GENERATE_BASE_HEADERS(cudf_data_blob, blob);
+static int blob_is_null(cudf_data_blob value);
+static void blob_initialize(struct cudf_data_struct_blob *self,
+								 size_t count);
 
 #define GENERATE_BAT_INPUT_BASE(tpe)                                           \
 	struct cudf_data_struct_##tpe *bat_data =                                  \
@@ -307,10 +251,14 @@ GENERATE_BASE_HEADERS(cudf_data_blob, blob);
 			/* bat is dense, materialize it */                                 \
 			bat_data->data = wrapped_GDK_malloc_nojump(                        \
 				bat_data->count * sizeof(bat_data->null_value));               \
+			if (!bat_data->data) {                                             \
+				msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);      \
+				goto wrapup;                                                   \
+			}                                                                  \
 			for (it = 0; it < bat_data->count; it++) {                         \
 				bat_data->data[it] = val++;                                    \
 			}                                                                  \
-		} else {                                                               \
+		} else if (can_mprotect_region(Tloc(b, 0))) {                          \
 			bat_data->data = (tpe *)Tloc(b, 0);                                \
 			mprotect_retval = mprotect_region(                                 \
 				bat_data->data,                                                \
@@ -321,6 +269,16 @@ GENERATE_BASE_HEADERS(cudf_data_blob, blob);
 									  mprotect_retval);                        \
 				goto wrapup;                                                   \
 			}                                                                  \
+		} else {                                                               \
+			/* cannot mprotect bat region, copy data */                        \
+			bat_data->data = wrapped_GDK_malloc_nojump(                        \
+				bat_data->count * sizeof(bat_data->null_value));               \
+			if (!bat_data->data) {                                             \
+				msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);      \
+				goto wrapup;                                                   \
+			}                                                                  \
+			memcpy(bat_data->data, Tloc(b, 0),                                 \
+				bat_data->count * sizeof(bat_data->null_value));                \
 		}                                                                      \
 	}
 
@@ -974,6 +932,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		} else if (bat_type == TYPE_str) {
 			BATiter li;
 			BUN p = 0, q = 0;
+			bool can_mprotect_varheap = false;
 			str mprotect_retval;
 			GENERATE_BAT_INPUT_BASE(str);
 			bat_data->count = BATcount(input_bats[index]);
@@ -985,6 +944,11 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			}
 			j = 0;
 
+			// check if we can mprotect the varheap
+			// if we can't mprotect, copy the strings instead
+			assert(input_bats[index]->tvheap);
+			can_mprotect_varheap = can_mprotect_region(input_bats[index]->tvheap->base);
+
 			li = bat_iterator(input_bats[index]);
 			BATloop(input_bats[index], p, q)
 			{
@@ -992,20 +956,30 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				if (strcmp(t, str_nil) == 0) {
 					bat_data->data[j] = NULL;
 				} else {
-					bat_data->data[j] = t;
+					if (can_mprotect_varheap) {
+						bat_data->data[j] = t;
+					} else {
+						bat_data->data[j] = wrapped_GDK_malloc_nojump(strlen(t) + 1);
+						if (!bat_data->data[j]) {
+							msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+							goto wrapup;
+						}
+						strcpy(bat_data->data[j], t);
+					}
 				}
 				j++;
 			}
-			// for string columns, mprotect the varheap of the BAT
-			assert(input_bats[index]->tvheap);
-			mprotect_retval =
-				mprotect_region(input_bats[index]->tvheap->base,
-								input_bats[index]->tvheap->size, &regions);
-			if (mprotect_retval) {
-				msg = createException(MAL, "cudf.eval",
-									  "Failed to mprotect region: %s",
-									  mprotect_retval);
-				goto wrapup;
+			if (can_mprotect_varheap) {
+				// mprotect the varheap of the BAT to prevent modification of input strings
+				mprotect_retval =
+					mprotect_region(input_bats[index]->tvheap->base,
+									input_bats[index]->tvheap->size, &regions);
+				if (mprotect_retval) {
+					msg = createException(MAL, "cudf.eval",
+										  "Failed to mprotect region: %s",
+										  mprotect_retval);
+					goto wrapup;
+				}
 			}
 		} else if (bat_type == TYPE_date) {
 			date *baseptr;
@@ -1059,6 +1033,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			BATiter li;
 			BUN p = 0, q = 0;
 			str mprotect_retval;
+			bool can_mprotect_varheap = false;
 			GENERATE_BAT_INPUT_BASE(blob);
 			bat_data->count = BATcount(input_bats[index]);
 			bat_data->data =
@@ -1069,6 +1044,11 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			}
 			j = 0;
 
+			// check if we can mprotect the varheap
+			// if we can't mprotect, copy the strings instead
+			assert(input_bats[index]->tvheap);
+			can_mprotect_varheap = can_mprotect_region(input_bats[index]->tvheap->base);
+
 			li = bat_iterator(input_bats[index]);
 			BATloop(input_bats[index], p, q)
 			{
@@ -1078,22 +1058,32 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					bat_data->data[j].data = NULL;
 				} else {
 					bat_data->data[j].size = t->nitems;
-					bat_data->data[j].data = &t->data[0];
+					if (can_mprotect_varheap) {
+						bat_data->data[j].data = &t->data[0];
+					} else {
+						bat_data->data[j].data = wrapped_GDK_malloc_nojump(t->nitems);
+						if (!bat_data->data[j].data) {
+							msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+							goto wrapup;
+						}
+						memcpy(bat_data->data[j].data, &t->data[0], t->nitems);
+					}
 				}
 				j++;
 			}
 			bat_data->null_value.size = 0;
 			bat_data->null_value.data = NULL;
-			// for blob columns, mprotect the varheap of the BAT
-			assert(input_bats[index]->tvheap);
-			mprotect_retval =
-				mprotect_region(input_bats[index]->tvheap->base,
-								input_bats[index]->tvheap->size, &regions);
-			if (mprotect_retval) {
-				msg = createException(MAL, "cudf.eval",
-									  "Failed to mprotect region: %s",
-									  mprotect_retval);
-				goto wrapup;
+			if (can_mprotect_varheap) {
+				// for blob columns, mprotect the varheap of the BAT
+				mprotect_retval =
+					mprotect_region(input_bats[index]->tvheap->base,
+									input_bats[index]->tvheap->size, &regions);
+				if (mprotect_retval) {
+					msg = createException(MAL, "cudf.eval",
+										  "Failed to mprotect region: %s",
+										  mprotect_retval);
+					goto wrapup;
+				}
 			}
 		} else {
 			// unsupported type: convert to string
@@ -1755,3 +1745,10 @@ int timestamp_is_null(cudf_data_timestamp value)
 int str_is_null(char *value) { return value == NULL; }
 
 int blob_is_null(cudf_data_blob value) { return value.data == NULL; }
+
+void blob_initialize(struct cudf_data_struct_blob *self,
+								 size_t count) {
+	self->count = count;
+	self->data = jump_GDK_malloc(count * sizeof(self->null_value));
+	memset(self->data, 0, count * sizeof(self->null_value));
+}

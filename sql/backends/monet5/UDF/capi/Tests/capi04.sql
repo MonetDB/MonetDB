@@ -49,3 +49,4 @@ INSERT INTO strings VALUES ('ello'), ('ow'), (NULL), ('onestly?'), ('annes');
 SELECT capi04(i) FROM strings;
 
 ROLLBACK;
+
