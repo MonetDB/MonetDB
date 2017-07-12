@@ -40,7 +40,6 @@ static char *mprotect_region(void *addr, size_t len,
 static char *clear_mprotect(void *addr, size_t len);
 
 static allocated_region *allocated_regions[THREADS];
-static mprotected_region **actual_mprotected_regions[THREADS];
 static jmp_buf jump_buffer[THREADS];
 
 typedef char *(*jitted_function)(void **inputs, void **outputs,
@@ -111,8 +110,6 @@ static char *mprotect_region(void *addr, size_t len,
 							 mprotected_region **regions)
 {
 	mprotected_region *region;
-	int pagesize;
-	void *page_begin;
 	if (len == 0)
 		return NULL;
 
@@ -410,7 +407,6 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 	(void)cntxt;
 
-	actual_mprotected_regions[tid] = &regions;
 	allocated_regions[tid] = NULL;
 
 	// we need to be able to catch segfaults and bus errors
@@ -1243,8 +1239,6 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		GDKfree(regions);
 		regions = next;
 	}
-
-	actual_mprotected_regions[tid] = NULL;
 
 	// clear the signal handlers
 	if (sigaction(SIGSEGV, &oldsa, NULL) == -1 ||
