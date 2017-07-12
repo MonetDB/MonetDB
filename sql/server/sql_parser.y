@@ -772,7 +772,7 @@ set_statement:
 		append_string(l, $2 );
 		append_symbol(l, $4 );
 		$$ = _symbol_create_list( SQL_SET, l); }
-  |     set column_commalist_parens '=' subquery
+  |     set column_commalist_parens '=' subquery_with_orderby
 		{ dlist *l = L();
 	  	append_list(l, $2);
 	  	append_symbol(l, $4);
@@ -2919,7 +2919,7 @@ assignment:
 	  append_symbol(l, $3 );
 	  append_string(l, $1);
 	  $$ = _symbol_create_list( SQL_ASSIGN, l); }
- |  column_commalist_parens '=' subquery
+ |  column_commalist_parens '=' subquery_with_orderby
 	{ dlist *l = L();
 	  append_symbol(l, $3);
 	  append_list(l, $1);
