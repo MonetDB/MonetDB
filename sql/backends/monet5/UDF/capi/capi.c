@@ -1281,24 +1281,17 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 								  "Data has different cardinalities.");
 			goto wrapup;
 		}
-		b = COLnew(0, bat_type, count, TRANSIENT);
-		if (!b) {
-			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
-			goto wrapup;
-		}
-		b->tnil = 0;
-		b->tnonil = 0;
-		b->tkey = 0;
-		b->tsorted = 0;
-		b->trevsorted = 0;
-
 		if (bat_type == TYPE_bit || bat_type == TYPE_bte ||
 			bat_type == TYPE_sht || bat_type == TYPE_int ||
 			bat_type == TYPE_oid || bat_type == TYPE_lng ||
 			bat_type == TYPE_flt || bat_type == TYPE_dbl) {
+			b = COLnew(0, bat_type, 0, TRANSIENT);
+			if (!b) {
+				msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+				goto wrapup;
+			}
 			// we pass the data we have directly into the BAT for simple
-			// numeric
-			// types
+			// numeric types
 			// this way we do not need to copy any data unnecessarily
 			// free the current (initial) storage
 			GDKfree(b->theap.base);
@@ -1311,115 +1304,127 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			b->batCount = (BUN)count;
 			b->batCapacity = (BUN)count;
 			b->batCopiedtodisk = false;
-		} else if (bat_type == TYPE_date) {
-			date *baseptr = (date *)Tloc(b, 0);
-			cudf_data_date *source_base = (cudf_data_date *)data;
-			for (j = 0; j < count; j++) {
-				baseptr[j] = date_from_data(source_base + j);
-			}
-			BATsetcount(b, count);
-			GDKfree(data);
-		} else if (bat_type == TYPE_daytime) {
-			daytime *baseptr = (daytime *)Tloc(b, 0);
-			cudf_data_time *source_base = (cudf_data_time *)data;
-			for (j = 0; j < count; j++) {
-				baseptr[j] = time_from_data(source_base + j);
-			}
-			BATsetcount(b, count);
-			GDKfree(data);
-		} else if (bat_type == TYPE_timestamp) {
-			timestamp *baseptr = (timestamp *)Tloc(b, 0);
-			cudf_data_timestamp *source_base = (cudf_data_timestamp *)data;
-			for (j = 0; j < count; j++) {
-				baseptr[j] = timestamp_from_data(source_base + j);
-			}
-			BATsetcount(b, count);
-			GDKfree(data);
-		} else if (bat_type == TYPE_str) {
-			char **source_base = (char **)data;
-			for (j = 0; j < count; j++) {
-				const char *ptr = source_base[j];
-				if (!ptr) {
-					ptr = str_nil;
-				}
-				if (BUNappend(b, ptr, FALSE) != GDK_SUCCEED) {
-					msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
-					goto wrapup;
-				}
-			}
-			GDKfree(data);
-		} else if (bat_type == TYPE_blob || bat_type == TYPE_sqlblob) {
-			cudf_data_blob *source_base = (cudf_data_blob *)data;
-			blob *current_blob = NULL;
-			size_t current_blob_maxsize = 0;
-			for (j = 0; j < count; j++) {
-				const cudf_data_blob blob = source_base[j];
-
-				if (!current_blob || current_blob_maxsize < blob.size) {
-					if (current_blob) {
-						GDKfree(current_blob);
-					}
-					current_blob_maxsize = blob.size;
-					current_blob = GDKmalloc(sizeof(size_t) + blob.size);
-					if (!current_blob) {
-						msg =
-							createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
-						goto wrapup;
-					}
-				}
-
-				if (!blob.data) {
-					current_blob->nitems = ~(size_t)0;
-				} else {
-					current_blob->nitems = blob.size;
-					memcpy(&current_blob->data[0], blob.data, blob.size);
-				}
-
-				if (BUNappend(b, current_blob, FALSE) != GDK_SUCCEED) {
-					if (current_blob) {
-						GDKfree(current_blob);
-					}
-					msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
-					goto wrapup;
-				}
-			}
-			if (current_blob) {
-				GDKfree(current_blob);
-			}
-			GDKfree(data);
 		} else {
-			char **source_base = (char **)data;
-			int len = 0;
-			void *element = NULL;
-			for (j = 0; j < count; j++) {
-				const char *ptr = source_base[j];
-				const void *appended_element;
-				if (!ptr || strcmp(ptr, str_nil) == 0) {
-					appended_element = (void *)BATatoms[bat_type].atomNull;
-				} else {
-					if (BATatoms[bat_type].atomFromStr(ptr, &len, &element) ==
-						0) {
-						msg = createException(MAL, "cudf.eval",
-											  "Failed to convert output "
-											  "element from string: %s",
-											  ptr);
+			b = COLnew(0, bat_type, count, TRANSIENT);
+			if (!b) {
+				msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+				goto wrapup;
+			}
+			if (bat_type == TYPE_date) {
+				date *baseptr = (date *)Tloc(b, 0);
+				cudf_data_date *source_base = (cudf_data_date *)data;
+				for (j = 0; j < count; j++) {
+					baseptr[j] = date_from_data(source_base + j);
+				}
+				BATsetcount(b, count);
+				GDKfree(data);
+			} else if (bat_type == TYPE_daytime) {
+				daytime *baseptr = (daytime *)Tloc(b, 0);
+				cudf_data_time *source_base = (cudf_data_time *)data;
+				for (j = 0; j < count; j++) {
+					baseptr[j] = time_from_data(source_base + j);
+				}
+				BATsetcount(b, count);
+				GDKfree(data);
+			} else if (bat_type == TYPE_timestamp) {
+				timestamp *baseptr = (timestamp *)Tloc(b, 0);
+				cudf_data_timestamp *source_base = (cudf_data_timestamp *)data;
+				for (j = 0; j < count; j++) {
+					baseptr[j] = timestamp_from_data(source_base + j);
+				}
+				BATsetcount(b, count);
+				GDKfree(data);
+			} else if (bat_type == TYPE_str) {
+				char **source_base = (char **)data;
+				for (j = 0; j < count; j++) {
+					const char *ptr = source_base[j];
+					if (!ptr) {
+						ptr = str_nil;
+					}
+					if (BUNappend(b, ptr, FALSE) != GDK_SUCCEED) {
+						msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 						goto wrapup;
 					}
-					appended_element = element;
 				}
-				if (BUNappend(b, appended_element, FALSE) != GDK_SUCCEED) {
-					if (element) {
-						GDKfree(element);
+				GDKfree(data);
+			} else if (bat_type == TYPE_blob || bat_type == TYPE_sqlblob) {
+				cudf_data_blob *source_base = (cudf_data_blob *)data;
+				blob *current_blob = NULL;
+				size_t current_blob_maxsize = 0;
+				for (j = 0; j < count; j++) {
+					const cudf_data_blob blob = source_base[j];
+
+					if (!current_blob || current_blob_maxsize < blob.size) {
+						if (current_blob) {
+							GDKfree(current_blob);
+						}
+						current_blob_maxsize = blob.size;
+						current_blob = GDKmalloc(sizeof(size_t) + blob.size);
+						if (!current_blob) {
+							msg =
+								createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+							goto wrapup;
+						}
 					}
-					msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
-					goto wrapup;
+
+					if (!blob.data) {
+						current_blob->nitems = ~(size_t)0;
+					} else {
+						current_blob->nitems = blob.size;
+						memcpy(&current_blob->data[0], blob.data, blob.size);
+					}
+
+					if (BUNappend(b, current_blob, FALSE) != GDK_SUCCEED) {
+						if (current_blob) {
+							GDKfree(current_blob);
+						}
+						msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+						goto wrapup;
+					}
 				}
+				if (current_blob) {
+					GDKfree(current_blob);
+				}
+				GDKfree(data);
+			} else {
+				char **source_base = (char **)data;
+				int len = 0;
+				void *element = NULL;
+				for (j = 0; j < count; j++) {
+					const char *ptr = source_base[j];
+					const void *appended_element;
+					if (!ptr || strcmp(ptr, str_nil) == 0) {
+						appended_element = (void *)BATatoms[bat_type].atomNull;
+					} else {
+						if (BATatoms[bat_type].atomFromStr(ptr, &len, &element) ==
+							0) {
+							msg = createException(MAL, "cudf.eval",
+												  "Failed to convert output "
+												  "element from string: %s",
+												  ptr);
+							goto wrapup;
+						}
+						appended_element = element;
+					}
+					if (BUNappend(b, appended_element, FALSE) != GDK_SUCCEED) {
+						if (element) {
+							GDKfree(element);
+						}
+						msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+						goto wrapup;
+					}
+				}
+				if (element) {
+					GDKfree(element);
+				}
+				GDKfree(data);
 			}
-			if (element) {
-				GDKfree(element);
-			}
-			GDKfree(data);
 		}
+		b->tnil = 0;
+		b->tnonil = 0;
+		b->tkey = 0;
+		b->tsorted = 0;
+		b->trevsorted = 0;
 
 		// free the output value right now to prevent the internal data from
 		// being freed later
