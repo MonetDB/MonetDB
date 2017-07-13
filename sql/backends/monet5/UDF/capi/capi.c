@@ -95,6 +95,7 @@ static void handler(int sig, siginfo_t *si, void *unused)
 	int tid = THRgettid();
 
 	(void)sig;
+	(void)si;
 	(void)unused;
 
 	longjmp(jump_buffer[tid], 1);
