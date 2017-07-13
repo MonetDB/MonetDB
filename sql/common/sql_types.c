@@ -1531,6 +1531,17 @@ sqltypeinit( sql_allocator *sa)
 			}
 		}
 	}
+	for (t = decimals, t++; t != floats; t++) {
+		sql_type **u;
+
+		for (u = decimals, u++; u != floats; u++) {
+			if (t != u && (*t)->localtype >  (*u)->localtype) {
+				sql_create_func(sa, "sql_mul", "calc", "*", *t, *u, *t, SCALE_MUL);
+				sql_create_func(sa, "sql_div", "calc", "/", *t, *u, *t, SCALE_DIV);
+			}
+		}
+	}
+
 	/* all numericals */
 	for (t = numerical; *t != TME; t++) {
 		sql_subtype *lt;

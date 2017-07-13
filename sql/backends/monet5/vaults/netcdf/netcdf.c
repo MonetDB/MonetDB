@@ -612,9 +612,14 @@ NCDFloadVar(bat **dim, bat *v, int ncid, int varid, nc_type vtype, int vndims, i
 	res = NULL;
 
 	/* Manually create dimensions with range [0:1:dlen[i]] */
-	// FIXME unchecked_malloc GDKmalloc can return NULL
 	val_rep = (size_t *)GDKmalloc(sizeof(size_t) * vndims);
 	grp_rep = (size_t *)GDKmalloc(sizeof(size_t) * vndims);
+	if (val_rep == NULL || grp_rep == NULL) {
+		GDKfree(dlen);
+		GDKfree(val_rep);
+		GDKfree(grp_rep);
+		throw(MAL, "netcdf.loadvar", MAL_MALLOC_FAIL);
+	}
 
     	/* compute the repetition factor inside of the series (val_rep) and of series (grp_rep) */
 	for (i = 0; i < vndims; i++) {
@@ -716,6 +721,8 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* compose 'create table' statement in the buffer */
 	dname = (char **) GDKzalloc( sizeof(char *) * vndims);
+	if (dname == NULL)
+		throw(MAL, "netcdf.importvar", MAL_MALLOC_FAIL);
 	for (i = 0; i < vndims; i++)
 		dname[i] = (char *) GDKzalloc(NC_MAX_NAME + 1);
 
@@ -724,10 +731,12 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	j = snprintf(buf, BUFSIZ,"create table %s.%s( ", sch->base.name, aname);
 
 	for (i = 0; i < vndims; i++){
-		if ((retval = nc_inq_dim(ncid, vdims[i], dname[i], &dlen)))
-			return createException(MAL, "netcdf.importvar",
-								   "Cannot read dimension %d : %s",
-								   vdims[i], nc_strerror(retval));
+		if ((retval = nc_inq_dim(ncid, vdims[i], dname[i], &dlen))) {
+			GDKfree(dname);
+			throw(MAL, "netcdf.importvar",
+			      "Cannot read dimension %d : %s",
+			      vdims[i], nc_strerror(retval));
+		}
 
 		if ( dlen <= (int) GDK_bte_max )
 			dimtype = "TINYINT";
@@ -748,12 +757,15 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 /* load variable data */
-	// FIXME unchecked_malloc GDKmalloc can return NULL
 	dim_bids = (bat *)GDKmalloc(sizeof(bat) * vndims);
+	if (dim_bids == NULL)
+		throw(MAL, "netcdf.importvar", MAL_MALLOC_FAIL);
 
 	msg = NCDFloadVar(&dim_bids, &vbatid, ncid, varid, vtype, vndims, vdims);
-	if ( msg != MAL_SUCCEED )
+	if ( msg != MAL_SUCCEED ) {
+		GDKfree(dim_bids);
 		return msg;
+	}
 
 	/* associate columns in the table with loaded variable data */
 	aname_sys = toLower(aname);

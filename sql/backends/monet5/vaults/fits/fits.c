@@ -205,17 +205,19 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  
 	tbl = mvc_bind_table(m, sch, tname);
 	if (tbl == NULL) {
-		msg = createException (MAL, "fits.exporttable", "Table %s is missing.\n", tname);
-		return msg;
+		throw(MAL, "fits.exporttable", "Table %s is missing.\n", tname);
 	}
 
 	set = (*tbl).columns.set;
 
 	columns = list_length(set);
-	// FIXME unchecked_malloc GDKmalloc can return NULL
 	colname = (str *) GDKmalloc(columns * sizeof(str));
-	// FIXME unchecked_malloc GDKmalloc can return NULL
 	tform = (str *) GDKmalloc(columns * sizeof(str));
+	if (colname == NULL || tform == NULL) {
+		GDKfree(colname);
+		GDKfree(tform);
+		throw(MAL, "fits.exporttable", MAL_MALLOC_FAIL);
+	}
 
 	/*	fprintf(stderr,"Number of columns: %d\n", columns);*/
 

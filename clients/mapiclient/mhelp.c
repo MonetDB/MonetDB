@@ -74,8 +74,8 @@ SQLhelp sqlhelp[] = {
 	 NULL,
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Users"},
 	{"ANALYZE",
-	 "Collect statistics for optimizations",
-	 "ANALYZE qname [column_list] [SAMPLE size] [MINMAX]",
+	 "Collect column data statistics for optimizations",
+	 "ANALYZE schemaname [ . tablename [ column_list ] ] [SAMPLE size] [MINMAX]",
 	 "column_list",
 	 "See also https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/statistics"},
 	{"CALL",
@@ -85,7 +85,7 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"CASE",
 	 "Case statement for procedures/functions",
-	 "CASE  scalar_expression [ when_statement ...]  [ELSE procedure_statement ... ] END CASE",
+	 "CASE scalar_expression [ when_statement ...]  [ELSE procedure_statement ... ] END CASE",
 	 NULL,
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Flowofcontrol"},
 	{"COMMIT",
@@ -97,7 +97,7 @@ SQLhelp sqlhelp[] = {
 	 "Append binary representations into a table",
 	 "COPY [nrofrecords] BINARY INTO qname [column_list] FROM string [','...] [NO CONSTRAINT]",
 	 "nrofrecords",
-	 "see https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/BinaryBulkLoad"},
+	 "See also https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/BinaryBulkLoad"},
 	{"COPY INTO",
 	 "Parse a csv-file into a table",
 	 "COPY [nrofrecords] INTO qname [column_list] FROM string [','...] [headerlist] [ separators]\n"
@@ -114,32 +114,31 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"CREATE AGGREGATE FUNCTION",
 	 "",
-	 "CREATE AGGREGATE  FUNCTION qname '(' { '*' | [ param [',' ...]] } ')'\n"
+	 "CREATE [ OR REPLACE ] AGGREGATE FUNCTION qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS { data_type | TABLE '(' function_return [ ',' ... ] ')' }\n"
 	 "    EXTERNAL NAME ident ',' ident\n"
-	 "CREATE AGGREGATE FUNCTION qname '(' { '*' | [ param [',' ...]] }')'\n"
+	 "CREATE [ OR REPLACE ] AGGREGATE FUNCTION qname '(' { '*' | [ param [',' ...]] }')'\n"
 	 "    RETURNS { data_type | TABLE '(' function_return [ ',' ... ] ')' }\n"
 	 "    LANGUAGE ident external_code",
 	 "param,data_type,function_return",
 	 NULL},
 	{"CREATE FILTER FUNCTION",
 	 "",
-	 "CREATE FILTER  FUNCTION qname '(' { '*' | [ param [',' ...]] } ')'\n"
+	 "CREATE [ OR REPLACE ] FILTER FUNCTION qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS { data_type | TABLE '(' function_return [ ',' ... ] ')' }\n"
 	 "    EXTERNAL NAME ident ',' ident",
 	 "param,data_type,function_return",
 	 NULL},
 	{"CREATE FUNCTION",
 	 "",
-	 "CREATE FUNCTION qname '(' { '*' | [ param [',' ...]] } ')'\n"
+	 "CREATE [ OR REPLACE ] FUNCTION qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS { data_type | TABLE '(' function_return [ ',' ... ] ')' }\n"
 	 "    EXTERNAL NAME ident ',' ident\n"
-	 "CREATE FUNCTION qname '(' { '*' | [ param [',' ...]] } ')'\n"
+	 "CREATE [ OR REPLACE ] FUNCTION qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    RETURNS { data_type | TABLE '(' function_return [ ',' ... ] ')' }\n"
 	 "    BEGIN [ ATOMIC ] statement [ ';' ...] END\n"
-	 "CREATE FUNCTION qname '(' { '*' | [ param [',' ...]] }')'\n"
+	 "CREATE [ OR REPLACE ] FUNCTION qname '(' { '*' | [ param [',' ...]] }')'\n"
 	 "    RETURNS { data_type | TABLE '(' function_return [ ',' ... ] ')' }\n"
-
 	 "    LANGUAGE ident external_code",
 	 "param,data_type,function_return,external_code",
 	 NULL},
@@ -150,56 +149,56 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"CREATE PROCEDURE",
 	 "",
-	 "CREATE PROCEDURE qname '(' { '*' | [ param [',' ...]] }')'\n"
+	 "CREATE [ OR REPLACE ] PROCEDURE qname '(' { '*' | [ param [',' ...]] }')'\n"
 	 "    EXTERNAL NAME ident ',' ident\n"
-	 "CREATE PROCEDURE qname '(' { '*' | [ param [',' ...]] } ')'\n"
+	 "CREATE [ OR REPLACE ] PROCEDURE qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    BEGIN [ ATOMIC ] procedure_statement [ ';' ...] END\n"
-	 "CREATE PROCEDURE qname '(' { '*' | [ param [',' ...]] } ')'\n"
+	 "CREATE [ OR REPLACE ] PROCEDURE qname '(' { '*' | [ param [',' ...]] } ')'\n"
 	 "    LANGUAGE ident external_code",
 	 "param,data_type,external_code",
 	 NULL},
 	{"CREATE LOADER",
 	 "",
-	 "CREATE LOADER qname '(' [ param [',' ...]] ')'\n"
+	 "CREATE [ OR REPLACE ] LOADER qname '(' [ param [',' ...]] ')'\n"
 	 "    LANGUAGE ident external_code",
 	 "param,data_type,function_return,external_code",
 	 NULL},
 	{"CREATE MERGE TABLE",
 	 "",
-	 "CREATE MERGE TABLE qname table_source;",
+	 "CREATE MERGE TABLE [ IF NOT EXISTS ] qname table_source;",
 	 NULL,
 	 "See also https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/DataPartitioning"},
 	{"CREATE REMOTE TABLE",
 	 "",
-	 "CREATE REMOTE TABLE qname ON string",
+	 "CREATE REMOTE TABLE [ IF NOT EXISTS ] qname ON string",
 	 NULL,
 	 "remote name should match mapi:monetdb://host:port/database[/schema[/table]]"},
 	{"CREATE REPLICA TABLE",
 	 "",
-	 "CREATE REPLICA TABLE qname table_source;",
+	 "CREATE REPLICA TABLE [ IF NOT EXISTS ] qname table_source;",
 	 NULL,
-	 "https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/TransactionReplication"},
+	 "See also https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/TransactionReplication"},
 	{"CREATE SCHEMA",
 	 "",
-	 "CREATE SCHEMA schema_name [default_char_set] [path_spec] [schema_element]",
+	 "CREATE SCHEMA [ IF NOT EXISTS ] schema_name [default_char_set] [path_spec] [schema_element]",
 	 "schema_name,default_char_set,path_spec,schema_element",
 	 NULL},
 	{"CREATE SEQUENCE",
 	 "Define a new sequence generator",
-	 "CREATE SEQUENCE ident   [ AS datatype] [ START [WITH start]] [INCREMENT BY increment]\n"
+	 "CREATE SEQUENCE ident [ AS datatype] [ START [WITH start]] [INCREMENT BY increment]\n"
 	 "[MINVALUE minvalue | NO MINVALUE] [MAXVALUE maxvalue | NOMAXVALUE] | [ [ NO] CYCLE]",
 	 NULL,
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/SerialTypes"},
 	{"CREATE STREAM TABLE",
 	 "Temporary table, locked during updates/ continues query processing",
-	 "CREATE STREAM TABLE qname table_source\n",
+	 "CREATE STREAM TABLE [ IF NOT EXISTS ] qname table_source\n",
 	 NULL,
 	 NULL},
 	{"CREATE TABLE",
 	 "",
-	 "CREATE TABLE qname table_source [STORAGE ident string]\n"
-	 "CREATE TABLE qname FROM LOADER function_ref\n"
-	 "CREATE [ LOCAL | GLOBAL ] TEMP[ORARY] TABLE qname table_source [on_commit]",
+	 "CREATE TABLE [ IF NOT EXISTS ] qname table_source [STORAGE ident string]\n"
+	 "CREATE TABLE [ IF NOT EXISTS ] qname FROM LOADER function_ref\n"
+	 "CREATE [ LOCAL | GLOBAL ] TEMP[ORARY] TABLE [ IF NOT EXISTS ] qname table_source [on_commit]",
 	 "table_source,on_commit,function_ref",
 	 NULL},
 	{"CREATE TRIGGER",
@@ -215,7 +214,7 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"CREATE VIEW",
 	 "",
-	 "CREATE VIEW qname [ column_list ] AS { query_expression | '(' query_expression ') } [ WITH CHECK OPTION]",
+	 "CREATE VIEW qname [ column_list ] AS { query_expression | '(' query_expression ') } [ WITH CHECK OPTION ]",
 	 "column_list,query_expression",
 	 NULL},
 	{"CURRENT_DATE",
@@ -260,13 +259,14 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"DROP AGGREGATE",
 	 "",
-	 "DROP AGGREGATE qname [ RESTRICT | CASCADE ]",
+	 "DROP ALL AGGREGATE qname [ RESTRICT | CASCADE ]\n"
+	 "DROP AGGREGATE qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
 	 NULL,
 	 NULL},
 	{"DROP FUNCTION",
 	 "",
 	 "DROP ALL [FILTER] FUNCTION qname [ RESTRICT | CASCADE ]\n"
-	 "DROP routine_designator [ RESTRICT | CASCADE ]",
+	 "DROP [FILTER] FUNCTION qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
 	 NULL,
 	 NULL},
 	{"DROP INDEX",
@@ -276,12 +276,14 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"DROP LOADER",
 	 "",
-	 "DROP ALL LOADED qname [ RESTRICT | CASCADE ]",
+	 "DROP ALL LOADER qname [ RESTRICT | CASCADE ]\n"
+	 "DROP LOADER qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
 	 NULL,
 	 NULL},
 	{"DROP PROCEDURE",
 	 "",
-	 "DROP PROCEDURE qname [ RESTRICT | CASCADE ]",
+	 "DROP ALL PROCEDURE qname [ RESTRICT | CASCADE ]\n"
+	 "DROP PROCEDURE qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
 	 NULL,
 	 NULL},
 	{"DROP ROLE",
@@ -291,7 +293,7 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"DROP SCHEMA",
 	 "",
-	 "DROP SCHEMA qname [ RESTRICT | CASCADE ]",
+	 "DROP SCHEMA [ IF EXISTS ] qname [ RESTRICT | CASCADE ]",
 	 NULL,
 	 NULL},
 	{"DROP SEQUENCE",
@@ -301,7 +303,7 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"DROP TABLE",
 	 "",
-	 "DROP TABLE qname [ RESTRICT | CASCADE ]",
+	 "DROP TABLE [ IF EXISTS ] qname [ RESTRICT | CASCADE ]",
 	 NULL,
 	 NULL},
 	{"DROP TRIGGER",
@@ -321,7 +323,7 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"DROP VIEW",
 	 "",
-	 "DROP VIEW qname [ RESTRICT | CASCADE ]",
+	 "DROP VIEW [ IF EXISTS ] qname [ RESTRICT | CASCADE ]",
 	 NULL,
 	 NULL},
 	{"IF",
@@ -520,11 +522,10 @@ SQLhelp sqlhelp[] = {
 	 "DATE  | TIME [ time_precision ] tz | TIMESTAMP [ timestamp_precision ] tz",
 	 "time_precision,timestamp_precision,tz",
 	 NULL},
-	{
-	 "data_type",
+	{"data_type",
 	 NULL,
-	 "[ [ CHARACTER | VARCHAR | CLOB | BLOB] [ '(' nonzero ')' ] |\n"
-	 "TINYINT | SMALLINT | BIGINT | HUGEINT | [ DECIMAL | FLOAT] [ '(' nonzero [',' nonzero ] ')'] |\n"
+	 "[ [ CHAR[ACTER] | VARCHAR | CLOB | TEXT | BLOB] [ '(' nonzero ')' ] |\n"
+	 "TINYINT | SMALLINT | INT[EGER] | BIGINT | HUGEINT | [ DECIMAL | FLOAT] [ '(' nonzero [',' nonzero ] ')'] |\n"
 	 " DOUBLE [ PRECISION ] | REAL | datetime_type | interval_type | geometry_type",
 	 "datetime_type,interval_type,geometry_type",
 	 NULL},
@@ -553,7 +554,7 @@ SQLhelp sqlhelp[] = {
 	 "AUTO_INCREMENT | GENERATED ALWAYS AS IDENTITY [ '(' [ AS datatype] [ START [WITH start]] [INCREMENT BY increment]\n"
 	 "[MINVALUE minvalue | NO MINVALUE] [MAXVALUE maxvalue | NOMAXVALUE] | [ [ NO] CYCLE] ')' ] ",
 	 NULL,
-	 "see https://www.monetdb.org/Documentation/Manuals/SQLreference/SerialTypes"},
+	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/SerialTypes"},
 	{"global_privileges",
 	 NULL,
 	 "{ COPY FROM | COPY INTO } [ ',' ... ]",

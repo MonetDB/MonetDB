@@ -274,11 +274,18 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 	} else if (is_set(rel->op) ||
 		   is_sort(rel) ||
 		   is_semi(rel->op) ||
-		   is_apply(rel->op) ||
 		   is_select(rel->op) || 
 		   is_topn(rel->op)) {
 		if (rel->l)
 			return rel_bind_column2(sql, rel->l, tname, cname, f);
+	} else if (is_apply(rel->op)) {
+		sql_exp *e = NULL;
+
+		if (!e && rel->l)
+			e = rel_bind_column2(sql, rel->l, tname, cname, f);
+		if (!e && rel->r && (rel->flag == APPLY_JOIN || rel->flag == APPLY_LOJ))
+			return rel_bind_column2(sql, rel->r, tname, cname, f);
+		return e;
 	}
 	return NULL;
 }

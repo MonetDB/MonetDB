@@ -219,6 +219,43 @@ kc_column_cmp(sql_kc *kc, sql_column *c)
 	return !(c == kc->c);
 }
 
+static void psm_exps_properties(mvc *sql, global_props *gp, list *exps);
+static void rel_properties(mvc *sql, global_props *gp, sql_rel *rel);
+
+static void
+psm_exp_properties(mvc *sql, global_props *gp, sql_exp *e)
+{
+	/* only functions need fix up */
+	if (e->type == e_psm) {
+		if (e->flag & PSM_SET) {
+			psm_exp_properties(sql, gp, e->l);
+		} else if (e->flag & PSM_RETURN) {
+			psm_exp_properties(sql, gp, e->l);
+		} else if (e->flag & PSM_WHILE) {
+			psm_exp_properties(sql, gp, e->l);
+			psm_exps_properties(sql, gp, e->r);
+		} else if (e->flag & PSM_IF) {
+			psm_exp_properties(sql, gp, e->l);
+			psm_exps_properties(sql, gp, e->r);
+			if (e->f)
+				psm_exps_properties(sql, gp, e->f);
+		} else if (e->flag & PSM_REL) {
+			rel_properties(sql, gp, e->l);
+		}
+	}
+}
+
+static void
+psm_exps_properties(mvc *sql, global_props *gp, list *exps)
+{
+	node *n;
+
+	if (!exps)
+		return;
+	for (n = exps->h; n; n = n->next) 
+		psm_exp_properties(sql, gp, n->data);
+}
+
 static void
 rel_properties(mvc *sql, global_props *gp, sql_rel *rel) 
 {
@@ -250,6 +287,8 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	case op_topn:
 	case op_sample:
 	case op_ddl:
+		if (rel->op == op_ddl && rel->flag == DDL_PSM && rel->exps) 
+			psm_exps_properties(sql, gp, rel->exps);
 		if (rel->l)
 			rel_properties(sql, gp, rel->l);
 		break;
@@ -8597,18 +8636,25 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static list * rewrite_exps(mvc *sql, list *l, rewrite_rel_fptr rewrite_rel, rewrite_fptr rewriter, int *has_changes);
+
 static sql_exp *
 rewrite_exp(mvc *sql, sql_exp *e, rewrite_rel_fptr rewrite_rel, rewrite_fptr rewriter, int *has_changes)
 {
 	if (e->type != e_psm)
 		return e;
-	if (e->flag & PSM_SET || e->flag & PSM_VAR) 
+	if (e->flag & PSM_VAR) 
 		return e;
-	if (e->flag & PSM_RETURN) {
+	if (e->flag & PSM_SET || e->flag & PSM_RETURN) {
 		e->l = rewrite_exp(sql, e->l, rewrite_rel, rewriter, has_changes);
 	}
-	if (e->flag & PSM_WHILE || e->flag & PSM_IF) 
+	if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
+		e->l = rewrite_exp(sql, e->l, rewrite_rel, rewriter, has_changes);
+		e->r = rewrite_exps(sql, e->r, rewrite_rel, rewriter, has_changes);
+		if (e->f)
+			e->f = rewrite_exps(sql, e->f, rewrite_rel, rewriter, has_changes);
 		return e;
+	}
 	if (e->flag & PSM_REL) 
 		e->l = rewrite_rel(sql, e->l, rewriter, has_changes);
 	return e;

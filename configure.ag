@@ -3196,17 +3196,17 @@ done
 echo
 echo "* Enabled/disabled components:"
 for comp in \
-	'gdk         ' \
-	'monetdb5    ' \
-	'sql         ' \
-	'geom        ' \
-	'console     ' \
-	'pyintegration' \
+	'gdk           ' \
+	'monetdb5      ' \
+	'sql           ' \
+	'geom          ' \
+	'console       ' \
+	'pyintegration ' \
 	'py3integration' \
-	'rintegration' \
-	'odbc        ' \
-	'testing     ' \
-	'embedded    ' \
+	'rintegration  ' \
+	'odbc          ' \
+	'testing       ' \
+	'embedded      ' \
 ; do
 	eval "dft=\$dft_$comp"
 	eval "enable=\$enable_$comp"
@@ -3220,31 +3220,31 @@ done
 echo
 echo "* Available features/extensions:"
 for comp in \
-	'atomic_ops   ' \
-	'bz2          ' \
-	'curl         ' \
-	'fits         ' \
-	'getaddrinfo  ' \
-	'gdal         ' \
-	'liblas       ' \
-	'liblzma      ' \
-	'libxml2      ' \
-	'lidar        ' \
-	'lz4          ' \
-	'netcdf       ' \
-	'openssl      ' \
-	'proj         ' \
-	'pthread      ' \
-	'python2      ' \
-	'python3      ' \
-	'readline     ' \
-	'regex        ' \
-	'samtools     ' \
-	'shp          ' \
-	'snappy       ' \
-	'unixodbc     ' \
-	'valgrind     ' \
-	'zlib         ' \
+	'atomic_ops ' \
+	'bz2        ' \
+	'curl       ' \
+	'fits       ' \
+	'getaddrinfo' \
+	'gdal       ' \
+	'liblas     ' \
+	'liblzma    ' \
+	'libxml2    ' \
+	'lidar      ' \
+	'lz4        ' \
+	'netcdf     ' \
+	'openssl    ' \
+	'proj       ' \
+	'pthread    ' \
+	'python2    ' \
+	'python3    ' \
+	'readline   ' \
+	'regex      ' \
+	'samtools   ' \
+	'shp        ' \
+	'snappy     ' \
+	'unixodbc   ' \
+	'valgrind   ' \
+	'zlib       ' \
 ; do
 	eval "org=\$org_have_$comp"
 	eval "have=\$have_$comp"
