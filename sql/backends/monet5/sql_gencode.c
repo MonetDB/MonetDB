@@ -42,6 +42,8 @@
 
 #include <rel_select.h>
 #include <rel_optimizer.h>
+#include <rel_distribute.h>
+#include <rel_partition.h>
 #include <rel_prop.h>
 #include <rel_rel.h>
 #include <rel_exp.h>
@@ -872,8 +874,11 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	if (!vararg)
 		f->sql++;
 	r = rel_parse(m, f->s, f->query, m_instantiate);
-	if (r)
+	if (r) {
 		r = rel_optimizer(m, r);
+                r = rel_distribute(m, r);
+                r = rel_partition(m, r);
+	}
 	if (r && !f->sql) 	/* native function */
 		return 0;
 
