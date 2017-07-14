@@ -1,6 +1,10 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
+* Fri Jul 14 2017 Sjoerd Mullender <sjoerd@acm.org>
+- Added a new RPM called MonetDB-selinux which provides the SELinux
+  policy required to run MonetDB under systemd, especially on Fedora 26.
+
 * Fri Jul  7 2017 Sjoerd Mullender <sjoerd@acm.org>
 - The Windows installers (*.msi files) are now created using the WiX
   Toolset.

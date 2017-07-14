@@ -11,7 +11,7 @@ ExecStart=@Ebindir@/monetdbd start @Elocalstatedir@/monetdb5/dbfarm
 ExecStop=@Ebindir@/monetdbd stop @Elocalstatedir@/monetdb5/dbfarm
 Restart=on-failure
 PIDFile=@Erundir@/merovingian.pid
-PrivateDevices=yes
+PrivateDevices=no
 ProtectSystem=full
 ProtectHome=true
 
