@@ -19,6 +19,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <errno.h>
+#include <fcntl.h>
 
 #include "stream.h"
 #include "stream_socket.h"
@@ -61,6 +62,7 @@ char* control_send(
 					strerror(errno));
 			return(strdup(sbuf));
 		}
+		fcntl(sock, F_SETFD, FD_CLOEXEC);
 		memset(&server, 0, sizeof(struct sockaddr_un));
 		server.sun_family = AF_UNIX;
 		strncpy(server.sun_path, host, sizeof(server.sun_path) - 1);
@@ -81,6 +83,7 @@ char* control_send(
 					strerror(errno));
 			return(strdup(sbuf));
 		}
+		fcntl(sock, F_SETFD, FD_CLOEXEC);
 		hp = gethostbyname(host);
 		if (hp == NULL) {
 			snprintf(sbuf, sizeof(sbuf), "cannot lookup hostname: %s",

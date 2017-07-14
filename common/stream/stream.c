@@ -2597,6 +2597,9 @@ udp_socket(udp_stream *udp, const char *hostname, int port, int write)
 		udp->s = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
 		if (udp->s == INVALID_SOCKET)
 			continue;
+#ifdef HAVE_FCNTL
+		fcntl(udp->s, F_SETFD, FD_CLOEXEC);
+#endif
 		if (!write &&
 		    bind(udp->s, rp->ai_addr,
 #ifdef _MSC_VER
@@ -2633,6 +2636,9 @@ udp_socket(udp_stream *udp, const char *hostname, int port, int write)
 	udp->s = socket(serv->sa_family, SOCK_DGRAM, IPPROTO_UDP);
 	if (udp->s == INVALID_SOCKET)
 		return -1;
+#ifdef HAVE_FCNTL
+	fcntl(udp->s, F_SETFD, FD_CLOEXEC);
+#endif
 	if (!write && bind(udp->s, serv, servsize) == SOCKET_ERROR)
 		return -1;
 	return 0;
