@@ -322,6 +322,9 @@ scanner_init_keywords(void)
 	keywords_insert("ROWS", ROWS);
 	keywords_insert("NO", NO);
 	keywords_insert("START", START);
+	keywords_insert("STOP", STOP);
+	keywords_insert("PAUSE", PAUSE);
+	keywords_insert("RESUME", RESUME);
 	keywords_insert("TRANSACTION", TRANSACTION);
 	keywords_insert("READ", READ);
 	keywords_insert("WRITE", WRITE);
@@ -338,6 +341,7 @@ scanner_init_keywords(void)
 
 	keywords_insert("TYPE", TYPE);
 	keywords_insert("PROCEDURE", PROCEDURE);
+	keywords_insert("CONTINUOUS", CONTINUOUS);
 	keywords_insert("FUNCTION", FUNCTION);
 	keywords_insert("LOADER", sqlLOADER);
 	keywords_insert("REPLACE", REPLACE);
@@ -1249,12 +1253,46 @@ sqllex(YYSTYPE * yylval, void *parm)
 	mvc *c = (mvc *) parm;
 	struct scanner *lc = &c->scanner;
 	int pos;
+	
 
 	/* store position for when view's query ends */
 	pos = (int)lc->rs->pos + lc->yycur;
 
 	token = sql_get_next_token(yylval, parm);
 	
+	/* check for double keyword sequences */
+	if( token == START){
+		int next = sqllex(yylval, parm);
+
+		if (next == CONTINUOUS)
+			token = START_CONTINUOUS;
+		else
+			lc->yynext = next;
+	} else
+	if( token == PAUSE){
+		int next = sqllex(yylval, parm);
+
+		if (next == CONTINUOUS)
+			token = PAUSE_CONTINUOUS;
+		else
+			lc->yynext = next;
+	} else
+	if( token == RESUME){
+		int next = sqllex(yylval, parm);
+
+		if (next == CONTINUOUS)
+			token = RESUME_CONTINUOUS;
+		else 
+			lc->yynext = next;
+	} else
+	if( token == STOP){
+		int next = sqllex(yylval, parm);
+
+		if (next == CONTINUOUS)
+			token = STOP_CONTINUOUS;
+		else
+			lc->yynext = next;
+	} else
 	if (token == NOT) {
 		int next = sqllex(yylval, parm);
 

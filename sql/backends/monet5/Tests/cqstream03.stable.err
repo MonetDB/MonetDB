@@ -1,0 +1,38 @@
+stderr of test 'cqstream03` in directory 'sql/backends/monet5` itself:
+
+
+# 12:58:45 >  
+# 12:58:45 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38071" "--set" "mapi_usock=/var/tmp/mtest-17764/.s.monetdb.38071" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/cquery//Linux/var/MonetDB/mTests_sql_backends_monet5"
+# 12:58:45 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/cquery//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38071
+# cmdline opt 	mapi_usock = /var/tmp/mtest-17764/.s.monetdb.38071
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/cquery//Linux/var/MonetDB/mTests_sql_backends_monet5
+# cmdline opt 	gdk_debug = 536870922
+
+# 12:58:46 >  
+# 12:58:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17764" "--port=38071"
+# 12:58:46 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-17764/.s.monetdb.38071
+QUERY = call cquery.heartbeat('sys','cq_agenda',1000);
+ERROR = !Beat ignored, a window constraint exist
+
+
+# 12:58:46 >  
+# 12:58:46 >  "Done."
+# 12:58:46 >  
+

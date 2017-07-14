@@ -1,0 +1,7 @@
+#simple test for basket management
+
+(seen:bat[:timestamp],sch:bat[:str],tbl:bat[:str],window:bat[:int], stride:bat[:int],events:bat[:int],cycles:bat[:int], error:bat[:str]) := basket.status();
+
+io.print(seen,sch,tbl,window,stride,events,cycles,error);
+
+basket.dump();

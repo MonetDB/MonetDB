@@ -1,0 +1,82 @@
+stdout of test 'cqstream00` in directory 'sql/backends/monet5` itself:
+
+
+# 13:18:56 >  
+# 13:18:56 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33396" "--set" "mapi_usock=/var/tmp/mtest-6019/.s.monetdb.33396" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/cquery//Linux/var/MonetDB/mTests_sql_backends_monet5"
+# 13:18:56 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:33396/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6019/.s.monetdb.33396
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 13:18:56 >  
+# 13:18:56 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6019" "--port=33396"
+# 13:18:56 >  
+
+#create stream table stmp2 (t timestamp, sensor integer, val decimal(8,2)) ;
+#insert into stmp2 values('2005-09-23 12:34:26.000',1,11.0);
+[ 1	]
+#insert into stmp2 values('2005-09-23 12:34:27.000',1,11.0);
+[ 1	]
+#insert into stmp2 values('2005-09-23 12:34:28.000',1,13.0);
+[ 1	]
+#insert into stmp2 values('2005-09-23 12:34:28.000',1,13.0);
+[ 1	]
+#create table result1(like stmp2);
+#create table result2(like stmp2);
+#create procedure cq_splitter()
+#begin
+#    insert into result1 select * from stmp2 where val <12;
+#    insert into result2 select * from stmp2 where val >12;
+#end;
+#select * from cquery.status();
+% .L1,	.L1,	.L1,	.L1,	.L1 # table_name
+% tick,	schema,	function,	state,	errors # name
+% timestamp,	clob,	clob,	clob,	clob # type
+% 26,	3,	11,	7,	0 # length
+[ NULL,	"sys",	"cq_splitter",	"waiting",	""	]
+#select 'RESULT';
+% .L2 # table_name
+% L2 # name
+% char # type
+% 6 # length
+[ "RESULT"	]
+#select * from stmp2;
+% sys.stmp2,	sys.stmp2,	sys.stmp2 # table_name
+% t,	sensor,	val # name
+% timestamp,	int,	decimal # type
+% 26,	1,	10 # length
+#select val from result1;
+% sys.result1 # table_name
+% val # name
+% decimal # type
+% 10 # length
+[ 11.00	]
+[ 11.00	]
+#select val from result2;
+% sys.result2 # table_name
+% val # name
+% decimal # type
+% 10 # length
+[ 13.00	]
+[ 13.00	]
+#drop procedure cq_splitter;
+#drop table stmp2;
+#drop table result1;
+#drop table result2;
+
+# 13:18:58 >  
+# 13:18:58 >  "Done."
+# 13:18:58 >  
+

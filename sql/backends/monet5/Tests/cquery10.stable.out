@@ -1,0 +1,52 @@
+stdout of test 'cquery10` in directory 'sql/backends/monet5` itself:
+
+
+# 10:28:05 >  
+# 10:28:05 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33494" "--set" "mapi_usock=/var/tmp/mtest-25654/.s.monetdb.33494" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/cquery//Linux/var/MonetDB/mTests_sql_backends_monet5"
+# 10:28:05 >  
+
+# MonetDB 5 server v11.26.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:33494/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-25654/.s.monetdb.33494
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 10:28:05 >  
+# 10:28:05 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25654" "--port=33494"
+# 10:28:05 >  
+
+#create table result(i integer);
+#create procedure cq_cycles()
+#begin
+#	insert into sys.result (select count(*) from sys.result);
+#end;
+#select 'RESULT';
+% .L2 # table_name
+% L2 # name
+% char # type
+% 6 # length
+[ "RESULT"	]
+#select * from result;
+% sys.result # table_name
+% i # name
+% int # type
+% 1 # length
+[ 0	]
+[ 1	]
+[ 2	]
+#drop procedure cq_cycles;
+#drop table result;
+
+# 10:28:09 >  
+# 10:28:09 >  "Done."
+# 10:28:09 >  
+

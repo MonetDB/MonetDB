@@ -150,6 +150,10 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_DROP_FUNC:
 	case SQL_DECLARE:
 	case SQL_CALL:
+	case SQL_START_CALL:
+	case SQL_STOP_CALL:
+	case SQL_PAUSE_CALL:
+	case SQL_RESUME_CALL:
 	case SQL_SET:
 	
 	case SQL_CREATE_TABLE_LOADER:

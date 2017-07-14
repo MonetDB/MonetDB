@@ -1,0 +1,69 @@
+stdout of test 'cqstream01` in directory 'sql/backends/monet5` itself:
+
+
+# 13:05:16 >  
+# 13:05:16 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30307" "--set" "mapi_usock=/var/tmp/mtest-22244/.s.monetdb.30307" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/cquery//Linux/var/MonetDB/mTests_sql_backends_monet5"
+# 13:05:16 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30307/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-22244/.s.monetdb.30307
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 13:05:17 >  
+# 13:05:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22244" "--port=30307"
+# 13:05:17 >  
+
+#create stream table stmp2 (t timestamp, sensor integer, val decimal(8,2)) ;
+#create table result2(like stmp2);
+#insert into stmp2 values('2005-09-23 12:34:26.000',1,9.0);
+[ 1	]
+#insert into stmp2 values('2005-09-23 12:34:27.000',1,11.0);
+[ 1	]
+#insert into stmp2 values('2005-09-23 12:34:28.000',1,13.0);
+[ 1	]
+#insert into stmp2 values('2005-09-23 12:34:28.000',1,15.0);
+[ 1	]
+#create procedure cq_window()
+#begin
+#	-- The window ensures a maximal number of tuples to consider
+#	-- Could be considered a property of the stream table
+#    call cquery.window('sys','stmp2',2);
+#    insert into result2 select * from stmp2 where val >12;
+#end;
+#select 'RESULT';
+% .L2 # table_name
+% L2 # name
+% char # type
+% 6 # length
+[ "RESULT"	]
+#select val from stmp2;
+% sys.stmp2 # table_name
+% val # name
+% decimal # type
+% 10 # length
+#select val from result2;
+% sys.result2 # table_name
+% val # name
+% decimal # type
+% 10 # length
+[ 13.00	]
+[ 15.00	]
+#drop procedure cq_window;
+#drop table stmp2;
+#drop table result2;
+
+# 13:05:18 >  
+# 13:05:18 >  "Done."
+# 13:05:18 >  
+

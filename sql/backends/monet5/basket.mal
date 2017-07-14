@@ -1,0 +1,86 @@
+# The contents of this file are subject to the MonetDB Public License
+# Version 1.1 (the "License"); you may not use this file except in
+# compliance with the License. You may obtain a copy of the License at
+# http://www.monetdb.org/Legal/MonetDBLicense
+#
+# Software distributed under the License is distributed on an "AS IS"
+# basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See the
+# License for the specific language governing rights and limitations
+# under the License.
+#
+# The Original Code is the MonetDB Database System.
+#
+# The Initial Developer of the Original Code is CWI.
+# Portions created by CWI are Copyright (C) 1997-July 2008 CWI.
+# Copyright August 2008-2016 MonetDB B.V.
+# All Rights Reserved.
+
+module basket;
+
+pattern register(mvc:int,sch:str,tbl:str,role:int):int
+address BSKTregister
+comment "Initialize a new basket based on a specific table definition.
+roles:input =0, output=2";
+
+pattern tid(mvc:int,sch:str,tbl:str):bat[:oid]
+address BSKTtid
+comment "Collect the candidates for a basket";
+
+pattern bind(mvc:int,sch:str,tbl:str,col:str):bat[:any]
+address BSKTbind
+comment "Access the basket column, if needed add to basket catalog";
+
+pattern append(mvc:int, sch:str, tbl:str, col:str, val:any):int
+address BSKTappend
+comment "Append new tuples to a basket";
+
+pattern update(mvc:int, sch:str, tbl:str, col:str, rid:bat[:oid],val:bat[:any]):int
+address BSKTupdate
+comment "Update tuples in a basket";
+
+pattern delete(mvc:int, sch:str, tbl:str, rid:bat[:oid]):int
+address BSKTdelete
+comment "Remove tuples from a basket";
+
+pattern clear_table(sname:str,tname:str):lng
+address mvc_clear_table_wrap;
+
+pattern window(sch:str, tbl:str, elm:int):int
+address BSKTwindow
+comment "Set window size";
+
+pattern window(sch:str, tbl:str, elm:int, stride:int):int
+address BSKTwindow
+comment "Set window size and stride";
+
+unsafe pattern tumble(mvc:any, sch:str, tbl:str):int
+address BSKTtumble
+comment "Eat away and slide forward";
+
+unsafe pattern lock(mvc:any, sch:str, tbl:str):int
+address BSKTlock
+comment "Lock the basket for private use";
+
+unsafe pattern unlock(mvc:any, sch:str, tbl:str):int
+address BSKTunlock
+comment "Lock the basket for private use";
+
+pattern commit(mvc:any, sch:str, tbl:str):int
+address BSKTcommit
+comment "Make the basket available after updates";
+
+pattern reset(mvc:int,sch:str,tbl:str):int
+address BSKTreset
+comment "Remove a basket content";
+
+pattern drop(mvc:int,sch:str,tbl:str):int
+address BSKTdrop
+comment "Remove the basket";
+
+pattern status() (seen:bat[:timestamp],sch:bat[:str],tbl:bat[:str], window:bat[:int], stride:bat[:int],events:bat[:int],cycles:bat[:int], error:bat[:str])
+address BSKTstatus
+comment "Show the status of the baskets";
+
+command dump()
+address BSKTdump
+comment "Show the baskets table";

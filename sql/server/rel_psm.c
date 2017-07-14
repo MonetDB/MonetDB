@@ -616,6 +616,10 @@ sequential_block (mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk,
 			reslist = rel_psm_case(sql, restype, restypelist, s->data.lval->h, is_func);
 			break;
 		case SQL_CALL:
+		case SQL_START_CALL:
+		case SQL_STOP_CALL:
+		case SQL_PAUSE_CALL:
+		case SQL_RESUME_CALL:
 			res = rel_psm_call(sql, s->data.sym);
 			break;
 		case SQL_RETURN:
@@ -1412,6 +1416,10 @@ rel_psm(mvc *sql, symbol *s)
 		sql->type = Q_SCHEMA;
 		break;
 	case SQL_CALL:
+	case SQL_START_CALL:
+	case SQL_STOP_CALL:
+	case SQL_PAUSE_CALL:
+	case SQL_RESUME_CALL:
 		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, s->data.sym));
 		sql->type = Q_UPDATE;
 		break;

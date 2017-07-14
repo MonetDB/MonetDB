@@ -1,0 +1,141 @@
+stderr of test 'cquery10` in directory 'sql/backends/monet5` itself:
+
+
+# 10:28:05 >  
+# 10:28:05 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33494" "--set" "mapi_usock=/var/tmp/mtest-25654/.s.monetdb.33494" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/cquery//Linux/var/MonetDB/mTests_sql_backends_monet5"
+# 10:28:05 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/cquery//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 33494
+# cmdline opt 	mapi_usock = /var/tmp/mtest-25654/.s.monetdb.33494
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/cquery//Linux/var/MonetDB/mTests_sql_backends_monet5
+# cmdline opt 	gdk_debug = 536870922
+#cquery register user.cq_cycles
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#set the heartbeat of sys.cq_cycles to 1000
+#Start CQscheduler
+#cquery.scheduler started
+#cquery.scheduler paused
+#set cycles 
+#resume scheduler
+#scheduler wait 4000 ms
+#cquery: sys.cq_cycles enabled 
+#Transitions 1 enabled:
+#Run transition sys.cq_cycles cycle=3 
+#cquery.execute sys.cq_cycles locked
+
+
+
+
+
+#cquery.execute sys.cq_cycles finised 
+#create query.log table
+#beat sys.cq_cycles  2273106(1275366) disabled
+#cquery.scheduler paused
+#beat sys.cq_cycles  2273106(1475599) disabled
+#cquery.scheduler paused
+#beat sys.cq_cycles  2273106(1715873) disabled
+#cquery.scheduler paused
+#beat sys.cq_cycles  2273106(2004196) disabled
+#cquery.scheduler paused
+#beat sys.cq_cycles  2273106(2349596) enabled
+#cquery: sys.cq_cycles enabled 
+#Transitions 1 enabled:
+#Run transition sys.cq_cycles cycle=2 
+#cquery.execute sys.cq_cycles locked
+
+
+
+
+
+#cquery.execute sys.cq_cycles finised 
+#beat sys.cq_cycles  3349596(2351847) disabled
+#cquery.scheduler paused
+#beat sys.cq_cycles  3349596(2552081) disabled
+#cquery.scheduler paused
+#beat sys.cq_cycles  3349596(2792391) disabled
+#cquery.scheduler paused
+#beat sys.cq_cycles  3349596(3080735) disabled
+#cquery.scheduler paused
+#beat sys.cq_cycles  3349596(3426141) enabled
+#cquery: sys.cq_cycles enabled 
+#Transitions 1 enabled:
+#Run transition sys.cq_cycles cycle=1 
+#cquery.execute sys.cq_cycles locked
+
+
+
+
+
+#cquery.execute sys.cq_cycles finised 
+#cquery.scheduler paused
+#cquery.scheduler paused
+#cquery.scheduler paused
+#cquery.scheduler paused
+#cquery.scheduler paused
+#cquery.scheduler paused
+#pause cqueries
+#deregister queries 0 - 1
+
+# 10:28:05 >  
+# 10:28:05 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25654" "--port=33494"
+# 10:28:05 >  
+
+
+# 10:28:09 >  
+# 10:28:09 >  "Done."
+# 10:28:09 >  
+

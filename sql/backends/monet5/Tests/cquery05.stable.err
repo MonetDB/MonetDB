@@ -1,0 +1,123 @@
+stderr of test 'cquery05` in directory 'sql/backends/monet5` itself:
+
+
+# 10:28:03 >  
+# 10:28:03 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33494" "--set" "mapi_usock=/var/tmp/mtest-25654/.s.monetdb.33494" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/cquery//Linux/var/MonetDB/mTests_sql_backends_monet5"
+# 10:28:03 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/cquery//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 33494
+# cmdline opt 	mapi_usock = /var/tmp/mtest-25654/.s.monetdb.33494
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/cquery//Linux/var/MonetDB/mTests_sql_backends_monet5
+# cmdline opt 	gdk_debug = 536870922
+#cquery register user.cq_basic
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#set the heartbeat of sys.cq_basic to 1000
+#Start CQscheduler
+#cquery.scheduler started
+#cquery.scheduler paused
+#resume scheduler
+#scheduler wait 2100 ms
+#cquery: sys.cq_basic enabled 
+#Transitions 1 enabled:
+#Run transition sys.cq_basic cycle=-2147483648 
+#cquery.execute sys.cq_basic locked
+
+
+
+
+
+#cquery.execute sys.cq_basic finised 
+#create query.log table
+#beat sys.cq_basic  1827328(828776) disabled
+#cquery.scheduler paused
+#beat sys.cq_basic  1827328(1028998) disabled
+#cquery.scheduler paused
+#beat sys.cq_basic  1827328(1269289) disabled
+#cquery.scheduler paused
+#beat sys.cq_basic  1827328(1557635) disabled
+#cquery.scheduler paused
+#beat sys.cq_basic  1827328(1903059) enabled
+#cquery: sys.cq_basic enabled 
+#Transitions 1 enabled:
+#Run transition sys.cq_basic cycle=-2147483648 
+#cquery.execute sys.cq_basic locked
+
+
+
+
+
+#cquery.execute sys.cq_basic finised 
+#beat sys.cq_basic  2903059(1904361) disabled
+#cquery.scheduler paused
+#beat sys.cq_basic  2903059(2104589) disabled
+#cquery.scheduler paused
+#beat sys.cq_basic  2903059(2344851) disabled
+#cquery.scheduler paused
+#beat sys.cq_basic  2903059(2633165) disabled
+#cquery.scheduler paused
+#pause cqueries
+#deregister queries 0 - 1
+
+# 10:28:03 >  
+# 10:28:03 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25654" "--port=33494"
+# 10:28:03 >  
+
+
+# 10:28:05 >  
+# 10:28:05 >  "Done."
+# 10:28:05 >  
+

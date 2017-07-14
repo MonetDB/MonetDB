@@ -181,6 +181,7 @@ int yydebug=1;
 	select_statement_single_row
 	call_statement
 	call_procedure_statement
+	continuous_procedure_statement
 	routine_invocation
 	return_statement
 	return_value
@@ -532,6 +533,7 @@ int yydebug=1;
 %token <sval> sqlDELETE UPDATE SELECT INSERT 
 %token <sval> LATERAL LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
+%token  STOP CONTINUOUS START_CONTINUOUS STOP_CONTINUOUS PAUSE PAUSE_CONTINUOUS RESUME RESUME_CONTINUOUS
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
 %token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE
 
@@ -1970,6 +1972,19 @@ func_def:
 				append_int(f, FUNC_LANG_SQL);
 				append_int(f, $1);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
+  |	 create_or_replace CONTINUOUS PROCEDURE qname
+	'(' opt_paramlist ')'
+    routine_body
+			{ dlist *f = L();
+				append_list(f, $4);                    /* continuous query name */
+				append_list(f, $6);                    /* parameters */
+				append_symbol(f, NULL);                /* no result */
+				append_list(f, NULL);                  /* no external name */
+				append_list(f, $8);                    /* continuous query body */
+				append_int(f, F_PROC); 				   /* continuous query identifier */
+				append_int(f, FUNC_LANG_SQL);          /* for now only SQL */
+				append_int(f, $1);                     /* create or replace feature */
+			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
   |	create_or_replace sqlLOADER qname
 	'(' opt_paramlist ')'
     LANGUAGE IDENT function_body { 
@@ -2080,15 +2095,32 @@ call_statement:
     ;
 
 call_procedure_statement:
-	CALL func_ref		 	{$$ = _symbol_create_symbol(SQL_CALL, $2);}
-    ;
+	  CALL func_ref		 				{ $$ = _symbol_create_symbol(SQL_CALL, $2);}
+    | continuous_procedure_statement 	{ $$ = $1; }
+	;
+
+continuous_procedure_statement:
+	 START_CONTINUOUS func_ref
+		{ $$ = _symbol_create_symbol( SQL_START_CALL, $2 ); }
+	| STOP_CONTINUOUS qname
+		{ dlist *l = L();
+		  append_list(l, $2);
+		  $$ = _symbol_create_list( SQL_STOP_CALL, l ); }
+	| PAUSE_CONTINUOUS qname
+		{ dlist *l = L();
+		  append_list(l, $2);
+		  $$ = _symbol_create_list( SQL_PAUSE_CALL, l ); }
+	| RESUME_CONTINUOUS qname
+		{ dlist *l = L();
+		  append_list(l, $2);
+		  $$ = _symbol_create_list( SQL_RESUME_CALL, l ); }
+   ;
 
 routine_invocation: 
 	routine_name '(' argument_list ')'
 		{ dlist *l = L(); 
 		  append_list( l, $1);
 		  append_list( l, $3);
-		  assert(0);
 		  $$ = _symbol_create_list( SQL_FUNC, l);
 		}
     ;
@@ -5239,6 +5271,10 @@ non_reserved_word:
 | START		{ $$ = sa_strdup(SA, "start"); }	/* sloppy: officially reserved */
 | STATEMENT	{ $$ = sa_strdup(SA, "statement"); }	/* sloppy: officially reserved */
 | TABLE		{ $$ = sa_strdup(SA, "table"); } 	/* sloppy: officially reserved */
+
+| PAUSE		{ $$ = sa_strdup(SA, "pause"); } 	
+| RESUME	{ $$ = sa_strdup(SA, "resume"); } 
+| STOP		{ $$ = sa_strdup(SA, "stop"); } 
 
 |  CACHE	{ $$ = sa_strdup(SA, "cache"); }
 |  DATA 	{ $$ = sa_strdup(SA, "data"); }

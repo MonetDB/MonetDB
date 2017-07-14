@@ -1,0 +1,51 @@
+stdout of test 'cqstream03` in directory 'sql/backends/monet5` itself:
+
+
+# 12:58:45 >  
+# 12:58:45 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38071" "--set" "mapi_usock=/var/tmp/mtest-17764/.s.monetdb.38071" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/cquery//Linux/var/MonetDB/mTests_sql_backends_monet5"
+# 12:58:45 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:38071/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-17764/.s.monetdb.38071
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 12:58:46 >  
+# 12:58:46 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17764" "--port=38071"
+# 12:58:46 >  
+
+#create stream table tmp13 (t timestamp, sensor integer, val decimal(8,2)) ;
+#create table agenda13(i integer, msg string);
+#create procedure cq_agenda()
+#begin
+#    declare b boolean;
+#    set b = (select count(*) > 0 from tmp13);
+#    if (b)
+#    then
+#        insert into agenda13 select count(*), 'full batch' from tmp13;
+#    end if;
+#end;
+#select * from cquery.status();
+% .L1,	.L1,	.L1,	.L1,	.L1 # table_name
+% tick,	schema,	function,	state,	errors # name
+% timestamp,	clob,	clob,	clob,	clob # type
+% 26,	3,	9,	7,	0 # length
+[ NULL,	"sys",	"cq_agenda",	"waiting",	""	]
+#drop procedure cq_agenda;
+#drop table tmp13;
+#drop table agenda13;
+
+# 12:58:46 >  
+# 12:58:46 >  "Done."
+# 12:58:46 >  
+

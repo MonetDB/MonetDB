@@ -1,0 +1,9 @@
+# some simple MAL tests
+
+cquery.dump();
+
+cquery.show("unknown","query");
+
+(tick:bat[:timestamp],mod:bat[:str],fcn:bat[:str], time:bat[:lng],error:bat[:str]) := cquery.log();
+
+io.print(tick,mod,fcn,time,error);
