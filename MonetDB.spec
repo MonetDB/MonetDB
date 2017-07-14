@@ -135,9 +135,11 @@ URL: https://www.monetdb.org/
 Source: https://www.monetdb.org/downloads/sources/Jul2017/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
+# we need checkpolicy and selinux-policy-devel for the SELinux policy
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 # RHEL >= 7, and all current Fedora
 BuildRequires: systemd
+BuildRequires: checkpolicy, selinux-policy-devel, hardlink
 %endif
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -879,6 +881,62 @@ developer, but if you do want to test, this is the package you need.
 %dir %{python2_sitelib}/MonetDBtesting
 %{python2_sitelib}/MonetDBtesting/*
 
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+%package selinux
+Summary: MonetDB - Monet Database Management System
+Group: Applications/Databases
+%if "%{_selinux_policy_version}" != ""
+Requires:       selinux-policy >= %{_selinux_policy_version}
+%endif
+Requires:       %{name}-SQL-server5 = %{version}-%{release}
+Requires(post):   /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles, MonetDB-SQL-server5, MonetDB5-server
+Requires(postun): /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles, MonetDB-SQL-server5, MonetDB5-server
+BuildArch: noarch
+
+%global selinux_types %(%{__awk} '/^#[[:space:]]*SELINUXTYPE=/,/^[^#]/ { if ($3 == "-") printf "%s ", $2 }' /etc/selinux/config 2>/dev/null)
+%global selinux_variants %([ -z "%{selinux_types}" ] && echo mls targeted || echo %{selinux_types})
+
+%description selinux
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains the SELinux policy for running MonetDB under
+control of systemd.
+
+%post selinux
+for selinuxvariant in %{selinux_variants}
+do
+  /usr/sbin/semodule -s ${selinuxvariant} -i \
+    %{_datadir}/selinux/${selinuxvariant}/monetdb.pp &> /dev/null || :
+done
+/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_localstatedir}/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
+/usr/bin/systemctl try-restart monetdbd.service
+
+%postun selinux
+if [ $1 -eq 0 ] ; then
+  active=`/usr/bin/systemctl is-active monetdbd.service`
+  if [ $active = active ]; then
+    /usr/bin/systemctl stop monetdbd.service
+  fi
+  for selinuxvariant in %{selinux_variants}
+  do
+    /usr/sbin/semodule -s ${selinuxvariant} -r monetdb &> /dev/null || :
+  done
+  /sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_localstatedir}/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
+  if [ $active = active ]; then
+    /usr/bin/systemctl start monetdbd.service
+  fi
+fi
+
+%files selinux
+%defattr(-,root,root,0755)
+%doc buildtools/selinux/*
+%{_datadir}/selinux/*/monetdb.pp
+
+%endif
+
 %prep
 %setup -q
 
@@ -940,6 +998,15 @@ fi
 
 make %{?_smp_mflags}
 
+cd buildtools/selinux
+for selinuxvariant in %{selinux_variants}
+do
+  make NAME=${selinuxvariant} -f /usr/share/selinux/devel/Makefile
+  mv monetdb.pp monetdb.pp.${selinuxvariant}
+  make NAME=${selinuxvariant} -f /usr/share/selinux/devel/Makefile clean
+done
+cd -
+
 %install
 %make_install
 
@@ -954,6 +1021,14 @@ rm -f %{buildroot}%{_libdir}/*.la
 rm -f %{buildroot}%{_libdir}/monetdb5/*.la
 # internal development stuff
 rm -f %{buildroot}%{_bindir}/Maddlog
+
+for selinuxvariant in %{selinux_variants}
+do
+  install -d %{buildroot}%{_datadir}/selinux/${selinuxvariant}
+  install -p -m 644 buildtools/selinux/monetdb.pp.${selinuxvariant} \
+    %{buildroot}%{_datadir}/selinux/${selinuxvariant}/monetdb.pp
+done
+/usr/sbin/hardlink -cv %{buildroot}%{_datadir}/selinux
 
 %post -p /sbin/ldconfig
 

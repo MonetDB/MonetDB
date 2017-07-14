@@ -977,11 +977,12 @@ static str getIOactivity(void){
 			if ( fd == NULL)
 				return buf;
 			(void) snprintf(buf+len, BUFSIZ-len-2,"thr %d ",i);
-			if ((n = fread(buf+len, 1, BUFSIZ-len-2,fd)) == 0 )
-				return  buf;
+			n = fread(buf+len, 1, BUFSIZ-len-2,fd);
+			(void) fclose(fd);
+			if (n == 0)
+				return buf;
 			// extract the properties
 			mnstr_printf(GDKout,"#got io stat:%s\n",buf);
-			(void)fclose (fd);
 		 }
 	//MT_lock_unset(&GDKthreadLock);
 	buf[len++]='"';
