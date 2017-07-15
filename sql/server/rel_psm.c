@@ -804,7 +804,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 					
 					if (arg_list) {
 						char *t = arg_list;
-						arg_list = sql_message("SQLSTATE 4200 !""%s, %s", arg_list, tpe);
+						arg_list = sql_message("%s, %s", arg_list, tpe);
 						_DELETE(t);
 						_DELETE(tpe);
 					} else {
@@ -1000,7 +1000,7 @@ resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, int ty
 				
 					if (arg_list) {
 						char *t = arg_list;
-						arg_list = sql_message("SQLSTATE 4200 !""%s, %s", arg_list, tpe);
+						arg_list = sql_message("%s, %s", arg_list, tpe);
 						_DELETE(tpe);
 						_DELETE(t);
 					} else {

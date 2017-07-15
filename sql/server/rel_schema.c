@@ -1330,7 +1330,7 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te)
 			for (n = nt->columns.nelm; n; n = n->next) {
 				sql_column *c = n->data;
 				if (c->def) {
-					char *d = sql_message("SQLSTATE 42000 !""select %s;", c->def);
+					char *d = sql_message("select %s;", c->def);
 					e = rel_parse_val(sql, d, sql->emode);
 					_DELETE(d);
 				} else {
