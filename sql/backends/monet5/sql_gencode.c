@@ -547,6 +547,7 @@ backend_callinline(backend *be, Client c)
 	InstrPtr curInstr = 0;
 	MalBlkPtr curBlk = c->curprg->def;
 
+	setVarType(curBlk, 0, 0);
 	if (m->argc) {	
 		int argc = 0;
 
@@ -1028,6 +1029,15 @@ backend_create_subaggr(backend *be, sql_subaggr *f)
 	res = backend_create_func(be, f->aggr, f->res, NULL);
 	be->mb = mb;
 	return res;
+}
+
+void
+_rel_print(mvc *sql, sql_rel *rel) 
+{
+	list *refs = sa_list(sql->sa);
+	rel_print_refs(sql, GDKstdout, rel, 0, refs, 1);
+	rel_print_(sql, GDKstdout, rel, 0, refs, 1);
+	mnstr_printf(GDKstdout, "\n");
 }
 
 void
