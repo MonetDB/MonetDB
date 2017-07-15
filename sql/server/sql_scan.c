@@ -635,7 +635,7 @@ scanner_getc(struct scanner *lc)
 		/* incorrect UTF-8 sequence */
 		/* n==0: c == 10xxxxxx */
 		/* n>=6: c == 1111111x */
-		lc->errstr = "!invalid start of UTF-8 sequence";
+		lc->errstr = "SQLSTATE 42000 !invalid start of UTF-8 sequence";
 		goto error;
 	}
 
@@ -651,7 +651,7 @@ scanner_getc(struct scanner *lc)
 		if (((m = *s++) & 0xC0) != 0x80) {
 			/* incorrect UTF-8 sequence: byte is not 10xxxxxx */
 			/* this includes end-of-string (m == 0) */
-			lc->errstr = "!invalid continuation in UTF-8 sequence";
+			lc->errstr = "SQLSTATE 42000 !invalid continuation in UTF-8 sequence";
 			goto error;
 		}
 		c |= m & 0x3F;
