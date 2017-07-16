@@ -16,6 +16,7 @@ stethoscope [options]
   -P | --password=<password>
   -p | --port=<portnr>
   -h | --host=<hostname>
+  -c | --convert=<old formated file>
   -j | --json
   -o | --output=<file>
   -b | --beat=<delay> in milliseconds (default 50)

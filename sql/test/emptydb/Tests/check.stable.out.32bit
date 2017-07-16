@@ -40,6 +40,7 @@ Ready.
 \dSs
 \dSf
 \dn bam
+\dn cquery
 \dn json
 \dn profiler
 \dn sys
@@ -344,6 +345,7 @@ Ready.
 \dSf sys."var_pop"
 \dSf sys."var_samp"
 SYSTEM SCHEMA  bam
+SYSTEM SCHEMA  cquery
 SYSTEM SCHEMA  json
 SYSTEM SCHEMA  profiler
 SYSTEM SCHEMA  sys
@@ -786,6 +788,7 @@ SYSTEM FUNCTION  sys.xor
 SYSTEM FUNCTION  sys.year
 SYSTEM FUNCTION  sys.zero_or_one
 CREATE SCHEMA "bam" AUTHORIZATION "monetdb";
+CREATE SCHEMA "cquery" AUTHORIZATION "monetdb";
 CREATE SCHEMA "json" AUTHORIZATION "monetdb";
 CREATE SCHEMA "profiler" AUTHORIZATION "monetdb";
 CREATE SCHEMA "sys";
@@ -1298,6 +1301,7 @@ drop function pcre_replace(string, string, string, string);
 % varchar,	int,	int,	boolean # type
 % 8,	1,	1,	5 # length
 [ "bam",	3,	3,	true	]
+[ "cquery",	3,	3,	true	]
 [ "json",	3,	3,	true	]
 [ "profiler",	3,	3,	true	]
 [ "sys",	2,	3,	true	]
@@ -1761,7 +1765,8 @@ drop function pcre_replace(string, string, string, string);
 % sys.s,	.z,	.z,	.z # table_name
 % name,	name,	mod,	func # name
 % varchar,	varchar,	varchar,	varchar # type
-% 0,	0,	0,	0 # length
+% 6,	6,	6,	6 # length
+[ "cquery",	"tumble",	"cquery",	"tumble"	]
 #with
 #arg0 (id, id0, name0, type0, type_digits0, type_scale0, inout0) as (select f.id, a0.id, a0.name, a0.type, a0.type_digits, a0.type_scale, a0.inout from sys.functions f left outer join args a0 on a0.func_id = f.id and a0.number = 0),
 #arg1 (id, id0, name0, type0, type_digits0, type_scale0, inout0, id1, name1, type1, type_digits1, type_scale1, inout1) as (select arg0.*, a1.id, a1.name, a1.type, a1.type_digits, a1.type_scale, a1.inout from arg0 left outer join args a1 on a1.func_id = arg0.id and a1.number = 1),
@@ -1780,6 +1785,29 @@ drop function pcre_replace(string, string, string, string);
 [ "bam",	"sam_export",	"create procedure bam.sam_export(output_path string) external name bam.sam_export;",	"bam",	1,	"procedure",	true,	false,	false,	"output_path",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "bam",	"seq_char",	"create function bam.seq_char(ref_pos int, alg_seq string, alg_pos int, alg_cigar string) returns char(1) external name bam.seq_char;",	"bam",	1,	"function",	false,	false,	false,	"result",	"char",	1,	0,	"out",	"ref_pos",	"int",	32,	0,	"in",	"alg_seq",	"clob",	0,	0,	"in",	"alg_pos",	"int",	32,	0,	"in",	"alg_cigar",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "bam",	"seq_length",	"create function bam.seq_length(cigar string) returns int external name bam.seq_length;",	"bam",	1,	"function",	false,	false,	false,	"result",	"int",	32,	0,	"out",	"cigar",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "cquery",	"cycles",	"create procedure cquery.cycles(cycles integer) external name cquery.cycles;",	"cquery",	1,	"procedure",	true,	false,	false,	"cycles",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "cquery",	"cycles",	"create procedure cquery.cycles(sch string, cqname string, cycles integer) external name cquery.cycles;",	"cquery",	1,	"procedure",	true,	false,	false,	"sch",	"clob",	0,	0,	"in",	"cqname",	"clob",	0,	0,	"in",	"cycles",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "cquery",	"deregister",	"create procedure cquery.deregister() external name cquery.deregister;",	"cquery",	1,	"procedure",	true,	false,	false,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "cquery",	"deregister",	"create procedure cquery.deregister(sch string, cqname string) external name cquery.deregister;",	"cquery",	1,	"procedure",	true,	false,	false,	"sch",	"clob",	0,	0,	"in",	"cqname",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "cquery",	"dump",	"create procedure cquery.dump() external name cquery.dump;",	"cquery",	1,	"procedure",	true,	false,	false,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "cquery",	"heartbeat",	"create procedure cquery.heartbeat(\"schema\" string, qryname string, msec integer) external name cquery.heartbeat;",	"cquery",	1,	"procedure",	true,	false,	false,	"schema",	"clob",	0,	0,	"in",	"qryname",	"clob",	0,	0,	"in",	"msec",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "cquery",	"heartbeat",	"create procedure cquery.heartbeat(msec integer) external name cquery.heartbeat;",	"cquery",	1,	"procedure",	true,	false,	false,	"msec",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "cquery",	"log",	"create function cquery.log() returns table(tick timestamp, \"schema\" string, \"function\" string, time bigint, errors string) external name cquery.log;",	"cquery",	1,	"table function",	false,	false,	false,	"tick",	"timestamp",	7,	0,	"out",	"schema",	"clob",	0,	0,	"out",	"function",	"clob",	0,	0,	"out",	"time",	"bigint",	64,	0,	"out",	"errors",	"clob",	0,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "cquery",	"pause",	"create procedure cquery.pause() external name cquery.pause;",	"cquery",	1,	"procedure",	true,	false,	false,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "cquery",	"pause",	"create procedure cquery.pause(sch string, cqname string) external name cquery.pause;",	"cquery",	1,	"procedure",	true,	false,	false,	"sch",	"clob",	0,	0,	"in",	"cqname",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "cquery",	"register",	"create procedure cquery.register(sch string, cqname string) external name cquery.register;",	"cquery",	1,	"procedure",	true,	false,	false,	"sch",	"clob",	0,	0,	"in",	"cqname",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "cquery",	"resume",	"create procedure cquery.resume() external name cquery.resume;",	"cquery",	1,	"procedure",	true,	false,	false,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "cquery",	"resume",	"create procedure cquery.resume(sch string, cqname string) external name cquery.resume;",	"cquery",	1,	"procedure",	true,	false,	false,	"sch",	"clob",	0,	0,	"in",	"cqname",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "cquery",	"show",	"create function cquery.show(\"schema\" string, qryname string) returns string external name cquery.show;",	"cquery",	1,	"function",	false,	false,	false,	"result",	"clob",	0,	0,	"out",	"schema",	"clob",	0,	0,	"in",	"qryname",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "cquery",	"status",	"create function cquery.status() returns table(tick timestamp, \"schema\" string, \"function\" string, state string, errors string) external name cquery.status;",	"cquery",	1,	"table function",	false,	false,	false,	"tick",	"timestamp",	7,	0,	"out",	"schema",	"clob",	0,	0,	"out",	"function",	"clob",	0,	0,	"out",	"state",	"clob",	0,	0,	"out",	"errors",	"clob",	0,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "cquery",	"streams",	"create function cquery.streams() returns table(tick timestamp, \"schema\" string, \"function\" string, winsize integer, stride integer, events integer, cycles integer, errors string) external name basket.status;",	"basket",	1,	"table function",	false,	false,	false,	"tick",	"timestamp",	7,	0,	"out",	"schema",	"clob",	0,	0,	"out",	"function",	"clob",	0,	0,	"out",	"winsize",	"int",	32,	0,	"out",	"stride",	"int",	32,	0,	"out",	"events",	"int",	32,	0,	"out",	"cycles",	"int",	32,	0,	"out",	"errors",	"clob",	0,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "cquery",	"streams",	"create procedure cquery.streams() external name basket.dump;",	"basket",	1,	"procedure",	true,	false,	false,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "cquery",	"summary",	"create function cquery.summary() returns table(\"schema\" string, \"function\" string, runs int, totaltime bigint) begin return select \"schema\",\"function\", count(*), sum(time) from cquery.log() group by \"schema\",\"function\"; end;",	"user",	2,	"table function",	false,	false,	false,	"schema",	"clob",	0,	0,	"out",	"function",	"clob",	0,	0,	"out",	"runs",	"int",	32,	0,	"out",	"totaltime",	"bigint",	64,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "cquery",	"tumble",	"create procedure cquery.tumble(\"schema\" string, \"table\" string, elem integer) external name cquery.tumble;",	"cquery",	1,	"procedure",	true,	false,	false,	"schema",	"clob",	0,	0,	"in",	"table",	"clob",	0,	0,	"in",	"elem",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "cquery",	"wait",	"create procedure cquery.wait(ms bigint) external name cquery.wait;",	"cquery",	1,	"procedure",	true,	false,	false,	"ms",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "cquery",	"wait",	"create procedure cquery.wait(ms integer) external name cquery.wait;",	"cquery",	1,	"procedure",	true,	false,	false,	"ms",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "cquery",	"window",	"create procedure cquery.window(\"schema\" string, \"table\" string, elem integer) external name basket.window;",	"basket",	1,	"procedure",	true,	false,	false,	"schema",	"clob",	0,	0,	"in",	"table",	"clob",	0,	0,	"in",	"elem",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "cquery",	"window",	"create procedure cquery.window(\"schema\" string, \"table\" string, elem integer, stride integer) external name basket.window;",	"basket",	1,	"procedure",	true,	false,	false,	"schema",	"clob",	0,	0,	"in",	"table",	"clob",	0,	0,	"in",	"elem",	"int",	32,	0,	"in",	"stride",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "json",	"filter",	"create function json.filter(js json, name bigint) returns json external name json.filter;",	"json",	1,	"function",	false,	false,	false,	"result",	"json",	0,	0,	"out",	"js",	"json",	0,	0,	"in",	"name",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "json",	"filter",	"create function json.filter(js json, name integer) returns json external name json.filter;",	"json",	1,	"function",	false,	false,	false,	"result",	"json",	0,	0,	"out",	"js",	"json",	0,	0,	"in",	"name",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "json",	"filter",	"create function json.filter(js json, name tinyint) returns json external name json.filter;",	"json",	1,	"function",	false,	false,	false,	"result",	"json",	0,	0,	"out",	"js",	"json",	0,	0,	"in",	"name",	"tinyint",	8,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -4347,6 +4375,8 @@ drop function pcre_replace(string, string, string, string);
 [ "current_time"	]
 [ "current_timestamp"	]
 [ "curtime"	]
+[ "cycles"	]
+[ "cycles"	]
 [ "date_to_str"	]
 [ "day"	]
 [ "day"	]
@@ -4376,12 +4406,15 @@ drop function pcre_replace(string, string, string, string);
 [ "dependencies_tables_on_views"	]
 [ "dependencies_views_on_functions"	]
 [ "dependencies_views_on_triggers"	]
+[ "deregister"	]
+[ "deregister"	]
 [ "diff"	]
 [ "diff"	]
 [ "difference"	]
 [ "difference"	]
 [ "difference"	]
 [ "droporderindex"	]
+[ "dump"	]
 [ "editdistance"	]
 [ "editdistance"	]
 [ "editdistance"	]
@@ -4445,6 +4478,8 @@ drop function pcre_replace(string, string, string, string);
 [ "hash"	]
 [ "hashsize"	]
 [ "heapsize"	]
+[ "heartbeat"	]
+[ "heartbeat"	]
 [ "host"	]
 [ "hostmask"	]
 [ "hour"	]
@@ -4527,6 +4562,7 @@ drop function pcre_replace(string, string, string, string);
 [ "locate"	]
 [ "locate"	]
 [ "locate"	]
+[ "log"	]
 [ "log"	]
 [ "log"	]
 [ "log10"	]
@@ -4655,6 +4691,8 @@ drop function pcre_replace(string, string, string, string);
 [ "patindex"	]
 [ "pause"	]
 [ "pause"	]
+[ "pause"	]
+[ "pause"	]
 [ "pi"	]
 [ "power"	]
 [ "power"	]
@@ -4694,6 +4732,7 @@ drop function pcre_replace(string, string, string, string);
 [ "rand"	]
 [ "rand"	]
 [ "rank"	]
+[ "register"	]
 [ "rejects"	]
 [ "repeat"	]
 [ "repeat"	]
@@ -4713,6 +4752,8 @@ drop function pcre_replace(string, string, string, string);
 [ "replicate"	]
 [ "replicatick"	]
 [ "restart"	]
+[ "resume"	]
+[ "resume"	]
 [ "resume"	]
 [ "resume"	]
 [ "reuse"	]
@@ -5282,6 +5323,7 @@ drop function pcre_replace(string, string, string, string);
 [ "setsession"	]
 [ "settimeout"	]
 [ "settimeout"	]
+[ "show"	]
 [ "shpattach"	]
 [ "shpload"	]
 [ "shpload"	]
@@ -5663,6 +5705,7 @@ drop function pcre_replace(string, string, string, string);
 [ "st_ymin"	]
 [ "st_z"	]
 [ "start"	]
+[ "status"	]
 [ "stddev_pop"	]
 [ "stddev_pop"	]
 [ "stddev_pop"	]
@@ -5694,6 +5737,8 @@ drop function pcre_replace(string, string, string, string);
 [ "str_to_date"	]
 [ "str_to_time"	]
 [ "str_to_timestamp"	]
+[ "streams"	]
+[ "streams"	]
 [ "strings"	]
 [ "strings"	]
 [ "strings"	]
@@ -5721,6 +5766,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sum"	]
 [ "sum"	]
 [ "sum"	]
+[ "summary"	]
 [ "tan"	]
 [ "tan"	]
 [ "tanh"	]
@@ -5745,6 +5791,7 @@ drop function pcre_replace(string, string, string, string);
 [ "truncate"	]
 [ "truncate"	]
 [ "truncate"	]
+[ "tumble"	]
 [ "ucase"	]
 [ "ucase"	]
 [ "ucase"	]
@@ -5773,8 +5820,12 @@ drop function pcre_replace(string, string, string, string);
 [ "var_samp"	]
 [ "var_samp"	]
 [ "var_samp"	]
+[ "wait"	]
+[ "wait"	]
 [ "week"	]
 [ "weekofyear"	]
+[ "window"	]
+[ "window"	]
 [ "xor"	]
 [ "year"	]
 [ "year"	]

@@ -31,6 +31,7 @@ headers_sql = {
 		41_md5sum.sql \
 		45_uuid.sql \
 		46_profiler.sql \
+		50_cquery.sql \
 		51_sys_schema_extension.sql \
 		60_wlcr.sql \
 		75_storagemodel.sql \

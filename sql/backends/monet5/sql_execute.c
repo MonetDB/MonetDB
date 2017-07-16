@@ -24,6 +24,7 @@
 #include "sql_env.h"
 #include "sql_mvc.h"
 #include "sql_user.h"
+#include "sql_cquery.h"
 #include <sql_optimizer.h>
 #include <sql_datetime.h>
 #include <rel_optimizer.h>
@@ -349,7 +350,31 @@ SQLrun(Client c, backend *be, mvc *m){
 			msg = runMAL(c, mb, 0, 0);
 			stopTrace(0);
 		} else {
-			msg = runMAL(c, mb, 0, 0);
+			switch( m->continuous){
+			case mod_start_continuous:
+				//mnstr_printf(c->fdout, "#Start continuous query\n");
+				CQregisterMAL(c,mb, 0,0);
+				m->continuous = 0;
+				msg = MAL_SUCCEED;
+				break;
+			case mod_stop_continuous:
+				//mnstr_printf(c->fdout, "#Stop continuous query\n");
+				m->continuous = 0;
+				msg = MAL_SUCCEED;
+				break;
+			case mod_pause_continuous:
+				//mnstr_printf(c->fdout, "#Pause continuous query\n");
+				m->continuous = 0;
+				msg = MAL_SUCCEED;
+				break;
+			case mod_resume_continuous:
+				//mnstr_printf(c->fdout, "#Resume continuous query\n");
+				m->continuous = 0;
+				msg = MAL_SUCCEED;
+				break;
+			default:
+				msg = runMAL(c, mb, 0, 0);
+			}
 		}
 	}
 

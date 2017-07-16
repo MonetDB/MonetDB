@@ -128,7 +128,30 @@ Ready.
 % sys.systemfunctions # table_name
 % function_id # name
 % int # type
-% 1 # length
+% 4 # length
+[ 7641	]
+[ 7645	]
+[ 7647	]
+[ 7651	]
+[ 7653	]
+[ 7657	]
+[ 7659	]
+[ 7663	]
+[ 7666	]
+[ 7669	]
+[ 7672	]
+[ 7677	]
+[ 7682	]
+[ 7685	]
+[ 7690	]
+[ 7695	]
+[ 7701	]
+[ 7708	]
+[ 7714	]
+[ 7721	]
+[ 7731	]
+[ 7736	]
+[ 7738	]
 #SELECT * FROM sys.args WHERE func_id NOT IN (SELECT id FROM sys.functions);
 % sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args # table_name
 % id,	func_id,	name,	type,	type_digits,	type_scale,	inout,	number # name

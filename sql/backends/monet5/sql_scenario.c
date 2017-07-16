@@ -462,7 +462,7 @@ SQLinitClient(Client c)
 	if (c->sqlcontext == 0) {
 		m = mvc_create(c->idx, 0, SQLdebug, c->fdin, c->fdout);
 		global_variables(m, "monetdb", "sys");
-		if (isAdministrator(c) || strcmp(c->scenario, "msql") == 0)	/* console should return everything */
+		if (isAdministrator(c) || (c->scenario && strcmp(c->scenario, "msql") == 0))	/* console should return everything */
 			m->reply_size = -1;
 		be = (void *) backend_create(m, c);
 		if( be == NULL)

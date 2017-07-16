@@ -616,10 +616,22 @@ sequential_block (mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk,
 			reslist = rel_psm_case(sql, restype, restypelist, s->data.lval->h, is_func);
 			break;
 		case SQL_CALL:
+			res = rel_psm_call(sql, s->data.sym);
+			break;
 		case SQL_START_CALL:
+			sql->continuous = mod_start_continuous;
+			res = rel_psm_call(sql, s->data.sym);
+			break;
 		case SQL_STOP_CALL:
+			sql->continuous = mod_stop_continuous;
+			res = rel_psm_call(sql, s->data.sym);
+			break;
 		case SQL_PAUSE_CALL:
+			sql->continuous = mod_pause_continuous;
+			res = rel_psm_call(sql, s->data.sym);
+			break;
 		case SQL_RESUME_CALL:
+			sql->continuous = mod_resume_continuous;
 			res = rel_psm_call(sql, s->data.sym);
 			break;
 		case SQL_RETURN:
@@ -1416,10 +1428,26 @@ rel_psm(mvc *sql, symbol *s)
 		sql->type = Q_SCHEMA;
 		break;
 	case SQL_CALL:
+		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, s->data.sym));
+		sql->type = Q_UPDATE;
+		break;
 	case SQL_START_CALL:
+		sql->continuous = mod_start_continuous;
+		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, s->data.sym));
+		sql->type = Q_UPDATE;
+		break;
 	case SQL_STOP_CALL:
+		sql->continuous = mod_stop_continuous;
+		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, s->data.sym));
+		sql->type = Q_UPDATE;
+		break;
 	case SQL_PAUSE_CALL:
+		sql->continuous = mod_pause_continuous;
+		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, s->data.sym));
+		sql->type = Q_UPDATE;
+		break;
 	case SQL_RESUME_CALL:
+		sql->continuous = mod_resume_continuous;
 		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, s->data.sym));
 		sql->type = Q_UPDATE;
 		break;

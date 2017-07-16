@@ -421,6 +421,9 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		if (getFunctionId(p) == singleRef) return FALSE;
 		return TRUE;
 	}
+	if (getModuleId(p) == basketRef || getModuleId(p) == cqueryRef){
+		return TRUE;
+	}
 	if( getModuleId(p) == mapiRef){
 		if( getFunctionId(p) == rpcRef)
 			return TRUE;
@@ -442,6 +445,8 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 	if ( getModuleId(p) == wlcRef)
 		return TRUE;
 	if ( getModuleId(p) == remoteRef)
+		return TRUE;
+	if ( getModuleId(p) == cqueryRef)
 		return TRUE;
 	return FALSE;
 }

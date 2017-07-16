@@ -2102,18 +2102,12 @@ call_procedure_statement:
 continuous_procedure_statement:
 	 START_CONTINUOUS func_ref
 		{ $$ = _symbol_create_symbol( SQL_START_CALL, $2 ); }
-	| STOP_CONTINUOUS qname
-		{ dlist *l = L();
-		  append_list(l, $2);
-		  $$ = _symbol_create_list( SQL_STOP_CALL, l ); }
-	| PAUSE_CONTINUOUS qname
-		{ dlist *l = L();
-		  append_list(l, $2);
-		  $$ = _symbol_create_list( SQL_PAUSE_CALL, l ); }
-	| RESUME_CONTINUOUS qname
-		{ dlist *l = L();
-		  append_list(l, $2);
-		  $$ = _symbol_create_list( SQL_RESUME_CALL, l ); }
+	| STOP_CONTINUOUS func_ref
+		{ $$ = _symbol_create_symbol( SQL_STOP_CALL, $2 ); }
+	| PAUSE_CONTINUOUS func_ref
+		{ $$ = _symbol_create_symbol( SQL_PAUSE_CALL, $2 ); }
+	| RESUME_CONTINUOUS func_ref
+		{ $$ = _symbol_create_symbol( SQL_RESUME_CALL, $2 ); }
    ;
 
 routine_invocation: 

@@ -33,7 +33,7 @@
    transitions eligble to fire, i.e. have non-empty baskets or whose heartbeat ticks, which are then actived one after the other.
    Future implementations may relax this rigid scheme using a parallel implementation of the scheduler, such that each 
    transition by itself can decide to fire. However, when resources are limited to handle all complex continuous queries, 
-   it may pay of to invest into a domain specif scheduler.
+   it may pay of to invest into a domain specific scheduler.
 
    The current implementation is limited to a fixed number of transitions. The scheduler can be stopped and restarted
    at any time. Even selectively for specific baskets. This provides the handle to debug a system before being deployed.
@@ -374,7 +374,7 @@ CQanalysis(Client cntxt, MalBlkPtr mb, int idx)
 
 // locate the SQL procedure in the catalog
 static str
-IOTprocedureStmt(Client cntxt, MalBlkPtr mb, str schema, str nme)
+CQprocedureStmt(Client cntxt, MalBlkPtr mb, str schema, str nme)
 {
 	mvc *m = NULL;
 	str msg = MAL_SUCCEED;
@@ -405,10 +405,10 @@ IOTprocedureStmt(Client cntxt, MalBlkPtr mb, str schema, str nme)
 	return createException(SQL,"cquery.register","SQL procedure missing");
 }
 
+
 static str
-CQregisterInternal(Client cntxt, str modnme, str fcnnme, int action)
+CQregisterInternal(Client cntxt, str modnme, str fcnnme)
 {
-	int i;
 	InstrPtr sig,q;
 	str msg = MAL_SUCCEED;
 	MalBlkPtr mb, nmb;
@@ -424,16 +424,13 @@ CQregisterInternal(Client cntxt, str modnme, str fcnnme, int action)
 		return createException(SQL,"cquery.register","Could not find SQL procedure");
 
 	mb = s->def;
-	msg = IOTprocedureStmt(cntxt, mb, modnme, fcnnme);
+	msg = CQprocedureStmt(cntxt, mb, modnme, fcnnme);
 	if( msg)
 		return msg;
 	sig = getInstrPtr(mb,0);
 
-	MT_lock_set(&ttrLock);
-	if (pnettop == MAXCQ) {
-		msg = createException(MAL,"cquery.register","Too many transitions");
-		goto finish;
-	}
+	if (pnettop == MAXCQ) 
+		return createException(MAL,"cquery.register","Too many transitions");
 
 #ifdef DEBUG_CQUERY
 	fprintf(stderr, "#cquery register %s.%s\n", getModuleId(sig),getFunctionId(sig));
@@ -454,37 +451,49 @@ CQregisterInternal(Client cntxt, str modnme, str fcnnme, int action)
 #ifdef DEBUG_CQUERY
 	fprintFunction(stderr, nmb, 0, LIST_MAL_ALL);
 #endif
+	msg =  CQregisterMAL(cntxt, nmb,0,0);
+	if( msg != MAL_SUCCEED){
+		freeSymbol(s);
+	}
+	return msg;
+}
+
+str
+CQregisterMAL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
+{
+	int i;
+	str msg = MAL_SUCCEED;
+	InstrPtr sig = getInstrPtr(mb,0);
+	(void) pci;
+	(void) stk;
 
 	i = CQlocate(getModuleId(sig), getFunctionId(sig));
-	if(i != pnettop && action != RESTART_CQUERY) {
-		freeSymbol(s);
-		msg = createException(SQL,"cquery.register","Duplicate registration of continuous procedure %s.%s.\n", modnme, fcnnme);
+	if(i != pnettop ){
+		msg = createException(SQL,"cquery.register","Duplicate registration of continuous procedure %s.%s.\n",
+		getModuleId(sig), getFunctionId(sig));
 		goto finish;
 	}
-	if(action == RESTART_CQUERY) {
-		CQfree(i);
-	}
-
-	pnet[pnettop].mod = GDKstrdup(modnme);
-	pnet[pnettop].fcn = GDKstrdup(fcnnme);
-	pnet[pnettop].mb = nmb;
-	pnet[pnettop].stk = prepareMALstack(nmb, nmb->vsize);
-	pnet[pnettop].cycles = int_nil;
-	pnet[pnettop].beats = lng_nil;
-	pnet[pnettop].run  = lng_nil;
-	pnet[pnettop].seen = *timestamp_nil;
-	pnet[pnettop].status = (action != REGISTER_CQUERY) ? CQWAIT : CQPAUSE;
-
 	msg = CQanalysis(cntxt, mb, pnettop);
 	if( msg != MAL_SUCCEED) {
 		CQfree(pnettop); // restore the entry
 		goto finish;
 	}
+
+	MT_lock_set(&ttrLock);
+	pnet[pnettop].mod = GDKstrdup(getModuleId(sig));
+	pnet[pnettop].fcn = GDKstrdup(getFunctionId(sig));
+	pnet[pnettop].mb = mb;
+	pnet[pnettop].stk = prepareMALstack(mb, mb->vsize);
+	pnet[pnettop].cycles = int_nil;
+	pnet[pnettop].beats = lng_nil;
+	pnet[pnettop].run  = lng_nil;
+	pnet[pnettop].seen = *timestamp_nil;
+	pnet[pnettop].status = CQWAIT;
 	pnettop++;
 
-	finish:
 	MT_lock_unset(&ttrLock);
-	if(!msg && action != RESTART_CQUERY && CQinit == 0) { /* start the scheduler if needed */
+finish:
+	if(!msg && CQinit == 0) { /* start the scheduler if needed */
 		msg = CQstartScheduler();
 	}
 	return msg;
@@ -497,7 +506,7 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str fcnnme = *getArgReference_str(stk, pci, 2);
 	(void) mb;
 
-	return CQregisterInternal(cntxt, modnme, fcnnme, REGISTER_CQUERY);
+	return CQregisterInternal(cntxt, modnme, fcnnme);
 }
 
 static str
@@ -998,12 +1007,11 @@ CQstartScheduler(void)
 {
 	Client cntxt;
 	MT_Id pid;
-	//stream *fin, *fout;
+	stream *fin, *fout;
 
 #ifdef DEBUG_CQUERY
 	fprintf(stderr, "#Start CQscheduler\n");
 #endif
-/*
 	fin =  open_rastream("cquery_in");
 	if( fin == NULL)
 		throw(MAL, "cquery.startScheduler","Could not create input file");
@@ -1011,8 +1019,10 @@ CQstartScheduler(void)
 	if( fout == NULL)
 		throw(MAL, "cquery.startScheduler","Could not create output file");
 	cntxt = MCinitClient(0,bstream_create(fin,0),fout);
-*/
+	
+/*
 	cntxt = MCinitClient(0,0,0);
+*/
 	if( cntxt == NULL)
 		throw(MAL, "cquery.startScheduler","Could not initialize CQscheduler");
 	if( SQLinitClient(cntxt) != MAL_SUCCEED)

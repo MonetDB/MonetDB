@@ -66,6 +66,12 @@
 /* locked needs unlocking */
 #define mod_locked 	16 
 
+/* define the continuous query states */
+#define mod_start_continuous	1
+#define mod_stop_continuous 	2
+#define mod_pause_continuous 	3
+#define mod_resume_continuous 	4
+
 typedef struct sql_var {
 	const char *name;
 	atom a;
@@ -116,6 +122,7 @@ typedef struct mvc {
 
 	char emode;		/* execution mode */
 	char emod;		/* execution modifier */
+	int  continuous;/* scheduling action */
 
 	sql_session *session;	
 

@@ -81,8 +81,10 @@ basket00
 
 epoch
 
+# use the continuous primitives
 cq00
 
+# direct script procedure interface 
 cquery00
 cquery05
 cquery10

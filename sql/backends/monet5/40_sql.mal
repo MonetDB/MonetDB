@@ -6,6 +6,8 @@
 
 # This loads the MonetDB/SQL module
 include sql;
+include basket;
+include cquery;
 include sqlcatalog;
 include sql_transaction;
 include wlr;

@@ -44,6 +44,13 @@ pattern optimizer.volcano(mod:str, fcn:str):str
 address OPTwrapper
 comment "Simulate volcano style execution";
 
+#opt_cquery
+pattern optimizer.cquery():str
+address OPTwrapper;
+pattern optimizer.cquery(mod:str, fcn:str):str 
+address OPTwrapper
+comment "Simulate cquery style execution";
+
 #opt_constants
 pattern optimizer.constants():str
 address OPTwrapper;

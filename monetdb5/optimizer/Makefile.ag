@@ -24,6 +24,7 @@ lib_optimizer = {
 		opt_candidates.c opt_candidates.h \
 		opt_constants.c opt_constants.h \
 		opt_costModel.c opt_costModel.h \
+		opt_cquery.c opt_cquery.h \
 		opt_dataflow.c opt_dataflow.h \
 		opt_deadcode.c opt_deadcode.h \
 		opt_emptybind.c opt_emptybind.h \

@@ -48,6 +48,7 @@
 #include "opt_remap.h"
 #include "opt_remoteQueries.h"
 #include "opt_reorder.h"
+#include "opt_cquery.h"
 #include "opt_volcano.h"
 #include "opt_wlc.h"
 
@@ -70,6 +71,7 @@ struct{
 	{"garbageCollector", &OPTgarbageCollectorImplementation,0,0},
 	{"generator", &OPTgeneratorImplementation,0,0},
 	{"inline", &OPTinlineImplementation,0,0},
+    {"cquery", &OPTcqueryImplementation,0,0},
 	{"jit", &OPTjitImplementation,0,0},
 	{"json", &OPTjsonImplementation,0,0},
 	{"matpack", &OPTmatpackImplementation,0,0},
