@@ -714,8 +714,10 @@ MALengine(Client c)
 		msg = (str) runMAL(c, prg->def, 0, c->glb);
 	if (msg) {
 		/* ignore "internal" exceptions */
-		if (strstr(msg, "client.quit") )
+		if (strstr(msg, "client.quit") ) {
+			freeException(msg);
 			msg = MAL_SUCCEED;
+		}
 	}
 	MSresetVariables(c, prg->def, c->glb, 0);
 	resetMalBlk(prg->def, 1);

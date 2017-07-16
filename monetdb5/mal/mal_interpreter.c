@@ -524,7 +524,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		pci = getInstrPtr(mb, stkpc);
 		if (cntxt->mode == FINISHCLIENT){
 			stkpc = stoppc;
-			ret= createException(MAL, "mal.interpreter", "prematurely stopped client");
+			if (ret == NULL)
+				ret= createException(MAL, "mal.interpreter", "prematurely stopped client");
 			break;
 		}
 		if (cntxt->itrace || mb->trap || stk->status) {
@@ -1187,7 +1188,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						strcat(new,"\n");
 					strcat(new,"!");
 					strcat(new,n);
-					//freeException(ret);
+					freeException(ret);
 					ret = new;
 				}
 			}
