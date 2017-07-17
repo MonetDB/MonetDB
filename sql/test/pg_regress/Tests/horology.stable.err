@@ -217,17 +217,17 @@ QUERY = SELECT timestamp without time zone '12/31/294276' - timestamp without ti
 ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting SCOLON in: "select timestamp without"
 MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT (timestamp without time zone 'today' = (timestamp without time zone 'yesterday' + interval '1 day')) as "True";
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' in: "select (timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = SELECT (timestamp without time zone 'today' = (timestamp without time zone 'tomorrow' - interval '1 day')) as "True";
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' in: "select (timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = SELECT (timestamp without time zone 'tomorrow' = (timestamp without time zone 'yesterday' + interval '2 days')) as "True";
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' in: "select (timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = SELECT (timestamp without time zone 'tomorrow' > 'now') as "True";
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' in: "select (timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = SELECT date '1994-01-01' + time '11:00' AS "Jan_01_1994_11am";
 ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such binary operator 'sql_add(date,time)'
 MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
@@ -387,28 +387,28 @@ ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected ')' i
 MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT (timestamp without time zone '2000-11-27', timestamp without time zone '2000-11-28')
           OVERLAPS (timestamp without time zone '2000-11-27 12:00', timestamp without time zone '2000-11-30') AS "True";
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' in: "select (timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = SELECT (timestamp without time zone '2000-11-26', timestamp without time zone '2000-11-27')
           OVERLAPS (timestamp without time zone '2000-11-27 12:00', timestamp without time zone '2000-11-30') AS "False";
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' in: "select (timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = SELECT (timestamp without time zone '2000-11-27', timestamp without time zone '2000-11-28')
           OVERLAPS (timestamp without time zone '2000-11-27 12:00', interval '1 day') AS "True";
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' in: "select (timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = SELECT (timestamp without time zone '2000-11-27', interval '12 hours')
           OVERLAPS (timestamp without time zone '2000-11-27 12:00', timestamp without time zone '2000-11-30') AS "False";
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' in: "select (timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = SELECT (timestamp without time zone '2000-11-27', interval '12 hours')
           OVERLAPS (timestamp without time zone '2000-11-27', interval '12 hours') AS "True";
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' in: "select (timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = SELECT (timestamp without time zone '2000-11-27', interval '12 hours')
           OVERLAPS (timestamp without time zone '2000-11-27 12:00', interval '12 hours') AS "False";
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' in: "select (timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = SELECT (time '00:00', time '01:00')
           OVERLAPS (time '00:30', time '01:30') AS "True";
 ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting NOT_IN or sqlIN in: "select (time '00:00', time '01:00')

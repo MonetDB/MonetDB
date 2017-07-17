@@ -228,8 +228,8 @@ QUERY = select null::int >= any ('{}');
 ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Unexpected symbol (:)
 MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select 33.4 = any (array[1,2,3]);
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting ')' in: "select 33.4 = any (array["
-MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting ')' or OR in: "select 33.4 = any (array["
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = select 33.4 > all (array[1,2,3]);
 ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting SELECT or WITH or '(' or VALUES in: "select 33.4 > all (array"
 MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
