@@ -917,6 +917,7 @@ rel_bind_path_(sql_rel *rel, sql_exp *e, list *path )
 	case op_insert:
 	case op_update:
 	case op_delete:
+	case op_truncate:
 		break;
 	case op_ddl:
 		break;

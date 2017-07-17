@@ -163,7 +163,8 @@ typedef enum operator_type {
 	op_sample,
 	op_insert, 	/* insert(l=table, r insert expressions) */ 
 	op_update, 	/* update(l=table, r update expressions) */
-	op_delete 	/* delete(l=table, r delete expression) */
+	op_delete, 	/* delete(l=table, r delete expression) */
+	op_truncate /* trucante(l=table) */
 } operator_type;
 
 #define is_atom(et) \
@@ -222,7 +223,7 @@ typedef enum operator_type {
 #define is_topn(op) \
 	(op == op_topn)
 #define is_modify(op) \
-	(op == op_insert || op == op_update || op == op_delete)
+	(op == op_insert || op == op_update || op == op_delete || op == op_truncate)
 #define is_sample(op) \
 	(op == op_sample)
 

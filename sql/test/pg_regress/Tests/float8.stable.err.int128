@@ -89,8 +89,8 @@ ERROR = !conversion of string 'Infinity' to type dbl failed.
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT cast('nan' as double) / cast('nan' as double);
 ERROR = !conversion of string 'nan' to type dbl failed.
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
-QUERY = SELECT '' AS five, f.f1, truncate(f1) AS trunc_f1
+MAPI  = (monetdb) /var/tmp/mtest-3103/.s.monetdb.32847
+QUERY = SELECT '' AS five, f.f1, sys."truncate"(f1) AS trunc_f1
            FROM FLOAT8_TBL f;
 ERROR = !SELECT: no such unary operator 'truncate(double)'
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395

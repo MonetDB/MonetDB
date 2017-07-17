@@ -642,7 +642,8 @@ sequential_block (mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk,
 		case SQL_BINCOPYFROM:
 		case SQL_INSERT:
 		case SQL_UPDATE:
-		case SQL_DELETE: {
+		case SQL_DELETE:
+		case SQL_TRUNCATE: {
 			sql_rel *r = rel_updates(sql, s);
 			if (!r)
 				return NULL;
@@ -1139,9 +1140,10 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, dlist *t
 	sql_schema *ss = cur_schema(sql);
 	sql_table *t = NULL;
 	int instantiate = (sql->emode == m_instantiate);
-	int create = (!instantiate && sql->emode != m_deps);
+	int create = (!instantiate && sql->emode != m_deps), event, orientation;
 	list *sq = NULL;
 	sql_rel *r = NULL;
+	char *q;
 
 	dlist *columns = trigger_event->data.lval;
 	const char *old_name = NULL, *new_name = NULL; 
@@ -1178,10 +1180,22 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, dlist *t
 		return sql_error(sql, 02, "CREATE TRIGGER: cannot create trigger on view '%s'", tname);
 	
 	if (create) {
-		int event = (trigger_event->token == SQL_INSERT)?0:
-			    (trigger_event->token == SQL_DELETE)?1:2;
-		int orientation = triggered_action->h->data.i_val;
-		char *q = query_cleaned(QUERY(sql->scanner));
+		switch (trigger_event->token) {
+			case SQL_INSERT:
+				event = 0;
+				break;
+			case SQL_DELETE:
+				event = 1;
+				break;
+			case SQL_TRUNCATE:
+				event = 3;
+				break;
+			default:
+				event = 2;
+				break;
+		}
+		orientation = triggered_action->h->data.i_val;
+		q = query_cleaned(QUERY(sql->scanner));
 
 		assert(triggered_action->h->type == type_int);
 		r = rel_create_trigger(sql, t->s->base.name, t->base.name, triggername, time, orientation, event, old_name, new_name, condition, q);

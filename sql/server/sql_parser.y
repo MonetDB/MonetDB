@@ -141,6 +141,7 @@ int yydebug=1;
 	path_specification
 	schema_element
 	delete_stmt
+	truncate_stmt
 	copyfrom_stmt
 	table_def
 	view_def
@@ -436,6 +437,7 @@ int yydebug=1;
 	document_or_content
 	document_or_content_or_sequence
 	drop_action
+	check_identity
 	grantor
 	intval
 	join_type
@@ -542,7 +544,7 @@ int yydebug=1;
 %token <operation> EXTRACT
 
 /* sequence operations */
-%token SEQUENCE INCREMENT RESTART
+%token SEQUENCE INCREMENT RESTART CONTINUE
 %token MAXVALUE MINVALUE CYCLE
 %token NOMAXVALUE NOMINVALUE NOCYCLE
 %token NEXT VALUE CACHE
@@ -592,7 +594,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE 
 %token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREPARE EXECUTE
-%token DEFAULT DISTINCT DROP
+%token DEFAULT DISTINCT DROP TRUNCATE
 %token FOREIGN
 %token RENAME ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
 %token IS KEY ON OPTION OPTIONS
@@ -1007,6 +1009,7 @@ operation_commalist:
 operation:
     INSERT			    { $$ = _symbol_create(SQL_INSERT,NULL); }
  |  sqlDELETE			    { $$ = _symbol_create(SQL_DELETE,NULL); }
+ |  TRUNCATE			    { $$ = _symbol_create(SQL_TRUNCATE,NULL); }
  |  UPDATE opt_column_list          { $$ = _symbol_create_list(SQL_UPDATE,$2); }
  |  SELECT opt_column_list	    { $$ = _symbol_create_list(SQL_SELECT,$2); }
  |  REFERENCES opt_column_list 	    { $$ = _symbol_create_list(SQL_SELECT,$2); }
@@ -2330,7 +2333,8 @@ trigger_action_time:
 
 trigger_event:
     INSERT 			{ $$ = _symbol_create_list(SQL_INSERT, NULL); }
- |  sqlDELETE 			{ $$ = _symbol_create_list(SQL_DELETE, NULL); }
+ |  sqlDELETE 		{ $$ = _symbol_create_list(SQL_DELETE, NULL); }
+ |  TRUNCATE 		{ $$ = _symbol_create_list(SQL_TRUNCATE, NULL); }
  |  UPDATE 			{ $$ = _symbol_create_list(SQL_UPDATE, NULL); }
  |  UPDATE OF ident_commalist 	{ $$ = _symbol_create_list(SQL_UPDATE, $3); }
  ;
@@ -2526,6 +2530,7 @@ sql:
 update_statement: 
 /* todo merge statement */
    delete_stmt
+ | truncate_stmt
  | insert_stmt
  | update_stmt
  | copyfrom_stmt
@@ -2775,6 +2780,27 @@ delete_stmt:
 	  append_list(l, $3);
 	  append_symbol(l, $4);
 	  $$ = _symbol_create_list( SQL_DELETE, l ); }
+ ;
+
+check_identity:
+    /* empty */			{ $$ = 0; }
+ |  CONTINUE IDENTITY	{ $$ = 0; }
+ |  RESTART IDENTITY	{ $$ = 1; }
+ ;
+
+truncate_stmt:
+   TRUNCATE TABLE qname check_identity drop_action
+	{ dlist *l = L();
+	  append_list(l, $3 );
+	  append_int(l, $4 );
+	  append_int(l, $5 );
+	  $$ = _symbol_create_list( SQL_TRUNCATE, l ); }
+ | TRUNCATE qname check_identity drop_action
+	{ dlist *l = L();
+	  append_list(l, $2 );
+	  append_int(l, $3 );
+	  append_int(l, $4 );
+	  $$ = _symbol_create_list( SQL_TRUNCATE, l ); }
  ;
 
 update_stmt:

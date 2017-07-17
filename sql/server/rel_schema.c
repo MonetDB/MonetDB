@@ -1502,7 +1502,7 @@ rel_grant_table(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *gr
 {
 	sql_rel *res = NULL;
 	dnode *gn;
-	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE;
+	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE | PRIV_TRUNCATE;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
 
@@ -1538,6 +1538,9 @@ rel_grant_table(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *gr
 				break;
 			case SQL_DELETE:
 				priv = PRIV_DELETE;
+				break;
+			case SQL_TRUNCATE:
+				priv = PRIV_TRUNCATE;
 				break;
 			case SQL_EXECUTE:
 			default:
@@ -1683,7 +1686,7 @@ rel_revoke_table(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *g
 {
 	dnode *gn;
 	sql_rel *res = NULL;
-	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE;
+	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE | PRIV_TRUNCATE;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
 
@@ -1714,14 +1717,15 @@ rel_revoke_table(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *g
 			case SQL_UPDATE:
 				priv = PRIV_UPDATE;
 				break;
-
 			case SQL_INSERT:
 				priv = PRIV_INSERT;
 				break;
 			case SQL_DELETE:
 				priv = PRIV_DELETE;
 				break;
-
+			case SQL_TRUNCATE:
+				priv = PRIV_TRUNCATE;
+				break;
 			case SQL_EXECUTE:
 			default:
 				return sql_error(sql, 02, "42000!Cannot GRANT EXECUTE on table name %s", tname);

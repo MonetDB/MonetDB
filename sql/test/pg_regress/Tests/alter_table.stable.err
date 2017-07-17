@@ -253,7 +253,7 @@ QUERY = create rule def_view_test_ins as
         	on insert to def_view_test
         	do instead insert into def_test select new.*;
 
-MAPI  = (monetdb) /var/tmp/mtest-4014/.s.monetdb.32482
+MAPI  = (monetdb) /var/tmp/mtest-3103/.s.monetdb.32847
 QUERY = insert into def_view_test default values;
 ERROR = !INSERT INTO: cannot insert into view 'def_view_test'
 MAPI  = (monetdb) /var/tmp/mtest-22572/.s.monetdb.35667
@@ -334,31 +334,31 @@ ERROR = !INSERT INTO: number of values doesn't match number of columns of table 
 MAPI  = (monetdb) /var/tmp/mtest-22572/.s.monetdb.35667
 QUERY = insert into atacc1 values (default, 11, 12, 13);
 
-MAPI  = (monetdb) /var/tmp/mtest-4014/.s.monetdb.32482
+MAPI  = (monetdb) /var/tmp/mtest-3103/.s.monetdb.32847
 QUERY = insert into atacc1 (a) values (10);
 ERROR = !INSERT INTO: no such column 'atacc1.a'
 MAPI  = (monetdb) /var/tmp/mtest-22572/.s.monetdb.35667
 QUERY = insert into atacc1 (a) values (default);
 
-MAPI  = (monetdb) /var/tmp/mtest-4014/.s.monetdb.32482
+MAPI  = (monetdb) /var/tmp/mtest-3103/.s.monetdb.32847
 QUERY = insert into atacc1 (a,b,c,d) values (10,11,12,13);
 ERROR = !INSERT INTO: no such column 'atacc1.a'
 MAPI  = (monetdb) /var/tmp/mtest-22572/.s.monetdb.35667
 QUERY = insert into atacc1 (a,b,c,d) values (default,11,12,13);
 
-MAPI  = (monetdb) /var/tmp/mtest-4014/.s.monetdb.32482
+MAPI  = (monetdb) /var/tmp/mtest-3103/.s.monetdb.32847
 QUERY = insert into atacc1 ("........pg.dropped.1........") values (10);
 ERROR = !INSERT INTO: no such column 'atacc1.........pg.dropped.1........'
 MAPI  = (monetdb) /var/tmp/mtest-22572/.s.monetdb.35667
 QUERY = insert into atacc1 ("........pg.dropped.1........") values (default);
 
-MAPI  = (monetdb) /var/tmp/mtest-4014/.s.monetdb.32482
+MAPI  = (monetdb) /var/tmp/mtest-3103/.s.monetdb.32847
 QUERY = insert into atacc1 ("........pg.dropped.1........",b,c,d) values (10,11,12,13);
 ERROR = !INSERT INTO: no such column 'atacc1.........pg.dropped.1........'
 MAPI  = (monetdb) /var/tmp/mtest-22572/.s.monetdb.35667
 QUERY = insert into atacc1 ("........pg.dropped.1........",b,c,d) values (default,11,12,13);
 
-MAPI  = (monetdb) /var/tmp/mtest-4014/.s.monetdb.32482
+MAPI  = (monetdb) /var/tmp/mtest-3103/.s.monetdb.32847
 QUERY = delete from atacc1 where a = 3;
 ERROR = !SELECT: identifier 'a' unknown
 MAPI  = (monetdb) /var/tmp/mtest-22572/.s.monetdb.35667
@@ -589,7 +589,7 @@ ERROR = !INSERT INTO: number of values doesn't match number of columns of table 
 MAPI  = (monetdb) /var/tmp/mtest-22572/.s.monetdb.35667
 QUERY = create domain mytype as text;
 
-MAPI  = (monetdb) /var/tmp/mtest-4014/.s.monetdb.32482
+MAPI  = (monetdb) /var/tmp/mtest-3103/.s.monetdb.32847
 QUERY = create temp table foo (f1 text, f2 mytype, f3 text);
 ERROR = !type (mytype) unknown in: "create temp table foo (f1 text, f2 mytype,"
         !syntax error, unexpected IDENT in: "f3"

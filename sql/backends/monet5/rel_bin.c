@@ -1346,6 +1346,7 @@ rel2bin_args(backend *be, sql_rel *rel, list *args)
 	case op_insert:
 	case op_update:
 	case op_delete:
+	case op_truncate:
 		args = rel2bin_args(be, rel->r, args);
 		break;
 	}
@@ -1356,7 +1357,7 @@ typedef struct trigger_input {
 	sql_table *t;
 	stmt *tids;
 	stmt **updates;
-	int type; /* insert 1, update 2, delete 3 */
+	int type; /* insert 1, update 2, delete 3, truncate 4 */
 	const char *on;
 	const char *nn;
 } trigger_input;
@@ -4303,7 +4304,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 }
  
 static void
-sql_stack_add_deleted(mvc *sql, const char *name, sql_table *t, stmt *tids)
+sql_stack_add_deleted(mvc *sql, const char *name, sql_table *t, stmt *tids, int type)
 {
 	/* Put single relation of updates and old values on to the stack */
 	sql_rel *r = NULL;
@@ -4314,7 +4315,7 @@ sql_stack_add_deleted(mvc *sql, const char *name, sql_table *t, stmt *tids)
 	ti->t = t;
 	ti->tids = tids;
 	ti->updates = NULL;
-	ti->type = 3;
+	ti->type = type;
 	ti->nn = name;
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
@@ -4329,7 +4330,7 @@ sql_stack_add_deleted(mvc *sql, const char *name, sql_table *t, stmt *tids)
 }
 
 static int
-sql_delete_triggers(backend *be, sql_table *t, stmt *tids, int time)
+sql_delete_triggers(backend *be, sql_table *t, stmt *tids, int time, int firing_type, int internal_type)
 {
 	mvc *sql = be->mvc;
 	node *n;
@@ -4342,7 +4343,7 @@ sql_delete_triggers(backend *be, sql_table *t, stmt *tids, int time)
 		sql_trigger *trigger = n->data;
 
 		stack_push_frame(sql, "OLD-NEW");
-		if (trigger->event == 1 && trigger->time == time) {
+		if (trigger->event == firing_type && trigger->time == time) {
 			stmt *s = NULL;
 	
 			/* add name for the 'deleted' to the stack */
@@ -4350,7 +4351,7 @@ sql_delete_triggers(backend *be, sql_table *t, stmt *tids, int time)
 		
 			if (!o) o = "old"; 
 		
-			sql_stack_add_deleted(sql, o, t, tids);
+			sql_stack_add_deleted(sql, o, t, tids, internal_type);
 			s = sql_parse(be, sql->sa, trigger->statement, m_instantiate);
 
 			if (!s) 
@@ -4457,7 +4458,7 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 	}
 
 /* before */
-	if (!sql_delete_triggers(be, t, v, 0)) 
+	if (!sql_delete_triggers(be, t, v, 0, 1, 3))
 		return sql_error(sql, 02, "DELETE: triggers failed for table '%s'", t->base.name);
 
 	if (!sql_delete_keys(be, t, v, l)) 
@@ -4475,7 +4476,7 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 	}
 
 /* after */
-	if (!sql_delete_triggers(be, t, v, 1)) 
+	if (!sql_delete_triggers(be, t, v, 1, 1, 3))
 		return sql_error(sql, 02, "DELETE: triggers failed for table '%s'", t->base.name);
 	if (rows) 
 		s = stmt_aggr(be, rows, NULL, NULL, sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL), 1, 0);
@@ -4510,8 +4511,102 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 	return delete;
 }
 
+static stmt *
+sql_truncate(backend *be, sql_table *t, int restart_sequences, int drop_action)
+{
+	mvc *sql = be->mvc;
+	list *l = sa_list(sql->sa);
+	stmt *v = stmt_tid(be, t, 0), *s = NULL;
+	const char *next_value_for = "next value for \"sys\".\"seq_";
+	char *seq_name;
+	str seq_pos = NULL;
+	sql_column *col;
+	sql_sequence *seq;
+	sql_schema *sche = t->s;
+	sql_trans *tr = sql->session->tr;
+	node *n;
+
+	if(restart_sequences) { /* restart the sequences if it's the case */
+		for (n = t->columns.set->h; n; n = n->next) {
+			col = n->data;
+			if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
+				seq_name = _STRDUP(seq_pos + (strlen(next_value_for) - strlen("seq_")));
+				seq_name[strlen(seq_name)-1] = '\0';
+				seq = find_sql_sequence(sche, seq_name);
+				if (seq) {
+					sql_trans_sequence_restart(tr, seq, seq->start);
+					seq->base.wtime = sche->base.wtime = tr->wtime = tr->wstime;
+					tr->schema_updates++;
+				}
+				_DELETE(seq_name);
+			}
+		}
+	}
+
+	if (!drop_action && t->keys.set) { /* Check for foreign key references if it's the case */
+		for (n = t->keys.set->h; n; n = n->next) {
+			sql_key *k = n->data;
+
+			if (k->type == ukey || k->type == pkey) {
+				sql_ukey *uk = (sql_ukey *) k;
+
+				if (uk->keys && list_length(uk->keys)) {
+					node *l = uk->keys->h;
+
+					for (; l; l = l->next) {
+						k = l->data;
+						/* make sure it is not a self referencing key */
+						if (k->t != t)
+							return sql_error(sql, 02, "TRUNCATE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, t->base.name);
+					}
+				}
+			}
+		}
+	}
+
+/* before */
+	if (!sql_delete_triggers(be, t, v, 0, 3, 4))
+		return sql_error(sql, 02, "TRUNCATE: triggers failed for table '%s'", t->base.name);
+
+	if (!sql_delete_keys(be, t, v, l))
+		return sql_error(sql, 02, "TRUNCATE: failed to delete indexes for table '%s'", t->base.name);
+
+	s = stmt_table_clear(be, t);
+	list_append(l, s);
+
+/* after */
+	if (!sql_delete_triggers(be, t, v, 1, 3, 4))
+		return sql_error(sql, 02, "TRUNCATE: triggers failed for table '%s'", t->base.name);
+	return s;
+}
+
 #define E_ATOM_INT(e) ((atom*)((sql_exp*)e)->l)->data.val.lval
 #define E_ATOM_STRING(e) ((atom*)((sql_exp*)e)->l)->data.val.sval
+
+static stmt *
+rel2bin_truncate(backend *be, sql_rel *rel)
+{
+	mvc *sql = be->mvc;
+	stmt *truncate;
+	sql_rel *tr = rel->l;
+	sql_table *t = NULL;
+	node *n;
+	int restart_sequences, drop_action;
+
+	if (tr->op == op_basetable)
+		t = tr->l;
+	else
+		assert(0/*ddl statement*/);
+
+	n = rel->exps->h;
+	restart_sequences = E_ATOM_INT(n->data);
+	drop_action = E_ATOM_INT(n->next->data);
+
+	truncate = sql_truncate(be, t, restart_sequences, drop_action);
+	if (sql->cascade_action)
+		sql->cascade_action = NULL;
+	return truncate;
+}
 
 static stmt *
 rel2bin_output(backend *be, sql_rel *rel, list *refs) 
@@ -4821,6 +4916,11 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		if (sql->type == Q_TABLE)
 			sql->type = Q_UPDATE;
 		break;
+	case op_truncate:
+		s = rel2bin_truncate(be, rel);
+		if (sql->type == Q_TABLE)
+			sql->type = Q_UPDATE;
+		break;
 	case op_ddl:
 		s = rel2bin_ddl(be, rel, refs);
 		break;
@@ -5033,7 +5133,8 @@ rel_deps(sql_allocator *sa, sql_rel *r, list *refs, list *l)
 		break;
 	case op_insert: 
 	case op_update: 
-	case op_delete: 
+	case op_delete:
+	case op_truncate:
 		if (rel_deps(sa, r->l, refs, l) != 0 ||
 		    rel_deps(sa, r->r, refs, l) != 0)
 			return -1;

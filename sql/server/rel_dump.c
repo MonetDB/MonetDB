@@ -286,7 +286,8 @@ op2string(operator_type op)
 		return "sample";
 	case op_insert: 
 	case op_update: 
-	case op_delete: 
+	case op_delete:
+	case op_truncate:
 		return "modify op";
 	default:
 		return "unknown";
@@ -473,7 +474,8 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		break;
 	case op_insert:
 	case op_update:
-	case op_delete: {
+	case op_delete:
+	case op_truncate: {
 
 		print_indent(sql, fout, depth, decorate);
 		if (rel->op == op_insert)
@@ -482,6 +484,8 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 			mnstr_printf(fout, "update(");
 		else if (rel->op == op_delete)
 			mnstr_printf(fout, "delete(");
+		else if (rel->op == op_truncate)
+			mnstr_printf(fout, "truncate(");
 
 		if (rel_is_ref(rel->l)) {
 			int nr = find_ref(refs, rel->l);
@@ -562,7 +566,8 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 		break;
 	case op_insert: 
 	case op_update: 
-	case op_delete: 
+	case op_delete:
+	case op_truncate:
 		rel_print_refs(sql, fout, rel->l, depth, refs, decorate);
 		if (rel->l && rel_is_ref(rel->l) && !find_ref(refs, rel->l)) {
 			rel_print_(sql, fout, rel->l, depth, refs, decorate);

@@ -764,10 +764,16 @@ sql_update_jul2017(Client c, mvc *sql)
 			"privilege_code_id   INT NOT NULL PRIMARY KEY,\n"
 			"privilege_code_name VARCHAR(30) NOT NULL UNIQUE);\n"
 			"INSERT INTO sys.privilege_codes (privilege_code_id, privilege_code_name) VALUES\n"
-			"(1, 'SELECT'), (2, 'UPDATE'), (4, 'INSERT'), (8, 'DELETE'), (16, 'EXECUTE'), (32, 'GRANT'),\n"
+			"(1, 'SELECT'), (2, 'UPDATE'), (4, 'INSERT'), (8, 'DELETE'), (16, 'EXECUTE'), (32, 'GRANT'), (64, 'TRUNCATE'),\n"
 			"(3, 'SELECT,UPDATE'), (5, 'SELECT,INSERT'), (6, 'INSERT,UPDATE'), (7, 'SELECT,INSERT,UPDATE'),\n"
 			"(9, 'SELECT,DELETE'), (10, 'UPDATE,DELETE'), (11, 'SELECT,UPDATE,DELETE'), (12, 'INSERT,DELETE'),\n"
-			"(13, 'SELECT,INSERT,DELETE'), (14, 'INSERT,UPDATE,DELETE'), (15, 'SELECT,INSERT,UPDATE,DELETE');\n"
+			"(13, 'SELECT,INSERT,DELETE'), (14, 'INSERT,UPDATE,DELETE'), (15, 'SELECT,INSERT,UPDATE,DELETE'),\n"
+			"(65, 'SELECT,TRUNCATE'), (66, 'UPDATE,TRUNCATE'), (68, 'INSERT,TRUNCATE'), (72, 'DELETE,TRUNCATE'),\n"
+			"(67, 'SELECT,UPDATE,TRUNCATE'), (69, 'SELECT,INSERT,TRUNCATE'), (73, 'SELECT,DELETE,TRUNCATE'),\n"
+			"(70, 'INSERT,UPDATE,TRUNCATE'), (76, 'INSERT,DELETE,TRUNCATE'), (74, 'UPDATE,DELETE,TRUNCATE'),\n"
+			"(71, 'SELECT,INSERT,UPDATE,TRUNCATE'), (75, 'SELECT,UPDATE,DELETE,TRUNCATE'),\n"
+			"(77, 'SELECT,INSERT,DELETE,TRUNCATE'), (78, 'INSERT,UPDATE,DELETE,TRUNCATE'),\n"
+			"(79, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE');\n"
 			"ALTER TABLE sys.privilege_codes SET READ ONLY;\n"
 
 			"update sys._tables set system = true where name in ('function_languages', 'function_types', 'index_types', 'key_types', 'privilege_codes') and schema_id = (select id from sys.schemas where name = 'sys');\n");

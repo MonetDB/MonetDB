@@ -188,6 +188,7 @@ scanner_init_keywords(void)
 	keywords_insert("INSERT", INSERT);
 	keywords_insert("UPDATE", UPDATE);
 	keywords_insert("DELETE", sqlDELETE);
+	keywords_insert("TRUNCATE", TRUNCATE);
 
 	keywords_insert("ACTION", ACTION);
 	keywords_insert("CASCADE", CASCADE);
@@ -382,6 +383,7 @@ scanner_init_keywords(void)
 	keywords_insert("SERIAL", SERIAL);
 	keywords_insert("BIGSERIAL", BIGSERIAL);
 	keywords_insert("AUTO_INCREMENT", AUTO_INCREMENT);
+	keywords_insert("CONTINUE", CONTINUE);
 
 	keywords_insert("TRIGGER", TRIGGER);
 	keywords_insert("ATOMIC", ATOMIC);

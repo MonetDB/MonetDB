@@ -39,6 +39,8 @@ priv2string(int priv)
 		return "INSERT";
 	case PRIV_DELETE:
 		return "DELETE";
+	case PRIV_TRUNCATE:
+		return "TRUNCATE";
 	case PRIV_EXECUTE:
 		return "EXECUTE";
 	}
@@ -61,6 +63,7 @@ sql_insert_all_privs(mvc *sql, int auth_id, int obj_id, int grantor, int grantab
 	sql_insert_priv(sql, auth_id, obj_id, PRIV_UPDATE, grantor, grantable);
 	sql_insert_priv(sql, auth_id, obj_id, PRIV_INSERT, grantor, grantable);
 	sql_insert_priv(sql, auth_id, obj_id, PRIV_DELETE, grantor, grantable);
+	sql_insert_priv(sql, auth_id, obj_id, PRIV_TRUNCATE, grantor, grantable);
 }
 
 static int
@@ -130,7 +133,7 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 	sql_table *t = NULL;
 	sql_column *c = NULL;
 	int allowed, grantee_id;
-	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE;
+	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE | PRIV_TRUNCATE;
 
  	if (sname)
 		s = mvc_bind_schema(sql, sname);
@@ -168,7 +171,8 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 	    (sql_privilege(sql, grantee_id, t->base.id, PRIV_SELECT, 0) ||
 	     sql_privilege(sql, grantee_id, t->base.id, PRIV_UPDATE, 0) ||
 	     sql_privilege(sql, grantee_id, t->base.id, PRIV_INSERT, 0) ||
-	     sql_privilege(sql, grantee_id, t->base.id, PRIV_DELETE, 0))) ||
+	     sql_privilege(sql, grantee_id, t->base.id, PRIV_DELETE, 0) ||
+	     sql_privilege(sql, grantee_id, t->base.id, PRIV_TRUNCATE, 0))) ||
 	    (privs != all && !c && sql_privilege(sql, grantee_id, t->base.id, privs, 0)) || 
 	    (privs != all && c && sql_privilege(sql, grantee_id, c->base.id, privs, 0))) {
 		return sql_message("42M32!GRANT: user/role '%s' already has this privilege", grantee);
@@ -271,7 +275,7 @@ sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *t
 	sql_table *t = NULL;
 	sql_column *c = NULL;
 	int allowed, grantee_id;
-	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE;
+	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE | PRIV_TRUNCATE;
 
  	if (sname)
 		s = mvc_bind_schema(sql, sname);
@@ -307,6 +311,7 @@ sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *t
 		sql_delete_priv(sql, grantee_id, t->base.id, PRIV_UPDATE, grantor, grant);
 		sql_delete_priv(sql, grantee_id, t->base.id, PRIV_INSERT, grantor, grant);
 		sql_delete_priv(sql, grantee_id, t->base.id, PRIV_DELETE, grantor, grant);
+		sql_delete_priv(sql, grantee_id, t->base.id, PRIV_TRUNCATE, grantor, grant);
 	} else if (!c) {
 		sql_delete_priv(sql, grantee_id, t->base.id, privs, grantor, grant);
 	} else {

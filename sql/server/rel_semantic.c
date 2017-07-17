@@ -163,6 +163,7 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_INSERT:
 	case SQL_UPDATE:
 	case SQL_DELETE:
+	case SQL_TRUNCATE:
 	case SQL_COPYFROM:
 	case SQL_BINCOPYFROM:
 	case SQL_COPYLOADER:

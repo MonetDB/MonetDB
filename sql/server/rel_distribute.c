@@ -62,6 +62,7 @@ has_remote_or_replica( sql_rel *rel )
 	case op_insert:
 	case op_update:
 	case op_delete:
+	case op_truncate:
 		if (rel->r && has_remote_or_replica( rel->r )) 
 			return 1;
 		break;
@@ -213,6 +214,7 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 	case op_insert:
 	case op_update:
 	case op_delete:
+	case op_truncate:
 		rel->r = replica(sql, rel->r, uri);
 		break;
 	}
@@ -346,6 +348,7 @@ distribute(mvc *sql, sql_rel *rel)
 	case op_insert:
 	case op_update:
 	case op_delete:
+	case op_truncate:
 		rel->r = distribute(sql, rel->r);
 		break;
 	}
@@ -430,6 +433,7 @@ rel_remote_func(mvc *sql, sql_rel *rel)
 	case op_insert:
 	case op_update:
 	case op_delete:
+	case op_truncate:
 		rel->r = rel_remote_func(sql, rel->r);
 		break;
 	}
