@@ -5534,19 +5534,18 @@ stream_fwf_close(stream *s)
 static void
 stream_fwf_destroy(stream *s)
 {
-	if (s) {
-		stream_fwf_close(s);
-		destroy(s);
-	}
+	stream_fwf_close(s);
+	destroy(s);
 }
 
-stream*
-stream_fwf_create (stream *s, size_t num_fields, size_t *widths, char filler)
+stream *
+stream_fwf_create(stream *s, size_t num_fields, size_t *widths, char filler)
 {
 	stream *ns;
 	stream_fwf_data *fsd = malloc(sizeof(stream_fwf_data));
 	size_t i, out_buf_len;
-	if (!fsd) {
+
+	if (fsd == NULL) {
 		return NULL;
 	}
 	fsd->s = s;
@@ -5594,11 +5593,10 @@ stream_fwf_create (stream *s, size_t num_fields, size_t *widths, char filler)
 	}
 	ns->read = stream_fwf_read;
 	ns->close = stream_fwf_close;
+	ns->destroy = stream_fwf_destroy;
 	ns->write = NULL;
 	ns->flush = NULL;
 	ns->access = ST_READ;
 	ns->stream_data.p = fsd;
-	ns->destroy = stream_fwf_destroy;
 	return ns;
 }
-

@@ -95,7 +95,7 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 
 	utf8_string = *value;
 	if (!utf8_string) {
-		utf8_string = (str)malloc(len = (pyobject_get_size(obj) * sizeof(char)));
+		utf8_string = (str)malloc(len = (pyobject_get_size(obj) * sizeof(char)) + 1);
 		if (!utf8_string) {
 			msg = createException(MAL, "pyapi.eval",
 								  "SQLSTATE HY001 !"MAL_MALLOC_FAIL "python string");
