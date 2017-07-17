@@ -605,6 +605,7 @@ MALparser(Client c)
 	MalBlkRecord oldstate;
 	str msg= MAL_SUCCEED;
 
+	assert(c->curprg->def->errors == NULL);
 	c->curprg->def->errors = 0;
 	oldstate = *c->curprg->def;
 
@@ -616,7 +617,7 @@ MALparser(Client c)
 	c->yycur = 0;
 
 	/* check for unfinished blocks */
-	if(c->blkmode)
+	if(!c->curprg->def->errors && c->blkmode)
 		return MAL_SUCCEED;
 	/* empty files should be skipped as well */
 	if (c->curprg->def->stop == 1){
@@ -658,8 +659,8 @@ MALcommentsOnly(MalBlkPtr mb)
 str
 MALcallback(Client c, str msg)
 {
-	if( msg){
-		mnstr_printf(c->fdout,"!%s%s",msg, (msg[strlen(msg)-1] == '\n'? "":"\n"));
+	if (msg){
+		mnstr_printf(c->fdout,"!%s%s", msg, (msg[strlen(msg)-1] == '\n'? "":"\n"));
 		freeException(msg);
 	}
 	return MAL_SUCCEED;

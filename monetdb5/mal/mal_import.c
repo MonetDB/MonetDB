@@ -197,8 +197,11 @@ malInclude(Client c, str name, int listing)
 			if ((msg = malLoadScript(c, filename, &c->fdin)) == MAL_SUCCEED) {
 				parseMAL(c, c->curprg, 1, INT_MAX);
 				bstream_destroy(c->fdin);
-			} else
+			} else {
+				/* TODO output msg ? */
+				freeException(msg);
 				msg = MAL_SUCCEED;
+			}
 			if (p)
 				filename = p + 1;
 		} while (p);
@@ -282,39 +285,42 @@ static str mal_cmdline(char *s, int *len)
 
 str
 compileString(Symbol *fcn, Client cntxt, str s)
-{	Client c;
+{	
+	Client c;
 	int len = (int) strlen(s);
 	buffer *b;
 	str msg = MAL_SUCCEED;
 	str qry;
 	str old = s;
-	(void) cntxt;
+	bstream *fdin = NULL;
 
 	s = mal_cmdline(s, &len);
-	mal_unquote(qry = GDKstrdup(s));
-	if (old != s)
-		GDKfree(s);
+	qry = s;
+	if (old == s)
+		qry = GDKstrdup(s);
+	mal_unquote(qry);
 	b = (buffer *) GDKzalloc(sizeof(buffer));
 	if (b == NULL) {
 		GDKfree(qry);
 		return MAL_MALLOC_FAIL;
 	}
 
-	c= MCinitClient((oid)0, 0, 0);
+	buffer_init(b, qry, len);
+	fdin = bstream_create(buffer_rastream(b, "compileString"), b->len);
+	strncpy(fdin->buf, qry, len+1);
+
+	// compile in context of called for
+	c= MCinitClient((oid)0, fdin, 0);
 	if( c == NULL){
 		GDKfree(b);
 		GDKfree(qry);
 		throw(MAL,"mal.eval","Can not create user context");
 	}
-	buffer_init(b, qry, len +1);
-	c->fdin = bstream_create(buffer_rastream(b, "compileString"), b->len);
-	strncpy(c->fdin->buf, qry, len+1);
-	// compile in context of called for
 	c->curmodule = c->usermodule = cntxt->usermodule;
 	c->promptlength = 0;
 	c->listing = 0;
 
-    if ( (msg = defaultScenario(c)) ) {
+	if ( (msg = defaultScenario(c)) ) {
 		c->usermodule= 0;
 		MCcloseClient(c);
 		throw(MAL,"mal.compile","%s",msg);
@@ -343,12 +349,12 @@ callString(Client cntxt, str s, int listing)
 	buffer *b;
 	str old =s;
 	str msg = MAL_SUCCEED, qry;
-	(void) cntxt;
 
 	s = mal_cmdline(s, &len);
-	mal_unquote(qry = GDKstrdup(s));
-	if (old != s)
-		GDKfree(s);
+	qry = s;
+	if (old == s)
+		qry = GDKstrdup(s);
+	mal_unquote(qry);
 	b = (buffer *) GDKzalloc(sizeof(buffer));
 	if (b == NULL){
 		GDKfree(qry);
@@ -357,6 +363,7 @@ callString(Client cntxt, str s, int listing)
 
 	buffer_init(b, qry, len);
 	c= MCinitClient((oid)0, bstream_create(buffer_rastream(b, "callString"), b->len),0);
+	strncpy(c->fdin->buf, qry, len+1);
 	if( c == NULL){
 		GDKfree(b);
 		GDKfree(qry);
@@ -366,7 +373,7 @@ callString(Client cntxt, str s, int listing)
 	c->promptlength = 0;
 	c->listing = listing;
 
-    if ( (msg = defaultScenario(c)) ) {
+	if ( (msg = defaultScenario(c)) ) {
 		c->usermodule = 0;
 		GDKfree(b);
 		GDKfree(qry);

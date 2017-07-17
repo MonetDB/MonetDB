@@ -185,10 +185,10 @@ showException(stream *out, enum malexception type, const char *fcn, const char *
  * is good.
  */
 static str
-createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, const char *prev, const char *format, va_list ap)
+createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, char *prev, const char *format, va_list ap)
 	__attribute__((__format__(__printf__, 5, 0)));
 static str
-createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, const char *prev, const char *format, va_list ap)
+createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, char *prev, const char *format, va_list ap)
 {
 	char buf[GDKMAXERRLEN];
 	size_t i;
@@ -206,8 +206,8 @@ createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, const c
 		}
 		i += snprintf(buf + i, GDKMAXERRLEN - 1 - i, "!%s:%s.%s[%d]:",
 				exceptionNames[type], s, fcn, pc);
-	} else
-	if( type == SYNTAX)
+		freeException(prev);
+	} else if( type == SYNTAX)
 		i += snprintf(buf + i, GDKMAXERRLEN - 1 - i, "%s:",
 				exceptionNames[type]);
 	else

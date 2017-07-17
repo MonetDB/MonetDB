@@ -1177,24 +1177,25 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	if (exceptionVar >= 0) {
 		char nme[256];
 		snprintf(nme,256,"%s.%s[%d]", getModuleId(getInstrPtr(mb,0)), getFunctionId(getInstrPtr(mb,0)), stkpc);
-		if (ret){
+		if (ret) {
 			str new, n;
 			n = createException(MAL,nme,"exception not caught");
-			if( n) {
+			if (n) {
 				new = GDKzalloc(strlen(ret) + strlen(n) +16);
-				if( new){
+				if (new){
 					strcpy(new, ret);
 					if( new[strlen(new)-1] != '\n')
 						strcat(new,"\n");
 					strcat(new,"!");
 					strcat(new,n);
+					freeException(n);
 					freeException(ret);
 					ret = new;
 				}
 			}
+		} else {
+			ret = createException(MAL, nme, "Exception not caught");
 		}
-		else 
-			ret = createException(MAL,nme,"Exception not caught");
 	}
 	if( startedProfileQueue)
 		runtimeProfileFinish(cntxt, mb, stk);

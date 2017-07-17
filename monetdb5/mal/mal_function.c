@@ -434,7 +434,8 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	/* beware, we should now ignore any cloning */
 	if (proc->def->errors == 0) {
 		chkProgram(scope,new->def);
-		if( new->def->errors){
+		if(new->def->errors){
+			assert(mb->errors == NULL);
 			mb->errors = new->def->errors;
 			mb->errors = createMalException(mb,0,TYPE,"Error in cloned function");
 			new->def->errors = 0;
@@ -785,19 +786,17 @@ void chkDeclarations(MalBlkPtr mb){
 				 */
 				if( p->barrier == CATCHsymbol){
 					setVarScope(mb, l, blks[0]);
-				} else
-				if( !( isVarConstant(mb, l) || isVarTypedef(mb,l)) &&
+				} else if( !( isVarConstant(mb, l) || isVarTypedef(mb,l)) &&
 					!isVarInit(mb,l) ) {
 					mb->errors = createMalException( mb,pc,TYPE,
 						"'%s' may not be used before being initialized",
 						getVarName(mb,l));
 				}
-			} else
-			if( !isVarInit(mb,l) ){
+			} else if( !isVarInit(mb,l) ){
 			    /* is the block still active ? */
 			    for( i=0; i<= top; i++)
-					if( blks[i] == getVarScope(mb,l) )
-						break;
+				if( blks[i] == getVarScope(mb,l) )
+					break;
 			    if( i> top || blks[i]!= getVarScope(mb,l) ){
 			        mb->errors = createMalException( mb,pc,TYPE,
 							"'%s' used outside scope",

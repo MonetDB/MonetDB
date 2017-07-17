@@ -95,9 +95,6 @@ __hidden mal_export void mal_client_reset(void)
 __hidden mal_export void mal_dataflow_reset(void)
 	__attribute__((__visibility__("hidden")));
 
-__hidden mal_export void mal_factory_reset(void)
-	__attribute__((__visibility__("hidden")));
-
 __hidden mal_export void mal_linker_reset(void)
 	__attribute__((__visibility__("hidden")));
 

@@ -81,11 +81,11 @@ parseError(Client cntxt, str msg)
 	ssize_t i;
 
 	s= buf;
-    for (t = l; *t && *t != '\n' && s < buf+sizeof(buf)-4; t++) {
-        *s++ = *t;
-    }
-    *s++ = '\n';
-    *s = 0;
+    	for (t = l; *t && *t != '\n' && s < buf+sizeof(buf)-4; t++) {
+        	*s++ = *t;
+    	}
+    	*s++ = '\n';
+    	*s = 0;
 	line = createException( SYNTAX, "parseError", "%s", buf);
 
 	/* produce the position marker*/
@@ -106,7 +106,7 @@ parseError(Client cntxt, str msg)
 		skipToEnd(cntxt);
 		return ; // just stick to old error message
 	}
-	if( old){
+	if (old){
 		strcpy(new, old);
 		strcat(new,"!");
 		GDKfree(old);
@@ -1436,30 +1436,35 @@ parseEnd(Client cntxt)
 		}
 		chkProgram(cntxt->usermodule, cntxt->curprg->def);
 		// check for newly identified errors
-		if (errors ==NULL){
+		if (errors == NULL){
 			errors = cntxt->curprg->def->errors;
 			cntxt->curprg->def->errors=0;
-		} else if( cntxt->curprg->def->errors){
+		} else if (cntxt->curprg->def->errors) {
 			//collect all errors for reporting
 			str new = GDKzalloc(strlen(errors) + strlen(cntxt->curprg->def->errors) +16);
-			if( new){
+			if (new){
 				strcpy(new, errors);
 				if( new[strlen(new)-1] != '\n')
 					strcat(new,"\n");
 				strcat(new,"!");
 				strcat(new,cntxt->curprg->def->errors);
+
+				GDKfree(errors);
+				GDKfree(cntxt->curprg->def->errors);
+
+				cntxt->curprg->def->errors=0;
 				errors = new;
 			}
-			cntxt->curprg->def->errors=0;
 		}
 		
-        if (cntxt->backup) {
-            cntxt->curprg = cntxt->backup;
-            cntxt->backup = 0;
-        }  else{
+        	if (cntxt->backup) {
+            		cntxt->curprg = cntxt->backup;
+            		cntxt->backup = 0;
+        	} else {
 			(void) MSinitClientPrg(cntxt,cntxt->curmodule->name,"main");
 		}
 		// pass collected errors to context
+		assert(cntxt->curprg->def->errors == NULL);
 		cntxt->curprg->def->errors = errors;
 		return 1;
 	}

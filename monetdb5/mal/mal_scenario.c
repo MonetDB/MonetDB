@@ -550,10 +550,10 @@ runScenarioBody(Client c, int once)
 			goto wrapup;
 	wrapup:
 		if (msg != MAL_SUCCEED){
-			if( c->phase[MAL_SCENARIO_CALLBACK])
-					msg = (str) (*c->phase[MAL_SCENARIO_CALLBACK])(c, msg);
-			if( msg){
-				mnstr_printf(c->fdout,"!%s%s",msg, (msg[strlen(msg)-1] == '\n'? "":"\n"));
+			if(c->phase[MAL_SCENARIO_CALLBACK])
+				msg = (str) (*c->phase[MAL_SCENARIO_CALLBACK])(c, msg);
+			if (msg) {
+				mnstr_printf(c->fdout,"!%s%s", msg, (msg[strlen(msg)-1] == '\n'? "":"\n"));
 				freeException(msg);
 				msg = MAL_SUCCEED;
 			}
