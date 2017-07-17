@@ -32,7 +32,7 @@ stderr of test 'string_split.Bug-3564` in directory 'sql/test/BugTracker-2015` i
 
 MAPI  = (monetdb) /var/tmp/mtest-61161/.s.monetdb.38988
 QUERY = select split_part('joeuser@mydatabase','@',0) AS "an error";
-ERROR = !field position must be greater than zero
+ERROR = !MALException:str.splitpart:field position must be greater than zero
 
 # 15:17:36 >  
 # 15:17:36 >  "Done."
