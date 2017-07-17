@@ -70,42 +70,6 @@ stderr of test 'ORDER_BY_over_UNION_EXCEPT_INTERSECT.Bug-2606` in directory 'sql
 # 11:27:31 >  mclient -lsql -ftest -i -e --host=rig --port=30498 
 # 11:27:31 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
-QUERY = plan   select * from t2606a   union   select * from t2606b   order by a;
-ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors SyntaxException:RETURN missing
-MAPI  = (monetdb) /var/tmp/mtest-27265/.s.monetdb.39400
-QUERY = plan ( select * from t2606a   union   select * from t2606b ) order by a;
-ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors SyntaxException:RETURN missing
-MAPI  = (monetdb) /var/tmp/mtest-27265/.s.monetdb.39400
-QUERY = plan ( select * from t2606a ) union ( select * from t2606b ) order by a;
-ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors SyntaxException:RETURN missing
-MAPI  = (monetdb) /var/tmp/mtest-27265/.s.monetdb.39400
-QUERY = plan   select * from t2606a   except   select * from t2606b   order by a;
-ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors SyntaxException:RETURN missing
-MAPI  = (monetdb) /var/tmp/mtest-27265/.s.monetdb.39400
-QUERY = plan ( select * from t2606a   except   select * from t2606b ) order by a;
-ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors SyntaxException:RETURN missing
-MAPI  = (monetdb) /var/tmp/mtest-27265/.s.monetdb.39400
-QUERY = plan ( select * from t2606a ) except ( select * from t2606b ) order by a;
-ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors SyntaxException:RETURN missing
-MAPI  = (monetdb) /var/tmp/mtest-27265/.s.monetdb.39400
-QUERY = plan   select * from t2606a   intersect   select * from t2606b   order by a;
-ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors SyntaxException:RETURN missing
-MAPI  = (monetdb) /var/tmp/mtest-27265/.s.monetdb.39400
-QUERY = plan ( select * from t2606a   intersect   select * from t2606b ) order by a;
-ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors SyntaxException:RETURN missing
-MAPI  = (monetdb) /var/tmp/mtest-27265/.s.monetdb.39400
-QUERY = plan ( select * from t2606a ) intersect ( select * from t2606b ) order by a;
-ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors SyntaxException:RETURN missing
-MAPI  = (monetdb) /var/tmp/mtest-27265/.s.monetdb.39400
-QUERY = plan select * from (select * from t2606a union select * from t2606b) as t order by a;
-ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors SyntaxException:RETURN missing
-MAPI  = (monetdb) /var/tmp/mtest-27265/.s.monetdb.39400
-QUERY = plan select * from (select * from t2606a except select * from t2606b) as t order by a;
-ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors SyntaxException:RETURN missing
-MAPI  = (monetdb) /var/tmp/mtest-27265/.s.monetdb.39400
-QUERY = plan select * from (select * from t2606a intersect select * from t2606b) as t order by a;
-ERROR = !ParseException:SQLparser:SQLSTATE M0M27 !Semantic errors SyntaxException:RETURN missing
 
 # 11:27:31 >  
 # 11:27:31 >  Done.
