@@ -153,7 +153,6 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 		logadd("\"usec\":"LLFMT",%s", pci->ticks, prettify);
 	}
 	logadd("\"rss\":"SZFMT ",%s", MT_getrss()/1024/1024, prettify);
-	logadd("\"size\":"LLFMT ",%s", pci? pci->wbytes/1024/1024:0, prettify);	// result size
 
 #ifdef NUMAprofiling
 		logadd("\"numa\":[");
@@ -804,7 +803,7 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str stmt, c;
 	lng clock;
 	lng rssMB = MT_getrss()/1024/1024;
-	lng tmpspace = pci->wbytes/1024/1024;
+	lng tmpspace = 0;
 	int errors = 0;
 
 	clock = GDKusec();
@@ -978,11 +977,12 @@ static str getIOactivity(void){
 			if ( fd == NULL)
 				return buf;
 			(void) snprintf(buf+len, BUFSIZ-len-2,"thr %d ",i);
-			if ((n = fread(buf+len, 1, BUFSIZ-len-2,fd)) == 0 )
-				return  buf;
+			n = fread(buf+len, 1, BUFSIZ-len-2,fd);
+			(void) fclose(fd);
+			if (n == 0)
+				return buf;
 			// extract the properties
 			mnstr_printf(GDKout,"#got io stat:%s\n",buf);
-			(void)fclose (fd);
 		 }
 	//MT_lock_unset(&GDKthreadLock);
 	buf[len++]='"';

@@ -1028,6 +1028,9 @@ typedef unsigned __int64 uint64_t;
 #define false 0
 #define __bool_true_false_are_defined 1
 
+/* normally defined in fcntl.h, but not on Windows */
+#define O_CLOEXEC 0
+
 
 #ifdef HAVE_LONG_LONG
 typedef long long lng;

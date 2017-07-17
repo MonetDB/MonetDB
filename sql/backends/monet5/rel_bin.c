@@ -260,7 +260,7 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 }
 
 static stmt *
-value_list(backend *be, list *vals) 
+value_list(backend *be, list *vals, stmt *left, stmt *sel) 
 {
 	node *n;
 	stmt *s;
@@ -269,7 +269,7 @@ value_list(backend *be, list *vals)
 	s = stmt_temp(be, exp_subtype(vals->h->data));
 	for( n = vals->h; n; n = n->next) {
 		sql_exp *e = n->data;
-		stmt *i = exp_bin(be, e, NULL, NULL, NULL, NULL, NULL, NULL);
+		stmt *i = exp_bin(be, e, left, NULL, NULL, NULL, NULL, sel);
 
 		if (list_length(vals) == 1)
 			return i;
@@ -387,7 +387,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		} else if (e->r) { 		/* parameters */
 			s = stmt_var(be, sa_strdup(sql->sa, e->r), e->tpe.type?&e->tpe:NULL, 0, e->flag);
 		} else if (e->f) { 		/* values */
-			s = value_list(be, e->f);
+			s = value_list(be, e->f, left, sel);
 		} else { 			/* arguments */
 			s = stmt_varnr(be, e->flag, e->tpe.type?&e->tpe:NULL);
 		}
@@ -436,7 +436,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				if (!es) 
 					return NULL;
 
-				if (rows && en == exps->h)
+				if (rows && en == exps->h && f->func->type != F_LOADER)
 					es = stmt_const(be, rows, es);
 				if (es->nrcols > nrcols)
 					nrcols = es->nrcols;
@@ -1039,7 +1039,6 @@ rel_parse_value(backend *be, char *query, char emode)
 
 	m->caching = 0;
 	m->emode = emode;
-	// FIXME unchecked_malloc GDKmalloc can return NULL
 	b = (buffer*)GDKmalloc(sizeof(buffer));
 	if (b == 0)
 		return sql_error(m, 02, MAL_MALLOC_FAIL);
@@ -1417,34 +1416,36 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 			return NULL;	
 		}
 		l = sa_list(sql->sa);
-		if (f->func->varres) {
-			for(i=0, en = rel->exps->h, n = f->res->h; en; en = en->next, n = n->next, i++ ) {
-				sql_exp *exp = en->data;
-				sql_subtype *st = n->data;
-				const char *rnme = exp->rname?exp->rname:exp->l;
-				stmt *s = stmt_rs_column(be, psub, i, st); 
-		
-				s = stmt_alias(be, s, rnme, exp->name);
-				list_append(l, s);
-			}
-		} else {
-			for(i = 0, n = f->func->res->h; n; n = n->next, i++ ) {
-				sql_arg *a = n->data;
-				stmt *s = stmt_rs_column(be, psub, i, &a->type); 
-				const char *rnme = exp_find_rel_name(op);
-	
-				s = stmt_alias(be, s, rnme, a->name);
-				list_append(l, s);
-			}
-			if (list_length(f->res) == list_length(f->func->res) + 1) {
-				/* add missing %TID% column */
-				sql_subtype *t = f->res->t->data;
-				stmt *s = stmt_rs_column(be, psub, i, t); 
-				const char *rnme = exp_find_rel_name(op);
-	
-				s = stmt_alias(be, s, rnme, TID);
-				list_append(l, s);
-			}
+		if (f->func->res) {
+				if (f->func->varres) {
+					for(i=0, en = rel->exps->h, n = f->res->h; en; en = en->next, n = n->next, i++ ) {
+						sql_exp *exp = en->data;
+						sql_subtype *st = n->data;
+						const char *rnme = exp->rname?exp->rname:exp->l;
+						stmt *s = stmt_rs_column(be, psub, i, st); 
+				
+						s = stmt_alias(be, s, rnme, exp->name);
+						list_append(l, s);
+					}
+				} else {
+					for(i = 0, n = f->func->res->h; n; n = n->next, i++ ) {
+						sql_arg *a = n->data;
+						stmt *s = stmt_rs_column(be, psub, i, &a->type); 
+						const char *rnme = exp_find_rel_name(op);
+			
+						s = stmt_alias(be, s, rnme, a->name);
+						list_append(l, s);
+					}
+					if (list_length(f->res) == list_length(f->func->res) + 1) {
+						/* add missing %TID% column */
+						sql_subtype *t = f->res->t->data;
+						stmt *s = stmt_rs_column(be, psub, i, t); 
+						const char *rnme = exp_find_rel_name(op);
+			
+						s = stmt_alias(be, s, rnme, TID);
+						list_append(l, s);
+					}
+				}
 		}
 		if (!rel->flag && sub && sub->nrcols) { 
 			assert(0);

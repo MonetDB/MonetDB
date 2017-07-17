@@ -51,6 +51,8 @@ str _connection_init(void);
 str _connection_query(Client cntxt, char *query, res_table **result);
 str _connection_create_table(Client cntxt, char *sname, char *tname,
 							 sql_emit_col *columns, size_t ncols);
+str _connection_append_to_table(Client cntxt, char *sname, char *tname,
+							 sql_emit_col *columns, size_t ncols);
 void _connection_cleanup_result(void *output);
 
 #endif /* _LOOPBACK_QUERY_ */

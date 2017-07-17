@@ -351,6 +351,9 @@ SERVERlistenThread(SOCKET *Sock)
 				}
 				continue;
 			}
+#ifdef HAVE_FCNTL
+			fcntl(msgsock, F_SETFD, FD_CLOEXEC);
+#endif
 #ifdef HAVE_SYS_UN_H
 		} else if (usock != INVALID_SOCKET && FD_ISSET(usock, &fds)) {
 			struct msghdr msgh;
@@ -373,6 +376,9 @@ SERVERlistenThread(SOCKET *Sock)
 				}
 				continue;
 			}
+#ifdef HAVE_FCNTL
+			fcntl(msgsock, F_SETFD, FD_CLOEXEC);
+#endif
 
 			/* BEWARE: unix domain sockets have a slightly different
 			 * behaviour initialy than normal sockets, because we can
@@ -610,6 +616,9 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 #endif
 				);
 		}
+#ifdef HAVE_FCNTL
+		fcntl(sock, F_SETFD, FD_CLOEXEC);
+#endif
 
 		if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) == SOCKET_ERROR) {
 #ifdef _MSC_VER
@@ -699,6 +708,9 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 #endif
 				);
 		}
+#ifdef HAVE_FCNTL
+		fcntl(usock, F_SETFD, FD_CLOEXEC);
+#endif
 
 		/* prevent silent truncation, sun_path is typically around 108
 		 * chars long :/ */

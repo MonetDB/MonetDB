@@ -66,3 +66,6 @@ crash-dce.Bug-6330
 delete_from_merge_table.Bug-3743
 statistics_nils_not_eq_zero.Bug-6331
 crash-select_after_MAL_error.Bug-6332
+groupby_assertion.Bug-6338
+spurious_error.Bug-6344
+name-interference.Bug-6348

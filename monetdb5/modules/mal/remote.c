@@ -355,6 +355,8 @@ RMTgetId(char *buf, MalBlkPtr mb, InstrPtr p, int arg) {
 	if (mod == NULL)
 		mod = "user";
 	rt = getTypeIdentifier(getArgType(mb,p,arg));
+	if (rt == NULL)
+		throw(MAL, "remote.put", MAL_MALLOC_FAIL);
 
 	snprintf(buf, BUFSIZ, "rmt%d_%s_%s", idtag++, var, rt);
 
@@ -490,6 +492,8 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	   Since the put() encodes the type as known to the remote site
 	   we can simple compare it here */
 	rt = getTypeIdentifier(rtype);
+	if (rt == NULL)
+		throw(MAL, "remote.get", MAL_MALLOC_FAIL);
 	if (strcmp(ident + strlen(ident) - strlen(rt), rt)) {
 		tmp = createException(MAL, "remote.get", ILLEGAL_ARGUMENT
 			": remote object type %s does not match expected type %s",
@@ -678,7 +682,11 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	MT_lock_set(&c->lock);
 
 	/* get a free, typed identifier for the remote host */
-	RMTgetId(ident, mb, pci, 2);
+	tmp = RMTgetId(ident, mb, pci, 2);
+	if (tmp != MAL_SUCCEED) {
+		MT_lock_unset(&c->lock);
+		return tmp;
+	}
 
 	/* depending on the input object generate actions to store the
 	 * object remotely*/
@@ -701,6 +709,10 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		stream *sout;
 
 		tail = getTypeIdentifier(getBatType(type));
+		if (tail == NULL) {
+			MT_lock_unset(&c->lock);
+			throw(MAL, "remote.put", MAL_MALLOC_FAIL);
+		}
 
 		bid = *(bat *)value;
 		if (bid != 0) {
@@ -748,28 +760,45 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		}
 		mapi_close_handle(mhdl);
 	} else {
+		int l = 0;
 		str val = NULL;
 		char *tpe;
-		char qbuf[BUFSIZ + 1]; /* FIXME: this should be dynamic */
+		char qbuf[512], *nbuf = qbuf;
 		if (ATOMvarsized(type)) {
-			ATOMformat(type, *(str *)value, &val);
+			l = ATOMformat(type, *(str *)value, &val);
 		} else {
-			ATOMformat(type, value, &val);
+			l = ATOMformat(type, value, &val);
+		}
+		if (l < 0) {
+			MT_lock_unset(&c->lock);
+			throw(MAL, "remote.put", GDK_EXCEPTION);
 		}
 		tpe = getTypeIdentifier(type);
+		if (tpe == NULL) {
+			MT_lock_unset(&c->lock);
+			GDKfree(val);
+			throw(MAL, "remote.put", MAL_MALLOC_FAIL);
+		}
+		l += (int) (strlen(tpe) + strlen(ident) + 10);
+		if (l > (int) sizeof(qbuf) && (nbuf = GDKmalloc(l)) == NULL) {
+			MT_lock_unset(&c->lock);
+			GDKfree(val);
+			GDKfree(tpe);
+			throw(MAL, "remote.put", MAL_MALLOC_FAIL);
+		}
 		if (type <= TYPE_str)
-			snprintf(qbuf, BUFSIZ, "%s := %s:%s;\n", ident, val, tpe);
+			snprintf(nbuf, l, "%s := %s:%s;\n", ident, val, tpe);
 		else
-			snprintf(qbuf, BUFSIZ, "%s := \"%s\":%s;\n", ident, val, tpe);
-		qbuf[BUFSIZ] = '\0';
+			snprintf(nbuf, l, "%s := \"%s\":%s;\n", ident, val, tpe);
 		GDKfree(tpe);
 		GDKfree(val);
 #ifdef _DEBUG_REMOTE
-		fprintf(stderr, "#remote.put:%s:%s\n", c->name, qbuf);
+		fprintf(stderr, "#remote.put:%s:%s\n", c->name, nbuf);
 #endif
-		if ((tmp = RMTquery(&mhdl, "remote.put", c->mconn, qbuf))
-				!= MAL_SUCCEED)
-		{
+		tmp = RMTquery(&mhdl, "remote.put", c->mconn, nbuf);
+		if (nbuf != qbuf)
+			GDKfree(nbuf);
+		if (tmp != MAL_SUCCEED) {
 			MT_lock_unset(&c->lock);
 			return tmp;
 		}
@@ -1148,61 +1177,74 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 
 				lvp = &lv;
 				len = (int) sizeof(lv);
-				/* all values should be non-negative, so we check that
-				 * here as well */
-				if (lngFromStr(val, &len, &lvp) == 0 ||
-					lv < 0 /* includes lng_nil */)
-					throw(MAL, "remote.bincopyfrom",
-						  "bad %s value: %s", nme, val);
-
-				/* deal with nme and val */
-				if (strcmp(nme, "version") == 0) {
-					if (lv != 1)
-						throw(MAL, "remote.bincopyfrom",
-								"unsupported version: %s", val);
-				} else if (strcmp(nme, "hseqbase") == 0) {
-#if SIZEOF_OID < SIZEOF_LNG
-					if (lv > GDK_oid_max)
-						throw(MAL, "remote.bincopyfrom",
-							  "bad %s value: %s", nme, val);
+				/* tseqbase can be 1<<31/1<<63 which causes overflow
+				 * in lngFromStr, so we check separately */
+				if (strcmp(val,
+#if SIZEOF_OID == 8
+						   "9223372036854775808"
+#else
+						   "2147483648"
 #endif
-					bb.Hseqbase = (oid)lv;
-				} else if (strcmp(nme, "ttype") == 0) {
-					if (lv >= GDKatomcnt)
-						throw(MAL, "remote.bincopyfrom",
-							  "bad %s value: %s", nme, val);
-					bb.Ttype = (int) lv;
-				} else if (strcmp(nme, "tseqbase") == 0) {
-#if SIZEOF_OID < SIZEOF_LNG
-					if (lv > GDK_oid_max)
-						throw(MAL, "remote.bincopyfrom",
-							  "bad %s value: %s", nme, val);
-#endif
-					bb.Tseqbase = (oid) lv;
-				} else if (strcmp(nme, "tsorted") == 0) {
-					bb.Tsorted = lv != 0;
-				} else if (strcmp(nme, "trevsorted") == 0) {
-					bb.Trevsorted = lv != 0;
-				} else if (strcmp(nme, "hkey") == 0) {
-					bb.Hkey = lv != 0;
-				} else if (strcmp(nme, "tkey") == 0) {
-					bb.Tkey = lv != 0;
-				} else if (strcmp(nme, "tnonil") == 0) {
-					bb.Tnonil = lv != 0;
-				} else if (strcmp(nme, "tdense") == 0) {
-					bb.Tdense = lv != 0;
-				} else if (strcmp(nme, "size") == 0) {
-					if (lv > (lng) BUN_MAX)
-						throw(MAL, "remote.bincopyfrom",
-							  "bad %s value: %s", nme, val);
-					bb.size = (BUN) lv;
-				} else if (strcmp(nme, "tailsize") == 0) {
-					bb.tailsize = (size_t) lv;
-				} else if (strcmp(nme, "theapsize") == 0) {
-					bb.theapsize = (size_t) lv;
+						) == 0 &&
+					strcmp(nme, "tseqbase") == 0) {
+					bb.Tseqbase = oid_nil;
 				} else {
-					throw(MAL, "remote.bincopyfrom",
-							"unknown element: %s", nme);
+					/* all values should be non-negative, so we check that
+					 * here as well */
+					if (lngFromStr(val, &len, &lvp) == 0 ||
+						lv < 0 /* includes lng_nil */)
+						throw(MAL, "remote.bincopyfrom",
+							  "bad %s value: %s", nme, val);
+
+					/* deal with nme and val */
+					if (strcmp(nme, "version") == 0) {
+						if (lv != 1)
+							throw(MAL, "remote.bincopyfrom",
+								  "unsupported version: %s", val);
+					} else if (strcmp(nme, "hseqbase") == 0) {
+#if SIZEOF_OID < SIZEOF_LNG
+						if (lv > GDK_oid_max)
+							throw(MAL, "remote.bincopyfrom",
+									  "bad %s value: %s", nme, val);
+#endif
+						bb.Hseqbase = (oid)lv;
+					} else if (strcmp(nme, "ttype") == 0) {
+						if (lv >= GDKatomcnt)
+							throw(MAL, "remote.bincopyfrom",
+								  "bad %s value: %s", nme, val);
+						bb.Ttype = (int) lv;
+					} else if (strcmp(nme, "tseqbase") == 0) {
+#if SIZEOF_OID < SIZEOF_LNG
+						if (lv > GDK_oid_max)
+							throw(MAL, "remote.bincopyfrom",
+								  "bad %s value: %s", nme, val);
+#endif
+						bb.Tseqbase = (oid) lv;
+					} else if (strcmp(nme, "tsorted") == 0) {
+						bb.Tsorted = lv != 0;
+					} else if (strcmp(nme, "trevsorted") == 0) {
+						bb.Trevsorted = lv != 0;
+					} else if (strcmp(nme, "hkey") == 0) {
+						bb.Hkey = lv != 0;
+					} else if (strcmp(nme, "tkey") == 0) {
+						bb.Tkey = lv != 0;
+					} else if (strcmp(nme, "tnonil") == 0) {
+						bb.Tnonil = lv != 0;
+					} else if (strcmp(nme, "tdense") == 0) {
+						bb.Tdense = lv != 0;
+					} else if (strcmp(nme, "size") == 0) {
+						if (lv > (lng) BUN_MAX)
+							throw(MAL, "remote.bincopyfrom",
+								  "bad %s value: %s", nme, val);
+						bb.size = (BUN) lv;
+					} else if (strcmp(nme, "tailsize") == 0) {
+						bb.tailsize = (size_t) lv;
+					} else if (strcmp(nme, "theapsize") == 0) {
+						bb.theapsize = (size_t) lv;
+					} else {
+						throw(MAL, "remote.bincopyfrom",
+							  "unknown element: %s", nme);
+					}
 				}
 				nme = val = NULL;
 				break;

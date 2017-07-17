@@ -446,11 +446,10 @@ SQLinitClient(Client c)
 	 * based on the mandatory scripts to be executed.
 	 */
 	if (sqlinit) {		/* add sqlinit to the fdin stack */
-		// FIXME unchecked_malloc GDKmalloc can return NULL
 		buffer *b = (buffer *) GDKmalloc(sizeof(buffer));
 		size_t len = strlen(sqlinit);
 		bstream *fdin;
-	
+
 		if( b == NULL)
 			throw(SQL,"sql.initClient",MAL_MALLOC_FAIL);
 

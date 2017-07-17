@@ -46,7 +46,7 @@
 
 typedef char *States;
 
-#define setState(S,P,K,F)  ( assert(getArg(P,K) < vlimit), (S)[getArg(P,K)] = F)
+#define setState(S,P,K,F)  ( assert(getArg(P,K) < vlimit), (S)[getArg(P,K)] |= F)
 #define getState(S,P,K)  ((S)[getArg(P,K)])
 
 static int
@@ -126,7 +126,7 @@ dataflowBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, States states)
 	}
 
 	for(j=p->retc; j < p->argc; j++)
-		if ( getState(states,p,j) == VARBLOCK){
+		if ( getState(states,p,j) & VARBLOCK){
 #ifdef DEBUG_OPT_DATAFLOW
 			if( getState(states,p,j) & VARREAD)
 				fprintf(stderr,"#breakpoint on blocked var %s state %d\n", getVarName(mb,getArg(p,j)), getState(states,p,j));
@@ -236,7 +236,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				// collect BAT variables garbage collected within the block 
 				if( !simple)
 					for( k=q->retc; k<q->argc; k++){
-						if (getState(states,q,k) == VAR2READ &&  getEndScope(mb,getArg(q,k)) == j  && isaBatType(getVarType(mb,getArg(q,k))) )
+						if (getState(states,q,k) & VAR2READ &&  getEndScope(mb,getArg(q,k)) == j && isaBatType(getVarType(mb,getArg(q,k))) )
 								top = dflowGarbagesink(cntxt, mb, getArg(q,k), sink, top);
 					}
 			}
@@ -288,15 +288,15 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		} 
 		// remember you assigned/read variables
 		for ( k = 0; k < p->retc; k++)
-			setState(states,p,k,VARWRITE);
-		if( isUpdateInstruction(p) && (getState(states,p,1) == 0 || getState(states,p,1) == VARWRITE))
+			setState(states, p, k, VARWRITE);
+		if( isUpdateInstruction(p) && (getState(states,p,1) == 0 || getState(states,p,1) & VARWRITE))
 			setState(states, p,1, VARBLOCK);
 		for ( k = p->retc; k< p->argc; k++)
 		if( !isVarConstant(mb,getArg(p,k)) ){
-			if( getState(states, p, k) == VARREAD)
+			if( getState(states, p, k) & VARREAD)
 				setState(states, p, k, VAR2READ);
 			else
-			if( getState(states, p, k) == VARWRITE)
+			if( getState(states, p, k) & VARWRITE)
 				setState(states, p ,k, VARREAD);
 		}
 #ifdef DEBUG_OPT_DATAFLOW

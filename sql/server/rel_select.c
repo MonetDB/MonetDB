@@ -430,26 +430,26 @@ find_func(mvc *sql, sql_schema *s, char *fname, int len, int type, sql_subfunc *
 }
 
 static sql_exp *
-find_table_function(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl)
+find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl, int type, sql_subfunc **sf)
 {
 	sql_exp *e = NULL;
-	sql_subfunc * sf = bind_func_(sql, s, fname, tl, F_UNION);
+	*sf = bind_func_(sql, s, fname, tl, type);
 
-	if (sf) {
-		e = exp_op(sql->sa, exps, sf);
+	if (*sf) {
+		e = exp_op(sql->sa, exps, *sf);
 	} else if (list_length(tl)) { 
 		sql_subfunc * prev = NULL;
 
-		while(!e && (sf = bind_member_func(sql, s, fname, tl->h->data, list_length(tl), prev)) != NULL) {
+		while(!e && (*sf = bind_member_func(sql, s, fname, tl->h->data, list_length(tl), prev)) != NULL) {
 			node *n, *m;
 			list *nexps;
 
-			prev = sf;
-			if (sf->func->vararg) {
-				e = exp_op(sql->sa, exps, sf);
+			prev = *sf;
+			if ((*sf)->func->vararg) {
+				e = exp_op(sql->sa, exps, *sf);
 			} else {
 	       			nexps = new_exp_list(sql->sa);
-				for (n = exps->h, m = sf->func->ops->h; n && m; n = n->next, m = m->next) {
+				for (n = exps->h, m = (*sf)->func->ops->h; n && m; n = n->next, m = m->next) {
 					sql_arg *a = m->data;
 					sql_exp *e = n->data;
 
@@ -471,20 +471,20 @@ find_table_function(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl)
 				}
 				e = NULL;
 				if (nexps) 
-					e = exp_op(sql->sa, nexps, sf);
+					e = exp_op(sql->sa, nexps, *sf);
 			}
 		}
 		prev = NULL;
-		while(!e && (sf = find_func(sql, s, fname, list_length(tl), F_UNION, prev)) != NULL) {
+		while(!e && (*sf = find_func(sql, s, fname, list_length(tl), type, prev)) != NULL) {
 			node *n, *m;
 			list *nexps;
 
-			prev = sf;
-			if (sf->func->vararg) {
-				e = exp_op(sql->sa, exps, sf);
+			prev = *sf;
+			if ((*sf)->func->vararg) {
+				e = exp_op(sql->sa, exps, *sf);
 			} else {
        				nexps = new_exp_list(sql->sa);
-				for (n = exps->h, m = sf->func->ops->h; n && m; n = n->next, m = m->next) {
+				for (n = exps->h, m = (*sf)->func->ops->h; n && m; n = n->next, m = m->next) {
 					sql_arg *a = m->data;
 					sql_exp *e = n->data;
 
@@ -506,11 +506,17 @@ find_table_function(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl)
 				}
 				e = NULL;
 				if (nexps) 
-					e = exp_op(sql->sa, nexps, sf);
+					e = exp_op(sql->sa, nexps, *sf);
 			}
 		}
 	}
 	return e;
+}
+static sql_exp*
+find_table_function(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl)
+{
+	sql_subfunc* sf = NULL;
+	return find_table_function_type(sql, s, fname, exps, tl, F_UNION, &sf);
 }
 
 static sql_rel *
@@ -923,7 +929,7 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref, int lateral)
 			}
 			return rel;
 		}
-		if ((isMergeTable(t) || isReplicaTable(t)) && list_empty(t->tables.set))
+		if ((isMergeTable(t) || isReplicaTable(t)) && list_empty(t->members.set))
 			return sql_error(sql, 02, "MERGE or REPLICA TABLE should have at least one table associated");
 
 		return rel_basetable(sql, t, tname);
@@ -4958,6 +4964,8 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek, int app
 					fnd = table_ref(sql, rel, n->data.sym, 0);
 				}
 				used = 1;
+				if (!fnd && lateral)
+					res = NULL;
 			}
 
 			if (!fnd)
@@ -5413,5 +5421,75 @@ schema_selects(mvc *sql, sql_schema *schema, symbol *s)
 	res = rel_selects(sql, s);
 	sql->session->schema = os;
 	return res;
+}
+
+sql_rel *
+rel_loader_function(mvc* sql, symbol* fcall, list *fexps, sql_subfunc **loader_function) {
+	list *exps = NULL, *tl;
+	exp_kind ek = { type_value, card_relation, TRUE };
+	sql_rel *sq = NULL;
+	sql_exp *e = NULL;
+	symbol *sym = fcall;
+	dnode *l = sym->data.lval->h;
+	char *sname = qname_schema(l->data.lval);
+	char *fname = qname_fname(l->data.lval);
+	char *tname = NULL;
+	node *en;
+	sql_schema *s = sql->session->schema;
+	sql_subfunc* sf;
+
+		
+	tl = sa_list(sql->sa);
+	exps = new_exp_list(sql->sa);
+	if (l->next) { /* table call with subquery */
+		if (l->next->type == type_symbol && l->next->data.sym->token == SQL_SELECT) {
+			if (l->next->next != NULL)
+				return sql_error(sql, 02, "SELECT: '%s' requires a single sub query", fname);
+	       		sq = rel_subquery(sql, NULL, l->next->data.sym, ek, 0 /*apply*/);
+		} else if (l->next->type == type_symbol || l->next->type == type_list) {
+			dnode *n;
+			exp_kind iek = {type_value, card_column, TRUE};
+			list *exps = sa_list (sql->sa);
+
+			if (l->next->type == type_symbol)
+				n = l->next;
+			else 
+				n = l->next->data.lval->h;
+			for ( ; n; n = n->next) {
+				sql_exp *e = rel_value_exp(sql, NULL, n->data.sym, sql_sel, iek);
+
+				if (!e)
+					return NULL;
+				append(exps, e);
+			}
+			sq = rel_project(sql->sa, NULL, exps);
+		}
+
+		/* reset error */
+		sql->session->status = 0;
+		sql->errstr[0] = '\0';
+		if (!sq)
+			return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
+		for (en = sq->exps->h; en; en = en->next) {
+			sql_exp *e = en->data;
+
+			append(exps, e = exp_alias_or_copy(sql, tname, exp_name(e), NULL, e));
+			append(tl, exp_subtype(e));
+		}
+	}
+	if (sname)
+		s = mvc_bind_schema(sql, sname);
+
+
+	e = find_table_function_type(sql, s, fname, exps, tl, F_LOADER, &sf);
+	if (!e || !sf) {
+		return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
+	}
+
+	if (loader_function) {
+		*loader_function = sf;
+	}
+
+	return rel_table_func(sql->sa, sq, e, fexps, (sq != NULL));
 }
 

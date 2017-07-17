@@ -135,6 +135,62 @@ renderEvent(EventRecord *ev){
 }
 
 static void
+convertOldFormat(char *inputfile)
+{	FILE *fdin;
+	char basefile[BUFSIZ];
+	char buf[BUFSIZ]={0}, *response = buf, *e;
+	int first = 0, i = 0;
+	size_t n;
+	size_t len;
+	EventRecord event;
+
+	fprintf(stderr, "Converting a file to JSON\n");
+
+	fdin = fopen(inputfile,"r");
+	if( fdin == NULL){
+		fprintf(stderr,"Could not open the input file %s\n", inputfile);
+		return;
+	}
+	if( strstr(inputfile,".trace"))
+		*strstr(inputfile,".trace") = 0;
+	snprintf(basefile,BUFSIZ,"%s.json",inputfile);
+	trace = fopen(basefile,"w");
+	if( trace == NULL){
+		fprintf(stderr,"Could not create the output file %s\n", basefile);
+		return;
+	}
+	fprintf(trace?trace:stdout,"[\n{");
+	len = 0;
+	while ((n = fread(buf + len, 1, BUFSIZ - len, fdin)) > 0) {
+		buf[len + n] = 0;
+		response = buf;
+		while ((e = strchr(response, '\n')) != NULL) {
+			*e = 0;
+			i = lineparser(response, &event);
+			if (debug  )
+				fprintf(stderr, "PARSE %d:%s\n", i, response);
+			renderJSONevent((trace?trace:stdout), &event, first);
+			first++;
+			response = e + 1;
+		}
+		if( i){
+			renderJSONevent((trace?trace:stdout),&event,first);
+			resetEventRecord(&event);
+		}
+		/* handle last line in buffer */
+		if (*response) {
+			if (debug)
+				fprintf(stderr,"LASTLINE:%s", response);
+			len = strlen(response);
+			strncpy(buf, response, len + 1);
+		} else
+			len = 0;
+	}
+	fprintf(trace?trace:stdout,"}]\n");
+	return;
+}
+
+static void
 usageStethoscope(void)
 {
     fprintf(stderr, "stethoscope [options] \n");
@@ -143,6 +199,7 @@ usageStethoscope(void)
     fprintf(stderr, "  -P | --password=<password>\n");
     fprintf(stderr, "  -p | --port=<portnr>\n");
     fprintf(stderr, "  -h | --host=<hostname>\n");
+    fprintf(stderr, "  -c | --convert=<old formated file>\n");
     fprintf(stderr, "  -j | --json\n");
     fprintf(stderr, "  -o | --output=<file>\n");
 	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 50)\n");
@@ -175,6 +232,7 @@ main(int argc, char **argv)
 	ssize_t  n;
 	size_t len, buflen;
 	char *host = NULL;
+	char *conversion = NULL;
 	int portnr = 0;
 	char *dbname = NULL;
 	char *uri = NULL;
@@ -184,13 +242,14 @@ main(int argc, char **argv)
 	int done = 0;
 	EventRecord *ev = malloc(sizeof(EventRecord));
 
-	static struct option long_options[11] = {
+	static struct option long_options[12] = {
 		{ "dbname", 1, 0, 'd' },
 		{ "user", 1, 0, 'u' },
 		{ "port", 1, 0, 'p' },
 		{ "password", 1, 0, 'P' },
 		{ "host", 1, 0, 'h' },
 		{ "help", 0, 0, '?' },
+		{ "convert", 1, 0, 'c'},
 		{ "json", 0, 0, 'j'},
 		{ "output", 1, 0, 'o' },
 		{ "debug", 0, 0, 'D' },
@@ -246,6 +305,9 @@ main(int argc, char **argv)
 		case 'h':
 			host = optarg;
 			break;
+		case 'c':
+			conversion = optarg;
+			break;
 		case 'j':
 			json = 1;
 			break;
@@ -263,6 +325,10 @@ main(int argc, char **argv)
 			usageStethoscope();
 			exit(-1);
 		}
+	}
+	if( conversion){
+		convertOldFormat(conversion);
+		return 0;
 	}
 
 	if(dbname == NULL){

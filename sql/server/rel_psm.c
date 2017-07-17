@@ -1339,14 +1339,12 @@ psm_analyze(mvc *sql, char *analyzeType, dlist *qname, dlist *columns, symbol *s
 }
 
 static sql_rel*
-create_table_from_loader(mvc *sql, dlist *qname, symbol *fcall)
-{
+create_table_from_loader(mvc *sql, dlist *qname, symbol *fcall) {
 	sql_schema *s = NULL;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
-	sql_exp *import = NULL;
-	exp_kind ek = {type_value, card_loader, FALSE};
-	sql_rel *res = NULL;
+	sql_subfunc *loader = NULL;
+	sql_rel* rel = NULL;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, "3F000!CREATE TABLE: no such schema '%s'", sname);
@@ -1357,17 +1355,17 @@ create_table_from_loader(mvc *sql, dlist *qname, symbol *fcall)
 		return sql_error(sql, 02, "42000!CREATE TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 
-	import = rel_value_exp(sql, &res, fcall, sql_sel, ek);
-	if (!import) {
+	rel = rel_loader_function(sql, fcall, new_exp_list(sql->sa), &loader);
+	if (!rel || !loader) {
 		return NULL;
 	}
-	((sql_subfunc*) import->f)->sname = sname ? sa_zalloc(sql->sa, strlen(sname) + 1) : NULL;
-	((sql_subfunc*) import->f)->tname = tname ? sa_zalloc(sql->sa, strlen(tname) + 1) : NULL;
+	loader->sname = sname ? sa_zalloc(sql->sa, strlen(sname) + 1) : NULL;
+	loader->tname = tname ? sa_zalloc(sql->sa, strlen(tname) + 1) : NULL;
 
-	if (sname) strcpy(((sql_subfunc*) import->f)->sname, sname);
-	if (tname) strcpy(((sql_subfunc*) import->f)->tname, tname);
+	if (sname) strcpy(loader->sname, sname);
+	if (tname) strcpy(loader->tname, tname);
 
-	return rel_psm_stmt(sql->sa, import);
+	return rel;
 }
 
 sql_rel *
@@ -1423,8 +1421,8 @@ rel_psm(mvc *sql, symbol *s)
 	    dlist *qname = l->h->data.lval;
 	    symbol *sym = l->h->next->data.sym;
 
-	    ret = create_table_from_loader(sql, qname, sym);
-	    sql->type = Q_UPDATE;
+	    ret = rel_psm_stmt(sql->sa, exp_rel(sql, create_table_from_loader(sql, qname, sym)));
+	    sql->type = Q_SCHEMA;
 	}	break;
 	case SQL_CREATE_TRIGGER:
 	{

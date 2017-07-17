@@ -144,7 +144,7 @@ void reinitialize(void)
 
 	f = getConfVal(_mero_props, "logfile");
 	/* reopen (or open new) file */
-	t = open(f, O_WRONLY | O_APPEND | O_CREAT, S_IRUSR | S_IWUSR);
+	t = open(f, O_WRONLY | O_APPEND | O_CREAT | O_CLOEXEC, S_IRUSR | S_IWUSR);
 	if (t == -1) {
 		Mfprintf(stderr, "forced to ignore SIGHUP: unable to open "
 				"'%s': %s\n", f, strerror(errno));

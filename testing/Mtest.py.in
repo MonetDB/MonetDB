@@ -1280,6 +1280,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                 if FtOut in (F_OK, F_WARN) and FtErr in (F_OK, F_WARN):
                     oktests.append(TST)
                 if global_timeout and start_time + global_timeout < time.time():
+                    print('\nGlobal testing timeout reached\n')
                     break
         except KeyboardInterrupt:
             print('\nInterrupted')
@@ -4267,6 +4268,7 @@ def main(argv) :
                     if interrupted:
                         break
                     if global_timeout and start_time + global_timeout < time.time():
+                        print('\nGlobal testing timeout reached\n')
                         break
                     if not testweb:
                         # after a directory has been tested, create
