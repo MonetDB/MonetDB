@@ -195,6 +195,27 @@ static void *wrapped_GDK_zalloc_nojump(size_t size)
 	return add_allocated_region(ptr);
 }
 
+#define GENERATE_NUMERIC_FUNCTIONS(type, tpename) \
+	static void tpename##_initialize(struct cudf_data_struct_##tpename *self,  \
+									 size_t count)                             \
+	{                                                                          \
+		BAT* b;                                                                \
+		if (self->bat) {                                                       \
+			BBPunfix(((BAT*)self->bat)->batCacheid);                           \
+			self->bat = NULL;                                                  \
+		}                                                                      \
+		b = COLnew(0, TYPE_##tpename, count, TRANSIENT);                       \
+		if (!b) {                                                              \
+			longjmp(jump_buffer[THRgettid()], 2);                              \
+		}                                                                      \
+		self->bat = (void*) b;                                                 \
+		self->count = count;                                                   \
+		self->data = (type*) b->theap.base;                                    \
+		BATsetcount(b, count);                                                 \
+	}                                                                          \
+	static int tpename##_is_null(type value) { return value == tpename##_nil; }
+
+
 #define GENERATE_BASE_HEADERS(type, tpename)                                   \
 	static int tpename##_is_null(type value);                                  \
 	static void tpename##_initialize(struct cudf_data_struct_##tpename *self,  \
@@ -208,13 +229,14 @@ static void *wrapped_GDK_zalloc_nojump(size_t size)
 	GENERATE_BASE_HEADERS(tpe, tpename);                                       \
 	static int tpename##_is_null(tpe value) { return value == tpename##_nil; }
 
-GENERATE_BASE_FUNCTIONS(bte, bte);
-GENERATE_BASE_FUNCTIONS(sht, sht);
-GENERATE_BASE_FUNCTIONS(int, int);
-GENERATE_BASE_FUNCTIONS(lng, lng);
-GENERATE_BASE_FUNCTIONS(flt, flt);
-GENERATE_BASE_FUNCTIONS(dbl, dbl);
-GENERATE_BASE_FUNCTIONS(oid, oid);
+GENERATE_NUMERIC_FUNCTIONS(bit, bit);
+GENERATE_NUMERIC_FUNCTIONS(bte, bte);
+GENERATE_NUMERIC_FUNCTIONS(sht, sht);
+GENERATE_NUMERIC_FUNCTIONS(int, int);
+GENERATE_NUMERIC_FUNCTIONS(lng, lng);
+GENERATE_NUMERIC_FUNCTIONS(flt, flt);
+GENERATE_NUMERIC_FUNCTIONS(dbl, dbl);
+GENERATE_NUMERIC_FUNCTIONS(oid, oid);
 
 GENERATE_BASE_HEADERS(char *, str);
 GENERATE_BASE_HEADERS(cudf_data_date, date);
@@ -226,7 +248,7 @@ static void blob_initialize(struct cudf_data_struct_blob *self,
 
 #define GENERATE_BAT_INPUT_BASE(tpe)                                           \
 	struct cudf_data_struct_##tpe *bat_data =                                  \
-		GDKmalloc(sizeof(struct cudf_data_struct_##tpe));                      \
+		GDKzalloc(sizeof(struct cudf_data_struct_##tpe));                      \
 	if (!bat_data) {                                                           \
 		msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);              \
 		goto wrapup;                                                           \
@@ -235,6 +257,7 @@ static void blob_initialize(struct cudf_data_struct_blob *self,
 	bat_data->is_null = tpe##_is_null;                                         \
 	bat_data->scale =                                                          \
 		argnode ? pow(10, ((sql_arg *)argnode->data)->type.scale) : 1;         \
+	bat_data->bat = NULL;                                                      \
 	bat_data->initialize = (void (*)(void *, size_t))tpe##_initialize;
 
 #define GENERATE_BAT_INPUT(b, tpe)                                             \
@@ -282,7 +305,7 @@ static void blob_initialize(struct cudf_data_struct_blob *self,
 
 #define GENERATE_BAT_OUTPUT_BASE(tpe)                                          \
 	struct cudf_data_struct_##tpe *bat_data =                                  \
-		GDKmalloc(sizeof(struct cudf_data_struct_##tpe));                      \
+		GDKzalloc(sizeof(struct cudf_data_struct_##tpe));                      \
 	if (!bat_data) {                                                           \
 		msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);              \
 		goto wrapup;                                                           \
@@ -320,6 +343,7 @@ const char *ldflags_pragma = "#pragma LDFLAGS ";
 
 static size_t GetTypeCount(int type, void *struct_ptr);
 static void *GetTypeData(int type, void *struct_ptr);
+static void *GetTypeBat(int type, void *struct_ptr);
 static const char *GetTypeName(int type);
 
 static void data_from_date(date d, cudf_data_date *ptr);
@@ -912,7 +936,9 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				BATdescriptor(*getArgReference_bat(stk, pci, i));
 		}
 
-		if (bat_type == TYPE_bit || bat_type == TYPE_bte) {
+		if (bat_type == TYPE_bit) {
+			GENERATE_BAT_INPUT(input_bats[index], bit);
+		} else if (bat_type == TYPE_bte) {
 			GENERATE_BAT_INPUT(input_bats[index], bte);
 		} else if (bat_type == TYPE_sht) {
 			GENERATE_BAT_INPUT(input_bats[index], sht);
@@ -1142,7 +1168,9 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	for (i = 0; i < output_count; i++) {
 		index = i;
 		bat_type = getBatType(getArgType(mb, pci, i));
-		if (bat_type == TYPE_bit || bat_type == TYPE_bte) {
+		if (bat_type == TYPE_bit) {
+			GENERATE_BAT_OUTPUT(bit);
+		} else if (bat_type == TYPE_bte) {
 			GENERATE_BAT_OUTPUT(bte);
 		} else if (bat_type == TYPE_sht) {
 			GENERATE_BAT_OUTPUT(sht);
@@ -1286,26 +1314,13 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			bat_type == TYPE_sht || bat_type == TYPE_int ||
 			bat_type == TYPE_oid || bat_type == TYPE_lng ||
 			bat_type == TYPE_flt || bat_type == TYPE_dbl) {
-			b = COLnew(0, bat_type, 0, TRANSIENT);
+			b = GetTypeBat(bat_type, outputs[i]);
 			if (!b) {
-				msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
+				msg = createException(MAL, "cudf.eval", "Output column was not properly initialized.");
 				goto wrapup;
 			}
-			// we pass the data we have directly into the BAT for simple
-			// numeric types
-			// this way we do not need to copy any data unnecessarily
-			// free the current (initial) storage
-			GDKfree(b->theap.base);
-			// set the heap to use the new storage
-			b->theap.base = data;
-			b->theap.size = count * b->twidth;
-			b->theap.free = b->theap.size;
-			b->theap.storage = STORE_MEM;
-			b->theap.newstorage = STORE_MEM;
-			b->batCount = (BUN)count;
-			b->batCapacity = (BUN)count;
-			b->batCopiedtodisk = false;
 		} else {
+			assert(GetTypeBat(bat_type, outputs[i]) == NULL);
 			b = COLnew(0, bat_type, count, TRANSIENT);
 			if (!b) {
 				msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
@@ -1541,9 +1556,14 @@ wrapup:
 							   ? getBatType(getArgType(mb, pci, i))
 							   : getArgType(mb, pci, i);
 			if (outputs[i]) {
-				void *data = GetTypeData(bat_type, outputs[i]);
-				if (data) {
-					GDKfree(data);
+				void* b = GetTypeBat(bat_type, outputs[i]);
+				if (b) {
+					BBPunfix(((BAT*)b)->batCacheid);
+				} else {
+					void *data = GetTypeData(bat_type, outputs[i]);
+					if (data) {
+						GDKfree(data);
+					}
 				}
 				GDKfree(outputs[i]);
 			}
@@ -1641,6 +1661,41 @@ void *GetTypeData(int type, void *struct_ptr)
 		data = ((struct cudf_data_struct_str *)struct_ptr)->data;
 	}
 	return data;
+}
+
+void *GetTypeBat(int type, void *struct_ptr)
+{
+	void *bat = NULL;
+
+	if (type == TYPE_bit || type == TYPE_bte) {
+		bat = ((struct cudf_data_struct_bte *)struct_ptr)->bat;
+	} else if (type == TYPE_sht) {
+		bat = ((struct cudf_data_struct_sht *)struct_ptr)->bat;
+	} else if (type == TYPE_int) {
+		bat = ((struct cudf_data_struct_int *)struct_ptr)->bat;
+	} else if (type == TYPE_oid) {
+		bat = ((struct cudf_data_struct_oid *)struct_ptr)->bat;
+	} else if (type == TYPE_lng) {
+		bat = ((struct cudf_data_struct_lng *)struct_ptr)->bat;
+	} else if (type == TYPE_flt) {
+		bat = ((struct cudf_data_struct_flt *)struct_ptr)->bat;
+	} else if (type == TYPE_dbl) {
+		bat = ((struct cudf_data_struct_dbl *)struct_ptr)->bat;
+	} else if (type == TYPE_str) {
+		bat = ((struct cudf_data_struct_str *)struct_ptr)->bat;
+	} else if (type == TYPE_date) {
+		bat = ((struct cudf_data_struct_date *)struct_ptr)->bat;
+	} else if (type == TYPE_daytime) {
+		bat = ((struct cudf_data_struct_time *)struct_ptr)->bat;
+	} else if (type == TYPE_timestamp) {
+		bat = ((struct cudf_data_struct_timestamp *)struct_ptr)->bat;
+	} else if (type == TYPE_blob || type == TYPE_sqlblob) {
+		bat = ((struct cudf_data_struct_blob *)struct_ptr)->bat;
+	} else {
+		// unsupported type: string
+		bat = ((struct cudf_data_struct_str *)struct_ptr)->bat;
+	}
+	return bat;
 }
 
 size_t GetTypeCount(int type, void *struct_ptr)

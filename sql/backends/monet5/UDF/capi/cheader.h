@@ -33,8 +33,10 @@ typedef struct {
 		double scale;                                                          \
 		int (*is_null)(type value);                                            \
 		void (*initialize)(void *self, size_t count);                          \
+		void *bat;                                                             \
 	}
 
+DEFAULT_STRUCT_DEFINITION(signed char, bit);
 DEFAULT_STRUCT_DEFINITION(signed char, bte);
 DEFAULT_STRUCT_DEFINITION(short, sht);
 DEFAULT_STRUCT_DEFINITION(int, int);
