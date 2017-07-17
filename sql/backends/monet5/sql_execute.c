@@ -267,7 +267,8 @@ SQLexecutePrepared(Client c, backend *be, MalBlkPtr mb)
 }
 
 static str
-SQLrun(Client c, backend *be, mvc *m){
+SQLrun(Client c, backend *be, mvc *m)
+{
 	str msg= MAL_SUCCEED;
 	MalBlkPtr mc = 0, mb=c->curprg->def;
 	InstrPtr p=0;
@@ -495,7 +496,6 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	c->sqlcontext = sql;
 	while (msg == MAL_SUCCEED && m->scanner.rs->pos < m->scanner.rs->len) {
 		sql_rel *r;
-		MalStkPtr oldglb = c->glb;
 
 		if (!m->sa)
 			m->sa = sa_create();
@@ -516,8 +516,6 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 			execute = 0;
 			if (!err)
 				continue;
-			assert(c->glb == 0 || c->glb == oldglb);	/* detect leak */
-			c->glb = oldglb;
 			goto endofcompile;
 		}
 
@@ -549,8 +547,6 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 			freeVariables(c, c->curprg->def, c->glb, oldvtop);
 
 			c->curprg->def->errors = 0;
-			assert(c->glb == 0 || c->glb == oldglb);	/* detect leak */
-			c->glb = oldglb;
 			goto endofcompile;
 		}
 		/* generate MAL code */
@@ -565,11 +561,9 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		mnstr_printf(c->fdout, "#SQLstatement:post-compile\n");
 		printFunction(c->fdout, c->curprg->def, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
 #endif
-		msg =SQLoptimizeFunction(c, c->curprg->def);
-		if( msg)
-			goto endofcompile;
+		msg = SQLoptimizeFunction(c, c->curprg->def);
 
-		if (err ||c->curprg->def->errors) {
+		if (err || c->curprg->def->errors || msg) {
 			/* restore the state */
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, c->glb, oldvtop);
@@ -581,8 +575,6 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 					msg = createException(PARSE, "SQLparser", "SQLSTATE 42000 !""%s", m->errstr);
 				*m->errstr = 0;
 			}
-			assert(c->glb == 0 || c->glb == oldglb);	/* detect leak */
-			c->glb = oldglb;
 			goto endofcompile;
 		}
 #ifdef _SQL_COMPILE
@@ -637,16 +629,11 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		}
 
 		if (!execute) {
-			assert(c->glb == 0 || c->glb == oldglb);	/* detect leak */
-			c->glb = oldglb;
 			goto endofcompile;
 		}
 #ifdef _SQL_COMPILE
 		mnstr_printf(c->fdout, "#parse/execute result %d\n", err);
 #endif
-		assert(c->glb == 0 || c->glb == oldglb || (c->glb && oldglb == 0));	/* detect leak */
-		c->glb = oldglb;
-
 	}
 	if (m->results) {
 		if (result) { /* return all results sets */
@@ -695,7 +682,6 @@ str
 SQLengineIntern(Client c, backend *be)
 {
 	str msg = MAL_SUCCEED;
-	MalStkPtr oldglb = c->glb;
 	char oldlang = be->language;
 	mvc *m = be->mvc;
 
@@ -726,8 +712,6 @@ SQLengineIntern(Client c, backend *be)
 	if (m->emode == m_prepare)
 		goto cleanup_engine;
 
-	assert(c->glb == 0 || c->glb == oldglb);	/* detect leak */
-	c->glb = 0;
 	be->language = 'D';
 	/*
 	 * The code below is copied from MALengine, which handles execution
@@ -771,8 +755,6 @@ cleanup_engine:
 	 * Any error encountered during execution should block further processing
 	 * unless auto_commit has been set.
 	 */
-	assert(c->glb == 0 || c->glb == oldglb);	/* detect leak */
-	c->glb = oldglb;
 	return msg;
 }
 
@@ -804,7 +786,6 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (rel) {
 		int oldvtop = c->curprg->def->vtop;
 		int oldstop = c->curprg->def->stop;
-		MalStkPtr oldglb = c->glb;
 
 		if (*opt)
 			rel = rel_optimizer(m, rel);
@@ -824,10 +805,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!msg) {
 			resetMalBlk(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, NULL, oldvtop);
-			if( !(c->glb == 0 || c->glb == oldglb))
-				msg= createException(MAL,"sql","global stack leakage");	/* detect leak */
 		}
-		c->glb = oldglb;
 	}
 	return msg;
 }

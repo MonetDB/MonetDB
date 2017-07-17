@@ -25,14 +25,14 @@
 bool string_copy(char *source, char *dest, size_t max_size, bool allow_unicode)
 {
 	size_t i;
-	for (i = 0; i < max_size; i++) {
+	for (i = 0; i < max_size-1; i++) {
 		dest[i] = source[i];
 		if (dest[i] == 0)
 			return TRUE;
 		if (!allow_unicode && source[i] & 0x80)
 			return FALSE;
 	}
-	dest[max_size] = '\0';
+	dest[max_size-1] = '\0';
 	return TRUE;
 }
 
@@ -83,6 +83,7 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 	PyObject *obj;
 	str msg = MAL_SUCCEED;
 	str utf8_string = NULL;
+	size_t len = 0;
 
 	(void)maxsize;
 
@@ -94,7 +95,7 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 
 	utf8_string = *value;
 	if (!utf8_string) {
-		utf8_string = (str)malloc(pyobject_get_size(obj) * sizeof(char));
+		utf8_string = (str)malloc(len = (pyobject_get_size(obj) * sizeof(char)));
 		if (!utf8_string) {
 			msg = createException(MAL, "pyapi.eval",
 								  "SQLSTATE HY001 !"MAL_MALLOC_FAIL "python string");
@@ -106,7 +107,7 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 #ifndef IS_PY3K
 	if (PyString_CheckExact(obj)) {
 		char *str = ((PyStringObject *)obj)->ob_sval;
-		if (!string_copy(str, utf8_string, strlen(str) + 1, false)) {
+		if (!string_copy(str, utf8_string, len, false)) {
 			msg = createException(MAL, "pyapi.eval",
 								  "SQLSTATE PY000 !""Invalid string encoding used. Please return "
 								  "a regular ASCII string, or a Numpy_Unicode "
@@ -117,7 +118,7 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 #endif
 		if (PyByteArray_CheckExact(obj)) {
 		char *str = ((PyByteArrayObject *)obj)->ob_bytes;
-		if (!string_copy(str, utf8_string, strlen(str) + 1, false)) {
+		if (!string_copy(str, utf8_string, len, false)) {
 			msg = createException(MAL, "pyapi.eval",
 								  "SQLSTATE PY000 !""Invalid string encoding used. Please return "
 								  "a regular ASCII string, or a Numpy_Unicode "
@@ -134,7 +135,7 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 #endif
 #else
 		char *str = PyUnicode_AsUTF8(obj);
-		if (!string_copy(str, utf8_string, strlen(str) + 1, true)) {
+		if (!string_copy(str, utf8_string, len, true)) {
 			msg = createException(MAL, "pyapi.eval",
 								  "SQLSTATE PY000 !""Invalid string encoding used. Please return "
 								  "a regular ASCII string, or a Numpy_Unicode "

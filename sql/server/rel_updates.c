@@ -1189,7 +1189,7 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 	if (fwf_widths && dlist_length(fwf_widths) > 0) {
 		dnode *dn;
 		int ncol = 0;
-		char* fwf_string_cur = fwf_string = GDKmalloc(20 * dlist_length(fwf_widths) + 1); // a 64 bit int needs 19 characters in decimal representation plus the separator
+		char* fwf_string_cur = fwf_string = sa_alloc(sql->sa, 20 * dlist_length(fwf_widths) + 1); // a 64 bit int needs 19 characters in decimal representation plus the separator
 
 		if (!fwf_string) 
 			return NULL;

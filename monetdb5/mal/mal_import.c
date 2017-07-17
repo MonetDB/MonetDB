@@ -233,7 +233,8 @@ malInclude(Client c, str name, int listing)
  */
 str
 evalFile(str fname, int listing)
-{	Client c;
+{	
+	Client c;
 	stream *fd;
 	str filename;
 	str msg = MAL_SUCCEED;
@@ -257,13 +258,14 @@ evalFile(str fname, int listing)
 	c->promptlength = 0;
 	c->listing = listing;
 
-    if ( (msg = defaultScenario(c)) ) {
+	if ( (msg = defaultScenario(c)) ) {
 		MCcloseClient(c);
 		throw(MAL,"mal.eval","%s",msg);
 	}
 	MSinitClientPrg(c, "user", "main");
 
 	msg = runScenario(c,0);
+	MCcloseClient(c);
 	return msg;
 }
 

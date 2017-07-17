@@ -5518,16 +5518,26 @@ stream_fwf_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 static void
 stream_fwf_close(stream *s)
 {
-	if (strcmp(s->name, STREAM_FWF_NAME) == 0) {
+	if (strcmp(s->name, STREAM_FWF_NAME) == 0 && s->stream_data.p) {
 		stream_fwf_data *fsd = (stream_fwf_data*) s->stream_data.p;
 		mnstr_close(fsd->s);
+		mnstr_destroy(fsd->s);
 		free(fsd->widths);
 		free(fsd->in_buf);
 		free(fsd->out_buf);
 		free(fsd->nl_buf);
 		free(fsd);
+		s->stream_data.p = NULL;
 	}
-	// FIXME destroy(s);
+}
+
+static void
+stream_fwf_destroy(stream *s)
+{
+	if (s) {
+		stream_fwf_close(s);
+		destroy(s);
+	}
 }
 
 stream*
@@ -5549,12 +5559,16 @@ stream_fwf_create (stream *s, size_t num_fields, size_t *widths, char filler)
 	}
 	fsd->in_buf = malloc(fsd->line_len);
 	if (!fsd->in_buf) {
+		mnstr_close(fsd->s);
+		mnstr_destroy(fsd->s);
 		free(fsd);
 		return NULL;
 	}
 	out_buf_len = fsd->line_len * 3;
 	fsd->out_buf = malloc(out_buf_len);
 	if (!fsd->out_buf) {
+		mnstr_close(fsd->s);
+		mnstr_destroy(fsd->s);
 		free(fsd->in_buf);
 		free(fsd);
 		return NULL;
@@ -5562,12 +5576,16 @@ stream_fwf_create (stream *s, size_t num_fields, size_t *widths, char filler)
 	fsd->out_buf_remaining = 0;
 	fsd->nl_buf = malloc(1);
 	if (!fsd->nl_buf) {
+		mnstr_close(fsd->s);
+		mnstr_destroy(fsd->s);
 		free(fsd->in_buf);
 		free(fsd->out_buf);
 		free(fsd);
 		return NULL;
 	}
 	if ((ns = create_stream(STREAM_FWF_NAME)) == NULL) {
+		mnstr_close(fsd->s);
+		mnstr_destroy(fsd->s);
 		free(fsd->in_buf);
 		free(fsd->out_buf);
 		free(fsd->nl_buf);
@@ -5580,6 +5598,7 @@ stream_fwf_create (stream *s, size_t num_fields, size_t *widths, char filler)
 	ns->flush = NULL;
 	ns->access = ST_READ;
 	ns->stream_data.p = fsd;
+	ns->destroy = stream_fwf_destroy;
 	return ns;
 }
 
