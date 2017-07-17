@@ -80,7 +80,7 @@ name_find_column( sql_rel *rel, char *rname, char *name, int pnr, sql_rel **bt )
 			if (strcmp(c->base.name, name) == 0) {
 				*bt = rel;
 				if (pnr < 0 || (c->t->p &&
-				    list_position(c->t->p->tables.set, c->t) == pnr))
+				    list_position(c->t->p->members.set, c->t) == pnr))
 					return c;
 			}
 		}
@@ -90,7 +90,7 @@ name_find_column( sql_rel *rel, char *rname, char *name, int pnr, sql_rel **bt )
 			if (strcmp(i->base.name, name+1 /* skip % */) == 0) {
 				*bt = rel;
 				if (pnr < 0 || (i->t->p &&
-				    list_position(i->t->p->tables.set, i->t) == pnr)) {
+				    list_position(i->t->p->members.set, i->t) == pnr)) {
 					sql_kc *c = i->columns->h->data;
 					return c->c;
 				}
@@ -219,6 +219,43 @@ kc_column_cmp(sql_kc *kc, sql_column *c)
 	return !(c == kc->c);
 }
 
+static void psm_exps_properties(mvc *sql, global_props *gp, list *exps);
+static void rel_properties(mvc *sql, global_props *gp, sql_rel *rel);
+
+static void
+psm_exp_properties(mvc *sql, global_props *gp, sql_exp *e)
+{
+	/* only functions need fix up */
+	if (e->type == e_psm) {
+		if (e->flag & PSM_SET) {
+			psm_exp_properties(sql, gp, e->l);
+		} else if (e->flag & PSM_RETURN) {
+			psm_exp_properties(sql, gp, e->l);
+		} else if (e->flag & PSM_WHILE) {
+			psm_exp_properties(sql, gp, e->l);
+			psm_exps_properties(sql, gp, e->r);
+		} else if (e->flag & PSM_IF) {
+			psm_exp_properties(sql, gp, e->l);
+			psm_exps_properties(sql, gp, e->r);
+			if (e->f)
+				psm_exps_properties(sql, gp, e->f);
+		} else if (e->flag & PSM_REL) {
+			rel_properties(sql, gp, e->l);
+		}
+	}
+}
+
+static void
+psm_exps_properties(mvc *sql, global_props *gp, list *exps)
+{
+	node *n;
+
+	if (!exps)
+		return;
+	for (n = exps->h; n; n = n->next) 
+		psm_exp_properties(sql, gp, n->data);
+}
+
 static void
 rel_properties(mvc *sql, global_props *gp, sql_rel *rel) 
 {
@@ -250,6 +287,8 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	case op_topn:
 	case op_sample:
 	case op_ddl:
+		if (rel->op == op_ddl && rel->flag == DDL_PSM && rel->exps) 
+			psm_exps_properties(sql, gp, rel->exps);
 		if (rel->l)
 			rel_properties(sql, gp, rel->l);
 		break;
@@ -2461,7 +2500,8 @@ static sql_exp *
 math_unsafe_fixup( mvc *sql, sql_exp *e, sql_exp *cond, int lr )
 {
 	list *args = e->l;
-	if (args->h->next)
+
+	if (args && args->h && args->h->next)
 		return math_unsafe_fixup_binop(sql, e, args->h->data, args->h->next->data, cond, lr);
 	else
 		return math_unsafe_fixup_unop(sql, e, args->h->data, cond, lr);
@@ -2695,13 +2735,13 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 			sql_exp *le = l->h->data;
 			sql_exp *re = l->h->next->data;
 			/* 0*a = 0 */
-			if (exp_is_atom(le) && exp_is_zero(sql, le)) {
+			if (exp_is_atom(le) && exp_is_zero(sql, le) && exp_is_not_null(sql, re)) {
 				(*changes)++;
 				exp_setname(sql->sa, le, exp_relname(e), exp_name(e));
 				return le;
 			}
 			/* a*0 = 0 */
-			if (exp_is_atom(re) && exp_is_zero(sql, re)) {
+			if (exp_is_atom(re) && exp_is_zero(sql, re) && exp_is_not_null(sql, le)) {
 				(*changes)++;
 				exp_setname(sql->sa, re, exp_relname(e), exp_name(e));
 				return re;
@@ -4318,7 +4358,7 @@ rel_part_nr( sql_rel *rel, sql_exp *e )
 		return -1;
 	pp = c->t;
 	if (pp->p)
-		return list_position(pp->p->tables.set, pp);
+		return list_position(pp->p->members.set, pp);
 	return -1;
 }
 
@@ -4340,7 +4380,7 @@ rel_uses_part_nr( sql_rel *rel, sql_exp *e, int pnr )
 		c = exp_find_column(rel, e->r, pnr); 
 	if (c) {
 		sql_table *pp = c->t;
-		if (pp->p && list_position(pp->p->tables.set, pp) == pnr)
+		if (pp->p && list_position(pp->p->members.set, pp) == pnr)
 			return 1;
 	}
 	/* for projects we may need to do a rename! */
@@ -5656,6 +5696,21 @@ positional_exps_mark_used( sql_rel *rel, sql_rel *subrel )
 }
 
 static void
+exps_mark_dependent(sql_rel *rel)
+{
+	if (rel->exps) {
+		node *n;
+
+		for (n=rel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (e->used) 
+				exp_mark_used(rel, e);
+		}
+	}
+}
+
+static void
 exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
 {
 	int nr = 0;
@@ -5781,6 +5836,8 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 		if (proj && rel->l) {
 			exps_mark_used(sql->sa, rel, rel->l);
 			rel_mark_used(sql, rel->l, 0);
+		} else if (proj) {
+			exps_mark_dependent(rel);
 		}
 		break;
 	case op_update:
@@ -7599,13 +7656,13 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			char *tname = t->base.name;
 			list *cols = NULL, *low = NULL, *high = NULL;
 
-			if (list_empty(t->tables.set)) 
+			if (list_empty(t->members.set)) 
 				return rel;
 			if (sel) {
 				node *n;
 
 				/* no need to reduce the tables list */
-				if (list_length(t->tables.set) <= 1) 
+				if (list_length(t->members.set) <= 1) 
 					return sel;
 
 				cols = sa_list(sql->sa);
@@ -7660,7 +7717,7 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			}
 			assert(!rel_is_ref(rel));
 			(*changes)++;
-			if (t->tables.set) {
+			if (t->members.set) {
 				list *tables = sa_list(sql->sa);
 				node *nt;
 				int *pos = NULL, nr = list_length(rel->exps), first = 1;
@@ -7668,8 +7725,9 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 				/* rename (mostly the idxs) */
 				pos = SA_NEW_ARRAY(sql->sa, int, nr);
 				memset(pos, 0, sizeof(int)*nr);
-				for (nt = t->tables.set->h; nt; nt = nt->next) {
-					sql_table *pt = nt->data;
+				for (nt = t->members.set->h; nt; nt = nt->next) {
+					sql_part *pd = nt->data;
+					sql_table *pt = find_sql_table(t->s, pd->base.name);
 					sql_rel *prel = rel_basetable(sql, pt, tname);
 					node *n, *m;
 					int skip = 0, j;
@@ -7754,7 +7812,7 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 					tables = ntables;
 				}
 			}
-			if (nrel && list_length(t->tables.set) == 1) {
+			if (nrel && list_length(t->members.set) == 1) {
 				nrel = rel_project(sql->sa, nrel, rel->exps);
 			} else if (nrel)
 				nrel->exps = rel->exps;
@@ -8577,18 +8635,25 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static list * rewrite_exps(mvc *sql, list *l, rewrite_rel_fptr rewrite_rel, rewrite_fptr rewriter, int *has_changes);
+
 static sql_exp *
 rewrite_exp(mvc *sql, sql_exp *e, rewrite_rel_fptr rewrite_rel, rewrite_fptr rewriter, int *has_changes)
 {
 	if (e->type != e_psm)
 		return e;
-	if (e->flag & PSM_SET || e->flag & PSM_VAR) 
+	if (e->flag & PSM_VAR) 
 		return e;
-	if (e->flag & PSM_RETURN) {
+	if (e->flag & PSM_SET || e->flag & PSM_RETURN) {
 		e->l = rewrite_exp(sql, e->l, rewrite_rel, rewriter, has_changes);
 	}
-	if (e->flag & PSM_WHILE || e->flag & PSM_IF) 
+	if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
+		e->l = rewrite_exp(sql, e->l, rewrite_rel, rewriter, has_changes);
+		e->r = rewrite_exps(sql, e->r, rewrite_rel, rewriter, has_changes);
+		if (e->f)
+			e->f = rewrite_exps(sql, e->f, rewrite_rel, rewriter, has_changes);
 		return e;
+	}
 	if (e->flag & PSM_REL) 
 		e->l = rewrite_rel(sql, e->l, rewriter, has_changes);
 	return e;

@@ -105,7 +105,8 @@ PyObject *PyMaskedArray_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 	// data array and a mask array
 	// The mask array is a boolean array that has the value 'True' when the
 	// element is NULL, and 'False' otherwise
-	// If the BAT has Null values, we construct this masked array
+	// if we know for sure that the BAT has no NULL values, we can skip the construction
+	// of this masked array. Otherwise, we create it.
 	if (!(b->tnil == 0 && b->tnonil == 1)) {
 		PyObject *mask;
 		PyObject *mafunc = PyObject_GetAttrString(
@@ -113,7 +114,10 @@ PyObject *PyMaskedArray_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 		PyObject *maargs;
 		PyObject *nullmask = PyNullMask_FromBAT(b, t_start, t_end);
 
-		if (nullmask == Py_None) {
+		if (!nullmask) {
+			msg = createException(MAL, "pyapi.eval", "Failed to create mask for some reason");
+			goto wrapup;
+		} else if (nullmask == Py_None) {
 			maargs = PyTuple_New(1);
 			PyTuple_SetItem(maargs, 0, vararray);
 		} else {
@@ -203,6 +207,9 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 		}
 	} else {
 		switch (inp->bat_type) {
+			case TYPE_bit:
+				BAT_TO_NP(b, bit, NPY_INT8);
+				break;
 			case TYPE_bte:
 				BAT_TO_NP(b, bte, NPY_INT8);
 				break;
@@ -445,17 +452,13 @@ PyObject *PyNullMask_FromBAT(BAT *b, size_t t_start, size_t t_end)
 			CreateNullMask(hge);
 			break;
 #endif
-		case TYPE_str: {
+		default: {
 			int (*atomcmp)(const void *, const void *) = ATOMcompare(b->ttype);
 			for (j = 0; j < count; j++) {
 				mask_data[j] = (*atomcmp)(BUNtail(bi, (BUN)(j)), nil) == 0;
 				found_nil = found_nil || mask_data[j];
 			}
-			break;
 		}
-		default:
-			// todo: do something with the error?
-			return NULL;
 	}
 
 	if (!found_nil) {

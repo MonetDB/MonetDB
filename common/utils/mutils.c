@@ -343,7 +343,7 @@ MT_lockf(char *filename, int mode, off_t off, off_t len)
 		return 0;
 	}
 
-	fd = open(filename, O_CREAT | O_RDWR | O_TEXT, MONETDB_MODE);
+	fd = open(filename, O_CREAT | O_RDWR | O_TEXT | O_CLOEXEC, MONETDB_MODE);
 	if (fd < 0)
 		return -2;
 	fh = (HANDLE) _get_osfhandle(fd);
@@ -421,7 +421,7 @@ lockf(int fd, int cmd, off_t len)
 int
 MT_lockf(char *filename, int mode, off_t off, off_t len)
 {
-	int fd = open(filename, O_CREAT | O_RDWR | O_TEXT, MONETDB_MODE);
+	int fd = open(filename, O_CREAT | O_RDWR | O_TEXT | O_CLOEXEC, MONETDB_MODE);
 
 	if (fd < 0)
 		return -2;

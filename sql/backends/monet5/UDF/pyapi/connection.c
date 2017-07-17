@@ -16,13 +16,36 @@
 CREATE_SQL_FUNCTION_PTR(void, SQLdestroyResult);
 CREATE_SQL_FUNCTION_PTR(str, SQLstatementIntern);
 CREATE_SQL_FUNCTION_PTR(str, create_table_from_emit);
+CREATE_SQL_FUNCTION_PTR(str, append_to_table_from_emit);
 
 static PyObject *_connection_execute(Py_ConnectionObject *self, PyObject *args)
 {
-	if (!PyString_CheckExact(args)) {
+	char *query = NULL;
+#ifndef IS_PY3K
+	if (PyUnicode_CheckExact(args)) {
+		PyObject* str = PyUnicode_AsUTF8String(args);
+		if (!str) {
+			PyErr_Format(PyExc_Exception, "Unicode failure.");
+			return NULL;
+		}
+		query = GDKstrdup(((PyStringObject *)str)->ob_sval);
+		Py_DECREF(str);
+	} else
+#endif
+	if (PyString_CheckExact(args)) {
+#ifndef IS_PY3K
+		query = GDKstrdup(((PyStringObject *)args)->ob_sval);
+#else
+		query = GDKstrdup(PyUnicode_AsUTF8(args));
+#endif
+	} else {
 		PyErr_Format(PyExc_TypeError,
 					 "expected a query string, but got an object of type %s",
 					 Py_TYPE(args)->tp_name);
+		return NULL;
+	}
+	if (!query) {
+		PyErr_Format(PyExc_Exception, "%s", MAL_MALLOC_FAIL);
 		return NULL;
 	}
 	if (!self->mapped) {
@@ -31,14 +54,10 @@ static PyObject *_connection_execute(Py_ConnectionObject *self, PyObject *args)
 		PyObject *result;
 		res_table *output = NULL;
 		char *res = NULL;
-		char *query;
-#ifndef IS_PY3K
-		query = ((PyStringObject *)args)->ob_sval;
-#else
-		query = PyUnicode_AsUTF8(args);
-#endif
-
+Py_BEGIN_ALLOW_THREADS;
 		res = _connection_query(self->cntxt, query, &output);
+Py_END_ALLOW_THREADS;
+		GDKfree(query);
 		if (res != MAL_SUCCEED) {
 			PyErr_Format(PyExc_Exception, "SQL Query Failed: %s",
 						 (res ? res : "<no error>"));
@@ -79,92 +98,10 @@ static PyObject *_connection_execute(Py_ConnectionObject *self, PyObject *args)
 		} else {
 			Py_RETURN_NONE;
 		}
-	} else
-#ifdef HAVE_FORK
-	{
-		str msg;
-		char *query;
-#ifndef IS_PY3K
-		query = ((PyStringObject *)args)->ob_sval;
-#else
-		query = PyUnicode_AsUTF8(args);
-#endif
-		// This is a mapped process, we do not want forked processes to touch
-		// the database
-		// Only the main process may touch the database, so we ship the query
-		// back to the main process
-		// copy the query into shared memory and tell the main process there is
-		// a query to handle
-		strncpy(self->query_ptr->query, query, 8192);
-		self->query_ptr->pending_query = true;
-		// free the main process so it can work on the query
-		GDKchangesemval(self->query_sem, 0, 1, &msg);
-		// now wait for the main process to finish
-		GDKchangesemval(self->query_sem, 1, -1, &msg);
-		if (self->query_ptr->pending_query) {
-			// the query failed in the main process
-			//           life is hopeless
-			// there is no reason to continue to live
-			//                so we commit sudoku
-			exit(0);
-		}
-
-		if (self->query_ptr->memsize > 0) // check if there are return values
-		{
-			char *msg;
-			char *ptr;
-			PyObject *numpy_array;
-			size_t position = 0;
-			PyObject *result;
-			int i;
-
-			// get a pointer to the shared memory holding the return values
-			if (GDKinitmmap(self->query_ptr->mmapid + 0,
-							self->query_ptr->memsize, (void **)&ptr, NULL,
-							&msg) != GDK_SUCCEED) {
-				PyErr_Format(PyExc_Exception, "%s", msg);
-				return NULL;
-			}
-
-			result = PyDict_New();
-			for (i = 0; i < self->query_ptr->nr_cols; i++) {
-				BAT *b;
-				str colname;
-				PyInput input;
-				position += GDKbatread(ptr + position, &b, &colname);
-				// initialize the PyInput structure
-				input.bat = b;
-				input.count = BATcount(b);
-				input.bat_type = b->ttype;
-				input.scalar = false;
-				input.sql_subtype = NULL;
-
-				numpy_array =
-					PyMaskedArray_FromBAT(&input, 0, input.count, &msg, true);
-				if (!numpy_array) {
-					PyErr_Format(PyExc_Exception, "SQL Query Failed: %s",
-								 (msg ? msg : "<no error>"));
-					GDKreleasemmap(ptr, self->query_ptr->memsize,
-								   self->query_ptr->mmapid, &msg);
-					return NULL;
-				}
-				PyDict_SetItem(result, PyString_FromString(colname),
-							   numpy_array);
-				Py_DECREF(numpy_array);
-			}
-			GDKreleasemmap(ptr, self->query_ptr->memsize,
-						   self->query_ptr->mmapid, &msg);
-			return result;
-		}
-
-		Py_RETURN_NONE;
-	}
-#else
-	{
-		PyErr_Format(PyExc_Exception, "Mapped is not supported on Windows.");
+	} else {
+		PyErr_Format(PyExc_Exception, "Loopback queries are not supported in parallel.");
 		return NULL;
 	}
-#endif
 }
 
 static PyMethodDef _connectionObject_methods[] = {
@@ -253,6 +190,12 @@ str _connection_create_table(Client cntxt, char *sname, char *tname,
 	return (*create_table_from_emit_ptr)(cntxt, sname, tname, columns, ncols);
 }
 
+str _connection_append_to_table(Client cntxt, char *sname, char *tname,
+							 sql_emit_col *columns, size_t ncols)
+{
+	return (*append_to_table_from_emit_ptr)(cntxt, sname, tname, columns, ncols);
+}
+
 PyObject *Py_Connection_Create(Client cntxt, bit mapped, QueryStruct *query_ptr,
 							   int query_sem)
 {
@@ -281,6 +224,7 @@ str _connection_init(void)
 	LOAD_SQL_FUNCTION_PTR(SQLdestroyResult);
 	LOAD_SQL_FUNCTION_PTR(SQLstatementIntern);
 	LOAD_SQL_FUNCTION_PTR(create_table_from_emit);
+	LOAD_SQL_FUNCTION_PTR(append_to_table_from_emit);
 
 	if (msg != MAL_SUCCEED) {
 		return msg;

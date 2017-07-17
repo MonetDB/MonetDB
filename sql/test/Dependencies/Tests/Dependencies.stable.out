@@ -456,7 +456,6 @@ Dependencies between database objects
 % varchar,	varchar,	char # type
 % 17,	13,	8 # length
 [ "f1",	"f2",	"DEP_FUNC"	]
-[ "like",	"f2",	"DEP_FUNC"	]
 [ "st_numgeometries",	"st_numpatches",	"DEP_FUNC"	]
 [ "st_geometryn",	"st_patchn",	"DEP_FUNC"	]
 [ "getproj4",	"st_transform",	"DEP_FUNC"	]

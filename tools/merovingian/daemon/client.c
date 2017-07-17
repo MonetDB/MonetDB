@@ -19,6 +19,7 @@
 #ifdef HAVE_SYS_UIO_H
 # include <sys/uio.h>
 #endif
+#include <fcntl.h>
 
 #include <msabaoth.h>
 #include <mcrypt.h>
@@ -488,6 +489,7 @@ acceptConnections(int sock, int usock)
 				}
 				continue;
 			}
+			fcntl(msgsock, F_SETFD, FD_CLOEXEC);
 		} else if (FD_ISSET(usock, &fds)) {
 			struct msghdr msgh;
 			struct iovec iov;
@@ -504,6 +506,7 @@ acceptConnections(int sock, int usock)
 				}
 				continue;
 			}
+			fcntl(usock, F_SETFD, FD_CLOEXEC);
 
 			/* BEWARE: unix domain sockets have a slightly different
 			 * behaviour initialy than normal sockets, because we can

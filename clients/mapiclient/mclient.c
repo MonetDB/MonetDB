@@ -1452,7 +1452,6 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 			 strcmp(s, "tinyint") == 0 ||
 			 strcmp(s, "bigint") == 0 ||
 			 strcmp(s, "hugeint") == 0 ||
-			 strcmp(s, "wrd") == 0 ||
 			 strcmp(s, "oid") == 0 ||
 			 strcmp(s, "smallint") == 0 ||
 			 strcmp(s, "double") == 0 ||
@@ -2703,7 +2702,10 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 						}
 					} else
 #endif
-						sql_help(line, toConsole);
+					{
+						setWidth();
+						sql_help(line, toConsole, pagewidth <= 0 ? DEFWIDTH : pagewidth);
+					}
 					continue;
 				}
 /* for later

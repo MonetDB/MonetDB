@@ -14,7 +14,7 @@
 #include "mal_resolve.h"
 #include "mal_linker.h"
 #include "mal_atom.h"       /* for malAtomDefinition(), malAtomProperty() */
-#include "mal_interpreter.h" 
+#include "mal_interpreter.h"    /* for showErrors() */
 #include "mal_instruction.h"    /* for pushEndInstruction(), findVariableLength() */
 #include "mal_namespace.h"
 #include "mal_utils.h"
@@ -803,8 +803,9 @@ helpInfo(Client cntxt, str *help)
 			if (*help)
 				advance(cntxt, l - 1);
 			skipToEnd(cntxt);
-		} else 
+		} else {
 			parseError(cntxt, "<string> expected\n");
+		}
 	} else if (currChar(cntxt) != ';')
 		parseError(cntxt, "';' expected\n");
 }

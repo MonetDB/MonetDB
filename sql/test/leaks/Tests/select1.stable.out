@@ -37,7 +37,7 @@ Ready.
 % L3 # name
 % bigint # type
 % 3 # length
-[ 440	]
+[ 436	]
 #select 1; 
 % .L2 # table_name
 % L2 # name

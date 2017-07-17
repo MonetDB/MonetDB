@@ -142,7 +142,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							bsample = BATsample(bn, (BUN) samplesize);
 						} else
 							bsample = NULL;
-						br = BATselect(bn, bsample, ATOMnilptr(bn->ttype), NULL, 0, 0, 0);
+						br = BATselect(bn, bsample, ATOMnilptr(bn->ttype), NULL, 1, 0, 0);
 						if (br == NULL) {
 							BBPunfix(bn->batCacheid);
 							/* XXX throw error instead? */

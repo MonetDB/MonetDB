@@ -568,24 +568,10 @@ log_read_create(logger *lg, trans *tr, char *name)
 		return LOG_ERR;
 	}
 	*ta++ = 0;		/* skip over , */
-	if (strcmp(ha, "wrd") == 0) {
-#if SIZEOF_SSIZE_T == SIZEOF_INT
-		ha = "int";
-#else
-		ha = "lng";
-#endif
-	}
 	if (strcmp(ha, "vid") == 0) {
 		ht = -1;
 	} else {
 		ht = ATOMindex(ha);
-	}
-	if (strcmp(ta, "wrd") == 0) {
-#if SIZEOF_SSIZE_T == SIZEOF_INT
-		ta = "int";
-#else
-		ta = "lng";
-#endif
 	}
 	if (strcmp(ta, "vid") == 0) {
 		tt = -1;

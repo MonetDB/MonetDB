@@ -23,6 +23,12 @@ insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s)
 {
 	if (s->token == SQL_NULL) {
 		return exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
+	} else if (s->token == SQL_DEFAULT) {
+		if (c->def) {
+			return rel_parse_val(sql, sa_message(sql->sa, "select CAST(%s AS %s);", c->def, c->type.type->sqlname), sql->emode);
+		} else {
+			return sql_error(sql, 02, "INSERT INTO: column '%s' has no valid default value", c->base.name);
+		}
 	} else {
 		int is_last = 0;
 		exp_kind ek = {type_value, card_value, FALSE};
@@ -492,8 +498,16 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 						sql_column *c = m->data;
 						sql_rel *r = NULL;
 						sql_exp *ins = insert_value(sql, c, &r, n->data.sym);
-						if (!ins || r)
+						if (!ins) 
 							return NULL;
+						if (r && inner)
+							inner = rel_crossproduct(sql->sa, inner, r, op_join);
+						else if (r) 
+							inner = r;
+						if (inner && !ins->name) {
+							exp_label(sql->sa, ins, ++sql->label);
+							ins = exp_column(sql->sa, exp_relname(ins), exp_name(ins), exp_subtype(ins), ins->card, has_nil(ins), is_intern(ins));
+						}
 						list_append(vals_list, ins);
 					}
 				} else {
@@ -505,7 +519,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 						if (!ins)
 							return NULL;
 						if (r && inner)
-							inner = rel_crossproduct(sql->sa, inner,r, op_join);
+							inner = rel_crossproduct(sql->sa, inner, r, op_join);
 						else if (r) 
 							inner = r;
 						if (!ins->name)
@@ -971,11 +985,19 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 				int status = sql->session->status;
 				exp_kind ek = {type_value, (single)?card_column:card_relation, FALSE};
 
-				if (single) 
+				if(single && a->token == SQL_DEFAULT) {
+					char *colname = assignment->h->next->data.sval;
+					sql_column *col = mvc_bind_column(sql, t, colname);
+					if (col->def) {
+						v = rel_parse_val(sql, sa_message(sql->sa, "select CAST(%s AS %s);", col->def, col->type.type->sqlname), sql->emode);
+					} else {
+						return sql_error(sql, 02, "UPDATE: column '%s' has no valid default value", col->base.name);
+					}
+				} else if (single) {
 					v = rel_value_exp(sql, &rel_val, a, sql_sel, ek);
-				else
+				} else {
 					rel_val = rel_subquery(sql, NULL, a, ek, APPLY_JOIN);
-
+				}
 				if (!v) {
 					sql->errstr[0] = 0;
 					sql->session->status = status;
@@ -1173,7 +1195,7 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 	sql_exp *import;
 	sql_schema *sys = mvc_bind_schema(sql, "sys");
 	sql_subfunc *f = sql_find_func(sql->sa, sys, "copyfrom", 11, F_UNION, NULL);
-	char* fwf_string = NULL;
+	char *fwf_string = NULL;
 	
 	if (!f) /* we do expect copyfrom to be there */
 		return NULL;
@@ -1189,7 +1211,7 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 	if (fwf_widths && dlist_length(fwf_widths) > 0) {
 		dnode *dn;
 		int ncol = 0;
-		char* fwf_string_cur = fwf_string = sa_alloc(sql->sa, 20 * dlist_length(fwf_widths) + 1); // a 64 bit int needs 19 characters in decimal representation plus the separator
+		char *fwf_string_cur = fwf_string = sa_alloc(sql->sa, 20 * dlist_length(fwf_widths) + 1); // a 64 bit int needs 19 characters in decimal representation plus the separator
 
 		if (!fwf_string) 
 			return NULL;
@@ -1510,30 +1532,22 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, int constraint
 	return res;
 }
 
-
 static sql_rel *
 copyfromloader(mvc *sql, dlist *qname, symbol *fcall)
 {
+	sql_schema *s = NULL;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
-
-	sql_schema *s = NULL;
-	sql_table *t = NULL;
-
-	node *n;
-	sql_rel res_obj ;
-	sql_rel *res = &res_obj;
-	list *exps = new_exp_list(sql->sa); //, *args = NULL;
-	sql_exp *import;
-	exp_kind ek = {type_value, card_loader, FALSE};
+	sql_subfunc *loader = NULL;
+	sql_rel* rel = NULL;
+	sql_table* t;
 
 	if (!copy_allowed(sql, 1)) {
 		(void) sql_error(sql, 02, "SQLSTATE 42000 !""COPY INTO: insufficient privileges: "
 				"binary COPY INTO requires database administrator rights");
 		return NULL;
 	}
-
-	if (sname && !(s=mvc_bind_schema(sql, sname))) {
+	if (sname && !(s = mvc_bind_schema(sql, sname))) {
 		(void) sql_error(sql, 02, "SQLSTATE 3F000 !""COPY INTO: no such schema '%s'", sname);
 		return NULL;
 	}
@@ -1550,20 +1564,20 @@ copyfromloader(mvc *sql, dlist *qname, symbol *fcall)
 		return NULL;
 	}
 
-	import = rel_value_exp(sql, &res, fcall, sql_sel, ek);
-	if (!import) {
+	rel = rel_loader_function(sql, fcall, new_exp_list(sql->sa), &loader);
+	if (!rel || !loader) {
 		return NULL;
 	}
-	((sql_subfunc*) import->f)->res = table_column_types(sql->sa, t);
-	((sql_subfunc*) import->f)->colnames = table_column_names(sql->sa, t);
 
-	for (n = t->columns.set->h; n; n = n->next) {
-		sql_column *c = n->data;
-		append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
-	}
+	loader->sname = sname ? sa_zalloc(sql->sa, strlen(sname) + 1) : NULL;
+	loader->tname = tname ? sa_zalloc(sql->sa, strlen(tname) + 1) : NULL;
+	loader->coltypes = table_column_types(sql->sa, t);
+	loader->colnames = table_column_names(sql->sa, t);
 
-	res = rel_table_func(sql->sa, NULL, import, exps, 1);
-	return  rel_insert_table(sql, t, t->base.name, res);
+	if (sname) strcpy(loader->sname, sname);
+	if (tname) strcpy(loader->tname, tname);
+
+	return rel;
 }
 
 
@@ -1731,10 +1745,12 @@ rel_updates(mvc *sql, symbol *s)
 		break;
 	case SQL_COPYLOADER:
 	{
-		dlist *l = s->data.lval;
+	    dlist *l = s->data.lval;
+	    dlist *qname = l->h->data.lval;
+	    symbol *sym = l->h->next->data.sym;
 
-		ret = copyfromloader(sql, l->h->data.lval, l->h->next->data.sym);
-		sql->type = Q_UPDATE;
+	    ret = rel_psm_stmt(sql->sa, exp_rel(sql, copyfromloader(sql, qname, sym)));
+	    sql->type = Q_SCHEMA;
 	}
 		break;
 	case SQL_COPYTO:

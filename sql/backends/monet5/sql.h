@@ -149,6 +149,7 @@ sql5_export str BATSQLidentity(bat *rid, const bat *bid);
 sql5_export str PBATSQLidentity(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp);
 sql5_export str create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols);
+sql5_export str append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *columns, size_t ncols);
 
 sql5_export str bte_dec_round_wrap(bte *res, const bte *v, const bte *r);
 sql5_export str bte_bat_dec_round_wrap(bat *res, const bat *v, const bte *r);

@@ -25,14 +25,14 @@
 bool string_copy(char *source, char *dest, size_t max_size, bool allow_unicode)
 {
 	size_t i;
-	for (i = 0; i < max_size-1; i++) {
+	for (i = 0; i < max_size; i++) {
 		dest[i] = source[i];
 		if (dest[i] == 0)
 			return TRUE;
 		if (!allow_unicode && source[i] & 0x80)
 			return FALSE;
 	}
-	dest[max_size-1] = '\0';
+	dest[max_size] = '\0';
 	return TRUE;
 }
 
@@ -70,12 +70,57 @@ PyObject *PyLong_FromHge(hge h)
 size_t pyobject_get_size(PyObject *obj)
 {
 	size_t size = 256;
-	if (PyString_CheckExact(obj) || PyByteArray_CheckExact(obj)) {
-		size = Py_SIZE(obj); // Normal strings are 1 string per character
+
+	if (
+#ifndef IS_PY3K
+	    PyString_CheckExact(obj) ||
+#endif
+	    PyByteArray_CheckExact(obj)) {
+		size = Py_SIZE(obj); // Normal strings are 1 byte per character
 	} else if (PyUnicode_CheckExact(obj)) {
 		size = Py_SIZE(obj) * 4; // UTF32 is 4 bytes per character
 	}
 	return size;
+}
+
+
+str pyobject_to_blob(PyObject **ptr, size_t maxsize, blob **value) {
+	size_t size;
+	char* bytes_data;
+	PyObject *obj;
+	str msg = MAL_SUCCEED;
+	if (ptr == NULL || *ptr == NULL) {
+		msg = createException(MAL, "pyapi.eval", "Invalid PyObject.");
+		goto wrapup;
+	}
+	obj = *ptr;
+	
+	(void)maxsize;
+#ifndef IS_PY3K
+	if (PyString_CheckExact(obj)) {
+		size = PyString_Size(obj);
+		bytes_data = ((PyStringObject *)obj)->ob_sval;
+	} else
+#endif
+	if (PyByteArray_CheckExact(obj)) {
+		size = PyByteArray_Size(obj);
+		bytes_data = ((PyByteArrayObject *)obj)->ob_bytes;
+	} else {
+		msg = createException(
+			MAL, "pyapi.eval",
+			"Unrecognized Python object. Could not convert to blob.\n");
+		goto wrapup;
+	}
+
+	*value = GDKmalloc(sizeof(blob) + size + 1);
+	if (!*value) {
+		msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL);
+		goto wrapup;
+	}
+	(*value)->nitems = size;
+	memcpy((*value)->data, bytes_data, size);
+wrapup:
+	return msg;
 }
 
 str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
@@ -85,8 +130,6 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 	str utf8_string = NULL;
 	size_t len = 0;
 
-	(void)maxsize;
-
 	if (ptr == NULL || *ptr == NULL) {
 		msg = createException(MAL, "pyapi.eval", "SQLSTATE PY000 !""Invalid PyObject.");
 		goto wrapup;
@@ -95,19 +138,21 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 
 	utf8_string = *value;
 	if (!utf8_string) {
-		utf8_string = (str)malloc(len = (pyobject_get_size(obj) * sizeof(char)) + 1);
+		utf8_string = (str)malloc(len = (pyobject_get_size(obj) + 1));
 		if (!utf8_string) {
 			msg = createException(MAL, "pyapi.eval",
 								  "SQLSTATE HY001 !"MAL_MALLOC_FAIL "python string");
 			goto wrapup;
 		}
 		*value = utf8_string;
+	} else {
+		len = maxsize;
 	}
 
 #ifndef IS_PY3K
 	if (PyString_CheckExact(obj)) {
 		char *str = ((PyStringObject *)obj)->ob_sval;
-		if (!string_copy(str, utf8_string, len, false)) {
+		if (!string_copy(str, utf8_string, len-1, false)) {
 			msg = createException(MAL, "pyapi.eval",
 								  "SQLSTATE PY000 !""Invalid string encoding used. Please return "
 								  "a regular ASCII string, or a Numpy_Unicode "
@@ -118,7 +163,7 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 #endif
 		if (PyByteArray_CheckExact(obj)) {
 		char *str = ((PyByteArrayObject *)obj)->ob_bytes;
-		if (!string_copy(str, utf8_string, len, false)) {
+		if (!string_copy(str, utf8_string, len-1, false)) {
 			msg = createException(MAL, "pyapi.eval",
 								  "SQLSTATE PY000 !""Invalid string encoding used. Please return "
 								  "a regular ASCII string, or a Numpy_Unicode "
@@ -135,7 +180,7 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 #endif
 #else
 		char *str = PyUnicode_AsUTF8(obj);
-		if (!string_copy(str, utf8_string, len, true)) {
+		if (!string_copy(str, utf8_string, len-1, true)) {
 			msg = createException(MAL, "pyapi.eval",
 								  "SQLSTATE PY000 !""Invalid string encoding used. Please return "
 								  "a regular ASCII string, or a Numpy_Unicode "

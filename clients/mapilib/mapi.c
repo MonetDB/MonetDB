@@ -766,6 +766,10 @@
 # endif
 #endif
 
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
+
 #ifndef INVALID_SOCKET
 #define INVALID_SOCKET (-1)
 #endif
@@ -2354,6 +2358,9 @@ mapi_reconnect(Mapi mid)
 				);
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
+#ifdef HAVE_FCNTL
+		fcntl(s, F_SETFD, FD_CLOEXEC);
+#endif
 		memset(&userver, 0, sizeof(struct sockaddr_un));
 		userver.sun_family = AF_UNIX;
 		strncpy(userver.sun_path, mid->hostname, sizeof(userver.sun_path) - 1);
@@ -2420,6 +2427,9 @@ mapi_reconnect(Mapi mid)
 			s = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
 			if (s == INVALID_SOCKET)
 				continue;
+#ifdef HAVE_FCNTL
+			fcntl(s, F_SETFD, FD_CLOEXEC);
+#endif
 			if (connect(s, rp->ai_addr, (socklen_t) rp->ai_addrlen) != SOCKET_ERROR)
 				break;  /* success */
 			closesocket(s);
@@ -2470,6 +2480,9 @@ mapi_reconnect(Mapi mid)
 				);
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
+#ifdef HAVE_FCNTL
+		fcntl(s, F_SETFD, FD_CLOEXEC);
+#endif
 
 		if (connect(s, serv, sizeof(server)) == SOCKET_ERROR) {
 			snprintf(errbuf, sizeof(errbuf),

@@ -21,6 +21,7 @@ HAVE_NETCDF?rel2bin_project-assert.Bug-6080
 str2decimal.Bug-6206
 integer_addition_overflow.Bug-6205
 dce_bug-6177
+default-insert-update.Bug-6249
 crash_on_NULL_ptr.Bug-6130
 HAVE_SAMTOOLS?sqlsmith01
 HAVE_NETCDF?sqlsmith02
@@ -59,3 +60,12 @@ exist-bigint-missing.Bug-6315
 coalesc-limit.Bug-6316
 limit.Bug-6322
 simplify_math.Bug-6324
+HAVE_GEOM?push_subslice.Bug-6322
+create_table_as-missing_not_null.Bug-6329
+crash-dce.Bug-6330
+delete_from_merge_table.Bug-3743
+statistics_nils_not_eq_zero.Bug-6331
+crash-select_after_MAL_error.Bug-6332
+groupby_assertion.Bug-6338
+spurious_error.Bug-6344
+name-interference.Bug-6348

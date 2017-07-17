@@ -42,6 +42,7 @@ openConnectionTCP(int *ret, const char *bindaddr, unsigned short port, FILE *log
 	if (sock == -1)
 		return(newErr("creation of stream socket failed: %s",
 					strerror(errno)));
+	fcntl(sock, F_SETFD, FD_CLOEXEC);
 
 	if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) < 0) {
 		closesocket(sock);
@@ -122,6 +123,7 @@ openConnectionUDP(int *ret, const char *bindaddr, unsigned short port)
 		sock = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
 		if (sock == -1)
 			continue;
+		fcntl(sock, F_SETFD, FD_CLOEXEC);
 
 		if (bind(sock, rp->ai_addr, rp->ai_addrlen) != -1)
 			break; /* working */
@@ -163,6 +165,7 @@ openConnectionUNIX(int *ret, const char *path, int mode, FILE *log)
 	if (sock == -1)
 		return(newErr("creation of UNIX stream socket failed: %s",
 					strerror(errno)));
+	fcntl(sock, F_SETFD, FD_CLOEXEC);
 
 	memset(&server, 0, sizeof(struct sockaddr_un));
 	server.sun_family = AF_UNIX;

@@ -217,6 +217,7 @@ int yydebug=1;
 	opt_order_by_clause
 	default
 	default_value
+	assign_default
 	cast_value
 	aggr_ref
 	var_ref
@@ -576,8 +577,8 @@ int yydebug=1;
 %left <operation> '*' '/' '%'
 %left <operation> '~'
 
-%left <operatio> GEOM_OVERLAP GEOM_OVERLAP_OR_ABOVE GEOM_OVERLAP_OR_BELOW GEOM_OVERLAP_OR_LEFT 
-%left <operatio> GEOM_OVERLAP_OR_RIGHT GEOM_BELOW GEOM_ABOVE GEOM_DIST GEOM_MBR_EQUAL
+%left <operation> GEOM_OVERLAP GEOM_OVERLAP_OR_ABOVE GEOM_OVERLAP_OR_BELOW GEOM_OVERLAP_OR_LEFT
+%left <operation> GEOM_OVERLAP_OR_RIGHT GEOM_BELOW GEOM_ABOVE GEOM_DIST GEOM_MBR_EQUAL
 
 /* literal keyword tokens */
 /*
@@ -2479,10 +2480,11 @@ drop_statement:
 	  append_int(l, 1 );
 	  append_int(l, $5 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
- |  drop VIEW qname drop_action
+ |  drop VIEW if_exists qname drop_action
 	{ dlist *l = L();
-	  append_list(l, $3 );
-	  append_int(l, $4 );
+	  append_list(l, $4 );
+	  append_int(l, $5 );
+	  append_int(l, $3 );
 	  $$ = _symbol_create_list( SQL_DROP_VIEW, l ); }
  |  drop TYPE qname drop_action	 
 	{ dlist *l = L();
@@ -2887,6 +2889,7 @@ simple_atom:
 
 insert_atom:
     simple_atom
+ |  DEFAULT		{ $$ = _symbol_create(SQL_DEFAULT, NULL ); }
  ;
 
 value:
@@ -2906,8 +2909,17 @@ assignment_commalist:
 			{ $$ = append_symbol($1, $3 ); }
  ;
 
+assign_default:
+    DEFAULT		{ $$ = _symbol_create(SQL_DEFAULT, NULL ); }
+ ;
+
 assignment:
-   column '=' search_condition
+   column '=' assign_default
+	{ dlist *l = L();
+	  append_symbol(l, $3);
+	  append_string(l, $1);
+	  $$ = _symbol_create_list( SQL_ASSIGN, l); }
+ |  column '=' search_condition
 	{ dlist *l = L();
 	  append_symbol(l, $3 );
 	  append_string(l, $1);
@@ -3281,7 +3293,7 @@ opt_having_clause:
 
 
 search_condition:
-    and_exp OR search_condition
+    search_condition OR and_exp
 		{ dlist *l = L();
 		  append_symbol(l, $1);
 		  append_symbol(l, $3);
@@ -3290,7 +3302,7 @@ search_condition:
  ;
    
 and_exp:
-    pred_exp AND and_exp
+    and_exp AND pred_exp
 		{ dlist *l = L();
 		  append_symbol(l, $1);
 		  append_symbol(l, $3);

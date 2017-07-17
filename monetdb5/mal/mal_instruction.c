@@ -163,7 +163,6 @@ resizeMalBlk(MalBlkPtr mb, int elements)
 {
 	int i;
 
-	//assert(mb->vsize >= mb->ssize);
 	if( elements > mb->ssize){
 		InstrPtr *ostmt = mb->stmt;
 		mb->stmt = (InstrPtr *) GDKrealloc(mb->stmt, elements * sizeof(InstrPtr));
@@ -203,7 +202,7 @@ resetMalBlk(MalBlkPtr mb, int stop)
 	for(i=0; i<stop; i++) 
 		mb->stmt[i] ->typechk = TYPE_UNKNOWN;
 	mb->stop = stop;
-	mb->errors = 0;
+	mb->errors = NULL;
 }
 
 /* The freeMalBlk code is quite defensive. It is used to localize an
@@ -931,13 +930,10 @@ trimMalVariables(MalBlkPtr mb, MalStkPtr stk)
 	/* reset the use bit for all non-signature arguments */
 	for (i = 0; i < mb->vtop; i++) 
 		clrVarUsed(mb,i);
-	/* the return variable is also 'used' */
-	//i = findVariable(mb, getFunctionId(mb->stmt[0]));
-	//assert(i >=0); 
-	//setVarUsed(mb,i);
 	/* build the use table */
 	for (i = 0; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
+
 		for (j = 0; j < q->argc; j++)
 			setVarUsed(mb,getArg(q,j));
 	}
@@ -1413,13 +1409,15 @@ void
 pushInstruction(MalBlkPtr mb, InstrPtr p)
 {
 	int i;
+	int extra;
 	InstrPtr q;
 
 	if (p == NULL)
 		return;
 
+	extra = mb->vsize - mb->vtop; // the extra variables already known
 	if (mb->stop + 1 >= mb->ssize) {
-		if( resizeMalBlk(mb, growBlk(mb->ssize)) ){
+		if( resizeMalBlk(mb, growBlk(mb->ssize) + extra) ){
 			/* perhaps we can continue with a smaller increment.
 			 * But the block remains marked as faulty.
 			 */

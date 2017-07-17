@@ -169,7 +169,7 @@ control_authorise(
 	}
 	free(pwd);
 
-	mnstr_printf(fout, "=OK");
+	mnstr_printf(fout, "=OK\n");
 	mnstr_flush(fout);
 
 	return 1;
@@ -992,6 +992,7 @@ controlRunner(void *d)
 			}
 			continue;
 		}
+		fcntl(msgsock, F_SETFD, FD_CLOEXEC);
 
 		if (pthread_create(&tid, NULL, handle_client, &msgsock) != 0)
 			closesocket(msgsock);

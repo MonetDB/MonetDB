@@ -1,52 +1,62 @@
 stdout of test 'jdbc_no_debug.SF-1739356` in directory 'sql/test/BugTracker` itself:
 
 
-# 13:44:44 >  
-# 13:44:44 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm"    --set mapi_open=true --set xrpc_open=true --set mapi_port=36629 --set xrpc_port=45999 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
-# 13:44:44 >  
+# 15:14:32 >  
+# 15:14:32 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34637" "--set" "mapi_usock=/var/tmp/mtest-10846/.s.monetdb.34637" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-virgin/var/MonetDB/mTests_sql_test_BugTracker"
+# 15:14:32 >  
 
-# MonetDB server v5.12.0, based on kernel v1.30.0
-# Serving database 'mTests_src_test_BugTracker', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# MonetDB 5 server v11.28.0 (hg id: 623015a562d3)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 62.701 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:36629/
-# MonetDB/SQL module v2.30.0 loaded
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:34637/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-10846/.s.monetdb.34637
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
 
 Ready.
 
+# 15:14:32 >  
+# 15:14:32 >  "./jdbc_no_debug.SF-1739356.SQL.sh" "jdbc_no_debug.SF-1739356"
+# 15:14:32 >  
 
 
+# 15:14:32 >  
+# 15:14:32 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -h methuselah -p 34637 -d mTests_sql_test_BugTracker -f "../../../../../../../../scratch1/sjoerd/src/MonetDB/virgin/sql/test/BugTracker/Tests/jdbc_no_debug.SF-1739356-data.sql"
+# 15:14:32 >  
 
-+--------------------------------------------------------------------+
-| rel                                                                                                                                                                                                                                                                       |
-+====================================================================+
-| project (                                                                                                                                                                                                                                                                 |
-| | group by (                                                                                                                                                                                                                                                              |
-| | | union (                                                                                                      |
-| | | | group by (                                                                                                 |
-| | | | | project (                                                                                                                                                                                                                                                         |
-| | | | | | select (                                                                                                                                                                                                                                                        |
-| | | | | | | table(sys._tables) [ _tables.id, _tables.type ] COUNT  |
-| | | | | | ) [ _tables.type != smallint "2" ]                       |
-| | | | | ) [ _tables.id as tables.id ]                              |
-| | | | ) [  ] [ sys.count() NOT NULL as L41.L41 ],                  |
-| | | | group by (                                                                                                 |
-| | | | | project (                                                                                                                                                                                                                                                         |
-| | | | | | table(tmp._tables) [ _tables.id ] COUNT                  |
-| | | | | ) [ _tables.id as tables.id ]                              |
-| | | | ) [  ] [ sys.count() NOT NULL as L41.L41 ]                   |
-| | | ) [ L41.L41 ]                                                  |
-| | ) [  ] [ sys.sum no nil (L41.L41) COUNT  as L41.L41 ]            |
-| ) [ L41 NOT NULL as L42.L41 ]                                      |
-+--------------------------------------------------------------------+
++----------------------------------------------------------------------------+
+| rel                                                                        |
++============================================================================+
+| project (                                                                  |
+| | group by (                                                               |
+| | | union (                                                                |
+| | | | group by (                                                           |
+| | | | | project (                                                          |
+| | | | | | select (                                                         |
+| | | | | | | table(sys._tables) [ "_tables"."id", "_tables"."type" ] COUNT  |
+| | | | | | ) [ "_tables"."type" != smallint "2" ]                           |
+| | | | | ) [ "_tables"."id" as "tables"."id" ]                              |
+| | | | ) [  ] [ sys.count() NOT NULL as "L41"."L41" ],                      |
+| | | | group by (                                                           |
+| | | | | project (                                                          |
+| | | | | | table(tmp._tables) [ "_tables"."id" ] COUNT                      |
+| | | | | ) [ "_tables"."id" as "tables"."id" ]                              |
+| | | | ) [  ] [ sys.count() NOT NULL as "L41"."L41" ]                       |
+| | | ) [ "L41"."L41" ]                                                      |
+| | ) [  ] [ sys.sum no nil ("L41"."L41") COUNT  as "L41"."L41" ]            |
+| ) [ "L41" NOT NULL as "L42"."L41" ]                                        |
++----------------------------------------------------------------------------+
 18 rows
 Operation successful
 +-------------------------------------------------------------------------------------------------------+
-| mal                                                                 |
+| mal                                                                                                   |
 +=======================================================================================================+
-| function user.s4_1():void;                                                                       |
+| function user.s4_1():void;                                                                            |
 |     X_1:void := querylog.define("explain select count(*) from tables\n;", "sequential_pipe", 30:int); |
 |     X_38:bat[:lng] := bat.new(nil:lng);                                                               |
 |     X_4 := sql.mvc();                                                                                 |
@@ -72,33 +82,34 @@ Operation successful
 |     X_42 := bat.append(X_40, X_36, true);                                                             |
 |     X_43:lng := aggr.sum(X_42);                                                                       |
 |     sql.resultSet(".L42", "L41", "bigint", 64:int, 0:int, 7:int, X_43);                               |
-| end user.s4_1;                                                                                   |
-| #inline               actions= 0 time=1 usec                                                          |
-| #remap                actions= 0 time=1 usec                                                          |
-| #costmodel            actions= 1 time=1 usec                                                          |
-| #coercion             actions= 1 time=5 usec                                                          |
-| #evaluate             actions= 0 time=2 usec                                                          |
-| #emptybind            actions= 0 time=1 usec                                                          |
-| #pushselect           actions= 5 time=22 usec                                                         |
-| #aliases              actions= 2 time=6 usec                                                          |
-| #mergetable           actions= 0 time=27 usec                                                         |
-| #deadcode             actions= 3 time=5 usec                                                          |
+| end user.s4_1;                                                                                        |
+| #inline               actions= 0 time=0 usec                                                          |
+| #remap                actions= 0 time=0 usec                                                          |
+| #costmodel            actions= 1 time=0 usec                                                          |
+| #coercion             actions= 1 time=1 usec                                                          |
+| #evaluate             actions= 0 time=1 usec                                                          |
+| #emptybind            actions= 0 time=0 usec                                                          |
+| #pushselect           actions= 5 time=11 usec                                                         |
+| #aliases              actions= 2 time=3 usec                                                          |
+| #mergetable           actions= 0 time=11 usec                                                         |
+| #deadcode             actions= 3 time=2 usec                                                          |
 | #aliases              actions= 0 time=0 usec                                                          |
-| #constants            actions= 1 time=6 usec                                                          |
-| #commonTerms          actions= 0 time=4 usec                                                          |
-| #projectionpath       actions= 0 time=2 usec                                                          |
-| #reorder              actions= 1 time=20 usec                                                         |
-| #deadcode             actions= 0 time=4 usec                                                          |
+| #constants            actions= 1 time=2 usec                                                          |
+| #commonTerms          actions= 0 time=3 usec                                                          |
+| #projectionpath       actions= 0 time=1 usec                                                          |
+| #reorder              actions= 1 time=9 usec                                                          |
+| #deadcode             actions= 0 time=2 usec                                                          |
 | #matpack              actions= 0 time=0 usec                                                          |
 | #multiplex            actions= 0 time=1 usec                                                          |
-| #profiler             actions= 1 time=1 usec                                                          |
-| #candidates           actions= 1 time=0 usec                                                          |
-| #garbagecollector     actions= 2 time=33 usec                                                         |
-| #total                actions=23 time=242 usec                                                        |
+| #profiler             actions=1 time=1 usec                                                           |
+| #candidates           actions=1 time=0 usec                                                           |
+| #wlc                  actions= 0 time=1 usec                                                          |
+| #garbagecollector     actions= 1 time=21 usec                                                         |
+| #total                actions=24 time=112 usec                                                        |
 +-------------------------------------------------------------------------------------------------------+
-49 rows
+50 rows
 
-# 10:24:52 >  
-# 10:24:52 >  "Done."
-# 10:24:52 >  
+# 15:14:32 >  
+# 15:14:32 >  "Done."
+# 15:14:32 >  
 

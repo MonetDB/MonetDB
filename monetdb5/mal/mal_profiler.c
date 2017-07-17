@@ -315,7 +315,7 @@ This information can be used to determine memory footprint and variable life tim
 				GDKfree(tname);
 				logadd("}%s%s", (j< pci->argc-1 && j != pci->retc -1?",":""), pret);
 			}
-			logadd("] %s",prettify); // end marker for arguments
+			logadd("]%s",prettify); // end marker for arguments
 		}
 	}
 #endif
@@ -435,7 +435,7 @@ profilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname)
 
 	if( sqlProfiling && !start )
 		cachedProfilerEvent(mb, stk, pci);
-		
+
 	if( eventstream) {
 		renderProfilerEvent(mb, stk, pci, start, usrname);
 		if ( start && pci->pc ==0)
@@ -472,7 +472,7 @@ openProfilerStream(stream *fd, int mode)
 		closeProfilerStream();
 	malProfileMode = -1;
 	eventstream = fd;
-	prettify = (mode & PROFSINGLELINE) ? " ": "\n";
+	prettify = (mode & PROFSINGLELINE) ? "": "\n";
 
 	/* show all in progress instructions for stethoscope startup */
 	if( (mode & PROFSHOWRUNNING) > 0){
@@ -804,7 +804,7 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str stmt, c;
 	lng clock;
 	lng rssMB = MT_getrss()/1024/1024;
-	lng tmpspace = pci->wbytes/1024/1024;
+	lng tmpspace = 0;
 	int errors = 0;
 
 	clock = GDKusec();

@@ -47,6 +47,7 @@ MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
 QUERY = DROP FUNCTION rooms_derivative;
 ERROR = !ParseException:SQLparser:SQLSTATE 42000 !DROP FUNCTION: no such function 'rooms_derivative'
 
+
 # 15:14:19 >  
 # 15:14:19 >  "Done."
 # 15:14:19 >  

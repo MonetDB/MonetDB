@@ -664,7 +664,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 
 	if (alter && 
 		(isView(t) || 
-		((isMergeTable(t) || isReplicaTable(t)) && (s->token != SQL_TABLE && s->token != SQL_DROP_TABLE && cs_size(&t->tables)>0)) || 
+		((isMergeTable(t) || isReplicaTable(t)) && (s->token != SQL_TABLE && s->token != SQL_DROP_TABLE && cs_size(&t->members)>0)) || 
 	  	(isTable(t) && (s->token == SQL_TABLE || s->token == SQL_DROP_TABLE)) ||
  		(isPartition(t) && (s->token == SQL_DROP_COLUMN || s->token == SQL_COLUMN || s->token == SQL_CONSTRAINT)))){
 		char *msg = "";
@@ -1995,7 +1995,7 @@ rel_schemas(mvc *sql, symbol *s)
 
 		assert(l->h->next->type == type_int);
 		sname = get_schema_name(sql, sname, tname);
-		ret = rel_schema(sql->sa, DDL_DROP_VIEW, sname, tname, l->h->next->data.i_val);
+		ret = rel_schema(sql->sa, l->h->next->next->data.i_val ? DDL_DROP_VIEW_IF_EXISTS : DDL_DROP_VIEW, sname, tname, l->h->next->data.i_val);
 	} 	break;
 	case SQL_ALTER_TABLE:
 	{

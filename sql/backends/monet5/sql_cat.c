@@ -114,7 +114,7 @@ alter_table_add_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 		throw(SQL,"sql.alter_table_add_table","SQLSTATE 42S02 !""ALTER TABLE: cannot add table '%s.%s' to table '%s.%s'", psname, ptname, msname, mtname);
 	if (mt && pt) {
 		char *msg;
-		node *n = cs_find_id(&mt->tables, pt->base.id);
+		node *n = cs_find_id(&mt->members, pt->base.id);
 
 		if (n)
 			throw(SQL,"alter_table_add_table","SQLSTATE 42S02 !""ALTER TABLE: table '%s.%s' is already part of the MERGE TABLE '%s.%s'", psname, ptname, msname, mtname);
@@ -142,7 +142,7 @@ alter_table_del_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 	if (mt && pt) {
 		node *n = NULL;
 
-		if (!pt || (n = cs_find_id(&mt->tables, pt->base.id)) == NULL)
+		if (!pt || (n = cs_find_id(&mt->members, pt->base.id)) == NULL)
 			throw(SQL,"sql.alter_table_del_table","SQLSTATE 42S02 !""ALTER TABLE: table '%s.%s' isn't part of the MERGE TABLE '%s.%s'", psname, ptname, msname, mtname);
 
 		sql_trans_del_table(sql->session->tr, mt, pt, drop_action);
@@ -297,7 +297,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 }
 
 static char *
-drop_view(mvc *sql, char *sname, char *tname, int drop_action)
+drop_view(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 {
 	sql_table *t = NULL;
 	sql_schema *ss = NULL;
@@ -309,10 +309,12 @@ drop_view(mvc *sql, char *sname, char *tname, int drop_action)
 		ss = cur_schema(sql);
 
 	t = mvc_bind_table(sql, ss, tname);
-
 	if (!mvc_schema_privs(sql, ss) && !(isTempSchema(ss) && t && t->persistence == SQL_LOCAL_TEMP)) {
 		throw(SQL,"sql.dropview", "SQLSTATE 42000 !""DROP VIEW: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), ss->base.name);
 	} else if (!t) {
+		if(if_exists){
+			return MAL_SUCCEED;
+		}
 		throw(SQL,"sql.drop_view","SQLSTATE 42S02 !""DROP VIEW: unknown view '%s'", tname);
 	} else if (!isView(t)) {
 		throw(SQL,"sql.drop_view", "SQLSTATE 42000 !""DROP VIEW: unable to drop view '%s': is a table", tname);
@@ -824,15 +826,16 @@ SQLcreate_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (mvc_bind_schema(sql, sname)) {
 		throw(SQL,"sql.create_schema", "SQLSTATE 3F000 !""CREATE SCHEMA: name '%s' already in use", sname);
-	} 
-	(void) mvc_create_schema(sql, sname, auth_id, sql->user_id);
-	return MAL_SUCCEED;
+	} else {
+		(void) mvc_create_schema(sql, sname, auth_id, sql->user_id);
+	}
+	return msg;
 }
 
 str
 SQLdrop_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 {	mvc *sql = NULL;
-	str msg;
+	str msg= MAL_SUCCEED;
 	str sname = *getArgReference_str(stk, pci, 1); 
 	str notused = *getArgReference_str(stk, pci, 2); 
 	int action = *getArgReference_int(stk, pci, 3);
@@ -859,7 +862,7 @@ SQLdrop_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		mvc_drop_schema(sql, s, action);
 	}
-	return MAL_SUCCEED;
+	return msg;
 }
 
 str
@@ -914,9 +917,13 @@ SQLdrop_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sname = *getArgReference_str(stk, pci, 1); 
 	str name = *getArgReference_str(stk, pci, 2);
 	int action = *getArgReference_int(stk, pci, 3);
+	int if_exists = 0; // should become an argument
 
 	initcontext();
-	msg = drop_view(sql, sname, name, action);
+	if( pci->argc > 4)
+		if_exists  = *getArgReference_int(stk, pci, 4);
+
+	msg = drop_view(sql, sname, name, action, if_exists);
 	return msg;
 }
 
