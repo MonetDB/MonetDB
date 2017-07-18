@@ -607,7 +607,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		// because this will be removed again upon server startup
 		const int RANDOM_NAME_SIZE = 32;
 		char *path = NULL;
-		const char *prefix = "LEFTOVERS" DIR_SEP_STR;
+		const char *prefix = "DELETE_ME" DIR_SEP_STR;
 		size_t prefix_size = strlen(prefix);
 		char *leftdirpath;
 
@@ -641,7 +641,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		GDKfree(path);
 
 		// if LEFTOVERS directory does not exist, create it
-		leftdirpath = GDKfilepath(0, NULL, LEFTDIR, NULL);
+		leftdirpath = GDKfilepath(0, NULL, DELDIR, NULL);
 		if (!leftdirpath) {
 			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 			goto wrapup;
