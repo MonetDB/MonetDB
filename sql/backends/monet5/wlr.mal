@@ -107,10 +107,6 @@ pattern drop_schema( sname:str, s:str, action:int, ifexists:int)
 address WLRgeneric
 comment "Catalog operation drop_schema";
 
-pattern drop_schema( sname:str, s:str, action:int)
-address WLRgeneric
-comment "Catalog operation drop_schema";
-
 pattern create_table(sname:str, tname:str, temp:int)
 address WLRgeneric
 comment "Catalog operation create_table";
@@ -123,14 +119,7 @@ pattern drop_table( sname:str, name:str, action:int , ifexists:int)
 address WLRgeneric
 comment "Catalog operation drop_table";
 
-pattern drop_table( sname:str, name:str, action:int )
-address WLRgeneric
-comment "Catalog operation drop_table";
 pattern drop_view( sname:str, name:str, action:int, ifexists:int)
-address WLRgeneric
-comment "Catalog operation drop_view";
-
-pattern drop_view( sname:str, name:str, action:int)
 address WLRgeneric
 comment "Catalog operation drop_view";
 

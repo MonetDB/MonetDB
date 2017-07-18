@@ -32,10 +32,10 @@ stderr of test 'insert` in directory 'sql/test/pg_regress` itself:
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into inserttest (col1, col2, col3) values (DEFAULT, DEFAULT, DEFAULT);
 
-MAPI  = (monetdb) /var/tmp/mtest-3103/.s.monetdb.32847
+MAPI  = (monetdb) /var/tmp/mtest-17313/.s.monetdb.39631
 QUERY = insert into inserttest (col1, col2, col3) values (DEFAULT, DEFAULT);
 
-MAPI  = (monetdb) /var/tmp/mtest-3103/.s.monetdb.32847
+MAPI  = (monetdb) /var/tmp/mtest-17313/.s.monetdb.39631
 QUERY = insert into inserttest (col1, col2, col3) values (1, 2);
 ERROR = !INSERT INTO: number of values doesn't match number of columns of table 'inserttest'
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
@@ -43,6 +43,7 @@ QUERY = insert into inserttest (col1) values (1, 2);
 ERROR = !INSERT INTO: number of values doesn't match number of columns of table 'inserttest'
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into inserttest (col1) values (DEFAULT, DEFAULT);
+
 
 
 

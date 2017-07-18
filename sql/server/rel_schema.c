@@ -993,7 +993,7 @@ rel_add_intern(mvc *sql, sql_rel *rel)
 
 
 static sql_rel *
-rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *query, int check, int persistent)
+rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *query, int check, int persistent, int if_not_exists)
 {
 	char *name = qname_table(qname);
 	char *sname = qname_schema(qname);
@@ -1011,7 +1011,11 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 		s = cur_schema(sql);
 
 	if (create && mvc_bind_table(sql, s, name) != NULL) {
-		return sql_error(sql, 02, "42S01!CREATE VIEW: name '%s' already in use", name);
+		if (if_not_exists) {
+			return NULL;
+		} else {
+			return sql_error(sql, 02, "42S01!CREATE VIEW: name '%s' already in use", name);
+		}
 	} else if (create && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP))) {
 		return sql_error(sql, 02, "42000!CREATE VIEW: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (query) {
@@ -1159,7 +1163,27 @@ schema_auth(dlist *name_auth)
 }
 
 static sql_rel *
-rel_schema(sql_allocator *sa, int cat_type, char *sname, char *auth, int nr)
+rel_drop(sql_allocator *sa, int cat_type, char *sname, char *auth, int nr, int exists_check)
+{
+	sql_rel *rel = rel_create(sa);
+	list *exps = new_exp_list(sa);
+
+	append(exps, exp_atom_int(sa, nr));
+	append(exps, exp_atom_clob(sa, sname));
+	append(exps, exp_atom_clob(sa, auth));
+	append(exps, exp_atom_int(sa, exists_check));
+	rel->l = NULL;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = cat_type;
+	rel->exps = exps;
+	rel->card = 0;
+	rel->nrcols = 0;
+	return rel;
+}
+
+static sql_rel *
+rel_create_schema_dll(sql_allocator *sa, char *sname, char *auth, int nr)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1172,7 +1196,7 @@ rel_schema(sql_allocator *sa, int cat_type, char *sname, char *auth, int nr)
 	rel->l = NULL;
 	rel->r = NULL;
 	rel->op = op_ddl;
-	rel->flag = cat_type;
+	rel->flag = DDL_CREATE_SCHEMA;
 	rel->exps = exps;
 	rel->card = 0;
 	rel->nrcols = 0;
@@ -1180,7 +1204,7 @@ rel_schema(sql_allocator *sa, int cat_type, char *sname, char *auth, int nr)
 }
 
 static sql_rel *
-rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements, int ignore_in_use)
+rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements, int if_not_exists)
 {
 	char *name = dlist_get_schema_name(auth_name);
 	char *auth = schema_auth(auth_name);
@@ -1198,7 +1222,7 @@ rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements, int ignore
 		name = auth;
 	assert(name);
 	if (mvc_bind_schema(sql, name)) {
-		if (!ignore_in_use) {
+		if (!if_not_exists) {
 			sql_error(sql, 02, "3F000!CREATE SCHEMA: name '%s' already in use", name);
 			return NULL;
 		} else {
@@ -1210,7 +1234,7 @@ rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements, int ignore
 		sql_schema *ss = SA_ZNEW(sql->sa, sql_schema);
 		sql_rel *ret;
 
-		ret = rel_schema(sql->sa, DDL_CREATE_SCHEMA, name, auth, 0);
+		ret = rel_create_schema_dll(sql->sa, name, auth, 0);
 
 		ss->base.name = name;
 		ss->auth_id = auth_id;
@@ -1277,7 +1301,7 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te)
 			int drop_action = l->h->next->data.i_val;
 			
 			sname = get_schema_name(sql, sname, tname);
-			return rel_schema(sql->sa, DDL_DROP_CONSTRAINT, sname, kname, drop_action);
+			return rel_drop(sql->sa, DDL_DROP_CONSTRAINT, sname, kname, drop_action, 0);
 		}
 
 		if (t->persistence != SQL_DECLARED_TABLE)
@@ -1947,7 +1971,8 @@ rel_schemas(mvc *sql, symbol *s)
 		dlist *l = s->data.lval;
 
 		ret = rel_create_schema(sql, l->h->data.lval,
-				l->h->next->next->next->data.lval, l->h->next->next->next->next->data.i_val);
+				l->h->next->next->next->data.lval,
+				l->h->next->next->next->next->data.i_val); /* if not exists */
 	} 	break;
 	case SQL_DROP_SCHEMA:
 	{
@@ -1955,11 +1980,11 @@ rel_schemas(mvc *sql, symbol *s)
 		dlist *auth_name = l->h->data.lval;
 
 		assert(l->h->next->type == type_int);
-		ret = rel_schema(sql->sa, 
-			   l->h->next->next->data.i_val ? DDL_DROP_SCHEMA_IF_EXISTS : DDL_DROP_SCHEMA, 
+		ret = rel_drop(sql->sa, DDL_DROP_SCHEMA,
 			   dlist_get_schema_name(auth_name),
 			   NULL,
-			   l->h->next->data.i_val);	/* drop_action */
+			   l->h->next->data.i_val, 	/* drop_action */
+			   l->h->next->next->data.i_val); /* if exists */
 	} 	break;
 	case SQL_CREATE_TABLE:
 	{
@@ -1971,7 +1996,10 @@ rel_schemas(mvc *sql, symbol *s)
 
 		assert(l->h->type == type_int);
 		assert(l->h->next->next->next->type == type_int);
-		ret = rel_create_table(sql, cur_schema(sql), temp, sname, name, l->h->next->next->data.sym, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.sval, l->h->next->next->next->next->next->data.i_val);
+		ret = rel_create_table(sql, cur_schema(sql), temp, sname, name, l->h->next->next->data.sym,
+							   l->h->next->next->next->data.i_val,
+							   l->h->next->next->next->next->data.sval,
+							   l->h->next->next->next->next->next->data.i_val); /* if not exists */
 	} 	break;
 	case SQL_CREATE_VIEW:
 	{
@@ -1979,7 +2007,12 @@ rel_schemas(mvc *sql, symbol *s)
 
 		assert(l->h->next->next->next->type == type_int);
 		assert(l->h->next->next->next->next->type == type_int);
-		ret = rel_create_view(sql, NULL, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.i_val);
+		ret = rel_create_view(sql, NULL, l->h->data.lval,
+							  l->h->next->data.lval,
+							  l->h->next->next->data.sym,
+							  l->h->next->next->next->data.i_val,
+							  l->h->next->next->next->next->data.i_val,
+							  l->h->next->next->next->next->next->data.i_val); /* if not exists */
 	} 	break;
 	case SQL_DROP_TABLE:
 	{
@@ -1989,7 +2022,9 @@ rel_schemas(mvc *sql, symbol *s)
 
 		assert(l->h->next->type == type_int);
 		sname = get_schema_name(sql, sname, tname);
-		ret = rel_schema(sql->sa, l->h->next->next->data.i_val ? DDL_DROP_TABLE_IF_EXISTS : DDL_DROP_TABLE, sname, tname, l->h->next->data.i_val);
+		ret = rel_drop(sql->sa, DDL_DROP_TABLE, sname, tname,
+						 l->h->next->data.i_val,
+						 l->h->next->next->data.i_val); /* if exists */
 	} 	break;
 	case SQL_DROP_VIEW:
 	{
@@ -1999,7 +2034,9 @@ rel_schemas(mvc *sql, symbol *s)
 
 		assert(l->h->next->type == type_int);
 		sname = get_schema_name(sql, sname, tname);
-		ret = rel_schema(sql->sa, l->h->next->next->data.i_val ? DDL_DROP_VIEW_IF_EXISTS : DDL_DROP_VIEW, sname, tname, l->h->next->data.i_val);
+		ret = rel_drop(sql->sa, DDL_DROP_VIEW, sname, tname,
+						 l->h->next->data.i_val,
+						 l->h->next->next->data.i_val); /* if exists */
 	} 	break;
 	case SQL_ALTER_TABLE:
 	{

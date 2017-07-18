@@ -99,22 +99,16 @@ typedef struct expression {
 #define DDL_TRANS	               14
 
 #define DDL_CREATE_SCHEMA          21
-#define DDL_DROP_SCHEMA_IF_EXISTS  22
-#define DDL_DROP_SCHEMA            23
-
-#define DDL_CREATE_TABLE           24
-#define DDL_DROP_TABLE_IF_EXISTS   25
-#define DDL_DROP_TABLE 	           26
-#define DDL_CREATE_VIEW            27
-#define DDL_DROP_VIEW_IF_EXISTS    28
-#define DDL_DROP_VIEW              29
-#define DDL_DROP_CONSTRAINT        30
-#define DDL_ALTER_TABLE            31
-
-#define DDL_CREATE_TYPE            32 
-#define DDL_DROP_TYPE              33 
-
-#define DDL_DROP_INDEX             34
+#define DDL_DROP_SCHEMA            22
+#define DDL_CREATE_TABLE           23
+#define DDL_DROP_TABLE 	           24
+#define DDL_CREATE_VIEW            25
+#define DDL_DROP_VIEW              26
+#define DDL_DROP_CONSTRAINT        27
+#define DDL_ALTER_TABLE            28
+#define DDL_CREATE_TYPE            29
+#define DDL_DROP_TYPE              30
+#define DDL_DROP_INDEX             31
 
 #define DDL_CREATE_FUNCTION        41 
 #define DDL_DROP_FUNCTION          42 

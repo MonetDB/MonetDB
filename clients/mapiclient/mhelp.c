@@ -214,7 +214,8 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"CREATE VIEW",
 	 "",
-	 "CREATE VIEW qname [ column_list ] AS { query_expression | '(' query_expression ') } [ WITH CHECK OPTION ]",
+	 "CREATE VIEW [ IF NOT EXISTS ] qname [ column_list ] AS { query_expression | '(' query_expression ') }\n"
+	 "[ WITH CHECK OPTION ]",
 	 "column_list,query_expression",
 	 NULL},
 	{"CURRENT_DATE",

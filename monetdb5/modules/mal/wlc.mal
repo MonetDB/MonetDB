@@ -95,15 +95,11 @@ pattern drop_seq( sname:str, nme:str, action:int)
 address WLCgeneric
 comment "Catalog operation drop_seq";
 
-pattern create_schema(sname:str, auth:str, action:int)
+pattern create_schema(sname:str, auth:str, ifnotexists:int, action:int)
 address WLCgeneric
 comment "Catalog operation create_schema";
 
-pattern drop_schema( sname:str, s:str, action:int, ifexists:int)
-address WLCgeneric
-comment "Catalog operation drop_schema";
-
-pattern drop_schema( sname:str, s:str, action:int)
+pattern drop_schema( sname:str, s:str, ifexists:int, action:int)
 address WLCgeneric
 comment "Catalog operation drop_schema";
 
@@ -115,11 +111,7 @@ pattern create_view(sname:str, tname:str, temp:int)
 address WLCgeneric
 comment "Catalog operation create_view";
 
-pattern drop_table( sname:str, name:str, action:int , ifexists:int)
-address WLCgeneric
-comment "Catalog operation drop_table";
-
-pattern drop_table( sname:str, name:str, action:int )
+pattern drop_table( sname:str, name:str, action:int, ifexists:int)
 address WLCgeneric
 comment "Catalog operation drop_table";
 
@@ -127,11 +119,7 @@ pattern drop_view( sname:str, name:str, action:int, ifexists:int)
 address WLCgeneric
 comment "Catalog operation drop_view";
 
-pattern drop_view( sname:str, name:str, action:int)
-address WLCgeneric
-comment "Catalog operation drop_view";
-
-pattern drop_constraint( sname:str, name:str, action:int)
+pattern drop_constraint( sname:str, name:str, action:int, ifexists:int)
 address WLCgeneric
 comment "Catalog operation drop_constraint";
 

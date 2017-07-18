@@ -4726,7 +4726,7 @@ rel2bin_catalog(backend *be, sql_rel *rel, list *refs)
 	mvc *sql = be->mvc;
 	node *en = rel->exps->h;
 	stmt *action = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL);
-	stmt *sname = NULL, *name = NULL;
+	stmt *sname = NULL, *name = NULL, *ifexists = NULL;
 	list *l = sa_list(sql->sa);
 
 	(void)refs;
@@ -4737,8 +4737,14 @@ rel2bin_catalog(backend *be, sql_rel *rel, list *refs)
 	} else {
 		name = stmt_atom_string_nil(be);
 	}
+	if (en->next && en->next->next) {
+		ifexists = exp_bin(be, en->next->next->data, NULL, NULL, NULL, NULL, NULL, NULL);
+	} else {
+		ifexists = stmt_atom_int(be, 0);
+	}
 	append(l, sname);
 	append(l, name);
+	append(l, ifexists);
 	append(l, action);
 	return stmt_catalog(be, rel->flag, stmt_list(be, l));
 }
@@ -4749,7 +4755,7 @@ rel2bin_catalog_table(backend *be, sql_rel *rel, list *refs)
 	mvc *sql = be->mvc;
 	node *en = rel->exps->h;
 	stmt *action = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL);
-	stmt *table = NULL, *sname, *tname = NULL;
+	stmt *table = NULL, *sname, *tname = NULL, *ifexists = NULL;
 	list *l = sa_list(sql->sa);
 
 	(void)refs;
@@ -4760,13 +4766,22 @@ rel2bin_catalog_table(backend *be, sql_rel *rel, list *refs)
 		tname = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL);
 		en = en->next;
 	}
-	if (en) 
-		table = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL);
 	append(l, sname);
 	assert(tname);
 	append(l, tname);
-	if (rel->flag != DDL_DROP_TABLE && rel->flag != DDL_DROP_TABLE_IF_EXISTS && rel->flag != DDL_DROP_VIEW && rel->flag != DDL_DROP_VIEW_IF_EXISTS && rel->flag != DDL_DROP_CONSTRAINT)
+	if (rel->flag != DDL_DROP_TABLE && rel->flag != DDL_DROP_VIEW && rel->flag != DDL_DROP_CONSTRAINT) {
+		if (en) {
+			table = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL);
+		}
 		append(l, table);
+	} else {
+		if (en) {
+			ifexists = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL);
+		} else {
+			ifexists = stmt_atom_int(be, 0);
+		}
+		append(l, ifexists);
+	}
 	append(l, action);
 	return stmt_catalog(be, rel->flag, stmt_list(be, l));
 }

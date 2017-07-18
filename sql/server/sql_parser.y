@@ -1157,6 +1157,7 @@ drop_table_element:
 	  append_string(l, $2 );
 	  append_int(l, $3 );
 	  append_int(l, 0);
+	  append_int(l, FALSE ); /* no if exists check */
 	  $$ = _symbol_create_list( SQL_DROP_TABLE, l ); }
   ;
 
@@ -1744,13 +1745,14 @@ like_table:
  ;
 
 view_def:
-    VIEW qname opt_column_list AS query_expression_def opt_with_check_option
+    VIEW if_not_exists qname opt_column_list AS query_expression_def opt_with_check_option
 	{  dlist *l = L();
-	  append_list(l, $2);
 	  append_list(l, $3);
-	  append_symbol(l, $5);
-	  append_int(l, $6);
+	  append_list(l, $4);
+	  append_symbol(l, $6);
+	  append_int(l, $7);
 	  append_int(l, TRUE);	/* persistent view */
+	  append_int(l, $2);
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); 
 	}
   ;
@@ -2437,7 +2439,7 @@ drop_statement:
 	{ dlist *l = L();
 	  append_list(l, $4 );
 	  append_int(l, $5 );
-	  append_int(l, $3);
+	  append_int(l, $3 );
 	  $$ = _symbol_create_list( SQL_DROP_TABLE, l ); }
  | drop routine_designator drop_action
 	{ dlist *l = $2;
@@ -3063,6 +3065,7 @@ with_list_element:
 	  append_symbol(l, $4);
 	  append_int(l, FALSE);	/* no with check */
 	  append_int(l, FALSE);	/* inlined view  (ie not persistent) */
+	  append_int(l, FALSE); /* no if not exists clause */
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); 
 	}
  ;
