@@ -17,9 +17,14 @@
 
 module cquery;
 
+pattern registersql(mod:str, fcn:str)
+address CQprocedure
+comment "Add a continuous SQL procedure to the Petri-net scheduler. It will analyse
+the MAL block to determine the input/output dependencies and firing conditions.";
+
 pattern register(mod:str, fcn:str)
 address CQregister
-comment "Add a continuous MAL plan to the Petri-net scheduler. It will analyse
+comment "Add a continuous SQL procedure to the Petri-net scheduler. It will analyse
 the MAL block to determine the input/output dependencies and firing conditions.";
 
 pattern resume(mod:str, fcn:str)

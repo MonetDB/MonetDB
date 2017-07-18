@@ -20,7 +20,7 @@
 create schema cquery;
 
 create procedure cquery.register(sch string, cqname string)
-	external name cquery.register;
+	external name cquery.registersql;
 
 create procedure cquery.resume()
 	external name cquery.resume;

@@ -477,7 +477,7 @@ typedef enum table_types {
 	tt_replica_table = 6	/* multiple replica of the same table */
 } table_types;
 
-#define isTable(x) 	  (x->type==tt_table)
+#define isTable(x) 	  (x->type==tt_table || x->type == tt_stream)
 #define isView(x)  	  (x->type==tt_view)
 #define isMergeTable(x)   (x->type==tt_merge_table)
 #define isStream(x)  	  (x->type==tt_stream)

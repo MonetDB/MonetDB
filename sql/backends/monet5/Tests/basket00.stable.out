@@ -24,11 +24,17 @@ Ready.
 # 13:08:27 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-16206" "--port=39158"
 # 13:08:27 >  
 
-#--------------------------#
-# t	t	t	t	t	t	t	t	t	t  # name
-# void	timestamp	str	str	str	int	int	int	int	str  # type
-#--------------------------#
-#baskets table
+#create stream table s_tmp(i integer);
+#insert into s_tmp values(1),(2);
+[ 2	]
+#select * from s_tmp;
+% sys.s_tmp # table_name
+% i # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+#drop table s_tmp;
 
 # 13:08:27 >  
 # 13:08:27 >  "Done."

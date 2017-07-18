@@ -372,7 +372,9 @@ CQanalysis(Client cntxt, MalBlkPtr mb, int idx)
 	return msg;
 }
 
-// locate the SQL procedure in the catalog
+/* locate the MAL representation of this operation and extract the flow */
+/* If the operation is not available yet, it should be compiled from its
+   definition retained in the SQL catalog */
 static str
 CQprocedureStmt(Client cntxt, MalBlkPtr mb, str schema, str nme)
 {
@@ -424,9 +426,9 @@ CQregisterInternal(Client cntxt, str modnme, str fcnnme)
 		return createException(SQL,"cquery.register","Could not find SQL procedure");
 
 	mb = s->def;
-	msg = CQprocedureStmt(cntxt, mb, modnme, fcnnme);
-	if( msg)
-		return msg;
+	//msg = CQprocedureStmt(cntxt, mb, modnme, fcnnme);
+	//if( msg)
+		//return msg;
 	sig = getInstrPtr(mb,0);
 
 	if (pnettop == MAXCQ) 
@@ -454,6 +456,81 @@ CQregisterInternal(Client cntxt, str modnme, str fcnnme)
 	msg =  CQregisterMAL(cntxt, nmb,0,0);
 	if( msg != MAL_SUCCEED){
 		freeSymbol(s);
+	}
+	return msg;
+}
+
+str
+CQprocedure(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str sch= NULL;
+	str nme= NULL;
+
+	Symbol s = NULL;
+	MalBlkPtr qry;
+	str msg = NULL;
+	InstrPtr p;
+	//Module scope;
+	int i;
+	char name[IDLENGTH];
+
+
+	/* check existing of the pre-compiled and activated function */
+	sch = *getArgReference_str(stk, pci, 1);
+	nme = *getArgReference_str(stk, pci, 2);
+	snprintf(name,IDLENGTH,"%s_%s",sch,nme);
+#ifdef DEBUG_CQUERY
+	fprintf(stderr,"#cq: register the continues procedure %s.%s()\n",sch,nme);
+#endif
+
+	/* check existing of the pre-compiled function */
+#ifdef DEBUG_CQUERY
+	fprintf(stderr,"#cq: locate a SQL procedure %s.%s()\n",sch,nme);
+#endif
+	msg = CQprocedureStmt(cntxt, mb, sch, nme);
+	if (msg)
+		return msg;
+	s = findSymbolInModule(cntxt->nspace, putName(nme));
+	if (s == NULL)
+		throw(SQL, "cqeury.procedure", "Definition missing");
+	qry = s->def;
+
+	chkProgram(cntxt->fdout,cntxt->nspace,qry);
+	if( qry->errors)
+		msg = createException(SQL,"cquery.procedure","Error in continuous procedure");
+
+#ifdef DEBUG_CQUERY
+	fprintf(stderr,"#cq: register a new continuous query plan\n");
+#endif
+	s = newFunction(userRef, putName(name), FUNCTIONsymbol);
+	if (s == NULL)
+		msg = createException(SQL, "cquery.procedure", "Procedure code does not exist.");
+
+	freeMalBlk(s->def);
+	s->def = copyMalBlk(qry);
+	p = getInstrPtr(s->def, 0);
+	setModuleId(p,userRef);
+	setFunctionId(p, putName(name));
+	insertSymbol(cntxt->nspace, s);
+#ifdef DEBUG_CQUERY
+	printFunction(cntxt->fdout, s->def, 0, LIST_MAL_ALL);
+#endif
+	/* optimize the code and register at scheduler */
+	if (msg == MAL_SUCCEED) 
+		addtoMalBlkHistory(mb);
+	if (msg == MAL_SUCCEED) {
+#ifdef DEBUG_CQUERY
+		fprintf(stderr,"#cq: continuous query plan\n");
+#endif
+		msg = CQregisterInternal(cntxt, userRef, putName(name));
+	}
+
+	// register all the baskets mentioned in the plan
+	for( i=1; i< s->def->stop;i++){
+		p= getInstrPtr(s->def,i);
+		if( getModuleId(p) == basketRef && getFunctionId(p)== registerRef){
+			BSKTregister(cntxt,s->def,0,p);
+		}
 	}
 	return msg;
 }
@@ -1005,28 +1082,21 @@ CQscheduler(void *dummy)
 str
 CQstartScheduler(void)
 {
-	Client cntxt;
 	MT_Id pid;
+	Client cntxt;
 	stream *fin, *fout;
 
 #ifdef DEBUG_CQUERY
 	fprintf(stderr, "#Start CQscheduler\n");
 #endif
-	fin =  open_rastream("cquery_in");
-	if( fin == NULL)
-		throw(MAL, "cquery.startScheduler","Could not create input file");
-	fout =  open_wastream("cquery_out");
-	if( fout == NULL)
-		throw(MAL, "cquery.startScheduler","Could not create output file");
+	fin =  open_rastream("fin_petri_sched");
+	fout =  open_wastream("fout_petri_sched");
 	cntxt = MCinitClient(0,bstream_create(fin,0),fout);
 	
-/*
-	cntxt = MCinitClient(0,0,0);
-*/
 	if( cntxt == NULL)
 		throw(MAL, "cquery.startScheduler","Could not initialize CQscheduler");
 	if( SQLinitClient(cntxt) != MAL_SUCCEED)
-		throw(MAL, "cquery.startScheduler","Could not initialize CQscheduler");
+		throw(MAL, "cquery.startScheduler","Could not initialize SQL context");
 
 	if (pnstatus== CQINIT && MT_create_thread(&pid, CQscheduler, (void*) cntxt, MT_THR_JOINABLE) != 0){
 #ifdef DEBUG_CQUERY

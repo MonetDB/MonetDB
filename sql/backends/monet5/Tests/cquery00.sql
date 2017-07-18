@@ -1,5 +1,5 @@
 create stream table testing (a int);
-insert into TESTING values(123);
+insert into testing values(123);
 
 create table results (a int);
 
@@ -15,3 +15,6 @@ select * from results;
 
 select * from functions wherE name = 'myfirstcq';
 
+drop procedure myfirstcq;
+drop table results;
+drop table testing;
