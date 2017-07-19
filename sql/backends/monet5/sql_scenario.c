@@ -1194,7 +1194,7 @@ SQLparser(Client c)
 			/* restore the state */
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, NULL, oldvtop);
-			if (msg == NULL && m->errstr && *m->errstr){
+			if (msg == NULL && *m->errstr){
 				if(strstr(m->errstr,"SQLSTATE"))
 					msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 				else

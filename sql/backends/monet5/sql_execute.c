@@ -574,8 +574,8 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
-			if( m->errstr){
-				if( strstr(m->errstr,"SQLSTATE"))
+			if (*m->errstr) {
+				if (strstr(m->errstr,"SQLSTATE"))
 					msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 				else
 					msg = createException(PARSE, "SQLparser", "SQLSTATE 42000 !""%s", m->errstr);
