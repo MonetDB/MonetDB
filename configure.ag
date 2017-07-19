@@ -443,7 +443,7 @@ AS_CASE([$host],
 		# it disables, however, the availability of madvise, which is
 		# in use use by GDK, so we cannot just AC_DEFINE this, but
 		# rather have to enable it where it is necessary
-		MSGCONTROL_FLAGS="-D_XOPEN_SOURCE=500"
+		MSGCONTROL_FLAGS="-D_XPG4_2"
 		AC_SUBST([MSGCONTROL_FLAGS])])
 
 # (try to) determine compiler type (gcc, icc, clang) (and version)
