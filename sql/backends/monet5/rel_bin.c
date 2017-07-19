@@ -4372,7 +4372,7 @@ sql_delete_cascade_Fkeys(backend *be, sql_key *fk, stmt *ftids)
 }
 
 static void 
-sql_delete_ukey(backend *be, stmt *utids /* deleted tids from ukey table */, sql_key *k, list *l) 
+sql_delete_ukey(backend *be, stmt *utids /* deleted tids from ukey table */, sql_key *k, list *l, char* which, int cascade)
 {
 	mvc *sql = be->mvc;
 	sql_ukey *uk = (sql_ukey*)k;
@@ -4393,31 +4393,36 @@ sql_delete_ukey(backend *be, stmt *utids /* deleted tids from ukey table */, sql
 			s = stmt_join(be, s, utids, 0, cmp_equal); /* join over the join index */
 			s = stmt_result(be, s, 0);
 			tids = stmt_project(be, s, tids);
-			switch (((sql_fkey*)fk)->on_delete) {
-				case ACT_NO_ACTION: 
-					break;
-				case ACT_SET_NULL: 
-				case ACT_SET_DEFAULT: 
-					s = sql_delete_set_Fkeys(be, fk, tids, ((sql_fkey*)fk)->on_delete);
-					list_prepend(l, s);
-					break;
-				case ACT_CASCADE: 
-					s = sql_delete_cascade_Fkeys(be, fk, tids);
-					list_prepend(l, s);
-					break;
-				default:	/*RESTRICT*/
-					/* The overlap between deleted primaries and foreign should be empty */
-					s = stmt_binop(be, stmt_aggr(be, tids, NULL, NULL, cnt, 1, 0), stmt_atom_lng(be, 0), ne);
-					msg = sa_message(sql->sa, "DELETE: FOREIGN KEY constraint '%s.%s' violated", fk->t->base.name, fk->base.name);
-					s = stmt_exception(be, s, msg, 00001);
-					list_prepend(l, s);
+			if(cascade) { //for truncate statements with the cascade option
+				s = sql_delete_cascade_Fkeys(be, fk, tids);
+				list_prepend(l, s);
+			} else {
+				switch (((sql_fkey*)fk)->on_delete) {
+					case ACT_NO_ACTION:
+						break;
+					case ACT_SET_NULL:
+					case ACT_SET_DEFAULT:
+						s = sql_delete_set_Fkeys(be, fk, tids, ((sql_fkey*)fk)->on_delete);
+						list_prepend(l, s);
+						break;
+					case ACT_CASCADE:
+						s = sql_delete_cascade_Fkeys(be, fk, tids);
+						list_prepend(l, s);
+						break;
+					default:	/*RESTRICT*/
+						/* The overlap between deleted primaries and foreign should be empty */
+						s = stmt_binop(be, stmt_aggr(be, tids, NULL, NULL, cnt, 1, 0), stmt_atom_lng(be, 0), ne);
+						msg = sa_message(sql->sa, "%s: FOREIGN KEY constraint '%s.%s' violated", which, fk->t->base.name, fk->base.name);
+						s = stmt_exception(be, s, msg, 00001);
+						list_prepend(l, s);
+				}
 			}
 		}
 	}
 }
 
 static int
-sql_delete_keys(backend *be, sql_table *t, stmt *rows, list *l)
+sql_delete_keys(backend *be, sql_table *t, stmt *rows, list *l, char* which, int cascade)
 {
 	mvc *sql = be->mvc;
 	int res = 1;
@@ -4437,7 +4442,7 @@ sql_delete_keys(backend *be, sql_table *t, stmt *rows, list *l)
 				
 				*local_id = k->base.id;
 				list_append(sql->cascade_action, local_id); 
-				sql_delete_ukey(be, rows, k, l);
+				sql_delete_ukey(be, rows, k, l, which, cascade);
 			}
 		}
 	}
@@ -4461,7 +4466,7 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 	if (!sql_delete_triggers(be, t, v, 0, 1, 3))
 		return sql_error(sql, 02, "DELETE: triggers failed for table '%s'", t->base.name);
 
-	if (!sql_delete_keys(be, t, v, l)) 
+	if (!sql_delete_keys(be, t, v, l, "DELETE", 0))
 		return sql_error(sql, 02, "DELETE: failed to delete indexes for table '%s'", t->base.name);
 
 	if (rows) { 
@@ -4511,39 +4516,22 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 	return delete;
 }
 
-static stmt *
-sql_truncate(backend *be, sql_table *t, int restart_sequences, int drop_action)
-{
-	mvc *sql = be->mvc;
-	list *l = sa_list(sql->sa);
-	stmt *v = stmt_tid(be, t, 0), *s = NULL;
-	const char *next_value_for = "next value for \"sys\".\"seq_";
-	char *seq_name;
-	str seq_pos = NULL;
-	sql_column *col;
-	sql_sequence *seq;
-	sql_schema *sche = t->s;
-	sql_trans *tr = sql->session->tr;
-	node *n;
+struct tablelist {
+	sql_table *table;
+	struct tablelist* next;
+};
 
-	if(restart_sequences) { /* restart the sequences if it's the case */
-		for (n = t->columns.set->h; n; n = n->next) {
-			col = n->data;
-			if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
-				seq_name = _STRDUP(seq_pos + (strlen(next_value_for) - strlen("seq_")));
-				seq_name[strlen(seq_name)-1] = '\0';
-				seq = find_sql_sequence(sche, seq_name);
-				if (seq) {
-					sql_trans_sequence_restart(tr, seq, seq->start);
-					seq->base.wtime = sche->base.wtime = tr->wtime = tr->wstime;
-					tr->schema_updates++;
-				}
-				_DELETE(seq_name);
-			}
-		}
+static void //inspect the other tables recursively for foreign key dependencies
+check_for_foreign_key_references(mvc *sql, struct tablelist* list, struct tablelist* next_append, sql_table *t, int cascade, stmt **error) {
+	node *n;
+	int found;
+	struct tablelist* new_node, *node_check;
+
+	if(*error) {
+		return;
 	}
 
-	if (!drop_action && t->keys.set) { /* Check for foreign key references if it's the case */
+	if (t->keys.set) { /* Check for foreign key references */
 		for (n = t->keys.set->h; n; n = n->next) {
 			sql_key *k = n->data;
 
@@ -4556,28 +4544,107 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int drop_action)
 					for (; l; l = l->next) {
 						k = l->data;
 						/* make sure it is not a self referencing key */
-						if (k->t != t)
-							return sql_error(sql, 02, "TRUNCATE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, t->base.name);
+						if (k->t != t && !cascade) {
+							*error = sql_error(sql, 02, "TRUNCATE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, t->base.name);
+						} else if(k->t != t) {
+							found = 0;
+							for (node_check = list; node_check; node_check = node_check->next) {
+								if(node_check->table == k->t) {
+									found = 1;
+								}
+							}
+							if(!found) {
+								new_node = (struct tablelist*) GDKmalloc(sizeof(struct tablelist));
+								new_node->table = k->t;
+								new_node->next = NULL;
+								next_append->next = new_node;
+								check_for_foreign_key_references(sql, list, new_node, k->t, cascade, error);
+							}
+						}
 					}
 				}
 			}
 		}
 	}
+}
 
-/* before */
-	if (!sql_delete_triggers(be, t, v, 0, 3, 4))
-		return sql_error(sql, 02, "TRUNCATE: triggers failed for table '%s'", t->base.name);
+static stmt *
+sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
+{
+	mvc *sql = be->mvc;
+	list *l = sa_list(sql->sa);
+	stmt *v, *error = NULL, *ret, *other;
+	const char *next_value_for = "next value for \"sys\".\"seq_";
+	char *seq_name;
+	str seq_pos = NULL;
+	sql_column *col;
+	sql_sequence *seq;
+	sql_schema *sche;
+	sql_table *next;
+	sql_trans *tr = sql->session->tr;
+	node *n;
 
-	if (!sql_delete_keys(be, t, v, l))
-		return sql_error(sql, 02, "TRUNCATE: failed to delete indexes for table '%s'", t->base.name);
+	struct tablelist* new_list = (struct tablelist*) GDKmalloc(sizeof(struct tablelist)), *list_node, *aux;
+	new_list->table = t;
+	new_list->next = NULL;
+	check_for_foreign_key_references(sql, new_list, new_list, t, cascade, &error);
 
-	s = stmt_table_clear(be, t);
-	list_append(l, s);
+	if(error) {
+		goto finalize;
+	}
 
-/* after */
-	if (!sql_delete_triggers(be, t, v, 1, 3, 4))
-		return sql_error(sql, 02, "TRUNCATE: triggers failed for table '%s'", t->base.name);
-	return s;
+	for (list_node = new_list; list_node; list_node = list_node->next) {
+		next = list_node->table;
+		sche = next->s;
+
+		if(restart_sequences) { /* restart the sequences if it's the case */
+			for (n = next->columns.set->h; n; n = n->next) {
+				col = n->data;
+				if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
+					seq_name = _STRDUP(seq_pos + (strlen(next_value_for) - strlen("seq_")));
+					seq_name[strlen(seq_name)-1] = '\0';
+					seq = find_sql_sequence(sche, seq_name);
+					if (seq) {
+						sql_trans_sequence_restart(tr, seq, seq->start);
+						seq->base.wtime = sche->base.wtime = tr->wtime = tr->wstime;
+						tr->schema_updates++;
+					}
+					_DELETE(seq_name);
+				}
+			}
+		}
+
+		v = stmt_tid(be, next, 0);
+
+		/* before */
+		if (!sql_delete_triggers(be, next, v, 0, 3, 4))
+			return sql_error(sql, 02, "TRUNCATE: triggers failed for table '%s'", next->base.name);
+
+		if (!sql_delete_keys(be, next, v, l, "TRUNCATE", cascade))
+			return sql_error(sql, 02, "TRUNCATE: failed to delete indexes for table '%s'", next->base.name);
+
+		other = stmt_table_clear(be, next);
+		list_append(l, other);
+		if(next == t) {
+			ret = other;
+		}
+
+		/* after */
+		if (!sql_delete_triggers(be, next, v, 1, 3, 4))
+			return sql_error(sql, 02, "TRUNCATE: triggers failed for table '%s'", next->base.name);
+	}
+
+	finalize:
+		for (list_node = new_list; list_node;) {
+			aux = list_node->next;
+			GDKfree(list_node);
+			list_node = aux;
+		}
+		if(error) {
+			return error;
+		}
+
+	return ret;
 }
 
 #define E_ATOM_INT(e) ((atom*)((sql_exp*)e)->l)->data.val.lval
@@ -4591,7 +4658,7 @@ rel2bin_truncate(backend *be, sql_rel *rel)
 	sql_rel *tr = rel->l;
 	sql_table *t = NULL;
 	node *n;
-	int restart_sequences, drop_action;
+	int restart_sequences, cascade;
 
 	if (tr->op == op_basetable)
 		t = tr->l;
@@ -4600,9 +4667,9 @@ rel2bin_truncate(backend *be, sql_rel *rel)
 
 	n = rel->exps->h;
 	restart_sequences = E_ATOM_INT(n->data);
-	drop_action = E_ATOM_INT(n->next->data);
+	cascade = E_ATOM_INT(n->next->data);
 
-	truncate = sql_truncate(be, t, restart_sequences, drop_action);
+	truncate = sql_truncate(be, t, restart_sequences, cascade);
 	if (sql->cascade_action)
 		sql->cascade_action = NULL;
 	return truncate;
