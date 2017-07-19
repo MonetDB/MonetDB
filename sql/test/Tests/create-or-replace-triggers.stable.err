@@ -32,8 +32,7 @@ MAPI  = (monetdb) /var/tmp/mtest-15975/.s.monetdb.38017
 QUERY = CREATE OR REPLACE TRIGGER failedtrigger AFTER INSERT ON testing3 FOR EACH STATEMENT BEGIN ATOMIC INSERT INTO testing8 VALUES (3); END; --error
 
 
-
-# 09:43:34 >  
-# 09:43:34 >  "Done."
-# 09:43:34 >  
+# 12:24:46 >  
+# 12:24:46 >  "Done."
+# 12:24:46 >  
 

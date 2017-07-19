@@ -33,6 +33,8 @@ QUERY = CREATE OR REPLACE VIEW failureview AS SELECT b2 FROM testingnothing WHER
 
 
 
+
+
 # 09:44:21 >  
 # 09:44:21 >  "Done."
 # 09:44:21 >  

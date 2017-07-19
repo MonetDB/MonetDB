@@ -39,3 +39,7 @@ TRUNCATE testing6 RESTART IDENTITY;
 INSERT INTO testing6 (b) VALUES (7);
 INSERT INTO testing6 (b) VALUES (8);
 SELECT a, b FROM testing6;
+
+DROP TABLE testing5;
+DROP TABLE testing4;
+DROP TABLE testing6;

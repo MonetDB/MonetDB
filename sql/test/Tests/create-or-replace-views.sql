@@ -11,3 +11,6 @@ CREATE OR REPLACE VIEW viewtest AS SELECT a1, b2 FROM testing9 WHERE b2 = 'two';
 SELECT a1, b2 FROM viewtest;
 
 CREATE OR REPLACE VIEW failureview AS SELECT b2 FROM testingnothing WHERE b2 = 'two'; --error
+
+DROP VIEW viewtest;
+DROP TABLE testing9;
