@@ -69,8 +69,8 @@ Ready.
 #CREATE TRIGGER nanani AFTER INSERT ON testing FOR EACH STATEMENT BEGIN ATOMIC INSERT INTO testing2 VALUES (1); END;
 #INSERT INTO testing values (1);
 [ 1	]
-#SELECT abc FROM testing2; --should get a single row with value 1
-% sys.testing2 # table_name
+#SELECT abc FROM testing8; --should get a single row with value 1
+% sys.testing8 # table_name
 % abc # name
 % int # type
 % 1 # length
@@ -78,8 +78,8 @@ Ready.
 #CREATE OR REPLACE TRIGGER nanani AFTER INSERT ON testing FOR EACH STATEMENT BEGIN ATOMIC INSERT INTO testing2 VALUES (2); END;
 #INSERT INTO testing values (1);
 [ 1	]
-#SELECT abc FROM testing2; --the previous row plus 2
-% sys.testing2 # table_name
+#SELECT abc FROM testing8; --the previous row plus 2
+% sys.testing8 # table_name
 % abc # name
 % int # type
 % 1 # length

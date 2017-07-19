@@ -28,8 +28,9 @@ stderr of test 'create-or-replace-triggers` in directory 'sql/test` itself:
 # 09:43:33 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7671" "--port=35381"
 # 09:43:33 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-7671/.s.monetdb.35381
-QUERY = CREATE OR REPLACE TRIGGER failedtrigger AFTER INSERT ON testing3 FOR EACH STATEMENT BEGIN ATOMIC INSERT INTO testing2 VALUES (3); END; --error
+MAPI  = (monetdb) /var/tmp/mtest-15975/.s.monetdb.38017
+QUERY = CREATE OR REPLACE TRIGGER failedtrigger AFTER INSERT ON testing3 FOR EACH STATEMENT BEGIN ATOMIC INSERT INTO testing8 VALUES (3); END; --error
+
 
 
 # 09:43:34 >  

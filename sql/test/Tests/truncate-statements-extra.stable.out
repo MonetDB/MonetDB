@@ -71,39 +71,39 @@ Ready.
 [ 1	]
 #INSERT INTO testing2 VALUES (1);
 [ 1	]
-#SELECT a FROM testing;
-% sys.testing # table_name
+#SELECT a FROM testing4;
+% sys.testing4 # table_name
 % a # name
 % int # type
 % 1 # length
 [ 1	]
-#SELECT abc FROM testing2;
-% sys.testing2 # table_name
+#SELECT abc FROM testing5;
+% sys.testing5 # table_name
 % abc # name
 % int # type
 % 1 # length
 [ 1	]
-#SELECT a FROM testing;
-% sys.testing # table_name
+#SELECT a FROM testing4;
+% sys.testing4 # table_name
 % a # name
 % int # type
 % 1 # length
 [ 1	]
-#SELECT abc FROM testing2;
-% sys.testing2 # table_name
+#SELECT abc FROM testing5;
+% sys.testing5 # table_name
 % abc # name
 % int # type
 % 1 # length
 [ 1	]
 #TRUNCATE testing CASCADE;
 [ 1	]
-#SELECT a FROM testing;
-% sys.testing # table_name
+#SELECT a FROM testing4;
+% sys.testing4 # table_name
 % a # name
 % int # type
 % 1 # length
-#SELECT abc FROM testing2;
-% sys.testing2 # table_name
+#SELECT abc FROM testing5;
+% sys.testing5 # table_name
 % abc # name
 % int # type
 % 1 # length
@@ -112,8 +112,8 @@ Ready.
 [ 1	]
 #INSERT INTO testing3 (b) VALUES (1);
 [ 1	]
-#SELECT a, b FROM testing3;
-% sys.testing3,	sys.testing3 # table_name
+#SELECT a, b FROM testing6;
+% sys.testing6,	sys.testing6 # table_name
 % a,	b # name
 % int,	int # type
 % 1,	1 # length
@@ -125,8 +125,8 @@ Ready.
 [ 1	]
 #INSERT INTO testing3 (b) VALUES (4);
 [ 1	]
-#SELECT a, b FROM testing3;
-% sys.testing3,	sys.testing3 # table_name
+#SELECT a, b FROM testing6;
+% sys.testing6,	sys.testing6 # table_name
 % a,	b # name
 % int,	int # type
 % 1,	1 # length
@@ -138,8 +138,8 @@ Ready.
 [ 1	]
 #INSERT INTO testing3 (b) VALUES (6);
 [ 1	]
-#SELECT a, b FROM testing3;
-% sys.testing3,	sys.testing3 # table_name
+#SELECT a, b FROM testing6;
+% sys.testing6,	sys.testing6 # table_name
 % a,	b # name
 % int,	int # type
 % 1,	1 # length
@@ -151,8 +151,8 @@ Ready.
 [ 1	]
 #INSERT INTO testing3 (b) VALUES (8);
 [ 1	]
-#SELECT a, b FROM testing3;
-% sys.testing3,	sys.testing3 # table_name
+#SELECT a, b FROM testing6;
+% sys.testing6,	sys.testing6 # table_name
 % a,	b # name
 % int,	int # type
 % 1,	1 # length

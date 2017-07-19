@@ -28,8 +28,9 @@ stderr of test 'create-or-replace-views` in directory 'sql/test` itself:
 # 09:44:20 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7857" "--port=30539"
 # 09:44:20 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-7857/.s.monetdb.30539
-QUERY = CREATE OR REPLACE VIEW failureview AS SELECT b2 FROM testing2 WHERE b2 = 'two'; --error
+MAPI  = (monetdb) /var/tmp/mtest-15815/.s.monetdb.39325
+QUERY = CREATE OR REPLACE VIEW failureview AS SELECT b2 FROM testingnothing WHERE b2 = 'two'; --error
+
 
 
 # 09:44:21 >  
