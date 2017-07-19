@@ -1950,13 +1950,13 @@ AS_VAR_IF([enable_pyintegration], [no], [], [
 	   	], [])
 	], [PY2CONFIG="$have_py2config"])
 	PYTHON_CMD=$PYTHON2
-	NUMPYVER=`$PYTHON_CMD -c "import numpy; print(int(numpy.__version__.split('.').__getitem__(1)) >= 7)"`
+	NUMPYVER=`$PYTHON_CMD -c "import numpy; print(int(numpy.__version__.split('.').__getitem__(1)) >= 7)" 2> /dev/null`
 	# check numpyconfig.h because autoconf tests includes by
 	# compiling a small C program, and other numpy headers do
 	# not compile without Python.h
 	AC_CHECK_HEADER([numpy/numpyconfig.h],
 		[NUMPYHEADERS=True],
-		[NUMPYHEADERS=`$PYTHON_CMD -c "import numpy, os; print(os.path.isfile(os.path.join(numpy.get_include(), 'numpy/arrayobject.h')))"`])
+		[NUMPYHEADERS=`$PYTHON_CMD -c "import numpy, os; print(os.path.isfile(os.path.join(numpy.get_include(), 'numpy/arrayobject.h')))" 2> /dev/null`])
 	AS_IF([test "x$NUMPYVER" = x || test "x$NUMPYVER" = xFalse],
 		[AS_VAR_IF([enable_pyintegration], [yes],
 			[AC_MSG_ERROR([numpy version >= 1.7.0 required for Python integration support])],
@@ -1971,9 +1971,9 @@ AS_VAR_IF([enable_pyintegration], [no], [], [
 			 why_have_libpy="(numpy/arrayobject.h not found)"
 			 enable_pyintegration="no"
 			 disable_pyintegration="(numpy/arrayobject.h not found)"])],
-		[libpy_CFLAGS=`$PYTHON_CMD -c "from distutils.sysconfig import get_python_inc; import numpy; print(' -I' + get_python_inc() + ' -I' + numpy.get_include());"`
+		[libpy_CFLAGS=`$PYTHON_CMD -c "from distutils.sysconfig import get_python_inc; import numpy; print(' -I' + get_python_inc() + ' -I' + numpy.get_include());" 2> /dev/null`
 		 libpy_LIBS=`$PY2CONFIG --ldflags`
-		 HAVEPYTHONHEADER=`$PYTHON_CMD -c "import distutils.sysconfig, os; print(os.path.isfile(os.path.join(distutils.sysconfig.get_python_inc(), 'Python.h')))"`
+		 HAVEPYTHONHEADER=`$PYTHON_CMD -c "import distutils.sysconfig, os; print(os.path.isfile(os.path.join(distutils.sysconfig.get_python_inc(), 'Python.h')))" 2> /dev/null`
 		 AS_VAR_IF([HAVEPYTHONHEADER], [True],
 		 	[have_libpy=yes
 			 AC_DEFINE([HAVE_LIBPY], 1, [Define if we can link to python])
@@ -2022,12 +2022,12 @@ if test "x$enable_py3integration" != xno; then
 
 	PYTHON_CMD=$PYTHON3
 
-	NUMPYVER=`$PYTHON_CMD -c "import numpy; print(int(numpy.__version__.split('.').__getitem__(1)) >= 7)"`
+	NUMPYVER=`$PYTHON_CMD -c "import numpy; print(int(numpy.__version__.split('.').__getitem__(1)) >= 7)" 2> /dev/null`
 	# check numpyconfig.h because autoconf tests includes by compiling a small C program, and other numpy headers do not compile without Python.h
 	AC_CHECK_HEADER(
 	    [numpy/numpyconfig.h], 
 		[NUMPYHEADERS=True],
-		[NUMPYHEADERS=`$PYTHON_CMD -c "import numpy, os; print(os.path.isfile(os.path.join(numpy.get_include(), 'numpy/arrayobject.h')))"`]
+		[NUMPYHEADERS=`$PYTHON_CMD -c "import numpy, os; print(os.path.isfile(os.path.join(numpy.get_include(), 'numpy/arrayobject.h')))" 2> /dev/null`]
 		)
 	if [test "x$NUMPYVER" = x] || [test "x$NUMPYVER" = xFalse]; then
 	  	if test "x$enable_py3integration" = xyes; then
@@ -2048,9 +2048,9 @@ if test "x$enable_py3integration" != xno; then
 			disable_py3integration="(numpy/arrayobject.h not found)"
 		fi
 	else
-		libpy3_CFLAGS=`$PYTHON_CMD -c "from distutils.sysconfig import get_python_inc; import numpy; print(' -I' + get_python_inc() + ' -I' + numpy.get_include());"`
+		libpy3_CFLAGS=`$PYTHON_CMD -c "from distutils.sysconfig import get_python_inc; import numpy; print(' -I' + get_python_inc() + ' -I' + numpy.get_include());" 2> /dev/null`
 		libpy3_LIBS=`$PY3CONFIG --ldflags`
-		HAVEPYTHONHEADER=`$PYTHON_CMD -c "import distutils.sysconfig, os; print(os.path.isfile(os.path.join(distutils.sysconfig.get_python_inc(), 'Python.h')))"`
+		HAVEPYTHONHEADER=`$PYTHON_CMD -c "import distutils.sysconfig, os; print(os.path.isfile(os.path.join(distutils.sysconfig.get_python_inc(), 'Python.h')))" 2> /dev/null`
 		if [test "x$HAVEPYTHONHEADER" = xTrue]; then
 			have_libpy3=yes
 			AC_DEFINE(HAVE_LIBPY3, 1, [Define if we can link to python])
