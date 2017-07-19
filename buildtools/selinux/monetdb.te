@@ -14,7 +14,7 @@ init_daemon_domain(monetdbd_t, monetdbd_exec_t)
 # mserver5_exec_t which must then transition to the mserver5_t domain
 type mserver5_t;		# mserver5 when run by monetdbd (monetdbd_t)
 type mserver5_exec_t;		# /usr/bin/mserver5
-application_domain(mserver5_t, mserver5_exec_t)
+init_daemon_domain(mserver5_t, mserver5_exec_t)
 # see https://selinuxproject.org/page/NB_Domain_and_Object_Transitions#Domain_Transition
 allow monetdbd_t mserver5_t:process transition;
 allow monetdbd_t mserver5_exec_t:file { execute open read getattr };
