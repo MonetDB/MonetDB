@@ -205,8 +205,8 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"CREATE TRIGGER",
 	 "",
-	 "CREATE TRIGGER wname { BEFORE | AFTER } { INSERT | DELETE | TRUNCATE | UPDATE [ OF ident [',' ident]] } ...\n"
-	 "ON qname REFERENCING trigger_reference... triggered_action",
+	 "CREATE [ OR REPLACE ] TRIGGER wname { BEFORE | AFTER } { INSERT | DELETE | TRUNCATE ...\n"
+	 " | UPDATE [ OF ident [',' ident]] } ON qname REFERENCING trigger_reference... triggered_action",
 	 "trigger_reference",
 	 NULL},
 	{"CREATE TYPE",
@@ -216,7 +216,7 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"CREATE VIEW",
 	 "",
-	 "CREATE VIEW [ IF NOT EXISTS ] qname [ column_list ] AS { query_expression | '(' query_expression ')' }\n"
+	 "CREATE [ OR REPLACE ] VIEW qname [ column_list ] AS { query_expression | '(' query_expression ')' }\n"
 	 "[ WITH CHECK OPTION ]",
 	 "column_list,query_expression",
 	 NULL},

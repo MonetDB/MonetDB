@@ -113,3 +113,5 @@ alastair_udf_mergetable_bug
 copy-into-fwf
 
 truncate-statements
+create-or-replace-triggers
+create-or-replace-views

@@ -1132,29 +1132,30 @@ _stack_push_table(mvc *sql, const char *tname, sql_table *t)
 }
 
 static sql_rel *
-create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, dlist *tqname, dlist *opt_ref, dlist *triggered_action)
+create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, dlist *tqname, dlist *opt_ref, dlist *triggered_action, int replace)
 {
 	const char *triggername = qname_table(qname);
 	const char *sname = qname_schema(tqname);
 	const char *tname = qname_table(tqname);
 	sql_schema *ss = cur_schema(sql);
 	sql_table *t = NULL;
+	sql_trigger *st = NULL;
 	int instantiate = (sql->emode == m_instantiate);
 	int create = (!instantiate && sql->emode != m_deps), event, orientation;
 	list *sq = NULL;
 	sql_rel *r = NULL;
-	char *q;
+	char *q, *base = replace ? "CREATE OR REPLACE" : "CREATE";
 
 	dlist *columns = trigger_event->data.lval;
 	const char *old_name = NULL, *new_name = NULL; 
 	dlist *stmts = triggered_action->h->next->next->data.lval;
 	symbol *condition = triggered_action->h->next->data.sym;
-	
+
 	if (!sname)
 		sname = ss->base.name;
 
 	if (sname && !(ss = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, "3F000!CREATE TRIGGER: no such schema '%s'", sname);
+		return sql_error(sql, 02, "3F000!%s TRIGGER: no such schema '%s'", base, sname);
 
 	if (opt_ref) {
 		dnode *dl = opt_ref->h;
@@ -1169,16 +1170,21 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, dlist *t
 				new_name = n;
 		}
 	}
+
 	if (create && !mvc_schema_privs(sql, ss)) 
-		return sql_error(sql, 02, "CREATE TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), ss->base.name);
-	if (create && mvc_bind_trigger(sql, ss, triggername) != NULL) 
-		return sql_error(sql, 02, "CREATE TRIGGER: name '%s' already in use", triggername);
-	
+		return sql_error(sql, 02, "%s TRIGGER: access denied for %s to schema ;'%s'", base, stack_get_string(sql, "current_user"), ss->base.name);
 	if (create && !(t = mvc_bind_table(sql, ss, tname)))
-		return sql_error(sql, 02, "CREATE TRIGGER: unknown table '%s'", tname);
-	if (create && isView(t)) 
-		return sql_error(sql, 02, "CREATE TRIGGER: cannot create trigger on view '%s'", tname);
-	
+		return sql_error(sql, 02, "%s TRIGGER: unknown table '%s'", base, tname);
+	if (create && isView(t))
+		return sql_error(sql, 02, "%s TRIGGER: cannot create trigger on view '%s'", base, tname);
+	if (create && (st = mvc_bind_trigger(sql, ss, triggername)) != NULL) {
+		if (replace) {
+			mvc_drop_trigger(sql, ss, st);
+		} else {
+			return sql_error(sql, 02, "%s TRIGGER: name '%s' already in use", base, triggername);
+		}
+	}
+
 	if (create) {
 		switch (trigger_event->token) {
 			case SQL_INSERT:
@@ -1443,7 +1449,7 @@ rel_psm(mvc *sql, symbol *s)
 		dlist *l = s->data.lval;
 
 		assert(l->h->next->type == type_int);
-		ret = create_trigger(sql, l->h->data.lval, l->h->next->data.i_val, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.lval);
+		ret = create_trigger(sql, l->h->data.lval, l->h->next->data.i_val, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.lval, l->h->next->next->next->next->next->next->data.i_val);
 		sql->type = Q_SCHEMA;
 	}
 		break;

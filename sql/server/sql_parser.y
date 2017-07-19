@@ -1169,7 +1169,7 @@ opt_column:
 create_statement:	
    create role_def 	{ $$ = $2; }
  | create table_def 	{ $$ = $2; }
- | create view_def 	{ $$ = $2; }
+ | view_def 	{ $$ = $1; }
  | type_def
  | func_def
  | index_def
@@ -1745,14 +1745,14 @@ like_table:
  ;
 
 view_def:
-    VIEW if_not_exists qname opt_column_list AS query_expression_def opt_with_check_option
+    create_or_replace VIEW qname opt_column_list AS query_expression_def opt_with_check_option
 	{  dlist *l = L();
 	  append_list(l, $3);
 	  append_list(l, $4);
 	  append_symbol(l, $6);
 	  append_int(l, $7);
 	  append_int(l, TRUE);	/* persistent view */
-	  append_int(l, $2);
+	  append_int(l, $1);
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); 
 	}
   ;
@@ -2314,7 +2314,7 @@ Define triggered SQL-statements.
 */
 
 trigger_def:
-    create TRIGGER qname trigger_action_time trigger_event
+    create_or_replace TRIGGER qname trigger_action_time trigger_event
     ON qname opt_referencing_list triggered_action
 	{ dlist *l = L();
 	  append_list(l, $3);
@@ -2323,6 +2323,7 @@ trigger_def:
 	  append_list(l, $7);
 	  append_list(l, $8);
 	  append_list(l, $9);
+	  append_int(l, $1);
 	  $$ = _symbol_create_list(SQL_CREATE_TRIGGER, l); 
 	}
  ;
@@ -3065,7 +3066,7 @@ with_list_element:
 	  append_symbol(l, $4);
 	  append_int(l, FALSE);	/* no with check */
 	  append_int(l, FALSE);	/* inlined view  (ie not persistent) */
-	  append_int(l, FALSE); /* no if not exists clause */
+	  append_int(l, FALSE); /* no replace clause */
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); 
 	}
  ;

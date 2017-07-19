@@ -993,7 +993,7 @@ rel_add_intern(mvc *sql, sql_rel *rel)
 
 
 static sql_rel *
-rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *query, int check, int persistent, int if_not_exists)
+rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *query, int check, int persistent, int replace)
 {
 	char *name = qname_table(qname);
 	char *sname = qname_schema(qname);
@@ -1002,23 +1002,35 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 	int instantiate = (sql->emode == m_instantiate || !persistent);
 	int deps = (sql->emode == m_deps);
 	int create = (!instantiate && !deps);
+	char *base = replace ? "CREATE OR REPLACE" : "CREATE";
 
-(void)ss;
+	(void) ss;
 	(void) check;		/* Stefan: unused!? */
 	if (sname && !(s = mvc_bind_schema(sql, sname))) 
 		return sql_error(sql, 02, "3F000!CREATE VIEW: no such schema '%s'", sname);
 	if (s == NULL)
 		s = cur_schema(sql);
 
-	if (create && mvc_bind_table(sql, s, name) != NULL) {
-		if (if_not_exists) {
-			return NULL;
+	if (create && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP))) {
+		return sql_error(sql, 02, "42000!%s VIEW: access denied for %s to schema ;'%s'", base, stack_get_string(sql, "current_user"), s->base.name);
+	}
+
+	if (create && (t = mvc_bind_table(sql, s, name)) != NULL) {
+		if (replace) {
+			if (!isView(t)) {
+				return sql_error(sql, 02, "42000!%s VIEW: unable to drop view '%s': is a table", base, name);
+			} else if (t->system) {
+				return sql_error(sql, 02, "42000!%s VIEW: cannot replace system view '%s'", base, name);
+			} else if (mvc_check_dependency(sql, t->base.id, VIEW_DEPENDENCY, NULL)) {
+				return sql_error(sql, 02, "42000!%s VIEW: cannot replace view '%s', there are database objects which depend on it", base, t->base.name);
+			} else {
+				mvc_drop_table(sql, s, t, 0);
+		 	}
 		} else {
-			return sql_error(sql, 02, "42S01!CREATE VIEW: name '%s' already in use", name);
+			return sql_error(sql, 02, "42S01!%s VIEW: name '%s' already in use", base, name);
 		}
-	} else if (create && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP))) {
-		return sql_error(sql, 02, "42000!CREATE VIEW: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
-	} else if (query) {
+	}
+	if (query) {
 		sql_rel *sq = NULL;
 		char *q = QUERY(sql->scanner);
 
@@ -1026,7 +1038,7 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 			SelectNode *sn = (SelectNode *) query;
 
 			if (sn->limit)
-				return sql_error(sql, 01, "0A000!42000!CREATE VIEW: LIMIT not supported");
+				return sql_error(sql, 01, "0A000!42000!%s VIEW: LIMIT not supported", base);
 		}
 
 		sq = schema_selects(sql, s, query);
@@ -2012,7 +2024,7 @@ rel_schemas(mvc *sql, symbol *s)
 							  l->h->next->next->data.sym,
 							  l->h->next->next->next->data.i_val,
 							  l->h->next->next->next->next->data.i_val,
-							  l->h->next->next->next->next->next->data.i_val); /* if not exists */
+							  l->h->next->next->next->next->next->data.i_val); /* or replace */
 	} 	break;
 	case SQL_DROP_TABLE:
 	{
