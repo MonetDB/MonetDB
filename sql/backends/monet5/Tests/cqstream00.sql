@@ -18,28 +18,26 @@ begin
     insert into result1 select * from stmp2 where val <12;
     insert into result2 select * from stmp2 where val >12;
 end;
-call cquery.register('sys','cq_splitter');
-select * from cquery.status();
 
--- START cq_splitter;
-call cquery.resume('sys','cq_splitter');
+start continuous sys.cq_splitter();
 
 -- wait for a few seconds for scheduler to do work
 call cquery.wait(1000);
 
 -- STOP cq_splitter;
-call cquery.pause('sys','cq_splitter');
+pause continuous sys.cq_splitter();
+
+select * from cquery.status();
+--select * from cquery.status();
+--select * from cquery.log();
 
 select 'RESULT';
 select * from stmp2;
 select val from result1;
 select val from result2;
 
---select * from cquery.status();
---select * from cquery.log();
-
 -- ideally auto remove upon dropping the procedure
-call cquery.deregister('sys','cq_splitter');
+stop continuous sys.cq_splitter();
 
 drop procedure cq_splitter;
 drop table stmp2;

@@ -19,24 +19,6 @@
 
 create schema cquery;
 
-create procedure cquery.register(sch string, cqname string)
-	external name cquery.registersql;
-
-create procedure cquery.resume()
-	external name cquery.resume;
-create procedure cquery.resume(sch string, cqname string)
-	external name cquery.resume;
-
-create procedure cquery.pause()
-	external name cquery.pause;
-create procedure cquery.pause(sch string, cqname string)
-	external name cquery.pause;
-
-create procedure cquery.deregister()
-	external name cquery.deregister;
-create procedure cquery.deregister(sch string, cqname string)
-	external name cquery.deregister;
-
 -- The following commands can be part of the cquery itself
 create procedure cquery.wait(ms integer)
 	external name cquery.wait;
@@ -78,7 +60,7 @@ begin
 end;
 
 create function cquery.status()
- returns table(tick timestamp,  "schema" string, "function" string, state string, errors string)
+ returns table(tick timestamp,  "schema" string, "function" string, state string, errors string, stmt string)
  external name cquery.status;
 
 create function cquery.streams()

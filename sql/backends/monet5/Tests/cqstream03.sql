@@ -15,12 +15,12 @@ begin
         insert into agenda13 select count(*), 'full batch' from tmp13;
     end if;
 end;
-call cquery.register('sys','cq_agenda');
+start continuous sys.cq_agenda();
 call cquery.heartbeat('sys','cq_agenda',1000);
 
 select * from cquery.status();
 
-call cquery.deregister('sys','cq_agenda');
+stop continuous sys.cq_agenda();
 drop procedure cq_agenda;
 drop table tmp13;
 drop table agenda13;

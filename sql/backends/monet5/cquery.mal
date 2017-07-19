@@ -17,7 +17,12 @@
 
 module cquery;
 
+pattern registersql(mod:str, fcn:str, arg:any...)
+address CQprocedure
+comment "Add a continuous SQL procedure to the Petri-net scheduler. It will analyse
+the MAL block to determine the input/output dependencies and firing conditions.";
 pattern registersql(mod:str, fcn:str)
+
 address CQprocedure
 comment "Add a continuous SQL procedure to the Petri-net scheduler. It will analyse
 the MAL block to determine the input/output dependencies and firing conditions.";
@@ -72,7 +77,7 @@ address CQerror
 comment "Remember the error seen";
 
 # continuous query status analysis
-pattern status() (tick:bat[:timestamp],mod:bat[:str],fcn:bat[:str],state:bat[:str],error:bat[:str])
+pattern status() (tick:bat[:timestamp],mod:bat[:str],fcn:bat[:str],state:bat[:str],error:bat[:str], stmt:bat[:str])
 address CQstatus
 comment "Status of all registered continuous queries";
 

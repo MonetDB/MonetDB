@@ -50,6 +50,7 @@ typedef struct {
 
 	int status;     /* query status .../wait/running/paused */
 	int enabled;
+	str stmt;		/* actual statement call */
 
 	int baskets[MAXSTREAMS];	/* reference into the registered basket tables catalog */
 	int inout[MAXSTREAMS]; /* how the stream tables are used, needed for locking */

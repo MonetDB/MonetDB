@@ -1,6 +1,6 @@
 -- create a continuous query and find it
 
-create table cqtbl(i integer);
+create stream table cqtbl(i integer);
 
 -- the hello example
 create continuous procedure cqfoo(v integer)
@@ -18,6 +18,7 @@ select * from cqtbl;
 start continuous cqfoo(321);
 select * from cqtbl;
 
+stop continuous cqfoo(321);
 --stop continuous cqfoo;
 select * from cqtbl;
 

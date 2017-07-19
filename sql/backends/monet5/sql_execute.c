@@ -353,23 +353,27 @@ SQLrun(Client c, backend *be, mvc *m){
 			switch( m->continuous){
 			case mod_start_continuous:
 				//mnstr_printf(c->fdout, "#Start continuous query\n");
+				// hand over the wrapper command to the scheduler
 				CQregisterMAL(c,mb, 0,0);
 				m->continuous = 0;
-				msg = MAL_SUCCEED;
+				return MAL_SUCCEED;
 				break;
 			case mod_stop_continuous:
 				//mnstr_printf(c->fdout, "#Stop continuous query\n");
 				m->continuous = 0;
+				CQderegister(c,mb, 0,0);
 				msg = MAL_SUCCEED;
 				break;
 			case mod_pause_continuous:
 				//mnstr_printf(c->fdout, "#Pause continuous query\n");
 				m->continuous = 0;
+				CQpause(c,mb, 0,0);
 				msg = MAL_SUCCEED;
 				break;
 			case mod_resume_continuous:
 				//mnstr_printf(c->fdout, "#Resume continuous query\n");
 				m->continuous = 0;
+				CQresume(c,mb, 0,0);
 				msg = MAL_SUCCEED;
 				break;
 			default:
