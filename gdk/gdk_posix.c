@@ -66,6 +66,10 @@
 #define MMAP_ADVISE		7
 #define MMAP_WRITABLE		(MMAP_WRITE|MMAP_COPY)
 
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
+#endif
+
 /* DDALERT: AIX4.X 64bits needs HAVE_SETENV==0 due to a AIX bug, but
  * it probably isn't detected so by configure */
 

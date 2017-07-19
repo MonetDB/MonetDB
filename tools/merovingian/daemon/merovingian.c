@@ -80,6 +80,10 @@
 #include "argvcmds.h"
 #include "multiplex-funnel.h"
 
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
+#endif
+
 
 /* private structs */
 
@@ -662,6 +666,9 @@ main(int argc, char *argv[])
 				p, strerror(errno));
 		MERO_EXIT_CLEAN(1);
 	}
+#if O_CLOEXEC == 0
+	fcntl(_mero_topdp->ou, F_SETFD< FD_CLOEXEC);
+#endif
 	_mero_topdp->err = _mero_topdp->out;
 
 	_mero_logfile = fdopen(_mero_topdp->out, "a");

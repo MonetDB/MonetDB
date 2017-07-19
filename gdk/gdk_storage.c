@@ -33,6 +33,10 @@
 #include <fcntl.h>
 #endif
 
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
+#endif
+
 /* GDKfilepath returns a newly allocated string containing the path
  * name of a database farm.
  * The arguments are the farmID or -1, the name of a subdirectory
