@@ -345,7 +345,7 @@ handle_error(mvc *m, int pstatus, str msg)
 	} else if( GDKerrbuf && GDKerrbuf[0]){
 		new = GDKstrdup(GDKerrbuf);
 		GDKerrbuf[0] = 0;
-	}else if( m->errstr && *m->errstr){
+	}else if( *m->errstr){
 		new = GDKstrdup(m->errstr);
 		m->errstr[0] = 0;
 	}
@@ -1059,7 +1059,7 @@ SQLparser(Client c)
 	    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
 		if (!err &&m->scanner.started)	/* repeat old errors, with a parsed query */
 			err = mvc_status(m);
-		if (err && m->errstr && *m->errstr) {
+		if (err && *m->errstr) {
 			if( strstr(m->errstr,"SQLSTATE"))
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			else
@@ -1105,7 +1105,7 @@ SQLparser(Client c)
 
 		r = sql_symbol2relation(m, m->sym);
 
-		if (!r || (err = mvc_status(m) && m->type != Q_TRANS && m->errstr && *m->errstr)) {
+		if (!r || (err = mvc_status(m) && m->type != Q_TRANS && *m->errstr)) {
 			if( strstr(m->errstr,"SQLSTATE"))
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			else

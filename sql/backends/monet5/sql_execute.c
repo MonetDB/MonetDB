@@ -281,7 +281,7 @@ SQLrun(Client c, backend *be, mvc *m)
 	int i,j, retc;
 	ValPtr val;
 			
-	if (m->errstr &&  *m->errstr){
+	if (*m->errstr){
 		if( strstr(m->errstr,"SQLSTATE"))
 			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 		else 
@@ -511,7 +511,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		    (mvc_status(m) && m->type != Q_TRANS) || !m->sym) {
 			if (!err)
 				err = mvc_status(m);
-			if (m->errstr && *m->errstr){
+			if (*m->errstr){
 				if( strstr(m->errstr,"SQLSTATE"))
 					msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 				else
@@ -540,7 +540,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		mnstr_printf(c->fdout, "#SQLstatement:\n");
 #endif
 		scanner_query_processed(&(m->scanner));
-		if ((err = mvc_status(m)) && m->errstr) {
+		if ((err = mvc_status(m)) ) {
 				if( strstr(m->errstr,"SQLSTATE"))
 					msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 				else
@@ -574,13 +574,11 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
-			if (*m->errstr) {
-				if (strstr(m->errstr,"SQLSTATE"))
-					msg = createException(PARSE, "SQLparser", "%s", m->errstr);
-				else
-					msg = createException(PARSE, "SQLparser", "SQLSTATE 42000 !""%s", m->errstr);
-				*m->errstr = 0;
-			}
+			if( strstr(m->errstr,"SQLSTATE"))
+				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
+			else
+				msg = createException(PARSE, "SQLparser", "SQLSTATE 42000 !""%s", m->errstr);
+			*m->errstr = 0;
 			goto endofcompile;
 		}
 #ifdef _SQL_COMPILE
