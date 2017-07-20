@@ -36,11 +36,11 @@ Ready.
 #    end if;
 #end;
 #select * from cquery.status();
-% .L1,	.L1,	.L1,	.L1,	.L1 # table_name
-% tick,	schema,	function,	state,	errors # name
-% timestamp,	clob,	clob,	clob,	clob # type
-% 26,	3,	9,	7,	0 # length
-[ NULL,	"sys",	"cq_agenda",	"waiting",	""	]
+% .L1,	.L1,	.L1,	.L1,	.L1,	.L1 # table_name
+% tick,	schema,	function,	state,	errors,	stmt # name
+% timestamp,	clob,	clob,	clob,	clob,	clob # type
+% 26,	4,	9,	10,	0,	17 # length
+[ NULL,	"user",	"cq_agenda",	"readytorun",	"",	"user.cq_agenda();"	]
 #drop procedure cq_agenda;
 #drop table tmp13;
 #drop table agenda13;

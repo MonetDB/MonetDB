@@ -43,6 +43,7 @@ Ready.
 [ 0	]
 [ 1	]
 [ 2	]
+[ 3	]
 #drop procedure cq_cycles;
 #drop table result;
 

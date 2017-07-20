@@ -596,6 +596,7 @@ CQregisterMAL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	q = newStmt(mb, sqlRef, commitRef);
 	setArgType(mb,q, 0, TYPE_void);
 	moveInstruction(mb, getPC(mb,q),i+2);
+	chkProgram(cntxt->fdout, cntxt->nspace, mb);
 
 #ifdef DEBUG_CQUERY
 	fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
@@ -672,7 +673,7 @@ str
 CQresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	int i;
+	int i, k =-1;
 	InstrPtr q;
 	(void) cntxt;
 	(void) stk;
@@ -680,9 +681,15 @@ CQresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for( i=1; i < mb->stop; i++){
 		q = getInstrPtr(mb,i);
-		if( getModuleId(q) == userRef)
-			return CQresumeInternal(getModuleId(q), getFunctionId(q));
+
+		if( getModuleId(q) == userRef){
+			if( k != -1)
+				throw(SQL,"cquery.resume","Ambiguous resume statement");
+			k = i;
+		}
 	}
+	if( k >= 0)
+		return CQresumeInternal(getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
 	//resume all
 	MT_lock_set(&ttrLock);
 	msg = CQresumeInternalRanges(0, pnettop);
@@ -723,7 +730,7 @@ str
 CQpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	int i;
+	int i,k = -1;
 	InstrPtr q;
 	(void) cntxt;
 	(void) stk;
@@ -731,9 +738,15 @@ CQpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for( i=1; i < mb->stop; i++){
 		q = getInstrPtr(mb,i);
-		if( getModuleId(q) == userRef)
-			return CQpauseInternal(getModuleId(q), getFunctionId(q));
+		if( getModuleId(q) == userRef){
+			if( k != -1)
+				throw(SQL,"cquery.pause","Ambiguous pause statement");
+			k = i;
+		}
 	}
+	if( k >= 0)
+		return CQpauseInternal(getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
+
 	//pause all
 	MT_lock_set(&ttrLock);
 	msg = CQpauseInternalRanges(0, pnettop);
@@ -882,7 +895,7 @@ str
 CQderegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	int i;
+	int i, k= -1;
 	InstrPtr q;
 	(void) cntxt;
 	(void) stk;
@@ -890,9 +903,14 @@ CQderegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for( i=1; i < mb->stop; i++){
 		q = getInstrPtr(mb,i);
-		if( getModuleId(q) == userRef)
-			return CQderegisterInternal(getModuleId(q), getFunctionId(q), 0);
+		if( getModuleId(q) == userRef){
+			if( k != -1)
+				throw(SQL,"cquery.stop","Ambiguous stop statement");
+			k = i;
+		}
 	}
+	if( k>= 0)
+		return CQderegisterInternal(getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)), 0);
 	//deregister all
 	MT_lock_set(&ttrLock);
 	msg = CQderegisterInternalRanges(0, pnettop);

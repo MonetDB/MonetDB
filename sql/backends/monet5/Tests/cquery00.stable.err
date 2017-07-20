@@ -38,7 +38,8 @@ QUERY = # some simple MAL tests
         (tick:bat[:timestamp],mod:bat[:str],fcn:bat[:str], time:bat[:lng],error:bat[:str]) := cquery.log();
         
         io.print(tick,mod,fcn,time,error);
-ERROR = !SQLException:cquery.show:Continous query unknown.query not accessible
+ERROR = !SQLException:cquery.show:Continuous procedure unknown.query not accessible
+
 
 
 

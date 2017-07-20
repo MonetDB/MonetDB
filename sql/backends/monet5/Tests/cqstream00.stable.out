@@ -40,12 +40,6 @@ Ready.
 #    insert into result1 select * from stmp2 where val <12;
 #    insert into result2 select * from stmp2 where val >12;
 #end;
-#select * from cquery.status();
-% .L1,	.L1,	.L1,	.L1,	.L1 # table_name
-% tick,	schema,	function,	state,	errors # name
-% timestamp,	clob,	clob,	clob,	clob # type
-% 26,	3,	11,	7,	0 # length
-[ NULL,	"sys",	"cq_splitter",	"waiting",	""	]
 #select 'RESULT';
 % .L2 # table_name
 % L2 # name

@@ -27,7 +27,7 @@ call cquery.wait(1000);
 -- STOP cq_splitter;
 pause continuous sys.cq_splitter();
 
-select * from cquery.status();
+--select * from cquery.status();
 --select * from cquery.status();
 --select * from cquery.log();
 

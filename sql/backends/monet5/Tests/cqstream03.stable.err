@@ -29,7 +29,7 @@ stderr of test 'cqstream03` in directory 'sql/backends/monet5` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-17764/.s.monetdb.38071
 QUERY = call cquery.heartbeat('sys','cq_agenda',1000);
-ERROR = !Beat ignored, a window constraint exist
+ERROR = !Beat ignored, a window constraint exists
 
 
 # 12:58:46 >  

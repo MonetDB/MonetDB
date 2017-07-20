@@ -21,8 +21,8 @@ pattern registersql(mod:str, fcn:str, arg:any...)
 address CQprocedure
 comment "Add a continuous SQL procedure to the Petri-net scheduler. It will analyse
 the MAL block to determine the input/output dependencies and firing conditions.";
-pattern registersql(mod:str, fcn:str)
 
+pattern registersql(mod:str, fcn:str)
 address CQprocedure
 comment "Add a continuous SQL procedure to the Petri-net scheduler. It will analyse
 the MAL block to determine the input/output dependencies and firing conditions.";
