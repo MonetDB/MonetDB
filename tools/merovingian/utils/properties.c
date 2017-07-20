@@ -24,7 +24,7 @@
 	"# This file is used by monetdbd\n\n"
 
 /* these are the properties used for starting an mserver */
-static confkeyval _internal_prop_keys[PROPLENGTH] = {
+static const confkeyval _internal_prop_keys[PROPLENGTH] = {
 	{"type",     NULL, 0, STR},
 	{"shared",   NULL, 0, STR},
 	{"nthreads", NULL, 0, INT},
@@ -40,6 +40,20 @@ static confkeyval _internal_prop_keys[PROPLENGTH] = {
 };
 
 static pthread_mutex_t readprops_lock = PTHREAD_MUTEX_INITIALIZER;
+
+/**
+ * Returns true if the key is a default property.
+ */
+int
+defaultProperty(const char *property) {
+	int i;
+	if (property == NULL)
+		return 0;
+	for (i = 0; _internal_prop_keys[i].key != NULL; i++)
+		if (strcmp(property, _internal_prop_keys[i].key) == 0)
+			return 1;
+	return 0;
+}
 
 /**
  * Returns the currently supported list of properties.  This list can be

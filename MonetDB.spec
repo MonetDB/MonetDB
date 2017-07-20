@@ -998,6 +998,7 @@ fi
 
 make %{?_smp_mflags}
 
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 cd buildtools/selinux
 for selinuxvariant in %{selinux_variants}
 do
@@ -1006,6 +1007,7 @@ do
   make NAME=${selinuxvariant} -f /usr/share/selinux/devel/Makefile clean
 done
 cd -
+%endif
 
 %install
 %make_install
@@ -1022,6 +1024,7 @@ rm -f %{buildroot}%{_libdir}/monetdb5/*.la
 # internal development stuff
 rm -f %{buildroot}%{_bindir}/Maddlog
 
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 for selinuxvariant in %{selinux_variants}
 do
   install -d %{buildroot}%{_datadir}/selinux/${selinuxvariant}
@@ -1029,6 +1032,7 @@ do
     %{buildroot}%{_datadir}/selinux/${selinuxvariant}/monetdb.pp
 done
 /usr/sbin/hardlink -cv %{buildroot}%{_datadir}/selinux
+%endif
 
 %post -p /sbin/ldconfig
 

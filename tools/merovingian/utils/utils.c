@@ -96,24 +96,23 @@ readConfFileFull(confkeyval *list, FILE *cnf) {
 			val = strtok(NULL, separator);
 			/* strip trailing newline */
 			val = strtok(val, "\n");
-			/* check if it is default property or not. those are set in a special way */
-			if (defaultProperty(key)) {
-				if ((err = setConfValForKey(t, key, val)) != NULL) {
-					free(err); /* ignore, just fall back to default */
+			if ((err = setConfValForKey(t, key, val)) != NULL) {
+				if (strstr(err, "is not recognized") == NULL) {
+					/* If we already have more than PROPLENGTH
+					 * entries, ignore every ad hoc property
+					 */
+					if (cnt >= PROPLENGTH - 1) {
+						continue;
+					}
+					list->key = strdup(key);
+					list->val = strdup(val);
+					list->ival = 0;
+					list->type = STR;
+					list++;
+					cnt++;
 				}
-			} else {
-				/* If we already have more than PROPLENGTH entries, ignore every
-				 * ad hoc property
-				 */
-				if (cnt >= PROPLENGTH - 1) {
-					continue;
-				}
-				list->key = strdup(key);
-				list->val = strdup(val);
-				list->ival = 0;
-				list->type = STR;
-				list++;
-				cnt++;
+				/* else: ignore the property */
+				free(err);
 			}
 		}
 	}
@@ -131,25 +130,6 @@ freeConfFile(confkeyval *list) {
 		}
 		list++;
 	}
-}
-
-/**
- * Returns true if the key is a default property.
- */
-int
-defaultProperty(const char *property) {
-	if (property == NULL)
-		return 0;
-	return strcmp(property, "type") == 0 ||
-		strcmp(property, "shared") == 0 ||
-		strcmp(property, "nthreads") == 0 ||
-		strcmp(property, "readonly") == 0 ||
-		strcmp(property, "nclients") == 0 ||
-		strcmp(property, "mfunnel") == 0 ||
-		strcmp(property, "embedr") == 0 ||
-		strcmp(property, "embedpy") == 0 ||
-		strcmp(property, "embedpy3") == 0 ||
-		strcmp(property, "optpipe") == 0;
 }
 
 /**
