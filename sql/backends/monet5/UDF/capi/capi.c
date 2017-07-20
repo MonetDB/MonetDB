@@ -603,13 +603,13 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		// we have to compile it
 
 		// first generate the names	of the files
-		// we place the temporary files in the LEFTOVERS directory
+		// we place the temporary files in the DELDIR directory
 		// because this will be removed again upon server startup
 		const int RANDOM_NAME_SIZE = 32;
 		char *path = NULL;
-		const char *prefix = "DELETE_ME" DIR_SEP_STR;
+		const char *prefix = TEMPDIR_NAME DIR_SEP_STR;
 		size_t prefix_size = strlen(prefix);
-		char *leftdirpath;
+		char *deldirpath;
 
 		memcpy(buf, prefix, sizeof(char) * strlen(prefix));
 		// generate a random 32-character name for the temporary files
@@ -640,18 +640,18 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		strcpy(libname, path);
 		GDKfree(path);
 
-		// if LEFTOVERS directory does not exist, create it
-		leftdirpath = GDKfilepath(0, NULL, DELDIR, NULL);
-		if (!leftdirpath) {
+		// if DELDIR directory does not exist, create it
+		deldirpath = GDKfilepath(0, NULL, TEMPDIR, NULL);
+		if (!deldirpath) {
 			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 			goto wrapup;
 		}
-		if (mkdir(leftdirpath, 0755) < 0 && errno != EEXIST) {
+		if (mkdir(deldirpath, 0755) < 0 && errno != EEXIST) {
 			msg = createException(MAL, "cudf.eval",
-								  "cannot create directory %s\n", leftdirpath);
+								  "cannot create directory %s\n", deldirpath);
 			goto wrapup;
 		}
-		GDKfree(leftdirpath);
+		GDKfree(deldirpath);
 
 		// now generate the source file
 		f = fopen(fname, "w+");

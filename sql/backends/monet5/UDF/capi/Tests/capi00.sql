@@ -1,5 +1,4 @@
 
-
 START TRANSACTION;
 
 CREATE FUNCTION capi00(inp INTEGER) RETURNS INTEGER LANGUAGE C {
@@ -16,5 +15,6 @@ INSERT INTO integers VALUES (1), (2), (3), (4), (5);
 SELECT i, capi00(i) FROM integers;
 
 DROP FUNCTION capi00;
+DROP TABLE integers;
 
 ROLLBACK;

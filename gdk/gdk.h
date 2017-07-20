@@ -391,18 +391,22 @@
 #define GDKisalnum(c)	isalnum((int) (unsigned char) (c))
 #define GDKisdigit(c)	(((unsigned char) (c)) >= '0' && ((unsigned char) (c)) <= '9')
 
+#define TEMPDIR_NAME "TEMP_DATA"
+
 #ifndef NATIVE_WIN32
 #define BATDIR		"bat"
 #define DELDIR		"bat/DELETE_ME"
 #define BAKDIR		"bat/BACKUP"
 #define SUBDIR		"bat/BACKUP/SUBCOMMIT"
 #define LEFTDIR		"bat/LEFTOVERS"
+#define TEMPDIR     "bat/"TEMPDIR_NAME
 #else
 #define BATDIR		"bat"
 #define DELDIR		"bat\\DELETE_ME"
 #define BAKDIR		"bat\\BACKUP"
 #define SUBDIR		"bat\\BACKUP\\SUBCOMMIT"
 #define LEFTDIR		"bat\\LEFTOVERS"
+#define TEMPDIR     "bat\\"TEMPDIR_NAME
 #endif
 
 #ifdef MAXPATHLEN
