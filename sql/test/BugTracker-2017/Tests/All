@@ -1,4 +1,5 @@
 unknown_col_in_order_by.Bug-3535
+extract_quarter_week_from_date.Bug-3831
 insert_self_ref_FK.Bug-6131
 shutdown.Bug-6182
 avggroupbysq.Bug-6178

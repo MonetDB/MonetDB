@@ -239,8 +239,9 @@ QUERY = SELECT '' AS "54", d1 as "timestamp",
            date_part( 'quarter', d1) AS quarter, date_part( 'msec', d1) AS msec,
            date_part( 'usec', d1) AS usec
            FROM TIMESTAMP_TBL WHERE d1 BETWEEN '1902-01-01' AND '2038-01-01';
-ERROR = !SELECT: no such binary operator 'date_part(char,timestamp)'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !syntax error, unexpected QUARTER in: "select '' as "54", d1 as "timestamp",
+        !   date_part( 'quarter', d1) as quarter"
+MAPI  = (monetdb) /var/tmp/mtest-6702/.s.monetdb.34447
 QUERY = SELECT '' AS to_char_1, to_char(d1, 'DAY Day day DY Dy dy MONTH Month month RM MON Mon mon') 
            FROM TIMESTAMP_TBL;
 ERROR = !SELECT: no such binary operator 'to_char(timestamp,char)'
@@ -329,13 +330,7 @@ ERROR = !syntax error, unexpected MONTH in: "select d1, month"
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT d1, year(d1) FROM TIMESTAMP_TBL;
 ERROR = !syntax error, unexpected YEAR in: "select d1, year"
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
-QUERY = SELECT d1, extract(week from d1) FROM TIMESTAMP_TBL;
-ERROR = !syntax error, unexpected IDENT in: "select d1, extract(week"
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
-QUERY = SELECT d1, extract(quarter from d1) FROM TIMESTAMP_TBL;
-ERROR = !syntax error, unexpected IDENT in: "select d1, extract(quarter"
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+MAPI  = (monetdb) /var/tmp/mtest-6702/.s.monetdb.34447
 QUERY = SELECT d1, extract(halfyear from d1) FROM TIMESTAMP_TBL;
 ERROR = !syntax error, unexpected IDENT in: "select d1, extract(halfyear"
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395

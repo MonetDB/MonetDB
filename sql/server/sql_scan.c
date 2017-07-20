@@ -290,7 +290,9 @@ scanner_init_keywords(void)
 	keywords_insert("ZONE", ZONE);
 
 	keywords_insert("YEAR", YEAR);
+	keywords_insert("QUARTER", QUARTER);
 	keywords_insert("MONTH", MONTH);
+	keywords_insert("WEEK", WEEK);
 	keywords_insert("DAY", DAY);
 	keywords_insert("HOUR", HOUR);
 	keywords_insert("MINUTE", MINUTE);

@@ -436,6 +436,7 @@ int yydebug=1;
 	document_or_content
 	document_or_content_or_sequence
 	drop_action
+	extract_datetime_field
 	grantor
 	intval
 	join_type
@@ -602,7 +603,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 
 %token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
-%token YEAR MONTH DAY HOUR MINUTE SECOND ZONE
+%token YEAR QUARTER MONTH WEEK DAY HOUR MINUTE SECOND ZONE
 %token LIMIT OFFSET SAMPLE
 
 %token CASE WHEN THEN ELSE NULLIF COALESCE IF ELSEIF WHILE DO
@@ -4011,7 +4012,7 @@ func_ident:
  ;
 
 datetime_funcs:
-    EXTRACT '(' datetime_field FROM scalar_exp ')'
+    EXTRACT '(' extract_datetime_field FROM scalar_exp ')'
 			{ dlist *l = L();
 			  const char *ident = datetime_field((itype)$3);
 			  append_list(l,
@@ -4284,6 +4285,12 @@ non_second_datetime_field:
 datetime_field:
     non_second_datetime_field
  |  SECOND		{ $$ = isec; }
+ ;
+
+extract_datetime_field:
+    datetime_field
+ |  QUARTER		{ $$ = iquarter; }
+ |  WEEK		{ $$ = iweek; }
  ;
 
 start_field:

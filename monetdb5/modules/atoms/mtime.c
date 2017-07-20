@@ -1377,7 +1377,7 @@ MTIMEprelude(void *ret)
 	timezone_name = tzbatnme;
 	timezone_def = tzbatdef;
 
-/* perhaps add the following to the global kvstore 
+/* perhaps add the following to the global kvstore
 * 	timezone_name
 * 	timezone_def
 */
@@ -1649,6 +1649,24 @@ MTIMEdate_extract_year(int *ret, const date *v)
 		*ret = int_nil;
 	} else {
 		fromdate(*v, NULL, NULL, ret);
+	}
+	return MAL_SUCCEED;
+}
+
+/* extracts quarter from date (value between 1 and 4) */
+str
+MTIMEdate_extract_quarter(int *ret, const date *v)
+{
+	if (*v == date_nil) {
+		*ret = int_nil;
+	} else {
+		int mnd = 0;
+		fromdate(*v, NULL, &mnd, NULL);
+		if (mnd <= 6) {
+			*ret = (mnd <= 3) ? 1 : 2;
+		} else {
+			*ret = (mnd <= 9) ? 3 : 4;
+		}
 	}
 	return MAL_SUCCEED;
 }
@@ -2425,9 +2443,9 @@ MTIMEtimestamp_add_month_interval_lng_wrap(timestamp *ret, const timestamp *v, c
 	int m;
 	MTIMEtimestamp_extract_daytime(&t, v, &tzone_local);
 	MTIMEtimestamp_extract_date(&d, v, &tzone_local);
-	if (*months > (YEAR_MAX*12)) 
+	if (*months > (YEAR_MAX*12))
 		throw(MAL, "mtime.timestamp_sub_interval", "to many months");
-       	m = (int)*months;
+	m = (int)*months;
 	MTIMEdate_addmonths(&d, &d, &m);
 	return MTIMEtimestamp_create(ret, &d, &t, &tzone_local);
 }
@@ -2452,9 +2470,9 @@ MTIMEtimestamp_sub_month_interval_lng_wrap(timestamp *ret, const timestamp *v, c
 	int m;
 	MTIMEtimestamp_extract_daytime(&t, v, &tzone_local);
 	MTIMEtimestamp_extract_date(&d, v, &tzone_local);
-	if (*months > (YEAR_MAX*12)) 
+	if (*months > (YEAR_MAX*12))
 		throw(MAL, "mtime.timestamp_sub_interval", "to many months");
-       	m = -(int)*months;
+	m = -(int)*months;
 	MTIMEdate_addmonths(&d, &d, &m);
 	return MTIMEtimestamp_create(ret, &d, &t, &tzone_local);
 }
@@ -2938,6 +2956,17 @@ MTIMEtimestamp_year(int *ret, const timestamp *t)
 }
 
 str
+MTIMEtimestamp_quarter(int *ret, const timestamp *t)
+{
+	date d;
+	str e;
+
+	if ((e = MTIMEtimestamp_extract_date(&d, t, &tzone_local)) != MAL_SUCCEED)
+		return e;
+	return MTIMEdate_extract_quarter(ret, &d);
+}
+
+str
 MTIMEtimestamp_month(int *ret, const timestamp *t)
 {
 	date d;
@@ -2947,6 +2976,7 @@ MTIMEtimestamp_month(int *ret, const timestamp *t)
 		return e;
 	return MTIMEdate_extract_month(ret, &d);
 }
+
 
 str
 MTIMEtimestamp_day(int *ret, const timestamp *t)
@@ -3110,7 +3140,7 @@ MTIMEdate_extract_year_bulk(bat *ret, const bat *bid)
 		throw(MAL, "batmtime.year", "Cannot access descriptor");
 	n = BATcount(b);
 
-	bn = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
+	bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batmtime.year", MAL_MALLOC_FAIL);
@@ -3123,11 +3153,12 @@ MTIMEdate_extract_year_bulk(bat *ret, const bat *bid)
 	for (i = 0; i < n; i++) {
 		if (*t == date_nil) {
 			*y = int_nil;
-		} else
-			MTIMEdate_extract_year(y, t);
-		if (*y == int_nil) {
-			bn->tnonil = 0;
 			bn->tnil = 1;
+		} else {
+			MTIMEdate_extract_year(y, t);
+			if (*y == int_nil) {
+				bn->tnil = 1;
+			}
 		}
 		y++;
 		t++;
@@ -3135,8 +3166,55 @@ MTIMEdate_extract_year_bulk(bat *ret, const bat *bid)
 
 	BATsetcount(bn, (BUN) (y - (int *) Tloc(bn, 0)));
 
-	bn->tsorted = BATcount(bn)<2;
-	bn->trevsorted = BATcount(bn)<2;
+	bn->tnonil = !bn->tnil;
+	bn->tsorted = BATcount(bn) < 2;
+	bn->trevsorted = BATcount(bn) < 2;
+
+	BBPkeepref(*ret = bn->batCacheid);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+MTIMEdate_extract_quarter_bulk(bat *ret, const bat *bid)
+{
+	BAT *b, *bn;
+	BUN i,n;
+	int *q;
+	const date *t;
+
+	if ((b = BATdescriptor(*bid)) == NULL)
+		throw(MAL, "batmtime.quarter", "Cannot access descriptor");
+	n = BATcount(b);
+
+	bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT);
+	if (bn == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "batmtime.quarter", MAL_MALLOC_FAIL);
+	}
+	bn->tnonil = 1;
+	bn->tnil = 0;
+
+	t = (const date *) Tloc(b, 0);
+	q = (int *) Tloc(bn, 0);
+	for (i = 0; i < n; i++) {
+		if (*t == date_nil) {
+			*q = int_nil;
+			bn->tnil = 1;
+		} else {
+			MTIMEdate_extract_quarter(q, t);
+			if (*q == int_nil) {
+				bn->tnil = 1;
+			}
+		}
+		q++;
+		t++;
+	}
+	BATsetcount(bn, (BUN) (q - (int *) Tloc(bn, 0)));
+
+	bn->tnonil = !bn->tnil;
+	bn->tsorted = BATcount(bn) < 2;
+	bn->trevsorted = BATcount(bn) < 2;
 
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -3152,10 +3230,10 @@ MTIMEdate_extract_month_bulk(bat *ret, const bat *bid)
 	const date *t;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batmtime.year", "Cannot access descriptor");
+		throw(MAL, "batmtime.month", "Cannot access descriptor");
 	n = BATcount(b);
 
-	bn = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
+	bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batmtime.month", MAL_MALLOC_FAIL);
@@ -3168,17 +3246,19 @@ MTIMEdate_extract_month_bulk(bat *ret, const bat *bid)
 	for (i = 0; i < n; i++) {
 		if (*t == date_nil) {
 			*m = int_nil;
-		} else
-			MTIMEdate_extract_month(m, t);
-		if (*m == int_nil) {
-			bn->tnonil = 0;
 			bn->tnil = 1;
+		} else {
+			MTIMEdate_extract_month(m, t);
+			if (*m == int_nil) {
+				bn->tnil = 1;
+			}
 		}
 		m++;
 		t++;
 	}
 	BATsetcount(bn, (BUN) (m - (int *) Tloc(bn, 0)));
 
+	bn->tnonil = !bn->tnil;
 	bn->tsorted = BATcount(bn) < 2;
 	bn->trevsorted = BATcount(bn) < 2;
 
@@ -3199,7 +3279,7 @@ MTIMEdate_extract_day_bulk(bat *ret, const bat *bid)
 		throw(MAL, "batmtime.day", "Cannot access descriptor");
 	n = BATcount(b);
 
-	bn = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
+	bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batmtime.day", MAL_MALLOC_FAIL);
@@ -3212,11 +3292,12 @@ MTIMEdate_extract_day_bulk(bat *ret, const bat *bid)
 	for (i = 0; i < n; i++) {
 		if (*t == date_nil) {
 			*d = int_nil;
-		} else
-			MTIMEdate_extract_day(d, t);
-		if (*d == int_nil) {
-			bn->tnonil = 0;
 			bn->tnil = 1;
+		} else {
+			MTIMEdate_extract_day(d, t);
+			if (*d == int_nil) {
+				bn->tnil = 1;
+			}
 		}
 		d++;
 		t++;
@@ -3224,8 +3305,9 @@ MTIMEdate_extract_day_bulk(bat *ret, const bat *bid)
 
 	BATsetcount(bn, (BUN) (d - (int *) Tloc(bn, 0)));
 
-	bn->tsorted = BATcount(bn) <2;
-	bn->trevsorted = BATcount(bn) <2;
+	bn->tnonil = !bn->tnil;
+	bn->tsorted = BATcount(bn) < 2;
+	bn->trevsorted = BATcount(bn) < 2;
 
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -3241,10 +3323,10 @@ MTIMEdaytime_extract_hours_bulk(bat *ret, const bat *bid)
 	const date *t;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batmtime.hourse", "Cannot access descriptor");
+		throw(MAL, "batmtime.hours", "Cannot access descriptor");
 	n = BATcount(b);
 
-	bn = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
+	bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batmtime.hours", MAL_MALLOC_FAIL);
@@ -3257,19 +3339,21 @@ MTIMEdaytime_extract_hours_bulk(bat *ret, const bat *bid)
 	for (i = 0; i < n; i++) {
 		if (*t == date_nil) {
 			*h = int_nil;
-		} else
-			MTIMEdaytime_extract_hours(h, t);
-		if (*h == int_nil) {
-			bn->tnonil = 0;
 			bn->tnil = 1;
+		} else {
+			MTIMEdaytime_extract_hours(h, t);
+			if (*h == int_nil) {
+				bn->tnil = 1;
+			}
 		}
 		h++;
 		t++;
 	}
 	BATsetcount(bn, (BUN) (h - (int *) Tloc(bn, 0)));
 
-	bn->tsorted = BATcount(bn) <2;;
-	bn->trevsorted = BATcount(bn) <2;;
+	bn->tnonil = !bn->tnil;
+	bn->tsorted = BATcount(bn) < 2;
+	bn->trevsorted = BATcount(bn) < 2;
 
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -3288,30 +3372,34 @@ MTIMEdaytime_extract_minutes_bulk(bat *ret, const bat *bid)
 		throw(MAL, "batmtime.minutes", "Cannot access descriptor");
 	n = BATcount(b);
 
-	bn = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
+	bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batmtime.minutes", MAL_MALLOC_FAIL);
 	}
+	bn->tnonil = 1;
+	bn->tnil = 0;
 
 	t = (const date *) Tloc(b, 0);
 	m = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
 		if (*t == date_nil) {
 			*m = int_nil;
-		} else
-			MTIMEdaytime_extract_minutes(m, t);
-		if (*m == int_nil) {
-			bn->tnonil = 0;
 			bn->tnil = 1;
+		} else {
+			MTIMEdaytime_extract_minutes(m, t);
+			if (*m == int_nil) {
+				bn->tnil = 1;
+			}
 		}
 		m++;
 		t++;
 	}
 	BATsetcount(bn, (BUN) (m - (int *) Tloc(bn, 0)));
 
-	bn->tsorted = FALSE;
-	bn->trevsorted = FALSE;
+	bn->tnonil = !bn->tnil;
+	bn->tsorted = BATcount(bn) < 2;
+	bn->trevsorted = BATcount(bn) < 2;
 
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -3330,29 +3418,34 @@ MTIMEdaytime_extract_seconds_bulk(bat *ret, const bat *bid)
 		throw(MAL, "batmtime.seconds", "Cannot access descriptor");
 	n = BATcount(b);
 
-	bn = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
+	bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batmtime.seconds", MAL_MALLOC_FAIL);
 	}
+	bn->tnonil = 1;
+	bn->tnil = 0;
 
 	t = (const date *) Tloc(b, 0);
 	s = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
 		if (*t == date_nil) {
 			*s = int_nil;
-		} else
-			MTIMEdaytime_extract_seconds(s, t);
-		if (*s == int_nil) {
-			bn->tnonil = 0;
 			bn->tnil = 1;
+		} else {
+			MTIMEdaytime_extract_seconds(s, t);
+			if (*s == int_nil) {
+				bn->tnil = 1;
+			}
 		}
-		s++; t++;
+		s++;
+		t++;
 	}
 	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, 0)));
 
-	bn->tsorted = FALSE;
-	bn->trevsorted = FALSE;
+	bn->tnonil = !bn->tnil;
+	bn->tsorted = BATcount(bn) < 2;
+	bn->trevsorted = BATcount(bn) < 2;
 
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -3371,22 +3464,25 @@ MTIMEdaytime_extract_sql_seconds_bulk(bat *ret, const bat *bid)
 		throw(MAL, "batmtime.sql_seconds", "Cannot access descriptor");
 	n = BATcount(b);
 
-	bn = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
+	bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batmtime.sql_seconds", MAL_MALLOC_FAIL);
 	}
+	bn->tnonil = 1;
+	bn->tnil = 0;
 
 	t = (const date *) Tloc(b, 0);
 	s = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
 		if (*t == date_nil) {
 			*s = int_nil;
-		} else
-			MTIMEdaytime_extract_sql_seconds(s, t);
-		if (*s == int_nil) {
-			bn->tnonil = 0;
 			bn->tnil = 1;
+		} else {
+			MTIMEdaytime_extract_sql_seconds(s, t);
+			if (*s == int_nil) {
+				bn->tnil = 1;
+			}
 		}
 		s++;
 		t++;
@@ -3394,8 +3490,9 @@ MTIMEdaytime_extract_sql_seconds_bulk(bat *ret, const bat *bid)
 
 	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, 0)));
 
-	bn->tsorted = BATcount(bn) <2;
-	bn->trevsorted = BATcount(bn) <2;
+	bn->tnonil = !bn->tnil;
+	bn->tsorted = BATcount(bn) < 2;
+	bn->trevsorted = BATcount(bn) < 2;
 
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
@@ -3414,30 +3511,34 @@ MTIMEdaytime_extract_milliseconds_bulk(bat *ret, const bat *bid)
 		throw(MAL, "batmtime.milliseconds", "Cannot access descriptor");
 	n = BATcount(b);
 
-	bn = COLnew(b->hseqbase, TYPE_int, BATcount(b), TRANSIENT);
+	bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batmtime.milliseconds", MAL_MALLOC_FAIL);
 	}
+	bn->tnonil = 1;
+	bn->tnil = 0;
 
 	t = (const date *) Tloc(b, 0);
 	s = (int *) Tloc(bn, 0);
 	for (i = 0; i < n; i++) {
 		if (*t == date_nil) {
 			*s = int_nil;
-		} else
-			MTIMEdaytime_extract_milliseconds(s, t);
-		if (*s == int_nil) {
-			bn->tnonil = 0;
 			bn->tnil = 1;
+		} else {
+			MTIMEdaytime_extract_milliseconds(s, t);
+			if (*s == int_nil) {
+				bn->tnil = 1;
+			}
 		}
 		s++;
 		t++;
 	}
 	BATsetcount(bn, (BUN) (s - (int *) Tloc(bn, 0)));
 
-	bn->tsorted = FALSE;
-	bn->trevsorted = FALSE;
+	bn->tnonil = !bn->tnil;
+	bn->tsorted = BATcount(bn) < 2;
+	bn->trevsorted = BATcount(bn) < 2;
 
 	BBPkeepref(*ret = bn->batCacheid);
 	BBPunfix(b->batCacheid);
