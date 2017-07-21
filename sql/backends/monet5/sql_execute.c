@@ -360,20 +360,20 @@ SQLrun(Client c, backend *be, mvc *m){
 				break;
 			case mod_stop_continuous:
 				//mnstr_printf(c->fdout, "#Stop continuous query\n");
-				m->continuous = 0;
 				CQderegister(c,mb, 0,0);
+				m->continuous = 0;
 				msg = MAL_SUCCEED;
 				break;
 			case mod_pause_continuous:
 				//mnstr_printf(c->fdout, "#Pause continuous query\n");
-				m->continuous = 0;
 				CQpause(c,mb, 0,0);
+				m->continuous = 0;
 				msg = MAL_SUCCEED;
 				break;
 			case mod_resume_continuous:
 				//mnstr_printf(c->fdout, "#Resume continuous query\n");
-				m->continuous = 0;
 				CQresume(c,mb, 0,0);
+				m->continuous = 0;
 				msg = MAL_SUCCEED;
 				break;
 			default:

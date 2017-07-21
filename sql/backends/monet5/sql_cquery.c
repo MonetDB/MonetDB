@@ -641,7 +641,6 @@ CQresumeInternalRanges(int first, int last)
 	fprintf(stderr, "#resume scheduler\n");
 #endif
 	for( ; first < last; first++)
-	if( pnet[first].status == CQPAUSE )
 		pnet[first].status = CQWAIT;
 
 	/* start the scheduler if needed */
@@ -663,8 +662,10 @@ CQresumeInternal(str modnme, str fcnnme)
 		msg = createException(SQL, "cquery.resume", "Continuous procedure %s.%s not accessible\n", modnme, fcnnme);
 		goto finish;
 	}
+	if( pnet[idx].status != CQPAUSE)
+		goto finish;
 	msg = CQresumeInternalRanges(idx, idx+1);
-	finish:
+finish:
 	MT_lock_unset(&ttrLock);
 	return msg;
 }
@@ -719,6 +720,14 @@ CQpauseInternal(str modnme, str fcnnme)
 	if( idx == pnettop) {
 		msg = createException(SQL, "cquery.pause", "Continuous procedure %s.%s not accessible\n", modnme, fcnnme);
 		goto finish;
+	}
+	// actually wait if the query was running
+	while( pnet[idx].status == CQRUNNING ){
+		MT_lock_unset(&ttrLock);
+		MT_sleep_ms(10);  
+		MT_lock_set(&ttrLock);
+		if( pnet[idx].status == CQWAIT)
+			break;
 	}
 	msg = CQpauseInternalRanges(idx, idx+1);
 finish:
@@ -883,8 +892,18 @@ CQderegisterInternal(str modnme, str fcnnme, int force)
 		msg = createException(SQL, "cquery.deregister", "Continuous procedure %s.%s not accessible\n", modnme, fcnnme);
 		goto finish;
 	}
-	if(idx < pnettop) //remove from the petrinet only when found
-		msg = CQderegisterInternalRanges(idx, idx+1);
+	if(idx == pnettop) 
+		goto finish;
+
+	// actually wait if the query was running
+	while( pnet[idx].status == CQRUNNING ){
+		MT_lock_unset(&ttrLock);
+		MT_sleep_ms(10);  
+		MT_lock_set(&ttrLock);
+		if( pnet[idx].status == CQWAIT)
+			break;
+	}
+	msg = CQderegisterInternalRanges(idx, idx+1);
 
 finish:
 	MT_lock_unset(&ttrLock);
@@ -985,7 +1004,7 @@ CQexecute( Client cntxt, int idx)
 		fprintf(stderr, "#cquery.execute %s.%s finised %s\n", node->mod, node->fcn, (msg?msg:""));
 #endif
 	MT_lock_set(&ttrLock);
-	if( node->status != CQPAUSE)
+	if( node->status != CQPAUSE && node->status != CQSTOP)
 		node->status = CQWAIT;
 	MT_lock_unset(&ttrLock);
 }
@@ -1091,6 +1110,13 @@ CQscheduler(void *dummy)
 
 			t = GDKusec();
 			// Fork MAL execution thread 
+			MT_lock_set(&ttrLock); 
+			if (pnet[i].status != CQWAIT){
+				MT_lock_unset(&ttrLock); 
+				goto wrapup;
+			}
+			pnet[i].status = CQRUNNING;
+			MT_lock_unset(&ttrLock); 
 			CQexecute(cntxt, i);
 /*
 				if (MT_create_thread(&pnet[i].tid, CQexecute, (void*) (pnet+i), MT_THR_JOINABLE) < 0){
@@ -1114,6 +1140,7 @@ CQscheduler(void *dummy)
 			}
 			delay = cycleDelay;
 		}
+wrapup:
 		/* after one sweep all threads should be released */
 /*
 		for (m = 0; m < k; m++)

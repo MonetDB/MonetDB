@@ -11,12 +11,13 @@ begin
         set tmp_total = tmp_total + (select sum(val) from sys.stmp10),
             tmp_count = tmp_count + (select count(*) from sys.stmp10);
 end;
-start continuous sys.cq_collector();
 
 insert into stmp10 values('2005-09-23 12:34:26.000',1,9.0);
 insert into stmp10 values('2005-09-23 12:34:27.000',1,11.0);
 insert into stmp10 values('2005-09-23 12:34:28.000',1,13.0);
 insert into stmp10 values('2005-09-23 12:34:28.000',1,15.0);
+
+start continuous sys.cq_collector();
 
 -- Run the query a few times
 call cquery.cycles(3);
