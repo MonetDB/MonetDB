@@ -1322,6 +1322,31 @@ BBPaddfarm(const char *dirname, int rolemask)
 		if (BBPfarms[i].dirname == NULL) {
 			BBPfarms[i].dirname = GDKstrdup(dirname);
 			BBPfarms[i].roles = rolemask;
+			if ((rolemask & 1) == 0) {
+				char *bbpdir;
+				int j;
+
+				for (j = 0; j < i; j++)
+					if (strcmp(BBPfarms[i].dirname,
+						   BBPfarms[j].dirname) == 0)
+						return;
+				/* if an extra farm, make sure we
+				 * don't find a BBP.dir there that
+				 * might belong to an existing
+				 * database */
+				bbpdir = GDKfilepath(i, BATDIR, "BBP", "dir");
+				if (bbpdir == NULL)
+					GDKfatal("BBPaddfarm: malloc failed\n");
+				if (stat(bbpdir, &st) != -1 || errno != ENOENT)
+					GDKfatal("BBPaddfarm: %s is a database\n", dirname);
+				GDKfree(bbpdir);
+				bbpdir = GDKfilepath(i, BAKDIR, "BBP", "dir");
+				if (bbpdir == NULL)
+					GDKfatal("BBPaddfarm: malloc failed\n");
+				if (stat(bbpdir, &st) != -1 || errno != ENOENT)
+					GDKfatal("BBPaddfarm: %s is a database\n", dirname);
+				GDKfree(bbpdir);
+			}
 			return;
 		}
 	}
@@ -1350,6 +1375,7 @@ BBPinit(void)
 	int bbpversion;
 	str bbpdirstr = GDKfilepath(0, BATDIR, "BBP", "dir");
 	str backupbbpdirstr = GDKfilepath(0, BAKDIR, "BBP", "dir");
+	int i;
 
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&GDKunloadLock, "GDKunloadLock");
@@ -1414,10 +1440,22 @@ BBPinit(void)
 		GDKfatal("BBPinit: cannot properly prepare process %s. Please check whether your disk is full or write-protected", BAKDIR);
 
 	/* cleanup any leftovers (must be done after BBPrecover) */
-	{
-		char *d = GDKfilepath(0, NULL, BATDIR, NULL);
-		BBPdiskscan(d);
-		GDKfree(d);
+	for (i = 0; i < MAXFARMS && BBPfarms[i].dirname != NULL; i++) {
+		int j;
+		for (j = 0; j < i; j++) {
+			/* don't clean a directory twice */
+			if (BBPfarms[j].dirname &&
+			    strcmp(BBPfarms[i].dirname,
+				   BBPfarms[j].dirname) == 0)
+				break;
+		}
+		if (j == i) {
+			char *d = GDKfilepath(i, NULL, BATDIR, NULL);
+			if (d == NULL)
+				GDKfatal("BBPinit: malloc failed\n");
+			BBPdiskscan(d);
+			GDKfree(d);
+		}
 	}
 
 #ifdef GDKLIBRARY_SORTEDPOS
@@ -3662,7 +3700,7 @@ BBPdiskscan(const char *parent)
 			/* found a file with too long a name
 			   (i.e. unknown); stop pruning in this
 			   subdir */
-			IODEBUG fprintf(stderr, "BBPdiskscan: unexpected file %s, leaving %s.\n", dent->d_name, parent);
+			fprintf(stderr, "BBPdiskscan: unexpected file %s, leaving %s.\n", dent->d_name, parent);
 			break;
 		}
 		strncpy(dst, dent->d_name, dstlen);
@@ -3724,7 +3762,7 @@ BBPdiskscan(const char *parent)
 		if (!ok) {
 			/* found an unknown file; stop pruning in this
 			 * subdir */
-			IODEBUG fprintf(stderr, "BBPdiskscan: unexpected file %s, leaving %s.\n", dent->d_name, parent);
+			fprintf(stderr, "BBPdiskscan: unexpected file %s, leaving %s.\n", dent->d_name, parent);
 			break;
 		}
 		if (delete) {
