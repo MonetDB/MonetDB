@@ -671,9 +671,22 @@ finish:
 }
 
 str
+CQresumeAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str msg;
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	MT_lock_set(&ttrLock);
+	msg = CQresumeInternalRanges(0, pnettop);
+	MT_lock_unset(&ttrLock);
+	return msg;
+}
+
+str
 CQresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str msg = MAL_SUCCEED;
 	int i, k =-1;
 	InstrPtr q;
 	(void) cntxt;
@@ -683,19 +696,16 @@ CQresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for( i=1; i < mb->stop; i++){
 		q = getInstrPtr(mb,i);
 
+		if( q->token == ENDsymbol )
+			break;
 		if( getModuleId(q) == userRef){
-			if( k != -1)
-				throw(SQL,"cquery.resume","Ambiguous resume statement");
 			k = i;
+			break;
 		}
 	}
-	if( k >= 0)
+	if( k >= 0 )
 		return CQresumeInternal(getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
-	//resume all
-	MT_lock_set(&ttrLock);
-	msg = CQresumeInternalRanges(0, pnettop);
-	MT_lock_unset(&ttrLock);
-	return msg;
+	throw(SQL,"cquery.resume","Continuous query not found ");
 }
 
 static str
@@ -724,7 +734,7 @@ CQpauseInternal(str modnme, str fcnnme)
 	// actually wait if the query was running
 	while( pnet[idx].status == CQRUNNING ){
 		MT_lock_unset(&ttrLock);
-		MT_sleep_ms(10);  
+		MT_sleep_ms(5);  
 		MT_lock_set(&ttrLock);
 		if( pnet[idx].status == CQWAIT)
 			break;
@@ -736,9 +746,22 @@ finish:
 }
 
 str
+CQpauseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str msg;
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	//pause all
+	MT_lock_set(&ttrLock);
+	msg = CQpauseInternalRanges(0, pnettop);
+	MT_lock_unset(&ttrLock);
+	return msg;
+}
+str
 CQpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str msg = MAL_SUCCEED;
 	int i,k = -1;
 	InstrPtr q;
 	(void) cntxt;
@@ -747,20 +770,16 @@ CQpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for( i=1; i < mb->stop; i++){
 		q = getInstrPtr(mb,i);
+		if( q->token == ENDsymbol )
+			break;
 		if( getModuleId(q) == userRef){
-			if( k != -1)
-				throw(SQL,"cquery.pause","Ambiguous pause statement");
 			k = i;
+			break;
 		}
 	}
 	if( k >= 0)
 		return CQpauseInternal(getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
-
-	//pause all
-	MT_lock_set(&ttrLock);
-	msg = CQpauseInternalRanges(0, pnettop);
-	MT_lock_unset(&ttrLock);
-	return msg;
+	throw(SQL,"cquery.pause","Continuous query not found ");
 }
 
 str
@@ -892,20 +911,33 @@ CQderegisterInternal(str modnme, str fcnnme, int force)
 		msg = createException(SQL, "cquery.deregister", "Continuous procedure %s.%s not accessible\n", modnme, fcnnme);
 		goto finish;
 	}
+	if (idx <pnettop)
+		pnet[idx].status = CQSTOP;
+	MT_lock_unset(&ttrLock);
 	if(idx == pnettop) 
 		goto finish;
 
 	// actually wait if the query was running
-	while( pnet[idx].status == CQRUNNING ){
-		MT_lock_unset(&ttrLock);
-		MT_sleep_ms(10);  
-		MT_lock_set(&ttrLock);
-		if( pnet[idx].status == CQWAIT)
-			break;
+	while( pnet[idx].status != CQDEREGISTER ){
+		MT_sleep_ms(5);
 	}
+	MT_lock_set(&ttrLock);
 	msg = CQderegisterInternalRanges(idx, idx+1);
 
 finish:
+	MT_lock_unset(&ttrLock);
+	return msg;
+}
+str
+CQderegisterAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str msg;
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	MT_lock_set(&ttrLock);
+	msg = CQderegisterInternalRanges(0, pnettop);
 	MT_lock_unset(&ttrLock);
 	return msg;
 }
@@ -913,7 +945,6 @@ finish:
 str
 CQderegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str msg = MAL_SUCCEED;
 	int i, k= -1;
 	InstrPtr q;
 	(void) cntxt;
@@ -922,19 +953,16 @@ CQderegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for( i=1; i < mb->stop; i++){
 		q = getInstrPtr(mb,i);
+		if( q->token == ENDsymbol )
+			break;
 		if( getModuleId(q) == userRef){
-			if( k != -1)
-				throw(SQL,"cquery.stop","Ambiguous stop statement");
 			k = i;
+			break;
 		}
 	}
-	if( k>= 0)
+	if( k>= 0 )
 		return CQderegisterInternal(getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)), 0);
-	//deregister all
-	MT_lock_set(&ttrLock);
-	msg = CQderegisterInternalRanges(0, pnettop);
-	MT_lock_unset(&ttrLock);
-	return msg;
+	throw(SQL,"cquery.stop","Continuous query not found ");
 }
 
 /* WARNING no locks in this call yet! */
@@ -1004,7 +1032,7 @@ CQexecute( Client cntxt, int idx)
 		fprintf(stderr, "#cquery.execute %s.%s finised %s\n", node->mod, node->fcn, (msg?msg:""));
 #endif
 	MT_lock_set(&ttrLock);
-	if( node->status != CQPAUSE && node->status != CQSTOP)
+	if( node->status != CQSTOP)
 		node->status = CQWAIT;
 	MT_lock_unset(&ttrLock);
 }
@@ -1088,6 +1116,10 @@ CQscheduler(void *dummy)
 				fprintf(stderr, "#cquery: %s.%s enabled \n", pnet[i].mod, pnet[i].fcn);
 #endif
 			pntasks += pnet[i].enabled;
+		} else
+		if( pnet[i].status == CQSTOP){
+			pnet[i].status = CQDEREGISTER;
+			pnet[i].enabled = 0;
 		}
 		(void) fflush(stderr);
 		MT_lock_unset(&ttrLock); 

@@ -16,8 +16,6 @@ call cqfoo(123);
 select * from cqtbl;
 
 start continuous cqfoo(321);
-select * from cqtbl;
-
 stop continuous cqfoo(321);
 --stop continuous cqfoo;
 select * from cqtbl;

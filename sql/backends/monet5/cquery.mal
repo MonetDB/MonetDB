@@ -36,21 +36,21 @@ pattern resume(mod:str, fcn:str)
 address CQresume
 comment "Activate a specific continuous query";
 pattern resume()
-address CQresume
+address CQresumeAll
 comment "Activate all continuous queries";
 
 pattern pause(mod:str, fcn:str)
 address CQpause
 comment "Deactivate a continuous query";
 pattern pause()
-address CQpause
+address CQpauseAll
 comment "Deactivate all continuous queries";
 
 pattern deregister(mod:str, fcn:str)
 address CQderegister
 comment "Remove a continuous query";
 pattern deregister()
-address CQderegister
+address CQderegisterAll
 comment "Remove all continuous queries";
 
 pattern wait(cnt:int)
