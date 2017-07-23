@@ -154,7 +154,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	/* leave a consistent scope admin behind */
 	setVariableScope(mb);
 	/* Defense line against incorrect plans */
-	if (actions+1 > 0) {
+	if (actions > 0) {
 		chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
 		chkFlow(cntxt->fdout, mb);
 		chkDeclarations(cntxt->fdout, mb);
