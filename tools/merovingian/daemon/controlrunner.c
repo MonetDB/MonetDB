@@ -19,6 +19,7 @@
 #include <string.h>  /* strerror */
 #include <unistd.h>  /* select */
 #include <signal.h>
+#include <fcntl.h>
 
 #include <errno.h>
 

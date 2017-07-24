@@ -729,7 +729,7 @@ void
 chkTypes(stream *out, Module s, MalBlkPtr mb, int silent)
 {
 	InstrPtr p = 0;
-	int i, chk = 0;
+	int i;
 
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
@@ -738,12 +738,6 @@ chkTypes(stream *out, Module s, MalBlkPtr mb, int silent)
 			typeChecker(out, s, mb, p, silent);
 		if (mb->errors)
 			return;
-
-		if (getFunctionId(p)) {
-			if (p->fcn != NULL && p->typechk == TYPE_RESOLVED)
-				chk++;
-		} else if (p->typechk == TYPE_RESOLVED)
-			chk++;
 	}
 }
 

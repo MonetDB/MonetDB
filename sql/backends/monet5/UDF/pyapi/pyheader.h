@@ -47,6 +47,7 @@
 
 // Numpy Library
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+#define NPY_INTERNAL_BUILD 0
 #ifdef __INTEL_COMPILER
 // Intel compiler complains about trailing comma's in numpy source code,
 #pragma warning(disable : 271)

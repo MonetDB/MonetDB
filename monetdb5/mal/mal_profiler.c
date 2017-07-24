@@ -26,6 +26,8 @@
 #include <sys/time.h>
 #endif
 
+#include <string.h>
+
 static void cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 stream *eventstream = 0;
@@ -62,16 +64,23 @@ static struct{
 #define LOGLEN 8192
 #define lognew()  loglen = 0; logbase = logbuffer; *logbase = 0;
 
-#define logadd(...) {													\
+#define logadd(...)														\
 	do {																\
-		if (loglen < LOGLEN)											\
+		char tmp_buff[LOGLEN];											\
+		int tmp_len = 0;												\
+		tmp_len = snprintf(tmp_buff, LOGLEN, __VA_ARGS__);				\
+		if (loglen + tmp_len < LOGLEN)									\
 			loglen += snprintf(logbase+loglen, LOGLEN - loglen, __VA_ARGS__); \
-	} while (0);}
-
+		else {															\
+			logjsonInternal(logbuffer);									\
+			lognew();													\
+			loglen += snprintf(logbase+loglen, LOGLEN - loglen, __VA_ARGS__); \
+		}																\
+	} while (0)
 
 // The heart beat events should be sent to all outstanding channels.
 static void logjsonInternal(char *logbuffer)
-{	
+{
 	size_t len;
 
 	len = strlen(logbuffer);
@@ -83,6 +92,28 @@ static void logjsonInternal(char *logbuffer)
 		(void) mnstr_flush(eventstream);
 	}
 	MT_lock_unset(&mal_profileLock);
+}
+
+static char *
+truncate_string(char *inp)
+{
+	size_t len;
+	char *ret;
+	size_t ret_len = LOGLEN/2;
+	size_t padding = 64;
+
+	len = strlen(inp);
+	ret = (char *)GDKmalloc(ret_len + 1);
+	if (ret == NULL) {
+		return NULL;
+	}
+
+	*ret = 0;
+	ret = strncat(ret, inp, ret_len/2);
+	ret = strncat(ret, " ...<truncated>... ", strlen(" ...<truncated>... "));
+	ret = strncat(ret, inp + (len - ret_len/2 + padding), ret_len/2 - padding);
+
+	return ret;
 }
 
 /* JSON rendering method of performance data. 
@@ -109,7 +140,7 @@ static void
 renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname)
 {
 	char logbuffer[LOGLEN], *logbase;
-	int loglen;
+	size_t loglen;
 	str stmt, c;
 	str stmtq;
 	lng usec= GDKusec();
@@ -129,7 +160,8 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	logadd("{%s",prettify); // fill in later with the event counter
 
 	if( usrname)
-		logadd("\"user\":\"%s\",%s",usrname, prettify);
+		//logadd("\"user\":\"%s\",%s",usrname, prettify);
+
 	logadd("\"clk\":"LLFMT",%s",usec,prettify);
 	logadd("\"ctime\":"LLFMT".%06ld,%s", sec, microseconds, prettify);
 	logadd("\"thread\":%d,%s", THRgettid(),prettify);
@@ -183,6 +215,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 		size_t len;
 		int i,j,k,comma;
 		InstrPtr q;
+		char *truncated;
 
 		/* generate actual call statement */
 		stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);
@@ -193,8 +226,13 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 				c++;
 			if( *c){
 				stmtq = mal_quote(c, strlen(c));
+				if (stmtq && strlen(stmtq) > LOGLEN/2) {
+					truncated = truncate_string(stmtq);
+					GDKfree(stmtq);
+					stmtq = truncated;
+				}
 				if (stmtq != NULL) {
-					logadd("\"stmt\":\"%s\",%s", stmtq,prettify);
+					logadd("\"stmt\":\"%s\",%s", stmtq, prettify);
 					GDKfree(stmtq);
 				}
 			}
@@ -205,10 +243,15 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 
 		stmt = shortStmtRendering(mb, stk, pci);
 		stmtq = mal_quote(stmt, strlen(stmt));
+		if (stmtq && strlen(stmtq) > LOGLEN/2) {
+			truncated = truncate_string(stmtq);
+			GDKfree(stmtq);
+			stmtq = truncated;
+		}
 		if (stmtq != NULL) {
 			logadd("\"short\":\"%s\",%s", stmtq, prettify);
 			GDKfree(stmtq);
-		} 
+		}
 		GDKfree(stmt);
 
 
@@ -301,11 +344,17 @@ This information can be used to determine memory footprint and variable life tim
 					logadd("\"count\":\""BUNFMT"\",%s",cnt,pret);
 					logadd("\"size\":" LLFMT",%s", total,pret);
 				} else{
+					char *truncated;
 					tname = getTypeName(tpe);
 					logadd("\"type\":\"%s\",%s", tname,pret);
 					cv = 0;
 					VALformat(&cv, &stk->stk[getArg(pci,j)]);
 					stmtq = mal_quote(cv, strlen(cv));
+					if (stmtq != NULL && strlen(stmtq) > LOGLEN/2) {
+						truncated = truncate_string(stmtq);
+						GDKfree(stmtq);
+						stmtq = truncated;
+					}
 					logadd("\"value\":\"%s\",%s", stmtq,pret);
 					GDKfree(cv);
 					GDKfree(stmtq);

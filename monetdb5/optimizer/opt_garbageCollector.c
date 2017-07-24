@@ -87,6 +87,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		p->gc &=  ~GARBAGECONTROL;
+		p->typechk = TYPE_UNKNOWN;
 		/* Set the program counter to ease profiling */
 		p->pc = i;
 
@@ -134,9 +135,9 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	{ 	int k;
 		fprintf(stderr, "#Garbage collected BAT variables \n");
 		for ( k =0; k < vlimit; k++)
-		fprintf(stderr,"%10s eolife %3d  begin %3d lastupd %3d end %3d\n",
-			getVarName(mb,k), mb->var[k]->eolife,
-			getBeginScope(mb,k), getLastUpdate(mb,k), getEndScope(mb,k));
+			fprintf(stderr,"%10s eolife %3d  begin %3d lastupd %3d end %3d\n",
+				getVarName(mb,k), mb->var[k]->eolife,
+				getBeginScope(mb,k), getLastUpdate(mb,k), getEndScope(mb,k));
 		chkFlow(cntxt->fdout,mb);
 		fprintFunction(stderr,mb, 0, LIST_MAL_ALL);
 		fprintf(stderr, "End of GCoptimizer\n");
@@ -145,24 +146,23 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 
 	/* rename all temporaries for ease of debugging */
 	for( i = 0; i < mb->vtop; i++)
-	if( sscanf(getVarName(mb,i),"X_%d", &j) == 1)
-		snprintf(getVarName(mb,i),IDLENGTH,"X_%d",i);
-	else
-	if( sscanf(getVarName(mb,i),"C_%d", &j) == 1)
-		snprintf(getVarName(mb,i),IDLENGTH,"C_%d",i);
+		if( sscanf(getVarName(mb,i),"X_%d", &j) == 1)
+			snprintf(getVarName(mb,i),IDLENGTH,"X_%d",i);
+		else if( sscanf(getVarName(mb,i),"C_%d", &j) == 1)
+			snprintf(getVarName(mb,i),IDLENGTH,"C_%d",i);
 
 	/* leave a consistent scope admin behind */
 	setVariableScope(mb);
-    /* Defense line against incorrect plans */
-    if( actions+1 > 0){
-        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-        chkFlow(cntxt->fdout, mb);
-        chkDeclarations(cntxt->fdout, mb);
-    }
-    /* keep all actions taken as a post block comment */
+	/* Defense line against incorrect plans */
+	if (actions > 0) {
+		chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+		chkFlow(cntxt->fdout, mb);
+		chkDeclarations(cntxt->fdout, mb);
+	}
+	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions, usec);
-    newComment(mb,buf);
+	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions, usec);
+	newComment(mb,buf);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
