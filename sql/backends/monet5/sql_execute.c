@@ -354,31 +354,26 @@ SQLrun(Client c, backend *be, mvc *m){
 			case mod_start_continuous:
 				//mnstr_printf(c->fdout, "#Start continuous query\n");
 				// hand over the wrapper command to the scheduler
-				CQregisterMAL(c,mb, 0,0);
-				m->continuous = 0;
-				return MAL_SUCCEED;
+				msg = CQregister(c,mb, 0,0);
 				break;
 			case mod_stop_continuous:
 				//mnstr_printf(c->fdout, "#Stop continuous query\n");
-				CQderegister(c,mb, 0,0);
-				m->continuous = 0;
-				msg = MAL_SUCCEED;
+				msg = CQderegister(c,mb, 0,0);
 				break;
 			case mod_pause_continuous:
 				//mnstr_printf(c->fdout, "#Pause continuous query\n");
-				CQpause(c,mb, 0,0);
-				m->continuous = 0;
-				msg = MAL_SUCCEED;
+				msg = CQpause(c,mb, 0,0);
 				break;
 			case mod_resume_continuous:
 				//mnstr_printf(c->fdout, "#Resume continuous query\n");
-				CQresume(c,mb, 0,0);
-				m->continuous = 0;
-				msg = MAL_SUCCEED;
+				msg = CQresume(c,mb, 0,0);
 				break;
 			default:
 				msg = runMAL(c, mb, 0, 0);
 			}
+			m->continuous = 0;
+			m->heartbeats = 0;
+			m->cycles = 0;
 		}
 	}
 

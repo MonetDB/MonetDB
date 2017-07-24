@@ -3,7 +3,7 @@
 create stream table cqtbl(i integer);
 
 -- the hello example
-create continuous procedure cqfoo(v integer)
+create procedure cqfoo(v integer)
 begin
 	insert into cqtbl values(v);
 end;

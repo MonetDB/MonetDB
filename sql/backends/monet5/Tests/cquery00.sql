@@ -4,7 +4,7 @@ insert into testing values(123);
 
 create table results (a int);
 
-create continuous procedure myproc() 
+create procedure myproc()
 begin 
 	insert into results select a from sys.testing; 
 END;

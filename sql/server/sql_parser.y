@@ -443,6 +443,8 @@ int yydebug=1;
 	opt_outer
 	non_second_datetime_field
 	nonzero
+	beat_set
+	cycles_set
 	opt_bounds
 	opt_column
 	opt_encrypted
@@ -533,7 +535,8 @@ int yydebug=1;
 %token <sval> sqlDELETE UPDATE SELECT INSERT 
 %token <sval> LATERAL LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
-%token  STOP CONTINUOUS START_CONTINUOUS STOP_CONTINUOUS PAUSE PAUSE_CONTINUOUS RESUME RESUME_CONTINUOUS
+%token  CONTINUOUS START_CONTINUOUS STOP STOP_CONTINUOUS PAUSE PAUSE_CONTINUOUS RESUME RESUME_CONTINUOUS
+%token  BEAT CYCLES
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
 %token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE
 
@@ -1972,19 +1975,6 @@ func_def:
 				append_int(f, FUNC_LANG_SQL);
 				append_int(f, $1);
 			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
-  |	 create_or_replace CONTINUOUS PROCEDURE qname
-	'(' opt_paramlist ')'
-    routine_body
-			{ dlist *f = L();
-				append_list(f, $4);                    /* continuous query name */
-				append_list(f, $6);                    /* parameters */
-				append_symbol(f, NULL);                /* no result */
-				append_list(f, NULL);                  /* no external name */
-				append_list(f, $8);                    /* continuous query body */
-				append_int(f, F_PROC); 				   /* continuous query identifier */
-				append_int(f, FUNC_LANG_SQL);          /* for now only SQL */
-				append_int(f, $1);                     /* create or replace feature */
-			  $$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
   |	create_or_replace sqlLOADER qname
 	'(' opt_paramlist ')'
     LANGUAGE IDENT function_body { 
@@ -2095,20 +2085,34 @@ call_statement:
     ;
 
 call_procedure_statement:
-	  CALL func_ref		 				{ $$ = _symbol_create_symbol(SQL_CALL, $2);}
-    | continuous_procedure_statement 	{ $$ = $1; }
+	CALL func_ref		 				{ $$ = _symbol_create_symbol(SQL_CALL, $2);}
+	| continuous_procedure_statement
+	;
+
+beat_set:
+	  /* empty */ { $$ = 1; } /* 1 second at minimum */
+	| BEAT intval { $$ = $2; }
+	;
+
+cycles_set:
+	  /* empty */   { $$ = int_nil; } /* int_nil means that the CQ will run forever */
+	| CYCLES intval { $$ = $2; }
 	;
 
 continuous_procedure_statement:
-	 START_CONTINUOUS func_ref
-		{ $$ = _symbol_create_symbol( SQL_START_CALL, $2 ); }
+	START_CONTINUOUS func_ref beat_set cycles_set
+		{ dlist *l = L();
+		  append_symbol( l, $2);
+		  append_int( l, $3);
+		  append_int( l, $4);
+		  $$ = _symbol_create_list( SQL_START_CALL, l ); }
 	| STOP_CONTINUOUS func_ref
 		{ $$ = _symbol_create_symbol( SQL_STOP_CALL, $2 ); }
 	| PAUSE_CONTINUOUS func_ref
 		{ $$ = _symbol_create_symbol( SQL_PAUSE_CALL, $2 ); }
 	| RESUME_CONTINUOUS func_ref
 		{ $$ = _symbol_create_symbol( SQL_RESUME_CALL, $2 ); }
-   ;
+	;
 
 routine_invocation: 
 	routine_name '(' argument_list ')'

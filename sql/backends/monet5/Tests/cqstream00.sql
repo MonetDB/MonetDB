@@ -12,7 +12,7 @@ insert into stmp2 values('2005-09-23 12:34:28.000',1,13.0);
 create table result1(like stmp2);
 create table result2(like stmp2);
 
--- CREATE CONTINUOUS QUERY cq_splitter
+-- CREATE PROCEDURE cq_splitter
 create procedure cq_splitter()
 begin
     insert into result1 select * from stmp2 where val <12;

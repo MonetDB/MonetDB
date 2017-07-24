@@ -7,8 +7,8 @@ insert into stmp2 values('2005-09-23 12:34:27.000',1,11.0);
 insert into stmp2 values('2005-09-23 12:34:28.000',1,13.0);
 insert into stmp2 values('2005-09-23 12:34:28.000',1,15.0);
 
--- CREATE CONTINUOUS QUERY cq_window
-create continuous procedure cq_window()
+-- CREATE procedure cq_window
+create procedure cq_window()
 begin
 	-- The window ensures a maximal number of tuples to consider
 	-- Could be considered a property of the stream table

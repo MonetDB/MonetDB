@@ -618,20 +618,23 @@ sequential_block (mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk,
 		case SQL_CALL:
 			res = rel_psm_call(sql, s->data.sym);
 			break;
-		case SQL_START_CALL:
+		case SQL_START_CALL: {
+			dlist *l = s->data.lval;
 			sql->continuous = mod_start_continuous;
+			sql->heartbeats = l->h->next->data.i_val;
+			sql->cycles = l->h->next->next->data.i_val;
+			res = rel_psm_call(sql, l->h->data.sym);
+		}	break;
+		case SQL_RESUME_CALL: {
+			sql->continuous = mod_resume_continuous;
 			res = rel_psm_call(sql, s->data.sym);
-			break;
+		}	break;
 		case SQL_STOP_CALL:
 			sql->continuous = mod_stop_continuous;
 			res = rel_psm_call(sql, s->data.sym);
 			break;
 		case SQL_PAUSE_CALL:
 			sql->continuous = mod_pause_continuous;
-			res = rel_psm_call(sql, s->data.sym);
-			break;
-		case SQL_RESUME_CALL:
-			sql->continuous = mod_resume_continuous;
 			res = rel_psm_call(sql, s->data.sym);
 			break;
 		case SQL_RETURN:
@@ -1431,11 +1434,19 @@ rel_psm(mvc *sql, symbol *s)
 		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, s->data.sym));
 		sql->type = Q_UPDATE;
 		break;
-	case SQL_START_CALL:
+	case SQL_START_CALL: {
+		dlist *l = s->data.lval;
 		sql->continuous = mod_start_continuous;
+		sql->heartbeats = l->h->next->data.i_val;
+		sql->cycles = l->h->next->next->data.i_val;
+		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, l->h->data.sym));
+		sql->type = Q_UPDATE;
+    }	break;
+	case SQL_RESUME_CALL: {
+		sql->continuous = mod_resume_continuous;
 		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, s->data.sym));
 		sql->type = Q_UPDATE;
-		break;
+    }	break;
 	case SQL_STOP_CALL:
 		sql->continuous = mod_stop_continuous;
 		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, s->data.sym));
@@ -1443,11 +1454,6 @@ rel_psm(mvc *sql, symbol *s)
 		break;
 	case SQL_PAUSE_CALL:
 		sql->continuous = mod_pause_continuous;
-		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, s->data.sym));
-		sql->type = Q_UPDATE;
-		break;
-	case SQL_RESUME_CALL:
-		sql->continuous = mod_resume_continuous;
 		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, s->data.sym));
 		sql->type = Q_UPDATE;
 		break;

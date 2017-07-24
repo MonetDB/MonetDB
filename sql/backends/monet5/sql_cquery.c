@@ -467,7 +467,7 @@ CQregisterInternal(Client cntxt, str modnme, str fcnnme)
 	fprintFunction(stderr, nmb, 0, LIST_MAL_ALL);
 #endif
 	// and hand it over to the scheduler
-	msg =  CQregisterMAL(cntxt, nmb,0,0);
+	msg = CQregister(cntxt, nmb,0,0);
 	if( msg != MAL_SUCCEED){
 		freeSymbol(s);
 	}
@@ -556,15 +556,25 @@ CQprocedure(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  */
 
 str
-CQregisterMAL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
+CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 {
-	int i;
+	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
 	str msg = MAL_SUCCEED;
 	InstrPtr sig = getInstrPtr(mb,0),q;
 	Symbol s;
+	int i, cycles = sqlcontext ? sqlcontext->cycles : int_nil, heartbeats = sqlcontext ? sqlcontext->heartbeats : 1;
 
 	(void) pci;
 	(void) stk;
+
+	if(cycles <= 0 && cycles != int_nil){
+		msg = createException(SQL,"cquery.register","The cycles value must be positive");
+		goto finish;
+	}
+	if(heartbeats <= 0){
+		msg = createException(SQL,"cquery.register","The heartbeats value must be positive");
+		goto finish;
+	}
 
 	/* extract the actual procedure call and check for duplicate*/
 	for(i = 1; i< mb->stop; i++){
@@ -607,8 +617,8 @@ CQregisterMAL(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	pnet[pnettop].stmt = instruction2str(mb,stk,sig,LIST_MAL_CALL);
 	pnet[pnettop].mb = mb;
 	pnet[pnettop].stk = prepareMALstack(mb, mb->vsize);
-	pnet[pnettop].cycles = int_nil;
-	pnet[pnettop].beats = lng_nil;
+	pnet[pnettop].cycles = cycles;
+	pnet[pnettop].beats = heartbeats * 1000;
 	pnet[pnettop].run  = lng_nil;
 	pnet[pnettop].seen = *timestamp_nil;
 	pnet[pnettop].status = CQWAIT;
@@ -620,16 +630,6 @@ finish:
 		msg = CQstartScheduler();
 	}
 	return msg;
-}
-
-str
-CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str modnme = *getArgReference_str(stk, pci, 1);
-	str fcnnme = *getArgReference_str(stk, pci, 2);
-	(void) mb;
-
-	return CQregisterInternal(cntxt, modnme, fcnnme);
 }
 
 static str
@@ -897,25 +897,21 @@ CQderegisterInternalRanges(int first, int last)
 	return MAL_SUCCEED;
 }
 
-//The force flag is set when deleting the CQ from the SQL catalog. In that case the CQ may be registered in the Petrinet or not
-
-str
-CQderegisterInternal(str modnme, str fcnnme, int force)
+static str
+CQderegisterInternal(str modnme, str fcnnme)
 {
 	int idx;
 	str msg = MAL_SUCCEED;
 
 	MT_lock_set(&ttrLock);
 	idx = CQlocate(modnme, fcnnme);
-	if(!force && idx == pnettop) {
+	if(idx == pnettop) {
 		msg = createException(SQL, "cquery.deregister", "Continuous procedure %s.%s not accessible\n", modnme, fcnnme);
 		goto finish;
 	}
 	if (idx <pnettop)
 		pnet[idx].status = CQSTOP;
 	MT_lock_unset(&ttrLock);
-	if(idx == pnettop) 
-		goto finish;
 
 	// actually wait if the query was running
 	while( pnet[idx].status != CQDEREGISTER ){
@@ -928,6 +924,7 @@ finish:
 	MT_lock_unset(&ttrLock);
 	return msg;
 }
+
 str
 CQderegisterAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -961,7 +958,7 @@ CQderegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	if( k>= 0 )
-		return CQderegisterInternal(getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)), 0);
+		return CQderegisterInternal(getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
 	throw(SQL,"cquery.stop","Continuous query not found ");
 }
 
