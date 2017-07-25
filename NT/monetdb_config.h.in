@@ -756,7 +756,7 @@
 #define MONETDB5_PASSWDHASH_TOKEN SHA512
 
 /* Release name or "unreleased" */
-#define MONETDB_RELEASE "unreleased"
+#define MONETDB_RELEASE "Jul2017-SP1"
 
 /* Suffix for C++ files */
 #define MX_CXX_SUFFIX "cxx"
@@ -768,7 +768,7 @@
 #define PACKAGE "MonetDB"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "11.27.2"
+#define PACKAGE_VERSION "11.27.3"
 
 /* Define to the address where bug reports for this package should be sent. */
 #define PACKAGE_BUGREPORT "https://bugs.monetdb.org/"
