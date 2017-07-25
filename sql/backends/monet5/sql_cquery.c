@@ -286,20 +286,19 @@ CQlocateMb(MalBlkPtr mb, int* idx, str* res, const char* call)
 			break;
 	}
 	assert(i != mb->stop);
-	mb2str = instruction2str(mb, NULL, sig, LIST_MAL_CALL);
-	if(mb2str == NULL) {
-		throw(MAL,call,MAL_MALLOC_FAIL);
+	if((mb2str = instruction2str(mb, NULL, sig, LIST_MAL_CALL)) == NULL) {
+		throw(SQL,call,MAL_MALLOC_FAIL);
 	}
 
 	for (i = 0; i < pnettop; i++){
 		if (strcmp(pnet[i].stmt, mb2str) == 0) {
-			GDKfree(mb2str);
 			*idx = i;
+			*res = mb2str;
 			return MAL_SUCCEED;
 		}
 	}
-	*res = mb2str;
 	*idx = i;
+	*res = mb2str;
 	return MAL_SUCCEED;
 }
 
@@ -317,7 +316,7 @@ CQerror(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	idx = CQlocate(sch, fcn);
 	if( idx == pnettop)
-		throw(SQL,"cquery.error","Continuous procedure %s.%s not accessible",sch,fcn);
+		throw(SQL,"cquery.error","The continuous procedure %s.%s is not accessible\n",sch,fcn);
 
 	pnet[idx].error = GDKstrdup(error);
 	return MAL_SUCCEED;
@@ -336,7 +335,7 @@ CQshow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	idx = CQlocate(sch, fcn);
 	if( idx == pnettop)
-		throw(SQL,"cquery.show","continuous procedure %s.%s not accessible",sch,fcn);
+		throw(SQL,"cquery.show","The continuous procedure %s.%s is not accessible\n",sch,fcn);
 
 	printFunction(cntxt->fdout, pnet[idx].mb, 0, LIST_MAL_NAME | LIST_MAL_VALUE  | LIST_MAL_MAPI);
 	return MAL_SUCCEED;
@@ -535,7 +534,7 @@ CQprocedure(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	s = findSymbolInModule(cntxt->nspace, putName(nme));
 	if (s == NULL)
-		throw(SQL, "cqeury.procedure", "Definition of procedure missing");
+		throw(SQL, "cquery.procedure", "Definition of procedure missing");
 	qry = s->def;
 
 	chkProgram(cntxt->fdout,cntxt->nspace,qry);
@@ -596,12 +595,12 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 
 	(void) pci;
 
-	if(cycles <= 0 && cycles != int_nil){
-		msg = createException(SQL,"cquery.register","The cycles value must be positive");
+	if(cycles < 0 && cycles != int_nil){
+		msg = createException(SQL,"cquery.register","The cycles value must be non negative\n");
 		goto finish;
 	}
-	if(heartbeats <= 0){
-		msg = createException(SQL,"cquery.register","The heartbeats value must be positive");
+	if(heartbeats < 0){
+		msg = createException(SQL,"cquery.register","The heartbeats value must be non negative\n");
 		goto finish;
 	}
 
@@ -700,18 +699,22 @@ static str
 CQresumeInternal(Client cntxt, MalBlkPtr mb, int with_alter)
 {
 	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
-	str msg = MAL_SUCCEED, mb2str;
+	str msg = MAL_SUCCEED, mb2str = NULL;
 	int idx, cycles, heartbeats;
+
+#ifdef DEBUG_CQUERY
+	fprintf(stderr, "#resume scheduler\n");
+#endif
 
 	if(with_alter) {
 		cycles = sqlcontext ? sqlcontext->cycles : int_nil;
 		heartbeats = sqlcontext ? sqlcontext->heartbeats : 1;
-		if(cycles <= 0 && cycles != int_nil){
-			msg = createException(SQL,"cquery.resume","The cycles value must be positive");
+		if(cycles < 0 && cycles != int_nil){
+			msg = createException(SQL,"cquery.resume","The cycles value must be non negative\n");
 			goto finish;
 		}
-		if(heartbeats <= 0){
-			msg = createException(SQL,"cquery.resume","The heartbeats value must be positive");
+		if(heartbeats < 0){
+			msg = createException(SQL,"cquery.resume","The heartbeats value must be non negative\n");
 			goto finish;
 		}
 	}
@@ -722,16 +725,14 @@ CQresumeInternal(Client cntxt, MalBlkPtr mb, int with_alter)
 		goto unlock;
 	}
 	if( idx == pnettop) {
-		msg = createException(SQL, "cquery.resume", "continuous procedure %s has not yet started\n", mb2str);
-		GDKfree(mb2str);
+		msg = createException(SQL, "cquery.resume", "The continuous procedure %s has not yet started\n", mb2str);
 		goto unlock;
 	}
-	if( pnet[idx].status != CQPAUSE)
+	if( pnet[idx].status != CQPAUSE) {
+		msg = createException(SQL, "cquery.resume", "The continuous procedure %s is already running\n", mb2str);
 		goto unlock;
+	}
 
-#ifdef DEBUG_CQUERY
-	fprintf(stderr, "#resume scheduler\n");
-#endif
 	pnet[idx].status = CQWAIT;
 	if(with_alter) {
 		pnet[idx].cycles = cycles;
@@ -744,40 +745,10 @@ CQresumeInternal(Client cntxt, MalBlkPtr mb, int with_alter)
 	}
 
 unlock:
+	if(mb2str)
+		GDKfree(mb2str);
 	MT_lock_unset(&ttrLock);
 finish:
-	return msg;
-}
-
-static str
-CQresumeInternalRanges(int first, int last)
-{
-	str msg = MAL_SUCCEED;
-
-#ifdef DEBUG_CQUERY
-	fprintf(stderr, "#resume scheduler\n");
-#endif
-	for( ; first < last; first++)
-		pnet[first].status = CQWAIT;
-
-	/* start the scheduler if needed */
-	if(CQinit == 0) {
-		msg = CQstartScheduler();
-	}
-	return msg;
-}
-
-str
-CQresumeAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str msg;
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	MT_lock_set(&ttrLock);
-	msg = CQresumeInternalRanges(0, pnettop);
-	MT_lock_unset(&ttrLock);
 	return msg;
 }
 
@@ -801,7 +772,7 @@ CQresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if( k >= 0 )
 		return CQresumeInternal(cntxt, mb, 1);
-	throw(SQL,"cquery.resume","continuous procedure %s.%s not found", getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
+	throw(SQL,"cquery.resume","The continuous procedure %s.%s was not found\n", getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
 }
 
 str
@@ -824,33 +795,52 @@ CQresumeNoAlter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if( k >= 0 )
 		return CQresumeInternal(cntxt, mb, 0);
-	throw(SQL,"cquery.resume","continuous procedure %s.%s not found", getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
+	throw(SQL,"cquery.resume","The continuous procedure %s.%s was not found\n", getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
 }
 
-static str
-CQpauseInternalRanges(int first, int last)
+str
+CQresumeAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	str msg = MAL_SUCCEED;
+	int i;
+
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+
 #ifdef DEBUG_CQUERY
-	fprintf(stderr, "#pause cqueries\n");
+	fprintf(stderr, "#resume scheduler\n");
 #endif
-	for( ; first < last; first++)
-		pnet[first].status = CQPAUSE;
-	return MAL_SUCCEED;
+
+	MT_lock_set(&ttrLock);
+	for(i = 0 ; i < pnettop; i++)
+		pnet[i].status = CQWAIT;
+
+	/* start the scheduler if needed */
+	if(CQinit == 0) {
+		msg = CQstartScheduler();
+	}
+	MT_lock_unset(&ttrLock);
+	return msg;
 }
 
 static str
 CQpauseInternal(MalBlkPtr mb)
 {
 	int idx;
-	str msg = MAL_SUCCEED, mb2str;
+	str msg = MAL_SUCCEED, mb2str = NULL;
 
 	MT_lock_set(&ttrLock);
 	if(CQlocateMb(mb, &idx, &mb2str, "cquery.pause") != MAL_SUCCEED) {
 		goto finish;
 	}
 	if( idx == pnettop) {
-		msg = createException(SQL, "cquery.pause", "continuous procedure %s has not yet started\n", mb2str);
-		GDKfree(mb2str);
+		msg = createException(SQL, "cquery.pause", "The continuous procedure %s has not yet started\n", mb2str);
+		goto finish;
+	}
+	if( pnet[idx].status == CQPAUSE) {
+		msg = createException(SQL, "cquery.pause", "The continuous procedure %s is already paused\n", mb2str);
 		goto finish;
 	}
 	// actually wait if the query was running
@@ -861,23 +851,11 @@ CQpauseInternal(MalBlkPtr mb)
 		if( pnet[idx].status == CQWAIT)
 			break;
 	}
-	msg = CQpauseInternalRanges(idx, idx+1);
-finish:
-	MT_lock_unset(&ttrLock);
-	return msg;
-}
+	pnet[idx].status = CQPAUSE;
 
-str
-CQpauseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str msg;
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	//pause all
-	MT_lock_set(&ttrLock);
-	msg = CQpauseInternalRanges(0, pnettop);
+finish:
+	if(mb2str)
+		GDKfree(mb2str);
 	MT_lock_unset(&ttrLock);
 	return msg;
 }
@@ -902,7 +880,37 @@ CQpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if( k >= 0)
 		return CQpauseInternal(mb);
-	throw(SQL,"cquery.pause","continuous procedure %s.%s not found", getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
+	throw(SQL,"cquery.pause","The continuous procedure %s.%s was not found\n", getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
+}
+
+str
+CQpauseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str msg = MAL_SUCCEED;
+	int i;
+
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+
+#ifdef DEBUG_CQUERY
+	fprintf(stderr, "#pause cqueries\n");
+#endif
+
+	MT_lock_set(&ttrLock);
+	for(i = 0 ; i < pnettop; i++) {
+		while( pnet[i].status == CQRUNNING ){
+			MT_lock_unset(&ttrLock);
+			MT_sleep_ms(5);
+			MT_lock_set(&ttrLock);
+			if( pnet[i].status == CQWAIT)
+				break;
+		}
+		pnet[i].status = CQPAUSE;
+	}
+	MT_lock_unset(&ttrLock);
+	return msg;
 }
 
 str
@@ -920,7 +928,7 @@ CQcycles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fcn = *getArgReference_str(stk,pci,2);
 		idx = CQlocate(sch, fcn);
 		if( idx == pnettop) {
-			msg = createException(SQL,"cquery.cycles","continuous procedure %s.%s not accessible\n",sch,fcn);
+			msg = createException(SQL,"cquery.cycles","The continuous procedure %s.%s not accessible\n",sch,fcn);
 			goto finish;
 		}
 		last = idx+1;
@@ -965,7 +973,7 @@ CQheartbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fcn = *getArgReference_str(stk,pci,2);
 		idx = CQlocate(sch, fcn);
 		if( idx == pnettop) {
-			msg = createException(SQL,"cquery.heartbeat","continuous procedure %s.%s not accessible\n",sch,fcn);
+			msg = createException(SQL,"cquery.heartbeat","The continuous procedure %s.%s not accessible\n",sch,fcn);
 			goto finish;
 		}
 		last = idx+1;
@@ -1007,60 +1015,34 @@ CQwait(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 /*Remove a specific continuous query from the scheduler */
 
 static str
-CQderegisterInternalRanges(int first, int last)
-{
-#ifdef DEBUG_CQUERY
-	fprintf(stderr, "#stop queries %d - %d\n",first,last);
-#endif
-	for( ; first < last; first++)
-		CQfree(first);
-
-	if( pnettop == 0)
-		pnstatus = CQSTOP;
-	return MAL_SUCCEED;
-}
-
-static str
 CQderegisterInternal(MalBlkPtr mb)
 {
 	int idx;
-	str msg = MAL_SUCCEED, mb2str;
+	str msg = MAL_SUCCEED, mb2str = NULL;
 
 	MT_lock_set(&ttrLock);
 	if(CQlocateMb(mb, &idx, &mb2str, "cquery.stop") != MAL_SUCCEED) {
 		goto finish;
 	}
 	if(idx == pnettop) {
-		msg = createException(SQL, "cquery.stop", "continuous procedure %s has not yet started\n", mb2str);
+		msg = createException(SQL, "cquery.stop", "The continuous procedure %s has not yet started\n", mb2str);
 		GDKfree(mb2str);
 		goto finish;
 	}
-	if (idx <pnettop)
-		pnet[idx].status = CQSTOP;
+	pnet[idx].status = CQSTOP;
 	MT_lock_unset(&ttrLock);
-
 	// actually wait if the query was running
 	while( pnet[idx].status != CQDEREGISTER ){
 		MT_sleep_ms(5);
 	}
 	MT_lock_set(&ttrLock);
-	msg = CQderegisterInternalRanges(idx, idx+1);
+	CQfree(idx);
+	if( pnettop == 0)
+		pnstatus = CQSTOP;
 
 finish:
-	MT_lock_unset(&ttrLock);
-	return msg;
-}
-
-str
-CQderegisterAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str msg;
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-	MT_lock_set(&ttrLock);
-	msg = CQderegisterInternalRanges(0, pnettop);
+	if(mb2str)
+		GDKfree(mb2str);
 	MT_lock_unset(&ttrLock);
 	return msg;
 }
@@ -1085,7 +1067,37 @@ CQderegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if( k>= 0 )
 		return CQderegisterInternal(mb);
-	throw(SQL,"cquery.stop","continuous procedure %s.%s not found", getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
+	throw(SQL,"cquery.stop","The continuous procedure %s.%s was not found\n", getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
+}
+
+str
+CQderegisterAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str msg = MAL_SUCCEED;
+	int i, limit;
+
+	(void) cntxt;
+	(void) mb;
+	(void) stk;
+	(void) pci;
+	MT_lock_set(&ttrLock);
+	limit = pnettop; // the pnettop value will always decrease in the loop bellow
+
+	for(i = 0 ; i < limit; i++) {
+		pnet[i].status = CQSTOP;
+		MT_lock_unset(&ttrLock);
+
+		// actually wait if the query was running
+		while( pnet[i].status != CQDEREGISTER ){
+			MT_sleep_ms(5);
+		}
+		MT_lock_set(&ttrLock);
+		CQfree(i);
+	}
+	pnstatus = CQSTOP;
+
+	MT_lock_unset(&ttrLock);
+	return msg;
 }
 
 /* WARNING no locks in this call yet! */
