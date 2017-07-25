@@ -365,11 +365,11 @@ SQLrun(Client c, backend *be, mvc *m){
 				msg = CQpause(c,mb, 0,0);
 				break;
 			case mod_resume_continuous:
-				//mnstr_printf(c->fdout, "#Resume continuous query with alter\n");
+				//mnstr_printf(c->fdout, "#Resume continuous query with changes\n");
 				msg = CQresume(c,mb, 0,0);
 				break;
 			case mod_resume_continuous_no_alter:
-				//mnstr_printf(c->fdout, "#Resume continuous query with no alter\n");
+				//mnstr_printf(c->fdout, "#Resume continuous query with no changes\n");
 				msg = CQresumeNoAlter(c,mb, 0,0);
 				break;
 			default:
