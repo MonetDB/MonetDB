@@ -71,6 +71,11 @@
 #define mod_stop_continuous 	2
 #define mod_pause_continuous 	3
 #define mod_resume_continuous 	4
+#define mod_resume_continuous_no_alter 	5
+
+#define mod_stop_all_continuous 	6
+#define mod_pause_all_continuous 	7
+#define mod_resume_all_continuous 	8
 
 typedef struct sql_var {
 	const char *name;

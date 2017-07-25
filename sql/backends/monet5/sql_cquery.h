@@ -25,10 +25,6 @@
 //#define DEBUG_CQUERY
 //#define DEBUG_CQUERY_SCHEDULER
 
-#define REGISTER_CQUERY           1
-#define REGISTER_AND_START_CQUERY 2
-#define RESTART_CQUERY            3
-
 #define CQINIT     0
 #define CQREGISTER 1    /* being registered */
 #define CQWAIT 	   2    /* wait for data */
@@ -73,6 +69,7 @@ sql5_export MT_Lock ttrLock;
 sql5_export str CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQprocedure(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str CQresumeNoAlter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQresumeAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQpauseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

@@ -127,9 +127,13 @@ pattern drop_role( role:str, action:int)
 address SQLdrop_role 
 comment "Catalog operation drop_role";
 
-pattern drop_index( sname:str, iname:str, action:int) 
-address SQLdrop_index 
+pattern drop_index( sname:str, iname:str, action:int)
+address SQLdrop_index
 comment "Catalog operation drop_index";
+
+pattern change_cp( action:int)
+address SQLchange_cp
+comment "Pause, resume or stop all continuous queries";
 
 pattern drop_function( sname:str, fname:str, fid:int, type:int, action:int) 
 address SQLdrop_function 

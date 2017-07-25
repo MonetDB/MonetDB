@@ -110,6 +110,7 @@ mal_export  str drop_userRef;
 mal_export  str drop_roleRef;
 mal_export  str drop_userRef;
 mal_export  str drop_indexRef;
+mal_export  str change_cpRef;
 mal_export  str drop_functionRef;
 mal_export  str drop_triggerRef;
 mal_export  str subdiffRef;

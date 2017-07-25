@@ -81,6 +81,7 @@ str subcountRef;
 str copyRef;
 str copy_fromRef;
 str export_tableRef;
+str change_cpRef;
 str count_no_nilRef;
 str crossRef;
 str createRef;
@@ -408,6 +409,7 @@ void optimizerInit(void)
 	drop_roleRef = putName("drop_role");
 	drop_userRef = putName("drop_user");
 	drop_indexRef = putName("drop_index");
+	change_cpRef = putName("change_cp");
 	drop_functionRef = putName("drop_function");
 	drop_triggerRef = putName("drop_trigger");
 	mergecandRef= putName("mergecand");

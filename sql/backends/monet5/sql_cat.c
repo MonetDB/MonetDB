@@ -24,6 +24,7 @@
 #include "querylog.h"
 #include "mal_builder.h"
 #include "mal_debugger.h"
+#include "sql_cquery.h"
 
 #include <rel_select.h>
 #include <rel_optimizer.h>
@@ -377,6 +378,21 @@ drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
 		mvc_drop_idx(sql, s, i);
 	}
 	return NULL;
+}
+
+static str
+change_cp(Client cntxt, int action)
+{
+	switch(action) {
+		case mod_stop_all_continuous:
+			return CQderegisterAll(cntxt, NULL, 0, 0);
+		case mod_pause_all_continuous:
+			return CQpauseAll(cntxt, NULL, 0, 0);
+		case mod_resume_all_continuous:
+			return CQresumeAll(cntxt, NULL, 0, 0);
+		default:
+			return sql_message("42000!ALL CONTINUOUS: Unknown option");
+	}
 }
 
 static str
@@ -1184,6 +1200,17 @@ SQLdrop_index(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	initcontext();
 	msg = drop_index(cntxt, sql, sname, iname);
+	return msg;
+}
+
+str
+SQLchange_cp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{	mvc *sql = NULL;
+	str msg;
+	int action = *getArgReference_int(stk, pci, 1);
+
+	initcontext();
+	msg = change_cp(cntxt, action);
 	return msg;
 }
 

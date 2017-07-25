@@ -365,8 +365,12 @@ SQLrun(Client c, backend *be, mvc *m){
 				msg = CQpause(c,mb, 0,0);
 				break;
 			case mod_resume_continuous:
-				//mnstr_printf(c->fdout, "#Resume continuous query\n");
+				//mnstr_printf(c->fdout, "#Resume continuous query with alter\n");
 				msg = CQresume(c,mb, 0,0);
+				break;
+			case mod_resume_continuous_no_alter:
+				//mnstr_printf(c->fdout, "#Resume continuous query with no alter\n");
+				msg = CQresumeNoAlter(c,mb, 0,0);
 				break;
 			default:
 				msg = runMAL(c, mb, 0, 0);

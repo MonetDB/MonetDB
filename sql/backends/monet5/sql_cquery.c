@@ -488,7 +488,6 @@ CQprocedure(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i;
 	char name[IDLENGTH];
 
-
 	/* check existing of the pre-compiled and activated function */
 	sch = *getArgReference_str(stk, pci, 1);
 	nme = *getArgReference_str(stk, pci, 2);
@@ -565,7 +564,6 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	int i, cycles = sqlcontext ? sqlcontext->cycles : int_nil, heartbeats = sqlcontext ? sqlcontext->heartbeats : 1;
 
 	(void) pci;
-	(void) stk;
 
 	if(cycles <= 0 && cycles != int_nil){
 		msg = createException(SQL,"cquery.register","The cycles value must be positive");
@@ -633,6 +631,55 @@ finish:
 }
 
 static str
+CQresumeInternal(Client cntxt, str modnme, str fcnnme, int with_alter)
+{
+	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
+	str msg = MAL_SUCCEED;
+	int idx, cycles, heartbeats;
+
+	MT_lock_set(&ttrLock);
+
+	if(with_alter) {
+		cycles = sqlcontext ? sqlcontext->cycles : int_nil;
+		heartbeats = sqlcontext ? sqlcontext->heartbeats : 1;
+		if(cycles <= 0 && cycles != int_nil){
+			msg = createException(SQL,"cquery.resume","The cycles value must be positive");
+			goto finish;
+		}
+		if(heartbeats <= 0){
+			msg = createException(SQL,"cquery.resume","The heartbeats value must be positive");
+			goto finish;
+		}
+	}
+
+	idx = CQlocate(modnme, fcnnme);
+	if( idx == pnettop) {
+		msg = createException(SQL, "cquery.resume", "Continuous procedure %s.%s not accessible\n", modnme, fcnnme);
+		goto finish;
+	}
+	if( pnet[idx].status != CQPAUSE)
+		goto finish;
+
+#ifdef DEBUG_CQUERY
+	fprintf(stderr, "#resume scheduler\n");
+#endif
+	pnet[idx].status = CQWAIT;
+	if(with_alter) {
+		pnet[idx].cycles = cycles;
+		pnet[idx].beats = heartbeats * 1000;
+	}
+
+	/* start the scheduler if needed */
+	if(CQinit == 0) {
+		msg = CQstartScheduler();
+	}
+
+finish:
+	MT_lock_unset(&ttrLock);
+	return msg;
+}
+
+static str
 CQresumeInternalRanges(int first, int last)
 {
 	str msg = MAL_SUCCEED;
@@ -647,26 +694,6 @@ CQresumeInternalRanges(int first, int last)
 	if(CQinit == 0) {
 		msg = CQstartScheduler();
 	}
-	return msg;
-}
-
-static str
-CQresumeInternal(str modnme, str fcnnme)
-{
-	int idx;
-	str msg = MAL_SUCCEED;
-
-	MT_lock_set(&ttrLock);
-	idx = CQlocate(modnme, fcnnme);
-	if( idx == pnettop) {
-		msg = createException(SQL, "cquery.resume", "Continuous procedure %s.%s not accessible\n", modnme, fcnnme);
-		goto finish;
-	}
-	if( pnet[idx].status != CQPAUSE)
-		goto finish;
-	msg = CQresumeInternalRanges(idx, idx+1);
-finish:
-	MT_lock_unset(&ttrLock);
 	return msg;
 }
 
@@ -689,7 +716,6 @@ CQresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, k =-1;
 	InstrPtr q;
-	(void) cntxt;
 	(void) stk;
 	(void) pci;
 
@@ -704,7 +730,30 @@ CQresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	if( k >= 0 )
-		return CQresumeInternal(getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
+		return CQresumeInternal(cntxt, getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)), 1);
+	throw(SQL,"cquery.resume","Continuous query not found ");
+}
+
+str
+CQresumeNoAlter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int i, k =-1;
+	InstrPtr q;
+	(void) stk;
+	(void) pci;
+
+	for( i=1; i < mb->stop; i++){
+		q = getInstrPtr(mb,i);
+
+		if( q->token == ENDsymbol )
+			break;
+		if( getModuleId(q) == userRef){
+			k = i;
+			break;
+		}
+	}
+	if( k >= 0 )
+		return CQresumeInternal(cntxt, getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)), 0);
 	throw(SQL,"cquery.resume","Continuous query not found ");
 }
 
@@ -1026,7 +1075,7 @@ CQexecute( Client cntxt, int idx)
 
 	// release all locks held
 #ifdef DEBUG_CQUERY
-		fprintf(stderr, "#cquery.execute %s.%s finised %s\n", node->mod, node->fcn, (msg?msg:""));
+		fprintf(stderr, "#cquery.execute %s.%s finished %s\n", node->mod, node->fcn, (msg?msg:""));
 #endif
 	MT_lock_set(&ttrLock);
 	if( node->status != CQSTOP)

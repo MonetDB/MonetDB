@@ -2110,9 +2110,22 @@ continuous_procedure_statement:
 		{ $$ = _symbol_create_symbol( SQL_STOP_CALL, $2 ); }
 	| PAUSE_CONTINUOUS func_ref
 		{ $$ = _symbol_create_symbol( SQL_PAUSE_CALL, $2 ); }
-	| RESUME_CONTINUOUS func_ref
-		{ $$ = _symbol_create_symbol( SQL_RESUME_CALL, $2 ); }
-	;
+	| RESUME_CONTINUOUS func_ref beat_set cycles_set
+		{ dlist *l = L();
+		  append_symbol( l, $2);
+		  append_int( l, $3);
+		  append_int( l, $4);
+		  $$ = _symbol_create_list( SQL_RESUME_ALTER_CALL, l ); }
+	| RESUME_CONTINUOUS func_ref WITH NO ALTER
+		{ $$ = _symbol_create_symbol( SQL_RESUME_NO_ALTER_CALL, $2 ); }
+	| STOP ALL CONTINUOUS
+		{ $$ = _symbol_create_int( SQL_STOP_ALL, mod_stop_all_continuous ); }
+	| PAUSE ALL CONTINUOUS
+		{ $$ = _symbol_create_int( SQL_PAUSE_ALL, mod_pause_all_continuous ); }
+	| RESUME ALL CONTINUOUS
+		{ $$ = _symbol_create_int( SQL_RESUME_ALL, mod_resume_all_continuous ); }
+	| RESUME ALL CONTINUOUS WITH NO ALTER
+		{ $$ = _symbol_create_int( SQL_RESUME_ALL, mod_resume_all_continuous ); }
 
 routine_invocation: 
 	routine_name '(' argument_list ')'

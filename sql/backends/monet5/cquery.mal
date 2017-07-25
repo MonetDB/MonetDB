@@ -34,7 +34,10 @@ the MAL block to determine the input/output dependencies and firing conditions."
 
 pattern resume(mod:str, fcn:str)
 address CQresume
-comment "Activate a specific continuous query";
+comment "Activate a specific continuous query with no changes";
+pattern resumenoalter(mod:str, fcn:str)
+address CQresumeNoAlter
+comment "Activate a specific continuous query with changes to the cycles and heartbeat values";
 pattern resume()
 address CQresumeAll
 comment "Activate all continuous queries";
