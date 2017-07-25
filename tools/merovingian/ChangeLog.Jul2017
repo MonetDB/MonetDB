@@ -1,7 +1,3 @@
 # ChangeLog file for sql/src/backends/monet5/merovingian
 # This file is updated with mchangelog
 
-* Fri Jul 14 2017 Sjoerd Mullender <sjoerd@acm.org>
-- monetdbd was leaking open file descriptors to the mserver5 process
-  it started.  This has been fixed.
-

@@ -1,9 +1,3 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
-* Fri Jul  7 2017 Sjoerd Mullender <sjoerd@acm.org>
-- Many functions in GDK are now annotated with the GCC attribute
-  __warn_unused_result__ meaning that the compiler will issue a warning
-  if the result of the function (usually an indication of an error)
-  is not used.
-
