@@ -412,8 +412,9 @@ shortRenderingTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx)
 	ValRecord *val;
 	char *cv =0;
 	int varid = getArg(p,idx);
+	size_t len = BUFSIZ;
 
-	s= GDKmalloc(BUFSIZ);
+	s= GDKmalloc(len);
 	if( s == NULL)
 		return NULL;
 	*s = 0;
@@ -421,7 +422,13 @@ shortRenderingTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx)
 	if( isVarConstant(mb,varid) ){
 		val =&getVarConstant(mb, varid);
 		VALformat(&cv, val);
-		snprintf(s,BUFSIZ,"%s",cv);
+		if (strlen(cv) >= len) {
+			len = strlen(cv);
+			s = GDKrealloc(s, len + 1);
+			if (s == NULL)
+				return NULL;
+		}
+		snprintf(s,len + 1,"%s",cv);
 	} else {
 		val = &stk->stk[varid];
 		VALformat(&cv, val);
