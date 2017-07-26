@@ -443,7 +443,7 @@ int yydebug=1;
 	opt_outer
 	non_second_datetime_field
 	nonzero
-	beat_set
+	heartbeat_set
 	cycles_set
 	opt_bounds
 	opt_column
@@ -536,7 +536,7 @@ int yydebug=1;
 %token <sval> LATERAL LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 %token  CONTINUOUS START_CONTINUOUS STOP STOP_CONTINUOUS PAUSE PAUSE_CONTINUOUS RESUME RESUME_CONTINUOUS
-%token  BEAT CYCLES
+%token  HEARTBEAT CYCLES
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
 %token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE
 
@@ -2089,9 +2089,9 @@ call_procedure_statement:
 	| continuous_procedure_statement
 	;
 
-beat_set:
+heartbeat_set:
 	  /* empty */ { $$ = 1; } /* 1 millisecond, but 0 is also possible */
-	| BEAT intval { $$ = $2; }
+	| HEARTBEAT intval { $$ = $2; }
 	;
 
 cycles_set:
@@ -2100,7 +2100,7 @@ cycles_set:
 	;
 
 continuous_procedure_statement:
-	START_CONTINUOUS func_ref WITH beat_set cycles_set
+	START_CONTINUOUS func_ref WITH heartbeat_set cycles_set
 		{ dlist *l = L();
 		  append_symbol( l, $2);
 		  append_int( l, $4);
@@ -2116,7 +2116,7 @@ continuous_procedure_statement:
 		{ $$ = _symbol_create_symbol( SQL_STOP_CALL, $2 ); }
 	| PAUSE_CONTINUOUS func_ref
 		{ $$ = _symbol_create_symbol( SQL_PAUSE_CALL, $2 ); }
-	| RESUME_CONTINUOUS func_ref WITH beat_set cycles_set
+	| RESUME_CONTINUOUS func_ref WITH heartbeat_set cycles_set
 		{ dlist *l = L();
 		  append_symbol( l, $2);
 		  append_int( l, $4);

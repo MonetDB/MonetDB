@@ -4,7 +4,7 @@ create table agenda13(i integer, msg string);
 
 -- The window determines the input size, it can not be overruled.
 -- which is overruled here by the hearbeat (order is important)
-call cquery.window('sys','tmp13',2);
+call cquery."window"('sys','tmp13',2);
 
 create procedure cq_agenda()
 begin
@@ -16,7 +16,7 @@ begin
     end if;
 end;
 start continuous sys.cq_agenda();
-call cquery.heartbeat('sys','cq_agenda',1000);
+call cquery."heartbeat"('sys','cq_agenda',1000);
 
 select * from cquery.status();
 

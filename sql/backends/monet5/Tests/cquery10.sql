@@ -11,10 +11,10 @@ end;
 start continuous sys.cq_cycles();
 
 -- The scheduler interval is 1 sec 
---call cquery.heartbeat('sys','cq_cycles',1000);
+--call cquery."heartbeat"('sys','cq_cycles',1000);
 
 -- The scheduler executes all CQ at most 5 rounds
-call cquery.cycles('sys','cq_cycles',3);
+call cquery."cycles"('sys','cq_cycles',3);
 
 -- reactivate all continuous queries
 

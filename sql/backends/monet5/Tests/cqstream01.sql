@@ -12,7 +12,7 @@ create procedure cq_window()
 begin
 	-- The window ensures a maximal number of tuples to consider
 	-- Could be considered a property of the stream table
-    call cquery.window('sys','stmp2',2);
+    call cquery."window"('sys','stmp2',2);
     insert into result2 select * from stmp2 where val >12;
 end;
 

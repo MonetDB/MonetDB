@@ -26,26 +26,26 @@ create procedure cquery.wait(ms bigint)
 	external name cquery.wait;
 
 -- Limit the number of iterations of a CQ
-create procedure cquery.cycles(cycles integer)
-	external name cquery.cycles;
-create procedure cquery.cycles(sch string, cqname string, cycles integer)
-	external name cquery.cycles;
+create procedure cquery."cycles"(cqcycles integer)
+	external name cquery."cycles";
+create procedure cquery."cycles"("schema" string, cqname string, cqcycles integer)
+	external name cquery."cycles";
 
 -- set the scheduler heartbeat 
-create procedure cquery.heartbeat("schema" string, qryname string, msec integer)
-	external name cquery.heartbeat;
-create procedure cquery.heartbeat(msec integer)
-	external name cquery.heartbeat;
+create procedure cquery."heartbeat"("schema" string, cqname string, msec integer)
+	external name cquery."heartbeat";
+create procedure cquery."heartbeat"(msec integer)
+	external name cquery."heartbeat";
 
 -- Tumble the stream buffer
-create procedure cquery.tumble("schema" string, "table" string, elem integer)
-	external name cquery.tumble;
+create procedure cquery."tumble"("schema" string, "table" string, elem integer)
+	external name cquery."tumble";
 
 -- Window based consumption for stream queries
-create procedure cquery.window("schema" string, "table" string, elem integer)
-	external name basket.window;
-create procedure cquery.window("schema" string, "table" string, elem integer, stride integer)
-	external name basket.window;
+create procedure cquery."window"("schema" string, "table" string, elem integer)
+	external name basket."window";
+create procedure cquery."window"("schema" string, "table" string, elem integer, stride integer)
+	external name basket."window";
 
 -- continuous query status analysis
 
@@ -64,7 +64,7 @@ create function cquery.status()
  external name cquery.status;
 
 create function cquery.streams()
- returns table(tick timestamp,  "schema" string, "function" string, winsize integer, stride integer, events integer, cycles integer,  errors string)
+ returns table(tick timestamp,  "schema" string, "function" string, winsize integer, stride integer, events integer, "cycles" integer,  errors string)
  external name basket.status;
 
 create function cquery.show("schema" string, qryname string)

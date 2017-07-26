@@ -1126,11 +1126,31 @@ rel_drop_type(mvc *sql, dlist *qname, int drop_action)
 }
 
 static sql_rel *
-rel_continuous_queries(sql_allocator *sa, int action) {
-	sql_rel *rel = rel_create(sa);
-	list *exps = new_exp_list(sa);
+rel_continuous_queries(mvc *sql, int action) {
+	sql_rel *rel;
+	list *exps;
+	char* err_message;
 
-	append(exps, exp_atom_int(sa, action));
+	switch (action) {
+		case mod_stop_all_continuous:
+			err_message = "STOP";
+			break;
+		case mod_pause_all_continuous:
+			err_message = "PAUSE";
+			break;
+		case mod_resume_all_continuous:
+			err_message = "RESUME";
+			break;
+	}
+
+	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN) {
+		sql_error(sql, 02, "42000!%s ALL CONTINUOUS: insufficient privileges for user '%s'", err_message, stack_get_string(sql, "current_user"));
+		return NULL;
+	}
+
+	rel = rel_create(sql->sa);
+	exps = new_exp_list(sql->sa);
+	append(exps, exp_atom_int(sql->sa, action));
 	rel->l = NULL;
 	rel->r = NULL;
 	rel->op = op_ddl;
@@ -2135,7 +2155,7 @@ rel_schemas(mvc *sql, symbol *s)
 	case SQL_STOP_ALL:
 	case SQL_PAUSE_ALL:
 	case SQL_RESUME_ALL:
-		ret = rel_continuous_queries(sql->sa, s->data.i_val);
+		ret = rel_continuous_queries(sql, s->data.i_val);
 		break;
 	default:
 		return sql_error(sql, 01, "M0M03!schema statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));

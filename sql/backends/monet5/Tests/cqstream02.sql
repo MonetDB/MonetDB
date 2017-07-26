@@ -20,7 +20,7 @@ insert into stmp10 values('2005-09-23 12:34:28.000',1,15.0);
 start continuous sys.cq_collector();
 
 -- Run the query a few times
-call cquery.cycles(3);
+call cquery."cycles"(3);
 
 call cquery.wait(1000);
 

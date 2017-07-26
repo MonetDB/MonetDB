@@ -75,6 +75,7 @@ MT_Lock ttrLock MT_LOCK_INITIALIZER("cqueryLock");
 static void
 CQfree(int idx)
 {
+	int i;
 	if( pnet[idx].mb)
 		freeMalBlk(pnet[idx].mb);
 	if( pnet[idx].stk)
@@ -82,10 +83,10 @@ CQfree(int idx)
 	GDKfree(pnet[idx].mod);
 	GDKfree(pnet[idx].fcn);
 	GDKfree(pnet[idx].stmt);
-	for( ; idx<pnettop-1; idx++)
-		pnet[idx] = pnet[idx+1];
+	for(i=idx; i<pnettop-1; i++)
+		pnet[i] = pnet[i+1];
 	pnettop--;
-	memset((void*) (pnet+idx), 0, sizeof(CQnode));
+	memset((void*) (pnet+pnettop), 0, sizeof(CQnode));
 }
 
 /* We need a lock table for all stream tables considered
@@ -700,15 +701,15 @@ CQresumeInternal(Client cntxt, MalBlkPtr mb, int with_alter)
 {
 	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
 	str msg = MAL_SUCCEED, mb2str = NULL;
-	int idx, cycles, heartbeats;
+	int idx = 0, cycles = int_nil, heartbeats = 1;
 
 #ifdef DEBUG_CQUERY
 	fprintf(stderr, "#resume scheduler\n");
 #endif
 
-	if(with_alter) {
-		cycles = sqlcontext ? sqlcontext->cycles : int_nil;
-		heartbeats = sqlcontext ? sqlcontext->heartbeats : 1;
+	if(with_alter && sqlcontext) {
+		cycles = sqlcontext->cycles;
+		heartbeats = sqlcontext->heartbeats;
 		if(cycles < 0 && cycles != int_nil){
 			msg = createException(SQL,"cquery.resume","The cycles value must be non negative\n");
 			goto finish;
@@ -828,7 +829,7 @@ CQresumeAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 CQpauseInternal(MalBlkPtr mb)
 {
-	int idx;
+	int idx = 0;
 	str msg = MAL_SUCCEED, mb2str = NULL;
 
 	MT_lock_set(&ttrLock);
@@ -1017,7 +1018,7 @@ CQwait(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 static str
 CQderegisterInternal(MalBlkPtr mb)
 {
-	int idx;
+	int idx = 0;
 	str msg = MAL_SUCCEED, mb2str = NULL;
 
 	MT_lock_set(&ttrLock);

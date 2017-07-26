@@ -82,8 +82,13 @@ basket00
 epoch
 
 # use the continuous primitives
+cqcreate
+
 cquery00
 cquery05
+cquery06
+cquery07
+cquery08
 cquery10
 cquery20
 
