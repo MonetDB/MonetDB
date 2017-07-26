@@ -521,6 +521,8 @@ GDKinit(opt *set, int setlen)
 	}
 
 	n = (opt *) malloc(setlen * sizeof(opt));
+	if (n == NULL)
+		GDKfatal("GDKinit: malloc failed\n");
 	for (i = 0; i < setlen; i++) {
 		int done = 0;
 		int j;
@@ -1046,7 +1048,7 @@ GDKerror(const char *format, ...)
 	}
 	va_start(ap, format);
 	if (vsnprintf(message + len, sizeof(message) - (len + 2), format, ap) < 0)
-		strcpy(message, GDKERROR "an error occurred within GDKerror, possibly malloc failure.\n");
+		strcpy(message, GDKERROR "an error occurred within GDKerror.\n");
 	va_end(ap);
 
 	GDKaddbuf(message);
@@ -1400,7 +1402,8 @@ THRprintf(stream *s, const char *format, ...)
 		if (bf != THRprintbuf)
 			free(bf);
 		bf = (str) malloc(bfsz);
-		assert(bf != NULL);
+		if (bf == NULL)
+			return -1;
 	} while (1);
 
 	p += n;
