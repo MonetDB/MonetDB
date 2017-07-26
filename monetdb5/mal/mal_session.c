@@ -488,13 +488,8 @@ MSserveClient(void *dummy)
 		assert(0);
 	}
 
-	if (c->mode > FINISHCLIENT) {
-		if (isAdministrator(c) /* && moreClients(0)==0 */) {
-			if (c->scenario) {
-				exitScenario(c);
-			}
-		}
-	}
+	if (c->mode == FINISHCLIENT && isAdministrator(c))
+		exitScenario(c);
 	if (!isAdministrator(c))
 		MCcloseClient(c);
 	if (c->nspace && strcmp(c->nspace->name, "user") == 0) {

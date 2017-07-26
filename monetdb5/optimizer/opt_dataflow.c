@@ -288,7 +288,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		} 
 		// remember you assigned/read variables
 		for ( k = 0; k < p->retc; k++)
-			setState(states,p,k, VARWRITE);
+			setState(states, p, k, VARWRITE);
 		if( isUpdateInstruction(p) && (getState(states,p,1) == 0 || getState(states,p,1) & VARWRITE))
 			setState(states, p,1, VARBLOCK);
 		for ( k = p->retc; k< p->argc; k++)
