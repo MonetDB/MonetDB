@@ -350,9 +350,9 @@ main(int argc, char **argv)
 				printf("%s", response);
 		if(json) {
 			if(trace != NULL) {
-				fprintf(trace, "%s", response);
+				fprintf(trace, "%s", response + len);
 			} else {
-				printf("%s", response);
+				printf("%s", response + len);
 				fflush(stdout);
 			}
 		}
