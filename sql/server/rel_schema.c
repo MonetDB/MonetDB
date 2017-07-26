@@ -228,6 +228,9 @@ table_constraint_name(symbol *s, sql_table *t)
 	while (len + slen >= buflen)
 		buflen += BUFSIZ;
 	buf = malloc(buflen);
+	if(!buf) {
+		return NULL;
+	}
 	strcpy(buf, t->base.name);
 
 	/* add column name(s) */
@@ -236,6 +239,9 @@ table_constraint_name(symbol *s, sql_table *t)
 		while (len + slen + 1 >= buflen) {
 			buflen += BUFSIZ;
 			buf = realloc(buf, buflen);
+			if(!buf) {
+				return NULL;
+			}
 		}
 		snprintf(buf + len, buflen - len, "_%s", nms->data.sval);
 		len += slen + 1;
@@ -246,6 +252,9 @@ table_constraint_name(symbol *s, sql_table *t)
 	while (len + slen >= buflen) {
 		buflen += BUFSIZ;
 		buf = realloc(buf, buflen);
+		if(!buf) {
+			return NULL;
+		}
 	}
 	snprintf(buf + len, buflen - len, "%s", suffix);
 
