@@ -738,8 +738,12 @@ AS_VAR_IF([enable_sanitizer], [no], [], [
 			AS_VAR_IF([enable_sanitizer], [yes],
 				[MCHECK_ADD_FLAG([-fsanitize=address])],
 				[MCHECK_ADD_FLAG([-fsanitize=$enable_sanitizer])
-				AS_VAR_IF([enable_sanitizer], [thread],
+				 AS_VAR_IF([enable_sanitizer], [thread],
 					[X_CFLAGS="$X_CFLAGS -DNO_ATOMIC_INSTRUCTIONS"])])
+			AS_CASE([$X_CFLAGS],
+				[*-fsanitize=*],
+				[],
+				[AC_MSG_ERROR([--enable-sanitizer not supported by this compiler])])
 			MCHECK_ADD_FLAG([-fno-omit-frame-pointer])],
 		[AC_MSG_ERROR([--enable-sanitizer only supported with GCC])])])
 
