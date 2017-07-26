@@ -77,6 +77,15 @@ mdbInit(void)
 	return 0;
 }
 
+void
+mdbExit(void)
+{
+	if (mdbTable) {
+		GDKfree(mdbTable);
+		mdbTable = 0;
+	}
+}
+
 static char
 isBreakpoint(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 {

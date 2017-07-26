@@ -149,12 +149,14 @@ void mserver_reset(int exit)
 	GDKfree(mal_clients->prompt);
 	GDKfree(mal_clients->username);
 	freeStack(mal_clients->glb);
-	freeSymbol(mal_clients->curprg);
+	if (mal_clients->nspace)
+		freeModule(mal_clients->nspace);
 	mal_client_reset();
   	mal_linker_reset();
 	mal_resource_reset();
 	mal_runtime_reset();
 	mal_module_reset();
+	mdbExit();
 
 	memset((char*)monet_cwd,0, sizeof(monet_cwd));
 	monet_memory = 0;

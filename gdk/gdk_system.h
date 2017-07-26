@@ -224,7 +224,7 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 		/* since the lock is in memory that is governed by the */ \
 		/* SQL storage allocator, and hence we have no control */ \
 		/* over when the lock is destroyed and the memory freed */ \
-		if (strncmp((l)->name, "sa_", 3) != 0) {		\
+		if (0 && strncmp((l)->name, "sa_", 3) != 0) {		\
 			MT_Lock * volatile _p;				\
 			/* save a copy for statistical purposes */	\
 			_p = GDKmalloc(sizeof(MT_Lock));		\

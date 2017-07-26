@@ -480,21 +480,15 @@ MSserveClient(void *dummy)
 		c->backup = 0;
 	}
 	if (c->curprg) {
-		assert(0);
 		freeSymbol(c->curprg);
 		c->curprg = 0;
 	}
-	if (c->nspace) {
-		assert(0);
-	}
 
-	if (c->mode == FINISHCLIENT && isAdministrator(c))
-		exitScenario(c);
 	if (!isAdministrator(c))
 		MCcloseClient(c);
-	if (c->nspace && strcmp(c->nspace->name, "user") == 0) {
-		GDKfree(c->nspace->space);
-		GDKfree(c->nspace);
+
+	if (c->nspace /*&& strcmp(c->nspace->name, "user") == 0*/) {
+		freeModule(c->nspace);
 		c->nspace = NULL;
 	}
 }
