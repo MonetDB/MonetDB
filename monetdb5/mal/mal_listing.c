@@ -423,10 +423,14 @@ shortRenderingTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx)
 		val =&getVarConstant(mb, varid);
 		VALformat(&cv, val);
 		if (strlen(cv) >= len) {
+			char *nbuf;
 			len = strlen(cv);
-			s = GDKrealloc(s, len + 1);
-			if (s == NULL)
+			nbuf = GDKrealloc(s, len + 1);
+			if (nbuf == NULL) {
+				GDKfree(s);
 				return NULL;
+			}
+			s = nbuf;
 		}
 		snprintf(s,len + 1,"%s",cv);
 	} else {
