@@ -26,7 +26,6 @@
 #define FE_INVALID			0
 #define FE_DIVBYZERO		0
 #define FE_OVERFLOW			0
-#define FE_UNDERFLOW		0
 #endif
 
 #define voidresultBAT(X1,X2)									\
@@ -68,7 +67,7 @@ str CMDscience_bat_##TYPE##_##FUNC(bat *ret, const bat *bid)		\
 	}																\
 	if ((e = errno) != 0 ||											\
 		(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |				\
-						   FE_OVERFLOW | FE_UNDERFLOW)) != 0) {		\
+						   FE_OVERFLOW)) != 0) {					\
 		const char *err;											\
 		BBPunfix(bn->batCacheid);									\
 		if (e) {													\
@@ -77,8 +76,6 @@ str CMDscience_bat_##TYPE##_##FUNC(bat *ret, const bat *bid)		\
 			err = "Divide by zero";									\
 		else if (ex & FE_OVERFLOW)									\
 			err = "Overflow";										\
-		else if (ex & FE_UNDERFLOW)									\
-			err = "Underflow";										\
 		else														\
 			err = "Invalid result";									\
 		throw(MAL, "batmmath." #FUNC, "Math exception: %s", err);	\
@@ -121,7 +118,7 @@ str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
 	}																	\
 	if ((e = errno) != 0 ||												\
 		(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |					\
-						   FE_OVERFLOW | FE_UNDERFLOW)) != 0) {			\
+						   FE_OVERFLOW)) != 0) {						\
 		const char *err;												\
 		BBPunfix(bn->batCacheid);										\
 		if (e) {														\
@@ -130,8 +127,6 @@ str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
 			err = "Divide by zero";										\
 		else if (ex & FE_OVERFLOW)										\
 			err = "Overflow";											\
-		else if (ex & FE_UNDERFLOW)										\
-			err = "Underflow";											\
 		else															\
 			err = "Invalid result";										\
 		throw(MAL, "batmmath." #FUNC, "Math exception: %s", err);		\
@@ -173,7 +168,7 @@ str CMDscience_cst_bat_##FUNC##_##TYPE(bat *ret, const TYPE *d,			\
 	}																	\
 	if ((e = errno) != 0 ||												\
 		(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |					\
-						   FE_OVERFLOW | FE_UNDERFLOW)) != 0) {			\
+						   FE_OVERFLOW)) != 0) {						\
 		const char *err;												\
 		BBPunfix(bn->batCacheid);										\
 		if (e) {														\
@@ -182,8 +177,6 @@ str CMDscience_cst_bat_##FUNC##_##TYPE(bat *ret, const TYPE *d,			\
 			err = "Divide by zero";										\
 		else if (ex & FE_OVERFLOW)										\
 			err = "Overflow";											\
-		else if (ex & FE_UNDERFLOW)										\
-			err = "Underflow";											\
 		else															\
 			err = "Invalid result";										\
 		throw(MAL, "batmmath." #FUNC, "Math exception: %s", err);		\

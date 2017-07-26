@@ -27,7 +27,6 @@
 #define FE_INVALID			0
 #define FE_DIVBYZERO		0
 #define FE_OVERFLOW			0
-#define FE_UNDERFLOW		0
 #endif
 
 #define cot(x)				(1 / tan(x))
@@ -48,7 +47,7 @@ MATHunary##NAME##TYPE(TYPE *res , const TYPE *a)					\
 		r = FUNC(a1);												\
 		if ((e = errno) != 0 ||										\
 			(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |			\
-							   FE_OVERFLOW | FE_UNDERFLOW)) != 0) {	\
+							   FE_OVERFLOW)) != 0) {				\
 			const char *err;										\
 			if (e) {												\
 				err = strerror(e);									\
@@ -56,8 +55,6 @@ MATHunary##NAME##TYPE(TYPE *res , const TYPE *a)					\
 				err = "Divide by zero";								\
 			else if (ex & FE_OVERFLOW)								\
 				err = "Overflow";									\
-			else if (ex & FE_UNDERFLOW)								\
-				err = "Underflow";									\
 			else													\
 				err = "Invalid result";								\
 			throw(MAL, "mmath." #FUNC, "Math exception: %s", err);	\
@@ -85,7 +82,7 @@ MATHbinary##NAME##TYPE(TYPE *res, const TYPE *a, const TYPE *b)		\
 		r1 = FUNC(a1, b1);											\
 		if ((e = errno) != 0 ||										\
 			(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |			\
-							   FE_OVERFLOW | FE_UNDERFLOW)) != 0) {	\
+							   FE_OVERFLOW)) != 0) {				\
 			const char *err;										\
 			if (e) {												\
 				err = strerror(e);									\
@@ -93,8 +90,6 @@ MATHbinary##NAME##TYPE(TYPE *res, const TYPE *a, const TYPE *b)		\
 				err = "Divide by zero";								\
 			else if (ex & FE_OVERFLOW)								\
 				err = "Overflow";									\
-			else if (ex & FE_UNDERFLOW)								\
-				err = "Underflow";									\
 			else													\
 				err = "Invalid result";								\
 			throw(MAL, "mmath." #FUNC, "Math exception: %s", err);	\
