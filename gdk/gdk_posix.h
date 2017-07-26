@@ -41,29 +41,6 @@
 #include <direct.h>
 #endif
 
-/* Some systems (SGI, Sun) call malloc before we get a chance to call
- * mallopt, and mallopt should be called before the first call to
- * malloc.  Therefore we do as if we don't have mallopt, even though
- * in reality we do. */
-#ifdef HAVE_MALLOPT
-#undef HAVE_MALLOPT
-#endif
-
-#ifndef M_MXFAST
-#define M_MXFAST	1	/* set size of blocks to be fast */
-#endif
-#ifndef M_NLBLKS
-#define M_NLBLKS	2	/* set number of block in a holding block */
-#endif
-#ifndef M_GRAIN
-#define M_GRAIN		3	/* set number of sizes mapped to one, for */
-				/* small blocks */
-#endif
-#ifndef M_KEEP
-#define M_KEEP		4	/* retain contents of block after a free */
-				/* until another allocation */
-#endif
-
 /*
  * @- locking, sleep
  */

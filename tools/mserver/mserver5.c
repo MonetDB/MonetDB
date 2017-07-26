@@ -51,7 +51,6 @@
 #define getcwd _getcwd
 #endif
 
-static int malloc_init = 1;
 #ifdef HAVE_CONSOLE
 static int monet_daemon;
 #endif
@@ -286,26 +285,6 @@ main(int argc, char **av)
 	if (setlocale(LC_CTYPE, "") == NULL) {
 		GDKfatal("cannot set locale\n");
 	}
-
-#ifdef HAVE_MALLOPT
-	if (malloc_init) {
-/* for (Red Hat) Linux (6.2) unused and ignored at least as of glibc-2.1.3-15 */
-/* for (Red Hat) Linux (8) used at least as of glibc-2.2.93-5 */
-		if (mallopt(M_MXFAST, 192)) {
-			fprintf(stderr, "!monet: mallopt(M_MXFAST,192) fails.\n");
-			exit(-1);
-		}
-#ifdef M_BLKSZ
-		if (mallopt(M_BLKSZ, 8 * 1024)) {
-			fprintf(stderr, "!monet: mallopt(M_BLKSZ,8*1024) fails.\n");
-			exit(-1);
-		}
-#endif
-	}
-	malloc_init = 0;
-#else
-	(void) malloc_init; /* still unused */
-#endif
 
 	if (getcwd(monet_cwd, PATHLENGTH - 1) == NULL) {
 		perror("pwd");
