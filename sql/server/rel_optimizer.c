@@ -263,7 +263,7 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	switch (rel->op) {
 	case op_basetable:
 	case op_table:
-		if (rel->op == op_table && rel->l) 
+		if (rel->op == op_table && rel->l && rel->flag != 2) 
 			rel_properties(sql, gp, rel->l);
 		break;
 	case op_join: 

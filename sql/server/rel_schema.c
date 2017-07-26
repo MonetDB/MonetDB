@@ -227,15 +227,24 @@ table_constraint_name(symbol *s, sql_table *t)
 	slen = strlen(suffix);
 	while (len + slen >= buflen)
 		buflen += BUFSIZ;
-	buf = malloc(buflen);
+	buf = GDKmalloc(buflen);
+	if (!buf) {
+		return NULL;
+	}
 	strcpy(buf, t->base.name);
 
 	/* add column name(s) */
 	for (; nms; nms = nms->next) {
 		slen = strlen(nms->data.sval);
 		while (len + slen + 1 >= buflen) {
+			char *nbuf;
 			buflen += BUFSIZ;
-			buf = realloc(buf, buflen);
+			nbuf = GDKrealloc(buf, buflen);
+			if (!nbuf) {
+				GDKfree(buf);
+				return NULL;
+			}
+			buf = nbuf;
 		}
 		snprintf(buf + len, buflen - len, "_%s", nms->data.sval);
 		len += slen + 1;
@@ -244,8 +253,14 @@ table_constraint_name(symbol *s, sql_table *t)
 	/* add suffix */
 	slen = strlen(suffix);
 	while (len + slen >= buflen) {
+		char *nbuf;
 		buflen += BUFSIZ;
-		buf = realloc(buf, buflen);
+		nbuf = GDKrealloc(buf, buflen);
+		if (!nbuf) {
+			GDKfree(buf);
+			return NULL;
+		}
+		buf = nbuf;
 	}
 	snprintf(buf + len, buflen - len, "%s", suffix);
 
@@ -613,9 +628,11 @@ table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 
 		if (!opt_name)
 			opt_name = table_constraint_name(sym, t);
+		if (opt_name == NULL)
+			return SQL_ERR;
 		res = table_constraint_type(sql, opt_name, sym, ss, t);
 		if (opt_name != l->h->data.sval)
-			free(opt_name);
+			GDKfree(opt_name);
 	}
 
 	if (res != SQL_OK) {

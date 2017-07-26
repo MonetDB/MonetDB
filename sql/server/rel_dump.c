@@ -946,6 +946,11 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 		skipWS(r, pos);
 		set_anti(exp);
 	}
+	/* [ COUNT ] */
+	if (strncmp(r+*pos, "COUNT",  strlen("COUNT")) == 0) {
+		(*pos)+= (int) strlen("COUNT");
+		skipWS( r, pos);
+	}
 	/* [ ASC ] */
 	if (strncmp(r+*pos, "ASC",  strlen("ASC")) == 0) {
 		(*pos)+= (int) strlen("NOT");

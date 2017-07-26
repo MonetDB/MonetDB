@@ -280,7 +280,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 #else
 		logadd("\"prereq\":%s]%s", prereq, prettify);
 #endif
-		
+
 /* EXAMPLE MAL statement argument decomposition
  * The eventparser may assume this layout for ease of parsing
 {
@@ -306,14 +306,14 @@ This information can be used to determine memory footprint and variable life tim
 
 				if( j == pci->retc ){
 					logadd("],%s\"arg\":[",prettify);
-				} 
+				}
 				logadd("{");
 				logadd("\"index\":\"%d\",%s", j,pret);
 				logadd("\"name\":\"%s\",%s", getVarName(mb, getArg(pci,j)), pret);
 				if( getVarSTC(mb,getArg(pci,j))){
 					InstrPtr stc = getInstrPtr(mb, getVarSTC(mb,getArg(pci,j)));
 					if(stc && strcmp(getModuleId(stc),"sql") ==0  && strncmp(getFunctionId(stc),"bind",4)==0)
-						logadd("\"alias\":\"%s.%s.%s\",%s", 
+						logadd("\"alias\":\"%s.%s.%s\",%s",
 							getVarConstant(mb, getArg(stc,stc->retc +1)).val.sval,
 							getVarConstant(mb, getArg(stc,stc->retc +2)).val.sval,
 							getVarConstant(mb, getArg(stc,stc->retc +3)).val.sval, pret);
@@ -335,16 +335,16 @@ This information can be used to determine memory footprint and variable life tim
 						} else
 							logadd("\"kind\":\"%s\",%s", ( d->batPersistence == PERSISTENT ? "persistent":"transient"), pret);
 						total += cnt * d->twidth;
-						total += heapinfo(d->tvheap, d->batCacheid); 
-						total += hashinfo(d->thash, d->batCacheid); 
+						total += heapinfo(d->tvheap, d->batCacheid);
+						total += hashinfo(d->thash, d->batCacheid);
 						total += IMPSimprintsize(d);
 						BBPunfix(d->batCacheid);
-					} 
+					}
 					logadd("\"bid\":\"%d\",%s", bid,pret);
 					logadd("\"count\":\""BUNFMT"\",%s",cnt,pret);
 					logadd("\"size\":" LLFMT",%s", total,pret);
 				} else{
-					char *truncated;
+					char *truncated = NULL;
 					tname = getTypeName(tpe);
 					logadd("\"type\":\"%s\",%s", tname,pret);
 					cv = 0;
@@ -355,7 +355,11 @@ This information can be used to determine memory footprint and variable life tim
 						GDKfree(stmtq);
 						stmtq = truncated;
 					}
-					logadd("\"value\":\"%s\",%s", stmtq,pret);
+					if (stmtq == NULL) {
+						logadd("\"value\":\"(null)\",%s", pret);
+					} else {
+						logadd("\"value\":\"%s\",%s", stmtq, pret);
+					}
 					GDKfree(cv);
 					GDKfree(stmtq);
 				}

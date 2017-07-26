@@ -468,6 +468,7 @@ resetScenario(Client c)
 	c->oldscenario = 0;
 }
 
+/*
 void
 exitScenario(Client c)
 {
@@ -479,6 +480,19 @@ exitScenario(Client c)
 	if (scen->exitSystemCmd)
 		(*scen->exitSystemCmd) (c);
 	c->scenario = NULL;
+}
+*/
+
+void
+exitScenario(Client c)
+{
+	int i;
+	Scenario scen = scenarioRec;
+
+	for (i = 0; i < MAXSCEN && scen->name; i++, scen++) {
+		if (scen->exitSystemCmd)
+			(*scen->exitSystemCmd)(c);
+	}
 }
 
 /*
