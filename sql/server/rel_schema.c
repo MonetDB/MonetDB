@@ -1127,29 +1127,8 @@ rel_drop_type(mvc *sql, dlist *qname, int drop_action)
 
 static sql_rel *
 rel_continuous_queries(mvc *sql, int action) {
-	sql_rel *rel;
-	list *exps;
-	char* err_message;
-
-	switch (action) {
-		case mod_stop_all_continuous:
-			err_message = "STOP";
-			break;
-		case mod_pause_all_continuous:
-			err_message = "PAUSE";
-			break;
-		case mod_resume_all_continuous:
-			err_message = "RESUME";
-			break;
-	}
-
-	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN) {
-		sql_error(sql, 02, "42000!%s ALL CONTINUOUS: insufficient privileges for user '%s'", err_message, stack_get_string(sql, "current_user"));
-		return NULL;
-	}
-
-	rel = rel_create(sql->sa);
-	exps = new_exp_list(sql->sa);
+	sql_rel *rel = rel_create(sql->sa);
+	list *exps = new_exp_list(sql->sa);
 	append(exps, exp_atom_int(sql->sa, action));
 	rel->l = NULL;
 	rel->r = NULL;

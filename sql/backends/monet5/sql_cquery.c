@@ -72,6 +72,15 @@ MT_Lock ttrLock MT_LOCK_INITIALIZER("cqueryLock");
 
 #define SET_HEARTBEATS(X) X * 1000 /* minimal 1 ms */
 
+#define ALL_ROOT_CHECK(cntxt, malcal, name)                                                           \
+	do {                                                                                              \
+		smvc = ((backend *) cntxt->sqlcontext)->mvc;                                                  \
+		if(!smvc)                                                                                     \
+			throw(SQL,malcal,"##name##ALL CONTINUOUS: SQL clients only");                             \
+		 else if (smvc->user_id != USER_MONETDB && smvc->role_id != ROLE_SYSADMIN)                    \
+			throw(SQL,malcal,"##name##ALL CONTINUOUS: insufficient privileges for the current user"); \
+	} while(0);
+
 static void
 CQfree(int idx)
 {
@@ -591,6 +600,7 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
 	str msg = MAL_SUCCEED;
 	InstrPtr sig = getInstrPtr(mb,0),q;
+	MalBlkPtr other;
 	Symbol s;
 	int i, cycles = sqlcontext ? sqlcontext->cycles : int_nil, heartbeats = sqlcontext ? sqlcontext->heartbeats : 1;
 
@@ -617,38 +627,41 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 		goto finish;
 	}
 
+#ifdef DEBUG_CQUERY
+	fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
+#endif
+	MT_lock_set(&ttrLock);
+
 	// access the actual procedure body
 	s = findSymbol(cntxt->nspace, getModuleId(sig), getFunctionId(sig));
 	if ( s == NULL){
 		msg = createException(SQL,"cquery.register","Cannot find procedure %s.%s.\n",
 		getModuleId(sig), getFunctionId(sig));
-		goto finish;
+		goto unlock;
 	} else
 		msg = CQanalysis(cntxt, s->def, pnettop);
 	if( msg != MAL_SUCCEED) {
 		CQfree(pnettop); // restore the entry
-		goto finish;
+		goto unlock;
 	}
-	q = newStmt(mb, sqlRef, transactionRef);
-	if(q == NULL) {
-		msg = createException(SQL,"cquery.register",MAL_MALLOC_FAIL);
-		goto finish;
-	}
-	setArgType(mb,q, 0, TYPE_void);
-	moveInstruction(mb, getPC(mb,q),i);
-	q = newStmt(mb, sqlRef, commitRef);
-	if(q == NULL) {
-		msg = createException(SQL,"cquery.register",MAL_MALLOC_FAIL);
-		goto finish;
-	}
-	setArgType(mb,q, 0, TYPE_void);
-	moveInstruction(mb, getPC(mb,q),i+2);
-	chkProgram(cntxt->fdout, cntxt->nspace, mb);
 
-#ifdef DEBUG_CQUERY
-	fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
-#endif
-	MT_lock_set(&ttrLock);
+	other = copyMalBlk(mb);
+	q = newStmt(other, sqlRef, transactionRef);
+	if(q == NULL) {
+		msg = createException(SQL,"cquery.register",MAL_MALLOC_FAIL);
+		goto unlock;
+	}
+	setArgType(other,q, 0, TYPE_void);
+	moveInstruction(other, getPC(other,q),i);
+	q = newStmt(other, sqlRef, commitRef);
+	if(q == NULL) {
+		msg = createException(SQL,"cquery.register",MAL_MALLOC_FAIL);
+		goto unlock;
+	}
+	setArgType(other,q, 0, TYPE_void);
+	moveInstruction(other, getPC(other,q),i+2);
+	chkProgram(cntxt->fdout, cntxt->nspace, other);
+
 	pnet[pnettop].mod = GDKstrdup(getModuleId(sig));
 	if(pnet[pnettop].mod == NULL) {
 		msg = createException(SQL,"cquery.register",MAL_MALLOC_FAIL);
@@ -662,7 +675,7 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 		goto unlock;
 	}
 
-	pnet[pnettop].stmt = instruction2str(mb,stk,sig,LIST_MAL_CALL);
+	pnet[pnettop].stmt = instruction2str(other,stk,sig,LIST_MAL_CALL);
 	if(pnet[pnettop].stmt == NULL) {
 		msg = createException(SQL,"cquery.register",MAL_MALLOC_FAIL);
 		GDKfree(pnet[pnettop].mod);
@@ -670,9 +683,9 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 		goto unlock;
 	}
 
-	pnet[pnettop].mb = mb;
+	pnet[pnettop].mb = other;
 
-	pnet[pnettop].stk = prepareMALstack(mb, mb->vsize);
+	pnet[pnettop].stk = prepareMALstack(other, other->vsize);
 	if(pnet[pnettop].stk == NULL) {
 		msg = createException(SQL,"cquery.register",MAL_MALLOC_FAIL);
 		GDKfree(pnet[pnettop].mod);
@@ -804,6 +817,9 @@ CQresumeAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	int i;
+	mvc* smvc;
+
+	ALL_ROOT_CHECK(cntxt, "cquery.resume", "RESUME ");
 
 	(void) cntxt;
 	(void) mb;
@@ -889,6 +905,9 @@ CQpauseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	int i;
+	mvc* smvc;
+
+	ALL_ROOT_CHECK(cntxt, "cquery.pause", "PAUSE ");
 
 	(void) cntxt;
 	(void) mb;
@@ -1027,7 +1046,6 @@ CQderegisterInternal(MalBlkPtr mb)
 	}
 	if(idx == pnettop) {
 		msg = createException(SQL, "cquery.stop", "The continuous procedure %s has not yet started\n", mb2str);
-		GDKfree(mb2str);
 		goto finish;
 	}
 	pnet[idx].status = CQSTOP;
@@ -1076,11 +1094,15 @@ CQderegisterAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	int i, limit;
+	mvc* smvc;
+
+	ALL_ROOT_CHECK(cntxt, "cquery.stop", "STOP ");
 
 	(void) cntxt;
 	(void) mb;
 	(void) stk;
 	(void) pci;
+
 	MT_lock_set(&ttrLock);
 	limit = pnettop; // the pnettop value will always decrease in the loop bellow
 
