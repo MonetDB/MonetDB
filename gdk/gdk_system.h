@@ -224,20 +224,13 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 		/* since the lock is in memory that is governed by the */ \
 		/* SQL storage allocator, and hence we have no control */ \
 		/* over when the lock is destroyed and the memory freed */ \
-		if (0 && strncmp((l)->name, "sa_", 3) != 0) {		\
-			MT_Lock * volatile _p;				\
-			/* save a copy for statistical purposes */	\
-			_p = GDKmalloc(sizeof(MT_Lock));		\
+		if (strncmp((l)->name, "sa_", 3) != 0) {		\
+			MT_Lock * volatile *_p;				\
 			while (ATOMIC_TAS(GDKlocklistlock, dummy) != 0) \
 				;					\
-			if (_p) {					\
-				memcpy(_p, l, sizeof(MT_Lock));		\
-				_p->next = GDKlocklist;			\
-				GDKlocklist = _p;			\
-			}						\
-			for (_p = GDKlocklist; _p; _p = _p->next)	\
-				if (_p->next == (l)) {			\
-					_p->next = (l)->next;		\
+			for (_p = &GDKlocklist; *_p; _p = &(*_p)->next)	\
+				if ((l) == *_p) {			\
+					*_p = (l)->next;		\
 					break;				\
 				}					\
 			ATOMIC_CLEAR(GDKlocklistlock, dummy);		\
