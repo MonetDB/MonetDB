@@ -66,6 +66,7 @@ static str monetdb_query(Client c, str query) {
 	(SQLautocommit_ptr)(c, m);
 	if (retval != MAL_SUCCEED) {
 		printf("Failed to execute SQL query: %s\n", query);
+		freeException(retval);
 		exit(1);
 		return MAL_SUCCEED;
 	}
