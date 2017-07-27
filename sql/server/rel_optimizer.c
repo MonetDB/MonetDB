@@ -8761,9 +8761,9 @@ rewrite_topdown(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes)
 	switch (rel->op) {
 	case op_basetable:
 	case op_table:
-		if (rel->op == op_table && rel->l) 
+		if (rel->op == op_table && rel->l && rel->flag != 2) 
 			rel->l = rewrite(sql, rel->l, rewriter, has_changes);
-		if (rel->op == op_table && rel->l) 
+		if (rel->op == op_table && rel->l && rel->flag != 2) 
 			rel->l = rewrite_topdown(sql, rel->l, rewriter, has_changes);
 		break;
 	case op_join: 
