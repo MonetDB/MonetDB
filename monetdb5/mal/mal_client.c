@@ -57,7 +57,7 @@ void
 mal_client_reset(void)
 {
 	MAL_MAXCLIENTS = 0;
-	if ( mal_clients)
+	if (mal_clients) 
 		GDKfree(mal_clients);
 }
 

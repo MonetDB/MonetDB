@@ -190,18 +190,29 @@ SQLprelude(void *ret)
 }
 
 str
-SQLepilogue(void *ret)
+SQLexit(Client c)
 {
-	char *s = "sql", *m = "msql";
-	str res;
-
-	(void) ret;
+#ifdef _SQL_SCENARIO_DEBUG
+	fprintf(stderr, "#SQLexit\n");
+#endif
+	(void) c;		/* not used */
 	MT_lock_set(&sql_contextLock);
 	if (SQLinitialized) {
 		mvc_exit();
 		SQLinitialized = FALSE;
 	}
 	MT_lock_unset(&sql_contextLock);
+	return MAL_SUCCEED;
+}
+
+str
+SQLepilogue(void *ret)
+{
+	char *s = "sql", *m = "msql";
+	str res;
+
+	(void) ret;
+	SQLexit(NULL);
 	/* this function is never called, but for the style of it, we clean
 	 * up our own mess */
 	res = msab_retreatScenario(m);
@@ -265,18 +276,6 @@ SQLinit(void)
 		GDKregister(idlethread);
 	}
 	WLCinit();
-	return MAL_SUCCEED;
-}
-
-str
-SQLexit(Client c)
-{
-#ifdef _SQL_SCENARIO_DEBUG
-	fprintf(stderr, "#SQLexit\n");
-#endif
-	(void) c;		/* not used */
-	if (SQLinitialized == FALSE)
-		throw(SQL, "SQLexit", "Catalogue not available");
 	return MAL_SUCCEED;
 }
 
@@ -436,7 +435,7 @@ SQLinitClient(Client c)
 #ifdef _SQL_SCENARIO_DEBUG
 	fprintf(stderr, "#SQLinitClient\n");
 #endif
-	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
+	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED) 
 		return msg;
 	MT_lock_set(&sql_contextLock);
 	WLRinit();
@@ -604,13 +603,11 @@ SQLinitClient(Client c)
 str
 SQLresetClient(Client c)
 {
+	if (c->sqlcontext == NULL)
+		throw(SQL, "SQLexitClient", "MVC catalogue not available");
 	if (c->sqlcontext) {
-		backend *be = NULL;
-		mvc *m = NULL;
-		if (c->sqlcontext == NULL)
-			throw(SQL, "SQLexitClient", "MVC catalogue not available");
-		be = (backend *) c->sqlcontext;
-		m = be->mvc;
+		backend *be = c->sqlcontext;
+		mvc *m = be->mvc;
 
 		assert(m->session);
 		if (m->session->auto_commit && m->session->active) {

@@ -51,7 +51,6 @@
 #define getcwd _getcwd
 #endif
 
-static int malloc_init = 1;
 #ifdef HAVE_CONSOLE
 static int monet_daemon;
 #endif
@@ -236,7 +235,7 @@ main(int argc, char **av)
 {
 	char *prog = *av;
 	opt *set = NULL;
-	int idx = 0, grpdebug = 0, debug = 0, setlen = 0, listing = 0, i = 0;
+	int i, grpdebug = 0, debug = 0, setlen = 0, listing = 0;
 	str dbinit = NULL;
 	str err = MAL_SUCCEED;
 	char prmodpath[1024];
@@ -286,26 +285,6 @@ main(int argc, char **av)
 	if (setlocale(LC_CTYPE, "") == NULL) {
 		GDKfatal("cannot set locale\n");
 	}
-
-#ifdef HAVE_MALLOPT
-	if (malloc_init) {
-/* for (Red Hat) Linux (6.2) unused and ignored at least as of glibc-2.1.3-15 */
-/* for (Red Hat) Linux (8) used at least as of glibc-2.2.93-5 */
-		if (mallopt(M_MXFAST, 192)) {
-			fprintf(stderr, "!monet: mallopt(M_MXFAST,192) fails.\n");
-			exit(-1);
-		}
-#ifdef M_BLKSZ
-		if (mallopt(M_BLKSZ, 8 * 1024)) {
-			fprintf(stderr, "!monet: mallopt(M_BLKSZ,8*1024) fails.\n");
-			exit(-1);
-		}
-#endif
-	}
-	malloc_init = 0;
-#else
-	(void) malloc_init; /* still unused */
-#endif
 
 	if (getcwd(monet_cwd, PATHLENGTH - 1) == NULL) {
 		perror("pwd");
@@ -487,20 +466,21 @@ main(int argc, char **av)
 	}
 
 	monet_script = (str *) malloc(sizeof(str) * (argc + 1));
-	if (monet_script) {
-		monet_script[idx] = NULL;
-		while (optind < argc) {
-			monet_script[idx] = absolute_path(av[optind]);
-			if ( monet_script[idx] == NULL){
-				fprintf(stderr, "!ERROR: cannot allocate memory for script \n");
-				exit(1);
-			} else {
-				monet_script[idx + 1] = NULL;
-				idx++;
-			}
-			optind++;
-		}
+	if (monet_script == NULL) {
+		fprintf(stderr, "!ERROR: cannot allocate memory for script \n");
+		exit(1);
 	}
+	i = 0;
+	while (optind < argc) {
+		monet_script[i] = absolute_path(av[optind]);
+		if (monet_script[i] == NULL) {
+			fprintf(stderr, "!ERROR: cannot allocate memory for script \n");
+			exit(1);
+		}
+		i++;
+		optind++;
+	}
+	monet_script[i] = NULL;
 	if (!dbpath) {
 		dbpath = absolute_path(mo_find_option(set, setlen, "gdk_dbpath"));
 		if (dbpath == NULL || GDKcreatedir(dbpath) != GDK_SUCCEED) {
@@ -534,7 +514,6 @@ main(int argc, char **av)
 		 * libX/monetdb5/lib/
 		 * probe libX = lib, lib32, lib64, lib/64 */
 		char *libdirs[] = { "lib", "lib64", "lib/64", "lib32", NULL };
-		size_t i;
 		struct stat sb;
 		if (binpath != NULL) {
 			char *p = strrchr(binpath, DIR_SEP);
@@ -677,19 +656,18 @@ main(int argc, char **av)
 		callString(mal_clients, dbinit, listing);
 
 	emergencyBreakpoint();
-	if (monet_script)
-		for (i = 0; monet_script[i]; i++) {
-			str msg = evalFile(mal_clients, monet_script[i], listing);
-			/* check for internal exception message to terminate */
-			if (msg) {
-				if (strcmp(msg, "MALException:client.quit:Server stopped.") == 0)
-					mal_exit();
-				fprintf(stderr, "#%s: %s\n", monet_script[i], msg);
-				freeException(msg);
-			}
-			GDKfree(monet_script[i]);
-			monet_script[i] = 0;
+	for (i = 0; monet_script[i]; i++) {
+		str msg = evalFile(mal_clients, monet_script[i], listing);
+		/* check for internal exception message to terminate */
+		if (msg) {
+			if (strcmp(msg, "MALException:client.quit:Server stopped.") == 0)
+				mal_exit();
+			fprintf(stderr, "#%s: %s\n", monet_script[i], msg);
+			freeException(msg);
 		}
+		GDKfree(monet_script[i]);
+		monet_script[i] = 0;
+	}
 
 	if ((err = msab_registerStarted()) != NULL) {
 		/* throw the error at the user, but don't die */
@@ -697,8 +675,7 @@ main(int argc, char **av)
 		free(err);
 	}
 
-	if (monet_script)
-		free(monet_script);
+	free(monet_script);
 #ifdef HAVE_CONSOLE
 	if (!monet_daemon) {
 		MSserveClient(mal_clients);

@@ -5126,6 +5126,12 @@ data_type:
 		yyerror(m, msg);
 		_DELETE(msg);
 		YYABORT;
+	} else if (geoSubType == -1) {
+		char *msg = sql_message("allocation failure");
+		$$.type = NULL;
+		yyerror(m, msg);
+		_DELETE(msg);
+		YYABORT;
 	}  else if (!sql_find_subtype(&$$, "geometry", geoSubType, 0 )) {
 		char *msg = sql_message("\b22000!type (%s) unknown", $1);
 		yyerror(m, msg);
@@ -5146,6 +5152,11 @@ subgeometry_type:
 		yyerror(m, msg);
 		_DELETE(msg);
 		YYABORT;
+	} else if(subtype == -1) {
+		char *msg = sql_message("allocation failure");
+		yyerror(m, msg);
+		_DELETE(msg);
+		YYABORT;
 	} 
 	$$ = subtype;	
 }
@@ -5155,6 +5166,11 @@ subgeometry_type:
 
 	if(subtype == 0) {
 		char *msg = sql_message("\b22000!type (%s) unknown", geoSubType);
+		yyerror(m, msg);
+		_DELETE(msg);
+		YYABORT;
+	} else if (subtype == -1) {
+		char *msg = sql_message("allocation failure");
 		yyerror(m, msg);
 		_DELETE(msg);
 		YYABORT;
@@ -5953,13 +5969,18 @@ int find_subgeometry_type(char* geoSubType) {
 		if(strLength > 0 ) {
 			char *typeSubStr = malloc(strLength);
 			char flag = geoSubType[strLength-1]; 
-			
+
+			if (typeSubStr == NULL) {
+				return -1;
+			}
 			memcpy(typeSubStr, geoSubType, strLength-1);
 			typeSubStr[strLength-1]='\0';
 			if(flag == 'z' || flag == 'm' ) {
 				subType = find_subgeometry_type(typeSubStr);
-			
-			
+				if (subType == -1) {
+					free(typeSubStr);
+					return -1;
+				}
 				if(flag == 'z')
 					SET_Z(subType);
 				if(flag == 'm')

@@ -597,13 +597,26 @@ exps_count(list *exps)
 static list *
 order_join_expressions(mvc *sql, list *dje, list *rels)
 {
-	list *res = sa_list(sql->sa);
+	list *res;
 	node *n = NULL;
 	int i, j, *keys, *pos, cnt = list_length(dje);
 	int debug = mvc_debug_on(sql, 16);
 
 	keys = (int*)malloc(cnt*sizeof(int));
 	pos = (int*)malloc(cnt*sizeof(int));
+	if (keys == NULL || pos == NULL) {
+		if (keys)
+			free(keys);
+		if (pos)
+			free(pos);
+		return NULL;
+	}
+	res = sa_list(sql->sa);
+	if (res == NULL) {
+		free(keys);
+		free(pos);
+		return NULL;
+	}
 	for (n = dje->h, i = 0; n; n = n->next, i++) {
 		sql_exp *e = n->data;
 
@@ -4824,6 +4837,15 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 		gbe = rel->r;
 		tbls = (sql_table**)malloc(sizeof(sql_table*)*list_length(gbe));
 		bts = (sql_rel**)malloc(sizeof(sql_rel*)*list_length(gbe));
+		if (scores == NULL || tbls == NULL || bts == NULL) {
+			if (scores)
+				free(scores);
+			if (tbls)
+				free(tbls);
+			if (bts)
+				free(bts);
+			return NULL;
+		}
 		for (k = 0, i = 0, n = gbe->h; n; n = n->next, k++) {
 			sql_exp *e = n->data;
 
