@@ -69,7 +69,6 @@ static char *FunctionBasePath(void)
 }
 
 static MT_Lock pyapiLock MT_LOCK_INITIALIZER("pyapiLock");
-static MT_Lock queryLock MT_LOCK_INITIALIZER("queryLock");
 static int pyapiInitialized = FALSE;
 
 int PYFUNCNAME(PyAPIInitialized)(void) {
@@ -1303,10 +1302,8 @@ PYFUNCNAME(PyAPIprelude)(void *ret) {
 #ifdef NEED_MT_LOCK_INIT
 	static int initialized = 0;
 	/* since we don't destroy the lock, only initialize it once */
-	if (!initialized) {
+	if (!initialized)
 		MT_lock_init(&pyapiLock, "pyapi_lock");
-		MT_lock_init(&queryLock, "query_lock");
-	}
 	initialized = 1;
 #endif
 	(void) ret;
