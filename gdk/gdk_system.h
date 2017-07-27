@@ -209,8 +209,11 @@ gdk_export ATOMIC_TYPE volatile GDKlocksleepcnt;
 		/* SQL storage allocator, and hence we have no control */ \
 		/* over when the lock is destroyed and the memory freed */ \
 		if (strncmp((n), "sa_", 3) != 0) {			\
+			MT_Lock * volatile _p;				\
 			while (ATOMIC_TAS(GDKlocklistlock, dummy) != 0) \
 				;					\
+			for (_p = GDKlocklist; _p; _p = _p->next)	\
+				assert(_p != (l));			\
 			(l)->next = GDKlocklist;			\
 			GDKlocklist = (l);				\
 			ATOMIC_CLEAR(GDKlocklistlock, dummy);		\

@@ -700,6 +700,7 @@ GDKreset(int status, int exit)
 	Thread t, s;
 	struct serverthread *st;
 	int farmid;
+	int i;
 
 	if( GDKkey){
 		BBPunfix(GDKkey->batCacheid);
@@ -788,8 +789,16 @@ GDKreset(int status, int exit)
 		GDKnrofthreads = 0;
 		close_stream((stream *) THRdata[0]);
 		close_stream((stream *) THRdata[1]);
-		memset((char*) GDKbatLock,0, sizeof(GDKbatLock));
-		memset((char*) GDKbbpLock,0,sizeof(GDKbbpLock));
+		for (i = 0; i <= BBP_BATMASK; i++) {
+			MT_lock_destroy(&GDKbatLock[i].swap);
+			MT_lock_destroy(&GDKbatLock[i].hash);
+			MT_lock_destroy(&GDKbatLock[i].imprints);
+		}
+		for (i = 0; i <= BBP_THREADMASK; i++) {
+			MT_lock_destroy(&GDKbbpLock[i].alloc);
+			MT_lock_destroy(&GDKbbpLock[i].trim);
+			GDKbbpLock[i].free = 0;
+		}
 
 		memset((char*) GDKthreads, 0, sizeof(GDKthreads));
 		memset((char*) THRdata, 0, sizeof(THRdata));
@@ -798,6 +807,19 @@ GDKreset(int status, int exit)
 		MT_lock_unset(&GDKthreadLock);
 		//gdk_system_reset(); CHECK OUT
 	}
+#ifdef NEED_MT_LOCK_INIT
+	MT_lock_destroy(&MT_system_lock);
+#if defined(USE_PTHREAD_LOCKS) && defined(ATOMIC_LOCK)
+	MT_lock_destroy(&GDKstoppedLock);
+	MT_lock_destroy(&mbyteslock);
+#endif
+	MT_lock_destroy(&GDKnameLock);
+	MT_lock_destroy(&GDKthreadLock);
+	MT_lock_destroy(&GDKtmLock);
+#ifndef NDEBUG
+	MT_lock_destroy(&mallocsuccesslock);
+#endif
+#endif
 #ifndef HAVE_EMBEDDED
 	if (exit) {
 		MT_global_exit(status);

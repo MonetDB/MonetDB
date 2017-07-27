@@ -36,7 +36,7 @@
 #define DEL_TABLE "DELETE FROM lidarfiles;"
 #define ATTACHDIR "CALL lidarattach('%s');"
 
-static MT_Lock mt_lidar_lock;
+static MT_Lock mt_lidar_lock MT_LOCK_INITIALIZER("mt_lidar_lock");
 
 #ifndef NDEBUG
 static
@@ -1076,8 +1076,14 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 LIDARprelude(void *ret) {
+#ifdef NEED_MT_LOCK_INIT
+	static int initialized = 0;
+	/* since we don't destroy the lock, only initialize it once */
+	if (!initialized)
+		MT_lock_init(&mt_lidar_lock, "lidar.lock");
+	initialized = 1;
+#endif
 	(void) ret;
-	MT_lock_init(&mt_lidar_lock, "lidar.lock");
 
 	return MAL_SUCCEED;
 }
