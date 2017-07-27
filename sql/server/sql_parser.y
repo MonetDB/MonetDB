@@ -2090,7 +2090,7 @@ call_procedure_statement:
 	;
 
 heartbeat_set:
-	  /* empty */ { $$ = 1; } /* 1 millisecond, but 0 is also possible */
+	  /* empty */ { $$ = 1000; } /* 1 second, but 0 is also possible */
 	| HEARTBEAT intval { $$ = $2; }
 	;
 
@@ -2109,7 +2109,7 @@ continuous_procedure_statement:
 	| START_CONTINUOUS func_ref
 		{ dlist *l = L();
 		  append_symbol( l, $2);
-		  append_int( l, 1);
+		  append_int( l, 1000);
 		  append_int( l, int_nil);
 		  $$ = _symbol_create_list( SQL_START_CALL, l ); }
 	| STOP_CONTINUOUS func_ref

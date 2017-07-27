@@ -34,8 +34,8 @@ Ready.
 % sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
 % id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
 % int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
-% 4,	5,	85,	4,	1,	1,	5,	5,	5,	4 # length
-[ 8434,	"cqfoo",	"create continuous procedure cqfoo(v integer)\nbegin\n insert into cqtbl values(v);\nend;",	"user",	2,	2,	true,	false,	false,	2000	]
+% 4,	5,	74,	4,	1,	1,	5,	5,	5,	4 # length
+[ 8334,	"cqfoo",	"create procedure cqfoo(v integer)\nbegin\n insert into cqtbl values(v);\nend;",	"user",	2,	2,	true,	false,	false,	2000	]
 #select * from cqtbl;
 % sys.cqtbl # table_name
 % i # name

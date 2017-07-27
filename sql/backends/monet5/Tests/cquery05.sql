@@ -7,9 +7,7 @@ begin
 	insert into cqresult05 (select count(*) from cqresult05);
 end;
 
-start continuous sys.cq_basic();
-
-call cquery."heartbeat"('sys','cq_basic',1000);
+start continuous sys.cq_basic() with heartbeat 1000;
 
 call cquery.wait(2100);
 
@@ -23,7 +21,6 @@ stop continuous sys.cq_basic();
 
 select 'RESULT';
 select * from cqresult05;
-
 
 drop procedure cq_basic;
 drop table cqresult05;

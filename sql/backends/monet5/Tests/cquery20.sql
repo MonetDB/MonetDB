@@ -22,4 +22,3 @@ select * from cqtbl;
 
 drop procedure cqfoo;
 drop table cqtbl;
-

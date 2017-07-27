@@ -323,6 +323,10 @@ SQLrun(Client c, backend *be, mvc *m){
 				setVarFixed(mb, j+retc);
 			}
 			mb->stmt[0]->argc = 1;
+			//set the cq parameters
+			m->continuous = be->q->continuous;
+			m->heartbeats = be->q->heartbeats;
+			m->cycles = be->q->cycles;
 			break;
 		}
 	}

@@ -237,7 +237,7 @@ qc_match(qc *cache, symbol *s, atom **params, int  plen, int key)
 }
 
 cq *
-qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname,  symbol *s, atom **params, int paramlen, int key, int type, char *cmd)
+qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname,  symbol *s, atom **params, int paramlen, int key, int type, char *cmd, int continuous, int heartbeats, int cycles)
 {
 	int i, namelen;
 	// FIXME unchecked_malloc MNEW can return NULL
@@ -270,6 +270,9 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname,  symbol *s, ato
 	namelen = 5 + ((n->id+7)>>3) + ((cache->clientid+7)>>3);
 	n->name = sa_alloc(sa, namelen);
 	strcpy(n->name, qname);
+	n->continuous = continuous;
+	n->heartbeats = heartbeats;
+	n->cycles = cycles;
 	cache->q = n;
 	return n;
 }

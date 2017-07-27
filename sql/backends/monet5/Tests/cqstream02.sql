@@ -17,10 +17,7 @@ insert into stmp10 values('2005-09-23 12:34:27.000',1,11.0);
 insert into stmp10 values('2005-09-23 12:34:28.000',1,13.0);
 insert into stmp10 values('2005-09-23 12:34:28.000',1,15.0);
 
-start continuous sys.cq_collector();
-
--- Run the query a few times
-call cquery."cycles"(3);
+start continuous sys.cq_collector() with cycles 3;
 
 call cquery.wait(1000);
 
@@ -32,4 +29,3 @@ select * from tmp_aggregate;
 drop procedure cq_collector;
 drop table stmp10;
 drop table tmp_aggregate;
-

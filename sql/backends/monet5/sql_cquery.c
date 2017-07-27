@@ -70,7 +70,8 @@ static int pnstatus = CQINIT;
 static int cycleDelay = 200; /* be careful, it affects response/throughput timings */
 MT_Lock ttrLock MT_LOCK_INITIALIZER("cqueryLock");
 
-#define SET_HEARTBEATS(X) X * 1000 /* minimal 1 ms */
+#define DEFAULT_HEARTBEAT  1000 /* 1 second */
+#define SET_HEARTBEATS(X)  X * 1000 /* minimal 1 ms */
 
 #define ALL_ROOT_CHECK(cntxt, malcal, name)                                                           \
 	do {                                                                                              \
@@ -602,7 +603,7 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	InstrPtr sig = getInstrPtr(mb,0),q;
 	MalBlkPtr other;
 	Symbol s;
-	int i, cycles = sqlcontext ? sqlcontext->cycles : int_nil, heartbeats = sqlcontext ? sqlcontext->heartbeats : 1;
+	int i, cycles = sqlcontext ? sqlcontext->cycles : int_nil, heartbeats = sqlcontext ? sqlcontext->heartbeats : DEFAULT_HEARTBEAT;
 
 	(void) pci;
 
@@ -646,9 +647,14 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	}
 
 	other = copyMalBlk(mb);
+	if(other == NULL) {
+		msg = createException(SQL,"cquery.register",MAL_MALLOC_FAIL);
+		goto unlock;
+	}
 	q = newStmt(other, sqlRef, transactionRef);
 	if(q == NULL) {
 		msg = createException(SQL,"cquery.register",MAL_MALLOC_FAIL);
+		freeMalBlk(other);
 		goto unlock;
 	}
 	setArgType(other,q, 0, TYPE_void);
@@ -656,6 +662,7 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	q = newStmt(other, sqlRef, commitRef);
 	if(q == NULL) {
 		msg = createException(SQL,"cquery.register",MAL_MALLOC_FAIL);
+		freeMalBlk(other);
 		goto unlock;
 	}
 	setArgType(other,q, 0, TYPE_void);
@@ -665,12 +672,14 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	pnet[pnettop].mod = GDKstrdup(getModuleId(sig));
 	if(pnet[pnettop].mod == NULL) {
 		msg = createException(SQL,"cquery.register",MAL_MALLOC_FAIL);
+		freeMalBlk(other);
 		goto unlock;
 	}
 
 	pnet[pnettop].fcn = GDKstrdup(getFunctionId(sig));
 	if(pnet[pnettop].fcn == NULL) {
 		msg = createException(SQL,"cquery.register",MAL_MALLOC_FAIL);
+		freeMalBlk(other);
 		GDKfree(pnet[pnettop].mod);
 		goto unlock;
 	}
@@ -678,6 +687,7 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	pnet[pnettop].stmt = instruction2str(other,stk,sig,LIST_MAL_CALL);
 	if(pnet[pnettop].stmt == NULL) {
 		msg = createException(SQL,"cquery.register",MAL_MALLOC_FAIL);
+		freeMalBlk(other);
 		GDKfree(pnet[pnettop].mod);
 		GDKfree(pnet[pnettop].fcn);
 		goto unlock;
@@ -688,6 +698,7 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	pnet[pnettop].stk = prepareMALstack(other, other->vsize);
 	if(pnet[pnettop].stk == NULL) {
 		msg = createException(SQL,"cquery.register",MAL_MALLOC_FAIL);
+		freeMalBlk(other);
 		GDKfree(pnet[pnettop].mod);
 		GDKfree(pnet[pnettop].fcn);
 		GDKfree(pnet[pnettop].stmt);
@@ -714,7 +725,7 @@ CQresumeInternal(Client cntxt, MalBlkPtr mb, int with_alter)
 {
 	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
 	str msg = MAL_SUCCEED, mb2str = NULL;
-	int idx = 0, cycles = int_nil, heartbeats = 1;
+	int idx = 0, cycles = int_nil, heartbeats = DEFAULT_HEARTBEAT;
 
 #ifdef DEBUG_CQUERY
 	fprintf(stderr, "#resume scheduler\n");

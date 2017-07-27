@@ -1138,7 +1138,11 @@ SQLparser(Client c)
 					  m->args,	/* the argument list */
 					  m->argc, m->scanner.key ^ m->session->schema->base.id,	/* the statement hash key */
 					  m->emode == m_prepare ? Q_PREPARE : m->type,	/* the type of the statement */
-					  sql_escape_str(q));
+					  sql_escape_str(q),
+					  m->continuous,
+					  m->heartbeats,
+					  m->cycles
+			);
 			GDKfree(q);
 			scanner_query_processed(&(m->scanner));
 			be->q->code = (backend_code) backend_dumpproc(be, c, be->q, r);
