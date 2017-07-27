@@ -1,3 +1,10 @@
+monetdb (11.27.5) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6375: MAL profiler truncates JSON objects larger than 8192 characters
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 27 Jul 2017 12:56:09 +0200
+
 monetdb (11.27.3) unstable; urgency=low
 
   * Rebuilt.

@@ -1039,6 +1039,10 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Thu Jul 27 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.5-20170727
+- Rebuilt.
+- BZ#6375: MAL profiler truncates JSON objects larger than 8192 characters
+
 * Tue Jul 25 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.3-20170725
 - Rebuilt.
 - BZ#6325: Merge table unusable in other connections
