@@ -45,13 +45,13 @@ comment "Remove tuples from a basket";
 pattern clear_table(sname:str,tname:str):lng
 address mvc_clear_table_wrap;
 
-pattern window(sch:str, tbl:str, elm:int):int
-address BSKTwindow
-comment "Set window size";
+# pattern window(sch:str, tbl:str, elm:int):int
+# address BSKTwindow
+# comment "Set window size";
 
-pattern window(sch:str, tbl:str, elm:int, stride:int):int
-address BSKTwindow
-comment "Set window size and stride";
+# pattern window(sch:str, tbl:str, elm:int, stride:int):int
+# address BSKTwindow
+# comment "Set window size and stride";
 
 unsafe pattern tumble(mvc:any, sch:str, tbl:str):int
 address BSKTtumble

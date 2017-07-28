@@ -1091,6 +1091,16 @@ alter_statement:
 	  append_string(p, $10);
 	  append_list(l, p);
 	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
+ | ALTER STREAM TABLE qname SET WINDOW intval
+	{ dlist *l = L();
+	  append_list(l, $4);
+	  append_symbol(l, _symbol_create_int(SQL_STREAM_TABLE_WINDOW, $7));
+	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
+ | ALTER STREAM TABLE qname SET STRIDE intval
+	{ dlist *l = L();
+	  append_list(l, $4);
+	  append_symbol(l, _symbol_create_int(SQL_STREAM_TABLE_STRIDE, $7));
+	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
   ;
 
 passwd_schema:
@@ -1330,14 +1340,13 @@ table_opt_storage:
  ;
 
 stream_window_set:
-    /* empty */   { $$ = DEFAULT_TABLE_WINDOW; } /* delete all tuples from the stream table each cycle */
- |  NO WINDOW     { $$ = DEFAULT_TABLE_WINDOW; }
- |  WINDOW intval { $$ = $2; }
+    /* empty */           { $$ = DEFAULT_TABLE_WINDOW; } /* don't set a window constraint, make CP time based */
+ |  WINDOW intval         { $$ = $2; }                   /* trigger every N tuples */
  ;
 
 stream_stride_set:
-    /* empty */   { $$ = DEFAULT_TABLE_STRIDE; } /* don't stride the table */
- |  STRIDE intval { $$ = $2; }
+    /* empty */   { $$ = DEFAULT_TABLE_STRIDE; } /* never tumble tuples */
+ |  STRIDE intval { $$ = $2; }                   /* tumble N tuples each cycle */
  ;
 
 stream_table_details:

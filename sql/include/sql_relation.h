@@ -139,6 +139,7 @@ typedef struct expression {
 #define DDL_ALTER_TABLE_ADD_TABLE  63
 #define DDL_ALTER_TABLE_DEL_TABLE  64
 #define DDL_ALTER_TABLE_SET_ACCESS 65
+#define DDL_ALTER_STREAM_TABLE     66
 
 #define DDL_EMPTY 100
 

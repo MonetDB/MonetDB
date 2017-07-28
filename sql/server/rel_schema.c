@@ -911,7 +911,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 	if(tt == tt_stream) {
 		window_size = stream_details->h->data.i_val;
 		stride = stream_details->h->next->data.i_val;
-		if(window_size < -1)
+		if(window_size < 0)
 			return sql_error(sql, 02, "42000!CREATE TABLE: window size must be non negative");
 		if(stride < 0)
 			return sql_error(sql, 02, "42000!CREATE TABLE: stride size must be non negative");
@@ -1213,6 +1213,26 @@ rel_schema(sql_allocator *sa, int cat_type, char *sname, char *auth, int nr)
 }
 
 static sql_rel *
+rel_alter_stream_table(sql_allocator *sa, char *sname, char *tname, int operation, int value)
+{
+	sql_rel *rel = rel_create(sa);
+	list *exps = new_exp_list(sa);
+
+	append(exps, exp_atom_clob(sa, sname));
+	append(exps, exp_atom_clob(sa, tname));
+	append(exps, exp_atom_int(sa, operation));
+	append(exps, exp_atom_int(sa, value));
+	rel->l = NULL;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = DDL_ALTER_STREAM_TABLE;
+	rel->exps = exps;
+	rel->card = 0;
+	rel->nrcols = 0;
+	return rel;
+}
+
+static sql_rel *
 rel_create_schema(mvc *sql, dlist *auth_name, dlist *schema_elements, int ignore_in_use)
 {
 	char *name = dlist_get_schema_name(auth_name);
@@ -1315,6 +1335,29 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te)
 
 		if (t->persistence != SQL_DECLARED_TABLE)
 			sname = s->base.name;
+
+		if (t && te && (te->token == SQL_STREAM_TABLE_WINDOW || te->token == SQL_STREAM_TABLE_STRIDE)) {
+			int operation, new_value = te->data.i_val;
+			char* opname;
+
+			if(!isStream(t))
+				return sql_error(sql, 02, "42S02!ALTER STREAM TABLE: table '%s' is not a stream table", tname);
+			switch (te->token) {
+				case SQL_STREAM_TABLE_WINDOW:
+					operation = CHANGE_WINDOW;
+					opname = "window";
+					break;
+				case SQL_STREAM_TABLE_STRIDE:
+					operation = CHANGE_STRIDE;
+					opname = "stride";
+					break;
+				default:
+					assert(0);
+			}
+			if(new_value < 0)
+				return sql_error(sql, 02, "42S02!ALTER STREAM TABLE: %s size must be non negative", opname);
+			return rel_alter_stream_table(sql->sa, sname, tname, operation, new_value);
+		}
 
 		if (te && (te->token == SQL_TABLE || te->token == SQL_DROP_TABLE)) {
 			char *ntname = te->data.lval->h->data.sval;

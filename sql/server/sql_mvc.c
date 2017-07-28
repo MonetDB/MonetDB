@@ -1329,6 +1329,29 @@ mvc_access(mvc *m, sql_table *t, sht access)
 	return sql_trans_alter_access(m->session->tr, t, access);
 }
 
+sql_table *
+mvc_alter_stream_table(mvc *m, sql_table *t, int operation, int value)
+{
+	if (mvc_debug)
+		fprintf(stderr, "#mvc_alter_stream_table %s %d %d\n", t->base.name, operation, value);
+
+	if (t->persistence == SQL_DECLARED_TABLE) {
+		assert(t->stream);
+		switch(operation) {
+			case CHANGE_WINDOW:
+				t->stream->window = value;
+				break;
+			case CHANGE_STRIDE:
+				t->stream->stride = value;
+				break;
+			default:
+				assert(0);
+		}
+		return t;
+	}
+	return sql_trans_alter_stream_table(m->session->tr, t, operation, value);
+}
+
 int 
 mvc_is_sorted(mvc *m, sql_column *col)
 {

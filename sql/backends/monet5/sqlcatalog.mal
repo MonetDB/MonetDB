@@ -163,3 +163,6 @@ pattern alter_set_table( sname:str, tnme:str, access:int)
 address SQLalter_set_table 
 comment "Catalog operation alter_set_table";
 
+pattern alter_stream_table( sname:str, tnme:str, operation:int, value:int)
+address SQLalter_stream_table
+comment "Catalog operation alter_stream_table";

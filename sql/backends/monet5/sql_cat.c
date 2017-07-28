@@ -179,6 +179,39 @@ alter_table_set_access(mvc *sql, char *sname, char *tname, int access)
 }
 
 static char *
+alter_stream_table(mvc *sql, char *sname, char *tname, int operation, int value)
+{
+	sql_schema *s = mvc_bind_schema(sql, sname);
+	sql_table *t = NULL;
+    char* opname;
+
+	if (s)
+		t = mvc_bind_table(sql, s, tname);
+	if (t) {
+		if (!isStream(t))
+			return sql_message("42S02!ALTER STREAM TABLE: table '%s' is not a stream table", sname);
+
+		switch (operation) {
+			case CHANGE_WINDOW:
+				opname = "window";
+				break;
+			case CHANGE_STRIDE:
+				 opname = "stride";
+				break;
+			default:
+				assert(0);
+		}
+		if(value < 0)
+			return sql_message("42S02!ALTER STREAM TABLE: %s size must be non negative", opname);
+
+		mvc_alter_stream_table(sql, t, operation, value);
+	} else {
+		return sql_message("42S02!ALTER STREAM TABLE: no such table '%s' in schema '%s'", tname, sname);
+	}
+	return MAL_SUCCEED;
+}
+
+static char *
 create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, int orientation, int event, char *old_name, char *new_name, char *condition, char *query)
 {
 	sql_trigger *tri = NULL;
@@ -1316,6 +1349,21 @@ SQLalter_set_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	initcontext();
 	msg = alter_table_set_access(sql, sname, tname, access);
+
+	return msg;
+}
+
+str
+SQLalter_stream_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{	mvc *sql = NULL;
+	str msg;
+	str sname = *getArgReference_str(stk, pci, 1);
+	char *tname = SaveArgReference(stk, pci, 2);
+	int operation = *getArgReference_int(stk, pci, 3);
+	int value = *getArgReference_int(stk, pci, 4);
+
+	initcontext();
+	msg = alter_stream_table(sql, sname, tname, operation, value);
 
 	return msg;
 }

@@ -40,6 +40,7 @@ str alter_triggerRef;
 str alter_add_tableRef;
 str alter_del_tableRef;
 str alter_set_tableRef;
+str alter_stream_tableRef;
 str attachRef;
 str avgRef;
 str batRef;
@@ -338,6 +339,7 @@ void optimizerInit(void)
 	alter_add_tableRef = putName("alter_add_table");
 	alter_del_tableRef = putName("alter_del_table");
 	alter_set_tableRef = putName("alter_set_table");
+	alter_stream_tableRef = putName("alter_stream_table");
 	avgRef = putName("avg");
 	arrayRef = putName("array");
 	batRef = putName("bat");

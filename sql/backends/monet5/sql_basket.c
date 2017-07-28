@@ -194,7 +194,8 @@ BSKTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     return msg;
 }
 
-/*str
+/* Not being used, so comment for now
+str
 BSKTwindow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str sch = *getArgReference_str(stk,pci,1);
@@ -221,9 +222,9 @@ BSKTwindow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	baskets[idx].window = window;
 	baskets[idx].stride = stride;
 	return MAL_SUCCEED;
-}*/
+}
 
-/*str Not being used, hence comment for now
+str
 BSKTkeep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str sch = *getArgReference_str(stk,pci,1);
@@ -245,9 +246,9 @@ BSKTkeep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( baskets[idx].window >= 0)
 		baskets[idx].window = - baskets[idx].window -1;
 	return MAL_SUCCEED;
-}*/
+}
 
-/*str
+str
 BSKTrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str sch = *getArgReference_str(stk,pci,1);

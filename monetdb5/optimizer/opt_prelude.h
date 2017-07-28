@@ -39,6 +39,7 @@ mal_export  str alter_triggerRef;
 mal_export  str alter_add_tableRef;
 mal_export  str alter_del_tableRef;
 mal_export  str alter_set_tableRef;
+mal_export  str alter_stream_tableRef;
 mal_export  str avgRef;
 mal_export  str arrayRef;
 mal_export  str batRef;

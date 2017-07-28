@@ -108,11 +108,14 @@
 #define dt_schema 	"%dt%"
 #define isDeclaredSchema(s) 	(strcmp(s->base.name, dt_schema) == 0)
 
-/* continuous queries parameters */
+/* continuous queries default parameters */
 #define DEFAULT_CP_HEARTBEAT     1000 /* 1 second */
 #define DEFAULT_CP_CYCLES     int_nil /* run forever */
-#define DEFAULT_TABLE_WINDOW       -1 /* delete all tuples */
-#define DEFAULT_TABLE_STRIDE        0 /* the number of tuples required to trigger a CQ in the table */
+#define DEFAULT_TABLE_WINDOW        0 /* run independently of the number of tuples in the table */
+#define DEFAULT_TABLE_STRIDE        0 /* never discard tuples */
+
+#define CHANGE_WINDOW 1
+#define CHANGE_STRIDE 2
 
 extern const char *TID;
 
