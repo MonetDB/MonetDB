@@ -125,6 +125,9 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 		MSresetClientPrg(cntxt);
 		return;
 	}
+	if (cntxt->nspace == 0) {
+		cntxt->nspace = newModule(NULL, putName("user"));
+	}
 	cntxt->curprg = newFunction(putName("user"), putName(nme), FUNCTIONsymbol);
 	if( cntxt->curprg == 0){
 		GDKerror("MSinitClientPrg" "Failed to create function");
