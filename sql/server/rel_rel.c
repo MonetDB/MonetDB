@@ -104,6 +104,7 @@ rel_copy( sql_allocator *sa, sql_rel *i )
 	rel->l = NULL;
 	rel->r = NULL;
 	rel->card = i->card;
+	rel->flag = i->flag;
 
 	switch(i->op) {
 	case op_basetable:

@@ -5837,7 +5837,7 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 	case op_basetable:
 	case op_table:
 
-		if (rel->op == op_table && rel->l) {
+		if (rel->op == op_table && rel->l && rel->flag != 2) {
 			rel_used(rel);
 			if (rel->r)
 				exp_mark_used(rel->l, rel->r);
@@ -6086,7 +6086,7 @@ rel_dce_refs(mvc *sql, sql_rel *rel)
 	case op_groupby: 
 	case op_select: 
 
-		if (rel->l)
+		if (rel->l && (rel->op != op_table || rel->flag != 2))
 			l = rel_dce_refs(sql, rel->l);
 
 	case op_basetable:
@@ -6150,7 +6150,7 @@ rel_dce_down(mvc *sql, sql_rel *rel, list *refs, int skip_proj)
 	case op_basetable:
 	case op_table:
 
-		if (skip_proj && rel->l && rel->op == op_table)
+		if (skip_proj && rel->l && rel->op == op_table && rel->flag != 2)
 			rel->l = rel_dce_down(sql, rel->l, refs, 0);
 		if (!skip_proj)
 			rel_dce_sub(sql, rel, refs);
@@ -8316,7 +8316,7 @@ rel_apply_rename(mvc *sql, sql_rel *rel)
 	case op_basetable:
 		return rel;
 	case op_table:
-		if (rel->l)
+		if (rel->l && rel->flag != 2)
 			rel->l = rel_apply_rename(sql, rel->l);
 		return rel;
 	case op_project:
@@ -8483,7 +8483,7 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 		return l;
 	}
 	/* table function (TODO should output any input cols) */
-	if (r->op == op_table && r->l) {
+	if (r->op == op_table && r->l && rel->flag != 2) {
 		assert(0);
 		r->l = rel->l;
 		return r;
