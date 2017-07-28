@@ -31,6 +31,7 @@ MAPI  = (monetdb) /var/tmp/mtest-24395/.s.monetdb.39287
 QUERY = pause continuous cq_basic06(); --error
 
 
+
 # 10:26:39 >  
 # 10:26:39 >  "Done."
 # 10:26:39 >  

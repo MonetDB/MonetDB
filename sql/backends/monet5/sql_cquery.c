@@ -70,7 +70,6 @@ static int pnstatus = CQINIT;
 static int cycleDelay = 200; /* be careful, it affects response/throughput timings */
 MT_Lock ttrLock MT_LOCK_INITIALIZER("cqueryLock");
 
-#define DEFAULT_HEARTBEAT  1000 /* 1 second */
 #define SET_HEARTBEATS(X)  X * 1000 /* minimal 1 ms */
 
 #define ALL_ROOT_CHECK(cntxt, malcal, name)                                                           \
@@ -385,8 +384,8 @@ CQanalysis(Client cntxt, MalBlkPtr mb, int idx)
 
 			// we only need a single column for window size testing
 			for( j=0; j< MAXSTREAMS && pnet[idx].baskets[j]; j++)
-			if( strcmp(sch, baskets[pnet[idx].baskets[j]].schema) == 0 &&
-				strcmp(tbl, baskets[pnet[idx].baskets[j]].table) == 0 )
+			if( strcmp(sch, baskets[pnet[idx].baskets[j]].table->s->base.name) == 0 &&
+				strcmp(tbl, baskets[pnet[idx].baskets[j]].table->base.name) == 0 )
 				break;
 			if ( j == MAXSTREAMS){
 				msg = createException(MAL,"cquery.analysis","too many stream table columns\n");
@@ -402,8 +401,8 @@ CQanalysis(Client cntxt, MalBlkPtr mb, int idx)
 
 		// Pick up the window constraint from the query definition
 		if (getModuleId(p) == cqueryRef && getFunctionId(p) == windowRef){
-			int window = getVarConstant(mb, getArg(p,3)).val.ival;
-			int stride;
+			/*int window = getVarConstant(mb, getArg(p,3)).val.ival;
+			int stride;*/
 			sch = getVarConstant(mb, getArg(p,1)).val.sval;
 			tbl = getVarConstant(mb, getArg(p,2)).val.sval;
 
@@ -419,11 +418,11 @@ CQanalysis(Client cntxt, MalBlkPtr mb, int idx)
 					}
 				}
 			}
-			if( p->argc == 5)
+			/*if( p->argc == 5)
 				stride = getVarConstant(mb, getArg(p,4)).val.ival;
 			else stride = window;
 			baskets[bskt].window = window;
-			baskets[bskt].stride = stride;
+			baskets[bskt].stride = stride;*/
 		}
 	}
 	return msg;
@@ -603,11 +602,11 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	InstrPtr sig = getInstrPtr(mb,0),q;
 	MalBlkPtr other;
 	Symbol s;
-	int i, cycles = sqlcontext ? sqlcontext->cycles : int_nil, heartbeats = sqlcontext ? sqlcontext->heartbeats : DEFAULT_HEARTBEAT;
+	int i, cycles = sqlcontext ? sqlcontext->cycles : DEFAULT_CP_CYCLES, heartbeats = sqlcontext ? sqlcontext->heartbeats : DEFAULT_CP_HEARTBEAT;
 
 	(void) pci;
 
-	if(cycles < 0 && cycles != int_nil){
+	if(cycles < 0 && cycles != DEFAULT_CP_CYCLES){
 		msg = createException(SQL,"cquery.register","The cycles value must be non negative\n");
 		goto finish;
 	}
@@ -643,6 +642,10 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 		msg = CQanalysis(cntxt, s->def, pnettop);
 	if( msg != MAL_SUCCEED) {
 		CQfree(pnettop); // restore the entry
+		goto unlock;
+	}
+	if(heartbeats != DEFAULT_CP_HEARTBEAT && pnet[pnettop].baskets[0]) {
+		msg = createException(SQL, "cquery.register", "Heartbeat ignored, a window constraint exists\n");
 		goto unlock;
 	}
 
@@ -725,7 +728,7 @@ CQresumeInternal(Client cntxt, MalBlkPtr mb, int with_alter)
 {
 	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
 	str msg = MAL_SUCCEED, mb2str = NULL;
-	int idx = 0, cycles = int_nil, heartbeats = DEFAULT_HEARTBEAT;
+	int idx = 0, cycles = DEFAULT_CP_CYCLES, heartbeats = DEFAULT_CP_HEARTBEAT;
 
 #ifdef DEBUG_CQUERY
 	fprintf(stderr, "#resume scheduler\n");
@@ -734,7 +737,7 @@ CQresumeInternal(Client cntxt, MalBlkPtr mb, int with_alter)
 	if(with_alter && sqlcontext) {
 		cycles = sqlcontext->cycles;
 		heartbeats = sqlcontext->heartbeats;
-		if(cycles < 0 && cycles != int_nil){
+		if(cycles < 0 && cycles != DEFAULT_CP_CYCLES){
 			msg = createException(SQL,"cquery.resume","The cycles value must be non negative\n");
 			goto finish;
 		}
@@ -757,6 +760,10 @@ CQresumeInternal(Client cntxt, MalBlkPtr mb, int with_alter)
 		msg = createException(SQL, "cquery.resume", "The continuous procedure %s is already running\n", mb2str);
 		goto unlock;
 	}
+	if(with_alter && heartbeats != DEFAULT_CP_HEARTBEAT && pnet[idx].baskets[0]) {
+		msg = createException(SQL, "cquery.resume", "Heartbeat ignored, a window constraint exists\n");
+		goto unlock;
+	}
 
 	pnet[idx].status = CQWAIT;
 	if(with_alter) {
@@ -770,9 +777,9 @@ CQresumeInternal(Client cntxt, MalBlkPtr mb, int with_alter)
 	}
 
 unlock:
+	MT_lock_unset(&ttrLock);
 	if(mb2str)
 		GDKfree(mb2str);
-	MT_lock_unset(&ttrLock);
 finish:
 	return msg;
 }
@@ -830,7 +837,7 @@ CQresumeAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i;
 	mvc* smvc;
 
-	ALL_ROOT_CHECK(cntxt, "cquery.resume", "RESUME ");
+	ALL_ROOT_CHECK(cntxt, "cquery.resumeall", "RESUME ");
 
 	(void) cntxt;
 	(void) mb;
@@ -847,9 +854,11 @@ CQresumeAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* start the scheduler if needed */
 	if(CQinit == 0) {
+		MT_lock_unset(&ttrLock);
 		msg = CQstartScheduler();
+	} else {
+		MT_lock_unset(&ttrLock);
 	}
-	MT_lock_unset(&ttrLock);
 	return msg;
 }
 
@@ -882,9 +891,9 @@ CQpauseInternal(MalBlkPtr mb)
 	pnet[idx].status = CQPAUSE;
 
 finish:
+	MT_lock_unset(&ttrLock);
 	if(mb2str)
 		GDKfree(mb2str);
-	MT_lock_unset(&ttrLock);
 	return msg;
 }
 
@@ -918,7 +927,7 @@ CQpauseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i;
 	mvc* smvc;
 
-	ALL_ROOT_CHECK(cntxt, "cquery.pause", "PAUSE ");
+	ALL_ROOT_CHECK(cntxt, "cquery.pauseall", "PAUSE ");
 
 	(void) cntxt;
 	(void) mb;
@@ -982,7 +991,7 @@ CQsetbeat(int idx, int beats)
 {
 	int i;
 	for( i=0; i < MAXSTREAMS; i++)
-	if( pnet[idx].inout[i] == STREAM_IN && baskets[pnet[idx].baskets[i]].window){
+	if( pnet[idx].inout[i] == STREAM_IN && baskets[pnet[idx].baskets[i]].table->stream->window){
 		// can not set the beat due to stream window constraint
 		pnet[idx].beats = lng_nil;
 		return;
@@ -1020,7 +1029,7 @@ CQheartbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	for( ; idx < last; idx++){
 		if( pnet[idx].baskets[0]){
-			msg = createException(SQL,"cquery.heartbeat","Beat ignored, a window constraint exists\n");
+			msg = createException(SQL,"cquery.heartbeat","Heartbeat ignored, a window constraint exists\n");
 			break;
 		}
 		CQsetbeat(idx, beats);
@@ -1052,11 +1061,11 @@ CQderegisterInternal(MalBlkPtr mb)
 	str msg = MAL_SUCCEED, mb2str = NULL;
 
 	MT_lock_set(&ttrLock);
-	if(CQlocateMb(mb, &idx, &mb2str, "cquery.stop") != MAL_SUCCEED) {
+	if(CQlocateMb(mb, &idx, &mb2str, "cquery.deregister") != MAL_SUCCEED) {
 		goto finish;
 	}
 	if(idx == pnettop) {
-		msg = createException(SQL, "cquery.stop", "The continuous procedure %s has not yet started\n", mb2str);
+		msg = createException(SQL, "cquery.deregister", "The continuous procedure %s has not yet started\n", mb2str);
 		goto finish;
 	}
 	pnet[idx].status = CQSTOP;
@@ -1097,7 +1106,7 @@ CQderegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if( k>= 0 )
 		return CQderegisterInternal(mb);
-	throw(SQL,"cquery.stop","The continuous procedure %s.%s was not found\n", getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
+	throw(SQL,"cquery.deregister","The continuous procedure %s.%s was not found\n", getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
 }
 
 str
@@ -1107,7 +1116,7 @@ CQderegisterAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i, limit;
 	mvc* smvc;
 
-	ALL_ROOT_CHECK(cntxt, "cquery.stop", "STOP ");
+	ALL_ROOT_CHECK(cntxt, "cquery.deregisterall", "STOP ");
 
 	(void) cntxt;
 	(void) mb;
@@ -1152,12 +1161,12 @@ CQdump(void *ret)
 			fprintf(stderr, " streams ");
 		for (k = 0; k < MAXSTREAMS && pnet[i].baskets[k]; k++)
 		if( pnet[i].inout[k] == STREAM_IN)
-			fprintf(stderr, "%s.%s ", baskets[pnet[i].baskets[k]].schema, baskets[pnet[i].baskets[k]].table);
+			fprintf(stderr, "%s.%s ", baskets[pnet[i].baskets[k]].table->s->base.name, baskets[pnet[i].baskets[k]].table->base.name);
 		if( pnet[i].inout[0])
 			fprintf(stderr, " --> ");
 		for (k = 0; k < MAXSTREAMS && pnet[i].baskets[k]; k++)
 		if( pnet[i].inout[k] == STREAM_OUT)
-			fprintf(stderr, "%s.%s ", baskets[pnet[i].baskets[k]].schema, baskets[pnet[i].baskets[k]].table);
+			fprintf(stderr, "%s.%s ", baskets[pnet[i].baskets[k]].table->s->base.name, baskets[pnet[i].baskets[k]].table->base.name);
 		if (pnet[i].error)
 			fprintf(stderr, " errors:%s", pnet[i].error);
 		fprintf(stderr, "\n");
@@ -1240,7 +1249,7 @@ CQscheduler(void *dummy)
 		MT_lock_set(&ttrLock); // analysis should be done with exclusive access
 		for (k = i = 0; i < pnettop; i++)
 		if ( pnet[i].status == CQWAIT ){
-			pnet[i].enabled = pnet[i].error == 0 && (pnet[i].cycles > 0 || pnet[i].cycles == int_nil);
+			pnet[i].enabled = pnet[i].error == 0 && (pnet[i].cycles > 0 || pnet[i].cycles == DEFAULT_CP_CYCLES);
 
 			/* Queries are triggered by the heartbeat or  all window constraints */
 			/* A heartbeat in combination with a window constraint is ambiguous */
@@ -1255,13 +1264,13 @@ CQscheduler(void *dummy)
 					fprintf(stderr,"#beat %s.%s  "LLFMT"("LLFMT") %s\n", pnet[i].mod, pnet[i].fcn,
 						pnet[i].run + pnet[i].beats, now, (pnet[i].enabled? "enabled":"disabled"));
 #endif
-					}
 				}
+			}
 
 			/* check if all input baskets are available */
 			for (j = 0; pnet[i].enabled && pnet[i].baskets[j] && (b = baskets[pnet[i].baskets[j]].bats[0]); j++)
 				/* consider execution only if baskets are properly filled */
-				if ( pnet[i].inout[j] == STREAM_IN && (BUN) baskets[pnet[i].baskets[j]].window > BATcount(b)){
+				if ( pnet[i].inout[j] == STREAM_IN && (BUN) baskets[pnet[i].baskets[j]].table->stream->window > BATcount(b)){
 					pnet[i].enabled = 0;
 					break;
 				}
@@ -1324,7 +1333,7 @@ CQscheduler(void *dummy)
 					msg= createException(MAL,"petrinet.scheduler","Can not fork the thread");
 				} else
 */
-			if( pnet[i].cycles != int_nil && pnet[i].cycles > 0)
+			if( pnet[i].cycles != DEFAULT_CP_CYCLES && pnet[i].cycles > 0)
 				pnet[i].cycles--;
 			pnet[i].run = now;				/* last executed */
 			pnet[i].time = GDKusec() - t;   /* keep around in microseconds */

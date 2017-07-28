@@ -47,8 +47,8 @@ BSKTlocate(str sch, str tbl)
 	if( sch == 0 || tbl == 0)
 		return 0;
 	for (i = 1; i < bsktTop; i++)
-		if (baskets[i].schema && strcmp(sch, baskets[i].schema) == 0 &&
-			baskets[i].table && strcmp(tbl, baskets[i].table) == 0)
+		if (baskets[i].table && baskets[i].table->s && strcmp(sch, baskets[i].table->s->base.name) == 0 &&
+			baskets[i].table && strcmp(tbl, baskets[i].table->base.name) == 0)
 			return i;
 	return 0;
 }
@@ -90,68 +90,19 @@ BSKTclean(int idx)
 {	int i;
 
 	if( idx){
-		GDKfree(baskets[idx].schema);
-		GDKfree(baskets[idx].table);
-		GDKfree(baskets[idx].error);
-		baskets[idx].schema = NULL;
+		if(baskets[idx].error)
+			GDKfree(baskets[idx].error);
 		baskets[idx].table = NULL;
 		baskets[idx].error = NULL;
 		baskets[idx].count = 0;
 		baskets[idx].events = 0;
-		baskets[idx].cycles = 0;
 		baskets[idx].seen =  *timestamp_nil;
 		for(i=0; baskets[idx].bats[i]; i++){
+			GDKfree(baskets[idx].cols[i]);
 			BBPunfix(baskets[idx].bats[i]->batCacheid);
 			baskets[idx].bats[i] =0;
 		}
 	}
-}
-
-// Instantiate a basket description for a particular stream table
-static str
-BSKTnewbasket(mvc *m, sql_schema *s, sql_table *t)
-{
-	int i, idx, colcnt=0;
-	BAT *b;
-	node *o;
-
-	// Don't introduce the same basket twice
-	if( BSKTlocate(s->base.name, t->base.name) > 0)
-		return MAL_SUCCEED;
-
-	if( !isStream(t))
-		throw(MAL,"basket.register","Only allowed for stream tables");
-
-	idx = BSKTnewEntry();
-
-	baskets[idx].schema = GDKstrdup(s->base.name);
-	baskets[idx].table = GDKstrdup(t->base.name);
-	(void) MTIMEcurrent_timestamp(&baskets[idx].seen);
-
-	// Check the column types first
-	for (o = t->columns.set->h; o && colcnt <MAXCOLS-1; o = o->next){
-        sql_column *col = o->data;
-        int tpe = col->type.type->localtype;
-
-        if ( !(tpe <= TYPE_str || tpe == TYPE_date || tpe == TYPE_daytime || tpe == TYPE_timestamp) )
-			throw(MAL,"basket.register","Unsupported type %d\n",tpe);
-		colcnt++;
-	}
-	if( colcnt == MAXCOLS-1){
-		BSKTclean(idx);
-		throw(MAL,"baskets.register","Too many columns\n");
-	}
-
-	// collect the column names and the storage
-	for ( i=0, o = t->columns.set->h; i <colcnt && o; o = o->next){
-        sql_column *col = o->data;
-		b = store_funcs.bind_col(m->session->tr,col,RD_INS);
-		assert(b);
-		BBPfix(b->batCacheid);
-		baskets[idx].bats[i]= b;
-		baskets[idx].cols[i++]=  GDKstrdup(col->base.name);
-	}
-	return MAL_SUCCEED;
 }
 
 // MAL/SQL interface for registration of a single table
@@ -161,6 +112,9 @@ BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl)
 	sql_schema  *s;
 	sql_table   *t;
 	mvc *m = NULL;
+	int i, j, idx, colcnt=0;
+	BAT *b;
+	node *o;
 	str msg = getSQLContext(cntxt, mb, &m, NULL);
 
 	if ( msg != MAL_SUCCEED)
@@ -172,16 +126,58 @@ BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl)
 	if ((msg = checkSQLContext(cntxt)) != MAL_SUCCEED)
 		return msg;
 
-	s = mvc_bind_schema(m, sch);
-	if (s == NULL)
+	if (!(s = mvc_bind_schema(m, sch)))
 		throw(SQL, "basket.register", "Schema missing\n");
 
-	t = mvc_bind_table(m, s, tbl);
-	if (t == NULL)
+	if (!(t = mvc_bind_table(m, s, tbl)))
 		throw(SQL, "basket.register", "Table missing '%s'\n", tbl);
 
-	msg=  BSKTnewbasket(m, s, t);
-	return msg;
+	// Don't introduce the same basket twice
+	if( BSKTlocate(s->base.name, t->base.name) > 0)
+		return MAL_SUCCEED;
+
+	if( !isStream(t))
+		throw(MAL,"basket.register","Only allowed for stream tables\n");
+
+	if((idx = BSKTnewEntry()) < 1)
+		throw(MAL,"basket.register",MAL_MALLOC_FAIL);
+
+	baskets[idx].table = t;
+	(void) MTIMEcurrent_timestamp(&baskets[idx].seen);
+
+	// Check the column types first
+	for (o = t->columns.set->h; o && colcnt <MAXCOLS-1; o = o->next){
+		sql_column *col = o->data;
+		int tpe = col->type.type->localtype;
+
+		if ( !(tpe <= TYPE_str || tpe == TYPE_date || tpe == TYPE_daytime || tpe == TYPE_timestamp) )
+			throw(MAL,"basket.register","Unsupported type %d\n",tpe);
+		colcnt++;
+	}
+	if( colcnt == MAXCOLS-1){
+		BSKTclean(idx);
+		throw(MAL,"baskets.register","Too many columns\n");
+	}
+
+	// collect the column names and the storage
+	for ( i=0, o = t->columns.set->h; i <colcnt && o; o = o->next){
+		sql_column *col = o->data;
+		b = store_funcs.bind_col(m->session->tr,col,RD_INS);
+		assert(b);
+		BBPfix(b->batCacheid);
+		baskets[idx].bats[i]= b;
+		baskets[idx].cols[i]= GDKstrdup(col->base.name);
+		if(baskets[idx].cols[i] == NULL) {
+			for(j = 0 ; j < i ; j++) {
+				BBPunfix(baskets[idx].bats[j]->batCacheid);
+				GDKfree(baskets[idx].cols[j]);
+			}
+			BSKTclean(idx);
+			throw(MAL,"basket.register",MAL_MALLOC_FAIL);
+		}
+		i++;
+	}
+	return MAL_SUCCEED;
 }
 
 str
@@ -198,7 +194,7 @@ BSKTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
     return msg;
 }
 
-str
+/*str
 BSKTwindow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str sch = *getArgReference_str(stk,pci,1);
@@ -225,9 +221,9 @@ BSKTwindow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	baskets[idx].window = window;
 	baskets[idx].stride = stride;
 	return MAL_SUCCEED;
-}
+}*/
 
-str
+/*str Not being used, hence comment for now
 BSKTkeep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str sch = *getArgReference_str(stk,pci,1);
@@ -249,9 +245,9 @@ BSKTkeep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( baskets[idx].window >= 0)
 		baskets[idx].window = - baskets[idx].window -1;
 	return MAL_SUCCEED;
-}
+}*/
 
-str
+/*str
 BSKTrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str sch = *getArgReference_str(stk,pci,1);
@@ -273,7 +269,7 @@ BSKTrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( baskets[idx].window < 0)
 		baskets[idx].window = - baskets[idx].window -1;
 	return MAL_SUCCEED;
-}
+}*/
 
 static BAT *
 BSKTbindColumn(str sch, str tbl, str col)
@@ -342,13 +338,13 @@ BSKTbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*ret = 0;
 	if( b){
 		if( bskt > 0){
-			if( baskets[bskt].window >0){
+			if( baskets[bskt].table->stream->window >0){
 				bn = VIEWcreate(0,b);
 				if( bn){
-					VIEWbounds(b,bn, 0, baskets[bskt].window);
+					VIEWbounds(b,bn, 0, baskets[bskt].table->stream->window);
 					BBPkeepref(*ret =  bn->batCacheid);
 				} else
-					throw(SQL,"basket.bind","Can not create view %s.%s.%s[%d]\n",sch,tbl,col,baskets[bskt].window );
+					throw(SQL,"basket.bind","Can not create view %s.%s.%s[%d]\n",sch,tbl,col,baskets[bskt].table->stream->window );
 			} else{
 				BBPkeepref( *ret = b->batCacheid);
 				BBPfix(b->batCacheid); // don't loose it
@@ -471,10 +467,10 @@ BSKTtumble(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL,"basket.tumble","Stream table %s.%s not accessible \n",sch,tbl);
 	}
 	// don't tumble when the window constraint has not been set to at least 0
-	if( baskets[idx].window < 0)
+	if( baskets[idx].table->stream->window < 0)
 		return MAL_SUCCEED;
 	/* also take care of time-based tumbling */
-	elm =(int) baskets[idx].stride;
+	elm =(int) baskets[idx].table->stream->stride;
 	return BSKTtumbleInternal(cntxt, sch, tbl, idx, elm);
 }
 
@@ -555,11 +551,11 @@ BSKTdump(void *ret)
 			fprintf(stderr, "#baskets[%2d] %s.%s columns "BUNFMT
 					" window=%d stride=%d error=%s fill="SZFMT"\n",
 					bskt,
-					baskets[bskt].schema,
-					baskets[bskt].table,
+					baskets[bskt].table->s->base.name,
+					baskets[bskt].table->base.name,
 					baskets[bskt].count,
-					baskets[bskt].window,
-					baskets[bskt].stride,
+					baskets[bskt].table->stream->window,
+					baskets[bskt].table->stream->stride,
 					baskets[bskt].error,
 					cnt);
 		}
@@ -729,11 +725,10 @@ BSKTstatus (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *windowId = getArgReference_bat(stk,pci,3);
 	bat *strideId = getArgReference_bat(stk,pci,4);
 	bat *eventsId = getArgReference_bat(stk,pci,5);
-	bat *cyclesId = getArgReference_bat(stk,pci,6);
-	bat *errorId = getArgReference_bat(stk,pci,7);
+	bat *errorId = getArgReference_bat(stk,pci,6);
 
 	BAT *seen = NULL, *schema = NULL, *table = NULL, *window = NULL;
-	BAT *stride = NULL, *events = NULL, *cycles = NULL, *errors = NULL;
+	BAT *stride = NULL, *events = NULL, *errors = NULL;
 	int i;
 	BAT *bn = NULL;
 
@@ -758,24 +753,20 @@ BSKTstatus (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	events = COLnew(0, TYPE_int, BATTINY, TRANSIENT);
 	if (events == 0)
 		goto wrapup;
-	cycles = COLnew(0, TYPE_int, BATTINY, TRANSIENT);
-	if (cycles == 0)
-		goto wrapup;
 	errors = COLnew(0, TYPE_str, BATTINY, TRANSIENT);
 	if (errors == 0)
 		goto wrapup;
 
 	for (i = 1; i < bsktTop; i++)
 		if (baskets[i].table) {
-			bn = BSKTbindColumn(baskets[i].schema, baskets[i].table, baskets[i].cols[0]);
+			bn = BSKTbindColumn(baskets[i].table->s->base.name, baskets[i].table->base.name, baskets[i].cols[0]);
 			baskets[i].events = bn ? BATcount( bn): 0;
 			if( BUNappend(seen, &baskets[i].seen, FALSE) != GDK_SUCCEED ||
-				BUNappend(schema, baskets[i].schema, FALSE) != GDK_SUCCEED ||
-				BUNappend(table, baskets[i].table, FALSE) != GDK_SUCCEED ||
-				BUNappend(window, &baskets[i].window, FALSE) != GDK_SUCCEED ||
-				BUNappend(stride, &baskets[i].stride, FALSE) != GDK_SUCCEED ||
+				BUNappend(schema, baskets[i].table->s->base.name, FALSE) != GDK_SUCCEED ||
+				BUNappend(table, baskets[i].table->base.name, FALSE) != GDK_SUCCEED ||
+				BUNappend(window, &baskets[i].table->stream->window, FALSE) != GDK_SUCCEED ||
+				BUNappend(stride, &baskets[i].table->stream->stride, FALSE) != GDK_SUCCEED ||
 				BUNappend(events, &baskets[i].events, FALSE) != GDK_SUCCEED ||
-				BUNappend(cycles, &baskets[i].cycles, FALSE) != GDK_SUCCEED  ||
 				BUNappend(errors, (baskets[i].error? baskets[i].error:""), FALSE) != GDK_SUCCEED )
 				goto wrapup;
 		}
@@ -785,7 +776,6 @@ BSKTstatus (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(*tableId = table->batCacheid);
 	BBPkeepref(*windowId = window->batCacheid);
 	BBPkeepref(*strideId = stride->batCacheid);
-	BBPkeepref(*cyclesId = cycles->batCacheid);
 	BBPkeepref(*eventsId = events->batCacheid);
 	BBPkeepref(*errorId = errors->batCacheid);
 	return MAL_SUCCEED;
@@ -802,8 +792,6 @@ wrapup:
 		BBPunfix(stride->batCacheid);
 	if (errors)
 		BBPunfix(errors->batCacheid);
-	if (cycles)
-		BBPunfix(cycles->batCacheid);
 	if (events)
 		BBPunfix(events->batCacheid);
 	throw(SQL, "basket.status", MAL_MALLOC_FAIL);

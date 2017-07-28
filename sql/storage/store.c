@@ -164,9 +164,11 @@ schema_destroy(sql_schema *s)
 	list_destroy(s->keys);
 	list_destroy(s->idxs);
 	list_destroy(s->triggers);
+	list_destroy(s->streams);
 	s->keys = NULL;
 	s->idxs = NULL;
 	s->triggers = NULL;
+	s->streams = NULL;
 }
 
 static void
@@ -497,6 +499,28 @@ load_trigger(sql_trans *tr, sql_table *t, oid rid)
 	return nt;
 }
 
+static sql_stream *
+load_sql_stream(sql_trans *tr, sql_table *t, oid rid)
+{
+	void *v;
+	sql_stream *nt = SA_ZNEW(tr->sa, sql_stream);
+	sql_schema *syss = find_sql_schema(tr, "sys");
+	sql_table *streams = find_sql_table(syss, "streams");
+	sqlid tid;
+
+	v = table_funcs.column_find_value(tr, find_sql_column(streams, "id"), rid);
+	tid = *(sqlid *)v;			_DELETE(v);
+	base_init(tr->sa, &nt->base, tid, TR_OLD, NULL); //no name for streams!
+
+	v = table_funcs.column_find_value(tr, find_sql_column(streams, "window"), rid);
+	nt->window = *(int*)v;			_DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(streams, "stride"), rid);
+	nt->stride = *(int*)v;		_DELETE(v);
+
+	nt->t = t;
+	return nt;
+}
+
 static sql_column *
 load_column(sql_trans *tr, sql_table *t, oid rid)
 {
@@ -577,8 +601,9 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	sql_table *idxs = find_sql_table(syss, "idxs");
 	sql_table *keys = find_sql_table(syss, "keys");
 	sql_table *triggers = find_sql_table(syss, "triggers");
+	sql_table *streams = find_sql_table(syss, "streams");
 	char *query;
-	sql_column *idx_table_id, *key_table_id, *trigger_table_id;
+	sql_column *idx_table_id, *key_table_id, *trigger_table_id, *streams_table_id;
 	oid rid;
 	rids *rs;
 
@@ -665,6 +690,19 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 		list_append(s->triggers, k);
 	}
 	table_funcs.rids_destroy(rs);
+
+	if (isStream(t)) {
+		streams_table_id = find_sql_column(streams, "table_id");
+		rs = table_funcs.rids_select(tr, streams_table_id, &t->base.id, &t->base.id, NULL);
+		for (rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) {
+			sql_stream *st = load_sql_stream(tr, t, rid);
+
+			t->stream = st;
+			list_append(s->streams, st);
+			break; //there will be always only one stream per table
+		}
+		table_funcs.rids_destroy(rs);
+	}
 
 	if (isMergeTable(t) || isReplicaTable(t)) {
 		sql_table *objects = find_sql_table(syss, "objects");
@@ -913,6 +951,7 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 		s->keys = list_new(tr->sa, (fdestroy) NULL);
 		s->idxs = list_new(tr->sa, (fdestroy) NULL);
 		s->triggers = list_new(tr->sa, (fdestroy) NULL);
+		s->streams = list_new(tr->sa, (fdestroy) NULL);
 
 		cs_new(&s->tables, tr->sa, (fdestroy) &table_destroy);
 		cs_new(&s->types, tr->sa, (fdestroy) NULL);
@@ -943,7 +982,7 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 		subrids *nrs = table_funcs.subrids_create(tr, rs, table_id, column_table_id, column_number);
 		sqlid tid;
 
-		for(tid = table_funcs.subrids_nextid(nrs); tid >= 0; tid = table_funcs.subrids_nextid(nrs)) 
+		for(tid = table_funcs.subrids_nextid(nrs); tid >= 0; tid = table_funcs.subrids_nextid(nrs))
 			cs_add(&s->tables, load_table(tr, s, tid, nrs), TR_OLD);
 		table_funcs.subrids_destroy(nrs);
 	}
@@ -1233,6 +1272,7 @@ create_sql_table_with_id(sql_allocator *sa, int id, const char *name, sht type, 
 	cs_new(&t->idxs, sa, (fdestroy) &idx_destroy);
 	cs_new(&t->keys, sa, (fdestroy) &key_destroy);
 	cs_new(&t->triggers, sa, (fdestroy) &trigger_destroy);
+	t->stream = NULL;
 	cs_new(&t->members, sa, (fdestroy) NULL);
 	t->pkey = NULL;
 	t->sz = COLSIZE;
@@ -1242,9 +1282,18 @@ create_sql_table_with_id(sql_allocator *sa, int id, const char *name, sht type, 
 }
 
 sql_table *
-create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int persistence, int commit_action)
+create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int persistence, int commit_action, int window, int stride)
 {
-	return create_sql_table_with_id(sa, next_oid(), name, type, system, persistence, commit_action);
+	sql_table *res = create_sql_table_with_id(sa, next_oid(), name, type, system, persistence, commit_action);
+	if(isStream(res)) {
+		res->stream = SA_ZNEW(sa, sql_stream);
+		if(!(res->stream)) {
+			return NULL;
+		}
+		res->stream->window = window;
+		res->stream->stride = stride;
+	}
+	return res;
 }
 
 static sql_column *
@@ -1311,7 +1360,7 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name)
 	int istmp = isTempSchema(s);
 	int persistence = istmp?SQL_GLOBAL_TEMP:SQL_PERSIST;
 	sht commit_action = istmp?CA_PRESERVE:CA_COMMIT;
-	sql_table *t = create_sql_table(tr->sa, name, tt_table, 1, persistence, commit_action);
+	sql_table *t = create_sql_table(tr->sa, name, tt_table, 1, persistence, commit_action, 0, 0);
 
 	if (bs_debug)
 		fprintf(stderr, "#bootstrap_create_table %s\n", name );
@@ -1347,6 +1396,7 @@ bootstrap_create_schema(sql_trans *tr, char *name, int auth_id, int owner)
 	s->keys = list_new(tr->sa, (fdestroy) NULL);
 	s->idxs = list_new(tr->sa, (fdestroy) NULL);
 	s->triggers = list_new(tr->sa, (fdestroy) NULL);
+	s->streams = list_new(tr->sa, (fdestroy) NULL);
 
 	cs_add(&tr->schemas, s, TR_NEW);
 
@@ -1470,6 +1520,12 @@ store_load(void) {
 		bootstrap_create_column(tr, t, "system", "boolean", 1);
 		bootstrap_create_column(tr, t, "commit_action", "smallint", 16);
 		bootstrap_create_column(tr, t, "access", "smallint", 16);
+
+		t = bootstrap_create_table(tr, s, "streams");
+		bootstrap_create_column(tr, t, "id", "int", 32);
+		bootstrap_create_column(tr, t, "table_id", "int", 32);
+		bootstrap_create_column(tr, t, "window", "int", 32);
+		bootstrap_create_column(tr, t, "stride", "int", 32);
 
 		t = bootstrap_create_table(tr, s, "_columns");
 		bootstrap_create_column(tr, t, "id", "int", 32);
@@ -2164,6 +2220,24 @@ trigger_dup(sql_trans *tr, int flag, sql_trigger * i, sql_table *t)
 	return nt;
 }
 
+static sql_stream *
+stream_dup(sql_trans *tr, int flag, sql_stream * i, sql_table *t)
+{
+	sql_allocator *sa = (flag == TR_NEW)?tr->parent->sa:tr->sa;
+	sql_stream *nt = SA_ZNEW(sa, sql_stream);
+
+	base_init(sa, &nt->base, i->base.id, tr_flag(&i->base, flag), i->base.name);
+
+	nt->t = t;
+	nt->window = i->window;
+	nt->stride = i->stride;
+
+	list_append(t->s->streams, nt);
+	if (flag == TR_NEW && tr->parent == gtrans)
+		i->base.flag = TR_OLD;
+	return nt;
+}
+
 static sql_column *
 column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 {
@@ -2407,6 +2481,9 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 		if (tr->parent == gtrans)
 			ot->triggers.nelm = NULL;
 	}
+	if(isStream(ot)) {
+		t->stream = stream_dup(tr, flag, ot->stream, t);
+	}
 	if (isNew(ot) && flag == TR_NEW && tr->parent == gtrans) 
 		ot->base.flag = TR_OLD;
 	return t;
@@ -2501,6 +2578,7 @@ schema_dup(sql_trans *tr, int flag, sql_schema *os, sql_trans *o)
 	s->keys = list_new(sa, (fdestroy) NULL);
 	s->idxs = list_new(sa, (fdestroy) NULL);
 	s->triggers = list_new(sa, (fdestroy) NULL);
+	s->streams = list_new(sa, (fdestroy) NULL);
 
 	if (os->types.set) {
 		for (n = os->types.set->h; n; n = n->next) {
@@ -3743,6 +3821,21 @@ sys_drop_trigger(sql_trans *tr, sql_trigger * i)
 }
 
 static void
+sys_drop_sql_stream(sql_trans *tr, sql_stream * st)
+{
+	sql_schema *syss = find_sql_schema(tr, isGlobal(st->t)?"sys":"tmp");
+	sql_table *sysstreams = find_sql_table(syss, "streams");
+	oid rid = table_funcs.column_find_row(tr, find_sql_column(sysstreams, "id"), &st->base.id, NULL);
+
+	if (rid == oid_nil)
+		return ;
+	table_funcs.table_delete(tr, sysstreams, rid);
+
+	/* remove stream from schema */
+	list_remove_data(st->t->s->streams, st);
+}
+
+static void
 sys_drop_sequence(sql_trans *tr, sql_sequence * seq, int drop_action)
 {
 	sql_schema *syss = find_sql_schema(tr, "sys");
@@ -3875,6 +3968,10 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 
 	if (isKindOfTable(t) || isView(t))
 		sys_drop_columns(tr, t, drop_action);
+
+	if (isStream(t)) {
+		sys_drop_sql_stream(tr, t->stream);
+	}
 
 	if (isGlobal(t)) 
 		tr->schema_updates ++;
@@ -4181,6 +4278,7 @@ sql_trans_create_schema(sql_trans *tr, const char *name, int auth_id, int owner)
 	s->keys = list_new(tr->sa, (fdestroy) NULL);
 	s->idxs = list_new(tr->sa, (fdestroy) NULL);
 	s->triggers = list_new(tr->sa, (fdestroy) NULL);
+	s->streams = list_new(tr->sa, (fdestroy) NULL);
 	s->tr = tr;
 
 	cs_add(&tr->schemas, s, TR_NEW);
@@ -4268,11 +4366,12 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 }
 
 sql_table *
-sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const char *sql, int tt, bit system, int persistence, int commit_action, int sz)
+sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const char *sql, int tt, bit system, int persistence, int commit_action, int sz, int window, int stride)
 {
-	sql_table *t = create_sql_table(tr->sa, name, tt, system, persistence, commit_action);
+	sql_table *t = create_sql_table(tr->sa, name, tt, system, persistence, commit_action, window, stride);
 	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *systable = find_sql_table(syss, "_tables");
+	sql_table *streamtable;
 	sht ca;
 
 	/* temps all belong to a special tmp schema and only views/remote
@@ -4304,6 +4403,14 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 		table_funcs.table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id,
 			(t->query) ? t->query : ATOMnilptr(TYPE_str), &t->type,
 			&t->system, &ca, &t->access);
+
+	if(isStream(t)) {
+		base_init(tr->sa, &t->stream->base, next_oid(), TR_NEW, NULL);
+		list_append(t->s->streams, t->stream);
+
+		streamtable = find_sql_table(syss, "streams");
+		table_funcs.table_insert(tr, streamtable, &t->stream->base.id, &t->base.id, &t->stream->window, &t->stream->stride);
+	}
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	if (isGlobal(t)) 
@@ -4460,7 +4567,7 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action)
 	if (isGlobal(t) || (t->commit_action != CA_DROP)) 
 		tr->schema_updates ++;
 	cs_del(&s->tables, n, t->base.flag);
-	
+
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;

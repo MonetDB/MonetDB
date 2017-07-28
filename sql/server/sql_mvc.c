@@ -1085,10 +1085,10 @@ mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, in
 		fprintf(stderr, "#mvc_create_table %s %s %d %d %d %d\n", s->base.name, name, tt, system, persistence, commit_action);
 
 	if (persistence == SQL_DECLARED_TABLE && (!s || strcmp(s->base.name, dt_schema))) {
-		t = create_sql_table(m->sa, name, tt, system, persistence, commit_action);
+		t = create_sql_table(m->sa, name, tt, system, persistence, commit_action, 0, 0);
 		t->s = s;
 	} else {
-		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt, system, persistence, commit_action, sz);
+		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt, system, persistence, commit_action, sz, 0, 0);
 	}
 	return t;
 }
@@ -1102,11 +1102,11 @@ mvc_create_view(mvc *m, sql_schema *s, const char *name, int persistence, const 
 		fprintf(stderr, "#mvc_create_view %s %s %s\n", s->base.name, name, sql);
 
 	if (persistence == SQL_DECLARED_TABLE) {
-		t = create_sql_table(m->sa, name, tt_view, system, persistence, 0);
+		t = create_sql_table(m->sa, name, tt_view, system, persistence, 0, 0, 0);
 		t->s = s;
 		t->query = sa_strdup(m->sa, sql);
 	} else {
-		t = sql_trans_create_table(m->session->tr, s, name, sql, tt_view, system, SQL_PERSIST, 0, 0);
+		t = sql_trans_create_table(m->session->tr, s, name, sql, tt_view, system, SQL_PERSIST, 0, 0, 0, 0);
 	}
 	return t;
 }
@@ -1120,11 +1120,28 @@ mvc_create_remote(mvc *m, sql_schema *s, const char *name, int persistence, cons
 		fprintf(stderr, "#mvc_create_remote %s %s %s\n", s->base.name, name, loc);
 
 	if (persistence == SQL_DECLARED_TABLE) {
-		t = create_sql_table(m->sa, name, tt_remote, 0, persistence, 0);
+		t = create_sql_table(m->sa, name, tt_remote, 0, persistence, 0, 0, 0);
 		t->s = s;
 		t->query = sa_strdup(m->sa, loc);
 	} else {
-		t = sql_trans_create_table(m->session->tr, s, name, loc, tt_remote, 0, SQL_REMOTE, 0, 0);
+		t = sql_trans_create_table(m->session->tr, s, name, loc, tt_remote, 0, SQL_REMOTE, 0, 0, 0, 0);
+	}
+	return t;
+}
+
+sql_table *
+mvc_create_stream_table(mvc *m, sql_schema *s, const char *name, bit system, int persistence, int commit_action, int sz, int window, int stride)
+{
+	sql_table *t = NULL;
+
+	if (mvc_debug)
+		fprintf(stderr, "#mvc_create_stream_table %s %s %d %d %d %d %d %d\n", s->base.name, name, tt_stream, system, persistence, commit_action, window, stride);
+
+	if (persistence == SQL_DECLARED_TABLE && (!s || strcmp(s->base.name, dt_schema))) {
+		t = create_sql_table(m->sa, name, tt_stream, system, persistence, commit_action, window, stride);
+		t->s = s;
+	} else {
+		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt_stream, system, persistence, commit_action, sz, window, stride);
 	}
 	return t;
 }

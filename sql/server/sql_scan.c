@@ -324,6 +324,8 @@ scanner_init_keywords(void)
 	keywords_insert("START", START);
 	keywords_insert("STOP", STOP);
 	keywords_insert("PAUSE", PAUSE);
+	keywords_insert("WINDOW", WINDOW);
+	keywords_insert("STRIDE", STRIDE);
 	keywords_insert("HEARTBEAT", HEARTBEAT);
 	keywords_insert("CYCLES", CYCLES);
 	keywords_insert("RESUME", RESUME);

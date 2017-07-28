@@ -178,14 +178,20 @@ as_subquery( mvc *sql, sql_table *t, sql_rel *sq, dlist *column_spec, const char
 }
 
 sql_table *
-mvc_create_table_as_subquery( mvc *sql, sql_rel *sq, sql_schema *s, const char *tname, dlist *column_spec, int temp, int commit_action )
+mvc_create_table_as_subquery( mvc *sql, sql_rel *sq, sql_schema *s, const char *tname, dlist *column_spec, int temp, int commit_action, int window_size, int stride )
 {
-	int tt =(temp == SQL_REMOTE)?tt_remote:
-		(temp == SQL_STREAM)?tt_stream:
-	        (temp == SQL_MERGE_TABLE)?tt_merge_table:
-	        (temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
+	sql_table *t;
+	int tt;
 
-	sql_table *t = mvc_create_table(sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
+	if(temp == SQL_STREAM) {
+		t = mvc_create_stream_table(sql, s, tname, 0, SQL_DECLARED_TABLE, commit_action, -1, window_size, stride);
+	} else {
+		tt =(temp == SQL_REMOTE)?tt_remote:
+			(temp == SQL_MERGE_TABLE)?tt_merge_table:
+			(temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
+		t = mvc_create_table(sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
+	}
+
 	if (as_subquery( sql, t, sq, column_spec, "CREATE TABLE") != 0)
 
 		return NULL;
@@ -871,7 +877,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 }
 
 sql_rel *
-rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const char *name, symbol *table_elements_or_subquery, int commit_action, const char *loc, int if_not_exists)
+rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const char *name, symbol *table_elements_or_subquery, int commit_action, const char *loc, int if_not_exists, dlist* stream_details)
 {
 	sql_schema *s = NULL;
 
@@ -882,6 +888,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 		 (temp == SQL_STREAM)?tt_stream:
 	         (temp == SQL_MERGE_TABLE)?tt_merge_table:
 	         (temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
+	int window_size = DEFAULT_TABLE_WINDOW, stride = DEFAULT_TABLE_STRIDE;
 
 	(void)create;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
@@ -895,10 +902,19 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 		if (temp != SQL_PERSIST && tt == tt_table) {
 			s = mvc_bind_schema(sql, "tmp");
 			if (temp == SQL_LOCAL_TEMP && sname && strcmp(sname, s->base.name) != 0)
-				return sql_error(sql, 02, "3F000!CREATE TABLE: local tempory tables should be stored in the '%s' schema", s->base.name);
+				return sql_error(sql, 02, "3F000!CREATE TABLE: local temporary tables should be stored in the '%s' schema", s->base.name);
 		} else if (s == NULL) {
 			s = ss;
 		}
+	}
+
+	if(tt == tt_stream) {
+		window_size = stream_details->h->data.i_val;
+		stride = stream_details->h->next->data.i_val;
+		if(window_size < -1)
+			return sql_error(sql, 02, "42000!CREATE TABLE: window size must be non negative");
+		if(stride < 0)
+			return sql_error(sql, 02, "42000!CREATE TABLE: stride size must be non negative");
 	}
 
 	if (temp != SQL_DECLARED_TABLE && s)
@@ -918,11 +934,13 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 		dnode *n;
 		dlist *columns = table_elements_or_subquery->data.lval;
 		sql_table *t;
-	       
+
 		if (tt == tt_remote) {
 			if (!mapiuri_valid(loc))
 				return sql_error(sql, 02, "42000!CREATE TABLE: incorrect uri '%s' for remote table '%s'", loc, name);
 			t = mvc_create_remote(sql, s, name, SQL_DECLARED_TABLE, loc);
+		} else if(tt == tt_stream) {
+			t = mvc_create_stream_table(sql, s, name, 0, SQL_DECLARED_TABLE, commit_action, -1, window_size, stride);
 		} else {
 			t = mvc_create_table(sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
 		}
@@ -955,7 +973,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 			return sql_error(sql, 02, "42000!CREATE TABLE: cannot create %s table 'with data'", tt == tt_merge_table?"MERGE TABLE":tt == tt_remote?"REMOTE TABLE":"REPLICA TABLE");
 
 		/* create table */
-		if ((t = mvc_create_table_as_subquery( sql, sq, s, name, column_spec, temp, commit_action)) == NULL) { 
+		if ((t = mvc_create_table_as_subquery( sql, sq, s, name, column_spec, temp, commit_action, window_size, stride)) == NULL) {
 			rel_destroy(sq);
 			return NULL;
 		}
@@ -1982,7 +2000,10 @@ rel_schemas(mvc *sql, symbol *s)
 
 		assert(l->h->type == type_int);
 		assert(l->h->next->next->next->type == type_int);
-		ret = rel_create_table(sql, cur_schema(sql), temp, sname, name, l->h->next->next->data.sym, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.sval, l->h->next->next->next->next->next->data.i_val);
+		ret = rel_create_table(sql, cur_schema(sql), temp, sname, name, l->h->next->next->data.sym,
+							   l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.sval,
+							   l->h->next->next->next->next->next->data.i_val,
+							   l->h->next->next->next->next->next->next->data.lval);
 	} 	break;
 	case SQL_CREATE_VIEW:
 	{

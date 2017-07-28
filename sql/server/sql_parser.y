@@ -363,6 +363,7 @@ int yydebug=1;
 	filter_arg_list
 	filter_args
 	qname
+	stream_table_details
 	qfunc
 	qrank
 	qaggr
@@ -443,6 +444,8 @@ int yydebug=1;
 	opt_outer
 	non_second_datetime_field
 	nonzero
+	stream_window_set
+	stream_stride_set
 	heartbeat_set
 	cycles_set
 	opt_bounds
@@ -536,7 +539,7 @@ int yydebug=1;
 %token <sval> LATERAL LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 %token  CONTINUOUS START_CONTINUOUS STOP STOP_CONTINUOUS PAUSE PAUSE_CONTINUOUS RESUME RESUME_CONTINUOUS
-%token  HEARTBEAT CYCLES
+%token  WINDOW STRIDE HEARTBEAT CYCLES
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
 %token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE
 
@@ -1326,6 +1329,22 @@ table_opt_storage:
  |  STORAGE ident STRING { $$ = append_string(append_string(L(), $2), $3); } 
  ;
 
+stream_window_set:
+    /* empty */   { $$ = DEFAULT_TABLE_WINDOW; } /* delete all tuples from the stream table each cycle */
+ |  NO WINDOW     { $$ = DEFAULT_TABLE_WINDOW; }
+ |  WINDOW intval { $$ = $2; }
+ ;
+
+stream_stride_set:
+    /* empty */   { $$ = DEFAULT_TABLE_STRIDE; } /* don't stride the table */
+ |  STRIDE intval { $$ = $2; }
+ ;
+
+stream_table_details:
+    /* empty */                             { $$ = append_int(append_int(L(), DEFAULT_TABLE_WINDOW), DEFAULT_TABLE_STRIDE); }
+ |  SET stream_window_set stream_stride_set { $$ = append_int(append_int(L(), $2), $3); }
+ ;
+
 table_def:
     TABLE if_not_exists qname table_content_source  table_opt_storage
 	{ int commit_action = CA_COMMIT;
@@ -1338,6 +1357,7 @@ table_def:
 	  append_string(l, NULL);
 	  append_int(l, $2);
 	  append_list(l, $5);
+	  append_list(l, NULL); /* only used for stream table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  |  TABLE if_not_exists qname FROM sqlLOADER func_ref
     {
@@ -1346,7 +1366,7 @@ table_def:
       append_symbol(l, $6);
       $$ = _symbol_create_list( SQL_CREATE_TABLE_LOADER, l);
     }
- |  STREAM TABLE if_not_exists qname table_content_source 
+ |  STREAM TABLE if_not_exists qname table_content_source stream_table_details
 	{ int commit_action = CA_COMMIT, tpe = SQL_STREAM;
 	  dlist *l = L();
 
@@ -1356,6 +1376,7 @@ table_def:
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
 	  append_int(l, $3);
+	  append_list(l, $6);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  |  MERGE TABLE if_not_exists qname table_content_source 
 	{ int commit_action = CA_COMMIT, tpe = SQL_MERGE_TABLE;
@@ -1367,6 +1388,7 @@ table_def:
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
 	  append_int(l, $3);
+	  append_list(l, NULL); /* only used for stream table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  |  REPLICA TABLE if_not_exists qname table_content_source 
 	{ int commit_action = CA_COMMIT, tpe = SQL_REPLICA_TABLE;
@@ -1378,6 +1400,7 @@ table_def:
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
 	  append_int(l, $3);
+	  append_list(l, NULL); /* only used for stream table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  /* mapi:monetdb://host:port/database[/schema[/table]] 
     This also allows access via monetdbd. 
@@ -1392,6 +1415,7 @@ table_def:
 	  append_int(l, commit_action);
 	  append_string(l, $7);
 	  append_int(l, $3);
+	  append_list(l, NULL); /* only used for stream table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
   | opt_temp TABLE if_not_exists qname table_content_source opt_on_commit 
 	{ int commit_action = CA_COMMIT;
@@ -1405,6 +1429,7 @@ table_def:
 	  append_int(l, commit_action);
 	  append_string(l, NULL);
 	  append_int(l, $3);
+	  append_list(l, NULL); /* only used for stream table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  ;
 
@@ -2090,12 +2115,12 @@ call_procedure_statement:
 	;
 
 heartbeat_set:
-	  /* empty */ { $$ = 1000; } /* 1 second, but 0 is also possible */
+	  /* empty */ { $$ = DEFAULT_CP_HEARTBEAT; } /* 1 second, but 0 is also possible */
 	| HEARTBEAT intval { $$ = $2; }
 	;
 
 cycles_set:
-	  /* empty */   { $$ = int_nil; } /* int_nil means that the CQ will run forever */
+	  /* empty */   { $$ = DEFAULT_CP_CYCLES; } /* the CQ will run forever */
 	| CYCLES intval { $$ = $2; }
 	;
 
@@ -2109,8 +2134,8 @@ continuous_procedure_statement:
 	| START_CONTINUOUS func_ref
 		{ dlist *l = L();
 		  append_symbol( l, $2);
-		  append_int( l, 1000);
-		  append_int( l, int_nil);
+		  append_int( l, DEFAULT_CP_HEARTBEAT);
+		  append_int( l, DEFAULT_CP_CYCLES);
 		  $$ = _symbol_create_list( SQL_START_CALL, l ); }
 	| STOP_CONTINUOUS func_ref
 		{ $$ = _symbol_create_symbol( SQL_STOP_CALL, $2 ); }

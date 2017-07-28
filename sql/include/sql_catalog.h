@@ -108,6 +108,11 @@
 #define dt_schema 	"%dt%"
 #define isDeclaredSchema(s) 	(strcmp(s->base.name, dt_schema) == 0)
 
+/* continuous queries parameters */
+#define DEFAULT_CP_HEARTBEAT     1000 /* 1 second */
+#define DEFAULT_CP_CYCLES     int_nil /* run forever */
+#define DEFAULT_TABLE_WINDOW       -1 /* delete all tuples */
+#define DEFAULT_TABLE_STRIDE        0 /* the number of tuples required to trigger a CQ in the table */
 
 extern const char *TID;
 
@@ -232,6 +237,7 @@ typedef struct sql_schema {
 	list *keys;		/* Names for keys, idxs and triggers are */
 	list *idxs;		/* global, but these objects are only */
 	list *triggers;		/* useful within a table */
+	list *streams;
 
 	char *internal; 	/* optional internal module name */
 	sql_trans *tr;
@@ -495,6 +501,13 @@ typedef struct sql_part {
 	struct sql_table *t; /* cached value */
 } sql_part;
 
+typedef struct sql_stream {
+	sql_base base;
+	struct sql_table *t;
+	int window;
+	int stride;
+} sql_stream;
+
 typedef struct sql_table {
 	sql_base base;
 	sht type;		/* table, view, etc */
@@ -506,6 +519,7 @@ typedef struct sql_table {
 	int  sz;
 
 	sql_ukey *pkey;
+	sql_stream* stream; /* optional stream field */
 	changeset columns;
 	changeset idxs;
 	changeset keys;

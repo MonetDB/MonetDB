@@ -282,6 +282,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 	sql_schema *s = mvc_bind_schema(sql, sname);
 	sql_table *nt = NULL;
 	node *n;
+	int window_size, stride;
 
 	(void)tname;
 	if (STORE_READONLY)
@@ -322,7 +323,10 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 		}
 	}
 
-	nt = sql_trans_create_table(sql->session->tr, s, t->base.name, t->query, t->type, t->system, temp, t->commit_action, t->sz);
+	window_size = isStream(t) ? t->stream->window : 0;
+	stride = isStream(t) ? t->stream->stride : 0;
+
+	nt = sql_trans_create_table(sql->session->tr, s, t->base.name, t->query, t->type, t->system, temp, t->commit_action, t->sz, window_size, stride);
 
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;

@@ -874,6 +874,8 @@ sql_create_privileges(mvc *m, sql_schema *s)
 	table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
 	t = find_sql_table(s, "privileges");
 	table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
+	t = find_sql_table(s, "streams");
+	table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
 
 	p = PRIV_EXECUTE;
 	f = sql_bind_func_(m->sa, s, "env", NULL, F_UNION);
@@ -895,6 +897,8 @@ sql_create_privileges(mvc *m, sql_schema *s)
 	t = find_sql_table(s, "triggers");
 	table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
 	t = find_sql_table(s, "objects");
+	table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
+	t = find_sql_table(s, "streams");
 	table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
 	*/
 

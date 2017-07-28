@@ -29,18 +29,16 @@
 #define MAXCOLS 128
 
 typedef struct{
-	str schema;			/* schema for the basket */
-	str table;			/* table that represents the basket */
+	sql_table *table;	/* The basket stream table */
 	str cols[MAXCOLS];	/* column names */
 	BAT *bats[MAXCOLS];	/* the bats comprising the basket */
 	BUN count;			/* number of events available in basket */
-	int window;			/* consumption size */
-	int stride;			/* stride forward after consumption */
+	//int window;	 consumption size (now in the table's stream)
+	//int stride;	 stride forward after consumption (now in the table's stream)
 
 	/* statistics */
 	timestamp seen;
 	BUN events; /* total number of events grabbed */
-	int cycles; 
 	str error;
 	/* concurrency control between petrinet/{receptor,emitter} */
 	MT_Lock lock;
@@ -56,8 +54,8 @@ sql5_export str BSKTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 sql5_export str BSKTtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str BSKTbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-sql5_export str BSKTkeep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str BSKTrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+//sql5_export str BSKTkeep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+//sql5_export str BSKTrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str BSKTwindow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str BSKTtumble(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str BSKTreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
