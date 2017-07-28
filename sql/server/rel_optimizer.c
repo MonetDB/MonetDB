@@ -5500,7 +5500,7 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 				}
 			}
 		} else if (is_join(rel->op)) {
-			list *r_exps = rel_projections(sql, r, NULL, 1, 1);
+			list *r_exps = rel_projections(sql, r, NULL, 1, 2);
 
 			list_merge(exps, r_exps, (fdup)NULL);
 		}

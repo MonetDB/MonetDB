@@ -498,7 +498,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 							inner = rel_crossproduct(sql->sa, inner, r, op_join);
 						else if (r) 
 							inner = r;
-						if (inner && !ins->name) {
+						if (inner && !ins->name && !is_atom(ins->type)) {
 							exp_label(sql->sa, ins, ++sql->label);
 							ins = exp_column(sql->sa, exp_relname(ins), exp_name(ins), exp_subtype(ins), ins->card, has_nil(ins), is_intern(ins));
 						}
