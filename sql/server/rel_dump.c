@@ -857,7 +857,10 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 		tname = b;
 		tpe = sql_bind_subtype(sql->sa, tname, 0, 0);
 		st = readString(r,pos);
-		exp = exp_atom(sql->sa, atom_general(sql->sa, tpe, st));
+		if (st && strcmp(st, "NULL") == 0)
+			exp = exp_atom(sql->sa, atom_general(sql->sa, tpe, NULL));
+		else
+			exp = exp_atom(sql->sa, atom_general(sql->sa, tpe, st));
 		skipWS(r, pos);
 		break;
 	default:
