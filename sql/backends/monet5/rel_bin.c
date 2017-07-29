@@ -271,6 +271,9 @@ value_list(backend *be, list *vals, stmt *left, stmt *sel)
 		sql_exp *e = n->data;
 		stmt *i = exp_bin(be, e, left, NULL, NULL, NULL, NULL, sel);
 
+		if (!i)
+			return NULL;
+
 		if (list_length(vals) == 1)
 			return i;
 		

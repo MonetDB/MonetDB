@@ -126,6 +126,12 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						if (col && strcmp(bc->name, col))
 							continue;
 
+						/* remove cached value */
+						if (c->min)
+							c->min = NULL;
+						if (c->max)
+							c->max = NULL;
+
 						if ((bn = store_funcs.bind_col(tr, c, RDONLY)) == NULL) {
 							/* XXX throw error instead? */
 							continue;

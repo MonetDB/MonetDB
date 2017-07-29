@@ -655,6 +655,8 @@ rel_named_table_function(mvc *sql, sql_rel *rel, symbol *query, int lateral)
 			if (!f->rel || !rel || !sf)
 				return NULL;
 		}
+		if (!sf)
+			return NULL;
 		exps = list_dup(exps, NULL);
 		append(exps, tid);
 		e = exp_op(sql->sa, exps, sf);
