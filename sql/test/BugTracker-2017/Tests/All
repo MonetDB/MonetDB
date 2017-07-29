@@ -72,3 +72,4 @@ groupby_assertion.Bug-6338
 spurious_error.Bug-6344
 caching_stats_bug.6374
 name-interference.Bug-6348
+parsererror.Bug-6381
