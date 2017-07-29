@@ -8379,8 +8379,6 @@ exps_from_rel( list *exps, sql_rel *rel )
 }
 
 
-extern void _rel_print(mvc *sql, sql_rel *rel);
-
 static sql_rel *
 rel_apply(mvc *sql, sql_rel *l, sql_rel *r, list *exps, int flag)
 {
