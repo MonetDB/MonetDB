@@ -7,7 +7,6 @@ create procedure cqfoo(v integer)
 begin
 	insert into cqtbl values(v);
 end;
-select * from functions where name = 'cqfoo';
 
 -- continuous procedures can always be called directly
 -- this simplifies debugging as well
