@@ -184,8 +184,9 @@ CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	msg= compileString(&sym, cntxt,*code);
 	if( sym) {
-		mnstr_printf(cntxt->fdout,"#register FUNCTION %s.%s\n",
-			getModuleId(sym->def->stmt[0]), getFunctionId(sym->def->stmt[0]));
+		assert(cntxt->nspace);
+		//mnstr_printf(cntxt->fdout,"#register FUNCTION %s.%s\n",
+			//getModuleId(sym->def->stmt[0]), getFunctionId(sym->def->stmt[0]));
 		mb= sym->def;
 		if( help)
 			mb->help= GDKstrdup(*help);
