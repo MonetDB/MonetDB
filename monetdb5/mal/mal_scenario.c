@@ -472,19 +472,6 @@ resetScenario(Client c)
 	c->oldscenario = 0;
 }
 
-void
-exitScenario(Client c)
-{
-	Scenario scen = scenarioRec;
-
-	if (c->scenario == 0)
-		return;
-	scen = findScenario(c->scenario);
-	if (scen->exitSystemCmd)
-		(*scen->exitSystemCmd) (c);
-	c->scenario = NULL;
-}
-
 /*
  * The building blocks of scenarios are routines obeying a strict
  * name signature. They require exclusive access to the client

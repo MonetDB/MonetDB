@@ -88,7 +88,8 @@ int
 UUIDtoString(str *retval, int *len, const uuid *value)
 {
 	if (*len <= UUID_STRLEN || *retval == NULL) {
-		GDKfree(*retval);
+		if (*retval)
+			GDKfree(*retval);
 		if ((*retval = GDKmalloc(UUID_STRLEN + 1)) == NULL)
 			return 0;
 		*len = UUID_STRLEN + 1;

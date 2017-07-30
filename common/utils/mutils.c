@@ -37,6 +37,10 @@
 # include <sys/sysctl.h>  /* KERN_PROC_PATHNAME on BSD */
 #endif
 
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
+#endif
+
 #ifdef NATIVE_WIN32
 
 /* Some definitions that we need to compile on Windows.

@@ -314,8 +314,8 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	// compile in context of called for
 	c= MCinitClient((oid)0, fdin, 0);
 	if( c == NULL){
-		GDKfree(b);
 		GDKfree(qry);
+		GDKfree(b);
 		throw(MAL,"mal.eval","Can not create user context");
 	}
 	c->curmodule = c->usermodule = cntxt->usermodule;
@@ -323,6 +323,8 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	c->listing = 0;
 
 	if ( (msg = defaultScenario(c)) ) {
+		GDKfree(qry);
+		GDKfree(b);
 		c->usermodule= 0;
 		MCcloseClient(c);
 		throw(MAL,"mal.compile","%s",msg);

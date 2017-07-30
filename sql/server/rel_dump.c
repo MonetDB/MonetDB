@@ -857,7 +857,10 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 		tname = b;
 		tpe = sql_bind_subtype(sql->sa, tname, 0, 0);
 		st = readString(r,pos);
-		exp = exp_atom(sql->sa, atom_general(sql->sa, tpe, st));
+		if (st && strcmp(st, "NULL") == 0)
+			exp = exp_atom(sql->sa, atom_general(sql->sa, tpe, NULL));
+		else
+			exp = exp_atom(sql->sa, atom_general(sql->sa, tpe, st));
 		skipWS(r, pos);
 		break;
 	default:
@@ -945,6 +948,11 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 		(*pos)++;
 		skipWS(r, pos);
 		set_anti(exp);
+	}
+	/* [ COUNT ] */
+	if (strncmp(r+*pos, "COUNT",  strlen("COUNT")) == 0) {
+		(*pos)+= (int) strlen("COUNT");
+		skipWS( r, pos);
 	}
 	/* [ ASC ] */
 	if (strncmp(r+*pos, "ASC",  strlen("ASC")) == 0) {
@@ -1074,6 +1082,22 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 		}
 	}
 	return exp;
+}
+
+static int
+rel_set_types(mvc *sql, sql_rel *rel)
+{
+	list *iexps = rel_projections( sql, rel->l, NULL, 0, 1);
+	node *n, *m;
+
+	if (!iexps || list_length(iexps) >= list_length(rel->exps))
+		return -1;
+	for(n=iexps->h, m=rel->exps->h; n && m; n = n->next, m = m->next) {
+		sql_exp *e = m->data;
+
+		e->tpe = *exp_subtype( n->data );
+	}
+	return 0;
 }
 
 sql_rel*
@@ -1382,9 +1406,13 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		(*pos)++;
 		skipWS(r, pos);
 
-		exps = read_exps(sql, lrel, rrel, NULL, r, pos, '[', 0);
+		exps = read_exps(sql, NULL, NULL, NULL, r, pos, '[', 0);
 		rel = rel_setop(sql->sa, lrel, rrel, j);
+		if (!exps)
+			return NULL;
 		rel->exps = exps;
+		if (rel_set_types(sql, rel) < 0)
+			return NULL;
 		set_processed(rel);
 		return rel;
 	case 'd':

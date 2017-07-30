@@ -26,6 +26,7 @@ begin
 end;
 
 select * from cls_0_statistics;
+call cls_0_statistics();
 
 drop procedure cls_0_statistics;
 drop table cls_0_statistics;

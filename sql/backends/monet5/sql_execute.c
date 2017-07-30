@@ -551,7 +551,6 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 			/* restore the state */
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, c->glb, oldvtop);
-
 			c->curprg->def->errors = 0;
 			goto endofcompile;
 		}

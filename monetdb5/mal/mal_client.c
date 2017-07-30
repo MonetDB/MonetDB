@@ -57,7 +57,7 @@ void
 mal_client_reset(void)
 {
 	MAL_MAXCLIENTS = 0;
-	if ( mal_clients)
+	if (mal_clients)
 		GDKfree(mal_clients);
 }
 
@@ -391,8 +391,10 @@ freeClient(Client c)
 		c->username = 0;
 	}
 	c->mythread = 0;
-	freeStack(c->glb);
-	c->glb = NULL;
+	if (c->glb) {
+		freeStack(c->glb);
+		c->glb = NULL;
+	}
 	if( c->error_row){
 		BBPrelease(c->error_row->batCacheid);
 		BBPrelease(c->error_fld->batCacheid);

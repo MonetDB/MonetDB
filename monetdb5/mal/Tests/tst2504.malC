@@ -1,7 +1,8 @@
 # The prototypical factory construct
 # test factory return and restart
 
-factory random(seed:int):int;
+module rand;
+factory rand.random(seed:int):int;
 	random:= seed;
 	i:= seed;
 	i:= 125 *i;
@@ -11,13 +12,13 @@ factory random(seed:int):int;
 	i:= i % 32767;
 	yield i;
 	return random:=0;
-end random;
+end rand.random;
 
-r1:= user.random(1);
+r1:= rand.random(1);
 io.print(r1);
-r2:= user.random(1);
+r2:= rand.random(1);
 io.print(r2);
-r2:= user.random(1);
+r2:= rand.random(1);
 io.print(r2);
-r2:= user.random(1);
+r2:= rand.random(1);
 io.print(r2);

@@ -43,6 +43,10 @@
 #endif
 #endif
 
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
+#endif
+
 /**
  * Parses the given file stream matching the keys from list.  If a match
  * is found, the value is set in list->value.  Values are malloced.

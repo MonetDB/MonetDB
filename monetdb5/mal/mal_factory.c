@@ -377,3 +377,34 @@ shutdownFactoryByName(Client cntxt, Module m, str nme){
 		}
 	return MAL_SUCCEED;
 }
+
+void mal_factory_reset(void)
+{
+	Plant pl, plim;
+
+	plim = plants + lastPlant;
+	for (pl = plants; pl < plim; pl++){
+			/* MSresetVariables(mb, pl->stk, 0);*/
+			/* freeStack(pl->stk); there may be a reference?*/
+			/* we are inside the body of the factory and about to return */
+			if (pl->stk) {
+				pl->stk->keepAlive = FALSE;
+				garbageCollector(NULL, pl->factory, pl->stk, TRUE);
+				GDKfree(pl->stk);
+			}
+			pl->factory = 0;
+			pl->stk=0;
+			pl->pc = 0;
+			pl->inuse = 0;
+			pl->client = NULL;
+			pl->caller = NULL;
+			pl->pci = NULL;
+			pl->env = NULL;
+			pl->client = NULL;
+			pl->caller = NULL;
+			pl->env= NULL;
+			pl->pci = NULL;
+	}
+	plantId = 1;
+	lastPlant = 0;
+}

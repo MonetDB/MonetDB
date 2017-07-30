@@ -88,6 +88,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		p->gc &=  ~GARBAGECONTROL;
+		p->typechk = TYPE_UNKNOWN;
 		/* Set the program counter to ease profiling */
 		p->pc = i;
 
@@ -160,7 +161,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	/* leave a consistent scope admin behind */
 	setVariableScope(mb);
     /* Defense line against incorrect plans */
-    if( actions+1 > 0){
+    if( actions > 0){
         chkTypes(cntxt->usermodule, mb, FALSE);
         chkFlow(mb);
         chkDeclarations(mb);

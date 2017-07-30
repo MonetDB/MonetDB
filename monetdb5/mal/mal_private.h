@@ -22,8 +22,6 @@ __hidden void MCpopClientInput(Client c)
 	__attribute__((__visibility__("hidden")));
 __hidden str defaultScenario(Client c)	/* used in src/mal/mal_session.c */
 	__attribute__((__visibility__("hidden")));
-__hidden void exitScenario(Client c)		/* used in src/mal/mal_session.c */
-	__attribute__((__visibility__("hidden")));
 __hidden void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	__attribute__((__visibility__("hidden")));
 
@@ -54,7 +52,6 @@ __hidden extern MT_Lock mal_namespaceLock;
 
 __hidden void mdbInit(void)
 	__attribute__((__visibility__("hidden")));
-
 __hidden void mdbExit(void)
 	__attribute__((__visibility__("hidden")));
 
@@ -93,6 +90,9 @@ __hidden mal_export void mal_client_reset(void)
 	__attribute__((__visibility__("hidden")));
 
 __hidden mal_export void mal_dataflow_reset(void)
+	__attribute__((__visibility__("hidden")));
+
+__hidden mal_export void mal_factory_reset(void)
 	__attribute__((__visibility__("hidden")));
 
 __hidden mal_export void mal_linker_reset(void)

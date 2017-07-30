@@ -37,6 +37,7 @@ int have_hge;
 #include "mal_resource.h"
 #include "wlc.h"
 #include "mal_atom.h"
+#include "opt_pipes.h"
 
 MT_Lock     mal_contextLock MT_LOCK_INITIALIZER("mal_contextLock");
 MT_Lock     mal_namespaceLock MT_LOCK_INITIALIZER("mal_namespaceLock");
@@ -143,38 +144,34 @@ void mserver_reset(int exit)
 	MTIMEreset();
 #endif
 */
-#ifdef HAVE_GEOM
-#include "geom.h"
-	{
-		int ret;
-		geom_epilogue(&ret);
-	}
-#endif
+	mal_factory_reset();
 	mal_dataflow_reset();
 	THRdel(mal_clients->mythread);
 	GDKfree(mal_clients->errbuf);
 	mal_clients->fdin->s = NULL;
 	bstream_destroy(mal_clients->fdin);
-	mal_clients->fdin = 0;
 	GDKfree(mal_clients->prompt);
-	mal_clients->prompt = 0;
 	GDKfree(mal_clients->username);
-	mal_clients->username = 0;
 	freeStack(mal_clients->glb);
-	mal_clients->glb = 0;
-	freeSymbol(mal_clients->curprg);
-	mal_clients->curprg = 0;
-	//if( mal_clients->usermodule && strcmp(mal_clients->usermodule->name,"user")==0)
+	if (mal_clients->usermodule/* && strcmp(mal_clients->usermodule->name,"user")==0*/)
 		freeModule(mal_clients->usermodule);
+
+	mal_clients->fdin = 0;
+	mal_clients->prompt = 0;
+	mal_clients->username = 0;
+	mal_clients->curprg = 0;
 	mal_clients->usermodule = 0;
+
 	mal_client_reset();
   	mal_linker_reset();
 	mal_resource_reset();
 	mal_runtime_reset();
-	//mal_module_reset();
+	mal_module_reset();
 	mal_atom_reset();
+	opt_pipes_reset();
 	mdbExit();
 	GDKfree(mal_session_uuid);
+	mal_session_uuid = NULL;
 
 	memset((char*)monet_cwd,0, sizeof(monet_cwd));
 	monet_memory = 0;

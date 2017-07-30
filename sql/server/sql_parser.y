@@ -436,6 +436,7 @@ int yydebug=1;
 	document_or_content
 	document_or_content_or_sequence
 	drop_action
+	extract_datetime_field
 	grantor
 	intval
 	join_type
@@ -602,7 +603,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 
 %token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
-%token YEAR MONTH DAY HOUR MINUTE SECOND ZONE
+%token YEAR QUARTER MONTH WEEK DAY HOUR MINUTE SECOND ZONE
 %token LIMIT OFFSET SAMPLE
 
 %token CASE WHEN THEN ELSE NULLIF COALESCE IF ELSEIF WHILE DO
@@ -4011,7 +4012,7 @@ func_ident:
  ;
 
 datetime_funcs:
-    EXTRACT '(' datetime_field FROM scalar_exp ')'
+    EXTRACT '(' extract_datetime_field FROM scalar_exp ')'
 			{ dlist *l = L();
 			  const char *ident = datetime_field((itype)$3);
 			  append_list(l,
@@ -4284,6 +4285,12 @@ non_second_datetime_field:
 datetime_field:
     non_second_datetime_field
  |  SECOND		{ $$ = isec; }
+ ;
+
+extract_datetime_field:
+    datetime_field
+ |  QUARTER		{ $$ = iquarter; }
+ |  WEEK		{ $$ = iweek; }
  ;
 
 start_field:
@@ -5119,6 +5126,12 @@ data_type:
 		yyerror(m, msg);
 		_DELETE(msg);
 		YYABORT;
+	} else if (geoSubType == -1) {
+		char *msg = sql_message("allocation failure");
+		$$.type = NULL;
+		yyerror(m, msg);
+		_DELETE(msg);
+		YYABORT;
 	}  else if (!sql_find_subtype(&$$, "geometry", geoSubType, 0 )) {
 		char *msg = sql_message("SQLSTATE 22000 !""Type (%s) unknown", $1);
 		yyerror(m, msg);
@@ -5139,6 +5152,11 @@ subgeometry_type:
 		yyerror(m, msg);
 		_DELETE(msg);
 		YYABORT;
+	} else if(subtype == -1) {
+		char *msg = sql_message("allocation failure");
+		yyerror(m, msg);
+		_DELETE(msg);
+		YYABORT;
 	} 
 	$$ = subtype;	
 }
@@ -5148,6 +5166,11 @@ subgeometry_type:
 
 	if(subtype == 0) {
 		char *msg = sql_message("SQLSTATE 22000 !""Type (%s) unknown", geoSubType);
+		yyerror(m, msg);
+		_DELETE(msg);
+		YYABORT;
+	} else if (subtype == -1) {
+		char *msg = sql_message("allocation failure");
 		yyerror(m, msg);
 		_DELETE(msg);
 		YYABORT;
@@ -5946,13 +5969,18 @@ int find_subgeometry_type(char* geoSubType) {
 		if(strLength > 0 ) {
 			char *typeSubStr = malloc(strLength);
 			char flag = geoSubType[strLength-1]; 
-			
+
+			if (typeSubStr == NULL) {
+				return -1;
+			}
 			memcpy(typeSubStr, geoSubType, strLength-1);
 			typeSubStr[strLength-1]='\0';
 			if(flag == 'z' || flag == 'm' ) {
 				subType = find_subgeometry_type(typeSubStr);
-			
-			
+				if (subType == -1) {
+					free(typeSubStr);
+					return -1;
+				}
 				if(flag == 'z')
 					SET_Z(subType);
 				if(flag == 'm')

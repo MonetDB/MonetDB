@@ -274,8 +274,6 @@ addPipeDefinition(Client cntxt, str name, str pipe)
 		MT_lock_set(&pipeLock);
 		GDKfree(pipes[i].name);
 		GDKfree(pipes[i].def);
-		if (pipes[i].mb)
-			freeMalBlk(pipes[i].mb);
 		GDKfree(pipes[i].status);
 		pipes[i] = oldpipe;
 		MT_lock_unset(&pipeLock);
@@ -490,7 +488,7 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name)
 	if (pipes[i].mb == NULL)
 		msg = compileOptimizer(cntxt, name);
 
-	if (pipes[i].mb) {
+	if (pipes[i].mb && pipes[i].mb->stop) {
 		for (j = 1; j < pipes[i].mb->stop - 1; j++) {
 			q= getInstrPtr(pipes[i].mb,j);
 			if( getModuleId(q) != optimizerRef)
@@ -506,4 +504,13 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name)
 		}
 	}
 	return msg;
+}
+
+void
+opt_pipes_reset(void)
+{
+	int i;
+
+	for (i = 0; i < MAXOPTPIPES; i++)
+		pipes[i].mb = NULL;
 }

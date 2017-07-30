@@ -42,8 +42,12 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 		m->session->schema = s;
 
 	b = (buffer*)GDKmalloc(sizeof(buffer));
+	if (!b) {
+		return NULL;
+	}
 	n = GDKmalloc(len + 1 + 1);
-	if (!b || !n) {
+	if (!n) {
+		GDKfree(b);
 		return NULL;
 	}
 	strncpy(n, query, len);

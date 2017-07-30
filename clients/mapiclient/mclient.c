@@ -390,12 +390,48 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 			if (--n == 0) {
 				/* last byte of a multi-byte character */
 				len++;
-				/* the following code points are all East
-				 * Asian Fullwidth and East Asian Wide
-				 * characters as defined in Unicode 8.0 */
+				/* this list was created by combining
+				 * the code points marked as
+				 * Emoji_Presentation in
+				 * /usr/share/unicode/emoji/emoji-data.txt
+				 * and code points marked either F or
+				 * W in EastAsianWidth.txt; this list
+				 * is up-to-date with Unicode 9.0 */
 				if ((0x1100 <= c && c <= 0x115F) ||
-				    c == 0x2329 ||
-				    c == 0x232A ||
+				    (0x231A <= c && c <= 0x231B) ||
+				    (0x2329 <= c && c <= 0x232A) ||
+				    (0x23E9 <= c && c <= 0x23EC) ||
+				    c == 0x23F0 ||
+				    c == 0x23F3 ||
+				    (0x25FD <= c && c <= 0x25FE) ||
+				    (0x2614 <= c && c <= 0x2615) ||
+				    (0x2648 <= c && c <= 0x2653) ||
+				    c == 0x267F ||
+				    c == 0x2693 ||
+				    c == 0x26A1 ||
+				    (0x26AA <= c && c <= 0x26AB) ||
+				    (0x26BD <= c && c <= 0x26BE) ||
+				    (0x26C4 <= c && c <= 0x26C5) ||
+				    c == 0x26CE ||
+				    c == 0x26D4 ||
+				    c == 0x26EA ||
+				    (0x26F2 <= c && c <= 0x26F3) ||
+				    c == 0x26F5 ||
+				    c == 0x26FA ||
+				    c == 0x26FD ||
+				    c == 0x2705 ||
+				    (0x270A <= c && c <= 0x270B) ||
+				    c == 0x2728 ||
+				    c == 0x274C ||
+				    c == 0x274E ||
+				    (0x2753 <= c && c <= 0x2755) ||
+				    c == 0x2757 ||
+				    (0x2795 <= c && c <= 0x2797) ||
+				    c == 0x27B0 ||
+				    c == 0x27BF ||
+				    (0x2B1B <= c && c <= 0x2B1C) ||
+				    c == 0x2B50 ||
+				    c == 0x2B55 ||
 				    (0x2E80 <= c && c <= 0x2E99) ||
 				    (0x2E9B <= c && c <= 0x2EF3) ||
 				    (0x2F00 <= c && c <= 0x2FD5) ||
@@ -409,7 +445,8 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 				    (0x31C0 <= c && c <= 0x31E3) ||
 				    (0x31F0 <= c && c <= 0x321E) ||
 				    (0x3220 <= c && c <= 0x3247) ||
-				    (0x3250 <= c && c <= 0x4DBF) ||
+				    (0x3250 <= c && c <= 0x32FE) ||
+				    (0x3300 <= c && c <= 0x4DBF) ||
 				    (0x4E00 <= c && c <= 0xA48C) ||
 				    (0xA490 <= c && c <= 0xA4C6) ||
 				    (0xA960 <= c && c <= 0xA97C) ||
@@ -419,12 +456,52 @@ utf8strlenmax(char *s, char *e, size_t max, char **t)
 				    (0xFE30 <= c && c <= 0xFE52) ||
 				    (0xFE54 <= c && c <= 0xFE66) ||
 				    (0xFE68 <= c && c <= 0xFE6B) ||
-				    (0xFF01 <= c && c <= 0xFFE6) ||
+				    (0xFF01 <= c && c <= 0xFF60) ||
+				    (0xFFE0 <= c && c <= 0xFFE6) ||
+				    c == 0x16FE0 ||
+				    (0x17000 <= c && c <= 0x187EC) ||
+				    (0x18800 <= c && c <= 0x18AF2) ||
 				    (0x1B000 <= c && c <= 0x1B001) ||
+				    c == 0x1F004 ||
+				    c == 0x1F0CF ||
+				    c == 0x1F18E ||
+				    (0x1F191 <= c && c <= 0x1F19A) ||
+				    /* removed 0x1F1E6..0x1F1FF */
 				    (0x1F200 <= c && c <= 0x1F202) ||
-				    (0x1F210 <= c && c <= 0x1F23A) ||
+				    (0x1F210 <= c && c <= 0x1F23B) ||
 				    (0x1F240 <= c && c <= 0x1F248) ||
 				    (0x1F250 <= c && c <= 0x1F251) ||
+				    (0x1F300 <= c && c <= 0x1F320) ||
+				    (0x1F32D <= c && c <= 0x1F335) ||
+				    (0x1F337 <= c && c <= 0x1F37C) ||
+				    (0x1F37E <= c && c <= 0x1F393) ||
+				    (0x1F3A0 <= c && c <= 0x1F3CA) ||
+				    (0x1F3CF <= c && c <= 0x1F3D3) ||
+				    (0x1F3E0 <= c && c <= 0x1F3F0) ||
+				    c == 0x1F3F4 ||
+				    (0x1F3F8 <= c && c <= 0x1F43E) ||
+				    c == 0x1F440 ||
+				    (0x1F442 <= c && c <= 0x1F4FC) ||
+				    (0x1F4FF <= c && c <= 0x1F53D) ||
+				    (0x1F54B <= c && c <= 0x1F54E) ||
+				    (0x1F550 <= c && c <= 0x1F567) ||
+				    c == 0x1F57A ||
+				    (0x1F595 <= c && c <= 0x1F596) ||
+				    c == 0x1F5A4 ||
+				    (0x1F5FB <= c && c <= 0x1F64F) ||
+				    (0x1F680 <= c && c <= 0x1F6C5) ||
+				    c == 0x1F6CC ||
+				    (0x1F6D0 <= c && c <= 0x1F6D2) ||
+				    (0x1F6EB <= c && c <= 0x1F6EC) ||
+				    (0x1F6F4 <= c && c <= 0x1F6F6) ||
+				    (0x1F910 <= c && c <= 0x1F91E) ||
+				    (0x1F920 <= c && c <= 0x1F927) ||
+				    c == 0x1F930 ||
+				    (0x1F933 <= c && c <= 0x1F93E) ||
+				    (0x1F940 <= c && c <= 0x1F94B) ||
+				    (0x1F950 <= c && c <= 0x1F95E) ||
+				    (0x1F980 <= c && c <= 0x1F991) ||
+				    c == 0x1F9C0 ||
 				    (0x20000 <= c && c <= 0x2FFFD) ||
 				    (0x30000 <= c && c <= 0x3FFFD))
 					len++;

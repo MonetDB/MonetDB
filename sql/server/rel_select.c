@@ -655,6 +655,8 @@ rel_named_table_function(mvc *sql, sql_rel *rel, symbol *query, int lateral)
 			if (!f->rel || !rel || !sf)
 				return NULL;
 		}
+		if (!sf)
+			return NULL;
 		exps = list_dup(exps, NULL);
 		append(exps, tid);
 		e = exp_op(sql->sa, exps, sf);
@@ -3319,8 +3321,9 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 	if (!groupby) {
 		char *uaname = malloc(strlen(aname) + 1);
 		sql_exp *e = sql_error(sql, 02, "SQLSTATE 42000 !""%s: missing group by",
-				toUpperCopy(uaname, aname));
-		free(uaname);
+				       uaname ? toUpperCopy(uaname, aname) : aname);
+		if (uaname)
+			free(uaname);
 		return e;
 	}
 
@@ -3347,8 +3350,9 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 	if (f == sql_where) {
 		char *uaname = malloc(strlen(aname) + 1);
 		sql_exp *e = sql_error(sql, 02, "SQLSTATE 42000 !""%s: not allowed in WHERE clause",
-				toUpperCopy(uaname, aname));
-		free(uaname);
+				       uaname ? toUpperCopy(uaname, aname) : aname);
+		if (uaname)
+			free(uaname);
 		return e;
 	}
 	
@@ -3358,8 +3362,9 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 		if (strcmp(aname, "count") != 0) {
 			char *uaname = malloc(strlen(aname) + 1);
 			sql_exp *e = sql_error(sql, 02, "SQLSTATE 42000 !""%s: unable to perform '%s(*)'",
-					toUpperCopy(uaname, aname), aname);
-			free(uaname);
+					       uaname ? toUpperCopy(uaname, aname) : aname, aname);
+			if (uaname)
+				free(uaname);
 			return e;
 		}
 		a = sql_bind_aggr(sql->sa, s, aname, NULL);
@@ -3467,9 +3472,10 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 		}
 
 		e = sql_error(sql, 02, "SQLSTATE 42000 !""%s: no such operator '%s(%s)'",
-				toUpperCopy(uaname, aname), aname, type);
+			      uaname ? toUpperCopy(uaname, aname) : aname, aname, type);
 
-		free(uaname);
+		if (uaname)
+			free(uaname);
 		return e;
 	}
 }
@@ -4186,8 +4192,9 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	if (f == sql_where) {
 		char *uaname = malloc(strlen(aname) + 1);
 		e = sql_error(sql, 02, "SQLSTATE 42000 !""%s: not allowed in WHERE clause",
-				toUpperCopy(uaname, aname));
-		free(uaname);
+			      uaname ? toUpperCopy(uaname, aname) : aname);
+		if (uaname)
+			free(uaname);
 		return e;
 	}
 

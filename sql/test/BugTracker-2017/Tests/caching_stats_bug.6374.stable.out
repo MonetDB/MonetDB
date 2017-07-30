@@ -1,0 +1,98 @@
+stdout of test 'caching_stats_bug.6374` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 21:27:18 >  
+# 21:27:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34552" "--set" "mapi_usock=/var/tmp/mtest-8392/.s.monetdb.34552" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 21:27:18 >  
+
+# MonetDB 5 server v11.27.4
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.331 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:34552/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8392/.s.monetdb.34552
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 21:27:18 >  
+# 21:27:18 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8392" "--port=34552"
+# 21:27:18 >  
+
+#create table sub1 (i int);
+#create table sub2 (i int);
+#create merge table mt as select * from sub1 with no data;
+#alter table mt add table sub1;
+#alter table mt add table sub2;
+#insert into sub1 values (1),(2);
+[ 2	]
+#insert into sub2 values (11),(12);
+[ 2	]
+#alter table sub1 set read only;
+#alter table sub2 set read only;
+#select count(*) from mt where i >= 5 and i < 100;
+% sys.L4 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 2	]
+#plan select count(*) from mt where i >= 5 and i < 100;
+% .plan # table_name
+% rel # name
+% clob # type
+% 64 # length
+project (
+| group by (
+| | select (
+| | | table(sys.sub2) [ "mt"."i", "mt"."%TID%" NOT NULL ] COUNT 
+| | ) [ int "5" <= "mt"."i" < int "100" ]
+| ) [  ] [ sys.count() NOT NULL as "L3"."L3" ]
+) [ "L3" NOT NULL as "L4"."L3" ]
+#alter table sub1 set read write;
+#insert into sub1 values (7),(8);
+[ 2	]
+#alter table sub1 set read only;
+#select count(*) from mt where i >= 5 and i < 100;
+% .L4 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 4	]
+#plan select count(*) from mt where i >= 5 and i < 100;
+% .plan # table_name
+% rel # name
+% clob # type
+% 102 # length
+project (
+| group by (
+| | union (
+| | | group by (
+| | | | project (
+| | | | | select (
+| | | | | | table(sys.sub1) [ "sub1"."i" as "mt"."i", "sub1"."%TID%" NOT NULL as "mt"."%TID%" ] COUNT 
+| | | | | ) [ int "5" <= "mt"."i" < int "100" ]
+| | | | ) [ "mt"."i", "mt"."%TID%" NOT NULL ]
+| | | ) [  ] [ sys.count() NOT NULL as "L3"."L3" ],
+| | | group by (
+| | | | project (
+| | | | | select (
+| | | | | | table(sys.sub2) [ "sub2"."i" as "mt"."i", "sub2"."%TID%" NOT NULL as "mt"."%TID%" ] COUNT 
+| | | | | ) [ int "5" <= "mt"."i" < int "100" ]
+| | | | ) [ "mt"."i", "mt"."%TID%" NOT NULL ]
+| | | ) [  ] [ sys.count() NOT NULL as "L3"."L3" ]
+| | ) [ "L3"."L3" ]
+| ) [  ] [ sys.sum no nil ("L3"."L3") COUNT  as "L3"."L3" ]
+) [ "L3" NOT NULL as "L4"."L3" ]
+#drop table mt;
+#drop table sub1;
+#drop table sub2;
+
+# 21:27:18 >  
+# 21:27:18 >  "Done."
+# 21:27:18 >  
+

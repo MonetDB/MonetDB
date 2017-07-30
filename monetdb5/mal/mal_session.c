@@ -480,7 +480,6 @@ MSserveClient(void *dummy)
 
 	if (c->scenario == 0)
 		msg = defaultScenario(c);
-
 	if (msg) {
 		c->mode = RUNCLIENT;
 		return msg;
@@ -507,28 +506,18 @@ MSserveClient(void *dummy)
 		freeSymbol(c->backup);
 		c->backup = 0;
 	}
-	if (c->curprg) {
-		Symbol s = c->curprg;
-		assert(0);
-		c->curprg = 0;
-		freeSymbol(s);
-	}
-	if (c->usermodule) {
-		assert(0);
-	}
 
-	if (c->mode > FINISHCLIENT) {
-		if (isAdministrator(c) /* && moreClients(0)==0 */) {
-			if (c->scenario) {
-				exitScenario(c);
-			}
-		}
+	/*
+	if (c->curprg) {
+		freeSymbol(c->curprg);
+		c->curprg = 0;
 	}
+	*/
+
 	if (!isAdministrator(c))
 		MCcloseClient(c);
-	if (c->usermodule && strcmp(c->usermodule->name, "user") == 0) {
-		GDKfree(c->usermodule->space);
-		GDKfree(c->usermodule);
+	if (c->usermodule /*&& strcmp(c->usermodule->name, "user") == 0*/) {
+		freeModule(c->usermodule);
 		c->usermodule = NULL;
 	}
 	return MAL_SUCCEED;
@@ -556,21 +545,19 @@ MALinitClient(Client c)
 str
 MALexitClient(Client c)
 {
-	Module m = c->usermodule;
 	if (c->glb && c->curprg->def->errors == MAL_SUCCEED)
 		garbageCollector(c, c->curprg->def, c->glb, TRUE);
 	c->mode = FINISHCLIENT;
 	if (c->backup) {
+		assert(0);
 		freeSymbol(c->backup);
 		c->backup = NULL;
 	}
 	/* should be in the usermodule */
 	c->curprg = NULL;
-	c->usermodule = NULL;
-	// only clear out the private module
-	// Beware the parser may choosen another target
-	if (m && strcmp(m->name,"user")== 0){
-		freeModule(m);
+	if (c->usermodule){
+		freeModule(c->usermodule);
+		c->usermodule = NULL;
 	}
 	return NULL;
 }

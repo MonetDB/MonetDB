@@ -61,6 +61,9 @@
 #ifdef HAVE_SYS_UIO_H
 # include <sys/uio.h>
 #endif
+#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif
 
 #define SOCKPTR struct sockaddr *
 #ifdef HAVE_SOCKLEN_T

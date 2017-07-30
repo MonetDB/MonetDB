@@ -44,6 +44,10 @@ static FileRecord filesLoaded[MAXMODULES];
 static int maxfiles = MAXMODULES;
 static int lastfile = 0;
 
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
+#endif
+
 /*
  * returns 1 if the file exists
  */
