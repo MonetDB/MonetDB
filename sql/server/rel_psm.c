@@ -616,6 +616,7 @@ sequential_block (mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk,
 			reslist = rel_psm_case(sql, restype, restypelist, s->data.lval->h, is_func);
 			break;
 		case SQL_CALL:
+			sql->continuous = 0;
 			res = rel_psm_call(sql, s->data.sym);
 			break;
 		case SQL_START_CALL: {

@@ -92,6 +92,7 @@ CQfree(int idx)
 	GDKfree(pnet[idx].mod);
 	GDKfree(pnet[idx].fcn);
 	GDKfree(pnet[idx].stmt);
+	// compact the pnet table
 	for(i=idx; i<pnettop-1; i++)
 		pnet[i] = pnet[i+1];
 	pnettop--;
@@ -1113,7 +1114,7 @@ str
 CQderegisterAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	int i, limit;
+	int i;
 	mvc* smvc;
 
 	ALL_ROOT_CHECK(cntxt, "cquery.deregisterall", "STOP ");
@@ -1124,9 +1125,8 @@ CQderegisterAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) pci;
 
 	MT_lock_set(&ttrLock);
-	limit = pnettop; // the pnettop value will always decrease in the loop bellow
 
-	for(i = 0 ; i < limit; i++) {
+	for(i = 0 ; i < pnettop; i++) {
 		pnet[i].status = CQSTOP;
 		MT_lock_unset(&ttrLock);
 
@@ -1136,6 +1136,7 @@ CQderegisterAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		MT_lock_set(&ttrLock);
 		CQfree(i);
+		i--;
 	}
 	pnstatus = CQSTOP;
 
@@ -1312,7 +1313,7 @@ CQscheduler(void *dummy)
 
 		/* Execute each enabled transformation */
 		/* Tricky part is here a single stream used by multiple transitions */
-		for (i = 0; i < pnettop; i++)
+		for (i = 0; i < pnettop  ; i++)
 		if( pnet[i].enabled){
 #ifdef DEBUG_CQUERY
 			fprintf(stderr, "#Run transition %s.%s cycle=%d \n", pnet[i].mod, pnet[i].fcn, pnet[i].cycles);
@@ -1327,7 +1328,8 @@ CQscheduler(void *dummy)
 			}
 			pnet[i].status = CQRUNNING;
 			MT_lock_unset(&ttrLock);
-			CQexecute(cntxt, i);
+			if( !GDKexiting())
+				CQexecute(cntxt, i);
 /*
 				if (MT_create_thread(&pnet[i].tid, CQexecute, (void*) (pnet+i), MT_THR_JOINABLE) < 0){
 					msg= createException(MAL,"petrinet.scheduler","Can not fork the thread");

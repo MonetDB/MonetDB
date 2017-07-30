@@ -38,6 +38,7 @@ comment "Activate a specific continuous query with no changes";
 pattern resumenoalter(mod:str, fcn:str)
 address CQresumeNoAlter
 comment "Activate a specific continuous query with changes to the cycles and heartbeat values";
+
 pattern resume()
 address CQresumeAll
 comment "Activate all continuous queries";
@@ -45,6 +46,7 @@ comment "Activate all continuous queries";
 pattern pause(mod:str, fcn:str)
 address CQpause
 comment "Deactivate a continuous query";
+
 pattern pause()
 address CQpauseAll
 comment "Deactivate all continuous queries";
@@ -52,6 +54,7 @@ comment "Deactivate all continuous queries";
 pattern deregister(mod:str, fcn:str)
 address CQderegister
 comment "Remove a continuous query";
+
 pattern deregister()
 address CQderegisterAll
 comment "Remove all continuous queries";

@@ -84,6 +84,7 @@ epoch
 # use the continuous primitives
 cqcreate
 
+cquery
 cquery00
 cquery05
 cquery06

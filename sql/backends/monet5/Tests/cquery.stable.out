@@ -1,0 +1,32 @@
+stdout of test 'cquery` in directory 'sql/backends/monet5` itself:
+
+
+# 22:02:27 >  
+# 22:02:27 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30916" "--set" "mapi_usock=/var/tmp/mtest-9376/.s.monetdb.30916" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/trails//Linux/var/MonetDB/mTests_sql_backends_monet5"
+# 22:02:27 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.588 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://vienna.da.cwi.nl:30916/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9376/.s.monetdb.30916
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Timetrails module loaded
+
+Ready.
+
+# 22:02:28 >  
+# 22:02:28 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-9376" "--port=30916"
+# 22:02:28 >  
+
+
+# 22:02:28 >  
+# 22:02:28 >  "Done."
+# 22:02:28 >  
+

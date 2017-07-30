@@ -22,7 +22,7 @@ end;
 start continuous sys.cq_splitter();
 
 -- wait for a few seconds for scheduler to do work
-call cquery.wait(1000);
+call cquery.wait(3000);
 
 -- STOP cq_splitter;
 pause continuous sys.cq_splitter();

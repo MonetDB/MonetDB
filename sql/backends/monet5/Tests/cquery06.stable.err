@@ -29,6 +29,7 @@ stderr of test 'cquery06` in directory 'sql/backends/monet5` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-24395/.s.monetdb.39287
 QUERY = pause continuous cq_basic06(); --error
+ERROR = !The continuous procedure user.cq_basic06(); has not yet started
 
 
 

@@ -1,11 +1,11 @@
 stderr of test 'cquery00` in directory 'sql/backends/monet5` itself:
 
 
-# 22:29:13 >  
-# 22:29:13 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36097" "--set" "mapi_usock=/var/tmp/mtest-16121/.s.monetdb.36097" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/cquery//Linux/var/MonetDB/mTests_sql_backends_monet5"
-# 22:29:13 >  
+# 22:52:08 >  
+# 22:52:08 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34092" "--set" "mapi_usock=/var/tmp/mtest-29156/.s.monetdb.34092" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/trails//Linux/var/MonetDB/mTests_sql_backends_monet5"
+# 22:52:08 >  
 
-# builtin opt 	gdk_dbpath = /export/scratch1/mk/cquery//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/trails//Linux/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
 # builtin opt 	gdk_vmtrim = no
 # builtin opt 	monet_prompt = >
@@ -17,35 +17,18 @@ stderr of test 'cquery00` in directory 'sql/backends/monet5` itself:
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 36097
-# cmdline opt 	mapi_usock = /var/tmp/mtest-16121/.s.monetdb.36097
+# cmdline opt 	mapi_port = 34092
+# cmdline opt 	mapi_usock = /var/tmp/mtest-29156/.s.monetdb.34092
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbpath = /export/scratch1/mk/cquery//Linux/var/MonetDB/mTests_sql_backends_monet5
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/trails//Linux/var/MonetDB/mTests_sql_backends_monet5
 # cmdline opt 	gdk_debug = 536870922
-#scheduler status init
 
-# 22:29:14 >  
-# 22:29:14 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-16121" "--port=36097"
-# 22:29:14 >  
-
-MAPI  = (monetdb) /var/tmp/mtest-16121/.s.monetdb.36097
-QUERY = # some simple MAL tests
-        
-        cquery.dump();
-        
-        cquery.show("unknown","query");
-        
-        (tick:bat[:timestamp],mod:bat[:str],fcn:bat[:str], time:bat[:lng],error:bat[:str]) := cquery.log();
-        
-        io.print(tick,mod,fcn,time,error);
+# 22:52:08 >  
+# 22:52:08 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29156" "--port=34092"
+# 22:52:08 >  
 
 
-
-
-
-
-
-# 22:29:14 >  
-# 22:29:14 >  "Done."
-# 22:29:14 >  
+# 22:52:08 >  
+# 22:52:08 >  "Done."
+# 22:52:08 >  
 

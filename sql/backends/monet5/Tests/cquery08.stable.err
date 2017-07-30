@@ -1,0 +1,118 @@
+stderr of test 'cquery08` in directory 'sql/backends/monet5` itself:
+
+
+# 22:02:35 >  
+# 22:02:35 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30916" "--set" "mapi_usock=/var/tmp/mtest-9376/.s.monetdb.30916" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/trails//Linux/var/MonetDB/mTests_sql_backends_monet5"
+# 22:02:35 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/mk/trails//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30916
+# cmdline opt 	mapi_usock = /var/tmp/mtest-9376/.s.monetdb.30916
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /export/scratch1/mk/trails//Linux/var/MonetDB/mTests_sql_backends_monet5
+# cmdline opt 	gdk_debug = 536870922
+
+
+
+Thread 7 (Thread 0x7ff7acafc700 (LWP 11460)):
+#0  0x00007ff7d19fe323 in select () from /lib64/libc.so.6
+#1  0x00007ff7d46758aa in MT_sleep_ms (ms=288) at /export/scratch1/mk/trails//package/gdk/gdk_posix.c:1105
+#2  0x00007ff7c5b09807 in CQscheduler (dummy=0x7ff7c73bc670) at /export/scratch1/mk/trails//package/sql/backends/monet5/sql_cquery.c:1376
+#3  0x00007ff7d1cce5ca in start_thread () from /lib64/libpthread.so.0
+#4  0x00007ff7d1a080cd in clone () from /lib64/libc.so.6
+Thread 6 (Thread 0x7ff7accfd700 (LWP 11459)):
+#0  0x00007ff7d19fe323 in select () from /lib64/libc.so.6
+#1  0x00007ff7d46758aa in MT_sleep_ms (ms=5) at /export/scratch1/mk/trails//package/gdk/gdk_posix.c:1105
+#2  0x00007ff7c5b07ddd in CQderegisterAll (cntxt=0x7ff7c73b6348, mb=0x0, stk=0x0, pci=0x0) at /export/scratch1/mk/trails//package/sql/backends/monet5/sql_cquery.c:1135
+#3  0x00007ff7c5a9ceff in change_cp (cntxt=0x7ff7c73b6348, action=6) at /export/scratch1/mk/trails//package/sql/backends/monet5/sql_cat.c:421
+#4  0x00007ff7c5aa26d5 in SQLchange_cp (cntxt=0x7ff7c73b6348, mb=0x7ff798276400, stk=0x7ff7983aeca0, pci=0x7ff7983ac880) at /export/scratch1/mk/trails//package/sql/backends/monet5/sql_cat.c:1246
+#5  0x00007ff7d49c940f in runMALsequence (cntxt=0x7ff7c73b6348, mb=0x7ff798276400, startpc=1, stoppc=0, stk=0x7ff7983aeca0, env=0x0, pcicaller=0x0) at /export/scratch1/mk/trails//package/monetdb5/mal/mal_interpreter.c:642
+#6  0x00007ff7d49c7fe3 in runMAL (cntxt=0x7ff7c73b6348, mb=0x7ff798276400, mbcaller=0x0, env=0x0) at /export/scratch1/mk/trails//package/monetdb5/mal/mal_interpreter.c:354
+#7  0x00007ff7c5a7efc8 in SQLrun (c=0x7ff7c73b6348, be=0x7ff7981e1d20, m=0x7ff79810abc0) at /export/scratch1/mk/trails//package/sql/backends/monet5/sql_execute.c:380
+#8  0x00007ff7c5a806ae in SQLengineIntern (c=0x7ff7c73b6348, be=0x7ff7981e1d20) at /export/scratch1/mk/trails//package/sql/backends/monet5/sql_execute.c:752
+#9  0x00007ff7c5a7d591 in SQLengine (c=0x7ff7c73b6348) at /export/scratch1/mk/trails//package/sql/backends/monet5/sql_scenario.c:1209
+#10 0x00007ff7d49edd7d in runPhase (c=0x7ff7c73b6348, phase=4) at /export/scratch1/mk/trails//package/monetdb5/mal/mal_scenario.c:517
+#11 0x00007ff7d49edf56 in runScenarioBody (c=0x7ff7c73b6348) at /export/scratch1/mk/trails//package/monetdb5/mal/mal_scenario.c:559
+#12 0x00007ff7d49ee064 in runScenario (c=0x7ff7c73b6348) at /export/scratch1/mk/trails//package/monetdb5/mal/mal_scenario.c:579
+#13 0x00007ff7d49efb0a in MSserveClient (dummy=0x7ff7c73b6348) at /export/scratch1/mk/trails//package/monetdb5/mal/mal_session.c:462
+#14 0x00007ff7d49ef5fa in MSscheduleClient (command=0x7ff7980008d0 "0i\035\230\367\177", challenge=0x7ff7accfcd70 "lJaIh2kIcgA", fin=0x7ff798002990, fout=0x7ff7a4000b40, protocol=PROTOCOL_9, blocksize=8190, compute_column_widths=0) at /export/scratch1/mk/trails//package/monetdb5/mal/mal_session.c:353
+#15 0x00007ff7d4a90718 in doChallenge (data=0x7ff7a40008d0) at /export/scratch1/mk/trails//package/monetdb5/modules/mal/mal_mapi.c:269
+#16 0x00007ff7d46734e4 in thread_starter (arg=0x7ff7a4004c60) at /export/scratch1/mk/trails//package/gdk/gdk_system.c:485
+#17 0x00007ff7d1cce5ca in start_thread () from /lib64/libpthread.so.0
+#18 0x00007ff7d1a080cd in clone () from /lib64/libc.so.6
+Thread 5 (Thread 0x7ff7acefe700 (LWP 11455)):
+#0  0x00007ff7d19fe323 in select () from /lib64/libc.so.6
+#1  0x00007ff7d46758aa in MT_sleep_ms (ms=10) at /export/scratch1/mk/trails//package/gdk/gdk_posix.c:1105
+#2  0x00007ff7c5bc44d6 in idle_manager () at /export/scratch1/mk/trails//package/sql/storage/store.c:1895
+#3  0x00007ff7c5b1eea0 in mvc_idlemanager () at /export/scratch1/mk/trails//package/sql/server/sql_mvc.c:187
+#4  0x00007ff7d1cce5ca in start_thread () from /lib64/libpthread.so.0
+#5  0x00007ff7d1a080cd in clone () from /lib64/libc.so.6
+Thread 4 (Thread 0x7ff7ad0ff700 (LWP 11454)):
+#0  0x00007ff7d19fe323 in select () from /lib64/libc.so.6
+#1  0x00007ff7d46758aa in MT_sleep_ms (ms=10) at /export/scratch1/mk/trails//package/gdk/gdk_posix.c:1105
+#2  0x00007ff7c5bc3e0c in store_manager () at /export/scratch1/mk/trails//package/sql/storage/store.c:1835
+#3  0x00007ff7c5b1ee51 in mvc_logmanager () at /export/scratch1/mk/trails//package/sql/server/sql_mvc.c:178
+#4  0x00007ff7d1cce5ca in start_thread () from /lib64/libpthread.so.0
+#5  0x00007ff7d1a080cd in clone () from /lib64/libc.so.6
+Thread 3 (Thread 0x7ff7ad300700 (LWP 11452)):
+#0  0x00007ff7d19fe323 in select () from /lib64/libc.so.6
+#1  0x00007ff7d4a90997 in SERVERlistenThread (Sock=0xb209b0) at /export/scratch1/mk/trails//package/monetdb5/modules/mal/mal_mapi.c:319
+#2  0x00007ff7d1cce5ca in start_thread () from /lib64/libpthread.so.0
+#3  0x00007ff7d1a080cd in clone () from /lib64/libc.so.6
+Thread 2 (Thread 0x7ff7c73af700 (LWP 11451)):
+#0  0x00007ff7d19fe323 in select () from /lib64/libc.so.6
+#1  0x00007ff7d46758aa in MT_sleep_ms (ms=10) at /export/scratch1/mk/trails//package/gdk/gdk_posix.c:1105
+#2  0x00007ff7d49e8a1c in profilerHeartbeat (dummy=0x0) at /export/scratch1/mk/trails//package/monetdb5/mal/mal_profiler.c:1016
+#3  0x00007ff7d1cce5ca in start_thread () from /lib64/libpthread.so.0
+#4  0x00007ff7d1a080cd in clone () from /lib64/libc.so.6
+Thread 1 (Thread 0x7ff7d4f89880 (LWP 11448)):
+#0  0x00007ff7d19f81ad in read () from /lib64/libc.so.6
+#1  0x00007ff7d197d528 in __GI__IO_file_underflow () from /lib64/libc.so.6
+#2  0x00007ff7d197e56e in __GI__IO_default_uflow () from /lib64/libc.so.6
+#3  0x00007ff7d1971d9a in __GI__IO_getline_info () from /lib64/libc.so.6
+#4  0x00007ff7d1970ccb in fgets () from /lib64/libc.so.6
+#5  0x00007ff7d380e721 in bstream_readline (s=0x7c83e0) at /export/scratch1/mk/trails//package/common/stream/stream.c:5135
+#6  0x00007ff7d380e828 in bstream_next (s=0x7c83e0) at /export/scratch1/mk/trails//package/common/stream/stream.c:5158
+#7  0x00007ff7d49ad7e9 in MCreadClient (c=0x7ff7c73b0020) at /export/scratch1/mk/trails//package/monetdb5/mal/mal_client.c:551
+#8  0x00007ff7d49eff85 in MALreader (c=0x7ff7c73b0020) at /export/scratch1/mk/trails//package/monetdb5/mal/mal_session.c:556
+#9  0x00007ff7d49edd7d in runPhase (c=0x7ff7c73b0020, phase=0) at /export/scratch1/mk/trails//package/monetdb5/mal/mal_scenario.c:517
+#10 0x00007ff7d49ede6c in runScenarioBody (c=0x7ff7c73b0020) at /export/scratch1/mk/trails//package/monetdb5/mal/mal_scenario.c:545
+#11 0x00007ff7d49ee064 in runScenario (c=0x7ff7c73b0020) at /export/scratch1/mk/trails//package/monetdb5/mal/mal_scenario.c:579
+#12 0x00007ff7d49efb0a in MSserveClient (dummy=0x7ff7c73b0020) at /export/scratch1/mk/trails//package/monetdb5/mal/mal_session.c:462
+#13 0x0000000000404096 in main (argc=14, av=0x7fff04e78668) at /export/scratch1/mk/trails//package/tools/mserver/mserver5.c:704
+
+
+# 22:02:36 >  
+# 22:02:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9376" "--port=30916"
+# 22:02:36 >  
+
+
+
+
+#0  0x00007fe62f4e9d80 in __read_nocancel () from /lib64/libpthread.so.0
+#1  0x00007fe630dec9a8 in socket_read (s=0x20e6590, buf=0x7ffd84e2f226, elmsize=2, cnt=1) at /export/scratch1/mk/trails//package/common/stream/stream.c:2235
+#2  0x00007fe630df16de in mnstr_readSht (s=0x20e6590, val=0x7ffd84e2f226) at /export/scratch1/mk/trails//package/common/stream/stream.c:4714
+#3  0x00007fe630def54e in bs_read (ss=0x20e66d0, buf=0x20ed42b, elmsize=1, cnt=8190) at /export/scratch1/mk/trails//package/common/stream/stream.c:3774
+#4  0x00007fe630de84e4 in mnstr_read (s=0x20e66d0, buf=0x20ed42b, elmsize=1, cnt=8190) at /export/scratch1/mk/trails//package/common/stream/stream.c:349
+#5  0x00007fe6310057e1 in read_line (mid=0x20e6310) at /export/scratch1/mk/trails//package/clients/mapilib/mapi.c:3399
+#6  0x00007fe631007628 in read_into_cache (hdl=0x20e6820, lookahead=1) at /export/scratch1/mk/trails//package/clients/mapilib/mapi.c:3845
+#7  0x00007fe63100944e in mapi_query_done (hdl=0x20e6820) at /export/scratch1/mk/trails//package/clients/mapilib/mapi.c:4245
+#8  0x000000000040b6df in doFile (mid=0x20e6310, fp=0x20e68e0, useinserts=0, interactive=1, save_history=0) at /export/scratch1/mk/trails//package/clients/mapiclient/mclient.c:2796
+#9  0x000000000040d500 in main (argc=8, argv=0x7ffd84e308f8) at /export/scratch1/mk/trails//package/clients/mapiclient/mclient.c:3421
+
+
+# 22:03:37 >  
+# 22:03:37 >  "Done."
+# 22:03:37 >  
+

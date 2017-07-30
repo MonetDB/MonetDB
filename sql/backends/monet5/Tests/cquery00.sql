@@ -14,7 +14,7 @@ call myproc();
 
 select * from results;
 
-select * from functions where name = 'myproc';
+--select * from functions where name = 'myproc';
 
 drop procedure myproc;
 drop table results;
