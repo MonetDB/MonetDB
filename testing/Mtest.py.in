@@ -3781,7 +3781,11 @@ def main(argv) :
             if not os.path.exists(rdir):
                 os.makedirs(rdir)
     if CheckExec('php'):
-        proc = process.Popen(['php', '-d', 'include_path=${PHP_INCPATH}', '-r', "require 'monetdb/php_monetdb.php';"],
+        phpcmd = ['php']
+        if 'PHP_INCPATH' in os.environ:
+            phpcmd.extend(['-d', 'include_path=%s' % os.environ['PHP_INCPATH']])
+        phpcmd.extend(['-r', "require 'monetdb/php_monetdb.php';"])
+        proc = process.Popen(phpcmd,
                              stdout = process.PIPE, stderr = process.PIPE,
                              universal_newlines = True)
         php_out, php_err = proc.communicate()
