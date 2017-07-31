@@ -324,7 +324,7 @@ SQLrun(Client c, backend *be, mvc *m)
 				}
 				val= (ValPtr) &arg->data;
 				if (VALcopy(&mb->var[j+retc].value, val) == NULL)
-					throw(MAL, "sql.prepare", SQLSTATE(HY100) MAL_MALLOC_FAIL);
+					throw(MAL, "sql.prepare", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				setVarConstant(mb, j+retc);
 				setVarFixed(mb, j+retc);
 			}
@@ -612,7 +612,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 					void *ptr =ATOMnil(t->type->localtype);
 
 					if( ptr == NULL){
-						msg = createException(SQL,"SQLstatement",MAL_MALLOC_FAIL);
+						msg = createException(SQL,"SQLstatement", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 						goto endofcompile;
 					}
 					name = e->name;
@@ -623,7 +623,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 						rname = e->l;
 					if (res_col_create(m->session->tr, res, rname, name, t->type->sqlname, t->digits,
 							   t->scale, t->type->localtype, ptr) == NULL) {
-						msg = createException(SQL,"SQLstatement",MAL_MALLOC_FAIL);
+						msg = createException(SQL,"SQLstatement", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 						goto endofcompile;
 					}
 				}

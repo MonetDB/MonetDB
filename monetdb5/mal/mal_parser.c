@@ -1218,7 +1218,7 @@ fcnHeader(Client cntxt, int kind)
 		max = curInstr->maxarg;
 		newarg = (short *) GDKmalloc(max * sizeof(curInstr->argv[0]));
 		if (newarg == NULL){
-			parseError(cntxt, MAL_MALLOC_FAIL);
+			parseError(cntxt, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			if (cntxt->backup) {
 				freeSymbol(cntxt->curprg);
 				cntxt->curprg = cntxt->backup;

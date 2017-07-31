@@ -41,7 +41,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	index= (int*) GDKzalloc(sizeof(int) * mb->vtop);
 
 	if ( alias == NULL || cst == NULL || index == NULL){
-		msg = createException(MAL,"optimizer.constants",MAL_MALLOC_FAIL);
+		msg = createException(MAL,"optimizer.constants", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 

@@ -217,7 +217,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (colname == NULL || tform == NULL) {
 		GDKfree(colname);
 		GDKfree(tform);
-		throw(MAL, "fits.exporttable", MAL_MALLOC_FAIL);
+		throw(MAL, "fits.exporttable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	/*	fprintf(stderr,"Number of columns: %d\n", columns);*/

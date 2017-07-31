@@ -238,7 +238,7 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if ((bn = COLnew(0, TYPE_oid, BATcount(b), TRANSIENT)) == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.getorderidx", MAL_MALLOC_FAIL);
+		throw(MAL, "bat.getorderidx", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	memcpy(Tloc(bn, 0), (const oid *) b->torderidx->base + ORDERIDXOFF,
 		   BATcount(b) * SIZEOF_OID);
@@ -267,7 +267,7 @@ OIDXorderidx(bat *ret, const bat *bid, const bit *stable)
 	r = BATorderidx(b, *stable);
 	if (r != GDK_SUCCEED) {
 		BBPunfix(*bid);
-		throw(MAL, "algebra.orderidx", MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.orderidx", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	*ret = *bid;
 	BBPkeepref(*ret);
@@ -325,7 +325,7 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if ((a = (BAT **) GDKmalloc(n_ar*sizeof(BAT *))) == NULL) {
 		BBPunfix(bid);
-		throw(MAL, "bat.orderidx", MAL_MALLOC_FAIL);
+		throw(MAL, "bat.orderidx", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	m_sz = 0;
 	for (i = 0; i < n_ar; i++) {
@@ -369,7 +369,7 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(bid);
 
 	if (rc != GDK_SUCCEED)
-		throw(MAL, "bat.orderidx", MAL_MALLOC_FAIL);
+		throw(MAL, "bat.orderidx", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	return MAL_SUCCEED;
 }

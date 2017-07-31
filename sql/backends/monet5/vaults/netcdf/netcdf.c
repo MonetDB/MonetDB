@@ -618,7 +618,7 @@ NCDFloadVar(bat **dim, bat *v, int ncid, int varid, nc_type vtype, int vndims, i
 		GDKfree(dlen);
 		GDKfree(val_rep);
 		GDKfree(grp_rep);
-		throw(MAL, "netcdf.loadvar", MAL_MALLOC_FAIL);
+		throw(MAL, "netcdf.loadvar", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
     	/* compute the repetition factor inside of the series (val_rep) and of series (grp_rep) */
@@ -722,7 +722,7 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* compose 'create table' statement in the buffer */
 	dname = (char **) GDKzalloc( sizeof(char *) * vndims);
 	if (dname == NULL)
-		throw(MAL, "netcdf.importvar", MAL_MALLOC_FAIL);
+		throw(MAL, "netcdf.importvar", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	for (i = 0; i < vndims; i++)
 		dname[i] = (char *) GDKzalloc(NC_MAX_NAME + 1);
 
@@ -759,7 +759,7 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /* load variable data */
 	dim_bids = (bat *)GDKmalloc(sizeof(bat) * vndims);
 	if (dim_bids == NULL)
-		throw(MAL, "netcdf.importvar", MAL_MALLOC_FAIL);
+		throw(MAL, "netcdf.importvar", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	msg = NCDFloadVar(&dim_bids, &vbatid, ncid, varid, vtype, vndims, vdims);
 	if ( msg != MAL_SUCCEED ) {

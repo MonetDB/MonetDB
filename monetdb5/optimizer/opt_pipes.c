@@ -326,7 +326,7 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 		BBPreclaim(b);
 		BBPreclaim(bn);
 		BBPreclaim(bs);
-		throw(MAL, "optimizer.getpipeDefinition", MAL_MALLOC_FAIL);
+		throw(MAL, "optimizer.getpipeDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++) {
@@ -342,7 +342,7 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 			BBPreclaim(b);
 			BBPreclaim(bn);
 			BBPreclaim(bs);
-			throw(MAL, "optimizer.getpipeDefinition", MAL_MALLOC_FAIL);
+			throw(MAL, "optimizer.getpipeDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 

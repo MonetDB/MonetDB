@@ -390,11 +390,11 @@ str qserv_ptInSphPoly(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* Parse polygon spec if it isn't constant */
 	edges = (dbl*) GDKmalloc( pci->argc -3 * sizeof(dbl));
 	if ( edges == NULL)
-		throw(MAL,"lsst.ptInSPhPoly",MAL_MALLOC_FAIL);
+		throw(MAL,"lsst.ptInSPhPoly", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	nv = (dbl*) GDKmalloc( pci->argc -3 * sizeof(dbl));
 	if ( nv == NULL){
 		GDKfree(edges);
-		throw(MAL,"lsst.ptInSPhPoly",MAL_MALLOC_FAIL);
+		throw(MAL,"lsst.ptInSPhPoly", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	for (i = 3; i <pci->argc; ++i) 
 		nv[i-3] =  *getArgReference_dbl(stk,pci,i);
@@ -471,7 +471,7 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 	if ( xl == NULL){
 		BBPunfix(*lid);
 		BBPunfix(*rid);
-		throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.xmatch", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	xr = COLnew(0, TYPE_oid, MIN(BATcount(bl), BATcount(br)), TRANSIENT);
@@ -479,7 +479,7 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 		BBPunfix(*lid);
 		BBPunfix(*rid);
 		BBPunfix(xl->batCacheid);
-		throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.xmatch", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	for (lo = bl->hseqbase; l < lend; lo++, l++) {
@@ -498,7 +498,7 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 							BBPunfix(*rid);
 							BBPunfix(xl->batCacheid);
 							BBPunfix(xr->batCacheid);
-							throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
+							throw(MAL, "algebra.xmatch", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 						}
 					} else if (lhtm < rhtm) {
 						lhtm = lhtm << shift;
@@ -572,7 +572,7 @@ LSSTxmatchselect(bat *res, bat *bid, bat *sid, lng *r, int *delta, bit *anti)
 		BBPunfix(b->batCacheid);
 		if (s)
 			BBPunfix(s->batCacheid);
-		throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.xmatch", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	if (*r == lng_nil) {
 		BBPunfix(b->batCacheid);
@@ -602,7 +602,7 @@ LSSTxmatchselect(bat *res, bat *bid, bat *sid, lng *r, int *delta, bit *anti)
 				if (s)
 					BBPunfix(s->batCacheid);
 				BBPunfix(bn->batCacheid);
-				throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
+				throw(MAL, "algebra.xmatch", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 		}
 	} else {
@@ -624,7 +624,7 @@ LSSTxmatchselect(bat *res, bat *bid, bat *sid, lng *r, int *delta, bit *anti)
 				if (s)
 					BBPunfix(s->batCacheid);
 				BBPunfix(bn->batCacheid);
-				throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
+				throw(MAL, "algebra.xmatch", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			o++;
 		}

@@ -39,7 +39,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	limit= mb->stop;
 	slimit = mb->ssize;
 	if ( newMalBlkStmt(mb,mb->stop) < 0)
-		throw(MAL,"optimizer.matpack",MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.matpack", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		if( getModuleId(p) == matRef  && getFunctionId(p) == packRef && isaBatType(getArgType(mb,p,1))) {

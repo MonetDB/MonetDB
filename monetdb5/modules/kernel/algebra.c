@@ -565,7 +565,7 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (g)
 		BBPunfix(g->batCacheid);
 	if (rc != GDK_SUCCEED)
-		throw(MAL, "algebra.firstn", MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.firstn", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	BBPkeepref(*ret1 = bn->batCacheid);
 	if (ret2)
 		BBPkeepref(*ret2 = gn->batCacheid);
@@ -880,7 +880,7 @@ ALGsubslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end)
 	bn = BATdense(0, b->hseqbase + s, e - s);
 	BBPunfix(*bid);
 	if (bn == NULL)
-		throw(MAL, "algebra.subslice", MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.subslice", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	*ret = bn->batCacheid;
 	BBPkeepref(*ret);
 	return MAL_SUCCEED;
@@ -901,7 +901,7 @@ doALGfetch(ptr ret, BAT *b, BUN pos)
 		int _len = ATOMlen(b->ttype, _src);
 		ptr _dst = GDKmalloc(_len);
 		if( _dst == NULL)
-			throw(MAL,"doAlgFetch",MAL_MALLOC_FAIL);
+			throw(MAL,"doAlgFetch", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		memcpy(_dst, _src, _len);
 		*(ptr*) ret = _dst;
 	} else {
@@ -1008,7 +1008,7 @@ ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bn = BATconstant(b->hseqbase, v->vtype, VALptr(v), BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		*ret = bat_nil;
-		throw(MAL, "algebra.project", MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.project", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	*ret= bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
@@ -1028,13 +1028,13 @@ str ALGreuse(bat *ret, const bat *bid)
 			bn= BATwcopy(b);
 			if (bn == NULL) {
 				BBPunfix(b->batCacheid);
-				throw(MAL, "algebra.reuse", MAL_MALLOC_FAIL);
+				throw(MAL, "algebra.reuse", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 		} else {
 			bn = COLnew(b->hseqbase, b->ttype, BATcount(b), TRANSIENT);
 			if (bn == NULL) {
 				BBPunfix(b->batCacheid);
-				throw(MAL, "algebra.reuse", MAL_MALLOC_FAIL);
+				throw(MAL, "algebra.reuse", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			BATsetcount(bn,BATcount(b));
 			bn->tsorted = FALSE;

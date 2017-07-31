@@ -114,7 +114,7 @@ str pyobject_to_blob(PyObject **ptr, size_t maxsize, blob **value) {
 
 	*value = GDKmalloc(sizeof(blob) + size + 1);
 	if (!*value) {
-		msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL);
+		msg = createException(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 	(*value)->nitems = size;

@@ -258,7 +258,7 @@ MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 			last = i;
 			i = inlineMALblock(mb, i, t->def);
 			if( i < 0)
-				throw(MAL, "optimizer.MACROoptimizer", MAL_MALLOC_FAIL);
+				throw(MAL, "optimizer.MACROoptimizer", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				
 			cnt++;
 			if (cnt > MAXEXPANSION)
@@ -370,7 +370,7 @@ ORCAMprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 			msg = MACROvalidate(mc);
 			if (msg == MAL_SUCCEED){
 				if( replaceMALblock(mb, i, mc) < 0)
-					throw(MAL,"orcam", MAL_MALLOC_FAIL);
+					throw(MAL,"orcam", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			} else
 				break;
 		}

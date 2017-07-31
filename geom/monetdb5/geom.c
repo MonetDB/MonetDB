@@ -4624,7 +4624,7 @@ wkbBox2D(mbr **box, wkb **point1, wkb **point2)
 		//Assign the coordinates. Ensure that they are in correct order
 		*box = GDKmalloc(sizeof(mbr));
 		if (*box == NULL) {
-			err = createException(MAL, SQLSTATE(38000) "geom.MakeBox2D", MAL_MALLOC_FAIL);
+			err = createException(MAL, "geom.MakeBox2D", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		} else {
 			(*box)->xmin = (float) (xmin < xmax ? xmin : xmax);
 			(*box)->ymin = (float) (ymin < ymax ? ymin : ymax);

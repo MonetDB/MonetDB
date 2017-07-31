@@ -96,7 +96,7 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 	if (GDKerrbuf &&
 		/* prevent recursion
 		 * note, sizeof("string") includes terminating NULL byte */
-		strncmp(format, MAL_MALLOC_FAIL ":", sizeof(MAL_MALLOC_FAIL)) != 0 &&
+		strncmp(format, SQLSTATE(HY001) MAL_MALLOC_FAIL ":", sizeof(MAL_MALLOC_FAIL)) != 0 &&
 		(strncmp(GDKerrbuf, "GDKmalloc", 9) == 0 ||
 		 strncmp(GDKerrbuf, "GDKrealloc", 10) == 0 ||
 		 strncmp(GDKerrbuf, "GDKzalloc", 9) == 0 ||
@@ -105,7 +105,7 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 		/* override errors when the underlying error is memory
 		 * exhaustion, but include whatever it is that the GDK level
 		 * reported */
-		ret = createException(type, fcn, MAL_MALLOC_FAIL ": %s", GDKerrbuf);
+		ret = createException(type, fcn, SQLSTATE(HY001) MAL_MALLOC_FAIL ": %s", GDKerrbuf);
 		GDKclrerr();
 		return ret;
 	}

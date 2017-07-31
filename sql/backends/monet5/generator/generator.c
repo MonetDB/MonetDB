@@ -710,7 +710,7 @@ wrapup:
 	bn = COLnew(0, TYPE_##TPE, cnt, TRANSIENT);\
 	if( bn == NULL){\
 		BBPunfix(bid);\
-		throw(MAL,"generator.projection", SQLSTATE(42000) MAL_MALLOC_FAIL);\
+		throw(MAL,"generator.projection", SQLSTATE(HY001) MAL_MALLOC_FAIL);\
 	}\
 	v = (TPE*) Tloc(bn,0);\
 	for(; cnt-- > 0; ol++, o++){\
