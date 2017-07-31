@@ -84,7 +84,7 @@ Ready.
 [ 5,	"wereld"	]
 [ 6,	"maan"	]
 #select * from sys.rejects();
-% .,	.,	.,	. # table_name
+% .L1,	.L1,	.L1,	.L1 # table_name
 % rowid,	fldid,	message,	input # name
 % bigint,	int,	clob,	clob # type
 % 1,	1,	22,	11 # length

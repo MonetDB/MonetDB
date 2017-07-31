@@ -43,8 +43,8 @@ Ready.
 #                                       'codec 1',
 #                                       2000);
 #select return_id;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 4	]

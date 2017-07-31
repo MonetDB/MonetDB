@@ -351,7 +351,7 @@ handle_error(mvc *m, int pstatus, str msg)
 	if( new && msg){
 		newmsg = GDKzalloc( strlen(msg) + strlen(new) + 64);
 		strcpy(newmsg, msg);
-		strcat(newmsg,"!");
+		/* strcat(newmsg,"!"); */
 		strcat(newmsg,new);
 		GDKfree(new);
 		GDKfree(msg);

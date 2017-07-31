@@ -90,8 +90,8 @@ Ready.
 #      SELECT 0 FROM foo
 #      UNION ALL
 #      SELECT 0 FROM foo) AS t;
-% .L14 # table_name
-% L14 # name
+% .L120 # table_name
+% L120 # name
 % tinyint # type
 % 1 # length
 #INSERT INTO foo VALUES (3), (6), (7);

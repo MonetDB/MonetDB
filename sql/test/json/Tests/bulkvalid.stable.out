@@ -68,8 +68,8 @@ Ready.
 [ "{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}"	]
 [ "[1,\"f2\", 2]"	]
 #select json.isvalid(j) from nosql;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -79,8 +79,8 @@ Ready.
 [ true	]
 [ true	]
 #select json.isobject(j) from nosql;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -90,8 +90,8 @@ Ready.
 [ true	]
 [ false	]
 #select json.isarray(j) from nosql;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -121,8 +121,8 @@ Ready.
 [ "{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}"	]
 [ "[1,\"f2\", 2]"	]
 #select json.isvalid(j) from nosql;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -132,8 +132,8 @@ Ready.
 [ true	]
 [ true	]
 #select json.isobject(j) from nosql;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -143,8 +143,8 @@ Ready.
 [ true	]
 [ false	]
 #select json.isarray(j) from nosql;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ false	]

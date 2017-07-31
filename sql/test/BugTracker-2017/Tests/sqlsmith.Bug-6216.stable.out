@@ -43,7 +43,7 @@ Ready.
 #    on (subq_0.c5 = ref_11.id )
 #where ref_9.table_id is NULL
 #limit 146;
-% .L27 # table_name
+% .L30 # table_name
 % c0 # name
 % int # type
 % 1 # length
