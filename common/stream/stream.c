@@ -129,6 +129,7 @@
 
 #ifdef NATIVE_WIN32
 #define pclose _pclose
+#define fileno(fd) _fileno(fd)
 #endif
 
 #define UTF8BOM		"\xEF\xBB\xBF" /* UTF-8 encoding of Unicode BOM */
@@ -821,7 +822,7 @@ file_fsync(stream *s)
 	if (fp == NULL ||
 	    (s->access == ST_WRITE
 #ifdef NATIVE_WIN32
-	     && _commit(_fileno(fp)) < 0
+	     && _commit(fileno(fp)) < 0
 #else
 #ifdef HAVE_FDATASYNC
 	     && fdatasync(fileno(fp)) < 0
@@ -876,10 +877,6 @@ file_fsetpos(stream *s, lng p)
 #endif
 	return res;
 }
-
-#ifdef NATIVE_WIN32
-#define fileno(fd) _fileno(fd)
-#endif
 
 size_t
 getFileSize(stream *s)
@@ -2978,7 +2975,7 @@ file_rastream(FILE *fp, const char *name)
 		}
 	}
 #ifdef _MSC_VER
-	if (_fileno(fp) == 0 && _isatty(0)) {
+	if (fileno(fp) == 0 && isatty(0)) {
 		struct console *c = malloc(sizeof(struct console));
 		s->stream_data.p = c;
 		c->h = GetStdHandle(STD_INPUT_HANDLE);
@@ -3015,7 +3012,7 @@ file_wastream(FILE *fp, const char *name)
 	s->access = ST_WRITE;
 	s->type = ST_ASCII;
 #ifdef _MSC_VER
-	if ((_fileno(fp) == 1 || _fileno(fp) == 2) && _isatty(_fileno(fp))) {
+	if ((fileno(fp) == 1 || fileno(fp) == 2) && isatty(fileno(fp))) {
 		struct console *c = malloc(sizeof(struct console));
 		s->stream_data.p = c;
 		c->h = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -4469,7 +4466,7 @@ bs2_stealbuf(stream *ss)
 
 int 
 bs2_resizebuf(stream *ss, size_t bufsiz) {
-	size_t compress_bound;
+	ssize_t compress_bound;
 	bs2 *s = (bs2 *) ss->stream_data.p;
 	assert(ss->read == bs2_read);
 
@@ -5391,6 +5388,17 @@ getFile(stream *s)
 	if (s->read != file_read)
 		return NULL;
 	return (FILE *) s->stream_data.p;
+}
+
+int
+getFileNo(stream *s)
+{
+	FILE *f;
+
+	f = getFile(s);
+	if (f == NULL)
+		return -1;
+	return fileno(f);
 }
 
 static ssize_t

@@ -17,7 +17,7 @@ QUERY = SELECT date, (SELECT date from test_subquery where date > t1892413a.date
 
 MAPI  = (monetdb) /var/tmp/mtest-16542/.s.monetdb.31249
 QUERY = SELECT date, (SELECT date from test_subquery where date > t1892413a.date) as dtNext from test_subquery t1892413a;
-ERROR = !zero_or_one: cardinality violation (2>1)
+ERROR = !zero_or_one: cardinality violation, scalar expression expected
 
 # 10:24:35 >  
 # 10:24:35 >  Done.

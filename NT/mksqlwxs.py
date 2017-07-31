@@ -107,6 +107,16 @@ def main():
     id = comp(features, id, 16,
               [r'lib\monetdb5\%s' % x for x in sorted(filter(lambda x: x.startswith('lib_') and x.endswith('.dll') and ('geom' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     print(r'              </Directory>')
+    id = comp(features, id, 14,
+              [r'lib\libmapi.lib',
+               r'lib\libstream.lib',
+               r'%s\lib\iconv.lib' % makedefs['LIBICONV'],
+               r'%s\lib\libbz2.lib' % makedefs['LIBBZIP2'],
+               r'%s\lib\libeay32.lib' % makedefs['LIBOPENSSL'],
+               r'%s\lib\libxml2.lib' % makedefs['LIBXML2'],
+               r'%s\lib\pcre.lib' % makedefs['LIBPCRE'],
+               r'%s\lib\ssleay32.lib' % makedefs['LIBOPENSSL'],
+               r'%s\lib\zdll.lib' % makedefs['LIBZLIB']])
     print(r'            </Directory>')
     print(r'            <Directory Id="share" Name="share">')
     print(r'              <Directory Id="doc" Name="doc">')
@@ -134,7 +144,7 @@ def main():
               args = '/STARTED-FROM-MENU -lsql -Ecp437',
               sid = 'mclient_bat')
     id = comp(features, id, 12,
-              [r'MSQLServer.bat'],
+              [r'MSQLserver.bat'],
               name = 'MonetDB SQL Server',
               sid = 'msqlserver_bat')
     print(r'          </Directory>')

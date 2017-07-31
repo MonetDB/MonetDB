@@ -45,4 +45,15 @@ wrong_aggregation_count.Bug-6257
 select.Bug-6259
 function_and_mergetable.Bug-6288
 crash_in_in_handling.Bug-6260
+crash_correlated_subqueries_not_in_select.Bug-6290
+crash_function_returning_sample.Bug-6291
 nestedoperators.Bug-6292
+not_plus.Bug-6294
+distinct_minus_count_distinct.Bug-6296
+all_minus_count_star.Bug-6297
+lateral.Bug-6310
+limit_clause.Bug-6312
+type-resolution-error.Bugs-6313
+lateral02.Bug-6314
+exist-bigint-missing.Bug-6315
+coalesc-limit.Bug-6316

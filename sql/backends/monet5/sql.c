@@ -2785,11 +2785,8 @@ zero_or_one(ptr ret, const bat *bid)
 		BATiter bi = bat_iterator(b);
 		p = BUNtail(bi, 0);
 	} else {
-		char buf[BUFSIZ];
-
 		p = NULL;
-		snprintf(buf, BUFSIZ, "21000!cardinality violation (" BUNFMT ">1)", c);
-		throw(SQL, "zero_or_one", "%s", buf);
+		throw(SQL, "zero_or_one", "21000!cardinality violation, scalar value expected");
 	}
 	_s = ATOMsize(ATOMtype(b->ttype));
 	if (ATOMextern(b->ttype)) {
@@ -3481,11 +3478,13 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	if (TRACEtable(t) != 13)
 		throw(SQL, "sql.dump_trace", "3F000!Profiler not started");
-	for(i=0; i< 13; i++){
+	for(i=0; i< 13; i++)
+	if( t[i]){
 		id = t[i]->batCacheid;
 		*getArgReference_bat(stk, pci, i) = id;
 		BBPkeepref(id);
-	}
+	} else
+		throw(SQL,"dump_trace","Missing trace BAT ");
 	return MAL_SUCCEED;
 }
 
@@ -3504,12 +3503,14 @@ sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	QLOGcatalog(t);
-	for (i = 0; i < 8; i++) {
+	for (i = 0; i < 8; i++) 
+	if( t[i]){
 		bat id = t[i]->batCacheid;
 
 		*getArgReference_bat(stk, pci, i) = id;
 		BBPkeepref(id);
-	}
+	} else
+		throw(SQL,"sql.querylog","Missing query catalog BAT");
 	return MAL_SUCCEED;
 }
 
@@ -3522,12 +3523,14 @@ sql_querylog_calls(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 	QLOGcalls(t);
-	for (i = 0; i < 9; i++) {
+	for (i = 0; i < 9; i++) 
+	if( t[i]){
 		bat id = t[i]->batCacheid;
 
 		*getArgReference_bat(stk, pci, i) = id;
 		BBPkeepref(id);
-	}
+	} else
+		throw(SQL,"sql.querylog","Missing query call BAT");
 	return MAL_SUCCEED;
 }
 
@@ -4608,5 +4611,27 @@ SQLflush_log(void *ret)
 {
 	(void)ret;
 	store_flush_log();
+	return MAL_SUCCEED;
+}
+
+str
+SQLexist_val(bit *res, void *v)
+{
+	if (v) 
+		*res = TRUE;
+	else
+		*res = FALSE;
+	return MAL_SUCCEED;
+}
+
+str
+SQLexist(bit *res, bat *id)
+{
+	BAT *b;
+
+	if ((b = BATdescriptor(*id)) == NULL)
+		throw(SQL, "aggr.exist", "Cannot access descriptor");
+	*res = BATcount(b) != 0;
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

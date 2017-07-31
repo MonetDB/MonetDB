@@ -1231,7 +1231,7 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 		      "s.id = f.schema_id "
 		      "%s%s"
 		      "%s%s%s%s%s%s"
-		"ORDER BY f.id";
+		"ORDER BY f.func";
 	MapiHdl hdl;
 	char *q;
 	size_t l;

@@ -11,9 +11,9 @@
 #include "mal.h"
 #include "mal_interpreter.h"
 
-mal_export int initQlog(void);
-mal_export void QLOGcatalog(BAT **r);
-mal_export void QLOGcalls(BAT **r);
+mal_export str initQlog(void);
+mal_export str QLOGcatalog(BAT **r);
+mal_export str QLOGcalls(BAT **r);
 mal_export str QLOGenable(void *ret);
 mal_export str QLOGenableThreshold(void *ret, int *threshold);
 mal_export str QLOGdisable(void *ret);

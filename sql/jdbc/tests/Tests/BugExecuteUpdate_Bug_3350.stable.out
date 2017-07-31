@@ -73,14 +73,20 @@ Ready.
 
 executeUpdate(INSERT ...) returned: 1
 getUpdateCount() returned: 1
-INSERT INTO: PRIMARY KEY constraint 'keywords.keywords_keyword_pkey' violated
+INSERT INTO: PRIMARY KEY constraint 't3350.t3350_keyword_pkey' violated
 getUpdateCount() returned: 1
 executeUpdate(INSERT ...) returned: 1
 getUpdateCount() returned: 1
+executeUpdate(INSERT ...) returned: 4
+getUpdateCount() returned: 4
 executeUpdate(DELETE ...) returned: 1
 getUpdateCount() returned: 1
 executeUpdate(DELETE ...) returned: 0
 getUpdateCount() returned: 0
+executeUpdate(UPDATE ...) returned: 4
+getUpdateCount() returned: 4
+executeUpdate(DELETE ...) returned: 4
+getUpdateCount() returned: 4
 
 # 19:27:23 >  
 # 19:27:23 >  "Done."

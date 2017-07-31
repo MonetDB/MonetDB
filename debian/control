@@ -2,9 +2,9 @@ Source: monetdb
 Section: misc
 Priority: extra
 Maintainer: MonetDB BV <info@monetdb.org>
-Homepage: http://www.monetdb.org/
-Vcs-Browser: http://dev.monetdb.org/hg/MonetDB/
-Vcs-Hg: http://dev.monetdb.org/hg/MonetDB/
+Homepage: https://www.monetdb.org/
+Vcs-Browser: https://dev.monetdb.org/hg/MonetDB/
+Vcs-Hg: https://dev.monetdb.org/hg/MonetDB/
 Build-Depends: debhelper (>= 5), autotools-dev, bison, libatomic-ops-dev,
  libbam-dev, libbz2-dev, libcurl4-gnutls-dev, libgeos-dev (>= 3.4.0),
  libpcre3-dev, libreadline-dev, liblzma-dev,

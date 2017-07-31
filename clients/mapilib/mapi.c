@@ -1945,6 +1945,7 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 	char *host;
 	int port;
 	char *dbname;
+	char *query;
 
 	if (!mapi_initialized) {
 		mapi_initialized = 1;
@@ -2007,6 +2008,7 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 		host = uri;
 		port = 0;
 		dbname = NULL;
+		query = uri;
 	} else {
 		char *p;
 
@@ -2034,11 +2036,12 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 				      "mapi_mapiuri", MERROR);
 			return mid;
 		}
+		query = dbname;
 	}
 	mid->port = port;
 
 	/* this is in particular important for unix sockets */
-	parse_uri_query(mid, uri);
+	parse_uri_query(mid, query);
 
 	/* doing this here, because parse_uri_query will
 	 * terminate the string if a ? is in place */
