@@ -6149,27 +6149,30 @@ void *sql_error( mvc * sql, int error_code, char *format, ... )
 
 int sqlerror(mvc * c, const char *err)
 {
-	if (err && *err == '\b') {
-		(void)sql_error(c, 4,
-				"SQLSTATE %s: %s\n",
-				err, c->scanner.errstr + 1);
-		err++;
+	const char *sqlstate;
+
+	if (err && strlen(err) > 6 && err[5] == '!') {
+		/* sql state provided */
+		sqlstate = "";
+	} else {
+		/* default: Syntax error or access rule violation */
+		sqlstate = SQLSTATE(42000);
 	}
 	if (c->scanner.errstr) {
 		if (c->scanner.errstr[0] == '!'){
 			assert(0);// catch it
 			(void)sql_error(c, 4,
-					SQLSTATE(42000) "%s: %s\n",
-					err, c->scanner.errstr + 1);
+					"%s%s: %s\n",
+					sqlstate, err, c->scanner.errstr + 1);
 		} else
 			(void)sql_error(c, 4,
-					"%s: %s in \"%.80s\"\n",
-					 err, c->scanner.errstr,
+					"%s%s: %s in \"%.80s\"\n",
+					sqlstate, err, c->scanner.errstr,
 					QUERY(c->scanner));
 	} else
 		(void)sql_error(c, 4,
-				"%s in: \"%.80s\"\n",
-				err, QUERY(c->scanner));
+				"%s%s in: \"%.80s\"\n",
+				sqlstate, err, QUERY(c->scanner));
 	return 1;
 }
 
