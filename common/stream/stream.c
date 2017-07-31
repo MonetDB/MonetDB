@@ -3237,7 +3237,7 @@ ic_flush(stream *s)
 	if (ic->buflen > 0 ||
 	    iconv(ic->cd, NULL, NULL, &outbuf, &outbytesleft) == (size_t) -1 ||
 	    (outbytesleft < sizeof(ic->buffer) &&
-												   mnstr_write(ic->s, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft) < 0)) {
+	     mnstr_write(ic->s, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft) < 0)) {
 		s->errnr = MNSTR_WRITE_ERROR;
 		return -1;
 	}
@@ -5592,18 +5592,24 @@ stream_fwf_create(stream *s, size_t num_fields, size_t *widths, char filler)
 	}
 	fsd->in_buf = malloc(fsd->line_len);
 	if (fsd->in_buf == NULL) {
+		mnstr_close(fsd->s);
+		mnstr_destroy(fsd->s);
 		free(fsd);
 		return NULL;
 	}
 	out_buf_len = fsd->line_len * 3;
 	fsd->out_buf = malloc(out_buf_len);
 	if (fsd->out_buf == NULL) {
+		mnstr_close(fsd->s);
+		mnstr_destroy(fsd->s);
 		free(fsd->in_buf);
 		free(fsd);
 		return NULL;
 	}
 	fsd->out_buf_remaining = 0;
 	if ((ns = create_stream(STREAM_FWF_NAME)) == NULL) {
+		mnstr_close(fsd->s);
+		mnstr_destroy(fsd->s);
 		free(fsd->in_buf);
 		free(fsd->out_buf);
 		free(fsd);

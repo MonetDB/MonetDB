@@ -232,6 +232,6 @@ str _connection_init(void)
 
 	if (PyType_Ready(&Py_ConnectionType) < 0)
 		return createException(MAL, "pyapi.eval",
-							   "Failed to initialize connection type.");
+							   "SQLSTATE PY0000 !""Failed to initialize connection type.");
 	return msg;
 }

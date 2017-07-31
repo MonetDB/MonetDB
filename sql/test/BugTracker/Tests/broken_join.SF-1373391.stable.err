@@ -26,9 +26,12 @@ QUERY = select urlid,clicktime from
         urls.suburl5x0=clicks.suburl5x0 and
         urls.suburl5x1=clicks.suburl5x1 and
         urls.suburl6x0=clicks.suburl6x0 and
-ERROR = !syntax error, unexpected ')', expecting SCOLON in: "select urlid,clicktime from
-        !(clicks left outer join urls on
-        !urls.suburl0x0=click"
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected ')', expecting SCOLON in: "select urlid,clicktime from
+MAPI  = (monetdb) /var/tmp/mtest-30975/.s.monetdb.35845
+QUERY = --  ^ is wrong, did gave an error with strange symbols
+ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-30975/.s.monetdb.35845
+ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
 
 # 14:15:47 >  
 # 14:15:47 >  Done.

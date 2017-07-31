@@ -31,573 +31,560 @@ stderr of test 'horology` in directory 'sql/test/pg_regress` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
 QUERY = SET australian_timezones = 'off';
-ERROR = !Variable australian_timezones unknown
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Variable australian_timezones unknown
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SET DateStyle = 'Postgres, MDY';
-ERROR = !Variable datestyle unknown
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Variable datestyle unknown
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone '20011227 040506+08';
-ERROR = !incorrect timestamp value (20011227 040506+08) in: "select timestamp with time zone '20011227 040506+08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (20011227 040506+08) in: "select timestamp with time zone '20011227 040506+08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone '20011227 040506-08';
-ERROR = !incorrect timestamp value (20011227 040506-08) in: "select timestamp with time zone '20011227 040506-08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (20011227 040506-08) in: "select timestamp with time zone '20011227 040506-08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone '20011227 040506.789+08';
-ERROR = !incorrect timestamp value (20011227 040506.789+08) in: "select timestamp with time zone '20011227 040506.789+08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (20011227 040506.789+08) in: "select timestamp with time zone '20011227 040506.789+08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone '20011227 040506.789-08';
-ERROR = !incorrect timestamp value (20011227 040506.789-08) in: "select timestamp with time zone '20011227 040506.789-08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (20011227 040506.789-08) in: "select timestamp with time zone '20011227 040506.789-08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone '20011227T040506+08';
-ERROR = !incorrect timestamp value (20011227T040506+08) in: "select timestamp with time zone '20011227T040506+08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (20011227T040506+08) in: "select timestamp with time zone '20011227T040506+08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone '20011227T040506-08';
-ERROR = !incorrect timestamp value (20011227T040506-08) in: "select timestamp with time zone '20011227T040506-08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (20011227T040506-08) in: "select timestamp with time zone '20011227T040506-08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone '20011227T040506.789+08';
-ERROR = !incorrect timestamp value (20011227T040506.789+08) in: "select timestamp with time zone '20011227T040506.789+08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (20011227T040506.789+08) in: "select timestamp with time zone '20011227T040506.789+08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone '20011227T040506.789-08';
-ERROR = !incorrect timestamp value (20011227T040506.789-08) in: "select timestamp with time zone '20011227T040506.789-08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (20011227T040506.789-08) in: "select timestamp with time zone '20011227T040506.789-08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone '2001.12.27 04:05:06.789-08';
-ERROR = !incorrect timestamp value (2001.12.27 04:05:06.789-08) in: "select timestamp with time zone '2001.12.27 04:05:06.789-08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (2001.12.27 04:05:06.789-08) in: "select timestamp with time zone '2001.12.27 04:05:06.789-08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone '12/27/2001 04:05:06.789-08';
-ERROR = !incorrect timestamp value (12/27/2001 04:05:06.789-08) in: "select timestamp with time zone '12/27/2001 04:05:06.789-08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (12/27/2001 04:05:06.789-08) in: "select timestamp with time zone '12/27/2001 04:05:06.789-08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone '27/12/2001 04:05:06.789-08';
-ERROR = !incorrect timestamp value (27/12/2001 04:05:06.789-08) in: "select timestamp with time zone '27/12/2001 04:05:06.789-08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (27/12/2001 04:05:06.789-08) in: "select timestamp with time zone '27/12/2001 04:05:06.789-08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = set datestyle to dmy;
-ERROR = !syntax error, unexpected TO, expecting '=' in: "set datestyle to"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected TO, expecting '=' in: "set datestyle to"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone '27/12/2001 04:05:06.789-08';
-ERROR = !incorrect timestamp value (27/12/2001 04:05:06.789-08) in: "select timestamp with time zone '27/12/2001 04:05:06.789-08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (27/12/2001 04:05:06.789-08) in: "select timestamp with time zone '27/12/2001 04:05:06.789-08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = reset datestyle;
-ERROR = !syntax error, unexpected IDENT in: "reset"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT in: "reset"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone 'Y2001M12D27H04M05S06.789+08';
-ERROR = !incorrect timestamp value (Y2001M12D27H04M05S06.789+08) in: "select timestamp with time zone 'Y2001M12D27H04M05S06.789+08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (Y2001M12D27H04M05S06.789+08) in: "select timestamp with time zone 'Y2001M12D27H04M05S06.789+08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone 'Y2001M12D27H04M05S06.789-08';
-ERROR = !incorrect timestamp value (Y2001M12D27H04M05S06.789-08) in: "select timestamp with time zone 'Y2001M12D27H04M05S06.789-08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (Y2001M12D27H04M05S06.789-08) in: "select timestamp with time zone 'Y2001M12D27H04M05S06.789-08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone 'Y2001M12D27H04MM05S06.789+08';
-ERROR = !incorrect timestamp value (Y2001M12D27H04MM05S06.789+08) in: "select timestamp with time zone 'Y2001M12D27H04MM05S06.789+08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (Y2001M12D27H04MM05S06.789+08) in: "select timestamp with time zone 'Y2001M12D27H04MM05S06.789+08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone 'Y2001M12D27H04MM05S06.789-08';
-ERROR = !incorrect timestamp value (Y2001M12D27H04MM05S06.789-08) in: "select timestamp with time zone 'Y2001M12D27H04MM05S06.789-08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (Y2001M12D27H04MM05S06.789-08) in: "select timestamp with time zone 'Y2001M12D27H04MM05S06.789-08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone 'J2452271+08';
-ERROR = !incorrect timestamp value (J2452271+08) in: "select timestamp with time zone 'J2452271+08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (J2452271+08) in: "select timestamp with time zone 'J2452271+08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone 'J2452271-08';
-ERROR = !incorrect timestamp value (J2452271-08) in: "select timestamp with time zone 'J2452271-08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (J2452271-08) in: "select timestamp with time zone 'J2452271-08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone 'J2452271.5+08';
-ERROR = !incorrect timestamp value (J2452271.5+08) in: "select timestamp with time zone 'J2452271.5+08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (J2452271.5+08) in: "select timestamp with time zone 'J2452271.5+08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone 'J2452271.5-08';
-ERROR = !incorrect timestamp value (J2452271.5-08) in: "select timestamp with time zone 'J2452271.5-08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (J2452271.5-08) in: "select timestamp with time zone 'J2452271.5-08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone 'J2452271 04:05:06+08';
-ERROR = !incorrect timestamp value (J2452271 04:05:06+08) in: "select timestamp with time zone 'J2452271 04:05:06+08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (J2452271 04:05:06+08) in: "select timestamp with time zone 'J2452271 04:05:06+08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone 'J2452271 04:05:06-08';
-ERROR = !incorrect timestamp value (J2452271 04:05:06-08) in: "select timestamp with time zone 'J2452271 04:05:06-08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (J2452271 04:05:06-08) in: "select timestamp with time zone 'J2452271 04:05:06-08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone 'J2452271T040506+08';
-ERROR = !incorrect timestamp value (J2452271T040506+08) in: "select timestamp with time zone 'J2452271T040506+08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (J2452271T040506+08) in: "select timestamp with time zone 'J2452271T040506+08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone 'J2452271T040506-08';
-ERROR = !incorrect timestamp value (J2452271T040506-08) in: "select timestamp with time zone 'J2452271T040506-08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (J2452271T040506-08) in: "select timestamp with time zone 'J2452271T040506-08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone 'J2452271T040506.789+08';
-ERROR = !incorrect timestamp value (J2452271T040506.789+08) in: "select timestamp with time zone 'J2452271T040506.789+08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (J2452271T040506.789+08) in: "select timestamp with time zone 'J2452271T040506.789+08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone 'J2452271T040506.789-08';
-ERROR = !incorrect timestamp value (J2452271T040506.789-08) in: "select timestamp with time zone 'J2452271T040506.789-08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (J2452271T040506.789-08) in: "select timestamp with time zone 'J2452271T040506.789-08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone '12.27.2001 04:05:06.789+08';
-ERROR = !incorrect timestamp value (12.27.2001 04:05:06.789+08) in: "select timestamp with time zone '12.27.2001 04:05:06.789+08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (12.27.2001 04:05:06.789+08) in: "select timestamp with time zone '12.27.2001 04:05:06.789+08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone '12.27.2001 04:05:06.789-08';
-ERROR = !incorrect timestamp value (12.27.2001 04:05:06.789-08) in: "select timestamp with time zone '12.27.2001 04:05:06.789-08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (12.27.2001 04:05:06.789-08) in: "select timestamp with time zone '12.27.2001 04:05:06.789-08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SET DateStyle = 'German';
-ERROR = !Variable datestyle unknown
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Variable datestyle unknown
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone '27.12.2001 04:05:06.789+08';
-ERROR = !incorrect timestamp value (27.12.2001 04:05:06.789+08) in: "select timestamp with time zone '27.12.2001 04:05:06.789+08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (27.12.2001 04:05:06.789+08) in: "select timestamp with time zone '27.12.2001 04:05:06.789+08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone '27.12.2001 04:05:06.789-08';
-ERROR = !incorrect timestamp value (27.12.2001 04:05:06.789-08) in: "select timestamp with time zone '27.12.2001 04:05:06.789-08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (27.12.2001 04:05:06.789-08) in: "select timestamp with time zone '27.12.2001 04:05:06.789-08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SET DateStyle = 'ISO';
-ERROR = !Variable datestyle unknown
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Variable datestyle unknown
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT time without time zone '040506.789+08';
-ERROR = !syntax error, unexpected IDENT, expecting SCOLON in: "select time without"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting SCOLON in: "select time without"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT time without time zone '040506.789-08';
-ERROR = !syntax error, unexpected IDENT, expecting SCOLON in: "select time without"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting SCOLON in: "select time without"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT time without time zone 'T040506.789+08';
-ERROR = !syntax error, unexpected IDENT, expecting SCOLON in: "select time without"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting SCOLON in: "select time without"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT time without time zone 'T040506.789-08';
-ERROR = !syntax error, unexpected IDENT, expecting SCOLON in: "select time without"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting SCOLON in: "select time without"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT time with time zone '040506.789+08';
-ERROR = !incorrect time value (040506.789+08) in: "select time with time zone '040506.789+08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect time value (040506.789+08) in: "select time with time zone '040506.789+08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT time with time zone '040506.789-08';
-ERROR = !incorrect time value (040506.789-08) in: "select time with time zone '040506.789-08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect time value (040506.789-08) in: "select time with time zone '040506.789-08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT time with time zone 'T040506.789+08';
-ERROR = !incorrect time value (T040506.789+08) in: "select time with time zone 'T040506.789+08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect time value (T040506.789+08) in: "select time with time zone 'T040506.789+08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT time with time zone 'T040506.789-08';
-ERROR = !incorrect time value (T040506.789-08) in: "select time with time zone 'T040506.789-08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect time value (T040506.789-08) in: "select time with time zone 'T040506.789-08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT time with time zone 'T040506.789 +08';
-ERROR = !incorrect time value (T040506.789 +08) in: "select time with time zone 'T040506.789 +08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect time value (T040506.789 +08) in: "select time with time zone 'T040506.789 +08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT time with time zone 'T040506.789 -08';
-ERROR = !incorrect time value (T040506.789 -08) in: "select time with time zone 'T040506.789 -08';"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect time value (T040506.789 -08) in: "select time with time zone 'T040506.789 -08';"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SET DateStyle = 'Postgres, MDY';
-ERROR = !Variable datestyle unknown
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Variable datestyle unknown
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT date '1981-02-03' + time '04:05:06' AS "Date + Time";
-ERROR = !SELECT: no such binary operator 'sql_add(date,time)'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such binary operator 'sql_add(date,time)'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT date '1991-02-03' + time with time zone '04:05:06 PST' AS "Date + Time PST";
-ERROR = !SELECT: no such binary operator 'sql_add(date,timetz)'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such binary operator 'sql_add(date,timetz)'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT date '2001-02-03' + time with time zone '04:05:06 UTC' AS "Date + Time UTC";
-ERROR = !SELECT: no such binary operator 'sql_add(date,timetz)'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such binary operator 'sql_add(date,timetz)'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT date '1991-02-03' + interval '2 years' AS "Add Two Years";
-ERROR = !syntax error, unexpected AS in: "select date '1991-02-03' + interval '2 years' as"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected AS in: "select date '1991-02-03' + interval '2 years' as"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT date '2001-12-13' - interval '2 years' AS "Subtract Two Years";
-ERROR = !syntax error, unexpected AS in: "select date '2001-12-13' - interval '2 years' as"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected AS in: "select date '2001-12-13' - interval '2 years' as"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT date '1991-02-03' - time '04:05:06' AS "Subtract Time";
-ERROR = !SELECT: no such binary operator 'sql_sub(date,time)'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such binary operator 'sql_sub(date,time)'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT date '1991-02-03' - time with time zone '04:05:06 UTC' AS "Subtract Time UTC";
-ERROR = !SELECT: no such binary operator 'sql_sub(date,timetz)'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such binary operator 'sql_sub(date,timetz)'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp without time zone '1996-03-01' - interval '1 second' AS "Feb 29";
-ERROR = !syntax error, unexpected IDENT, expecting SCOLON in: "select timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting SCOLON in: "select timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp without time zone '1999-03-01' - interval '1 second' AS "Feb 28";
-ERROR = !syntax error, unexpected IDENT, expecting SCOLON in: "select timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting SCOLON in: "select timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp without time zone '2000-03-01' - interval '1 second' AS "Feb 29";
-ERROR = !syntax error, unexpected IDENT, expecting SCOLON in: "select timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting SCOLON in: "select timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp without time zone '1999-12-01' + interval '1 month - 1 second' AS "Dec 31";
-ERROR = !syntax error, unexpected IDENT, expecting SCOLON in: "select timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting SCOLON in: "select timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp without time zone 'Jan 1, 4713 BC' + interval '106000000 days' AS "Feb 23, 285506";
-ERROR = !syntax error, unexpected IDENT, expecting SCOLON in: "select timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting SCOLON in: "select timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp without time zone 'Jan 1, 4713 BC' + interval '107000000 days' AS "Jan 20, 288244";
-ERROR = !syntax error, unexpected IDENT, expecting SCOLON in: "select timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting SCOLON in: "select timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp without time zone 'Jan 1, 4713 BC' + interval '109203489 days' AS "Dec 31, 294276";
-ERROR = !syntax error, unexpected IDENT, expecting SCOLON in: "select timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting SCOLON in: "select timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp without time zone '12/31/294276' - timestamp without time zone '12/23/1999' AS "106751991 Days";
-ERROR = !syntax error, unexpected IDENT, expecting SCOLON in: "select timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting SCOLON in: "select timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT (timestamp without time zone 'today' = (timestamp without time zone 'yesterday' + interval '1 day')) as "True";
-ERROR = !syntax error, unexpected IDENT, expecting ')' in: "select (timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = SELECT (timestamp without time zone 'today' = (timestamp without time zone 'tomorrow' - interval '1 day')) as "True";
-ERROR = !syntax error, unexpected IDENT, expecting ')' in: "select (timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = SELECT (timestamp without time zone 'tomorrow' = (timestamp without time zone 'yesterday' + interval '2 days')) as "True";
-ERROR = !syntax error, unexpected IDENT, expecting ')' in: "select (timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = SELECT (timestamp without time zone 'tomorrow' > 'now') as "True";
-ERROR = !syntax error, unexpected IDENT, expecting ')' in: "select (timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = SELECT date '1994-01-01' + time '11:00' AS "Jan_01_1994_11am";
-ERROR = !SELECT: no such binary operator 'sql_add(date,time)'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such binary operator 'sql_add(date,time)'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT date '1994-01-01' + time '10:00' AS "Jan_01_1994_10am";
-ERROR = !SELECT: no such binary operator 'sql_add(date,time)'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such binary operator 'sql_add(date,time)'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT date '1994-01-01' + timetz '11:00-5' AS "Jan_01_1994_8am";
-ERROR = !SELECT: no such binary operator 'sql_add(date,timetz)'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such binary operator 'sql_add(date,timetz)'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamptz(date '1994-01-01', time with time zone '11:00-5') AS "Jan_01_1994_8am";
-ERROR = !SELECT: no such binary operator 'timestamptz(date,timetz)'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such binary operator 'timestamptz(date,timetz)'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS "64", d1 + interval '1 year' AS one_year FROM TIMESTAMP_TBL;
-ERROR = !syntax error, unexpected AS in: "select '' as "64", d1 + interval '1 year' as"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected AS in: "select '' as "64", d1 + interval '1 year' as"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS "64", d1 - interval '1 year' AS one_year FROM TIMESTAMP_TBL;
-ERROR = !syntax error, unexpected AS in: "select '' as "64", d1 - interval '1 year' as"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected AS in: "select '' as "64", d1 - interval '1 year' as"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone '1996-03-01' - interval '1 second' AS "Feb 29";
-ERROR = !syntax error, unexpected AS in: "select timestamp with time zone '1996-03-01' - interval '1 second' as"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected AS in: "select timestamp with time zone '1996-03-01' - interval '1 second' as"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone '1999-03-01' - interval '1 second' AS "Feb 28";
-ERROR = !syntax error, unexpected AS in: "select timestamp with time zone '1999-03-01' - interval '1 second' as"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected AS in: "select timestamp with time zone '1999-03-01' - interval '1 second' as"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone '2000-03-01' - interval '1 second' AS "Feb 29";
-ERROR = !syntax error, unexpected AS in: "select timestamp with time zone '2000-03-01' - interval '1 second' as"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected AS in: "select timestamp with time zone '2000-03-01' - interval '1 second' as"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamp with time zone '1999-12-01' + interval '1 month - 1 second' AS "Dec 31";
-ERROR = !syntax error, unexpected AS in: "select timestamp with time zone '1999-12-01' + interval '1 month - 1 second' as"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected AS in: "select timestamp with time zone '1999-12-01' + interval '1 month - 1 second' as"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT (timestamp with time zone 'today' = (timestamp with time zone 'yesterday' + interval '1 day')) as "True";
-ERROR = !incorrect timestamp value (today) in: "select (timestamp with time zone 'today' ="
-        !syntax error, unexpected TIMESTAMP, expecting SELECT or '(' in: "(timestamp"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (today) in: "select (timestamp with time zone 'today' ="
+        !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected TIMESTAMP, expecting SELECT or '(' in: "(timestamp"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT (timestamp with time zone 'today' = (timestamp with time zone 'tomorrow' - interval '1 day')) as "True";
-ERROR = !incorrect timestamp value (today) in: "select (timestamp with time zone 'today' ="
-        !syntax error, unexpected TIMESTAMP, expecting SELECT or '(' in: "(timestamp"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (today) in: "select (timestamp with time zone 'today' ="
+        !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected TIMESTAMP, expecting SELECT or '(' in: "(timestamp"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT (timestamp with time zone 'tomorrow' = (timestamp with time zone 'yesterday' + interval '2 days')) as "True";
-ERROR = !incorrect timestamp value (tomorrow) in: "select (timestamp with time zone 'tomorrow' ="
-        !syntax error, unexpected TIMESTAMP, expecting SELECT or '(' in: "(timestamp"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (tomorrow) in: "select (timestamp with time zone 'tomorrow' ="
+        !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected TIMESTAMP, expecting SELECT or '(' in: "(timestamp"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT (timestamp with time zone 'tomorrow' > 'now') as "True";
-ERROR = !incorrect timestamp value (tomorrow) in: "select (timestamp with time zone 'tomorrow' >"
-        !syntax error, unexpected STRING in: "'now'"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (tomorrow) in: "select (timestamp with time zone 'tomorrow' >"
+        !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected STRING in: "'now'"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamptz(date '1994-01-01', time '11:00') AS "Jan_01_1994_10am";
-ERROR = !SELECT: no such binary operator 'timestamptz(date,time)'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such binary operator 'timestamptz(date,time)'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamptz(date '1994-01-01', time '10:00') AS "Jan_01_1994_9am";
-ERROR = !SELECT: no such binary operator 'timestamptz(date,time)'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such binary operator 'timestamptz(date,time)'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamptz(date '1994-01-01', time with time zone '11:00-8') AS "Jan_01_1994_11am";
-ERROR = !SELECT: no such binary operator 'timestamptz(date,timetz)'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such binary operator 'timestamptz(date,timetz)'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamptz(date '1994-01-01', time with time zone '10:00-8') AS "Jan_01_1994_10am";
-ERROR = !SELECT: no such binary operator 'timestamptz(date,timetz)'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such binary operator 'timestamptz(date,timetz)'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT timestamptz(date '1994-01-01', time with time zone '11:00-5') AS "Jan_01_1994_8am";
-ERROR = !SELECT: no such binary operator 'timestamptz(date,timetz)'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such binary operator 'timestamptz(date,timetz)'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS "64", d1 + interval '1 year' AS one_year FROM TIMESTAMPTZ_TBL;
-ERROR = !syntax error, unexpected AS in: "select '' as "64", d1 + interval '1 year' as"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected AS in: "select '' as "64", d1 + interval '1 year' as"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS "64", d1 - interval '1 year' AS one_year FROM TIMESTAMPTZ_TBL;
-ERROR = !syntax error, unexpected AS in: "select '' as "64", d1 - interval '1 year' as"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected AS in: "select '' as "64", d1 - interval '1 year' as"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT CAST(time '01:02' AS interval) AS "+01:02";
-ERROR = !syntax error, unexpected ')' in: "select cast(time '01:02' as interval)"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected ')' in: "select cast(time '01:02' as interval)"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT CAST(interval '02:03' AS time) AS "02:03:00";
-ERROR = !syntax error, unexpected AS in: "select cast(interval '02:03' as"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected AS in: "select cast(interval '02:03' as"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT time '01:30' + interval '02:01' AS "03:31:00";
-ERROR = !syntax error, unexpected AS in: "select time '01:30' + interval '02:01' as"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected AS in: "select time '01:30' + interval '02:01' as"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT time '01:30' - interval '02:01' AS "23:29:00";
-ERROR = !syntax error, unexpected AS in: "select time '01:30' - interval '02:01' as"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected AS in: "select time '01:30' - interval '02:01' as"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT time '02:30' + interval '36:01' AS "14:31:00";
-ERROR = !syntax error, unexpected AS in: "select time '02:30' + interval '36:01' as"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected AS in: "select time '02:30' + interval '36:01' as"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT time '03:30' + interval '1 month 04:01' AS "07:31:00";
-ERROR = !syntax error, unexpected AS in: "select time '03:30' + interval '1 month 04:01' as"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected AS in: "select time '03:30' + interval '1 month 04:01' as"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT CAST(time with time zone '01:02-08' AS interval) AS "+00:01";
-ERROR = !syntax error, unexpected ')' in: "select cast(time with time zone '01:02-08' as interval)"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected ')' in: "select cast(time with time zone '01:02-08' as interval)"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT CAST(interval '02:03' AS time with time zone) AS "02:03:00-08";
-ERROR = !syntax error, unexpected AS in: "select cast(interval '02:03' as"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected AS in: "select cast(interval '02:03' as"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT time with time zone '01:30-08' - interval '02:01' AS "23:29:00-08";
-ERROR = !syntax error, unexpected AS in: "select time with time zone '01:30-08' - interval '02:01' as"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected AS in: "select time with time zone '01:30-08' - interval '02:01' as"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT time with time zone '02:30-08' + interval '36:01' AS "14:31:00-08";
-ERROR = !syntax error, unexpected AS in: "select time with time zone '02:30-08' + interval '36:01' as"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected AS in: "select time with time zone '02:30-08' + interval '36:01' as"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT CAST(CAST(date 'today' + time with time zone '01:30'
-ERROR = !incorrect date value (today) in: "select cast(cast(date 'today' +"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect date value (today) in: "select cast(cast(date 'today' +"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT CAST(CAST(date 'today' + time with time zone '01:30'
                     + interval '02:01' AS time with time zone) AS time) AS "03:31:00";
-ERROR = !syntax error, unexpected TIME in: "time"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected TIME in: "time"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT CAST(cast(date 'today' + time with time zone '03:30'
-ERROR = !incorrect date value (today) in: "select cast(cast(date 'today' +"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect date value (today) in: "select cast(cast(date 'today' +"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT CAST(cast(date 'today' + time with time zone '03:30'
           + interval '1 month 04:01' as timestamp without time zone) AS time) AS "07:31:00";
-ERROR = !syntax error, unexpected TIME in: "time"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected TIME in: "time"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT t.d1 + i.f1 AS "102" FROM TIMESTAMP_TBL t, INTERVAL_TBL i
           WHERE t.d1 BETWEEN '1990-01-01' AND '2001-01-01'
             AND i.f1 BETWEEN '00:00' AND '23:00';
-ERROR = !SELECT: no such table 'timestamp_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'timestamp_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT t.d1 - i.f1 AS "102" FROM TIMESTAMP_TBL t, INTERVAL_TBL i
           WHERE t.d1 BETWEEN '1990-01-01' AND '2001-01-01'
             AND i.f1 BETWEEN '00:00' AND '23:00';
-ERROR = !SELECT: no such table 'timestamp_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'timestamp_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT t.f1 + i.f1 AS "80" FROM TIME_TBL t, INTERVAL_TBL i;
-ERROR = !SELECT: no such table 'time_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'time_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT t.f1 - i.f1 AS "80" FROM TIME_TBL t, INTERVAL_TBL i;
-ERROR = !SELECT: no such table 'time_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'time_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT t.f1 + i.f1 AS "100" FROM TIMETZ_TBL t, INTERVAL_TBL i;
-ERROR = !SELECT: no such table 'timetz_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'timetz_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT t.f1 - i.f1 AS "100" FROM TIMETZ_TBL t, INTERVAL_TBL i;
-ERROR = !SELECT: no such table 'timetz_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'timetz_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT (timestamp with time zone '2000-11-27', timestamp with time zone '2000-11-28')
           OVERLAPS (timestamp with time zone '2000-11-27 12:00', timestamp with time zone '2000-11-30') AS "True";
-ERROR = !syntax error, unexpected IDENT, expecting sqlIN or NOT in: "select (timestamp with time zone '2000-11-27', timestamp with time zone '2000-11"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting NOT_IN or sqlIN in: "select (timestamp with time zone '2000-11-27', timestamp with time zone '2000-11"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT (timestamp with time zone '2000-11-26', timestamp with time zone '2000-11-27')
           OVERLAPS (timestamp with time zone '2000-11-27 12:00', timestamp with time zone '2000-11-30') AS "False";
-ERROR = !syntax error, unexpected IDENT, expecting sqlIN or NOT in: "select (timestamp with time zone '2000-11-26', timestamp with time zone '2000-11"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting NOT_IN or sqlIN in: "select (timestamp with time zone '2000-11-26', timestamp with time zone '2000-11"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT (timestamp with time zone '2000-11-27', timestamp with time zone '2000-11-28')
           OVERLAPS (timestamp with time zone '2000-11-27 12:00', interval '1 day') AS "True";
-ERROR = !syntax error, unexpected IDENT, expecting sqlIN or NOT in: "select (timestamp with time zone '2000-11-27', timestamp with time zone '2000-11"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting NOT_IN or sqlIN in: "select (timestamp with time zone '2000-11-27', timestamp with time zone '2000-11"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT (timestamp with time zone '2000-11-27', interval '12 hours')
           OVERLAPS (timestamp with time zone '2000-11-27 12:00', timestamp with time zone '2000-11-30') AS "False";
-ERROR = !syntax error, unexpected ')' in: "select (timestamp with time zone '2000-11-27', interval '12 hours')"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected ')' in: "select (timestamp with time zone '2000-11-27', interval '12 hours')"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT (timestamp with time zone '2000-11-27', interval '12 hours')
           OVERLAPS (timestamp with time zone '2000-11-27', interval '12 hours') AS "True";
-ERROR = !syntax error, unexpected ')' in: "select (timestamp with time zone '2000-11-27', interval '12 hours')"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected ')' in: "select (timestamp with time zone '2000-11-27', interval '12 hours')"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT (timestamp with time zone '2000-11-27', interval '12 hours')
           OVERLAPS (timestamp with time zone '2000-11-27 12:00', interval '12 hours') AS "False";
-ERROR = !syntax error, unexpected ')' in: "select (timestamp with time zone '2000-11-27', interval '12 hours')"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected ')' in: "select (timestamp with time zone '2000-11-27', interval '12 hours')"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT (timestamp without time zone '2000-11-27', timestamp without time zone '2000-11-28')
           OVERLAPS (timestamp without time zone '2000-11-27 12:00', timestamp without time zone '2000-11-30') AS "True";
-ERROR = !syntax error, unexpected IDENT, expecting ')' in: "select (timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = SELECT (timestamp without time zone '2000-11-26', timestamp without time zone '2000-11-27')
           OVERLAPS (timestamp without time zone '2000-11-27 12:00', timestamp without time zone '2000-11-30') AS "False";
-ERROR = !syntax error, unexpected IDENT, expecting ')' in: "select (timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = SELECT (timestamp without time zone '2000-11-27', timestamp without time zone '2000-11-28')
           OVERLAPS (timestamp without time zone '2000-11-27 12:00', interval '1 day') AS "True";
-ERROR = !syntax error, unexpected IDENT, expecting ')' in: "select (timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = SELECT (timestamp without time zone '2000-11-27', interval '12 hours')
           OVERLAPS (timestamp without time zone '2000-11-27 12:00', timestamp without time zone '2000-11-30') AS "False";
-ERROR = !syntax error, unexpected IDENT, expecting ')' in: "select (timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = SELECT (timestamp without time zone '2000-11-27', interval '12 hours')
           OVERLAPS (timestamp without time zone '2000-11-27', interval '12 hours') AS "True";
-ERROR = !syntax error, unexpected IDENT, expecting ')' in: "select (timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = SELECT (timestamp without time zone '2000-11-27', interval '12 hours')
           OVERLAPS (timestamp without time zone '2000-11-27 12:00', interval '12 hours') AS "False";
-ERROR = !syntax error, unexpected IDENT, expecting ')' in: "select (timestamp without"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = SELECT (time '00:00', time '01:00')
           OVERLAPS (time '00:30', time '01:30') AS "True";
-ERROR = !syntax error, unexpected IDENT, expecting sqlIN or NOT in: "select (time '00:00', time '01:00')
-        !  overlaps"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting NOT_IN or sqlIN in: "select (time '00:00', time '01:00')
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT (time '00:00', interval '1 hour')
           OVERLAPS (time '00:30', interval '1 hour') AS "True";
-ERROR = !syntax error, unexpected ')' in: "select (time '00:00', interval '1 hour')"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected ')' in: "select (time '00:00', interval '1 hour')"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT (time '00:00', interval '1 hour')
           OVERLAPS (time '01:30', interval '1 hour') AS "False";
-ERROR = !syntax error, unexpected ')' in: "select (time '00:00', interval '1 hour')"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected ')' in: "select (time '00:00', interval '1 hour')"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT (time '00:00', interval '1 hour')
           OVERLAPS (time '01:30', interval '1 day') AS "False";
-ERROR = !syntax error, unexpected ')' in: "select (time '00:00', interval '1 hour')"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected ')' in: "select (time '00:00', interval '1 hour')"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = INSERT INTO TEMP_TIMESTAMP (f1)
           SELECT d1 FROM TIMESTAMP_TBL
           WHERE d1 BETWEEN '13-jun-1957' AND '1-jan-1997'
            OR d1 BETWEEN '1-jan-1999' AND '1-jan-2010';
-ERROR = !SELECT: no such table 'timestamp_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'timestamp_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS "160", d.f1 AS "timestamp", t.f1 AS "interval", d.f1 + t.f1 AS plus
           FROM TEMP_TIMESTAMP d, INTERVAL_TBL t
           ORDER BY plus, "timestamp", "interval";
-ERROR = !SELECT: no such table 'interval_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'interval_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS "160", d.f1 AS "timestamp", t.f1 AS "interval", d.f1 - t.f1 AS minus
           FROM TEMP_TIMESTAMP d, INTERVAL_TBL t
           WHERE isfinite(d.f1)
           ORDER BY minus, "timestamp", "interval";
-ERROR = !SELECT: no such table 'interval_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'interval_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS ten, ABSTIME_TBL.f1 AS abstime, RELTIME_TBL.f1 AS reltime
            WHERE (ABSTIME_TBL.f1 + RELTIME_TBL.f1) < abstime 'Jan 14 14:00:00 1971'
            ORDER BY abstime, reltime;
-ERROR = !type (abstime) unknown in: "select '' as ten, abstime_tbl.f1 as abstime, reltime_tbl.f1 as reltime
-        !   where "
-        !syntax error, unexpected BY in: "by"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22000 !type (abstime) unknown in: "select '' as ten, abstime_tbl.f1 as abstime, reltime_tbl.f1 as reltime
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS three, ABSTIME_TBL.*
           WHERE  (ABSTIME_TBL.f1 + reltime '@ 3 year')         -- +3 years
-ERROR = !type (reltime) unknown in: "select '' as three, abstime_tbl.*
-        !  where  (abstime_tbl.f1 + reltime '@ 3 year')"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22000 !type (reltime) unknown in: "select '' as three, abstime_tbl.*
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = < abstime 'Jan 14 14:00:00 1977';
-ERROR = !syntax error, unexpected COMPARISON in: "<"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected COMPARISON in: "<"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS three, ABSTIME_TBL.*
            WHERE  (ABSTIME_TBL.f1 + reltime '@ 3 year ago')    -- -3 years
-ERROR = !type (reltime) unknown in: "select '' as three, abstime_tbl.*
-        !   where  (abstime_tbl.f1 + reltime '@ 3 year "
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22000 !type (reltime) unknown in: "select '' as three, abstime_tbl.*
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = < abstime 'Jan 14 14:00:00 1971';
-ERROR = !syntax error, unexpected COMPARISON in: "<"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected COMPARISON in: "<"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS three, ABSTIME_TBL.*
            WHERE  (ABSTIME_TBL.f1 - reltime '@ 3 year')        -- -(+3) years
-ERROR = !type (reltime) unknown in: "select '' as three, abstime_tbl.*
-        !   where  (abstime_tbl.f1 - reltime '@ 3 year'"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22000 !type (reltime) unknown in: "select '' as three, abstime_tbl.*
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = < abstime 'Jan 14 14:00:00 1971';
-ERROR = !syntax error, unexpected COMPARISON in: "<"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected COMPARISON in: "<"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS three, ABSTIME_TBL.*
            WHERE  (ABSTIME_TBL.f1 - reltime '@ 3 year ago')    -- -(-3) years
-ERROR = !type (reltime) unknown in: "select '' as three, abstime_tbl.*
-        !   where  (abstime_tbl.f1 - reltime '@ 3 year "
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22000 !type (reltime) unknown in: "select '' as three, abstime_tbl.*
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = < abstime 'Jan 14 14:00:00 1977';
-ERROR = !syntax error, unexpected COMPARISON in: "<"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected COMPARISON in: "<"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS "16", f1 AS "timestamp", date(f1) AS date
           FROM TEMP_TIMESTAMP
           WHERE f1 <> timestamp 'now'
           ORDER BY date, "timestamp";
-ERROR = !incorrect timestamp value (now) in: "select '' as "16", f1 as "timestamp", date(f1) as date
-        !  from temp_timestamp
-        !  w"
-        !syntax error, unexpected BY in: "by"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22007 !Incorrect timestamp value (now) in: "select '' as "16", f1 as "timestamp", date(f1) as date
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS "16", f1 AS "timestamp", abstime(f1) AS abstime
           FROM TEMP_TIMESTAMP
           ORDER BY abstime;
-ERROR = !SELECT: no such unary operator 'abstime(timestamptz)'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such unary operator 'abstime(timestamptz)'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS four, f1 AS abstime, date(f1) AS date
           FROM ABSTIME_TBL
           WHERE isfinite(f1) AND f1 <> abstime 'now'
           ORDER BY date, abstime;
-ERROR = !type (abstime) unknown in: "select '' as four, f1 as abstime, date(f1) as date
-        !  from abstime_tbl
-        !  where is"
-        !syntax error, unexpected BY in: "by"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 22000 !type (abstime) unknown in: "select '' as four, f1 as abstime, date(f1) as date
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS two, d1 AS "timestamp", abstime(d1) AS abstime
           FROM TIMESTAMP_TBL WHERE NOT isfinite(d1);
-ERROR = !SELECT: no such table 'timestamp_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'timestamp_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS three, f1 as abstime, cast(f1 as timestamp) AS "timestamp"
   FROM ABSTIME_TBL WHERE NOT isfinite(f1);
-ERROR = !SELECT: no such table 'abstime_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'abstime_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS ten, f1 AS interval, reltime(f1) AS reltime
           FROM INTERVAL_TBL;
-ERROR = !SELECT: no such table 'interval_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'interval_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS six, f1 as reltime, CAST(f1 AS interval) AS interval
           FROM RELTIME_TBL;
-ERROR = !syntax error, unexpected ')' in: "select '' as six, f1 as reltime, cast(f1 as interval)"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected ')' in: "select '' as six, f1 as reltime, cast(f1 as interval)"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SET DateStyle TO 'US,Postgres';
-ERROR = !syntax error, unexpected TO, expecting '=' in: "set datestyle to"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected TO, expecting '=' in: "set datestyle to"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SHOW DateStyle;
-ERROR = !syntax error, unexpected IDENT in: "show"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT in: "show"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS "64", d1 AS us_postgres FROM TIMESTAMP_TBL;
-ERROR = !SELECT: no such table 'timestamp_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'timestamp_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS seven, f1 AS us_postgres FROM ABSTIME_TBL;
-ERROR = !SELECT: no such table 'abstime_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'abstime_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SET DateStyle TO 'US,ISO';
-ERROR = !syntax error, unexpected TO, expecting '=' in: "set datestyle to"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected TO, expecting '=' in: "set datestyle to"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS "64", d1 AS us_iso FROM TIMESTAMP_TBL;
-ERROR = !SELECT: no such table 'timestamp_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'timestamp_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS seven, f1 AS us_iso FROM ABSTIME_TBL;
-ERROR = !SELECT: no such table 'abstime_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'abstime_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SET DateStyle TO 'US,SQL';
-ERROR = !syntax error, unexpected TO, expecting '=' in: "set datestyle to"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected TO, expecting '=' in: "set datestyle to"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SHOW DateStyle;
-ERROR = !syntax error, unexpected IDENT in: "show"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT in: "show"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS "64", d1 AS us_sql FROM TIMESTAMP_TBL;
-ERROR = !SELECT: no such table 'timestamp_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'timestamp_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS seven, f1 AS us_sql FROM ABSTIME_TBL;
-ERROR = !SELECT: no such table 'abstime_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'abstime_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SET DateStyle TO 'European,Postgres';
-ERROR = !syntax error, unexpected TO, expecting '=' in: "set datestyle to"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected TO, expecting '=' in: "set datestyle to"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SHOW DateStyle;
-ERROR = !syntax error, unexpected IDENT in: "show"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT in: "show"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = INSERT INTO TIMESTAMP_TBL VALUES('13/06/1957');
-ERROR = !INSERT INTO: no such table 'timestamp_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !INSERT INTO: no such table 'timestamp_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT count(*) as one FROM TIMESTAMP_TBL WHERE d1 = 'Jun 13 1957';
-ERROR = !SELECT: no such table 'timestamp_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'timestamp_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS "65", d1 AS european_postgres FROM TIMESTAMP_TBL;
-ERROR = !SELECT: no such table 'timestamp_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'timestamp_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS seven, f1 AS european_postgres FROM ABSTIME_TBL;
-ERROR = !SELECT: no such table 'abstime_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'abstime_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SET DateStyle TO 'European,ISO';
-ERROR = !syntax error, unexpected TO, expecting '=' in: "set datestyle to"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected TO, expecting '=' in: "set datestyle to"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SHOW DateStyle;
-ERROR = !syntax error, unexpected IDENT in: "show"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT in: "show"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS "65", d1 AS european_iso FROM TIMESTAMP_TBL;
-ERROR = !SELECT: no such table 'timestamp_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'timestamp_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS seven, f1 AS european_iso FROM ABSTIME_TBL;
-ERROR = !SELECT: no such table 'abstime_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'abstime_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SET DateStyle TO 'European,SQL';
-ERROR = !syntax error, unexpected TO, expecting '=' in: "set datestyle to"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected TO, expecting '=' in: "set datestyle to"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SHOW DateStyle;
-ERROR = !syntax error, unexpected IDENT in: "show"
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT in: "show"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS "65", d1 AS european_sql FROM TIMESTAMP_TBL;
-ERROR = !SELECT: no such table 'timestamp_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'timestamp_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = SELECT '' AS seven, f1 AS european_sql FROM ABSTIME_TBL;
-ERROR = !SELECT: no such table 'abstime_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'abstime_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = RESET DateStyle;
-ERROR = !syntax error, unexpected IDENT in: "reset"
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT in: "reset"
 
 
 

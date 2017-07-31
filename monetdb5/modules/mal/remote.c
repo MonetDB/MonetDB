@@ -831,7 +831,7 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 		throw(ILLARG, "remote.register", ILLEGAL_ARGUMENT ": connection name is NULL or nil");
 
 	/* find local definition */
-	sym = findSymbol(cntxt->nspace, putName(mod), putName(fcn));
+	sym = findSymbol(cntxt->usermodule, putName(mod), putName(fcn));
 	if (sym == NULL)
 		throw(MAL, "remote.register", ILLEGAL_ARGUMENT ": no such function: %s.%s", mod, fcn);
 
@@ -860,7 +860,7 @@ str RMTregisterInternal(Client cntxt, str conn, str mod, str fcn)
 		mapi_close_handle(mhdl);
 
 	/* make sure the program is error free */
-	chkProgram(cntxt->fdout, cntxt->nspace, sym->def);
+	chkProgram(cntxt->usermodule, sym->def);
 	if (sym->def->errors) {
 		MT_lock_unset(&c->lock);
 		throw(MAL, "remote.register",

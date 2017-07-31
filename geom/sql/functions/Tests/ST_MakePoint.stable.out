@@ -54,7 +54,7 @@ Ready.
 #insert into points_tbl values (10, 20, 30, 40), (100, 200, 300, 400), (1, 2, 3, 4);
 [ 3	]
 #select st_makepoint(x,y) as "XY" from points_tbl;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % XY # name
 % geometry # type
 % 0 # length
@@ -62,7 +62,7 @@ Ready.
 [ "POINT (100 200)"	]
 [ "POINT (1 2)"	]
 #select st_makepoint(x,y,z) as "XYZ" from points_tbl;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % XYZ # name
 % geometry # type
 % 0 # length
@@ -70,7 +70,7 @@ Ready.
 [ "POINT Z (100 200 300)"	]
 [ "POINT Z (1 2 3)"	]
 #select st_makepointm(x,y,m) as "XYM" from points_tbl;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % XYM # name
 % geometry # type
 % 0 # length

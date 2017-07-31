@@ -101,7 +101,7 @@
  * @end
  */
 /*
- * @- Module initializaton
+ * Module initializaton
  */
 #include "monetdb_config.h"
 #include "vault.h"
@@ -115,7 +115,6 @@
 
 char vaultpath[BUFSIZ];
 /*
- * @-
  * The curl sample code has been copied from http://curl.haxx.se/libcurl/c/import.html
  */
 #ifdef HAVE_CURL
@@ -170,7 +169,6 @@ VLTimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* get a copy */
 		curl_easy_setopt(curl, CURLOPT_URL, *source);
 		/*
-		 * @-
 		 * Actually, before copying the file it is better to check its
 		 * properties, such as last modified date to see if it needs a refresh.
 		 * Have to find the CURL method to enact this. It may be protocol
@@ -195,7 +193,7 @@ VLTimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		curl_easy_cleanup(curl);
 
 		if(CURLE_OK != res)
-			msg = createException(MAL,"vault.import", "curl [%d] %s '%s' -> '%s'\n", res, curl_easy_strerror(res), *source,path);
+			msg = createException(MAL,"vault.import", "SQLSTATE 4200 !""curl [%d] %s '%s' -> '%s'\n", res, curl_easy_strerror(res), *source,path);
 	}
 
 	if(ftpfile.stream)
@@ -205,7 +203,7 @@ VLTimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #else
 	(void) source;
 	(void) target;
-	msg = createException(MAL,"vault.import", "No curl library");
+	msg = createException(MAL,"vault.import", "SQLSTATE 4200 !""No curl library");
 #endif
 	if (msg)
 		return msg;
@@ -227,7 +225,7 @@ VLTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( vaultpath[0] == 0){
 		snprintf(vaultpath, PATHLENGTH, "%s%cvault", GDKgetenv("gdk_dbpath"), DIR_SEP);
 		if (mkdir(vaultpath, 0755) < 0 && errno != EEXIST)
-			return createException(MAL,"vault.getLocation", "can not access vault directory");
+			return createException(MAL,"vault.getLocation", "SQLSTATE 4200 !""can not access vault directory");
 	}
 	(void) cntxt;
 	(void) mb;
@@ -246,7 +244,7 @@ VLTbasename(str *ret, str *fname, str *split)
 		*ret = GDKstrdup( r);
 		return MAL_SUCCEED;
 	}
-	throw(MAL,"vault.basename","Split of file failed:%s",*fname);
+	throw(MAL,"vault.basename","SQLSTATE 4200 !""Split of file failed:%s",*fname);
 }
 
 str VLTremove(timestamp *ret, str *t)

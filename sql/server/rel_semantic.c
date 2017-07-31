@@ -215,6 +215,6 @@ rel_semantic(mvc *sql, symbol *s)
 		return rel_selects(sql, s);
 
 	default:
-		return sql_error(sql, 02, "symbol type not found");
+		return sql_error(sql, 02, "SQLSTATE 42000 !""Symbol type not found");
 	}
 }

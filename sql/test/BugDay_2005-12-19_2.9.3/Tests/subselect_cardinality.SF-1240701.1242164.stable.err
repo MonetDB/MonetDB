@@ -30,10 +30,10 @@ stderr of test 'subselect_cardinality.SF-1240701.1242164` in directory 'sql/test
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from tab where i = (select 0 from tab where i < 3) order by i;
-ERROR = !cardinality violation, scalar value expected
-MAPI  = (monetdb) /var/tmp/mtest-8091/.s.monetdb.39076
+ERROR = !SQLException:zero_or_one:SQLSTATE 21000 !Cardinality violation, scalar value expected
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = select * from tab where i = (select i from tab where i < 3) order by i;
-ERROR = !cardinality violation, scalar value expected
+ERROR = !SQLException:zero_or_one:SQLSTATE 21000 !Cardinality violation, scalar value expected
 
 # 11:09:03 >  
 # 11:09:03 >  "Done."

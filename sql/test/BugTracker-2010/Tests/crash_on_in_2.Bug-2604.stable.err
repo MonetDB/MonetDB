@@ -69,10 +69,10 @@ stderr of test 'crash_on_in_2.Bug-2604` in directory 'sql/test/BugTracker-2010` 
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from t2;
-ERROR = !SELECT: no such table 't2'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 't2'
+MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
 QUERY = select * from t1 where a in (select b from t2);
-ERROR = !SELECT: no such table 't2'
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 't2'
 
 # 18:31:06 >  
 # 18:31:06 >  Done.

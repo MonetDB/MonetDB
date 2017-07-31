@@ -35,11 +35,11 @@
 	tpe *databuf; \
 	res = COLnew(0, TYPE_##tpe, sz, TRANSIENT); \
 	if ( res == NULL ) \
-		return createException(MAL, "netcdf.importvar", MAL_MALLOC_FAIL); \
+		return createException(MAL, "netcdf.importvar", "SQLSTATE HY001 !"MAL_MALLOC_FAIL); \
 	databuf = (tpe *)Tloc(res, 0); \
 	if ( (retval = nc_get_var_##ncdftpe(ncid, varid, databuf)) ) \
 		return createException(MAL, "netcdf.importvar", \
-						   "Cannot read variable %d values: %s", \
+						   "SQLSTATE NC000 !""Cannot read variable %d values: %s", \
 						   varid, nc_strerror(retval)); \
 	}
 
@@ -66,13 +66,13 @@ NCDFtest(int *vars, str *fname)
 
 	/* Open NetCDF file  */
 	if ((retval = nc_open(*fname, NC_NOWRITE, &ncid)))
-	    return createException(MAL, "netcdf.test", "Cannot open NetCDF file %s: %s", *fname, nc_strerror(retval));
+	    return createException(MAL, "netcdf.test", "SQLSTATE NC000 !""Cannot open NetCDF file %s: %s", *fname, nc_strerror(retval));
 
     if ((retval = nc_inq(ncid, &dims, vars, &ngatts, &unlimdim)))
-	    return createException(MAL, "netcdf.test", "Cannot read NetCDF header: %s", nc_strerror(retval));
+	    return createException(MAL, "netcdf.test", "SQLSTATE NC000 !""Cannot read NetCDF header: %s", nc_strerror(retval));
 
     if ((retval = nc_close(ncid)))
-	    return createException(MAL, "netcdf.test", "Cannot close file %s: \
+	    return createException(MAL, "netcdf.test", "SQLSTATE NC000 !""Cannot close file %s: \
 %s", *fname, nc_strerror(retval));
 
     return msg;
@@ -186,21 +186,21 @@ NCDFARRAYseries(bat *bid, bte start, bte step, int stop, int group, int series)
 
 		bn = COLnew(0, TYPE_bte, cnt, TRANSIENT);
 		if ( bn == NULL)
-			throw(MAL, "array.series", MAL_MALLOC_FAIL);
+			throw(MAL, "array.series", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		array_series(sta, ste, sto, bte);
 	} else if (stop <= (int) GDK_sht_max) {
 		sht sta = (sht) start, ste = (sht) step, sto = (sht) stop;
 
 		bn = COLnew(0, TYPE_sht, cnt, TRANSIENT);
 		if ( bn == NULL)
-			throw(MAL, "array.series", MAL_MALLOC_FAIL);
+			throw(MAL, "array.series", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		array_series(sta, ste, sto, sht);
 	} else {
 		int sta = (int) start, ste = (int) step, sto = (int) stop;
 
 		bn = COLnew(0, TYPE_int, cnt, TRANSIENT);
 		if ( bn == NULL)
-			throw(MAL, "array.series", MAL_MALLOC_FAIL);
+			throw(MAL, "array.series", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		array_series(sta, ste, sto, int);
 	}
 
@@ -248,7 +248,7 @@ NCDFattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tr = m->session->tr;
 	sch = mvc_bind_schema(m, "sys");
 	if ( !sch )
-        return createException(MAL, "netcdf.attach", "Cannot get schema sys\n");
+        return createException(MAL, "netcdf.attach", "SQLSTATE NC000 !""Cannot get schema sys\n");
 
 	tfiles = mvc_bind_table(m, sch, "netcdf_files");
 	tdims = mvc_bind_table(m, sch, "netcdf_dims");
@@ -258,21 +258,21 @@ NCDFattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (tfiles == NULL || tdims == NULL || tvars == NULL || 
 	    tvardim == NULL || tattrs == NULL)
-        return createException(MAL, "netcdf.attach", "Catalog table missing\n");
+        return createException(MAL, "netcdf.attach", "SQLSTATE NC000 !""Catalog table missing\n");
 
 	/* check if the file is already attached */
 	col = mvc_bind_column(m, tfiles, "location");
 	rid = table_funcs.column_find_row(m->session->tr, col, fname, NULL);
 	if (rid != oid_nil) 
-	    return createException(SQL, "netcdf.attach", "File %s is already attached\n", fname);
+	    return createException(SQL, "netcdf.attach", "SQLSTATE NC000 !""File %s is already attached\n", fname);
 
 	/* Open NetCDF file  */
 	if ((retval = nc_open(fname, NC_NOWRITE, &ncid)))
-        return createException(MAL, "netcdf.test", "Cannot open NetCDF \
+        return createException(MAL, "netcdf.test", "SQLSTATE NC000 !""Cannot open NetCDF \
 file %s: %s", fname, nc_strerror(retval));
 
 	if ((retval = nc_inq(ncid, &ndims, &nvars, &ngatts, &unlimdim)))
-        return createException(MAL, "netcdf.test", "Cannot read NetCDF \
+        return createException(MAL, "netcdf.test", "SQLSTATE NC000 !""Cannot read NetCDF \
 header: %s", nc_strerror(retval));
 
 	/* Insert row into netcdf_files table */
@@ -281,7 +281,7 @@ header: %s", nc_strerror(retval));
 
 	esc_str0 = SQLescapeString(fname);
 	if (!esc_str0) {
-		msg = createException(MAL, "netcdf.attach", MAL_MALLOC_FAIL);
+		msg = createException(MAL, "netcdf.attach", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 		goto finish;
 	}
 	snprintf(buf, BUFSIZ, INSFILE, (int)fid, esc_str0);
@@ -295,11 +295,11 @@ header: %s", nc_strerror(retval));
 	dims = (char **)GDKzalloc(sizeof(char *) * ndims);
 	for (didx = 0; didx < ndims; didx++){
 		if ((retval = nc_inq_dim(ncid, didx, dname, &dlen)) != 0)
-	        return createException(MAL, "netcdf.attach", "Cannot read dimension %d : %s", didx, nc_strerror(retval));
+	        return createException(MAL, "netcdf.attach", "SQLSTATE NC000 !""Cannot read dimension %d : %s", didx, nc_strerror(retval));
 
 		esc_str0 = SQLescapeString(dname);
 		if (!esc_str0) {
-			msg = createException(MAL, "netcdf.attach", MAL_MALLOC_FAIL);
+			msg = createException(MAL, "netcdf.attach", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 			goto finish;
 		}
 
@@ -316,7 +316,7 @@ header: %s", nc_strerror(retval));
 	for (vidx = 0; vidx < nvars; vidx++){
 	    if ( (retval = nc_inq_var(ncid, vidx, vname, &vtype, &vndims, vdims, &vnatts)))
 	        return createException(MAL, "netcdf.attach", 
-								   "Cannot read variable %d : %s",
+								   "SQLSTATE NC000 !""Cannot read variable %d : %s",
 								   vidx, nc_strerror(retval));
 
     	/* Check if this is coordinate variable */
@@ -326,7 +326,7 @@ header: %s", nc_strerror(retval));
 
 		esc_str0 = SQLescapeString(vname);
 		if (!esc_str0) {
-			msg = createException(MAL, "netcdf.attach", MAL_MALLOC_FAIL);
+			msg = createException(MAL, "netcdf.attach", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 			goto finish;
 		}
 
@@ -350,23 +350,23 @@ header: %s", nc_strerror(retval));
             for (aidx = 0; aidx < vnatts; aidx++){
                 if ((retval = nc_inq_attname(ncid,vidx,aidx,aname)))
                     return createException(MAL, "netcdf.attach",
-										   "Cannot read attribute %d of variable %d: %s",
+										   "SQLSTATE NC000 !""Cannot read attribute %d of variable %d: %s",
 										   aidx, vidx, nc_strerror(retval));
 
 				if ((retval = nc_inq_att(ncid,vidx,aname,&atype,&alen)))
                     return createException(MAL, "netcdf.attach",
-										   "Cannot read attribute %s type and length: %s",
+										   "SQLSTATE NC000 !""Cannot read attribute %s type and length: %s",
 										   aname, nc_strerror(retval));
 
 				esc_str0 = SQLescapeString(vname);
 				if (!esc_str0) {
-					msg = createException(MAL, "netcdf.attach", MAL_MALLOC_FAIL);
+					msg = createException(MAL, "netcdf.attach", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 					goto finish;
 				}
 				esc_str1 = SQLescapeString(aname);
 				if (!esc_str1) {
 					GDKfree(esc_str0);
-					msg = createException(MAL, "netcdf.attach", MAL_MALLOC_FAIL);
+					msg = createException(MAL, "netcdf.attach", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 					goto finish;
 				}
 				switch ( atype ) {
@@ -374,7 +374,7 @@ header: %s", nc_strerror(retval));
 					aval = (char *) GDKzalloc(alen + 1);
 					if ((retval = nc_get_att_text(ncid,vidx,aname,aval)))
 						return createException(MAL, "netcdf.attach",
-											   "Cannot read attribute %s value: %s",
+											   "SQLSTATE NC000 !""Cannot read attribute %s value: %s",
 											   aname, nc_strerror(retval));
 					fix_quote(aval, alen);
 					aval[alen] = '\0';
@@ -385,7 +385,7 @@ header: %s", nc_strerror(retval));
 				case NC_INT:
 					if ((retval = nc_get_att_int(ncid,vidx,aname,&avalint)))
 						return createException(MAL, "netcdf.attach",
-											   "Cannot read attribute %s value: %s",
+											   "SQLSTATE NC000 !""Cannot read attribute %s value: %s",
 											   aname, nc_strerror(retval));
 					snprintf(abuf,80,"%d",avalint);
 					snprintf(buf, BUFSIZ, INSATTR, esc_str0, esc_str1, prim_type_name(atype), abuf, (int)fid, "root");
@@ -394,7 +394,7 @@ header: %s", nc_strerror(retval));
 				case NC_FLOAT:
 					if ((retval = nc_get_att_float(ncid,vidx,aname,&avalfl)))
 						return createException(MAL, "netcdf.attach",
-											   "Cannot read attribute %s value: %s",
+											   "SQLSTATE NC000 !""Cannot read attribute %s value: %s",
 											   aname, nc_strerror(retval));
 					snprintf(abuf,80,"%7.2f",avalfl);
 					snprintf(buf, BUFSIZ, INSATTR, esc_str0, esc_str1, prim_type_name(atype), abuf, (int)fid, "root");
@@ -403,7 +403,7 @@ header: %s", nc_strerror(retval));
 				case NC_DOUBLE:
 					if ((retval = nc_get_att_double(ncid,vidx,aname,&avaldbl)))
 						return createException(MAL, "netcdf.attach",
-											   "Cannot read attribute %s value: %s",
+											   "SQLSTATE NC000 !""Cannot read attribute %s value: %s",
 											   aname, nc_strerror(retval));
 					snprintf(abuf,80,"%7.2e",avaldbl);
 					snprintf(buf, BUFSIZ, INSATTR, esc_str0, esc_str1, prim_type_name(atype), abuf, (int)fid, "root");
@@ -429,17 +429,17 @@ header: %s", nc_strerror(retval));
 	for (aidx = 0; aidx < ngatts; aidx++){
 		if ((retval = nc_inq_attname(ncid,NC_GLOBAL,aidx,aname)) != 0)
 	        return createException(MAL, "netcdf.attach",
-								   "Cannot read global attribute %d: %s",
+								   "SQLSTATE NC000 !""Cannot read global attribute %d: %s",
 								   aidx, nc_strerror(retval));
 
 		if ((retval = nc_inq_att(ncid,NC_GLOBAL,aname,&atype,&alen)) != 0)
 	        return createException(MAL, "netcdf.attach",
-								   "Cannot read global attribute %s type and length: %s",
+								   "SQLSTATE NC000 !""Cannot read global attribute %s type and length: %s",
 								   aname, nc_strerror(retval));
 
 		esc_str0 = SQLescapeString(aname);
 		if (!esc_str0) {
-			msg = createException(MAL, "netcdf.attach", MAL_MALLOC_FAIL);
+			msg = createException(MAL, "netcdf.attach", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 			goto finish;
 		}
 
@@ -448,7 +448,7 @@ header: %s", nc_strerror(retval));
 			aval = (char *) GDKzalloc(alen + 1);
 			if ((retval = nc_get_att_text(ncid,NC_GLOBAL,aname,aval)))
 				return createException(MAL, "netcdf.attach",
-									   "Cannot read global attribute %s value: %s",
+									   "SQLSTATE NC000 !""Cannot read global attribute %s value: %s",
 									   aname, nc_strerror(retval));
 		    fix_quote(aval, alen);
 			aval[alen] = '\0';
@@ -459,7 +459,7 @@ header: %s", nc_strerror(retval));
 		case NC_INT:
 			if ((retval = nc_get_att_int(ncid,NC_GLOBAL,aname,&avalint)))
 				return createException(MAL, "netcdf.attach",
-									   "Cannot read global attribute %s of type %s : %s",
+									   "SQLSTATE NC000 !""Cannot read global attribute %s of type %s : %s",
 									   aname, prim_type_name(atype), nc_strerror(retval));
 			snprintf(abuf,80,"%d",avalint);
 			snprintf(buf, BUFSIZ, INSATTR, "GLOBAL", esc_str0, prim_type_name(atype), abuf, (int)fid, "root");
@@ -468,7 +468,7 @@ header: %s", nc_strerror(retval));
 		case NC_FLOAT:
 			if ((retval = nc_get_att_float(ncid,NC_GLOBAL,aname,&avalfl)))
 				return createException(MAL, "netcdf.attach",
-									   "Cannot read global attribute %s of type %s: %s",
+									   "SQLSTATE NC000 !""Cannot read global attribute %s of type %s: %s",
 									   aname, prim_type_name(atype), nc_strerror(retval));
 			snprintf(abuf,80,"%7.2f",avalfl);
 			snprintf(buf, BUFSIZ, INSATTR, "GLOBAL", esc_str0, prim_type_name(atype), abuf, (int)fid, "root");
@@ -477,7 +477,7 @@ header: %s", nc_strerror(retval));
 		case NC_DOUBLE:
 			if ((retval = nc_get_att_double(ncid,NC_GLOBAL,aname,&avaldbl)))
 				return createException(MAL, "netcdf.attach",
-									   "Cannot read global attribute %s value: %s",
+									   "SQLSTATE NC000 !""Cannot read global attribute %s value: %s",
 									   aname, nc_strerror(retval));
 			snprintf(abuf,80,"%7.2e",avaldbl);
 			snprintf(buf, BUFSIZ, INSATTR, "GLOBAL", esc_str0, prim_type_name(atype), abuf, (int)fid, "root");
@@ -527,11 +527,11 @@ NCDFimportVarStmt(str *sciqlstmt, str *fname, int *varid)
 	/* Open NetCDF file  */
 	if ((retval = nc_open(*fname, NC_NOWRITE, &ncid)))
         return createException(MAL, "netcdf.importvar",
-            "Cannot open NetCDF file %s: %s", *fname, nc_strerror(retval));
+            "SQLSTATE NC000 !""Cannot open NetCDF file %s: %s", *fname, nc_strerror(retval));
 
 	if ( (retval = nc_inq_var(ncid, *varid, vname, &vtype, &vndims, vdims, &vnatts)))
 	    return createException(MAL, "netcdf.attach",
-		    "Cannot read variable %d : %s", *varid, nc_strerror(retval));
+		    "SQLSTATE NC000 !""Cannot read variable %d : %s", *varid, nc_strerror(retval));
 
 
 	j = snprintf(buf, BUFSIZ,"create table %s( ", vname);
@@ -539,7 +539,7 @@ NCDFimportVarStmt(str *sciqlstmt, str *fname, int *varid)
 	for (i = 0; i < vndims; i++){
 	    if ((retval = nc_inq_dim(ncid, vdims[i], dname, &dlen)))
 	        return createException(MAL, "netcdf.attach",
-			    "Cannot read dimension %d : %s", vdims[i], nc_strerror(retval));
+			    "SQLSTATE NC000 !""Cannot read dimension %d : %s", vdims[i], nc_strerror(retval));
 
 	  (void)dlen;
 	  j += snprintf(buf + j, BUFSIZ - j, "%s INTEGER, ", dname);
@@ -568,7 +568,7 @@ NCDFloadVar(bat **dim, bat *v, int ncid, int varid, nc_type vtype, int vndims, i
 	size_t *dlen = NULL, *val_rep = NULL, *grp_rep = NULL;
 
 	if ( dim == NULL )
-		return createException(MAL, "netcdf.importvar", "array of dimension bat is NULL");
+		return createException(MAL, "netcdf.importvar", "SQLSTATE NC000 !""array of dimension bat is NULL");
 	dim_bids = *dim;
 
 	dlen = (size_t *)GDKzalloc(sizeof(size_t) * vndims);
@@ -576,7 +576,7 @@ NCDFloadVar(bat **dim, bat *v, int ncid, int varid, nc_type vtype, int vndims, i
 	for (i = 0; i < vndims; i++){
 		if ((retval = nc_inq_dimlen(ncid, vdims[i], &dlen[i])))
 			return createException(MAL, "netcdf.importvar",
-								   "Cannot read dimension %d : %s",
+								   "SQLSTATE NC000 !""Cannot read dimension %d : %s",
 								   vdims[i], nc_strerror(retval));
 		sz *= dlen[i];
 	}
@@ -596,7 +596,7 @@ NCDFloadVar(bat **dim, bat *v, int ncid, int varid, nc_type vtype, int vndims, i
 
 	default:
 	  return createException(MAL, "netcdf.importvar",
-			   "Type %s not supported yet",
+			   "SQLSTATE NC000 !""Type %s not supported yet",
 			   prim_type_name(vtype));
 
 	}
@@ -640,7 +640,7 @@ NCDFloadVar(bat **dim, bat *v, int ncid, int varid, nc_type vtype, int vndims, i
 			GDKfree(dlen);
 			GDKfree(val_rep);
 			GDKfree(grp_rep);
-			return createException(MAL, "netcdf.loadvar", "Failed to create a dimension of variable %d", varid);
+			return createException(MAL, "netcdf.loadvar", "SQLSTATE NC000 !""Failed to create a dimension of variable %d", varid);
 		}
 	}
 	/* to do : is descriptor check of dim_bids is needed? */
@@ -682,19 +682,19 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	sch = mvc_bind_schema(m, "sys");
 	if ( !sch )
-		return createException(MAL, "netcdf.importvar", "Cannot get schema sys\n");
+		return createException(MAL, "netcdf.importvar", "SQLSTATE NC000 !""Cannot get schema sys\n");
 
 	tfiles = mvc_bind_table(m, sch, "netcdf_files");
 	if (tfiles == NULL)
-		return createException(MAL, "netcdf.importvar", "Catalog table missing\n");
+		return createException(MAL, "netcdf.importvar", "SQLSTATE NC000 !""Catalog table missing\n");
 
 	/* get the name of the attached NetCDF file */
 	col = mvc_bind_column(m, tfiles, "file_id");
 	if (col == NULL)
-		return createException(MAL, "netcdf.importvar", "Could not find \"netcdf_files\".\"file_id\"\n");
+		return createException(MAL, "netcdf.importvar", "SQLSTATE NC000 !""Could not find \"netcdf_files\".\"file_id\"\n");
 	rid = table_funcs.column_find_row(m->session->tr, col, (void *)&fid, NULL);
 	if (rid == oid_nil)
-		return createException(MAL, "netcdf.importvar", "File %d not in the NetCDF vault\n", fid);
+		return createException(MAL, "netcdf.importvar", "SQLSTATE NC000 !""File %d not in the NetCDF vault\n", fid);
 
 
 	col = mvc_bind_column(m, tfiles, "location");
@@ -702,7 +702,7 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* Open NetCDF file  */
 	if ((retval = nc_open(fname, NC_NOWRITE, &ncid))) {
-		char *msg = createException(MAL, "netcdf.importvar", "Cannot open NetCDF file %s: %s", 
+		char *msg = createException(MAL, "netcdf.importvar", "SQLSTATE NC000 !""Cannot open NetCDF file %s: %s", 
 			   fname, nc_strerror(retval));
 		GDKfree(fname);
 		return msg;
@@ -712,11 +712,11 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* Get info for variable vname from NetCDF file */
 	if ( (retval = nc_inq_varid(ncid, vname, &varid)) )
 		return createException(MAL, "netcdf.importvar",
-			   "Cannot read variable %s: %s",
+			   "SQLSTATE NC000 !""Cannot read variable %s: %s",
 			   vname, nc_strerror(retval));
 	if ( (retval = nc_inq_var(ncid, varid, vname, &vtype, &vndims, vdims, &vnatts)))
 		return createException(MAL, "netcdf.importvar",
-				"Cannot read variable %d : %s",
+				"SQLSTATE NC000 !""Cannot read variable %d : %s",
 				varid, nc_strerror(retval));
 
 	/* compose 'create table' statement in the buffer */
@@ -733,9 +733,9 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = 0; i < vndims; i++){
 		if ((retval = nc_inq_dim(ncid, vdims[i], dname[i], &dlen))) {
 			GDKfree(dname);
-			throw(MAL, "netcdf.importvar",
-			      "Cannot read dimension %d : %s",
-			      vdims[i], nc_strerror(retval));
+			return createException(MAL, "netcdf.importvar",
+								   "SQLSTATE NC000 !""Cannot read dimension %d : %s",
+								   vdims[i], nc_strerror(retval));
 		}
 
 		if ( dlen <= (int) GDK_bte_max )
@@ -771,11 +771,11 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	aname_sys = toLower(aname);
 	arr_table = mvc_bind_table(m, sch, aname_sys);
 	if (arr_table == NULL)
-		return createException(MAL, "netcdf.importvar", "netcdf table %s missing\n", aname_sys);
+		return createException(MAL, "netcdf.importvar", "SQLSTATE NC000 !""netcdf table %s missing\n", aname_sys);
 
 	col = mvc_bind_column(m, arr_table, "value");
 	if (col == NULL)
-		return createException(MAL, "netcdf.importvar", "Cannot find column %s.value\n", aname_sys);
+		return createException(MAL, "netcdf.importvar", "SQLSTATE NC000 !""Cannot find column %s.value\n", aname_sys);
 
 	vbat = BATdescriptor(vbatid);
 	store_funcs.append_col(m->session->tr, col, vbat, TYPE_bat);
@@ -787,7 +787,7 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = 0; i < vndims; i++){
 		col = mvc_bind_column(m, arr_table, dname[i]);
 		if (col == NULL)
-			return createException(MAL, "netcdf.importvar", "Cannot find column %s.%s\n", aname_sys, dname[i]);
+			return createException(MAL, "netcdf.importvar", "SQLSTATE NC000 !""Cannot find column %s.%s\n", aname_sys, dname[i]);
 
 		dimbat = BATdescriptor(dim_bids[i]);
 		store_funcs.append_col(m->session->tr, col, dimbat, TYPE_bat);

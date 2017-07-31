@@ -81,13 +81,13 @@ stderr of test 'invalid_qualified_column_name.SF-2183288` in directory 'sql/test
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from t where b = 0;
-ERROR = !SELECT: identifier 'b' unknown
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: identifier 'b' unknown
+MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
 QUERY = select * from t where t.b = 0;
-ERROR = !SELECT: no such column 't.b'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42S22 !SELECT: no such column 't.b'
+MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
 QUERY = select * from t where s.a = 0;
-ERROR = !SELECT: no such column 's.a'
+ERROR = !ParseException:SQLparser:SQLSTATE 42S22 !SELECT: no such column 's.a'
 
 # 14:44:24 >  
 # 14:44:24 >  Done.

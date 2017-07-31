@@ -70,8 +70,13 @@ PyObject *PyLong_FromHge(hge h)
 size_t pyobject_get_size(PyObject *obj)
 {
 	size_t size = 256;
-	if (PyString_CheckExact(obj) || PyByteArray_CheckExact(obj)) {
-		size = Py_SIZE(obj); // Normal strings are 1 string per character
+
+	if (
+#ifndef IS_PY3K
+	    PyString_CheckExact(obj) ||
+#endif
+	    PyByteArray_CheckExact(obj)) {
+		size = Py_SIZE(obj); // Normal strings are 1 byte per character
 	} else if (PyUnicode_CheckExact(obj)) {
 		size = Py_SIZE(obj) * 4; // UTF32 is 4 bytes per character
 	}
@@ -123,32 +128,33 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 	PyObject *obj;
 	str msg = MAL_SUCCEED;
 	str utf8_string = NULL;
-
-	(void)maxsize;
+	size_t len = 0;
 
 	if (ptr == NULL || *ptr == NULL) {
-		msg = createException(MAL, "pyapi.eval", "Invalid PyObject.");
+		msg = createException(MAL, "pyapi.eval", "SQLSTATE PY000 !""Invalid PyObject.");
 		goto wrapup;
 	}
 	obj = *ptr;
 
 	utf8_string = *value;
 	if (!utf8_string) {
-		utf8_string = (str)malloc(pyobject_get_size(obj) * sizeof(char) + 1);
+		utf8_string = (str)malloc(len = (pyobject_get_size(obj) + 1));
 		if (!utf8_string) {
 			msg = createException(MAL, "pyapi.eval",
-								  MAL_MALLOC_FAIL "python string");
+								  "SQLSTATE HY001 !"MAL_MALLOC_FAIL "python string");
 			goto wrapup;
 		}
 		*value = utf8_string;
+	} else {
+		len = maxsize;
 	}
 
 #ifndef IS_PY3K
 	if (PyString_CheckExact(obj)) {
 		char *str = ((PyStringObject *)obj)->ob_sval;
-		if (!string_copy(str, utf8_string, strlen(str) + 1, false)) {
+		if (!string_copy(str, utf8_string, len-1, false)) {
 			msg = createException(MAL, "pyapi.eval",
-								  "Invalid string encoding used. Please return "
+								  "SQLSTATE PY000 !""Invalid string encoding used. Please return "
 								  "a regular ASCII string, or a Numpy_Unicode "
 								  "object.\n");
 			goto wrapup;
@@ -157,9 +163,9 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 #endif
 		if (PyByteArray_CheckExact(obj)) {
 		char *str = ((PyByteArrayObject *)obj)->ob_bytes;
-		if (!string_copy(str, utf8_string, strlen(str) + 1, false)) {
+		if (!string_copy(str, utf8_string, len-1, false)) {
 			msg = createException(MAL, "pyapi.eval",
-								  "Invalid string encoding used. Please return "
+								  "SQLSTATE PY000 !""Invalid string encoding used. Please return "
 								  "a regular ASCII string, or a Numpy_Unicode "
 								  "object.\n");
 			goto wrapup;
@@ -174,9 +180,9 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 #endif
 #else
 		char *str = PyUnicode_AsUTF8(obj);
-		if (!string_copy(str, utf8_string, strlen(str) + 1, true)) {
+		if (!string_copy(str, utf8_string, len-1, true)) {
 			msg = createException(MAL, "pyapi.eval",
-								  "Invalid string encoding used. Please return "
+								  "SQLSTATE PY000 !""Invalid string encoding used. Please return "
 								  "a regular ASCII string, or a Numpy_Unicode "
 								  "object.\n");
 			goto wrapup;
@@ -196,7 +202,7 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 	} else {
 		msg = createException(
 			MAL, "pyapi.eval",
-			"Unrecognized Python object. Could not convert to NPY_UNICODE.\n");
+			"SQLSTATE PY000 !""Unrecognized Python object. Could not convert to NPY_UNICODE.\n");
 		goto wrapup;
 	}
 wrapup:

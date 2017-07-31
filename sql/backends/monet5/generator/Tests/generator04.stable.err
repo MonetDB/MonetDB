@@ -31,24 +31,24 @@ stderr of test 'generator04` in directory 'sql/backends/monet5/generator` itself
 
 MAPI  = (monetdb) /var/tmp/mtest-20019/.s.monetdb.36969
 QUERY = select * from generate_series('a','a','c');
-ERROR = !conversion of string 'a' to type bte failed.
-MAPI  = (monetdb) /var/tmp/mtest-3000/.s.monetdb.31545
+ERROR = !MALException:calc.bte:22018!conversion of string 'a' to type bte failed.
+MAPI  = (monetdb) /var/tmp/mtest-10318/.s.monetdb.31660
 QUERY = select * from generate_series(false,true,false) ;
-ERROR = !zero step size not allowed
-MAPI  = (monetdb) /var/tmp/mtest-20019/.s.monetdb.36969
+ERROR = !MALException:generator.noop:SQLTYPE 42000 !Zero step size not allowed
+MAPI  = (monetdb) /var/tmp/mtest-10318/.s.monetdb.31660
 QUERY = select * from generate_series(null,null,1);
-ERROR = !Illegal generator range
-MAPI  = (monetdb) /var/tmp/mtest-20019/.s.monetdb.36969
+ERROR = !MALException:generator.table:SQLTYPE 42000 !Illegal generator range
+MAPI  = (monetdb) /var/tmp/mtest-10318/.s.monetdb.31660
 QUERY = select * from generate_series(10,null,1);
-ERROR = !Illegal generator range
-MAPI  = (monetdb) /var/tmp/mtest-20019/.s.monetdb.36969
+ERROR = !MALException:generator.table:SQLTYPE 42000 !Illegal generator range
+MAPI  = (monetdb) /var/tmp/mtest-10318/.s.monetdb.31660
 QUERY = select * from generate_series(null,10,1);
-ERROR = !Illegal generator range
-MAPI  = (monetdb) /var/tmp/mtest-20019/.s.monetdb.36969
+ERROR = !MALException:generator.table:SQLTYPE 42000 !Illegal generator range
+MAPI  = (monetdb) /var/tmp/mtest-10318/.s.monetdb.31660
 QUERY = select * from generate_series(
         	timestamp '2008-03-01 00:00',
         	timestamp '2008-03-04 12:00');
-ERROR = !types timestamp(7,0) and tinyint(8,0) are not equal for column 'L1'
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !types timestamp(7,0) and tinyint(8,0) are not equal for column 'L1'
 
 # 21:38:52 >  
 # 21:38:52 >  "Done."

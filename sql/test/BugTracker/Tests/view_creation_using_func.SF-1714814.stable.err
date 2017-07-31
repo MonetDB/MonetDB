@@ -14,10 +14,10 @@ stderr of test 'view_creation_using_func.SF-1714814` in directory 'sql/test/BugT
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = create view v1 as select * from t1714814a where id = f(1);
-ERROR = !SELECT: no such unary operator 'f(tinyint)'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such unary operator 'f(tinyint)'
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = drop view v1;
-ERROR = !DROP VIEW: unknown view 'v1'
+ERROR = !SQLException:sql.drop_view:SQLSTATE 42S02 !DROP VIEW: unknown view 'v1'
 
 # 18:25:58 >  
 # 18:25:58 >  Done.

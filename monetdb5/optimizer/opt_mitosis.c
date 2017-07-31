@@ -42,6 +42,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int activeClients;
 	char buf[256];
 	lng usec = GDKusec();
+	str msg = MAL_SUCCEED;
 
 	//if ( optimizerIsApplied(mb,"mitosis") )
 		//return 0;
@@ -235,6 +236,13 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 		for (j = 0; j < pieces; j++) {
 			q = copyInstruction(p);
+			if( q == NULL){
+				for (; i<limit; i++) 
+					if (old[i])
+						pushInstruction(mb,old[i]);
+				GDKfree(old);
+				throw(MAL,"optimizer.mitosis", MAL_MALLOC_FAIL);
+			}
 			q = pushInt(mb, q, j);
 			q = pushInt(mb, q, pieces);
 
@@ -263,9 +271,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
     /* Defense line against incorrect plans */
     if( 1){
-        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-        chkFlow(cntxt->fdout, mb);
-        chkDeclarations(cntxt->fdout, mb);
+        chkTypes(cntxt->usermodule, mb, FALSE);
+        chkFlow(mb);
+        chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
@@ -273,5 +281,5 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
     newComment(mb,buf);
 	addtoMalBlkHistory(mb);
 
-	return MAL_SUCCEED;
+	return msg;
 }

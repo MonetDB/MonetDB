@@ -30,6 +30,7 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 	int i, j, k, match, actions=0;
 	InstrPtr p,q,r,*old;
 	int limit, slimit;
+	str msg = MAL_SUCCEED;
 
 	old = mb->stmt;
 	limit = mb->stop;
@@ -75,6 +76,9 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 #endif
 			/* create the factored out prefix projection */
 			r = copyInstruction(p);
+			if( r == NULL){
+				return -1;
+			}
 			r->argc = prefixlength;
 			getArg(r,0) = newTmpVariable(mb, newBatType(getBatType(getArgType(mb,r,r->argc-1))));
 			setVarUDFtype(mb, getArg(r,0));
@@ -137,9 +141,9 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 	}
 #ifdef DEBUG_OPT_PROJECTIONPATH
     if( actions > 0){
-        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-        chkFlow(cntxt->fdout, mb);
-        chkDeclarations(cntxt->fdout, mb);
+        chkTypes(cntxt->usermodule, mb, FALSE);
+        chkFlow(mb);
+        chkDeclarations(mb);
     }
 	mnstr_printf(cntxt->fdout,"#projectionpath prefix actions %d\n",actions);
 	if(actions) printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);
@@ -317,9 +321,9 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
     /* Defense line against incorrect plans */
     if( actions > 0){
-        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-        chkFlow(cntxt->fdout, mb);
-        chkDeclarations(cntxt->fdout, mb);
+        chkTypes(cntxt->usermodule, mb, FALSE);
+        chkFlow(mb);
+        chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 wrapupall:

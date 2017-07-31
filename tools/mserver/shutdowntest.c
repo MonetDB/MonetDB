@@ -25,7 +25,7 @@ static char* dbdir = NULL;
    fcnname##_ptr_tpe fcnname##_ptr = NULL;
 
 #define LOAD_SQL_FUNCTION_PTR(fcnname)                                             \
-    fcnname##_ptr = (fcnname##_ptr_tpe) getAddress(NULL, "lib_sql.dll", #fcnname, 0); \
+    fcnname##_ptr = (fcnname##_ptr_tpe) getAddress( #fcnname); \
     if (fcnname##_ptr == NULL) {                                                           \
         retval = GDKstrdup(#fcnname);  \
     }
@@ -63,7 +63,7 @@ static str monetdb_query(Client c, str query) {
 		&query, 
 		"name", 
 		1, 0, &res);
-	(*SQLautocommit_ptr)(c, m);
+	(*SQLautocommit_ptr)(m);
 	if (retval != MAL_SUCCEED) {
 		printf("Failed to execute SQL query: %s\n", query);
 		freeException(retval);

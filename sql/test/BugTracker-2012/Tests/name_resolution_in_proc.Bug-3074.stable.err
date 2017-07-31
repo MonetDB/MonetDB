@@ -35,10 +35,12 @@ QUERY = create procedure dc.archive()
         begin
             insert into runningcatalog select  * from dc.lta;
         end;
-ERROR = !INSERT INTO: no such table 'runningcatalog'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !INSERT INTO: no such table 'runningcatalog'
+MAPI  = (monetdb) /var/tmp/mtest-30975/.s.monetdb.35845
 QUERY = call dc.archive();
-ERROR = !current transaction is aborted (please ROLLBACK)
+ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-30975/.s.monetdb.35845
+ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
 
 # 16:33:04 >  
 # 16:33:04 >  "Done."

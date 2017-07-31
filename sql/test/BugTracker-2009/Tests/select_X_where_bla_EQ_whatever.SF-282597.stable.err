@@ -73,7 +73,7 @@ stderr of test 'select_X_where_bla_EQ_whatever.SF-282597` in directory 'sql/test
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * where bla = "whatever";
-ERROR = !SELECT: identifier 'bla' unknown
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: identifier 'bla' unknown
 
 # 09:39:48 >  
 # 09:39:48 >  Done.

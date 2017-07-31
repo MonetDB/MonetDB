@@ -14,7 +14,7 @@ stderr of test 'create_column.SF-1643542` in directory 'sql/test/BugTracker` its
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = alter table t1643542a add col int;
-ERROR = !ALTER TABLE: a column named 'col' already exists
+ERROR = !ParseException:SQLparser:SQLSTATE 42S21 !ALTER TABLE: a column named 'col' already exists
 
 # 12:47:21 >  
 # 12:47:21 >  Done.

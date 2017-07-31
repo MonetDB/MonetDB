@@ -81,7 +81,7 @@ stderr of test 'alter_table_set_not_null.SF-1997030` in directory 'sql/test/BugT
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = ALTER TABLE foo ALTER COLUMN i SET NOT NULL;
-ERROR = !ALTER TABLE: NOT NULL constraint violated for column foo.i
+ERROR = !SQLException:sql.alter_table:SQLSTATE 40002 !ALTER TABLE: NOT NULL constraint violated for column foo.i
 
 # 19:06:38 >  
 # 19:06:38 >  Done.

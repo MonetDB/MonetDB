@@ -14,10 +14,10 @@ stderr of test 'bug_in_selection.SF-1892413` in directory 'sql/test/BugTracker` 
 
 MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
 QUERY = SELECT date, (SELECT date from test_subquery where date > t1892413a.date limit 1) as dtNext from test_subquery t1892413a;
-ERROR = !syntax error, unexpected LIMIT, expecting UNION or EXCEPT or INTERSECT or ')' in: "select date, (select date from test_subquery where date > t1892413a.date limit"
-MAPI  = (monetdb) /var/tmp/mtest-9352/.s.monetdb.30593
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected LIMIT, expecting UNION or EXCEPT or INTERSECT or ')' in: "select date, (select date from test_subquery where date > t1892413a.date limit"
+MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
 QUERY = SELECT date, (SELECT date from test_subquery where date > t1892413a.date) as dtNext from test_subquery t1892413a;
-ERROR = !zero_or_one: cardinality violation, scalar expression expected
+ERROR = !SQLException:assert:SQLSTATE M0M29 !21000!zero_or_one: cardinality violation, scalar expression expected
 
 # 10:24:35 >  
 # 10:24:35 >  Done.

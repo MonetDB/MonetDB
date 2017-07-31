@@ -32,16 +32,18 @@ stderr of test 'history_table_escape.SF-1072089` in directory 'sql/test/BugDay_2
 
 MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = DELETE FROM history;
-ERROR = !DELETE FROM: no such table 'history'
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !DELETE FROM: no such table 'history'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = record SELECT 1;
-ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT in: "record"
+        !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.36655
 QUERY = record SELECT 'test';
-ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT in: "record"
+        !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-25690/.s.monetdb.32684
 QUERY = SELECT query FROM history;
-ERROR = !current transaction is aborted (please ROLLBACK)
+ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
 
 
 # 15:49:19 >  

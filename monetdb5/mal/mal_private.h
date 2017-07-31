@@ -43,14 +43,14 @@ __hidden int moreClients(int reruns)
 __hidden void stopMALdataflow(void)
 	__attribute__((__visibility__("hidden")));
 
-__hidden int malAtomDefinition(stream *out, str name,int tpe)
+__hidden str malAtomDefinition(str name,int tpe)
 	__attribute__((__visibility__("hidden")));
-__hidden int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
+__hidden str malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 	__attribute__((__visibility__("hidden")));
 
 __hidden extern MT_Lock mal_namespaceLock;
 
-__hidden int mdbInit(void)
+__hidden void mdbInit(void)
 	__attribute__((__visibility__("hidden")));
 __hidden void mdbExit(void)
 	__attribute__((__visibility__("hidden")));
@@ -62,7 +62,7 @@ __hidden str createScriptException(MalBlkPtr, int, enum malexception,
 
 #ifdef MAXSCOPE
 /* MAXSCOPE is defined in the same file as Module */
-__hidden Symbol cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
+__hidden Symbol cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	__attribute__((__visibility__("hidden")));
 #endif
 __hidden int getBarrierEnvelop(MalBlkPtr mb)

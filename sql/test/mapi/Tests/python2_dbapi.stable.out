@@ -31,7 +31,8 @@ Ready.
 
 [(1,)]
 (2,)
-42000!syntax error, unexpected IDENT, expecting SELECT or '(' in: "( xyz"
+ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting SELECT or '(' in: "( xyz"
+!SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
 
 [(3, u'three'), (7, u'seven')]
 2

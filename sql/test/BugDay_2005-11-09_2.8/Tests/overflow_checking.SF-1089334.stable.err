@@ -14,7 +14,7 @@ MAPI  = monetdb@sofia:39182
 QUERY = INSERT INTO rawtriples VALUES(1001, 1,
         '100168990', 2, 'glossaryEntry', 0, '',
         -5342185907394955428, NULL, 'adorning with mosaic', true);
-ERROR = !too many digits (19 > 10)
+ERROR = !SQLException:lng_2_lng:SQLSTATE 22003 !Too many digits (19 > 10)
 
 # 13:12:25 >  
 # 13:12:25 >  Done.

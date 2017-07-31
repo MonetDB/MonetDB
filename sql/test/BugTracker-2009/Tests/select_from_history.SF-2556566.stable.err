@@ -82,7 +82,7 @@ stderr of test 'select_from_history.SF-2556566` in directory 'sql/test/BugTracke
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from history;
-ERROR = !SELECT: no such table 'history'
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'history'
 
 # 15:05:17 >  
 # 15:05:17 >  Done.

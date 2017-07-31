@@ -82,7 +82,7 @@ stderr of test 'limit_in_subquery.SF-2620437` in directory 'sql/test/BugTracker-
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select id from tables where id not in (select id from columns limit 10);
-ERROR = !syntax error, unexpected LIMIT, expecting ')' or ',' in: "select id from tables where id not in (select id from columns limit"
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected LIMIT, expecting ')' or ',' in: "select id from tables where id not in (select id from columns limit"
 
 # 20:35:13 >  
 # 20:35:13 >  Done.

@@ -130,7 +130,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			fcnnme= getArgDefault(mb,p,2);
 		}
 		removeInstruction(mb, p);
-		s= findSymbol(cntxt->nspace, putName(modnme),putName(fcnnme));
+		s= findSymbol(cntxt->usermodule, putName(modnme),putName(fcnnme));
 
 		if( s == NULL) 
 			throw(MAL, optimizer, RUNTIME_OBJECT_UNDEFINED ":%s.%s", modnme, fcnnme);

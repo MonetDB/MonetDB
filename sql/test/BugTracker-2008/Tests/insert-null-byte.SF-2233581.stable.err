@@ -84,7 +84,7 @@ stderr of test 'insert-null-byte.SF-2233581` in directory 'sql/test/BugTracker-2
 NULL byte in input on line 4 of input
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = 3	"some other string"
-ERROR = !syntax error, unexpected sqlINT in: "3"
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected sqlINT in: "3"
 
 
 # 17:08:26 >  

@@ -49,7 +49,7 @@ QUERY = insert into sys.privileges values (
                 case when (select dependency_type_name from sys.dependency_types)
                        is not NULL then 7 else 7 end
                   );
-ERROR = !cardinality violation, scalar value expected
+ERROR = !SQLException:zero_or_one:SQLSTATE 21000 !Cardinality violation, scalar value expected
 
 # 16:32:28 >  
 # 16:32:28 >  "Done."

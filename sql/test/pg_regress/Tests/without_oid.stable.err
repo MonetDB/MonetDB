@@ -32,10 +32,10 @@ stderr of test 'without_oid` in directory 'sql/test/pg_regress` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT count(oid) FROM wo;-- should fail
-ERROR = !SELECT: identifier 'oid' unknown
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: identifier 'oid' unknown
+MAPI  = (monetdb) /var/tmp/mtest-30693/.s.monetdb.32199
 QUERY = SELECT count(oid) FROM create_table_test3; -- should fail
-ERROR = !SELECT: identifier 'oid' unknown
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: identifier 'oid' unknown
 
 
 

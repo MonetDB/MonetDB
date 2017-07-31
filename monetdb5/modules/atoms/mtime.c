@@ -3137,7 +3137,7 @@ MTIMEdate_extract_year_bulk(bat *ret, const bat *bid)
 	const date *t;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batmtime.year", "Cannot access descriptor");
+		throw(MAL, "batmtime.year", "SQLSTATE HY005 !""Cannot access column descriptor");
 	n = BATcount(b);
 
 	bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT);
@@ -3230,7 +3230,7 @@ MTIMEdate_extract_month_bulk(bat *ret, const bat *bid)
 	const date *t;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batmtime.month", "Cannot access descriptor");
+		throw(MAL, "batmtime.year", "SQLSTATE HY005 !""Cannot access column descriptor");
 	n = BATcount(b);
 
 	bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT);
@@ -3276,7 +3276,7 @@ MTIMEdate_extract_day_bulk(bat *ret, const bat *bid)
 	const date *t;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batmtime.day", "Cannot access descriptor");
+		throw(MAL, "batmtime.day", "SQLSTATE HY005 !""Cannot access column descriptor");
 	n = BATcount(b);
 
 	bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT);
@@ -3323,7 +3323,7 @@ MTIMEdaytime_extract_hours_bulk(bat *ret, const bat *bid)
 	const date *t;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batmtime.hours", "Cannot access descriptor");
+		throw(MAL, "batmtime.hourse", "SQLSTATE HY005 !""Cannot access column descriptor");
 	n = BATcount(b);
 
 	bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT);
@@ -3369,7 +3369,7 @@ MTIMEdaytime_extract_minutes_bulk(bat *ret, const bat *bid)
 	int *m;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batmtime.minutes", "Cannot access descriptor");
+		throw(MAL, "batmtime.minutes", "SQLSTATE HY005 !""Cannot access column descriptor");
 	n = BATcount(b);
 
 	bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT);
@@ -3415,7 +3415,7 @@ MTIMEdaytime_extract_seconds_bulk(bat *ret, const bat *bid)
 	int *s;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batmtime.seconds", "Cannot access descriptor");
+		throw(MAL, "batmtime.seconds", "SQLSTATE HY005 !""Cannot access column descriptor");
 	n = BATcount(b);
 
 	bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT);
@@ -3461,7 +3461,7 @@ MTIMEdaytime_extract_sql_seconds_bulk(bat *ret, const bat *bid)
 	int *s;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batmtime.sql_seconds", "Cannot access descriptor");
+		throw(MAL, "batmtime.sql_seconds", "SQLSTATE HY005 !""Cannot access column descriptor");
 	n = BATcount(b);
 
 	bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT);
@@ -3508,7 +3508,7 @@ MTIMEdaytime_extract_milliseconds_bulk(bat *ret, const bat *bid)
 	int *s;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batmtime.milliseconds", "Cannot access descriptor");
+		throw(MAL, "batmtime.milliseconds", "SQLSTATE HY005 !""Cannot access column descriptor");
 	n = BATcount(b);
 
 	bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT);

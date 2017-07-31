@@ -36,7 +36,7 @@ sql_fix_system_tables(Client c, mvc *sql)
 	sql_schema *s;
 
 	if (buf == NULL)
-		throw(SQL, "sql_fix_system_tables", MAL_MALLOC_FAIL);
+		throw(SQL, "sql_fix_system_tables", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	s = mvc_bind_schema(sql, "sys");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
@@ -198,7 +198,7 @@ sql_update_hugeint(Client c, mvc *sql)
 		return err;
 
 	if ((buf = GDKmalloc(bufsize)) == NULL)
-		throw(SQL, "sql_update_hugeint", MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_hugeint", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 
 	schema = stack_get_string(sql, "current_schema");
 
@@ -299,7 +299,7 @@ sql_update_epoch(Client c, mvc *m)
 	sql_schema *s = mvc_bind_schema(m, "sys");
 
 	if (buf == NULL)
-		throw(SQL, "sql_update_epoch", MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_epoch", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	sql_find_subtype(&tp, "bigint", 0, 0);
@@ -357,12 +357,12 @@ sql_update_geom(Client c, mvc *sql, int olddb)
 
 	geomupgrade = (*fixfunc)(olddb);
 	if (geomupgrade == NULL)
-		throw(SQL, "sql_update_geom", MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_geom", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	bufsize = strlen(geomupgrade) + 512;
 	buf = GDKmalloc(bufsize);
 	if (buf == NULL) {
 		GDKfree(geomupgrade);
-		throw(SQL, "sql_update_geom", MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_geom", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	}
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "%s", geomupgrade);
@@ -398,7 +398,7 @@ sql_update_dec2016(Client c, mvc *sql)
 	sql_schema *s;
 
 	if (buf == NULL)
-		throw(SQL, "sql_update_dec2016", MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_dec2016", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	s = mvc_bind_schema(sql, "sys");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
@@ -616,7 +616,7 @@ sql_update_dec2016_sp2(Client c, mvc *sql)
 	BAT *b;
 
 	if (buf == NULL)
-		throw(SQL, "sql_update_dec2016_sp2", MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_dec2016_sp2", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos, "select id from sys.types where sqlname = 'decimal' and digits = %d;\n",
 #ifdef HAVE_HGE
 			have_hge ? 39 :
@@ -696,7 +696,7 @@ sql_update_jul2017(Client c, mvc *sql)
 	BAT *b;
 
 	if( buf== NULL)
-		throw(SQL, "sql_default", MAL_MALLOC_FAIL);
+		throw(SQL, "sql_default", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,

@@ -60,7 +60,7 @@ static mdbStateRecord *mdbTable;
  * The debugger flags overview
  */
 
-int
+void
 mdbInit(void)
 {
 	/*
@@ -71,10 +71,9 @@ mdbInit(void)
 	 */
 	mdbTable = GDKzalloc(sizeof(mdbStateRecord) * MAL_MAXCLIENTS);
 	if (mdbTable == NULL) {
-		showException(GDKout,MAL, "mdbInit",MAL_MALLOC_FAIL);
-		return -1;
+		fprintf(stderr,"#mdbInit:" MAL_MALLOC_FAIL);
+		mal_exit();
 	}
-	return 0;
 }
 
 void
@@ -149,7 +148,7 @@ mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd)
 		modnme = request;
 		*fcnnme = 0;
 		fcnnme++;
-		sym = findSymbol(cntxt->nspace, modnme, fcnnme);
+		sym = findSymbol(cntxt->usermodule, modnme, fcnnme);
 		mdb->brkBlock[mdb->brkTop] = sym ? sym->def : mb;
 		mdb->brkPc[mdb->brkTop] = -1;
 		mdb->brkVar[mdb->brkTop] = -1;
@@ -264,7 +263,7 @@ int
 mdbSetTrap(Client cntxt, str modnme, str fcnnme, int flag)
 {
 	Symbol s;
-	s = findSymbol(cntxt->nspace, putName(modnme),
+	s = findSymbol(cntxt->usermodule, putName(modnme),
 			putName(fcnnme));
 	if (s == NULL)
 		return -1;
@@ -296,7 +295,7 @@ printTraceCall(stream *out, MalBlkPtr mb, MalStkPtr stk, int pc, int flags)
 
 	p = getInstrPtr(mb, pc);
 	msg = instruction2str(mb, stk, p, flags);
-	mnstr_printf(out, "#%s%s\n", (mb->errors ? "!" : ""), msg?msg:"failed instruction2str()");
+	mnstr_printf(out, "#%s%s\n", (mb->errors != MAL_SUCCEED ? "!" : ""), msg?msg:"failed instruction2str()");
 	GDKfree(msg);
 }
 
@@ -381,7 +380,7 @@ mdbLocateMalBlk(Client cntxt, MalBlkPtr mb, str b, stream *out)
 			if( idx < 0)
 				return NULL;
 		}
-		fsym = findSymbolInModule(findModule(cntxt->nspace, putName(b)), fcnname + 1);
+		fsym = findSymbolInModule(findModule(cntxt->usermodule, putName(b)), fcnname + 1);
 		*fcnname = '.';
 		if (h)
 			*h = '[';
@@ -400,7 +399,7 @@ static void
 mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 {
 	int m = 1;
-	char *b, *c, lastcmd = 0;
+	char *b= 0, *c, lastcmd = 0;
 	stream *out = cntxt->fdout;
 	char *oldprompt = cntxt->prompt;
 	size_t oldpromptlength = cntxt->promptlength;
@@ -408,6 +407,8 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 	int first = pc;
 	int stepsize = 1000;
 	char oldcmd[1024] = { 0 };
+	str msg = MAL_SUCCEED;
+
 	do {
 		if (p != NULL) {
 			if (cntxt != mal_clients)
@@ -425,11 +426,11 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 
 		if (cntxt->phase[MAL_SCENARIO_READER]) {
 retryRead:
-			b = (char *) (*cntxt->phase[MAL_SCENARIO_READER])(cntxt);
-			if (b != 0)
+			msg = (char *) (*cntxt->phase[MAL_SCENARIO_READER])(cntxt);
+			if (msg != MAL_SUCCEED || cntxt->mode == FINISHCLIENT){
+				GDKfree(msg);
 				break;
-			if (cntxt->mode == FINISHCLIENT)
-				break;
+			}
 			/* SQL patch, it should only react to Smessages, Xclose requests to be ignored */
 			if (strncmp(cntxt->fdin->buf, "Xclose", 6) == 0) {
 				cntxt->fdin->pos = cntxt->fdin->len;
@@ -465,6 +466,32 @@ retryRead:
 			m = 0;
 			break;
 		case 'c':
+			if (strncmp("check",b,5) == 0){
+				Symbol fs;
+				int i;
+
+				skipWord(cntxt,b);
+				skipBlanc(cntxt, b);
+				if( strchr(b,'.') ){
+					str modnme = b;
+					str fcnnme;
+					fcnnme = strchr(b,'.');
+					*fcnnme++  = 0;
+
+					fs = findSymbol(cntxt->usermodule, putName(modnme),putName(fcnnme));
+					if (fs == 0) {
+						mnstr_printf(out, "#'%s.%s' not found\n", modnme,fcnnme);
+						continue;
+					}
+					for(; fs; fs = fs->peer){ 
+						for(i=0; i< fs->def->stop; i++)
+							fs->def->stmt[i]->typechk = TYPE_UNKNOWN;
+						chkProgram(cntxt->usermodule, fs->def);
+					}
+				} else
+					mnstr_printf(out, "#<modnme>.<fcnnme> expected\n");
+				break;
+			}
 			if (strncmp("catch", b, 3) == 0) {
 				/* catch the next exception */
 				stk->cmd = 'C';
@@ -515,6 +542,9 @@ retryRead:
 			stk->cmd = *b;
 			m = 0;
 			break;
+		case 'M':	/* dump all module names */
+			dumpModules(out);
+			break;
 		case 'm':   /* display a module */
 		{
 			str modname, fcnname;
@@ -531,9 +561,9 @@ retryRead:
 					*fcnname = 0;
 					fcnname++;
 				}
-				fsym = findModule(cntxt->nspace, putName(modname));
+				fsym = findModule(cntxt->usermodule, putName(modname));
 
-				if (fsym == cntxt->nspace && strcmp(modname, "user")) {
+				if (fsym == cntxt->usermodule && strcmp(modname, "user")) {
 					mnstr_printf(out, "#module '%s' not found\n", modname);
 					continue;
 				}
@@ -549,7 +579,7 @@ retryRead:
 				Module* list;
 				int length;
 				int i;
-				mnstr_printf(out,"#%s ",cntxt->nspace->name);
+				mnstr_printf(out,"#%s ",cntxt->usermodule->name);
 				getModuleList(&list, &length);
 				for(i = 0; i < length; i++) {
 					mnstr_printf(out, "%s ", list[i]->name);	
@@ -603,7 +633,7 @@ retryRead:
 				modname = b;
 				fcnname = strchr(b, '.');
 				if (fcnname == NULL) {
-					fsym = findModule(cntxt->nspace, putName(modname));
+					fsym = findModule(cntxt->usermodule, putName(modname));
 					if (fsym == 0) {
 						mnstr_printf(out, "#%s module not found\n", modname);
 						continue;
@@ -619,7 +649,7 @@ retryRead:
 				}
 				*fcnname = 0;
 				fcnname++;
-				fsym = findModule(cntxt->nspace, putName(modname));
+				fsym = findModule(cntxt->usermodule, putName(modname));
 				if (fsym == 0) {
 					mnstr_printf(out, "#%s module not found\n", modname);
 					continue;
@@ -824,7 +854,6 @@ retryRead:
 		case 'L':
 		case 'l':   /* list the current MAL block or module */
 		{
-			Module fsym;
 			Symbol fs;
 			int i, lstng, varid;
 			InstrPtr q;
@@ -839,7 +868,10 @@ retryRead:
 				if (m && strchr(b, '*')) {
 					/* detect l user.fcn[*] */
 					for (m = mb; m != NULL; m = m->history)
-						printFunction(out, m, 0, lstng);
+						if( lstng == LIST_MAL_NAME)
+							printFunction(out, m, 0, lstng);
+						else
+							debugFunction(out, m, 0, lstng, 0,m->stop);
 				} else if (m == NULL && !strchr(b, '.') && !strchr(b, '[') && !isdigit((int) *b) && *b != '-' && *b != '+') {
 					/* is this a variable ? */
 					varid = findVariable(mb, b);
@@ -857,25 +889,36 @@ retryRead:
 						}
 						continue;
 					}
-					/* optionally dump the complete module */
-					fsym = findModule(cntxt->nspace, putName(b));
-					if (fsym == 0) {
-						mnstr_printf(out, "#'%s' not found\n", b);
-						continue;
-					}
-					for (i = 0; i < MAXSCOPE; i++) {
-						fs = fsym->space[i];
-						while (fs != NULL) {
-							printFunction(out, fs->def, 0, lstng);
-							fs = fs->peer;
-						}
-					}
-					continue;
 				} 
 				if (isdigit((int) *b) || *b == '-' || *b == '+')
 					goto partial;
-				if (m)
-					debugFunction(out, m, 0, lstng, 0,m->stop);
+
+				if( strchr(b,'.') ){
+					str modnme = b;
+					str fcnnme;
+					fcnnme = strchr(b,'.');
+					*fcnnme++  = 0;
+
+					fs = findSymbol(cntxt->usermodule, putName(modnme),putName(fcnnme));
+					if (fs == 0) {
+						mnstr_printf(out, "#'%s' not found\n", modnme);
+						continue;
+					}
+					for(; fs; fs = fs->peer)
+					if( strcmp(fcnnme, fs->name)==0) {
+						if( lstng == LIST_MAL_NAME)
+							printFunction(out, fs->def, 0, lstng);
+						else
+							debugFunction(out, fs->def, 0, lstng, 0,m->stop);
+					}
+					continue;
+				}
+				if (m){
+					if( lstng == LIST_MAL_NAME)
+						printFunction(out, m, 0, lstng);
+					else
+						debugFunction(out, m, 0, lstng, 0,m->stop);
+				}
 			} else {
 /*
  * Listing the program starts at the pc last given.
@@ -1042,7 +1085,7 @@ mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	case 'C':
 		mdbSessionActive = 0; /* for name completion */
 	}
-	if (mb->errors) {
+	if (mb->errors != MAL_SUCCEED) {
 		MalStkPtr su;
 
 		/* return from this debugger */
@@ -1227,8 +1270,6 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 	str nme, nmeOnStk;
 	VarPtr n = getVar(mb, index);
 
-	if (!isVarUsed(mb, index))
-		return;
 	printStackHdr(f, mb, v, index);
 
 	if (v && v->vtype == TYPE_bat) {
@@ -1271,7 +1312,7 @@ printBatDetails(stream *f, bat bid)
 
 	/* at this level we don't know bat kernel primitives */
 	mnstr_printf(f, "#Show info for %d\n", bid);
-	fcn = getAddress(f, "bat", "BKCinfo", 0);
+	fcn = getAddress("BKCinfo");
 	if (fcn) {
 		(*fcn)(&ret,&ret2, &bid);
 		b[0] = BATdescriptor(ret);
@@ -1305,7 +1346,7 @@ printBatProperties(stream *f, VarPtr n, ValPtr v, str props)
 		BUN p;
 
 		/* at this level we don't know bat kernel primitives */
-		fcn = getAddress(f, "bat", "BKCinfo", 0);
+		fcn = getAddress("BKCinfo");
 		if (fcn) {
 			BAT *b[2];
 			str res;

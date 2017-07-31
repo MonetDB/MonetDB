@@ -295,7 +295,7 @@ mvc_commit(mvc *m, int chain, const char *name)
 		fprintf(stderr, "#mvc_commit %s\n", (name) ? name : "");
 
 	if (m->session->status < 0) {
-		(void)sql_error(m, 010, "40000!COMMIT: transaction is aborted, will ROLLBACK instead");
+		(void)sql_error(m, 010, "SQLSTATE 40000 !""COMMIT: transaction is aborted, will ROLLBACK instead");
 		mvc_rollback(m, chain, name);
 		return -1;
 	}
@@ -356,7 +356,7 @@ build up the hash (not copied in the trans dup)) */
 		MT_sleep_ms(100);
 		wait += 100;
 		if (wait > 1000) {
-			(void)sql_error(m, 010, "40000!COMMIT: transaction is aborted because of DDL concurrency conflicts, will ROLLBACK instead");
+			(void)sql_error(m, 010, "SQLSTATE 40000 !""COMMIT: transaction is aborted because of DDL concurrency conflicts, will ROLLBACK instead");
 			mvc_rollback(m, chain, name);
 			return -1;
 		}
@@ -366,13 +366,13 @@ build up the hash (not copied in the trans dup)) */
 	/* validation phase */
 	if (sql_trans_validate(tr)) {
 		if ((ok = sql_trans_commit(tr)) != SQL_OK) {
-			char *msg = sql_message("40000!COMMIT: transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", GDKerrbuf);
+			char *msg = sql_message("SQLSTATE 40000 !""COMMIT: transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", GDKerrbuf);
 			GDKfatal("%s", msg);
 			_DELETE(msg);
 		}
 	} else {
 		store_unlock();
-		(void)sql_error(m, 010, "40000!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead");
+		(void)sql_error(m, 010, "SQLSTATE 40000 !""COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead");
 		mvc_rollback(m, chain, name);
 		return -1;
 	}
@@ -406,7 +406,7 @@ mvc_rollback(mvc *m, int chain, const char *name)
 		while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 			tr = tr->parent;
 		if (!tr) {
-			(void)sql_error(m, 010, "ROLLBACK: no such savepoint: '%s'", name);
+			(void)sql_error(m, 010, "SQLSTATE 42000 !""ROLLBACK: no such savepoint: '%s'", name);
 			m->session->status = -1;
 			store_unlock();
 			return -1;
@@ -466,7 +466,7 @@ mvc_release(mvc *m, const char *name)
 	while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 		tr = tr->parent;
 	if (!tr || !tr->name || strcmp(tr->name, name) != 0) {
-		(void)sql_error(m, 010, "release savepoint %s doesn't exists", name);
+		(void)sql_error(m, 010, "SQLSTATE 42000 !""Release savepoint %s doesn't exists", name);
 		m->session->status = -1;
 		return -1;
 	}

@@ -85,7 +85,8 @@ QUERY = SELECT  ROUND(uMag-gMag,0) AS UG,
           AND   (uMag+gMag+rMag+iMag+zMag+yMag) < 150 -- exclude bogus magnitudes (== 999) 
         GROUP BY UG, GR, RI, IZ, ZY
         HAVING pop > 500    -- Common bucktes have 500 or more members, so delete them
-ERROR = !SELECT: identifier 'pop' unknown
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: identifier 'pop' unknown
+
 
 # 05:57:35 >  
 # 05:57:35 >  Done.

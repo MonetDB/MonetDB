@@ -81,10 +81,10 @@ stderr of test 'session_vars` in directory 'sql/test` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = set test_nr = 'help';
-ERROR = !conversion of string 'help' to type int failed.
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !MALException:calc.int:22018!conversion of string 'help' to type int failed.
+MAPI  = (monetdb) /var/tmp/mtest-15016/.s.monetdb.36297
 QUERY = set test_boolean = 'help';
-ERROR = !conversion of string 'help' to type bit failed.
+ERROR = !MALException:calc.bit:22018!conversion of string 'help' to type bit failed.
 
 # 20:30:43 >  
 # 20:30:43 >  Done.

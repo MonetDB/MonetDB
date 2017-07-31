@@ -12,13 +12,13 @@ stderr of test 'drop_column_alter_table.SF-1114557` in directory 'sql/test/BugDa
 
 MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = ALTER TABLE t1114557 DROP garbage;
-ERROR = !ALTER TABLE: no such column 'garbage'
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+ERROR = !ParseException:SQLparser:SQLSTATE 42S22 !ALTER TABLE: no such column 'garbage'
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = ALTER TABLE t1114557 DROP id;
-ERROR = !ALTER TABLE: cannot drop column 'id': table needs at least one column
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !ALTER TABLE: cannot drop column 'id': table needs at least one column
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = ALTER TABLE t1114557 DROP name;
-ERROR = !ALTER TABLE: no such column 'name'
+ERROR = !ParseException:SQLparser:SQLSTATE 42S22 !ALTER TABLE: no such column 'name'
 
 # 14:21:47 >  
 # 14:21:47 >  Done.

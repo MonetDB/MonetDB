@@ -222,7 +222,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	if( curBlk->inlineProp == 0)
 		SQLoptimizeQuery(c, c->curprg->def);
 	else{
-		chkProgram(c->fdout, c->nspace, c->curprg->def);
+		chkProgram(c->usermodule, c->curprg->def);
 		SQLoptimizeFunction(c,c->curprg->def);
 	}
 	if (backup)
@@ -437,7 +437,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	//curBlk->inlineProp = 1;
 
 	SQLaddQueryToCache(c);
-	//chkProgram(c->fdout, c->nspace, c->curprg->def);
+	//chkProgram(c->usermodule, c->curprg->def);
 	SQLoptimizeFunction(c, c->curprg->def);
 	if (backup)
 		c->curprg = backup;
@@ -551,6 +551,7 @@ backend_callinline(backend *be, Client c)
 	InstrPtr curInstr = 0;
 	MalBlkPtr curBlk = c->curprg->def;
 
+	setVarType(curBlk, 0, 0);
 	if (m->argc) {	
 		int argc = 0;
 
@@ -716,11 +717,11 @@ monet5_resolve_function(ptr M, sql_func *f)
 
 	/*
 	   fails to search outer modules!
-	   if (!findSymbol(c->nspace, f->mod, f->imp))
+	   if (!findSymbol(c->usermodule, f->mod, f->imp))
 	   return 0;
 	 */
 
-	for (m = findModule(c->nspace, f->mod); m; m = m->link) {
+	for (m = findModule(c->usermodule, f->mod); m; m = m->link) {
 		if (strcmp(m->name, f->mod) == 0) {
 			Symbol s = m->space[(int) (getSymbolIndex(f->imp))];
 			for (; s; s = s->peer) {
@@ -970,7 +971,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	if( curBlk->inlineProp == 0)
 		SQLoptimizeFunction(c, c->curprg->def);
 	else{
-		chkProgram(c->fdout, c->nspace, c->curprg->def);
+		chkProgram(c->usermodule, c->curprg->def);
 		SQLoptimizeFunction(c,c->curprg->def);
 	}
 	if (backup)

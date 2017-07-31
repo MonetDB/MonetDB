@@ -672,7 +672,7 @@ join_split(Client cntxt, InstrPtr p, int args)
 	strncpy(name, getFunctionId(p), len-7);
 	strcpy(name+len-7, "join");
 
-	sym = findSymbol(cntxt->nspace, getModuleId(p), name);
+	sym = findSymbol(cntxt->usermodule, getModuleId(p), name);
 	assert(sym);
 	mb = sym->def;
 
@@ -724,7 +724,7 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 
 		if (split < 0) {
 			GDKfree(mats);
-			mb->errors++;
+			mb->errors= createException(MAL,"mergetable.join"," incorrect split level");
 			return ;
 		}
 		/* now detect split point */
@@ -1869,19 +1869,21 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		pushInstruction(mb, copyInstruction(p));
 	}
 	(void) stk; 
-	chkTypes(cntxt->fdout, cntxt->nspace,mb, TRUE);
+	chkTypes(cntxt->usermodule,mb, TRUE);
+	if( mb->errors != MAL_SUCCEED)
+		goto cleanup;
 
 #ifdef DEBUG_OPT_MERGETABLE
 	{
 		fprintf(stderr,"#Result of multi table optimizer\n");
-        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-        chkFlow(cntxt->fdout, mb);
-        chkDeclarations(cntxt->fdout, mb);
+        chkTypes(cntxt->usermodule, mb, FALSE);
+        chkFlow(mb);
+        chkDeclarations(mb);
 		fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
 	}
 #endif
 
-	if ( mb->errors == 0) {
+	if ( mb->errors == MAL_SUCCEED) {
 		for(i=0; i<slimit; i++)
 			if (old[i]) 
 				freeInstruction(old[i]);
@@ -1897,10 +1899,10 @@ cleanup:
 	if (ml.torigin) GDKfree(ml.torigin);
 	if (ml.vars) GDKfree(ml.vars);
     /* Defense line against incorrect plans */
-    if( actions > 0){
-        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-        chkFlow(cntxt->fdout, mb);
-        chkDeclarations(cntxt->fdout, mb);
+    if( actions > 0 && msg == MAL_SUCCEED){
+        chkTypes(cntxt->usermodule, mb, FALSE);
+        chkFlow(mb);
+        chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

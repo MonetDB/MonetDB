@@ -57,12 +57,13 @@ static int OPTsimpleflow(MalBlkPtr mb, int pc)
 }
 
 /* barrier blocks can only be dropped when they are fully excluded.  */
-static int
+static str
 OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 {
 	/* catch and remove constant bounded blocks */
 	int i, j = 0, action = 0, block = -1, skip = 0, multipass = 1;
 	InstrPtr p;
+	str msg = MAL_SUCCEED;
 
 	while(multipass--){
 		block = -1;
@@ -107,22 +108,20 @@ OPTremoveUnusedBlocks(Client cntxt, MalBlkPtr mb)
 		for (; j < i; j++)
 			mb->stmt[j] = NULL;
 	}
-	if (action) {
-		chkTypes(cntxt->fdout, cntxt->nspace, mb, TRUE);
-		return mb->errors ? 0 : action;
-	}
-	return action;
+	if (action)
+		chkTypes(cntxt->usermodule, mb, TRUE);
+	return msg;
 }
 
 str
 OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
-	int i, k, limit, barrier;
+	int i, k, limit, *alias = 0, barrier;
 	MalStkPtr env = NULL;
 	int profiler;
 	int debugstate = cntxt->itrace, actions = 0, constantblock = 0;
-	int *alias = 0, *assigned = 0, atop, use; 
+	int *assigned = 0, use; 
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
@@ -139,12 +138,11 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	fprintf(stderr, "Constant expression optimizer started\n");
 #endif
 
-	atop = mb->vsize *2;	/* we possibly introduce more variables */
-	assigned = (int*) GDKzalloc(sizeof(int) * atop);
+	assigned = (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	if (assigned == NULL)
 		throw(MAL,"optimzier.evaluate", MAL_MALLOC_FAIL);
 
-	alias = (int*)GDKzalloc(sizeof(int) * atop); 
+	alias = (int*)GDKzalloc(mb->vsize * sizeof(int) * 2); /* we introduce more */
 	if (alias == NULL){
 		GDKfree(assigned);
 		throw(MAL,"optimzier.evaluate", MAL_MALLOC_FAIL);
@@ -160,10 +158,8 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		// The double count emerging from a barrier exit is ignored.
 		if (! blockExit(p) || (blockExit(p) && p->retc != p->argc))
 		for ( k =0;  k < p->retc; k++)
-		if ( p->retc != p->argc || p->token != ASSIGNsymbol ){
-			assert(getArg(p,k) < atop);
+		if ( p->retc != p->argc || p->token != ASSIGNsymbol )
 			assigned[getArg(p,k)]++;
-		}
 	}
 
 	for (i = 1; i < limit && cntxt->mode != FINISHCLIENT; i++) {
@@ -242,15 +238,14 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	}
 	// produces errors in SQL when enabled
 	if ( constantblock)
-		actions += OPTremoveUnusedBlocks(cntxt, mb);
+		msg = OPTremoveUnusedBlocks(cntxt, mb);
 	cntxt->itrace = debugstate;
 
     /* Defense line against incorrect plans */
-    if( actions){
-	chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-	chkFlow(cntxt->fdout, mb);
-	chkDeclarations(cntxt->fdout, mb);
-    }
+	/* Plan is unaffected */
+	chkTypes(cntxt->usermodule, mb, FALSE);
+	chkFlow(mb);
+	chkDeclarations(mb);
     
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

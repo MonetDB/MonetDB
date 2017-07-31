@@ -248,7 +248,7 @@ rel_xml(mvc *sql, sql_rel **rel, symbol *s, int f, exp_kind knd)
 
 	if (!xml_type.type) {
 		if ((t = mvc_bind_type(sql, "xml")) == NULL)
-			return sql_error(sql, 02, "XML: xml type missing, probably the xml module wasn't added");
+			return sql_error(sql, 02, "SQLSTATE 42000 !""XML: xml type missing, probably the xml module wasn't added");
 		sql_init_subtype(&xml_type, t, 0, 0);
 		sql_find_subtype(&str_type, "clob", 0, 0);
 	}
@@ -279,7 +279,7 @@ rel_xml(mvc *sql, sql_rel **rel, symbol *s, int f, exp_kind knd)
 		ret = rel_xmltext(sql, rel, s, f, knd);
 		break;
 	default:
-		return sql_error(sql, 01, "XML statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
+		return sql_error(sql, 01, "SQLSTATE 42000 !""XML statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}
 	return ret;
 }

@@ -13,7 +13,7 @@ stderr of test 'copy_into_crash.SF-1975402` in directory 'geom/BugTracker` itsel
 MAPI  = (monetdb) /var/tmp/mtest-27003/.s.monetdb.30235
 QUERY = COPY 1 RECORDS INTO nodes from STDIN USING DELIMITERS ',', '\n';
         45111956, 'POINT(52.0697 4.3723)'
-ERROR = !Failed to import table 'nodes', line 1 field p 'geometry(4)' expected in ' 'POINT(52.0697 4.3723)''
+ERROR = !SQLException:importTable:SQLSTATE 42000 !Failed to import table 'nodes', line 1 field p 'geometry(4)' expected in ' 'POINT(52.0697 4.3723)''
 
 # 13:33:18 >  
 # 13:33:18 >  Done.

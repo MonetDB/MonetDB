@@ -12,10 +12,10 @@ stderr of test 'variables.SF-1508160` in directory 'sql/test/BugTracker` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select explain;
-ERROR = !SELECT: identifier 'explain' unknown
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: identifier 'explain' unknown
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = select @explain;
-ERROR = !SELECT: '@explain' unknown
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: '@explain' unknown
 
 # 17:12:03 >  
 # 17:12:03 >  Done.

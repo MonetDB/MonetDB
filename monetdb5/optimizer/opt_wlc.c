@@ -114,9 +114,9 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(old);
 
     /* Defense line against incorrect plans */
-	chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-	chkFlow(cntxt->fdout, mb);
-	//chkDeclarations(cntxt->fdout, mb);
+	chkTypes(cntxt->usermodule, mb, FALSE);
+	chkFlow(mb);
+	//chkDeclarations(mb);
     /* keep all actions taken as a post block comment */
 #ifdef _WLCR_DEBUG_
 	printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);

@@ -18,6 +18,7 @@
 #include "mal_debugger.h"   /* for mdbStep() */
 #include "mal_type.h"
 #include "mal_private.h"
+  
 
 /*
  * The struct alignment leads to 40% gain in simple instructions when set.
@@ -49,20 +50,6 @@ ptr getArgReference(MalStkPtr stk, InstrPtr pci, int k)
 	default:        return (ptr) &v->val.pval;
 	}
 #endif
-}
-
-/* code is obsolete, because all should be handled as exceptions */
-void showErrors(Client cntxt)
-{
-	int i;
-	char *errbuf = GDKerrbuf;
-	if (errbuf && *errbuf) {
-		i = (int)strlen(errbuf);
-		mnstr_printf(cntxt->fdout, "%s", errbuf);
-		if (errbuf[i - 1] != '\n')
-			mnstr_printf(cntxt->fdout, "\n");
-		errbuf[0] = '\0';
-	}
 }
 
 str malCommandCall(MalStkPtr stk, InstrPtr pci)
@@ -537,7 +524,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		pci = getInstrPtr(mb, stkpc);
 		if (cntxt->mode == FINISHCLIENT){
 			stkpc = stoppc;
-			ret= createException(MAL, "mal.interpreter", "prematurely stopped client");
+			if (ret == NULL)
+				ret= createException(MAL, "mal.interpreter", "prematurely stopped client");
 			break;
 		}
 		if (cntxt->itrace || mb->trap || stk->status) {
@@ -636,8 +624,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			break;
 		case PATcall:
 			if (pci->fcn == NULL) {
-				ret = createScriptException(mb, stkpc, MAL, NULL,
-					"address of pattern %s.%s missing", pci->modname, pci->fcnname);
+				ret = createException(MAL,"interpreter", "address of pattern %s.%s missing", pci->modname, pci->fcnname);
 			} else {
 				ret = (*pci->fcn)(cntxt, mb, stk, pci);
 #ifndef NDEBUG
@@ -695,8 +682,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			 * counting.
 			 */
 			if (pci->blk == NULL)
-				ret = createScriptException(mb, stkpc, MAL, NULL,
-					"reference to MAL function missing");
+				ret = createException(MAL,"interpreter", "%s.%s[%d] reference to MAL function missing", getModuleId(pci), getFunctionId(pci), pci->pc);
 			else {
 				/* show call before entering the factory */
 				if (cntxt->itrace || mb->trap) {
@@ -785,7 +771,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				break;
 			}
 			w= instruction2str(mb, 0, pci, FALSE);
-			ret = createScriptException(mb, stkpc, MAL, NULL, "unkown operation:%s",w);
+			ret = createException(MAL,"interpreter", "unkown operation:%s", w);
 			GDKfree(w);
 			if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout){
 				ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
@@ -856,10 +842,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 		/* Exception handling */
 		if (localGDKerrbuf && localGDKerrbuf[0]) {
-			str oldret = ret;
-			ret = catchKernelException(cntxt, ret);
-			if (ret != oldret)
-				freeException(oldret);
+			if( ret == 0)
+				ret = createException(MAL,"mal.interpreter",GDK_EXCEPTION);
+			// TODO take properly care of the GDK exception
+			localGDKerrbuf[0]=0;
 		}
 
 		if (ret != MAL_SUCCEED) {
@@ -1012,9 +998,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					stkpc = pci->jump;
 				break;
 			default:
-				ret = createScriptException(mb, stkpc, MAL, NULL,
-					"%s: Unknown barrier type",
-					getVarName(mb, getDestVar(pci)));
+				ret = createException(MAL,"interpreter", "%s: Unknown barrier type", getVarName(mb, getDestVar(pci)));
 			}
 			stkpc++;
 			break;
@@ -1106,11 +1090,12 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			break;
 		case RAISEsymbol:
 			exceptionVar = getDestVar(pci);
-			freeException(ret);
+			//freeException(ret);
 			ret = NULL;
 			if (getVarType(mb, getDestVar(pci)) == TYPE_str) {
-				ret = createScriptException(mb, stkpc, MAL, NULL,
-					"%s", stk->stk[getDestVar(pci)].val.sval);
+				char nme[256];
+				snprintf(nme,256,"%s.%s[%d]", getModuleId(getInstrPtr(mb,0)), getFunctionId(getInstrPtr(mb,0)), stkpc);
+				ret = createException(MAL, nme, "%s", stk->stk[getDestVar(pci)].val.sval);
 			}
 			/* skipToCatch(exceptionVar, @2, stk) */
 			if (stk->cmd == 'C' || mb->trap) {
@@ -1142,8 +1127,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				break;
 			}
 			if (stkpc == mb->stop)
-				ret = createScriptException(mb, stkpc, MAL, ret,
-					"Exception raised");
+				ret = mb->errors = createMalException(mb, stkpc, TYPE,
+					"Exception raised\n");
 			break;
 		case YIELDsymbol:     /* to be defined */
 			if( startedProfileQueue)
@@ -1190,22 +1175,27 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 	/* if we could not find the exception variable, cascade a new one */
 	if (exceptionVar >= 0) {
-		str oldret = ret;
+		char nme[256];
+		snprintf(nme,256,"%s.%s[%d]", getModuleId(getInstrPtr(mb,0)), getFunctionId(getInstrPtr(mb,0)), stkpc);
 		if (ret) {
-			ret = createScriptException(mb, mb->stop - 1,
-				getExceptionType(getVarName(mb, exceptionVar)),
-				ret, "Exception not caught");
-		} else {
-			if (stk->stk[exceptionVar].vtype == TYPE_str) {
-				ret = createScriptException(mb, mb->stop - 1, MAL,
-					stk->stk[exceptionVar].val.sval,
-					"Exception not caught");
-			} else {
-				ret = createScriptException(mb, mb->stop - 1, MAL,
-					NULL, "Exception not caught");
+			str new, n;
+			n = createException(MAL,nme,"exception not caught");
+			if (n) {
+				new = GDKzalloc(strlen(ret) + strlen(n) +16);
+				if (new){
+					strcpy(new, ret);
+					if( new[strlen(new)-1] != '\n')
+						strcat(new,"\n");
+					strcat(new,"!");
+					strcat(new,n);
+					freeException(n);
+					freeException(ret);
+					ret = new;
+				}
 			}
+		} else {
+			ret = createException(MAL, nme, "Exception not caught");
 		}
-		freeException(oldret);
 	}
 	if( startedProfileQueue)
 		runtimeProfileFinish(cntxt, mb, stk);
@@ -1312,35 +1302,6 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
  * encoding of the exceptional state encountered. This message
  * starts with the exception identifer, followed by contextual details.
  */
-str catchKernelException(Client cntxt, str ret)
-{
-	str z;
-	char *errbuf = GDKerrbuf;
-	(void) cntxt;
-	if (errbuf && errbuf[0]) {
-		if (ret != MAL_SUCCEED) {
-			z = (char*)GDKmalloc(strlen(ret) + strlen(errbuf) + 2);
-			if (z) {
-				strcpy(z, ret);
-				if (z[strlen(z) - 1] != '\n') strcat(z, "\n");
-				strcat(z, errbuf);
-			} else // when malloc fails, leave it somewhere
-				fprintf(stderr,"!catchKernelException:%s\n",ret);
-		} else {
-			/* trap hidden (GDK) exception */
-			z = (char*)GDKmalloc(strlen("GDKerror:") + strlen(errbuf) + 2);
-			if (z)
-				sprintf(z, "GDKerror:%s", errbuf);
-			else
-				fprintf(stderr,"!catchKernelException:GDKerror:%s\n",errbuf);
-		}
-		/* did we eat the error away of not */
-		if (z)
-			errbuf[0] = '\0';
-	} else
-		z = ret;
-	return z;
-}
 
 /*
  * Garbage collection

@@ -185,6 +185,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 		logadd("\"usec\":"LLFMT",%s", pci->ticks, prettify);
 	}
 	logadd("\"rss\":"SZFMT ",%s", MT_getrss()/1024/1024, prettify);
+	logadd("\"size\":"LLFMT ",%s", pci? pci->wbytes/1024/1024:0, prettify);	// result size
 
 #ifdef NUMAprofiling
 		logadd("\"numa\":[");
@@ -1006,42 +1007,6 @@ getDiskSpace(void)
 	return size;
 }
 
-//
-// Retrieve the io statistics for the complete process group
-// This information can only be obtained using root-permissions.
-//
-#ifdef GETIOSTAT
-static str getIOactivity(void){
-	Thread t,s;
-	FILE *fd;
-	char fnme[BUFSIZ], *buf;
-	int n,i=0;
-	size_t len=0;
-
-	buf= GDKzalloc(BUFSIZ);
-	if ( buf == NULL)
-		return 0;
-	buf[len++]='"';
-	//MT_lock_set(&GDKthreadLock);
-	for (t = GDKthreads, s = t + THREADS; t < s; t++, i++)
-		if (t->pid ){
-			(void) snprintf(fnme,BUFSIZ,"/proc/"SZFMT"/io",t->pid);
-			fd = fopen(fnme,"r");
-			if ( fd == NULL)
-				return buf;
-			(void) snprintf(buf+len, BUFSIZ-len-2,"thr %d ",i);
-			n = fread(buf+len, 1, BUFSIZ-len-2,fd);
-			(void) fclose(fd);
-			if (n == 0)
-				return buf;
-			// extract the properties
-			mnstr_printf(GDKout,"#got io stat:%s\n",buf);
-		 }
-	//MT_lock_unset(&GDKthreadLock);
-	buf[len++]='"';
-	return buf;
-}
-#endif
 
 void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 {

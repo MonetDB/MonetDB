@@ -46,7 +46,7 @@ QUERY = select
         			  on (ref_4.name = sample_5.systemname )
         			right join sys.user_role as sample_8
         			  inner join sys.partsupp as ref_10
-ERROR = !cardinality violation, scalar value expected
+ERROR = !SQLException:zero_or_one:SQLSTATE 21000 !Cardinality violation, scalar value expected
 
 # 16:49:27 >  
 # 16:49:27 >  "Done."

@@ -65,7 +65,7 @@ fileexists(const char *path)
 
 /* Search for occurrence of the function in the library identified by the filename.  */
 MALfcn
-getAddress(stream *out, str modname, str fcnname, int silent)
+getAddress(str fcnname)
 {
 	void *dl;
 	MALfcn adr;
@@ -104,27 +104,15 @@ getAddress(stream *out, str modname, str fcnname, int silent)
 	 * the first argument must be the same as the base name of the
 	 * library that is created in src/tools */
 	dl = mdlopen("libmonetdb5", RTLD_NOW | RTLD_GLOBAL);
-	if (dl == NULL) {
-		/* shouldn't happen, really */
-		if (!silent)
-			showException(out, MAL, "MAL.getAddress",
-						  "address of '%s.%s' not found",
-						  (modname?modname:"<unknown>"), fcnname);
+	if (dl == NULL) 
 		return NULL;
-	}
 
 	adr = (MALfcn) dlsym(dl, fcnname);
 	filesLoaded[lastfile].modname = GDKstrdup("libmonetdb5");
 	filesLoaded[lastfile].fullname = GDKstrdup("libmonetdb5");
 	filesLoaded[lastfile].handle = dl;
 	lastfile ++;
-	if(adr != NULL)
-		return adr; /* found it */
-
-	if (!silent)
-		showException(out, MAL,"MAL.getAddress", "address of '%s.%s' not found",
-			(modname?modname:"<unknown>"), fcnname);
-	return NULL;
+	return adr;
 }
 /*
  * Module file loading
@@ -238,7 +226,7 @@ loadLibrary(str filename, int flag)
 	if (lastfile == maxfiles) {
 		if (handle)
 			dlclose(handle);
-		showException(GDKout, MAL,"loadModule", "internal error, too many modules loaded");
+		throw(MAL,"mal.linker", "loadModule internal error, too many modules loaded");
 	} else {
 		filesLoaded[lastfile].modname = GDKstrdup(filename);
 		filesLoaded[lastfile].fullname = GDKstrdup(handle ? nme : "");

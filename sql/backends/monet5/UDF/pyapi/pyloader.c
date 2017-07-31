@@ -31,7 +31,7 @@ str _loader_init(void)
 
 	if (PyType_Ready(&Py_ConnectionType) < 0)
 		return createException(MAL, "pyapi.eval",
-							   "Failed to initialize loader functions.");
+							   "SQLSTATE PY000 !""Failed to initialize loader functions.");
 	return msg;
 }
 
@@ -70,7 +70,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
     if (!PYFUNCNAME(PyAPIInitialized())) {
         throw(MAL, "pyapi.eval",
-              "Embedded Python is enabled but an error was thrown during initialization.");
+              "SQLSTATE PY000 !""Embedded Python is enabled but an error was thrown during initialization.");
     }
     sqlmorefun = *(sql_subfunc**) getArgReference(stk, pci, pci->retc);
     sqlfun = sqlmorefun->func;
@@ -78,7 +78,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 	args = (str *)GDKzalloc(pci->argc * sizeof(str));
 	if (!args) {
-		throw(MAL, "pyapi.eval", MAL_MALLOC_FAIL " arguments.");
+		throw(MAL, "pyapi.eval", "SQLSTATE HY001 !"MAL_MALLOC_FAIL " arguments.");
 	}
 
 	// Analyse the SQL_Func structure to get the parameter names
@@ -105,7 +105,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	pArgs = PyTuple_New(argcount - pci->retc - 2 + additional_columns);
 	if (!pArgs) {
 		msg = createException(MAL, "pyapi.eval_loader",
-							  MAL_MALLOC_FAIL "python object");
+							  "SQLSTATE HY001 !"MAL_MALLOC_FAIL "python object");
 		goto wrapup;
 	}
 
@@ -131,8 +131,8 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			BAT* b = BATdescriptor(*getArgReference_bat(stk, pci, i));
 			if (b == NULL) {
 				msg = createException(
-					MAL, "pyapi.eval",
-					"The BAT passed to the function (argument #%d) is NULL.\n",
+					MAL, "pyapi.eval_loader",
+					"SQLSTATE PY000 !""The BAT passed to the function (argument #%d) is NULL.\n",
 					i - (pci->retc + 2) + 1);
 				goto wrapup;
 			}
@@ -152,7 +152,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if (PyTuple_SetItem(pArgs, ai++, val) != 0) {
 			msg =
 				createException(MAL, "pyapi.eval_loader",
-								"Failed to set tuple (this shouldn't happen).");
+								"SQLSTATE PY000 !""Failed to set tuple (this shouldn't happen).");
 			goto wrapup;
 		}
 		// TODO deal with sql types
@@ -171,7 +171,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		cols = GDKzalloc(sizeof(sql_emit_col) * ncols);
 		if (!cols) {
 			msg = createException(MAL, "pyapi.eval_loader",
-								  MAL_MALLOC_FAIL "column list");
+								  "SQLSTATE HY001 !"MAL_MALLOC_FAIL "column list");
 			goto wrapup;
 		}
 		assert(pyapi_list_length(sqlmorefun->colnames) == pyapi_list_length(sqlmorefun->coltypes));
@@ -199,7 +199,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	pEmit = PyEmit_Create(cols, ncols);
 	if (!pConnection || !pEmit) {
 		msg = createException(MAL, "pyapi.eval_loader",
-							  MAL_MALLOC_FAIL "python object");
+							  "SQLSTATE HY001 !"MAL_MALLOC_FAIL "python object");
 		goto wrapup;
 	}
 
@@ -211,7 +211,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	if (!pycall && !code_object) {
 		if (msg == MAL_SUCCEED) {
 			msg = createException(MAL, "pyapi.eval_loader",
-								  "Error while parsing Python code.");
+								  "SQLSTATE PY000 !""Error while parsing Python code.");
 		}
 		goto wrapup;
 	}
@@ -279,7 +279,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 		if (ncols == 0) {
 			msg = createException(MAL, "pyapi.eval_loader",
-								  "No elements emitted by the loader.");
+								  "SQLSTATE PY000 !""No elements emitted by the loader.");
 			goto wrapup;
 		}
 	}
