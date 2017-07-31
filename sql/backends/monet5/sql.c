@@ -561,7 +561,7 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		lng sgn = val_get_number(src);
 		if ((msg = sql_update_var(m, varname, src->val.sval, sgn)) != NULL) {
 			snprintf(buf, BUFSIZ, "%s", msg);
-			if( strstr(msg, "SQLSTATE"))
+			if (strlen(msg) > 6 && msg[5] == '!')
 				return msg;
 			_DELETE(msg);
 			throw(SQL, "sql.setVariable", SQLSTATE(42100) "%s", buf);

@@ -282,7 +282,7 @@ SQLrun(Client c, backend *be, mvc *m)
 	ValPtr val;
 			
 	if (*m->errstr){
-		if( strstr(m->errstr,"SQLSTATE"))
+		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 		else 
 			msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
@@ -512,7 +512,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 			if (!err)
 				err = mvc_status(m);
 			if (*m->errstr){
-				if( strstr(m->errstr,"SQLSTATE"))
+				if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 					msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 				else
 					msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
@@ -541,7 +541,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 #endif
 		scanner_query_processed(&(m->scanner));
 		if ((err = mvc_status(m)) ) {
-				if( strstr(m->errstr,"SQLSTATE"))
+				if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 					msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 				else
 					msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
@@ -573,7 +573,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
-			if( strstr(m->errstr,"SQLSTATE"))
+			if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			else
 				msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
@@ -700,7 +700,7 @@ SQLengineIntern(Client c, backend *be)
 	if (c->curprg->def->stop == 1) {
 		if (mvc_status(m)) {
 			if (*m->errstr){
-				if( strstr(m->errstr,"SQLSTATE"))
+				if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 					msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 				else
 					msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);

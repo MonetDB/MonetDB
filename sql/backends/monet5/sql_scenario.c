@@ -1042,7 +1042,7 @@ SQLparser(Client c)
 		if (!err &&m->scanner.started)	/* repeat old errors, with a parsed query */
 			err = mvc_status(m);
 		if (err && *m->errstr) {
-			if( strstr(m->errstr,"SQLSTATE"))
+			if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			else
 				msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
@@ -1088,7 +1088,7 @@ SQLparser(Client c)
 		r = sql_symbol2relation(m, m->sym);
 
 		if (!r || (err = mvc_status(m) && m->type != Q_TRANS && *m->errstr)) {
-			if( strstr(m->errstr,"SQLSTATE"))
+			if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			else
 				msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
@@ -1177,7 +1177,7 @@ SQLparser(Client c)
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, NULL, oldvtop);
 			if (msg == NULL && *m->errstr){
-				if(strstr(m->errstr,"SQLSTATE"))
+				if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 					msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 				else
 					msg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", m->errstr);
