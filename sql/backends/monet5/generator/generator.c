@@ -51,12 +51,12 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			/* with timestamp, step is of SQL type "interval seconds",
 			 * i.e., MAL / C type "lng" */
 			 VLTnoop(lng);
-		} else throw(MAL,"generator.noop", "SQLTYPE 42000 !""uUknown data type %d", getArgType(mb,pci,1));
+		} else throw(MAL,"generator.noop", SQLSTATE(42000) "unknown data type %d", getArgType(mb,pci,1));
 	}
 	if( zeroerror)
-		throw(MAL,"generator.noop", "SQLTYPE 42000 !""Zero step size not allowed");
+		throw(MAL,"generator.noop", SQLSTATE(42000) "Zero step size not allowed");
 	if( nullerr)
-		throw(MAL,"generator.noop", "SQLTYPE 42000 !""Null step size not allowed");
+		throw(MAL,"generator.noop", SQLSTATE(42000) "Null step size not allowed");
 	return MAL_SUCCEED;
 }
 
@@ -73,7 +73,7 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		else s =  *getArgReference_##TPE(stk,pci, 3);		\
 		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l) || f == TPE##_nil || l == TPE##_nil)	\
 			throw(MAL, "generator.table",			\
-			       "SQLTYPE 42000 !""Illegal generator range");		\
+			      SQLSTATE(42000) "Illegal generator range"); \
 		n = (BUN) ((l - f) / s);				\
 		if ((TPE) (n * s + f) != l)				\
 			n++;						\
