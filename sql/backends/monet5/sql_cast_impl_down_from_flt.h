@@ -55,7 +55,7 @@ FUN(,TP1,_num2dec_,TP2)(TP2 *res, const TP1 *v, const int *d2, const int *s2)
 		inlen = (int) floor(log10(val)) + 1;
 	}
 	if (inlen + scale > precision)
-		throw(SQL, "convert", "SQLSTATE 22003 !""too many digits (%d > %d)",
+		throw(SQL, "convert", SQLSTATE(22003) "too many digits (%d > %d)",
 		      inlen + scale, precision);
 
 #ifndef TRUNCATE_NUMBERS
@@ -79,13 +79,13 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_num2dec_,TP2)), "SQLSTATE HY005 !""Cannot access column descriptor");
+		throw(SQL, "batcalc."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY005) "Cannot access column descriptor");
 	}
 	bi = bat_iterator(b);
 	dst = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), "SQLSTATE HY005" MAL_MALLOC_FAIL);
+		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY005) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		TP1 *v = (TP1 *) BUNtail(bi, p);
@@ -99,7 +99,7 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
 			BBPunfix(dst->batCacheid);
 			BBPunfix(b->batCacheid);
-			throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), "SQLSTATE HY005" MAL_MALLOC_FAIL);
+			throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY005) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);

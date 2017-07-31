@@ -78,7 +78,7 @@ UDFBATreverse_(BAT **ret, BAT *src)
 
 	/* handle NULL pointer */
 	if (src == NULL)
-		throw(MAL, "batudf.reverse",  "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batudf.reverse",  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	/* check tail type */
 	if (src->ttype != TYPE_str) {
@@ -139,7 +139,7 @@ UDFBATreverse(bat *ret, const bat *arg)
 
 	/* bat-id -> BAT-descriptor */
 	if ((src = BATdescriptor(*arg)) == NULL)
-		throw(MAL, "batudf.reverse",  "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batudf.reverse",  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	/* do the work */
 	msg = UDFBATreverse_ ( &res, src );
@@ -218,7 +218,7 @@ UDFBATfuse_(BAT **ret, const BAT *bone, const BAT *btwo)
 
 	/* handle NULL pointer */
 	if (bone == NULL || btwo == NULL)
-		throw(MAL, "batudf.fuse",  "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batudf.fuse",  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	/* check for aligned heads */
 	if (BATcount(bone) != BATcount(btwo) ||
@@ -334,12 +334,12 @@ UDFBATfuse(bat *ires, const bat *ione, const bat *itwo)
 
 	/* bat-id -> BAT-descriptor */
 	if ((bone = BATdescriptor(*ione)) == NULL)
-		throw(MAL, "batudf.fuse",  "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batudf.fuse",  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	/* bat-id -> BAT-descriptor */
 	if ((btwo = BATdescriptor(*itwo)) == NULL) {
 		BBPunfix(bone->batCacheid);
-		throw(MAL, "batudf.fuse",  "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batudf.fuse",  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	/* do the work */

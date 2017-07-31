@@ -139,7 +139,7 @@ SQLprelude(void *ret)
 
 	(void) ret;
 	if (!s)
-		throw(MAL, "sql.start", "SQLSTATE 42000 !""out of scenario slots");
+		throw(MAL, "sql.start", SQLSTATE(42000) "out of scenario slots");
 	sqlinit = GDKgetenv("sqlinit");
 	s->name = "S_Q_L";
 	s->language = "sql";
@@ -154,7 +154,7 @@ SQLprelude(void *ret)
 
 	ms = getFreeScenario();
 	if (!ms)
-		throw(MAL, "sql.start", "SQLSTATE 42000 !""out of scenario slots");
+		throw(MAL, "sql.start", SQLSTATE(42000) "out of scenario slots");
 
 	ms->name = "M_S_Q_L";
 	ms->language = "msql";
@@ -173,7 +173,7 @@ SQLprelude(void *ret)
 		fprintf(stderr, "Fatal error during initialization:\n%s\n", tmp);
 		freeException(tmp);
 		if ((tmp = GDKerrbuf) && *tmp)
-			fprintf(stderr, "SQLSTATE 42000 !""GDK reported: %s\n", tmp);
+			fprintf(stderr, SQLSTATE(42000) "GDK reported: %s\n", tmp);
 		fflush(stderr);
 		exit(1);
 	}
@@ -263,17 +263,17 @@ SQLinit(void)
 		SQLdebug |= 32;
 	if ((SQLnewcatalog = mvc_init(SQLdebug, store_bat, readonly, single_user, 0)) < 0) {
 		MT_lock_unset(&sql_contextLock);
-		throw(SQL, "SQLinit", "SQLSTATE 42000 !""Catalogue initialization failed");
+		throw(SQL, "SQLinit", SQLSTATE(42000) "Catalogue initialization failed");
 	}
 	SQLinitialized = TRUE;
 	MT_lock_unset(&sql_contextLock);
 	if (MT_create_thread(&sqllogthread, (void (*)(void *)) mvc_logmanager, NULL, MT_THR_JOINABLE) != 0) {
-		throw(SQL, "SQLinit", "SQLSTATE 42000 !""Starting log manager failed");
+		throw(SQL, "SQLinit", SQLSTATE(42000) "Starting log manager failed");
 	}
 	GDKregister(sqllogthread);
 	if (!(SQLdebug&1024)) {
 		if (MT_create_thread(&idlethread, (void (*)(void *)) mvc_idlemanager, NULL, MT_THR_JOINABLE) != 0) {
-			throw(SQL, "SQLinit", "SQLSTATE 42000 !""Starting idle manager failed");
+			throw(SQL, "SQLinit", SQLSTATE(42000) "Starting idle manager failed");
 		}
 		GDKregister(idlethread);
 	}
@@ -331,7 +331,7 @@ global_variables(mvc *sql, char *user, char *schema)
 	return 0;
 }
 
-#define TRANS_ABORTED "SQLSTATE 25005 !""Current transaction is aborted (please ROLLBACK)\n"
+#define TRANS_ABORTED SQLSTATE(25005) "Current transaction is aborted (please ROLLBACK)\n"
 
 str
 handle_error(mvc *m, int pstatus, str msg)
@@ -433,7 +433,7 @@ SQLinitClient(Client c)
 		bstream *fdin;
 
 		if( b == NULL)
-			throw(SQL,"sql.initClient","SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+			throw(SQL,"sql.initClient",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 		buffer_init(b, _STRDUP(sqlinit), len);
 		fdin = bstream_create(buffer_rastream(b, "si"), b->len);
@@ -448,7 +448,7 @@ SQLinitClient(Client c)
 			m->reply_size = -1;
 		be = (void *) backend_create(m, c);
 		if( be == NULL)
-			throw(SQL,"sql.init", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+			throw(SQL,"sql.init", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
 		be = c->sqlcontext;
 		m = be->mvc;
@@ -462,7 +462,7 @@ SQLinitClient(Client c)
 	schema = monet5_user_set_def_schema(m, c->user);
 	if (!schema) {
 		_DELETE(schema);
-		throw(PERMD, "SQLinitClient", "SQLSTATE 08004 !""schema authorization error");
+		throw(PERMD, "SQLinitClient", SQLSTATE(08004) "schema authorization error");
 	}
 	_DELETE(schema);
 #else
@@ -503,7 +503,7 @@ SQLinitClient(Client c)
 			if (bstream_next(createdb_bstream) >= 0)
 				msg = SQLstatementIntern(c, &createdb_bstream->buf, "sql.init", TRUE, FALSE, NULL);
 			else
-				msg = createException(MAL, "createdb", "SQLSTATE 42000 ! Could not load inlined createdb script");
+				msg = createException(MAL, "createdb", SQLSTATE(42000) "Could not load inlined createdb script");
 
 			free(createdb_buf);
 			free(createdb_stream);
@@ -545,7 +545,7 @@ SQLinitClient(Client c)
 					sz = getFileSize(fd);
 					if (sz > (size_t) 1 << 29) {
 						mnstr_destroy(fd);
-						newmsg = createException(MAL, "createdb", "SQLSTATE 42000 !""File %s too large to process", filename);
+						newmsg = createException(MAL, "createdb", SQLSTATE(42000) "File %s too large to process", filename);
 					} else {
 						bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz);
 						if (bfd && bstream_next(bfd) >= 0)
@@ -591,7 +591,7 @@ SQLresetClient(Client c)
 	str msg = MAL_SUCCEED;
 
 	if (c->sqlcontext == NULL)
-		throw(SQL, "SQLexitClient", "SQLSTATE 42000 !""MVC catalogue not available");
+		throw(SQL, "SQLexitClient", SQLSTATE(42000) "MVC catalogue not available");
 	if (c->sqlcontext) {
 		backend *be = c->sqlcontext;
 		mvc *m = be->mvc;
@@ -626,7 +626,7 @@ SQLexitClient(Client c)
 	fprintf(stderr, "#SQLexitClient\n");
 #endif
 	if (SQLinitialized == FALSE)
-		throw(SQL, "SQLexitClient", "SQLSTATE 42000 !""Catalogue not available");
+		throw(SQL, "SQLexitClient", SQLSTATE(42000) "Catalogue not available");
 	if ((err = SQLresetClient(c)) != MAL_SUCCEED)
 		return err;
 	MALexitClient(c);
@@ -702,17 +702,17 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fd = open_rastream(fullname);
 	if (mnstr_errnr(fd) == MNSTR_OPEN_ERROR) {
 		mnstr_destroy(fd);
-		throw(MAL, "sql.include", "SQLSTATE 42000 !""could not open file: %s\n", *name);
+		throw(MAL, "sql.include", SQLSTATE(42000) "could not open file: %s\n", *name);
 	}
 	sz = getFileSize(fd);
 	if (sz > (size_t) 1 << 29) {
 		mnstr_destroy(fd);
-		throw(MAL, "sql.include", "SQLSTATE 42000 !""file %s too large to process", fullname);
+		throw(MAL, "sql.include", SQLSTATE(42000) "file %s too large to process", fullname);
 	}
 	bfd = bstream_create(fd, sz == 0 ? (size_t) (128 * BLOCK) : sz);
 	if (bstream_next(bfd) < 0) {
 		bstream_destroy(bfd);
-		throw(MAL, "sql.include", "SQLSTATE 42000 !""could not read %s\n", *name);
+		throw(MAL, "sql.include", SQLSTATE(42000) "could not read %s\n", *name);
 	}
 
 	expr = &bfd->buf;
@@ -932,7 +932,7 @@ SQLparser(Client c)
 		/* stop here, instead of printing the exception below to the
 		 * client in an endless loop */
 		c->mode = FINISHCLIENT;
-		throw(SQL, "SQLparser", "SQLSTATE 42000 !""State descriptor missing, aborting");
+		throw(SQL, "SQLparser", SQLSTATE(42000) "State descriptor missing, aborting");
 	}
 	oldvtop = c->curprg->def->vtop;
 	oldstop = c->curprg->def->stop;
@@ -953,7 +953,7 @@ SQLparser(Client c)
 		m->sa = sa_create();
 	if (!m->sa) {
 		c->mode = FINISHCLIENT;
-		throw(SQL, "SQLparser", "SQLSTATE HY001 !"MAL_MALLOC_FAIL " for SQL allocator");
+		throw(SQL, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL " for SQL allocator");
 	}
 
 	m->emode = m_normal;
@@ -997,10 +997,10 @@ SQLparser(Client c)
 			m->session->ac_on_commit = m->session->auto_commit;
 			if (m->session->active) {
 				if (commit && mvc_commit(m, 0, NULL) < 0) {
-					msg = createException(SQL, "COMMIT", "SQLSTATE 42000 !""Commit failed while enabling auto_commit");
+					msg = createException(SQL, "COMMIT", SQLSTATE(42000) "Commit failed while enabling auto_commit");
 				} else if (!commit && mvc_rollback(m, 0, NULL) < 0) {
 					mnstr_printf(out, "!COMMIT: rollback failed while " "disabling auto_commit\n");
-					msg = createException(SQL, "COMMIT", "SQLSTATE 42000 !""rollback failed while " "disabling auto_commit");
+					msg = createException(SQL, "COMMIT", SQLSTATE(42000) "rollback failed while " "disabling auto_commit");
 				}
 			}
 			in->pos = in->len;	/* HACK: should use parsed length */
@@ -1011,7 +1011,7 @@ SQLparser(Client c)
 		if (strncmp(in->buf + in->pos, "reply_size ", 11) == 0) {
 			v = (int) strtol(in->buf + in->pos + 11, NULL, 10);
 			if (v < -1) {
-				msg = createException(SQL, "SQLparser", "SQLSTATE 42000 !""Reply_size cannot be negative");
+				msg = createException(SQL, "SQLparser", SQLSTATE(42000) "Reply_size cannot be negative");
 				goto finalize;
 			}
 			m->reply_size = v;
@@ -1028,11 +1028,11 @@ SQLparser(Client c)
 			c->mode = FINISHCLIENT;
 			return MAL_SUCCEED;
 		}
-		msg = createException(SQL, "SQLparser", "SQLSTATE 42000 !""Unrecognized X command: %s\n", in->buf + in->pos);
+		msg = createException(SQL, "SQLparser", SQLSTATE(42000) "Unrecognized X command: %s\n", in->buf + in->pos);
 		goto finalize;
 	}
 	if (be->language !='S') {
-		msg = createException(SQL, "SQLparser", "SQLSTATE 42000 !""Unrecognized language prefix: %ci\n", be->language);
+		msg = createException(SQL, "SQLparser", SQLSTATE(42000) "Unrecognized language prefix: %ci\n", be->language);
 		goto finalize;
 	}
 
@@ -1045,7 +1045,7 @@ SQLparser(Client c)
 			if( strstr(m->errstr,"SQLSTATE"))
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			else
-				msg = createException(PARSE, "SQLparser", "SQLSTATE 42000 !""%s", m->errstr);
+				msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
 			*m->errstr = 0;
 		}
 		msg = handle_error(m, pstatus, msg);
@@ -1065,14 +1065,14 @@ SQLparser(Client c)
 		be->q = qc_find(m->qc, m->sym->data.lval->h->data.i_val);
 		if (!be->q) {
 			err = -1;
-			msg = createException(SQL, "EXEC", "SQLSTATE 07003! ""No prepared statement with id: %d\n", m->sym->data.lval->h->data.i_val);
+			msg = createException(SQL, "EXEC", SQLSTATE(07003) "No prepared statement with id: %d\n", m->sym->data.lval->h->data.i_val);
 			*m->errstr = 0;
 			msg = handle_error(m, pstatus, msg);
 			sqlcleanup(m, err);
 			goto finalize;
 		} else if (be->q->type != Q_PREPARE) {
 			err = -1;
-			msg = createException(SQL, "EXEC", "SQLSTATE 07005 !""Given handle id is not for a " "prepared statement: %d\n", m->sym->data.lval->h->data.i_val);
+			msg = createException(SQL, "EXEC", SQLSTATE(07005) "Given handle id is not for a " "prepared statement: %d\n", m->sym->data.lval->h->data.i_val);
 			*m->errstr = 0;
 			msg = handle_error(m, pstatus, msg);
 			sqlcleanup(m, err);
@@ -1091,7 +1091,7 @@ SQLparser(Client c)
 			if( strstr(m->errstr,"SQLSTATE"))
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			else
-				msg = createException(PARSE, "SQLparser", "SQLSTATE 42000 !""%s", m->errstr);
+				msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
 			*m->errstr = 0;
 			msg = handle_error(m, pstatus, msg);
 			sqlcleanup(m, err);
@@ -1180,11 +1180,11 @@ SQLparser(Client c)
 				if(strstr(m->errstr,"SQLSTATE"))
 					msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 				else
-					msg = createException(PARSE, "SQLparser", "SQLSTATE M0M27 !""Semantic errors %s", m->errstr);
+					msg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", m->errstr);
 				*m->errstr = 0;
 			} else if(msg) {
 				str newmsg;
-				newmsg = createException(PARSE, "SQLparser", "SQLSTATE M0M27 !""Semantic errors %s", msg);
+				newmsg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", msg);
 				GDKfree(msg);
 				msg = newmsg;
 			}
@@ -1214,7 +1214,7 @@ SQLCacheRemove(Client c, str nme)
 
 	s = findSymbolInModule(c->usermodule, nme);
 	if (s == NULL)
-		throw(MAL, "cache.remove", "SQLSTATE 42000 !""internal error, symbol missing\n");
+		throw(MAL, "cache.remove", SQLSTATE(42000) "internal error, symbol missing\n");
 	deleteSymbol(c->usermodule, s);
 	return MAL_SUCCEED;
 }
@@ -1232,7 +1232,7 @@ SQLcallback(Client c, str msg){
 			s++;
 			strncpy(newerr, msg, s - msg);
 			newerr[s-msg] = 0;
-			snprintf(newerr + (s-msg), 1024 -(s-msg), "SQLSTATE HY020 !%s",s);
+			snprintf(newerr + (s-msg), 1024 -(s-msg), SQLSTATE(HY020) "%s",s);
 			GDKfree(msg);
 			msg = GDKstrdup(newerr);
 		}

@@ -533,13 +533,13 @@ scanner_error(mvc *lc, int cur)
 {
 	switch (cur) {
 	case EOF:
-		(void) sql_error(lc, 1, "SQLSTATE 42000 !""Unexpected end of input");
+		(void) sql_error(lc, 1, SQLSTATE(42000) "Unexpected end of input");
 		return -1;	/* EOF needs -1 result */
 	default:
 		/* on Windows at least, iswcntrl returns TRUE for
 		 * U+FEFF, but we just want consistent error
 		 * messages */
-		(void) sql_error(lc, 1, "SQLSTATE 42000 !""Unexpected%s character (U+%04X)", iswcntrl(cur) && cur != 0xFEFF ? " control" : "", cur);
+		(void) sql_error(lc, 1, SQLSTATE(42000) "Unexpected%s character (U+%04X)", iswcntrl(cur) && cur != 0xFEFF ? " control" : "", cur);
 	}
 	return LEX_ERROR;
 }
@@ -637,7 +637,7 @@ scanner_getc(struct scanner *lc)
 		/* incorrect UTF-8 sequence */
 		/* n==0: c == 10xxxxxx */
 		/* n>=6: c == 1111111x */
-		lc->errstr = "SQLSTATE 42000 !invalid start of UTF-8 sequence";
+		lc->errstr = SQLSTATE(42000) "invalid start of UTF-8 sequence";
 		goto error;
 	}
 
@@ -653,7 +653,7 @@ scanner_getc(struct scanner *lc)
 		if (((m = *s++) & 0xC0) != 0x80) {
 			/* incorrect UTF-8 sequence: byte is not 10xxxxxx */
 			/* this includes end-of-string (m == 0) */
-			lc->errstr = "SQLSTATE 42000 !invalid continuation in UTF-8 sequence";
+			lc->errstr = SQLSTATE(42000) "invalid continuation in UTF-8 sequence";
 			goto error;
 		}
 		c |= m & 0x3F;
@@ -715,7 +715,7 @@ scanner_string(mvc *c, int quote)
 		/* long utf8, if correct isn't the quote */
 		if (!cur) {
 			if (lc->rs->len >= lc->rs->pos + lc->yycur + 1) {
-				(void) sql_error(c, 2, "SQLSTATE 42000 !""NULL byte in string");
+				(void) sql_error(c, 2, SQLSTATE(42000) "NULL byte in string");
 				return LEX_ERROR;
 			}
 			cur = scanner_read_more(lc, 1);
@@ -723,7 +723,7 @@ scanner_string(mvc *c, int quote)
 			cur = scanner_getc(lc);
 		}
 	}
-	(void) sql_error(c, 2, "SQLSTATE 42000 !""%s", lc->errstr ? lc->errstr : "unexpected end of input");
+	(void) sql_error(c, 2, SQLSTATE(42000) "%s", lc->errstr ? lc->errstr : "unexpected end of input");
 	return LEX_ERROR;
 }
 
@@ -762,7 +762,7 @@ scanner_body(mvc *c)
 		lc->yycur--;	/* go back to current (possibly invalid) char */
 		if (!cur) {
 			if (lc->rs->len >= lc->rs->pos + lc->yycur + 1) {
-				(void) sql_error(c, 2, "SQLSTATE 42000 !""NULL byte in string");
+				(void) sql_error(c, 2, SQLSTATE(42000) "NULL byte in string");
 				return LEX_ERROR;
 			}
 			cur = scanner_read_more(lc, 1);
@@ -770,7 +770,7 @@ scanner_body(mvc *c)
 			cur = scanner_getc(lc);
 		}
 	}
-	(void) sql_error(c, 2, "SQLSTATE 42000 !""Unexpected end of input");
+	(void) sql_error(c, 2, SQLSTATE(42000) "Unexpected end of input");
 	return LEX_ERROR;
 }
 
@@ -914,7 +914,7 @@ number(mvc * c, int cur)
 			utf8_putchar(lc, before_cur);
 		return scanner_token(lc, token);
 	} else {
-		(void)sql_error( c, 2, "SQLSTATE 42000 !""Unexpected symbol %lc", (wint_t) cur);
+		(void)sql_error( c, 2, SQLSTATE(42000) "Unexpected symbol %lc", (wint_t) cur);
 		return LEX_ERROR;
 	}
 }
@@ -1102,7 +1102,7 @@ int scanner_symbol(mvc * c, int cur)
 			return scanner_token(lc, '|');
 		}
 	}
-	(void)sql_error( c, 3, "SQLSTATE 42000 !""Unexpected symbol (%lc)", (wint_t) cur);
+	(void)sql_error( c, 3, SQLSTATE(42000) "Unexpected symbol (%lc)", (wint_t) cur);
 	return LEX_ERROR;
 }
 
@@ -1226,7 +1226,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm) {
 			if (valid_ident(yylval->sval+1,str)) {
 				token = IDENT;
 			} else {
-				sql_error(c, 1, "SQLSTATE 42000 !""Invalid identifier '%s'", yylval->sval+1);
+				sql_error(c, 1, SQLSTATE(42000) "Invalid identifier '%s'", yylval->sval+1);
 				return LEX_ERROR;
 			}
 		} else {

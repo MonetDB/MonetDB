@@ -64,7 +64,7 @@ alloc_data(bam1_t *b, int size)
 }
 
 /* Error macro */
-#define FILL_BAM_ALIG_ERR "SQLSTATE BA000 !""Error processing alignment '%d': "
+#define FILL_BAM_ALIG_ERR SQLSTATE(BA000) "Error processing alignment '%d': "
 
 /**
  * I had to write this function, which contains much low level
@@ -94,7 +94,7 @@ fill_bam_alig(str qname, sht flag, str rname, int pos,
 		c->l_qname = strlen(qname) + 1;
 		if(alloc_data(b, doff + c->l_qname) == NULL) {
 			throw(MAL, "fill_bam_alig",
-				"SQLSTATE HY001 !"MAL_MALLOC_FAIL " allignment %d", alignment_nr);
+				SQLSTATE(HY001) MAL_MALLOC_FAIL " allignment %d", alignment_nr);
 		}
 		memcpy(b->data + doff, qname, c->l_qname);
 		doff += c->l_qname;
@@ -132,7 +132,7 @@ fill_bam_alig(str qname, sht flag, str rname, int pos,
 			}
 			if (alloc_data(b, doff + c->n_cigar * 4) == NULL) {
 				throw(MAL, "fill_bam_alig",
-					"SQLSTATE HY001 !"MAL_MALLOC_FAIL " alignment nr %d", alignment_nr);
+					SQLSTATE(HY001) MAL_MALLOC_FAIL " alignment nr %d", alignment_nr);
 			}
 			cigar_enc = bam1_cigar(b);
 			for (i = 0, s = cigar; i != c->n_cigar; ++i) {
@@ -184,7 +184,7 @@ fill_bam_alig(str qname, sht flag, str rname, int pos,
 			p = (uint8_t*)alloc_data(b, doff + c->l_qseq + (c->l_qseq+1)/2);
 			if(p == NULL) {
 				throw(MAL, "fill_bam_alig",
-					"SQLSTATE HY001 !"MAL_MALLOC_FAIL " alignment nr %d", alignment_nr);
+					SQLSTATE(HY001) MAL_MALLOC_FAIL " alignment nr %d", alignment_nr);
 			}
 			p += doff;
 			memset(p, 0, (c->l_qseq+1)/2);
@@ -239,11 +239,11 @@ bind_export_result(Client cntxt, MalBlkPtr mb, bam_field fields[11], int *tuple_
 	}
 
 	if ((s_bam = mvc_bind_schema(m, "bam")) == NULL) {
-		throw(MAL, "bind_export_result", "SQLSTATE BA000 !""Could not find bam schema");
+		throw(MAL, "bind_export_result", SQLSTATE(BA000) "Could not find bam schema");
 	}
 
 	if ((t_export = mvc_bind_table(m, s_bam, "export")) == NULL) {
-		throw(MAL, "bind_export_result", "SQLSTATE BA000 !""Could not find bam.export table");
+		throw(MAL, "bind_export_result", SQLSTATE(BA000) "Could not find bam.export table");
 	}
 
 	fields[0].name = "qname";
@@ -261,17 +261,17 @@ bind_export_result(Client cntxt, MalBlkPtr mb, bam_field fields[11], int *tuple_
 	for (i=0; i<11; ++i) {
 		int cnt_tmp;
 		if ((fields[i].c = mvc_bind_column(m, t_export, fields[i].name)) == NULL) {
-			throw(MAL, "bind_export_result", "SQLSTATE BA000 !""Could not find bam.export.%s column", fields[i].name);
+			throw(MAL, "bind_export_result", SQLSTATE(BA000) "Could not find bam.export.%s column", fields[i].name);
 		}
 		if ((fields[i].b = store_funcs.bind_col(m->session->tr, fields[i].c, RDONLY)) == NULL) {
-		   throw(MAL, "bind_export_result", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
+		   throw(MAL, "bind_export_result", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		cnt_tmp = BATcount(fields[i].b);
 		if (cnt_tmp <= 0) {
-			throw(MAL, "bind_export_result", "SQLSTATE BA000 !""The bam.export table is empty");
+			throw(MAL, "bind_export_result", SQLSTATE(BA000) "The bam.export table is empty");
 		}
 		if (i > 0 && cnt != cnt_tmp) {
-			throw(MAL, "bind_export_result", "SQLSTATE BA000 !""Misalignment in bam.export table: "
+			throw(MAL, "bind_export_result", SQLSTATE(BA000) "Misalignment in bam.export table: "
 					"column '%s' has %d values; expected %d",
 					fields[i].name, cnt_tmp, cnt);
 		}
@@ -302,7 +302,7 @@ write_header(stream *output, bam_field fields[11])
 
 	/* Start by building the table with sequences */
 	if((sq_table = GDKmalloc(sq_table_size * sizeof(str))) == NULL) {
-		msg = createException(MAL, "write_header", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+		msg = createException(MAL, "write_header", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
@@ -342,7 +342,7 @@ write_header(stream *output, bam_field fields[11])
 			int new_size = sq_table_size * 2;
 			str *tmp;
 			if((tmp = GDKrealloc(sq_table, new_size * sizeof(str))) == NULL) {
-				msg = createException(MAL, "write_header", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+				msg = createException(MAL, "write_header", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
 			sq_table = tmp;
@@ -352,7 +352,7 @@ write_header(stream *output, bam_field fields[11])
 
 		/* Insert chromosome */
 		if ((sq_table[sq_table_count] = GDKstrdup(cur)) == NULL) {
-			msg = createException(MAL, "write_header", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+			msg = createException(MAL, "write_header", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
 
@@ -416,7 +416,7 @@ sam_exportf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	memset(fields, 0, 11 * sizeof(bam_field));
 
 	if ((output = bsopen(output_path)) == NULL) {
-		msg = createException(MAL, "sam_export", "SQLSTATE BA000 !""Could not open output file '%s' for writing", output_path);
+		msg = createException(MAL, "sam_export", SQLSTATE(BA000) "Could not open output file '%s' for writing", output_path);
 		goto cleanup;
 	}
 
@@ -466,7 +466,7 @@ bam_exportf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) stk;
 	(void) pci;
 
-	throw(MAL, "bam_export", "SQLSTATE BA000 !""Exporting to BAM files is not implemented yet. This is our first priority for the next release of the BAM library.");
+	throw(MAL, "bam_export", SQLSTATE(BA000) "Exporting to BAM files is not implemented yet. This is our first priority for the next release of the BAM library.");
 #else
 	/* arg 1: path to desired output file */
 	str output_path = *getArgReference_str(stk, pci, pci->retc);
@@ -487,13 +487,13 @@ bam_exportf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = MAL_SUCCEED;
 
 	if ((output = bam_open(output_path, "wb")) == NULL) {
-		msg = createException(MAL, "bam_export", "SQLSTATE BA000 !""Could not open output file '%s' for writing", output_path);
+		msg = createException(MAL, "bam_export", SQLSTATE(BA000) "Could not open output file '%s' for writing", output_path);
 		goto cleanup;
 	}
 
 	snprintf(output_header_path, 1024, "%s_tmp.sam", output_path);
 	if ((output_header = bsopen(output_header_path)) == NULL) {
-		msg = createException(MAL, "bam_export", "SQLSTATE BA000 !""Could not open temporary output file '%s' for writing", output_header_path);
+		msg = createException(MAL, "bam_export", SQLSTATE(BA000) "Could not open temporary output file '%s' for writing", output_header_path);
 		goto cleanup;
 	}
 
@@ -506,12 +506,12 @@ bam_exportf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	output_header = NULL;
 
 	if((sam_header = sam_open(output_header_path)) == NULL) {
-		msg = createException(MAL, "bam_export", "SQLSTATE BA000 !""Could not open temporarily written SAM header file '%s'", output_header_path);
+		msg = createException(MAL, "bam_export", SQLSTATE(BA000) "Could not open temporarily written SAM header file '%s'", output_header_path);
 		goto cleanup;
 	}
 
 	if((header = sam_header_read(sam_header)) == NULL) {
-		msg = createException(MAL, "bam_export", "SQLSTATE BA000 !""Could not parse the temporarily written SAM header in file '%s'", output_header_path);
+		msg = createException(MAL, "bam_export", SQLSTATE(BA000) "Could not parse the temporarily written SAM header in file '%s'", output_header_path);
 		goto cleanup;
 	}
 
@@ -519,7 +519,7 @@ bam_exportf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 	if((alig = bam_init1()) == NULL) {
-		throw(MAL, "bam_export", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+		throw(MAL, "bam_export", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	for (i=0; i<tuple_count; ++i) {

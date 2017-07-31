@@ -464,6 +464,6 @@ str _emit_init(void)
 	_import_array();
 	if (PyType_Ready(&PyEmitType) < 0)
 		return createException(MAL, "pyapi.eval",
-							   "SQLSTATE PY000 !""Failed to initialize emit type.");
+							   SQLSTATE(PY000) "Failed to initialize emit type.");
 	return MAL_SUCCEED;
 }

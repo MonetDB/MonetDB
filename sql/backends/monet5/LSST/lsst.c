@@ -447,7 +447,7 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 	shift = 2 * *delta; 
 
 	if( (bl= BATdescriptor(*lid)) == NULL )
-		throw(MAL, "algebra.xmatch", "SQLSTATE HY002 !" RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.xmatch", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if( !bl->tsorted){
 		BBPunfix(*lid);
 		throw(MAL, "algebra.xmatch", "sorted input required");
@@ -455,7 +455,7 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 
 	if( (br= BATdescriptor(*rid)) == NULL ){
 		BBPunfix(*lid);
-		throw(MAL, "algebra.xmatch", "SQLSTATE HY002 !" RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.xmatch", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if( !br->tsorted){
 		BBPunfix(*lid);
@@ -562,11 +562,11 @@ LSSTxmatchselect(bat *res, bat *bid, bat *sid, lng *r, int *delta, bit *anti)
 	shift = 2 * *delta;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.xmatch", "SQLSTATE HY002 !" RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.xmatch", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	assert(b->ttype == TYPE_lng);
 	if (sid && *sid && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.xmatch", "SQLSTATE HY002 !" RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.xmatch", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if ((bn = COLnew(0, TYPE_oid, 0, TRANSIENT)) == NULL) {
 		BBPunfix(b->batCacheid);

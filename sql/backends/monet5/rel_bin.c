@@ -793,7 +793,7 @@ check_table_types(backend *be, list *types, stmt *s, check_type tpe)
 	if (s->type != st_table) {
 		return sql_error(
 			sql, 03,
-			"SQLSTATE 4200 !""single value and complex type are not equal");
+			SQLSTATE(42000) "single value and complex type are not equal");
 	}
 	tab = s->op1;
 	temp = s->flag;
@@ -840,7 +840,7 @@ check_table_types(backend *be, list *types, stmt *s, check_type tpe)
 		if (list_length(types) != 1) {
 			stmt *res = sql_error(
 				sql, 03,
-				"SQLSTATE 4200 !""single value of type %s and complex type are not equal",
+				SQLSTATE(42000) "single value of type %s and complex type are not equal",
 				st->type->sqlname
 			);
 			return res;
@@ -925,7 +925,7 @@ check_types(backend *be, sql_subtype *ct, stmt *s, check_type tpe)
 	if ((!st || !st->type) && stmt_set_type_param(sql, ct, s) == 0) {
 		return s;
 	} else if (!st) {
-		return sql_error(sql, 02, "SQLSTATE 42000 !""statement has no type information");
+		return sql_error(sql, 02, SQLSTATE(42000) "statement has no type information");
 	}
 
 	/* first try cheap internal (inplace) convertions ! */
@@ -949,7 +949,7 @@ check_types(backend *be, sql_subtype *ct, stmt *s, check_type tpe)
 	if (!s) {
 		stmt *res = sql_error(
 			sql, 03,
-			"SQLSTATE 42000 !""types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal",
+			SQLSTATE(42000) "types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal",
 			st->type->sqlname,
 			st->digits,
 			st->scale,
@@ -996,7 +996,7 @@ sql_unop_(backend *be, sql_schema *s, const char *fname, stmt *rs)
 	} else if (rs) {
 		char *type = tail_type(rs)->type->sqlname;
 
-		return sql_error(sql, 02, "SQLSTATE 42000 !""SELECT: no such unary operator '%s(%s)'", fname, type);
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such unary operator '%s(%s)'", fname, type);
 	}
 	return NULL;
 }
@@ -1023,7 +1023,7 @@ sql_Nop_(backend *be, const char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4)
 	f = sql_bind_func_(sql->sa, sql->session->schema, fname, tl, F_FUNC);
 	if (f)
 		return stmt_Nop(be, stmt_list(be, sl), f);
-	return sql_error(sql, 02, "SQLSTATE 42000 !""SELECT: no such operator '%s'", fname);
+	return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such operator '%s'", fname);
 }
 
 static stmt *
@@ -1044,10 +1044,10 @@ rel_parse_value(backend *be, char *query, char emode)
 	m->emode = emode;
 	b = (buffer*)GDKmalloc(sizeof(buffer));
 	if (b == 0)
-		return sql_error(m, 02, "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	n = GDKmalloc(len + 1 + 1);
 	if (n == 0)
-		return sql_error(m, 02, "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	strncpy(n, query, len);
 	query = n;
 	query[len] = '\n';
@@ -2832,7 +2832,7 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 	stream *buf;
 
  	if (THRhighwater())
-		return sql_error(m, 10, "SQLSTATE 42000 !""SELECT: too many nested operators");
+		return sql_error(m, 10, SQLSTATE(42000) "SELECT: too many nested operators");
 
 	o = MNEW(mvc);
 	if (!o)
@@ -2846,10 +2846,10 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 
 	b = (buffer*)GDKmalloc(sizeof(buffer));
 	if (b == 0)
-		return sql_error(m, 02, "SQLSTATE HY0001 !"MAL_MALLOC_FAIL);
+		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	n = GDKmalloc(len + 1 + 1);
 	if (n == 0)
-		return sql_error(m, 02, "SQLSTATE HY0001 !"MAL_MALLOC_FAIL);
+		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	strncpy(n, query, len);
 	query = n;
 	query[len] = '\n';
@@ -3296,7 +3296,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 
 /* before */
 	if (!sql_insert_triggers(be, t, updates, 0)) 
-		return sql_error(sql, 02, "SQLSTATE 42000 !""INSERT INTO: triggers failed for table '%s'", t->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
 
 	if (t->idxs.set)
 	for (n = t->idxs.set->h; n && m; n = n->next, m = m->next) {
@@ -3330,7 +3330,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		return NULL;
 
 	if (!sql_insert_triggers(be, t, updates, 1)) 
-		return sql_error(sql, 02, "SQLSTATE 42000 !""INSERT INTO: triggers failed for table '%s'", t->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
 	if (ddl) {
 		list_prepend(l, ddl);
 	} else {
@@ -4172,12 +4172,12 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 	idx_updates = update_idxs_and_check_keys(be, t, rows, updates, l, NULL);
 	if (!idx_updates) {
 		assert(0);
-		return sql_error(sql, 02, "SQLSTATE 42000 !""UPDATE: failed to update indexes for table '%s'", t->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: failed to update indexes for table '%s'", t->base.name);
 	}
 
 /* before */
 	if (!sql_update_triggers(be, t, rows, updates, 0)) 
-		return sql_error(sql, 02, "SQLSTATE 42000 !""UPDATE: triggers failed for table '%s'", t->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: triggers failed for table '%s'", t->base.name);
 
 /* apply updates */
 	for (i = 0, n = t->columns.set->h; i < nr_cols && n; i++, n = n->next) { 
@@ -4187,11 +4187,11 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 	       		append(l, stmt_update_col(be, c, rows, updates[i]));
 	}
 	if (cascade_updates(be, t, rows, updates))
-		return sql_error(sql, 02, "SQLSTATE 42000 !""UPDATE: cascade failed for table '%s'", t->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: cascade failed for table '%s'", t->base.name);
 
 /* after */
 	if (!sql_update_triggers(be, t, rows, updates, 1)) 
-		return sql_error(sql, 02, "SQLSTATE 42000 !""UPDATE: triggers failed for table '%s'", t->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: triggers failed for table '%s'", t->base.name);
 
 /* cascade ?? */
 	return l;
@@ -4274,7 +4274,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 
 /* before */
 	if (!sql_update_triggers(be, t, tids, updates, 0)) 
-		return sql_error(sql, 02, "SQLSTATE 42000 !""UPDATE: triggers failed for table '%s'", t->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: triggers failed for table '%s'", t->base.name);
 
 /* apply the update */
 	for (m = rel->exps->h; m; m = m->next) {
@@ -4286,11 +4286,11 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 	}
 
 	if (cascade_updates(be, t, tids, updates))
-		return sql_error(sql, 02, "SQLSTATE 42000 !""UPDATE: cascade failed for table '%s'", t->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: cascade failed for table '%s'", t->base.name);
 
 /* after */
 	if (!sql_update_triggers(be, t, tids, updates, 1)) 
-		return sql_error(sql, 02, "SQLSTATE 42000 !""UPDATE: triggers failed for table '%s'", t->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: triggers failed for table '%s'", t->base.name);
 
 	if (ddl) {
 		list_prepend(l, ddl);
@@ -4461,10 +4461,10 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 
 /* before */
 	if (!sql_delete_triggers(be, t, v, 0)) 
-		return sql_error(sql, 02, "SQLSTATE 42000 !""DELETE: triggers failed for table '%s'", t->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "DELETE: triggers failed for table '%s'", t->base.name);
 
 	if (!sql_delete_keys(be, t, v, l)) 
-		return sql_error(sql, 02, "SQLSTATE 42000 !""DELETE: failed to delete indexes for table '%s'", t->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "DELETE: failed to delete indexes for table '%s'", t->base.name);
 
 	if (rows) { 
 		sql_subtype to;
@@ -4479,7 +4479,7 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 
 /* after */
 	if (!sql_delete_triggers(be, t, v, 1)) 
-		return sql_error(sql, 02, "SQLSTATE 42000 !""DELETE: triggers failed for table '%s'", t->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "DELETE: triggers failed for table '%s'", t->base.name);
 	if (rows) 
 		s = stmt_aggr(be, rows, NULL, NULL, sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL), 1, 0);
 	return s;

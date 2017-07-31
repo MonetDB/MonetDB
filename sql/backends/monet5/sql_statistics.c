@@ -80,7 +80,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	query = NULL;
 	dquery = (char *) GDKzalloc(8192);
 	if (dquery == NULL) {
-		throw(SQL, "analyze", "SQLSTATE HY005"MAL_MALLOC_FAIL);
+		throw(SQL, "analyze", SQLSTATE(HY005) MAL_MALLOC_FAIL);
 	}
 
 	switch (argc) {
@@ -190,7 +190,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							maxval = GDKmalloc(4);
 							if( maxval== NULL) {
 								GDKfree(dquery);
-								throw(SQL, "analyze", "SQLSTATE HY005"MAL_MALLOC_FAIL);
+								throw(SQL, "analyze", SQLSTATE(HY005) MAL_MALLOC_FAIL);
 							}
 							maxlen = 4;
 						}
@@ -200,7 +200,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							if( minval== NULL){
 								GDKfree(dquery);
 								GDKfree(maxval);
-								throw(SQL, "analyze", "SQLSTATE HY005"MAL_MALLOC_FAIL);
+								throw(SQL, "analyze", SQLSTATE(HY005) MAL_MALLOC_FAIL);
 							}
 							minlen = 4;
 						}
@@ -229,7 +229,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								GDKfree(dquery);
 								GDKfree(maxval);
 								GDKfree(minval);
-								throw(SQL, "analyze", "SQLSTATE HY005"MAL_MALLOC_FAIL);
+								throw(SQL, "analyze", SQLSTATE(HY005) MAL_MALLOC_FAIL);
 							}
 						}
 						snprintf(query, querylen, "insert into sys.statistics (column_id,type,width,stamp,\"sample\",count,\"unique\",nils,minval,maxval,sorted,revsorted) values(%d,'%s',%d,now()," LLFMT "," LLFMT "," LLFMT "," LLFMT ",'%s','%s',%s,%s);", c->base.id, c->type.type->sqlname, width, (samplesize ? samplesize : sz), sz, uniq, nils, minval, maxval, sorted ? "true" : "false", revsorted ? "true" : "false");
@@ -262,10 +262,10 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(maxval);
 	GDKfree(minval);
 	if (sch && !sfnd)
-		throw(SQL, "analyze", "SQLSTATE 3F000 !""Schema '%s' does not exist", sch);
+		throw(SQL, "analyze", SQLSTATE(3F000) "Schema '%s' does not exist", sch);
 	if (tbl && !tfnd)
-		throw(SQL, "analyze", "SQLSTATE 42S02 !""Table '%s' does not exist", tbl);
+		throw(SQL, "analyze", SQLSTATE(42S02) "Table '%s' does not exist", tbl);
 	if (col && !cfnd)
-		throw(SQL, "analyze", "SQLSTATE 38000 !""Column '%s' does not exist", col);
+		throw(SQL, "analyze", SQLSTATE(38000) "Column '%s' does not exist", col);
 	return MAL_SUCCEED;
 }

@@ -131,7 +131,7 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 	size_t len = 0;
 
 	if (ptr == NULL || *ptr == NULL) {
-		msg = createException(MAL, "pyapi.eval", "SQLSTATE PY000 !""Invalid PyObject.");
+		msg = createException(MAL, "pyapi.eval", SQLSTATE(PY000) "Invalid PyObject.");
 		goto wrapup;
 	}
 	obj = *ptr;
@@ -141,7 +141,7 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 		utf8_string = (str)malloc(len = (pyobject_get_size(obj) + 1));
 		if (!utf8_string) {
 			msg = createException(MAL, "pyapi.eval",
-								  "SQLSTATE HY001 !"MAL_MALLOC_FAIL "python string");
+								  SQLSTATE(HY001) MAL_MALLOC_FAIL "python string");
 			goto wrapup;
 		}
 		*value = utf8_string;
@@ -154,7 +154,7 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 		char *str = ((PyStringObject *)obj)->ob_sval;
 		if (!string_copy(str, utf8_string, len-1, false)) {
 			msg = createException(MAL, "pyapi.eval",
-								  "SQLSTATE PY000 !""Invalid string encoding used. Please return "
+								  SQLSTATE(PY000) "Invalid string encoding used. Please return "
 								  "a regular ASCII string, or a Numpy_Unicode "
 								  "object.\n");
 			goto wrapup;
@@ -165,7 +165,7 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 		char *str = ((PyByteArrayObject *)obj)->ob_bytes;
 		if (!string_copy(str, utf8_string, len-1, false)) {
 			msg = createException(MAL, "pyapi.eval",
-								  "SQLSTATE PY000 !""Invalid string encoding used. Please return "
+								  SQLSTATE(PY000) "Invalid string encoding used. Please return "
 								  "a regular ASCII string, or a Numpy_Unicode "
 								  "object.\n");
 			goto wrapup;
@@ -182,7 +182,7 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 		char *str = PyUnicode_AsUTF8(obj);
 		if (!string_copy(str, utf8_string, len-1, true)) {
 			msg = createException(MAL, "pyapi.eval",
-								  "SQLSTATE PY000 !""Invalid string encoding used. Please return "
+								  SQLSTATE(PY000) "Invalid string encoding used. Please return "
 								  "a regular ASCII string, or a Numpy_Unicode "
 								  "object.\n");
 			goto wrapup;
@@ -202,7 +202,7 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 	} else {
 		msg = createException(
 			MAL, "pyapi.eval",
-			"SQLSTATE PY000 !""Unrecognized Python object. Could not convert to NPY_UNICODE.\n");
+			SQLSTATE(PY000) "Unrecognized Python object. Could not convert to NPY_UNICODE.\n");
 		goto wrapup;
 	}
 wrapup:

@@ -363,7 +363,7 @@ validatePipe(MalBlkPtr mb)
 		throw(MAL, "optimizer.validate", "missing optimizer mal block\n");
 	p = getInstrPtr(mb,1);
 	if (getFunctionId(p) == NULL || idcmp(getFunctionId(p), "inline"))
-		throw(MAL, "optimizer.validate", "SQLSTATE 42000 !""'inline' should be the first\n");
+		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'inline' should be the first\n");
 
 	for (i = 1; i < mb->stop - 1; i++){
 		p = getInstrPtr(mb,i);
@@ -383,23 +383,23 @@ validatePipe(MalBlkPtr mb)
 			else if (strcmp(getFunctionId(p), "garbageCollector") == 0)
 				garbage = TRUE;
 		} else
-			throw(MAL, "optimizer.validate", "SQLSTATE 42000 !""Missing optimizer call\n");
+			throw(MAL, "optimizer.validate", SQLSTATE(42000) "Missing optimizer call\n");
 	}
 
 	if (mitosis == TRUE && mergetable == FALSE)
-		throw(MAL, "optimizer.validate", "SQLSTATE 42000 !""'mitosis' needs 'mergetable'\n");
+		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'mitosis' needs 'mergetable'\n");
 
 	/* several optimizer should be used */
 	if (multiplex == 0)
-		throw(MAL, "optimizer.validate", "SQLSTATE 42000 !""'multiplex' should be used\n");
+		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'multiplex' should be used\n");
 	if (deadcode == FALSE)
-		throw(MAL, "optimizer.validate", "SQLSTATE 42000 !""'deadcode' should be used at least once\n");
+		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'deadcode' should be used at least once\n");
 	if (garbage == FALSE)
-		throw(MAL, "optimizer.validate", "SQLSTATE 42000 !""'garbageCollector' should be used as the last one\n");
+		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'garbageCollector' should be used as the last one\n");
 	if (remap == FALSE)
-		throw(MAL, "optimizer.validate", "SQLSTATE 42000 !""'remap' should be used\n");
+		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'remap' should be used\n");
 	if (generator == FALSE)
-		throw(MAL, "optimizer.validate", "SQLSTATE 42000 !""'generator' should be used\n");
+		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'generator' should be used\n");
 
 	return MAL_SUCCEED;
 }
