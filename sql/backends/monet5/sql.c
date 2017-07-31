@@ -542,7 +542,7 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		str newopt = *getArgReference_str(stk, pci, 3);
 		if (newopt) {
 			if (!isOptimizerPipe(newopt) && strchr(newopt, (int) ';') == 0) {
-				throw(SQL, "sql.setVariable", SQLSTATE(42100) "optimizer %s unknown", newopt);
+				throw(SQL, "sql.setVariable", SQLSTATE(42100) "optimizer '%s' unknown", newopt);
 			}
 			snprintf(buf, BUFSIZ, "user_%d", cntxt->idx);
 			if (!isOptimizerPipe(newopt) || strcmp(buf, newopt) == 0) {
