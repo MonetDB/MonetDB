@@ -26,22 +26,25 @@ stderr of test 'default` in directory 'sql/test` itself:
 # cmdline opt 	gdk_dbname = mTests_test
 # cmdline opt 	mal_listing = 0
 
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
-QUERY = INSERT INTO t1default (id) VALUES(1);
-ERROR = !INSERT INTO: NOT NULL constraint violated for column t1default.text2
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
-QUERY = INSERT INTO t1default (text1) VALUES('test1');
-ERROR = !INSERT INTO: NOT NULL constraint violated for column t1default.text2
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
-QUERY = INSERT INTO t1default (id, text3) VALUES(1, 'test3');
-ERROR = !INSERT INTO: NOT NULL constraint violated for column t1default.text2
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
-QUERY = INSERT INTO t1default (id, text1, text3, text4) VALUES(1, 'test1', 'test3', 'test4');
-ERROR = !INSERT INTO: NOT NULL constraint violated for column t1default.text2
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
-QUERY = INSERT INTO t1default (id, text1, text2, text3, text4) VALUES(1, 'test1', 'test2', 'test3', NULL);
-ERROR = !INSERT INTO: NOT NULL constraint violated for column t1default.text4
+# 14:29:50 >  
+# 14:29:50 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29803" "--port=33854"
+# 14:29:50 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-29803/.s.monetdb.33854
+QUERY = INSERT INTO t1default (id) VALUES(1);
+ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: NOT NULL constraint violated for column t1default.text2
+MAPI  = (monetdb) /var/tmp/mtest-29803/.s.monetdb.33854
+QUERY = INSERT INTO t1default (text1) VALUES('test1');
+ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: NOT NULL constraint violated for column t1default.text2
+MAPI  = (monetdb) /var/tmp/mtest-29803/.s.monetdb.33854
+QUERY = INSERT INTO t1default (id, text3) VALUES(1, 'test3');
+ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: NOT NULL constraint violated for column t1default.text2
+MAPI  = (monetdb) /var/tmp/mtest-29803/.s.monetdb.33854
+QUERY = INSERT INTO t1default (id, text1, text3, text4) VALUES(1, 'test1', 'test3', 'test4');
+ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: NOT NULL constraint violated for column t1default.text2
+MAPI  = (monetdb) /var/tmp/mtest-29803/.s.monetdb.33854
+QUERY = INSERT INTO t1default (id, text1, text2, text3, text4) VALUES(1, 'test1', 'test2', 'test3', NULL);
+ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: NOT NULL constraint violated for column t1default.text4
 
 
 # 17:34:21 >  

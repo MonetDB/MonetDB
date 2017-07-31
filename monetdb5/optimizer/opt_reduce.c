@@ -28,9 +28,9 @@ OPTreduceImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	/* plan is not changed */
 	/* plan is not changed */
     //if( actions > 0){
-        //chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-        //chkFlow(cntxt->fdout, mb);
-        //chkDeclarations(cntxt->fdout, mb);
+        //chkTypes(cntxt->usermodule, mb, FALSE);
+        //chkFlow(mb);
+        //chkDeclarations(mb);
     //}
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

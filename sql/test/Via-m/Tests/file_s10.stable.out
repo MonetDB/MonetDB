@@ -36,8 +36,8 @@ Ready.
 #                 from   media
 #                 where  identifier = 'identifier1');
 #select id_file1;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 11 # length
 [ -1234567890	]

@@ -59,7 +59,7 @@ rel_transactions(mvc *sql, symbol *s)
 		ret = rel_trans(sql, DDL_TRANS, s->data.i_val, NULL);
 		break;
 	default:
-		return sql_error(sql, 01, "transaction unknown Symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
+		return sql_error(sql, 01, "SQLSTATE 42000 !""Transaction unknown Symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}
 	return ret;
 }

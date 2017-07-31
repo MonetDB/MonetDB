@@ -32,10 +32,10 @@ stderr of test 'mergedropcrash` in directory 'sql/test/mergetables` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-30244/.s.monetdb.33503
 QUERY = alter table m drop table t1;
-ERROR = !ALTER TABLE: table 'sys.t1' isn't part of the MERGE TABLE 'sys.m'
-MAPI  = (monetdb) /var/tmp/mtest-30244/.s.monetdb.33503
+ERROR = !SQLException:sql.alter_table_del_table:SQLSTATE 42S02 !ALTER TABLE: table 'sys.t1' isn't part of the MERGE TABLE 'sys.m'
+MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
 QUERY = alter table m drop table t1;
-ERROR = !ALTER TABLE: no such table 't1' in schema 'sys'
+ERROR = !SQLException:sql.alter_table_del_table:SQLSTATE 42S02 !ALTER TABLE: no such table 't1' in schema 'sys'
 
 # 12:42:18 >  
 # 12:42:18 >  "Done."

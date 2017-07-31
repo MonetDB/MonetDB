@@ -44,18 +44,18 @@ sql_createorderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 	s = mvc_bind_schema(m, sch);
 	if (s == NULL)
-		throw(SQL, "sql.createorderindex", "unknown schema %s", sch);
+		throw(SQL, "sql.createorderindex", "SQLSTATE 42000 !""Unknown schema %s", sch);
 	t = mvc_bind_table(m, s, tbl);
 	if (t == NULL || !isTable(t))
-		throw(SQL, "sql.createorderindex", "unknown table %s.%s",
+		throw(SQL, "sql.createorderindex", "SQLSTATE 42000 !""Unknown table %s.%s",
 		      sch, tbl);
 	c = mvc_bind_column(m, t, col);
 	if (c == NULL)
-		throw(SQL, "sql.createorderindex", "unknown column %s.%s.%s",
+		throw(SQL, "sql.createorderindex", "SQLSTATE 42000 !""Unknown column %s.%s.%s",
 		      sch, tbl, col);
 	b = store_funcs.bind_col(m->session->tr, c, 0);
 	if (b == 0)
-		throw(SQL,"sql.createorderindex","Column can not be accessed");
+		throw(SQL,"sql.createorderindex", "SQLSTATE HY005 !""Column can not be accessed");
 	/* create the ordered index on the column */
 	msg = OIDXcreateImplementation(cntxt, newBatType(b->ttype), b, -1);
 	BBPunfix(b->batCacheid);
@@ -85,18 +85,16 @@ sql_droporderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 	s = mvc_bind_schema(m, sch);
 	if (s == NULL)
-		throw(SQL, "sql.droporderindex", "unknown schema %s", sch);
+		throw(SQL, "sql.droporderindex", "SQLSTATE 3FOOO !""Unknown schema %s", sch);
 	t = mvc_bind_table(m, s, tbl);
 	if (t == NULL || !isTable(t))
-		throw(SQL, "sql.droporderindex", "unknown table %s.%s",
-		      sch, tbl);
+		throw(SQL, "sql.droporderindex", "SQLSTATE 42S02 !""Unknown table %s.%s", sch, tbl);
 	c = mvc_bind_column(m, t, col);
 	if (c == NULL)
-		throw(SQL, "sql.droporderindex", "unknown column %s.%s.%s",
-		      sch, tbl, col);
+		throw(SQL, "sql.droporderindex", "SQLSTATE 38000 !""Unknown column %s.%s.%s", sch, tbl, col);
 	b = store_funcs.bind_col(m->session->tr, c, 0);
 	if (b == 0)
-		throw(SQL,"sql.droporderindex","Column can not be accessed");
+		throw(SQL,"sql.droporderindex", "SQLSTATE 38000 !""Column can not be accessed");
 	msg = OIDXdropImplementation(cntxt, b);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;

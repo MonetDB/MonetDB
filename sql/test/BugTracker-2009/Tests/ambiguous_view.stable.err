@@ -86,13 +86,13 @@ QUERY = CREATE VIEW eur_kg_test AS
         , 'kg' AS DT_UOM
         FROM t_base
         ;
-ERROR = !CREATE VIEW: duplicate column name dt_uom
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42S21 !CREATE VIEW: duplicate column name dt_uom
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = select * from eur_kg_test;
-ERROR = !SELECT: no such table 'eur_kg_test'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'eur_kg_test'
+MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
 QUERY = drop view eur_kg_test;
-ERROR = !DROP VIEW: unknown view 'eur_kg_test'
+ERROR = !SQLException:sql.drop_view:SQLSTATE 42S02 !DROP VIEW: unknown view 'eur_kg_test'
 
 # 20:07:37 >  
 # 20:07:37 >  Done.

@@ -30,34 +30,34 @@ stderr of test 'catalog_name_qualifier.Bug-3948` in directory 'sql/test/BugTrack
 
 MAPI  = (monetdb) /var/tmp/mtest-11629/.s.monetdb.39371
 QUERY = select * from sys.sys.dependency_types where dependency_type_id IN (1, 2);
-ERROR = !SELECT: only a schema and table name expected
-MAPI  = (monetdb) /var/tmp/mtest-11629/.s.monetdb.39371
+ERROR = !ParseException:SQLparser:SQLSTATE 3F000 !SELECT: only a schema and table name expected
+MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
 QUERY = select * from sys.sys.sys.dependency_types;
-ERROR = !syntax error, unexpected '.', expecting SCOLON in: "select * from sys.sys.sys."
-MAPI  = (monetdb) /var/tmp/mtest-11629/.s.monetdb.39371
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '.', expecting SCOLON in: "select * from sys.sys.sys."
+MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
 QUERY = select * from sys.sys.table_types where table_type_id IN (0, 1);
-ERROR = !SELECT: only a schema and table name expected
-MAPI  = (monetdb) /var/tmp/mtest-11629/.s.monetdb.39371
+ERROR = !ParseException:SQLparser:SQLSTATE 3F000 !SELECT: only a schema and table name expected
+MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
 QUERY = select * from sys.sys.sys.table_types;
-ERROR = !syntax error, unexpected '.', expecting SCOLON in: "select * from sys.sys.sys."
-MAPI  = (monetdb) /var/tmp/mtest-11629/.s.monetdb.39371
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '.', expecting SCOLON in: "select * from sys.sys.sys."
+MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
 QUERY = select * from tmp.tmp.t3948;
-ERROR = !SELECT: only a schema and table name expected
-MAPI  = (monetdb) /var/tmp/mtest-11629/.s.monetdb.39371
+ERROR = !ParseException:SQLparser:SQLSTATE 3F000 !SELECT: only a schema and table name expected
+MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
 QUERY = select * from tmp.tmp.tmp.t3948;
-ERROR = !syntax error, unexpected '.', expecting SCOLON in: "select * from tmp.tmp.tmp."
-MAPI  = (monetdb) /var/tmp/mtest-11629/.s.monetdb.39371
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '.', expecting SCOLON in: "select * from tmp.tmp.tmp."
+MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
 QUERY = select * from sys.sys.t3948;
-ERROR = !SELECT: only a schema and table name expected
-MAPI  = (monetdb) /var/tmp/mtest-11629/.s.monetdb.39371
+ERROR = !ParseException:SQLparser:SQLSTATE 3F000 !SELECT: only a schema and table name expected
+MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
 QUERY = select * from sys.sys.sys.t3948;
-ERROR = !syntax error, unexpected '.', expecting SCOLON in: "select * from sys.sys.sys."
-MAPI  = (monetdb) /var/tmp/mtest-11629/.s.monetdb.39371
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '.', expecting SCOLON in: "select * from sys.sys.sys."
+MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
 QUERY = select * from sys.sys.dependencies_tables_on_views();
-ERROR = !syntax error, unexpected '(', expecting SCOLON in: "select * from sys.sys.dependencies_tables_on_views("
-MAPI  = (monetdb) /var/tmp/mtest-11629/.s.monetdb.39371
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '(', expecting SCOLON in: "select * from sys.sys.dependencies_tables_on_views("
+MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
 QUERY = select * from sys.sys.sys.dependencies_tables_on_views();
-ERROR = !syntax error, unexpected '.', expecting SCOLON in: "select * from sys.sys.sys."
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '.', expecting SCOLON in: "select * from sys.sys.sys."
 
 
 # 11:57:28 >  

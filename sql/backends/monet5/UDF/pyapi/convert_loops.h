@@ -65,7 +65,7 @@
 	{                                                                          \
 		bat = COLnew(seqbase, TYPE_##mtpe, 0, TRANSIENT);                      \
 		if (bat == NULL) {                                                     \
-			msg = createException(MAL, "pyapi.eval", "Cannor create BAT");     \
+			msg = createException(MAL, "pyapi.eval", "SQLSTATE PY000 !""Cannot create column");     \
 			goto wrapup;                                                       \
 		}                                                                      \
 		bat->tnil = 0;                                                         \
@@ -129,7 +129,7 @@
 	{                                                                          \
 		bat = COLnew(seqbase, TYPE_##mtpe, 0, TRANSIENT);                      \
 		if (bat == NULL) {                                                     \
-			msg = createException(MAL, "pyapi.eval", "Cannor create BAT");     \
+			msg = createException(MAL, "pyapi.eval", "SQLSTATE PY000 !""Cannot create column");     \
 			goto wrapup;                                                       \
 		}                                                                      \
 		bat->tnil = 0;                                                         \
@@ -293,7 +293,7 @@
 									 ret->memory_size]));                      \
 			if (BUNappend(bat, utf8_string, FALSE) != GDK_SUCCEED) {           \
 				msg =                                                          \
-					createException(MAL, "pyapi.eval", "BUNappend failed.\n"); \
+					createException(MAL, "pyapi.eval", "SQLSTATE PY000 !""BUNappend failed.\n"); \
 				goto wrapup;                                                   \
 			}                                                                  \
 		}                                                                      \
@@ -303,7 +303,7 @@
 				bat->tnil = 1;                                                 \
 				if (BUNappend(bat, str_nil, FALSE) != GDK_SUCCEED) {           \
 					msg = createException(MAL, "pyapi.eval",                   \
-										  "BUNappend failed.\n");              \
+										  "SQLSTATE PY000 !""BUNappend failed.\n");              \
 					goto wrapup;                                               \
 				}                                                              \
 			} else {                                                           \
@@ -312,7 +312,7 @@
 										 ret->memory_size]));                  \
 				if (BUNappend(bat, utf8_string, FALSE) != GDK_SUCCEED) {       \
 					msg = createException(MAL, "pyapi.eval",                   \
-										  "BUNappend failed.\n");              \
+										  "SQLSTATE PY000 !""BUNappend failed.\n");              \
 					goto wrapup;                                               \
 				}                                                              \
 			}                                                                  \
@@ -379,7 +379,7 @@
 			default:                                                           \
 				msg = createException(                                         \
 					MAL, "pyapi.eval",                                         \
-					"Unrecognized type. Could not convert to %s.\n",           \
+					"SQLSTATE PY000 !""Unrecognized type. Could not convert to %s.\n",           \
 					BatType_Format(TYPE_##mtpe));                              \
 				goto wrapup;                                                   \
 		}                                                                      \
@@ -436,7 +436,7 @@
 					b->tnil = 1;                                               \
 					if (BUNappend(b, str_nil, FALSE) != GDK_SUCCEED) {         \
 						msg = createException(MAL, "pyapi.eval",               \
-											  "BUNappend failed.\n");          \
+											  "SQLSTATE PY000 !""BUNappend failed.\n");          \
 						goto wrapup;                                           \
 					}                                                          \
 				} else {                                                       \
@@ -444,7 +444,7 @@
 										   ret->memory_size],                  \
 									 utf8_string, ret->memory_size, false)) {  \
 						msg = createException(MAL, "pyapi.eval",               \
-											  "Invalid string encoding used. " \
+											  "SQLSTATE PY000 !""Invalid string encoding used. " \
 											  "Please return a regular ASCII " \
 											  "string, or a Numpy_Unicode "    \
 											  "object.\n");                    \
@@ -452,7 +452,7 @@
 					}                                                          \
 					if (BUNappend(b, utf8_string, FALSE) != GDK_SUCCEED) {     \
 						msg = createException(MAL, "pyapi.eval",               \
-											  "BUNappend failed.\n");          \
+											  "SQLSTATE PY000 !""BUNappend failed.\n");          \
 						goto wrapup;                                           \
 					}                                                          \
 				}                                                              \
@@ -465,7 +465,7 @@
 					b->tnil = 1;                                               \
 					if (BUNappend(b, str_nil, FALSE) != GDK_SUCCEED) {         \
 						msg = createException(MAL, "pyapi.eval",               \
-											  "BUNappend failed.\n");          \
+											  "SQLSTATE PY000 !""BUNappend failed.\n");          \
 						goto wrapup;                                           \
 					}                                                          \
 				} else {                                                       \
@@ -476,7 +476,7 @@
 									  ret->memory_size]));                     \
 					if (BUNappend(b, utf8_string, FALSE) != GDK_SUCCEED) {     \
 						msg = createException(MAL, "pyapi.eval",               \
-											  "BUNappend failed.\n");          \
+											  "SQLSTATE PY000 !""BUNappend failed.\n");          \
 						goto wrapup;                                           \
 					}                                                          \
 				}                                                              \
@@ -504,7 +504,7 @@
 			}                                                                  \
 			utf8_string = GDKzalloc(utf8_size);                                \
 			if (utf8_string == NULL) {			\
-				msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL); \
+				msg = createException(MAL, "pyapi.eval", "SQLSTATE HY001 !"MAL_MALLOC_FAIL); \
 				goto wrapup;				\
 			}						\
 			for (iu = 0; iu < ret->count; iu++) {                              \
@@ -513,7 +513,7 @@
 					b->tnil = 1;                                               \
 					if (BUNappend(b, str_nil, FALSE) != GDK_SUCCEED) {         \
 						msg = createException(MAL, "pyapi.eval",               \
-											  "BUNappend failed.\n");          \
+											  "SQLSTATE PY000 !""BUNappend failed.\n");          \
 						goto wrapup;                                           \
 					}                                                          \
 				} else {                                                       \
@@ -524,7 +524,7 @@
 						utf8_size, &utf8_string);                              \
 					if (BUNappend(b, utf8_string, FALSE) != GDK_SUCCEED) {     \
 						msg = createException(MAL, "pyapi.eval",               \
-											  "BUNappend failed.\n");          \
+											  "SQLSTATE PY000 !""BUNappend failed.\n");          \
 						goto wrapup;                                           \
 					}                                                          \
 				}                                                              \
@@ -534,7 +534,7 @@
 		default:                                                               \
 			msg = createException(                                             \
 				MAL, "pyapi.eval",                                             \
-				"Unrecognized type. Could not convert to NPY_UNICODE.\n");     \
+				"SQLSTATE PY000 !""Unrecognized type. Could not convert to NPY_UNICODE.\n");     \
 			goto wrapup;                                                       \
 	}                                                                          \
 	b->tnonil = 1 - b->tnil;
@@ -560,7 +560,7 @@
 		if (ret->array_data == NULL) {                                         \
 			msg =                                                              \
 				createException(MAL, "pyapi.eval",                             \
-								"No return value stored in the structure.\n"); \
+								"SQLSTATE PY000 !""No return value stored in the structure.\n"); \
 			goto wrapup;                                                       \
 		}                                                                      \
 		data = (char *)ret->array_data;                                        \
@@ -582,7 +582,7 @@
 		} else {                                                               \
 			bat = COLnew(seqbase, TYPE_##mtpe, (BUN)ret->count, TRANSIENT);    \
 			if (bat == NULL) {                                                 \
-				msg = createException(MAL, "pyapi.eval", "Cannor create BAT"); \
+				msg = createException(MAL, "pyapi.eval", "SQLSTATE PY000 !""Cannot create column"); \
 				goto wrapup;                                                   \
 			}                                                                  \
 			bat->tkey = 0;                                                     \

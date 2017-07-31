@@ -14,10 +14,10 @@ stderr of test 'alter_table_add_fkey.SF-1737668` in directory 'sql/test/BugTrack
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = alter table t1737668a add constraint fk_t1_id_t2_id FOREIGN key(id) references t1737668b(id);
-ERROR = !UPDATE: FOREIGN KEY constraint 't1737668a.fk_t1_id_t2_id' violated
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !SQLException:assert:SQLSTATE M0M29 !UPDATE: FOREIGN KEY constraint 't1737668a.fk_t1_id_t2_id' violated
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = alter table t1737668a add constraint fk_t1_age_t3_age FOREIGN key(age) references t1737668c(age);
-ERROR = !UPDATE: FOREIGN KEY constraint 't1737668a.fk_t1_age_t3_age' violated
+ERROR = !SQLException:assert:SQLSTATE M0M29 !UPDATE: FOREIGN KEY constraint 't1737668a.fk_t1_age_t3_age' violated
 
 # 13:25:13 >  
 # 13:25:13 >  Done.

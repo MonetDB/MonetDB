@@ -75,7 +75,7 @@ stderr of test 'insert_queue` in directory 'sql/test/ssqq` itself:
 
 MAPI  = monetdb@sofia:38256
 QUERY = set id_result = insert_queue(10, 'monet', 'linux');
-ERROR = !INSERT INTO: FOREIGN KEY constraint 'ssqq_queue.queue_query_id_fk' violated
+ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: FOREIGN KEY constraint 'ssqq_queue.queue_query_id_fk' violated
 
 # 15:07:52 >  
 # 15:07:52 >  Done.

@@ -36,8 +36,8 @@ QUERY = insert into nonutf8 values ('zwaar lange golf piek -dal ±10cm vak5');
         copy 2 records into nonutf8 from stdin;
         zwaar lange golf piek -dal ±10cm vak5
         ±17 %
-ERROR = !invalid start of UTF-8 sequence
-MAPI  = (monetdb) /var/tmp/mtest-2478/.s.monetdb.31776
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SQLSTATE 42000 !invalid start of UTF-8 sequence
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = insert into nonutf8 values ('zwaar lange golf piek -dal ±10cm vak5');
         
         copy 2 records into nonutf8 from stdin;
@@ -45,10 +45,13 @@ QUERY = insert into nonutf8 values ('zwaar lange golf piek -dal ±10cm vak5');
         ±17 %
         
         select * from nonutf8;
-ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-2478/.s.monetdb.31776
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected sqlINT in: "7"
+        !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
+ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = drop table nonutf8;
-ERROR = !current transaction is aborted (please ROLLBACK)
+ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
 
 # 15:39:57 >  
 # 15:39:57 >  "Done."

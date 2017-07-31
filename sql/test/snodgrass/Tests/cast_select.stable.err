@@ -32,14 +32,18 @@ stderr of test 'cast_select` in directory 'sql/test/snodgrass` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-21360/.s.monetdb.30215
 QUERY = SELECT CAST(TIME '12:34:56' AS TIMESTAMP WITH TIME ZONE) = TIMESTAMP '1997-07-23 12:34:56-07:00';
-ERROR = !types time(1,0) and timestamptz(7,0) are not equal
-MAPI  = (monetdb) /var/tmp/mtest-21360/.s.monetdb.30215
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !types time(1,0) and timestamptz(7,0) are not equal
+MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
 QUERY = SELECT CAST('3-7' AS INTERVAL MONTH );
-ERROR = !wrong format (3-7)
-MAPI  = (monetdb) /var/tmp/mtest-21360/.s.monetdb.30215
+ERROR = !SQLException:calc.month_interval:SQLSTATE 42000 !Wrong format (3-7)
+MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
 QUERY = SELECT CAST('12:34' AS INTERVAL DAY TO MINUTE ); -- err: works not
-ERROR = !wrong format (12:34)
-MAPI  = (monetdb) /var/tmp/mtest-21360/.s.monetdb.30215
+ERROR = !SQLException:calc.second_interval:SQLSTATE 42000 !Wrong format (12:34)
+MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
 QUERY = SELECT CAST('86 00:00:00' AS INTERVAL HOUR(3) TO SECOND ); -- err: overflow exception
-ERROR = !wrong format (86 00:00:00)
+ERROR = !SQLException:calc.second_interval:SQLSTATE 42000 !Wrong format (86 00:00:00)
+
+# 12:02:15 >  
+# 12:02:15 >  "Done."
+# 12:02:15 >  
 

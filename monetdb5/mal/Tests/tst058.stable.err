@@ -75,13 +75,15 @@ MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
 QUERY = -- some typos
         i:= 1 + 1 + 1;
         j:= 1 + + 1;
-ERROR = !SyntaxException:convertConstant:integer parse error
-        !SyntaxException:parseError:-- some typos
+ERROR = !SyntaxException:parseError:-- some typos
+        !SyntaxException:parseError:^convertConstant: integer parse error
+        !SyntaxException:parseError:i:= 1 + 1 + 1;
         !SyntaxException:parseError:^<identifier> expected
         !SyntaxException:parseError:i:= 1 + 1 + 1;
-        !SyntaxException:parseError:         ^';' expected
+        !SyntaxException:parseError:          ^';' expected
         !SyntaxException:parseError:j:= 1 + + 1;
-        !SyntaxException:parseError:       ^<term> expected
+        !SyntaxException:parseError:        ^<term> expected
+        !TypeException:user.main[3]:'calc.+' undefined in:     j:any := calc.+(1:int);
 
 # 20:18:21 >  
 # 20:18:21 >  Done.

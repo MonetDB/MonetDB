@@ -46,8 +46,8 @@ QUERY = # incomplete barrier blocks. Resolve them when unambigous
         	exit t;
         	redo;
         exit;
-ERROR = !SyntaxException:user.main[3]:label 'X_2' not in guarded block
-        !SyntaxException:user.main[14]:label 't' not in guarded block
+ERROR = !MALException:user.main[3]:label 'X_2' not in guarded block
+        !MALException:user.main[14]:label 't' not in guarded block
 
 # 13:20:00 >  
 # 13:20:00 >  "Done."

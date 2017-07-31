@@ -36,13 +36,13 @@
 
 # version of the GDK library (subdirectory gdk; also includes
 # common/options and common/utils)
-GDK_VERSION=14:7:1
+GDK_VERSION=15:2:0
 
 # version of the MAPI library (subdirectory clients/mapilib)
-MAPI_VERSION=8:2:0
+MAPI_VERSION=9:1:0
 
 # version of the MONETDB5 library (subdirectory monetdb5, not including extras)
-MONETDB5_VERSION=22:7:1
+MONETDB5_VERSION=23:2:0
 
 # version of the STREAM library (subdirectory common/stream)
-STREAM_VERSION=9:1:1
+STREAM_VERSION=10:1:2

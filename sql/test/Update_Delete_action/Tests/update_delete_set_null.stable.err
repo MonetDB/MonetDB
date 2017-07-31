@@ -12,10 +12,10 @@ stderr of test 'update_delete_set_null` in directory 'sql/test/Update_Delete_act
 
 MAPI  = monetdb@sofia:38256
 QUERY = update t1 set id = 10 where id =3;
-ERROR = !UPDATE: NOT NULL constraint violated for column 't2.id'
-MAPI  = monetdb@sofia:38256
+ERROR = !SQLException:assert:SQLSTATE M0M29 !UPDATE: NOT NULL constraint violated for column 't2.id'
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = delete from t1 where id = 4;
-ERROR = !UPDATE: NOT NULL constraint violated for column 't2.id'
+ERROR = !SQLException:assert:SQLSTATE M0M29 !UPDATE: NOT NULL constraint violated for column 't2.id'
 
 # 11:12:56 >  
 # 11:12:56 >  Done.

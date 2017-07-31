@@ -82,16 +82,18 @@ stderr of test 'crash_on_fkey_update2.SF-1703497` in directory 'sql/test/BugTrac
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = update t1703497b set id = 10 where id =3;
-ERROR = !UPDATE: FOREIGN KEY constraint 't1703497b.t1703497b_id_fkey' violated
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !SQLException:assert:SQLSTATE M0M29 !UPDATE: FOREIGN KEY constraint 't1703497b.t1703497b_id_fkey' violated
+MAPI  = (monetdb) /var/tmp/mtest-10039/.s.monetdb.39302
+ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-10039/.s.monetdb.39302
 QUERY = drop table t1703497b;
-ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-10039/.s.monetdb.39302
 QUERY = drop table t1703497a;
-ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-10039/.s.monetdb.39302
 QUERY = COMMIT;
-ERROR = !COMMIT: failed
+ERROR = !SQLException:sql.trans:SQLSTATE 2D000 !COMMIT: failed
 
 # 21:01:03 >  
 # 21:01:03 >  Done.

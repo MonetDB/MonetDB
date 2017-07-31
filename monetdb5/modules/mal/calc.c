@@ -632,8 +632,9 @@ CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = getArgReference(stk, pci, 3);
 	}
 	if (ATOMextern(t1)) {
-		// FIXME unchecked_malloc ATOMdup could return NULL
 		*(ptr **) retval = ATOMdup(t1, *(ptr**)p);
+		if (*(ptr **) retval == NULL)
+			throw(MAL, "ifthenelse", MAL_MALLOC_FAIL);
 	} else if (t1 == TYPE_void) {
 		memcpy(retval, p, sizeof(oid));
 	} else {

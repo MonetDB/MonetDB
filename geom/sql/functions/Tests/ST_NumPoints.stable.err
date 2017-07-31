@@ -31,10 +31,10 @@ stderr of test 'ST_NumPoints` in directory 'geom/sql/functions` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-8056/.s.monetdb.39838
 QUERY = SELECT ST_NumPoints(ST_GeomFromText('polygon((77.29 29.07,77.42 29.26,77.27 29.31,77.29 29.07))'));
-ERROR = !Geometry "POLYGON ((77.29000000000001 29.07, 77.42 29.26, 77.27 29.31, 77.29000000000001 29.07))" not a LineString
-MAPI  = (monetdb) /var/tmp/mtest-8056/.s.monetdb.39838
+ERROR = !MALException:geom.NumPoints:SQLSTATE 38000 !Geometry "POLYGON ((77.29000000000001 29.07, 77.42 29.26, 77.27 29.31, 77.29000000000001 29.07))" not a LineString
+MAPI  = (monetdb) /var/tmp/mtest-30693/.s.monetdb.32199
 QUERY = select st_numPoints(st_mpointFromText('multipoint(1 2 3, 4 5 6, 7 8 9, 10 11 12)'));
-ERROR = !Geometry "MULTIPOINT Z (1 2 3, 4 5 6, 7 8 9, 10 11 12)" not a LineString
+ERROR = !MALException:geom.NumPoints:SQLSTATE 38000 !Geometry "MULTIPOINT Z (1 2 3, 4 5 6, 7 8 9, 10 11 12)" not a LineString
 
 # 09:53:35 >  
 # 09:53:35 >  "Done."

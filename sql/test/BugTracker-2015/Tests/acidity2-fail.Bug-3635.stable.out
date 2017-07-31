@@ -25,19 +25,19 @@ Ready.
 # 14:09:16 >  "/usr/bin/python2" "acidity2-fail.Bug-3635.SQL.py" "acidity2-fail.Bug-3635"
 # 14:09:16 >  
 
-create table foo (a int)
-insert into foo values (1),(2),(3)
-create view bar as select * from foo
+create table foo_2017 (a int)
+insert into foo_2017 values (1),(2),(3)
+create view bar as select * from foo_2017
 start transaction
-delete from foo
+delete from foo_2017
 drop view bar
-create view bar as select * from foo
+create view bar as select * from foo_2017
 create table baz (a int);drop table baz
 commit
 commit failed
-insert into foo values (4),(5),(6)
+insert into foo_2017 values (4),(5),(6)
 drop view bar
-drop table foo
+drop table foo_2017
 
 # 14:09:16 >  
 # 14:09:16 >  "Done."

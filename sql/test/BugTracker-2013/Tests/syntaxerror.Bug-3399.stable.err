@@ -30,7 +30,7 @@ stderr of test 'syntaxerror.Bug-3399` in directory 'sql/test/BugTracker-2013` it
 
 MAPI  = (monetdb) /var/tmp/mtest-19909/.s.monetdb.30301
 QUERY = select *, (select *) from tmp;
-ERROR = !SELECT: no such table 'tmp'
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'tmp'
 
 # 11:53:57 >  
 # 11:53:57 >  "Done."

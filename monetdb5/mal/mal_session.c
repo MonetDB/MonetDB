@@ -11,7 +11,7 @@
 #include "monetdb_config.h"
 #include "mal_session.h"
 #include "mal_instruction.h" /* for pushEndInstruction() */
-#include "mal_interpreter.h" /* for showErrors(), runMAL(), garbageElement() */
+#include "mal_interpreter.h" /* for runMAL(), garbageElement() */
 #include "mal_parser.h"	     /* for parseMAL() */
 #include "mal_namespace.h"
 #include "mal_readline.h"
@@ -32,47 +32,53 @@
  * consist of include statements to load modules of general interest.
  * The startup script is run as user Admin.
  */
-int
+str
 malBootstrap(void)
 {
 	Client c;
-	str msg, bootfile = "mal_init", s = NULL;
+	str msg = MAL_SUCCEED;
+	str bootfile = "mal_init", s = NULL;
 
 	c = MCinitClient((oid) 0, 0, 0);
 	assert(c != NULL);
-	c->nspace = newModule(NULL, putName("user"));
+	c->curmodule = c->usermodule = userModule();
 	if ( (msg = defaultScenario(c)) ) {
-		freeException(msg);
-		GDKerror("malBootstrap:Failed to initialise default scenario");
-		return 0;
+		GDKfree(msg);
+		fprintf(stderr,"#malBootstrap:Failed to initialise default scenario");
+		mal_exit();
 	}
 	MSinitClientPrg(c, "user", "main");
 	if( MCinitClientThread(c) < 0){
-		GDKerror("malBootstrap:Failed to create client thread");
-		return 0;
+		fprintf(stderr,"#malBootstrap:Failed to create client thread");
+		mal_exit();
 	}
 	s = malInclude(c, bootfile, 0);
 	if (s != NULL) {
-		mnstr_printf(GDKout, "!%s\n", s);
+		fprintf(stderr, "!%s\n", s);
 		GDKfree(s);
-		return 0;
+		mal_exit();
 	}
 	pushEndInstruction(c->curprg->def);
-	chkProgram(c->fdout, c->nspace, c->curprg->def);
-	if (c->curprg->def->errors) {
-		showErrors(c);
+	chkProgram(c->usermodule, c->curprg->def);
+	if ( (msg= c->curprg->def->errors) != MAL_SUCCEED ) {
+		mnstr_printf(c->fdout,"!%s%s",msg, (msg[strlen(msg)-1] == '\n'? "":"\n"));
+		mnstr_flush(c->fdout);
+		if( GDKerrbuf && GDKerrbuf[0]){
+			mnstr_printf(c->fdout,"!GDKerror: %s\n",GDKerrbuf);
+			mnstr_flush(c->fdout);
+		}
 #ifdef HAVE_EMBEDDED
-		return 0;
+		return msg;
 #endif
 	}
 	s = MALengine(c);
 	if (s != MAL_SUCCEED) {
 		GDKfree(s);
 #ifdef HAVE_EMBEDDED
-		return 0;
+		return msg;
 #endif
 	}
-	return 1;
+	return msg;
 }
 
 /*
@@ -89,57 +95,70 @@ malBootstrap(void)
  * was added.  At the end of the session we have to garbage collect the
  * BATs introduced.
  */
-static void
-MSresetClientPrg(Client cntxt)
+static str
+MSresetClientPrg(Client cntxt, str mod, str fcn)
 {
 	MalBlkPtr mb;
 	InstrPtr p;
 
 	cntxt->itrace = 0;  /* turn off any debugging */
 	mb = cntxt->curprg->def;
-	mb->typefixed = 0;
-	mb->flowfixed = 0;
 	mb->stop = 1;
-	mb->errors = 0;
+	mb->errors = MAL_SUCCEED;
 	p = mb->stmt[0];
 
 	p->gc = 0;
 	p->retc = 1;
 	p->argc = 1;
-	setModuleId(p, putName("user"));
-	setFunctionId(p, putName("main"));
+	p->argv[0] = 0;
+
+#ifdef _DEBUG_SESSION_
+	fprintf(stderr,"reset sym %s %s to %s, id %d\n", 
+		cntxt->curprg->name, getFunctionId(p), nme, findVariable(mb,nme) );
+	fprintf(stderr,"vtop %d\n", mb->vtop);
+	if( mb->vtop)
+	fprintf(stderr,"first var %s\n", mb->var[0].id);
+#endif
+
+	setModuleId(p, mod);
+	setFunctionId(p, fcn);
+	if( findVariable(mb,fcn) < 0)
+		p->argv[0] = newVariable(mb, fcn, strlen(fcn), TYPE_void);
+
+	setVarType(mb, findVariable(mb, fcn), TYPE_void);
 	/* remove any MAL history */
 	if (mb->history) {
 		freeMalBlk(mb->history);
 		mb->history = 0;
 	}
+	return MAL_SUCCEED;
 }
 
-void
+/*
+ * Create a new container block
+ */
+
+str
 MSinitClientPrg(Client cntxt, str mod, str nme)
 {
-	InstrPtr p;
-	MalBlkPtr mb;
+	int idx;
 
-	if (cntxt->curprg && idcmp(nme, cntxt->curprg->name) == 0) {
-		MSresetClientPrg(cntxt);
-		return;
-	}
-	cntxt->curprg = newFunction(putName("user"), putName(nme), FUNCTIONsymbol);
-	if( cntxt->curprg == 0){
-		GDKerror("MSinitClientPrg" "Failed to create function");
-		return;
-	}
-	mb = cntxt->curprg->def;
-	p = getSignature(cntxt->curprg);
-	if (mod)
-		setModuleId(p, mod);
-	else
-		setModuleScope(p, cntxt->nspace);
-	setVarType(mb, findVariable(mb, nme), TYPE_void);
-	insertSymbol(cntxt->nspace, cntxt->curprg);
-	cntxt->glb = 0;
+	if (cntxt->curprg  && idcmp(nme, cntxt->curprg->name) == 0)
+		return MSresetClientPrg(cntxt, putName(mod), putName(nme));
+	cntxt->curprg = newFunction(putName(mod), putName(nme), FUNCTIONsymbol);
+	if( (idx= findVariable(cntxt->curprg->def,"main")) >=0)
+		setVarType(cntxt->curprg->def, idx, TYPE_void);
+	insertSymbol(cntxt->usermodule,cntxt->curprg);
+	
+	if( cntxt->curprg == 0)
+		throw(MAL, "initClientPrg", MAL_MALLOC_FAIL);
+	if (cntxt->glb == NULL )
+		cntxt->glb = newGlobalStack(MAXGLOBALS + cntxt->curprg->def->vsize);
+	if( cntxt->glb == NULL)
+		throw(MAL,"initClientPrg", MAL_MALLOC_FAIL);
 	assert(cntxt->curprg->def != NULL);
+	assert(cntxt->curprg->def->vtop >0);
+	return MAL_SUCCEED;
 }
 
 /*
@@ -306,8 +325,8 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 			return;
 		}
 		/* move this back !! */
-		if (c->nspace == 0) {
-			c->nspace = newModule(NULL, putName("user"));
+		if (c->usermodule == 0) {
+			c->curmodule = c->usermodule = userModule();
 		}
 
 		if ((s = setScenario(c, lang)) != NULL) {
@@ -327,7 +346,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 		}
 	}
 
-	MSinitClientPrg(c, "user", "main");
+	(void) MSinitClientPrg(c, "user", "main");
 
 	GDKfree(command);
 
@@ -397,9 +416,12 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 {
 	int i;
 
-	for (i = 0; i < start && start < mb->vtop; i++)
+#ifdef _DEBUG_SESSION_
+	fprintf(stderr,"resetVarables %d  vtop %d errors %s\n", start, mb->vtop,mb->errors);
+#endif
+	for (i = 0; i < start && i < mb->vtop ; i++)
 		setVarUsed(mb,i);
-	if (mb->errors == 0)
+	if (mb->errors == MAL_SUCCEED)
 		for (i = start; i < mb->vtop; i++) {
 			if (isVarUsed(mb,i) || !isTmpVar(mb,i)){
 				assert(!mb->var[i].value.vtype || isVarConstant(mb, i));
@@ -415,8 +437,14 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
 			}
 		}
 
-	if (mb->errors == 0)
+#ifdef _DEBUG_SESSION_
+	fprintf(stderr,"resetVar %s %d\n", getFunctionId(mb->stmt[0]), mb->var[mb->stmt[0]->argv[0]].used);
+#endif
+	if (mb->errors == MAL_SUCCEED)
 		trimMalVariables_(mb, glb);
+#ifdef _DEBUG_SESSION_
+	fprintf(stderr,"after trim %s %d\n", getFunctionId(mb->stmt[0]), mb->vtop);
+#endif
 }
 
 /*
@@ -424,7 +452,7 @@ MSresetVariables(Client cntxt, MalBlkPtr mb, MalStkPtr glb, int start)
  * need to initialize and allocate space for the global variables.
  * Thereafter it is up to the scenario interpreter to process input.
  */
-void
+str
 MSserveClient(void *dummy)
 {
 	MalBlkPtr mb;
@@ -433,7 +461,7 @@ MSserveClient(void *dummy)
 
 	if (!isAdministrator(c) && MCinitClientThread(c) < 0) {
 		MCcloseClient(c);
-		return;
+		return MAL_SUCCEED;
 	}
 	/*
 	 * A stack frame is initialized to keep track of global variables.
@@ -443,8 +471,8 @@ MSserveClient(void *dummy)
 	if (c->glb == NULL)
 		c->glb = newGlobalStack(MAXGLOBALS + mb->vsize);
 	if (c->glb == NULL) {
-		showException(c->fdout, MAL, "serveClient", MAL_MALLOC_FAIL);
 		c->mode = RUNCLIENT;
+		throw(MAL, "serveClient", MAL_MALLOC_FAIL);
 	} else {
 		c->glb->stktop = mb->vtop;
 		c->glb->blk = mb;
@@ -453,13 +481,12 @@ MSserveClient(void *dummy)
 	if (c->scenario == 0)
 		msg = defaultScenario(c);
 	if (msg) {
-		showException(c->fdout, MAL, "serveClient", "could not initialize default scenario");
 		c->mode = RUNCLIENT;
-		freeException(msg);
+		return msg;
 	} else {
 		do {
 			do {
-				msg = runScenario(c);
+				msg = runScenario(c,0);
 				freeException(msg);
 				if (c->mode == FINISHCLIENT)
 					break;
@@ -479,29 +506,21 @@ MSserveClient(void *dummy)
 		freeSymbol(c->backup);
 		c->backup = 0;
 	}
+
+	/*
 	if (c->curprg) {
-		assert(0);
 		freeSymbol(c->curprg);
 		c->curprg = 0;
 	}
-	if (c->nspace) {
-		assert(0);
-	}
+	*/
 
-	if (c->mode > FINISHCLIENT) {
-		if (isAdministrator(c) /* && moreClients(0)==0 */) {
-			if (c->scenario) {
-				exitScenario(c);
-			}
-		}
-	}
 	if (!isAdministrator(c))
 		MCcloseClient(c);
-	if (c->nspace && strcmp(c->nspace->name, "user") == 0) {
-		GDKfree(c->nspace->space);
-		GDKfree(c->nspace);
-		c->nspace = NULL;
+	if (c->usermodule /*&& strcmp(c->usermodule->name, "user") == 0*/) {
+		freeModule(c->usermodule);
+		c->usermodule = NULL;
 	}
+	return MAL_SUCCEED;
 }
 
 /*
@@ -526,21 +545,19 @@ MALinitClient(Client c)
 str
 MALexitClient(Client c)
 {
-	if (c->glb && c->curprg->def->errors == 0)
+	if (c->glb && c->curprg->def->errors == MAL_SUCCEED)
 		garbageCollector(c, c->curprg->def, c->glb, TRUE);
-	if (c->bak)
-		return NULL;
 	c->mode = FINISHCLIENT;
 	if (c->backup) {
 		assert(0);
 		freeSymbol(c->backup);
 		c->backup = NULL;
 	}
-	/* should be in the nspace */
+	/* should be in the usermodule */
 	c->curprg = NULL;
-	if (c->nspace) {
-		freeModule(c->nspace);
-		c->nspace = NULL;
+	if (c->usermodule){
+		freeModule(c->usermodule);
+		c->usermodule = NULL;
 	}
 	return NULL;
 }
@@ -565,8 +582,6 @@ MALreader(Client c)
 	MT_lock_unset(&mal_contextLock);
 	if (c->fdin)
 		c->fdin->buf[c->fdin->pos] = 0;
-	else
-		throw(MAL, "mal.reader", RUNTIME_IO_EOF);
 	return MAL_SUCCEED;
 }
 
@@ -575,54 +590,44 @@ MALparser(Client c)
 {
 	InstrPtr p;
 	MalBlkRecord oldstate;
+	str msg= MAL_SUCCEED;
 
+	assert(c->curprg->def->errors == NULL);
 	c->curprg->def->errors = 0;
 	oldstate = *c->curprg->def;
 
 	prepareMalBlk(c->curprg->def, CURRENT(c));
-	if (parseMAL(c, c->curprg, 0, INT_MAX) || c->curprg->def->errors) {
-		/* just complete it for visibility */
-		pushEndInstruction(c->curprg->def);
-		/* caught errors */
-		showErrors(c);
-		if (c->listing)
-			printFunction(c->fdout, c->curprg->def, 0, c->listing);
-		MSresetVariables(c, c->curprg->def, c->glb, oldstate.vtop);
-		resetMalBlk(c->curprg->def, 1);
-		/* now the parsing is done we should advance the stream */
-		c->fdin->pos += c->yycur;
-		c->yycur = 0;
-		throw(SYNTAX, "mal.parser", SYNTAX_GENERAL MANUAL_HELP);
-	}
+	parseMAL(c, c->curprg, 0, INT_MAX);
 
 	/* now the parsing is done we should advance the stream */
 	c->fdin->pos += c->yycur;
 	c->yycur = 0;
 
 	/* check for unfinished blocks */
-	if (c->blkmode)
+	if(!c->curprg->def->errors && c->blkmode)
 		return MAL_SUCCEED;
 	/* empty files should be skipped as well */
-	if (c->curprg->def->stop == 1)
-		return MAL_SUCCEED;
+	if (c->curprg->def->stop == 1){
+		if ( (msg =c->curprg->def->errors) )
+			c->curprg->def->errors = 0;
+		return msg;
+	}
 
 	p = getInstrPtr(c->curprg->def, 0);
 	if (p->token != FUNCTIONsymbol) {
-		if (c->listing)
-			printFunction(c->fdout, c->curprg->def, 0, c->listing);
+		msg =c->curprg->def->errors;
+		c->curprg->def->errors = 0;
 		MSresetVariables(c, c->curprg->def, c->glb, oldstate.vtop);
 		resetMalBlk(c->curprg->def, 1);
-		throw(SYNTAX, "mal.parser", SYNTAX_SIGNATURE);
+		return msg;
 	}
 	pushEndInstruction(c->curprg->def);
-	chkProgram(c->fdout, c->nspace, c->curprg->def);
-	if (c->curprg->def->errors) {
-		showErrors(c);
-		if (c->listing)
-			printFunction(c->fdout, c->curprg->def, 0, c->listing);
+	chkProgram(c->usermodule, c->curprg->def);
+	if ( (msg =c->curprg->def->errors) ){
+		c->curprg->def->errors = 0;
 		MSresetVariables(c, c->curprg->def, c->glb, oldstate.vtop);
 		resetMalBlk(c->curprg->def, 1);
-		throw(MAL, "MAL.parser", SEMANTIC_GENERAL);
+		return msg;
 	}
 	return MAL_SUCCEED;
 }
@@ -636,6 +641,16 @@ MALcommentsOnly(MalBlkPtr mb)
 		if (mb->stmt[i]->token != REMsymbol)
 			return 0;
 	return 1;
+}
+
+str
+MALcallback(Client c, str msg)
+{
+	if (msg){
+		mnstr_printf(c->fdout,"!%s%s", msg, (msg[strlen(msg)-1] == '\n'? "":"\n"));
+		freeException(msg);
+	}
+	return MAL_SUCCEED;
 }
 
 str
@@ -654,13 +669,12 @@ MALengine(Client c)
 	if (prg->def == NULL)
 		throw(SYNTAX, "mal.engine", SYNTAX_SIGNATURE);
 
-	if (prg->def->errors > 0) {
-		showErrors(c);
-		if (c->listing)
-			printFunction(c->fdout, c->curprg->def, 0, c->listing);
+	if (prg->def->errors != MAL_SUCCEED) {
+		msg = prg->def->errors;
+		prg->def->errors = NULL;
 		MSresetVariables(c, c->curprg->def, c->glb, oldstate.vtop);
 		resetMalBlk(c->curprg->def, 1);
-		throw(MAL, "mal.engine", PROGRAM_GENERAL);
+		return msg;
 	}
 	if (prg->def->stop == 1 || MALcommentsOnly(prg->def))
 		return 0;   /* empty block */
@@ -674,8 +688,6 @@ MALengine(Client c)
 		c->glb->blk = prg->def;
 		c->glb->cmd = (c->itrace && c->itrace != 'C') ? 'n' : 0;
 	}
-	if (c->listing > 1)
-		printFunction(c->fdout, c->curprg->def, 0, c->listing);
 
 	/*
 	 * In interactive mode we should avoid early garbage collection of values.
@@ -686,17 +698,14 @@ MALengine(Client c)
 		c->glb->pcup = 0;
 		c->glb->keepAlive = TRUE; /* no garbage collection */
 	}
-	if (prg->def->errors == 0)
+	if (prg->def->errors == MAL_SUCCEED)
 		msg = (str) runMAL(c, prg->def, 0, c->glb);
 	if (msg) {
 		/* ignore "internal" exceptions */
-		str fcn = getExceptionPlace(msg); /* retrieves from "first" exception */
-		if (strcmp(fcn, "client.quit") != 0)
-			dumpExceptionsToStream(c->fdout, msg);
-		GDKfree(fcn);
-		if (!c->listing)
-			printFunction(c->fdout, c->curprg->def, 0, c->listing);
-		showErrors(c);
+		if (strstr(msg, "client.quit") ) {
+			freeException(msg);
+			msg = MAL_SUCCEED;
+		}
 	}
 	MSresetVariables(c, prg->def, c->glb, 0);
 	resetMalBlk(prg->def, 1);
@@ -704,7 +713,10 @@ MALengine(Client c)
 		/* for global stacks avoid reinitialization from this point */
 		c->glb->stkbot = prg->def->vtop;
 	}
-	prg->def->errors = 0;
+	
+	if (prg->def->errors)
+		GDKfree(prg->def->errors);
+	prg->def->errors = NULL;
 	if (c->itrace)
 		mnstr_printf(c->fdout, "mdb>#EOD\n");
 	return msg;

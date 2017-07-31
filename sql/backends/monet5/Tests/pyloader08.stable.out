@@ -1,0 +1,66 @@
+stdout of test 'pyloader08` in directory 'sql/backends/monet5` itself:
+
+
+# 11:17:54 >  
+# 11:17:54 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34915" "--set" "mapi_usock=/var/tmp/mtest-11175/.s.monetdb.34915" "--set" "monet_prompt=" "--forcemito" "--dbpath=/Users/PHolanda/Desktop/MonetDB/install/var/MonetDB/mTests_sql_backends_monet5" "--set" "embedded_py=true"
+# 11:17:54 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-apple-darwin16.6.0/64bit with 128bit integers
+# Found 8.000 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-47.eduroam.cwi.nl:34915/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11175/.s.monetdb.34915
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python2 module loaded
+
+Ready.
+
+# 11:17:54 >  
+# 11:17:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11175" "--port=34915"
+# 11:17:54 >  
+
+#START TRANSACTION;
+#CREATE TABLE integers(i INTEGER);
+#INSERT INTO integers VALUES (3), (4), (5);
+[ 3	]
+#CREATE LOADER pyloader08(i INTEGER, j INTEGER) LANGUAGE PYTHON {
+#    _emit.emit({'s': i, 't': j});
+#};
+#CREATE FUNCTION pyfunction(i INTEGER, j INTEGER) RETURNS TABLE(i INTEGER, j INTEGER) LANGUAGE PYTHON {
+#	return {'i': i, 'j': j};
+#};
+#CREATE TABLE pyloader08table FROM LOADER pyloader08(  (SELECT i, i FROM integers) );
+#SELECT * FROM pyloader08table;
+% sys.pyloader08table,	sys.pyloader08table # table_name
+% s,	t # name
+% int,	int # type
+% 1,	1 # length
+[ 3,	3	]
+[ 4,	4	]
+[ 5,	5	]
+#COPY LOADER INTO pyloader08table FROM pyloader08(  (SELECT i, i*2 FROM integers) );
+#SELECT * FROM pyloader08table;
+% sys.pyloader08table,	sys.pyloader08table # table_name
+% s,	t # name
+% int,	int # type
+% 1,	2 # length
+[ 3,	3	]
+[ 4,	4	]
+[ 5,	5	]
+[ 3,	6	]
+[ 4,	8	]
+[ 5,	10	]
+#DROP TABLE pyloader08table;
+#DROP LOADER pyloader08;
+#ROLLBACK;
+
+# 11:17:54 >  
+# 11:17:54 >  "Done."
+# 11:17:54 >  
+

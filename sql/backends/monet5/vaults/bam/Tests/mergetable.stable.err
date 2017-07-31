@@ -124,7 +124,7 @@ stderr of test 'mergetable` in directory 'sql/backends/monet5/vaults/bam` itself
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT COUNT(*) FROM alignments;
-ERROR = !MERGE or REPLICA TABLE should have at least one table associated
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !MERGE or REPLICA TABLE should have at least one table associated
 
 # 18:59:22 >  
 # 18:59:22 >  "Done."

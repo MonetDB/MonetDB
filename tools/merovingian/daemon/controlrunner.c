@@ -19,6 +19,7 @@
 #include <string.h>  /* strerror */
 #include <unistd.h>  /* select */
 #include <signal.h>
+#include <fcntl.h>
 
 #include <errno.h>
 
@@ -992,6 +993,7 @@ controlRunner(void *d)
 			}
 			continue;
 		}
+		fcntl(msgsock, F_SETFD, FD_CLOEXEC);
 
 		if (pthread_create(&tid, NULL, handle_client, &msgsock) != 0)
 			closesocket(msgsock);

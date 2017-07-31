@@ -61,7 +61,7 @@ Ready.
 #    RETURN tmp; 
 #END;
 #SELECT * FROM groupElements(1);
-% . # table_name
+% .L2 # table_name
 % x # name
 % int # type
 % 1 # length

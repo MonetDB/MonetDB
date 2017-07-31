@@ -33,9 +33,7 @@ MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT '' AS five, unique1, unique2, stringu1 
         		FROM onek
         		ORDER BY unique1 OFFSET 990 LIMIT 5;
-ERROR = !syntax error, unexpected LIMIT, expecting SCOLON in: "select '' as five, unique1, unique2, stringu1 
-        !		from onek
-        !		order by unique1 of"
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected LIMIT, expecting SCOLON in: "select '' as five, unique1, unique2, stringu1 
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

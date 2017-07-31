@@ -1,4 +1,5 @@
 unknown_col_in_order_by.Bug-3535
+extract_quarter_week_from_date.Bug-3831
 insert_self_ref_FK.Bug-6131
 shutdown.Bug-6182
 avggroupbysq.Bug-6178
@@ -21,6 +22,7 @@ HAVE_NETCDF?rel2bin_project-assert.Bug-6080
 str2decimal.Bug-6206
 integer_addition_overflow.Bug-6205
 dce_bug-6177
+default-insert-update.Bug-6249
 crash_on_NULL_ptr.Bug-6130
 HAVE_SAMTOOLS?sqlsmith01
 HAVE_NETCDF?sqlsmith02
@@ -59,9 +61,15 @@ exist-bigint-missing.Bug-6315
 coalesc-limit.Bug-6316
 limit.Bug-6322
 simplify_math.Bug-6324
-push_subslice.Bug-6322
+HAVE_GEOM?push_subslice.Bug-6322
 create_table_as-missing_not_null.Bug-6329
 crash-dce.Bug-6330
 delete_from_merge_table.Bug-3743
 statistics_nils_not_eq_zero.Bug-6331
 crash-select_after_MAL_error.Bug-6332
+handle-values-subqueries.Bug-6336
+groupby_assertion.Bug-6338
+spurious_error.Bug-6344
+caching_stats_bug.6374
+name-interference.Bug-6348
+parsererror.Bug-6381

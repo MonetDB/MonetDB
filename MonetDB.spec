@@ -132,12 +132,14 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Dec2016-SP5/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jul2017-SP1/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
+# we need checkpolicy and selinux-policy-devel for the SELinux policy
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 # RHEL >= 7, and all current Fedora
 BuildRequires: systemd
+BuildRequires: checkpolicy, selinux-policy-devel, hardlink
 %endif
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -407,7 +409,7 @@ Recommends: perl-DBD-monetdb >= 1.0
 Recommends: php-monetdb >= 1.0
 %endif
 Requires: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
-Requires: python-pymonetdb >= 1.0
+Requires: python-pymonetdb >= 1.0.6
 
 %description client-tests
 MonetDB is a database management system that is developed from a
@@ -591,6 +593,8 @@ Recommends: MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}
 %endif
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
+# versions up to 1.0.5 don't accept the queryid field in the result set
+Conflicts: python-pymonetdb < 1.0.6
 
 %description -n MonetDB5-server
 MonetDB is a database management system that is developed from a
@@ -781,7 +785,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 # no _unitdir macro
 %exclude %{_prefix}/lib/systemd/system/monetdbd.service
 %endif
-%config(noreplace) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
+%config(noreplace) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
 %{_libdir}/monetdb5/autoload/??_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.sql
@@ -877,6 +881,62 @@ developer, but if you do want to test, this is the package you need.
 %dir %{python2_sitelib}/MonetDBtesting
 %{python2_sitelib}/MonetDBtesting/*
 
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+%package selinux
+Summary: MonetDB - Monet Database Management System
+Group: Applications/Databases
+%if "%{_selinux_policy_version}" != ""
+Requires:       selinux-policy >= %{_selinux_policy_version}
+%endif
+Requires:       %{name}-SQL-server5 = %{version}-%{release}
+Requires(post):   /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles, MonetDB-SQL-server5, MonetDB5-server
+Requires(postun): /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles, MonetDB-SQL-server5, MonetDB5-server
+BuildArch: noarch
+
+%global selinux_types %(%{__awk} '/^#[[:space:]]*SELINUXTYPE=/,/^[^#]/ { if ($3 == "-") printf "%s ", $2 }' /etc/selinux/config 2>/dev/null)
+%global selinux_variants %([ -z "%{selinux_types}" ] && echo mls targeted || echo %{selinux_types})
+
+%description selinux
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains the SELinux policy for running MonetDB under
+control of systemd.
+
+%post selinux
+for selinuxvariant in %{selinux_variants}
+do
+  /usr/sbin/semodule -s ${selinuxvariant} -i \
+    %{_datadir}/selinux/${selinuxvariant}/monetdb.pp &> /dev/null || :
+done
+/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_localstatedir}/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
+/usr/bin/systemctl try-restart monetdbd.service
+
+%postun selinux
+if [ $1 -eq 0 ] ; then
+  active=`/usr/bin/systemctl is-active monetdbd.service`
+  if [ $active = active ]; then
+    /usr/bin/systemctl stop monetdbd.service
+  fi
+  for selinuxvariant in %{selinux_variants}
+  do
+    /usr/sbin/semodule -s ${selinuxvariant} -r monetdb &> /dev/null || :
+  done
+  /sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_localstatedir}/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
+  if [ $active = active ]; then
+    /usr/bin/systemctl start monetdbd.service
+  fi
+fi
+
+%files selinux
+%defattr(-,root,root,0755)
+%doc buildtools/selinux/*
+%{_datadir}/selinux/*/monetdb.pp
+
+%endif
+
 %prep
 %setup -q
 
@@ -938,6 +998,17 @@ fi
 
 make %{?_smp_mflags}
 
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+cd buildtools/selinux
+for selinuxvariant in %{selinux_variants}
+do
+  make NAME=${selinuxvariant} -f /usr/share/selinux/devel/Makefile
+  mv monetdb.pp monetdb.pp.${selinuxvariant}
+  make NAME=${selinuxvariant} -f /usr/share/selinux/devel/Makefile clean
+done
+cd -
+%endif
+
 %install
 %make_install
 
@@ -953,11 +1024,209 @@ rm -f %{buildroot}%{_libdir}/monetdb5/*.la
 # internal development stuff
 rm -f %{buildroot}%{_bindir}/Maddlog
 
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+for selinuxvariant in %{selinux_variants}
+do
+  install -d %{buildroot}%{_datadir}/selinux/${selinuxvariant}
+  install -p -m 644 buildtools/selinux/monetdb.pp.${selinuxvariant} \
+    %{buildroot}%{_datadir}/selinux/${selinuxvariant}/monetdb.pp
+done
+/usr/sbin/hardlink -cv %{buildroot}%{_datadir}/selinux
+%endif
+
 %post -p /sbin/ldconfig
 
 %postun -p /sbin/ldconfig
 
 %changelog
+* Thu Jul 27 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.5-20170727
+- Rebuilt.
+- BZ#6375: MAL profiler truncates JSON objects larger than 8192 characters
+
+* Tue Jul 25 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.3-20170725
+- Rebuilt.
+- BZ#6325: Merge table unusable in other connections
+- BZ#6328: Transactional/multi-connection issues with merge tables
+- BZ#6336: VALUES multiple inserts error
+- BZ#6339: Mserver5 crashes on nested SELECT
+- BZ#6340: sample operator takes effect after the execution of the query,
+  expected before
+- BZ#6341: MERGE TABLE issue: Cannot register
+- BZ#6342: MERGE TABLE issue: hang
+- BZ#6344: Spurious errors and assertions (SQLsmith)
+
+* Mon Jul 24 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.3-20170725
+- buildtools: The Debian and Ubuntu installers have been fixed: there was a file
+  missing in the Jul2017 release.
+
+* Fri Jul 14 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.3-20170725
+- buildtools: Added a new RPM called MonetDB-selinux which provides the SELinux
+  policy required to run MonetDB under systemd, especially on Fedora 26.
+
+* Fri Jul 14 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.3-20170725
+- merovingian: monetdbd was leaking open file descriptors to the mserver5 process
+  it started.  This has been fixed.
+
+* Fri Jul  7 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.3-20170725
+- buildtools: The Windows installers (*.msi files) are now created using the WiX
+  Toolset.
+- buildtools: The Windows binaries are now built using Visual Studio 2015.  Because of
+  this, you may need to install the Visual C++ Redistributable for Visual
+  Studio 2015 before being able to run MonetDB.
+
+* Fri Jul  7 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.3-20170725
+- gdk: Many functions in GDK are now annotated with the GCC attribute
+  __warn_unused_result__ meaning that the compiler will issue a warning
+  if the result of the function (usually an indication of an error)
+  is not used.
+
+* Wed Jul 05 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- Rebuilt.
+- BZ#3465: Request: add support for CREATE VIEW with ORDER BY clause
+- BZ#3545: monetdb commands don't work with -h -P -p options (locally
+  and remotely)
+- BZ#3996: select * from sys.connections always returns 0 rows. Expected
+  to see at least one row for the active connection.
+- BZ#6187: Nested WITH queries not supported
+- BZ#6225: Order of evaluation of the modulo operator
+- BZ#6289: Crashes and hangs with remote tables
+- BZ#6292: Runaway SQL optimizer in too many nested operators
+- BZ#6310: Name resolution error (sqlsmith)
+- BZ#6312: Object not found in LIMIT clause (sqlsmith)
+- BZ#6313: Null type resolution in disjunction fails (sqlsmith)
+- BZ#6319: Server crash on LATERAL (sqlsmith)
+- BZ#6322: Crash on disjunction with LIMIT (sqlsmith)
+- BZ#6323: Deadlock calling sys.bbp()
+- BZ#6324: Sqlitelogictest crash in a IN query (8th)
+- BZ#6327: The daemon does not respect the actual name of the mserver5
+  executable
+- BZ#6330: Sqlitelogictest crash on a complex SELECT query
+- BZ#6331: sys.statistics column "nils" always contains 0. Expected a
+  positive value for columns that have one or more nils/NULLs
+- BZ#6332: Sqlitelogictest crash related to an undefined MAL function
+
+* Mon May 29 2017 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.27.1-20170705
+- merovingian: Added handling of a dbextra property per database at the daemon
+  level. The user can set the dbextra property for a database using the
+  command:  $ monetdb set dbextra=<path> <database> and the daemon will
+  make sure to start the new server using the correct
+  --dbextra parameter.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- monetdb5: The "sub" prefix of many functions, both at the MAL and the C level,
+  has been removed.
+
+* Mon May 29 2017 Mark Raasveldt <m.raasveldt@cwi.nl> - 11.27.1-20170705
+- MonetDB: Added a new server-side protocol implementation. The new protocol
+  is backwards compatible with the old protocol. Clients can choose
+  whether they want to use the old or the new protocol during the initial
+  handshake with the server. The new protocol is a binary column-based
+  protocol that is significantly faster than the old protocol when
+  transferring large result sets. In addition, the new protocol supports
+  compression using Snappy or LZ4.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- gdk: Improved error checking in the logger code (dealing with the write-ahead
+  log); changed return types a several functions from int to gdk_return
+  (i.e., they now return GDK_SUCCEED or GDK_FAIL).  The logger no longer
+  calls GDKfatal on error.  Instead the caller is responsible for dealing
+  with errors.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- sql: Made the operator precedence of % equal to those of * and /.  All three
+  are evaluated from left to right.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- MonetDB: Moved the sphinx extension module to its own repository.
+  See https://dev.monetdb.org/hg/MonetDB-sphinx/.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- gdk: BATsort may now create an order index as a by product.
+- gdk: Quantile calculations now use the order index if available (and use
+  BATsort otherwise, producing an order index).
+- gdk: Quantiles calculate a position in the sorted column.  If this position
+  is not an integer, we now choose the nearest position, favoring the
+  lower if the distance to the two adjacent positions is equal (round
+  down to nearest integer).
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- MonetDB: Removed GSL module: it's now a separate (extension) package.
+  See https://dev.monetdb.org/hg/MonetDB-gsl/.
+- MonetDB: The PCRE library is now optional for systems that support POSIX regular
+  expressions.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- sql: Removed table sys.connections.  It was a remnant of an experimental
+  change that had already been removed in 2012.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- gdk: Removed function BATprintf.  Use BATprint or BATprintcolumns instead.
+- gdk: Removed BATsave from the list of exported functions.
+
+* Mon May 29 2017 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.27.1-20170705
+- MonetDB: Added 5 new sys schema tables: function_languages, function_types,
+  key_types, index_types and privilege_codes.  They are pre-loaded with
+  static content and contain descriptive names for the various integer
+  type and code values.  See also sql/scripts/51_sys_schema_extension.sql
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- monetdb5: Changed the interfaces of the AUTH* functions: pass values, not pointers
+  to values.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- gdk: Replaced BBPincref/BBPdecref with BBPfix/BBPunfix for physical reference
+  count and BBPretain/BBPrelease for logical reference count maintenance.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- gdk: Removed automatic conversion of 32-bit OIDs to 64 bits on 64-bit
+  architectures.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- gdk: Removed functions OIDbase() and OIDnew().
+- gdk: Removed talign field from BAT descriptor.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- monetdb5: Removed calc.setoid().
+- monetdb5: group.subgroup is now called group.group if it is not refining a group.
+  Both group.group and group.subgroup now also have variants with a
+  candidate list.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- clients: The mclient and msqldump programs lost compatibility with old
+  mserver5 versions (pre 2014) which didn't have a "system" column in
+  the sys.schemas table.
+- clients: The mclient and msqldump programs lost compatibility with ancient
+  mserver5 versions (pre 2011) which didn't have the sys.systemfunctions
+  table.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- gdk: BATappend now takes an optional (NULL if not used) candidate list for
+  the to-be-appended BAT.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- gdk: New function BATkeyed(BAT *b) that determines (possibly using a hash
+  table) whether all values in b are distinct.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- clients: Removed the "array" and "quick" functions from the mapi library.
+  To be precise, the removed functions are: mapi_execute_array,
+  mapi_fetch_field_array, mapi_prepare_array, mapi_query_array,
+  mapi_quick_query, mapi_quick_query_array, and mapi_quick_response.
+
+* Mon May 29 2017 Martin Kersten <mk@cwi.nl> - 11.27.1-20170705
+- monetdb5: The allocation schemes for MAL blocks and Variables has been turned
+  into block-based.  This reduces the number of malloc()/free() calls.
+
+* Mon May 29 2017 Martin Kersten <mk@cwi.nl> - 11.27.1-20170705
+- sql: Protect against runaway profiler events If you hit a barrier block
+  during profiling, the JSON event log may quickly become unwieldy. Event
+  production is protected using a high water mark, which ensures that
+  never within the single execution of MAL block the instruction causes
+  excessive event records.
+
+* Mon May 29 2017 Martin Kersten <mk@cwi.nl> - 11.27.1-20170705
+- clients: Added a more elaborate \help command for SQL expressions.
+
 * Mon May 29 2017 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.25.23-20170529
 - Rebuilt.
 - BZ#6290: Crash (and assertion failure) with a correlated subquery with

@@ -63,6 +63,10 @@ lex.yy.c
 *.dll
 
 # other files we don't want
+GTAGS
+gtags.files
+GPATH
+GRTAGS
 TAGS
 tags
 *.pyo

@@ -32,13 +32,13 @@ stderr of test 'grantRole.Bug-3772` in directory 'sql/test/Users` itself:
 
 MAPI  = (bruce) /var/tmp/mtest-16480/.s.monetdb.37363
 QUERY = GRANT role1 to bruce;
-ERROR = !GRANT: insufficient privileges to grant ROLE 'role1'
-MAPI  = (bruce) /var/tmp/mtest-16480/.s.monetdb.37363
+ERROR = !SQLException:sql.grant_role:SQLSTATE 0P000 !Insufficient privileges to grant ROLE 'role1'
+MAPI  = (bruce) /var/tmp/mtest-26377/.s.monetdb.39857
 QUERY = SET role role1;
-ERROR = !Role (role1) missing
-MAPI  = (bruce) /var/tmp/mtest-16480/.s.monetdb.37363
+ERROR = !SQLException:sql.update_var:SQLSTATE 42000 !Role (role1) missing
+MAPI  = (bruce) /var/tmp/mtest-26377/.s.monetdb.39857
 QUERY = select * from test;
-ERROR = !SELECT: access denied for bruce to table 's1.test'
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: access denied for bruce to table 's1.test'
 
 # 22:00:20 >  
 # 22:00:20 >  "Done."

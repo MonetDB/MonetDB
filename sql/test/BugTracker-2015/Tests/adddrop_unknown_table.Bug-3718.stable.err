@@ -32,10 +32,10 @@ stderr of test 'adddrop_unknown_table.Bug-3718` in directory 'sql/test/BugTracke
 
 MAPI  = (monetdb) /var/tmp/mtest-30244/.s.monetdb.33503
 QUERY = ALTER TABLE mt ADD TABLE blablah;
-ERROR = !ALTER TABLE: no such table 'blablah' in schema 'sys'
-MAPI  = (monetdb) /var/tmp/mtest-30244/.s.monetdb.33503
+ERROR = !SQLException:sql.alter_table_add_table:SQLSTATE 42S02 !ALTER TABLE: no such table 'blablah' in schema 'sys'
+MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
 QUERY = ALTER TABLE mt DROP TABLE blablah;
-ERROR = !ALTER TABLE: no such table 'blablah' in schema 'sys'
+ERROR = !SQLException:sql.alter_table_del_table:SQLSTATE 42S02 !ALTER TABLE: no such table 'blablah' in schema 'sys'
 
 # 12:45:38 >  
 # 12:45:38 >  "Done."

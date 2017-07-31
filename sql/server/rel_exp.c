@@ -1300,6 +1300,19 @@ exp_is_zero(mvc *sql, sql_exp *e)
 }
 
 int
+exp_is_not_null(mvc *sql, sql_exp *e) 
+{
+	if (e->type == e_atom) {
+		if (e->l) {
+			return !(atom_null(e->l));
+		} else if(sql->emode == m_normal && sql->argc > e->flag && EC_COMPUTE(exp_subtype(e)->type->eclass)) {
+			return !atom_null(sql->args[e->flag]);
+		}
+	}
+	return 0;
+}
+
+int
 exp_is_atom( sql_exp *e )
 {
 	switch (e->type) {

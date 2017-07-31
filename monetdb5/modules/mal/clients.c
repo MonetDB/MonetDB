@@ -248,28 +248,6 @@ CLTActions(bat *ret)
 	BBPreclaim(b);
 	throw(MAL, "clients.getActions", MAL_MALLOC_FAIL);
 }
-str
-CLTTime(bat *ret)
-{
-	BAT *b = COLnew(0, TYPE_lng, 12, TRANSIENT);
-	int i;
-
-	if (b == 0)
-		throw(MAL, "clients.getTime", MAL_MALLOC_FAIL);
-	for (i = 0; i < MAL_MAXCLIENTS; i++) {
-		Client c = mal_clients+i;
-		if (c->mode >= RUNCLIENT && c->user != oid_nil) {
-			if (BUNappend(b, &c->totaltime, FALSE) != GDK_SUCCEED)
-				goto bailout;
-		}
-	}
-	if (pseudo(ret,b,"client","usec"))
-		goto bailout;
-	return MAL_SUCCEED;
-  bailout:
-	BBPreclaim(b);
-	throw(MAL, "clients.getTime", MAL_MALLOC_FAIL);
-}
 
 /*
  * Produce a list of clients currently logged in

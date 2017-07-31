@@ -14,7 +14,7 @@ stderr of test 'update_fkey_with_value_not_in_the_pkey.SF-1734143` in directory 
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = update t1734143b set id = 2 where id =1;
-ERROR = !UPDATE: FOREIGN KEY constraint 't1734143b.t1734143b_id_fkey' violated
+ERROR = !SQLException:assert:SQLSTATE M0M29 !UPDATE: FOREIGN KEY constraint 't1734143b.t1734143b_id_fkey' violated
 
 # 20:17:19 >  
 # 20:17:19 >  Done.

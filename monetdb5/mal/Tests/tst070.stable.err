@@ -38,6 +38,7 @@ QUERY = # parsing operations with multi-assignments
         (initial:str,surname:str):= user.getName();
         end foo;
 ERROR = !TypeException:user.foo[1]:'user.point' undefined in:     (x:any, y:any) := user.point(1:int);
+        !TypeException:user.foo[2]:'user.getName' undefined in:     (initial:str, surname:str) := user.getName();
 
 
 # 13:02:34 >  

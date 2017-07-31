@@ -58,12 +58,12 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 
 	/* get argument BAT descriptor */
 	if ((v = BATdescriptor(*_v)) == NULL)
-		throw(MAL, "round", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "round", "SQLSTATE HY002 !" RUNTIME_OBJECT_MISSING);
 
 	/* more sanity checks */
 	if (v->ttype != TPE(TYPE)) {
 		BBPunfix(v->batCacheid);
-		throw(MAL, "round", "argument 1 must have a " STRING(TYPE) " tail");
+		throw(MAL, "round", "SQLSTATE 42000 !""Argument 1 must have a " STRING(TYPE) " tail");
 	}
 	cnt = BATcount(v);
 
@@ -71,7 +71,7 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	res = COLnew(0, TPE(TYPE), cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPunfix(v->batCacheid);
-		throw(MAL, "round", MAL_MALLOC_FAIL);
+		throw(MAL, "round", "SQLSTATE HY001 "MAL_MALLOC_FAIL);
 	}
 
 	/* access columns as arrays */
@@ -170,12 +170,12 @@ bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 
 	/* get argument BAT descriptor */
 	if ((v = BATdescriptor(*_v)) == NULL)
-		throw(MAL, "round", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "round", "SQLSTATE HY002 !" RUNTIME_OBJECT_MISSING);
 
 	/* more sanity checks */
 	if (v->ttype != TPE(TYPE)) {
 		BBPunfix(v->batCacheid);
-		throw(MAL, "round", "argument 1 must have a " STRING(TYPE) " tail");
+		throw(MAL, "round", "SQLSTATE 42000 !""Argument 1 must have a " STRING(TYPE) " tail");
 	}
 	cnt = BATcount(v);
 
@@ -183,7 +183,7 @@ bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 	res = COLnew(0, TPE(TYPE), cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPunfix(v->batCacheid);
-		throw(MAL, "round", MAL_MALLOC_FAIL);
+		throw(MAL, "round", "SQLSTATE HY002 !"MAL_MALLOC_FAIL);
 	}
 
 	/* access columns as arrays */

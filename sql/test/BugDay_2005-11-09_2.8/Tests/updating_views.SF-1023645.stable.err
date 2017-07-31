@@ -12,7 +12,7 @@ stderr of test 'updating_views.SF-1023645` in directory 'sql/test/BugDay_2005-11
 
 MAPI  = monetdb@sofia:39182
 QUERY = insert into v1023645 values (1);
-ERROR = !INSERT INTO: cannot insert into view 'v1023645'
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !INSERT INTO: cannot insert into view 'v1023645'
 
 
 # 10:01:13 >  

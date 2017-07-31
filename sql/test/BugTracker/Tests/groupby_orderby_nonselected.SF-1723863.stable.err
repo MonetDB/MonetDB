@@ -18,9 +18,7 @@ QUERY = select count(*)
         group by col2
         order by row_count desc, col1
         ) sq;
-ERROR = !SELECT: cannot use non GROUP BY column 'col1' in query results without an aggregate function
-
-
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: cannot use non GROUP BY column 'col1' in query results without an aggregate function
 
 # 23:24:26 >  
 # 23:24:26 >  Done.

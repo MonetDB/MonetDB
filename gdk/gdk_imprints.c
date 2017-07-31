@@ -208,7 +208,6 @@ BATcheckimprints(BAT *b)
 		Imprints *imprints;
 		Heap *hp;
 		str nme = BBP_physical(b->batCacheid);
-		const char *ext = b->batCacheid > 0 ? "timprints" : "himprints";
 
 		b->timprints = NULL;
 		if ((hp = GDKzalloc(sizeof(Heap))) != NULL &&
@@ -216,10 +215,10 @@ BATcheckimprints(BAT *b)
 		    (hp->filename = GDKmalloc(strlen(nme) + 12)) != NULL) {
 			int fd;
 
-			sprintf(hp->filename, "%s.%s", nme, ext);
+			sprintf(hp->filename, "%s.timprints", nme);
 			/* check whether a persisted imprints index
 			 * can be found */
-			if ((fd = GDKfdlocate(hp->farmid, nme, "rb", ext)) >= 0) {
+			if ((fd = GDKfdlocate(hp->farmid, nme, "rb", "timprints")) >= 0) {
 				size_t hdata[4];
 				struct stat st;
 				size_t pages;
@@ -240,7 +239,7 @@ BATcheckimprints(BAT *b)
 							   hdata[2] * sizeof(cchdc_t) +
 							   sizeof(uint64_t) /* padding for alignment */
 							   + 4 * SIZEOF_SIZE_T) &&
-				    HEAPload(hp, nme, b->batCacheid > 0 ? "timprints" : "himprints", 0) == GDK_SUCCEED) {
+				    HEAPload(hp, nme, "timprints", 0) == GDK_SUCCEED) {
 					/* usable */
 					imprints->imprints = hp;
 					imprints->bits = (bte) (hdata[0] & 0xFF);
@@ -261,7 +260,7 @@ BATcheckimprints(BAT *b)
 				GDKfree(imprints);
 				close(fd);
 				/* unlink unusable file */
-				GDKunlink(hp->farmid, BATDIR, nme, ext);
+				GDKunlink(hp->farmid, BATDIR, nme, "timprints");
 			}
 			GDKfree(hp->filename);
 		}
@@ -342,8 +341,7 @@ BATimprints(BAT *b)
 			MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 			return GDK_FAIL;
 		}
-		sprintf(imprints->imprints->filename, "%s.%cimprints", nme,
-			b->batCacheid > 0 ? 't' : 'h');
+		sprintf(imprints->imprints->filename, "%s.timprints", nme);
 		pages = (((size_t) BATcount(b) * b->twidth) + IMPS_PAGE - 1) / IMPS_PAGE;
 		imprints->imprints->farmid = BBPselectfarm(b->batRole, b->ttype,
 							   imprintsheap);
@@ -472,9 +470,9 @@ BATimprints(BAT *b)
 		((size_t *) imprints->imprints->base)[2] = (size_t) imprints->dictcnt;
 		((size_t *) imprints->imprints->base)[3] = (size_t) BATcount(b);
 		if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
-		    HEAPsave(imprints->imprints, nme, b->batCacheid > 0 ? "timprints" : "himprints") == GDK_SUCCEED &&
+		    HEAPsave(imprints->imprints, nme, "timprints") == GDK_SUCCEED &&
 		    (fd = GDKfdlocate(imprints->imprints->farmid, nme, "rb+",
-				      b->batCacheid > 0 ? "timprints" : "himprints")) >= 0) {
+				      "timprints")) >= 0) {
 			ALGODEBUG fprintf(stderr, "#BATimprints: persisting imprints\n");
 			/* add version number */
 			((size_t *) imprints->imprints->base)[0] |= (size_t) IMPRINTS_VERSION << 8;
@@ -610,7 +608,7 @@ IMPSremove(BAT *b)
 		    * (size_t *) imprints->imprints->base & (1 << 16))
 			fprintf(stderr, "#IMPSremove: removing persisted imprints\n");
 		if (HEAPdelete(imprints->imprints, BBP_physical(b->batCacheid),
-			       b->batCacheid > 0 ? "timprints" : "himprints"))
+			       "timprints"))
 			IODEBUG fprintf(stderr, "#IMPSremove(%s): imprints heap\n", BATgetId(b));
 
 		GDKfree(imprints->imprints);

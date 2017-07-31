@@ -77,7 +77,8 @@ QUERY = function z()( :int,:int,:int,:int,:int,:int,:int,:int,:int,:int, :int,:i
         end z;
         z();
 ERROR = !SyntaxException:parseError:return (1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0,1,2,3,4,5,6,7,8,9,0);
-        !SyntaxException:parseError:       ^<identifier> expected
+        !SyntaxException:parseError:        ^<identifier> expected
+        !MALException:user.z[2]:invalid return target!
         !TypeException:user.main[1]:'user.z' undefined in:     user.z();
 
 # 11:11:08 >  

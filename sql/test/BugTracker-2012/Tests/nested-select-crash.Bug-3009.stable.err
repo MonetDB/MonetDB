@@ -32,7 +32,7 @@ stderr of test 'nested-select-crash.Bug-3009` in directory 'sql/test/BugTracker-
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select 1 as y, (select x from (select 1) as test where x = y);
-ERROR = !SELECT: identifier 'x' unknown
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: identifier 'x' unknown
 
 # 16:07:02 >  
 # 16:07:02 >  "Done."

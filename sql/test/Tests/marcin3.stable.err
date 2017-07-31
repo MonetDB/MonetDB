@@ -13,13 +13,14 @@ stderr of test 'marcin3` in directory 'sql/test` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select id, sum(val) AS valsum from nutki group by id having val>1;
-ERROR = !SELECT: identifier 'val' unknown
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: identifier 'val' unknown
+MAPI  = (monetdb) /var/tmp/mtest-29803/.s.monetdb.33854
 QUERY = select id, sum(val) AS valsum from nutki group by id having val>2;
-ERROR = !SELECT: identifier 'val' unknown
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: identifier 'val' unknown
+MAPI  = (monetdb) /var/tmp/mtest-29803/.s.monetdb.33854
 QUERY = select id, sum(val) AS valsum from nutki group by id having valsum>3;
-ERROR = !SELECT: identifier 'valsum' unknown
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: identifier 'valsum' unknown
+
 
 # 21:15:41 >  
 # 21:15:41 >  Done.

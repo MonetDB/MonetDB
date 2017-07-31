@@ -18,7 +18,9 @@ typedef enum inttype {
 	iday,
 	ihour,
 	imin,
-	isec
+	isec,
+	iquarter,
+	iweek
 } itype;
 
 int parse_interval_qualifier(mvc *sql, struct dlist *pers, int *sk, int *ek, int *sp, int *ep);

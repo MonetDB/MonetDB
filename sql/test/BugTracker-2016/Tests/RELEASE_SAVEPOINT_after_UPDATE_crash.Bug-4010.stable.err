@@ -30,7 +30,7 @@ stderr of test 'RELEASE_SAVEPOINT_after_UPDATE_crash.Bug-4010` in directory 'sql
 
 MAPI  = (monetdb) /var/tmp/mtest-27142/.s.monetdb.39308
 QUERY = DROP TABLE t;
-ERROR = !DROP TABLE: no such table 't'
+ERROR = !SQLException:sql.droptable:SQLSTATE 42S02 !DROP TABLE: no such table 't'
 
 
 # 16:19:12 >  

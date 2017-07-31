@@ -12,7 +12,7 @@ stderr of test 'interval_on_time_stamp.SF-1080488` in directory 'sql/test/BugDay
 
 MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = select interval '2:74' hour to minute;
-ERROR = !Overflow detected in minutes (74)
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Overflow detected in minutes (74)
 
 # 19:58:14 >  
 # 19:58:14 >  Done.

@@ -47,7 +47,7 @@ QUERY = select
                       left join sys.db_user_info as ref_25
                       on (ref_24.dimpos = ref_25.default_schema )
                     on (ref_23.id = ref_24.var_id )
-ERROR = !cardinality violation, scalar value expected
+ERROR = !SQLException:zero_or_one:SQLSTATE 21000 !Cardinality violation, scalar value expected
 
 # 17:09:30 >  
 # 17:09:30 >  "Done."

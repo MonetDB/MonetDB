@@ -29,7 +29,7 @@ stderr of test 'table_function_with_column_subselects.Bug-3172` in directory 'sq
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from x((select id from _tables), (select schema_id from _tables));
-ERROR = !SELECT: 'x' requires a single sub query
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: 'x' requires a single sub query
 
 # 13:48:49 >  
 # 13:48:49 >  "Done."

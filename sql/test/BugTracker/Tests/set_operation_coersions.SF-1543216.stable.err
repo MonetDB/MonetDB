@@ -12,10 +12,14 @@ stderr of test 'set_operation_coersions.SF-1543216` in directory 'sql/test/BugTr
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from t1543216 union select * from s1543216;
-ERROR = !types varchar(23,0) and int(32,0) are not equal for column 'id'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !types varchar(23,0) and int(32,0) are not equal for column 'id'
+MAPI  = (monetdb) /var/tmp/mtest-10039/.s.monetdb.39302
+ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-10039/.s.monetdb.39302
 QUERY = select * from f1543216 union select * from b1543216;
-ERROR = !types boolean(1,0) and double(53,0) are not equal for column 'id'
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !types boolean(1,0) and double(53,0) are not equal for column 'id'
+MAPI  = (monetdb) /var/tmp/mtest-10039/.s.monetdb.39302
+ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
 
 
 # 11:19:45 >  

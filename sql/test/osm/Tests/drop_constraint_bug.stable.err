@@ -81,7 +81,7 @@ stderr of test 'drop_constraint_bug` in directory 'sql/test/osm` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = alter table ways drop constraint ways_id_pkey;
-ERROR = !ALTER TABLE: cannot drop constraint 'ways_id_pkey': there are database objects which depend on it
+ERROR = !SQLException:sql.drop_key:SQLSTATE 42000 !ALTER TABLE: cannot drop constraint 'ways_id_pkey': there are database objects which depend on it
 
 # 14:06:51 >  
 # 14:06:51 >  Done.

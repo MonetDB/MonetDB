@@ -81,11 +81,11 @@ stderr of test 'string_truncate.SF-919542` in directory 'sql/test/BugDay_2005-10
 
 MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = create table z(w varchar(0));
-ERROR = !Positive value greater than 0 expected in: "create table z(w varchar(0"
-        !syntax error, unexpected ')' in: ")"
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Positive value greater than 0 expected in: "create table z(w varchar(0"
+        !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected ')' in: ")"
+MAPI  = (monetdb) /var/tmp/mtest-32041/.s.monetdb.36560
 QUERY = insert into z values('wrong');
-ERROR = !value too long for type (var)char(1)
+ERROR = !SQLException:str_cast:SQLSTATE 22001 !value too long for type (var)char(1)
 
 # 19:21:07 >  
 # 19:21:07 >  Done.

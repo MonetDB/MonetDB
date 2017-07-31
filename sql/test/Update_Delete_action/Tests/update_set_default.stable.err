@@ -12,13 +12,13 @@ stderr of test 'update_set_default` in directory 'sql/test/Update_Delete_action`
 
 MAPI  = monetdb@sofia:38256
 QUERY = update t1 set id = 10 where id =3;
-ERROR = !UPDATE: FOREIGN KEY constraint 't2.t2_id_fkey' violated
-MAPI  = monetdb@sofia:38256
+ERROR = !SQLException:assert:SQLSTATE M0M29 !UPDATE: FOREIGN KEY constraint 't2.t2_id_fkey' violated
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = update t1 set id = 11 where id =4;
-ERROR = !UPDATE: FOREIGN KEY constraint 't2.t2_id_fkey' violated
-MAPI  = monetdb@sofia:38256
+ERROR = !SQLException:assert:SQLSTATE M0M29 !UPDATE: FOREIGN KEY constraint 't2.t2_id_fkey' violated
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = update t2 set id = 7 where id =5;
-ERROR = !UPDATE: FOREIGN KEY constraint 't3.t3_id_fkey' violated
+ERROR = !SQLException:assert:SQLSTATE M0M29 !UPDATE: FOREIGN KEY constraint 't3.t3_id_fkey' violated
 
 # 11:13:36 >  
 # 11:13:36 >  Done.

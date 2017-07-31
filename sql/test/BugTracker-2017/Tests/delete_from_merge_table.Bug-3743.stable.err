@@ -29,6 +29,15 @@ stderr of test 'delete_from_merge_table.Bug-3743` in directory 'sql/test/BugTrac
 # 17:32:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19147" "--port=31497"
 # 17:32:34 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-8392/.s.monetdb.34552
+QUERY = delete from tt where t = 1;
+ERROR = !DELETE FROM: cannot delete from merge table 'tt'
+MAPI  = (monetdb) /var/tmp/mtest-8392/.s.monetdb.34552
+QUERY = delete from tt where t = 2;
+ERROR = !DELETE FROM: cannot delete from merge table 'tt'
+MAPI  = (monetdb) /var/tmp/mtest-8392/.s.monetdb.34552
+QUERY = delete from tt;
+ERROR = !DELETE FROM: cannot delete from merge table 'tt'
 
 # 17:32:35 >  
 # 17:32:35 >  "Done."

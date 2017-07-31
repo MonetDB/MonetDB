@@ -81,7 +81,7 @@ stderr of test 'role2` in directory 'sql/test/Users` itself:
 
 MAPI  = my_user2@sofia:38256
 QUERY = SET ROLE my_role;
-ERROR = !Role (my_role) missing
+ERROR = !SQLException:sql.update_var:SQLSTATE 42000 !Role (my_role) missing
 
 # 20:38:25 >  
 # 20:38:25 >  Done.

@@ -1,94 +1,39 @@
 stdout of test 'explain.SF-1739353` in directory 'sql/test/BugTracker` itself:
 
 
-# 15:15:36 >  
-# 15:15:36 >   mserver5 "--config=/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5:/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/lib:/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=33159 --set xrpc_port=45591 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
-# 15:15:36 >  
+# 15:11:17 >  
+# 15:11:17 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33800" "--set" "mapi_usock=/var/tmp/mtest-7180/.s.monetdb.33800" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-virgin/var/MonetDB/mTests_sql_test_BugTracker"
+# 15:11:17 >  
 
-# 12:04:36 >  
-# 12:04:36 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39801" "--set" "mapi_usock=/var/tmp/mtest-31630/.s.monetdb.39801" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker" "--set" "embedded_r=yes" "--set" "embedded_py=true"
-# 12:04:36 >  
-
-# MonetDB 5 server v11.24.0
+# MonetDB 5 server v11.28.0 (hg id: 623015a562d3)
 # This is an unreleased version
 # Serving database 'mTests_sql_test_BugTracker', using 8 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
-# Found 15.589 GiB available main-memory.
+# Found 62.701 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
-# Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:39801/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-31630/.s.monetdb.39801
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:33800/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-7180/.s.monetdb.33800
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-# MonetDB/Python module loaded
-# MonetDB/R   module loaded
 
 Ready.
-# SQL catalog created, loading sql scripts once
-# loading sql script: 09_like.sql
-# loading sql script: 10_math.sql
-# loading sql script: 11_times.sql
-# loading sql script: 12_url.sql
-# loading sql script: 13_date.sql
-# loading sql script: 14_inet.sql
-# loading sql script: 15_querylog.sql
-# loading sql script: 16_tracelog.sql
-# loading sql script: 17_temporal.sql
-# loading sql script: 18_index.sql
-# loading sql script: 20_vacuum.sql
-# loading sql script: 21_dependency_functions.sql
-# loading sql script: 22_clients.sql
-# loading sql script: 23_skyserver.sql
-# loading sql script: 25_debug.sql
-# loading sql script: 26_sysmon.sql
-# loading sql script: 27_rejects.sql
-# loading sql script: 39_analytics.sql
-# loading sql script: 39_analytics_hge.sql
-# loading sql script: 40_geom.sql
-# loading sql script: 40_json.sql
-# loading sql script: 40_json_hge.sql
-# loading sql script: 41_md5sum.sql
-# loading sql script: 45_uuid.sql
-# loading sql script: 46_gsl.sql
-# loading sql script: 46_profiler.sql
-# loading sql script: 51_sys_schema_extension.sql
-# loading sql script: 72_fits.sql
-# loading sql script: 74_netcdf.sql
-# loading sql script: 75_lidar.sql
-# loading sql script: 75_shp.sql
-# loading sql script: 75_storagemodel.sql
-# loading sql script: 80_statistics.sql
-# loading sql script: 80_udf.sql
-# loading sql script: 80_udf_hge.sql
-# loading sql script: 85_bam.sql
-# loading sql script: 90_generator.sql
-# loading sql script: 90_generator_hge.sql
-# loading sql script: 99_system.sql
 
-# 12:04:37 >  
-# 12:04:37 >  "./explain.SF-1739353.SQL.sh" "explain.SF-1739353"
-# 12:04:37 >  
+# 15:11:18 >  
+# 15:11:18 >  "./explain.SF-1739353.SQL.sh" "explain.SF-1739353"
+# 15:11:18 >  
 
 
-# 12:04:37 >  
-# 12:04:37 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -h toulouse -p 39801 -d mTests_sql_test_BugTracker -f "../../../../../dev/sql/test/BugTracker/Tests/explain.SF-1739353-data.sql"
-# 12:04:37 >  
-
-# 11:07:50 >  
-# 11:07:50 >  "./explain.SF-1739353.SQL.sh" "explain.SF-1739353"
-# 11:07:50 >  
-
-
-# 11:07:50 >  
-# 11:07:50 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -h localhost -p 33313 -d mTests_sql_test_BugTracker -f "../../../../../../../data/MonetDB/sql/test/BugTracker/Tests/explain.SF-1739353-data.sql"
-# 11:07:50 >  
+# 15:11:18 >  
+# 15:11:18 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -h methuselah -p 33800 -d mTests_sql_test_BugTracker -f "../../../../../../../../scratch1/sjoerd/src/MonetDB/virgin/sql/test/BugTracker/Tests/explain.SF-1739353-data.sql"
+# 15:11:18 >  
 
 Operation successful
 +-----------------------------------------------------------------------------------------------------------+
-| mal    |
+| mal                                                                                                       |
 +===========================================================================================================+
-| function user.s4_1():void;                                                                           |
+| function user.s4_1():void;                                                                                |
 |     X_1:void := querylog.define("explain select \"name\" from \"tables\"\n;", "sequential_pipe", 36:int); |
 |     X_35:bat[:str] := bat.new(nil:str);                                                                   |
 |     X_4 := sql.mvc();                                                                                     |
@@ -109,7 +54,7 @@ Operation successful
 |     X_34 := algebra.projection(C_31, X_33);                                                               |
 |     X_37 := bat.append(X_35, X_29, true);                                                                 |
 |     X_39 := bat.append(X_37, X_34, true);                                                                 |
-|     X_41 := bat.new(nil:str);                                                                           |
+|     X_41 := bat.new(nil:str);                                                                             |
 |     X_46 := bat.new(nil:int);                                                                             |
 |     X_44 := bat.new(nil:int);                                                                             |
 |     X_43 := bat.new(nil:str);                                                                             |
@@ -120,33 +65,34 @@ Operation successful
 |     X_53 := bat.append(X_44, 1024:int);                                                                   |
 |     X_55 := bat.append(X_46, 0:int);                                                                      |
 |     sql.resultSet(X_47, X_49, X_51, X_53, X_55, X_39);                                                    |
-| end user.s4_1;                                                                                       |
-| #inline               actions= 0 time=1 usec                                                            |
-| #remap                actions= 0 time=2 usec                                                            |
-| #costmodel            actions= 1 time=2 usec                                                            |
-| #coercion             actions= 1 time=6 usec                                                            |
-| #evaluate             actions= 0 time=3 usec                                                            |
-| #emptybind            actions= 0 time=0 usec                                                              |
-| #pushselect           actions= 5 time=26 usec                                                             |
-| #aliases              actions= 2 time=8 usec                                                              |
-| #mergetable           actions= 0 time=30 usec                                                             |
-| #deadcode             actions= 3 time=7 usec                                                              |
+| end user.s4_1;                                                                                            |
+| #inline               actions= 0 time=1 usec                                                              |
+| #remap                actions= 0 time=1 usec                                                              |
+| #costmodel            actions= 1 time=1 usec                                                              |
+| #coercion             actions= 1 time=2 usec                                                              |
+| #evaluate             actions= 0 time=1 usec                                                              |
+| #emptybind            actions= 0 time=1 usec                                                              |
+| #pushselect           actions= 5 time=12 usec                                                             |
+| #aliases              actions= 2 time=3 usec                                                              |
+| #mergetable           actions= 0 time=18 usec                                                             |
+| #deadcode             actions= 3 time=3 usec                                                              |
 | #aliases              actions= 0 time=0 usec                                                              |
-| #constants            actions= 2 time=7 usec                                                              |
-| #commonTerms          actions= 0 time=6 usec                                                              |
-| #projectionpath       actions= 0 time=4 usec                                                              |
-| #reorder              actions= 1 time=24 usec                                                             |
-| #deadcode             actions= 0 time=5 usec                                                              |
+| #constants            actions= 2 time=3 usec                                                              |
+| #commonTerms          actions= 0 time=3 usec                                                              |
+| #projectionpath       actions= 0 time=1 usec                                                              |
+| #reorder              actions= 1 time=10 usec                                                             |
+| #deadcode             actions= 0 time=3 usec                                                              |
 | #matpack              actions= 0 time=0 usec                                                              |
 | #multiplex            actions= 0 time=1 usec                                                              |
-| #profiler             actions= 1 time=1 usec                                                              |
-| #candidates           actions= 1 time=1 usec                                                            |
-| #garbagecollector     actions= 1 time=41 usec                                                             |
-| #total                actions=23 time=259 usec                                                            |
+| #profiler             actions=1 time=1 usec                                                               |
+| #candidates           actions=1 time=0 usec                                                               |
+| #wlc                  actions= 0 time=0 usec                                                              |
+| #garbagecollector     actions= 1 time=22 usec                                                             |
+| #total                actions=24 time=127 usec                                                            |
 +-----------------------------------------------------------------------------------------------------------+
-55 rows
+56 rows
 
-# 10:24:50 >  
-# 10:24:50 >  "Done."
-# 10:24:50 >  
+# 15:11:18 >  
+# 15:11:18 >  "Done."
+# 15:11:18 >  
 

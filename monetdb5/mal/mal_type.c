@@ -64,11 +64,14 @@ str
 getTypeIdentifier(malType tpe){
 	str s,t,v;
 	s= getTypeName(tpe);
+	if (s == NULL)
+		return NULL;
 	for ( t=s; *t; t++)
 		if ( !isalnum((int) *t) )
 			*t='_';
 	t--;
-	if (*t == '_') *t = 0;
+	if (*t == '_')
+		*t = 0;
 	for (v=s, t=s+1; *t; t++){
 		if (  !(*t == '_' && *v == '_' ) )
 			*++v = *t;

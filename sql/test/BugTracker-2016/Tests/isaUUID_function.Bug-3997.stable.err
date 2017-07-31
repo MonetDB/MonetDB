@@ -32,10 +32,10 @@ stderr of test 'isaUUID_function.Bug-3997` in directory 'sql/test/BugTracker-201
 
 MAPI  = (monetdb) /var/tmp/mtest-29906/.s.monetdb.39904
 QUERY = SELECT SUM(u) AS sumu FROM testUUID;
-ERROR = !types uuid(0,0) and tinyint(8,0) are not equal for column 'u'
-MAPI  = (monetdb) /var/tmp/mtest-25496/.s.monetdb.30394
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !types uuid(0,0) and tinyint(8,0) are not equal for column 'u'
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = SELECT AVG(u) AS sumu FROM testUUID;
-ERROR = !types uuid(0,0) and double(53,0) are not equal for column 'u'
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !types uuid(0,0) and double(53,0) are not equal for column 'u'
 
 
 # 13:53:57 >  

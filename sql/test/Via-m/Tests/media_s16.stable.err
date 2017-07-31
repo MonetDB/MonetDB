@@ -72,7 +72,7 @@ stderr of test 'media_s16` in directory 'sql/test/Via-m` itself:
 
 MAPI  = monetdb@sofia:38256
 QUERY = set id_media_description =  add_media_description('description 1');
-ERROR = !INSERT INTO: UNIQUE constraint 'media_description.unq_media_description_description' violated
+ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: UNIQUE constraint 'media_description.unq_media_description_description' violated
 
 # 16:30:12 >  
 # 16:30:12 >  Done.

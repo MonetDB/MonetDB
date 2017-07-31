@@ -30,22 +30,22 @@ stderr of test 'column_alias_in_where_clause.Bug-3947` in directory 'sql/test/Bu
 
 MAPI  = (monetdb) /var/tmp/mtest-8448/.s.monetdb.34393
 QUERY = SELECT a AS "A", b AS "B", c AS "C" FROM t_alias WHERE "A" < "B";
-ERROR = !SELECT: identifier 'A' unknown
-MAPI  = (monetdb) /var/tmp/mtest-8448/.s.monetdb.34393
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: identifier 'A' unknown
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = SELECT a AS "A", b * b AS "B", c AS "C" FROM t_alias WHERE "B" >99;
-ERROR = !SELECT: identifier 'B' unknown
-MAPI  = (monetdb) /var/tmp/mtest-8448/.s.monetdb.34393
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: identifier 'B' unknown
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = SELECT a AS "A", b AS "B", c AS "C" FROM t_alias WHERE "C" LIKE '%en';
-ERROR = !SELECT: identifier 'C' unknown
-MAPI  = (monetdb) /var/tmp/mtest-24202/.s.monetdb.31274
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: identifier 'C' unknown
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = SELECT cast(null as char(1)) AS "CAT", a AS "A", c AS "C" FROM t_alias WHERE "CAT" = NULL;
-ERROR = !SELECT: identifier 'CAT' unknown
-MAPI  = (monetdb) /var/tmp/mtest-24202/.s.monetdb.31274
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: identifier 'CAT' unknown
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = SELECT cast(null as char(1)) AS "CAT", a AS "A", c AS "C" FROM t_alias WHERE "CAT" IS NULL;
-ERROR = !SELECT: identifier 'CAT' unknown
-MAPI  = (monetdb) /var/tmp/mtest-24202/.s.monetdb.31274
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: identifier 'CAT' unknown
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = SELECT cast(null as char(1)) AS "CAT", a AS "A", c AS "C" FROM t_alias WHERE "CAT" IS NULL or "CAT" = NULL;
-ERROR = !SELECT: identifier 'CAT' unknown
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: identifier 'CAT' unknown
 
 # 12:19:54 >  
 # 12:19:54 >  "Done."

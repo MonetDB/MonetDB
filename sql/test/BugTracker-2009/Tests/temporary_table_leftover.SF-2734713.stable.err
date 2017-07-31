@@ -80,19 +80,19 @@ stderr of test 'temporary_table_leftover.SF-2734713` in directory 'sql/test/BugT
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = blabla;
-ERROR = !syntax error, unexpected IDENT in: "blabla"
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT in: "blabla"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = COMMIT;
-ERROR = !COMMIT: failed
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !SQLException:sql.trans:SQLSTATE 2D000 !COMMIT: failed
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = blabla;
-ERROR = !syntax error, unexpected IDENT in: "blabla"
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT in: "blabla"
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = COMMIT;
-ERROR = !COMMIT: failed
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !SQLException:sql.trans:SQLSTATE 2D000 !COMMIT: failed
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = drop table persistent_temopary;
-ERROR = !DROP TABLE: no such table 'persistent_temopary'
+ERROR = !SQLException:sql.droptable:SQLSTATE 42S02 !DROP TABLE: no such table 'persistent_temopary'
 
 # 19:21:38 >  
 # 19:21:38 >  Done.

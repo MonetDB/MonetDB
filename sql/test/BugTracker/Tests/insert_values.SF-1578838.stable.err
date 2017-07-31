@@ -93,8 +93,10 @@ QUERY = INSERT INTO "examines" ("docID", "vicID") VALUES
         WHERE "name" LIKE 'vic%'
         )
         );
-ERROR = !cardinality violation, scalar value expected
-MAPI  = (monetdb) /var/tmp/mtest-8091/.s.monetdb.39076
+ERROR = !SQLException:zero_or_one:SQLSTATE 21000 !Cardinality violation, scalar value expected
+MAPI  = (monetdb) /var/tmp/mtest-10039/.s.monetdb.39302
+ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-10039/.s.monetdb.39302
 QUERY = INSERT INTO "timelines" ("vicID", "time", "event") VALUES
         (
         (
@@ -105,7 +107,9 @@ QUERY = INSERT INTO "timelines" ("vicID", "time", "event") VALUES
         '11:00 PM',
         'Polly is seen walking etc...'
         );
-ERROR = !cardinality violation, scalar value expected
+ERROR = !SQLException:zero_or_one:SQLSTATE 21000 !Cardinality violation, scalar value expected
+MAPI  = (monetdb) /var/tmp/mtest-10039/.s.monetdb.39302
+ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
 
 # 19:33:23 >  
 # 19:33:23 >  Done.
