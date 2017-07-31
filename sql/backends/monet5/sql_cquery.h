@@ -33,9 +33,8 @@
 #define CQSTOP	   5	/* stop the scheduler */
 #define CQDEREGISTER  6	/* stop the scheduler */
 
-#define PAUSEDEFAULT 1000
-#define MAXCQ 200           /* it is the minimum, if we need more space GDKrealloc */
-#define MAXSTREAMS 128		/* limit the number of stream columns to be looked after per query*/
+#define INITIAL_MAXCQ 128		/* it is the minimum, if we need more space GDKrealloc */
+#define MAXSTREAMS    128		/* limit the number of stream columns to be looked after per query*/
 
 #define STREAM_IN	1
 #define STREAM_OUT	4
@@ -62,9 +61,11 @@ typedef struct {
 	lng time;
 } CQnode;
 
-sql5_export CQnode pnet[MAXCQ];
-sql5_export int pnettop;
+sql5_export CQnode *pnet;
+sql5_export int pnetLimit, pnettop;
 sql5_export MT_Lock ttrLock;
+
+sql5_export int CQlocateExternal(str modname, str fcnname);
 
 sql5_export str CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQprocedure(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -85,4 +86,5 @@ sql5_export str CQstatus(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 sql5_export str CQlog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQdump(void *ret);
 sql5_export str CQprelude(void *ret);
+sql5_export str CQepilogue(void *ret);
 #endif

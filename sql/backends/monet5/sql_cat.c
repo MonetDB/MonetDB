@@ -518,6 +518,8 @@ drop_func(mvc *sql, char *sname, char *name, int fid, int type, int action)
 			}
 			if (!action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
 				return sql_message("DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
+			if(IS_PROC(func) && CQlocateExternal(sname, name))
+				return sql_message("DROP %s%s: there are continuous queries dependent on %s%s %s;", KF, F, kf, f, func->base.name);
 
 			mvc_drop_func(sql, s, func, action);
 		}

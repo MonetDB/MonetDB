@@ -84,3 +84,11 @@ comment "Show the status of the baskets";
 command dump()
 address BSKTdump
 comment "Show the baskets table";
+
+# initializer code
+command prelude() :void
+address BSKTprelude;
+basket.prelude();
+
+command epilogue() :void
+address BSKTepilogue;

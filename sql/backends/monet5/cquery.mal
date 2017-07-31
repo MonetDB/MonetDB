@@ -103,3 +103,6 @@ comment "Show the status of the query scheduler";
 command prelude() :void
 address CQprelude;
 cquery.prelude();
+
+command epilogue() :void
+address CQepilogue;

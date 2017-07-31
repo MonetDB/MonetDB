@@ -26,15 +26,15 @@
 #include "sql.h"
 
 #define MAXBSKT 128
-#define MAXCOLS 128
 
 typedef struct{
 	sql_table *table;	/* The basket stream table */
-	str cols[MAXCOLS];	/* column names */
-	BAT *bats[MAXCOLS];	/* the bats comprising the basket */
+	sql_column **cols;	/* the table columns */
+	BAT **bats;			/* the bats comprising the basket */
+	int ncols;			/* number of columns of the table */
 	BUN count;			/* number of events available in basket */
-	//int window;	 consumption size (now in the table's stream)
-	//int stride;	 stride forward after consumption (now in the table's stream)
+	//int window;		/* consumption size (now in the table's stream) */
+	//int stride;		/* stride forward after consumption (now in the table's stream) */
 
 	/* statistics */
 	timestamp seen;
@@ -75,5 +75,6 @@ sql5_export str BSKTunlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 sql5_export void BSKTclean(int idx);
 sql5_export str BSKTdump(void *ret);
-
+sql5_export str BSKTprelude(void *ret);
+sql5_export str BSKTepilogue(void *ret);
 #endif

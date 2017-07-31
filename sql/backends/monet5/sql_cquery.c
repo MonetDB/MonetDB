@@ -63,12 +63,12 @@ static BAT *CQ_id_time = 0;
 static BAT *CQ_id_error = 0;
 static BAT *CQ_id_stmt = 0;
 
-CQnode pnet[MAXCQ];
-int pnettop = 0;
+CQnode *pnet;
+int pnetLimit, pnettop;
 
 static int pnstatus = CQINIT;
 static int cycleDelay = 200; /* be careful, it affects response/throughput timings */
-MT_Lock ttrLock MT_LOCK_INITIALIZER("cqueryLock");
+MT_Lock ttrLock;
 
 #define SET_HEARTBEATS(X)  X * 1000 /* minimal 1 ms */
 
@@ -284,6 +284,18 @@ CQlocate(str modname, str fcnname)
 	return i;
 }
 
+int
+CQlocateExternal(str modname, str fcnname)
+{
+	int res;
+
+	MT_lock_set(&ttrLock);
+	res = CQlocate(modname, fcnname);
+	res = (res < pnettop) ? 1 : 0;
+	MT_lock_unset(&ttrLock);
+	return res;
+}
+
 static str
 CQlocateMb(MalBlkPtr mb, int* idx, str* res, const char* call)
 {
@@ -472,6 +484,7 @@ CQregisterInternal(Client cntxt, str modnme, str fcnnme)
 	MalBlkPtr mb, nmb;
 	Module scope;
 	Symbol s = NULL;
+	CQnode *pnew;
 	char buf[IDLENGTH];
 
 	scope = findModule(cntxt->nspace, putName(modnme));
@@ -484,8 +497,14 @@ CQregisterInternal(Client cntxt, str modnme, str fcnnme)
 	mb = s->def;
 	sig = getInstrPtr(mb,0);
 
-	if (pnettop == MAXCQ)
-		return createException(MAL,"cquery.register","Too many transitions");
+	if (pnettop == pnetLimit) {
+		pnew = (CQnode *) GDKrealloc(pnet, (pnetLimit+INITIAL_MAXCQ) * sizeof(CQnode));
+		if( pnew == NULL) {
+			return createException(SQL,"cquery.register",MAL_MALLOC_FAIL);
+		}
+		pnetLimit += INITIAL_MAXCQ;
+		pnet = pnew;
+	}
 
 #ifdef DEBUG_CQUERY
 	fprintf(stderr, "#cquery register %s.%s\n", getModuleId(sig),getFunctionId(sig));
@@ -603,6 +622,7 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	InstrPtr sig = getInstrPtr(mb,0),q;
 	MalBlkPtr other;
 	Symbol s;
+	CQnode *pnew;
 	int i, cycles = sqlcontext ? sqlcontext->cycles : DEFAULT_CP_CYCLES, heartbeats = sqlcontext ? sqlcontext->heartbeats : DEFAULT_CP_HEARTBEAT;
 
 	(void) pci;
@@ -632,6 +652,16 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	fprintFunction(stderr, mb, 0, LIST_MAL_ALL);
 #endif
 	MT_lock_set(&ttrLock);
+
+	if (pnettop == pnetLimit) {
+		pnew = (CQnode *) GDKrealloc(pnet, (pnetLimit+INITIAL_MAXCQ) * sizeof(CQnode));
+		if( pnew == NULL) {
+			msg = createException(SQL,"cquery.register",MAL_MALLOC_FAIL);
+			goto unlock;
+		}
+		pnetLimit += INITIAL_MAXCQ;
+		pnet = pnew;
+	}
 
 	// access the actual procedure body
 	s = findSymbol(cntxt->nspace, getModuleId(sig), getFunctionId(sig));
@@ -1465,9 +1495,28 @@ CQstartScheduler(void)
 }
 
 str
-CQprelude(void *ret) {
+CQprelude(void *ret)
+{
 	(void) ret;
 	MT_lock_init(&ttrLock, "cqueryLock");
+	pnet = (CQnode *) GDKzalloc(INITIAL_MAXCQ * sizeof(CQnode));
+	pnetLimit = INITIAL_MAXCQ;
+	pnettop = 0;
+	if(pnet == NULL)
+		throw(MAL, "cquery.prelude", MAL_MALLOC_FAIL);
 	printf("# MonetDB/Timetrails module loaded\n");
+	return MAL_SUCCEED;
+}
+
+str
+CQepilogue(void *ret)
+{
+	(void) ret;
+	if(pnet)
+		GDKfree(pnet);
+	pnet = NULL;
+	pnetLimit = MAXBSKT;
+	pnettop = 1;
+	MT_lock_destroy(&ttrLock);
 	return MAL_SUCCEED;
 }

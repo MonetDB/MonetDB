@@ -59,13 +59,7 @@ static int BSKTnewEntry(void)
 	int i = bsktTop;
 	BasketRec *bnew;
 
-	if (bsktLimit == 0) {
-		bsktLimit = MAXBSKT;
-		baskets = (BasketRec *) GDKzalloc(bsktLimit * sizeof(BasketRec));
-		if( baskets == 0)	
-			return 0;
-		bsktTop = 1; /* entry 0 is used as non-initialized */
-	} else if (bsktTop + 1 == bsktLimit) {
+	if (bsktTop + 1 == bsktLimit) {
 		bnew = (BasketRec *) GDKrealloc(baskets, (bsktLimit+MAXBSKT) * sizeof(BasketRec));
 		if( bnew == 0)
 			return 0;
@@ -97,11 +91,12 @@ BSKTclean(int idx)
 		baskets[idx].count = 0;
 		baskets[idx].events = 0;
 		baskets[idx].seen =  *timestamp_nil;
-		for(i=0; baskets[idx].bats[i]; i++){
-			GDKfree(baskets[idx].cols[i]);
+		for(i=0; i < baskets[idx].ncols ; i++){
 			BBPunfix(baskets[idx].bats[i]->batCacheid);
-			baskets[idx].bats[i] =0;
+			baskets[idx].bats[i] =NULL;
 		}
+		GDKfree(baskets[idx].bats);
+		GDKfree(baskets[idx].cols);
 	}
 }
 
@@ -112,7 +107,7 @@ BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl)
 	sql_schema  *s;
 	sql_table   *t;
 	mvc *m = NULL;
-	int i, j, idx, colcnt=0;
+	int i, idx, colcnt=0;
 	BAT *b;
 	node *o;
 	str msg = getSQLContext(cntxt, mb, &m, NULL);
@@ -146,7 +141,7 @@ BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl)
 	(void) MTIMEcurrent_timestamp(&baskets[idx].seen);
 
 	// Check the column types first
-	for (o = t->columns.set->h; o && colcnt <MAXCOLS-1; o = o->next){
+	for (o = t->columns.set->h; o ; o = o->next){
 		sql_column *col = o->data;
 		int tpe = col->type.type->localtype;
 
@@ -154,28 +149,24 @@ BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl)
 			throw(MAL,"basket.register","Unsupported type %d\n",tpe);
 		colcnt++;
 	}
-	if( colcnt == MAXCOLS-1){
-		BSKTclean(idx);
-		throw(MAL,"baskets.register","Too many columns\n");
+	baskets[idx].ncols = colcnt;
+	baskets[idx].bats = GDKmalloc(colcnt * sizeof(BAT **));
+	if(baskets[idx].bats == NULL)
+		throw(MAL,"basket.register",MAL_MALLOC_FAIL);
+	baskets[idx].cols = GDKmalloc(colcnt * sizeof(sql_column **));
+	if(baskets[idx].cols == NULL) {
+		GDKfree(baskets[idx].bats);
+		throw(MAL,"basket.register",MAL_MALLOC_FAIL);
 	}
 
 	// collect the column names and the storage
-	for ( i=0, o = t->columns.set->h; i <colcnt && o; o = o->next){
+	for ( i=0, o = t->columns.set->h; i <colcnt && o; o = o->next, i++){
 		sql_column *col = o->data;
 		b = store_funcs.bind_col(m->session->tr,col,RD_INS);
 		assert(b);
 		BBPfix(b->batCacheid);
 		baskets[idx].bats[i]= b;
-		baskets[idx].cols[i]= GDKstrdup(col->base.name);
-		if(baskets[idx].cols[i] == NULL) {
-			for(j = 0 ; j < i ; j++) {
-				BBPunfix(baskets[idx].bats[j]->batCacheid);
-				GDKfree(baskets[idx].cols[j]);
-			}
-			BSKTclean(idx);
-			throw(MAL,"basket.register",MAL_MALLOC_FAIL);
-		}
-		i++;
+		baskets[idx].cols[i]= col;
 	}
 	return MAL_SUCCEED;
 }
@@ -183,15 +174,15 @@ BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl)
 str
 BSKTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-    str sch, tbl;
-    str msg= MAL_SUCCEED;
+	str sch, tbl;
+	str msg= MAL_SUCCEED;
 
-    (void) stk;
-    (void) pci;
-    sch = getVarConstant(mb, getArg(pci,2)).val.sval;
-    tbl = getVarConstant(mb, getArg(pci,3)).val.sval;
-    msg = BSKTregisterInternal(cntxt,mb,sch,tbl);
-    return msg;
+	(void) stk;
+	(void) pci;
+	sch = getVarConstant(mb, getArg(pci,2)).val.sval;
+	tbl = getVarConstant(mb, getArg(pci,3)).val.sval;
+	msg = BSKTregisterInternal(cntxt,mb,sch,tbl);
+	return msg;
 }
 
 /* Not being used, so comment for now
@@ -280,10 +271,10 @@ BSKTbindColumn(str sch, str tbl, str col)
 	if( (idx = BSKTlocate(sch,tbl)) < 0)
 		return NULL;
 
-	for( i=0; i < MAXCOLS && baskets[idx].cols[i]; i++)
-		if( strcmp(baskets[idx].cols[i], col)== 0)
+	for( i=0; i < baskets[idx].ncols; i++)
+		if( strcmp(baskets[idx].cols[i]->base.name, col)== 0)
 			break;
-	if(  i < MAXCOLS)
+	if(  i < baskets[idx].ncols)
 		return baskets[idx].bats[i];
 	return NULL;
 }
@@ -394,7 +385,7 @@ BSKTtumbleInternal(Client cntxt, str sch, str tbl, int bskt, int stride)
 	_DEBUG_BASKET_ fprintf(stderr,"Tumble %s.%s %d elements\n",sch,tbl,stride);
 	if( stride == 0)
 		return MAL_SUCCEED;
-	for(i=0; i< MAXCOLS && baskets[bskt].cols[i]; i++){
+	for(i=0; i< baskets[bskt].ncols ; i++){
 		b = baskets[bskt].bats[i];
 		assert( b );
 
@@ -524,7 +515,7 @@ BSKTunlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( idx ==0)
 		throw(SQL,"basket.lock","Stream table %s.%s not accessible\n",sch,tbl);
 	/* this is also the place to administer the size of the basket */
-    b = BSKTbindColumn(sch,tbl, baskets[idx].cols[0]);
+	b = BSKTbindColumn(sch,tbl, baskets[idx].cols[0]->base.name);
 	if( b)
 		baskets[idx].count = BATcount(b);
 	/* release the basket lock */
@@ -568,20 +559,20 @@ BSKTdump(void *ret)
 str
 BSKTappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-    int *res = getArgReference_int(stk, pci, 0);
-    str sname = *getArgReference_str(stk, pci, 2);
-    str tname = *getArgReference_str(stk, pci, 3);
-    str cname = *getArgReference_str(stk, pci, 4);
-    ptr value = getArgReference(stk, pci, 5);
-    int tpe = getArgType(mb, pci, 5);
-    BAT *bn=0, *binsert = 0;
+	int *res = getArgReference_int(stk, pci, 0);
+	str sname = *getArgReference_str(stk, pci, 2);
+	str tname = *getArgReference_str(stk, pci, 3);
+	str cname = *getArgReference_str(stk, pci, 4);
+	ptr value = getArgReference(stk, pci, 5);
+	int tpe = getArgType(mb, pci, 5);
+	BAT *bn=0, *binsert = 0;
 	int bskt;
 
 	(void) cntxt;
-    *res = 0;
+	*res = 0;
 
-    if ( isaBatType(tpe) && (binsert = BATdescriptor(*(int *) value)) == NULL)
-        throw(SQL, "basket.append", "Cannot access source descriptor");
+	if ( isaBatType(tpe) && (binsert = BATdescriptor(*(int *) value)) == NULL)
+		throw(SQL, "basket.append", "Cannot access source descriptor");
 	if ( !isaBatType(tpe) && ATOMextern(getBatType(tpe)))
 		value = *(ptr*) value;
 
@@ -608,26 +599,26 @@ BSKTappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 BSKTupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-    int *res = getArgReference_int(stk, pci, 0);
-    str sname = *getArgReference_str(stk, pci, 2);
-    str tname = *getArgReference_str(stk, pci, 3);
-    str cname = *getArgReference_str(stk, pci, 4);
-    bat rows = *getArgReference_bat(stk, pci, 5);
-    bat val = *getArgReference_bat(stk, pci, 6);
-    BAT *bn=0, *rid=0, *bval = 0;
+	int *res = getArgReference_int(stk, pci, 0);
+	str sname = *getArgReference_str(stk, pci, 2);
+	str tname = *getArgReference_str(stk, pci, 3);
+	str cname = *getArgReference_str(stk, pci, 4);
+	bat rows = *getArgReference_bat(stk, pci, 5);
+	bat val = *getArgReference_bat(stk, pci, 6);
+	BAT *bn=0, *rid=0, *bval = 0;
 	int bskt;
 
 	(void) cntxt;
 	(void) mb;
-    *res = 0;
+	*res = 0;
 
-    rid = BATdescriptor(rows);
+	rid = BATdescriptor(rows);
 	if( rid == NULL)
-        throw(SQL, "basket.update", "Cannot access source oid descriptor");
-    bval = BATdescriptor(val);
+		throw(SQL, "basket.update", "Cannot access source oid descriptor");
+	bval = BATdescriptor(val);
 	if( bval == NULL){
 		BBPunfix(rid->batCacheid);
-        throw(SQL, "basket.update", "Cannot access source descriptor");
+		throw(SQL, "basket.update", "Cannot access source descriptor");
 	}
 
 	bskt = BSKTlocate(sname,tname);
@@ -650,25 +641,25 @@ BSKTupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 BSKTdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-    int *res = getArgReference_int(stk, pci, 0);
-    str sname = *getArgReference_str(stk, pci, 2);
-    str tname = *getArgReference_str(stk, pci, 3);
-    bat rows = *getArgReference_bat(stk, pci, 4);
-    BAT *b=0, *rid=0;
+	int *res = getArgReference_int(stk, pci, 0);
+	str sname = *getArgReference_str(stk, pci, 2);
+	str tname = *getArgReference_str(stk, pci, 3);
+	bat rows = *getArgReference_bat(stk, pci, 4);
+	BAT *b=0, *rid=0;
 	int i,idx;
 
 	(void) cntxt;
 	(void) mb;
-    *res = 0;
+	*res = 0;
 
-    rid = BATdescriptor(rows);
+	rid = BATdescriptor(rows);
 	if( rid == NULL)
-        throw(SQL, "basket.delete", "Cannot access source oid descriptor");
+		throw(SQL, "basket.delete", "Cannot access source oid descriptor");
 
 	idx = BSKTlocate(sname,tname);
 	if( idx == 0)
 		throw(SQL, "basket.delete", "Cannot access basket descriptor %s.%s",sname,tname);
-	for( i=0; baskets[idx].cols[i]; i++){
+	for( i=0; i < baskets[idx].ncols; i++){
 		b = baskets[idx].bats[i];
 		if(b){
 			 if( BATdel(b, rid) != GDK_SUCCEED){
@@ -692,21 +683,21 @@ BSKTdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 BSKTreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-    lng *res = getArgReference_lng(stk, pci, 0);
-    str sname = *getArgReference_str(stk, pci, 2);
-    str tname = *getArgReference_str(stk, pci, 3);
+	lng *res = getArgReference_lng(stk, pci, 0);
+	str sname = *getArgReference_str(stk, pci, 2);
+	str tname = *getArgReference_str(stk, pci, 3);
 	int i, idx;
 	BAT *b;
 	(void) cntxt;
 	(void) mb;
 
-    *res = 0;
+	*res = 0;
 	idx = BSKTlocate(sname,tname);
 	if( idx <= 0)
-		throw(SQL,"basket.clear","Stream table %s.%s not registered \n",sname,tname);
+		throw(SQL,"basket.reset","Stream table %s.%s not registered \n",sname,tname);
 	// do actual work
 	MT_lock_set(&baskets[idx].lock);
-	for( i=0; baskets[idx].cols[i]; i++){
+	for( i=0; i < baskets[idx].ncols; i++){
 		b = baskets[idx].bats[i];
 		if(b){
 			BATsetcount(b,0);
@@ -716,6 +707,7 @@ BSKTreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_unset(&baskets[idx].lock);
 	return MAL_SUCCEED;
 }
+
 /* provide a tabular view for inspection */
 str
 BSKTstatus (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -760,7 +752,7 @@ BSKTstatus (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for (i = 1; i < bsktTop; i++)
 		if (baskets[i].table) {
-			bn = BSKTbindColumn(baskets[i].table->s->base.name, baskets[i].table->base.name, baskets[i].cols[0]);
+			bn = BSKTbindColumn(baskets[i].table->s->base.name, baskets[i].table->base.name, baskets[i].cols[0]->base.name);
 			baskets[i].events = bn ? BATcount( bn): 0;
 			if( BUNappend(seen, &baskets[i].seen, FALSE) != GDK_SUCCEED ||
 				BUNappend(schema, baskets[i].table->s->base.name, FALSE) != GDK_SUCCEED ||
@@ -796,4 +788,28 @@ wrapup:
 	if (events)
 		BBPunfix(events->batCacheid);
 	throw(SQL, "basket.status", MAL_MALLOC_FAIL);
+}
+
+str
+BSKTprelude(void *ret)
+{
+	(void) ret;
+	baskets = (BasketRec *) GDKzalloc(MAXBSKT * sizeof(BasketRec));
+	bsktLimit = MAXBSKT;
+	bsktTop = 1;
+	if( baskets == NULL)
+		throw(MAL, "basket.prelude", MAL_MALLOC_FAIL);
+	return MAL_SUCCEED;
+}
+
+str
+BSKTepilogue(void *ret)
+{
+	(void) ret;
+	if(baskets)
+		GDKfree(baskets);
+	baskets = NULL;
+	bsktLimit = MAXBSKT;
+	bsktTop = 1;
+	return MAL_SUCCEED;
 }
