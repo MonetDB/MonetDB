@@ -188,5 +188,7 @@ extern char *token2string(int token);
 extern int sqlparse(mvc *m);
 extern int sqlerror(mvc *sql, const char *s);
 
+#include "mal_errors.h"		/* for SQLSTATE() */
+
 #endif /*_SQL_PARSER_H_*/
 

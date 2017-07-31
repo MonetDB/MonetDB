@@ -24,11 +24,6 @@ pseudo(bat *ret, BAT *b, str X1,str X2) {
 		return -1;
 	}
 	BATroles(b,X2);
-	if (BATmode(b,TRANSIENT) != GDK_SUCCEED) {
-		BBPunfix(b->batCacheid);
-		return -1;
-	}
-	BATfakeCommit(b);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
 	return -0;

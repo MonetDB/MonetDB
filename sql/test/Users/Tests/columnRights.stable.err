@@ -32,13 +32,13 @@ stderr of test 'columnRights` in directory 'sql/test/Users` itself:
 
 MAPI  = (alice) /var/tmp/mtest-9087/.s.monetdb.35899
 QUERY = SELECT price FROM orders;
-ERROR = !SELECT: access denied for alice to table 'library.orders'
-MAPI  = (alice) /var/tmp/mtest-9087/.s.monetdb.35899
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: access denied for alice to table 'library.orders'
+MAPI  = (alice) /var/tmp/mtest-27097/.s.monetdb.31804
 QUERY = SELECT name FROM orders; --insufficient rights
-ERROR = !SELECT: access denied for alice to table 'library.orders'
-MAPI  = (alice) /var/tmp/mtest-9087/.s.monetdb.35899
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: access denied for alice to table 'library.orders'
+MAPI  = (alice) /var/tmp/mtest-27097/.s.monetdb.31804
 QUERY = UPDATE orders SET price = 0; --insufficient rights
-ERROR = !UPDATE: insufficient privileges for user 'alice' to update table 'orders' on column 'price'
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !UPDATE: insufficient privileges for user 'alice' to update table 'orders' on column 'price'
 
 # 11:31:52 >  
 # 11:31:52 >  "Done."

@@ -347,9 +347,6 @@
 /* Define to 1 if you have the <malloc.h> header file. */
 #define HAVE_MALLOC_H 1
 
-/* Define to 1 if you have the `mallopt' function. */
-/* #undef HAVE_MALLOPT */
-
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
 
@@ -1027,6 +1024,9 @@ typedef unsigned __int64 uint64_t;
 #define true 1
 #define false 0
 #define __bool_true_false_are_defined 1
+
+/* normally defined in fcntl.h, but not on Windows */
+#define O_CLOEXEC 0
 
 
 #ifdef HAVE_LONG_LONG

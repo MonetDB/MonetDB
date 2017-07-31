@@ -41,6 +41,7 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	lng usec = GDKusec();
 	OLTPlocks wlocks, rlocks;
 	char buf[256];
+	str msg = MAL_SUCCEED;
 
 	(void) pci;
 	(void) cntxt;
@@ -113,6 +114,13 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			q= newCatchStmt(mb,"SQLexception");
 			q= newExitStmt(mb,"SQLexception");
 			q= copyInstruction(lcks);
+			if( q == NULL){
+				for(; i<slimit; i++)
+					if( old[i])
+						freeInstruction(old[i]);
+				GDKfree(old);
+				throw(MAL,"optimizer.oltp",MAL_MALLOC_FAIL);
+			}
 			setFunctionId(q, releaseRef);
 			pushInstruction(mb,q);
 		}
@@ -124,14 +132,14 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(old);
 
     /* Defense line against incorrect plans */
-	chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-	//chkFlow(cntxt->fdout, mb);
-	//chkDeclarations(cntxt->fdout, mb);
+	chkTypes(cntxt->usermodule, mb, FALSE);
+	//chkFlow(mb);
+	//chkDeclarations(mb);
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","oltp",actions, usec);
     newComment(mb,buf);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
-	return MAL_SUCCEED;
+	return msg;
 }

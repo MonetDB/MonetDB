@@ -35,8 +35,8 @@ stderr of test 'jdbc_no_debug.SF-1739356` in directory 'sql/test/BugTracker` its
 # 13:05:27 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -h sofia -p 38256 -d mTests_test_BugTracker -f "../../../../../..//monetdb/Dec2011/hgrepo/sql/test/BugTracker/Tests/jdbc_no_debug.SF-1739356-data.sql"
 # 13:05:27 >  
 
-Error on line 1: [42000] SQL debugging only supported in interactive mode in: "debug"
-Error on line 1: [25005] current transaction is aborted (please ROLLBACK)
+Error on line 1: [22000] ParseException:SQLparser:SQLSTATE 42000 !SQL debugging only supported in interactive mode in: "debug"
+Error on line 1: [22000] SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
 
 # 13:05:27 >  
 # 13:05:27 >  "Done."

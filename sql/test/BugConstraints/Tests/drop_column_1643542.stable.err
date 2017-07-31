@@ -14,10 +14,11 @@ stderr of test 'drop_column_1643542` in directory 'sql/test/BugConstraints` itse
 
 MAPI  = monetdb@sofia:38972
 QUERY = alter table t2 add constraint id_p primary key(id_f);
-ERROR = !CONSTRAINT PRIMARY KEY: key 'id_p' already exists
-MAPI  = monetdb@sofia:38972
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !CONSTRAINT PRIMARY KEY: key 'id_p' already exists
+MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
 QUERY = alter table t1 drop id;
-ERROR = !ALTER TABLE: cannot drop column 'id': there are database objects which depend on it
+ERROR = !ParseException:SQLparser:SQLSTATE 2BM37 !ALTER TABLE: cannot drop column 'id': there are database objects which depend on it
+
 
 # 12:57:28 >  
 # 12:57:28 >  Done.

@@ -37,12 +37,12 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 112 # length
+% 128 # length
 project (
 | group by (
-| | table(sys.test02) [ test02.col1 NOT NULL ] COUNT 
-| ) [ test02.col1 NOT NULL ] [ test02.col1 NOT NULL, sys.count no nil (test02.col1 NOT NULL) NOT NULL as L3.L3 ]
-) [ test02.col1 NOT NULL ] [ L3.L3 ASC NOT NULL ]
+| | table(sys.test02) [ "test02"."col1" NOT NULL ] COUNT 
+| ) [ "test02"."col1" NOT NULL ] [ "test02"."col1" NOT NULL, sys.count no nil ("test02"."col1" NOT NULL) NOT NULL as "L3"."L3" ]
+) [ "test02"."col1" NOT NULL ] [ "L3"."L3" ASC NOT NULL ]
 #select col1
 #from test02
 #group by col1

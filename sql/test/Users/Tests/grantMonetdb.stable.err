@@ -32,10 +32,10 @@ stderr of test 'grantMonetdb` in directory 'sql/test/Users` itself:
 
 MAPI  = (alice) /var/tmp/mtest-8540/.s.monetdb.34898
 QUERY = CREATE USER may WITH PASSWORD 'may' NAME 'May' SCHEMA library;
-ERROR = !CREATE USER: access denied for user 'alice'
-MAPI  = (alice) /var/tmp/mtest-8540/.s.monetdb.34898
+ERROR = !SQLException:sql.create_user:SQLSTATE M0M27 !CREATE USER: access denied for user 'alice'
+MAPI  = (alice) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = GRANT sysadmin TO april;
-ERROR = !GRANT: insufficient privileges to grant ROLE 'sysadmin'
+ERROR = !SQLException:sql.grant_role:SQLSTATE 0P000 !Insufficient privileges to grant ROLE 'sysadmin'
 
 # 10:44:51 >  
 # 10:44:51 >  "Done."

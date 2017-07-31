@@ -32,7 +32,7 @@ stderr of test 'copyinto` in directory 'sql/test/Users` itself:
 
 MAPI  = (copyuser) /var/tmp/mtest-23128/.s.monetdb.32528
 QUERY = COPY 5 RECORDS INTO region from '$DATADIR/region.tbl' USING DELIMITERS '|', '|\n';
-ERROR = !COPY INTO: insufficient privileges: COPY INTO from file(s) requires database administrator rights, use 'COPY INTO "region" FROM STDIN' instead
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !COPY INTO: insufficient privileges: COPY INTO from file(s) requires database administrator rights, use 'COPY INTO "region" FROM STDIN' instead
 
 # 19:39:24 >  
 # 19:39:24 >  "Done."

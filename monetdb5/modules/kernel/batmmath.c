@@ -23,6 +23,9 @@
 #else
 #define feclearexcept(x)
 #define fetestexcept(x)		0
+#define FE_INVALID			0
+#define FE_DIVBYZERO		0
+#define FE_OVERFLOW			0
 #endif
 
 #define voidresultBAT(X1,X2)									\
@@ -43,6 +46,8 @@ str CMDscience_bat_##TYPE##_##FUNC(bat *ret, const bat *bid)		\
 {																	\
 	BAT *b, *bn;													\
 	TYPE *o, *p, *q;												\
+	int e = 0, ex = 0;												\
+																	\
 	if ((b = BATdescriptor(*bid)) == NULL) {						\
 		throw(MAL, #TYPE, RUNTIME_OBJECT_MISSING);					\
 	}																\
@@ -60,13 +65,20 @@ str CMDscience_bat_##TYPE##_##FUNC(bat *ret, const bat *bid)		\
 		for (; p < q; o++, p++)										\
 			*o = *p == TYPE##_nil ? TYPE##_nil : FUNC##SUFF(*p);	\
 	}																\
-	if (errno != 0 ||												\
-		fetestexcept(FE_INVALID | FE_DIVBYZERO |					\
-					 FE_OVERFLOW | FE_UNDERFLOW) != 0) {			\
-		int e = errno;												\
+	if ((e = errno) != 0 ||											\
+		(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |				\
+						   FE_OVERFLOW)) != 0) {					\
+		const char *err;											\
 		BBPunfix(bn->batCacheid);									\
-		throw(MAL, "batmmath." #FUNC, "Math exception: %s",			\
-			  strerror(e));											\
+		if (e) {													\
+			err = strerror(e);										\
+		} else if (ex & FE_DIVBYZERO)								\
+			err = "Divide by zero";									\
+		else if (ex & FE_OVERFLOW)									\
+			err = "Overflow";										\
+		else														\
+			err = "Invalid result";									\
+		throw(MAL, "batmmath." #FUNC, "Math exception: %s", err);	\
 	}																\
 	BATsetcount(bn, BATcount(b));									\
 	bn->tsorted = 0;												\
@@ -85,6 +97,7 @@ str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
 {																		\
 	BAT *b, *bn;														\
 	TYPE *o, *p, *q;													\
+	int e = 0, ex = 0;													\
 																		\
 	if ((b = BATdescriptor(*bid)) == NULL) {							\
 		throw(MAL, #TYPE, RUNTIME_OBJECT_MISSING);						\
@@ -103,13 +116,20 @@ str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
 		for (; p < q; o++, p++)											\
 			*o = *p == TYPE##_nil ? TYPE##_nil : FUNC##SUFF(*p, *d);	\
 	}																	\
-	if (errno != 0 ||													\
-		fetestexcept(FE_INVALID | FE_DIVBYZERO |						\
-					 FE_OVERFLOW | FE_UNDERFLOW) != 0) {				\
-		int e = errno;													\
+	if ((e = errno) != 0 ||												\
+		(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |					\
+						   FE_OVERFLOW)) != 0) {						\
+		const char *err;												\
 		BBPunfix(bn->batCacheid);										\
-		throw(MAL, "batmmath." #FUNC, "Math exception: %s",				\
-			  strerror(e));												\
+		if (e) {														\
+			err = strerror(e);											\
+		} else if (ex & FE_DIVBYZERO)									\
+			err = "Divide by zero";										\
+		else if (ex & FE_OVERFLOW)										\
+			err = "Overflow";											\
+		else															\
+			err = "Invalid result";										\
+		throw(MAL, "batmmath." #FUNC, "Math exception: %s", err);		\
 	}																	\
 	BATsetcount(bn, BATcount(b));										\
 	bn->tsorted = 0;													\
@@ -127,6 +147,7 @@ str CMDscience_cst_bat_##FUNC##_##TYPE(bat *ret, const TYPE *d,			\
 {																		\
 	BAT *b, *bn;														\
 	TYPE *o, *p, *q;													\
+	int e = 0, ex = 0;													\
 																		\
 	if ((b = BATdescriptor(*bid)) == NULL) {							\
 		throw(MAL, #TYPE, RUNTIME_OBJECT_MISSING);						\
@@ -145,13 +166,20 @@ str CMDscience_cst_bat_##FUNC##_##TYPE(bat *ret, const TYPE *d,			\
 		for (; p < q; o++, p++)											\
 			*o = *p == TYPE##_nil ? TYPE##_nil : FUNC##SUFF(*d, *p);	\
 	}																	\
-	if (errno != 0 ||													\
-		fetestexcept(FE_INVALID | FE_DIVBYZERO |						\
-					 FE_OVERFLOW | FE_UNDERFLOW) != 0) {				\
-		int e = errno;													\
+	if ((e = errno) != 0 ||												\
+		(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |					\
+						   FE_OVERFLOW)) != 0) {						\
+		const char *err;												\
 		BBPunfix(bn->batCacheid);										\
-		throw(MAL, "batmmath." #FUNC, "Math exception: %s",				\
-			  strerror(e));												\
+		if (e) {														\
+			err = strerror(e);											\
+		} else if (ex & FE_DIVBYZERO)									\
+			err = "Divide by zero";										\
+		else if (ex & FE_OVERFLOW)										\
+			err = "Overflow";											\
+		else															\
+			err = "Invalid result";										\
+		throw(MAL, "batmmath." #FUNC, "Math exception: %s", err);		\
 	}																	\
 	BATsetcount(bn, BATcount(b));										\
 	bn->tsorted = 0;													\

@@ -12,22 +12,22 @@ stderr of test 'rollback_and_autocommit.SF-926453` in directory 'sql/test/BugDay
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select count(*) from tapestry where attr2<0;
-ERROR = !SELECT: no such table 'tapestry'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'tapestry'
+MAPI  = (monetdb) /var/tmp/mtest-10110/.s.monetdb.31072
 QUERY = select count(*) from tapestry where attr2<0;
-ERROR = !SELECT: no such table 'tapestry'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'tapestry'
+MAPI  = (monetdb) /var/tmp/mtest-10110/.s.monetdb.31072
 QUERY = select count(*) from tapestry where attr2<0;
-ERROR = !SELECT: no such table 'tapestry'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'tapestry'
+MAPI  = (monetdb) /var/tmp/mtest-10110/.s.monetdb.31072
 QUERY = select count(*) from tapestry where attr2<0;
-ERROR = !SELECT: no such table 'tapestry'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'tapestry'
+MAPI  = (monetdb) /var/tmp/mtest-10110/.s.monetdb.31072
 QUERY = select count(*) from tapestry where attr2<0;
-ERROR = !SELECT: no such table 'tapestry'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'tapestry'
+MAPI  = (monetdb) /var/tmp/mtest-10110/.s.monetdb.31072
 QUERY = select count(*) from tapestry where attr2<0;
-ERROR = !SELECT: no such table 'tapestry'
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'tapestry'
 
 # 15:32:14 >  
 # 15:32:14 >  "Done."

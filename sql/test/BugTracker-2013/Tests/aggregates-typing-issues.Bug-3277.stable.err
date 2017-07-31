@@ -30,19 +30,19 @@ stderr of test 'aggregates-typing-issues.Bug-3277` in directory 'sql/test/BugTra
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select stddev( prob1 ) from mtcars2;
-ERROR = !SELECT: no such unary operator 'stddev(bigint)'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such unary operator 'stddev(bigint)'
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = select stddev( prob1 ) from mtcars2;
-ERROR = !SELECT: no such unary operator 'stddev(tinyint)'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such unary operator 'stddev(tinyint)'
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = select stddev( prob1 ) from mtcars2;
-ERROR = !SELECT: no such unary operator 'stddev(smallint)'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such unary operator 'stddev(smallint)'
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = select stddev( prob1 ) from mtcars2;
-ERROR = !SELECT: no such unary operator 'stddev(int)'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such unary operator 'stddev(int)'
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = select stddev( prob1 ) from mtcars2;
-ERROR = !SELECT: no such unary operator 'stddev(bigint)'
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such unary operator 'stddev(bigint)'
 
 # 10:46:44 >  
 # 10:46:44 >  "Done."

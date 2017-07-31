@@ -32,13 +32,13 @@ stderr of test 'foreign_key.Bug-3114` in directory 'sql/test/BugTracker-2012` it
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into "second" values (101, 1);
-ERROR = !INSERT INTO: FOREIGN KEY constraint 'second.second_ref_fkey' violated
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: FOREIGN KEY constraint 'second.second_ref_fkey' violated
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = update "second" set ref = 1 WHERE id = 100;
-ERROR = !UPDATE: FOREIGN KEY constraint 'second.second_ref_fkey' violated
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !SQLException:assert:SQLSTATE M0M29 !UPDATE: FOREIGN KEY constraint 'second.second_ref_fkey' violated
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = update "second" set ref = 1 WHERE id = 100;
-ERROR = !UPDATE: FOREIGN KEY constraint 'second.second_ref_fkey' violated
+ERROR = !SQLException:assert:SQLSTATE M0M29 !UPDATE: FOREIGN KEY constraint 'second.second_ref_fkey' violated
 
 # 17:09:14 >  
 # 17:09:14 >  "Done."

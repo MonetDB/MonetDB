@@ -44,9 +44,9 @@ QUERY = # Error, illegal block weaveing
         	redo t;
         exit	t;
         	i:= 0;
-ERROR = !SyntaxException:user.main[9]:exit-label 'v' doesnot match 't'
-        !SyntaxException:user.main[10]:label 't' not in guarded block
-        !SyntaxException:user.main[11]:exit-label 't' without begin-label
+ERROR = !MALException:user.main[9]:exit-label 'v' doesnot match 't'
+        !MALException:user.main[10]:label 't' not in guarded block
+        !MALException:user.main[11]:exit-label 't' without begin-label
 
 # 20:43:15 >  
 # 20:43:15 >  "Done."

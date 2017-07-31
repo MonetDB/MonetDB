@@ -46,6 +46,7 @@ def main():
     print(r'    <WixVariable Id="WixUIBannerBmp" Value="banner.bmp"/>')
     # print(r'    <WixVariable Id="WixUIDialogBmp" Value="backgroundRipple.bmp"/>')
     print(r'    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR"/>')
+    print(r'    <Property Id="ARPPRODUCTICON" Value="monetdb.ico"/>')
     print(r'    <Media Id="1" Cabinet="monetdb.cab" EmbedCab="yes"/>')
     print(r'    <CustomAction Id="driverinstall" FileKey="odbcinstall" ExeCommand="/Install" Execute="deferred" Impersonate="no"/>')
     print(r'    <CustomAction Id="driveruninstall" FileKey="odbcinstall" ExeCommand="/Uninstall" Execute="deferred" Impersonate="no"/>')

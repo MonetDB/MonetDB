@@ -12,8 +12,8 @@ stderr of test 'crash_on_incorrect_SQL.SF-1314904` in directory 'sql/test/BugDay
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = create table t1314904b (testid unknowntype, testchar varchar(255));
-ERROR = !type (unknowntype) unknown in: "create table t1314904b (testid unknowntype,"
-        !syntax error, unexpected IDENT in: "testchar"
+ERROR = !ParseException:SQLparser:SQLSTATE 22000 !Type (unknowntype) unknown in: "create table t1314904b (testid unknowntype,"
+        !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT in: "testchar"
 
 # 16:53:01 >  
 # 16:53:01 >  Done.

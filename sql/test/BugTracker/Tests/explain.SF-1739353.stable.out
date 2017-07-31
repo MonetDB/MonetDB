@@ -1,9 +1,9 @@
 stdout of test 'explain.SF-1739353` in directory 'sql/test/BugTracker` itself:
 
 
-# 15:15:36 >  
-# 15:15:36 >   mserver5 "--config=/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5:/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/lib:/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/lib64/MonetDB5/bin" --set "gdk_dbfarm=/ufs/manegold/_/scratch0/Monet/Testing/Candidate/prefix.--enable-strict_--disable-optimize_--enable-debug_--enable-assert/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=33159 --set xrpc_port=45591 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
-# 15:15:36 >  
+# 15:11:17 >  
+# 15:11:17 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33800" "--set" "mapi_usock=/var/tmp/mtest-7180/.s.monetdb.33800" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-virgin/var/MonetDB/mTests_sql_test_BugTracker"
+# 15:11:17 >  
 
 # MonetDB server v5.16.0, based on kernel v1.34.0
 # Serving database 'mTests_src_test_BugTracker', using 4 threads
@@ -21,16 +21,15 @@ Ready.
 #end main;
 
 
-
 # 22:44:03 >  
 # 22:44:03 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -h vienna -p 37175 -d mTests_sql_test_BugTracker -f "../../../../../package/sql/test/BugTracker/Tests/explain.SF-1739353-data.sql"
 # 22:44:03 >  
 
 Operation successful
 +------------------------------------------------------------------------------------------------------+
-| mal    |
+| mal                                                                                                       |
 +======================================================================================================+
-| function user.s4_1():void;                                                                           |
+| function user.s4_1():void;                                                                                |
 |     X_52:void := querylog.define("explain select \"name\" from \"tables\"\n;","sequential_pipe",33); |
 |     X_36 := bat.new(nil:str);                                                                        |
 |     X_43 := bat.append(X_36,".tables");                                                              |
@@ -62,7 +61,7 @@ Operation successful
 |     X_33 := mosaic.projection(C_30,X_32);                                                            |
 |     X_34 := bat.append(X_29,X_33,true);                                                              |
 |     sql.resultSet(X_43,X_45,X_46,X_48,X_50,X_34);                                                    |
-| end user.s4_1;                                                                                       |
+| end user.s4_1;                                                                                            |
 | #inline               actions= 0 time=1 usec                                                         |
 | #remap                actions= 0 time=2 usec                                                         |
 | #costmodel            actions= 1 time=2 usec                                                         |

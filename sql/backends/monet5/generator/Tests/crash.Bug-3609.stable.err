@@ -32,7 +32,7 @@ stderr of test 'crash.Bug-3609` in directory 'sql/backends/monet5/generator` its
 
 MAPI  = (monetdb) /var/tmp/mtest-30092/.s.monetdb.31340
 QUERY = select generate_series(0,2,1);
-ERROR = !SELECT: no such operator 'generate_series'
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such operator 'generate_series'
 
 
 

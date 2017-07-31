@@ -224,7 +224,7 @@ MNDBTables(ODBCStmt *stmt,
 		}
 
 		/* construct the query now */
-		query = (char *) malloc(1200 + (cat ? strlen(cat) : 0) + (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0) + ((NameLength4 + 1) / 5) * 67);
+		query = (char *) malloc(2000 + (cat ? strlen(cat) : 0) + (sch ? strlen(sch) : 0) + (tab ? strlen(tab) : 0) + ((NameLength4 + 1) / 5) * 67);
 		if (query == NULL)
 			goto nomem;
 		query_end = query;
@@ -295,7 +295,7 @@ MNDBTables(ODBCStmt *stmt,
 			    "sys.env() e "
 		       "where s.id = t.schema_id and "
 			     "e.name = 'gdk_dbname'");
-		assert(strlen(query) < 1100);
+		assert(strlen(query) < 1900);
 		query_end += strlen(query_end);
 
 		/* dependent on the input parameter values we must add a

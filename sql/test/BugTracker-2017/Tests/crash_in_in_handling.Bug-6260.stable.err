@@ -29,7 +29,7 @@ stderr of test 'crash_in_in_handling.Bug-6260` in directory 'sql/test/BugTracker
 
 MAPI  = (monetdb) /var/tmp/mtest-29945/.s.monetdb.39677
 QUERY = SELECT * FROM tab0 AS cor0 WHERE NOT NULL IN ( col3 );
-ERROR = !SELECT: identifier 'col3' unknown
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: identifier 'col3' unknown
 
 # 14:07:27 >  
 # 14:07:27 >  "Done."

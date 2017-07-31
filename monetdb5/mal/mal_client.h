@@ -15,6 +15,8 @@
 #include "mal_resolve.h"
 #include "mal_profiler.h"
 
+#define SCENARIO_PROPERTIES 8
+
 #define CONSOLE     0
 #define isAdministrator(X) (X==mal_clients)
 
@@ -68,9 +70,8 @@ typedef struct CLIENT {
 	 */
 	str     scenario;  /* scenario management references */
 	str     oldscenario;
-	void    *state[7], *oldstate[7];
-	MALfcn  phase[7], oldphase[7];
-	sht	stage;	   /* keep track of the phase being ran */
+	void    *state[SCENARIO_PROPERTIES], *oldstate[SCENARIO_PROPERTIES];
+	MALfcn  phase[SCENARIO_PROPERTIES], oldphase[SCENARIO_PROPERTIES];
 	char    itrace;    /* trace execution using interactive mdb */
 						/* if set to 'S' it will put the process to sleep */
 	/*
@@ -142,9 +143,10 @@ typedef struct CLIENT {
 	 * object space (the global variables).  Moreover, the parser needs
 	 * some administration variables to keep track of critical elements.
 	 */
-	Module      nspace;     /* private scope resolution list */
-	Symbol      curprg;     /* focus of parser */
-	Symbol      backup;     /* save parsing context */
+	Module      usermodule;     /* private user scope */
+	Module		curmodule;		/* where to deliver the symbol, used by parser , only freed globally */
+	Symbol      curprg;     /* container for the malparser */
+	Symbol      backup;     /* saving the parser context for functions,commands/patterns */
 	MalStkPtr   glb;        /* global variable stack */
 	/*
 	 * Some statistics on client behavior becomes relevant for server
@@ -153,7 +155,6 @@ typedef struct CLIENT {
 	 * we have to wait for the next one.
 	 */
 	int		actions;
-	lng		totaltime;	/* sum of elapsed processing times */
 
 	jmp_buf	exception_buf;
 	int exception_buf_initialized;

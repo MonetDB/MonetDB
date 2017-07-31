@@ -389,7 +389,7 @@ void mal_factory_reset(void)
 			/* we are inside the body of the factory and about to return */
 			if (pl->stk) {
 				pl->stk->keepAlive = FALSE;
-				garbageCollector(NULL, pl->factory, pl->stk,TRUE);
+				garbageCollector(NULL, pl->factory, pl->stk, TRUE);
 				GDKfree(pl->stk);
 			}
 			pl->factory = 0;

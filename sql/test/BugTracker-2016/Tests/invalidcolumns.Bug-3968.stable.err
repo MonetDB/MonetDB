@@ -32,10 +32,10 @@ MAPI  = (monetdb) /var/tmp/mtest-7864/.s.monetdb.36671
 QUERY = create function places3()
         returns table( "schema" string,  "table" string, "schema" string)
         external name iot.places;
-ERROR = !CREATE FUNC: identifier 'schema' ambiguous
-MAPI  = (monetdb) /var/tmp/mtest-7864/.s.monetdb.36671
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !CREATE FUNC: identifier 'schema' ambiguous
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = select * from places3();
-ERROR = !SELECT: no such operator 'places3'
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such operator 'places3'
 
 # 12:37:42 >  
 # 12:37:42 >  "Done."

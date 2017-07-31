@@ -29,18 +29,24 @@ stderr of test 'ifexists` in directory 'sql/test` itself:
 # 16:49:36 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-81010" "--port=38832"
 # 16:49:36 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-81010/.s.monetdb.38832
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
+QUERY = CREATE TABLE IF NOT EXISTS hello(i INTEGER);
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = CREATE TABLE hello(i INTEGER);
-ERROR = !CREATE TABLE: name 'hello' already in use
-MAPI  = (monetdb) /var/tmp/mtest-81010/.s.monetdb.38832
+ERROR = !ParseException:SQLparser:SQLSTATE 42S01 !CREATE TABLE: name 'hello' already in use
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = DROP TABLE hello;
-ERROR = !DROP TABLE: no such table 'hello'
-MAPI  = (monetdb) /var/tmp/mtest-81010/.s.monetdb.38832
+ERROR = !SQLException:sql.droptable:SQLSTATE 42S02 !DROP TABLE: no such table 'hello'
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
+QUERY = CREATE SCHEMA IF NOT EXISTS hello;
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = CREATE SCHEMA hello;
-ERROR = !CREATE SCHEMA: name 'hello' already in use
-MAPI  = (monetdb) /var/tmp/mtest-81010/.s.monetdb.38832
+ERROR = !ParseException:SQLparser:SQLSTATE 3F000 !CREATE SCHEMA: name 'hello' already in use
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = DROP SCHEMA hello;
-ERROR = !DROP SCHEMA: name hello does not exist
+ERROR = !SQLException:sql.drop_schema:SQLSTATE 3F000 !DROP SCHEMA: name hello does not exist
 
 # 16:49:36 >  
 # 16:49:36 >  "Done."

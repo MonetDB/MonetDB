@@ -12,7 +12,7 @@ stderr of test 'select_constant_from_where_1=1-bug-sf-1019529` in directory 'sql
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select name, count(*) from t1019529; -- should fail
-ERROR = !cannot use non GROUP BY column 'name' in query results without an aggregate function
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Cannot use non GROUP BY column 'name' in query results without an aggregate function
 
 # 13:45:16 >  
 # 13:45:16 >  Done.

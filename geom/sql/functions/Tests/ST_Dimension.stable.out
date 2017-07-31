@@ -25,31 +25,31 @@ Ready.
 # 15:08:42 >  
 
 #SELECT ST_Dimension(st_GeometryFromText('POINT(0 0)'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 0	]
 #SELECT ST_Dimension(st_GeometryFromText('LINESTRING(1 1,0 0)'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 1	]
 #SELECT ST_Dimension(st_GeometryFromText('polygon((0 0,1 0, 0 1, 1 1, 0 0))'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 2	]
 #SELECT ST_Dimension(st_GeomCollFromText('GEOMETRYCOLLECTION(LINESTRING(1 1,0 0),POINT(0 0))'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 1	]
 #SELECT DISTINCT ST_GeometryType(geom) AS "TYPE", ST_Dimension(geom) AS "DIM" FROM geometries;
-% sys.L1,	sys.L2 # table_name
+% sys.L2,	sys.L4 # table_name
 % TYPE,	DIM # name
 % clob,	int # type
 % 21,	1 # length

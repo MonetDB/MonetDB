@@ -73,7 +73,7 @@ MAPI  = (monetdb) /var/tmp/mtest-29638/.s.monetdb.30099
 QUERY = COPY 2 RECORDS INTO "number" FROM stdin USING DELIMITERS ';', '\n';
         1
         bla
-ERROR = !Failed to import table 'number', line 2 field isanumber 'int' expected in 'bla'
+ERROR = !SQLException:importTable:SQLSTATE 42000 !Failed to import table 'number', line 2 field isanumber 'int' expected in 'bla'
 
 # 17:35:33 >  
 # 17:35:33 >  Done.

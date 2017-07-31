@@ -15,13 +15,13 @@ QUERY = insert into suspect (name, picture_uri, notes,
         victim_name) values ("Dr. Thomas Neill Cream ",
         "http://blabla/toolong", "did commit murders, but by
         poisoning", "");
-ERROR = !SELECT: identifier 'Dr. Thomas Neill Cream ' unknown
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: identifier 'Dr. Thomas Neill Cream ' unknown
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = insert into suspect (name, picture_uri, notes,
         victim_name) values ("Sander Borsboom", "lives
         centuries later, so not much chance", "blah.jpg",
         "noone (yet :D)");
-ERROR = !SELECT: identifier 'Sander Borsboom' unknown
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: identifier 'Sander Borsboom' unknown
 
 # 11:28:19 >  
 # 11:28:19 >  Done.

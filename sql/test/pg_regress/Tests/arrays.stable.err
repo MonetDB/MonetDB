@@ -39,99 +39,93 @@ QUERY = CREATE TABLE arrtest (
         	f			char(5)[],
         	g			varchar(5)[]
         );
-ERROR = !syntax error, unexpected '[', expecting ')' or ',' in: "create table arrtest (
-        !	a 			smallint["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting ')' or ',' in: "create table arrtest (
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = INSERT INTO arrtest (a[1:5], b[1:1][1:2][1:2], c, d, f, g)
            VALUES ('{1,2,3,4,5}', '{{{0,0},{1,2}}}', '{}', '{}', '{}', '{}');
-ERROR = !syntax error, unexpected '[', expecting ')' or ',' in: "insert into arrtest (a["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting ')' or ',' in: "insert into arrtest (a["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = UPDATE arrtest SET e[0] = '1.1';
-ERROR = !syntax error, unexpected '[', expecting '=' in: "update arrtest set e["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting '=' in: "update arrtest set e["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = UPDATE arrtest SET e[1] = '2.2';
-ERROR = !syntax error, unexpected '[', expecting '=' in: "update arrtest set e["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting '=' in: "update arrtest set e["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = INSERT INTO arrtest (f)
    VALUES ('{"too long"}');
-ERROR = !INSERT INTO: no such table 'arrtest'
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !INSERT INTO: no such table 'arrtest'
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = INSERT INTO arrtest (a, b[1:2][1:2], c, d, e, f, g)
            VALUES ('{11,12,23}', '{{3,4},{4,5}}', '{"foobar"}', 
                    '{{"elt1", "elt2"}}', '{"3.4", "6.7"}',
                    '{"abc","abcde"}', '{"abc","abcde"}');
-ERROR = !syntax error, unexpected '[', expecting ')' or ',' in: "insert into arrtest (a, b["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting ')' or ',' in: "insert into arrtest (a, b["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = INSERT INTO arrtest (a, b[1:2], c, d[1:2])
            VALUES ('{}', '{3,4}', '{foo,bar}', '{bar,foo}');
-ERROR = !syntax error, unexpected '[', expecting ')' or ',' in: "insert into arrtest (a, b["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting ')' or ',' in: "insert into arrtest (a, b["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT * FROM arrtest;
-ERROR = !SELECT: no such table 'arrtest'
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'arrtest'
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT arrtest.a[1],
                   arrtest.b[1][1][1],
                   arrtest.c[1],
                   arrtest.d[1][1], 
                   arrtest.e[0]
            FROM arrtest;
-ERROR = !syntax error, unexpected '[', expecting SCOLON in: "select arrtest.a["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting SCOLON in: "select arrtest.a["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT a[1], b[1][1][1], c[1], d[1][1], e[0]
            FROM arrtest;
-ERROR = !syntax error, unexpected '[', expecting SCOLON in: "select a["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting SCOLON in: "select a["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT a[1:3],
                   b[1:1][1:2][1:2],
                   c[1:2], 
                   d[1:1][1:2]
            FROM arrtest;
-ERROR = !syntax error, unexpected '[', expecting SCOLON in: "select a["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting SCOLON in: "select a["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT array_dims(a) AS a,array_dims(b) AS b,array_dims(c) AS c
            FROM arrtest;
-ERROR = !SELECT: no such table 'arrtest'
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'arrtest'
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT *
            FROM arrtest
            WHERE a[1] < 5 and 
                  c = '{"foobar"}'::_name;
-ERROR = !syntax error, unexpected '[', expecting SCOLON in: "select *
-        !   from arrtest
-        !   where a["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting SCOLON in: "select *
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = UPDATE arrtest
           SET a[1:2] = '{16,25}'
           WHERE NOT a = '{}'::_int2;
-ERROR = !syntax error, unexpected '[', expecting '=' in: "update arrtest
-        !  set a["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting '=' in: "update arrtest
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = UPDATE arrtest
           SET b[1:1][1:1][1:2] = '{113, 117}',
               b[1:1][1:2][2:2] = '{142, 147}'
           WHERE array_dims(b) = '[1:1][1:2][1:2]';
-ERROR = !syntax error, unexpected '[', expecting '=' in: "update arrtest
-        !  set b["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting '=' in: "update arrtest
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = UPDATE arrtest
           SET c[2:2] = '{"new_word"}'
           WHERE array_dims(c) is not null;
-ERROR = !syntax error, unexpected '[', expecting '=' in: "update arrtest
-        !  set c["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting '=' in: "update arrtest
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT a,b,c FROM arrtest;
-ERROR = !SELECT: no such table 'arrtest'
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'arrtest'
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT a[1:3],
                   b[1:1][1:2][1:2],
                   c[1:2], 
                   d[1:1][2:2]
            FROM arrtest;
-ERROR = !syntax error, unexpected '[', expecting SCOLON in: "select a["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting SCOLON in: "select a["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = CREATE TEMP TABLE arrtest2 (i integer ARRAY[4], f double[], n numeric[], t text[], d timestamp[]);
-ERROR = !syntax error, unexpected IDENT, expecting ')' or ',' in: "create temp table arrtest2 (i integer array"
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting ')' or ',' in: "create temp table arrtest2 (i integer array"
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = INSERT INTO arrtest2 VALUES(
           ARRAY[[[113,142],[1,147]]],
           ARRAY[1.1,1.2,1.3]::double[],
@@ -139,211 +133,210 @@ QUERY = INSERT INTO arrtest2 VALUES(
           ARRAY[[['aaa','aab'],['aba','abb'],['aca','acb']],[['baa','bab'],['bba','bbb'],['bca','bcb']]],
           ARRAY['19620326','19931223','19970117']::timestamp[]
         );
-ERROR = !syntax error, unexpected '[', expecting ')' or ',' in: "insert into arrtest2 values(
-        !  array["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting ')' or ',' in: "insert into arrtest2 values(
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT t.f[1][3][1] AS "131", t.f[2][2][1] AS "221" FROM (
           SELECT ARRAY[[[111,112],[121,122],[131,132]],[[211,212],[221,122],[231,232]]] AS f
         ) AS t;
-ERROR = !syntax error, unexpected '[', expecting SCOLON in: "select t.f["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting SCOLON in: "select t.f["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT ARRAY[[[[[['hello'],['world']]]]]];
-ERROR = !syntax error, unexpected '[', expecting SCOLON in: "select array["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting SCOLON in: "select array["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT ARRAY[ARRAY['hello'],ARRAY['world']];
-ERROR = !syntax error, unexpected '[', expecting SCOLON in: "select array["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting SCOLON in: "select array["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT ARRAY(select f2 from arrtest_f order by f2) AS "ARRAY";
-ERROR = !syntax error, unexpected SELECT in: "select array(select"
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected SELECT in: "select array(select"
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT array_append(array[42], 6) AS "{42,6}";
-ERROR = !syntax error, unexpected '[', expecting ')' or ',' in: "select array_append(array["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting ')' or ',' in: "select array_append(array["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT array_prepend(6, array[42]) AS "{6,42}";
-ERROR = !syntax error, unexpected '[', expecting ')' or ',' in: "select array_prepend(6, array["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting ')' or ',' in: "select array_prepend(6, array["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT array_cat(ARRAY[1,2], ARRAY[3,4]) AS "{1,2,3,4}";
-ERROR = !syntax error, unexpected '[', expecting ')' or ',' in: "select array_cat(array["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting ')' or ',' in: "select array_cat(array["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT array_cat(ARRAY[1,2], ARRAY[[3,4],[5,6]]) AS "{{1,2},{3,4},{5,6}}";
-ERROR = !syntax error, unexpected '[', expecting ')' or ',' in: "select array_cat(array["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting ')' or ',' in: "select array_cat(array["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT array_cat(ARRAY[[3,4],[5,6]], ARRAY[1,2]) AS "{{3,4},{5,6},{1,2}}";
-ERROR = !syntax error, unexpected '[', expecting ')' or ',' in: "select array_cat(array["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting ')' or ',' in: "select array_cat(array["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT a FROM arrtest WHERE b = ARRAY[[[113,142],[1,147]]];
-ERROR = !syntax error, unexpected '[', expecting SCOLON in: "select a from arrtest where b = array["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting SCOLON in: "select a from arrtest where b = array["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT NOT ARRAY[1.1,1.2,1.3] = ARRAY[1.1,1.2,1.3] AS "FALSE";
-ERROR = !syntax error, unexpected '[', expecting SCOLON in: "select not array["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting SCOLON in: "select not array["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT ARRAY[1,2] || 3 AS "{1,2,3}";
-ERROR = !syntax error, unexpected '[', expecting SCOLON in: "select array["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting SCOLON in: "select array["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT 0 || ARRAY[1,2] AS "{0,1,2}";
-ERROR = !syntax error, unexpected '[', expecting SCOLON in: "select 0 || array["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting SCOLON in: "select 0 || array["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT ARRAY[1,2] || ARRAY[3,4] AS "{1,2,3,4}";
-ERROR = !syntax error, unexpected '[', expecting SCOLON in: "select array["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting SCOLON in: "select array["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT ARRAY[[['hello','world']]] || ARRAY[[['happy','birthday']]] AS "ARRAY";
-ERROR = !syntax error, unexpected '[', expecting SCOLON in: "select array["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting SCOLON in: "select array["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT ARRAY[[1,2],[3,4]] || ARRAY[5,6] AS "{{1,2},{3,4},{5,6}}";
-ERROR = !syntax error, unexpected '[', expecting SCOLON in: "select array["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting SCOLON in: "select array["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT ARRAY[0,0] || ARRAY[1,1] || ARRAY[2,2] AS "{0,0,1,1,2,2}";
-ERROR = !syntax error, unexpected '[', expecting SCOLON in: "select array["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting SCOLON in: "select array["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT 0 || ARRAY[1,2] || 3 AS "{0,1,2,3}";
-ERROR = !syntax error, unexpected '[', expecting SCOLON in: "select 0 || array["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting SCOLON in: "select 0 || array["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT ARRAY[1,2,3]::text[]::int[]::double[] AS "{1,2,3}";
-ERROR = !syntax error, unexpected '[', expecting SCOLON in: "select array["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting SCOLON in: "select array["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT ARRAY[1,2,3]::text[]::int[]::double[] is of (double[]) as "TRUE";
-ERROR = !syntax error, unexpected '[', expecting SCOLON in: "select array["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting SCOLON in: "select array["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT ARRAY[['a','bc'],['def','hijk']]::text[]::varchar[] AS "{{a,bc},{def,hijk}}";
-ERROR = !syntax error, unexpected '[', expecting SCOLON in: "select array["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting SCOLON in: "select array["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT ARRAY[['a','bc'],['def','hijk']]::text[]::varchar[] is of (varchar[]) as "TRUE";
-ERROR = !syntax error, unexpected '[', expecting SCOLON in: "select array["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting SCOLON in: "select array["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = SELECT CAST(ARRAY[[[[[['a','bb','ccc']]]]]] as text[]) as "{{{{{{a,bb,ccc}}}}}}";
-ERROR = !syntax error, unexpected '[', expecting AS in: "select cast(array["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting AS in: "select cast(array["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select 33 = any ('{1,2,3}');
-ERROR = !conversion of string '{1,2,3}' to type bte failed.
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !MALException:calc.bte:22018!conversion of string '{1,2,3}' to type bte failed.
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select 33 = any ('{1,2,33}');
-ERROR = !conversion of string '{1,2,33}' to type bte failed.
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !MALException:calc.bte:22018!conversion of string '{1,2,33}' to type bte failed.
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select 33 = all ('{1,2,33}');
-ERROR = !conversion of string '{1,2,33}' to type bte failed.
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !MALException:calc.bte:22018!conversion of string '{1,2,33}' to type bte failed.
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select 33 >= all ('{1,2,33}');
-ERROR = !syntax error, unexpected STRING, expecting SELECT or WITH or '(' or VALUES in: "select 33 >= all ('{1,2,33}'"
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected STRING, expecting SELECT or WITH or '(' or VALUES in: "select 33 >= all ('{1,2,33}'"
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select null::int >= all ('{1,2,33}');
-ERROR = !unexpected symbol (:)
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select null::int >= all ('{}');
-ERROR = !unexpected symbol (:)
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select null::int >= any ('{}');
-ERROR = !unexpected symbol (:)
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select 33.4 = any (array[1,2,3]);
-ERROR = !syntax error, unexpected '[', expecting ')' in: "select 33.4 = any (array["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting ')' or OR in: "select 33.4 = any (array["
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = select 33.4 > all (array[1,2,3]);
-ERROR = !syntax error, unexpected IDENT, expecting SELECT or WITH or '(' or VALUES in: "select 33.4 > all (array"
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting SELECT or WITH or '(' or VALUES in: "select 33.4 > all (array"
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select 33 * any ('{1,2,3}');
-ERROR = !syntax error, unexpected ANY in: "select 33 * any"
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected ANY in: "select 33 * any"
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select 33 * any (44);
-ERROR = !syntax error, unexpected ANY in: "select 33 * any"
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected ANY in: "select 33 * any"
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = CREATE temp table arr_tbl (f1 int[] unique);
-ERROR = !syntax error, unexpected '[', expecting ')' or ',' in: "create temp table arr_tbl (f1 int["
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '[', expecting ')' or ',' in: "create temp table arr_tbl (f1 int["
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = insert into arr_tbl values ('{1,2,3}');
-ERROR = !INSERT INTO: no such table 'arr_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !INSERT INTO: no such table 'arr_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = insert into arr_tbl values ('{1,2}');
-ERROR = !INSERT INTO: no such table 'arr_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !INSERT INTO: no such table 'arr_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = insert into arr_tbl values ('{1,2,3}');
-ERROR = !INSERT INTO: no such table 'arr_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !INSERT INTO: no such table 'arr_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = insert into arr_tbl values ('{2,3,4}');
-ERROR = !INSERT INTO: no such table 'arr_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !INSERT INTO: no such table 'arr_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = insert into arr_tbl values ('{1,5,3}');
-ERROR = !INSERT INTO: no such table 'arr_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !INSERT INTO: no such table 'arr_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = insert into arr_tbl values ('{1,2,10}');
-ERROR = !INSERT INTO: no such table 'arr_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !INSERT INTO: no such table 'arr_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = set enable_seqscan to off;
-ERROR = !syntax error, unexpected TO, expecting '=' in: "set enable_seqscan to"
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected TO, expecting '=' in: "set enable_seqscan to"
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select * from arr_tbl where f1 > '{1,2,3}' and f1 <= '{1,5,3}';
-ERROR = !SELECT: no such table 'arr_tbl'
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'arr_tbl'
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select 'foo' like any (array['%a', '%o']); -- t
-ERROR = !syntax error, unexpected ANY in: "select 'foo' like any"
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected ANY in: "select 'foo' like any"
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select 'foo' like any (array['%a', '%b']); -- f
-ERROR = !syntax error, unexpected ANY in: "select 'foo' like any"
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected ANY in: "select 'foo' like any"
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select 'foo' like all (array['f%', '%o']); -- t
-ERROR = !syntax error, unexpected ALL in: "select 'foo' like all"
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected ALL in: "select 'foo' like all"
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select 'foo' like all (array['f%', '%b']); -- f
-ERROR = !syntax error, unexpected ALL in: "select 'foo' like all"
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected ALL in: "select 'foo' like all"
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select 'foo' not like any (array['%a', '%b']); -- t
-ERROR = !syntax error, unexpected ANY in: "select 'foo' not like any"
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected ANY in: "select 'foo' not like any"
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select 'foo' not like all (array['%a', '%o']); -- f
-ERROR = !syntax error, unexpected ALL in: "select 'foo' not like all"
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected ALL in: "select 'foo' not like all"
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select 'foo' ilike any (array['%A', '%O']); -- t
-ERROR = !syntax error, unexpected ANY in: "select 'foo' ilike any"
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected ANY in: "select 'foo' ilike any"
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select 'foo' ilike all (array['F%', '%O']); -- t
-ERROR = !syntax error, unexpected ALL in: "select 'foo' ilike all"
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected ALL in: "select 'foo' ilike all"
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select '{{1,{2}},{2,3}}'::text[];
-ERROR = !unexpected symbol (:)
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select '{{},{}}'::text[];
-ERROR = !unexpected symbol (:)
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select '{{1,2},\\{2,3}}'::text[];
-ERROR = !unexpected symbol (:)
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select '{{"1 2" x},{3}}'::text[];
-ERROR = !unexpected symbol (:)
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select '{}}'::text[];
-ERROR = !unexpected symbol (:)
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select '{ }}'::text[];
-ERROR = !unexpected symbol (:)
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select '{}'::text[];
-ERROR = !unexpected symbol (:)
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select '{{{1,2,3,4},{2,3,4,5}},{{3,4,5,6},{4,5,6,7}}}'::text[];
-ERROR = !unexpected symbol (:)
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select '{0 second  ,0 second}'::interval[];
-ERROR = !unexpected symbol (:)
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select '{ { "," } , { 3 } }'::text[];
-ERROR = !unexpected symbol (:)
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select '  {   {  "  0 second  "   ,  0 second  }   }'::text[];
-ERROR = !unexpected symbol (:)
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = select '{
                    0 second,
                    @ 1 hour @ 42 minutes @ 20 seconds
                  }'::interval[];
-ERROR = !unexpected symbol (:)
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Unexpected symbol (:)
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = DROP TABLE arrtest;
-ERROR = !DROP TABLE: no such table 'arrtest'
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !SQLException:sql.droptable:SQLSTATE 42S02 !DROP TABLE: no such table 'arrtest'
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = DROP TABLE arrtest2;
-ERROR = !DROP TABLE: no such table 'arrtest2'
-MAPI  = (monetdb) /var/tmp/mtest-10064/.s.monetdb.32932
+ERROR = !SQLException:sql.droptable:SQLSTATE 42S02 !DROP TABLE: no such table 'arrtest2'
+MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
 QUERY = DROP table arr_tbl;
-ERROR = !DROP TABLE: no such table 'arr_tbl'
+ERROR = !SQLException:sql.droptable:SQLSTATE 42S02 !DROP TABLE: no such table 'arr_tbl'
 
 
 # 17:11:19 >  

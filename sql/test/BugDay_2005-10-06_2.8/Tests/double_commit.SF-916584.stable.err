@@ -12,7 +12,7 @@ stderr of test 'double_commit.SF-916584` in directory 'sql/test/BugDay_2005-10-0
 
 MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = COMMIT;
-ERROR = !COMMIT: not allowed in auto commit mode
+ERROR = !SQLException:sql.trans:SQLSTATE 2DM30 !COMMIT: not allowed in auto commit mode
 
 # 14:14:57 >  
 # 14:14:57 >  Done.

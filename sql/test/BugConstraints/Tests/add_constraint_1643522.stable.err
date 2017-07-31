@@ -14,7 +14,8 @@ stderr of test 'add_constraint_1643522` in directory 'sql/test/BugConstraints` i
 
 MAPI  = monetdb@sofia:38972
 QUERY = alter table t1 add constraint id_p primary key(id);
-ERROR = !CONSTRAINT PRIMARY KEY: key 'id_p' already exists
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !CONSTRAINT PRIMARY KEY: key 'id_p' already exists
+
 
 # 12:55:04 >  
 # 12:55:04 >  Done.

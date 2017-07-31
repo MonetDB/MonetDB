@@ -34,23 +34,23 @@ MAPI  = (monetdb) /var/tmp/mtest-29638/.s.monetdb.30099
 QUERY = copy 3 records into t_int from stdin USING DELIMITERS ',','\n','\"' NULL AS '';
         0
         5.1
-ERROR = !Failed to import table 't_int', line 2 field i 'int' expected in '5.1'
-MAPI  = (monetdb) /var/tmp/mtest-25850/.s.monetdb.38004
+ERROR = !SQLException:importTable:SQLSTATE 42000 !Failed to import table 't_int', line 2 field i 'int' expected in '5.1'
+MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
 QUERY = 9
         
         select * from t_int;
-ERROR = !syntax error, unexpected sqlINT in: "9"
-MAPI  = (monetdb) /var/tmp/mtest-29638/.s.monetdb.30099
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected sqlINT in: "9"
+MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
 QUERY = copy 5 records into t_int from stdin delimiters ',','\n' NULL as '';
         1
         nil
-ERROR = !Failed to import table 't_int', line 2 field i 'int' expected in 'nil'
-MAPI  = (monetdb) /var/tmp/mtest-25850/.s.monetdb.38004
+ERROR = !SQLException:importTable:SQLSTATE 42000 !Failed to import table 't_int', line 2 field i 'int' expected in 'nil'
+MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
 QUERY = null
         abc
         
         select * from t_int;
-ERROR = !syntax error, unexpected sqlNULL in: "null"
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected sqlNULL in: "null"
 
 # 11:23:33 >  
 # 11:23:33 >  "Done."

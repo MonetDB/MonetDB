@@ -1,3 +1,10 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Mon Jul 17 2017 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
+- Add a new pretty printing option to stethoscope
+  Running stethoscope with the flag -j will produce not pretty printed
+  output (one json object per line). Running with the -y flag will produce
+  pretty printed output. Running with neither, wiil produce the legacy,
+  line oriented format
+

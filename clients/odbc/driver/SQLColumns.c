@@ -204,11 +204,6 @@ MNDBColumns(ODBCStmt *stmt,
 			    "when 'timetz' then %d "
 			    "when 'tinyint' then %d "
 			    "when 'varchar' then %d "
-			    "when 'wrd' then "
-				 "case c.type_digits "
-				      "when 32 then %d "
-				      "when 64 then %d "
-				 "end "
 		       "end as data_type, "
 		       "case c.type "
 			    "when 'bigint' then 'BIGINT' "
@@ -247,11 +242,6 @@ MNDBColumns(ODBCStmt *stmt,
 			    "when 'timetz' then 'TIME' "
 			    "when 'tinyint' then 'TINYINT' "
 			    "when 'varchar' then 'VARCHAR' "
-			    "when 'wrd' then "
-				 "case c.type_digits "
-				      "when 32 then 'INTEGER' "
-				      "when 64 then 'BIGINT' "
-				 "end "
 		       "end as type_name, "
 		       "case c.type "
 			    "when 'date' then 10 "
@@ -314,11 +304,6 @@ MNDBColumns(ODBCStmt *stmt,
 			    "when 'timetz' then 12 "
 			    "when 'tinyint' then 4 "
 			    "when 'varchar' then 2 * c.type_digits "
-			    "when 'wrd' then "
-				 "case c.type_digits "
-				      "when 32 then 11 "
-				      "when 64 then 20 "
-				 "end "
 			    "else c.type_digits "
 		       "end as buffer_length, "
 		       "case c.type "
@@ -341,11 +326,6 @@ MNDBColumns(ODBCStmt *stmt,
 			    "when 'timestamptz' then c.type_digits - 1 "
 			    "when 'timetz' then c.type_digits - 1 "
 			    "when 'tinyint' then 3 "
-			    "when 'wrd' then "
-				 "case c.type_digits "
-				      "when 32 then 10 "
-				      "when 64 then 19 "
-				 "end "
 			    "else cast(null as smallint) "
 		       "end as decimal_digits, "
 		       "case c.type "
@@ -362,7 +342,6 @@ MNDBColumns(ODBCStmt *stmt,
 				 "end "
 			    "when 'smallint' then 2 "
 			    "when 'tinyint' then 2 "
-			    "when 'wrd' then 2 "
 			    "else cast(null as smallint) "
 		       "end as num_prec_radix, "
 		       "case c.\"null\" "
@@ -391,11 +370,6 @@ MNDBColumns(ODBCStmt *stmt,
 			    "when 'timetz' then %d "
 			    "when 'tinyint' then %d "
 			    "when 'varchar' then %d "
-			    "when 'wrd' then "
-				 "case c.type_digits "
-				      "when 32 then %d "
-				      "when 64 then %d "
-				 "end "
 		       "end as sql_data_type, "
 		       "case c.type "
 			    "when 'date' then %d "
@@ -454,7 +428,7 @@ MNDBColumns(ODBCStmt *stmt,
 		SQL_INTERVAL_MINUTE, SQL_INTERVAL_MINUTE_TO_SECOND,
 		SQL_INTERVAL_SECOND, SQL_SMALLINT, SQL_TYPE_TIME,
 		SQL_TYPE_TIMESTAMP, SQL_TYPE_TIMESTAMP, SQL_TYPE_TIME,
-		SQL_TINYINT, SQL_WVARCHAR, SQL_INTEGER, SQL_BIGINT,
+		SQL_TINYINT, SQL_WVARCHAR,
 		/* nullable: */
 		SQL_NULLABLE, SQL_NO_NULLS,
 		/* sql_data_type: */
@@ -462,8 +436,7 @@ MNDBColumns(ODBCStmt *stmt,
 		SQL_WLONGVARCHAR, SQL_DATETIME, SQL_DECIMAL, SQL_DOUBLE,
 		SQL_INTEGER, SQL_INTERVAL, SQL_REAL, SQL_INTERVAL,
 		SQL_SMALLINT, SQL_DATETIME, SQL_DATETIME, SQL_DATETIME,
-		SQL_DATETIME, SQL_TINYINT, SQL_WVARCHAR, SQL_INTEGER,
-		SQL_BIGINT,
+		SQL_DATETIME, SQL_TINYINT, SQL_WVARCHAR,
 		/* sql_datetime_sub: */
 		SQL_CODE_DATE, SQL_CODE_YEAR, SQL_CODE_YEAR_TO_MONTH,
 		SQL_CODE_MONTH, SQL_CODE_DAY, SQL_CODE_DAY_TO_HOUR,

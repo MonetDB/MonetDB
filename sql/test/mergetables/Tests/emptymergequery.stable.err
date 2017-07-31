@@ -32,7 +32,7 @@ stderr of test 'emptymergequery` in directory 'sql/test/mergetables` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-11671/.s.monetdb.39369
 QUERY = select * from emptym;
-ERROR = !MERGE or REPLICA TABLE should have at least one table associated
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !MERGE or REPLICA TABLE should have at least one table associated
 
 # 18:40:24 >  
 # 18:40:24 >  "Done."

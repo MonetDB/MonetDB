@@ -30,16 +30,16 @@ stderr of test 'pathexpr` in directory 'sql/test/json` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-27591/.s.monetdb.38925
 QUERY = select json.filter(js,'.book[-1]') from jspath;
-ERROR = !'*' or digit expected
-MAPI  = (monetdb) /var/tmp/mtest-27591/.s.monetdb.38925
+ERROR = !MALException:json.path:'*' or digit expected
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = select json.filter(js,'$$$') from jspath;
-ERROR = !Root node must be first
-MAPI  = (monetdb) /var/tmp/mtest-27591/.s.monetdb.38925
+ERROR = !MALException:json.compile:Root node must be first
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = select json.filter(js,'...') from jspath;
-ERROR = !Step identifier expected
-MAPI  = (monetdb) /var/tmp/mtest-27591/.s.monetdb.38925
+ERROR = !MALException:json.compile:Step identifier expected
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = select json.filter(js,'[[2]]') from jspath;
-ERROR = !'*' or digit expected
+ERROR = !MALException:json.path:'*' or digit expected
 
 
 # 22:47:15 >  

@@ -25,44 +25,44 @@ Ready.
 # 12:51:38 >  
 
 #SELECT ST_IsClosed(st_linefromtext('LINESTRING(10 10, 20 20)'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT ST_IsClosed(st_linefromtext('LINESTRING(10 10, 20 20, 10 10)'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT ST_IsClosed(st_mlinefromtext('MULTILINESTRING((10 10, 20 20, 10 10),(10 10, 20 20))'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT ST_IsClosed(st_pointfromtext('POINT(10 10)'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT ST_IsClosed(st_mpointfromtext('MULTIPOINT((10 10), (20 20))'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT ST_IsClosed(st_polygonfromtext('POLYGON((10 10 10, 20 20 20, 30 30 30, 10 10 10))'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT ST_IsClosed(st_linefromtext('LINESTRING(10 10 10, 20 20 20, 10 10 10)'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -72,8 +72,8 @@ Ready.
 #insert into geo values (st_linefromtext('LINESTRING(10 10, 20 20, 10 10)', 4326));
 [ 1	]
 #select st_isclosed(g) from geo;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -83,15 +83,15 @@ Ready.
 #insert into geo values (st_polygonfromtext('polygon((10 10 10, 20 20 20, 30 30 30, 10 10 10))', 4326));
 [ 1	]
 #select st_isclosed(g) from geo;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #drop table geo;
 #SELECT geom AS "GEOMETRY", ST_IsClosed(geom) FROM geometries WHERE id<14;
-% sys.L1,	sys.L2 # table_name
-% GEOMETRY,	L2 # name
+% sys.L2,	sys.L4 # table_name
+% GEOMETRY,	L4 # name
 % geometry,	boolean # type
 % 0,	5 # length
 [ "POINT (10 20)",	true	]

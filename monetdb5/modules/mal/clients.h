@@ -26,7 +26,6 @@ mal_export str CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CLTLogin(bat *ret, bat *nme);
 mal_export str CLTLastCommand(bat *ret);
 mal_export str CLTActions(bat *ret);
-mal_export str CLTTime(bat *ret);
 mal_export str CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

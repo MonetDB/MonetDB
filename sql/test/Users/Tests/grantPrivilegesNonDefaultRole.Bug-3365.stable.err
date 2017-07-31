@@ -32,7 +32,7 @@ stderr of test 'grantPrivilegesNonDefaultRole.Bug-3365` in directory 'sql/test/U
 
 MAPI  = (blake) /var/tmp/mtest-15247/.s.monetdb.36393
 QUERY = grant select on employees to clark;
-ERROR = !GRANT: grantor 'blake' is not allowed to grant privileges for table 'employees'
+ERROR = !SQLException:sql.grant_table:SQLSTATE 0L000 !Grantor 'blake' is not allowed to grant privileges for table 'employees'
 
 # 17:10:02 >  
 # 17:10:02 >  "Done."

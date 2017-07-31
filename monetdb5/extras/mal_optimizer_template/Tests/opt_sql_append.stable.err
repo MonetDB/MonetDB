@@ -32,16 +32,16 @@ stderr of test 'opt_sql_append` in directory 'monetdb5/extras/mal_optimizer_temp
 
 MAPI  = (monetdb) /var/tmp/mtest-5498/.s.monetdb.31321
 QUERY = explain copy into ttt from '\tmp/xyz';
-ERROR = !COPY INTO: filename must have absolute path: \tmp/xyz
-MAPI  = (monetdb) /var/tmp/mtest-5498/.s.monetdb.31321
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !COPY INTO: filename must have absolute path: \tmp/xyz
+MAPI  = (monetdb) /var/tmp/mtest-505/.s.monetdb.35544
 QUERY = explain copy into ttt from 'a:\tmp/xyz';
-ERROR = !COPY INTO: filename must have absolute path: a:\tmp/xyz
-MAPI  = (monetdb) /var/tmp/mtest-5498/.s.monetdb.31321
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !COPY INTO: filename must have absolute path: a:\tmp/xyz
+MAPI  = (monetdb) /var/tmp/mtest-505/.s.monetdb.35544
 QUERY = explain copy into ttt from '\tmp/xyz';
-ERROR = !COPY INTO: filename must have absolute path: \tmp/xyz
-MAPI  = (monetdb) /var/tmp/mtest-5498/.s.monetdb.31321
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !COPY INTO: filename must have absolute path: \tmp/xyz
+MAPI  = (monetdb) /var/tmp/mtest-505/.s.monetdb.35544
 QUERY = explain copy into ttt from 'Z:/tmp/xyz';
-ERROR = !COPY INTO: filename must have absolute path: Z:/tmp/xyz
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !COPY INTO: filename must have absolute path: Z:/tmp/xyz
 
 # 22:58:58 >  
 # 22:58:58 >  "Done."

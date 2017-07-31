@@ -32,7 +32,7 @@ stderr of test 'incorrect_column_name_in_OR_condition_of_LEFT-JOIN_crashes_mserv
 
 MAPI  = (monetdb) /var/tmp/mtest-17623/.s.monetdb.37506
 QUERY = SELECT B.value, F.id FROM bar B LEFT JOIN foo F ON (F.bar1 = B.barid OR F.bar2 = B.id);
-ERROR = !SELECT: no such column 'b.id'	
+ERROR = !ParseException:SQLparser:SQLSTATE 42S22 !SELECT: no such column 'b.id'
 
 # 12:49:56 >  
 # 12:49:56 >  "Done."

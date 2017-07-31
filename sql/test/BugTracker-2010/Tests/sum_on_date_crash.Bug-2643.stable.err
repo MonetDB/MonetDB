@@ -61,7 +61,7 @@ stderr of test 'sum_on_date_crash.Bug-2643` in directory 'sql/test/BugTracker-20
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select sum(today) from test;
-ERROR = !types date(0,0) and tinyint(8,0) are not equal for column 'today'
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !types date(0,0) and tinyint(8,0) are not equal for column 'today'
 
 # 00:48:05 >  
 # 00:48:05 >  Done.

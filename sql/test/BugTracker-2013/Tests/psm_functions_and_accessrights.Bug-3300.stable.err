@@ -40,13 +40,13 @@ stderr of test 'psm_functions_and_accessrights.Bug-3300` in directory 'sql/test/
 
 MAPI  = (psm) /var/tmp/mtest-32127/.s.monetdb.34402
 QUERY = explain select * from storagemodel();
-ERROR = !SELECT: no such operator 'storagemodel'
-MAPI  = (psm) /var/tmp/mtest-32127/.s.monetdb.34402
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such operator 'storagemodel'
+MAPI  = (psm) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = select * from storagemodel();
-ERROR = !SELECT: no such operator 'storagemodel'
-MAPI  = (psm) /var/tmp/mtest-32127/.s.monetdb.34402
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such operator 'storagemodel'
+MAPI  = (psm) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = select * from storagemodel();
-ERROR = !SELECT: no such operator 'storagemodel'
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such operator 'storagemodel'
 
 # 18:51:04 >  
 # 18:51:04 >  Mtimeout -timeout 60 mclient -lsql -ftest -Eutf-8 -e --host=/var/tmp/mtest-6005 --port=37031 --database=mTests_sql_test_BugTracker-2013 ../../../../../../../data/rc/clean/sql/test/BugTracker-2013/Tests/../PSMdrop_user.sql

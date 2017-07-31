@@ -27,8 +27,8 @@ Ready.
 
 #create table bla (id int);
 #select (select id) from bla;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L4 # name
 % int # type
 % 1 # length
 #insert into bla values(10);
@@ -36,8 +36,8 @@ Ready.
 #insert into bla values(1);
 [ 1	]
 #select (select id) from bla;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L4 # name
 % int # type
 % 2 # length
 [ 10	]

@@ -35,13 +35,17 @@ WriteMemoryCallback(void *contents, size_t size, size_t nmemb, void *userp)
 {
 	size_t realsize = size * nmemb;
 	struct MemoryStruct *mem = (struct MemoryStruct *)userp;
+	char *nmem;
 
-	mem->memory = realloc(mem->memory, mem->size + realsize + 1);
-	if(mem->memory == NULL) {
+	nmem = realloc(mem->memory, mem->size + realsize + 1);
+	if(nmem == NULL) {
 		/* out of memory! */
-		printf("not enough memory (realloc returned NULL)\n");
+		free(mem->memory);
+		mem->memory = NULL;
+		fprintf(stderr, "mcurl module: not enough memory (realloc returned NULL)\n");
 		return 0;
 	}
+	mem->memory = nmem;
 
 	memcpy(&(mem->memory[mem->size]), contents, realsize);
 	mem->size += realsize;
@@ -62,6 +66,8 @@ handle_get_request(str *retval, str *url)
 	struct MemoryStruct chunk;
 
 	chunk.memory = malloc(1);  /* will be grown as needed by the realloc above */
+	if (chunk.memory == NULL)
+		throw(MAL, "mcurl.getrequest", MAL_MALLOC_FAIL);
 	chunk.size = 0;    /* no data at this point */
 
 	curl_global_init(CURL_GLOBAL_ALL);
@@ -128,6 +134,8 @@ handle_put_request(str *retval, str *url)
 	struct MemoryStruct chunk;
 
 	chunk.memory = malloc(1);  /* will be grown as needed by the realloc above */
+	if (chunk.memory == NULL)
+		throw(MAL, "mcurl.putrequest", MAL_MALLOC_FAIL);
 	chunk.size = 0;    /* no data at this point */
 
 	curl_global_init(CURL_GLOBAL_ALL);
@@ -153,7 +161,7 @@ handle_put_request(str *retval, str *url)
 
 	/* check for errors */
 	if(res != CURLE_OK) {
-		msg = createException(MAL, "mcurl.deleterequest",
+		msg = createException(MAL, "mcurl.putrequest",
 							  "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
 	} else {
 		/*
@@ -194,6 +202,8 @@ handle_post_request(str *retval, str *url)
 	struct MemoryStruct chunk;
 
 	chunk.memory = malloc(1);  /* will be grown as needed by the realloc above */
+	if (chunk.memory == NULL)
+		throw(MAL, "mcurl.postrequest", MAL_MALLOC_FAIL);
 	chunk.size = 0;    /* no data at this point */
 
 	curl_global_init(CURL_GLOBAL_ALL);
@@ -219,7 +229,7 @@ handle_post_request(str *retval, str *url)
 
 	/* check for errors */
 	if(res != CURLE_OK) {
-		msg = createException(MAL, "mcurl.deleterequest",
+		msg = createException(MAL, "mcurl.postrequest",
 							  "curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
 	} else {
 		/*
@@ -261,6 +271,8 @@ handle_delete_request(str *retval, str *url)
 	struct MemoryStruct chunk;
 
 	chunk.memory = malloc(1);  /* will be grown as needed by the realloc above */
+	if (chunk.memory == NULL)
+		throw(MAL, "mcurl.deleterequest", MAL_MALLOC_FAIL);
 	chunk.size = 0;    /* no data at this point */
 
 	curl_global_init(CURL_GLOBAL_ALL);

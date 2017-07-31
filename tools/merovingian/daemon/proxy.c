@@ -139,6 +139,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		if ((ssock = socket(PF_UNIX, SOCK_STREAM, 0)) == -1) {
 			return(newErr("cannot open socket: %s", strerror(errno)));
 		}
+		fcntl(ssock, F_SETFD, FD_CLOEXEC);
 		if (connect(ssock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) == -1) {
 			closesocket(ssock);
 			return(newErr("cannot connect: %s", strerror(errno)));
@@ -211,6 +212,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		if (ssock == -1) {
 			return(newErr("cannot open socket: %s", strerror(errno)));
 		}
+		fcntl(ssock, F_SETFD, FD_CLOEXEC);
 
 		if (connect(ssock, serv, servsize) == -1) {
 			closesocket(ssock);

@@ -1,0 +1,103 @@
+policy_module(monetdb, 0.1)
+# The above line declares that this file is a SELinux policy file. Its
+# name is monetdb, so the file should be saved as monetdb.te
+
+# First, we declare the monetdbd_t domain, used for the "monetdbd"
+# process.  Because it is launched by systemd, we tell the policy that
+# monetdbd_exec_t (the context of monetdbd), when launched by systemd,
+# should transition to monetdbd_t.
+type monetdbd_t;		# monetdbd when run by systemd
+type monetdbd_exec_t;		# /usr/bin/monetdbd
+init_daemon_domain(monetdbd_t, monetdbd_exec_t)
+
+# monetdbd_t must be allowed to execute mserver5 which has context
+# mserver5_exec_t which must then transition to the mserver5_t domain
+type mserver5_t;		# mserver5 when run by monetdbd (monetdbd_t)
+type mserver5_exec_t;		# /usr/bin/mserver5
+init_daemon_domain(mserver5_t, mserver5_exec_t)
+# see https://selinuxproject.org/page/NB_Domain_and_Object_Transitions#Domain_Transition
+allow monetdbd_t mserver5_t:process transition;
+allow monetdbd_t mserver5_exec_t:file { execute open read getattr };
+allow mserver5_t mserver5_exec_t:file { entrypoint read execute };
+type_transition monetdbd_t mserver5_exec_t:process mserver5_t;
+
+# declare a type for the systemd unit file (monetdbd.service)
+type monetdbd_unit_file_t;
+systemd_unit_file(monetdbd_unit_file_t)
+
+# declare a type for the log files
+type monetdbd_log_t;
+logging_log_file(monetdbd_log_t)
+manage_dirs_pattern(monetdbd_t, monetdbd_log_t, monetdbd_log_t)
+manage_files_pattern(monetdbd_t, monetdbd_log_t, monetdbd_log_t)
+logging_log_filetrans(monetdbd_t, monetdbd_log_t, { file dir })
+
+# the context used for the MonetDB database files
+type mserver5_db_t;
+files_type(mserver5_db_t)
+manage_files_pattern(mserver5_t, mserver5_db_t, mserver5_db_t)
+manage_dirs_pattern(mserver5_t, mserver5_db_t, mserver5_db_t)
+manage_files_pattern(monetdbd_t, mserver5_db_t, mserver5_db_t)
+manage_dirs_pattern(monetdbd_t, mserver5_db_t, mserver5_db_t)
+
+# the context used for the configuration files
+type monetdbd_etc_t;
+files_config_file(monetdbd_etc_t)
+read_files_pattern(monetdbd_t, monetdbd_etc_t, monetdbd_etc_t)
+read_lnk_files_pattern(monetdbd_t, monetdbd_etc_t, monetdbd_etc_t)
+
+# the context used for the PID file
+type monetdbd_var_run_t;
+files_pid_file(monetdbd_var_run_t)
+init_daemon_run_dir(monetdbd_var_run_t, "monetdb")
+manage_dirs_pattern(monetdbd_t, monetdbd_var_run_t, monetdbd_var_run_t)
+manage_files_pattern(monetdbd_t, monetdbd_var_run_t, monetdbd_var_run_t)
+
+# context for .merovingian_lock file
+type monetdbd_lock_t;
+files_lock_file(monetdbd_lock_t)
+allow monetdbd_t monetdbd_lock_t:file manage_file_perms;
+files_lock_filetrans(monetdbd_t, monetdbd_lock_t, file, ".merovingian_lock")
+
+# context for .gdk_lock file inside the database
+# these files get locked by mserver5, but also by monetdbd
+type mserver5_lock_t;
+files_lock_file(mserver5_lock_t)
+allow mserver5_t mserver5_lock_t:file manage_file_perms;
+files_lock_filetrans(mserver5_t, mserver5_lock_t, file, ".gdk_lock")
+allow monetdbd_t mserver5_lock_t:file manage_file_perms;
+files_lock_filetrans(monetdbd_t, mserver5_lock_t, file, ".gdk_lock")
+
+# other required permissions
+dev_read_rand(monetdbd_t)
+sysnet_dns_name_resolve(monetdbd_t)
+corenet_udp_bind_generic_node(monetdbd_t)
+corenet_tcp_bind_generic_node(monetdbd_t)
+allow monetdbd_t self:tcp_socket create_stream_socket_perms;
+allow monetdbd_t self:udp_socket create_stream_socket_perms;
+allow monetdbd_t self:unix_dgram_socket create_socket_perms;
+allow monetdbd_t self:unix_stream_socket { create_stream_socket_perms connectto };
+allow monetdbd_t self:netlink_selinux_socket create_socket_perms;
+manage_dirs_pattern(monetdbd_t, tmp_t, tmp_t)
+manage_sock_files_pattern(monetdbd_t, tmp_t, tmp_t)
+manage_sock_files_pattern(monetdbd_t, mserver5_db_t, mserver5_db_t)
+
+dev_read_rand(mserver5_t)
+allow mserver5_t monetdbd_t:fd { use };
+allow monetdbd_t mserver5_t:process { rlimitinh siginh signal };
+dev_rw_null(mserver5_t)
+sysnet_dns_name_resolve(mserver5_t)
+corenet_udp_bind_generic_node(mserver5_t)
+corenet_tcp_bind_generic_node(mserver5_t)
+allow mserver5_t self:tcp_socket create_stream_socket_perms;
+allow mserver5_t self:udp_socket create_stream_socket_perms;
+allow mserver5_t self:unix_dgram_socket create_socket_perms;
+allow mserver5_t self:unix_stream_socket { create_stream_socket_perms connectto };
+allow mserver5_t self:netlink_selinux_socket create_socket_perms;
+manage_dirs_pattern(mserver5_t, tmp_t, tmp_t)
+manage_sock_files_pattern(mserver5_t, tmp_t, tmp_t)
+manage_sock_files_pattern(mserver5_t, mserver5_db_t, mserver5_db_t)
+allow mserver5_t monetdbd_t:fifo_file { read write getattr };
+allow mserver5_t monetdbd_t:unix_stream_socket { read write getopt shutdown };
+allow mserver5_t var_t:dir { read };
+allow monetdbd_t mserver5_t:unix_stream_socket { connectto };

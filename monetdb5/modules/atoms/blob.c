@@ -137,10 +137,7 @@ BLOBhash(blob *b)
 blob *
 BLOBnull(void)
 {
-	blob *b= (blob*) GDKmalloc(offsetof(blob, data));
-	if( b )
-		b->nitems = ~(size_t) 0;
-	return b;
+	return &nullval;
 }
 
 blob *
@@ -495,17 +492,12 @@ BLOBblob_blob(blob **d, blob **s)
 	size_t len = blobsize((*s)->nitems);
 	blob *b;
 
-	if( (*s)->nitems == ~(size_t) 0){
-		*d= BLOBnull();
-		if( *d == NULL)
-			throw(MAL,"blob", MAL_MALLOC_FAIL);
-	} else {
-		*d= b= (blob *) GDKmalloc(len);
-		if( b == NULL)
-			throw(MAL,"blob_blob",MAL_MALLOC_FAIL);
-		b->nitems = len;
-		memcpy(b->data, (*s)->data, len);
-	}
+	*d = b = GDKmalloc(len);
+	if (b == NULL)
+		throw(MAL,"blob", MAL_MALLOC_FAIL);
+	b->nitems = (*s)->nitems;
+	if (b->nitems != ~(size_t) 0 && b->nitems != 0)
+		memcpy(b->data, (*s)->data, b->nitems);
 	return MAL_SUCCEED;
 }
 

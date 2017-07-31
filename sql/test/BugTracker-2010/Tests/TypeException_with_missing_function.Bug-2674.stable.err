@@ -74,11 +74,11 @@ stderr of test 'TypeException_with_missing_function.Bug-2674` in directory 'sql/
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select fDistanceArcMinEq(213.7849600 , -0.4932472, ra,"dec") as distance_arcmin
         from t2674, fGetNearbyObjAllEq(213.7849600 , -0.4932472 , 20.8897421 ) as N;
-ERROR = !SELECT: no such operator 'fgetnearbyobjalleq'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such operator 'fgetnearbyobjalleq'
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = select fDistanceArcMinEq(213.7849600 , -0.4932472, ra,"dec") as distance_arcmin
         from t2674, fGetNearbyObjAllEq(213.7849600 , -0.4932472 , 20.8897421 ) as N;
-ERROR = !SELECT: no such operator 'fgetnearbyobjalleq'
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such operator 'fgetnearbyobjalleq'
 
 # 11:02:37 >  
 # 11:02:37 >  Done.

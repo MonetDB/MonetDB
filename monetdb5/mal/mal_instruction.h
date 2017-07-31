@@ -127,6 +127,7 @@
 #define getGDKType(T) 		( T <= TYPE_str ? T : (T == TYPE_any ? TYPE_void : findGDKtype(T)))
 
 
+mal_export void addMalException(MalBlkPtr mb, str msg);
 mal_export void mal_instruction_reset(void);
 mal_export InstrPtr newInstruction(MalBlkPtr mb, str modnme, str fcnnme);
 mal_export InstrPtr copyInstruction(InstrPtr p);
@@ -148,6 +149,7 @@ mal_export void freeMalBlk(MalBlkPtr mb);
 mal_export MalBlkPtr copyMalBlk(MalBlkPtr mb);
 mal_export void addtoMalBlkHistory(MalBlkPtr mb);
 mal_export MalBlkPtr getMalBlkHistory(MalBlkPtr mb, int idx);
+mal_export MalBlkPtr getMalBlkOptimized(MalBlkPtr mb, str name);
 mal_export void trimMalVariables(MalBlkPtr mb, MalStkPtr stk);
 mal_export void trimMalVariables_(MalBlkPtr mb, MalStkPtr glb);
 mal_export void moveInstruction(MalBlkPtr mb, int pc, int target);
@@ -177,7 +179,6 @@ mal_export InstrPtr setArgument(MalBlkPtr mb, InstrPtr p, int idx, int varid);
 mal_export InstrPtr pushReturn(MalBlkPtr mb, InstrPtr p, int varid);
 mal_export InstrPtr pushArgumentId(MalBlkPtr mb, InstrPtr p, const char *name);
 mal_export void delArgument(InstrPtr p, int varid);
-mal_export void clrAllTypes(MalBlkPtr mb);
 mal_export void setArgType(MalBlkPtr mb, InstrPtr p, int i, int tpe);
 mal_export void setReturnArgument(InstrPtr p, int varid);
 mal_export malType destinationType(MalBlkPtr mb, InstrPtr p);

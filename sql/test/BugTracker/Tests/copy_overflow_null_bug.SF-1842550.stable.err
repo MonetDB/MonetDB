@@ -34,7 +34,7 @@ MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = COPY 2 RECORDS INTO bulk FROM stdin USING DELIMITERS '|', '\n', '''';
         5536|'5536'
         53605|'53605'
-ERROR = !Failed to import table 'bulk', line 2 field num 'smallint' expected in '53605'
+ERROR = !SQLException:importTable:SQLSTATE 42000 !Failed to import table 'bulk', line 2 field num 'smallint' expected in '53605'
 
 
 # 08:13:34 >  

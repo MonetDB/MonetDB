@@ -75,10 +75,10 @@ stderr of test 'insert_quser` in directory 'sql/test/ssqq` itself:
 
 MAPI  = monetdb@sofia:38256
 QUERY = set id_result = insert_quser(NULL, NULL, NULL, NULL);
-ERROR = !INSERT INTO: NOT NULL constraint violated for column quser.user_name
-MAPI  = (monetdb) /var/tmp/mtest-6013/.s.monetdb.33339
+ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: NOT NULL constraint violated for column quser.user_name
+MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
 QUERY = set id_result = insert_quser('user1', 'email3@example.com', 3, 'nosecret');
-ERROR = !INSERT INTO: UNIQUE constraint 'quser.user_name_unq' violated
+ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: UNIQUE constraint 'quser.user_name_unq' violated
 
 # 16:29:57 >  
 # 16:29:57 >  Done.

@@ -32,28 +32,28 @@ stderr of test 'renameUser` in directory 'sql/test/Users` itself:
 
 MAPI  = (april) /var/tmp/mtest-7070/.s.monetdb.36242
 QUERY = DELETE from bank.accounts; -- not enough privelges
-ERROR = !DELETE FROM: insufficient privileges for user 'april' to delete from table 'accounts'
-MAPI  = (april) /var/tmp/mtest-7070/.s.monetdb.36242
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !DELETE FROM: insufficient privileges for user 'april' to delete from table 'accounts'
+MAPI  = (april) /var/tmp/mtest-27097/.s.monetdb.31804
 QUERY = SET role bankAdmin; -- no such role
-ERROR = !Role (bankadmin) missing
-MAPI  = (april) /var/tmp/mtest-7070/.s.monetdb.36242
+ERROR = !SQLException:sql.update_var:SQLSTATE 42000 !Role (bankadmin) missing
+MAPI  = (april) /var/tmp/mtest-26377/.s.monetdb.39857
 QUERY = ALTER USER "april2" RENAME TO "april3"; --not enough privileges 
-ERROR = !ALTER USER: no such user 'april2'
-MAPI  = (monetdb) /var/tmp/mtest-7070/.s.monetdb.36242
+ERROR = !SQLException:sql.rename_user:SQLSTATE 42M32 !ALTER USER: no such user 'april2'
+MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
 QUERY = ALTER USER "april2" RENAME TO "april";
-ERROR = !ALTER USER: user 'april' already exists
-MAPI  = (monetdb) /var/tmp/mtest-7070/.s.monetdb.36242
+ERROR = !SQLException:sql.rename_user:SQLSTATE 42M31 !ALTER USER: user 'april' already exists
+MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
 QUERY = ALTER USER "april5" RENAME TO "april2"; -- no such user
-ERROR = !ALTER USER: no such user 'april5'
-MAPI  = (monetdb) /var/tmp/mtest-7070/.s.monetdb.36242
+ERROR = !SQLException:sql.rename_user:SQLSTATE 42M32 !ALTER USER: no such user 'april5'
+MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
 QUERY = drop user april2; --nu such user
-ERROR = !DROP USER: no such user: 'april2'
-MAPI  = (monetdb) /var/tmp/mtest-7070/.s.monetdb.36242
+ERROR = !SQLException:sql.drop_user:SQLSTATE M0M27 !DROP USER: no such user: 'april2'
+MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
 QUERY = CREATE USER april2 with password 'april' name 'second april, no rights' schema library2; --no such schema
-ERROR = !CREATE USER: no such schema 'library2'
-MAPI  = (monetdb) /var/tmp/mtest-7070/.s.monetdb.36242
+ERROR = !SQLException:sql.create_user:SQLSTATE 3F000 !CREATE USER: no such schema 'library2'
+MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
 QUERY = CREATE USER april with password 'april' name 'second april, no rights' schema library; --user exsists
-ERROR = !CREATE USER: user 'april' already exists
+ERROR = !SQLException:sql.create_user:SQLSTATE 42M31 !CREATE USER: user 'april' already exists
 
 # 23:01:33 >  
 # 23:01:33 >  "Done."

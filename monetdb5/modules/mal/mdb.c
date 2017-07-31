@@ -53,9 +53,6 @@ pseudo(bat *ret, BAT *b, const char *X1, const char *X2, const char *X3) {
 	if (BBPindex(buf) <= 0 && BBPrename(b->batCacheid, buf) != 0)
 		return -1;
 	BATroles(b,X2);
-	if (BATmode(b, TRANSIENT) != GDK_SUCCEED)
-		return -1;
-	BATfakeCommit(b);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
 	return 0;
@@ -243,7 +240,7 @@ MDBinspect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		fcnnme = getArgDefault(mb, p, 2);
 	}
 
-	s = findSymbol(cntxt->nspace, putName(modnme), putName(fcnnme));
+	s = findSymbol(cntxt->usermodule, putName(modnme), putName(fcnnme));
 
 	if (s == NULL)
 		throw(MAL, "mdb.inspect", RUNTIME_SIGNATURE_MISSING);
@@ -491,7 +488,7 @@ MDBlist3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str fcnnme = *getArgReference_str(stk, p, 2);
 	Symbol s = NULL;
 
-	s = findSymbol(cntxt->nspace, putName(modnme), putName(fcnnme));
+	s = findSymbol(cntxt->usermodule, putName(modnme), putName(fcnnme));
 	if (s == NULL)
 		throw(MAL,"mdb.list","Could not find %s.%s", modnme, fcnnme);
 	printFunction(cntxt->fdout, s->def, 0,  LIST_MAL_NAME );
@@ -515,7 +512,7 @@ MDBlist3Detail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str fcnnme = *getArgReference_str(stk, p, 2);
 	Symbol s = NULL;
 
-	s = findSymbol(cntxt->nspace, putName(modnme), putName(fcnnme));
+	s = findSymbol(cntxt->usermodule, putName(modnme), putName(fcnnme));
 	if (s == NULL)
 		throw(MAL,"mdb.list","Could not find %s.%s", modnme, fcnnme);
 	debugFunction(cntxt->fdout, s->def, 0,  LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS , 0, s->def->stop);
@@ -539,7 +536,7 @@ MDBvar3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str fcnnme = *getArgReference_str(stk, p, 2);
 	Symbol s = NULL;
 
-	s = findSymbol(cntxt->nspace, putName(modnme), putName(fcnnme));
+	s = findSymbol(cntxt->usermodule, putName(modnme), putName(fcnnme));
 	if (s == NULL)
 		throw(MAL,"mdb.var","Could not find %s.%s", modnme, fcnnme);
 	printStack(cntxt->fdout, s->def, (s->def == mb ? stk : 0));

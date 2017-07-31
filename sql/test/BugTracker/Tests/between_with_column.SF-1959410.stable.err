@@ -14,7 +14,7 @@ stderr of test 'between_with_column.SF-1959410` in directory 'sql/test/BugTracke
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select yea from t1959410d, t1959410e where age between 0.03 and id < 30 ;
-ERROR = !types boolean(1,0) and double(53,0) are not equal
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !types boolean(1,0) and double(53,0) are not equal
 
 # 10:53:08 >  
 # 10:53:08 >  Done.

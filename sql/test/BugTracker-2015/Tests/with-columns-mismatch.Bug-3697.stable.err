@@ -35,7 +35,9 @@ QUERY = WITH cte(qtime, open, close, sdate, id, rnk) as (
           select qtime, sdate, id, row_number() over (partition by sdate order by qtime asc) as rnk
           from quotes where sym='SPY'
         ) select * from cte where rnk=1;
-ERROR = !WITH CLAUSE: number of columns does not match
+ERROR = !ParseException:SQLparser:SQLSTATE 21S02 !WITH CLAUSE: number of columns does not match
+MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
+ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
 
 # 09:14:41 >  
 # 09:14:41 >  "Done."

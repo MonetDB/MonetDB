@@ -15,6 +15,7 @@
 
 #include <mapi.h>
 #include <mutils.h> /* MT_lockf */
+#include <fcntl.h>
 
 #include "utils/glob.h"
 
@@ -374,14 +375,16 @@ multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr)
 		/* create communication channel */
 		if (pipe(mfpipe) != 0)
 			Mfprintf(stderr, "failed to create mfpipe: %s\n", strerror(errno));
-
-		Mfprintf(stdout, "starting multiplex-funnel connection manager\n");
-		if ((i = pthread_create(&mfmanager, &detach,
-				MFconnectionManager, NULL)) != 0)
-		{
-			Mfprintf(stderr, "failed to start MFconnectionManager: %s\n",
-					strerror(i));
-			mfmanager = 0;
+		else {
+			fcntl(mfpipe[0], F_SETFD, FD_CLOEXEC);
+			fcntl(mfpipe[1], F_SETFD, FD_CLOEXEC);
+			Mfprintf(stdout, "starting multiplex-funnel connection manager\n");
+			if ((i = pthread_create(&mfmanager, &detach,
+									MFconnectionManager, NULL)) != 0) {
+				Mfprintf(stderr, "failed to start MFconnectionManager: %s\n",
+						 strerror(i));
+				mfmanager = 0;
+			}
 		}
 	}
 

@@ -32,13 +32,13 @@ stderr of test 'table_returning_func_returns_too_many_columns.Bug-3077` in direc
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = create function t () returns table (x int) begin declare table t (x int, y int); return t; end;
-ERROR = !RETURN: number of columns do not match
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !RETURN: number of columns do not match
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = select * from t();
-ERROR = !SELECT: no such operator 't'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such operator 't'
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
 QUERY = drop function t;
-ERROR = !DROP FUNCTION: no such function 't'
+ERROR = !ParseException:SQLparser:SQLSTATE 42000 !DROP FUNCTION: no such function 't'
 
 # 10:39:11 >  
 # 10:39:11 >  "Done."

@@ -57,7 +57,7 @@ int RAPIEnabled(void) {
 }
 
 // The R-environment should be single threaded, calling for some protective measures.
-static MT_Lock rapiLock;
+static MT_Lock rapiLock MT_LOCK_INITIALIZER("rapiLock");
 static int rapiInitialized = FALSE;
 static char* rtypenames[] = { "NIL", "SYM", "LIST", "CLO", "ENV", "PROM",
 		"LANG", "SPECIAL", "BUILTIN", "CHAR", "LGL", "unknown", "unknown",
@@ -511,8 +511,14 @@ void* RAPIloopback(void *query) {
 
 
 str RAPIprelude(void *ret) {
+#ifdef NEED_MT_LOCK_INIT
+	static int initialized = 0;
+	/* since we don't destroy the lock, only initialize it once */
+	if (!initialized)
+		MT_lock_init(&rapiLock, "rapi_lock");
+	initialized = 1;
+#endif
 	(void) ret;
-	MT_lock_init(&rapiLock, "rapi_lock");
 
 	if (RAPIEnabled()) {
 		MT_lock_set(&rapiLock);

@@ -32,10 +32,10 @@ stderr of test 'readonly.Bug-3709` in directory 'sql/test/BugTracker-2015` itsel
 
 MAPI  = (monetdb) /var/tmp/mtest-15194/.s.monetdb.36528
 QUERY = alter table s10 set read only; 
-ERROR = !ALTER TABLE: set READ or INSERT ONLY not possible with outstanding updates (wait until updates are flushed)
-MAPI  = (monetdb) /var/tmp/mtest-15194/.s.monetdb.36528
+ERROR = !SQLException:sql.alter_table_set_access:SQLSTATE 40000 !ALTER TABLE: set READ or INSERT ONLY not possible with outstanding updates (wait until updates are flushed)
+MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
 QUERY = trace select * from s10; 
-ERROR = !current transaction is aborted (please ROLLBACK)
+ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
 
 # 21:17:25 >  
 # 21:17:25 >  "Done."
