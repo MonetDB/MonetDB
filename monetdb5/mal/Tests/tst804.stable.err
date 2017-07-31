@@ -45,7 +45,6 @@ ERROR = !SyntaxException:parseError:function wrong.message():void;
         !SyntaxException:parseError:end message;
         !SyntaxException:parseError:   ^non matching end label
         !TypeException:user.foo[1]:'wrong.message' undefined in:     wrong.message();
-        !TypeException:user.foo[2]:'wrongTo.message' undefined in:     wrongTo.message();
 
 # 15:26:53 >  
 # 15:26:53 >  "Done."
