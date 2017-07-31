@@ -646,8 +646,18 @@ MALcommentsOnly(MalBlkPtr mb)
 str
 MALcallback(Client c, str msg)
 {
-	if (msg){
-		mnstr_printf(c->fdout,"!%s%s", msg, (msg[strlen(msg)-1] == '\n'? "":"\n"));
+	if (msg) {
+		/* don't print exception decoration, just the message */
+		char *n = NULL;
+		char *o = msg;
+		while ((n = strchr(o, '\n')) != NULL) {
+			*n = '\0';
+			mnstr_printf(c->fdout, "!%s\n", getExceptionMessage(o));
+			*n++ = '\n';
+			o = n;
+		}
+		if (*o != 0)
+			mnstr_printf(c->fdout, "!%s\n", getExceptionMessage(o));
 		freeException(msg);
 	}
 	return MAL_SUCCEED;
