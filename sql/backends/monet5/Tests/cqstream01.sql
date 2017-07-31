@@ -1,5 +1,5 @@
 -- Example of a window based action
-create stream table stmp2 (t timestamp, sensor integer, val decimal(8,2)) ;
+create stream table stmp2 (t timestamp, sensor integer, val decimal(8,2)) set window 2 stride 2;
 create table result2(like stmp2);
 
 insert into stmp2 values('2005-09-23 12:34:26.000',1,9.0);
@@ -10,16 +10,13 @@ insert into stmp2 values('2005-09-23 12:34:28.000',1,15.0);
 -- CREATE procedure cq_window
 create procedure cq_window()
 begin
-	-- The window ensures a maximal number of tuples to consider
-	-- Could be considered a property of the stream table
-	alter stream table 'sys'.'stmp2' set window 2;
     insert into result2 select * from stmp2 where val >12;
 end;
 
 start continuous sys.cq_window();
 
 -- wait for a few seconds for scheduler to do its swork
-call cquery.wait(1000);
+call cquery.wait(3000);
 
 -- STOP cq_window;
 pause continuous sys.cq_window();

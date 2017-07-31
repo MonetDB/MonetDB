@@ -1811,6 +1811,20 @@ open_rastream(const char *filename)
 	return s;
 }
 
+stream *
+open_rastream_and_create(const char *filename)
+{
+	stream *s;
+
+	if (filename == NULL)
+		return NULL;
+
+	if ((s = open_stream(filename, "a+")) == NULL)
+		return NULL;
+	s->type = ST_ASCII;
+	return s;
+}
+
 static stream *
 open_wastream_(const char *filename, char *mode)
 {

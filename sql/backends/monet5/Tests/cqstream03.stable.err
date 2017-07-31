@@ -29,9 +29,11 @@ stderr of test 'cqstream03` in directory 'sql/backends/monet5` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-19488/.s.monetdb.35698
 QUERY = start continuous sys.cq_agenda() with heartbeat 2000;
-
-MAPI  = (monetdb) /var/tmp/mtest-19488/.s.monetdb.35698
+ERROR = !Heartbeat ignored, a window constraint exists
+MAPI  = (monetdb) /var/tmp/mtest-30134/.s.monetdb.35010
 QUERY = stop continuous sys.cq_agenda(); --error
+ERROR = !The continuous procedure user.cq_agenda(); has not yet started
+
 
 
 

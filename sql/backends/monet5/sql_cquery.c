@@ -836,9 +836,9 @@ CQresumeAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	int i;
-	mvc* smvc;
+	//mvc* smvc;
 
-	ALL_ROOT_CHECK(cntxt, "cquery.resumeall", "RESUME ");
+	//ALL_ROOT_CHECK(cntxt, "cquery.resumeall", "RESUME ");
 
 	(void) cntxt;
 	(void) mb;
@@ -926,9 +926,9 @@ CQpauseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	int i;
-	mvc* smvc;
+	//mvc* smvc;
 
-	ALL_ROOT_CHECK(cntxt, "cquery.pauseall", "PAUSE ");
+	//ALL_ROOT_CHECK(cntxt, "cquery.pauseall", "PAUSE ");
 
 	(void) cntxt;
 	(void) mb;
@@ -1115,9 +1115,9 @@ CQderegisterAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	int i;
-	mvc* smvc;
+	//mvc* smvc;
 
-	ALL_ROOT_CHECK(cntxt, "cquery.deregisterall", "STOP ");
+	//ALL_ROOT_CHECK(cntxt, "cquery.deregisterall", "STOP ");
 
 	(void) cntxt;
 	(void) mb;
@@ -1126,7 +1126,7 @@ CQderegisterAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	MT_lock_set(&ttrLock);
 
-	for(i = pnettop - 1 ; i > -1; i--) {
+	for(i = 0 ; i < pnettop; i++) {
 		pnet[i].status = CQSTOP;
 		MT_lock_unset(&ttrLock);
 
@@ -1136,6 +1136,7 @@ CQderegisterAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		MT_lock_set(&ttrLock);
 		CQfree(i);
+		i--;
 	}
 	pnstatus = CQSTOP;
 
@@ -1384,6 +1385,8 @@ wrapup:
 #endif
 	cntxt->fdin = 0;
 	cntxt->fdout = 0;
+	//bstream_destroy(cntxt->fdin);
+	//mnstr_destroy(cntxt->fdout);
 	//MCcloseClient(cntxt); to be checked, removes too much
 	pnstatus = CQINIT;
 	CQinit = 0;
@@ -1395,24 +1398,67 @@ CQstartScheduler(void)
 	MT_Id pid;
 	Client cntxt;
 	stream *fin, *fout;
+	bstream *bin;
+	char* dbpath = GDKgetenv("gdk_dbpath"), *location;
+	const char* fpsin = "fin_petri_sched";
+	const char* fpsout = "fout_petri_sched";
 
 #ifdef DEBUG_CQUERY
 	fprintf(stderr, "#Start CQscheduler\n");
 #endif
-	fin =  open_rastream("fin_petri_sched");
-	fout =  open_wastream("fout_petri_sched");
-	cntxt = MCinitClient(0,bstream_create(fin,0),fout);
 
-	if( cntxt == NULL)
+	if(!dbpath)
+		throw(MAL, "cquery.startScheduler","The gdk_dbpath environment variable is not set");
+
+	location = GDKmalloc(strlen(dbpath) + strlen(DIR_SEP_STR) + strlen(fpsin) + 1);
+	if( location == NULL)
+		throw(MAL, "cquery.startScheduler",MAL_MALLOC_FAIL);
+	sprintf(location, "%s%s%s", dbpath, DIR_SEP_STR, fpsin);
+	fin =  open_rastream_and_create(location);
+	GDKfree(location);
+	if( fin == NULL)
 		throw(MAL, "cquery.startScheduler","Could not initialize CQscheduler");
-	if( SQLinitClient(cntxt) != MAL_SUCCEED)
-		throw(MAL, "cquery.startScheduler","Could not initialize SQL context");
+
+	location = GDKmalloc(strlen(dbpath) + strlen(DIR_SEP_STR) + strlen(fpsout) + 1);
+	if( location == NULL)
+		throw(MAL, "cquery.startScheduler",MAL_MALLOC_FAIL);
+	sprintf(location, "%s%s%s", dbpath, DIR_SEP_STR, fpsout);
+	fout =  open_wastream(location);
+	GDKfree(location);
+	if( fout == NULL) {
+		mnstr_destroy(fin);
+		throw(MAL, "cquery.startScheduler","Could not initialize CQscheduler");
+	}
+
+	bin = bstream_create(fin,0);
+	if( bin == NULL) {
+		mnstr_destroy(fin);
+		mnstr_destroy(fout);
+		throw(MAL, "cquery.startScheduler","Could not initialize CQscheduler");
+	}
+
+	cntxt = MCinitClient(0,bin,fout);
+	if( cntxt == NULL) {
+		bstream_destroy(cntxt->fdin);
+		mnstr_destroy(cntxt->fdout);
+		throw(MAL, "cquery.startScheduler","Could not initialize CQscheduler");
+	}
+
+	if( SQLinitClient(cntxt) != MAL_SUCCEED) {
+		bstream_destroy(cntxt->fdin);
+		mnstr_destroy(cntxt->fdout);
+		//MCcloseClient(cntxt); check this
+		throw(MAL, "cquery.startScheduler","Could not initialize SQL context in CQscheduler");
+	}
 
 	if (pnstatus== CQINIT && MT_create_thread(&pid, CQscheduler, (void*) cntxt, MT_THR_JOINABLE) != 0){
 #ifdef DEBUG_CQUERY
 		fprintf(stderr, "#Start CQscheduler failed\n");
 #endif
-		throw(MAL, "cquery.startScheduler", "cquery creation failed");
+		bstream_destroy(cntxt->fdin);
+		mnstr_destroy(cntxt->fdout);
+		//MCcloseClient(cntxt); check this
+		throw(MAL, "cquery.startScheduler", "Could not initialize client thread in CQscheduler");
 	}
 	(void) pid;
 	return MAL_SUCCEED;
