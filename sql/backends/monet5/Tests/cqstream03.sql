@@ -15,11 +15,11 @@ begin
     end if;
 end;
 
-start continuous sys.cq_agenda() with heartbeat 1000;
+start continuous sys.cq_agenda() with heartbeat 2000;
 
 select * from cquery.status();
 
-stop continuous sys.cq_agenda();
+stop continuous sys.cq_agenda(); --error
 drop procedure cq_agenda;
 drop table tmp13;
 drop table agenda13;

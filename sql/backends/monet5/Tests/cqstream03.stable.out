@@ -39,8 +39,7 @@ Ready.
 % .L1,	.L1,	.L1,	.L1,	.L1,	.L1 # table_name
 % tick,	schema,	function,	state,	errors,	stmt # name
 % timestamp,	clob,	clob,	clob,	clob,	clob # type
-% 26,	4,	9,	10,	0,	17 # length
-[ NULL,	"user",	"cq_agenda",	"readytorun",	"",	"user.cq_agenda();"	]
+% 26,	0,	0,	0,	0,	0 # length
 #drop procedure cq_agenda;
 #drop table tmp13;
 #drop table agenda13;

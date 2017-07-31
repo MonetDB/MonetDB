@@ -137,7 +137,7 @@ BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl)
 		return MAL_SUCCEED;
 
 	if( !isStream(t))
-		throw(MAL,"basket.register","Only allowed for stream tables\n");
+		throw(SQL,"basket.register","Only allowed for stream tables\n");
 
 	if((idx = BSKTnewEntry()) < 1)
 		throw(MAL,"basket.register",MAL_MALLOC_FAIL);

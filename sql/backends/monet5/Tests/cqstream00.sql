@@ -1,7 +1,6 @@
 -- Example of a stream splitter
--- SET WINDOW 2 STRIDE 1
 -- call cquery."window"('sys','stmp2',1); -- consume 1 tuple and tumble 1 from this stream
-create stream table stmp2 (t timestamp, sensor integer, val decimal(8,2)) set window 2;
+create stream table stmp2 (t timestamp, sensor integer, val decimal(8,2)) set window 1 stride 1;
 --select * from cquery.streams();
 
 insert into stmp2 values('2005-09-23 12:34:26.000',1,11.0);
@@ -22,7 +21,7 @@ end;
 start continuous sys.cq_splitter();
 
 -- wait for a few seconds for scheduler to do work
-call cquery.wait(3000);
+call cquery.wait(5000);
 
 -- STOP cq_splitter;
 pause continuous sys.cq_splitter();

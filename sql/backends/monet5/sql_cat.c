@@ -183,7 +183,7 @@ alter_stream_table(mvc *sql, char *sname, char *tname, int operation, int value)
 {
 	sql_schema *s = mvc_bind_schema(sql, sname);
 	sql_table *t = NULL;
-    char* opname;
+	char* opname;
 
 	if (s)
 		t = mvc_bind_table(sql, s, tname);

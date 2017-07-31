@@ -1126,7 +1126,7 @@ CQderegisterAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	MT_lock_set(&ttrLock);
 
-	for(i = 0 ; i < pnettop; i++) {
+	for(i = pnettop - 1 ; i > -1; i--) {
 		pnet[i].status = CQSTOP;
 		MT_lock_unset(&ttrLock);
 
@@ -1136,7 +1136,6 @@ CQderegisterAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		MT_lock_set(&ttrLock);
 		CQfree(i);
-		i--;
 	}
 	pnstatus = CQSTOP;
 

@@ -8,7 +8,7 @@ end;
 
 pause continuous cq_basic06(); --error
 
-start continuous cq_basic06() WITH HEARTBEAT 1000; --1 second
+start continuous cq_basic06() with heartbeat 1000; --1 second
 
 call cquery.wait(2100);
 
