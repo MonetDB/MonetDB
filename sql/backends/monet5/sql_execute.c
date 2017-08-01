@@ -380,8 +380,8 @@ SQLrun(Client c, backend *be, mvc *m){
 				msg = runMAL(c, mb, 0, 0);
 			}
 			m->continuous = 0;
-			m->heartbeats = 0;
-			m->cycles = 0;
+			m->heartbeats = DEFAULT_CP_HEARTBEAT;
+			m->cycles = DEFAULT_CP_CYCLES;
 		}
 	}
 

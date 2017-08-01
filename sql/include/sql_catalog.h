@@ -109,10 +109,12 @@
 #define isDeclaredSchema(s) 	(strcmp(s->base.name, dt_schema) == 0)
 
 /* continuous queries default parameters */
-#define DEFAULT_CP_HEARTBEAT     1000 /* 1 second */
-#define DEFAULT_CP_CYCLES     int_nil /* run forever */
-#define DEFAULT_TABLE_WINDOW        0 /* run independently of the number of tuples in the table */
-#define DEFAULT_TABLE_STRIDE        0 /* never discard tuples */
+#define NO_HEARTBEAT               lng_nil
+#define NO_CYCLES                  int_nil
+#define DEFAULT_CP_HEARTBEAT  NO_HEARTBEAT /* no heartbeat set */
+#define DEFAULT_CP_CYCLES        NO_CYCLES /* run forever */
+#define DEFAULT_TABLE_WINDOW             0 /* run independently of the number of tuples in the table */
+#define DEFAULT_TABLE_STRIDE             0 /* never discard tuples */
 
 #define CHANGE_WINDOW 1
 #define CHANGE_STRIDE 2

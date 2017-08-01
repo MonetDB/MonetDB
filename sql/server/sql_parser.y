@@ -446,7 +446,6 @@ int yydebug=1;
 	nonzero
 	stream_window_set
 	stream_stride_set
-	heartbeat_set
 	cycles_set
 	opt_bounds
 	opt_column
@@ -489,6 +488,7 @@ int yydebug=1;
 	lngval
 	poslng
 	nonzerolng
+	heartbeat_set
 
 %type <bval>
 	opt_brackets
@@ -2124,7 +2124,7 @@ call_procedure_statement:
 	;
 
 heartbeat_set:
-	  /* empty */ { $$ = DEFAULT_CP_HEARTBEAT; } /* 1 second, but 0 is also possible */
+	  /* empty */ { $$ = DEFAULT_CP_HEARTBEAT; } /* CQ never triggered by time */
 	| HEARTBEAT intval { $$ = $2; }
 	;
 
@@ -2137,13 +2137,13 @@ continuous_procedure_statement:
 	START_CONTINUOUS func_ref WITH heartbeat_set cycles_set
 		{ dlist *l = L();
 		  append_symbol( l, $2);
-		  append_int( l, $4);
+		  append_lng( l, $4);
 		  append_int( l, $5);
 		  $$ = _symbol_create_list( SQL_START_CALL, l ); }
 	| START_CONTINUOUS func_ref
 		{ dlist *l = L();
 		  append_symbol( l, $2);
-		  append_int( l, DEFAULT_CP_HEARTBEAT);
+		  append_lng( l, DEFAULT_CP_HEARTBEAT);
 		  append_int( l, DEFAULT_CP_CYCLES);
 		  $$ = _symbol_create_list( SQL_START_CALL, l ); }
 	| STOP_CONTINUOUS func_ref
@@ -2153,7 +2153,7 @@ continuous_procedure_statement:
 	| RESUME_CONTINUOUS func_ref WITH heartbeat_set cycles_set
 		{ dlist *l = L();
 		  append_symbol( l, $2);
-		  append_int( l, $4);
+		  append_lng( l, $4);
 		  append_int( l, $5);
 		  $$ = _symbol_create_list( SQL_RESUME_ALTER_CALL, l ); }
 	| RESUME_CONTINUOUS func_ref

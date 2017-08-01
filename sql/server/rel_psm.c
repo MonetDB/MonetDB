@@ -622,14 +622,14 @@ sequential_block (mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk,
 		case SQL_START_CALL: {
 			dlist *l = s->data.lval;
 			sql->continuous = mod_start_continuous;
-			sql->heartbeats = l->h->next->data.i_val;
+			sql->heartbeats = l->h->next->data.l_val;
 			sql->cycles = l->h->next->next->data.i_val;
 			res = rel_psm_call(sql, l->h->data.sym);
 		}	break;
 		case SQL_RESUME_ALTER_CALL: {
 			dlist *l = s->data.lval;
 			sql->continuous = mod_resume_continuous;
-			sql->heartbeats = l->h->next->data.i_val;
+			sql->heartbeats = l->h->next->data.l_val;
 			sql->cycles = l->h->next->next->data.i_val;
 			res = rel_psm_call(sql, l->h->data.sym);
 		}	break;
@@ -755,7 +755,7 @@ create_type_list(mvc *sql, dlist *params, int param)
 }
 
 static sql_rel*
-rel_create_function(sql_allocator *sa, const char *sname, sql_func *f)
+rel_create_function(sql_allocator *sa, const char *sname, sql_func *f, sql_func *fo, int replace)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -764,6 +764,8 @@ rel_create_function(sql_allocator *sa, const char *sname, sql_func *f)
 	if (f)
 		append(exps, exp_atom_clob(sa, f->base.name));
 	append(exps, exp_atom_ptr(sa, f));
+	append(exps, exp_atom_ptr(sa, fo));
+	append(exps, exp_atom_int(sa, replace));
 	rel->l = NULL;
 	rel->r = NULL;
 	rel->op = op_ddl;
@@ -816,15 +818,11 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 	if ((sf = sql_bind_func_(sql->sa, s, fname, type_list, type)) != NULL && create) {
 		if (replace) {
 			sql_func *func = sf->func;
-			int action = 0;
-			if (!mvc_schema_privs(sql, s)) {
+			if (!mvc_schema_privs(sql, s))
 				return sql_error(sql, 02, "CREATE OR REPLACE %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
-			}
 			if (mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
 				return sql_error(sql, 02, "CREATE OR REPLACE %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, fn, func->base.name);
-
-			mvc_drop_func(sql, s, func, action);
-			sf = NULL;
+			//I moved the mvc_drop to the backend layer so there I can check if a procedure is on the Petri-net
 		} else {
 			if (params) {
 				char *arg_list = NULL;
@@ -962,7 +960,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 			}
 		}
 	}
-	return rel_create_function(sql->sa, s->base.name, f);
+	return rel_create_function(sql->sa, s->base.name, f, sf ? sf->func : NULL, replace);
 }
 
 static sql_rel*
@@ -1445,7 +1443,7 @@ rel_psm(mvc *sql, symbol *s)
 	case SQL_START_CALL: {
 		dlist *l = s->data.lval;
 		sql->continuous = mod_start_continuous;
-		sql->heartbeats = l->h->next->data.i_val;
+		sql->heartbeats = l->h->next->data.l_val;
 		sql->cycles = l->h->next->next->data.i_val;
 		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, l->h->data.sym));
 		sql->type = Q_UPDATE;
@@ -1453,7 +1451,7 @@ rel_psm(mvc *sql, symbol *s)
 	case SQL_RESUME_ALTER_CALL: {
 		dlist *l = s->data.lval;
 		sql->continuous = mod_resume_continuous;
-		sql->heartbeats = l->h->next->data.i_val;
+		sql->heartbeats = l->h->next->data.l_val;
 		sql->cycles = l->h->next->next->data.i_val;
 		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, l->h->data.sym));
 		sql->type = Q_UPDATE;

@@ -128,7 +128,7 @@ typedef struct mvc {
 	char emode;		/* execution mode */
 	char emod;		/* execution modifier */
 	int continuous;/* scheduling action TODO maybe we could move the CQ information into a dedicated struct */
-	int heartbeats; /* heartbeats value for the next continuous procedure */
+	lng heartbeats; /* heartbeats value for the next continuous procedure */
 	int cycles; /* cycles value for the next continuous procedure */
 
 	sql_session *session;	

@@ -32,7 +32,7 @@ typedef struct cq {
 	int count;		/* number of times the query is matched */
 	//need these for continuous queries
 	int continuous;/* scheduling action TODO maybe we could move the CQ information into a dedicated struct */
-	int heartbeats; /* heartbeats value for the next continuous procedure */
+	lng heartbeats; /* heartbeats value for the next continuous procedure */
 	int cycles; /* cycles value for the next continuous procedure */
 } cq;
 
@@ -48,7 +48,7 @@ extern void qc_destroy(qc *cache);
 extern void qc_clean(qc *cache);
 extern cq *qc_find(qc *cache, int id);
 extern cq *qc_match(qc *cache, symbol *s, atom **params, int plen, int key);
-extern cq *qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname, symbol *s, atom **params, int paramlen, int key, int type, char *codedstr, int continuous, int heartbeats, int cycles);
+extern cq *qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname, symbol *s, atom **params, int paramlen, int key, int type, char *codedstr, int continuous, lng heartbeats, int cycles);
 extern void qc_delete(qc *cache, cq *q);
 extern int qc_size(qc *cache);
 extern int qc_isaquerytemplate(char *nme);

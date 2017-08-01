@@ -33,8 +33,8 @@ typedef struct{
 	BAT **bats;			/* the bats comprising the basket */
 	int ncols;			/* number of columns of the table */
 	BUN count;			/* number of events available in basket */
-	//int window;		/* consumption size (now in the table's stream) */
-	//int stride;		/* stride forward after consumption (now in the table's stream) */
+	int window;			/* consumption size */
+	int stride;			/* stride forward after consumption  */
 
 	/* statistics */
 	timestamp seen;
@@ -54,9 +54,9 @@ sql5_export str BSKTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 sql5_export str BSKTtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str BSKTbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-/*sql5_export str BSKTkeep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str BSKTkeep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str BSKTrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str BSKTwindow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);*/
+sql5_export str BSKTwindow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str BSKTtumble(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str BSKTreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str BSKTcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -73,8 +73,7 @@ sql5_export str BSKTdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 sql5_export str BSKTlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str BSKTunlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-sql5_export void BSKTclean(int idx);
 sql5_export str BSKTdump(void *ret);
 sql5_export str BSKTprelude(void *ret);
-sql5_export str BSKTepilogue(void *ret);
+sql5_export str BSKTshutdown(void);
 #endif

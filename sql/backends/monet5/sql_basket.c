@@ -66,7 +66,6 @@ static int BSKTnewEntry(void)
 		bsktLimit += MAXBSKT;
 		baskets = bnew;
 	}
-	
 	for (i = 1; i < bsktLimit; i++) { /* find an available slot */
 		if (baskets[i].table == NULL)
 			break;
@@ -74,12 +73,12 @@ static int BSKTnewEntry(void)
 	if(i >= bsktTop) { /* if it's the last one we need to increment bsktTop */
 		bsktTop++;
 	}
-	MT_lock_init(&baskets[i].lock,"bsktlock");	
+	MT_lock_init(&baskets[i].lock,"bsktlock");
 	return i;
 }
 
 // free a basket structure
-void
+static void
 BSKTclean(int idx)
 {	int i;
 
@@ -88,6 +87,8 @@ BSKTclean(int idx)
 			GDKfree(baskets[idx].error);
 		baskets[idx].table = NULL;
 		baskets[idx].error = NULL;
+		baskets[idx].window = 0;
+		baskets[idx].stride = 0;
 		baskets[idx].count = 0;
 		baskets[idx].events = 0;
 		baskets[idx].seen =  *timestamp_nil;
@@ -97,6 +98,7 @@ BSKTclean(int idx)
 		}
 		GDKfree(baskets[idx].bats);
 		GDKfree(baskets[idx].cols);
+		MT_lock_destroy(&baskets[idx].lock);
 	}
 }
 
@@ -138,6 +140,8 @@ BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl)
 		throw(MAL,"basket.register",MAL_MALLOC_FAIL);
 
 	baskets[idx].table = t;
+	baskets[idx].window = t->stream->window;
+	baskets[idx].stride = t->stream->stride;
 	(void) MTIMEcurrent_timestamp(&baskets[idx].seen);
 
 	// Check the column types first
@@ -185,7 +189,6 @@ BSKTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-/* Not being used, so comment for now
 str
 BSKTwindow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -207,11 +210,11 @@ BSKTwindow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( idx ==0)
 			throw(SQL,"basket.window","Stream table %s.%s not accessible\n",sch,tbl);
 	}
-	if( pci->argc == 5)
-		stride = *getArgReference_int(stk,pci,4);
-	else stride = window;
 	baskets[idx].window = window;
-	baskets[idx].stride = stride;
+	if( pci->argc == 5) {
+		stride = *getArgReference_int(stk,pci,4);
+		baskets[idx].stride = stride;
+	}
 	return MAL_SUCCEED;
 }
 
@@ -261,7 +264,7 @@ BSKTrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( baskets[idx].window < 0)
 		baskets[idx].window = - baskets[idx].window -1;
 	return MAL_SUCCEED;
-}*/
+}
 
 static BAT *
 BSKTbindColumn(str sch, str tbl, str col)
@@ -298,11 +301,11 @@ BSKTtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( b == 0)
 		throw(SQL,"basket.bind","Stream table reference column '%s.%s' not accessible\n",sch,tbl);
 
-    tids = COLnew(0, TYPE_void, 0, TRANSIENT);
-    if (tids == NULL)
-        throw(SQL, "basket.tid", MAL_MALLOC_FAIL);
+	tids = COLnew(0, TYPE_void, 0, TRANSIENT);
+	if (tids == NULL)
+		throw(SQL, "basket.tid", MAL_MALLOC_FAIL);
 	tids->tseqbase = 0;
-    BATsetcount(tids, BATcount(b));
+	BATsetcount(tids, BATcount(b));
 	BATsettrivprop(tids);
 
 	BBPkeepref( *ret = tids->batCacheid);
@@ -324,19 +327,18 @@ BSKTbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = BSKTregisterInternal(cntxt,mb,sch,tbl);
 	if( msg)
 		return msg;
-	
 	bskt = BSKTlocate(sch,tbl);
 	b = BSKTbindColumn(sch,tbl,col);
 	*ret = 0;
 	if( b){
 		if( bskt > 0){
-			if( baskets[bskt].table->stream->window >0){
+			if( baskets[bskt].window >0){
 				bn = VIEWcreate(0,b);
 				if( bn){
-					VIEWbounds(b,bn, 0, baskets[bskt].table->stream->window);
+					VIEWbounds(b,bn, 0, baskets[bskt].window);
 					BBPkeepref(*ret =  bn->batCacheid);
 				} else
-					throw(SQL,"basket.bind","Can not create view %s.%s.%s[%d]\n",sch,tbl,col,baskets[bskt].table->stream->window );
+					throw(SQL,"basket.bind","Can not create view %s.%s.%s[%d]\n",sch,tbl,col,baskets[bskt].window );
 			} else{
 				BBPkeepref( *ret = b->batCacheid);
 				BBPfix(b->batCacheid); // don't loose it
@@ -459,10 +461,10 @@ BSKTtumble(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL,"basket.tumble","Stream table %s.%s not accessible \n",sch,tbl);
 	}
 	// don't tumble when the window constraint has not been set to at least 0
-	if( baskets[idx].table->stream->window < 0)
+	if( baskets[idx].window < 0)
 		return MAL_SUCCEED;
 	/* also take care of time-based tumbling */
-	elm =(int) baskets[idx].table->stream->stride;
+	elm =(int) baskets[idx].stride;
 	return BSKTtumbleInternal(cntxt, sch, tbl, idx, elm);
 }
 
@@ -546,8 +548,8 @@ BSKTdump(void *ret)
 					baskets[bskt].table->s->base.name,
 					baskets[bskt].table->base.name,
 					baskets[bskt].count,
-					baskets[bskt].table->stream->window,
-					baskets[bskt].table->stream->stride,
+					baskets[bskt].window,
+					baskets[bskt].stride,
 					baskets[bskt].error,
 					cnt);
 		}
@@ -757,8 +759,8 @@ BSKTstatus (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if( BUNappend(seen, &baskets[i].seen, FALSE) != GDK_SUCCEED ||
 				BUNappend(schema, baskets[i].table->s->base.name, FALSE) != GDK_SUCCEED ||
 				BUNappend(table, baskets[i].table->base.name, FALSE) != GDK_SUCCEED ||
-				BUNappend(window, &baskets[i].table->stream->window, FALSE) != GDK_SUCCEED ||
-				BUNappend(stride, &baskets[i].table->stream->stride, FALSE) != GDK_SUCCEED ||
+				BUNappend(window, &baskets[i].window, FALSE) != GDK_SUCCEED ||
+				BUNappend(stride, &baskets[i].stride, FALSE) != GDK_SUCCEED ||
 				BUNappend(events, &baskets[i].events, FALSE) != GDK_SUCCEED ||
 				BUNappend(errors, (baskets[i].error? baskets[i].error:""), FALSE) != GDK_SUCCEED )
 				goto wrapup;
@@ -803,9 +805,8 @@ BSKTprelude(void *ret)
 }
 
 str
-BSKTepilogue(void *ret)
+BSKTshutdown(void)
 {
-	(void) ret;
 	if(baskets)
 		GDKfree(baskets);
 	baskets = NULL;

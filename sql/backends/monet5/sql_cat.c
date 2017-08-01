@@ -538,6 +538,10 @@ drop_func(mvc *sql, char *sname, char *name, int fid, int type, int action)
 				list_destroy(list_func);
 				return sql_message("DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
 			}
+			if(IS_PROC(func) && CQlocateExternal(sname, name)) {
+				list_destroy(list_func);
+				return sql_message("DROP %s%s: there are continuous queries dependent on %s%s %s;", KF, F, kf, f, func->base.name);
+			}
 		}
 		mvc_drop_all_func(sql, s, list_func, action);
 		list_destroy(list_func);
@@ -546,20 +550,34 @@ drop_func(mvc *sql, char *sname, char *name, int fid, int type, int action)
 }
 
 static char *
-create_func(mvc *sql, char *sname, char *fname, sql_func *f)
+create_func(mvc *sql, char *sname, char *fname, sql_func *f, sql_func *fo, int replace)
 {
 	sql_func *nf;
 	sql_schema *s = NULL;
+	node *n;
 	char is_aggr = (f->type == F_AGGR);
 	char is_func = (f->type != F_PROC);
+	char is_loader = (f->type == F_LOADER);
 	char *F = is_aggr ? "AGGREGATE" : (is_func ? "FUNCTION" : "PROCEDURE");
+	char *fn = is_loader?"loader":(is_aggr ? "aggregate" : (is_func ? "function" : "procedure"));
 	char *KF = f->type == F_FILT ? "FILTER " : f->type == F_UNION ? "UNION " : "";
+	char *kf = f->type == F_FILT ? "filter " : f->type == F_UNION ? "union " : "";
 
 	(void)fname;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_message("3F000!CREATE %s%s: no such schema '%s'", KF, F, sname);
 	if (!s)
 		s = cur_schema(sql);
+	if (replace && fo && (n = find_sql_func_node(s, fo->base.id))) {
+		if (!mvc_schema_privs(sql, s))
+			return sql_message("3F000!CREATE OR REPLACE %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
+		if (mvc_check_dependency(sql, fo->base.id, !IS_PROC(fo) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
+			return sql_message("3F000!CREATE OR REPLACE %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, fn, fo->base.name);
+		if(IS_PROC(fo) && CQlocateExternal(sname, fo->base.name))
+			return sql_message("3F000!CREATE OR REPLACE %s%s: there are continuous queries dependent on %s%s %s;", KF, F, kf, fn, fo->base.name);
+
+		mvc_drop_func(sql, s, n->data, 0);
+	}
 	nf = mvc_create_func(sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg);
 	if (nf && nf->query && nf->lang <= FUNC_LANG_SQL) {
 		char *buf;
@@ -773,7 +791,7 @@ UPGcreate_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
 		sql_func *func = (sql_func*)((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.pval;
 
-		msg = create_func(sql, schema, fname, func);
+		msg = create_func(sql, schema, fname, func, NULL, 0);
 		mvc_set_schema(sql, osname);
 	} else {
 		mvc_set_schema(sql, osname);
@@ -1271,9 +1289,11 @@ SQLcreate_function(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sname = *getArgReference_str(stk, pci, 1); 
 	str fname = *getArgReference_str(stk, pci, 2); 
 	sql_func *f = *(sql_func **) getArgReference(stk, pci, 3);
+	sql_func *fo = *(sql_func **) getArgReference(stk, pci, 4);
+	int replace = *getArgReference_int(stk, pci, 5);
 
 	initcontext();
-	msg = create_func(sql, sname, fname, f);
+	msg = create_func(sql, sname, fname, f, fo, replace);
 	return msg;
 }
 

@@ -4738,8 +4738,8 @@ sql_trans_alter_access(sql_trans *tr, sql_table *t, sht access)
 sql_table *
 sql_trans_alter_stream_table(sql_trans *tr, sql_table *t, int operation, int value)
 {
-	char* which_column;
-	int to_change;
+	char* which_column = NULL;
+	int to_change = 0;
 
 	switch(operation) {
 		case CHANGE_WINDOW:
