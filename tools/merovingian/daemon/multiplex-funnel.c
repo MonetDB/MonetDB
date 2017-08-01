@@ -505,7 +505,7 @@ static void
 multiplexQuery(multiplex *m, char *buf, stream *fout)
 {
 	int i;
-	char *t;
+	const char *t;
 	MapiHdl h;
 	mapi_int64 rlen;
 	int fcnt;

@@ -16,6 +16,7 @@ QUERY = CREATE TABLE bounds_test (
 ERROR = !syntax error, unexpected $end, expecting FOREIGN or PRIMARY or UNIQUE: end of input stream in "create table bounds_test (
         !id int not null auto_increment primary key,
         !"
+CODE  = 42000
 
 # 14:52:27 >  
 # 14:52:27 >  Done.

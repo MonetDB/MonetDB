@@ -923,10 +923,11 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 	do {																\
 		int rn = mapi_error(mid);										\
 		if ((rn == -4 && hdl && mapi_result_error(hdl)) || rn) {		\
-			str err, newerr;											\
+			const char *err, *e;										\
+			str newerr;													\
 			str ret;													\
 			size_t l;													\
-			char *e, *f;												\
+			char *f;													\
 																		\
 			if (hdl && mapi_result_error(hdl))							\
 				err = mapi_result_error(hdl);							\
@@ -999,7 +1000,7 @@ SERVERconnectAll(Client cntxt, int *key, str *host, int *port, str *username, st
 	mid = mapi_connect(*host, *port, *username, *password, *lang, NULL);
 
 	if (mapi_error(mid)) {
-		str err = mapi_error_str(mid);
+		const char *err = mapi_error_str(mid);
 		str ex;
 		if (err == NULL)
 			err = "(no reason given)";

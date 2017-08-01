@@ -32,6 +32,7 @@ MAPI  = (monetdb) /var/tmp/mtest-15437/.s.monetdb.35953
 QUERY = start transaction;create table bug (n_nationkey INTEGER,n_regionkey INTEGER);
         copy binary into bug from '${TSTTRGBASE}/mTests/sql/test/BugTracker-2013/n_nationkey.sorted', '${TSTTRGBASE}/mTests/sql/test/BugTracker-2013/n_regionkey.sorted';
 ERROR = !Binary files for table 'bug' have inconsistent counts
+CODE  = 42000
 
 # 11:33:26 >  
 # 11:33:26 >  "Done."

@@ -53,9 +53,9 @@ mal_export void	showScriptException(stream *out, MalBlkPtr, int, enum malexcepti
 	__attribute__((__format__(__printf__, 5, 6)));
 mal_export int isExceptionVariable(str nme);
 
-mal_export enum malexception	getExceptionType(str);
-mal_export str	getExceptionPlace(str);
-mal_export str	getExceptionMessage(str);
+mal_export enum malexception	getExceptionType(const char *);
+mal_export str	getExceptionPlace(const char *);
+mal_export str	getExceptionMessage(const char *);
 mal_export void dumpExceptionsToStream(stream *out, str msg);
 mal_export void freeException(str);
 

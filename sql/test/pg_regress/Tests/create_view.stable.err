@@ -33,22 +33,27 @@ MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = CREATE OR REPLACE VIEW viewtest AS
         	SELECT * FROM viewtest_tbl WHERE a > 10;
 ERROR = !syntax error, unexpected VIEW in: "create or replace view"
-MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = CREATE OR REPLACE VIEW viewtest AS
         	SELECT a, b FROM viewtest_tbl WHERE a > 5 ORDER BY b DESC;
 ERROR = !syntax error, unexpected VIEW in: "create or replace view"
-MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = CREATE OR REPLACE VIEW viewtest AS
 	SELECT a FROM viewtest_tbl WHERE a <> 20;
 ERROR = !syntax error, unexpected VIEW in: "create or replace view"
-MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = CREATE OR REPLACE VIEW viewtest AS
 	SELECT 1, * FROM viewtest_tbl;
 ERROR = !syntax error, unexpected VIEW in: "create or replace view"
-MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = CREATE OR REPLACE VIEW viewtest AS
 	SELECT a, cast(b as numeric) FROM viewtest_tbl;
 ERROR = !syntax error, unexpected VIEW in: "create or replace view"
+CODE  = 42000
 
 
 # 17:11:19 >  

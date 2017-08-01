@@ -42,8 +42,10 @@ QUERY = CREATE TABLE instrument (
             CONSTRAINT instrument_exchange_fk FOREIGN KEY (fk_exchange) REFERENCES exchange (pk_symbol),
             CONSTRAINT instrument_entity_fk FOREIGN KEY (fk_entity_uuid) REFERENCES entity (pk_uuid)
 ERROR = !CONSTRAINT FOREIGN KEY: key 'instrument_exchange_fk' already exists
-MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
 
 # 13:08:16 >  
 # 13:08:16 >  "Done."

@@ -270,25 +270,25 @@ showScriptException(stream *out, MalBlkPtr mb, int pc, enum malexception type, c
  * generic MALException.
  */
 enum malexception
-getExceptionType(str exception)
+getExceptionType(const char *exception)
 {
 	enum malexception ret = MAL;
-	str s;
+	const char *s;
+	size_t len;
 	enum malexception i;
 
 	if ((s = strchr(exception, ':')) != NULL)
-		*s = '\0';
+		len = s - exception;
+	else
+		len = strlen(exception);
 
 	for (i = MAL; exceptionNames[i] != NULL; i++) {
-		if (strcmp(exceptionNames[i], exception) == 0) {
+		if (strncmp(exceptionNames[i], exception, len) == 0 &&
+			exceptionNames[i][len] == '\0') {
 			ret = i;
 			break;
 		}
 	}
-
-	/* restore original string */
-	if (s != NULL)
-		*s = ':';
 
 	return(ret);
 }
@@ -300,9 +300,10 @@ getExceptionType(str exception)
  * needs to be GDKfreed.
  */
 str
-getExceptionPlace(str exception)
+getExceptionPlace(const char *exception)
 {
-	str ret, s, t;
+	str ret;
+	const char *s, *t;
 	enum malexception i;
 	size_t l;
 
@@ -328,9 +329,9 @@ getExceptionPlace(str exception)
  * Returns the informational message of the exception given.
  */
 str
-getExceptionMessage(str exception)
+getExceptionMessage(const char *exception)
 {
-	str s, t;
+	const char *s, *t;
 	enum malexception i;
 	size_t l;
 
@@ -340,11 +341,11 @@ getExceptionMessage(str exception)
 			exception[l] == ':') {
 			s = exception + l + 1;
 			if ((t = strchr(s, ':')) != NULL)
-				return t + 1;
-			return s;
+				return (str) (t + 1);
+			return (str) s;
 		}
 	}
 	if (strncmp(exception, "!ERROR: ", 8) == 0)
-		return exception + 8;
-	return exception;
+		return (str) (exception + 8);
+	return (str) exception;
 }

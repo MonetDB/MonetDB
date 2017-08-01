@@ -29,11 +29,14 @@ QUERY = select urlid,clicktime from
 ERROR = !syntax error, unexpected ')', expecting SCOLON in: "select urlid,clicktime from
         !(clicks left outer join urls on
         !urls.suburl0x0=click"
-MAPI  = (monetdb) /var/tmp/mtest-19293/.s.monetdb.33928
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = --  ^ is wrong, did gave an error with strange symbols
 ERROR = !Current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-19293/.s.monetdb.33928
+CODE  = 25005
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
 
 # 14:15:47 >  
 # 14:15:47 >  Done.

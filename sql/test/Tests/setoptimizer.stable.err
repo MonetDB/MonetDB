@@ -85,6 +85,7 @@ ERROR = !'optimizer.emptySet' undefined in:     optimizer.emptySet();
 MAPI  = (monetdb) /var/tmp/mtest-19293/.s.monetdb.33928
 QUERY = set optimizer='myfamous_pipe';
 ERROR = !optimizer 'myfamous_pipe' unknown
+CODE  = 42100
 
 
 # 19:12:49 >  

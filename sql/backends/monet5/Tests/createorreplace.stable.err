@@ -32,6 +32,7 @@ stderr of test 'createorreplace` in directory 'sql/backends/monet5` itself:
 MAPI  = (monetdb) /var/tmp/mtest-26151/.s.monetdb.34646
 QUERY = CREATE FUNCTION createorreplacefunc(i INTEGER) RETURNS INTEGER LANGUAGE PYTHON { return i * 3; };
 ERROR = !CREATE FUNCTION: name 'createorreplacefunc' (int(32)) already in use
+CODE  = 42000
 
 # 14:49:52 >  
 # 14:49:52 >  "Done."

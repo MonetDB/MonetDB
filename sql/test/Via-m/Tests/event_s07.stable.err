@@ -73,6 +73,7 @@ stderr of test 'event_s07` in directory 'sql/test/Via-m` itself:
 MAPI  = monetdb@sofia:38256
 QUERY = set id_event = add_event('event 2', '2009-06-23', 'artist2', 'location2', 'description2');
 ERROR = !INSERT INTO: UNIQUE constraint 'event.unq_event_name' violated
+CODE  = M0M29
 
 
 # 14:41:43 >  

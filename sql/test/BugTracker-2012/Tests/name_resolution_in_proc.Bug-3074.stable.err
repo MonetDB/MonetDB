@@ -36,11 +36,14 @@ QUERY = create procedure dc.archive()
             insert into runningcatalog select  * from dc.lta;
         end;
 ERROR = !INSERT INTO: no such table 'runningcatalog'
-MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = call dc.archive();
 ERROR = !Current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
+CODE  = 25005
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
 
 # 16:33:04 >  
 # 16:33:04 >  "Done."

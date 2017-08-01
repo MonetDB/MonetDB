@@ -14,6 +14,7 @@ MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = create table t1314904b (testid unknowntype, testchar varchar(255));
 ERROR = !Type (unknowntype) unknown in: "create table t1314904b (testid unknowntype,"
         !syntax error, unexpected IDENT in: "testchar"
+CODE  = 22000
 
 # 16:53:01 >  
 # 16:53:01 >  Done.
