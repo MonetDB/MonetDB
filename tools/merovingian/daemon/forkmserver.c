@@ -753,4 +753,56 @@ forkMserver(char *database, sabdb** stats, int force)
 	return(newErr("%s", strerror(errno)));
 }
 
+/**
+ * Fork stethoscope and detatch, after performing sanity checks. The assumption
+ * is that each mserver5 process can have at most one stethoscope process
+ * attached to it.
+ */
+err
+fork_profiler(char *dbname, sabdb **stats, char **log_path)
+{
+	pid_t pid;
+	char *error = NO_ERR;
+	confkeyval *ckv, *kv;
+
+	(void) pid;
+	(void) log_path;
+	error = msab_getStatus(stats, dbname);
+	if (error != NULL) {
+		err er = NULL;
+		er = newErr("%s", er);
+		free(error);
+		return er;
+	}
+
+	if (*stats == NULL) {
+		/* TODO: What now? */
+		return error;
+	}
+
+	pthread_mutex_lock(&fork_lock);
+
+	if ((*stats)->state != SABdbRunning) {
+		/* server is not running, shoo */
+		error = newErr("Database is not running.");
+		goto cleanup;
+	}
+
+	ckv = getDefaultProps();
+	readAllProps(ckv, (*stats)->path);
+	kv = findConfKey(ckv, "profilerlogpath");
+
+	if (kv == NULL) {
+		error = newErr("Property 'profilerlogpath' not set for db %s\n",
+					   dbname);
+		goto cleanup;
+	}
+
+	*log_path = GDKstrdup(kv->val);
+
+  cleanup:
+	pthread_mutex_unlock(&fork_lock);
+	return error;
+}
+
 /* vim:set ts=4 sw=4 noexpandtab: */
