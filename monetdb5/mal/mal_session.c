@@ -651,13 +651,16 @@ MALcallback(Client c, str msg)
 		char *n = NULL;
 		char *o = msg;
 		while ((n = strchr(o, '\n')) != NULL) {
-			*n = '\0';
-			mnstr_printf(c->fdout, "!%s\n", getExceptionMessage(o));
-			*n++ = '\n';
-			o = n;
+			if (*o == '!')
+				o++;
+			mnstr_printf(c->fdout, "!%.*s\n", (int) (n - o), o);
+			o = ++n;
 		}
-		if (*o != 0)
-			mnstr_printf(c->fdout, "!%s\n", getExceptionMessage(o));
+		if (*o != 0) {
+			if (*o == '!')
+				o++;
+			mnstr_printf(c->fdout, "!%s\n", o);
+		}
 		freeException(msg);
 	}
 	return MAL_SUCCEED;

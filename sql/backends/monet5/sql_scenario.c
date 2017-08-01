@@ -1237,5 +1237,28 @@ SQLcallback(Client c, str msg){
 			msg = GDKstrdup(newerr);
 		}
 	}
+	if (msg) {
+		/* remove exception decoration */
+		char *m, *n, *p, *s;
+		size_t l;
+
+		m = p = msg;
+		while (m && *m) {
+			n = strchr(m, '\n');
+			if (n)
+				*n = 0;
+			s = getExceptionMessage(m);
+			if (n) {
+				*n++ = '\n';
+				l = n - s;
+			} else {
+				l = strlen(s);
+			}
+			memmove(p, s, l);
+			p += l;
+			m = n;
+		}
+		*p = 0;
+	}
 	return MALcallback(c,msg);
 }

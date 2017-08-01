@@ -108,11 +108,9 @@ parseError(Client cntxt, str msg)
 	}
 	if (old){
 		strcpy(new, old);
-		strcat(new,"!");
 		GDKfree(old);
 	} 
 	strcat(new,line);
-	strcat(new,"!");
 	strcat(new,marker);
 
 	mb->errors = new;
