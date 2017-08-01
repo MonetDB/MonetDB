@@ -30,28 +30,28 @@ stderr of test 'test_privs2_p2` in directory 'sql/test/Users` itself:
 
 MAPI  = (my_user2) /var/tmp/mtest-15225/.s.monetdb.34050
 QUERY = SELECT * FROM version;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: access denied for my_user2 to table 'my_schema.version'
-MAPI  = (my_user2) /var/tmp/mtest-27097/.s.monetdb.31804
+ERROR = !SELECT: access denied for my_user2 to table 'my_schema.version'
+MAPI  = (my_user2) /var/tmp/mtest-13234/.s.monetdb.39382
 QUERY = insert into version (name ,i) values ('test2' ,2) ;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !INSERT INTO: insufficient privileges for user 'my_user2' to insert into table 'version'
-MAPI  = (my_user2) /var/tmp/mtest-27097/.s.monetdb.31804
+ERROR = !INSERT INTO: insufficient privileges for user 'my_user2' to insert into table 'version'
+MAPI  = (my_user2) /var/tmp/mtest-13234/.s.monetdb.39382
 QUERY = SELECT insertversion('test3', 3);
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !INSERT INTO: insufficient privileges for user 'my_user2' to insert into table 'version'
-MAPI  = (my_user2) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !INSERT INTO: insufficient privileges for user 'my_user2' to insert into table 'version'
+MAPI  = (my_user2) /var/tmp/mtest-13234/.s.monetdb.39382
 QUERY = SELECT * FROM version;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: access denied for my_user2 to table 'my_schema.version'
-MAPI  = (my_user2) /var/tmp/mtest-27097/.s.monetdb.31804
+ERROR = !SELECT: access denied for my_user2 to table 'my_schema.version'
+MAPI  = (my_user2) /var/tmp/mtest-13234/.s.monetdb.39382
 QUERY = SELECT updateversion('test1', 4);
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !UPDATE: insufficient privileges for user 'my_user2' to update table 'version'
-MAPI  = (my_user2) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !UPDATE: insufficient privileges for user 'my_user2' to update table 'version'
+MAPI  = (my_user2) /var/tmp/mtest-13234/.s.monetdb.39382
 QUERY = SELECT * FROM version;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: access denied for my_user2 to table 'my_schema.version'
-MAPI  = (my_user2) /var/tmp/mtest-27097/.s.monetdb.31804
+ERROR = !SELECT: access denied for my_user2 to table 'my_schema.version'
+MAPI  = (my_user2) /var/tmp/mtest-13234/.s.monetdb.39382
 QUERY = SELECT deleteversion(4);
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !DELETE FROM: insufficient privileges for user 'my_user2' to delete from table 'version'
-MAPI  = (my_user2) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !DELETE FROM: insufficient privileges for user 'my_user2' to delete from table 'version'
+MAPI  = (my_user2) /var/tmp/mtest-13234/.s.monetdb.39382
 QUERY = SELECT * FROM version;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: access denied for my_user2 to table 'my_schema.version'
+ERROR = !SELECT: access denied for my_user2 to table 'my_schema.version'
 
 # 15:54:47 >  
 # 15:54:47 >  "Done."
