@@ -904,7 +904,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			for( n = exps->h; n; n = n->next)
 				append(ops, exp_subtype(n->data));
 			f = sql_bind_func_(sql->sa, s, cname, ops, F_FUNC);
-			exp = exp_op( sql->sa, exps, f);
+			if (f)
+				exp = exp_op( sql->sa, exps, f);
 		}
 	}
 
