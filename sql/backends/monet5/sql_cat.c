@@ -24,7 +24,6 @@
 #include "querylog.h"
 #include "mal_builder.h"
 #include "mal_debugger.h"
-#include "mosaic.h"
 
 #include <rel_select.h>
 #include <rel_optimizer.h>
@@ -558,17 +557,12 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 	sql_schema *s = mvc_bind_schema(sql, sname);
 	sql_table *nt = NULL;
 	node *n;
-	int i;
- 	MOStask task= (MOStask) GDKzalloc(sizeof(*task));
-    if( task == NULL)
-        throw(MAL, "sql.alter", MAL_MALLOC_FAIL);
 
 	if (!s)
 		throw(SQL,"sql.alter_table", SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", sname);
 
 	if ((nt = mvc_bind_table(sql, s, t->base.name)) == NULL) {
 		throw(SQL,"sql.alter_table", SQLSTATE(42S02) "ALTER TABLE: no such table '%s'", t->base.name);
-
 	} else if (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP)) {
 		throw(SQL,"sql.alter_table", SQLSTATE(42000) "ALTER TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
@@ -626,43 +620,9 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			mvc_default(sql, nc, c->def);
 
 		if (c->storage_type != nc->storage_type) {
-			bat bid = 0;
-			BAT *b;
-			size_t cnt;
-			sql_delta *d;
-			char *msg;
-/* no restriction
 			if (c->t->access == TABLE_WRITABLE)
 				throw(SQL,"sql.alter_table", SQLSTATE(40002) "ALTER TABLE: SET STORAGE for column %s.%s only allowed on READ or INSERT ONLY tables", c->t->base.name, c->base.name);
-*/
 			nc->base.rtime = nc->base.wtime = sql->session->tr->wtime;
-
-			b = store_funcs.bind_col(sql->session->tr, nc, 0);
-			assert(b);
-			cnt = BATcount(b);
-			if (cnt < MOSAIC_THRESHOLD){
-				BBPunfix(b->batCacheid);
-				continue;
-			}
-			if( c->storage_type && !strstr(c->storage_type,"mosaic"))
-				for( i = 0; i< MOSAIC_METHODS; i++)
-					task->filter[i]= strstr(c->storage_type,MOSfiltername[i]) != 0;
-			else
-				for( i = 0; i< MOSAIC_METHODS; i++)
-					task->filter[i]= 1;
-
-			if( c->storage_type)
-				msg = MOScompressInternal(cntxt, &b->batCacheid, task, 0);
-			else
-				msg = MOSdecompressInternal(cntxt, &b->batCacheid);
-			BBPunfix(b->batCacheid);
-			if (msg)
-				return msg;
-			store_funcs.clear_col(sql->session->tr, nc);
-			assert(nc->base.allocated == 1);
-			d = nc->data;
-			d->bid = bid;
-			d->cnt = cnt;
 			mvc_storage(sql, nc, c->storage_type);
 		}
 	}

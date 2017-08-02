@@ -36,7 +36,7 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		msg= createException(MAL,"optimizer.deadcode",MAL_MALLOC_FAIL);
+		msg= createException(MAL,"optimizer.deadcode", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 

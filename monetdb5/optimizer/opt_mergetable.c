@@ -1520,7 +1520,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 	vars= (int*) GDKmalloc(sizeof(int)* mb->vtop);
 	if( vars == NULL){
-		throw(MAL, "optimizer.mergetable", MAL_MALLOC_FAIL);
+		throw(MAL, "optimizer.mergetable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	/* check for bailout conditions */
 	for (i = 1; i < oldtop; i++) {
@@ -1560,7 +1560,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	ml.torigin = 0;
 	ml.v = 0;
 	if (bailout){
-		msg = createException(MAL,"optimizer.mergetable",MAL_MALLOC_FAIL);
+		msg = createException(MAL,"optimizer.mergetable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
@@ -1585,7 +1585,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	mb->stmt = (InstrPtr *) GDKzalloc(size * sizeof(InstrPtr));
 	if ( mb->stmt == NULL) {
 		mb->stmt = old;
-		msg = createException(MAL,"optimizer.mergetable",MAL_MALLOC_FAIL);
+		msg = createException(MAL,"optimizer.mergetable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 	mb->ssize = size;

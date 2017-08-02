@@ -89,7 +89,7 @@ UDFBATreverse_(BAT **ret, BAT *src)
 	/* allocate void-headed result BAT */
 	bn = COLnew(src->hseqbase, TYPE_str, BATcount(src), TRANSIENT);
 	if (bn == NULL) {
-		throw(MAL, "batudf.reverse", MAL_MALLOC_FAIL);
+		throw(MAL, "batudf.reverse", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	/* create BAT iterator */
@@ -115,7 +115,7 @@ UDFBATreverse_(BAT **ret, BAT *src)
 		/* append reversed tail in result BAT */
 		if (BUNappend(bn, tr, FALSE) != GDK_SUCCEED) {
 			BBPunfix(bn->batCacheid);
-			throw(MAL, "batudf.reverse", MAL_MALLOC_FAIL);
+			throw(MAL, "batudf.reverse", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 
 		/* free memory allocated in UDFreverse_() */
@@ -259,7 +259,7 @@ UDFBATfuse_(BAT **ret, const BAT *bone, const BAT *btwo)
 		      "}");
 	}
 	if (bres == NULL)
-		throw(MAL, "batudf.fuse", MAL_MALLOC_FAIL);
+		throw(MAL, "batudf.fuse", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	/* call type-specific core algorithm */
 	switch (bone->ttype) {

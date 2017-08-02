@@ -212,7 +212,7 @@ CMDevalFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (*s != '/') {
 		char *buf = GDKmalloc(strlen(monet_cwd) + strlen(s) + 2);
 		if ( buf == NULL)
-			throw(MAL,"language.eval", MAL_MALLOC_FAIL);
+			throw(MAL,"language.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 		strcpy(buf, monet_cwd);
 		strcat(buf, "/");

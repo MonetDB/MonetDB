@@ -32,7 +32,6 @@ Ready.
 [ "tmp"	]
 [ "json"	]
 [ "profiler"	]
-[ "mosaic"	]
 [ "bam"	]
 [ "ft"	]
 #drop function ft.func;

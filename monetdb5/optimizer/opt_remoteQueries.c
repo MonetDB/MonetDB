@@ -166,18 +166,18 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 
 	location= (int*) GDKzalloc(mb->vsize * sizeof(int));
 	if ( location == NULL)
-		throw(MAL, "optimizer.remote",MAL_MALLOC_FAIL);
+		throw(MAL, "optimizer.remote", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	dbalias= (DBalias*) GDKzalloc(128 * sizeof(DBalias));
 	if (dbalias == NULL){
 		GDKfree(location);
-		throw(MAL, "optimizer.remote",MAL_MALLOC_FAIL);
+		throw(MAL, "optimizer.remote", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	dbtop= 0;
 
 	if ( newMalBlkStmt(mb, mb->ssize) < 0){
 		GDKfree(dbalias);
 		GDKfree(location);
-		throw(MAL, "optimizer.remote",MAL_MALLOC_FAIL);
+		throw(MAL, "optimizer.remote", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	for (i = 0; i < limit; i++) {

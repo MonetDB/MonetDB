@@ -49,26 +49,26 @@ Ready.
 # 11:28:36 >  
 
 #SELECT CAST(0.94 AS INTEGER);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 1	]
 #SELECT CAST(0.95 AS INTEGER);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 1	]
 #SELECT CAST(0.49 AS INTEGER);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 0	]
 #SELECT CAST(0.50 AS INTEGER);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 1	]

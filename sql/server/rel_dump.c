@@ -806,7 +806,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			if (filter) {
 				sql_subfunc *func = sql_find_func(sql->sa, mvc_bind_schema(sql, "sys"), fname, 1+list_length(exps), F_FILT, NULL);
 				if (!func)
-					return sql_error(sql, -1, "SQLTYPE 42000 !""Filter: missing function '%s'\n", fname);
+					return sql_error(sql, -1, SQLSTATE(42000) "Filter: missing function '%s'\n", fname);
 					
 				return exp_filter(sql->sa, lexps, rexps, func, 0/* anti*/);
 			}

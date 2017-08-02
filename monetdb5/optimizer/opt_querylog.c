@@ -45,13 +45,13 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	limit= mb->stop;
 	slimit= mb->ssize;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)
-		throw(MAL,"optimizer.querylog",MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.querylog", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	pushInstruction(mb, old[0]);
 	/* run the querylog.define operation */
 	defineQuery = copyInstruction(defineQuery);
 	if( defineQuery == NULL)
-		throw(MAL,"optimizer.querylog",MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.querylog", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	defineQuery->argc--;  // remoge MAL instruction count
 	setFunctionId(defineQuery, appendRef);

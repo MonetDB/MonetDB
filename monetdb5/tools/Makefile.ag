@@ -16,7 +16,6 @@ lib_monetdb5 = {
 	SOURCES = libmonetdb5.rc
 	LIBS = ../mal/libmal ../modules/atoms/libatoms \
 		../modules/kernel/libkernel ../modules/mal/libmal \
-		../modules/mosaic/libmosaic \
 		../optimizer/liboptimizer ../scheduler/libscheduler \
 		../../gdk/libbat \
 		HAVE_MAPI?../../clients/mapilib/libmapi \

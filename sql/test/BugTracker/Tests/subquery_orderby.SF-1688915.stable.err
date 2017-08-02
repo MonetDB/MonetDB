@@ -1,11 +1,11 @@
 stderr of test 'subquery_orderby.SF-1688915` in directory 'sql/test/BugTracker` itself:
 
 
-# 09:40:47 >  
-# 09:40:47 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38406" "--set" "mapi_usock=/var/tmp/mtest-20871/.s.monetdb.38406" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_sql_test_BugTracker"
-# 09:40:47 >  
+# 14:49:16 >  
+# 14:49:16 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32077" "--set" "mapi_usock=/var/tmp/mtest-71873/.s.monetdb.32077" "--set" "monet_prompt=" "--forcemito" "--dbpath=/Users/myth/opt/var/MonetDB/mTests_sql_test_BugTracker" "--set" "embedded_py=true"
+# 14:49:16 >  
 
-# builtin opt 	gdk_dbpath = /export/scratch1/mk/mosaic//Linux/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_dbpath = /Users/myth/opt/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
 # builtin opt 	gdk_vmtrim = no
 # builtin opt 	monet_prompt = >
@@ -17,18 +17,19 @@ stderr of test 'subquery_orderby.SF-1688915` in directory 'sql/test/BugTracker` 
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 38406
-# cmdline opt 	mapi_usock = /var/tmp/mtest-20871/.s.monetdb.38406
+# cmdline opt 	mapi_port = 32077
+# cmdline opt 	mapi_usock = /var/tmp/mtest-71873/.s.monetdb.32077
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbpath = /export/scratch1/mk/mosaic//Linux/var/MonetDB/mTests_sql_test_BugTracker
+# cmdline opt 	gdk_dbpath = /Users/myth/opt/var/MonetDB/mTests_sql_test_BugTracker
+# cmdline opt 	embedded_py = true
 # cmdline opt 	gdk_debug = 536870922
 
-# 09:40:47 >  
-# 09:40:47 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20871" "--port=38406"
-# 09:40:47 >  
+# 14:49:17 >  
+# 14:49:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-71873" "--port=32077"
+# 14:49:17 >  
 
 
-# 09:40:47 >  
-# 09:40:47 >  "Done."
-# 09:40:47 >  
+# 14:49:17 >  
+# 14:49:17 >  "Done."
+# 14:49:17 >  
 

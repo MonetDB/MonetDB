@@ -14,7 +14,7 @@
 		r = COLnew(b->hseqbase, tpe, cnt, TRANSIENT);	\
 		if (r == NULL) {				\
 			BBPunfix(b->batCacheid);		\
-			throw(MAL, err, SQLSTATE(HY005) MAL_MALLOC_FAIL);	\
+			throw(MAL, err, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
 		}						\
 		r->tsorted = 0;					\
 		r->trevsorted = 0;				\

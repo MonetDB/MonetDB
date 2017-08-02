@@ -351,7 +351,7 @@ handle_error(mvc *m, int pstatus, str msg)
 	if( new && msg){
 		newmsg = GDKzalloc( strlen(msg) + strlen(new) + 64);
 		strcpy(newmsg, msg);
-		strcat(newmsg,"!");
+		/* strcat(newmsg,"!"); */
 		strcat(newmsg,new);
 		GDKfree(new);
 		GDKfree(msg);
@@ -1042,7 +1042,7 @@ SQLparser(Client c)
 		if (!err &&m->scanner.started)	/* repeat old errors, with a parsed query */
 			err = mvc_status(m);
 		if (err && *m->errstr) {
-			if( strstr(m->errstr,"SQLSTATE"))
+			if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			else
 				msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
@@ -1088,7 +1088,7 @@ SQLparser(Client c)
 		r = sql_symbol2relation(m, m->sym);
 
 		if (!r || (err = mvc_status(m) && m->type != Q_TRANS && *m->errstr)) {
-			if( strstr(m->errstr,"SQLSTATE"))
+			if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			else
 				msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
@@ -1177,7 +1177,7 @@ SQLparser(Client c)
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, NULL, oldvtop);
 			if (msg == NULL && *m->errstr){
-				if(strstr(m->errstr,"SQLSTATE"))
+				if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 					msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 				else
 					msg = createException(PARSE, "SQLparser", SQLSTATE(M0M27) "Semantic errors %s", m->errstr);
@@ -1236,6 +1236,29 @@ SQLcallback(Client c, str msg){
 			GDKfree(msg);
 			msg = GDKstrdup(newerr);
 		}
+	}
+	if (msg) {
+		/* remove exception decoration */
+		char *m, *n, *p, *s;
+		size_t l;
+
+		m = p = msg;
+		while (m && *m) {
+			n = strchr(m, '\n');
+			if (n)
+				*n = 0;
+			s = getExceptionMessage(m);
+			if (n) {
+				*n++ = '\n';
+				l = n - s;
+			} else {
+				l = strlen(s);
+			}
+			memmove(p, s, l);
+			p += l;
+			m = n;
+		}
+		*p = 0;
 	}
 	return MALcallback(c,msg);
 }

@@ -172,7 +172,7 @@ GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	aggr = GROUPcollect(cntxt, mb, stk, pci);
 	if( aggr == NULL)
-		throw(MAL,"group.multicolumn",MAL_MALLOC_FAIL);
+		throw(MAL,"group.multicolumn", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	GROUPcollectSort(aggr, 0, aggr->last);
 
 	/* (grp,ext,hist) := group.group(..) */

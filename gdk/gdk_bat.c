@@ -474,7 +474,6 @@ BATextend(BAT *b, BUN newcap)
 	HASHdestroy(b);
 	IMPSdestroy(b);
 	OIDXdestroy(b);
-	MOSdestroy(b);
 	return GDK_SUCCEED;
 }
 

@@ -40,7 +40,7 @@ Ready.
 #  select 13 as x
 #) sub
 #;
-% .sub,	.L27 # table_name
+% .sub,	.L32 # table_name
 % x,	log # name
 % tinyint,	tinyint # type
 % 2,	1 # length

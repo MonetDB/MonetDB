@@ -490,7 +490,6 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 
 	IMPSdestroy(b);		/* imprints do not support updates yet */
 	OIDXdestroy(b);
-	MOSdestroy(b);
 	if (b->thash == (Hash *) 1 || BATcount(b) == 0) {
 		/* don't bother first loading the hash to then change
 		 * it, or updating the hash if we replace the heap */

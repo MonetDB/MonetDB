@@ -1,3 +1,9 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+
 module mosaic;
 
 pattern compress(b:bat[:any_1], prop:str):bat[:any_1]
@@ -77,4 +83,3 @@ comment "Overloaded projection operation";
 pattern join(l:bat[:any_1],r:bat[:any_1],sl:bat[:oid],sr:bat[:oid],nil_matches:bit,estimate:lng) (:bat[:oid],:bat[:oid])
 address MOSjoin
 comment "Overloaded join operation";
-

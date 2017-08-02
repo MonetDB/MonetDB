@@ -421,7 +421,7 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 		for (i = pci->retc; i < pci->argc; i++) {
 			lhs = &stk->stk[pci->argv[i]];
 			if (VALcopy(lhs, argv[i]) == NULL)
-				throw(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
+				throw(MAL, "mal.interpreter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			if (lhs->vtype == TYPE_bat)
 				BBPretain(lhs->val.bval);
 		}
@@ -478,11 +478,11 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		if (pci->argc > 16) {
 			backup = GDKmalloc(pci->argc * sizeof(ValRecord));
 			if( backup == NULL)
-				throw(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
+				throw(MAL, "mal.interpreter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			garbage = (int*)GDKzalloc(pci->argc * sizeof(int));
 			if( garbage == NULL){
 				GDKfree(backup);
-				throw(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
+				throw(MAL, "mal.interpreter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 		} else {
 			backup = backups;
@@ -492,11 +492,11 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	} else if ( mb->maxarg > 16 ){
 		backup = GDKmalloc(mb->maxarg * sizeof(ValRecord));
 		if( backup == NULL)
-			throw(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
+			throw(MAL, "mal.interpreter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		garbage = (int*)GDKzalloc(mb->maxarg * sizeof(int));
 		if( garbage == NULL){
 			GDKfree(backup);
-			throw(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
+			throw(MAL, "mal.interpreter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	} else {
 		backup = backups;

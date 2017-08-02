@@ -65,14 +65,14 @@ Ready.
 #insert into t3352 values (222.8,222.8);
 [ 1	]
 #select median(a) from t3352;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % decimal # type
 % 20 # length
 [ 41.18	]
 #select median(b) from t3352;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ 41.18	]

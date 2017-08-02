@@ -77,7 +77,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	series = (InstrPtr*) GDKzalloc(sizeof(InstrPtr) * mb->vtop);
 	if(series == NULL)
-		throw(MAL,"optimizer.generator", MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.generator", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	old = mb->stmt;
 	limit = mb->stop;
 	slimit = mb->ssize;
@@ -95,7 +95,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(series);
-		throw(MAL,"optimizer.generator", MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.generator", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	for( i=0; i < limit; i++){

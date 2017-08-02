@@ -794,6 +794,7 @@ GDKreset(int status, int exit)
 			MT_lock_destroy(&GDKbatLock[i].swap);
 			MT_lock_destroy(&GDKbatLock[i].hash);
 			MT_lock_destroy(&GDKbatLock[i].imprints);
+			MT_lock_destroy(&GDKbatLock[i].mosaic);
 		}
 		for (i = 0; i <= BBP_THREADMASK; i++) {
 			MT_lock_destroy(&GDKbbpLock[i].alloc);

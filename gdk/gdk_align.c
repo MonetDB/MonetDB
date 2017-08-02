@@ -184,7 +184,7 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 	/* Order OID index */
 	bn->torderidx = NULL;
 	bn->tmosaic = NULL;
-    if (BBPcacheit(bn, 1) != GDK_SUCCEED) { /* enter in BBP */
+	if (BBPcacheit(bn, 1) != GDK_SUCCEED) {	/* enter in BBP */
 		if (tp)
 			BBPunshare(tp);
 		if (bn->tvheap)

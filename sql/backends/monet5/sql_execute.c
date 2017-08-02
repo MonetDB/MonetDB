@@ -282,7 +282,7 @@ SQLrun(Client c, backend *be, mvc *m)
 	ValPtr val;
 			
 	if (*m->errstr){
-		if( strstr(m->errstr,"SQLSTATE"))
+		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 		else 
 			msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
@@ -324,7 +324,7 @@ SQLrun(Client c, backend *be, mvc *m)
 				}
 				val= (ValPtr) &arg->data;
 				if (VALcopy(&mb->var[j+retc].value, val) == NULL)
-					throw(MAL, "sql.prepare", SQLSTATE(HY100) MAL_MALLOC_FAIL);
+					throw(MAL, "sql.prepare", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				setVarConstant(mb, j+retc);
 				setVarFixed(mb, j+retc);
 			}
@@ -351,8 +351,6 @@ SQLrun(Client c, backend *be, mvc *m)
 	} else if( m->emod & mod_debug) {
 		msg = runMALDebugger(c, mb);
 	} else {
-		if( c->curprg->def->errors)
-			throw(SQL,"sql.run","Program contains errors");
 		if( m->emod & mod_trace){
 			SQLsetTrace(c,mb);
 			msg = runMAL(c, mb, 0, 0);
@@ -514,7 +512,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 			if (!err)
 				err = mvc_status(m);
 			if (*m->errstr){
-				if( strstr(m->errstr,"SQLSTATE"))
+				if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 					msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 				else
 					msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
@@ -543,7 +541,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 #endif
 		scanner_query_processed(&(m->scanner));
 		if ((err = mvc_status(m)) ) {
-				if( strstr(m->errstr,"SQLSTATE"))
+				if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 					msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 				else
 					msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
@@ -575,7 +573,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 			MSresetInstructions(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, c->glb, oldvtop);
 			c->curprg->def->errors = 0;
-			if( strstr(m->errstr,"SQLSTATE"))
+			if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 				msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 			else
 				msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
@@ -614,7 +612,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 					void *ptr =ATOMnil(t->type->localtype);
 
 					if( ptr == NULL){
-						msg = createException(SQL,"SQLstatement",MAL_MALLOC_FAIL);
+						msg = createException(SQL,"SQLstatement", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 						goto endofcompile;
 					}
 					name = e->name;
@@ -625,7 +623,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 						rname = e->l;
 					if (res_col_create(m->session->tr, res, rname, name, t->type->sqlname, t->digits,
 							   t->scale, t->type->localtype, ptr) == NULL) {
-						msg = createException(SQL,"SQLstatement",MAL_MALLOC_FAIL);
+						msg = createException(SQL,"SQLstatement", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 						goto endofcompile;
 					}
 				}
@@ -702,7 +700,7 @@ SQLengineIntern(Client c, backend *be)
 	if (c->curprg->def->stop == 1) {
 		if (mvc_status(m)) {
 			if (*m->errstr){
-				if( strstr(m->errstr,"SQLSTATE"))
+				if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 					msg = createException(PARSE, "SQLparser", "%s", m->errstr);
 				else
 					msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);

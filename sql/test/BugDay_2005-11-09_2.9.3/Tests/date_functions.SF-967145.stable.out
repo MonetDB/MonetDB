@@ -25,14 +25,14 @@ Ready.
 # 11:50:50 >  
 
 #select current_date - current_date;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 0	]
 #select current_date() - current_date();
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 0	]

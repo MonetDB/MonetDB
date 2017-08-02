@@ -111,7 +111,11 @@ stdout of test 'bam_lib_mal` in directory 'sql/backends/monet5/vaults/bam` itsel
 [ 0@0,	"A"  ]
 [ 1@0,	"T"  ]
 [ 2@0,	"G"  ]
-!MALException:mal.manifold:Columns must be of same length
+!Columns must be of same length
+
+# 16:35:59 >  
+# 16:35:59 >  "Done."
+# 16:35:59 >  
 
 # 16:51:57 >  
 # 16:51:57 >  "Done."

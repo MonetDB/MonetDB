@@ -24,6 +24,6 @@ seq := algebra.projection(ord,bv);
 
 io.print(seq);
 
-(k,l):= algebra.sort(bv,false,true);
+(k,l):= algebra.sort(bv,0:bit,1:bit);
 
 io.print(k,l);

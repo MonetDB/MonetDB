@@ -1015,7 +1015,7 @@ wkbDistance_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	}
 	//check if the BATs are aligned
 	if (aBAT->hseqbase != bBAT->hseqbase || BATcount(aBAT) != BATcount(bBAT)) {
-		ret = createException(MAL, "batgeom.Distance", "SQLSTATE Columns !""Columns must be aligned");
+		ret = createException(MAL, "batgeom.Distance", SQLSTATE(38000) "Columns must be aligned");
 		goto clean;
 	}
 	//create a new BAT for the output

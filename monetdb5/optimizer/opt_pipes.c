@@ -50,7 +50,6 @@ static struct PIPELINES {
 	 "optimizer.deadcode();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
-	 "optimizer.mosaic();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 	 "optimizer.garbageCollector();",
@@ -88,7 +87,6 @@ static struct PIPELINES {
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
-	 "optimizer.mosaic();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 //	 "optimizer.jit();" awaiting the new batcalc api
@@ -124,7 +122,6 @@ static struct PIPELINES {
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
 	 "optimizer.volcano();"
-	 "optimizer.mosaic();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 //	 "optimizer.jit();" awaiting the new batcalc api
@@ -168,7 +165,7 @@ static struct PIPELINES {
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 //	 "optimizer.jit();" awaiting the new batcalc api
-	 "optimizer.mosaic();"
+//	 "optimizer.oltp();"awaiting the autocommit front-end changes
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
@@ -331,7 +328,7 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 		BBPreclaim(b);
 		BBPreclaim(bn);
 		BBPreclaim(bs);
-		throw(MAL, "optimizer.getpipeDefinition", MAL_MALLOC_FAIL);
+		throw(MAL, "optimizer.getpipeDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++) {
@@ -347,7 +344,7 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 			BBPreclaim(b);
 			BBPreclaim(bn);
 			BBPreclaim(bs);
-			throw(MAL, "optimizer.getpipeDefinition", MAL_MALLOC_FAIL);
+			throw(MAL, "optimizer.getpipeDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 
@@ -476,6 +473,7 @@ compileAllOptimizers(Client cntxt)
     }
 	return msg;
 }
+
 str
 addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name)
 {

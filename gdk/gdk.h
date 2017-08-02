@@ -1904,7 +1904,7 @@ gdk_export ptr ATOMdup(int id, const void *val);
  * @end multitable
  *
  * The current BAT implementation supports three search accelerators:
- * hashing, imprints, oid ordered index, and mosaic.
+ * hashing, imprints, and oid ordered index.
  *
  * The routine BAThash makes sure that a hash accelerator on the tail of the
  * BAT exists. GDK_FAIL is returned upon failure to create the supportive

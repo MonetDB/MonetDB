@@ -42,13 +42,13 @@ Ready.
 
 #START TRANSACTION;
 #select null;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % char # type
 % 0 # length
 [ NULL	]
 #select null as v;
-% .L1 # table_name
+% .L2 # table_name
 % v # name
 % char # type
 % 0 # length

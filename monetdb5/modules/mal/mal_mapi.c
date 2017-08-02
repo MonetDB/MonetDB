@@ -454,7 +454,7 @@ SERVERlistenThread(SOCKET *Sock)
 		data = GDKmalloc(sizeof(*data));
 		if( data == NULL){
 			closesocket(msgsock);
-			showException(GDKstdout, MAL, "initClient", MAL_MALLOC_FAIL);
+			showException(GDKstdout, MAL, "initClient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			continue;
 		}
 		data->in = socket_rastream(msgsock, "Server read");
@@ -573,7 +573,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 
 	psock = GDKmalloc(sizeof(SOCKET) * 3);
 	if (psock == NULL)
-		throw(MAL,"mal_mapi.listen", MAL_MALLOC_FAIL);
+		throw(MAL,"mal_mapi.listen", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	port = *Port;
 	if (Usockfile == NULL || *Usockfile == 0 ||
@@ -878,14 +878,14 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 	/* in embedded mode we allow just one client */
 	data = GDKmalloc(sizeof(*data));
 	if( data == NULL)
-		throw(MAL, "mapi.SERVERclient", MAL_MALLOC_FAIL);
+		throw(MAL, "mapi.SERVERclient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	data->in = block_stream(*In);
 	data->out = block_stream(*Out);
 	if (data->in == NULL || data->out == NULL) {
 		mnstr_destroy(data->in);
 		mnstr_destroy(data->out);
 		GDKfree(data);
-		throw(MAL, "mapi.SERVERclient", MAL_MALLOC_FAIL);
+		throw(MAL, "mapi.SERVERclient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	if (MT_create_thread(&tid, doChallenge, data, MT_THR_DETACHED)) {
 		mnstr_destroy(data->in);
@@ -1502,7 +1502,7 @@ SERVERfetch_field_bat(bat *bid, int *key){
 	accessTest(*key, "rpc");
 	b= COLnew(0,TYPE_str,256, TRANSIENT);
 	if( b == NULL)
-		throw(MAL,"mapi.fetch",MAL_MALLOC_FAIL);
+		throw(MAL,"mapi.fetch", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	cnt= mapi_get_field_count(SERVERsessions[i].hdl);
 	for(j=0; j< cnt; j++){
 		fld= mapi_fetch_field(SERVERsessions[i].hdl,j);
@@ -1513,7 +1513,7 @@ SERVERfetch_field_bat(bat *bid, int *key){
 		}
 		if (BUNappend(b,fld, FALSE) != GDK_SUCCEED) {
 			BBPreclaim(b);
-			throw(MAL, "mapi.fetch_field_bat", MAL_MALLOC_FAIL);
+			throw(MAL, "mapi.fetch_field_bat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 	*bid = b->batCacheid;
@@ -1654,7 +1654,7 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			s= (char*) GDKmalloc(strlen(qry)+strlen(fld)+1);
 			if ( s == NULL) {
 				GDKfree(qry);
-				throw(MAL, "mapi.rpc",MAL_MALLOC_FAIL);
+				throw(MAL, "mapi.rpc", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			strcpy(s,qry);
 			strcat(s,fld);
@@ -1732,13 +1732,13 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 
 	b= COLnew(0,tt,256, TRANSIENT);
 	if ( b == NULL)
-		throw(MAL,"mapi.rpc",MAL_MALLOC_FAIL);
+		throw(MAL,"mapi.rpc", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	while( mapi_fetch_row(hdl)){
 		fld2= mapi_fetch_field(hdl,1);
 		SERVERfieldAnalysis(fld2, tt, &tval);
 		if (BUNappend(b,VALptr(&tval), FALSE) != GDK_SUCCEED) {
 			BBPreclaim(b);
-			throw(MAL, "mapi.rpc", MAL_MALLOC_FAIL);
+			throw(MAL, "mapi.rpc", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 	*ret = b->batCacheid;

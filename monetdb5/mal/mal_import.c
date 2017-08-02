@@ -362,7 +362,7 @@ callString(Client cntxt, str s, int listing)
 	b = (buffer *) GDKzalloc(sizeof(buffer));
 	if (b == NULL){
 		GDKfree(qry);
-		throw(MAL,"callstring",MAL_MALLOC_FAIL);
+		throw(MAL,"callstring", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	buffer_init(b, qry, len);

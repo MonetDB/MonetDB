@@ -32,8 +32,8 @@ Ready.
 #set id_media_description = -1234567890;
 #set id_media_description =  add_media_description('description 1');
 #select id_media_description;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 2	]

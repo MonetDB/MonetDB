@@ -365,7 +365,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0 )
-		throw(MAL,"optmizer.remap",MAL_MALLOC_FAIL);
+		throw(MAL,"optmizer.remap", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
@@ -406,11 +406,11 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			InstrPtr cnt;
 			sum = copyInstruction(p);
 			if( sum == NULL)
-				throw(MAL, "remap", MAL_MALLOC_FAIL);
+				throw(MAL, "remap", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			cnt = copyInstruction(p);
 			if( cnt == NULL){
 				freeInstruction(sum);
-				throw(MAL, "remap", MAL_MALLOC_FAIL);
+				throw(MAL, "remap", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			setFunctionId(sum, sumRef);
 			setFunctionId(cnt, countRef);

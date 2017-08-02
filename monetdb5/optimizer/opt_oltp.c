@@ -119,7 +119,7 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if( old[i])
 						freeInstruction(old[i]);
 				GDKfree(old);
-				throw(MAL,"optimizer.oltp",MAL_MALLOC_FAIL);
+				throw(MAL,"optimizer.oltp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			setFunctionId(q, releaseRef);
 			pushInstruction(mb,q);

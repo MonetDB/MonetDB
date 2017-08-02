@@ -13,10 +13,10 @@ stderr of test 'marcin2` in directory 'sql/test` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select sum(*) from t3;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SUM: unable to perform 'sum(*)'
-MAPI  = (monetdb) /var/tmp/mtest-29803/.s.monetdb.33854
+ERROR = !SUM: unable to perform 'sum(*)'
+MAPI  = (monetdb) /var/tmp/mtest-19293/.s.monetdb.33928
 QUERY = select sum(*),val from t3 group by val ;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SUM: unable to perform 'sum(*)'
+ERROR = !SUM: unable to perform 'sum(*)'
 
 
 # 20:07:33 >  

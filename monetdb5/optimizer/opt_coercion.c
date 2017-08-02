@@ -130,7 +130,7 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	str msg = MAL_SUCCEED;
 
 	if( coerce == NULL)
-		throw(MAL,"optimizer.coercion",MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.coercion", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	(void) cntxt;
 	(void) pci;
 	(void) stk;		/* to fool compilers */

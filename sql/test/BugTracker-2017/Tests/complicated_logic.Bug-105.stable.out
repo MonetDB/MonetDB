@@ -28,8 +28,8 @@ Ready.
 #INSERT INTO test VALUES (0, 1, 2);
 [ 1	]
 #SELECT COUNT(*) FROM test WHERE (b = 1 OR b = 2) AND (a NOT IN (3, 4) OR b <> 1) AND a = 1;
-% sys.L13 # table_name
-% L12 # name
+% sys.L14 # table_name
+% L13 # name
 % bigint # type
 % 1 # length
 [ 1	]

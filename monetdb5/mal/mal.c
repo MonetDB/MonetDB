@@ -36,7 +36,7 @@ int have_hge;
 #include "mal_runtime.h"
 #include "mal_resource.h"
 #include "wlc.h"
-#include "gdk_bitvector.h"
+#include "mal_atom.h"
 #include "opt_pipes.h"
 
 MT_Lock     mal_contextLock MT_LOCK_INITIALIZER("mal_contextLock");
@@ -106,7 +106,7 @@ int mal_init(void){
 	initHeartbeat();
 #endif
 	initResource();
-	initBitMasks();
+	malBootstrap();
 	initProfiler();
 	return 0;
 }
