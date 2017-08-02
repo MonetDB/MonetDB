@@ -21,6 +21,7 @@
 #include <utils/utils.h>
 #include <utils/glob.h>
 #include <utils/properties.h>
+#include <mutils.h>
 
 #include "merovingian.h"
 #include "discoveryrunner.h" /* remotedb */
@@ -763,7 +764,12 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 {
 	pid_t pid;
 	char *error = NO_ERR;
+	char *pidfilename = NULL;
 	confkeyval *ckv, *kv;
+	size_t pidfnlen;
+	FILE *pidfile;
+	char *profiler_executable;
+	char *tmp_exe;
 
 	(void) pid;
 	(void) log_path;
@@ -778,6 +784,31 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 	if (*stats == NULL) {
 		/* TODO: What now? */
 		return error;
+	}
+
+	/* monetdb
+	 * stethoscope
+	 */
+	tmp_exe = get_bin_path();
+	if (tmp_exe == NULL) {
+		error = newErr("Cannot find the profiler executable");
+		return error;
+	} else {
+		char *s = strstr(tmp_exe, "monetdbd");
+		size_t executable_len = 0;
+
+		if (s == NULL || strncmp(s, "monetdbd", strlen("monetdbd")) != 0) {
+			error = newErr("Unexpected executable (missing the string \"monetdbd\")");
+			free(tmp_exe);
+			return error;
+		}
+
+		executable_len = strlen(tmp_exe) + strlen("stethoscope") - strlen("monetdbd") + 1;
+		*s = '\0';
+		profiler_executable = malloc(executable_len);
+		snprintf(profiler_executable, executable_len, "%s%s%s",
+				 tmp_exe, "stethoscope", s + 8);
+		/* free(tmp_exe); */
 	}
 
 	pthread_mutex_lock(&fork_lock);
@@ -798,9 +829,40 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 		goto cleanup;
 	}
 
-	*log_path = GDKstrdup(kv->val);
+	*log_path = strdup(kv->val);
+	/* Check that the log_path exists and create it if it does not */
+
+
+	pidfnlen = strlen(*log_path) + strlen("/profiler.pid") + 1;
+	pidfilename = malloc(pidfnlen);
+	snprintf(pidfilename, pidfnlen, "%s/profiler.pid", *log_path);
+	if ((pidfile = fopen(pidfilename, "w")) == NULL) {
+		error = newErr("unable to open %s for writing\n", pidfilename);
+		free(*log_path);
+		*log_path = NULL;
+		goto cleanup;
+	}
+
+
+	pid = fork();
+	if (pid == 0) {
+		fclose(pidfile);
+		/* find the executable */
+		/* build the arguments */
+		/* execute */
+		exit(1);
+	} else {
+		/* write pid of stethoscope */
+		Mfprintf(pidfile, "%d", (int)pid);
+		fclose(pidfile);
+
+	}
 
   cleanup:
+	freeConfFile(ckv);
+	free(ckv);
+	free(profiler_executable);
+	msab_freeStatus(stats);
 	pthread_mutex_unlock(&fork_lock);
 	return error;
 }
