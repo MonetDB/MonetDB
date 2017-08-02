@@ -12,7 +12,8 @@ stderr of test 'interval_convert_bugs-sf-1274077-1274085` in directory 'sql/test
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select interval '1' year = interval '12' second;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !types month_interval(1,0) and sec_interval(13,0) are not equal
+ERROR = !types month_interval(1,0) and sec_interval(13,0) are not equal
+CODE  = 42000
 
 # 14:19:19 >  
 # 14:19:19 >  Done.

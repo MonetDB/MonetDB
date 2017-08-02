@@ -29,7 +29,8 @@ stderr of test 'incorrect_error.Bug-6141` in directory 'sql/test/BugTracker-2017
 
 MAPI  = (monetdb) /var/tmp/mtest-7159/.s.monetdb.31566
 QUERY = select count(c1_) as c2 from (select count(*) as c1, c2 from t1 group by c2) as t2 group by c2;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: identifier 'c1_' unknown
+ERROR = !SELECT: identifier 'c1_' unknown
+CODE  = 42000
 
 # 14:15:19 >  
 # 14:15:19 >  "Done."

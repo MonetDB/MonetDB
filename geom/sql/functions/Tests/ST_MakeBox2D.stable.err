@@ -31,7 +31,8 @@ stderr of test 'ST_MakeBox2D` in directory 'geom/sql/functions` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-30133/.s.monetdb.37873
 QUERY = select ST_MakeBox2D(ST_PointFromText('POINT(-989502.1875 528439.5625)'), ST_GeomFromText('linestring(-987121.375 529933.1875, 0 0)'));
-ERROR = !MALException:geom.MakeBox2D:SQLSTATE 38000 !Geometries should be points
+ERROR = !Geometries should be points
+CODE  = 38000
 
 # 12:51:08 >  
 # 12:51:08 >  "Done."

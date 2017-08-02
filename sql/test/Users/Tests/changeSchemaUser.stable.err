@@ -32,16 +32,20 @@ stderr of test 'changeSchemaUser` in directory 'sql/test/Users` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-7070/.s.monetdb.36242
 QUERY = ALTER USER "april2" SET SCHEMA library; --no such user
-ERROR = !SQLException:sql.alter_user:SQLSTATE 42M32 !ALTER USER: no such user 'april2'
-MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
+ERROR = !ALTER USER: no such user 'april2'
+CODE  = 42M32
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = ALTER USER "april" SET SCHEMA library2; --no such schema
-ERROR = !SQLException:sql.alter_user:SQLSTATE 3F000 !ALTER USER: no such schema 'library2'
-MAPI  = (april) /var/tmp/mtest-14902/.s.monetdb.35943
+ERROR = !ALTER USER: no such schema 'library2'
+CODE  = 3F000
+MAPI  = (april) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT * from library.orders; --not enough privileges.
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: access denied for april to table 'library.orders'
-MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
+ERROR = !SELECT: access denied for april to table 'library.orders'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = DROP user april;
-ERROR = !SQLException:sql.drop_user:SQLSTATE M1M05 !DROP USER: 'april' owns a schema
+ERROR = !DROP USER: 'april' owns a schema
+CODE  = M1M05
 
 # 23:01:33 >  
 # 23:01:33 >  "Done."

@@ -96,7 +96,7 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 	if (GDKerrbuf &&
 		/* prevent recursion
 		 * note, sizeof("string") includes terminating NULL byte */
-		strncmp(format, MAL_MALLOC_FAIL ":", sizeof(MAL_MALLOC_FAIL)) != 0 &&
+		strncmp(format, SQLSTATE(HY001) MAL_MALLOC_FAIL ":", sizeof(MAL_MALLOC_FAIL)) != 0 &&
 		(strncmp(GDKerrbuf, "GDKmalloc", 9) == 0 ||
 		 strncmp(GDKerrbuf, "GDKrealloc", 10) == 0 ||
 		 strncmp(GDKerrbuf, "GDKzalloc", 9) == 0 ||
@@ -105,7 +105,7 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 		/* override errors when the underlying error is memory
 		 * exhaustion, but include whatever it is that the GDK level
 		 * reported */
-		ret = createException(type, fcn, MAL_MALLOC_FAIL ": %s", GDKerrbuf);
+		ret = createException(type, fcn, SQLSTATE(HY001) MAL_MALLOC_FAIL ": %s", GDKerrbuf);
 		GDKclrerr();
 		return ret;
 	}
@@ -270,25 +270,25 @@ showScriptException(stream *out, MalBlkPtr mb, int pc, enum malexception type, c
  * generic MALException.
  */
 enum malexception
-getExceptionType(str exception)
+getExceptionType(const char *exception)
 {
 	enum malexception ret = MAL;
-	str s;
+	const char *s;
+	size_t len;
 	enum malexception i;
 
 	if ((s = strchr(exception, ':')) != NULL)
-		*s = '\0';
+		len = s - exception;
+	else
+		len = strlen(exception);
 
 	for (i = MAL; exceptionNames[i] != NULL; i++) {
-		if (strcmp(exceptionNames[i], exception) == 0) {
+		if (strncmp(exceptionNames[i], exception, len) == 0 &&
+			exceptionNames[i][len] == '\0') {
 			ret = i;
 			break;
 		}
 	}
-
-	/* restore original string */
-	if (s != NULL)
-		*s = ':';
 
 	return(ret);
 }
@@ -300,9 +300,10 @@ getExceptionType(str exception)
  * needs to be GDKfreed.
  */
 str
-getExceptionPlace(str exception)
+getExceptionPlace(const char *exception)
 {
-	str ret, s, t;
+	str ret;
+	const char *s, *t;
 	enum malexception i;
 	size_t l;
 
@@ -328,9 +329,9 @@ getExceptionPlace(str exception)
  * Returns the informational message of the exception given.
  */
 str
-getExceptionMessage(str exception)
+getExceptionMessage(const char *exception)
 {
-	str s, t;
+	const char *s, *t;
 	enum malexception i;
 	size_t l;
 
@@ -340,11 +341,11 @@ getExceptionMessage(str exception)
 			exception[l] == ':') {
 			s = exception + l + 1;
 			if ((t = strchr(s, ':')) != NULL)
-				return t + 1;
-			return s;
+				return (str) (t + 1);
+			return (str) s;
 		}
 	}
 	if (strncmp(exception, "!ERROR: ", 8) == 0)
-		return exception + 8;
-	return exception;
+		return (str) (exception + 8);
+	return (str) exception;
 }

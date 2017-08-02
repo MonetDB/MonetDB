@@ -31,12 +31,14 @@ stderr of test 'columns` in directory 'sql/test/copy` itself:
 MAPI  = (monetdb) /var/tmp/mtest-15100/.s.monetdb.36199
 QUERY = copy 3 records into tbl (i, d) from stdin delimiters ',','\n';
         1,2.0
-ERROR = !SQLException:importTable:SQLSTATE 42000 !Failed to import table 'tbl', Column value 2 missing
-MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
+ERROR = !Failed to import table 'tbl', Column value 2 missing
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = 2,2.1
         3,2.2
         select * from tbl;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected sqlINT in: "2"
+ERROR = !syntax error, unexpected sqlINT in: "2"
+CODE  = 42000
 
 # 09:30:19 >  
 # 09:30:19 >  "Done."

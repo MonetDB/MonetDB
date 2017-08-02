@@ -43,7 +43,8 @@ QUERY = select
               inner join sys.idxs as ref_1
               on (subq_1.c2 = ref_1.id )
             inner join sys.netcdf_attrs as sample_15
-ERROR = !ParseException:SQLparser:SQLSTATE 42S22 !SELECT: no such column 'ref_0.ndim'
+ERROR = !SELECT: no such column 'ref_0.ndim'
+CODE  = 42S22
 
 # 16:32:27 >  
 # 16:32:27 >  "Done."

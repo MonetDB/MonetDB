@@ -12,11 +12,13 @@ stderr of test 'limits_of_decimal.SF-1685357` in directory 'sql/test/BugTracker`
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = create table tab2 ( col1 decimal(40,0) not null );
-ERROR = !ParseException:SQLparser:SQLSTATE 22003 !Decimal(40,0) isn't supported because P=40 > 38 in: "create table tab2 ( col1 decimal(40,0)"
-        !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected NOT in: "not null"
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !Decimal(40,0) isn't supported because P=40 > 38 in: "create table tab2 ( col1 decimal(40,0)"
+        !syntax error, unexpected NOT in: "not null"
+CODE  = 22003
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop table tab2;
-ERROR = !SQLException:sql.droptable:SQLSTATE 42S02 !DROP TABLE: no such table 'tab2'
+ERROR = !DROP TABLE: no such table 'tab2'
+CODE  = 42S02
 
 # 10:32:42 >  
 # 10:32:42 >  Done.

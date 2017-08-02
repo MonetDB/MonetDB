@@ -102,7 +102,7 @@ str RMTresolve(bat *ret, str *pat) {
 
 	list = COLnew(0, TYPE_str, 0, TRANSIENT);
 	if (list == NULL)
-		throw(MAL, "remote.resolve", MAL_MALLOC_FAIL);
+		throw(MAL, "remote.resolve", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	/* extract port from mero_uri, let mapi figure out the rest */
 	mero_uri+=strlen("mapi:monetdb://");
@@ -123,7 +123,7 @@ str RMTresolve(bat *ret, str *pat) {
 				free(*redirs);
 			while (*++redirs);
 			free(or);
-			throw(MAL, "remote.resolve", MAL_MALLOC_FAIL);
+			throw(MAL, "remote.resolve", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		free(*redirs);
 		redirs++;
@@ -213,7 +213,7 @@ str RMTconnectScen(
 		GDKfree(c);
 		mapi_destroy(m);
 		MT_lock_unset(&mal_remoteLock);
-		throw(MAL,"remote.connect",MAL_MALLOC_FAIL);
+		throw(MAL,"remote.connect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	c->mconn = m;
 	c->nextid = 0;
@@ -356,7 +356,7 @@ RMTgetId(char *buf, MalBlkPtr mb, InstrPtr p, int arg) {
 		mod = "user";
 	rt = getTypeIdentifier(getArgType(mb,p,arg));
 	if (rt == NULL)
-		throw(MAL, "remote.put", MAL_MALLOC_FAIL);
+		throw(MAL, "remote.put", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	snprintf(buf, BUFSIZ, "rmt%d_%s_%s", idtag++, var, rt);
 
@@ -493,7 +493,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	   we can simple compare it here */
 	rt = getTypeIdentifier(rtype);
 	if (rt == NULL)
-		throw(MAL, "remote.get", MAL_MALLOC_FAIL);
+		throw(MAL, "remote.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	if (strcmp(ident + strlen(ident) - strlen(rt), rt)) {
 		tmp = createException(MAL, "remote.get", ILLEGAL_ARGUMENT
 			": remote object type %s does not match expected type %s",
@@ -534,14 +534,14 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		t = getBatType(rtype);
 		b = COLnew(0, t, 0, TRANSIENT);
 		if (b == NULL)
-			throw(MAL, "remote.get", MAL_MALLOC_FAIL);
+			throw(MAL, "remote.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 		if (ATOMvarsized(t)) {
 			while (mapi_fetch_row(mhdl)) {
 				var = mapi_fetch_field(mhdl, 1);
 				if (BUNappend(b, var == NULL ? str_nil : var, FALSE) != GDK_SUCCEED) {
 					BBPreclaim(b);
-					throw(MAL, "remote.get", MAL_MALLOC_FAIL);
+					throw(MAL, "remote.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				}
 			}
 		} else
@@ -711,7 +711,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		tail = getTypeIdentifier(getBatType(type));
 		if (tail == NULL) {
 			MT_lock_unset(&c->lock);
-			throw(MAL, "remote.put", MAL_MALLOC_FAIL);
+			throw(MAL, "remote.put", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 
 		bid = *(bat *)value;
@@ -777,14 +777,14 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		if (tpe == NULL) {
 			MT_lock_unset(&c->lock);
 			GDKfree(val);
-			throw(MAL, "remote.put", MAL_MALLOC_FAIL);
+			throw(MAL, "remote.put", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		l += (int) (strlen(tpe) + strlen(ident) + 10);
 		if (l > (int) sizeof(qbuf) && (nbuf = GDKmalloc(l)) == NULL) {
 			MT_lock_unset(&c->lock);
 			GDKfree(val);
 			GDKfree(tpe);
-			throw(MAL, "remote.put", MAL_MALLOC_FAIL);
+			throw(MAL, "remote.put", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		if (type <= TYPE_str)
 			snprintf(nbuf, l, "%s := %s:%s;\n", ident, val, tpe);
@@ -948,7 +948,7 @@ str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	len += 2;
 	buflen = len + 1;
 	if ((qbuf = GDKmalloc(buflen)) == NULL)
-		throw(MAL, "remote.exec", MAL_MALLOC_FAIL);
+		throw(MAL, "remote.exec", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	len = 0;
 
@@ -1011,7 +1011,7 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	b = COLnew(0, t, size, TRANSIENT);
 	if (b == NULL)
-		throw(MAL, "remote.load", MAL_MALLOC_FAIL);
+		throw(MAL, "remote.load", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	/* grab the input stream and start reading */
 	fdin->eof = 0;
@@ -1254,7 +1254,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 
 	b = COLnew(0, bb.Ttype, bb.size, TRANSIENT);
 	if (b == NULL)
-		throw(MAL, "remote.get", MAL_MALLOC_FAIL);
+		throw(MAL, "remote.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	/* for strings, the width may not match, fix it to match what we
 	 * retrieved */

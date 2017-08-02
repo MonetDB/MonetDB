@@ -14,10 +14,12 @@ stderr of test 'update_restrict` in directory 'sql/test/Update_Delete_action` it
 
 MAPI  = monetdb@sofia:38256
 QUERY = update t1 set id = 10 where id =1;
-ERROR = !SQLException:assert:SQLSTATE M0M29 !UPDATE: FOREIGN KEY constraint 't2.t2_id_fkey' violated
-MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
+ERROR = !UPDATE: FOREIGN KEY constraint 't2.t2_id_fkey' violated
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = update t1 set id = 13 where id =3;
-ERROR = !SQLException:assert:SQLSTATE M0M29 !UPDATE: FOREIGN KEY constraint 't2.t2_id_fkey' violated
+ERROR = !UPDATE: FOREIGN KEY constraint 't2.t2_id_fkey' violated
+CODE  = M0M29
 
 # 16:49:34 >  
 # 16:49:34 >  Done.

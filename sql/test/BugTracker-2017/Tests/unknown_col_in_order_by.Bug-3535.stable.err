@@ -31,13 +31,16 @@ stderr of test 'unknown_col_in_order_by.Bug-3535` in directory 'sql/test/BugTrac
 
 MAPI  = (monetdb) /var/tmp/mtest-28604/.s.monetdb.35802
 QUERY = select a from test_a group by a order by c;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: identifier 'c' unknown
-MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
+ERROR = !SELECT: identifier 'c' unknown
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select * from test_a order by c;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: identifier 'c' unknown
-MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
+ERROR = !SELECT: identifier 'c' unknown
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT a from test_a group by a order by b;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: cannot use non GROUP BY column 'b' in query results without an aggregate function
+ERROR = !SELECT: cannot use non GROUP BY column 'b' in query results without an aggregate function
+CODE  = 42000
 
 # 12:20:04 >  
 # 12:20:04 >  "Done."

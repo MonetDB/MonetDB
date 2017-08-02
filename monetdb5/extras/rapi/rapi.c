@@ -268,7 +268,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 
 	args = (str*) GDKzalloc(sizeof(str) * pci->argc);
 	if (args == NULL) {
-		throw(MAL, "rapi.eval", MAL_MALLOC_FAIL);
+		throw(MAL, "rapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	// get the lock even before initialization of the R interpreter, as this can take a second and must be done only once.
@@ -312,21 +312,21 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 		if (!isaBatType(getArgType(mb,pci,i))) {
 			b = COLnew(0, getArgType(mb, pci, i), 0, TRANSIENT);
 			if (b == NULL) {
-				msg = createException(MAL, "rapi.eval", MAL_MALLOC_FAIL);
+				msg = createException(MAL, "rapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto wrapup;
 			}
 			if ( getArgType(mb,pci,i) == TYPE_str) {
 				if (BUNappend(b, *getArgReference_str(stk, pci, i), FALSE) != GDK_SUCCEED) {
 					BBPreclaim(b);
 					b = NULL;
-					msg = createException(MAL, "rapi.eval", MAL_MALLOC_FAIL);
+					msg = createException(MAL, "rapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 					goto wrapup;
 				}
 			} else {
 				if (BUNappend(b, getArgReference(stk, pci, i), FALSE) != GDK_SUCCEED) {
 					BBPreclaim(b);
 					b = NULL;
-					msg = createException(MAL, "rapi.eval", MAL_MALLOC_FAIL);
+					msg = createException(MAL, "rapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 					goto wrapup;
 				}
 			}
@@ -335,7 +335,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 		} else {
 			b = BATdescriptor(*getArgReference_bat(stk, pci, i));
 			if (b == NULL) {
-				msg = createException(MAL, "rapi.eval", MAL_MALLOC_FAIL);
+				msg = createException(MAL, "rapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto wrapup;
 			}
 		}
@@ -369,7 +369,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	pos = 0;
 	argnames = malloc(argnameslen);
 	if (argnames == NULL) {
-		msg = createException(MAL, "rapi.eval", MAL_MALLOC_FAIL);
+		msg = createException(MAL, "rapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 	argnames[0] = '\0';
@@ -380,7 +380,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 	rcalllen = 2 * pos + strlen(exprStr) + 100;
 	rcall = malloc(rcalllen);
 	if (rcall == NULL) {
-		msg = createException(MAL, "rapi.eval", MAL_MALLOC_FAIL);
+		msg = createException(MAL, "rapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 	snprintf(rcall, rcalllen,
@@ -453,7 +453,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 			BATiter li = bat_iterator(b);
 			if (VALinit(&stk->stk[pci->argv[i]], bat_type,
 						BUNtail(li, 0)) == NULL) { // TODO BUNtail here
-				msg = createException(MAL, "rapi.eval", MAL_MALLOC_FAIL);
+				msg = createException(MAL, "rapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto wrapup;
 			}
 		}

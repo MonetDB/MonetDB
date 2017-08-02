@@ -30,13 +30,16 @@ stderr of test 'null` in directory 'sql/test` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into t3 values(NULL,5);
-ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: NOT NULL constraint violated for column t3.id
-MAPI  = (monetdb) /var/tmp/mtest-29803/.s.monetdb.33854
+ERROR = !INSERT INTO: NOT NULL constraint violated for column t3.id
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into t3 values(NULL,6);
-ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: NOT NULL constraint violated for column t3.id
-MAPI  = (monetdb) /var/tmp/mtest-29803/.s.monetdb.33854
+ERROR = !INSERT INTO: NOT NULL constraint violated for column t3.id
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into t3 values(NULL,NULL);
-ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: NOT NULL constraint violated for column t3.id
+ERROR = !INSERT INTO: NOT NULL constraint violated for column t3.id
+CODE  = M0M29
 
 
 # 11:33:24 >  

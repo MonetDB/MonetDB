@@ -32,22 +32,28 @@ stderr of test 'number_4_4.Bug-3543` in directory 'sql/test/BugTracker-2014` its
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO fract_only VALUES (4, '0.99995');  -- should fail but is invalidly accepted
-ERROR = !SQLException:TYPE:SQLSTATE 42000 !Rounding of decimal (0.99995) doesn't fit format (4.4)
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
+ERROR = !Rounding of decimal (0.99995) doesn't fit format (4.4)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO fract_only VALUES (5, '0.99999');  -- should fail but is invalidly accepted
-ERROR = !SQLException:TYPE:SQLSTATE 42000 !Rounding of decimal (0.99999) doesn't fit format (4.4)
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
+ERROR = !Rounding of decimal (0.99999) doesn't fit format (4.4)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO fract_only VALUES (6, '+0.99995'); -- correctly fails
-ERROR = !SQLException:TYPE:SQLSTATE 42000 !Rounding of decimal (+0.99995) doesn't fit format (4.4)
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
+ERROR = !Rounding of decimal (+0.99995) doesn't fit format (4.4)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO fract_only VALUES (6, '+.99995');  -- should fail but is invalidly accepted
-ERROR = !SQLException:TYPE:SQLSTATE 42000 !Rounding of decimal (+.99995) doesn't fit format (4.4)
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
+ERROR = !Rounding of decimal (+.99995) doesn't fit format (4.4)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO fract_only VALUES (7, '-0.99995'); -- correctly fails
-ERROR = !SQLException:TYPE:SQLSTATE 42000 !Rounding of decimal (-0.99995) doesn't fit format (4.4)
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
+ERROR = !Rounding of decimal (-0.99995) doesn't fit format (4.4)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO fract_only VALUES (7, '-.999998');  -- should fail but is invalidly accepted
-ERROR = !SQLException:TYPE:SQLSTATE 42000 !Rounding of decimal (-.999998) doesn't fit format (4.4)
+ERROR = !Rounding of decimal (-.999998) doesn't fit format (4.4)
+CODE  = 42000
 
 # 14:07:38 >  
 # 14:07:38 >  "Done."

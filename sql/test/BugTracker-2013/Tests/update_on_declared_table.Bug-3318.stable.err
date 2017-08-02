@@ -37,13 +37,16 @@ QUERY = create function MyFunc1()
         	  update t set i = 0;
         	  return 0;
         end;
-ERROR = !ParseException:SQLparser:SQLSTATE 42S22 !UPDATE: no such column 't.i'
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !UPDATE: no such column 't.i'
+CODE  = 42S22
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select MyFunc1();
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such operator 'myfunc1'
-MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
+ERROR = !SELECT: no such operator 'myfunc1'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop function MyFunc1;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !DROP FUNCTION: no such function 'myfunc1'
+ERROR = !DROP FUNCTION: no such function 'myfunc1'
+CODE  = 42000
 
 # 10:45:26 >  
 # 10:45:26 >  "Done."

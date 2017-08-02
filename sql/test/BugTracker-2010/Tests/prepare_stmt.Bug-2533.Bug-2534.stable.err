@@ -31,7 +31,8 @@ stderr of test 'prepare_stmt.Bug-2533.Bug-2534` in directory 'sql/test/BugTracke
 
 MAPI  = (monetdb) /var/tmp/mtest-7551/.s.monetdb.35003
 QUERY = exec  3(2.3);
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !wrong type for argument 1 of function call: decimal, expected bigint
+ERROR = !wrong type for argument 1 of function call: decimal, expected bigint
+CODE  = 42000
 
 
 # 23:36:35 >  

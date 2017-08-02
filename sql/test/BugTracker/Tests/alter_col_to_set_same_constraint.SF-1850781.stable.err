@@ -14,7 +14,8 @@ stderr of test 'alter_col_to_set_same_constraint.SF-1850781` in directory 'sql/t
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = alter table atacc1 alter bar set not null;
-ERROR = !ParseException:SQLparser:SQLSTATE 42S22 !ALTER TABLE: no such column 'bar'
+ERROR = !ALTER TABLE: no such column 'bar'
+CODE  = 42S22
 
 # 00:41:05 >  
 # 00:41:05 >  Done.

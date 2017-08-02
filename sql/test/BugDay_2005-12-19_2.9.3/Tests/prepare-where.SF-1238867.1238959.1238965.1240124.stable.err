@@ -12,10 +12,12 @@ stderr of test 'prepare-where.SF-1238867.1238959.1238965.1240124` in directory '
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = prepare select * from env() as env where ? = ?;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Cannot have a parameter (?) on both sides of an expression
-MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
+ERROR = !Cannot have a parameter (?) on both sides of an expression
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = prepare select ? from env() as env;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: subquery result missing
+ERROR = !SELECT: subquery result missing
+CODE  = 42000
 
 # 13:00:07 >  
 # 13:00:07 >  Done.

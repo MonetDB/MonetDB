@@ -69,10 +69,12 @@ stderr of test 'overflow.SF-2853458` in directory 'sql/test/BugTracker-2009` its
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select cast(power(2,63) as bigint);
-ERROR = !MALException:calc.lng:22003!overflow in conversion of 9.2233720368547758e+18 to lng.
-MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
+ERROR = !overflow in conversion of 9.2233720368547758e+18 to lng.
+CODE  = 22003
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select cast(power(2,64) as bigint);
-ERROR = !MALException:calc.lng:22003!overflow in conversion of 1.8446744073709552e+19 to lng.
+ERROR = !overflow in conversion of 1.8446744073709552e+19 to lng.
+CODE  = 22003
 
 # 22:26:13 >  
 # 22:26:13 >  Done.

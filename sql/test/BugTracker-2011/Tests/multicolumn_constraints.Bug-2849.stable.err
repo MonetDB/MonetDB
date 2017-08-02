@@ -32,7 +32,8 @@ stderr of test 'multicolumn_constraints.Bug-2849` in directory 'sql/test/BugTrac
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO "portmapping" VALUES (5,5,1,'y','test');
-ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: UNIQUE constraint 'portmapping.port' violated
+ERROR = !INSERT INTO: UNIQUE constraint 'portmapping.port' violated
+CODE  = M0M29
 
 # 16:14:18 >  
 # 16:14:18 >  Done.

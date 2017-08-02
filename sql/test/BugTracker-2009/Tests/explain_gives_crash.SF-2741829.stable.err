@@ -29,7 +29,8 @@ stderr of test 'explain_gives_crash.SF-2741829` in directory 'sql/test/BugTracke
 
 MAPI  = (monetdb) /var/tmp/mtest-23841/.s.monetdb.32129
 QUERY = alter table blabla drop constraint dada;
-ERROR = !SQLException:sql.drop_key:SQLSTATE 42000 !ALTER TABLE: no such constraint 'dada'
+ERROR = !ALTER TABLE: no such constraint 'dada'
+CODE  = 42000
 
 # 13:17:23 >  
 # 13:17:23 >  "Done."

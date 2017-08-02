@@ -32,7 +32,8 @@ stderr of test 'too_general_errmsg.Bug-3605` in directory 'sql/test/BugTracker-2
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select operatingday, coalesce(gepubliceerd, 0) as gepubliceerd, coalesce(gereden, 0) as gereden, coalesce(geannuleerd, 0) as geannuleerd, coalesce(onbekend, 0) as onbekend, coalesce(extra, 0) as extra, coalesce(tochgezien, 0) as tochgezien from (select operatingday, count(trip_hash) as gepubliceerd from tt where pointorder = 1 group by operatingday) as a full outer join (select z.operatingday, count(*) as geannuleerd from (select trip_hash, operatingday from kv17_canceled except select trip_hash, operatingday from kv6 where kv6.messagetype = 'ARRIVAL') as u group by u.operatingday) as e using (operatingday) full outer join (select o.operatingday, count(trip_hash) as onbekend from (select distinct trip_hash, operatingday from tt) as o join (select distinct trip_hash from tt where (epoch(cast(tt.operatingday as timestamp with time zone)) + cast(split_part(tt.targetarrivaltime, ':', 1) as int) * 3600 + (cast(split_part(tt.targetarrivaltime, ':', 2) as int) + 10) * 60) < epoch(now()) except (select trip_hash from kv6 where messagetype = 'ARRIVAL' union all select trip_hash from kv17_canceled)) as p using (trip_hash) group by operatingday) as f using (operatingday) order by operatingday;
-ERROR = !ParseException:SQLparser:SQLSTATE 42S22 !SELECT: no such column 'z.operatingday'
+ERROR = !SELECT: no such column 'z.operatingday'
+CODE  = 42S22
 
 
 

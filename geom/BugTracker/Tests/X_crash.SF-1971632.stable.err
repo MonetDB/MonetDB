@@ -14,7 +14,8 @@ stderr of test 'X_crash.SF-1971632` in directory 'geom/BugTracker` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-16186/.s.monetdb.34816
 QUERY = select ST_X(g) from geoms order by id;
-ERROR = !MALException:geom.GetCoordinate:SQLSTATE 38000 !Geometry "LINESTRING (10 10, 20 20, 30 40)" not a Point
+ERROR = !Geometry "LINESTRING (10 10, 20 20, 30 40)" not a Point
+CODE  = 38000
 
 
 # 11:50:18 >  

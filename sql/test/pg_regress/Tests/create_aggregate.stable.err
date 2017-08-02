@@ -35,19 +35,25 @@ QUERY = CREATE AGGREGATE newavg (
            finalfunc = numeric_avg,
            initcond1 = '{0,0,0}'
         );
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '=' in: "create aggregate newavg (
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !syntax error, unexpected '=' in: "create aggregate newavg (
+        !   sfunc ="
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = CREATE AGGREGATE newsum (
            sfunc1 = int4pl, basetype = integer, stype1 = integer, 
            initcond1 = '0'
         );
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '=' in: "create aggregate newsum (
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !syntax error, unexpected '=' in: "create aggregate newsum (
+        !   sfunc1 ="
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = CREATE AGGREGATE newcnt (
            sfunc = int4inc, basetype = 'any', stype = integer,
            initcond = '0'
         );
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected '=' in: "create aggregate newcnt (
+ERROR = !syntax error, unexpected '=' in: "create aggregate newcnt (
+        !   sfunc ="
+CODE  = 42000
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

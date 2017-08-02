@@ -29,10 +29,12 @@ stderr of test 'queueError.Bug-3604` in directory 'sql/test/BugTracker-2014` its
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop table xyz;
-ERROR = !SQLException:sql.droptable:SQLSTATE 42S02 !DROP TABLE: no such table 'xyz'
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !DROP TABLE: no such table 'xyz'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop table yz;
-ERROR = !SQLException:sql.droptable:SQLSTATE 42S02 !DROP TABLE: no such table 'yz'
+ERROR = !DROP TABLE: no such table 'yz'
+CODE  = 42S02
 
 
 

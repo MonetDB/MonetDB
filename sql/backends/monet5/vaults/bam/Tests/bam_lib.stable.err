@@ -32,7 +32,8 @@ stderr of test 'bam_lib` in directory 'sql/backends/monet5/vaults/bam` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT bam_flag(111, 'Fail-hard');
-ERROR = !MALException:bam_flag:SQLSTATE BA000 !Unknown flag name given: Fail-hard
+ERROR = !Unknown flag name given: Fail-hard
+CODE  = BA000
 
 # 21:40:11 >  
 # 21:40:11 >  "Done."

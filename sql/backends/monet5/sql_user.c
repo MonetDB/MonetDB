@@ -99,7 +99,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 		pwd = mcrypt_BackendSum(passwd, strlen(passwd));
 		if (pwd == NULL) {
 			BBPunfix(bid);
-			throw(MAL, "sql.create_user", "SQLSTATE 42000 !""Crypt backend hash not found");
+			throw(MAL, "sql.create_user", SQLSTATE(42000) "Crypt backend hash not found");
 		}
 	} else {
 		pwd = passwd;

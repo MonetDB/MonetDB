@@ -15,7 +15,8 @@ stderr of test 'between_having_problem.SF-1959391` in directory 'sql/test/BugTra
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select id from t31959391 where (id between 0 and 62) having (id = id+.1 or id = id
         - .1);
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: cannot use non GROUP BY column 'id' in query results without an aggregate function
+ERROR = !SELECT: cannot use non GROUP BY column 'id' in query results without an aggregate function
+CODE  = 42000
 
 # 09:56:54 >  
 # 09:56:54 >  Done.

@@ -12,7 +12,8 @@ stderr of test 'delete_set_default` in directory 'sql/test/Update_Delete_action`
 
 MAPI  = monetdb@sofia:38256
 QUERY = delete from t1 where id > 2 and id < 5;
-ERROR = !SQLException:assert:SQLSTATE M0M29 !UPDATE: PRIMARY KEY constraint 't2.t2_id_pkey' violated
+ERROR = !UPDATE: PRIMARY KEY constraint 't2.t2_id_pkey' violated
+CODE  = M0M29
 
 # 11:10:52 >  
 # 11:10:52 >  Done.

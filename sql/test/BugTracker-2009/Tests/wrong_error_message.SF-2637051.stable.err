@@ -80,7 +80,8 @@ stderr of test 'wrong_error_message.SF-2637051` in directory 'sql/test/BugTracke
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select test from test2 group by test;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: identifier 'test' unknown
+ERROR = !SELECT: identifier 'test' unknown
+CODE  = 42000
 
 # 22:52:42 >  
 # 22:52:42 >  Done.

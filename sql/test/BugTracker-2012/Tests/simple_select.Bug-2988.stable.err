@@ -32,7 +32,8 @@ stderr of test 'simple_select.Bug-2988` in directory 'sql/test/BugTracker-2012` 
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select 1, (select 1 as y, 2 as z) as x;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: subquery must return only one column
+ERROR = !SELECT: subquery must return only one column
+CODE  = 42000
 
 # 21:38:00 >  
 # 21:38:00 >  "Done."

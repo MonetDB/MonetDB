@@ -14,36 +14,53 @@ MAPI  = monetdb@sofia:38256
 QUERY = create trigger test_7_1
         	after update on t_7_1
         	create table t_7_2 (id int);
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test_7_1
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test_7_1
+        !	after update on t_7_1
+        !	create"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop trigger test_7_1;
-ERROR = !SQLException:sql.drop_trigger:SQLSTATE 3F000 !DROP TRIGGER: unknown trigger test_7_1
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !DROP TRIGGER: unknown trigger test_7_1
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = create trigger test_7_1
         	after update on t_7_1
         	drop table t_7_2;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected DROP, expecting WHILE in: "create trigger test_7_1
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !syntax error, unexpected DROP, expecting WHILE in: "create trigger test_7_1
+        !	after update on t_7_1
+        !	drop"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop trigger test_7_1;
-ERROR = !SQLException:sql.drop_trigger:SQLSTATE 3F000 !DROP TRIGGER: unknown trigger test_7_1
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !DROP TRIGGER: unknown trigger test_7_1
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = create trigger test_7_1
         	after update on t_7_1
         	alter table t_7_2 add column (name varchar(1024));
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected ALTER, expecting WHILE in: "create trigger test_7_1
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !syntax error, unexpected ALTER, expecting WHILE in: "create trigger test_7_1
+        !	after update on t_7_1
+        !	alter"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = create trigger test_7_2
         	after update on t_7_1
         	create trigger test_7_2_1
         		after update on t_7_1
         		alter table t_7_2 add column (name varchar(1024));
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test_7_2
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test_7_2
+        !	after update on t_7_1
+        !	create"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = create trigger test_7_3
         	after update on t_7_1
         	create view v1 as select * from t_7_1;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test_7_3
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test_7_3
+        !	after update on t_7_1
+        !	create"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = create trigger test_7_4
         	after update on t_7_1
         	create function f1 (id int)
@@ -51,36 +68,50 @@ QUERY = create trigger test_7_4
         	BEGIN
         		if (id >0)
         			then return true;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test_7_4
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test_7_4
+        !	after update on t_7_1
+        !	create"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = else return false;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected ELSE in: "			else"
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !syntax error, unexpected ELSE in: "			else"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = end if;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected END in: "		end"
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !syntax error, unexpected END in: "		end"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = END;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected END in: "	end"
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !syntax error, unexpected END in: "	end"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = create trigger test_7_5
         	after update on t_7_1
         	create index id_index on t_7_2(id);
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test_7_5
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !syntax error, unexpected CREATE, expecting WHILE in: "create trigger test_7_5
+        !	after update on t_7_1
+        !	create"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop trigger test_7_1;
-ERROR = !SQLException:sql.drop_trigger:SQLSTATE 3F000 !DROP TRIGGER: unknown trigger test_7_1
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !DROP TRIGGER: unknown trigger test_7_1
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop trigger test_7_2;
-ERROR = !SQLException:sql.drop_trigger:SQLSTATE 3F000 !DROP TRIGGER: unknown trigger test_7_2
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !DROP TRIGGER: unknown trigger test_7_2
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop trigger test_7_3;
-ERROR = !SQLException:sql.drop_trigger:SQLSTATE 3F000 !DROP TRIGGER: unknown trigger test_7_3
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !DROP TRIGGER: unknown trigger test_7_3
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop trigger test_7_4;
-ERROR = !SQLException:sql.drop_trigger:SQLSTATE 3F000 !DROP TRIGGER: unknown trigger test_7_4
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !DROP TRIGGER: unknown trigger test_7_4
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop trigger test_7_5;
-ERROR = !SQLException:sql.drop_trigger:SQLSTATE 3F000 !DROP TRIGGER: unknown trigger test_7_5
+ERROR = !DROP TRIGGER: unknown trigger test_7_5
+CODE  = 3F000
 
 # 14:01:52 >  
 # 14:01:52 >  Done.

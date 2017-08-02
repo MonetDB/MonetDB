@@ -77,10 +77,12 @@ stderr of test 'copy_multiple_files.SF-2902320` in directory 'sql/test/BugTracke
 
 MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = plan copy into cm_tmp from '\file1','\file2';
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !COPY INTO: filename must have absolute path: \file1
-MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
+ERROR = !COPY INTO: filename must have absolute path: \file1
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = plan copy into cm_tmp from 'a:\file1','Z:/file2';
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !COPY INTO: filename must have absolute path: a:\file1
+ERROR = !COPY INTO: filename must have absolute path: a:\file1
+CODE  = 42000
 
 # 08:59:53 >  
 # 08:59:53 >  Done.

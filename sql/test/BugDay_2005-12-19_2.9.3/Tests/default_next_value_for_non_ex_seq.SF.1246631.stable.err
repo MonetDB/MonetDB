@@ -12,16 +12,20 @@ stderr of test 'default_next_value_for_non_ex_seq.SF.1246631` in directory 'sql/
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = create table test1246631( i int default next value for non_ex_seq);
-ERROR = !SQLException:sql.catalog:SQLSTATE 42000 !SQLSTATE 42000 !NEXT VALUE FOR: no such sequence 'sys'.'non_ex_seq'
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !42000!NEXT VALUE FOR: no such sequence 'sys'.'non_ex_seq'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into test1246631;
-ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !INSERT INTO: no such table 'test1246631'
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !INSERT INTO: no such table 'test1246631'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select * from test1246631;
-ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'test1246631'
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !SELECT: no such table 'test1246631'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into test1246631;
-ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !INSERT INTO: no such table 'test1246631'
+ERROR = !INSERT INTO: no such table 'test1246631'
+CODE  = 42S02
 
 # 13:41:25 >  
 # 13:41:25 >  Done.

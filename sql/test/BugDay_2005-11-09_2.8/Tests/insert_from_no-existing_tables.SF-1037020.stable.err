@@ -12,7 +12,8 @@ stderr of test 'insert_from_no-existing_tables.SF-1037020` in directory 'sql/tes
 
 MAPI  = monetdb@sofia:39182
 QUERY = insert into t1037020 select * from does_not_exist;
-ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'does_not_exist'
+ERROR = !SELECT: no such table 'does_not_exist'
+CODE  = 42S02
 
 # 11:38:32 >  
 # 11:38:32 >  Done.

@@ -32,7 +32,8 @@ stderr of test 'foreign_key.Bug-3938` in directory 'sql/test/BugTracker-2016` it
 
 MAPI  = (monetdb) /var/tmp/mtest-29638/.s.monetdb.30099
 QUERY = insert into t3 (b) values (1);
-ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: FOREIGN KEY constraint 't3.t3_a_fkey' violated
+ERROR = !INSERT INTO: FOREIGN KEY constraint 't3.t3_a_fkey' violated
+CODE  = M0M29
 
 # 15:32:36 >  
 # 15:32:36 >  "Done."

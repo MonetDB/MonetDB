@@ -30,7 +30,8 @@ stderr of test 'stream_table_crash.Bug-3952` in directory 'sql/test/BugTracker-2
 
 MAPI  = (monetdb) /var/tmp/mtest-8540/.s.monetdb.34898
 QUERY = insert into temp values(timestamp '2016-03-13 08:58:14', 1, 23.4);
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !INSERT INTO: cannot insert into stream 'temp'
+ERROR = !INSERT INTO: cannot insert into stream 'temp'
+CODE  = 42000
 
 # 22:03:49 >  
 # 22:03:49 >  "Done."

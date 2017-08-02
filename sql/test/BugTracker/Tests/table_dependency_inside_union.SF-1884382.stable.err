@@ -14,10 +14,12 @@ stderr of test 'table_dependency_inside_union.SF-1884382` in directory 'sql/test
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop table t1884382a;
-ERROR = !SQLException:sql.droptable:SQLSTATE 42000 !DROP TABLE: unable to drop table t1884382a (there are database objects which depend on it)
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !DROP TABLE: unable to drop table t1884382a (there are database objects which depend on it)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop table t1884382b;
-ERROR = !SQLException:sql.droptable:SQLSTATE 42000 !DROP TABLE: unable to drop table t1884382b (there are database objects which depend on it)
+ERROR = !DROP TABLE: unable to drop table t1884382b (there are database objects which depend on it)
+CODE  = 42000
 
 # 14:42:29 >  
 # 14:42:29 >  Done.

@@ -12,10 +12,12 @@ stderr of test 'drop_foreignkey_selfreferencing` in directory 'sql/test/bugs` it
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop table a;
-ERROR = !SQLException:sql.droptable:SQLSTATE 40000 !DROP TABLE: FOREIGN KEY b.b_id_fkey depends on a
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
+ERROR = !DROP TABLE: FOREIGN KEY b.b_id_fkey depends on a
+CODE  = 40000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop table b;
-ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
 
 # 22:06:39 >  
 # 22:06:39 >  Done.

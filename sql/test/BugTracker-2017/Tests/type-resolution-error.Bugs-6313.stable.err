@@ -40,8 +40,9 @@ QUERY = select auxiliary
         from sys.tablestoragemodel 
         where ((select r_regionkey from sys.region) is NULL)
           or ((select index_type_name from sys.index_types) is not NULL);
-ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'region'
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !SELECT: no such table 'region'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select
                   sample_69.f_table_catalog as c2
         from    
@@ -52,7 +53,8 @@ QUERY = select
                 ((select default_schema from sys.users) is NULL)
                   or (cast(coalesce((select side_effect from sys.functions) ,
                       sample_65.revsorted) as boolean) is not NULL);
-ERROR = !SQLException:zero_or_one:SQLSTATE 21000 !Cardinality violation, scalar value expected
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
 
 # 16:32:27 >  
 # 16:32:27 >  "Done."

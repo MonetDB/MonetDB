@@ -82,9 +82,11 @@ stderr of test 'savepoint_rollback-bug-sf-953553` in directory 'sql/test/bugs` i
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = ROLLBACK TO SAVEPOINT a2;
-ERROR = !SQLException:sql.trans:SQLSTATE 3B000 !ROLLBACK TO SAVEPOINT: (a2) failed
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
-ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
+ERROR = !ROLLBACK TO SAVEPOINT: (a2) failed
+CODE  = 3B000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
 
 # 21:02:42 >  
 # 21:02:42 >  Done.

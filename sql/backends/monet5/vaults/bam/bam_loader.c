@@ -193,7 +193,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 	/* Check sanity of input */
 	if (dbschema != 0 && dbschema != 1) {
 		msg = createException(MAL, "bam_loader",
-					  "SQLSTATE BA000 !""Wrong value for dbschema: '%d' (0=straightforward storage schema, 1=pairwise storage schema)",
+					  SQLSTATE(BA000) "Wrong value for dbschema: '%d' (0=straightforward storage schema, 1=pairwise storage schema)",
 					  dbschema);
 		goto cleanup;
 	}
@@ -232,7 +232,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 	if ((bws =
 		 (bam_wrapper *) GDKmalloc(nr_files * sizeof(bam_wrapper))) ==
 		NULL) {
-		msg = createException(MAL, "bam_loader", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+		msg = createException(MAL, "bam_loader", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
@@ -266,7 +266,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 			TO_LOG("<bam_loader> Checking sortedness for BAM file '%s'...\n", filenames[i]);
 			if (bws[i].ord != ORDERING_QUERYNAME) {
 				msg = createException(MAL, "bam_loader",
-							  "SQLSTATE BA000 !""Only BAM files that are sorted on queryname can be inserted into the pairwise storage schema; "
+							  SQLSTATE(BA000) "Only BAM files that are sorted on queryname can be inserted into the pairwise storage schema; "
 							  "BAM file '%s' has ordering '%s'",
 							  bws[i].file_location,
 							  ordering_str(bws[i].
@@ -296,13 +296,13 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 	TO_LOG("<bam_loader> Creating reader threads...\n");
 	if ((reader_threads =
 		 (MT_Id *) GDKmalloc(nr_threads * sizeof(MT_Id))) == NULL) {
-		msg = createException(MAL, "bam_loader", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+		msg = createException(MAL, "bam_loader", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
 	if ((r_thread_data =
 		 create_reader_thread_data(bws, nr_files, nr_threads)) == NULL) {
-		msg = createException(MAL, "bam_loader", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+		msg = createException(MAL, "bam_loader", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
@@ -313,7 +313,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 					  &r_thread_data[i],
 					  MT_THR_JOINABLE)) != 0) {
 			msg = createException(MAL, "bam_loader",
-						  "SQLSTATE BA000 !""Could not create thread to process alignments (errnr %d)",
+						  SQLSTATE(BA000) "Could not create thread to process alignments (errnr %d)",
 						  errnr);
 			goto cleanup;
 		}
@@ -330,7 +330,7 @@ bam_loader(Client cntxt, MalBlkPtr mb, str * filenames, int nr_files,
 	for (i = 0; i < nr_threads; ++i) {
 		if ((errnr = MT_join_thread(reader_threads[i])) != 0) {
 			msg = createException(MAL, "bam_loader",
-						  "SQLSTATE BA000 !""Could not join alignment processing thread (errnr %d)",
+						  SQLSTATE(BA000) "Could not join alignment processing thread (errnr %d)",
 						  errnr);
 			goto cleanup;
 		}
@@ -425,11 +425,11 @@ bam_loader_repos(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((d = opendir(bam_repos)) == NULL) {
 		if (errno == ENOENT) {
 			msg = createException(MAL, "bam_loader_repos",
-						  "SQLSTATE BA000 !""Could not find directory '%s'",
+						  SQLSTATE(BA000) "Could not find directory '%s'",
 						  bam_repos);
 		} else {
 			msg = createException(MAL, "bam_loader_repos",
-						  "SQLSTATE BA000 !""Could not open directory '%s'",
+						  SQLSTATE(BA000) "Could not open directory '%s'",
 						  bam_repos);
 		}
 		goto cleanup;
@@ -445,7 +445,7 @@ bam_loader_repos(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (filecount == 0) {
 		msg = createException(MAL, "bam_loader_repos",
-					  "SQLSTATE BA000 !""No SAM or BAM files found in directory '%s'",
+					  SQLSTATE(BA000) "No SAM or BAM files found in directory '%s'",
 					  bam_repos);
 		goto cleanup;
 	}
@@ -453,7 +453,7 @@ bam_loader_repos(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* Now malloc enough memory for filenames array */
 	if ((filenames = (str *) GDKmalloc(filecount * sizeof(str))) == NULL) {
 		msg = createException(MAL, "bam_loader_repos",
-					  "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+					  SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
@@ -477,7 +477,7 @@ bam_loader_repos(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				(path, 4096, "%s/%s", bam_repos,
 				 direntry->d_name) < 0) {
 				msg = createException(MAL, "bam_loader_repos",
-							  "SQLSTATE BA000 !""Could not construct filepath for SAM/BAM file '%s'",
+							  SQLSTATE(BA000) "Could not construct filepath for SAM/BAM file '%s'",
 							  direntry->d_name);
 				goto cleanup;
 			}
@@ -487,7 +487,7 @@ bam_loader_repos(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				 * file was added to the directory in
 				 * the meantime */
 				msg = createException(MAL, "bam_loader_repos",
-							  "SQLSTATE BA000 !""An error occurred while reading directory '%s'",
+							  SQLSTATE(BA000) "An error occurred while reading directory '%s'",
 							  bam_repos);
 				goto cleanup;
 			}
@@ -551,7 +551,7 @@ bam_loader_files(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	f = fopen(bam_files, "r");
 	if (f == NULL) {
 		msg = createException(MAL, "bam_loader_files",
-					  "SQLSTATE BA000 !""Error on opening file list '%s': %s",
+					  SQLSTATE(BA000) "Error on opening file list '%s': %s",
 					  bam_files, strerror(errno));
 		goto cleanup;
 	}
@@ -565,7 +565,7 @@ bam_loader_files(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (ferror(f)) {
 		msg = createException(MAL, "bam_loader_files",
-					  "SQLSTATE BA000 !""Error while processing file '%s'",
+					  SQLSTATE(BA000) "Error while processing file '%s'",
 					  bam_files);
 		goto cleanup;
 	}
@@ -573,7 +573,7 @@ bam_loader_files(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* Now we can malloc the filenames array */
 	if ((filenames = (str *) GDKmalloc(nr_lines * sizeof(str))) == NULL) {
 		msg = createException(MAL, "bam_loader_files",
-					  "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+					  SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 	/* Enables cleanup to check individual files */
@@ -610,14 +610,14 @@ bam_loader_files(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (ferror(f)) {
 		msg = createException(MAL, "bam_loader_files",
-					  "SQLSTATE BA000 !""Error while processing file '%s'",
+					  SQLSTATE(BA000) "Error while processing file '%s'",
 					  bam_files);
 		goto cleanup;
 	}
 
 	if (nr_files == 0) {
 		msg = createException(MAL, "bam_loader_files",
-					  "SQLSTATE BA000 !""No valid entries found in file '%s'",
+					  SQLSTATE(BA000) "No valid entries found in file '%s'",
 					  bam_files);
 		goto cleanup;
 	}
@@ -681,7 +681,7 @@ bam_drop_file(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = drop_file(cntxt, "bam.drop_file", file_id, dbschema);
 	if (msg != MAL_SUCCEED) {
 		str msg2 = createException(MAL, "bam_drop_file",
-			  "SQLSTATE BA000 !""Error when dropping file with file id '" LLFMT
+			  SQLSTATE(BA000) "Error when dropping file with file id '" LLFMT
 			  "': %s\n", file_id, msg);
 		freeException(msg);
 		return msg2;

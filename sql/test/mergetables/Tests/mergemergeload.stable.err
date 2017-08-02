@@ -32,8 +32,9 @@ stderr of test 'mergemergeload` in directory 'sql/test/mergetables` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-4346/.s.monetdb.35313
 QUERY = COPY 4 RECORDS INTO part1 FROM stdin USING DELIMITERS ' ','\n';
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !COPY INTO: cannot copy into merge table 'part1'
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !COPY INTO: cannot copy into merge table 'part1'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = 0.0 0.0 0.0
         1.0 0.0 0.0 
         0.0 1.0 0.0 
@@ -41,8 +42,9 @@ QUERY = 0.0 0.0 0.0
         
         
         COPY 4 RECORDS INTO part2 FROM stdin USING DELIMITERS ' ','\n';
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected INTNUM in: "0.0"
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !syntax error, unexpected INTNUM in: "0.0"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = 2.0 0.0 0.0
         3.0 0.0 0.0 
         2.0 1.0 0.0 
@@ -50,7 +52,8 @@ QUERY = 2.0 0.0 0.0
         
         
         SELECT * FROM COMPLETE;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected INTNUM in: "2.0"
+ERROR = !syntax error, unexpected INTNUM in: "2.0"
+CODE  = 42000
 
 # 09:41:46 >  
 # 09:41:46 >  "Done."

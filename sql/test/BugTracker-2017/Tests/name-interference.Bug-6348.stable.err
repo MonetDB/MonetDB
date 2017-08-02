@@ -30,9 +30,11 @@ stderr of test 'name-interference.Bug-6348` in directory 'sql/test/BugTracker-20
 MAPI  = (monetdb) /var/tmp/mtest-7389/.s.monetdb.39137
 QUERY = select * from cls_0_statistics;
 ERROR = !SELECT: no such table 'cls_0_statistics'
-MAPI  = (monetdb) /var/tmp/mtest-7389/.s.monetdb.39137
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop table cls_0_statistics;
 ERROR = !DROP TABLE: no such table 'cls_0_statistics'
+CODE  = 42S02
 
 # 13:47:15 >  
 # 13:47:15 >  "Done."

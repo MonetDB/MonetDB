@@ -890,6 +890,7 @@ struct MapiResultSet {
 	int fieldcnt;
 	int maxfields;
 	char *errorstr;		/* error from server */
+	char sqlstate[6];	/* the SQL state code */
 	struct MapiColumn *fields;
 	struct MapiRowBuf cache;
 	int commentonly;	/* only comments seen so far */
@@ -1038,7 +1039,7 @@ mapi_error(Mapi mid)
 	return mid->error;
 }
 
-char *
+const char *
 mapi_error_str(Mapi mid)
 {
 	assert(mid);
@@ -1174,17 +1175,6 @@ clean_print(char *msg, const char *prefix, FILE *fd)
 		if (strncmp(msg, prefix, len) == 0)
 			msg += len;
 
-		/* skip SQLSTATE if provided */
-		if (strlen(msg) > 6 && msg[5] == '!' &&
-				((msg[0] >= '0' && msg[0] <= '9') || (msg[0] >= 'A' && msg[0] <= 'Z')) &&
-				((msg[1] >= '0' && msg[1] <= '9') || (msg[1] >= 'A' && msg[1] <= 'Z')) &&
-				((msg[2] >= '0' && msg[2] <= '9') || (msg[2] >= 'A' && msg[2] <= 'Z')) &&
-				((msg[3] >= '0' && msg[3] <= '9') || (msg[3] >= 'A' && msg[3] <= 'Z')) &&
-				((msg[4] >= '0' && msg[4] <= '9') || (msg[4] >= 'A' && msg[4] <= 'Z')))
-		{
-			msg += 6;
-		}
-
 		/* output line */
 		fputs(msg, fd);
 		fputc('\n', fd);
@@ -1202,19 +1192,8 @@ indented_print(const char *msg, const char *prefix, FILE *fd)
 	const char t = s[len - 1];
 
 	while (p && *p) {
-		fprintf(fd, "%.*s%c", len - 1, s, t);
-		s = "        ";
-
-		/* skip SQLSTATE if provided */
-		if (strlen(p) > 6 && p[5] == '!' &&
-				((p[0] >= '0' && p[0] <= '9') || (p[0] >= 'A' && p[0] <= 'Z')) &&
-				((p[1] >= '0' && p[1] <= '9') || (p[1] >= 'A' && p[1] <= 'Z')) &&
-				((p[2] >= '0' && p[2] <= '9') || (p[2] >= 'A' && p[2] <= 'Z')) &&
-				((p[3] >= '0' && p[3] <= '9') || (p[3] >= 'A' && p[3] <= 'Z')) &&
-				((p[4] >= '0' && p[4] <= '9') || (p[4] >= 'A' && p[4] <= 'Z')))
-		{
-			p += 6;
-		}
+		fprintf(fd, "%*.*s%c", len - 1, len - 1, s, t);
+		s = "";
 
 		q = strchr(p, '\n');
 		if (q) {
@@ -1312,6 +1291,8 @@ mapi_explain_result(MapiHdl hdl, FILE *fd)
 		if (hdl->query)
 			indented_print(hdl->query, "QUERY = ", fd);
 		indented_print(hdl->result->errorstr, "ERROR = !", fd);
+		if (mid->languageId == LANG_SQL && hdl->result->sqlstate[0])
+			indented_print(hdl->result->sqlstate, "CODE  = ", fd);
 	} else {
 		clean_print(hdl->result->errorstr, mid->noexplain, fd);
 	}
@@ -1456,6 +1437,7 @@ new_result(MapiHdl hdl)
 	result->tableid = -1;
 	result->querytype = -1;
 	result->errorstr = NULL;
+	memset(result->sqlstate, 0, sizeof(result->sqlstate));
 
 	result->tuple_count = 0;
 	result->row_count = 0;
@@ -1595,6 +1577,7 @@ close_result(MapiHdl hdl)
 	if (result->errorstr)
 		free(result->errorstr);
 	result->errorstr = NULL;
+	memset(result->sqlstate, 0, sizeof(result->sqlstate));
 	result->hdl = NULL;
 	hdl->result = result->next;
 	if (hdl->result == NULL)
@@ -1610,15 +1593,40 @@ add_error(struct MapiResultSet *result, char *error)
 	/* concatenate the error messages */
 	size_t size = result->errorstr ? strlen(result->errorstr) : 0;
 
+	if (strlen(error) > 6 && error[5] == '!' &&
+	    ((error[0] >= '0' && error[0] <= '9') ||
+	     (error[0] >= 'A' && error[0] <= 'Z')) &&
+	    ((error[1] >= '0' && error[1] <= '9') ||
+	     (error[1] >= 'A' && error[1] <= 'Z')) &&
+	    ((error[2] >= '0' && error[2] <= '9') ||
+	     (error[2] >= 'A' && error[2] <= 'Z')) &&
+	    ((error[3] >= '0' && error[3] <= '9') ||
+	     (error[3] >= 'A' && error[3] <= 'Z')) &&
+	    ((error[4] >= '0' && error[4] <= '9') ||
+	     (error[4] >= 'A' && error[4] <= 'Z'))) {
+		if (result->errorstr == NULL) {
+			/* remeber SQLSTATE for first error */
+			strncpy(result->sqlstate, error, 5);
+			result->sqlstate[5] = 0;
+		}
+		/* skip SQLSTATE */
+		error += 6;
+	}
 	REALLOC(result->errorstr, size + strlen(error) + 2);
 	strcpy(result->errorstr + size, error);
 	strcat(result->errorstr + size, "\n");
 }
 
-char *
+const char *
 mapi_result_error(MapiHdl hdl)
 {
 	return hdl && hdl->result ? hdl->result->errorstr : NULL;
+}
+
+const char *
+mapi_result_errorcode(MapiHdl hdl)
+{
+	return hdl && hdl->result && hdl->result->sqlstate[0] ? hdl->result->sqlstate : NULL;
 }
 
 /* Go to the next result set, if any, and close the current result

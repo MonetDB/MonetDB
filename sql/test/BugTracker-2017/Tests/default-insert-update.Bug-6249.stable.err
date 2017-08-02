@@ -29,10 +29,12 @@ stderr of test 'default-insert-update.Bug-6249` in directory 'sql/test/BugTracke
 
 MAPI  = (monetdb) /var/tmp/mtest-21586/.s.monetdb.39704
 QUERY = INSERT INTO test2 VALUES (1, 'a', DEFAULT, 'a'); --throw an error
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !INSERT INTO: column 'c' has no valid default value
-MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
+ERROR = !INSERT INTO: column 'c' has no valid default value
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = UPDATE test2 SET b = DEFAULT; --throw an error
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !UPDATE: column 'b' has no valid default value
+ERROR = !UPDATE: column 'b' has no valid default value
+CODE  = 42000
 
 
 # 11:11:43 >  

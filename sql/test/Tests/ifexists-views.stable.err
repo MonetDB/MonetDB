@@ -29,13 +29,16 @@ stderr of test 'ifexists-views` in directory 'sql/test` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-29186/.s.monetdb.32036
 QUERY = SELECT * FROM view1; -- should fail
-ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'view1'
-MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
+ERROR = !SELECT: no such table 'view1'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = DROP VIEW view2; -- should fail
-ERROR = !SQLException:sql.drop_view:SQLSTATE 42S02 !DROP VIEW: unknown view 'view2'
-MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
+ERROR = !DROP VIEW: unknown view 'view2'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT * FROM view2; -- should fail
-ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'view2'
+ERROR = !SELECT: no such table 'view2'
+CODE  = 42S02
 
 # 10:36:23 >  
 # 10:36:23 >  "Done."

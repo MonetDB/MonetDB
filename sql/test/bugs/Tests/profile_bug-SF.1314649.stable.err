@@ -12,17 +12,21 @@ stderr of test 'profile_bug-SF.1314649` in directory 'sql/test/bugs` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = record select 1;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT in: "record"
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
+ERROR = !syntax error, unexpected IDENT in: "record"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select query, user from history;
-ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = record select count(*) from t1314649 where "human" = true;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT in: "record"
-        !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
+ERROR = !syntax error, unexpected IDENT in: "record"
+        !Current transaction is aborted (please ROLLBACK)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select query, user from history;
-ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
 
 # 10:17:27 >  
 # 10:17:27 >  Done.

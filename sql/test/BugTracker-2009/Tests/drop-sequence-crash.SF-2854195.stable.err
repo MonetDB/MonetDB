@@ -74,9 +74,11 @@ stderr of test 'drop-sequence-crash.SF-2854195` in directory 'sql/test/BugTracke
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = DROP SEQUENCE "seq_2184";
-ERROR = !SQLException:sql.drop_seq:SQLSTATE 42M35 !DROP SEQUENCE: no such sequence 'seq_2184'
-MAPI  = (monetdb) /var/tmp/mtest-30975/.s.monetdb.35845
-ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
+ERROR = !DROP SEQUENCE: no such sequence 'seq_2184'
+CODE  = 42M35
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
 
 # 14:55:13 >  
 # 14:55:13 >  Done.

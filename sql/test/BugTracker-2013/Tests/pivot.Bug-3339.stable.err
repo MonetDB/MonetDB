@@ -31,7 +31,8 @@ stderr of test 'pivot.Bug-3339` in directory 'sql/test/BugTracker-2013` itself:
 MAPI  = (monetdb) /var/tmp/mtest-16107/.s.monetdb.31536
 QUERY = SELECT (SELECT * FROM groupElements(pivot.x))
         FROM (SELECT * FROM tmp) as pivot;
-ERROR = !ParseException:SQLparser:SQLSTATE 42S22 !SELECT: no such column 'pivot.x'
+ERROR = !SELECT: no such column 'pivot.x'
+CODE  = 42S22
 
 # 09:16:37 >  
 # 09:16:37 >  "Done."

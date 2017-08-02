@@ -33,7 +33,8 @@ QUERY = WITH 	a AS (SELECT a, b FROM wtf WHERE a IN (1, 4)),
               	b AS (SELECT a, b, count(*) AS d FROM a GROUP BY a, b),
         	c AS (SELECT a, count(*) AS e FROM b GROUP BY b) 
         SELECT * FROM c;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: cannot use non GROUP BY column 'a' in query results without an aggregate function
+ERROR = !SELECT: cannot use non GROUP BY column 'a' in query results without an aggregate function
+CODE  = 42000
 
 # 16:59:36 >  
 # 16:59:36 >  "Done."

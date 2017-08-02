@@ -32,10 +32,12 @@ stderr of test 'column_name_conflict.Bug-3912` in directory 'sql/test/BugTracker
 
 MAPI  = (monetdb) /var/tmp/mtest-32403/.s.monetdb.38022
 QUERY = create table foo (bar_baz int);
-ERROR = !SQLException:sql.catalog:SQLSTATE 42000 !CREATE TABLE: sys_foo_bar_baz conflicts
-MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
+ERROR = !CREATE TABLE: sys_foo_bar_baz conflicts
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into foo values (1); 
-ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !INSERT INTO: no such table 'foo'
+ERROR = !INSERT INTO: no such table 'foo'
+CODE  = 42S02
 
 # 08:21:28 >  
 # 08:21:28 >  "Done."

@@ -74,7 +74,8 @@ QUERY = SELECT 'first line'
         ' - next line' /* this comment is not allowed here */
         ' - third line'
         	AS "Illegal 
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !unexpected end of input
+ERROR = !unexpected end of input
+CODE  = 42000
 
 # 22:00:37 >  
 # 22:00:37 >  Done.

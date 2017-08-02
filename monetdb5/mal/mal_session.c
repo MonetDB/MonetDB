@@ -151,11 +151,11 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 	insertSymbol(cntxt->usermodule,cntxt->curprg);
 	
 	if( cntxt->curprg == 0)
-		throw(MAL, "initClientPrg", MAL_MALLOC_FAIL);
+		throw(MAL, "initClientPrg", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	if (cntxt->glb == NULL )
 		cntxt->glb = newGlobalStack(MAXGLOBALS + cntxt->curprg->def->vsize);
 	if( cntxt->glb == NULL)
-		throw(MAL,"initClientPrg", MAL_MALLOC_FAIL);
+		throw(MAL,"initClientPrg", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	assert(cntxt->curprg->def != NULL);
 	assert(cntxt->curprg->def->vtop >0);
 	return MAL_SUCCEED;
@@ -472,7 +472,7 @@ MSserveClient(void *dummy)
 		c->glb = newGlobalStack(MAXGLOBALS + mb->vsize);
 	if (c->glb == NULL) {
 		c->mode = RUNCLIENT;
-		throw(MAL, "serveClient", MAL_MALLOC_FAIL);
+		throw(MAL, "serveClient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
 		c->glb->stktop = mb->vtop;
 		c->glb->blk = mb;
@@ -646,8 +646,21 @@ MALcommentsOnly(MalBlkPtr mb)
 str
 MALcallback(Client c, str msg)
 {
-	if (msg){
-		mnstr_printf(c->fdout,"!%s%s", msg, (msg[strlen(msg)-1] == '\n'? "":"\n"));
+	if (msg) {
+		/* don't print exception decoration, just the message */
+		char *n = NULL;
+		char *o = msg;
+		while ((n = strchr(o, '\n')) != NULL) {
+			if (*o == '!')
+				o++;
+			mnstr_printf(c->fdout, "!%.*s\n", (int) (n - o), o);
+			o = ++n;
+		}
+		if (*o != 0) {
+			if (*o == '!')
+				o++;
+			mnstr_printf(c->fdout, "!%s\n", o);
+		}
 		freeException(msg);
 	}
 	return MAL_SUCCEED;
@@ -682,7 +695,7 @@ MALengine(Client c)
 		if (prg->def && c->glb->stksize < prg->def->vsize){
 			c->glb = reallocGlobalStack(c->glb, prg->def->vsize);
 			if( c->glb == NULL)
-				throw(MAL, "mal.engine", MAL_MALLOC_FAIL);
+				throw(MAL, "mal.engine", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		c->glb->stktop = prg->def->vtop;
 		c->glb->blk = prg->def;

@@ -25,7 +25,7 @@ Ready.
 
 [ 1	]
 #SELECT 2 * q1 AS q FROM A;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % q # name
 % hugeint # type
 % 16 # length
@@ -33,8 +33,8 @@ Ready.
 [ 1	]
 #SELECT SUM(2 * COL1 * COL2)
 #FROM A2;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % hugeint # type
 % 6 # length
 [ 246864	]
@@ -42,8 +42,8 @@ Ready.
 #SELECT (-COL2+COL1)
 #FROM A
 #WHERE COL3 IS NULL;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % bigint # type
 % 4 # length
 [ 3000	]

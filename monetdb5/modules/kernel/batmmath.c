@@ -33,7 +33,7 @@
 		bn = COLnew(b->hseqbase, X1, BATcount(b), TRANSIENT);	\
 		if (bn == NULL) {										\
 			BBPunfix(b->batCacheid);							\
-			throw(MAL, X2, MAL_MALLOC_FAIL);					\
+			throw(MAL, X2, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
 		}														\
 		bn->tsorted = b->tsorted;								\
 		bn->trevsorted = b->trevsorted;							\

@@ -72,20 +72,25 @@ stderr of test 'crashonschema.Bug-2547` in directory 'sql/test/BugTracker-2010` 
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = create schema intro2 authorized monetdb;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting SCOLON in: "create schema intro2 authorized"
-MAPI  = (monetdb) /var/tmp/mtest-32041/.s.monetdb.36560
+ERROR = !syntax error, unexpected IDENT, expecting SCOLON in: "create schema intro2 authorized"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = create schema authorized monetdb;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting SCOLON in: "create schema authorized monetdb"
-MAPI  = (monetdb) /var/tmp/mtest-32041/.s.monetdb.36560
+ERROR = !syntax error, unexpected IDENT, expecting SCOLON in: "create schema authorized monetdb"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop schema intro2;
-ERROR = !SQLException:sql.drop_schema:SQLSTATE 3F000 !DROP SCHEMA: name intro2 does not exist
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !DROP SCHEMA: name intro2 does not exist
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = create schema intro3 
           grant insert on t2010 to monetdb;
-ERROR = !SQLException:sql.grant_table:SQLSTATE 42S02 !GRANT no such table 't2010'
-MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
+ERROR = !GRANT no such table 't2010'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop schema intro3;
-ERROR = !SQLException:sql.drop_schema:SQLSTATE 3F000 !DROP SCHEMA: name intro3 does not exist
+ERROR = !DROP SCHEMA: name intro3 does not exist
+CODE  = 3F000
 
 # 18:47:50 >  
 # 18:47:50 >  Done.

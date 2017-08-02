@@ -81,7 +81,8 @@ stderr of test 'alter_view_not_allowed.SF-2075195` in directory 'sql/test/BugTra
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = alter table myview alter column a set null;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !ALTER TABLE: cannot set column options for VIEW 'myview'
+ERROR = !ALTER TABLE: cannot set column options for VIEW 'myview'
+CODE  = 42000
 
 # 12:25:51 >  
 # 12:25:51 >  Done.

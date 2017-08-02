@@ -75,11 +75,11 @@ PyObject *PyArrayObject_FromScalar(PyInput *inp, char **return_message)
 			break;
 		default:
 			msg = createException(MAL, "pyapi.eval",
-								  "SQLSTATE PY000 !""Unsupported scalar type %i.", inp->bat_type);
+								  SQLSTATE(PY000) "Unsupported scalar type %i.", inp->bat_type);
 			goto wrapup;
 	}
 	if (vararray == NULL) {
-		msg = createException(MAL, "pyapi.eval", "SQLSTATE PY000 !""Something went wrong "
+		msg = createException(MAL, "pyapi.eval", SQLSTATE(PY000) "Something went wrong "
 												 "converting the MonetDB "
 												 "scalar to a Python scalar.");
 		goto wrapup;
@@ -130,7 +130,7 @@ PyObject *PyMaskedArray_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 		// constructor
 		mask = PyObject_CallObject(mafunc, maargs);
 		if (!mask) {
-			msg = createException(MAL, "pyapi.eval", "SQLSTATE PY000 !""Failed to create mask");
+			msg = createException(MAL, "pyapi.eval", SQLSTATE(PY000) "Failed to create mask");
 			goto wrapup;
 		}
 		Py_DECREF(maargs);
@@ -160,7 +160,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 
 	if (!b) {
 		// No BAT was found, we can't do anything in this case
-		msg = createException(MAL, "pyapi.eval", "SQLSTATE HY001 !"MAL_MALLOC_FAIL " bat missing");
+		msg = createException(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL " bat missing");
 		goto wrapup;
 	}
 
@@ -172,7 +172,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 			// FIXME: scalar SQL types
 			msg = createException(
 				MAL, "pyapi.eval",
-				"SQLSTATE PY000 !""Scalar SQL types haven't been implemented yet... sorry");
+				SQLSTATE(PY000) "Scalar SQL types haven't been implemented yet... sorry");
 			goto wrapup;
 		} else {
 			BAT *ret_bat = NULL;
@@ -180,7 +180,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 									 &inp->bat_type);
 			if (msg != MAL_SUCCEED) {
 				msg = createException(MAL, "pyapi.eval",
-									  "SQLSTATE PY000 !""Failed to convert BAT.");
+									  SQLSTATE(PY000) "Failed to convert BAT.");
 				goto wrapup;
 			}
 			BBPunfix(inp->bat->batCacheid);
@@ -260,7 +260,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 								GDKzalloc(b->tvheap->free * sizeof(PyObject *));
 							if (!pyptrs) {
 								msg = createException(MAL, "pyapi.eval",
-													  "SQLSTATE HY001 !"MAL_MALLOC_FAIL
+													  SQLSTATE(HY001) MAL_MALLOC_FAIL
 													  " PyObject strings.");
 								goto wrapup;
 							}
@@ -284,7 +284,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 									if (!pyptrs[offset]) {
 										msg = createException(
 											MAL, "pyapi.eval",
-											"SQLSTATE PY000 !""Failed to create string.");
+											SQLSTATE(PY000) "Failed to create string.");
 										goto wrapup;
 									}
 								} else {
@@ -311,7 +311,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 								if (obj == NULL) {
 									msg = createException(
 										MAL, "pyapi.eval",
-										"SQLSTATE PY000 !""Failed to create string.");
+										SQLSTATE(PY000) "Failed to create string.");
 									goto wrapup;
 								}
 								data[j++] = obj;
@@ -325,7 +325,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 								GDKzalloc(b->tvheap->free * sizeof(PyObject *));
 							if (!pyptrs) {
 								msg = createException(MAL, "pyapi.eval",
-													  "SQLSTATE HY001 !"MAL_MALLOC_FAIL
+													  SQLSTATE(HY001) MAL_MALLOC_FAIL
 													  " PyObject strings.");
 								goto wrapup;
 							}
@@ -349,7 +349,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 								if (obj == NULL) {
 									msg = createException(
 										MAL, "pyapi.eval",
-										"SQLSTATE PY000 !""Failed to create string.");
+										SQLSTATE(PY000) "Failed to create string.");
 									goto wrapup;
 								}
 								data[j++] = obj;
@@ -381,10 +381,10 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 			default:
 				if (!inp->sql_subtype || !inp->sql_subtype->type) {
 					msg = createException(MAL, "pyapi.eval",
-										  "SQLSTATE PY000 !""unknown argument type");
+										  SQLSTATE(PY000) "unknown argument type");
 				} else {
 					msg = createException(MAL, "pyapi.eval",
-										  "SQLSTATE PY000 !""Unsupported SQL Type: %s",
+										  SQLSTATE(PY000) "Unsupported SQL Type: %s",
 										  inp->sql_subtype->type->sqlname);
 				}
 				goto wrapup;
@@ -393,7 +393,7 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 
 	if (vararray == NULL) {
 		msg = createException(MAL, "pyapi.eval",
-							  "SQLSTATE PY000 !""Failed to convert BAT to Numpy array.");
+							  SQLSTATE(PY000) "Failed to convert BAT to Numpy array.");
 		goto wrapup;
 	}
 	return vararray;
@@ -482,7 +482,7 @@ PyObject *PyDict_CheckForConversion(PyObject *pResult, int expected_columns,
 		if (object == NULL) {
 			msg =
 				createException(MAL, "pyapi.eval",
-								"SQLSTATE PY000 !""Expected a return value with name \"%s\", but "
+								SQLSTATE(PY000) "Expected a return value with name \"%s\", but "
 								"this key was not present in the dictionary.",
 								retcol_names[i]);
 			goto wrapup;
@@ -492,7 +492,7 @@ PyObject *PyDict_CheckForConversion(PyObject *pResult, int expected_columns,
 		if (object == NULL) {
 			msg = createException(
 				MAL, "pyapi.eval",
-				"SQLSTATE PY000 !""Error converting dict return value \"%s\": %s.",
+				SQLSTATE(PY000) "Error converting dict return value \"%s\": %s.",
 				retcol_names[i], *return_message);
 			GDKfree(*return_message);
 			goto wrapup;
@@ -503,7 +503,7 @@ PyObject *PyDict_CheckForConversion(PyObject *pResult, int expected_columns,
 			Py_INCREF(item);
 			Py_DECREF(object);
 		} else {
-			msg = createException(MAL, "pyapi.eval", "SQLSTATE PY000 !""Why is this not a list?");
+			msg = createException(MAL, "pyapi.eval", SQLSTATE(PY000) "Why is this not a list?");
 			goto wrapup;
 		}
 	}
@@ -535,7 +535,7 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 			pResult = PyObject_GetAttrString(pResult, "values");
 			if (pResult == NULL) {
 				msg = createException(MAL, "pyapi.eval",
-									  "SQLSTATE PY000 !""Invalid Pandas data frame.");
+									  SQLSTATE(PY000) "Invalid Pandas data frame.");
 				goto wrapup;
 			}
 			// we transpose the values field so it's aligned correctly for our
@@ -543,7 +543,7 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 			pResult = PyObject_GetAttrString(pResult, "T");
 			if (pResult == NULL) {
 				msg = createException(MAL, "pyapi.eval",
-									  "SQLSTATE PY000 !""Invalid Pandas data frame.");
+									  SQLSTATE(PY000) "Invalid Pandas data frame.");
 				goto wrapup;
 			}
 		}
@@ -569,7 +569,7 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 				// a single element, so the output is necessarily wrong.
 				msg = createException(
 					MAL, "pyapi.eval",
-					"SQLSTATE PY000 !""A single scalar was returned, yet we expect a list of %d "
+					SQLSTATE(PY000) "A single scalar was returned, yet we expect a list of %d "
 					"columns. We can only convert a single scalar into a "
 					"single column, thus the result is invalid.",
 					expected_columns);
@@ -583,7 +583,7 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 				data = PyObject_GetAttrString(pResult, "data");
 				if (data == NULL) {
 					msg = createException(MAL, "pyapi.eval",
-										  "SQLSTATE PY000 !""Invalid masked array.");
+										  SQLSTATE(PY000) "Invalid masked array.");
 					goto wrapup;
 				}
 			}
@@ -604,7 +604,7 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 				// array, thus the result is unsupported! Throw an exception!
 				msg = createException(
 					MAL, "pyapi.eval",
-					"SQLSTATE PY000 !""Unsupported result object. Expected either a list, "
+					SQLSTATE(PY000) "Unsupported result object. Expected either a list, "
 					"dictionary, a numpy array, a numpy masked array or a "
 					"pandas data frame, but received an object of type \"%s\"",
 					PyString_AsString(PyObject_Str(PyObject_Type(data))));
@@ -627,7 +627,7 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 					// into a list with a single array, so the output is
 					// necessarily wrong.
 					msg = createException(MAL, "pyapi.eval",
-										  "SQLSTATE PY000 !""A single array was returned, yet we "
+										  SQLSTATE(PY000) "A single array was returned, yet we "
 										  "expect a list of %d columns. The "
 										  "result is invalid.",
 										  expected_columns);
@@ -645,7 +645,7 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 				if (results != expected_columns && expected_columns > 0) {
 					// wrong return size, we expect pci->retc arrays
 					msg = createException(MAL, "pyapi.eval",
-										  "SQLSTATE PY000 !""An array of size %d was returned, "
+										  SQLSTATE(PY000) "An array of size %d was returned, "
 										  "yet we expect a list of %d columns. "
 										  "The result is invalid.",
 										  results, expected_columns);
@@ -656,7 +656,7 @@ PyObject *PyObject_CheckForConversion(PyObject *pResult, int expected_columns,
 	} else {
 		msg = createException(
 			MAL, "pyapi.eval",
-			"SQLSTATE PY000 !""Invalid result object. No result object could be generated.");
+			SQLSTATE(PY000) "Invalid result object. No result object could be generated.");
 		goto wrapup;
 	}
 
@@ -680,7 +680,7 @@ str PyObject_GetReturnValues(PyObject *obj, PyReturn *ret)
 	if (ret->numpy_array == NULL) {
 		msg = createException(
 			MAL, "pyapi.eval",
-			"SQLSTATE PY000 !""Could not create a Numpy array from the return type.\n");
+			SQLSTATE(PY000) "Could not create a Numpy array from the return type.\n");
 		goto wrapup;
 	}
 
@@ -827,7 +827,7 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 		if (ret->result_type == NPY_OBJECT) {
 			// FIXME: check for byte array/or pickle object to string
 			msg = createException(MAL, "pyapi.eval",
-								  "SQLSTATE PY000 !""Python object to BLOB not supported yet.");
+								  SQLSTATE(PY000) "Python object to BLOB not supported yet.");
 			goto wrapup;
 		}
 		if (ret->mask_data != NULL) {
@@ -835,7 +835,7 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 		}
 		if (ret->array_data == NULL) {
 			msg = createException(MAL, "pyapi.eval",
-								  "SQLSTATE PY000 !""No return value stored in the structure.");
+								  SQLSTATE(PY000) "No return value stored in the structure.");
 			goto wrapup;
 		}
 		data = (char *)ret->array_data;
@@ -911,7 +911,7 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 				if (ret->array_data == NULL) {
 					msg = createException(
 						MAL, "pyapi.eval",
-						"SQLSTATE PY000 !""No return value stored in the structure.  n");
+						SQLSTATE(PY000) "No return value stored in the structure.  n");
 					goto wrapup;
 				}
 				data = (char *)ret->array_data;
@@ -937,7 +937,7 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 			}
 			default:
 				msg = createException(MAL, "pyapi.eval",
-									  "SQLSTATE PY000 !""Unrecognized BAT type %s.\n",
+									  SQLSTATE(PY000) "Unrecognized BAT type %s.\n",
 									  BatType_Format(bat_type));
 				goto wrapup;
 		}
@@ -954,7 +954,7 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 	return b;
 bunins_failed:
 	BBPunfix(b->batCacheid);
-	msg = createException(MAL, "pyapi.eval", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+	msg = createException(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 wrapup:
 	*return_message = msg;
 	return NULL;
@@ -1014,18 +1014,18 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 		*ret_type = conv_type;
 		if (!(*ret_bat)) {
 			return createException(MAL, "pyapi.eval",
-								   "SQLSTATE HY001 !"MAL_MALLOC_FAIL " string conversion BAT.");
+								   SQLSTATE(HY001) MAL_MALLOC_FAIL " string conversion BAT.");
 		}
 		BATloop(b, p, q)
 		{
 			void *element = (void *)BUNtail(li, p);
 			if (strConversion(&result, &length, element) == 0) {
 				return createException(MAL, "pyapi.eval",
-									   "SQLSTATE PY000 !""Failed to convert element to string.");
+									   SQLSTATE(PY000) "Failed to convert element to string.");
 			}
 			if (BUNappend(*ret_bat, result, FALSE) != GDK_SUCCEED) {
 				BBPunfix((*ret_bat)->batCacheid);
-				throw(MAL, "pyapi.eval", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+				throw(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 		}
 		if (result) {

@@ -32,13 +32,16 @@ stderr of test 'role` in directory 'sql/test/Users` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-7070/.s.monetdb.36242
 QUERY = DROP ROLE bankAdmin3; -- role doesn't exist
-ERROR = !SQLException:sql.drop_role:SQLSTATE 0P000 !DROP ROLE: no such role 'bankadmin3'
-MAPI  = (april) /var/tmp/mtest-26377/.s.monetdb.39857
+ERROR = !DROP ROLE: no such role 'bankadmin3'
+CODE  = 0P000
+MAPI  = (april) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SET ROLE bankAdmin; -- role revoked
-ERROR = !SQLException:sql.update_var:SQLSTATE 42000 !Role (bankadmin) missing
-MAPI  = (april) /var/tmp/mtest-26377/.s.monetdb.39857
+ERROR = !SQLException:sql.update_var:42000!Role (bankadmin) missing
+CODE  = 42100
+MAPI  = (april) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SET ROLE bankAdmin2; -- role no longer exists
-ERROR = !SQLException:sql.update_var:SQLSTATE 42000 !Role (bankadmin2) missing
+ERROR = !SQLException:sql.update_var:42000!Role (bankadmin2) missing
+CODE  = 42100
 
 # 23:01:34 >  
 # 23:01:34 >  "Done."

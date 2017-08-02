@@ -12,13 +12,16 @@ stderr of test 'drop_system_tables.SF-1550768` in directory 'sql/test/BugTracker
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop table tables;
-ERROR = !SQLException:sql.droptable:SQLSTATE 42000 !DROP TABLE: cannot drop VIEW 'tables'
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !DROP TABLE: cannot drop VIEW 'tables'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop view tables;
-ERROR = !SQLException:sql.drop_view:SQLSTATE 42000 !DROP VIEW: cannot drop system view 'tables'
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !DROP VIEW: cannot drop system view 'tables'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop table _tables;
-ERROR = !SQLException:sql.droptable:SQLSTATE 42000 !DROP TABLE: cannot drop system table '_tables'
+ERROR = !DROP TABLE: cannot drop system table '_tables'
+CODE  = 42000
 
 # 10:53:33 >  
 # 10:53:33 >  Done.

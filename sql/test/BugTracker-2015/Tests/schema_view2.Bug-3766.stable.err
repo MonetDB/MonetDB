@@ -32,16 +32,20 @@ stderr of test 'schema_view2.Bug-3766` in directory 'sql/test/BugTracker-2015` i
 
 MAPI  = (monetdb) /var/tmp/mtest-6881/.s.monetdb.33815
 QUERY = create view tst.v1 (i) as select * from t1;
-ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 't1'
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !SELECT: no such table 't1'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select * from tst.v1;
-ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'v1'
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !SELECT: no such table 'v1'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = create view tst.v1 (i) as select * from t1;
-ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 't1'
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !SELECT: no such table 't1'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop view tst.v1;
-ERROR = !SQLException:sql.drop_view:SQLSTATE 42S02 !DROP VIEW: unknown view 'v1'
+ERROR = !DROP VIEW: unknown view 'v1'
+CODE  = 42S02
 
 # 16:30:15 >  
 # 16:30:15 >  "Done."

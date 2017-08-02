@@ -31,19 +31,24 @@ stderr of test 'insert` in directory 'sql/test/pg_regress` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into inserttest (col1, col2, col3) values (DEFAULT, DEFAULT, DEFAULT);
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !INSERT INTO: column 'col1' has no valid default value
-MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
+ERROR = !INSERT INTO: column 'col1' has no valid default value
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into inserttest (col1, col2, col3) values (DEFAULT, DEFAULT);
-ERROR = !ParseException:SQLparser:SQLSTATE 21S01 !INSERT INTO: number of values doesn't match number of columns of table 'inserttest'
-MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
+ERROR = !INSERT INTO: number of values doesn't match number of columns of table 'inserttest'
+CODE  = 21S01
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into inserttest (col1, col2, col3) values (1, 2);
-ERROR = !ParseException:SQLparser:SQLSTATE 21S01 !INSERT INTO: number of values doesn't match number of columns of table 'inserttest'
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !INSERT INTO: number of values doesn't match number of columns of table 'inserttest'
+CODE  = 21S01
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into inserttest (col1) values (1, 2);
-ERROR = !ParseException:SQLparser:SQLSTATE 21S01 !INSERT INTO: number of values doesn't match number of columns of table 'inserttest'
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !INSERT INTO: number of values doesn't match number of columns of table 'inserttest'
+CODE  = 21S01
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into inserttest (col1) values (DEFAULT, DEFAULT);
-ERROR = !ParseException:SQLparser:SQLSTATE 21S01 !INSERT INTO: number of values doesn't match number of columns of table 'inserttest'
+ERROR = !INSERT INTO: number of values doesn't match number of columns of table 'inserttest'
+CODE  = 21S01
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

@@ -45,32 +45,32 @@ Ready.
 # 21:26:36 >  
 
 #SELECT DATE '1996-02-24' + INTERVAL '7' DAY = DATE '1996-03-02';
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT DATE '1996-02-24' + INTERVAL '12:30' HOUR TO MINUTE; -- err: disallowed
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % date # type
 % 10 # length
 [ 1996-02-24	]
 #SELECT DATE '1996-02-24' + INTERVAL '2 12' DAY TO HOUR; -- err: disallowed
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % date # type
 % 10 # length
 [ 1996-02-26	]
 #SELECT INTERVAL '7' DAY + DATE '1996-02-24' = DATE '1996-03-02';
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT DATE '1996-03-02' - INTERVAL '7' DAY = DATE '1996-02-24';
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]

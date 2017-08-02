@@ -38,7 +38,8 @@ QUERY = select
               from sys.spatial_ref_sys as sample_0
                       where sample_0.srtext is not NULL limit 95) as subq_0
         where cast(coalesce(17, subq_0.c1) as int) is not NULL;
-ERROR = !SQLException:zero_or_one:SQLSTATE 21000 !Cardinality violation, scalar value expected
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
 
 # 14:35:34 >  
 # 14:35:34 >  "Done."

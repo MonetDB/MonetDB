@@ -32,23 +32,28 @@ stderr of test 'create_view` in directory 'sql/test/pg_regress` itself:
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = CREATE OR REPLACE VIEW viewtest AS
         	SELECT * FROM viewtest_tbl WHERE a > 10;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected VIEW in: "create or replace view"
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !syntax error, unexpected VIEW in: "create or replace view"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = CREATE OR REPLACE VIEW viewtest AS
         	SELECT a, b FROM viewtest_tbl WHERE a > 5 ORDER BY b DESC;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected VIEW in: "create or replace view"
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !syntax error, unexpected VIEW in: "create or replace view"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = CREATE OR REPLACE VIEW viewtest AS
 	SELECT a FROM viewtest_tbl WHERE a <> 20;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected VIEW in: "create or replace view"
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !syntax error, unexpected VIEW in: "create or replace view"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = CREATE OR REPLACE VIEW viewtest AS
 	SELECT 1, * FROM viewtest_tbl;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected VIEW in: "create or replace view"
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !syntax error, unexpected VIEW in: "create or replace view"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = CREATE OR REPLACE VIEW viewtest AS
 	SELECT a, cast(b as numeric) FROM viewtest_tbl;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected VIEW in: "create or replace view"
+ERROR = !syntax error, unexpected VIEW in: "create or replace view"
+CODE  = 42000
 
 
 # 17:11:19 >  

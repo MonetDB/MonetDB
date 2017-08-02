@@ -32,15 +32,17 @@ MAPI  = (monetdb) /var/tmp/mtest-25939/.s.monetdb.30016
 QUERY = create table papoints AS ( --get points from intersecting patches
         	SELECT a.id, x, y, z, geom FROM test1 a, test2 b
         	WHERE [a.geom] IntersectsXYZ [x, y, z,28992]) WITH DATA;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such FILTER function 'intersectsxyz'
-MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
+ERROR = !SELECT: no such FILTER function 'intersectsxyz'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = create table papoints AS ( --get points from intersecting patches
         	SELECT a.type, a.id, x, y, z, geom FROM test1 a
         	--LEFT JOIN pointcloud_unclassified b ON (ST_Intersects(a.geom, geometry(b.pa)))
                --LEFT JOIN pointcloud_unclassified b ON (ST_Intersects(a.geom, x, y, z,28992))
                LEFT JOIN test2 b ON ([a.geom] IntersectsXYZ [x, y, z,28992])
         ) WITH DATA;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such FILTER function 'intersectsxyz'
+ERROR = !SELECT: no such FILTER function 'intersectsxyz'
+CODE  = 42000
 
 # 17:51:56 >  
 # 17:51:56 >  "Done."

@@ -72,17 +72,21 @@ stderr of test 'unicode-bom.Bug-2641` in directory 'sql/test/BugTracker-2010` it
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = ﻿
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Unexpected character (U+FEFF)
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !Unexpected character (U+FEFF)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = ﻿SELECT 1;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !Unexpected character (U+FEFF)
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !Unexpected character (U+FEFF)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SEL﻿ECT 1;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT in: "sel"
-MAPI  = (monetdb) /var/tmp/mtest-32041/.s.monetdb.36560
+ERROR = !syntax error, unexpected IDENT in: "sel"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SE﻿LE﻿CT﻿ 1﻿;﻿
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT in: "se"
-        !ParseException:SQLparser:SQLSTATE 42000 !Unexpected character (U+FEFF)
+ERROR = !syntax error, unexpected IDENT in: "se"
+        !Unexpected character (U+FEFF)
+CODE  = 42000
 
 # 11:21:04 >  
 # 11:21:04 >  Done.

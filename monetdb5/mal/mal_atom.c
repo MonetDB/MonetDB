@@ -183,7 +183,7 @@ malAtomDefinition(str name, int tpe)
 
 	i = ATOMallocate(name);
 	if (i == int_nil)
-		throw(TYPE,"atomDefinition", MAL_MALLOC_FAIL);
+		throw(TYPE,"atomDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	/* overload atom ? */
 	if (tpe) {
 		BATatoms[i] = BATatoms[tpe];

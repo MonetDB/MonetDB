@@ -24,10 +24,12 @@ QUERY = CREATE FUNCTION fDocColumnsWithRank(TableName varchar(400))
         			coalesce(d."AUTO_INCREMENT",0) =
         			coalesce(ColumnProperty (c.id, c.nme,'IsIdentity'),0) );
         END;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such operator 'columnproperty'
-MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
+ERROR = !SELECT: no such operator 'columnproperty'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop function fDocColumnsWithRank;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !DROP FUNCTION: no such function 'fdoccolumnswithrank'
+ERROR = !DROP FUNCTION: no such function 'fdoccolumnswithrank'
+CODE  = 42000
 
 # 00:33:51 >  
 # 00:33:51 >  Done.

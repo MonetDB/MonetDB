@@ -32,16 +32,20 @@ stderr of test 'alter` in directory 'sql/test/mergetables` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-22017/.s.monetdb.30920
 QUERY = alter table smalltable add table unknowntable;
-ERROR = !SQLException:sql.alter_table_add_table:SQLSTATE 42S02 !ALTER TABLE: no such table 'unknowntable' in schema 'sys'
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !ALTER TABLE: no such table 'unknowntable' in schema 'sys'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = alter table mys.smalltable add table part1;
-ERROR = !SQLException:sql.alter_table_add_table:SQLSTATE 42S02 !ALTER TABLE: no such table 'part1' in schema 'mys'
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !ALTER TABLE: no such table 'part1' in schema 'mys'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = alter table mys.smalltable add table mys.part1;
-ERROR = !SQLException:sql.alter_table_add_table:SQLSTATE 42S02 !ALTER TABLE: no such table 'mys' in schema 'mys'
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !ALTER TABLE: no such table 'mys' in schema 'mys'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select * from mys.smalltable;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !MERGE or REPLICA TABLE should have at least one table associated
+ERROR = !MERGE or REPLICA TABLE should have at least one table associated
+CODE  = 42000
 
 # 12:41:49 >  
 # 12:41:49 >  "Done."

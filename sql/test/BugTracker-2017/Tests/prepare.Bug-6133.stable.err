@@ -33,7 +33,7 @@ QUERY = PREPARE
         SELECT tnew.id, tnew.content, false, tnew.creationdate, tnew.locationip, tnew.browserused, NULL, tnew.length, tnew.person_id, tnew.place_id, parent.forum_id, tnew.comment_id, parent.post_id
         FROM ( VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ) AS tnew(id, content, creationdate, locationip, browserused, length, person_id, place_id, parent_id)
         JOIN messages parent ON ( parent.id = tnew.parent_id );
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !
+ERROR = !42000!
 
 # 20:13:43 >  
 # 20:13:43 >  "Done."

@@ -32,7 +32,8 @@ stderr of test 'ukey_check_unaligned.Bug-3669` in directory 'sql/test/BugTracker
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = alter table tab add constraint tab_uc6 unique (id, nm, dt, qnt, descr);
-ERROR = !SQLException:assert:SQLSTATE M0M29 !UPDATE: UNIQUE constraint 'tab.tab_uc6' violated
+ERROR = !UPDATE: UNIQUE constraint 'tab.tab_uc6' violated
+CODE  = M0M29
 
 # 20:45:27 >  
 # 20:45:27 >  "Done."

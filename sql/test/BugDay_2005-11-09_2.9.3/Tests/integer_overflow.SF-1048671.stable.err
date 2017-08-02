@@ -81,7 +81,8 @@ stderr of test 'integer_overflow.SF-1048671` in directory 'sql/test/BugDay_2005-
 
 MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = insert into test1048671 values (9876543210);
-ERROR = !MALException:calc.int:22003!overflow in conversion of 9876543210 to int.
+ERROR = !overflow in conversion of 9876543210 to int.
+CODE  = 22003
 
 # 19:27:23 >  
 # 19:27:23 >  Done.

@@ -31,19 +31,24 @@ stderr of test 'temporary.Bug-3430` in directory 'sql/test/BugTracker-2014` itse
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = create temporary table temp.dummy(i int);
-ERROR = !ParseException:SQLparser:SQLSTATE 3F000 !CREATE TABLE: no such schema 'temp'
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !CREATE TABLE: no such schema 'temp'
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = create temporary table tempo.dummy(i int);
-ERROR = !ParseException:SQLparser:SQLSTATE 3F000 !CREATE TABLE: local tempory tables should be stored in the 'tmp' schema
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !CREATE TABLE: local tempory tables should be stored in the 'tmp' schema
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select * from tempo.dummy;
-ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'dummy'
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !SELECT: no such table 'dummy'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select * from tmp.dummy;
-ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'dummy'
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !SELECT: no such table 'dummy'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop table tmp.dummy;
-ERROR = !SQLException:sql.droptable:SQLSTATE 42S02 !DROP TABLE: no such table 'dummy'
+ERROR = !DROP TABLE: no such table 'dummy'
+CODE  = 42S02
 
 # 12:14:57 >  
 # 12:14:57 >  "Done."

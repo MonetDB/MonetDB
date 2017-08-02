@@ -36,7 +36,8 @@ QUERY = SELECT *
         		 ( SELECT * FROM test) AS a2 
         		ON a1.x = a2.x
         	) AS t;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: Duplicate column name 't.x'
+ERROR = !SELECT: Duplicate column name 't.x'
+CODE  = 42000
 
 # 10:39:09 >  
 # 10:39:09 >  "Done."

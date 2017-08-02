@@ -29,23 +29,30 @@ stderr of test 'merge-table-edit.Bug-6084` in directory 'sql/test/BugTracker-201
 
 MAPI  = (monetdb) /var/tmp/mtest-71697/.s.monetdb.32414
 QUERY = ALTER TABLE test_table ADD COLUMN u int;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !ALTER TABLE: cannot add column to a PARTITION of a MERGE or REPLICA TABLE 'test_table'
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !ALTER TABLE: cannot add column to a PARTITION of a MERGE or REPLICA TABLE 'test_table'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = UPDATE test_table SET u = 2;
-ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT * FROM test_table;
-ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
-ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = ALTER TABLE test_table DROP COLUMN d;
-ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT * FROM test_merge_table;
-ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
-ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
 
 # 17:26:57 >  
 # 17:26:57 >  "Done."

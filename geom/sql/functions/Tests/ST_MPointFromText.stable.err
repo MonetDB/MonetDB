@@ -31,55 +31,72 @@ stderr of test 'ST_MPointFromText` in directory 'geom/sql/functions` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-30133/.s.monetdb.37873
 QUERY = insert into points_tbl values (st_mpointfromtext('multipoint(20 20, 30 30)', 4326));
-ERROR = !MALException:calc.wkb:SQLSTATE 38000 !Geos column needs geometry(20, 0) and value is geometry(20, 4326)
-MAPI  = (monetdb) /var/tmp/mtest-30693/.s.monetdb.32199
+ERROR = !Geos column needs geometry(20, 0) and value is geometry(20, 4326)
+CODE  = 38000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into points_tbl values (st_linefromtext('linestring(10 10, 20 20, 30 40)'));
-ERROR = !MALException:calc.wkb:SQLSTATE 38000 !Geos column needs geometry(20, 0) and value is geometry(8, 0)
-MAPI  = (monetdb) /var/tmp/mtest-30693/.s.monetdb.32199
+ERROR = !Geos column needs geometry(20, 0) and value is geometry(8, 0)
+CODE  = 38000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into points_tbl values (st_mpointfromtext('multipoint(10 10, 20 20)'));
-ERROR = !MALException:calc.wkb:SQLSTATE 38000 !Geos column needs geometry(20, 4326) and value is geometry(20, 0)
-MAPI  = (monetdb) /var/tmp/mtest-30693/.s.monetdb.32199
+ERROR = !Geos column needs geometry(20, 4326) and value is geometry(20, 0)
+CODE  = 38000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into points_tbl values (st_mpointfromtext('multipoint(30 30, 40 40)', 0));
-ERROR = !MALException:calc.wkb:SQLSTATE 38000 !Geos column needs geometry(20, 4326) and value is geometry(20, 0)
-MAPI  = (monetdb) /var/tmp/mtest-30693/.s.monetdb.32199
+ERROR = !Geos column needs geometry(20, 4326) and value is geometry(20, 0)
+CODE  = 38000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into points_tbl values (st_linefromtext('linestring(10 10, 20 20, 30 40)', 4326));
-ERROR = !MALException:calc.wkb:SQLSTATE 38000 !Geos column needs geometry(20, 4326) and value is geometry(8, 4326)
-MAPI  = (monetdb) /var/tmp/mtest-30693/.s.monetdb.32199
+ERROR = !Geos column needs geometry(20, 4326) and value is geometry(8, 4326)
+CODE  = 38000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into points_tbl values (st_mpointfromtext('multipoint(20 20 20, 30 30 30)', 4326));
-ERROR = !MALException:calc.wkb:SQLSTATE 38000 !Geos column needs geometry(22, 0) and value is geometry(22, 4326)
-MAPI  = (monetdb) /var/tmp/mtest-30693/.s.monetdb.32199
+ERROR = !Geos column needs geometry(22, 0) and value is geometry(22, 4326)
+CODE  = 38000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into points_tbl values (st_linefromtext('linestring(10 10 10, 20 20 20, 30 30 40)'));
-ERROR = !MALException:calc.wkb:SQLSTATE 38000 !Geos column needs geometry(22, 0) and value is geometry(10, 0)
-MAPI  = (monetdb) /var/tmp/mtest-30693/.s.monetdb.32199
+ERROR = !Geos column needs geometry(22, 0) and value is geometry(10, 0)
+CODE  = 38000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into points_tbl values (st_mpointfromtext('multipoint(10 10 10, 20 20 20)'));
-ERROR = !MALException:calc.wkb:SQLSTATE 38000 !Geos column needs geometry(22, 4326) and value is geometry(22, 0)
-MAPI  = (monetdb) /var/tmp/mtest-30693/.s.monetdb.32199
+ERROR = !Geos column needs geometry(22, 4326) and value is geometry(22, 0)
+CODE  = 38000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into points_tbl values (st_mpointfromtext('multipoint(30 30 30, 40 40 40)', 0));
-ERROR = !MALException:calc.wkb:SQLSTATE 38000 !Geos column needs geometry(22, 4326) and value is geometry(22, 0)
-MAPI  = (monetdb) /var/tmp/mtest-30693/.s.monetdb.32199
+ERROR = !Geos column needs geometry(22, 4326) and value is geometry(22, 0)
+CODE  = 38000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into points_tbl values (st_linefromtext('linestring(10 10 10, 20 20 20, 30 30 30)', 4326));
-ERROR = !MALException:calc.wkb:SQLSTATE 38000 !Geos column needs geometry(22, 4326) and value is geometry(10, 4326)
-MAPI  = (monetdb) /var/tmp/mtest-30693/.s.monetdb.32199
+ERROR = !Geos column needs geometry(22, 4326) and value is geometry(10, 4326)
+CODE  = 38000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select st_mpointfromtext(geom) from geometriesTxt WHERE id=1;
-ERROR = !SQLException:wkb.FromText:SQLSTATE 38000 !Geometry not type '5: MULTIPOINT' but '1: POINT' instead
-MAPI  = (monetdb) /var/tmp/mtest-30693/.s.monetdb.32199
+ERROR = !Geometry not type '5: MULTIPOINT' but '1: POINT' instead
+CODE  = 38000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select st_mpointfromtext(geom) from geometriesTxt WHERE id=2;
-ERROR = !SQLException:wkb.FromText:SQLSTATE 38000 !Geometry not type '5: MULTIPOINT' but '2: LINESTRING' instead
-MAPI  = (monetdb) /var/tmp/mtest-30693/.s.monetdb.32199
+ERROR = !Geometry not type '5: MULTIPOINT' but '2: LINESTRING' instead
+CODE  = 38000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select st_mpointfromtext(geom) from geometriesTxt WHERE id=3;
-ERROR = !SQLException:wkb.FromText:SQLSTATE 38000 !Geometry not type '5: MULTIPOINT' but '4: POLYGON' instead
-MAPI  = (monetdb) /var/tmp/mtest-30693/.s.monetdb.32199
+ERROR = !Geometry not type '5: MULTIPOINT' but '4: POLYGON' instead
+CODE  = 38000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select st_mpointfromtext(geom) from geometriesTxt WHERE id=5;
-ERROR = !SQLException:wkb.FromText:SQLSTATE 38000 !Geometry not type '5: MULTIPOINT' but '6: MULTILINESTRING' instead
-MAPI  = (monetdb) /var/tmp/mtest-30693/.s.monetdb.32199
+ERROR = !Geometry not type '5: MULTIPOINT' but '6: MULTILINESTRING' instead
+CODE  = 38000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select st_mpointfromtext(geom) from geometriesTxt WHERE id=6;
-ERROR = !SQLException:wkb.FromText:SQLSTATE 38000 !Geometry not type '5: MULTIPOINT' but '7: MULTIPOLYGON' instead
-MAPI  = (monetdb) /var/tmp/mtest-30693/.s.monetdb.32199
+ERROR = !Geometry not type '5: MULTIPOINT' but '7: MULTIPOLYGON' instead
+CODE  = 38000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select st_mpointfromtext(geom) from geometriesTxt WHERE id=7;
-ERROR = !SQLException:wkb.FromText:SQLSTATE 38000 !Geometry not type '5: MULTIPOINT' but '7: MULTIPOLYGON' instead
-MAPI  = (monetdb) /var/tmp/mtest-30693/.s.monetdb.32199
+ERROR = !Geometry not type '5: MULTIPOINT' but '7: MULTIPOLYGON' instead
+CODE  = 38000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select st_mpointfromtext(geom) from geometriesTxt WHERE id=8;
-ERROR = !SQLException:wkb.FromText:SQLSTATE 38000 !Geometry not type '5: MULTIPOINT' but '8: GEOMETRYCOLLECTION' instead
+ERROR = !Geometry not type '5: MULTIPOINT' but '8: GEOMETRYCOLLECTION' instead
+CODE  = 38000
 
 # 15:46:18 >  
 # 15:46:18 >  "Done."

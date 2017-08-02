@@ -83,15 +83,18 @@ stderr of test 'null_as_string_errors` in directory 'sql/test/copy` itself:
 MAPI  = (monetdb) /var/tmp/mtest-29638/.s.monetdb.30099
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
         NULL,NULL,NULL
-ERROR = !SQLException:importTable:SQLSTATE 42000 !Failed to import table 'null_as_string', line 1 field i 'int' expected in 'NULL'
-MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
+ERROR = !Failed to import table 'null_as_string', line 1 field i 'int' expected in 'NULL'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
         NULL,zero,0
-ERROR = !SQLException:importTable:SQLSTATE 42000 !Failed to import table 'null_as_string', line 1 field i 'int' expected in 'NULL'
-MAPI  = (monetdb) /var/tmp/mtest-27097/.s.monetdb.31804
+ERROR = !Failed to import table 'null_as_string', line 1 field i 'int' expected in 'NULL'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = copy 1 records into null_as_string from stdin delimiters ',','\n' NULL as '';
         2,two,NULL
-ERROR = !SQLException:importTable:SQLSTATE 42000 !Failed to import table 'null_as_string', line 1 field d 'decimal(5,2)' expected in 'NULL'
+ERROR = !Failed to import table 'null_as_string', line 1 field d 'decimal(5,2)' expected in 'NULL'
+CODE  = 42000
 
 # 08:37:31 >  
 # 08:37:31 >  "Done."

@@ -14,10 +14,12 @@ stderr of test 'number_null_first_row.SF-1833286` in directory 'sql/test/BugTrac
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT into "decimal_null" values (NULL);
-ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: NOT NULL constraint violated for column decimal_null.promoid
-MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
+ERROR = !INSERT INTO: NOT NULL constraint violated for column decimal_null.promoid
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT into "decimal_null" values (NULL);
-ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: NOT NULL constraint violated for column decimal_null.promoid
+ERROR = !INSERT INTO: NOT NULL constraint violated for column decimal_null.promoid
+CODE  = M0M29
 
 
 # 21:23:57 >  

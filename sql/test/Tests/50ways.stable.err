@@ -83,29 +83,34 @@ stderr of test '50ways` in directory 'sql/test` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop table s;
-ERROR = !SQLException:sql.droptable:SQLSTATE 42S02 !DROP TABLE: no such table 's'
-MAPI  = (monetdb) /var/tmp/mtest-9163/.s.monetdb.38304
+ERROR = !DROP TABLE: no such table 's'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop table sp;
-ERROR = !SQLException:sql.droptable:SQLSTATE 42S02 !DROP TABLE: no such table 'sp'
-MAPI  = (monetdb) /var/tmp/mtest-9163/.s.monetdb.38304
+ERROR = !DROP TABLE: no such table 'sp'
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = commit;
-ERROR = !SQLException:sql.trans:SQLSTATE 2DM30 !COMMIT: not allowed in auto commit mode
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !COMMIT: not allowed in auto commit mode
+CODE  = 2DM30
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT  DISTINCT S.SNAME
               FROM  (  ( SELECT * FROM S )
                                INTERSECT CORRESPONDING 
                                (SELECT * FROM SP
                                  WHERE SP.PNR = 'P2' ) ) AS POINTLESS
                                NATURAL JOIN S;
-ERROR = !ParseException:SQLparser:SQLSTATE 42S22 !SELECT: no such column 's.sname'
-MAPI  = (monetdb) /var/tmp/mtest-10110/.s.monetdb.31072
+ERROR = !SELECT: no such column 's.sname'
+CODE  = 42S22
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT  DISTINCT S.SNAME
               FROM  (  ( SELECT * FROM S )
                                INTERSECT CORRESPONDING BY ( SNR )
                                (SELECT * FROM SP
                                  WHERE SP.PNR = 'P2' ) ) AS POINTLESS
                                NATURAL JOIN S;
-ERROR = !ParseException:SQLparser:SQLSTATE 42S22 !SELECT: no such column 's.sname'
+ERROR = !SELECT: no such column 's.sname'
+CODE  = 42S22
 
 
 # 16:07:26 >  

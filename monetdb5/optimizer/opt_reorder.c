@@ -286,7 +286,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if ( newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(uselist);
 		OPTremoveDep(dep, limit);
-		throw(MAL,"optimizer.reorder", MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.reorder", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	
 	pushInstruction(mb,old[0]);

@@ -31,8 +31,8 @@ Ready.
 
 [(1,)]
 (2,)
-ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected IDENT, expecting SELECT or '(' in: "( xyz"
-!SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
+42000!syntax error, unexpected IDENT, expecting SELECT or '(' in: "( xyz"
+!25005!Current transaction is aborted (please ROLLBACK)
 
 [(3, 'three'), (7, 'seven')]
 2

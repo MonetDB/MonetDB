@@ -13,7 +13,8 @@ stderr of test 'crash_with_wrong_nesting.SF-1097883` in directory 'sql/test/BugD
 MAPI  = monetdb@sofia:39182
 QUERY = update crash_q set b= (
         select b from crash_me where crash_q.a = crash_me.a);
-ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'crash_me'
+ERROR = !SELECT: no such table 'crash_me'
+CODE  = 42S02
 
 # 13:25:30 >  
 # 13:25:30 >  Done.

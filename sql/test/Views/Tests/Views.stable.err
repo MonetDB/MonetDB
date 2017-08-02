@@ -72,16 +72,17 @@ stderr of test 'Views` in directory 'sql/test/Views` itself:
 
 MAPI  = monetdb@niels:30298
 QUERY = ALTER TABLE v1 DROP COLUMN age;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000!ALTER TABLE: cannot drop column from VIEW 'v1'
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !ALTER TABLE: cannot drop column from VIEW 'v1'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = CREATE TRIGGER trigger_test AFTER INSERT ON v1
                 INSERT INTO t2 values(1,23);
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !CREATE TRIGGER: cannot create trigger on view 'v1'
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !CREATE TRIGGER: cannot create trigger on view 'v1'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = CREATE INDEX id_age_index ON v1(id,age);
-ERROR = !ParseException:SQLparser:SQLSTATE 42S02!CREATE INDEX: cannot create index on view 'v1'
-
-
+ERROR = !CREATE INDEX: cannot create index on view 'v1'
+CODE  = 42S02
 
 # 15:59:37 >  
 # 15:59:37 >  Done.

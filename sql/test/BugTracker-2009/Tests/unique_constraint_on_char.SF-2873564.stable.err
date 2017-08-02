@@ -77,19 +77,24 @@ stderr of test 'unique_constraint_on_char.SF-2873564` in directory 'sql/test/Bug
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into keytest (date_added, hash_key, dimension1, dimension2, metric1, metric2) VALUES (1, 'a', 1, 1, 2, 2);
-ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: UNIQUE constraint 'keytest.key_test' violated
-MAPI  = (monetdb) /var/tmp/mtest-32041/.s.monetdb.36560
+ERROR = !INSERT INTO: UNIQUE constraint 'keytest.key_test' violated
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = CREATE UNIQUE INDEX unique_key_test ON test.keytest (date_added, hash_key);
-ERROR = !ParseException:SQLparser:SQLSTATE 3F000 !CREATE INDEX: no such schema 'test'
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !CREATE INDEX: no such schema 'test'
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into keytest (date_added, hash_key, dimension1, dimension2, metric1, metric2) VALUES (1, 'a', 1, 1, 2, 2);
-ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: UNIQUE constraint 'keytest.key_test' violated
-MAPI  = (monetdb) /var/tmp/mtest-32041/.s.monetdb.36560
+ERROR = !INSERT INTO: UNIQUE constraint 'keytest.key_test' violated
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into keytest (date_added, hash_key, dimension1, dimension2, metric1, metric2) VALUES (1, 'a', 1, 1, 2, 2);
-ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: UNIQUE constraint 'keytest.key_test' violated
-MAPI  = (monetdb) /var/tmp/mtest-32041/.s.monetdb.36560
+ERROR = !INSERT INTO: UNIQUE constraint 'keytest.key_test' violated
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into keytest2 (date_added, key, dimension1, dimension2, metric1, metric2) VALUES (1, 1, 1, 1, 2, 2);
-ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: UNIQUE constraint 'keytest2.key_test2' violated
+ERROR = !INSERT INTO: UNIQUE constraint 'keytest2.key_test2' violated
+CODE  = M0M29
 
 # 21:33:07 >  
 # 21:33:07 >  Done.

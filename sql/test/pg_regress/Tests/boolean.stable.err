@@ -31,54 +31,69 @@ stderr of test 'boolean` in directory 'sql/test/pg_regress` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT cast('t' AS boolean) AS "true";
-ERROR = !MALException:calc.bit:22018!conversion of string 't' to type bit failed.
-MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
+ERROR = !conversion of string 't' to type bit failed.
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT cast('true' AS boolean) AS true;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected BOOL_TRUE in: "select cast('true' as boolean) as true"
-MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
+ERROR = !syntax error, unexpected BOOL_TRUE in: "select cast('true' as boolean) as true"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT cast('f' AS boolean) AS "false";
-ERROR = !MALException:calc.bit:22018!conversion of string 'f' to type bit failed.
-MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
+ERROR = !conversion of string 'f' to type bit failed.
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT cast('false' AS boolean) AS false;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !syntax error, unexpected BOOL_FALSE in: "select cast('false' as boolean) as false"
-MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
+ERROR = !syntax error, unexpected BOOL_FALSE in: "select cast('false' as boolean) as false"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT cast('t' AS boolean) or cast('f' AS boolean) AS "true";
-ERROR = !MALException:calc.bit:22018!conversion of string 't' to type bit failed.
-MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
+ERROR = !conversion of string 't' to type bit failed.
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT cast('t' AS boolean) and cast('f' AS boolean) AS "false";
-ERROR = !MALException:calc.bit:22018!conversion of string 't' to type bit failed.
-MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
+ERROR = !conversion of string 't' to type bit failed.
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT not cast('f' AS boolean) AS "true";
-ERROR = !MALException:calc.bit:22018!conversion of string 'f' to type bit failed.
-MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
+ERROR = !conversion of string 'f' to type bit failed.
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT cast('t' AS boolean) = cast('f' AS boolean) AS "false";
-ERROR = !MALException:calc.bit:22018!conversion of string 't' to type bit failed.
-MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
+ERROR = !conversion of string 't' to type bit failed.
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT cast('t' AS boolean) <> cast('f' AS boolean) AS "true";
-ERROR = !MALException:calc.bit:22018!conversion of string 't' to type bit failed.
-MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
+ERROR = !conversion of string 't' to type bit failed.
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO BOOLTBL1 (f1) VALUES (cast('t' AS boolean));
-ERROR = !MALException:calc.bit:22018!conversion of string 't' to type bit failed.
-MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
+ERROR = !conversion of string 't' to type bit failed.
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT '' AS zero, BOOLTBL1.*
            FROM BOOLTBL1
            WHERE booleq(cast('false' AS boolean), f1);
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such binary operator 'booleq(boolean,boolean)'
-MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
+ERROR = !SELECT: no such binary operator 'booleq(boolean,boolean)'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO BOOLTBL1 (f1) VALUES (cast('f' AS boolean));
-ERROR = !MALException:calc.bit:22018!conversion of string 'f' to type bit failed.
-MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
+ERROR = !conversion of string 'f' to type bit failed.
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO BOOLTBL2 (f1) VALUES (cast('f' AS boolean));
-ERROR = !MALException:calc.bit:22018!conversion of string 'f' to type bit failed.
-MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
+ERROR = !conversion of string 'f' to type bit failed.
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO BOOLTBL2 (f1) 
            VALUES ('XXX');  
-ERROR = !MALException:calc.bit:22018!conversion of string 'XXX' to type bit failed.
-MAPI  = (monetdb) /var/tmp/mtest-14902/.s.monetdb.35943
+ERROR = !conversion of string 'XXX' to type bit failed.
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT '' AS tf_12, BOOLTBL1.*, BOOLTBL2.*
            FROM BOOLTBL1, BOOLTBL2
            WHERE boolne(BOOLTBL2.f1,BOOLTBL1.f1);
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such binary operator 'boolne(boolean,boolean)'
+ERROR = !SELECT: no such binary operator 'boolne(boolean,boolean)'
+CODE  = 42000
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

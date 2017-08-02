@@ -12,7 +12,8 @@ stderr of test 'reset_session_vars.SF-1505987` in directory 'sql/test/BugTracker
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = commit;
-ERROR = !SQLException:sql.trans:SQLSTATE 2DM30 !COMMIT: not allowed in auto commit mode
+ERROR = !COMMIT: not allowed in auto commit mode
+CODE  = 2DM30
 
 # 10:38:14 >  
 # 10:38:14 >  Done.

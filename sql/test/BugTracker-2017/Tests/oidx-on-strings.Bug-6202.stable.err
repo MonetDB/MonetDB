@@ -31,28 +31,36 @@ stderr of test 'oidx-on-strings.Bug-6202` in directory 'sql/test/BugTracker-2017
 
 MAPI  = (monetdb) /var/tmp/mtest-19864/.s.monetdb.34473
 QUERY = create ordered index test_oidx1 on test_oidx (c2);
-ERROR = !SQLException:sql.alter_table:SQLSTATE 40002 !CREATE ORDERED INDEX: MALException:bat.orderidx:Type is not supported
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !CREATE ORDERED INDEX: MALException:bat.orderidx:Type is not supported
+CODE  = 40002
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop index test_oidx1;
-ERROR = !SQLException:sql.drop_index:SQLSTATE 42S12 !DROP INDEX: no such index 'test_oidx1'
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !DROP INDEX: no such index 'test_oidx1'
+CODE  = 42S12
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = create ordered index test_oidx1 on test_oidx (c2);
-ERROR = !SQLException:sql.alter_table:SQLSTATE 40002 !CREATE ORDERED INDEX: MALException:bat.orderidx:Type is not supported
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !CREATE ORDERED INDEX: MALException:bat.orderidx:Type is not supported
+CODE  = 40002
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop index test_oidx1;
-ERROR = !SQLException:sql.drop_index:SQLSTATE 42S12 !DROP INDEX: no such index 'test_oidx1'
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !DROP INDEX: no such index 'test_oidx1'
+CODE  = 42S12
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = create ordered index test_oidx1 on test_oidx (c2);
-ERROR = !SQLException:sql.alter_table:SQLSTATE 40002 !CREATE ORDERED INDEX: MALException:bat.orderidx:Type is not supported
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !CREATE ORDERED INDEX: MALException:bat.orderidx:Type is not supported
+CODE  = 40002
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop index test_oidx1;
-ERROR = !SQLException:sql.drop_index:SQLSTATE 42S12 !DROP INDEX: no such index 'test_oidx1'
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !DROP INDEX: no such index 'test_oidx1'
+CODE  = 42S12
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = create ordered index test_oidx1 on test_oidx (c2);
-ERROR = !SQLException:sql.alter_table:SQLSTATE 40002 !CREATE ORDERED INDEX: MALException:bat.orderidx:Type is not supported
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !CREATE ORDERED INDEX: MALException:bat.orderidx:Type is not supported
+CODE  = 40002
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop index test_oidx1;
-ERROR = !SQLException:sql.drop_index:SQLSTATE 42S12 !DROP INDEX: no such index 'test_oidx1'
+ERROR = !DROP INDEX: no such index 'test_oidx1'
+CODE  = 42S12
 
 # 17:01:36 >  
 # 17:01:36 >  "Done."

@@ -7,8 +7,9 @@ stderr of test 'create_on_ro_db_crash.SF-2830238` in directory 'sql/test/BugTrac
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = create table t2 (a int);
-ERROR = !SQLException:sql.cat:SQLSTATE 25006 !Schema statements cannot be executed on a readonly database.
-# builtin opt 	gdk_dbpath = /export/scratch1/mk/malerrors//Linux/var/monetdb5/dbfarm/demo
+ERROR = !Schema statements cannot be executed on a readonly database.
+CODE  = 25006
+# builtin opt 	gdk_dbpath = /ufs/sjoerd/@Monet-candidate/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
 # builtin opt 	gdk_alloc_map = no
 # builtin opt 	gdk_vmtrim = yes

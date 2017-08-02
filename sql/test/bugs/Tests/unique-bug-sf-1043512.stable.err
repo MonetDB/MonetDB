@@ -12,18 +12,23 @@ stderr of test 'unique-bug-sf-1043512` in directory 'sql/test/bugs` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into unique_test values (1);
-ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: UNIQUE constraint 'unique_test.unique_test_id_unique' violated
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
-ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
+ERROR = !INSERT INTO: UNIQUE constraint 'unique_test.unique_test_id_unique' violated
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = -- rollback our changes, either because the transaction is aborted, or to make
-ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = -- the table clean for the rest of the test
-ERROR = !SQLException:sql.execute:SQLSTATE 25005 !Current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into unique_test values (1);
-ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: UNIQUE constraint 'unique_test.unique_test_id_unique' violated
+ERROR = !INSERT INTO: UNIQUE constraint 'unique_test.unique_test_id_unique' violated
+CODE  = M0M29
 
 # 17:24:53 >  
 # 17:24:53 >  Done.

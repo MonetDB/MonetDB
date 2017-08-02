@@ -14,10 +14,12 @@ stderr of test 'update_set_default_crash` in directory 'sql/test/Update_Delete_a
 
 MAPI  = monetdb@sofia:38256
 QUERY = delete from t1 where id = 4;
-ERROR = !SQLException:assert:SQLSTATE M0M29 !UPDATE: PRIMARY KEY constraint 't2.t2_id_pkey' violated
-MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
+ERROR = !UPDATE: PRIMARY KEY constraint 't2.t2_id_pkey' violated
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = update t1 set id = 12 where id =3;
-ERROR = !SQLException:assert:SQLSTATE M0M29 !UPDATE: NOT NULL constraint violated for column 't2.id'
+ERROR = !UPDATE: NOT NULL constraint violated for column 't2.id'
+CODE  = M0M29
 
 # 18:14:38 >  
 # 18:14:38 >  Done.

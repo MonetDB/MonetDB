@@ -76,7 +76,8 @@ QUERY = INSERT INTO Image
                ,imageBinaries)
         VALUES
                (MAX(ImageId)+1,'data');
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !MAX: missing group by
+ERROR = !MAX: missing group by
+CODE  = 42000
 
 # 09:57:59 >  
 # 09:57:59 >  Done.

@@ -95,7 +95,7 @@ fromblob_idx(str *retval, blob *b, int *idx)
 	}
 	*retval = s = (str) GDKmalloc(1 + r - p);
 	if( *retval == NULL)
-		throw(MAL, "blob.tostring", MAL_MALLOC_FAIL);
+		throw(MAL, "blob.tostring", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	for (; p < r; p++, s++)
 		*s = *p;
 	*s = 0;
@@ -363,7 +363,7 @@ BLOBtoblob(blob **retval, str *s)
 	blob *b = (blob *) GDKmalloc(blobsize(len));
 
 	if( b == NULL)
-		throw(MAL, "blob.toblob", MAL_MALLOC_FAIL);
+		throw(MAL, "blob.toblob", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	b->nitems = len;
 	memcpy(b->data, *s, len);
 	*retval = b;
@@ -494,7 +494,7 @@ BLOBblob_blob(blob **d, blob **s)
 
 	*d = b = GDKmalloc(len);
 	if (b == NULL)
-		throw(MAL,"blob", MAL_MALLOC_FAIL);
+		throw(MAL,"blob", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	b->nitems = (*s)->nitems;
 	if (b->nitems != ~(size_t) 0 && b->nitems != 0)
 		memcpy(b->data, (*s)->data, b->nitems);

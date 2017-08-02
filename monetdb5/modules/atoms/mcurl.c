@@ -67,7 +67,7 @@ handle_get_request(str *retval, str *url)
 
 	chunk.memory = malloc(1);  /* will be grown as needed by the realloc above */
 	if (chunk.memory == NULL)
-		throw(MAL, "mcurl.getrequest", MAL_MALLOC_FAIL);
+		throw(MAL, "mcurl.getrequest", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	chunk.size = 0;    /* no data at this point */
 
 	curl_global_init(CURL_GLOBAL_ALL);
@@ -135,7 +135,7 @@ handle_put_request(str *retval, str *url)
 
 	chunk.memory = malloc(1);  /* will be grown as needed by the realloc above */
 	if (chunk.memory == NULL)
-		throw(MAL, "mcurl.putrequest", MAL_MALLOC_FAIL);
+		throw(MAL, "mcurl.putrequest", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	chunk.size = 0;    /* no data at this point */
 
 	curl_global_init(CURL_GLOBAL_ALL);
@@ -203,7 +203,7 @@ handle_post_request(str *retval, str *url)
 
 	chunk.memory = malloc(1);  /* will be grown as needed by the realloc above */
 	if (chunk.memory == NULL)
-		throw(MAL, "mcurl.postrequest", MAL_MALLOC_FAIL);
+		throw(MAL, "mcurl.postrequest", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	chunk.size = 0;    /* no data at this point */
 
 	curl_global_init(CURL_GLOBAL_ALL);
@@ -272,7 +272,7 @@ handle_delete_request(str *retval, str *url)
 
 	chunk.memory = malloc(1);  /* will be grown as needed by the realloc above */
 	if (chunk.memory == NULL)
-		throw(MAL, "mcurl.deleterequest", MAL_MALLOC_FAIL);
+		throw(MAL, "mcurl.deleterequest", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	chunk.size = 0;    /* no data at this point */
 
 	curl_global_init(CURL_GLOBAL_ALL);

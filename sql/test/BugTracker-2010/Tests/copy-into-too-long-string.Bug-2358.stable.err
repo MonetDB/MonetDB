@@ -74,7 +74,8 @@ MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = COPY 1 RECORDS INTO t FROM STDIN USING DELIMITERS '|','
         ','"' NULL AS '';
         "abcd"
-ERROR = !SQLException:importTable:SQLSTATE 42000 !Failed to import table 't', line 1 field c 'varchar(3)' expected in 'abcd'
+ERROR = !Failed to import table 't', line 1 field c 'varchar(3)' expected in 'abcd'
+CODE  = 42000
 
 # 15:34:26 >  
 # 15:34:26 >  Done.

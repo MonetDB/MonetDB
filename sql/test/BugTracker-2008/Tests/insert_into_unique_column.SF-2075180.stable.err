@@ -82,16 +82,20 @@ stderr of test 'insert_into_unique_column.SF-2075180` in directory 'sql/test/Bug
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO FEAT16 VALUES (2);
-ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: UNIQUE constraint 'feat16.feat16_pnum_unique' violated
-MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
+ERROR = !INSERT INTO: UNIQUE constraint 'feat16.feat16_pnum_unique' violated
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO FEAT16 VALUES (NULL, 2);
-ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: UNIQUE constraint 'feat16.feat16_pnum_unique' violated
-MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
+ERROR = !INSERT INTO: UNIQUE constraint 'feat16.feat16_pnum_unique' violated
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO FEAT16 VALUES (2, 2);
-ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: UNIQUE constraint 'feat16.feat16_age_pnum_unique' violated
-MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
+ERROR = !INSERT INTO: UNIQUE constraint 'feat16.feat16_age_pnum_unique' violated
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into t2 select * from t1;
-ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: UNIQUE constraint 't2.t2_id_unique' violated
+ERROR = !INSERT INTO: UNIQUE constraint 't2.t2_id_unique' violated
+CODE  = M0M29
 
 # 00:04:36 >  
 # 00:04:36 >  Done.

@@ -32,7 +32,8 @@ stderr of test 'verify_load` in directory 'sql/backends/monet5/vaults/bam` itsel
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT *
         FROM bam.alignments_3;
-ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !SELECT: no such table 'alignments_3'
+ERROR = !SELECT: no such table 'alignments_3'
+CODE  = 42S02
 
 # 10:22:39 >  
 # 10:22:39 >  "Done."

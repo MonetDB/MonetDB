@@ -32,10 +32,12 @@ stderr of test 'mergedrop` in directory 'sql/test/mergetables` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-25313/.s.monetdb.33568
 QUERY = DROP TABLE part1;
-ERROR = !SQLException:sql.droptable:SQLSTATE 42000 !DROP TABLE: unable to drop table part1 (there are database objects which depend on it)
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !DROP TABLE: unable to drop table part1 (there are database objects which depend on it)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = DROP TABLE part2;
-ERROR = !SQLException:sql.droptable:SQLSTATE 42000 !DROP TABLE: unable to drop table part2 (there are database objects which depend on it)
+ERROR = !DROP TABLE: unable to drop table part2 (there are database objects which depend on it)
+CODE  = 42000
 
 # 22:49:56 >  
 # 22:49:56 >  "Done."

@@ -7,14 +7,17 @@ stderr of test 'mserver5-sql-readonly-view` in directory 'sql/test/mserver5-sql-
 
 MAPI  = monetdb@sofia:38972
 QUERY = insert into v1 (a) values ( 2 );
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !INSERT INTO: cannot insert into view 'v1'
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !INSERT INTO: cannot insert into view 'v1'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = update v1 set a = 3 where a = 2;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !UPDATE: cannot update view 'v1'
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !UPDATE: cannot update view 'v1'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = delete from v1 where a = 3;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !DELETE FROM: cannot delete from view 'v1'
-# builtin opt 	gdk_dbpath = /export/scratch1/mk/malerrors//Linux/var/monetdb5/dbfarm/demo
+ERROR = !DELETE FROM: cannot delete from view 'v1'
+CODE  = 42000
+# builtin opt 	gdk_dbpath = /ufs/sjoerd/@Monet-candidate/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
 # builtin opt 	gdk_alloc_map = no
 # builtin opt 	gdk_vmtrim = yes
@@ -71,20 +74,25 @@ ERROR = !ParseException:SQLparser:SQLSTATE 42000 !DELETE FROM: cannot delete fro
 # cmdline opt 	gdk_dbname = mTests_test_mserver5-sql-readonly
 MAPI  = monetdb@sofia:38972
 QUERY = create view v2 as select * from t1;
-ERROR = !SQLException:sql.cat:SQLSTATE 25006 !Schema statements cannot be executed on a readonly database.
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !Schema statements cannot be executed on a readonly database.
+CODE  = 25006
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop view v1;
-ERROR = !ParseException:SQLparser:SQLSTATE 25006 !Schema statements cannot be executed on a readonly database.
-MAPI  = (monetdb) /var/tmp/mtest-12543/.s.monetdb.38884
+ERROR = !Schema statements cannot be executed on a readonly database.
+CODE  = 25006
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into v1 (a) values ( 1 );
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !INSERT INTO: cannot insert into view 'v1'
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !INSERT INTO: cannot insert into view 'v1'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = update v1 set a = 2 where a = 1;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !UPDATE: cannot update view 'v1'
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !UPDATE: cannot update view 'v1'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = delete from v1 where a = 1;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !DELETE FROM: cannot delete from view 'v1'
-# builtin opt 	gdk_dbpath = /export/scratch1/mk/malerrors//Linux/var/monetdb5/dbfarm/demo
+ERROR = !DELETE FROM: cannot delete from view 'v1'
+CODE  = 42000
+# builtin opt 	gdk_dbpath = /ufs/sjoerd/@Monet-candidate/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
 # builtin opt 	gdk_alloc_map = no
 # builtin opt 	gdk_vmtrim = yes

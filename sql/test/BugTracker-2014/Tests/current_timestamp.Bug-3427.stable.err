@@ -30,10 +30,12 @@ stderr of test 'current_timestamp.Bug-3427` in directory 'sql/test/BugTracker-20
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = set t = current_time;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !types timetz(7,0) and timestamp(7,0) are not equal
-MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
+ERROR = !types timetz(7,0) and timestamp(7,0) are not equal
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = create table d(t timestamp default current_time, i integer);
-ERROR = !SQLException:sql.catalog:SQLSTATE 42000 !SQLSTATE 42000 !types timetz(7,0) and timestamp(7,0) are not equal
+ERROR = !42000!types timetz(7,0) and timestamp(7,0) are not equal
+CODE  = 42000
 
 # 14:58:53 >  
 # 14:58:53 >  "Done."

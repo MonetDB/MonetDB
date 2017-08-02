@@ -30,28 +30,28 @@ stderr of test 'quantiles` in directory 'sql/test/quantiles` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-6487/.s.monetdb.31354
 QUERY = select quantile(l_extendedprice,-1.0) from lit;
-ERROR = !MALException:aggr.subquantile:quantile value of -1.000000 is not in range [0,1]
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
+ERROR = !quantile value of -1.000000 is not in range [0,1]
+MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
 QUERY = select quantile(l_extendedprice,-1) from lit;
-ERROR = !MALException:aggr.subquantile:quantile value of -1.000000 is not in range [0,1]
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
+ERROR = !quantile value of -1.000000 is not in range [0,1]
+MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
 QUERY = select quantile(l_extendedprice,42) from lit;
-ERROR = !MALException:aggr.subquantile:quantile value of 42.000000 is not in range [0,1]
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
+ERROR = !quantile value of 42.000000 is not in range [0,1]
+MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
 QUERY = select quantile(l_extendedprice,42.0) from lit;
-ERROR = !MALException:aggr.subquantile:quantile value of 42.000000 is not in range [0,1]
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
+ERROR = !quantile value of 42.000000 is not in range [0,1]
+MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
 QUERY = select quantile(l_extendedprice,-1.0) from lit group by l_returnflag;
-ERROR = !MALException:aggr.subquantile:quantile value of -1.000000 is not in range [0,1]
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
+ERROR = !quantile value of -1.000000 is not in range [0,1]
+MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
 QUERY = select quantile(l_extendedprice,-1) from lit group by l_returnflag;
-ERROR = !MALException:aggr.subquantile:quantile value of -1.000000 is not in range [0,1]
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
+ERROR = !quantile value of -1.000000 is not in range [0,1]
+MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
 QUERY = select quantile(l_extendedprice,42) from lit group by l_returnflag;
-ERROR = !MALException:aggr.subquantile:quantile value of 42.000000 is not in range [0,1]
-MAPI  = (monetdb) /var/tmp/mtest-26377/.s.monetdb.39857
+ERROR = !quantile value of 42.000000 is not in range [0,1]
+MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
 QUERY = select quantile(l_extendedprice,42.0) from lit group by l_returnflag;
-ERROR = !MALException:aggr.subquantile:quantile value of 42.000000 is not in range [0,1]
+ERROR = !quantile value of 42.000000 is not in range [0,1]
 
 # 12:24:32 >  
 # 12:24:32 >  "Done."

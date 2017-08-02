@@ -14,7 +14,8 @@ stderr of test 'auto_increment.SF-1834820` in directory 'sql/test/BugTracker` it
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO testusers (name, fullname) VALUES ('fred', 'Fred Flintstone');
-ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: PRIMARY KEY constraint 'testusers.testusers_id_pkey' violated
+ERROR = !INSERT INTO: PRIMARY KEY constraint 'testusers.testusers_id_pkey' violated
+CODE  = M0M29
 
 
 # 15:29:02 >  

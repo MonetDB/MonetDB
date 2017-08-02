@@ -12,7 +12,8 @@ stderr of test 'temporary_tables.SF-1715669` in directory 'sql/test/BugTracker` 
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop table t1715669a;
-ERROR = !SQLException:sql.droptable:SQLSTATE 42S02 !DROP TABLE: no such table 't1715669a'
+ERROR = !DROP TABLE: no such table 't1715669a'
+CODE  = 42S02
 
 # 09:35:56 >  
 # 09:35:56 >  Done.

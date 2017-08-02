@@ -29,22 +29,28 @@ stderr of test 'drop_not_null_on_pkey.Bug-6189` in directory 'sql/test/BugTracke
 
 MAPI  = (monetdb) /var/tmp/mtest-2736/.s.monetdb.35008
 QUERY = INSERT INTO "PKeyNotNull" values ('C12', NULL, 1);
-ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: NOT NULL constraint violated for column PKeyNotNull.PK_COL2
-MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
+ERROR = !INSERT INTO: NOT NULL constraint violated for column PKeyNotNull.PK_COL2
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = ALTER TABLE "PKeyNotNull" ALTER "PK_COL2" SET NULL;
-ERROR = !SQLException:sql.alter_table:SQLSTATE 40000 !NOT NULL CONSTRAINT: cannot change NOT NULL CONSTRAINT for column 'PK_COL2' as its part of the PRIMARY KEY
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !NOT NULL CONSTRAINT: cannot change NOT NULL CONSTRAINT for column 'PK_COL2' as its part of the PRIMARY KEY
+CODE  = 40000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO "PKeyNotNull" values ('C12', NULL, 2);
-ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: NOT NULL constraint violated for column PKeyNotNull.PK_COL2
-MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
+ERROR = !INSERT INTO: NOT NULL constraint violated for column PKeyNotNull.PK_COL2
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO "PKeyImplicitNotNull" values ('C12', NULL, 1);
-ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: NOT NULL constraint violated for column PKeyImplicitNotNull.PK_COL2
-MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
+ERROR = !INSERT INTO: NOT NULL constraint violated for column PKeyImplicitNotNull.PK_COL2
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = ALTER TABLE "PKeyImplicitNotNull" ALTER "PK_COL2" SET NULL;
-ERROR = !SQLException:sql.alter_table:SQLSTATE 40000 !NOT NULL CONSTRAINT: cannot change NOT NULL CONSTRAINT for column 'PK_COL2' as its part of the PRIMARY KEY
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !NOT NULL CONSTRAINT: cannot change NOT NULL CONSTRAINT for column 'PK_COL2' as its part of the PRIMARY KEY
+CODE  = 40000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO "PKeyImplicitNotNull" values ('C12', NULL, 2);
-ERROR = !SQLException:assert:SQLSTATE M0M29 !INSERT INTO: NOT NULL constraint violated for column PKeyImplicitNotNull.PK_COL2
+ERROR = !INSERT INTO: NOT NULL constraint violated for column PKeyImplicitNotNull.PK_COL2
+CODE  = M0M29
 
 # 13:54:58 >  
 # 13:54:58 >  "Done."

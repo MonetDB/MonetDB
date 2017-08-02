@@ -43,7 +43,7 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	setVariableScope(mb);
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)
-		throw(MAL,"optimizer.jit", MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.jit", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	/* peephole optimization */
 	for (i = 0; i < limit; i++) {

@@ -40,7 +40,7 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
     limit= mb->stop;
     if ( newMalBlkStmt(mb, mb->ssize + 20) < 0)
-		throw(MAL,"optimizer.volcano",MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.volcano", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];

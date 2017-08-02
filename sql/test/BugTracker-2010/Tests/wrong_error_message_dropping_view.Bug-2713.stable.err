@@ -73,7 +73,8 @@ stderr of test 'wrong_error_message_dropping_view.Bug-2713` in directory 'sql/te
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = drop view t2713;
-ERROR = !SQLException:sql.drop_view:SQLSTATE 42000 !DROP VIEW: unable to drop view 't2713': is a table
+ERROR = !DROP VIEW: unable to drop view 't2713': is a table
+CODE  = 42000
 
 # 22:26:26 >  
 # 22:26:26 >  Done.

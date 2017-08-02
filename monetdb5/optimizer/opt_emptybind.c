@@ -69,7 +69,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	// track of where 'emptybind' results are produced
 	empty = (int *) GDKzalloc(mb->vsize * sizeof(int));
 	if ( empty == NULL)
-		throw(MAL,"optimizer.emptybind",MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.emptybind", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	updated= (InstrPtr *) GDKzalloc(esize * sizeof(InstrPtr));
 	if( updated == 0){
@@ -93,7 +93,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	if ( newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(empty);
 		GDKfree(updated);
-		throw(MAL,"optimizer.emptybind",MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.emptybind", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	/* Symbolic evaluation of the empty BAT variables */

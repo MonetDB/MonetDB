@@ -31,7 +31,8 @@ stderr of test 'timestamp_minus_date.Bug-2977` in directory 'sql/test/BugTracker
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select (cast('1970-01-01 0:00' as timestamp) - cast('1970-01-01' as date));
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such binary operator 'sql_sub(timestamp,date)'
+ERROR = !SELECT: no such binary operator 'sql_sub(timestamp,date)'
+CODE  = 42000
 
 # 13:51:43 >  
 # 13:51:43 >  "Done."

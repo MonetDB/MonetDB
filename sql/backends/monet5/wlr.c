@@ -377,7 +377,7 @@ WLRinit(void)
 		return MAL_SUCCEED;
 	// time to continue the consolidation process in the background
 	if (MT_create_thread(&wlr_thread, WLRprocessScheduler, (void*) cntxt, MT_THR_JOINABLE) < 0) {
-			throw(SQL,"wlr.init","SQLSTATE 42000 !""Starting wlr manager failed");
+			throw(SQL,"wlr.init",SQLSTATE(42000) "Starting wlr manager failed");
 	}
 	GDKregister(wlr_thread);
 	return MAL_SUCCEED;
@@ -404,7 +404,7 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( getArgType(mb, pci, 1) == TYPE_str){
 			wlr_limit = -1;
 			if( strcmp(GDKgetenv("gdk_dbname"),*getArgReference_str(stk,pci,1)) == 0)
-				throw(SQL,"wlr.replicate","SQLSTATE 42000 !""Master and replicate should be different");
+				throw(SQL,"wlr.replicate",SQLSTATE(42000) "Master and replicate should be different");
 			strncpy(wlr_master, *getArgReference_str(stk,pci,1), IDLENGTH);
 		}
 	} else  {
@@ -513,7 +513,7 @@ WLRsetreplicabeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	new = *getArgReference_int(stk,pci,1);
 	if ( new < wlc_beat || new < 1)
-		throw(SQL,"replicatebeat","SQLSTATE 42000 !""Cycle time should be larger then master or >= 1 second");
+		throw(SQL,"replicatebeat",SQLSTATE(42000) "Cycle time should be larger then master or >= 1 second");
 	wlr_beat = new;
 	return MAL_SUCCEED;
 }
@@ -531,7 +531,7 @@ WLRquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	// we need to get rid of the escaped quote.
 	x = qtxt= (char*) GDKmalloc(strlen(qry) +1);
 	if( qtxt == NULL)
-		throw(SQL,"wlr.query","SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+		throw(SQL,"wlr.query",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	for(y = qry; *y; y++){
 		if( *y == '\\' ){
 			if( *(y+1) ==  '\'')
@@ -634,16 +634,16 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL)
-		throw(SQL, "sql.append", "SQLSTATE 3F000 !""Schema missing %s",sname);
+		throw(SQL, "sql.append", SQLSTATE(3F000) "Schema missing %s",sname);
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
-		throw(SQL, "sql.append", "SQLSTATE 42S02 !""Table missing %s.%s",sname,tname);
+		throw(SQL, "sql.append", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
 	// get the data into local BAT
 
 	tpe= getArgType(mb,pci,4);
 	ins = COLnew(0, tpe, 0, TRANSIENT);
 	if( ins == NULL){
-		throw(SQL,"WLRappend","SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+		throw(SQL,"WLRappend",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	switch(ATOMstorage(tpe)){
@@ -706,15 +706,15 @@ WLRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL)
-		throw(SQL, "sql.append", "SQLSTATE 3F000 !""Schema missing %s",sname);
+		throw(SQL, "sql.append", SQLSTATE(3F000) "Schema missing %s",sname);
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
-		throw(SQL, "sql.append", "SQLSTATE 42S02 !""Table missing %s.%s",sname,tname);
+		throw(SQL, "sql.append", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
 	// get the data into local BAT
 
 	ins = COLnew(0, TYPE_oid, 0, TRANSIENT);
 	if( ins == NULL){
-		throw(SQL,"WLRappend","SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+		throw(SQL,"WLRappend",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	for( i = 3; i < pci->argc; i++){
@@ -772,20 +772,20 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL)
-		throw(SQL, "sql.update", "SQLSTATE 3F000 !""Schema missing %s",sname);
+		throw(SQL, "sql.update", SQLSTATE(3F000) "Schema missing %s",sname);
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
-		throw(SQL, "sql.update", "SQLSTATE 42S02 !""Table missing %s.%s",sname,tname);
+		throw(SQL, "sql.update", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
 	// get the data into local BAT
 
 	tids = COLnew(0, TYPE_oid, 0, TRANSIENT);
 	if( tids == NULL){
-		throw(SQL,"WLRupdate","SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+		throw(SQL,"WLRupdate",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	upd = COLnew(0, tpe, 0, TRANSIENT);
 	if( upd == NULL){
 		BBPunfix(((BAT *) tids)->batCacheid);
-		throw(SQL,"WLRupdate","SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+		throw(SQL,"WLRupdate",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
         if (BUNappend(tids, &o, FALSE) != GDK_SUCCEED) {
                 msg = createException(MAL, "WLRupdate", "BUNappend failed");
@@ -851,10 +851,10 @@ WLRclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	s = mvc_bind_schema(m, *sname);
 	if (s == NULL)
-		throw(SQL, "sql.clear_table", "SQLSTATE 3F000 !""Schema missing %s",*sname);
+		throw(SQL, "sql.clear_table", SQLSTATE(3F000) "Schema missing %s",*sname);
 	t = mvc_bind_table(m, s, *tname);
 	if (t == NULL)
-		throw(SQL, "sql.clear_table", "SQLSTATE 42S02 !""Table missing %s.%s",*sname,*tname);
+		throw(SQL, "sql.clear_table", SQLSTATE(42S02) "Table missing %s.%s",*sname,*tname);
 	(void) mvc_clear_table(m, t);
 	return MAL_SUCCEED;
 }

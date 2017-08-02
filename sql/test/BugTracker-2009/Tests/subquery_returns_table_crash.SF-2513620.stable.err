@@ -82,7 +82,8 @@ stderr of test 'subquery_returns_table_crash.SF-2513620` in directory 'sql/test/
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select f1();
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: no such operator 'f1'
+ERROR = !SELECT: no such operator 'f1'
+CODE  = 42000
 
 # 15:06:01 >  
 # 15:06:01 >  Done.

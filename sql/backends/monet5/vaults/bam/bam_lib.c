@@ -89,7 +89,7 @@ bam_flag(bit * ret, sht * flag, str * name)
 	k = flag_str2sht(*name);
 
 	if (k < 0)
-		throw(MAL, "bam_flag", "SQLSTATE BA000 !""Unknown flag name given: %s\n",
+		throw(MAL, "bam_flag", SQLSTATE(BA000) "Unknown flag name given: %s\n",
 			  *name);
 	*ret = kth_bit(*flag, k);
 	return MAL_SUCCEED;
@@ -135,7 +135,7 @@ reverse_seq(str * ret, str * seq)
 
 	result = GDKmalloc((len + 1) * sizeof(char));
 	if (result == NULL)
-		throw(MAL, "reverse_seq", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+		throw(MAL, "reverse_seq", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	backward = &result[len-1];
 	for (i = 0; i < len; ++i) {
@@ -162,7 +162,7 @@ reverse_qual(str * ret, str * qual)
 
 	result = GDKmalloc((len + 1) * sizeof(char));
 	if (result == NULL)
-		throw(MAL, "reverse_qual", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+		throw(MAL, "reverse_qual", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	backward = &result[len-1];
 	for (i = 0; i < len; ++i)
@@ -176,7 +176,7 @@ reverse_qual(str * ret, str * qual)
 	str tmp; \
 	cnt = strtol(s, &tmp, 10); \
 	if(cnt <= 0 || s == tmp || *s == '\0') { \
-		throw(MAL, fn, "SQLSTATE BA000 !""Could not parse CIGAR string"); \
+		throw(MAL, fn, SQLSTATE(BA000) "Could not parse CIGAR string"); \
 	} \
 	s = tmp; \
 	op = *s++; \
@@ -251,7 +251,7 @@ seq_char(str * ret, int * ref_pos, str * alg_seq, int * alg_pos, str * alg_cigar
 		return MAL_SUCCEED;
 	}
 	if(((*ret) = GDKmalloc(2 * sizeof(char))) == NULL) {
-		throw(MAL, "seq_char", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+		throw(MAL, "seq_char", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	(*ret)[0] = (*alg_seq)[seq_pos];
 	(*ret)[1] = '\0';
@@ -291,17 +291,17 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 
 	k = flag_str2sht(*name);
 	if (k < 0)
-		throw(MAL, "bam_flag", "SQLSTATE BA000 !""Unknown flag name given: %s\n",
+		throw(MAL, "bam_flag", SQLSTATE(BA000) "Unknown flag name given: %s\n",
 			  *name);
 
 	if ((input = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bam_flag_bat", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
+		throw(MAL, "bam_flag_bat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	/* allocate result BAT */
 	output = COLnew(input->hseqbase, TYPE_bit, BATcount(input), TRANSIENT);
 	if (output == NULL) {
 		BBPunfix(input->batCacheid);
-		throw(MAL, "bam_flag_bat", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+		throw(MAL, "bam_flag_bat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	
 	init_props();
@@ -331,13 +331,13 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 	assert(ret != NULL && bid != NULL);									\
 																		\
 	if ((input = BATdescriptor(*bid)) == NULL)							\
-		throw(MAL, "reverse_seq_bat", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);			\
+		throw(MAL, "reverse_seq_bat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);			\
 																		\
 	/* allocate result BAT */											\
 	output = COLnew(input->hseqbase, TYPE_str, BATcount(input), TRANSIENT); \
 	if (output == NULL) {												\
 		BBPunfix(input->batCacheid);									\
-		throw(MAL, "reverse_seq_bat", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);					\
+		throw(MAL, "reverse_seq_bat", SQLSTATE(HY001) MAL_MALLOC_FAIL);					\
 	}																	\
 																		\
 	li = bat_iterator(input);											\
@@ -354,7 +354,7 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 		if (BUNappend(output, (ptr) r, FALSE) != GDK_SUCCEED) {			\
 			BBPunfix(input->batCacheid);								\
 			BBPreclaim(output);											\
-			throw(MAL, "reverse_seq_bat", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);				\
+			throw(MAL, "reverse_seq_bat", SQLSTATE(HY001) MAL_MALLOC_FAIL);				\
 		}																\
 		GDKfree(r);														\
 	}																	\
@@ -393,12 +393,12 @@ seq_length_bat(bat * ret, bat * bid)
 	assert(ret != NULL && bid != NULL);
 
 	if ((input = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "seq_length_bat", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
+		throw(MAL, "seq_length_bat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	/* allocate result BAT */
 	output = COLnew(input->hseqbase, TYPE_int, BATcount(input), TRANSIENT);
 	if (output == NULL) {
-		throw(MAL, "seq_length_bat", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+		throw(MAL, "seq_length_bat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	init_props();
@@ -438,13 +438,13 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 	if ((seqs = BATdescriptor(*alg_seq)) == NULL ||
 	    (poss = BATdescriptor(*alg_pos)) == NULL ||
 		(cigars = BATdescriptor(*alg_cigar)) == NULL) {
-		msg = createException(MAL, "seq_char_bat", "SQLSTATE HY002 !"RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "seq_char_bat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto cleanup;
 	}
 
 	if(BATcount(seqs) != BATcount(poss) || BATcount(seqs) != BATcount(cigars)) {
 		msg = createException(MAL, "seq_char_bat", 
-			"SQLSTATE BA000 !""Misalignment in input BATs: "BUNFMT"/"BUNFMT"/"BUNFMT, 
+			SQLSTATE(BA000) "Misalignment in input BATs: "BUNFMT"/"BUNFMT"/"BUNFMT, 
 			BATcount(poss), BATcount(seqs), BATcount(cigars));
 		goto cleanup;
 	}
@@ -452,7 +452,7 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 	/* allocate result BAT */
 	result = COLnew(seqs->hseqbase, TYPE_str, BATcount(cigars), TRANSIENT);
 	if (result == NULL) {
-		msg = createException(MAL, "seq_char_bat", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+		msg = createException(MAL, "seq_char_bat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
@@ -476,7 +476,7 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 			goto cleanup;
 		}
 		if (BUNappend(result, (ptr) r, FALSE) != GDK_SUCCEED) {
-			msg = createException(MAL, "seq_char_bat", "SQLSTATE HY001 !"MAL_MALLOC_FAIL);
+			msg = createException(MAL, "seq_char_bat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
 		GDKfree(r);

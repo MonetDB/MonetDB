@@ -32,7 +32,8 @@ stderr of test 'grantMonetdbToSchemaOwner.Bug-3771` in directory 'sql/test/Users
 
 MAPI  = (owner) /var/tmp/mtest-10039/.s.monetdb.37978
 QUERY = set role monetdb;
-ERROR = !SQLException:sql.update_var:SQLSTATE 42000 !Role (monetdb) missing
+ERROR = !SQLException:sql.update_var:42000!Role (monetdb) missing
+CODE  = 42100
 
 # 16:37:25 >  
 # 16:37:25 >  "Done."

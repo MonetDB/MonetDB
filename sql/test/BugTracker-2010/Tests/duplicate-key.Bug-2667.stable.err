@@ -73,10 +73,12 @@ stderr of test 'duplicate-key.Bug-2667` in directory 'sql/test/BugTracker-2010` 
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = ALTER TABLE mulpk ADD CONSTRAINT pk2 PRIMARY KEY (id);
-ERROR = !SQLException:sql.alter_table:SQLSTATE 40000 !CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY
-MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
+ERROR = !CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY
+CODE  = 40000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = ALTER TABLE mulpk ADD CONSTRAINT pk3 PRIMARY KEY (id);
-ERROR = !SQLException:sql.alter_table:SQLSTATE 40000 !CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY
+ERROR = !CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY
+CODE  = 40000
 
 # 12:43:13 >  
 # 12:43:13 >  Done.

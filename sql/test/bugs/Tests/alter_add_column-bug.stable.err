@@ -14,7 +14,8 @@ stderr of test 'alter_add_column-bug` in directory 'sql/test/bugs` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = ALTER TABLE "myschema"."COLLECTION_INFO" ADD COLUMN test_col1  varchar(256);
-ERROR = !ParseException:SQLparser:SQLSTATE 42S02 !ALTER TABLE: no such table 'COLLECTION_INFO' in schema 'myschema'
+ERROR = !ALTER TABLE: no such table 'COLLECTION_INFO' in schema 'myschema'
+CODE  = 42S02
 
 # 23:04:06 >  
 # 23:04:06 >  Done.
