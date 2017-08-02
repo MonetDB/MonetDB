@@ -139,19 +139,15 @@ relational_func_create_result(mvc *sql, MalBlkPtr mb, InstrPtr q, sql_rel *f)
 	return q;
 }
 
-
 static int
-_create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *rel, stmt *call, list *rel_ops, int inline_func)
+_create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *r, stmt *call, list *rel_ops, int inline_func)
 {
-	sql_rel *r;
 	Client c = MCgetClient(m->clientid);
 	backend *be = (backend *) c->sqlcontext;
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0;
 	Symbol backup = NULL, curPrg = NULL;
 	int old_argc = be->mvc->argc;
-
-	r = rel_optimizer(m, rel);
 
 	backup = c->curprg;
 	curPrg = c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
@@ -196,7 +192,10 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 			int varid = 0;
 			char buf[64];
 
-			snprintf(buf,64,"A%d",e->flag);
+			if (e->type == e_atom) 
+				snprintf(buf,64,"A%d",e->flag);
+			else
+				snprintf(buf,64,"A%s",e->name);
 			varid = newVariable(curBlk, (char *)buf, strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
@@ -246,7 +245,6 @@ rel2str( mvc *sql, sql_rel *rel)
 	mnstr_destroy(s);
 	return res;
 }
-
 
 /* stub and remote function */
 static int
