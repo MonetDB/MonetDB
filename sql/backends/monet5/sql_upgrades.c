@@ -460,7 +460,8 @@ sql_update_dec2016(Client c, mvc *sql)
 			" sorted boolean,\n"
 			" revsorted boolean,\n"
 			" \"unique\" boolean,\n"
-			" orderidx bigint\n"
+			" orderidx bigint,\n"
+			" compressed boolean\n"
 			")\n"
 			"external name sql.\"storage\";\n"
 			"create view sys.\"storage\" as select * from sys.\"storage\"();\n"
@@ -482,7 +483,8 @@ sql_update_dec2016(Client c, mvc *sql)
 			" sorted boolean,\n"
 			" revsorted boolean,\n"
 			" \"unique\" boolean,\n"
-			" orderidx bigint\n"
+			" orderidx bigint,\n"
+			" compressed boolean\n"
 			")\n"
 			"external name sql.\"storage\";\n"
 			"create function sys.\"storage\"( sname string, tname string)\n"
@@ -503,7 +505,8 @@ sql_update_dec2016(Client c, mvc *sql)
 			" sorted boolean,\n"
 			" revsorted boolean,\n"
 			" \"unique\" boolean,\n"
-			" orderidx bigint\n"
+			" orderidx bigint,\n"
+			" compressed boolean\n"
 			")\n"
 			"external name sql.\"storage\";\n"
 			"create function sys.\"storage\"( sname string, tname string, cname string)\n"
@@ -524,14 +527,15 @@ sql_update_dec2016(Client c, mvc *sql)
 			" sorted boolean,\n"
 			" revsorted boolean,\n"
 			" \"unique\" boolean,\n"
-			" orderidx bigint\n"
+			" orderidx bigint,\n"
+			" compressed boolean\n"
 			")\n"
 			"external name sql.\"storage\";\n"
 			"create procedure sys.storagemodelinit()\n"
 			"begin\n"
 			" delete from sys.storagemodelinput;\n"
 			" insert into sys.storagemodelinput\n"
-			" select X.\"schema\", X.\"table\", X.\"column\", X.\"type\", X.typewidth, X.count, 0, X.typewidth, false, X.sorted, X.revsorted, X.\"unique\", X.orderidx from sys.\"storage\"() X;\n"
+			" select X.\"schema\", X.\"table\", X.\"column\", X.\"type\", X.typewidth, X.count, 0, X.typewidth, false, X.sorted, X.revsorted, X.\"unique\", X.orderidx , X.compressed from sys.\"storage\"() X;\n"
 			" update sys.storagemodelinput\n"
 			" set reference = true\n"
 			" where concat(concat(\"schema\",\"table\"), \"column\") in (\n"
@@ -562,14 +566,15 @@ sql_update_dec2016(Client c, mvc *sql)
 			" sorted boolean,\n"
 			" revsorted boolean,\n"
 			" \"unique\" boolean,\n"
-			" orderidx bigint)\n"
+			" orderidx bigint,\n"
+			" compressed boolean)\n"
 			"begin\n"
 			" return select I.\"schema\", I.\"table\", I.\"column\", I.\"type\", I.\"count\",\n"
 			" columnsize(I.\"type\", I.count, I.\"distinct\"),\n"
 			" heapsize(I.\"type\", I.\"distinct\", I.\"atomwidth\"),\n"
 			" hashsize(I.\"reference\", I.\"count\"),\n"
 			" imprintsize(I.\"count\",I.\"type\"),\n"
-			" I.sorted, I.revsorted, I.\"unique\", I.orderidx\n"
+			" I.sorted, I.revsorted, I.\"unique\", I.orderidx, I.compressed\n"
 			" from sys.storagemodelinput I;\n"
 			"end;\n"
 			"create view sys.storagemodel as select * from sys.storagemodel();\n"
@@ -803,6 +808,43 @@ sql_update_jul2017(Client c, mvc *sql)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_mosaic(Client c, mvc *sql)
+{
+	size_t bufsize = 10240, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+
+	(void) sql;
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	/* 76_mosaic.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop function mosaic_layout(sch string, tbl string, col string,compression string);"
+			"drop function mosaic_layout(sch string, tbl string, col string);"
+			"drop function mosaic_analyse(sch string, tbl string, col string,compression string);"
+			"drop function mosaic_analyse(sch string, tbl string, col string);"
+			"create schema mosaic;"
+			"create function layout(sch string, tbl string, col string,compression string)"
+			"returns table(technique string, \"count\" bigint, inputsize bigint, outputsize bigint,properties string)"
+			"external name sql.mosaiclayout;"
+			"create function layout(sch string, tbl string, col string)"
+			"returns table(technique string, \"count\" bigint, inputsize bigint, outputsize bigint,properties string)"
+			"external name sql.mosaiclayout;"
+			"create function analysis(sch string, tbl string, col string)"
+			"returns table(technique string, outputsize bigint, factor float, run bigint)"
+			"external name sql.mosaicanalysis;"
+			"create function analysis(sch string, tbl string, col string, compression string)"
+			"returns table(technique string, outputsize bigint, factor float, run bigint)"
+			"external name sql.mosaicanalysis;"
+	);
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 void
 SQLupgrades(Client c, mvc *m)
 {
@@ -890,4 +932,5 @@ SQLupgrades(Client c, mvc *m)
 			freeException(err);
 		}
 	}
+	if(0)	sql_update_mosaic(c, m);
 }

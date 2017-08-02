@@ -9,6 +9,7 @@ SUBDIRS = NOT_WIN32?vaults UDF LSST generator
 INCLUDES = ../../include ../../common ../../storage ../../server \
 		   ../../../monetdb5/modules/atoms \
 		   ../../../monetdb5/modules/kernel \
+		   ../../../monetdb5/modules/mosaic \
 		   ../../../monetdb5/mal \
 		   ../../../monetdb5/modules/mal \
 		   ../../../monetdb5/optimizer \
@@ -26,6 +27,7 @@ lib__sql = {
 		sql.c sql.h \
 		mal_backend.c mal_backend.h \
 		sql_user.c sql_user.h \
+		sql_mosaic.c sql_mosaic.h \
 		sql_scenario.c sql_scenario.h \
 		sql_execute.c sql_execute.h \
 		sql_assert.c sql_assert.h \
