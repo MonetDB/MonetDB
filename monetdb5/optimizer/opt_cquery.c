@@ -31,7 +31,7 @@
 #include "mal_builder.h"
 #include "opt_dataflow.h"
 
-#define MAXBSKT 64
+#define MAXBSKTOPT 128
 #define getStreamTableInfo(S,T) \
 	for(fnd=0, k= 0; k< btop; k++) \
 	if( strcmp(schemas[k], S)== 0 && strcmp(tables[k], T)== 0 ){ \
@@ -46,10 +46,10 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i, j, k, fnd, limit, slimit;
 	InstrPtr r, p, *old;
 	int *alias;
-	str  schemas[MAXBSKT];
-	str  tables[MAXBSKT];
-	int input[MAXBSKT]= {0};
-	int output[MAXBSKT]= {0};
+	str schemas[MAXBSKTOPT];
+	str tables[MAXBSKTOPT];
+	int input[MAXBSKTOPT]= {0};
+	int output[MAXBSKTOPT]= {0};
 	int btop=0, lastmvc=0;
 	int noerror=0;
 	int mvcseen = 0;
@@ -77,7 +77,7 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	slimit = mb->ssize;
 
 	/* first analyse the query for streaming tables */
-	for (i = 1; i < limit && btop <MAXBSKT; i++){
+	for (i = 1; i < limit && btop <MAXBSKTOPT; i++){
 		p = old[i];
 		if( getModuleId(p)== basketRef && (getFunctionId(p)== registerRef || getFunctionId(p)== bindRef )  ){
 			schemas[btop]= getVarConstant(mb, getArg(p,2)).val.sval;
@@ -143,7 +143,7 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef DEBUG_OPT_CQUERY
 	mnstr_printf(cntxt->fdout, "#cquery optimizer started with %d streams, mvc %d\n", btop,lastmvc);
 #endif
-	if( btop == MAXBSKT || btop == 0)
+	if( btop == MAXBSKTOPT || btop == 0)
 		return MAL_SUCCEED;
 
 	(void) stk;
@@ -298,18 +298,18 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			pushInstruction(mb, p);
 		}
 
-    /* take the remainder as is */
-    for (; i<limit; i++)
-        if (old[i])
-            pushInstruction(mb,old[i]);
+	/* take the remainder as is */
+	for (; i<limit; i++)
+		if (old[i])
+			pushInstruction(mb,old[i]);
 
-    /* Defense line against incorrect plans */
+	/* Defense line against incorrect plans */
 	chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
 	chkFlow(cntxt->fdout, mb);
 	chkDeclarations(cntxt->fdout, mb);
-    /* keep all actions taken as a post block comment */
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","cquery", btop, GDKusec() - usec);
-    newComment(mb,buf);
+	/* keep all actions taken as a post block comment */
+	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","cquery", btop, GDKusec() - usec);
+	newComment(mb,buf);
 
 #ifdef DEBUG_OPT_CQUERY
 	mnstr_printf(cntxt->fdout, "#cquery optimizer final\n");
@@ -318,7 +318,7 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(alias);
 	GDKfree(old);
 
-    if( btop > 0)
-        return MAL_SUCCEED;
+	if( btop > 0)
+		return MAL_SUCCEED;
 	throw (MAL,"optimizer.cquery", "The cquery optimizer failed to start! (btop = %d)", btop);
 }

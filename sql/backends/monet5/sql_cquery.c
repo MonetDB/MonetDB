@@ -84,7 +84,9 @@ int pnetLimit, pnettop;
 static void
 CQfree(int idx)
 {
-	int i;
+	int i, j, k, found;
+	str sch, tbl;
+
 	if( pnet[idx].mb)
 		freeMalBlk(pnet[idx].mb);
 	if( pnet[idx].stk)
@@ -92,6 +94,24 @@ CQfree(int idx)
 	GDKfree(pnet[idx].mod);
 	GDKfree(pnet[idx].fcn);
 	GDKfree(pnet[idx].stmt);
+	//try delete the baskets
+	for( j=0; j< MAXSTREAMS && pnet[idx].baskets[j]; j++) {
+		found = 0;
+		sch = baskets[pnet[idx].baskets[j]].table->s->base.name;
+		tbl = baskets[pnet[idx].baskets[j]].table->base.name;
+		for( i=0; i < pnettop && !found; i++) {
+			if(i != idx) {
+				for( k=0; k< MAXSTREAMS && pnet[i].baskets[k] && !found; k++) {
+					if (strcmp(sch, baskets[pnet[i].baskets[k]].table->s->base.name) == 0 &&
+						strcmp(tbl, baskets[pnet[i].baskets[k]].table->base.name) == 0)
+						found = 1;
+				}
+			}
+		}
+		if(!found) {
+			BSKTclean(pnet[idx].baskets[j]);
+		}
+	}
 	// compact the pnet table
 	for(i=idx; i<pnettop-1; i++)
 		pnet[i] = pnet[i+1];
@@ -285,7 +305,7 @@ CQlocate(str modname, str fcnname)
 }
 
 int
-CQlocateExternal(str modname, str fcnname) //check if a CQ is registered from the SQL catalog
+CQlocateQueryExternal(str modname, str fcnname) //check if a CQ is registered from the SQL catalog
 {
 	int res;
 
@@ -296,7 +316,7 @@ CQlocateExternal(str modname, str fcnname) //check if a CQ is registered from th
 	return res;
 }
 
-/*int
+int
 CQlocateBasketExternal(str schname, str tblname) //check if a stream table is being used by a continuous query
 {
 	int i, j, res = 0;
@@ -311,7 +331,7 @@ CQlocateBasketExternal(str schname, str tblname) //check if a stream table is be
 	}
 	MT_lock_unset(&ttrLock);
 	return res;
-}*/
+}
 
 static str
 CQlocateMb(MalBlkPtr mb, int* idx, str* res, const char* call)
@@ -383,7 +403,7 @@ CQshow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* Collect all input/output basket roles */
 /* Make sure we do not re-use the same source more than once */
-/* Avoid any concurreny conflict */
+/* Avoid any concurrency conflict */
 static str
 CQanalysis(Client cntxt, MalBlkPtr mb, int idx)
 {
@@ -400,16 +420,8 @@ CQanalysis(Client cntxt, MalBlkPtr mb, int idx)
 			tbl = getVarConstant(mb, getArg(p,3)).val.sval;
 
 			// find the stream basket definition
-			bskt = BSKTlocate(sch,tbl);
-			if( bskt == 0){
-				msg = BSKTregisterInternal(cntxt,mb,sch,tbl);
-				if( msg == MAL_SUCCEED){
-					bskt = BSKTlocate(sch,tbl);
-					if( bskt == 0){
-						msg = createException(MAL,"cquery.analysis","basket registration missing\n");
-						continue;
-					}
-				}
+			if((msg = BSKTregisterInternal(cntxt,mb,sch,tbl,&bskt)) != MAL_SUCCEED){
+				continue;
 			}
 
 			// we only need a single column for window size testing
@@ -437,16 +449,8 @@ CQanalysis(Client cntxt, MalBlkPtr mb, int idx)
 			tbl = getVarConstant(mb, getArg(p,2)).val.sval;
 
 			// find the stream basket definition
-			bskt = BSKTlocate(sch,tbl);
-			if( bskt == 0){
-				msg = BSKTregisterInternal(cntxt,mb,sch,tbl);
-				if( msg == MAL_SUCCEED){
-					bskt = BSKTlocate(sch,tbl);
-					if( bskt == 0){
-						msg = createException(MAL,"cquery.analysis","basket registration missing\n");
-						continue;
-					}
-				}
+			if((msg = BSKTregisterInternal(cntxt,mb,sch,tbl,&bskt)) != MAL_SUCCEED){
+				continue;
 			}
 			/*if( p->argc == 5)
 				stride = getVarConstant(mb, getArg(p,4)).val.ival;
@@ -793,7 +797,7 @@ CQresumeInternal(Client cntxt, MalBlkPtr mb, int with_alter)
 			msg = createException(SQL,"cquery.resume","The cycles value must be non negative\n");
 			goto finish;
 		}
-		if(heartbeats < 0){
+		if(heartbeats < 0 && heartbeats != NO_HEARTBEAT){
 			msg = createException(SQL,"cquery.resume","The heartbeats value must be non negative\n");
 			goto finish;
 		}
@@ -1034,6 +1038,10 @@ CQcycles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #ifdef DEBUG_CQUERY
 	fprintf(stderr, "#set cycles \n");
 #endif
+	if(cycles < 0 && cycles != NO_CYCLES){
+		msg = createException(SQL,"cquery.cycles","The cycles value must be non negative\n");
+		goto finish;
+	}
 	for( ; idx < last; idx++)
 		pnet[idx].cycles = cycles;
 
@@ -1042,28 +1050,11 @@ CQcycles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-static void
-CQsetbeat(int idx, int beats)
-{
-	int j;
-
-	if(beats != NO_HEARTBEAT) {
-		for(j=0; j < MAXSTREAMS && pnet[idx].baskets[j]; j++) {
-			if(pnet[idx].inout[j] == STREAM_IN && baskets[pnet[idx].baskets[j]].window != DEFAULT_TABLE_WINDOW) {
-				// can not set the beat due to stream window constraint
-				pnet[idx].beats = SET_HEARTBEATS(NO_HEARTBEAT);
-				return;
-			}
-		}
-	}
-	pnet[idx].beats = SET_HEARTBEATS(beats);
-}
-
 str
 CQheartbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str sch, fcn, msg = MAL_SUCCEED;
-	int beats, idx=0, last= pnettop;
+	int beats, j, idx=0, last= pnettop;
 	(void) cntxt;
 	(void) mb;
 
@@ -1087,12 +1078,25 @@ CQheartbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fprintf(stderr, "#set the heartbeat %d ms\n",beats);
 #endif
 	}
+	if(beats < 0 && beats != NO_HEARTBEAT){
+		msg = createException(SQL,"cquery.heartbeat","The heartbeats value must be non negative\n");
+		goto finish;
+	}
 	for( ; idx < last; idx++){
 		if( pnet[idx].baskets[0]){
 			msg = createException(SQL,"cquery.heartbeat","Heartbeat ignored, a window constraint exists\n");
 			break;
 		}
-		CQsetbeat(idx, beats);
+		if(beats != NO_HEARTBEAT) {
+			for(j=0; j < MAXSTREAMS && pnet[idx].baskets[j]; j++) {
+				if(pnet[idx].inout[j] == STREAM_IN && baskets[pnet[idx].baskets[j]].window != DEFAULT_TABLE_WINDOW) {
+					// can not set the beat due to stream window constraint
+					pnet[idx].beats = SET_HEARTBEATS(NO_HEARTBEAT);
+					goto finish;
+				}
+			}
+		}
+		pnet[idx].beats = SET_HEARTBEATS(beats);
 	}
 	finish:
 	MT_lock_unset(&ttrLock);

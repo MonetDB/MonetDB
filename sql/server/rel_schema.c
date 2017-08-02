@@ -644,6 +644,9 @@ create_column(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	if (alter && !isTable(t)) {
 		sql_error(sql, 02, "42000!ALTER TABLE: cannot add column to VIEW '%s'\n", t->base.name);
 		return SQL_ERR;
+	} else if (alter && isStream(t)) {
+		sql_error(sql, 02, "42000!ALTER TABLE: cannot drop column '%s': table is a stream table\n", cname);
+		return SQL_ERR;
 	}
 	if (l->h->next->next)
 		opt_list = l->h->next->next->data.lval;
@@ -840,6 +843,10 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		}
 		if (t->system) {
 			sql_error(sql, 02, "42000!ALTER TABLE: cannot drop column '%s': table is a system table\n", cname);
+			return SQL_ERR;
+		}
+		if (isStream(t)) {
+			sql_error(sql, 02, "42000!ALTER TABLE: cannot drop column '%s': table is a stream table\n", cname);
 			return SQL_ERR;
 		}
 		if (isView(t)) {

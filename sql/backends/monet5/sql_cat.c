@@ -301,6 +301,8 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 		return sql_message("42000!DROP TABLE: cannot drop system table '%s'", tname);
 	} else if (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP)) {
 		return sql_message("42000!DROP TABLE: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+	} else if (isStream(t) && CQlocateBasketExternal(sname, tname)) {
+		return sql_message("42000!DROP TABLE: unable to drop stream table '%s': there are pending continuous queries on it", tname);
 	}
 	if (!drop_action && t->keys.set) {
 		for (n = t->keys.set->h; n; n = n->next) {
@@ -518,7 +520,7 @@ drop_func(mvc *sql, char *sname, char *name, int fid, int type, int action)
 			}
 			if (!action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
 				return sql_message("DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
-			if(IS_PROC(func) && CQlocateExternal(sname, name))
+			if(IS_PROC(func) && CQlocateQueryExternal(sname, name))
 				return sql_message("DROP %s%s: there are continuous queries dependent on %s%s %s;", KF, F, kf, f, func->base.name);
 
 			mvc_drop_func(sql, s, func, action);
@@ -538,7 +540,7 @@ drop_func(mvc *sql, char *sname, char *name, int fid, int type, int action)
 				list_destroy(list_func);
 				return sql_message("DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
 			}
-			if(IS_PROC(func) && CQlocateExternal(sname, name)) {
+			if(IS_PROC(func) && CQlocateQueryExternal(sname, name)) {
 				list_destroy(list_func);
 				return sql_message("DROP %s%s: there are continuous queries dependent on %s%s %s;", KF, F, kf, f, func->base.name);
 			}
@@ -573,7 +575,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, sql_func *fo, int r
 			return sql_message("3F000!CREATE OR REPLACE %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
 		if (mvc_check_dependency(sql, fo->base.id, !IS_PROC(fo) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
 			return sql_message("3F000!CREATE OR REPLACE %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, fn, fo->base.name);
-		if(IS_PROC(fo) && CQlocateExternal(sname, fo->base.name))
+		if(IS_PROC(fo) && CQlocateQueryExternal(sname, fo->base.name))
 			return sql_message("3F000!CREATE OR REPLACE %s%s: there are continuous queries dependent on %s%s %s;", KF, F, kf, fn, fo->base.name);
 
 		mvc_drop_func(sql, s, n->data, 0);
@@ -649,13 +651,17 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 	}
 
 	/* check for changes */
-	if (t->columns.dset)
+	if (t->columns.dset) {
+		if (isStream(t)) {
+			return sql_message("42000!ALTER TABLE: cannot drop columns to a stream table\n");
+		}
 		for (n = t->columns.dset->h; n; n = n->next) {
 			/* propagate alter table .. drop column */
 			sql_column *c = n->data;
 			sql_column *nc = mvc_bind_column(sql, nt, c->base.name);
 			mvc_drop_column(sql, nt, nc, c->drop_action);
 		}
+	}
 	/* check for changes on current cols */
 	for (n = t->columns.set->h; n != t->columns.nelm; n = n->next) {
 

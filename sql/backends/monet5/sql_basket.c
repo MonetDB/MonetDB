@@ -60,10 +60,10 @@ static int BSKTnewEntry(void)
 	BasketRec *bnew;
 
 	if (bsktTop + 1 == bsktLimit) {
-		bnew = (BasketRec *) GDKrealloc(baskets, (bsktLimit+MAXBSKT) * sizeof(BasketRec));
+		bnew = (BasketRec *) GDKrealloc(baskets, (bsktLimit+INTIAL_BSKT) * sizeof(BasketRec));
 		if( bnew == 0)
 			return 0;
-		bsktLimit += MAXBSKT;
+		bsktLimit += INTIAL_BSKT;
 		baskets = bnew;
 	}
 	for (i = 1; i < bsktLimit; i++) { /* find an available slot */
@@ -78,11 +78,11 @@ static int BSKTnewEntry(void)
 }
 
 // free a basket structure
-static void
+void
 BSKTclean(int idx)
 {	int i;
 
-	if( idx){
+	if( idx && baskets[idx].table){
 		if(baskets[idx].error)
 			GDKfree(baskets[idx].error);
 		baskets[idx].table = NULL;
@@ -104,7 +104,7 @@ BSKTclean(int idx)
 
 // MAL/SQL interface for registration of a single table
 str
-BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl)
+BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl, int* res)
 {
 	sql_schema  *s;
 	sql_table   *t;
@@ -118,8 +118,11 @@ BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl)
 		return msg;
 
 	/* check double registration */
-	if( BSKTlocate(sch, tbl) > 0)
-		return msg;
+	if( (idx = BSKTlocate(sch, tbl)) > 0) {
+		*res = idx;
+		return MAL_SUCCEED;
+	}
+
 	if ((msg = checkSQLContext(cntxt)) != MAL_SUCCEED)
 		return msg;
 
@@ -128,10 +131,6 @@ BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl)
 
 	if (!(t = mvc_bind_table(m, s, tbl)))
 		throw(SQL, "basket.register", "Table missing '%s'\n", tbl);
-
-	// Don't introduce the same basket twice
-	if( BSKTlocate(s->base.name, t->base.name) > 0)
-		return MAL_SUCCEED;
 
 	if( !isStream(t))
 		throw(SQL,"basket.register","Only allowed for stream tables\n");
@@ -172,6 +171,7 @@ BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl)
 		baskets[idx].bats[i]= b;
 		baskets[idx].cols[i]= col;
 	}
+	*res = idx;
 	return MAL_SUCCEED;
 }
 
@@ -180,12 +180,13 @@ BSKTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str sch, tbl;
 	str msg= MAL_SUCCEED;
+	int i;
 
 	(void) stk;
 	(void) pci;
 	sch = getVarConstant(mb, getArg(pci,2)).val.sval;
 	tbl = getVarConstant(mb, getArg(pci,3)).val.sval;
-	msg = BSKTregisterInternal(cntxt,mb,sch,tbl);
+	msg = BSKTregisterInternal(cntxt,mb,sch,tbl, &i);
 	return msg;
 }
 
@@ -195,24 +196,23 @@ BSKTwindow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sch = *getArgReference_str(stk,pci,1);
 	str tbl = *getArgReference_str(stk,pci,2);
 	int window = *getArgReference_int(stk,pci,3);
-	int stride;
-	int idx;
+	int stride, idx;
 	str msg;
 
 	(void) cntxt;
 	(void) mb;
-	idx = BSKTlocate(sch, tbl);
-	if( idx == 0){
-		msg= BSKTregisterInternal(cntxt, mb, sch, tbl);
-		if( msg != MAL_SUCCEED)
-			return msg;
-		idx = BSKTlocate(sch, tbl);
-		if( idx ==0)
-			throw(SQL,"basket.window","Stream table %s.%s not accessible\n",sch,tbl);
+	msg= BSKTregisterInternal(cntxt, mb, sch, tbl, &idx);
+	if( msg != MAL_SUCCEED)
+		return msg;
+	if( window < 0)
+		throw(MAL,"basket.window","negative window not allowed");
+	if( pci->argc == 5) {
+		stride = *getArgReference_int(stk,pci,4);
+		if( stride < 0)
+			throw(MAL,"basket.stride","negative stride not allowed");
 	}
 	baskets[idx].window = window;
 	if( pci->argc == 5) {
-		stride = *getArgReference_int(stk,pci,4);
 		baskets[idx].stride = stride;
 	}
 	return MAL_SUCCEED;
@@ -228,15 +228,9 @@ BSKTkeep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
-	idx = BSKTlocate(sch, tbl);
-	if( idx == 0){
-		msg= BSKTregisterInternal(cntxt, mb, sch, tbl);
-		if( msg != MAL_SUCCEED)
-			return msg;
-		idx = BSKTlocate(sch, tbl);
-		if( idx ==0)
-			throw(SQL,"basket.window","Stream table %s.%s not accessible\n",sch,tbl);
-	}
+	msg= BSKTregisterInternal(cntxt, mb, sch, tbl, &idx);
+	if( msg != MAL_SUCCEED)
+		return msg;
 	if( baskets[idx].window >= 0)
 		baskets[idx].window = - baskets[idx].window -1;
 	return MAL_SUCCEED;
@@ -252,15 +246,9 @@ BSKTrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
-	idx = BSKTlocate(sch, tbl);
-	if( idx == 0){
-		msg= BSKTregisterInternal(cntxt, mb, sch, tbl);
-		if( msg != MAL_SUCCEED)
-			return msg;
-		idx = BSKTlocate(sch, tbl);
-		if( idx ==0)
-			throw(SQL,"basket.window","Stream table %s.%s not accessible\n",sch,tbl);
-	}
+	msg= BSKTregisterInternal(cntxt, mb, sch, tbl, &idx);
+	if( msg != MAL_SUCCEED)
+		return msg;
 	if( baskets[idx].window < 0)
 		baskets[idx].window = - baskets[idx].window -1;
 	return MAL_SUCCEED;
@@ -324,25 +312,22 @@ BSKTbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg= MAL_SUCCEED;
 
 	// first add the basket to the catalog
-	msg = BSKTregisterInternal(cntxt,mb,sch,tbl);
-	if( msg)
+	msg = BSKTregisterInternal(cntxt,mb,sch,tbl, &bskt);
+	if( msg != MAL_SUCCEED)
 		return msg;
-	bskt = BSKTlocate(sch,tbl);
 	b = BSKTbindColumn(sch,tbl,col);
 	*ret = 0;
 	if( b){
-		if( bskt > 0){
-			if( baskets[bskt].window >0){
-				bn = VIEWcreate(0,b);
-				if( bn){
-					VIEWbounds(b,bn, 0, baskets[bskt].window);
-					BBPkeepref(*ret =  bn->batCacheid);
-				} else
-					throw(SQL,"basket.bind","Can not create view %s.%s.%s[%d]\n",sch,tbl,col,baskets[bskt].window );
-			} else{
-				BBPkeepref( *ret = b->batCacheid);
-				BBPfix(b->batCacheid); // don't loose it
-			}
+		if( baskets[bskt].window >0){
+			bn = VIEWcreate(0,b);
+			if( bn){
+				VIEWbounds(b,bn, 0, baskets[bskt].window);
+				BBPkeepref(*ret =  bn->batCacheid);
+			} else
+				throw(SQL,"basket.bind","Can not create view %s.%s.%s[%d]\n",sch,tbl,col,baskets[bskt].window );
+		} else{
+			BBPkeepref( *ret = b->batCacheid);
+			BBPfix(b->batCacheid); // don't loose it
 		}
 		return MAL_SUCCEED;
 	}
@@ -451,15 +436,9 @@ BSKTtumble(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sch = *getArgReference_str(stk,pci,2);
 	tbl = *getArgReference_str(stk,pci,3);
 
-	idx = BSKTlocate(sch, tbl);
-	if( idx == 0){
-		msg = BSKTregisterInternal(cntxt, mb, sch, tbl);
-		if( msg != MAL_SUCCEED)
-			return msg;
-		idx = BSKTlocate(sch, tbl);
-		if( idx ==0)
-			throw(SQL,"basket.tumble","Stream table %s.%s not accessible \n",sch,tbl);
-	}
+	msg = BSKTregisterInternal(cntxt, mb, sch, tbl, &idx);
+	if( msg != MAL_SUCCEED)
+		return msg;
 	// don't tumble when the window constraint has not been set to at least 0
 	if( baskets[idx].window < 0)
 		return MAL_SUCCEED;
@@ -514,8 +493,11 @@ BSKTunlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 
 	idx = BSKTlocate(sch, tbl);
-	if( idx ==0)
+	if( idx ==0) {
+		MT_lock_unset(&baskets[idx].lock);
 		throw(SQL,"basket.lock","Stream table %s.%s not accessible\n",sch,tbl);
+	}
+
 	/* this is also the place to administer the size of the basket */
 	b = BSKTbindColumn(sch,tbl, baskets[idx].cols[0]->base.name);
 	if( b)
@@ -803,7 +785,7 @@ BSKTshutdown(void)
 		GDKfree(baskets);
 		baskets = NULL;
 	}
-	bsktLimit = MAXBSKT;
+	bsktLimit = INTIAL_BSKT;
 	bsktTop = 1;
 }
 
@@ -811,8 +793,8 @@ str
 BSKTprelude(void *ret)
 {
 	(void) ret;
-	baskets = (BasketRec *) GDKzalloc(MAXBSKT * sizeof(BasketRec));
-	bsktLimit = MAXBSKT;
+	baskets = (BasketRec *) GDKzalloc(INTIAL_BSKT * sizeof(BasketRec));
+	bsktLimit = INTIAL_BSKT;
 	bsktTop = 1;
 	if( baskets == NULL)
 		throw(MAL, "basket.prelude", MAL_MALLOC_FAIL);

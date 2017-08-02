@@ -25,7 +25,7 @@
 #include "mal_interpreter.h"
 #include "sql.h"
 
-#define MAXBSKT 128
+#define INTIAL_BSKT 128
 
 typedef struct{
 	sql_table *table;	/* The basket stream table */
@@ -49,7 +49,9 @@ sql5_export BasketRec *baskets;   /* the global timetrails catalog */
 sql5_export int bsktTop, bsktLimit;
 
 sql5_export int BSKTlocate(str sch, str tbl);
-sql5_export str BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl);
+sql5_export void BSKTclean(int idx);
+sql5_export str BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl, int* res);
+
 sql5_export str BSKTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str BSKTtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str BSKTbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

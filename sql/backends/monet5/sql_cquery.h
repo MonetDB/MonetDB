@@ -33,8 +33,8 @@
 #define CQSTOP	   5	/* stop the scheduler */
 #define CQDEREGISTER  6	/* stop the scheduler */
 
-#define INITIAL_MAXCQ 128		/* it is the minimum, if we need more space GDKrealloc */
-#define MAXSTREAMS    128		/* limit the number of stream columns to be looked after per query*/
+#define INITIAL_MAXCQ     32		/* it is the minimum, if we need more space GDKrealloc */
+#define MAXSTREAMS       128	/* limit the number of stream columns to be looked after per query*/
 
 #define STREAM_IN	1
 #define STREAM_OUT	4
@@ -64,8 +64,8 @@ typedef struct {
 sql5_export CQnode *pnet;
 sql5_export int pnetLimit, pnettop;
 
-sql5_export int CQlocateExternal(str modname, str fcnname);
-//sql5_export int CQlocateBasketExternal(str schname, str tblname);
+sql5_export int CQlocateQueryExternal(str modname, str fcnname);
+sql5_export int CQlocateBasketExternal(str schname, str tblname);
 
 sql5_export str CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQprocedure(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
