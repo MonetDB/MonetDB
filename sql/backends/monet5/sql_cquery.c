@@ -50,11 +50,15 @@
 #include "mal_builder.h"
 #include "opt_prelude.h"
 
+extern void (*cq_close)(void);
+
 static str statusname[7] = { "init", "register", "readytorun", "running", "waiting", "paused", "stopping"};
 
 static str CQstartScheduler(void);
 static int CQinit;
-static int pnstatus;
+static int pnstatus = CQINIT;
+static int cycleDelay = 200; /* be careful, it affects response/throughput timings */
+static MT_Lock ttrLock;
 
 static BAT *CQ_id_tick = 0;
 static BAT *CQ_id_mod = 0;
@@ -65,10 +69,6 @@ static BAT *CQ_id_stmt = 0;
 
 CQnode *pnet;
 int pnetLimit, pnettop;
-
-static int pnstatus = CQINIT;
-static int cycleDelay = 200; /* be careful, it affects response/throughput timings */
-MT_Lock ttrLock;
 
 #define SET_HEARTBEATS(X) (X != NO_HEARTBEAT) ? X * 1000 : NO_HEARTBEAT /* minimal 1 ms */
 
@@ -687,10 +687,8 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 		msg = createException(SQL,"cquery.register","Cannot find procedure %s.%s.\n",
 		getModuleId(sig), getFunctionId(sig));
 		goto unlock;
-	} else
-		msg = CQanalysis(cntxt, s->def, pnettop);
-	if( msg != MAL_SUCCEED) {
-		CQfree(pnettop); // restore the entry
+	}
+	if((msg = CQanalysis(cntxt, s->def, pnettop)) != MAL_SUCCEED) {
 		goto unlock;
 	}
 	if(heartbeats != NO_HEARTBEAT) {
@@ -803,7 +801,7 @@ CQresumeInternal(Client cntxt, MalBlkPtr mb, int with_alter)
 
 	MT_lock_set(&ttrLock);
 
-	if(CQlocateMb(mb, &idx, &mb2str, "cquery.resume") != MAL_SUCCEED) {
+	if((msg = CQlocateMb(mb, &idx, &mb2str, "cquery.resume")) != MAL_SUCCEED) {
 		goto unlock;
 	}
 	if( idx == pnettop) {
@@ -927,7 +925,7 @@ CQpauseInternal(MalBlkPtr mb)
 	str msg = MAL_SUCCEED, mb2str = NULL;
 
 	MT_lock_set(&ttrLock);
-	if(CQlocateMb(mb, &idx, &mb2str, "cquery.pause") != MAL_SUCCEED) {
+	if((msg = CQlocateMb(mb, &idx, &mb2str, "cquery.pause")) != MAL_SUCCEED) {
 		goto finish;
 	}
 	if( idx == pnettop) {
@@ -1123,7 +1121,7 @@ CQderegisterInternal(MalBlkPtr mb)
 	str msg = MAL_SUCCEED, mb2str = NULL;
 
 	MT_lock_set(&ttrLock);
-	if(CQlocateMb(mb, &idx, &mb2str, "cquery.deregister") != MAL_SUCCEED) {
+	if((msg = CQlocateMb(mb, &idx, &mb2str, "cquery.deregister")) != MAL_SUCCEED) {
 		goto finish;
 	}
 	if(idx == pnettop) {
@@ -1521,8 +1519,20 @@ CQstartScheduler(void)
 		//MCcloseClient(cntxt); check this
 		throw(MAL, "cquery.startScheduler", "Could not initialize client thread in CQscheduler");
 	}
-	(void) pid;
 	return MAL_SUCCEED;
+}
+
+void
+CQreset(void)
+{
+	if(pnet) {
+		CQderegisterAll(NULL, NULL, NULL, NULL); //stop all continuous queries
+		GDKfree(pnet);
+	}
+	pnet = NULL;
+	MT_lock_destroy(&ttrLock);
+	(void) BSKTshutdown(); //this must be last!!
+	cq_close = NULL; //avoid a second call!
 }
 
 str
@@ -1535,21 +1545,7 @@ CQprelude(void *ret)
 	pnettop = 0;
 	if(pnet == NULL)
 		throw(MAL, "cquery.prelude", MAL_MALLOC_FAIL);
+	cq_close = CQreset;
 	printf("# MonetDB/Timetrails module loaded\n");
-	return MAL_SUCCEED;
-}
-
-str
-CQepilogue(void *ret)
-{
-	(void) ret;
-	CQderegisterAll(NULL, NULL, NULL, NULL); //stop all continuous queries
-	if(pnet)
-		GDKfree(pnet);
-	pnet = NULL;
-	pnetLimit = MAXBSKT;
-	pnettop = 1;
-	MT_lock_destroy(&ttrLock);
-	(void) BSKTshutdown(); //this must be last!!
 	return MAL_SUCCEED;
 }

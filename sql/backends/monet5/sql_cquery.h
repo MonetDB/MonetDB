@@ -63,7 +63,6 @@ typedef struct {
 
 sql5_export CQnode *pnet;
 sql5_export int pnetLimit, pnettop;
-sql5_export MT_Lock ttrLock;
 
 sql5_export int CQlocateExternal(str modname, str fcnname);
 //sql5_export int CQlocateBasketExternal(str schname, str tblname);
@@ -85,7 +84,8 @@ sql5_export str CQerror(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 sql5_export str CQshow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQstatus(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQlog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
 sql5_export str CQdump(void *ret);
+sql5_export void CQreset(void);
 sql5_export str CQprelude(void *ret);
-sql5_export str CQepilogue(void *ret);
 #endif

@@ -792,6 +792,21 @@ wrapup:
 	throw(SQL, "basket.status", MAL_MALLOC_FAIL);
 }
 
+void
+BSKTshutdown(void)
+{
+	int i;
+	if(baskets) {
+		for(i = 1 ; i < bsktTop ; i++) {
+			BSKTclean(i);
+		}
+		GDKfree(baskets);
+		baskets = NULL;
+	}
+	bsktLimit = MAXBSKT;
+	bsktTop = 1;
+}
+
 str
 BSKTprelude(void *ret)
 {
@@ -801,16 +816,5 @@ BSKTprelude(void *ret)
 	bsktTop = 1;
 	if( baskets == NULL)
 		throw(MAL, "basket.prelude", MAL_MALLOC_FAIL);
-	return MAL_SUCCEED;
-}
-
-str
-BSKTshutdown(void)
-{
-	if(baskets)
-		GDKfree(baskets);
-	baskets = NULL;
-	bsktLimit = MAXBSKT;
-	bsktTop = 1;
 	return MAL_SUCCEED;
 }

@@ -74,6 +74,6 @@ sql5_export str BSKTlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 sql5_export str BSKTunlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 sql5_export str BSKTdump(void *ret);
+sql5_export void BSKTshutdown(void);
 sql5_export str BSKTprelude(void *ret);
-sql5_export str BSKTshutdown(void);
 #endif
