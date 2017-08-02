@@ -85,7 +85,13 @@ readConfFileFull(confkeyval *list, FILE *cnf) {
 
 	/* iterate until the end of the array */
 	while (list->key != NULL) {
-		/* If we already have PROPLENGTH entries, */
+		/* If we already have PROPLENGTH entries, we cannot add any more. Do
+		 * read the file because it might specify a different value for an
+		 * existing property.
+		 *
+		 * TODO: This is an arbitrary limitation and should either be justified
+		 * sufficiently or removed.
+		 */
 		if (cnt >= PROPLENGTH - 1) {
 			break;
 		}
@@ -101,11 +107,14 @@ readConfFileFull(confkeyval *list, FILE *cnf) {
 			/* strip trailing newline */
 			val = strtok(val, "\n");
 			if ((err = setConfValForKey(t, key, val)) != NULL) {
-				if (strstr(err, "is not recognized") == NULL) {
-					/* If we already have more than PROPLENGTH
-					 * entries, ignore every ad hoc property
+				if (strstr(err, "is not recognized") != NULL) {
+					/* If we already have PROPLENGTH entries in the list, ignore
+					 * every ad hoc property, but continue reading the file
+					 * because a different value might be specified later in the
+					 * file for one of the properties we have already in the list.
 					 */
 					if (cnt >= PROPLENGTH - 1) {
+						free(err);
 						continue;
 					}
 					list->key = strdup(key);
@@ -279,6 +288,9 @@ setConfValForKey(confkeyval *list, const char *key, const char *val) {
 		}
 		list++;
 	}
+	/* XXX: Do NOT change this error message or readConfFileFull will stop
+	 * working as expected.
+	 */
 	snprintf(buf, sizeof(buf), "key '%s' is not recognized, internal error", key);
 	return(strdup(buf));
 }
