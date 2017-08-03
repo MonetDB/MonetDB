@@ -905,7 +905,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			for( n = exps->h; n; n = n->next)
 				append(ops, exp_subtype(n->data));
 			f = sql_bind_func_(sql->sa, s, cname, ops, F_FUNC);
-			exp = exp_op( sql->sa, exps, f);
+			if (f)
+				exp = exp_op( sql->sa, exps, f);
 		}
 	}
 
@@ -919,6 +920,16 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 
 				exp = exp_atom_ref(sql->sa, nr, &a->tpe);
 			}
+		}
+		if (!exp) {
+			old = *e;
+			*e = 0;
+			if (stack_find_var(sql, b)) {
+				sql_subtype *tpe = stack_find_type(sql, b);
+				int frame = stack_find_frame(sql, b);
+				exp = exp_param(sql->sa, sa_strdup(sql->sa, b), tpe, frame);
+			}
+			*e = old;
 		}
 		if (!exp && lrel) { 
 			int amb = 0;
