@@ -770,6 +770,8 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 	FILE *pidfile;
 	char *profiler_executable;
 	char *tmp_exe;
+	struct stat path_info;
+	int error_code;
 
 	(void) pid;
 	(void) log_path;
@@ -786,39 +788,49 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 		return error;
 	}
 
-	/* monetdb
-	 * stethoscope
+	/* Find the profiler executable. We are currently running as:
+	 * /path/to/installation/monetdbd
+	 * and the profiler executable should be:
+	 * /path/to/installation/stethoscope
 	 */
 	tmp_exe = get_bin_path();
 	if (tmp_exe == NULL) {
 		error = newErr("Cannot find the profiler executable");
 		return error;
 	} else {
-		char *s = strstr(tmp_exe, "monetdbd");
+		char *daemon_filename = "monetdbd";
+		char *profiler_filename = "stethoscope";
+		char *s = strstr(tmp_exe, daemon_filename);
 		size_t executable_len = 0;
 
-		if (s == NULL || strncmp(s, "monetdbd", strlen("monetdbd")) != 0) {
+		if (s == NULL || strncmp(s, daemon_filename, strlen(daemon_filename)) != 0) {
 			error = newErr("Unexpected executable (missing the string \"monetdbd\")");
 			free(tmp_exe);
 			return error;
 		}
 
-		executable_len = strlen(tmp_exe) + strlen("stethoscope") - strlen("monetdbd") + 1;
+		executable_len = strlen(tmp_exe) + strlen(profiler_filename) - strlen(daemon_filename) + 1;
 		*s = '\0';
 		profiler_executable = malloc(executable_len);
 		snprintf(profiler_executable, executable_len, "%s%s%s",
-				 tmp_exe, "stethoscope", s + 8);
+				 tmp_exe, profiler_filename, s + 8);
+		if (stat(profiler_executable, &path_info) == -1) {
+			error = newErr("Cannot find profiler executable");
+			goto cleanup;
+		}
 		/* free(tmp_exe); */
 	}
 
 	pthread_mutex_lock(&fork_lock);
 
+	/* Verify that the requested db is running */
 	if ((*stats)->state != SABdbRunning) {
 		/* server is not running, shoo */
 		error = newErr("Database is not running.");
 		goto cleanup;
 	}
 
+	/* find the path that the profiler will be storing files */
 	ckv = getDefaultProps();
 	readAllProps(ckv, (*stats)->path);
 	kv = findConfKey(ckv, "profilerlogpath");
@@ -830,39 +842,105 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 	}
 
 	*log_path = strdup(kv->val);
+
 	/* Check that the log_path exists and create it if it does not */
+	error_code = stat(*log_path, &path_info);
+	if (error_code == -1) {  /* stat failed */
+		if (errno == ENOENT) {  /* dir does not exist, create it */
+			mode_t mode = 0755;
+			if (mkdir(*log_path, mode) == -1) {  /* mkdir failed, bail out */
+				char error_message[BUFSIZ];
+				strerror_r(errno, error_message, BUFSIZ);
+				error = newErr("%s", error_message);
+				free(*log_path);
+				*log_path = NULL;
+				goto cleanup;
+			}
+		} else {  /* Something else went wrong, can't handle the heat */
+			char error_message[BUFSIZ];
+			strerror_r(errno, error_message, BUFSIZ);
+			error = newErr("%s", error_message);
+			free(*log_path);
+			*log_path = NULL;
+			goto cleanup;
+		}
+	} else {  /* stat succeeded */
+		if(!S_ISDIR(path_info.st_mode)) {  /* file exists but is not a directory, bail out */
+			error = newErr("File %s exists but is not a directory.", *log_path);
+			free(*log_path);
+			*log_path = NULL;
+			goto cleanup;
+		}
+	}
 
-
+	/* construct the filename of the pid file */
 	pidfnlen = strlen(*log_path) + strlen("/profiler.pid") + 1;
 	pidfilename = malloc(pidfnlen);
 	snprintf(pidfilename, pidfnlen, "%s/profiler.pid", *log_path);
-	if ((pidfile = fopen(pidfilename, "w")) == NULL) {
-		error = newErr("unable to open %s for writing\n", pidfilename);
+
+	/* Make sure that the pid file is does not exist */
+	error_code = stat(pidfilename, &path_info);
+	if (error_code != -1) {
+		error = newErr("pid file %s already exists. Is the profiler already running?",
+					   pidfilename);
 		free(*log_path);
 		*log_path = NULL;
 		goto cleanup;
 	}
 
+	/* Open the pid file */
+	if ((pidfile = fopen(pidfilename, "w")) == NULL) {
+		error = newErr("unable to open %s for writing", pidfilename);
+		free(*log_path);
+		*log_path = NULL;
+		goto cleanup;
+	}
 
 	pid = fork();
 	if (pid == 0) {
+		char timestamp[20];
+		char *argv[512];
+		int arg_idx = 0;
+		size_t log_filename_len;
+		char *log_filename;
+		time_t current_time;
+		struct tm *tm_ctime;
+
 		fclose(pidfile);
-		/* find the executable */
+		/* construct the log output file */
+		log_filename_len = strlen(*log_path) + strlen("/proflen_") + strlen(dbname) + 26;
+		log_filename = malloc(log_filename_len);
+		if (log_filename == NULL) {
+			/* TODO What now? */
+			Mfprintf(stderr, "failed to allocate buffer\n");
+			exit(1);
+		}
+		current_time = time(NULL);
+		tm_ctime = localtime(&current_time);
+		strftime(timestamp, sizeof(timestamp), "%Y-%m-%d_%H:%M:%S", tm_ctime);
+		snprintf(log_filename, log_filename_len, "%s/proflen_%s_%s.json",
+				 *log_path, dbname, timestamp);
+
 		/* build the arguments */
+		argv[arg_idx++] = profiler_executable;
+		argv[arg_idx++] = "-j";  /* JSON output */
+		argv[arg_idx++] = "-d";
+		argv[arg_idx++] = dbname;
+		argv[arg_idx++] = "-o";
+		argv[arg_idx++] = log_filename;
 		/* execute */
+		execv(profiler_executable, argv);
 		exit(1);
 	} else {
 		/* write pid of stethoscope */
 		Mfprintf(pidfile, "%d", (int)pid);
 		fclose(pidfile);
-
 	}
 
   cleanup:
 	freeConfFile(ckv);
 	free(ckv);
 	free(profiler_executable);
-	msab_freeStatus(stats);
 	pthread_mutex_unlock(&fork_lock);
 	return error;
 }
