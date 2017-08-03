@@ -401,11 +401,11 @@ freeClient(Client c)
 		BBPrelease(c->error_msg->batCacheid);
 		BBPrelease(c->error_input->batCacheid);
 		c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
-		if( c->wlc)
-			freeMalBlk(c->wlc);
-		c->wlc_kind = 0;
-		c->wlc = NULL;
 	}
+	if( c->wlc)
+		freeMalBlk(c->wlc);
+	c->wlc_kind = 0;
+	c->wlc = NULL;
 	if (t)
 		THRdel(t);  /* you may perform suicide */
 	MT_sema_destroy(&c->s);
