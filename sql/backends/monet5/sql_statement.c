@@ -13,6 +13,7 @@
 #include "sql_gencode.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
+#include "rel_optimizer.h"
 
 #include "mal_namespace.h"
 #include "mal_builder.h"
@@ -2591,7 +2592,7 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 		return NULL;
 	mod = sql_func_mod(f->func);
 	fimp = sql_func_imp(f->func);
-	if (o && o->nrcols > 0) {
+	if (o && o->nrcols > 0 && f->func->type != F_LOADER) {
 		sql_subtype *res = f->res->h->data;
 		fimp = convertMultiplexFcn(fimp);
 		q = NULL;
@@ -2681,6 +2682,9 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 	/* dump args */
 	if (ops && ops->nr < 0)
 		return NULL;
+
+	rel = rel_optimizer(be->mvc, rel);
+
 	if (monet5_create_relational_function(be->mvc, mod, name, rel, ops, NULL, 1) < 0)
 		 return NULL;
 

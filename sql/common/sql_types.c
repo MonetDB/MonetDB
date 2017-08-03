@@ -1257,7 +1257,6 @@ sqltypeinit( sql_allocator *sa)
 	sql_type **strings, **numerical;
 	sql_type **decimals, **floats, **dates, **end, **t;
 	sql_type *STR, *BTE, *SHT, *INT, *LNG, *OID, *FLT, *DBL, *DEC;
-	sql_type *WRD;
 #ifdef HAVE_HGE
 	sql_type *HGE = NULL;
 #endif
@@ -1294,14 +1293,8 @@ sqltypeinit( sql_allocator *sa)
 	BTE = *t++ = sql_create_type(sa, "TINYINT",   8, SCALE_FIX, 2, EC_NUM, "bte");
 	SHT = *t++ = sql_create_type(sa, "SMALLINT", 16, SCALE_FIX, 2, EC_NUM, "sht");
 	INT = *t++ = sql_create_type(sa, "INT",      32, SCALE_FIX, 2, EC_NUM, "int");
-#if SIZEOF_SIZE_T == SIZEOF_INT
-	WRD = *t++ = sql_create_type(sa, "WRD", 32, SCALE_FIX, 2, EC_NUM, "int");
-#endif
 	LargestINT =
 	LNG = *t++ = sql_create_type(sa, "BIGINT",   64, SCALE_FIX, 2, EC_NUM, "lng");
-#if SIZEOF_SIZE_T == SIZEOF_LNG
-	WRD = *t++ = sql_create_type(sa, "WRD", 64, SCALE_FIX, 2, EC_NUM, "lng");
-#endif
 #ifdef HAVE_HGE
 	if (have_hge) {
 		LargestINT =
@@ -1478,8 +1471,6 @@ sqltypeinit( sql_allocator *sa)
 #endif
 
 	for (t = numerical; t < dates; t++) {
-		if (*t == WRD)
-			continue;
 		sql_create_func(sa, "mod", "calc", "%", *t, *t, *t, SCALE_FIX);
 	}
 
@@ -1533,23 +1524,29 @@ sqltypeinit( sql_allocator *sa)
 	/* allow smaller types for arguments of mul/div */
 	for (t = numerical, t++; t != decimals; t++) {
 		sql_type **u;
-		if (*t == WRD)
-			continue;
 		for (u = numerical, u++; u != decimals; u++) {
-			if (*u == WRD)
-				continue;
+			if (t != u && (*t)->localtype >  (*u)->localtype) {
+				sql_create_func(sa, "sql_mul", "calc", "*", *t, *u, *t, SCALE_MUL);
+				sql_create_func(sa, "sql_mul", "calc", "*", *u, *t, *t, SCALE_MUL);
+				sql_create_func(sa, "sql_div", "calc", "/", *t, *u, *t, SCALE_DIV);
+			}
+		}
+	}
+	for (t = decimals, t++; t != floats; t++) {
+		sql_type **u;
+
+		for (u = decimals, u++; u != floats; u++) {
 			if (t != u && (*t)->localtype >  (*u)->localtype) {
 				sql_create_func(sa, "sql_mul", "calc", "*", *t, *u, *t, SCALE_MUL);
 				sql_create_func(sa, "sql_div", "calc", "/", *t, *u, *t, SCALE_DIV);
 			}
 		}
 	}
+
 	/* all numericals */
 	for (t = numerical; *t != TME; t++) {
 		sql_subtype *lt;
 
-		if (*t == WRD)
-			continue;
 		lt = sql_bind_localtype((*t)->base.name);
 
 		sql_create_func(sa, "sql_sub", "calc", "-", *t, *t, *t, SCALE_FIX);
@@ -1585,8 +1582,6 @@ sqltypeinit( sql_allocator *sa)
 	for (t = decimals, t++; t != floats; t++) {
 		sql_type **u;
 		for (u = numerical; u != floats; u++) {
-			if (*u == WRD)
-				continue;
 			if (*u == OID)
 				continue;
 			if ((*t)->localtype >  (*u)->localtype) {
@@ -1602,11 +1597,7 @@ sqltypeinit( sql_allocator *sa)
 	for (t = numerical; t < end; t++) {
 		sql_type **u;
 
-		if (*t == WRD)
-			continue;
 		for (u = numerical; u < end; u++) {
-			if (*u == WRD)
-				continue;
 			sql_create_func(sa, "scale_up", "calc", "*", *u, *t, *t, SCALE_NONE);
 		}
 	}
@@ -1673,6 +1664,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "local_timezone", "mtime", "local_timezone", NULL, NULL, SECINT, SCALE_FIX);
 
 	sql_create_func(sa, "year", "mtime", "year", DTE, NULL, INT, SCALE_FIX);
+	sql_create_func(sa, "quarter", "mtime", "quarter", DTE, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "month", "mtime", "month", DTE, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "day", "mtime", "day", DTE, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "hour", "mtime", "hours", TME, NULL, INT, SCALE_FIX);
@@ -1683,6 +1675,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func_res(sa, "second", "mtime", "sql_seconds", TMETZ, NULL, DEC, SCALE_NONE, 3);
 
 	sql_create_func(sa, "year", "mtime", "year", TMESTAMP, NULL, INT, SCALE_FIX);
+	sql_create_func(sa, "quarter", "mtime", "quarter", TMESTAMP, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "month", "mtime", "month", TMESTAMP, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "day", "mtime", "day", TMESTAMP, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "hour", "mtime", "hours", TMESTAMP, NULL, INT, SCALE_FIX);
@@ -1690,6 +1683,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func_res(sa, "second", "mtime", "sql_seconds", TMESTAMP, NULL, DEC, SCALE_NONE, 3);
 
 	sql_create_func(sa, "year", "mtime", "year", TMESTAMPTZ, NULL, INT, SCALE_FIX);
+	sql_create_func(sa, "quarter", "mtime", "quarter", TMESTAMPTZ, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "month", "mtime", "month", TMESTAMPTZ, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "day", "mtime", "day", TMESTAMPTZ, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "hour", "mtime", "hours", TMESTAMPTZ, NULL, INT, SCALE_FIX);

@@ -33,8 +33,8 @@ Ready.
 [ 2	]
 #select a+b from (select 1 as a,1 as b union select 1,1) as q order by a limit
 #1;
-% .L16 # table_name
-% L16 # name
+% .L17 # table_name
+% L17 # name
 % tinyint # type
 % 1 # length
 [ 2	]

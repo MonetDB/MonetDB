@@ -31,8 +31,8 @@ Ready.
 #insert into a values (1);
 [ 1	]
 #select * from a left join (select a, 20 from b) as x using (a);
-% .L2,	.x # table_name
-% a,	L1 # name
+% .L4,	.x # table_name
+% a,	L3 # name
 % int,	tinyint # type
 % 1,	1 # length
 [ 1,	NULL	]

@@ -26,28 +26,28 @@ Ready.
 # 15:27:10 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-25519" "--port=37447"
 # 15:27:10 >  
 
-function user.getz(p:int):bat[:int];    	#[0] (0)  0 <- 1 
-    x:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 2 <- 3 
-    z:bat[:int] := bat.new(:int);       	#[2] (0) CMDBATnew 4 <- 3 
-    V30:bat[:int] := bat.new(:int);     	#[3] (0) CMDBATnew 5 <- 3 
-barrier V12:bit := true:bit;            	#[4] (0)  6 <- 7 
-    V13:any := algebra.union(x:bat[:int], z:bat[:int]);	#[5] (0)  8 <- 2 4 
-    V30:bat[:int] := V13:any;           	#[6] (0)  5 <- 8 
-exit V12:bit;                           	#[7] (0)  6 
-    return V31:bat[:int] := V30:bat[:int];	#[8] (0)  9 <- 5 
-end user.getz;                          	#[9] (0)  
+function user.getz(p:int):bat[:int];    	#[0] (0)  0 <- 1  type check needed 
+    x:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 2 <- 3  type check needed 
+    z:bat[:int] := bat.new(:int);       	#[2] (0) CMDBATnew 4 <- 3  type check needed 
+    V30:bat[:int] := bat.new(:int);     	#[3] (0) CMDBATnew 5 <- 3  type check needed 
+barrier V12:bit := true:bit;            	#[4] (0)  6 <- 7  type check needed 
+    V13:any := algebra.union(x:bat[:int], z:bat[:int]);	#[5] (0)  8 <- 2 4  type check needed 
+    V30:bat[:int] := V13:any;           	#[6] (0)  5 <- 8  type check needed 
+exit V12:bit;                           	#[7] (0)  6  type check needed 
+    return V31:bat[:int] := V30:bat[:int];	#[8] (0)  9 <- 5  type check needed 
+end user.getz;                          	#[9] (0)   type check needed 
 #aliases              actions= 0 time=4 usec 
-#garbagecollector     actions= 1 time=12 usec 
-function user.getz(p:int):bat[:int];    	#[0] (0)  0 <- 1 
-    x:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 2 <- 3 
-    z:bat[:int] := bat.new(:int);       	#[2] (0) CMDBATnew 4 <- 3 
-    V30:bat[:int] := bat.new(:int);     	#[3] (0) CMDBATnew 5 <- 3 
-barrier V12:bit := true:bit;            	#[4] (0)  6 <- 7 
-    V13:any := algebra.union(x:bat[:int], z:bat[:int]);	#[5] (0)  8 <- 2 4 
-    V30:bat[:int] := V13:any;           	#[6] (0)  5 <- 8 
-exit V12:bit;                           	#[7] (0)  6 
-    return V31:bat[:int] := V30:bat[:int];	#[8] (0)  9 <- 5 
-end user.getz;                          	#[9] (0)  
+#garbagecollector     actions= 0 time=8 usec 
+function user.getz(p:int):bat[:int];    	#[0] (0)  0 <- 1  type check needed 
+    x:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 2 <- 3  type check needed 
+    z:bat[:int] := bat.new(:int);       	#[2] (0) CMDBATnew 4 <- 3  type check needed 
+    V30:bat[:int] := bat.new(:int);     	#[3] (0) CMDBATnew 5 <- 3  type check needed 
+barrier V12:bit := true:bit;            	#[4] (0)  6 <- 7  type check needed 
+    V13:any := algebra.union(x:bat[:int], z:bat[:int]);	#[5] (0)  8 <- 2 4  type check needed 
+    V30:bat[:int] := V13:any;           	#[6] (0)  5 <- 8  type check needed 
+exit V12:bit;                           	#[7] (0)  6  type check needed 
+    return V31:bat[:int] := V30:bat[:int];	#[8] (0)  9 <- 5  type check needed 
+end user.getz;                          	#[9] (0)   type check needed 
 #aliases              actions= 0 time=4 usec 
 #garbagecollector     actions= 1 time=12 usec 
 

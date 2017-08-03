@@ -62,7 +62,7 @@ mal_export str AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat
 		if ((X) == NULL) {											\
 			BBPunfix((Y)->batCacheid);								\
 			free;													\
-			throw(MAL, "xml." Z, MAL_MALLOC_FAIL);					\
+			throw(MAL, "xml." Z, SQLSTATE(HY001) MAL_MALLOC_FAIL);	\
 		}															\
 		(X)->tsorted =  0;											\
 		(X)->trevsorted =  0;										\
@@ -236,7 +236,7 @@ BATXMLstr2xml(bat *ret, const bat *bid)
 
 	buf = GDKmalloc(size);
 	if (buf == NULL)
-		throw(MAL,"xml.str2xml",MAL_MALLOC_FAIL);
+		throw(MAL,"xml.str2xml", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		GDKfree(buf);
 		throw(MAL, "xml.xml", INTERNAL_BAT_ACCESS);
@@ -289,7 +289,7 @@ BATXMLdocument(bat *ret, const bat *bid)
 	const char *err = OPERATION_FAILED;
 
 	if (buf == NULL)
-		throw(MAL,"xml.document",MAL_MALLOC_FAIL);
+		throw(MAL,"xml.document", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		GDKfree(buf);
 		throw(MAL, "xml.document", INTERNAL_BAT_ACCESS);
@@ -352,7 +352,7 @@ BATXMLcontent(bat *ret, const bat *bid)
 	xmlBufferPtr xbuf;
 
 	if (buf == NULL)
-		throw(MAL,"xml.content",MAL_MALLOC_FAIL);
+		throw(MAL,"xml.content", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		GDKfree(buf);
 		throw(MAL, "xml.content", INTERNAL_BAT_ACCESS);
@@ -479,7 +479,7 @@ BATXMLoptions(bat *ret, const char * const *name, const char * const *options, c
 			GDKfree(val);
 		if (buf != NULL)
 			GDKfree(buf);
-		throw(MAL, "batxml.options", MAL_MALLOC_FAIL);
+		throw(MAL, "batxml.options", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		GDKfree(val);
@@ -549,7 +549,7 @@ BATXMLcomment(bat *ret, const bat *bid)
 	const char *err= OPERATION_FAILED;
 
 	if (buf == NULL)
-		throw(MAL, "xml.comment", MAL_MALLOC_FAIL);
+		throw(MAL, "xml.comment", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		GDKfree(buf);
 		throw(MAL, "xml.comment", INTERNAL_BAT_ACCESS);
@@ -621,7 +621,7 @@ BATXMLpi(bat *ret, const char * const *target, const bat *bid)
 		throw(MAL, "xml.pi", XML_PI_ERROR);
 	buf = GDKmalloc(size);
 	if (buf == NULL)
-		throw(MAL, "xml.pi", MAL_MALLOC_FAIL);
+		throw(MAL, "xml.pi", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	tgtlen = strlen(*target) + 6;
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -692,7 +692,7 @@ BATXMLroot(bat *ret, const bat *bid, const char * const *version, const char * c
 	}
 	buf = GDKmalloc(size);
 	if (buf == NULL)
-		throw(MAL, "xml.root", MAL_MALLOC_FAIL);
+		throw(MAL, "xml.root", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		GDKfree(buf);
 		throw(MAL, "xml.pi", INTERNAL_BAT_ACCESS);
@@ -768,7 +768,7 @@ BATXMLattribute(bat *ret, const char * const *name, const bat *bid)
 	attrlen = strlen(*name) + 5;
 	buf = GDKmalloc(size);
 	if (buf == NULL)
-		throw(MAL, "xml.attribute", MAL_MALLOC_FAIL);
+		throw(MAL, "xml.attribute", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		GDKfree(buf);
 		throw(MAL, "xml.attribute", INTERNAL_BAT_ACCESS);
@@ -845,7 +845,7 @@ BATXMLelement(bat *ret, const char * const *name, xml *nspace, xml *attr, const 
 	}
 	buf = GDKmalloc(size);
 	if (buf == NULL)
-		throw(MAL, "xml.attribute", MAL_MALLOC_FAIL);
+		throw(MAL, "xml.attribute", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		GDKfree(buf);
 		throw(MAL, "xml.element", INTERNAL_BAT_ACCESS);
@@ -935,7 +935,7 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(p);
 		if (q)
 			GDKfree(q);
-		throw(MAL, "xml.forest", MAL_MALLOC_FAIL);
+		throw(MAL, "xml.forest", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	/* collect the admin for the xml elements */
@@ -1037,7 +1037,7 @@ BATXMLconcat(bat *ret, const bat *bid, const bat *rid)
 	const char *err = OPERATION_FAILED;
 
 	if (buf == NULL)
-		throw(MAL, "xml.concat", MAL_MALLOC_FAIL);
+		throw(MAL, "xml.concat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	b = BATdescriptor(*bid);
 	r = BATdescriptor(*rid);
 	if (b == NULL || r == NULL) {
@@ -1121,7 +1121,7 @@ BATXMLgroup(xml *ret, const bat *bid)
 	const char *err = NULL;
 
 	if (buf == NULL)
-		throw(MAL, "xml.aggr",MAL_MALLOC_FAIL);
+		throw(MAL, "xml.aggr", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		GDKfree(buf);
 		throw(MAL, "xml.aggr", RUNTIME_OBJECT_MISSING);

@@ -30,8 +30,8 @@ Ready.
 #	SELECT 0 FROM ( SELECT 0, 0, 0, 0, 0, 0, 0 UNION ALL
 #			SELECT 1, 0, 0, 0, 0, 0, 0) AS a23(x1, x2, x3, x4, x5, x6, x7)
 #	) SELECT 0 FROM t1, t2;
-% .L53 # table_name
-% L53 # name
+% .L54 # table_name
+% L54 # name
 % tinyint # type
 % 1 # length
 [ 0	]

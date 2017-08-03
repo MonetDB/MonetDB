@@ -276,7 +276,7 @@ str OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			modnme= getArgDefault(mb,p,1);
 			fcnnme= getArgDefault(mb,p,2);
 		}
-		s= findSymbol(cntxt->nspace, putName(modnme),putName(fcnnme));
+		s= findSymbol(cntxt->usermodule, putName(modnme),putName(fcnnme));
 
 		if( s == NULL) {
 			char buf[1024];
@@ -294,9 +294,9 @@ str OPTsql_append(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	actions= OPTsql_appendImplementation(cntxt, mb,stk,p);
 
     /* Defense line against incorrect plans */
-	chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-	chkFlow(cntxt->fdout, mb);
-	chkDeclarations(cntxt->fdout, mb);
+	chkTypes(cntxt->usermodule, mb, FALSE);
+	chkFlow(mb);
+	chkDeclarations(mb);
 #ifdef DEBUG_OPT_OPTIMIZERS
 		mnstr_printf(cntxt->fdout,"=FINISHED sql_append %d\n",actions);
 		printFunction(cntxt->fdout,mb,0,LIST_MAL_ALL );

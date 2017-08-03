@@ -31,6 +31,7 @@ stderr of test 'non_groupby_column.Bug-3524` in directory 'sql/test/BugTracker-2
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select max(a), b from agg_error group by a;
 ERROR = !SELECT: cannot use non GROUP BY column 'b' in query results without an aggregate function
+CODE  = 42000
 
 # 11:15:00 >  
 # 11:15:00 >  "Done."

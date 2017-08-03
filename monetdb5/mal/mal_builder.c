@@ -27,7 +27,7 @@ newAssignment(MalBlkPtr mb)
 
 	if ( q == NULL)
 		return NULL;
-	if ((getArg(q,0)= newTmpVariable(mb,TYPE_any)) < 0 || mb->errors) {
+	if ((getArg(q,0)= newTmpVariable(mb,TYPE_any)) < 0 || mb->errors != MAL_SUCCEED) {
 		freeInstruction(q);
 		return NULL;
 	}
@@ -43,7 +43,7 @@ newStmt(MalBlkPtr mb, const char *module, const char *name)
 	if ( q == NULL)
 		return NULL;
 	setDestVar(q, newTmpVariable(mb, TYPE_any));
-	if (getDestVar(q) < 0 || mb->errors) {
+	if (getDestVar(q) < 0 || mb->errors != MAL_SUCCEED) {
 		freeInstruction(q);
 		return NULL;
 	}
@@ -58,7 +58,7 @@ newReturnStmt(MalBlkPtr mb)
 
 	if ( q == NULL)
 		return NULL;
-	if ((getArg(q,0)= newTmpVariable(mb,TYPE_any)) < 0 || mb->errors) {
+	if ((getArg(q,0)= newTmpVariable(mb,TYPE_any)) < 0 || mb->errors != MAL_SUCCEED) {
 		freeInstruction(q);
 		return NULL;
 	}
@@ -98,7 +98,7 @@ newComment(MalBlkPtr mb, const char *val)
 	getArg(q,0) = defConstant(mb,TYPE_str,&cst);
 	clrVarConstant(mb,getArg(q,0));
 	setVarDisabled(mb,getArg(q,0));
-	if (mb->errors) {
+	if (mb->errors != MAL_SUCCEED) {
 		freeInstruction(q);
 		return NULL;
 	}
@@ -116,7 +116,7 @@ newCatchStmt(MalBlkPtr mb, str nme)
 		return NULL;
 	q->barrier = CATCHsymbol;
 	if ( i< 0) {
-		if ((getArg(q,0)= newVariable(mb, nme, strlen(nme),TYPE_str)) < 0 || mb->errors) {
+		if ((getArg(q,0)= newVariable(mb, nme, strlen(nme),TYPE_str)) < 0 || mb->errors != MAL_SUCCEED) {
 			freeInstruction(q);
 			return NULL;
 		}
@@ -135,7 +135,7 @@ newRaiseStmt(MalBlkPtr mb, str nme)
 		return NULL;
 	q->barrier = RAISEsymbol;
 	if ( i< 0) {
-		if ((getArg(q,0)= newVariable(mb, nme, strlen(nme),TYPE_str)) < 0 || mb->errors) {
+		if ((getArg(q,0)= newVariable(mb, nme, strlen(nme),TYPE_str)) < 0 || mb->errors != MAL_SUCCEED) {
 			freeInstruction(q);
 			return NULL;
 		}
@@ -154,7 +154,7 @@ newExitStmt(MalBlkPtr mb, str nme)
 		return NULL;
 	q->barrier = EXITsymbol;
 	if ( i< 0) {
-		if ((getArg(q,0)= newVariable(mb, nme,strlen(nme),TYPE_str)) < 0 || mb->errors) {
+		if ((getArg(q,0)= newVariable(mb, nme,strlen(nme),TYPE_str)) < 0 || mb->errors != MAL_SUCCEED) {
 			freeInstruction(q);
 			return NULL;
 		}

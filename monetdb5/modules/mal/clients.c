@@ -34,9 +34,6 @@ pseudo(bat *ret, BAT *b, str X1,str X2) {
 	if (BBPindex(buf) <= 0 && BBPrename(b->batCacheid, buf) != 0)
 		return -1;
 	BATroles(b,X2);
-	if (BATmode(b,TRANSIENT) != GDK_SUCCEED)
-		return -1;
-	BATfakeCommit(b);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
 	return 0;
@@ -135,7 +132,7 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == 0 || bn == 0){
 		if ( b != 0) BBPunfix(b->batCacheid);
 		if ( bn != 0) BBPunfix(bn->batCacheid);
-		throw(MAL, "clients.info", MAL_MALLOC_FAIL);
+		throw(MAL, "clients.info", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	if (BUNappend(b, "user", FALSE) != GDK_SUCCEED ||
@@ -169,7 +166,7 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   bailout:
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	throw(MAL, "clients.info", MAL_MALLOC_FAIL);
+	throw(MAL, "clients.info", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 str
@@ -200,7 +197,7 @@ CLTLogin(bat *nme, bat *ret)
   bailout:
 	BBPreclaim(b);
 	BBPreclaim(u);
-	throw(MAL, "clients.getLogins", MAL_MALLOC_FAIL);
+	throw(MAL, "clients.getLogins", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 str
@@ -211,7 +208,7 @@ CLTLastCommand(bat *ret)
 	char s[26];
 
 	if (b == 0)
-		throw(MAL, "clients.getLastCommand", MAL_MALLOC_FAIL);
+		throw(MAL, "clients.getLastCommand", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
 		if (c->mode >= RUNCLIENT && c->user != oid_nil) {
@@ -226,7 +223,7 @@ CLTLastCommand(bat *ret)
 
   bailout:
 	BBPreclaim(b);
-	throw(MAL, "clients.getLastCommand", MAL_MALLOC_FAIL);
+	throw(MAL, "clients.getLastCommand", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 str
@@ -236,7 +233,7 @@ CLTActions(bat *ret)
 	int i;
 
 	if (b == 0)
-		throw(MAL, "clients.getActions", MAL_MALLOC_FAIL);
+		throw(MAL, "clients.getActions", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
 		if (c->mode >= RUNCLIENT && c->user != oid_nil) {
@@ -249,29 +246,7 @@ CLTActions(bat *ret)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	throw(MAL, "clients.getActions", MAL_MALLOC_FAIL);
-}
-str
-CLTTime(bat *ret)
-{
-	BAT *b = COLnew(0, TYPE_lng, 12, TRANSIENT);
-	int i;
-
-	if (b == 0)
-		throw(MAL, "clients.getTime", MAL_MALLOC_FAIL);
-	for (i = 0; i < MAL_MAXCLIENTS; i++) {
-		Client c = mal_clients+i;
-		if (c->mode >= RUNCLIENT && c->user != oid_nil) {
-			if (BUNappend(b, &c->totaltime, FALSE) != GDK_SUCCEED)
-				goto bailout;
-		}
-	}
-	if (pseudo(ret,b,"client","usec"))
-		goto bailout;
-	return MAL_SUCCEED;
-  bailout:
-	BBPreclaim(b);
-	throw(MAL, "clients.getTime", MAL_MALLOC_FAIL);
+	throw(MAL, "clients.getActions", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 /*
@@ -284,7 +259,7 @@ CLTusers(bat *ret)
 	int i;
 
 	if (b == 0)
-		throw(MAL, "clients.users", MAL_MALLOC_FAIL);
+		throw(MAL, "clients.users", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
 		if (c->mode >= RUNCLIENT && c->user != oid_nil &&
@@ -296,7 +271,7 @@ CLTusers(bat *ret)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	throw(MAL, "clients.users", MAL_MALLOC_FAIL);
+	throw(MAL, "clients.users", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 str
@@ -643,7 +618,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if ( qtimeout) BBPunfix(qtimeout->batCacheid);
 		if ( last) BBPunfix(last->batCacheid);
 		if ( active) BBPunfix(active->batCacheid);
-		throw(SQL,"sql.sessions",MAL_MALLOC_FAIL);
+		throw(SQL,"sql.sessions", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	
     MT_lock_set(&mal_contextLock);

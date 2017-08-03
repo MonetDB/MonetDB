@@ -109,6 +109,11 @@ char *PyType_Format(int type)
 
 char *BatType_Format(int type)
 {
+	if (type == TYPE_blob) {
+		return "BLOB";
+	} else if (type == TYPE_sqlblob) {
+		return "SQLBLOB";
+	}
 	switch (type) {
 		case TYPE_bit:
 			return "BOOL";
@@ -177,6 +182,11 @@ int PyType_ToBat(int type)
 
 int BatType_ToPyType(int type)
 {
+	if (type == TYPE_blob) {
+		return NPY_OBJECT;
+	} else if (type == TYPE_sqlblob) {
+		return NPY_OBJECT;
+	}
 	switch (type) {
 		case TYPE_bit:
 			return NPY_BOOL;

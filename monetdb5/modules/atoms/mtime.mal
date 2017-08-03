@@ -472,6 +472,12 @@ comment "extracts year from date (nonzero
 command batmtime.year(d:bat[:date]):bat[:int]
 address MTIMEdate_extract_year_bulk;
 
+command quarter(d:date) :int
+address MTIMEdate_extract_quarter
+comment "extracts quarter from date";
+command batmtime.quarter(d:bat[:date]):bat[:int]
+address MTIMEdate_extract_quarter_bulk;
+
 command month(d:date) :int
 address MTIMEdate_extract_month
 comment "extracts month from date";
@@ -594,6 +600,9 @@ comment "Returns N where d is the Nth day
 command weekofyear(d:date) :int
 address MTIMEdate_extract_weekofyear
 comment "Returns the week number in the year.";
+command week(d:date) :int
+address MTIMEdate_extract_weekofyear
+comment "Returns the week number in the year.";
 command dayofweek(d:date) :int
 address MTIMEdate_extract_dayofweek
 comment "Returns the current day of the week
@@ -691,6 +700,8 @@ address MTIMEcurrent_time;
 
 command year(t:timestamp):int
 address MTIMEtimestamp_year;
+command quarter(t:timestamp):int
+address MTIMEtimestamp_quarter;
 command month(t:timestamp):int
 address MTIMEtimestamp_month;
 command day(t:timestamp):int

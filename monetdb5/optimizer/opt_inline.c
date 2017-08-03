@@ -31,7 +31,7 @@ static int OPTinlineMultiplex(Client cntxt, MalBlkPtr mb, InstrPtr p){
 
 	mod = VALget(&getVar(mb, getArg(p, 1))->value);
 	fcn = VALget(&getVar(mb, getArg(p, 2))->value);
-	if( (s= findSymbol(cntxt->nspace, mod,fcn)) ==0 )
+	if( (s= findSymbol(cntxt->usermodule, mod,fcn)) ==0 )
 		return FALSE;
 	/*
 	 * Before we decide to propagate the inline request
@@ -54,6 +54,7 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	int actions = 0;
 	char buf[256];
 	lng usec = GDKusec();
+	str msg = MAL_SUCCEED;
 
 	(void) p;
 	(void)stk;
@@ -93,9 +94,9 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
     /* Defense line against incorrect plans */
     if( actions > 0){
-        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-        chkFlow(cntxt->fdout, mb);
-        chkDeclarations(cntxt->fdout, mb);
+        chkTypes(cntxt->usermodule, mb, FALSE);
+        chkFlow(mb);
+        chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
@@ -104,5 +105,5 @@ OPTinlineImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 
-	return MAL_SUCCEED;
+	return msg;
 }

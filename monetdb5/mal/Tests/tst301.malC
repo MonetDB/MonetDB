@@ -6,3 +6,4 @@ catch IllegalAccess;
 	io.printf("caught %d\n",IllegalAccess);
 exit IllegalAccess;
 end;
+foo();

@@ -402,7 +402,7 @@ recover_dir(int farmid, int direxists)
 
 static gdk_return BBPrecover(int farmid);
 static gdk_return BBPrecover_subdir(void);
-static int BBPdiskscan(const char *);
+static int BBPdiskscan(const char *, size_t);
 
 #ifdef GDKLIBRARY_SORTEDPOS
 static void
@@ -1000,14 +1000,8 @@ heapinit(BAT *b, const char *buf, int *hashash, const char *HT, int bbpversion, 
 		GDKfatal("BBPinit: unknown properties are set: incompatible database\n");
 	*hashash = var & 2;
 	var &= ~2;
-	/* silently convert chr columns to bte */
-	if (strcmp(type, "chr") == 0)
-		strcpy(type, "bte");
-	/* silently convert wrd columns to int or lng */
-	else if (strcmp(type, "wrd") == 0)
-		strcpy(type, width == SIZEOF_INT ? "int" : "lng");
 #ifdef HAVE_HGE
-	else if (strcmp(type, "hge") == 0)
+	if (strcmp(type, "hge") == 0)
 		havehge = 1;
 #endif
 	if ((t = ATOMindex(type)) < 0) {
@@ -1147,7 +1141,7 @@ BBPreadEntries(FILE *fp, int bbpversion)
 			   &properties,
 			   &count, &capacity, &base,
 			   &nread) < 8)
-			GDKfatal("BBPinit: invalid format for BBP.dir%s", buf);
+			GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
 
 		/* convert both / and \ path separators to our own DIR_SEP */
 #if DIR_SEP != '/'
@@ -1322,6 +1316,31 @@ BBPaddfarm(const char *dirname, int rolemask)
 		if (BBPfarms[i].dirname == NULL) {
 			BBPfarms[i].dirname = GDKstrdup(dirname);
 			BBPfarms[i].roles = rolemask;
+			if ((rolemask & 1) == 0) {
+				char *bbpdir;
+				int j;
+
+				for (j = 0; j < i; j++)
+					if (strcmp(BBPfarms[i].dirname,
+						   BBPfarms[j].dirname) == 0)
+						return;
+				/* if an extra farm, make sure we
+				 * don't find a BBP.dir there that
+				 * might belong to an existing
+				 * database */
+				bbpdir = GDKfilepath(i, BATDIR, "BBP", "dir");
+				if (bbpdir == NULL)
+					GDKfatal("BBPaddfarm: malloc failed\n");
+				if (stat(bbpdir, &st) != -1 || errno != ENOENT)
+					GDKfatal("BBPaddfarm: %s is a database\n", dirname);
+				GDKfree(bbpdir);
+				bbpdir = GDKfilepath(i, BAKDIR, "BBP", "dir");
+				if (bbpdir == NULL)
+					GDKfatal("BBPaddfarm: malloc failed\n");
+				if (stat(bbpdir, &st) != -1 || errno != ENOENT)
+					GDKfatal("BBPaddfarm: %s is a database\n", dirname);
+				GDKfree(bbpdir);
+			}
 			return;
 		}
 	}
@@ -1350,6 +1369,7 @@ BBPinit(void)
 	int bbpversion;
 	str bbpdirstr = GDKfilepath(0, BATDIR, "BBP", "dir");
 	str backupbbpdirstr = GDKfilepath(0, BAKDIR, "BBP", "dir");
+	int i;
 
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&GDKunloadLock, "GDKunloadLock");
@@ -1414,10 +1434,22 @@ BBPinit(void)
 		GDKfatal("BBPinit: cannot properly prepare process %s. Please check whether your disk is full or write-protected", BAKDIR);
 
 	/* cleanup any leftovers (must be done after BBPrecover) */
-	{
-		char *d = GDKfilepath(0, NULL, BATDIR, NULL);
-		BBPdiskscan(d);
-		GDKfree(d);
+	for (i = 0; i < MAXFARMS && BBPfarms[i].dirname != NULL; i++) {
+		int j;
+		for (j = 0; j < i; j++) {
+			/* don't clean a directory twice */
+			if (BBPfarms[j].dirname &&
+			    strcmp(BBPfarms[i].dirname,
+				   BBPfarms[j].dirname) == 0)
+				break;
+		}
+		if (j == i) {
+			char *d = GDKfilepath(i, NULL, BATDIR, NULL);
+			if (d == NULL)
+				GDKfatal("BBPinit: malloc failed\n");
+			BBPdiskscan(d, strlen(d) - strlen(BATDIR));
+			GDKfree(d);
+		}
 	}
 
 #ifdef GDKLIBRARY_SORTEDPOS
@@ -1466,7 +1498,7 @@ BBPexit(void)
 		skipped = 0;
 		for (i = 0; i < (bat) ATOMIC_GET(BBPsize, BBPsizeLock); i++) {
 			if (BBPvalid(i)) {
-				BAT *b = BBP_cache(i);
+				BAT *b = BBP_desc(i);
 
 				if (b) {
 					if (b->batSharecnt > 0) {
@@ -1483,11 +1515,11 @@ BBPexit(void)
 						bat tp = VIEWtparent(b);
 						bat vtp = VIEWvtparent(b);
 						if (tp) {
-							BBP_cache(tp)->batSharecnt--;
+							BBP_desc(tp)->batSharecnt--;
 							--BBP_lrefs(tp);
 						}
 						if (vtp) {
-							BBP_cache(vtp)->batSharecnt--;
+							BBP_desc(vtp)->batSharecnt--;
 							--BBP_lrefs(vtp);
 						}
 						VIEWdestroy(b);
@@ -1811,42 +1843,63 @@ BBPdump(void)
 			continue;
 		fprintf(stderr,
 			"# %d[%s]: nme='%s' refs=%d lrefs=%d "
-			"status=%d count=" BUNFMT " "
-			"Theap=[" SZFMT "," SZFMT "] "
-			"Tvheap=[" SZFMT "," SZFMT "] "
-			"Thash=[" SZFMT "," SZFMT "]\n",
+			"status=%d count=" BUNFMT,
 			i,
 			ATOMname(b->ttype),
 			BBP_logical(i) ? BBP_logical(i) : "<NULL>",
 			BBP_refs(i),
 			BBP_lrefs(i),
 			BBP_status(i),
-			b->batCount,
-			HEAPmemsize(&b->theap),
-			HEAPvmsize(&b->theap),
-			HEAPmemsize(b->tvheap),
-			HEAPvmsize(b->tvheap),
-			b->thash && b->thash != (Hash *) -1 && b->thash != (Hash *) 1 ? HEAPmemsize(b->thash->heap) : 0,
-			b->thash && b->thash != (Hash *) -1 && b->thash != (Hash *) 1 ? HEAPvmsize(b->thash->heap) : 0);
-		if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-			cmem += HEAPmemsize(&b->theap);
-			cvm += HEAPvmsize(&b->theap);
-			nc++;
+			b->batCount);
+		if (b->batSharecnt > 0)
+			fprintf(stderr, " shares=%d", b->batSharecnt);
+		if (b->batDirty)
+			fprintf(stderr, " Dirty");
+		if (b->batDirtydesc)
+			fprintf(stderr, " DirtyDesc");
+		if (b->theap.parentid) {
+			fprintf(stderr, " Theap -> %d", b->theap.parentid);
 		} else {
-			mem += HEAPmemsize(&b->theap);
-			vm += HEAPvmsize(&b->theap);
-			n++;
-		}
-		if (b->tvheap) {
+			fprintf(stderr,
+				" Theap=[" SZFMT "," SZFMT "]%s",
+				HEAPmemsize(&b->theap),
+				HEAPvmsize(&b->theap),
+				b->theap.dirty ? "(Dirty)" : "");
 			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-				cmem += HEAPmemsize(b->tvheap);
-				cvm += HEAPvmsize(b->tvheap);
+				cmem += HEAPmemsize(&b->theap);
+				cvm += HEAPvmsize(&b->theap);
+				nc++;
 			} else {
-				mem += HEAPmemsize(b->tvheap);
-				vm += HEAPvmsize(b->tvheap);
+				mem += HEAPmemsize(&b->theap);
+				vm += HEAPvmsize(&b->theap);
+				n++;
 			}
 		}
-		if (b->thash && b->thash != (Hash *) -1 && b->thash != (Hash *) 1) {
+		if (b->tvheap) {
+			if (b->tvheap->parentid != b->batCacheid) {
+				fprintf(stderr,
+					" Tvheap -> %d",
+					b->tvheap->parentid);
+			} else {
+				fprintf(stderr,
+					" Tvheap=[" SZFMT "," SZFMT "]%s",
+					HEAPmemsize(b->tvheap),
+					HEAPvmsize(b->tvheap),
+				b->tvheap->dirty ? "(Dirty)" : "");
+				if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
+					cmem += HEAPmemsize(b->tvheap);
+					cvm += HEAPvmsize(b->tvheap);
+				} else {
+					mem += HEAPmemsize(b->tvheap);
+					vm += HEAPvmsize(b->tvheap);
+				}
+			}
+		}
+		if (b->thash && b->thash != (Hash *) -1) {
+			fprintf(stderr,
+				" Thash=[" SZFMT "," SZFMT "]",
+				HEAPmemsize(b->thash->heap),
+				HEAPvmsize(b->thash->heap));
 			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
 				cmem += HEAPmemsize(b->thash->heap);
 				cvm += HEAPvmsize(b->thash->heap);
@@ -1855,6 +1908,7 @@ BBPdump(void)
 				vm += HEAPvmsize(b->thash->heap);
 			}
 		}
+		fprintf(stderr, "\n");
 	}
 	fprintf(stderr,
 		"# %d bats: mem=" SZFMT ", vm=" SZFMT " %d cached bats: mem=" SZFMT ", vm=" SZFMT "\n",
@@ -3596,7 +3650,7 @@ getdesc(bat bid)
 }
 
 static int
-BBPdiskscan(const char *parent)
+BBPdiskscan(const char *parent, size_t baseoff)
 {
 	DIR *dirp = opendir(parent);
 	struct dirent *dent;
@@ -3626,9 +3680,9 @@ BBPdiskscan(const char *parent)
 			continue;	/* ignore .dot files and directories (. ..) */
 
 		if (strncmp(dent->d_name, "BBP.", 4) == 0 &&
-		    (strcmp(parent, BATDIR) == 0 ||
-		     strncmp(parent, BAKDIR, strlen(BAKDIR)) == 0 ||
-		     strncmp(parent, SUBDIR, strlen(SUBDIR)) == 0))
+		    (strcmp(parent + baseoff, BATDIR) == 0 ||
+		     strncmp(parent + baseoff, BAKDIR, strlen(BAKDIR)) == 0 ||
+		     strncmp(parent + baseoff, SUBDIR, strlen(SUBDIR)) == 0))
 			continue;
 
 		p = strchr(dent->d_name, '.');
@@ -3640,13 +3694,13 @@ BBPdiskscan(const char *parent)
 			/* found a file with too long a name
 			   (i.e. unknown); stop pruning in this
 			   subdir */
-			IODEBUG fprintf(stderr, "BBPdiskscan: unexpected file %s, leaving %s.\n", dent->d_name, parent);
+			fprintf(stderr, "BBPdiskscan: unexpected file %s, leaving %s.\n", dent->d_name, parent);
 			break;
 		}
 		strncpy(dst, dent->d_name, dstlen);
 		fullname[sizeof(fullname) - 1] = 0;
 
-		if (p == NULL && BBPdiskscan(fullname) == 0) {
+		if (p == NULL && BBPdiskscan(fullname, baseoff) == 0) {
 			/* it was a directory */
 			continue;
 		}
@@ -3702,7 +3756,7 @@ BBPdiskscan(const char *parent)
 		if (!ok) {
 			/* found an unknown file; stop pruning in this
 			 * subdir */
-			IODEBUG fprintf(stderr, "BBPdiskscan: unexpected file %s, leaving %s.\n", dent->d_name, parent);
+			fprintf(stderr, "BBPdiskscan: unexpected file %s, leaving %s.\n", dent->d_name, parent);
 			break;
 		}
 		if (delete) {

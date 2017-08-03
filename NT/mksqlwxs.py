@@ -49,6 +49,7 @@ def main():
     print(r'      <RegistrySearch Id="MonetDBRegistry" Key="Software\[Manufacturer]\[ProductName]" Name="InstallPath" Root="HKLM" Type="raw"/>')
     print(r'    </Property>')
     print(r'    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR"/>')
+    print(r'    <Property Id="ARPPRODUCTICON" Value="monetdb.ico"/>')
     print(r'    <Media Id="1" Cabinet="monetdb.cab" EmbedCab="yes"/>')
     print(r'    <Directory Id="TARGETDIR" Name="SourceDir">')
     print(r'      <Merge Id="VCRedist" DiskId="1" Language="0" SourceFile="C:\Program Files (x86)\Common Files\Merge Modules\Microsoft_VC%s0_CRT_%s.msm"/>' % (vs, arch))

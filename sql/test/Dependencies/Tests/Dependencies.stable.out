@@ -94,21 +94,21 @@ Dependencies between database objects
 [ "monetdb",	"bam",	"DEP_SCHEMA"	]
 [ "monetdb",	"test",	"DEP_SCHEMA"	]
 #SELECT t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, dependencies as dep where t.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type = 1;
-% .t,	.v,	.L76 # table_name
-% name,	name,	L76 # name
+% .t,	.v,	.L100 # table_name
+% name,	name,	L100 # name
 % varchar,	varchar,	char # type
 % 2,	2,	8 # length
 [ "t1",	"v1",	"DEP_VIEW"	]
 [ "v1",	"v2",	"DEP_VIEW"	]
 #SELECT t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys) and t.type = 0;
-% .t,	.i,	.L54 # table_name
-% name,	name,	L54 # name
+% .t,	.i,	.L55 # table_name
+% name,	name,	L55 # name
 % varchar,	varchar,	char # type
 % 2,	8,	9 # length
 [ "t1",	"id_index",	"DEP_INDEX"	]
 #(SELECT t.name as name, tri.name as trigname, 'DEP_TRIGGER' from tables as t, triggers as tri where tri.table_id = t.id) UNION (SELECT t.name as name, tri.name as trigname, 'DEP_TRIGGER' from triggers tri, tables t, dependencies dep where dep.id = t.id AND dep.depend_id =tri.id AND dep.depend_type = 8);
-% .L112,	.L112,	.L112 # table_name
-% name,	trigname,	L43 # name
+% .L115,	.L115,	.L115 # table_name
+% name,	trigname,	L44 # name
 % varchar,	varchar,	char # type
 % 2,	14,	11 # length
 [ "t1",	"trigger_test",	"DEP_TRIGGER"	]
@@ -116,8 +116,8 @@ Dependencies between database objects
 [ "t2",	"trigger_test",	"DEP_TRIGGER"	]
 [ "t3",	"trigger_test_4",	"DEP_TRIGGER"	]
 #SELECT t.name, fk.name, 'DEP_FKEY' from tables as t, keys as k, keys as fk where fk.rkey = k.id and k.table_id = t.id;
-% .t,	.fk,	.L41 # table_name
-% name,	name,	L41 # name
+% .t,	.fk,	.L42 # table_name
+% name,	name,	L42 # name
 % varchar,	varchar,	char # type
 % 5,	15,	8 # length
 [ "files",	"sq_fkey_file_id",	"DEP_FKEY"	]
@@ -125,8 +125,8 @@ Dependencies between database objects
 [ "files",	"pg_fkey_file_id",	"DEP_FKEY"	]
 [ "t1",	"t2_id_t1_fkey",	"DEP_FKEY"	]
 #SELECT t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND t.type IN (0, 10) ORDER BY t.name, f.name;
-% .t,	.f,	.L41 # table_name
-% name,	name,	L41 # name
+% .t,	.f,	.L42 # table_name
+% name,	name,	L42 # name
 % varchar,	varchar,	char # type
 % 17,	35,	8 # length
 [ "auths",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
@@ -164,16 +164,16 @@ Dependencies between database objects
 [ "triggers",	"dependencies_tables_on_triggers",	"DEP_FUNC"	]
 [ "triggers",	"dependencies_views_on_triggers",	"DEP_FUNC"	]
 #SELECT c.name, v.name, 'DEP_VIEW' from columns as c, tables as v, dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type = 1;
-% .c,	.v,	.L52 # table_name
-% name,	name,	L52 # name
+% .c,	.v,	.L54 # table_name
+% name,	name,	L54 # name
 % varchar,	varchar,	char # type
 % 4,	2,	8 # length
 [ "id",	"v1",	"DEP_VIEW"	]
 [ "name",	"v1",	"DEP_VIEW"	]
 [ "age",	"v1",	"DEP_VIEW"	]
 #SELECT c.name, k.name, 'DEP_KEY' from columns as c, objects as kc, keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1;
-% .c,	.k,	.L15 # table_name
-% name,	name,	L15 # name
+% .c,	.k,	.L16 # table_name
+% name,	name,	L16 # name
 % varchar,	varchar,	char # type
 % 20,	44,	7 # length
 [ "srid",	"spatial_ref_sys_srid_pkey",	"DEP_KEY"	]
@@ -201,14 +201,14 @@ Dependencies between database objects
 [ "file_id",	"pg_pkey_id_file_id",	"DEP_KEY"	]
 [ "id",	"t1_id_pkey",	"DEP_KEY"	]
 #SELECT c.name, i.name, 'DEP_INDEX' from columns as c, objects as kc, idxs as i where kc."name" = c.name AND kc.id = i.id AND c.table_id = i.table_id AND i.name not in (select name from keys);
-% .c,	.i,	.L32 # table_name
-% name,	name,	L32 # name
+% .c,	.i,	.L33 # table_name
+% name,	name,	L33 # name
 % varchar,	varchar,	char # type
 % 2,	8,	9 # length
 [ "id",	"id_index",	"DEP_INDEX"	]
 #SELECT c.name, f.name, 'DEP_FUNC' from functions as f, columns as c, dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 ORDER BY c.name, f.name;
-% .c,	.f,	.L15 # table_name
-% name,	name,	L15 # name
+% .c,	.f,	.L16 # table_name
+% name,	name,	L16 # name
 % varchar,	varchar,	char # type
 % 13,	35,	8 # length
 [ "action",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
@@ -410,8 +410,8 @@ Dependencies between database objects
 [ "varres",	"dependencies_tables_on_functions",	"DEP_FUNC"	]
 [ "varres",	"dependencies_views_on_functions",	"DEP_FUNC"	]
 #SELECT c.name, tri.name, 'DEP_TRIGGER' from columns as c, triggers as tri, dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8;
-% .c,	.tri,	.L15 # table_name
-% name,	name,	L15 # name
+% .c,	.tri,	.L16 # table_name
+% name,	name,	L16 # name
 % varchar,	varchar,	char # type
 % 6,	14,	11 # length
 [ "id_t1",	"trigger_test",	"DEP_TRIGGER"	]
@@ -421,8 +421,8 @@ Dependencies between database objects
 [ "age",	"trigger_test",	"DEP_TRIGGER"	]
 [ "id",	"trigger_test_4",	"DEP_TRIGGER"	]
 #SELECT v.name, f.name, 'DEP_FUNC' from functions as f, tables as v, dependencies as dep where v.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND v.type IN (1, 11) ORDER BY v.name, f.name;
-% .v,	.f,	.L41 # table_name
-% name,	name,	L41 # name
+% .v,	.f,	.L42 # table_name
+% name,	name,	L42 # name
 % varchar,	varchar,	char # type
 % 7,	34,	8 # length
 [ "columns",	"dependencies_columns_on_functions",	"DEP_FUNC"	]
@@ -441,13 +441,13 @@ Dependencies between database objects
 [ "users",	"dependencies_schemas_on_users",	"DEP_FUNC"	]
 [ "v1",	"f2",	"DEP_FUNC"	]
 #SELECT v.name, i.name, 'DEP_INDEX' from tables as v, idxs as i where i.table_id = v.id and i.name not in (select name from keys) and v.type = 1;
-% .v,	.i,	.L54 # table_name
-% name,	name,	L54 # name
+% .v,	.i,	.L55 # table_name
+% name,	name,	L55 # name
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length
 #SELECT v.name, tri.name, 'DEP_TRIGGER' from tables as v, triggers as tri, dependencies as dep where dep.id = v.id AND dep.depend_id =tri.id AND dep.depend_type = 8 AND v.type = 1;
-% .v,	.tri,	.L41 # table_name
-% name,	name,	L41 # name
+% .v,	.tri,	.L42 # table_name
+% name,	name,	L42 # name
 % varchar,	varchar,	char # type
 % 0,	0,	11 # length
 #SELECT f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 order by f2.name, f1.name;
@@ -456,7 +456,6 @@ Dependencies between database objects
 % varchar,	varchar,	char # type
 % 17,	13,	8 # length
 [ "f1",	"f2",	"DEP_FUNC"	]
-[ "like",	"f2",	"DEP_FUNC"	]
 [ "st_numgeometries",	"st_numpatches",	"DEP_FUNC"	]
 [ "st_geometryn",	"st_patchn",	"DEP_FUNC"	]
 [ "getproj4",	"st_transform",	"DEP_FUNC"	]
@@ -589,8 +588,8 @@ Cleanup
 [ "monetdb",	"profiler",	"DEP_SCHEMA"	]
 [ "monetdb",	"bam",	"DEP_SCHEMA"	]
 #SELECT t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, dependencies as dep where t.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31);
-% .t,	.v,	.L76 # table_name
-% name,	name,	L76 # name
+% .t,	.v,	.L100 # table_name
+% name,	name,	L100 # name
 % varchar,	varchar,	char # type
 % 11,	16,	8 # length
 [ "tables",	"geometry_columns",	"DEP_VIEW"	]
@@ -599,26 +598,26 @@ Cleanup
 [ "schemas",	"geometry_columns",	"DEP_VIEW"	]
 [ "environment",	"geometry_columns",	"DEP_VIEW"	]
 #SELECT t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys) and t.type in (0, 10, 20, 30);
-% .t,	.i,	.L54 # table_name
-% name,	name,	L54 # name
+% .t,	.i,	.L55 # table_name
+% name,	name,	L55 # name
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length
 #(SELECT t.name, tri.name, 'DEP_TRIGGER' from tables as t, triggers as tri where tri.table_id = t.id) UNION (SELECT t.name, tri.name, 'DEP_TRIGGER' from triggers tri, tables t, dependencies dep where dep.id = t.id AND dep.depend_id =tri.id AND dep.depend_type = 8);
-% .L106,	.L106,	.L106 # table_name
-% name,	name,	L41 # name
+% .L111,	.L111,	.L111 # table_name
+% name,	name,	L42 # name
 % varchar,	varchar,	char # type
 % 0,	0,	11 # length
 #SELECT t.name, fk.name, 'DEP_FKEY' from tables as t, keys as k, keys as fk where fk.rkey = k.id and k.table_id = t.id;
-% .t,	.fk,	.L41 # table_name
-% name,	name,	L41 # name
+% .t,	.fk,	.L42 # table_name
+% name,	name,	L42 # name
 % varchar,	varchar,	char # type
 % 5,	15,	8 # length
 [ "files",	"sq_fkey_file_id",	"DEP_FKEY"	]
 [ "files",	"rg_fkey_file_id",	"DEP_FKEY"	]
 [ "files",	"pg_fkey_file_id",	"DEP_FKEY"	]
 #SELECT t.name, f.name, 'DEP_FUNC' from functions as f, tables as t, dependencies as dep where t.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND t.type in (0, 10, 20, 30) ORDER BY t.name, f.name;
-% .t,	.f,	.L41 # table_name
-% name,	name,	L41 # name
+% .t,	.f,	.L42 # table_name
+% name,	name,	L42 # name
 % varchar,	varchar,	char # type
 % 17,	35,	8 # length
 [ "auths",	"dependencies_owners_on_schemas",	"DEP_FUNC"	]
@@ -655,8 +654,8 @@ Cleanup
 [ "triggers",	"dependencies_tables_on_triggers",	"DEP_FUNC"	]
 [ "triggers",	"dependencies_views_on_triggers",	"DEP_FUNC"	]
 #SELECT c.name, v.name, 'DEP_VIEW' from columns as c, tables as v, dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31);
-% .c,	.v,	.L52 # table_name
-% name,	name,	L52 # name
+% .c,	.v,	.L54 # table_name
+% name,	name,	L54 # name
 % varchar,	varchar,	char # type
 % 10,	16,	8 # length
 [ "systemname",	"geometry_columns",	"DEP_VIEW"	]
@@ -664,8 +663,8 @@ Cleanup
 [ "id",	"geometry_columns",	"DEP_VIEW"	]
 [ "name",	"geometry_columns",	"DEP_VIEW"	]
 #SELECT c.name, k.name, 'DEP_KEY' from columns as c, objects as kc, keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1;
-% .c,	.k,	.L15 # table_name
-% name,	name,	L15 # name
+% .c,	.k,	.L16 # table_name
+% name,	name,	L16 # name
 % varchar,	varchar,	char # type
 % 20,	44,	7 # length
 [ "srid",	"spatial_ref_sys_srid_pkey",	"DEP_KEY"	]
@@ -692,13 +691,13 @@ Cleanup
 [ "id",	"pg_pkey_id_file_id",	"DEP_KEY"	]
 [ "file_id",	"pg_pkey_id_file_id",	"DEP_KEY"	]
 #SELECT c.name, i.name, 'DEP_INDEX' from columns as c, objects as kc, idxs as i where kc."name" = c.name AND kc.id = i.id AND c.table_id = i.table_id AND i.name not in (select name from keys);
-% .c,	.i,	.L32 # table_name
-% name,	name,	L32 # name
+% .c,	.i,	.L33 # table_name
+% name,	name,	L33 # name
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length
 #SELECT c.name, f.name, 'DEP_FUNC' from functions as f, columns as c, dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 ORDER BY c.name, f.name;
-% .c,	.f,	.L15 # table_name
-% name,	name,	L15 # name
+% .c,	.f,	.L16 # table_name
+% name,	name,	L16 # name
 % varchar,	varchar,	char # type
 % 13,	35,	8 # length
 [ "action",	"dependencies_columns_on_indexes",	"DEP_FUNC"	]
@@ -897,13 +896,13 @@ Cleanup
 [ "varres",	"dependencies_tables_on_functions",	"DEP_FUNC"	]
 [ "varres",	"dependencies_views_on_functions",	"DEP_FUNC"	]
 #SELECT c.name, tri.name, 'DEP_TRIGGER' from columns as c, triggers as tri, dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8;
-% .c,	.tri,	.L15 # table_name
-% name,	name,	L15 # name
+% .c,	.tri,	.L16 # table_name
+% name,	name,	L16 # name
 % varchar,	varchar,	char # type
 % 0,	0,	11 # length
 #SELECT v.name, f.name, 'DEP_FUNC' from functions as f, tables as v, dependencies as dep where v.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND v.type in (1, 11, 21, 31) ORDER BY v.name, f.name;
-% .v,	.f,	.L41 # table_name
-% name,	name,	L41 # name
+% .v,	.f,	.L42 # table_name
+% name,	name,	L42 # name
 % varchar,	varchar,	char # type
 % 7,	34,	8 # length
 [ "columns",	"dependencies_columns_on_functions",	"DEP_FUNC"	]
@@ -921,13 +920,13 @@ Cleanup
 [ "tables",	"dependencies_views_on_triggers",	"DEP_FUNC"	]
 [ "users",	"dependencies_schemas_on_users",	"DEP_FUNC"	]
 #SELECT v.name, i.name, 'DEP_INDEX' from tables as v, idxs as i where i.table_id = v.id and i.name not in (select name from keys) and v.type in (1, 11, 21, 31);
-% .v,	.i,	.L54 # table_name
-% name,	name,	L54 # name
+% .v,	.i,	.L55 # table_name
+% name,	name,	L55 # name
 % varchar,	varchar,	char # type
 % 0,	0,	9 # length
 #SELECT v.name, tri.name, 'DEP_TRIGGER' from tables as v, triggers as tri, dependencies as dep where dep.id = v.id AND dep.depend_id =tri.id AND dep.depend_type = 8 AND v.type in (1, 11, 21, 31);
-% .v,	.tri,	.L41 # table_name
-% name,	name,	L41 # name
+% .v,	.tri,	.L42 # table_name
+% name,	name,	L42 # name
 % varchar,	varchar,	char # type
 % 0,	0,	11 # length
 #SELECT f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 ORDER BY f1.name, f2.name;

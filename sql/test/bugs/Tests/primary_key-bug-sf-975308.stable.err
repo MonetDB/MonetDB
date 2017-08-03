@@ -13,9 +13,11 @@ stderr of test 'primary_key-bug-sf-975308` in directory 'sql/test/bugs` itself:
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO test_pk values( 2,4 );
 ERROR = !INSERT INTO: PRIMARY KEY constraint 'test_pk.test_pk_x_y_pkey' violated
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = UPDATE test_pk SET x = 1;
 ERROR = !UPDATE: PRIMARY KEY constraint 'test_pk.test_pk_x_y_pkey' violated
+CODE  = M0M29
 
 # 16:06:04 >  
 # 16:06:04 >  Done.

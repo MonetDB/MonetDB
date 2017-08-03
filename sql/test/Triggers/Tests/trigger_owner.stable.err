@@ -14,22 +14,28 @@ MAPI  = user_test@sofia:38256
 QUERY = create trigger test_6_1 after insert on t_6_1
         	insert into t_6_1 values(12);
 ERROR = !CREATE TRIGGER: access denied for user_test to schema ;'sys'
-MAPI  = user_test@sofia:38256
+CODE  = 42000
+MAPI  = (user_test) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = create table t_6_2(age int);
 ERROR = !CREATE TABLE: insufficient privileges for user 'user_test' in schema 'sys'
-MAPI  = monetdb@sofia:38256
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = create trigger test_6_2 after insert on t_6_2
         	insert into t_6_1 values(12);
 ERROR = !CREATE TRIGGER: unknown table 't_6_2'
-MAPI  = monetdb@sofia:38256
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop trigger test_6_1;
 ERROR = !DROP TRIGGER: unknown trigger test_6_1
-MAPI  = monetdb@sofia:38256
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop trigger test_6_2;
 ERROR = !DROP TRIGGER: unknown trigger test_6_2
-MAPI  = monetdb@sofia:38256
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop table t_6_2;
 ERROR = !DROP TABLE: no such table 't_6_2'
+CODE  = 42S02
 
 # 14:14:18 >  
 # 14:14:18 >  Done.

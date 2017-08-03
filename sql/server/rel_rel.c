@@ -104,6 +104,7 @@ rel_copy( sql_allocator *sa, sql_rel *i )
 	rel->l = NULL;
 	rel->r = NULL;
 	rel->card = i->card;
+	rel->flag = i->flag;
 
 	switch(i->op) {
 	case op_basetable:
@@ -185,7 +186,7 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname )
 			*p = rel;
 			l = rel_bind_column_(sql, p, rel->l, cname);
 			if (l && r && !rel_issubquery(r)) {
-				(void) sql_error(sql, ERR_AMBIGUOUS, "SELECT: identifier '%s' ambiguous", cname);
+				(void) sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
 				return NULL;
 			}
 		}
@@ -205,7 +206,7 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname )
 		if (rel->exps && exps_bind_column(rel->exps, cname, &ambiguous))
 			return rel;
 		if (ambiguous) {
-			(void) sql_error(sql, ERR_AMBIGUOUS, "SELECT: identifier '%s' ambiguous", cname);
+			(void) sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
 			return NULL;
 		}
 		*p = rel;
@@ -274,11 +275,18 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 	} else if (is_set(rel->op) ||
 		   is_sort(rel) ||
 		   is_semi(rel->op) ||
-		   is_apply(rel->op) ||
 		   is_select(rel->op) || 
 		   is_topn(rel->op)) {
 		if (rel->l)
 			return rel_bind_column2(sql, rel->l, tname, cname, f);
+	} else if (is_apply(rel->op)) {
+		sql_exp *e = NULL;
+
+		if (!e && rel->l)
+			e = rel_bind_column2(sql, rel->l, tname, cname, f);
+		if (!e && rel->r && (rel->flag == APPLY_JOIN || rel->flag == APPLY_LOJ))
+			return rel_bind_column2(sql, rel->r, tname, cname, f);
+		return e;
 	}
 	return NULL;
 }
@@ -1095,9 +1103,9 @@ rel_push_join(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, sq
 }
 
 sql_rel *
-rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps)
+rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps)
 {
-	sql_rel *rel, *ll = l->l, *rl = r->l;
+	sql_rel *ll = l->l, *rl = r->l;
 	list *ls, *rs;
 
 	assert(!lexps || l == r);
@@ -1115,7 +1123,7 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps)
 
 	/* favor or expressions over union */
 	if (l->op == r->op && l->op == op_select &&
-	    ll == rl && !rel_is_ref(l) && !rel_is_ref(r)) {
+	    ll == rl && ll == rel && !rel_is_ref(l) && !rel_is_ref(r)) {
 		sql_exp *e = exp_or(sql->sa, l->exps, r->exps);
 		list *nl = new_exp_list(sql->sa); 
 		
@@ -1135,8 +1143,13 @@ rel_or(mvc *sql, sql_rel *l, sql_rel *r, list *oexps, list *lexps, list *rexps)
 		return l;
 	}
 
-	ls = rel_projections(sql, l, NULL, 1, 1);
-	rs = rel_projections(sql, r, NULL, 1, 1);
+	if (rel) {
+		ls = rel_projections(sql, rel, NULL, 1, 1);
+		rs = rel_projections(sql, rel, NULL, 1, 1);
+	} else {
+		ls = rel_projections(sql, l, NULL, 1, 1);
+		rs = rel_projections(sql, r, NULL, 1, 1);
+	}
 	set_processed(l);
 	set_processed(r);
 	rel = rel_setop_check_types(sql, l, r, ls, rs, op_union);

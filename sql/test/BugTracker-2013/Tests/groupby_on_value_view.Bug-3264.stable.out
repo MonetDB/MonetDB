@@ -28,7 +28,7 @@ Ready.
 #start transaction;
 #CREATE VIEW mmtest_v AS SELECT date'2012-01-01' as period, 1 as quantity;
 #SELECT extract(month from period) as m, count(1) as cnt FROM mmtest_v GROUP BY m;
-% .L3,	.L6 # table_name
+% .L7,	.L13 # table_name
 % m,	cnt # name
 % int,	bigint # type
 % 1,	1 # length

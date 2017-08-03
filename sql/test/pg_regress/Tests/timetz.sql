@@ -90,7 +90,7 @@ SELECT f1, "year"(f1) FROM TIMETZ_TBL;
 SELECT f1, extract(week from f1) FROM TIMETZ_TBL;
 SELECT f1, extract(month from f1) FROM TIMETZ_TBL;
 SELECT f1, extract(year from f1) FROM TIMETZ_TBL;
-SELECT f1, week(f1) FROM TIMETZ_TBL;
+SELECT f1, "week"(f1) FROM TIMETZ_TBL;
 SELECT f1, weekofyear(f1) FROM TIMETZ_TBL;
 SELECT f1, dayofmonth(f1) FROM TIMETZ_TBL;
 SELECT f1, dayofweek(f1) FROM TIMETZ_TBL;

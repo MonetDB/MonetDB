@@ -6,6 +6,7 @@ debian/tmp/usr/lib/systemd/system/monetdbd.service lib/systemd/system
 debian/tmp/etc/tmpfiles.d/monetdbd.conf etc/tmpfiles.d
 # usr/lib/monetdb5/sql*.mal EXCEPT: sql*_hge.mal
 debian/tmp/usr/lib/monetdb5/sql.mal usr/lib/monetdb5
+debian/tmp/usr/lib/monetdb5/sql[!_]*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/sql_aggr_[!h]*.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/sql_decimal.mal usr/lib/monetdb5
 debian/tmp/usr/lib/monetdb5/sql_[!adh]*.mal usr/lib/monetdb5

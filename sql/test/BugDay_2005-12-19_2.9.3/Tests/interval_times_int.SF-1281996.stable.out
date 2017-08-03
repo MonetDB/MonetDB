@@ -25,14 +25,14 @@ Ready.
 # 11:51:15 >  
 
 #select 2 * interval '1' second;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % sec_interval # type
 % 5 # length
 [ 2.000	]
 #select interval '1' second * 2;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % sec_interval # type
 % 5 # length
 [ 2.000	]

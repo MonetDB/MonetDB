@@ -18,6 +18,7 @@
 #define MAL_SCENARIO_ENGINE 4
 #define MAL_SCENARIO_INITCLIENT 5
 #define MAL_SCENARIO_EXITCLIENT 6
+#define MAL_SCENARIO_CALLBACK 7
 
 /*#define MAL_SCENARIO_DEBUG*/
 /*
@@ -54,11 +55,14 @@ typedef struct SCENARIO {
 	str engine;
 	MALfcn engineCmd;
 	void *engineState;
+	str callback;
+	MALfcn callbackCmd;
+	void *callbackState;
 	struct SCENARIO *next;
 } *Scenario;
 
 mal_export str setScenario(Client c, str nme);
-mal_export str runScenario(Client c);
+mal_export str runScenario(Client c, int once);
 mal_export str getScenarioLanguage(Client c);
 mal_export Scenario getFreeScenario(void);
 

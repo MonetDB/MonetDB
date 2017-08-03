@@ -1,0 +1,47 @@
+stdout of test 'lateral.Bug-6310` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 16:49:27 >  
+# 16:49:27 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34067" "--set" "mapi_usock=/var/tmp/mtest-31693/.s.monetdb.34067" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-old/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 16:49:27 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.331 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:34067/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-31693/.s.monetdb.34067
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 16:49:27 >  
+# 16:49:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-31693" "--port=34067"
+# 16:49:27 >  
+
+#CREATE TABLE PART  ( P_PARTKEY     INTEGER NOT NULL,
+#                          P_NAME        VARCHAR(55) NOT NULL,
+#                          P_MFGR        CHAR(25) NOT NULL,
+#                          P_BRAND       CHAR(10) NOT NULL,
+#                          P_TYPE        VARCHAR(25) NOT NULL,
+#                          P_SIZE        INTEGER NOT NULL,
+#                          P_CONTAINER   CHAR(10) NOT NULL,
+#                          P_RETAILPRICE DECIMAL(15,2) NOT NULL,
+#                          P_COMMENT     VARCHAR(23) NOT NULL,
+#CREATE TABLE PARTSUPP ( PS_PARTKEY     INTEGER NOT NULL,
+#                             PS_SUPPKEY     INTEGER NOT NULL,
+#                             PS_AVAILQTY    INTEGER NOT NULL,
+#                             PS_SUPPLYCOST  DECIMAL(15,2)  NOT NULL,
+#                             PS_COMMENT     VARCHAR(199) NOT NULL,
+#                             PRIMARY KEY    (PS_PARTKEY,PS_SUPPKEY),
+#                             FOREIGN KEY (PS_PARTKEY) references PART );
+
+# 16:49:27 >  
+# 16:49:27 >  "Done."
+# 16:49:27 >  
+

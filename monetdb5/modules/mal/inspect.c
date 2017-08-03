@@ -29,9 +29,6 @@ pseudo(bat *ret, BAT *b, str X1,str X2, str X3) {
 	if (BBPindex(buf) <= 0 && BBPrename(b->batCacheid, buf) != 0)
 		return -1;
 	BATroles(b,X2);
-	if (BATmode(b,TRANSIENT) != GDK_SUCCEED)
-		return -1;
-	BATfakeCommit(b);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
 	return 0;
@@ -59,12 +56,12 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 	if (b == 0)
-		throw(MAL, "inspect.getgetFunctionId", MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.getgetFunctionId", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 
 	getModuleList(&moduleList, &length);
 	for(j = -1; j < length; j++) {
-		s = j < 0 ? cntxt->nspace : moduleList[j];
+		s = j < 0 ? cntxt->usermodule : moduleList[j];
 		for (i = 0; s && i < MAXSCOPE; i++) {
 			if (s->space[i]) {
 				for (t = s->space[i]; t; t = t->peer) {
@@ -82,7 +79,7 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	throw(MAL, "inspect.getgetFunctionId", MAL_MALLOC_FAIL);
+	throw(MAL, "inspect.getgetFunctionId", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 str
@@ -98,11 +95,11 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 	if (b == 0)
-		throw(MAL, "inspect.getmodule", MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.getmodule", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	getModuleList(&moduleList, &length);
 	for(j = -1; j < length; j++) {
-		s = j < 0 ? cntxt->nspace : moduleList[j];
+		s = j < 0 ? cntxt->usermodule : moduleList[j];
 		for (i = 0; s && i < MAXSCOPE; i++) {
 			if (s->space[i]) {
 				for (t = s->space[i]; t; t = t->peer) {
@@ -121,7 +118,7 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	throw(MAL, "inspect.getmodule", MAL_MALLOC_FAIL);
+	throw(MAL, "inspect.getmodule", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 str
@@ -137,11 +134,11 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void)mb;
 	if (b == 0)
-		throw(MAL, "inspect.get", MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	getModuleList(&moduleList, &length);
 	for(j = -1; j < length; j++) {
-		s = j < 0 ? cntxt->nspace : moduleList[j];
+		s = j < 0 ? cntxt->usermodule : moduleList[j];
 		for (i = 0; s && i < MAXSCOPE; i++) {
 			if (s->space[i]) {
 				for (t = s->space[i]; t; t = t->peer) {
@@ -160,7 +157,7 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	throw(MAL, "inspect.get", MAL_MALLOC_FAIL);
+	throw(MAL, "inspect.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 
@@ -178,11 +175,11 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void)mb;
 	if (b == 0)
-		throw(MAL, "inspect.get", MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	getModuleList(&moduleList, &length);
 	for(j = -1; j < length; j++) {
-		s = j < 0 ? cntxt->nspace : moduleList[j];
+		s = j < 0 ? cntxt->usermodule : moduleList[j];
 		for (i = 0; s && i < MAXSCOPE; i++)
 			if (s->space[i]) {
 				for (t = s->space[i]; t; t = t->peer) {
@@ -201,7 +198,7 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	throw(MAL, "inspect.get", MAL_MALLOC_FAIL);
+	throw(MAL, "inspect.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 str
 INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -218,12 +215,12 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)mb;
 
 	if (b == 0)
-		throw(MAL, "inspect.get", MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 
 	getModuleList(&moduleList, &length);
 	for(j = -1; j < length; j++) {
-		s = j < 0 ? cntxt->nspace : moduleList[j];
+		s = j < 0 ? cntxt->usermodule : moduleList[j];
 		for (i = 0; s && i < MAXSCOPE; i++)
 			if (s->space[i]) {
 				for (t = s->space[i]; t; t = t->peer) {
@@ -244,7 +241,7 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	throw(MAL, "inspect.get", MAL_MALLOC_FAIL);
+	throw(MAL, "inspect.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 str
@@ -257,13 +254,13 @@ INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b;
 	(void)mb;
 
-	s = findSymbol(cntxt->nspace, putName(*mod), putName(*fcn));
+	s = findSymbol(cntxt->usermodule, putName(*mod), putName(*fcn));
 	if (s == 0)
 		throw(MAL, "inspect.getDefinition", RUNTIME_SIGNATURE_MISSING);
 
 	b = COLnew(0, TYPE_str, 256, TRANSIENT);
 	if (b == 0)
-		throw(MAL, "inspect.getDefinition", MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.getDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	while (s) {
 		int i;
@@ -285,7 +282,7 @@ INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	throw(MAL, "inspect.getDefinition", MAL_MALLOC_FAIL);
+	throw(MAL, "inspect.getDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 str
@@ -299,12 +296,12 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b;
 	(void) mb;
 
-	s = findSymbol(cntxt->nspace, getName(*mod), putName(*fcn));
+	s = findSymbol(cntxt->usermodule, getName(*mod), putName(*fcn));
 	if (s == 0)
 		throw(MAL, "inspect.getSignature", RUNTIME_SIGNATURE_MISSING);
 	b = COLnew(0, TYPE_str, 12, TRANSIENT);
 	if (b == 0)
-		throw(MAL, "inspect.getSignature", MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.getSignature", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	while (s != NULL) {
 		if (idcmp(s->name, *fcn) == 0) {
@@ -335,7 +332,7 @@ INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	throw(MAL, "inspect.getSignature", MAL_MALLOC_FAIL);
+	throw(MAL, "inspect.getSignature", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 str
@@ -349,12 +346,12 @@ INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b;
 	(void) mb;
 
-	s = findSymbol(cntxt->nspace, getName(*mod), putName(*fcn));
+	s = findSymbol(cntxt->usermodule, getName(*mod), putName(*fcn));
 	if (s == 0)
 		throw(MAL, "inspect.getAddress", RUNTIME_SIGNATURE_MISSING);
 	b = COLnew(0, TYPE_str, 12, TRANSIENT);
 	if (b == 0)
-		throw(MAL, "inspect.getAddress", MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.getAddress", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	while (s != NULL) {
 		if (idcmp(s->name, *fcn) == 0) {
@@ -389,7 +386,7 @@ INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	throw(MAL, "inspect.getAddress", MAL_MALLOC_FAIL);
+	throw(MAL, "inspect.getAddress", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 str
 INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -401,12 +398,12 @@ INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b;
 	(void) mb;
 
-	s = findSymbol(cntxt->nspace, getName(*mod), putName(*fcn));
+	s = findSymbol(cntxt->usermodule, getName(*mod), putName(*fcn));
 	if (s == 0)
 		throw(MAL, "inspect.getComment", RUNTIME_SIGNATURE_MISSING);
 	b = COLnew(0, TYPE_str, 12, TRANSIENT);
 	if (b == 0)
-		throw(MAL, "inspect.getComment", MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.getComment", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	while (s != NULL) {
 		if (idcmp(s->name, *fcn) == 0 &&
@@ -420,7 +417,7 @@ INSPECTgetComment(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	throw(MAL, "inspect.getComment", MAL_MALLOC_FAIL);
+	throw(MAL, "inspect.getComment", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 str
@@ -434,13 +431,13 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	size_t len,lim;
 	(void) mb;
 
-	s = findSymbol( cntxt->nspace, getName(*mod), putName(*fcn));
+	s = findSymbol( cntxt->usermodule, getName(*mod), putName(*fcn));
 	if (s == 0)
 		throw(MAL, "inspect.getSource", RUNTIME_SIGNATURE_MISSING);
 
 	buf= (char*) GDKmalloc(BUFSIZ);
 	if ( buf == NULL)
-		throw(MAL, "inspect.getSource", MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.getSource", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	snprintf(buf,BUFSIZ,"%s.%s",*mod,*fcn);
 	buf[0]=0;
 	len= 0;
@@ -459,7 +456,7 @@ INSPECTgetSource(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if ( bn == NULL) {
 					GDKfree(ps);
 					GDKfree(buf);
-					throw(MAL, "inspect.getSource", MAL_MALLOC_FAIL);
+					throw(MAL, "inspect.getSource", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				}
 				buf=bn;
 				lim+= BUFSIZ;
@@ -483,7 +480,7 @@ INSPECTatom_names(bat *ret)
 	BAT *b = COLnew(0, TYPE_str, 256, TRANSIENT);
 
 	if (b == 0)
-		throw(MAL, "inspect.getAtomNames", MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.getAtomNames", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < GDKatomcnt; i++)
 		if (BUNappend(b, ATOMname(i), FALSE) != GDK_SUCCEED)
@@ -495,7 +492,7 @@ INSPECTatom_names(bat *ret)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	throw(MAL, "inspect.getAtomNames", MAL_MALLOC_FAIL);
+	throw(MAL, "inspect.getAtomNames", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 str
 INSPECTgetEnvironment(bat *ret, bat *ret2)
@@ -504,11 +501,11 @@ INSPECTgetEnvironment(bat *ret, bat *ret2)
 
 	b = COLcopy(GDKkey, GDKkey->ttype, 0, TRANSIENT);
 	if (b == 0)
-		throw(MAL, "inspect.getEnvironment", MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.getEnvironment", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	bn = COLcopy(GDKval, GDKval->ttype, 0, TRANSIENT);
 	if (bn == 0){
 		BBPunfix(b->batCacheid);
-		throw(MAL, "inspect.getEnvironment", MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.getEnvironment", SQLSTATE(HY001) MAL_MALLOC_FAIL);
  	}
 	BAThseqbase(b,0);
 	BAThseqbase(bn,0);
@@ -540,7 +537,7 @@ INSPECTatom_sup_names(bat *ret)
 	BAT *b = COLnew(0, TYPE_str, 256, TRANSIENT);
 
 	if (b == 0)
-		throw(MAL, "inspect.getAtomSuper", MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.getAtomSuper", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < GDKatomcnt; i++) {
 		for (k = ATOMstorage(i); k > TYPE_str; k = ATOMstorage(k))
@@ -555,7 +552,7 @@ INSPECTatom_sup_names(bat *ret)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	throw(MAL, "inspect.getAtomSuper", MAL_MALLOC_FAIL);
+	throw(MAL, "inspect.getAtomSuper", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 str
@@ -566,7 +563,7 @@ INSPECTatom_sizes(bat *ret)
 	BAT *b = COLnew(0, TYPE_int, 256, TRANSIENT);
 
 	if (b == 0)
-		throw(MAL, "inspect.getAtomSizes", MAL_MALLOC_FAIL);
+		throw(MAL, "inspect.getAtomSizes", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < GDKatomcnt; i++) {
 		s = ATOMsize(i);
@@ -580,7 +577,7 @@ INSPECTatom_sizes(bat *ret)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	throw(MAL, "inspect.getAtomSizes", MAL_MALLOC_FAIL);
+	throw(MAL, "inspect.getAtomSizes", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 /* calculate to trimmed storage space */
@@ -619,7 +616,7 @@ INSPECTgetFunctionSize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	Symbol s;
 	(void) mb;
 
-	s = findSymbol(cntxt->nspace, getName(*mod), putName(*fcn));
+	s = findSymbol(cntxt->usermodule, getName(*mod), putName(*fcn));
 	if (s == 0)
 		throw(MAL, "inspect.getSize", RUNTIME_SIGNATURE_MISSING);
 	*ret= INSPECTcalcSize(s->def);
@@ -643,7 +640,7 @@ INSPECTshowFunction3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	str fcnnme = getArgName(mb, p, 2);
 	Symbol s = NULL;
 
-	s = findSymbol(cntxt->nspace,getName(modnme), putName(fcnnme));
+	s = findSymbol(cntxt->usermodule,getName(modnme), putName(fcnnme));
 
 	if (s == NULL){
 		char buf[BUFSIZ];

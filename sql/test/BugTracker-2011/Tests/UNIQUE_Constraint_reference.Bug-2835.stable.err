@@ -35,12 +35,15 @@ stderr of test 'UNIQUE_Constraint_reference.Bug-2835` in directory 'sql/test/Bug
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO "Bug_2835_1" VALUES (0);
 ERROR = !INSERT INTO: UNIQUE constraint 'Bug_2835_1.unique' violated
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into "Bug_2835_2" values (1);
 ERROR = !INSERT INTO: UNIQUE constraint 'Bug_2835_2.Bug_2835_2_id_unique' violated
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into "Bug_2835_3" values (2);
 ERROR = !INSERT INTO: UNIQUE constraint 'Bug_2835_3.Bug_2835_6_id_unique' violated
+CODE  = M0M29
 
 # 14:14:58 >  
 # 14:14:58 >  Done.

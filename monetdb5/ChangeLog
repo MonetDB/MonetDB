@@ -1,3 +1,8 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Tue Aug  1 2017 Sjoerd Mullender <sjoerd@acm.org>
+- Lots of changes to streamline the internal error handling.
+  In principle, all errors should now include a SQLSTATE error code
+  (see the SQL standard).
+

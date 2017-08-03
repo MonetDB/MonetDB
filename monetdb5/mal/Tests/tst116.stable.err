@@ -40,7 +40,6 @@ QUERY = # illustrate a short cut reference to the implementation
         
         Admin.doit("print(1);");
 ERROR = !TypeException:user.doit[2]:'mal.call' undefined in:     mal.call(s:str);
-        !TypeException:user.main[2]:'Admin.doit' undefined in:     Admin.doit("print(1);":str);
 
 # 08:01:53 >  
 # 08:01:53 >  "Done."

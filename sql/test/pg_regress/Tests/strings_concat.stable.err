@@ -75,6 +75,7 @@ QUERY = SELECT 'first line'
         ' - third line'
         	AS "Illegal 
 ERROR = !unexpected end of input
+CODE  = 42000
 
 # 22:00:37 >  
 # 22:00:37 >  Done.

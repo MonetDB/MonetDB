@@ -36,6 +36,7 @@ QUERY = UPDATE test1
         ) AS t2
         WHERE 10 * A = test3.X;
 ERROR = !SELECT: no such column 'test3.x'
+CODE  = 42S22
 
 # 21:42:56 >  
 # 21:42:56 >  "Done."

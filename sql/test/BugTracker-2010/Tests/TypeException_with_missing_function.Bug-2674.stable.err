@@ -75,10 +75,12 @@ MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select fDistanceArcMinEq(213.7849600 , -0.4932472, ra,"dec") as distance_arcmin
         from t2674, fGetNearbyObjAllEq(213.7849600 , -0.4932472 , 20.8897421 ) as N;
 ERROR = !SELECT: no such operator 'fgetnearbyobjalleq'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select fDistanceArcMinEq(213.7849600 , -0.4932472, ra,"dec") as distance_arcmin
         from t2674, fGetNearbyObjAllEq(213.7849600 , -0.4932472 , 20.8897421 ) as N;
 ERROR = !SELECT: no such operator 'fgetnearbyobjalleq'
+CODE  = 42000
 
 # 11:02:37 >  
 # 11:02:37 >  Done.

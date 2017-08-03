@@ -42,6 +42,8 @@
 
 #include <rel_select.h>
 #include <rel_optimizer.h>
+#include <rel_distribute.h>
+#include <rel_partition.h>
 #include <rel_prop.h>
 #include <rel_rel.h>
 #include <rel_exp.h>
@@ -137,19 +139,15 @@ relational_func_create_result(mvc *sql, MalBlkPtr mb, InstrPtr q, sql_rel *f)
 	return q;
 }
 
-
 static int
-_create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *rel, stmt *call, list *rel_ops, int inline_func)
+_create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *r, stmt *call, list *rel_ops, int inline_func)
 {
-	sql_rel *r;
 	Client c = MCgetClient(m->clientid);
 	backend *be = (backend *) c->sqlcontext;
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0;
 	Symbol backup = NULL, curPrg = NULL;
 	int old_argc = be->mvc->argc;
-
-	r = rel_optimizer(m, rel);
 
 	backup = c->curprg;
 	curPrg = c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
@@ -194,7 +192,10 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 			int varid = 0;
 			char buf[64];
 
-			snprintf(buf,64,"A%d",e->flag);
+			if (e->type == e_atom) 
+				snprintf(buf,64,"A%d",e->flag);
+			else
+				snprintf(buf,64,"A%s",e->name);
 			varid = newVariable(curBlk, (char *)buf, strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
@@ -220,7 +221,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	if( curBlk->inlineProp == 0)
 		SQLoptimizeQuery(c, c->curprg->def);
 	else{
-		chkProgram(c->fdout, c->nspace, c->curprg->def);
+		chkProgram(c->usermodule, c->curprg->def);
 		SQLoptimizeFunction(c,c->curprg->def);
 	}
 	if (backup)
@@ -244,7 +245,6 @@ rel2str( mvc *sql, sql_rel *rel)
 	mnstr_destroy(s);
 	return res;
 }
-
 
 /* stub and remote function */
 static int
@@ -364,6 +364,8 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 			sql_subtype *t = tail_type(op);
 			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
 
+			if ((nr + 100) > len)
+				buf = GDKrealloc(buf, len*=2);
 			nr += snprintf(buf+nr, len-nr, "%s %s(%u,%u)%c", nme, t->type->sqlname, t->digits, t->scale, n->next?',':' ');
 		}
 		s = buf;
@@ -433,7 +435,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	//curBlk->inlineProp = 1;
 
 	SQLaddQueryToCache(c);
-	//chkProgram(c->fdout, c->nspace, c->curprg->def);
+	//chkProgram(c->usermodule, c->curprg->def);
 	SQLoptimizeFunction(c, c->curprg->def);
 	if (backup)
 		c->curprg = backup;
@@ -547,6 +549,7 @@ backend_callinline(backend *be, Client c)
 	InstrPtr curInstr = 0;
 	MalBlkPtr curBlk = c->curprg->def;
 
+	setVarType(curBlk, 0, 0);
 	if (m->argc) {	
 		int argc = 0;
 
@@ -712,11 +715,11 @@ monet5_resolve_function(ptr M, sql_func *f)
 
 	/*
 	   fails to search outer modules!
-	   if (!findSymbol(c->nspace, f->mod, f->imp))
+	   if (!findSymbol(c->usermodule, f->mod, f->imp))
 	   return 0;
 	 */
 
-	for (m = findModule(c->nspace, f->mod); m; m = m->link) {
+	for (m = findModule(c->usermodule, f->mod); m; m = m->link) {
 		if (strcmp(m->name, f->mod) == 0) {
 			Symbol s = m->space[(int) (getSymbolIndex(f->imp))];
 			for (; s; s = s->peer) {
@@ -870,8 +873,11 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	if (!vararg)
 		f->sql++;
 	r = rel_parse(m, f->s, f->query, m_instantiate);
-	if (r)
+	if (r) {
 		r = rel_optimizer(m, r);
+                r = rel_distribute(m, r);
+                r = rel_partition(m, r);
+	}
 	if (r && !f->sql) 	/* native function */
 		return 0;
 
@@ -963,7 +969,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	if( curBlk->inlineProp == 0)
 		SQLoptimizeFunction(c, c->curprg->def);
 	else{
-		chkProgram(c->fdout, c->nspace, c->curprg->def);
+		chkProgram(c->usermodule, c->curprg->def);
 		SQLoptimizeFunction(c,c->curprg->def);
 	}
 	if (backup)

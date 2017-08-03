@@ -301,8 +301,8 @@ Ready.
 [ "MULTIPOLYGON Z (((20 20 20, 30 30 30, 40 40 40, 20 20 20), (200 200 200, 300 300 300, 400 400 400, 200 200 200)))"	]
 #drop table polygons_tbl;
 #select st_geomfromtext(geom) from geometriesTxt;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % geometry # type
 % 0 # length
 [ "POINT (10 20)"	]

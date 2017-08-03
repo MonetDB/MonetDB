@@ -12,25 +12,32 @@ stderr of test 'grant_public.SF-1114580` in directory 'sql/test/BugDay_2005-11-0
 
 MAPI  = (monetdb) /var/tmp/mtest-15225/.s.monetdb.34050
 QUERY = GRANT UPDATE(dumdum) ON test1114580 TO PUBLIC;
-ERROR = !GRANT: table test1114580 has no column dumdum
-MAPI  = (monetdb) /var/tmp/mtest-15225/.s.monetdb.34050
+ERROR = !Table test1114580 has no column dumdum
+CODE  = 42S22
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = GRANT INSERT ON test1114580 TO PUBLIC;
-ERROR = !GRANT: user/role 'public' already has this privilege
-MAPI  = (monetdb) /var/tmp/mtest-15225/.s.monetdb.34050
+ERROR = !User/role 'public' already has this privilege
+CODE  = 42M32
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = GRANT INSERT ON test1114580 TO PUBLIC;
-ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-15225/.s.monetdb.34050
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = GRANT INSERT ON test1114580 TO PUBLIC;
-ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-15225/.s.monetdb.34050
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = REVOKE SELECT ON test1114580 FROM  PUBLIC;
-ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-15225/.s.monetdb.34050
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = REVOKE SELECT ON test1114580 FROM  PUBLIC;
-ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-15225/.s.monetdb.34050
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = REVOKE SELECT ON test1114580 TO PUBLIC;
 ERROR = !syntax error, unexpected TO, expecting FROM in: "revoke select on test1114580 to"
+CODE  = 42000
 
 # 19:58:17 >  
 # 19:58:17 >  Done.

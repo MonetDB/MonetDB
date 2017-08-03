@@ -81,7 +81,7 @@ Ready.
 #SELECT xy.a1 as a1, xy.prob as prob FROM xy WHERE xy.a1 NOT IN (select a1 from z)
 #UNION ALL
 #SELECT z.a1 as a1, z.prob as prob FROM z WHERE z.a1 NOT IN (select a1 from xy);
-% .L120,	.L120 # table_name
+% .L124,	.L124 # table_name
 % a1,	prob # name
 % int,	double # type
 % 1,	24 # length
@@ -97,7 +97,7 @@ Ready.
 #SELECT xy.a1 as a1, xy.prob as prob FROM xy WHERE xy.a1 NOT IN (SELECT xy.a1 FROM xy, z WHERE xy.a1=z.a1)
 #UNION ALL
 #SELECT z.a1 as a1, z.prob as prob FROM z WHERE z.a1 NOT IN (SELECT xy.a1 FROM xy, z WHERE xy.a1=z.a1);
-% .L122,	.L122 # table_name
+% .L126,	.L126 # table_name
 % a1,	prob # name
 % int,	double # type
 % 1,	24 # length
@@ -113,7 +113,7 @@ Ready.
 #SELECT xy.a1 as a1, xy.prob as prob FROM xy WHERE xy.a1 NOT IN (select a1 from z)
 #UNION ALL
 #SELECT z.a1 as a1, z.prob as prob FROM z WHERE z.a1 NOT IN (select a1 from xy)
-% .L120,	.L120 # table_name
+% .L124,	.L124 # table_name
 % a1,	prob # name
 % int,	double # type
 % 1,	24 # length
@@ -129,7 +129,7 @@ Ready.
 #SELECT xy.a1 as a1, xy.prob as prob FROM xy WHERE xy.a1 NOT IN (SELECT xy.a1 FROM xy, z WHERE xy.a1=z.a1)
 #UNION ALL
 #SELECT z.a1 as a1, z.prob as prob FROM z WHERE z.a1 NOT IN (SELECT xy.a1 FROM xy, z WHERE xy.a1=z.a1)
-% .L122,	.L122 # table_name
+% .L126,	.L126 # table_name
 % a1,	prob # name
 % int,	double # type
 % 1,	24 # length

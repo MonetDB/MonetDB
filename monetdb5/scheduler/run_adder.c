@@ -87,7 +87,7 @@ RUNadder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	mb->stmt = (InstrPtr *) GDKzalloc(size * sizeof(InstrPtr));
 	if (mb->stmt == NULL) {
 		mb->stmt = old;
-		throw(MAL, "adder.generate", MAL_MALLOC_FAIL);
+		throw(MAL, "adder.generate", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	mb->ssize = size;
 	memcpy( mb->stmt, old, sizeof(InstrPtr)*(pc+1));
@@ -113,9 +113,9 @@ RUNadder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	mb->stop += (oldtop-pc)-1;
 
 	/* check new statments for sanity */
-	chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-	chkFlow(cntxt->fdout, mb);
-	chkDeclarations(cntxt->fdout, mb);
+	chkTypes(cntxt->usermodule, mb, FALSE);
+	chkFlow(mb);
+	chkDeclarations(mb);
 
 	GDKfree(old);
 	return MAL_SUCCEED;

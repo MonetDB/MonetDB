@@ -800,7 +800,7 @@ HEAPwarm(Heap *h)
 size_t
 HEAPvmsize(Heap *h)
 {
-	if (h && h->free)
+	if (h && h->base && h->free)
 		return h->size;
 	return 0;
 }
@@ -810,7 +810,7 @@ HEAPvmsize(Heap *h)
 size_t
 HEAPmemsize(Heap *h)
 {
-	if (h && h->free && h->storage != STORE_MMAP)
+	if (h && h->base && h->free && h->storage != STORE_MMAP)
 		return h->size;
 	return 0;
 }

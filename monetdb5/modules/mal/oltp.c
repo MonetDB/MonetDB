@@ -239,7 +239,7 @@ OLTPtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( bu) BBPunfix(bu->batCacheid);
 		if( bc) BBPunfix(bc->batCacheid);
 		if( bq) BBPunfix(bq->batCacheid);
-		throw(MAL,"oltp.table",MAL_MALLOC_FAIL);
+		throw(MAL,"oltp.table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	for( i = 0; msg ==  MAL_SUCCEED && i < MAXOLTPLOCKS; i++)
 	if (oltp_locks[i].used ){
@@ -264,7 +264,7 @@ OLTPtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(bu->batCacheid);
 	BBPunfix(bc->batCacheid);
 	BBPunfix(bq->batCacheid);
-	return msg ? msg : createException(MAL, "oltp.table", MAL_MALLOC_FAIL);
+	return msg ? msg : createException(MAL, "oltp.table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 str

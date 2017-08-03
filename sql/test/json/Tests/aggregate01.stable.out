@@ -53,44 +53,44 @@ Ready.
 
 #create table aggrtest01 ( col1 double, col2 integer );
 #select json.tojsonarray(col1) from aggrtest01;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % clob # type
 % 0 # length
 [ NULL	]
 #insert into aggrtest1 values (0.1234, 1);
 [ 1	]
 #select json.tojsonarray(col1) from aggrtest01;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % clob # type
 % 12 # length
 [ "[ 0.123400 ]"	]
 #insert into aggrtest1 values (5.6789, 1);
 [ 1	]
 #select json.tojsonarray(col1) from aggrtest01;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % clob # type
 % 22 # length
 [ "[ 0.123400, 5.678900 ]"	]
 #select json.tojsonarray(col1) from aggrtest01 group by col2;
-% sys.L2 # table_name
-% L1 # name
+% sys.L3 # table_name
+% L2 # name
 % clob # type
 % 22 # length
 [ "[ 0.123400, 5.678900 ]"	]
 #insert into aggrtest1 values (0.516273849, 2);
 [ 1	]
 #select json.tojsonarray(col1) from aggrtest01;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % clob # type
 % 32 # length
 [ "[ 0.123400, 5.678900, 0.516274 ]"	]
 #select json.tojsonarray(col1) from aggrtest01 group by col2;
-% sys.L2 # table_name
-% L1 # name
+% sys.L3 # table_name
+% L2 # name
 % clob # type
 % 22 # length
 [ "[ 0.123400, 5.678900 ]"	]
@@ -100,30 +100,30 @@ Ready.
 #insert into aggrtest01 values (NULL, 1);
 [ 1	]
 #select json.tojsonarray(col1) from aggrtest01;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % clob # type
 % 0 # length
 [ NULL	]
 #insert into aggrtest01 values (NULL, 1);
 [ 1	]
 #select json.tojsonarray(col1) from aggrtest01;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % clob # type
 % 0 # length
 [ NULL	]
 #select json.tojsonarray(col1) from aggrtest01 group by col2;
-% sys.L2 # table_name
-% L1 # name
+% sys.L3 # table_name
+% L2 # name
 % clob # type
 % 4 # length
 [ "[  ]"	]
 #insert into aggrtest01 values (0.1234, 1);
 [ 1	]
 #select json.tojsonarray(col1) from aggrtest01;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % clob # type
 % 12 # length
 [ "[ 0.123400 ]"	]
@@ -139,14 +139,14 @@ Ready.
 [ 0.1234,	1	]
 [ 0.516273849,	2	]
 #select json.tojsonarray(col1) from aggrtest01;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % clob # type
 % 22 # length
 [ "[ 0.123400, 0.516274 ]"	]
 #select json.tojsonarray(col1) from aggrtest01 group by col2;
-% sys.L2 # table_name
-% L1 # name
+% sys.L3 # table_name
+% L2 # name
 % clob # type
 % 12 # length
 [ "[ 0.123400 ]"	]
@@ -154,14 +154,14 @@ Ready.
 #delete from aggrtest01 where col1 is null;
 [ 2	]
 #select json.tojsonarray(col1) from aggrtest01;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % clob # type
 % 22 # length
 [ "[ 0.123400, 0.516274 ]"	]
 #select json.tojsonarray(col1) from aggrtest01 group by col2;
-% sys.L2 # table_name
-% L1 # name
+% sys.L3 # table_name
+% L2 # name
 % clob # type
 % 12 # length
 [ "[ 0.123400 ]"	]

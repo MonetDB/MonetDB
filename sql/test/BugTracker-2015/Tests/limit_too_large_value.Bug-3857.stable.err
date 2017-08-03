@@ -32,7 +32,8 @@ stderr of test 'limit_too_large_value.Bug-3857` in directory 'sql/test/BugTracke
 
 MAPI  = (monetdb) /var/tmp/mtest-521/.s.monetdb.31933
 QUERY = select * from _tables limit 1000000000000000000000000000000000000000;
-ERROR = !integer value too large or not a number (1000000000000000000000000000000000000000) in: "select * from _tables limit 1000000000000000000000000000000000000000"
+ERROR = !Integer value too large or not a number (1000000000000000000000000000000000000000) in: "select * from _tables limit 1000000000000000000000000000000000000000"
+CODE  = 22003
 
 # 15:49:13 >  
 # 15:49:13 >  "Done."

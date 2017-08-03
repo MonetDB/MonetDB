@@ -25,20 +25,20 @@ Ready.
 # 11:51:00 >  
 
 #select 1 in ('1', '2', '3');
-% .L3 # table_name
-% L3 # name
+% .L14 # table_name
+% L14 # name
 % boolean # type
 % 5 # length
 [ true	]
 #select 1 in ((select 1 union select 2));
-% .L4 # table_name
-% L4 # name
+% .L14 # table_name
+% L14 # name
 % boolean # type
 % 5 # length
 [ true	]
 #select 1 in (select * from (select 1 union select 2) as a);
-% .L4 # table_name
-% L4 # name
+% .L16 # table_name
+% L16 # name
 % boolean # type
 % 5 # length
 [ true	]

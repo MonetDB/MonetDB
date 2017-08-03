@@ -14,6 +14,7 @@ MAPI  = monetdb@sofia:39182
 QUERY = update crash_q set b= (
         select b from crash_me where crash_q.a = crash_me.a);
 ERROR = !SELECT: no such table 'crash_me'
+CODE  = 42S02
 
 # 13:25:30 >  
 # 13:25:30 >  Done.

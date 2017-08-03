@@ -32,8 +32,8 @@ Ready.
 #set id_event = -1;
 #set id_event = add_event('event 2', '2009-06-23', 'artist2', 'location2', 'description2');
 #select id_event; 
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 2	]

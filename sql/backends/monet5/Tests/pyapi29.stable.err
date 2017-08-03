@@ -28,6 +28,21 @@ stderr of test 'pyapi29` in directory 'sql/backends/monet5` itself:
 # 14:25:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=lyon" "--port=37152"
 # 14:25:19 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-23452/.s.monetdb.39765
+QUERY = SELECT * FROM myfunc();
+ERROR = !Python exception
+        !
+        !  1. def pyfun(_columns,_column_types,_conn):
+        !> 2.   res = _conn.execute("SELECT max(d) FROM mytable;")
+        !  3.   result = dict()
+        !  4.   result['n'] = str(res)
+        !Loopback queries are not supported in parallel.
+MAPI  = (monetdb) /var/tmp/mtest-23452/.s.monetdb.39765
+QUERY = DROP TABLE mytable;
+ERROR = !current transaction is aborted (please ROLLBACK)
+MAPI  = (monetdb) /var/tmp/mtest-23452/.s.monetdb.39765
+QUERY = DROP FUNCTION myfunc;
+ERROR = !current transaction is aborted (please ROLLBACK)
 
 # 14:25:20 >  
 # 14:25:20 >  "Done."
