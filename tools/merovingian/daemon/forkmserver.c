@@ -28,7 +28,6 @@
 #include "multiplex-funnel.h" /* multiplexInit */
 #include "forkmserver.h"
 
-
 static pthread_mutex_t fork_lock = PTHREAD_MUTEX_INITIALIZER;
 
 /**
@@ -773,18 +772,14 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 	struct stat path_info;
 	int error_code;
 
-	(void) pid;
-	(void) log_path;
 	error = msab_getStatus(stats, dbname);
 	if (error != NULL) {
-		err er = NULL;
-		er = newErr("%s", er);
-		free(error);
-		return er;
+		return error;
 	}
 
 	if (*stats == NULL) {
 		/* TODO: What now? */
+		error = newErr("Null stats for db %s", dbname);
 		return error;
 	}
 
@@ -826,14 +821,14 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 	/* Verify that the requested db is running */
 	if ((*stats)->state != SABdbRunning) {
 		/* server is not running, shoo */
-		error = newErr("Database is not running.");
+		error = newErr("Database %s is not running.", dbname);
 		goto cleanup;
 	}
 
 	/* find the path that the profiler will be storing files */
 	ckv = getDefaultProps();
 	readAllProps(ckv, (*stats)->path);
-	kv = findConfKey(ckv, "profilerlogpath");
+	kv = findConfKey(ckv, PROFILERLOGPROPERTY);
 
 	if (kv == NULL) {
 		error = newErr("Property 'profilerlogpath' not set for db %s\n",
@@ -876,6 +871,10 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 	/* construct the filename of the pid file */
 	pidfnlen = strlen(*log_path) + strlen("/profiler.pid") + 1;
 	pidfilename = malloc(pidfnlen);
+	if (pidfilename == NULL) {
+		error = newErr("Cannot allocate buffer while starting profiler");
+		goto cleanup;
+	}
 	snprintf(pidfilename, pidfnlen, "%s/profiler.pid", *log_path);
 
 	/* Make sure that the pid file is does not exist */
@@ -888,6 +887,8 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 		goto cleanup;
 	}
 
+	/* TODO: if the pid file exists read it and check if stethoscope with the
+	 * given pid is running */
 	/* Open the pid file */
 	if ((pidfile = fopen(pidfilename, "w")) == NULL) {
 		error = newErr("unable to open %s for writing", pidfilename);
