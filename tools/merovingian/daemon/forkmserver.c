@@ -833,7 +833,7 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 	kv = findConfKey(ckv, PROFILERLOGPROPERTY);
 
 	if (kv == NULL) {
-		error = newErr("Property 'profilerlogpath' not set for db %s\n",
+		error = newErr("Property '"PROFILERLOGPROPERTY"' not set for db %s\n",
 					   dbname);
 		goto cleanup;
 	}
@@ -987,7 +987,7 @@ shutdown_profiler(char *dbname, sabdb **stats)
 	kv = findConfKey(ckv, PROFILERLOGPROPERTY);
 
 	if (kv == NULL) {
-		error = newErr("Property 'profilerlogpath' not set for db %s\n",
+		error = newErr("Property '"PROFILERLOGPROPERTY"' not set for db %s\n",
 					   dbname);
 		goto cleanup;
 	}
