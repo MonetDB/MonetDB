@@ -53,6 +53,10 @@ openConnectionTCP(int *ret, const char *bindaddr, unsigned short port, FILE *log
 	server.sin_family = AF_INET;
 	if (bindaddr) {
 		hoste = gethostbyname(bindaddr);
+		if (hoste == NULL) {
+			closesocket(sock);
+			return newErr("cannot find host %s", bindaddr);
+		}
 		memcpy(&server.sin_addr.s_addr, *(hoste->h_addr_list),
 				sizeof(server.sin_addr.s_addr));
 	} else {

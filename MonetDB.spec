@@ -139,7 +139,9 @@ Source: https://www.monetdb.org/downloads/sources/Jul2017-SP1/%{name}-%{version}
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 # RHEL >= 7, and all current Fedora
 BuildRequires: systemd
-BuildRequires: checkpolicy, selinux-policy-devel, hardlink
+BuildRequires: checkpolicy
+BuildRequires: selinux-policy-devel
+BuildRequires: hardlink
 %endif
 BuildRequires: bison
 BuildRequires: bzip2-devel
