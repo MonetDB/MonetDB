@@ -265,10 +265,10 @@ the return code of
 indicates failure if one of the databases had a failure, even though
 the operation on other databases was successful.
 .TP
-\fBprofilerstart\fP \fIdatabase\fP
+\fBprofilerstart\fP \fIdatabase\fP [\fIdatabase\fP ...]
 .PD 0
 .TP
-\fBprofilerstop\fP \fIdatabase\fP
+\fBprofilerstop\fP \fIdatabase\fP [\fIdatabase\fP ...]
 Starts or stops the collection of profiling logs for the given database. The property
 .B profilerlogpath
 must be set for the given database, and it should point to a directory where the logs
