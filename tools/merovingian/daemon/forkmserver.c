@@ -910,7 +910,7 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 
 		fclose(pidfile);
 		/* construct the log output file */
-		log_filename_len = strlen(*log_path) + strlen("/proflen_") + strlen(dbname) + 26;
+		log_filename_len = strlen(*log_path) + strlen("/proflog_") + strlen(dbname) + 26;
 		log_filename = malloc(log_filename_len);
 		if (log_filename == NULL) {
 			/* TODO What now? */
@@ -920,7 +920,7 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 		current_time = time(NULL);
 		tm_ctime = localtime(&current_time);
 		strftime(timestamp, sizeof(timestamp), "%Y-%m-%d_%H:%M:%S", tm_ctime);
-		snprintf(log_filename, log_filename_len, "%s/proflen_%s_%s.json",
+		snprintf(log_filename, log_filename_len, "%s/proflog_%s_%s.json",
 				 *log_path, dbname, timestamp);
 
 		/* build the arguments */
