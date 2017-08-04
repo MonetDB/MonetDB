@@ -66,6 +66,7 @@ command_help(int argc, char *argv[])
 		printf("  where command is one of:\n");
 		printf("    create, destroy, lock, release\n");
 		printf("    status, start, stop, kill\n");
+		printf("    profilerstart, profilerstop\n");
 		printf("    set, get, inherit\n");
 		printf("    discover, help, version\n");
 		printf("  options can be:\n");
