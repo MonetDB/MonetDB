@@ -105,7 +105,7 @@ command_help(int argc, char *argv[])
 	} else if (strcmp(argv[1], "profilerstart") == 0) {
 		printf("Usage: monetdb profilerstart database [database ...]\n");
 		printf("  Starts the collection of profiling events. The property\n");
-		printf("  \"profiler_path\" should be set. Use the \"profilerstop\"\n");
+		printf("  \""PROFILERLOGPROPERTY"\" should be set. Use the \"profilerstop\"\n");
 		printf("  command to stop the profiler.\n");
 	} else if (strcmp(argv[1], "profilerstop") == 0) {
 		printf("Usage: monetdb profilerstop database [database ...]\n");
