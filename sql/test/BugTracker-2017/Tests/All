@@ -62,3 +62,4 @@ crash-select_after_MAL_error.Bug-6332
 handle-values-subqueries.Bug-6336
 spurious_errors.Bug-6344
 caching_stats_bug.6374
+aggr_udf_with_more_than_2params.Bug-6385
