@@ -639,7 +639,21 @@ static void ctl_handle_client(
 				}
 				msab_freeStatus(&stats);
 			}  else if (strncmp(p, "profilerstop", strlen("profilerstop")) == 0) {
-
+				char *e = shutdown_profiler(q, &stats);
+				if (e != NULL) {
+					Mfprintf(_mero_ctlerr, "%s: failed to shutdown the profiler "
+							 "database '%s': %s\n", origin, q, getErrMsg(e));
+					len = snprintf(buf2, sizeof(buf2),
+								   "%s\n", getErrMsg(e));
+					send_client("!");
+					freeErr(e);
+				} else {
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send_client("=");
+					Mfprintf(_mero_ctlout, "%s: profiler shut down for '%s'\n",
+							 origin, q);
+				}
+				msab_freeStatus(&stats);
 			} else if (strncmp(p, "name=", strlen("name=")) == 0) {
 				char *e;
 

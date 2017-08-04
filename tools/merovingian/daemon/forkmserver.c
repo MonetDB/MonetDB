@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <sys/un.h>
 #include <sys/stat.h>
+#include <signal.h>
 #include <unistd.h>
 #include <string.h> /* char ** */
 #include <time.h> /* localtime */
@@ -942,7 +943,101 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 	freeConfFile(ckv);
 	free(ckv);
 	free(profiler_executable);
+	free(pidfilename);
 	pthread_mutex_unlock(&fork_lock);
+	return error;
+}
+
+err
+shutdown_profiler(char *dbname, sabdb **stats)
+{
+	err error=NO_ERR;
+	confkeyval *ckv, *kv;
+	size_t pidfnlen = 0;
+	char *pidfilename = NULL;
+	FILE *pidfile;
+	char buf[BUFSIZ];
+	size_t nbytes;
+	pid_t pid;
+
+	error = msab_getStatus(stats, dbname);
+	if (error != NULL) {
+		return error;
+	}
+
+	if (*stats == NULL) {
+		/* TODO: What now? */
+		error = newErr("Null stats for db %s", dbname);
+		return error;
+	}
+
+	/* Verify that the requested db is running */
+	if ((*stats)->state != SABdbRunning) {
+		/* server is not running, shoo */
+		error = newErr("Database %s is not running.", dbname);
+		goto cleanup;
+	}
+
+	/* Find the pid file and make sure the profiler is running */
+	ckv = getDefaultProps();
+	readAllProps(ckv, (*stats)->path);
+	kv = findConfKey(ckv, PROFILERLOGPROPERTY);
+
+	if (kv == NULL) {
+		error = newErr("Property 'profilerlogpath' not set for db %s\n",
+					   dbname);
+		goto cleanup;
+	}
+
+	/* construct the filename of the pid file */
+	pidfnlen = strlen(kv->val) + strlen("/profiler.pid") + 1;
+	pidfilename = malloc(pidfnlen);
+	if (pidfilename == NULL) {
+		error = newErr("Cannot allocate buffer while shutting down of profiler");
+		goto cleanup;
+	}
+	snprintf(pidfilename, pidfnlen, "%s/profiler.pid", kv->val);
+
+	if ((pidfile = fopen(pidfilename, "r")) == NULL) {
+		error = newErr("Unable to open %s for reading", pidfilename);
+		goto cleanup;
+	}
+
+	clearerr(pidfile);
+	nbytes = fread(buf, 1, BUFSIZ, pidfile);
+
+	if (ferror(pidfile)) {
+		error = newErr("Cannot read pid (%s) from file %s", buf, pidfilename);
+		fclose(pidfile);
+		goto cleanup;
+	}
+	fclose(pidfile);
+
+	if (buf[nbytes - 1] == '\n') {
+		buf[nbytes - 1] = '\0';
+	}
+
+	pid = (pid_t)strtol(buf, NULL, 10);
+	if (pid == 0 && errno == EINVAL) {
+		error = newErr("File contents %s not a valid pid", buf);
+		goto cleanup;
+	}
+
+	if (kill(pid, SIGTERM) == -1) {
+		char error_message[BUFSIZ];
+		strerror_r(errno, error_message, BUFSIZ);
+		error = newErr("%s", error_message);
+		goto cleanup;
+	}
+
+	/* All went well. Remove the pidfile */
+	if (unlink(pidfilename) != 0) {
+		error = newErr("Profiler seems to have stopped, but cannot remove pid file.");
+	}
+
+  cleanup:
+	freeConfFile(ckv);
+	free(pidfilename);
 	return error;
 }
 
