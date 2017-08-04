@@ -765,7 +765,7 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 	pid_t pid;
 	char *error = NO_ERR;
 	char *pidfilename = NULL;
-	confkeyval *ckv, *kv;
+	confkeyval *ckv = NULL, *kv;
 	size_t pidfnlen;
 	FILE *pidfile;
 	char *profiler_executable;
@@ -847,7 +847,8 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 			mode_t mode = 0755;
 			if (mkdir(*log_path, mode) == -1) {  /* mkdir failed, bail out */
 				char error_message[BUFSIZ];
-				strerror_r(errno, error_message, BUFSIZ);
+				if (strerror_r(errno, error_message, BUFSIZ) != 0)
+					strcpy(error_message, "unknown error");
 				error = newErr("%s", error_message);
 				free(*log_path);
 				*log_path = NULL;
@@ -855,7 +856,8 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 			}
 		} else {  /* Something else went wrong, can't handle the heat */
 			char error_message[BUFSIZ];
-			strerror_r(errno, error_message, BUFSIZ);
+			if (strerror_r(errno, error_message, BUFSIZ) != 0)
+				strcpy(error_message, "unknown error");
 			error = newErr("%s", error_message);
 			free(*log_path);
 			*log_path = NULL;
@@ -953,7 +955,7 @@ err
 shutdown_profiler(char *dbname, sabdb **stats)
 {
 	err error=NO_ERR;
-	confkeyval *ckv, *kv;
+	confkeyval *ckv = NULL, *kv;
 	size_t pidfnlen = 0;
 	char *pidfilename = NULL;
 	FILE *pidfile;
@@ -1026,7 +1028,8 @@ shutdown_profiler(char *dbname, sabdb **stats)
 
 	if (kill(pid, SIGTERM) == -1) {
 		char error_message[BUFSIZ];
-		strerror_r(errno, error_message, BUFSIZ);
+		if (strerror_r(errno, error_message, BUFSIZ) != 0)
+			strcpy(error_message, "unknown error");
 		error = newErr("%s", error_message);
 		goto cleanup;
 	}
