@@ -19,6 +19,7 @@
 
 #ifndef _CQUERY_
 #define _CQUERY_
+
 #include "mal_interpreter.h"
 #include "sql_scenario.h"
 
@@ -33,7 +34,7 @@
 #define CQSTOP	   5	/* stop the scheduler */
 #define CQDEREGISTER  6	/* stop the scheduler */
 
-#define INITIAL_MAXCQ     32		/* it is the minimum, if we need more space GDKrealloc */
+#define INITIAL_MAXCQ     32	/* it is the minimum, if we need more space GDKrealloc */
 #define MAXSTREAMS       128	/* limit the number of stream columns to be looked after per query*/
 
 #define STREAM_IN	1

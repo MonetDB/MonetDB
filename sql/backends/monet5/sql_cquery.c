@@ -50,7 +50,7 @@
 #include "mal_builder.h"
 #include "opt_prelude.h"
 
-extern void (*cq_close)(void);
+sql5_export void (*cq_close)(void);
 
 static str statusname[7] = { "init", "register", "readytorun", "running", "waiting", "paused", "stopping"};
 
@@ -379,6 +379,8 @@ CQerror(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL,"cquery.error","The continuous procedure %s.%s is not accessible\n",sch,fcn);
 
 	pnet[idx].error = GDKstrdup(error);
+	if(pnet[idx].error == NULL)
+		throw(SQL,"cquery.error",MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
