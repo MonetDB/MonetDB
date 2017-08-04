@@ -784,32 +784,33 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 		return error;
 	}
 
-	/* Find the profiler executable. We are currently running as:
-	 * /path/to/installation/monetdbd
+	/* Find the profiler executable. The mserver is running as
+	 * /path/to/installation/mserver5
 	 * and the profiler executable should be:
 	 * /path/to/installation/stethoscope
 	 */
-	tmp_exe = get_bin_path();
+	tmp_exe = strdup(_mero_mserver);
 	if (tmp_exe == NULL) {
 		error = newErr("Cannot find the profiler executable");
 		return error;
 	} else {
-		char *daemon_filename = "monetdbd";
+		char *server_filename = "mserver5";
 		char *profiler_filename = "stethoscope";
-		char *s = strstr(tmp_exe, daemon_filename);
+		char *s = strstr(tmp_exe, server_filename);
 		size_t executable_len = 0;
 
-		if (s == NULL || strncmp(s, daemon_filename, strlen(daemon_filename)) != 0) {
-			error = newErr("Unexpected executable (missing the string \"monetdbd\")");
+		if (s == NULL || strncmp(s, server_filename, strlen(server_filename)) != 0) {
+			error = newErr("Unexpected executable (missing the string \"%s\")", server_filename);
 			free(tmp_exe);
 			return error;
 		}
 
-		executable_len = strlen(tmp_exe) + strlen(profiler_filename) - strlen(daemon_filename) + 1;
+		executable_len = strlen(tmp_exe) + strlen(profiler_filename) - strlen(server_filename) + 1;
 		*s = '\0';
 		profiler_executable = malloc(executable_len);
 		snprintf(profiler_executable, executable_len, "%s%s%s",
 				 tmp_exe, profiler_filename, s + 8);
+		free(tmp_exe);
 		if (stat(profiler_executable, &path_info) == -1) {
 			error = newErr("Cannot find profiler executable");
 			goto cleanup;
