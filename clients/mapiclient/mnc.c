@@ -172,6 +172,9 @@ main(int argc, char **argv)
 				break;  /* success */
 			closesocket(s);
 		}
+#ifdef HAVE_FCNTL
+		fcntl(s, F_SETFD, FD_CLOEXEC);
+#endif
 		freeaddrinfo(res);
 		if (rp == NULL) {
 			fprintf(stderr, "could not connect to %s:%s: %s\n",
@@ -197,6 +200,9 @@ main(int argc, char **argv)
 			fprintf(stderr, "opening socket failed: %s\n", strerror(errno));
 			exit(1);
 		}
+#ifdef HAVE_FCNTL
+		fcntl(s, F_SETFD, FD_CLOEXEC);
+#endif
 
 		if (connect(s, serv, sizeof(server)) == SOCKET_ERROR) {
 			fprintf(stderr,
@@ -221,6 +227,9 @@ main(int argc, char **argv)
 			fprintf(stderr, "failed to create socket: %s\n", strerror(errno));
 			exit(1);
 		}
+#ifdef HAVE_FCNTL
+		fcntl(sock, F_SETFD, FD_CLOEXEC);
+#endif
 
 		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on);
 
@@ -243,6 +252,9 @@ main(int argc, char **argv)
 					strerror(errno));
 			exit(1);
 		}
+#ifdef HAVE_FCNTL
+		fcntl(s, F_SETFD, FD_CLOEXEC);
+#endif
 	}
 
 	out = socket_wastream(s, "ascii write stream");

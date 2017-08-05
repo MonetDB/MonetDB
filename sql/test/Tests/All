@@ -99,6 +99,7 @@ antiselect
 median_stdev
 
 ifexists
+ifexists-views
 subqueries
 
 #HAVE_GEOM?trace
@@ -108,3 +109,5 @@ HAVE_JDBCCLIENT_JAR?bogus-auto-generated-keys
 str-pad
 str-trim
 alastair_udf_mergetable_bug
+
+copy-into-fwf

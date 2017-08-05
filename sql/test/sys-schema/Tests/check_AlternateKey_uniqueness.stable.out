@@ -64,6 +64,31 @@ Ready.
 % duplicates,	table_id,	name # name
 % bigint,	int,	varchar # type
 % 1,	1,	0 # length
+#SELECT COUNT(*) AS duplicates, table_id, number FROM sys._columns GROUP BY table_id, number HAVING COUNT(*) > 1;
+% sys.L3,	sys._columns,	sys._columns # table_name
+% duplicates,	table_id,	number # name
+% bigint,	int,	int # type
+% 1,	1,	1 # length
+#SELECT COUNT(*) AS duplicates, table_id, number FROM tmp._columns GROUP BY table_id, number HAVING COUNT(*) > 1;
+% tmp.L3,	tmp._columns,	tmp._columns # table_name
+% duplicates,	table_id,	number # name
+% bigint,	int,	int # type
+% 1,	1,	1 # length
+#SELECT COUNT(*) AS duplicates, table_id, number FROM sys.columns GROUP BY table_id, number HAVING COUNT(*) > 1;
+% .L15,	.columns,	.columns # table_name
+% duplicates,	table_id,	number # name
+% bigint,	int,	int # type
+% 1,	1,	1 # length
+#SELECT COUNT(*) AS duplicates, T.id FROM (SELECT id FROM sys.schemas UNION ALL SELECT id FROM sys._tables UNION ALL SELECT id FROM sys._columns UNION ALL SELECT id FROM sys.functions) T GROUP BY T.id HAVING COUNT(*) > 1;
+% .L26,	.t # table_name
+% duplicates,	id # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, T.id FROM (SELECT id FROM sys.schemas UNION ALL SELECT id FROM sys.tables UNION ALL SELECT id FROM sys.columns UNION ALL SELECT id FROM sys.functions) T GROUP BY T.id HAVING COUNT(*) > 1;
+% .L26,	.t # table_name
+% duplicates,	id # name
+% bigint,	int # type
+% 1,	1 # length
 #SELECT COUNT(*) AS duplicates, func_id, name FROM sys.args GROUP BY func_id, name HAVING COUNT(*) > 1;
 % sys.L3,	sys.args,	sys.args # table_name
 % duplicates,	func_id,	name # name

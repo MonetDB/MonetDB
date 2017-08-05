@@ -98,7 +98,7 @@ MKEYbathash(bat *res, const bat *bid)
 	dst = COLnew(b->hseqbase, TYPE_lng, n, TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "mkey.bathash", MAL_MALLOC_FAIL);
+		throw(SQL, "mkey.bathash", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATsetcount(dst, n);
 
@@ -269,7 +269,7 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 	if (bn == NULL) {
 		BBPunfix(hb->batCacheid);
 		BBPunfix(b->batCacheid);
-		throw(MAL, "mkey.rotate_xor_hash", MAL_MALLOC_FAIL);
+		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATsetcount(bn, n);
 
@@ -392,7 +392,7 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	bn = COLnew(hb->hseqbase, TYPE_lng, n, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(hb->batCacheid);
-		throw(MAL, "mkey.rotate_xor_hash", MAL_MALLOC_FAIL);
+		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATsetcount(bn, n);
 
@@ -465,7 +465,7 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 	bn = COLnew(b->hseqbase, TYPE_lng, n, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "mkey.rotate_xor_hash", MAL_MALLOC_FAIL);
+		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATsetcount(bn, n);
 

@@ -292,6 +292,10 @@ datetime_field(itype f)
 		return "minute";
 	case isec:
 		return "second";
+	case iquarter:
+		return "quarter";
+	case iweek:
+		return "week";
 	}
 }
 

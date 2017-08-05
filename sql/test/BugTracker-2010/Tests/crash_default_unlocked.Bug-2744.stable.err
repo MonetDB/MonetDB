@@ -73,7 +73,8 @@ stderr of test 'crash_default_unlocked.Bug-2744` in directory 'sql/test/BugTrack
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = CREATE TABLE "programs" ("state" VARCHAR(10) DEFAULT UNLOCKED NOT NULL); 
-ERROR = !incorrect default value 'unlocked'
+ERROR = !Incorrect default value 'unlocked'
+CODE  = 42000
 
 # 14:51:06 >  
 # 14:51:06 >  Done.

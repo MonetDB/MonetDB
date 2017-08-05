@@ -37,7 +37,7 @@ Ready.
 [ 2,	4	]
 [ 3,	9	]
 #select * from generate_series(0,5,1);
-% . # table_name
+% .L4 # table_name
 % value # name
 % tinyint # type
 % 1 # length

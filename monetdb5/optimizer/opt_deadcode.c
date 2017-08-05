@@ -36,7 +36,7 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		msg= createException(MAL,"optimizer.deadcode",MAL_MALLOC_FAIL);
+		msg= createException(MAL,"optimizer.deadcode", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 
@@ -107,9 +107,9 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
     /* Defense line against incorrect plans */
 	/* we don't create or change existing structures */
     //if( actions > 0){
-        //chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-        chkFlow(cntxt->fdout, mb);
-        //chkDeclarations(cntxt->fdout, mb);
+        //chkTypes(cntxt->usermodule, mb, FALSE);
+        chkFlow(mb);
+        //chkDeclarations(mb);
     //}
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

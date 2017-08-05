@@ -370,13 +370,6 @@ dump_type(Mapi mid, stream *toConsole, char *c_type, char *c_type_digits, char *
 {
 	int space = 0;
 
-	/* map wrd type to something legal */
-	if (strcmp(c_type, "wrd") == 0) {
-		if (strcmp(c_type_scale, "32") == 0)
-			c_type = "int";
-		else
-			c_type = "bigint";
-	}
 	if (strcmp(c_type, "boolean") == 0) {
 		space = mnstr_printf(toConsole, "BOOLEAN");
 	} else if (strcmp(c_type, "int") == 0) {
@@ -1231,7 +1224,7 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 		      "s.id = f.schema_id "
 		      "%s%s"
 		      "%s%s%s%s%s%s"
-		"ORDER BY f.id";
+		"ORDER BY f.func";
 	MapiHdl hdl;
 	char *q;
 	size_t l;

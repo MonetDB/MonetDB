@@ -64,8 +64,8 @@ Ready.
 #    return true;
 #end;
 #select tmp1();
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -79,8 +79,8 @@ Ready.
 #    return true;
 #end;
 #select tmp2();
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -94,8 +94,8 @@ Ready.
 #    return true;
 #end;
 #select tmp3();
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -109,8 +109,8 @@ Ready.
 #    return true;
 #end;
 #select tmp4();
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]

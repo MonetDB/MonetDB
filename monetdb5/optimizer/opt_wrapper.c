@@ -132,7 +132,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			fcnnme= getArgDefault(mb,p,2);
 		}
 		removeInstruction(mb, p);
-		s= findSymbol(cntxt->nspace, putName(modnme),putName(fcnnme));
+		s= findSymbol(cntxt->usermodule, putName(modnme),putName(fcnnme));
 
 		if( s == NULL) 
 			throw(MAL, optimizer, RUNTIME_OBJECT_UNDEFINED ":%s.%s", modnme, fcnnme);
@@ -183,7 +183,7 @@ OPTstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		BBPreclaim(n);
 		BBPreclaim(c);
 		BBPreclaim(t);
-		throw(MAL,"optimizer.statistics", MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.statistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	for( i= 0; codes[i].nme; i++){
 		if (BUNappend(n, codes[i].nme, FALSE) != GDK_SUCCEED ||
@@ -192,7 +192,7 @@ OPTstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			BBPreclaim(n);
 			BBPreclaim(c);
 			BBPreclaim(t);
-			throw(MAL,"optimizer.statistics", MAL_MALLOC_FAIL);
+			throw(MAL,"optimizer.statistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref( *nme = n->batCacheid);

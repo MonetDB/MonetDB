@@ -60,10 +60,8 @@ newGlobalStack(int size)
 	MalStkPtr s;
 
 	s = (MalStkPtr) GDKzalloc(stackSize(size) + offsetof(MalStack, stk));
-	if (!s) {
-		GDKerror("newGlobalStack:"MAL_MALLOC_FAIL);
+	if (!s)
 		return NULL;
-	}
 	s->stksize = size;
 	return s;
 }

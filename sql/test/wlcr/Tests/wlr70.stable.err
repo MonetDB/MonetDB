@@ -22,10 +22,6 @@ stderr of test 'wlr70` in directory 'sql/test/wlcr` itself:
 # cmdline opt 	mapi_usock = /var/tmp/mtest-22068/.s.monetdb.52305
 # cmdline opt 	gdk_dbpath = /home/kutsurak/work/monet/sources/MonetDB/build/install/var/MonetDB/mTests_sql_test_wlcr-clone
 # cmdline opt 	gdk_debug = 536870922
-MAPI  = (monetdb) /var/tmp/mtest-23854/.s.monetdb.55397
-QUERY = select * from tmp70;
-
-
 
 # 13:16:48 >  
 # 13:16:48 >  "Done."

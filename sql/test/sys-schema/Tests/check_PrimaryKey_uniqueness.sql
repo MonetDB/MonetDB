@@ -40,7 +40,7 @@ SELECT COUNT(*) AS duplicates, name FROM sys.users GROUP BY name HAVING COUNT(*)
 SELECT COUNT(*) AS duplicates, login_id, role_id FROM sys.user_role GROUP BY login_id, role_id HAVING COUNT(*) > 1;
 
 SELECT COUNT(*) AS duplicates, privilege_code_id FROM sys.privilege_codes GROUP BY privilege_code_id HAVING COUNT(*) > 1;
-SELECT COUNT(*) AS duplicates, obj_id FROM sys.privileges GROUP BY obj_id HAVING COUNT(*) > 1;
+SELECT COUNT(*) AS duplicates, obj_id, auth_id FROM sys.privileges GROUP BY obj_id, auth_id HAVING COUNT(*) > 1;
 
 SELECT COUNT(*) AS duplicates, id FROM sys.querylog_catalog GROUP BY id HAVING COUNT(*) >1;
 SELECT COUNT(*) AS duplicates, id FROM sys.querylog_calls GROUP BY id HAVING COUNT(*) > 1;

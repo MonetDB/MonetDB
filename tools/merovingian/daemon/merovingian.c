@@ -80,6 +80,13 @@
 #include "argvcmds.h"
 #include "multiplex-funnel.h"
 
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
+#endif
+#ifndef F_DUPFD_CLOEXEC
+#define F_DUPFD_CLOEXEC F_DUPFD
+#endif
+
 
 /* private structs */
 
@@ -334,13 +341,13 @@ main(int argc, char *argv[])
 	 * hardcoded bin-dir */
 	_mero_mserver = get_bin_path();
 	if (_mero_mserver != NULL) {
-		/* replace the trailing monetdbd by mserver5, fits nicely since
-		 * they happen to be of same length */
-		char *s = strrchr(_mero_mserver, '/');
-		if (s != NULL && strcmp(s + 1, "monetdbd") == 0) {
-			s++;
-			*s++ = 'm'; *s++ = 's'; *s++ = 'e'; *s++ = 'r';
-			*s++ = 'v'; *s++ = 'e'; *s++ = 'r'; *s++ = '5';
+		/* Find where the string monetdbd actually starts */
+		char *s = strstr(_mero_mserver, "monetdbd");
+		if (s != NULL && strncmp(s, "monetdbd", 8) == 0) {
+			/* Replace the 8 following characters with the characters mserver5.
+			 * This should work even if the executables have prefixes or
+			 * suffixes */
+			strncpy(s, "mserver5", 8);
 			if (stat(_mero_mserver, &sb) == -1)
 				_mero_mserver = NULL;
 		}
@@ -355,6 +362,8 @@ main(int argc, char *argv[])
 	kv = findConfKey(_mero_db_props, "embedr");
 	kv->val = strdup("no");
 	kv = findConfKey(_mero_db_props, "embedpy");
+	kv->val = strdup("no");
+	kv = findConfKey(_mero_db_props, "embedpy3");
 	kv->val = strdup("no");
 	kv = findConfKey(_mero_db_props, "nclients");
 	kv->val = strdup("64");
@@ -465,11 +474,12 @@ main(int argc, char *argv[])
 				if (setsid() < 0)
 					Mfprintf(stderr, "hmmm, can't detach from controlling tty, "
 							"continuing anyway\n");
-				retfd = open("/dev/null", O_RDONLY);
+				retfd = open("/dev/null", O_RDONLY | O_CLOEXEC);
 				dup2(retfd, 0);
 				close(retfd);
 				close(pfd[0]); /* close unused read end */
 				retfd = pfd[1]; /* store the write end */
+				fcntl(retfd, F_SETFD, FD_CLOEXEC);
 			break;
 			default:
 				/* the parent, we want it to die, after we know the child
@@ -652,13 +662,16 @@ main(int argc, char *argv[])
 	/* where should our msg output go to? */
 	p = getConfVal(_mero_props, "logfile");
 	/* write to the given file */
-	_mero_topdp->out = open(p, O_WRONLY | O_APPEND | O_CREAT,
+	_mero_topdp->out = open(p, O_WRONLY | O_APPEND | O_CREAT | O_CLOEXEC,
 			S_IRUSR | S_IWUSR);
 	if (_mero_topdp->out == -1) {
 		Mfprintf(stderr, "unable to open '%s': %s\n",
 				p, strerror(errno));
 		MERO_EXIT_CLEAN(1);
 	}
+#if O_CLOEXEC == 0
+	fcntl(_mero_topdp->out, F_SETFD, FD_CLOEXEC);
+#endif
 	_mero_topdp->err = _mero_topdp->out;
 
 	_mero_logfile = fdopen(_mero_topdp->out, "a");
@@ -674,6 +687,7 @@ main(int argc, char *argv[])
 	d->out = pfd[0];
 	dup2(pfd[1], 1);
 	close(pfd[1]);
+	fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
 
 	/* redirect stderr */
 	if (pipe(pfd) == -1) {
@@ -682,8 +696,12 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 	}
 	/* before it is too late, save original stderr */
-	oerr = fdopen(dup(2), "w");
+	oerr = fdopen(fcntl(2, F_DUPFD_CLOEXEC), "w");
+#if F_DUPFD_CLOEXEC == F_DUPFD
+	fcntl(fileno(oerr), F_SETFD, FD_CLOEXEC);
+#endif
 	d->err = pfd[0];
+	fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
 	dup2(pfd[1], 2);
 	close(pfd[1]);
 
@@ -699,6 +717,8 @@ main(int argc, char *argv[])
 				strerror(errno));
 		MERO_EXIT(1);
 	}
+	fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
+	fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
 	d->out = pfd[0];
 	_mero_discout = fdopen(pfd[1], "a");
 	if (pipe(pfd) == -1) {
@@ -706,6 +726,8 @@ main(int argc, char *argv[])
 				strerror(errno));
 		MERO_EXIT(1);
 	}
+	fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
+	fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
 	d->err = pfd[0];
 	_mero_discerr = fdopen(pfd[1], "a");
 	d->pid = getpid();
@@ -721,6 +743,8 @@ main(int argc, char *argv[])
 				strerror(errno));
 		MERO_EXIT(1);
 	}
+	fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
+	fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
 	d->out = pfd[0];
 	_mero_ctlout = fdopen(pfd[1], "a");
 	if (pipe(pfd) == -1) {
@@ -728,6 +752,8 @@ main(int argc, char *argv[])
 				strerror(errno));
 		MERO_EXIT(1);
 	}
+	fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
+	fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
 	d->err = pfd[0];
 	_mero_ctlerr = fdopen(pfd[1], "a");
 	d->pid = getpid();
@@ -822,6 +848,7 @@ main(int argc, char *argv[])
 				closesocket(discsock);
 				discsock = -1;
 			}
+			fcntl(_mero_broadcastsock, F_SETFD, FD_CLOEXEC);
 
 			_mero_broadcastaddr.sin_family = AF_INET;
 			_mero_broadcastaddr.sin_addr.s_addr = htonl(INADDR_BROADCAST);

@@ -42,8 +42,12 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 		m->session->schema = s;
 
 	b = (buffer*)GDKmalloc(sizeof(buffer));
+	if (!b) {
+		return NULL;
+	}
 	n = GDKmalloc(len + 1 + 1);
-	if (!b || !n) {
+	if (!n) {
+		GDKfree(b);
 		return NULL;
 	}
 	strncpy(n, query, len);
@@ -211,6 +215,6 @@ rel_semantic(mvc *sql, symbol *s)
 		return rel_selects(sql, s);
 
 	default:
-		return sql_error(sql, 02, "symbol type not found");
+		return sql_error(sql, 02, SQLSTATE(42000) "Symbol type not found");
 	}
 }

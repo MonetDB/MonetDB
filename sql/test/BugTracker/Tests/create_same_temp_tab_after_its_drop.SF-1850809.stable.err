@@ -15,9 +15,11 @@ stderr of test 'create_same_temp_tab_after_its_drop.SF-1850809` in directory 'sq
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO temptest VALUES (3);
 ERROR = !INSERT INTO: no such table 'temptest'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = DROP TABLE temptest;
 ERROR = !DROP TABLE: no such table 'temptest'
+CODE  = 42S02
 
 # 11:00:59 >  
 # 11:00:59 >  Done.

@@ -13,6 +13,7 @@ stderr of test 'update_set_null` in directory 'sql/test/Update_Delete_action` it
 MAPI  = monetdb@sofia:38256
 QUERY = update t1 set id = 10 where id =1;
 ERROR = !UPDATE: NOT NULL constraint violated for column 't2.id'
+CODE  = M0M29
 
 # 11:14:02 >  
 # 11:14:02 >  Done.

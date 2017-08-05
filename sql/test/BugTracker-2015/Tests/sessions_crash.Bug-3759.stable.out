@@ -30,20 +30,20 @@ Ready.
 # 16:14:53 >  
 
 #select COUNT(*) from "sys"."queue";
-% .L2 # table_name
-% L1 # name
+% .L11 # table_name
+% L10 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select COUNT(*) from "sys"."rejects";
-% .L2 # table_name
-% L1 # name
+% .L11 # table_name
+% L10 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #select COUNT(*) from "sys"."sessions";
-% .L2 # table_name
-% L1 # name
+% .L11 # table_name
+% L10 # name
 % bigint # type
 % 1 # length
 [ 2	]

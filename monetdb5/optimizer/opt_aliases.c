@@ -42,7 +42,7 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if( i < limit){
 		alias= (int*) GDKzalloc(sizeof(int)* mb->vtop);
 		if (alias == NULL)
-			throw(MAL,"optimizer.aliases",MAL_MALLOC_FAIL);
+			throw(MAL,"optimizer.aliases", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		setVariableScope(mb);
 		for(j=1; j<mb->vtop; j++) alias[j]=j;
 	}
@@ -73,9 +73,9 @@ OPTaliasesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	/* Defense line against incorrect plans */
 	/* Plan is unaffected */
-	//chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-	//chkFlow(cntxt->fdout, mb);
-	//chkDeclarations(cntxt->fdout, mb);
+	//chkTypes(cntxt->usermodule, mb, FALSE);
+	//chkFlow(mb);
+	//chkDeclarations(mb);
 	//
     /* keep all actions taken as a post block comment
 	 * and update statics */

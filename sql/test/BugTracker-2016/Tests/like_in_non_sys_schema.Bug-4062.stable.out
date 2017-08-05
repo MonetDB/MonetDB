@@ -70,7 +70,7 @@ Ready.
 #SELECT cast(CASE WHEN "columns"."default" IS NOT NULL AND "columns"."default" LIKE 'next value for %' THEN 'YES' ELSE 'NO' END AS varchar(3)) AS "IS_AUTOINCREMENT"
 #FROM "sys"."columns"
 #WHERE "columns"."default" LIKE 'next value for %';
-% .L14 # table_name
+% .L15 # table_name
 % IS_AUTOINCREMENT # name
 % varchar # type
 % 0 # length
@@ -78,7 +78,7 @@ Ready.
 #SELECT cast(CASE WHEN "columns"."default" IS NOT NULL AND "columns"."default" LIKE 'next value for %' THEN 'YES' ELSE 'NO' END AS varchar(3)) AS "IS_AUTOINCREMENT"
 #FROM "sys"."columns"
 #WHERE "columns"."default" LIKE 'next value for %';
-% .L14 # table_name
+% .L15 # table_name
 % IS_AUTOINCREMENT # name
 % varchar # type
 % 0 # length
@@ -86,7 +86,7 @@ Ready.
 #SELECT cast(CASE WHEN "columns"."default" IS NOT NULL AND "columns"."default" LIKE 'next value for %' THEN 'YES' ELSE 'NO' END AS varchar(3)) AS "IS_AUTOINCREMENT"
 #FROM "sys"."columns"
 #WHERE "columns"."default" LIKE 'next value for %';
-% .L14 # table_name
+% .L15 # table_name
 % IS_AUTOINCREMENT # name
 % varchar # type
 % 0 # length

@@ -191,23 +191,23 @@ OPTmultiplexSimple(Client cntxt, MalBlkPtr mb)
 	//MalBlkPtr mb= cntxt->curprg->def;
 	int i, doit=0;
 	InstrPtr p;
+	str msg = MAL_SUCCEED;
+
 	if(mb)
-	for( i=0; i<mb->stop; i++){
-		p= getInstrPtr(mb,i);
-		if(isMultiplex(p)) {
-			p->typechk = TYPE_UNKNOWN;
-			doit++;
+		for( i=0; i<mb->stop; i++){
+			p= getInstrPtr(mb,i);
+			if(isMultiplex(p)) {
+				p->typechk = TYPE_UNKNOWN;
+				doit++;
+			}
 		}
-	}
 	if( doit) {
 		OPTmultiplexImplementation(cntxt, mb, 0, 0);
-		chkTypes(cntxt->fdout, cntxt->nspace, mb,TRUE);
-		if ( mb->errors == 0) {
-			chkFlow(cntxt->fdout, mb);
-			chkDeclarations(cntxt->fdout,mb);
-		}
+		chkTypes(cntxt->usermodule, mb,TRUE);
+		chkFlow(mb);
+		chkDeclarations(mb);
 	}
-	return 0;
+	return msg;
 }
 str
 OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -225,12 +225,12 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0 )
-		throw(MAL,"optimizer.mergetable", MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.mergetable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		if (msg == MAL_SUCCEED && isMultiplex(p)) { 
-			if ( MANIFOLDtypecheck(cntxt,mb,p) != NULL){
+			if ( MANIFOLDtypecheck(cntxt,mb,p,0) != NULL){
 				setFunctionId(p, manifoldRef);
 				p->typechk = TYPE_UNKNOWN;
 				pushInstruction(mb, p);
@@ -256,10 +256,10 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	GDKfree(old);
 
     /* Defense line against incorrect plans */
-    if( mb->errors == 0 && actions > 0){
-        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-        chkFlow(cntxt->fdout, mb);
-        chkDeclarations(cntxt->fdout, mb);
+    if( msg == MAL_SUCCEED &&  actions > 0){
+        chkTypes(cntxt->usermodule, mb, FALSE);
+        chkFlow(mb);
+        chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

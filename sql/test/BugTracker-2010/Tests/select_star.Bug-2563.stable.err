@@ -73,6 +73,7 @@ stderr of test 'select_star.Bug-2563` in directory 'sql/test/BugTracker-2010` it
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select *;
 ERROR = !Table expression without table name
+CODE  = 42000
 
 # 08:53:38 >  
 # 08:53:38 >  Done.

@@ -241,9 +241,11 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 	int cnt = 0;
 
 	va_start(va, t);
-	for (val = va_arg(va, void *); n && val; n = n->next, val = va_arg(va, void *))
+	for (; n; n = n->next)
 	{
 		sql_column *c = n->data;
+		val = va_arg(va, void *);
+		if (!val) break;
 		store_funcs.append_col(tr, c, val, c->type.type->localtype);
 		cnt++;
 	}

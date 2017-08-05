@@ -26,11 +26,11 @@ stderr of test 'tst302` in directory 'monetdb5/mal` itself:
 # cmdline opt 	embedded_r = yes
 # cmdline opt 	gdk_debug = 536870922
 
-# 13:20:49 >  
-# 13:20:49 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-18020" "--port=37961"
-# 13:20:49 >  
+# 14:00:49 >  
+# 14:00:49 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-20510" "--port=36088"
+# 14:00:49 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-7831/.s.monetdb.38226
+MAPI  = (monetdb) /var/tmp/mtest-20510/.s.monetdb.36088
 QUERY = #propagate INT exception
         # (you should be able to pass it upwards though)
         function foo();
@@ -39,11 +39,11 @@ QUERY = #propagate INT exception
         end;
         mdb.List("user","foo");
         user.foo();
-ERROR = !MALException:user.foo[3]:Exception not caught
+ERROR = !MALException:user.foo[4]:Exception not caught
 
 
 
-# 09:00:01 >  
-# 09:00:01 >  "Done."
-# 09:00:01 >  
+# 14:00:49 >  
+# 14:00:49 >  "Done."
+# 14:00:49 >  
 

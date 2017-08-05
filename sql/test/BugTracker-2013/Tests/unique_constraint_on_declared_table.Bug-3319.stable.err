@@ -37,12 +37,15 @@ QUERY = create function MyFunc2()
         	  return select count(*) from t;
         end;
 ERROR = !CONSTRAINT: constraints on declared tables are not supported
-MAPI  = (monetdb) /var/tmp/mtest-24279/.s.monetdb.39133
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select MyFunc2();
 ERROR = !SELECT: no such operator 'myfunc2'
-MAPI  = (monetdb) /var/tmp/mtest-24279/.s.monetdb.39133
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop function MyFunc2;
 ERROR = !DROP FUNCTION: no such function 'myfunc2'
+CODE  = 42000
 
 # 10:45:26 >  
 # 10:45:26 >  "Done."

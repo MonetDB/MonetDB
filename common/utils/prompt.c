@@ -154,11 +154,11 @@ simple_prompt(const char *prompt, int maxlen, int echo, const char *def)
 		fputs("\n", termout);
 		fflush(termout);
 	}
+#endif
 	if (termin != stdin)
 		fclose(termin);
 	if (termout != stdout)
 		fclose(termout);
-#endif
 	if (destination[0] == 0 && def)
 		strcpy(destination, def);
 	return destination;

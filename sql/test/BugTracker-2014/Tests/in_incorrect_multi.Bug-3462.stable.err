@@ -32,6 +32,7 @@ MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT * FROM SYS.ARGS
          WHERE FUNC_ID NOT IN (SELECT * FROM SYS.FUNCTIONS);
 ERROR = !IN: inner query should return a single column
+CODE  = 42000
 
 
 # 14:17:13 >  

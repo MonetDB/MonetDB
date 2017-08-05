@@ -33,6 +33,7 @@ stderr of test 'interval_select` in directory 'sql/test/snodgrass` itself:
 MAPI  = monetdb@sofia:37615
 QUERY = SELECT INTERVAL '3-7' YEAR TO MONTH = INTERVAL '23' DAY;  -- err: incomparable
 ERROR = !types month_interval(2,0) and sec_interval(4,0) are not equal
+CODE  = 42000
 
 # 17:37:29 >  
 # 17:37:29 >  "Done."

@@ -347,9 +347,6 @@
 /* Define to 1 if you have the <malloc.h> header file. */
 #define HAVE_MALLOC_H 1
 
-/* Define to 1 if you have the `mallopt' function. */
-/* #undef HAVE_MALLOPT */
-
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
 
@@ -767,23 +764,23 @@
 /* Name of package */
 #define PACKAGE "MonetDB"
 
+/* Define to the version of this package. */
+#define PACKAGE_VERSION "11.28.0"
+
 /* Define to the address where bug reports for this package should be sent. */
-#define PACKAGE_BUGREPORT "info@monetdb.org"
+#define PACKAGE_BUGREPORT "https://bugs.monetdb.org/"
 
 /* Define to the full name of this package. */
 #define PACKAGE_NAME "MonetDB"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "MonetDB 11.28.0"
+#define PACKAGE_STRING PACKAGE " " PACKAGE_VERSION
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "MonetDB"
 
-/* Define to the version of this package. */
-#define PACKAGE_VERSION "11.28.0"
-
 /* Define to the home page for this package. */
-#define PACKAGE_URL ""
+#define PACKAGE_URL "https://www.monetdb.org/"
 
 /* Path separator */
 #define PATH_SEP ';'
@@ -1027,6 +1024,9 @@ typedef unsigned __int64 uint64_t;
 #define true 1
 #define false 0
 #define __bool_true_false_are_defined 1
+
+/* normally defined in fcntl.h, but not on Windows */
+#define O_CLOEXEC 0
 
 
 #ifdef HAVE_LONG_LONG

@@ -17,7 +17,7 @@
 #include <gdk.h>
 
 #ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5) && !defined(LIBMOSAIC)
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
 #define mal_export extern __declspec(dllimport)
 #else
 #define mal_export extern __declspec(dllexport)
@@ -139,7 +139,7 @@ typedef struct SYMDEF {
 	struct SYMDEF *peer;		/* where to look next */
 	struct SYMDEF *skip;		/* skip to next different symbol */
 	str name;
-	int kind;
+	int kind;					/* what kind of symbol */
 	struct MALBLK *def;			/* the details of the MAL fcn */
 } *Symbol, SymRecord;
 
@@ -212,9 +212,7 @@ typedef struct MALBLK {
 		     unsafeProp:1,		/* unsafe property */
 		     sealedProp:1;		/* sealed property (opertions for sealed object should be on the full object once) */
 
-	int errors;				/* left over errors */
-	int typefixed;			/* no undetermined instruction */
-	int flowfixed;			/* all flow instructions are fixed */
+	str errors;				/* left over errors */
 	struct MALBLK *history;	/* of optimizer actions */
 	short keephistory;		/* do we need the history at all */
 	int maxarg;				/* keep track on the maximal arguments used */

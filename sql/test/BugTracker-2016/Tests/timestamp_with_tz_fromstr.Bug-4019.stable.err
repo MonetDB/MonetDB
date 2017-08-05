@@ -30,10 +30,12 @@ stderr of test 'timestamp_with_tz_fromstr.Bug-4019` in directory 'sql/test/BugTr
 
 MAPI  = (monetdb) /var/tmp/mtest-1703/.s.monetdb.32740
 QUERY = select cast('2015-12-08T00:46:60' as timestamp);
-ERROR = !timestamp (2015-12-08T00:46:60) has incorrect format
-MAPI  = (monetdb) /var/tmp/mtest-1703/.s.monetdb.32740
+ERROR = !Timestamp (2015-12-08T00:46:60) has incorrect format
+CODE  = 22007
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select cast('2015-12-08 00:46:60' as timestamp);
-ERROR = !timestamp (2015-12-08 00:46:60) has incorrect format
+ERROR = !Timestamp (2015-12-08 00:46:60) has incorrect format
+CODE  = 22007
 
 # 16:31:49 >  
 # 16:31:49 >  "Done."

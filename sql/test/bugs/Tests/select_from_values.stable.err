@@ -83,6 +83,7 @@ stderr of test 'select_from_values` in directory 'sql/test/bugs` itself:
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT * FROM (VALUES (0, Promo0), (1, Promo1)) AS "t" ;
 ERROR = !SELECT: identifier 'promo0' unknown
+CODE  = 42000
 
 # 23:25:52 >  
 # 23:25:52 >  Done.

@@ -121,15 +121,15 @@ Ready.
 % name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 16,	4,	0,	2,	5,	1,	1,	1 # length
-[ "dependency_types",	2000,	NULL,	10,	true,	0,	0,	0	]
-[ "table_types",	2000,	NULL,	10,	true,	0,	0,	0	]
+[ "dependency_types",	2000,	NULL,	10,	true,	0,	1,	0	]
+[ "table_types",	2000,	NULL,	10,	true,	0,	1,	0	]
 #select * from system_tables ORDER BY name DESC, schema_id LIMIT 10;
 % sys.system_tables,	sys.system_tables,	sys.system_tables,	sys.system_tables,	sys.system_tables,	sys.system_tables,	sys.system_tables,	sys.system_tables # table_name
 % name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 16,	4,	0,	2,	5,	1,	1,	1 # length
-[ "table_types",	2000,	NULL,	10,	true,	0,	0,	0	]
-[ "dependency_types",	2000,	NULL,	10,	true,	0,	0,	0	]
+[ "table_types",	2000,	NULL,	10,	true,	0,	1,	0	]
+[ "dependency_types",	2000,	NULL,	10,	true,	0,	1,	0	]
 #select * from system_views;
 % sys.system_views,	sys.system_views,	sys.system_views,	sys.system_views,	sys.system_views,	sys.system_views,	sys.system_views,	sys.system_views # table_name
 % name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
@@ -149,9 +149,9 @@ Ready.
 % name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
 % varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 16,	4,	0,	2,	5,	1,	1,	1 # length
-[ "dependency_types",	2000,	NULL,	10,	true,	0,	0,	0	]
+[ "dependency_types",	2000,	NULL,	10,	true,	0,	1,	0	]
 [ "my_tables",	2000,	NULL,	0,	false,	0,	0,	0	]
-[ "table_types",	2000,	NULL,	10,	true,	0,	0,	0	]
+[ "table_types",	2000,	NULL,	10,	true,	0,	1,	0	]
 [ "test10",	2000,	NULL,	0,	false,	0,	0,	0	]
 #select * from all_tables ORDER BY name DESC, schema_id LIMIT 10;
 % .all_tables,	.all_tables,	.all_tables,	.all_tables,	.all_tables,	.all_tables,	.all_tables,	.all_tables # table_name
@@ -159,9 +159,9 @@ Ready.
 % varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	tinyint # type
 % 16,	4,	0,	2,	5,	1,	1,	1 # length
 [ "test10",	2000,	NULL,	0,	false,	0,	0,	0	]
-[ "table_types",	2000,	NULL,	10,	true,	0,	0,	0	]
+[ "table_types",	2000,	NULL,	10,	true,	0,	1,	0	]
 [ "my_tables",	2000,	NULL,	0,	false,	0,	0,	0	]
-[ "dependency_types",	2000,	NULL,	10,	true,	0,	0,	0	]
+[ "dependency_types",	2000,	NULL,	10,	true,	0,	1,	0	]
 #select * from all_views;
 % .all_views,	.all_views,	.all_views,	.all_views,	.all_views,	.all_views,	.all_views,	.all_views # table_name
 % name,	schema_id,	query,	type,	system,	commit_action,	access,	temporary # name
@@ -198,13 +198,13 @@ Ready.
 [ "all_tables",	2000,	"create view all_tables as select * from user_tables union select * from system_tables order by schema_id, name;",	1,	false,	0,	0,	0	]
 [ "all_tbl_objs",	2000,	"create view all_tbl_objs as select * from all_tables union select * from all_views order by schema_id, name;",	1,	false,	0,	0,	0	]
 [ "all_views",	2000,	"create view all_views as select * from user_views union select * from system_views order by schema_id, name;",	1,	false,	0,	0,	0	]
-[ "dependency_types",	2000,	NULL,	10,	true,	0,	0,	0	]
+[ "dependency_types",	2000,	NULL,	10,	true,	0,	1,	0	]
 [ "environment",	2000,	"create view sys.environment as select * from sys.environment();",	11,	true,	0,	0,	0	]
 [ "my_tables",	2000,	NULL,	0,	false,	0,	0,	0	]
 [ "optimizers",	2000,	"create view sys.optimizers as select * from sys.optimizers();",	11,	true,	0,	0,	0	]
 [ "system_tables",	2000,	"create view system_tables as select * from my_tables where system and query is null and schema_id in (select id from sys.schemas where name = 'sys') order by schema_id, name;",	1,	false,	0,	0,	0	]
 [ "system_views",	2000,	"create view system_views as select * from my_tables where system and query is not null and schema_id in (select id from sys.schemas where name = 'sys') order by schema_id, name;",	1,	false,	0,	0,	0	]
-[ "table_types",	2000,	NULL,	10,	true,	0,	0,	0	]
+[ "table_types",	2000,	NULL,	10,	true,	0,	1,	0	]
 [ "test10",	2000,	NULL,	0,	false,	0,	0,	0	]
 [ "user_tables",	2000,	"create view user_tables as select * from my_tables where not system and query is null order by schema_id, name;",	1,	false,	0,	0,	0	]
 [ "user_views",	2000,	"create view user_views as select * from my_tables where not system and query is not null order by schema_id, name;",	1,	false,	0,	0,	0	]
@@ -222,7 +222,7 @@ Ready.
 [ "all_views",	2000,	"create view all_views as select * from user_views union select * from system_views order by schema_id, name;",	1,	false,	0,	0,	0	]
 [ "all_tbl_objs",	2000,	"create view all_tbl_objs as select * from all_tables union select * from all_views order by schema_id, name;",	1,	false,	0,	0,	0	]
 [ "all_tables",	2000,	"create view all_tables as select * from user_tables union select * from system_tables order by schema_id, name;",	1,	false,	0,	0,	0	]
-[ "dependency_types",	2000,	NULL,	10,	true,	0,	0,	0	]
+[ "dependency_types",	2000,	NULL,	10,	true,	0,	1,	0	]
 #select * from user_tables
 #UNION
 #select * from user_views
@@ -279,7 +279,7 @@ Ready.
 [ "system_views",	2000,	"create view system_views as select * from my_tables where system and query is not null and schema_id in (select id from sys.schemas where name = 'sys') order by schema_id, name;",	1,	false,	0,	0,	0	]
 [ "user_tables",	2000,	"create view user_tables as select * from my_tables where not system and query is null order by schema_id, name;",	1,	false,	0,	0,	0	]
 [ "user_views",	2000,	"create view user_views as select * from my_tables where not system and query is not null order by schema_id, name;",	1,	false,	0,	0,	0	]
-[ "table_types",	2000,	NULL,	10,	true,	0,	0,	0	]
+[ "table_types",	2000,	NULL,	10,	true,	0,	1,	0	]
 #(select * from user_tables UNION ALL select * from user_views)
 #INTERSECT
 #(select * from system_tables UNION select * from system_views)

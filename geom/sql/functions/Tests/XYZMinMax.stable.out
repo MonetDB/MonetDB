@@ -25,7 +25,7 @@ Ready.
 # 17:54:59 >  
 
 #select id, ST_XMin(geom) AS "Xmin", ST_YMin(geom) AS "Ymin", ST_XMax(geom) AS "Xmax", ST_YMax(geom) AS "Ymax" from geometries;
-% sys.geometries,	sys.L1,	sys.L2,	sys.L3,	sys.L4 # table_name
+% sys.geometries,	sys.L3,	sys.L5,	sys.L7,	sys.L11 # table_name
 % id,	Xmin,	Ymin,	Xmax,	Ymax # name
 % int,	double,	double,	double,	double # type
 % 2,	24,	24,	24,	24 # length
@@ -57,7 +57,7 @@ Ready.
 [ 26,	100,	100,	200,	200	]
 [ 27,	100,	100,	200,	200	]
 #select id, ST_XMin(mbr(geom)) AS "Xmin", ST_YMin(mbr(geom)) AS "Ymin", ST_XMax(mbr(geom)) AS "Xmax", ST_YMax(mbr(geom)) AS "Ymax" from geometries;
-% sys.geometries,	sys.L1,	sys.L2,	sys.L3,	sys.L4 # table_name
+% sys.geometries,	sys.L3,	sys.L5,	sys.L7,	sys.L11 # table_name
 % id,	Xmin,	Ymin,	Xmax,	Ymax # name
 % int,	double,	double,	double,	double # type
 % 2,	24,	24,	24,	24 # length

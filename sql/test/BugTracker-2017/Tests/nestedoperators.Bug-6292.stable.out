@@ -1,0 +1,110 @@
+stdout of test 'nestedoperators.Bug-6292` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 15:14:18 >  
+# 15:14:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30197" "--set" "mapi_usock=/var/tmp/mtest-18530/.s.monetdb.30197" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2017" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 15:14:18 >  
+
+# MonetDB 5 server v11.25.22
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.589 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:30197/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-18530/.s.monetdb.30197
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_gsl.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 15:14:18 >  
+# 15:14:18 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18530" "--port=30197"
+# 15:14:18 >  
+
+#CREATE TABLE rooms(
+#     time timestamp,
+#     room string,
+#     level integer,
+#     temp double,
+#	PRIMARY KEY(time, room,level) );
+#insert into rooms values
+#(timestamp '2017/01/01 09:00:00.000', 'L302', 3, 21.3),
+#(timestamp '2017/01/01 09:00:15.000', 'L302', 3, 21.3),
+#(timestamp '2017/01/01 09:00:30.000', 'L302', 3, 21.4),
+#(timestamp '2017/01/01 09:00:45.000', 'L302', 3, 21.5),
+#(timestamp '2017/01/01 10:00:00.000', 'L302', 3, 21.4),
+#(timestamp '2017/01/01 10:00:15.000', 'L302', 3, 21.4),
+#(timestamp '2017/01/01 10:00:30.000', 'L302', 3, 21.4),
+#(timestamp '2017/01/01 10:00:45.000', 'L302', 3, 21.5),
+#(timestamp '2017/01/01 11:00:00.000', 'L302', 3, 21.4),
+[ 12	]
+#WITH bounds(first, last, period) 
+#AS (SELECT min(time) AS mintime, max(time) as maxtime, epoch(time)/60 AS period FROM rooms GROUP BY period) 
+#SELECT r2.time, r2.room, r2.level, (r2.temp - r1.temp)/ (epoch(bounds.last) - epoch(bounds.first)) FROM bounds, rooms r1, rooms r2
+#WHERE r1.time = bounds.first and r2.time = bounds.last and r1.room = r2.room and r1.level = r2.level;
+% sys.r2,	sys.r2,	sys.r2,	sys.L17 # table_name
+% time,	room,	level,	L17 # name
+% timestamp,	clob,	int,	double # type
+% 26,	4,	1,	24 # length
+[ 2017-01-01 09:00:45.000000,	"L302",	3,	0.004444444444	]
+[ 2017-01-01 10:00:45.000000,	"L302",	3,	0.002222222222	]
+[ 2017-01-01 11:00:45.000000,	"L302",	3,	0.002222222222	]
+#CREATE FUNCTION rooms_derivative( stride bigint)
+#RETURNS TABLE( 
+#    time timestamp,
+#    room string,
+#    level integer,
+#    temp double)
+#BEGIN
+#DROP FUNCTION rooms_derivative;
+#DROP TABLE rooms;
+
+# 15:14:19 >  
+# 15:14:19 >  "Done."
+# 15:14:19 >  
+
