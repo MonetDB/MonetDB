@@ -1542,8 +1542,20 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 			return rel_select(sql->sa, rel, e);
 
 		if (/*is_semi(rel->op) ||*/ is_outerjoin(rel->op)) {
-			rel_join_add_exp(sql->sa, rel, e);
-			return rel;
+			if ((is_left(rel->op) || is_full(rel->op)) && rel_find_exp(rel->l, l->h->data)) {
+				rel_join_add_exp(sql->sa, rel, e);
+				return rel;
+			} else if ((is_right(rel->op) || is_full(rel->op)) && rel_find_exp(rel->r, l->h->data)) {
+				rel_join_add_exp(sql->sa, rel, e);
+				return rel;
+			}
+			if (is_left(rel->op) && rel_find_exp(rel->r, l->h->data)) {
+				rel->r = rel_push_select(sql, rel->r, L, e);
+				return rel;
+			} else if (is_right(rel->op) && rel_find_exp(rel->l, l->h->data)) {
+				rel->l = rel_push_select(sql, rel->l, L, e);
+				return rel;
+			}
 		}
 		/* push select into the given relation */
 		return rel_push_select(sql, rel, L, e);
