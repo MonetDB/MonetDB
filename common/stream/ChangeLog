@@ -2,6 +2,7 @@
 # This file is updated with Maddlog
 
 * Mon Aug  7 2017 Sjoerd Mullender <sjoerd@acm.org>
+- Removed functions udp_rastream and udp_wastream.
 - Removed functions socket_rstream and socket_wstream.
 - Removed functions append_wstream and append_wastream.
 - Removed functions mnstr_rstream and mnstr_wstream.
