@@ -618,36 +618,6 @@ close_stream(stream *s)
 	}
 }
 
-stream *
-mnstr_rstream(stream *s)
-{
-	if (s == NULL)
-		return NULL;
-#ifdef STREAM_DEBUG
-	fprintf(stderr, "mnstr_rstream %s\n", s->name ? s->name : "<unnamed>");
-#endif
-	assert(s->access == ST_READ);
-	s->type = ST_BIN;
-	if (s->errnr == MNSTR_NO__ERROR)
-		s->read(s, (void *) &s->byteorder, sizeof(s->byteorder), 1);
-	return s;
-}
-
-stream *
-mnstr_wstream(stream *s)
-{
-	if (s == NULL)
-		return NULL;
-#ifdef STREAM_DEBUG
-	fprintf(stderr, "mnstr_wstream %s\n", s->name ? s->name : "<unnamed>");
-#endif
-	assert(s->access == ST_WRITE);
-	s->type = ST_BIN;
-	if (s->errnr == MNSTR_NO__ERROR)
-		s->write(s, (void *) &s->byteorder, sizeof(s->byteorder), 1);
-	return s;
-}
-
 #define EXT_LEN 4
 static const char *
 get_extention(const char *file)

@@ -156,8 +156,6 @@ stream_export void mnstr_clearerr(stream *s);
 stream_export int mnstr_type(stream *s);
 stream_export int mnstr_byteorder(stream *s);
 stream_export void mnstr_set_byteorder(stream *s, char bigendian);
-stream_export stream *mnstr_rstream(stream *s);
-stream_export stream *mnstr_wstream(stream *s);
 stream_export void mnstr_settimeout(stream *s, unsigned int ms, int (*func)(void));
 stream_export int mnstr_isalive(stream *s);
 

@@ -87,20 +87,6 @@ str mnstr_open_wastreamwrap(Stream *S, str *filename)
 }
 
 str
-mnstr_stream_rstreamwrap(Stream *sout, Stream *sin)
-{
-	*(stream**)sout = mnstr_rstream(*(stream**)sin);
-	return MAL_SUCCEED;
-}
-
-str
-mnstr_stream_wstreamwrap(Stream *sout, Stream *sin)
-{
-	*(stream**)sout = mnstr_wstream(*(stream**)sin);
-	return MAL_SUCCEED;
-}
-
-str
 mnstr_socket_rstreamwrap(Stream *S, int *socket, str *name)
 {
 	stream *s;

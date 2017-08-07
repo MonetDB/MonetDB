@@ -22,13 +22,6 @@ unsafe command openWrite( filename:str ) :streams
 address mnstr_open_wastreamwrap
 comment "open ascii file stream for writing";
 
-unsafe command openRead(s:streams):streams
-address mnstr_stream_rstreamwrap
-comment "convert an ascii stream to binary";
-unsafe command openWrite(s:streams):streams
-address mnstr_stream_wstreamwrap
-comment "convert an ascii stream to binary";
-
 unsafe command socketReadBytes(skt:int,name:str):streams
 address mnstr_socket_rstreamwrap
 comment "open a socket stream for reading";

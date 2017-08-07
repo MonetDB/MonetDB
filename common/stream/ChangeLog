@@ -1,3 +1,6 @@
 # ChangeLog file for stream
 # This file is updated with Maddlog
 
+* Mon Aug  7 2017 Sjoerd Mullender <sjoerd@acm.org>
+- Removed functions mnstr_rstream and mnstr_wstream.
+
