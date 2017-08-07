@@ -3237,7 +3237,7 @@ ic_flush(stream *s)
 	if (ic->buflen > 0 ||
 	    iconv(ic->cd, NULL, NULL, &outbuf, &outbytesleft) == (size_t) -1 ||
 	    (outbytesleft < sizeof(ic->buffer) &&
-												   mnstr_write(ic->s, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft) < 0)) {
+	     mnstr_write(ic->s, ic->buffer, 1, sizeof(ic->buffer) - outbytesleft) < 0)) {
 		s->errnr = MNSTR_WRITE_ERROR;
 		return -1;
 	}
@@ -3448,8 +3448,13 @@ buffer_get_buf(buffer *b)
 
 	if (b == NULL)
 		return NULL;
-	if (b->pos == b->len && (b->buf = realloc(b->buf, b->len + 1)) == NULL)
-		return NULL;
+	if (b->pos == b->len) {
+		if ((r = realloc(b->buf, b->len + 1)) == NULL) {
+			/* keep b->buf in tact */
+			return NULL;
+		}
+		b->buf = r;
+	}
 	r = b->buf;
 	r[b->pos] = '\0';
 	b->buf = malloc(b->len);
@@ -3505,14 +3510,14 @@ buffer_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 		return -1;
 	}
 	if (b->pos + size > b->len) {
-		size_t ns = b->len;
+		char *p;
+		size_t ns = b->pos + size + 8192;
 
-		while (b->pos + size > ns)
-			ns *= 2;
-		if ((b->buf = realloc(b->buf, ns)) == NULL) {
+		if ((p = realloc(b->buf, ns)) == NULL) {
 			s->errnr = MNSTR_WRITE_ERROR;
 			return -1;
 		}
+		b->buf = p;
 		b->len = ns;
 	}
 	memcpy(b->buf + b->pos, buf, size);
@@ -5076,12 +5081,14 @@ bstream_read(bstream *s, size_t size)
 	}
 
 	assert(s->buf != NULL);
-	if (s->len == s->size &&
-	    (s->buf = realloc(s->buf, (s->size <<= 1) + 1)) == NULL) {
-		s->size = 0;
-		s->len = 0;
-		s->pos = 0;
-		return -1;
+	if (s->len == s->size) {
+		char *p;
+		size_t ns = s->size + size + 8192;
+		if ((p = realloc(s->buf, ns + 1)) == NULL) {
+			return -1;
+		}
+		s->size = ns;
+		s->buf = p;
 	}
 
 	if (size > s->size - s->len)
@@ -5127,12 +5134,14 @@ bstream_readline(bstream *s)
 	}
 
 	assert(s->buf != NULL);
-	if (s->len == s->size &&
-	    (s->buf = realloc(s->buf, (s->size <<= 1) + 1)) == NULL) {
-		s->size = 0;
-		s->len = 0;
-		s->pos = 0;
-		return -1;
+	if (s->len == s->size) {
+		char *p;
+		size_t ns = s->size + size + 8192;
+		if ((p = realloc(s->buf, ns + 1)) == NULL) {
+			return -1;
+		}
+		s->size = ns;
+		s->buf = p;
 	}
 
 	if (size > s->size - s->len)
