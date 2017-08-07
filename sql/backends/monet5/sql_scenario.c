@@ -496,18 +496,28 @@ SQLinitClient(Client c)
 		maybeupgrade = 0;
 		{
 			size_t createdb_len = strlen(createdb_inline);
-			buffer* createdb_buf = buffer_create(createdb_len);
-			stream* createdb_stream = buffer_rastream(createdb_buf, "createdb.sql");
-			bstream* createdb_bstream = bstream_create(createdb_stream, createdb_len);
+			buffer* createdb_buf;
+			stream* createdb_stream;
+			bstream* createdb_bstream;
+			if ((createdb_buf = GDKmalloc(sizeof(buffer))) == NULL)
+				throw(MAL, "createdb", MAL_MALLOC_FAIL);
 			buffer_init(createdb_buf, createdb_inline, createdb_len);
+			if ((createdb_stream = buffer_rastream(createdb_buf, "createdb.sql")) == NULL) {
+				GDKfree(createdb_buf);
+				throw(MAL, "createdb", MAL_MALLOC_FAIL);
+			}
+			if ((createdb_bstream = bstream_create(createdb_stream, createdb_len)) == NULL) {
+				mnstr_destroy(createdb_stream);
+				GDKfree(createdb_buf);
+				throw(MAL, "createdb", MAL_MALLOC_FAIL);
+			}
 			if (bstream_next(createdb_bstream) >= 0)
 				msg = SQLstatementIntern(c, &createdb_bstream->buf, "sql.init", TRUE, FALSE, NULL);
 			else
 				msg = createException(MAL, "createdb", SQLSTATE(42000) "Could not load inlined createdb script");
 
-			free(createdb_buf);
-			free(createdb_stream);
-			free(createdb_bstream);
+			bstream_destroy(createdb_bstream);
+			GDKfree(createdb_buf);
 			if (m->sa)
 				sa_destroy(m->sa);
 			m->sa = NULL;
