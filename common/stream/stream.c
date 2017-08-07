@@ -2341,45 +2341,6 @@ socket_open(SOCKET sock, const char *name)
 }
 
 stream *
-socket_rstream(SOCKET sock, const char *name)
-{
-	stream *s;
-
-#ifdef STREAM_DEBUG
-	fprintf(stderr, "socket_rstream " SSZFMT " %s\n", (ssize_t) sock, name);
-#endif
-	if ((s = socket_open(sock, name)) == NULL)
-		return NULL;
-	s->type = ST_BIN;
-	if (s->errnr == MNSTR_NO__ERROR &&
-	    socket_read(s, (void *) &s->byteorder, sizeof(s->byteorder), 1) < 1) {
-		socket_close(s);
-		s->errnr = MNSTR_OPEN_ERROR;
-	}
-	return s;
-}
-
-stream *
-socket_wstream(SOCKET sock, const char *name)
-{
-	stream *s;
-
-#ifdef STREAM_DEBUG
-	fprintf(stderr, "socket_wstream " SSZFMT " %s\n", (ssize_t) sock, name);
-#endif
-	if ((s = socket_open(sock, name)) == NULL)
-		return NULL;
-	s->access = ST_WRITE;
-	s->type = ST_BIN;
-	if (s->errnr == MNSTR_NO__ERROR &&
-	    socket_write(s, (void *) &s->byteorder, sizeof(s->byteorder), 1) < 1) {
-		socket_close(s);
-		s->errnr = MNSTR_OPEN_ERROR;
-	}
-	return s;
-}
-
-stream *
 socket_rastream(SOCKET sock, const char *name)
 {
 	stream *s = NULL;
