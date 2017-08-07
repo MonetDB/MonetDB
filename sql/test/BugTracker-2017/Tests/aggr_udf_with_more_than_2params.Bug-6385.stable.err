@@ -31,10 +31,10 @@ stderr of test 'aggr_udf_with_more_than_2params.Bug-6385` in directory 'sql/test
 
 MAPI  = (monetdb) /var/tmp/mtest-31488/.s.monetdb.35710
 QUERY = SELECT groupnr, aggr2(value) FROM grouped_ints GROUP BY groupnr;
-ERROR = !SELECT: no such aggregate 'aggr2' (int(32))
-MAPI  = (monetdb) /var/tmp/mtest-31488/.s.monetdb.35710
+ERROR = !SELECT: no such aggregate 'aggr2'
+MAPI  = (monetdb) /var/tmp/mtest-58752/.s.monetdb.37612
 QUERY = SELECT groupnr, aggr2(value, value, value) FROM grouped_ints GROUP BY groupnr;
-ERROR = !SELECT: no such aggregate 'aggr2' (int(32), int(32), int(32))
+ERROR = !SELECT: no such aggregate 'aggr2'
 
 # 16:36:13 >  
 # 16:36:13 >  "Done."
