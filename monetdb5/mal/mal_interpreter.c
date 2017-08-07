@@ -1155,8 +1155,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			/* Return from factory involves cleanup */
 
 			if (getInstrPtr(mb, 0)->token == FACTORYsymbol) {
-				yieldResult(mb, pci, stkpc);
 				shutdownFactory(cntxt, mb);
+				ret= createException(MAL, "mal.interpreter", "The factory has ended");
 			} else {
 				/* a fake multi-assignment */
 				if (env != NULL && pcicaller != NULL) {
