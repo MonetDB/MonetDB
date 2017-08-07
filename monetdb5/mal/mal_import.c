@@ -193,19 +193,31 @@ malInclude(Client c, str name, int listing)
 	(void) p;
 	{
 		size_t mal_init_len = strlen(mal_init_inline);
-		buffer* mal_init_buf = buffer_create(mal_init_len);
-		stream* mal_init_stream = buffer_rastream(mal_init_buf, name);
+		buffer* mal_init_buf;
+		stream* mal_init_stream;
+
+		if ((mal_init_buf = GDKmalloc(sizeof(buffer))) == NULL)
+			throw(MAL, "malInclude", MAL_MALLOC_FAIL);
+		if ((mal_init_stream = buffer_rastream(mal_init_buf, name)) == NULL) {
+			GDKfree(mal_init_buf);
+			throw(MAL, "malInclude", MAL_MALLOC_FAIL);
+		}
 		buffer_init(mal_init_buf, mal_init_inline, mal_init_len);
 		c->srcFile = name;
 		c->yycur = 0;
 		c->bak = NULL;
-		c->fdin = bstream_create(mal_init_stream, mal_init_len);
+		if ((c->fdin = bstream_create(mal_init_stream, mal_init_len)) == NULL) {
+			mnstr_destroy(mal_init_stream);
+			GDKfree(mal_init_buf);
+			throw(MAL, "malInclude", MAL_MALLOC_FAIL);
+		}
 		bstream_next(c->fdin);
 		parseMAL(c, c->curprg, 1);
 		free(mal_init_buf);
 		free(mal_init_stream);
 		free(c->fdin);
 		c->fdin = NULL;
+		GDKfree(mal_init_buf);
 	}
 #else
 	if ((filename = malResolveFile(name)) != NULL) {
