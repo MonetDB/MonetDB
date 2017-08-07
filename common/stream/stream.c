@@ -1708,8 +1708,8 @@ open_rstream(const char *filename)
 	return s;
 }
 
-static stream *
-open_wstream_(const char *filename, char *mode)
+stream *
+open_wstream(const char *filename)
 {
 	stream *s;
 	const char *ext;
@@ -1722,13 +1722,13 @@ open_wstream_(const char *filename, char *mode)
 	ext = get_extention(filename);
 
 	if (strcmp(ext, "gz") == 0)
-		return open_gzwstream(filename, mode);
+		return open_gzwstream(filename, "wb");
 	if (strcmp(ext, "bz2") == 0)
-		return open_bzwstream(filename, mode);
+		return open_bzwstream(filename, "wb");
 	if (strcmp(ext, "xz") == 0)
-		return open_xzwstream(filename, mode);
+		return open_xzwstream(filename, "wb");
 
-	if ((s = open_stream(filename, mode)) == NULL)
+	if ((s = open_stream(filename, "wb")) == NULL)
 		return NULL;
 	s->access = ST_WRITE;
 	s->type = ST_BIN;
@@ -1741,18 +1741,6 @@ open_wstream_(const char *filename, char *mode)
 		}
 	}
 	return s;
-}
-
-stream *
-open_wstream(const char *filename)
-{
-	return open_wstream_(filename, "wb");
-}
-
-stream *
-append_wstream(const char *filename)
-{
-	return open_wstream_(filename, "ab");
 }
 
 stream *
@@ -1781,8 +1769,8 @@ open_rastream(const char *filename)
 	return s;
 }
 
-static stream *
-open_wastream_(const char *filename, char *mode)
+stream *
+open_wastream(const char *filename)
 {
 	stream *s;
 	const char *ext;
@@ -1795,29 +1783,17 @@ open_wastream_(const char *filename, char *mode)
 	ext = get_extention(filename);
 
 	if (strcmp(ext, "gz") == 0)
-		return open_gzwastream(filename, mode);
+		return open_gzwastream(filename, "w");
 	if (strcmp(ext, "bz2") == 0)
-		return open_bzwastream(filename, mode);
+		return open_bzwastream(filename, "w");
 	if (strcmp(ext, "xz") == 0)
-		return open_xzwastream(filename, mode);
+		return open_xzwastream(filename, "w");
 
-	if ((s = open_stream(filename, mode)) == NULL)
+	if ((s = open_stream(filename, "w")) == NULL)
 		return NULL;
 	s->access = ST_WRITE;
 	s->type = ST_ASCII;
 	return s;
-}
-
-stream *
-open_wastream(const char *filename)
-{
-	return open_wastream_(filename, "w");
-}
-
-stream *
-append_wastream(const char *filename)
-{
-	return open_wastream_(filename, "a");
 }
 
 /* ------------------------------------------------------------------ */

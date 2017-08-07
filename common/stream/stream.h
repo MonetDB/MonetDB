@@ -162,17 +162,11 @@ stream_export int mnstr_isalive(stream *s);
 stream_export stream *open_rstream(const char *filename);
 stream_export stream *open_wstream(const char *filename);
 
-/* append to stream */
-stream_export stream *append_wstream(const char *filename);
-
 /* open in ascii stream in read mode */
 stream_export stream *open_rastream(const char *filename);
 
 /* open in ascii stream in write mode*/
 stream_export stream *open_wastream(const char *filename);
-
-/* append to ascii stream */
-stream_export stream *append_wastream(const char *filename);
 
 stream_export void close_stream(stream *s);
 

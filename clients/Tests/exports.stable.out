@@ -2598,8 +2598,6 @@ str wlrRef;
 str zero_or_oneRef;
 
 # stream
-stream *append_wastream(const char *filename);
-stream *append_wstream(const char *filename);
 stream *block_stream(stream *s);
 stream *block_stream2(stream *s, size_t bufsiz, compression_method comp, column_compression colcomp);
 buffer bs2_buffer(stream *s);
