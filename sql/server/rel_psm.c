@@ -241,8 +241,16 @@ rel_psm_while_do( mvc *sql, sql_subtype *res, list *restypelist, dnode *w, int i
 		n = n->next;
 		whilestmts = sequential_block(sql, res, restypelist, n->data.lval, n->next->data.sval, is_func);
 
-		if (sql->session->status || !cond || !whilestmts || rel) 
+		if (sql->session->status || !cond || !whilestmts) 
 			return NULL;
+		if (rel) {
+			sql_exp *er = exp_rel(sql, rel);
+			list *b = sa_list(sql->sa);
+
+			append(b, er);
+			append(b, exp_while( sql->sa, cond, whilestmts ));
+			return exp_rel(sql, rel_psm_block(sql->sa, b));
+		}
 		return exp_while( sql->sa, cond, whilestmts );
 	}
 	return NULL;
