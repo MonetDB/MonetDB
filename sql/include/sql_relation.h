@@ -80,6 +80,7 @@ typedef struct expression {
 #define PSM_WHILE 8
 #define PSM_IF 16
 #define PSM_REL 32
+#define PSM_YIELD 64
 
 #define SET_PSM_LEVEL(level)	(level<<8)
 #define GET_PSM_LEVEL(level)	(level>>8)

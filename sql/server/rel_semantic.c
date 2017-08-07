@@ -84,13 +84,14 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 		m->session->status = status;
 		strcpy(m->errstr, errstr);
 	} else {
-		int label = m->label;
+		int label = m->label, is_factory = m->is_factory;
 		while (m->topvars > o.topvars) {
 			if (m->vars[--m->topvars].name)
 				c_delete(m->vars[m->topvars].name);
 		}
 		*m = o;
 		m->label = label;
+		m->is_factory = is_factory;
 	}
 	m->session->schema = c;
 	return rel;

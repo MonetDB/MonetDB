@@ -356,6 +356,7 @@ scanner_init_keywords(void)
 	keywords_insert("EXTERNAL", EXTERNAL);
 	keywords_insert("NAME", sqlNAME);
 	keywords_insert("RETURN", RETURN);
+	keywords_insert("YIELD", YIELD);
 	keywords_insert("CALL", CALL);
 	keywords_insert("LANGUAGE", LANGUAGE);
 

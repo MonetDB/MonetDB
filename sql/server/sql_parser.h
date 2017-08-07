@@ -182,7 +182,8 @@ typedef enum tokens {
 	SQL_PAUSE_ALL,
 	SQL_RESUME_ALL,
 	SQL_STREAM_TABLE_WINDOW,
-	SQL_STREAM_TABLE_STRIDE
+	SQL_STREAM_TABLE_STRIDE,
+	SQL_YIELD
 } tokens;
 
 typedef enum jt {

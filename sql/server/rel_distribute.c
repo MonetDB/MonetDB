@@ -104,7 +104,7 @@ exp_replica(mvc *sql, sql_exp *e, char *uri)
 		return e;
 	if (e->flag & PSM_VAR) 
 		return e;
-	if (e->flag & PSM_SET || e->flag & PSM_RETURN) 
+	if (e->flag & PSM_SET || e->flag & PSM_RETURN || e->flag & PSM_YIELD)
 		e->l = exp_replica(sql, e->l, uri);
 	if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
 		e->l = exp_replica(sql, e->l, uri);
@@ -229,7 +229,7 @@ exp_distribute(mvc *sql, sql_exp *e)
 		return e;
 	if (e->flag & PSM_VAR) 
 		return e;
-	if (e->flag & PSM_SET || e->flag & PSM_RETURN) 
+	if (e->flag & PSM_SET || e->flag & PSM_RETURN || e->flag & PSM_YIELD)
 		e->l = exp_distribute(sql, e->l);
 	if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
 		e->l = exp_distribute(sql, e->l);
@@ -362,7 +362,7 @@ exp_remote_func(mvc *sql, sql_exp *e)
 		return e;
 	if (e->flag & PSM_VAR) 
 		return e;
-	if (e->flag & PSM_SET || e->flag & PSM_RETURN) 
+	if (e->flag & PSM_SET || e->flag & PSM_RETURN || e->flag & PSM_YIELD)
 		e->l = exp_remote_func(sql, e->l);
 	if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
 		e->l = exp_remote_func(sql, e->l);

@@ -319,7 +319,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				return stmt_vars(be, e->name, e->f, 1, GET_PSM_LEVEL(e->flag));
 			else
 				return stmt_var(be, e->name, &e->tpe, 1, GET_PSM_LEVEL(e->flag));
-		} else if (e->flag & PSM_RETURN) {
+		} else if (e->flag & PSM_RETURN || e->flag & PSM_YIELD) {
 			sql_exp *l = e->l;
 			stmt *r = exp_bin(be, l, left, right, grp, ext, cnt, sel);
 
@@ -337,7 +337,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				if (r->type == st_list)
 					r = stmt_table(be, r, 1);
 			}
-			return stmt_return(be, r, GET_PSM_LEVEL(e->flag));
+			return stmt_return(be, r, GET_PSM_LEVEL(e->flag), e->flag);
 		} else if (e->flag & PSM_WHILE) {
 			/* while is a if - block true with leave statement
 	 		 * needed because the condition needs to be inside this outer block */

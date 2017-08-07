@@ -3319,7 +3319,7 @@ dump_cols(MalBlkPtr mb, list *l, InstrPtr q)
 }
 
 stmt *
-stmt_return(backend *be, stmt *val, int nr_declared_tables)
+stmt_return(backend *be, stmt *val, int nr_declared_tables, int flag) /* also used for yield statements */
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -3333,7 +3333,7 @@ stmt_return(backend *be, stmt *val, int nr_declared_tables)
 	q = newInstruction(mb, NULL, NULL);
 	if (q == NULL)
 		return NULL;
-	q->barrier= RETURNsymbol;
+	q->barrier = ((flag & PSM_RETURN) == PSM_RETURN) ? RETURNsymbol : YIELDsymbol;
 	if (val->type == st_table) {
 		list *l = val->op1->op4.lval;
 
@@ -3346,7 +3346,7 @@ stmt_return(backend *be, stmt *val, int nr_declared_tables)
 		return NULL;
 	pushInstruction(mb, q);
 	if (q) {
-		stmt *s = stmt_create(be->mvc->sa, st_return);
+		stmt *s = stmt_create(be->mvc->sa, ((flag & PSM_RETURN) == PSM_RETURN) ? st_return : st_yield);
 
 		s->op1 = val;
 		s->flag = nr_declared_tables;

@@ -183,6 +183,7 @@ int yydebug=1;
 	call_procedure_statement
 	continuous_procedure_statement
 	routine_invocation
+	yield_statement
 	return_statement
 	return_value
 	case_statement
@@ -606,7 +607,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token IS KEY ON OPTION OPTIONS
 %token PATH PRIMARY PRIVILEGES
 %token<sval> PUBLIC REFERENCES SCHEMA SET AUTO_COMMIT
-%token RETURN 
+%token RETURN YIELD
 
 %token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
@@ -2102,6 +2103,7 @@ control_statement:
     |   while_statement
     |   if_statement
     |   case_statement
+    |   yield_statement
     |	return_statement
 /*
     |   for_statement		fetch tuples, not supported because of cursors 
@@ -2183,6 +2185,9 @@ argument_list:
 			{ $$ = append_symbol( $1, $3); }
  ;
 
+yield_statement:
+        YIELD return_value { $$ = _symbol_create_symbol(SQL_YIELD, $2); }
+   ;
 
 return_statement:
         RETURN return_value { $$ = _symbol_create_symbol(SQL_RETURN, $2); }

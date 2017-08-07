@@ -76,6 +76,7 @@ extern sql_exp * exp_set(sql_allocator *sa, const char *name, sql_exp *val, int 
 extern sql_exp * exp_var(sql_allocator *sa, const char *name, sql_subtype *type, int level);
 extern sql_exp * exp_table(sql_allocator *sa, const char *name, sql_table *t, int level);
 extern sql_exp * exp_return(sql_allocator *sa, sql_exp *val, int level);
+extern sql_exp * exp_yield(sql_allocator *sa, sql_exp *val, int level);
 extern sql_exp * exp_while(sql_allocator *sa, sql_exp *cond, list *stmts);
 extern sql_exp * exp_if(sql_allocator *sa, sql_exp *cond, list *if_stmts, list *else_stmts);
 extern sql_exp * exp_rel(mvc *sql, sql_rel * r);

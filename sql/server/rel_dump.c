@@ -81,6 +81,9 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		} else if (e->flag & PSM_RETURN) {
 			mnstr_printf(fout, "return ");
 			exp_print(sql, fout, e->l, depth, refs, 0, 0);
+		} else if (e->flag & PSM_YIELD) {
+			mnstr_printf(fout, "yield ");
+			exp_print(sql, fout, e->l, depth, refs, 0, 0);
 		} else if (e->flag & PSM_WHILE) {
 			mnstr_printf(fout, "while ");
 			exp_print(sql, fout, e->l, depth, refs, 0, 0);

@@ -229,7 +229,7 @@ psm_exp_properties(mvc *sql, global_props *gp, sql_exp *e)
 	if (e->type == e_psm) {
 		if (e->flag & PSM_SET) {
 			psm_exp_properties(sql, gp, e->l);
-		} else if (e->flag & PSM_RETURN) {
+		} else if (e->flag & PSM_RETURN || e->flag & PSM_YIELD) {
 			psm_exp_properties(sql, gp, e->l);
 		} else if (e->flag & PSM_WHILE) {
 			psm_exp_properties(sql, gp, e->l);
@@ -2604,7 +2604,7 @@ exp_case_fixup( mvc *sql, sql_exp *e )
 			/* todo */
 		} else if (e->flag & PSM_VAR) {
 			/* todo */
-		} else if (e->flag & PSM_RETURN) {
+		} else if (e->flag & PSM_RETURN || e->flag & PSM_YIELD) {
 			e->l = exp_case_fixup(sql, e->l);
 		} else if (e->flag & PSM_WHILE) {
 			e->l = exp_case_fixup(sql, e->l);
@@ -8645,7 +8645,7 @@ rewrite_exp(mvc *sql, sql_exp *e, rewrite_rel_fptr rewrite_rel, rewrite_fptr rew
 		return e;
 	if (e->flag & PSM_VAR) 
 		return e;
-	if (e->flag & PSM_SET || e->flag & PSM_RETURN) {
+	if (e->flag & PSM_SET || e->flag & PSM_RETURN || e->flag & PSM_YIELD) {
 		e->l = rewrite_exp(sql, e->l, rewrite_rel, rewriter, has_changes);
 	}
 	if (e->flag & PSM_WHILE || e->flag & PSM_IF) {

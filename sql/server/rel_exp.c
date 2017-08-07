@@ -541,6 +541,16 @@ exp_return(sql_allocator *sa, sql_exp *val, int level)
 	return e;
 }
 
+sql_exp *
+exp_yield(sql_allocator *sa, sql_exp *val, int level)
+{
+	sql_exp *e = exp_create(sa, e_psm);
+
+	e->l = val;
+	e->flag = PSM_YIELD + SET_PSM_LEVEL(level);
+	return e;
+}
+
 sql_exp * 
 exp_while(sql_allocator *sa, sql_exp *cond, list *stmts)
 {

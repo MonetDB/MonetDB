@@ -154,7 +154,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	r = rel_optimizer(m, rel);
 
 	backup = c->curprg;
-	curPrg = c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
+	curPrg = c->curprg = newFunction(putName(mod), putName(name), m->is_factory ? FACTORYsymbol : FUNCTIONsymbol);
 	if( curPrg == NULL)
 		return -1;
 
@@ -272,7 +272,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 
 	/* create stub */
 	backup = c->curprg;
-	c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
+	c->curprg = newFunction(putName(mod), putName(name), m->is_factory ? FACTORYsymbol : FUNCTIONsymbol);
 	if( c->curprg == NULL)
 		return -1;
 	lname[0] = 'l';
@@ -890,7 +890,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	assert(r);
 
 	backup = c->curprg;
-	curPrg = c->curprg = newFunction(userRef, putName(f->base.name), FUNCTIONsymbol);
+	curPrg = c->curprg = newFunction(userRef, putName(f->base.name), m->is_factory? FACTORYsymbol : FUNCTIONsymbol);
 	if( curPrg == NULL)
 		goto cleanup;
 

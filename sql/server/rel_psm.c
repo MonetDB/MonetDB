@@ -422,16 +422,18 @@ rel_psm_case( mvc *sql, sql_subtype *res, list *restypelist, dnode *case_when, i
 	}
 }
 
-/* return val;
+/* return val; yield val;
  */
 static list * 
-rel_psm_return( mvc *sql, sql_subtype *restype, list *restypelist, symbol *return_sym )
+rel_psm_return( mvc *sql, sql_subtype *restype, list *restypelist, symbol *return_sym, int token )
 {
 	exp_kind ek = {type_value, card_value, FALSE};
-	sql_exp *res;
+	sql_exp *res, *to_append;
 	sql_rel *rel = NULL;
 	int is_last = 0;
 	list *l = sa_list(sql->sa);
+	char* psm_Err = token == SQL_RETURN ? "RETURN" : "YIELD";
+    char* psm_err = token == SQL_RETURN ? "return" : "yield";
 
 	if (restypelist)
 		ek.card = card_relation;
@@ -440,7 +442,7 @@ rel_psm_return( mvc *sql, sql_subtype *restype, list *restypelist, symbol *retur
 		return NULL;
 	if (ek.card != card_relation && (!res || !restype ||
            	(res = rel_check_type(sql, restype, res, type_equal)) == NULL))
-		return (!restype)?sql_error(sql, 02, "RETURN: return type does not match"):NULL;
+		return (!restype)?sql_error(sql, 02, "%s: %s type does not match", psm_Err, psm_err):NULL;
 	else if (ek.card == card_relation && !rel)
 		return NULL;
 	
@@ -482,7 +484,7 @@ rel_psm_return( mvc *sql, sql_subtype *restype, list *restypelist, symbol *retur
 		const char *tname = t->base.name;
 
 		if (cs_size(&t->columns) != list_length(restypelist))
-			return sql_error(sql, 02, "RETURN: number of columns do not match");
+			return sql_error(sql, 02, "%s: number of columns do not match", psm_Err);
 		for (n = t->columns.set->h, m = restypelist->h; n && m; n = n->next, m = m->next) {
 			sql_column *c = n->data;
 			sql_arg *ce = m->data;
@@ -496,7 +498,9 @@ rel_psm_return( mvc *sql, sql_subtype *restype, list *restypelist, symbol *retur
 		rel = rel_project(sql->sa, rel, exps);
 		res = exp_rel(sql, rel);
 	}
-	append(l, exp_return(sql->sa, res, stack_nr_of_declared_tables(sql)));
+	to_append = (token == SQL_RETURN) ? exp_return(sql->sa, res, stack_nr_of_declared_tables(sql)) :
+			 exp_yield(sql->sa, res, stack_nr_of_declared_tables(sql));
+	append(l, to_append);
 	return l;
 }
 
@@ -557,7 +561,7 @@ static int
 exp_has_return(sql_exp *e) 
 {
 	if (e->type == e_psm) {
-		if (e->flag & PSM_RETURN) 
+		if (e->flag & PSM_RETURN)
 			return 1;
 		if (e->flag & PSM_IF) 
 			return has_return(e->r) && (!e->f || has_return(e->f));
@@ -572,7 +576,32 @@ has_return( list *l )
 	sql_exp *e = n->data;
 
 	/* last statment of sequential block */
-	if (exp_has_return(e)) 
+	if (exp_has_return(e))
+		return 1;
+	return 0;
+}
+
+static int has_yield( list *l );
+
+static int
+exp_has_yield(sql_exp *e)
+{
+	if (e->type == e_psm) {
+		if (e->flag & PSM_YIELD)
+			return 1;
+		if (e->flag & PSM_IF)
+			return has_yield(e->r) && (!e->f || has_yield(e->f));
+	}
+	return 0;
+}
+
+static int
+has_yield( list *l )
+{
+	node *n = l->t;
+	sql_exp *e = n->data;
+
+	if (exp_has_yield(e))
 		return 1;
 	return 0;
 }
@@ -646,18 +675,19 @@ sequential_block (mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk,
 			res = rel_psm_call(sql, s->data.sym);
 			break;
 		case SQL_RETURN:
+		case SQL_YIELD:
 			/*If it is not a function it cannot have a return statement*/
 			if (!is_func)
 				res = sql_error(sql, 01, 
 					"Return statement in the procedure body");
 			else {
 				/* should be last statement of a sequential_block */
-				if (n->next) { 
+				if (s->token == SQL_RETURN && n->next) {
 					res = sql_error(sql, 01, 
 						"Statement after return");
 				} else {
 					res = NULL;
-					reslist = rel_psm_return(sql, restype, restypelist, s->data.sym);
+					reslist = rel_psm_return(sql, restype, restypelist, s->data.sym, s->token);
 				}
 			}
 			break;
@@ -806,6 +836,8 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 	if (is_table)
 		type = F_UNION;
 
+	sql->is_factory = 0;
+
 	if (STORE_READONLY && create) 
 		return sql_error(sql, 06, "schema statements cannot be executed on a readonly database.");
 			
@@ -921,17 +953,19 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 			sql->params = NULL;
 			if (!b) 
 				return NULL;
-		
-			/* check if we have a return statement */
-			if (is_func && restype && !has_return(b)) {
-				return sql_error(sql, 01,
-						"CREATE %s%s: missing return statement", KF, F);
+			if (is_func && has_yield(b)) {
+				sql->is_factory = 1;
+			} else {
+				/* check if we have a return statement */
+				if (is_func && restype && !has_return(b)) {
+					return sql_error(sql, 01,
+									 "CREATE %s%s: missing return statement", KF, F);
+				}
+				if (!is_func && !restype && has_return(b)) {
+					return sql_error(sql, 01, "CREATE %s%s: procedures "
+							"cannot have return statements", KF, F);
+				}
 			}
-			if (!is_func && !restype && has_return(b)) {
-				return sql_error(sql, 01, "CREATE %s%s: procedures "
-						"cannot have return statements", KF, F);
-			}
-
 			/* in execute mode we instantiate the function */
 			if (instantiate || deps) {
 				return rel_psm_block(sql->sa, b);

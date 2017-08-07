@@ -95,6 +95,7 @@ typedef enum stmt_type {
 	st_cond,
 	st_control_end,
 	st_return,
+	st_yield,
 	st_assign
 } st_type;
 
@@ -226,7 +227,7 @@ extern stmt *stmt_affected_rows(backend *be, stmt *l);
 /* flow control statements */
 extern stmt *stmt_cond(backend *be, stmt *cond, stmt *outer, int loop, int anti);
 extern stmt *stmt_control_end(backend *be, stmt *cond);
-extern stmt *stmt_return(backend *be, stmt *val, int nr_of_declared_tables);
+extern stmt *stmt_return(backend *be, stmt *val, int nr_of_declared_tables, int flag);
 extern stmt *stmt_assign(backend *be, const char *varname, stmt *val, int level);
 
 extern sql_subtype *tail_type(stmt *st);
