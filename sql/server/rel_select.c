@@ -2944,8 +2944,15 @@ rel_unop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	sql->session->status = 0;
 	sql->errstr[0] = '\0';
        	e = rel_value_exp(sql, rel, l->next->data.sym, fs, iek);
-	if (!e)
+	if (!e) {
+		if (!f && *rel && (*rel)->card == CARD_AGGR) {
+			/* reset error */
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
+			return sql_error(sql, 02, "SELECT: no such aggregate '%s'", fname);
+		}
 		return NULL;
+	}
 
 	t = exp_subtype(e);
 	if (!t) {
@@ -3229,8 +3236,14 @@ rel_binop(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek)
 
 	l = rel_value_exp(sql, rel, dl->next->data.sym, f, iek);
 	r = rel_value_exp(sql, rel, dl->next->next->data.sym, f, iek);
-	if (!l && !r)
+	if (!l || !r)
 		sf = find_func(sql, s, fname, 2, F_AGGR, NULL);
+	if (!sf && (!l || !r) && *rel && (*rel)->card == CARD_AGGR) {
+		/* reset error */
+		sql->session->status = 0;
+		sql->errstr[0] = '\0';
+		return sql_error(sql, 02, "SELECT: no such aggregate '%s'", fname);
+	}
 	if (!l && !r && sf) { /* possibly we cannot resolve the argument as the function maybe an aggregate */
 		/* reset error */
 		sql->session->status = 0;
@@ -3294,26 +3307,43 @@ rel_nop(mvc *sql, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	char *sname = qname_schema(l->data.lval);
 	sql_schema *s = sql->session->schema;
 	exp_kind iek = {type_value, card_column, FALSE};
+	int err = 0;
 
 	for (; ops; ops = ops->next, nr_args++) {
 		sql_exp *e = rel_value_exp(sql, rel, ops->data.sym, fs, iek);
 		sql_subtype *tpe;
 
 		if (!e) 
-			return NULL;
+			err = 1;
 		append(exps, e);
-		tpe = exp_subtype(e);
-		if (!nr_args)
-			obj_type = tpe;
-		append(tl, tpe);
+		if (e) {
+			tpe = exp_subtype(e);
+			if (!nr_args)
+				obj_type = tpe;
+			append(tl, tpe);
+		}
 	}
 	if (sname)
 		s = mvc_bind_schema(sql, sname);
 	
 	/* first try aggregate */
 	f = find_func(sql, s, fname, nr_args, F_AGGR, NULL);
-	if (f)
+	if (!f && err && *rel && (*rel)->card == CARD_AGGR) {
+		/* reset error */
+		sql->session->status = 0;
+		sql->errstr[0] = '\0';
+		return sql_error(sql, 02, "SELECT: no such aggregate '%s'", fname);
+	}
+	if (f) {
+		if (err) {
+			/* reset error */
+			sql->session->status = 0;
+			sql->errstr[0] = '\0';
+		}
 		return _rel_aggr(sql, rel, 0, s, fname, l->next->data.lval->h, fs);
+	}
+	if (err)
+		return NULL;
 	return _rel_nop(sql, s, fname, tl, exps, obj_type, nr_args, ek);
 
 }

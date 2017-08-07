@@ -40,4 +40,5 @@ SELECT groupnr, aggr2(value, value, value) FROM grouped_ints GROUP BY groupnr;
 DROP TABLE grouped_ints;
 DROP AGGREGATE aggr2;
 DROP AGGREGATE aggr3;
+DROP AGGREGATE aggr4;
 
