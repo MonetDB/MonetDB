@@ -30,7 +30,7 @@ stderr of test 'cannot_use_columns_after_groupby.Bug-3340` in directory 'sql/tes
 
 MAPI  = (monetdb) /var/tmp/mtest-5110/.s.monetdb.34599
 QUERY = select "function", (sum(fv.claim_tb) - sum(fv.used_tb)) * 100 / toc.total_overcapacity from sys.filer_volumes as fv, (select sum(claim_tb) - sum(used_tb) as total_overcapacity from sys.filer_volumes) as toc group by fv."function" order by fv."function";
-ERROR = !SELECT: cannot use non GROUP BY column 'toc.total_overcapacity' in query results without an aggregate function
+ERROR = !SELECT: no such aggregate 'sql_div'
 
 # 20:54:49 >  
 # 20:54:49 >  "Done."
