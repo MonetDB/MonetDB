@@ -1,4 +1,4 @@
-create function myaggr()     
+create function aggr00()     
 returns integer
 begin
     declare s int;
@@ -10,18 +10,18 @@ begin
 	end while;
 	return s;
 END;
-select * from functions where name ='myaggr';
+select * from functions where name ='aggr00';
 
 -- a continuous procedure can be called like any other procedure
-start continuous  myaggr();
+start continuous  aggr00();
 
-select myaggr(); #should return 1
-select myaggr(); #should return 2
+select aggr00(); #should return 1
+select aggr00(); #should return 2
 
-drop function myproc;
+drop function aggr00;
 
---factory factories.myaggr():int;             	#[0] (0)  0 
---#function user.myaggr():int;             	#[0] (0)  0 
+--factory factories.aggr00():int;             	#[0] (0)  0 
+--#function user.aggr00():int;             	#[0] (0)  0 
 --    As := nil:int;                      	#[1] (0)  2 <- 3 
 --    As := 0:int;                        	#[2] (0)  2 <- 5 
 --barrier X_8 := true;                    	#[3] (0)  8 <- 7 
@@ -31,9 +31,9 @@ drop function myproc;
 --    X_16:lng := calc.+(X_13, 1:lng);    	#[7] (0) CMDvarADDsignal 16 <- 13 15 
 --    X_17 := calc.int(X_16);             	#[8] (0) CMDvarCONVERT 17 <- 16 
 --    As := X_17;                         	#[9] (0)  2 <- 17 
---	yield myaggr:int := As;
---    # return myaggr:int := As;            	#[10] (0)  0 <- 2 
+--	yield aggr00:int := As;
+--    # return aggr00:int := As;            	#[10] (0)  0 <- 2 
 --    redo X_8 := true;                   	#[11] (0)  8 <- 7 
 --exit X_8;                               	#[12] (0)  8 
---    return myaggr:int := As;            	#[13] (0)  0 <- 2 
---end factories.myaggr;                        	#[14] (0)  
+--    return aggr00:int := As;            	#[13] (0)  0 <- 2 
+--end factories.aggr00;                        	#[14] (0)  
