@@ -219,7 +219,6 @@ stream_export buffer *mnstr_get_buffer(stream *s);
  * number of bytes can be read the end of the major block is
  * found. The next read will then start with a new major block.
  */
-stream_export stream *wbstream(stream *s, size_t buflen);
 stream_export stream *block_stream(stream *s);
 stream_export int isa_block_stream(stream *s);
 stream_export int isa_fixed_block_stream(stream *s);

@@ -2686,7 +2686,6 @@ stream *socket_wastream(SOCKET socket, const char *name);
 stream *socket_wstream(SOCKET socket, const char *name);
 stream *stream_blackhole_create(void);
 stream *stream_fwf_create(stream *s, size_t num_fields, size_t *widths, char filler);
-stream *wbstream(stream *s, size_t buflen);
 
 
 # 21:41:06 >  
