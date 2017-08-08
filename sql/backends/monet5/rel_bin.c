@@ -4901,7 +4901,7 @@ exp_deps(sql_allocator *sa, sql_exp *e, list *refs, list *l)
 {
 	switch(e->type) {
 	case e_psm:
-		if (e->flag & PSM_SET || e->flag & PSM_RETURN) {
+		if (e->flag & PSM_SET || e->flag & PSM_RETURN || e->flag & PSM_YIELD) {
 			return exp_deps(sa, e->l, refs, l);
 		} else if (e->flag & PSM_VAR) {
 			return 0;

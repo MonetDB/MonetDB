@@ -50,8 +50,6 @@
 #include "mal_builder.h"
 #include "opt_prelude.h"
 
-sql5_export void (*cq_close)(void);
-
 static str statusname[7] = { "init", "register", "readytorun", "running", "waiting", "paused", "stopping"};
 
 static str CQstartScheduler(void);
@@ -67,6 +65,7 @@ static BAT *CQ_id_time = 0;
 static BAT *CQ_id_error = 0;
 static BAT *CQ_id_stmt = 0;
 
+void (*cq_close)(void);
 CQnode *pnet;
 int pnetLimit, pnettop;
 

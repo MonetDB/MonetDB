@@ -575,33 +575,8 @@ has_return( list *l )
 	node *n = l->t;
 	sql_exp *e = n->data;
 
-	/* last statment of sequential block */
+	/* last statement of sequential block */
 	if (exp_has_return(e))
-		return 1;
-	return 0;
-}
-
-static int has_yield( list *l );
-
-static int
-exp_has_yield(sql_exp *e)
-{
-	if (e->type == e_psm) {
-		if (e->flag & PSM_YIELD)
-			return 1;
-		if (e->flag & PSM_IF)
-			return has_yield(e->r) && (!e->f || has_yield(e->f));
-	}
-	return 0;
-}
-
-static int
-has_yield( list *l )
-{
-	node *n = l->t;
-	sql_exp *e = n->data;
-
-	if (exp_has_yield(e))
 		return 1;
 	return 0;
 }
@@ -686,6 +661,9 @@ sequential_block (mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk,
 					res = sql_error(sql, 01, 
 						"Statement after return");
 				} else {
+					if(s->token == SQL_YIELD) {
+						sql->is_factory = 1;
+					}
 					res = NULL;
 					reslist = rel_psm_return(sql, restype, restypelist, s->data.sym, s->token);
 				}
@@ -953,19 +931,19 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 			sql->params = NULL;
 			if (!b) 
 				return NULL;
-			if (is_func && has_yield(b)) {
+			/*if (is_func && has_yield(b)) {
 				sql->is_factory = 1;
-			} else {
+			} else {*/
 				/* check if we have a return statement */
-				if (is_func && restype && !has_return(b)) {
+				if (!sql->is_factory && is_func && restype && !has_return(b)) {
 					return sql_error(sql, 01,
 									 "CREATE %s%s: missing return statement", KF, F);
 				}
-				if (!is_func && !restype && has_return(b)) {
+				if (!sql->is_factory && !is_func && !restype && has_return(b)) {
 					return sql_error(sql, 01, "CREATE %s%s: procedures "
 							"cannot have return statements", KF, F);
 				}
-			}
+			//}
 			/* in execute mode we instantiate the function */
 			if (instantiate || deps) {
 				return rel_psm_block(sql->sa, b);

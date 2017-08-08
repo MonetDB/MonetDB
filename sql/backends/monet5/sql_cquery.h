@@ -62,6 +62,7 @@ typedef struct {
 	lng time;
 } CQnode;
 
+sql5_export void (*cq_close)(void);
 sql5_export CQnode *pnet;
 sql5_export int pnetLimit, pnettop;
 
