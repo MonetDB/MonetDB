@@ -931,19 +931,15 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 			sql->params = NULL;
 			if (!b) 
 				return NULL;
-			/*if (is_func && has_yield(b)) {
-				sql->is_factory = 1;
-			} else {*/
-				/* check if we have a return statement */
-				if (!sql->is_factory && is_func && restype && !has_return(b)) {
-					return sql_error(sql, 01,
-									 "CREATE %s%s: missing return statement", KF, F);
-				}
-				if (!sql->is_factory && !is_func && !restype && has_return(b)) {
-					return sql_error(sql, 01, "CREATE %s%s: procedures "
-							"cannot have return statements", KF, F);
-				}
-			//}
+			/* check if we have a return statement */
+			if (!sql->is_factory && is_func && restype && !has_return(b)) {
+				return sql_error(sql, 01,
+								 "CREATE %s%s: missing return statement", KF, F);
+			}
+			if (!sql->is_factory && !is_func && !restype && has_return(b)) {
+				return sql_error(sql, 01, "CREATE %s%s: procedures "
+						"cannot have return statements", KF, F);
+			}
 			/* in execute mode we instantiate the function */
 			if (instantiate || deps) {
 				return rel_psm_block(sql->sa, b);
