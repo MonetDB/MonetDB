@@ -33,6 +33,10 @@
 #include <fcntl.h>
 #endif
 
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
+#endif
+
 /* GDKfilepath returns a newly allocated string containing the path
  * name of a database farm.
  * The arguments are the farmID or -1, the name of a subdirectory
@@ -208,11 +212,11 @@ GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension
 #ifdef WIN32
 	flags |= strchr(mode, 'b') ? O_BINARY : O_TEXT;
 #endif
-	fd = open(path, flags, MONETDB_MODE);
+	fd = open(path, flags | O_CLOEXEC, MONETDB_MODE);
 	if (fd < 0 && *mode == 'w') {
 		/* try to create the directory, in case that was the problem */
 		if (GDKcreatedir(path) == GDK_SUCCEED) {
-			fd = open(path, flags, MONETDB_MODE);
+			fd = open(path, flags | O_CLOEXEC, MONETDB_MODE);
 			if (fd < 0)
 				GDKsyserror("GDKfdlocate: cannot open file %s\n", path);
 		}
@@ -379,7 +383,7 @@ GDKextend(const char *fn, size_t size)
 	 * bytes without O_BINARY. */
 	flags |= O_BINARY;
 #endif
-	if ((fd = open(fn, flags)) >= 0) {
+	if ((fd = open(fn, flags | O_CLOEXEC)) >= 0) {
 		rt = GDKextendf(fd, size, fn);
 		close(fd);
 	} else {

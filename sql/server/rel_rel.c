@@ -104,6 +104,7 @@ rel_copy( sql_allocator *sa, sql_rel *i )
 	rel->l = NULL;
 	rel->r = NULL;
 	rel->card = i->card;
+	rel->flag = i->flag;
 
 	switch(i->op) {
 	case op_basetable:
@@ -185,7 +186,7 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname )
 			*p = rel;
 			l = rel_bind_column_(sql, p, rel->l, cname);
 			if (l && r && !rel_issubquery(r)) {
-				(void) sql_error(sql, ERR_AMBIGUOUS, "SELECT: identifier '%s' ambiguous", cname);
+				(void) sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
 				return NULL;
 			}
 		}
@@ -205,7 +206,7 @@ rel_bind_column_(mvc *sql, sql_rel **p, sql_rel *rel, const char *cname )
 		if (rel->exps && exps_bind_column(rel->exps, cname, &ambiguous))
 			return rel;
 		if (ambiguous) {
-			(void) sql_error(sql, ERR_AMBIGUOUS, "SELECT: identifier '%s' ambiguous", cname);
+			(void) sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
 			return NULL;
 		}
 		*p = rel;

@@ -71,13 +71,13 @@ int pnetLimit, pnettop;
 
 #define SET_HEARTBEATS(X) (X != NO_HEARTBEAT) ? X * 1000 : NO_HEARTBEAT /* minimal 1 ms */
 
-#define ALL_ROOT_CHECK(cntxt, malcal, name)                                                           \
-	do {                                                                                              \
-		smvc = ((backend *) cntxt->sqlcontext)->mvc;                                                  \
-		if(!smvc)                                                                                     \
-			throw(SQL,malcal,"##name##ALL CONTINUOUS: SQL clients only");                             \
-		 else if (smvc->user_id != USER_MONETDB && smvc->role_id != ROLE_SYSADMIN)                    \
-			throw(SQL,malcal,"##name##ALL CONTINUOUS: insufficient privileges for the current user"); \
+#define ALL_ROOT_CHECK(cntxt, malcal, name)                                                                            \
+	do {                                                                                                               \
+		smvc = ((backend *) cntxt->sqlcontext)->mvc;                                                                   \
+		if(!smvc)                                                                                                      \
+			throw(SQL,malcal,SQLSTATE(42000) "##name##ALL CONTINUOUS: SQL clients only\n");                            \
+		 else if (smvc->user_id != USER_MONETDB && smvc->role_id != ROLE_SYSADMIN)                                     \
+			throw(SQL,malcal,SQLSTATE(42000) "##name##ALL CONTINUOUS: insufficient privileges for the current user\n");\
 	} while(0);
 
 static void
@@ -161,7 +161,7 @@ CQcreatelog(void){
 		CQ_id_stmt == 0 &&
 		CQ_id_error == 0){
 			(void) CQcleanuplog();
-			throw(MAL,"cquery.log",MAL_MALLOC_FAIL);
+			throw(MAL,"cquery.log",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	return MAL_SUCCEED;
 }
@@ -176,7 +176,7 @@ CQentry(int idx)
 		BUNappend(CQ_id_time, &pnet[idx].time,FALSE) != GDK_SUCCEED ||
 		BUNappend(CQ_id_error, (pnet[idx].error ? pnet[idx].error:""),FALSE) != GDK_SUCCEED ||
 		BUNappend(CQ_id_stmt, (pnet[idx].stmt ? pnet[idx].stmt:""),FALSE) != GDK_SUCCEED )
-		pnet[idx].error = createException(SQL,"cquery.logentry",MAL_MALLOC_FAIL);
+		pnet[idx].error = createException(SQL,"cquery.logentry",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 str
@@ -269,7 +269,7 @@ CQstatus( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			BUNappend(statusbat, statusname[pnet[idx].status],FALSE) != GDK_SUCCEED ||
 			BUNappend(stmtbat, (pnet[idx].stmt ? pnet[idx].stmt:""),FALSE) != GDK_SUCCEED ||
 			BUNappend(errbat, (pnet[idx].error ? pnet[idx].error:""),FALSE) != GDK_SUCCEED )
-				msg = createException(SQL,"cquery.status",MAL_MALLOC_FAIL);
+				msg = createException(SQL,"cquery.status",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	BBPkeepref(*tickret = tickbat->batCacheid);
 	BBPkeepref(*modret = modbat->batCacheid);
@@ -285,7 +285,7 @@ wrapup:
 	if( statusbat) BBPunfix(statusbat->batCacheid);
 	if( errbat) BBPunfix(errbat->batCacheid);
 	if( stmtbat) BBPunfix(stmtbat->batCacheid);
-	throw(SQL,"cquery.status",MAL_MALLOC_FAIL);
+	throw(SQL,"cquery.status",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 static int
@@ -346,7 +346,7 @@ CQlocateMb(MalBlkPtr mb, int* idx, str* res, const char* call)
 	}
 	assert(i != mb->stop);
 	if((mb2str = instruction2str(mb, NULL, sig, LIST_MAL_CALL)) == NULL) {
-		throw(SQL,call,MAL_MALLOC_FAIL);
+		throw(SQL,call,SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	for (i = 0; i < pnettop; i++){
@@ -379,7 +379,7 @@ CQerror(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	pnet[idx].error = GDKstrdup(error);
 	if(pnet[idx].error == NULL)
-		throw(SQL,"cquery.error",MAL_MALLOC_FAIL);
+		throw(SQL,"cquery.error",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -431,7 +431,7 @@ CQanalysis(Client cntxt, MalBlkPtr mb, int idx)
 				strcmp(tbl, baskets[pnet[idx].baskets[j]].table->base.name) == 0 )
 				break;
 			if ( j == MAXSTREAMS){
-				msg = createException(MAL,"cquery.analysis","too many stream table columns\n");
+				msg = createException(MAL,"cquery.analysis",SQLSTATE(3F000) "too many stream table columns\n");
 				continue;
 			}
 
@@ -482,7 +482,7 @@ CQprocedureStmt(Client cntxt, MalBlkPtr mb, str schema, str nme)
 		return msg;
 	s = mvc_bind_schema(m, schema);
 	if (s == NULL)
-		return createException(SQL,"cquery.register","Schema missing");
+		return createException(SQL,"cquery.register",SQLSTATE(3F000) "Schema missing\n");
 	/*tr = m->session->tr;*/
 	for (o = s->funcs.set->h; o; o = o->next) {
 		f = o->data;
@@ -495,7 +495,7 @@ CQprocedureStmt(Client cntxt, MalBlkPtr mb, str schema, str nme)
 			return MAL_SUCCEED;
 		}
 	}
-	return createException(SQL,"cquery.register","SQL procedure missing");
+	return createException(SQL,"cquery.register",SQLSTATE(3F000) "SQL procedure missing\n");
 }
 
 static str
@@ -509,12 +509,12 @@ CQregisterInternal(Client cntxt, str modnme, str fcnnme)
 	CQnode *pnew;
 	char buf[IDLENGTH];
 
-	scope = findModule(cntxt->nspace, putName(modnme));
+	scope = findModule(cntxt->usermodule, putName(modnme));
 	if (scope)
-		s = findSymbolInModule(scope, putName(fcnnme));
+		s = findSymbolInModule(scope, fcnnme);
 
 	if (s == NULL)
-		return createException(SQL,"cquery.register","Could not find SQL procedure");
+		return createException(SQL,"cquery.register",SQLSTATE(3F000) "Could not find SQL procedure\n");
 
 	mb = s->def;
 	sig = getInstrPtr(mb,0);
@@ -522,7 +522,7 @@ CQregisterInternal(Client cntxt, str modnme, str fcnnme)
 	if (pnettop == pnetLimit) {
 		pnew = (CQnode *) GDKrealloc(pnet, (pnetLimit+INITIAL_MAXCQ) * sizeof(CQnode));
 		if( pnew == NULL) {
-			return createException(SQL,"cquery.register",MAL_MALLOC_FAIL);
+			return createException(SQL,"cquery.register",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		pnetLimit += INITIAL_MAXCQ;
 		pnet = pnew;
@@ -544,7 +544,7 @@ CQregisterInternal(Client cntxt, str modnme, str fcnnme)
 	q = newStmt(nmb, sqlRef, commitRef);
 	setArgType(nmb,q, 0, TYPE_void);
 	pushEndInstruction(nmb);
-	chkProgram(cntxt->fdout, cntxt->nspace, nmb);
+	chkProgram(cntxt->usermodule, nmb);
 #ifdef DEBUG_CQUERY
 	fprintFunction(stderr, nmb, 0, LIST_MAL_ALL);
 #endif
@@ -584,14 +584,14 @@ CQprocedure(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = CQprocedureStmt(cntxt, mb, sch, nme);
 	if (msg)
 		return msg;
-	s = findSymbolInModule(cntxt->nspace, putName(nme));
+	s = findSymbolInModule(cntxt->usermodule, putName(nme));
 	if (s == NULL)
-		throw(SQL, "cquery.procedure", "Definition of procedure missing");
+		throw(SQL, "cquery.procedure",SQLSTATE(3F000) "Definition of procedure missing\n");
 	qry = s->def;
 
-	chkProgram(cntxt->fdout,cntxt->nspace,qry);
+	chkProgram(cntxt->usermodule, qry);
 	if( qry->errors)
-		msg = createException(SQL,"cquery.procedure","Error in continuous procedure");
+		msg = createException(SQL,"cquery.procedure",SQLSTATE(2F000) "Error in continuous procedure\n");
 
 #ifdef DEBUG_CQUERY
 	fprintf(stderr,"#cq: register a new continuous query plan\n");
@@ -600,14 +600,14 @@ CQprocedure(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	snprintf(name,IDLENGTH,"%s_%s",sch,nme);
 	s = newFunction(userRef, putName(name), FUNCTIONsymbol);
 	if (s == NULL)
-		msg = createException(SQL, "cquery.procedure", "Procedure code does not exist.");
+		msg = createException(SQL, "cquery.procedure",SQLSTATE(3F000) "Procedure code does not exist\n");
 
 	freeMalBlk(s->def);
 	s->def = copyMalBlk(qry);
 	p = getInstrPtr(s->def, 0);
 	setModuleId(p,userRef);
 	setFunctionId(p, putName(name));
-	insertSymbol(cntxt->nspace, s);
+	insertSymbol(cntxt->usermodule, s);
 #ifdef DEBUG_CQUERY
 	printFunction(cntxt->fdout, s->def, 0, LIST_MAL_ALL);
 #endif
@@ -651,11 +651,11 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	(void) pci;
 
 	if(cycles < 0 && cycles != NO_CYCLES){
-		msg = createException(SQL,"cquery.register","The cycles value must be non negative\n");
+		msg = createException(SQL,"cquery.register",SQLSTATE(42000) "The cycles value must be non negative\n");
 		goto finish;
 	}
 	if(heartbeats < 0 && heartbeats != NO_HEARTBEAT){
-		msg = createException(SQL,"cquery.register","The heartbeats value must be non negative\n");
+		msg = createException(SQL,"cquery.register",SQLSTATE(42000) "The heartbeats value must be non negative\n");
 		goto finish;
 	}
 
@@ -666,7 +666,7 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 			break;
 	}
 	if( i == mb->stop){
-		msg = createException(SQL,"cquery.register","Cannot detect procedure call %s.%s.\n",
+		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Cannot detect procedure call %s.%s.\n",
 		getModuleId(sig), getFunctionId(sig));
 		goto finish;
 	}
@@ -679,7 +679,7 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	if (pnettop == pnetLimit) {
 		pnew = (CQnode *) GDKrealloc(pnet, (pnetLimit+INITIAL_MAXCQ) * sizeof(CQnode));
 		if( pnew == NULL) {
-			msg = createException(SQL,"cquery.register",MAL_MALLOC_FAIL);
+			msg = createException(SQL,"cquery.register",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			goto unlock;
 		}
 		pnetLimit += INITIAL_MAXCQ;
@@ -687,9 +687,9 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	}
 
 	// access the actual procedure body
-	s = findSymbol(cntxt->nspace, getModuleId(sig), getFunctionId(sig));
+	s = findSymbol(cntxt->usermodule, getModuleId(sig), getFunctionId(sig));
 	if ( s == NULL){
-		msg = createException(SQL,"cquery.register","Cannot find procedure %s.%s.\n",
+		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Cannot find procedure %s.%s.\n",
 		getModuleId(sig), getFunctionId(sig));
 		goto unlock;
 	}
@@ -699,7 +699,8 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	if(heartbeats != NO_HEARTBEAT) {
 		for(j=0; j < MAXSTREAMS && pnet[pnettop].baskets[j]; j++) {
 			if(baskets[pnet[pnettop].baskets[j]].window != DEFAULT_TABLE_WINDOW) {
-				msg = createException(SQL, "cquery.register", "Heartbeat ignored, a window constraint exists\n");
+				msg = createException(SQL, "cquery.register",
+									  SQLSTATE(42000) "Heartbeat ignored, a window constraint exists\n");
 				goto unlock;
 			}
 		}
@@ -707,12 +708,12 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 
 	other = copyMalBlk(mb);
 	if(other == NULL) {
-		msg = createException(SQL,"cquery.register",MAL_MALLOC_FAIL);
+		msg = createException(SQL,"cquery.register",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto unlock;
 	}
 	q = newStmt(other, sqlRef, transactionRef);
 	if(q == NULL) {
-		msg = createException(SQL,"cquery.register",MAL_MALLOC_FAIL);
+		msg = createException(SQL,"cquery.register",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		freeMalBlk(other);
 		goto unlock;
 	}
@@ -720,24 +721,24 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	moveInstruction(other, getPC(other,q),i);
 	q = newStmt(other, sqlRef, commitRef);
 	if(q == NULL) {
-		msg = createException(SQL,"cquery.register",MAL_MALLOC_FAIL);
+		msg = createException(SQL,"cquery.register",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		freeMalBlk(other);
 		goto unlock;
 	}
 	setArgType(other,q, 0, TYPE_void);
 	moveInstruction(other, getPC(other,q),i+2);
-	chkProgram(cntxt->fdout, cntxt->nspace, other);
+	chkProgram(cntxt->usermodule, other);
 
 	pnet[pnettop].mod = GDKstrdup(getModuleId(sig));
 	if(pnet[pnettop].mod == NULL) {
-		msg = createException(SQL,"cquery.register",MAL_MALLOC_FAIL);
+		msg = createException(SQL,"cquery.register",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		freeMalBlk(other);
 		goto unlock;
 	}
 
 	pnet[pnettop].fcn = GDKstrdup(getFunctionId(sig));
 	if(pnet[pnettop].fcn == NULL) {
-		msg = createException(SQL,"cquery.register",MAL_MALLOC_FAIL);
+		msg = createException(SQL,"cquery.register",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		freeMalBlk(other);
 		GDKfree(pnet[pnettop].mod);
 		goto unlock;
@@ -745,7 +746,7 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 
 	pnet[pnettop].stmt = instruction2str(other,stk,sig,LIST_MAL_CALL);
 	if(pnet[pnettop].stmt == NULL) {
-		msg = createException(SQL,"cquery.register",MAL_MALLOC_FAIL);
+		msg = createException(SQL,"cquery.register",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		freeMalBlk(other);
 		GDKfree(pnet[pnettop].mod);
 		GDKfree(pnet[pnettop].fcn);
@@ -756,7 +757,7 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 
 	pnet[pnettop].stk = prepareMALstack(other, other->vsize);
 	if(pnet[pnettop].stk == NULL) {
-		msg = createException(SQL,"cquery.register",MAL_MALLOC_FAIL);
+		msg = createException(SQL,"cquery.register",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		freeMalBlk(other);
 		GDKfree(pnet[pnettop].mod);
 		GDKfree(pnet[pnettop].fcn);
@@ -795,11 +796,11 @@ CQresumeInternal(Client cntxt, MalBlkPtr mb, int with_alter)
 		cycles = sqlcontext->cycles;
 		heartbeats = sqlcontext->heartbeats;
 		if(cycles < 0 && cycles != NO_CYCLES){
-			msg = createException(SQL,"cquery.resume","The cycles value must be non negative\n");
+			msg = createException(SQL,"cquery.resume",SQLSTATE(42000) "The cycles value must be non negative\n");
 			goto finish;
 		}
 		if(heartbeats < 0 && heartbeats != NO_HEARTBEAT){
-			msg = createException(SQL,"cquery.resume","The heartbeats value must be non negative\n");
+			msg = createException(SQL,"cquery.resume",SQLSTATE(42000) "The heartbeats value must be non negative\n");
 			goto finish;
 		}
 	}
@@ -810,17 +811,17 @@ CQresumeInternal(Client cntxt, MalBlkPtr mb, int with_alter)
 		goto unlock;
 	}
 	if( idx == pnettop) {
-		msg = createException(SQL, "cquery.resume", "The continuous procedure %s has not yet started\n", mb2str);
+		msg = createException(SQL, "cquery.resume",SQLSTATE(42000) "The continuous procedure %s has not yet started\n", mb2str);
 		goto unlock;
 	}
 	if( pnet[idx].status != CQPAUSE) {
-		msg = createException(SQL, "cquery.resume", "The continuous procedure %s is already running\n", mb2str);
+		msg = createException(SQL, "cquery.resume",SQLSTATE(42000) "The continuous procedure %s is already running\n", mb2str);
 		goto unlock;
 	}
 	if(with_alter && heartbeats != NO_HEARTBEAT) {
 		for(j=0; j < MAXSTREAMS && pnet[idx].baskets[j]; j++) {
 			if(baskets[pnet[idx].baskets[j]].window != DEFAULT_TABLE_WINDOW) {
-				msg = createException(SQL, "cquery.resume", "Heartbeat ignored, a window constraint exists\n");
+				msg = createException(SQL, "cquery.resume",SQLSTATE(42000) "Heartbeat ignored, a window constraint exists\n");
 				goto unlock;
 			}
 		}
@@ -865,7 +866,8 @@ CQresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if( k >= 0 )
 		return CQresumeInternal(cntxt, mb, 1);
-	throw(SQL,"cquery.resume","The continuous procedure %s.%s was not found\n", getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
+	throw(SQL,"cquery.resume",SQLSTATE(3F000) "The continuous procedure %s.%s was not found\n",
+			getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
 }
 
 str
@@ -888,7 +890,8 @@ CQresumeNoAlter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if( k >= 0 )
 		return CQresumeInternal(cntxt, mb, 0);
-	throw(SQL,"cquery.resume","The continuous procedure %s.%s was not found\n", getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
+	throw(SQL,"cquery.resume",SQLSTATE(3F000) "The continuous procedure %s.%s was not found\n",
+			getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
 }
 
 str
@@ -934,11 +937,13 @@ CQpauseInternal(MalBlkPtr mb)
 		goto finish;
 	}
 	if( idx == pnettop) {
-		msg = createException(SQL, "cquery.pause", "The continuous procedure %s has not yet started\n", mb2str);
+		msg = createException(SQL, "cquery.pause",
+							  SQLSTATE(42000) "The continuous procedure %s has not yet started\n", mb2str);
 		goto finish;
 	}
 	if( pnet[idx].status == CQPAUSE) {
-		msg = createException(SQL, "cquery.pause", "The continuous procedure %s is already paused\n", mb2str);
+		msg = createException(SQL, "cquery.pause",
+							  SQLSTATE(42000) "The continuous procedure %s is already paused\n", mb2str);
 		goto finish;
 	}
 	// actually wait if the query was running
@@ -978,7 +983,8 @@ CQpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if( k >= 0)
 		return CQpauseInternal(mb);
-	throw(SQL,"cquery.pause","The continuous procedure %s.%s was not found\n", getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
+	throw(SQL,"cquery.pause",SQLSTATE(3F000) "The continuous procedure %s.%s was not found\n",
+			getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
 }
 
 str
@@ -1029,7 +1035,8 @@ CQcycles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fcn = *getArgReference_str(stk,pci,2);
 		idx = CQlocate(sch, fcn);
 		if( idx == pnettop) {
-			msg = createException(SQL,"cquery.cycles","The continuous procedure %s.%s not accessible\n",sch,fcn);
+			msg = createException(SQL,"cquery.cycles",
+								  SQLSTATE(3F000) "The continuous procedure %s.%s not accessible\n",sch,fcn);
 			goto finish;
 		}
 		last = idx+1;
@@ -1040,7 +1047,7 @@ CQcycles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fprintf(stderr, "#set cycles \n");
 #endif
 	if(cycles < 0 && cycles != NO_CYCLES){
-		msg = createException(SQL,"cquery.cycles","The cycles value must be non negative\n");
+		msg = createException(SQL,"cquery.cycles",SQLSTATE(42000) "The cycles value must be non negative\n");
 		goto finish;
 	}
 	for( ; idx < last; idx++)
@@ -1065,7 +1072,8 @@ CQheartbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fcn = *getArgReference_str(stk,pci,2);
 		idx = CQlocate(sch, fcn);
 		if( idx == pnettop) {
-			msg = createException(SQL,"cquery.heartbeat","The continuous procedure %s.%s not accessible\n",sch,fcn);
+			msg = createException(SQL,"cquery.heartbeat",
+								  SQLSTATE(3F000) "The continuous procedure %s.%s not accessible\n",sch,fcn);
 			goto finish;
 		}
 		last = idx+1;
@@ -1080,12 +1088,13 @@ CQheartbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 	}
 	if(beats < 0 && beats != NO_HEARTBEAT){
-		msg = createException(SQL,"cquery.heartbeat","The heartbeats value must be non negative\n");
+		msg = createException(SQL,"cquery.heartbeat",SQLSTATE(42000) "The heartbeats value must be non negative\n");
 		goto finish;
 	}
 	for( ; idx < last; idx++){
 		if( pnet[idx].baskets[0]){
-			msg = createException(SQL,"cquery.heartbeat","Heartbeat ignored, a window constraint exists\n");
+			msg = createException(SQL,"cquery.heartbeat",
+								  SQLSTATE(42000) "Heartbeat ignored, a window constraint exists\n");
 			break;
 		}
 		if(beats != NO_HEARTBEAT) {
@@ -1130,7 +1139,8 @@ CQderegisterInternal(MalBlkPtr mb)
 		goto finish;
 	}
 	if(idx == pnettop) {
-		msg = createException(SQL, "cquery.deregister", "The continuous procedure %s has not yet started\n", mb2str);
+		msg = createException(SQL, "cquery.deregister",
+							  SQLSTATE(42000) "The continuous procedure %s has not yet started\n", mb2str);
 		goto finish;
 	}
 	pnet[idx].status = CQSTOP;
@@ -1171,7 +1181,8 @@ CQderegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if( k>= 0 )
 		return CQderegisterInternal(mb);
-	throw(SQL,"cquery.deregister","The continuous procedure %s.%s was not found\n", getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
+	throw(SQL,"cquery.deregister",SQLSTATE(3F000) "The continuous procedure %s.%s was not found\n",
+			getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
 }
 
 str
@@ -1472,47 +1483,47 @@ CQstartScheduler(void)
 #endif
 
 	if(!dbpath)
-		throw(MAL, "cquery.startScheduler","The gdk_dbpath environment variable is not set");
+		throw(MAL, "cquery.startScheduler",SQLSTATE(42000) "The gdk_dbpath environment variable is not set\n");
 
 	location = GDKmalloc(strlen(dbpath) + strlen(DIR_SEP_STR) + strlen(fpsin) + 1);
 	if( location == NULL)
-		throw(MAL, "cquery.startScheduler",MAL_MALLOC_FAIL);
+		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	sprintf(location, "%s%s%s", dbpath, DIR_SEP_STR, fpsin);
 	fin =  open_rastream_and_create(location);
 	GDKfree(location);
 	if( fin == NULL)
-		throw(MAL, "cquery.startScheduler","Could not initialize CQscheduler");
+		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize CQscheduler\n");
 
 	location = GDKmalloc(strlen(dbpath) + strlen(DIR_SEP_STR) + strlen(fpsout) + 1);
 	if( location == NULL)
-		throw(MAL, "cquery.startScheduler",MAL_MALLOC_FAIL);
+		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	sprintf(location, "%s%s%s", dbpath, DIR_SEP_STR, fpsout);
 	fout =  open_wastream(location);
 	GDKfree(location);
 	if( fout == NULL) {
 		mnstr_destroy(fin);
-		throw(MAL, "cquery.startScheduler","Could not initialize CQscheduler");
+		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize CQscheduler\n");
 	}
 
 	bin = bstream_create(fin,0);
 	if( bin == NULL) {
 		mnstr_destroy(fin);
 		mnstr_destroy(fout);
-		throw(MAL, "cquery.startScheduler","Could not initialize CQscheduler");
+		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize CQscheduler\n");
 	}
 
 	cntxt = MCinitClient(0,bin,fout);
 	if( cntxt == NULL) {
 		bstream_destroy(cntxt->fdin);
 		mnstr_destroy(cntxt->fdout);
-		throw(MAL, "cquery.startScheduler","Could not initialize CQscheduler");
+		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize CQscheduler\n");
 	}
 
 	if( SQLinitClient(cntxt) != MAL_SUCCEED) {
 		bstream_destroy(cntxt->fdin);
 		mnstr_destroy(cntxt->fdout);
 		//MCcloseClient(cntxt); check this
-		throw(MAL, "cquery.startScheduler","Could not initialize SQL context in CQscheduler");
+		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize SQL context in CQscheduler\n");
 	}
 
 	if (pnstatus== CQINIT && MT_create_thread(&pid, CQscheduler, (void*) cntxt, MT_THR_JOINABLE) != 0){
@@ -1522,7 +1533,7 @@ CQstartScheduler(void)
 		bstream_destroy(cntxt->fdin);
 		mnstr_destroy(cntxt->fdout);
 		//MCcloseClient(cntxt); check this
-		throw(MAL, "cquery.startScheduler", "Could not initialize client thread in CQscheduler");
+		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize client thread in CQscheduler\n");
 	}
 	return MAL_SUCCEED;
 }
@@ -1549,7 +1560,7 @@ CQprelude(void *ret)
 	pnetLimit = INITIAL_MAXCQ;
 	pnettop = 0;
 	if(pnet == NULL)
-		throw(MAL, "cquery.prelude", MAL_MALLOC_FAIL);
+		throw(MAL, "cquery.prelude",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	cq_close = CQreset;
 	printf("# MonetDB/Timetrails module loaded\n");
 	return MAL_SUCCEED;

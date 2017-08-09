@@ -127,16 +127,16 @@ BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl, int* res)
 		return msg;
 
 	if (!(s = mvc_bind_schema(m, sch)))
-		throw(SQL, "basket.register", "Schema missing\n");
+		throw(SQL, "basket.register",SQLSTATE(3F000) "Schema missing\n");
 
 	if (!(t = mvc_bind_table(m, s, tbl)))
-		throw(SQL, "basket.register", "Table missing '%s'\n", tbl);
+		throw(SQL, "basket.register",SQLSTATE(3F000) "Table missing '%s'\n", tbl);
 
 	if( !isStream(t))
-		throw(SQL,"basket.register","Only allowed for stream tables\n");
+		throw(SQL,"basket.register",SQLSTATE(42000) "Only allowed for stream tables\n");
 
 	if((idx = BSKTnewEntry()) < 1)
-		throw(MAL,"basket.register",MAL_MALLOC_FAIL);
+		throw(MAL,"basket.register",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	baskets[idx].table = t;
 	baskets[idx].window = t->stream->window;
@@ -148,18 +148,23 @@ BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl, int* res)
 		sql_column *col = o->data;
 		int tpe = col->type.type->localtype;
 
-		if ( !(tpe <= TYPE_str || tpe == TYPE_date || tpe == TYPE_daytime || tpe == TYPE_timestamp) )
-			throw(MAL,"basket.register","Unsupported type %d\n",tpe);
+		if ( !(tpe <= TYPE_str || tpe == TYPE_date || tpe == TYPE_daytime || tpe == TYPE_timestamp) ) {
+			MT_lock_destroy(&baskets[idx].lock);
+			throw(MAL,"basket.register",SQLSTATE(42000) "Unsupported type %d\n",tpe);
+		}
 		colcnt++;
 	}
 	baskets[idx].ncols = colcnt;
 	baskets[idx].bats = GDKmalloc(colcnt * sizeof(BAT **));
-	if(baskets[idx].bats == NULL)
-		throw(MAL,"basket.register",MAL_MALLOC_FAIL);
+	if(baskets[idx].bats == NULL) {
+		MT_lock_destroy(&baskets[idx].lock);
+		throw(MAL,"basket.register",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 	baskets[idx].cols = GDKmalloc(colcnt * sizeof(sql_column **));
 	if(baskets[idx].cols == NULL) {
+		MT_lock_destroy(&baskets[idx].lock);
 		GDKfree(baskets[idx].bats);
-		throw(MAL,"basket.register",MAL_MALLOC_FAIL);
+		throw(MAL,"basket.register",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	// collect the column names and the storage
@@ -205,11 +210,11 @@ BSKTwindow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( msg != MAL_SUCCEED)
 		return msg;
 	if( window < 0)
-		throw(MAL,"basket.window","negative window not allowed");
+		throw(MAL,"basket.window",SQLSTATE(42000) "negative window not allowed\n");
 	if( pci->argc == 5) {
 		stride = *getArgReference_int(stk,pci,4);
 		if( stride < 0)
-			throw(MAL,"basket.stride","negative stride not allowed");
+			throw(MAL,"basket.stride",SQLSTATE(42000) "negative stride not allowed\n");
 	}
 	baskets[idx].window = window;
 	if( pci->argc == 5) {
@@ -284,14 +289,14 @@ BSKTtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	bskt = BSKTlocate(sch,tbl);
 	if( bskt == 0)	
-		throw(SQL,"basket.bind","Stream table column '%s.%s' not found\n",sch,tbl);
+		throw(SQL,"basket.bind",SQLSTATE(3F000) "Stream table column '%s.%s' not found\n",sch,tbl);
 	b = baskets[bskt].bats[0];
 	if( b == 0)
-		throw(SQL,"basket.bind","Stream table reference column '%s.%s' not accessible\n",sch,tbl);
+		throw(SQL,"basket.bind",SQLSTATE(3F000) "Stream table reference column '%s.%s' not accessible\n",sch,tbl);
 
 	tids = COLnew(0, TYPE_void, 0, TRANSIENT);
 	if (tids == NULL)
-		throw(SQL, "basket.tid", MAL_MALLOC_FAIL);
+		throw(SQL, "basket.tid",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	tids->tseqbase = 0;
 	BATsetcount(tids, BATcount(b));
 	BATsettrivprop(tids);
@@ -324,14 +329,14 @@ BSKTbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				VIEWbounds(b,bn, 0, baskets[bskt].window);
 				BBPkeepref(*ret =  bn->batCacheid);
 			} else
-				throw(SQL,"basket.bind","Can not create view %s.%s.%s[%d]\n",sch,tbl,col,baskets[bskt].window );
+				throw(SQL,"basket.bind",SQLSTATE(HY005) "Can not create view %s.%s.%s[%d]\n",sch,tbl,col,baskets[bskt].window );
 		} else{
 			BBPkeepref( *ret = b->batCacheid);
 			BBPfix(b->batCacheid); // don't loose it
 		}
 		return MAL_SUCCEED;
 	}
-	throw(SQL,"basket.bind","Stream table column '%s.%s.%s' not found\n",sch,tbl,col);
+	throw(SQL,"basket.bind",SQLSTATE(3F000) "Stream table column '%s.%s.%s' not found\n",sch,tbl,col);
 }
 
 str
@@ -345,7 +350,7 @@ BSKTdrop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	bskt = BSKTlocate(sch,tbl);
 	if (bskt == 0)
-		throw(SQL, "basket.drop", "Could not find the basket %s.%s\n",sch,tbl);
+		throw(SQL, "basket.drop",SQLSTATE(3F000) "Could not find the basket %s.%s\n",sch,tbl);
 	BSKTclean(bskt);
 	return MAL_SUCCEED;
 }
@@ -368,7 +373,7 @@ BSKTtumbleInternal(Client cntxt, str sch, str tbl, int bskt, int stride)
 	(void) cntxt;
 
 	if( stride < 0)
-		throw(MAL,"basket.tumble","negative stride not allowed");
+		throw(MAL,"basket.tumble",SQLSTATE(42000) "negative stride not allowed\n");
 	_DEBUG_BASKET_ fprintf(stderr,"Tumble %s.%s %d elements\n",sch,tbl,stride);
 	if( stride == 0)
 		return MAL_SUCCEED;
@@ -397,7 +402,7 @@ BSKTtumbleInternal(Client cntxt, str sch, str tbl, int bskt, int stride)
 			}
 				break;
 		default: 
-			throw(SQL, "basket.tumble", "Could not find the basket column storage %s.%s[%d]",sch,tbl,i);
+			throw(SQL, "basket.tumble",SQLSTATE(3F000) "Could not find the basket column storage %s.%s[%d]\n",sch,tbl,i);
 		}
 
 		_DEBUG_BASKET_ fprintf(stderr,"#Tumbled %s.%s[%d] "BUNFMT" elements left\n",sch,tbl,i,cnt);
@@ -459,7 +464,7 @@ BSKTcommit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	idx = BSKTlocate(sch, tbl);
 	if( idx ==0)
-		throw(SQL,"basket.commit","Stream table %s.%s not accessible\n",sch,tbl);
+		throw(SQL,"basket.commit",SQLSTATE(3F000) "Stream table %s.%s not accessible\n",sch,tbl);
 	return MAL_SUCCEED;
 }
 
@@ -475,7 +480,7 @@ BSKTlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	idx = BSKTlocate(sch, tbl);
 	if( idx ==0)
-		throw(SQL,"basket.lock","Stream table %s.%s not accessible\n",sch,tbl);
+		throw(SQL,"basket.lock",SQLSTATE(3F000) "Stream table %s.%s not accessible\n",sch,tbl);
 	/* release the basket lock */
 	MT_lock_set(&baskets[idx].lock);
 	return MAL_SUCCEED;
@@ -495,7 +500,7 @@ BSKTunlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	idx = BSKTlocate(sch, tbl);
 	if( idx ==0) {
 		MT_lock_unset(&baskets[idx].lock);
-		throw(SQL,"basket.lock","Stream table %s.%s not accessible\n",sch,tbl);
+		throw(SQL,"basket.lock",SQLSTATE(3F000) "Stream table %s.%s not accessible\n",sch,tbl);
 	}
 
 	/* this is also the place to administer the size of the basket */
@@ -556,24 +561,24 @@ BSKTappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*res = 0;
 
 	if ( isaBatType(tpe) && (binsert = BATdescriptor(*(int *) value)) == NULL)
-		throw(SQL, "basket.append", "Cannot access source descriptor");
+		throw(SQL, "basket.append",SQLSTATE(HY005) "Cannot access source descriptor\n");
 	if ( !isaBatType(tpe) && ATOMextern(getBatType(tpe)))
 		value = *(ptr*) value;
 
 	bskt = BSKTlocate(sname,tname);
 	if( bskt == 0)
-		throw(SQL, "basket.append", "Cannot access basket descriptor %s.%s",sname,tname);
+		throw(SQL, "basket.append",SQLSTATE(HY005) "Cannot access basket descriptor %s.%s\n",sname,tname);
 	bn = BSKTbindColumn(sname,tname,cname);
 
 	if( bn){
 		if (binsert){
 			if( BATappend(bn, binsert, NULL, TRUE) != GDK_SUCCEED)
-				throw(MAL,"basket.append","insertion failed\n");
+				throw(MAL,"basket.append",SQLSTATE(HY005) "insertion failed\n");
 		} else
 			if( BUNappend(bn, value, TRUE) != GDK_SUCCEED)
-				throw(MAL,"basket.append","insertion failed\n");
+				throw(MAL,"basket.append",SQLSTATE(HY005) "insertion failed\n");
 		BATsettrivprop(bn);
-	} else throw(SQL, "basket.append", "Cannot access target column %s.%s.%s",sname,tname,cname);
+	} else throw(SQL, "basket.append",SQLSTATE(3F000) "Cannot access target column %s.%s.%s\n",sname,tname,cname);
 	
 	if (binsert )
 		BBPunfix(((BAT *) binsert)->batCacheid);
@@ -598,24 +603,24 @@ BSKTupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	rid = BATdescriptor(rows);
 	if( rid == NULL)
-		throw(SQL, "basket.update", "Cannot access source oid descriptor");
+		throw(SQL, "basket.update",SQLSTATE(HY005) "Cannot access source oid descriptor\n");
 	bval = BATdescriptor(val);
 	if( bval == NULL){
 		BBPunfix(rid->batCacheid);
-		throw(SQL, "basket.update", "Cannot access source descriptor");
+		throw(SQL, "basket.update",SQLSTATE(HY005) "Cannot access source descriptor\n");
 	}
 
 	bskt = BSKTlocate(sname,tname);
 	if( bskt == 0)
-		throw(SQL, "basket.update", "Cannot access basket descriptor %s.%s",sname,tname);
+		throw(SQL, "basket.update",SQLSTATE(HY005) "Cannot access basket descriptor %s.%s\n",sname,tname);
 	bn = BSKTbindColumn(sname,tname,cname);
 
 	if( bn){
 		if( void_replace_bat(bn, rid, bval, TRUE) != GDK_SUCCEED)
-			throw(SQL, "basket.update", "Cannot access basket descriptor %s.%s",sname,tname);
+			throw(SQL, "basket.update",SQLSTATE(HY005) "Cannot access basket descriptor %s.%s\n",sname,tname);
 		
 		BATsettrivprop(bn);
-	} else throw(SQL, "basket.append", "Cannot access target column %s.%s.%s",sname,tname,cname);
+	} else throw(SQL, "basket.update",SQLSTATE(3F000) "Cannot access target column %s.%s.%s\n",sname,tname,cname);
 	
 	BBPunfix(rid->batCacheid);
 	BBPunfix(bval->batCacheid);
@@ -638,17 +643,17 @@ BSKTdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	rid = BATdescriptor(rows);
 	if( rid == NULL)
-		throw(SQL, "basket.delete", "Cannot access source oid descriptor");
+		throw(SQL, "basket.delete",SQLSTATE(3F000) "Cannot access source oid descriptor\n");
 
 	idx = BSKTlocate(sname,tname);
 	if( idx == 0)
-		throw(SQL, "basket.delete", "Cannot access basket descriptor %s.%s",sname,tname);
+		throw(SQL, "basket.delete",SQLSTATE(3F000) "Cannot access basket descriptor %s.%s\n",sname,tname);
 	for( i=0; i < baskets[idx].ncols; i++){
 		b = baskets[idx].bats[i];
 		if(b){
 			 if( BATdel(b, rid) != GDK_SUCCEED){
 				BBPunfix(rid->batCacheid);
-				throw(SQL, "basket.delete", MAL_MALLOC_FAIL);
+				throw(SQL, "basket.delete", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			baskets[idx].count = BATcount(b);
 			b->tnil = 0;
@@ -678,7 +683,7 @@ BSKTreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*res = 0;
 	idx = BSKTlocate(sname,tname);
 	if( idx <= 0)
-		throw(SQL,"basket.reset","Stream table %s.%s not registered \n",sname,tname);
+		throw(SQL,"basket.reset",SQLSTATE(3F000) "Stream table %s.%s not registered\n",sname,tname);
 	// do actual work
 	MT_lock_set(&baskets[idx].lock);
 	for( i=0; i < baskets[idx].ncols; i++){
@@ -771,7 +776,7 @@ wrapup:
 		BBPunfix(errors->batCacheid);
 	if (events)
 		BBPunfix(events->batCacheid);
-	throw(SQL, "basket.status", MAL_MALLOC_FAIL);
+	throw(SQL, "basket.status", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 void
@@ -797,6 +802,6 @@ BSKTprelude(void *ret)
 	bsktLimit = INTIAL_BSKT;
 	bsktTop = 1;
 	if( baskets == NULL)
-		throw(MAL, "basket.prelude", MAL_MALLOC_FAIL);
+		throw(MAL, "basket.prelude", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }

@@ -29,47 +29,11 @@
 #include "ODBCStmt.h"
 #include "ODBCUtil.h"
 
-static struct errors {
-	const char *error;
-	const char *msg;
-} errors[] = {
-	{"syntax error", "42000"},
-	{NULL, NULL},		/* sentinel */
-};
-
-const char *
-ODBCErrorType(const char *msg, const char **emsg)
-{
-	struct errors *e;
-
-	if (strlen(msg) > 6 && msg[5] == '!' &&
-	    ((msg[0] >= '0' && msg[0] <= '9') ||
-	     (msg[0] >= 'A' && msg[0] <= 'Z')) &&
-	    ((msg[1] >= '0' && msg[1] <= '9') ||
-	     (msg[1] >= 'A' && msg[1] <= 'Z')) &&
-	    ((msg[2] >= '0' && msg[2] <= '9') ||
-	     (msg[2] >= 'A' && msg[2] <= 'Z')) &&
-	    ((msg[3] >= '0' && msg[3] <= '9') ||
-	     (msg[3] >= 'A' && msg[3] <= 'Z')) &&
-	    ((msg[4] >= '0' && msg[4] <= '9') ||
-	     (msg[4] >= 'A' && msg[4] <= 'Z'))) {
-		*emsg = msg + 6;
-		while (**emsg == ' ')
-			(*emsg)++;
-		return msg;
-	}
-
-	*emsg = msg;
-	for (e = errors; e->error != NULL; e++)
-		if (strncmp(msg, e->error, strlen(e->error)) == 0)
-			return e->msg;
-	return NULL;
-}
-
 static SQLRETURN
 ODBCExecDirect(ODBCStmt *stmt, SQLCHAR *StatementText, SQLINTEGER TextLength)
 {
 	char *query;
+	const char *err;
 	MapiMsg ret;
 	MapiHdl hdl;
 
@@ -118,21 +82,19 @@ ODBCExecDirect(ODBCStmt *stmt, SQLCHAR *StatementText, SQLINTEGER TextLength)
 		addStmtError(stmt, stmt->Dbc->sql_attr_connection_timeout ? "HYT00" : "08S01", mapi_error_str(stmt->Dbc->mid), 0);
 		return SQL_ERROR;
 	default:
-		/* reuse variable for error string */
-		query = mapi_result_error(hdl);
-		if (query == NULL)
-			query = mapi_error_str(stmt->Dbc->mid);
-		if (query != NULL) {
-			const char *m;
-			const char *e = ODBCErrorType(query, &m);
+		err = mapi_result_error(hdl);
+		if (err == NULL)
+			err = mapi_error_str(stmt->Dbc->mid);
+		if (err != NULL) {
+			const char *e = mapi_result_errorcode(hdl);
 
 			if (e) {
-				addStmtError(stmt, e, m, 0);
+				addStmtError(stmt, e, err, 0);
 				return SQL_ERROR;
 			}
 		}
 		/* General error */
-		addStmtError(stmt, "HY000", query, 0);
+		addStmtError(stmt, "HY000", err, 0);
 		return SQL_ERROR;
 	}
 

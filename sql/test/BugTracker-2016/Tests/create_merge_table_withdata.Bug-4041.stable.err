@@ -31,6 +31,7 @@ stderr of test 'create_merge_table_withdata.Bug-4041` in directory 'sql/test/Bug
 MAPI  = (monetdb) /var/tmp/mtest-10452/.s.monetdb.33213
 QUERY = create merge table mt as select * from other_table limit 1;
 ERROR = !CREATE TABLE: cannot create MERGE TABLE table 'with data'
+CODE  = 42000
 
 # 15:43:40 >  
 # 15:43:40 >  "Done."

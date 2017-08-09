@@ -25,14 +25,14 @@ Ready.
 # 12:51:08 >  
 
 #select ST_MakeBox2D(ST_Point(-989502.1875, 528439.5625), ST_Point(-987121.375 ,529933.1875));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % mbr # type
 % 0 # length
 [ "BOX (-989502.1875 528439.5625, -987121.375 529933.1875)"	]
 #select ST_MakeBox2D(ST_Point(-989502.1875, 528439.5625), null);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % mbr # type
 % 0 # length
 [ NULL	]
@@ -40,7 +40,7 @@ Ready.
 #INSERT INTO t VALUES(ST_Point(10, 20)), (ST_Point(30, 40)), (ST_Point(50, 60)), (ST_Point(70, 80));
 [ 4	]
 #SELECT geom AS "P", ST_MakeBox2D(geom, ST_Point(90, 90)) AS "BOX2D" FROM t;
-% sys.L1,	sys.L2 # table_name
+% sys.L2,	sys.L4 # table_name
 % P,	BOX2D # name
 % geometry,	mbr # type
 % 0,	0 # length
@@ -49,7 +49,7 @@ Ready.
 [ "POINT (50 60)",	"BOX (50 60, 90 90)"	]
 [ "POINT (70 80)",	"BOX (70 80, 90 90)"	]
 #SELECT g1.geom AS "P1", g2.geom AS "P2", ST_MakeBox2D(g1.geom, g2.geom) AS "BOX2D" FROM t g1, t g2;
-% sys.L1,	sys.L2,	sys.L3 # table_name
+% sys.L2,	sys.L4,	sys.L6 # table_name
 % P1,	P2,	BOX2D # name
 % geometry,	geometry,	mbr # type
 % 0,	0,	0 # length

@@ -1,3 +1,11 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Thu Jul 20 2017 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Added support for extracting the quarter (number between 1 and 4)
+  of a date (or timestamp or timestamp with timezone) in SQL:
+   EXTRACT ( QUARTER FROM my_date_expr ).
+  Added support for extracting the week (number between 1 and 53)
+  of a date (or timestamp or timestamp with timezone) in SQL:
+   EXTRACT ( WEEK FROM my_date_expr ).
+

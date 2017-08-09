@@ -163,10 +163,14 @@ setODBCDescRecCount(ODBCDesc *desc, int count)
 		desc->descRec = NULL;
 	} else if (desc->descRec == NULL) {
 		assert(desc->sql_desc_count == 0);
-		desc->descRec = (ODBCDescRec *) malloc((count + 1) * sizeof(*desc->descRec));
+		desc->descRec = malloc((count + 1) * sizeof(*desc->descRec));
 	} else {
+		ODBCDescRec *p;
 		assert(desc->sql_desc_count > 0);
-		desc->descRec = (ODBCDescRec *) realloc(desc->descRec, (count + 1) * sizeof(*desc->descRec));
+		p = realloc(desc->descRec, (count + 1) * sizeof(*desc->descRec));
+		if (p == NULL)
+			return;	/* TODO: error handling */
+		desc->descRec = p;
 	}
 	if (count > desc->sql_desc_count) {
 		int i;

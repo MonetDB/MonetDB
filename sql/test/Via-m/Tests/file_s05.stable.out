@@ -32,8 +32,8 @@ Ready.
 #set video_sets_id1 = -1234567890;
 #set video_sets_id1 = get_video_sets_id('fabchannel2007');
 #select video_sets_id1;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 1	]

@@ -6,4 +6,4 @@
 
 SUBDIRS = conf
 
-EXTRA_DIST_DIR = autogen doc
+EXTRA_DIST_DIR = autogen doc selinux

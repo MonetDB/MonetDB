@@ -388,11 +388,19 @@ list_match(list *l1, list *l2, fcmp cmp)
 list *
 list_keysort(list *l, int *keys, fdup dup)
 {
-	list *res = list_new_(l);
+	list *res;
 	node *n = NULL;
 	int i, j, *pos, cnt = list_length(l);
 
 	pos = (int*)malloc(cnt*sizeof(int));
+	if (pos == NULL) {
+		return NULL;
+	}
+	res = list_new_(l);
+	if (res == NULL) {
+		free(pos);
+		return NULL;
+	}
 	for (n = l->h, i = 0; n; n = n->next, i++) {
 		pos[i] = i;
 	}
@@ -410,12 +418,25 @@ list_keysort(list *l, int *keys, fdup dup)
 list *
 list_sort(list *l, fkeyvalue key, fdup dup)
 {
-	list *res = list_new_(l);
+	list *res;
 	node *n = NULL;
 	int i, j, *keys, *pos, cnt = list_length(l);
 
 	keys = (int*)malloc(cnt*sizeof(int));
 	pos = (int*)malloc(cnt*sizeof(int));
+	if (keys == NULL || pos == NULL) {
+		if (keys)
+			free(keys);
+		if (pos)
+			free(pos);
+		return NULL;
+	}
+	res = list_new_(l);
+	if (res == NULL) {
+		free(keys);
+		free(pos);
+		return NULL;
+	}
 	for (n = l->h, i = 0; n; n = n->next, i++) {
 		keys[i] = key(n->data);
 		pos[i] = i;

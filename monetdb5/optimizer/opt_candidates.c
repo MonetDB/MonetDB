@@ -76,9 +76,9 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
     /* Defense line against incorrect plans */
 	/* plan remains unaffected */
-	//chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-	//chkFlow(cntxt->fdout, mb);
-	//chkDeclarations(cntxt->fdout, mb);
+	//chkTypes(cntxt->usermodule, mb, FALSE);
+	//chkFlow(mb);
+	//chkDeclarations(mb);
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","candidates",usec);

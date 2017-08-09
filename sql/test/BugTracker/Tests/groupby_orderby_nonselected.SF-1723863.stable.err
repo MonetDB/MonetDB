@@ -19,8 +19,7 @@ QUERY = select count(*)
         order by row_count desc, col1
         ) sq;
 ERROR = !SELECT: cannot use non GROUP BY column 'col1' in query results without an aggregate function
-
-
+CODE  = 42000
 
 # 23:24:26 >  
 # 23:24:26 >  Done.

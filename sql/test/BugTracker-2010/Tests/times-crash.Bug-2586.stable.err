@@ -74,6 +74,7 @@ stderr of test 'times-crash.Bug-2586` in directory 'sql/test/BugTracker-2010` it
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select times();
 ERROR = !SELECT: no such operator 'times'
+CODE  = 42000
 
 # 15:46:02 >  
 # 15:46:02 >  Done.

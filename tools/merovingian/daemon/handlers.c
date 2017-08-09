@@ -23,6 +23,10 @@
 #include "merovingian.h"
 #include "handlers.h"
 
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
+#endif
+
 
 static const char *sigint  = "SIGINT";
 static const char *sigterm = "SIGTERM";
@@ -144,11 +148,14 @@ void reinitialize(void)
 
 	f = getConfVal(_mero_props, "logfile");
 	/* reopen (or open new) file */
-	t = open(f, O_WRONLY | O_APPEND | O_CREAT, S_IRUSR | S_IWUSR);
+	t = open(f, O_WRONLY | O_APPEND | O_CREAT | O_CLOEXEC, S_IRUSR | S_IWUSR);
 	if (t == -1) {
 		Mfprintf(stderr, "forced to ignore SIGHUP: unable to open "
 				"'%s': %s\n", f, strerror(errno));
 	} else {
+#if O_CLOEXEC == 0
+		fcntl(t, F_SETFD, FD_CLOEXEC);
+#endif
 		Mfprintf(_mero_logfile, "%s END merovingian[" LLFMT "]: "
 				"caught SIGHUP, closing logfile\n",
 				mytime, (long long int)_mero_topdp->next->pid);

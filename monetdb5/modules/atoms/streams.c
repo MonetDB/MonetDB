@@ -214,13 +214,13 @@ mnstr_read_stringwrap(str *res, Stream *S)
 	char *buf = GDKmalloc(size), *start = buf, *tmp;
 
 	if( buf == NULL)
-		throw(MAL,"mnstr_read_stringwrap",MAL_MALLOC_FAIL);
+		throw(MAL,"mnstr_read_stringwrap", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	while ((len = mnstr_read(s, start, 1, CHUNK)) > 0) {
 		size += len;
 		tmp = GDKrealloc(buf, size);
 		if (tmp == NULL) {
 			GDKfree(buf);
-			throw(MAL,"mnstr_read_stringwrap",MAL_MALLOC_FAIL);
+			throw(MAL,"mnstr_read_stringwrap", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		buf = tmp;
 		start = buf + size - CHUNK - 1;

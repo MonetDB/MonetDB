@@ -33,9 +33,11 @@ stderr of test 'duplicate_primary_keys.Bug-3474` in directory 'sql/test/BugTrack
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into x values ('FIAM','HHZ', '2010-04-25T14:00:00.000');
 ERROR = !INSERT INTO: PRIMARY KEY constraint 'x.x_a_b_c_pkey' violated
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into x (select * from y);
 ERROR = !INSERT INTO: PRIMARY KEY constraint 'x.x_a_b_c_pkey' violated
+CODE  = M0M29
 
 # 14:51:59 >  
 # 14:51:59 >  "Done."

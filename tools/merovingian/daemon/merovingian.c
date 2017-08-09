@@ -80,6 +80,13 @@
 #include "argvcmds.h"
 #include "multiplex-funnel.h"
 
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
+#endif
+#ifndef F_DUPFD_CLOEXEC
+#define F_DUPFD_CLOEXEC F_DUPFD
+#endif
+
 
 /* private structs */
 
@@ -467,11 +474,12 @@ main(int argc, char *argv[])
 				if (setsid() < 0)
 					Mfprintf(stderr, "hmmm, can't detach from controlling tty, "
 							"continuing anyway\n");
-				retfd = open("/dev/null", O_RDONLY);
+				retfd = open("/dev/null", O_RDONLY | O_CLOEXEC);
 				dup2(retfd, 0);
 				close(retfd);
 				close(pfd[0]); /* close unused read end */
 				retfd = pfd[1]; /* store the write end */
+				fcntl(retfd, F_SETFD, FD_CLOEXEC);
 			break;
 			default:
 				/* the parent, we want it to die, after we know the child
@@ -654,13 +662,16 @@ main(int argc, char *argv[])
 	/* where should our msg output go to? */
 	p = getConfVal(_mero_props, "logfile");
 	/* write to the given file */
-	_mero_topdp->out = open(p, O_WRONLY | O_APPEND | O_CREAT,
+	_mero_topdp->out = open(p, O_WRONLY | O_APPEND | O_CREAT | O_CLOEXEC,
 			S_IRUSR | S_IWUSR);
 	if (_mero_topdp->out == -1) {
 		Mfprintf(stderr, "unable to open '%s': %s\n",
 				p, strerror(errno));
 		MERO_EXIT_CLEAN(1);
 	}
+#if O_CLOEXEC == 0
+	fcntl(_mero_topdp->out, F_SETFD, FD_CLOEXEC);
+#endif
 	_mero_topdp->err = _mero_topdp->out;
 
 	_mero_logfile = fdopen(_mero_topdp->out, "a");
@@ -676,6 +687,7 @@ main(int argc, char *argv[])
 	d->out = pfd[0];
 	dup2(pfd[1], 1);
 	close(pfd[1]);
+	fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
 
 	/* redirect stderr */
 	if (pipe(pfd) == -1) {
@@ -684,8 +696,12 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 	}
 	/* before it is too late, save original stderr */
-	oerr = fdopen(dup(2), "w");
+	oerr = fdopen(fcntl(2, F_DUPFD_CLOEXEC), "w");
+#if F_DUPFD_CLOEXEC == F_DUPFD
+	fcntl(fileno(oerr), F_SETFD, FD_CLOEXEC);
+#endif
 	d->err = pfd[0];
+	fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
 	dup2(pfd[1], 2);
 	close(pfd[1]);
 
@@ -701,6 +717,8 @@ main(int argc, char *argv[])
 				strerror(errno));
 		MERO_EXIT(1);
 	}
+	fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
+	fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
 	d->out = pfd[0];
 	_mero_discout = fdopen(pfd[1], "a");
 	if (pipe(pfd) == -1) {
@@ -708,6 +726,8 @@ main(int argc, char *argv[])
 				strerror(errno));
 		MERO_EXIT(1);
 	}
+	fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
+	fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
 	d->err = pfd[0];
 	_mero_discerr = fdopen(pfd[1], "a");
 	d->pid = getpid();
@@ -723,6 +743,8 @@ main(int argc, char *argv[])
 				strerror(errno));
 		MERO_EXIT(1);
 	}
+	fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
+	fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
 	d->out = pfd[0];
 	_mero_ctlout = fdopen(pfd[1], "a");
 	if (pipe(pfd) == -1) {
@@ -730,6 +752,8 @@ main(int argc, char *argv[])
 				strerror(errno));
 		MERO_EXIT(1);
 	}
+	fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
+	fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
 	d->err = pfd[0];
 	_mero_ctlerr = fdopen(pfd[1], "a");
 	d->pid = getpid();
@@ -824,6 +848,7 @@ main(int argc, char *argv[])
 				closesocket(discsock);
 				discsock = -1;
 			}
+			fcntl(_mero_broadcastsock, F_SETFD, FD_CLOEXEC);
 
 			_mero_broadcastaddr.sin_family = AF_INET;
 			_mero_broadcastaddr.sin_addr.s_addr = htonl(INADDR_BROADCAST);

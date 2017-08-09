@@ -138,18 +138,6 @@ stderr of test 'ssbm` in directory 'sql/test/remote` itself:
 # cmdline opt 	mapi_port = 33166
 # cmdline opt 	gdk_dbpath = /tmp/remotetest/worker_4/worker_4
 # cmdline opt 	gdk_debug = 536870922
-Traceback (most recent call last):
-  File "ssbm.SQL.py", line 193, in <module>
-    c.execute("select * from lineorder where lo_orderkey=356")
-  File "/ufs/mk/.local/lib/python2.7/site-packages/pymonetdb/sql/cursors.py", line 164, in execute
-    block = self.connection.execute(query)
-  File "/ufs/mk/.local/lib/python2.7/site-packages/pymonetdb/sql/connections.py", line 133, in execute
-    return self.command('s' + query + ';')
-  File "/ufs/mk/.local/lib/python2.7/site-packages/pymonetdb/sql/connections.py", line 138, in command
-    return self.mapi.cmd(command)
-  File "/ufs/mk/.local/lib/python2.7/site-packages/pymonetdb/mapi.py", line 221, in cmd
-    raise exception(string)
-pymonetdb.exceptions.OperationalError: bad tseqbase value: 9223372036854775808
 
 # 20:00:49 >  
 # 20:00:49 >  "Done."

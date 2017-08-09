@@ -369,7 +369,7 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int 
 #else
 		regfree(&re);
 #endif
-		throw(MAL, "pcre.likeselect", MAL_MALLOC_FAIL);
+		throw(MAL, "pcre.likeselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	off = b->hseqbase;
 
@@ -457,14 +457,14 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int an
 
 	bn = COLnew(0, TYPE_oid, s ? BATcount(s) : BATcount(b), TRANSIENT);
 	if (bn == NULL)
-		throw(MAL, "pcre.likeselect", MAL_MALLOC_FAIL);
+		throw(MAL, "pcre.likeselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	off = b->hseqbase;
 
 	if (!use_strcmp) {
 		nr = re_simple(pat);
 		re = re_create(pat, nr);
 		if (!re)
-			throw(MAL, "pcre.likeselect", MAL_MALLOC_FAIL);
+			throw(MAL, "pcre.likeselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	if (s && !BATtdense(s)) {
 		const oid *candlist;
@@ -627,7 +627,7 @@ pcre_replace(str *res, const char *origin_str, const char *pattern, const char *
 	ovecsize = (i + 1) * 3;
 	if ((ovector = (int *) GDKmalloc(sizeof(int) * ovecsize)) == NULL) {
 		my_pcre_free(pcre_code);
-		throw(MAL, "pcre_replace",MAL_MALLOC_FAIL);
+		throw(MAL, "pcre_replace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	i = 0;
@@ -650,7 +650,7 @@ pcre_replace(str *res, const char *origin_str, const char *pattern, const char *
 		if (!tmpres) {
 			my_pcre_free(pcre_code);
 			GDKfree(ovector);
-			throw(MAL, "pcre_replace", MAL_MALLOC_FAIL);
+			throw(MAL, "pcre_replace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 
 		j = k = 0;
@@ -745,14 +745,14 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 	ovecsize = (i + 1) * 3;
 	if ((ovector = (int *) GDKzalloc(sizeof(int) * ovecsize)) == NULL) {
 		my_pcre_free(pcre_code);
-		throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
+		throw(MAL, "pcre_replace_bat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	tmpbat = COLnew(origin_strs->hseqbase, TYPE_str, BATcount(origin_strs), TRANSIENT);
 	if( tmpbat==NULL) {
 		my_pcre_free(pcre_code);
 		GDKfree(ovector);
-		throw(MAL,"pcre.replace",MAL_MALLOC_FAIL);
+		throw(MAL,"pcre.replace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(origin_strs, p, q) {
 		origin_str = BUNtail(origin_strsi, p);
@@ -778,7 +778,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 				pcre_free_study(extra);
 				GDKfree(ovector);
 				BBPreclaim(tmpbat);
-				throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
+				throw(MAL, "pcre_replace_bat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 
 			j = k = 0;
@@ -813,7 +813,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 				GDKfree(ovector);
 				GDKfree(replaced_str);
 				BBPreclaim(tmpbat);
-				throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
+				throw(MAL, "pcre_replace_bat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			GDKfree(replaced_str);
 		} else { /* no captured substrings, copy the original string into new bat */
@@ -822,7 +822,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 				pcre_free_study(extra);
 				GDKfree(ovector);
 				BBPreclaim(tmpbat);
-				throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
+				throw(MAL, "pcre_replace_bat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 		}
 	}
@@ -965,7 +965,7 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 		throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);
 	ppat = GDKmalloc(strlen(pat)*2+3 /* 3 = "^'the translated regexp'$0" */);
 	if (ppat == NULL)
-		throw(MAL, "pcre.sql2pcre", MAL_MALLOC_FAIL);
+		throw(MAL, "pcre.sql2pcre", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	*r = ppat;
 	/* The escape character can be a char which is special in a PCRE
@@ -1036,7 +1036,7 @@ pat2pcre(str *r, const char *pat)
 	int start = 0;
 
 	if (ppat == NULL)
-		throw(MAL, "pcre.sql2pcre", MAL_MALLOC_FAIL);
+		throw(MAL, "pcre.sql2pcre", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	*r = ppat;
 	while (*pat) {
 		int c = *pat++;
@@ -1142,7 +1142,7 @@ PCREquote(str *ret, const str *val)
 
 	*ret = p = GDKmalloc(strlen(s) * 2 + 1); /* certainly long enough */
 	if (p == NULL)
-		throw(MAL, "pcre.quote", MAL_MALLOC_FAIL);
+		throw(MAL, "pcre.quote", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	/* quote all non-alphanumeric ASCII characters (i.e. leave
 	   non-ASCII and alphanumeric alone) */
 	while (*s) {
@@ -1291,7 +1291,7 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 		r = COLnew(strs->hseqbase, TYPE_bit, BATcount(strs), TRANSIENT);
 		if( r==NULL) {
 			GDKfree(ppat);
-			throw(MAL,"pcre.like3",MAL_MALLOC_FAIL);
+			throw(MAL,"pcre.like3", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		br = (bit*)Tloc(r, 0);
 		strsi = bat_iterator(strs);
@@ -1498,7 +1498,7 @@ PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 			if (*caseignore) {
 				ppat = GDKmalloc(strlen(*pat) + 3);
 				if (ppat == NULL)
-					throw(MAL, "algebra.likeselect", MAL_MALLOC_FAIL);
+					throw(MAL, "algebra.likeselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				ppat[0] = '^';
 				strcpy(ppat + 1, *pat);
 				strcat(ppat, "$");
@@ -1666,7 +1666,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		if (*esc == 0 && (nr = re_simple(vr)) > 0) {
 			re = re_create(vr, nr);
 			if (re == NULL) {
-				msg = createException(MAL, "pcre.join", MAL_MALLOC_FAIL);
+				msg = createException(MAL, "pcre.join", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
 		} else {
@@ -1679,7 +1679,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				if (caseignore) {
 					pcrepat = GDKmalloc(strlen(vr) + 3);
 					if (pcrepat == NULL) {
-						msg = createException(MAL, "pcre.join", MAL_MALLOC_FAIL);
+						msg = createException(MAL, "pcre.join", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 						goto bailout;
 					}
 					sprintf(pcrepat, "^%s$", vr);
@@ -1762,7 +1762,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				BATsetcount(r2, BATcount(r2));
 				if (BATextend(r1, newcap) != GDK_SUCCEED ||
 					BATextend(r2, newcap) != GDK_SUCCEED) {
-					msg = createException(MAL, "pcre.join", MAL_MALLOC_FAIL);
+					msg = createException(MAL, "pcre.join", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 					goto bailout;
 				}
 				assert(BATcapacity(r1) == BATcapacity(r2));
@@ -1870,7 +1870,7 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid,
 	result1 = COLnew(0, TYPE_oid, BATcount(left), TRANSIENT);
 	result2 = COLnew(0, TYPE_oid, BATcount(left), TRANSIENT);
 	if (result1 == NULL || result2 == NULL) {
-		msg = createException(MAL, "pcre.join", MAL_MALLOC_FAIL);
+		msg = createException(MAL, "pcre.join", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto fail;
 	}
 	result1->tnil = 0;

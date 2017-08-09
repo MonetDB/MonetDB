@@ -26,13 +26,13 @@ Ready.
 # 09:53:35 >  
 
 #SELECT ST_NumPoints(ST_GeomFromText('LINESTRING(77.29 29.07,77.42 29.26,77.27 29.31,77.29 29.07)'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 4	]
 #select st_numPoints(geom) AS "POINTS" from geometries where id in (2,3,4);
-% sys.L1 # table_name
+% sys.L2 # table_name
 % POINTS # name
 % int # type
 % 1 # length

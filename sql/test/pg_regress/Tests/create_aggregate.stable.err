@@ -37,20 +37,23 @@ QUERY = CREATE AGGREGATE newavg (
         );
 ERROR = !syntax error, unexpected '=' in: "create aggregate newavg (
         !   sfunc ="
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = CREATE AGGREGATE newsum (
            sfunc1 = int4pl, basetype = integer, stype1 = integer, 
            initcond1 = '0'
         );
 ERROR = !syntax error, unexpected '=' in: "create aggregate newsum (
         !   sfunc1 ="
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = CREATE AGGREGATE newcnt (
            sfunc = int4inc, basetype = 'any', stype = integer,
            initcond = '0'
         );
 ERROR = !syntax error, unexpected '=' in: "create aggregate newcnt (
         !   sfunc ="
+CODE  = 42000
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

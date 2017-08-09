@@ -188,6 +188,27 @@ Ready.
 [ 2039-04-09,	9	]
 [ 2040-04-10,	10	]
 [ NULL,	NULL	]
+#SELECT f1, extract(week from f1) FROM DATE_TBL;
+% sys.date_tbl,	sys.L3 # table_name
+% f1,	L3 # name
+% date,	int # type
+% 10,	2 # length
+[ 1957-04-09,	15	]
+[ 1957-06-13,	24	]
+[ 1996-02-28,	9	]
+[ 1996-02-29,	9	]
+[ 1996-03-01,	9	]
+[ 1996-03-02,	9	]
+[ 1997-02-28,	9	]
+[ 1997-03-01,	9	]
+[ 1997-03-02,	9	]
+[ 2000-04-01,	13	]
+[ 2000-04-02,	13	]
+[ 2000-04-03,	14	]
+[ 2038-04-08,	14	]
+[ 2039-04-09,	14	]
+[ 2040-04-10,	15	]
+[ NULL,	NULL	]
 #SELECT f1, extract(month from f1) FROM DATE_TBL;
 % sys.date_tbl,	sys.L3 # table_name
 % f1,	L3 # name
@@ -208,6 +229,27 @@ Ready.
 [ 2038-04-08,	4	]
 [ 2039-04-09,	4	]
 [ 2040-04-10,	4	]
+[ NULL,	NULL	]
+#SELECT f1, extract(quarter from f1) FROM DATE_TBL;
+% sys.date_tbl,	sys.L3 # table_name
+% f1,	L3 # name
+% date,	int # type
+% 10,	1 # length
+[ 1957-04-09,	2	]
+[ 1957-06-13,	2	]
+[ 1996-02-28,	1	]
+[ 1996-02-29,	1	]
+[ 1996-03-01,	1	]
+[ 1996-03-02,	1	]
+[ 1997-02-28,	1	]
+[ 1997-03-01,	1	]
+[ 1997-03-02,	1	]
+[ 2000-04-01,	2	]
+[ 2000-04-02,	2	]
+[ 2000-04-03,	2	]
+[ 2038-04-08,	2	]
+[ 2039-04-09,	2	]
+[ 2040-04-10,	2	]
 [ NULL,	NULL	]
 #SELECT f1, extract(year from f1) FROM DATE_TBL;
 % sys.date_tbl,	sys.L3 # table_name

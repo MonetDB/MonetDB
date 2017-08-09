@@ -27,9 +27,10 @@ stderr of test 'bincopycollist` in directory 'sql/test` itself:
 # 17:04:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-69867" "--port=34187"
 # 17:04:52 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-69867/.s.monetdb.34187
-QUERY = COPY BINARY INTO intvals (a) FROM ('/Users/myth/opt/mTests/sql/test/bincopyint.bin');
+MAPI  = (monetdb) /var/tmp/mtest-19293/.s.monetdb.33928
+QUERY = COPY BINARY INTO intvals (a) FROM ('/net/methuselah/export/scratch2/sjoerd/bin/candidate/mTests/sql/test/bincopyint.bin');
 ERROR = !COPY BINARY INTO: no such column 'intvals.a'
+CODE  = 42S22
 
 # 17:04:53 >  
 # 17:04:53 >  "Done."

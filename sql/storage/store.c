@@ -201,7 +201,6 @@ sql_trans_destroy(sql_trans *t)
 {
 	sql_trans *res = t->parent;
 
-	transactions--;
 #ifdef STORE_DEBUG
 	fprintf(stderr, "#destroy trans (%p)\n", t);
 #endif
@@ -221,6 +220,7 @@ sql_trans_destroy(sql_trans *t)
 	cs_destroy(&t->schemas);
 	sa_destroy(t->sa);
 	_DELETE(t);
+	transactions--;
 	return res;
 }
 
@@ -484,7 +484,10 @@ load_trigger(sql_trans *tr, sql_table *t, oid rid)
 	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), v) != 0)
 		nt->condition = sa_strdup(tr->sa, v);
 	_DELETE(v);	
-	nt->statement = table_funcs.column_find_value(tr, find_sql_column(triggers, "statement"), rid);
+	v = table_funcs.column_find_value(tr, find_sql_column(triggers, "statement"), rid);
+	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), v) != 0) 
+		nt->statement = sa_strdup(tr->sa, v);
+	_DELETE(v);
 
 	nt->t = t;
 	nt->columns = list_new(tr->sa, (fdestroy) NULL);
@@ -1435,6 +1438,7 @@ store_load(void) {
 
 	sequences_init();
 	gtrans = tr = create_trans(sa, backend_stk);
+	transactions = 0;
 	active_sessions = sa_list(sa);
 
 	if (logger_funcs.log_isnew()) {
@@ -3515,7 +3519,6 @@ sql_trans_create(backend_stack stk, sql_trans *parent, const char *name)
 {
 	sql_trans *tr = NULL;
 
-	transactions++;
 	if (gtrans) {
 		if (!parent && spares > 0 && !name) {
 			tr = spare_trans[--spares];
@@ -3527,6 +3530,7 @@ sql_trans_create(backend_stack stk, sql_trans *parent, const char *name)
 #ifdef STORE_DEBUG
 			fprintf(stderr, "#new trans (%p)\n", tr);
 #endif
+			transactions++;
 		}
 	}
 	return tr;

@@ -15,9 +15,12 @@ stderr of test 'delete_primarykey_1643845` in directory 'sql/test/BugConstraints
 MAPI  = monetdb@sofia:39182
 QUERY = insert into t2 values(2,33);
 ERROR = !INSERT INTO: FOREIGN KEY constraint 't2.t2_id_f_fkey' violated
-MAPI  = monetdb@sofia:39182
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = delete from t1 where id = 1;
 ERROR = !DELETE: FOREIGN KEY constraint 't2.t2_id_f_fkey' violated
+CODE  = M0M29
+
 
 # 12:55:04 >  
 # 12:55:04 >  Done.

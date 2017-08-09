@@ -13,18 +13,23 @@ stderr of test 'create_in_schema` in directory 'sql/test` itself:
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from bla3;	-- should fail
 ERROR = !SELECT: no such table 'bla3'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop view tmp.v_bla5;
 ERROR = !DROP VIEW: unknown view 'v_bla5'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop view v_bla4;	-- should fail
 ERROR = !DROP VIEW: unknown view 'v_bla4'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop table sys.bla4;	-- should fail
 ERROR = !DROP TABLE: no such table 'bla4'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop table bla3;	-- should fail
 ERROR = !DROP TABLE: no such table 'bla3'
+CODE  = 42S02
 
 # 15:21:45 >  
 # 15:21:45 >  Done.

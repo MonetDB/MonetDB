@@ -6,7 +6,7 @@ HAVE_JDBCTESTS?Test_Creplysize
 HAVE_JDBCTESTS?Test_Csavepoints
 #HAVE_JDBCTESTS?Test_Csendthread  # unfortunately has runtime-dependant output
 HAVE_JDBCTESTS?Test_Ctransaction
-HAVE_JDBCTESTS&HAVE_NETCDF&HAVE_GEOM?Test_Dobjects
+HAVE_JDBCTESTS?Test_Dobjects
 HAVE_JDBCTESTS?Test_FetchSize
 HAVE_JDBCTESTS&HAVE_HGE?Test_Int128
 HAVE_JDBCCLIENT_JAR?Test_JdbcClient
@@ -37,3 +37,4 @@ HAVE_JDBCTESTS?BugDatabaseMetaData_Bug_3356
 HAVE_JDBCTESTS?BugSetQueryTimeout_Bug_3357
 HAVE_JDBCTESTS?BugDecimalRound_Bug_3561
 HAVE_JDBCTESTS?BugResultSetMetaData_Bug_6183
+HAVE_JDBCTESTS?Bug_PrepStmtSetObject_CLOB_6349
