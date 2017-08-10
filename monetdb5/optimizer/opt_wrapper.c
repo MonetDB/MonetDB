@@ -21,6 +21,7 @@
  * The optimizer used so far
 */
 #include "opt_aliases.h"
+#include "opt_batcalc.h"
 #include "opt_coercion.h"
 #include "opt_commonTerms.h"
 #include "opt_candidates.h"
@@ -58,6 +59,7 @@ struct{
 	lng timing;
 } codes[] = {
 	{"aliases", &OPTaliasesImplementation,0,0},
+	{"batcalc", &OPTbatcalcImplementation,0,0},
 	{"candidates", &OPTcandidatesImplementation,0,0},
 	{"coercions", &OPTcoercionImplementation,0,0},
 	{"commonTerms", &OPTcommonTermsImplementation,0,0},
@@ -150,7 +152,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			break;	
 		}
 	if (codes[i].nme == 0)
-		throw(MAL, optimizer, "Optimizer implementation '%s' missing", fcnnme);
+		throw(MAL, optimizer, "Optimizer implementation '%s' missing", optimizer);
 
 	OPTIMIZERDEBUG {
 		fprintf(stderr,"=FINISHED %s  %d\n",optimizer, actions);

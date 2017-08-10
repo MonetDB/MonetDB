@@ -28,6 +28,7 @@ struct OPTcatalog {
 	int actions;
 } optcatalog[]= {
 {"aliases",		0,	0,	0},
+{"batcalc",		0,	0,	0},
 {"coercions",	0,	0,	0},
 {"commonTerms",	0,	0,	0},
 {"constants",	0,	0,	0},

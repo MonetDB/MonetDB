@@ -22,6 +22,14 @@ pattern optimizer.coercions(mod:str, fcn:str):str
 address OPTwrapper
 comment "Handle simple type coercions";
 
+#opt_coercions.mal
+
+pattern optimizer.batcalc():str
+address OPTwrapper;
+pattern optimizer.batcalc(mod:str, fcn:str):str
+address OPTwrapper
+comment "Merge projections into the arithmetic";
+
 #opt_commonTerms.mal
 
 pattern optimizer.commonTerms():str
