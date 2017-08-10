@@ -29,23 +29,23 @@ stderr of test 'factory00` in directory 'sql/backends/monet5` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-14113/.s.monetdb.37491
 QUERY = SELECT factory1(); --error
-
+ERROR = !The factory has ended
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-14113/.s.monetdb.37491
 QUERY = SELECT factory2(); --error
-
+ERROR = !The factory has ended
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-14113/.s.monetdb.37491
 QUERY = SELECT factory3(); --error
-
+ERROR = !The factory has ended
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-14113/.s.monetdb.37491
 QUERY = SELECT factory4(); --error
-
+ERROR = !The factory has ended
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-14113/.s.monetdb.37491
 QUERY = SELECT factory5(); --error
-
+ERROR = !The factory has ended
 CODE  = 42000
 
 # 14:39:53 >  

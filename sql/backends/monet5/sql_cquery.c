@@ -470,12 +470,13 @@ CQanalysis(Client cntxt, MalBlkPtr mb, int idx)
 str
 CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 {
-	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
 	str msg = MAL_SUCCEED;
 	InstrPtr sig = getInstrPtr(mb,0),q;
 	MalBlkPtr other;
 	Symbol s;
 	CQnode *pnew;
+	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
+	char* err_message = (sqlcontext && sqlcontext->continuous & mod_continuous_function) ? "function" : "procedure";
 	int i, j, cycles = sqlcontext ? sqlcontext->cycles : DEFAULT_CP_CYCLES;
 	lng heartbeats = sqlcontext ? sqlcontext->heartbeats : DEFAULT_CP_HEARTBEAT;
 
@@ -497,8 +498,8 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 			break;
 	}
 	if( i == mb->stop){
-		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Cannot detect procedure call %s.%s.\n",
-							  getModuleId(sig), getFunctionId(sig));
+		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Cannot detect %s call %s.%s.\n",
+							  err_message, getModuleId(sig), getFunctionId(sig));
 		goto finish;
 	}
 
@@ -520,8 +521,8 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	// access the actual procedure body
 	s = findSymbol(cntxt->usermodule, getModuleId(sig), getFunctionId(sig));
 	if ( s == NULL){
-		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Cannot find procedure %s.%s.\n",
-							  getModuleId(sig), getFunctionId(sig));
+		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Cannot find %s %s.%s.\n",
+							  err_message, getModuleId(sig), getFunctionId(sig));
 		goto unlock;
 	}
 	if((msg = CQanalysis(cntxt, s->def, pnettop)) != MAL_SUCCEED) {
@@ -614,10 +615,11 @@ finish:
 static str
 CQresumeInternal(Client cntxt, MalBlkPtr mb, int with_alter)
 {
-	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
 	str msg = MAL_SUCCEED, mb2str = NULL;
 	int idx = 0, j, cycles = DEFAULT_CP_CYCLES;
 	lng heartbeats = DEFAULT_CP_HEARTBEAT;
+	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
+	char* err_message = (sqlcontext && sqlcontext->continuous & mod_continuous_function) ? "function" : "procedure";
 
 #ifdef DEBUG_CQUERY
 	fprintf(stderr, "#resume scheduler\n");
@@ -643,12 +645,12 @@ CQresumeInternal(Client cntxt, MalBlkPtr mb, int with_alter)
 	}
 	if( idx == pnettop) {
 		msg = createException(SQL, "cquery.resume",
-							  SQLSTATE(42000) "The continuous procedure %s has not yet started\n", mb2str);
+							  SQLSTATE(42000) "The continuous %s %s has not yet started\n", mb2str, err_message);
 		goto unlock;
 	}
 	if( pnet[idx].status != CQPAUSE) {
 		msg = createException(SQL, "cquery.resume",
-							  SQLSTATE(42000) "The continuous procedure %s is already running\n", mb2str);
+							  SQLSTATE(42000) "The continuous %s %s is already running\n", mb2str, err_message);
 		goto unlock;
 	}
 	if(with_alter && heartbeats != NO_HEARTBEAT) {
@@ -685,6 +687,8 @@ CQresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, k =-1;
 	InstrPtr q;
+	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
+	char* err_message = (sqlcontext && sqlcontext->continuous & mod_continuous_function) ? "function" : "procedure";
 	(void) stk;
 	(void) pci;
 
@@ -700,8 +704,8 @@ CQresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if( k >= 0 )
 		return CQresumeInternal(cntxt, mb, 1);
-	throw(SQL,"cquery.resume",SQLSTATE(3F000) "The continuous procedure %s.%s was not found\n",
-			getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
+	throw(SQL,"cquery.resume",SQLSTATE(3F000) "The continuous %s %s.%s was not found\n",
+			err_message, getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
 }
 
 str
@@ -709,6 +713,8 @@ CQresumeNoAlter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, k =-1;
 	InstrPtr q;
+	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
+	char* err_message = (sqlcontext && sqlcontext->continuous & mod_continuous_function) ? "function" : "procedure";
 	(void) stk;
 	(void) pci;
 
@@ -724,8 +730,8 @@ CQresumeNoAlter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if( k >= 0 )
 		return CQresumeInternal(cntxt, mb, 0);
-	throw(SQL,"cquery.resume",SQLSTATE(3F000) "The continuous procedure %s.%s was not found\n",
-			getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
+	throw(SQL,"cquery.resume",SQLSTATE(3F000) "The continuous %s %s.%s was not found\n",
+			err_message, getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
 }
 
 str
@@ -761,7 +767,7 @@ CQresumeAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-CQpauseInternal(MalBlkPtr mb)
+CQpauseInternal(MalBlkPtr mb, char* err_message)
 {
 	int idx = 0;
 	str msg = MAL_SUCCEED, mb2str = NULL;
@@ -772,12 +778,12 @@ CQpauseInternal(MalBlkPtr mb)
 	}
 	if( idx == pnettop) {
 		msg = createException(SQL, "cquery.pause",
-							  SQLSTATE(42000) "The continuous procedure %s has not yet started\n", mb2str);
+							  SQLSTATE(42000) "The continuous %s %s has not yet started\n", mb2str, err_message);
 		goto finish;
 	}
 	if( pnet[idx].status == CQPAUSE) {
 		msg = createException(SQL, "cquery.pause",
-							  SQLSTATE(42000) "The continuous procedure %s is already paused\n", mb2str);
+							  SQLSTATE(42000) "The continuous %s %s is already paused\n", mb2str, err_message);
 		goto finish;
 	}
 	// actually wait if the query was running
@@ -802,7 +808,8 @@ CQpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,k = -1;
 	InstrPtr q;
-	(void) cntxt;
+	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
+	char* err_message = (sqlcontext && sqlcontext->continuous & mod_continuous_function) ? "function" : "procedure";
 	(void) stk;
 	(void) pci;
 
@@ -816,9 +823,9 @@ CQpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	if( k >= 0)
-		return CQpauseInternal(mb);
-	throw(SQL,"cquery.pause",SQLSTATE(3F000) "The continuous procedure %s.%s was not found\n",
-			getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
+		return CQpauseInternal(mb, err_message);
+	throw(SQL,"cquery.pause",SQLSTATE(3F000) "The continuous %s %s.%s was not found\n",
+			err_message, getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
 }
 
 str
@@ -963,7 +970,7 @@ CQwait(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 /*Remove a specific continuous query from the scheduler */
 
 static str
-CQderegisterInternal(MalBlkPtr mb)
+CQderegisterInternal(MalBlkPtr mb, char* err_message)
 {
 	int idx = 0;
 	str msg = MAL_SUCCEED, mb2str = NULL;
@@ -974,7 +981,7 @@ CQderegisterInternal(MalBlkPtr mb)
 	}
 	if(idx == pnettop) {
 		msg = createException(SQL, "cquery.deregister",
-							  SQLSTATE(42000) "The continuous procedure %s has not yet started\n", mb2str);
+							  SQLSTATE(42000) "The continuous %s %s has not yet started\n", mb2str, err_message);
 		goto finish;
 	}
 	pnet[idx].status = CQSTOP;
@@ -1000,7 +1007,8 @@ CQderegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, k= -1;
 	InstrPtr q;
-	(void) cntxt;
+	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
+	char* err_message = (sqlcontext && sqlcontext->continuous & mod_continuous_function) ? "function" : "procedure";
 	(void) stk;
 	(void) pci;
 
@@ -1014,9 +1022,9 @@ CQderegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	if( k>= 0 )
-		return CQderegisterInternal(mb);
-	throw(SQL,"cquery.deregister",SQLSTATE(3F000) "The continuous procedure %s.%s was not found\n",
-			getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
+		return CQderegisterInternal(mb, err_message);
+	throw(SQL,"cquery.deregister",SQLSTATE(3F000) "The continuous %s %s.%s was not found\n",
+			err_message, getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
 }
 
 str

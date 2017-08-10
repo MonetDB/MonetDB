@@ -145,9 +145,7 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_CREATE_TYPE:
 	case SQL_DROP_TYPE:
 
-	case SQL_STOP_ALL:
-	case SQL_PAUSE_ALL:
-	case SQL_RESUME_ALL:
+	case SQL_ALL_CONTINUOUS_QUERIES:
 		return rel_schemas(sql, s);
 
 	case SQL_CREATE_SEQ:
@@ -159,11 +157,7 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_DROP_FUNC:
 	case SQL_DECLARE:
 	case SQL_CALL:
-	case SQL_START_CALL:
-	case SQL_STOP_CALL:
-	case SQL_PAUSE_CALL:
-	case SQL_RESUME_ALTER_CALL:
-	case SQL_RESUME_NO_ALTER_CALL:
+	case SQL_SINGLE_CONTINUOUS_QUERY:
 	case SQL_SET:
 
 	case SQL_CREATE_TABLE_LOADER:

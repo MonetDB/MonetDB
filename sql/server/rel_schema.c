@@ -2219,9 +2219,7 @@ rel_schemas(mvc *sql, symbol *s)
 		dlist *l = s->data.lval;
 		ret = rel_drop_type(sql, l->h->data.lval, l->h->next->data.i_val);
 	} 	break;
-	case SQL_STOP_ALL:
-	case SQL_PAUSE_ALL:
-	case SQL_RESUME_ALL:
+	case SQL_ALL_CONTINUOUS_QUERIES:
 		ret = rel_continuous_queries(sql, s->data.i_val);
 		break;
 	default:

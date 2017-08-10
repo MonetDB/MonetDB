@@ -181,7 +181,7 @@ int yydebug=1;
 	select_statement_single_row
 	call_statement
 	call_procedure_statement
-	continuous_procedure_statement
+	continuous_query_statement
 	routine_invocation
 	yield_statement
 	return_statement
@@ -448,6 +448,7 @@ int yydebug=1;
 	nonzero
 	stream_window_set
 	stream_stride_set
+	database_object
 	cycles_set
 	opt_bounds
 	opt_column
@@ -2123,11 +2124,17 @@ call_statement:
 
 call_procedure_statement:
 	CALL func_ref		 				{ $$ = _symbol_create_symbol(SQL_CALL, $2);}
-	| continuous_procedure_statement
+	| continuous_query_statement
+	;
+
+database_object:
+	  /* empty */ { $$ = mod_continuous_procedure; }
+	| PROCEDURE   { $$ = mod_continuous_procedure; }
+	| FUNCTION    { $$ = mod_continuous_function; }
 	;
 
 heartbeat_set:
-	  /* empty */ { $$ = DEFAULT_CP_HEARTBEAT; } /* CQ never triggered by time */
+	  /* empty */      { $$ = DEFAULT_CP_HEARTBEAT; } /* CQ never triggered by time */
 	| HEARTBEAT intval { $$ = $2; }
 	;
 
@@ -2136,37 +2143,55 @@ cycles_set:
 	| CYCLES intval { $$ = $2; }
 	;
 
-continuous_procedure_statement:
-	START_CONTINUOUS func_ref WITH heartbeat_set cycles_set
+continuous_query_statement:
+	START_CONTINUOUS database_object func_ref WITH heartbeat_set cycles_set
 		{ dlist *l = L();
-		  append_symbol( l, $2);
-		  append_lng( l, $4);
-		  append_int( l, $5);
-		  $$ = _symbol_create_list( SQL_START_CALL, l ); }
-	| START_CONTINUOUS func_ref
+		  append_int( l, mod_start_continuous);
+		  append_int( l, $2);
+		  append_symbol( l, $3);
+		  append_lng( l, $5);
+		  append_int( l, $6);
+		  $$ = _symbol_create_list( SQL_SINGLE_CONTINUOUS_QUERY, l ); }
+	| START_CONTINUOUS database_object func_ref
 		{ dlist *l = L();
-		  append_symbol( l, $2);
+		  append_int( l, mod_start_continuous);
+		  append_int( l, $2);
+		  append_symbol( l, $3);
 		  append_lng( l, DEFAULT_CP_HEARTBEAT);
 		  append_int( l, DEFAULT_CP_CYCLES);
-		  $$ = _symbol_create_list( SQL_START_CALL, l ); }
-	| STOP_CONTINUOUS func_ref
-		{ $$ = _symbol_create_symbol( SQL_STOP_CALL, $2 ); }
-	| PAUSE_CONTINUOUS func_ref
-		{ $$ = _symbol_create_symbol( SQL_PAUSE_CALL, $2 ); }
-	| RESUME_CONTINUOUS func_ref WITH heartbeat_set cycles_set
+		  $$ = _symbol_create_list( SQL_SINGLE_CONTINUOUS_QUERY, l ); }
+	| STOP_CONTINUOUS database_object func_ref
 		{ dlist *l = L();
-		  append_symbol( l, $2);
-		  append_lng( l, $4);
-		  append_int( l, $5);
-		  $$ = _symbol_create_list( SQL_RESUME_ALTER_CALL, l ); }
-	| RESUME_CONTINUOUS func_ref
-		{ $$ = _symbol_create_symbol( SQL_RESUME_NO_ALTER_CALL, $2 ); }
+		  append_int( l, mod_stop_continuous);
+		  append_int( l, $2);
+		  append_symbol( l, $3);
+		  $$ = _symbol_create_list( SQL_SINGLE_CONTINUOUS_QUERY, l ); }
+	| PAUSE_CONTINUOUS database_object func_ref
+		{ dlist *l = L();
+		  append_int( l, mod_pause_continuous);
+		  append_int( l, $2);
+		  append_symbol( l, $3);
+		  $$ = _symbol_create_list( SQL_SINGLE_CONTINUOUS_QUERY, l ); }
+	| RESUME_CONTINUOUS database_object func_ref WITH heartbeat_set cycles_set
+		{ dlist *l = L();
+		  append_int( l, mod_resume_continuous);
+		  append_int( l, $2);
+		  append_symbol( l, $3);
+		  append_lng( l, $5);
+		  append_int( l, $6);
+		  $$ = _symbol_create_list( SQL_SINGLE_CONTINUOUS_QUERY, l ); }
+	| RESUME_CONTINUOUS database_object func_ref
+		{ dlist *l = L();
+		  append_int( l, mod_resume_continuous_no_alter);
+		  append_int( l, $2);
+		  append_symbol( l, $3);
+		  $$ = _symbol_create_list( SQL_SINGLE_CONTINUOUS_QUERY, l ); }
 	| STOP ALL CONTINUOUS
-		{ $$ = _symbol_create_int( SQL_STOP_ALL, mod_stop_all_continuous ); }
+		{ $$ = _symbol_create_int( SQL_ALL_CONTINUOUS_QUERIES, mod_stop_all_continuous ); }
 	| PAUSE ALL CONTINUOUS
-		{ $$ = _symbol_create_int( SQL_PAUSE_ALL, mod_pause_all_continuous ); }
+		{ $$ = _symbol_create_int( SQL_ALL_CONTINUOUS_QUERIES, mod_pause_all_continuous ); }
 	| RESUME ALL CONTINUOUS
-		{ $$ = _symbol_create_int( SQL_RESUME_ALL, mod_resume_all_continuous ); }
+		{ $$ = _symbol_create_int( SQL_ALL_CONTINUOUS_QUERIES, mod_resume_all_continuous ); }
 
 routine_invocation: 
 	routine_name '(' argument_list ')'

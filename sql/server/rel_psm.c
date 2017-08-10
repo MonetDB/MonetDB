@@ -149,15 +149,17 @@ psm_set_exp(mvc *sql, dnode *n)
 }
 
 static sql_exp*
-rel_psm_call(mvc * sql, symbol *se)
+rel_psm_call(mvc * sql, symbol *se, int continuous_query)
 {
 	sql_subtype *t;
 	sql_exp *res = NULL;
-	exp_kind ek = {type_value, card_none, FALSE};
+	int card = (!continuous_query || continuous_query == mod_continuous_procedure) ? card_none : card_value;
+	exp_kind ek = {type_value, card, FALSE};
 	sql_rel *rel = NULL;
 
 	res = rel_value_exp(sql, &rel, se, sql_sel, ek);
-	if (!res || rel || ((t=exp_subtype(res)) && t->type))  /* only procedures */
+	/* only procedures or continuous queries */
+	if (!continuous_query && (!res || rel || ((t=exp_subtype(res)) && t->type)))
 		return sql_error(sql, 01, SQLSTATE(42000) "Function calls are ignored");
 	return res;
 }
@@ -629,34 +631,18 @@ sequential_block (mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk,
 			break;
 		case SQL_CALL:
 			sql->continuous = 0;
-			res = rel_psm_call(sql, s->data.sym);
+			res = rel_psm_call(sql, s->data.sym, 0);
 			break;
-		case SQL_START_CALL: {
+		case SQL_SINGLE_CONTINUOUS_QUERY: {
 			dlist *l = s->data.lval;
-			sql->continuous = mod_start_continuous;
-			sql->heartbeats = l->h->next->data.l_val;
-			sql->cycles = l->h->next->next->data.i_val;
-			res = rel_psm_call(sql, l->h->data.sym);
+			sql->continuous |= l->h->data.i_val; /*start, pause, resume or stop query? */
+			sql->continuous |= l->h->next->data.i_val; /* procedure or function? */
+			if((sql->continuous & mod_start_continuous) || (sql->continuous & mod_resume_continuous)) {
+				sql->heartbeats = l->h->next->next->next->data.l_val;
+				sql->cycles = l->h->next->next->next->next->data.i_val;
+			}
+			res = rel_psm_call(sql, l->h->next->next->data.sym, l->h->next->data.i_val);
 		}	break;
-		case SQL_RESUME_ALTER_CALL: {
-			dlist *l = s->data.lval;
-			sql->continuous = mod_resume_continuous;
-			sql->heartbeats = l->h->next->data.l_val;
-			sql->cycles = l->h->next->next->data.i_val;
-			res = rel_psm_call(sql, l->h->data.sym);
-		}	break;
-		case SQL_RESUME_NO_ALTER_CALL:
-			sql->continuous = mod_resume_continuous_no_alter;
-			res = rel_psm_call(sql, s->data.sym);
-			break;
-		case SQL_STOP_CALL:
-			sql->continuous = mod_stop_continuous;
-			res = rel_psm_call(sql, s->data.sym);
-			break;
-		case SQL_PAUSE_CALL:
-			sql->continuous = mod_pause_continuous;
-			res = rel_psm_call(sql, s->data.sym);
-			break;
 		case SQL_RETURN:
 		case SQL_YIELD:
 			/*If it is not a function it cannot have a return statement*/
@@ -1448,40 +1434,20 @@ rel_psm(mvc *sql, symbol *s)
 		sql->type = Q_SCHEMA;
 		break;
 	case SQL_CALL:
-		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, s->data.sym));
+		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, s->data.sym, 0));
 		sql->type = Q_UPDATE;
 		break;
-	case SQL_START_CALL: {
+	case SQL_SINGLE_CONTINUOUS_QUERY: {
 		dlist *l = s->data.lval;
-		sql->continuous = mod_start_continuous;
-		sql->heartbeats = l->h->next->data.l_val;
-		sql->cycles = l->h->next->next->data.i_val;
-		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, l->h->data.sym));
+		sql->continuous |= l->h->data.i_val; /*start, pause, resume or stop query? */
+		sql->continuous |= l->h->next->data.i_val; /* procedure or function? */
+		if((sql->continuous & mod_start_continuous) || (sql->continuous & mod_resume_continuous)) {
+			sql->heartbeats = l->h->next->next->next->data.l_val;
+			sql->cycles = l->h->next->next->next->next->data.i_val;
+		}
+		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, l->h->next->next->data.sym, l->h->next->data.i_val));
 		sql->type = Q_UPDATE;
 	}	break;
-	case SQL_RESUME_ALTER_CALL: {
-		dlist *l = s->data.lval;
-		sql->continuous = mod_resume_continuous;
-		sql->heartbeats = l->h->next->data.l_val;
-		sql->cycles = l->h->next->next->data.i_val;
-		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, l->h->data.sym));
-		sql->type = Q_UPDATE;
-	}	break;
-	case SQL_RESUME_NO_ALTER_CALL:
-		sql->continuous = mod_resume_continuous_no_alter;
-		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, s->data.sym));
-		sql->type = Q_UPDATE;
-		break;
-	case SQL_STOP_CALL:
-		sql->continuous = mod_stop_continuous;
-		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, s->data.sym));
-		sql->type = Q_UPDATE;
-		break;
-	case SQL_PAUSE_CALL:
-		sql->continuous = mod_pause_continuous;
-		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, s->data.sym));
-		sql->type = Q_UPDATE;
-		break;
 	case SQL_CREATE_TABLE_LOADER:
 	{
 	    dlist *l = s->data.lval;
