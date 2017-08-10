@@ -6,3 +6,13 @@
   In principle, all errors should now include a SQLSTATE error code
   (see the SQL standard).
 
+* Thu Jul 20 2017 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Added support for extracting the quarter (number between 1 and 4)
+  of a date or a timestamp or a timestamp with timezone in SQL:
+   EXTRACT ( QUARTER FROM my_date_expr ).
+  Added support for extracting the week (number between 1 and 53)
+  of a date or a timestamp or a timestamp with timezone in SQL:
+   EXTRACT ( WEEK FROM my_date_expr ).
+  Added support for scalar functions: quarter(date_expr),
+  quarter(timestamp_expr) and quarter(timestamptz_expr).
+
