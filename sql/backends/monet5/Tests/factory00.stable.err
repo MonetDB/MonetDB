@@ -1,0 +1,54 @@
+stderr of test 'factory00` in directory 'sql/backends/monet5` itself:
+
+
+# 14:39:52 >  
+# 14:39:52 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37491" "--set" "mapi_usock=/var/tmp/mtest-14113/.s.monetdb.37491" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/MonetDB-trails/BUILD/var/MonetDB/mTests_sql_backends_monet5"
+# 14:39:52 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/MonetDB-trails/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 37491
+# cmdline opt 	mapi_usock = /var/tmp/mtest-14113/.s.monetdb.37491
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/MonetDB-trails/BUILD/var/MonetDB/mTests_sql_backends_monet5
+# cmdline opt 	gdk_debug = 536870922
+
+# 14:39:52 >  
+# 14:39:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14113" "--port=37491"
+# 14:39:52 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-14113/.s.monetdb.37491
+QUERY = SELECT factory1(); --error
+
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-14113/.s.monetdb.37491
+QUERY = SELECT factory2(); --error
+
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-14113/.s.monetdb.37491
+QUERY = SELECT factory3(); --error
+
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-14113/.s.monetdb.37491
+QUERY = SELECT factory4(); --error
+
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-14113/.s.monetdb.37491
+QUERY = SELECT factory5(); --error
+
+CODE  = 42000
+
+# 14:39:53 >  
+# 14:39:53 >  "Done."
+# 14:39:53 >  
+

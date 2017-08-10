@@ -29,7 +29,7 @@ SELECT factory2(); --error
 CREATE FUNCTION factory3() RETURNS INT BEGIN
     DECLARE a INT;
     SET a = 0;
-    WHILE a < 4 DO
+    WHILE a < 3 DO
         SET a = a + 1;
         YIELD a;
     END WHILE;

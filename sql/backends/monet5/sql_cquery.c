@@ -463,179 +463,10 @@ CQanalysis(Client cntxt, MalBlkPtr mb, int idx)
 	return msg;
 }
 
-/* locate the MAL representation of this operation and extract the flow */
-/* If the operation is not available yet, it should be compiled from its
-   definition retained in the SQL catalog */
-static str
-CQprocedureStmt(Client cntxt, MalBlkPtr mb, str schema, str nme)
-{
-	mvc *m = NULL;
-	str msg = MAL_SUCCEED;
-	sql_schema  *s;
-	backend *be;
-	node *o;
-	sql_func *f;
-	/*sql_trans *tr;*/
-
-	msg = getSQLContext(cntxt, mb, &m, NULL);
-	if ((msg = checkSQLContext(cntxt)) != MAL_SUCCEED)
-		return msg;
-	s = mvc_bind_schema(m, schema);
-	if (s == NULL)
-		return createException(SQL,"cquery.register",SQLSTATE(3F000) "Schema missing\n");
-	/*tr = m->session->tr;*/
-	for (o = s->funcs.set->h; o; o = o->next) {
-		f = o->data;
-		if (strcmp(f->base.name, nme) == 0) {
-			be = (void *) backend_create(m, cntxt);
-			if ( be->mvc->sa == NULL)
-				be->mvc->sa = sa_create();
-			//TODO fix result type
-			backend_create_func(be, f, f->res,NULL);
-			return MAL_SUCCEED;
-		}
-	}
-	return createException(SQL,"cquery.register",SQLSTATE(3F000) "SQL procedure missing\n");
-}
-
-static str
-CQregisterInternal(Client cntxt, str modnme, str fcnnme)
-{
-	InstrPtr sig,q;
-	str msg = MAL_SUCCEED;
-	MalBlkPtr mb, nmb;
-	Module scope;
-	Symbol s = NULL;
-	CQnode *pnew;
-	char buf[IDLENGTH];
-
-	scope = findModule(cntxt->usermodule, putName(modnme));
-	if (scope)
-		s = findSymbolInModule(scope, fcnnme);
-
-	if (s == NULL)
-		return createException(SQL,"cquery.register",SQLSTATE(3F000) "Could not find SQL procedure\n");
-
-	mb = s->def;
-	sig = getInstrPtr(mb,0);
-
-	if (pnettop == pnetLimit) {
-		pnew = (CQnode *) GDKrealloc(pnet, (pnetLimit+INITIAL_MAXCQ) * sizeof(CQnode));
-		if( pnew == NULL) {
-			return createException(SQL,"cquery.register",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		}
-		pnetLimit += INITIAL_MAXCQ;
-		pnet = pnew;
-	}
-
-#ifdef DEBUG_CQUERY
-	fprintf(stderr, "#cquery register %s.%s\n", getModuleId(sig),getFunctionId(sig));
-	fprintFunction(stderr,mb,0,LIST_MAL_ALL);
-#endif
-	memset((void*) (pnet+pnettop), 0, sizeof(CQnode));
-
-	snprintf(buf,IDLENGTH,"wrap_%s_%s",modnme,fcnnme);
-	s = newFunction(userRef, putName(buf), FUNCTIONsymbol);
-	nmb = s->def;
-	setArgType(nmb, nmb->stmt[0],0, TYPE_void);
-	(void) newStmt(nmb, sqlRef, transactionRef);
-	(void) newStmt(nmb, getModuleId(sig),getFunctionId(sig));
-	// add also the remaining arguments
-	q = newStmt(nmb, sqlRef, commitRef);
-	setArgType(nmb,q, 0, TYPE_void);
-	pushEndInstruction(nmb);
-	chkProgram(cntxt->usermodule, nmb);
-#ifdef DEBUG_CQUERY
-	fprintFunction(stderr, nmb, 0, LIST_MAL_ALL);
-#endif
-	// and hand it over to the scheduler
-	msg = CQregister(cntxt, nmb,0,0);
-	if( msg != MAL_SUCCEED){
-		freeSymbol(s);
-	}
-	return msg;
-}
-
-str
-CQprocedure(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	str sch= NULL;
-	str nme= NULL;
-
-	Symbol s = NULL;
-	MalBlkPtr qry;
-	str msg = NULL;
-	InstrPtr p;
-	//Module scope;
-	int i;
-	char name[IDLENGTH];
-
-	/* check existing of the pre-compiled and activated function */
-	sch = *getArgReference_str(stk, pci, 1);
-	nme = *getArgReference_str(stk, pci, 2);
-#ifdef DEBUG_CQUERY
-	fprintf(stderr,"#cq: register the continues procedure %s.%s()\n",sch,nme);
-#endif
-
-	/* check existing of the pre-compiled function */
-#ifdef DEBUG_CQUERY
-	fprintf(stderr,"#cq: locate a SQL procedure %s.%s()\n",sch,nme);
-#endif
-	msg = CQprocedureStmt(cntxt, mb, sch, nme);
-	if (msg)
-		return msg;
-	s = findSymbolInModule(cntxt->usermodule, putName(nme));
-	if (s == NULL)
-		throw(SQL, "cquery.procedure",SQLSTATE(3F000) "Definition of procedure missing\n");
-	qry = s->def;
-
-	chkProgram(cntxt->usermodule, qry);
-	if( qry->errors)
-		msg = createException(SQL,"cquery.procedure",SQLSTATE(2F000) "Error in continuous procedure\n");
-
-#ifdef DEBUG_CQUERY
-	fprintf(stderr,"#cq: register a new continuous query plan\n");
-#endif
-	// create a copy to be used for continuous processing?
-	snprintf(name,IDLENGTH,"%s_%s",sch,nme);
-	s = newFunction(userRef, putName(name), FUNCTIONsymbol);
-	if (s == NULL)
-		msg = createException(SQL, "cquery.procedure",SQLSTATE(3F000) "Procedure code does not exist\n");
-
-	freeMalBlk(s->def);
-	s->def = copyMalBlk(qry);
-	p = getInstrPtr(s->def, 0);
-	setModuleId(p,userRef);
-	setFunctionId(p, putName(name));
-	insertSymbol(cntxt->usermodule, s);
-#ifdef DEBUG_CQUERY
-	printFunction(cntxt->fdout, s->def, 0, LIST_MAL_ALL);
-#endif
-	/* optimize the code and register at scheduler */
-	if (msg == MAL_SUCCEED)
-		addtoMalBlkHistory(mb);
-	if (msg == MAL_SUCCEED) {
-#ifdef DEBUG_CQUERY
-		fprintf(stderr,"#cq: continuous query plan\n");
-#endif
-		msg = CQregisterInternal(cntxt, userRef, putName(name));
-	}
-
-	// register all the baskets mentioned in the plan
-	for( i=1; i< s->def->stop;i++){
-		p= getInstrPtr(s->def,i);
-		if( getModuleId(p) == basketRef && getFunctionId(p)== registerRef){
-			BSKTregister(cntxt,s->def,0,p);
-		}
-	}
-	return msg;
-}
-
 /* Every SQL statement is wrapped with a caller function that
  * regulates transaction bounds, debugger
  * The actual function is called with the arguments provided in the call.
  */
-
 str
 CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 {
@@ -667,7 +498,7 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	}
 	if( i == mb->stop){
 		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Cannot detect procedure call %s.%s.\n",
-		getModuleId(sig), getFunctionId(sig));
+							  getModuleId(sig), getFunctionId(sig));
 		goto finish;
 	}
 
@@ -690,7 +521,7 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	s = findSymbol(cntxt->usermodule, getModuleId(sig), getFunctionId(sig));
 	if ( s == NULL){
 		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Cannot find procedure %s.%s.\n",
-		getModuleId(sig), getFunctionId(sig));
+							  getModuleId(sig), getFunctionId(sig));
 		goto unlock;
 	}
 	if((msg = CQanalysis(cntxt, s->def, pnettop)) != MAL_SUCCEED) {
@@ -811,17 +642,20 @@ CQresumeInternal(Client cntxt, MalBlkPtr mb, int with_alter)
 		goto unlock;
 	}
 	if( idx == pnettop) {
-		msg = createException(SQL, "cquery.resume",SQLSTATE(42000) "The continuous procedure %s has not yet started\n", mb2str);
+		msg = createException(SQL, "cquery.resume",
+							  SQLSTATE(42000) "The continuous procedure %s has not yet started\n", mb2str);
 		goto unlock;
 	}
 	if( pnet[idx].status != CQPAUSE) {
-		msg = createException(SQL, "cquery.resume",SQLSTATE(42000) "The continuous procedure %s is already running\n", mb2str);
+		msg = createException(SQL, "cquery.resume",
+							  SQLSTATE(42000) "The continuous procedure %s is already running\n", mb2str);
 		goto unlock;
 	}
 	if(with_alter && heartbeats != NO_HEARTBEAT) {
 		for(j=0; j < MAXSTREAMS && pnet[idx].baskets[j]; j++) {
 			if(baskets[pnet[idx].baskets[j]].window != DEFAULT_TABLE_WINDOW) {
-				msg = createException(SQL, "cquery.resume",SQLSTATE(42000) "Heartbeat ignored, a window constraint exists\n");
+				msg = createException(SQL, "cquery.resume",
+									  SQLSTATE(42000) "Heartbeat ignored, a window constraint exists\n");
 				goto unlock;
 			}
 		}

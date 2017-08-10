@@ -1141,7 +1141,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 
 			if (getInstrPtr(mb, 0)->token == FACTORYsymbol) {
 				shutdownFactory(cntxt, mb);
-				ret= createException(MAL, "mal.interpreter", "The factory has ended");
+				ret= createException(MAL, "mal.interpreter",SQLSTATE(42000) "The factory has ended");
 			} else {
 				/* a fake multi-assignment */
 				if (env != NULL && pcicaller != NULL) {
