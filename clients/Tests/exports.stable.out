@@ -2374,6 +2374,7 @@ int optimizerIsApplied(MalBlkPtr mb, str name);
 str optimizerRef;
 str optimizer_prelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str pack2Ref;
+str packIncrementRef;
 str packRef;
 str parametersRef;
 void parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines);
