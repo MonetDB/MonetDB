@@ -3692,9 +3692,6 @@ BBPdiskscan(const char *parent, size_t baseoff)
 			continue;
 
 		p = strchr(dent->d_name, '.');
-		bid = strtol(dent->d_name, NULL, 8);
-		ok = p && bid;
-		delete = FALSE;
 
 		if (strlen(dent->d_name) >= dstlen) {
 			/* found a file with too long a name
@@ -3711,53 +3708,61 @@ BBPdiskscan(const char *parent, size_t baseoff)
 			continue;
 		}
 
-		if (ok == FALSE || !persistent_bat(bid)) {
+		if (p && strcmp(p + 1, "tmp") == 0) {
 			delete = TRUE;
-		} else if (strcmp(p + 1, "tmp") == 0) {
-			delete = 1;	/* throw away any .tmp file */
-		} else if (strncmp(p + 1, "tail", 4) == 0) {
-			BAT *b = getdesc(bid);
-			delete = (b == NULL || !b->ttype || b->batCopiedtodisk == 0);
-		} else if (strncmp(p + 1, "theap", 5) == 0) {
-			BAT *b = getdesc(bid);
-			delete = (b == NULL || !b->tvheap || b->batCopiedtodisk == 0);
-		} else if (strncmp(p + 1, "thash", 5) == 0) {
+			ok = TRUE;
+			bid = 0;
+		} else {
+			bid = strtol(dent->d_name, NULL, 8);
+			ok = p && bid;
+			delete = FALSE;
+
+			if (ok == FALSE || !persistent_bat(bid)) {
+				delete = TRUE;
+			} else if (strncmp(p + 1, "tail", 4) == 0) {
+				BAT *b = getdesc(bid);
+				delete = (b == NULL || !b->ttype || b->batCopiedtodisk == 0);
+			} else if (strncmp(p + 1, "theap", 5) == 0) {
+				BAT *b = getdesc(bid);
+				delete = (b == NULL || !b->tvheap || b->batCopiedtodisk == 0);
+			} else if (strncmp(p + 1, "thash", 5) == 0) {
 #ifdef PERSISTENTHASH
-			BAT *b = getdesc(bid);
-			delete = b == NULL;
-			if (!delete)
-				b->thash = (Hash *) 1;
+				BAT *b = getdesc(bid);
+				delete = b == NULL;
+				if (!delete)
+					b->thash = (Hash *) 1;
 #else
-			delete = TRUE;
+				delete = TRUE;
 #endif
-		} else if (strncmp(p + 1, "timprints", 9) == 0) {
-			BAT *b = getdesc(bid);
-			delete = b == NULL;
-			if (!delete)
-				b->timprints = (Imprints *) 1;
-		} else if (strncmp(p + 1, "torderidx", 9) == 0) {
+			} else if (strncmp(p + 1, "timprints", 9) == 0) {
+				BAT *b = getdesc(bid);
+				delete = b == NULL;
+				if (!delete)
+					b->timprints = (Imprints *) 1;
+			} else if (strncmp(p + 1, "torderidx", 9) == 0) {
 #ifdef PERSISTENTIDX
-			BAT *b = getdesc(bid);
-			delete = b == NULL;
-			if (!delete)
-				b->torderidx = (Heap *) 1;
+				BAT *b = getdesc(bid);
+				delete = b == NULL;
+				if (!delete)
+					b->torderidx = (Heap *) 1;
 #else
-			delete = TRUE;
+				delete = TRUE;
 #endif
-		} else if (strncmp(p + 1, "priv", 4) != 0 &&
-			   strncmp(p + 1, "new", 3) != 0 &&
-			   strncmp(p + 1, "head", 4) != 0 &&
-			   strncmp(p + 1, "tail", 4) != 0) {
-			ok = FALSE;
-		} else if (strncmp(p + 1, "head", 4) == 0 ||
-			   strncmp(p + 1, "hheap", 5) == 0 ||
-			   strncmp(p + 1, "hhash", 5) == 0 ||
-			   strncmp(p + 1, "himprints", 9) == 0 ||
-			   strncmp(p + 1, "horderidx", 9) == 0) {
-			/* head is VOID, so no head, hheap files, and
-			 * we do not support any indexes on the
-			 * head */
-			delete = 1;
+			} else if (strncmp(p + 1, "priv", 4) != 0 &&
+				   strncmp(p + 1, "new", 3) != 0 &&
+				   strncmp(p + 1, "head", 4) != 0 &&
+				   strncmp(p + 1, "tail", 4) != 0) {
+				ok = FALSE;
+			} else if (strncmp(p + 1, "head", 4) == 0 ||
+				   strncmp(p + 1, "hheap", 5) == 0 ||
+				   strncmp(p + 1, "hhash", 5) == 0 ||
+				   strncmp(p + 1, "himprints", 9) == 0 ||
+				   strncmp(p + 1, "horderidx", 9) == 0) {
+				/* head is VOID, so no head, hheap files, and
+				 * we do not support any indexes on the
+				 * head */
+				delete = 1;
+			}
 		}
 		if (!ok) {
 			/* found an unknown file; stop pruning in this
