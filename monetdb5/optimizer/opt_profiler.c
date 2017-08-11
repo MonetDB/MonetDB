@@ -55,6 +55,7 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	InstrPtr p;
 	char buf[BUFSIZ];
 	lng usec = GDKusec();
+	char *packIncrementRef = putName("packIncrement");
 
 	(void) pci;
 	(void) stk;
