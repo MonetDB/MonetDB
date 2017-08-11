@@ -2131,6 +2131,7 @@ lng getDiskReads(void);
 lng getDiskSpace(void);
 lng getDiskWrites(void);
 str getExceptionMessage(const char *);
+str getExceptionMessageAndState(const char *);
 str getExceptionPlace(const char *);
 enum malexception getExceptionType(const char *);
 int getFltConstant(MalBlkPtr mb, flt val);

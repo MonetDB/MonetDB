@@ -1257,7 +1257,7 @@ SQLcallback(Client c, str msg){
 			n = strchr(m, '\n');
 			if (n)
 				*n = 0;
-			s = getExceptionMessage(m);
+			s = getExceptionMessageAndState(m);
 			if (n) {
 				*n++ = '\n';
 				l = n - s;
