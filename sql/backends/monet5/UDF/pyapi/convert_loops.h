@@ -109,7 +109,7 @@
 				/* If we are taking data from a MMAP file, set the filename to \
 				 * the absolute path */                                        \
 				char address[100];                                             \
-				GDKmmapfile(address, 100, ret->mmap_id);                       \
+				GDKmmapfile(address, sizeof(address), ret->mmap_id);           \
 				bat->theap.filename =                                          \
 					GDKfilepath(NOFARM, BATDIR, address, "tmp");               \
 				ret->mmap_id = -1;                                             \
