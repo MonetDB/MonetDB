@@ -67,8 +67,8 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 				el_count = this_size;
 			} else if (el_count != this_size) {
 				PyErr_Format(
-					PyExc_TypeError, "Element %s has size %zu, but expected an "
-									 "element with size %zu",
+					PyExc_TypeError, "Element %s has size " SZFMT ", but expected an "
+									 "element with size " SZFMT,
 					PyString_AsString(PyObject_Str(key)), this_size, el_count);
 				Py_DECREF(items);
 				return NULL;

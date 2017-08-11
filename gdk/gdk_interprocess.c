@@ -163,7 +163,7 @@ GDKreleasemmap(void *ptr, size_t size, size_t id, str *msg)
 gdk_return
 GDKmmapfile(str buffer, size_t max, size_t id)
 {
-	snprintf(buffer, max, "pymmap%zu", id);
+	snprintf(buffer, max, "pymmap" SZFMT, id);
 	return GDK_SUCCEED;
 }
 

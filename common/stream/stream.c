@@ -3823,7 +3823,7 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 			{
 				ssize_t i;
 
-				fprintf(stderr, "RD %s %zd \"", ss->name, m);
+				fprintf(stderr, "RD %s " SSZFMT " \"", ss->name, m);
 				for (i = 0; i < m; i++)
 					if (' ' <= ((char *) buf)[i] &&
 					    ((char *) buf)[i] < 127)
