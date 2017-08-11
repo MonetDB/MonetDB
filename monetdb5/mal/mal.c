@@ -15,7 +15,6 @@ size_t 	monet_memory = 0;
 char 	monet_characteristics[PATHLENGTH];
 int		mal_trace;		/* enable profile events on console */
 str     mal_session_uuid;   /* unique marker for the session */
-void	(*cq_close)(void) = NULL;
 
 #ifdef HAVE_HGE
 int have_hge;
@@ -125,9 +124,9 @@ int mal_init(void){
 void mserver_reset(int exit)
 {
 	str err = 0;
-
-	if(cq_close) {
-		cq_close();
+	cqfix_fptr fcqfix;
+	if((fcqfix = cqfix_get()) != NULL) {
+		fcqfix();
 	}
 	GDKprepareExit();
 	WLCreset();

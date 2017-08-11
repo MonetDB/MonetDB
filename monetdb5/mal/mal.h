@@ -15,6 +15,7 @@
 #define _MAL_H
 
 #include <gdk.h>
+#include <gdk_logger.h>
 
 #ifdef WIN32
 #if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
@@ -53,7 +54,6 @@ mal_export lng 		memorypool;      /* memory claimed by concurrent threads */
 mal_export int 		memoryclaims;    /* number of threads active with expensive operations */
 mal_export int		mal_trace;		/* enable profile events on console */
 mal_export str		mal_session_uuid;	/* unique marker for the session */
-mal_export void		(*cq_close)(void);	/* Sorry but for now we need this for timetrails */
 #ifdef HAVE_HGE
 mal_export int have_hge;
 #endif

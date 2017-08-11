@@ -144,4 +144,9 @@ gdk_export geomsqlfix_fptr geomsqlfix_get(void);
 gdk_export void geomversion_set(void);
 gdk_export int geomversion_get(void);
 
+/* for timetrails */
+typedef void (*cqfix_fptr)(void);
+gdk_export void cqfix_set(cqfix_fptr);
+gdk_export cqfix_fptr cqfix_get(void);
+
 #endif /*_LOGGER_H_*/

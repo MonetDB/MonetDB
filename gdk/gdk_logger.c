@@ -2893,3 +2893,19 @@ int geomversion_get(void)
 {
 	return geomisoldversion;
 }
+
+/* for timetrails */
+
+static cqfix_fptr cqfix = NULL;
+
+void
+cqfix_set(cqfix_fptr f)
+{
+	cqfix = f;
+}
+
+cqfix_fptr
+cqfix_get(void)
+{
+	return cqfix;
+}

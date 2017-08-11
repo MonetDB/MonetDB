@@ -65,7 +65,6 @@ static BAT *CQ_id_time = 0;
 static BAT *CQ_id_error = 0;
 static BAT *CQ_id_stmt = 0;
 
-void (*cq_close)(void);
 CQnode *pnet;
 int pnetLimit, pnettop;
 
@@ -645,12 +644,12 @@ CQresumeInternal(Client cntxt, MalBlkPtr mb, int with_alter)
 	}
 	if( idx == pnettop) {
 		msg = createException(SQL, "cquery.resume",
-							  SQLSTATE(42000) "The continuous %s %s has not yet started\n", mb2str, err_message);
+							  SQLSTATE(42000) "The continuous %s %s has not yet started\n", err_message, mb2str);
 		goto unlock;
 	}
 	if( pnet[idx].status != CQPAUSE) {
 		msg = createException(SQL, "cquery.resume",
-							  SQLSTATE(42000) "The continuous %s %s is already running\n", mb2str, err_message);
+							  SQLSTATE(42000) "The continuous %s %s is already running\n", err_message, mb2str);
 		goto unlock;
 	}
 	if(with_alter && heartbeats != NO_HEARTBEAT) {
@@ -778,12 +777,12 @@ CQpauseInternal(MalBlkPtr mb, char* err_message)
 	}
 	if( idx == pnettop) {
 		msg = createException(SQL, "cquery.pause",
-							  SQLSTATE(42000) "The continuous %s %s has not yet started\n", mb2str, err_message);
+							  SQLSTATE(42000) "The continuous %s %s has not yet started\n", err_message, mb2str);
 		goto finish;
 	}
 	if( pnet[idx].status == CQPAUSE) {
 		msg = createException(SQL, "cquery.pause",
-							  SQLSTATE(42000) "The continuous %s %s is already paused\n", mb2str, err_message);
+							  SQLSTATE(42000) "The continuous %s %s is already paused\n", err_message, mb2str);
 		goto finish;
 	}
 	// actually wait if the query was running
@@ -981,7 +980,7 @@ CQderegisterInternal(MalBlkPtr mb, char* err_message)
 	}
 	if(idx == pnettop) {
 		msg = createException(SQL, "cquery.deregister",
-							  SQLSTATE(42000) "The continuous %s %s has not yet started\n", mb2str, err_message);
+							  SQLSTATE(42000) "The continuous %s %s has not yet started\n", err_message, mb2str);
 		goto finish;
 	}
 	pnet[idx].status = CQSTOP;
@@ -1390,7 +1389,6 @@ CQreset(void)
 	pnet = NULL;
 	MT_lock_destroy(&ttrLock);
 	(void) BSKTshutdown(); //this must be last!!
-	cq_close = NULL; //avoid a second call!
 }
 
 str
@@ -1403,7 +1401,7 @@ CQprelude(void *ret)
 	pnettop = 0;
 	if(pnet == NULL)
 		throw(MAL, "cquery.prelude",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	cq_close = CQreset;
+	cqfix_set(CQreset);
 	printf("# MonetDB/Timetrails module loaded\n");
 	return MAL_SUCCEED;
 }
