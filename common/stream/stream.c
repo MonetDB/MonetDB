@@ -3138,6 +3138,10 @@ buffer_get_buf(buffer *b)
 	r = b->buf;
 	r[b->pos] = '\0';
 	b->buf = malloc(b->len);
+	if (b->buf == NULL) {
+		free(b);
+		return NULL;
+	}
 	b->len = b->buf ? b->len : 0;
 	b->pos = 0;
 	return r;
