@@ -201,6 +201,7 @@ str optimizerRef;
 str parametersRef;
 str packRef;
 str pack2Ref;
+str packIncrementRef;
 str passRef;
 str partitionRef;
 str pcreRef;
@@ -482,6 +483,7 @@ void optimizerInit(void)
 	parametersRef = putName("parameters");
 	packRef = putName("pack");
 	pack2Ref = putName("pack2");
+	packIncrementRef = putName("packIncrement");
 	passRef = putName("pass");
 	partitionRef = putName("partition");
 	pcreRef = putName("pcre");

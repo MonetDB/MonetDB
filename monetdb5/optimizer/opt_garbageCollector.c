@@ -154,11 +154,9 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	/* leave a consistent scope admin behind */
 	setVariableScope(mb);
 	/* Defense line against incorrect plans */
-	if (actions > 0) {
-		chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-		chkFlow(cntxt->fdout, mb);
-		chkDeclarations(cntxt->fdout, mb);
-	}
+	chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
+	chkFlow(cntxt->fdout, mb);
+	chkDeclarations(cntxt->fdout, mb);
 	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
 	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions, usec);
