@@ -5441,16 +5441,16 @@ getFileNo(stream *s)
 static ssize_t
 stream_blackhole_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
-	s = (stream *) s;
-	buf = (const void *) buf;
-	elmsize = (size_t) elmsize;
+	(void) s;
+	(void) buf;
+	(void) elmsize;
 	return (ssize_t) cnt;
 }
 
 static void
 stream_blackhole_close(stream *s)
 {
-	s = (stream *) s;
+	(void) s;
 	/* no resources to close */
 }
 
