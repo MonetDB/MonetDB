@@ -3707,7 +3707,7 @@ BBPdiskscan(const char *parent, size_t baseoff)
 
 		if (ok == FALSE || !persistent_bat(bid)) {
 			delete = TRUE;
-		} else if (strstr(p + 1, ".tmp")) {
+		} else if (strcmp(p + 1, "tmp") == 0) {
 			delete = 1;	/* throw away any .tmp file */
 		} else if (strncmp(p + 1, "tail", 4) == 0) {
 			BAT *b = getdesc(bid);

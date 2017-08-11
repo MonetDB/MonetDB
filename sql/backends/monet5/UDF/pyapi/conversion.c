@@ -493,7 +493,7 @@ PyObject *PyDict_CheckForConversion(PyObject *pResult, int expected_columns,
 			msg = createException(
 				MAL, "pyapi.eval",
 				SQLSTATE(PY000) "Error converting dict return value \"%s\": %s.",
-				retcol_names[i], *return_message);
+				retcol_names[i], getExceptionMessage(*return_message));
 			GDKfree(*return_message);
 			goto wrapup;
 		}

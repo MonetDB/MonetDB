@@ -3503,7 +3503,7 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 			{
 				ssize_t i;
 
-				fprintf(stderr, "RD %s %zd \"", ss->name, m);
+				fprintf(stderr, "RD %s " SSZFMT " \"", ss->name, m);
 				for (i = 0; i < m; i++)
 					if (' ' <= ((char *) buf)[i] &&
 					    ((char *) buf)[i] < 127)
@@ -4976,16 +4976,16 @@ getFileNo(stream *s)
 static ssize_t
 stream_blackhole_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
-	s = (stream *) s;
-	buf = (const void *) buf;
-	elmsize = (size_t) elmsize;
+	(void) s;
+	(void) buf;
+	(void) elmsize;
 	return (ssize_t) cnt;
 }
 
 static void
 stream_blackhole_close(stream *s)
 {
-	s = (stream *) s;
+	(void) s;
 	/* no resources to close */
 }
 
