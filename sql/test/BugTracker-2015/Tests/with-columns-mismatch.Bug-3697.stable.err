@@ -37,9 +37,6 @@ QUERY = WITH cte(qtime, open, close, sdate, id, rnk) as (
         ) select * from cte where rnk=1;
 ERROR = !WITH CLAUSE: number of columns does not match
 CODE  = 21S02
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-ERROR = !Current transaction is aborted (please ROLLBACK)
-CODE  = 25005
 
 # 09:14:41 >  
 # 09:14:41 >  "Done."
