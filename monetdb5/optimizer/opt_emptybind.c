@@ -83,7 +83,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	}
 
 #ifdef DEBUG_OPT_EMPTYBIND
-	fprintf(stderr "#Optimize Query Emptybind\n");
+	fprintf(stderr, "#Optimize Query Emptybind\n");
 	fprintFunction(stderr, mb, 0, LIST_MAL_DEBUG);
 #endif
 
