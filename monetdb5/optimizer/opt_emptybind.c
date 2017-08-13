@@ -183,28 +183,6 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					}
 				}
 			}
-			if( empty[getArg(p,0)]){
-                int tpe;
-				actions++;
-				if( p->retc == 2){
-					tpe = getBatType(getVarType(mb,getArg(p,1)));
-					q= newInstruction(0, batRef, newRef);
-					q = pushType(mb,q,tpe);
-					getArg(q,0)= getArg(p,1);
-					setVarFixed(mb, getArg(p,0));
-					pushInstruction(mb,q);
-					empty[getArg(q,0)]= i;
-				}
-
-                tpe = getBatType(getVarType(mb,getArg(p,0)));
-                clrFunction(p);
-                setModuleId(p,batRef);
-                setFunctionId(p,newRef);
-                p->argc = p->retc = 1;
-                p = pushType(mb,p,tpe);
-				setVarFixed(mb, getArg(p,0));
-				empty[getArg(p,0)]= i;
-			}
 			continue;
 		}
 
@@ -242,28 +220,6 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 						break;
 					}
 				}
-			}
-			if( empty[getArg(p,0)]){
-				int tpe;
-				actions++;
-				if( p->retc == 2){
-					tpe = getBatType(getVarType(mb,getArg(p,1)));
-					q= newInstruction(0, batRef, newRef);
-					q = pushType(mb,q,tpe);
-					getArg(q,0)= getArg(p,1);
-					setVarFixed(mb,getArg(q,0));
-					pushInstruction(mb,q);
-					empty[getArg(q,0)]= i;
-				}
-				
-				tpe = getBatType(getVarType(mb,getArg(p,0)));
-				clrFunction(p);
-				setModuleId(p,batRef);
-				setFunctionId(p,newRef);
-				p->argc = p->retc = 1;
-				p = pushType(mb,p,tpe);
-				setVarFixed(mb, getArg(p,0));
-				empty[getArg(p,0)]= i;
 			}
 			continue;
 		}
@@ -316,6 +272,15 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					actions++;
 					emptyresult(0);
 				}
+			}
+		}
+		if( getModuleId(p) == batstrRef){
+			if( empty[getArg(p,1)] || empty[getArg(p,2)] ){
+#ifdef DEBUG_OPT_EMPTYBIND
+				fprintf(stderr, "#empty string operation  pc %d var %d\n",i , getArg(p,0) );
+#endif
+				actions++;
+				emptyresult(0);
 			}
 		}
 		if (getModuleId(p)== batRef && isUpdateInstruction(p)){
