@@ -31,18 +31,18 @@ Ready.
 
 function user.foo():void;               	#[0] (0)  0 
     b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 1 <- 2 
-    bat.append(b:bat[:int], 2:int);     	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
-    bat.append(b:bat[:int], 5:int);     	#[3] (0) BKCappend_val_wrap 5 <- 1 6 
-    bat.append(b:bat[:int], 3:int);     	#[4] (0) BKCappend_val_wrap 7 <- 1 8 
-    b:bat[:int] := algebra.sort(b:bat[:int], false:bit, false:bit);	#[5] (0) ALGsort11 1 <- 1 9 10 
-end user.foo;                           	#[6] (0)  
+    b1:bat[:int] := bat.append(b:bat[:int], 2:int);	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
+    b2:bat[:int] := bat.append(b1:bat[:int], 5:int);	#[3] (0) BKCappend_val_wrap 5 <- 3 6 
+    b3:bat[:int] := bat.append(b2:bat[:int], 3:int);	#[4] (0) BKCappend_val_wrap 7 <- 5 8 
+end user.foo;                           	#[5] (0)  
+#deadcode             actions= 1 time=5 usec 
 function user.foo():void;               	#[0] (0)  0 
     b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 1 <- 2 
-    bat.append(b:bat[:int], 2:int);     	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
-    bat.append(b:bat[:int], 5:int);     	#[3] (0) BKCappend_val_wrap 5 <- 1 6 
-    bat.append(b:bat[:int], 3:int);     	#[4] (0) BKCappend_val_wrap 7 <- 1 8 
-    b:bat[:int] := algebra.sort(b:bat[:int], false:bit, false:bit);	#[5] (0) ALGsort11 1 <- 1 9 10 
-end user.foo;                           	#[6] (0)  
+    b1:bat[:int] := bat.append(b:bat[:int], 2:int);	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
+    b2:bat[:int] := bat.append(b1:bat[:int], 5:int);	#[3] (0) BKCappend_val_wrap 5 <- 3 6 
+    b3:bat[:int] := bat.append(b2:bat[:int], 3:int);	#[4] (0) BKCappend_val_wrap 7 <- 5 8 
+end user.foo;                           	#[5] (0)  
+#deadcode             actions= 1 time=5 usec 
 
 # 06:41:05 >  
 # 06:41:05 >  "Done."
