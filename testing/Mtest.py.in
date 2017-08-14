@@ -2046,7 +2046,16 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
                 f.close()
                 if os.path.isfile(TSTSRC):
                     try:
-                        SymlinkOrCopy(TSTSRC, ff[:-4])
+                        if '.stable.' in ff:
+                            f1 = open(TSTSRC, "r")
+                            f2 = open(ff[:-4], "w")
+                            line = f.readline()
+                            f2.write("%s of test '%s` in directory '%s` itself:\n" % (line[:6], TST, TSTDIR))
+                            f2.write(f1.read())
+                            f1.close()
+                            f2.close()
+                        else:
+                            SymlinkOrCopy(TSTSRC, ff[:-4])
                         links.append(ff[:-4])
                     except IOError as err:
                         ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
