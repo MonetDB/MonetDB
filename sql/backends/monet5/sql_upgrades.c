@@ -806,16 +806,40 @@ sql_update_jul2017(Client c, mvc *sql)
 static str
 sql_create_comments_table(Client c)
 {
-	char *err, *q1, *q2;
+	char *err, *q1, *q2, *q3;
 
-	q1 = "CREATE TABLE sys.comments (id INTEGER, remark CLOB);\n";
+	q1 = ""
+		"CREATE TABLE sys.comments (\n"
+		"	id INTEGER NOT NULL PRIMARY KEY,\n"
+		"	remark VARCHAR(65000) NOT NULL\n"
+		");";
 	err = SQLstatementIntern(c, &q1, "update", 1, 0, NULL);
 	if (err)
 		return err;
 
-	q2 = "UPDATE sys._tables SET system = true WHERE name = 'comments' AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n";
-	return SQLstatementIntern(c, &q2, "update", 1, 0, NULL);
-}
+	q2 = ""
+		"UPDATE sys._tables\n"
+		"SET system = true\n"
+		"WHERE name = 'comments'\n"
+		"AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n";
+	err =  SQLstatementIntern(c, &q2, "update", 1, 0, NULL);
+	if (err)
+		return err;
+
+	q3 = ""
+		"CREATE PROCEDURE sys.comment_on(obj_id OID, obj_remark VARCHAR(65000))\n"
+		"BEGIN\n"
+		"        IF obj_remark IS NULL OR obj_remark = '' THEN\n"
+		"                DELETE FROM sys.comments WHERE id = obj_id;\n"
+		"--         ELSEIF EXISTS (SELECT id FROM sys.comments WHERE id = obj_id) THEN\n"
+		"        ELSEIF 0 < (SELECT COUNT(id) FROM sys.comments WHERE id = obj_id) THEN\n"
+		"                UPDATE sys.comments SET remark = obj_remark WHERE id = obj_id;\n"
+		"        ELSE\n"
+		"                INSERT INTO sys.comments VALUES (obj_id, obj_remark);\n"
+		"        END IF;\n"
+		"END;\n";
+		return SQLstatementIntern(c, &q3, "update", 1, 0, NULL);
+	}
 
 void
 SQLupgrades(Client c, mvc *m)
