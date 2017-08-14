@@ -34,7 +34,7 @@ CREATE_SQL_FUNCTION_PTR(int,SQLautocommit);
 CREATE_SQL_FUNCTION_PTR(str,SQLexitClient);
 CREATE_SQL_FUNCTION_PTR(str,SQLinitClient);
 CREATE_SQL_FUNCTION_PTR(str,SQLstatementIntern);
-CREATE_SQL_FUNCTION_PTR(void,res_table_destroy);
+CREATE_SQL_FUNCTION_PTR(void,SQLdestroyResult);
 
 static int monetdb_initialized = 0;
 
@@ -77,7 +77,7 @@ static str monetdb_query(Client c, str query) {
 			printf("%s", res->cols[i].name);
 			printf(i + 1 == res->nr_cols ? ")\n" : ",");
 		}
-		(*res_table_destroy_ptr)(res);
+		(*SQLdestroyResult_ptr)(res);
 	}
 	return MAL_SUCCEED;
 }
@@ -257,7 +257,7 @@ static str monetdb_initialize(void) {
 	LOAD_SQL_FUNCTION_PTR(SQLexitClient);
 	LOAD_SQL_FUNCTION_PTR(SQLinitClient);
 	LOAD_SQL_FUNCTION_PTR(SQLstatementIntern);
-	LOAD_SQL_FUNCTION_PTR(res_table_destroy);
+	LOAD_SQL_FUNCTION_PTR(SQLdestroyResult);
 
 	if (retval != MAL_SUCCEED) {
 		printf("Failed to load SQL function: %s\n", retval);
