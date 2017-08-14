@@ -215,7 +215,6 @@ if os.name == 'nt':
     if 'PYTHONPATH' in os.environ:
         p = os.environ['PYTHONPATH'] + os.pathsep + p
     os.environ['PYTHONPATH'] = p
-    os.environ['PYTHONHOME'] = sys.prefix
 
 import string                   # for whitespace
 def splitcommand(cmd):
