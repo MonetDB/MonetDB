@@ -396,7 +396,7 @@
 				assert(p < end);			\
 				INIT_1;					\
 				prb = HASH;				\
-				prb = (prb ^ (BUN) grps[r] << bits) & hs->mask;	\
+				prb = (prb ^ hash_oid(hs, &grps[r])) & hs->mask; \
 				for (hb = HASHget(hs, prb);		\
 				     hb != HASHnil(hs) && hb >= start;	\
 				     hb = HASHgetlink(hs, hb)) {	\
@@ -1009,8 +1009,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		size_t nmelen;
 		Heap *hp = NULL;
 		BUN prb;
-		BUN mask;
-		int bits;
 
 		GDKclrerr();	/* not interested in BAThash errors */
 
@@ -1032,25 +1030,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  subsorted, gc ? " (g clustered)" : "");
 		nme = BBP_physical(b->batCacheid);
 		nmelen = strlen(nme);
-		if (ATOMsize(t) == 1) {
-			mask = 1 << 16;
-			bits = 8;
-		} else if (ATOMsize(t) == 2) {
-			mask = 1 << 16;
-			bits = 8;
-		} else {
-			/* when combining value and group-id hashes,
-			 * we left-shift one of them by half the
-			 * hash-mask width to better spread bits and
-			 * use the entire hash-mask, and thus reduce
-			 * collisions */
-			mask = HASHmask(cnt) >> 3;
-			bits = 3;
-			while (mask >>= 1)
-				bits++;
-			bits /= 2;
-			mask = HASHmask(cnt);
-		}
 		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
 		    (hp->farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
 		    (hp->filename = GDKmalloc(nmelen + 30)) == NULL ||
