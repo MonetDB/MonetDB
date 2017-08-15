@@ -58,7 +58,7 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			varused[getArg(p,0)]++; // force keeping 
 			continue;
 		}
-		if ( getModuleId(p) == batRef && isUpdateInstruction(p)){
+		if ( getModuleId(p) == batRef && isUpdateInstruction(p) && !p->barrier){
 			/* bat.append and friends are intermediates that need not be retained 
 			 * unless they are used */
 		} else
