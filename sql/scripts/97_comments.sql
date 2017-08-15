@@ -9,7 +9,7 @@ CREATE TABLE sys.comments (
         remark VARCHAR(65000) NOT NULL
 );
 
-CREATE PROCEDURE sys.comment_on(obj_id OID, obj_remark VARCHAR(65000))
+CREATE PROCEDURE sys.comment_on(obj_id INTEGER, obj_remark VARCHAR(65000))
 BEGIN
         IF obj_remark IS NULL OR obj_remark = '' THEN
                 DELETE FROM sys.comments WHERE id = obj_id;

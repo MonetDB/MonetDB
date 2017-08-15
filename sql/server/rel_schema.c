@@ -2034,8 +2034,33 @@ rel_commentable_object(mvc *sql, symbol *catalog_object) {
 
 static sql_rel *
 rel_comment_on(mvc *sql, sqlid obj_id, char *remark) {
-	mvc_comment_on(sql, obj_id, remark); // wonder how errors are handled.
-	return NULL;
+	// Impersonate EXEC sys.comment_on(obj_id, remark);
+
+	sql_rel *rel;
+	list *exps;
+	sql_exp *exp, *left, *right;
+	sql_subtype *tpe;
+
+	// Imitate rel_psm_call()
+	tpe = sql_bind_localtype("str");
+	left = exp_atom_int(sql->sa, obj_id);
+	right = exp_atom_str(sql->sa, remark, tpe);
+	exp = rel_binop_(sql, left, right, mvc_bind_schema(sql, "sys"), "comment_on", card_none);
+
+	// Imitate rel_psm_stmt()
+	exps = new_exp_list(sql->sa);
+	list_append(exps, exp);
+
+	// Imitate rel_psm_block()
+	rel = rel_create(sql->sa);
+	rel->op = op_ddl;
+	rel->exps = exps;
+	rel->flag = DDL_PSM;
+
+	// Imitate rel_psm()
+	sql->type = Q_UPDATE;
+
+	return rel;
 }
 
 sql_rel *

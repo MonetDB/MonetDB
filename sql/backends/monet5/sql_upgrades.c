@@ -827,7 +827,7 @@ sql_create_comments_table(Client c)
 		return err;
 
 	q3 = ""
-		"CREATE PROCEDURE sys.comment_on(obj_id OID, obj_remark VARCHAR(65000))\n"
+		"CREATE PROCEDURE sys.comment_on(obj_id INTEGER, obj_remark VARCHAR(65000))\n"
 		"BEGIN\n"
 		"        IF obj_remark IS NULL OR obj_remark = '' THEN\n"
 		"                DELETE FROM sys.comments WHERE id = obj_id;\n"
