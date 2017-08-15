@@ -552,13 +552,13 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	}
 	if (b->tkey || cnt <= 1 || (g && (g->tkey || BATtdense(g)))) {
 		/* grouping is trivial: 1 element per group */
-		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
+		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
 				  "h=%s#" BUNFMT ",subsorted=%d): "
 				  "trivial case: 1 element per group\n",
-				  BATgetId(b), BATcount(b),
+				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
 				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
 				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
@@ -593,13 +593,13 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		/* all values are equal */
 		if (g == NULL || (BATordered(g) && BATordered_rev(g))) {
 			/* there's only a single group: 0 */
-			ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
+			ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
 				  "h=%s#" BUNFMT ",subsorted=%d): "
-					  "trivial case: single output group\n",
-				  BATgetId(b), BATcount(b),
+				  "trivial case: single output group\n",
+				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
 				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
 				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
@@ -635,13 +635,13 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			 * e/h available in order to copy them,
 			 * otherwise we will need to calculate them
 			 * which we will do using the "normal" case */
-			ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
+			ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
 				  "h=%s#" BUNFMT ",subsorted=%d): "
-					  "trivial case: copy input groups\n",
-				  BATgetId(b), BATcount(b),
+				  "trivial case: copy input groups\n",
+				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
 				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
 				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
@@ -731,13 +731,13 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	    ((BATordered(b) || BATordered_rev(b)) &&
 	     (g == NULL || BATordered(g) || BATordered_rev(g)))) {
 		/* we only need to compare each entry with the previous */
-		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
+		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
 				  "h=%s#" BUNFMT ",subsorted=%d): "
 				  "compare consecutive values\n",
-				  BATgetId(b), BATcount(b),
+				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
 				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
 				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
@@ -788,13 +788,13 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * last time we saw that group, so if the last time we
 		 * saw the old group of the current value is within
 		 * this range, we can reuse the new group */
-		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
+		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
 				  "h=%s#" BUNFMT ",subsorted=%d): "
 				  "subscan old groups\n",
-				  BATgetId(b), BATcount(b),
+				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
 				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
 				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
@@ -943,13 +943,13 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		/* we already have a hash table on b, or b is
 		 * persistent and we could create a hash table, or b
 		 * is a view on a bat that already has a hash table */
-		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
+		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
 				  "h=%s#" BUNFMT ",subsorted=%d): "
 				  "use existing hash table\n",
-				  BATgetId(b), BATcount(b),
+				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
 				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
 				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
@@ -1018,13 +1018,13 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * build an incomplete hash table on the fly--also see
 		 * BATassertProps for similar code; we also exploit if
 		 * g is clustered */
-		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
+		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
 				  "h=%s#" BUNFMT ",subsorted=%d): "
 				  "create partial hash table%s\n",
-				  BATgetId(b), BATcount(b),
+				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
 				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
 				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
