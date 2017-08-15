@@ -104,18 +104,8 @@ QUERY = CREATE TABLE phpbb_attachments (
         	download_count integer DEFAULT '0' NOT NULL ,
         	attach_comment varchar(4000) DEFAULT '' NOT NULL,
 ERROR = !syntax error, unexpected STRING in: "'1'"
-        !Current transaction is aborted (please ROLLBACK)
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-ERROR = !Current transaction is aborted (please ROLLBACK)
-CODE  = 25005
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-QUERY = /*
-        	Table: 'phpbb_acl_groups'
-        */
-ERROR = !Current transaction is aborted (please ROLLBACK)
-CODE  = 25005
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-20479/.s.monetdb.32416
 QUERY = CREATE TABLE phpbb_acl_groups (
         	group_id integer DEFAULT '0' NOT NULL ,
         	forum_id integer DEFAULT '0' NOT NULL ,
@@ -125,10 +115,7 @@ QUERY = CREATE TABLE phpbb_acl_groups (
         );
 ERROR = !Current transaction is aborted (please ROLLBACK)
 CODE  = 25005
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-ERROR = !Current transaction is aborted (please ROLLBACK)
-CODE  = 25005
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-20479/.s.monetdb.32416
 QUERY = COMMIT;
 ERROR = !COMMIT: failed
 CODE  = 2D000

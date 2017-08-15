@@ -39,7 +39,7 @@ Ready.
 #	return retval
 #};
 #SELECT * FROM pyapi17();
-% .,	.,	.,	. # table_name
+% .L1,	.L1,	.L1,	.L1 # table_name
 % a,	b,	c,	d # name
 % clob,	clob,	int,	boolean # type
 % 3,	3,	1,	5 # length
@@ -57,7 +57,7 @@ Ready.
 #	return retval
 #};
 #SELECT * FROM pyapi17();
-% .,	.,	.,	. # table_name
+% .L1,	.L1,	.L1,	.L1 # table_name
 % a,	b,	c,	d # name
 % clob,	clob,	int,	boolean # type
 % 3,	3,	1,	5 # length
@@ -97,8 +97,8 @@ Ready.
 #	return retval
 #};
 #SELECT pyapi17(i) FROM integers;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % int # type
 % 2 # length
 [ 33	]

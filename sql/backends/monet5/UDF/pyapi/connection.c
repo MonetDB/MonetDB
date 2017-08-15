@@ -60,7 +60,7 @@ Py_END_ALLOW_THREADS;
 		GDKfree(query);
 		if (res != MAL_SUCCEED) {
 			PyErr_Format(PyExc_Exception, "SQL Query Failed: %s",
-						 (res ? res : "<no error>"));
+						 (res ? getExceptionMessage(res) : "<no error>"));
 			return NULL;
 		}
 
@@ -84,7 +84,7 @@ Py_END_ALLOW_THREADS;
 				if (!numpy_array) {
 					_connection_cleanup_result(output);
 					PyErr_Format(PyExc_Exception, "SQL Query Failed: %s",
-								 (res ? res : "<no error>"));
+								 (res ? getExceptionMessage(res) : "<no error>"));
 					return NULL;
 				}
 				PyDict_SetItem(result,

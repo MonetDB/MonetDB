@@ -10,4 +10,4 @@ set PYTHONPATH=%testpath%;%PYTHON3PATH%
 prompt # $t $g  
 echo on
 
-%PYTHON3% "%testpath%/python_int128.py %MAPIPORT% %TSTDB% %MAPIHOST%"
+"%PYTHON3%" "%testpath%/python_int128.py %MAPIPORT% %TSTDB% %MAPIHOST%"

@@ -95,10 +95,7 @@ QUERY = INSERT INTO "examines" ("docID", "vicID") VALUES
         );
 ERROR = !Cardinality violation, scalar value expected
 CODE  = 21000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-ERROR = !Current transaction is aborted (please ROLLBACK)
-CODE  = 25005
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-20479/.s.monetdb.32416
 QUERY = INSERT INTO "timelines" ("vicID", "time", "event") VALUES
         (
         (
@@ -111,9 +108,6 @@ QUERY = INSERT INTO "timelines" ("vicID", "time", "event") VALUES
         );
 ERROR = !Cardinality violation, scalar value expected
 CODE  = 21000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-ERROR = !Current transaction is aborted (please ROLLBACK)
-CODE  = 25005
 
 # 19:33:23 >  
 # 19:33:23 >  Done.

@@ -47,12 +47,8 @@ QUERY = insert into nonutf8 values ('zwaar lange golf piek -dal ±10cm vak5');
         
         select * from nonutf8;
 ERROR = !syntax error, unexpected sqlINT in: "7"
-        !Current transaction is aborted (please ROLLBACK)
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-ERROR = !Current transaction is aborted (please ROLLBACK)
-CODE  = 25005
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-20479/.s.monetdb.32416
 QUERY = drop table nonutf8;
 ERROR = !Current transaction is aborted (please ROLLBACK)
 CODE  = 25005

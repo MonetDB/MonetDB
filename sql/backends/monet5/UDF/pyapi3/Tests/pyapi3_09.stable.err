@@ -33,20 +33,18 @@ stderr of test 'pyapi3_09` in directory 'sql/backends/monet5/UDF/pyapi3` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-28978/.s.monetdb.30135
 QUERY = SELECT * FROM pyapi09();
-ERROR = !SELECT: no such table 'unknown_table'
-        !Python exception
+ERROR = !Python exception
         !
         !  1. def pyfun(_columns,_column_types,_conn):
         !> 2.   res = _conn.execute('SELECT * FROM unknown_table;')
         !  3.   return numpy.arange(10)
         !  4. 
-        !SQL Query Failed: ParseException:SQLparser:42S02!SELECT: no such table 'unknown_table'
-MAPI  = (monetdb) /var/tmp/mtest-28978/.s.monetdb.30135
-QUERY = SELECT * FROM pyapi09();
-ERROR = !SELECT: no such table 'unknown_table'
-MAPI  = (monetdb) /var/tmp/mtest-28978/.s.monetdb.30135
+        !SQL Query Failed: SELECT: no such table 'unknown_table'
+CODE  = PY000
+MAPI  = (monetdb) /var/tmp/mtest-13372/.s.monetdb.36607
 QUERY = SELECT 1; # yes it does...
-ERROR = !current transaction is aborted (please ROLLBACK)
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
 
 # 14:42:12 >  
 # 14:42:12 >  "Done."

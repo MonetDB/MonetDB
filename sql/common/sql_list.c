@@ -44,6 +44,9 @@ list *
 sa_list(sql_allocator *sa)
 {
 	list *l = (sa)?SA_ZNEW(sa, list):ZNEW(list);
+	if (!l) {
+		return NULL;
+	}
 
 	l->sa = sa;
 	l->destroy = NULL;
@@ -58,6 +61,9 @@ list *
 list_new(sql_allocator *sa, fdestroy destroy)
 {
 	list *l = (sa)?SA_ZNEW(sa, list):ZNEW(list);
+	if (!l) {
+		return NULL;
+	}
 
 	l->sa = sa;
 	l->destroy = destroy;

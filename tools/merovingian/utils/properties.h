@@ -12,6 +12,7 @@
 #include "utils.h"
 
 #define MEROPROPFILE ".merovingian_properties"
+#define PROFILERLOGPROPERTY "profilerlogpath"
 
 confkeyval *getDefaultProps(void);
 int writeProps(confkeyval *ckv, const char *path);

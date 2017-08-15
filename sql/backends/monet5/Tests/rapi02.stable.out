@@ -33,7 +33,7 @@ Ready.
 #	return(arg1*sum(arg2)*arg3);
 #};
 #SELECT rapi02(i,j,2) as r02 FROM rval;
-% sys.L1 # table_name
+% sys.L2 # table_name
 % r02 # name
 % int # type
 % 2 # length

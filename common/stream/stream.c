@@ -618,36 +618,6 @@ close_stream(stream *s)
 	}
 }
 
-stream *
-mnstr_rstream(stream *s)
-{
-	if (s == NULL)
-		return NULL;
-#ifdef STREAM_DEBUG
-	fprintf(stderr, "mnstr_rstream %s\n", s->name ? s->name : "<unnamed>");
-#endif
-	assert(s->access == ST_READ);
-	s->type = ST_BIN;
-	if (s->errnr == MNSTR_NO__ERROR)
-		s->read(s, (void *) &s->byteorder, sizeof(s->byteorder), 1);
-	return s;
-}
-
-stream *
-mnstr_wstream(stream *s)
-{
-	if (s == NULL)
-		return NULL;
-#ifdef STREAM_DEBUG
-	fprintf(stderr, "mnstr_wstream %s\n", s->name ? s->name : "<unnamed>");
-#endif
-	assert(s->access == ST_WRITE);
-	s->type = ST_BIN;
-	if (s->errnr == MNSTR_NO__ERROR)
-		s->write(s, (void *) &s->byteorder, sizeof(s->byteorder), 1);
-	return s;
-}
-
 #define EXT_LEN 4
 static const char *
 get_extention(const char *file)
@@ -1738,8 +1708,8 @@ open_rstream(const char *filename)
 	return s;
 }
 
-static stream *
-open_wstream_(const char *filename, char *mode)
+stream *
+open_wstream(const char *filename)
 {
 	stream *s;
 	const char *ext;
@@ -1752,13 +1722,13 @@ open_wstream_(const char *filename, char *mode)
 	ext = get_extention(filename);
 
 	if (strcmp(ext, "gz") == 0)
-		return open_gzwstream(filename, mode);
+		return open_gzwstream(filename, "wb");
 	if (strcmp(ext, "bz2") == 0)
-		return open_bzwstream(filename, mode);
+		return open_bzwstream(filename, "wb");
 	if (strcmp(ext, "xz") == 0)
-		return open_xzwstream(filename, mode);
+		return open_xzwstream(filename, "wb");
 
-	if ((s = open_stream(filename, mode)) == NULL)
+	if ((s = open_stream(filename, "wb")) == NULL)
 		return NULL;
 	s->access = ST_WRITE;
 	s->type = ST_BIN;
@@ -1771,18 +1741,6 @@ open_wstream_(const char *filename, char *mode)
 		}
 	}
 	return s;
-}
-
-stream *
-open_wstream(const char *filename)
-{
-	return open_wstream_(filename, "wb");
-}
-
-stream *
-append_wstream(const char *filename)
-{
-	return open_wstream_(filename, "ab");
 }
 
 stream *
@@ -1811,8 +1769,8 @@ open_rastream(const char *filename)
 	return s;
 }
 
-static stream *
-open_wastream_(const char *filename, char *mode)
+stream *
+open_wastream(const char *filename)
 {
 	stream *s;
 	const char *ext;
@@ -1825,29 +1783,17 @@ open_wastream_(const char *filename, char *mode)
 	ext = get_extention(filename);
 
 	if (strcmp(ext, "gz") == 0)
-		return open_gzwastream(filename, mode);
+		return open_gzwastream(filename, "w");
 	if (strcmp(ext, "bz2") == 0)
-		return open_bzwastream(filename, mode);
+		return open_bzwastream(filename, "w");
 	if (strcmp(ext, "xz") == 0)
-		return open_xzwastream(filename, mode);
+		return open_xzwastream(filename, "w");
 
-	if ((s = open_stream(filename, mode)) == NULL)
+	if ((s = open_stream(filename, "w")) == NULL)
 		return NULL;
 	s->access = ST_WRITE;
 	s->type = ST_ASCII;
 	return s;
-}
-
-stream *
-open_wastream(const char *filename)
-{
-	return open_wastream_(filename, "w");
-}
-
-stream *
-append_wastream(const char *filename)
-{
-	return open_wastream_(filename, "a");
 }
 
 /* ------------------------------------------------------------------ */
@@ -2395,45 +2341,6 @@ socket_open(SOCKET sock, const char *name)
 }
 
 stream *
-socket_rstream(SOCKET sock, const char *name)
-{
-	stream *s;
-
-#ifdef STREAM_DEBUG
-	fprintf(stderr, "socket_rstream " SSZFMT " %s\n", (ssize_t) sock, name);
-#endif
-	if ((s = socket_open(sock, name)) == NULL)
-		return NULL;
-	s->type = ST_BIN;
-	if (s->errnr == MNSTR_NO__ERROR &&
-	    socket_read(s, (void *) &s->byteorder, sizeof(s->byteorder), 1) < 1) {
-		socket_close(s);
-		s->errnr = MNSTR_OPEN_ERROR;
-	}
-	return s;
-}
-
-stream *
-socket_wstream(SOCKET sock, const char *name)
-{
-	stream *s;
-
-#ifdef STREAM_DEBUG
-	fprintf(stderr, "socket_wstream " SSZFMT " %s\n", (ssize_t) sock, name);
-#endif
-	if ((s = socket_open(sock, name)) == NULL)
-		return NULL;
-	s->access = ST_WRITE;
-	s->type = ST_BIN;
-	if (s->errnr == MNSTR_NO__ERROR &&
-	    socket_write(s, (void *) &s->byteorder, sizeof(s->byteorder), 1) < 1) {
-		socket_close(s);
-		s->errnr = MNSTR_OPEN_ERROR;
-	}
-	return s;
-}
-
-stream *
 socket_rastream(SOCKET sock, const char *name)
 {
 	stream *s = NULL;
@@ -2456,233 +2363,6 @@ socket_wastream(SOCKET sock, const char *name)
 #endif
 	if ((s = socket_open(sock, name)) == NULL)
 		return NULL;
-	s->access = ST_WRITE;
-	s->type = ST_ASCII;
-	return s;
-}
-
-/* ------------------------------------------------------------------ */
-/* streams working on a UDP socket */
-
-typedef struct udp_stream {
-	SOCKET s;
-	struct sockaddr_in addr;
-} udp_stream;
-
-static ssize_t
-udp_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
-{
-	ssize_t res = 0, size = (ssize_t) (elmsize * cnt);
-	udp_stream *udp;
-	int addrlen;
-
-	udp = s->stream_data.p;
-	if (s->errnr || udp == NULL)
-		return -1;
-
-	if (size == 0 || elmsize == 0)
-		return (ssize_t) cnt;
-	addrlen = sizeof(udp->addr);
-	errno = 0;
-#ifdef _MSC_VER
-	WSASetLastError(0);
-#endif
-	if ((res = sendto(udp->s, buf,
-#ifdef NATIVE_WIN32
-			  (int)	/* on Windows, the length is an int... */
-#endif
-			  size, 0, (struct sockaddr *) &udp->addr, addrlen)) < 0) {
-		s->errnr = MNSTR_WRITE_ERROR;
-		return res;
-	}
-	if (res > 0)
-		return (ssize_t) (res / elmsize);
-	return 0;
-}
-
-static ssize_t
-udp_read(stream *s, void *buf, size_t elmsize, size_t cnt)
-{
-	ssize_t res = 0, size = (ssize_t) (elmsize * cnt);
-	struct sockaddr_in from;
-	socklen_t fromlen = sizeof(struct sockaddr_in);
-	udp_stream *udp;
-
-	udp = s->stream_data.p;
-	if (s->errnr || udp == NULL)
-		return -1;
-
-	if (size == 0)
-		return 0;
-	errno = 0;
-#ifdef _MSC_VER
-	WSASetLastError(0);
-#endif
-	if ((res = recvfrom(udp->s, buf,
-#ifdef NATIVE_WIN32
-			    (int)	/* on Windows, the length is an int... */
-#endif
-			    size, 0, (struct sockaddr *) &from, &fromlen)) < 0) {
-		s->errnr = MNSTR_READ_ERROR;
-		return res;
-	}
-	if (res > 0)
-		return (ssize_t) (res / elmsize);
-	return 0;
-}
-
-static void
-udp_close(stream *s)
-{
-	udp_stream *udp = s->stream_data.p;
-
-	if (udp) {
-#ifdef HAVE_SHUTDOWN
-		shutdown(udp->s, SHUT_RDWR);
-#endif
-		closesocket(udp->s);
-	}
-}
-
-static void
-udp_destroy(stream *s)
-{
-	if (s->stream_data.p)
-		free(s->stream_data.p);
-	destroy(s);
-}
-
-static stream *
-udp_create(const char *name)
-{
-	stream *s;
-	udp_stream *udp = NULL;
-
-	if ((s = create_stream(name)) == NULL)
-		return NULL;
-	if ((udp = (udp_stream *) malloc(sizeof(udp_stream))) == NULL) {
-		destroy(s);
-		return NULL;
-	}
-	s->read = udp_read;
-	s->write = udp_write;
-	s->close = udp_close;
-	s->destroy = udp_destroy;
-	s->stream_data.p = udp;
-
-	errno = 0;
-#ifdef _MSC_VER
-	WSASetLastError(0);
-#endif
-	return s;
-}
-
-static int
-udp_socket(udp_stream *udp, const char *hostname, int port, int write)
-{
-#ifdef HAVE_GETADDRINFO
-	struct addrinfo hints, *res, *rp;
-	char sport[32];
-
-	snprintf(sport, sizeof(sport), "%d", port);
-	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_UNSPEC;	/* IPv4 or IPv6 */
-	hints.ai_socktype = SOCK_DGRAM;
-	hints.ai_flags = AI_PASSIVE;
-	hints.ai_protocol = IPPROTO_UDP;
-	if (getaddrinfo(hostname, sport, &hints, &res))
-		return -1;
-	memset(&udp->addr, 0, sizeof(udp->addr));
-	for (rp = res; rp; rp = rp->ai_next) {
-		udp->s = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-		if (udp->s == INVALID_SOCKET)
-			continue;
-#ifdef HAVE_FCNTL
-		fcntl(udp->s, F_SETFD, FD_CLOEXEC);
-#endif
-		if (!write &&
-		    bind(udp->s, rp->ai_addr,
-#ifdef _MSC_VER
-			 (int)	/* Windows got the interface wrong... */
-#endif
-			 rp->ai_addrlen) == SOCKET_ERROR) {
-			closesocket(udp->s);
-			continue;
-		}
-		memcpy(&udp->addr, rp->ai_addr, rp->ai_addrlen);
-		freeaddrinfo(res);
-		return 0;
-	}
-	freeaddrinfo(res);
-	return -1;
-#else
-	struct sockaddr *serv;
-	socklen_t servsize;
-	struct hostent *hp;
-
-	hp = gethostbyname(hostname);
-	if (hp == NULL)
-		return -1;
-
-	memset(&udp->addr, 0, sizeof(udp->addr));
-	if (write)
-		memcpy(&udp->addr.sin_addr, hp->h_addr_list[0], hp->h_length);
-	else
-		udp->addr.sin_addr.s_addr = INADDR_ANY;
-	udp->addr.sin_family = hp->h_addrtype;
-	udp->addr.sin_port = htons((unsigned short) (port & 0xFFFF));
-	serv = (struct sockaddr *) &udp->addr;
-	servsize = (socklen_t) sizeof(udp->addr);
-	udp->s = socket(serv->sa_family, SOCK_DGRAM, IPPROTO_UDP);
-	if (udp->s == INVALID_SOCKET)
-		return -1;
-#ifdef HAVE_FCNTL
-	fcntl(udp->s, F_SETFD, FD_CLOEXEC);
-#endif
-	if (!write && bind(udp->s, serv, servsize) == SOCKET_ERROR)
-		return -1;
-	return 0;
-#endif
-}
-
-stream *
-udp_rastream(const char *hostname, int port, const char *name)
-{
-	stream *s;
-
-	if (hostname == NULL || name == NULL)
-		return NULL;
-#ifdef STREAM_DEBUG
-	fprintf(stderr, "udp_rawastream %s %s\n", hostname, name);
-#endif
-	s = udp_create(name);
-	if (s == NULL)
-		return NULL;
-	if (udp_socket(s->stream_data.p, hostname, port, 0) < 0) {
-		udp_destroy(s);
-		return NULL;
-	}
-	s->type = ST_ASCII;
-	return s;
-}
-
-stream *
-udp_wastream(const char *hostname, int port, const char *name)
-{
-	stream *s;
-
-	if (hostname == NULL || name == NULL)
-		return NULL;
-#ifdef STREAM_DEBUG
-	fprintf(stderr, "udp_wastream %s %s\n", hostname, name);
-#endif
-	s = udp_create(name);
-	if (s == NULL)
-		return NULL;
-	if (udp_socket(s->stream_data.p, hostname, port, 1) < 0) {
-		udp_destroy(s);
-		return NULL;
-	}
 	s->access = ST_WRITE;
 	s->type = ST_ASCII;
 	return s;
@@ -3448,11 +3128,20 @@ buffer_get_buf(buffer *b)
 
 	if (b == NULL)
 		return NULL;
-	if (b->pos == b->len && (b->buf = realloc(b->buf, b->len + 1)) == NULL)
-		return NULL;
+	if (b->pos == b->len) {
+		if ((r = realloc(b->buf, b->len + 1)) == NULL) {
+			/* keep b->buf in tact */
+			return NULL;
+		}
+		b->buf = r;
+	}
 	r = b->buf;
 	r[b->pos] = '\0';
 	b->buf = malloc(b->len);
+	if (b->buf == NULL) {
+		free(b);
+		return NULL;
+	}
 	b->len = b->buf ? b->len : 0;
 	b->pos = 0;
 	return r;
@@ -3505,14 +3194,14 @@ buffer_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 		return -1;
 	}
 	if (b->pos + size > b->len) {
-		size_t ns = b->len;
+		char *p;
+		size_t ns = b->pos + size + 8192;
 
-		while (b->pos + size > ns)
-			ns *= 2;
-		if ((b->buf = realloc(b->buf, ns)) == NULL) {
+		if ((p = realloc(b->buf, ns)) == NULL) {
 			s->errnr = MNSTR_WRITE_ERROR;
 			return -1;
 		}
+		b->buf = p;
 		b->len = ns;
 	}
 	memcpy(b->buf + b->pos, buf, size);
@@ -3818,7 +3507,7 @@ bs_read(stream *ss, void *buf, size_t elmsize, size_t cnt)
 			{
 				ssize_t i;
 
-				fprintf(stderr, "RD %s %zd \"", ss->name, m);
+				fprintf(stderr, "RD %s " SSZFMT " \"", ss->name, m);
 				for (i = 0; i < m; i++)
 					if (' ' <= ((char *) buf)[i] &&
 					    ((char *) buf)[i] < 127)
@@ -5076,12 +4765,14 @@ bstream_read(bstream *s, size_t size)
 	}
 
 	assert(s->buf != NULL);
-	if (s->len == s->size &&
-	    (s->buf = realloc(s->buf, (s->size <<= 1) + 1)) == NULL) {
-		s->size = 0;
-		s->len = 0;
-		s->pos = 0;
-		return -1;
+	if (s->len == s->size) {
+		char *p;
+		size_t ns = s->size + size + 8192;
+		if ((p = realloc(s->buf, ns + 1)) == NULL) {
+			return -1;
+		}
+		s->size = ns;
+		s->buf = p;
 	}
 
 	if (size > s->size - s->len)
@@ -5127,12 +4818,14 @@ bstream_readline(bstream *s)
 	}
 
 	assert(s->buf != NULL);
-	if (s->len == s->size &&
-	    (s->buf = realloc(s->buf, (s->size <<= 1) + 1)) == NULL) {
-		s->size = 0;
-		s->len = 0;
-		s->pos = 0;
-		return -1;
+	if (s->len == s->size) {
+		char *p;
+		size_t ns = s->size + size + 8192;
+		if ((p = realloc(s->buf, ns + 1)) == NULL) {
+			return -1;
+		}
+		s->size = ns;
+		s->buf = p;
 	}
 
 	if (size > s->size - s->len)
@@ -5187,151 +4880,6 @@ bstream_destroy(bstream *s)
 			free(s->buf);
 		free(s);
 	}
-}
-
-/* ------------------------------------------------------------------ */
-
-/*
- * Buffered write stream batches subsequent write requests in order to
- * optimize write bandwidth
- */
-typedef struct {
-	stream *s;
-	size_t len, pos;
-	char buf[FLEXIBLE_ARRAY_MEMBER];	/* NOTE: buf extends beyond array for wbs->len bytes */
-} wbs_stream;
-
-static int
-wbs_flush(stream *s)
-{
-	wbs_stream *wbs;
-	size_t len;
-
-	wbs = (wbs_stream *) s->stream_data.p;
-	if (wbs == NULL)
-		return -1;
-	len = wbs->pos;
-	wbs->pos = 0;
-	if (wbs->s == NULL ||
-	    wbs->s->write(wbs->s, wbs->buf, 1, len) != (ssize_t) len)
-		return -1;
-	if (wbs->s->flush)
-		return wbs->s->flush(wbs->s);
-	return 0;
-}
-
-static ssize_t
-wbs_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
-{
-	wbs_stream *wbs;
-	size_t nbytes, reqsize = cnt * elmsize, todo = reqsize;
-
-	wbs = (wbs_stream *) s->stream_data.p;
-	if (wbs == NULL)
-		return -1;
-	while (todo > 0) {
-		int flush = 1;
-		nbytes = wbs->len - wbs->pos;
-		if (nbytes > todo) {
-			nbytes = todo;
-			flush = 0;
-		}
-		memcpy(wbs->buf + wbs->pos, buf, nbytes);
-		todo -= nbytes;
-		buf = (((const char *) buf) + nbytes);
-		wbs->pos += nbytes;
-		if (flush && wbs_flush(s) < 0)
-			return -1;
-	}
-	return (ssize_t) cnt;
-}
-
-static void
-wbs_close(stream *s)
-{
-	wbs_stream *wbs = (wbs_stream *) s->stream_data.p;
-
-	wbs_flush(s);
-	if (wbs && wbs->s)
-		wbs->s->close(wbs->s);
-}
-
-static void
-wbs_destroy(stream *s)
-{
-	wbs_stream *wbs = (wbs_stream *) s->stream_data.p;
-
-	if (wbs) {
-		if (wbs->s)
-			wbs->s->destroy(wbs->s);
-		free(wbs);
-	}
-	destroy(s);
-}
-
-static void
-wbs_update_timeout(stream *s)
-{
-	wbs_stream *wbs = (wbs_stream *) s->stream_data.p;
-
-	if (wbs && wbs->s) {
-		wbs->s->timeout = s->timeout;
-		wbs->s->timeout_func = s->timeout_func;
-		if (wbs->s->update_timeout)
-			wbs->s->update_timeout(wbs->s);
-	}
-}
-
-static int
-wbs_isalive(stream *s)
-{
-	wbs_stream *wbs = (wbs_stream *) s->stream_data.p;
-
-	if (wbs && wbs->s) {
-		if (wbs->s->isalive)
-			return wbs->s->isalive(wbs->s);
-		return 1;
-	}
-	return 0;
-}
-
-static void
-wbs_clrerr(stream *s)
-{
-	if (s && s->stream_data.p)
-		mnstr_clearerr(((wbs_stream *) s->stream_data.p)->s);
-}
-
-stream *
-wbstream(stream *s, size_t buflen)
-{
-	stream *ns;
-	wbs_stream *wbs;
-
-	if (s == NULL)
-		return NULL;
-	ns = create_stream(s->name);
-	if (ns == NULL)
-		return NULL;
-	wbs = (wbs_stream *) malloc(offsetof(wbs_stream, buf) + buflen);
-	if (wbs == NULL) {
-		destroy(ns);
-		return NULL;
-	}
-	ns->type = s->type;
-	ns->access = s->access;
-	ns->close = wbs_close;
-	ns->clrerr = wbs_clrerr;
-	ns->destroy = wbs_destroy;
-	ns->flush = wbs_flush;
-	ns->update_timeout = wbs_update_timeout;
-	ns->isalive = wbs_isalive;
-	ns->write = wbs_write;
-	ns->stream_data.p = (void *) wbs;
-	wbs->s = s;
-	wbs->pos = 0;
-	wbs->len = buflen;
-	return ns;
 }
 
 /* ------------------------------------------------------------------ */
@@ -5432,16 +4980,16 @@ getFileNo(stream *s)
 static ssize_t
 stream_blackhole_write(stream *s, const void *buf, size_t elmsize, size_t cnt)
 {
-	s = (stream *) s;
-	buf = (const void *) buf;
-	elmsize = (size_t) elmsize;
+	(void) s;
+	(void) buf;
+	(void) elmsize;
 	return (ssize_t) cnt;
 }
 
 static void
 stream_blackhole_close(stream *s)
 {
-	s = (stream *) s;
+	(void) s;
 	/* no resources to close */
 }
 

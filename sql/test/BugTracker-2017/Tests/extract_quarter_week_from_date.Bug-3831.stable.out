@@ -165,6 +165,87 @@ Ready.
 [ 2015-12-14 14:12:12.120000+02:00,	51	]
 [ 2016-07-14 14:12:12.120000+02:00,	28	]
 [ 2017-06-14 14:12:12.120000+02:00,	24	]
+#select dt, "year"(dt) as dt_yr from my_dates order by dt;
+% sys.my_dates,	sys.L3 # table_name
+% dt,	dt_yr # name
+% date,	int # type
+% 10,	4 # length
+[ 2014-01-14,	2014	]
+[ 2015-12-14,	2015	]
+[ 2016-07-14,	2016	]
+[ 2017-06-14,	2017	]
+#select ts, "year"(ts) as ts_yr from my_dates order by dt;
+% sys.my_dates,	sys.L3 # table_name
+% ts,	ts_yr # name
+% timestamp,	int # type
+% 26,	4 # length
+[ 2014-01-14 12:12:12.120000,	2014	]
+[ 2015-12-14 12:12:12.120000,	2015	]
+[ 2016-07-14 12:12:12.120000,	2016	]
+[ 2017-06-14 12:12:12.120000,	2017	]
+#select tstz, "year"(tstz) as tstz_yr from my_dates order by dt;
+% sys.my_dates,	sys.L3 # table_name
+% tstz,	tstz_yr # name
+% timestamptz,	int # type
+% 32,	4 # length
+[ 2014-01-14 14:12:12.120000+02:00,	2014	]
+[ 2015-12-14 14:12:12.120000+02:00,	2015	]
+[ 2016-07-14 14:12:12.120000+02:00,	2016	]
+[ 2017-06-14 14:12:12.120000+02:00,	2017	]
+#select dt, quarter(dt) as dt_qrfrom from my_dates order by dt;
+% sys.my_dates,	sys.L3 # table_name
+% dt,	dt_qrfrom # name
+% date,	int # type
+% 10,	1 # length
+[ 2014-01-14,	1	]
+[ 2015-12-14,	4	]
+[ 2016-07-14,	3	]
+[ 2017-06-14,	2	]
+#select ts, quarter(ts) as ts_qrfrom from my_dates order by dt;
+% sys.my_dates,	sys.L3 # table_name
+% ts,	ts_qrfrom # name
+% timestamp,	int # type
+% 26,	1 # length
+[ 2014-01-14 12:12:12.120000,	1	]
+[ 2015-12-14 12:12:12.120000,	4	]
+[ 2016-07-14 12:12:12.120000,	3	]
+[ 2017-06-14 12:12:12.120000,	2	]
+#select tstz, quarter(tstz) as tstz_qr from my_dates order by dt;
+% sys.my_dates,	sys.L3 # table_name
+% tstz,	tstz_qr # name
+% timestamptz,	int # type
+% 32,	1 # length
+[ 2014-01-14 14:12:12.120000+02:00,	1	]
+[ 2015-12-14 14:12:12.120000+02:00,	4	]
+[ 2016-07-14 14:12:12.120000+02:00,	3	]
+[ 2017-06-14 14:12:12.120000+02:00,	2	]
+#select dt, week(dt) as dt_wk from my_dates order by dt;
+% sys.my_dates,	sys.L3 # table_name
+% dt,	dt_wk # name
+% date,	int # type
+% 10,	2 # length
+[ 2014-01-14,	3	]
+[ 2015-12-14,	51	]
+[ 2016-07-14,	28	]
+[ 2017-06-14,	24	]
+#select ts, week(ts) as ts_wk from my_dates order by dt;
+% sys.my_dates,	sys.L3 # table_name
+% ts,	ts_wk # name
+% timestamp,	int # type
+% 26,	2 # length
+[ 2014-01-14 12:12:12.120000,	3	]
+[ 2015-12-14 12:12:12.120000,	51	]
+[ 2016-07-14 12:12:12.120000,	28	]
+[ 2017-06-14 12:12:12.120000,	24	]
+#select tstz, week(tstz) as tstz_wk from my_dates order by dt;
+% sys.my_dates,	sys.L3 # table_name
+% tstz,	tstz_wk # name
+% timestamptz,	int # type
+% 32,	2 # length
+[ 2014-01-14 14:12:12.120000+02:00,	3	]
+[ 2015-12-14 14:12:12.120000+02:00,	51	]
+[ 2016-07-14 14:12:12.120000+02:00,	28	]
+[ 2017-06-14 14:12:12.120000+02:00,	24	]
 #drop table my_dates;
 
 # 17:54:32 >  

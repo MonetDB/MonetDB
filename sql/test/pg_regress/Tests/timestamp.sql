@@ -263,7 +263,7 @@ SELECT d1, extract(century from d1) FROM TIMESTAMP_TBL;
 SELECT d1, extract(millenium from d1) FROM TIMESTAMP_TBL;
 SELECT d1, extract(epoch from d1) FROM TIMESTAMP_TBL;
 
-SELECT d1, "week"(d1) FROM TIMESTAMP_TBL;
+SELECT d1, week(d1) FROM TIMESTAMP_TBL;
 SELECT d1, weekofyear(d1) FROM TIMESTAMP_TBL;
 
 SELECT d1, dayofmonth(d1) FROM TIMESTAMP_TBL;

@@ -32,7 +32,6 @@ Ready.
 [(1,)]
 (2,)
 42000!syntax error, unexpected IDENT, expecting SELECT or '(' in: "( xyz"
-!25005!Current transaction is aborted (please ROLLBACK)
 
 [(3, 'three'), (7, 'seven')]
 2
