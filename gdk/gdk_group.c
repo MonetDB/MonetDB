@@ -331,6 +331,47 @@
 	/* COMP   */	cmp(v, BUNtail(bi, hb)) == 0		\
 	)
 
+/* reverse the bits of an OID value */
+static inline oid
+rev(oid x)
+{
+#if SIZEOF_OID == 8
+	x = (x & 0x5555555555555555) << 1 | (x & 0xAAAAAAAAAAAAAAAA) >> 1;
+	x = (x & 0x3333333333333333) << 2 | (x & 0xCCCCCCCCCCCCCCCC) >> 2;
+	x = (x & 0x0F0F0F0F0F0F0F0F) << 4 | (x & 0xF0F0F0F0F0F0F0F0) >> 4;
+	x = (x & 0x00FF00FF00FF00FF) << 8 | (x & 0xFF00FF00FF00FF00) >> 8;
+	x = (x & 0x0000FFFF0000FFFF) << 16 | (x & 0xFFFF0000FFFF0000) >> 16;
+	x = (x & 0x00000000FFFFFFFF) << 32 | (x & 0xFFFFFFFF00000000) >> 32;
+#else
+	x = (x & 0x55555555) << 1 | (x & 0xAAAAAAAA) >> 1;
+	x = (x & 0x33333333) << 2 | (x & 0xCCCCCCCC) >> 2;
+	x = (x & 0x0F0F0F0F) << 4 | (x & 0xF0F0F0F0) >> 4;
+	x = (x & 0x00FF00FF) << 8 | (x & 0xFF00FF00) >> 8;
+	x = (x & 0x0000FFFF) << 16 | (x & 0xFFFF0000) >> 16;
+#endif
+	return x >> 1;		/* shift to be in OID range */
+}
+
+/* population count: count number of 1 bits in a value */
+static inline int
+pop(oid x)
+{
+#if SIZEOF_OID == 8
+	x = (x & 0x5555555555555555) + ((x >> 1) & 0x5555555555555555);
+	x = (x & 0x3333333333333333) + ((x >> 2) & 0x3333333333333333);
+	x = (x & 0x0F0F0F0F0F0F0F0F) + ((x >> 4) & 0x0F0F0F0F0F0F0F0F);
+	x = (x & 0x00FF00FF00FF00FF) + ((x >> 8) & 0x00FF00FF00FF00FF);
+	x = (x & 0x0000FFFF0000FFFF) + ((x >> 16) & 0x0000FFFF0000FFFF);
+	x = (x & 0x00000000FFFFFFFF) + ((x >> 32) & 0x00000000FFFFFFFF);
+#else
+	x = (x & 0x55555555) + ((x >> 1) & 0x55555555);
+	x = (x & 0x33333333) + ((x >> 2) & 0x33333333);
+	x = (x & 0x0F0F0F0F) + ((x >> 4) & 0x0F0F0F0F);
+	x = (x & 0x00FF00FF) + ((x >> 8) & 0x00FF00FF);
+	x = (x & 0x0000FFFF) + ((x >> 16) & 0x0000FFFF);
+#endif
+	return (int) x;
+}
 
 #define GRP_create_partial_hash_table(INIT_0,INIT_1,HASH,COMP)		\
 	do {								\
@@ -396,7 +437,11 @@
 				assert(p < end);			\
 				INIT_1;					\
 				prb = HASH;				\
-				prb = (prb ^ hash_oid(hs, &grps[r])) & hs->mask; \
+				/* cleverly combine group ID with */	\
+				/* hash value: group ID in top-most */	\
+				/* bits of hash by reversing the */	\
+				/* bits and shifting them in place */	\
+				prb = (prb ^ rev(grps[r]) >> bits) & hs->mask; \
 				for (hb = HASHget(hs, prb);		\
 				     hb != HASHnil(hs) && hb >= start;	\
 				     hb = HASHgetlink(hs, hb)) {	\
@@ -1009,6 +1054,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		size_t nmelen;
 		Heap *hp = NULL;
 		BUN prb;
+		int bits;
+		BUN mask;
 
 		GDKclrerr();	/* not interested in BAThash errors */
 
@@ -1030,6 +1077,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  subsorted, gc ? " (g clustered)" : "");
 		nme = BBP_physical(b->batCacheid);
 		nmelen = strlen(nme);
+		mask = MAX(HASHmask(cnt), 1 << 16);
+		bits = 8 * SIZEOF_OID - pop(mask - 1) - 1;
 		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
 		    (hp->farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
 		    (hp->filename = GDKmalloc(nmelen + 30)) == NULL ||
@@ -1037,7 +1086,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
 		    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
 		    (hs = HASHnew(hp, b->ttype, BUNlast(b),
-				  MAX(HASHmask(cnt), 1 << 16), BUN_NONE)) == NULL) {
+				  mask, BUN_NONE)) == NULL) {
 			if (hp) {
 				if (hp->filename)
 					GDKfree(hp->filename);
