@@ -476,8 +476,8 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	CQnode *pnew;
 	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
 	char* err_message = (sqlcontext && sqlcontext->continuous & mod_continuous_function) ? "function" : "procedure";
-	int i, j, cycles = sqlcontext ? sqlcontext->cycles : DEFAULT_CP_CYCLES,
-            is_function = strcmp(err_message, "function") == 0;
+	int i, j, cycles = sqlcontext ? sqlcontext->cycles : DEFAULT_CP_CYCLES;/*,
+          is_function = strcmp(err_message, "function") == 0;*/
 	lng heartbeats = sqlcontext ? sqlcontext->heartbeats : DEFAULT_CP_HEARTBEAT;
 
 	(void) pci;
