@@ -12,12 +12,13 @@ begin
 END;
 select * from functions where name ='aggr00';
 
--- a continuous procedure can be called like any other procedure
-start continuous  aggr00();
+-- to call a continuous function in the scheduler, we must pass the keyword "function" explicitly
+start continuous function aggr00();
 
 select aggr00(); #should return 1
 select aggr00(); #should return 2
 
+stop continuous function aggr00();
 drop function aggr00;
 
 --factory factories.aggr00():int;             	#[0] (0)  0 

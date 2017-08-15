@@ -18,7 +18,7 @@ select * from functions where name ='aggr01';
 -- a continuous function can be called used like any other function?
 select aggr01();  -- causes error
 
-start continuous  aggr01();
+start continuous function aggr01();
 
 insert into ftmp values(1),(1);
 select aggr01(); #should return 2
@@ -32,6 +32,6 @@ select aggr01(); #should return 6
 call cquery.wait(1000);
 select aggr01(); #should return 6
 
-stop continuous aggr01();
+stop continuous function aggr01();
 drop function aggr01;
 drop table ftmp;

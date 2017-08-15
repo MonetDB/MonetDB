@@ -171,7 +171,7 @@ stream_export stream *append_wstream(const char *filename);
 stream_export stream *open_rastream(const char *filename);
 
 /* open any file with any mode */
-stream *open_rastream_and_create(const char *filename);
+stream_export stream *open_rastream_and_create(const char *filename);
 
 /* open in ascii stream in write mode*/
 stream_export stream *open_wastream(const char *filename);
