@@ -4602,9 +4602,14 @@ SQLflush_log(void *ret)
 }
 
 str
-SQLexist_val(bit *res, void *v)
+SQLexist_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	if (v) 
+	bit *res = getArgReference_bit(stk, pci, 0);
+	ptr v = getArgReference(stk, pci, 1);
+	int mtype = getArgType(mb, pci, 1);
+
+	(void)cntxt;
+	if (ATOMcmp(mtype, v, ATOMnilptr(mtype)) != 0)
 		*res = TRUE;
 	else
 		*res = FALSE;

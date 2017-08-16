@@ -53,5 +53,5 @@ address ALGexist;
 command aggr.exist(b:bat[:any_2]):bit
 address SQLexist;
 
-command aggr.exist(v:any_2):bit
+pattern aggr.exist(v:any_2):bit
 address SQLexist_val;

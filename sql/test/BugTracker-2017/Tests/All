@@ -63,3 +63,5 @@ handle-values-subqueries.Bug-6336
 spurious_errors.Bug-6344
 caching_stats_bug.6374
 HAVE_LIBPY?aggr_udf_with_more_than_2params.Bug-6385
+exists.Bug-6392
+case.Bug-6386
