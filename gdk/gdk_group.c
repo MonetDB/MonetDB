@@ -560,6 +560,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 #endif
 	BUN start, end, cnt;
 	const oid *restrict cand, *candend;
+	oid maxgrp = 0;		/* maximum value of g BAT (if subgrouping) */
+	PROPrec *prop;
 
 	if (b == NULL) {
 		GDKerror("BATgroup: b must exist\n");
@@ -635,6 +637,19 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		}
 		return GDK_SUCCEED;
 	}
+	if (g) {
+		if (BATtdense(g))
+			maxgrp = g->tseqbase + BATcount(g);
+		else if (BATtordered(g))
+			maxgrp = * (oid *) Tloc(g, BATcount(g) - 1);
+		else {
+			prop = BATgetprop(g, GDK_MAX_VALUE);
+			if (prop)
+				maxgrp = prop->v.val.oval;
+			else
+				BATmax(g, &maxgrp);
+		}
+	}
 	if (BATordered(b) && BATordered_rev(b)) {
 		/* all values are equal */
 		if (g == NULL || (BATordered(g) && BATordered_rev(g))) {
@@ -696,6 +711,10 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			gn = COLcopy(g, g->ttype, 0, TRANSIENT);
 			if (gn == NULL)
 				goto error;
+			prop = BATgetprop(g, GDK_MAX_VALUE);
+			if (prop)
+				BATsetprop(gn, GDK_MAX_VALUE, TYPE_oid, &maxgrp);
+
 			*groups = gn;
 			if (extents) {
 				en = COLcopy(e, e->ttype, 0, TRANSIENT);
@@ -720,6 +739,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		goto error;
 	ngrps = (oid *) Tloc(gn, 0);
 	maxgrps = cnt / 10;
+	if (maxgrps < maxgrp)
+		maxgrps += maxgrp;
 	if (e && maxgrps < BATcount(e))
 		maxgrps += BATcount(e);
 	if (h && maxgrps < BATcount(h))
@@ -1165,6 +1186,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	gn->trevsorted = ngrp == 1 || BATcount(gn) <= 1;
 	gn->tnonil = 1;
 	gn->tnil = 0;
+	ngrp--;	     /* max value is one less than number of values */
+	BATsetprop(gn, GDK_MAX_VALUE, TYPE_oid, &ngrp);
 	*groups = gn;
 	return GDK_SUCCEED;
   error:
