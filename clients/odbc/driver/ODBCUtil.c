@@ -331,13 +331,13 @@ static struct scalars {
 	{"dayofmonth", 1, "\"dayofmonth\"(\1)", },
 	{"dayofweek", 1, "\"dayofweek\"(\1)", },
 	{"dayofyear", 1, "\"dayofyear\"(\1)", },
-	{"extract", 1, "\"extract\"(\1)", }, /* include "FROM" in argument */
+	{"extract", 1, "\"extract\"(\1)", }, /* include "X FROM " in argument */
 	{"hour", 1, "\"hour\"(\1)", },
 	{"minute", 1, "\"minute\"(\1)", },
 	{"month", 1, "\"month\"(\1)", },
 	{"monthname", 1, NULL, },
 	{"now", 0, "\"now\"()", },
-	{"quarter", 1, "((\"month\"(\1) - 1) / 3 + 1)", },
+	{"quarter", 1, "\"quarter\"(\1)", },
 	{"second", 1, "\"second\"(\1)", },
 	{"timestampadd", 3, NULL, },
 	{"timestampdiff", 3, NULL, },
@@ -357,7 +357,7 @@ static struct convert {
 	{ "SQL_BIGINT", "bigint", },
 	{ "SQL_BINARY", "binary large object", },
 	{ "SQL_BIT", "boolean", },
-	{ "SQL_CHAR", "character large object", },
+	{ "SQL_CHAR", "character", },
 	{ "SQL_DATE", "date", },
 	{ "SQL_DECIMAL", "decimal(18,7)", },
 	{ "SQL_DOUBLE", "double", },
@@ -389,7 +389,7 @@ static struct convert {
 	{ "SQL_VARCHAR", "character varying", },
 	{ "SQL_WCHAR", "character", },
 	{ "SQL_WLONGVARCHAR", "character large object", },
-	{ "SQL_WVARCHAR", "character large object", },
+	{ "SQL_WVARCHAR", "character varying", },
 	{ NULL, NULL, },	/* sentinel */
 };
 

@@ -445,6 +445,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	int oldvtop, oldstop = 1;
 	buffer *b;
 	char *n;
+	bstream *bs;
 	stream *buf;
 	str msg = MAL_SUCCEED;
 	backend *be, *sql = (backend *) c->sqlcontext;
@@ -503,15 +504,26 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	if( b == NULL)
 		throw(SQL,"sql.statement", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	n = GDKmalloc(len + 1 + 1);
-	if( n == NULL)
+	if( n == NULL) {
+		GDKfree(b);
 		throw(SQL,"sql.statement", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 	strncpy(n, *expr, len);
 	n[len] = '\n';
 	n[len + 1] = 0;
 	len++;
 	buffer_init(b, n, len);
 	buf = buffer_rastream(b, "sqlstatement");
-	scanner_init(&m->scanner, bstream_create(buf, b->len), NULL);
+	if(buf == NULL) {
+		buffer_destroy(b);//n and b will be freed by the buffer
+		throw(SQL,"sql.statement",MAL_MALLOC_FAIL);
+	}
+	bs = bstream_create(buf, b->len);
+	if(bs == NULL) {
+		buffer_destroy(b);//n and b will be freed by the buffer
+		throw(SQL,"sql.statement",MAL_MALLOC_FAIL);
+	}
+	scanner_init(&m->scanner, bs, NULL);
 	m->scanner.mode = LINE_N;
 	bstream_next(m->scanner.rs);
 

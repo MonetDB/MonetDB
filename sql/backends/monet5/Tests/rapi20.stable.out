@@ -70,7 +70,7 @@ Ready.
 #	loopback_query("SELECT * FROM rapi20dummy")$i
 #};
 #SELECT * FROM rapi20();
-% . # table_name
+% .L1 # table_name
 % i # name
 % int # type
 % 2 # length

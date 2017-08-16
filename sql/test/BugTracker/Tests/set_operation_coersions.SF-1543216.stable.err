@@ -14,16 +14,10 @@ MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from t1543216 union select * from s1543216;
 ERROR = !types varchar(23,0) and int(32,0) are not equal for column 'id'
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-ERROR = !Current transaction is aborted (please ROLLBACK)
-CODE  = 25005
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-20479/.s.monetdb.32416
 QUERY = select * from f1543216 union select * from b1543216;
 ERROR = !types boolean(1,0) and double(53,0) are not equal for column 'id'
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-ERROR = !Current transaction is aborted (please ROLLBACK)
-CODE  = 25005
 
 
 # 11:19:45 >  

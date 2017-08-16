@@ -20,7 +20,6 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	InstrPtr p,q;
 	int actions = 0;
 	InstrPtr *old;
-	char *packIncrementRef = putName("packIncrement");
 	char buf[256];
 	lng usec = GDKusec();
 

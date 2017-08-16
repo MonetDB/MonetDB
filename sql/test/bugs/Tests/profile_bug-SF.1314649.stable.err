@@ -21,7 +21,6 @@ CODE  = 25005
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = record select count(*) from t1314649 where "human" = true;
 ERROR = !syntax error, unexpected IDENT in: "record"
-        !Current transaction is aborted (please ROLLBACK)
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select query, user from history;

@@ -344,7 +344,7 @@ handle_error(mvc *m, int pstatus, str msg)
 	} else if( GDKerrbuf && GDKerrbuf[0]){
 		new = GDKstrdup(GDKerrbuf);
 		GDKerrbuf[0] = 0;
-	}else if( *m->errstr){
+	} else if( *m->errstr){
 		new = GDKstrdup(m->errstr);
 		m->errstr[0] = 0;
 	}
@@ -1058,7 +1058,8 @@ SQLparser(Client c)
 				msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
 			*m->errstr = 0;
 		}
-		msg = handle_error(m, pstatus, msg);
+		if (m->sym)
+			msg = handle_error(m, pstatus, msg);
 		sqlcleanup(m, err);
 		goto finalize;
 	}
@@ -1261,7 +1262,7 @@ SQLcallback(Client c, str msg){
 			n = strchr(m, '\n');
 			if (n)
 				*n = 0;
-			s = getExceptionMessage(m);
+			s = getExceptionMessageAndState(m);
 			if (n) {
 				*n++ = '\n';
 				l = n - s;

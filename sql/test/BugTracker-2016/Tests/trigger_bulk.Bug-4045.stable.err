@@ -31,13 +31,16 @@ stderr of test 'trigger_bulk.Bug-4045` in directory 'sql/test/BugTracker-2016` i
 
 MAPI  = (monetdb) /var/tmp/mtest-15541/.s.monetdb.33804
 QUERY = INSERT INTO t111 SELECT * FROM t111;
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: too many nested operators
+ERROR = !SELECT: too many nested operators
+CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
 QUERY = INSERT INTO t111 VALUES(30,'single');
-ERROR = !ParseException:SQLparser:SQLSTATE 42000 !SELECT: too many nested operators
+ERROR = !SELECT: too many nested operators
+CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-21551/.s.monetdb.38677
 QUERY = DROP TABLE t111;
-ERROR = !SQLException:sql.droptable:SQLSTATE 42000 !DROP TABLE: unable to drop table t111 (there are database objects which depend on it)
+ERROR = !DROP TABLE: unable to drop table t111 (there are database objects which depend on it)
+CODE  = 42000
 
 # 09:09:27 >  
 # 09:09:27 >  "Done."

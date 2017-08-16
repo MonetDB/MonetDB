@@ -41,12 +41,4 @@ mal_export str mnstr_open_rstreamwrap(Stream *S, str *filename);
 mal_export str mnstr_open_wstreamwrap(Stream *S, str *filename);
 mal_export str mnstr_open_rastreamwrap(Stream *S, str *filename);
 mal_export str mnstr_open_wastreamwrap(Stream *S, str *filename);
-
-mal_export str mnstr_stream_rstreamwrap(Stream *sout, Stream *sin);
-mal_export str mnstr_stream_wstreamwrap(Stream *sout, Stream *sin);
-
-mal_export str mnstr_socket_rstreamwrap(Stream *S, int *socket, str *name);
-mal_export str mnstr_socket_wstreamwrap(Stream *S, int *socket, str *name);
-mal_export str mnstr_socket_rastreamwrap(Stream *S, int *socket, str *name);
-mal_export str mnstr_socket_wastreamwrap(Stream *S, int *socket, str *name);
 #endif /*_STREAMS_H_*/

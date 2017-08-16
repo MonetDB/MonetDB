@@ -40,20 +40,24 @@ ERROR = !Python exception
         !  3.   _conn.execute('INSERT INTO pyapi19_integers VALUES (0), (1), (2);')
         !  4.   return(1)
         !Loopback queries are not supported in parallel.
-MAPI  = (monetdb) /var/tmp/mtest-23452/.s.monetdb.39765
+CODE  = PY000
+MAPI  = (monetdb) /var/tmp/mtest-11032/.s.monetdb.32138
 QUERY = SELECT * FROM pyapi19_integers;
-ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-23452/.s.monetdb.39765
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
+MAPI  = (monetdb) /var/tmp/mtest-11032/.s.monetdb.32138
 QUERY = CREATE FUNCTION mapped_result_query() returns table (i integer) LANGUAGE PYTHON_MAP
         {
             res = _conn.execute('SELECT * FROM pyapi19_integers;')
             return res['i']
         };
-ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-23452/.s.monetdb.39765
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
+MAPI  = (monetdb) /var/tmp/mtest-11032/.s.monetdb.32138
 QUERY = SELECT * FROM mapped_result_query();
-ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-23452/.s.monetdb.39765
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
+MAPI  = (monetdb) /var/tmp/mtest-11032/.s.monetdb.32138
 QUERY = SELECT COUNT(i) FROM pyapi19_load_table();
 ERROR = !Python exception
         !
@@ -62,7 +66,8 @@ ERROR = !Python exception
         !  3.   return res['i']
         !  4. 
         !Loopback queries are not supported in parallel.
-MAPI  = (monetdb) /var/tmp/mtest-23452/.s.monetdb.39765
+CODE  = PY000
+MAPI  = (monetdb) /var/tmp/mtest-11032/.s.monetdb.32138
 QUERY = SELECT * FROM mapped_result_query();
 ERROR = !Python exception
         !
@@ -71,7 +76,8 @@ ERROR = !Python exception
         !  3.   return res['s']
         !  4. 
         !Loopback queries are not supported in parallel.
-MAPI  = (monetdb) /var/tmp/mtest-23452/.s.monetdb.39765
+CODE  = PY000
+MAPI  = (monetdb) /var/tmp/mtest-11032/.s.monetdb.32138
 QUERY = SELECT * FROM mapped_result_query();
 ERROR = !Python exception
         !
@@ -80,7 +86,8 @@ ERROR = !Python exception
         !  3.   return res
         !  4. 
         !Loopback queries are not supported in parallel.
-MAPI  = (monetdb) /var/tmp/mtest-23452/.s.monetdb.39765
+CODE  = PY000
+MAPI  = (monetdb) /var/tmp/mtest-11032/.s.monetdb.32138
 QUERY = SELECT * FROM pyapi19_load_table() LIMIT 100;
 ERROR = !Python exception
         !
@@ -89,6 +96,7 @@ ERROR = !Python exception
         !  3.   return res
         !  4. 
         !Loopback queries are not supported in parallel.
+CODE  = PY000
 
 # 11:59:05 >  
 # 11:59:05 >  "Done."

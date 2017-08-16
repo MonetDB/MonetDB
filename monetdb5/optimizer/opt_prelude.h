@@ -202,6 +202,7 @@ mal_export  str outputRef;
 mal_export  str parametersRef;
 mal_export  str packRef;
 mal_export  str pack2Ref;
+mal_export  str packIncrementRef;
 mal_export  str passRef;
 mal_export  str partitionRef;
 mal_export  str pcreRef;

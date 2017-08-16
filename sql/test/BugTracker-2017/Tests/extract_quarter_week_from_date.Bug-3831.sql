@@ -18,5 +18,17 @@ select dt, extract(week from dt) as dt_wk from my_dates order by dt;
 select ts, extract(week from ts) as ts_wk from my_dates order by dt;
 select tstz, extract(week from tstz) as tstz_wk from my_dates order by dt;
 
+select dt, "year"(dt) as dt_yr from my_dates order by dt;
+select ts, "year"(ts) as ts_yr from my_dates order by dt;
+select tstz, "year"(tstz) as tstz_yr from my_dates order by dt;
+
+select dt, quarter(dt) as dt_qrfrom from my_dates order by dt;
+select ts, quarter(ts) as ts_qrfrom from my_dates order by dt;
+select tstz, quarter(tstz) as tstz_qr from my_dates order by dt;
+
+select dt, week(dt) as dt_wk from my_dates order by dt;
+select ts, week(ts) as ts_wk from my_dates order by dt;
+select tstz, week(tstz) as tstz_wk from my_dates order by dt;
+
 drop table my_dates;
 

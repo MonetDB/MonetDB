@@ -55,6 +55,7 @@ mal_export int isExceptionVariable(str nme);
 
 mal_export enum malexception	getExceptionType(const char *);
 mal_export str	getExceptionPlace(const char *);
+mal_export str	getExceptionMessageAndState(const char *);
 mal_export str	getExceptionMessage(const char *);
 mal_export void dumpExceptionsToStream(stream *out, str msg);
 mal_export void freeException(str);

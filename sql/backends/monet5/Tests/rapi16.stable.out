@@ -36,7 +36,7 @@ Ready.
 #CREATE FUNCTION rapi16(a INTEGER, b DOUBLE) RETURNS TABLE (c INTEGER, d DOUBLE) LANGUAGE R {
 #data.frame(c=a,d=b)};
 #SELECT * FROM rapi16((SELECT A, B FROM rapi16 AS X));
-% .,	. # table_name
+% .L3,	.L3 # table_name
 % c,	d # name
 % int,	double # type
 % 1,	24 # length

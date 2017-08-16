@@ -19,6 +19,7 @@ OPTallConstant(Client cntxt, MalBlkPtr mb, InstrPtr p)
 	if ( !(p->token == ASSIGNsymbol ||
 		   getModuleId(p) == calcRef ||
 		   getModuleId(p) == strRef ||
+		   getModuleId(p) == mtimeRef ||
 		   getModuleId(p) == mmathRef))
 		return FALSE;
 	if (getModuleId(p) == mmathRef && strcmp(getFunctionId(p), "rand") == 0)

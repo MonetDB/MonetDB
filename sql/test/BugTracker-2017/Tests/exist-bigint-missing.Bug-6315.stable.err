@@ -50,6 +50,7 @@ QUERY = insert into sys.privileges values (
                        is not NULL then 7 else 7 end
                   );
 ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
 
 # 16:32:28 >  
 # 16:32:28 >  "Done."

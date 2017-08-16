@@ -1,6 +1,12 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Mon Aug  7 2017 Sjoerd Mullender <sjoerd@acm.org>
+- Removed MAL functions streams.socketRead, streams.socketReadBytes,
+  streams.socketWrite, and streams.socketWriteBytes.
+- Removed MAL functions streams.openRead(s:streams):streams and
+  streams.openWrite(s:streams):streams.
+
 * Tue Aug  1 2017 Sjoerd Mullender <sjoerd@acm.org>
 - Lots of changes to streamline the internal error handling.
   In principle, all errors should now include a SQLSTATE error code

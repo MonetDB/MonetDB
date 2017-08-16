@@ -36,6 +36,7 @@ ERROR = !Python exception
         !> 4.   _emit.emit({'a1': a1, 'a2': a2})
         !  5. 
         !Element a2 has size 200, but expected an element with size 100
+CODE  = PY000
 
 # 13:26:40 >  
 # 13:26:40 >  "Done."

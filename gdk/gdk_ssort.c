@@ -47,8 +47,13 @@ typedef struct {
 	 * most 2 lng's, we don't need to allocate anything. */
 	void *th;
 	void *tt;
+#ifdef HAVE_HGE
+	hge tempstorageh[1];	/* 16 bytes should be wide enough ... */
+	hge tempstoraget[1];	/* ... for all our fixed-sized data */
+#else
 	lng tempstorageh[2];	/* 16 bytes should be wide enough ... */
 	lng tempstoraget[2];	/* ... for all our fixed-sized data */
+#endif
 
 	/* This controls when we get *into* galloping mode.  It's
 	 * initialized to MIN_GALLOP.  merge_lo and merge_hi tend to
