@@ -341,7 +341,8 @@ SQLrun(Client c, backend *be, mvc *m)
 	// This include template constants, BAT sizes.
 	if( m->emod & mod_debug)
 		mb->keephistory = TRUE;
-	msg = SQLoptimizeQuery(c, mb);
+	if(!m->continuous) /* it's fine to not optimize the MAL block in a continuous query, as the plan it's just a user module call */
+		msg = SQLoptimizeQuery(c, mb);
 	mb->keephistory = FALSE;
 
 	if (mb->errors){
@@ -355,36 +356,32 @@ SQLrun(Client c, backend *be, mvc *m)
 			printFunction(c->fdout, mb, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
 	} else if( m->emod & mod_debug) {
 		msg = runMALDebugger(c, mb);
+	} else if( m->emod & mod_trace){
+		SQLsetTrace(c,mb);
+		msg = runMAL(c, mb, 0, 0);
+		stopTrace(0);
+	} else if(m->continuous & mod_start_continuous) {
+		//mnstr_printf(c->fdout, "#Start continuous query\n");
+		// hand over the wrapper command to the scheduler
+		msg = CQregister(c,mb, 0,0);
+	} else if(m->continuous & mod_stop_continuous) {
+		//mnstr_printf(c->fdout, "#Stop continuous query\n");
+		msg = CQderegister(c,mb, 0,0);
+	} else if(m->continuous & mod_pause_continuous) {
+		//mnstr_printf(c->fdout, "#Stop continuous query\n");
+		msg = CQpause(c,mb, 0,0);
+	} else if(m->continuous & mod_resume_continuous) {
+		//mnstr_printf(c->fdout, "#Resume continuous query with changes\n");
+		msg = CQresume(c,mb, 0,0);
+	} else if(m->continuous & mod_resume_continuous_no_alter) {
+		//mnstr_printf(c->fdout, "#Resume continuous query with no changes\n");
+		msg = CQresumeNoAlter(c,mb, 0,0);
 	} else {
-		if( m->emod & mod_trace){
-			SQLsetTrace(c,mb);
-			msg = runMAL(c, mb, 0, 0);
-			stopTrace(0);
-		} else {
-			if(m->continuous & mod_start_continuous) {
-				//mnstr_printf(c->fdout, "#Start continuous query\n");
-				// hand over the wrapper command to the scheduler
-				msg = CQregister(c,mb, 0,0);
-			} else if(m->continuous & mod_stop_continuous) {
-				//mnstr_printf(c->fdout, "#Stop continuous query\n");
-				msg = CQderegister(c,mb, 0,0);
-			} else if(m->continuous & mod_pause_continuous) {
-				//mnstr_printf(c->fdout, "#Stop continuous query\n");
-				msg = CQpause(c,mb, 0,0);
-			} else if(m->continuous & mod_resume_continuous) {
-				//mnstr_printf(c->fdout, "#Resume continuous query with changes\n");
-				msg = CQresume(c,mb, 0,0);
-			} else if(m->continuous & mod_resume_continuous_no_alter) {
-				//mnstr_printf(c->fdout, "#Resume continuous query with no changes\n");
-				msg = CQresumeNoAlter(c,mb, 0,0);
-			} else {
-				msg = runMAL(c, mb, 0, 0);
-			}
-			m->continuous = 0;
-			m->heartbeats = DEFAULT_CP_HEARTBEAT;
-			m->cycles = DEFAULT_CP_CYCLES;
-		}
+		msg = runMAL(c, mb, 0, 0);
 	}
+	m->continuous = 0;
+	m->heartbeats = DEFAULT_CP_HEARTBEAT;
+	m->cycles = DEFAULT_CP_CYCLES;
 
 	// release the resources
 	freeMalBlk(mb);

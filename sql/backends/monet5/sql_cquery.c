@@ -474,13 +474,22 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	MalBlkPtr other;
 	Symbol s;
 	CQnode *pnew;
-	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
-	char* err_message = (sqlcontext && sqlcontext->continuous & mod_continuous_function) ? "function" : "procedure";
-	int i, j, cycles = sqlcontext ? sqlcontext->cycles : DEFAULT_CP_CYCLES;/*,
-          is_function = strcmp(err_message, "function") == 0;*/
-	lng heartbeats = sqlcontext ? sqlcontext->heartbeats : DEFAULT_CP_HEARTBEAT;
+	backend *be = (backend *) cntxt->sqlcontext;
+	mvc* sqlcontext;
+	char* err_message = "procedure";
+	int i, j, is_function = 0, cycles = DEFAULT_CP_CYCLES;
+	lng heartbeats = DEFAULT_CP_HEARTBEAT;
 
 	(void) pci;
+
+	if(be){
+		sqlcontext = be->mvc;
+		if(sqlcontext->continuous & mod_continuous_function)
+			err_message = "function";
+		cycles = sqlcontext->cycles;
+		heartbeats = sqlcontext->heartbeats;
+		is_function = (sqlcontext->continuous & mod_continuous_function);
+	}
 
 	if(cycles < 0 && cycles != NO_CYCLES){
 		msg = createException(SQL,"cquery.register",SQLSTATE(42000) "The cycles value must be non negative\n");
@@ -491,15 +500,16 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 		goto finish;
 	}
 
-	/*if(is_function) {
-		q = newStmt(mb, userRef, cq->name);
-		if (!q) {
-			msg = createException(SQL,"cquery.register",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			goto finish;
+	if(is_function){ /* for functions we need to remove the sql.mvc instruction */
+		for(i = 1; i< mb->stop; i++){
+			sig= getInstrPtr(mb,i);
+			if( getFunctionId(sig) == mvcRef){
+				removeInstruction(mb, sig);
+			}
 		}
-	}*/
+	}
 
-	/* extract the actual procedure call and check for duplicate*/
+	/* extract the actual procedure/function call and check for duplicate */
 	for(i = 1; i< mb->stop; i++){
 		sig= getInstrPtr(mb,i);
 		if( getModuleId(sig) == userRef)
