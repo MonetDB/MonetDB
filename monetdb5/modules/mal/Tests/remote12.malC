@@ -4,6 +4,7 @@ conn:str := remote.connect(uri, "monetdb", "monetdb");
 e := nil:bat[:int];
 m:str := remote.put(conn, e);
 io.print(m);
-v:bat[:int] := remote.get(conn,m);
-io.print(v);
-mdb.var();
+# retrieval of nil bats require an API change
+#v:bat[:int] := remote.get(conn,m);
+#io.print(v);
+#mdb.var();

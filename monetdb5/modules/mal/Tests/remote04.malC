@@ -10,7 +10,7 @@ bat.append(b, "foo");
 bat.append(b, "bar");
 bat.append(b, "baz");
 
-no := nil:bat[:oid];
+no := algebra.select (b,"bar":str,nil:str,true,true,false);
 n := remote.put(conn, no);
 bo:= bat.new(:oid);
 bok := remote.put(conn, bo);
