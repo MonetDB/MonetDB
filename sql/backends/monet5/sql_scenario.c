@@ -443,19 +443,37 @@ SQLinitClient(Client c)
 	if (sqlinit) {		/* add sqlinit to the fdin stack */
 		buffer *b = (buffer *) GDKmalloc(sizeof(buffer));
 		size_t len = strlen(sqlinit);
+		char* cbuf = _STRDUP(sqlinit);
+		stream *buf;
 		bstream *fdin;
 
-		if( b == NULL)
+		if( b == NULL || cbuf == NULL) {
+			GDKfree(b);
+			GDKfree(cbuf);
 			throw(SQL,"sql.initClient",MAL_MALLOC_FAIL);
+		}
 
-		buffer_init(b, _STRDUP(sqlinit), len);
-		fdin = bstream_create(buffer_rastream(b, "si"), b->len);
+		buffer_init(b, cbuf, len);
+		buf = buffer_rastream(b, "si");
+		if( buf == NULL) {
+			buffer_destroy(b);
+			throw(SQL,"sql.initClient",MAL_MALLOC_FAIL);
+		}
+
+		fdin = bstream_create(buf, b->len);
+		if( fdin == NULL) {
+			buffer_destroy(b);
+			throw(SQL,"sql.initClient",MAL_MALLOC_FAIL);
+		}
+
 		bstream_next(fdin);
 		if( MCpushClientInput(c, fdin, 0, "") < 0)
 			fprintf(stderr, "SQLinitClient:Could not switch client input stream");
 	}
 	if (c->sqlcontext == 0) {
 		m = mvc_create(c->idx, 0, SQLdebug, c->fdin, c->fdout);
+		if( m == NULL)
+			throw(SQL,"sql.initClient",MAL_MALLOC_FAIL);
 		global_variables(m, "monetdb", "sys");
 		if (isAdministrator(c) || strcmp(c->scenario, "msql") == 0)	/* console should return everything */
 			m->reply_size = -1;
@@ -589,8 +607,11 @@ SQLinitClient(Client c)
 	} else {		/* handle upgrades */
 		if (!m->sa)
 			m->sa = sa_create();
-		if (maybeupgrade)
+		if (!m->sa) {
+			msg = createException(MAL, "createdb", MAL_MALLOC_FAIL);
+		} else if (maybeupgrade) {
 			SQLupgrades(c,m);
+		}
 		maybeupgrade = 0;
 	}
 	MT_lock_unset(&sql_contextLock);
@@ -1142,6 +1163,10 @@ SQLparser(Client c)
 					  m->argc, m->scanner.key ^ m->session->schema->base.id,	/* the statement hash key */
 					  m->emode == m_prepare ? Q_PREPARE : m->type,	/* the type of the statement */
 					  sql_escape_str(q));
+			if(!be->q) {
+				err = 1;
+				msg = createException(PARSE, "SQLparser", MAL_MALLOC_FAIL);
+			}
 			GDKfree(q);
 			scanner_query_processed(&(m->scanner));
 			be->q->code = (backend_code) backend_dumpproc(be, c, be->q, r);
