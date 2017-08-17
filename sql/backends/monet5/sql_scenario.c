@@ -1151,18 +1151,28 @@ SQLparser(Client c)
 			/* Add the query tree to the SQL query cache
 			 * and bake a MAL program for it.
 			 */
-			char *q = query_cleaned(QUERY(m->scanner));
+			char *q = query_cleaned(QUERY(m->scanner)), *escaped_q;
 			char qname[IDLENGTH];
+			be->q = NULL;
+			if(!q) {
+				err = 1;
+				msg = createException(PARSE, "SQLparser", MAL_MALLOC_FAIL);
+			}
 			(void) snprintf(qname, IDLENGTH, "%c%d_%d", (m->emode == m_prepare?'p':'s'), m->qc->id++, m->qc->clientid);
-
-			be->q = qc_insert(m->qc, m->sa,	/* the allocator */
-					  r,	/* keep relational query */
-					  qname, /* its MAL name) */
-					  m->sym,	/* the sql symbol tree */
-					  m->args,	/* the argument list */
-					  m->argc, m->scanner.key ^ m->session->schema->base.id,	/* the statement hash key */
-					  m->emode == m_prepare ? Q_PREPARE : m->type,	/* the type of the statement */
-					  sql_escape_str(q));
+			escaped_q = sql_escape_str(q);
+			if(!escaped_q) {
+				err = 1;
+				msg = createException(PARSE, "SQLparser", MAL_MALLOC_FAIL);
+			} else {
+				be->q = qc_insert(m->qc, m->sa,	/* the allocator */
+						  r,	/* keep relational query */
+						  qname, /* its MAL name) */
+						  m->sym,	/* the sql symbol tree */
+						  m->args,	/* the argument list */
+						  m->argc, m->scanner.key ^ m->session->schema->base.id,	/* the statement hash key */
+						  m->emode == m_prepare ? Q_PREPARE : m->type,	/* the type of the statement */
+						  escaped_q);
+			}
 			if(!be->q) {
 				err = 1;
 				msg = createException(PARSE, "SQLparser", MAL_MALLOC_FAIL);

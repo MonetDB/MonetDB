@@ -18,6 +18,8 @@ rel_trans(mvc *sql, int trans_type, int nr, char *name)
 {
 	sql_rel *rel = rel_create(sql->sa);
 	list *exps = new_exp_list(sql->sa);
+	if(!rel || !exps)
+		return NULL;
 
 	append(exps, exp_atom_int(sql->sa, nr));
 	if (name)

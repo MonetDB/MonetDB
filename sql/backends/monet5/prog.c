@@ -7,6 +7,7 @@
  */
 
 #include <monetdb_config.h>
+#include "sql.h"
 #include "monet_options.h"
 #include "embeddedclient.h"
 
@@ -156,7 +157,7 @@ main(int argc, char **av)
 	/* now for each file given on the command line (or stdin) 
 	   read the query and execute it
 	 */
-	buf = malloc(maxlen);
+	buf = GDKmalloc(maxlen);
 	if (buf == NULL) {
 		fprintf(stderr, "Cannot allocate memory for query buffer\n");
 		return -1;
@@ -174,7 +175,7 @@ main(int argc, char **av)
 			curlen += n;
 			if (curlen + 1024 > maxlen) {
 				maxlen += 8 * BUFSIZ;
-				buf = realloc(buf, maxlen + 1);
+				buf = GDKrealloc(buf, maxlen + 1);
 				if (buf == NULL) {
 					fprintf(stderr, "Cannot allocate memory for query buffer\n");
 					return -1;
@@ -200,7 +201,7 @@ main(int argc, char **av)
 		if (timeflag)
 			printf("Timer: "LLFMT" (usec)\n", gettime() - t0);
 	}
-	free(buf);
+	GDKfree(buf);
 	mapi_destroy(mid);
 	return 0;
 }

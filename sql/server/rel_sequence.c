@@ -29,6 +29,8 @@ rel_drop_seq(sql_allocator *sa, char *sname, char *seqname)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
+	if(!rel || !exps)
+		return NULL;
 
 	append(exps, exp_atom_clob(sa, sname));
 	append(exps, exp_atom_clob(sa, seqname));
@@ -48,6 +50,8 @@ rel_seq(sql_allocator *sa, int cat_type, char *sname, sql_sequence *s, sql_rel *
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
+	if(!rel || !exps)
+		return NULL;
 
 	if (val)
 		append(exps, val);

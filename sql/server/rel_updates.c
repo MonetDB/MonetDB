@@ -242,6 +242,8 @@ rel_insert_idxs(mvc *sql, sql_table *t, sql_rel *inserts)
 	}
 	if (inserts->r != p) {
 		sql_rel *r = rel_create(sql->sa);
+		if(!r)
+			return NULL;
 
 		r->op = op_insert;
 		r->l = rel_dup(p);
@@ -257,6 +259,8 @@ rel_insert(mvc *sql, sql_rel *t, sql_rel *inserts)
 {
 	sql_rel * r = rel_create(sql->sa);
 	sql_table *tab = get_table(t);
+	if(!r)
+		return NULL;
 
 	r->op = op_insert;
 	r->l = t;
@@ -774,7 +778,8 @@ rel_update_idxs(mvc *sql, sql_table *t, sql_rel *relup)
 	}
 	if (relup->r != p) {
 		sql_rel *r = rel_create(sql->sa);
-
+		if(!r)
+			return NULL;
 		r->op = op_update;
 		r->l = rel_dup(p);
 		r->r = relup;
@@ -808,6 +813,8 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 	sql_rel *r = rel_create(sql->sa);
 	sql_table *tab = get_table(t);
 	node *m;
+	if(!r)
+		return NULL;
 
 	if (tab)
 	for (m = tab->columns.set->h; m; m = m->next) {
@@ -1077,6 +1084,8 @@ sql_rel *
 rel_delete(sql_allocator *sa, sql_rel *t, sql_rel *deletes)
 {
 	sql_rel *r = rel_create(sa);
+	if(!r)
+		return NULL;
 
 	r->op = op_delete;
 	r->l = t;
@@ -1580,6 +1589,8 @@ rel_output(mvc *sql, sql_rel *l, sql_exp *sep, sql_exp *rsep, sql_exp *ssep, sql
 {
 	sql_rel *rel = rel_create(sql->sa);
 	list *exps = new_exp_list(sql->sa);
+	if(!rel || !exps)
+		return NULL;
 
 	append(exps, sep);
 	append(exps, rsep);

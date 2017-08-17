@@ -185,6 +185,8 @@ static sql_rel *
 rel_orderby(mvc *sql, sql_rel *l)
 {
 	sql_rel *rel = rel_create(sql->sa);
+	if(!rel)
+		return NULL;
 
 	assert(l->op == op_project && !l->r);
 	rel->l = l;
@@ -3358,11 +3360,11 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 	list *exps = NULL;
 
 	if (!groupby) {
-		char *uaname = malloc(strlen(aname) + 1);
+		char *uaname = GDKmalloc(strlen(aname) + 1);
 		sql_exp *e = sql_error(sql, 02, "%s: missing group by",
 				       uaname ? toUpperCopy(uaname, aname) : aname);
 		if (uaname)
-			free(uaname);
+			GDKfree(uaname);
 		return e;
 	}
 
@@ -3387,11 +3389,11 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 		return NULL;
 
 	if (f == sql_where) {
-		char *uaname = malloc(strlen(aname) + 1);
+		char *uaname = GDKmalloc(strlen(aname) + 1);
 		sql_exp *e = sql_error(sql, 02, "%s: not allowed in WHERE clause",
 				       uaname ? toUpperCopy(uaname, aname) : aname);
 		if (uaname)
-			free(uaname);
+			GDKfree(uaname);
 		return e;
 	}
 	
@@ -3399,11 +3401,11 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 		sql_exp *e;
 
 		if (strcmp(aname, "count") != 0) {
-			char *uaname = malloc(strlen(aname) + 1);
+			char *uaname = GDKmalloc(strlen(aname) + 1);
 			sql_exp *e = sql_error(sql, 02, "%s: unable to perform '%s(*)'",
 					       uaname ? toUpperCopy(uaname, aname) : aname, aname);
 			if (uaname)
-				free(uaname);
+				GDKfree(uaname);
 			return e;
 		}
 		a = sql_bind_aggr(sql->sa, s, aname, NULL);
@@ -3503,7 +3505,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 	} else {
 		sql_exp *e;
 		char *type = "unknown";
-		char *uaname = malloc(strlen(aname) + 1);
+		char *uaname = GDKmalloc(strlen(aname) + 1);
 
 		if (exps->h) {
 			sql_exp *e = exps->h->data;
@@ -3514,7 +3516,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 			      uaname ? toUpperCopy(uaname, aname) : aname, aname, type);
 
 		if (uaname)
-			free(uaname);
+			GDKfree(uaname);
 		return e;
 	}
 }
@@ -4229,11 +4231,11 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		s = mvc_bind_schema(sql, sname);
 
 	if (f == sql_where) {
-		char *uaname = malloc(strlen(aname) + 1);
+		char *uaname = GDKmalloc(strlen(aname) + 1);
 		e = sql_error(sql, 02, "%s: not allowed in WHERE clause",
 			      uaname ? toUpperCopy(uaname, aname) : aname);
 		if (uaname)
-			free(uaname);
+			GDKfree(uaname);
 		return e;
 	}
 

@@ -83,6 +83,8 @@ sql_rel*
 rel_create( sql_allocator *sa )
 {
 	sql_rel *r = SA_NEW(sa, sql_rel);
+	if(!r)
+		return NULL;
 
 	sql_ref_init(&r->ref);
 	r->l = r->r = NULL;
@@ -100,6 +102,8 @@ sql_rel *
 rel_copy( sql_allocator *sa, sql_rel *i )
 {
 	sql_rel *rel = rel_create(sa);
+	if(!rel)
+		return NULL;
 
 	rel->l = NULL;
 	rel->r = NULL;
@@ -144,7 +148,9 @@ sql_rel *
 rel_select_copy(sql_allocator *sa, sql_rel *l, list *exps)
 {
 	sql_rel *rel = rel_create(sa);
-	
+	if(!rel)
+		return NULL;
+
 	rel->l = l;
 	rel->r = NULL;
 	rel->op = op_select;
@@ -314,6 +320,8 @@ rel_inplace_project(sql_allocator *sa, sql_rel *rel, sql_rel *l, list *e)
 {
 	if (!l) {
 		l = rel_create(sa);
+		if(!l)
+			return NULL;
 
 		l->op = rel->op;
 		l->l = rel->l;
@@ -360,6 +368,8 @@ sql_rel *
 rel_setop(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type setop)
 {
 	sql_rel *rel = rel_create(sa);
+	if(!rel)
+		return NULL;
 
 	rel->l = l;
 	rel->r = r;
@@ -377,6 +387,8 @@ rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, oper
 	list *nls = new_exp_list(sql->sa);
 	list *nrs = new_exp_list(sql->sa);
 	node *n, *m;
+	if(!nls || !nrs)
+		return NULL;
 
 	for (n = ls->h, m = rs->h; n && m; n = n->next, m = m->next) {
 		sql_exp *le = n->data;
@@ -398,6 +410,8 @@ sql_rel *
 rel_crossproduct(sql_allocator *sa, sql_rel *l, sql_rel *r, operator_type join)
 {
 	sql_rel *rel = rel_create(sa);
+	if(!rel)
+		return NULL;
 
 	rel->l = l;
 	rel->r = r;
@@ -412,6 +426,8 @@ sql_rel *
 rel_topn(sql_allocator *sa, sql_rel *l, list *exps )
 {
 	sql_rel *rel = rel_create(sa);
+	if(!rel)
+		return NULL;
 
 	rel->l = l;
 	rel->r = NULL;
@@ -426,6 +442,8 @@ sql_rel *
 rel_sample(sql_allocator *sa, sql_rel *l, list *exps )
 {
 	sql_rel *rel = rel_create(sa);
+	if(!rel)
+		return NULL;
 
 	rel->l = l;
 	rel->r = NULL;
@@ -623,6 +641,9 @@ rel_select(sql_allocator *sa, sql_rel *l, sql_exp *e)
 		return l;
 	}
 	rel = rel_create(sa);
+	if(!rel)
+		return NULL;
+
 	rel->l = l;
 	rel->r = NULL;
 	rel->op = op_select;
@@ -645,12 +666,18 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 	sql_allocator *sa = sql->sa;
 	sql_rel *rel = rel_create(sa);
 	const char *tname = t->base.name;
+	if(!rel)
+		return NULL;
 
 	assert(atname);
 	rel->l = t;
 	rel->r = NULL;
 	rel->op = op_basetable;
 	rel->exps = new_exp_list(sa);
+	if(!rel->exps) {
+		rel_destroy(rel);
+		return NULL;
+	}
 
 	if (isRemote(t)) 
 		tname = mapiuri_table(t->query, sql->sa, tname);
@@ -708,6 +735,10 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 	sql_rel *rel = rel_create(sql->sa);
 	list *aggrs = new_exp_list(sql->sa);
 	node *en;
+	if(!rel || !aggrs) {
+		rel_destroy(rel);
+		return NULL;
+	}
 
 	rel->card = CARD_ATOM;
 	if (groupbyexps) {
@@ -735,6 +766,8 @@ sql_rel *
 rel_project(sql_allocator *sa, sql_rel *l, list *e)
 {
 	sql_rel *rel = rel_create(sa);
+	if(!rel)
+		return NULL;
 
 	rel->l = l;
 	rel->r = NULL;
@@ -752,6 +785,8 @@ sql_rel *
 rel_relational_func(sql_allocator *sa, sql_rel *l, list *exps)
 {
 	sql_rel *rel = rel_create(sa);
+	if(!rel)
+		return NULL;
 
 	rel->flag = 1;
 	rel->l = l;
@@ -766,6 +801,8 @@ sql_rel *
 rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind)
 {
 	sql_rel *rel = rel_create(sa);
+	if(!rel)
+		return NULL;
 
 	rel->flag = kind;
 	rel->l = l; /* relation before call */
@@ -931,6 +968,9 @@ static list *
 rel_bind_path(sql_allocator *sa, sql_rel *rel, sql_exp *e )
 {
 	list *path = new_rel_list(sa);
+	if(!path) {
+		return NULL;
+	}
 
 	if (e->type == e_convert)
 		e = e->l;
