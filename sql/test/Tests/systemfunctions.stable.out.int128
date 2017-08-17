@@ -248,7 +248,7 @@ Ready.
 [ "sys",	"avg",	1,	"hugeint",	""	]
 [ "sys",	"avg",	0,	"double",	"avg"	]
 [ "sys",	"avg",	1,	"real",	""	]
-[ "sys",	"bbp",	0,	"int",	"create function sys.bbp ()\n returns table (id int, name string, \n ttype string, count bigint, refcnt int, lrefcnt int,\n location string, heat int, dirty string,\n status string, kind string)\n external name bbp.get;"	]
+[ "sys",	"bbp",	0,	"int",	"create function sys.bbp ()\n returns table (id int, name string,\n ttype string, count bigint, refcnt int, lrefcnt int,\n location string, heat int, dirty string,\n status string, kind string)\n external name bbp.get;"	]
 [ "sys",	"bbp",	1,	"clob",	""	]
 [ "sys",	"bbp",	2,	"clob",	""	]
 [ "sys",	"bbp",	3,	"bigint",	""	]

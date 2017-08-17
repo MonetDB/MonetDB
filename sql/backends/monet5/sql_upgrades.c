@@ -327,7 +327,7 @@ create function sys.\"epoch\"(ts TIMESTAMP WITH TIME ZONE) returns INT external 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"insert into sys.systemfunctions (select id from sys.functions where name = 'epoch' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
 
-	if (schema) 
+	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 
 	assert(pos < bufsize);
@@ -548,7 +548,7 @@ sql_update_jun2016(Client c, mvc *sql)
 	pos += snprintf(buf + pos, bufsize - pos,
 			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
 
-	if (schema) 
+	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 
 	assert(pos < bufsize);
@@ -596,7 +596,7 @@ sql_update_geom(Client c, mvc *sql, int olddb)
 			pos += snprintf(buf + pos, bufsize - pos, "insert into sys.types values (%d, '%s', '%s', %u, %u, %d, %d, %d);\n", t->base.id, t->base.name, t->sqlname, t->digits, t->scale, t->radix, t->eclass, t->s ? t->s->base.id : s->base.id);
 	}
 
-	if (schema) 
+	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 
 	assert(pos < bufsize);
@@ -813,7 +813,7 @@ sql_update_dec2016(Client c, mvc *sql)
 	pos += snprintf(buf + pos, bufsize - pos,
 			"delete from systemfunctions where function_id not in (select id from functions);\n");
 
-	if (schema) 
+	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 
 	assert(pos < bufsize);
@@ -887,7 +887,7 @@ sql_update_nowrd(Client c, mvc *sql)
 	pos += snprintf(buf + pos, bufsize - pos,
 			"delete from systemfunctions where function_id not in (select id from functions);\n");
 
-	if (schema) 
+	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 
 	assert(pos < bufsize);
@@ -1338,7 +1338,9 @@ sql_update_dec2016_sp3(Client c, mvc *sql)
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *schema = stack_get_string(sql, "current_schema");
 
-	pos += snprintf(buf + pos, bufsize - pos, 
+	if (buf == NULL)
+		throw(SQL, "sql_update_dec2016_sp3", MAL_MALLOC_FAIL);
+	pos += snprintf(buf + pos, bufsize - pos,
 			"set schema \"sys\";\n"
 			"drop procedure sys.settimeout(bigint);\n"
 			"drop procedure sys.settimeout(bigint,bigint);\n"
@@ -1348,7 +1350,7 @@ sql_update_dec2016_sp3(Client c, mvc *sql)
 			"create procedure sys.setsession(\"timeout\" bigint) external name clients.setsession;\n"
 			"insert into sys.systemfunctions (select id from sys.functions where name in ('settimeout', 'setsession') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n"
 			"delete from systemfunctions where function_id not in (select id from functions);\n");
-	if (schema) 
+	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 	assert(pos < bufsize);
 
@@ -1369,7 +1371,7 @@ sql_update_jul2017(Client c, mvc *sql)
 	BAT *b;
 
 	if( buf== NULL)
-		throw(SQL, "sql_default", MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_jul2017", MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1474,6 +1476,54 @@ sql_update_jul2017(Client c, mvc *sql)
 	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_update_jul2017_sp2(Client c)
+{
+	char *qry = "select obj_id from sys.privileges where auth_id = 1 and obj_id in (select id from sys._tables where name in ('keywords', 'table_types', 'dependency_types', 'function_types', 'function_languages', 'key_types', 'index_types', 'privilege_codes', 'environment')) and privileges = 1;\n";
+	char *err = NULL;
+	res_table *output;
+	BAT *b;
+
+	err = SQLstatementIntern(c, &qry, "update", 1, 0, &output);
+	if (err) {
+		return err;
+	}
+
+	b = BATdescriptor(output->cols[0].b);
+	if (b) {
+		if (BATcount(b) < 9) {
+			/* we are missing grants on these system tables, add them */
+			size_t bufsize = 2048, pos = 0;
+			char *buf = GDKmalloc(bufsize);
+
+			if (buf== NULL)
+				throw(SQL, "sql_update_jul2017_sp2", MAL_MALLOC_FAIL);
+
+			/* 51_sys_schema_extensions.sql and 25_debug.sql */
+			pos += snprintf(buf + pos, bufsize - pos,
+				"GRANT SELECT ON sys.keywords TO PUBLIC;\n"
+				"GRANT SELECT ON sys.table_types TO PUBLIC;\n"
+				"GRANT SELECT ON sys.dependency_types TO PUBLIC;\n"
+				"GRANT SELECT ON sys.function_types TO PUBLIC;\n"
+				"GRANT SELECT ON sys.function_languages TO PUBLIC;\n"
+				"GRANT SELECT ON sys.key_types TO PUBLIC;\n"
+				"GRANT SELECT ON sys.index_types TO PUBLIC;\n"
+				"GRANT SELECT ON sys.privilege_codes TO PUBLIC;\n"
+				"GRANT EXECUTE ON FUNCTION sys.environment() TO PUBLIC;\n"
+				"GRANT SELECT ON sys.environment TO PUBLIC;\n"
+				);
+			assert(pos < bufsize);
+			printf("Running database upgrade commands:\n%s\n", buf);
+			err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+			GDKfree(buf);
+		}
+		BBPunfix(b->batCacheid);
+	}
+	res_tables_destroy(output);
+
+	return err;		/* usually NULL */
 }
 
 void
@@ -1602,5 +1652,10 @@ SQLupgrades(Client c, mvc *m)
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}
+	}
+
+	if ((err = sql_update_jul2017_sp2(c)) != NULL) {
+		fprintf(stderr, "!%s\n", err);
+		freeException(err);
 	}
 }
