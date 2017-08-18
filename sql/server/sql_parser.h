@@ -63,6 +63,7 @@ typedef enum tokens {
 	SQL_VIEW,
 	SQL_INDEX,
 	SQL_TYPE,
+	SQL_SEQUENCE,
 	SQL_CASE,
 	SQL_CAST,
 	SQL_RETURN,

@@ -2055,6 +2055,34 @@ rel_find_designated_index(mvc *sql, symbol *sym) {
 }
 
 static sqlid
+rel_find_designated_sequence(mvc *sql, symbol *sym) {
+	(void)sql;
+	(void)sym;
+	dlist *qname;
+	sql_schema *s;
+	char *sname;
+	char *seqname;
+	sql_sequence *seq;
+
+	assert(sym->type == type_list);
+	qname = sym->data.lval;
+	s = cur_schema(sql);
+	sname = qname_schema(qname);
+	if (sname && !(s = mvc_bind_schema(sql, sname))) {
+		sql_error(sql, 02, "3F000!COMMENT ON:no such schema: %s", sname);
+		return 0;
+	}
+	seqname = qname_table(qname);
+	seq = find_sql_sequence(s, seqname);
+	if (seq)
+		return seq->base.id;
+
+	sql_error(sql, 02, "3F000!COMMENT ON:no such sequence: %s.%s",
+		s->base.name, seqname);
+	return 0;
+}
+
+static sqlid
 rel_find_designated_object(mvc *sql, symbol *sym) {
 
 	switch (sym->token) {
@@ -2068,6 +2096,8 @@ rel_find_designated_object(mvc *sql, symbol *sym) {
 			return rel_find_designated_column(sql, sym);
 		case SQL_INDEX:
 			return rel_find_designated_index(sql, sym);
+		case SQL_SEQUENCE:
+			return rel_find_designated_sequence(sql, sym);
 		default:
 			sql_error(sql, 2, "!COMMENT ON %s is not supported", token2string(sym->token));
 			return 0;

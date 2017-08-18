@@ -35,22 +35,15 @@ RETURN TABLE (
 
 ------------------------------------------------------------------------
 
--- create an index and comment on it
-CREATE TABLE tab (i INTEGER);
-CREATE INDEX idx ON tab(i);
-COMMENT ON INDEX idx IS 'an index';
+-- create a sequence and comment on it
+CREATE SEQUENCE seq AS INT;
+COMMENT ON SEQUENCE seq IS 'a few numbers';
 SELECT * FROM new_comments();
 
 -- explicit schema
-COMMENT ON INDEX sch.idx IS 'a qualified index';
+COMMENT ON SEQUENCE sch.seq IS 'a few more numbers';
 SELECT * FROM new_comments();
 
 -- check that deletes cascade
-DROP INDEX idx;
-SELECT * FROM new_comments();
-
--- full cascade
-CREATE INDEX idx ON tab(i);
-COMMENT ON INDEX idx IS 'an index';
-DROP TABLE tab;
+DROP SEQUENCE seq;
 SELECT * FROM new_comments();

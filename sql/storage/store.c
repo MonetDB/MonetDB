@@ -3758,7 +3758,8 @@ sys_drop_sequence(sql_trans *tr, sql_sequence * seq, int drop_action)
 		return ;
 	table_funcs.table_delete(tr, sysseqs, rid);
 	sql_trans_drop_dependencies(tr, seq->base.id);
-
+	sql_trans_drop_any_comment(tr, seq->base.id);
+	
 	if (drop_action)
 		sql_trans_drop_all_dependencies(tr, seq->s, seq->base.id, SEQ_DEPENDENCY);
 		

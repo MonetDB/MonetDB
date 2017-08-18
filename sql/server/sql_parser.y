@@ -5467,9 +5467,9 @@ comment_on_statement:
 	;
 
 catalog_object:
-	  SCHEMA ident { $$ = _symbol_create( SQL_SCHEMA, $2); }
-	| TABLE qname { $$ = _symbol_create_list( SQL_TABLE, $2); }
-	| VIEW qname { $$ = _symbol_create_list( SQL_VIEW, $2); }
+	  SCHEMA ident { $$ = _symbol_create( SQL_SCHEMA, $2 ); }
+	| TABLE qname { $$ = _symbol_create_list( SQL_TABLE, $2 ); }
+	| VIEW qname { $$ = _symbol_create_list( SQL_VIEW, $2 ); }
 	| COLUMN ident '.' ident
 	{ dlist *l = L();
 	  append_string(l, $2);
@@ -5483,7 +5483,8 @@ catalog_object:
 	  append_string(l, $6);
 	  $$ = _symbol_create_list( SQL_COLUMN, l );
 	}
-	| INDEX qname { $$ = _symbol_create_list( SQL_INDEX, $2); }
+	| INDEX qname { $$ = _symbol_create_list( SQL_INDEX, $2 ); }
+	| SEQUENCE qname { $$ = _symbol_create_list( SQL_SEQUENCE, $2 ); }
 	;
 
 XML_value_expression:
@@ -6078,6 +6079,7 @@ char *token2string(int token)
 	SQL(VIEW);
 	SQL(INDEX);
 	SQL(TYPE);
+	SQL(SEQUENCE);
 	SQL(CASE);
 	SQL(CAST);
 	SQL(RETURN);

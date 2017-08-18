@@ -18,9 +18,11 @@ RETURN TABLE (
         FROM sys.columns AS c, sys.tables AS t
         WHERE c.table_id = t.id
         UNION ALL
-        SELECT i.id, t.name || '.' || i.name, 'INDEX'
-        FROM sys.idxs AS i, sys.tables AS t
-        WHERE i.table_id = t.id
+        SELECT id, name, 'INDEX'
+        FROM sys.idxs
+        UNION ALL
+        SELECT id, name, 'SEQUENCE'
+        FROM sys.sequences
 );
 
 CREATE FUNCTION new_comments()
