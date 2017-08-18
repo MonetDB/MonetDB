@@ -65,8 +65,8 @@ static BAT *CQ_id_time = 0;
 static BAT *CQ_id_error = 0;
 static BAT *CQ_id_stmt = 0;
 
-CQnode *pnet;
-int pnetLimit, pnettop;
+CQnode *pnet = 0;
+int pnetLimit = 0, pnettop = 0;
 
 #define SET_HEARTBEATS(X) (X != NO_HEARTBEAT) ? X * 1000 : NO_HEARTBEAT /* minimal 1 ms */
 
@@ -526,6 +526,15 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 #endif
 	MT_lock_set(&ttrLock);
 
+	if( pnet == 0){
+		pnew = (CQnode *) GDKzalloc((INITIAL_MAXCQ) * sizeof(CQnode));
+		if( pnew == NULL) {
+			msg = createException(SQL,"cquery.register",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			goto unlock;
+		}
+		pnetLimit = INITIAL_MAXCQ;
+		pnet = pnew;
+	} else
 	if (pnettop == pnetLimit) {
 		pnew = (CQnode *) GDKrealloc(pnet, (pnetLimit+INITIAL_MAXCQ) * sizeof(CQnode));
 		if( pnew == NULL) {
@@ -1378,6 +1387,8 @@ CQstartScheduler(void)
 		mnstr_destroy(cntxt->fdout);
 		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize CQscheduler\n");
 	}
+
+    cntxt->curmodule = cntxt->usermodule = userModule();
 
 	if( SQLinitClient(cntxt) != MAL_SUCCEED) {
 		bstream_destroy(cntxt->fdin);

@@ -59,6 +59,13 @@ static int BSKTnewEntry(void)
 	int i = bsktTop;
 	BasketRec *bnew;
 
+	if( baskets == 0){
+		bnew = (BasketRec *) GDKzalloc((INTIAL_BSKT) * sizeof(BasketRec));
+		if( bnew == 0)
+			return 0;
+		bsktLimit = INTIAL_BSKT;
+		baskets = bnew;
+	} else
 	if (bsktTop + 1 == bsktLimit) {
 		bnew = (BasketRec *) GDKrealloc(baskets, (bsktLimit+INTIAL_BSKT) * sizeof(BasketRec));
 		if( bnew == 0)
