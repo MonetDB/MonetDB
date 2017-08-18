@@ -590,8 +590,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			prop = BATgetprop(g, GDK_MAX_VALUE);
 			if (prop)
 				maxgrp = prop->v.val.oval;
-			else
-				BATmax(g, &maxgrp);
 		}
 	}
 	if (BATordered(b) && BATordered_rev(b)) {
@@ -655,9 +653,11 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			gn = COLcopy(g, g->ttype, 0, TRANSIENT);
 			if (gn == NULL)
 				goto error;
-			prop = BATgetprop(g, GDK_MAX_VALUE);
-			if (prop)
-				BATsetprop(gn, GDK_MAX_VALUE, TYPE_oid, &maxgrp);
+			if (maxgrp > 0) {
+				prop = BATgetprop(g, GDK_MAX_VALUE);
+				if (prop)
+					BATsetprop(gn, GDK_MAX_VALUE, TYPE_oid, &maxgrp);
+			}
 
 			*groups = gn;
 			if (extents) {
@@ -1072,7 +1072,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 
 		switch (t) {
 		case TYPE_bte:
-			if (grps && maxgrp < ((oid) 1 << (SIZEOF_LNG * 8 - 8))) {
+			if (grps && maxgrp > 1 && maxgrp < ((oid) 1 << (SIZEOF_LNG * 8 - 8))) {
 				ulng v;
 				const bte *w = (bte *) Tloc(b, 0);
 				GRP_create_partial_hash_table_core(
@@ -1085,7 +1085,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				GRP_create_partial_hash_table_tpe(bte);
 			break;
 		case TYPE_sht:
-			if (grps && maxgrp < ((oid) 1 << (SIZEOF_LNG * 8 - 16))) {
+			if (grps && maxgrp > 1 && maxgrp < ((oid) 1 << (SIZEOF_LNG * 8 - 16))) {
 				ulng v;
 				const sht *w = (sht *) Tloc(b, 0);
 				GRP_create_partial_hash_table_core(
@@ -1098,7 +1098,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				GRP_create_partial_hash_table_tpe(sht);
 			break;
 		case TYPE_int:
-			if (grps && maxgrp < ((oid) 1 << (SIZEOF_LNG * 8 - 32))) {
+			if (grps && maxgrp > 1 && maxgrp < ((oid) 1 << (SIZEOF_LNG * 8 - 32))) {
 				ulng v;
 				const int *w = (int *) Tloc(b, 0);
 				GRP_create_partial_hash_table_core(
@@ -1112,7 +1112,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			break;
 		case TYPE_lng:
 #ifdef HAVE_HGE
-			if (grps) {
+			if (grps && maxgrp > 1) {
 				uhge v;
 				const lng *w = (lng *) Tloc(b, 0);
 				GRP_create_partial_hash_table_core(
