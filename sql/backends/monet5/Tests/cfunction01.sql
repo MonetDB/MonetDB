@@ -19,14 +19,22 @@ select * from functions where name ='aggr01';
 select aggr01();  -- causes error
 
 start continuous function aggr01();
+call cquery.wait(1000); #wait to be started
+
+select aggr01(); #should return 0
+pause continuous function aggr01();
 
 insert into ftmp values(1),(1);
+resume continuous function aggr01();
+
+call cquery.wait(1000); #wait for processing
 select aggr01(); #should return 2
 
+pause continuous function aggr01();
 insert into ftmp values(2),(2);
 insert into ftmp values(3),(3);
 
-call cquery.wait(1000);
+resume continuous function aggr01();
 select aggr01(); #should return 6
 
 call cquery.wait(1000);
