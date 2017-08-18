@@ -374,92 +374,25 @@ pop(oid x)
 	return (int) x;
 }
 
-#define GRP_create_partial_hash_table(INIT_0,INIT_1,HASH,COMP)		\
+#define GRP_create_partial_hash_table_core(INIT_1,HASH,COMP,ASSERT,GRPTST) \
 	do {								\
-		oid grp;						\
-		INIT_0;							\
-		if (gc) {						\
+		if (cand) {						\
 			for (r = 0; r < cnt; r++) {			\
-				if (cand) {				\
-					p = cand[r] - b->hseqbase;	\
-				} else {				\
-					p = start + r;			\
-				}					\
+				p = cand[r] - b->hseqbase;		\
 				assert(p < end);			\
 				INIT_1;					\
 				prb = HASH;				\
 				for (hb = HASHget(hs, prb);		\
 				     hb != HASHnil(hs) && hb >= start;	\
 				     hb = HASHgetlink(hs, hb)) {	\
-					assert(HASHgetlink(hs, hb) == HASHnil(hs) \
-					       || HASHgetlink(hs, hb) < hb); \
-					if (cand) {			\
-						q = r;			\
-						while (q != 0 && cand[--q] - b->hseqbase > hb) \
-							;		\
-						if (cand[q] - b->hseqbase != hb) \
-							continue;	\
-						if (grps[q] != grps[r])	{ \
-							hb = HASHnil(hs); \
-							break;		\
-						}			\
-						grp = ngrps[q];		\
-					} else {			\
-						if (grps[hb] != grps[r]) { \
-							hb = HASHnil(hs); \
-							break;		\
-						}			\
-						grp = ngrps[hb];	\
-					}				\
-					if (COMP) {			\
-						ngrps[r] = grp;		\
-						if (histo)		\
-							cnts[grp]++;	\
-						if (gn->tsorted &&	\
-						    grp != ngrp - 1)	\
-							gn->tsorted = 0; \
-						break;			\
-					}				\
-				}					\
-				if (hb == HASHnil(hs) || hb < start) {	\
-					GRPnotfound();			\
-					/* enter new group into hash table */ \
-					HASHputlink(hs, p, HASHget(hs, prb)); \
-					HASHput(hs, prb, p);		\
-				}					\
-			}						\
-		} else if (grps) {					\
-			for (r = 0; r < cnt; r++) {			\
-				if (cand) {				\
-					p = cand[r] - b->hseqbase;	\
-				} else {				\
-					p = start + r;			\
-				}					\
-				assert(p < end);			\
-				INIT_1;					\
-				prb = HASH;				\
-				/* cleverly combine group ID with */	\
-				/* hash value: group ID in top-most */	\
-				/* bits of hash by reversing the */	\
-				/* bits and shifting them in place */	\
-				prb = (prb ^ rev(grps[r]) >> bits) & hs->mask; \
-				for (hb = HASHget(hs, prb);		\
-				     hb != HASHnil(hs) && hb >= start;	\
-				     hb = HASHgetlink(hs, hb)) {	\
-					if (cand) {			\
-						q = r;			\
-						while (q != 0 && cand[--q] - b->hseqbase > hb) \
-							;		\
-						if (cand[q] - b->hseqbase != hb) \
-							continue;	\
-						if (grps[q] != grps[r])	\
-							continue;	\
-						grp = ngrps[q];		\
-					} else {			\
-						if (grps[hb] != grps[r]) \
-							continue;	\
-						grp = ngrps[hb];	\
-					}				\
+					ASSERT;				\
+					q = r;				\
+					while (q != 0 && cand[--q] - b->hseqbase > hb) \
+						;			\
+					if (cand[q] - b->hseqbase != hb) \
+						continue;		\
+					GRPTST(q, r);			\
+					grp = ngrps[q];			\
 					if (COMP) {			\
 						ngrps[r] = grp;		\
 						if (histo)		\
@@ -479,27 +412,16 @@ pop(oid x)
 			}						\
 		} else {						\
 			for (r = 0; r < cnt; r++) {			\
-				if (cand) {				\
-					p = cand[r] - b->hseqbase;	\
-				} else {				\
-					p = start + r;			\
-				}					\
+				p = start + r;				\
 				assert(p < end);			\
 				INIT_1;					\
 				prb = HASH;				\
 				for (hb = HASHget(hs, prb);		\
 				     hb != HASHnil(hs) && hb >= start;	\
 				     hb = HASHgetlink(hs, hb)) {	\
-					if (cand) {			\
-						q = r;			\
-						while (q != 0 && cand[--q] - b->hseqbase > hb) \
-							;		\
-						if (cand[q] - b->hseqbase != hb) \
-							continue;	\
-						grp = ngrps[q];		\
-					} else {			\
-						grp = ngrps[hb];	\
-					}				\
+					ASSERT;				\
+					GRPTST(hb, r);			\
+					grp = ngrps[hb];		\
 					if (COMP) {			\
 						ngrps[r] = grp;		\
 						if (histo)		\
@@ -517,6 +439,20 @@ pop(oid x)
 					HASHput(hs, prb, p);		\
 				}					\
 			}						\
+		}							\
+	} while (0)
+#define GCGRPTST(i, j)	if (grps[i] != grps[j]) { hb = HASHnil(hs); break; }
+#define GRPTST(i, j)	if (grps[i] != grps[j]) continue
+#define NOGRPTST(i, j)	(void) 0
+#define GRP_create_partial_hash_table(INIT_0,INIT_1,HASH,COMP)		\
+	do {								\
+		INIT_0;							\
+		if (gc) {						\
+			GRP_create_partial_hash_table_core(INIT_1,HASH,COMP,assert(HASHgetlink(hs, hb) == HASHnil(hs) || HASHgetlink(hs, hb) < hb),GCGRPTST); \
+		} else if (grps) {					\
+			GRP_create_partial_hash_table_core(INIT_1,HASH ^ (rev(grps[p]) >> bits),COMP,(void)0,GRPTST); \
+		} else {						\
+			GRP_create_partial_hash_table_core(INIT_1,HASH,COMP,(void)0,NOGRPTST); \
 		}							\
 	} while (0)
 
@@ -1078,6 +1014,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		BUN prb;
 		int bits;
 		BUN mask;
+		oid grp;
 
 		GDKclrerr();	/* not interested in BAThash errors */
 
