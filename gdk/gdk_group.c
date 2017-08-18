@@ -353,6 +353,13 @@ rev(oid x)
 }
 
 /* population count: count number of 1 bits in a value */
+#ifdef __GNUC__
+#if SIZEOF_OID == SIZEOF_INT
+#define pop(x)		__builtin_popcount(x)
+#else
+#define pop(x)		__builtin_popcountl(x)
+#endif
+#else
 static inline int
 pop(oid x)
 {
@@ -373,6 +380,7 @@ pop(oid x)
 #endif
 	return (int) x;
 }
+#endif
 
 #define GRP_create_partial_hash_table_core(INIT_1,HASH,COMP,ASSERT,GRPTST) \
 	do {								\
