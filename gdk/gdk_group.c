@@ -495,10 +495,12 @@ pop(oid x)
 #define GRP_create_partial_hash_table(INIT_0,INIT_1,HASH,COMP)		\
 	do {								\
 		INIT_0;							\
-		if (gc) {						\
-			GRP_create_partial_hash_table_core(INIT_1,HASH,COMP,assert(HASHgetlink(hs, hb) == HASHnil(hs) || HASHgetlink(hs, hb) < hb),GCGRPTST); \
-		} else if (grps) {					\
-			GRP_create_partial_hash_table_core(INIT_1,HASH ^ (rev(grps[p]) >> bits),COMP,(void)0,GRPTST); \
+		if (grps) {						\
+			if (gc) {					\
+				GRP_create_partial_hash_table_core(INIT_1,HASH,COMP,assert(HASHgetlink(hs, hb) == HASHnil(hs) || HASHgetlink(hs, hb) < hb),GCGRPTST); \
+			} else {				\
+				GRP_create_partial_hash_table_core(INIT_1,HASH ^ (rev(grps[p]) >> bits),COMP,(void)0,GRPTST); \
+			}						\
 		} else {						\
 			GRP_create_partial_hash_table_core(INIT_1,HASH,COMP,(void)0,NOGRPTST); \
 		}							\
