@@ -3649,6 +3649,7 @@ sys_drop_idx(sql_trans *tr, sql_idx * i, int drop_action)
 	if (rid == oid_nil)
 		return ;
 	table_funcs.table_delete(tr, sysidx, rid);
+	sql_trans_drop_any_comment(tr, i->base.id);
 
 	for (n = i->columns->h; n; n = n->next) {
 		sql_kc *ic = n->data;

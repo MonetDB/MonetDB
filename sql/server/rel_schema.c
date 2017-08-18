@@ -2029,6 +2029,32 @@ rel_find_designated_column(mvc *sql, symbol *sym) {
 }
 
 static sqlid
+rel_find_designated_index(mvc *sql, symbol *sym) {
+	dlist *qname;
+	sql_schema *s;
+	char *sname;
+	char *iname;
+	sql_idx *idx;
+
+	assert(sym->type == type_list);
+	qname = sym->data.lval;
+	s = cur_schema(sql);
+	sname = qname_schema(qname);
+	if (sname && !(s = mvc_bind_schema(sql, sname))) {
+		sql_error(sql, 02, "3F000!COMMENT ON:no such schema: %s", sname);
+		return 0;
+	}
+	iname = qname_table(qname);
+	idx = mvc_bind_idx(sql, s, iname);
+	if (idx)
+		return idx->base.id;
+
+	sql_error(sql, 02, "3F000!COMMENT ON:no such index: %s.%s",
+		s->base.name, iname);
+	return 0;
+}
+
+static sqlid
 rel_find_designated_object(mvc *sql, symbol *sym) {
 
 	switch (sym->token) {
@@ -2040,6 +2066,8 @@ rel_find_designated_object(mvc *sql, symbol *sym) {
 			return rel_find_designated_table(sql, sym);
 		case SQL_COLUMN:
 			return rel_find_designated_column(sql, sym);
+		case SQL_INDEX:
+			return rel_find_designated_index(sql, sym);
 		default:
 			sql_error(sql, 2, "!COMMENT ON %s is not supported", token2string(sym->token));
 			return 0;

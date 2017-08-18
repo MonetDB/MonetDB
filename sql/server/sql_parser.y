@@ -5483,6 +5483,7 @@ catalog_object:
 	  append_string(l, $6);
 	  $$ = _symbol_create_list( SQL_COLUMN, l );
 	}
+	| INDEX qname { $$ = _symbol_create_list( SQL_INDEX, $2); }
 	;
 
 XML_value_expression:
@@ -6075,6 +6076,7 @@ char *token2string(int token)
 	SQL(SCHEMA);
 	SQL(TABLE);
 	SQL(VIEW);
+	SQL(INDEX);
 	SQL(TYPE);
 	SQL(CASE);
 	SQL(CAST);

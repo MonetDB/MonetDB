@@ -33,16 +33,22 @@ RETURN TABLE (
 
 ------------------------------------------------------------------------
 
--- create a view and comment on it
-CREATE VIEW vivi AS SELECT * FROM sys.comments;
-COMMENT ON VIEW vivi IS 'a view to a kill';
-COMMENT ON COLUMN vivi.remark IS 'remarkable';
+-- create an index and comment on it
+CREATE TABLE tab (i INTEGER);
+CREATE INDEX idx ON tab(i);
+COMMENT ON INDEX idx IS 'an index';
 SELECT * FROM new_comments();
 
--- accessing it as a table doesn't work
-COMMENT ON TABLE vivi is 'a mistake';
+-- explicit schema
+COMMENT ON INDEX sch.idx IS 'a qualified index';
 SELECT * FROM new_comments();
 
 -- check that deletes cascade
-DROP VIEW vivi;
+DROP INDEX idx;
+SELECT * FROM new_comments();
+
+-- full cascade
+CREATE INDEX idx ON tab(i);
+COMMENT ON INDEX idx IS 'an index';
+DROP TABLE tab;
 SELECT * FROM new_comments();

@@ -61,6 +61,7 @@ typedef enum tokens {
 	SQL_TABLE,
 	SQL_TABLE_OPERATOR,
 	SQL_VIEW,
+	SQL_INDEX,
 	SQL_TYPE,
 	SQL_CASE,
 	SQL_CAST,
