@@ -98,24 +98,64 @@
 #define GRP_compare_consecutive_values(INIT_0,INIT_1,COMP,KEEP)		\
 	do {								\
 		INIT_0;							\
-		for (r = 0; r < cnt; r++) {				\
-			if (cand) {					\
+		if (cand && grps) {					\
+			for (r = 0; r < cnt; r++) {			\
 				p = *cand++ - b->hseqbase;		\
-			} else {					\
-				p = start++;				\
-			}						\
-			assert(p < end);				\
-			INIT_1;						\
-			if (ngrp == 0 || (grps && grps[r] != prev) || COMP) { \
-				GRPnotfound();				\
-			} else {					\
-				ngrps[r] = ngrp - 1;			\
-				if (histo)				\
-					cnts[ngrp - 1]++;		\
-			}						\
-			KEEP;						\
-			if (grps)					\
+				assert(p < end);			\
+				INIT_1;					\
+				if (ngrp == 0 || grps[r] != prev || COMP) { \
+					GRPnotfound();			\
+				} else {				\
+					ngrps[r] = ngrp - 1;		\
+					if (histo)			\
+						cnts[ngrp - 1]++;	\
+				}					\
+				KEEP;					\
 				prev = grps[r];				\
+			}						\
+		} else if (cand) {					\
+			for (r = 0; r < cnt; r++) {			\
+				p = *cand++ - b->hseqbase;		\
+				assert(p < end);			\
+				INIT_1;					\
+				if (ngrp == 0 || COMP) {		\
+					GRPnotfound();			\
+				} else {				\
+					ngrps[r] = ngrp - 1;		\
+					if (histo)			\
+						cnts[ngrp - 1]++;	\
+				}					\
+				KEEP;					\
+			}						\
+		} else if (grps) {					\
+			for (r = 0; r < cnt; r++) {			\
+				p = start++;				\
+				assert(p < end);			\
+				INIT_1;					\
+				if (ngrp == 0 || grps[r] != prev || COMP) { \
+					GRPnotfound();			\
+				} else {				\
+					ngrps[r] = ngrp - 1;		\
+					if (histo)			\
+						cnts[ngrp - 1]++;	\
+				}					\
+				KEEP;					\
+				prev = grps[r];				\
+			}						\
+		} else {						\
+			for (r = 0; r < cnt; r++) {			\
+				p = start++;				\
+				assert(p < end);			\
+				INIT_1;					\
+				if (ngrp == 0 || COMP) {		\
+					GRPnotfound();			\
+				} else {				\
+					ngrps[r] = ngrp - 1;		\
+					if (histo)			\
+						cnts[ngrp - 1]++;	\
+				}					\
+				KEEP;					\
+			}						\
 		}							\
 	} while(0)
 
