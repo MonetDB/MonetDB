@@ -708,7 +708,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	}
 	ngrp = 0;
 	BATsetcount(gn, cnt);
-	if (g)
+	/* don't bother looking at old groups if there is only one */
+	if (g && (!BATordered(g) || !BATordered_rev(g)))
 		grps = (const oid *) Tloc(g, 0);
 
 	/* figure out if we can use the storage type also for
@@ -790,7 +791,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		BUN i, j;
 		BUN *pgrp;
 
-		assert(g);	/* if g == NULL, we used the code above */
+		assert(g);	/* if g == NULL or if there is a single */
+		assert(grps);	/* group, we used the code above */
 		/* for each value, we need to scan all previous equal
 		 * values (a consecutive, possibly empty, range) to
 		 * see if we can find one in the same old group
