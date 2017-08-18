@@ -1116,12 +1116,16 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 
 		switch (t) {
 		case TYPE_bte:
-			if (grps && maxgrp > 1 && maxgrp < ((oid) 1 << (SIZEOF_LNG * 8 - 8))) {
+			if (grps && maxgrp > 1
+#if SIZEOF_OID == SIZEOF_LNG
+			    && maxgrp < ((oid) 1 << (SIZEOF_LNG * 8 - 8))
+#endif
+				) {
 				ulng v;
 				const bte *w = (bte *) Tloc(b, 0);
 				GRP_create_partial_hash_table_core(
 					(void) 0,
-					(v = (grps[r]<<8)|(unsigned char)w[p], hash_lng(hs, &v)),
+					(v = ((ulng)grps[r]<<8)|(unsigned char)w[p], hash_lng(hs, &v)),
 					w[p] == w[hb] && grps[r] == grps[hb],
 					(void) 0,
 					NOGRPTST);
@@ -1129,12 +1133,16 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				GRP_create_partial_hash_table_tpe(bte);
 			break;
 		case TYPE_sht:
-			if (grps && maxgrp > 1 && maxgrp < ((oid) 1 << (SIZEOF_LNG * 8 - 16))) {
+			if (grps && maxgrp > 1
+#if SIZEOF_OID == SIZEOF_LNG
+			    && maxgrp < ((oid) 1 << (SIZEOF_LNG * 8 - 16))
+#endif
+				) {
 				ulng v;
 				const sht *w = (sht *) Tloc(b, 0);
 				GRP_create_partial_hash_table_core(
 					(void) 0,
-					(v = (grps[r]<<16)|(unsigned short)w[p], hash_lng(hs, &v)),
+					(v = ((ulng)grps[r]<<16)|(unsigned short)w[p], hash_lng(hs, &v)),
 					w[p] == w[hb] && grps[r] == grps[hb],
 					(void) 0,
 					NOGRPTST);
@@ -1142,12 +1150,16 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				GRP_create_partial_hash_table_tpe(sht);
 			break;
 		case TYPE_int:
-			if (grps && maxgrp > 1 && maxgrp < ((oid) 1 << (SIZEOF_LNG * 8 - 32))) {
+			if (grps && maxgrp > 1
+#if SIZEOF_OID == SIZEOF_LNG
+			    && maxgrp < ((oid) 1 << (SIZEOF_LNG * 8 - 32))
+#endif
+				) {
 				ulng v;
 				const int *w = (int *) Tloc(b, 0);
 				GRP_create_partial_hash_table_core(
 					(void) 0,
-					(v = (grps[r]<<32)|(unsigned int)w[p], hash_lng(hs, &v)),
+					(v = ((ulng)grps[r]<<32)|(unsigned int)w[p], hash_lng(hs, &v)),
 					w[p] == w[hb] && grps[r] == grps[hb],
 					(void) 0,
 					NOGRPTST);
