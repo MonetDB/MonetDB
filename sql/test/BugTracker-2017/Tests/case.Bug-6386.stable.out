@@ -1,0 +1,97 @@
+stdout of test 'case.Bug-6386` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 18:14:34 >  
+# 18:14:34 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33907" "--set" "mapi_usock=/var/tmp/mtest-10620/.s.monetdb.33907" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 18:14:34 >  
+
+# MonetDB 5 server v11.27.4
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.331 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:33907/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-10620/.s.monetdb.33907
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 18:14:35 >  
+# 18:14:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10620" "--port=33907"
+# 18:14:35 >  
+
+#select case name when 'types' then 1 when 'args' then 60.3281 when 'keys' then 0.8415381117315 else 0 end as t1 from tables;
+% .L40 # table_name
+% t1 # name
+% decimal # type
+% 18 # length
+[ 0.0000000000000	]
+[ 1.0000000000000	]
+[ 0.0000000000000	]
+[ 60.3281000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.8415381117315	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.8415381117315	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+[ 0.0000000000000	]
+
+# 18:14:35 >  
+# 18:14:35 >  "Done."
+# 18:14:35 >  
+

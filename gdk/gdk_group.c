@@ -98,24 +98,64 @@
 #define GRP_compare_consecutive_values(INIT_0,INIT_1,COMP,KEEP)		\
 	do {								\
 		INIT_0;							\
-		for (r = 0; r < cnt; r++) {				\
-			if (cand) {					\
+		if (cand && grps) {					\
+			for (r = 0; r < cnt; r++) {			\
 				p = *cand++ - b->hseqbase;		\
-			} else {					\
-				p = start++;				\
-			}						\
-			assert(p < end);				\
-			INIT_1;						\
-			if (ngrp == 0 || (grps && grps[r] != prev) || COMP) { \
-				GRPnotfound();				\
-			} else {					\
-				ngrps[r] = ngrp - 1;			\
-				if (histo)				\
-					cnts[ngrp - 1]++;		\
-			}						\
-			KEEP;						\
-			if (grps)					\
+				assert(p < end);			\
+				INIT_1;					\
+				if (ngrp == 0 || grps[r] != prev || COMP) { \
+					GRPnotfound();			\
+				} else {				\
+					ngrps[r] = ngrp - 1;		\
+					if (histo)			\
+						cnts[ngrp - 1]++;	\
+				}					\
+				KEEP;					\
 				prev = grps[r];				\
+			}						\
+		} else if (cand) {					\
+			for (r = 0; r < cnt; r++) {			\
+				p = *cand++ - b->hseqbase;		\
+				assert(p < end);			\
+				INIT_1;					\
+				if (ngrp == 0 || COMP) {		\
+					GRPnotfound();			\
+				} else {				\
+					ngrps[r] = ngrp - 1;		\
+					if (histo)			\
+						cnts[ngrp - 1]++;	\
+				}					\
+				KEEP;					\
+			}						\
+		} else if (grps) {					\
+			for (r = 0; r < cnt; r++) {			\
+				p = start++;				\
+				assert(p < end);			\
+				INIT_1;					\
+				if (ngrp == 0 || grps[r] != prev || COMP) { \
+					GRPnotfound();			\
+				} else {				\
+					ngrps[r] = ngrp - 1;		\
+					if (histo)			\
+						cnts[ngrp - 1]++;	\
+				}					\
+				KEEP;					\
+				prev = grps[r];				\
+			}						\
+		} else {						\
+			for (r = 0; r < cnt; r++) {			\
+				p = start++;				\
+				assert(p < end);			\
+				INIT_1;					\
+				if (ngrp == 0 || COMP) {		\
+					GRPnotfound();			\
+				} else {				\
+					ngrps[r] = ngrp - 1;		\
+					if (histo)			\
+						cnts[ngrp - 1]++;	\
+				}					\
+				KEEP;					\
+			}						\
 		}							\
 	} while(0)
 
@@ -353,6 +393,13 @@ rev(oid x)
 }
 
 /* population count: count number of 1 bits in a value */
+#ifdef __GNUC__
+#if SIZEOF_OID == SIZEOF_INT
+#define pop(x)		__builtin_popcount(x)
+#else
+#define pop(x)		__builtin_popcountl(x)
+#endif
+#else
 static inline int
 pop(oid x)
 {
@@ -373,93 +420,27 @@ pop(oid x)
 #endif
 	return (int) x;
 }
+#endif
 
-#define GRP_create_partial_hash_table(INIT_0,INIT_1,HASH,COMP)		\
+#define GRP_create_partial_hash_table_core(INIT_1,HASH,COMP,ASSERT,GRPTST) \
 	do {								\
-		oid grp;						\
-		INIT_0;							\
-		if (gc) {						\
+		if (cand) {						\
 			for (r = 0; r < cnt; r++) {			\
-				if (cand) {				\
-					p = cand[r] - b->hseqbase;	\
-				} else {				\
-					p = start + r;			\
-				}					\
+				p = cand[r] - b->hseqbase;		\
 				assert(p < end);			\
 				INIT_1;					\
 				prb = HASH;				\
 				for (hb = HASHget(hs, prb);		\
 				     hb != HASHnil(hs) && hb >= start;	\
 				     hb = HASHgetlink(hs, hb)) {	\
-					assert(HASHgetlink(hs, hb) == HASHnil(hs) \
-					       || HASHgetlink(hs, hb) < hb); \
-					if (cand) {			\
-						q = r;			\
-						while (q != 0 && cand[--q] - b->hseqbase > hb) \
-							;		\
-						if (cand[q] - b->hseqbase != hb) \
-							continue;	\
-						if (grps[q] != grps[r])	{ \
-							hb = HASHnil(hs); \
-							break;		\
-						}			\
-						grp = ngrps[q];		\
-					} else {			\
-						if (grps[hb] != grps[r]) { \
-							hb = HASHnil(hs); \
-							break;		\
-						}			\
-						grp = ngrps[hb];	\
-					}				\
-					if (COMP) {			\
-						ngrps[r] = grp;		\
-						if (histo)		\
-							cnts[grp]++;	\
-						if (gn->tsorted &&	\
-						    grp != ngrp - 1)	\
-							gn->tsorted = 0; \
-						break;			\
-					}				\
-				}					\
-				if (hb == HASHnil(hs) || hb < start) {	\
-					GRPnotfound();			\
-					/* enter new group into hash table */ \
-					HASHputlink(hs, p, HASHget(hs, prb)); \
-					HASHput(hs, prb, p);		\
-				}					\
-			}						\
-		} else if (grps) {					\
-			for (r = 0; r < cnt; r++) {			\
-				if (cand) {				\
-					p = cand[r] - b->hseqbase;	\
-				} else {				\
-					p = start + r;			\
-				}					\
-				assert(p < end);			\
-				INIT_1;					\
-				prb = HASH;				\
-				/* cleverly combine group ID with */	\
-				/* hash value: group ID in top-most */	\
-				/* bits of hash by reversing the */	\
-				/* bits and shifting them in place */	\
-				prb = (prb ^ rev(grps[r]) >> bits) & hs->mask; \
-				for (hb = HASHget(hs, prb);		\
-				     hb != HASHnil(hs) && hb >= start;	\
-				     hb = HASHgetlink(hs, hb)) {	\
-					if (cand) {			\
-						q = r;			\
-						while (q != 0 && cand[--q] - b->hseqbase > hb) \
-							;		\
-						if (cand[q] - b->hseqbase != hb) \
-							continue;	\
-						if (grps[q] != grps[r])	\
-							continue;	\
-						grp = ngrps[q];		\
-					} else {			\
-						if (grps[hb] != grps[r]) \
-							continue;	\
-						grp = ngrps[hb];	\
-					}				\
+					ASSERT;				\
+					q = r;				\
+					while (q != 0 && cand[--q] - b->hseqbase > hb) \
+						;			\
+					if (cand[q] - b->hseqbase != hb) \
+						continue;		\
+					GRPTST(q, r);			\
+					grp = ngrps[q];			\
 					if (COMP) {			\
 						ngrps[r] = grp;		\
 						if (histo)		\
@@ -479,27 +460,16 @@ pop(oid x)
 			}						\
 		} else {						\
 			for (r = 0; r < cnt; r++) {			\
-				if (cand) {				\
-					p = cand[r] - b->hseqbase;	\
-				} else {				\
-					p = start + r;			\
-				}					\
+				p = start + r;				\
 				assert(p < end);			\
 				INIT_1;					\
 				prb = HASH;				\
 				for (hb = HASHget(hs, prb);		\
 				     hb != HASHnil(hs) && hb >= start;	\
 				     hb = HASHgetlink(hs, hb)) {	\
-					if (cand) {			\
-						q = r;			\
-						while (q != 0 && cand[--q] - b->hseqbase > hb) \
-							;		\
-						if (cand[q] - b->hseqbase != hb) \
-							continue;	\
-						grp = ngrps[q];		\
-					} else {			\
-						grp = ngrps[hb];	\
-					}				\
+					ASSERT;				\
+					GRPTST(hb, r);			\
+					grp = ngrps[hb];		\
 					if (COMP) {			\
 						ngrps[r] = grp;		\
 						if (histo)		\
@@ -517,6 +487,22 @@ pop(oid x)
 					HASHput(hs, prb, p);		\
 				}					\
 			}						\
+		}							\
+	} while (0)
+#define GCGRPTST(i, j)	if (grps[i] != grps[j]) { hb = HASHnil(hs); break; }
+#define GRPTST(i, j)	if (grps[i] != grps[j]) continue
+#define NOGRPTST(i, j)	(void) 0
+#define GRP_create_partial_hash_table(INIT_0,INIT_1,HASH,COMP)		\
+	do {								\
+		INIT_0;							\
+		if (grps) {						\
+			if (gc) {					\
+				GRP_create_partial_hash_table_core(INIT_1,HASH,COMP,assert(HASHgetlink(hs, hb) == HASHnil(hs) || HASHgetlink(hs, hb) < hb),GCGRPTST); \
+			} else {				\
+				GRP_create_partial_hash_table_core(INIT_1,HASH ^ (rev(grps[p]) >> bits),COMP,(void)0,GRPTST); \
+			}						\
+		} else {						\
+			GRP_create_partial_hash_table_core(INIT_1,HASH,COMP,(void)0,NOGRPTST); \
 		}							\
 	} while (0)
 
@@ -560,6 +546,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 #endif
 	BUN start, end, cnt;
 	const oid *restrict cand, *candend;
+	oid maxgrp = 0;		/* maximum value of g BAT (if subgrouping) */
+	PROPrec *prop;
 
 	if (b == NULL) {
 		GDKerror("BATgroup: b must exist\n");
@@ -635,6 +623,17 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		}
 		return GDK_SUCCEED;
 	}
+	if (g) {
+		if (BATtdense(g))
+			maxgrp = g->tseqbase + BATcount(g);
+		else if (BATtordered(g))
+			maxgrp = * (oid *) Tloc(g, BATcount(g) - 1);
+		else {
+			prop = BATgetprop(g, GDK_MAX_VALUE);
+			if (prop)
+				maxgrp = prop->v.val.oval;
+		}
+	}
 	if (BATordered(b) && BATordered_rev(b)) {
 		/* all values are equal */
 		if (g == NULL || (BATordered(g) && BATordered_rev(g))) {
@@ -696,6 +695,12 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			gn = COLcopy(g, g->ttype, 0, TRANSIENT);
 			if (gn == NULL)
 				goto error;
+			if (maxgrp > 0) {
+				prop = BATgetprop(g, GDK_MAX_VALUE);
+				if (prop)
+					BATsetprop(gn, GDK_MAX_VALUE, TYPE_oid, &maxgrp);
+			}
+
 			*groups = gn;
 			if (extents) {
 				en = COLcopy(e, e->ttype, 0, TRANSIENT);
@@ -720,6 +725,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		goto error;
 	ngrps = (oid *) Tloc(gn, 0);
 	maxgrps = cnt / 10;
+	if (maxgrps < maxgrp)
+		maxgrps += maxgrp;
 	if (e && maxgrps < BATcount(e))
 		maxgrps += BATcount(e);
 	if (h && maxgrps < BATcount(h))
@@ -743,7 +750,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	}
 	ngrp = 0;
 	BATsetcount(gn, cnt);
-	if (g)
+	/* don't bother looking at old groups if there is only one */
+	if (g && (!BATordered(g) || !BATordered_rev(g)))
 		grps = (const oid *) Tloc(g, 0);
 
 	/* figure out if we can use the storage type also for
@@ -825,7 +833,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		BUN i, j;
 		BUN *pgrp;
 
-		assert(g);	/* if g == NULL, we used the code above */
+		assert(g);	/* if g == NULL or if there is a single */
+		assert(grps);	/* group, we used the code above */
 		/* for each value, we need to scan all previous equal
 		 * values (a consecutive, possibly empty, range) to
 		 * see if we can find one in the same old group
@@ -1057,6 +1066,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		BUN prb;
 		int bits;
 		BUN mask;
+		oid grp;
 
 		GDKclrerr();	/* not interested in BAThash errors */
 
@@ -1106,16 +1116,70 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 
 		switch (t) {
 		case TYPE_bte:
-			GRP_create_partial_hash_table_tpe(bte);
+			if (grps && maxgrp > 1
+#if SIZEOF_OID == SIZEOF_LNG
+			    && maxgrp < ((oid) 1 << (SIZEOF_LNG * 8 - 8))
+#endif
+				) {
+				ulng v;
+				const bte *w = (bte *) Tloc(b, 0);
+				GRP_create_partial_hash_table_core(
+					(void) 0,
+					(v = ((ulng)grps[r]<<8)|(unsigned char)w[p], hash_lng(hs, &v)),
+					w[p] == w[hb] && grps[r] == grps[hb],
+					(void) 0,
+					NOGRPTST);
+			} else
+				GRP_create_partial_hash_table_tpe(bte);
 			break;
 		case TYPE_sht:
-			GRP_create_partial_hash_table_tpe(sht);
+			if (grps && maxgrp > 1
+#if SIZEOF_OID == SIZEOF_LNG
+			    && maxgrp < ((oid) 1 << (SIZEOF_LNG * 8 - 16))
+#endif
+				) {
+				ulng v;
+				const sht *w = (sht *) Tloc(b, 0);
+				GRP_create_partial_hash_table_core(
+					(void) 0,
+					(v = ((ulng)grps[r]<<16)|(unsigned short)w[p], hash_lng(hs, &v)),
+					w[p] == w[hb] && grps[r] == grps[hb],
+					(void) 0,
+					NOGRPTST);
+			} else
+				GRP_create_partial_hash_table_tpe(sht);
 			break;
 		case TYPE_int:
-			GRP_create_partial_hash_table_tpe(int);
+			if (grps && maxgrp > 1
+#if SIZEOF_OID == SIZEOF_LNG
+			    && maxgrp < ((oid) 1 << (SIZEOF_LNG * 8 - 32))
+#endif
+				) {
+				ulng v;
+				const int *w = (int *) Tloc(b, 0);
+				GRP_create_partial_hash_table_core(
+					(void) 0,
+					(v = ((ulng)grps[r]<<32)|(unsigned int)w[p], hash_lng(hs, &v)),
+					w[p] == w[hb] && grps[r] == grps[hb],
+					(void) 0,
+					NOGRPTST);
+			} else
+				GRP_create_partial_hash_table_tpe(int);
 			break;
 		case TYPE_lng:
-			GRP_create_partial_hash_table_tpe(lng);
+#ifdef HAVE_HGE
+			if (grps && maxgrp > 1) {
+				uhge v;
+				const lng *w = (lng *) Tloc(b, 0);
+				GRP_create_partial_hash_table_core(
+					(void) 0,
+					(v = ((uhge)grps[r]<<64)|(ulng)w[p], hash_hge(hs, &v)),
+					w[p] == w[hb] && grps[r] == grps[hb],
+					(void) 0,
+					NOGRPTST);
+			} else
+#endif
+				GRP_create_partial_hash_table_tpe(lng);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
@@ -1165,6 +1229,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	gn->trevsorted = ngrp == 1 || BATcount(gn) <= 1;
 	gn->tnonil = 1;
 	gn->tnil = 0;
+	ngrp--;	     /* max value is one less than number of values */
+	BATsetprop(gn, GDK_MAX_VALUE, TYPE_oid, &ngrp);
 	*groups = gn;
 	return GDK_SUCCEED;
   error:

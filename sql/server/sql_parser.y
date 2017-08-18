@@ -44,8 +44,8 @@
 
 #define _atom_string(t, v)   atom_string(SA, t, v)
 
-#define YYMALLOC malloc
-#define YYFREE free
+#define YYMALLOC GDKmalloc
+#define YYFREE GDKfree
 
 #define YY_parse_LSP_NEEDED	/* needed for bison++ 1.21.11-3 */
 
@@ -5969,7 +5969,7 @@ int find_subgeometry_type(char* geoSubType) {
 	else {
 		size_t strLength = strlen(geoSubType);
 		if(strLength > 0 ) {
-			char *typeSubStr = malloc(strLength);
+			char *typeSubStr = GDKmalloc(strLength);
 			char flag = geoSubType[strLength-1]; 
 
 			if (typeSubStr == NULL) {
@@ -5980,7 +5980,7 @@ int find_subgeometry_type(char* geoSubType) {
 			if(flag == 'z' || flag == 'm' ) {
 				subType = find_subgeometry_type(typeSubStr);
 				if (subType == -1) {
-					free(typeSubStr);
+					GDKfree(typeSubStr);
 					return -1;
 				}
 				if(flag == 'z')
@@ -5988,7 +5988,7 @@ int find_subgeometry_type(char* geoSubType) {
 				if(flag == 'm')
 					SET_M(subType);
 			}
-			free(typeSubStr);
+			GDKfree(typeSubStr);
 		}
 
 	}

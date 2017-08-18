@@ -67,8 +67,17 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		sql_table *t;
 		sqlid tid = 0, ntid, cid = 0, ncid;
 		mvc *m = mvc_create(0, stk, 0, NULL, NULL);
+		if (!m) {
+			fprintf(stderr, "!mvc_init: malloc failure\n");
+			return -1;
+		}
 
 		m->sa = sa_create();
+		if (!m->sa) {
+			mvc_destroy(m);
+			fprintf(stderr, "!mvc_init: malloc failure\n");
+			return -1;
+		}
 
 		/* disable caching */
 		m->caching = 0;
@@ -494,6 +503,9 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	mvc *m;
 
  	m = ZNEW(mvc);
+	if(!m) {
+		return NULL;
+	}
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create\n");
 
@@ -502,17 +514,28 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->errstr[ERRSIZE-1] = '\0';
 
 	m->qc = qc_create(clientid, 0);
+	if(!m->qc) {
+		_DELETE(m);
+		return NULL;
+	}
 	m->sa = NULL;
 
 	m->params = NULL;
 	m->sizevars = MAXPARAMS;
-	// FIXME unchecked_malloc NEW_ARRAY can return NULL
 	m->vars = NEW_ARRAY(sql_var, m->sizevars);
+
 	m->topvars = 0;
 	m->frame = 1;
 	m->use_views = 0;
 	m->argmax = MAXPARAMS;
 	m->args = NEW_ARRAY(atom*,m->argmax);
+	if(!m->vars || !m->args) {
+		qc_destroy(m->qc);
+		_DELETE(m->vars);
+		_DELETE(m->args);
+		_DELETE(m);
+		return NULL;
+	}
 	m->argc = 0;
 	m->sym = NULL;
 
