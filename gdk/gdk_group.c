@@ -1064,16 +1064,58 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 
 		switch (t) {
 		case TYPE_bte:
-			GRP_create_partial_hash_table_tpe(bte);
+			if (grps && maxgrp < ((oid) 1 << (SIZEOF_LNG * 8 - 8))) {
+				ulng v;
+				const bte *w = (bte *) Tloc(b, 0);
+				GRP_create_partial_hash_table_core(
+					(void) 0,
+					(v = (grps[r]<<8)|(unsigned char)w[p], hash_lng(hs, &v)),
+					w[p] == w[hb] && grps[r] == grps[hb],
+					(void) 0,
+					NOGRPTST);
+			} else
+				GRP_create_partial_hash_table_tpe(bte);
 			break;
 		case TYPE_sht:
-			GRP_create_partial_hash_table_tpe(sht);
+			if (grps && maxgrp < ((oid) 1 << (SIZEOF_LNG * 8 - 16))) {
+				ulng v;
+				const sht *w = (sht *) Tloc(b, 0);
+				GRP_create_partial_hash_table_core(
+					(void) 0,
+					(v = (grps[r]<<16)|(unsigned short)w[p], hash_lng(hs, &v)),
+					w[p] == w[hb] && grps[r] == grps[hb],
+					(void) 0,
+					NOGRPTST);
+			} else
+				GRP_create_partial_hash_table_tpe(sht);
 			break;
 		case TYPE_int:
-			GRP_create_partial_hash_table_tpe(int);
+			if (grps && maxgrp < ((oid) 1 << (SIZEOF_LNG * 8 - 32))) {
+				ulng v;
+				const int *w = (int *) Tloc(b, 0);
+				GRP_create_partial_hash_table_core(
+					(void) 0,
+					(v = (grps[r]<<32)|(unsigned int)w[p], hash_lng(hs, &v)),
+					w[p] == w[hb] && grps[r] == grps[hb],
+					(void) 0,
+					NOGRPTST);
+			} else
+				GRP_create_partial_hash_table_tpe(int);
 			break;
 		case TYPE_lng:
-			GRP_create_partial_hash_table_tpe(lng);
+#ifdef HAVE_HGE
+			if (grps) {
+				uhge v;
+				const lng *w = (lng *) Tloc(b, 0);
+				GRP_create_partial_hash_table_core(
+					(void) 0,
+					(v = ((uhge)grps[r]<<64)|(ulng)w[p], hash_hge(hs, &v)),
+					w[p] == w[hb] && grps[r] == grps[hb],
+					(void) 0,
+					NOGRPTST);
+			} else
+#endif
+				GRP_create_partial_hash_table_tpe(lng);
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
