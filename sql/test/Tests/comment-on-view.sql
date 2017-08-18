@@ -35,6 +35,10 @@ COMMENT ON VIEW vivi IS 'a view to a kill';
 COMMENT ON COLUMN vivi.remark IS 'remarkable';
 SELECT * FROM new_comments();
 
+-- accessing it as a table doesn't work
+COMMENT ON TABLE vivi is 'a mistake';
+SELECT * FROM new_comments();
+
 -- check that deletes cascade
 DROP VIEW vivi;
 SELECT * FROM new_comments();

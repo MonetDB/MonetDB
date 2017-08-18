@@ -23,14 +23,16 @@ stderr of test 'comment-on-table` in directory 'sql/test` itself:
 # cmdline opt 	gdk_dbpath = /Users/joeri/monets/default/var/MonetDB/mTests_sql_test
 # cmdline opt 	gdk_debug = 536870922
 
-# 13:09:12 >  
-# 13:09:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-44551" "--port=32134"
-# 13:09:12 >  
+# 11:31:41 >  
+# 11:31:41 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29570" "--port=39712"
+# 11:31:41 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-29570/.s.monetdb.39712
+QUERY = COMMENT ON VIEW sch.tab IS 'a mistake';
+ERROR = !COMMENT ON:no such view: sch.tab
+CODE  = 3F000
 
-
-
-# 13:09:13 >  
-# 13:09:13 >  "Done."
-# 13:09:13 >  
+# 11:31:42 >  
+# 11:31:42 >  "Done."
+# 11:31:42 >  
 

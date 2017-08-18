@@ -28,6 +28,10 @@ stderr of test 'comment-on-view` in directory 'sql/test` itself:
 # 16:43:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24105" "--port=37613"
 # 16:43:54 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-29646/.s.monetdb.36441
+QUERY = COMMENT ON TABLE vivi is 'a mistake';
+ERROR = !COMMENT ON:no such table: sch.vivi
+CODE  = 3F000
 
 # 16:43:54 >  
 # 16:43:54 >  "Done."

@@ -216,8 +216,6 @@ extern void mvc_create_dependency(mvc *m, int id, int depend_id, int depend_type
 extern void mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, int dep_type);
 extern int mvc_check_dependency(mvc * m, int id, int type, list *ignore_ids);
 
-extern void mvc_comment_on(mvc *m, int id, const char *remark);
-
 /* variable management */
 extern void stack_push_var(mvc *sql, const char *name, sql_subtype *type);
 extern void stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql_subtype *type);

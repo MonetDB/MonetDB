@@ -38,6 +38,10 @@ SELECT * FROM new_comments();
 COMMENT ON TABLE sch.tab IS 'a new comment';
 SELECT * FROM new_comments();
 
+-- accessing it as a view doesn't work
+COMMENT ON VIEW sch.tab IS 'a mistake';
+SELECT * FROM new_comments();
+
 -- drop it by setting it to NULL
 COMMENT ON TABLE tab IS NULL;
 SELECT * FROM new_comments();
@@ -50,4 +54,11 @@ SELECT * FROM new_comments();
 -- drop it by dropping the table
 COMMENT ON TABLE tab IS 'banana';
 DROP TABLE tab;
+SELECT * FROM new_comments();
+
+-- remote tables etc also work
+CREATE REMOTE TABLE rem (i INT) ON 'mapi:monetdb://foo/bar';
+COMMENT ON TABLE rem IS 'remote table';
+CREATE MERGE TABLE mrg (i INT);
+COMMENT ON TABLE mrg IS 'merge table';
 SELECT * FROM new_comments();

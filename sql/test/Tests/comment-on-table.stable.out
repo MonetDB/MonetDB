@@ -94,6 +94,12 @@ Ready.
 % .L1,	.L1,	.L1 # table_name
 % name,	source,	remark # name
 % varchar,	varchar,	clob # type
+% 3,	5,	13 # length
+[ "tab",	"TABLE",	"a new comment"	]
+#SELECT * FROM new_comments();
+% .L1,	.L1,	.L1 # table_name
+% name,	source,	remark # name
+% varchar,	varchar,	clob # type
 % 0,	0,	0 # length
 #SELECT * FROM new_comments();
 % .L1,	.L1,	.L1 # table_name
@@ -106,6 +112,15 @@ Ready.
 % name,	source,	remark # name
 % varchar,	varchar,	clob # type
 % 0,	0,	0 # length
+#CREATE REMOTE TABLE rem (i INT) ON 'mapi:monetdb://foo/bar';
+#CREATE MERGE TABLE mrg (i INT);
+#SELECT * FROM new_comments();
+% .L1,	.L1,	.L1 # table_name
+% name,	source,	remark # name
+% varchar,	varchar,	clob # type
+% 3,	12,	12 # length
+[ "rem",	"REMOTE TABLE",	"remote table"	]
+[ "mrg",	"MERGE TABLE",	"merge table"	]
 
 # 14:25:22 >  
 # 14:25:22 >  "Done."

@@ -1946,89 +1946,103 @@ rel_alter_user(sql_allocator *sa, char *user, char *passwd, int enc, char *schem
 	return rel;
 }
 
+static sqlid
+rel_find_designated_schema(mvc *sql, symbol *sym) {
+	char *sname;
+	sql_schema *s;
+
+	assert(sym->type == type_string);
+	sname = sym->data.sval;
+	if (!(s = mvc_bind_schema(sql, sname))) {
+		sql_error(sql, 02, "3F000!COMMENT ON:no such schema: %s", sname);
+		return 0;
+	}
+	return s->base.id;
+}
 
 static sqlid
-rel_commentable_object(mvc *sql, symbol *catalog_object) {
+rel_find_designated_table(mvc *sql, symbol *sym) {
+	dlist *qname;
+	sql_schema *s;
+	char *sname;
+	char *tname;
+	sql_table *t;
+	int want_table = sym->token == SQL_TABLE;
 
-	switch (catalog_object->token) {
-		case SQL_SCHEMA: {
-			char *sname;
-			sql_schema *s;
+	assert(sym->type == type_list);
+	qname = sym->data.lval;
+	s = cur_schema(sql);
+	sname = qname_schema(qname);
+	if (sname && !(s = mvc_bind_schema(sql, sname))) {
+		sql_error(sql, 02, "3F000!COMMENT ON:no such schema: %s", sname);
+		return 0;
+	}
+	tname = qname_table(qname);
+	t = mvc_bind_table(sql, s, tname);
+	if (t && !want_table == !isKindOfTable(t))	/* comparing booleans can be tricky */
+		return t->base.id;
 
-			assert(catalog_object->type == type_string);
-			sname = catalog_object->data.sval;
-			if (!(s = mvc_bind_schema(sql, sname))) {
-				sql_error(sql, 02, "3F000!COMMENT ON:no such schema: %s", sname);
-				return 0;
-			}
-			return s->base.id;
-		}
+	sql_error(sql, 02, "3F000!COMMENT ON:no such %s: %s.%s",
+		want_table ? "table" : "view",
+		s->base.name, tname);
+	return 0;
+}
+
+static sqlid
+rel_find_designated_column(mvc *sql, symbol *sym) {
+	char *sname, *tname, *cname;
+	dlist *colname;
+	sql_schema *s;
+	sql_table *t;
+	sql_column *c;
+
+	assert(sym->type == type_list);
+	colname = sym->data.lval;
+	assert(colname->cnt == 2 || colname->cnt == 3);
+	assert(colname->h->type == type_string);
+	assert(colname->h->next->type == type_string);
+	if (colname->cnt == 2) {
+		sname = NULL;
+		tname = colname->h->data.sval;
+		cname = colname->h->next->data.sval;
+	} else {
+		// cnt == 3
+		sname = colname->h->data.sval;
+		tname = colname->h->next->data.sval;
+		assert(colname->h->next->next->type == type_string);
+		cname = colname->h->next->next->data.sval;
+	}
+	s = cur_schema(sql);
+	if (sname && !(s = mvc_bind_schema(sql, sname))) {
+		sql_error(sql, 02, "3F000!COMMENT ON:no such schema: %s", sname);
+		return 0;
+	}
+	if (!(t = mvc_bind_table(sql, s, tname))) {
+		sql_error(sql, 02, "3F000!COMMENT ON:no such table: %s.%s", s->base.name, tname);
+		return 0;
+	}
+	if (!(c = mvc_bind_column(sql, t, cname))) {
+		sql_error(sql, 02, "3F000!COMMENT ON:no such column: %s.%s", tname, cname);
+		return 0;
+	}
+	return c->base.id;
+}
+
+static sqlid
+rel_find_designated_object(mvc *sql, symbol *sym) {
+
+	switch (sym->token) {
+		case SQL_SCHEMA:
+			return rel_find_designated_schema(sql, sym);
 		case SQL_TABLE:
-			/* fall through */
-		case SQL_VIEW: {
-			dlist *qname;
-			sql_schema *s;
-			char *sname;
-			char *tname;
-			sql_table *t;
-
-			assert(catalog_object->type == type_list);
-			qname = catalog_object->data.lval;
-			s = cur_schema(sql);
-			sname = qname_schema(qname);
-			if (sname && !(s = mvc_bind_schema(sql, sname))) {
-				sql_error(sql, 02, "3F000!COMMENT ON:no such schema: %s", sname);
-				return 0;
-			}
-			tname = qname_table(qname);
-			if (!(t = mvc_bind_table(sql, s, tname))) {
-				sql_error(sql, 02, "3F000!COMMENT ON:no such table or view: %s.%s", s->base.name, tname);
-				return 0;
-			}
-			return t->base.id;
-		}
-		case SQL_COLUMN: {
-			char *sname, *tname, *cname;
-			dlist *colname;
-			sql_schema *s;
-			sql_table *t;
-			sql_column *c;
-
-			assert(catalog_object->type == type_list);
-			colname = catalog_object->data.lval;
-			assert(colname->cnt == 2 || colname->cnt == 3);
-			assert(colname->h->type == type_string);
-			assert(colname->h->next->type == type_string);
-			if (colname->cnt == 2) {
-				sname = NULL;
-				tname = colname->h->data.sval;
-				cname = colname->h->next->data.sval;
-			} else {
-				// cnt == 3
-				sname = colname->h->data.sval;
-				tname = colname->h->next->data.sval;
-				assert(colname->h->next->next->type == type_string);
-				cname = colname->h->next->next->data.sval;
-			}
-			s = cur_schema(sql);
-			if (sname && !(s = mvc_bind_schema(sql, sname))) {
-				sql_error(sql, 02, "3F000!COMMENT ON:no such schema: %s", sname);
-				return 0;
-			}
-			if (!(t = mvc_bind_table(sql, s, tname))) {
-				sql_error(sql, 02, "3F000!COMMENT ON:no such table: %s.%s", s->base.name, tname);
-				return 0;
-			}
-			if (!(c = mvc_bind_column(sql, t, cname))) {
-				sql_error(sql, 02, "3F000!COMMENT ON:no such column: %s.%s", tname, cname);
-				return 0;
-			}
-			return c->base.id;
-		}
-		default: {
-			sql_error(sql, 2, "!COMMENT ON %s is not supported", token2string(catalog_object->token));
+			return rel_find_designated_table(sql, sym);
+		case SQL_VIEW:
+			return rel_find_designated_table(sql, sym);
+		case SQL_COLUMN:
+			return rel_find_designated_column(sql, sym);
+		default:
+			sql_error(sql, 2, "!COMMENT ON %s is not supported", token2string(sym->token));
 			return 0;
-		}
 	}
 }
 
@@ -2260,9 +2274,9 @@ rel_schemas(mvc *sql, symbol *s)
 		assert(l->cnt == 2);
 		remark = l->h->next->data.sval;
 
-		id = rel_commentable_object(sql, catalog_object);
+		id = rel_find_designated_object(sql, catalog_object);
 		if (!id) {
-			/* rel_commentable_object has already set the error message so we don't have to */
+			/* rel_find_designated_object has already set the error message so we don't have to */
 			return NULL;
 		}
 

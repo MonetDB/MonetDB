@@ -95,6 +95,13 @@ Ready.
 % 11,	6,	16 # length
 [ "vivi",	"VIEW",	"a view to a kill"	]
 [ "vivi.remark",	"COLUMN",	"remarkable"	]
+#SELECT * FROM new_comments();
+% .L1,	.L1,	.L1 # table_name
+% name,	source,	remark # name
+% varchar,	varchar,	clob # type
+% 11,	6,	16 # length
+[ "vivi",	"VIEW",	"a view to a kill"	]
+[ "vivi.remark",	"COLUMN",	"remarkable"	]
 #DROP VIEW vivi;
 #SELECT * FROM new_comments();
 % .L1,	.L1,	.L1 # table_name
