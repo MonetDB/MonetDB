@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Sat Aug 19 2017 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented versions of group.(sub)group(done) that don't return
+  a histogram.
+
 * Mon Aug  7 2017 Sjoerd Mullender <sjoerd@acm.org>
 - Removed MAL functions streams.socketRead, streams.socketReadBytes,
   streams.socketWrite, and streams.socketWriteBytes.
