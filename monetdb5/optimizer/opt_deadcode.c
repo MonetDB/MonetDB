@@ -103,6 +103,15 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				freeInstruction(p);
 				actions ++;
 			}
+			if ( getModuleId(p) == groupRef && p->retc == 3 && varused[getArg(p,2)] == 0 &&
+				(getFunctionId(p) == groupRef || 
+				 getFunctionId(p) == subgroupRef || 
+				 getFunctionId(p) == groupdoneRef || 
+				 getFunctionId(p) == subgroupdoneRef)){
+				// remove the histogram unless needed
+				delArgument(p,2);
+				actions++;
+			}
 		}
 	}
 	for(; i<slimit; i++)
@@ -111,7 +120,7 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
     /* Defense line against incorrect plans */
 	/* we don't create or change existing structures */
     //if( actions > 0){
-        //chkTypes(cntxt->usermodule, mb, FALSE);
+        chkTypes(cntxt->usermodule, mb, FALSE);
         chkFlow(mb);
         //chkDeclarations(mb);
     //}
