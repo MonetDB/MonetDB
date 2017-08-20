@@ -37,7 +37,7 @@ GRPsubgroup5(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, co
 			BBPunfix(h->batCacheid);
 		throw(MAL, gid ? "group.subgroup" : "group.group", RUNTIME_OBJECT_MISSING);
 	}
-	if ((r = BATgroup(&gn, &en, &hn, b, s, g, e, h)) == GDK_SUCCEED) {
+	if ((r = BATgroup(&gn, &en, nhis ? &hn : NULL, b, s, g, e, h)) == GDK_SUCCEED) {
 		*ngid = gn->batCacheid;
 		*next = en->batCacheid;
 		if (nhis){
