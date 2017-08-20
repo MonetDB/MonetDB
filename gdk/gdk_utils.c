@@ -1579,6 +1579,10 @@ GDKmalloc_internal(size_t size)
 		return NULL;
 	}
 #endif
+	if (GDKvm_cursize() + size >= GDK_vm_maxsize) {
+		GDKerror("allocating too much memory\n");
+		return NULL;
+	}
 
 	/* pad to multiple of eight bytes and add some extra space to
 	 * write real size in front; when debugging, also allocate
@@ -1716,6 +1720,11 @@ GDKrealloc(void *s, size_t size)
 	nsize = (size + 7) & ~7;
 	asize = ((size_t *) s)[-1]; /* how much allocated last */
 
+	if (nsize > asize &&
+	    GDKvm_cursize() + nsize - asize >= GDK_vm_maxsize) {
+		GDKerror("allocating too much memory\n");
+		return NULL;
+	}
 #ifndef NDEBUG
 	assert((asize & 2) == 0);   /* check against duplicate free */
 	/* check for out-of-bounds writes */
