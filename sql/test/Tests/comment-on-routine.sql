@@ -39,19 +39,31 @@ RETURN TABLE (
 
 ------------------------------------------------------------------------
 
--- create a table and comment on a column
-CREATE TABLE tab (i integer, j integer);
-COMMENT ON COLUMN tab.i IS 'A column';
+CREATE FUNCTION f() RETURNS INT RETURN 42;
+CREATE FUNCTION f(i INT) RETURNS INT RETURN 2 * i;
+CREATE FUNCTION f(i INT, j INT) RETURNS INT RETURN i + j;
+CREATE FUNCTION g(i INT) RETURNS TABLE (j INT) RETURN SELECT i;
+
+COMMENT ON FUNCTION f() IS 'function with no parameters';
+COMMENT ON FUNCTION f(INT) IS 'function with one parameter';
+COMMENT ON FUNCTION f(INT, INT) IS 'function with two parameters';
+COMMENT ON FUNCTION g IS 'table returning function';
+COMMENT ON PROCEDURE sys.comment_on(int, varchar(65000)) IS 'sys comment_on';
 SELECT * FROM new_comments();
 
--- again, with an explicit schema reference
-COMMENT ON COLUMN sch.tab.j IS 'Another comment';
+-- drop one, check if the right one disappears
+COMMENT ON FUNCTION f(INT) is NULL;
 SELECT * FROM new_comments();
 
--- it's dropped if the column is dropped
-ALTER TABLE tab DROP COLUMN i;
+-- if there is no ambiguity we can leave out the parameter list
+COMMENT ON PROCEDURE sys.comment_on IS NULL;
 SELECT * FROM new_comments();
 
--- and if the table is dropped
-DROP TABLE tab;
+-- if there is ambiguity we can't
+COMMENT ON FUNCTION f IS 'ambiguous';
+
+-- dropping the functions cascades to the comments
+DROP FUNCTION f(INT);
+DROP FUNCTION f(INT, INT);
+DROP FUNCTION f();
 SELECT * FROM new_comments();

@@ -3937,6 +3937,7 @@ sys_drop_func(sql_trans *tr, sql_func *func, int drop_action)
 	table_funcs.table_delete(tr, sys_tab_func, rid_func);
 
 	sql_trans_drop_dependencies(tr, func->base.id);
+	sql_trans_drop_any_comment(tr, func->base.id);
 
 	tr->schema_updates ++;
 

@@ -2082,6 +2082,49 @@ rel_find_designated_sequence(mvc *sql, symbol *sym) {
 	return 0;
 }
 
+
+static sqlid
+rel_find_designated_routine(mvc *sql, symbol *sym) {
+	(void)sql;
+	(void)sym;
+	dlist *designator;
+	dlist *qname;
+	dlist *typelist;
+	int func_type;
+	char *sname;
+	sql_schema *s;
+	char *fname;
+	sql_func *func;
+
+
+	assert(sym->type == type_list);
+	designator = sym->data.lval;
+	assert(designator->cnt == 3);
+	qname = designator->h->data.lval;
+	typelist = designator->h->next->data.lval;
+	func_type = designator->h->next->next->data.i_val;
+
+	s = cur_schema(sql);
+	sname = qname_schema(qname);
+	if (sname && !(s = mvc_bind_schema(sql, sname))) {
+		sql_error(sql, 02, "3F000!COMMENT ON:no such schema: %s", sname);
+		return 0;
+	}
+
+	fname = qname_func(qname);
+	func = resolve_func(sql, s, fname, typelist, func_type, "COMMENT");
+	if (!func && func_type == F_FUNC) {
+		// functions returning a table have a special type
+		func = resolve_func(sql, s, fname, typelist, F_UNION, "COMMENT");
+	}
+	if (func)
+		return func->base.id;
+
+	if (sql->errstr[0] == '\0')
+		sql_error(sql, 02, "3F000!COMMENT ON:no such routine: %s.%s", s->base.name, fname);
+	return 0;
+}
+
 static sqlid
 rel_find_designated_object(mvc *sql, symbol *sym) {
 
@@ -2098,6 +2141,8 @@ rel_find_designated_object(mvc *sql, symbol *sym) {
 			return rel_find_designated_index(sql, sym);
 		case SQL_SEQUENCE:
 			return rel_find_designated_sequence(sql, sym);
+		case SQL_ROUTINE:
+			return rel_find_designated_routine(sql, sym);
 		default:
 			sql_error(sql, 2, "!COMMENT ON %s is not supported", token2string(sym->token));
 			return 0;

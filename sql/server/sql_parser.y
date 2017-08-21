@@ -5485,6 +5485,7 @@ catalog_object:
 	}
 	| INDEX qname { $$ = _symbol_create_list( SQL_INDEX, $2 ); }
 	| SEQUENCE qname { $$ = _symbol_create_list( SQL_SEQUENCE, $2 ); }
+	| routine_designator { $$ = _symbol_create_list( SQL_ROUTINE, $1 ); }
 	;
 
 XML_value_expression:
@@ -6151,6 +6152,7 @@ char *token2string(int token)
 	SQL(FRAME);
 	SQL(COMPARE);
 	SQL(FILTER);
+	SQL(ROUTINE);
 	SQL(TEMP_LOCAL);
 	SQL(TEMP_GLOBAL);
 	SQL(INT_VALUE);

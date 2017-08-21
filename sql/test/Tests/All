@@ -107,6 +107,7 @@ comment-on-view
 comment-on-column
 comment-on-index
 comment-on-sequence
+comment-on-routine
 
 #HAVE_GEOM?trace
 
