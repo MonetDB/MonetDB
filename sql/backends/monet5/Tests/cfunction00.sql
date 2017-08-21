@@ -6,7 +6,7 @@ begin
 	while (true)
 	do
 		set s = s + 1;
-		return s ; --yield s;
+		yield s;
 	end while;
 	return s;
 END;
@@ -15,6 +15,7 @@ select * from functions where name ='aggr00';
 -- to call a continuous function in the scheduler, we must pass the keyword "function" explicitly
 start continuous function aggr00();
 
+call cquery.wait(1000); #give it time to start
 select aggr00(); #should return 1
 select aggr00(); #should return 2
 

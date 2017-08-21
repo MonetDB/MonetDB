@@ -1,0 +1,51 @@
+factory user.factory06(Aparam:int):int;
+    X_3 := Aparam;
+    yield factory06:int := X_3;
+    X_4 := Aparam;
+    X_5 := calc.lng(X_4);
+    X_8:lng := calc.+(X_5, 1:lng);
+    X_9 := calc.int(X_8);
+    Aparam:int := X_9;
+    X_10 := Aparam;
+    yield factory06:int := X_10;
+    X_11 := Aparam;
+    X_12 := calc.lng(X_11);
+    X_14:lng := calc.+(X_12, 1:lng);
+    X_15 := calc.int(X_14);
+    Aparam:int := X_15;
+    yield factory06:int := Aparam;
+    return factory06:int;
+end user.factory06;
+
+i:= factory06(1);
+io.print(i);
+j:= factory06(1);
+io.print(j);
+k:= factory06(1);
+io.print(k);
+
+factory user.factory06a(Aparam:int):int;
+    yield factory06a:int := Aparam;
+    X_5 := calc.lng(Aparam);
+    X_8:lng := calc.+(X_5, 1:lng);
+    X_9 := calc.int(X_8);
+    Aparam:int := X_9;
+    yield factory06a:int := Aparam;
+    X_12 := calc.lng(Aparam);
+    X_14:lng := calc.+(X_12, 1:lng);
+    X_15 := calc.int(X_14);
+    Aparam:int := X_15;
+    yield factory06a:int := Aparam;
+    return factory06a:int := Aparam;
+end user.factory06a;
+
+i:= factory06a(1);
+io.print(i);
+j:= factory06a(1);
+io.print(j);
+k:= factory06a(1);
+io.print(k);
+
+mdb.List("user","factory06");
+optimizer.aliases("user","factory06");
+mdb.List("user","factory06");
