@@ -1,3 +1,4 @@
+--Just a more complicated test in a regular table
 CREATE TABLE myTable10 (aa int, dd real);
 
 CREATE FUNCTION factory10() RETURNS TABLE (aa int, dd real) BEGIN

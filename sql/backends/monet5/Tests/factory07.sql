@@ -1,3 +1,4 @@
+--Factory in while true loop. Should never output the end of factory mal error
 CREATE FUNCTION factory07() RETURNS INT BEGIN
     DECLARE a INT;
     SET a = 0;

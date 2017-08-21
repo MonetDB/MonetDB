@@ -1,5 +1,4 @@
-# Test MAL factories with YIELD statements
-
+--YIELD statements inside while loops after statements
 CREATE FUNCTION factory02() RETURNS INT BEGIN
     DECLARE a INT;
     SET a = 0;

@@ -1,5 +1,4 @@
-# Test MAL factories with YIELD statements
-
+--YIELD a declared variable and update it through invocations, testing the coroutine
 CREATE FUNCTION factory01() RETURNS INT BEGIN
     DECLARE a INT;
     SET a = 1;

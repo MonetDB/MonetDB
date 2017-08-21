@@ -1,3 +1,4 @@
+
 CREATE FUNCTION factory11() RETURNS VARCHAR(32) BEGIN
     DECLARE aa VARCHAR(32);
     SET aa = 'This is a string! :) :) :) :) :)';

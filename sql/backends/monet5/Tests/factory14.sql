@@ -1,3 +1,4 @@
+--Update the arguments durinf
 CREATE FUNCTION factory14(aa INT, bb CLOB) RETURNS TABLE (aa INT, bb CLOB) BEGIN
     YIELD TABLE (SELECT aa, bb);
     SET aa = aa + 1;

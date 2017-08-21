@@ -1,4 +1,4 @@
-
+--Consecutive yield statements are allowed
 CREATE FUNCTION factory05(param INT) RETURNS INT BEGIN
     YIELD param;
     YIELD param;

@@ -1,3 +1,4 @@
+--Check yield statements are allowed in multiple while loops, even nested
 CREATE FUNCTION factory09() RETURNS INT BEGIN
     DECLARE a INT;
     DECLARE b INT;

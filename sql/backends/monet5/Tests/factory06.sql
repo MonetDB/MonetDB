@@ -1,3 +1,4 @@
+--Update the factory function parameter in the body
 CREATE FUNCTION factory06(param INT) RETURNS INT BEGIN
     YIELD param;
     SET param = param + 1;

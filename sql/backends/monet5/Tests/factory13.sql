@@ -1,3 +1,4 @@
+--Test factory function with increasing rows in the table
 CREATE TABLE myTable13 (aa INT, bb TIME, cc CHAR(32));
 
 CREATE FUNCTION factory13() RETURNS TABLE (aa INT, bb TIME, cc CHAR(32)) BEGIN

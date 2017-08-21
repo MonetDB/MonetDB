@@ -1,3 +1,4 @@
+--YIELD statement inside a IF statement
 CREATE FUNCTION factory08() RETURNS INT BEGIN  --show only the even numbers
     DECLARE a INT;
     SET a = 0;

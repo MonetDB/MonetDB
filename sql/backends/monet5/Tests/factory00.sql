@@ -1,5 +1,5 @@
-# Test MAL factories with YIELD statements
-
+--The most basic coroutine operation test. Show that the MAL stack is correctly stopped and returned at the point
+--after each call
 CREATE FUNCTION factory00() RETURNS INT BEGIN
     YIELD 1;
     YIELD 2;
