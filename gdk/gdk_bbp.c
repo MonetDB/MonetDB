@@ -1594,7 +1594,7 @@ vheap_entry(FILE *fp, Heap *h)
 }
 
 static gdk_return
-new_bbpentry(FILE *fp, bat i)
+new_bbpentry(FILE *fp, bat i, const char *prefix)
 {
 #ifndef NDEBUG
 	assert(i > 0);
@@ -1610,8 +1610,9 @@ new_bbpentry(FILE *fp, bat i)
 	}
 #endif
 
-	if (fprintf(fp, SSZFMT " %d %s %s %d " BUNFMT " "
-		    BUNFMT " " OIDFMT, /* BAT info */
+	if (fprintf(fp, "%s" SSZFMT " %d %s %s %d " BUNFMT " "
+		    BUNFMT " " OIDFMT, prefix,
+		    /* BAT info */
 		    (ssize_t) i,
 		    BBP_status(i) & BBPPERSISTENT,
 		    BBP_logical(i),
@@ -1709,10 +1710,10 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 			bat i = subcommit[j];
 			/* BBP.dir consists of all persistent bats only */
 			if (BBP_status(i) & BBPPERSISTENT) {
-				if (new_bbpentry(nbbpf, i) != GDK_SUCCEED) {
+				if (new_bbpentry(nbbpf, i, "") != GDK_SUCCEED) {
 					goto bailout;
 				}
-				IODEBUG new_bbpentry(stderr, i);
+				IODEBUG new_bbpentry(stderr, i, "#");
 			}
 			if (i == n)
 				n = 0;	/* read new entry (i.e. skip this one from old BBP.dir */
@@ -1725,7 +1726,7 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 				GDKsyserror("BBPdir_subcommit: Copying BBP.dir entry failed\n");
 				goto bailout;
 			}
-			IODEBUG fprintf(stderr, "%s", buf);
+			IODEBUG fprintf(stderr, "#%s", buf);
 			n = 0;
 		}
 	}
@@ -1787,10 +1788,10 @@ BBPdir(int cnt, bat *subcommit)
 		/* write the entry
 		 * BBP.dir consists of all persistent bats */
 		if (BBP_status(i) & BBPPERSISTENT) {
-			if (new_bbpentry(fp, i) != GDK_SUCCEED) {
+			if (new_bbpentry(fp, i, "") != GDK_SUCCEED) {
 				goto bailout;
 			}
-			IODEBUG new_bbpentry(stderr, i);
+			IODEBUG new_bbpentry(stderr, i, "#");
 		}
 	}
 
@@ -3603,7 +3604,7 @@ BBPrecover_subdir(void)
 	if (ret == GDK_SUCCEED) {
 		ret = GDKremovedir(0, SUBDIR);
 		if (backup_dir == 2) {
-			IODEBUG fprintf(stderr, "BBPrecover_subdir: %s%cBBP.dir had disappeared!", SUBDIR, DIR_SEP);
+			IODEBUG fprintf(stderr, "#BBPrecover_subdir: %s%cBBP.dir had disappeared!", SUBDIR, DIR_SEP);
 			backup_dir = 0;
 		}
 	}
