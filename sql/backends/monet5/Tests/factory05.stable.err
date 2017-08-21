@@ -1,9 +1,9 @@
-stderr of test 'factory00` in directory 'sql/backends/monet5` itself:
+stderr of test 'factory05` in directory 'sql/backends/monet5` itself:
 
 
-# 14:39:52 >  
-# 14:39:52 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37491" "--set" "mapi_usock=/var/tmp/mtest-14113/.s.monetdb.37491" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/MonetDB-trails/BUILD/var/MonetDB/mTests_sql_backends_monet5"
-# 14:39:52 >  
+# 11:49:42 >  
+# 11:49:42 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31223" "--set" "mapi_usock=/var/tmp/mtest-12722/.s.monetdb.31223" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/MonetDB-trails/BUILD/var/MonetDB/mTests_sql_backends_monet5"
+# 11:49:42 >  
 
 # builtin opt 	gdk_dbpath = /home/ferreira/MonetDB-trails/BUILD/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
@@ -17,22 +17,22 @@ stderr of test 'factory00` in directory 'sql/backends/monet5` itself:
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 37491
-# cmdline opt 	mapi_usock = /var/tmp/mtest-14113/.s.monetdb.37491
+# cmdline opt 	mapi_port = 31223
+# cmdline opt 	mapi_usock = /var/tmp/mtest-12722/.s.monetdb.31223
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbpath = /home/ferreira/MonetDB-trails/BUILD/var/MonetDB/mTests_sql_backends_monet5
 # cmdline opt 	gdk_debug = 536870922
 
-# 14:39:52 >  
-# 14:39:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14113" "--port=37491"
-# 14:39:52 >  
+# 11:49:43 >  
+# 11:49:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12722" "--port=31223"
+# 11:49:43 >  
 
 MAPI  = (monetdb) /var/tmp/mtest-12722/.s.monetdb.31223
-QUERY = SELECT factory00(); --error
+QUERY = SELECT factory05(1); --error
 ERROR = !The factory has ended
 CODE  = 42000
 
-# 14:39:53 >  
-# 14:39:53 >  "Done."
-# 14:39:53 >  
+# 11:49:43 >  
+# 11:49:43 >  "Done."
+# 11:49:43 >  
 

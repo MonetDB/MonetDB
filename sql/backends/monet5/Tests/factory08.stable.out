@@ -1,0 +1,85 @@
+stdout of test 'factory08` in directory 'sql/backends/monet5` itself:
+
+
+# 13:42:38 >  
+# 13:42:38 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33894" "--set" "mapi_usock=/var/tmp/mtest-16207/.s.monetdb.33894" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/MonetDB-trails/BUILD/var/MonetDB/mTests_sql_backends_monet5"
+# 13:42:38 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.498 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-120.eduroam.cwi.nl:33894/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16207/.s.monetdb.33894
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Timetrails module loaded
+
+Ready.
+
+# 13:42:38 >  
+# 13:42:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16207" "--port=33894"
+# 13:42:38 >  
+
+#CREATE FUNCTION factory08() RETURNS INT BEGIN  --show only the even numbers
+#    DECLARE a INT;
+#    SET a = 0;
+#    WHILE TRUE DO
+#        IF a % 2 = 0 THEN
+#            YIELD a;
+#        END IF;
+#        SET a = a + 1;
+#    END WHILE;
+#END;
+#SELECT factory08();
+% .L2 # table_name
+% L2 # name
+% int # type
+% 1 # length
+[ 0	]
+#SELECT factory08();
+% .L2 # table_name
+% L2 # name
+% int # type
+% 1 # length
+[ 2	]
+#SELECT factory08();
+% .L2 # table_name
+% L2 # name
+% int # type
+% 1 # length
+[ 4	]
+#SELECT factory08();
+% .L2 # table_name
+% L2 # name
+% int # type
+% 1 # length
+[ 6	]
+#SELECT factory08();
+% .L2 # table_name
+% L2 # name
+% int # type
+% 1 # length
+[ 8	]
+#SELECT factory08();
+% .L2 # table_name
+% L2 # name
+% int # type
+% 2 # length
+[ 10	]
+#SELECT factory08();
+% .L2 # table_name
+% L2 # name
+% int # type
+% 2 # length
+[ 12	]
+#DROP FUNCTION factory08;
+
+# 13:42:38 >  
+# 13:42:38 >  "Done."
+# 13:42:38 >  
+
