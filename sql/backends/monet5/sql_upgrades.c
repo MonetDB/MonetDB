@@ -916,6 +916,54 @@ sql_update_default(Client c, mvc *sql)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_default_geom(Client c, mvc *sql, sql_table *t)
+{
+	size_t bufsize = 10000, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	char *schema = stack_get_string(sql, "current_schema");
+
+	if( buf== NULL)
+		throw(SQL, "sql_update_jul2017", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	t->system = 0;
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop view sys.geometry_columns;\n"
+			"create view geometry_columns as\n"
+			"\tselect e.value as f_table_catalog,\n"
+			"\t\ts.name as f_table_schema,\n"
+			"\t\ty.f_table_name, y.f_geometry_column, y.coord_dimension, y.srid, y.type\n"
+			"\tfrom schemas s, environment e, (\n"
+			"\t\tselect t.schema_id,\n"
+			"\t\t\tt.name as f_table_name,\n"
+			"\t\t\tx.name as f_geometry_column,\n"
+			"\t\t\tcast(has_z(info)+has_m(info)+2 as integer) as coord_dimension,\n"
+			"\t\t\tsrid, get_type(info, 0) as type\n"
+			"\t\tfrom tables t, (\n"
+			"\t\t\tselect name, table_id, type_digits AS info, type_scale AS srid\n"
+			"\t\t\tfrom columns\n"
+			"\t\t\twhere type in ( select distinct sqlname from types where systemname='wkb')\n"
+			"\t\t\t) as x\n"
+			"\t\twhere t.id=x.table_id\n"
+			"\t\t) y\n"
+			"\twhere y.schema_id=s.id and e.name='gdk_dbname';\n"
+			"GRANT SELECT ON geometry_columns TO PUBLIC;\n"
+			"update sys._tables set system = true where name in ('geometry_columns') and schema_id = (select id from schemas where name = 'sys');\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
+
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 void
 SQLupgrades(Client c, mvc *m)
 {
@@ -923,6 +971,8 @@ SQLupgrades(Client c, mvc *m)
 	sql_subfunc *f;
 	char *err;
 	sql_schema *s = mvc_bind_schema(m, "sys");
+	sql_table *t;
+	sql_column *col;
 
 #ifdef HAVE_HGE
 	if (have_hge) {
@@ -1016,4 +1066,12 @@ SQLupgrades(Client c, mvc *m)
 		}
 	}
 
+	if ((t = mvc_bind_table(m, s, "geometry_columns")) != NULL &&
+	    (col = mvc_bind_column(m, t, "coord_dimension")) != NULL &&
+	    strcmp(col->type.type->sqlname, "int") != 0) {
+		if ((err = sql_update_default_geom(c, m, t)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+	}
 }

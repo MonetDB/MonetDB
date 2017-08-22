@@ -837,7 +837,7 @@ CREATE TABLE "tmp"."objects" ("id" INTEGER, "name" VARCHAR(1024), "nr" INTEGER);
 CREATE TABLE "tmp"."triggers" ("id" INTEGER, "name" VARCHAR(1024), "table_id" INTEGER, "time" SMALLINT, "orientation" SMALLINT, "event" SMALLINT, "old_name" VARCHAR(1024), "new_name" VARCHAR(1024), "condition" VARCHAR(2048), "statement" VARCHAR(2048));
 SELECT * FROM (SELECT p.* FROM "sys"."_columns" AS p UNION ALL SELECT t.* FROM "tmp"."_columns" AS t) AS columns;
 create view sys.environment as select * from sys.environment();
-create view geometry_columns as select e.value as f_table_catalog, s.name as f_table_schema, y.f_table_name, y.f_geometry_column, y.coord_dimension, y.srid, y.type from schemas s, environment e, (select t.schema_id, t.name as f_table_name, x.name as f_geometry_column, has_z(info)+has_m(info)+2 as coord_dimension, srid, get_type(info, 0) as type from tables t, (select name, table_id, type_digits as info, type_scale as srid from columns where type in (select distinct sqlname from types where systemname='wkb')) as x where t.id=x.table_id) y where y.schema_id=s.id and e.name='gdk_dbname';
+create view geometry_columns as select e.value as f_table_catalog, s.name as f_table_schema, y.f_table_name, y.f_geometry_column, y.coord_dimension, y.srid, y.type from schemas s, environment e, (select t.schema_id, t.name as f_table_name, x.name as f_geometry_column, cast(has_z(info)+has_m(info)+2 as integer) as coord_dimension, srid, get_type(info, 0) as type from tables t, (select name, table_id, type_digits as info, type_scale as srid from columns where type in (select distinct sqlname from types where systemname='wkb')) as x where t.id=x.table_id) y where y.schema_id=s.id and e.name='gdk_dbname';
 create view sys.optimizers as select * from sys.optimizers();
 create view sys.querylog_calls as select * from sys.querylog_calls();
 create view sys.querylog_catalog as select * from sys.querylog_catalog();
@@ -1307,7 +1307,7 @@ drop function pcre_replace(string, string, string, string);
 % .s,	.t,	.L4,	.t,	.t,	.t,	.t # table_name
 % name,	name,	query,	type,	system,	commit_action,	access # name
 % varchar,	varchar,	varchar,	smallint,	boolean,	smallint,	smallint # type
-% 3,	18,	597,	1,	5,	1,	1 # length
+% 3,	18,	608,	1,	5,	1,	1 # length
 [ "bam",	"export",	NULL,	0,	true,	0,	0	]
 [ "bam",	"files",	NULL,	0,	true,	0,	0	]
 [ "bam",	"pg",	NULL,	0,	true,	0,	0	]
@@ -1325,7 +1325,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"function_languages",	NULL,	0,	true,	0,	1	]
 [ "sys",	"function_types",	NULL,	0,	true,	0,	1	]
 [ "sys",	"functions",	NULL,	0,	true,	0,	0	]
-[ "sys",	"geometry_columns",	"create view geometry_columns as select e.value as f_table_catalog, s.name as f_table_schema, y.f_table_name, y.f_geometry_column, y.coord_dimension, y.srid, y.type from schemas s, environment e, (select t.schema_id, t.name as f_table_name, x.name as f_geometry_column, has_z(info)+has_m(info)+2 as coord_dimension, srid, get_type(info, 0) as type from tables t, (select name, table_id, type_digits as info, type_scale as srid from columns where type in (select distinct sqlname from types where systemname='wkb')) as x where t.id=x.table_id) y where y.schema_id=s.id and e.name='gdk_dbname';",	1,	true,	0,	0	]
+[ "sys",	"geometry_columns",	"create view geometry_columns as select e.value as f_table_catalog, s.name as f_table_schema, y.f_table_name, y.f_geometry_column, y.coord_dimension, y.srid, y.type from schemas s, environment e, (select t.schema_id, t.name as f_table_name, x.name as f_geometry_column, cast(has_z(info)+has_m(info)+2 as integer) as coord_dimension, srid, get_type(info, 0) as type from tables t, (select name, table_id, type_digits as info, type_scale as srid from columns where type in (select distinct sqlname from types where systemname='wkb')) as x where t.id=x.table_id) y where y.schema_id=s.id and e.name='gdk_dbname';",	1,	true,	0,	0	]
 [ "sys",	"idxs",	NULL,	0,	true,	0,	0	]
 [ "sys",	"index_types",	NULL,	0,	true,	0,	1	]
 [ "sys",	"key_types",	NULL,	0,	true,	0,	1	]
@@ -1475,7 +1475,7 @@ drop function pcre_replace(string, string, string, string);
 [ "geometry_columns",	"f_table_schema",	"varchar",	1024,	0,	NULL,	true,	1,	NULL	]
 [ "geometry_columns",	"f_table_name",	"varchar",	1024,	0,	NULL,	true,	2,	NULL	]
 [ "geometry_columns",	"f_geometry_column",	"varchar",	1024,	0,	NULL,	true,	3,	NULL	]
-[ "geometry_columns",	"coord_dimension",	"bigint",	64,	0,	NULL,	true,	4,	NULL	]
+[ "geometry_columns",	"coord_dimension",	"int",	32,	0,	NULL,	true,	4,	NULL	]
 [ "geometry_columns",	"srid",	"int",	32,	0,	NULL,	true,	5,	NULL	]
 [ "geometry_columns",	"type",	"clob",	0,	0,	NULL,	true,	6,	NULL	]
 [ "idxs",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
@@ -3020,6 +3020,8 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"sql_mul",	"*",	"calc",	0,	"function",	false,	false,	false,	"res_0",	"int",	32,	0,	"out",	"arg_1",	"int",	32,	0,	"in",	"arg_2",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"sql_mul",	"*",	"calc",	0,	"function",	false,	false,	false,	"res_0",	"int",	32,	0,	"out",	"arg_1",	"int",	32,	0,	"in",	"arg_2",	"smallint",	16,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"sql_mul",	"*",	"calc",	0,	"function",	false,	false,	false,	"res_0",	"int",	32,	0,	"out",	"arg_1",	"int",	32,	0,	"in",	"arg_2",	"tinyint",	8,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"sql_mul",	"*",	"calc",	0,	"function",	false,	false,	false,	"res_0",	"int",	32,	0,	"out",	"arg_1",	"smallint",	16,	0,	"in",	"arg_2",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"sql_mul",	"*",	"calc",	0,	"function",	false,	false,	false,	"res_0",	"int",	32,	0,	"out",	"arg_1",	"tinyint",	8,	0,	"in",	"arg_2",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"sql_mul",	"*",	"calc",	0,	"function",	false,	false,	false,	"res_0",	"month_interval",	32,	0,	"out",	"arg_1",	"month_interval",	32,	0,	"in",	"arg_2",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"sql_mul",	"*",	"calc",	0,	"function",	false,	false,	false,	"res_0",	"month_interval",	32,	0,	"out",	"arg_1",	"month_interval",	32,	0,	"in",	"arg_2",	"decimal",	2,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"sql_mul",	"*",	"calc",	0,	"function",	false,	false,	false,	"res_0",	"month_interval",	32,	0,	"out",	"arg_1",	"month_interval",	32,	0,	"in",	"arg_2",	"decimal",	4,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -5431,10 +5433,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sql_exists"	]
 [ "sql_max"	]
 [ "sql_min"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
-[ "sql_mul"	]
 [ "sql_mul"	]
 [ "sql_mul"	]
 [ "sql_mul"	]
