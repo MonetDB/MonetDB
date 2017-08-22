@@ -136,6 +136,8 @@ readConfFileFull(confkeyval *list, FILE *cnf) {
  */
 inline void
 freeConfFile(confkeyval *list) {
+	if (list == NULL)
+		return;
 	while (list->key != NULL) {
 		if (list->val != NULL) {
 			free(list->val);

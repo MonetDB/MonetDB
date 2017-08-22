@@ -37,12 +37,10 @@ CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = record SELECT 1;
 ERROR = !syntax error, unexpected IDENT in: "record"
-        !Current transaction is aborted (please ROLLBACK)
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = record SELECT 'test';
 ERROR = !syntax error, unexpected IDENT in: "record"
-        !Current transaction is aborted (please ROLLBACK)
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT query FROM history;

@@ -419,6 +419,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	int oldvtop, oldstop = 1;
 	buffer *b;
 	char *n;
+	bstream *bs;
 	stream *buf;
 	str msg = MAL_SUCCEED;
 	backend *be, *sql = (backend *) c->sqlcontext;
@@ -477,15 +478,26 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	if( b == NULL)
 		throw(SQL,"sql.statement", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	n = GDKmalloc(len + 1 + 1);
-	if( n == NULL)
+	if( n == NULL) {
+		GDKfree(b);
 		throw(SQL,"sql.statement", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 	strncpy(n, *expr, len);
 	n[len] = '\n';
 	n[len + 1] = 0;
 	len++;
 	buffer_init(b, n, len);
 	buf = buffer_rastream(b, "sqlstatement");
-	scanner_init(&m->scanner, bstream_create(buf, b->len), NULL);
+	if(buf == NULL) {
+		buffer_destroy(b);//n and b will be freed by the buffer
+		throw(SQL,"sql.statement",MAL_MALLOC_FAIL);
+	}
+	bs = bstream_create(buf, b->len);
+	if(bs == NULL) {
+		buffer_destroy(b);//n and b will be freed by the buffer
+		throw(SQL,"sql.statement",MAL_MALLOC_FAIL);
+	}
+	scanner_init(&m->scanner, bs, NULL);
 	m->scanner.mode = LINE_N;
 	bstream_next(m->scanner.rs);
 
@@ -494,6 +506,10 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	m->session->auto_commit = 0;
 	if (!m->sa)
 		m->sa = sa_create();
+	if (!m->sa) {
+		bstream_destroy(m->scanner.rs);
+		throw(SQL,"sql.statement",MAL_MALLOC_FAIL);
+	}
 
 	/*
 	 * System has been prepared to parse it and generate code.
@@ -505,6 +521,10 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 
 		if (!m->sa)
 			m->sa = sa_create();
+		if (!m->sa) {
+			msg = createException(PARSE, "SQLparser",MAL_MALLOC_FAIL);
+			goto endofcompile;
+		}
 		m->sym = NULL;
 		if ((err = sqlparse(m)) ||
 		    /* Only forget old errors on transaction boundaries */
@@ -605,6 +625,10 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 				res_table *res;
 				for (n = r->exps->h; n; n = n->next) ncol++;
 				res = res_table_create(m->session->tr, m->result_id++, 0, ncol, 1, NULL, NULL);
+				if( res == NULL){
+					msg = createException(SQL,"SQLstatement",MAL_MALLOC_FAIL);
+					goto endofcompile;
+				}
 				for (n = r->exps->h; n; n = n->next) {
 					const char *name, *rname;
 					sql_exp *e = n->data;
@@ -784,6 +808,8 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (!m->sa)
 		m->sa = sa_create();
+	if (!m->sa)
+		return createException(SQL,"RAstatement",MAL_MALLOC_FAIL);
 	refs = sa_list(m->sa);
 	rel = rel_read(m, *expr, &pos, refs);
 	if (rel) {
@@ -845,6 +871,8 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (!m->sa)
 		m->sa = sa_create();
+	if (!m->sa)
+		return createException(SQL,"RAstatement2",MAL_MALLOC_FAIL);
 
 	/* keep copy of signature and relational expression */
 	snprintf(buf, BUFSIZ, "%s %s", *sig, *expr);
@@ -852,7 +880,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	stack_push_frame(m, NULL);
 	ops = sa_list(m->sa);
 	while (c && *c && !isspace(*c)) {
-		char *vnme = c, *tnme; 
+		char *vnme = c, *tnme;
 		char *p = strchr(++c, (int)' ');
 		int d,s,nr = -1;
 		sql_subtype t;
@@ -866,7 +894,8 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = strchr(p, (int)'(');
 		*p++ = 0;
 		tnme = sa_strdup(m->sa, tnme);
-
+		if (!tnme)
+			return createException(SQL,"RAstatement2",MAL_MALLOC_FAIL);
 		d = strtol(p, &p, 10);
 		p++; /* skip , */
 		s = strtol(p, &p, 10);

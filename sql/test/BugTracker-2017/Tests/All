@@ -73,3 +73,7 @@ spurious_error.Bug-6344
 caching_stats_bug.6374
 name-interference.Bug-6348
 parsererror.Bug-6381
+HAVE_LIBPY?aggr_udf_with_more_than_2params.Bug-6385
+exists.Bug-6392
+case.Bug-6386
+sqllitelogistest_case.Bug-6335

@@ -41,9 +41,6 @@ MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = call dc.archive();
 ERROR = !Current transaction is aborted (please ROLLBACK)
 CODE  = 25005
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-ERROR = !Current transaction is aborted (please ROLLBACK)
-CODE  = 25005
 
 # 16:33:04 >  
 # 16:33:04 >  "Done."

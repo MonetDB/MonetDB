@@ -490,6 +490,8 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 
 	IMPSdestroy(b);		/* imprints do not support updates yet */
 	OIDXdestroy(b);
+	PROPdestroy(b->tprops);
+	b->tprops = NULL;
 	if (b->thash == (Hash *) 1 || BATcount(b) == 0) {
 		/* don't bother first loading the hash to then change
 		 * it, or updating the hash if we replace the heap */
@@ -749,6 +751,8 @@ BATdel(BAT *b, BAT *d)
 	/* not sure about these anymore */
 	b->tnosorted = b->tnorevsorted = 0;
 	b->tnokey[0] = b->tnokey[1] = 0;
+	PROPdestroy(b->tprops);
+	b->tprops = NULL;
 
 	return GDK_SUCCEED;
 }

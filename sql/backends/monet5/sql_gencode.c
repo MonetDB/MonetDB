@@ -158,6 +158,8 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	curInstr = getInstrPtr(curBlk, 0);
 
 	curInstr = relational_func_create_result(m, curBlk, curInstr, r);
+	if( curInstr == NULL)
+		return -1;
 	setVarUDFtype(curBlk, 0);
 
 	/* ops */
@@ -232,17 +234,34 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 static str
 rel2str( mvc *sql, sql_rel *rel)
 {
-	buffer *b;
-	stream *s = buffer_wastream(b = buffer_create(1024), "rel_dump");
-	list *refs = sa_list(sql->sa);
-	char *res = NULL; 
+	buffer *b = NULL;
+	stream *s = NULL;
+	list *refs = NULL;
+	char *res = NULL;
+
+	b = buffer_create(1024);
+	if(b == NULL) {
+		goto cleanup;
+	}
+	s = buffer_wastream(b, "rel_dump");
+	if(s == NULL) {
+		goto cleanup;
+	}
+	refs = sa_list(sql->sa);
+	if (!refs) {
+		goto cleanup;
+	}
 
 	rel_print_refs(sql, s, rel, 0, refs, 0);
 	rel_print_(sql, s, rel, 0, refs, 0);
 	mnstr_printf(s, "\n");
 	res = buffer_get_buf(b);
-	buffer_destroy(b);
-	mnstr_destroy(s);
+
+cleanup:
+	if(b)
+		buffer_destroy(b);
+	if(s)
+		mnstr_destroy(s);
 	return res;
 }
 
@@ -258,26 +277,47 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	node *n;
 	int i, q, v;
 	int *lret, *rret;
-	char *lname = GDKstrdup(name);
+	char *lname;
 	sql_rel *r = rel;
+
+	if(uri == NULL)
+		return -1;
+
+	lname = GDKstrdup(name);
+	if(lname == NULL)
+		return -1;
 
 	if (is_topn(r->op))
 		r = r->l;
 	if (!is_project(r->op))
 		r = rel_project(m->sa, r, rel_projections(m, r, NULL, 1, 1));
 	lret = SA_NEW_ARRAY(m->sa, int, list_length(r->exps));
+	if(lret == NULL) {
+		GDKfree(lname);
+		return -1;
+	}
 	rret = SA_NEW_ARRAY(m->sa, int, list_length(r->exps));
+	if(rret == NULL) {
+		GDKfree(lname);
+		return -1;
+	}
 
 	/* create stub */
 	backup = c->curprg;
 	c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
-	if( c->curprg == NULL)
+	if( c->curprg == NULL) {
+		GDKfree(lname);
 		return -1;
+	}
 	lname[0] = 'l';
 	curBlk = c->curprg->def;
 	curInstr = getInstrPtr(curBlk, 0);
 
 	curInstr = relational_func_create_result(m, curBlk, curInstr, rel);
+	if( curInstr == NULL) {
+		GDKfree(lname);
+		return -1;
+	}
 	setVarUDFtype(curBlk, 0);
 
 	/* ops */
@@ -345,9 +385,15 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	int len = 1024, nr = 0;
 	char *s, *buf = GDKmalloc(len);
 	if (!buf) {
+		GDKfree(lname);
 		return -1;
 	}
 	s = rel2str(m, rel);
+	if (!s) {
+		GDKfree(lname);
+		GDKfree(buf);
+		return -1;
+	}
 	o = newFcnCall(curBlk, remoteRef, putRef);
 	o = pushArgument(curBlk, o, q);
 	o = pushStr(curBlk, o, s);	/* relational plan */
@@ -364,17 +410,26 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 			sql_subtype *t = tail_type(op);
 			const char *nme = (op->op3)?op->op3->op4.aval->data.val.sval:op->cname;
 
-			if ((nr + 100) > len)
+			if ((nr + 100) > len) {
 				buf = GDKrealloc(buf, len*=2);
+				if(buf == NULL)
+					break;
+			}
+
 			nr += snprintf(buf+nr, len-nr, "%s %s(%u,%u)%c", nme, t->type->sqlname, t->digits, t->scale, n->next?',':' ');
 		}
 		s = buf;
 	}
-	o = newFcnCall(curBlk, remoteRef, putRef);
-	o = pushArgument(curBlk, o, q);
-	o = pushStr(curBlk, o, s);	/* signature */
-	p = pushArgument(curBlk, p, getArg(o,0));
-	GDKfree(buf);
+	if(buf) {
+		o = newFcnCall(curBlk, remoteRef, putRef);
+		o = pushArgument(curBlk, o, q);
+		o = pushStr(curBlk, o, s);	/* signature */
+		p = pushArgument(curBlk, p, getArg(o,0));
+		GDKfree(buf);
+	} else {
+		GDKfree(lname);
+		return -1;
+	}
 	}
 	pushInstruction(curBlk, p);
 
@@ -491,6 +546,9 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, ch
 
 	if (query) {
 		tt = t = GDKstrdup(query);
+		if(t == NULL) {
+			return -1;
+		}
 		while (t && isspace((int) *t))
 			t++;
 
@@ -504,6 +562,9 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, ch
 		q = pushStr(mb, q, t);
 		GDKfree(tt);
 		q = pushStr(mb, q, getSQLoptimizer(be->mvc));
+		if (q == NULL) {
+			return -1;
+		}
 	}
 
 	/* announce the transaction mode */
@@ -898,8 +959,11 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 
 	if (f->res) {
 		sql_arg *res = f->res->h->data;
-		if (f->type == F_UNION)
+		if (f->type == F_UNION) {
 			curInstr = table_func_create_result(curBlk, curInstr, f, restypes);
+			if( curInstr == NULL)
+				goto cleanup;
+		}
 		else
 			setArgType(curBlk, curInstr, 0, res->type.type->localtype);
 	} else {

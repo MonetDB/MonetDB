@@ -40,47 +40,47 @@ Ready.
 #  "yyyymm" varchar(7) NOT NULL,
 #  "quarter" SMALLINT NOT NULL
 #);
-#INSERT INTO time( data_id, header_id, data_item, opr_date, opr_hr, opr_min, yyyymmddhh, interval_num, svalue, years, months, yyyymm, "quarter")
+#INSERT INTO time( data_id, header_id, data_item, opr_date, opr_hr, opr_min, yyyymmddhh, interval_num, svalue, years, months, yyyymm, quarter)
 #    VALUES
 #    (100, 14, 'ATL_PEAK_ON_OFF_FLG', '2009-04-01', 1, 0, 2009040101, 1, 'OFF', 2009, 4, '2009-04', 2 );
 [ 1	]
-#INSERT INTO time( data_id, header_id, data_item, opr_date, opr_hr, opr_min, yyyymmddhh, interval_num, svalue, years, months, yyyymm, "quarter")
+#INSERT INTO time( data_id, header_id, data_item, opr_date, opr_hr, opr_min, yyyymmddhh, interval_num, svalue, years, months, yyyymm, quarter)
 #    VALUES
 #    (101, 14, 'ATL_PEAK_ON_OFF_FLG', '2009-04-01', 2, 0, 2009040102, 2, 'OFF', 2009, 4, '2009-04', 2 );
 [ 1	]
-#INSERT INTO time( data_id, header_id, data_item, opr_date, opr_hr, opr_min, yyyymmddhh, interval_num, svalue, years, months, yyyymm, "quarter")
+#INSERT INTO time( data_id, header_id, data_item, opr_date, opr_hr, opr_min, yyyymmddhh, interval_num, svalue, years, months, yyyymm, quarter)
 #    VALUES
 #    (102, 14, 'ATL_PEAK_ON_OFF_FLG', '2009-04-01', 3, 0, 2009040103, 3, 'OFF', 2009, 4, '2009-04', 2 );
 [ 1	]
-#INSERT INTO time( data_id, header_id, data_item, opr_date, opr_hr, opr_min, yyyymmddhh, interval_num, svalue, years, months, yyyymm, "quarter")
+#INSERT INTO time( data_id, header_id, data_item, opr_date, opr_hr, opr_min, yyyymmddhh, interval_num, svalue, years, months, yyyymm, quarter)
 #    VALUES
 #    (103, 14, 'ATL_PEAK_ON_OFF_FLG', '2009-04-01', 4, 0, 2009040104, 4, 'OFF', 2009, 4, '2009-04', 2 );
 [ 1	]
-#INSERT INTO time( data_id, header_id, data_item, opr_date, opr_hr, opr_min, yyyymmddhh, interval_num, svalue, years, months, yyyymm, "quarter")
+#INSERT INTO time( data_id, header_id, data_item, opr_date, opr_hr, opr_min, yyyymmddhh, interval_num, svalue, years, months, yyyymm, quarter)
 #    VALUES
 #    (104, 14, 'ATL_PEAK_ON_OFF_FLG', '2009-04-01', 5, 0, 2009040105, 5, 'OFF', 2009, 4, '2009-04', 2 );
 [ 1	]
-#INSERT INTO time( data_id, header_id, data_item, opr_date, opr_hr, opr_min, yyyymmddhh, interval_num, svalue, years, months, yyyymm, "quarter")
+#INSERT INTO time( data_id, header_id, data_item, opr_date, opr_hr, opr_min, yyyymmddhh, interval_num, svalue, years, months, yyyymm, quarter)
 #    VALUES
 #    (105, 14, 'ATL_PEAK_ON_OFF_FLG', '2009-04-01', 6, 0, 2009040106, 6, 'OFF', 2009, 4, '2009-04', 2 );
 [ 1	]
-#INSERT INTO time( data_id, header_id, data_item, opr_date, opr_hr, opr_min, yyyymmddhh, interval_num, svalue, years, months, yyyymm, "quarter")
+#INSERT INTO time( data_id, header_id, data_item, opr_date, opr_hr, opr_min, yyyymmddhh, interval_num, svalue, years, months, yyyymm, quarter)
 #    VALUES
 #    (106, 14, 'ATL_PEAK_ON_OFF_FLG', '2009-04-01', 7, 0, 2009040107, 7, 'ON', 2009, 4, '2009-04', 2 );
 [ 1	]
-#INSERT INTO time( data_id, header_id, data_item, opr_date, opr_hr, opr_min, yyyymmddhh, interval_num, svalue, years, months, yyyymm, "quarter")
+#INSERT INTO time( data_id, header_id, data_item, opr_date, opr_hr, opr_min, yyyymmddhh, interval_num, svalue, years, months, yyyymm, quarter)
 #    VALUES
 #    (107, 14, 'ATL_PEAK_ON_OFF_FLG', '2009-04-01', 8, 0, 2009040108, 8, 'ON', 2009, 4, '2009-04', 2 );
 [ 1	]
-#INSERT INTO time( data_id, header_id, data_item, opr_date, opr_hr, opr_min, yyyymmddhh, interval_num, svalue, years, months, yyyymm, "quarter")
+#INSERT INTO time( data_id, header_id, data_item, opr_date, opr_hr, opr_min, yyyymmddhh, interval_num, svalue, years, months, yyyymm, quarter)
 #    VALUES
 #    (108, 14, 'ATL_PEAK_ON_OFF_FLG', '2009-04-01', 9, 0, 2009040109, 9, 'ON', 2009, 4, '2009-04', 2 );
 [ 1	]
-#INSERT INTO time( data_id, header_id, data_item, opr_date, opr_hr, opr_min, yyyymmddhh, interval_num, svalue, years, months, yyyymm, "quarter")
+#INSERT INTO time( data_id, header_id, data_item, opr_date, opr_hr, opr_min, yyyymmddhh, interval_num, svalue, years, months, yyyymm, quarter)
 #    VALUES
 #    (109, 14, 'ATL_PEAK_ON_OFF_FLG', '2009-04-01', 10, 0, 2009040110, 10, 'ON', 2009, 4, '2009-04', 2 );
 [ 1	]
-#INSERT INTO time( data_id, header_id, data_item, opr_date, opr_hr, opr_min, yyyymmddhh, interval_num, svalue, years, months, yyyymm, "quarter")
+#INSERT INTO time( data_id, header_id, data_item, opr_date, opr_hr, opr_min, yyyymmddhh, interval_num, svalue, years, months, yyyymm, quarter)
 #    VALUES
 #    (110, 14, 'ATL_PEAK_ON_OFF_FLG', '2009-04-01', 11, 0, 2009040111, 11, 'ON', 2009, 4, '2009-04', 2 );
 [ 1	]

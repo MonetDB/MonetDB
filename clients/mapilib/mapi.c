@@ -989,7 +989,16 @@ static int mapi_initialized = 0;
 			return (e);					\
 		}							\
 	} while (0)
-#define REALLOC(p,c)	((p) = ((p) ? realloc((p),(c)*sizeof(*(p))) : malloc((c)*sizeof(*(p)))))
+#define REALLOC(p, c)						\
+	do {							\
+		if (p) {					\
+			void *tmp = (p);			\
+			(p) = realloc((p), (c) * sizeof(*(p)));	\
+			if ((p) == NULL)			\
+				free(tmp);			\
+		} else						\
+			(p) = malloc((c) * sizeof(*(p)));	\
+	} while (0)
 
 /*
  * Blocking
@@ -1010,11 +1019,13 @@ static int mapi_initialized = 0;
  * errors, and mapi_explain or mapi_explain_query to print a formatted error
  * report.
  */
+static char nomem[] = "Memory allocation failed";
+
 static void
 mapi_clrError(Mapi mid)
 {
 	assert(mid);
-	if (mid->errorstr)
+	if (mid->errorstr && mid->errorstr != nomem)
 		free(mid->errorstr);
 	mid->action = 0;	/* contains references to constants */
 	mid->error = 0;
@@ -1026,7 +1037,10 @@ mapi_setError(Mapi mid, const char *msg, const char *action, MapiMsg error)
 {
 	assert(msg);
 	REALLOC(mid->errorstr, strlen(msg) + 1);
-	strcpy(mid->errorstr, msg);
+	if (mid->errorstr == NULL)
+		mid->errorstr = nomem;
+	else
+		strcpy(mid->errorstr, msg);
 	mid->error = error;
 	mid->action = action;
 	return mid->error;
@@ -1574,7 +1588,7 @@ close_result(MapiHdl hdl)
 		result->cache.line = NULL;
 		result->cache.tuplecount = 0;
 	}
-	if (result->errorstr)
+	if (result->errorstr && result->errorstr != nomem)
 		free(result->errorstr);
 	result->errorstr = NULL;
 	memset(result->sqlstate, 0, sizeof(result->sqlstate));
@@ -1613,8 +1627,12 @@ add_error(struct MapiResultSet *result, char *error)
 		error += 6;
 	}
 	REALLOC(result->errorstr, size + strlen(error) + 2);
-	strcpy(result->errorstr + size, error);
-	strcat(result->errorstr + size, "\n");
+	if (result->errorstr == NULL)
+		result->errorstr = nomem;
+	else {
+		strcpy(result->errorstr + size, error);
+		strcat(result->errorstr + size, "\n");
+	}
 }
 
 const char *
@@ -2134,7 +2152,7 @@ mapi_destroy(Mapi mid)
 		(void) mapi_disconnect(mid);
 	if (mid->blk.buf)
 		free(mid->blk.buf);
-	if (mid->errorstr)
+	if (mid->errorstr && mid->errorstr != nomem)
 		free(mid->errorstr);
 	if (mid->hostname)
 		free(mid->hostname);
@@ -2774,7 +2792,8 @@ mapi_reconnect(Mapi mid)
 		mid->errorstr = NULL;
 		mapi_close_handle(hdl);
 		mapi_setError(mid, errorstr, "mapi_reconnect", error);
-		free(errorstr);	/* now free it after a copy has been made */
+		if (errorstr != nomem)
+			free(errorstr);	/* now free it after a copy has been made */
 		close_connection(mid);
 		return mid->error;
 	}
@@ -3216,9 +3235,14 @@ mapi_prepare(Mapi mid, const char *cmd)
 	do {							\
 		/* note: k==strlen(hdl->query) */		\
 		if (k+len >= lim) {				\
+			char *q = hdl->query;			\
 			lim = k + len + MAPIBLKSIZE;		\
 			hdl->query = realloc(hdl->query, lim);	\
-			assert(hdl->query);			\
+			if (hdl->query == NULL) {		\
+				free(q);			\
+				return;				\
+			}					\
+			hdl->query = q;				\
 		}						\
 	} while (0)
 
@@ -3236,7 +3260,8 @@ mapi_param_store(MapiHdl hdl)
 
 	lim = strlen(hdl->template) + MAPIBLKSIZE;
 	REALLOC(hdl->query, lim);
-	assert(hdl->query);
+	if (hdl->query == NULL)
+		return;
 	hdl->query[0] = 0;
 	k = 0;
 
@@ -3252,7 +3277,8 @@ mapi_param_store(MapiHdl hdl)
 		if (k + (q - p) >= lim) {
 			lim += MAPIBLKSIZE;
 			REALLOC(hdl->query, lim);
-			assert(hdl->query);
+			if (hdl->query == NULL)
+				return;
 		}
 		strncpy(hdl->query + k, p, q - p);
 		k += q - p;

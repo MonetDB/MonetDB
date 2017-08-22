@@ -42,20 +42,20 @@ Ready.
 #    return 1
 #};
 #SELECT * FROM create_file();
-% . # table_name
+% .L1 # table_name
 % i # name
 % int # type
 % 1 # length
 [ 1	]
 #CREATE FUNCTION integers() RETURNS TABLE(i INTEGER) LANGUAGE PYTHON { return numpy.arange(10000) + 1 };
 #SELECT average(i) FROM integers();
-% .L1 # table_name
-% L1 # name
+% .L3 # table_name
+% L3 # name
 % int # type
 % 4 # length
 [ 5000	]
 #SELECT * FROM delete_file();
-% . # table_name
+% .L1 # table_name
 % i # name
 % int # type
 % 1 # length

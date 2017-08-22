@@ -13,6 +13,9 @@
 mal_export str GRPgroup1(bat *ngid, bat *next, bat *nhis, const bat *bid);
 mal_export str GRPgroup2(bat *ngid, bat *next, bat *nhis,
 						 const bat *bid, const bat *sid);
+mal_export str GRPgroup3(bat *ngid, bat *next, const bat *bid);
+mal_export str GRPgroup4(bat *ngid, bat *next,
+						 const bat *bid, const bat *sid);
 mal_export str GRPsubgroup2(bat *ngid, bat *next, bat *nhis,
 							const bat *bid, const bat *gid);
 mal_export str GRPsubgroup3(bat *ngid, bat *next, bat *nhis,
@@ -22,6 +25,17 @@ mal_export str GRPsubgroup4(bat *ngid, bat *next, bat *nhis,
 							const bat *bid, const bat *gid,
 							const bat *eid, const bat *hid);
 mal_export str GRPsubgroup5(bat *ngid, bat *next, bat *nhis,
+							const bat *bid, const bat *sid,
+							const bat *gid, const bat *eid, const bat *hid);
+mal_export str GRPsubgroup6(bat *ngid, bat *next,
+							const bat *bid, const bat *gid);
+mal_export str GRPsubgroup7(bat *ngid, bat *next,
+							const bat *bid, const bat *sid,
+							const bat *gid);
+mal_export str GRPsubgroup8(bat *ngid, bat *next,
+							const bat *bid, const bat *gid,
+							const bat *eid, const bat *hid);
+mal_export str GRPsubgroup9(bat *ngid, bat *next,
 							const bat *bid, const bat *sid,
 							const bat *gid, const bat *eid, const bat *hid);
 

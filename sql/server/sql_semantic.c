@@ -200,11 +200,12 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 	int idigits = i->digits;
 	int rdigits = r->digits;
 	unsigned int scale = sql_max(i->scale, r->scale);
+	sql_subtype lsuper;
 
-	*super = *r;
+	lsuper = *r;
 	if (i->type->base.id > r->type->base.id || 
 	    (EC_VARCHAR(i->type->eclass) && !EC_VARCHAR(r->type->eclass))) {
-		*super = *i;
+		lsuper = *i;
 		radix = i->type->radix;
 		tpe = i->type->sqlname;
 	}
@@ -226,11 +227,12 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 		}
 	}
 	if (scale == 0 && (idigits == 0 || rdigits == 0)) {
-		sql_find_subtype(super, tpe, 0, 0);
+		sql_find_subtype(&lsuper, tpe, 0, 0);
 	} else {
 		digits = sql_max(idigits - i->scale, rdigits - r->scale);
-		sql_find_subtype(super, tpe, digits+scale, scale);
+		sql_find_subtype(&lsuper, tpe, digits+scale, scale);
 	}
+	*super = lsuper;
 	return super;
 }
 

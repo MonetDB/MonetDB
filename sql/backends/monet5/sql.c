@@ -311,7 +311,11 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 			sql_rel *r = NULL;
 
 			sql->sa = sa_create();
+			if(!sql->sa)
+				throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
 			buf = sa_alloc(sql->sa, strlen(c->def) + 8);
+			if(!buf)
+				throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
 			snprintf(buf, BUFSIZ, "select %s;", c->def);
 			r = rel_parse(sql, s, buf, m_deps);
 			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 || rel_check_type(sql, &c->type, r->exps->h->data, type_equal) == NULL)
@@ -348,6 +352,8 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 		sql_rel *r = NULL;
 
 		sql->sa = sa_create();
+		if(!sql->sa)
+			throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, nt->query, m_deps);
 		if (r)
 			r = rel_optimizer(sql, r);
@@ -378,8 +384,10 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 
 	/* for some reason we don't have an allocator here, so make one */
 	sql->sa = sa_create();
+	if(!sql->sa)
+		throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
 
-    if (!sname) 
+	if (!sname)
 		sname = "sys";
 	if (!(s = mvc_bind_schema(sql, sname))) {
 		msg = sql_error(sql, 02, "3F000!CREATE TABLE: no such schema '%s'", sname);
@@ -4661,9 +4669,14 @@ SQLflush_log(void *ret)
 }
 
 str
-SQLexist_val(bit *res, void *v)
+SQLexist_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	if (v) 
+	bit *res = getArgReference_bit(stk, pci, 0);
+	ptr v = getArgReference(stk, pci, 1);
+	int mtype = getArgType(mb, pci, 1);
+
+	(void)cntxt;
+	if (ATOMcmp(mtype, v, ATOMnilptr(mtype)) != 0)
 		*res = TRUE;
 	else
 		*res = FALSE;

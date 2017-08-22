@@ -37,13 +37,15 @@ GRPsubgroup5(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, co
 			BBPunfix(h->batCacheid);
 		throw(MAL, gid ? "group.subgroup" : "group.group", RUNTIME_OBJECT_MISSING);
 	}
-	if ((r = BATgroup(&gn, &en, &hn, b, s, g, e, h)) == GDK_SUCCEED) {
+	if ((r = BATgroup(&gn, &en, nhis ? &hn : NULL, b, s, g, e, h)) == GDK_SUCCEED) {
 		*ngid = gn->batCacheid;
 		*next = en->batCacheid;
-		*nhis = hn->batCacheid;
+		if (nhis){
+			*nhis = hn->batCacheid;
+			BBPkeepref(*nhis);
+		}
 		BBPkeepref(*ngid);
 		BBPkeepref(*next);
-		BBPkeepref(*nhis);
 	}
 	BBPunfix(b->batCacheid);
 	if (s)
@@ -55,6 +57,30 @@ GRPsubgroup5(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, co
 	if (h)
 		BBPunfix(h->batCacheid);
 	return r == GDK_SUCCEED ? MAL_SUCCEED : createException(MAL, gid ? "group.subgroup" : "group.group", GDK_EXCEPTION);
+}
+
+str
+GRPsubgroup9(bat *ngid, bat *next, const bat *bid, const bat *sid, const bat *gid, const bat *eid, const bat *hid)
+{
+	return GRPsubgroup5(ngid, next, NULL, bid, sid, gid, eid, hid);
+}
+
+str
+GRPsubgroup8(bat *ngid, bat *next, const bat *bid, const bat *gid, const bat *eid, const bat *hid)
+{
+	return GRPsubgroup5(ngid, next, NULL, bid, NULL, gid, eid, hid);
+}
+
+str
+GRPsubgroup7(bat *ngid, bat *next, const bat *bid, const bat *sid, const bat *gid)
+{
+	return GRPsubgroup5(ngid, next, NULL, bid, sid, gid, NULL, NULL);
+}
+
+str
+GRPsubgroup6(bat *ngid, bat *next, const bat *bid, const bat *gid)
+{
+	return GRPsubgroup5(ngid, next, NULL, bid, NULL, gid, NULL, NULL);
 }
 
 str
@@ -73,6 +99,18 @@ str
 GRPsubgroup2(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid)
 {
 	return GRPsubgroup5(ngid, next, nhis, bid, NULL, gid, NULL, NULL);
+}
+
+str
+GRPgroup4(bat *ngid, bat *next, const bat *bid, const bat *sid)
+{
+	return GRPsubgroup5(ngid, next, NULL, bid, sid, NULL, NULL, NULL);
+}
+
+str
+GRPgroup3(bat *ngid, bat *next, const bat *bid)
+{
+	return GRPsubgroup5(ngid, next, NULL, bid, NULL, NULL, NULL, NULL);
 }
 
 str

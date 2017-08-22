@@ -344,7 +344,7 @@ handle_error(mvc *m, int pstatus, str msg)
 	} else if( GDKerrbuf && GDKerrbuf[0]){
 		new = GDKstrdup(GDKerrbuf);
 		GDKerrbuf[0] = 0;
-	}else if( *m->errstr){
+	} else if( *m->errstr){
 		new = GDKstrdup(m->errstr);
 		m->errstr[0] = 0;
 	}
@@ -430,19 +430,37 @@ SQLinitClient(Client c)
 	if (sqlinit) {		/* add sqlinit to the fdin stack */
 		buffer *b = (buffer *) GDKmalloc(sizeof(buffer));
 		size_t len = strlen(sqlinit);
+		char* cbuf = _STRDUP(sqlinit);
+		stream *buf;
 		bstream *fdin;
 
-		if( b == NULL)
+		if( b == NULL || cbuf == NULL) {
+			GDKfree(b);
+			GDKfree(cbuf);
 			throw(SQL,"sql.initClient",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
 
-		buffer_init(b, _STRDUP(sqlinit), len);
-		fdin = bstream_create(buffer_rastream(b, "si"), b->len);
+		buffer_init(b, cbuf, len);
+		buf = buffer_rastream(b, "si");
+		if( buf == NULL) {
+			buffer_destroy(b);
+			throw(SQL,"sql.initClient",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
+
+		fdin = bstream_create(buf, b->len);
+		if( fdin == NULL) {
+			buffer_destroy(b);
+			throw(SQL,"sql.initClient",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
+
 		bstream_next(fdin);
 		if( MCpushClientInput(c, fdin, 0, "") < 0)
 			fprintf(stderr, "SQLinitClient:Could not switch client input stream");
 	}
 	if (c->sqlcontext == 0) {
 		m = mvc_create(c->idx, 0, SQLdebug, c->fdin, c->fdout);
+		if( m == NULL)
+			throw(SQL,"sql.initClient",MAL_MALLOC_FAIL);
 		global_variables(m, "monetdb", "sys");
 		if (isAdministrator(c) || strcmp(c->scenario, "msql") == 0)	/* console should return everything */
 			m->reply_size = -1;
@@ -496,18 +514,28 @@ SQLinitClient(Client c)
 		maybeupgrade = 0;
 		{
 			size_t createdb_len = strlen(createdb_inline);
-			buffer* createdb_buf = buffer_create(createdb_len);
-			stream* createdb_stream = buffer_rastream(createdb_buf, "createdb.sql");
-			bstream* createdb_bstream = bstream_create(createdb_stream, createdb_len);
+			buffer* createdb_buf;
+			stream* createdb_stream;
+			bstream* createdb_bstream;
+			if ((createdb_buf = GDKmalloc(sizeof(buffer))) == NULL)
+				throw(MAL, "createdb", MAL_MALLOC_FAIL);
 			buffer_init(createdb_buf, createdb_inline, createdb_len);
+			if ((createdb_stream = buffer_rastream(createdb_buf, "createdb.sql")) == NULL) {
+				GDKfree(createdb_buf);
+				throw(MAL, "createdb", MAL_MALLOC_FAIL);
+			}
+			if ((createdb_bstream = bstream_create(createdb_stream, createdb_len)) == NULL) {
+				mnstr_destroy(createdb_stream);
+				GDKfree(createdb_buf);
+				throw(MAL, "createdb", MAL_MALLOC_FAIL);
+			}
 			if (bstream_next(createdb_bstream) >= 0)
 				msg = SQLstatementIntern(c, &createdb_bstream->buf, "sql.init", TRUE, FALSE, NULL);
 			else
 				msg = createException(MAL, "createdb", SQLSTATE(42000) "Could not load inlined createdb script");
 
-			free(createdb_buf);
-			free(createdb_stream);
-			free(createdb_bstream);
+			bstream_destroy(createdb_bstream);
+			GDKfree(createdb_buf);
 			if (m->sa)
 				sa_destroy(m->sa);
 			m->sa = NULL;
@@ -568,8 +596,11 @@ SQLinitClient(Client c)
 	} else {		/* handle upgrades */
 		if (!m->sa)
 			m->sa = sa_create();
-		if (maybeupgrade)
+		if (!m->sa) {
+			msg = createException(MAL, "createdb", MAL_MALLOC_FAIL);
+		} else if (maybeupgrade) {
 			SQLupgrades(c,m);
+		}
 		maybeupgrade = 0;
 	}
 	MT_lock_unset(&sql_contextLock);
@@ -1048,7 +1079,8 @@ SQLparser(Client c)
 				msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
 			*m->errstr = 0;
 		}
-		msg = handle_error(m, pstatus, msg);
+		if (m->sym)
+			msg = handle_error(m, pstatus, msg);
 		sqlcleanup(m, err);
 		goto finalize;
 	}
@@ -1114,18 +1146,32 @@ SQLparser(Client c)
 			/* Add the query tree to the SQL query cache
 			 * and bake a MAL program for it.
 			 */
-			char *q = query_cleaned(QUERY(m->scanner));
+			char *q = query_cleaned(QUERY(m->scanner)), *escaped_q;
 			char qname[IDLENGTH];
+			be->q = NULL;
+			if(!q) {
+				err = 1;
+				msg = createException(PARSE, "SQLparser", MAL_MALLOC_FAIL);
+			}
 			(void) snprintf(qname, IDLENGTH, "%c%d_%d", (m->emode == m_prepare?'p':'s'), m->qc->id++, m->qc->clientid);
-
-			be->q = qc_insert(m->qc, m->sa,	/* the allocator */
-					  r,	/* keep relational query */
-					  qname, /* its MAL name) */
-					  m->sym,	/* the sql symbol tree */
-					  m->args,	/* the argument list */
-					  m->argc, m->scanner.key ^ m->session->schema->base.id,	/* the statement hash key */
-					  m->emode == m_prepare ? Q_PREPARE : m->type,	/* the type of the statement */
-					  sql_escape_str(q));
+			escaped_q = sql_escape_str(q);
+			if(!escaped_q) {
+				err = 1;
+				msg = createException(PARSE, "SQLparser", MAL_MALLOC_FAIL);
+			} else {
+				be->q = qc_insert(m->qc, m->sa,	/* the allocator */
+						  r,	/* keep relational query */
+						  qname, /* its MAL name) */
+						  m->sym,	/* the sql symbol tree */
+						  m->args,	/* the argument list */
+						  m->argc, m->scanner.key ^ m->session->schema->base.id,	/* the statement hash key */
+						  m->emode == m_prepare ? Q_PREPARE : m->type,	/* the type of the statement */
+						  escaped_q);
+			}
+			if(!be->q) {
+				err = 1;
+				msg = createException(PARSE, "SQLparser", MAL_MALLOC_FAIL);
+			}
 			GDKfree(q);
 			scanner_query_processed(&(m->scanner));
 			be->q->code = (backend_code) backend_dumpproc(be, c, be->q, r);
@@ -1247,7 +1293,7 @@ SQLcallback(Client c, str msg){
 			n = strchr(m, '\n');
 			if (n)
 				*n = 0;
-			s = getExceptionMessage(m);
+			s = getExceptionMessageAndState(m);
 			if (n) {
 				*n++ = '\n';
 				l = n - s;

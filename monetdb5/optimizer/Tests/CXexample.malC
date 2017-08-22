@@ -3,8 +3,8 @@
 function foo();
 b:= bat.new(:int);
 c:= bat.new(:int);       
-d:= algebra.select(b,0,100,true,true,false);
-e:= algebra.select(b,0,100,true,true,false);    
+d:= algebra.select(b,nil:bat[:oid],0,100,true,true,false);
+e:= algebra.select(b,nil:bat[:oid],0,100,true,true,false);    
 k1:= 24;
 k2:= 27;
 l:= k1+k2;

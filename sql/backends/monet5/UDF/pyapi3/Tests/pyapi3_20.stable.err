@@ -40,12 +40,15 @@ ERROR = !Python exception
         !  5.   return i
         !  6. 
         !division by zero
-MAPI  = (monetdb) /var/tmp/mtest-56217/.s.monetdb.35996
+CODE  = PY000
+MAPI  = (monetdb) /var/tmp/mtest-13372/.s.monetdb.36607
 QUERY = DROP FUNCTION pyapi20;
-ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-1892/.s.monetdb.30765
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
+MAPI  = (monetdb) /var/tmp/mtest-13372/.s.monetdb.36607
 QUERY = DROP TABLE rval;
-ERROR = !current transaction is aborted (please ROLLBACK)
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
 
 # 20:46:11 >  
 # 20:46:11 >  "Done."

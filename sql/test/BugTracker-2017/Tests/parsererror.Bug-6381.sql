@@ -21,4 +21,7 @@ begin
     end while;
     return s;
 END;
-sql>select * from functions where name ='mycounter2';
+select * from functions where name ='mycounter2';
+
+drop function mycounter1;
+drop function mycounter2;
