@@ -43,7 +43,7 @@ typedef struct MDBSTATE{
 
 #define skipBlanc(c, X)    while (*(X) && isspace((int) *X)) { X++; }
 #define skipNonBlanc(c, X) while (*(X) && !isspace((int) *X)) { X++; }
-#define skipWord(c, X)     while (*(X) && isalnum((int) *X)) { X++; } \
+#define skipWord(c, X)     while (*(X) && (isalnum((int) *X))) { X++; } \
 	skipBlanc(c, X);
 
 static void printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first);
@@ -336,7 +336,7 @@ printBATproperties(stream *f, BAT *b)
 		mnstr_printf(cntxt->fdout, "#MonetDB Debugger %s\n", (X ? "on" : "off"));
 
 static MalBlkPtr
-mdbLocateMalBlk(Client cntxt, MalBlkPtr mb, str b, stream *out)
+mdbLocateMalBlk(Client cntxt, MalBlkPtr mb, str b)
 {
 	MalBlkPtr m = mb;
 	char *h = 0;
@@ -385,7 +385,6 @@ mdbLocateMalBlk(Client cntxt, MalBlkPtr mb, str b, stream *out)
 		if (h)
 			*h = '[';
 		if (fsym == 0) {
-			mnstr_printf(out, "#'%s.%s' not found\n", b, fcnname + 1);
 			return NULL;
 		}
 		m = fsym->def;
@@ -404,7 +403,7 @@ mdbCommand(Client cntxt, MalBlkPtr mb, MalStkPtr stkbase, InstrPtr p, int pc)
 	char *oldprompt = cntxt->prompt;
 	size_t oldpromptlength = cntxt->promptlength;
 	MalStkPtr stk = stkbase;
-	int first = pc;
+	int first = pc - ( pc == 1);
 	int stepsize = 1000;
 	char oldcmd[1024] = { 0 };
 	str msg = MAL_SUCCEED;
@@ -855,8 +854,7 @@ retryRead:
 		case 'l':   /* list the current MAL block or module */
 		{
 			Symbol fs;
-			int i, lstng, varid;
-			InstrPtr q;
+			int lstng;
 
 			lstng = LIST_MAL_NAME;
 			if(*b == 'L')
@@ -864,40 +862,32 @@ retryRead:
 			skipWord(cntxt, b);
 			skipBlanc(cntxt, b);
 			if (*b != 0) {
-				MalBlkPtr m = mdbLocateMalBlk(cntxt, mb, b, out);
-				if (m && strchr(b, '*')) {
-					/* detect l user.fcn[*] */
-					for (m = mb; m != NULL; m = m->history)
-						if( lstng == LIST_MAL_NAME)
-							printFunction(out, m, 0, lstng);
-						else
-							debugFunction(out, m, 0, lstng, 0,m->stop);
-				} else if (m == NULL && !strchr(b, '.') && !strchr(b, '[') && !isdigit((int) *b) && *b != '-' && *b != '+') {
-					/* is this a variable ? */
-					varid = findVariable(mb, b);
-					if (varid >= 0) {
-						b += (int) strlen(getVarName(mb, varid));
-						skipBlanc(cntxt, b);
-						for (; pc < mb->stop; pc++) {
-							q = getInstrPtr(mb, pc);
-							for (i = 0; i < q->argc; i++)
-								if (getArg(q, i) == varid) {
-									first = pc;
-									goto partial;
-								}
-
-						}
-						continue;
+				/* debug the current block */
+				MalBlkPtr m = mdbLocateMalBlk(cntxt, mb, b);
+				
+				if ( m == 0)
+					m = mb;
+				if ( m ){
+					str nme = getFunctionId(mb->stmt[0]);
+					str s = strstr(b, nme);
+					if( s ){
+						b = s + strlen(nme);
+						skipBlanc(cntxt,b);
 					}
 				} 
 				if (isdigit((int) *b) || *b == '-' || *b == '+')
 					goto partial;
 
+				/* inspect another function */
 				if( strchr(b,'.') ){
 					str modnme = b;
 					str fcnnme;
 					fcnnme = strchr(b,'.');
 					*fcnnme++  = 0;
+					b = fcnnme;
+					skipNonBlanc(cntxt, b);
+					if ( b) 
+						*b++  = 0;
 
 					fs = findSymbol(cntxt->usermodule, putName(modnme),putName(fcnnme));
 					if (fs == 0) {
@@ -909,7 +899,7 @@ retryRead:
 						if( lstng == LIST_MAL_NAME)
 							printFunction(out, fs->def, 0, lstng);
 						else
-							debugFunction(out, fs->def, 0, lstng, 0,m->stop);
+							debugFunction(out, fs->def, 0, lstng, 0,mb->stop);
 					}
 					continue;
 				}
@@ -960,9 +950,11 @@ partial:
 			skipWord(cntxt, b);
 			skipBlanc(cntxt, b);
 			if (*b) {
-				mdot = mdbLocateMalBlk(cntxt, mb, b, out);
+				mdot = mdbLocateMalBlk(cntxt, mb, b);
 				if (mdot != NULL)
 					showMalBlkHistory(out, mdot);
+				else
+					mnstr_printf(out, "#'%s' not found\n", b);
 			} else
 				showMalBlkHistory(out, mb);
 			break;
@@ -1401,7 +1393,7 @@ mdbHelp(stream *f)
 	mnstr_printf(f, "list <obj>       -- list current program block\n");
 	mnstr_printf(f, "list #  [+#],-#  -- list current program block slice\n");
 	mnstr_printf(f, "List <obj> [#]   -- list with type information[slice]\n");
-	mnstr_printf(f, "list '['<name>']'-- list program block after optimizer <name> or <#>\n");
+	mnstr_printf(f, "list [#] <obj>   -- list program block after optimizer <#>\n");
 	mnstr_printf(f, "List #  [+#],-#  -- list current program block slice\n");
 	mnstr_printf(f, "var  <obj>       -- print symbol table for module\n");
 	mnstr_printf(f, "optimizer <obj>  -- display optimizer steps\n");
