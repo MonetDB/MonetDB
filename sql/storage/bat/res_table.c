@@ -91,16 +91,9 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 		/* we need to set the order bat otherwise mvc_export_result won't work with single-row result sets containing BATs */
 		if (!t->order) {
 			oid zero = 0;
-			BAT *o = COLnew(0, TYPE_oid, 1, TRANSIENT);
+			BAT *o = BATconstant(0, TYPE_oid, &zero, 1, TRANSIENT);
 			if (o == NULL) {
 				BBPreclaim(b);
-				_DELETE(c->tn);
-				_DELETE(c->name);
-				return NULL;
-			}
-			if (BUNappend(o, &zero, FALSE) != GDK_SUCCEED) {
-				BBPreclaim(b);
-				BBPreclaim(o);
 				_DELETE(c->tn);
 				_DELETE(c->name);
 				return NULL;
