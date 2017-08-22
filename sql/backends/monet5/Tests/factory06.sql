@@ -13,3 +13,22 @@ SELECT factory06(1);
 SELECT factory06(1); --error
 
 DROP FUNCTION factory06;
+
+-- Update the factory function parameter in the body
+-- This variant works
+CREATE FUNCTION factory06a(param INT) RETURNS INT BEGIN
+    declare p int;
+    set p = param;
+    YIELD p;
+    SET p = p + 1;
+    YIELD p;
+    SET p = p + 1;
+    YIELD p;
+END;
+
+SELECT factory06a(1);
+SELECT factory06a(1);
+SELECT factory06a(1);
+SELECT factory06a(1); --error
+
+DROP FUNCTION factory06a;
