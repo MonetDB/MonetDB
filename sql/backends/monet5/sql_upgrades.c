@@ -853,6 +853,69 @@ sql_update_jul2017_sp2(Client c)
 	return err;		/* usually NULL */
 }
 
+static str
+sql_update_default(Client c, mvc *sql)
+{
+	size_t bufsize = 10000, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	char *schema = stack_get_string(sql, "current_schema");
+
+	if( buf== NULL)
+		throw(SQL, "sql_update_jul2017", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	/* 60_wlcr.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create procedure master()\n"
+			"external name wlc.master;\n"
+			"create procedure master(path string)\n"
+			"external name wlc.master;\n"
+			"create procedure stopmaster()\n"
+			"external name wlc.stopmaster;\n"
+			"create procedure masterbeat( duration int)\n"
+			"external name wlc.\"setmasterbeat\";\n"
+			"create function masterClock() returns string\n"
+			"external name wlc.\"getmasterclock\";\n"
+			"create function masterTick() returns bigint\n"
+			"external name wlc.\"getmastertick\";\n"
+			"create procedure replicate()\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(pointintime timestamp)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(dbname string)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(dbname string, pointintime timestamp)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(dbname string, id tinyint)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(dbname string, id smallint)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(dbname string, id integer)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(dbname string, id bigint)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicabeat(duration integer)\n"
+			"external name wlr.\"setreplicabeat\";\n"
+			"create function replicaClock() returns string\n"
+			"external name wlr.\"getreplicaclock\";\n"
+			"create function replicaTick() returns bigint\n"
+			"external name wlr.\"getreplicatick\";\n"
+			"insert into sys.systemfunctions (select id from sys.functions where name in ('master', 'stopmaster', 'masterbeat', 'masterclock', 'mastertick', 'replicate', 'replicabeat', 'replicaclock', 'replicatick') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n"
+		);
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
+
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 void
 SQLupgrades(Client c, mvc *m)
 {
@@ -945,4 +1008,12 @@ SQLupgrades(Client c, mvc *m)
 		fprintf(stderr, "!%s\n", err);
 		freeException(err);
 	}
+
+	if (!sql_bind_func(m->sa, s, "master", NULL, NULL, F_PROC)) {
+		if ((err = sql_update_default(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+	}
+
 }

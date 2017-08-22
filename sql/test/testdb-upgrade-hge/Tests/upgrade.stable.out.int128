@@ -36,9 +36,50 @@ GRANT SELECT ON sys.privilege_codes TO PUBLIC;
 GRANT EXECUTE ON FUNCTION sys.environment() TO PUBLIC;
 GRANT SELECT ON sys.environment TO PUBLIC;
 
-# 15:26:24 >  
-# 15:26:24 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
-# 15:26:24 >  
+Running database upgrade commands:
+set schema "sys";
+create procedure master()
+external name wlc.master;
+create procedure master(path string)
+external name wlc.master;
+create procedure stopmaster()
+external name wlc.stopmaster;
+create procedure masterbeat( duration int)
+external name wlc."setmasterbeat";
+create function masterClock() returns string
+external name wlc."getmasterclock";
+create function masterTick() returns bigint
+external name wlc."getmastertick";
+create procedure replicate()
+external name wlr.replicate;
+create procedure replicate(pointintime timestamp)
+external name wlr.replicate;
+create procedure replicate(dbname string)
+external name wlr.replicate;
+create procedure replicate(dbname string, pointintime timestamp)
+external name wlr.replicate;
+create procedure replicate(dbname string, id tinyint)
+external name wlr.replicate;
+create procedure replicate(dbname string, id smallint)
+external name wlr.replicate;
+create procedure replicate(dbname string, id integer)
+external name wlr.replicate;
+create procedure replicate(dbname string, id bigint)
+external name wlr.replicate;
+create procedure replicabeat(duration integer)
+external name wlr."setreplicabeat";
+create function replicaClock() returns string
+external name wlr."getreplicaclock";
+create function replicaTick() returns bigint
+external name wlr."getreplicatick";
+insert into sys.systemfunctions (select id from sys.functions where name in ('master', 'stopmaster', 'masterbeat', 'masterclock', 'mastertick', 'replicate', 'replicabeat', 'replicaclock', 'replicatick') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+delete from sys.systemfunctions where function_id not in (select id from sys.functions);
+set schema "testschema";
+
+
+# 13:50:55 >  
+# 13:50:55 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
+# 13:50:55 >  
 
 #select count(*) from testschema.smallstring;
 % testschema.L4 # table_name

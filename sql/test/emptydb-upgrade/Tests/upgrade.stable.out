@@ -36,9 +36,50 @@ GRANT SELECT ON sys.privilege_codes TO PUBLIC;
 GRANT EXECUTE ON FUNCTION sys.environment() TO PUBLIC;
 GRANT SELECT ON sys.environment TO PUBLIC;
 
-# 15:41:18 >  
-# 15:41:18 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7576" "--port=32696"
-# 15:41:18 >  
+Running database upgrade commands:
+set schema "sys";
+create procedure master()
+external name wlc.master;
+create procedure master(path string)
+external name wlc.master;
+create procedure stopmaster()
+external name wlc.stopmaster;
+create procedure masterbeat( duration int)
+external name wlc."setmasterbeat";
+create function masterClock() returns string
+external name wlc."getmasterclock";
+create function masterTick() returns bigint
+external name wlc."getmastertick";
+create procedure replicate()
+external name wlr.replicate;
+create procedure replicate(pointintime timestamp)
+external name wlr.replicate;
+create procedure replicate(dbname string)
+external name wlr.replicate;
+create procedure replicate(dbname string, pointintime timestamp)
+external name wlr.replicate;
+create procedure replicate(dbname string, id tinyint)
+external name wlr.replicate;
+create procedure replicate(dbname string, id smallint)
+external name wlr.replicate;
+create procedure replicate(dbname string, id integer)
+external name wlr.replicate;
+create procedure replicate(dbname string, id bigint)
+external name wlr.replicate;
+create procedure replicabeat(duration integer)
+external name wlr."setreplicabeat";
+create function replicaClock() returns string
+external name wlr."getreplicaclock";
+create function replicaTick() returns bigint
+external name wlr."getreplicatick";
+insert into sys.systemfunctions (select id from sys.functions where name in ('master', 'stopmaster', 'masterbeat', 'masterclock', 'mastertick', 'replicate', 'replicabeat', 'replicaclock', 'replicatick') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+delete from sys.systemfunctions where function_id not in (select id from sys.functions);
+set schema "sys";
+
+
+# 14:06:25 >  
+# 14:06:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32766" "--port=33975"
+# 14:06:25 >  
 
 #select 1;
 % .L2 # table_name
