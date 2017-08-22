@@ -106,11 +106,13 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 				return NULL;
 			}
 			t->order = o->batCacheid;
-			bat_incref(t->order);
+			BBPkeepref(t->order);
 		}
 	}
 	c->b = b->batCacheid;
 	bat_incref(c->b);
+	if (mtype != TYPE_bat)
+		BBPunfix(c->b);
 	t->cur_col++;
 	assert(t->cur_col <= t->nr_cols);
 	return c;
