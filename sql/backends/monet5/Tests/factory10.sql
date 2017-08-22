@@ -19,6 +19,7 @@ CREATE FUNCTION factory10() RETURNS TABLE (aa int, dd real) BEGIN
         END IF;
         SET pointer = pointer + 1;
     END WHILE;
+	RETURN (SELECT MIN(aa), MAX(dd) FROM myTable10);
 END;
 
 SELECT aa, dd FROM factory10();

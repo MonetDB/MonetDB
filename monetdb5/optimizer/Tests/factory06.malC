@@ -1,3 +1,4 @@
+# The support function for SQL factory test 06
 factory user.factory06(Aparam:int):int;
     X_3 := Aparam;
     yield factory06:int := X_3;
@@ -47,5 +48,6 @@ k:= factory06a(1);
 io.print(k);
 
 mdb.List("user","factory06");
+mdb.var("user","factory06");
 optimizer.aliases("user","factory06");
 mdb.List("user","factory06");

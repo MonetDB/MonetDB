@@ -5,6 +5,7 @@ CREATE FUNCTION factory13() RETURNS TABLE (aa INT, bb TIME, cc CHAR(32)) BEGIN
     WHILE TRUE DO
         YIELD TABLE (SELECT aa, bb, cc FROM myTable13);
     END WHILE;
+	RETURN TABLE (SELECT aa, bb, cc FROM myTable13);
 END;
 
 INSERT INTO myTable13 VALUES (1, cast('08:00:00' AS TIME), '1234');

@@ -1,4 +1,4 @@
---Update the arguments durinf
+--Update the arguments during
 CREATE FUNCTION factory14(aa INT, bb CLOB) RETURNS TABLE (aa INT, bb CLOB) BEGIN
     YIELD TABLE (SELECT aa, bb);
     SET aa = aa + 1;
@@ -13,9 +13,9 @@ CREATE FUNCTION factory14(aa INT, bb CLOB) RETURNS TABLE (aa INT, bb CLOB) BEGIN
 END;
 
 SELECT aa, bb FROM factory14(0, '');
-SELECT aa, bb FROM factory14(0, '');
-SELECT aa, bb FROM factory14(0, '');
-SELECT aa, bb FROM factory14(0, '');
-SELECT aa, bb FROM factory14(0, ''); --error
+SELECT aa, bb FROM factory14(1, 'first');
+SELECT aa, bb FROM factory14(2, 'second');
+SELECT aa, bb FROM factory14(3, 'third');
+SELECT aa, bb FROM factory14(4, 'fourth'); --error
 
 DROP FUNCTION factory14;
