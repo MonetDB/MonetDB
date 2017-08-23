@@ -347,7 +347,7 @@ SQLrun(Client c, backend *be, mvc *m)
 
 	if (m->emod & mod_explain) {
 		if (c->curprg->def)
-			printFunction(c->fdout, mb, 0, LIST_MAL_NAME | LIST_MAL_VALUE  |  LIST_MAL_MAPI);
+			printFunction(c->fdout, mb, 0, LIST_MAL_NAME | LIST_MAL_VALUE  | LIST_MAL_TYPE |  LIST_MAL_MAPI);
 	} else if( m->emod & mod_debug) {
 		msg = runMALDebugger(c, mb);
 	} else {

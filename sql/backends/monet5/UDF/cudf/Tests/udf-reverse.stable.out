@@ -48,11 +48,11 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 100 # length
+% 108 # length
 function user.s4_1():void;
-    X_2:void := querylog.define("explain select reverse(\\'MonetDB\\');", "sequential_pipe", 7:int);
-    X_7:str := udf.reverse("MonetDB");
-    sql.resultSet(".L2", "L2", "clob", 0:int, 0:int, 4:int, X_7);
+    X_2:void := querylog.define("explain select reverse(\\'MonetDB\\');":str, "sequential_pipe":str, 7:int);
+    X_7:str := udf.reverse("MonetDB":str);
+    sql.resultSet(".L2":str, "L2":str, "clob":str, 0:int, 0:int, 4:int, X_7:str);
 end user.s4_1;
 #inline               actions= 0 time=2 usec 
 #candidates           actions= 1 time=8 usec 
@@ -107,25 +107,25 @@ end user.s4_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 106 # length
+% 114 # length
 function user.s12_1():void;
-    X_1:void := querylog.define("explain select reverse(x) from udf_reverse;", "sequential_pipe", 22:int);
-    X_22 := bat.new(nil:str);
-    X_28 := bat.new(nil:int);
-    X_26 := bat.new(nil:int);
-    X_25 := bat.new(nil:str);
-    X_24 := bat.new(nil:str);
-    X_4 := sql.mvc();
-    C_5:bat[:oid] := sql.tid(X_4, "sys", "udf_reverse");
-    X_8:bat[:str] := sql.bind(X_4, "sys", "udf_reverse", "x", 0:int);
-    X_17 := algebra.projection(C_5, X_8);
-    X_18:bat[:str] := batudf.reverse(X_17);
-    X_29 := bat.append(X_22, "sys.L2");
-    X_31 := bat.append(X_24, "L2");
-    X_33 := bat.append(X_25, "clob");
-    X_35 := bat.append(X_26, 0:int);
-    X_36 := bat.append(X_28, 0:int);
-    sql.resultSet(X_29, X_31, X_33, X_35, X_36, X_18);
+    X_1:void := querylog.define("explain select reverse(x) from udf_reverse;":str, "sequential_pipe":str, 22:int);
+    X_22:bat[:str] := bat.new(nil:str);
+    X_28:bat[:int] := bat.new(nil:int);
+    X_26:bat[:int] := bat.new(nil:int);
+    X_25:bat[:str] := bat.new(nil:str);
+    X_24:bat[:str] := bat.new(nil:str);
+    X_4:int := sql.mvc();
+    C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "udf_reverse":str);
+    X_8:bat[:str] := sql.bind(X_4:int, "sys":str, "udf_reverse":str, "x":str, 0:int);
+    X_17:bat[:str] := algebra.projection(C_5:bat[:oid], X_8:bat[:str]);
+    X_18:bat[:str] := batudf.reverse(X_17:bat[:str]);
+    X_29:bat[:str] := bat.append(X_22:bat[:str], "sys.L2":str);
+    X_31:bat[:str] := bat.append(X_24:bat[:str], "L2":str);
+    X_33:bat[:str] := bat.append(X_25:bat[:str], "clob":str);
+    X_35:bat[:int] := bat.append(X_26:bat[:int], 0:int);
+    X_36:bat[:int] := bat.append(X_28:bat[:int], 0:int);
+    sql.resultSet(X_29:bat[:str], X_31:bat[:str], X_33:bat[:str], X_35:bat[:int], X_36:bat[:int], X_18:bat[:str]);
 end user.s12_1;
 #inline               actions= 0 time=4 usec 
 #candidates           actions= 1 time=15 usec 
