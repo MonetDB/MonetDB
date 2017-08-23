@@ -41,6 +41,10 @@ enum malexception {
 mal_export str	createException(enum malexception, const char *,
 	_In_z_ _Printf_format_string_ const char *, ...)
 	__attribute__((__format__(__printf__, 3, 4)));
+/*FIXmal_export str createMalException(MalBlkPtr mb, int pc, enum malexception type, const char *prev, const char *format, ...);*/
+mal_export str createMalException(MalBlkPtr , int , enum malexception , 
+	_In_z_ _Printf_format_string_ const char *, ...)
+	__attribute__((__format__(__printf__, 4, 5)));
 mal_export void	showException(stream *out, enum malexception, const char *,
 	_In_z_ _Printf_format_string_ const char *, ...)
 	__attribute__((__format__(__printf__, 4, 5)));
@@ -49,9 +53,10 @@ mal_export void	showScriptException(stream *out, MalBlkPtr, int, enum malexcepti
 	__attribute__((__format__(__printf__, 5, 6)));
 mal_export int isExceptionVariable(str nme);
 
-mal_export enum malexception	getExceptionType(str);
-mal_export str	getExceptionPlace(str);
-mal_export str	getExceptionMessage(str);
+mal_export enum malexception	getExceptionType(const char *);
+mal_export str	getExceptionPlace(const char *);
+mal_export str	getExceptionMessageAndState(const char *);
+mal_export str	getExceptionMessage(const char *);
 mal_export void dumpExceptionsToStream(stream *out, str msg);
 mal_export void freeException(str);
 

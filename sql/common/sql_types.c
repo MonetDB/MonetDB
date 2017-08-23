@@ -1527,6 +1527,7 @@ sqltypeinit( sql_allocator *sa)
 		for (u = numerical, u++; u != decimals; u++) {
 			if (t != u && (*t)->localtype >  (*u)->localtype) {
 				sql_create_func(sa, "sql_mul", "calc", "*", *t, *u, *t, SCALE_MUL);
+				sql_create_func(sa, "sql_mul", "calc", "*", *u, *t, *t, SCALE_MUL);
 				sql_create_func(sa, "sql_div", "calc", "/", *t, *u, *t, SCALE_DIV);
 			}
 		}
@@ -1663,6 +1664,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "local_timezone", "mtime", "local_timezone", NULL, NULL, SECINT, SCALE_FIX);
 
 	sql_create_func(sa, "year", "mtime", "year", DTE, NULL, INT, SCALE_FIX);
+	sql_create_func(sa, "quarter", "mtime", "quarter", DTE, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "month", "mtime", "month", DTE, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "day", "mtime", "day", DTE, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "hour", "mtime", "hours", TME, NULL, INT, SCALE_FIX);
@@ -1673,6 +1675,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func_res(sa, "second", "mtime", "sql_seconds", TMETZ, NULL, DEC, SCALE_NONE, 3);
 
 	sql_create_func(sa, "year", "mtime", "year", TMESTAMP, NULL, INT, SCALE_FIX);
+	sql_create_func(sa, "quarter", "mtime", "quarter", TMESTAMP, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "month", "mtime", "month", TMESTAMP, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "day", "mtime", "day", TMESTAMP, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "hour", "mtime", "hours", TMESTAMP, NULL, INT, SCALE_FIX);
@@ -1680,6 +1683,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func_res(sa, "second", "mtime", "sql_seconds", TMESTAMP, NULL, DEC, SCALE_NONE, 3);
 
 	sql_create_func(sa, "year", "mtime", "year", TMESTAMPTZ, NULL, INT, SCALE_FIX);
+	sql_create_func(sa, "quarter", "mtime", "quarter", TMESTAMPTZ, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "month", "mtime", "month", TMESTAMPTZ, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "day", "mtime", "day", TMESTAMPTZ, NULL, INT, SCALE_FIX);
 	sql_create_func(sa, "hour", "mtime", "hours", TMESTAMPTZ, NULL, INT, SCALE_FIX);

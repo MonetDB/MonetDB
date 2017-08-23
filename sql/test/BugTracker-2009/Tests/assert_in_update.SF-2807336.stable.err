@@ -73,6 +73,7 @@ MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = update anbi set kvk = (select kvk from kvk,anbi where lower(naam)
         = lower(bedrijfsnaam) and lower(plaats) = lower(vestigingsplaats));
 ERROR = !SELECT: identifier 'kvk' ambiguous
+CODE  = 42000
 
 # 10:38:04 >  
 # 10:38:04 >  Done.

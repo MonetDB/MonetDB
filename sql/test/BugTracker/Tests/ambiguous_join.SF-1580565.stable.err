@@ -13,12 +13,15 @@ stderr of test 'ambiguous_join.SF-1580565` in directory 'sql/test/BugTracker` it
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from B left join B on B.id = B.id;
 ERROR = !SELECT: 'b' on both sides of the JOIN expression;
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select * from A, B left join B on B.id = A.id;
 ERROR = !SELECT: 'b' on both sides of the JOIN expression;
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select * from A, B left join B as b2 on B.id = A.id;
 ERROR = !SELECT: no such column 'a.id'
+CODE  = 42S22
 
 # 12:47:59 >  
 # 12:47:59 >  Done.

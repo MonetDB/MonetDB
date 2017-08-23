@@ -505,6 +505,8 @@ BATclear(BAT *b, int force)
 	HASHdestroy(b);
 	IMPSdestroy(b);
 	OIDXdestroy(b);
+	PROPdestroy(b->tprops);
+	b->tprops = NULL;
 
 	/* we must dispose of all inserted atoms */
 	if (force && BATatoms[b->ttype].atomDel == NULL) {
@@ -1055,6 +1057,8 @@ BUNappend(BAT *b, const void *t, bit force)
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
+	PROPdestroy(b->tprops);
+	b->tprops = NULL;
 	if (b->thash == (Hash *) 1) {
 		/* don't bother first loading the hash to then change it */
 		HASHdestroy(b);
@@ -1118,6 +1122,8 @@ BUNdelete(BAT *b, oid o)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 	HASHdestroy(b);
+	PROPdestroy(b->tprops);
+	b->tprops = NULL;
 	return GDK_SUCCEED;
 }
 
@@ -1155,6 +1161,8 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 		b->tnil = 0;
 	}
 	HASHdestroy(b);
+	PROPdestroy(b->tprops);
+	b->tprops = NULL;
 	Treplacevalue(b, BUNtloc(bi, p), t);
 
 	tt = b->ttype;

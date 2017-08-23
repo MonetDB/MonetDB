@@ -45,8 +45,9 @@
 qc *
 qc_create(int clientid, int seqnr)
 {
-	// FIXME unchecked_malloc MNEW can return NULL
 	qc *r = MNEW(qc);
+	if(!r)
+		return NULL;
 	r->clientid = clientid;
 	r->id = seqnr;
 	r->nr = 0;
@@ -240,8 +241,9 @@ cq *
 qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname,  symbol *s, atom **params, int paramlen, int key, int type, char *cmd)
 {
 	int i, namelen;
-	// FIXME unchecked_malloc MNEW can return NULL
 	cq *n = MNEW(cq);
+	if(!n)
+		return NULL;
 
 	n->id = cache->id++;
 	cache->nr++;
@@ -254,6 +256,10 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname,  symbol *s, ato
 	n->paramlen = paramlen;
 	if (paramlen) {
 		n->params = SA_NEW_ARRAY(sa, sql_subtype,paramlen);
+		if(!n->params) {
+			_DELETE(n);
+			return NULL;
+		}
 		for (i = 0; i < paramlen; i++) {
 			atom *a = params[i];
 
@@ -269,6 +275,11 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname,  symbol *s, ato
 	n->count = 1;
 	namelen = 5 + ((n->id+7)>>3) + ((cache->clientid+7)>>3);
 	n->name = sa_alloc(sa, namelen);
+	if(!n->name) {
+		_DELETE(n->params);
+		_DELETE(n);
+		return NULL;
+	}
 	strcpy(n->name, qname);
 	cache->q = n;
 	return n;

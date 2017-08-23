@@ -45,7 +45,7 @@ JSONresultSet(json *res, bat *uuid, bat *rev, bat *js)
 		BBPunfix(bu->batCacheid);
 		BBPunfix(br->batCacheid);
 		BBPunfix(bj->batCacheid);
-		throw(MAL, "json.resultset", MAL_MALLOC_FAIL);
+		throw(MAL, "json.resultset", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	len += snprintf(result,sz,"[");
 	/* here the dirty work follows */

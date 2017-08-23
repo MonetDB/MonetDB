@@ -12,8 +12,10 @@ QUERY = select name from tables where "type" = 10 and "system" = true
         and name IN ('args', 'columns', 'functions', 'idxs', 'objects',
         'keys', 'modules', 'sequences') having 1=1;
 ERROR = !SELECT: cannot use non GROUP BY column 'name' in query results without an aggregate function
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select name from tables where "type" = 10 and "system" = true having 1=0;
 ERROR = !SELECT: cannot use non GROUP BY column 'name' in query results without an aggregate function
+CODE  = 42000
 
 

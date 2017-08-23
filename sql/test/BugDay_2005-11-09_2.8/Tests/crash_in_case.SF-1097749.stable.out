@@ -29,8 +29,8 @@ Ready.
 # 16:45:44 >  
 
 #select case when 1 > 2 then 'false' when 2 > 1 then 'true' end;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % char # type
 % 5 # length
 [ "true"	]

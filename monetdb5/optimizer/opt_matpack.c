@@ -20,7 +20,6 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	InstrPtr p,q;
 	int actions = 0;
 	InstrPtr *old;
-	char *packIncrementRef = putName("packIncrement");
 	char buf[256];
 	lng usec = GDKusec();
 
@@ -39,7 +38,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	limit= mb->stop;
 	slimit = mb->ssize;
 	if ( newMalBlkStmt(mb,mb->stop) < 0)
-		throw(MAL,"optimizer.matpack",MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.matpack", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		if( getModuleId(p) == matRef  && getFunctionId(p) == packRef && isaBatType(getArgType(mb,p,1))) {
@@ -49,7 +48,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			v = getArg(q,0);
 			q = pushInt(mb,q, p->argc - p->retc);
 			pushInstruction(mb,q);
-			typeChecker(cntxt->fdout, cntxt->nspace,mb,q,TRUE);
+			typeChecker(cntxt->usermodule,mb,q,TRUE);
 
 			for ( j = 2; j < p->argc; j++) {
 				q = newInstruction(0, matRef, packIncrementRef);
@@ -58,7 +57,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 				setDestVar(q, newTmpVariable(mb, getVarType(mb,v)));
 				v = getArg(q,0);
 				pushInstruction(mb,q);
-				typeChecker(cntxt->fdout, cntxt->nspace,mb,q,TRUE);
+				typeChecker(cntxt->usermodule,mb,q,TRUE);
 			}
 			getArg(q,0) = getArg(p,0);
 			freeInstruction(p);
@@ -74,9 +73,9 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
     /* Defense line against incorrect plans */
     if( actions > 0){
-        //chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-        //chkFlow(cntxt->fdout, mb);
-        //chkDeclarations(cntxt->fdout, mb);
+        //chkTypes(cntxt->usermodule, mb, FALSE);
+        //chkFlow(mb);
+        //chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 wrapup:

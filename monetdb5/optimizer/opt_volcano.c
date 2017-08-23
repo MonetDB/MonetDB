@@ -29,6 +29,7 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	InstrPtr p,q, *old = mb->stmt;
 	char buf[256];
 	lng usec = GDKusec();
+	str msg = MAL_SUCCEED;
 
 	(void) pci;
 	(void) cntxt;
@@ -39,7 +40,7 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
     limit= mb->stop;
     if ( newMalBlkStmt(mb, mb->ssize + 20) < 0)
-		throw(MAL,"optimizer.volcano",MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.volcano", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
@@ -93,9 +94,9 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 
     /* Defense line against incorrect plans */
     if( count){
-        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-        chkFlow(cntxt->fdout, mb);
-        chkDeclarations(cntxt->fdout, mb);
+        chkTypes(cntxt->usermodule, mb, FALSE);
+        chkFlow(mb);
+        chkDeclarations(mb);
     }
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
@@ -104,5 +105,5 @@ OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	if( count >= 0)
 		addtoMalBlkHistory(mb);
 
-	return MAL_SUCCEED;
+	return msg;
 }

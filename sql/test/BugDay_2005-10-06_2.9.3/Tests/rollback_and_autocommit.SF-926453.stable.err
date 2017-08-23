@@ -13,21 +13,27 @@ stderr of test 'rollback_and_autocommit.SF-926453` in directory 'sql/test/BugDay
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select count(*) from tapestry where attr2<0;
 ERROR = !SELECT: no such table 'tapestry'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select count(*) from tapestry where attr2<0;
 ERROR = !SELECT: no such table 'tapestry'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select count(*) from tapestry where attr2<0;
 ERROR = !SELECT: no such table 'tapestry'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select count(*) from tapestry where attr2<0;
 ERROR = !SELECT: no such table 'tapestry'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select count(*) from tapestry where attr2<0;
 ERROR = !SELECT: no such table 'tapestry'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select count(*) from tapestry where attr2<0;
 ERROR = !SELECT: no such table 'tapestry'
+CODE  = 42S02
 
 # 15:32:14 >  
 # 15:32:14 >  "Done."

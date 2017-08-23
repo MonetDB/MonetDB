@@ -213,7 +213,7 @@ RUNpickResult(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			if ((rhs)->vtype < TYPE_str)
 				*lhs = *rhs;
 			else if (VALcopy(lhs, rhs) == NULL)
-				throw(MAL, "scheduler.pick", MAL_MALLOC_FAIL);
+				throw(MAL, "scheduler.pick", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			if (lhs->vtype == TYPE_bat)
 				BBPretain(lhs->val.bval);
 			return MAL_SUCCEED;

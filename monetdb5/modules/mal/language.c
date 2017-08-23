@@ -184,8 +184,9 @@ CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	msg= compileString(&sym, cntxt,*code);
 	if( sym) {
-		mnstr_printf(cntxt->fdout,"#register FUNCTION %s.%s\n",
-			getModuleId(sym->def->stmt[0]), getFunctionId(sym->def->stmt[0]));
+		assert(cntxt->usermodule);
+		//mnstr_printf(cntxt->fdout,"#register FUNCTION %s.%s\n",
+			//getModuleId(sym->def->stmt[0]), getFunctionId(sym->def->stmt[0]));
 		mb= sym->def;
 		if( help)
 			mb->help= GDKstrdup(*help);
@@ -193,7 +194,7 @@ CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sym->name= putName(*fcn);
 		setModuleId(sig, putName(*mod));
 		setFunctionId(sig, sym->name);
-		insertSymbol(findModule(cntxt->nspace, getModuleId(sig)), sym);
+		insertSymbol(findModule(cntxt->usermodule, getModuleId(sig)), sym);
 	}
 	return msg;
 }
@@ -203,6 +204,7 @@ CMDevalFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str s = *getArgReference_str(stk,pci,1);
 	char *msg = NULL;
 	(void) mb;
+	(void) cntxt;
 
 	if (s == 0) 
 		throw(MAL, "mal.evalFile", RUNTIME_FILE_NOT_FOUND "missing file name");
@@ -210,15 +212,15 @@ CMDevalFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (*s != '/') {
 		char *buf = GDKmalloc(strlen(monet_cwd) + strlen(s) + 2);
 		if ( buf == NULL)
-			throw(MAL,"language.eval", MAL_MALLOC_FAIL);
+			throw(MAL,"language.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 		strcpy(buf, monet_cwd);
 		strcat(buf, "/");
 		strcat(buf, s);
-		msg = evalFile(cntxt, buf, 0);
+		msg = evalFile(buf, 0);
 		GDKfree(buf);
 	} else 
-		msg = evalFile(cntxt, s, 0);
+		msg = evalFile(s, 0);
 	return msg;
 }
 /*

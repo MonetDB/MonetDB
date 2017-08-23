@@ -53,7 +53,7 @@ Ready.
 #              on (ref_18.fullname = ref_20.name )
 #            left join sys._columns as ref_21
 #              inner join sys.columns as ref_22
-% .L155,	.L157,	.L161,	.L163 # table_name
+% .L160,	.L162,	.L164,	.L166 # table_name
 % c0,	c1,	c2,	c3 # name
 % int,	int,	int,	int # type
 % 1,	1,	1,	1 # length

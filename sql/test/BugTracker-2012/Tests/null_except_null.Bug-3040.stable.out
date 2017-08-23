@@ -48,7 +48,7 @@ Ready.
 # 14:34:20 >  
 
 #SELECT null EXCEPT SELECT null;
-% .L10 # table_name
+% .L11 # table_name
 % L2 # name
 % char # type
 % 0 # length

@@ -31,15 +31,19 @@ stderr of test 'test_privs_p2` in directory 'sql/test/Users` itself:
 MAPI  = (my_user2) /var/tmp/mtest-14654/.s.monetdb.35552
 QUERY = select * from test;
 ERROR = !SELECT: access denied for my_user2 to table 'my_schema.test'
-MAPI  = (my_user2) /var/tmp/mtest-14654/.s.monetdb.35552
+CODE  = 42000
+MAPI  = (my_user2) /var/tmp/mtest-28783/.s.monetdb.30417
 QUERY = insert into test values(1,1);
 ERROR = !INSERT INTO: insufficient privileges for user 'my_user2' to insert into table 'test'
-MAPI  = (my_user2) /var/tmp/mtest-14654/.s.monetdb.35552
+CODE  = 42000
+MAPI  = (my_user2) /var/tmp/mtest-28783/.s.monetdb.30417
 QUERY = update test set b = 2;
 ERROR = !UPDATE: insufficient privileges for user 'my_user2' to update table 'test' on column 'b'
-MAPI  = (my_user2) /var/tmp/mtest-14654/.s.monetdb.35552
+CODE  = 42000
+MAPI  = (my_user2) /var/tmp/mtest-28783/.s.monetdb.30417
 QUERY = delete from test;
 ERROR = !DELETE FROM: insufficient privileges for user 'my_user2' to delete from table 'test'
+CODE  = 42000
 
 # 13:35:21 >  
 # 13:35:21 >  "Done."

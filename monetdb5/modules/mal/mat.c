@@ -68,7 +68,7 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	bn = COLnew(0, tt, cap, TRANSIENT);
 	if (bn == NULL)
-		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+		throw(MAL, "mat.pack", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	for (i = 1; i < p->argc; i++) {
 		b = BATdescriptor(stk->stk[getArg(p,i)].val.ival);
@@ -112,13 +112,13 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		pieces = stk->stk[getArg(p,2)].val.ival;
 		bn = COLnew(b->hseqbase, ATOMtype(b->ttype), (BUN)(1.2 * BATcount(b) * pieces), TRANSIENT);
 		if (bn == NULL)
-			throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+			throw(MAL, "mat.pack", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		/* allocate enough space for the vheap, but not for strings,
 		 * since BATappend does clever things for strings */
 		if ( b->tvheap && bn->tvheap && ATOMstorage(b->ttype) != TYPE_str){
 			newsize =  b->tvheap->size * pieces;
 			if (HEAPextend(bn->tvheap, newsize, TRUE) != GDK_SUCCEED)
-				throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+				throw(MAL, "mat.pack", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		BATtseqbase(bn, b->tseqbase);
 		if (BATappend(bn, b, NULL, FALSE) != GDK_SUCCEED) {
@@ -172,7 +172,7 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	type = getArgType(mb,p,first);
 	bn = COLnew(0, type, p->argc, TRANSIENT);
 	if( bn == NULL)
-		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+		throw(MAL, "mat.pack", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	if (ATOMextern(type)) {
 		for(i = first; i < p->argc; i++)
@@ -188,5 +188,5 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(bn);
-	throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+	throw(MAL, "mat.pack", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }

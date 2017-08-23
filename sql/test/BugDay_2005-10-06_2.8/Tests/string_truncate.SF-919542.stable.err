@@ -83,9 +83,11 @@ MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = create table z(w varchar(0));
 ERROR = !Positive value greater than 0 expected in: "create table z(w varchar(0"
         !syntax error, unexpected ')' in: ")"
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into z values('wrong');
 ERROR = !value too long for type (var)char(1)
+CODE  = 22001
 
 # 19:21:07 >  
 # 19:21:07 >  Done.

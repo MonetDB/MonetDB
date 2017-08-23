@@ -72,7 +72,7 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		if( getModuleId(p)== sqlRef && getFunctionId(p)== tidRef){
 			getVarSTC(mb,getArg(p,0)) = i;
 		} else
-		if( getModuleId(p)== batRef && (getFunctionId(p)== deltaRef || getFunctionId(p) == subdeltaRef)){
+		if( getModuleId(p)== sqlRef && (getFunctionId(p)== deltaRef || getFunctionId(p) == subdeltaRef)){
 			// inherit property of first argument
 			getVarSTC(mb,getArg(p,0)) = getVarSTC(mb,getArg(p,1));
 		} else
@@ -82,7 +82,10 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		if( getModuleId(p)== algebraRef && getFunctionId(p)== projectionRef){
 			getVarSTC(mb,getArg(p,0)) = getVarSTC(mb,getArg(p,p->argc-1));
 		} else
-		if( getModuleId(p)== algebraRef && (getFunctionId(p)== selectRef || getFunctionId(p) == thetaselectRef)){
+		if( getModuleId(p)== algebraRef && 
+			(getFunctionId(p)== selectRef || 
+			 getFunctionId(p) == thetaselectRef ||
+			 getFunctionId(p) == selectNotNilRef) ){
 			getVarSTC(mb,getArg(p,0)) = getVarSTC(mb,getArg(p,p->retc));
 		} else
 		if( getModuleId(p)== algebraRef && (getFunctionId(p)== likeselectRef || getFunctionId(p) == ilikeselectRef)){
@@ -97,13 +100,16 @@ OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			  getFunctionId(p) == rangejoinRef )){
 				getVarSTC(mb,getArg(p,0)) = getVarSTC(mb,getArg(p,p->retc));
 				getVarSTC(mb,getArg(p,1)) = getVarSTC(mb,getArg(p,p->retc +1));
+		} else 
+		if( getModuleId(p)== matRef && getFunctionId(p)== packIncrementRef){
+			getVarSTC(mb,getArg(p,0)) = getVarSTC(mb,getArg(p,1));
 		} 
 	}
     /* Defense line against incorrect plans */
 	/* Plan remains unaffected */
-	//chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-	//chkFlow(cntxt->fdout, mb);
-	//chkDeclarations(cntxt->fdout, mb);
+	//chkTypes(cntxt->usermodule, mb, FALSE);
+	//chkFlow(mb);
+	//chkDeclarations(mb);
 	//
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

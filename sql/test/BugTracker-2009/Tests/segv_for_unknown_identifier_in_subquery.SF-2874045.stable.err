@@ -78,6 +78,7 @@ stderr of test 'segv_for_unknown_identifier_in_subquery.SF-2874045` in directory
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select (select 1) * (select vettecrash from tables);
 ERROR = !SELECT: identifier 'vettecrash' unknown
+CODE  = 42000
 
 # 18:30:54 >  
 # 18:30:54 >  Done.

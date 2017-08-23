@@ -1,3 +1,65 @@
+monetdb (11.27.5) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6375: MAL profiler truncates JSON objects larger than 8192 characters
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 27 Jul 2017 12:56:09 +0200
+
+monetdb (11.27.3) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#6325: Merge table unusable in other connections
+  * BZ#6328: Transactional/multi-connection issues with merge tables
+  * BZ#6336: VALUES multiple inserts error
+  * BZ#6339: Mserver5 crashes on nested SELECT
+  * BZ#6340: sample operator takes effect after the execution of the query,
+    expected before
+  * BZ#6341: MERGE TABLE issue: Cannot register
+  * BZ#6342: MERGE TABLE issue: hang
+  * BZ#6344: Spurious errors and assertions (SQLsmith)
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 25 Jul 2017 10:44:31 +0200
+
+monetdb (11.27.3) unstable; urgency=low
+
+  * buildtools: The Debian and Ubuntu installers have been fixed: there was a file
+    missing in the Jul2017 release.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 24 Jul 2017 10:44:31 +0200
+
+monetdb (11.27.3) unstable; urgency=low
+
+  * buildtools: Added a new RPM called MonetDB-selinux which provides the SELinux
+    policy required to run MonetDB under systemd, especially on Fedora 26.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 14 Jul 2017 10:44:31 +0200
+
+monetdb (11.27.3) unstable; urgency=low
+
+  * merovingian: monetdbd was leaking open file descriptors to the mserver5 process
+    it started.  This has been fixed.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 14 Jul 2017 10:44:31 +0200
+
+monetdb (11.27.3) unstable; urgency=low
+
+  * buildtools: The Windows installers (*.msi files) are now created using the WiX
+    Toolset.
+  * buildtools: The Windows binaries are now built using Visual Studio 2015.  Because of
+    this, you may need to install the Visual C++ Redistributable for Visual
+    Studio 2015 before being able to run MonetDB.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 7 Jul 2017 10:44:31 +0200
+
+monetdb (11.27.3) unstable; urgency=low
+
+  * gdk: Many functions in GDK are now annotated with the GCC attribute
+    __warn_unused_result__ meaning that the compiler will issue a warning
+    if the result of the function (usually an indication of an error)
+    is not used.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 7 Jul 2017 10:44:31 +0200
+
 monetdb (11.27.1) unstable; urgency=low
 
   * Rebuilt.

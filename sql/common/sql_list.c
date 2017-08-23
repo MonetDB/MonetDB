@@ -44,6 +44,9 @@ list *
 sa_list(sql_allocator *sa)
 {
 	list *l = (sa)?SA_ZNEW(sa, list):ZNEW(list);
+	if (!l) {
+		return NULL;
+	}
 
 	l->sa = sa;
 	l->destroy = NULL;
@@ -58,6 +61,9 @@ list *
 list_new(sql_allocator *sa, fdestroy destroy)
 {
 	list *l = (sa)?SA_ZNEW(sa, list):ZNEW(list);
+	if (!l) {
+		return NULL;
+	}
 
 	l->sa = sa;
 	l->destroy = destroy;
@@ -388,11 +394,19 @@ list_match(list *l1, list *l2, fcmp cmp)
 list *
 list_keysort(list *l, int *keys, fdup dup)
 {
-	list *res = list_new_(l);
+	list *res;
 	node *n = NULL;
 	int i, j, *pos, cnt = list_length(l);
 
-	pos = (int*)malloc(cnt*sizeof(int));
+	pos = (int*)GDKmalloc(cnt*sizeof(int));
+	if (pos == NULL) {
+		return NULL;
+	}
+	res = list_new_(l);
+	if (res == NULL) {
+		GDKfree(pos);
+		return NULL;
+	}
 	for (n = l->h, i = 0; n; n = n->next, i++) {
 		pos[i] = i;
 	}
@@ -403,19 +417,32 @@ list_keysort(list *l, int *keys, fdup dup)
 			assert(n);
 		list_append(res, dup?dup(n->data):n->data);
 	}
-	free(pos);
+	GDKfree(pos);
 	return res;
 }
 
 list *
 list_sort(list *l, fkeyvalue key, fdup dup)
 {
-	list *res = list_new_(l);
+	list *res;
 	node *n = NULL;
 	int i, j, *keys, *pos, cnt = list_length(l);
 
-	keys = (int*)malloc(cnt*sizeof(int));
-	pos = (int*)malloc(cnt*sizeof(int));
+	keys = (int*)GDKmalloc(cnt*sizeof(int));
+	pos = (int*)GDKmalloc(cnt*sizeof(int));
+	if (keys == NULL || pos == NULL) {
+		if (keys)
+			GDKfree(keys);
+		if (pos)
+			GDKfree(pos);
+		return NULL;
+	}
+	res = list_new_(l);
+	if (res == NULL) {
+		GDKfree(keys);
+		GDKfree(pos);
+		return NULL;
+	}
 	for (n = l->h, i = 0; n; n = n->next, i++) {
 		keys[i] = key(n->data);
 		pos[i] = i;
@@ -427,8 +454,8 @@ list_sort(list *l, fkeyvalue key, fdup dup)
 			assert(n);
 		list_append(res, dup?dup(n->data):n->data);
 	}
-	free(keys);
-	free(pos);
+	GDKfree(keys);
+	GDKfree(pos);
 	return res;
 }
 

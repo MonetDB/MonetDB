@@ -87,89 +87,6 @@ str mnstr_open_wastreamwrap(Stream *S, str *filename)
 }
 
 str
-mnstr_stream_rstreamwrap(Stream *sout, Stream *sin)
-{
-	*(stream**)sout = mnstr_rstream(*(stream**)sin);
-	return MAL_SUCCEED;
-}
-
-str
-mnstr_stream_wstreamwrap(Stream *sout, Stream *sin)
-{
-	*(stream**)sout = mnstr_wstream(*(stream**)sin);
-	return MAL_SUCCEED;
-}
-
-str
-mnstr_socket_rstreamwrap(Stream *S, int *socket, str *name)
-{
-	stream *s;
-
-	if ((s = socket_rstream(*socket, *name)) == NULL || mnstr_errnr(s)) {
-		int errnr = mnstr_errnr(s);
-		if (s)
-			mnstr_destroy(s);
-		throw(IO, "streams.open", "could not open socket: %s",
-				strerror(errnr));
-	} else {
-		*(stream**)S = s;
-	}
-
-	return MAL_SUCCEED;
-}
-str
-mnstr_socket_wstreamwrap(Stream *S, int *socket, str *name)
-{
-	stream *s;
-
-	if ((s = socket_wstream(*socket, *name)) == NULL || mnstr_errnr(s)) {
-		int errnr = mnstr_errnr(s);
-		if (s)
-			mnstr_destroy(s);
-		throw(IO, "streams.open", "could not open socket: %s",
-				strerror(errnr));
-	} else {
-		*(stream**)S = s;
-	}
-
-	return MAL_SUCCEED;
-}
-str
-mnstr_socket_rastreamwrap(Stream *S, int *socket, str *name)
-{
-	stream *s;
-
-	if ((s = socket_rastream(*socket, *name)) == NULL || mnstr_errnr(s)) {
-		int errnr = mnstr_errnr(s);
-		if (s)
-			mnstr_destroy(s);
-		throw(IO, "streams.open", "could not open socket: %s",
-				strerror(errnr));
-	} else {
-		*(stream**)S = s;
-	}
-
-	return MAL_SUCCEED;
-}
-str
-mnstr_socket_wastreamwrap(Stream *S, int *socket, str *name)
-{
-	stream *s;
-
-	if ((s = socket_wastream(*socket, *name)) == NULL || mnstr_errnr(s)) {
-		int errnr = mnstr_errnr(s);
-		if (s)
-			mnstr_destroy(s);
-		throw(IO, "streams.open", "could not open socket: %s",
-				strerror(errnr));
-	} else {
-		*(stream**)S = s;
-	}
-
-	return MAL_SUCCEED;
-}
-
-str
 mnstr_write_stringwrap(void *ret, Stream *S, str *data)
 {
 	stream *s = *(stream **)S;
@@ -214,13 +131,13 @@ mnstr_read_stringwrap(str *res, Stream *S)
 	char *buf = GDKmalloc(size), *start = buf, *tmp;
 
 	if( buf == NULL)
-		throw(MAL,"mnstr_read_stringwrap",MAL_MALLOC_FAIL);
+		throw(MAL,"mnstr_read_stringwrap", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	while ((len = mnstr_read(s, start, 1, CHUNK)) > 0) {
 		size += len;
 		tmp = GDKrealloc(buf, size);
 		if (tmp == NULL) {
 			GDKfree(buf);
-			throw(MAL,"mnstr_read_stringwrap",MAL_MALLOC_FAIL);
+			throw(MAL,"mnstr_read_stringwrap", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		buf = tmp;
 		start = buf + size - CHUNK - 1;

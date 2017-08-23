@@ -34,6 +34,7 @@ INSERT INTO sys.keywords (keyword) VALUES
 ('XMLAGG'), ('XMLATTRIBUTES'), ('XMLCOMMENT'), ('XMLCONCAT'), ('XMLDOCUMENT'), ('XMLELEMENT'), ('XMLFOREST'), ('XMLNAMESPACES'), ('XMLPARSE'), ('XMLPI'), ('XMLQUERY'), ('XMLSCHEMA'), ('XMLTEXT'), ('XMLVALIDATE');
 
 ALTER TABLE sys.keywords SET READ ONLY;
+GRANT SELECT ON sys.keywords TO PUBLIC;
 
 
 CREATE TABLE sys.table_types (
@@ -51,6 +52,7 @@ INSERT INTO sys.table_types (table_type_id, table_type_name) VALUES
   (30, 'LOCAL TEMPORARY TABLE');
 
 ALTER TABLE sys.table_types SET READ ONLY;
+GRANT SELECT ON sys.table_types TO PUBLIC;
 
 
 CREATE TABLE sys.dependency_types (
@@ -63,6 +65,7 @@ INSERT INTO sys.dependency_types (dependency_type_id, dependency_type_name) VALU
   (9, 'OWNER'), (10, 'INDEX'), (11, 'FKEY'), (12, 'SEQUENCE'), (13, 'PROCEDURE'), (14, 'BE_DROPPED'), (15, 'TYPE');
 
 ALTER TABLE sys.dependency_types SET READ ONLY;
+GRANT SELECT ON sys.dependency_types TO PUBLIC;
 
 
 CREATE TABLE sys.function_types (
@@ -75,6 +78,7 @@ INSERT INTO sys.function_types (function_type_id, function_type_name) VALUES
   (6, 'Analytic function'), (7, 'Loader function');
 
 ALTER TABLE sys.function_types SET READ ONLY;
+GRANT SELECT ON sys.function_types TO PUBLIC;
 
 
 CREATE TABLE sys.function_languages (
@@ -86,6 +90,7 @@ INSERT INTO sys.function_languages (language_id, language_name) VALUES
   (0, 'Internal C'), (1, 'MAL'), (2, 'SQL'), (3, 'R'), (6, 'Python'), (7, 'Python Mapped'), (8, 'Python2'), (9, 'Python2 Mapped'), (10, 'Python3'), (11, 'Python3 Mapped');
 
 ALTER TABLE sys.function_languages SET READ ONLY;
+GRANT SELECT ON sys.function_languages TO PUBLIC;
 
 
 CREATE TABLE sys.key_types (
@@ -97,6 +102,7 @@ INSERT INTO sys.key_types (key_type_id, key_type_name) VALUES
   (0, 'Primary Key'), (1, 'Unique Key'), (2, 'Foreign Key');
 
 ALTER TABLE sys.key_types SET READ ONLY;
+GRANT SELECT ON sys.key_types TO PUBLIC;
 
 
 CREATE TABLE sys.index_types (
@@ -108,6 +114,7 @@ INSERT INTO sys.index_types (index_type_id, index_type_name) VALUES
   (0, 'Hash'), (1, 'Join'), (2, 'Order preserving hash'), (3, 'No-index'), (4, 'Imprint'), (5, 'Ordered');
 
 ALTER TABLE sys.index_types SET READ ONLY;
+GRANT SELECT ON sys.index_types TO PUBLIC;
 
 
 CREATE TABLE sys.privilege_codes (
@@ -123,4 +130,5 @@ INSERT INTO sys.privilege_codes (privilege_code_id, privilege_code_name) VALUES
   (13, 'SELECT,INSERT,DELETE'), (14, 'INSERT,UPDATE,DELETE'), (15, 'SELECT,INSERT,UPDATE,DELETE');
 
 ALTER TABLE sys.privilege_codes SET READ ONLY;
+GRANT SELECT ON sys.privilege_codes TO PUBLIC;
 

@@ -30,9 +30,11 @@ stderr of test 'union_func_crash.Bug-6196` in directory 'sql/test/BugTracker-201
 MAPI  = (monetdb) /var/tmp/mtest-19682/.s.monetdb.30973
 QUERY = SELECT generate_series(1,4);
 ERROR = !SELECT: no such binary operator 'generate_series(tinyint,tinyint)'
-MAPI  = (monetdb) /var/tmp/mtest-19682/.s.monetdb.30973
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select ser(1, 4);
 ERROR = !SELECT: no such binary operator 'ser(tinyint,tinyint)'
+CODE  = 42000
 
 # 13:40:29 >  
 # 13:40:29 >  "Done."

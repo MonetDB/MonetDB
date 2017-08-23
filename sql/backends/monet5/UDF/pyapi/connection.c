@@ -45,7 +45,7 @@ static PyObject *_connection_execute(Py_ConnectionObject *self, PyObject *args)
 		return NULL;
 	}
 	if (!query) {
-		PyErr_Format(PyExc_Exception, "%s", MAL_MALLOC_FAIL);
+		PyErr_Format(PyExc_Exception, "%s", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return NULL;
 	}
 	if (!self->mapped) {
@@ -60,7 +60,7 @@ Py_END_ALLOW_THREADS;
 		GDKfree(query);
 		if (res != MAL_SUCCEED) {
 			PyErr_Format(PyExc_Exception, "SQL Query Failed: %s",
-						 (res ? res : "<no error>"));
+						 (res ? getExceptionMessage(res) : "<no error>"));
 			return NULL;
 		}
 
@@ -84,7 +84,7 @@ Py_END_ALLOW_THREADS;
 				if (!numpy_array) {
 					_connection_cleanup_result(output);
 					PyErr_Format(PyExc_Exception, "SQL Query Failed: %s",
-								 (res ? res : "<no error>"));
+								 (res ? getExceptionMessage(res) : "<no error>"));
 					return NULL;
 				}
 				PyDict_SetItem(result,
@@ -232,6 +232,6 @@ str _connection_init(void)
 
 	if (PyType_Ready(&Py_ConnectionType) < 0)
 		return createException(MAL, "pyapi.eval",
-							   "Failed to initialize connection type.");
+				       SQLSTATE(PY000) "Failed to initialize connection type.");
 	return msg;
 }

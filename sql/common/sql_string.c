@@ -10,6 +10,7 @@
 #include <sql_mem.h>
 #include <gdk.h>
 #include "sql_string.h"
+#include "mal_exception.h"
 
 /* 
  * some string functions.
@@ -160,7 +161,6 @@ char *
 sql_escape_str(char *s)
 {
 	size_t l = strlen(s);
-	// FIXME unchecked_malloc NEW_ARRAY can return NULL
 	char *res, *r = NEW_ARRAY(char, (l * 2) + 1);
 
 	res = r;
@@ -204,7 +204,7 @@ char *sql_message( const char *format, ... )
 	va_start (ap,format);
 	(void) vsnprintf( buf, BUFSIZ, format, ap); 
 	va_end (ap);
-	return _STRDUP(buf);
+	return GDKstrdup(buf);
 }
 
 char *sa_message( sql_allocator *sa, const char *format, ... )

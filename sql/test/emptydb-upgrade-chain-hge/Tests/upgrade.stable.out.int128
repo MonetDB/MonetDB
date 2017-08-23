@@ -24,10 +24,88 @@ stdout of test 'upgrade` in directory 'sql/test/emptydb-upgrade-chain-hge` itsel
 # MonetDB/R   module loaded
 
 Ready.
+Running database upgrade commands:
+GRANT SELECT ON sys.keywords TO PUBLIC;
+GRANT SELECT ON sys.table_types TO PUBLIC;
+GRANT SELECT ON sys.dependency_types TO PUBLIC;
+GRANT SELECT ON sys.function_types TO PUBLIC;
+GRANT SELECT ON sys.function_languages TO PUBLIC;
+GRANT SELECT ON sys.key_types TO PUBLIC;
+GRANT SELECT ON sys.index_types TO PUBLIC;
+GRANT SELECT ON sys.privilege_codes TO PUBLIC;
+GRANT EXECUTE ON FUNCTION sys.environment() TO PUBLIC;
+GRANT SELECT ON sys.environment TO PUBLIC;
 
-# 13:33:15 >  
-# 13:33:15 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32047" "--port=35791"
-# 13:33:15 >  
+Running database upgrade commands:
+set schema "sys";
+create procedure master()
+external name wlc.master;
+create procedure master(path string)
+external name wlc.master;
+create procedure stopmaster()
+external name wlc.stopmaster;
+create procedure masterbeat( duration int)
+external name wlc."setmasterbeat";
+create function masterClock() returns string
+external name wlc."getmasterclock";
+create function masterTick() returns bigint
+external name wlc."getmastertick";
+create procedure replicate()
+external name wlr.replicate;
+create procedure replicate(pointintime timestamp)
+external name wlr.replicate;
+create procedure replicate(dbname string)
+external name wlr.replicate;
+create procedure replicate(dbname string, pointintime timestamp)
+external name wlr.replicate;
+create procedure replicate(dbname string, id tinyint)
+external name wlr.replicate;
+create procedure replicate(dbname string, id smallint)
+external name wlr.replicate;
+create procedure replicate(dbname string, id integer)
+external name wlr.replicate;
+create procedure replicate(dbname string, id bigint)
+external name wlr.replicate;
+create procedure replicabeat(duration integer)
+external name wlr."setreplicabeat";
+create function replicaClock() returns string
+external name wlr."getreplicaclock";
+create function replicaTick() returns bigint
+external name wlr."getreplicatick";
+insert into sys.systemfunctions (select id from sys.functions where name in ('master', 'stopmaster', 'masterbeat', 'masterclock', 'mastertick', 'replicate', 'replicabeat', 'replicaclock', 'replicatick') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+delete from sys.systemfunctions where function_id not in (select id from sys.functions);
+set schema "sys";
+
+Running database upgrade commands:
+set schema "sys";
+drop view sys.geometry_columns;
+create view geometry_columns as
+	select e.value as f_table_catalog,
+		s.name as f_table_schema,
+		y.f_table_name, y.f_geometry_column, y.coord_dimension, y.srid, y.type
+	from schemas s, environment e, (
+		select t.schema_id,
+			t.name as f_table_name,
+			x.name as f_geometry_column,
+			cast(has_z(info)+has_m(info)+2 as integer) as coord_dimension,
+			srid, get_type(info, 0) as type
+		from tables t, (
+			select name, table_id, type_digits AS info, type_scale AS srid
+			from columns
+			where type in ( select distinct sqlname from types where systemname='wkb')
+			) as x
+		where t.id=x.table_id
+		) y
+	where y.schema_id=s.id and e.name='gdk_dbname';
+GRANT SELECT ON geometry_columns TO PUBLIC;
+update sys._tables set system = true where name in ('geometry_columns') and schema_id = (select id from schemas where name = 'sys');
+delete from sys.systemfunctions where function_id not in (select id from sys.functions);
+set schema "sys";
+
+
+# 13:50:24 >  
+# 13:50:24 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7858" "--port=33066"
+# 13:50:24 >  
 
 #select 1;
 % .L2 # table_name

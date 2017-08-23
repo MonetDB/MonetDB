@@ -75,12 +75,14 @@ stderr of test 'copy_multiple_files.SF-2902320` in directory 'sql/test/BugTracke
 # 08:59:53 >  mclient -lsql -i --host=alf --port=36694 
 # 08:59:53 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+MAPI  = (monetdb) /var/tmp/mtest-26073/.s.monetdb.33079
 QUERY = plan copy into cm_tmp from '\file1','\file2';
 ERROR = !COPY INTO: filename must have absolute path: \file1
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = plan copy into cm_tmp from 'a:\file1','Z:/file2';
 ERROR = !COPY INTO: filename must have absolute path: a:\file1
+CODE  = 42000
 
 # 08:59:53 >  
 # 08:59:53 >  Done.

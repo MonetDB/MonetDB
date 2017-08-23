@@ -81,10 +81,12 @@ stderr of test 'inserting_invalid_timestamp.SF-1363557` in directory 'sql/test/B
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into foo values('12:12:12:99');
-ERROR = !timestamp (12:12:12:99) has incorrect format
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !Timestamp (12:12:12:99) has incorrect format
+CODE  = 22007
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = insert into foo values(timestamp '12:12:12:99');
-ERROR = !incorrect timestamp value (12:12:12:99) in: "insert into foo values(timestamp '12:12:12:99')"
+ERROR = !Incorrect timestamp value (12:12:12:99) in: "insert into foo values(timestamp '12:12:12:99')"
+CODE  = 22007
 
 # 19:33:07 >  
 # 19:33:07 >  Done.

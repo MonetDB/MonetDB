@@ -23,7 +23,6 @@ stream *
 bsopen(str filepath)
 {
 	stream *s;
-	stream *wbs;
 
 	if ((s = open_wastream(filepath)) == NULL) {
 		return NULL;
@@ -32,9 +31,5 @@ bsopen(str filepath)
 		close_stream(s);
 		return NULL;
 	}
-	if ((wbs = wbstream(s, BSTREAM_CHUNK_SIZE)) == NULL) {
-		close_stream(s);
-		return NULL;
-	}
-	return wbs;
+	return s;
 }

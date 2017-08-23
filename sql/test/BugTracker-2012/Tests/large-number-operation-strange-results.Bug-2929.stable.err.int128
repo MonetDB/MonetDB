@@ -32,6 +32,7 @@ stderr of test 'large-number-operation-strange-results.Bug-2929` in directory 's
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select          convert(1000000000000000000 , decimal(20)) * 100000000000000 * 11.51                +          51.097 * 100000000000000;
 ERROR = !overflow in calculation 115099999999999999673254835333890048*10000.
+CODE  = 22003
 
 
 # 14:36:23 >  

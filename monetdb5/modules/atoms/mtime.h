@@ -137,6 +137,7 @@ mal_export str MTIMEtimestamp_create_default(timestamp *ret, const date *d, cons
 mal_export str MTIMEtimestamp_create_from_date(timestamp *ret, const date *d);
 mal_export str MTIMEtimestamp_create_from_date_bulk(bat *ret, bat *bid);
 mal_export str MTIMEdate_extract_year(int *ret, const date *v);
+mal_export str MTIMEdate_extract_quarter(int *ret, const date *v);
 mal_export str MTIMEdate_extract_month(int *ret, const date *v);
 mal_export str MTIMEdate_extract_day(int *ret, const date *v);
 mal_export str MTIMEdate_extract_dayofyear(int *ret, const date *v);
@@ -168,6 +169,7 @@ mal_export str MTIMEepoch2lng(lng *res, const timestamp *ts);
 mal_export str MTIMEepoch_bulk(bat *ret, bat *bid);
 
 mal_export str MTIMEtimestamp_year(int *ret, const timestamp *t);
+mal_export str MTIMEtimestamp_quarter(int *ret, const timestamp *t);
 mal_export str MTIMEtimestamp_month(int *ret, const timestamp *t);
 mal_export str MTIMEtimestamp_day(int *ret, const timestamp *t);
 mal_export str MTIMEtimestamp_hours(int *ret, const timestamp *t);
@@ -243,19 +245,14 @@ mal_export str MTIMEstr_to_timestamp(timestamp *d, const char * const *s, const 
 mal_export str MTIMEtimestamp_to_str(str *s, const timestamp *d, const char * const *format);
 
 mal_export str MTIMEdate_extract_year_bulk(bat *ret, const bat *bid);
-
+mal_export str MTIMEdate_extract_quarter_bulk(bat *ret, const bat *bid);
 mal_export str MTIMEdate_extract_month_bulk(bat *ret, const bat *bid);
-
 mal_export str MTIMEdate_extract_day_bulk(bat *ret, const bat *bid);
 
 mal_export str MTIMEdaytime_extract_hours_bulk(bat *ret, const bat *bid);
-
 mal_export str MTIMEdaytime_extract_minutes_bulk(bat *ret, const bat *bid);
-
 mal_export str MTIMEdaytime_extract_seconds_bulk(bat *ret, const bat *bid);
-
 mal_export str MTIMEdaytime_extract_sql_seconds_bulk(bat *ret, const bat *bid);
-
 mal_export str MTIMEdaytime_extract_milliseconds_bulk(bat *ret, const bat *bid);
 
 mal_export int TYPE_date;

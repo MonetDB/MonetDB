@@ -1,4 +1,5 @@
 unknown_col_in_order_by.Bug-3535
+extract_quarter_week_from_date.Bug-3831
 insert_self_ref_FK.Bug-6131
 shutdown.Bug-6182
 avggroupbysq.Bug-6178
@@ -66,6 +67,13 @@ crash-dce.Bug-6330
 delete_from_merge_table.Bug-3743
 statistics_nils_not_eq_zero.Bug-6331
 crash-select_after_MAL_error.Bug-6332
+handle-values-subqueries.Bug-6336
 groupby_assertion.Bug-6338
 spurious_error.Bug-6344
+caching_stats_bug.6374
 name-interference.Bug-6348
+parsererror.Bug-6381
+HAVE_LIBPY?aggr_udf_with_more_than_2params.Bug-6385
+exists.Bug-6392
+case.Bug-6386
+sqllitelogistest_case.Bug-6335

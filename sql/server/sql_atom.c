@@ -28,6 +28,8 @@ atom_create( sql_allocator *sa )
 {
 	atom *a;
 	a = SA_NEW(sa, atom);
+	if(!a)
+		return NULL;
 
 	memset(&a->data, 0, sizeof(a->data));
 	a->d = dbl_nil;
@@ -43,8 +45,9 @@ SA_VALcopy(sql_allocator *sa, ValPtr d, const ValRecord *s)
 	if (!ATOMextern(s->vtype)) {
 		*d = *s;
 	} else if (s->val.pval == 0) {
-		// FIXME unchecked_malloc ATOMnil can return NULL
 		d->val.pval = ATOMnil(s->vtype);
+		if (d->val.pval == NULL)
+			return NULL;
 		d->vtype = s->vtype;
 	} else if (s->vtype == TYPE_str) {
 		d->vtype = TYPE_str;
@@ -69,6 +72,8 @@ atom *
 atom_bool( sql_allocator *sa, sql_subtype *tpe, bit val)
 {
 	atom *a = atom_create(sa);
+	if(!a)
+		return NULL;
 	
 	a->isnull = 0;
 	a->tpe = *tpe;
@@ -91,6 +96,8 @@ atom_int( sql_allocator *sa, sql_subtype *tpe,
 		return atom_float(sa, tpe, (double) val);
 	} else {
 		atom *a = atom_create(sa);
+		if(!a)
+			return NULL;
 
 		a->isnull = 0;
 		a->tpe = *tpe;
@@ -188,6 +195,8 @@ atom *
 atom_string(sql_allocator *sa, sql_subtype *tpe, const char *val)
 {
 	atom *a = atom_create(sa);
+	if(!a)
+		return NULL;
 
 	a->isnull = 1;
 	a->tpe = *tpe;
@@ -209,6 +218,8 @@ atom *
 atom_float(sql_allocator *sa, sql_subtype *tpe, double val)
 {
 	atom *a = atom_create(sa);
+	if(!a)
+		return NULL;
 
 	a->isnull = 0;
 	a->tpe = *tpe;
@@ -237,6 +248,8 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 	if (tpe->type->localtype == TYPE_str)
 		return atom_string(sa, tpe, val);
 	a = atom_create(sa);
+	if(!a)
+		return NULL;
 	a->tpe = *tpe;
 	a->data.val.pval = NULL;
 	a->data.vtype = tpe->type->localtype;
@@ -279,6 +292,8 @@ atom *
 atom_ptr( sql_allocator *sa, sql_subtype *tpe, void *v)
 {
 	atom *a = atom_create(sa);
+	if(!a)
+		return NULL;
 	a->tpe = *tpe;
 	a->isnull = 0;
 	a->data.vtype = TYPE_ptr;
@@ -508,6 +523,8 @@ atom *
 atom_dup(sql_allocator *sa, atom *a)
 {
 	atom *r = atom_create(sa);
+	if(!r)
+		return NULL;
 
 	*r = *a;
 	r->tpe = a->tpe;

@@ -85,6 +85,7 @@ NULL byte in input on line 4 of input
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = 3	"some other string"
 ERROR = !syntax error, unexpected sqlINT in: "3"
+CODE  = 42000
 
 
 # 17:08:26 >  

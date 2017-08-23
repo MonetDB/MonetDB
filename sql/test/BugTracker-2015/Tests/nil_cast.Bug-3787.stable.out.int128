@@ -32,8 +32,8 @@ Ready.
 #START TRANSACTION;
 #create table foo (a smallint);
 #select count(y),sum(z) from (select '',false,a=200 from foo union all select '',null,a=200 from foo) as t(x,y,z) group by x;
-% .L7,	.L10 # table_name
-% L7,	L10 # name
+% .L24,	.L27 # table_name
+% L23,	L26 # name
 % bigint,	hugeint # type
 % 1,	1 # length
 #ROLLBACK;

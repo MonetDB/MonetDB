@@ -33,10 +33,12 @@ create function sys.environment()
 	returns table ("name" string, value string)
 	external name sql.sql_environment;
 create view sys.environment as select * from sys.environment();
+GRANT EXECUTE ON FUNCTION sys.environment() TO PUBLIC;
+GRANT SELECT ON sys.environment TO PUBLIC;
 
 -- The BAT buffer pool overview
 create function sys.bbp ()
-	returns table (id int, name string, 
+	returns table (id int, name string,
 		ttype string, count BIGINT, refcnt int, lrefcnt int,
 		location string, heat int, dirty string,
 		status string, kind string)
@@ -49,7 +51,7 @@ create function sys.malfunctions()
 create procedure sys.evalAlgebra( ra_stmt string, opt bool)
 	external name sql."evalAlgebra";
 
--- enqueue a flush log, ie as soon as no transactions are active 
+-- enqueue a flush log, ie as soon as no transactions are active
 -- flush the log and cleanup the used storage
 create procedure sys.flush_log ()
 	external name sql."flush_log";

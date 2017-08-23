@@ -53,7 +53,7 @@ Ready.
 [ 5,	"gotham",	false,	NULL,	NULL,	NULL	]
 [ 6,	"wayne",	false,	NULL,	NULL,	3	]
 #select two.id, two.name, two.count, twoAlias.id as id2, twoAlias.name as name2 from two left join two as twoAlias on two.count=twoAlias.id; 
-% .two,	.two,	.two,	.L1,	.L2 # table_name
+% .two,	.two,	.two,	.L5,	.L7 # table_name
 % id,	name,	count,	id2,	name2 # name
 % int,	clob,	int,	int,	clob # type
 % 1,	6,	1,	1,	6 # length

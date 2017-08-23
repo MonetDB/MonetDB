@@ -190,7 +190,7 @@ XMLstr2xml(xml *x, str *val)
 	len = 6 * strlen(t) + 1;
 	buf = GDKmalloc(len + 1);
 	if (buf == NULL)
-		throw(MAL, "xml.xml", MAL_MALLOC_FAIL);
+		throw(MAL, "xml.xml", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	buf[0] = 'C';
 	XMLquotestring(t, buf + 1, len);
 	*x = buf;
@@ -207,7 +207,7 @@ XMLxmltext(str *s, xml *x)
 	if (strNil(*x)) {
 		*s = GDKstrdup(str_nil);
 		if (*s == NULL)
-			throw(MAL, "xml.text", MAL_MALLOC_FAIL);
+			throw(MAL, "xml.text", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	if (**x == 'D') {
@@ -227,7 +227,7 @@ XMLxmltext(str *s, xml *x)
 
 		p = content = GDKmalloc(strlen(*x) + 1);
 		if (p == NULL)
-			throw(MAL, "xml.text", MAL_MALLOC_FAIL);
+			throw(MAL, "xml.text", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		while (*t) {
 			if (*t == '"' || *t == '\'') {
 				char q = *t++;
@@ -241,7 +241,7 @@ XMLxmltext(str *s, xml *x)
 	if (content == NULL) {
 		*s = GDKstrdup("");
 		if (*s == NULL)
-			throw(MAL, "xml.text", MAL_MALLOC_FAIL);
+			throw(MAL, "xml.text", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else
 		*s = (str) content;
 	return MAL_SUCCEED;
@@ -252,7 +252,7 @@ XMLxml2xml(xml *s, xml *x)
 {
 	*s = GDKstrdup(*x);
 	if (*s == NULL)
-		throw(MAL, "xml.xml", MAL_MALLOC_FAIL);
+		throw(MAL, "xml.xml", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -264,7 +264,7 @@ XMLdocument(xml *x, str *val)
 	if (strNil(*val)) {
 		*x = (xml) GDKstrdup(str_nil);
 		if (*x == NULL)
-			throw(MAL, "xml.document", MAL_MALLOC_FAIL);
+			throw(MAL, "xml.document", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	/* call the libxml2 library to perform the test */
@@ -277,7 +277,7 @@ XMLdocument(xml *x, str *val)
 		xmlFreeDoc(doc);
 		*x = GDKmalloc(len + 2);
 		if (*x == NULL)
-			throw(MAL, "xml.document", MAL_MALLOC_FAIL);
+			throw(MAL, "xml.document", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		snprintf(*x, len + 2, "D%s", (char *) buf);
 		GDKfree(buf);
 		return MAL_SUCCEED;
@@ -298,7 +298,7 @@ XMLcontent(xml *x, str *val)
 	if (strNil(*val)) {
 		*x = (xml) GDKstrdup(str_nil);
 		if (*x == NULL)
-			throw(MAL, "xml.content", MAL_MALLOC_FAIL);
+			throw(MAL, "xml.content", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	/* call the libxml2 library to perform the test */
@@ -314,7 +314,7 @@ XMLcontent(xml *x, str *val)
 	len = strlen((const char *) s) + 2;
 	*x = GDKmalloc(len);
 	if (*x == NULL)
-		throw(MAL, "xml.content", MAL_MALLOC_FAIL);
+		throw(MAL, "xml.content", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	snprintf(*x, len, "C%s", (const char *) s);
 	xmlBufferFree(buf);
 	xmlFreeNodeList(elem);
@@ -348,7 +348,7 @@ XMLcomment(xml *x, str *s)
 	if (strNil(*s)) {
 		*x = (xml) GDKstrdup(str_nil);
 		if (*x == NULL)
-			throw(MAL, "xml.comment", MAL_MALLOC_FAIL);
+			throw(MAL, "xml.comment", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	if (strstr(*s, "--") != NULL)
@@ -356,7 +356,7 @@ XMLcomment(xml *x, str *s)
 	len = strlen(*s) + 9;
 	buf = (str) GDKmalloc(len);
 	if (buf == NULL)
-		throw(MAL, "xml.comment", MAL_MALLOC_FAIL);
+		throw(MAL, "xml.comment", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	snprintf(buf, len, "C<!--%s-->", *s);
 	*x = buf;
 	return MAL_SUCCEED;
@@ -383,7 +383,7 @@ XMLpi(str *ret, str *target, str *value)
 	if (strNil(*target)) {
 		*ret = GDKstrdup(str_nil);
 		if (*ret == NULL)
-			throw(MAL, "xml.attribute", MAL_MALLOC_FAIL);
+			throw(MAL, "xml.attribute", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	if (xmlValidateName((xmlChar *) *target, 0) != 0 || strcasecmp(*target, "xml") == 0)
@@ -394,14 +394,14 @@ XMLpi(str *ret, str *target, str *value)
 
 		val = GDKmalloc(n);
 		if (val == NULL)
-			throw(MAL, "xml.attribute", MAL_MALLOC_FAIL);
+			throw(MAL, "xml.attribute", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		len += XMLquotestring(*value, val, n) + 1;
 	}
 	buf = GDKmalloc(len);
 	if (buf == NULL) {
 		if (val)
 			GDKfree(val);
-		throw(MAL, "xml.attribute", MAL_MALLOC_FAIL);
+		throw(MAL, "xml.attribute", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	if (val == NULL) {
 		snprintf(buf, len, "C<?%s?>", *target);
@@ -423,7 +423,7 @@ XMLroot(xml *ret, xml *val, str *version, str *standalone)
 	if (strNil(*val)) {
 		*ret = GDKstrdup(str_nil);
 		if (*ret == NULL)
-			throw(MAL, "xml.root", MAL_MALLOC_FAIL);
+			throw(MAL, "xml.root", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	if (**val != 'C')
@@ -442,7 +442,7 @@ XMLroot(xml *ret, xml *val, str *version, str *standalone)
 	}
 	buf = GDKmalloc(len);
 	if (buf == NULL)
-		throw(MAL, "xml.root", MAL_MALLOC_FAIL);
+		throw(MAL, "xml.root", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	strcpy(buf, "D<?xml");
 	i = strlen(buf);
 	if (!strNil(*version) && **version)
@@ -471,7 +471,7 @@ XMLattribute(xml *x, str *name, str *val)
 	if (strNil(t) || strNil(*name)) {
 		*x = (xml) GDKstrdup(str_nil);
 		if (*x == NULL)
-			throw(MAL, "xml.attribute", MAL_MALLOC_FAIL);
+			throw(MAL, "xml.attribute", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	if (xmlValidateName((xmlChar *) *name, 0) != 0)
@@ -479,13 +479,13 @@ XMLattribute(xml *x, str *name, str *val)
 	len = 6 * strlen(t) + 1;
 	buf = GDKmalloc(len);
 	if (buf == NULL)
-		throw(MAL, "xml.attribute", MAL_MALLOC_FAIL);
+		throw(MAL, "xml.attribute", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	len = XMLquotestring(t, buf, len);
 	len += strlen(*name) + 5;
 	*x = GDKmalloc(len);
 	if (*x == NULL) {
 		GDKfree(buf);
-		throw(MAL, "xml.attribute", MAL_MALLOC_FAIL);
+		throw(MAL, "xml.attribute", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	snprintf(*x, len, "A%s=\"%s\"", *name, buf);
 	GDKfree(buf);
@@ -524,7 +524,7 @@ XMLelement(xml *ret, str *name, xml *nspace, xml *attr, xml *val)
 	}
 	buf = GDKmalloc(len);
 	if (buf == NULL)
-		throw(MAL, "xml.element", MAL_MALLOC_FAIL);
+		throw(MAL, "xml.element", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	if (strNil(*val) && (!attr || strNil(*attr))) {
 		strcpy(buf, str_nil);
 	} else {
@@ -565,18 +565,18 @@ XMLconcat(xml *ret, xml *left, xml *right)
 		len = strlen(*left) + strlen(*right) + 1;
 		buf = GDKmalloc(len);
 		if (buf == NULL)
-			throw(MAL, "xml.concat", MAL_MALLOC_FAIL);
+			throw(MAL, "xml.concat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		snprintf(buf, len, "A%s %s", *left + 1, *right + 1);
 	} else if (**left == 'C') {
 		len = strlen(*left) + strlen(*right) +2;
 		buf = GDKmalloc(len);
 		if (buf == NULL)
-			throw(MAL, "xml.concat", MAL_MALLOC_FAIL);
+			throw(MAL, "xml.concat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		snprintf(buf, len, "C%s%s", *left + 1, *right + 1);
 	} else
 		throw(MAL, "xml.concat", "can only concatenate attributes and element content");
 	if (buf == NULL)
-		throw(MAL, "xml.concat", MAL_MALLOC_FAIL);
+		throw(MAL, "xml.concat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	*ret = buf;
 	return MAL_SUCCEED;
 }
@@ -603,7 +603,7 @@ XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	}
 	buf = (str) GDKmalloc(len);
 	if (buf == NULL)
-		throw(MAL, "xml.forest", MAL_MALLOC_FAIL);
+		throw(MAL, "xml.forest", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	*ret = buf;
 	*buf++ = 'C';
 	*buf = 0;

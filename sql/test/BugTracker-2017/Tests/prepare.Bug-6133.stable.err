@@ -27,6 +27,13 @@ stderr of test 'prepare.Bug-6133` in directory 'sql/test/BugTracker-2017` itself
 # 20:13:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-867" "--port=38809"
 # 20:13:43 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-5920/.s.monetdb.34392
+QUERY = PREPARE
+        INSERT INTO messages(id, content, isimage, creationdate, locationip, browserused, "language", length, creator, place_id, forum_id, reply, post_id)
+        SELECT tnew.id, tnew.content, false, tnew.creationdate, tnew.locationip, tnew.browserused, NULL, tnew.length, tnew.person_id, tnew.place_id, parent.forum_id, tnew.comment_id, parent.post_id
+        FROM ( VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ) AS tnew(id, content, creationdate, locationip, browserused, length, person_id, place_id, parent_id)
+        JOIN messages parent ON ( parent.id = tnew.parent_id );
+ERROR = !42000!
 
 # 20:13:43 >  
 # 20:13:43 >  "Done."

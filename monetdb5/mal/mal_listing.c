@@ -47,6 +47,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 
 	buf = GDKzalloc(maxlen);
 	if( buf == NULL) {
+		addMalException(mb, "renderTerm:Failed to allocate");
 		return NULL;
 	}
 	// show the name when required or is used
@@ -69,18 +70,13 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 		} else if( stk)
 			val = &stk->stk[varid];
 
-		if (VALformat(&cv, val) <= 0) {
-			GDKfree(buf);
-			GDKerror("renderTerm:Failed to allocate");
+		VALformat(&cv, val);
+		if (len + strlen(cv) >= maxlen)
+			buf= GDKrealloc(buf, maxlen =len + strlen(cv) + BUFSIZ);
+
+		if( buf == 0){
+			addMalException(mb,"renderTerm:Failed to allocate");
 			return NULL;
-		}
-		if (len + strlen(cv) >= maxlen) {
-			char *nbuf = GDKrealloc(buf, maxlen =len + strlen(cv) + BUFSIZ);
-			if (nbuf == NULL) {
-				GDKfree(buf);
-				return NULL;
-			}
-			buf = nbuf;
 		}
 
 		if( strcmp(cv,"nil") == 0){
@@ -103,7 +99,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 				strcat(buf+len,"\"");
 				len++;
 			}
-			showtype = showtype || closequote > TYPE_str || ((isVarUDFtype(mb,varid) || isVarTypedef(mb,varid) || (flg & LIST_MAL_REMOTE)) && isVarConstant(mb,varid)) ||
+			showtype = showtype || closequote > TYPE_str || ((isVarUDFtype(mb,varid) || isVarTypedef(mb,varid) || (flg & (LIST_MAL_REMOTE | LIST_MAL_TYPE))) && isVarConstant(mb,varid)) ||
 				(isaBatType(getVarType(mb,varid)) && idx < p->retc);
 
 			if (stk && isaBatType(getVarType(mb,varid)) && stk->stk[varid].val.bval ){
@@ -120,17 +116,12 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 		strcat(buf + len,":");
 		len++;
 		tpe = getTypeName(getVarType(mb, varid));
-		if (tpe == NULL) {
-			GDKfree(buf);
-			GDKerror("renderTerm:Failed to allocate");
-			return NULL;
-		}
 		len += snprintf(buf+len,maxlen-len,"%s",tpe);
 		GDKfree(tpe);
 	}
 
 	if( len >= maxlen)
-		GDKerror("renderTerm:Value representation too large");
+		addMalException(mb,"renderTerm:Value representation too large");
 	return buf;
 }
 
@@ -412,8 +403,9 @@ shortRenderingTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx)
 	ValRecord *val;
 	char *cv =0;
 	int varid = getArg(p,idx);
+	size_t len = BUFSIZ;
 
-	s= GDKmalloc(BUFSIZ);
+	s= GDKmalloc(len);
 	if( s == NULL)
 		return NULL;
 	*s = 0;
@@ -421,7 +413,17 @@ shortRenderingTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx)
 	if( isVarConstant(mb,varid) ){
 		val =&getVarConstant(mb, varid);
 		VALformat(&cv, val);
-		snprintf(s,BUFSIZ,"%s",cv);
+		if (strlen(cv) >= len) {
+			char *nbuf;
+			len = strlen(cv);
+			nbuf = GDKrealloc(s, len + 1);
+			if (nbuf == NULL) {
+				GDKfree(s);
+				return NULL;
+			}
+			s = nbuf;
+		}
+		snprintf(s,len + 1,"%s",cv);
 	} else {
 		val = &stk->stk[varid];
 		VALformat(&cv, val);
@@ -539,6 +541,7 @@ mal2str(MalBlkPtr mb, int first, int last)
 	len = GDKmalloc(sizeof(int) * mb->stop);
 
 	if( txt == NULL || len == NULL){
+		addMalException(mb,"mal2str: " MAL_MALLOC_FAIL);
 		GDKfree(txt);
 		GDKfree(len);
 		return NULL;
@@ -557,6 +560,7 @@ mal2str(MalBlkPtr mb, int first, int last)
 	}
 	ps = GDKmalloc(totlen + mb->stop + 1);
 	if( ps == NULL){
+		addMalException(mb,"mal2str: " MAL_MALLOC_FAIL);
 		GDKfree(len);
 		GDKfree(txt);
 		return NULL;
@@ -625,7 +629,7 @@ printSignature(stream *fd, Symbol s, int flg)
 		(void) fcnDefinition(s->def, p, txt, flg, txt, MAXLISTING);
 		mnstr_printf(fd, "%s\n", txt);
 		GDKfree(txt);
-	}
+	} else mnstr_printf(fd,"printSignature"MAL_MALLOC_FAIL);
 }
 
 void showMalBlkHistory(stream *out, MalBlkPtr mb)

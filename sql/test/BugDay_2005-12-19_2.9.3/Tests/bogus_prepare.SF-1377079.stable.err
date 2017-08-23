@@ -13,6 +13,7 @@ stderr of test 'bogus_prepare.SF-1377079` in directory 'sql/test/BugDay_2005-12-
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = prepare select ?;
 ERROR = !SELECT: subquery result missing
+CODE  = 42000
 
 # 14:23:30 >  
 # 14:23:30 >  Done.

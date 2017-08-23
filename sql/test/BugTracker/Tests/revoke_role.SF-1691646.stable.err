@@ -13,6 +13,7 @@ stderr of test 'revoke_role.SF-1691646` in directory 'sql/test/BugTracker` itsel
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = REVOKE auth1 from user1;
 ERROR = !REVOKE: no such role 'auth1' or grantee 'user1'
+CODE  = 42M32
 
 # 09:58:20 >  
 # 09:58:20 >  Done.

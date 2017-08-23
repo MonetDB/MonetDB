@@ -32,11 +32,19 @@ Ready.
 function user.qry():void;               	#[0] (0)  0 
     b:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 1 <- 2 
     bat.append(b:bat[:int], 1:int);     	#[2] (0) BKCappend_val_wrap 3 <- 1 4 
-    z:bat[:int] := mal.multiplex("user":str, "foo":str, b:bat[:int], b:bat[:int]);	#[3] (0) MANIFOLDremapMultiplex 5 <- 6 7 1 1 
-    z:bat[:int] := mal.multiplex("user":str, "foo":str, b:bat[:int], 2:int);	#[4] (0) MANIFOLDremapMultiplex 5 <- 6 8 1 9 
-end user.qry;                           	#[5] (0)  
-#inline               actions= 0 time=27 usec 
-#remap                actions= 0 time=8 usec 
+    X_11:bat[:int] := batcalc.+(b:bat[:int], b:bat[:int]);	#[3] (0) CMDbatADDsignal 14 <- 1 1 
+    X_12:int := mmath.rand();           	#[4] (0) MATHrandint 15 
+#                                       
+    X_11:bat[:int] := batcalc.*(X_11:bat[:int], X_12:int);	#[6] (0) CMDbatMULsignal 14 <- 14 15 
+    z:bat[:int] := X_11:bat[:int];      	#[7] (0)  5 <- 14 
+    X_19:bat[:int] := batcalc.+(b:bat[:int], 2:int);	#[8] (0) CMDbatADDsignal 22 <- 1 9 
+    X_20:int := mmath.rand();           	#[9] (0) MATHrandint 23 
+#                                       
+    X_19:bat[:int] := batcalc.*(X_19:bat[:int], X_20:int);	#[11] (0) CMDbatMULsignal 22 <- 22 23 
+    z:bat[:int] := X_19:bat[:int];      	#[12] (0)  5 <- 22 
+end user.qry;                           	#[13] (0)  
+#inline               actions= 0 time=17 usec 
+#remap                actions= 2 time=313 usec 
 
 # 18:00:44 >  
 # 18:00:44 >  Done.

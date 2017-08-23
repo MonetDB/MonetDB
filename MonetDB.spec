@@ -132,14 +132,16 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Jul2017/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jul2017-SP1/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 # we need checkpolicy and selinux-policy-devel for the SELinux policy
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 # RHEL >= 7, and all current Fedora
 BuildRequires: systemd
-BuildRequires: checkpolicy, selinux-policy-devel, hardlink
+BuildRequires: checkpolicy
+BuildRequires: selinux-policy-devel
+BuildRequires: hardlink
 %endif
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -1039,6 +1041,47 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Thu Jul 27 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.5-20170727
+- Rebuilt.
+- BZ#6375: MAL profiler truncates JSON objects larger than 8192 characters
+
+* Tue Jul 25 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.3-20170725
+- Rebuilt.
+- BZ#6325: Merge table unusable in other connections
+- BZ#6328: Transactional/multi-connection issues with merge tables
+- BZ#6336: VALUES multiple inserts error
+- BZ#6339: Mserver5 crashes on nested SELECT
+- BZ#6340: sample operator takes effect after the execution of the query,
+  expected before
+- BZ#6341: MERGE TABLE issue: Cannot register
+- BZ#6342: MERGE TABLE issue: hang
+- BZ#6344: Spurious errors and assertions (SQLsmith)
+
+* Mon Jul 24 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.3-20170725
+- buildtools: The Debian and Ubuntu installers have been fixed: there was a file
+  missing in the Jul2017 release.
+
+* Fri Jul 14 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.3-20170725
+- buildtools: Added a new RPM called MonetDB-selinux which provides the SELinux
+  policy required to run MonetDB under systemd, especially on Fedora 26.
+
+* Fri Jul 14 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.3-20170725
+- merovingian: monetdbd was leaking open file descriptors to the mserver5 process
+  it started.  This has been fixed.
+
+* Fri Jul  7 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.3-20170725
+- buildtools: The Windows installers (*.msi files) are now created using the WiX
+  Toolset.
+- buildtools: The Windows binaries are now built using Visual Studio 2015.  Because of
+  this, you may need to install the Visual C++ Redistributable for Visual
+  Studio 2015 before being able to run MonetDB.
+
+* Fri Jul  7 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.3-20170725
+- gdk: Many functions in GDK are now annotated with the GCC attribute
+  __warn_unused_result__ meaning that the compiler will issue a warning
+  if the result of the function (usually an indication of an error)
+  is not used.
+
 * Wed Jul 05 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
 - Rebuilt.
 - BZ#3465: Request: add support for CREATE VIEW with ORDER BY clause

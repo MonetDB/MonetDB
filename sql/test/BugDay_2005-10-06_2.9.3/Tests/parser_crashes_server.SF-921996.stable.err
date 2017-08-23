@@ -13,9 +13,10 @@ stderr of test 'parser_crashes_server.SF-921996` in directory 'sql/test/BugDay_2
 MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = CREATE TABLE bounds_test (
         id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-ERROR = !syntax error, unexpected $end, expecting FOREIGN or PRIMARY or UNIQUE in: "create table bounds_test (
+ERROR = !syntax error, unexpected $end, expecting FOREIGN or PRIMARY or UNIQUE: end of input stream in "create table bounds_test (
         !id int not null auto_increment primary key,
         !"
+CODE  = 42000
 
 # 14:52:27 >  
 # 14:52:27 >  Done.

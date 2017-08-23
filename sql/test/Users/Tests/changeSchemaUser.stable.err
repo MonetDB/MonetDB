@@ -33,15 +33,19 @@ stderr of test 'changeSchemaUser` in directory 'sql/test/Users` itself:
 MAPI  = (monetdb) /var/tmp/mtest-7070/.s.monetdb.36242
 QUERY = ALTER USER "april2" SET SCHEMA library; --no such user
 ERROR = !ALTER USER: no such user 'april2'
-MAPI  = (monetdb) /var/tmp/mtest-7070/.s.monetdb.36242
+CODE  = 42M32
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = ALTER USER "april" SET SCHEMA library2; --no such schema
 ERROR = !ALTER USER: no such schema 'library2'
-MAPI  = (april) /var/tmp/mtest-7070/.s.monetdb.36242
+CODE  = 3F000
+MAPI  = (april) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT * from library.orders; --not enough privileges.
 ERROR = !SELECT: access denied for april to table 'library.orders'
-MAPI  = (monetdb) /var/tmp/mtest-7070/.s.monetdb.36242
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = DROP user april;
 ERROR = !DROP USER: 'april' owns a schema
+CODE  = M1M05
 
 # 23:01:33 >  
 # 23:01:33 >  "Done."

@@ -46,7 +46,7 @@
 str
 OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i,j, actions =0;
+	int i,j, actions =0, extras= 0;
 	int *empty;
 	int limit = mb->stop, slimit = mb->ssize;
 	InstrPtr p, q, *old = mb->stmt, *updated;
@@ -56,48 +56,45 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	int etop= 0, esize= 256;
 	str msg = MAL_SUCCEED;
 
+	(void) stk;
+	(void) cntxt;
+	(void) pci;
+
 	//if ( optimizerIsApplied(mb,"emptybind") )
 		//return 0;
 	// use an instruction reference table to keep
 	
 	for( i=0; i< mb->stop; i++)
-		actions += getFunctionId(getInstrPtr(mb,i)) == emptybindRef || getFunctionId(getInstrPtr(mb,i)) == emptybindidxRef;
-	if( actions == 0)
+		if( getFunctionId(getInstrPtr(mb,i)) == emptybindRef || getFunctionId(getInstrPtr(mb,i)) == emptybindidxRef)
+			extras += getInstrPtr(mb,i)->argc;
+	if( extras == 0)
 		goto wrapup;
-	actions = 0;
 
 	// track of where 'emptybind' results are produced
-	empty = (int *) GDKzalloc(mb->vsize * sizeof(int));
+	// reserve space for maximal number of emptybat variables created
+	empty = (int *) GDKzalloc((mb->vsize + extras) * sizeof(int));
 	if ( empty == NULL)
-		throw(MAL,"optimizer.emptybind",MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.emptybind", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	updated= (InstrPtr *) GDKzalloc(esize * sizeof(InstrPtr));
 	if( updated == 0){
 		GDKfree(empty);
 		return 0;
 	}
-	(void) stk;
-
-	/* Got an instructions V:= bat.new(:tpe) 
-	 * The form the initial family of empty sets.
-	 */
-
-	(void) cntxt;
-	(void) pci;
 
 #ifdef DEBUG_OPT_EMPTYBIND
-	fprintf(stderr "#Optimize Query Emptybind\n");
+	fprintf(stderr, "#Optimize Query Emptybind\n");
 	fprintFunction(stderr, mb, 0, LIST_MAL_DEBUG);
 #endif
 
 	if ( newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(empty);
 		GDKfree(updated);
-		throw(MAL,"optimizer.emptybind",MAL_MALLOC_FAIL);
+		throw(MAL,"optimizer.emptybind", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
-	/* Symbolic evaluation of the empty BAT variables */
-	/* by looking at empty BAT arguments */
+	/* Symbolic evaluation of instructions with empty BAT variables */
+	actions = 0;
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 
@@ -135,7 +132,10 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			updated[etop++]= p;
 		}
 
-		/* restore the naming, dropping the runtime property 'empty' */
+		/* restore the naming, dropping the runtime property 'empty' 
+		 * Keep the bind operation, because it is cheap, rather focus on their re-use
+		 */
+
 		if (getFunctionId(p) == emptybindRef) {
 #ifdef DEBUG_OPT_EMPTYBIND
 			fprintf(stderr, "#empty bind  pc %d var %d\n",i , getArg(p,0) );
@@ -183,28 +183,6 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					}
 				}
 			}
-			if( empty[getArg(p,0)]){
-                int tpe;
-				actions++;
-				if( p->retc == 2){
-					tpe = getBatType(getVarType(mb,getArg(p,1)));
-					q= newInstruction(0, batRef, newRef);
-					q = pushType(mb,q,tpe);
-					getArg(q,0)= getArg(p,1);
-					setVarFixed(mb, getArg(p,0));
-					pushInstruction(mb,q);
-					empty[getArg(q,0)]= i;
-				}
-
-                tpe = getBatType(getVarType(mb,getArg(p,0)));
-                clrFunction(p);
-                setModuleId(p,batRef);
-                setFunctionId(p,newRef);
-                p->argc = p->retc = 1;
-                p = pushType(mb,p,tpe);
-				setVarFixed(mb, getArg(p,0));
-				empty[getArg(p,0)]= i;
-			}
 			continue;
 		}
 
@@ -242,28 +220,6 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 						break;
 					}
 				}
-			}
-			if( empty[getArg(p,0)]){
-				int tpe;
-				actions++;
-				if( p->retc == 2){
-					tpe = getBatType(getVarType(mb,getArg(p,1)));
-					q= newInstruction(0, batRef, newRef);
-					q = pushType(mb,q,tpe);
-					getArg(q,0)= getArg(p,1);
-					setVarFixed(mb,getArg(q,0));
-					pushInstruction(mb,q);
-					empty[getArg(q,0)]= i;
-				}
-				
-				tpe = getBatType(getVarType(mb,getArg(p,0)));
-				clrFunction(p);
-				setModuleId(p,batRef);
-				setFunctionId(p,newRef);
-				p->argc = p->retc = 1;
-				p = pushType(mb,p,tpe);
-				setVarFixed(mb, getArg(p,0));
-				empty[getArg(p,0)]= i;
 			}
 			continue;
 		}
@@ -308,14 +264,23 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					emptyresult(0);
 				}
 			}
-			if( getFunctionId(p) == thetaselectRef) {
+			if( getFunctionId(p) == thetaselectRef || getFunctionId(p) == selectRef) {
 				if( empty[getArg(p,1)] || empty[getArg(p,2)] ){
 #ifdef DEBUG_OPT_EMPTYBIND
-					fprintf(stderr, "#empty projection  pc %d var %d\n",i , getArg(p,0) );
+					fprintf(stderr, "#empty selection  pc %d var %d\n",i , getArg(p,0) );
 #endif
 					actions++;
 					emptyresult(0);
 				}
+			}
+		}
+		if( getModuleId(p) == batstrRef){
+			if( empty[getArg(p,1)] || empty[getArg(p,2)] ){
+#ifdef DEBUG_OPT_EMPTYBIND
+				fprintf(stderr, "#empty string operation  pc %d var %d\n",i , getArg(p,0) );
+#endif
+				actions++;
+				emptyresult(0);
 			}
 		}
 		if (getModuleId(p)== batRef && isUpdateInstruction(p)){
@@ -331,7 +296,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	}
 
 #ifdef DEBUG_OPT_EMPTYBIND
-	chkTypes(cntxt->fdout, cntxt->nspace,mb,TRUE);
+	chkTypes(cntxt->usermodule,mb,TRUE);
 	fprintf(stderr, "#Optimize Query Emptybind done\n");
 	fprintFunction(stderr, mb, 0, LIST_MAL_DEBUG);
 #endif
@@ -343,9 +308,9 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	GDKfree(empty);
 	GDKfree(updated);
     /* Defense line against incorrect plans */
-	chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-	chkFlow(cntxt->fdout, mb);
-	chkDeclarations(cntxt->fdout, mb);
+	chkTypes(cntxt->usermodule, mb, FALSE);
+	chkFlow(mb);
+	chkDeclarations(mb);
     /* keep all actions taken as a post block comment */
 wrapup:
 	usec = GDKusec()- usec;

@@ -156,16 +156,11 @@ stream_export void mnstr_clearerr(stream *s);
 stream_export int mnstr_type(stream *s);
 stream_export int mnstr_byteorder(stream *s);
 stream_export void mnstr_set_byteorder(stream *s, char bigendian);
-stream_export stream *mnstr_rstream(stream *s);
-stream_export stream *mnstr_wstream(stream *s);
 stream_export void mnstr_settimeout(stream *s, unsigned int ms, int (*func)(void));
 stream_export int mnstr_isalive(stream *s);
 
 stream_export stream *open_rstream(const char *filename);
 stream_export stream *open_wstream(const char *filename);
-
-/* append to stream */
-stream_export stream *append_wstream(const char *filename);
 
 /* open in ascii stream in read mode */
 stream_export stream *open_rastream(const char *filename);
@@ -173,15 +168,9 @@ stream_export stream *open_rastream(const char *filename);
 /* open in ascii stream in write mode*/
 stream_export stream *open_wastream(const char *filename);
 
-/* append to ascii stream */
-stream_export stream *append_wastream(const char *filename);
-
 stream_export void close_stream(stream *s);
 
 stream_export stream *open_urlstream(const char *url);
-
-stream_export stream *udp_rastream(const char *hostname, int port, const char *name);
-stream_export stream *udp_wastream(const char *hostname, int port, const char *name);
 
 stream_export stream *file_rstream(FILE *fp, const char *name);
 stream_export stream *file_wstream(FILE *fp, const char *name);
@@ -230,7 +219,6 @@ stream_export buffer *mnstr_get_buffer(stream *s);
  * number of bytes can be read the end of the major block is
  * found. The next read will then start with a new major block.
  */
-stream_export stream *wbstream(stream *s, size_t buflen);
 stream_export stream *block_stream(stream *s);
 stream_export int isa_block_stream(stream *s);
 stream_export int isa_fixed_block_stream(stream *s);

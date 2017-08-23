@@ -32,21 +32,21 @@ Ready.
 #declare id_event integer;
 #set id_event = -1;
 #select id_event;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 2 # length
 [ -1	]
 #set id_event = add_event('event 4', '2009-06-23', NULL, NULL, 'description3');
 #select id_event;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 5	]
 #select id_event; 
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 5	]

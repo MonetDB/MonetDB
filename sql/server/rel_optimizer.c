@@ -263,7 +263,7 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	switch (rel->op) {
 	case op_basetable:
 	case op_table:
-		if (rel->op == op_table && rel->l) 
+		if (rel->op == op_table && rel->l && rel->flag != 2) 
 			rel_properties(sql, gp, rel->l);
 		break;
 	case op_join: 
@@ -597,13 +597,26 @@ exps_count(list *exps)
 static list *
 order_join_expressions(mvc *sql, list *dje, list *rels)
 {
-	list *res = sa_list(sql->sa);
+	list *res;
 	node *n = NULL;
 	int i, j, *keys, *pos, cnt = list_length(dje);
 	int debug = mvc_debug_on(sql, 16);
 
 	keys = (int*)malloc(cnt*sizeof(int));
 	pos = (int*)malloc(cnt*sizeof(int));
+	if (keys == NULL || pos == NULL) {
+		if (keys)
+			free(keys);
+		if (pos)
+			free(pos);
+		return NULL;
+	}
+	res = sa_list(sql->sa);
+	if (res == NULL) {
+		free(keys);
+		free(pos);
+		return NULL;
+	}
 	for (n = dje->h, i = 0; n; n = n->next, i++) {
 		sql_exp *e = n->data;
 
@@ -4824,6 +4837,15 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 		gbe = rel->r;
 		tbls = (sql_table**)malloc(sizeof(sql_table*)*list_length(gbe));
 		bts = (sql_rel**)malloc(sizeof(sql_rel*)*list_length(gbe));
+		if (scores == NULL || tbls == NULL || bts == NULL) {
+			if (scores)
+				free(scores);
+			if (tbls)
+				free(tbls);
+			if (bts)
+				free(bts);
+			return NULL;
+		}
 		for (k = 0, i = 0, n = gbe->h; n; n = n->next, k++) {
 			sql_exp *e = n->data;
 
@@ -5478,7 +5500,7 @@ rel_push_project_up(int *changes, mvc *sql, sql_rel *rel)
 				}
 			}
 		} else if (is_join(rel->op)) {
-			list *r_exps = rel_projections(sql, r, NULL, 1, 1);
+			list *r_exps = rel_projections(sql, r, NULL, 1, 2);
 
 			list_merge(exps, r_exps, (fdup)NULL);
 		}
@@ -5815,7 +5837,7 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 	case op_basetable:
 	case op_table:
 
-		if (rel->op == op_table && rel->l) {
+		if (rel->op == op_table && rel->l && rel->flag != 2) {
 			rel_used(rel);
 			if (rel->r)
 				exp_mark_used(rel->l, rel->r);
@@ -6064,7 +6086,7 @@ rel_dce_refs(mvc *sql, sql_rel *rel)
 	case op_groupby: 
 	case op_select: 
 
-		if (rel->l)
+		if (rel->l && (rel->op != op_table || rel->flag != 2))
 			l = rel_dce_refs(sql, rel->l);
 
 	case op_basetable:
@@ -6128,7 +6150,7 @@ rel_dce_down(mvc *sql, sql_rel *rel, list *refs, int skip_proj)
 	case op_basetable:
 	case op_table:
 
-		if (skip_proj && rel->l && rel->op == op_table)
+		if (skip_proj && rel->l && rel->op == op_table && rel->flag != 2)
 			rel->l = rel_dce_down(sql, rel->l, refs, 0);
 		if (!skip_proj)
 			rel_dce_sub(sql, rel, refs);
@@ -7479,8 +7501,10 @@ rel_dicttable(mvc *sql, sql_column *c, const char *tname, int de)
 	sql_exp *e, *ie;
 	int nr = 0;
 	char name[16], *nme;
+	if(!rel)
+		return NULL;
 
-       	e = exp_alias(sql->sa, tname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+	e = exp_alias(sql->sa, tname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
 	rel->l = NULL;
 	rel->r = c;
 	rel->op = op_basetable; 
@@ -8294,7 +8318,7 @@ rel_apply_rename(mvc *sql, sql_rel *rel)
 	case op_basetable:
 		return rel;
 	case op_table:
-		if (rel->l)
+		if (rel->l && rel->flag != 2)
 			rel->l = rel_apply_rename(sql, rel->l);
 		return rel;
 	case op_project:
@@ -8356,8 +8380,6 @@ exps_from_rel( list *exps, sql_rel *rel )
 	return 0;
 }
 
-
-extern void _rel_print(mvc *sql, sql_rel *rel);
 
 static sql_rel *
 rel_apply(mvc *sql, sql_rel *l, sql_rel *r, list *exps, int flag)
@@ -8461,7 +8483,7 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 		return l;
 	}
 	/* table function (TODO should output any input cols) */
-	if (r->op == op_table && r->l) {
+	if (r->op == op_table && r->l && rel->flag != 2) {
 		assert(0);
 		r->l = rel->l;
 		return r;
@@ -8739,9 +8761,9 @@ rewrite_topdown(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes)
 	switch (rel->op) {
 	case op_basetable:
 	case op_table:
-		if (rel->op == op_table && rel->l) 
+		if (rel->op == op_table && rel->l && rel->flag != 2) 
 			rel->l = rewrite(sql, rel->l, rewriter, has_changes);
-		if (rel->op == op_table && rel->l) 
+		if (rel->op == op_table && rel->l && rel->flag != 2) 
 			rel->l = rewrite_topdown(sql, rel->l, rewriter, has_changes);
 		break;
 	case op_join: 

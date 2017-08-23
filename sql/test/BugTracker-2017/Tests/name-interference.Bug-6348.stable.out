@@ -1,0 +1,72 @@
+stdout of test 'name-interference.Bug-6348` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 13:47:15 >  
+# 13:47:15 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39137" "--set" "mapi_usock=/var/tmp/mtest-7389/.s.monetdb.39137" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 13:47:15 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.331 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:39137/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-7389/.s.monetdb.39137
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 13:47:15 >  
+# 13:47:15 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7389" "--port=39137"
+# 13:47:15 >  
+
+#create table cls_0(i integer, j integer, k string);
+#insert into cls_0 values
+#( 1,  99, 'b'),
+#( 2,  99, 'b'),
+#( 3,  99, 'b'),
+#( 4,  99, 'a'),
+#( 5,  99, 'a'),
+#( 6,  99, 'a'),
+#( 7,  33, 'b'),
+#( 8,  33, 'b'),
+#( 9,  33, 'b'),
+#( 10,  33, 'a'),
+#( 11,  33, 'a'),
+#( 12,  33, 'a');
+[ 12	]
+#select * from cls_0;
+% sys.cls_0,	sys.cls_0,	sys.cls_0 # table_name
+% i,	j,	k # name
+% int,	int,	clob # type
+% 2,	2,	1 # length
+[ 1,	99,	"b"	]
+[ 2,	99,	"b"	]
+[ 3,	99,	"b"	]
+[ 4,	99,	"a"	]
+[ 5,	99,	"a"	]
+[ 6,	99,	"a"	]
+[ 7,	33,	"b"	]
+[ 8,	33,	"b"	]
+[ 9,	33,	"b"	]
+[ 10,	33,	"a"	]
+[ 11,	33,	"a"	]
+[ 12,	33,	"a"	]
+#create procedure cls_0_statistics()
+#begin
+#    create table cls_0_statistics ( col string, fcn string, tpe string, val string);
+#    insert into cls_0_statistics values
+#        ('i', 'min', 'int', (select cast( min( i ) as string)  from cls_0)),
+#        ('i', 'max', 'int', (select cast( min( i ) as string)  from cls_0)),
+#        ('j', 'min', 'int', (select cast( min( i ) as string)  from cls_0));
+#end;
+#drop procedure cls_0_statistics;
+
+# 13:47:15 >  
+# 13:47:15 >  "Done."
+# 13:47:15 >  
+

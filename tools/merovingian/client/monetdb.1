@@ -70,6 +70,8 @@ utility are
 .BR start ,
 .BR stop ,
 .BR kill ,
+.BR profilerstart ,
+.BR profilerstop ,
 .BR set ,
 .BR get ,
 .BR inherit ,
@@ -262,6 +264,21 @@ the return code of
 .IR monetdb (1)
 indicates failure if one of the databases had a failure, even though
 the operation on other databases was successful.
+.TP
+\fBprofilerstart\fP \fIdatabase\fP [\fIdatabase\fP ...]
+.PD 0
+.TP
+\fBprofilerstop\fP \fIdatabase\fP [\fIdatabase\fP ...]
+Starts or stops the collection of profiling logs for the given database. The property
+.B profilerlogpath
+must be set for the given database, and it should point to a directory where the logs
+will be gathered. The filenames of the logs have the format:
+.I proflog_<database>_YYYY-MM-DD_HH-MM-SS.json
+where the last part is the date and time when the collection started. Please
+note that a file recording the pid of the profiler is written in the log
+directory, therefore each database needs to have a different
+.B profilerlogpath
+value.
 .TP
 \fBget\fP <\fBall\fP | \fIproperty\fP[,\fIproperty\fP[,..]]> [\fIdatabase\fP ...]
 Prints the requested properties, or all known properties, for the given

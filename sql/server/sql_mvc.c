@@ -67,8 +67,17 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		sql_table *t;
 		sqlid tid = 0, ntid, cid = 0, ncid;
 		mvc *m = mvc_create(0, stk, 0, NULL, NULL);
+		if (!m) {
+			fprintf(stderr, "!mvc_init: malloc failure\n");
+			return -1;
+		}
 
 		m->sa = sa_create();
+		if (!m->sa) {
+			mvc_destroy(m);
+			fprintf(stderr, "!mvc_init: malloc failure\n");
+			return -1;
+		}
 
 		/* disable caching */
 		m->caching = 0;
@@ -295,7 +304,7 @@ mvc_commit(mvc *m, int chain, const char *name)
 		fprintf(stderr, "#mvc_commit %s\n", (name) ? name : "");
 
 	if (m->session->status < 0) {
-		(void)sql_error(m, 010, "40000!COMMIT: transaction is aborted, will ROLLBACK instead");
+		(void)sql_error(m, 010, SQLSTATE(40000) "COMMIT: transaction is aborted, will ROLLBACK instead");
 		mvc_rollback(m, chain, name);
 		return -1;
 	}
@@ -356,7 +365,7 @@ build up the hash (not copied in the trans dup)) */
 		MT_sleep_ms(100);
 		wait += 100;
 		if (wait > 1000) {
-			(void)sql_error(m, 010, "40000!COMMIT: transaction is aborted because of DDL concurrency conflicts, will ROLLBACK instead");
+			(void)sql_error(m, 010, SQLSTATE(40000) "COMMIT: transaction is aborted because of DDL concurrency conflicts, will ROLLBACK instead");
 			mvc_rollback(m, chain, name);
 			return -1;
 		}
@@ -366,13 +375,13 @@ build up the hash (not copied in the trans dup)) */
 	/* validation phase */
 	if (sql_trans_validate(tr)) {
 		if ((ok = sql_trans_commit(tr)) != SQL_OK) {
-			char *msg = sql_message("40000!COMMIT: transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", GDKerrbuf);
+			char *msg = sql_message(SQLSTATE(40000) "COMMIT: transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", GDKerrbuf);
 			GDKfatal("%s", msg);
 			_DELETE(msg);
 		}
 	} else {
 		store_unlock();
-		(void)sql_error(m, 010, "40000!COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead");
+		(void)sql_error(m, 010, SQLSTATE(40000) "COMMIT: transaction is aborted because of concurrency conflicts, will ROLLBACK instead");
 		mvc_rollback(m, chain, name);
 		return -1;
 	}
@@ -406,7 +415,7 @@ mvc_rollback(mvc *m, int chain, const char *name)
 		while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 			tr = tr->parent;
 		if (!tr) {
-			(void)sql_error(m, 010, "ROLLBACK: no such savepoint: '%s'", name);
+			(void)sql_error(m, 010, SQLSTATE(42000) "ROLLBACK: no such savepoint: '%s'", name);
 			m->session->status = -1;
 			store_unlock();
 			return -1;
@@ -466,7 +475,7 @@ mvc_release(mvc *m, const char *name)
 	while (tr && (!tr->name || strcmp(tr->name, name) != 0))
 		tr = tr->parent;
 	if (!tr || !tr->name || strcmp(tr->name, name) != 0) {
-		(void)sql_error(m, 010, "release savepoint %s doesn't exists", name);
+		(void)sql_error(m, 010, SQLSTATE(42000) "Release savepoint %s doesn't exists", name);
 		m->session->status = -1;
 		return -1;
 	}
@@ -494,6 +503,9 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	mvc *m;
 
  	m = ZNEW(mvc);
+	if(!m) {
+		return NULL;
+	}
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create\n");
 
@@ -502,17 +514,28 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->errstr[ERRSIZE-1] = '\0';
 
 	m->qc = qc_create(clientid, 0);
+	if(!m->qc) {
+		_DELETE(m);
+		return NULL;
+	}
 	m->sa = NULL;
 
 	m->params = NULL;
 	m->sizevars = MAXPARAMS;
-	// FIXME unchecked_malloc NEW_ARRAY can return NULL
 	m->vars = NEW_ARRAY(sql_var, m->sizevars);
+
 	m->topvars = 0;
 	m->frame = 1;
 	m->use_views = 0;
 	m->argmax = MAXPARAMS;
 	m->args = NEW_ARRAY(atom*,m->argmax);
+	if(!m->vars || !m->args) {
+		qc_destroy(m->qc);
+		_DELETE(m->vars);
+		_DELETE(m->args);
+		_DELETE(m);
+		return NULL;
+	}
 	m->argc = 0;
 	m->sym = NULL;
 

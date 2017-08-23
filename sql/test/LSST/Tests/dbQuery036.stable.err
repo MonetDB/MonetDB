@@ -86,6 +86,8 @@ QUERY = SELECT  ROUND(uMag-gMag,0) AS UG,
         GROUP BY UG, GR, RI, IZ, ZY
         HAVING pop > 500    -- Common bucktes have 500 or more members, so delete them
 ERROR = !SELECT: identifier 'pop' unknown
+CODE  = 42000
+
 
 # 05:57:35 >  
 # 05:57:35 >  Done.

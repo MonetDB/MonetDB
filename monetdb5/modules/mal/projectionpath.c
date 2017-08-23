@@ -23,7 +23,7 @@ ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	assert(pci->argc > 1);
 	if ( joins == NULL)
-		throw(MAL, "algebra.projectionpath", MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.projectionpath", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	for (i = pci->retc; i < pci->argc; i++) {
 		bid = getArgReference_bat(stk, pci, i);
 		b = BATdescriptor(*bid);
