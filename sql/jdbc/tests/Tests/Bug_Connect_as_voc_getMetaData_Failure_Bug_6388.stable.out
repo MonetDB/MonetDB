@@ -82,11 +82,11 @@ UserName = voc
 4.3. getMaxConnections()
 MaxConnections = 64
 4.4. getDatabaseProductVersion()
-DatabaseProductVersion = 11.28.0
+DatabaseProductVersion = 11.27.+
 4.5. getDatabaseMajorVersion()
 DatabaseMajorVersion = 11
 4.6. getDatabaseMinorVersion()
-DatabaseMinorVersion = 28
+DatabaseMinorVersion = 27+
 4.7. getTables(null, 'tmp', null, null)
 List Tables in schema tmp:
 _columns
