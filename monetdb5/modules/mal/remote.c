@@ -697,7 +697,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		msg = createException(MAL, "remote.put", "unsupported type: %s", tpe);
 		GDKfree(tpe);
 		return msg;
-	} else if (isaBatType(type) && *(bat*) value != 0) {
+	} else if (isaBatType(type) && *(bat*) value != 0 && *(bat*) value != int_nil) {
 		BATiter bi;
 		/* naive approach using bat.new() and bat.insert() calls */
 		char *tail;
@@ -759,6 +759,14 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			return tmp;
 		}
 		mapi_close_handle(mhdl);
+	} else if (isaBatType(type) && *(bat*) value == int_nil) {
+		stream *sout;
+		str typename = getTypeName(type);
+		sout = mapi_get_to(c->mconn);
+		mnstr_printf(sout,
+				"%s := nil:%s;\n", ident, typename);
+		mnstr_flush(sout);
+		GDKfree(typename);
 	} else {
 		int l = 0;
 		str val = NULL;

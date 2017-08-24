@@ -1,0 +1,63 @@
+stdout of test 'cfunction00` in directory 'sql/backends/monet5` itself:
+
+
+# 15:54:43 >  
+# 15:54:43 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37465" "--set" "mapi_usock=/var/tmp/mtest-14298/.s.monetdb.37465" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/MonetDB-trails/BUILD/var/MonetDB/mTests_sql_backends_monet5"
+# 15:54:43 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.498 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-120.eduroam.cwi.nl:37465/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-14298/.s.monetdb.37465
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Timetrails module loaded
+
+Ready.
+
+# 15:54:43 >  
+# 15:54:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14298" "--port=37465"
+# 15:54:43 >  
+
+#create function aggr00()     
+#returns integer
+#begin
+#    declare s int;
+#	set s = 0;
+#	while (true)
+#	do
+#		set s = s + 1;
+#		yield s;
+#	end while;
+#	return s;
+#END;
+#select * from functions where name ='aggr00';
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
+% int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
+% 4,	6,	147,	4,	1,	1,	5,	5,	5,	4 # length
+[ 8516,	"aggr00",	"create function aggr00() \nreturns integer\nbegin\n declare s int;\n set s = 0;\n while (true)\n do\n set s = s + 1;\n yield s;\n end while;\n return s;\nend;",	"user",	2,	1,	false,	false,	false,	2000	]
+#select aggr00(); #should return 1
+% .L2 # table_name
+% L2 # name
+% int # type
+% 1 # length
+[ 1	]
+#select aggr00(); #should return 2
+% .L2 # table_name
+% L2 # name
+% int # type
+% 1 # length
+[ 2	]
+#drop function aggr00;
+
+# 15:54:44 >  
+# 15:54:44 >  "Done."
+# 15:54:44 >  
+

@@ -277,7 +277,7 @@ minimal_pipe=inline,remap,deadcode,multiplex,garbageCollector
 The default pipe line contains the mitosis-mergetable-reorder
 optimizers, aimed at large tables and improved access locality.
 .\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-default_pipe=inline,remap,costModel,coercions,evaluate,emptySet,aliases,pushselect,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,matpack,dataflow,querylog,multiplex,garbageCollector
+default_pipe=inline,remap,costModel,cquery,coercions,evaluate,emptySet,aliases,pushselect,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,matpack,dataflow,querylog,multiplex,garbageCollector
 .TP
 .B no_mitosis_pipe
 The no_mitosis pipe line is identical to the default pipeline, except
@@ -286,7 +286,7 @@ It is used mainly to make some tests work deterministically, and to
 check/debug whether "unexpected" problems are related to mitosis
 (and/or mergetable).
 .\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-no_mitosis_pipe=inline,remap,costModel,coercions,evaluate,emptySet,aliases,pushselect,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,matpack,dataflow,querylog,multiplex,garbageCollector
+no_mitosis_pipe=inline,remap,costModel,cquery,coercions,evaluate,emptySet,aliases,pushselect,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,matpack,dataflow,querylog,multiplex,garbageCollector
 .TP
 .B sequential_pipe
 The sequential pipe line is identical to the default pipeline, except
@@ -294,7 +294,7 @@ that optimizers mitosis & dataflow are omitted.
 It is use mainly to make some tests work deterministically, i.e.,
 avoid ambigious output, by avoiding parallelism.
 .\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-sequential_pipe=inline,remap,costModel,coercions,evaluate,emptySet,aliases,pushselect,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,matpack,querylog,multiplex,garbageCollector
+sequential_pipe=inline,remap,costModel,cquery,coercions,evaluate,emptySet,aliases,pushselect,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,matpack,querylog,multiplex,garbageCollector
 .SH CONFIG FILE FORMAT
 The configuration file readable by
 .I mserver5

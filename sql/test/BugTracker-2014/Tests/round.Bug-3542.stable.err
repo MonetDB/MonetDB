@@ -33,9 +33,11 @@ stderr of test 'round.Bug-3542` in directory 'sql/test/BugTracker-2014` itself:
 MAPI  = (monetdb) /var/tmp/mtest-12641/.s.monetdb.34069
 QUERY = SELECT t1.id, t2.id, t1.val * t2.val FROM test_num_data t1, test_num_data t2;
 ERROR = !overflow in calculation -343384922153970470*-343384922153970470.
+CODE  = 22003
 MAPI  = (monetdb) /var/tmp/mtest-12641/.s.monetdb.34069
 QUERY = SELECT t1.id, t2.id, round(t1.val * t2.val, 30) FROM test_num_data t1, test_num_data t2;
 ERROR = !overflow in calculation -343384922153970470*-343384922153970470.
+CODE  = 22003
 
 
 # 11:02:08 >  

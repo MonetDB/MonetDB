@@ -329,7 +329,7 @@ create function sys.\"epoch\"(ts TIMESTAMP WITH TIME ZONE) returns INT external 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"insert into sys.systemfunctions (select id from sys.functions where name = 'epoch' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
 
-	if (schema) 
+	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 
 	assert(pos < bufsize);
@@ -379,7 +379,7 @@ sql_update_geom(Client c, mvc *sql, int olddb)
 			pos += snprintf(buf + pos, bufsize - pos, "insert into sys.types values (%d, '%s', '%s', %u, %u, %d, %d, %d);\n", t->base.id, t->base.name, t->sqlname, t->digits, t->scale, t->radix, t->eclass, t->s ? t->s->base.id : s->base.id);
 	}
 
-	if (schema) 
+	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 
 	assert(pos < bufsize);
@@ -596,7 +596,7 @@ sql_update_dec2016(Client c, mvc *sql)
 	pos += snprintf(buf + pos, bufsize - pos,
 			"delete from systemfunctions where function_id not in (select id from functions);\n");
 
-	if (schema) 
+	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 
 	assert(pos < bufsize);
@@ -665,7 +665,9 @@ sql_update_dec2016_sp3(Client c, mvc *sql)
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *schema = stack_get_string(sql, "current_schema");
 
-	pos += snprintf(buf + pos, bufsize - pos, 
+	if (buf == NULL)
+		throw(SQL, "sql_update_dec2016_sp3", MAL_MALLOC_FAIL);
+	pos += snprintf(buf + pos, bufsize - pos,
 			"set schema \"sys\";\n"
 			"drop procedure sys.settimeout(bigint);\n"
 			"drop procedure sys.settimeout(bigint,bigint);\n"
@@ -675,7 +677,7 @@ sql_update_dec2016_sp3(Client c, mvc *sql)
 			"create procedure sys.setsession(\"timeout\" bigint) external name clients.setsession;\n"
 			"insert into sys.systemfunctions (select id from sys.functions where name in ('settimeout', 'setsession') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n"
 			"delete from systemfunctions where function_id not in (select id from functions);\n");
-	if (schema) 
+	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 	assert(pos < bufsize);
 
@@ -696,7 +698,7 @@ sql_update_jul2017(Client c, mvc *sql)
 	BAT *b;
 
 	if( buf== NULL)
-		throw(SQL, "sql_default", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_jul2017", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -803,6 +805,165 @@ sql_update_jul2017(Client c, mvc *sql)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_jul2017_sp2(Client c)
+{
+	char *qry = "select obj_id from sys.privileges where auth_id = 1 and obj_id in (select id from sys._tables where name in ('keywords', 'table_types', 'dependency_types', 'function_types', 'function_languages', 'key_types', 'index_types', 'privilege_codes', 'environment')) and privileges = 1;\n";
+	char *err = NULL;
+	res_table *output;
+	BAT *b;
+
+	err = SQLstatementIntern(c, &qry, "update", 1, 0, &output);
+	if (err) {
+		return err;
+	}
+
+	b = BATdescriptor(output->cols[0].b);
+	if (b) {
+		if (BATcount(b) < 9) {
+			/* we are missing grants on these system tables, add them */
+			size_t bufsize = 2048, pos = 0;
+			char *buf = GDKmalloc(bufsize);
+
+			if (buf== NULL)
+				throw(SQL, "sql_update_jul2017_sp2", MAL_MALLOC_FAIL);
+
+			/* 51_sys_schema_extensions.sql and 25_debug.sql */
+			pos += snprintf(buf + pos, bufsize - pos,
+				"GRANT SELECT ON sys.keywords TO PUBLIC;\n"
+				"GRANT SELECT ON sys.table_types TO PUBLIC;\n"
+				"GRANT SELECT ON sys.dependency_types TO PUBLIC;\n"
+				"GRANT SELECT ON sys.function_types TO PUBLIC;\n"
+				"GRANT SELECT ON sys.function_languages TO PUBLIC;\n"
+				"GRANT SELECT ON sys.key_types TO PUBLIC;\n"
+				"GRANT SELECT ON sys.index_types TO PUBLIC;\n"
+				"GRANT SELECT ON sys.privilege_codes TO PUBLIC;\n"
+				"GRANT EXECUTE ON FUNCTION sys.environment() TO PUBLIC;\n"
+				"GRANT SELECT ON sys.environment TO PUBLIC;\n"
+				);
+			assert(pos < bufsize);
+			printf("Running database upgrade commands:\n%s\n", buf);
+			err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+			GDKfree(buf);
+		}
+		BBPunfix(b->batCacheid);
+	}
+	res_tables_destroy(output);
+
+	return err;		/* usually NULL */
+}
+
+static str
+sql_update_default(Client c, mvc *sql)
+{
+	size_t bufsize = 10000, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	char *schema = stack_get_string(sql, "current_schema");
+
+	if( buf== NULL)
+		throw(SQL, "sql_update_jul2017", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	/* 60_wlcr.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create procedure master()\n"
+			"external name wlc.master;\n"
+			"create procedure master(path string)\n"
+			"external name wlc.master;\n"
+			"create procedure stopmaster()\n"
+			"external name wlc.stopmaster;\n"
+			"create procedure masterbeat( duration int)\n"
+			"external name wlc.\"setmasterbeat\";\n"
+			"create function masterClock() returns string\n"
+			"external name wlc.\"getmasterclock\";\n"
+			"create function masterTick() returns bigint\n"
+			"external name wlc.\"getmastertick\";\n"
+			"create procedure replicate()\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(pointintime timestamp)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(dbname string)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(dbname string, pointintime timestamp)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(dbname string, id tinyint)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(dbname string, id smallint)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(dbname string, id integer)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(dbname string, id bigint)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicabeat(duration integer)\n"
+			"external name wlr.\"setreplicabeat\";\n"
+			"create function replicaClock() returns string\n"
+			"external name wlr.\"getreplicaclock\";\n"
+			"create function replicaTick() returns bigint\n"
+			"external name wlr.\"getreplicatick\";\n"
+			"insert into sys.systemfunctions (select id from sys.functions where name in ('master', 'stopmaster', 'masterbeat', 'masterclock', 'mastertick', 'replicate', 'replicabeat', 'replicaclock', 'replicatick') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n"
+		);
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
+
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_update_default_geom(Client c, mvc *sql, sql_table *t)
+{
+	size_t bufsize = 10000, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	char *schema = stack_get_string(sql, "current_schema");
+
+	if( buf== NULL)
+		throw(SQL, "sql_update_jul2017", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	t->system = 0;
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop view sys.geometry_columns;\n"
+			"create view geometry_columns as\n"
+			"\tselect e.value as f_table_catalog,\n"
+			"\t\ts.name as f_table_schema,\n"
+			"\t\ty.f_table_name, y.f_geometry_column, y.coord_dimension, y.srid, y.type\n"
+			"\tfrom schemas s, environment e, (\n"
+			"\t\tselect t.schema_id,\n"
+			"\t\t\tt.name as f_table_name,\n"
+			"\t\t\tx.name as f_geometry_column,\n"
+			"\t\t\tcast(has_z(info)+has_m(info)+2 as integer) as coord_dimension,\n"
+			"\t\t\tsrid, get_type(info, 0) as type\n"
+			"\t\tfrom tables t, (\n"
+			"\t\t\tselect name, table_id, type_digits AS info, type_scale AS srid\n"
+			"\t\t\tfrom columns\n"
+			"\t\t\twhere type in ( select distinct sqlname from types where systemname='wkb')\n"
+			"\t\t\t) as x\n"
+			"\t\twhere t.id=x.table_id\n"
+			"\t\t) y\n"
+			"\twhere y.schema_id=s.id and e.name='gdk_dbname';\n"
+			"GRANT SELECT ON geometry_columns TO PUBLIC;\n"
+			"update sys._tables set system = true where name in ('geometry_columns') and schema_id = (select id from schemas where name = 'sys');\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
+
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 void
 SQLupgrades(Client c, mvc *m)
 {
@@ -810,6 +971,8 @@ SQLupgrades(Client c, mvc *m)
 	sql_subfunc *f;
 	char *err;
 	sql_schema *s = mvc_bind_schema(m, "sys");
+	sql_table *t;
+	sql_column *col;
 
 #ifdef HAVE_HGE
 	if (have_hge) {
@@ -886,6 +1049,27 @@ SQLupgrades(Client c, mvc *m)
 
 	if (mvc_bind_table(m, s, "function_languages") == NULL) {
 		if ((err = sql_update_jul2017(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+	}
+
+	if ((err = sql_update_jul2017_sp2(c)) != NULL) {
+		fprintf(stderr, "!%s\n", err);
+		freeException(err);
+	}
+
+	if (!sql_bind_func(m->sa, s, "master", NULL, NULL, F_PROC)) {
+		if ((err = sql_update_default(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+	}
+
+	if ((t = mvc_bind_table(m, s, "geometry_columns")) != NULL &&
+	    (col = mvc_bind_column(m, t, "coord_dimension")) != NULL &&
+	    strcmp(col->type.type->sqlname, "int") != 0) {
+		if ((err = sql_update_default_geom(c, m, t)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}

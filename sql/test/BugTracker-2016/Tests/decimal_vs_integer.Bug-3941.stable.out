@@ -35,12 +35,12 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 112 # length
+% 120 # length
 function user.s4_1():void;
-    X_2:void := querylog.define("explain select count(*) from tmp where i = 20160222;", "default_pipe", 12:int);
-    X_16 := bat.new(nil:int);
-    X_17 := aggr.count(X_16);
-    sql.resultSet("sys.L4", "L3", "bigint", 64:int, 0:int, 7:int, X_17);
+    X_2:void := querylog.define("explain select count(*) from tmp where i = 20160222;":str, "default_pipe":str, 12:int);
+    X_16:bat[:int] := bat.new(nil:int);
+    X_17:lng := aggr.count(X_16:bat[:int]);
+    sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_17:lng);
 end user.s4_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
@@ -48,12 +48,12 @@ end user.s4_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 118 # length
+% 126 # length
 function user.s6_1():void;
-    X_2:void := querylog.define("explain select count(*) from tmp where i = \\'20160222\\';", "default_pipe", 13:int);
-    X_18 := bat.new(nil:int);
-    X_19 := aggr.count(X_18);
-    sql.resultSet("sys.L4", "L3", "bigint", 64:int, 0:int, 7:int, X_19);
+    X_2:void := querylog.define("explain select count(*) from tmp where i = \\'20160222\\';":str, "default_pipe":str, 13:int);
+    X_18:bat[:int] := bat.new(nil:int);
+    X_19:lng := aggr.count(X_18:bat[:int]);
+    sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_19:lng);
 end user.s6_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
@@ -61,12 +61,12 @@ end user.s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 113 # length
+% 121 # length
 function user.s8_1():void;
-    X_2:void := querylog.define("explain select count(*) from tmp where i = 201602221;", "default_pipe", 13:int);
-    X_20 := bat.new(nil:int);
-    X_21 := aggr.count(X_20);
-    sql.resultSet("sys.L4", "L3", "bigint", 64:int, 0:int, 7:int, X_21);
+    X_2:void := querylog.define("explain select count(*) from tmp where i = 201602221;":str, "default_pipe":str, 13:int);
+    X_20:bat[:int] := bat.new(nil:int);
+    X_21:lng := aggr.count(X_20:bat[:int]);
+    sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_21:lng);
 end user.s8_1;
 # optimizer.mitosis()
 # optimizer.dataflow()

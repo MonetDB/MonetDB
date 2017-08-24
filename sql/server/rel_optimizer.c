@@ -7501,8 +7501,10 @@ rel_dicttable(mvc *sql, sql_column *c, const char *tname, int de)
 	sql_exp *e, *ie;
 	int nr = 0;
 	char name[16], *nme;
+	if(!rel)
+		return NULL;
 
-       	e = exp_alias(sql->sa, tname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+	e = exp_alias(sql->sa, tname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
 	rel->l = NULL;
 	rel->r = c;
 	rel->op = op_basetable; 
