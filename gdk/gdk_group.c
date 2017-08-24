@@ -469,7 +469,7 @@ pop(oid x)
 				     hb = HASHgetlink(hs, hb)) {	\
 					ASSERT;				\
 					GRPTST(hb, r);			\
-					grp = ngrps[hb];		\
+					grp = ngrps[hb - start];	\
 					if (COMP) {			\
 						ngrps[r] = grp;		\
 						if (histo)		\
