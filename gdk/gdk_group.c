@@ -689,8 +689,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			}
 			return GDK_SUCCEED;
 		}
-		if ((extents == NULL) == (e == NULL) &&
-		    (histo == NULL) == (h == NULL)) {
+		if ((extents == NULL || e != NULL) &&
+		    (histo == NULL || h != NULL)) {
 			/* inherit given grouping; note that if
 			 * extents/histo is to be returned, we need
 			 * e/h available in order to copy them,
