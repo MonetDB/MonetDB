@@ -102,7 +102,7 @@
 
 #define shuffle_unique(TYPE, OP)					\
 	do {								\
-		const TYPE *restrict vals = (const TYPE *) Tloc(b, 0);	\
+		const TYPE *restrict vals = (const TYPE *) Tloc(b, 0); \
 		heapify(OP##fix, SWAP1);				\
 		while (cand ? cand < candend : start < end) {		\
 			i = cand ? *cand++ : start++ + b->hseqbase;	\
@@ -121,7 +121,7 @@
  * multiple equal values to take us past N, we return a subset of those.
  */
 static BAT *
-BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc, oid *lastp)
+BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc)
 {
 	BAT *bn;
 	BATiter bi = bat_iterator(b);
@@ -293,8 +293,6 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc, oid *lastp)
 			break;
 		}
 	}
-	if (lastp)
-		*lastp = oids[0]; /* store id of largest value */
 	/* output must be sorted since it's a candidate list */
 	GDKqsort(oids, NULL, NULL, (size_t) n, sizeof(oid), 0, TYPE_oid);
 	bn->tsorted = 1;
@@ -547,61 +545,288 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc)
 	return bn;
 }
 
+#define shuffle_grouped1_body(COMPARE, EQUAL)				\
+	do {								\
+		for (i = cand ? *cand++ - b->hseqbase : start;		\
+		     i < end;						\
+		     cand < candend ? (i = *cand++ - b->hseqbase) : i++) { \
+			for (j = 0; j < n; j++) {			\
+				if (j == top) {				\
+					assert(top < n);		\
+					groups[top].cnt = 1;		\
+					groups[top++].bun = i;		\
+					break;				\
+				} else {				\
+					assert(j < top);		\
+					assert(groups[j].bun < i);	\
+					if (COMPARE) {			\
+						if (top < n)		\
+							top++;		\
+						for (k = top - 1; k > j; k--) {	\
+							groups[k] = groups[k - 1]; \
+						}			\
+						groups[j].bun = i;	\
+						groups[j].cnt = 1;	\
+						break;			\
+					} else if (EQUAL) {		\
+						groups[j].cnt++;	\
+						break;			\
+					}				\
+				}					\
+			}						\
+		}							\
+	} while (0)
+
+#define shuffle_grouped1(TYPE, OPER)					\
+	do {								\
+		const TYPE *restrict v = (const TYPE *) Tloc(b, 0);	\
+		shuffle_grouped1_body(OPER(v[i], v[groups[j].bun]),	\
+				      v[i] == v[groups[j].bun]);	\
+	} while (0)
+
+#define shuffle_grouped2(TYPE)						\
+	do {								\
+		const TYPE *restrict v = (const TYPE *) Tloc(b, 0);	\
+		TYPE lastval = v[groups[top - 1].bun];			\
+		for (i = cand ? *cand++ - b->hseqbase : start;		\
+		     i < end;						\
+		     cand < candend ? (i = *cand++ - b->hseqbase) : i++) { \
+			if (asc ? v[i] > lastval : v[i] < lastval)	\
+				continue;				\
+			for (j = 0; j < top; j++) {			\
+				if (v[i] == v[groups[j].bun]) {		\
+					if (bp)				\
+						*bp++ = i + b->hseqbase; \
+					*gp++ = j;			\
+					break;				\
+				}					\
+			}						\
+		}							\
+	} while (0)
+
 static gdk_return
 BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int distinct)
 {
-	BAT *bn1, *bn2, *bn, *gn;
-	oid last;
+	BAT *bn, *gn;
+	BATiter bi = bat_iterator(b);
+	oid *restrict bp, *restrict gp;
+	BUN top, i, j, k, cnt, start, end;
+	const oid *restrict cand, *candend, *oldcand;
+	int tpe = b->ttype;
+	int c;
+	int (*cmp)(const void *, const void *);
+	BUN ncnt;
+	struct group {
+		BUN bun;
+		BUN cnt;
+	} *restrict groups;
 
-	if (distinct) {
-		s = BATunique(b, s);
-		if (s == NULL)
+	assert(topn);
+
+	CANDINIT(b, s, start, end, cnt, cand, candend);
+
+	if (n > cnt)
+		n = cnt;
+	if (cand && n > (BUN) (candend - cand))
+		n = (BUN) (candend - cand);
+
+	if (n == 0) {
+		/* candidate list might refer only to values outside
+		 * of the bat and hence be effectively empty */
+		bn = COLnew(0, TYPE_void, 0, TRANSIENT);
+		if (bn == NULL)
 			return GDK_FAIL;
-	}
-	bn1 = BATfirstn_unique(b, s, n, asc, &last);
-	if (bn1 == NULL)
-		return GDK_FAIL;
-	if (BATcount(bn1) == 0) {
+		BATtseqbase(bn, 0);
 		if (gids) {
 			gn = COLnew(0, TYPE_void, 0, TRANSIENT);
 			if (gn == NULL) {
-				BBPunfix(bn1->batCacheid);
+				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
+			BATtseqbase(gn, 0);
 			*gids = gn;
 		}
-		*topn = bn1;
+		*topn = bn;
 		return GDK_SUCCEED;
 	}
-	if (b->tkey) {
-		bn = bn1;
-	} else if (distinct) {
-		BBPunfix(s->batCacheid);
-		if (BATsemijoin(&bn, NULL, b, b, NULL, bn1, 1, BUN_NONE) != GDK_SUCCEED) {
-			BBPunfix(bn1->batCacheid);
-			return GDK_FAIL;
+
+	top = 0;
+	cmp = ATOMcompare(b->ttype);
+	/* if base type has same comparison function as type itself, we
+	 * can use the base type */
+	tpe = ATOMbasetype(tpe); /* takes care of oid */
+	groups = GDKmalloc(sizeof(*groups) * n);
+	if (groups == NULL)
+		return GDK_FAIL;
+	oldcand = cand;
+	if (asc) {
+		switch (tpe) {
+		case TYPE_void:
+			shuffle_grouped1_body(i < groups[j].bun,
+					      i == groups[j].bun);
+			break;
+		case TYPE_bte:
+			shuffle_grouped1(bte, LT);
+			break;
+		case TYPE_sht:
+			shuffle_grouped1(sht, LT);
+			break;
+		case TYPE_int:
+			shuffle_grouped1(int, LT);
+			break;
+		case TYPE_lng:
+			shuffle_grouped1(lng, LT);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			shuffle_grouped1(hge, LT);
+			break;
+#endif
+		case TYPE_flt:
+			shuffle_grouped1(flt, LT);
+			break;
+		case TYPE_dbl:
+			shuffle_grouped1(dbl, LT);
+			break;
+		default:
+			shuffle_grouped1_body(
+				(c = cmp(BUNtail(bi, i),
+					 BUNtail(bi, groups[j].bun))) < 0,
+				c == 0);
+			break;
 		}
-		BBPunfix(bn1->batCacheid);
 	} else {
-		BATiter bi = bat_iterator(b);
-		bn2 = BATselect(b, s, BUNtail(bi, last - b->hseqbase), NULL, 1, 0, 0);
-		if (bn2 == NULL) {
-			BBPunfix(bn1->batCacheid);
-			return GDK_FAIL;
+		switch (tpe) {
+		case TYPE_void:
+			shuffle_grouped1_body(i > groups[j].bun,
+					      i == groups[j].bun);
+			break;
+		case TYPE_bte:
+			shuffle_grouped1(bte, GT);
+			break;
+		case TYPE_sht:
+			shuffle_grouped1(sht, GT);
+			break;
+		case TYPE_int:
+			shuffle_grouped1(int, GT);
+			break;
+		case TYPE_lng:
+			shuffle_grouped1(lng, GT);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			shuffle_grouped1(hge, GT);
+			break;
+#endif
+		case TYPE_flt:
+			shuffle_grouped1(flt, GT);
+			break;
+		case TYPE_dbl:
+			shuffle_grouped1(dbl, GT);
+			break;
+		default:
+			shuffle_grouped1_body(
+				(c = cmp(BUNtail(bi, i),
+					 BUNtail(bi, groups[j].bun))) > 0,
+				c == 0);
+			break;
 		}
-		bn = BATmergecand(bn1, bn2);
-		BBPunfix(bn1->batCacheid);
-		BBPunfix(bn2->batCacheid);
-		if (bn == NULL)
-			return GDK_FAIL;
+	}
+	cand = oldcand;
+	for (i = 0, ncnt = 0; i < top && (distinct || ncnt < n); i++)
+		ncnt += groups[i].cnt;
+	top = i;
+	assert(ncnt <= cnt);
+	if (ncnt == cnt)
+		bn = COLnew(0, TYPE_void, ncnt, TRANSIENT);
+	else
+		bn = COLnew(0, TYPE_oid, ncnt, TRANSIENT);
+	gn = COLnew(0, TYPE_oid, ncnt, TRANSIENT);
+	if (bn == NULL || gn == NULL) {
+		GDKfree(groups);
+		BBPreclaim(bn);
+		BBPreclaim(gn);
+		return GDK_FAIL;
+	}
+	if (ncnt == cnt)
+		bp = NULL;
+	else
+		bp = (oid *) Tloc(bn, 0);
+	gp = (oid *) Tloc(gn, 0);
+	switch (tpe) {
+	case TYPE_void:
+		for (i = cand ? *cand++ - b->hseqbase : start;
+		     i < end;
+		     cand < candend ? (i = *cand++ - b->hseqbase) : i++) {
+			for (j = 0; j < top; j++) {
+				if (i == groups[j].bun) {
+					if (bp)
+						*bp++ = i + b->hseqbase;
+					*gp++ = j;
+					break;
+				}
+			}
+		}
+		break;
+	case TYPE_bte:
+		shuffle_grouped2(bte);
+		break;
+	case TYPE_sht:
+		shuffle_grouped2(sht);
+		break;
+	case TYPE_int:
+		shuffle_grouped2(int);
+		break;
+	case TYPE_lng:
+		shuffle_grouped2(lng);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		shuffle_grouped2(hge);
+		break;
+#endif
+	case TYPE_flt:
+		shuffle_grouped2(flt);
+		break;
+	case TYPE_dbl:
+		shuffle_grouped2(dbl);
+		break;
+	default:
+		for (i = cand ? *cand++ - b->hseqbase : start;
+		     i < end;
+		     cand < candend ? (i = *cand++ - b->hseqbase) : i++) {
+			for (j = 0; j < top; j++) {
+				if (cmp(BUNtail(bi, i), BUNtail(bi, groups[j].bun)) == 0) {
+					if (bp)
+						*bp++ = i + b->hseqbase;
+					*gp++ = j;
+					break;
+				}
+			}
+		}
+		break;
+	}
+	GDKfree(groups);
+	BATsetcount(bn, ncnt);
+	if (ncnt == cnt) {
+		BATtseqbase(bn, b->hseqbase);
+	} else {
+		bn->tkey = 1;
+		bn->tsorted = 1;
+		bn->trevsorted = ncnt <= 1;
+		bn->tnil = 0;
+		bn->tnonil = 1;
 	}
 	if (gids) {
-		if (BATgroup(&gn, NULL, NULL, b, bn, NULL, NULL, NULL) != GDK_SUCCEED) {
-			BBPunfix(bn->batCacheid);
-			return GDK_FAIL;
-		}
+		BATsetcount(gn, ncnt);
+		gn->tkey = ncnt == top;
+		gn->tsorted = ncnt <= 1;
+		gn->trevsorted = ncnt <= 1;
+		gn->tnil = 0;
+		gn->tnonil = 1;
 		*gids = gn;
-	}
+	} else
+		BBPreclaim(gn);
 	*topn = bn;
 	return GDK_SUCCEED;
 }
@@ -949,7 +1174,7 @@ BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, int asc, int di
 
 	if (g == NULL) {
 		if (gids == NULL && !distinct) {
-			*topn = BATfirstn_unique(b, s, n, asc, NULL);
+			*topn = BATfirstn_unique(b, s, n, asc);
 			return *topn ? GDK_SUCCEED : GDK_FAIL;
 		}
 		return BATfirstn_grouped(topn, gids, b, s, n, asc, distinct);
