@@ -22,6 +22,10 @@
 #include <unistd.h>
 #include <string.h>
 
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic ignored "-Wclobbered"
+#endif
+
 struct _allocated_region;
 typedef struct _allocated_region {
 	struct _allocated_region *next;
