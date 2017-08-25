@@ -606,11 +606,24 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		BATtseqbase(gn, 0);
 		*groups = gn;
 		if (extents) {
-			en = COLnew(0, TYPE_void, BATcount(b), TRANSIENT);
-			if (en == NULL)
-				goto error;
+			if (cand) {
+				en = COLnew(0, TYPE_oid, cnt, TRANSIENT);
+				if (en == NULL)
+					goto error;
+				memcpy(Tloc(en, 0), cand, cnt * sizeof(oid));
+				en->tsorted = 1;
+				en->trevsorted = cnt <= 1;
+				en->tkey = 1;
+				en->tnil = 0;
+				en->tnonil = 1;
+				en->tdense = 0;
+			} else {
+				en = COLnew(0, TYPE_void, BATcount(b), TRANSIENT);
+				if (en == NULL)
+					goto error;
+				BATtseqbase(en, b->hseqbase + start);
+			}
 			BATsetcount(en, cnt);
-			BATtseqbase(en, ngrp);
 			*extents = en;
 		}
 		if (histo) {
@@ -658,11 +671,12 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				goto error;
 			*groups = gn;
 			if (extents) {
-				ngrp = gn->hseqbase;
-				en = BATconstant(0, TYPE_void, &ngrp, 1, TRANSIENT);
+				ngrp = b->hseqbase + start;
+				en = COLnew(0, TYPE_void, 1, TRANSIENT);
 				if (en == NULL)
 					goto error;
-				BATtseqbase(en, ngrp);
+				BATtseqbase(en, b->hseqbase + start);
+				BATsetcount(en, 1);
 				*extents = en;
 			}
 			if (histo) {
