@@ -447,7 +447,9 @@ int yydebug=1;
 	non_second_datetime_field
 	nonzero
 	stream_window_set
+	stream_window_update
 	stream_stride_set
+	stream_stride_update
 	database_object
 	cycles_set
 	opt_bounds
@@ -542,7 +544,7 @@ int yydebug=1;
 %token <sval> LATERAL LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 %token  CONTINUOUS START_CONTINUOUS STOP STOP_CONTINUOUS PAUSE PAUSE_CONTINUOUS RESUME RESUME_CONTINUOUS
-%token  WINDOW STRIDE HEARTBEAT CYCLES
+%token  WINDOW NOWINDOW STRIDE NOSTRIDE HEARTBEAT NOHEARTBEAT CYCLES NOCYCLES
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
 %token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE
 
@@ -1037,6 +1039,17 @@ grantee:
 
 /* DOMAIN, ASSERTION, CHARACTER SET, TRANSLATION, TRIGGER */
 
+stream_window_update:
+    WINDOW intval { $$ = $2; }                   /* trigger every N tuples */
+ |  NOWINDOW      { $$ = DEFAULT_TABLE_WINDOW; } /* don't set a window constraint, make CP time based */
+ ;
+
+stream_stride_update:
+    STRIDE intval { $$ = $2; }                   /* tumble N tuples each cycle */
+ |  STRIDE ALL    { $$ = STRIDE_ALL; }           /* delete all tuples */
+ |  NOSTRIDE      { $$ = DEFAULT_TABLE_STRIDE; } /* never tumble tuples */
+ ;
+
 alter_statement:
    ALTER TABLE qname ADD opt_column add_table_element
 
@@ -1094,20 +1107,15 @@ alter_statement:
 	  append_string(p, $10);
 	  append_list(l, p);
 	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
- | ALTER STREAM TABLE qname SET WINDOW intval
+ | ALTER STREAM TABLE qname SET stream_window_update
 	{ dlist *l = L();
 	  append_list(l, $4);
-	  append_symbol(l, _symbol_create_int(SQL_STREAM_TABLE_WINDOW, $7));
+	  append_symbol(l, _symbol_create_int(SQL_STREAM_TABLE_WINDOW, $6));
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
- | ALTER STREAM TABLE qname SET STRIDE intval
+ | ALTER STREAM TABLE qname SET stream_stride_update
 	{ dlist *l = L();
 	  append_list(l, $4);
-	  append_symbol(l, _symbol_create_int(SQL_STREAM_TABLE_STRIDE, $7));
-	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
- | ALTER STREAM TABLE qname SET STRIDE ALL
-	{ dlist *l = L();
-	  append_list(l, $4);
-	  append_symbol(l, _symbol_create_int(SQL_STREAM_TABLE_STRIDE, STRIDE_ALL));
+	  append_symbol(l, _symbol_create_int(SQL_STREAM_TABLE_STRIDE, $6));
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
   ;
 
@@ -1348,14 +1356,16 @@ table_opt_storage:
  ;
 
 stream_window_set:
-    /* empty */           { $$ = DEFAULT_TABLE_WINDOW; } /* don't set a window constraint, make CP time based */
- |  WINDOW intval         { $$ = $2; }                   /* trigger every N tuples */
+    /* empty */   { $$ = DEFAULT_TABLE_WINDOW; } /* don't set a window constraint, make CP time based */
+ |  WINDOW intval { $$ = $2; }                   /* trigger every N tuples */
+ |  NOWINDOW      { $$ = DEFAULT_TABLE_WINDOW; }
  ;
 
 stream_stride_set:
     /* empty */   { $$ = DEFAULT_TABLE_STRIDE; } /* never tumble tuples */
  |  STRIDE intval { $$ = $2; }                   /* tumble N tuples each cycle */
  |  STRIDE ALL    { $$ = STRIDE_ALL; }           /* delete all tuples */
+ |  NOSTRIDE      { $$ = DEFAULT_TABLE_STRIDE; }
  ;
 
 stream_table_details:
@@ -2142,11 +2152,13 @@ database_object:
 heartbeat_set:
 	  /* empty */      { $$ = DEFAULT_CP_HEARTBEAT; } /* CQ never triggered by time */
 	| HEARTBEAT intval { $$ = $2; }
+	| NOHEARTBEAT      { $$ = DEFAULT_CP_HEARTBEAT; }
 	;
 
 cycles_set:
 	  /* empty */   { $$ = DEFAULT_CP_CYCLES; } /* the CQ will run forever */
 	| CYCLES intval { $$ = $2; }
+	| NOCYCLES      { $$ = DEFAULT_CP_CYCLES; }
 	;
 
 continuous_query_statement:
