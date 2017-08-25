@@ -95,7 +95,7 @@ BSKTclean(int idx)
 		baskets[idx].table = NULL;
 		baskets[idx].error = NULL;
 		baskets[idx].window = 0;
-		baskets[idx].stride = -1;
+		baskets[idx].stride = STRIDE_ALL;
 		baskets[idx].count = 0;
 		baskets[idx].events = 0;
 		baskets[idx].seen =  *timestamp_nil;
@@ -220,7 +220,7 @@ BSKTwindow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"basket.window",SQLSTATE(42000) "negative window not allowed\n");
 	if( pci->argc == 5) {
 		stride = *getArgReference_int(stk,pci,4);
-		if( stride < -1)
+		if( stride < STRIDE_ALL)
 			throw(MAL,"basket.stride",SQLSTATE(42000) "negative stride not allowed\n");
 		if( window < stride)
 			throw(MAL,"basket.window",SQLSTATE(42000) "the window size must not be smaller than the stride size\n");
@@ -381,12 +381,12 @@ BSKTtumbleInternal(Client cntxt, str sch, str tbl, int bskt, int window, int str
 	int i;
 	(void) cntxt;
 
-	if( stride < -1)
+	if( stride < STRIDE_ALL)
 		throw(MAL,"basket.tumble",SQLSTATE(42000) "negative stride not allowed\n");
 	_DEBUG_BASKET_ fprintf(stderr,"Tumble %s.%s %d elements\n",sch,tbl,stride);
 	if( stride == 0)
 		return MAL_SUCCEED;
-	if( stride == -1) /*IMPORTANT set the implementation stride size to the window size */
+	if( stride == STRIDE_ALL) /*IMPORTANT set the implementation stride size to the window size */
 		stride = window;
 	for(i=0; i< baskets[bskt].ncols ; i++){
 		b = baskets[bskt].bats[i];
@@ -443,7 +443,7 @@ str
 BSKTtumble(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str sch, tbl, msg;
-	int idx, elw, elm = -1;
+	int idx, elw, elm = STRIDE_ALL;
 
 	(void) cntxt;
 	(void) mb;

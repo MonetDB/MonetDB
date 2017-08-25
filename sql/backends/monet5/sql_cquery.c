@@ -625,7 +625,8 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	}
 	pnet[pnettop].cycles = cycles;
 	pnet[pnettop].beats = SET_HEARTBEATS(heartbeats);
-	pnet[pnettop].run  = lng_nil;
+	pnet[pnettop].startat = 0;
+	pnet[pnettop].run = 0;
 	pnet[pnettop].seen = *timestamp_nil;
 	pnet[pnettop].status = CQWAIT;
 	pnettop++;
@@ -930,7 +931,7 @@ str
 CQheartbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str sch, fcn, msg = MAL_SUCCEED;
-	int beats, j, idx=0, last= pnettop;
+	int heartbeats, j, there_is_window_constraint, idx=0, last= pnettop;
 	(void) cntxt;
 	(void) mb;
 
@@ -945,37 +946,39 @@ CQheartbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto finish;
 		}
 		last = idx+1;
-		beats = *getArgReference_int(stk,pci,3);
+		heartbeats = *getArgReference_int(stk,pci,3);
 #ifdef DEBUG_CQUERY
 		fprintf(stderr, "#set the heartbeat of %s.%s to %d\n",sch,fcn,beats);
 #endif
 	} else{
-		beats = *getArgReference_int(stk,pci,1);
+		heartbeats = *getArgReference_int(stk,pci,1);
 #ifdef DEBUG_CQUERY
 		fprintf(stderr, "#set the heartbeat %d ms\n",beats);
 #endif
 	}
-	if(beats < 0 && beats != NO_HEARTBEAT){
+	if(heartbeats < 0){
 		msg = createException(SQL,"cquery.heartbeat",SQLSTATE(42000) "The heartbeats value must be non negative\n");
 		goto finish;
 	}
+
 	for( ; idx < last; idx++){
-		if( pnet[idx].baskets[0]){
-			msg = createException(SQL,"cquery.heartbeat",
-								  SQLSTATE(42000) "Heartbeat ignored, a window constraint exists\n");
-			break;
-		}
-		if(beats != NO_HEARTBEAT) {
-			for(j=0; j < MAXSTREAMS && pnet[idx].baskets[j]; j++) {
-				if(pnet[idx].inout[j] == STREAM_IN && baskets[pnet[idx].baskets[j]].window != DEFAULT_TABLE_WINDOW) {
-					// can not set the beat due to stream window constraint
-					pnet[idx].beats = SET_HEARTBEATS(NO_HEARTBEAT);
-					goto finish;
-				}
+		there_is_window_constraint = 0;
+		for(j=0; j < MAXSTREAMS && !there_is_window_constraint && pnet[idx].baskets[j]; j++) {
+			if(baskets[pnet[idx].baskets[j]].window != DEFAULT_TABLE_WINDOW) {
+				there_is_window_constraint = 1;
 			}
 		}
-		pnet[idx].beats = SET_HEARTBEATS(beats);
+		if(heartbeats != NO_HEARTBEAT && there_is_window_constraint) {
+			msg = createException(SQL, "cquery.heartbeat",
+								  SQLSTATE(42000) "Heartbeat ignored, a window constraint exists\n");
+			goto finish;
+		}
 	}
+
+	for( ; idx < last; idx++){
+		pnet[idx].beats = SET_HEARTBEATS(heartbeats);
+	}
+
 	finish:
 	MT_lock_unset(&ttrLock);
 	return msg;
@@ -1097,11 +1100,10 @@ CQdump(void *ret)
 
 	fprintf(stderr, "#scheduler status %s\n", statusname[pnstatus]);
 	for (i = 0; i < pnettop; i++) {
-		fprintf(stderr, "#[%d]\t%s.%s %s ",
-				i, pnet[i].mod, pnet[i].fcn, statusname[pnet[i].status]);
-		if ( pnet[i].beats != NO_HEARTBEAT)
-			fprintf(stderr, "beats="LLFMT" ", pnet[i].beats);
-
+		fprintf(stderr, "#[%d]\t%s.%s %s ", i, pnet[i].mod, pnet[i].fcn, statusname[pnet[i].status]);
+		fprintf(stderr, "beats="LLFMT" ", pnet[i].beats);
+		fprintf(stderr, "startat="LLFMT" ", pnet[i].startat);
+		fprintf(stderr, "cycles=%d ", pnet[i].cycles);
 		if( pnet[i].inout[0])
 			fprintf(stderr, " streams ");
 		for (k = 0; k < MAXSTREAMS && pnet[i].baskets[k]; k++)
@@ -1163,10 +1165,7 @@ CQexecute( Client cntxt, int idx)
 static void
 CQscheduler(void *dummy)
 {
-	int i, j;
-	int k = -1;
-	int pntasks;
-	int delay = cycleDelay;
+	int i, j, k = -1, pntasks, delay = cycleDelay;
 	Client cntxt = (Client) dummy;
 	str msg = MAL_SUCCEED;
 	lng t, now;
@@ -1202,14 +1201,12 @@ CQscheduler(void *dummy)
 			if( pnet[i].beats == NO_HEARTBEAT && pnet[i].baskets[0] == 0)
 				pnet[i].enabled = 0;
 
-			if( pnet[i].enabled && pnet[i].beats > 0){
-				if( pnet[i].run != lng_nil ) {
-					pnet[i].enabled = now >= pnet[i].run + pnet[i].beats;
+			if( pnet[i].enabled && (pnet[i].beats > 0 || pnet[i].startat != NO_STARTAT)){
+				pnet[i].enabled = now >= pnet[i].run + pnet[i].beats + pnet[i].startat;
 #ifdef DEBUG_CQUERY_SCHEDULER
-					fprintf(stderr,"#beat %s.%s  "LLFMT"("LLFMT") %s\n", pnet[i].mod, pnet[i].fcn,
-						pnet[i].run + pnet[i].beats, now, (pnet[i].enabled? "enabled":"disabled"));
+				fprintf(stderr,"#beat %s.%s  "LLFMT"("LLFMT") %s\n", pnet[i].mod, pnet[i].fcn,
+					pnet[i].run + pnet[i].beats + pnet[i].startat, now, (pnet[i].enabled? "enabled":"disabled"));
 #endif
-				}
 			}
 
 			/* check if all input baskets are available */

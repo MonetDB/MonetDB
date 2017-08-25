@@ -333,6 +333,7 @@ scanner_init_keywords(void)
 	keywords_insert("NOSTRIDE", NOSTRIDE);
 	keywords_insert("HEARTBEAT", HEARTBEAT);
 	keywords_insert("NOHEARTBEAT", NOHEARTBEAT);
+	keywords_insert("NOAT", NOAT);
 	keywords_insert("CYCLES", CYCLES);
 	keywords_insert("NOCYCLES", NOCYCLES);
 	keywords_insert("RESUME", RESUME);

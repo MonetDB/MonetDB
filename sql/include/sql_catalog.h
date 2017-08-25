@@ -109,8 +109,10 @@
 #define isDeclaredSchema(s) 	(strcmp(s->base.name, dt_schema) == 0)
 
 /* continuous queries default parameters */
+#define NO_STARTAT                       0
 #define NO_HEARTBEAT               lng_nil
 #define NO_CYCLES                  int_nil
+#define DEFAULT_CP_STARTAT      NO_STARTAT /* no heartbeat set */
 #define DEFAULT_CP_HEARTBEAT  NO_HEARTBEAT /* no heartbeat set */
 #define DEFAULT_CP_CYCLES        NO_CYCLES /* run forever */
 #define STRIDE_ALL                      -1 /* discard all tuples from the table */

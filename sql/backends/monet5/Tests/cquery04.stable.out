@@ -75,8 +75,8 @@ Ready.
 [ 2	]
 #insert into cqinput06 values (3), (4);
 [ 2	]
-#select * from cqresult06; --output 2 tuples with value 2
-% sys.cqresult06 # table_name
+#select aaa from cqresult04; --output 2 tuples with value 2
+% sys.cqresult04 # table_name
 % aaa # name
 % int # type
 % 1 # length
@@ -84,8 +84,8 @@ Ready.
 [ 2	]
 #insert into cqinput06 values (5);
 [ 1	]
-#select * from cqresult06; --output 2 tuples with value 2
-% sys.cqresult06 # table_name
+#select aaa from cqresult04; --output 2 tuples with value 2
+% sys.cqresult04 # table_name
 % aaa # name
 % int # type
 % 1 # length
@@ -93,8 +93,8 @@ Ready.
 [ 2	]
 #insert into cqinput06 values (6);
 [ 1	]
-#select * from cqresult06; --output 3 tuples with value 2
-% sys.cqresult06 # table_name
+#select aaa from cqresult04; --output 3 tuples with value 2
+% sys.cqresult04 # table_name
 % aaa # name
 % int # type
 % 1 # length

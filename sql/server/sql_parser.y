@@ -236,6 +236,7 @@ int yydebug=1;
 	simple_atom
 	value
 	literal
+	start_at_set
 	null
 	interval_expression
 	ordering_spec
@@ -544,7 +545,7 @@ int yydebug=1;
 %token <sval> LATERAL LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 %token  CONTINUOUS START_CONTINUOUS STOP STOP_CONTINUOUS PAUSE PAUSE_CONTINUOUS RESUME RESUME_CONTINUOUS
-%token  WINDOW NOWINDOW STRIDE NOSTRIDE HEARTBEAT NOHEARTBEAT CYCLES NOCYCLES
+%token  WINDOW NOWINDOW STRIDE NOSTRIDE HEARTBEAT NOHEARTBEAT CYCLES NOCYCLES NOAT
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
 %token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE
 
@@ -2155,6 +2156,12 @@ heartbeat_set:
 	| NOHEARTBEAT      { $$ = DEFAULT_CP_HEARTBEAT; }
 	;
 
+start_at_set:
+	  /* empty */ { $$ = NULL; } /* CQ not delayed, so starts now */
+	| AT literal  { $$ = $2; }   /* TODO 	| AT query_expression { $$ = $2; } */
+	| NOAT        { $$ = NULL; }
+	;
+
 cycles_set:
 	  /* empty */   { $$ = DEFAULT_CP_CYCLES; } /* the CQ will run forever */
 	| CYCLES intval { $$ = $2; }
@@ -2162,13 +2169,14 @@ cycles_set:
 	;
 
 continuous_query_statement:
-	START_CONTINUOUS database_object func_ref WITH heartbeat_set cycles_set
+	START_CONTINUOUS database_object func_ref WITH heartbeat_set start_at_set cycles_set
 		{ dlist *l = L();
 		  append_int( l, mod_start_continuous);
 		  append_int( l, $2);
 		  append_symbol( l, $3);
 		  append_lng( l, $5);
-		  append_int( l, $6);
+		  /*append_symbol( l, $6);*/
+		  append_int( l, $7);
 		  $$ = _symbol_create_list( SQL_SINGLE_CONTINUOUS_QUERY, l ); }
 	| START_CONTINUOUS database_object func_ref
 		{ dlist *l = L();
@@ -2190,13 +2198,14 @@ continuous_query_statement:
 		  append_int( l, $2);
 		  append_symbol( l, $3);
 		  $$ = _symbol_create_list( SQL_SINGLE_CONTINUOUS_QUERY, l ); }
-	| RESUME_CONTINUOUS database_object func_ref WITH heartbeat_set cycles_set
+	| RESUME_CONTINUOUS database_object func_ref WITH heartbeat_set start_at_set cycles_set
 		{ dlist *l = L();
 		  append_int( l, mod_resume_continuous);
 		  append_int( l, $2);
 		  append_symbol( l, $3);
 		  append_lng( l, $5);
-		  append_int( l, $6);
+		  /*append_symbol( l, $6);*/
+		  append_int( l, $7);
 		  $$ = _symbol_create_list( SQL_SINGLE_CONTINUOUS_QUERY, l ); }
 	| RESUME_CONTINUOUS database_object func_ref
 		{ dlist *l = L();

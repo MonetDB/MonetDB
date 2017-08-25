@@ -53,7 +53,8 @@ typedef struct {
 	int inout[MAXSTREAMS]; /* how the stream tables are used, needed for locking */
 
 	int cycles;		/* limit the number of invocations before dying */
-	lng beats;		/* heart beat stride for procedures activations */
+	lng beats;		/* heart beat stride for procedures activations -> must be in microseconds */
+	lng startat;	/* start at the CQ at that precise moment (UNIX timestamp) -> must be in microseconds */
 
 	MT_Id	tid;	/* Thread responsible */
 	lng		run;	/* last executed relative to start of server */
