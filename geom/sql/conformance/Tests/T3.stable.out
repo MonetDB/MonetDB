@@ -29,7 +29,7 @@ Ready.
 #SELECT coord_dimension FROM geometry_columns WHERE f_table_name = 'streams';
 % .geometry_columns # table_name
 % coord_dimension # name
-% bigint # type
+% int # type
 % 1 # length
 [ 2	]
 
