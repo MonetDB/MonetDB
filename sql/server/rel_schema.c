@@ -942,8 +942,10 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 		stride = stream_details->h->next->data.i_val;
 		if(window_size < 0)
 			return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: window size must be non negative");
-		if(stride < 0)
+		if(stride < -1)
 			return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: stride size must be non negative");
+		if(stride > window_size)
+			return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: stride size is larger than the window size?");
 	}
 
 	if (temp != SQL_DECLARED_TABLE && s)
@@ -1372,8 +1374,8 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te)
 			sname = s->base.name;
 
 		if (t && te && (te->token == SQL_STREAM_TABLE_WINDOW || te->token == SQL_STREAM_TABLE_STRIDE)) {
-			int operation, new_value = te->data.i_val;
-			char* opname;
+			int operation = CHANGE_WINDOW, new_value = te->data.i_val, minimum = 0;
+			char* opname = NULL;
 
 			if(!isStream(t))
 				return sql_error(sql, 02, SQLSTATE(42S02) "ALTER STREAM TABLE: table '%s' is not a stream table", tname);
@@ -1381,15 +1383,17 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te)
 				case SQL_STREAM_TABLE_WINDOW:
 					operation = CHANGE_WINDOW;
 					opname = "window";
+					minimum = 0;
 					break;
 				case SQL_STREAM_TABLE_STRIDE:
 					operation = CHANGE_STRIDE;
 					opname = "stride";
+					minimum = -1;
 					break;
 				default:
 					assert(0);
 			}
-			if(new_value < 0)
+			if(new_value < minimum)
 				return sql_error(sql, 02, SQLSTATE(42S02) "ALTER STREAM TABLE: %s size must be non negative", opname);
 			return rel_alter_stream_table(sql->sa, sname, tname, operation, new_value);
 		}

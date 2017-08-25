@@ -95,7 +95,7 @@ BSKTclean(int idx)
 		baskets[idx].table = NULL;
 		baskets[idx].error = NULL;
 		baskets[idx].window = 0;
-		baskets[idx].stride = 0;
+		baskets[idx].stride = -1;
 		baskets[idx].count = 0;
 		baskets[idx].events = 0;
 		baskets[idx].seen =  *timestamp_nil;
@@ -220,8 +220,10 @@ BSKTwindow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"basket.window",SQLSTATE(42000) "negative window not allowed\n");
 	if( pci->argc == 5) {
 		stride = *getArgReference_int(stk,pci,4);
-		if( stride < 0)
+		if( stride < -1)
 			throw(MAL,"basket.stride",SQLSTATE(42000) "negative stride not allowed\n");
+		if( window < stride)
+			throw(MAL,"basket.window",SQLSTATE(42000) "the window size must not be smaller than the stride size\n");
 	}
 	baskets[idx].window = window;
 	if( pci->argc == 5) {
@@ -372,51 +374,55 @@ BSKTdrop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-BSKTtumbleInternal(Client cntxt, str sch, str tbl, int bskt, int stride)
+BSKTtumbleInternal(Client cntxt, str sch, str tbl, int bskt, int window, int stride)
 {
 	BAT *b;
 	BUN cnt= 0 ;
 	int i;
 	(void) cntxt;
 
-	if( stride < 0)
+	if( stride < -1)
 		throw(MAL,"basket.tumble",SQLSTATE(42000) "negative stride not allowed\n");
 	_DEBUG_BASKET_ fprintf(stderr,"Tumble %s.%s %d elements\n",sch,tbl,stride);
 	if( stride == 0)
 		return MAL_SUCCEED;
+	if( stride == -1) /*IMPORTANT set the implementation stride size to the window size */
+		stride = window;
 	for(i=0; i< baskets[bskt].ncols ; i++){
 		b = baskets[bskt].bats[i];
 		assert( b );
 
 		switch(ATOMstorage(b->ttype)){
-		case TYPE_bit:ColumnShift(b,bit); break;
-		case TYPE_bte:ColumnShift(b,bte); break;
-		case TYPE_sht:ColumnShift(b,sht); break;
-		case TYPE_int:ColumnShift(b,int); break;
-		case TYPE_oid:ColumnShift(b,oid); break;
-		case TYPE_flt:ColumnShift(b,flt); break;
-		case TYPE_dbl:ColumnShift(b,dbl); break;
-		case TYPE_lng:ColumnShift(b,lng); break;
-#ifdef HAVE_HGE
-		case TYPE_hge:ColumnShift(b,hge); break;
-#endif
-		case TYPE_str:
-			switch(b->twidth){
-			case 1: ColumnShift(b,bte); break;
-			case 2: ColumnShift(b,sht); break;
-			case 4: ColumnShift(b,int); break;
-			case 8: ColumnShift(b,lng); break;
-			}
+			case TYPE_bit:ColumnShift(b,bit); break;
+			case TYPE_bte:ColumnShift(b,bte); break;
+			case TYPE_sht:ColumnShift(b,sht); break;
+			case TYPE_int:ColumnShift(b,int); break;
+			case TYPE_oid:ColumnShift(b,oid); break;
+			case TYPE_flt:ColumnShift(b,flt); break;
+			case TYPE_dbl:ColumnShift(b,dbl); break;
+			case TYPE_lng:ColumnShift(b,lng); break;
+			#ifdef HAVE_HGE
+				case TYPE_hge:ColumnShift(b,hge); break;
+			#endif
+			case TYPE_str:
+				switch(b->twidth){
+					case 1: ColumnShift(b,bte); break;
+					case 2: ColumnShift(b,sht); break;
+					case 4: ColumnShift(b,int); break;
+					case 8: ColumnShift(b,lng); break;
+				}
 				break;
-		default: 
-			throw(SQL, "basket.tumble",SQLSTATE(3F000) "Could not find the basket column storage %s.%s[%d]\n",sch,tbl,i);
+			default:
+				throw(SQL, "basket.tumble",SQLSTATE(3F000) "Could not find the basket column storage %s.%s[%d]\n",
+															sch,tbl,i);
 		}
 
 		_DEBUG_BASKET_ fprintf(stderr,"#Tumbled %s.%s[%d] "BUNFMT" elements left\n",sch,tbl,i,cnt);
 		BATsetcount(b, cnt);
 		baskets[bskt].count = BATcount(b);
 		b->tnil = 0;
-		if( (BUN) stride < BATcount(b)){ b->tnokey[0] -= stride;
+		if((BUN) stride < BATcount(b)){
+			b->tnokey[0] -= stride;
 			b->tnokey[1] -= stride;
 			b->tnosorted = 0;
 			b->tnorevsorted = 0;
@@ -436,11 +442,8 @@ BSKTtumbleInternal(Client cntxt, str sch, str tbl, int bskt, int stride)
 str
 BSKTtumble(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str sch;
-	str tbl;
-	int elm = -1;
-	int idx;
-	str msg;
+	str sch, tbl, msg;
+	int idx, elw, elm = -1;
 
 	(void) cntxt;
 	(void) mb;
@@ -455,8 +458,9 @@ BSKTtumble(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( baskets[idx].window < 0)
 		return MAL_SUCCEED;
 	/* also take care of time-based tumbling */
+	elw =(int) baskets[idx].window;
 	elm =(int) baskets[idx].stride;
-	return BSKTtumbleInternal(cntxt, sch, tbl, idx, elm);
+	return BSKTtumbleInternal(cntxt, sch, tbl, idx, elw, elm);
 }
 
 str

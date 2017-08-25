@@ -184,6 +184,7 @@ alter_stream_table(mvc *sql, char *sname, char *tname, int operation, int value)
 	sql_schema *s = mvc_bind_schema(sql, sname);
 	sql_table *t = NULL;
 	char* opname = NULL;
+	int minimum = 0;
 
 	if (s)
 		t = mvc_bind_table(sql, s, tname);
@@ -194,14 +195,20 @@ alter_stream_table(mvc *sql, char *sname, char *tname, int operation, int value)
 		switch (operation) {
 			case CHANGE_WINDOW:
 				opname = "window";
+				minimum = 0;
+				if(value < t->stream->stride)
+					throw(SQL,"sql.alter_table", SQLSTATE(42S02) "ALTER STREAM TABLE: the stride size is larger than the window size?");
 				break;
 			case CHANGE_STRIDE:
-				 opname = "stride";
+				opname = "stride";
+				minimum = -1;
+				if(t->stream->window < value)
+					throw(SQL,"sql.alter_table", SQLSTATE(42S02) "ALTER STREAM TABLE: the stride size is larger than the window size?");
 				break;
 			default:
 				assert(0);
 		}
-		if(value < 0)
+		if(value < minimum)
 			throw(SQL,"sql.alter_table", SQLSTATE(42S02) "ALTER STREAM TABLE: %s size must be non negative", opname);
 
 		mvc_alter_stream_table(sql, t, operation, value);

@@ -1104,6 +1104,11 @@ alter_statement:
 	  append_list(l, $4);
 	  append_symbol(l, _symbol_create_int(SQL_STREAM_TABLE_STRIDE, $7));
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
+ | ALTER STREAM TABLE qname SET STRIDE ALL
+	{ dlist *l = L();
+	  append_list(l, $4);
+	  append_symbol(l, _symbol_create_int(SQL_STREAM_TABLE_STRIDE, STRIDE_ALL));
+	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
   ;
 
 passwd_schema:
@@ -1350,6 +1355,7 @@ stream_window_set:
 stream_stride_set:
     /* empty */   { $$ = DEFAULT_TABLE_STRIDE; } /* never tumble tuples */
  |  STRIDE intval { $$ = $2; }                   /* tumble N tuples each cycle */
+ |  STRIDE ALL    { $$ = STRIDE_ALL; }           /* delete all tuples */
  ;
 
 stream_table_details:

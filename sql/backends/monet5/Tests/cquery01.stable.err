@@ -1,0 +1,46 @@
+stderr of test 'cquery01` in directory 'sql/backends/monet5` itself:
+
+
+# 14:38:22 >  
+# 14:38:22 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30485" "--set" "mapi_usock=/var/tmp/mtest-12016/.s.monetdb.30485" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/MonetDB-trails/BUILD/var/MonetDB/mTests_sql_backends_monet5"
+# 14:38:22 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/MonetDB-trails/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30485
+# cmdline opt 	mapi_usock = /var/tmp/mtest-12016/.s.monetdb.30485
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/MonetDB-trails/BUILD/var/MonetDB/mTests_sql_backends_monet5
+# cmdline opt 	gdk_debug = 536870922
+
+# 14:38:22 >  
+# 14:38:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-12016" "--port=30485"
+# 14:38:22 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-12016/.s.monetdb.30485
+QUERY = create stream table cqinput01(aaa integer) set window 4 stride 5; --error
+ERROR = !CREATE TABLE: stride size is larger than the window size?
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-12016/.s.monetdb.30485
+QUERY = alter stream table cqinput01 set stride 10; --error
+ERROR = !ALTER STREAM TABLE: the stride size is larger than the window size?
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-12016/.s.monetdb.30485
+QUERY = alter stream table cqinput01 set window 4; --error
+ERROR = !ALTER STREAM TABLE: the stride size is larger than the window size?
+CODE  = 42S02
+
+# 14:38:23 >  
+# 14:38:23 >  "Done."
+# 14:38:23 >  
+
