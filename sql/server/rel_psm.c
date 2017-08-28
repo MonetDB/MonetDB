@@ -643,7 +643,8 @@ sequential_block (mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk,
 			sql->continuous |= l->h->next->data.i_val; /* procedure or function? */
 			if((sql->continuous & mod_start_continuous) || (sql->continuous & mod_resume_continuous)) {
 				sql->heartbeats = l->h->next->next->next->data.l_val;
-				sql->cycles = l->h->next->next->next->next->data.i_val;
+				sql->startat_atom = l->h->next->next->next->next->data.sym;
+				sql->cycles = l->h->next->next->next->next->next->data.i_val;
 			}
 			res = rel_psm_call(sql, l->h->next->next->data.sym, l->h->next->data.i_val);
 		}	break;
@@ -1459,7 +1460,8 @@ rel_psm(mvc *sql, symbol *s)
 		sql->continuous |= l->h->next->data.i_val; /* procedure or function? */
 		if((sql->continuous & mod_start_continuous) || (sql->continuous & mod_resume_continuous)) {
 			sql->heartbeats = l->h->next->next->next->data.l_val;
-			sql->cycles = l->h->next->next->next->next->data.i_val;
+			sql->startat_atom = l->h->next->next->next->next->data.sym;
+			sql->cycles = l->h->next->next->next->next->next->data.i_val;
 		}
 		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, l->h->next->next->data.sym, l->h->next->data.i_val));
 		sql->type = Q_UPDATE;

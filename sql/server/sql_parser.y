@@ -236,7 +236,7 @@ int yydebug=1;
 	simple_atom
 	value
 	literal
-	start_at_set
+	begin_at_set
 	null
 	interval_expression
 	ordering_spec
@@ -545,7 +545,7 @@ int yydebug=1;
 %token <sval> LATERAL LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
 %token <sval> COMMIT ROLLBACK SAVEPOINT RELEASE WORK CHAIN NO PRESERVE ROWS
 %token  CONTINUOUS START_CONTINUOUS STOP STOP_CONTINUOUS PAUSE PAUSE_CONTINUOUS RESUME RESUME_CONTINUOUS
-%token  WINDOW NOWINDOW STRIDE NOSTRIDE HEARTBEAT NOHEARTBEAT CYCLES NOCYCLES NOAT
+%token  WINDOW NO_WINDOW STRIDE NO_STRIDE HEARTBEAT NO_HEARTBEAT NO_BEGIN CYCLES NO_CYCLES
 %token  START TRANSACTION READ WRITE ONLY ISOLATION LEVEL
 %token  UNCOMMITTED COMMITTED sqlREPEATABLE SERIALIZABLE DIAGNOSTICS sqlSIZE STORAGE
 
@@ -1042,13 +1042,13 @@ grantee:
 
 stream_window_update:
     WINDOW intval { $$ = $2; }                   /* trigger every N tuples */
- |  NOWINDOW      { $$ = DEFAULT_TABLE_WINDOW; } /* don't set a window constraint, make CP time based */
+ |  NO_WINDOW     { $$ = DEFAULT_TABLE_WINDOW; } /* don't set a window constraint, make CP time based */
  ;
 
 stream_stride_update:
     STRIDE intval { $$ = $2; }                   /* tumble N tuples each cycle */
  |  STRIDE ALL    { $$ = STRIDE_ALL; }           /* delete all tuples */
- |  NOSTRIDE      { $$ = DEFAULT_TABLE_STRIDE; } /* never tumble tuples */
+ |  NO_STRIDE     { $$ = DEFAULT_TABLE_STRIDE; } /* never tumble tuples */
  ;
 
 alter_statement:
@@ -1359,14 +1359,14 @@ table_opt_storage:
 stream_window_set:
     /* empty */   { $$ = DEFAULT_TABLE_WINDOW; } /* don't set a window constraint, make CP time based */
  |  WINDOW intval { $$ = $2; }                   /* trigger every N tuples */
- |  NOWINDOW      { $$ = DEFAULT_TABLE_WINDOW; }
+ |  NO_WINDOW     { $$ = DEFAULT_TABLE_WINDOW; }
  ;
 
 stream_stride_set:
     /* empty */   { $$ = DEFAULT_TABLE_STRIDE; } /* never tumble tuples */
  |  STRIDE intval { $$ = $2; }                   /* tumble N tuples each cycle */
  |  STRIDE ALL    { $$ = STRIDE_ALL; }           /* delete all tuples */
- |  NOSTRIDE      { $$ = DEFAULT_TABLE_STRIDE; }
+ |  NO_STRIDE     { $$ = DEFAULT_TABLE_STRIDE; }
  ;
 
 stream_table_details:
@@ -2153,29 +2153,29 @@ database_object:
 heartbeat_set:
 	  /* empty */      { $$ = DEFAULT_CP_HEARTBEAT; } /* CQ never triggered by time */
 	| HEARTBEAT intval { $$ = $2; }
-	| NOHEARTBEAT      { $$ = DEFAULT_CP_HEARTBEAT; }
+	| NO_HEARTBEAT     { $$ = DEFAULT_CP_HEARTBEAT; }
 	;
 
-start_at_set:
-	  /* empty */ { $$ = NULL; } /* CQ not delayed, so starts now */
-	| AT literal  { $$ = $2; }   /* TODO 	| AT query_expression { $$ = $2; } */
-	| NOAT        { $$ = NULL; }
+begin_at_set:
+	  /* empty */      { $$ = NULL; } /* CQ not delayed, so starts now */
+	| BEGIN literal    { $$ = $2; }   /* TODO 	| BEGIN query_expression { $$ = $2; } */
+	| NO_BEGIN         { $$ = NULL; }
 	;
 
 cycles_set:
 	  /* empty */   { $$ = DEFAULT_CP_CYCLES; } /* the CQ will run forever */
 	| CYCLES intval { $$ = $2; }
-	| NOCYCLES      { $$ = DEFAULT_CP_CYCLES; }
+	| NO_CYCLES     { $$ = DEFAULT_CP_CYCLES; }
 	;
 
 continuous_query_statement:
-	START_CONTINUOUS database_object func_ref WITH heartbeat_set start_at_set cycles_set
+	START_CONTINUOUS database_object func_ref WITH heartbeat_set begin_at_set cycles_set
 		{ dlist *l = L();
 		  append_int( l, mod_start_continuous);
 		  append_int( l, $2);
 		  append_symbol( l, $3);
 		  append_lng( l, $5);
-		  /*append_symbol( l, $6);*/
+		  append_symbol( l, $6);
 		  append_int( l, $7);
 		  $$ = _symbol_create_list( SQL_SINGLE_CONTINUOUS_QUERY, l ); }
 	| START_CONTINUOUS database_object func_ref
@@ -2184,6 +2184,7 @@ continuous_query_statement:
 		  append_int( l, $2);
 		  append_symbol( l, $3);
 		  append_lng( l, DEFAULT_CP_HEARTBEAT);
+		  append_symbol( l, NULL);
 		  append_int( l, DEFAULT_CP_CYCLES);
 		  $$ = _symbol_create_list( SQL_SINGLE_CONTINUOUS_QUERY, l ); }
 	| STOP_CONTINUOUS database_object func_ref
@@ -2198,13 +2199,13 @@ continuous_query_statement:
 		  append_int( l, $2);
 		  append_symbol( l, $3);
 		  $$ = _symbol_create_list( SQL_SINGLE_CONTINUOUS_QUERY, l ); }
-	| RESUME_CONTINUOUS database_object func_ref WITH heartbeat_set start_at_set cycles_set
+	| RESUME_CONTINUOUS database_object func_ref WITH heartbeat_set begin_at_set cycles_set
 		{ dlist *l = L();
 		  append_int( l, mod_resume_continuous);
 		  append_int( l, $2);
 		  append_symbol( l, $3);
 		  append_lng( l, $5);
-		  /*append_symbol( l, $6);*/
+		  append_symbol( l, $6);
 		  append_int( l, $7);
 		  $$ = _symbol_create_list( SQL_SINGLE_CONTINUOUS_QUERY, l ); }
 	| RESUME_CONTINUOUS database_object func_ref

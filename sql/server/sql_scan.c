@@ -328,14 +328,9 @@ scanner_init_keywords(void)
 	keywords_insert("STOP", STOP);
 	keywords_insert("PAUSE", PAUSE);
 	keywords_insert("WINDOW", WINDOW);
-	keywords_insert("NOWINDOW", NOWINDOW);
 	keywords_insert("STRIDE", STRIDE);
-	keywords_insert("NOSTRIDE", NOSTRIDE);
 	keywords_insert("HEARTBEAT", HEARTBEAT);
-	keywords_insert("NOHEARTBEAT", NOHEARTBEAT);
-	keywords_insert("NOAT", NOAT);
 	keywords_insert("CYCLES", CYCLES);
-	keywords_insert("NOCYCLES", NOCYCLES);
 	keywords_insert("RESUME", RESUME);
 	keywords_insert("TRANSACTION", TRANSACTION);
 	keywords_insert("READ", READ);
@@ -1339,6 +1334,21 @@ sqllex(YYSTYPE * yylval, void *parm)
 			break;
 			case MINVALUE:
 				token = NOMINVALUE;
+			break;
+			case WINDOW:
+				token = NO_WINDOW;
+			break;
+			case STRIDE:
+				token = NO_STRIDE;
+			break;
+			case HEARTBEAT:
+				token = NO_HEARTBEAT;
+			break;
+			case BEGIN:
+				token = NO_BEGIN;
+			break;
+			case CYCLES:
+				token = NO_CYCLES;
 			break;
 			case CYCLE:
 				token = NOCYCLE;

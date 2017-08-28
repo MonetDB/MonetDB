@@ -333,6 +333,7 @@ SQLrun(Client c, backend *be, mvc *m)
 			//set the cq parameters
 			m->continuous = be->q->continuous;
 			m->heartbeats = be->q->heartbeats;
+			m->startat_atom = be->q->startat_atom;
 			m->cycles = be->q->cycles;
 			break;
 		}
@@ -381,6 +382,7 @@ SQLrun(Client c, backend *be, mvc *m)
 	}
 	m->continuous = 0;
 	m->heartbeats = DEFAULT_CP_HEARTBEAT;
+	m->startat_atom = NULL;
 	m->cycles = DEFAULT_CP_CYCLES;
 
 	// release the resources

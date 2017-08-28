@@ -130,10 +130,12 @@ typedef struct mvc {
 
 	char emode;		/* execution mode */
 	char emod;		/* execution modifier */
+
 	int continuous;/* scheduling action TODO maybe we could move the CQ information into a dedicated struct */
 	lng heartbeats; /* heartbeats value for the next continuous procedure */
 	int cycles; /* cycles value for the next continuous procedure */
-	int is_factory; /* is a factory? */
+	int is_factory; /* while compiling an UDF it checks if it is a factory */
+	void* startat_atom; /* an AtomNode* */
 
 	sql_session *session;	
 

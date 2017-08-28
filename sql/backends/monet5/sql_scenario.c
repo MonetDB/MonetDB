@@ -1170,6 +1170,7 @@ SQLparser(Client c)
 								  escaped_q,
 								  m->continuous,
 								  m->heartbeats,
+								  (AtomNode*) m->startat_atom,
 								  m->cycles);
 			}
 			GDKfree(q);
