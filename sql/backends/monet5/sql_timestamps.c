@@ -32,7 +32,7 @@ convert_atom_into_unix_timestamp(atom *a, lng* res)
 	*res = 0;
 
 	if(a->isnull) {
-		throw(SQL,"sql.timestamp",SQLSTATE(42000) "The start at value cannot be null\n");
+		throw(SQL,"sql.timestamp",SQLSTATE(42000) "The begin value cannot be null\n");
 	}
 	switch (GetSQLTypeFromAtom(&a->tpe)) {
 		case EC_TIMESTAMP: {
@@ -94,7 +94,7 @@ convert_atom_into_unix_timestamp(atom *a, lng* res)
 		/*case EC_CHAR:
 		case EC_STRING:*/
 		default:
-			throw(SQL,"sql.timestamp",SQLSTATE(42000) "Only number, time, date and timestamp fields allowed\n");
+			throw(SQL,"sql.timestamp",SQLSTATE(42000) "Only number, time, date and timestamp fields are allowed for begin value\n");
 	}
 	return msg;
 }

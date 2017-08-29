@@ -9,7 +9,7 @@ CREATE TABLE node (
 	"left"           integer                  NOT NULL,
 	"right"          integer                  NOT NULL,
 	token_index      integer,
-	continuous       boolean,
+	"continuous"     boolean,
 	span             character varying(2000),
 	toplevel_corpus  integer                  NOT NULL,
 	left_token       integer,
