@@ -887,7 +887,7 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 	int *ibuf;
 	int *pbuf;
 	int *lbuf;
-	str msg;
+	str msg = MAL_SUCCEED;
 
 	qgram = BATdescriptor(*qid);
 	id = BATdescriptor(*bid);
