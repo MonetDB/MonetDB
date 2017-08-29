@@ -624,6 +624,7 @@ BKCsetAccess(bat *res, const bat *bid, const char * const *param)
 		break;
 	default:
 		*res = 0;
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.setAccess", ILLEGAL_ARGUMENT " Got %c" " expected 'r','a', or 'w'", *param[0]);
 	}
 	if ((b = setaccess(b, m)) == NULL)
@@ -881,8 +882,10 @@ BKCsetName(void *r, const bat *bid, const char * const *s)
 		throw(MAL, "bat.setName", RUNTIME_OBJECT_MISSING);
 
 	for ( ; (c = *t) != 0; t++)
-		if (c != '_' && !GDKisalnum(c))
+		if (c != '_' && !GDKisalnum(c)) {
+			BBPunfix(b->batCacheid);
 			throw(MAL, "bat.setName", ILLEGAL_ARGUMENT ": identifier expected: %s", *s);
+		}
 
 	t = *s;
 	ret = BBPrename(b->batCacheid, t);
@@ -913,7 +916,7 @@ BKCgetBBPname(str *ret, const bat *bid)
 	}
 	*ret = GDKstrdup(BBPname(b->batCacheid));
 	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
+	return *ret ? MAL_SUCCEED : createException(MAL, "bat.getName", MAL_MALLOC_FAIL);
 }
 
 str
@@ -945,6 +948,7 @@ BKCsave2(void *r, const bat *bid)
 		throw(MAL, "bat.save", RUNTIME_OBJECT_MISSING);
 	}
 	if ( b->batPersistence != TRANSIENT){
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.save", "Only save transient columns.");
 	}
 

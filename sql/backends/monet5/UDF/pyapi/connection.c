@@ -72,6 +72,11 @@ Py_END_ALLOW_THREADS;
 				res_col col = output->cols[i];
 				BAT *b = BATdescriptor(col.b);
 
+				if (b == NULL) {
+					PyErr_Format(PyExc_Exception, "Internal error: could not retrieve bat");
+					return NULL;
+				}
+
 				input.bat = b;
 				input.count = BATcount(b);
 				input.bat_type = getBatType(b->ttype);
@@ -82,6 +87,7 @@ Py_END_ALLOW_THREADS;
 					PyMaskedArray_FromBAT(&input, 0, input.count, &res, true);
 				if (!numpy_array) {
 					_connection_cleanup_result(output);
+					BBPunfix(b->batCacheid);
 					PyErr_Format(PyExc_Exception, "SQL Query Failed: %s",
 								 (res ? res : "<no error>"));
 					return NULL;

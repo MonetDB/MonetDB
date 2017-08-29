@@ -111,14 +111,19 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		/* first step, estimate with some slack */
 		pieces = stk->stk[getArg(p,2)].val.ival;
 		bn = COLnew(b->hseqbase, ATOMtype(b->ttype), (BUN)(1.2 * BATcount(b) * pieces), TRANSIENT);
-		if (bn == NULL)
+		if (bn == NULL) {
+			BBPunfix(b->batCacheid);
 			throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+		}
 		/* allocate enough space for the vheap, but not for strings,
 		 * since BATappend does clever things for strings */
 		if ( b->tvheap && bn->tvheap && ATOMstorage(b->ttype) != TYPE_str){
 			newsize =  b->tvheap->size * pieces;
-			if (HEAPextend(bn->tvheap, newsize, TRUE) != GDK_SUCCEED)
+			if (HEAPextend(bn->tvheap, newsize, TRUE) != GDK_SUCCEED) {
+				BBPunfix(b->batCacheid);
+				BBPunfix(bn->batCacheid);
 				throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+			}
 		}
 		BATtseqbase(bn, b->tseqbase);
 		if (BATappend(bn, b, NULL, FALSE) != GDK_SUCCEED) {
@@ -143,14 +148,13 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				BBPunfix(b->batCacheid);
 				throw(MAL, "mat.pack", GDK_EXCEPTION);
 			}
+			BBPunfix(bb->batCacheid);
 		}
 		b->S.unused--;
 		if(b->S.unused == 0)
 			BATsetaccess(b, BAT_READ);
 		assert(!b->tnil || !b->tnonil);
 		BBPkeepref(*ret = b->batCacheid);
-		if( bb) 
-			BBPunfix(bb->batCacheid);
 	}
 	return MAL_SUCCEED;
 }

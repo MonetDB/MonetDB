@@ -58,6 +58,7 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					v = BUNtail(it, i);
 				}
 			}
+			BBPunfix(c->batCacheid);
 		} else {
 	       		cmp = ATOMcompare(b->ttype);
 	       		it = bat_iterator(b);

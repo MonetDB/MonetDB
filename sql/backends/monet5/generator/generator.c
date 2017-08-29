@@ -622,21 +622,30 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 			f = *getArgReference_TYPE(stk,p, 1, timestamp);
 			l = *getArgReference_TYPE(stk,p, 2, timestamp);
-			if ( p->argc == 3) 
-					throw(MAL,"generator.table","Timestamp step missing");
+			if ( p->argc == 3) {
+				if (cand)
+					BBPunfix(cand->batCacheid);
+				throw(MAL,"generator.table","Timestamp step missing");
+			}
 			s = *getArgReference_lng(stk,p, 3);
 			if ( s == 0 || 
 				 (s > 0 && (f.days > l.days || (f.days == l.days && f.msecs > l.msecs) )) ||
 				 (s < 0 && (f.days < l.days || (f.days == l.days && f.msecs < l.msecs) )) 
-				)
+				) {
+				if (cand)
+					BBPunfix(cand->batCacheid);
 				throw(MAL, "generator.subselect", "Illegal generator range");
+			}
 
 			hgh = low = *timestamp_nil;
 			if ( strcmp(oper,"<") == 0){
 				lng minone = -1;
 				hgh= *getArgReference_TYPE(stk,pci,idx, timestamp);
-				if ((msg = MTIMEtimestamp_add(&hgh, &hgh, &minone)) != MAL_SUCCEED)
+				if ((msg = MTIMEtimestamp_add(&hgh, &hgh, &minone)) != MAL_SUCCEED) {
+					if (cand)
+						BBPunfix(cand->batCacheid);
 					return msg;
+				}
 			} else
 			if ( strcmp(oper,"<=") == 0){
 				hgh= *getArgReference_TYPE(stk,pci,idx, timestamp) ;
@@ -644,8 +653,11 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			if ( strcmp(oper,">") == 0){
 				lng one = 1;
 				low= *getArgReference_TYPE(stk,pci,idx, timestamp);
-				if ((msg = MTIMEtimestamp_add(&hgh, &hgh, &one)) != MAL_SUCCEED)
+				if ((msg = MTIMEtimestamp_add(&hgh, &hgh, &one)) != MAL_SUCCEED) {
+					if (cand)
+						BBPunfix(cand->batCacheid);
 					return msg;
+				}
 			} else
 			if ( strcmp(oper,">=") == 0){
 				low= *getArgReference_TYPE(stk,pci,idx, timestamp);
@@ -656,13 +668,19 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			} else
 			if ( strcmp(oper,"==") == 0 || strcmp(oper, "=") == 0){
 				hgh= low= *getArgReference_TYPE(stk,pci,idx, timestamp);
-			} else
+			} else {
+				if (cand)
+					BBPunfix(cand->batCacheid);
 				throw(MAL,"generator.thetasubselect","Unknown operator");
+			}
 
 			cap = (BUN) ((((lng) l.days - f.days) * 24*60*60*1000 + l.msecs - f.msecs) / s);
 			bn = COLnew(0, TYPE_oid, cap, TRANSIENT);
-			if( bn == NULL)
+			if( bn == NULL) {
+				if (cand)
+					BBPunfix(cand->batCacheid);
 				throw(MAL,"generator.thetasubselect",MAL_MALLOC_FAIL);
+			}
 			v = (oid*) Tloc(bn,0);
 
 			if(cand){ cn = BATcount(cand); if( cl == 0) oc = cand->tseqbase; }
@@ -678,8 +696,11 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 				if( (msg = MTIMEtimestamp_add(&val, &val, &s)) != MAL_SUCCEED)
 					goto wrapup;
 			}
-		} else
+		} else {
+			if (cand)
+				BBPunfix(cand->batCacheid);
 			throw(MAL,"generator.thetasubselect","Illegal generator arguments");
+		}
 	}
 
 wrapup:
@@ -744,9 +765,13 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	// it might have been materialized already
 	if( p == NULL){
 		bn = BATdescriptor( *getArgReference_bat(stk,pci,2));
-		if( bn == NULL)
+		if( bn == NULL) {
+			BBPunfix(b->batCacheid);
 			throw(MAL,"generator.projection",RUNTIME_OBJECT_MISSING);
+		}
 		msg = ALGprojection(ret, &b->batCacheid, &bn->batCacheid);
+		BBPunfix(b->batCacheid);
+		BBPunfix(bn->batCacheid);
 		return msg;
 	}
 
@@ -774,13 +799,17 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			timestamp *v;
 			f = *getArgReference_TYPE(stk,p, 1, timestamp);
 			l = *getArgReference_TYPE(stk,p, 2, timestamp);
-			if ( p->argc == 3) 
-					throw(MAL,"generator.table","Timestamp step missing");
+			if ( p->argc == 3) {
+				BBPunfix(b->batCacheid);
+				throw(MAL,"generator.table","Timestamp step missing");
+			}
 			s =  *getArgReference_lng(stk,p, 3);
 			if ( s == 0 ||
 				(s< 0 &&	(f.days< l.days || (f.days == l.days && f.msecs < l.msecs))) ||
-				(s> 0 &&	(l.days< f.days || (l.days == f.days && l.msecs < f.msecs))) )
+			     (s> 0 &&	(l.days< f.days || (l.days == f.days && l.msecs < f.msecs))) ) {
+				BBPunfix(b->batCacheid);
 				throw(MAL,"generator.projection","Illegal range");
+			}
 
 			bn = COLnew(0, TYPE_timestamp, cnt, TRANSIENT);
 			if( bn == NULL){

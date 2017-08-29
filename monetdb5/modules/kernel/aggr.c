@@ -31,17 +31,20 @@ AGGRgrouped(bat *retval1, bat *retval2, BAT *b, BAT *g, BAT *e, int tp,
 			(grpfunc1 == NULL && grpfunc2 == NULL && quantilefunc != NULL) );
 	/* if retval2 is non-NULL, we must have grpfunc2 */
 	assert(retval2 == NULL || grpfunc2 != NULL);
-	assert(quantile == NULL || quantilefunc != NULL);
 
-	if (b == NULL || g == NULL || e == NULL) {
+	if (b == NULL || g == NULL || e == NULL ||
+		(quantilefunc != NULL && quantile == NULL)) {
 		if (b)
 			BBPunfix(b->batCacheid);
 		if (g)
 			BBPunfix(g->batCacheid);
 		if (e)
 			BBPunfix(e->batCacheid);
+		if (quantile)
+			BBPunfix(quantile->batCacheid);
 		throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 	}
+	assert(quantile == NULL || quantilefunc != NULL);
 	assert(b->hseqbase == g->hseqbase);
 	assert(BATcount(b) == BATcount(g));
 	if (tp == TYPE_any && (grpfunc1 == BATgroupmedian || quantilefunc == BATgroupquantile))
@@ -52,10 +55,11 @@ AGGRgrouped(bat *retval1, bat *retval2, BAT *b, BAT *g, BAT *e, int tp,
 		assert(BATcount(quantile)>0);
 		assert(quantile->ttype == TYPE_dbl);
 		qvalue = ((const double *)Tloc(quantile, 0))[0];
-		if (qvalue <  0|| qvalue > 1) {
-			char *s;
-			s = createException(MAL, malfunc, "quantile value of %f is not in range [0,1]", qvalue);
-			return s;
+		if (qvalue <  0 || qvalue > 1) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(g->batCacheid);
+			BBPunfix(e->batCacheid);
+			throw(MAL, malfunc, "quantile value of %f is not in range [0,1]", qvalue);
 		}
 		bn = (*quantilefunc)(b, g, e, NULL, tp, qvalue, skip_nils, 1);
 		BBPunfix(quantile->batCacheid);
@@ -360,19 +364,24 @@ AGGRsubgroupedExt(bat *retval1, bat *retval2, const bat *bid, const bat *gid, co
 
 	/* if retval2 is non-NULL, we must have grpfunc2 */
 	assert(retval2 == NULL || grpfunc2 != NULL);
+	/* only quantiles need a quantile BAT */
+	assert((quantilefunc == NULL) == (quantile == NULL));
 
 	b = BATdescriptor(*bid);
 	g = gid ? BATdescriptor(*gid) : NULL;
 	e = eid ? BATdescriptor(*eid) : NULL;
 	q = quantile ? BATdescriptor(*quantile) : NULL;
 
-	if (b == NULL || (gid != NULL && g == NULL) || (eid != NULL && e == NULL)) {
+	if (b == NULL || (gid != NULL && g == NULL) ||
+		(eid != NULL && e == NULL) || (quantile != NULL && q == NULL)) {
 		if (b)
 			BBPunfix(b->batCacheid);
 		if (g)
 			BBPunfix(g->batCacheid);
 		if (e)
 			BBPunfix(e->batCacheid);
+		if (q)
+			BBPunfix(q->batCacheid);
 		throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 	}
 	if (tp == TYPE_any && (grpfunc1 == BATgroupmedian || quantilefunc == BATgroupquantile))
@@ -386,9 +395,11 @@ AGGRsubgroupedExt(bat *retval1, bat *retval2, const bat *bid, const bat *gid, co
 				BBPunfix(g->batCacheid);
 			if (e)
 				BBPunfix(e->batCacheid);
+			if (q)
+				BBPunfix(q->batCacheid);
 			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
 		}
-	} else 
+	} else
 		s = NULL;
 	if (grpfunc1)
 		bn = (*grpfunc1)(b, g, e, s, tp, skip_nils, abort_on_error);
@@ -399,14 +410,20 @@ AGGRsubgroupedExt(bat *retval1, bat *retval2, const bat *bid, const bat *gid, co
 			qvalue = 0.5;
 		} else {
 			qvalue = ((const dbl *)Tloc(q, 0))[0];
-			if (qvalue <  0|| qvalue > 1) {
-				char *s;
-				s = createException(MAL, malfunc, "quantile value of %f is not in range [0,1]", qvalue);
-				return s;
+			if (qvalue < 0 || qvalue > 1) {
+				BBPunfix(b->batCacheid);
+				if (g)
+					BBPunfix(g->batCacheid);
+				if (e)
+					BBPunfix(e->batCacheid);
+				BBPunfix(q->batCacheid);
+				if (s)
+					BBPunfix(s->batCacheid);
+				throw(MAL, malfunc, "quantile value of %f is not in range [0,1]", qvalue);
 			}
 		}
-		bn = (*quantilefunc)(b, g, e, s, tp, qvalue, skip_nils, abort_on_error);
 		BBPunfix(q->batCacheid);
+		bn = (*quantilefunc)(b, g, e, s, tp, qvalue, skip_nils, abort_on_error);
 	}
 	if (grpfunc2 && (*grpfunc2)(&bn, retval2 ? &cnts : NULL, b, g, e, s, tp, skip_nils, abort_on_error) != GDK_SUCCEED)
 		bn = NULL;
@@ -844,36 +861,6 @@ AGGRsubmaxcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, cons
 						  0, TYPE_oid, BATgroupmax, NULL, "aggr.submax");
 }
 
-mal_export str AGGRsubmin_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
-str
-AGGRsubmin_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils)
-{
-	BAT *a, *b, *r;
-	str res;
-	bat ret;
-
-	if ((res = AGGRsubgrouped(&ret, NULL, bid, gid, eid, NULL, *skip_nils,
-							  0, TYPE_oid, BATgroupmin, NULL,
-							  "aggr.submin")) != MAL_SUCCEED)
-		return res;
-	b = BATdescriptor(*bid);
-	if( b == NULL)
-		throw(MAL, "aggr.submax", INTERNAL_BAT_ACCESS);
-	a = BATdescriptor(ret);
-	if( a == NULL){
-		BBPunfix(b->batCacheid);
-		throw(MAL, "aggr.submax", INTERNAL_BAT_ACCESS);
-	}
-	r = BATproject(a, b);
-	BBPunfix(b->batCacheid);
-	BBPunfix(a->batCacheid);
-	BBPrelease(ret);
-	if (r == NULL)
-		throw(MAL, "aggr.submin", MAL_MALLOC_FAIL);
-	BBPkeepref(*retval = r->batCacheid);
-	return MAL_SUCCEED;
-}
-
 mal_export str AGGRsubmincand_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils);
 str
 AGGRsubmincand_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
@@ -886,52 +873,30 @@ AGGRsubmincand_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, 
 							  0, TYPE_oid, BATgroupmin, NULL,
 							  "aggr.submin")) != MAL_SUCCEED)
 		return res;
-	b = BATdescriptor(*bid);
-	if( b == NULL)
-		throw(MAL, "aggr.submax", INTERNAL_BAT_ACCESS);
 	a = BATdescriptor(ret);
-	if( a == NULL){
-		BBPunfix(b->batCacheid);
-		throw(MAL, "aggr.submax", INTERNAL_BAT_ACCESS);
+	BBPrelease(ret);
+	if (a == NULL) {
+		throw(MAL, "aggr.submin", INTERNAL_BAT_ACCESS);
+	}
+	b = BATdescriptor(*bid);
+	if (b == NULL) {
+		BBPunfix(a->batCacheid);
+		throw(MAL, "aggr.submin", INTERNAL_BAT_ACCESS);
 	}
 	r = BATproject(a, b);
 	BBPunfix(b->batCacheid);
 	BBPunfix(a->batCacheid);
-	BBPrelease(ret);
 	if (r == NULL)
 		throw(MAL, "aggr.submin", MAL_MALLOC_FAIL);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;
 }
 
-mal_export str AGGRsubmax_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
+mal_export str AGGRsubmin_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
 str
-AGGRsubmax_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils)
+AGGRsubmin_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils)
 {
-	BAT *a, *b, *r;
-	str res;
-	bat ret;
-
-	if ((res = AGGRsubgrouped(&ret, NULL, bid, gid, eid, NULL, *skip_nils,
-							  0, TYPE_oid, BATgroupmax, NULL,
-							  "aggr.submax")) != MAL_SUCCEED)
-		return res;
-	b = BATdescriptor(*bid);
-	if( b == NULL)
-		throw(MAL, "aggr.submax", INTERNAL_BAT_ACCESS);
-	a = BATdescriptor(ret);
-	if( a == NULL){
-		BBPunfix(b->batCacheid);
-		throw(MAL, "aggr.submax", INTERNAL_BAT_ACCESS);
-	}
-	r = BATproject(a, b);
-	BBPunfix(b->batCacheid);
-	BBPunfix(a->batCacheid);
-	BBPrelease(ret);
-	if (r == NULL)
-		throw(MAL, "aggr.submax", MAL_MALLOC_FAIL);
-	BBPkeepref(*retval = r->batCacheid);
-	return MAL_SUCCEED;
+	return AGGRsubmincand_val(retval, bid, gid, eid, NULL, skip_nils);
 }
 
 mal_export str AGGRsubmaxcand_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils);
@@ -946,24 +911,31 @@ AGGRsubmaxcand_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, 
 							  0, TYPE_oid, BATgroupmax, NULL,
 							  "aggr.submax")) != MAL_SUCCEED)
 		return res;
-	b = BATdescriptor(*bid);
-	if ( b == NULL)
-		throw(MAL, "aggr.max", RUNTIME_OBJECT_MISSING);
 	a = BATdescriptor(ret);
-	if ( a == NULL){
-		BBPunfix(b->batCacheid);
-		throw(MAL, "aggr.max", RUNTIME_OBJECT_MISSING);
+	BBPrelease(ret);
+	if (a == NULL) {
+		throw(MAL, "aggr.submax", INTERNAL_BAT_ACCESS);
+	}
+	b = BATdescriptor(*bid);
+	if (b == NULL) {
+		BBPunfix(a->batCacheid);
+		throw(MAL, "aggr.submax", INTERNAL_BAT_ACCESS);
 	}
 	r = BATproject(a, b);
 	BBPunfix(b->batCacheid);
 	BBPunfix(a->batCacheid);
-	BBPrelease(ret);
 	if (r == NULL)
 		throw(MAL, "aggr.submax", MAL_MALLOC_FAIL);
 	BBPkeepref(*retval = r->batCacheid);
 	return MAL_SUCCEED;
 }
 
+mal_export str AGGRsubmax_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
+str
+AGGRsubmax_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils)
+{
+	return AGGRsubmaxcand_val(retval, bid, gid, eid, NULL, skip_nils);
+}
 
 mal_export str AGGRmedian(bat *retval, const bat *bid, const bit *skip_nils);
 str
