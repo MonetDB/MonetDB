@@ -1574,7 +1574,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	if (sl)
 		r1->tdense = sl->tdense;
-	if (sr)
+	if (r2 && sr)
 		r2->tdense = sr->tdense;
 	while (lcand ? lcand < lcandend : lstart < lend) {
 		if (lscan == 0) {
