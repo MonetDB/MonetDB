@@ -1121,11 +1121,17 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ( tpe == TYPE_bat)
 		b =  (BAT*) ins;
 	s = mvc_bind_schema(m, sname);
-	if (s == NULL)
+	if (s == NULL) {
+		if (b)
+			BBPunfix(b->batCacheid);
 		throw(SQL, "sql.append", SQLSTATE(3F000) "Schema missing %s",sname);
+	}
 	t = mvc_bind_table(m, s, tname);
-	if (t == NULL)
+	if (t == NULL) {
+		if (b)
+			BBPunfix(b->batCacheid);
 		throw(SQL, "sql.append", SQLSTATE(42S02) "Table missing %s",tname);
+	}
 	if( b && BATcount(b) > 4096 && b->batPersistence == PERSISTENT)
 		BATmsync(b);
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
@@ -1135,8 +1141,8 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (i)
 			store_funcs.append_idx(m->session->tr, i, ins, tpe);
 	}
-	if (tpe == TYPE_bat) {
-		BBPunfix(((BAT *) ins)->batCacheid);
+	if (b) {
+		BBPunfix(b->batCacheid);
 	}
 	return MAL_SUCCEED;
 }
@@ -1258,19 +1264,28 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		tpe = TYPE_bat;
 	if (tpe == TYPE_bat && (b = BATdescriptor(*(int *) ins)) == NULL)
 		throw(SQL, "sql.delete", SQLSTATE(HY005) "Cannot access column descriptor");
-	if (tpe != TYPE_bat || (b->ttype != TYPE_oid && b->ttype != TYPE_void))
+	if (tpe != TYPE_bat || (b->ttype != TYPE_oid && b->ttype != TYPE_void)) {
+		if (b)
+			BBPunfix(b->batCacheid);
 		throw(SQL, "sql.delete", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
 	s = mvc_bind_schema(m, sname);
-	if (s == NULL)
+	if (s == NULL) {
+		if (b)
+			BBPunfix(b->batCacheid);
 		throw(SQL, "sql.delete", SQLSTATE(3F000) "Schema missing %s",sname);
+	}
 	t = mvc_bind_table(m, s, tname);
-	if (t == NULL)
+	if (t == NULL) {
+		if (b)
+			BBPunfix(b->batCacheid);
 		throw(SQL, "sql.delete", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
+	}
 	if( b && BATcount(b) > 4096 && b->batPersistence == PERSISTENT)
 		BATmsync(b);
 	store_funcs.delete_tab(m->session->tr, t, b, tpe);
-	if (tpe == TYPE_bat)
-		BBPunfix(((BAT *) ins)->batCacheid);
+	if (b)
+		BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -1344,8 +1359,10 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 	}
 	BBPunfix(c->batCacheid);
 
-	if ((u_val = BATdescriptor(*uval)) == NULL)
+	if ((u_val = BATdescriptor(*uval)) == NULL) {
+		BBPunfix(res->batCacheid);
 		throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
 	u_id = BATdescriptor(*uid);
 	assert(BATcount(u_id) == BATcount(u_val));
 	if (BATcount(u_id) &&
@@ -2851,6 +2868,7 @@ zero_or_one(ptr ret, const bat *bid)
 		p = BUNtail(bi, 0);
 	} else {
 		p = NULL;
+		BBPunfix(b->batCacheid);
 		throw(SQL, "zero_or_one", SQLSTATE(21000) "Cardinality violation, scalar value expected");
 	}
 	_s = ATOMsize(ATOMtype(b->ttype));
@@ -3728,8 +3746,10 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(SQL, name, SQLSTATE(HY005) "Cannot access column descriptor");
-	if (!BATtordered(b) && !BATtrevordered(b))
+	if (!BATtordered(b) && !BATtrevordered(b)) {
+		BBPunfix(b->batCacheid);
 		throw(SQL, name, SQLSTATE(45000) "Internal error, columns not sorted");
+	}
 
 	bi = bat_iterator(b);
 	cmp = ATOMcompare(b->ttype);
@@ -4469,19 +4489,20 @@ BATSTRindex_int(bat *res, const bat *src, const bit *u)
 		}
 		pos = GDK_STRHASHSIZE;
 		while (pos < h->free) {
-			const char *s;
+			const char *p;
 
 			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
 			if (pad < sizeof(stridx_t))
 				pad += GDK_VARALIGN;
 			pos += pad + extralen;
-			s = h->base + pos;
+			p = h->base + pos;
 			v = (int) (pos - GDK_STRHASHSIZE);
 			if (BUNappend(r, &v, FALSE) != GDK_SUCCEED) {
 				BBPreclaim(r);
+				BBPunfix(s->batCacheid);
 				throw(SQL, "calc.index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
-			pos += GDK_STRLEN(s);
+			pos += GDK_STRLEN(p);
 		}
 	} else {
 		r = VIEWcreate(s->hseqbase, s);
@@ -4585,19 +4606,20 @@ BATSTRindex_bte(bat *res, const bat *src, const bit *u)
 		}
 		pos = GDK_STRHASHSIZE;
 		while (pos < h->free) {
-			const char *s;
+			const char *p;
 
 			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
 			if (pad < sizeof(stridx_t))
 				pad += GDK_VARALIGN;
 			pos += pad + extralen;
-			s = h->base + pos;
+			p = h->base + pos;
 			v = (bte) (pos - GDK_STRHASHSIZE);
 			if (BUNappend(r, &v, FALSE) != GDK_SUCCEED) {
 				BBPreclaim(r);
+				BBPunfix(s->batCacheid);
 				throw(SQL, "calc.index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
-			pos += GDK_STRLEN(s);
+			pos += GDK_STRLEN(p);
 		}
 	} else {
 		r = VIEWcreate(s->hseqbase, s);
@@ -4642,18 +4664,19 @@ BATSTRstrings(bat *res, const bat *src)
 	}
 	pos = GDK_STRHASHSIZE;
 	while (pos < h->free) {
-		const char *s;
+		const char *p;
 
 		pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
 		if (pad < sizeof(stridx_t))
 			pad += GDK_VARALIGN;
 		pos += pad + extralen;
-		s = h->base + pos;
-		if (BUNappend(r, s, FALSE) != GDK_SUCCEED) {
+		p = h->base + pos;
+		if (BUNappend(r, p, FALSE) != GDK_SUCCEED) {
 			BBPreclaim(r);
+			BBPunfix(s->batCacheid);
 			throw(SQL, "calc.strings", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
-		pos += GDK_STRLEN(s);
+		pos += GDK_STRLEN(p);
 	}
 	BBPunfix(s->batCacheid);
 	BBPkeepref((*res = r->batCacheid));

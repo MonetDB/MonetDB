@@ -1548,7 +1548,7 @@ JSONvalueArray(json *ret, json *js)
 static BAT **
 JSONargumentlist(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, error = 0, error2 = 0, bats = 0;
+	int i, error = 0, bats = 0;
 	BUN cnt = 0;
 	BAT **bl;
 
@@ -1559,12 +1559,13 @@ JSONargumentlist(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (isaBatType(getArgType(mb, pci, i))) {
 			bats++;
 			bl[i] = BATdescriptor(stk->stk[getArg(pci, i)].val.bval);
-			if (bl[i] == 0)
-				error++;
-			error2 |= (cnt > 0 && BATcount(bl[i]) != cnt);
+			if (bl[i] == NULL || (cnt > 0 && BATcount(bl[i]) != cnt)) {
+				error = 1;
+				break;
+			}
 			cnt = BATcount(bl[i]);
 		}
-	if (error + error2 || bats == 0) {
+	if (error || bats == 0) {
 		for (i = pci->retc; i < pci->argc; i++)
 			if (bl[i])
 				BBPunfix(bl[i]->batCacheid);
@@ -2428,19 +2429,12 @@ JSONsubjsoncand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_n
 		(gid != NULL && g == NULL) ||
 		(eid != NULL && e == NULL) ||
 		(sid != NULL && s == NULL)) {
-
-		if (b)
-			BBPunfix(b->batCacheid);
-		if (g)
-			BBPunfix(g->batCacheid);
-		if (e)
-			BBPunfix(e->batCacheid);
-		if (s)
-			BBPunfix(s->batCacheid);
-		throw(MAL, "aggr.subjson", RUNTIME_OBJECT_MISSING);
+		err = RUNTIME_OBJECT_MISSING;
+	} else {
+		err = JSONjsonaggr(&bn, b, g, e, s, *skip_nils);
 	}
-	err = JSONjsonaggr(&bn, b, g, e, s, *skip_nils);
-	BBPunfix(b->batCacheid);
+	if (b)
+		BBPunfix(b->batCacheid);
 	if (g)
 		BBPunfix(g->batCacheid);
 	if (e)

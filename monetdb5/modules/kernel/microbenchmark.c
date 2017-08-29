@@ -353,7 +353,7 @@ MBMnormal(bat *ret, oid *base, lng *size, int *domain, int *stddev, int *mean){
 	BATnormal(&bn, base, size, domain, stddev, mean);
 	if( bn ){
 		BBPkeepref(*ret= bn->batCacheid);
-	} else throw(MAL, "microbenchmark.uniform", OPERATION_FAILED);
+	} else throw(MAL, "microbenchmark.normal", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 
@@ -365,7 +365,7 @@ MBMmix(bat *bn, bat *batid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*batid)) == NULL)
-                throw(MAL, "microbenchmark.mix", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "microbenchmark.mix", RUNTIME_OBJECT_MISSING);
 
 	n = BATcount(b);
 	/* mix BUNs randomly */
@@ -391,6 +391,6 @@ MBMskewed(bat *ret, oid *base, lng *size, int *domain, int *skew){
 	BATskewed(&bn, base, size, domain, skew);
 	if( bn ){
 		BBPkeepref(*ret= bn->batCacheid);
-	} else throw(MAL, "microbenchmark,uniform", OPERATION_FAILED);
+	} else throw(MAL, "microbenchmark.skewed", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }

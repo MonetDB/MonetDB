@@ -549,12 +549,12 @@ NAME##_##TYPE(BAT *b, BAT *s, BAT *bn, const TYPE *tl, const TYPE *th,	\
 	assert(lval);							\
 	assert(hval);							\
 	if (use_imprints && VIEWtparent(b)) {				\
-		BAT *parent = BATdescriptor(VIEWtparent(b));		\
+		BAT *parent = BBPdescriptor(VIEWtparent(b));		\
+		assert(parent);						\
 		basesrc = (const TYPE *) Tloc(parent, 0);		\
 		imprints = parent->timprints;				\
 		pr_off = (BUN) ((TYPE *)Tloc(b,0) -			\
 				(TYPE *)Tloc(parent,0));		\
-		BBPunfix(parent->batCacheid);				\
 	} else {							\
 		imprints = b->timprints;				\
 		basesrc = (const TYPE *) Tloc(b, 0);			\
