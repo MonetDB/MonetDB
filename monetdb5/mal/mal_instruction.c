@@ -1298,6 +1298,8 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 		if (mb->maxarg < pn->maxarg)
 			mb->maxarg = pn->maxarg;
 	}
+	/* protect against the case that the instruction is malloced
+	 * in isolation */
 	if( mb->maxarg < p->maxarg)
 		mb->maxarg= p->maxarg;
 
