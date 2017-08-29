@@ -356,4 +356,7 @@ gdk_export int MT_check_nr_cores(void);
 gdk_export lng GDKusec(void);
 gdk_export int GDKms(void);
 
+gdk_export lng GDKunix_timestamp_usec(void);
+gdk_export int GDKunix_timestamp_msec(void);
+
 #endif /*_GDK_SYSTEM_H_*/

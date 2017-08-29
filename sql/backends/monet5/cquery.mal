@@ -25,9 +25,6 @@ the MAL block to determine the input/output dependencies and firing conditions."
 pattern resume(mod:str, fcn:str)
 address CQresume
 comment "Activate a specific continuous query with no changes";
-pattern resumenoalter(mod:str, fcn:str)
-address CQresumeNoAlter
-comment "Activate a specific continuous query with changes to the cycles and heartbeat values";
 
 pattern resume()
 address CQresumeAll
@@ -56,15 +53,25 @@ comment "Sleep for some time";
 pattern cycles(mod:str, fcn:str,cnt:int)
 address CQcycles
 comment "Limit number of petrinet steps";
+
 pattern cycles(cnt:int)
 address CQcycles
 comment "Limit number of petrinet steps";
 
+pattern beginat(mod:str, fcn:str,beginat:lng)
+address CQbeginAt
+comment "Delay beginning of a continuous query, where beginat is an UNIX timestamp with microsecond precision";
+
+pattern beginat(beginat:lng)
+address CQbeginAt
+comment "Delay beginning of all continuous queries, where beginat is an UNIX timestamp with microsecond precision";
+
 # scheduler heart beat for each CQ
-pattern heartbeat(mod:str, fcn:str,cnt:int)
+pattern heartbeat(mod:str, fcn:str,cnt:lng)
 address CQheartbeat
 comment "Awake the query after cnt milliseconds";
-pattern heartbeat(cnt:int)
+
+pattern heartbeat(cnt:lng)
 address CQheartbeat
 comment "Awake all queries after cnt milliseconds";
 

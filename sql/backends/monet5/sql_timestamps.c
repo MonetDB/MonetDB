@@ -26,9 +26,8 @@ static int GetSQLTypeFromAtom(sql_subtype *sql_subtype)
 }
 
 str
-convert_atom_into_unix_timestamp(AtomNode *an, lng* res)
+convert_atom_into_unix_timestamp(atom *a, lng* res)
 {
-	atom *a = an->a;
 	str msg = MAL_SUCCEED;
 	*res = 0;
 
@@ -37,10 +36,7 @@ convert_atom_into_unix_timestamp(AtomNode *an, lng* res)
 	}
 	switch (GetSQLTypeFromAtom(&a->tpe)) {
 		case EC_TIMESTAMP: {
-			timestamp tempp;
-			if((msg = MTIMEtimestamp_fromstr(&tempp, (const char * const*)a->data.val.sval)) != MAL_SUCCEED) {
-				throw(SQL,"sql.timestamp",SQLSTATE(42000) "%s\n", msg);
-			}
+			timestamp tempp = (timestamp) a->data.val.lval;
 			if((msg = MTIMEepoch2lng(res, &tempp)) != MAL_SUCCEED) {
 				throw(SQL,"sql.timestamp",SQLSTATE(42000) "%s\n", msg);
 			}
@@ -48,11 +44,7 @@ convert_atom_into_unix_timestamp(AtomNode *an, lng* res)
 		}
 		case EC_DATE: {
 			timestamp tempd;
-			date datetd;
-			if((msg = MTIMEdate_fromstr(&datetd, (const char * const*)a->data.val.sval)) != MAL_SUCCEED) {
-				throw(SQL,"sql.timestamp",SQLSTATE(42000) "%s\n", msg);
-			}
-			tempd.days = datetd;
+			tempd.days = (date) a->data.val.ival;
 			tempd.msecs = 0;
 			if((msg = MTIMEepoch2lng(res, &tempd)) != NULL) {
 				throw(SQL,"sql.timestamp",SQLSTATE(42000) "%s\n", msg);
@@ -61,16 +53,12 @@ convert_atom_into_unix_timestamp(AtomNode *an, lng* res)
 		}
 		case EC_TIME: {
 			timestamp tempt;
-			daytime datett;
 			date dateother;
-			if((msg = MTIMEdaytime_fromstr(&datett, (const char * const*)a->data.val.sval)) != MAL_SUCCEED) {
-				throw(SQL,"sql.timestamp",SQLSTATE(42000) "%s\n", msg);
-			}
 			if((msg = MTIMEcurrent_date(&dateother)) != MAL_SUCCEED) {
 				throw(SQL,"sql.timestamp",SQLSTATE(42000) "%s\n", msg);
 			}
 			tempt.days = dateother;
-			tempt.msecs = datett;
+			tempt.msecs = (daytime) a->data.val.ival;
 			if((msg = MTIMEepoch2lng(res, &tempt)) != MAL_SUCCEED) {
 				throw(SQL,"sql.timestamp",SQLSTATE(42000) "%s\n", msg);
 			}

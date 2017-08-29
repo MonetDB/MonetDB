@@ -375,7 +375,7 @@ CQerror(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	idx = CQlocate(sch, fcn);
 	if( idx == pnettop)
-		throw(SQL,"cquery.error","The continuous procedure %s.%s is not accessible\n",sch,fcn);
+		throw(SQL,"cquery.error","The continuous query %s.%s is not accessible\n",sch,fcn);
 
 	pnet[idx].error = GDKstrdup(error);
 	if(pnet[idx].error == NULL)
@@ -396,9 +396,9 @@ CQshow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	idx = CQlocate(sch, fcn);
 	if( idx == pnettop)
-		throw(SQL,"cquery.show","The continuous procedure %s.%s is not accessible\n",sch,fcn);
+		throw(SQL,"cquery.show","The continuous query %s.%s is not accessible\n",sch,fcn);
 
-	printFunction(cntxt->fdout, pnet[idx].mb, 0, LIST_MAL_NAME | LIST_MAL_VALUE  | LIST_MAL_MAPI);
+	printFunction(cntxt->fdout, pnet[idx].mb, 0, LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_MAPI);
 	return MAL_SUCCEED;
 }
 
@@ -502,11 +502,12 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 		msg = createException(SQL,"cquery.register",SQLSTATE(42000) "The heartbeats value must be non negative\n");
 		goto finish;
 	}
-	if(start_atom && (msg = convert_atom_into_unix_timestamp(start_atom, &start_at_parsed)) != MAL_SUCCEED){
+	if(start_atom && (msg = convert_atom_into_unix_timestamp(start_atom->a, &start_at_parsed)) != MAL_SUCCEED){
 		goto finish;
 	}
 	/**
-	 * We are using GDKusec() to check if the query is enable to fire, so we have to convert into microseconds
+	 * We are using GDKunix_timestamp_usec() to check if the query is enable to fire, so we have to convert into
+	 * microseconds
 	 */
 	start_at_parsed *= 1000;
 
@@ -635,7 +636,8 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	}
 	pnet[pnettop].cycles = cycles;
 	pnet[pnettop].beats = SET_HEARTBEATS(heartbeats);
-	pnet[pnettop].run = start_at_parsed;
+	//subtract the beats value so the CQ will start at the precise moment
+	pnet[pnettop].run = start_at_parsed - (pnet[pnettop].beats > 0 ? pnet[pnettop].beats : 0);
 	pnet[pnettop].seen = *timestamp_nil;
 	pnet[pnettop].status = CQWAIT;
 	pnettop++;
@@ -675,7 +677,7 @@ CQresumeInternal(Client cntxt, MalBlkPtr mb, int with_alter)
 			msg = createException(SQL,"cquery.resume",SQLSTATE(42000) "The heartbeats value must be non negative\n");
 			goto finish;
 		}
-		if(start_atom && (msg = convert_atom_into_unix_timestamp(start_atom, &start_at_parsed)) != MAL_SUCCEED){
+		if(start_atom && (msg = convert_atom_into_unix_timestamp(start_atom->a, &start_at_parsed)) != MAL_SUCCEED){
 			goto finish;
 		}
 		start_at_parsed *= 1000;
@@ -709,9 +711,8 @@ CQresumeInternal(Client cntxt, MalBlkPtr mb, int with_alter)
 	pnet[idx].status = CQWAIT;
 	if(with_alter) {
 		pnet[idx].cycles = cycles;
-		if(start_at_parsed > 0)
-			pnet[idx].run = start_at_parsed;
 		pnet[idx].beats = SET_HEARTBEATS(heartbeats);
+		pnet[idx].run = start_at_parsed - (pnet[idx].beats > 0 ? pnet[idx].beats : 0);
 	}
 
 	/* start the scheduler if needed */
@@ -907,6 +908,45 @@ CQpauseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
+CQbeginAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str sch, fcn, msg = MAL_SUCCEED;
+	int idx=0, last;
+	lng delay;
+	(void) cntxt;
+	(void) mb;
+
+	MT_lock_set(&ttrLock);
+	last = pnettop;
+	if( pci->argc >2){
+		sch = *getArgReference_str(stk,pci,1);
+		fcn = *getArgReference_str(stk,pci,2);
+		idx = CQlocate(sch, fcn);
+		if( idx == pnettop) {
+			msg = createException(SQL,"cquery.begintat",
+								  SQLSTATE(3F000) "The continuous query %s.%s not accessible\n",sch,fcn);
+			goto finish;
+		}
+		last = idx+1;
+		delay = *getArgReference_lng(stk,pci,3);
+	} else
+		delay = *getArgReference_lng(stk,pci,1);
+#ifdef DEBUG_CQUERY
+	fprintf(stderr, "#set begin at \n");
+#endif
+	if(delay < 0){
+		msg = createException(SQL,"cquery.begintat",SQLSTATE(42000) "The delay value must be non negative\n");
+		goto finish;
+	}
+	for( ; idx < last; idx++)
+		pnet[idx].run = delay - (pnet[idx].beats > 0 ? pnet[idx].beats : 0);
+
+	finish:
+	MT_lock_unset(&ttrLock);
+	return msg;
+}
+
+str
 CQcycles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str sch, fcn, msg = MAL_SUCCEED;
@@ -922,7 +962,7 @@ CQcycles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		idx = CQlocate(sch, fcn);
 		if( idx == pnettop) {
 			msg = createException(SQL,"cquery.cycles",
-								  SQLSTATE(3F000) "The continuous procedure %s.%s not accessible\n",sch,fcn);
+								  SQLSTATE(3F000) "The continuous query %s.%s not accessible\n",sch,fcn);
 			goto finish;
 		}
 		last = idx+1;
@@ -948,7 +988,8 @@ str
 CQheartbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str sch, fcn, msg = MAL_SUCCEED;
-	int heartbeats, j, there_is_window_constraint, idx=0, last= pnettop;
+	int j, there_is_window_constraint, idx=0, last= pnettop;
+	lng heartbeats;
 	(void) cntxt;
 	(void) mb;
 
@@ -959,16 +1000,16 @@ CQheartbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		idx = CQlocate(sch, fcn);
 		if( idx == pnettop) {
 			msg = createException(SQL,"cquery.heartbeat",
-								  SQLSTATE(3F000) "The continuous procedure %s.%s not accessible\n",sch,fcn);
+								  SQLSTATE(3F000) "The continuous query %s.%s not accessible\n",sch,fcn);
 			goto finish;
 		}
 		last = idx+1;
-		heartbeats = *getArgReference_int(stk,pci,3);
+		heartbeats = *getArgReference_lng(stk,pci,3);
 #ifdef DEBUG_CQUERY
 		fprintf(stderr, "#set the heartbeat of %s.%s to %d\n",sch,fcn,beats);
 #endif
 	} else{
-		heartbeats = *getArgReference_int(stk,pci,1);
+		heartbeats = *getArgReference_lng(stk,pci,1);
 #ifdef DEBUG_CQUERY
 		fprintf(stderr, "#set the heartbeat %d ms\n",beats);
 #endif
@@ -993,7 +1034,13 @@ CQheartbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	for( ; idx < last; idx++){
-		pnet[idx].beats = SET_HEARTBEATS(heartbeats);
+		int new_hearbeats = SET_HEARTBEATS(heartbeats);
+		if(new_hearbeats > pnet[idx].beats) { //has to do the alignment of the starting point
+			pnet[idx].run -= (new_hearbeats - pnet[idx].beats);
+		} else {
+			pnet[idx].run += (pnet[idx].beats - new_hearbeats);
+		}
+		pnet[idx].beats = new_hearbeats;
 	}
 
 	finish:
@@ -1162,7 +1209,7 @@ CQexecute( Client cntxt, int idx)
 
 #ifdef DEBUG_CQUERY
 	fprintf(stderr, "#cquery.execute %s.%s locked\n",node->mod, node->fcn);
-	fprintFunction(stderr, node->mb, 0, LIST_MAL_NAME | LIST_MAL_VALUE  | LIST_MAL_MAPI);
+	fprintFunction(stderr, node->mb, 0, LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_MAPI);
 #endif
 
 	msg = runMALsequence(cntxt, node->mb, 1, 0, node->stk, 0, 0);
@@ -1205,7 +1252,7 @@ CQscheduler(void *dummy)
 		   come back. We also only have to check the places that are marked
 		   non empty. You can only trigger on empty baskets using a heartbeat */
 		memset((void*) claimed, 0, sizeof(claimed));
-		now = GDKusec();
+		now = GDKunix_timestamp_usec();
 		pntasks=0;
 		MT_lock_set(&ttrLock); // analysis should be done with exclusive access
 		for (k = i = 0; i < pnettop; i++)
@@ -1402,7 +1449,7 @@ CQstartScheduler(void)
 		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize CQscheduler\n");
 	}
 
-    cntxt->curmodule = cntxt->usermodule = userModule();
+	cntxt->curmodule = cntxt->usermodule = userModule();
 
 	if( SQLinitClient(cntxt) != MAL_SUCCEED) {
 		bstream_destroy(cntxt->fdin);
