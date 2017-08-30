@@ -1924,7 +1924,9 @@ BBPdump(void)
 				vm += HEAPvmsize(b->thash->heap);
 			}
 		}
-		fprintf(stderr, "\n");
+		fprintf(stderr, " role: %s, persistence: %s\n",
+			b->batRole == PERSISTENT ? "persistent" : "transient",
+			b->batPersistence == PERSISTENT ? "persistent" : "transient");
 	}
 	fprintf(stderr,
 		"# %d bats: mem=" SZFMT ", vm=" SZFMT " %d cached bats: mem=" SZFMT ", vm=" SZFMT "\n",
