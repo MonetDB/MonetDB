@@ -119,7 +119,7 @@ TKNZRopen(void *ret, str *in)
 	TRANS = COLnew(0, TYPE_str, MAX_TKNZR_DEPTH + 1, TRANSIENT);
 	if (TRANS == NULL) {
 		MT_lock_unset(&mal_contextLock);
-		throw(MAL, "tokenizer.open", MAL_MALLOC_FAIL);
+		throw(MAL, "tokenizer.open", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	/* now we are sure that none overwrites the tokenizer table*/
 	MT_lock_unset(&mal_contextLock);
@@ -127,7 +127,7 @@ TKNZRopen(void *ret, str *in)
 	snprintf(name, 128, "%s", *in);
 	batname = (str) GDKmalloc(134 * sizeof(char));
 	if( batname == NULL)
-		throw(MAL, "tokenizer.open", MAL_MALLOC_FAIL);
+		throw(MAL, "tokenizer.open", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	
 	snprintf(batname, 134, "%s_index", name);
 	idx = BBPindex(batname);
@@ -135,7 +135,7 @@ TKNZRopen(void *ret, str *in)
 	if (idx == 0) { /* new tokenizer */
 		b = COLnew(0, TYPE_oid, 1024, PERSISTENT);
 		if (b == NULL)
-			throw(MAL, "tokenizer.open", MAL_MALLOC_FAIL);
+			throw(MAL, "tokenizer.open", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		if (BKCsetName(&r, &b->batCacheid, (const char*const*) &batname) != MAL_SUCCEED ||
 			BKCsetPersistent(&r, &b->batCacheid) != MAL_SUCCEED ||
 			BUNappend(TRANS, batname, FALSE) != GDK_SUCCEED) {
@@ -164,7 +164,7 @@ TKNZRopen(void *ret, str *in)
 				BBPunfix(tokenBAT[depth].val->batCacheid);
 				tokenBAT[depth].val = NULL;
 				GDKfree(batname);
-				throw(MAL, "tokenizer.open", MAL_MALLOC_FAIL);
+				throw(MAL, "tokenizer.open", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 
 			/* For idx BATs */
@@ -177,7 +177,7 @@ TKNZRopen(void *ret, str *in)
 				BBPunfix(tokenBAT[depth].idx->batCacheid);
 				tokenBAT[depth].idx = NULL;
 				GDKfree(batname);
-				throw(MAL, "tokenizer.open", MAL_MALLOC_FAIL);
+				throw(MAL, "tokenizer.open", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 
 		}
@@ -259,7 +259,7 @@ TKNZRappend(oid *pos, str *s)
 		throw(MAL, "tokenizer", "no tokenizer store open");
 
 	if ((url = GDKstrdup(*s)) == NULL) {
-		throw(MAL, "tokenizer.append", OPERATION_FAILED MAL_MALLOC_FAIL);
+		throw(MAL, "tokenizer.append", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	depth = TKNZRtokenize(url, parts, '/');
@@ -280,13 +280,13 @@ TKNZRappend(oid *pos, str *s)
 			/* make new bat for value */
 			batname = (str) GDKmalloc(132 * sizeof(char));
 			if( batname == NULL)
-				throw(MAL,"TKNZappend",MAL_MALLOC_FAIL);
+				throw(MAL,"TKNZappend", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			snprintf(batname, 128, "%s_%d", name, i);
 			bVal = COLnew(0, TYPE_str, 1024, PERSISTENT);
 			if (bVal == NULL) {
 				GDKfree(batname);
 				GDKfree(url);
-				throw(MAL, "tokenizer.append", MAL_MALLOC_FAIL);
+				throw(MAL, "tokenizer.append", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			
 			tokenBAT[i].val = bVal;
@@ -296,7 +296,7 @@ TKNZRappend(oid *pos, str *s)
 				BUNappend(TRANS, batname, FALSE) != GDK_SUCCEED) {
 				GDKfree(batname);
 				GDKfree(url);
-				return msg ? msg : createException(MAL, "tokenizer.append", MAL_MALLOC_FAIL);
+				return msg ? msg : createException(MAL, "tokenizer.append", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 
 			/* make new bat for index */
@@ -305,7 +305,7 @@ TKNZRappend(oid *pos, str *s)
 			if (bIdx == NULL) {
 				GDKfree(batname);
 				GDKfree(url);
-				throw(MAL, "tokenizer.append", MAL_MALLOC_FAIL);
+				throw(MAL, "tokenizer.append", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			
 			tokenBAT[i].idx = bIdx;
@@ -315,7 +315,7 @@ TKNZRappend(oid *pos, str *s)
 				BUNappend(TRANS, batname, FALSE) != GDK_SUCCEED) {
 				GDKfree(batname);
 				GDKfree(url);
-				return msg ? msg : createException(MAL, "tokenizer.append", MAL_MALLOC_FAIL);
+				return msg ? msg : createException(MAL, "tokenizer.append", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 
 			GDKfree(batname);
@@ -379,7 +379,7 @@ TKNZRappend(oid *pos, str *s)
 	comp = COMP(prv, depth);
 	if (BUNappend(tokenBAT[INDEX].val, &comp, TRUE) != GDK_SUCCEED) {
 		GDKfree(url);
-		throw(MAL, "tokenizer.append", MAL_MALLOC_FAIL);
+		throw(MAL, "tokenizer.append", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	if (tokenBAT[INDEX].val->thash == NULL ||
 		tokenBAT[INDEX].val->thash == (Hash *) 1 ||
@@ -422,7 +422,7 @@ TKNZRdepositFile(void *r, str *fnme)
 	}
 	bs = bstream_create(fs, SIZE);
 	if (bs == NULL)
-		throw(MAL, "tokenizer.depositFile", MAL_MALLOC_FAIL);
+		throw(MAL, "tokenizer.depositFile", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	while (bstream_read(bs, bs->size - (bs->len - bs->pos)) != 0 &&
 		   !mnstr_errnr(bs->s))
 	{
@@ -479,7 +479,7 @@ TKNZRlocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	url = (str) GDKmalloc(sizeof(char) *
 			(strlen(*getArgReference_str(stk, pci, 1)) + 1));
 	if (url == NULL)
-		throw(MAL, "tokenizer.locate", MAL_MALLOC_FAIL);
+		throw(MAL, "tokenizer.locate", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	strcpy(url, *getArgReference_str(stk, pci, 1));
 
 
@@ -545,7 +545,7 @@ takeOid(oid id, str *val)
 
 	*val = (str) GDKmalloc(lngth+depth+1);
 	if( *val == NULL)
-		throw(MAL, "tokenizer.takeOid", MAL_MALLOC_FAIL);
+		throw(MAL, "tokenizer.takeOid", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	s = *val;
 
 	for (i = 0; i < depth; i++) {
@@ -597,7 +597,7 @@ TKNZRgetLevel(bat *r, int *level)
 		throw(MAL, "tokenizer.getLevel", OPERATION_FAILED " illegal level");
 	view = VIEWcreate(tokenBAT[*level].val->hseqbase, tokenBAT[*level].val);
 	if (view == NULL)
-		throw(MAL, "tokenizer.getLevel", MAL_MALLOC_FAIL);
+		throw(MAL, "tokenizer.getLevel", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	*r = view->batCacheid;
 
 	BBPkeepref(*r);
@@ -615,12 +615,12 @@ TKNZRgetCount(bat *r)
 		throw(MAL, "tokenizer", "no tokenizer store open");
 	b = COLnew(0, TYPE_lng, tokenDepth + 1, TRANSIENT);
 	if (b == NULL)
-		throw(MAL, "tokenizer.getCount", MAL_MALLOC_FAIL);
+		throw(MAL, "tokenizer.getCount", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	for (i = 0; i < tokenDepth; i++) {
 		cnt = (lng) BATcount(tokenBAT[i].val);
 		if (BUNappend(b, &cnt, FALSE) != GDK_SUCCEED) {
 			BBPreclaim(b);
-			throw(MAL, "tokenizer", MAL_MALLOC_FAIL);
+			throw(MAL, "tokenizer", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 	BATsetcount(b, tokenDepth);
@@ -640,7 +640,7 @@ TKNZRgetCardinality(bat *r)
 		throw(MAL, "tokenizer", "no tokenizer store open");
 	b = COLnew(0, TYPE_lng, tokenDepth + 1, TRANSIENT);
 	if (b == NULL)
-		throw(MAL, "tokenizer.getCardinality", MAL_MALLOC_FAIL);
+		throw(MAL, "tokenizer.getCardinality", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	for (i = 0; i < tokenDepth; i++) {
 		if ((en = BATunique(tokenBAT[i].val, NULL)) == NULL) {
 			BBPreclaim(b);
@@ -650,7 +650,7 @@ TKNZRgetCardinality(bat *r)
 		BBPunfix(en->batCacheid);
 		if (BUNappend(b, &cnt, FALSE) != GDK_SUCCEED) {
 			BBPreclaim(b);
-			throw(MAL, "tokenizer.getCardinality", MAL_MALLOC_FAIL);
+			throw(MAL, "tokenizer.getCardinality", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 

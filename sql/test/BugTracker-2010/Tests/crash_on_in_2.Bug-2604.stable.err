@@ -70,9 +70,11 @@ stderr of test 'crash_on_in_2.Bug-2604` in directory 'sql/test/BugTracker-2010` 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select * from t2;
 ERROR = !SELECT: no such table 't2'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select * from t1 where a in (select b from t2);
 ERROR = !SELECT: no such table 't2'
+CODE  = 42S02
 
 # 18:31:06 >  
 # 18:31:06 >  Done.

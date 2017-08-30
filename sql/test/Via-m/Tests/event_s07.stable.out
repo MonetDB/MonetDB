@@ -31,8 +31,8 @@ Ready.
 #declare id_event integer;
 #set id_event = -1;
 #select id_event; 
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 2 # length
 [ -1	]

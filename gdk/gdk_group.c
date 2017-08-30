@@ -331,6 +331,48 @@
 	/* COMP   */	cmp(v, BUNtail(bi, hb)) == 0		\
 	)
 
+/* reverse the bits of an OID value */
+static inline oid
+rev(oid x)
+{
+#if SIZEOF_OID == 8
+	x = ((x & 0x5555555555555555) <<  1) | ((x >>  1) & 0x5555555555555555);
+	x = ((x & 0x3333333333333333) <<  2) | ((x >>  2) & 0x3333333333333333);
+	x = ((x & 0x0F0F0F0F0F0F0F0F) <<  4) | ((x >>  4) & 0x0F0F0F0F0F0F0F0F);
+	x = ((x & 0x00FF00FF00FF00FF) <<  8) | ((x >>  8) & 0x00FF00FF00FF00FF);
+	x = ((x & 0x0000FFFF0000FFFF) << 16) | ((x >> 16) & 0x0000FFFF0000FFFF);
+	x = ((x & 0x00000000FFFFFFFF) << 32) | ((x >> 32) & 0x00000000FFFFFFFF);
+#else
+	x = ((x & 0x55555555) <<  1) | ((x >>  1) & 0x55555555);
+	x = ((x & 0x33333333) <<  2) | ((x >>  2) & 0x33333333);
+	x = ((x & 0x0F0F0F0F) <<  4) | ((x >>  4) & 0x0F0F0F0F);
+	x = ((x & 0x00FF00FF) <<  8) | ((x >>  8) & 0x00FF00FF);
+	x = ((x & 0x0000FFFF) << 16) | ((x >> 16) & 0x0000FFFF);
+#endif
+	return x;
+}
+
+/* population count: count number of 1 bits in a value */
+static inline int
+pop(oid x)
+{
+	/* divide and conquer implementation */
+#if SIZEOF_OID == 8
+	x = (x & 0x5555555555555555) + ((x >>  1) & 0x5555555555555555);
+	x = (x & 0x3333333333333333) + ((x >>  2) & 0x3333333333333333);
+	x = (x & 0x0F0F0F0F0F0F0F0F) + ((x >>  4) & 0x0F0F0F0F0F0F0F0F);
+	x = (x & 0x00FF00FF00FF00FF) + ((x >>  8) & 0x00FF00FF00FF00FF);
+	x = (x & 0x0000FFFF0000FFFF) + ((x >> 16) & 0x0000FFFF0000FFFF);
+	x = (x & 0x00000000FFFFFFFF) + ((x >> 32) & 0x00000000FFFFFFFF);
+#else
+	x = (x & 0x55555555) + ((x >>  1) & 0x55555555);
+	x = (x & 0x33333333) + ((x >>  2) & 0x33333333);
+	x = (x & 0x0F0F0F0F) + ((x >>  4) & 0x0F0F0F0F);
+	x = (x & 0x00FF00FF) + ((x >>  8) & 0x00FF00FF);
+	x = (x & 0x0000FFFF) + ((x >> 16) & 0x0000FFFF);
+#endif
+	return (int) x;
+}
 
 #define GRP_create_partial_hash_table(INIT_0,INIT_1,HASH,COMP)		\
 	do {								\
@@ -396,7 +438,11 @@
 				assert(p < end);			\
 				INIT_1;					\
 				prb = HASH;				\
-				prb = (prb ^ (BUN) grps[r] << bits) & hs->mask;	\
+				/* cleverly combine group ID with */	\
+				/* hash value: group ID in top-most */	\
+				/* bits of hash by reversing the */	\
+				/* bits and shifting them in place */	\
+				prb = (prb ^ rev(grps[r]) >> bits) & hs->mask; \
 				for (hb = HASHget(hs, prb);		\
 				     hb != HASHnil(hs) && hb >= start;	\
 				     hb = HASHgetlink(hs, hb)) {	\
@@ -552,13 +598,13 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	}
 	if (b->tkey || cnt <= 1 || (g && (g->tkey || BATtdense(g)))) {
 		/* grouping is trivial: 1 element per group */
-		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
+		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
 				  "h=%s#" BUNFMT ",subsorted=%d): "
 				  "trivial case: 1 element per group\n",
-				  BATgetId(b), BATcount(b),
+				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
 				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
 				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
@@ -593,13 +639,13 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		/* all values are equal */
 		if (g == NULL || (BATordered(g) && BATordered_rev(g))) {
 			/* there's only a single group: 0 */
-			ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
+			ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
 				  "h=%s#" BUNFMT ",subsorted=%d): "
-					  "trivial case: single output group\n",
-				  BATgetId(b), BATcount(b),
+				  "trivial case: single output group\n",
+				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
 				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
 				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
@@ -635,13 +681,13 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			 * e/h available in order to copy them,
 			 * otherwise we will need to calculate them
 			 * which we will do using the "normal" case */
-			ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
+			ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
 				  "h=%s#" BUNFMT ",subsorted=%d): "
-					  "trivial case: copy input groups\n",
-				  BATgetId(b), BATcount(b),
+				  "trivial case: copy input groups\n",
+				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
 				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
 				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
@@ -731,13 +777,13 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	    ((BATordered(b) || BATordered_rev(b)) &&
 	     (g == NULL || BATordered(g) || BATordered_rev(g)))) {
 		/* we only need to compare each entry with the previous */
-		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
+		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
 				  "h=%s#" BUNFMT ",subsorted=%d): "
 				  "compare consecutive values\n",
-				  BATgetId(b), BATcount(b),
+				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
 				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
 				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
@@ -788,13 +834,13 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * last time we saw that group, so if the last time we
 		 * saw the old group of the current value is within
 		 * this range, we can reuse the new group */
-		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
+		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
 				  "h=%s#" BUNFMT ",subsorted=%d): "
 				  "subscan old groups\n",
-				  BATgetId(b), BATcount(b),
+				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
 				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
 				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
@@ -943,13 +989,13 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		/* we already have a hash table on b, or b is
 		 * persistent and we could create a hash table, or b
 		 * is a view on a bat that already has a hash table */
-		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
+		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
 				  "h=%s#" BUNFMT ",subsorted=%d): "
 				  "use existing hash table\n",
-				  BATgetId(b), BATcount(b),
+				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
 				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
 				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
@@ -1009,8 +1055,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		size_t nmelen;
 		Heap *hp = NULL;
 		BUN prb;
-		BUN mask;
 		int bits;
+		BUN mask;
 
 		GDKclrerr();	/* not interested in BAThash errors */
 
@@ -1018,13 +1064,13 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * build an incomplete hash table on the fly--also see
 		 * BATassertProps for similar code; we also exploit if
 		 * g is clustered */
-		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT ","
+		ALGODEBUG fprintf(stderr, "#BATgroup(b=%s#" BUNFMT "[%s],"
 				  "s=%s#" BUNFMT ","
 				  "g=%s#" BUNFMT ","
 				  "e=%s#" BUNFMT ","
 				  "h=%s#" BUNFMT ",subsorted=%d): "
 				  "create partial hash table%s\n",
-				  BATgetId(b), BATcount(b),
+				  BATgetId(b), BATcount(b), ATOMname(b->ttype),
 				  s ? BATgetId(s) : "NULL", s ? BATcount(s) : 0,
 				  g ? BATgetId(g) : "NULL", g ? BATcount(g) : 0,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
@@ -1032,25 +1078,10 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  subsorted, gc ? " (g clustered)" : "");
 		nme = BBP_physical(b->batCacheid);
 		nmelen = strlen(nme);
-		if (ATOMsize(t) == 1) {
-			mask = 1 << 16;
-			bits = 8;
-		} else if (ATOMsize(t) == 2) {
-			mask = 1 << 16;
-			bits = 8;
-		} else {
-			/* when combining value and group-id hashes,
-			 * we left-shift one of them by half the
-			 * hash-mask width to better spread bits and
-			 * use the entire hash-mask, and thus reduce
-			 * collisions */
-			mask = HASHmask(cnt) >> 3;
-			bits = 3;
-			while (mask >>= 1)
-				bits++;
-			bits /= 2;
-			mask = HASHmask(cnt);
-		}
+		mask = MAX(HASHmask(cnt), 1 << 16);
+		/* mask is a power of two, so pop(mask - 1) tells us
+		 * which power of two */
+		bits = 8 * SIZEOF_OID - pop(mask - 1);
 		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
 		    (hp->farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
 		    (hp->filename = GDKmalloc(nmelen + 30)) == NULL ||
@@ -1058,7 +1089,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
 		    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
 		    (hs = HASHnew(hp, b->ttype, BUNlast(b),
-				  MAX(HASHmask(cnt), 1 << 16), BUN_NONE)) == NULL) {
+				  mask, BUN_NONE)) == NULL) {
 			if (hp) {
 				if (hp->filename)
 					GDKfree(hp->filename);

@@ -97,17 +97,23 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	if ( mb->inlineProp)
         	return 0;
 
-	/* force at least once a complete type check by resetting the type check flag */
-
-	// strong defense line, assure that MAL plan is initially correct
-	if( mb->errors == 0){
-		resetMalBlk(mb, mb->stop);
-        chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-        chkFlow(cntxt->fdout, mb);
-        chkDeclarations(cntxt->fdout, mb);
-	}
 	if (mb->errors)
 		throw(MAL, "optimizer.MALoptimizer", "Start with inconsistent MAL plan");
+
+	// strong defense line, assure that MAL plan is initially correct
+	if( mb->errors == 0 && mb->stop > 1){
+		resetMalBlk(mb, mb->stop);
+        chkTypes(cntxt->usermodule, mb, FALSE);
+        chkFlow(mb);
+        chkDeclarations(mb);
+		if( msg) 
+			return msg;
+		if( mb->errors != MAL_SUCCEED){
+			msg = mb->errors;
+			mb->errors = MAL_SUCCEED;
+			return msg;
+		}
+	}
 
 	/* Optimizers may massage the plan in such a way that a new pass is needed.
      * When no optimzer call is found, then terminate. */
@@ -123,7 +129,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 				msg = (str) (*p->fcn) (cntxt, mb, 0, p);
 				if (msg) {
 					str place = getExceptionPlace(msg);
-					str nmsg = createException(getExceptionType(msg), place, "%s", getExceptionMessage(msg));
+					str nmsg = createException(getExceptionType(msg), place, "%s", getExceptionMessageAndState(msg));
 					if (nmsg && place) {
 						freeException(msg);
 						msg = nmsg;
@@ -145,9 +151,6 @@ wrapup:
 		snprintf(buf, 256, "%-20s actions=%2d time=" LLFMT " usec", "total", actions, mb->optimize);
 		newComment(mb, buf);
 	}
-	if (msg != MAL_SUCCEED) {
-		mb->errors++;
-	}
 	if (cnt >= mb->stop)
 		throw(MAL, "optimizer.MALoptimizer", OPTIMIZER_CYCLE);
 	return msg;
@@ -166,6 +169,9 @@ MALoptimizer(Client c)
 	str msg;
 
 	if ( c->curprg->def->inlineProp)
+		return MAL_SUCCEED;
+	// only a signature statement can be skipped
+	if (c ->curprg->def->stop == 1)
 		return MAL_SUCCEED;
 	msg= optimizeMALBlock(c, c->curprg->def);
 	if( msg == MAL_SUCCEED)
@@ -622,7 +628,7 @@ int isSubJoin(InstrPtr p)
 
 int isMultiplex(InstrPtr p)
 {
-	return ((getModuleId(p) == malRef || getModuleId(p) == batmalRef) &&
+	return (malRef && (getModuleId(p) == malRef || getModuleId(p) == batmalRef) &&
 		getFunctionId(p) == multiplexRef);
 }
 

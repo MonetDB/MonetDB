@@ -32,30 +32,39 @@ stderr of test 'int2` in directory 'sql/test/pg_regress` itself:
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO INT2_TBL(f1) VALUES ('34.5');
 ERROR = !conversion of string '34.5' to type sht failed.
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO INT2_TBL(f1) VALUES ('100000');
 ERROR = !conversion of string '100000' to type sht failed.
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO INT2_TBL(f1) VALUES ('asdf');
 ERROR = !conversion of string 'asdf' to type sht failed.
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO INT2_TBL(f1) VALUES ('    ');
 ERROR = !conversion of string '    ' to type sht failed.
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO INT2_TBL(f1) VALUES ('- 1234');
 ERROR = !conversion of string '- 1234' to type sht failed.
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO INT2_TBL(f1) VALUES ('4 444');
 ERROR = !conversion of string '4 444' to type sht failed.
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO INT2_TBL(f1) VALUES ('123 dt');
 ERROR = !conversion of string '123 dt' to type sht failed.
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO INT2_TBL(f1) VALUES ('');
 ERROR = !conversion of string '' to type sht failed.
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT '' AS five, INT2_TBL.*;
 ERROR = !Column expression Table 'int2_tbl' unknown
+CODE  = 42000
 
 # 17:11:19 >  
 # 17:11:19 >  "Done."

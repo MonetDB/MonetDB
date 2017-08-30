@@ -33,21 +33,27 @@ stderr of test 'singlekeyconstraint` in directory 'sql/test/mergetables` itself:
 MAPI  = (monetdb) /var/tmp/mtest-8346/.s.monetdb.36761
 QUERY = ALTER TABLE complete ADD TABLE part1;
 ERROR = !ALTER MERGE TABLE: to be added table index doesn't match MERGE TABLE definition
+CODE  = 3F000
 MAPI  = (monetdb) /var/tmp/mtest-8346/.s.monetdb.36761
 QUERY = ALTER TABLE complete ADD TABLE part2;
 ERROR = !ALTER MERGE TABLE: to be added table index doesn't match MERGE TABLE definition
+CODE  = 3F000
 MAPI  = (monetdb) /var/tmp/mtest-8346/.s.monetdb.36761
 QUERY = INSERT INTO part2 VALUES(2.0, 0.0, 1.0);
 ERROR = !INSERT INTO: PRIMARY KEY constraint 'part2.part2_x_pkey' violated
+CODE  = M0M29
 MAPI  = (monetdb) /var/tmp/mtest-8346/.s.monetdb.36761
 QUERY = INSERT INTO part1 VALUES(0.0, 0.0, 2.0);
 ERROR = !INSERT INTO: PRIMARY KEY constraint 'part1.part1_x_pkey' violated
+CODE  = M0M29
 MAPI  = (monetdb) /var/tmp/mtest-8346/.s.monetdb.36761
 QUERY = INSERT INTO part2 VALUES(0.0, 0.0, 3.0);
 ERROR = !INSERT INTO: PRIMARY KEY constraint 'complete.complete_x_pkey' violated
+CODE  = M0M29
 MAPI  = (monetdb) /var/tmp/mtest-8346/.s.monetdb.36761
 QUERY = INSERT INTO complete VALUES(4.0, 0.0, 4.0);
 ERROR = !INSERT INTO: cannot insert into merge table 'complete'
+CODE  = 42000
 
 # 17:07:09 >  
 # 17:07:09 >  "Done."

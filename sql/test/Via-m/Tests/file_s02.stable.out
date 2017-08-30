@@ -29,8 +29,8 @@ Ready.
 # 17:12:50 >  
 
 #select i_add_video_set(21, 'fabchannel2007');
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 1 # length
 [ 0	]

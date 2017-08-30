@@ -33,13 +33,21 @@ stderr of test 'cast_select` in directory 'sql/test/snodgrass` itself:
 MAPI  = (monetdb) /var/tmp/mtest-21360/.s.monetdb.30215
 QUERY = SELECT CAST(TIME '12:34:56' AS TIMESTAMP WITH TIME ZONE) = TIMESTAMP '1997-07-23 12:34:56-07:00';
 ERROR = !types time(1,0) and timestamptz(7,0) are not equal
-MAPI  = (monetdb) /var/tmp/mtest-21360/.s.monetdb.30215
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT CAST('3-7' AS INTERVAL MONTH );
-ERROR = !wrong format (3-7)
-MAPI  = (monetdb) /var/tmp/mtest-21360/.s.monetdb.30215
+ERROR = !Wrong format (3-7)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT CAST('12:34' AS INTERVAL DAY TO MINUTE ); -- err: works not
-ERROR = !wrong format (12:34)
-MAPI  = (monetdb) /var/tmp/mtest-21360/.s.monetdb.30215
+ERROR = !Wrong format (12:34)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT CAST('86 00:00:00' AS INTERVAL HOUR(3) TO SECOND ); -- err: overflow exception
-ERROR = !wrong format (86 00:00:00)
+ERROR = !Wrong format (86 00:00:00)
+CODE  = 42000
+
+# 12:02:15 >  
+# 12:02:15 >  "Done."
+# 12:02:15 >  
 

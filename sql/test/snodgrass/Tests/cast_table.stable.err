@@ -33,6 +33,7 @@ stderr of test 'cast_table` in directory 'sql/test/snodgrass` itself:
 MAPI  = monetdb@sofia:32398
 QUERY = SELECT * FROM Employee WHERE CAST( ( DATE '1971-01-01' - BirthDate ) DAY AS INT ) = 365 AND CAST( ( DATE '1971-01-01' - BirthDate ) YEAR AS INT ) =  1; -- fixme
 ERROR = !syntax error, unexpected DAY, expecting AS in: "select * from employee where cast( ( date '1971-01-01' - birthdate ) day"
+CODE  = 42000
 
 # 21:08:54 >  
 # 21:08:54 >  "Done."

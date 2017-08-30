@@ -27,7 +27,7 @@ insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s)
 		if (c->def) {
 			return rel_parse_val(sql, sa_message(sql->sa, "select CAST(%s AS %s);", c->def, c->type.type->sqlname), sql->emode);
 		} else {
-			return sql_error(sql, 02, "INSERT INTO: column '%s' has no valid default value", c->base.name);
+			return sql_error(sql, 02, SQLSTATE(42000) "INSERT INTO: column '%s' has no valid default value", c->base.name);
 		}
 	} else {
 		int is_last = 0;
@@ -295,7 +295,7 @@ check_table_columns(mvc *sql, sql_table *t, dlist *columns, char *op, char *tnam
 			if (c) {
 				list_append(collist, c);
 			} else {
-				return sql_error(sql, 02, "42S22!%s INTO: no such column '%s.%s'", op, tname, n->data.sval);
+				return sql_error(sql, 02, SQLSTATE(42S22) "%s INTO: no such column '%s.%s'", op, tname, n->data.sval);
 			}
 		}
 	} else {
@@ -350,7 +350,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 							e = exp_atom(sql->sa, a);
 						}
 						if (!e) 
-							return sql_error(sql, 02, "INSERT INTO: column '%s' has no valid default value", c->base.name);
+							return sql_error(sql, 02, SQLSTATE(42000) "INSERT INTO: column '%s' has no valid default value", c->base.name);
 						if (exps) {
 							list *vals_list = exps->f;
 			
@@ -382,21 +382,21 @@ static sql_table *
 insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname)
 {
 	if (!t) {
-		return sql_error(sql, 02, "42S02!%s: no such table '%s'", op, tname);
+		return sql_error(sql, 02, SQLSTATE(42S02) "%s: no such table '%s'", op, tname);
 	} else if (isView(t)) {
-		return sql_error(sql, 02, "%s: cannot %s view '%s'", op, opname, tname);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s view '%s'", op, opname, tname);
 	} else if (isMergeTable(t)) {
-		return sql_error(sql, 02, "%s: cannot %s merge table '%s'", op, opname, tname);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s merge table '%s'", op, opname, tname);
 	} else if (isStream(t)) {
-		return sql_error(sql, 02, "%s: cannot %s stream '%s'", op, opname, tname);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s stream '%s'", op, opname, tname);
 	} else if (t->access == TABLE_READONLY) {
-		return sql_error(sql, 02, "%s: cannot %s read only table '%s'", op, opname, tname);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s read only table '%s'", op, opname, tname);
 	}
 	if (t && !isTempTable(t) && STORE_READONLY)
-		return sql_error(sql, 02, "%s: %s table '%s' not allowed in readonly mode", op, opname, tname);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: %s table '%s' not allowed in readonly mode", op, opname, tname);
 
 	if (!table_privs(sql, t, PRIV_INSERT)) {
-		return sql_error(sql, 02, "%s: insufficient privileges for user '%s' to %s table '%s'", op, stack_get_string(sql, "current_user"), opname, tname);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to %s table '%s'", op, stack_get_string(sql, "current_user"), opname, tname);
 	}
 	return t;
 }
@@ -413,20 +413,20 @@ static sql_table *
 update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int is_delete)
 {
 	if (!t) {
-		return sql_error(sql, 02, "42S02!%s: no such table '%s'", op, tname);
+		return sql_error(sql, 02, SQLSTATE(42S02) "%s: no such table '%s'", op, tname);
 	} else if (isView(t)) {
-		return sql_error(sql, 02, "%s: cannot %s view '%s'", op, opname, tname);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s view '%s'", op, opname, tname);
 	} else if (isMergeTable(t)) {
-		return sql_error(sql, 02, "%s: cannot %s merge table '%s'", op, opname, tname);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s merge table '%s'", op, opname, tname);
 	} else if (isStream(t)) {
-		return sql_error(sql, 02, "%s: cannot %s stream '%s'", op, opname, tname);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s stream '%s'", op, opname, tname);
 	} else if (t->access == TABLE_READONLY || t->access == TABLE_APPENDONLY) {
-		return sql_error(sql, 02, "%s: cannot %s read or append only table '%s'", op, opname, tname);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s read or append only table '%s'", op, opname, tname);
 	}
 	if (t && !isTempTable(t) && STORE_READONLY)
-		return sql_error(sql, 02, "%s: %s table '%s' not allowed in readonly mode", op, opname, tname);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: %s table '%s' not allowed in readonly mode", op, opname, tname);
 	if ((is_delete == 1 && !table_privs(sql, t, PRIV_DELETE)) || (is_delete == 2 && !table_privs(sql, t, PRIV_TRUNCATE)))
-		return sql_error(sql, 02, "%s: insufficient privileges for user '%s' to %s table '%s'", op, stack_get_string(sql, "current_user"), opname, tname);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to %s table '%s'", op, stack_get_string(sql, "current_user"), opname, tname);
 	return t;
 }
 
@@ -442,7 +442,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 	sql_rel *r = NULL;
 
 	if (sname && !(s=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, "3F000!INSERT INTO: no such schema '%s'", sname);
+		(void) sql_error(sql, 02, SQLSTATE(3F000) "INSERT INTO: no such schema '%s'", sname);
 		return NULL;
 	}
 	if (!s)
@@ -476,7 +476,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 			values = o->data.lval;
 
 			if (dlist_length(values) != list_length(collist)) {
-				return sql_error(sql, 02, "21S01!INSERT INTO: number of values doesn't match number of columns of table '%s'", tname);
+				return sql_error(sql, 02, SQLSTATE(21S01) "INSERT INTO: number of values doesn't match number of columns of table '%s'", tname);
 			} else {
 				dnode *n;
 				node *v, *m;
@@ -504,7 +504,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 							inner = rel_crossproduct(sql->sa, inner, r, op_join);
 						else if (r) 
 							inner = r;
-						if (inner && !ins->name) {
+						if (inner && !ins->name && !is_atom(ins->type)) {
 							exp_label(sql->sa, ins, ++sql->label);
 							ins = exp_column(sql->sa, exp_relname(ins), exp_name(ins), exp_subtype(ins), ins->card, has_nil(ins), is_intern(ins));
 						}
@@ -545,7 +545,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 0));
 	if ((r->exps && list_length(r->exps) != list_length(collist)) ||
 	   (!r->exps && collist)) 
-		return sql_error(sql, 02, "21S01!INSERT INTO: query result doesn't match number of columns in table '%s'", tname);
+		return sql_error(sql, 02, SQLSTATE(21S01) "INSERT INTO: query result doesn't match number of columns in table '%s'", tname);
 
 	r->exps = rel_inserts(sql, t, r, collist, rowcount, 0);
 	return rel_insert_table(sql, t, tname, r);
@@ -842,10 +842,10 @@ update_check_column(mvc *sql, sql_table *t, sql_column *c, sql_exp *v, sql_rel *
 {
 	if (!c) {
 		rel_destroy(r);
-		return sql_error(sql, 02, "42S22!UPDATE: no such column '%s.%s'", t->base.name, cname);
+		return sql_error(sql, 02, SQLSTATE(42S22) "UPDATE: no such column '%s.%s'", t->base.name, cname);
 	}
 	if (!table_privs(sql, t, PRIV_UPDATE) && !sql_privilege(sql, sql->user_id, c->base.id, PRIV_UPDATE, 0)) 
-		return sql_error(sql, 02, "UPDATE: insufficient privileges for user '%s' to update table '%s' on column '%s'", stack_get_string(sql, "current_user"), t->base.name, cname);
+		return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: insufficient privileges for user '%s' to update table '%s' on column '%s'", stack_get_string(sql, "current_user"), t->base.name, cname);
 	if (!v || (v = rel_check_type(sql, &c->type, v, type_equal)) == NULL) {
 		rel_destroy(r);
 		return NULL;
@@ -862,7 +862,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 	sql_table *t = NULL;
 
 	if (sname && !(s=mvc_bind_schema(sql,sname))) {
-		(void) sql_error(sql, 02, "3F000!UPDATE: no such schema '%s'", sname);
+		(void) sql_error(sql, 02, SQLSTATE(3F000) "UPDATE: no such schema '%s'", sname);
 		return NULL;
 	}
 	if (!s)
@@ -949,7 +949,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 			int status = sql->session->status;
 	
 			if (!table_privs(sql, t, PRIV_SELECT)) 
-				return sql_error(sql, 02, "UPDATE: insufficient privileges for user '%s' to update table '%s'", stack_get_string(sql, "current_user"), tname);
+				return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: insufficient privileges for user '%s' to update table '%s'", stack_get_string(sql, "current_user"), tname);
 			r = rel_logical_exp(sql, NULL, opt_where, sql_where);
 			if (r) { /* simple predicate which is not using the to 
 				    be updated table. We add a select all */
@@ -991,7 +991,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 					if (col->def) {
 						v = rel_parse_val(sql, sa_message(sql->sa, "select CAST(%s AS %s);", col->def, col->type.type->sqlname), sql->emode);
 					} else {
-						return sql_error(sql, 02, "UPDATE: column '%s' has no valid default value", col->base.name);
+						return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: column '%s' has no valid default value", col->base.name);
 					}
 				} else if (single) {
 					v = rel_value_exp(sql, &rel_val, a, sql_sel, ek);
@@ -1042,7 +1042,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 				if (!rel_val || !is_project(rel_val->op) ||
 				    dlist_length(cols) > list_length(rel_val->exps)) {
 					rel_destroy(r);
-					return sql_error(sql, 02, "UPDATE: too many columns specified");
+					return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: too many columns specified");
 				}
 				nr = (list_length(rel_val->exps)-dlist_length(cols));
 				for(n=rel_val->exps->h; nr; nr--, n = n->next)
@@ -1122,7 +1122,7 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 	sql_table *t = NULL;
 
 	if (sname && !(schema=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, "3F000!DELETE FROM: no such schema '%s'", sname);
+		(void) sql_error(sql, 02, SQLSTATE(3F000) "DELETE FROM: no such schema '%s'", sname);
 		return NULL;
 	}
 	if (!schema)
@@ -1143,7 +1143,7 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 			int status = sql->session->status;
 
 			if (!table_privs(sql, t, PRIV_SELECT)) 
-				return sql_error(sql, 02, "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", stack_get_string(sql, "current_user"), tname);
+				return sql_error(sql, 02, SQLSTATE(42000) "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", stack_get_string(sql, "current_user"), tname);
 
 			r = rel_logical_exp(sql, NULL, opt_where, sql_where);
 			if (r) { /* simple predicate which is not using the to 
@@ -1182,7 +1182,7 @@ truncate_table(mvc *sql, dlist *qname, int restart_sequences, int drop_action)
 	sql_table *t = NULL;
 
 	if (sname && !(schema=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, "3F000!TRUNCATE: no such schema '%s'", sname);
+		(void) sql_error(sql, 02, SQLSTATE(3F000) "TRUNCATE: no such schema '%s'", sname);
 		return NULL;
 	}
 	if (!schema)
@@ -1264,7 +1264,7 @@ rel_import(mvc *sql, sql_table *t, char *tsep, char *rsep, char *ssep, char *ns,
 			ncol++;
 		}
 		if(list_length(f->res) != ncol) {
-			(void) sql_error(sql, 02, "3F000!COPY INTO: fixed width import for %d columns but %d widths given.", list_length(f->res), ncol);
+			(void) sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: fixed width import for %d columns but %d widths given.", list_length(f->res), ncol);
 			return NULL;
 		}
 		*fwf_string_cur = '\0';
@@ -1312,7 +1312,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 	assert(!nr_offset || nr_offset->h->type == type_lng);
 	assert(!nr_offset || nr_offset->h->next->type == type_lng);
 	if (sname && !(s=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, "3F000!COPY INTO: no such schema '%s'", sname);
+		(void) sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: no such schema '%s'", sname);
 		return NULL;
 	}
 	if (!s)
@@ -1329,23 +1329,23 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 	/* Only the MONETDB user is allowed copy into with 
 	   a lock and only on tables without idx */
 	if (locked && !copy_allowed(sql, 1)) {
-		return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
+		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
 		    "COPY INTO from .. LOCKED requires database administrator rights");
 	}
 	if (locked && (!list_empty(t->idxs.set) || !list_empty(t->keys.set))) {
-		return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
+		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
 		    "COPY INTO from .. LOCKED requires tables without indices");
 	}
 	if (locked && has_snapshots(sql->session->tr)) {
-		return sql_error(sql, 02, "COPY INTO .. LOCKED: not allowed on snapshots");
+		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO .. LOCKED: not allowed on snapshots");
 	}
 	if (locked && !sql->session->auto_commit) {
-		return sql_error(sql, 02, "COPY INTO .. LOCKED: only allowed in auto commit mode");
+		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO .. LOCKED: only allowed in auto commit mode");
 	}
 	/* lock the store, for single user/transaction */
 	if (locked) { 
 		if (headers)
-			return sql_error(sql, 02, "COPY INTO .. LOCKED: not allowed with column lists");
+			return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO .. LOCKED: not allowed with column lists");
 		store_lock();
 		while (store_nr_active > 1) {
 			store_unlock();
@@ -1404,7 +1404,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 		dnode *n = files->h;
 
 		if (!copy_allowed(sql, 1))
-			return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
+			return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
 					"COPY INTO from file(s) requires database administrator rights, "
 					"use 'COPY INTO \"%s\" FROM STDIN' instead", tname);
 
@@ -1413,7 +1413,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 			sql_rel *nrel;
 
 			if (fname && !MT_path_absolute(fname))
-				return sql_error(sql, 02, "COPY INTO: filename must "
+				return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: filename must "
 						"have absolute path: %s", fname);
 
 			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, locked, best_effort, fwf_widths);
@@ -1458,7 +1458,7 @@ copyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, dlist *headers, d
 				sql_find_subtype(&st, "clob", 0, 0);
 				f = sql_bind_func_result(sql->sa, sys, fname, &st, &st, &cs->type); 
 				if (!f)
-					return sql_error(sql, 02, "COPY INTO: '%s' missing for type %s", fname, cs->type.type->sqlname);
+					return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: '%s' missing for type %s", fname, cs->type.type->sqlname);
 				append(args, e);
 				append(args, exp_atom_clob(sql->sa, format));
 				ne = exp_op(sql->sa, args, f);
@@ -1508,13 +1508,13 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, int constraint
 
 	assert(f);
 	if (!copy_allowed(sql, 1)) {
-		(void) sql_error(sql, 02, "COPY INTO: insufficient privileges: "
+		(void) sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
 				"binary COPY INTO requires database administrator rights");
 		return NULL;
 	}
 
 	if (sname && !(s=mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, "3F000!COPY INTO: no such schema '%s'", sname);
+		(void) sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: no such schema '%s'", sname);
 		return NULL;
 	}
 	if (!s)
@@ -1529,7 +1529,7 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, int constraint
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL) 
 		return NULL;
 	if (files == NULL)
-		return sql_error(sql, 02, "COPY INTO: must specify files");
+		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: must specify files");
 
 	collist = check_table_columns(sql, t, columns, "COPY BINARY", tname);
 	if (!collist)
@@ -1577,7 +1577,8 @@ bincopyfrom(mvc *sql, dlist *qname, dlist *columns, dlist *files, int constraint
 }
 
 static sql_rel *
-copyfromloader(mvc *sql, dlist *qname, symbol *fcall) {
+copyfromloader(mvc *sql, dlist *qname, symbol *fcall)
+{
 	sql_schema *s = NULL;
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
@@ -1586,12 +1587,12 @@ copyfromloader(mvc *sql, dlist *qname, symbol *fcall) {
 	sql_table* t;
 
 	if (!copy_allowed(sql, 1)) {
-		(void) sql_error(sql, 02, "COPY INTO: insufficient privileges: "
+		(void) sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
 				"binary COPY INTO requires database administrator rights");
 		return NULL;
 	}
 	if (sname && !(s = mvc_bind_schema(sql, sname))) {
-		(void) sql_error(sql, 02, "3F000!COPY INTO: no such schema '%s'", sname);
+		(void) sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: no such schema '%s'", sname);
 		return NULL;
 	}
 	if (!s)
@@ -1669,14 +1670,14 @@ copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string)
 	if (filename) {
 		struct stat fs;
 		if (!copy_allowed(sql, 0)) 
-			return sql_error(sql, 02, "COPY INTO: insufficient privileges: "
+			return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
 					"COPY INTO file requires database administrator rights, "
 					"use 'COPY ... INTO STDOUT' instead");
 		if (filename && !MT_path_absolute(filename))
-			return sql_error(sql, 02, "COPY INTO: filename must "
+			return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: filename must "
 					"have absolute path: %s", filename);
 		if (lstat(filename, &fs) == 0)
-			return sql_error(sql, 02, "COPY INTO: file already "
+			return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: file already "
 					"exists: %s", filename);
 	}
 
@@ -1840,7 +1841,7 @@ rel_updates(mvc *sql, symbol *s)
 		break;
 	default:
 		sql->use_views = old;
-		return sql_error(sql, 01, "Updates statement unknown Symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
+		return sql_error(sql, 01, SQLSTATE(42000) "Updates statement unknown Symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}
 	sql->use_views = old;
 	return ret;

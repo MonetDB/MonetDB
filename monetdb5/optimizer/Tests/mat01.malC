@@ -9,7 +9,7 @@
     bat.append(m2,2@0);
     b := mat.new(m0,m1,m2);
 	d := mat.new(m1,m2);
-    s := algebra.select(b,0@0,2@0);
+    s := algebra.select(b,nil:bat[:oid],0@0,2@0, true,true,false);
     i := aggr.count(s);
     io.print(s);
     io.print(i);
@@ -21,7 +21,7 @@
     bat.append(c,6@0);
     j := algebra.join(b,c);
     io.print(j);
-    s := algebra.select(d,0@0,2@0);
+    s := algebra.select(d, nil:bat[:oid], 0@0,2@0, true,true,false);
     i := aggr.count(s);
     io.print(s);
 io.print(b);

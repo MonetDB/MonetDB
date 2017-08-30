@@ -50,10 +50,6 @@ command getActions( ):bat[:int]
 address CLTActions
 comment "Pseudo bat of client's command counts.";
 
-command getTime( ):bat[:lng] 
-address CLTTime
-comment "Pseudo bat of client's total time usage(in usec).";
-
 command getUsers( ):bat[:str] 
 address CLTusers
 comment "Pseudo bat of users id and name.";

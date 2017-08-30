@@ -37,7 +37,7 @@ Ready.
 % L3 # name
 % bigint # type
 % 3 # length
-[ 436	]
+[ 440	]
 #select 1; 
 % .L2 # table_name
 % L2 # name
@@ -49,7 +49,7 @@ Ready.
 % L3 # name
 % bigint # type
 % 3 # length
-[ 444	]
+[ 440	]
 
 # 16:21:20 >  
 # 16:21:20 >  "Done."

@@ -36,7 +36,7 @@ sql_fix_system_tables(Client c, mvc *sql)
 	sql_schema *s;
 
 	if (buf == NULL)
-		throw(SQL, "sql_fix_system_tables", MAL_MALLOC_FAIL);
+		throw(SQL, "sql_fix_system_tables", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	s = mvc_bind_schema(sql, "sys");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
@@ -198,7 +198,7 @@ sql_update_hugeint(Client c, mvc *sql)
 		return err;
 
 	if ((buf = GDKmalloc(bufsize)) == NULL)
-		throw(SQL, "sql_update_hugeint", MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_hugeint", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	schema = stack_get_string(sql, "current_schema");
 
@@ -299,7 +299,7 @@ sql_update_epoch(Client c, mvc *m)
 	sql_schema *s = mvc_bind_schema(m, "sys");
 
 	if (buf == NULL)
-		throw(SQL, "sql_update_epoch", MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_epoch", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	sql_find_subtype(&tp, "bigint", 0, 0);
@@ -357,12 +357,12 @@ sql_update_geom(Client c, mvc *sql, int olddb)
 
 	geomupgrade = (*fixfunc)(olddb);
 	if (geomupgrade == NULL)
-		throw(SQL, "sql_update_geom", MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_geom", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	bufsize = strlen(geomupgrade) + 512;
 	buf = GDKmalloc(bufsize);
 	if (buf == NULL) {
 		GDKfree(geomupgrade);
-		throw(SQL, "sql_update_geom", MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_geom", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 	pos += snprintf(buf + pos, bufsize - pos, "%s", geomupgrade);
@@ -398,7 +398,7 @@ sql_update_dec2016(Client c, mvc *sql)
 	sql_schema *s;
 
 	if (buf == NULL)
-		throw(SQL, "sql_update_dec2016", MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_dec2016", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	s = mvc_bind_schema(sql, "sys");
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
@@ -616,7 +616,7 @@ sql_update_dec2016_sp2(Client c, mvc *sql)
 	BAT *b;
 
 	if (buf == NULL)
-		throw(SQL, "sql_update_dec2016_sp2", MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_dec2016_sp2", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos, "select id from sys.types where sqlname = 'decimal' and digits = %d;\n",
 #ifdef HAVE_HGE
 			have_hge ? 39 :
@@ -696,7 +696,7 @@ sql_update_jul2017(Client c, mvc *sql)
 	BAT *b;
 
 	if( buf== NULL)
-		throw(SQL, "sql_default", MAL_MALLOC_FAIL);
+		throw(SQL, "sql_default", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -762,12 +762,19 @@ sql_update_jul2017(Client c, mvc *sql)
 
 			"CREATE TABLE sys.privilege_codes (\n"
 			"privilege_code_id   INT NOT NULL PRIMARY KEY,\n"
-			"privilege_code_name VARCHAR(30) NOT NULL UNIQUE);\n"
+			"privilege_code_name VARCHAR(40) NOT NULL UNIQUE);\n"
 			"INSERT INTO sys.privilege_codes (privilege_code_id, privilege_code_name) VALUES\n"
 			"(1, 'SELECT'), (2, 'UPDATE'), (4, 'INSERT'), (8, 'DELETE'), (16, 'EXECUTE'), (32, 'GRANT'),\n"
 			"(3, 'SELECT,UPDATE'), (5, 'SELECT,INSERT'), (6, 'INSERT,UPDATE'), (7, 'SELECT,INSERT,UPDATE'),\n"
 			"(9, 'SELECT,DELETE'), (10, 'UPDATE,DELETE'), (11, 'SELECT,UPDATE,DELETE'), (12, 'INSERT,DELETE'),\n"
-			"(13, 'SELECT,INSERT,DELETE'), (14, 'INSERT,UPDATE,DELETE'), (15, 'SELECT,INSERT,UPDATE,DELETE');\n"
+			"(13, 'SELECT,INSERT,DELETE'), (14, 'INSERT,UPDATE,DELETE'), (15, 'SELECT,INSERT,UPDATE,DELETE'),\n"
+			"(64, 'TRUNCATE'),\n"
+			"(65, 'SELECT,TRUNCATE'), (66, 'UPDATE,TRUNCATE'), (68, 'INSERT,TRUNCATE'), (72, 'DELETE,TRUNCATE'),\n"
+			"(67, 'SELECT,UPDATE,TRUNCATE'), (69, 'SELECT,INSERT,TRUNCATE'), (73, 'SELECT,DELETE,TRUNCATE'),\n"
+			"(70, 'INSERT,UPDATE,TRUNCATE'), (76, 'INSERT,DELETE,TRUNCATE'), (74, 'UPDATE,DELETE,TRUNCATE'),\n"
+			"(71, 'SELECT,INSERT,UPDATE,TRUNCATE'), (75, 'SELECT,UPDATE,DELETE,TRUNCATE'),\n"
+			"(77, 'SELECT,INSERT,DELETE,TRUNCATE'), (78, 'INSERT,UPDATE,DELETE,TRUNCATE'),\n"
+			"(79, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE');\n"
 			"ALTER TABLE sys.privilege_codes SET READ ONLY;\n"
 
 			"update sys._tables set system = true where name in ('function_languages', 'function_types', 'index_types', 'key_types', 'privilege_codes') and schema_id = (select id from sys.schemas where name = 'sys');\n");
@@ -801,55 +808,6 @@ sql_update_jul2017(Client c, mvc *sql)
 	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
-sql_extra_upgrade(Client c, mvc *sql)
-{
-	size_t bufsize = 10000, pos = 0;
-	char *buf, *err = NULL, *schema = stack_get_string(sql, "current_schema");
-	char *q1 = "select privilege_code_id from sys.privilege_codes where privilege_code_id = 64;\n";
-	res_table *output;
-	BAT *b;
-	int upgrade = 0;
-
-	err = SQLstatementIntern(c, &q1, "update", 1, 0, &output);
-
-	b = BATdescriptor(output->cols[0].b);
-	if (b) {
-		if (BATcount(b) > 0) {
-			upgrade = 1;
-		}
-		BBPunfix(b->batCacheid);
-	}
-	res_tables_destroy(output);
-
-	if(upgrade) {
-		if((buf = GDKmalloc(bufsize)) == NULL)
-			throw(SQL, "sql_default", MAL_MALLOC_FAIL);
-
-		pos += snprintf(buf + pos, bufsize - pos,
-				"ALTER TABLE sys.privilege_codes SET READ WRITE;\n"
-				"INSERT INTO sys.privilege_codes (privilege_code_id, privilege_code_name) VALUES\n"
-				"(64, 'TRUNCATE'),\n"
-				"(65, 'SELECT,TRUNCATE'), (66, 'UPDATE,TRUNCATE'), (68, 'INSERT,TRUNCATE'), (72, 'DELETE,TRUNCATE'),\n"
-				"(67, 'SELECT,UPDATE,TRUNCATE'), (69, 'SELECT,INSERT,TRUNCATE'), (73, 'SELECT,DELETE,TRUNCATE'),\n"
-				"(70, 'INSERT,UPDATE,TRUNCATE'), (76, 'INSERT,DELETE,TRUNCATE'), (74, 'UPDATE,DELETE,TRUNCATE'),\n"
-				"(71, 'SELECT,INSERT,UPDATE,TRUNCATE'), (75, 'SELECT,UPDATE,DELETE,TRUNCATE'),\n"
-				"(77, 'SELECT,INSERT,DELETE,TRUNCATE'), (78, 'INSERT,UPDATE,DELETE,TRUNCATE'),\n"
-				"(79, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE');\n"
-				"ALTER TABLE sys.privilege_codes SET READ ONLY;\n");
-
-		if (schema)
-			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-
-		assert(pos < bufsize);
-
-		printf("Running database upgrade commands:\n%s\n", buf);
-		err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
-		GDKfree(buf);
-	}
-	return err;
 }
 
 void
@@ -938,10 +896,5 @@ SQLupgrades(Client c, mvc *m)
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}
-	}
-
-	if ((err = sql_extra_upgrade(c, m)) != NULL) {
-		fprintf(stderr, "!%s\n", err);
-		freeException(err);
 	}
 }

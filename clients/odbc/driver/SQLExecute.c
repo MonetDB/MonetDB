@@ -102,7 +102,7 @@ ODBCInitResult(ODBCStmt *stmt)
 	int nrCols;
 	ODBCDescRec *rec;
 	MapiHdl hdl;
-	char *errstr;
+	const char *errstr;
 
 	hdl = stmt->hdl;
 
@@ -116,10 +116,10 @@ ODBCInitResult(ODBCStmt *stmt)
       repeat:
 	errstr = mapi_result_error(hdl);
 	if (errstr) {
-		const char *emsg, *sqlstate;
+		const char *sqlstate;
 
-		if ((sqlstate = ODBCErrorType(errstr, &emsg)) != NULL)
-			addStmtError(stmt, sqlstate, emsg, 0);
+		if ((sqlstate = mapi_result_errorcode(hdl)) != NULL)
+			addStmtError(stmt, sqlstate, errstr, 0);
 		else {
 			/* Syntax error or access violation */
 			addStmtError(stmt, "42000", errstr, 0);
@@ -396,6 +396,7 @@ MNDBExecute(ODBCStmt *stmt)
 	MapiHdl hdl;
 	MapiMsg msg;
 	char *query;
+	const char *errstr;
 	char *sep;
 	size_t querylen;
 	size_t querypos;
@@ -495,20 +496,19 @@ MNDBExecute(ODBCStmt *stmt)
 		addStmtError(stmt, stmt->Dbc->sql_attr_connection_timeout ? "HYT00" : "08S01", mapi_error_str(stmt->Dbc->mid), 0);
 		return SQL_ERROR;
 	default:
-		/* reuse variable query for error message */
-		query = mapi_result_error(hdl);
-		if (query == NULL)
-			query = mapi_error_str(stmt->Dbc->mid);
-		if (query) {
-			const char *emsg, *sqlstate;
+		errstr = mapi_result_error(hdl);
+		if (errstr == NULL)
+			errstr = mapi_error_str(stmt->Dbc->mid);
+		if (errstr) {
+			const char *sqlstate;
 
-			if ((sqlstate = ODBCErrorType(query, &emsg)) != NULL) {
-				addStmtError(stmt, sqlstate, emsg, 0);
+			if ((sqlstate = mapi_result_errorcode(hdl)) != NULL) {
+				addStmtError(stmt, sqlstate, errstr, 0);
 				return SQL_ERROR;
 			}
 		}
 		/* General error */
-		addStmtError(stmt, "HY000", query, 0);
+		addStmtError(stmt, "HY000", errstr, 0);
 		return SQL_ERROR;
 	}
 

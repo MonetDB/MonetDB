@@ -30,9 +30,12 @@ stderr of test 'truncate-statements-extra` in directory 'sql/test` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-16076/.s.monetdb.38199
 QUERY = TRUNCATE testing4; --error
-
-MAPI  = (monetdb) /var/tmp/mtest-16638/.s.monetdb.32365
+ERROR = !TRUNCATE: FOREIGN KEY testing5.a_fkey depends on testing4
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-27738/.s.monetdb.37422
 QUERY = TRUNCATE testing4  RESTRICT; --error
+ERROR = !TRUNCATE: FOREIGN KEY testing5.a_fkey depends on testing4
+CODE  = 42000
 
 
 

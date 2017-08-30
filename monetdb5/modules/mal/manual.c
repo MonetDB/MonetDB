@@ -42,10 +42,10 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreclaim(sig);
 		BBPreclaim(adr);
 		BBPreclaim(com);
-		throw(MAL, "manual.functions", MAL_MALLOC_FAIL);
+		throw(MAL, "manual.functions", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
-	list[top++] = cntxt->nspace;
+	list[top++] = cntxt->usermodule;
 	getModuleList(&moduleList, &length);
 	if (moduleList == NULL)
 		goto bailout;

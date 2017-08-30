@@ -135,7 +135,7 @@ Ready.
 % mal # name
 % clob # type
 % 117 # length
-function user.main():void;
+function user.SQLanalyze():void;
     X_5:void := querylog.define("explain select x,y from test where x between 4.0 and 6.0;", "default_pipe", 49:int);
 barrier X_144 := language.dataflow();
     X_40:bat[:dbl] := bat.new(nil:dbl);
@@ -190,7 +190,7 @@ barrier X_144 := language.dataflow();
     language.pass(C_125);
 exit X_144;
     sql.resultSet(X_65, X_66, X_68, X_69, X_70, X_43, X_46);
-end user.main;
+end user.SQLanalyze;
 #inline               actions= 0 time=3 usec 
 #remap                actions= 0 time=8 usec 
 #costmodel            actions= 1 time=4 usec 
@@ -220,7 +220,7 @@ end user.main;
 % mal # name
 % clob # type
 % 121 # length
-function user.main():void;
+function user.SQLanalyze():void;
     X_8:void := querylog.define("explain select x,y from test where x between (7-3) and (7-1);", "default_pipe", 63:int);
 barrier X_164 := language.dataflow();
     X_55:bat[:dbl] := bat.new(nil:dbl);
@@ -275,10 +275,10 @@ barrier X_164 := language.dataflow();
     language.pass(C_145);
 exit X_164;
     sql.resultSet(X_80, X_81, X_83, X_84, X_85, X_58, X_61);
-end user.main;
-#inline               actions= 0 time=3 usec 
-#remap                actions= 0 time=9 usec 
-#costmodel            actions= 1 time=3 usec 
+end user.SQLanalyze;
+#inline               actions= 0 time=2 usec 
+#remap                actions= 0 time=6 usec 
+#costmodel            actions= 1 time=5 usec 
 #coercion             actions= 0 time=4 usec 
 #evaluate             actions=20 time=82 usec 
 #emptybind            actions= 0 time=19 usec 
@@ -305,7 +305,7 @@ end user.main;
 % mal # name
 % clob # type
 % 143 # length
-function user.main():void;
+function user.SQLanalyze():void;
     X_9:void := querylog.define("explain select x,y from test where x between 4.0 and 6.0 and y between 0.0 and 2.0;", "default_pipe", 37:int);
 barrier X_132 := language.dataflow();
     X_36 := bat.new(nil:str);
@@ -350,7 +350,7 @@ barrier X_132 := language.dataflow();
     language.pass(X_106);
 exit X_132;
     sql.resultSet(X_52, X_53, X_55, X_56, X_57, X_32, X_33);
-end user.main;
+end user.SQLanalyze;
 #inline               actions= 0 time=2 usec 
 #remap                actions= 0 time=8 usec 
 #costmodel            actions= 1 time=3 usec 
@@ -380,7 +380,7 @@ end user.main;
 % mal # name
 % clob # type
 % 156 # length
-function user.main():void;
+function user.SQLanalyze():void;
     X_12:void := querylog.define("explain select x,y from test where x between 4.0 and 6.0 and y between (1.0-1.0) and (4.0-2.0);", "default_pipe", 45:int);
 barrier X_147 := language.dataflow();
     X_46 := bat.new(nil:str);
@@ -425,10 +425,10 @@ barrier X_147 := language.dataflow();
     language.pass(X_121);
 exit X_147;
     sql.resultSet(X_63, X_64, X_66, X_67, X_68, X_42, X_43);
-end user.main;
-#inline               actions= 0 time=2 usec 
-#remap                actions= 0 time=8 usec 
-#costmodel            actions= 1 time=2 usec 
+end user.SQLanalyze;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=5 usec 
+#costmodel            actions= 1 time=5 usec 
 #coercion             actions= 0 time=3 usec 
 #evaluate             actions=16 time=60 usec 
 #emptybind            actions= 0 time=16 usec 
@@ -455,7 +455,7 @@ end user.main;
 % mal # name
 % clob # type
 % 160 # length
-function user.main():void;
+function user.SQLanalyze():void;
     X_15:void := querylog.define("explain select x,y from test where x between (7-3) and (7-1) and y between (1.0-1.0) and (4.0-2.0);", "default_pipe", 53:int);
 barrier X_160 := language.dataflow();
     X_55 := bat.new(nil:str);
@@ -500,7 +500,7 @@ barrier X_160 := language.dataflow();
     language.pass(X_134);
 exit X_160;
     sql.resultSet(X_72, X_73, X_75, X_76, X_77, X_51, X_52);
-end user.main;
+end user.SQLanalyze;
 #inline               actions= 0 time=2 usec 
 #remap                actions= 0 time=8 usec 
 #costmodel            actions= 1 time=3 usec 

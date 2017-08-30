@@ -13,9 +13,11 @@ stderr of test 'unique-bug-sf-1043512` in directory 'sql/test/bugs` itself:
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = insert into unique_test values (1);
 ERROR = !INSERT INTO: UNIQUE constraint 'unique_test.unique_test_id_unique' violated
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-20479/.s.monetdb.32416
 QUERY = insert into unique_test values (1);
 ERROR = !INSERT INTO: UNIQUE constraint 'unique_test.unique_test_id_unique' violated
+CODE  = M0M29
 
 # 17:24:53 >  
 # 17:24:53 >  Done.

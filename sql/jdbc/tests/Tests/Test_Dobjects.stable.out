@@ -35,82 +35,12 @@ TABLE_SCHEM	TABLE_CATALOG
 sys	null	
 Resultset with 10 columns
 TABLE_CAT	TABLE_SCHEM	TABLE_NAME	TABLE_TYPE	REMARKS	TYPE_CAT	TYPE_SCHEM	TYPE_NAME	SELF_REFERENCING_COL_NAME	REF_GENERATION	
-null	sys	_columns	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	_tables	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	args	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	auths	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	db_user_info	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	dependencies	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	dependency_types	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	function_languages	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	function_types	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	functions	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	idxs	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	index_types	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	key_types	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	keys	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	keywords	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	netcdf_attrs	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	netcdf_dims	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	netcdf_files	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	netcdf_vardim	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	netcdf_vars	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	objects	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	privilege_codes	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	privileges	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	schemas	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	sequences	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	spatial_ref_sys	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	statistics	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	storagemodelinput	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	systemfunctions	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	table_types	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	triggers	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	types	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	user_role	SYSTEM TABLE	null	null	null	null	null	null	
-null	sys	columns	SYSTEM VIEW	SELECT * FROM (SELECT p.* FROM "sys"."_columns" AS p UNION ALL SELECT t.* FROM "tmp"."_columns" AS t) AS columns;	null	null	null	null	null	
-null	sys	environment	SYSTEM VIEW	create view sys.environment as select * from sys.environment();	null	null	null	null	null	
-null	sys	geometry_columns	SYSTEM VIEW	create view geometry_columns as
- select e.value as f_table_catalog,
- s.name as f_table_schema,
- y.f_table_name, y.f_geometry_column, y.coord_dimension, y.srid, y.type
- from schemas s, environment e, (
- select t.schema_id,
- t.name as f_table_name,
- x.name as f_geometry_column,
- has_z(info)+has_m(info)+2 as coord_dimension,
- srid, get_type(info, 0) as type
- from tables t, (
- select name, table_id, type_digits as info, type_scale as srid
- from columns
- where type in ( select distinct sqlname from types where systemname='wkb')
- ) as x
- where t.id=x.table_id
- ) y
- where y.schema_id=s.id and e.name='gdk_dbname';	null	null	null	null	null	
-null	sys	optimizers	SYSTEM VIEW	create view sys.optimizers as select * from sys.optimizers();	null	null	null	null	null	
-null	sys	querylog_calls	SYSTEM VIEW	create view sys.querylog_calls as select * from sys.querylog_calls();	null	null	null	null	null	
-null	sys	querylog_catalog	SYSTEM VIEW	create view sys.querylog_catalog as select * from sys.querylog_catalog();	null	null	null	null	null	
-null	sys	querylog_history	SYSTEM VIEW	create view sys.querylog_history as
-select qd.*, ql."start",ql."stop", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.io 
-from sys.querylog_catalog() qd, sys.querylog_calls() ql
-where qd.id = ql.id and qd.owner = user;	null	null	null	null	null	
-null	sys	queue	SYSTEM VIEW	create view sys.queue as select * from sys.queue();	null	null	null	null	null	
-null	sys	rejects	SYSTEM VIEW	create view sys.rejects as select * from sys.rejects();	null	null	null	null	null	
-null	sys	sessions	SYSTEM VIEW	create view sys.sessions as select * from sys.sessions();	null	null	null	null	null	
-null	sys	storage	SYSTEM VIEW	create view sys."storage" as select * from sys."storage"();	null	null	null	null	null	
-null	sys	storagemodel	SYSTEM VIEW	create view sys.storagemodel as select * from sys.storagemodel();	null	null	null	null	null	
-null	sys	tables	SYSTEM VIEW	SELECT "id", "name", "schema_id", "query", CAST(CASE WHEN "system" THEN "type" + 10 /* system table/view */ ELSE (CASE WHEN "commit_action" = 0 THEN "type" /* table/view */ ELSE "type" + 20 /* global temp table */ END) END AS SMALLINT) AS "type", "system", "commit_action", "access", CASE WHEN (NOT "system" AND "commit_action" > 0) THEN 1 ELSE 0 END AS "temporary" FROM "sys"."_tables" WHERE "type" <> 2 UNION ALL SELECT "id", "name", "schema_id", "query", CAST("type" + 30 /* local temp table */ AS SMALLINT) AS "type", "system", "commit_action", "access", 1 AS "temporary" FROM "tmp"."_tables";	null	null	null	null	null	
-null	sys	tablestoragemodel	SYSTEM VIEW	create view sys.tablestoragemodel
-as select "schema","table",max(count) as "count",
-	sum(columnsize) as columnsize,
-	sum(heapsize) as heapsize,
-	sum(hashes) as hashes,
- sum("imprints") as "imprints",
-	sum(case when sorted = false then 8 * count else 0 end) as auxiliary
-from sys.storagemodel() group by "schema","table";	null	null	null	null	null	
-null	sys	tracelog	SYSTEM VIEW	create view sys.tracelog as select * from sys.tracelog();	null	null	null	null	null	
-null	sys	users	SYSTEM VIEW	SELECT u."name" AS "name", ui."fullname", ui."default_schema" FROM db_users() AS u LEFT JOIN "sys"."db_user_info" AS ui ON u."name" = ui."name" ;	null	null	null	null	null	
+null    tmp     _columns        SYSTEM TABLE    null    null    null    null    null    null    
+null    tmp     _tables SYSTEM TABLE    null    null    null    null    null    null    
+null    tmp     idxs    SYSTEM TABLE    null    null    null    null    null    null    
+null    tmp     keys    SYSTEM TABLE    null    null    null    null    null    null    
+null    tmp     objects SYSTEM TABLE    null    null    null    null    null    null    
+null    tmp     triggers        SYSTEM TABLE    null    null    null    null    null    null    
 Resultset with 7 columns
 TYPE_CAT	TYPE_SCHEM	TYPE_NAME	CLASS_NAME	DATA_TYPE	REMARKS	BASE_TYPE	
 null	sys	inet	nl.cwi.monetdb.jdbc.types.INET	2000	inet	null	

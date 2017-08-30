@@ -81,12 +81,6 @@ Ready.
 % 1 # length
 [ 1	]
 [ 2	]
-#delete from tt where t = 1;
-[ 1	]
-#delete from tt where t = 2;
-[ 1	]
-#delete from tt;
-[ 0	]
 #drop table tt cascade;
 #drop table t1 cascade;
 #drop table t2 cascade;

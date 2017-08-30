@@ -108,12 +108,12 @@ MNDBPrepare(ODBCStmt *stmt,
 
 		/* XXX more fine-grained control required */
 		/* Syntax error or access violation */
-		if ((s = mapi_result_error(hdl)) == NULL)
-			s = mapi_error_str(stmt->Dbc->mid);
-		if (s && (e = ODBCErrorType(s, &m)) != NULL)
+		if ((m = mapi_result_error(hdl)) == NULL)
+			m = mapi_error_str(stmt->Dbc->mid);
+		if (m && (e = mapi_result_errorcode(hdl)) != NULL)
 			addStmtError(stmt, e, m, 0);
 		else
-			addStmtError(stmt, "42000", s, 0);
+			addStmtError(stmt, "42000", m, 0);
 		return SQL_ERROR;
 	}
 	if (mapi_rows_affected(hdl) > (1 << 16)) {

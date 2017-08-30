@@ -30,6 +30,8 @@ stderr of test 'create-or-replace-views` in directory 'sql/test` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-15815/.s.monetdb.39325
 QUERY = CREATE OR REPLACE VIEW failureview AS SELECT b2 FROM testingnothing WHERE b2 = 'two'; --error
+ERROR = !SELECT: no such table 'testingnothing'
+CODE  = 42S02
 
 
 

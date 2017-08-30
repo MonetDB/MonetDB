@@ -17,9 +17,9 @@ QUERY = K := :=
         io.print(1);
         io.print(2);
 ERROR = !SyntaxException:parseError:K := :=
-        !SyntaxException:parseError:     ^Type identifier expected
+        !SyntaxException:parseError:      ^Type identifier expected
         !SyntaxException:parseError:K := :=
-        !SyntaxException:parseError:     ^';' expected
+        !SyntaxException:parseError:      ^';' expected
 
 # 21:00:37 >  
 # 21:00:37 >  "Done."

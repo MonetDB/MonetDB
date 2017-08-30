@@ -33,12 +33,15 @@ stderr of test 'types` in directory 'sql/test/mergetables` itself:
 MAPI  = (monetdb) /var/tmp/mtest-31544/.s.monetdb.34450
 QUERY = ALTER TABLE complete ADD TABLE part1;
 ERROR = !ALTER MERGE TABLE: to be added table column type doesn't match MERGE TABLE definition
-MAPI  = (monetdb) /var/tmp/mtest-31544/.s.monetdb.34450
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = ALTER TABLE complete ADD TABLE part2;
 ERROR = !ALTER MERGE TABLE: to be added table column type doesn't match MERGE TABLE definition
-MAPI  = (monetdb) /var/tmp/mtest-31544/.s.monetdb.34450
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT * FROM COMPLETE;
 ERROR = !MERGE or REPLICA TABLE should have at least one table associated
+CODE  = 42000
 
 # 12:41:49 >  
 # 12:41:49 >  "Done."

@@ -141,7 +141,7 @@ mapi_export MapiMsg mapi_reconnect(Mapi mid);
 mapi_export MapiMsg mapi_ping(Mapi mid);
 
 mapi_export MapiMsg mapi_error(Mapi mid);
-mapi_export char *mapi_error_str(Mapi mid);
+mapi_export const char *mapi_error_str(Mapi mid);
 mapi_export void mapi_noexplain(Mapi mid, char *errorprefix);
 mapi_export MapiMsg mapi_explain(Mapi mid, FILE *fd);
 mapi_export MapiMsg mapi_explain_query(MapiHdl hdl, FILE *fd);
@@ -157,7 +157,8 @@ mapi_export MapiMsg mapi_log(Mapi mid, const char *nme);
 mapi_export MapiMsg mapi_setAutocommit(Mapi mid, int autocommit);
 mapi_export MapiMsg mapi_set_size_header(Mapi mid, int value);
 mapi_export MapiMsg mapi_release_id(Mapi mid, int id);
-mapi_export char *mapi_result_error(MapiHdl hdl);
+mapi_export const char *mapi_result_error(MapiHdl hdl);
+mapi_export const char *mapi_result_errorcode(MapiHdl hdl);
 mapi_export MapiMsg mapi_next_result(MapiHdl hdl);
 mapi_export MapiMsg mapi_needmore(MapiHdl hdl);
 mapi_export int mapi_more_results(MapiHdl hdl);

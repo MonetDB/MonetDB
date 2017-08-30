@@ -72,6 +72,7 @@ static char hostname[128];
 static char *filename = NULL;
 static int beat = 0;
 static int json = 0;
+static int stream_mode = 1;
 static Mapi dbh;
 static MapiHdl hdl = NULL;
 static FILE *trace = NULL;
@@ -201,11 +202,12 @@ usageStethoscope(void)
     fprintf(stderr, "  -h | --host=<hostname>\n");
     fprintf(stderr, "  -c | --convert=<old formated file>\n");
     fprintf(stderr, "  -j | --json\n");
+    fprintf(stderr, "  -y | --pretty (implies --json)\n");
     fprintf(stderr, "  -o | --output=<file>\n");
-	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 50)\n");
-	fprintf(stderr, "  -D | --debug\n");
+    fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 50)\n");
+    fprintf(stderr, "  -D | --debug\n");
     fprintf(stderr, "  -? | --help\n");
-	exit(-1);
+    exit(-1);
 }
 
 /* Any signal should be captured and turned into a graceful
@@ -242,7 +244,7 @@ main(int argc, char **argv)
 	int done = 0;
 	EventRecord *ev = malloc(sizeof(EventRecord));
 
-	static struct option long_options[12] = {
+	static struct option long_options[13] = {
 		{ "dbname", 1, 0, 'd' },
 		{ "user", 1, 0, 'u' },
 		{ "port", 1, 0, 'p' },
@@ -251,6 +253,7 @@ main(int argc, char **argv)
 		{ "help", 0, 0, '?' },
 		{ "convert", 1, 0, 'c'},
 		{ "json", 0, 0, 'j'},
+		{ "pretty", 0, 0, 'y'},
 		{ "output", 1, 0, 'o' },
 		{ "debug", 0, 0, 'D' },
 		{ "beat", 1, 0, 'b' },
@@ -268,7 +271,7 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:p:P:h:?jo:Db:",
+		int c = getopt_long(argc, argv, "d:u:p:P:h:?jyo:Db:",
 					long_options, &option_index);
 		if (c == -1)
 			break;
@@ -310,6 +313,11 @@ main(int argc, char **argv)
 			break;
 		case 'j':
 			json = 1;
+			stream_mode = 3;
+			break;
+		case 'y':
+			stream_mode = 1;
+			json = 1;
 			break;
 		case 'o':
 			filename = strdup(optarg);
@@ -326,6 +334,7 @@ main(int argc, char **argv)
 			exit(-1);
 		}
 	}
+
 	if( conversion){
 		convertOldFormat(conversion);
 		return 0;
@@ -384,7 +393,7 @@ main(int argc, char **argv)
 		fprintf(stderr,"-- %s\n",buf);
 	doQ(buf);
 
-	snprintf(buf, BUFSIZ, " profiler.openstream(1);");
+	snprintf(buf, BUFSIZ, " profiler.openstream(%d);", stream_mode);
 	if( debug)
 		fprintf(stderr,"--%s\n",buf);
 	doQ(buf);
@@ -416,9 +425,9 @@ main(int argc, char **argv)
 				printf("%s", response);
 		if(json) {
 			if(trace != NULL) {
-				fprintf(trace, "%s", response);
+				fprintf(trace, "%s", response + len);
 			} else {
-				printf("%s", response);
+				printf("%s", response + len);
 				fflush(stdout);
 			}
 		}

@@ -33,6 +33,7 @@ stderr of test 'procedure_resolution_bug` in directory 'sql/test/bugs` itself:
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = call p();
 ERROR = !SELECT: no such operator 'p'
+CODE  = 42000
 
 # 23:43:49 >  
 # 23:43:49 >  Done.

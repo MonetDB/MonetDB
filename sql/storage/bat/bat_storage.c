@@ -159,7 +159,7 @@ delta_bind_bat( sql_delta *bat, int access, int temp)
 				return NULL;
 			}
 			if (BATcount(nui)) {
-				o = BATthetaselect(ui, NULL, &b->hseqbase, ">=");
+				o = BATselect(ui, NULL, &b->hseqbase, ATOMnilptr(ui->ttype), 1, 0, 0);
 				if (o == NULL) {
 					bat_destroy(ui);
 					bat_destroy(uv);
@@ -258,7 +258,7 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 		if (BATcount(ib)) { 
 			BAT *nui = tids, *nuv = updates;
 
-			o = BATthetaselect(tids, NULL, &ib->hseqbase, ">=");
+			o = BATselect(tids, NULL, &ib->hseqbase, ATOMnilptr(tids->ttype), 1, 0, 0);
 			if (o == NULL) {
 				bat_destroy(ib);
 				return LOG_ERR;
@@ -281,7 +281,7 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 				return LOG_ERR;
 			}
 
-			o = BATthetaselect(tids, NULL, &ib->hseqbase, "<");
+			o = BATselect(tids, NULL, ATOMnilptr(tids->ttype), &ib->hseqbase, 0, 0, 0);
 			if (o == NULL) {
 				bat_destroy(ib);
 				return LOG_ERR;
@@ -339,7 +339,7 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 		if (BATcount(ib)) {
 			BAT *nui = tids, *nuv = updates, *o;
 
-			o = BATthetaselect(tids, NULL, &ib->hseqbase, ">=");
+			o = BATselect(tids, NULL, &ib->hseqbase, ATOMnilptr(tids->ttype), 1, 0, 0);
 			if (o == NULL) {
 				bat_destroy(b);
 				bat_destroy(ib);
@@ -365,7 +365,7 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 				return LOG_ERR;
 			}
 
-			o = BATthetaselect(tids, NULL, &ib->hseqbase, "<");
+			o = BATselect(tids, NULL, ATOMnilptr(tids->ttype), &ib->hseqbase, 0, 0, 0);
 			if (o == NULL) {
 				bat_destroy(b);
 				bat_destroy(ib);

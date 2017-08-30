@@ -210,6 +210,5 @@ SQLRETURN MNDBPrepare(ODBCStmt *stmt, SQLCHAR *szSqlStr,
 		      SQLINTEGER nSqlStrLength);
 SQLRETURN MNDBSetStmtAttr(ODBCStmt *stmt, SQLINTEGER Attribute,
 			  SQLPOINTER Value, SQLINTEGER StringLength);
-const char *ODBCErrorType(const char *msg, const char **emsg);
 
 #endif

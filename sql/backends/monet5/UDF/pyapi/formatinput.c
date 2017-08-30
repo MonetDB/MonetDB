@@ -23,7 +23,7 @@ PyObject *PyCodeObject_ParseString(char *string, char **msg)
 	size_t i, j;
 	hex[2] = '\0';
 	if (code_copy == NULL) {
-		*msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL);
+		*msg = createException(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return NULL;
 	}
 	// decode hex codes (e.g. \x00) in the string to the actual numeric
@@ -58,7 +58,7 @@ PyObject *PyCodeObject_ParseString(char *string, char **msg)
 	if (code_object == NULL) {
 		PyErr_Print();
 		*msg = createException(MAL, "pyapi.eval",
-							   "Failed to marshal.loads() encoded object");
+							   SQLSTATE(PY000) "Failed to marshal.loads() encoded object");
 		return NULL;
 	}
 	*msg = MAL_SUCCEED;
@@ -120,7 +120,7 @@ char *FormatCode(char *code, char **args, size_t argcount, size_t tabwidth,
 	statements_per_level =
 		(size_t *)GDKzalloc(max_indentation * sizeof(size_t));
 	if (indentation_levels == NULL || statements_per_level == NULL) {
-		*msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL);
+		*msg = createException(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto finally;
 	}
 
@@ -224,14 +224,14 @@ char *FormatCode(char *code, char **args, size_t argcount, size_t tabwidth,
 					size_t *new_statements_per_level;
 					if (new_indentation == NULL) {
 						*msg =
-							createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL);
+							createException(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 						goto finally;
 					}
 					new_statements_per_level =
 						GDKzalloc(2 * max_indentation * sizeof(size_t));
 					if (new_statements_per_level == NULL) {
 						*msg =
-							createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL);
+							createException(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 						goto finally;
 					}
 
@@ -296,7 +296,7 @@ char *FormatCode(char *code, char **args, size_t argcount, size_t tabwidth,
 	// Allocate space for the function
 	newcode = GDKzalloc(size);
 	if (newcode == NULL) {
-		*msg = createException(MAL, "pyapi.eval", MAL_MALLOC_FAIL);
+		*msg = createException(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto finally;
 	}
 	initial_spaces = 0;
@@ -384,7 +384,7 @@ char *FormatCode(char *code, char **args, size_t argcount, size_t tabwidth,
 					// indentation_levels array or something happened to the
 					// code
 					*msg = createException(MAL, "pyapi.eval",
-										   "If you see this error something "
+										   SQLSTATE(PY000) "If you see this error something "
 										   "went wrong in the code. Sorry.");
 					goto finally;
 				}
@@ -410,7 +410,7 @@ char *FormatCode(char *code, char **args, size_t argcount, size_t tabwidth,
 		// Something went wrong with our size computation, this also should
 		// never happen
 		*msg = createException(MAL, "pyapi.eval",
-							   "If you see this error something went wrong in "
+							   SQLSTATE(PY000) "If you see this error something went wrong in "
 							   "the code (size computation). Sorry.");
 		goto finally;
 	}

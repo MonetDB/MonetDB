@@ -65,14 +65,14 @@ Ready.
 % 137 # length
 [ "{\"message\" : \"indoorDeviceLocation\", \"id\" : \"00:1b:21:02:30:cd\", \"dateTime\" : \"2007-04-05T14:30\", \"position\" : {\"X\" : \"10\", \"Y\" : \"10\" }}"	]
 #select json.text(json.filter(js, 'message')) from txt;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
 % 20 # length
 [ "indoorDeviceLocation"	]
 #select json.text(json.filter(js, 'message')) = 'indoorDeviceLocation' from txt;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]

@@ -13,6 +13,7 @@ stderr of test 'schema_change_grant_crash.SF-963620` in directory 'sql/test/BugD
 MAPI  = (monetdb) /var/tmp/mtest-32127/.s.monetdb.34402
 QUERY = grant all on mine to monetdb;
 ERROR = !GRANT no such table 'mine'
+CODE  = 42S02
 
 # 08:40:05 >  
 # 08:40:05 >  Done.

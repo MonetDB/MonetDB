@@ -81,10 +81,12 @@ stderr of test 'mixed_type.SF-917372` in directory 'sql/test/BugDay_2005-10-06_2
 
 MAPI  = (monetdb) /var/tmp/mtest-10022/.s.monetdb.31381
 QUERY = select 'a'+1;
-ERROR = !daytime (a) has incorrect format
-MAPI  = (monetdb) /var/tmp/mtest-10022/.s.monetdb.31381
+ERROR = !Daytime (a) has incorrect format
+CODE  = 22007
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select 1-'a';
 ERROR = !conversion of string 'a' to type bte failed.
+CODE  = 22018
 
 # 19:21:06 >  
 # 19:21:06 >  Done.

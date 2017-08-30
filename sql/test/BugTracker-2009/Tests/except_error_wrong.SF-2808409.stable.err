@@ -72,6 +72,7 @@ stderr of test 'except_error_wrong.SF-2808409` in directory 'sql/test/BugTracker
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select naam, vestigingsplaats from anbi except select naam, vestigingsplaats, beschikking from anbi, kvk where lower(naam) = lower(bedrijfsnaam) and lower(plaats) = lower(vestigingsplaats);
 ERROR = !EXCEPT: column counts (2 and 3) do not match
+CODE  = 42000
 
 # 17:04:37 >  
 # 17:04:37 >  Done.

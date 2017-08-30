@@ -130,7 +130,7 @@ HASHnew(Heap *hp, int tpe, BUN size, BUN mask, BUN count)
 	((size_t *) hp->base)[2] = mask;
 	((size_t *) hp->base)[3] = width;
 	((size_t *) hp->base)[4] = count;
-	ALGODEBUG fprintf(stderr, "#HASHnew: create hash(size " BUNFMT ", mask " BUNFMT ",width %d, nil " BUNFMT ", total " BUNFMT " bytes);\n", size, mask, width, h->nil, (size + mask) * width);
+	ALGODEBUG fprintf(stderr, "#HASHnew: create hash(size " BUNFMT ", mask " BUNFMT ", width %d, nil " BUNFMT ", total " BUNFMT " bytes);\n", size, mask, width, h->nil, (size + mask) * width);
 	return h;
 }
 

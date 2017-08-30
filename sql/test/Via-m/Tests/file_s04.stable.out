@@ -32,8 +32,8 @@ Ready.
 #set next_file_quid = -1234567890;
 #set next_file_quid = get_next_file_quid('fabchannel2007');
 #select next_file_quid;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % int # type
 % 8 # length
 [ 86046057	]

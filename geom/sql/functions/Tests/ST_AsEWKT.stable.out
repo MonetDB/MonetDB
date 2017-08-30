@@ -31,164 +31,164 @@ Ready.
 # 13:33:45 >  
 
 #select st_asEWKT(st_pointfromtext('point(10 10)'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 22 # length
 [ "SRID:0;\"POINT (10 10)\""	]
 #select st_asEWKT(st_pointfromtext('point(20 20)', 4326));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 25 # length
 [ "SRID:4326;\"POINT (20 20)\""	]
 #select st_asEWKT(st_pointfromtext('point(10 10 10)'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 27 # length
 [ "SRID:0;\"POINT Z (10 10 10)\""	]
 #select st_asEWKT(st_makepoint(10, 10));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 22 # length
 [ "SRID:0;\"POINT (10 10)\""	]
 #select st_asEWKT(st_point(20, 20));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 22 # length
 [ "SRID:0;\"POINT (20 20)\""	]
 #select st_asEWKT(st_makepoint(10, 10, 10));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 27 # length
 [ "SRID:0;\"POINT Z (10 10 10)\""	]
 #select st_asEWKT(st_linefromtext('linestring(10 10, 20 20, 30 30)'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 41 # length
 [ "SRID:0;\"LINESTRING (10 10, 20 20, 30 30)\""	]
 #select st_asEWKT(st_linefromtext('linestring(20 20, 30 30, 40 40)', 4326));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 44 # length
 [ "SRID:4326;\"LINESTRING (20 20, 30 30, 40 40)\""	]
 #select st_asEWKT(st_linefromtext('linestring(20 20 20, 30 30 30, 40 40 40)', 4326));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 55 # length
 [ "SRID:4326;\"LINESTRING Z (20 20 20, 30 30 30, 40 40 40)\""	]
 #select st_asEWKT(st_polygonfromtext('polygon((10 10, 20 20, 30 30, 10 10))'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 47 # length
 [ "SRID:0;\"POLYGON ((10 10, 20 20, 30 30, 10 10))\""	]
 #select st_asEWKT(st_polygonfromtext('polygon((20 20, 30 30, 40 40, 20 20))', 4326));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 50 # length
 [ "SRID:4326;\"POLYGON ((20 20, 30 30, 40 40, 20 20))\""	]
 #select st_asEWKT(st_polygonfromtext('polygon((10 10 10, 20 20 20, 30 30 30, 10 10 10))'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 61 # length
 [ "SRID:0;\"POLYGON Z ((10 10 10, 20 20 20, 30 30 30, 10 10 10))\""	]
 #select st_asEWKT(st_mpointfromtext('multipoint(10 10, 20 20)'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 34 # length
 [ "SRID:0;\"MULTIPOINT (10 10, 20 20)\""	]
 #select st_asEWKT(st_mpointfromtext('multipoint(20 20, 30 30)', 4326));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 37 # length
 [ "SRID:4326;\"MULTIPOINT (20 20, 30 30)\""	]
 #select st_asEWKT(st_mpointfromtext('multipoint(20 20 20, 30 30 30)', 4326));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 45 # length
 [ "SRID:4326;\"MULTIPOINT Z (20 20 20, 30 30 30)\""	]
 #select st_asEWKT(st_mlinefromtext('multilinestring((10 10, 20 20, 30 30), (40 40, 50 50, 60 60))'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 71 # length
 [ "SRID:0;\"MULTILINESTRING ((10 10, 20 20, 30 30), (40 40, 50 50, 60 60))\""	]
 #select st_asEWKT(st_mlinefromtext('multilinestring((20 20, 30 30, 40 40), (50 50, 60 60, 70 70))', 4326));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 74 # length
 [ "SRID:4326;\"MULTILINESTRING ((20 20, 30 30, 40 40), (50 50, 60 60, 70 70))\""	]
 #select st_asEWKT(st_mlinefromtext('multilinestring((20 20 20, 30 30 30, 40 40 40), (50 50 50, 60 60 60, 70 70 70))', 4326));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 94 # length
 [ "SRID:4326;\"MULTILINESTRING Z ((20 20 20, 30 30 30, 40 40 40), (50 50 50, 60 60 60, 70 70 70))\""	]
 #select st_asEWKT(st_mpolyfromtext('multipolygon(((10 10, 20 20, 30 30, 10 10),(100 100, 200 200, 300 300, 100 100)))'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 92 # length
 [ "SRID:0;\"MULTIPOLYGON (((10 10, 20 20, 30 30, 10 10), (100 100, 200 200, 300 300, 100 100)))\""	]
 #select st_asEWKT(st_mpolyfromtext('multipolygon(((20 20, 30 30, 40 40, 20 20),(200 200, 300 300, 400 400, 200 200)))', 4326));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 95 # length
 [ "SRID:4326;\"MULTIPOLYGON (((20 20, 30 30, 40 40, 20 20), (200 200, 300 300, 400 400, 200 200)))\""	]
 #select st_asEWKT(st_mpolyfromtext('multipolygon(((10 10 10, 20 20 20, 30 30 30, 10 10 10),(100 100 100, 200 200 200, 300 300 300, 100 100 100)))'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 122 # length
 [ "SRID:0;\"MULTIPOLYGON Z (((10 10 10, 20 20 20, 30 30 30, 10 10 10), (100 100 100, 200 200 200, 300 300 300, 100 100 100)))\""	]
 #select st_asEWKT(st_geomfromtext('point(10 10)'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 22 # length
 [ "SRID:0;\"POINT (10 10)\""	]
 #select st_asEWKT(st_geomfromtext('linestring(10 10, 20 20, 30 30)'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 41 # length
 [ "SRID:0;\"LINESTRING (10 10, 20 20, 30 30)\""	]
 #select st_asEWKT(st_geomfromtext('polygon((10 10, 20 20, 30 30, 10 10))'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 47 # length
 [ "SRID:0;\"POLYGON ((10 10, 20 20, 30 30, 10 10))\""	]
 #select st_asEWKT(st_geomfromtext('multipoint(10 10, 20 20)'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 34 # length
 [ "SRID:0;\"MULTIPOINT (10 10, 20 20)\""	]
 #select st_asEWKT(st_geomfromtext('multilinestring((10 10, 20 20, 30 30), (40 40, 50 50, 60 60))'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 71 # length
 [ "SRID:0;\"MULTILINESTRING ((10 10, 20 20, 30 30), (40 40, 50 50, 60 60))\""	]
 #select st_asEWKT(st_geomfromtext('multipolygon(((10 10, 20 20, 30 30, 10 10),(100 100, 200 200, 300 300, 100 100)))'));
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % clob # type
 % 92 # length
 [ "SRID:0;\"MULTIPOLYGON (((10 10, 20 20, 30 30, 10 10), (100 100, 200 200, 300 300, 100 100)))\""	]
@@ -196,8 +196,8 @@ Ready.
 #insert into points_tbl values (st_pointfromtext('point(10 10)'));
 [ 1	]
 #select st_asEWKT(g) from points_tbl;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
 % 22 # length
 [ "SRID:0;\"POINT (10 10)\""	]
@@ -206,8 +206,8 @@ Ready.
 #insert into lines_tbl values (st_linefromtext('linestring(10 10, 20 20, 30 30)'));
 [ 1	]
 #select st_asEWKT(g) from lines_tbl;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
 % 41 # length
 [ "SRID:0;\"LINESTRING (10 10, 20 20, 30 30)\""	]
@@ -216,8 +216,8 @@ Ready.
 #insert into polygons_tbl values (st_polygonfromtext('polygon((10 10, 20 20, 30 30, 10 10))'));
 [ 1	]
 #select st_asEWKT(g) from polygons_tbl;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
 % 47 # length
 [ "SRID:0;\"POLYGON ((10 10, 20 20, 30 30, 10 10))\""	]
@@ -226,8 +226,8 @@ Ready.
 #insert into points_tbl values (st_pointfromtext('point(10 10 10)'));
 [ 1	]
 #select st_asEWKT(g) from points_tbl;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
 % 27 # length
 [ "SRID:0;\"POINT Z (10 10 10)\""	]
@@ -236,8 +236,8 @@ Ready.
 #insert into lines_tbl values (st_linefromtext('linestring(10 10 10, 20 20 20, 30 30 30)'));
 [ 1	]
 #select st_asEWKT(g) from lines_tbl;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
 % 52 # length
 [ "SRID:0;\"LINESTRING Z (10 10 10, 20 20 20, 30 30 30)\""	]
@@ -246,8 +246,8 @@ Ready.
 #insert into polygons_tbl values (st_polygonfromtext('polygon((10 10 10, 20 20 20, 30 30 30, 10 10 10))'));
 [ 1	]
 #select st_asEWKT(g) from polygons_tbl;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
 % 61 # length
 [ "SRID:0;\"POLYGON Z ((10 10 10, 20 20 20, 30 30 30, 10 10 10))\""	]

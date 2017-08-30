@@ -47,6 +47,7 @@
 
 // Numpy Library
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+#define NPY_INTERNAL_BUILD 0
 #ifdef __INTEL_COMPILER
 // Intel compiler complains about trailing comma's in numpy source code,
 #pragma warning(disable : 271)
@@ -92,9 +93,9 @@
 
 #define LOAD_SQL_FUNCTION_PTR(fcnname)                                         \
 	fcnname##_ptr =                                                            \
-		(fcnname##_ptr_tpe)getAddress(NULL, "lib_sql.dll", #fcnname, 0);       \
+		(fcnname##_ptr_tpe)getAddress(#fcnname);       \
 	if (fcnname##_ptr == NULL) {                                               \
-		msg = createException(MAL, "pyapi.eval", "Failed to load function %s", \
+		msg = createException(MAL, "pyapi.eval", SQLSTATE(PY000) "Failed to load function %s", \
 							  #fcnname);                                       \
 	}
 #else

@@ -35,22 +35,26 @@ QUERY = copy 3 records into t_int from stdin USING DELIMITERS ',','\n','\"' NULL
         0
         5.1
 ERROR = !Failed to import table 't_int', line 2 field i 'int' expected in '5.1'
-MAPI  = (monetdb) /var/tmp/mtest-25850/.s.monetdb.38004
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = 9
         
         select * from t_int;
 ERROR = !syntax error, unexpected sqlINT in: "9"
-MAPI  = (monetdb) /var/tmp/mtest-29638/.s.monetdb.30099
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = copy 5 records into t_int from stdin delimiters ',','\n' NULL as '';
         1
         nil
 ERROR = !Failed to import table 't_int', line 2 field i 'int' expected in 'nil'
-MAPI  = (monetdb) /var/tmp/mtest-25850/.s.monetdb.38004
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = null
         abc
         
         select * from t_int;
 ERROR = !syntax error, unexpected sqlNULL in: "null"
+CODE  = 42000
 
 # 11:23:33 >  
 # 11:23:33 >  "Done."

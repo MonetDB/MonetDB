@@ -88,7 +88,8 @@ int
 UUIDtoString(str *retval, int *len, const uuid *value)
 {
 	if (*len <= UUID_STRLEN || *retval == NULL) {
-		GDKfree(*retval);
+		if (*retval)
+			GDKfree(*retval);
 		if ((*retval = GDKmalloc(UUID_STRLEN + 1)) == NULL)
 			return 0;
 		*len = UUID_STRLEN + 1;
@@ -171,7 +172,7 @@ UUIDgenerateUuid(uuid **retval)
 	int i = 0, r = 0;
 
 	if (*retval == NULL && (*retval = GDKmalloc(UUID_SIZE)) == NULL)
-		throw(MAL, "uuid.new", MAL_MALLOC_FAIL);
+		throw(MAL, "uuid.new", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	u = *retval;
 #ifdef HAVE_UUID
 	uuid_generate(u->u);
@@ -222,7 +223,7 @@ UUIDuuid2str(str *retval, uuid **u)
 	int l = 0;
 	*retval = NULL;
 	if (UUIDtoString(retval, &l, *u) == 0)
-		throw(MAL, "uuid.str", MAL_MALLOC_FAIL);
+		throw(MAL, "uuid.str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 

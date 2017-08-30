@@ -32,18 +32,23 @@ stderr of test 'temporary.Bug-3430` in directory 'sql/test/BugTracker-2014` itse
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = create temporary table temp.dummy(i int);
 ERROR = !CREATE TABLE: no such schema 'temp'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = create temporary table tempo.dummy(i int);
 ERROR = !CREATE TABLE: local tempory tables should be stored in the 'tmp' schema
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select * from tempo.dummy;
 ERROR = !SELECT: no such table 'dummy'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select * from tmp.dummy;
 ERROR = !SELECT: no such table 'dummy'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop table tmp.dummy;
 ERROR = !DROP TABLE: no such table 'dummy'
+CODE  = 42S02
 
 # 12:14:57 >  
 # 12:14:57 >  "Done."

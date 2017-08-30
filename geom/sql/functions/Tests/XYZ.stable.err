@@ -32,6 +32,7 @@ stderr of test 'XYZ` in directory 'geom/sql/functions` itself:
 MAPI  = (monetdb) /var/tmp/mtest-30133/.s.monetdb.37873
 QUERY = select st_x(g) as X, st_y(g) as Y, st_Z(g) as Z, g from geo;
 ERROR = !Geometry "LINESTRING (10 10, 20 20, 30 30)" not a Point
+CODE  = 38000
 
 # 16:37:55 >  
 # 16:37:55 >  "Done."

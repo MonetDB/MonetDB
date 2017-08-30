@@ -2,7 +2,7 @@
 function test(s:str):lng;
 	b:= bat.new(:str);
 	bat.append(b,"hello");
-	z:= algebra.select(b,s,s,true,true,false);
+	z:= algebra.select(b,nil:bat[:oid],s,s,true,true,false);
 	i:= aggr.count(z);
 	return test:=i;
 end test;

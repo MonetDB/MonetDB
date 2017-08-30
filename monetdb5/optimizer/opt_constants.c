@@ -41,7 +41,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	index= (int*) GDKzalloc(sizeof(int) * mb->vtop);
 
 	if ( alias == NULL || cst == NULL || index == NULL){
-		msg = createException(MAL,"optimizer.constants",MAL_MALLOC_FAIL);
+		msg = createException(MAL,"optimizer.constants", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 
@@ -89,9 +89,9 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		}
     /* Defense line against incorrect plans */
 	/* Plan remains unaffected */
-	//chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-	//chkFlow(cntxt->fdout, mb);
-	//chkDeclarations(cntxt->fdout, mb);
+	//chkTypes(cntxt->usermodule, mb, FALSE);
+	//chkFlow(mb);
+	//chkDeclarations(mb);
     
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;

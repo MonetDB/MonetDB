@@ -35,16 +35,16 @@ Ready.
 #';select count(*) from region;CREATE USER copyuser WITH PASSWORD 'copyuser' name 'copyuser' schema sys;GRANT INSERT, SELECT on region to copyuser;
 [ 5	]
 #select count(*) from region;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 5	]
 #CREATE USER copyuser WITH PASSWORD 'copyuser' name 'copyuser' schema sys;
 #GRANT INSERT, SELECT on region to copyuser;
 #select count(*) from region;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 5	]
@@ -53,8 +53,8 @@ Ready.
 #';select count(*) from region;
 [ 5	]
 #select count(*) from region;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 10	]

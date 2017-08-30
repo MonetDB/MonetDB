@@ -45,7 +45,8 @@ QUERY = # recursively raise an exception passed upward
         mdb.List("user","foo");
         user.foo();
 ERROR = !MALException:user.foo[5]:a second exception raised
-        !MALException:user.foo[9]:Exception not caught
+        !MALException:user.foo[10]:exception not caught
+
 
 # 09:00:01 >  
 # 09:00:01 >  "Done."

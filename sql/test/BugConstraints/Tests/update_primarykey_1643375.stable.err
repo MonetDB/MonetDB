@@ -15,6 +15,8 @@ stderr of test 'update_primarykey_1643375` in directory 'sql/test/BugConstraints
 MAPI  = monetdb@sofia:39182
 QUERY = update t1 set id = 0 where id =1;
 ERROR = !UPDATE: FOREIGN KEY constraint 't2.t2_id_f_fkey' violated
+CODE  = M0M29
+
 
 # 12:55:05 >  
 # 12:55:05 >  Done.

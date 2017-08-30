@@ -29,6 +29,7 @@ QUERY = select urlid,clicktime from
 ERROR = !syntax error, unexpected ')', expecting SCOLON in: "select urlid,clicktime from
         !(clicks left outer join urls on
         !urls.suburl0x0=click"
+CODE  = 42000
 
 # 14:15:47 >  
 # 14:15:47 >  Done.

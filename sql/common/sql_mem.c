@@ -78,6 +78,8 @@ sql_allocator *sa_reset( sql_allocator *sa )
 	return sa;
 }
 
+#undef sa_realloc
+#undef sa_alloc
 char *sa_realloc( sql_allocator *sa, void *p, size_t sz, size_t oldsz )
 {
 	char *r = sa_alloc(sa, sz);
@@ -123,6 +125,7 @@ char *sa_alloc( sql_allocator *sa, size_t sz )
 	return r;
 }
 
+#undef sa_zalloc
 char *sa_zalloc( sql_allocator *sa, size_t sz )
 {
 	char *r = sa_alloc(sa, sz);
@@ -143,6 +146,7 @@ void sa_destroy( sql_allocator *sa )
 	GDKfree(sa);
 }
 
+#undef sa_strndup
 char *sa_strndup( sql_allocator *sa, const char *s, size_t l) 
 { 
 	char *r = sa_alloc(sa, l+1); 
@@ -154,6 +158,7 @@ char *sa_strndup( sql_allocator *sa, const char *s, size_t l)
 	return r; 
 }
 
+#undef sa_strdup
 char *sa_strdup( sql_allocator *sa, const char *s ) 
 { 
 	return sa_strndup( sa, s, strlen(s));

@@ -117,8 +117,8 @@ Ready.
 #CREATE TABLE subt (A1 BIGINT);
 #CREATE TABLE t (B BIGINT);
 #SELECT (B IN (SELECT A1 FROM subt)) FROM t;
-% .L1 # table_name
-% L1 # name
+% .L5 # table_name
+% L5 # name
 % boolean # type
 % 5 # length
 #ROLLBACK;

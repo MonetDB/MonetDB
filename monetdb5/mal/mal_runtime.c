@@ -67,6 +67,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	else if ( qtop +1 == qsize )
 		QRYqueue = (QueryQueue) GDKrealloc( QRYqueue, sizeof (struct QRYQUEUE) * (qsize +=256));
 	if ( QRYqueue == NULL){
+		addMalException(mb,"runtimeProfileInit" MAL_MALLOC_FAIL);
 		GDKfree(tmp);			/* may be NULL, but doesn't harm */
 		MT_lock_unset(&mal_delayLock);
 		return;
