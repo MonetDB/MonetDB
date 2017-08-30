@@ -50,8 +50,9 @@
 #include "sql_basket.h"
 #include "mal_builder.h"
 #include "opt_prelude.h"
+#include "mtime.h"
 
-static str statusname[7] = { "init", "register", "readytorun", "running", "waiting", "paused", "stopping"};
+static str statusname[7] = {"init", "register", "readytorun", "running", "waiting", "paused", "stopping"};
 
 static str CQstartScheduler(void);
 static int CQinit;
@@ -69,7 +70,7 @@ static BAT *CQ_id_stmt = 0;
 CQnode *pnet = 0;
 int pnetLimit = 0, pnettop = 0;
 
-#define SET_HEARTBEATS(X) (X != HEARTBEAT_NIL) ? X * 1000 : HEARTBEAT_NIL /* minimal 1 ms */
+#define SET_HEARTBEATS(X) (X != HEARTBEAT_NIL) ? X : HEARTBEAT_NIL /* minimal 1 ms */
 
 #define ALL_ROOT_CHECK(cntxt, malcal, name)                                                                            \
 	do {                                                                                                               \
@@ -505,11 +506,6 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	if(start_atom && (msg = convert_atom_into_unix_timestamp(start_atom->a, &start_at_parsed)) != MAL_SUCCEED){
 		goto finish;
 	}
-	/**
-	 * We are using GDKunix_timestamp_usec() to check if the query is enable to fire, so we have to convert into
-	 * microseconds
-	 */
-	start_at_parsed *= 1000;
 
 	if(is_function){ /* for functions we need to remove the sql.mvc instruction */
 		for(i = 1; i< mb->stop; i++){
@@ -680,7 +676,6 @@ CQresumeInternal(Client cntxt, MalBlkPtr mb, int with_alter)
 		if(start_atom && (msg = convert_atom_into_unix_timestamp(start_atom->a, &start_at_parsed)) != MAL_SUCCEED){
 			goto finish;
 		}
-		start_at_parsed *= 1000;
 	}
 
 	MT_lock_set(&ttrLock);
@@ -1034,7 +1029,7 @@ CQheartbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	for( ; idx < last; idx++){
-		int new_hearbeats = SET_HEARTBEATS(heartbeats);
+		lng new_hearbeats = SET_HEARTBEATS(heartbeats);
 		if(new_hearbeats > pnet[idx].beats) { //has to do the alignment of the starting point
 			pnet[idx].run -= (new_hearbeats - pnet[idx].beats);
 		} else {
@@ -1233,6 +1228,7 @@ CQscheduler(void *dummy)
 	Client cntxt = (Client) dummy;
 	str msg = MAL_SUCCEED;
 	lng t, now;
+	timestamp aux;
 	int claimed[MAXSTREAMS];
 	BAT *b;
 
@@ -1252,7 +1248,16 @@ CQscheduler(void *dummy)
 		   come back. We also only have to check the places that are marked
 		   non empty. You can only trigger on empty baskets using a heartbeat */
 		memset((void*) claimed, 0, sizeof(claimed));
-		now = GDKunix_timestamp_usec();
+
+		if((msg = MTIMEcurrent_timestamp(&aux)) != MAL_SUCCEED) {
+			fprintf(stderr, "CQscheduler internal error: %s\n", msg);
+			GDKfree(msg);
+		}
+		if((msg = MTIMEepoch2lng(&now, &aux)) != MAL_SUCCEED) {
+			fprintf(stderr, "CQscheduler internal error: %s\n", msg);
+			GDKfree(msg);
+		}
+
 		pntasks=0;
 		MT_lock_set(&ttrLock); // analysis should be done with exclusive access
 		for (k = i = 0; i < pnettop; i++)

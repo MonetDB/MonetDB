@@ -27,7 +27,7 @@ WHERE r1.time = bounds.first and r2.time = bounds.last and r1.room = r2.room and
 
 --derivative function with hardcoded stride
 --causes an infinite loop.
-CREATE FUNCTION rooms_derivative( stride bigint)
+CREATE FUNCTION rooms_derivative( "stride" bigint)
 RETURNS TABLE( 
     time timestamp,
     room string,

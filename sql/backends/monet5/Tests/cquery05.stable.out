@@ -42,6 +42,7 @@ Ready.
 % 1 # length
 [ 0	]
 [ 1	]
+[ 2	]
 #drop procedure cq_basic;
 #drop table cqresult05;
 

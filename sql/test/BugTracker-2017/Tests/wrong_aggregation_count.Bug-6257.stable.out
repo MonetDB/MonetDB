@@ -77,7 +77,7 @@ Ready.
 % name,	authorization,	owner,	system,	"# tables/views",	"# system tables",	"# user tables",	"# system views",	"# user views" # name
 % varchar,	int,	int,	boolean,	int,	int,	int,	int,	int # type
 % 8,	1,	1,	5,	1,	1,	1,	1,	1 # length
-[ "tmp",	2,	3,	true,	6,	6,	0,	0,	0	]
+[ "tmp",	2,	3,	true,	7,	7,	0,	0,	0	]
 [ "json",	3,	3,	true,	0,	0,	0,	0,	0	]
 [ "profiler",	3,	3,	true,	0,	0,	0,	0,	0	]
 #SELECT count(*) as "# tmp tables/views" FROM sys.tables WHERE schema_id IN (SELECT id FROM sys.schemas WHERE name = 'tmp');
@@ -85,7 +85,7 @@ Ready.
 % "# tmp tables/views" # name
 % bigint # type
 % 1 # length
-[ 6	]
+[ 7	]
 #SELECT count(*) as "# json tables/views" FROM sys.tables WHERE schema_id IN (SELECT id FROM sys.schemas WHERE name = 'json');
 % .L50 # table_name
 % "# json tables/views" # name
@@ -103,7 +103,7 @@ Ready.
 % "# tmp system tables" # name
 % bigint # type
 % 1 # length
-[ 6	]
+[ 7	]
 #SELECT count(*) as "# json system tables" FROM sys.tables WHERE schema_id IN (SELECT id FROM sys.schemas WHERE name = 'json') AND system AND query is NULL;
 % .L50 # table_name
 % "# json system tables" # name

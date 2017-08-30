@@ -508,7 +508,7 @@ load_sql_stream(sql_trans *tr, sql_table *t, oid rid)
 	void *v;
 	sql_stream *nt = SA_ZNEW(tr->sa, sql_stream);
 	sql_schema *syss = find_sql_schema(tr, "sys");
-	sql_table *streams = find_sql_table(syss, "streams");
+	sql_table *streams = find_sql_table(syss, "_streams");
 	sqlid tid;
 
 	v = table_funcs.column_find_value(tr, find_sql_column(streams, "id"), rid);
@@ -604,7 +604,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	sql_table *idxs = find_sql_table(syss, "idxs");
 	sql_table *keys = find_sql_table(syss, "keys");
 	sql_table *triggers = find_sql_table(syss, "triggers");
-	sql_table *streams = find_sql_table(syss, "streams");
+	sql_table *streams = find_sql_table(syss, "_streams");
 	char *query;
 	sql_column *idx_table_id, *key_table_id, *trigger_table_id, *streams_table_id;
 	oid rid;
@@ -1527,7 +1527,7 @@ store_load(void) {
 		bootstrap_create_column(tr, t, "commit_action", "smallint", 16);
 		bootstrap_create_column(tr, t, "access", "smallint", 16);
 
-		t = bootstrap_create_table(tr, s, "streams");
+		t = bootstrap_create_table(tr, s, "_streams");
 		bootstrap_create_column(tr, t, "id", "int", 32);
 		bootstrap_create_column(tr, t, "table_id", "int", 32);
 		bootstrap_create_column(tr, t, "window", "int", 32);
@@ -3830,7 +3830,7 @@ static void
 sys_drop_sql_stream(sql_trans *tr, sql_stream * st)
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobal(st->t)?"sys":"tmp");
-	sql_table *sysstreams = find_sql_table(syss, "streams");
+	sql_table *sysstreams = find_sql_table(syss, "_streams");
 	oid rid = table_funcs.column_find_row(tr, find_sql_column(sysstreams, "id"), &st->base.id, NULL);
 
 	if (rid == oid_nil)
@@ -4414,7 +4414,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 		base_init(tr->sa, &t->stream->base, next_oid(), TR_NEW, NULL);
 		list_append(t->s->streams, t->stream);
 
-		streamtable = find_sql_table(syss, "streams");
+		streamtable = find_sql_table(syss, "_streams");
 		table_funcs.table_insert(tr, streamtable, &t->stream->base.id, &t->base.id, &t->stream->window, &t->stream->stride);
 	}
 
@@ -4759,7 +4759,7 @@ sql_trans_alter_stream_table(sql_trans *tr, sql_table *t, int operation, int val
 	}
 	if (to_change) {
 		sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
-		sql_table *sysstreams = find_sql_table(syss, "streams");
+		sql_table *sysstreams = find_sql_table(syss, "_streams");
 
 		oid rid = table_funcs.column_find_row(tr, find_sql_column(sysstreams, "id"), &t->stream->base.id, NULL);
 		if (rid == oid_nil)

@@ -32,22 +32,25 @@ convert_atom_into_unix_timestamp(atom *a, lng* res)
 	*res = 0;
 
 	if(a->isnull) {
-		throw(SQL,"sql.timestamp",SQLSTATE(42000) "The begin value cannot be null\n");
+		msg = createException(SQL, "sql.timestamp", SQLSTATE(42000) "The begin value cannot be null\n");
+		goto finish;
 	}
 	switch (GetSQLTypeFromAtom(&a->tpe)) {
 		case EC_TIMESTAMP: {
-			timestamp tempp = (timestamp) a->data.val.lval;
-			if((msg = MTIMEepoch2lng(res, &tempp)) != MAL_SUCCEED) {
-				throw(SQL,"sql.timestamp",SQLSTATE(42000) "%s\n", msg);
+			timestamp *tempp = (timestamp*) &(a->data.val.lval);
+			if((msg = MTIMEepoch2lng(res, tempp)) != MAL_SUCCEED) {
+				msg = createException(SQL, "sql.timestamp", SQLSTATE(42000) "%s\n", msg);
+				goto finish;
 			}
 			break;
 		}
 		case EC_DATE: {
 			timestamp tempd;
-			tempd.days = (date) a->data.val.ival;
+			tempd.days = a->data.val.ival;
 			tempd.msecs = 0;
-			if((msg = MTIMEepoch2lng(res, &tempd)) != NULL) {
-				throw(SQL,"sql.timestamp",SQLSTATE(42000) "%s\n", msg);
+			if((msg = MTIMEepoch2lng(res, &tempd)) != MAL_SUCCEED) {
+				msg = createException(SQL, "sql.timestamp", SQLSTATE(42000) "%s\n", msg);
+				goto finish;
 			}
 			break;
 		}
@@ -55,22 +58,24 @@ convert_atom_into_unix_timestamp(atom *a, lng* res)
 			timestamp tempt;
 			date dateother;
 			if((msg = MTIMEcurrent_date(&dateother)) != MAL_SUCCEED) {
-				throw(SQL,"sql.timestamp",SQLSTATE(42000) "%s\n", msg);
+				msg = createException(SQL, "sql.timestamp", SQLSTATE(42000) "%s\n", msg);
+				goto finish;
 			}
 			tempt.days = dateother;
-			tempt.msecs = (daytime) a->data.val.ival;
+			tempt.msecs = a->data.val.ival;
 			if((msg = MTIMEepoch2lng(res, &tempt)) != MAL_SUCCEED) {
-				throw(SQL,"sql.timestamp",SQLSTATE(42000) "%s\n", msg);
+				msg = createException(SQL, "sql.timestamp", SQLSTATE(42000) "%s\n", msg);
+				goto finish;
 			}
 			break;
 		}
 		case EC_NUM: {
 			switch (a->data.vtype) {
-#ifdef HAVE_HGE
+			#ifdef HAVE_HGE
 				case TYPE_hge:
 					*res = (lng) a->data.val.hval;
 					break;
-#endif
+			#endif
 				case TYPE_lng:
 					*res = a->data.val.lval;
 					break;
@@ -84,17 +89,21 @@ convert_atom_into_unix_timestamp(atom *a, lng* res)
 					*res = (lng) a->data.val.btval;
 					break;
 				default:
-					throw(SQL,"sql.timestamp",SQLSTATE(42000) "Unknown SQL type for conversion\n");
+					msg = createException(SQL, "sql.timestamp", SQLSTATE(42000) "Unknown SQL type for conversion\n");
+					goto finish;
 			}
 			if(*res < 0) {
-				throw(SQL,"sql.timestamp",SQLSTATE(42000) "Negative UNIX timestamps are not allowed!\n");
+				msg = createException(SQL, "sql.timestamp", SQLSTATE(42000) "Negative UNIX timestamps are not allowed\n");
+				goto finish;
 			}
 			break;
 		}
 		/*case EC_CHAR:
 		case EC_STRING:*/
 		default:
-			throw(SQL,"sql.timestamp",SQLSTATE(42000) "Only number, time, date and timestamp fields are allowed for begin value\n");
+			msg = createException(SQL, "sql.timestamp", SQLSTATE(42000) "Only number, time, date and timestamp fields "
+																		"are allowed for begin value\n");
 	}
+finish:
 	return msg;
 }
