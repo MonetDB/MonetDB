@@ -2283,9 +2283,10 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 #ifdef HAVE_LIBREADLINE
 	struct myread_t rl;
 #endif
+	int fd;
 
 	(void) save_history;	/* not used if no readline */
-	if (isatty(getFileNo(fp)) /* fails if not a FILE* */
+	if ((fd = getFileNo(fp)) >= 0 && isatty(fd)
 #ifdef WIN32			/* isatty may not give expected result */
 	    && formatter != TESTformatter
 #endif
@@ -2334,11 +2335,8 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 		for (;;) {
 			ssize_t l;
 			l = mnstr_readline(fp, buf + length, bufsiz - length);
-			if (l <= 0) {
-				if (length == 0)
-					length = l;
+			if (l <= 0)
 				break;
-			}
 			if (!seen_null_byte && strlen(buf + length) < (size_t) l) {
 				fprintf(stderr, "NULL byte in input on line %d of input\n", lineno);
 				seen_null_byte = 1;
@@ -2357,7 +2355,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 		lineno++;
 		if (seen_null_byte)
 			continue;
-		if (length <= 0) {
+		if (length == 0) {
 			/* end of file */
 			if (hdl == NULL) {
 				/* nothing more to do */
@@ -2366,7 +2364,6 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 			}
 
 			/* hdl != NULL, we should finish the current query */
-			length = 0;
 		}
 		if (hdl == NULL && length > 0 && interactive) {
 			/* test for special commands */

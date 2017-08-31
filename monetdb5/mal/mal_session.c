@@ -127,6 +127,8 @@ MSinitClientPrg(Client cntxt, str mod, str nme)
 	}
 	if (cntxt->nspace == 0) {
 		cntxt->nspace = newModule(NULL, putName("user"));
+		if (cntxt->nspace == NULL) /* alloc failed, GDKerror already called */
+			return;
 	}
 	cntxt->curprg = newFunction(putName("user"), putName(nme), FUNCTIONsymbol);
 	if( cntxt->curprg == 0){

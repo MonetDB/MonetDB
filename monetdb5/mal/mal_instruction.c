@@ -790,8 +790,6 @@ clearVariable(MalBlkPtr mb, int varid)
 	VarPtr v;
 
 	v = getVar(mb, varid);
-	if (v == 0)
-		return;
 	if (isVarConstant(mb, varid) || isVarDisabled(mb, varid))
 		VALclear(&v->value);
 	v->type = 0;

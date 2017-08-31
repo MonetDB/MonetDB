@@ -698,13 +698,10 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 		if (rc != GDK_SUCCEED)
 			return GDK_FAIL;
 		BBPunfix(bn7->batCacheid);
-		if (s) {
-			bn = BATproject(bn8, s);
-			BBPunfix(bn8->batCacheid);
-			if (bn == NULL)
-				return GDK_FAIL;
-		} else
-			bn = bn8;
+		bn = BATproject(bn8, s);
+		BBPunfix(bn8->batCacheid);
+		if (bn == NULL)
+			return GDK_FAIL;
 	} else {
 		bn = BATfirstn_unique_with_groups(b, s, g, n, asc, &last, &lastg);
 		if (bn == NULL)

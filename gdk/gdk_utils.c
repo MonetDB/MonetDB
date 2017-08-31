@@ -1823,8 +1823,10 @@ char *
 GDKstrndup(const char *s, size_t size)
 {
 	char *p = malloc(size + 1);
-	if (p == NULL)
+	if (p == NULL) {
 		GDKerror("GDKstrdup failed for %s\n", s);
+		return NULL;
+	}
 	memcpy(p, s, size);
 	p[size] = 0;
 	return p;
