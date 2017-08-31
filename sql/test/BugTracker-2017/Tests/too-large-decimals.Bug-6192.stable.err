@@ -31,7 +31,7 @@ stderr of test 'too-large-decimals.Bug-6192` in directory 'sql/test/BugTracker-2
 
 MAPI  = (monetdb) /var/tmp/mtest-18303/.s.monetdb.32047
 QUERY = INSERT INTO test_table4 VALUES (531421754532.553234531231250);
-ERROR = !Too many digits (14 > 12)
+ERROR = !too many digits (14 > 12)
 CODE  = 22003
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO test_table4 VALUES (531421754532);

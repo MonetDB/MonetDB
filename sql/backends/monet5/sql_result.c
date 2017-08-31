@@ -1467,8 +1467,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 
 	iterators = GDKzalloc(sizeof(BATiter) * t->nr_cols);
 	if (!iterators) {
-		fres = -1;
-		goto cleanup;
+		return -1;
 	}
 
 	// ensure the buffer is currently empty
@@ -1478,11 +1477,21 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 	for (i = 0; i < (size_t) t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 		BAT *b = BATdescriptor(c->b);
-		int mtype = b->ttype;
-		int typelen = ATOMsize(mtype);
+		int mtype;
+		int typelen;
 		int convert_to_string = !type_supports_binary_transfer(c->type.type);
 		sql_type *type = c->type.type;
 
+		if (b == NULL) {
+			while (i > 0) {
+				i--;
+				BBPunfix(iterators[i].b->batCacheid);
+			}
+			GDKfree(iterators);
+			return -1;
+		}
+		mtype = b->ttype;
+		typelen = ATOMsize(mtype);
 		iterators[i] = bat_iterator(b);
 		
 		if (type->eclass == EC_TIMESTAMP || type->eclass == EC_DATE) {
@@ -1749,6 +1758,11 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 		srow = row;
 	}
 cleanup:
+	if (iterators) {
+		for (i = 0; i < (size_t) t->nr_cols; i++)
+			BBPunfix(iterators[i].b->batCacheid);
+		GDKfree(iterators);
+	}
 	if (result) {
 		GDKfree(result);
 	}
@@ -1798,6 +1812,13 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 			break;
 
 		fmt[i].c = BATdescriptor(c->b);
+		if (fmt[i].c == NULL) {
+			while (--i >= 1)
+				BBPunfix(fmt[i].c->batCacheid);
+			GDKfree(fmt);
+			GDKfree(tres);
+			return -1;
+		}
 		fmt[i].ci = bat_iterator(fmt[i].c);
 		fmt[i].name = NULL;
 		if (csv) {
@@ -2152,20 +2173,26 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 	for (i = 0; i < (size_t) t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 		BAT *b = BATdescriptor(c->b);
-		int mtype = b->ttype;
-		int typelen = ATOMsize(mtype);
+		int mtype;
+		int typelen;
 		int nil_len = -1;
-		int nil_type = ATOMstorage(mtype);
+		int nil_type;
 		int retval = -1;
 		int convert_to_string = !type_supports_binary_transfer(c->type.type);
 		sql_type *type = c->type.type;
 		lng print_width = -1;
-		
+
+		if (b == NULL)
+			return -1;
+
+		mtype = b->ttype;
+		typelen = ATOMsize(mtype);
+		nil_type = ATOMstorage(mtype);
+
 		// if the client wants print widths, we compute them for this column
 		if (compute_lengths) {
 			print_width = get_print_width(mtype, type->eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), b->batCacheid, c->p);
 		}
-		BBPunfix(b->batCacheid);
 
 		if (type->eclass == EC_TIMESTAMP || type->eclass == EC_DATE) {
 			// timestamps are converted to Unix Timestamps
@@ -2190,6 +2217,7 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 		if (!write_str_term(s, c->tn) || !write_str_term(s, c->name) || !write_str_term(s, type->sqlname) ||
 				!mnstr_writeInt(s, typelen) || !mnstr_writeInt(s, c->type.digits) || !mnstr_writeInt(s, type->eclass == EC_SEC ? 3 : c->type.scale)) {
 			fres = -1;
+			BBPunfix(b->batCacheid);
 			goto cleanup;
 		}
 
@@ -2197,6 +2225,7 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 			nil_len = 0;
 		}
 
+		BBPunfix(b->batCacheid);
 
 		// write NULL values for this column to the stream
 		// NULL values are encoded as [size:int][NULL value] ([size] is always [typelen] for fixed size columns)
@@ -2540,9 +2569,7 @@ mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 	}
 
 	res = mvc_export_table(b, s, t, order, offset, cnt, "[ ", ",\t", "\t]\n", "\"", "NULL");
-	if (order) {
-		BBPunfix(order->batCacheid);	
-	}
+	BBPunfix(order->batCacheid);	
 	return res;
 }
 

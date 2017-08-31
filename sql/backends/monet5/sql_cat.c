@@ -206,7 +206,11 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 		sql_allocator *sa = sql->sa;
 
 		sql->sa = sa_create();
+		if(!sql->sa)
+			throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
 		buf = sa_strdup(sql->sa, query);
+		if(!buf)
+			throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
 			r = rel_optimizer(sql, r);
@@ -516,7 +520,11 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 		sql_allocator *sa = sql->sa;
 
 		sql->sa = sa_create();
+		if(!sql->sa)
+			throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
 		buf = sa_strdup(sql->sa, nf->query);
+		if(!buf)
+			throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
 			r = rel_optimizer(sql, r);
@@ -710,6 +718,7 @@ UPGcreate_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str func = *getArgReference_str(stk, pci, 3);
 	stmt *s;
 	backend *be;
+	sql_allocator *sa;
 
 	if ((msg = getSQLContext(cntxt, mb, &sql, &be)) != NULL)
 		return msg;
@@ -717,7 +726,10 @@ UPGcreate_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	osname = cur_schema(sql)->base.name;
 	mvc_set_schema(sql, sname);
-	s = sql_parse(be, sa_create(), func, 0);
+	sa = sa_create();
+	if(!sa)
+		throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
+	s = sql_parse(be, sa, func, 0);
 	if (s && s->type == st_catalog) {
 		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
 		sql_func *func = (sql_func*)((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.pval;
@@ -740,6 +752,7 @@ UPGcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str view = *getArgReference_str(stk, pci, 2);
 	stmt *s;
 	backend *be;
+	sql_allocator *sa;
 
 	if ((msg = getSQLContext(cntxt, mb, &sql, &be)) != NULL)
 		return msg;
@@ -748,7 +761,10 @@ UPGcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
                                                               
 	osname = cur_schema(sql)->base.name;
 	mvc_set_schema(sql, sname);
-	s = sql_parse(be, sa_create(), view, 0);
+	sa = sa_create();
+	if(!sa)
+		throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
+	s = sql_parse(be, sa, view, 0);
 	if (s && s->type == st_catalog) {
 		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
 		sql_table *v = (sql_table*)((stmt*)s->op1->op4.lval->h->next->data)->op4.aval->data.val.pval;

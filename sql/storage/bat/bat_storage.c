@@ -52,14 +52,11 @@ delta_bind_del(sql_dbat *bat, int access)
 {
 	BAT *b;
 
-#ifdef NDEBUG
-	(void) access; /* satisfy compiler */
-#endif
+	(void) access;
 	assert(access == RDONLY || access == RD_INS);
 	assert(access != RD_UPD_ID && access != RD_UPD_VAL);
 
 	b = temp_descriptor(bat->dbid);
-	assert(b);
 	return b;
 }
 
@@ -79,9 +76,7 @@ delta_bind_ubat(sql_delta *bat, int access, int type)
 {
 	BAT *b;
 
-#ifdef NDEBUG
-	(void) access; /* satisfy compiler */
-#endif
+	(void) access;
 	assert(access == RD_UPD_ID || access == RD_UPD_VAL);
 	if (bat->uibid && bat->uvbid) {
 		if (access == RD_UPD_ID)
@@ -94,7 +89,6 @@ delta_bind_ubat(sql_delta *bat, int access, int type)
 		else
 			b = temp_descriptor(e_bat(type));
 	}
-	assert(b);
 	return b;
 }
 
@@ -623,6 +617,8 @@ delta_append_bat( sql_delta *bat, BAT *i )
 	if (!BATcount(i))
 		return LOG_OK;
 	b = temp_descriptor(bat->ibid);
+	if (b == NULL)
+		return LOG_ERR;
 
 	if (bat->cached) {
 		bat_destroy(bat->cached);
@@ -633,7 +629,6 @@ delta_append_bat( sql_delta *bat, BAT *i )
 		temp_destroy(bat->ibid);
 		bat->ibid = id;
 		temp_dup(id);
-		bat_destroy(b);
 		BAThseqbase(i, bat->ibase);
 	} else {
 		if (!isEbat(b)){
@@ -657,8 +652,8 @@ delta_append_bat( sql_delta *bat, BAT *i )
 			return LOG_ERR;
 		}
 		assert(BUNlast(b) > b->batInserted);
-		bat_destroy(b);
 	}
+	bat_destroy(b);
 	bat->cnt += BATcount(i);
 	return LOG_OK;
 }
@@ -1217,9 +1212,10 @@ new_persistent_delta( sql_delta *bat, int sz )
 		bat->cnt = BATcount(b) + BATcount(i);
 		bat->ucnt = 0;
 		bat->ibid = temp_copy(i->batCacheid, FALSE);
+		bat_destroy(i);
+		bat_destroy(b);
 		if (bat->ibid == BID_NIL) 
 			return LOG_ERR;
-		bat_destroy(i);
 		i = temp_descriptor(bat->ibid);
 		bat_set_access(i, BAT_READ);
 		BAThseqbase(i, bat->ibase);
@@ -2072,6 +2068,8 @@ gtr_minmax_col( sql_trans *tr, sql_column *c)
 		return ok;
 
 	cur = temp_descriptor(cbat->bid);
+	if (cur == NULL)
+		return LOG_ERR;
 	if (BATgetprop(cur, GDK_MIN_VALUE)) {
 		bat_destroy(cur);
 		return ok;

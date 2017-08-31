@@ -201,10 +201,8 @@ ALGgroupby(bat *res, const bat *gids, const bat *cnts)
 		BBPunfix(c->batCacheid);
 		throw(MAL, "algebra.groupby",GDK_EXCEPTION);
 	}
-	if( bn){
-		*res = bn->batCacheid;
-		BBPkeepref(bn->batCacheid);
-	}
+	*res = bn->batCacheid;
+	BBPkeepref(bn->batCacheid);
 	BBPunfix(g->batCacheid);
 	BBPunfix(c->batCacheid);
 	return MAL_SUCCEED;
@@ -218,12 +216,13 @@ ALGcard(lng *result, const bat *bid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.card", RUNTIME_OBJECT_MISSING);
 	}
-	if ((en = BATunique(b, NULL)) == NULL) {
+	en = BATunique(b, NULL);
+	BBPunfix(b->batCacheid);
+	if (en == NULL) {
 		throw(MAL, "algebra.card", GDK_EXCEPTION);
 	}
 	*result = BATcount(en);
 	BBPunfix(en->batCacheid);
-	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -350,6 +349,7 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id, const
 	BAT *candleft = NULL, *candright = NULL;
 	BAT *result1, *result2;
 	BUN est;
+	const char *err = RUNTIME_OBJECT_MISSING;
 
 	assert(r2id == NULL || rangefunc != NULL);
 
@@ -365,6 +365,8 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id, const
 		est = BUN_NONE;
 	else
 		est = (BUN) *estimate;
+
+	err = GDK_EXCEPTION;		/* most likely error now */
 
 	if (thetafunc) {
 		assert(joinfunc == NULL);
@@ -387,8 +389,10 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id, const
 			goto fail;
 	} else if (rangefunc) {
 		assert(difffunc == NULL);
-		if ((right2 = BATdescriptor(*r2id)) == NULL)
+		if ((right2 = BATdescriptor(*r2id)) == NULL) {
+			err = RUNTIME_OBJECT_MISSING;
 			goto fail;
+		}
 		if ((*rangefunc)(&result1, &result2, left, right, right2, candleft, candright, li, hi, est) != GDK_SUCCEED)
 			goto fail;
 		BBPunfix(right2->batCacheid);
@@ -423,7 +427,7 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id, const
 		BBPunfix(candleft->batCacheid);
 	if (candright)
 		BBPunfix(candright->batCacheid);
-	throw(MAL, funcname, RUNTIME_OBJECT_MISSING);
+	throw(MAL, funcname, "%s", err);
 }
 
 str
@@ -938,8 +942,10 @@ ALGfetch(ptr ret, const bat *bid, const lng *pos)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.fetch", RUNTIME_OBJECT_MISSING);
 	}
-	if ((*pos < (lng) 0) || (*pos >= (lng) BUNlast(b)))
+	if ((*pos < (lng) 0) || (*pos >= (lng) BUNlast(b))) {
+		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.fetch", ILLEGAL_ARGUMENT " Idx out of range\n");
+	}
 	msg = doALGfetch(ret, b, (BUN) *pos);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -1006,13 +1012,13 @@ ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL, "algebra.project", RUNTIME_OBJECT_MISSING);
 	bn = BATconstant(b->hseqbase, v->vtype, VALptr(v), BATcount(b), TRANSIENT);
+	BBPunfix(b->batCacheid);
 	if (bn == NULL) {
 		*ret = bat_nil;
 		throw(MAL, "algebra.project", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	*ret= bn->batCacheid;
 	BBPkeepref(bn->batCacheid);
-	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 

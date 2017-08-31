@@ -16,17 +16,11 @@ _delta_cands(sql_trans *tr, sql_table *t)
 {
 	sql_column *c = t->columns.set->h->data;
 	/* create void,void bat with length and oid's set */
-	BAT *tids = COLnew(0, TYPE_void, 0, TRANSIENT);
 	size_t nr = store_funcs.count_col(tr, c, 1);
+	BAT *tids = BATdense(0, 0, (BUN) nr);
 
 	if (!tids)
 		return NULL;
-	tids->tseqbase = 0;
-	BATsetcount(tids, (BUN) nr);
-	tids->trevsorted = 0;
-
-	tids->tkey = 1;
-	tids->tdense = 1;
 
 	if (store_funcs.count_del(tr, t)) {
 		BAT *d, *diff = NULL;

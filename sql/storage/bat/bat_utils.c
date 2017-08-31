@@ -171,6 +171,7 @@ void
 bat_utils_init(void)
 {
 	int t;
+	char name[32];
 
 	for (t=1; t<GDKatomcnt; t++) {
 		if (t != TYPE_bat && BATatoms[t].name[0]
@@ -180,6 +181,10 @@ bat_utils_init(void)
 		) {
 			ebats[t] = bat_new(t, 0, TRANSIENT);
 			bat_set_access(ebats[t], BAT_READ);
+			/* give it a name for debugging purposes */
+			snprintf(name, sizeof(name), "sql_empty_%s_bat",
+				 ATOMname(t));
+			BBPrename(ebats[t]->batCacheid, name);
 		}
 	}
 }

@@ -23,6 +23,8 @@ rel_psm_block(sql_allocator *sa, list *l)
 {
 	if (l) {
 		sql_rel *r = rel_create(sa);
+		if(!r)
+			return NULL;
 
 		r->op = op_ddl;
 		r->flag = DDL_PSM;
@@ -37,6 +39,8 @@ rel_psm_stmt(sql_allocator *sa, sql_exp *e)
 {
 	if (e) {
 		list *l = sa_list(sa);
+		if(!l)
+			return NULL;
 
 		list_append(l, e);
 		return rel_psm_block(sa, l);
@@ -511,15 +515,15 @@ rel_psm_return( mvc *sql, sql_subtype *restype, list *restypelist, symbol *retur
 static list *
 rel_select_into( mvc *sql, symbol *sq, exp_kind ek)
 {
-        SelectNode *sn = (SelectNode*)sq;
-        dlist *into = sn->into;
+	SelectNode *sn = (SelectNode*)sq;
+	dlist *into = sn->into;
 	node *m;
 	dnode *n;
 	sql_rel *r;
 	list *nl = NULL;
 
-        /* SELECT ... INTO var_list */
-        sn->into = NULL;
+	/* SELECT ... INTO var_list */
+	sn->into = NULL;
 	r = rel_subquery(sql, NULL, sq, ek, APPLY_JOIN);
 	if (!r) 
 		return NULL;
@@ -738,6 +742,8 @@ rel_create_function(sql_allocator *sa, const char *sname, sql_func *f)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
+	if(!rel || !exps)
+		return NULL;
 
 	append(exps, exp_atom_clob(sa, sname));
 	if (f)
@@ -947,6 +953,8 @@ rel_drop_function(sql_allocator *sa, const char *sname, const char *name, int nr
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
+	if(!rel || !exps)
+		return NULL;
 
 	append(exps, exp_atom_clob(sa, sname));
 	append(exps, exp_atom_clob(sa, name));
@@ -1104,6 +1112,8 @@ rel_create_trigger(mvc *sql, const char *sname, const char *tname, const char *t
 {
 	sql_rel *rel = rel_create(sql->sa);
 	list *exps = new_exp_list(sql->sa);
+	if(!rel || !exps)
+		return NULL;
 
 	append(exps, exp_atom_str(sql->sa, sname, sql_bind_localtype("str") ));
 	append(exps, exp_atom_str(sql->sa, tname, sql_bind_localtype("str") ));
@@ -1254,6 +1264,8 @@ rel_drop_trigger(mvc *sql, const char *sname, const char *tname)
 {
 	sql_rel *rel = rel_create(sql->sa);
 	list *exps = new_exp_list(sql->sa);
+	if(!rel || !exps)
+		return NULL;
 
 	append(exps, exp_atom_str(sql->sa, sname, sql_bind_localtype("str") ));
 	append(exps, exp_atom_str(sql->sa, tname, sql_bind_localtype("str") ));
