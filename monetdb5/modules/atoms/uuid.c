@@ -67,11 +67,14 @@ str
 UUIDprelude(void *ret)
 {
 	int len = 0;
+	str msg;
 
 	(void) ret;
 	assert(UUID_SIZE == 16);
 	(void) malAtomSize(sizeof(uuid), sizeof(oid), "uuid");
-	UUIDgenerateUuid(&uuid_session);
+	msg = UUIDgenerateUuid(&uuid_session);
+	if (msg)
+		return msg;
 	UUIDtoString(&mal_session_uuid, &len, uuid_session);
 	//mnstr_printf(GDKerr,"Session uid:%s", uuid_session_name);
 	return MAL_SUCCEED;

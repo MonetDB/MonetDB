@@ -200,7 +200,8 @@ OPTmultiplexSimple(Client cntxt, MalBlkPtr mb)
 		}
 	}
 	if( doit) {
-		OPTmultiplexImplementation(cntxt, mb, 0, 0);
+		str msg = OPTmultiplexImplementation(cntxt, mb, 0, 0);
+		freeException(msg);		/* if (msg) return some error as well? */
 		chkTypes(cntxt->fdout, cntxt->nspace, mb,TRUE);
 		if ( mb->errors == 0) {
 			chkFlow(cntxt->fdout, mb);

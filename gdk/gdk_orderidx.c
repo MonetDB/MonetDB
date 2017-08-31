@@ -62,6 +62,8 @@ BATcheckorderidx(BAT *b)
 	int ret;
 	lng t = 0;
 
+	if (b == NULL)
+		return 0;
 	assert(b->batCacheid > 0);
 	ALGODEBUG t = GDKusec();
 	MT_lock_set(&GDKhashLock(b->batCacheid));

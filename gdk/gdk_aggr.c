@@ -2290,7 +2290,6 @@ BATminmax(BAT *b, void *aggr,
 	oid pos;
 	const void *res;
 	int s;
-	int needdecref = 0;
 	BATiter bi;
 
 	if ((VIEWtparent(b) == 0 ||
@@ -2333,8 +2332,6 @@ BATminmax(BAT *b, void *aggr,
 	}
 	if (aggr != NULL)	/* else: malloc error */
 		memcpy(aggr, res, s);
-	if (needdecref)
-		BBPunfix(b->batCacheid);
 	return aggr;
 }
 

@@ -104,8 +104,8 @@ void getModuleList(Module** out, int* length) {
 			m = m->link;
 		}
 	}
-	*out = GDKzalloc(moduleCount * sizeof(Module*));
-	if (!out) {
+	*out = GDKzalloc(moduleCount * sizeof(Module));
+	if (*out == NULL) {
 		return;
 	}
 	*length = moduleCount;

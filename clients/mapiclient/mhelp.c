@@ -823,7 +823,7 @@ sql_word(const char *word, size_t maxlen, stream *toConsole)
 void
 sql_help(char *pattern, stream *toConsole, int pagewidth)
 {
-	size_t maxlen = 0, len;
+	size_t maxlen = 1, len;
 	int i, step, ncolumns, total = 0;
 
 	if (*pattern == '\\')

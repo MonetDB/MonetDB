@@ -532,7 +532,12 @@ JSONmatch(JSON *jt, int ji, pattern * terms, int ti)
 	int i;
 	int cnt;
 
+	if (ti >= MAXTERMS)
+		return res;
+
 	if (terms[ti].token == ROOT_STEP) {
+		if (ti + 1 == MAXTERMS)
+			return NULL;
 		if (terms[ti + 1].token == END_STEP) {
 			res = JSONgetValue(jt, 0);
 			if (res == NULL)
@@ -560,6 +565,8 @@ JSONmatch(JSON *jt, int ji, pattern * terms, int ti)
 						r = JSONmatch(jt, jt->elm[i].child, terms, ti);
 					else
 						r = 0;
+				} else if (ti + 1 == MAXTERMS) {
+					return NULL;
 				} else if (terms[ti + 1].token == END_STEP) {
 					if (jt->elm[i].kind == JSON_VALUE)
 						r = JSONgetValue(jt, jt->elm[i].child);
@@ -588,6 +595,8 @@ JSONmatch(JSON *jt, int ji, pattern * terms, int ti)
 				terms[ti].name[0] == '*') {
 				if (terms[ti].index == INT_MAX ||
 					(cnt >= terms[ti].first && cnt <= terms[ti].last)) {
+					if (ti + 1 == MAXTERMS)
+						return NULL;
 					if (terms[ti + 1].token == END_STEP) {
 						r = JSONgetValue(jt, jt->elm[i].child);
 						if (r == NULL)
@@ -2205,19 +2214,18 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 						 * BATproject will fail.
 						 */
 						if ((p == 0) && (q == 1)) {
-							strncpy(buf, "[ null ]", maxlen - buflen);
-							buflen += strlen("[ null ]");
+							strcpy(buf, "[ null ]");
 							isnil = 1;
 						} else {
 							continue;
 						}
 					} else {
-						strncpy(buf, str_nil, buflen);
+						strcpy(buf, str_nil);
 						isnil = 1;
 					}
 				} else {
 					len = strlen(v);
-					if (len >= maxlen - buflen) {
+					if (len >= maxlen) {
 						maxlen += len + BUFSIZ;
 						buf2 = GDKrealloc(buf, maxlen);
 						if (buf2 == NULL) {
@@ -2228,17 +2236,14 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 					}
 					switch (b->ttype) {
 					case TYPE_str:
-						len = snprintf(buf + buflen, maxlen - buflen, "[ \"%s\" ]", v);
-						buflen += len;
+						len = snprintf(buf, maxlen, "[ \"%s\" ]", v);
 						break;
 					case TYPE_dbl:
-						len = snprintf(buf + buflen, maxlen - buflen, "[ %s ]", v);
-						buflen += len;
+						len = snprintf(buf, maxlen, "[ %s ]", v);
 						break;
 					}
 				}
 				bunfastapp_nocheck(bn, BUNlast(bn), buf, Tsize(bn));
-				buflen = 0;
 			}
 			bn->tnil = nils != 0;
 			bn->tnonil = nils == 0;

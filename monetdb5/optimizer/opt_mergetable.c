@@ -1567,6 +1567,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	ml.horigin = 0;
 	ml.torigin = 0;
 	ml.v = 0;
+	ml.vars = 0;
 	if (bailout){
 		msg = createException(MAL,"optimizer.mergetable",MAL_MALLOC_FAIL);
 		goto cleanup;

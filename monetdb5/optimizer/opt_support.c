@@ -128,7 +128,8 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 						freeException(msg);
 						msg = nmsg;
 						GDKfree(place);
-					}
+					} else
+						freeException(nmsg);
 					goto wrapup;
 				}
 				if (cntxt->mode == FINISHCLIENT)

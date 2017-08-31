@@ -2609,7 +2609,7 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 			return NULL;
 		}
 		if (s->nrcols == 0){
-			if (!predicate)
+			if (!predicate && sub)
 				predicate = stmt_const(be, bin_first_column(be, sub), stmt_bool(be, 1));
 			sel = stmt_uselect(be, predicate, s, cmp_equal, sel, 0);
 		} else if (e->type != e_cmp) {
