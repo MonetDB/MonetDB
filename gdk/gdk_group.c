@@ -599,17 +599,16 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
 		ngrp = cnt == 0  ? 0 : cand ? s->hseqbase + (cand - (const oid *) Tloc(s, 0)) : s ? s->hseqbase + start - s->tseqbase : b->hseqbase;
-		gn = COLnew(hseqb, TYPE_void, BATcount(b), TRANSIENT);
+		gn = BATdense(hseqb, 0, BATcount(b));
 		if (gn == NULL)
 			goto error;
-		BATsetcount(gn, BATcount(b));
-		BATtseqbase(gn, 0);
 		*groups = gn;
 		if (extents) {
 			if (cand) {
 				en = COLnew(0, TYPE_oid, cnt, TRANSIENT);
 				if (en == NULL)
 					goto error;
+				BATsetcount(en, cnt);
 				memcpy(Tloc(en, 0), cand, cnt * sizeof(oid));
 				en->tsorted = 1;
 				en->trevsorted = cnt <= 1;
@@ -618,12 +617,10 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				en->tnonil = 1;
 				en->tdense = 0;
 			} else {
-				en = COLnew(0, TYPE_void, BATcount(b), TRANSIENT);
+				en = BATdense(0, b->hseqbase, cnt);
 				if (en == NULL)
 					goto error;
-				BATtseqbase(en, b->hseqbase + start);
 			}
-			BATsetcount(en, cnt);
 			*extents = en;
 		}
 		if (histo) {
@@ -672,11 +669,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			*groups = gn;
 			if (extents) {
 				ngrp = b->hseqbase + start;
-				en = COLnew(0, TYPE_void, 1, TRANSIENT);
+				en = BATdense(0, b->hseqbase + start, 1);
 				if (en == NULL)
 					goto error;
-				BATtseqbase(en, b->hseqbase + start);
-				BATsetcount(en, 1);
 				*extents = en;
 			}
 			if (histo) {
