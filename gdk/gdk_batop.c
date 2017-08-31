@@ -1306,21 +1306,17 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			*sorted = bn;
 		}
 		if (order) {
-			on = COLnew(b->hseqbase, TYPE_void, BATcount(b), TRANSIENT);
+			on = BATdense(b->hseqbase, b->hseqbase, BATcount(b));
 			if (on == NULL)
 				goto error;
-			BATsetcount(on, BATcount(b));
-			BATtseqbase(on, b->hseqbase);
 			*order = on;
 		}
 		if (groups) {
 			if (BATtkey(b)) {
 				/* singleton groups */
-				gn = COLnew(0, TYPE_void, BATcount(b), TRANSIENT);
+				gn = BATdense(0, 0, BATcount(b));
 				if (gn == NULL)
 					goto error;
-				BATsetcount(gn, BATcount(b));
-				BATtseqbase(gn, 0);
 			} else {
 				/* single group */
 				const oid *o = 0;
@@ -1822,15 +1818,9 @@ BATcount_no_nil(BAT *b)
 static BAT *
 newdensecand(oid first, oid last)
 {
-	BAT *bn;
-
-	if ((bn = COLnew(0, TYPE_void, 0, TRANSIENT)) == NULL)
-		return NULL;
 	if (last < first)
 		first = last = 0; /* empty range */
-	BATsetcount(bn, last - first);
-	BATtseqbase(bn, first);
-	return bn;
+	return BATdense(0, first, last - first);
 }
 
 /* merge two candidate lists and produce a new one

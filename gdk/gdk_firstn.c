@@ -119,6 +119,10 @@
  * refer to the N smallest/largest (depending on asc) tail values of b
  * (taking the optional candidate list s into account).  If there are
  * multiple equal values to take us past N, we return a subset of those.
+ *
+ * If lastp is non-NULL, it is filled in with the oid of the "last"
+ * value, i.e. the value of which there may be multiple occurrences
+ * that are not all included in the first N.
  */
 static BAT *
 BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc, oid *lastp)
@@ -148,11 +152,9 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc, oid *lastp)
 		}
 	} else if (n >= cnt) {
 		/* trivial: return everything */
-		bn = COLnew(0, TYPE_void, cnt, TRANSIENT);
+		bn = BATdense(0, start + b->hseqbase, cnt);
 		if (bn == NULL)
 			return NULL;
-		BATsetcount(bn, cnt);
-		BATtseqbase(bn, start + b->hseqbase);
 		if (lastp)
 			*lastp = 0;
 		return bn;
@@ -178,18 +180,14 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc, oid *lastp)
 				*lastp = candend[-(ssize_t)n];
 			return BATslice(s, i - n, i);
 		}
-		bn = COLnew(0, TYPE_void, n, TRANSIENT);
-		if (bn == NULL)
-			return NULL;
-		BATsetcount(bn, n);
 		if (asc ? b->tsorted : b->trevsorted) {
 			/* first n entries from b */
-			BATtseqbase(bn, start + b->hseqbase);
+			bn = BATdense(0, start + b->hseqbase, n);
 			if (lastp)
 				*lastp = start + b->hseqbase + n - 1;
 		} else {
 			/* last n entries from b */
-			BATtseqbase(bn, start + cnt + b->hseqbase - n);
+			bn = BATdense(0, start + cnt + b->hseqbase - n, n);
 			if (lastp)
 				*lastp = start + cnt + b->hseqbase - n;
 		}
@@ -370,6 +368,17 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc, oid *lastp)
 		}							\
 	} while (0)
 
+/* This version of BATfirstn is like the one above, except that it
+ * also looks at groups.  The values of the group IDs are important:
+ * we return only the smallest N (i.e., not dependent on asc which
+ * refers only to the values in the BAT b).
+ *
+ * If lastp is non-NULL, it is filled in with the oid of the "last"
+ * value, i.e. the value of which there may be multiple occurrences
+ * that are not all included in the first N.  If lastgp is non-NULL,
+ * it is filled with the group ID (not the oid of the group ID) for
+ * that same value.
+ */
 static BAT *
 BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc, oid *lastp, oid *lastgp)
 {
@@ -401,11 +410,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc, oid *lastp,
 	if (n == 0) {
 		/* candidate list might refer only to values outside
 		 * of the bat and hence be effectively empty */
-		bn = COLnew(0, TYPE_void, 0, TRANSIENT);
-		if (bn == NULL)
-			return NULL;
-		BATtseqbase(bn, 0);
-		return bn;
+		return BATdense(0, 0, 0);
 	}
 
 	bn = COLnew(0, TYPE_oid, n, TRANSIENT);
@@ -581,7 +586,7 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 		return GDK_FAIL;
 	if (BATcount(bn) == 0) {
 		if (gids) {
-			gn = COLnew(0, TYPE_void, 0, TRANSIENT);
+			gn = BATdense(0, 0, 0);
 			if (gn == NULL) {
 				BBPunfix(bn->batCacheid);
 				return GDK_FAIL;
@@ -707,7 +712,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	}
 	if (BATcount(bn) == 0) {
 		if (gids) {
-			gn = COLnew(0, TYPE_void, 0, TRANSIENT);
+			gn = BATdense(0, 0, 0);
 			if (gn == NULL) {
 				BBPunfix(bn->batCacheid);
 				return GDK_FAIL;
@@ -816,17 +821,15 @@ BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BUN n, int asc, int di
 
 	if (n == 0 || BATcount(b) == 0 || (s != NULL && BATcount(s) == 0)) {
 		/* trivial: empty result */
-		*topn = COLnew(0, TYPE_void, 0, TRANSIENT);
+		*topn = BATdense(0, 0, 0);
 		if (*topn == NULL)
 			return GDK_FAIL;
-		BATtseqbase(*topn, 0);
 		if (gids) {
-			*gids = COLnew(0, TYPE_void, 0, TRANSIENT);
+			*gids = BATdense(0, 0, 0);
 			if (*gids == NULL) {
 				BBPreclaim(*topn);
 				return GDK_FAIL;
 			}
-			BATtseqbase(*gids, 0);
 		}
 		return GDK_SUCCEED;
 	}

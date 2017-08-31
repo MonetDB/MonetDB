@@ -1222,17 +1222,10 @@ static BAT *
 bm_tids(BAT *b, BAT *d)
 {
 	BUN sz = BATcount(b);
-	BAT *tids = COLnew(0, TYPE_void, 0, TRANSIENT);
+	BAT *tids = BATdense(0, 0, sz);
 
 	if (tids == NULL)
 		return NULL;
-
-	BATtseqbase(tids, 0);
-	BATsetcount(tids, sz);
-	tids->trevsorted = 0;
-
-	tids->tkey = 1;
-	tids->tdense = 1;
 
 	if (BATcount(d)) {
 		BAT *diff = BATdiff(tids, d, NULL, NULL, 0, BUN_NONE);

@@ -483,12 +483,10 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			bn->trevsorted = BATcount(bn) <= 1;
 			bn->tkey = 1;
 		} else {
-			bn = COLnew(0, TYPE_void, (BUN) (o2 - o1), TRANSIENT);
+			bn = BATdense(0, o1, (BUN) (o2 - o1));
 			if (bn == NULL)
 				throw(MAL, "generator.subselect",
 				      SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			BATsetcount(bn, o2 - o1);
-			BATtseqbase(bn, o1);
 		}
 	}
 	* getArgReference_bat(stk, pci, 0) = bn->batCacheid;
