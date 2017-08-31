@@ -356,14 +356,17 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 		assert(l->nr <= (lng) BUN_MAX);
 		if (l->flag == LOG_UPDATE) {
 			uid = COLnew(0, ht, (BUN) l->nr, PERSISTENT);
-			if (uid == NULL)
+			if (uid == NULL) {
+				logbat_destroy(b);
 				return LOG_ERR;
+			}
 		} else {
 			assert(ht == TYPE_void);
 		}
 		r = COLnew(0, tt, (BUN) l->nr, PERSISTENT);
 		if (r == NULL) {
 			BBPreclaim(uid);
+			logbat_destroy(b);
 			return LOG_ERR;
 		}
 
@@ -418,7 +421,6 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 		}
 		if (tv != lg->buf)
 			GDKfree(tv);
-		logbat_destroy(b);
 
 		if (res == LOG_OK) {
 			if (tr_grow(tr) == GDK_SUCCEED) {
@@ -427,6 +429,9 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 				tr->changes[tr->nr].ht = ht;
 				tr->changes[tr->nr].tt = tt;
 				if ((tr->changes[tr->nr].name = GDKstrdup(name)) == NULL) {
+					logbat_destroy(b);
+					BBPreclaim(uid);
+					BBPreclaim(r);
 					return LOG_ERR;
 				}
 				tr->changes[tr->nr].b = r;
@@ -440,6 +445,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 		/* bat missing ERROR or ignore ? currently error. */
 		res = LOG_ERR;
 	}
+	logbat_destroy(b);
 	return res;
 }
 
@@ -888,14 +894,19 @@ logger_open(logger *lg)
 		GDKdebug &= ~CHECKMASK;
 		if ((b = BATdescriptor(bid)) == NULL ||
 		    BATmode(b, TRANSIENT) != GDK_SUCCEED ||
-		    logger_del_bat(lg, bid) != GDK_SUCCEED)
+		    logger_del_bat(lg, bid) != GDK_SUCCEED) {
+			logbat_destroy(b);
 			return GDK_FAIL;
+		}
 		logbat_destroy(b);
+		b = NULL;
 		if ((bid = logger_find_bat(lg, "seqs_val")) == 0 ||
 		    (b = BATdescriptor(bid)) == NULL ||
 		    BATmode(b, TRANSIENT) != GDK_SUCCEED ||
-		    logger_del_bat(lg, bid) != GDK_SUCCEED)
+		    logger_del_bat(lg, bid) != GDK_SUCCEED) {
+			logbat_destroy(b);
 			return GDK_FAIL;
+		}
 		logbat_destroy(b);
 		GDKdebug = dbg;
 		if (bm_commit(lg) != GDK_SUCCEED)
@@ -1211,17 +1222,10 @@ static BAT *
 bm_tids(BAT *b, BAT *d)
 {
 	BUN sz = BATcount(b);
-	BAT *tids = COLnew(0, TYPE_void, 0, TRANSIENT);
+	BAT *tids = BATdense(0, 0, sz);
 
 	if (tids == NULL)
 		return NULL;
-
-	BATtseqbase(tids, 0);
-	BATsetcount(tids, sz);
-	tids->trevsorted = 0;
-
-	tids->tkey = 1;
-	tids->tdense = 1;
 
 	if (BATcount(d)) {
 		BAT *diff = BATdiff(tids, d, NULL, NULL, 0, BUN_NONE);
@@ -2745,6 +2749,7 @@ bm_commit(logger *lg)
 
 		if ((lb = BATdescriptor(bid)) == NULL ||
 		    BATmode(lb, PERSISTENT) != GDK_SUCCEED) {
+			logbat_destroy(lb);
 			logbat_destroy(n);
 			return GDK_FAIL;
 		}
@@ -2810,6 +2815,7 @@ logger_del_bat(logger *lg, log_bid bid)
 
 	assert(p != BUN_NONE);
 	if (p == BUN_NONE) {
+		logbat_destroy(b);
 		GDKerror("logger_del_bat: cannot find BAT\n");
 		return GDK_FAIL;
 	}
@@ -2819,19 +2825,25 @@ logger_del_bat(logger *lg, log_bid bid)
 	if (p >= lg->catalog_bid->batInserted &&
 	    (q = log_find(lg->snapshots_bid, lg->dsnapshots, bid)) != BUN_NONE) {
 
-		if (BUNappend(lg->dsnapshots, &q, FALSE) != GDK_SUCCEED)
+		if (BUNappend(lg->dsnapshots, &q, FALSE) != GDK_SUCCEED) {
+			logbat_destroy(b);
 			return GDK_FAIL;
+		}
 		if (lg->debug & 1)
 			fprintf(stderr,
 				"#logger_del_bat release snapshot %d (%d)\n",
 				bid, BBP_lrefs(bid));
-		if (BUNappend(lg->freed, &bid, FALSE) != GDK_SUCCEED)
+		if (BUNappend(lg->freed, &bid, FALSE) != GDK_SUCCEED) {
+			logbat_destroy(b);
 			return GDK_FAIL;
+		}
 	} else if (p >= lg->catalog_bid->batInserted) {
 		BBPrelease(bid);
 	} else {
-		if (BUNappend(lg->freed, &bid, FALSE) != GDK_SUCCEED)
+		if (BUNappend(lg->freed, &bid, FALSE) != GDK_SUCCEED) {
+			logbat_destroy(b);
 			return GDK_FAIL;
+		}
 	}
 	if (b) {
 		lg->changes += BATcount(b) + 1;

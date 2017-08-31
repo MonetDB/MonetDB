@@ -246,10 +246,10 @@ BATdense(oid hseq, oid tseq, BUN cnt)
 	BAT *bn;
 
 	bn = COLnew(hseq, TYPE_void, 0, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-	BATtseqbase(bn, tseq);
-	BATsetcount(bn, cnt);
+	if (bn != NULL) {
+		BATtseqbase(bn, tseq);
+		BATsetcount(bn, cnt);
+	}
 	return bn;
 }
 
@@ -1380,6 +1380,7 @@ BATsetcount(BAT *b, BUN cnt)
 {
 	/* head column is always VOID, and some head properties never change */
 	assert(b->hseqbase != oid_nil);
+	assert(cnt <= BUN_MAX);
 
 	b->batCount = cnt;
 	b->batDirtydesc = TRUE;

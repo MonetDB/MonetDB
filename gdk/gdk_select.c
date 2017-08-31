@@ -71,17 +71,6 @@ virtualize(BAT *bn)
 }
 
 static BAT *
-newempty(void)
-{
-	BAT *bn = COLnew(0, TYPE_void, 0, TRANSIENT);
-	if (bn == NULL) {
-		return NULL;
-	}
-	BATtseqbase(bn, 0);
-	return bn;
-}
-
-static BAT *
 doublerange(oid l1, oid h1, oid l2, oid h2)
 {
 	BAT *bn;
@@ -91,12 +80,7 @@ doublerange(oid l1, oid h1, oid l2, oid h2)
 	assert(l2 <= h2);
 	assert(h1 <= l2);
 	if (l1 == h1 || l2 == h2) {
-		bn = COLnew(0, TYPE_void, h1 - l1 + h2 - l2, TRANSIENT);
-		if (bn == NULL)
-			return NULL;
-		BATsetcount(bn, h1 - l1 + h2 - l2);
-		BATtseqbase(bn, l1 == h1 ? l2 : l1);
-		return bn;
+		return BATdense(0, l1 == h1 ? l2 : l1, h1 - l1 + h2 - l2);
 	}
 	bn = COLnew(0, TYPE_oid, h1 - l1 + h2 - l2, TRANSIENT);
 	if (bn == NULL)
@@ -549,12 +533,12 @@ NAME##_##TYPE(BAT *b, BAT *s, BAT *bn, const TYPE *tl, const TYPE *th,	\
 	assert(lval);							\
 	assert(hval);							\
 	if (use_imprints && VIEWtparent(b)) {				\
-		BAT *parent = BATdescriptor(VIEWtparent(b));		\
+		BAT *parent = BBPdescriptor(VIEWtparent(b));		\
+		assert(parent);						\
 		basesrc = (const TYPE *) Tloc(parent, 0);		\
 		imprints = parent->timprints;				\
 		pr_off = (BUN) ((TYPE *)Tloc(b,0) -			\
 				(TYPE *)Tloc(parent,0));		\
-		BBPunfix(parent->batCacheid);				\
 	} else {							\
 		imprints = b->timprints;				\
 		basesrc = (const TYPE *) Tloc(b, 0);			\
@@ -1148,7 +1132,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 				if (!li) {				\
 					/* open range on left */	\
 					if (*(TYPE*)tl == MAXVALUE##TYPE) \
-						return newempty();	\
+						return BATdense(0, 0, 0); \
 					/* vl < x === vl+1 <= x */	\
 					vl.v_##TYPE = NEXTVALUE##TYPE(*(TYPE*)tl); \
 					li = 1;				\
@@ -1166,7 +1150,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 				if (!hi) {				\
 					/* open range on right */	\
 					if (*(TYPE*)th == MINVALUE##TYPE) \
-						return newempty();	\
+						return BATdense(0, 0, 0); \
 					/* x < vh === x <= vh-1 */	\
 					vh.v_##TYPE = PREVVALUE##TYPE(*(TYPE*)th); \
 					hi = 1;				\
@@ -1180,7 +1164,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 				hval = 1;				\
 			}						\
 			if (*(TYPE*)tl > *(TYPE*)th)			\
-				return newempty();			\
+				return BATdense(0, 0, 0);		\
 		}							\
 		assert(lval);						\
 		assert(hval);						\
@@ -1252,7 +1236,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				  BATgetId(b), BATcount(b),
 				  s ? BATgetId(s) : "NULL",
 				  s && BATtdense(s) ? "(dense)" : "", anti);
-		return newempty();
+		return BATdense(0, 0, 0);
 	}
 
 	t = b->ttype;
@@ -1271,7 +1255,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				  s ? BATgetId(s) : "NULL",
 				  s && BATtdense(s) ? "(dense)" : "",
 				  li, hi, anti);
-		return newempty();
+		return BATdense(0, 0, 0);
 	}
 
 	lval = !lnil || th == NULL;	 /* low value used for comparison */
@@ -1321,7 +1305,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 					  s ? BATgetId(s) : "NULL",
 					  s && BATtdense(s) ? "(dense)" : "",
 					  anti);
-			return newempty();
+			return BATdense(0, 0, 0);
 		} else if (equi && lnil) {
 			/* antiselect for nil value: turn into range
 			 * select for nil-nil range (i.e. everything
@@ -1364,7 +1348,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				  BATgetId(b), BATcount(b),
 				  s ? BATgetId(s) : "NULL",
 				  s && BATtdense(s) ? "(dense)" : "", anti);
-		return newempty();
+		return BATdense(0, 0, 0);
 	}
 	if (equi && lnil && b->tnonil) {
 		/* return all nils, but there aren't any */
@@ -1373,7 +1357,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				  BATgetId(b), BATcount(b),
 				  s ? BATgetId(s) : "NULL",
 				  s && BATtdense(s) ? "(dense)" : "", anti);
-		return newempty();
+		return BATdense(0, 0, 0);
 	}
 
 	if (!equi && !lval && !hval && lnil && b->tnonil) {
@@ -1858,7 +1842,7 @@ BATthetaselect(BAT *b, BAT *s, const void *val, const char *op)
 
 	nil = ATOMnilptr(b->ttype);
 	if (ATOMcmp(b->ttype, val, nil) == 0)
-		return newempty();
+		return BATdense(0, 0, 0);
 	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[1] == 0)) {
 		/* "=" or "==" */
 		return BATselect(b, s, val, NULL, 1, 1, 0);

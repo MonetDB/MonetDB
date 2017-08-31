@@ -157,18 +157,16 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, int lkey, int rkey,
 	}
 
 	if (maxsize == 0) {
-		r1 = COLnew(0, TYPE_void, 0, TRANSIENT);
+		r1 = BATdense(0, 0, 0);
 		if (r1 == NULL) {
 			return BUN_NONE;
 		}
-		BATtseqbase(r1, 0);
 		if (r2p) {
-			r2 = COLnew(0, TYPE_void, 0, TRANSIENT);
+			r2 = BATdense(0, 0, 0);
 			if (r2 == NULL) {
 				BBPreclaim(r1);
 				return BUN_NONE;
 			}
-			BATtseqbase(r2, 0);
 			*r2p = r2;
 		}
 		*r1p = r1;
@@ -1574,7 +1572,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	if (sl)
 		r1->tdense = sl->tdense;
-	if (sr)
+	if (r2 && sr)
 		r2->tdense = sr->tdense;
 	while (lcand ? lcand < lcandend : lstart < lend) {
 		if (lscan == 0) {
@@ -3755,15 +3753,13 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 	if (sr)
 		rcount = MIN(rcount, BATcount(sr));
 	if (lcount == 0 || rcount == 0) {
-		r1 = COLnew(0, TYPE_void, 0, TRANSIENT);
-		r2 = COLnew(0, TYPE_void, 0, TRANSIENT);
+		r1 = BATdense(0, 0, 0);
+		r2 = BATdense(0, 0, 0);
 		if (r1 == NULL || r2 == NULL) {
 			BBPreclaim(r1);
 			BBPreclaim(r2);
 			return GDK_FAIL;
 		}
-		BATtseqbase(r1, 0);
-		BATtseqbase(r2, 0);
 		*r1p = r1;
 		*r2p = r2;
 		return GDK_SUCCEED;

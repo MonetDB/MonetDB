@@ -276,7 +276,7 @@ BATcheckimprints(BAT *b)
 gdk_return
 BATimprints(BAT *b)
 {
-	BAT *o = NULL, *s1 = NULL, *s2 = NULL, *s3 = NULL, *s4 = NULL;
+	BAT *s1 = NULL, *s2 = NULL, *s3 = NULL, *s4 = NULL;
 	Imprints *imprints;
 	lng t0 = 0;
 
@@ -305,14 +305,12 @@ BATimprints(BAT *b)
 	assert(b->timprints == NULL);
 
 	if (VIEWtparent(b)) {
-		bat p = VIEWtparent(b);
-		o = b;
-		b = BATdescriptor(p);
+		/* views always keep null pointer and need to obtain
+		 * the latest imprint from the parent at query time */
+		b = BBPdescriptor(VIEWtparent(b));
 		assert(b);
-		if (BATcheckimprints(b)) {
-			BBPunfix(b->batCacheid);
+		if (BATcheckimprints(b))
 			return GDK_SUCCEED;
-		}
 		assert(b->timprints == NULL);
 	}
 	MT_lock_set(&GDKimprintsLock(b->batCacheid));
@@ -336,9 +334,9 @@ BATimprints(BAT *b)
 		if (imprints->imprints == NULL ||
 		    (imprints->imprints->filename =
 		     GDKmalloc(strlen(nme) + 12)) == NULL) {
+			MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 			GDKfree(imprints->imprints);
 			GDKfree(imprints);
-			MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 			return GDK_FAIL;
 		}
 		sprintf(imprints->imprints->filename, "%s.timprints", nme);
@@ -350,6 +348,8 @@ BATimprints(BAT *b)
 		s1 = BATsample(b, SMP_SIZE);
 		if (s1 == NULL) {
 			MT_lock_unset(&GDKimprintsLock(b->batCacheid));
+			GDKfree(imprints->imprints->filename);
+			GDKfree(imprints->imprints);
 			GDKfree(imprints);
 			return GDK_FAIL;
 		}
@@ -357,6 +357,8 @@ BATimprints(BAT *b)
 		if (s2 == NULL) {
 			MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 			BBPunfix(s1->batCacheid);
+			GDKfree(imprints->imprints->filename);
+			GDKfree(imprints->imprints);
 			GDKfree(imprints);
 			return GDK_FAIL;
 		}
@@ -365,6 +367,8 @@ BATimprints(BAT *b)
 			MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 			BBPunfix(s1->batCacheid);
 			BBPunfix(s2->batCacheid);
+			GDKfree(imprints->imprints->filename);
+			GDKfree(imprints->imprints);
 			GDKfree(imprints);
 			return GDK_FAIL;
 		}
@@ -374,6 +378,8 @@ BATimprints(BAT *b)
 			BBPunfix(s1->batCacheid);
 			BBPunfix(s2->batCacheid);
 			BBPunfix(s3->batCacheid);
+			GDKfree(imprints->imprints->filename);
+			GDKfree(imprints->imprints);
 			GDKfree(imprints);
 			return GDK_FAIL;
 		}
@@ -406,10 +412,11 @@ BATimprints(BAT *b)
 			      sizeof(uint64_t) + /* padding for alignment */
 			      pages * sizeof(cchdc_t), /* dict */
 			      1) != GDK_SUCCEED) {
+			MT_lock_unset(&GDKimprintsLock(b->batCacheid));
+			GDKfree(imprints->imprints->filename);
 			GDKfree(imprints->imprints);
 			GDKfree(imprints);
 			GDKerror("#BATimprints: memory allocation error");
-			MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 			BBPunfix(s1->batCacheid);
 			BBPunfix(s2->batCacheid);
 			BBPunfix(s3->batCacheid);
@@ -498,22 +505,14 @@ BATimprints(BAT *b)
 	ALGODEBUG fprintf(stderr, "#BATimprints: imprints construction " LLFMT " usec\n", GDKusec() - t0);
 	MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 
-	/* BBPUnfix tries to get the imprints lock which might lead to a deadlock
-	 * if those were unfixed earlier */
+	/* BBPUnfix tries to get the imprints lock which might lead to
+	 * a deadlock if those were unfixed earlier */
 	if (s1) {
 		BBPunfix(s1->batCacheid);
 		BBPunfix(s2->batCacheid);
 		BBPunfix(s3->batCacheid);
 		BBPunfix(s4->batCacheid);
 	}
-	if (o != NULL) {
-		o->timprints = NULL;	/* views always keep null pointer and
-					   need to obtain the latest imprint
-					   from the parent at query time */
-		BBPunfix(b->batCacheid);
-		b = o;
-	}
-	assert(b->batCapacity >= BATcount(b));
 	return GDK_SUCCEED;
 }
 

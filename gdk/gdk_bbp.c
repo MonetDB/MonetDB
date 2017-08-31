@@ -321,9 +321,18 @@ BBPselectfarm(int role, int type, enum heaptype hptype)
 {
 	int i;
 
-	assert(role >= 0 && role < 32);
 	(void) type;		/* may use in future */
 	(void) hptype;		/* may use in future */
+
+	assert(role >= 0 && role < 32);
+#ifndef PERSISTENTHASH
+	if (hptype == hashheap)
+		role = TRANSIENT;
+#endif
+#ifndef PERSISTENTIDX
+	if (hptype == orderidxheap)
+		role = TRANSIENT;
+#endif
 	for (i = 0; i < MAXFARMS; i++)
 		if (BBPfarms[i].dirname && BBPfarms[i].roles & (1 << role))
 			return i;
@@ -1909,7 +1918,9 @@ BBPdump(void)
 				vm += HEAPvmsize(b->thash->heap);
 			}
 		}
-		fprintf(stderr, "\n");
+		fprintf(stderr, " role: %s, persistence: %s\n",
+			b->batRole == PERSISTENT ? "persistent" : "transient",
+			b->batPersistence == PERSISTENT ? "persistent" : "transient");
 	}
 	fprintf(stderr,
 		"# %d bats: mem=" SZFMT ", vm=" SZFMT " %d cached bats: mem=" SZFMT ", vm=" SZFMT "\n",
