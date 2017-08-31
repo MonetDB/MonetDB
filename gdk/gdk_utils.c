@@ -419,8 +419,10 @@ MT_init(void)
 static void THRinit(void);
 static void GDKlockHome(int farmid);
 
+#ifndef STATIC_CODE_ANALYSIS
 #ifndef NDEBUG
 static MT_Lock mallocsuccesslock MT_LOCK_INITIALIZER("mallocsuccesslock");
+#endif
 #endif
 
 int
