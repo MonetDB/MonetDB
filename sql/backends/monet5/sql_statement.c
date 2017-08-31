@@ -2114,20 +2114,21 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * forma
 		const char *ntn = sql_escape_ident(tn);
 		const char *nsn = sql_escape_ident(sn);
 		size_t fqtnl;
-		char *fqtn;
+		char *fqtn = NULL;
 
 		if (ntn && nsn && (fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1) ){
-			// FIXME unchecked_malloc NEW_ARRAY can return NULL
 			fqtn = NEW_ARRAY(char, fqtnl);
-			snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
-
-			metaInfo(tblId,Str,fqtn);
-			metaInfo(nmeId,Str,cn);
-			metaInfo(tpeId,Str,(t->type->localtype == TYPE_void ? "char" : t->type->sqlname));
-			metaInfo(lenId,Int,t->digits);
-			metaInfo(scaleId,Int,t->scale);
-			list = pushArgument(mb,list,c->nr);
-			_DELETE(fqtn);
+			if(fqtn) {
+				snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
+				metaInfo(tblId, Str, fqtn);
+				metaInfo(nmeId, Str, cn);
+				metaInfo(tpeId, Str, (t->type->localtype == TYPE_void ? "char" : t->type->sqlname));
+				metaInfo(lenId, Int, t->digits);
+				metaInfo(scaleId, Int, t->scale);
+				list = pushArgument(mb, list, c->nr);
+				_DELETE(fqtn);
+			} else
+				q = NULL;
 		} else
 			q = NULL;
 		c_delete(ntn);

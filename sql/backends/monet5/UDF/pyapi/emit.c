@@ -138,8 +138,12 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 		if (potential_size > self->maxcols) {
 			// allocate space for new columns (if any new columns show up)
 			sql_emit_col *old = self->cols;
-			// FIXME unchecked_malloc GDKmalloc can return NULL
 			self->cols = GDKzalloc(sizeof(sql_emit_col) * potential_size);
+			if (self->cols == NULL) {
+				PyErr_Format(PyExc_TypeError, "Out of memory error");
+				error = true;
+				goto wrapup;
+			}
 			if (old) {
 				memcpy(self->cols, old, sizeof(sql_emit_col) * self->maxcols);
 				GDKfree(old);

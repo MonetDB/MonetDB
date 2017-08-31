@@ -994,11 +994,13 @@ sql_create_alias(sql_allocator *sa, const char *name, const char *alias)
 {
 	sql_alias *a = SA_ZNEW(sa, sql_alias);
 
-	a->name = sa_strdup(sa, name);
-	a->alias = sa_strdup(sa, alias);
-	list_append(aliases, a);
-	if (!keyword_exists(a->alias) )
-		keywords_insert(a->alias, KW_ALIAS);
+	if(a) {
+		a->name = sa_strdup(sa, name);
+		a->alias = sa_strdup(sa, alias);
+		list_append(aliases, a);
+		if (!keyword_exists(a->alias) )
+			(void) keywords_insert(a->alias, KW_ALIAS);
+	}
 }
 
 char *
@@ -1030,8 +1032,8 @@ sql_create_type(sql_allocator *sa, const char *sqlname, unsigned int digits, uns
 	t->radix = radix;
 	t->eclass = eclass;
 	t->s = NULL;
-	if (!keyword_exists(t->sqlname) && !EC_INTERVAL(eclass)) 
-		keywords_insert(t->sqlname, KW_TYPE);
+	if (!keyword_exists(t->sqlname) && !EC_INTERVAL(eclass))
+		(void) keywords_insert(t->sqlname, KW_TYPE);
 	list_append(types, t);
 
 	list_append(localtypes, sql_create_subtype(sa, t, 0, 0));
@@ -1044,9 +1046,11 @@ create_arg(sql_allocator *sa, const char *name, sql_subtype *t, char inout)
 {
 	sql_arg *a = (sa)?SA_ZNEW(sa, sql_arg):ZNEW(sql_arg);
 
-	a->name = name?sa_strdup(sa, name):NULL;
-	a->type = *t;
-	a->inout = inout;
+	if(a) {
+		a->name = name?sa_strdup(sa, name):NULL;
+		a->type = *t;
+		a->inout = inout;
+	}
 	return a;
 }
 
@@ -1061,9 +1065,11 @@ arg_dup(sql_allocator *sa, sql_arg *oa)
 {
 	sql_arg *a = SA_ZNEW(sa, sql_arg);
 
-	a->name = sa_strdup(sa, oa->name);
-	a->type = oa->type;
-	a->inout = oa->inout;
+	if(a) {
+		a->name = sa_strdup(sa, oa->name);
+		a->type = oa->type;
+		a->inout = oa->inout;
+	}
 	return a;
 }
 
