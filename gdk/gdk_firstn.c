@@ -119,6 +119,10 @@
  * refer to the N smallest/largest (depending on asc) tail values of b
  * (taking the optional candidate list s into account).  If there are
  * multiple equal values to take us past N, we return a subset of those.
+ *
+ * If lastp is non-NULL, it is filled in with the oid of the "last"
+ * value, i.e. the value of which there may be multiple occurrences
+ * that are not all included in the first N.
  */
 static BAT *
 BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc, oid *lastp)
@@ -370,6 +374,17 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc, oid *lastp)
 		}							\
 	} while (0)
 
+/* This version of BATfirstn is like the one above, except that it
+ * also looks at groups.  The values of the group IDs are important:
+ * we return only the smallest N (i.e., not dependent on asc which
+ * refers only to the values in the BAT b).
+ *
+ * If lastp is non-NULL, it is filled in with the oid of the "last"
+ * value, i.e. the value of which there may be multiple occurrences
+ * that are not all included in the first N.  If lastgp is non-NULL,
+ * it is filled with the group ID (not the oid of the group ID) for
+ * that same value.
+ */
 static BAT *
 BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc, oid *lastp, oid *lastgp)
 {
