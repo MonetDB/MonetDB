@@ -30,6 +30,8 @@ stderr of test 'create-or-replace-triggers` in directory 'sql/test` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-15975/.s.monetdb.38017
 QUERY = CREATE OR REPLACE TRIGGER failedtrigger AFTER INSERT ON testing3 FOR EACH STATEMENT BEGIN ATOMIC INSERT INTO testing8 VALUES (3); END; --error
+ERROR = !CREATE OR REPLACE TRIGGER: unknown table 'testing3'
+CODE  = 42000
 
 
 # 12:24:46 >  

@@ -1,6 +1,17 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Wed Aug 30 2017 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- A column default value can be used in a UPDATE statement: UPDATE tname
+  SET cname = DEFAULT, and INSERT statements: INSERT INTO tname VALUES
+  (..., DEFAULT, ...)
+- Added TRUNCATE statements into the SQL catalog, conforming to the SQL
+  standard. In a TRUNCATE statement a 'CONTINUE IDENTITY' or 'RESTART
+  IDENTITY' clause can be passed mrestart or not, being the former the
+  default one. The options 'RESTRICT' and 'CASCADE' tell if the table has
+  foreign key references, the referencing tables should be truncated as
+  well. This happens on 'CASCADE' and 'RESTRICT' is the default behavior.
+
 * Tue Aug  1 2017 Sjoerd Mullender <sjoerd@acm.org>
 - Lots of changes to streamline the internal error handling.
   In principle, all errors should now include a SQLSTATE error code

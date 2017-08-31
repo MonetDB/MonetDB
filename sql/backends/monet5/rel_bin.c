@@ -4456,7 +4456,7 @@ static stmt *
 sql_delete(backend *be, sql_table *t, stmt *rows)
 {
 	mvc *sql = be->mvc;
-	stmt *v, *s = NULL;
+	stmt *v = NULL, *s = NULL;
 	list *l = sa_list(sql->sa);
 
 	if (rows) {
@@ -4495,7 +4495,7 @@ static stmt *
 rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
-	stmt *rows = NULL, *delete;
+	stmt *rows = NULL, *stdelete = NULL;
 	sql_rel *tr = rel->l;
 	sql_table *t = NULL;
 
@@ -4513,10 +4513,10 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 		stmt *s = rows;
 		rows = s->op4.lval->h->data;
 	}
-	delete = sql_delete(be, t, rows); 
+	stdelete = sql_delete(be, t, rows);
 	if (sql->cascade_action) 
 		sql->cascade_action = NULL;
-	return delete;
+	return stdelete;
 }
 
 struct tablelist {
@@ -4576,16 +4576,16 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 {
 	mvc *sql = be->mvc;
 	list *l = sa_list(sql->sa);
-	stmt *v, *error = NULL, *ret, *other;
+	stmt *v, *error = NULL, *ret = NULL, *other = NULL;
 	const char *next_value_for = "next value for \"sys\".\"seq_";
-	char *seq_name;
+	char *seq_name = NULL;
 	str seq_pos = NULL;
-	sql_column *col;
-	sql_sequence *seq;
-	sql_schema *sche;
-	sql_table *next;
+	sql_column *col = NULL;
+	sql_sequence *seq = NULL;
+	sql_schema *sche = NULL;
+	sql_table *next = NULL;
 	sql_trans *tr = sql->session->tr;
-	node *n;
+	node *n = NULL;
 
 	struct tablelist* new_list = (struct tablelist*) GDKmalloc(sizeof(struct tablelist)), *list_node, *aux;
 	new_list->table = t;
@@ -4650,17 +4650,17 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 	return ret;
 }
 
-#define E_ATOM_INT(e) ((atom*)((sql_exp*)e)->l)->data.val.lval
+#define E_ATOM_INT(e) ((atom*)((sql_exp*)e)->l)->data.val.ival
 #define E_ATOM_STRING(e) ((atom*)((sql_exp*)e)->l)->data.val.sval
 
 static stmt *
 rel2bin_truncate(backend *be, sql_rel *rel)
 {
 	mvc *sql = be->mvc;
-	stmt *truncate;
+	stmt *truncate = NULL;
 	sql_rel *tr = rel->l;
 	sql_table *t = NULL;
-	node *n;
+	node *n = NULL;
 	int restart_sequences, cascade;
 
 	if (tr->op == op_basetable)

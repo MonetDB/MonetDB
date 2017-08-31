@@ -1176,9 +1176,6 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, dlist *t
 
 	if (create && !mvc_schema_privs(sql, ss))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: access denied for %s to schema ;'%s'", base, stack_get_string(sql, "current_user"), ss->base.name);
-	if (create && mvc_bind_trigger(sql, ss, triggername) != NULL) 
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TRIGGER: name '%s' already in use", triggername);
-
 	if (create && !(t = mvc_bind_table(sql, ss, tname)))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: unknown table '%s'", base, tname);
 	if (create && isView(t))
