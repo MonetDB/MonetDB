@@ -83,11 +83,11 @@ address WLCcommitCmd
 comment "Rollback the workload-capture-replay record";
 
 # The wrapping of the catalog and transaction operations
-pattern create_seq( sname:str, seqname:str, action:int)
+pattern create_seq( sname:str, seqname:str, seq:ptr, action:int)
 address WLCgeneric
 comment "Catalog operation create_seq";
 
-pattern alter_seq( sname:str, seqname:str, val:lng)
+pattern alter_seq( sname:str, seqname:str, seq:ptr, val:lng)
 address WLCgeneric
 comment "Catalog operation alter_seq";
 
@@ -103,11 +103,11 @@ pattern drop_schema( sname:str, s:str, ifexists:int, action:int)
 address WLCgeneric
 comment "Catalog operation drop_schema";
 
-pattern create_table(sname:str, tname:str, temp:int)
+pattern create_table(sname:str, tname:str, tbl:ptr, temp:int)
 address WLCgeneric
 comment "Catalog operation create_table";
 
-pattern create_view(sname:str, tname:str, temp:int)
+pattern create_view(sname:str, vname:str, tbl:ptr, temp:int)
 address WLCgeneric
 comment "Catalog operation create_view";
 
@@ -123,7 +123,7 @@ pattern drop_constraint( sname:str, name:str, action:int, ifexists:int)
 address WLCgeneric
 comment "Catalog operation drop_constraint";
 
-pattern alter_table( sname:str, action:int)
+pattern alter_table( sname:str, tname:str, tbl:ptr, action:int)
 address WLCgeneric
 comment "Catalog operation alter_table";
 

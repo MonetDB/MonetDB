@@ -817,7 +817,7 @@ CREATE TABLE "sys"."netcdf_files" ("file_id" INTEGER, "location" CHAR(256));
 CREATE TABLE "sys"."netcdf_vardim" ("var_id" INTEGER, "dim_id" INTEGER, "file_id" INTEGER, "dimpos" INTEGER);
 CREATE TABLE "sys"."netcdf_vars" ("var_id" INTEGER, "file_id" INTEGER, "name" VARCHAR(64), "vartype" VARCHAR(64), "ndim" INTEGER, "coord_dim_id" INTEGER);
 CREATE TABLE "sys"."objects" ("id" INTEGER, "name" VARCHAR(1024), "nr" INTEGER);
-CREATE TABLE "sys"."privilege_codes" ("privilege_code_id" INTEGER NOT NULL, "privilege_code_name" VARCHAR(30) NOT NULL, CONSTRAINT "privilege_codes_privilege_code_id_pkey" PRIMARY KEY ("privilege_code_id"), CONSTRAINT "privilege_codes_privilege_code_name_unique" UNIQUE ("privilege_code_name"));
+CREATE TABLE "sys"."privilege_codes" ("privilege_code_id" INTEGER NOT NULL, "privilege_code_name" VARCHAR(40) NOT NULL, CONSTRAINT "privilege_codes_privilege_code_id_pkey" PRIMARY KEY ("privilege_code_id"), CONSTRAINT "privilege_codes_privilege_code_name_unique" UNIQUE ("privilege_code_name"));
 CREATE TABLE "sys"."privileges" ("obj_id" INTEGER, "auth_id" INTEGER, "privileges" INTEGER, "grantor" INTEGER, "grantable" INTEGER);
 CREATE TABLE "sys"."schemas" ("id" INTEGER, "name" VARCHAR(1024), "authorization" INTEGER, "owner" INTEGER, "system" BOOLEAN);
 CREATE TABLE "sys"."sequences" ("id" INTEGER, "schema_id" INTEGER, "name" VARCHAR(256), "start" BIGINT, "minvalue" BIGINT, "maxvalue" BIGINT, "increment" BIGINT, "cacheinc" BIGINT, "cycle" BOOLEAN);
@@ -1551,7 +1551,7 @@ drop function pcre_replace(string, string, string, string);
 [ "pg",	"pp",	"clob",	0,	0,	NULL,	true,	4,	NULL	]
 [ "pg",	"vn",	"clob",	0,	0,	NULL,	true,	5,	NULL	]
 [ "privilege_codes",	"privilege_code_id",	"int",	32,	0,	NULL,	false,	0,	NULL	]
-[ "privilege_codes",	"privilege_code_name",	"varchar",	30,	0,	NULL,	false,	1,	NULL	]
+[ "privilege_codes",	"privilege_code_name",	"varchar",	40,	0,	NULL,	false,	1,	NULL	]
 [ "privileges",	"obj_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "privileges",	"auth_id",	"int",	32,	0,	NULL,	true,	1,	NULL	]
 [ "privileges",	"privileges",	"int",	32,	0,	NULL,	true,	2,	NULL	]
@@ -6298,6 +6298,7 @@ drop function pcre_replace(string, string, string, string);
 [ "COMMIT"	]
 [ "COMMITTED"	]
 [ "CONSTRAINT"	]
+[ "CONTINUE"	]
 [ "CONVERT"	]
 [ "COPY"	]
 [ "CORRESPONDING"	]
@@ -6449,6 +6450,7 @@ drop function pcre_replace(string, string, string, string);
 [ "TRANSACTION"	]
 [ "TRIGGER"	]
 [ "TRUE"	]
+[ "TRUNCATE"	]
 [ "UNBOUNDED"	]
 [ "UNCOMMITTED"	]
 [ "UNENCRYPTED"	]
