@@ -123,13 +123,15 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 				msg = (str) (*p->fcn) (cntxt, mb, 0, p);
 				if (msg) {
 					str place = getExceptionPlace(msg);
-					str nmsg = createException(getExceptionType(msg), place, "%s", getExceptionMessage(msg));
-					if (nmsg && place) {
+					str nmsg = NULL;
+				       	if(place){
+						nmsg = createException(getExceptionType(msg), place, "%s", getExceptionMessage(msg));
+						GDKfree(place);
+					}
+					if (nmsg ) {
 						freeException(msg);
 						msg = nmsg;
-						GDKfree(place);
-					} else
-						freeException(nmsg);
+					} 
 					goto wrapup;
 				}
 				if (cntxt->mode == FINISHCLIENT)
@@ -170,7 +172,7 @@ MALoptimizer(Client c)
 		return MAL_SUCCEED;
 	msg= optimizeMALBlock(c, c->curprg->def);
 	if( msg == MAL_SUCCEED)
-		OPTmultiplexSimple(c, c->curprg->def);
+		msg = OPTmultiplexSimple(c, c->curprg->def);
 	return msg;
 }
 

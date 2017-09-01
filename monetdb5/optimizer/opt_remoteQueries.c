@@ -314,7 +314,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 					q= pushArgument(mb,q,location[getArg(p,j)]);
 					snprintf(buf,BUFSIZ,"io.print(%s);",
 						getVarName(mb,getArg(p,j)) );
-					(void) pushStr(mb,q,buf);
+					q=  pushStr(mb,q,buf);
 					pushInstruction(mb,q);
 				}
 				pushInstruction(mb,p);

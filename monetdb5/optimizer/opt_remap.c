@@ -108,6 +108,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 	int refbat=0, retc = p->retc;
 	bit *upgrade;
 	Symbol s;
+	str msg;
 
 
 	s= findSymbol(cntxt->nspace, 
@@ -273,7 +274,9 @@ terminateMX:
 		GDKfree(upgrade);
 
 		/* ugh ugh, fallback to non inline, but optimized code */
-		OPTmultiplexSimple(cntxt, s->def);
+		msg = OPTmultiplexSimple(cntxt, s->def);
+		if(msg) 
+			freeException(msg);
 		s->def->inlineProp = 0;
 		return 0;
 	}

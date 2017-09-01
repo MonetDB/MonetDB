@@ -191,6 +191,8 @@ OPTmultiplexSimple(Client cntxt, MalBlkPtr mb)
 	//MalBlkPtr mb= cntxt->curprg->def;
 	int i, doit=0;
 	InstrPtr p;
+	str msg = MAL_SUCCEED; 
+
 	if(mb)
 	for( i=0; i<mb->stop; i++){
 		p= getInstrPtr(mb,i);
@@ -200,16 +202,16 @@ OPTmultiplexSimple(Client cntxt, MalBlkPtr mb)
 		}
 	}
 	if( doit) {
-		str msg = OPTmultiplexImplementation(cntxt, mb, 0, 0);
-		freeException(msg);		/* if (msg) return some error as well? */
+		msg = OPTmultiplexImplementation(cntxt, mb, 0, 0);
 		chkTypes(cntxt->fdout, cntxt->nspace, mb,TRUE);
 		if ( mb->errors == 0) {
 			chkFlow(cntxt->fdout, mb);
 			chkDeclarations(cntxt->fdout,mb);
 		}
 	}
-	return 0;
+	return msg;
 }
+
 str
 OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
