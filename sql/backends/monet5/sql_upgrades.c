@@ -964,6 +964,33 @@ sql_update_default_geom(Client c, mvc *sql, sql_table *t)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_timetrails(Client c, mvc *sql)
+{
+	int i;
+	size_t bufsize = 10000, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	char *schema = stack_get_string(sql, "current_schema");
+	char *schemas_to_set[2] = {"sys", "tmp"};
+
+	if( buf== NULL)
+		throw(SQL, "sql_update_timetrails", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	for(i = 0; i < 2; i++) {
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schemas_to_set[i]);
+		pos += snprintf(buf + pos, bufsize - pos,
+						"create table _streams (id int, table_id int, window int, stride int);\n");
+	}
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 void
 SQLupgrades(Client c, mvc *m)
 {
@@ -1070,6 +1097,13 @@ SQLupgrades(Client c, mvc *m)
 	    (col = mvc_bind_column(m, t, "coord_dimension")) != NULL &&
 	    strcmp(col->type.type->sqlname, "int") != 0) {
 		if ((err = sql_update_default_geom(c, m, t)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+	}
+
+	if (mvc_bind_table(m, s, "_streams") == NULL) {
+		if ((err = sql_update_timetrails(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}
