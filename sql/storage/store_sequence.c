@@ -50,8 +50,10 @@ sql_create_sequence(sql_sequence *seq )
 {
 	lng id = 0;
 	store_sequence *s = NULL;
-	// FIXME unchecked_malloc MNEW can return NULL
 	s = MNEW(store_sequence);
+	if(!s)
+		return NULL;
+
 	s -> seqid = seq->base.id;
 	s -> called = 0;
 	s -> cur = seq->start; 	  

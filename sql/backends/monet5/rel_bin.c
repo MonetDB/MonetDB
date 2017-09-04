@@ -1037,17 +1037,19 @@ rel_parse_value(backend *be, char *query, char emode)
 	int len = _strlen(query);
 	exp_kind ek = {type_value, card_value, FALSE};
 	stream *sr;
+	bstream *bs;
 
 	m->qc = NULL;
 
 	m->caching = 0;
 	m->emode = emode;
 	b = (buffer*)GDKmalloc(sizeof(buffer));
-	if (b == 0)
-		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	n = GDKmalloc(len + 1 + 1);
-	if (n == 0)
+	if (b == NULL || n == NULL) {
+		GDKfree(b);
+		GDKfree(n);
 		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 	strncpy(n, query, len);
 	query = n;
 	query[len] = '\n';
@@ -1055,7 +1057,16 @@ rel_parse_value(backend *be, char *query, char emode)
 	len++;
 	buffer_init(b, query, len);
 	sr = buffer_rastream(b, "sqlstatement");
-	scanner_init(&m->scanner, bstream_create(sr, b->len), NULL);
+	if (sr == NULL) {
+		buffer_destroy(b);
+		return sql_error(m, 02, "HY001" MAL_MALLOC_FAIL);
+	}
+	bs = bstream_create(sr, b->len);
+	if(bs == NULL) {
+		buffer_destroy(b);
+		return sql_error(m, 02, "HY001" MAL_MALLOC_FAIL);
+	}
+	scanner_init(&m->scanner, bs, NULL);
 	m->scanner.mode = LINE_1; 
 	bstream_next(m->scanner.rs);
 
@@ -2600,7 +2611,7 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 			return NULL;
 		}
 		if (s->nrcols == 0){
-			if (!predicate)
+			if (!predicate && sub)
 				predicate = stmt_const(be, bin_first_column(be, sub), stmt_bool(be, 1));
 			sel = stmt_uselect(be, predicate, s, cmp_equal, sel, 0);
 		} else if (e->type != e_cmp) {
@@ -2859,7 +2870,7 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 	buf = buffer_rastream(b, "sqlstatement");
 	if(buf == NULL) {
 		buffer_destroy(b);
-		return sql_error(m, 02, MAL_MALLOC_FAIL);
+		return sql_error(m, 02, "HY001" MAL_MALLOC_FAIL);
 	}
 	scanner_init( &m->scanner, bstream_create(buf, b->len), NULL);
 	m->scanner.mode = LINE_1; 
@@ -2877,7 +2888,7 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 		GDKfree(query);
 		GDKfree(b);
 		bstream_destroy(m->scanner.rs);
-		return sql_error(m, 02, MAL_MALLOC_FAIL);
+		return sql_error(m, 02, "HY001" MAL_MALLOC_FAIL);
 	}
 
 	if (sqlparse(m) || !m->sym) {

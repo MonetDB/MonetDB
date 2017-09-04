@@ -419,8 +419,10 @@ MT_init(void)
 static void THRinit(void);
 static void GDKlockHome(int farmid);
 
+#ifndef STATIC_CODE_ANALYSIS
 #ifndef NDEBUG
 static MT_Lock mallocsuccesslock MT_LOCK_INITIALIZER("mallocsuccesslock");
+#endif
 #endif
 
 int
@@ -1821,8 +1823,10 @@ char *
 GDKstrndup(const char *s, size_t size)
 {
 	char *p = malloc(size + 1);
-	if (p == NULL)
+	if (p == NULL) {
 		GDKerror("GDKstrdup failed for %s\n", s);
+		return NULL;
+	}
 	memcpy(p, s, size);
 	p[size] = 0;
 	return p;

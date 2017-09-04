@@ -202,13 +202,14 @@ OPTmultiplexSimple(Client cntxt, MalBlkPtr mb)
 			}
 		}
 	if( doit) {
-		OPTmultiplexImplementation(cntxt, mb, 0, 0);
+		msg = OPTmultiplexImplementation(cntxt, mb, 0, 0);
 		chkTypes(cntxt->usermodule, mb,TRUE);
 		chkFlow(mb);
 		chkDeclarations(mb);
 	}
 	return msg;
 }
+
 str
 OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {

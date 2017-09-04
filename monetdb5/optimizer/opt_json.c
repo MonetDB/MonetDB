@@ -52,6 +52,7 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			getArg(q,0)= getArg(p,0);
 			pushArgument(mb,q,j);
 			pushInstruction(mb,q);
+			actions++;
 			continue;
 		}
 		if( getModuleId(p) == sqlRef  && getFunctionId(p) == rsColumnRef) {
@@ -63,6 +64,7 @@ OPTjsonImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (strcmp(nme,"json")==0)
 				bj = getArg(p,7);
 			freeInstruction(p);
+			actions++;
 			continue;
 		}
 		pushInstruction(mb,p);

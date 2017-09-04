@@ -1477,12 +1477,12 @@ parseEnd(Client cntxt)
  * This makes it easier to communicate types to MAL patterns.
  */
 
-#define GETvariable	\
+#define GETvariable(FREE)												\
 	if ((varid = findVariableLength(curBlk, CURRENT(cntxt), l)) == -1) { \
-		varid = newVariable(curBlk, CURRENT(cntxt),l, TYPE_any);	\
-		advance(cntxt, l);\
-		if(varid <  0) return;\
-	} else \
+		varid = newVariable(curBlk, CURRENT(cntxt),l, TYPE_any);		\
+		advance(cntxt, l);												\
+		if(varid <  0) { FREE; return; }								\
+	} else																\
 		advance(cntxt, l);
 
 /* The parameter of parseArguments is the return value of the enclosing function. */
@@ -1546,7 +1546,7 @@ parseAssign(Client cntxt, int cntrl)
 				pushInstruction(curBlk, curInstr);
 				return;
 			}
-			GETvariable;
+			GETvariable((void) 0);
 			if (currChar(cntxt) == ':') {
 				setVarUDFtype(curBlk, varid);
 				type = typeElm(cntxt, getVarType(curBlk, varid));
@@ -1598,7 +1598,7 @@ parseAssign(Client cntxt, int cntrl)
 		}
 
 		/* Get target variable details*/
-		GETvariable;
+		GETvariable((void) 0);
 		if (!(currChar(cntxt) == ':' && CURRENT(cntxt)[1] == '=')) {
 			curInstr->argv[0] = varid;
 			if (currChar(cntxt) == ':') {
@@ -1690,7 +1690,7 @@ part2:  /* consume <operator><term> part of expression */
 		advance(cntxt, i);
 		curInstr->modname = putName("calc");
 		if ((l = idLength(cntxt)) && !(l == 3 && strncmp(CURRENT(cntxt), "nil", 3) == 0)) {
-			GETvariable;
+			GETvariable(freeInstruction(curInstr));
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			goto part3;
 		}

@@ -931,6 +931,7 @@ logger_readlog(logger *lg, char *filename)
 	time_t t0, t1;
 	struct stat sb;
 	int dbg = GDKdebug;
+	int fd;
 
 	GDKdebug &= ~(CHECKMASK|PROPMASK);
 
@@ -947,7 +948,7 @@ logger_readlog(logger *lg, char *filename)
 		GDKdebug = dbg;
 		return GDK_SUCCEED;
 	}
-	if (fstat(getFileNo(lg->log), &sb) < 0) {
+	if ((fd = getFileNo(lg->log)) < 0 || fstat(fd, &sb) < 0) {
 		fprintf(stderr, "!ERROR: logger_readlog: fstat on opened file %s failed\n", filename);
 		mnstr_destroy(lg->log);
 		lg->log = NULL;

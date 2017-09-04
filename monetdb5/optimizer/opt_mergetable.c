@@ -421,8 +421,9 @@ mat_apply2(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, in
 {
 	int k, is_select = isSelect(p);
 	InstrPtr *r = NULL;
-	// FIXME unchecked_malloc GDKmalloc can return NULL
 	r = (InstrPtr*) GDKmalloc(sizeof(InstrPtr)* p->retc);
+	if(!r)
+		return;
 	for(k=0; k < p->retc; k++) {
 		r[k] = newInstruction(mb, matRef, packRef);
 		getArg(r[k],0) = getArg(p,k);
@@ -455,13 +456,14 @@ mat_apply2(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, in
 	GDKfree(r);
 }
 
-static void
+static int
 mat_apply3(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o, int mvar, int nvar, int ovar)
 {
 	int k;
 	InstrPtr *r = NULL;
-	// FIXME unchecked_malloc GDKmalloc can return NULL
 	r = (InstrPtr*) GDKmalloc(sizeof(InstrPtr)* p->retc);
+	if(!r)
+		return -1;
 	for(k=0; k < p->retc; k++) {
 		r[k] = newInstruction(mb, matRef, packRef);
 		getArg(r[k],0) = getArg(p,k);
@@ -489,6 +491,7 @@ mat_apply3(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o, int mva
 		pushInstruction(mb, r[k]);
 	}
 	GDKfree(r);
+	return 0;
 }
 
 static void
@@ -693,7 +696,7 @@ join_split(Client cntxt, InstrPtr p, int args)
  *
  * input is one list of arguments (just total length of mats) 
  */
-static void
+static int
 mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 {
 	int tpe = getArgType(mb,p, 0), j,k, nr = 1;
@@ -702,6 +705,10 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 	mat_t *mat = ml->v;
 	int *mats = (int*)GDKzalloc(sizeof(int) * args); 
 	int nr_mats = 0, first = 0;
+
+	if (!mats) {
+		return -1;
+	}
 
 	for(j=0;j<args;j++) {
 		mats[j] = is_a_mat(getArg(p,p->retc+j), ml);
@@ -725,7 +732,7 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 		if (split < 0) {
 			GDKfree(mats);
 			mb->errors= createException(MAL,"mergetable.join"," incorrect split level");
-			return ;
+			return 0;
 		}
 		/* now detect split point */
 		for(k=1; k<mat[mv1].mi->argc; k++) {
@@ -776,6 +783,7 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 	mat_add(ml, l, mat_none, getFunctionId(p));
 	mat_add(ml, r, mat_none, getFunctionId(p));
 	GDKfree(mats);
+	return 0;
 }
 
 
@@ -1559,6 +1567,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	ml.horigin = 0;
 	ml.torigin = 0;
 	ml.v = 0;
+	ml.vars = 0;
 	if (bailout){
 		msg = createException(MAL,"optimizer.mergetable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto cleanup;
@@ -1625,7 +1634,10 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   		n = is_a_mat(getArg(p,p->retc+1), &ml);
 				mat_join2(mb, p, &ml, m, n);
 			} else {
-				mat_joinNxM(cntxt, mb, p, &ml, bats);
+				if ( mat_joinNxM(cntxt, mb, p, &ml, bats)) {
+					msg = createException(MAL,"optimizer.mergetable",MAL_MALLOC_FAIL);
+					goto cleanup;
+				}
 			}
 			actions++;
 			continue;
@@ -1831,7 +1843,10 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (n=is_a_mat(getArg(p,fn), &ml)) >= 0 &&
 		   (o=is_a_mat(getArg(p,fo), &ml)) >= 0){
 			assert(ml.v[m].mi->argc == ml.v[n].mi->argc); 
-			mat_apply3(mb, p, &ml, m, n, o, fm, fn, fo);
+			if(mat_apply3(mb, p, &ml, m, n, o, fm, fn, fo)) {
+				msg = createException(MAL,"optimizer.mergetable",MAL_MALLOC_FAIL);
+				goto cleanup;
+			}
 			actions++;
 			continue;
 		}

@@ -77,3 +77,4 @@ HAVE_LIBPY?aggr_udf_with_more_than_2params.Bug-6385
 exists.Bug-6392
 case.Bug-6386
 sqllitelogistest_case.Bug-6335
+udf_crash_subquery_scalar_paramters.Bug-6399

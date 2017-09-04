@@ -208,9 +208,9 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 
 		res = BUNtail(bi, q);
 		sz = ATOMlen(b->ttype, res);
-		// FIXME unchecked_malloc GDKmalloc can return NULL
 		r = GDKmalloc(sz);
-		memcpy(r,res,sz);
+		if(r)
+			memcpy(r,res,sz);
 		res = r;
 	}
 	full_destroy(c, b);
@@ -274,6 +274,8 @@ rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const vo
 	/* if pointers are equal, make it an inclusive select */
 	int hi = key_value_low == key_value_high;
 
+	if(!rs)
+		return NULL;
 	s = delta_cands(tr, key->t);
 	b = full_column(tr, key);
 	if (!kvl)
@@ -552,8 +554,9 @@ table_vacuum(sql_trans *tr, sql_table *t)
 
 	if (!tids)
 		return SQL_ERR;
-	// FIXME unchecked_malloc NEW_ARRAY can return NULL
 	cols = NEW_ARRAY(BAT*, cs_size(&t->columns));
+	if (!cols)
+		return SQL_ERR;
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 		BAT *v = store_funcs.bind_col(tr, c, RDONLY);

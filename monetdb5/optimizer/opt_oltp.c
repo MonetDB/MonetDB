@@ -101,7 +101,7 @@ OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	// Now optimize the code
-	if ( newMalBlkStmt(mb,mb->ssize + 6) < 0){
+	if ( newMalBlkStmt(mb,mb->ssize + 6) < 0) {
 		freeInstruction(lcks);
 		return 0;
 	}

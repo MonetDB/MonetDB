@@ -55,8 +55,10 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		fprintf(stderr, "#mvc_init shared_drift_threshold %d\n", log_settings.shared_drift_threshold);
 	}
 	keyword_init();
-	scanner_init_keywords();
-
+	if(scanner_init_keywords() != 0) {
+		fprintf(stderr, "!mvc_init: malloc failure\n");
+		return -1;
+	}
 
 	if ((first = store_init(debug, store, ro, su, &log_settings, stk)) < 0) {
 		fprintf(stderr, "!mvc_init: unable to create system tables\n");

@@ -414,6 +414,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	if (BUNappend(b, &k, FALSE) != GDK_SUCCEED ||
 		BUNappend(bn, buf, FALSE) != GDK_SUCCEED) {
 		GDKfree(msg);
+		GDKfree(buf);
 		BBPreclaim(b);
 		throw(MAL,"mdb.setTrace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
@@ -704,6 +705,8 @@ TBL_getdir(void)
 		dent->d_name[len - extlen] = 0;
 		if (BUNappend(b, dent->d_name, FALSE) != GDK_SUCCEED) {
 			BBPreclaim(b);
+			if (dirp)
+				closedir(dirp);
 			return NULL;
 		}
 		i++;
