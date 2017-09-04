@@ -286,6 +286,8 @@ updateScenario(str nme, str fnme, MALfcn fcn)
 	int phase = -1;
 	Scenario scen = findScenario(nme);
 
+	if (scen == NULL)
+		return;
 	if (scen->initSystem && strcmp(scen->initSystem, fnme) == 0)
 		scen->initSystemCmd = fcn;
 	if (scen->exitSystem && strcmp(scen->exitSystem, fnme) == 0)

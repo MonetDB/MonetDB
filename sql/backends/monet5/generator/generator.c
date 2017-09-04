@@ -732,7 +732,7 @@ wrapup:
 		throw(MAL,"generator.projection", SQLSTATE(HY001) MAL_MALLOC_FAIL);\
 	}\
 	v = (TPE*) Tloc(bn,0);\
-	for(; cnt-- > 0; ol++, o++){\
+	for(; cnt-- > 0; ol ? *ol++ : o++){\
 		val = f + ((TPE) ( b->ttype == TYPE_void?o:*ol)) * s;\
 		if ( (s > 0 &&  (val < f || val >= l)) || (s < 0 && (val<l || val >=f))) \
 			continue;\
@@ -817,7 +817,7 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 			v = (timestamp*) Tloc(bn,0);
 
-			for(; cnt-- > 0; ol++, o++){
+			for(; cnt-- > 0; ol ? *ol++ : o++){
 				t = ((lng) ( b->ttype == TYPE_void?o:*ol)) * s;
 				if( (msg = MTIMEtimestamp_add(&val, &f, &t)) != MAL_SUCCEED)
 					return msg;
@@ -900,12 +900,10 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL,"generator.join", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if ( q == NULL){
+		/* p != NULL, hence bl == NULL */
 		br = BATdescriptor(*getArgReference_bat(stk,pci,3));
-		if( br == NULL){
-			if (bl)
-				BBPunfix(bl->batCacheid);
+		if( br == NULL)
 			throw(MAL,"generator.join", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		}
 	}
 
 	// in case of both generators  || getModuleId(q) == generatorRef)materialize the 'smallest' one first

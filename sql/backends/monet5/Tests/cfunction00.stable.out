@@ -37,12 +37,12 @@ Ready.
 #	end while;
 #	return s;
 #END;
-#select * from functions where name ='aggr00';
-% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
-% id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
-% int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
-% 4,	6,	147,	4,	1,	1,	5,	5,	5,	4 # length
-[ 8538,	"aggr00",	"create function aggr00() \nreturns integer\nbegin\n declare s int;\n set s = 0;\n while (true)\n do\n set s = s + 1;\n yield s;\n end while;\n return s;\nend;",	"user",	2,	1,	false,	false,	false,	2000	]
+#select name from functions where name ='aggr00';
+% sys.functions # table_name
+% name # name
+% varchar # type
+% 6 # length
+[ "aggr00"	]
 #select aggr00(); #should return 1
 % .L2 # table_name
 % L2 # name

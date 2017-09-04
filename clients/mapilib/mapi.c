@@ -1896,7 +1896,7 @@ parse_uri_query(Mapi mid, char *uri)
 	char *val;
 
 	/* just don't care where it is, assume it all starts from '?' */
-	if ((uri = strchr(uri, '?')) == NULL)
+	if (uri == NULL || (uri = strchr(uri, '?')) == NULL)
 		return;
 
 	*uri++ = '\0';			/* skip '?' */
@@ -2454,7 +2454,7 @@ mapi_reconnect(Mapi mid)
 			if (s == INVALID_SOCKET)
 				continue;
 #ifdef HAVE_FCNTL
-			fcntl(s, F_SETFD, FD_CLOEXEC);
+			(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
 			if (connect(s, rp->ai_addr, (socklen_t) rp->ai_addrlen) != SOCKET_ERROR)
 				break;  /* success */
@@ -3374,7 +3374,18 @@ mapi_param_store(MapiHdl hdl)
 				buf[0] = *(char *) src;
 				buf[1] = 0;
 				val = mapi_quote(buf, 1);
-				checkSpace(strlen(val) + 3);
+				/* note: k==strlen(hdl->query) */
+				if (k + strlen(val) + 3 >= lim) {
+					char *q = hdl->query;
+					lim = k + strlen(val) + 3 + MAPIBLKSIZE;
+					hdl->query = realloc(hdl->query, lim);
+					if (hdl->query == NULL) {
+						free(q);
+						free(val);
+						return;
+					}
+					hdl->query = q;
+				}
 				sprintf(hdl->query + k, "'%s'", val);
 				free(val);
 				break;

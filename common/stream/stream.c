@@ -3822,13 +3822,13 @@ bs2_create(stream *s, size_t bufsiz, compression_method comp)
 		ns->compbufsiz = compress_bound;
 		ns->compbuf = malloc(ns->compbufsiz);
 		if (!ns->compbuf) {
-			free(ns);
 			free(ns->buf);
+			free(ns);
 			return NULL;
 		}
 	} else if (compress_bound < 0) {
-		free(ns);
 		free(ns->buf);
+		free(ns);
 		return NULL;
 	}
 	return ns;
