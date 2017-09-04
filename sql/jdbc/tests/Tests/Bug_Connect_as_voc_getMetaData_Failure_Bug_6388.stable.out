@@ -90,6 +90,7 @@ DatabaseMinorVersion = 27+
 4.7. getTables(null, 'tmp', null, null)
 List Tables in schema tmp:
 _columns
+_streams
 _tables
 idxs
 keys

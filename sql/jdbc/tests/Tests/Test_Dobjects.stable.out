@@ -35,7 +35,8 @@ TABLE_SCHEM	TABLE_CATALOG
 sys	null	
 Resultset with 10 columns
 TABLE_CAT	TABLE_SCHEM	TABLE_NAME	TABLE_TYPE	REMARKS	TYPE_CAT	TYPE_SCHEM	TYPE_NAME	SELF_REFERENCING_COL_NAME	REF_GENERATION	
-null    tmp     _columns        SYSTEM TABLE    null    null    null    null    null    null    
+null    tmp     _columns        SYSTEM TABLE    null    null    null    null    null    null
+null    tmp     _streams        SYSTEM TABLE    null    null    null    null    null    null
 null    tmp     _tables SYSTEM TABLE    null    null    null    null    null    null    
 null    tmp     idxs    SYSTEM TABLE    null    null    null    null    null    null    
 null    tmp     keys    SYSTEM TABLE    null    null    null    null    null    null    
