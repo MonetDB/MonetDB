@@ -1744,8 +1744,12 @@ part2:  /* consume <operator><term> part of expression */
 	}
 part3:
 	skipSpace(cntxt);
-	if (currChar(cntxt) != ';')
+	if (currChar(cntxt) != ';') {
 		parseError(cntxt, "';' expected\n");
+		skipToEnd(cntxt);
+		pushInstruction(curBlk, curInstr);
+		return;
+	}
 	skipToEnd(cntxt);
 	pushInstruction(curBlk, curInstr);
 	if (cntrl == RETURNsymbol && !(curInstr->token == ASSIGNsymbol || getModuleId(curInstr) != 0))
