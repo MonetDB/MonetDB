@@ -1059,12 +1059,12 @@ rel_parse_value(backend *be, char *query, char emode)
 	sr = buffer_rastream(b, "sqlstatement");
 	if (sr == NULL) {
 		buffer_destroy(b);
-		return sql_error(m, 02, "HY001" MAL_MALLOC_FAIL);
+		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	bs = bstream_create(sr, b->len);
 	if(bs == NULL) {
 		buffer_destroy(b);
-		return sql_error(m, 02, "HY001" MAL_MALLOC_FAIL);
+		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	scanner_init(&m->scanner, bs, NULL);
 	m->scanner.mode = LINE_1; 
@@ -2870,7 +2870,7 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 	buf = buffer_rastream(b, "sqlstatement");
 	if(buf == NULL) {
 		buffer_destroy(b);
-		return sql_error(m, 02, "HY001" MAL_MALLOC_FAIL);
+		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	scanner_init( &m->scanner, bstream_create(buf, b->len), NULL);
 	m->scanner.mode = LINE_1; 
@@ -2888,7 +2888,7 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 		GDKfree(query);
 		GDKfree(b);
 		bstream_destroy(m->scanner.rs);
-		return sql_error(m, 02, "HY001" MAL_MALLOC_FAIL);
+		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	if (sqlparse(m) || !m->sym) {
