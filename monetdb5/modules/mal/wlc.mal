@@ -198,7 +198,7 @@ pattern drop_function( sname:str, fname:str, fid:int, type:int, action:int)
 address WLCgeneric
 comment "Catalog operation drop_function";
 
-pattern create_function( sname:str, fname:str)
+pattern create_function( sname:str, fname:str, fcn:ptr)
 address WLCgeneric
 comment "Catalog operation create_function";
 
