@@ -1282,9 +1282,10 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	}
 	assert(reverse == 0 || reverse == 1);
 	assert(stable == 0 || stable == 1);
-	if (sorted == NULL && order == NULL && groups == NULL) {
+	if (sorted == NULL && order == NULL) {
 		/* no place to put result, so we're done quickly */
-		return GDK_SUCCEED;
+		GDKerror("BATsort: no place to put the result.\n");
+		return GDK_FAIL;
 	}
 	if (g == NULL && !stable) {
 		/* pre-ordering doesn't make sense if we're not
