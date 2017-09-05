@@ -87,11 +87,11 @@ pattern clear_table(sname:str, tname:str):int
 address WLRclear_table
 comment "Destroy the tuples in the table";
 
-pattern create_seq( sname:str, seqname:str, action:int)
+pattern create_seq( sname:str, seqname:str, seq:ptr, action:int)
 address WLRgeneric
 comment "Catalog operation create_seq";
 
-pattern alter_seq( sname:str, seqname:str, val:lng)
+pattern alter_seq( sname:str, seqname:str, seq:ptr, val:lng)
 address WLRgeneric
 comment "Catalog operation alter_seq";
 
@@ -104,41 +104,42 @@ address WLRgeneric
 comment "Catalog operation create_schema";
 
 pattern drop_schema( sname:str, s:str, action:int, ifexists:int)
-address WLRgeneric
+address WLCgeneric
 comment "Catalog operation drop_schema";
 
 pattern drop_schema( sname:str, s:str, action:int)
-address WLRgeneric
+address WLCgeneric
 comment "Catalog operation drop_schema";
 
-pattern create_table(sname:str, tname:str, temp:int)
+pattern create_table(sname:str, tname:str, tbl:ptr, temp:int)
 address WLRgeneric
 comment "Catalog operation create_table";
 
-pattern create_view(sname:str, tname:str, temp:int)
+pattern create_view(sname:str, vname:str, tbl:ptr, temp:int)
 address WLRgeneric
 comment "Catalog operation create_view";
 
 pattern drop_table( sname:str, name:str, action:int , ifexists:int)
-address WLRgeneric
+address WLCgeneric
 comment "Catalog operation drop_table";
 
 pattern drop_table( sname:str, name:str, action:int )
-address WLRgeneric
+address WLCgeneric
 comment "Catalog operation drop_table";
+
 pattern drop_view( sname:str, name:str, action:int, ifexists:int)
-address WLRgeneric
+address WLCgeneric
 comment "Catalog operation drop_view";
 
 pattern drop_view( sname:str, name:str, action:int)
-address WLRgeneric
+address WLCgeneric
 comment "Catalog operation drop_view";
 
 pattern drop_constraint( sname:str, name:str, action:int)
-address WLRgeneric
+address WLCgeneric
 comment "Catalog operation drop_constraint";
 
-pattern alter_table( sname:str, action:int)
+pattern alter_table( sname:str, tname:str, tbl:ptr, action:int)
 address WLRgeneric
 comment "Catalog operation alter_table";
 
@@ -210,11 +211,15 @@ pattern drop_index( sname:str, iname:str, action:int)
 address WLRgeneric
 comment "Catalog operation drop_index";
 
+pattern change_cp( action:int)
+address WLRgeneric
+comment "Pause, resume or stop all continuous queries";
+
 pattern drop_function( sname:str, fname:str, fid:int, type:int, action:int)
 address WLRgeneric
 comment "Catalog operation drop_function";
 
-pattern create_function( sname:str, fname:str, replace:int)
+pattern create_function( sname:str, fname:str, fcn:ptr, ofcn:ptr, replace:int)
 address WLRgeneric
 comment "Catalog operation create_function";
 
@@ -261,4 +266,3 @@ comment "A transaction statement (type can be commit,release,rollback or start)"
 unsafe pattern transaction()
 address WLRgeneric
 comment "Start an autocommit transaction";
-

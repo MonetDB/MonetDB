@@ -31,10 +31,16 @@ create procedure cquery."cycles"(cqcycles integer)
 create procedure cquery."cycles"("schema" string, cqname string, cqcycles integer)
 	external name cquery."cycles";
 
+-- set the cquery initialization time
+create procedure cquery."beginat"("schema" string, cqname string, beginat bigint)
+	external name cquery."beginat";
+create procedure cquery."beginat"(beginat bigint)
+	external name cquery."beginat";
+
 -- set the scheduler heartbeat 
-create procedure cquery."heartbeat"("schema" string, cqname string, msec integer)
+create procedure cquery."heartbeat"("schema" string, cqname string, msec bigint)
 	external name cquery."heartbeat";
-create procedure cquery."heartbeat"(msec integer)
+create procedure cquery."heartbeat"(msec bigint)
 	external name cquery."heartbeat";
 
 -- Tumble the stream buffer
