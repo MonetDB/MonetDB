@@ -2377,7 +2377,7 @@ mapi_reconnect(Mapi mid)
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 #ifdef HAVE_FCNTL
-		fcntl(s, F_SETFD, FD_CLOEXEC);
+		(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
 		memset(&userver, 0, sizeof(struct sockaddr_un));
 		userver.sun_family = AF_UNIX;
@@ -2499,7 +2499,7 @@ mapi_reconnect(Mapi mid)
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 #ifdef HAVE_FCNTL
-		fcntl(s, F_SETFD, FD_CLOEXEC);
+		(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
 
 		if (connect(s, serv, sizeof(server)) == SOCKET_ERROR) {
@@ -3383,7 +3383,18 @@ mapi_param_store(MapiHdl hdl)
 				break;
 			case MAPI_VARCHAR:
 				val = mapi_quote((char *) src, hdl->params[i].sizeptr ? *hdl->params[i].sizeptr : -1);
-				checkSpace(strlen(val) + 3);
+				/* note: k==strlen(hdl->query) */
+				if (k + strlen(val) + 3 >= lim) {
+					char *q = hdl->query;
+					lim = k + strlen(val) + 3 + MAPIBLKSIZE;
+					hdl->query = realloc(hdl->query, lim);
+					if (hdl->query == NULL) {
+						free(q);
+						free(val);
+						return;
+					}
+					hdl->query = q;
+				}
 				sprintf(hdl->query + k, "'%s'", val);
 				free(val);
 				break;
