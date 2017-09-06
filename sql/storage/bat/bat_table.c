@@ -572,7 +572,7 @@ table_vacuum(sql_trans *tr, sql_table *t)
 		BBPunfix(cols[c->colnr]->batCacheid);
 	}
 	_DELETE(cols);
-	return LOG_OK;
+	return SQL_OK;
 }
 
 void
