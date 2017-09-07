@@ -35,7 +35,7 @@ enum clientmode {
  * simplifies recognition.  The information between the prompt brackets
  * can be used to pass the mode to the front-end. Moreover, the prompt
  * can be dropped if a single stream of information is expected from the
- * server (see mal_profiler.mx).
+ * server (see mal_profiler.c).
  *
  * The user can request server-side compilation as part of the
  * initialization string. See the documentation on Scenarios.

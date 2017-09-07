@@ -11,7 +11,7 @@
  * Binary Association Tables
  * This module contains the commands and patterns to manage Binary
  * Association Tables (BATs). The relational operations you can execute
- * on BATs have the form of a neat algebra, described in algebra.mx
+ * on BATs have the form of a neat algebra, described in algebra.c
  *
  * But a database system needs more that just this algebra, since often it
  * is crucial to do table-updates (this would not be permitted in a strict

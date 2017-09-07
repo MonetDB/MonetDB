@@ -1210,7 +1210,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm) {
 	yylval->sval = (lc->rs->buf + (int)lc->rs->pos + lc->yysval);
 
 	/* This is needed as ALIAS and aTYPE get defined too late, see
-	   sql_keyword.mx */
+	   sql_keyword.h */
 	if (token == KW_ALIAS)
 		token = ALIAS;
 

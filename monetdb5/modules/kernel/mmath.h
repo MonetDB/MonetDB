@@ -6,9 +6,6 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
-/*
- * The constants defined in math.h are defined in const.mx
- */
 #ifndef __MMATH_H__
 #define __MMATH_H__
 #include "mal.h"

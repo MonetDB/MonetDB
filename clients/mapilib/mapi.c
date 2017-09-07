@@ -2991,7 +2991,7 @@ close_connection(Mapi mid)
 	/* finish channels */
 	/* Make sure that the write- (to-) stream is closed first,
 	 * as the related read- (from-) stream closes the shared
-	 * socket; see also src/common/stream.mx:socket_close .
+	 * socket; see also src/common/stream.c:socket_close .
 	 */
 	if (mid->to) {
 		close_stream(mid->to);
