@@ -134,7 +134,7 @@ typedef struct expression {
 
 #define DDL_EMPTY 100
 
-#define MAXOPS 21
+#define MAXOPS 22
 
 typedef enum operator_type {
 	op_basetable = 0,

@@ -87,11 +87,11 @@ pattern clear_table(sname:str, tname:str):int
 address WLRclear_table
 comment "Destroy the tuples in the table";
 
-pattern create_seq( sname:str, seqname:str, seq:ptr, action:int)
+pattern create_seq( sname:str, seqname:str, action:int)
 address WLRgeneric
 comment "Catalog operation create_seq";
 
-pattern alter_seq( sname:str, seqname:str, seq:ptr, val:lng)
+pattern alter_seq( sname:str, seqname:str, val:lng)
 address WLRgeneric
 comment "Catalog operation alter_seq";
 
@@ -107,11 +107,11 @@ pattern drop_schema( sname:str, s:str, ifexists:int, action:int)
 address WLRgeneric
 comment "Catalog operation drop_schema";
 
-pattern create_table(sname:str, tname:str, tbl:ptr, temp:int)
+pattern create_table(sname:str, tname:str, temp:int)
 address WLRgeneric
 comment "Catalog operation create_table";
 
-pattern create_view(sname:str, vname:str, tbl:ptr, temp:int)
+pattern create_view(sname:str, tname:str, temp:int)
 address WLRgeneric
 comment "Catalog operation create_view";
 
@@ -127,7 +127,7 @@ pattern drop_constraint( sname:str, name:str, action:int, ifexists:int)
 address WLRgeneric
 comment "Catalog operation drop_constraint";
 
-pattern alter_table( sname:str, tname:str, tbl:ptr, action:int)
+pattern alter_table( sname:str, tname:str, action:int)
 address WLRgeneric
 comment "Catalog operation alter_table";
 
@@ -203,7 +203,7 @@ pattern drop_function( sname:str, fname:str, fid:int, type:int, action:int)
 address WLRgeneric
 comment "Catalog operation drop_function";
 
-pattern create_function( sname:str, fname:str, fcn:ptr)
+pattern create_function( sname:str, fname:str)
 address WLRgeneric
 comment "Catalog operation create_function";
 
