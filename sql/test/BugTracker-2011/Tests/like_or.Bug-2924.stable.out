@@ -30,7 +30,6 @@ Ready.
 % int,	varchar,	int,	int,	boolean # type
 % 4,	6,	1,	1,	5 # length
 [ 2000,	"sys",	2,	3,	true	]
-[ 7685,	"cquery",	3,	3,	true	]
 
 # 08:16:49 >  
 # 08:16:49 >  "Done."

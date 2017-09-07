@@ -32,9 +32,9 @@ create procedure cquery."cycles"("schema" string, cqname string, cqcycles intege
 	external name cquery."cycles";
 
 -- set the cquery initialization time
-create procedure cquery."beginat"("schema" string, cqname string, beginat bigint)
+create procedure cquery."beginat"("schema" string, cqname string, unixtime bigint)
 	external name cquery."beginat";
-create procedure cquery."beginat"(beginat bigint)
+create procedure cquery."beginat"(unixtime bigint)
 	external name cquery."beginat";
 
 -- set the scheduler heartbeat 

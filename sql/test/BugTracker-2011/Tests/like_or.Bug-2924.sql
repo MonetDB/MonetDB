@@ -1,2 +1,2 @@
-select * from schemas where name like '%ys' escape '=' or name like '%y' escape
+select * from schemas where name like '%ys' escape '=' or name like '%ly' escape
 '=';

@@ -83,11 +83,11 @@ address WLCcommitCmd
 comment "Rollback the workload-capture-replay record";
 
 # The wrapping of the catalog and transaction operations
-pattern create_seq( sname:str, seqname:str, seq:ptr, action:int)
+pattern create_seq( sname:str, seqname:str, action:int)
 address WLCgeneric
 comment "Catalog operation create_seq";
 
-pattern alter_seq( sname:str, seqname:str, seq:ptr, val:lng)
+pattern alter_seq( sname:str, seqname:str, val:lng)
 address WLCgeneric
 comment "Catalog operation alter_seq";
 
@@ -107,11 +107,11 @@ pattern drop_schema( sname:str, s:str, action:int)
 address WLCgeneric
 comment "Catalog operation drop_schema";
 
-pattern create_table(sname:str, tname:str, tbl:ptr, temp:int)
+pattern create_table(sname:str, tname:str, temp:int)
 address WLCgeneric
 comment "Catalog operation create_table";
 
-pattern create_view(sname:str, vname:str, tbl:ptr, temp:int)
+pattern create_view(sname:str, tname:str, temp:int)
 address WLCgeneric
 comment "Catalog operation create_view";
 
@@ -129,13 +129,13 @@ comment "Catalog operation drop_view";
 
 pattern drop_view( sname:str, name:str, action:int)
 address WLCgeneric
-comment "Catalog operation drop_view";;
+comment "Catalog operation drop_view";
 
 pattern drop_constraint( sname:str, name:str, action:int)
 address WLCgeneric
 comment "Catalog operation drop_constraint";
 
-pattern alter_table( sname:str, tname:str, tbl:ptr, action:int)
+pattern alter_table( sname:str, action:int)
 address WLCgeneric
 comment "Catalog operation alter_table";
 
@@ -207,14 +207,14 @@ address WLCgeneric
 comment "Catalog operation drop_index";
 
 pattern change_cp( action:int)
-address WLRgeneric
+address WLCgeneric
 comment "Pause, resume or stop all continuous queries";
 
 pattern drop_function( sname:str, fname:str, fid:int, type:int, action:int)
 address WLCgeneric
 comment "Catalog operation drop_function";
 
-pattern create_function( sname:str, fname:str, fcn:ptr, ofcn:ptr, replace:int)
+pattern create_function( sname:str, fname:str)
 address WLCgeneric
 comment "Catalog operation create_function";
 

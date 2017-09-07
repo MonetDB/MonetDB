@@ -58,13 +58,13 @@ pattern cycles(cnt:int)
 address CQcycles
 comment "Limit number of petrinet steps";
 
-pattern beginat(mod:str, fcn:str,beginat:lng)
+pattern beginat(mod:str, fcn:str,unixtime:lng)
 address CQbeginAt
-comment "Delay beginning of a continuous query, where beginat is an UNIX timestamp with microsecond precision";
+comment "Delay beginning of a continuous query, where unixtime is an UNIX timestamp with microsecond precision";
 
-pattern beginat(beginat:lng)
+pattern beginat(unixtime:lng)
 address CQbeginAt
-comment "Delay beginning of all continuous queries, where beginat is an UNIX timestamp with microsecond precision";
+comment "Delay beginning of all continuous queries, where unixtime is an UNIX timestamp with microsecond precision";
 
 # scheduler heart beat for each CQ
 pattern heartbeat(mod:str, fcn:str,cnt:lng)
