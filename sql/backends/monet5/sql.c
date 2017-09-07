@@ -2537,7 +2537,7 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKstrFromStr(ns, N, len);
 	len = 0;
 
-	if (!fname || strcmp(str_nil, *(char **) fname) == 0)
+	if (!fname || strcmp(str_nil, (char *) fname) == 0)
 		fname = NULL;
 	if (!fname) {
 		msg = mvc_import_table(cntxt, &b, be->mvc, be->mvc->scanner.rs, t, (char *) tsep, (char *) rsep, (char *) ssep, (char *) ns, sz, offset, locked, besteffort);
