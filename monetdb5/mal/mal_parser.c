@@ -1746,7 +1746,7 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 			nextChar(cntxt);
 			continue;
 		case '#':
-		{ /* keep the full line comments unless it is a MX #line */
+		{ /* keep the full line comments */
 			char start[256], *e = start, c;
 			MalBlkPtr curBlk = cntxt->curprg->def;
 			InstrPtr curInstr;

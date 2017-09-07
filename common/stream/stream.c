@@ -2222,7 +2222,7 @@ socket_close(stream *s)
 		 * as Windows' dup doesn't work on sockets;
 		 * hence, only one of the streams must/may close that
 		 * socket; we choose to let the read socket do the
-		 * job, since in mapi.mx it may happen that the read
+		 * job, since in mapi.c it may happen that the read
 		 * stream is closed before the write stream was even
 		 * created.
 		 */

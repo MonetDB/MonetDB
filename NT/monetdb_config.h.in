@@ -755,9 +755,6 @@
 /* Release name or "unreleased" */
 #define MONETDB_RELEASE "unreleased"
 
-/* Suffix for C++ files */
-#define MX_CXX_SUFFIX "cxx"
-
 /* Define if you do not want assertions */
 /* #undef NDEBUG */
 

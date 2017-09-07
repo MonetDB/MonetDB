@@ -786,7 +786,7 @@ BATsave(BAT *bd)
 
 
 /*
- * TODO: move to gdk_bbp.mx
+ * TODO: move to gdk_bbp.c
  */
 BAT *
 BATload_intern(bat bid, int lock)
