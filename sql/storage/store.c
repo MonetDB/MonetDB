@@ -1701,11 +1701,9 @@ store_needs_vacuum( sql_trans *tr )
 		if (!t->system)
 			continue;
 		/* no inserts, updates and enough deletes ? */
-		if (store_funcs.count_col(tr, c, 0) && 
-		    (store_funcs.count_col(tr, c, 1) -
-		    store_funcs.count_col(tr, c, 0)) == 0 && 
-		    !store_funcs.count_upd(tr, t) && 
-		    store_funcs.count_del(tr, t) >= max_dels) 
+		if (store_funcs.count_col(tr, c, 0) == 0 &&
+		    store_funcs.count_upd(tr, t) == 0 &&
+		    store_funcs.count_del(tr, t) >= max_dels)
 			return 1;
 	}
 	return 0;
@@ -1725,10 +1723,8 @@ store_vacuum( sql_trans *tr )
 
 		if (!t->system)
 			continue;
-		if (store_funcs.count_col(tr, c, 0) && 
-		    (store_funcs.count_col(tr, c, 1) -
-		    store_funcs.count_col(tr, c, 0)) == 0 && 
-		    !store_funcs.count_upd(tr, t) && 
+		if (store_funcs.count_col(tr, c, 0) == 0 &&
+		    store_funcs.count_upd(tr, t) == 0 &&
 		    store_funcs.count_del(tr, t) >= max_dels)
 			if (table_funcs.table_vacuum(tr, t) != SQL_OK)
 				return -1;
