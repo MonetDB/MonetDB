@@ -271,13 +271,13 @@ evalFile(str fname, int listing)
 	c->listing = listing;
 
 	if ( (msg = defaultScenario(c)) ) {
-		MCcloseClient(c);
+		MCcloseClient(c, 0);
 		throw(MAL,"mal.eval","%s",msg);
 	}
 	MSinitClientPrg(c, "user", "main");
 
 	msg = runScenario(c,0);
-	MCcloseClient(c);
+	MCcloseClient(c, 0);
 	return msg;
 }
 
@@ -338,7 +338,7 @@ compileString(Symbol *fcn, Client cntxt, str s)
 		GDKfree(qry);
 		GDKfree(b);
 		c->usermodule= 0;
-		MCcloseClient(c);
+		MCcloseClient(c, 0);
 		throw(MAL,"mal.compile","%s",msg);
 	}
 
@@ -352,7 +352,7 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	c->curprg = 0;
 	c->usermodule= 0;
 	/* restore IO channel */
-	MCcloseClient(c);
+	MCcloseClient(c, 0);
 	GDKfree(qry);
 	GDKfree(b);
 	return msg;
@@ -393,7 +393,7 @@ callString(Client cntxt, str s, int listing)
 		c->usermodule = 0;
 		GDKfree(b);
 		GDKfree(qry);
-		MCcloseClient(c);
+		MCcloseClient(c, 0);
 		throw(MAL,"mal.call","%s",msg);
 	}
 
@@ -421,7 +421,7 @@ callString(Client cntxt, str s, int listing)
 	c->usermodule = 0; // keep it around
 	bstream_destroy(c->fdin);
 	c->fdin = 0;
-	MCcloseClient(c);
+	MCcloseClient(c, 0);
 	GDKfree(qry);
 	GDKfree(b);
 	return msg;

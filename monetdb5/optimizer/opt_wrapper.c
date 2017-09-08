@@ -71,7 +71,7 @@ struct{
 	{"garbageCollector", &OPTgarbageCollectorImplementation,0,0},
 	{"generator", &OPTgeneratorImplementation,0,0},
 	{"inline", &OPTinlineImplementation,0,0},
-    {"cquery", &OPTcqueryImplementation,0,0},
+	{"cquery", &OPTcqueryImplementation,0,0},
 	{"jit", &OPTjitImplementation,0,0},
 	{"json", &OPTjsonImplementation,0,0},
 	{"matpack", &OPTmatpackImplementation,0,0},

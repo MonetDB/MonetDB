@@ -59,6 +59,7 @@ static int CQinit;
 static int pnstatus = CQINIT;
 static int cycleDelay = 200; /* be careful, it affects response/throughput timings */
 static MT_Lock ttrLock;
+static MT_Id cq_pid = 0;
 
 static BAT *CQ_id_tick = 0;
 static BAT *CQ_id_mod = 0;
@@ -90,7 +91,7 @@ CQfree(int idx)
 	if( pnet[idx].mb)
 		freeMalBlk(pnet[idx].mb);
 	if( pnet[idx].stk)
-		GDKfree(pnet[idx].stk);
+		freeStack(pnet[idx].stk);
 	GDKfree(pnet[idx].mod);
 	GDKfree(pnet[idx].fcn);
 	GDKfree(pnet[idx].stmt);
@@ -1393,11 +1394,8 @@ wrapup:
 #ifdef DEBUG_CQUERY
 	fprintf(stderr, "#cquery.scheduler stopped\n");
 #endif
-	cntxt->fdin = 0;
-	cntxt->fdout = 0;
-	//bstream_destroy(cntxt->fdin);
-	//mnstr_destroy(cntxt->fdout);
-	//MCcloseClient(cntxt); to be checked, removes too much
+	SQLexitClient(cntxt);
+	MCcloseClient(cntxt, 1);
 	pnstatus = CQINIT;
 	CQinit = 0;
 }
@@ -1405,7 +1403,6 @@ wrapup:
 str
 CQstartScheduler(void)
 {
-	MT_Id pid;
 	Client cntxt;
 	stream *fin, *fout;
 	bstream *bin;
@@ -1457,19 +1454,16 @@ CQstartScheduler(void)
 	cntxt->curmodule = cntxt->usermodule = userModule();
 
 	if( SQLinitClient(cntxt) != MAL_SUCCEED) {
-		bstream_destroy(cntxt->fdin);
-		mnstr_destroy(cntxt->fdout);
-		//MCcloseClient(cntxt); check this
+		MCcloseClient(cntxt, 1);
 		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize SQL context in CQscheduler\n");
 	}
 
-	if (pnstatus== CQINIT && MT_create_thread(&pid, CQscheduler, (void*) cntxt, MT_THR_JOINABLE) != 0){
+	if (pnstatus== CQINIT && MT_create_thread(&cq_pid, CQscheduler, (void*) cntxt, MT_THR_JOINABLE) != 0){
 #ifdef DEBUG_CQUERY
 		fprintf(stderr, "#Start CQscheduler failed\n");
 #endif
-		bstream_destroy(cntxt->fdin);
-		mnstr_destroy(cntxt->fdout);
-		//MCcloseClient(cntxt); check this
+		SQLexitClient(cntxt);
+		MCcloseClient(cntxt, 1);
 		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize client thread in CQscheduler\n");
 	}
 	return MAL_SUCCEED;
@@ -1480,6 +1474,10 @@ CQreset(void)
 {
 	if(pnet) {
 		CQderegisterAll(NULL, NULL, NULL, NULL); //stop all continuous queries
+		if(cq_pid > 0) {
+			MT_join_thread(cq_pid);
+			cq_pid = 0;
+		}
 		GDKfree(pnet);
 	}
 	pnet = NULL;

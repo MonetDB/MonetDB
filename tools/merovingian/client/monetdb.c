@@ -552,6 +552,8 @@ simple_argv_cmd(char *cmd, sabdb *dbs, char *merocmd,
 
 	/* do for each listed database */
 	for (; dbs != NULL; dbs = dbs->next) {
+		out = NULL;
+		ret = NULL;
 		if (premsg != NULL && !monetdb_quiet) {
 			printf("%s '%s'... ", premsg, dbs->dbname);
 			fflush(stdout);
@@ -566,6 +568,7 @@ simple_argv_cmd(char *cmd, sabdb *dbs, char *merocmd,
 			fprintf(stderr, "%s: %s\n",
 					cmd, ret);
 			free(ret);
+			free(out);
 			exit(2);
 		}
 
@@ -581,12 +584,10 @@ simple_argv_cmd(char *cmd, sabdb *dbs, char *merocmd,
 			if (premsg != NULL && !monetdb_quiet)
 				printf("FAILED\n");
 			fprintf(stderr, "%s: %s\n", cmd, out);
-			free(out);
-
 			state |= 1;
 		}
-
 		hadwork = 1;
+		free(out);
 	}
 
 	if (hadwork == 0) {

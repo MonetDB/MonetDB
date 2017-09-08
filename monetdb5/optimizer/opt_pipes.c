@@ -66,8 +66,8 @@ static struct PIPELINES {
 	{"default_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
-	 "optimizer.costModel();"
 	 "optimizer.cquery();"
+	 "optimizer.costModel();"
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
 	 "optimizer.emptybind();"
@@ -143,8 +143,8 @@ static struct PIPELINES {
 	{"no_mitosis_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
-	 "optimizer.costModel();"
 	 "optimizer.cquery();"
+	 "optimizer.costModel();"
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
 	 "optimizer.emptybind();"
@@ -184,8 +184,8 @@ static struct PIPELINES {
 	{"sequential_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
-	 "optimizer.costModel();"
 	 "optimizer.cquery();"
+	 "optimizer.costModel();"
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
 	 "optimizer.emptybind();"

@@ -316,7 +316,7 @@ WLRprocess(void *arg)
 wrapup:
 	wlrprocessrunning =0;
 	(void) mnstr_flush(c->fdout);
-	MCcloseClient(c);
+	MCcloseClient(c, 0);
 }
 
 /*
