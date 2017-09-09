@@ -24,6 +24,45 @@ static stmt * exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *gr
 static stmt * rel_bin(backend *be, sql_rel *rel);
 static stmt * subrel_bin(backend *be, sql_rel *rel, list *refs);
 
+static stmt *check_types(backend *be, sql_subtype *ct, stmt *s, check_type tpe);
+
+static stmt *
+sql_unop_(backend *be, sql_schema *s, const char *fname, stmt *rs)
+{
+	mvc *sql = be->mvc;
+	sql_subtype *rt = NULL;
+	sql_subfunc *f = NULL;
+
+	if (!s)
+		s = sql->session->schema;
+	rt = tail_type(rs);
+	f = sql_bind_func(sql->sa, s, fname, rt, NULL, F_FUNC);
+	/* try to find the function without a type, and convert
+	 * the value to the type needed by this function!
+	 */
+	if (!f && (f = sql_find_func(sql->sa, s, fname, 1, F_FUNC, NULL)) != NULL) {
+		sql_arg *a = f->func->ops->h->data;
+
+		rs = check_types(be, &a->type, rs, type_equal);
+		if (!rs) 
+			f = NULL;
+	}
+	if (f) {
+		/*
+		if (f->func->res.scale == INOUT) {
+			f->res.digits = rt->digits;
+			f->res.scale = rt->scale;
+		}
+		*/
+		return stmt_unop(be, rs, f);
+	} else if (rs) {
+		char *type = tail_type(rs)->type->sqlname;
+
+		return sql_error(sql, 02, "SELECT: no such unary operator '%s(%s)'", fname, type);
+	}
+	return NULL;
+}
+
 static stmt *
 refs_find_rel(list *refs, sql_rel *rel)
 {
@@ -708,10 +747,16 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 							tail_type(l), tail_type(r), F_FUNC);
 					sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema,
 							"and", bt, bt, F_FUNC);
-					assert(lf && rf && a);
-					s = stmt_binop(be, 
-						stmt_binop(be, l, r, lf), 
-						stmt_binop(be, l, r2, rf), a);
+
+					if (is_atom(re->type) && re->l && atom_null((atom*)re->l) &&
+					    is_atom(re2->type) && re2->l && atom_null((atom*)re2->l)) {
+						s = sql_unop_(be, NULL, "isnull", l);
+					} else {
+						assert(lf && rf && a);
+						s = stmt_binop(be, 
+							stmt_binop(be, l, r, lf), 
+							stmt_binop(be, l, r2, rf), a);
+					}
 					if (is_anti(e)) {
 						sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema, "not", bt, NULL, F_FUNC);
 						s = stmt_unop(be, s, a);
@@ -742,8 +787,6 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 	}
 	return s;
 }
-
-static stmt *check_types(backend *be, sql_subtype *ct, stmt *s, check_type tpe);
 
 static stmt *
 stmt_col( backend *be, sql_column *c, stmt *del) 
@@ -962,43 +1005,6 @@ check_types(backend *be, sql_subtype *ct, stmt *s, check_type tpe)
 		return res;
 	}
 	return s;
-}
-
-static stmt *
-sql_unop_(backend *be, sql_schema *s, const char *fname, stmt *rs)
-{
-	mvc *sql = be->mvc;
-	sql_subtype *rt = NULL;
-	sql_subfunc *f = NULL;
-
-	if (!s)
-		s = sql->session->schema;
-	rt = tail_type(rs);
-	f = sql_bind_func(sql->sa, s, fname, rt, NULL, F_FUNC);
-	/* try to find the function without a type, and convert
-	 * the value to the type needed by this function!
-	 */
-	if (!f && (f = sql_find_func(sql->sa, s, fname, 1, F_FUNC, NULL)) != NULL) {
-		sql_arg *a = f->func->ops->h->data;
-
-		rs = check_types(be, &a->type, rs, type_equal);
-		if (!rs) 
-			f = NULL;
-	}
-	if (f) {
-		/*
-		if (f->func->res.scale == INOUT) {
-			f->res.digits = rt->digits;
-			f->res.scale = rt->scale;
-		}
-		*/
-		return stmt_unop(be, rs, f);
-	} else if (rs) {
-		char *type = tail_type(rs)->type->sqlname;
-
-		return sql_error(sql, 02, "SELECT: no such unary operator '%s(%s)'", fname, type);
-	}
-	return NULL;
 }
 
 static stmt *
