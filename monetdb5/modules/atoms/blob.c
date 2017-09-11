@@ -37,14 +37,14 @@ int TYPE_sqlblob;
 
 mal_export str BLOBprelude(void *ret);
 
-mal_export int BLOBtostr(str *tostr, int *l, blob *pin);
-mal_export int BLOBfromstr(char *instr, int *l, blob **val);
-mal_export int BLOBcmp(blob *l, blob *r);
-mal_export BUN BLOBhash(blob *b);
-mal_export blob * BLOBnull(void);
-mal_export var_t BLOBput(Heap *h, var_t *bun, blob *val);
+mal_export int BLOBtostr(str *tostr, int *l, const blob *pin);
+mal_export int BLOBfromstr(const char *instr, int *l, blob **val);
+mal_export int BLOBcmp(const blob *l, const blob *r);
+mal_export BUN BLOBhash(const blob *b);
+mal_export const blob *BLOBnull(void);
+mal_export var_t BLOBput(Heap *h, var_t *bun, const blob *val);
 mal_export void BLOBdel(Heap *h, var_t *index);
-mal_export int BLOBlength(blob *p);
+mal_export int BLOBlength(const blob *p);
 mal_export void BLOBheap(Heap *heap, size_t capacity);
 mal_export str BLOBtoblob(blob **retval, str *s);
 mal_export str BLOBfromblob(str *retval, blob **b);
@@ -52,12 +52,12 @@ mal_export str BLOBfromidx(str *retval, blob **binp, int *index);
 mal_export str BLOBnitems(int *ret, blob *b);
 mal_export int BLOBget(Heap *h, int *bun, int *l, blob **val);
 mal_export blob * BLOBread(blob *a, stream *s, size_t cnt);
-mal_export gdk_return BLOBwrite(blob *a, stream *s, size_t cnt);
+mal_export gdk_return BLOBwrite(const blob *a, stream *s, size_t cnt);
 
 mal_export str BLOBblob_blob(blob **d, blob **s);
-mal_export str BLOBblob_fromstr(blob **b, str *d);
+mal_export str BLOBblob_fromstr(blob **b, const char **d);
 
-mal_export str BLOBsqlblob_fromstr(sqlblob **b, str *d);
+mal_export str BLOBsqlblob_fromstr(sqlblob **b, const char **d);
 
 str
 BLOBprelude(void *ret)
@@ -109,7 +109,7 @@ fromblob_idx(str *retval, blob *b, int *idx)
  * @-
  */
 int
-BLOBcmp(blob *l, blob *r)
+BLOBcmp(const blob *l, const blob *r)
 {
 	size_t len = l->nitems;
 
@@ -129,12 +129,12 @@ BLOBdel(Heap *h, var_t *idx)
 }
 
 BUN
-BLOBhash(blob *b)
+BLOBhash(const blob *b)
 {
 	return (BUN) b->nitems;
 }
 
-blob *
+const blob *
 BLOBnull(void)
 {
 	return &nullval;
@@ -159,20 +159,20 @@ BLOBread(blob *a, stream *s, size_t cnt)
 }
 
 gdk_return
-BLOBwrite(blob *a, stream *s, size_t cnt)
+BLOBwrite(const blob *a, stream *s, size_t cnt)
 {
 	var_t len = blobsize(a->nitems);
 
 	(void) cnt;
 	assert(cnt == 1);
 	if (!mnstr_writeInt(s, (int) len) /* 64bit: check for overflow */ ||
-		mnstr_write(s, (char *) a, len, 1) < 0)
+		mnstr_write(s, a, len, 1) < 0)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
 
 int
-BLOBlength(blob *p)
+BLOBlength(const blob *p)
 {
 	var_t l = blobsize(p->nitems); /* 64bit: check for overflow */
 	assert(l <= GDK_int_max);
@@ -186,14 +186,14 @@ BLOBheap(Heap *heap, size_t capacity)
 }
 
 var_t
-BLOBput(Heap *h, var_t *bun, blob *val)
+BLOBput(Heap *h, var_t *bun, const blob *val)
 {
 	char *base = NULL;
 
 	*bun = HEAP_malloc(h, blobsize(val->nitems));
  	base = h->base;
 	if (*bun) {
-		memcpy(&base[*bun], (char *) val, blobsize(val->nitems));
+		memcpy(&base[*bun], val, blobsize(val->nitems));
 		h->dirty = 1;
 	}
 	return *bun;
@@ -208,7 +208,7 @@ BLOBnitems(int *ret, blob *b)
 }
 
 int
-BLOBtostr(str *tostr, int *l, blob *p)
+BLOBtostr(str *tostr, int *l, const blob *p)
 {
 	char *s;
 	size_t i;
@@ -248,13 +248,14 @@ BLOBtostr(str *tostr, int *l, blob *p)
 }
 
 int
-BLOBfromstr(char *instr, int *l, blob **val)
+BLOBfromstr(const char *instr, int *l, blob **val)
 {
 	size_t i;
 	size_t nitems;
 	var_t nbytes;
 	blob *result;
-	char *s = instr;
+	const char *s = instr;
+	char *e;
 
 	s = strchr(s, '(');
 	if (s == NULL) {
@@ -262,12 +263,13 @@ BLOBfromstr(char *instr, int *l, blob **val)
 		*val = (blob *) NULL;
 		return (0);
 	}
-	nitems = (size_t) strtoul(s + 1, &s, 10);
-	if (s == NULL) {
+	nitems = (size_t) strtoul(s + 1, &e, 10);
+	if ((const char *) e == s + 1) {
 		GDKerror("Missing nitems in blob\n");
 		*val = (blob *) NULL;
 		return (0);
 	}
+	s = e;
 #if SIZEOF_SIZE_T > SIZEOF_INT
 	if (nitems > 0x7fffffff) {
 		GDKerror("Blob too large\n");
@@ -417,13 +419,13 @@ SQLBLOBtostr(str *tostr, int *l, const blob *p)
  * no brackets and no spaces in between the hexits
  */
 int
-SQLBLOBfromstr(char *instr, int *l, blob **val)
+SQLBLOBfromstr(const char *instr, int *l, blob **val)
 {
 	size_t i;
 	size_t nitems;
 	var_t nbytes;
 	blob *result;
-	char *s = instr;
+	const char *s = instr;
 	int nil = 0;
 
 	/* since the string is built of (only) hexits the number of bytes
@@ -502,7 +504,7 @@ BLOBblob_blob(blob **d, blob **s)
 }
 
 str
-BLOBblob_fromstr(blob **b, str *s)
+BLOBblob_fromstr(blob **b, const char **s)
 {
 	int len = 0;
 
@@ -512,7 +514,7 @@ BLOBblob_fromstr(blob **b, str *s)
 
 
 str
-BLOBsqlblob_fromstr(sqlblob **b, str *s)
+BLOBsqlblob_fromstr(sqlblob **b, const char **s)
 {
 	int len = 0;
 

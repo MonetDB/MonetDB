@@ -287,7 +287,7 @@ x2c(char *what)
  */
 
 int
-URLfromString(str src, int *len, str *u)
+URLfromString(const char *src, int *len, str *u)
 {
 	/* actually parse the message for valid url */
 	if (*u !=0)
@@ -300,7 +300,7 @@ URLfromString(str src, int *len, str *u)
 }
 
 int
-URLtoString(str *s, int *len, str src)
+URLtoString(str *s, int *len, const char *src)
 {
 	int l;
 

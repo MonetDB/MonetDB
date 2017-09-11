@@ -57,7 +57,7 @@ int TYPE_json;
 
 /* Internal constructors. */
 static int jsonhint = 8;
-static JSON *JSONparse(char *j, int silent);
+static JSON *JSONparse(const char *j, int silent);
 
 static JSON *
 JSONnewtree(int size)
@@ -109,7 +109,7 @@ JSONfree(JSON *c)
 }
 
 int
-JSONfromString(str src, int *len, json *j)
+JSONfromString(const char *src, int *len, json *j)
 {
 	ssize_t slen = (ssize_t) strlen(src);
 	JSON *jt = JSONparse(src, FALSE);
@@ -138,10 +138,11 @@ JSONfromString(str src, int *len, json *j)
 }
 
 int
-JSONtoString(str *s, int *len, json src)
+JSONtoString(str *s, int *len, const char *src)
 {
 	size_t cnt;
-	char *c, *dst;
+	const char *c;
+	char *dst;
 
 	if (GDK_STRNIL(src)) {
 		if (*s == NULL || *len < 4) {
@@ -689,7 +690,7 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 
 
 static str
-JSONstringParser(char *j, char **next, int silent)
+JSONstringParser(const char *j, const char **next, int silent)
 {
 	if (*j == '"')
 		j++;
@@ -736,9 +737,9 @@ JSONstringParser(char *j, char **next, int silent)
 }
 
 static str
-JSONnumberParser(char *j, char **next, int silent)
+JSONnumberParser(const char *j, const char **next, int silent)
 {
-	char *backup = j;
+	const char *backup = j;
 
 	if (*j == '-')
 		j++;
@@ -780,7 +781,7 @@ JSONnumberParser(char *j, char **next, int silent)
 }
 
 static int
-JSONtoken(JSON *jt, char *j, char **next, int silent)
+JSONtoken(JSON *jt, const char *j, const char **next, int silent)
 {
 	str msg;
 	int nxt, idx = JSONnew(jt);
@@ -971,7 +972,7 @@ JSONtoken(JSON *jt, char *j, char **next, int silent)
 
 
 static JSON *
-JSONparse(char *j, int silent)
+JSONparse(const char *j, int silent)
 {
 	JSON *jt = JSONnewtree(0);
 
