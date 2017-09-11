@@ -20,13 +20,13 @@
 #include "monetdb_config.h"
 #include "batcolor.h"
 
-#define BATwalk(NAME,FUNC,TYPE1,TYPE2)									\
+#define BATwalk(NAME,FUNC,TYPE1,NIL,TYPE2)								\
 str CLRbat##NAME(bat *ret, const bat *l)								\
 {																		\
 	BATiter bi;															\
 	BAT *bn, *b;														\
 	BUN p,q;															\
-	TYPE1 *x;															\
+	const TYPE1 *x;														\
 	TYPE2 y, *yp = &y;													\
 																		\
 	if( (b= BATdescriptor(*l)) == NULL )								\
@@ -44,8 +44,8 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 	bi = bat_iterator(b);												\
 																		\
 	BATloop(b, p, q) {													\
-		x= (TYPE1 *) BUNtail(bi,p);										\
-		if (x== 0 || *x == TYPE1##_nil) {								\
+		x= (const TYPE1 *) BUNtail(bi,p);								\
+		if (x== 0 || *x == NIL) {										\
 			y = (TYPE2) TYPE2##_nil;									\
 			bn->tnonil = 0;												\
 			bn->tnil = 1;												\
@@ -63,24 +63,24 @@ bunins_failed:															\
 	throw(MAL, "batcolor." #NAME, OPERATION_FAILED " During bulk operation"); \
 }
 
-BATwalk(Color,CLRcolor,str,color)
-BATwalk(Str,CLRstr,color,str)
+BATwalk(Color,CLRcolor,char *,str_nil,color)
+BATwalk(Str,CLRstr,color,color_nil,str)
 
-BATwalk(Red,CLRred,color,int)
-BATwalk(Green,CLRgreen,color,int)
-BATwalk(Blue,CLRblue,color,int)
+BATwalk(Red,CLRred,color,color_nil,int)
+BATwalk(Green,CLRgreen,color,color_nil,int)
+BATwalk(Blue,CLRblue,color,color_nil,int)
 
-BATwalk(Hue,CLRhue,color,flt)
-BATwalk(Saturation,CLRsaturation,color,flt)
-BATwalk(Value,CLRvalue,color,flt)
+BATwalk(Hue,CLRhue,color,color_nil,flt)
+BATwalk(Saturation,CLRsaturation,color,color_nil,flt)
+BATwalk(Value,CLRvalue,color,color_nil,flt)
 
-BATwalk(HueInt,CLRhueInt,color,int)
-BATwalk(SaturationInt,CLRsaturationInt,color,int)
-BATwalk(ValueInt,CLRvalueInt,color,int)
+BATwalk(HueInt,CLRhueInt,color,color_nil,int)
+BATwalk(SaturationInt,CLRsaturationInt,color,color_nil,int)
+BATwalk(ValueInt,CLRvalueInt,color,color_nil,int)
 
-BATwalk(Luminance,CLRluminance,color,int)
-BATwalk(Cr,CLRcr,color,int)
-BATwalk(Cb,CLRcb,color,int)
+BATwalk(Luminance,CLRluminance,color,color_nil,int)
+BATwalk(Cr,CLRcr,color,color_nil,int)
+BATwalk(Cb,CLRcb,color,color_nil,int)
 
 #define BATwalk3(NAME,FUNC,TYPE)										\
 str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
@@ -88,7 +88,7 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 	BATiter bi, b2i, b3i;												\
 	BAT *bn, *b2,*b3, *b;												\
 	BUN p,q;															\
-	TYPE *x, *x2, *x3;													\
+	const TYPE *x, *x2, *x3;											\
 	color y, *yp = &y;													\
 																		\
 	b= BATdescriptor(*l);												\
@@ -120,9 +120,9 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 	b3i = bat_iterator(b3);												\
 																		\
 	BATloop(b, p, q) {													\
-		x= (TYPE *) BUNtail(bi,p);										\
-		x2= (TYPE *) BUNtail(b2i,p);									\
-		x3= (TYPE *) BUNtail(b3i,p);									\
+		x= (const TYPE *) BUNtail(bi,p);								\
+		x2= (const TYPE *) BUNtail(b2i,p);								\
+		x3= (const TYPE *) BUNtail(b3i,p);								\
 		if (x== 0 || *x == TYPE##_nil ||								\
 			x2== 0 || *x2 == TYPE##_nil ||								\
 			x3== 0 || *x3 == TYPE##_nil) {								\
