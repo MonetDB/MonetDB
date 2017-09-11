@@ -2590,7 +2590,7 @@ mvc_result_column(mvc *m, char *tn, char *name, char *typename, int digits, int 
 }
 
 int
-mvc_result_value(mvc *m, char *tn, char *name, char *typename, int digits, int scale, ptr *p, int mtype)
+mvc_result_value(mvc *m, const char *tn, const char *name, const char *typename, int digits, int scale, ptr *p, int mtype)
 {
 	/* return 0 on success, non-zero on failure */
 	return res_col_create(m->session->tr, m->results, tn, name, typename, digits, scale, mtype, p) == NULL;

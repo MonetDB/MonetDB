@@ -241,7 +241,7 @@ optPipeInit(void)
 
 /* the session_pipe is the one defined by the user */
 str
-addPipeDefinition(Client cntxt, str name, str pipe)
+addPipeDefinition(Client cntxt, const char *name, const char *pipe)
 {
 	int i;
 	str msg;
@@ -292,7 +292,7 @@ addPipeDefinition(Client cntxt, str name, str pipe)
 }
 
 int
-isOptimizerPipe(str name)
+isOptimizerPipe(const char *name)
 {
 	int i;
 
@@ -426,7 +426,7 @@ validateOptimizerPipes(void)
  * then copy the statements to the end of the MAL plan
 */
 str
-compileOptimizer(Client cntxt, str name)
+compileOptimizer(Client cntxt, const char *name)
 {
 	int i, j;
 	char buf[2048];
@@ -472,7 +472,7 @@ compileAllOptimizers(Client cntxt)
 	return msg;
 }
 str
-addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name)
+addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 {
 	int i, j, k;
 	InstrPtr p,q;
