@@ -1021,7 +1021,7 @@ exp_is_complex_select( sql_exp *e )
 		list *l = e->l;
 
 		if (r && l)
-			for (n = l->h; n; n = n->next) 
+			for (n = l->h; n && !r; n = n->next) 
 				r |= exp_is_complex_select(n->data);
 		return r;
 	}
@@ -1330,7 +1330,7 @@ exp_is_atom( sql_exp *e )
 		list *l = e->l;
 
 		if (r && l)
-			for (n = l->h; n; n = n->next) 
+			for (n = l->h; n && r; n = n->next) 
 				r &= exp_is_atom(n->data);
 		return r;
 	}

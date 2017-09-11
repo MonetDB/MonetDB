@@ -2232,11 +2232,26 @@ rel_distinct_project2groupby(int *changes, mvc *sql, sql_rel *rel)
 				set_nodistinct(rel);
 		}
 	}
-	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && 
+	if (rel->op == op_project && rel->l && 
 	    need_distinct(rel) && exps_card(rel->exps) > CARD_ATOM) {
 		node *n;
 		list *exps = new_exp_list(sql->sa), *gbe = new_exp_list(sql->sa);
+		list *obe = rel->r; /* we need to readd the ordering later */
 
+		if (obe) { 
+			int fnd = 0;
+
+			for(n = obe->h; n && !fnd; n = n->next) { 
+				sql_exp *e = n->data;
+
+				if (e->type != e_column) 
+					fnd = 1;
+				else if (exps_bind_column2(rel->exps, e->l, e->r) == 0) 
+					fnd = 1;
+			}
+			if (fnd)
+				return rel;
+		}
 		rel->l = rel_project(sql->sa, rel->l, rel->exps);
 
 		for (n = rel->exps->h; n; n = n->next) {
@@ -2254,6 +2269,11 @@ rel_distinct_project2groupby(int *changes, mvc *sql, sql_rel *rel)
 		rel->exps = exps;
 		rel->r = gbe;
 		set_nodistinct(rel);
+		if (obe) {
+			/* add order again */
+			rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
+			rel->r = obe;
+		}
 		*changes = 1;
 	}
 	return rel;
