@@ -260,6 +260,15 @@ addPipeDefinition(Client cntxt, str name, str pipe)
 	pipes[i].name = GDKstrdup(name);
 	pipes[i].def = GDKstrdup(pipe);
 	pipes[i].status = GDKstrdup("experimental");
+	if(pipes[i].name == NULL || pipes[i].def == NULL || pipes[i].status == NULL) {
+		GDKfree(pipes[i].name);
+		GDKfree(pipes[i].def);
+		GDKfree(pipes[i].status);
+		pipes[i].name = oldpipe.name;
+		pipes[i].def = oldpipe.def;
+		pipes[i].status = oldpipe.status;
+		throw(MAL, "optimizer.addPipeDefinition", MAL_MALLOC_FAIL);
+	}
 	pipes[i].mb = NULL;
 	MT_lock_unset(&pipeLock);
 	msg = compileOptimizer(cntxt, name);
