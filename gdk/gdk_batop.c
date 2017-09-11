@@ -957,8 +957,8 @@ BATkeyed(BAT *b)
 			   (b->batPersistence == PERSISTENT &&
 			    BAThash(b, 0) == GDK_SUCCEED)
 #ifndef DISABLE_PARENT_HASH
-			   || ((parent = VIEWtparent(b)) != 0 &&
-			       BATcheckhash(BBPdescriptor(parent)))
+			   || (VIEWtparent(b) != 0 &&
+			       BATcheckhash(BBPdescriptor(VIEWtparent(b))))
 #endif
 			) {
 			/* we already have a hash table on b, or b is
@@ -969,8 +969,8 @@ BATkeyed(BAT *b)
 
 			hs = b->thash;
 #ifndef DISABLE_PARENT_HASH
-			if (b->thash == NULL && (parent = VIEWtparent(b)) != 0) {
-				BAT *b2 = BBPdescriptor(parent);
+			if (b->thash == NULL && VIEWtparent(b) != 0) {
+				BAT *b2 = BBPdescriptor(VIEWtparent(b));
 				lo = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
 				hs = b2->thash;
 			}
