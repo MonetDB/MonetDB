@@ -267,6 +267,7 @@ addPipeDefinition(Client cntxt, str name, str pipe)
 		pipes[i].name = oldpipe.name;
 		pipes[i].def = oldpipe.def;
 		pipes[i].status = oldpipe.status;
+		MT_lock_unset(&pipeLock);
 		throw(MAL, "optimizer.addPipeDefinition", MAL_MALLOC_FAIL);
 	}
 	pipes[i].mb = NULL;
