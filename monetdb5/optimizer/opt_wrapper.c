@@ -132,14 +132,19 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			fcnnme= getArgDefault(mb,p,2);
 		}
 		removeInstruction(mb, p);
+		freeInstruction(p);
+		mb->stmt[mb->stop] = NULL;
 		s= findSymbol(cntxt->usermodule, putName(modnme),putName(fcnnme));
 
 		if( s == NULL) 
 			throw(MAL, optimizer, RUNTIME_OBJECT_UNDEFINED ":%s.%s", modnme, fcnnme);
 		mb = s->def;
 		stk= 0;
-	} else if( p ) 
+	} else if( p ) {
 		removeInstruction(mb, p);
+		freeInstruction(p);
+		mb->stmt[mb->stop] = NULL;
+	}
 
 	for (i=0; codes[i].nme; i++)
 		if (strcmp(codes[i].nme, optimizer) == 0){

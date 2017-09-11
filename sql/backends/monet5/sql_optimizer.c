@@ -80,37 +80,37 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare, str *alterpipe)
 
 	for (i = 0; i < mb->stop; i++) {
 		InstrPtr p = mb->stmt[i];
-        char *f = getFunctionId(p);
+		char *f = getFunctionId(p);
 
-        if (getModuleId(p) == sqlRef && strcmp(f,"clear_table")==0){
-            char *sname = getVarConstant(mb, getArg(p, 1 )).val.sval;
-            char *tname = getVarConstant(mb, getArg(p, 2 )).val.sval;
-            sql_schema *s = mvc_bind_schema(m, sname);
-            sql_table *t;
+		if (getModuleId(p) == sqlRef && strcmp(f,"clear_table")==0){
+			char *sname = getVarConstant(mb, getArg(p, 1 )).val.sval;
+			char *tname = getVarConstant(mb, getArg(p, 2 )).val.sval;
+			sql_schema *s = mvc_bind_schema(m, sname);
+			sql_table *t;
 
-            if( ! s ) continue;
-            t = mvc_bind_table(m, s, tname);
-            if (t && isStream(t)) {
-                setModuleId(p, basketRef);
+			if( ! s ) continue;
+			t = mvc_bind_table(m, s, tname);
+			if (t && isStream(t)) {
+				setModuleId(p, basketRef);
 				*alterpipe= "cquery_pipe";
-                continue;
-            }
-        }
+				continue;
+			}
+		}
 
-        if (getModuleId(p) == sqlRef && (f == appendRef || f == updateRef || f == deleteRef )) {
-            char *sname = getVarConstant(mb, getArg(p, 2 )).val.sval;
-            char *tname = getVarConstant(mb, getArg(p, 3 )).val.sval;
-            sql_schema *s = mvc_bind_schema(m, sname);
-            sql_table *t;
+		if (getModuleId(p) == sqlRef && (f == appendRef || f == updateRef || f == deleteRef )) {
+			char *sname = getVarConstant(mb, getArg(p, 2 )).val.sval;
+			char *tname = getVarConstant(mb, getArg(p, 3 )).val.sval;
+			sql_schema *s = mvc_bind_schema(m, sname);
+			sql_table *t;
 
-            if( ! s ) continue;
-            t = mvc_bind_table(m, s, tname);
-            if (t && isStream(t)) {
-                setModuleId(p, basketRef);
-                *alterpipe= "cquery_pipe";
-                continue;
-            }
-        }
+			if( ! s ) continue;
+			t = mvc_bind_table(m, s, tname);
+			if (t && isStream(t)) {
+				setModuleId(p, basketRef);
+				*alterpipe= "cquery_pipe";
+				continue;
+			}
+		}
 
 		/* now deal with the update binds, it is only necessary to identify that there are updats
 		 * The actual size is not that important */

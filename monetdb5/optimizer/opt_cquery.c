@@ -43,7 +43,7 @@
 str
 OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, k, fnd, limit, slimit;
+	int i, j, k, fnd, limit, slimit, extra_stmts = 0;
 	InstrPtr r, p, *old;
 	int *alias;
 	str schemas[MAXBSKTOPT];
@@ -134,11 +134,21 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		if( getModuleId(p)== sqlRef && getFunctionId(p) == appendRef )
 			lastmvc = getArg(p,0);
-		if (!cq && getModuleId(p) == sqlRef && getFunctionId(p) == affectedRowsRef )
+		if( !cq && getModuleId(p) == sqlRef && getFunctionId(p) == affectedRowsRef )
 			lastmvc = getArg(p,0);
-		if( getModuleId(p)== cqueryRef && getFunctionId(p) == tumbleRef){
+		if( getModuleId(p)== cqueryRef && getFunctionId(p) == tumbleRef )
 			lastmvc = getArg(p,1);
+		/*if( getModuleId(p) == sqlRef && getFunctionId(p)== mvcRef ){
+			if( mvcseen){
+				extra_stmts++;
+			}
+			mvcseen=1;
+			extra_stmts += 2;
 		}
+		if( getModuleId(p)== cqueryRef && getFunctionId(p)==errorRef )
+			noerror++;
+		if( p->token == ENDsymbol && btop > 0 && noerror==0 )
+			extra_stmts += 2;*/
 	}
 #ifdef DEBUG_OPT_CQUERY
 	mnstr_printf(cntxt->fdout, "#cquery optimizer started with %d streams, mvc %d\n", btop,lastmvc);
@@ -152,10 +162,12 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (alias == 0)
 		return MAL_SUCCEED;
 
-	if (newMalBlkStmt(mb, slimit) < 0)
+	if (newMalBlkStmt(mb, slimit + extra_stmts) < 0)
 		return MAL_SUCCEED;
 
 	pushInstruction(mb, old[0]);
+	/*mvcseen = 0;
+	noerror = 0;*/
 	for (i = 1; i < limit; i++)
 		if (old[i]) {
 			p = old[i];

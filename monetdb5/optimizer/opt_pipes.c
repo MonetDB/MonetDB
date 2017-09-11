@@ -228,18 +228,19 @@ static struct PIPELINES {
 	 "optimizer.constants();"
 	 "optimizer.commonTerms();"
 	 "optimizer.projectionpath();"
-	"optimizer.deadcode();"
-	"optimizer.reorder();"
+	 "optimizer.deadcode();"
+	 "optimizer.reorder();"
 //	 "optimizer.reduce();" deprecated
-	"optimizer.matpack();"
-	"optimizer.dataflow();"
-	"optimizer.querylog();"
-	"optimizer.multiplex();"
-	"optimizer.generator();"
+	 "optimizer.matpack();"
+	 "optimizer.dataflow();"
+	 "optimizer.querylog();"
+	 "optimizer.multiplex();"
+	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
+	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
 

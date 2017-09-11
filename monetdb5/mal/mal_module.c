@@ -257,7 +257,7 @@ void freeModule(Module m)
 		}
 	}
 #ifdef _DEBUG_MODULE_
-	fprintf(stderr,"#freeModue %s \n", m->name);
+	fprintf(stderr,"#freeModule %s \n", m->name);
 #endif
 	freeSubScope(m);	
 	if (strcmp(m->name, "user")) {
