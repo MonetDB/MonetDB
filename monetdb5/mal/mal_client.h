@@ -29,6 +29,10 @@ enum clientmode {
 
 #define PROCESSTIMEOUT  2   /* seconds */
 
+#define REGULAR_CLIENT  0
+#define CQ_CLIENT       1
+#define WLR_CLIENT      2
+
 /*
  * The prompt structure is designed to simplify recognition of the
  * language framework for interaction. For direct console access it is a
@@ -207,7 +211,7 @@ mal_export Client  MCforkClient(Client father);
 mal_export void	   MCstopClients(Client c);
 mal_export int     MCshutdowninprogress(void);
 mal_export int	   MCactiveClients(void);
-mal_export void    MCcloseClient(Client c, int is_cq_client);
+mal_export void    MCcloseClient(Client c, int which_client);
 mal_export str     MCsuspendClient(int id);
 mal_export str     MCawakeClient(int id);
 mal_export int     MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt);

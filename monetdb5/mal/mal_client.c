@@ -467,7 +467,7 @@ MCactiveClients(void)
 }
 
 void
-MCcloseClient(Client c, int is_cq_client)
+MCcloseClient(Client c, int which_client)
 {
 #ifdef MAL_DEBUG_CLIENT
 	fprintf(stderr,"closeClient %d " OIDFMT "\n", (int) (c - mal_clients), c->user);
@@ -476,11 +476,13 @@ MCcloseClient(Client c, int is_cq_client)
 	if (!isAdministrator(c)) {
 		freeClient(c);
 		return;
+	} else if(which_client == WLR_CLIENT) {
+		freeClient(c);
 	}
 
 	/* adm is set to disallow new clients entering */
 	mal_clients[CONSOLE].mode = FINISHCLIENT;
-	if(!is_cq_client) {
+	if(which_client != CQ_CLIENT) {
 		mal_exit();
 	}
 }

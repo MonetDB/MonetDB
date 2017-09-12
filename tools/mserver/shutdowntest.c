@@ -87,7 +87,7 @@ static void monetdb_disconnect(void* conn) {
 		return;
 	}
 	(*SQLexitClient_ptr)((Client) conn);
-	MCcloseClient((Client) conn, 0);
+	MCcloseClient((Client) conn, REGULAR_CLIENT);
 }
 
 static str monetdb_initialize(void) {

@@ -1349,7 +1349,7 @@ str MBMskewed(bat *ret, oid *base, lng *size, int *domain, int *skew);
 str MBMuniform(bat *ret, oid *base, lng *size, int *domain);
 int MCactiveClients(void);
 str MCawakeClient(int id);
-void MCcloseClient(Client c);
+void MCcloseClient(Client c, int is_cq_client);
 int MCdefault;
 Client MCforkClient(Client father);
 Client MCgetClient(int id);

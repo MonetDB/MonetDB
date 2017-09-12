@@ -460,7 +460,7 @@ MSserveClient(void *dummy)
 	str msg = 0;
 
 	if (!isAdministrator(c) && MCinitClientThread(c) < 0) {
-		MCcloseClient(c, 0);
+		MCcloseClient(c, REGULAR_CLIENT);
 		return MAL_SUCCEED;
 	}
 	/*
@@ -515,7 +515,7 @@ MSserveClient(void *dummy)
 	*/
 
 	if (!isAdministrator(c))
-		MCcloseClient(c, 0);
+		MCcloseClient(c, REGULAR_CLIENT);
 	if (c->usermodule /*&& strcmp(c->usermodule->name, "user") == 0*/) {
 		freeModule(c->usermodule);
 		c->usermodule = NULL;

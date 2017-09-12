@@ -1395,7 +1395,7 @@ wrapup:
 	fprintf(stderr, "#cquery.scheduler stopped\n");
 #endif
 	SQLexitClient(cntxt);
-	MCcloseClient(cntxt, 1);
+	MCcloseClient(cntxt, CQ_CLIENT);
 	pnstatus = CQINIT;
 	CQinit = 0;
 }
@@ -1454,7 +1454,7 @@ CQstartScheduler(void)
 	cntxt->curmodule = cntxt->usermodule = userModule();
 
 	if( SQLinitClient(cntxt) != MAL_SUCCEED) {
-		MCcloseClient(cntxt, 1);
+		MCcloseClient(cntxt, CQ_CLIENT);
 		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize SQL context in CQscheduler\n");
 	}
 
@@ -1463,7 +1463,7 @@ CQstartScheduler(void)
 		fprintf(stderr, "#Start CQscheduler failed\n");
 #endif
 		SQLexitClient(cntxt);
-		MCcloseClient(cntxt, 1);
+		MCcloseClient(cntxt, CQ_CLIENT);
 		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize client thread in CQscheduler\n");
 	}
 	return MAL_SUCCEED;
