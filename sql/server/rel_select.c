@@ -4427,6 +4427,8 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 					set_processed(r);
 			}
 			/* single row */
+			if (!rel)
+				return NULL;
 			if (*rel) {
 				sql_rel *p = *rel;
 

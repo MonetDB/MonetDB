@@ -95,7 +95,7 @@ mal_export str INETtext(str *retval, const inet *val);
 mal_export str INETabbrev(str *retval, const inet *val);
 mal_export str INET_inet(inet *d, const inet *s);
 mal_export str INET_fromstr(inet *ret, str *s);
-mal_export inet *INETnull(void);
+mal_export const inet *INETnull(void);
 
 static inet inet_nil = {{{0,0,0,0,0,0,0,1}}};
 
@@ -790,7 +790,7 @@ INET_fromstr(inet *ret, str *s)
 	return MAL_SUCCEED;
 }
 
-inet *
+const inet *
 INETnull(void)
 {
 	return &inet_nil;

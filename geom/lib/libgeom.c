@@ -34,7 +34,7 @@ libgeom_exit(void)
 }
 
 int
-wkb_isnil(wkb *w)
+wkb_isnil(const wkb *w)
 {
 	if (!w || w->len == ~0)
 		return 1;
@@ -106,7 +106,7 @@ getMbrGeos(mbr *res, const GEOSGeom geosGeometry)
 */
 
 GEOSGeom
-wkb2geos(wkb *geomWKB)
+wkb2geos(const wkb *geomWKB)
 {
 	GEOSGeom geosGeometry;
 

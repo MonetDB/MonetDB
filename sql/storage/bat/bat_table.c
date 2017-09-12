@@ -154,17 +154,17 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 	va_start(va, value);
 	s = delta_cands(tr, c->t);
 	if (!s)
-		return oid_nil;
+		goto return_nil;
 	b = full_column(tr, c);
 	if (!b) {
 		bat_destroy(s);
-		return oid_nil;
+		goto return_nil;
 	}
 	r = BATselect(b, s, value, NULL, 1, 0, 0);
 	bat_destroy(s);
 	full_destroy(c, b);
 	if (!r)
-		return oid_nil;
+		goto return_nil;
 	s = r;
 	while ((n = va_arg(va, sql_column *)) != NULL) {
 		value = va_arg(va, void *);
@@ -173,13 +173,13 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 		b = full_column(tr, c);
 		if (!b) {
 			bat_destroy(s);
-			return oid_nil;
+			goto return_nil;
 		}
 		r = BATselect(b, s, value, NULL, 1, 0, 0);
 		bat_destroy(s);
 		full_destroy(c, b);
 		if (!r)
-			return oid_nil;
+			goto return_nil;
 		s = r;
 	}
 	va_end(va);
@@ -189,6 +189,9 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 	}
 	bat_destroy(s);
 	return rid;
+  return_nil:
+	va_end(va);
+	return oid_nil;
 }
 
 static void *
@@ -324,6 +327,7 @@ rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const vo
 			full_destroy(key, b);
 			if (s == NULL) {
 				GDKfree(rs);
+				va_end(va);
 				return NULL;
 			}
 		}

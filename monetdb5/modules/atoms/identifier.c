@@ -25,8 +25,8 @@ typedef str identifier;
 
 mal_export int TYPE_identifier;
 mal_export str IDprelude(void *ret);
-mal_export int IDfromString(str src, int *len, identifier *retval);
-mal_export int IDtoString(str *retval, int *len, identifier handle);
+mal_export int IDfromString(const char *src, int *len, identifier *retval);
+mal_export int IDtoString(str *retval, int *len, const char *handle);
 mal_export str IDentifier(identifier *retval, str *in);
 
 int TYPE_identifier;
@@ -45,7 +45,7 @@ str IDprelude(void *ret)
  * Returns the number of chars read
  */
 int
-IDfromString(str src, int *len, identifier *retval)
+IDfromString(const char *src, int *len, identifier *retval)
 {
 	if (src == NULL) {
 		*len = 0;
@@ -64,7 +64,7 @@ IDfromString(str src, int *len, identifier *retval)
  * Returns the length of the string
  */
 int
-IDtoString(str *retval, int *len, identifier handle)
+IDtoString(str *retval, int *len, const char *handle)
 {
 	int hl = (int)strlen(handle) + 1;
 	if (*len < hl || *retval == NULL) {

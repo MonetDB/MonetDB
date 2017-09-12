@@ -97,7 +97,7 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 		break;
 	case 'n':
 		if (idcmp("null", name) == 0 && pci->argc == 1) {
-			ptr atmnull = ((ptr (*)(void))pci->fcn)();
+			const void *atmnull = ((const void *(*)(void))pci->fcn)();
 
 			BATatoms[tpe].atomNull = atmnull;
 			setAtomName(pci);

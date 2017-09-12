@@ -19,20 +19,20 @@
 void
 addMalException(MalBlkPtr mb, str msg)
 {
-    str new;
-    
-    if( mb->errors){ 
-        new = GDKzalloc(strlen(mb->errors) + strlen(msg) + 4);
-        if (new == NULL)
-            return ; // just stick to one error message, ignore rest
-        strcpy(new, mb->errors);
-        strcat(new, msg);
-        GDKfree(mb->errors);
-        mb->errors = new;
-    } else {
+	str new;
+
+	if( mb->errors){
+		new = GDKzalloc(strlen(mb->errors) + strlen(msg) + 4);
+		if (new == NULL)
+			return ; // just stick to one error message, ignore rest
+		strcpy(new, mb->errors);
+		strcat(new, msg);
+		GDKfree(mb->errors);
+		mb->errors = new;
+	} else {
 		new = GDKstrdup(msg);
 		if( new == NULL)
-            return ; // just stick to one error message, ignore rest
+			return ; // just stick to one error message, ignore rest
 		mb->errors = new;
 	}
 }
@@ -203,6 +203,18 @@ resetMalBlk(MalBlkPtr mb, int stop)
 		mb->stmt[i] ->typechk = TYPE_UNKNOWN;
 	mb->stop = stop;
 	mb->errors = NULL;
+}
+
+void
+resetMalBlkAndFreeInstructions(MalBlkPtr mb, int stop)
+{
+	int i;
+
+	for(i=stop; i<mb->stop; i++) {
+		freeInstruction(mb->stmt[i]);
+		mb->stmt[i] = NULL;
+	}
+	resetMalBlk(mb, stop);
 }
 
 /* The freeMalBlk code is quite defensive. It is used to localize an

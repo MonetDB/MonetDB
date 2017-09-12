@@ -49,7 +49,7 @@ mal_export str UUIDprelude(void *ret);
 mal_export int UUIDcompare(const uuid *l, const uuid *r);
 mal_export int UUIDfromString(const char *svalue, int *len, uuid **retval);
 mal_export BUN UUIDhash(const void *u);
-mal_export uuid *UUIDnull(void);
+mal_export const uuid *UUIDnull(void);
 mal_export uuid *UUIDread(uuid *u, stream *s, size_t cnt);
 mal_export int UUIDtoString(str *retval, int *len, const uuid *value);
 mal_export gdk_return UUIDwrite(const uuid *u, stream *s, size_t cnt);
@@ -257,7 +257,7 @@ UUIDhash(const void *v)
 	return (BUN) mix_int(u1 ^ u2 ^ u3 ^ u4);
 }
 
-uuid *
+const uuid *
 UUIDnull(void)
 {
 	return &uuid_nil;

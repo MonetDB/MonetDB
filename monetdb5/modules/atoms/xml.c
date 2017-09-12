@@ -177,9 +177,9 @@ XMLxml2str(str *s, xml *x)
 }
 
 str
-XMLstr2xml(xml *x, str *val)
+XMLstr2xml(xml *x, const char **val)
 {
-	str t = *val;
+	const char *t = *val;
 	str buf;
 	size_t len;
 
@@ -632,7 +632,7 @@ XMLprelude(void *ret)
 }
 
 int
-XMLfromString(str src, int *len, xml *x)
+XMLfromString(const char *src, int *len, xml *x)
 {
 	if (*x){
 		GDKfree(*x);
@@ -656,7 +656,7 @@ XMLfromString(str src, int *len, xml *x)
 }
 
 int
-XMLtoString(str *s, int *len, xml src)
+XMLtoString(str *s, int *len, const char *src)
 {
 	int l;
 
@@ -681,13 +681,13 @@ XMLtoString(str *s, int *len, xml src)
 
 #define NO_LIBXML_FATAL "xml: MonetDB was built without libxml, but what you are trying to do requires it."
 
-int XMLfromString(str src, int *len, xml *x) {
+int XMLfromString(const char *src, int *len, xml *x) {
 	(void) src;
 	(void) len;
 	(void) x;
 	return -1;
 }
-int XMLtoString(str *s, int *len, xml src) {
+int XMLtoString(str *s, int *len, const char *src) {
 	(void) s;
 	(void) len;
 	(void) src;
