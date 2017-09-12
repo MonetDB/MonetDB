@@ -1656,8 +1656,8 @@ BATroles(BAT *b, const char *tnme)
  * commit, because the commit may fail and then the more unsafe
  * transient mmap modes would be present on a persistent bat.
  *
- * See dirty_bat() in BBPsync() -- gdk_bbp.mx and epilogue() in
- * gdk_tm.mx
+ * See dirty_bat() in BBPsync() -- gdk_bbp.c and epilogue() in
+ * gdk_tm.c.
  *
  * Including the exception states, we have 11 of the 16
  * combinations. As for the 5 avoided states, all four

@@ -10,7 +10,7 @@
 #define MAL_PRELUDE
 #include "opt_support.h"
 
-/* cf., gdk/gdk.mx */
+/* cf., gdk/gdk.h */
 #define DEBUGoptimizers     if (GDKdebug & GRPoptimizers)
 
 mal_export  str abortRef;

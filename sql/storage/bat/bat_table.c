@@ -156,27 +156,31 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 	if (!s)
 		return oid_nil;
 	b = full_column(tr, c);
-	if (!b)
+	if (!b) {
+		bat_destroy(s);
 		return oid_nil;
+	}
 	r = BATselect(b, s, value, NULL, 1, 0, 0);
+	bat_destroy(s);
+	full_destroy(c, b);
 	if (!r)
 		return oid_nil;
-	bat_destroy(s);
 	s = r;
-	full_destroy(c, b);
 	while ((n = va_arg(va, sql_column *)) != NULL) {
 		value = va_arg(va, void *);
 		c = n;
 
 		b = full_column(tr, c);
-		if (!b)
+		if (!b) {
+			bat_destroy(s);
 			return oid_nil;
+		}
 		r = BATselect(b, s, value, NULL, 1, 0, 0);
+		bat_destroy(s);
+		full_destroy(c, b);
 		if (!r)
 			return oid_nil;
-		bat_destroy(s);
 		s = r;
-		full_destroy(c, b);
 	}
 	va_end(va);
 	if (BATcount(s) == 1) {
@@ -277,7 +281,16 @@ rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const vo
 	if(!rs)
 		return NULL;
 	s = delta_cands(tr, key->t);
+	if (s == NULL) {
+		GDKfree(rs);
+		return NULL;
+	}
 	b = full_column(tr, key);
+	if (b == NULL) {
+		bat_destroy(s);
+		GDKfree(rs);
+		return NULL;
+	}
 	if (!kvl)
 		kvl = ATOMnilptr(b->ttype);
 	if (!kvh && kvl != ATOMnilptr(b->ttype))
@@ -289,6 +302,10 @@ rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const vo
 		s = r;
 	}
 	full_destroy(key, b);
+	if (s == NULL) {
+		GDKfree(rs);
+		return NULL;
+	}
 	if (key_value_low || key_value_high) {
 		va_start(va, key_value_high);
 		while ((key = va_arg(va, sql_column *)) != NULL) {
@@ -305,6 +322,10 @@ rids_select( sql_trans *tr, sql_column *key, const void *key_value_low, const vo
 			bat_destroy(s);
 			s = r;
 			full_destroy(key, b);
+			if (s == NULL) {
+				GDKfree(rs);
+				return NULL;
+			}
 		}
 		va_end(va);
 	}
@@ -555,26 +576,47 @@ table_vacuum(sql_trans *tr, sql_table *t)
 	if (!tids)
 		return SQL_ERR;
 	cols = NEW_ARRAY(BAT*, cs_size(&t->columns));
-	if (!cols)
+	if (!cols) {
+		bat_destroy(tids);
 		return SQL_ERR;
+	}
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 		BAT *v = store_funcs.bind_col(tr, c, RDONLY);
 
-		if (!v)
+		if (v == NULL ||
+		    (cols[c->colnr] = BATproject(tids, v)) == NULL) {
+			BBPunfix(tids->batCacheid);
+			for (n = t->columns.set->h; n; n = n->next) {
+				if (n->data == c)
+					break;
+				bat_destroy(cols[((sql_column *) n->data)->colnr]);
+			}
+			bat_destroy(v);
+			_DELETE(cols);
 			return SQL_ERR;
-		cols[c->colnr] = BATproject(tids, v);
+		}
 		BBPunfix(v->batCacheid);
 	}
+	BBPunfix(tids->batCacheid);
 	sql_trans_clear_table(tr, t);
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
+		int ok;
 
-		store_funcs.append_col(tr, c, cols[c->colnr], TYPE_bat);
+		ok = store_funcs.append_col(tr, c, cols[c->colnr], TYPE_bat);
 		BBPunfix(cols[c->colnr]->batCacheid);
+		if (ok != LOG_OK) {
+			for (n = n->next; n; n = n->next) {
+				c = n->data;
+				BBPunfix(cols[c->colnr]->batCacheid);
+			}
+			_DELETE(cols);
+			return SQL_ERR;
+		}
 	}
 	_DELETE(cols);
-	return LOG_OK;
+	return SQL_OK;
 }
 
 void

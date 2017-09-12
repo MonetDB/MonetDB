@@ -3041,7 +3041,7 @@ file_exists(int farmid, const char *dir, const char *name, const char *ext)
 static gdk_return
 heap_move(Heap *hp, const char *srcdir, const char *dstdir, const char *nme, const char *ext)
 {
-	/* see doc at BATsetaccess()/gdk_bat.mx for an expose on mmap
+	/* see doc at BATsetaccess()/gdk_bat.c for an expose on mmap
 	 * heap modes */
 	if (file_exists(hp->farmid, dstdir, nme, ext)) {
 		/* dont overwrite heap with the committed state
