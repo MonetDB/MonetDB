@@ -450,19 +450,18 @@ WLCsettime(Client cntxt, InstrPtr pci, InstrPtr p)
 }
 
 #define WLCstart(P, K)\
-{ Symbol s; \
+{\
 	if( cntxt->wlc == NULL){\
-		s = newSymbol("wlrc", FUNCTIONsymbol);\
 		cntxt->wlc_kind = K;\
-		cntxt->wlc = s->def;\
-		s->def = NULL;\
-	} \
+		cntxt->wlc = newMalBlk(STMT_INCREMENT);\
+	}\
 	if( cntxt->wlc->stop == 0){\
 		P = newStmt(cntxt->wlc,"wlr","transaction");\
 		P = WLCsettime(cntxt,pci, P); \
 		P = pushStr(cntxt->wlc, P, cntxt->username);\
 		P->ticks = GDKms();\
-}	}
+	}\
+}
 
 str
 WLCtransaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

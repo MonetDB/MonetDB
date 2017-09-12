@@ -2461,6 +2461,7 @@ str rename_userRef;
 str replaceRef;
 str replicatorRef;
 void resetMalBlk(MalBlkPtr mb, int stop);
+void resetMalBlkAndFreeInstructions(MalBlkPtr mb, int stop);
 void resetScenario(Client c);
 int resizeMalBlk(MalBlkPtr mb, int elements);
 int resolveType(int dsttype, int srctype);
