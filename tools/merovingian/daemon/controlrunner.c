@@ -953,7 +953,6 @@ void *
 controlRunner(void *d)
 {
 	int usock = *(int *)d;
-	int sock = -1;
 	int retval;
 	fd_set fds;
 	struct timeval tv;
@@ -964,7 +963,7 @@ controlRunner(void *d)
 		FD_ZERO(&fds);
 		FD_SET(usock, &fds);
 
-		/* Wait up to 5 seconds. */
+		/* limit waiting time in order to check whether we need to exit */
 		tv.tv_sec = 1;
 		tv.tv_usec = 0;
 		retval = select(usock + 1, &fds, NULL, NULL, &tv);
@@ -973,18 +972,14 @@ controlRunner(void *d)
 			continue;
 		}
 		if (retval == -1) {
-			if (_mero_keep_listening == 0)
-				break;
 			continue;
 		}
 
-		if (FD_ISSET(usock, &fds)) {
-			sock = usock;
-		} else {
+		if (!FD_ISSET(usock, &fds)) {
 			continue;
 		}
 
-		if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) == -1) {
+		if ((msgsock = accept(usock, (SOCKPTR) 0, (socklen_t *) 0)) == -1) {
 			if (_mero_keep_listening == 0)
 				break;
 			if (errno != EINTR) {
