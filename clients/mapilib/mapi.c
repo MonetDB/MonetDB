@@ -3819,6 +3819,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 	}
 
 	if (strcmp(tag, "name") == 0) {
+		result->fieldcnt = n;
 		for (i = 0; i < n; i++) {
 			if (anchors[i]) {
 				if (result->fields[i].columnname)
@@ -3828,6 +3829,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 			}
 		}
 	} else if (strcmp(tag, "type") == 0) {
+		result->fieldcnt = n;
 		for (i = 0; i < n; i++) {
 			if (anchors[i]) {
 				if (result->fields[i].columntype)
@@ -3837,11 +3839,13 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 			}
 		}
 	} else if (strcmp(tag, "length") == 0) {
+		result->fieldcnt = n;
 		for (i = 0; i < n; i++) {
 			if (anchors[i])
 				result->fields[i].columnlength = atoi(anchors[i]);
 		}
 	} else if (strcmp(tag, "table_name") == 0) {
+		result->fieldcnt = n;
 		for (i = 0; i < n; i++) {
 			if (anchors[i]) {
 				if (result->fields[i].tablename)
@@ -3851,6 +3855,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 			}
 		}
 	} else if (strcmp(tag, "typesizes") == 0) {
+		result->fieldcnt = n;
 		for (i = 0; i < n; i++) {
 			if (anchors[i]) {
 				char *p;
