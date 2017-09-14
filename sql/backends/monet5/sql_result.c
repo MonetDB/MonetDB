@@ -774,7 +774,7 @@ _ASCIIadt_frStr(Column *c, int type, const char *s)
 		if ((ssize_t) c->len < len) {
 			void *p;
 			c->len = (size_t) len;
-			if ((p = GDKrealloc(c->data, len)) == NULL) {
+			if ((p = GDKrealloc(c->data, c->len)) == NULL) {
 				GDKfree(c->data);
 				c->data = NULL;
 				c->len = 0;

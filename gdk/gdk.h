@@ -727,7 +727,8 @@ typedef struct {
 		hge hval;
 #endif
 	} val;
-	int len, vtype;
+	size_t len;
+	int vtype;
 } *ValPtr, ValRecord;
 
 /* interface definitions */
@@ -1742,7 +1743,7 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * @tab ATOMput         (int id, Heap *hp, BUN pos_dst, ptr val_src);
  * @item int
  * @tab ATOMdel         (int id, Heap *hp, BUN v_src);
- * @item int
+ * @item size_t
  * @tab ATOMlen         (int id, ptr val);
  * @item ptr
  * @tab ATOMnil         (int id);
@@ -1846,7 +1847,7 @@ typedef struct {
 	char name[IDLENGTH];
 	short storage;		/* stored as another type? */
 	short linear;		/* atom can be ordered linearly */
-	short size;		/* fixed size of atom */
+	unsigned short size;	/* fixed size of atom */
 
 	/* automatically generated fields */
 	const void *atomNull;	/* global nil value */
@@ -1865,7 +1866,7 @@ typedef struct {
 	/* varsized atom-only ADT functions */
 	var_t (*atomPut) (Heap *, var_t *off, const void *src);
 	void (*atomDel) (Heap *, var_t *atom);
-	int (*atomLen) (const void *atom);
+	size_t (*atomLen) (const void *atom);
 	void (*atomHeap) (Heap *, size_t);
 } atomDesc;
 
@@ -1876,7 +1877,7 @@ gdk_export int ATOMallocate(const char *nme);
 gdk_export int ATOMindex(const char *nme);
 
 gdk_export str ATOMname(int id);
-gdk_export int ATOMlen(int id, const void *v);
+gdk_export size_t ATOMlen(int id, const void *v);
 gdk_export ptr ATOMnil(int id);
 gdk_export int ATOMcmp(int id, const void *v_1, const void *v_2);
 gdk_export int ATOMprint(int id, const void *val, stream *fd);

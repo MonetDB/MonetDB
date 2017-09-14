@@ -5221,12 +5221,12 @@ wkbDEL(Heap *h, var_t *index)
 	HEAP_free(h, *index);
 }
 
-int
+size_t
 wkbLENGTH(const wkb *p)
 {
 	var_t len = wkb_size(p->len);
 	assert(len <= GDK_int_max);
-	return (int) len;
+	return (size_t) len;
 }
 
 void
@@ -5631,12 +5631,12 @@ wkbaDEL(Heap *h, var_t *index)
 	HEAP_free(h, *index);
 }
 
-int
+size_t
 wkbaLENGTH(const wkba *p)
 {
 	var_t len = wkba_size(p->itemsNum);
 	assert(len <= GDK_int_max);
-	return (int) len;
+	return (size_t) len;
 }
 
 void

@@ -902,7 +902,7 @@ doALGfetch(ptr ret, BAT *b, BUN pos)
 	assert(pos <= BUN_MAX);
 	if (ATOMextern(b->ttype)) {
 		ptr _src = BUNtail(bi,pos);
-		int _len = ATOMlen(b->ttype, _src);
+		size_t _len = ATOMlen(b->ttype, _src);
 		ptr _dst = GDKmalloc(_len);
 		if( _dst == NULL)
 			throw(MAL,"doAlgFetch", SQLSTATE(HY001) MAL_MALLOC_FAIL);

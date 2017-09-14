@@ -2289,27 +2289,29 @@ BATminmax(BAT *b, void *aggr,
 {
 	oid pos;
 	const void *res;
-	int s;
+	size_t s;
 	BATiter bi;
 
 	if ((VIEWtparent(b) == 0 ||
 	     BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b)))) &&
 	    BATcheckimprints(b)) {
 		Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(VIEWtparent(b))->timprints : b->timprints;
+		int i;
+
 		pos = oid_nil;
 		if (minmax == do_groupmin) {
 			/* find first non-empty bin */
-			for (s = 0; s < imprints->bits; s++) {
-				if (imprints->stats[s + 128]) {
-					pos = imprints->stats[s] + b->hseqbase;
+			for (i = 0; i < imprints->bits; i++) {
+				if (imprints->stats[i + 128]) {
+					pos = imprints->stats[i] + b->hseqbase;
 					break;
 				}
 			}
 		} else {
 			/* find last non-empty bin */
-			for (s = imprints->bits - 1; s >= 0; s--) {
-				if (imprints->stats[s + 128]) {
-					pos = imprints->stats[s + 64] + b->hseqbase;
+			for (i = imprints->bits - 1; i >= 0; i--) {
+				if (imprints->stats[i + 128]) {
+					pos = imprints->stats[i + 64] + b->hseqbase;
 					break;
 				}
 			}

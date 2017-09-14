@@ -44,7 +44,7 @@ mal_export BUN BLOBhash(const blob *b);
 mal_export const blob *BLOBnull(void);
 mal_export var_t BLOBput(Heap *h, var_t *bun, const blob *val);
 mal_export void BLOBdel(Heap *h, var_t *index);
-mal_export int BLOBlength(const blob *p);
+mal_export size_t BLOBlength(const blob *p);
 mal_export void BLOBheap(Heap *heap, size_t capacity);
 mal_export str BLOBtoblob(blob **retval, str *s);
 mal_export str BLOBfromblob(str *retval, blob **b);
@@ -171,12 +171,12 @@ BLOBwrite(const blob *a, stream *s, size_t cnt)
 	return GDK_SUCCEED;
 }
 
-int
+size_t
 BLOBlength(const blob *p)
 {
 	var_t l = blobsize(p->nitems); /* 64bit: check for overflow */
 	assert(l <= GDK_int_max);
-	return (int) l; /* 64bit: check for overflow */
+	return (size_t) l;
 }
 
 void
@@ -357,7 +357,7 @@ BLOBfromblob(str *retval, blob **b)
 str
 BLOBtoblob(blob **retval, str *s)
 {
-	int len = strLen(*s);
+	size_t len = strLen(*s);
 	blob *b = (blob *) GDKmalloc(blobsize(len));
 
 	if( b == NULL)

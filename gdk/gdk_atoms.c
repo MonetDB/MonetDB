@@ -250,7 +250,7 @@ ptr
 ATOMnil(int t)
 {
 	const void *src = ATOMnilptr(t);
-	int len = ATOMlen(ATOMtype(t), src);
+	size_t len = ATOMlen(ATOMtype(t), src);
 	ptr dst = GDKmalloc(len);
 
 	if (dst)
@@ -261,10 +261,10 @@ ATOMnil(int t)
 /*
  * @- Atomic ADT functions
  */
-int
+size_t
 ATOMlen(int t, const void *src)
 {
-	int (*l)(const void *) = BATatoms[t].atomLen;
+	size_t (*l)(const void *) = BATatoms[t].atomLen;
 
 	return l ? (*l) (src) : ATOMsize(t);
 }
@@ -370,7 +370,7 @@ ATOMformat(int t, const void *p, char **buf)
 ptr
 ATOMdup(int t, const void *p)
 {
-	int len = ATOMlen(t, p);
+	size_t len = ATOMlen(t, p);
 	ptr n = GDKmalloc(len);
 
 	if (n)
@@ -1116,10 +1116,10 @@ strNil(const char *s)
 	return GDK_STRNIL(s);
 }
 
-int
+size_t
 strLen(const char *s)
 {
-	return (int) GDK_STRLEN(s);
+	return GDK_STRLEN(s);
 }
 
 static int
@@ -2133,7 +2133,7 @@ atomDesc BATatoms[MAXATOMS] = {
 	 0,			/* atomUnfix */
 	 (var_t (*)(Heap *, var_t *, const void *)) strPut,  /* atomPut */
 	 0,			/* atomDel */
-	 (int (*)(const void *)) strLen,		     /* atomLen */
+	 (size_t (*)(const void *)) strLen,		     /* atomLen */
 	 strHeap,		/* atomHeap */
 	},
 };

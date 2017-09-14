@@ -93,7 +93,7 @@ gdk_export ssize_t dblToStr(str *dst, size_t *len, const dbl *src);
 gdk_export ssize_t GDKstrFromStr(unsigned char *dst, const unsigned char *src, ssize_t len);
 gdk_export ssize_t strFromStr(const char *src, size_t *len, str *dst);
 gdk_export BUN strHash(const char *s);
-gdk_export int strLen(const char *s);
+gdk_export size_t strLen(const char *s);
 gdk_export int strNil(const char *s);
 gdk_export size_t escapedStrlen(const char *src, const char *sep1, const char *sep2, int quote);
 gdk_export size_t escapedStr(char *dst, const char *src, size_t dstlen, const char *sep1, const char *sep2, int quote);

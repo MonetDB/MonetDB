@@ -2852,7 +2852,8 @@ str
 zero_or_one(ptr ret, const bat *bid)
 {
 	BAT *b;
-	BUN c, _s;
+	BUN c;
+	size_t _s;
 	const void *p;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {

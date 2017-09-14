@@ -211,7 +211,7 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 	if (q != BUN_NONE) {
 		BATiter bi = bat_iterator(b);
 		void *r;
-		int sz;
+		size_t sz;
 
 		res = BUNtail(bi, q);
 		sz = ATOMlen(b->ttype, res);

@@ -89,7 +89,7 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 		break;
 	case 'l':
 		if (idcmp("length", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomLen = (int (*)(const void *))pci->fcn;
+			BATatoms[tpe].atomLen = (size_t (*)(const void *))pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}

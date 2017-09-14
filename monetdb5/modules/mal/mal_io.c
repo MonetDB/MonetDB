@@ -400,7 +400,7 @@ IOprintf_(str *res, str format, ...)
 				width += (1 + prec);
 				m5sprintf(dval);
 			} else if (*cur == 's') {
-				int length;
+				size_t length;
 
 				if (extra) {
 					va_end(ap);
@@ -412,10 +412,10 @@ IOprintf_(str *res, str format, ...)
 				length = strLen(p);
 				width++;
 				prec++;	/* account for '\0' */
-				if (dotseen && prec < length)
-					length = prec;
-				if ((size_t) length > width)
-					width = (size_t) length;
+				if (dotseen && (size_t) prec < length)
+					length = (size_t) prec;
+				if (length > width)
+					width = length;
 				m5sprintf(p);
 			} else {
 				va_end(ap);

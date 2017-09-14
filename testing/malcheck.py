@@ -49,7 +49,7 @@ atomfunctypes = {
     'fromstr': ('ssize_t', (('char *', True), ('size_t *', False), ('void **', False))),
     'hash': ('BUN', (('void *', True),)),
     'heap': ('void', (('Heap *', False), ('size_t', False))),
-    'length': ('int', (('void *', True),)),
+    'length': ('size_t', (('void *', True),)),
     'nequal': ('int', (('void *', True), ('void *', True))),
     'null': ('const void *', (('void', False),)),
     'put': ('var_t', (('Heap *', False), ('var_t *', False), ('void *', True))),

@@ -82,8 +82,8 @@ geom_export var_t wkbaPUT(Heap *h, var_t *bun, const wkba *val);
 geom_export void wkbDEL(Heap *h, var_t *index);
 geom_export void wkbaDEL(Heap *h, var_t *index);
 
-geom_export int wkbLENGTH(const wkb *p);
-geom_export int wkbaLENGTH(const wkba *p);
+geom_export size_t wkbLENGTH(const wkb *p);
+geom_export size_t wkbaLENGTH(const wkba *p);
 
 geom_export void wkbHEAP(Heap *heap, size_t capacity);
 geom_export void wkbaHEAP(Heap *heap, size_t capacity);
