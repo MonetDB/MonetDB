@@ -948,7 +948,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			fmt[i].tostr = &_ASCIIadt_toStr;
 			fmt[i].frstr = &_ASCIIadt_frStr;
 			fmt[i].extra = col;
-			fmt[i].len = fmt[i].nillen = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
+			fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
 			fmt[i].data = GDKzalloc(fmt[i].len);
 			fmt[i].c = NULL;
 			fmt[i].ws = !has_whitespace(fmt[i].sep);
@@ -1872,7 +1872,6 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 		fmt[i].extra = fmt + i;
 		fmt[i].data = NULL;
 		fmt[i].len = 0;
-		fmt[i].nillen = 0;
 		fmt[i].ws = 0;
 		fmt[i].quote = ssep ? ssep[0] : 0;
 		fmt[i].nullstr = ns;

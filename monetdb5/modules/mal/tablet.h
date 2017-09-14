@@ -49,7 +49,6 @@ typedef struct Column_t {
 	void *data;
 	int skip;					/* only skip to the next field */
 	size_t len;
-	int nillen;
 	bit ws;						/* if set we need to skip white space */
 	char quote;					/* if set use this character for string quotes */
 	const void *nildata;
