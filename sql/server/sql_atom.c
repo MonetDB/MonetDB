@@ -265,8 +265,9 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 			a->isnull = 0;
 			a->data.val.sval = (char*)sql2str(sa_strdup(sa, val));
 			a->data.len = (int)strlen(a->data.val.sval);
-		} else { 
-			int res = ATOMfromstr(type, &p, &a->data.len, val);
+		} else {
+			size_t len = a->data.len;
+			ssize_t res = ATOMfromstr(type, &p, &len, val);
 
 			/* no result or nil means error (SQL has NULL not nil) */
 			if (res < 0 || !p || ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
@@ -275,6 +276,7 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 					GDKfree(p);
 				return NULL;
 			}
+			a->data.len = (int) len;
 			VALset(&a->data, a->data.vtype, p);
 			SA_VALcopy(sa, &a->data, &a->data);
 
@@ -314,7 +316,7 @@ atom2string(sql_allocator *sa, atom *a)
 #ifdef HAVE_HGE
 	case TYPE_hge:
 	{	char *_buf = buf;
-		int _bufsiz = BUFSIZ;
+		size_t _bufsiz = BUFSIZ;
 		hgeToStr(&_buf, &_bufsiz, &a->data.val.hval);
 		break;
 	}
@@ -450,7 +452,7 @@ atom2sql(atom *a)
 #ifdef HAVE_HGE
 		case TYPE_hge:
 		{	char *_buf = buf;
-			int _bufsiz = BUFSIZ;
+			size_t _bufsiz = BUFSIZ;
 			hgeToStr(&_buf, &_bufsiz, &a->data.val.hval);
 			break;
 		}
@@ -1093,7 +1095,8 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 #else
 				lng dec = 0;
 #endif
-				int len = 0, res = 0;
+				size_t len = 0;
+				ssize_t res = 0;
 				/* cast decimals to doubles */
 				switch( at->type->localtype) {
 				case TYPE_bte:
@@ -1135,18 +1138,21 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 			return 1;
 		}
 		if (at->type->eclass == EC_CHAR && tp->type->eclass == EC_DATE){
-			int type = tp->type->localtype, res = 0, len = (int) strlen(a->data.val.sval);
+			int type = tp->type->localtype;
+			ssize_t res = 0;
+			size_t len = 0;
 			ptr p = NULL;
-				
-			a->data.len = 0;
-			res = ATOMfromstr(type, &p, &a->data.len, a->data.val.sval);
+
+			res = ATOMfromstr(type, &p, &len, a->data.val.sval);
 			/* no result or nil means error (SQL has NULL not nil) */
-			if (res < len || !p || ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
+			if (res < (ssize_t) strlen(a->data.val.sval) || !p ||
+			    ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
 				if (p)
 					GDKfree(p);
 				a->data.len = (int) strlen(a->data.val.sval);
 				return 0;
 			}
+			a->data.len = (int) len;
 			a->tpe = *tp;
 			a->data.vtype = type;
 			VALset(&a->data, a->data.vtype, p);

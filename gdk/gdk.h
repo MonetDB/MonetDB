@@ -732,7 +732,7 @@ typedef struct {
 
 /* interface definitions */
 gdk_export ptr VALconvert(int typ, ValPtr t);
-gdk_export int VALformat(char **buf, const ValRecord *res);
+gdk_export ssize_t VALformat(char **buf, const ValRecord *res);
 gdk_export ValPtr VALcopy(ValPtr dst, const ValRecord *src);
 gdk_export ValPtr VALinit(ValPtr d, int tpe, const void *s);
 gdk_export void VALempty(ValPtr v);
@@ -1726,10 +1726,10 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * @tab ATOMvarsized    (int id);
  * @item ptr
  * @tab ATOMnilptr      (int id);
- * @item int
- * @tab ATOMfromstr     (int id, str s, int* len, ptr* v_dst);
- * @item int
- * @tab ATOMtostr       (int id, str s, int* len, ptr* v_dst);
+ * @item ssize_t
+ * @tab ATOMfromstr     (int id, str s, size_t* len, ptr* v_dst);
+ * @item ssize_t
+ * @tab ATOMtostr       (int id, str s, size_t* len, ptr* v_dst);
  * @item hash_t
  * @tab ATOMhash        (int id, ptr val, in mask);
  * @item int
@@ -1748,7 +1748,7 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * @tab ATOMlen         (int id, ptr val);
  * @item ptr
  * @tab ATOMnil         (int id);
- * @item int
+ * @item ssize_t
  * @tab ATOMformat      (int id, ptr val, char** buf);
  * @item int
  * @tab ATOMprint       (int id, ptr val, stream *fd);
@@ -1860,8 +1860,8 @@ typedef struct {
 	const void *atomNull;	/* global nil value */
 
 	/* generic (fixed + varsized atom) ADT functions */
-	int (*atomFromStr) (const char *src, int *len, ptr *dst);
-	int (*atomToStr) (str *dst, int *len, const void *src);
+	ssize_t (*atomFromStr) (const char *src, size_t *len, ptr *dst);
+	ssize_t (*atomToStr) (str *dst, size_t *len, const void *src);
 	void *(*atomRead) (void *dst, stream *s, size_t cnt);
 	gdk_return (*atomWrite) (const void *src, stream *s, size_t cnt);
 	int (*atomCmp) (const void *v1, const void *v2);
@@ -1888,7 +1888,7 @@ gdk_export int ATOMlen(int id, const void *v);
 gdk_export ptr ATOMnil(int id);
 gdk_export int ATOMcmp(int id, const void *v_1, const void *v_2);
 gdk_export int ATOMprint(int id, const void *val, stream *fd);
-gdk_export int ATOMformat(int id, const void *val, char **buf);
+gdk_export ssize_t ATOMformat(int id, const void *val, char **buf);
 
 gdk_export ptr ATOMdup(int id, const void *val);
 

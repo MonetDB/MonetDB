@@ -4423,7 +4423,8 @@ literal:
 		  }
 		}
  |  OIDNUM
-		{ int err = 0, len = sizeof(lng);
+		{ int err = 0;
+		  size_t len = sizeof(lng);
 		  lng value, *p = &value;
 		  sql_subtype t;
 
@@ -4456,11 +4457,11 @@ literal:
 		{ int digits = _strlen($1), err = 0;
 #ifdef HAVE_HGE
 		  hge value, *p = &value;
-		  int len = sizeof(hge);
+		  size_t len = sizeof(hge);
 		  const hge one = 1;
 #else
 		  lng value, *p = &value;
-		  int len = sizeof(lng);
+		  size_t len = sizeof(lng);
 		  const lng one = 1;
 #endif
 		  sql_subtype t;

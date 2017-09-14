@@ -990,7 +990,7 @@ convertConstant(int type, ValPtr vr)
 	if (vr->vtype == type)
 		return MAL_SUCCEED;
 	if (vr->vtype == TYPE_str) {
-		int ll = 0;
+		size_t ll = 0;
 		ptr d = NULL;
 		char *s = vr->val.sval;
 
@@ -1083,7 +1083,7 @@ convertConstant(int type, ValPtr vr)
 		   }
 		   if (vr->vtype == TYPE_int) {
 		   char buf[BUFSIZ];
-		   int ll = 0;
+		   size_t ll = 0;
 		   ptr d = NULL;
 
 		   snprintf(buf, BUFSIZ, "%d", vr->val.ival);
@@ -1106,7 +1106,7 @@ convertConstant(int type, ValPtr vr)
 		 * the new value. This should be garbage collected at the
 		 * end. */
 	default:{
-		int ll = 0;
+		size_t ll = 0;
 		ptr d = NULL;
 
 		if (isaBatType(type)) {

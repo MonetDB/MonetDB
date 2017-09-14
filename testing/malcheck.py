@@ -46,7 +46,7 @@ atomfunctypes = {
     'cmp': ('int', (('void *', True), ('void *', True))),
     'del': ('void', (('Heap *', False), ('var_t *', False))),
     'fix': ('int', (('void *', True),)),
-    'fromstr': ('int', (('char *', True), ('int *', False), ('void **', False))),
+    'fromstr': ('ssize_t', (('char *', True), ('size_t *', False), ('void **', False))),
     'hash': ('BUN', (('void *', True),)),
     'heap': ('void', (('Heap *', False), ('size_t', False))),
     'length': ('int', (('void *', True),)),
@@ -55,7 +55,7 @@ atomfunctypes = {
     'put': ('var_t', (('Heap *', False), ('var_t *', False), ('void *', True))),
     'read': ('void *', (('void *', False), ('stream *', False), ('size_t', False))),
     'storage': ('long', (('void', False),)),
-    'tostr': ('int', (('char **', False), ('int *', False), ('void *', True))),
+    'tostr': ('ssize_t', (('char **', False), ('size_t *', False), ('void *', True))),
     'unfix': ('int', (('void *', True),)),
     'write': ('gdk_return', (('void *', True), ('stream *', False), ('size_t', False))),
     }

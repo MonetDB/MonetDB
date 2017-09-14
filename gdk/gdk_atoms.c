@@ -317,26 +317,26 @@ ATOMcmp(int t, const void *l, const void *r)
 int
 ATOMprint(int t, const void *p, stream *s)
 {
-	int (*tostr) (str *, int *, const void *);
+	ssize_t (*tostr) (str *, size_t *, const void *);
 	ssize_t res;
 
 	if (p && t >= 0 && t < GDKatomcnt && (tostr = BATatoms[t].atomToStr)) {
+		size_t sz;
+
 		if (t != TYPE_bat && t < TYPE_str) {
 			char buf[dblStrlen], *addr = buf;	/* use memory from stack */
-			int sz = dblStrlen, l = (*tostr) (&addr, &sz, p);
 
-			if (l < 0)
-				res = -1;
-			else
-				res = mnstr_write(s, buf, l, 1);
+			sz = dblStrlen;
+			res = (*tostr) (&addr, &sz, p);
+			if (res > 0)
+				res = mnstr_write(s, buf, (size_t) res, 1);
 		} else {
 			str buf = 0;
-			int sz = 0, l = (*tostr) (&buf, &sz, p);
 
-			if (l < 0)
-				res = -1;
-			else
-				res = mnstr_write(s, buf, l, 1);
+			sz = 0;
+			res = (*tostr) (&buf, &sz, p);
+			if (res > 0)
+				res = mnstr_write(s, buf, (size_t) res, 1);
 			GDKfree(buf);
 		}
 	} else {
@@ -348,14 +348,19 @@ ATOMprint(int t, const void *p, stream *s)
 }
 
 
-int
+ssize_t
 ATOMformat(int t, const void *p, char **buf)
 {
-	int (*tostr) (str *, int *, const void *);
+	ssize_t (*tostr) (str *, size_t *, const void *);
 
 	if (p && 0 <= t && t < GDKatomcnt && (tostr = BATatoms[t].atomToStr)) {
-		int sz = 0;
-		return (*tostr) (buf, &sz, p);
+		size_t sz = 0;
+		ssize_t res = (*tostr) (buf, &sz, p);
+		if (res < 0 && *buf) {
+			GDKfree(*buf);
+			*buf = NULL;
+		}
+		return res;
 	}
 	*buf = GDKstrdup("nil");
 	if (*buf == NULL)
@@ -389,22 +394,22 @@ ATOMdup(int t, const void *p)
  * as 'dst' and/or a *len==0 is valid; the conversion function will
  * then alloc some region for you.
  */
-#define atommem(size)						\
-	do {							\
-		if (*dst == NULL || *len < (int) (size)) {	\
-			GDKfree(*dst);				\
-			*len = (size);				\
-			*dst = GDKmalloc(*len);			\
-			if (*dst == NULL) {			\
-				*len = 0;			\
-				return -1;			\
-			}					\
-		}						\
+#define atommem(size)					\
+	do {						\
+		if (*dst == NULL || *len < (size)) {	\
+			GDKfree(*dst);			\
+			*len = (size);			\
+			*dst = GDKmalloc(*len);		\
+			if (*dst == NULL) {		\
+				*len = 0;		\
+				return -1;		\
+			}				\
+		}					\
 	} while (0)
 
 #define atomtostr(TYPE, FMT, FMTCAST)			\
-int							\
-TYPE##ToStr(char **dst, int *len, const TYPE *src)	\
+ssize_t							\
+TYPE##ToStr(char **dst, size_t *len, const TYPE *src)	\
 {							\
 	atommem(TYPE##Strlen);				\
 	if (*src == TYPE##_nil) {			\
@@ -423,8 +428,8 @@ TYPE##ToStr(char **dst, int *len, const TYPE *src)	\
 #define mult16(x)	((x) << 4)
 
 #if 0
-int
-voidFromStr(const char *src, int *len, void **dst)
+ssize_t
+voidFromStr(const char *src, size_t *len, void **dst)
 {
 	(void) src;
 	(void) len;
@@ -432,8 +437,8 @@ voidFromStr(const char *src, int *len, void **dst)
 	return 0;
 }
 
-int
-voidToStr(str *dst, int *len, void *src)
+ssize_t
+voidToStr(str *dst, size_t *len, void *src)
 {
 	(void) src;
 
@@ -465,8 +470,8 @@ voidWrite(const void *a, stream *s, size_t cnt)
  * experiments showed that library function is even slightly faster and we
  * now also support True/False (and trUe/FAlSE should this become a thing).
  */
-int
-bitFromStr(const char *src, int *len, bit **dst)
+ssize_t
+bitFromStr(const char *src, size_t *len, bit **dst)
 {
 	const char *p = src;
 
@@ -494,11 +499,11 @@ bitFromStr(const char *src, int *len, bit **dst)
 	}
 	while (GDKisspace(*p))
 		p++;
-	return (int) (p - src);
+	return (ssize_t) (p - src);
 }
 
-int
-bitToStr(char **dst, int *len, const bit *src)
+ssize_t
+bitToStr(char **dst, size_t *len, const bit *src)
 {
 	atommem(6);
 
@@ -509,8 +514,8 @@ bitToStr(char **dst, int *len, const bit *src)
 	return snprintf(*dst, *len, "false");
 }
 
-int
-batFromStr(const char *src, int *len, bat **dst)
+ssize_t
+batFromStr(const char *src, size_t *len, bat **dst)
 {
 	char *s;
 	const char *t, *r = src;
@@ -540,21 +545,21 @@ batFromStr(const char *src, int *len, bat **dst)
 		GDKfree(s);
 	}
 	**dst = bid == 0 ? bat_nil : bid;
-	return bid == 0 ? 0 : (int) (t + (c == '>') - src);
+	return bid == 0 ? 0 : (ssize_t) (t + (c == '>') - src);
 }
 
-int
-batToStr(char **dst, int *len, const bat *src)
+ssize_t
+batToStr(char **dst, size_t *len, const bat *src)
 {
 	bat b = *src;
-	int i;
+	size_t i;
 	str s;
 
 	if (b == bat_nil || (s = BBPname(b)) == NULL || *s == 0) {
 		atommem(4);
 		return snprintf(*dst, *len, "nil");
 	}
-	i = (int) (strlen(s) + 4);
+	i = strlen(s) + 4;
 	atommem(i);
 	return snprintf(*dst, *len, "<%s>", s);
 }
@@ -645,11 +650,11 @@ static const struct maxdiv maxdiv[] = {
 };
 static const int maxmod10 = 7;	/* (int) (maxdiv[0].maxval % 10) */
 
-static int
-numFromStr(const char *src, int *len, void **dst, int tp)
+static ssize_t
+numFromStr(const char *src, size_t *len, void **dst, int tp)
 {
 	const char *p = src;
-	int sz = ATOMsize(tp);
+	size_t sz = (size_t) ATOMsize(tp);
 #ifdef HAVE_HGE
 	hge base = 0;
 #else
@@ -674,7 +679,7 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 			memcpy(*dst, ATOMnilptr(tp), sz);
 			if (p[1] == 'i' && p[2] == 'l') {
 				p += 3;
-				return (int) (p - src);
+				return (ssize_t) (p - src);
 			}
 			GDKerror("not a number");
 			goto bailout;
@@ -776,7 +781,7 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 	}
 	while (GDKisspace(*p))
 		p++;
-	return (int) (p - src);
+	return (ssize_t) (p - src);
 
   overflow:
 	while (num10(*p))
@@ -788,33 +793,33 @@ numFromStr(const char *src, int *len, void **dst, int tp)
 	return -1;
 }
 
-int
-bteFromStr(const char *src, int *len, bte **dst)
+ssize_t
+bteFromStr(const char *src, size_t *len, bte **dst)
 {
 	return numFromStr(src, len, (void **) dst, TYPE_bte);
 }
 
-int
-shtFromStr(const char *src, int *len, sht **dst)
+ssize_t
+shtFromStr(const char *src, size_t *len, sht **dst)
 {
 	return numFromStr(src, len, (void **) dst, TYPE_sht);
 }
 
-int
-intFromStr(const char *src, int *len, int **dst)
+ssize_t
+intFromStr(const char *src, size_t *len, int **dst)
 {
 	return numFromStr(src, len, (void **) dst, TYPE_int);
 }
 
-int
-lngFromStr(const char *src, int *len, lng **dst)
+ssize_t
+lngFromStr(const char *src, size_t *len, lng **dst)
 {
 	return numFromStr(src, len, (void **) dst, TYPE_lng);
 }
 
 #ifdef HAVE_HGE
-int
-hgeFromStr(const char *src, int *len, hge **dst)
+ssize_t
+hgeFromStr(const char *src, size_t *len, hge **dst)
 {
 	return numFromStr(src, len, (void **) dst, TYPE_hge);
 }
@@ -865,8 +870,8 @@ atom_io(lng, Lng, lng)
 #endif
 #define HGE_LL18DIGITS LL_CONSTANT(1000000000000000000)
 #define HGE_ABS(a) (((a) < 0) ? -(a) : (a))
-int
-hgeToStr(char **dst, int *len, const hge *src)
+ssize_t
+hgeToStr(char **dst, size_t *len, const hge *src)
 {
 	atommem(hgeStrlen);
 	if (*src == hge_nil) {
@@ -878,19 +883,19 @@ hgeToStr(char **dst, int *len, const hge *src)
 		return lngToStr(dst, len, &s);
 	} else {
 		hge s = *src / HGE_LL18DIGITS;
-		int l = hgeToStr(dst, len, &s);
+		ssize_t l = hgeToStr(dst, len, &s);
 		if (l < 0)
 			return -1;
 		snprintf(*dst + l, *len - l, HGE_LL018FMT,
 			 (lng) HGE_ABS(*src % HGE_LL18DIGITS));
-		return (int) strlen(*dst);
+		return strlen(*dst);
 	}
 }
 atom_io(hge, Hge, hge)
 #endif
 
-int
-ptrFromStr(const char *src, int *len, ptr **dst)
+ssize_t
+ptrFromStr(const char *src, size_t *len, ptr **dst)
 {
 	size_t base = 0;
 	const char *p = src;
@@ -922,7 +927,7 @@ ptrFromStr(const char *src, int *len, ptr **dst)
 	}
 	while (GDKisspace(*p))
 		p++;
-	return (int) (p - src);
+	return (ssize_t) (p - src);
 }
 
 atomtostr(ptr, PTRFMT, PTRFMTCAST)
@@ -937,11 +942,11 @@ atom_io(ptr, Lng, lng)
 #define isfinite(x)	_finite(x)
 #endif
 
-int
-dblFromStr(const char *src, int *len, dbl **dst)
+ssize_t
+dblFromStr(const char *src, size_t *len, dbl **dst)
 {
 	const char *p = src;
-	int n = 0;
+	ssize_t n = 0;
 	double d;
 
 	/* alloc memory */
@@ -952,7 +957,7 @@ dblFromStr(const char *src, int *len, dbl **dst)
 	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
 		**dst = dbl_nil;
 		p += 3;
-		n = (int) (p - src);
+		n = (ssize_t) (p - src);
 	} else {
 		/* on overflow, strtod returns HUGE_VAL and sets
 		 * errno to ERANGE; on underflow, it returns a value
@@ -966,7 +971,7 @@ dblFromStr(const char *src, int *len, dbl **dst)
 			p = src; /* nothing converted */
 		else
 			p = pe;
-		n = (int) (p - src);
+		n = (ssize_t) (p - src);
 		if (n == 0 || (errno == ERANGE && (d < -1 || d > 1))
 #ifdef isfinite
 		    || !isfinite(d) /* no NaN or Infinte */
@@ -983,8 +988,8 @@ dblFromStr(const char *src, int *len, dbl **dst)
 	return n;
 }
 
-int
-dblToStr(char **dst, int *len, const dbl *src)
+ssize_t
+dblToStr(char **dst, size_t *len, const dbl *src)
 {
 	int i;
 
@@ -997,16 +1002,16 @@ dblToStr(char **dst, int *len, const dbl *src)
 		if (strtod(*dst, NULL) == *src)
 			break;
 	}
-	return (int) strlen(*dst);
+	return (ssize_t) strlen(*dst);
 }
 
 atom_io(dbl, Lng, lng)
 
-int
-fltFromStr(const char *src, int *len, flt **dst)
+ssize_t
+fltFromStr(const char *src, size_t *len, flt **dst)
 {
 	const char *p = src;
-	int n = 0;
+	ssize_t n = 0;
 	float f;
 
 	/* alloc memory */
@@ -1017,7 +1022,7 @@ fltFromStr(const char *src, int *len, flt **dst)
 	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
 		**dst = flt_nil;
 		p += 3;
-		n = (int) (p - src);
+		n = (ssize_t) (p - src);
 	} else {
 #ifdef HAVE_STRTOF
 		/* on overflow, strtof returns HUGE_VALF and sets
@@ -1032,7 +1037,7 @@ fltFromStr(const char *src, int *len, flt **dst)
 			p = src; /* nothing converted */
 		else
 			p = pe;
-		n = (int) (p - src);
+		n = (ssize_t) (p - src);
 		if (n == 0 || (errno == ERANGE && (f < -1 || f > 1))
 #else /* no strtof, try sscanf */
 		if (sscanf(src, "%f%n", &f, &n) <= 0 || n <= 0
@@ -1052,8 +1057,8 @@ fltFromStr(const char *src, int *len, flt **dst)
 	return n;
 }
 
-int
-fltToStr(char **dst, int *len, const flt *src)
+ssize_t
+fltToStr(char **dst, size_t *len, const flt *src)
 {
 	int i;
 
@@ -1071,7 +1076,7 @@ fltToStr(char **dst, int *len, const flt *src)
 			break;
 #endif
 	}
-	return (int) strlen(*dst);
+	return (ssize_t) strlen(*dst);
 }
 
 atom_io(flt, Int, int)
@@ -1609,11 +1614,12 @@ GDKstrFromStr(unsigned char *dst, const unsigned char *src, ssize_t len)
 	return -1;
 }
 
-int
-strFromStr(const char *src, int *len, char **dst)
+ssize_t
+strFromStr(const char *src, size_t *len, char **dst)
 {
 	const unsigned char *cur = (const unsigned char *) src, *start = NULL;
-	int l = 1, escaped = FALSE;
+	size_t l = 1;
+	int escaped = FALSE;
 
 	while (GDKisspace(*cur))
 		cur++;
@@ -1656,7 +1662,7 @@ strFromStr(const char *src, int *len, char **dst)
 	}
 
 	assert(cur - start <= INT_MAX);	/* 64bit */
-	return (int) GDKstrFromStr((unsigned char *) *dst, start, (ssize_t) (cur - start));
+	return GDKstrFromStr((unsigned char *) *dst, start, (ssize_t) (cur - start));
 }
 
 /*
@@ -1671,10 +1677,10 @@ strFromStr(const char *src, int *len, char **dst)
 #define printable_chr(ch)	((' ' <= (ch) && (ch) <= '~') || ((ch) & 0x80) != 0)
 #endif
 
-int
+size_t
 escapedStrlen(const char *src, const char *sep1, const char *sep2, int quote)
 {
-	int end, sz = 0;
+	size_t end, sz = 0;
 	size_t sep1len, sep2len;
 
 	sep1len = sep1 ? strlen(sep1) : 0;
@@ -1706,10 +1712,10 @@ escapedStrlen(const char *src, const char *sep1, const char *sep2, int quote)
 	return sz;
 }
 
-int
-escapedStr(char *dst, const char *src, int dstlen, const char *sep1, const char *sep2, int quote)
+size_t
+escapedStr(char *dst, const char *src, size_t dstlen, const char *sep1, const char *sep2, int quote)
 {
-	int cur = 0, l = 0;
+	size_t cur = 0, l = 0;
 	size_t sep1len, sep2len;
 
 	sep1len = sep1 ? strlen(sep1) : 0;
@@ -1759,19 +1765,19 @@ escapedStr(char *dst, const char *src, int dstlen, const char *sep1, const char 
 	return l;
 }
 
-static int
-strToStr(char **dst, int *len, const char *src)
+static ssize_t
+strToStr(char **dst, size_t *len, const char *src)
 {
-	int l = 0;
+	ssize_t l = 0;
 
 	if (GDK_STRNIL((str) src)) {
 		atommem(4);
 
 		return snprintf(*dst, *len, "nil");
 	} else {
-		int sz = escapedStrlen(src, NULL, NULL, '"');
+		size_t sz = escapedStrlen(src, NULL, NULL, '"');
 		atommem(sz + 3);
-		l = escapedStr((*dst) + 1, src, *len - 1, NULL, NULL, '"');
+		l = (ssize_t) escapedStr((*dst) + 1, src, *len - 1, NULL, NULL, '"');
 		l++;
 		(*dst)[0] = (*dst)[l++] = '"';
 		(*dst)[l] = 0;
@@ -1814,16 +1820,16 @@ strWrite(const char *a, stream *s, size_t cnt)
 /*
  * String conversion routines.
  */
-int
-OIDfromStr(const char *src, int *len, oid **dst)
+ssize_t
+OIDfromStr(const char *src, size_t *len, oid **dst)
 {
 #if SIZEOF_OID == SIZEOF_INT
 	int ui = 0, *uip = &ui;
 #else
 	lng ui = 0, *uip = &ui;
 #endif
-	int l = (int) sizeof(ui);
-	int pos = 0;
+	size_t l = sizeof(ui);
+	ssize_t pos = 0;
 	const char *p = src;
 
 	atommem(sizeof(oid));
@@ -1851,11 +1857,11 @@ OIDfromStr(const char *src, int *len, oid **dst)
 	}
 	while (GDKisspace(*p))
 		p++;
-	return (int) (p - src);
+	return (ssize_t) (p - src);
 }
 
-int
-OIDtoStr(char **dst, int *len, const oid *src)
+ssize_t
+OIDtoStr(char **dst, size_t *len, const oid *src)
 {
 	atommem(oidStrlen);
 
@@ -1876,8 +1882,8 @@ atomDesc BATatoms[MAXATOMS] = {
 #else
 	 (ptr) &lng_nil,	/* atomNull */
 #endif
-	 (int (*)(const char *, int *, ptr *)) OIDfromStr,    /* atomFromStr */
-	 (int (*)(str *, int *, const void *)) OIDtoStr,      /* atomToStr */
+	 (ssize_t (*)(const char *, size_t *, ptr *)) OIDfromStr,    /* atomFromStr */
+	 (ssize_t (*)(str *, size_t *, const void *)) OIDtoStr,      /* atomToStr */
 	 (void *(*)(void *, stream *, size_t)) voidRead,      /* atomRead */
 	 (gdk_return (*)(const void *, stream *, size_t)) voidWrite, /* atomWrite */
 #if SIZEOF_OID == SIZEOF_INT
@@ -1900,8 +1906,8 @@ atomDesc BATatoms[MAXATOMS] = {
 	 sizeof(bit),		/* size */
 	 sizeof(bit),		/* align */
 	 (ptr) &bte_nil,	/* atomNull */
-	 (int (*)(const char *, int *, ptr *)) bitFromStr,   /* atomFromStr */
-	 (int (*)(str *, int *, const void *)) bitToStr,     /* atomToStr */
+	 (ssize_t (*)(const char *, size_t *, ptr *)) bitFromStr,   /* atomFromStr */
+	 (ssize_t (*)(str *, size_t *, const void *)) bitToStr,     /* atomToStr */
 	 (void *(*)(void *, stream *, size_t)) bitRead,	     /* atomRead */
 	 (gdk_return (*)(const void *, stream *, size_t)) bitWrite, /* atomWrite */
 	 (int (*)(const void *, const void *)) bteCmp,	     /* atomCmp */
@@ -1919,8 +1925,8 @@ atomDesc BATatoms[MAXATOMS] = {
 	 sizeof(bte),		/* size */
 	 sizeof(bte),		/* align */
 	 (ptr) &bte_nil,	/* atomNull */
-	 (int (*)(const char *, int *, ptr *)) bteFromStr,   /* atomFromStr */
-	 (int (*)(str *, int *, const void *)) bteToStr,     /* atomToStr */
+	 (ssize_t (*)(const char *, size_t *, ptr *)) bteFromStr,   /* atomFromStr */
+	 (ssize_t (*)(str *, size_t *, const void *)) bteToStr,     /* atomToStr */
 	 (void *(*)(void *, stream *, size_t)) bteRead,	     /* atomRead */
 	 (gdk_return (*)(const void *, stream *, size_t)) bteWrite, /* atomWrite */
 	 (int (*)(const void *, const void *)) bteCmp,	     /* atomCmp */
@@ -1938,8 +1944,8 @@ atomDesc BATatoms[MAXATOMS] = {
 	 sizeof(sht),		/* size */
 	 sizeof(sht),		/* align */
 	 (ptr) &sht_nil,	/* atomNull */
-	 (int (*)(const char *, int *, ptr *)) shtFromStr,   /* atomFromStr */
-	 (int (*)(str *, int *, const void *)) shtToStr,     /* atomToStr */
+	 (ssize_t (*)(const char *, size_t *, ptr *)) shtFromStr,   /* atomFromStr */
+	 (ssize_t (*)(str *, size_t *, const void *)) shtToStr,     /* atomToStr */
 	 (void *(*)(void *, stream *, size_t)) shtRead,	     /* atomRead */
 	 (gdk_return (*)(const void *, stream *, size_t)) shtWrite, /* atomWrite */
 	 (int (*)(const void *, const void *)) shtCmp,	     /* atomCmp */
@@ -1957,8 +1963,8 @@ atomDesc BATatoms[MAXATOMS] = {
 	 sizeof(bat),		/* size */
 	 sizeof(bat),		/* align */
 	 (ptr) &int_nil,	/* atomNull */
-	 (int (*)(const char *, int *, ptr *)) batFromStr,   /* atomFromStr */
-	 (int (*)(str *, int *, const void *)) batToStr,     /* atomToStr */
+	 (ssize_t (*)(const char *, size_t *, ptr *)) batFromStr,   /* atomFromStr */
+	 (ssize_t (*)(str *, size_t *, const void *)) batToStr,     /* atomToStr */
 	 (void *(*)(void *, stream *, size_t)) batRead,	     /* atomRead */
 	 (gdk_return (*)(const void *, stream *, size_t)) batWrite, /* atomWrite */
 	 (int (*)(const void *, const void *)) intCmp,	     /* atomCmp */
@@ -1976,8 +1982,8 @@ atomDesc BATatoms[MAXATOMS] = {
 	 sizeof(int),		/* size */
 	 sizeof(int),		/* align */
 	 (ptr) &int_nil,	/* atomNull */
-	 (int (*)(const char *, int *, ptr *)) intFromStr,   /* atomFromStr */
-	 (int (*)(str *, int *, const void *)) intToStr,     /* atomToStr */
+	 (ssize_t (*)(const char *, size_t *, ptr *)) intFromStr,   /* atomFromStr */
+	 (ssize_t (*)(str *, size_t *, const void *)) intToStr,     /* atomToStr */
 	 (void *(*)(void *, stream *, size_t)) intRead,	     /* atomRead */
 	 (gdk_return (*)(const void *, stream *, size_t)) intWrite, /* atomWrite */
 	 (int (*)(const void *, const void *)) intCmp,	     /* atomCmp */
@@ -2003,8 +2009,8 @@ atomDesc BATatoms[MAXATOMS] = {
 #else
 	 (ptr) &lng_nil,	/* atomNull */
 #endif
-	 (int (*)(const char *, int *, ptr *)) OIDfromStr,   /* atomFromStr */
-	 (int (*)(str *, int *, const void *)) OIDtoStr,     /* atomToStr */
+	 (ssize_t (*)(const char *, size_t *, ptr *)) OIDfromStr,   /* atomFromStr */
+	 (ssize_t (*)(str *, size_t *, const void *)) OIDtoStr,     /* atomToStr */
 #if SIZEOF_OID == SIZEOF_INT
 	 (void *(*)(void *, stream *, size_t)) intRead,	     /* atomRead */
 	 (gdk_return (*)(const void *, stream *, size_t)) intWrite, /* atomWrite */
@@ -2029,8 +2035,8 @@ atomDesc BATatoms[MAXATOMS] = {
 	 sizeof(ptr),		/* size */
 	 sizeof(ptr),		/* align */
 	 (ptr) &ptr_nil,	/* atomNull */
-	 (int (*)(const char *, int *, ptr *)) ptrFromStr,   /* atomFromStr */
-	 (int (*)(str *, int *, const void *)) ptrToStr,     /* atomToStr */
+	 (ssize_t (*)(const char *, size_t *, ptr *)) ptrFromStr,   /* atomFromStr */
+	 (ssize_t (*)(str *, size_t *, const void *)) ptrToStr,     /* atomToStr */
 	 (void *(*)(void *, stream *, size_t)) ptrRead,	     /* atomRead */
 	 (gdk_return (*)(const void *, stream *, size_t)) ptrWrite, /* atomWrite */
 #if SIZEOF_VOID_P == SIZEOF_INT
@@ -2053,8 +2059,8 @@ atomDesc BATatoms[MAXATOMS] = {
 	 sizeof(flt),		/* size */
 	 sizeof(flt),		/* align */
 	 (ptr) &flt_nil,	/* atomNull */
-	 (int (*)(const char *, int *, ptr *)) fltFromStr,   /* atomFromStr */
-	 (int (*)(str *, int *, const void *)) fltToStr,     /* atomToStr */
+	 (ssize_t (*)(const char *, size_t *, ptr *)) fltFromStr,   /* atomFromStr */
+	 (ssize_t (*)(str *, size_t *, const void *)) fltToStr,     /* atomToStr */
 	 (void *(*)(void *, stream *, size_t)) fltRead,	     /* atomRead */
 	 (gdk_return (*)(const void *, stream *, size_t)) fltWrite, /* atomWrite */
 	 (int (*)(const void *, const void *)) fltCmp,	     /* atomCmp */
@@ -2072,8 +2078,8 @@ atomDesc BATatoms[MAXATOMS] = {
 	 sizeof(dbl),		/* size */
 	 sizeof(dbl),		/* align */
 	 (ptr) &dbl_nil,	/* atomNull */
-	 (int (*)(const char *, int *, ptr *)) dblFromStr,   /* atomFromStr */
-	 (int (*)(str *, int *, const void *)) dblToStr,     /* atomToStr */
+	 (ssize_t (*)(const char *, size_t *, ptr *)) dblFromStr,   /* atomFromStr */
+	 (ssize_t (*)(str *, size_t *, const void *)) dblToStr,     /* atomToStr */
 	 (void *(*)(void *, stream *, size_t)) dblRead,	     /* atomRead */
 	 (gdk_return (*)(const void *, stream *, size_t)) dblWrite, /* atomWrite */
 	 (int (*)(const void *, const void *)) dblCmp,	     /* atomCmp */
@@ -2091,8 +2097,8 @@ atomDesc BATatoms[MAXATOMS] = {
 	 sizeof(lng),		/* size */
 	 sizeof(lng),		/* align */
 	 (ptr) &lng_nil,	/* atomNull */
-	 (int (*)(const char *, int *, ptr *)) lngFromStr,   /* atomFromStr */
-	 (int (*)(str *, int *, const void *)) lngToStr,     /* atomToStr */
+	 (ssize_t (*)(const char *, size_t *, ptr *)) lngFromStr,   /* atomFromStr */
+	 (ssize_t (*)(str *, size_t *, const void *)) lngToStr,     /* atomToStr */
 	 (void *(*)(void *, stream *, size_t)) lngRead,	     /* atomRead */
 	 (gdk_return (*)(const void *, stream *, size_t)) lngWrite, /* atomWrite */
 	 (int (*)(const void *, const void *)) lngCmp,	     /* atomCmp */
@@ -2111,8 +2117,8 @@ atomDesc BATatoms[MAXATOMS] = {
 	 sizeof(hge),		/* size */
 	 sizeof(hge),		/* align */
 	 (ptr) &hge_nil,	/* atomNull */
-	 (int (*)(const char *, int *, ptr *)) hgeFromStr,   /* atomFromStr */
-	 (int (*)(str *, int *, const void *)) hgeToStr,     /* atomToStr */
+	 (ssize_t (*)(const char *, size_t *, ptr *)) hgeFromStr,   /* atomFromStr */
+	 (ssize_t (*)(str *, size_t *, const void *)) hgeToStr,     /* atomToStr */
 	 (void *(*)(void *, stream *, size_t)) hgeRead,	     /* atomRead */
 	 (gdk_return (*)(const void *, stream *, size_t)) hgeWrite, /* atomWrite */
 	 (int (*)(const void *, const void *)) hgeCmp,	     /* atomCmp */
@@ -2131,8 +2137,8 @@ atomDesc BATatoms[MAXATOMS] = {
 	 sizeof(var_t),		/* size */
 	 sizeof(var_t),		/* align */
 	 (ptr) str_nil,		/* atomNull */
-	 (int (*)(const char *, int *, ptr *)) strFromStr,   /* atomFromStr */
-	 (int (*)(str *, int *, const void *)) strToStr,     /* atomToStr */
+	 (ssize_t (*)(const char *, size_t *, ptr *)) strFromStr,   /* atomFromStr */
+	 (ssize_t (*)(str *, size_t *, const void *)) strToStr,     /* atomToStr */
 	 (void *(*)(void *, stream *, size_t)) strRead,	     /* atomRead */
 	 (gdk_return (*)(const void *, stream *, size_t)) strWrite, /* atomWrite */
 	 (int (*)(const void *, const void *)) strCmp,	     /* atomCmp */

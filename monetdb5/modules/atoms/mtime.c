@@ -542,14 +542,15 @@ timestamp_inside(timestamp *ret, const timestamp *t, const tzone *z, lng offset)
 /*
  * ADT implementations
  */
-int
-date_fromstr(const char *buf, int *len, date **d)
+ssize_t
+date_fromstr(const char *buf, size_t *len, date **d)
 {
 	int day = 0, month = int_nil;
 	int year = 0, yearneg = (buf[0] == '-'), yearlast = 0;
-	int pos = 0, sep;
+	ssize_t pos = 0;
+	int sep;
 
-	if (*len < (int) sizeof(date) || *d == NULL) {
+	if (*len < sizeof(date) || *d == NULL) {
 		GDKfree(*d);
 		*d = (date *) GDKmalloc(*len = sizeof(date));
 		if( *d == NULL)
@@ -637,8 +638,8 @@ date_fromstr(const char *buf, int *len, date **d)
 	return pos;
 }
 
-int
-date_tostr(str *buf, int *len, const date *val)
+ssize_t
+date_tostr(str *buf, size_t *len, const date *val)
 {
 	int day, month, year;
 
@@ -656,18 +657,19 @@ date_tostr(str *buf, int *len, const date *val)
 		return 3;
 	}
 	sprintf(*buf, "%d-%02d-%02d", year, month, day);
-	return (int) strlen(*buf);
+	return (ssize_t) strlen(*buf);
 }
 
 /*
  * @- daytime
  */
-int
-daytime_fromstr(const char *buf, int *len, daytime **ret)
+ssize_t
+daytime_fromstr(const char *buf, size_t *len, daytime **ret)
 {
-	int hour, min, sec = 0, msec = 0, pos = 0;
+	int hour, min, sec = 0, msec = 0;
+	ssize_t pos = 0;
 
-	if (*len < (int) sizeof(daytime) || *ret == NULL) {
+	if (*len < sizeof(daytime) || *ret == NULL) {
 		GDKfree(*ret);
 		*ret = (daytime *) GDKmalloc(*len = sizeof(daytime));
 		if (*ret == NULL)
@@ -742,11 +744,11 @@ daytime_fromstr(const char *buf, int *len, daytime **ret)
 	return pos;
 }
 
-int
-daytime_tz_fromstr(const char *buf, int *len, daytime **ret)
+ssize_t
+daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret)
 {
 	const char *s = buf;
-	int pos = daytime_fromstr(s, len, ret);
+	ssize_t pos = daytime_fromstr(s, len, ret);
 	lng val, offset = 0;
 	daytime mtime = 24 * 60 * 60 * 1000;
 
@@ -779,11 +781,11 @@ daytime_tz_fromstr(const char *buf, int *len, daytime **ret)
 	if (val >= mtime)
 		val = val - mtime;
 	**ret = (daytime) val;
-	return (int) (s - buf);
+	return (ssize_t) (s - buf);
 }
 
-int
-daytime_tostr(str *buf, int *len, const daytime *val)
+ssize_t
+daytime_tostr(str *buf, size_t *len, const daytime *val)
 {
 	int hour, min, sec, msec;
 
@@ -804,15 +806,15 @@ daytime_tostr(str *buf, int *len, const daytime *val)
 /*
  * @- timestamp
  */
-int
-timestamp_fromstr(const char *buf, int *len, timestamp **ret)
+ssize_t
+timestamp_fromstr(const char *buf, size_t *len, timestamp **ret)
 {
 	const char *s = buf;
-	int pos;
+	ssize_t pos;
 	date *d;
 	daytime *t;
 
-	if (*len < (int) sizeof(timestamp) || *ret == NULL) {
+	if (*len < sizeof(timestamp) || *ret == NULL) {
 		GDKfree(*ret);
 		*ret = (timestamp *) GDKmalloc(*len = sizeof(timestamp));
 		if( *ret == NULL)
@@ -838,7 +840,7 @@ timestamp_fromstr(const char *buf, int *len, timestamp **ret)
 		s += pos;
 		if (*t == daytime_nil) {
 			**ret = *timestamp_nil;
-			return (int) (s - buf);
+			return (ssize_t) (s - buf);
 		}
 	} else if (*s) {
 		(*ret)->msecs = daytime_nil;
@@ -873,14 +875,14 @@ timestamp_fromstr(const char *buf, int *len, timestamp **ret)
 		}
 		MTIMEtimestamp_add(*ret, *ret, &offset);
 	}
-	return (int) (s - buf);
+	return (ssize_t) (s - buf);
 }
 
-int
-timestamp_tz_fromstr(const char *buf, int *len, timestamp **ret)
+ssize_t
+timestamp_tz_fromstr(const char *buf, size_t *len, timestamp **ret)
 {
 	const char *s = buf;
-	int pos = timestamp_fromstr(s, len, ret);
+	ssize_t pos = timestamp_fromstr(s, len, ret);
 	lng offset = 0;
 
 	if (pos < 0 || *ret == timestamp_nil)
@@ -907,14 +909,15 @@ timestamp_tz_fromstr(const char *buf, int *len, timestamp **ret)
 		offset = get_offset(&tzone_local) * (lng) -60000;
 	}
 	MTIMEtimestamp_add(*ret, *ret, &offset);
-	return (int) (s - buf);
+	return (ssize_t) (s - buf);
 }
 
 
-int
-timestamp_tz_tostr(str *buf, int *len, const timestamp *val, const tzone *timezone)
+ssize_t
+timestamp_tz_tostr(str *buf, size_t *len, const timestamp *val, const tzone *timezone)
 {
-	int len1, len2, big = 128;
+	ssize_t len1, len2;
+	size_t big = 128;
 	char buf1[128], buf2[128], *s = *buf, *s1 = buf1, *s2 = buf2;
 	if (timezone != NULL) {
 		/* int off = get_offset(timezone); */
@@ -931,9 +934,9 @@ timestamp_tz_tostr(str *buf, int *len, const timestamp *val, const tzone *timezo
 		if (len1 < 0 || len2 < 0)
 			return -1;
 
-		if (*len < 2 + len1 + len2 || *buf == NULL) {
+		if (*len < 2 + (size_t) len1 + (size_t) len2 || *buf == NULL) {
 			GDKfree(*buf);
-			*buf = GDKmalloc(*len = len1 + len2 + 2);
+			*buf = GDKmalloc(*len = (size_t) len1 + (size_t) len2 + 2);
 			if( *buf == NULL)
 				return -1;
 		}
@@ -956,11 +959,11 @@ timestamp_tz_tostr(str *buf, int *len, const timestamp *val, const tzone *timezo
 		   }
 		 */
 	}
-	return (int) (s - *buf);
+	return (ssize_t) (s - *buf);
 }
 
-int
-timestamp_tostr(str *buf, int *len, const timestamp *val)
+ssize_t
+timestamp_tostr(str *buf, size_t *len, const timestamp *val)
 {
 	return timestamp_tz_tostr(buf, len, val, &tzone_local);
 }
@@ -982,8 +985,8 @@ count1(int i)
 /*
  * @- rule
  */
-int
-rule_tostr(str *buf, int *len, const rule *r)
+ssize_t
+rule_tostr(str *buf, size_t *len, const rule *r)
 {
 	int hours = r->s.minutes / 60;
 	int minutes = r->s.minutes % 60;
@@ -1016,11 +1019,11 @@ rule_tostr(str *buf, int *len, const rule *r)
 				DAYS[WEEKDAY_ZERO - r->s.weekday], MONTHS[r->s.month],
 				DAY_ZERO - r->s.day, hours, minutes);
 	}
-	return (int) strlen(*buf);
+	return (ssize_t) strlen(*buf);
 }
 
-int
-rule_fromstr(const char *buf, int *len, rule **d)
+ssize_t
+rule_fromstr(const char *buf, size_t *len, rule **d)
 {
 	int day = 0, month = 0, weekday = 0, hours = 0, minutes = 0;
 	int neg_day = 0, neg_weekday = 0, pos;
@@ -1112,16 +1115,17 @@ rule_fromstr(const char *buf, int *len, rule **d)
 		(*d)->s.day = DAY_ZERO + (neg_day ? -day : day);
 		(*d)->s.minutes = hours * 60 + minutes;
 	}
-	return (int) (cur - buf);
+	return (ssize_t) (cur - buf);
 }
 
 /*
  * @- tzone
  */
-int
-tzone_fromstr(const char *buf, int *len, tzone **d)
+ssize_t
+tzone_fromstr(const char *buf, size_t *len, tzone **d)
 {
-	int hours = 0, minutes = 0, neg_offset = 0, pos = 0;
+	int hours = 0, minutes = 0, neg_offset = 0;
+	ssize_t pos = 0;
 	rule r1, *rp1 = &r1, r2, *rp2 = &r2;
 	const char *cur = buf;
 
@@ -1172,7 +1176,7 @@ tzone_fromstr(const char *buf, int *len, tzone **d)
 			return pos;
 		if (rp1->asint == int_nil) {
 			**d = *tzone_nil;
-			return (int) (cur + pos - buf);;
+			return (ssize_t) (cur + pos - buf);;
 		}
 		if (cur[pos++] != ',') {
 			GDKerror("Syntax error in timezone.\n");
@@ -1183,7 +1187,7 @@ tzone_fromstr(const char *buf, int *len, tzone **d)
 			return pos;
 		if (rp2->asint == int_nil) {
 			**d = *tzone_nil;
-			return (int) (cur + pos - buf);;
+			return (ssize_t) (cur + pos - buf);;
 		}
 		if (cur[pos++] != ']') {
 			GDKerror("Syntax error in timezone.\n");
@@ -1204,11 +1208,11 @@ tzone_fromstr(const char *buf, int *len, tzone **d)
 			(*d)->dst = FALSE;
 		}
 	}
-	return (int) (cur - buf);
+	return (ssize_t) (cur - buf);
 }
 
-int
-tzone_tostr(str *buf, int *len, const tzone *z)
+ssize_t
+tzone_tostr(str *buf, size_t *len, const tzone *z)
 {
 	str s;
 
@@ -1241,7 +1245,7 @@ tzone_tostr(str *buf, int *len, const tzone *z)
 			s += 6;
 		}
 		if (z->dst) {
-			int l;
+			ssize_t l;
 			strcpy(s, "-DST[");
 			s += 5;
 			l = rule_tostr(&s, len, &dst_start);
@@ -1258,7 +1262,7 @@ tzone_tostr(str *buf, int *len, const tzone *z)
 			*s = 0;
 		}
 	}
-	return (int) (s - *buf);
+	return (ssize_t) (s - *buf);
 }
 
 /*
@@ -1583,7 +1587,7 @@ MTIMEdate_date(date *d, const date *s)
 str
 MTIMEdate_fromstr(date *ret, const char * const *s)
 {
-	int len = (int) sizeof(date);
+	size_t len = sizeof(date);
 
 	if (strcmp(*s, "nil") == 0) {
 		*ret = date_nil;
@@ -1613,7 +1617,7 @@ MTIMEdaytime_create(daytime *ret, const int *hour, const int *min, const int *se
 str
 MTIMEtimestamp_fromstr(timestamp *ret, const char * const *d)
 {
-	int len = (int) sizeof(timestamp);
+	size_t len = sizeof(timestamp);
 
 	if (strcmp(*d, "nil") == 0) {
 		ret->msecs = daytime_nil;
@@ -2280,7 +2284,7 @@ MTIMEtimestamp_inside_dst(bit *ret, const timestamp *p, const tzone *z)
 str
 MTIMErule_fromstr(rule *ret, const char * const *s)
 {
-	int len = (int) sizeof(rule);
+	size_t len = sizeof(rule);
 
 	if (strcmp(*s, "nil") == 0) {
 		ret->asint = int_nil;
@@ -2570,7 +2574,7 @@ str
 MTIMEtzone_tostr(str *s, const tzone *ret)
 {
 	char *s1 = NULL;
-	int len = 0;
+	size_t len = 0;
 
 	if (tzone_tostr(&s1, &len, ret) < 0) {
 		GDKfree(s1);
@@ -2583,7 +2587,7 @@ MTIMEtzone_tostr(str *s, const tzone *ret)
 str
 MTIMEtzone_fromstr(tzone *ret, const char * const *s)
 {
-	int len = (int) sizeof(tzone);
+	size_t len = sizeof(tzone);
 
 	if (strcmp(*s, "nil") == 0) {
 		*ret = *tzone_nil;
@@ -2597,7 +2601,7 @@ MTIMEtzone_fromstr(tzone *ret, const char * const *s)
 str
 MTIMEdaytime_fromstr(daytime *ret, const char * const *s)
 {
-	int len = (int) sizeof(daytime);
+	size_t len = sizeof(daytime);
 
 	if (strcmp(*s, "nil") == 0) {
 		*ret = daytime_nil;

@@ -481,33 +481,23 @@ cstToken(Client cntxt, ValPtr cst)
 			}
 		}
 		if (cst->vtype == TYPE_flt) {
-			int len = i;
-			float *pval = 0;
+			size_t len = sizeof(flt);
+			float *pval = &cst->val.fval;
 			if (fltFromStr(CURRENT(cntxt), &len, &pval) < 0) {
 				parseError(cntxt, GDKerrbuf);
 				return i;
 			}
-			if (pval) {
-				cst->val.fval = *pval;
-				GDKfree(pval);
-			} else
-				cst->val.fval = 0;
 		}
 		if (cst->vtype == TYPE_dbl) {
-			int len = i;
-			double *pval = 0;
+			size_t len = sizeof(dbl);
+			double *pval = &cst->val.dval;
 			if (dblFromStr(CURRENT(cntxt), &len, &pval) < 0) {
 				parseError(cntxt, GDKerrbuf);
 				return i;
 			}
-			if (pval) {
-				cst->val.dval = *pval;
-				GDKfree(pval);
-			} else
-				cst->val.dval = 0;
 		}
 		if (*s == '@') {
-			int len = (int) sizeof(lng);
+			size_t len = sizeof(lng);
 			lng l, *pval = &l;
 			if (lngFromStr(CURRENT(cntxt), &len, &pval) < 0) {
 				parseError(cntxt, GDKerrbuf);
@@ -542,36 +532,26 @@ cstToken(Client cntxt, ValPtr cst)
 				s++;
 			}
 			if (cst->vtype == TYPE_dbl) {
-				int len = i;
-				double *pval = 0;
+				size_t len = sizeof(dbl);
+				dbl *pval = &cst->val.dval;
 				if (dblFromStr(CURRENT(cntxt), &len, &pval) < 0) {
 					parseError(cntxt, GDKerrbuf);
 					return i;
 				}
-				if (pval) {
-					cst->val.dval = *pval;
-					GDKfree(pval);
-				} else
-					cst->val.dval = 0;
 			} else {
-				int len = i;
-				lng *pval = 0;
+				size_t len = sizeof(lng);
+				lng *pval = &cst->val.lval;
 				if (lngFromStr(CURRENT(cntxt), &len, &pval) < 0) {
 					parseError(cntxt, GDKerrbuf);
 					return i;
 				}
-				if (pval) {
-					cst->val.lval = *pval;
-					GDKfree(pval);
-				} else
-					cst->val.lval = 0;
 			}
 			return i;
 		}
 #ifdef HAVE_HGE
 		if (*s == 'H' && cst->vtype == TYPE_int) {
-			int len = i;
-			hge *pval = 0;
+			size_t len = sizeof(hge);
+			hge *pval = &cst->val.hval;
 			cst->vtype = TYPE_hge;
 			i++;
 			s++;
@@ -583,11 +563,6 @@ cstToken(Client cntxt, ValPtr cst)
 				parseError(cntxt, GDKerrbuf);
 				return i;
 			}
-			if (pval) {
-				cst->val.hval = *pval;
-				GDKfree(pval);
-			} else
-				cst->val.hval = 0;
 			return i;
 		}
 #endif
@@ -598,7 +573,7 @@ handleInts:
 #endif
 		if (cst->vtype == TYPE_int) {
 #ifdef HAVE_HGE
-			int len = (int) sizeof(hge);
+			size_t len = sizeof(hge);
 			hge l, *pval = &l;
 			if (hgeFromStr(CURRENT(cntxt), &len, &pval) < 0)
 				l = hge_nil;
@@ -617,7 +592,7 @@ handleInts:
 					parseError(cntxt, "convertConstant: integer parse error\n");
 			}
 #else
-			int len = (int) sizeof(lng);
+			size_t len = sizeof(lng);
 			lng l, *pval = &l;
 			if (lngFromStr(CURRENT(cntxt), &len, &pval) < 0)
 				l = lng_nil;

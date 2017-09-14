@@ -286,35 +286,35 @@ x2c(char *what)
  * Here you find the wrappers around the V4 url library included above.
  */
 
-int
-URLfromString(const char *src, int *len, str *u)
+ssize_t
+URLfromString(const char *src, size_t *len, str *u)
 {
 	size_t l = strlen(src) + 1;
 
-	if (*len < (int) l || *u == NULL) {
+	if (*len < l || *u == NULL) {
 		GDKfree(*u);
 		*u = GDKmalloc(l);
 		if (*u == NULL)
 			return -1;
-		*len = (int) l;
+		*len = l;
 	}
 
 	/* actually parse the message for valid url */
 
 	memcpy(*u, src, l);
-	return (int) l - 1;
+	return (ssize_t) l - 1;
 }
 
-int
-URLtoString(str *s, int *len, const char *src)
+ssize_t
+URLtoString(str *s, size_t *len, const char *src)
 {
-	int l;
+	size_t l;
 
 	if (GDK_STRNIL(src)) {
 		*s = GDKstrdup("nil");
 		return *s ? 1 : -1;
 	}
-	l = (int) strlen(src) + 3;
+	l = strlen(src) + 3;
 	/* if( !*s) *s= (str)GDKmalloc(*len = l); */
 
 	if (l >= *len || *s == NULL) {
@@ -325,7 +325,7 @@ URLtoString(str *s, int *len, const char *src)
 	}
 	snprintf(*s, l, "\"%s\"", src);
 	*len = l - 1;
-	return *len;
+	return (ssize_t) *len;
 }
 
 /* COMMAND "getAnchor": Extract an anchor (reference) from the URL

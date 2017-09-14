@@ -47,11 +47,11 @@ typedef struct {
 
 mal_export str UUIDprelude(void *ret);
 mal_export int UUIDcompare(const uuid *l, const uuid *r);
-mal_export int UUIDfromString(const char *svalue, int *len, uuid **retval);
+mal_export ssize_t UUIDfromString(const char *svalue, size_t *len, uuid **retval);
 mal_export BUN UUIDhash(const void *u);
 mal_export const uuid *UUIDnull(void);
 mal_export uuid *UUIDread(uuid *u, stream *s, size_t cnt);
-mal_export int UUIDtoString(str *retval, int *len, const uuid *value);
+mal_export ssize_t UUIDtoString(str *retval, size_t *len, const uuid *value);
 mal_export gdk_return UUIDwrite(const uuid *u, stream *s, size_t cnt);
 
 mal_export str UUIDgenerateUuid(uuid **retval);
@@ -66,7 +66,7 @@ static uuid *uuid_session;		/* automatically set during system restart */
 str
 UUIDprelude(void *ret)
 {
-	int len = 0;
+	size_t len = 0;
 	str msg;
 
 	(void) ret;
@@ -91,8 +91,8 @@ UUIDprelude(void *ret)
  * Warning: GDK function
  * Returns the length of the string
  */
-int
-UUIDtoString(str *retval, int *len, const uuid *value)
+ssize_t
+UUIDtoString(str *retval, size_t *len, const uuid *value)
 {
 	if (*len <= UUID_STRLEN || *retval == NULL) {
 		if (*retval)
@@ -115,8 +115,8 @@ UUIDtoString(str *retval, int *len, const uuid *value)
 	return UUID_STRLEN;
 }
 
-int
-UUIDfromString(const char *svalue, int *len, uuid **retval)
+ssize_t
+UUIDfromString(const char *svalue, size_t *len, uuid **retval)
 {
 	const char *s = svalue;
 	int i, j;
@@ -159,7 +159,7 @@ UUIDfromString(const char *svalue, int *len, uuid **retval)
 		s++;
 		j++;
 	}
-	return (int)(s - svalue);
+	return (ssize_t) (s - svalue);
 
   bailout:
 	GDKerror("Syntax error in UUID.\n");
@@ -208,7 +208,7 @@ UUIDisaUUID(bit *retval, str *s)
 {
 	uuid u;
 	uuid *pu = &u;
-	int l = UUID_SIZE;
+	size_t l = UUID_SIZE;
 	*retval = UUIDfromString(*s, &l, &pu) == UUID_STRLEN;
 	return MAL_SUCCEED;
 }
@@ -216,7 +216,7 @@ UUIDisaUUID(bit *retval, str *s)
 str
 UUIDstr2uuid(uuid **retval, str *s)
 {
-	int l = *retval ? UUID_SIZE : 0;
+	size_t l = *retval ? UUID_SIZE : 0;
 
 	if (UUIDfromString(*s, &l, retval) == UUID_STRLEN) {
 		return MAL_SUCCEED;
@@ -227,7 +227,7 @@ UUIDstr2uuid(uuid **retval, str *s)
 str
 UUIDuuid2str(str *retval, uuid **u)
 {
-	int l = 0;
+	size_t l = 0;
 	*retval = NULL;
 	if (UUIDtoString(retval, &l, *u) < 0)
 		throw(MAL, "uuid.str", GDK_EXCEPTION);

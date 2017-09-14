@@ -1007,8 +1007,8 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 		BATiter li = bat_iterator(b);
 		BUN p = 0, q = 0;
 		char *result = NULL;
-		int length = 0;
-		int (*strConversion)(str *, int *, const void *) =
+		size_t length = 0;
+		ssize_t (*strConversion)(str *, size_t *, const void *) =
 			BATatoms[b->ttype].atomToStr;
 		*ret_bat = COLnew(0, TYPE_str, 0, TRANSIENT);
 		*ret_type = conv_type;

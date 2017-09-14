@@ -25,8 +25,8 @@ typedef str identifier;
 
 mal_export int TYPE_identifier;
 mal_export str IDprelude(void *ret);
-mal_export int IDfromString(const char *src, int *len, identifier *retval);
-mal_export int IDtoString(str *retval, int *len, const char *handle);
+mal_export ssize_t IDfromString(const char *src, size_t *len, identifier *retval);
+mal_export ssize_t IDtoString(str *retval, size_t *len, const char *handle);
 mal_export str IDentifier(identifier *retval, str *in);
 
 int TYPE_identifier;
@@ -44,19 +44,19 @@ str IDprelude(void *ret)
  * a pointer to a pointer for the retval!
  * Returns the number of chars read
  */
-int
-IDfromString(const char *src, int *len, identifier *retval)
+ssize_t
+IDfromString(const char *src, size_t *len, identifier *retval)
 {
 	size_t l = strlen(src) + 1;
-	if (*retval == NULL || *len < (int) l) {
+	if (*retval == NULL || *len < l) {
 		GDKfree(*retval);
 		*retval = GDKmalloc(l);
 		if (*retval == NULL)
 			return -1;
-		*len = (int) l;
+		*len = l;
 	}
 	memcpy(*retval, src, l);
-	return (int) l - 1;
+	return (ssize_t) l - 1;
 }
 
 /**
@@ -64,19 +64,19 @@ IDfromString(const char *src, int *len, identifier *retval)
  * Warning: GDK function
  * Returns the length of the string
  */
-int
-IDtoString(str *retval, int *len, const char *handle)
+ssize_t
+IDtoString(str *retval, size_t *len, const char *handle)
 {
 	size_t hl = strlen(handle) + 1;
-	if (*len < (int) hl || *retval == NULL) {
+	if (*len < hl || *retval == NULL) {
 		GDKfree(*retval);
 		*retval = GDKmalloc(hl);
 		if (*retval == NULL)
 			return -1;
-		*len = (int) hl;
+		*len = hl;
 	}
 	memcpy(*retval, handle, hl);
-	return (int) hl - 1;
+	return (ssize_t) hl - 1;
 }
 /**
  * Returns an identifier, parsed from a string.  The fromStr function is used
@@ -85,7 +85,7 @@ IDtoString(str *retval, int *len, const char *handle)
 str
 IDentifier(identifier *retval, str *in)
 {
-	int len = 0;
+	size_t len = 0;
 
 	if (IDfromString(*in, &len, retval) < 0)
 		throw(PARSE, "identifier.identifier", "Error while parsing %s", *in);

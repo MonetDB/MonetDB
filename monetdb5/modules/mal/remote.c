@@ -505,7 +505,8 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	if (isaBatType(rtype) && (localtype == 0177 || localtype != c->type ))
 	{
-		int t, s;
+		int t;
+		size_t s;
 		ptr r;
 		str var;
 		BAT *b;
@@ -612,7 +613,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	} else {
 		ptr p = NULL;
 		str val;
-		int len = 0;
+		size_t len = 0;
 
 		snprintf(qbuf, BUFSIZ, "io.print(%s);", ident);
 #ifdef _DEBUG_REMOTE
@@ -770,7 +771,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		mnstr_flush(sout);
 		GDKfree(typename);
 	} else {
-		int l = 0;
+		ssize_t l = 0;
 		str val = NULL;
 		char *tpe;
 		char qbuf[512], *nbuf = qbuf;
@@ -789,8 +790,8 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			GDKfree(val);
 			throw(MAL, "remote.put", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
-		l += (int) (strlen(tpe) + strlen(ident) + 10);
-		if (l > (int) sizeof(qbuf) && (nbuf = GDKmalloc(l)) == NULL) {
+		l += strlen(tpe) + strlen(ident) + 10;
+		if (l > (ssize_t) sizeof(qbuf) && (nbuf = GDKmalloc(l)) == NULL) {
 			MT_lock_unset(&c->lock);
 			GDKfree(val);
 			GDKfree(tpe);
@@ -1009,7 +1010,7 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	int t;
 	int size;
 	ptr  r;
-	int s;
+	size_t s;
 	BAT *b;
 	size_t len;
 	char *var;
@@ -1152,7 +1153,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	char *nme = NULL;
 	char *val = NULL;
 	char tmp;
-	int len;
+	size_t len;
 	lng lv, *lvp;
 
 	BAT *b;
@@ -1186,7 +1187,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 				*hdr = '\0';
 
 				lvp = &lv;
-				len = (int) sizeof(lv);
+				len = sizeof(lv);
 				/* tseqbase can be 1<<31/1<<63 which causes overflow
 				 * in lngFromStr, so we check separately */
 				if (strcmp(val,

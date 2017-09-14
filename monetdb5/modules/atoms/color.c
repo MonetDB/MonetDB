@@ -60,12 +60,12 @@ CLRhextoint(char h, char l)
 	return r;
 }
 
-int
-color_fromstr(const char *colorStr, int *len, color **c)
+ssize_t
+color_fromstr(const char *colorStr, size_t *len, color **c)
 {
 	const char *p = colorStr;
 
-	if (*len < (int) sizeof(color) || *c == NULL) {
+	if (*len < sizeof(color) || *c == NULL) {
 		GDKfree(*c);
 		*c = GDKmalloc(sizeof(color));
 		if( *c == NULL)
@@ -90,11 +90,11 @@ color_fromstr(const char *colorStr, int *len, color **c)
 		} else
 			**c = color_nil;
 	}
-	return (int) (p - colorStr);
+	return (ssize_t) (p - colorStr);
 }
 
-int
-color_tostr(char **colorStr, int *len, const color *c)
+ssize_t
+color_tostr(char **colorStr, size_t *len, const color *c)
 {
 	color sc = *c;
 
@@ -114,18 +114,18 @@ color_tostr(char **colorStr, int *len, const color *c)
 	}
 	snprintf(*colorStr, *len, "0x%08X", (unsigned int) sc);
 
-	return (int) strlen(*colorStr);
+	return (ssize_t) strlen(*colorStr);
 }
 
 str
 CLRstr(str *s, const color *c)
 {
-	int len = 0;
+	size_t len = 0;
 	str t = 0;
 
 	if (color_tostr(&t, &len, c) < 0)
 		throw(MAL, "color.str", GDK_EXCEPTION);
-	*s = (str) t;
+	*s = t;
 	return MAL_SUCCEED;
 }
 
@@ -372,7 +372,7 @@ CLRcb(int *cb, const color *c)
 str
 CLRcolor(color *c, const char **val)
 {
-	int len = (int) strlen(*val);
+	size_t len = sizeof(color);
 
 	if (color_fromstr(*val, &len, &c) < 0)
 		throw(MAL, "color.color", GDK_EXCEPTION);

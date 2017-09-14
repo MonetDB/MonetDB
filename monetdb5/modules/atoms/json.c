@@ -108,10 +108,10 @@ JSONfree(JSON *c)
 	GDKfree(c);
 }
 
-int
-JSONfromString(const char *src, int *len, json *j)
+ssize_t
+JSONfromString(const char *src, size_t *len, json *j)
 {
-	ssize_t slen = (ssize_t) strlen(src);
+	size_t slen = strlen(src);
 	JSON *jt;
 
 	if ((jt = JSONparse(src, FALSE)) == NULL)
@@ -123,21 +123,21 @@ JSONfromString(const char *src, int *len, json *j)
 	}
 	JSONfree(jt);
 
-	if ((ssize_t) *len <= slen || *j == NULL) {
+	if (*len <= slen || *j == NULL) {
 		GDKfree(*j);
 		if ((*j = GDKmalloc(slen + 1)) == NULL)
 			return -1;
-		*len = (int) slen + 1;
+		*len = slen + 1;
 	}
 	if (GDKstrFromStr((unsigned char *) *j,
-					  (const unsigned char *) src, slen) < 0)
+					  (const unsigned char *) src, (ssize_t) slen) < 0)
 		return -1;
 
-	return (int) strlen(*j);
+	return (ssize_t) strlen(*j);
 }
 
-int
-JSONtoString(str *s, int *len, const char *src)
+ssize_t
+JSONtoString(str *s, size_t *len, const char *src)
 {
 	size_t cnt;
 	const char *c;
@@ -173,7 +173,7 @@ JSONtoString(str *s, int *len, const char *src)
 		*s = GDKmalloc(cnt);
 		if (*s == NULL)
 			return -1;
-		*len = (int) cnt;
+		*len = cnt;
 	}
 	dst = *s;
 	*dst++ = '"';
@@ -195,7 +195,7 @@ JSONtoString(str *s, int *len, const char *src)
 	*dst++ = '"';
 	*dst++ = 0;
 	assert((size_t) (dst - *s) == cnt);
-	return (int) (cnt - 1);	/* length without \0 */
+	return cnt - 1;				/* length without \0 */
 }
 
 #define tab(D)									\

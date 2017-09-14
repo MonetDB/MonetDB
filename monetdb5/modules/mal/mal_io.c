@@ -628,13 +628,13 @@ str
 IOimport(void *ret, bat *bid, str *fnme)
 {
 	BAT *b;
-	int (*tconvert) (const char *, int *, ptr *);
+	ssize_t (*tconvert) (const char *, size_t *, ptr *);
 	int n;
 	size_t bufsize = 2048;	/* NIELS:tmp change used to be 1024 */
 	char *base, *cur, *end;
 	char *buf;
 	ptr t = 0;
-	int lt = 0;
+	size_t lt = 0;
 	FILE *fp = fopen(*fnme, "r");
 	char msg[BUFSIZ];
 

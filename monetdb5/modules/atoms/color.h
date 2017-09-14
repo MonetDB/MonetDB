@@ -27,8 +27,8 @@ mal_export str CLRcb(int *g, const color *c);
 mal_export str CLRhsv(color *c, const flt *h, const flt *s, const flt *v);
 mal_export str CLRrgb(color *rgb, const int *r, const int *g, const int *b);
 mal_export str CLRycc(color *c, const int *y, const int *cr, const int *cb);
-mal_export int color_fromstr(const char *colorStr, int *len, color **c);
-mal_export int color_tostr(char **colorStr, int *len, const color *c);
+mal_export ssize_t color_fromstr(const char *colorStr, size_t *len, color **c);
+mal_export ssize_t color_tostr(char **colorStr, size_t *len, const color *c);
 
 #define color_nil ((color)int_nil)
 

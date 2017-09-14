@@ -46,8 +46,8 @@ typedef str json;
 
 mal_export int TYPE_json;
 
-mal_export int JSONfromString(const char *src, int *len, json *x);
-mal_export int JSONtoString(str *s, int *len, const char *src);
+mal_export ssize_t JSONfromString(const char *src, size_t *len, json *x);
+mal_export ssize_t JSONtoString(str *s, size_t *len, const char *src);
 
 
 mal_export str JSONstr2json(json *ret, str *j);

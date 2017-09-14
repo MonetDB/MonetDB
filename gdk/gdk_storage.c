@@ -900,12 +900,12 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	int i;
 	BUN n, cnt;
 	struct colinfo {
-		int (*s) (str *, int *, const void *);
+		ssize_t (*s) (str *, size_t *, const void *);
 		BATiter i;
 	} *colinfo;
 	char *buf;
-	int buflen = 0;
-	int len;
+	size_t buflen = 0;
+	ssize_t len;
 
 	/* error checking */
 	for (i = 0; i < argc; i++) {

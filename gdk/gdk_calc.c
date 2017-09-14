@@ -13619,12 +13619,12 @@ convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
 	int tp = b->ttype;
 	oid candoff = b->hseqbase;
 	str dst = 0;
-	int len = 0;
+	size_t len = 0;
 	BUN nils = 0;
 	BUN i;
 	const void *nil = ATOMnilptr(tp);
 	const void *restrict src;
-	int (*atomtostr)(str *, int *, const void *) = BATatoms[tp].atomToStr;
+	ssize_t (*atomtostr)(str *, size_t *, const void *) = BATatoms[tp].atomToStr;
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tp);
 
 	for (i = 0; i < start; i++)
@@ -13715,9 +13715,9 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 	const void *nil = ATOMnilptr(tp);
 	char *s;
 	void *d;
-	int len = ATOMsize(tp);
-	int l;
-	int (*atomfromstr)(const char *, int *, ptr *) = BATatoms[tp].atomFromStr;
+	size_t len = (size_t) ATOMsize(tp);
+	ssize_t l;
+	ssize_t (*atomfromstr)(const char *, size_t *, ptr *) = BATatoms[tp].atomFromStr;
 	BATiter bi = bat_iterator(b);
 
 	for (i = 0; i < start; i++) {
@@ -13743,7 +13743,7 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 		} else {
 			d = dst;
 			if ((l = (*atomfromstr)(s, &len, &d)) < 0 ||
-			    l < (int) strlen(s)) {
+			    l < (ssize_t) strlen(s)) {
 				if (abort_on_error) {
 					GDKclrerr();
 					GDKerror("22018!conversion of string "
@@ -13753,7 +13753,7 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 				}
 				memcpy(dst, nil, len);
 			}
-			assert(len == ATOMsize(tp));
+			assert(len == (size_t) ATOMsize(tp));
 			if (ATOMcmp(tp, dst, nil) == 0)
 				nils++;
 		}
@@ -13775,9 +13775,9 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 	BUN i = 0;
 	int tp = bn->ttype;
 	void *restrict dst = Tloc(bn, 0);
-	int (*atomtostr)(str *, int *, const void *) = BATatoms[TYPE_oid].atomToStr;
+	ssize_t (*atomtostr)(str *, size_t *, const void *) = BATatoms[TYPE_oid].atomToStr;
 	str s = 0;
-	int len = 0;
+	size_t len = 0;
 
 	if (seq == oid_nil) {
 		start = end = 0;
@@ -14427,12 +14427,13 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 		} else if (BATatoms[v->vtype].atomToStr == BATatoms[TYPE_str].atomToStr) {
 			ret->val.sval = GDKstrdup(v->val.sval);
 		} else {
+			size_t len = 0;
 			ret->val.sval = NULL;
-			ret->len = 0;
 			if ((*BATatoms[v->vtype].atomToStr)(&ret->val.sval,
-							    &ret->len,
+							    &len,
 							    VALptr(v)) < 0)
 				nils = BUN_NONE;
+			ret->len = (int) len;
 		}
 		if (ret->val.sval == NULL)
 			nils = BUN_NONE;
@@ -14453,21 +14454,22 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 			if (VALinit(ret, ret->vtype, ATOMnilptr(ret->vtype)) == NULL)
 				nils = BUN_NONE;
 		} else {
-			int len;
+			ssize_t l;
+			size_t len;
 
 			if (ATOMextern(ret->vtype)) {
 				/* let atomFromStr allocate memory
 				 * which we later give away to ret */
 				p = NULL;
-				ret->len = 0;
+				len = 0;
 			} else {
 				/* use the space provided by ret */
 				p = VALget(ret);
-				ret->len = ATOMsize(ret->vtype);
+				len = (size_t) ATOMsize(ret->vtype);
 			}
-			if ((len = (*BATatoms[ret->vtype].atomFromStr)(
-				     v->val.sval, &ret->len, &p)) < 0 ||
-			    len < (int) strlen(v->val.sval)) {
+			if ((l = (*BATatoms[ret->vtype].atomFromStr)(
+				     v->val.sval, &len, &p)) < 0 ||
+			    l < (ssize_t) strlen(v->val.sval)) {
 				if (ATOMextern(ret->vtype))
 					GDKfree(p);
 				GDKclrerr();
@@ -14479,6 +14481,7 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 				/* now give value obtained to ret */
 				assert(ATOMextern(ret->vtype) ||
 				       p == VALget(ret));
+				ret->len = (int) len;
 				if (ATOMextern(ret->vtype))
 					VALset(ret, ret->vtype, p);
 			}

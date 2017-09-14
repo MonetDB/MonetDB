@@ -37,8 +37,8 @@ str
 str_2_timestamp(timestamp *res, const str *val)
 {
 	ptr p = NULL;
-	int len = 0;
-	int e;
+	size_t len = 0;
+	ssize_t e;
 	char buf[BUFSIZ];
 
 	e = ATOMfromstr(TYPE_timestamp, &p, &len, *val);
@@ -132,8 +132,8 @@ str
 str_2_daytime(daytime *res, const str *val)
 {
 	ptr p = NULL;
-	int len = 0;
-	int e;
+	size_t len = 0;
+	ssize_t e;
 	char buf[BUFSIZ];
 
 	e = ATOMfromstr(TYPE_daytime, &p, &len, *val);
@@ -227,7 +227,7 @@ str
 str_2_date(date *res, const str *val)
 {
 	ptr p = NULL;
-	int len = 0;
+	size_t len = 0;
 	int e;
 	char buf[BUFSIZ];
 
@@ -250,7 +250,7 @@ str
 SQLdate_2_str(str *res, const date *val)
 {
 	char *p = NULL;
-	int len = 0;
+	size_t len = 0;
 	if (date_tostr(&p, &len, val) < 0) {
 		GDKfree(p);
 		throw(SQL, "date", GDK_EXCEPTION);
@@ -327,8 +327,8 @@ str
 str_2_sqlblob(sqlblob **res, const str *val)
 {
 	ptr p = NULL;
-	int len = 0;
-	int e;
+	size_t len = 0;
+	ssize_t e;
 	char buf[BUFSIZ];
 
 	e = ATOMfromstr(TYPE_sqlblob, &p, &len, *val);
@@ -346,7 +346,7 @@ str
 SQLsqlblob_2_str(str *res, const sqlblob *val)
 {
 	char *p = NULL;
-	int len = 0;
+	size_t len = 0;
 	if (SQLBLOBtostr(&p, &len, val) < 0) {
 		GDKfree(p);
 		throw(SQL, "blob", GDK_EXCEPTION);

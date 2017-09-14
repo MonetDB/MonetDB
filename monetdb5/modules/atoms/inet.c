@@ -69,8 +69,8 @@ typedef struct _inet {
 #endif
 #define in_setnil(i) (i)->q1 = (i)->q2 = (i)->q3 = (i)->q4 = (i)->mask = (i)->filler1 = (i)->filler2 = 0; (i)->isnil = 1
 
-mal_export int INETfromString(const char *src, int *len, inet **retval);
-mal_export int INETtoString(str *retval, int *len, const inet *handle);
+mal_export ssize_t INETfromString(const char *src, size_t *len, inet **retval);
+mal_export ssize_t INETtoString(str *retval, size_t *len, const inet *handle);
 mal_export int INETcompare(const inet *l, const inet *r);
 mal_export str INETnew(inet *retval, str *in);
 mal_export str INET_isnil(bit *retval, const inet *val);
@@ -105,8 +105,8 @@ static inet inet_nil = {{{0,0,0,0,0,0,0,1}}};
  * a pointer to a pointer for the retval!
  * Returns the number of chars read
  */
-int
-INETfromString(const char *src, int *len, inet **retval)
+ssize_t
+INETfromString(const char *src, size_t *len, inet **retval)
 {
 	int i, last, type;
 	long parse; /* type long returned by strtol() */
@@ -116,13 +116,14 @@ INETfromString(const char *src, int *len, inet **retval)
 	last = 0;
 	type = 0;
 
-	if (*len < (int)sizeof(inet) || *retval == NULL) {
+	if (*len < sizeof(inet) || *retval == NULL) {
 		GDKfree(*retval);
 		*retval = GDKzalloc(sizeof(inet));
 		if( *retval == NULL){
 			*len = 0;
 			return -1;
 		}
+		*len = sizeof(inet);
 	} else {
 		memset(*retval, 0, sizeof(inet));
 	}
@@ -216,7 +217,7 @@ INETfromString(const char *src, int *len, inet **retval)
 		goto error;
 	}
 
-	return (int) (endptr - src);
+	return (ssize_t) (endptr - src);
 
   error:
 	in_setnil(*retval);
@@ -227,8 +228,8 @@ INETfromString(const char *src, int *len, inet **retval)
  * Warning: GDK function
  * Returns the length of the string
  */
-int
-INETtoString(str *retval, int *len, const inet *handle)
+ssize_t
+INETtoString(str *retval, size_t *len, const inet *handle)
 {
 	const inet *value = (const inet *)handle;
 
@@ -257,7 +258,7 @@ str
 INETnew(inet *retval, str *in)
 {
 	int pos;
-	int len = sizeof(inet);
+	size_t len = sizeof(inet);
 
 	pos = INETfromString(*in, &len, &retval);
 	if (pos < 0)
@@ -786,7 +787,7 @@ INET_inet(inet *d, const inet *s)
 str
 INET_fromstr(inet *ret, str *s)
 {
-	int len = sizeof(inet);
+	size_t len = sizeof(inet);
 	if (INETfromString(*s, &len, &ret) < 0)
 		throw(MAL, "inet.inet",  GDK_EXCEPTION);
 	return MAL_SUCCEED;

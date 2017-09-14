@@ -226,7 +226,7 @@ VALinit(ValPtr d, int tpe, const void *s)
 
 /* Format the value in RES in the standard way for the type of RES
  * into a newly allocated buffer which is returned through BUF. */
-int
+ssize_t
 VALformat(char **buf, const ValRecord *res)
 {
 	*buf = 0;

@@ -395,7 +395,7 @@ WLRinit(void)
 str
 WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str timelimit  = wlr_timelimit;
-	int size = 26;
+	size_t size = 26;
 	str msg;
 	(void) mb;
 
