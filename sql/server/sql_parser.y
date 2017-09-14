@@ -4427,8 +4427,7 @@ literal:
 		  lng value, *p = &value;
 		  sql_subtype t;
 
-		  lngFromStr($1, &len, &p);
-		  if (value == lng_nil)
+		  if (lngFromStr($1, &len, &p) < 0 || value == lng_nil)
 		  	err = 2;
 
 		  if (!err) {
@@ -4467,12 +4466,10 @@ literal:
 		  sql_subtype t;
 
 #ifdef HAVE_HGE
-		  hgeFromStr($1, &len, &p);
-		  if (value == hge_nil)
+		  if (hgeFromStr($1, &len, &p) < 0 || value == hge_nil)
 		  	err = 2;
 #else
-		  lngFromStr($1, &len, &p);
-		  if (value == lng_nil)
+		  if (lngFromStr($1, &len, &p) < 0 || value == lng_nil)
 		  	err = 2;
 #endif
 

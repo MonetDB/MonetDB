@@ -551,7 +551,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 					var = "nil";
 				s = 0;
 				r = NULL;
-				if (ATOMfromstr(t, &r, &s, var) <= 0 ||
+				if (ATOMfromstr(t, &r, &s, var) < 0 ||
 					BUNappend(b, r, FALSE) != GDK_SUCCEED) {
 					BBPreclaim(b);
 					GDKfree(r);
@@ -627,21 +627,23 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		val = mapi_fetch_field(mhdl, 0);
 
 		if (ATOMvarsized(rtype)) {
-			VALset(v, rtype, GDKstrdup(val == NULL ? str_nil : val));
+			p = GDKstrdup(val == NULL ? str_nil : val);
+			if (p == NULL)
+				throw(MAL, "remote.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			VALset(v, rtype, p);
+		} else if (ATOMfromstr(rtype, &p, &len, val == NULL ? "nil" : val) < 0) {
+			char *msg;
+			msg = createException(MAL, "remote.get",
+								  "unable to parse value: %s",
+								  val == NULL ? "nil" : val);
+			mapi_close_handle(mhdl);
+			MT_lock_unset(&c->lock);
+			GDKfree(p);
+			return msg;
 		} else {
-			ATOMfromstr(rtype, &p, &len, val == NULL ? "nil" : val);
-			if (p != NULL) {
-				VALset(v, rtype, p);
-				if (ATOMextern(rtype) == 0)
-					GDKfree(p);
-			} else {
-				char tval[BUFSIZ + 1];
-				snprintf(tval, BUFSIZ, "%s", val);
-				tval[BUFSIZ] = '\0';
-				mapi_close_handle(mhdl);
-				MT_lock_unset(&c->lock);
-				throw(MAL, "remote.get", "unable to parse value: %s", tval);
-			}
+			VALset(v, rtype, p);
+			if (ATOMextern(rtype) == 0)
+				GDKfree(p);
 		}
 	}
 
@@ -1047,7 +1049,7 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		s = 0;
 		r = NULL;
-		if (ATOMfromstr(t, &r, &s, var) <= 0 ||
+		if (ATOMfromstr(t, &r, &s, var) < 0 ||
 			BUNappend(b, r, FALSE) != GDK_SUCCEED) {
 			BBPreclaim(b);
 			GDKfree(r);
@@ -1199,7 +1201,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 				} else {
 					/* all values should be non-negative, so we check that
 					 * here as well */
-					if (lngFromStr(val, &len, &lvp) == 0 ||
+					if (lngFromStr(val, &len, &lvp) < 0 ||
 						lv < 0 /* includes lng_nil */)
 						throw(MAL, "remote.bincopyfrom",
 							  "bad %s value: %s", nme, val);

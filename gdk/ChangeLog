@@ -1,3 +1,8 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Thu Sep 14 2017 Sjoerd Mullender <sjoerd@acm.org>
+- The atom tostr and fromstr "methods" now always return -1 on error.
+  A return value greater than 0 is normal, a return value of 0 is not
+  normal, but technically not an error.
+

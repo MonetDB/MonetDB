@@ -1825,7 +1825,8 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * @item The @emph{ATOMfromstr()} parses an atom value from string
  * `s'. The memory allocation policy is the same as in
  * @emph{ATOMget()}. The return value is the number of parsed
- * characters.
+ * characters or -1 on failure.  Also in case of failure, the output
+ * parameter buf is a valid pointer or NULL.
  *
  * @item The @emph{ATOMprint()} prints an ASCII description of the
  * atom value pointed to by `val' on file descriptor `fd'. The return

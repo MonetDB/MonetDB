@@ -483,7 +483,10 @@ cstToken(Client cntxt, ValPtr cst)
 		if (cst->vtype == TYPE_flt) {
 			int len = i;
 			float *pval = 0;
-			fltFromStr(CURRENT(cntxt), &len, &pval);
+			if (fltFromStr(CURRENT(cntxt), &len, &pval) < 0) {
+				parseError(cntxt, GDKerrbuf);
+				return i;
+			}
 			if (pval) {
 				cst->val.fval = *pval;
 				GDKfree(pval);
@@ -493,7 +496,10 @@ cstToken(Client cntxt, ValPtr cst)
 		if (cst->vtype == TYPE_dbl) {
 			int len = i;
 			double *pval = 0;
-			dblFromStr(CURRENT(cntxt), &len, &pval);
+			if (dblFromStr(CURRENT(cntxt), &len, &pval) < 0) {
+				parseError(cntxt, GDKerrbuf);
+				return i;
+			}
 			if (pval) {
 				cst->val.dval = *pval;
 				GDKfree(pval);
@@ -503,7 +509,10 @@ cstToken(Client cntxt, ValPtr cst)
 		if (*s == '@') {
 			int len = (int) sizeof(lng);
 			lng l, *pval = &l;
-			lngFromStr(CURRENT(cntxt), &len, &pval);
+			if (lngFromStr(CURRENT(cntxt), &len, &pval) < 0) {
+				parseError(cntxt, GDKerrbuf);
+				return i;
+			}
 			if (l == lng_nil || l < 0
 #if SIZEOF_OID < SIZEOF_LNG
 				|| l > GDK_oid_max
@@ -535,7 +544,10 @@ cstToken(Client cntxt, ValPtr cst)
 			if (cst->vtype == TYPE_dbl) {
 				int len = i;
 				double *pval = 0;
-				dblFromStr(CURRENT(cntxt), &len, &pval);
+				if (dblFromStr(CURRENT(cntxt), &len, &pval) < 0) {
+					parseError(cntxt, GDKerrbuf);
+					return i;
+				}
 				if (pval) {
 					cst->val.dval = *pval;
 					GDKfree(pval);
@@ -544,7 +556,10 @@ cstToken(Client cntxt, ValPtr cst)
 			} else {
 				int len = i;
 				lng *pval = 0;
-				lngFromStr(CURRENT(cntxt), &len, &pval);
+				if (lngFromStr(CURRENT(cntxt), &len, &pval) < 0) {
+					parseError(cntxt, GDKerrbuf);
+					return i;
+				}
 				if (pval) {
 					cst->val.lval = *pval;
 					GDKfree(pval);
@@ -564,7 +579,10 @@ cstToken(Client cntxt, ValPtr cst)
 				i++;
 				s++;
 			}
-			hgeFromStr(CURRENT(cntxt), &len, &pval);
+			if (hgeFromStr(CURRENT(cntxt), &len, &pval) < 0) {
+				parseError(cntxt, GDKerrbuf);
+				return i;
+			}
 			if (pval) {
 				cst->val.hval = *pval;
 				GDKfree(pval);
@@ -582,7 +600,7 @@ handleInts:
 #ifdef HAVE_HGE
 			int len = (int) sizeof(hge);
 			hge l, *pval = &l;
-			if (hgeFromStr(CURRENT(cntxt), &len, &pval) <= 0 || l == hge_nil)
+			if (hgeFromStr(CURRENT(cntxt), &len, &pval) < 0)
 				l = hge_nil;
 
 			if ((hge) GDK_int_min < l && l <= (hge) GDK_int_max) {
@@ -601,7 +619,7 @@ handleInts:
 #else
 			int len = (int) sizeof(lng);
 			lng l, *pval = &l;
-			if (lngFromStr(CURRENT(cntxt), &len, &pval) <= 0 || l == lng_nil)
+			if (lngFromStr(CURRENT(cntxt), &len, &pval) < 0)
 				l = lng_nil;
 
 			if ((lng) GDK_int_min < l && l <= (lng) GDK_int_max) {

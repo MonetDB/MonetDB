@@ -645,6 +645,7 @@ XMLfromString(const char *src, int *len, xml *x)
 	} else {
 		char *err = XMLstr2xml(x, &src);
 		if (err != MAL_SUCCEED) {
+			GDKerror("%s", getExceptionMessageAndState(err));
 			freeException(err);
 			return -1;
 		}
@@ -670,7 +671,7 @@ XMLtoString(str *s, int *len, const char *src)
 		GDKfree(*s);
 		*s = (str) GDKmalloc(l);
 		if (*s == NULL)
-			return 0;
+			return -1;
 	}
 	strcpy(*s, src);
 	*len = l - 1;
@@ -685,12 +686,14 @@ int XMLfromString(const char *src, int *len, xml *x) {
 	(void) src;
 	(void) len;
 	(void) x;
+	GDKerror("not implemented\n");
 	return -1;
 }
 int XMLtoString(str *s, int *len, const char *src) {
 	(void) s;
 	(void) len;
 	(void) src;
+	GDKerror("not implemented\n");
 	return -1;
 }
 str XMLxml2str(str *s, xml *x) {

@@ -13666,7 +13666,8 @@ convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
 					end = i + 1;
 			}
 			src = BUNtvar(bi, i);
-			(*atomtostr)(&dst, &len, src);
+			if ((*atomtostr)(&dst, &len, src) < 0)
+				goto bunins_failed;
 			if ((*atomcmp)(src, nil) == 0)
 				nils++;
 			tfastins_nocheck(bn, i, dst, bn->twidth);
@@ -13686,7 +13687,8 @@ convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
 				if (++cand == candend)
 					end = i + 1;
 			}
-			(*atomtostr)(&dst, &len, src);
+			if ((*atomtostr)(&dst, &len, src) < 0)
+				goto bunins_failed;
 			if ((*atomcmp)(src, nil) == 0)
 				nils++;
 			tfastins_nocheck(bn, i, dst, bn->twidth);
@@ -13740,9 +13742,10 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 			nils++;
 		} else {
 			d = dst;
-			if ((l = (*atomfromstr)(s, &len, &d)) <= 0 ||
+			if ((l = (*atomfromstr)(s, &len, &d)) < 0 ||
 			    l < (int) strlen(s)) {
 				if (abort_on_error) {
+					GDKclrerr();
 					GDKerror("22018!conversion of string "
 						 "'%s' to type %s failed.\n",
 						 s, ATOMname(tp));
@@ -13875,7 +13878,8 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 					if (++cand == candend)
 						end = i + 1;
 				}
-				(*atomtostr)(&s, &len, &seq);
+				if ((*atomtostr)(&s, &len, &seq) < 0)
+					goto bunins_failed;
 				tfastins_nocheck(bn, i, s, bn->twidth);
 				seq++;
 			}
@@ -13918,7 +13922,8 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 		break;
 	case TYPE_str:
 		seq = oid_nil;
-		(*atomtostr)(&s, &len, &seq);
+		if ((*atomtostr)(&s, &len, &seq) < 0)
+			goto bunins_failed;
 		for (; i < cnt; i++) {
 			tfastins_nocheck(bn, i, s, bn->twidth);
 		}
@@ -13927,13 +13932,11 @@ convert_void_any(oid seq, BUN cnt, BAT *bn,
 		return BUN_NONE + 1;
 	}
 	nils += cnt - end;
-	if (s)
-		GDKfree(s);
+	GDKfree(s);
 	return nils;
 
   bunins_failed:
-	if (s)
-		GDKfree(s);
+	GDKfree(s);
 	return BUN_NONE + 2;
 }
 
@@ -14463,8 +14466,11 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 				ret->len = ATOMsize(ret->vtype);
 			}
 			if ((len = (*BATatoms[ret->vtype].atomFromStr)(
-				     v->val.sval, &ret->len, &p)) <= 0 ||
+				     v->val.sval, &ret->len, &p)) < 0 ||
 			    len < (int) strlen(v->val.sval)) {
+				if (ATOMextern(ret->vtype))
+					GDKfree(p);
+				GDKclrerr();
 				GDKerror("22018!conversion of string "
 					 "'%s' to type %s failed.\n",
 					 v->val.sval, ATOMname(ret->vtype));

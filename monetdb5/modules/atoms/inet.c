@@ -121,16 +121,20 @@ INETfromString(const char *src, int *len, inet **retval)
 		*retval = GDKzalloc(sizeof(inet));
 		if( *retval == NULL){
 			*len = 0;
-			return 0;
+			return -1;
 		}
 	} else {
 		memset(*retval, 0, sizeof(inet));
 	}
 
 	/* handle the nil string */
+	if (strcmp(src, "nil") == 0) {
+		in_setnil(*retval);
+		return 3;
+	}
 	if (strNil(src)) {
 		in_setnil(*retval);
-		return(0);
+		return 1;
 	}
 
 	/* use the DIY technique to guarantee maximum cross-platform
@@ -148,17 +152,17 @@ INETfromString(const char *src, int *len, inet **retval)
 				goto error;
 			}
 			switch (type) {
-				case 0:
-					(*retval)->q1 = (unsigned char) parse;
+			case 0:
+				(*retval)->q1 = (unsigned char) parse;
 				break;
-				case 1:
-					(*retval)->q2 = (unsigned char) parse;
+			case 1:
+				(*retval)->q2 = (unsigned char) parse;
 				break;
-				case 2:
-					(*retval)->q3 = (unsigned char) parse;
+			case 2:
+				(*retval)->q3 = (unsigned char) parse;
 				break;
-				case 3:
-					(*retval)->q4 = (unsigned char) parse;
+			case 3:
+				(*retval)->q4 = (unsigned char) parse;
 				break;
 			}
 
@@ -168,14 +172,14 @@ INETfromString(const char *src, int *len, inet **retval)
 			if (sep == '/') {
 				/* zero out (default) unused bytes */
 				switch (type) {
-					case 1:
-						(*retval)->q2 = (unsigned char) 0;
-						/* fall through */
-					case 2:
-						(*retval)->q3 = (unsigned char) 0;
-						/* fall through */
-					case 3:
-						(*retval)->q4 = (unsigned char) 0;
+				case 1:
+					(*retval)->q2 = (unsigned char) 0;
+					/* fall through */
+				case 2:
+					(*retval)->q3 = (unsigned char) 0;
+					/* fall through */
+				case 3:
+					(*retval)->q4 = (unsigned char) 0;
 					break;
 				}
 				/* force evaluation of the mask below when we break
@@ -214,10 +218,9 @@ INETfromString(const char *src, int *len, inet **retval)
 
 	return (int) (endptr - src);
 
-error: /* catch exception: return NULL */
+  error:
 	in_setnil(*retval);
-	*len = 0;	/* signal INETnew something went wrong */
-	return 0;
+	return -1;
 }
 /**
  * Returns the string representation of the given inet value.
@@ -233,20 +236,18 @@ INETtoString(str *retval, int *len, const inet *handle)
 		GDKfree(*retval);
 		*retval = GDKmalloc(sizeof(char) * (*len = 20));
 		if( *retval == NULL)
-			return 0;
+			return -1;
 	}
 	if (in_isnil(value)) {
-		*len = snprintf(*retval, *len, "(nil)");
+		return snprintf(*retval, *len, "nil");
 	} else if (value->mask == 32) {
-		*len = snprintf(*retval, *len, "%d.%d.%d.%d",
+		return snprintf(*retval, *len, "%d.%d.%d.%d",
 						value->q1, value->q2, value->q3, value->q4);
 	} else {
-		*len = snprintf(*retval, *len, "%d.%d.%d.%d/%d",
+		return snprintf(*retval, *len, "%d.%d.%d.%d/%d",
 						value->q1, value->q2, value->q3, value->q4,
 						value->mask);
 	}
-
-	return(*len);
 }
 /**
  * Returns a inet, parsed from a string.  The fromStr function is used
@@ -259,7 +260,7 @@ INETnew(inet *retval, str *in)
 	int len = sizeof(inet);
 
 	pos = INETfromString(*in, &len, &retval);
-	if (pos == 0)
+	if (pos < 0)
 		throw(PARSE, "inet.new", "Error while parsing at char %d", pos + 1);
 
 	return (MAL_SUCCEED);
@@ -786,7 +787,8 @@ str
 INET_fromstr(inet *ret, str *s)
 {
 	int len = sizeof(inet);
-	INETfromString(*s, &len, &ret);
+	if (INETfromString(*s, &len, &ret) < 0)
+		throw(MAL, "inet.inet",  GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 

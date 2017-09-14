@@ -112,29 +112,28 @@ int
 JSONfromString(const char *src, int *len, json *j)
 {
 	ssize_t slen = (ssize_t) strlen(src);
-	JSON *jt = JSONparse(src, FALSE);
+	JSON *jt;
 
-	if (*j)
-		GDKfree(*j);
-
-	if (!jt || jt->error) {
-		*j = GDKstrdup(str_nil);
-		if (jt)
-			JSONfree(jt);
-		return 0;
+	if ((jt = JSONparse(src, FALSE)) == NULL)
+		return -1;
+	if (jt->error) {
+		GDKerror("%s", getExceptionMessageAndState(jt->error));
+		JSONfree(jt);
+		return -1;
 	}
 	JSONfree(jt);
 
-	*len = (int) slen;
-	*j = GDKstrdup(src);
-	if (*j == NULL ||
-		GDKstrFromStr((unsigned char *) *j, (const unsigned char *) src, slen) < 0) {
+	if ((ssize_t) *len <= slen || *j == NULL) {
 		GDKfree(*j);
-		*j = GDKstrdup(str_nil);
-		*len = 2;
-		return 0;
+		if ((*j = GDKmalloc(slen + 1)) == NULL)
+			return -1;
+		*len = (int) slen + 1;
 	}
-	return *len;
+	if (GDKstrFromStr((unsigned char *) *j,
+					  (const unsigned char *) src, slen) < 0)
+		return -1;
+
+	return (int) strlen(*j);
 }
 
 int

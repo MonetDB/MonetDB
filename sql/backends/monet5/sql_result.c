@@ -79,7 +79,7 @@ mnstr_swap_lng(stream *s, lng lngval) {
 				*len = 5;				\
 				*Buf = GDKzalloc(*len);			\
 				if (*Buf == NULL) {			\
-					return 0;			\
+					return -1;			\
 				}					\
 			}						\
 			strcpy(*Buf, "NULL");				\
@@ -111,7 +111,7 @@ mnstr_swap_lng(stream *s, lng lngval) {
 			*len = l+1;					\
 			*Buf = GDKzalloc(*len);				\
 			if (*Buf == NULL) {				\
-				return 0;				\
+				return -1;				\
 			}						\
 		}							\
 		strcpy(*Buf, buf+cur+1);				\
@@ -137,7 +137,7 @@ dec_tostr(void *extra, char **Buf, int *len, int type, const void *a)
 	} else {
 		GDKerror("Decimal cannot be mapped to %s\n", ATOMname(type));
 	}
-	return 0;
+	return -1;
 }
 
 struct time_res {
@@ -169,13 +169,15 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 	tmp = (daytime) val;
 
 	len1 = daytime_tostr(&s1, &big, &tmp);
+	if (len1 < 0)
+		return -1;
 	if (len1 == 3 && strcmp(s1, "nil") == 0) {
 		if (*len < 4 || *buf == NULL) {
 			if (*buf)
 				GDKfree(*buf);
 			*buf = (str) GDKzalloc(*len = 4);
 			if (*buf == NULL) {
-				return 0;
+				return -1;
 			}
 		}
 		strcpy(*buf, s1);
@@ -192,7 +194,7 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 			GDKfree(*buf);
 		*buf = (str) GDKzalloc(*len = len1 + 8);
 		if (*buf == NULL) {
-			return 0;
+			return -1;
 		}
 	}
 	s = *buf;
@@ -231,6 +233,11 @@ sql_timestamp_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 		len1 = date_tostr(&s1, &big, &a->days);
 		len2 = daytime_tostr(&s2, &big, &a->msecs);
 	}
+	if (len1 < 0 || len2 < 0) {
+		GDKfree(s1);
+		GDKfree(s2);
+		return -1;
+	}
 
 	/* fixup the fraction, default is 3 */
 	len2 += (ts_res->fraction - 3);
@@ -242,7 +249,7 @@ sql_timestamp_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 			GDKfree(*buf);
 		*buf = (str) GDKzalloc(*len = len1 + len2 + 8);
 		if (*buf == NULL) {
-			return 0;
+			return -1;
 		}
 	}
 	s = *buf;
@@ -651,7 +658,7 @@ bat_max_hgelength(BAT *b)
 			return NULL;					\
 		r = c->data;						\
 		if (r == NULL &&					\
-			(r = GDKzalloc(sizeof(X))) == NULL)			\
+		    (r = GDKzalloc(sizeof(X))) == NULL)			\
 			return NULL;					\
 		c->data = r;						\
 		if (neg)						\
@@ -792,7 +799,7 @@ _ASCIIadt_frStr(Column *c, int type, const char *s)
 	if( strcmp(s,"nil")== 0)
 		return NULL;
 
-	len = (*BATatoms[type].atomFromStr) (s, &c->len, (ptr) &c->data);
+	len = (*BATatoms[type].atomFromStr) (s, &c->len, &c->data);
 	if (len < 0)
 		return NULL;
 	if (len == 0 || s[len]) {
@@ -835,7 +842,7 @@ _ASCIIadt_toStr(void *extra, char **buf, int *len, int type, const void *a)
 			*len = 2 * l + 3;
 			*buf = GDKzalloc(*len);
 			if (*buf == NULL) {
-				return 0;
+				return -1;
 			}
 		}
 		dst = *buf;
@@ -1329,26 +1336,28 @@ export_value(mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p,
 		ok = (mnstr_write(s, ns, ll, 1) == 1);
 	} else if (eclass == EC_DEC) {
 		l = dec_tostr((void *) (ptrdiff_t) sc, buf, len, mtype, p);
-		ok = (mnstr_write(s, *buf, l, 1) == 1);
+		if (l >= 0)
+			ok = (mnstr_write(s, *buf, l, 1) == 1);
 	} else if (eclass == EC_TIME) {
 		struct time_res ts_res;
 		ts_res.has_tz = (strcmp(sqlname, "timetz") == 0);
 		ts_res.fraction = d ? d - 1 : 0;
 		ts_res.timezone = m->timezone;
 		l = sql_time_tostr((void *) &ts_res, buf, len, mtype, p);
-
-		ok = (mnstr_write(s, *buf, l, 1) == 1);
+		if (l >= 0)
+			ok = (mnstr_write(s, *buf, l, 1) == 1);
 	} else if (eclass == EC_TIMESTAMP) {
 		struct time_res ts_res;
 		ts_res.has_tz = (strcmp(sqlname, "timestamptz") == 0);
 		ts_res.fraction = d ? d - 1 : 0;
 		ts_res.timezone = m->timezone;
 		l = sql_timestamp_tostr((void *) &ts_res, buf, len, mtype, p);
-
-		ok = (mnstr_write(s, *buf, l, 1) == 1);
+		if (l >= 0)
+			ok = (mnstr_write(s, *buf, l, 1) == 1);
 	} else if (eclass == EC_SEC) {
 		l = dec_tostr((void *) (ptrdiff_t) 3, buf, len, mtype, p);
-		ok = mnstr_write(s, *buf, l, 1) == 1;
+		if (l >= 0)
+			ok = mnstr_write(s, *buf, l, 1) == 1;
 	} else {
 		switch (mtype) {
 		case TYPE_bte:
@@ -1368,10 +1377,10 @@ export_value(mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p,
 			ok = mvc_send_hge(s, *(hge*)p);
 			break;
 #endif
-		default:{
+		default:
 			l = (*BATatoms[mtype].atomToStr) (buf, len, p);
-			ok = (mnstr_write(s, *buf, l, 1) == 1);
-		}
+			if (l >= 0)
+				ok = (mnstr_write(s, *buf, l, 1) == 1);
 		}
 	}
 	return ok;
@@ -1545,15 +1554,15 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 							blob *b = (blob*) BUNtail(iterators[i], row);
 							rowsize += sizeof(lng) + ((b->nitems == ~(size_t) 0) ? 0 : b->nitems);
 						} else {
-							size_t slen = 0;
+							int slen = 0;
 							if (convert_to_string) {
 								void *element = (void*) BUNtail(iterators[i], crow);
-								if ((slen = BATatoms[mtype].atomToStr(&result, &length, element)) == 0) {
+								if ((slen = BATatoms[mtype].atomToStr(&result, &length, element)) < 0) {
 									fres = -1;
 									goto cleanup;
 								}
 							} else {
-								slen = strlen((const char*) BUNtail(iterators[i], row));
+								slen = (int) strlen((const char*) BUNtail(iterators[i], row));
 							}
 							rowsize += slen + 1;
 						}
@@ -1640,7 +1649,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 							if (BATatoms[mtype].atomCmp(element, BATatoms[mtype].atomNull) == 0) {
 								str = str_nil;
 							} else {
-								if (BATatoms[mtype].atomToStr(&result, &length, element) == 0) {
+								if (BATatoms[mtype].atomToStr(&result, &length, element) < 0) {
 									fres = -1;
 									goto cleanup;
 								}

@@ -553,12 +553,16 @@ date_fromstr(const char *buf, int *len, date **d)
 		GDKfree(*d);
 		*d = (date *) GDKmalloc(*len = sizeof(date));
 		if( *d == NULL)
-			return 0;
+			return -1;
 	}
 	**d = date_nil;
+	if (strcmp(buf, str_nil) == 0)
+		return 1;
 	if (yearneg == 0 && !GDKisdigit(buf[0])) {
-		if (synonyms == 0)
-			return 0;
+		if (!synonyms) {
+			GDKerror("Syntax error in date.\n");
+			return -1;
+		}
 		yearlast = 1;
 		sep = ' ';
 	} else {
@@ -568,8 +572,9 @@ date_fromstr(const char *buf, int *len, date **d)
 				break;
 		}
 		sep = buf[pos++];
-		if (synonyms == 0 && sep != '-') {
-			return 0;
+		if (!synonyms && sep != '-') {
+			GDKerror("Syntax error in date.\n");
+			return -1;
 		}
 		sep = LOWER(sep);
 		if (sep >= 'a' && sep <= 'z') {
@@ -578,7 +583,8 @@ date_fromstr(const char *buf, int *len, date **d)
 			while (buf[pos] == ' ')
 				pos++;
 		} else if (sep != '-' && sep != '/' && sep != '\\') {
-			return 0;			/* syntax error */
+			GDKerror("Syntax error in date.\n");
+			return -1;
 		}
 	}
 	if (GDKisdigit(buf[pos])) {
@@ -586,20 +592,23 @@ date_fromstr(const char *buf, int *len, date **d)
 		if (GDKisdigit(buf[pos])) {
 			month = (buf[pos++] - '0') + month * 10;
 		}
-	} else if (synonyms == 0) {
-		return 0;
+	} else if (!synonyms) {
+		GDKerror("Syntax error in date.\n");
+		return -1;
 	} else {
 		pos += parse_substr(&month, buf + pos, 3, MONTHS, 12);
 	}
 	if (month == int_nil || (sep && buf[pos++] != sep)) {
-		return 0;				/* syntax error */
+		GDKerror("Syntax error in date.\n");
+		return -1;
 	}
 	if (sep == ' ') {
 		while (buf[pos] == ' ')
 			pos++;
 	}
 	if (!GDKisdigit(buf[pos])) {
-		return 0;				/* syntax error */
+		GDKerror("Syntax error in date.\n");
+		return -1;
 	}
 	while (GDKisdigit(buf[pos])) {
 		day = (buf[pos++] - '0') + day * 10;
@@ -621,8 +630,10 @@ date_fromstr(const char *buf, int *len, date **d)
 	}
 	/* handle semantic error here (returns nil in that case) */
 	**d = todate(day, month, yearneg ? -year : year);
-	if (**d == date_nil)
-		return 0;
+	if (**d == date_nil) {
+		GDKerror("Semantic error in date.\n");
+		return -1;
+	}
 	return pos;
 }
 
@@ -638,7 +649,7 @@ date_tostr(str *buf, int *len, const date *val)
 		GDKfree(*buf);
 		*buf = (str) GDKmalloc(*len = 15);
 		if( *buf == NULL)
-			return 0;
+			return -1;
 	}
 	if (*val == date_nil || !DATE(day, month, year)) {
 		strcpy(*buf, "nil");
@@ -660,18 +671,22 @@ daytime_fromstr(const char *buf, int *len, daytime **ret)
 		GDKfree(*ret);
 		*ret = (daytime *) GDKmalloc(*len = sizeof(daytime));
 		if (*ret == NULL)
-			return 0;
+			return -1;
 	}
 	**ret = daytime_nil;
+	if (strcmp(buf, str_nil) == 0)
+		return 1;
 	if (!GDKisdigit(buf[pos])) {
-		return 0;				/* syntax error */
+		GDKerror("Syntax error in time.\n");
+		return -1;
 	}
 	for (hour = 0; GDKisdigit(buf[pos]); pos++) {
 		if (hour <= 24)
 			hour = (buf[pos] - '0') + hour * 10;
 	}
 	if ((buf[pos++] != ':') || !GDKisdigit(buf[pos])) {
-		return 0;				/* syntax error */
+		GDKerror("Syntax error in time.\n");
+		return -1;
 	}
 	for (min = 0; GDKisdigit(buf[pos]); pos++) {
 		if (min <= 60)
@@ -720,6 +735,10 @@ daytime_fromstr(const char *buf, int *len, daytime **ret)
 	}
 	/* handle semantic error here (returns nil in that case) */
 	**ret = totime(hour, min, sec, msec);
+	if (**ret == daytime_nil) {
+		GDKerror("Semantic error in time.\n");
+		return -1;
+	}
 	return pos;
 }
 
@@ -731,14 +750,14 @@ daytime_tz_fromstr(const char *buf, int *len, daytime **ret)
 	lng val, offset = 0;
 	daytime mtime = 24 * 60 * 60 * 1000;
 
-	if (!*ret || **ret == daytime_nil)
+	if (pos < 0 || **ret == daytime_nil)
 		return pos;
 
 	s = buf + pos;
 	pos = 0;
 	while (GDKisspace(*s))
 		s++;
-	/* incase of gmt we need to add the time zone */
+	/* in case of gmt we need to add the time zone */
 	if (fleximatch(s, "gmt", 0) == 3) {
 		s += 3;
 	}
@@ -773,14 +792,13 @@ daytime_tostr(str *buf, int *len, const daytime *val)
 		GDKfree(*buf);
 		*buf = (str) GDKmalloc(*len = 13);
 		if( *buf == NULL)
-			return 0;
+			return -1;
 	}
 	if (*val == daytime_nil || !TIME(hour, min, sec, msec)) {
 		strcpy(*buf, "nil");
 		return 3;
 	}
-	sprintf(*buf, "%02d:%02d:%02d.%03d", hour, min, sec, msec);
-	return 12;
+	return sprintf(*buf, "%02d:%02d:%02d.%03d", hour, min, sec, msec);
 }
 
 /*
@@ -798,28 +816,41 @@ timestamp_fromstr(const char *buf, int *len, timestamp **ret)
 		GDKfree(*ret);
 		*ret = (timestamp *) GDKmalloc(*len = sizeof(timestamp));
 		if( *ret == NULL)
-			return 0;
+			return -1;
 	}
 	d = &(*ret)->days;
 	t = &(*ret)->msecs;
 	(*ret)->msecs = 0;
-	s += date_fromstr(buf, len, &d);
-	if (s > buf && (*(s) == '@' || *s == ' ' || *s == '-' || *s == 'T')) {
-		while (*(++s) == ' ')
+	pos = date_fromstr(buf, len, &d);
+	if (pos < 0)
+		return pos;
+	if (*d == date_nil) {
+		**ret = *timestamp_nil;
+		return pos;
+	}
+	s += pos;
+	if (*s == '@' || *s == ' ' || *s == '-' || *s == 'T') {
+		while (*++s == ' ')
 			;
 		pos = daytime_fromstr(s, len, &t);
-		s = pos ? s + pos : buf;
-	} else if (!s || *s) {
+		if (pos < 0)
+			return pos;
+		s += pos;
+		if (*t == daytime_nil) {
+			**ret = *timestamp_nil;
+			return (int) (s - buf);
+		}
+	} else if (*s) {
 		(*ret)->msecs = daytime_nil;
 	}
-	if (s <= buf || (*ret)->days == date_nil || (*ret)->msecs == daytime_nil) {
+	if ((*ret)->days == date_nil || (*ret)->msecs == daytime_nil) {
 		**ret = *timestamp_nil;
 	} else {
 		lng offset = 0;
 
 		while (GDKisspace(*s))
 			s++;
-		/* incase of gmt we need to add the time zone */
+		/* in case of gmt we need to add the time zone */
 		if (fleximatch(s, "gmt", 0) == 3) {
 			s += 3;
 		}
@@ -852,7 +883,7 @@ timestamp_tz_fromstr(const char *buf, int *len, timestamp **ret)
 	int pos = timestamp_fromstr(s, len, ret);
 	lng offset = 0;
 
-	if (!*ret || *ret == timestamp_nil)
+	if (pos < 0 || *ret == timestamp_nil)
 		return pos;
 
 	s = buf + pos;
@@ -897,12 +928,14 @@ timestamp_tz_tostr(str *buf, int *len, const timestamp *val, const tzone *timezo
 		}
 		len1 = date_tostr(&s1, &big, &tmp.days);
 		len2 = daytime_tostr(&s2, &big, &tmp.msecs);
+		if (len1 < 0 || len2 < 0)
+			return -1;
 
 		if (*len < 2 + len1 + len2 || *buf == NULL) {
 			GDKfree(*buf);
-			*buf = (str) GDKmalloc(*len = len1 + len2 + 2);
+			*buf = GDKmalloc(*len = len1 + len2 + 2);
 			if( *buf == NULL)
-				return 0;
+				return -1;
 		}
 		s = *buf;
 		if (ts_isnil(tmp)) {
@@ -959,7 +992,7 @@ rule_tostr(str *buf, int *len, const rule *r)
 		GDKfree(*buf);
 		*buf = (str) GDKmalloc(*len = 64);
 		if( *buf == NULL)
-			return 0;
+			return -1;
 	}
 	if (r->asint == int_nil) {
 		strcpy(*buf, "nil");
@@ -997,9 +1030,11 @@ rule_fromstr(const char *buf, int *len, rule **d)
 		GDKfree(*d);
 		*d = (rule *) GDKmalloc(*len = sizeof(rule));
 		if( *d == NULL)
-			return 0;
+			return -1;
 	}
 	(*d)->asint = int_nil;
+	if (strcmp(buf, str_nil) == 0)
+		return 1;
 
 	/* start parsing something like "first", "second", .. etc */
 	pos = parse_substr(&day, cur, 0, COUNT1, 6);
@@ -1034,7 +1069,8 @@ rule_fromstr(const char *buf, int *len, rule **d)
 			day = int_nil;		/* re-read below */
 		}
 		if (pos == 0) {
-			return 0;			/* syntax error */
+			GDKerror("Syntax error in timezone rule.\n");
+			return -1;
 		}
 		cur += pos;
 	}
@@ -1042,7 +1078,8 @@ rule_fromstr(const char *buf, int *len, rule **d)
 		/* RULE 5:  X-th of month */
 		cur += parse_substr(&month, cur, 3, MONTHS, 12);
 		if (month == int_nil || *cur++ != ' ' || !GDKisdigit(*cur)) {
-			return 0;			/* syntax error */
+			GDKerror("Syntax error in timezone rule.\n");
+			return -1;
 		}
 		day = 0;
 		while (GDKisdigit(*cur) && day < 31) {
@@ -1052,13 +1089,15 @@ rule_fromstr(const char *buf, int *len, rule **d)
 
 	/* parse hours:minutes */
 	if (*cur++ != '@' || !GDKisdigit(*cur)) {
-		return 0;				/* syntax error */
+		GDKerror("Syntax error in timezone rule.\n");
+		return -1;
 	}
 	while (GDKisdigit(*cur) && hours < 24) {
 		hours = (*(cur++) - '0') + hours * 10;
 	}
 	if (*cur++ != ':' || !GDKisdigit(*cur)) {
-		return 0;				/* syntax error */
+		GDKerror("Syntax error in timezone rule.\n");
+		return -1;
 	}
 	while (GDKisdigit(*cur) && minutes < 60) {
 		minutes = (*(cur++) - '0') + minutes * 10;
@@ -1091,13 +1130,16 @@ tzone_fromstr(const char *buf, int *len, tzone **d)
 		GDKfree(*d);
 		*d = (tzone *) GDKmalloc(*len = sizeof(tzone));
 		if( *d == NULL)
-			return 0;
+			return -1;
 	}
 	**d = *tzone_nil;
+	if (strcmp(buf, str_nil) == 0)
+		return 1;
 
 	/* syntax checks */
 	if (fleximatch(cur, "gmt", 0) == 0) {
-		return 0;				/* syntax error */
+		GDKerror("Syntax error in timezone.\n");
+		return -1;
 	}
 	cur += 3;
 	if (*cur == '-' || *cur == '+') {
@@ -1105,7 +1147,8 @@ tzone_fromstr(const char *buf, int *len, tzone **d)
 
 		neg_offset = (*cur++ == '-');
 		if (!GDKisdigit(*cur)) {
-			return 0;			/* syntax error */
+			GDKerror("Syntax error in timezone.\n");
+			return -1;
 		}
 		while (GDKisdigit(*cur) && hours < 9999) {
 			hours = (*(cur++) - '0') + hours * 10;
@@ -1119,17 +1162,32 @@ tzone_fromstr(const char *buf, int *len, tzone **d)
 			minutes = hours % 100;
 			hours = hours / 100;
 		} else {
-			return 0;			/* syntax error */
+			GDKerror("Syntax error in timezone.\n");
+			return -1;
 		}
 	}
 	if (fleximatch(cur, "-dst[", 0)) {
 		pos = rule_fromstr(cur += 5, len, &rp1);
-		if (pos == 0 || cur[pos++] != ',') {
-			return 0;			/* syntax error */
+		if (pos < 0)
+			return pos;
+		if (rp1->asint == int_nil) {
+			**d = *tzone_nil;
+			return (int) (cur + pos - buf);;
+		}
+		if (cur[pos++] != ',') {
+			GDKerror("Syntax error in timezone.\n");
+			return -1;
 		}
 		pos = rule_fromstr(cur += pos, len, &rp2);
-		if (pos == 0 || cur[pos++] != ']') {
-			return 0;			/* syntax error */
+		if (pos < 0)
+			return pos;
+		if (rp2->asint == int_nil) {
+			**d = *tzone_nil;
+			return (int) (cur + pos - buf);;
+		}
+		if (cur[pos++] != ']') {
+			GDKerror("Syntax error in timezone.\n");
+			return -1;
 		}
 		cur += pos;
 	}
@@ -1158,7 +1216,7 @@ tzone_tostr(str *buf, int *len, const tzone *z)
 		GDKfree(*buf);
 		*buf = (str) GDKmalloc(*len = 160);
 		if( *buf == NULL)
-			return 0;
+			return -1;
 	}
 	s = *buf;
 	if (tz_isnil(*z)) {
@@ -1183,11 +1241,18 @@ tzone_tostr(str *buf, int *len, const tzone *z)
 			s += 6;
 		}
 		if (z->dst) {
+			int l;
 			strcpy(s, "-DST[");
 			s += 5;
-			s += rule_tostr(&s, len, &dst_start);
+			l = rule_tostr(&s, len, &dst_start);
+			if (l < 0)
+				return -1;
+			s += l;
 			*s++ = ',';
-			s += rule_tostr(&s, len, &dst_end);
+			l = rule_tostr(&s, len, &dst_end);
+			if (l < 0)
+				return -1;
+			s += l;
 			*s++ = ']';
 			*s++ = '"';
 			*s = 0;
@@ -1518,16 +1583,14 @@ MTIMEdate_date(date *d, const date *s)
 str
 MTIMEdate_fromstr(date *ret, const char * const *s)
 {
-	int len = 0;
-	date *d = 0;
+	int len = (int) sizeof(date);
 
 	if (strcmp(*s, "nil") == 0) {
 		*ret = date_nil;
 		return MAL_SUCCEED;
 	}
-	date_fromstr(*s, &len, &d);
-	*ret = *d;
-	GDKfree(d);
+	if (date_fromstr(*s, &len, &ret) < 0)
+		throw(MAL, "mtime.date", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 
@@ -1550,14 +1613,15 @@ MTIMEdaytime_create(daytime *ret, const int *hour, const int *min, const int *se
 str
 MTIMEtimestamp_fromstr(timestamp *ret, const char * const *d)
 {
-	int len = (int) strlen(*d);
+	int len = (int) sizeof(timestamp);
 
 	if (strcmp(*d, "nil") == 0) {
 		ret->msecs = daytime_nil;
 		ret->days = date_nil;
 		return MAL_SUCCEED;
 	}
-	timestamp_fromstr(*d, &len, &ret);
+	if (timestamp_fromstr(*d, &len, &ret) < 0)
+		throw(MAL, "mtime.timestamp", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 
@@ -2216,16 +2280,14 @@ MTIMEtimestamp_inside_dst(bit *ret, const timestamp *p, const tzone *z)
 str
 MTIMErule_fromstr(rule *ret, const char * const *s)
 {
-	int len = 0;
-	rule *d = 0;
+	int len = (int) sizeof(rule);
 
 	if (strcmp(*s, "nil") == 0) {
 		ret->asint = int_nil;
 		return MAL_SUCCEED;
 	}
-	rule_fromstr(*s, &len, &d);
-	*ret = *d;
-	GDKfree(d);
+	if (rule_fromstr(*s, &len, &ret) < 0)
+		throw(MAL, "mtime.rule", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 
@@ -2510,7 +2572,10 @@ MTIMEtzone_tostr(str *s, const tzone *ret)
 	char *s1 = NULL;
 	int len = 0;
 
-	tzone_tostr(&s1, &len, ret);
+	if (tzone_tostr(&s1, &len, ret) < 0) {
+		GDKfree(s1);
+		throw(MAL, "mtime,str", GDK_EXCEPTION);
+	}
 	*s = s1;
 	return MAL_SUCCEED;
 }
@@ -2518,38 +2583,28 @@ MTIMEtzone_tostr(str *s, const tzone *ret)
 str
 MTIMEtzone_fromstr(tzone *ret, const char * const *s)
 {
-	int len = 0;
-	tzone *d = 0;
+	int len = (int) sizeof(tzone);
 
 	if (strcmp(*s, "nil") == 0) {
 		*ret = *tzone_nil;
 		return MAL_SUCCEED;
 	}
-	if (tzone_fromstr(*s, &len, &d) == 0) {
-		GDKfree(d);
-		throw(MAL, "mtime.timezone", "syntax error");
-	}
-	*ret = *d;
-	GDKfree(d);
+	if (tzone_fromstr(*s, &len, &ret) < 0)
+		throw(MAL, "mtime.timezone", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 
 str
 MTIMEdaytime_fromstr(daytime *ret, const char * const *s)
 {
-	int len = 0;
-	daytime *d = 0;
+	int len = (int) sizeof(daytime);
 
 	if (strcmp(*s, "nil") == 0) {
 		*ret = daytime_nil;
 		return MAL_SUCCEED;
 	}
-	if (daytime_fromstr(*s, &len, &d) == 0) {
-		GDKfree(d);
-		throw(MAL, "mtime.daytime", "syntax error");
-	}
-	*ret = *d;
-	GDKfree(d);
+	if (daytime_fromstr(*s, &len, &ret) < 0)
+		throw(MAL, "mtime.daytime", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 

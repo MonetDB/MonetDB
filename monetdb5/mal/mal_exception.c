@@ -94,9 +94,8 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 	str ret;
 
 	if (GDKerrbuf &&
-		/* prevent recursion
-		 * note, sizeof("string") includes terminating NULL byte */
-		strncmp(format, SQLSTATE(HY001) MAL_MALLOC_FAIL ":", sizeof(MAL_MALLOC_FAIL)) != 0 &&
+		(ret = strstr(format, MAL_MALLOC_FAIL)) != NULL &&
+		ret[strlen(MAL_MALLOC_FAIL)] != ':' &&
 		(strncmp(GDKerrbuf, "GDKmalloc", 9) == 0 ||
 		 strncmp(GDKerrbuf, "GDKrealloc", 10) == 0 ||
 		 strncmp(GDKerrbuf, "GDKzalloc", 9) == 0 ||
@@ -114,15 +113,19 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 		char *p = GDKerrbuf;
 		if (strncmp(p, GDKERROR, strlen(GDKERROR)) == 0)
 			p += strlen(GDKERROR);
-		ret = createException(type, fcn, "GDK reported error: %s", p);
+		if (strlen(p) > 6 && p[5] == '!')
+			ret = createException(type, fcn, "%s", p);
+		else
+			ret = createException(type, fcn, "GDK reported error: %s", p);
 		GDKclrerr();
 		return ret;
 	}
 	va_start(ap, format);
 	ret = createExceptionInternal(type, fcn, format, ap);
 	va_end(ap);
+	GDKclrerr();
 
-	return(ret);
+	return ret;
 }
 
 void

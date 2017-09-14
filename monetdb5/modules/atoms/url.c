@@ -289,14 +289,20 @@ x2c(char *what)
 int
 URLfromString(const char *src, int *len, str *u)
 {
-	/* actually parse the message for valid url */
-	if (*u !=0)
+	size_t l = strlen(src) + 1;
+
+	if (*len < (int) l || *u == NULL) {
 		GDKfree(*u);
+		*u = GDKmalloc(l);
+		if (*u == NULL)
+			return -1;
+		*len = (int) l;
+	}
 
-	*len = (int) strlen(src);
-	*u = GDKstrdup(src);
+	/* actually parse the message for valid url */
 
-	return *len;
+	memcpy(*u, src, l);
+	return (int) l - 1;
 }
 
 int
@@ -306,7 +312,7 @@ URLtoString(str *s, int *len, const char *src)
 
 	if (GDK_STRNIL(src)) {
 		*s = GDKstrdup("nil");
-		return 0;
+		return *s ? 1 : -1;
 	}
 	l = (int) strlen(src) + 3;
 	/* if( !*s) *s= (str)GDKmalloc(*len = l); */
@@ -315,7 +321,7 @@ URLtoString(str *s, int *len, const char *src)
 		GDKfree(*s);
 		*s = (str) GDKmalloc(l);
 		if (*s == NULL)
-			return 0;
+			return -1;
 	}
 	snprintf(*s, l, "\"%s\"", src);
 	*len = l - 1;

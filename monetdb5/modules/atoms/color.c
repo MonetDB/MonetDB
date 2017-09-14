@@ -69,7 +69,7 @@ color_fromstr(const char *colorStr, int *len, color **c)
 		GDKfree(*c);
 		*c = GDKmalloc(sizeof(color));
 		if( *c == NULL)
-			return 0;
+			return -1;
 		*len = sizeof(color);
 	}
 
@@ -104,7 +104,7 @@ color_tostr(char **colorStr, int *len, const color *c)
 		GDKfree(*colorStr);
 		*colorStr = GDKmalloc(11);
 		if( *colorStr == NULL)
-			return 0;
+			return -1;
 		*len = 11;
 	}
 
@@ -123,7 +123,8 @@ CLRstr(str *s, const color *c)
 	int len = 0;
 	str t = 0;
 
-	color_tostr(&t, &len, c);
+	if (color_tostr(&t, &len, c) < 0)
+		throw(MAL, "color.str", GDK_EXCEPTION);
 	*s = (str) t;
 	return MAL_SUCCEED;
 }
@@ -373,7 +374,7 @@ CLRcolor(color *c, const char **val)
 {
 	int len = (int) strlen(*val);
 
-	color_fromstr(*val, &len, &c);
+	if (color_fromstr(*val, &len, &c) < 0)
+		throw(MAL, "color.color", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
-

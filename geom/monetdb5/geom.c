@@ -2243,14 +2243,15 @@ wkbaFROMSTR_withSRID(const char *fromStr, int *len, wkba **toArray, int srid)
 	skipBytes += sizeof(int);
 	*toArray = GDKmalloc(wkba_size(items));
 	if (*toArray == NULL)
-		return 0;
+		return -1;
 
 	for (i = 0; i < items; i++) {
 		size_t parsedBytes;
 		str err = wkbFROMSTR_withSRID(fromStr + skipBytes, len, &(*toArray)->data[i], srid, &parsedBytes);
 		if (err != MAL_SUCCEED) {
+			GDKerror("%s", getExceptionMessageAndState(err));
 			freeException(err);
-			return 0;
+			return -1;
 		}
 		skipBytes += parsedBytes;
 	}
@@ -2559,7 +2560,7 @@ wkbAsText(char **txt, wkb **geomWKB, int *withSRID)
 	if ((*geomWKB)->srid < 0)
 		throw(MAL, "geom.AsText", SQLSTATE(38000) "Geod negative SRID");
 
-	if (wkbTOSTR(&wkt, &len, *geomWKB) == 0)
+	if (wkbTOSTR(&wkt, &len, *geomWKB) < 0)
 		throw(MAL, "geom.AsText", SQLSTATE(38000) "Geos failed to create Text from Well Known Format");
 
 	if (withSRID == NULL || *withSRID == 0) {	//accepting NULL withSRID to make internal use of it easier
@@ -5070,6 +5071,10 @@ wkbTOSTR(char **geomWKT, int *len, const wkb *geomWKB)
 		GEOSWKTWriter_setOutputDimension(WKT_wr, GEOSGeom_getCoordinateDimension(geosGeometry));
 		GEOSWKTWriter_setTrim(WKT_wr, 1);
 		wkt = GEOSWKTWriter_write(WKT_wr, geosGeometry);
+		if (wkt == NULL) {
+			GDKerror("GEOSWKTWriter_write failed\n");
+			return -1;
+		}
 		l = strlen(wkt);
 		assert(l < GDK_int_max);
 		dstStrLen = l + 2;	/* add quotes */
@@ -5083,7 +5088,7 @@ wkbTOSTR(char **geomWKT, int *len, const wkb *geomWKB)
 			GDKfree(*geomWKT);
 			if ((*geomWKT = GDKmalloc(*len)) == NULL) {
 				GEOSFree(wkt);
-				return 0;
+				return -1;
 			}
 		}
 		snprintf(*geomWKT, *len, "\"%s\"", wkt);
@@ -5092,7 +5097,7 @@ wkbTOSTR(char **geomWKT, int *len, const wkb *geomWKB)
 		if (*len < 4 || *geomWKT == NULL) {
 			GDKfree(*geomWKT);
 			if ((*geomWKT = GDKmalloc(*len = 4)) == NULL)
-				return 0;
+				return -1;
 		}
 		strcpy(*geomWKT, "nil");
 	}
@@ -5109,8 +5114,9 @@ wkbFROMSTR(const char *geomWKT, int *len, wkb **geomWKB)
 
 	err = wkbFROMSTR_withSRID(geomWKT, len, geomWKB, 0, &parsedBytes);
 	if (err != MAL_SUCCEED) {
+		GDKerror("%s", getExceptionMessageAndState(err));
 		freeException(err);
-		return 0;
+		return -1;
 	}
 	return (int) parsedBytes;
 }
@@ -5251,7 +5257,7 @@ mbrTOSTR(char **dst, int *len, const mbr *atom)
 	if (*len < (int) dstStrLen + 1 || *dst == NULL) {
 		GDKfree(*dst);
 		if ((*dst = GDKmalloc(*len = (int) dstStrLen + 1)) == NULL)
-			return 0;
+			return -1;
 	}
 
 	if (dstStrLen > 3)
@@ -5279,20 +5285,22 @@ mbrFROMSTR(const char *src, int *len, mbr **atom)
 		/* Parse the mbr */
 		if ((c - src) != 3 && (c - src) != 4) {
 			GDKerror("ParseException: Expected a string like 'MBR(0 0,1 1)' or 'MBR (0 0,1 1)'\n");
-			return 0;
+			return -1;
 		}
 
 		if (sscanf(c, "(%lf %lf,%lf %lf)", &xmin, &ymin, &xmax, &ymax) != 4) {
 			GDKerror("ParseException: Not enough coordinates.\n");
-			return 0;
+			return -1;
 		}
-	} else if (!nil && (geosMbr = GEOSGeomFromWKT(src)) == NULL)
-		return 0;
+	} else if (!nil && (geosMbr = GEOSGeomFromWKT(src)) == NULL) {
+		GDKerror("GEOSGeomFromWKT failed\n");
+		return -1;
+	}
 
 	if (*len < (int) sizeof(mbr) || *atom == NULL) {
 		GDKfree(*atom);
 		if ((*atom = GDKmalloc(*len = sizeof(mbr))) == NULL)
-			return 0;
+			return -1;
 	}
 	if (nil) {
 		nchars = 3;
@@ -5410,12 +5418,6 @@ mbrWRITE(const mbr *c, stream *s, size_t cnt)
 
 /* Creates the string representation of a wkb_array */
 /* return length of resulting string. */
-
-/* StM: Open question / ToDo:
- * why is len of type int,
- * while the returned length (correctly!) is of type size_t ?
- * (not only here, but also elsewhere in this file / the geom code)
- */
 int
 wkbaTOSTR(char **toStr, int *len, const wkba *fromArray)
 {
@@ -5427,7 +5429,7 @@ wkbaTOSTR(char **toStr, int *len, const wkba *fromArray)
 	char *toStrPtr = NULL, *itemsNumStr = GDKmalloc((itemsNumDigits + 1) * sizeof(char));
 
 	if (itemsNumStr == NULL)
-		return 0;
+		return -1;
 
 	sprintf(itemsNumStr, "%d", items);
 	dataSize = strlen(itemsNumStr);
@@ -5436,19 +5438,19 @@ wkbaTOSTR(char **toStr, int *len, const wkba *fromArray)
 	partialStrs = GDKzalloc(items * sizeof(char *));
 	if (partialStrs == NULL) {
 		GDKfree(itemsNumStr);
-		return 0;
+		return -1;
 	}
 	//create the string version of each wkb
 	for (i = 0; i < items; i++) {
 		int llen = 0;
 		int ds;
 		ds = wkbTOSTR(&partialStrs[i], &llen, fromArray->data[i]);
-		if (ds <= 0) {
+		if (ds < 0) {
 			GDKfree(itemsNumStr);
 			while (i >= 0)
 				GDKfree(partialStrs[i--]);
 			GDKfree(partialStrs);
-			return 0;
+			return -1;
 		}
 		dataSize += ds - 2;	//remove quotes
 
@@ -5460,7 +5462,7 @@ wkbaTOSTR(char **toStr, int *len, const wkba *fromArray)
 			if (*len < 4 || *toStr == NULL) {
 				GDKfree(*toStr);
 				if ((*toStr = GDKmalloc(*len = 4)) == NULL)
-					return 0;
+					return -1;
 			}
 			strcpy(*toStr, "nil");
 			return 3;
@@ -5481,7 +5483,7 @@ wkbaTOSTR(char **toStr, int *len, const wkba *fromArray)
 				GDKfree(partialStrs[i]);
 			GDKfree(partialStrs);
 			GDKfree(itemsNumStr);
-			return 0;
+			return -1;
 		}
 	}
 	toStrPtr = *toStr;

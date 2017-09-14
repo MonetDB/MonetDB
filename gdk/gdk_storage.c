@@ -953,6 +953,11 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 		mnstr_write(s, "[ ", 1, 2);
 		for (i = 0; i < argc; i++) {
 			len = colinfo[i].s(&buf, &buflen, BUNtail(colinfo[i].i, n));
+			if (len < 0) {
+				GDKfree(buf);
+				GDKfree(colinfo);
+				return GDK_FAIL;
+			}
 			if (i > 0)
 				mnstr_write(s, ",\t", 1, 2);
 			mnstr_write(s, buf, 1, len);

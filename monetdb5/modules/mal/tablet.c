@@ -290,6 +290,8 @@ output_line(char **buf, int *len, char **localbuf, int *locallen, Column *fmt, s
 					l = (int) strlen(f->nullstr);
 				} else {
 					l = f->tostr(f->extra, localbuf, locallen, f->adt, p);
+					if (l < 0)
+						return -1;
 					p = *localbuf;
 				}
 				if (fill + l + f->seplen >= *len) {
@@ -332,6 +334,8 @@ output_line_dense(char **buf, int *len, char **localbuf, int *locallen, Column *
 				l = (int) strlen(p);
 			} else {
 				l = f->tostr(f->extra, localbuf, locallen, f->adt, p);
+				if (l < 0)
+					return -1;
 				p = *localbuf;
 			}
 			if (fill + l + f->seplen >= *len) {
@@ -373,7 +377,7 @@ output_line_lookup(char **buf, int *len, Column *fmt, stream *fd, BUN nr_attrs, 
 			} else {
 				int l = f->tostr(f->extra, buf, len, f->adt, p);
 
-				if (mnstr_write(fd, *buf, 1, l) != l)
+				if (l < 0 || mnstr_write(fd, *buf, 1, l) != l)
 					return TABLET_error(fd);
 			}
 		}

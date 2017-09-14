@@ -43,8 +43,10 @@ FUN(do_,TP1,_dec2dec_,TP2) (TP2 *restrict res, int s1, TP1 val, int p, int s2)
 		    val > GDKmax(TP2) / scales[s2 - s1]) {
 			char *buf = NULL, *msg;
 			int len = 0;
-			BATatoms[TPE(TP1)].atomToStr(&buf, &len, &val);
-			msg = createException(SQL, "convert", SQLSTATE(22003) "Value (%s%0*d) exceeds limits of type "STRNG(TP2), buf, s2 - s1, 0);
+			if (BATatoms[TPE(TP1)].atomToStr(&buf, &len, &val) < 0)
+				msg = createException(SQL, "convert", SQLSTATE(22003) "value exceeds limits of type "STRNG(TP2));
+			else
+				msg = createException(SQL, "convert", SQLSTATE(22003) "value (%s%0*d) exceeds limits of type "STRNG(TP2), buf, s2 - s1, 0);
 			GDKfree(buf);
 			return msg;
 		}
@@ -54,8 +56,10 @@ FUN(do_,TP1,_dec2dec_,TP2) (TP2 *restrict res, int s1, TP1 val, int p, int s2)
 		    val / scales[s1 - s2] > GDKmax(TP2)) {
 			char *buf = NULL, *msg;
 			int len = 0;
-			BATatoms[TPE(TP1)].atomToStr(&buf, &len, &val);
-			msg = createException(SQL, "convert", SQLSTATE(22003) "Value (%.*s) exceeds limits of type "STRNG(TP2), s1 - s2, buf);
+			if (BATatoms[TPE(TP1)].atomToStr(&buf, &len, &val) < 0)
+				msg = createException(SQL, "convert", SQLSTATE(22003) "Value exceeds limits of type "STRNG(TP2));
+			else
+				msg = createException(SQL, "convert", SQLSTATE(22003) "Value (%.*s) exceeds limits of type "STRNG(TP2), s1 - s2, buf);
 			GDKfree(buf);
 			return msg;
 		}
@@ -67,8 +71,10 @@ FUN(do_,TP1,_dec2dec_,TP2) (TP2 *restrict res, int s1, TP1 val, int p, int s2)
 	} else if (val <= GDKmin(TP2) || val > GDKmax(TP2)) {
 		char *buf = NULL, *msg;
 		int len = 0;
-		BATatoms[TPE(TP1)].atomToStr(&buf, &len, &val);
-		msg = createException(SQL, "convert", SQLSTATE(22003) "Value (%s) exceeds limits of type "STRNG(TP2), buf);
+		if (BATatoms[TPE(TP1)].atomToStr(&buf, &len, &val) < 0)
+			msg = createException(SQL, "convert", SQLSTATE(22003) "Value exceeds limits of type "STRNG(TP2));
+		else
+			msg = createException(SQL, "convert", SQLSTATE(22003) "Value (%s) exceeds limits of type "STRNG(TP2), buf);
 		GDKfree(buf);
 		return msg;
 	}

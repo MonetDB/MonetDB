@@ -717,6 +717,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 					if (tmp == NULL) {
 						BBPunfix(b->batCacheid);
 						GDKfree(buf);
+						GDKfree(t);
 						throw(MAL, "io.imports", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 					}
 					buf = tmp;
@@ -740,6 +741,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 			if (tmp == NULL) {
 				BBPunfix(b->batCacheid);
 				GDKfree(buf);
+				GDKfree(t);
 				throw(MAL, "io.imports", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			buf = tmp;
@@ -764,20 +766,23 @@ IOimport(void *ret, bat *bid, str *fnme)
 			snprintf(msg,sizeof(msg),"error in input %s",buf);
 			GDKfree(buf);
 			MT_munmap(base, end - base);
+			GDKfree(t);
 			throw(MAL, "io.import", "%s", msg);
 		}
 		n = tconvert(p, &lt, (ptr*)&t);
-		if (n <= 0) {
+		if (n < 0) {
 			BBPunfix(b->batCacheid);
 			snprintf(msg,sizeof(msg),"error in input %s",buf);
 			GDKfree(buf);
 			MT_munmap(base, end - base);
+			GDKfree(t);
 			throw(MAL, "io.import", "%s", msg);
 		}
 		p += n;
 		if (BUNappend(b, t, FALSE) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			GDKfree(buf);
+			GDKfree(t);
 			MT_munmap(base, end - base);
 			throw(MAL, "io.import", "insert failed");
 		}

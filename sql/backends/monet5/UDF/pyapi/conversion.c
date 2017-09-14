@@ -1019,7 +1019,7 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 		BATloop(b, p, q)
 		{
 			void *element = (void *)BUNtail(li, p);
-			if (strConversion(&result, &length, element) == 0) {
+			if (strConversion(&result, &length, element) < 0) {
 				return createException(MAL, "pyapi.eval",
 									   SQLSTATE(PY000) "Failed to convert element to string.");
 			}

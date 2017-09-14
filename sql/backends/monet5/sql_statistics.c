@@ -21,12 +21,12 @@ analysis by optimizers.
 #include "sql_statistics.h"
 #include "sql_scenario.h"
 
-#define atommem(TYPE, size)					\
+#define atommem(size)						\
 	do {							\
 		if (*dst == NULL || *len < (int) (size)) {	\
 			GDKfree(*dst);				\
 			*len = (size);				\
-			*dst = (TYPE *) GDKmalloc(*len);	\
+			*dst = GDKmalloc(*len);			\
 			if (*dst == NULL)			\
 				return -1;			\
 		}						\
@@ -38,12 +38,12 @@ strToStrSQuote(char **dst, int *len, const void *src)
 	int l = 0;
 
 	if (GDK_STRNIL((str) src)) {
-		atommem(char, 4);
+		atommem(4);
 
 		return snprintf(*dst, *len, "nil");
 	} else {
 		int sz = escapedStrlen(src, NULL, NULL, '\'');
-		atommem(char, sz + 3);
+		atommem(sz + 3);
 		l = escapedStr((*dst) + 1, src, *len - 1, NULL, NULL, '\'');
 		l++;
 		(*dst)[0] = (*dst)[l++] = '"';
@@ -190,6 +190,8 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							maxval = GDKmalloc(4);
 							if( maxval== NULL) {
 								GDKfree(dquery);
+								GDKfree(minval);
+								GDKfree(maxval);
 								throw(SQL, "analyze", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 							}
 							maxlen = 4;
@@ -199,6 +201,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							minval = GDKmalloc(4);
 							if( minval== NULL){
 								GDKfree(dquery);
+								GDKfree(minval);
 								GDKfree(maxval);
 								throw(SQL, "analyze", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 							}
@@ -208,13 +211,25 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							if ((val = BATmax(bn,0)) == NULL)
 								strcpy(maxval, "nil");
 							else {
-								tostr(&maxval, &maxlen, val);
+								if (tostr(&maxval, &maxlen, val) < 0) {
+									GDKfree(val);
+									GDKfree(dquery);
+									GDKfree(minval);
+									GDKfree(maxval);
+									throw(SQL, "analyze", GDK_EXCEPTION);
+								}
 								GDKfree(val);
 							}
 							if ((val = BATmin(bn,0)) == NULL)
 								strcpy(minval, "nil");
 							else {
-								tostr(&minval, &minlen, val);
+								if (tostr(&minval, &minlen, val) < 0) {
+									GDKfree(val);
+									GDKfree(dquery);
+									GDKfree(minval);
+									GDKfree(maxval);
+									throw(SQL, "analyze", GDK_EXCEPTION);
+								}
 								GDKfree(val);
 							}
 						} else {

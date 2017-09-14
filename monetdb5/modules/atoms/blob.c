@@ -223,7 +223,7 @@ BLOBtostr(str *tostr, int *l, const blob *p)
 			GDKfree(*tostr);
 		*tostr = (str) GDKmalloc(expectedlen);
 		if( *tostr == NULL)
-			return 0;
+			return -1;
 		*l = (int) expectedlen;
 	}
 	if (p->nitems == ~(size_t) 0) {
@@ -260,29 +260,25 @@ BLOBfromstr(const char *instr, int *l, blob **val)
 	s = strchr(s, '(');
 	if (s == NULL) {
 		GDKerror("Missing ( in blob\n");
-		*val = (blob *) NULL;
-		return (0);
+		return -1;
 	}
 	nitems = (size_t) strtoul(s + 1, &e, 10);
 	if ((const char *) e == s + 1) {
 		GDKerror("Missing nitems in blob\n");
-		*val = (blob *) NULL;
-		return (0);
+		return -1;
 	}
 	s = e;
 #if SIZEOF_SIZE_T > SIZEOF_INT
 	if (nitems > 0x7fffffff) {
 		GDKerror("Blob too large\n");
-		*val = (blob *) NULL;
-		return (0);
+		return -1;
 	}
 #endif
 	nbytes = blobsize(nitems);
 	s = strchr(s, ':');
 	if (s == NULL) {
 		GDKerror("Missing ':' in blob\n");
-		*val = (blob *) NULL;
-		return (0);
+		return -1;
 	}
 	++s;
 
@@ -290,7 +286,7 @@ BLOBfromstr(const char *instr, int *l, blob **val)
 		GDKfree(*val);
 		*val = (blob *) GDKmalloc(nbytes);
 		if( *val == NULL)
-			return 0;
+			return -1;
 		*l = (int) nbytes;
 	}
 
@@ -339,6 +335,7 @@ BLOBfromstr(const char *instr, int *l, blob **val)
 	s = strchr(s, ')');
 	if (s == 0) {
 		GDKerror("blob_fromstr: Missing ')' in blob\n");
+		return -1;
 	}
 
 	return (int) (s - instr);
@@ -392,7 +389,7 @@ SQLBLOBtostr(str *tostr, int *l, const blob *p)
 			GDKfree(*tostr);
 		*tostr = (str) GDKmalloc(expectedlen);
 		if( *tostr == NULL)
-			return 0;
+			return -1;
 		*l = (int) expectedlen;
 	}
 	if (p->nitems == ~(size_t) 0) {
@@ -426,7 +423,6 @@ SQLBLOBfromstr(const char *instr, int *l, blob **val)
 	var_t nbytes;
 	blob *result;
 	const char *s = instr;
-	int nil = 0;
 
 	/* since the string is built of (only) hexits the number of bytes
 	 * required for it is the length of the string divided by two
@@ -434,8 +430,7 @@ SQLBLOBfromstr(const char *instr, int *l, blob **val)
 	i = strlen(instr);
 	if (i % 2 == 1) {
 		GDKerror("sqlblob_fromstr: Illegal blob length '" SZFMT "' (should be even)\n", i);
-		instr = 0;
-		nil = 1;
+		return -1;
 	}
 	nitems = i / 2;
 	nbytes = blobsize(nitems);
@@ -444,12 +439,8 @@ SQLBLOBfromstr(const char *instr, int *l, blob **val)
 		GDKfree(*val);
 		*val = (blob *) GDKmalloc(nbytes);
 		if( *val == NULL)
-			return 0;
+			return -1;
 		*l = (int) nbytes;
-	}
-	if (nil) {
-		**val = nullval;
-		return 0;
 	}
 	result = *val;
 	result->nitems = nitems;
@@ -468,6 +459,7 @@ SQLBLOBfromstr(const char *instr, int *l, blob **val)
 			res = 10 + *s - 'a';
 		} else {
 			GDKerror("sqlblob_fromstr: Illegal char '%c' in blob\n", *s);
+			return -1;
 		}
 		s++;
 		res <<= 4;
@@ -479,6 +471,7 @@ SQLBLOBfromstr(const char *instr, int *l, blob **val)
 			res += 10 + *s - 'a';
 		} else {
 			GDKerror("sqlblob_fromstr: Illegal char '%c' in blob\n", *s);
+			return -1;
 		}
 		s++;
 
@@ -508,7 +501,8 @@ BLOBblob_fromstr(blob **b, const char **s)
 {
 	int len = 0;
 
-	BLOBfromstr(*s, &len, b);
+	if (BLOBfromstr(*s, &len, b) < 0)
+		throw(MAL, "blob", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 
@@ -518,6 +512,7 @@ BLOBsqlblob_fromstr(sqlblob **b, const char **s)
 {
 	int len = 0;
 
-	SQLBLOBfromstr(*s, &len, b);
+	if (SQLBLOBfromstr(*s, &len, b) < 0)
+		throw(MAL, "blob", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }

@@ -47,15 +47,16 @@ str IDprelude(void *ret)
 int
 IDfromString(const char *src, int *len, identifier *retval)
 {
-	if (src == NULL) {
-		*len = 0;
-		*retval = GDKstrdup(str_nil);
-	} else {
-		*retval = GDKstrdup(src);
-		*len = (int)strlen(src);
+	size_t l = strlen(src) + 1;
+	if (*retval == NULL || *len < (int) l) {
+		GDKfree(*retval);
+		*retval = GDKmalloc(l);
+		if (*retval == NULL)
+			return -1;
+		*len = (int) l;
 	}
-
-	return(*len);
+	memcpy(*retval, src, l);
+	return (int) l - 1;
 }
 
 /**
@@ -66,17 +67,16 @@ IDfromString(const char *src, int *len, identifier *retval)
 int
 IDtoString(str *retval, int *len, const char *handle)
 {
-	int hl = (int)strlen(handle) + 1;
-	if (*len < hl || *retval == NULL) {
+	size_t hl = strlen(handle) + 1;
+	if (*len < (int) hl || *retval == NULL) {
 		GDKfree(*retval);
-		*retval = GDKmalloc(sizeof(char) * hl);
+		*retval = GDKmalloc(hl);
 		if (*retval == NULL)
-			return 0;
-		*len = hl;
+			return -1;
+		*len = (int) hl;
 	}
 	memcpy(*retval, handle, hl);
-
-	return(*len);
+	return (int) hl - 1;
 }
 /**
  * Returns an identifier, parsed from a string.  The fromStr function is used
@@ -87,8 +87,7 @@ IDentifier(identifier *retval, str *in)
 {
 	int len = 0;
 
-	(void)IDfromString(*in, &len, retval);
-	if (len == 0)
+	if (IDfromString(*in, &len, retval) < 0)
 		throw(PARSE, "identifier.identifier", "Error while parsing %s", *in);
 
 	return (MAL_SUCCEED);

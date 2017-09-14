@@ -75,7 +75,11 @@ UUIDprelude(void *ret)
 	msg = UUIDgenerateUuid(&uuid_session);
 	if (msg)
 		return msg;
-	UUIDtoString(&mal_session_uuid, &len, uuid_session);
+	if (UUIDtoString(&mal_session_uuid, &len, uuid_session) < 0) {
+		GDKfree(mal_session_uuid);
+		mal_session_uuid = NULL;
+		throw(MAL, "uuid.prelude", GDK_EXCEPTION);
+	}
 	//mnstr_printf(GDKerr,"Session uid:%s", uuid_session_name);
 	return MAL_SUCCEED;
 }
@@ -94,7 +98,7 @@ UUIDtoString(str *retval, int *len, const uuid *value)
 		if (*retval)
 			GDKfree(*retval);
 		if ((*retval = GDKmalloc(UUID_STRLEN + 1)) == NULL)
-			return 0;
+			return -1;
 		*len = UUID_STRLEN + 1;
 	}
 	if (UUIDisnil(value)) {
@@ -120,7 +124,7 @@ UUIDfromString(const char *svalue, int *len, uuid **retval)
 	if (*len < UUID_SIZE || *retval == NULL) {
 		GDKfree(*retval);
 		if ((*retval = GDKmalloc(UUID_SIZE)) == NULL)
-			return 0;
+			return -1;
 		*len = UUID_SIZE;
 	}
 	if (strcmp(svalue, "nil") == 0) {
@@ -158,8 +162,8 @@ UUIDfromString(const char *svalue, int *len, uuid **retval)
 	return (int)(s - svalue);
 
   bailout:
-	**retval = uuid_nil;
-	return 0;
+	GDKerror("Syntax error in UUID.\n");
+	return -1;
 }
 
 int
@@ -225,8 +229,8 @@ UUIDuuid2str(str *retval, uuid **u)
 {
 	int l = 0;
 	*retval = NULL;
-	if (UUIDtoString(retval, &l, *u) == 0)
-		throw(MAL, "uuid.str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	if (UUIDtoString(retval, &l, *u) < 0)
+		throw(MAL, "uuid.str", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 
