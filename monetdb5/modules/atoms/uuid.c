@@ -71,7 +71,7 @@ UUIDprelude(void *ret)
 
 	(void) ret;
 	assert(UUID_SIZE == 16);
-	(void) malAtomSize(sizeof(uuid), sizeof(oid), "uuid");
+	(void) malAtomSize(sizeof(uuid), "uuid");
 	msg = UUIDgenerateUuid(&uuid_session);
 	if (msg)
 		return msg;

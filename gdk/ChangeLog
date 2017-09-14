@@ -2,6 +2,7 @@
 # This file is updated with Maddlog
 
 * Thu Sep 14 2017 Sjoerd Mullender <sjoerd@acm.org>
+- Removed the "align" field from the ATOM descriptor (atomDesc) structure.
 - The atomtostr and atomfromstr "methods" for atoms now return ssize_t
   and require a pointer to size_t for the size of the buffer.
 - The atom tostr and fromstr "methods" now always return -1 on error.

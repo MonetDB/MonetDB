@@ -168,8 +168,8 @@ gdk_export const ptr ptr_nil;
  * @code{ ptr} types to @code{ lng} instead of @code{ int}.
  *
  * Derived types mimic their fathers in many ways. They inherit the
- * @code{ size}, @code{ linear}, @code{ null} and
- * @code{ align} properties of their father.  The same goes for the
+ * @code{ size}, @code{ linear}, and @code{ null}
+ * properties of their father.  The same goes for the
  * ADT functions HASH, CMP, PUT, NULL, DEL, LEN, and HEAP. So, a
  * derived type differs in only two ways from its father:
  * @table @code
@@ -185,7 +185,6 @@ gdk_export const ptr ptr_nil;
 /* use "do ... while(0)" so that lhs can safely be used in if statements */
 #define ATOMstorage(t)		BATatoms[t].storage
 #define ATOMsize(t)		BATatoms[t].size
-#define ATOMalign(t)		BATatoms[t].align
 #define ATOMfromstr(t,s,l,src)	BATatoms[t].atomFromStr(src,l,s)
 #define ATOMnilptr(t)		BATatoms[t].atomNull
 #define ATOMcompare(t)		BATatoms[t].atomCmp

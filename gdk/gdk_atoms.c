@@ -185,7 +185,6 @@ ATOMallocate(const char *id)
 		memset(BATatoms + t, 0, sizeof(atomDesc));
 		strcpy(BATatoms[t].name, id);
 		BATatoms[t].size = sizeof(int);		/* default */
-		BATatoms[t].align = sizeof(int);	/* default */
 		BATatoms[t].linear = 1;			/* default */
 		BATatoms[t].storage = t;		/* default */
 	}
@@ -1876,7 +1875,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 TYPE_void,		/* storage */
 	 1,			/* linear */
 	 0,			/* size */
-	 0,			/* align */
 #if SIZEOF_OID == SIZEOF_INT
 	 (ptr) &int_nil,	/* atomNull */
 #else
@@ -1904,7 +1902,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 TYPE_bte,		/* storage */
 	 1,			/* linear */
 	 sizeof(bit),		/* size */
-	 sizeof(bit),		/* align */
 	 (ptr) &bte_nil,	/* atomNull */
 	 (ssize_t (*)(const char *, size_t *, ptr *)) bitFromStr,   /* atomFromStr */
 	 (ssize_t (*)(str *, size_t *, const void *)) bitToStr,     /* atomToStr */
@@ -1923,7 +1920,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 TYPE_bte,		/* storage */
 	 1,			/* linear */
 	 sizeof(bte),		/* size */
-	 sizeof(bte),		/* align */
 	 (ptr) &bte_nil,	/* atomNull */
 	 (ssize_t (*)(const char *, size_t *, ptr *)) bteFromStr,   /* atomFromStr */
 	 (ssize_t (*)(str *, size_t *, const void *)) bteToStr,     /* atomToStr */
@@ -1942,7 +1938,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 TYPE_sht,		/* storage */
 	 1,			/* linear */
 	 sizeof(sht),		/* size */
-	 sizeof(sht),		/* align */
 	 (ptr) &sht_nil,	/* atomNull */
 	 (ssize_t (*)(const char *, size_t *, ptr *)) shtFromStr,   /* atomFromStr */
 	 (ssize_t (*)(str *, size_t *, const void *)) shtToStr,     /* atomToStr */
@@ -1961,7 +1956,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 TYPE_int,		/* storage */
 	 1,			/* linear */
 	 sizeof(bat),		/* size */
-	 sizeof(bat),		/* align */
 	 (ptr) &int_nil,	/* atomNull */
 	 (ssize_t (*)(const char *, size_t *, ptr *)) batFromStr,   /* atomFromStr */
 	 (ssize_t (*)(str *, size_t *, const void *)) batToStr,     /* atomToStr */
@@ -1980,7 +1974,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 TYPE_int,		/* storage */
 	 1,			/* linear */
 	 sizeof(int),		/* size */
-	 sizeof(int),		/* align */
 	 (ptr) &int_nil,	/* atomNull */
 	 (ssize_t (*)(const char *, size_t *, ptr *)) intFromStr,   /* atomFromStr */
 	 (ssize_t (*)(str *, size_t *, const void *)) intToStr,     /* atomToStr */
@@ -2003,7 +1996,6 @@ atomDesc BATatoms[MAXATOMS] = {
 #endif
 	 1,			/* linear */
 	 sizeof(oid),		/* size */
-	 sizeof(oid),		/* align */
 #if SIZEOF_OID == SIZEOF_INT
 	 (ptr) &int_nil,	/* atomNull */
 #else
@@ -2033,7 +2025,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 TYPE_ptr,		/* storage */
 	 1,			/* linear */
 	 sizeof(ptr),		/* size */
-	 sizeof(ptr),		/* align */
 	 (ptr) &ptr_nil,	/* atomNull */
 	 (ssize_t (*)(const char *, size_t *, ptr *)) ptrFromStr,   /* atomFromStr */
 	 (ssize_t (*)(str *, size_t *, const void *)) ptrToStr,     /* atomToStr */
@@ -2057,7 +2048,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 TYPE_flt,		/* storage */
 	 1,			/* linear */
 	 sizeof(flt),		/* size */
-	 sizeof(flt),		/* align */
 	 (ptr) &flt_nil,	/* atomNull */
 	 (ssize_t (*)(const char *, size_t *, ptr *)) fltFromStr,   /* atomFromStr */
 	 (ssize_t (*)(str *, size_t *, const void *)) fltToStr,     /* atomToStr */
@@ -2076,7 +2066,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 TYPE_dbl,		/* storage */
 	 1,			/* linear */
 	 sizeof(dbl),		/* size */
-	 sizeof(dbl),		/* align */
 	 (ptr) &dbl_nil,	/* atomNull */
 	 (ssize_t (*)(const char *, size_t *, ptr *)) dblFromStr,   /* atomFromStr */
 	 (ssize_t (*)(str *, size_t *, const void *)) dblToStr,     /* atomToStr */
@@ -2095,7 +2084,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 TYPE_lng,		/* storage */
 	 1,			/* linear */
 	 sizeof(lng),		/* size */
-	 sizeof(lng),		/* align */
 	 (ptr) &lng_nil,	/* atomNull */
 	 (ssize_t (*)(const char *, size_t *, ptr *)) lngFromStr,   /* atomFromStr */
 	 (ssize_t (*)(str *, size_t *, const void *)) lngToStr,     /* atomToStr */
@@ -2115,7 +2103,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 TYPE_hge,		/* storage */
 	 1,			/* linear */
 	 sizeof(hge),		/* size */
-	 sizeof(hge),		/* align */
 	 (ptr) &hge_nil,	/* atomNull */
 	 (ssize_t (*)(const char *, size_t *, ptr *)) hgeFromStr,   /* atomFromStr */
 	 (ssize_t (*)(str *, size_t *, const void *)) hgeToStr,     /* atomToStr */
@@ -2135,7 +2122,6 @@ atomDesc BATatoms[MAXATOMS] = {
 	 TYPE_str,		/* storage */
 	 1,			/* linear */
 	 sizeof(var_t),		/* size */
-	 sizeof(var_t),		/* align */
 	 (ptr) str_nil,		/* atomNull */
 	 (ssize_t (*)(const char *, size_t *, ptr *)) strFromStr,   /* atomFromStr */
 	 (ssize_t (*)(str *, size_t *, const void *)) strToStr,     /* atomToStr */

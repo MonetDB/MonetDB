@@ -1720,9 +1720,7 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * @tab ATOMname        (int id);
  * @item int
  * @tab ATOMsize        (int id);
- * @item int
- * @tab ATOMalign       (int id);
- * @item int
+  * @item int
  * @tab ATOMvarsized    (int id);
  * @item ptr
  * @tab ATOMnilptr      (int id);
@@ -1776,11 +1774,6 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * using its id.
  *
  * @item The @emph{ATOMsize()} operation returns the atoms fixed size.
- *
- * @item The @emph{ATOMalign()} operation returns the atoms minimum
- * alignment. If the alignment info was not specified explicitly
- * during atom install, it assumes the maximum value of @verb{ {
- * }1,2,4,8@verb{ } } smaller than the atom size.
  *
  * @item The @emph{ATOMnilptr()} operation returns a pointer to the
  * nil-value of an atom. We usually take one dedicated value halfway
@@ -1854,7 +1847,6 @@ typedef struct {
 	short storage;		/* stored as another type? */
 	short linear;		/* atom can be ordered linearly */
 	short size;		/* fixed size of atom */
-	short align;		/* alignment condition for values */
 
 	/* automatically generated fields */
 	const void *atomNull;	/* global nil value */

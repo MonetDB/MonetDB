@@ -77,7 +77,6 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 			/* heap function makes an atom varsized */
 			BATatoms[tpe].size = sizeof(var_t);
 			assert_shift_width(ATOMelmshift(ATOMsize(tpe)), ATOMsize(tpe));
-			BATatoms[tpe].align = sizeof(var_t);
 			BATatoms[tpe].atomHeap = (void (*)(Heap *, size_t))pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
@@ -200,7 +199,7 @@ malAtomDefinition(str name, int tpe)
  * User defined modules may introduce fixed sized types
  * to store information in BATs.
  */
-int malAtomSize(int size, int align, char *name)
+int malAtomSize(int size, const char *name)
 {
 	int i = 0;
 
@@ -208,7 +207,6 @@ int malAtomSize(int size, int align, char *name)
 	BATatoms[i].storage = i;
 	BATatoms[i].size = size;
 	assert_shift_width(ATOMelmshift(ATOMsize(i)), ATOMsize(i));
-	BATatoms[i].align = align;
 	return i;
 }
 

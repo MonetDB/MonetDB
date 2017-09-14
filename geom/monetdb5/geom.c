@@ -2063,7 +2063,7 @@ geom_prelude(void *ret)
 {
 	(void) ret;
 	libgeom_init();
-	TYPE_mbr = malAtomSize(sizeof(mbr), sizeof(oid), "mbr");
+	TYPE_mbr = malAtomSize(sizeof(mbr), "mbr");
 	geomcatalogfix_set(geom_catalog_upgrade);
 	geomsqlfix_set(geom_sql_upgrade);
 
