@@ -2873,8 +2873,8 @@ zero_or_one(ptr ret, const bat *bid)
 	_s = ATOMsize(ATOMtype(b->ttype));
 	if (ATOMextern(b->ttype)) {
 		_s = ATOMlen(ATOMtype(b->ttype), p);
-		ret = GDKmalloc(_s);
-		if(ret == NULL){
+		* (ptr *) ret = GDKmalloc(_s);
+		if (* (ptr *) ret == NULL) {
 			BBPunfix(b->batCacheid);
 			throw(SQL, "zero_or_one", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}

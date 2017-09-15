@@ -114,6 +114,17 @@ JSONfromString(const char *src, size_t *len, json *j)
 	size_t slen = strlen(src);
 	JSON *jt;
 
+	if (GDK_STRNIL(src)) {
+		if (*len < 2 || *j == NULL) {
+			GDKfree(*j);
+			if ((*j = GDKmalloc(2)) == NULL)
+				return -1;
+			*len = 2;
+		}
+		strcpy(*j, str_nil);
+		return 1;
+	}
+
 	if ((jt = JSONparse(src, FALSE)) == NULL)
 		return -1;
 	if (jt->error) {

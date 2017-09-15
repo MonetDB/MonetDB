@@ -227,34 +227,34 @@ gdk_export const ptr ptr_nil;
 		if ((*BATatoms[type].atomPut)(heap, dst, src) == 0)	\
 			goto bunins_failed;				\
 	} while (0)
-#define ATOMputFIX(type, dst, src)					\
-	do {								\
-		int t_ = (type);					\
-		void *d_ = (dst);					\
-		const void *s_ = (src);					\
-									\
-		assert(BATatoms[t_].atomPut == NULL);			\
-		ATOMfix(t_, s_);					\
-		switch (ATOMsize(t_)) {					\
-		case 0:		/* void */				\
-			break;						\
-		case 1:							\
-			* (bte *) d_ = * (bte *) s_;			\
-			break;						\
-		case 2:							\
-			* (sht *) d_ = * (sht *) s_;			\
-			break;						\
-		case 4:							\
-			* (int *) d_ = * (int *) s_;			\
-			break;						\
-		case 8:							\
-			* (lng *) d_ = * (lng *) s_;			\
-			break;						\
-		ATOM_CASE_16_hge;					\
-		default:						\
-			memcpy(d_, s_, (size_t) ATOMsize(t_));		\
-			break;						\
-		}							\
+#define ATOMputFIX(type, dst, src)			\
+	do {						\
+		int t_ = (type);			\
+		void *d_ = (dst);			\
+		const void *s_ = (src);			\
+							\
+		assert(BATatoms[t_].atomPut == NULL);	\
+		ATOMfix(t_, s_);			\
+		switch (ATOMsize(t_)) {			\
+		case 0:		/* void */		\
+			break;				\
+		case 1:					\
+			* (bte *) d_ = * (bte *) s_;	\
+			break;				\
+		case 2:					\
+			* (sht *) d_ = * (sht *) s_;	\
+			break;				\
+		case 4:					\
+			* (int *) d_ = * (int *) s_;	\
+			break;				\
+		case 8:					\
+			* (lng *) d_ = * (lng *) s_;	\
+			break;				\
+		ATOM_CASE_16_hge;			\
+		default:				\
+			memcpy(d_, s_, ATOMsize(t_));	\
+			break;				\
+		}					\
 	} while (0)
 
 #define ATOMreplaceVAR(type, heap, dst, src)				\
@@ -273,35 +273,35 @@ gdk_export const ptr ptr_nil;
 		*d_ = loc_;						\
 		ATOMfix(t_, s_);					\
 	} while (0)
-#define ATOMreplaceFIX(type, dst, src)					\
-	do {								\
-		int t_ = (type);					\
-		void *d_ = (dst);					\
-		const void *s_ = (src);					\
-									\
-		assert(BATatoms[t_].atomPut == NULL);			\
-		ATOMfix(t_, s_);					\
-		ATOMunfix(t_, d_);					\
-		switch (ATOMsize(t_)) {					\
-		case 0:	     /* void */					\
-			break;						\
-		case 1:							\
-			* (bte *) d_ = * (bte *) s_;			\
-			break;						\
-		case 2:							\
-			* (sht *) d_ = * (sht *) s_;			\
-			break;						\
-		case 4:							\
-			* (int *) d_ = * (int *) s_;			\
-			break;						\
-		case 8:							\
-			* (lng *) d_ = * (lng *) s_;			\
-			break;						\
-		ATOM_CASE_16_hge;					\
-		default:						\
-			memcpy(d_, s_, (size_t) ATOMsize(t_));		\
-			break;						\
-		}							\
+#define ATOMreplaceFIX(type, dst, src)			\
+	do {						\
+		int t_ = (type);			\
+		void *d_ = (dst);			\
+		const void *s_ = (src);			\
+							\
+		assert(BATatoms[t_].atomPut == NULL);	\
+		ATOMfix(t_, s_);			\
+		ATOMunfix(t_, d_);			\
+		switch (ATOMsize(t_)) {			\
+		case 0:	     /* void */			\
+			break;				\
+		case 1:					\
+			* (bte *) d_ = * (bte *) s_;	\
+			break;				\
+		case 2:					\
+			* (sht *) d_ = * (sht *) s_;	\
+			break;				\
+		case 4:					\
+			* (int *) d_ = * (int *) s_;	\
+			break;				\
+		case 8:					\
+			* (lng *) d_ = * (lng *) s_;	\
+			break;				\
+		ATOM_CASE_16_hge;			\
+		default:				\
+			memcpy(d_, s_, ATOMsize(t_));	\
+			break;				\
+		}					\
 	} while (0)
 
 /* string heaps:
@@ -343,7 +343,7 @@ gdk_export const ptr ptr_nil;
  * though we have to take corrective action to ensure that str(nil) is
  * the smallest value of the domain.
  */
-#define GDK_STRNIL(s)    ((s) == NULL || *(char*) (s) == '\200')
+#define GDK_STRNIL(s)    ((s) == NULL || *(const char*) (s) == '\200')
 #define GDK_STRLEN(s)    ((GDK_STRNIL(s)?1:strlen(s))+1)
 #define GDK_STRCMP(l,r)  (GDK_STRNIL(l)?(GDK_STRNIL(r)?0:-1):GDK_STRNIL(r)?1: \
 			  (*(const unsigned char*)(l) < *(const unsigned char*)(r))?-1: \

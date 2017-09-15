@@ -1719,9 +1719,9 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * @tab ATOMdelete      (int id);
  * @item str
  * @tab ATOMname        (int id);
- * @item int
+ * @item unsigned int
  * @tab ATOMsize        (int id);
-  * @item int
+ * @item int
  * @tab ATOMvarsized    (int id);
  * @item ptr
  * @tab ATOMnilptr      (int id);
@@ -1842,6 +1842,19 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * and @emph{ATOMformat()}) just have the atom id parameter prepended
  * to them.
  */
+
+/* atomFromStr returns the number of bytes of the input string that
+ * were processed.  atomToStr returns the length of the string
+ * produced.  Both functions return -1 on (any kind of) failure.  If
+ * *dst is not NULL, *len specifies the available space.  If there is
+ * not enough space, of if *dst is NULL, *dst will be freed (if not
+ * NULL) and a new buffer will be allocated and returned in *dst.
+ * *len will be set to reflect the actual size allocated.  If
+ * allocation fails, *dst will be NULL on return and *len is
+ * undefined.  In any case, if the function returns, *buf is either
+ * NULL or a valid pointer and then *len is the size of the area *buf
+ * points to. */
+
 typedef struct {
 	/* simple attributes */
 	char name[IDLENGTH];

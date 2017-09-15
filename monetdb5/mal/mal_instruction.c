@@ -995,6 +995,7 @@ convertConstant(int type, ValPtr vr)
 		char *s = vr->val.sval;
 
 		if (ATOMfromstr(type, &d, &ll, vr->val.sval) < 0 || d == NULL) {
+			GDKfree(d);
 			VALinit(vr, type, ATOMnilptr(type));
 			throw(SYNTAX, "convertConstant", "parse error in '%s'", s);
 		}
@@ -1129,23 +1130,26 @@ convertConstant(int type, ValPtr vr)
 		/* if what we're converting from is not a string */
 		if (vr->vtype != TYPE_str) {
 			/* an extern type */
-			str w = 0;
+			str w = NULL;
 
 			/* dump the non-string atom as string in w */
-			ATOMformat(vr->vtype, VALptr(vr), &w);
-			/* and try to parse it from string as the desired type */
-			if (ATOMfromstr(type, &d, &ll, w) < 0 || d == 0) {
-				VALinit(vr, type, ATOMnilptr(type));
+			if (ATOMformat(vr->vtype, VALptr(vr), &w) < 0 ||
+				/* and try to parse it from string as the desired type */
+				ATOMfromstr(type, &d, &ll, w) < 0 ||
+				d == NULL) {
+				GDKfree(d);
 				GDKfree(w);
+				VALinit(vr, type, ATOMnilptr(type));
 				throw(SYNTAX, "convertConstant", "conversion error");
 			}
+			GDKfree(w);
 			memset((char *) vr, 0, sizeof(*vr));
 			VALset(vr, type, d);
 			if (ATOMextern(type) == 0)
 				GDKfree(d);
-			GDKfree(w);
 		} else {				/* what we're converting from is a string */
 			if (ATOMfromstr(type, &d, &ll, vr->val.sval) < 0 || d == NULL) {
+				GDKfree(d);
 				VALinit(vr, type, ATOMnilptr(type));
 				throw(SYNTAX, "convertConstant", "conversion error");
 			}

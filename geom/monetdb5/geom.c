@@ -2149,10 +2149,10 @@ wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, s
 
 	/* we always allocate new memory */
 	GDKfree(*geomWKB);
-
 	*len = 0;
 	*geomWKB = NULL;
-	if (strcmp(geomWKT, str_nil) == 0) {
+
+	if (GDK_STRNIL(geomWKT)) {
 		*geomWKB = wkbNULLcopy();
 		if (*geomWKB == NULL)
 			throw(MAL, "wkb.FromText", SQLSTATE(HY001) MAL_MALLOC_FAIL);

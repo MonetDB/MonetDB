@@ -131,6 +131,10 @@ UUIDfromString(const char *svalue, size_t *len, uuid **retval)
 		**retval = uuid_nil;
 		return 3;
 	}
+	if (GDK_STRNIL(svalue)) {
+		**retval = uuid_nil;
+		return 1;
+	}
 	for (i = 0, j = 0; i < UUID_SIZE; i++) {
 		if (j == 8 || j == 12 || j == 16 || j == 20) {
 			if (*s != '-')

@@ -133,7 +133,7 @@ INETfromString(const char *src, size_t *len, inet **retval)
 		in_setnil(*retval);
 		return 3;
 	}
-	if (strNil(src)) {
+	if (GDK_STRNIL(src)) {
 		in_setnil(*retval);
 		return 1;
 	}
@@ -257,12 +257,12 @@ INETtoString(str *retval, size_t *len, const inet *handle)
 str
 INETnew(inet *retval, str *in)
 {
-	int pos;
+	ssize_t pos;
 	size_t len = sizeof(inet);
 
 	pos = INETfromString(*in, &len, &retval);
 	if (pos < 0)
-		throw(PARSE, "inet.new", "Error while parsing at char %d", pos + 1);
+		throw(PARSE, "inet.new", GDK_EXCEPTION);
 
 	return (MAL_SUCCEED);
 }

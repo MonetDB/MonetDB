@@ -256,6 +256,17 @@ BLOBfromstr(const char *instr, size_t *l, blob **val)
 	const char *s = instr;
 	char *e;
 
+	if (GDK_STRNIL(instr) || strncmp(instr, "nil", 3) == 0) {
+		nbytes = blobsize(0);
+		if (*l < nbytes || *val == NULL) {
+			GDKfree(*val);
+			if ((*val = GDKmalloc(nbytes)) == NULL)
+				return -1;
+		}
+		**val = nullval;
+		return GDK_STRNIL(instr) ? 1 : 3;
+	}
+
 	s = strchr(s, '(');
 	if (s == NULL) {
 		GDKerror("Missing ( in blob\n");
@@ -395,7 +406,6 @@ SQLBLOBtostr(str *tostr, size_t *l, const blob *p)
 		return 3;
 	}
 
-	strcpy(*tostr, "\0");
 	s = *tostr;
 
 	for (i = 0; i < p->nitems; i++) {
@@ -421,6 +431,17 @@ SQLBLOBfromstr(const char *instr, size_t *l, blob **val)
 	var_t nbytes;
 	blob *result;
 	const char *s = instr;
+
+	if (GDK_STRNIL(instr) || strncmp(instr, "nil", 3) == 0) {
+		nbytes = blobsize(0);
+		if (*l < nbytes || *val == NULL) {
+			GDKfree(*val);
+			if ((*val = GDKmalloc(nbytes)) == NULL)
+				return -1;
+		}
+		**val = nullval;
+		return GDK_STRNIL(instr) ? 1 : 3;
+	}
 
 	/* since the string is built of (only) hexits the number of bytes
 	 * required for it is the length of the string divided by two

@@ -185,6 +185,8 @@ XMLstr2xml(xml *x, const char **val)
 
 	if (strNil(t)) {
 		*x = (xml) GDKstrdup(str_nil);
+		if (*x == NULL)
+			throw(MAL, "xml.xml", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	len = 6 * strlen(t) + 1;
@@ -642,6 +644,12 @@ XMLfromString(const char *src, size_t *len, xml *x)
 		*x = GDKstrdup(str_nil);
 		if (*x == NULL)
 			return -1;
+		return 3;
+	} else if (GDK_STRNIL(src)) {
+		*x = GDKstrdup(str_nil);
+		if (*x == NULL)
+			return -1;
+		return 1;
 	} else {
 		char *err = XMLstr2xml(x, &src);
 		if (err != MAL_SUCCEED) {
@@ -650,10 +658,7 @@ XMLfromString(const char *src, size_t *len, xml *x)
 			return -1;
 		}
 	}
-	if( *x)
-		*len = strlen(*x) + 1;
-	else
-		*len = 0;
+	*len = strlen(*x) + 1;
 	return (ssize_t) *len - 1;
 }
 

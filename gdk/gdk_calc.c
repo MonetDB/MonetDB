@@ -13673,7 +13673,7 @@ convert_any_str(BAT *b, BAT *bn, BUN cnt, BUN start, BUN end,
 			tfastins_nocheck(bn, i, dst, bn->twidth);
 		}
 	} else {
-		int size = ATOMsize(tp);
+		size_t size = ATOMsize(tp);
 
 		src = Tloc(b, 0);
 		for (i = start; i < end; i++) {
@@ -13715,7 +13715,7 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 	const void *nil = ATOMnilptr(tp);
 	char *s;
 	void *d;
-	size_t len = (size_t) ATOMsize(tp);
+	size_t len = ATOMsize(tp);
 	ssize_t l;
 	ssize_t (*atomfromstr)(const char *, size_t *, ptr *) = BATatoms[tp].atomFromStr;
 	BATiter bi = bat_iterator(b);
@@ -13753,7 +13753,7 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 				}
 				memcpy(dst, nil, len);
 			}
-			assert(len == (size_t) ATOMsize(tp));
+			assert(len == ATOMsize(tp));
 			if (ATOMcmp(tp, dst, nil) == 0)
 				nils++;
 		}
@@ -14427,13 +14427,16 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 		} else if (BATatoms[v->vtype].atomToStr == BATatoms[TYPE_str].atomToStr) {
 			ret->val.sval = GDKstrdup(v->val.sval);
 		} else {
-			size_t len = 0;
+			ret->len = 0;
 			ret->val.sval = NULL;
 			if ((*BATatoms[v->vtype].atomToStr)(&ret->val.sval,
-							    &len,
-							    VALptr(v)) < 0)
+							    &ret->len,
+							    VALptr(v)) < 0) {
+				GDKfree(ret->val.sval);
+				ret->val.sval = NULL;
+				ret->len = 0;
 				nils = BUN_NONE;
-			ret->len = (int) len;
+			}
 		}
 		if (ret->val.sval == NULL)
 			nils = BUN_NONE;
@@ -14465,7 +14468,7 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 			} else {
 				/* use the space provided by ret */
 				p = VALget(ret);
-				len = (size_t) ATOMsize(ret->vtype);
+				len = ATOMsize(ret->vtype);
 			}
 			if ((l = (*BATatoms[ret->vtype].atomFromStr)(
 				     v->val.sval, &len, &p)) < 0 ||

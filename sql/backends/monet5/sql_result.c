@@ -1489,7 +1489,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 		res_col *c = t->cols + i;
 		BAT *b = BATdescriptor(c->b);
 		int mtype;
-		int typelen;
+		size_t typelen;
 		int convert_to_string = !type_supports_binary_transfer(c->type.type);
 		sql_type *type = c->type.type;
 
@@ -1511,7 +1511,6 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 			typelen = sizeof(lng);	
 		}
 		if (ATOMvarsized(mtype) || convert_to_string) {
-			typelen = -1;
 			varsized++;
 			length_prefixed++;
 		} else {
@@ -1676,7 +1675,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 					*((lng*)startbuf) = mnstr_swap_lng(s, buf - (startbuf + sizeof(lng)));
 				}
 			} else {
-				int atom_size = ATOMsize(mtype);
+				size_t atom_size = ATOMsize(mtype);
 				if (c->type.type->eclass == EC_DEC) {
 					atom_size = ATOMsize(ATOMstorage(mtype));
 				}

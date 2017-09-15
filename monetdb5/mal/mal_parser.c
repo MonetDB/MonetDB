@@ -428,7 +428,7 @@ cstToken(Client cntxt, ValPtr cst)
 		s++;
 		/* fall through */
 	case '0':
-		if ((s[1] == 'x' || s[1] == 'X')) {
+		if (s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) {
 			/* deal with hex */
 			hex = TRUE;
 			i += 2;
@@ -437,7 +437,7 @@ cstToken(Client cntxt, ValPtr cst)
 		/* fall through */
 	case '1': case '2': case '3': case '4': case '5':
 	case '6': case '7': case '8': case '9':
-		if (hex)
+		if (hex) {
 			while (isalnum((unsigned char) *s)) {
 				if (!((tolower(*s) >= 'a' && tolower(*s) <= 'f')
 					  || isdigit((unsigned char) *s)))
@@ -445,14 +445,13 @@ cstToken(Client cntxt, ValPtr cst)
 				i++;
 				s++;
 			}
-		else
+			goto handleInts;
+		} else
 			while (isdigit((unsigned char) *s)) {
 				i++;
 				s++;
 			}
 
-		if (hex)
-			goto handleInts;
 		/* fall through */
 	case '.':
 		if (*s == '.' && isdigit((unsigned char) *(s + 1))) {
@@ -1763,7 +1762,7 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 				curInstr->token= REMsymbol;
 				curInstr->barrier= 0;
 				cst.vtype = TYPE_str;
-				cst.len = (int) strlen(start);
+				cst.len = strlen(start);
 				cst.val.sval = GDKstrdup(start);
 				getArg(curInstr, 0) = defConstant(curBlk, TYPE_str, &cst);
 				clrVarConstant(curBlk, getArg(curInstr, 0));

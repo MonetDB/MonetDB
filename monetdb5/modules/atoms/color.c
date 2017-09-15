@@ -73,15 +73,18 @@ color_fromstr(const char *colorStr, size_t *len, color **c)
 		*len = sizeof(color);
 	}
 
+	if (GDK_STRNIL(colorStr)) {
+		**c = color_nil;
+		return 1;
+	}
+
 	while (GDKisspace(*p))
 		p++;
-	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
-		color **sc = (color **) c;
-
-		**sc = color_nil;
+	if (strncmp(p, "nil", 3) == 0) {
+		**c = color_nil;
 		p += 3;
 	} else {
-		if (p[0] == '0' && p[1] == 'x' && p[2] == '0' && p[3] == '0') {
+		if (strncmp(p, "0x00", 4) == 0) {
 			int r = CLRhextoint(p[4], p[5]);
 			int g = CLRhextoint(p[6], p[7]);
 			int b = CLRhextoint(p[8], p[9]);

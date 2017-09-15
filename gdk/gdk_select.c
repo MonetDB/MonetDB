@@ -1714,7 +1714,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		       tmp->batPersistence == PERSISTENT)
 #endif
 			  ) &&
-		 (size_t) ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
+		  ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
 		  BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2) ||
 		 (BATcheckhash(b)
 #ifndef DISABLE_PARENT_HASH

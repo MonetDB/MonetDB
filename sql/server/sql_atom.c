@@ -206,7 +206,7 @@ atom_string(sql_allocator *sa, sql_subtype *tpe, const char *val)
 	if (val) {
 		a->isnull = 0;
 		a->data.val.sval = (char*)val;
-		a->data.len = (int)strlen(a->data.val.sval);
+		a->data.len = strlen(a->data.val.sval);
 	}
 
 	if (atom_debug)
@@ -264,10 +264,9 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 		if (ATOMstorage(type) == TYPE_str) {
 			a->isnull = 0;
 			a->data.val.sval = (char*)sql2str(sa_strdup(sa, val));
-			a->data.len = (int)strlen(a->data.val.sval);
+			a->data.len = strlen(a->data.val.sval);
 		} else {
-			size_t len = a->data.len;
-			ssize_t res = ATOMfromstr(type, &p, &len, val);
+			ssize_t res = ATOMfromstr(type, &p, &a->data.len, val);
 
 			/* no result or nil means error (SQL has NULL not nil) */
 			if (res < 0 || !p || ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
@@ -276,7 +275,6 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 					GDKfree(p);
 				return NULL;
 			}
-			a->data.len = (int) len;
 			VALset(&a->data, a->data.vtype, p);
 			SA_VALcopy(sa, &a->data, &a->data);
 
@@ -1140,19 +1138,17 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 		if (at->type->eclass == EC_CHAR && tp->type->eclass == EC_DATE){
 			int type = tp->type->localtype;
 			ssize_t res = 0;
-			size_t len = 0;
 			ptr p = NULL;
 
-			res = ATOMfromstr(type, &p, &len, a->data.val.sval);
+			a->data.len = 0;
+			res = ATOMfromstr(type, &p, &a->data.len, a->data.val.sval);
 			/* no result or nil means error (SQL has NULL not nil) */
 			if (res < (ssize_t) strlen(a->data.val.sval) || !p ||
 			    ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
-				if (p)
-					GDKfree(p);
-				a->data.len = (int) strlen(a->data.val.sval);
+				GDKfree(p);
+				a->data.len = strlen(a->data.val.sval);
 				return 0;
 			}
-			a->data.len = (int) len;
 			a->tpe = *tp;
 			a->data.vtype = type;
 			VALset(&a->data, a->data.vtype, p);

@@ -301,7 +301,10 @@ URLfromString(const char *src, size_t *len, str *u)
 
 	/* actually parse the message for valid url */
 
-	memcpy(*u, src, l);
+	if (strcmp(src, "nil") == 0)
+		strcpy(*u, str_nil);
+	else
+		memcpy(*u, src, l);
 	return (ssize_t) l - 1;
 }
 

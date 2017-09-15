@@ -909,7 +909,7 @@ doALGfetch(ptr ret, BAT *b, BUN pos)
 		memcpy(_dst, _src, _len);
 		*(ptr*) ret = _dst;
 	} else {
-		int _s = ATOMsize(ATOMtype(b->ttype));
+		size_t _s = ATOMsize(ATOMtype(b->ttype));
 		if (b->ttype == TYPE_void) {
 			*(oid*) ret = b->tseqbase;
 			if (b->tseqbase != oid_nil)
