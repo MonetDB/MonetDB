@@ -4150,7 +4150,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sql_schema *s = (sql_schema *) nsch->data;
 		if( sname && strcmp(b->name, sname) )
 			continue;
-		if (isalpha((int) b->name[0]))
+		if (isalpha((unsigned char) b->name[0]))
 			if (s->tables.set)
 				for (ntab = (s)->tables.set->h; ntab; ntab = ntab->next) {
 					sql_base *bt = ntab->data;

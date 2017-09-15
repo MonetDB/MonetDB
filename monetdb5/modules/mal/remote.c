@@ -193,7 +193,7 @@ str RMTconnectScen(
 	snprintf(conn, BUFSIZ, "%s_%s_" SZFMT, s, *user, connection_id++);
 	/* make sure we can construct MAL identifiers using conn */
 	for (s = conn; *s != '\0'; s++) {
-		if (!isalpha((int)*s) && !isdigit((int)*s)) {
+		if (!isalnum((unsigned char)*s)) {
 			*s = '_';
 		}
 	}

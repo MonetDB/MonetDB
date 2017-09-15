@@ -176,7 +176,7 @@ skip_search(const char *uri)
 }
 
 static int needEscape(char c){
-	if( isalnum((int)c) )
+	if( isalnum((unsigned char)c) )
 		return 0;
 	if( c == '#' || c == '-' || c == '_' || c == '.' || c == '!' ||
 		c == '~' || c == '*' || c == '\'' || c == '(' || c == ')' )

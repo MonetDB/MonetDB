@@ -843,7 +843,7 @@ static int
 is_a_number(char *v)
 {
 	while(*v) {
-		if (!isdigit(*v))
+		if (!isdigit((unsigned char) *v))
 			return 0;
 		v++;
 	}
@@ -879,7 +879,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	stack_push_frame(m, NULL);
 	ops = sa_list(m->sa);
-	while (c && *c && !isspace(*c)) {
+	while (c && *c && !isspace((unsigned char) *c)) {
 		char *vnme = c, *tnme;
 		char *p = strchr(++c, (int)' ');
 		int d,s,nr = -1;

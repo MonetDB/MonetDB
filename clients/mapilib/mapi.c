@@ -3591,7 +3591,7 @@ slice_row(const char *reply, char *null, char ***anchorsp, size_t **lensp, int l
 		}
 		lens[i] = len;
 		anchors[i++] = start;
-		while (reply && *reply && isspace((int) (unsigned char) *reply))
+		while (reply && *reply && isspace((unsigned char) *reply))
 			reply++;
 	} while (reply && *reply && *reply != endchar);
 	*anchorsp = anchors;
@@ -3814,7 +3814,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 	result->commentonly = 0;
 
 	tag = etag + 1;
-	while (*tag && isspace((int) (unsigned char) *tag))
+	while (*tag && isspace((unsigned char) *tag))
 		tag++;
 
 	if (n > result->fieldcnt) {
@@ -4568,7 +4568,7 @@ unquote(const char *msg, char **str, const char **next, int endchar, size_t *len
 	char quote;
 
 	/* first skip over leading white space */
-	while (*p && isspace((int) (unsigned char) *p))
+	while (*p && isspace((unsigned char) *p))
 		p++;
 	quote = *p;
 	if (quote == '\'' || quote == '"') {
@@ -4676,9 +4676,9 @@ unquote(const char *msg, char **str, const char **next, int endchar, size_t *len
 		while (*p && *p != ',' && *p != '\t' && *p != endchar)
 			p++;
 		/* search back over trailing white space */
-		for (s = p - 1; s > msg && isspace((int) (unsigned char) *s); s--)
+		for (s = p - 1; s > msg && isspace((unsigned char) *s); s--)
 			;
-		if (s < msg || !isspace((int) (unsigned char) *s))	/* gone one too far */
+		if (s < msg || !isspace((unsigned char) *s))	/* gone one too far */
 			s++;
 		if (*p == ',' || *p == '\t') {
 			/* there is more to come; skip over separator */
@@ -4882,7 +4882,7 @@ store_field(struct MapiResultSet *result, int cr, int fnr, int outtype, void *ds
 			unsigned int fac = 1000000000;
 			unsigned int nsec = 0;
 
-			for (n++; isdigit((int) (unsigned char) val[n]); n++) {
+			for (n++; isdigit((unsigned char) val[n]); n++) {
 				fac /= 10;
 				nsec += (val[n] - '0') * fac;
 			}

@@ -41,9 +41,9 @@ typedef struct MDBSTATE{
 	int pc;
 } MdbState;
 
-#define skipBlanc(c, X)    while (*(X) && isspace((int) *X)) { X++; }
-#define skipNonBlanc(c, X) while (*(X) && !isspace((int) *X)) { X++; }
-#define skipWord(c, X)     while (*(X) && (isalnum((int) *X))) { X++; } \
+#define skipBlanc(c, X)    while (*(X) && isspace((unsigned char) *X)) { X++; }
+#define skipNonBlanc(c, X) while (*(X) && !isspace((unsigned char) *X)) { X++; }
+#define skipWord(c, X)     while (*(X) && (isalnum((unsigned char) *X))) { X++; } \
 	skipBlanc(c, X);
 
 static void printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first);
@@ -345,7 +345,7 @@ mdbLocateMalBlk(Client cntxt, MalBlkPtr mb, str b)
 	skipBlanc(cntxt, b);
 	/* start with function in context */
 	if (*b == '[') {
-		if( !isdigit((int) *(b+1))){
+		if( !isdigit((unsigned char) *(b+1))){
 			m = getMalBlkOptimized(mb, b+1);
 			if( m ==0 )
 				mnstr_printf(cntxt->fdout,"Integer or optimizer named expected");
@@ -356,7 +356,7 @@ mdbLocateMalBlk(Client cntxt, MalBlkPtr mb, str b)
 		if( idx < 0)
 			return NULL;
 		return getMalBlkHistory(mb, idx);
-	} else if (isdigit((int) *b)) {
+	} else if (isdigit((unsigned char) *b)) {
 		idx = atoi(b);
 		if( idx < 0)
 			return NULL;
@@ -369,7 +369,7 @@ mdbLocateMalBlk(Client cntxt, MalBlkPtr mb, str b)
 		*fcnname = 0;
 		if ((h = strchr(fcnname + 1, '['))) {
 			*h = 0;
-			if( !isdigit((int) *(h+1))){
+			if( !isdigit((unsigned char) *(h+1))){
 				m = getMalBlkOptimized(mb, h+1);
 				if( m ==0 )
 					mnstr_printf(cntxt->fdout,"Integer or optimizer named expected");
@@ -721,12 +721,12 @@ retryRead:
 			}
 			if (strncmp(b, "break", 5) == 0)
 				b += 4;
-			if (isspace((int) b[1])) {
+			if (isspace((unsigned char) b[1])) {
 				skipWord(cntxt, b);
-				if (*b && !isspace((int) *b) && !isdigit((int) *b))
+				if (*b && !isspace((unsigned char) *b) && !isdigit((unsigned char) *b))
 					/* set breakpoints by name */
 					mdbSetBreakRequest(cntxt, mb, b, 's');
-				else if (*b && isdigit((int) *b))
+				else if (*b && isdigit((unsigned char) *b))
 					/* set breakpoint at instruction */
 					mdbSetBreakpoint(cntxt, mb, atoi(b), 's');
 				else
@@ -754,9 +754,9 @@ retryRead:
 			}
 			skipWord(cntxt, b);
 			/* get rid of break point */
-			if (*b && !isspace((int) *b) && !isdigit((int) *b))
+			if (*b && !isspace((unsigned char) *b) && !isdigit((unsigned char) *b))
 				mdbClrBreakRequest(cntxt, b);
-			else if (isdigit((int) *b))
+			else if (isdigit((unsigned char) *b))
 				mdbClrBreakpoint(cntxt, atoi(b));
 			else {
 				mdbClrBreakpoint(cntxt, pc);
@@ -808,10 +808,10 @@ retryRead:
 			/* you can identify a start and length */
 			t++;
 			skipBlanc(cntxt, t);
-			if (isdigit((int) *t)) {
+			if (isdigit((unsigned char) *t)) {
 				size = (BUN) atol(t);
 				skipWord(cntxt, t);
-				if (isdigit((int) *t))
+				if (isdigit((unsigned char) *t))
 					first = (BUN) atol(t);
 			}
 			/* search the symbol */
@@ -875,7 +875,7 @@ retryRead:
 						skipBlanc(cntxt,b);
 					}
 				} 
-				if (isdigit((int) *b) || *b == '-' || *b == '+')
+				if (isdigit((unsigned char) *b) || *b == '-' || *b == '+')
 					goto partial;
 
 				/* inspect another function */
@@ -915,7 +915,7 @@ retryRead:
  * Repeated use of the list command moves you up and down the program
  */
 partial:
-				if (isdigit((int) *b)) {
+				if (isdigit((unsigned char) *b)) {
 					first = (int) atoi(b);
 					skipWord(cntxt, b);
 					skipBlanc(cntxt, b);

@@ -620,7 +620,7 @@ bat_max_hgelength(BAT *b)
 		unsigned int i, neg = 0;				\
 		X *r;							\
 		X res = 0;						\
-		while(isspace(*s))					\
+		while(isspace((unsigned char) *s))			\
 			s++;						\
 		if (*s == '-'){						\
 			neg = 1;					\
@@ -642,7 +642,7 @@ bat_max_hgelength(BAT *b)
 				res *= 10;				\
 			}						\
 		}							\
-		while(isspace(*s))					\
+		while(isspace((unsigned char) *s))			\
 			s++;						\
 		if (*s) {						\
 			if (*s != '.')					\
@@ -652,7 +652,7 @@ bat_max_hgelength(BAT *b)
 				res *= 10;				\
 				res += *s - '0';			\
 			}						\
-			while(isspace(*s))				\
+			while(isspace((unsigned char) *s))		\
 				s++;					\
 			for (; i < t->scale; i++) {			\
 				res *= 10;				\

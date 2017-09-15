@@ -581,7 +581,7 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 static void
 skipWS( char *r, int *pos)
 {
-	while(r[*pos] && (isspace(r[*pos]) || r[*pos] == '|')) 
+	while(r[*pos] && (isspace((unsigned char) r[*pos]) || r[*pos] == '|')) 
 		(*pos)++;
 }
 
@@ -594,7 +594,7 @@ skipIdent( char *r, int *pos)
 			(*pos)++;
 		(*pos)++;
 	} else {
-		while(r[*pos] && (isalnum(r[*pos]) || r[*pos] == '_' || r[*pos] == '%'))
+		while(r[*pos] && (isalnum((unsigned char) r[*pos]) || r[*pos] == '_' || r[*pos] == '%'))
 			(*pos)++;
 	}
 }
@@ -605,7 +605,7 @@ skipIdentOrSymbol( char *r, int *pos)
 	if (r[*pos] == '"') {
 		skipIdent(r, pos);
 	} else {
-		while(r[*pos] && (isalnum(r[*pos]) ||
+		while(r[*pos] && (isalnum((unsigned char) r[*pos]) ||
 				  r[*pos] == '_' || r[*pos] == '%' ||
 				  r[*pos] == '<' || r[*pos] == '>' ||
 				  r[*pos] == '/' || r[*pos] == '*' ||
@@ -620,7 +620,7 @@ readInt( char *r, int *pos)
 {
 	int res = 0;
 
-	while (isdigit(r[*pos])) {
+	while (isdigit((unsigned char) r[*pos])) {
 		res *= 10;
 		res += r[*pos]-'0';
 		(*pos)++;
@@ -911,7 +911,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 	}
 
 	if (!exp && b != e) { /* simple ident */
-		if (b[0] == 'A' && isdigit(b[1])) {
+		if (b[0] == 'A' && isdigit((unsigned char) b[1])) {
 			char *e2;
 			int nr = strtol(b+1,&e2,10);
 

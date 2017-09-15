@@ -387,9 +387,9 @@
 #define MIN(A,B)	((A)>(B)?(B):(A))
 
 /* defines from ctype with casts that allow passing char values */
-#define GDKisspace(c)	isspace((int) (unsigned char) (c))
-#define GDKisalnum(c)	isalnum((int) (unsigned char) (c))
-#define GDKisdigit(c)	(((unsigned char) (c)) >= '0' && ((unsigned char) (c)) <= '9')
+#define GDKisspace(c)	isspace((unsigned char) (c))
+#define GDKisalnum(c)	isalnum((unsigned char) (c))
+#define GDKisdigit(c)	isdigit((unsigned char) (c))
 
 #ifndef NATIVE_WIN32
 #define BATDIR		"bat"

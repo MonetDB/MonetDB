@@ -761,7 +761,7 @@ sql_grammar_rule(const char *word, stream *toConsole)
 {
 	char buf[65], *s = buf;
 	int i;
-	while (s < buf + 64 && *word != ',' && *word && !isspace((int) *word))
+	while (s < buf + 64 && *word != ',' && *word && !isspace((unsigned char) *word))
 		*s++ = *word++;
 	*s = 0;
 
@@ -770,9 +770,9 @@ sql_grammar_rule(const char *word, stream *toConsole)
 			mnstr_printf(toConsole, "%s : %s\n", buf, sqlhelp[i].syntax);
 		}
 	}
-	while (*word && (isalnum((int) *word || *word == '_')))
+	while (*word && (isalnum((unsigned char) *word || *word == '_')))
 		word++;
-	while (*word && isspace((int) *word))
+	while (*word && isspace((unsigned char) *word))
 		word++;
 	return *word == ',' ? word + 1 : NULL;
 }
@@ -828,10 +828,10 @@ sql_help(char *pattern, stream *toConsole, int pagewidth)
 
 	if (*pattern == '\\')
 		pattern++;
-	while (*pattern && !isspace((int) *pattern)) {
+	while (*pattern && !isspace((unsigned char) *pattern)) {
 		pattern++;
 	}
-	while (*pattern && isspace((int) *pattern)) {
+	while (*pattern && isspace((unsigned char) *pattern)) {
 		pattern++;
 	}
 
@@ -851,7 +851,7 @@ sql_help(char *pattern, stream *toConsole, int pagewidth)
 	}
 	// collect the major topics
 	for (i = 0; sqlhelp[i].command; i++) {
-		if (islower((int) sqlhelp[i].command[0]) && *pattern != '*')
+		if (islower((unsigned char) sqlhelp[i].command[0]) && *pattern != '*')
 			break;
 		total++;
 		if ((len = strlen(sqlhelp[i].command)) > maxlen)

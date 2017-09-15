@@ -239,7 +239,7 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					fcnDefinition(t->def, getSignature(t), sig, 0,sig,BLOCK);
 					a= strstr(sig,"address");
 					if( a)
-						for( a=a+7; isspace((int) *a); a++)
+						for( a=a+7; isspace((unsigned char) *a); a++)
 							;
 					if (BUNappend(b, (a? a: "nil"), FALSE) != GDK_SUCCEED)
 						goto bailout;
@@ -381,7 +381,7 @@ INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			tail= strstr(c,"address");
 			if( tail){
 				*tail = 0;
-				for( tail=tail+7; isspace((int) *tail); tail++)  ;
+				for( tail=tail+7; isspace((unsigned char) *tail); tail++)  ;
 			}
 			if (tail && (w=strchr(tail, ';')) )
 				*w = 0;

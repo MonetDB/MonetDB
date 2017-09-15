@@ -99,7 +99,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (nsch = tr->schemas.set->h; nsch; nsch = nsch->next) {
 		sql_base *b = nsch->data;
 		sql_schema *s = (sql_schema *) nsch->data;
-		if (!isalpha((int) b->name[0]))
+		if (!isalpha((unsigned char) b->name[0]))
 			continue;
 
 		if (sch && strcmp(sch, b->name))
