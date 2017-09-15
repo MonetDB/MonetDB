@@ -228,7 +228,7 @@ str_2_date(date *res, const str *val)
 {
 	ptr p = NULL;
 	size_t len = 0;
-	int e;
+	ssize_t e;
 	char buf[BUFSIZ];
 
 	e = ATOMfromstr(TYPE_date, &p, &len, *val);

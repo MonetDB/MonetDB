@@ -629,7 +629,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 {
 	BAT *b;
 	ssize_t (*tconvert) (const char *, size_t *, ptr *);
-	int n;
+	ssize_t n;
 	size_t bufsize = 2048;	/* NIELS:tmp change used to be 1024 */
 	char *base, *cur, *end;
 	char *buf;
