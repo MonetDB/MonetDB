@@ -357,7 +357,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			stmt *r = exp_bin(be, e->l, left, right, grp, ext, cnt, sel);
 			return stmt_assign(be, e->name, r, GET_PSM_LEVEL(e->flag));
 		} else if (e->flag & PSM_VAR) {
-			if (e->f) /* TODO TABLE */
+			if (e->f)
 				return stmt_vars(be, e->name, e->f, 1, GET_PSM_LEVEL(e->flag));
 			else
 				return stmt_var(be, e->name, &e->tpe, 1, GET_PSM_LEVEL(e->flag));
@@ -365,6 +365,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			sql_exp *l = e->l;
 			stmt *r = exp_bin(be, l, left, right, grp, ext, cnt, sel);
 
+			if (!r)
+				return NULL;
 			/* handle table returning functions */
 			if (l->type == e_psm && l->flag & PSM_REL) {
 				stmt *lst = r->op1;

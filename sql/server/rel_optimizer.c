@@ -2629,7 +2629,7 @@ exp_math_unsafe_fixup( mvc *sql, sql_exp *e, sql_exp *cond, int lr )
 }
 
 static sql_exp *
-exp_case_fixup( mvc *sql, sql_exp *e )
+exp_case_fixup( mvc *sql, sql_rel *rel, sql_exp *e )
 {
 	/* only functions need fix up */
 	if (e->type == e_psm) {
@@ -2638,12 +2638,12 @@ exp_case_fixup( mvc *sql, sql_exp *e )
 		} else if (e->flag & PSM_VAR) {
 			/* todo */
 		} else if (e->flag & PSM_RETURN) {
-			e->l = exp_case_fixup(sql, e->l);
+			e->l = exp_case_fixup(sql, rel, e->l);
 		} else if (e->flag & PSM_WHILE) {
-			e->l = exp_case_fixup(sql, e->l);
+			e->l = exp_case_fixup(sql, rel, e->l);
 			e->r = exps_case_fixup(sql, e->r, NULL, 0);
 		} else if (e->flag & PSM_IF) {
-			e->l = exp_case_fixup(sql, e->l);
+			e->l = exp_case_fixup(sql, rel, e->l);
 			e->r = exps_case_fixup(sql, e->r, NULL, 0);
 			if (e->f)
 				e->f = exps_case_fixup(sql, e->f, NULL, 0);
@@ -2659,7 +2659,7 @@ exp_case_fixup( mvc *sql, sql_exp *e )
 
 		/* first fixup arguments */
 		for (n=args->h; n; n=n->next) {
-			sql_exp *a = exp_case_fixup(sql, n->data);
+			sql_exp *a = exp_case_fixup(sql, rel, n->data);
 			list_append(l, a);
 		}
 		ne = exp_op(sql->sa, l, f);
@@ -2672,6 +2672,11 @@ exp_case_fixup( mvc *sql, sql_exp *e )
 			sql_exp *a1 = args->h->next->data; 
 			sql_exp *a2 = args->h->next->next->data; 
 
+			if (rel) {
+				exp_label(sql->sa, cond, ++sql->label);
+				append(rel->exps, cond);
+				cond = exp_column(sql->sa, exp_find_rel_name(cond), exp_name(cond), exp_subtype(cond), cond->card, has_nil(cond), is_intern(cond));
+			}
 			/* rewrite right hands of div */
 			if ((a1->type == e_func || a1->type == e_convert) && exp_find_math_unsafe(a1)) {
 				a1 = exp_math_unsafe_fixup(sql, a1, cond, 0);
@@ -2691,7 +2696,7 @@ exp_case_fixup( mvc *sql, sql_exp *e )
 		return ne;
 	}
 	if (e->type == e_convert) {
-		sql_exp *e1 = exp_case_fixup(sql, e->l);
+		sql_exp *e1 = exp_case_fixup(sql, rel, e->l);
 		sql_exp *ne = exp_convert(sql->sa, e1, exp_fromtype(e), exp_totype(e));
 		exp_setname(sql->sa, ne, e->rname, e->name);
 		return ne;
@@ -2706,7 +2711,7 @@ exp_case_fixup( mvc *sql, sql_exp *e )
 		if (args) {
  			l = new_exp_list(sql->sa);
 			for (n=args->h; n; n=n->next) {
-				sql_exp *a = exp_case_fixup(sql, n->data);
+				sql_exp *a = exp_case_fixup(sql, rel, n->data);
 				list_append(l, a);
 			}
 		}
@@ -2726,6 +2731,8 @@ rel_case_fixup(int *changes, mvc *sql, sql_rel *rel)
 		list *exps = rel->exps;
 		node *n;
 		int needed = 0;
+		sql_rel *res = rel;
+		int push_down = 0;
 
 		for (n = exps->h; n && !needed; n = n->next) { 
 			sql_exp *e = n->data;
@@ -2737,14 +2744,20 @@ rel_case_fixup(int *changes, mvc *sql, sql_rel *rel)
 		if (!needed)
 			return rel;
 
+		/* get proper output first, then rewrite lower project (such that it can split expressions) */
+		push_down = is_simple_project(rel->op) && !rel->r && !rel_is_ref(rel);
+		if (push_down)
+			res = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 2));
+
 		rel->exps = new_exp_list(sql->sa); 
 		for (n = exps->h; n; n = n->next) { 
-			sql_exp *e = exp_case_fixup( sql, n->data );
+			sql_exp *e = exp_case_fixup( sql, push_down?rel:NULL, n->data );
 		
 			if (!e) 
 				return NULL;
 			list_append(rel->exps, e);
 		}
+		return res;
 	} 
 	return rel;
 }
@@ -5738,21 +5751,6 @@ positional_exps_mark_used( sql_rel *rel, sql_rel *subrel )
 }
 
 static void
-exps_mark_dependent(sql_rel *rel)
-{
-	if (rel->exps) {
-		node *n;
-
-		for (n=rel->exps->h; n; n = n->next) {
-			sql_exp *e = n->data;
-
-			if (e->used) 
-				exp_mark_used(rel, e);
-		}
-	}
-}
-
-static void
 exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
 {
 	int nr = 0;
@@ -5781,7 +5779,7 @@ exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
 		}
 	}
 	/* for count/rank we need atleast one column */
-	if (!nr && (is_project(subrel->op) || is_base(subrel->op)) && subrel->exps->h) {
+	if (subrel && !nr && (is_project(subrel->op) || is_base(subrel->op)) && subrel->exps->h) {
 		sql_exp *e = subrel->exps->h->data;
 		e->used = 1;
 	}
@@ -5879,7 +5877,7 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 			exps_mark_used(sql->sa, rel, rel->l);
 			rel_mark_used(sql, rel->l, 0);
 		} else if (proj) {
-			exps_mark_dependent(rel);
+			exps_mark_used(sql->sa, rel, NULL);
 		}
 		break;
 	case op_update:

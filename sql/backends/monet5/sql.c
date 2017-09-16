@@ -1034,6 +1034,42 @@ str mvc_append_column(sql_trans *t, sql_column *c, BAT *ins) {
 	return MAL_SUCCEED;
 }
 
+/*mvc_grow_wrap(int *bid, str *sname, str *tname, str *cname, ptr d) */
+str
+mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *res = getArgReference_int(stk, pci, 0);
+	bat Tid = *getArgReference_bat(stk, pci, 1);
+	ptr Ins = getArgReference(stk, pci, 2);
+	int tpe = getArgType(mb, pci, 2);
+	BAT *tid = 0, *ins = 0;
+	size_t cnt = 1;
+	oid v = 0;
+
+	(void)cntxt;
+	*res = 0;
+	if ((tid = BATdescriptor(Tid)) == NULL)
+		throw(SQL, "sql.grow", "Cannot access descriptor");
+	if (tpe > GDKatomcnt)
+		tpe = TYPE_bat;
+	if (tpe == TYPE_bat && (ins = BATdescriptor(*(int *) Ins)) == NULL)
+		throw(SQL, "sql.append", "Cannot access descriptor");
+	if (ins) {
+		cnt = BATcount(ins);
+		BBPunfix(ins->batCacheid);
+	}
+	if (BATcount(tid))
+		v = *Tloc(tid, BATcount(tid)-1)+1;
+	for(;cnt>0; cnt--, v++) {
+		if (BUNappend(tid, &v, FALSE) != GDK_SUCCEED) {
+			BBPunfix(Tid);
+			throw(SQL, "sql", MAL_MALLOC_FAIL);
+		}
+	}
+	BBPunfix(Tid);
+	return MAL_SUCCEED;
+}
+
 /*mvc_append_wrap(int *bid, str *sname, str *tname, str *cname, ptr d) */
 str
 mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -2202,112 +2238,6 @@ mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		res = createException(SQL, "sql.resultSet", "failed");
 	BBPunfix(order->batCacheid);
 	return res;
-}
-
-/* str mvc_declared_table_wrap(int *res_id, str *name); */
-str
-mvc_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *m = NULL;
-	str msg;
-	sql_schema *s = NULL;
-	int *res_id = getArgReference_int(stk, pci, 0);
-	str name = *getArgReference_str(stk, pci, 1);
-
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	s = mvc_bind_schema(m, dt_schema);
-	if (s == NULL)
-		throw(SQL, "sql.declared_table", "3F000!Schema missing");
-	(void) mvc_create_table(m, s, name, tt_table, TRUE, SQL_DECLARED_TABLE, CA_DROP, 0);
-	*res_id = 0;
-	return MAL_SUCCEED;
-}
-
-/* str mvc_declared_table_column_wrap(int *ret, int *rs, str *tname, str *name, str *type, int *digits, int *scale); */
-str
-mvc_declared_table_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *m = NULL;
-	str msg;
-	sql_schema *s = NULL;
-	sql_table *t = NULL;
-	sql_type *type = NULL;
-	sql_subtype tpe;
-	int rs = *getArgReference_int(stk, pci, 1);
-	str tname = *getArgReference_str(stk, pci, 2);
-	str name = *getArgReference_str(stk, pci, 3);
-	str typename = *getArgReference_str(stk, pci, 4);
-	int digits = *getArgReference_int(stk, pci, 5);
-	int scale = *getArgReference_int(stk, pci, 6);
-
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	if (rs != 0)
-		throw(SQL, "sql.dtColumn", "Cannot access declared table");
-	if (!sql_find_subtype(&tpe, typename, digits, scale) && (type = mvc_bind_type(m, typename)) == NULL)
-		throw(SQL, "sql.dtColumn", "Cannot find column type");
-	if (type)
-		sql_init_subtype(&tpe, type, 0, 0);
-	s = mvc_bind_schema(m, dt_schema);
-	if (s == NULL)
-		throw(SQL, "sql.declared_table_column", "3F000!Schema missing");
-	t = mvc_bind_table(m, s, tname);
-	if (t == NULL)
-		throw(SQL, "sql.declared_table_column", "42S02!Table missing");
-	(void) mvc_create_column(m, t, name, &tpe);
-	return MAL_SUCCEED;
-}
-
-str
-mvc_drop_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *m = NULL;
-	str name = *getArgReference_str(stk, pci, 1);
-	str msg;
-	sql_schema *s = NULL;
-	sql_table *t = NULL;
-
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	s = mvc_bind_schema(m, dt_schema);
-	if (s == NULL)
-		throw(SQL, "sql.drop", "3F000!Schema missing");
-	t = mvc_bind_table(m, s, name);
-	if (t == NULL)
-		throw(SQL, "sql.drop", "42S02!Table missing");
-	(void) mvc_drop_table(m, s, t, 0);
-	return MAL_SUCCEED;
-}
-
-str
-mvc_drop_declared_tables_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *m = NULL;
-	int i = *getArgReference_int(stk, pci, 1);
-	str msg;
-	sql_schema *s = NULL;
-	sql_table *t = NULL;
-
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	s = mvc_bind_schema(m, dt_schema);
-	if (s == NULL)
-		throw(SQL, "sql.drop", "3F000!Schema missing");
-	while (i && s->tables.set->t) {
-		t = s->tables.set->t->data;
-		(void) mvc_drop_table(m, s, t, 0);
-		i--;
-	}
-	return MAL_SUCCEED;
 }
 
 /* str mvc_affected_rows_wrap(int *m, int m, lng *nr, str *w); */

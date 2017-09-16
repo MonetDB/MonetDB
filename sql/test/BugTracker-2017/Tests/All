@@ -67,3 +67,4 @@ exists.Bug-6392
 case.Bug-6386
 sqllitelogistest_case.Bug-6335
 udf_crash_subquery_scalar_paramters.Bug-6399
+side-effect.Bug-6397
