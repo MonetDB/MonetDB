@@ -1952,11 +1952,12 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 				idx = 1;
 			/* stop on first non equality join */
 			if (!join) {
+				if (en->next && s->type != st_join && s->type != st_join2 && s->type != st_joinN) 
+					break;
 				join = s;
 			} else if (s->type != st_join && s->type != st_join2 && s->type != st_joinN) {
 				/* handle select expressions */
-				assert(0);
-				return NULL;
+				break;
 			}
 			if (s->type == st_join || s->type == st_join2 || s->type == st_joinN) { 
 				list_append(lje, s->op1);
@@ -1986,7 +1987,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		/* construct relation */
 		nl = sa_list(sql->sa);
 
-		/* first project using equi-joins */
+		/* first project after equi-joins */
 		for( n = left->op4.lval->h; n; n = n->next ) {
 			stmt *c = n->data;
 			const char *rnme = table_name(sql->sa, c);
