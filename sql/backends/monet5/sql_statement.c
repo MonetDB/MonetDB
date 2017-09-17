@@ -2596,7 +2596,7 @@ stmt *
 stmt_table_clear(backend *be, sql_table *t)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q;
+	InstrPtr q = NULL;
        
 	if (!t->s && t->data) { /* declared table */
 		int *l = t->data; 
