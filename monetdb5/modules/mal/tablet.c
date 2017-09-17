@@ -133,7 +133,7 @@ str
 TABLETcreate_bats(Tablet *as, BUN est)
 {
 	Column *fmt = as->format;
-	BUN i;
+	BUN i, nr = 0;
 
 	for (i = 0; i < as->nr_attrs; i++) {
 		if (fmt[i].skip)
@@ -147,7 +147,10 @@ TABLETcreate_bats(Tablet *as, BUN est)
 			throw(SQL, "copy", "Failed to create bat of size " BUNFMT "\n", as->nr);
 		}
 		fmt[i].ci = bat_iterator(fmt[i].c);
+		nr++;
 	}
+	if (!nr) 
+		throw(SQL, "copy", "At least one column should be read from the input\n");
 	return MAL_SUCCEED;
 }
 
