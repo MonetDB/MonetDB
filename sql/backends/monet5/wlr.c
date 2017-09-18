@@ -52,45 +52,45 @@ static MT_Id wlr_thread;
 
 static void
 WLRgetConfig(void){
-    char *path;
+	char *path;
 	char line[MAXLINE];
-    FILE *fd;
+	FILE *fd;
 
 	path = GDKfilepath(0,0,"wlr.config",0);
-    fd = fopen(path,"r");
+	fd = fopen(path,"r");
 	GDKfree(path);
-    if( fd == NULL)
-        return ;
-    while( fgets(line, MAXLINE, fd) ){
+	if( fd == NULL)
+		return ;
+	while( fgets(line, MAXLINE, fd) ){
 		line[strlen(line)-1]= 0;
-        if( strncmp("master=", line,7) == 0)
-            strncpy(wlr_master, line + 7, IDLENGTH);
-        if( strncmp("batches=", line, 8) == 0)
-            wlr_batches = atoi(line+ 8);
-        if( strncmp("tag=", line, 4) == 0)
-            wlr_tag = atoi(line+ 4);
-        if( strncmp("beat=", line, 5) == 0)
-            wlr_beat = atoi(line+ 5);
-        if( strncmp("limit=", line, 6) == 0)
-            wlr_limit = atol(line+ 6);
-        if( strncmp("timelimit=", line, 10) == 0)
-            strcpy(wlr_timelimit, line + 10);
-        if( strncmp("error=", line, 6) == 0)
-            strncpy(wlr_error, line+ 6, PATHLENGTH);
-    }
-    fclose(fd);
+		if( strncmp("master=", line,7) == 0)
+			strncpy(wlr_master, line + 7, IDLENGTH);
+		if( strncmp("batches=", line, 8) == 0)
+			wlr_batches = atoi(line+ 8);
+		if( strncmp("tag=", line, 4) == 0)
+			wlr_tag = atoi(line+ 4);
+		if( strncmp("beat=", line, 5) == 0)
+			wlr_beat = atoi(line+ 5);
+		if( strncmp("limit=", line, 6) == 0)
+			wlr_limit = atol(line+ 6);
+		if( strncmp("timelimit=", line, 10) == 0)
+			strcpy(wlr_timelimit, line + 10);
+		if( strncmp("error=", line, 6) == 0)
+			strncpy(wlr_error, line+ 6, PATHLENGTH);
+	}
+	fclose(fd);
 }
 
 static void
 WLRsetConfig(void){
-    char *path;
-    stream *fd;
+	char *path;
+	stream *fd;
 
 	path = GDKfilepath(0,0,"wlr.config",0);
-    fd = open_wastream(path);
+	fd = open_wastream(path);
 	GDKfree(path);
-    if( fd == NULL){
-        return;
+	if( fd == NULL){
+		return;
 	}
 	mnstr_printf(fd,"master=%s\n", wlr_master);
 	mnstr_printf(fd,"batches=%d\n", wlr_batches);
@@ -101,7 +101,7 @@ WLRsetConfig(void){
 		mnstr_printf(fd,"timelimit=%s\n", wlr_timelimit);
 	if( wlr_error[0])
 		mnstr_printf(fd,"error=%s\n", wlr_error);
-    close_stream(fd);
+	close_stream(fd);
 }
 
 /*
@@ -144,11 +144,11 @@ static int wlrprocessrunning;
 
 static void
 WLRprocess(void *arg)
-{	
+{
 	Client cntxt = (Client) arg;
 	int i, pc;
 	char path[PATHLENGTH];
-	stream *fd;
+	stream *fd = NULL;
 	Client c;
 	size_t sz;
 	MalBlkPtr mb;
@@ -156,25 +156,26 @@ WLRprocess(void *arg)
 	str msg;
 	mvc *sql;
 	lng currid =0;
+	Symbol prev = NULL;
 
-    MT_lock_set(&wlc_lock);
+	MT_lock_set(&wlc_lock);
 	if( wlrprocessrunning){
 		MT_lock_unset(&wlc_lock);
 		return;
 	}
 	wlrprocessrunning ++;
-    MT_lock_unset(&wlc_lock);
+	MT_lock_unset(&wlc_lock);
 	c =MCforkClient(cntxt);
 	if( c == 0){
 		wlrprocessrunning =0;
 		GDKerror("Could not create user for WLR process\n");
 		return;
 	}
-    c->prompt = GDKstrdup("");  /* do not produce visible prompts */
-    c->promptlength = 0;
-    c->listing = 0;
+	c->promptlength = 0;
+	c->listing = 0;
 	c->fdout = open_wastream(".wlr");
-	c->curprg = newFunction(putName("user"), putName("wlr"), FUNCTIONsymbol);
+	prev = newFunction(putName("user"), putName("wlr"), FUNCTIONsymbol);
+	c->curprg = prev;
 	mb = c->curprg->def;
 	setVarType(mb, 0, TYPE_void);
 
@@ -184,11 +185,11 @@ WLRprocess(void *arg)
 	msg = getSQLContext(c, mb, &sql, NULL);
 	if( msg)
 		mnstr_printf(GDKerr,"#Failed to access the transaction context: %s\n",msg);
-    if ((msg = checkSQLContext(c)) != NULL)
+	if ((msg = checkSQLContext(c)) != NULL)
 		mnstr_printf(GDKerr,"#Inconsitent SQL contex : %s\n",msg);
 
 #ifdef _WLR_DEBUG_
-	mnstr_printf(c->fdout,"#Ready to start the replay against '%s' batches %d:%d\n", 
+	mnstr_printf(c->fdout,"#Ready to start the replay against '%s' batches %d:%d\n",
 		wlr_archive, wlr_firstbatch, wlr_batches );
 #endif
 	path[0]=0;
@@ -203,7 +204,7 @@ WLRprocess(void *arg)
 		}
 		sz = getFileSize(fd);
 		if (sz > (size_t) 1 << 29) {
-			mnstr_destroy(fd);
+			close_stream(fd);
 			mnstr_printf(GDKerr, "wlr.process File %s too large to process", path);
 			continue;
 		}
@@ -232,16 +233,17 @@ WLRprocess(void *arg)
 			if( getModuleId(q) == wlrRef && getFunctionId(q) == transactionRef && (currid = getVarConstant(mb, getArg(q,1)).val.lval) < wlr_tag){
 				/* skip already executed transactions */
 			} else
-			if( getModuleId(q) == wlrRef && getFunctionId(q) == transactionRef && 
+			if( getModuleId(q) == wlrRef && getFunctionId(q) == transactionRef &&
 				( ( (currid = getVarConstant(mb, getArg(q,1)).val.lval) >= wlr_limit && wlr_limit != -1) ||
-				( wlr_timelimit[0] && strcmp(getVarConstant(mb, getArg(q,2)).val.sval, wlr_timelimit) >= 0))
-				){
+				  ( wlr_timelimit[0] && strcmp(getVarConstant(mb, getArg(q,2)).val.sval, wlr_timelimit) >= 0))
+					){
 				/* stop execution of the transactions if your reached the limit */
 #ifdef _WLR_DEBUG_
 				mnstr_printf(GDKerr,"#skip tlimit %s  tag %s\n", wlr_timelimit,getVarConstant(mb, getArg(q,2)).val.sval);
 #endif
-				resetMalBlk(mb, 1);
+				resetMalBlkAndFreeInstructions(mb, 1);
 				trimMalVariables(mb, NULL);
+				bstream_destroy(c->fdin);
 				goto wrapup;
 			} else
 			if( getModuleId(q) == wlrRef && getFunctionId(q) == transactionRef ){
@@ -278,7 +280,7 @@ WLRprocess(void *arg)
 						mvc_rollback(sql,0,NULL);
 						// cleanup
 						fprintFunction(stderr,mb,0,63);
-						resetMalBlk(mb, 1);
+						resetMalBlkAndFreeInstructions(mb, 1);
 						trimMalVariables(mb, NULL);
 						pc = 0;
 					} else
@@ -292,13 +294,13 @@ WLRprocess(void *arg)
 					printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
 				}
 				// cleanup
-				resetMalBlk(mb, 1);
+				resetMalBlkAndFreeInstructions(mb, 1);
 				trimMalVariables(mb, NULL);
 				pc = 0;
 			} else
 			if ( getModuleId(q) == wlrRef && getFunctionId(q) == rollbackRef ){
 				// cleanup
-				resetMalBlk(mb, 1);
+				resetMalBlkAndFreeInstructions(mb, 1);
 				trimMalVariables(mb, NULL);
 				pc = 0;
 			}
@@ -310,13 +312,20 @@ WLRprocess(void *arg)
 		wlr_batches++;
 		WLRsetConfig();
 		// stop when we are about to read beyond the limited transaction (timestamp)
-		if( (wlr_limit != -1 || (wlr_timelimit[0] && wlr_read[0] && strncmp(wlr_read,wlr_timelimit,26)>= 0) )  && wlr_limit <= wlr_tag)
+		if( (wlr_limit != -1 || (wlr_timelimit[0] && wlr_read[0] && strncmp(wlr_read,wlr_timelimit,26)>= 0) )  && wlr_limit <= wlr_tag) {
+			bstream_destroy(c->fdin);
 			break;
+		}
+		bstream_destroy(c->fdin);
 	}
 wrapup:
 	wlrprocessrunning =0;
 	(void) mnstr_flush(c->fdout);
+	close_stream(c->fdout);
+	SQLexitClient(c);
 	MCcloseClient(c);
+	if(prev)
+		freeSymbol(prev);
 }
 
 /*
@@ -386,7 +395,7 @@ WLRinit(void)
 str
 WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str timelimit  = wlr_timelimit;
-	int size = 26;
+	size_t size = 26;
 	str msg;
 	(void) mb;
 
@@ -413,7 +422,8 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if( getArgType(mb, pci, pci->argc-1) == TYPE_timestamp){
-		timestamp_tz_tostr(&timelimit, &size, (timestamp*) getArgReference(stk,pci,1), &tzone_local);
+		if (timestamp_tz_tostr(&timelimit, &size, (timestamp*) getArgReference(stk,pci,1), &tzone_local) < 0)
+			throw(SQL, "wlr.replicate", GDK_EXCEPTION);
 		mnstr_printf(cntxt->fdout,"#time limit %s\n",timelimit);
 	} else
 	if( getArgType(mb, pci, pci->argc-1) == TYPE_bte)

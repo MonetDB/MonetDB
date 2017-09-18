@@ -84,38 +84,46 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 		ngrp = 1;
 	} else if (e == NULL) {
 		/* we need to find out the min and max of g */
-		min = oid_nil;	/* note that oid_nil > 0! (unsigned) */
-		max = 0;
-		if (BATtdense(g)) {
-			min = g->tseqbase;
-			max = g->tseqbase + BATcount(g) - 1;
-		} else if (g->tsorted) {
-			gids = (const oid *) Tloc(g, 0);
-			/* find first non-nil */
-			for (i = 0, ngrp = BATcount(g); i < ngrp; i++, gids++) {
-				if (*gids != oid_nil) {
-					min = *gids;
-					break;
-				}
-			}
-			if (min != oid_nil) {
-				/* found a non-nil, max must be last
-				 * value (and there is one!) */
-				max = * (const oid *) Tloc(g, BUNlast(g) - 1);
-			}
+		PROPrec *prop;
+
+		prop = BATgetprop(g, GDK_MAX_VALUE);
+		if (prop) {
+			min = 0; /* just assume it starts at 0 */
+			max = prop->v.val.oval;
 		} else {
-			/* we'll do a complete scan */
-			gids = (const oid *) Tloc(g, 0);
-			for (i = 0, ngrp = BATcount(g); i < ngrp; i++, gids++) {
-				if (*gids != oid_nil) {
-					if (*gids < min)
+			min = oid_nil;	/* note that oid_nil > 0! (unsigned) */
+			max = 0;
+			if (BATtdense(g)) {
+				min = g->tseqbase;
+				max = g->tseqbase + BATcount(g) - 1;
+			} else if (g->tsorted) {
+				gids = (const oid *) Tloc(g, 0);
+				/* find first non-nil */
+				for (i = 0, ngrp = BATcount(g); i < ngrp; i++, gids++) {
+					if (*gids != oid_nil) {
 						min = *gids;
-					if (*gids > max)
-						max = *gids;
+						break;
+					}
 				}
+				if (min != oid_nil) {
+					/* found a non-nil, max must be last
+					 * value (and there is one!) */
+					max = * (const oid *) Tloc(g, BUNlast(g) - 1);
+				}
+			} else {
+				/* we'll do a complete scan */
+				gids = (const oid *) Tloc(g, 0);
+				for (i = 0, ngrp = BATcount(g); i < ngrp; i++, gids++) {
+					if (*gids != oid_nil) {
+						if (*gids < min)
+							min = *gids;
+						if (*gids > max)
+							max = *gids;
+					}
+				}
+				/* note: max < min is possible if all groups
+				 * are nil (or BATcount(g)==0) */
 			}
-			/* note: max < min is possible if all groups
-			 * are nil (or BATcount(g)==0) */
 		}
 		ngrp = max < min ? 0 : max - min + 1;
 	} else {
@@ -2281,28 +2289,29 @@ BATminmax(BAT *b, void *aggr,
 {
 	oid pos;
 	const void *res;
-	int s;
-	int needdecref = 0;
+	size_t s;
 	BATiter bi;
 
 	if ((VIEWtparent(b) == 0 ||
 	     BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b)))) &&
 	    BATcheckimprints(b)) {
 		Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(VIEWtparent(b))->timprints : b->timprints;
+		int i;
+
 		pos = oid_nil;
 		if (minmax == do_groupmin) {
 			/* find first non-empty bin */
-			for (s = 0; s < imprints->bits; s++) {
-				if (imprints->stats[s + 128]) {
-					pos = imprints->stats[s] + b->hseqbase;
+			for (i = 0; i < imprints->bits; i++) {
+				if (imprints->stats[i + 128]) {
+					pos = imprints->stats[i] + b->hseqbase;
 					break;
 				}
 			}
 		} else {
 			/* find last non-empty bin */
-			for (s = imprints->bits - 1; s >= 0; s--) {
-				if (imprints->stats[s + 128]) {
-					pos = imprints->stats[s + 64] + b->hseqbase;
+			for (i = imprints->bits - 1; i >= 0; i--) {
+				if (imprints->stats[i + 128]) {
+					pos = imprints->stats[i + 64] + b->hseqbase;
 					break;
 				}
 			}
@@ -2325,8 +2334,6 @@ BATminmax(BAT *b, void *aggr,
 	}
 	if (aggr != NULL)	/* else: malloc error */
 		memcpy(aggr, res, s);
-	if (needdecref)
-		BBPunfix(b->batCacheid);
 	return aggr;
 }
 

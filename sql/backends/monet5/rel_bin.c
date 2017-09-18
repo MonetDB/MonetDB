@@ -24,6 +24,45 @@ static stmt * exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *gr
 static stmt * rel_bin(backend *be, sql_rel *rel);
 static stmt * subrel_bin(backend *be, sql_rel *rel, list *refs);
 
+static stmt *check_types(backend *be, sql_subtype *ct, stmt *s, check_type tpe);
+
+static stmt *
+sql_unop_(backend *be, sql_schema *s, const char *fname, stmt *rs)
+{
+	mvc *sql = be->mvc;
+	sql_subtype *rt = NULL;
+	sql_subfunc *f = NULL;
+
+	if (!s)
+		s = sql->session->schema;
+	rt = tail_type(rs);
+	f = sql_bind_func(sql->sa, s, fname, rt, NULL, F_FUNC);
+	/* try to find the function without a type, and convert
+	 * the value to the type needed by this function!
+	 */
+	if (!f && (f = sql_find_func(sql->sa, s, fname, 1, F_FUNC, NULL)) != NULL) {
+		sql_arg *a = f->func->ops->h->data;
+
+		rs = check_types(be, &a->type, rs, type_equal);
+		if (!rs) 
+			f = NULL;
+	}
+	if (f) {
+		/*
+		if (f->func->res.scale == INOUT) {
+			f->res.digits = rt->digits;
+			f->res.scale = rt->scale;
+		}
+		*/
+		return stmt_unop(be, rs, f);
+	} else if (rs) {
+		char *type = tail_type(rs)->type->sqlname;
+
+		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such unary operator '%s(%s)'", fname, type);
+	}
+	return NULL;
+}
+
 static stmt *
 refs_find_rel(list *refs, sql_rel *rel)
 {
@@ -318,7 +357,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			stmt *r = exp_bin(be, e->l, left, right, grp, ext, cnt, sel);
 			return stmt_assign(be, e->name, r, GET_PSM_LEVEL(e->flag));
 		} else if (e->flag & PSM_VAR) {
-			if (e->f) /* TODO TABLE */
+			if (e->f)
 				return stmt_vars(be, e->name, e->f, 1, GET_PSM_LEVEL(e->flag));
 			else
 				return stmt_var(be, e->name, &e->tpe, 1, GET_PSM_LEVEL(e->flag));
@@ -326,6 +365,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			sql_exp *l = e->l;
 			stmt *r = exp_bin(be, l, left, right, grp, ext, cnt, sel);
 
+			if (!r)
+				return NULL;
 			/* handle table returning functions */
 			if (l->type == e_psm && l->flag & PSM_REL) {
 				stmt *lst = r->op1;
@@ -708,10 +749,16 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 							tail_type(l), tail_type(r), F_FUNC);
 					sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema,
 							"and", bt, bt, F_FUNC);
-					assert(lf && rf && a);
-					s = stmt_binop(be, 
-						stmt_binop(be, l, r, lf), 
-						stmt_binop(be, l, r2, rf), a);
+
+					if (is_atom(re->type) && re->l && atom_null((atom*)re->l) &&
+					    is_atom(re2->type) && re2->l && atom_null((atom*)re2->l)) {
+						s = sql_unop_(be, NULL, "isnull", l);
+					} else {
+						assert(lf && rf && a);
+						s = stmt_binop(be, 
+							stmt_binop(be, l, r, lf), 
+							stmt_binop(be, l, r2, rf), a);
+					}
 					if (is_anti(e)) {
 						sql_subfunc *a = sql_bind_func(sql->sa, sql->session->schema, "not", bt, NULL, F_FUNC);
 						s = stmt_unop(be, s, a);
@@ -742,8 +789,6 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 	}
 	return s;
 }
-
-static stmt *check_types(backend *be, sql_subtype *ct, stmt *s, check_type tpe);
 
 static stmt *
 stmt_col( backend *be, sql_column *c, stmt *del) 
@@ -965,43 +1010,6 @@ check_types(backend *be, sql_subtype *ct, stmt *s, check_type tpe)
 }
 
 static stmt *
-sql_unop_(backend *be, sql_schema *s, const char *fname, stmt *rs)
-{
-	mvc *sql = be->mvc;
-	sql_subtype *rt = NULL;
-	sql_subfunc *f = NULL;
-
-	if (!s)
-		s = sql->session->schema;
-	rt = tail_type(rs);
-	f = sql_bind_func(sql->sa, s, fname, rt, NULL, F_FUNC);
-	/* try to find the function without a type, and convert
-	 * the value to the type needed by this function!
-	 */
-	if (!f && (f = sql_find_func(sql->sa, s, fname, 1, F_FUNC, NULL)) != NULL) {
-		sql_arg *a = f->func->ops->h->data;
-
-		rs = check_types(be, &a->type, rs, type_equal);
-		if (!rs) 
-			f = NULL;
-	}
-	if (f) {
-		/*
-		if (f->func->res.scale == INOUT) {
-			f->res.digits = rt->digits;
-			f->res.scale = rt->scale;
-		}
-		*/
-		return stmt_unop(be, rs, f);
-	} else if (rs) {
-		char *type = tail_type(rs)->type->sqlname;
-
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such unary operator '%s(%s)'", fname, type);
-	}
-	return NULL;
-}
-
-static stmt *
 sql_Nop_(backend *be, const char *fname, stmt *a1, stmt *a2, stmt *a3, stmt *a4)
 {
 	mvc *sql = be->mvc;
@@ -1037,17 +1045,19 @@ rel_parse_value(backend *be, char *query, char emode)
 	int len = _strlen(query);
 	exp_kind ek = {type_value, card_value, FALSE};
 	stream *sr;
+	bstream *bs;
 
 	m->qc = NULL;
 
 	m->caching = 0;
 	m->emode = emode;
 	b = (buffer*)GDKmalloc(sizeof(buffer));
-	if (b == 0)
-		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	n = GDKmalloc(len + 1 + 1);
-	if (n == 0)
+	if (b == NULL || n == NULL) {
+		GDKfree(b);
+		GDKfree(n);
 		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 	strncpy(n, query, len);
 	query = n;
 	query[len] = '\n';
@@ -1055,7 +1065,16 @@ rel_parse_value(backend *be, char *query, char emode)
 	len++;
 	buffer_init(b, query, len);
 	sr = buffer_rastream(b, "sqlstatement");
-	scanner_init(&m->scanner, bstream_create(sr, b->len), NULL);
+	if (sr == NULL) {
+		buffer_destroy(b);
+		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
+	bs = bstream_create(sr, b->len);
+	if(bs == NULL) {
+		buffer_destroy(b);
+		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
+	scanner_init(&m->scanner, bs, NULL);
 	m->scanner.mode = LINE_1; 
 	bstream_next(m->scanner.rs);
 
@@ -1935,11 +1954,12 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 				idx = 1;
 			/* stop on first non equality join */
 			if (!join) {
+				if (en->next && s->type != st_join && s->type != st_join2 && s->type != st_joinN) 
+					break;
 				join = s;
 			} else if (s->type != st_join && s->type != st_join2 && s->type != st_joinN) {
 				/* handle select expressions */
-				assert(0);
-				return NULL;
+				break;
 			}
 			if (s->type == st_join || s->type == st_join2 || s->type == st_joinN) { 
 				list_append(lje, s->op1);
@@ -1969,7 +1989,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		/* construct relation */
 		nl = sa_list(sql->sa);
 
-		/* first project using equi-joins */
+		/* first project after equi-joins */
 		for( n = left->op4.lval->h; n; n = n->next ) {
 			stmt *c = n->data;
 			const char *rnme = table_name(sql->sa, c);
@@ -2600,7 +2620,7 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 			return NULL;
 		}
 		if (s->nrcols == 0){
-			if (!predicate)
+			if (!predicate && sub)
 				predicate = stmt_const(be, bin_first_column(be, sub), stmt_bool(be, 1));
 			sel = stmt_uselect(be, predicate, s, cmp_equal, sel, 0);
 		} else if (e->type != e_cmp) {
@@ -2857,6 +2877,10 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 	len++;
 	buffer_init(b, query, len);
 	buf = buffer_rastream(b, "sqlstatement");
+	if(buf == NULL) {
+		buffer_destroy(b);
+		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 	scanner_init( &m->scanner, bstream_create(buf, b->len), NULL);
 	m->scanner.mode = LINE_1; 
 	bstream_next(m->scanner.rs);
@@ -2869,6 +2893,12 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 
 	/* create private allocator */
 	m->sa = (sa)?sa:sa_create();
+	if (!m->sa) {
+		GDKfree(query);
+		GDKfree(b);
+		bstream_destroy(m->scanner.rs);
+		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 
 	if (sqlparse(m) || !m->sym) {
 		/* oops an error */

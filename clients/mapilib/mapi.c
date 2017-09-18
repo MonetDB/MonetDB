@@ -1896,7 +1896,7 @@ parse_uri_query(Mapi mid, char *uri)
 	char *val;
 
 	/* just don't care where it is, assume it all starts from '?' */
-	if ((uri = strchr(uri, '?')) == NULL)
+	if (uri == NULL || (uri = strchr(uri, '?')) == NULL)
 		return;
 
 	*uri++ = '\0';			/* skip '?' */
@@ -2385,7 +2385,7 @@ mapi_reconnect(Mapi mid)
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 #ifdef HAVE_FCNTL
-		fcntl(s, F_SETFD, FD_CLOEXEC);
+		(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
 		memset(&userver, 0, sizeof(struct sockaddr_un));
 		userver.sun_family = AF_UNIX;
@@ -2454,7 +2454,7 @@ mapi_reconnect(Mapi mid)
 			if (s == INVALID_SOCKET)
 				continue;
 #ifdef HAVE_FCNTL
-			fcntl(s, F_SETFD, FD_CLOEXEC);
+			(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
 			if (connect(s, rp->ai_addr, (socklen_t) rp->ai_addrlen) != SOCKET_ERROR)
 				break;  /* success */
@@ -2507,7 +2507,7 @@ mapi_reconnect(Mapi mid)
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 #ifdef HAVE_FCNTL
-		fcntl(s, F_SETFD, FD_CLOEXEC);
+		(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
 
 		if (connect(s, serv, sizeof(server)) == SOCKET_ERROR) {
@@ -2999,7 +2999,7 @@ close_connection(Mapi mid)
 	/* finish channels */
 	/* Make sure that the write- (to-) stream is closed first,
 	 * as the related read- (from-) stream closes the shared
-	 * socket; see also src/common/stream.mx:socket_close .
+	 * socket; see also src/common/stream.c:socket_close .
 	 */
 	if (mid->to) {
 		close_stream(mid->to);
@@ -3374,13 +3374,35 @@ mapi_param_store(MapiHdl hdl)
 				buf[0] = *(char *) src;
 				buf[1] = 0;
 				val = mapi_quote(buf, 1);
-				checkSpace(strlen(val) + 3);
+				/* note: k==strlen(hdl->query) */
+				if (k + strlen(val) + 3 >= lim) {
+					char *q = hdl->query;
+					lim = k + strlen(val) + 3 + MAPIBLKSIZE;
+					hdl->query = realloc(hdl->query, lim);
+					if (hdl->query == NULL) {
+						free(q);
+						free(val);
+						return;
+					}
+					hdl->query = q;
+				}
 				sprintf(hdl->query + k, "'%s'", val);
 				free(val);
 				break;
 			case MAPI_VARCHAR:
 				val = mapi_quote((char *) src, hdl->params[i].sizeptr ? *hdl->params[i].sizeptr : -1);
-				checkSpace(strlen(val) + 3);
+				/* note: k==strlen(hdl->query) */
+				if (k + strlen(val) + 3 >= lim) {
+					char *q = hdl->query;
+					lim = k + strlen(val) + 3 + MAPIBLKSIZE;
+					hdl->query = realloc(hdl->query, lim);
+					if (hdl->query == NULL) {
+						free(q);
+						free(val);
+						return;
+					}
+					hdl->query = q;
+				}
 				sprintf(hdl->query + k, "'%s'", val);
 				free(val);
 				break;
@@ -3569,7 +3591,7 @@ slice_row(const char *reply, char *null, char ***anchorsp, size_t **lensp, int l
 		}
 		lens[i] = len;
 		anchors[i++] = start;
-		while (reply && *reply && isspace((int) (unsigned char) *reply))
+		while (reply && *reply && isspace((unsigned char) *reply))
 			reply++;
 	} while (reply && *reply && *reply != endchar);
 	*anchorsp = anchors;
@@ -3792,7 +3814,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 	result->commentonly = 0;
 
 	tag = etag + 1;
-	while (*tag && isspace((int) (unsigned char) *tag))
+	while (*tag && isspace((unsigned char) *tag))
 		tag++;
 
 	if (n > result->fieldcnt) {
@@ -3805,6 +3827,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 	}
 
 	if (strcmp(tag, "name") == 0) {
+		result->fieldcnt = n;
 		for (i = 0; i < n; i++) {
 			if (anchors[i]) {
 				if (result->fields[i].columnname)
@@ -3814,6 +3837,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 			}
 		}
 	} else if (strcmp(tag, "type") == 0) {
+		result->fieldcnt = n;
 		for (i = 0; i < n; i++) {
 			if (anchors[i]) {
 				if (result->fields[i].columntype)
@@ -3823,11 +3847,13 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 			}
 		}
 	} else if (strcmp(tag, "length") == 0) {
+		result->fieldcnt = n;
 		for (i = 0; i < n; i++) {
 			if (anchors[i])
 				result->fields[i].columnlength = atoi(anchors[i]);
 		}
 	} else if (strcmp(tag, "table_name") == 0) {
+		result->fieldcnt = n;
 		for (i = 0; i < n; i++) {
 			if (anchors[i]) {
 				if (result->fields[i].tablename)
@@ -3837,6 +3863,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 			}
 		}
 	} else if (strcmp(tag, "typesizes") == 0) {
+		result->fieldcnt = n;
 		for (i = 0; i < n; i++) {
 			if (anchors[i]) {
 				char *p;
@@ -4541,7 +4568,7 @@ unquote(const char *msg, char **str, const char **next, int endchar, size_t *len
 	char quote;
 
 	/* first skip over leading white space */
-	while (*p && isspace((int) (unsigned char) *p))
+	while (*p && isspace((unsigned char) *p))
 		p++;
 	quote = *p;
 	if (quote == '\'' || quote == '"') {
@@ -4649,9 +4676,9 @@ unquote(const char *msg, char **str, const char **next, int endchar, size_t *len
 		while (*p && *p != ',' && *p != '\t' && *p != endchar)
 			p++;
 		/* search back over trailing white space */
-		for (s = p - 1; s > msg && isspace((int) (unsigned char) *s); s--)
+		for (s = p - 1; s > msg && isspace((unsigned char) *s); s--)
 			;
-		if (s < msg || !isspace((int) (unsigned char) *s))	/* gone one too far */
+		if (s < msg || !isspace((unsigned char) *s))	/* gone one too far */
 			s++;
 		if (*p == ',' || *p == '\t') {
 			/* there is more to come; skip over separator */
@@ -4855,7 +4882,7 @@ store_field(struct MapiResultSet *result, int cr, int fnr, int outtype, void *ds
 			unsigned int fac = 1000000000;
 			unsigned int nsec = 0;
 
-			for (n++; isdigit((int) (unsigned char) val[n]); n++) {
+			for (n++; isdigit((unsigned char) val[n]); n++) {
 				fac /= 10;
 				nsec += (val[n] - '0') * fac;
 			}

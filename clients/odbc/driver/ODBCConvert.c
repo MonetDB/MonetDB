@@ -461,7 +461,7 @@ parseoptionalbracketednumber(char **svalp,
 	char *eptr;
 	long val;
 
-	while (slen > 0 && isspace((int) *sval)) {
+	while (slen > 0 && isspace((unsigned char) *sval)) {
 		slen--;
 		sval++;
 	}
@@ -471,7 +471,7 @@ parseoptionalbracketednumber(char **svalp,
 	}
 	slen--;
 	sval++;
-	while (slen > 0 && isspace((int) *sval)) {
+	while (slen > 0 && isspace((unsigned char) *sval)) {
 		slen--;
 		sval++;
 	}
@@ -493,14 +493,14 @@ parseoptionalbracketednumber(char **svalp,
 	slen -= (int) (eptr - sval);
 	sval = eptr;
 	*val1p = (int) val;
-	while (slen > 0 && isspace((int) *sval)) {
+	while (slen > 0 && isspace((unsigned char) *sval)) {
 		slen--;
 		sval++;
 	}
 	if (val2p != NULL && slen > 0 && *sval == ',') {
 		slen--;
 		sval++;
-		while (slen > 0 && isspace((int) *sval)) {
+		while (slen > 0 && isspace((unsigned char) *sval)) {
 			slen--;
 			sval++;
 		}
@@ -539,9 +539,9 @@ parsemonthintervalstring(char **svalp,
 		return SQL_ERROR;
 	sval += 8;
 	slen -= 8;
-	if (slen == 0 || !isspace((int) *sval))
+	if (slen == 0 || !isspace((unsigned char) *sval))
 		return SQL_ERROR;
-	while (slen > 0 && isspace((int) *sval)) {
+	while (slen > 0 && isspace((unsigned char) *sval)) {
 		slen--;
 		sval++;
 	}
@@ -571,14 +571,14 @@ parsemonthintervalstring(char **svalp,
 	leadingprecision = (SQLLEN) (eptr - sval);
 	slen -= leadingprecision;
 	sval = eptr;
-	while (isspace((int) *sval)) {
+	while (isspace((unsigned char) *sval)) {
 		slen--;
 		sval++;
 	}
 	if (*sval == '-') {
 		slen--;
 		sval++;
-		while (isspace((int) *sval)) {
+		while (isspace((unsigned char) *sval)) {
 			slen--;
 			sval++;
 		}
@@ -591,7 +591,7 @@ parsemonthintervalstring(char **svalp,
 			return SQL_ERROR;
 		slen -= (int) (eptr - sval);
 		sval = eptr;
-		while (isspace((int) *sval)) {
+		while (isspace((unsigned char) *sval)) {
 			slen--;
 			sval++;
 		}
@@ -605,9 +605,9 @@ parsemonthintervalstring(char **svalp,
 		return SQL_ERROR;
 	slen--;
 	sval++;
-	if (slen == 0 || !isspace((int) *sval))
+	if (slen == 0 || !isspace((unsigned char) *sval))
 		return SQL_ERROR;
-	while (slen > 0 && isspace((int) *sval)) {
+	while (slen > 0 && isspace((unsigned char) *sval)) {
 		slen--;
 		sval++;
 	}
@@ -625,8 +625,8 @@ parsemonthintervalstring(char **svalp,
 			ival->intval.year_month.year = val1;
 			ival->intval.year_month.month = 0;
 		}
-		if (slen > 0 && isspace((int) *sval)) {
-			while (slen > 0 && isspace((int) *sval)) {
+		if (slen > 0 && isspace((unsigned char) *sval)) {
+			while (slen > 0 && isspace((unsigned char) *sval)) {
 				slen--;
 				sval++;
 			}
@@ -635,16 +635,16 @@ parsemonthintervalstring(char **svalp,
 				sval += 2;
 				if (val2 == -1)
 					return SQL_ERROR;
-				if (slen == 0 || !isspace((int) *sval))
+				if (slen == 0 || !isspace((unsigned char) *sval))
 					return SQL_ERROR;
-				while (slen > 0 && isspace((int) *sval)) {
+				while (slen > 0 && isspace((unsigned char) *sval)) {
 					slen--;
 					sval++;
 				}
 				if (slen >= 5 && strncasecmp(sval, "month", 5) == 0) {
 					slen -= 5;
 					sval += 5;
-					while (slen > 0 && isspace((int) *sval)) {
+					while (slen > 0 && isspace((unsigned char) *sval)) {
 						slen--;
 						sval++;
 					}
@@ -663,7 +663,7 @@ parsemonthintervalstring(char **svalp,
 			return SQL_ERROR;
 		if (leadingprecision > p)
 			return SQL_ERROR;
-		while (slen > 0 && isspace((int) *sval)) {
+		while (slen > 0 && isspace((unsigned char) *sval)) {
 			slen--;
 			sval++;
 		}
@@ -697,9 +697,9 @@ parsesecondintervalstring(char **svalp,
 		return SQL_ERROR;
 	sval += 8;
 	slen -= 8;
-	if (slen == 0 || !isspace((int) *sval))
+	if (slen == 0 || !isspace((unsigned char) *sval))
 		return SQL_ERROR;
-	while (slen > 0 && isspace((int) *sval)) {
+	while (slen > 0 && isspace((unsigned char) *sval)) {
 		slen--;
 		sval++;
 	}
@@ -818,7 +818,7 @@ parsesecondintervalstring(char **svalp,
 			slen--;
 		}
 	}
-	while (slen > 0 && isspace((int) *sval)) {
+	while (slen > 0 && isspace((unsigned char) *sval)) {
 		slen--;
 		sval++;
 	}
@@ -826,9 +826,9 @@ parsesecondintervalstring(char **svalp,
 		return SQL_ERROR;
 	slen--;
 	sval++;
-	if (slen == 0 || !isspace((int) *sval))
+	if (slen == 0 || !isspace((unsigned char) *sval))
 		return SQL_ERROR;
-	while (slen > 0 && isspace((int) *sval)) {
+	while (slen > 0 && isspace((unsigned char) *sval)) {
 		slen--;
 		sval++;
 	}
@@ -916,17 +916,17 @@ parsesecondintervalstring(char **svalp,
 		if (ival->interval_type == SQL_IS_SECOND && secondprecision > q)
 			return SQL_ERROR;
 	}
-	if (slen > 0 && isspace((int) *sval)) {
-		while (slen > 0 && isspace((int) *sval)) {
+	if (slen > 0 && isspace((unsigned char) *sval)) {
+		while (slen > 0 && isspace((unsigned char) *sval)) {
 			slen--;
 			sval++;
 		}
 		if (slen > 2 && strncasecmp(sval, "to", 2) == 0) {
 			slen -= 2;
 			sval += 2;
-			if (slen == 0 || !isspace((int) *sval))
+			if (slen == 0 || !isspace((unsigned char) *sval))
 				return SQL_ERROR;
-			while (slen > 0 && isspace((int) *sval)) {
+			while (slen > 0 && isspace((unsigned char) *sval)) {
 				slen--;
 				sval++;
 			}
@@ -950,7 +950,7 @@ parsesecondintervalstring(char **svalp,
 				    ival->interval_type != SQL_IS_HOUR_TO_SECOND &&
 				    ival->interval_type != SQL_IS_MINUTE_TO_SECOND)
 					return SQL_ERROR;
-				while (slen > 0 && isspace((int) *sval)) {
+				while (slen > 0 && isspace((unsigned char) *sval)) {
 					slen--;
 					sval++;
 				}
@@ -960,7 +960,7 @@ parsesecondintervalstring(char **svalp,
 					return SQL_ERROR;
 			} else
 				return SQL_ERROR;
-			while (slen > 0 && isspace((int) *sval)) {
+			while (slen > 0 && isspace((unsigned char) *sval)) {
 				slen--;
 				sval++;
 			}

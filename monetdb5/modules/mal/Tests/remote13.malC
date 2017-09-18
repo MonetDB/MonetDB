@@ -1,0 +1,19 @@
+# let connect figure out itself how to connect to the running db
+uri := sabaoth.getLocalConnectionURI();
+conn:str := remote.connect(uri, "monetdb", "monetdb");
+io.print(conn);
+
+io := nil:int;
+o := remote.put(conn, io);
+j:int := remote.get(conn, o);
+io.print(j);
+
+no := nil:bat[:oid];
+n := remote.put(conn, no);
+# retrieval of nil bat requires an MAPI change.
+#k:bat[:oid] := remote.get(conn, n);
+#io.print(k);
+
+# help testweb a bit, since currently no cleanup is done on server
+# shutdown
+remote.disconnect(conn);

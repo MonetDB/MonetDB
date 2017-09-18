@@ -37,14 +37,14 @@ int TYPE_sqlblob;
 
 mal_export str BLOBprelude(void *ret);
 
-mal_export int BLOBtostr(str *tostr, int *l, blob *pin);
-mal_export int BLOBfromstr(char *instr, int *l, blob **val);
-mal_export int BLOBcmp(blob *l, blob *r);
-mal_export BUN BLOBhash(blob *b);
-mal_export blob * BLOBnull(void);
-mal_export var_t BLOBput(Heap *h, var_t *bun, blob *val);
+mal_export ssize_t BLOBtostr(str *tostr, size_t *l, const blob *pin);
+mal_export ssize_t BLOBfromstr(const char *instr, size_t *l, blob **val);
+mal_export int BLOBcmp(const blob *l, const blob *r);
+mal_export BUN BLOBhash(const blob *b);
+mal_export const blob *BLOBnull(void);
+mal_export var_t BLOBput(Heap *h, var_t *bun, const blob *val);
 mal_export void BLOBdel(Heap *h, var_t *index);
-mal_export int BLOBlength(blob *p);
+mal_export size_t BLOBlength(const blob *p);
 mal_export void BLOBheap(Heap *heap, size_t capacity);
 mal_export str BLOBtoblob(blob **retval, str *s);
 mal_export str BLOBfromblob(str *retval, blob **b);
@@ -52,12 +52,12 @@ mal_export str BLOBfromidx(str *retval, blob **binp, int *index);
 mal_export str BLOBnitems(int *ret, blob *b);
 mal_export int BLOBget(Heap *h, int *bun, int *l, blob **val);
 mal_export blob * BLOBread(blob *a, stream *s, size_t cnt);
-mal_export gdk_return BLOBwrite(blob *a, stream *s, size_t cnt);
+mal_export gdk_return BLOBwrite(const blob *a, stream *s, size_t cnt);
 
 mal_export str BLOBblob_blob(blob **d, blob **s);
-mal_export str BLOBblob_fromstr(blob **b, str *d);
+mal_export str BLOBblob_fromstr(blob **b, const char **d);
 
-mal_export str BLOBsqlblob_fromstr(sqlblob **b, str *d);
+mal_export str BLOBsqlblob_fromstr(sqlblob **b, const char **d);
 
 str
 BLOBprelude(void *ret)
@@ -109,7 +109,7 @@ fromblob_idx(str *retval, blob *b, int *idx)
  * @-
  */
 int
-BLOBcmp(blob *l, blob *r)
+BLOBcmp(const blob *l, const blob *r)
 {
 	size_t len = l->nitems;
 
@@ -129,12 +129,12 @@ BLOBdel(Heap *h, var_t *idx)
 }
 
 BUN
-BLOBhash(blob *b)
+BLOBhash(const blob *b)
 {
 	return (BUN) b->nitems;
 }
 
-blob *
+const blob *
 BLOBnull(void)
 {
 	return &nullval;
@@ -159,24 +159,24 @@ BLOBread(blob *a, stream *s, size_t cnt)
 }
 
 gdk_return
-BLOBwrite(blob *a, stream *s, size_t cnt)
+BLOBwrite(const blob *a, stream *s, size_t cnt)
 {
 	var_t len = blobsize(a->nitems);
 
 	(void) cnt;
 	assert(cnt == 1);
 	if (!mnstr_writeInt(s, (int) len) /* 64bit: check for overflow */ ||
-		mnstr_write(s, (char *) a, len, 1) < 0)
+		mnstr_write(s, a, len, 1) < 0)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
 
-int
-BLOBlength(blob *p)
+size_t
+BLOBlength(const blob *p)
 {
 	var_t l = blobsize(p->nitems); /* 64bit: check for overflow */
 	assert(l <= GDK_int_max);
-	return (int) l; /* 64bit: check for overflow */
+	return (size_t) l;
 }
 
 void
@@ -186,14 +186,14 @@ BLOBheap(Heap *heap, size_t capacity)
 }
 
 var_t
-BLOBput(Heap *h, var_t *bun, blob *val)
+BLOBput(Heap *h, var_t *bun, const blob *val)
 {
 	char *base = NULL;
 
 	*bun = HEAP_malloc(h, blobsize(val->nitems));
  	base = h->base;
 	if (*bun) {
-		memcpy(&base[*bun], (char *) val, blobsize(val->nitems));
+		memcpy(&base[*bun], val, blobsize(val->nitems));
 		h->dirty = 1;
 	}
 	return *bun;
@@ -207,8 +207,8 @@ BLOBnitems(int *ret, blob *b)
 	return MAL_SUCCEED;
 }
 
-int
-BLOBtostr(str *tostr, int *l, blob *p)
+ssize_t
+BLOBtostr(str *tostr, size_t *l, const blob *p)
 {
 	char *s;
 	size_t i;
@@ -218,13 +218,12 @@ BLOBtostr(str *tostr, int *l, blob *p)
 		expectedlen = 4;
 	else
 		expectedlen = 24 + (p->nitems * 3);
-	if (*l < 0 || (size_t) * l < expectedlen) {
-		if (*tostr != NULL)
-			GDKfree(*tostr);
-		*tostr = (str) GDKmalloc(expectedlen);
-		if( *tostr == NULL)
-			return 0;
-		*l = (int) expectedlen;
+	if (*l < expectedlen || *tostr == NULL) {
+		GDKfree(*tostr);
+		*tostr = GDKmalloc(expectedlen);
+		if (*tostr == NULL)
+			return -1;
+		*l = expectedlen;
 	}
 	if (p->nitems == ~(size_t) 0) {
 		strcpy(*tostr, "nil");
@@ -244,52 +243,61 @@ BLOBtostr(str *tostr, int *l, blob *p)
 	}
 	*s++ = ')';
 	*s = '\0';
-	return (int) (s - *tostr); /* 64bit: check for overflow */
+	return (ssize_t) (s - *tostr);
 }
 
-int
-BLOBfromstr(char *instr, int *l, blob **val)
+ssize_t
+BLOBfromstr(const char *instr, size_t *l, blob **val)
 {
 	size_t i;
 	size_t nitems;
 	var_t nbytes;
 	blob *result;
-	char *s = instr;
+	const char *s = instr;
+	char *e;
+
+	if (GDK_STRNIL(instr) || strncmp(instr, "nil", 3) == 0) {
+		nbytes = blobsize(0);
+		if (*l < nbytes || *val == NULL) {
+			GDKfree(*val);
+			if ((*val = GDKmalloc(nbytes)) == NULL)
+				return -1;
+		}
+		**val = nullval;
+		return GDK_STRNIL(instr) ? 1 : 3;
+	}
 
 	s = strchr(s, '(');
 	if (s == NULL) {
 		GDKerror("Missing ( in blob\n");
-		*val = (blob *) NULL;
-		return (0);
+		return -1;
 	}
-	nitems = (size_t) strtoul(s + 1, &s, 10);
-	if (s == NULL) {
+	nitems = (size_t) strtoul(s + 1, &e, 10);
+	if ((const char *) e == s + 1) {
 		GDKerror("Missing nitems in blob\n");
-		*val = (blob *) NULL;
-		return (0);
+		return -1;
 	}
+	s = e;
 #if SIZEOF_SIZE_T > SIZEOF_INT
 	if (nitems > 0x7fffffff) {
 		GDKerror("Blob too large\n");
-		*val = (blob *) NULL;
-		return (0);
+		return -1;
 	}
 #endif
 	nbytes = blobsize(nitems);
 	s = strchr(s, ':');
 	if (s == NULL) {
 		GDKerror("Missing ':' in blob\n");
-		*val = (blob *) NULL;
-		return (0);
+		return -1;
 	}
 	++s;
 
-	if (*l < 0 || (size_t) * l < nbytes || *val == NULL) {
+	if (*l < nbytes || *val == NULL) {
 		GDKfree(*val);
-		*val = (blob *) GDKmalloc(nbytes);
-		if( *val == NULL)
-			return 0;
-		*l = (int) nbytes;
+		*val = GDKmalloc(nbytes);
+		if (*val == NULL)
+			return -1;
+		*l = (size_t) nbytes;
 	}
 
 	result = *val;
@@ -337,9 +345,10 @@ BLOBfromstr(char *instr, int *l, blob **val)
 	s = strchr(s, ')');
 	if (s == 0) {
 		GDKerror("blob_fromstr: Missing ')' in blob\n");
+		return -1;
 	}
 
-	return (int) (s - instr);
+	return (ssize_t) (s - instr);
 }
 
 str
@@ -359,7 +368,7 @@ BLOBfromblob(str *retval, blob **b)
 str
 BLOBtoblob(blob **retval, str *s)
 {
-	int len = strLen(*s);
+	size_t len = strLen(*s);
 	blob *b = (blob *) GDKmalloc(blobsize(len));
 
 	if( b == NULL)
@@ -374,8 +383,8 @@ BLOBtoblob(blob **retval, str *s)
  * differs from the MonetDB BLOB output in that it does not start with a size
  * no brackets and no spaces in between the hexits
  */
-int
-SQLBLOBtostr(str *tostr, int *l, const blob *p)
+ssize_t
+SQLBLOBtostr(str *tostr, size_t *l, const blob *p)
 {
 	char *s;
 	size_t i;
@@ -385,20 +394,18 @@ SQLBLOBtostr(str *tostr, int *l, const blob *p)
 		expectedlen = 4;
 	else
 		expectedlen = 24 + (p->nitems * 3);
-	if (*l < 0 || (size_t) * l < expectedlen) {
-		if (*tostr != NULL)
-			GDKfree(*tostr);
-		*tostr = (str) GDKmalloc(expectedlen);
-		if( *tostr == NULL)
-			return 0;
-		*l = (int) expectedlen;
+	if (*l < expectedlen || *tostr == NULL) {
+		GDKfree(*tostr);
+		*tostr = GDKmalloc(expectedlen);
+		if (*tostr == NULL)
+			return -1;
+		*l = expectedlen;
 	}
 	if (p->nitems == ~(size_t) 0) {
 		strcpy(*tostr, "nil");
 		return 3;
 	}
 
-	strcpy(*tostr, "\0");
 	s = *tostr;
 
 	for (i = 0; i < p->nitems; i++) {
@@ -409,22 +416,32 @@ SQLBLOBtostr(str *tostr, int *l, const blob *p)
 		*s++ = hexit[val];
 	}
 	*s = '\0';
-	return (int) (s - *tostr); /* 64bit: check for overflow */
+	return (ssize_t) (s - *tostr);
 }
 
 /* SQL 99 compatible BLOB input string
  * differs from the MonetDB BLOB input in that it does not start with a size
  * no brackets and no spaces in between the hexits
  */
-int
-SQLBLOBfromstr(char *instr, int *l, blob **val)
+ssize_t
+SQLBLOBfromstr(const char *instr, size_t *l, blob **val)
 {
 	size_t i;
 	size_t nitems;
 	var_t nbytes;
 	blob *result;
-	char *s = instr;
-	int nil = 0;
+	const char *s = instr;
+
+	if (GDK_STRNIL(instr) || strncmp(instr, "nil", 3) == 0) {
+		nbytes = blobsize(0);
+		if (*l < nbytes || *val == NULL) {
+			GDKfree(*val);
+			if ((*val = GDKmalloc(nbytes)) == NULL)
+				return -1;
+		}
+		**val = nullval;
+		return GDK_STRNIL(instr) ? 1 : 3;
+	}
 
 	/* since the string is built of (only) hexits the number of bytes
 	 * required for it is the length of the string divided by two
@@ -432,22 +449,17 @@ SQLBLOBfromstr(char *instr, int *l, blob **val)
 	i = strlen(instr);
 	if (i % 2 == 1) {
 		GDKerror("sqlblob_fromstr: Illegal blob length '" SZFMT "' (should be even)\n", i);
-		instr = 0;
-		nil = 1;
+		return -1;
 	}
 	nitems = i / 2;
 	nbytes = blobsize(nitems);
 
-	if (*l < 0 || (size_t) * l < nbytes || *val == NULL) {
+	if (*l < nbytes || *val == NULL) {
 		GDKfree(*val);
-		*val = (blob *) GDKmalloc(nbytes);
+		*val = GDKmalloc(nbytes);
 		if( *val == NULL)
-			return 0;
-		*l = (int) nbytes;
-	}
-	if (nil) {
-		**val = nullval;
-		return 0;
+			return -1;
+		*l = (size_t) nbytes;
 	}
 	result = *val;
 	result->nitems = nitems;
@@ -466,6 +478,7 @@ SQLBLOBfromstr(char *instr, int *l, blob **val)
 			res = 10 + *s - 'a';
 		} else {
 			GDKerror("sqlblob_fromstr: Illegal char '%c' in blob\n", *s);
+			return -1;
 		}
 		s++;
 		res <<= 4;
@@ -477,13 +490,14 @@ SQLBLOBfromstr(char *instr, int *l, blob **val)
 			res += 10 + *s - 'a';
 		} else {
 			GDKerror("sqlblob_fromstr: Illegal char '%c' in blob\n", *s);
+			return -1;
 		}
 		s++;
 
 		result->data[i] = res;
 	}
 
-	return (int) (s - instr);
+	return (ssize_t) (s - instr);
 }
 
 str
@@ -502,20 +516,22 @@ BLOBblob_blob(blob **d, blob **s)
 }
 
 str
-BLOBblob_fromstr(blob **b, str *s)
+BLOBblob_fromstr(blob **b, const char **s)
 {
-	int len = 0;
+	size_t len = 0;
 
-	BLOBfromstr(*s, &len, b);
+	if (BLOBfromstr(*s, &len, b) < 0)
+		throw(MAL, "blob", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 
 
 str
-BLOBsqlblob_fromstr(sqlblob **b, str *s)
+BLOBsqlblob_fromstr(sqlblob **b, const char **s)
 {
-	int len = 0;
+	size_t len = 0;
 
-	SQLBLOBfromstr(*s, &len, b);
+	if (SQLBLOBfromstr(*s, &len, b) < 0)
+		throw(MAL, "blob", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }

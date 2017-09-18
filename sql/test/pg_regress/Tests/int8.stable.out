@@ -92,8 +92,7 @@ Ready.
 [ "",	4567890123456789,	-4567890123456789,	9135780246913578 ]
 #SELECT '' AS three, q1, q2, q1 * q2 AS multiply FROM INT8_TBL
 # WHERE q1 < 1000 or (q2 > 0 and q2 < 1000);
-% .,    sys.int8_tbl,   sys.int8_tbl,   sys. # table_name
-# .L,   sys.int8_tbl,   sys.int8_tbl,   sys.L # table_name
+% .L2,	sys.int8_tbl,	sys.int8_tbl,	sys.L6 # table_name
 % three,        q1,     q2,     multiply # name
 % char, bigint, bigint, bigint # type
 % 0,    16,     16,     18 # length

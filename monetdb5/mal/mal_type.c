@@ -67,7 +67,7 @@ getTypeIdentifier(malType tpe){
 	if (s == NULL)
 		return NULL;
 	for ( t=s; *t; t++)
-		if ( !isalnum((int) *t) )
+		if ( !isalnum((unsigned char) *t) )
 			*t='_';
 	t--;
 	if (*t == '_')
@@ -182,10 +182,10 @@ findGDKtype(int type)
 int
 isIdentifier(str s)
 {
-	if (!isalpha((int) *s))
+	if (!isalpha((unsigned char) *s))
 		return -1;
 	for (; s && *s; s++)
-		if (!isalnum((int) *s) && *s != '_')
+		if (!isalnum((unsigned char) *s) && *s != '_')
 			return -1;
 	return 0;
 }

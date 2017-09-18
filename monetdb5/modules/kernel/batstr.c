@@ -261,9 +261,12 @@ do_batstr_batstr_str(bat *ret, const bat *l, const bat *l2, const char *name, st
 	str msg = MAL_SUCCEED;
 
 	prepareOperand2(b, l, b2, l2, name);
-	if(BATcount(b) != BATcount(b2))
+	if(BATcount(b) != BATcount(b2)) {
+		BBPunfix(b->batCacheid);
+		BBPunfix(b2->batCacheid);
 		throw(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
-	prepareResult(bn, b, TYPE_str, name);
+	}
+	prepareResult2(bn, b, b2, TYPE_str, name);
 
 	bi = bat_iterator(b);
 	bi2 = bat_iterator(b2);
@@ -358,9 +361,12 @@ do_batstr_batint_str(bat *ret, const bat *l, const bat *n, const char *name, str
 	str msg = MAL_SUCCEED;
 
 	prepareOperand2(b, l, b2, n, name);
-	if(BATcount(b) != BATcount(b2))
+	if(BATcount(b) != BATcount(b2)) {
+		BBPunfix(b->batCacheid);
+		BBPunfix(b2->batCacheid);
 		throw(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
-	prepareResult(bn, b, TYPE_str, name);
+	}
+	prepareResult2(bn, b, b2, TYPE_str, name);
 
 	bi = bat_iterator(b);
 	bi2 = bat_iterator(b2);
@@ -454,8 +460,11 @@ do_batstr_batint_conststr_str(bat *ret, const bat *l, const bat *n, const str *s
 	str msg = MAL_SUCCEED;
 
 	prepareOperand2(b, l, b2, n, name);
-	if(BATcount(b) != BATcount(b2))
+	if(BATcount(b) != BATcount(b2)) {
+		BBPunfix(b->batCacheid);
+		BBPunfix(b2->batCacheid);
 		throw(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
+	}
 	prepareResult(bn, b, TYPE_str, name);
 
 	bi = bat_iterator(b);
@@ -504,8 +513,11 @@ do_batstr_constint_batstr_str(bat *ret, const bat *l, const int *n, const bat *l
 	str msg = MAL_SUCCEED;
 
 	prepareOperand2(b, l, b2, l2, name);
-	if(BATcount(b) != BATcount(b2))
+	if(BATcount(b) != BATcount(b2)) {
+		BBPunfix(b->batCacheid);
+		BBPunfix(b2->batCacheid);
 		throw(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
+	}
 	prepareResult(bn, b, TYPE_str, name);
 
 	bi = bat_iterator(b);
@@ -557,11 +569,21 @@ do_batstr_batint_batstr_str(bat *ret, const bat *l, const bat *n, const bat *l2,
 
 
 	prepareOperand3(b, l, b2, n, b3, l2, name);
-	if(BATcount(b) != BATcount(b2))
+	if (BATcount(b) != BATcount(b2) || BATcount(b) != BATcount(b3)) {
+		BBPunfix(b->batCacheid);
+		BBPunfix(b2->batCacheid);
+		BBPunfix(b3->batCacheid);
 		throw(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
-	if(BATcount(b) != BATcount(b3))
-		throw(MAL, name, ILLEGAL_ARGUMENT " Requires bats of identical size");
-	prepareResult(bn, b, TYPE_str, name);
+	}
+	bn = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT);
+	if (bn == NULL) {
+		BBPunfix(b->batCacheid);
+		BBPunfix(b2->batCacheid);
+		BBPunfix(b3->batCacheid);
+		throw(MAL, name, MAL_MALLOC_FAIL);
+	}
+	bn->tsorted=0;
+	bn->trevsorted=0;
 
 	bi = bat_iterator(b);
 	bi2 = bat_iterator(b2);
@@ -752,8 +774,11 @@ str STRbatPrefix(bat *ret, const bat *l, const bat *r)
 	bit v, *vp= &v;
 
 	prepareOperand2(left,l,right,r,"batstr.prefix");
-	if( BATcount(left) != BATcount(right) )
+	if(BATcount(left) != BATcount(right)) {
+		BBPunfix(left->batCacheid);
+		BBPunfix(right->batCacheid);
 		throw(MAL, "batstr.startsWith", ILLEGAL_ARGUMENT " Requires bats of identical size");
+	}
 	prepareResult2(bn,left,right,TYPE_bit,"batstr.prefix");
 
 	lefti = bat_iterator(left);
@@ -812,8 +837,11 @@ str STRbatSuffix(bat *ret, const bat *l, const bat *r)
 	bit v, *vp= &v;
 
 	prepareOperand2(left,l,right,r,"batstr.suffix");
-	if( BATcount(left) != BATcount(right) )
+	if(BATcount(left) != BATcount(right)) {
+		BBPunfix(left->batCacheid);
+		BBPunfix(right->batCacheid);
 		throw(MAL, "batstr.endsWith", ILLEGAL_ARGUMENT " Requires bats of identical size");
+	}
 	prepareResult2(bn,left,right,TYPE_bit,"batstr.suffix");
 
 	lefti = bat_iterator(left);
@@ -872,8 +900,11 @@ str STRbatstrSearch(bat *ret, const bat *l, const bat *r)
 	int v, *vp= &v;
 
 	prepareOperand2(left,l,right,r,"batstr.search");
-	if( BATcount(left) != BATcount(right) )
+	if(BATcount(left) != BATcount(right)) {
+		BBPunfix(left->batCacheid);
+		BBPunfix(right->batCacheid);
 		throw(MAL, "batstr.search", ILLEGAL_ARGUMENT " Requires bats of identical size");
+	}
 	prepareResult2(bn,left,right,TYPE_int,"batstr.search");
 
 	lefti = bat_iterator(left);
@@ -932,8 +963,11 @@ str STRbatRstrSearch(bat *ret, const bat *l, const bat *r)
 	int v, *vp= &v;
 
 	prepareOperand2(left,l,right,r,"batstr.r_search");
-	if( BATcount(left) != BATcount(right) )
+	if(BATcount(left) != BATcount(right)) {
+		BBPunfix(left->batCacheid);
+		BBPunfix(right->batCacheid);
 		throw(MAL, "batstr.r_search", ILLEGAL_ARGUMENT " Requires bats of identical size");
+	}
 	prepareResult2(bn,left,right,TYPE_bit,"batstr.r_search");
 
 	lefti = bat_iterator(left);
@@ -993,8 +1027,11 @@ str STRbatTail(bat *ret, const bat *l, const bat *r)
 	str msg = MAL_SUCCEED;
 
 	prepareOperand2(left,l,right,r,"batstr.string");
-	if( BATcount(left) != BATcount(right) )
+	if(BATcount(left) != BATcount(right)) {
+		BBPunfix(left->batCacheid);
+		BBPunfix(right->batCacheid);
 		throw(MAL, "batstr.string", ILLEGAL_ARGUMENT " Requires bats of identical size");
+	}
 	prepareResult2(bn,left,right,TYPE_str,"batstr.string");
 
 	lefti = bat_iterator(left);
@@ -1064,8 +1101,11 @@ str STRbatWChrAt(bat *ret, const bat *l, const bat *r)
 	int v, *vp= &v;
 
 	prepareOperand2(left,l,right,r,"batstr.+");
-	if( BATcount(left) != BATcount(right) )
+	if(BATcount(left) != BATcount(right)) {
+		BBPunfix(left->batCacheid);
+		BBPunfix(right->batCacheid);
 		throw(MAL, "batstr.unicodeAt", ILLEGAL_ARGUMENT " Requires bats of identical size");
+	}
 	prepareResult2(bn,left,right,TYPE_bit,"batstr.+");
 
 	lefti = bat_iterator(left);
@@ -1217,10 +1257,13 @@ str STRbatsubstring(bat *ret, const bat *l, const bat *r, const bat *t)
 		BBPunfix(start->batCacheid);
 		throw(MAL, "batstr.substring", RUNTIME_OBJECT_MISSING);
 	}
-	if( BATcount(left) != BATcount(start) )
+	if (BATcount(left) != BATcount(start) ||
+		BATcount(left) != BATcount(length)) {
+		BBPunfix(left->batCacheid);
+		BBPunfix(start->batCacheid);
+		BBPunfix(length->batCacheid);
 		throw(MAL, "batstr.substring", ILLEGAL_ARGUMENT " Requires bats of identical size");
-	if( BATcount(left) != BATcount(length) )
-		throw(MAL, "batstr.substring", ILLEGAL_ARGUMENT " Requires bats of identical size");
+	}
 
 	bn= COLnew(left->hseqbase, TYPE_str,BATcount(left), TRANSIENT);
 	if( bn == NULL){

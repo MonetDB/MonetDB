@@ -43,13 +43,12 @@ typedef struct Column_t {
 	int fieldstart;				/* Fixed character field load positions */
 	int fieldwidth;
 	int scale, precision;
-	int (*tostr)(void *extra, char **buf, int *len, int type, const void *a);
+	ssize_t (*tostr)(void *extra, char **buf, size_t *len, int type, const void *a);
 	void *(*frstr)(struct Column_t *fmt, int type, const char *s);
 	void *extra;
 	void *data;
 	int skip;					/* only skip to the next field */
-	int len;
-	int nillen;
+	size_t len;
 	bit ws;						/* if set we need to skip white space */
 	char quote;					/* if set use this character for string quotes */
 	const void *nildata;

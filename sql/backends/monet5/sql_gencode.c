@@ -549,7 +549,7 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, ch
 		if(t == NULL) {
 			return -1;
 		}
-		while (t && isspace((int) *t))
+		while (t && isspace((unsigned char) *t))
 			t++;
 
 		querylog = q = newStmt(mb, querylogRef, defineRef);
@@ -936,8 +936,8 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	r = rel_parse(m, f->s, f->query, m_instantiate);
 	if (r) {
 		r = rel_optimizer(m, r);
-                r = rel_distribute(m, r);
-                r = rel_partition(m, r);
+		r = rel_distribute(m, r);
+		r = rel_partition(m, r);
 	}
 	if (r && !f->sql) 	/* native function */
 		return 0;

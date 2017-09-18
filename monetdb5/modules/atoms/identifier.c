@@ -25,8 +25,8 @@ typedef str identifier;
 
 mal_export int TYPE_identifier;
 mal_export str IDprelude(void *ret);
-mal_export int IDfromString(str src, int *len, identifier *retval);
-mal_export int IDtoString(str *retval, int *len, identifier handle);
+mal_export ssize_t IDfromString(const char *src, size_t *len, identifier *retval);
+mal_export ssize_t IDtoString(str *retval, size_t *len, const char *handle);
 mal_export str IDentifier(identifier *retval, str *in);
 
 int TYPE_identifier;
@@ -44,18 +44,19 @@ str IDprelude(void *ret)
  * a pointer to a pointer for the retval!
  * Returns the number of chars read
  */
-int
-IDfromString(str src, int *len, identifier *retval)
+ssize_t
+IDfromString(const char *src, size_t *len, identifier *retval)
 {
-	if (src == NULL) {
-		*len = 0;
-		*retval = GDKstrdup(str_nil);
-	} else {
-		*retval = GDKstrdup(src);
-		*len = (int)strlen(src);
+	size_t l = strlen(src) + 1;
+	if (*retval == NULL || *len < l) {
+		GDKfree(*retval);
+		*retval = GDKmalloc(l);
+		if (*retval == NULL)
+			return -1;
+		*len = l;
 	}
-
-	return(*len);
+	memcpy(*retval, src, l);
+	return (ssize_t) l - 1;
 }
 
 /**
@@ -63,20 +64,19 @@ IDfromString(str src, int *len, identifier *retval)
  * Warning: GDK function
  * Returns the length of the string
  */
-int
-IDtoString(str *retval, int *len, identifier handle)
+ssize_t
+IDtoString(str *retval, size_t *len, const char *handle)
 {
-	int hl = (int)strlen(handle) + 1;
+	size_t hl = strlen(handle) + 1;
 	if (*len < hl || *retval == NULL) {
 		GDKfree(*retval);
-		*retval = GDKmalloc(sizeof(char) * hl);
+		*retval = GDKmalloc(hl);
 		if (*retval == NULL)
-			return 0;
+			return -1;
 		*len = hl;
 	}
 	memcpy(*retval, handle, hl);
-
-	return(*len);
+	return (ssize_t) hl - 1;
 }
 /**
  * Returns an identifier, parsed from a string.  The fromStr function is used
@@ -85,10 +85,9 @@ IDtoString(str *retval, int *len, identifier handle)
 str
 IDentifier(identifier *retval, str *in)
 {
-	int len = 0;
+	size_t len = 0;
 
-	(void)IDfromString(*in, &len, retval);
-	if (len == 0)
+	if (IDfromString(*in, &len, retval) < 0)
 		throw(PARSE, "identifier.identifier", "Error while parsing %s", *in);
 
 	return (MAL_SUCCEED);

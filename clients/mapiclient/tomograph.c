@@ -856,7 +856,7 @@ showcpu(void)
 			s = box[i].stmt +1;
 			while (s) {
 				s = strchr(s + 1, ' ');
-				while (s && isspace((int) *s))
+				while (s && isspace((unsigned char) *s))
 					s++;
 				if( s){
 					cpuload[j++] = atof(s);
@@ -1423,11 +1423,11 @@ update(char *line, EventRecord *ev)
 			if( (s= ev->stmt,'[')) 
 				s++;
 			else s = ev->stmt;
-			while (s && isspace((int) *s))
+			while (s && isspace((unsigned char) *s))
 				s++;
 			while (s) {
 				s = strchr(s + 1, ' ');
-				while (s && isspace((int) *s))
+				while (s && isspace((unsigned char) *s))
 					s++;
 				if (s)
 					cpus++;

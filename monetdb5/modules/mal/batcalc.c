@@ -880,12 +880,18 @@ callbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int sym)
 			throw(MAL, "batcalc.between", RUNTIME_OBJECT_MISSING);
 	}
 
-	if (tp1 != TYPE_bat && !isaBatType(tp1))
+	if (tp1 != TYPE_bat && !isaBatType(tp1)) {
+		if (s)
+			BBPunfix(s->batCacheid);
 		throw(MAL, "batcalc.between", ILLEGAL_ARGUMENT);
+	}
 	bid = getArgReference_bat(stk, pci, 1);
 	b = BATdescriptor(*bid);
-	if (b == NULL)
+	if (b == NULL) {
+		if (s)
+			BBPunfix(s->batCacheid);
 		throw(MAL, "batcalc.between", RUNTIME_OBJECT_MISSING);
+	}
 
 	if (tp2 == TYPE_bat || isaBatType(tp2)) {
 		bid = getArgReference_bat(stk, pci, 2);

@@ -94,14 +94,14 @@ Ready.
 % .L1,	.L1,	.L1 # table_name
 % name,	source,	remark # name
 % varchar,	varchar,	clob # type
-% 7,	5,	8 # length
-[ "tab.idx",	"INDEX",	"an index"	]
+% 3,	5,	8 # length
+[ "idx",	"INDEX",	"an index"	]
 #SELECT * FROM new_comments();
 % .L1,	.L1,	.L1 # table_name
 % name,	source,	remark # name
 % varchar,	varchar,	clob # type
-% 7,	5,	17 # length
-[ "tab.idx",	"INDEX",	"a qualified index"	]
+% 3,	5,	17 # length
+[ "idx",	"INDEX",	"a qualified index"	]
 #DROP INDEX idx;
 #SELECT * FROM new_comments();
 % .L1,	.L1,	.L1 # table_name

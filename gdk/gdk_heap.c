@@ -20,7 +20,7 @@
  * small (or rather: not huge) heaps are allocated with GDKmalloc.
  * Notice that GDKmalloc may redirect big requests to anonymous
  * virtual memory to prevent @emph{memory fragmentation} in the malloc
- * library (see gdk_utils.mx).
+ * library (see gdk_utils.c).
  *
  * @item STORE_MMAP: read-only mapped region
  * this is a file on disk that is mapped into virtual memory.  This is
@@ -40,7 +40,7 @@
  * write into a file that has a mmap open on it (e.g. Windows).  Such
  * X.new files take preference over X files when opening them.
  * @end table
- * Read also the discussion in BATsetaccess (gdk_bat.mx).
+ * Read also the discussion in BATsetaccess (gdk_bat.c).
  */
 #include "monetdb_config.h"
 #include "gdk.h"

@@ -34,7 +34,7 @@ create view geometry_columns as
 		select t.schema_id,
 			t.name as f_table_name,
 			x.name as f_geometry_column,
-			has_z(info)+has_m(info)+2 as coord_dimension,
+			cast(has_z(info)+has_m(info)+2 as integer) as coord_dimension,
 			srid, get_type(info, 0) as type
 		from tables t, (
 			select name, table_id, type_digits AS info, type_scale AS srid

@@ -67,6 +67,7 @@ sql5_export str SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Inst
 sql5_export str SQLtransaction2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
+sql5_export str mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_append_column(sql_trans *t, sql_column *c, BAT *ins);
 
@@ -317,6 +318,6 @@ sql5_export str BATSTRstrings(bat *res, const bat *src);
 sql5_export str SQLflush_log(void *ret);
 
 sql5_export str SQLexist(bit *res, bat *id);
-sql5_export str SQLexist_val(bit *res, void *val);
+sql5_export str SQLexist_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _SQL_H */

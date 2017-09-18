@@ -134,10 +134,31 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 			 ((unsigned int) (X) >> 13) ^	\
 			 ((unsigned int) (X) >> 21) ^	\
 			 (unsigned int) (X))
-#define mix_lng(X)	mix_int((unsigned int) ((ulng) (X) ^		\
-						((ulng) (X) >> 32)))
+#define mix_lng(X)	(((ulng) (X) >> 7) ^	\
+			 ((ulng) (X) >> 13) ^	\
+			 ((ulng) (X) >> 21) ^	\
+			 ((ulng) (X) >> 31) ^	\
+			 ((ulng) (X) >> 38) ^	\
+			 ((ulng) (X) >> 46) ^	\
+			 ((ulng) (X) >> 56) ^	\
+			 (ulng) (X))
 #ifdef HAVE_HGE
-#define mix_hge(X)	mix_lng((ulng) ((uhge) (X) ^ ((uhge) (X) >> 64)))
+#define mix_hge(X)	(((uhge) (X) >> 7) ^	\
+			 ((uhge) (X) >> 13) ^	\
+			 ((uhge) (X) >> 21) ^	\
+			 ((uhge) (X) >> 31) ^	\
+			 ((uhge) (X) >> 38) ^	\
+			 ((uhge) (X) >> 46) ^	\
+			 ((uhge) (X) >> 56) ^	\
+			 ((uhge) (X) >> 65) ^	\
+			 ((uhge) (X) >> 70) ^	\
+			 ((uhge) (X) >> 78) ^	\
+			 ((uhge) (X) >> 85) ^	\
+			 ((uhge) (X) >> 90) ^	\
+			 ((uhge) (X) >> 98) ^	\
+			 ((uhge) (X) >> 107) ^	\
+			 ((uhge) (X) >> 116) ^	\
+			 (uhge) (X))
 #endif
 #define hash_loc(H,V)	hash_any(H,V)
 #define hash_var(H,V)	hash_any(H,V)

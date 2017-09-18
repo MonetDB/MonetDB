@@ -177,14 +177,16 @@ XMLxml2str(str *s, xml *x)
 }
 
 str
-XMLstr2xml(xml *x, str *val)
+XMLstr2xml(xml *x, const char **val)
 {
-	str t = *val;
+	const char *t = *val;
 	str buf;
 	size_t len;
 
 	if (strNil(t)) {
 		*x = (xml) GDKstrdup(str_nil);
+		if (*x == NULL)
+			throw(MAL, "xml.xml", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	len = 6 * strlen(t) + 1;
@@ -631,8 +633,8 @@ XMLprelude(void *ret)
 	return MAL_SUCCEED;
 }
 
-int
-XMLfromString(str src, int *len, xml *x)
+ssize_t
+XMLfromString(const char *src, size_t *len, xml *x)
 {
 	if (*x){
 		GDKfree(*x);
@@ -642,55 +644,62 @@ XMLfromString(str src, int *len, xml *x)
 		*x = GDKstrdup(str_nil);
 		if (*x == NULL)
 			return -1;
+		return 3;
+	} else if (GDK_STRNIL(src)) {
+		*x = GDKstrdup(str_nil);
+		if (*x == NULL)
+			return -1;
+		return 1;
 	} else {
 		char *err = XMLstr2xml(x, &src);
 		if (err != MAL_SUCCEED) {
+			GDKerror("%s", getExceptionMessageAndState(err));
 			freeException(err);
 			return -1;
 		}
 	}
-	if( *x)
-		*len = (int) strlen(*x);
-	else *len = 0;
-	return *len;
+	*len = strlen(*x) + 1;
+	return (ssize_t) *len - 1;
 }
 
-int
-XMLtoString(str *s, int *len, xml src)
+ssize_t
+XMLtoString(str *s, size_t *len, const char *src)
 {
-	int l;
+	size_t l;
 
 	if (GDK_STRNIL(src))
 		src = "nil";
 	else
 		src++;
 	assert(strlen(src) < (size_t) INT_MAX);
-	l = (int) strlen(src) + 1;
+	l = strlen(src) + 1;
 	if (l >= *len) {
 		GDKfree(*s);
 		*s = (str) GDKmalloc(l);
 		if (*s == NULL)
-			return 0;
+			return -1;
 	}
 	strcpy(*s, src);
-	*len = l - 1;
-	return *len;
+	*len = l;
+	return (ssize_t) l - 1;
 }
 
 #else
 
 #define NO_LIBXML_FATAL "xml: MonetDB was built without libxml, but what you are trying to do requires it."
 
-int XMLfromString(str src, int *len, xml *x) {
+ssize_t XMLfromString(const char *src, size_t *len, xml *x) {
 	(void) src;
 	(void) len;
 	(void) x;
+	GDKerror("not implemented\n");
 	return -1;
 }
-int XMLtoString(str *s, int *len, xml src) {
+ssize_t XMLtoString(str *s, size_t *len, const char *src) {
 	(void) s;
 	(void) len;
 	(void) src;
+	GDKerror("not implemented\n");
 	return -1;
 }
 str XMLxml2str(str *s, xml *x) {

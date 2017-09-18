@@ -118,3 +118,5 @@ str-trim
 alastair_udf_mergetable_bug
 
 copy-into-fwf
+
+constant-not-in

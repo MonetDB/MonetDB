@@ -47,11 +47,11 @@ typedef struct {
 
 mal_export str UUIDprelude(void *ret);
 mal_export int UUIDcompare(const uuid *l, const uuid *r);
-mal_export int UUIDfromString(const char *svalue, int *len, uuid **retval);
+mal_export ssize_t UUIDfromString(const char *svalue, size_t *len, uuid **retval);
 mal_export BUN UUIDhash(const void *u);
-mal_export uuid *UUIDnull(void);
+mal_export const uuid *UUIDnull(void);
 mal_export uuid *UUIDread(uuid *u, stream *s, size_t cnt);
-mal_export int UUIDtoString(str *retval, int *len, const uuid *value);
+mal_export ssize_t UUIDtoString(str *retval, size_t *len, const uuid *value);
 mal_export gdk_return UUIDwrite(const uuid *u, stream *s, size_t cnt);
 
 mal_export str UUIDgenerateUuid(uuid **retval);
@@ -66,13 +66,20 @@ static uuid *uuid_session;		/* automatically set during system restart */
 str
 UUIDprelude(void *ret)
 {
-	int len = 0;
+	size_t len = 0;
+	str msg;
 
 	(void) ret;
 	assert(UUID_SIZE == 16);
-	(void) malAtomSize(sizeof(uuid), sizeof(oid), "uuid");
-	UUIDgenerateUuid(&uuid_session);
-	UUIDtoString(&mal_session_uuid, &len, uuid_session);
+	(void) malAtomSize(sizeof(uuid), "uuid");
+	msg = UUIDgenerateUuid(&uuid_session);
+	if (msg)
+		return msg;
+	if (UUIDtoString(&mal_session_uuid, &len, uuid_session) < 0) {
+		GDKfree(mal_session_uuid);
+		mal_session_uuid = NULL;
+		throw(MAL, "uuid.prelude", GDK_EXCEPTION);
+	}
 	//mnstr_printf(GDKerr,"Session uid:%s", uuid_session_name);
 	return MAL_SUCCEED;
 }
@@ -84,14 +91,14 @@ UUIDprelude(void *ret)
  * Warning: GDK function
  * Returns the length of the string
  */
-int
-UUIDtoString(str *retval, int *len, const uuid *value)
+ssize_t
+UUIDtoString(str *retval, size_t *len, const uuid *value)
 {
 	if (*len <= UUID_STRLEN || *retval == NULL) {
 		if (*retval)
 			GDKfree(*retval);
 		if ((*retval = GDKmalloc(UUID_STRLEN + 1)) == NULL)
-			return 0;
+			return -1;
 		*len = UUID_STRLEN + 1;
 	}
 	if (UUIDisnil(value)) {
@@ -108,8 +115,8 @@ UUIDtoString(str *retval, int *len, const uuid *value)
 	return UUID_STRLEN;
 }
 
-int
-UUIDfromString(const char *svalue, int *len, uuid **retval)
+ssize_t
+UUIDfromString(const char *svalue, size_t *len, uuid **retval)
 {
 	const char *s = svalue;
 	int i, j;
@@ -117,12 +124,16 @@ UUIDfromString(const char *svalue, int *len, uuid **retval)
 	if (*len < UUID_SIZE || *retval == NULL) {
 		GDKfree(*retval);
 		if ((*retval = GDKmalloc(UUID_SIZE)) == NULL)
-			return 0;
+			return -1;
 		*len = UUID_SIZE;
 	}
 	if (strcmp(svalue, "nil") == 0) {
 		**retval = uuid_nil;
 		return 3;
+	}
+	if (GDK_STRNIL(svalue)) {
+		**retval = uuid_nil;
+		return 1;
 	}
 	for (i = 0, j = 0; i < UUID_SIZE; i++) {
 		if (j == 8 || j == 12 || j == 16 || j == 20) {
@@ -152,11 +163,11 @@ UUIDfromString(const char *svalue, int *len, uuid **retval)
 		s++;
 		j++;
 	}
-	return (int)(s - svalue);
+	return (ssize_t) (s - svalue);
 
   bailout:
-	**retval = uuid_nil;
-	return 0;
+	GDKerror("Syntax error in UUID.\n");
+	return -1;
 }
 
 int
@@ -201,7 +212,7 @@ UUIDisaUUID(bit *retval, str *s)
 {
 	uuid u;
 	uuid *pu = &u;
-	int l = UUID_SIZE;
+	size_t l = UUID_SIZE;
 	*retval = UUIDfromString(*s, &l, &pu) == UUID_STRLEN;
 	return MAL_SUCCEED;
 }
@@ -209,7 +220,7 @@ UUIDisaUUID(bit *retval, str *s)
 str
 UUIDstr2uuid(uuid **retval, str *s)
 {
-	int l = *retval ? UUID_SIZE : 0;
+	size_t l = *retval ? UUID_SIZE : 0;
 
 	if (UUIDfromString(*s, &l, retval) == UUID_STRLEN) {
 		return MAL_SUCCEED;
@@ -220,10 +231,10 @@ UUIDstr2uuid(uuid **retval, str *s)
 str
 UUIDuuid2str(str *retval, uuid **u)
 {
-	int l = 0;
+	size_t l = 0;
 	*retval = NULL;
-	if (UUIDtoString(retval, &l, *u) == 0)
-		throw(MAL, "uuid.str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	if (UUIDtoString(retval, &l, *u) < 0)
+		throw(MAL, "uuid.str", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 
@@ -254,7 +265,7 @@ UUIDhash(const void *v)
 	return (BUN) mix_int(u1 ^ u2 ^ u3 ^ u4);
 }
 
-uuid *
+const uuid *
 UUIDnull(void)
 {
 	return &uuid_nil;

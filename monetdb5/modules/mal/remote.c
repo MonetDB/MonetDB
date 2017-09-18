@@ -193,7 +193,7 @@ str RMTconnectScen(
 	snprintf(conn, BUFSIZ, "%s_%s_" SZFMT, s, *user, connection_id++);
 	/* make sure we can construct MAL identifiers using conn */
 	for (s = conn; *s != '\0'; s++) {
-		if (!isalpha((int)*s) && !isdigit((int)*s)) {
+		if (!isalnum((unsigned char)*s)) {
 			*s = '_';
 		}
 	}
@@ -505,7 +505,8 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	if (isaBatType(rtype) && (localtype == 0177 || localtype != c->type ))
 	{
-		int t, s;
+		int t;
+		size_t s;
 		ptr r;
 		str var;
 		BAT *b;
@@ -551,7 +552,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 					var = "nil";
 				s = 0;
 				r = NULL;
-				if (ATOMfromstr(t, &r, &s, var) <= 0 ||
+				if (ATOMfromstr(t, &r, &s, var) < 0 ||
 					BUNappend(b, r, FALSE) != GDK_SUCCEED) {
 					BBPreclaim(b);
 					GDKfree(r);
@@ -612,7 +613,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	} else {
 		ptr p = NULL;
 		str val;
-		int len = 0;
+		size_t len = 0;
 
 		snprintf(qbuf, BUFSIZ, "io.print(%s);", ident);
 #ifdef _DEBUG_REMOTE
@@ -627,21 +628,23 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		val = mapi_fetch_field(mhdl, 0);
 
 		if (ATOMvarsized(rtype)) {
-			VALset(v, rtype, GDKstrdup(val == NULL ? str_nil : val));
+			p = GDKstrdup(val == NULL ? str_nil : val);
+			if (p == NULL)
+				throw(MAL, "remote.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			VALset(v, rtype, p);
+		} else if (ATOMfromstr(rtype, &p, &len, val == NULL ? "nil" : val) < 0) {
+			char *msg;
+			msg = createException(MAL, "remote.get",
+								  "unable to parse value: %s",
+								  val == NULL ? "nil" : val);
+			mapi_close_handle(mhdl);
+			MT_lock_unset(&c->lock);
+			GDKfree(p);
+			return msg;
 		} else {
-			ATOMfromstr(rtype, &p, &len, val == NULL ? "nil" : val);
-			if (p != NULL) {
-				VALset(v, rtype, p);
-				if (ATOMextern(rtype) == 0)
-					GDKfree(p);
-			} else {
-				char tval[BUFSIZ + 1];
-				snprintf(tval, BUFSIZ, "%s", val);
-				tval[BUFSIZ] = '\0';
-				mapi_close_handle(mhdl);
-				MT_lock_unset(&c->lock);
-				throw(MAL, "remote.get", "unable to parse value: %s", tval);
-			}
+			VALset(v, rtype, p);
+			if (ATOMextern(rtype) == 0)
+				GDKfree(p);
 		}
 	}
 
@@ -697,7 +700,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		msg = createException(MAL, "remote.put", "unsupported type: %s", tpe);
 		GDKfree(tpe);
 		return msg;
-	} else if (isaBatType(type) && *(bat*) value != 0) {
+	} else if (isaBatType(type) && *(bat*) value != 0 && *(bat*) value != int_nil) {
 		BATiter bi;
 		/* naive approach using bat.new() and bat.insert() calls */
 		char *tail;
@@ -759,8 +762,16 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			return tmp;
 		}
 		mapi_close_handle(mhdl);
+	} else if (isaBatType(type) && *(bat*) value == int_nil) {
+		stream *sout;
+		str typename = getTypeName(type);
+		sout = mapi_get_to(c->mconn);
+		mnstr_printf(sout,
+				"%s := nil:%s;\n", ident, typename);
+		mnstr_flush(sout);
+		GDKfree(typename);
 	} else {
-		int l = 0;
+		ssize_t l = 0;
 		str val = NULL;
 		char *tpe;
 		char qbuf[512], *nbuf = qbuf;
@@ -779,8 +790,8 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			GDKfree(val);
 			throw(MAL, "remote.put", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
-		l += (int) (strlen(tpe) + strlen(ident) + 10);
-		if (l > (int) sizeof(qbuf) && (nbuf = GDKmalloc(l)) == NULL) {
+		l += strlen(tpe) + strlen(ident) + 10;
+		if (l > (ssize_t) sizeof(qbuf) && (nbuf = GDKmalloc(l)) == NULL) {
 			MT_lock_unset(&c->lock);
 			GDKfree(val);
 			GDKfree(tpe);
@@ -999,7 +1010,7 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	int t;
 	int size;
 	ptr  r;
-	int s;
+	size_t s;
 	BAT *b;
 	size_t len;
 	char *var;
@@ -1039,7 +1050,7 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		s = 0;
 		r = NULL;
-		if (ATOMfromstr(t, &r, &s, var) <= 0 ||
+		if (ATOMfromstr(t, &r, &s, var) < 0 ||
 			BUNappend(b, r, FALSE) != GDK_SUCCEED) {
 			BBPreclaim(b);
 			GDKfree(r);
@@ -1142,7 +1153,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	char *nme = NULL;
 	char *val = NULL;
 	char tmp;
-	int len;
+	size_t len;
 	lng lv, *lvp;
 
 	BAT *b;
@@ -1176,7 +1187,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 				*hdr = '\0';
 
 				lvp = &lv;
-				len = (int) sizeof(lv);
+				len = sizeof(lv);
 				/* tseqbase can be 1<<31/1<<63 which causes overflow
 				 * in lngFromStr, so we check separately */
 				if (strcmp(val,
@@ -1191,7 +1202,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 				} else {
 					/* all values should be non-negative, so we check that
 					 * here as well */
-					if (lngFromStr(val, &len, &lvp) == 0 ||
+					if (lngFromStr(val, &len, &lvp) < 0 ||
 						lv < 0 /* includes lng_nil */)
 						throw(MAL, "remote.bincopyfrom",
 							  "bad %s value: %s", nme, val);

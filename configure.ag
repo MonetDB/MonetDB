@@ -151,7 +151,7 @@ AS_IF([test -f "$srcdir"/vertoo.data],
 
 AC_ARG_ENABLE([developer],
 	[AS_HELP_STRING([--enable-developer],
-		[enable support for MonetDB development (default=yes for development sources)])],
+		[build and install programs that are only useful for MonetDB development (default=yes for development sources)])],
 	[enable_developer=$enableval],
 	[enable_developer=$dft_developer])
 

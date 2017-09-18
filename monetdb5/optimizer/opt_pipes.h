@@ -13,10 +13,10 @@
 
 mal_export str getPipeDefinition(str name);
 mal_export str getPipeCatalog(bat *nme, bat *def, bat *stat);
-mal_export str addPipeDefinition(Client cntxt, str name, str pipe);
-mal_export int isOptimizerPipe(str name);
-mal_export str addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name);
-mal_export str compileOptimizer(Client cntxt, str name);
+mal_export str addPipeDefinition(Client cntxt, const char *name, const char *pipe);
+mal_export int isOptimizerPipe(const char *name);
+mal_export str addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name);
+mal_export str compileOptimizer(Client cntxt, const char *name);
 mal_export str compileAllOptimizers(Client cntxt);
 mal_export void opt_pipes_reset(void);
 

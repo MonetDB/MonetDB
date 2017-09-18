@@ -19,20 +19,20 @@
 void
 addMalException(MalBlkPtr mb, str msg)
 {
-    str new;
-    
-    if( mb->errors){ 
-        new = GDKzalloc(strlen(mb->errors) + strlen(msg) + 4);
-        if (new == NULL)
-            return ; // just stick to one error message, ignore rest
-        strcpy(new, mb->errors);
-        strcat(new, msg);
-        GDKfree(mb->errors);
-        mb->errors = new;
-    } else {
+	str new;
+
+	if( mb->errors){
+		new = GDKzalloc(strlen(mb->errors) + strlen(msg) + 4);
+		if (new == NULL)
+			return ; // just stick to one error message, ignore rest
+		strcpy(new, mb->errors);
+		strcat(new, msg);
+		GDKfree(mb->errors);
+		mb->errors = new;
+	} else {
 		new = GDKstrdup(msg);
 		if( new == NULL)
-            return ; // just stick to one error message, ignore rest
+			return ; // just stick to one error message, ignore rest
 		mb->errors = new;
 	}
 }
@@ -203,6 +203,18 @@ resetMalBlk(MalBlkPtr mb, int stop)
 		mb->stmt[i] ->typechk = TYPE_UNKNOWN;
 	mb->stop = stop;
 	mb->errors = NULL;
+}
+
+void
+resetMalBlkAndFreeInstructions(MalBlkPtr mb, int stop)
+{
+	int i;
+
+	for(i=stop; i<mb->stop; i++) {
+		freeInstruction(mb->stmt[i]);
+		mb->stmt[i] = NULL;
+	}
+	resetMalBlk(mb, stop);
 }
 
 /* The freeMalBlk code is quite defensive. It is used to localize an
@@ -823,8 +835,6 @@ clearVariable(MalBlkPtr mb, int varid)
 	VarPtr v;
 
 	v = getVar(mb, varid);
-	if (v == 0)
-		return;
 	if (isVarConstant(mb, varid) || isVarDisabled(mb, varid))
 		VALclear(&v->value);
 	v->type = 0;
@@ -980,11 +990,12 @@ convertConstant(int type, ValPtr vr)
 	if (vr->vtype == type)
 		return MAL_SUCCEED;
 	if (vr->vtype == TYPE_str) {
-		int ll = 0;
+		size_t ll = 0;
 		ptr d = NULL;
 		char *s = vr->val.sval;
 
 		if (ATOMfromstr(type, &d, &ll, vr->val.sval) < 0 || d == NULL) {
+			GDKfree(d);
 			VALinit(vr, type, ATOMnilptr(type));
 			throw(SYNTAX, "convertConstant", "parse error in '%s'", s);
 		}
@@ -1073,7 +1084,7 @@ convertConstant(int type, ValPtr vr)
 		   }
 		   if (vr->vtype == TYPE_int) {
 		   char buf[BUFSIZ];
-		   int ll = 0;
+		   size_t ll = 0;
 		   ptr d = NULL;
 
 		   snprintf(buf, BUFSIZ, "%d", vr->val.ival);
@@ -1096,7 +1107,7 @@ convertConstant(int type, ValPtr vr)
 		 * the new value. This should be garbage collected at the
 		 * end. */
 	default:{
-		int ll = 0;
+		size_t ll = 0;
 		ptr d = NULL;
 
 		if (isaBatType(type)) {
@@ -1119,23 +1130,26 @@ convertConstant(int type, ValPtr vr)
 		/* if what we're converting from is not a string */
 		if (vr->vtype != TYPE_str) {
 			/* an extern type */
-			str w = 0;
+			str w = NULL;
 
 			/* dump the non-string atom as string in w */
-			ATOMformat(vr->vtype, VALptr(vr), &w);
-			/* and try to parse it from string as the desired type */
-			if (ATOMfromstr(type, &d, &ll, w) < 0 || d == 0) {
-				VALinit(vr, type, ATOMnilptr(type));
+			if (ATOMformat(vr->vtype, VALptr(vr), &w) < 0 ||
+				/* and try to parse it from string as the desired type */
+				ATOMfromstr(type, &d, &ll, w) < 0 ||
+				d == NULL) {
+				GDKfree(d);
 				GDKfree(w);
+				VALinit(vr, type, ATOMnilptr(type));
 				throw(SYNTAX, "convertConstant", "conversion error");
 			}
+			GDKfree(w);
 			memset((char *) vr, 0, sizeof(*vr));
 			VALset(vr, type, d);
 			if (ATOMextern(type) == 0)
 				GDKfree(d);
-			GDKfree(w);
 		} else {				/* what we're converting from is a string */
 			if (ATOMfromstr(type, &d, &ll, vr->val.sval) < 0 || d == NULL) {
+				GDKfree(d);
 				VALinit(vr, type, ATOMnilptr(type));
 				throw(SYNTAX, "convertConstant", "conversion error");
 			}

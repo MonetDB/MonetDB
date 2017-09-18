@@ -60,11 +60,24 @@ SQLgetColumnSize(sql_trans *tr, sql_column *c, int access)
 	return size;
 }
 
+/*
+ * The maximal space occupied by a query is calculated
+ * under the assumption that the complete database should fit in memory.
+ * The assumption is that the plan does not contain duplicate bind operations.
+ * Calculation of the precise footprint is much more complex
+ * and can not deal with intermediate structures, or fast
+ * access using sorted probing.
+ *
+ * A run where we only take the size of a table only once,
+ * caused major degration on SF100 Q3 with SSD(>6x) 
+ */
+
 static lng
 SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 {
 	sql_trans *tr = m->session->tr;
 	lng size,space = 0, i;
+	str lasttable = 0;
 
 	for (i = 0; i < mb->stop; i++) {
 		InstrPtr p = mb->stmt[i];
@@ -90,9 +103,10 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 				continue;
 
 			/* we have to sum the cost of all three components of a BAT */
-			if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
+			if (c && (!isRemote(c->t) && !isMergeTable(c->t)) && (lasttable == 0 || strcmp(lasttable,tname)==0)) {
 				size = SQLgetColumnSize(tr, c, access);
-				space += size;	// accumulate once
+				space += size;	// accumulate once per table
+				//lasttable = tname;	 invalidate this attempt
 				if( !prepare && size == 0  && ! t->system){
 					//mnstr_printf(GDKout,"found empty column %s.%s.%s prepare %d size "LLFMT"\n",sname,tname,cname,prepare,size);
 					setFunctionId(p, emptybindRef);
@@ -151,21 +165,24 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
 	InstrPtr q;
 	backend *be;
 	str msg= MAL_SUCCEED;
-	lng space;
 
 	be = (backend *) c->sqlcontext;
 	assert(be && be->mvc);	/* SQL clients should always have their state set */
 
-	space = SQLgetSpace(be->mvc, mb, prepare);
+	(void) SQLgetSpace(be->mvc, mb, prepare); // detect empty bats.
+	/* The volcano optimizer seems relevant for traditional HDD settings.
+	 * It produced about 8 % improvement onf TPCH SF 100 on a 16G machine.
+	 * In a SSD setting it was counter productive, leading to worse parallel behavior.
+	 * The automatic switch to volcano is now disabled assuming more use of SSD.
+	 * The volcano optimizer pipeline can be used instead
 	if(space && (pipe == NULL || strcmp(pipe,"default_pipe")== 0)){
-		/* for queries with a potential large footprint and running the default pipe line,
-		 * we can switch to a better one. */
 		if( space > (lng)(0.8 * MT_npages() * MT_pagesize())  && GDKnr_threads > 1){
 			pipe = "volcano_pipe";
 			//mnstr_printf(GDKout, "#use volcano optimizer pipeline? "SZFMT"\n", space);
 		}else
 			pipe = "default_pipe";
 	} else
+	*/
 		pipe = pipe? pipe: "default_pipe";
 	msg = addOptimizerPipe(c, mb, pipe);
 	if (msg){

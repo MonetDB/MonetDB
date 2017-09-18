@@ -10,12 +10,12 @@ mapi.rpc(mid,"include sql;sql.init();");
 io.print("ready for remote SQL interaction");
 
 b:bat[:void,:int] := mapi.bind(mid,"sys","ptables","schema_id",0);
-c:=algebra.select(b,0,6000);
+c:=algebra.select(b,nil:bat[:oid],0,6000, true,true,false);
 io.print(c);
-d:=algebra.select(b,5,6000);
+d:=algebra.select(b,nil:bat[:oid],5,6000, true,true,false);
 low:= 5+1;
 io.print("kk");
-e:=algebra.select(d,low,7);
+e:=algebra.select(d,nil:bat[:oid],low,7, true,true,false);
 io.print("k2");
 i:=aggr.count(e);
 io.printf(" count %d\n",i);

@@ -1,7 +1,7 @@
 b := bat.new(:int);
 x:= bat.new(:oid);
 y:= bat.new(:oid);
-s1:= algebra.select(b,1,80,true,true,false);
+s1:= algebra.select(b,nil:bat[:oid],1,80,true,true,false);
 s2:= algebra.select(b,s1,5,95,true,true,false);
 s3:= algebra.select(b,s2,50,nil:int,true,true,false);
 s4:= algebra.select(b,s3,nil:int,75,true,true,false);

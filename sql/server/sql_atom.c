@@ -28,6 +28,8 @@ atom_create( sql_allocator *sa )
 {
 	atom *a;
 	a = SA_NEW(sa, atom);
+	if(!a)
+		return NULL;
 
 	memset(&a->data, 0, sizeof(a->data));
 	a->d = dbl_nil;
@@ -43,8 +45,9 @@ SA_VALcopy(sql_allocator *sa, ValPtr d, const ValRecord *s)
 	if (!ATOMextern(s->vtype)) {
 		*d = *s;
 	} else if (s->val.pval == 0) {
-		// FIXME unchecked_malloc ATOMnil can return NULL
 		d->val.pval = ATOMnil(s->vtype);
+		if (d->val.pval == NULL)
+			return NULL;
 		d->vtype = s->vtype;
 	} else if (s->vtype == TYPE_str) {
 		d->vtype = TYPE_str;
@@ -69,6 +72,8 @@ atom *
 atom_bool( sql_allocator *sa, sql_subtype *tpe, bit val)
 {
 	atom *a = atom_create(sa);
+	if(!a)
+		return NULL;
 	
 	a->isnull = 0;
 	a->tpe = *tpe;
@@ -91,6 +96,8 @@ atom_int( sql_allocator *sa, sql_subtype *tpe,
 		return atom_float(sa, tpe, (double) val);
 	} else {
 		atom *a = atom_create(sa);
+		if(!a)
+			return NULL;
 
 		a->isnull = 0;
 		a->tpe = *tpe;
@@ -188,6 +195,8 @@ atom *
 atom_string(sql_allocator *sa, sql_subtype *tpe, const char *val)
 {
 	atom *a = atom_create(sa);
+	if(!a)
+		return NULL;
 
 	a->isnull = 1;
 	a->tpe = *tpe;
@@ -197,7 +206,7 @@ atom_string(sql_allocator *sa, sql_subtype *tpe, const char *val)
 	if (val) {
 		a->isnull = 0;
 		a->data.val.sval = (char*)val;
-		a->data.len = (int)strlen(a->data.val.sval);
+		a->data.len = strlen(a->data.val.sval);
 	}
 
 	if (atom_debug)
@@ -209,6 +218,8 @@ atom *
 atom_float(sql_allocator *sa, sql_subtype *tpe, double val)
 {
 	atom *a = atom_create(sa);
+	if(!a)
+		return NULL;
 
 	a->isnull = 0;
 	a->tpe = *tpe;
@@ -237,6 +248,8 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 	if (tpe->type->localtype == TYPE_str)
 		return atom_string(sa, tpe, val);
 	a = atom_create(sa);
+	if(!a)
+		return NULL;
 	a->tpe = *tpe;
 	a->data.val.pval = NULL;
 	a->data.vtype = tpe->type->localtype;
@@ -251,9 +264,9 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 		if (ATOMstorage(type) == TYPE_str) {
 			a->isnull = 0;
 			a->data.val.sval = (char*)sql2str(sa_strdup(sa, val));
-			a->data.len = (int)strlen(a->data.val.sval);
-		} else { 
-			int res = ATOMfromstr(type, &p, &a->data.len, val);
+			a->data.len = strlen(a->data.val.sval);
+		} else {
+			ssize_t res = ATOMfromstr(type, &p, &a->data.len, val);
 
 			/* no result or nil means error (SQL has NULL not nil) */
 			if (res < 0 || !p || ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
@@ -279,6 +292,8 @@ atom *
 atom_ptr( sql_allocator *sa, sql_subtype *tpe, void *v)
 {
 	atom *a = atom_create(sa);
+	if(!a)
+		return NULL;
 	a->tpe = *tpe;
 	a->isnull = 0;
 	a->data.vtype = TYPE_ptr;
@@ -299,7 +314,7 @@ atom2string(sql_allocator *sa, atom *a)
 #ifdef HAVE_HGE
 	case TYPE_hge:
 	{	char *_buf = buf;
-		int _bufsiz = BUFSIZ;
+		size_t _bufsiz = BUFSIZ;
 		hgeToStr(&_buf, &_bufsiz, &a->data.val.hval);
 		break;
 	}
@@ -435,7 +450,7 @@ atom2sql(atom *a)
 #ifdef HAVE_HGE
 		case TYPE_hge:
 		{	char *_buf = buf;
-			int _bufsiz = BUFSIZ;
+			size_t _bufsiz = BUFSIZ;
 			hgeToStr(&_buf, &_bufsiz, &a->data.val.hval);
 			break;
 		}
@@ -508,6 +523,8 @@ atom *
 atom_dup(sql_allocator *sa, atom *a)
 {
 	atom *r = atom_create(sa);
+	if(!r)
+		return NULL;
 
 	*r = *a;
 	r->tpe = a->tpe;
@@ -1076,7 +1093,8 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 #else
 				lng dec = 0;
 #endif
-				int len = 0, res = 0;
+				size_t len = 0;
+				ssize_t res = 0;
 				/* cast decimals to doubles */
 				switch( at->type->localtype) {
 				case TYPE_bte:
@@ -1103,7 +1121,7 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 				len = sizeof(double);
 				res = ATOMfromstr(TYPE_dbl, &p, &len, s);
 				GDKfree(s);
-				if (res <= 0)
+				if (res < 0)
 					return 0;
 			}
 			if (tp->type->localtype == TYPE_dbl)
@@ -1118,16 +1136,17 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 			return 1;
 		}
 		if (at->type->eclass == EC_CHAR && tp->type->eclass == EC_DATE){
-			int type = tp->type->localtype, res = 0, len = (int) strlen(a->data.val.sval);
+			int type = tp->type->localtype;
+			ssize_t res = 0;
 			ptr p = NULL;
-				
+
 			a->data.len = 0;
 			res = ATOMfromstr(type, &p, &a->data.len, a->data.val.sval);
 			/* no result or nil means error (SQL has NULL not nil) */
-			if (res < len || !p || ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
-				if (p)
-					GDKfree(p);
-				a->data.len = (int) strlen(a->data.val.sval);
+			if (res < (ssize_t) strlen(a->data.val.sval) || !p ||
+			    ATOMcmp(type, p, ATOMnilptr(type)) == 0) {
+				GDKfree(p);
+				a->data.len = strlen(a->data.val.sval);
 				return 0;
 			}
 			a->tpe = *tp;
