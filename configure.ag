@@ -627,7 +627,7 @@ AS_VAR_IF([enable_strict], [yes], [
 		MCHECK_ADD_FLAG([-Wduplicated-branches])
 		MCHECK_ADD_FLAG([-Wlogical-op])
 		MCHECK_ADD_FLAG([-Wrestrict])
-		MCHECK_ADD_FLAG([-Wnull-dereference])
+dnl		MCHECK_ADD_FLAG([-Wnull-dereference])
 		MCHECK_ADD_FLAG([-Wjump-misses-init])
 dnl		MCHECK_ADD_FLAG([-Wshadow])
 		MCHECK_ADD_FLAG([-Wformat=2])
