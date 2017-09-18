@@ -2025,7 +2025,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tpe = BATdescriptor(tpeId);
 	len = BATdescriptor(lenId);
 	scale = BATdescriptor(scaleId);
-	if( msg || tbl == NULL || atr == NULL || tpe == NULL || len == NULL || scale == NULL)
+	if( tbl == NULL || atr == NULL || tpe == NULL || len == NULL || scale == NULL)
 		goto wrapup_result_set1;
 	/* mimick the old rsColumn approach; */
 	itertbl = bat_iterator(tbl);
@@ -2047,6 +2047,9 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( b)
 			BBPunfix(bid);
 	}
+	if ( msg )
+		goto wrapup_result_set1;
+
 	/* now select the file channel */
 	if ( strcmp(filename,"stdout") == 0 )
 		s= cntxt->fdout;
@@ -2190,6 +2193,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	l = strlen((char *) R);
 	rsep = GDKmalloc(l + 1);
 	if(rsep == 0){
+		GDKfree(tsep);
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto wrapup_result_set;
 	}
@@ -2198,6 +2202,8 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	l = strlen((char *) S);
 	ssep = GDKmalloc(l + 1);
 	if(ssep == 0){
+		GDKfree(tsep);
+		GDKfree(rsep);
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto wrapup_result_set;
 	}
@@ -2206,6 +2212,9 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	l = strlen((char *) N);
 	ns = GDKmalloc(l + 1);
 	if(ns == 0){
+		GDKfree(tsep);
+		GDKfree(rsep);
+		GDKfree(ssep);
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto wrapup_result_set;
 	}
@@ -3514,10 +3523,13 @@ sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
 	BAT *t[8];
+	str msg;
 
 	(void) cntxt;
 	(void) mb;
-	QLOGcatalog(t);
+	msg = QLOGcatalog(t);
+	if( msg != MAL_SUCCEED)
+		return msg;
 	for (i = 0; i < 8; i++) 
 	if( t[i]){
 		bat id = t[i]->batCacheid;
@@ -3534,10 +3546,13 @@ sql_querylog_calls(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
 	BAT *t[10];
+	str msg;
 
 	(void) cntxt;
 	(void) mb;
-	QLOGcalls(t);
+	msg = QLOGcalls(t);
+	if( msg != MAL_SUCCEED)
+		return msg;
 	for (i = 0; i < 9; i++) 
 	if( t[i]){
 		bat id = t[i]->batCacheid;
@@ -3556,8 +3571,7 @@ sql_querylog_empty(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	QLOGempty(NULL);
-	return MAL_SUCCEED;
+	return QLOGempty(NULL);
 }
 
 /* str sql_rowid(oid *rid, ptr v, str *sname, str *tname); */
