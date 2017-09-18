@@ -13,8 +13,7 @@ CREATE PROCEDURE sys.comment_on(obj_id INTEGER, obj_remark VARCHAR(65000))
 BEGIN
         IF obj_remark IS NULL OR obj_remark = '' THEN
                 DELETE FROM sys.comments WHERE id = obj_id;
---         ELSEIF EXISTS (SELECT id FROM sys.comments WHERE id = obj_id) THEN
-        ELSEIF 0 < (SELECT COUNT(id) FROM sys.comments WHERE id = obj_id) THEN
+        ELSEIF EXISTS (SELECT id FROM sys.comments WHERE id = obj_id) THEN
                 UPDATE sys.comments SET remark = obj_remark WHERE id = obj_id;
         ELSE
                 INSERT INTO sys.comments VALUES (obj_id, obj_remark);
