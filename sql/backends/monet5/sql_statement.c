@@ -257,39 +257,39 @@ stmt_none(backend *be)
 }
 
 static int
-dump_table(MalBlkPtr mb, sql_table *t)
+create_bat(MalBlkPtr mb, int tt)
 {
-	int nr;
-	node *n;
-	InstrPtr k = newStmt(mb, sqlRef, putName("declaredTable"));
-	if (k == NULL)
-		return -1;
+	InstrPtr q = newStmt(mb, batRef, newRef);
 
-	nr = getDestVar(k);
-	k = pushStr(mb, k, t->base.name);
-	if (k == NULL)
+	if (q == NULL)
 		return -1;
+	setVarType(mb, getArg(q, 0), newBatType(tt));
+	setVarUDFtype(mb, getArg(q, 0));
+	q = pushType(mb, q, tt);
+	return getDestVar(q);
+}
+
+static int *
+dump_table(sql_allocator *sa, MalBlkPtr mb, sql_table *t)
+{
+	int i = 0;
+	node *n;
+	int *l = SA_NEW_ARRAY(sa, int, list_length(t->columns.set) + 1);
+
+	if (!l)
+		return NULL;
+
+	/* tid column */
+	if ((l[i++] = create_bat(mb, TYPE_oid)) < 0) 
+		return NULL;
+
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
-		const char *tname = c->t->base.name;
-		const char *tn = sql_escape_ident(tname);
-		const char *cn = c->base.name;
-		InstrPtr q;
 
-		if (tn == NULL)
-			return -1;
-		q = newStmt(mb, sqlRef, putName("dtColumn"));
-		q = pushArgument(mb, q, nr);
-		q = pushStr(mb, q, tn);
-		q = pushStr(mb, q, cn);
-		q = pushStr(mb, q, c->type.type->localtype == TYPE_void ? "char" : c->type.type->sqlname);
-		q = pushInt(mb, q, c->type.digits);
-		q = pushInt(mb, q, c->type.scale);
-		c_delete(tn);
-		if (q == NULL)
-			return -1;
+		if ((l[i++] = create_bat(mb, c->type.type->localtype)) < 0)
+			return NULL;
 	}
-	return nr;
+	return l;
 }
 
 stmt *
@@ -355,38 +355,26 @@ stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-	char buf[IDLENGTH];
-	int tt = 0;
+	int *l;
 
+	(void)varname;
 	/* declared table */
-	if (dump_table(mb, t) < 0)
-		return NULL;
-	(void) snprintf(buf, sizeof(buf), "A%s", varname);
-	q = newInstruction(mb, NULL, NULL);
-	if (q == NULL) {
-		return NULL;
-	}
-	q->argc = q->retc = 0;
-	q = pushArgumentId(mb, q, buf);
-	q = pushNil(mb, q, tt);
-	pushInstruction(mb, q);
-	if (q == NULL)
-		return NULL;
-	q->retc++;
-	if (!q)
-		return NULL;
-	if (q) {
+	if ((l = dump_table(be->mvc->sa, mb, t)) != NULL) {
 		stmt *s = stmt_create(be->mvc->sa, st_var);
+
 		if (s == NULL) {
 			freeInstruction(q);
 			return NULL;
 		}
 
-		s->op3 = (stmt*)t; /* ugh */
+		t->data = l;
+		/*
+		s->op2 = (stmt*)l; 
+		s->op3 = (stmt*)t;
+		*/
 		s->flag = declare + (level << 1);
 		s->key = 1;
-		s->q = q;
-		s->nr = getDestVar(q);
+		s->nr = l[0];
 		return s;
 	}
 	return NULL;
@@ -472,11 +460,11 @@ stmt_temp(backend *be, sql_subtype *t)
 	q = pushType(mb, q, tt);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_temp);
+
 		if (s == NULL) {
 			freeInstruction(q);
 			return NULL;
 		}
-
 		s->op4.typeval = *t;
 		s->nrcols = 1;
 		s->q = q;
@@ -491,8 +479,20 @@ stmt_tid(backend *be, sql_table *t, int partition)
 {
 	int tt = TYPE_oid;
 	MalBlkPtr mb = be->mb;
-	InstrPtr q = newStmt(mb, sqlRef, tidRef);
+	InstrPtr q;
 
+	if (!t->s && t->data) { /* declared table */
+		stmt *s = stmt_create(be->mvc->sa, st_tid);
+		int *l = t->data;
+
+		assert(partition == 0);
+		s->partition = partition;
+		s->op4.tval = t;
+		s->nrcols = 1;
+		s->nr = l[0];
+		return s;
+	}
+       	q = newStmt(mb, sqlRef, tidRef);
 	if (q == NULL)
 		return NULL;
 	setVarType(mb, getArg(q, 0), newBatType(tt));
@@ -531,8 +531,22 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 {
 	int tt = c->type.type->localtype;
 	MalBlkPtr mb = be->mb;
-	InstrPtr q = newStmt(mb, sqlRef, bindRef);
+	InstrPtr q;
 
+	/* for read access tid.project(col) */
+	if (!c->t->s && c->t->data) { /* declared table */
+		stmt *s = stmt_create(be->mvc->sa, st_bat);
+		int *l = c->t->data;
+
+		assert(partition == 0);
+		s->partition = partition;
+		s->op4.cval = c;
+		s->nrcols = 1;
+		s->flag = access;
+		s->nr = l[c->colnr+1];
+		return s;
+	}
+       	q = newStmt(mb, sqlRef, bindRef);
 	if (q == NULL)
 		return NULL;
 	if (access == RD_UPD_ID) {
@@ -648,7 +662,21 @@ stmt_append_col(backend *be, sql_column *c, stmt *b, int fake)
 
 	if (b->nr < 0)
 		return NULL;
-	if (!fake) {	/* fake append */
+
+	if (!c->t->s && c->t->data) { /* declared table */
+		int *l = c->t->data;
+
+		if (c->colnr == 0) { /* append to tid column */
+			q = newStmt(mb, sqlRef, "grow");
+			q = pushArgument(mb, q, l[0]);
+			q = pushArgument(mb, q, b->nr);
+		} 
+		q = newStmt(mb, batRef, appendRef);
+		q = pushArgument(mb, q, l[c->colnr+1]);
+		q = pushArgument(mb, q, b->nr);
+		q = pushBit(mb, q, TRUE);
+		getArg(q,0) = l[c->colnr+1]; 
+	} else if (!fake) {	/* fake append */
 		q = newStmt(mb, sqlRef, appendRef);
 		q = pushArgument(mb, q, be->mvc_var);
 		if (q == NULL)
@@ -666,11 +694,11 @@ stmt_append_col(backend *be, sql_column *c, stmt *b, int fake)
 	}
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_append_col);
+
 		if (s == NULL) {
 			freeInstruction(q);
 			return NULL;
 		}
-
 		s->op1 = b;
 		s->op4.cval = c;
 		s->q = q;
@@ -726,26 +754,35 @@ stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd)
 	if (tids->nr < 0 || upd->nr < 0)
 		return NULL;
 
-	q = newStmt(mb, sqlRef, updateRef);
-	q = pushArgument(mb, q, be->mvc_var);
-	if (q == NULL)
-		return NULL;
-	getArg(q, 0) = be->mvc_var = newTmpVariable(mb, TYPE_int);
-	q = pushSchema(mb, q, c->t);
-	q = pushStr(mb, q, c->t->base.name);
-	q = pushStr(mb, q, c->base.name);
-	q = pushArgument(mb, q, tids->nr);
-	q = pushArgument(mb, q, upd->nr);
-	if (q == NULL)
-		return NULL;
-	be->mvc_var = getDestVar(q);
+	if (!c->t->s && c->t->data) { /* declared table */
+		int *l = c->t->data;
+
+		q = newStmt(mb, batRef, updateRef);
+		q = pushArgument(mb, q, l[c->colnr+1]);
+		q = pushArgument(mb, q, tids->nr);
+		q = pushArgument(mb, q, upd->nr);
+	} else {
+		q = newStmt(mb, sqlRef, updateRef);
+		q = pushArgument(mb, q, be->mvc_var);
+		if (q == NULL)
+			return NULL;
+		getArg(q, 0) = be->mvc_var = newTmpVariable(mb, TYPE_int);
+		q = pushSchema(mb, q, c->t);
+		q = pushStr(mb, q, c->t->base.name);
+		q = pushStr(mb, q, c->base.name);
+		q = pushArgument(mb, q, tids->nr);
+		q = pushArgument(mb, q, upd->nr);
+		if (q == NULL)
+			return NULL;
+		be->mvc_var = getDestVar(q);
+	}
 	if (q){
 		stmt *s = stmt_create(be->mvc->sa, st_update_col);
+
 		if (s == NULL) {
 			freeInstruction(q);
 			return NULL;
 		}
-
 		s->op1 = tids;
 		s->op2 = upd;
 		s->op4.cval = c;
@@ -804,17 +841,26 @@ stmt_delete(backend *be, sql_table *t, stmt *tids)
 
 	if (tids->nr < 0)
 		return NULL;
-	q = newStmt(mb, sqlRef, deleteRef);
-	q = pushArgument(mb, q, be->mvc_var);
-	if (q == NULL)
-		return NULL;
-	getArg(q, 0) = be->mvc_var = newTmpVariable(mb, TYPE_int);
-	q = pushSchema(mb, q, t);
-	q = pushStr(mb, q, t->base.name);
-	q = pushArgument(mb, q, tids->nr);
-	if (q == NULL)
-		return NULL;
-	be->mvc_var = getDestVar(q);
+
+	if (!t->s && t->data) { /* declared table */
+		int *l = t->data;
+
+		q = newStmt(mb, batRef, deleteRef);
+		q = pushArgument(mb, q, l[0]);
+		q = pushArgument(mb, q, tids->nr);
+	} else {
+		q = newStmt(mb, sqlRef, deleteRef);
+		q = pushArgument(mb, q, be->mvc_var);
+		if (q == NULL)
+			return NULL;
+		getArg(q, 0) = be->mvc_var = newTmpVariable(mb, TYPE_int);
+		q = pushSchema(mb, q, t);
+		q = pushStr(mb, q, t->base.name);
+		q = pushArgument(mb, q, tids->nr);
+		if (q == NULL)
+			return NULL;
+		be->mvc_var = getDestVar(q);
+	}
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_delete);
 		if (s == NULL) {
@@ -2550,12 +2596,25 @@ stmt *
 stmt_table_clear(backend *be, sql_table *t)
 {
 	MalBlkPtr mb = be->mb;
-	InstrPtr q = newStmt(mb, sqlRef, clear_tableRef);
+	InstrPtr q = NULL;
+       
+	if (!t->s && t->data) { /* declared table */
+		int *l = t->data; 
+		int cnt = list_length(t->columns.set)+1, i;
 
-	q = pushSchema(mb, q, t);
-	q = pushStr(mb, q, t->base.name);
+		for (i = 0; i < cnt; i++) {
+			q = newStmt(mb, batRef, "clear");
+			q = pushArgument(mb, q, l[i]);
+			l[i] = getDestVar(q);
+		}
+	} else {
+		q = newStmt(mb, sqlRef, clear_tableRef);
+		q = pushSchema(mb, q, t);
+		q = pushStr(mb, q, t->base.name);
+	}
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_table_clear);
+
 		if(!s) {
 			freeInstruction(q);
 			return NULL;
@@ -3505,10 +3564,6 @@ stmt_return(backend *be, stmt *val, int nr_declared_tables)
 
 	if (val->nr < 0)
 		return NULL;
-	if (nr_declared_tables) {	/* drop declared tables */
-		InstrPtr k = newStmt(mb, sqlRef, "dropDeclaredTables");
-		(void) pushInt(mb, k, nr_declared_tables);
-	}
 	q = newInstruction(mb, NULL, NULL);
 	if (q == NULL)
 		return NULL;
@@ -3552,10 +3607,7 @@ stmt_assign(backend *be, const char *varname, stmt *val, int level)
 
 		if (!val) {
 			/* drop declared table */
-			InstrPtr k = newStmt(mb, sqlRef, putName("dropDeclaredTable"));
-			k = pushStr(mb, k, varname);
-			if (getDestVar(k) < 0)
-				return NULL;
+			assert(0);
 		}
 		(void) snprintf(buf, sizeof(buf), "A%s", varname);
 		q = newInstruction(mb, NULL, NULL);
