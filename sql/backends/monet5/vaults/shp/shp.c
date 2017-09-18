@@ -272,8 +272,10 @@ SHPattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			sprintf(temp_buf + strlen(temp_buf), "\"%s\" INT, ", nameToLowerCase);
 		} else if (strcmp(field_definitions[i].fieldType, "Real") == 0) {
 			sprintf(temp_buf + strlen(temp_buf), "\"%s\" FLOAT, ", nameToLowerCase);
+#if 0
 		} else if (strcmp(field_definitions[i].fieldType, "Date") == 0) {
 			sprintf(temp_buf + strlen(temp_buf), "\"%s\" STRING, ", nameToLowerCase);
+#endif
         	} else 
 			sprintf(temp_buf + strlen(temp_buf), "\"%s\" STRING, ", nameToLowerCase);
 		GDKfree(nameToLowerCase);
@@ -451,11 +453,13 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 				msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto unfree4;
 			}
+#if 0
 		} else if (strcmp(field_definitions[i].fieldType, "Date") == 0) {
-        	if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT))) {
+			if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT))) {
 				msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto unfree4;
 			}
+#endif
 		} else {
 			if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT))) {
 				msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -675,11 +679,13 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 				msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
+#if 0
 		} else if (strcmp(field_definitions[i].fieldType, "Date") == 0) {
 			if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT))) {
 				msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
+#endif
 		} else {
 			if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT))) {
 				msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
