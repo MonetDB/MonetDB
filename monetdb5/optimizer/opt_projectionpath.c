@@ -181,7 +181,7 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	old= mb->stmt;
 	limit= mb->stop;
 	slimit= mb->ssize;
-	if ( newMalBlkStmt(mb,mb->ssize + mb->stop) < 0)
+	if ( newMalBlkStmt(mb, 2 * mb->stop) < 0)
 		throw(MAL,"optimizer.projectionpath", MAL_MALLOC_FAIL);
 
 	/* beware, new variables and instructions are introduced */
