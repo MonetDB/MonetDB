@@ -348,8 +348,7 @@ This information can be used to determine memory footprint and variable life tim
 					char *truncated = NULL;
 					tname = getTypeName(tpe);
 					logadd("\"type\":\"%s\",%s", tname,pret);
-					cv = 0;
-					VALformat(&cv, &stk->stk[getArg(pci,j)]);
+					cv = VALformat(&stk->stk[getArg(pci,j)]);
 					stmtq = mal_quote(cv, strlen(cv));
 					if (stmtq != NULL && strlen(stmtq) > LOGLEN/2) {
 						truncated = truncate_string(stmtq);

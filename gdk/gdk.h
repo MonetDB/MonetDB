@@ -733,7 +733,7 @@ typedef struct {
 
 /* interface definitions */
 gdk_export ptr VALconvert(int typ, ValPtr t);
-gdk_export ssize_t VALformat(char **buf, const ValRecord *res);
+gdk_export char *VALformat(const ValRecord *res);
 gdk_export ValPtr VALcopy(ValPtr dst, const ValRecord *src);
 gdk_export ValPtr VALinit(ValPtr d, int tpe, const void *s);
 gdk_export void VALempty(ValPtr v);
@@ -1894,7 +1894,7 @@ gdk_export size_t ATOMlen(int id, const void *v);
 gdk_export ptr ATOMnil(int id);
 gdk_export int ATOMcmp(int id, const void *v_1, const void *v_2);
 gdk_export int ATOMprint(int id, const void *val, stream *fd);
-gdk_export ssize_t ATOMformat(int id, const void *val, char **buf);
+gdk_export char *ATOMformat(int id, const void *val);
 
 gdk_export ptr ATOMdup(int id, const void *val);
 

@@ -741,8 +741,12 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		if (b) {
 			bi = bat_iterator(b);
 			BATloop(b, p, q) {
-				tailv = NULL;
-				ATOMformat(getBatType(type), BUNtail(bi, p), &tailv);
+				tailv = ATOMformat(getBatType(type), BUNtail(bi, p));
+				if (tailv == NULL) {
+					BBPunfix(b->batCacheid);
+					MT_lock_unset(&c->lock);
+					throw(MAL, "remote.put", GDK_EXCEPTION);
+				}
 				if (getBatType(type) > TYPE_str)
 					mnstr_printf(sout, "\"%s\"\n", tailv);
 				else
@@ -771,16 +775,16 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		mnstr_flush(sout);
 		GDKfree(typename);
 	} else {
-		ssize_t l = 0;
-		str val = NULL;
+		size_t l;
+		str val;
 		char *tpe;
 		char qbuf[512], *nbuf = qbuf;
 		if (ATOMvarsized(type)) {
-			l = ATOMformat(type, *(str *)value, &val);
+			val = ATOMformat(type, *(str *)value);
 		} else {
-			l = ATOMformat(type, value, &val);
+			val = ATOMformat(type, value);
 		}
-		if (l < 0) {
+		if (val == NULL) {
 			MT_lock_unset(&c->lock);
 			throw(MAL, "remote.put", GDK_EXCEPTION);
 		}
@@ -790,7 +794,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			GDKfree(val);
 			throw(MAL, "remote.put", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
-		l += strlen(tpe) + strlen(ident) + 10;
+		l = strlen(val) + strlen(tpe) + strlen(ident) + 10;
 		if (l > (ssize_t) sizeof(qbuf) && (nbuf = GDKmalloc(l)) == NULL) {
 			MT_lock_unset(&c->lock);
 			GDKfree(val);

@@ -1626,8 +1626,7 @@ JSONrenderRowObject(BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, BUN idx
 		bi = bat_iterator(bl[i + 1]);
 		p = BUNtail(bi, idx);
 		tpe = getBatType(getArgType(mb, pci, i + 1));
-		val = NULL;
-		if (ATOMformat(tpe, p, &val) < 0) {
+		if ((val = ATOMformat(tpe, p)) == NULL) {
 			GDKfree(row);
 			return NULL;
 		}
@@ -1742,8 +1741,7 @@ JSONrenderRowArray(BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 		bi = bat_iterator(bl[i]);
 		p = BUNtail(bi, idx);
 		tpe = getBatType(getArgType(mb, pci, i));
-		val = NULL;
-		if (ATOMformat(tpe, p, &val) < 0) {
+		if ((val = ATOMformat(tpe, p)) == NULL) {
 			goto memfail;
 		}
 		if (strcmp(val, "nil") == 0) {
@@ -1915,8 +1913,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 		if (tpe == TYPE_json)
 			val = p;
 		else {
-			val = NULL;
-			if (ATOMformat(tpe, p, &val) < 0)
+			if ((val = ATOMformat(tpe, p))  == NULL)
 				goto memfail;
 			if (strcmp(val, "nil") == 0) {
 				GDKfree(val);

@@ -347,24 +347,22 @@ ATOMprint(int t, const void *p, stream *s)
 }
 
 
-ssize_t
-ATOMformat(int t, const void *p, char **buf)
+char *
+ATOMformat(int t, const void *p)
 {
 	ssize_t (*tostr) (str *, size_t *, const void *);
 
 	if (p && 0 <= t && t < GDKatomcnt && (tostr = BATatoms[t].atomToStr)) {
 		size_t sz = 0;
-		ssize_t res = (*tostr) (buf, &sz, p);
-		if (res < 0 && *buf) {
-			GDKfree(*buf);
-			*buf = NULL;
+		char *buf = NULL;
+		ssize_t res = (*tostr) (&buf, &sz, p);
+		if (res < 0 && buf) {
+			GDKfree(buf);
+			buf = NULL;
 		}
-		return res;
+		return buf;
 	}
-	*buf = GDKstrdup("nil");
-	if (*buf == NULL)
-		return -1;
-	return 3;		/* strlen(*buf) */
+	return GDKstrdup("nil");
 }
 
 ptr

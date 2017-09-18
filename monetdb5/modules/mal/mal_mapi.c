@@ -1799,7 +1799,8 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		SERVERsessions[i].hdl= mapi_query(mid, buf);
 		break;
 	default:
-		ATOMformat(tpe,val,&w);
+		if ((w = ATOMformat(tpe,val)) == NULL)
+			throw(MAL, "mapi.put", GDK_EXCEPTION);
 		snprintf(buf,BUFSIZ,"%s:=%s;",*nme,w);
 		GDKfree(w);
 		if( SERVERsessions[i].hdl)
@@ -1830,7 +1831,8 @@ SERVERputLocal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		snprintf(buf,BUFSIZ,"%s:=%s;",*nme,*(char**)val);
 		break;
 	default:
-		ATOMformat(tpe,val,&w);
+		if ((w = ATOMformat(tpe,val)) == NULL)
+			throw(MAL, "mapi.glue", GDK_EXCEPTION);
 		snprintf(buf,BUFSIZ,"%s:=%s;",*nme,w);
 		GDKfree(w);
 		break;

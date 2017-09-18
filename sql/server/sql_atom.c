@@ -354,7 +354,7 @@ atom2string(sql_allocator *sa, atom *a)
 		v = &a->data.val.ival;
 		if (ATOMvarsized(a->data.vtype))
 			v = a->data.val.pval;
-		if (ATOMformat(a->data.vtype, v, &p) < 0) {
+		if ((p = ATOMformat(a->data.vtype, v)) == NULL) {
                 	snprintf(buf, BUFSIZ, "atom2string(TYPE_%d) not implemented", a->data.vtype);
 		} else {
 			 char *r = sa_strdup(sa, p);
