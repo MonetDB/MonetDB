@@ -830,8 +830,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 							continue;
 						}
 						b = BATdescriptor(stk->stk[getArg(pci, i)].val.bval);
-						BATassertProps(b);
-						BBPunfix(b->batCacheid);
+						if (b) {
+							BATassertProps(b);
+							BBPunfix(b->batCacheid);
+						}
 					}
 				}
 			}
