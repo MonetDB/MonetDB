@@ -1355,7 +1355,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 	BUN *restrict rems = NULL;
 	lng *restrict cnts = NULL;
 	dbl *restrict dbls;
-	BAT *bn = NULL;
+	BAT *bn = NULL, *cn = NULL;
 	BUN start, end;
 	const oid *cand = NULL, *candend = NULL;
 	const char *err;
@@ -1384,11 +1384,12 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		}
 		if (cntsp) {
 			lng zero = 0;
-			if ((*cntsp = BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &zero, ngrp, TRANSIENT)) == NULL) {
+			if ((cn = BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &zero, ngrp, TRANSIENT)) == NULL) {
 				GDKerror("BATgroupavg: failed to create BAT\n");
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
+			*cntsp = cn;
 		}
 		*bnp = bn;
 		return GDK_SUCCEED;
@@ -1404,10 +1405,11 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 			return GDK_FAIL;
 		if (cntsp) {
 			lng one = 1;
-			if ((*cntsp = BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &one, ngrp, TRANSIENT)) == NULL) {
+			if ((cn = BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &one, ngrp, TRANSIENT)) == NULL) {
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
+			*cntsp = cn;
 		}
 		*bnp = bn;
 		return GDK_SUCCEED;
@@ -1430,9 +1432,9 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		break;
 	}
 	if (cntsp) {
-		if ((*cntsp = COLnew(min, TYPE_lng, ngrp, TRANSIENT)) == NULL)
+		if ((cn = COLnew(min, TYPE_lng, ngrp, TRANSIENT)) == NULL)
 			goto alloc_fail;
-		cnts = (lng *) Tloc(*cntsp, 0);
+		cnts = (lng *) Tloc(cn, 0);
 		memset(cnts, 0, ngrp * sizeof(lng));
 	} else {
 		cnts = GDKzalloc(ngrp * sizeof(lng));
@@ -1476,8 +1478,8 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		break;
 	default:
 		GDKfree(rems);
-		if (cntsp)
-			BBPreclaim(*cntsp);
+		if (cn)
+			BBPreclaim(cn);
 		else
 			GDKfree(cnts);
 		BBPunfix(bn->batCacheid);
@@ -1486,15 +1488,16 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		return GDK_FAIL;
 	}
 	GDKfree(rems);
-	if (cntsp == NULL)
+	if (cn == NULL)
 		GDKfree(cnts);
 	else {
-		BATsetcount(*cntsp, ngrp);
-		(*cntsp)->tkey = BATcount(*cntsp) <= 1;
-		(*cntsp)->tsorted = BATcount(*cntsp) <= 1;
-		(*cntsp)->trevsorted = BATcount(*cntsp) <= 1;
-		(*cntsp)->tnil = 0;
-		(*cntsp)->tnonil = 1;
+		BATsetcount(cn, ngrp);
+		cn->tkey = BATcount(cn) <= 1;
+		cn->tsorted = BATcount(cn) <= 1;
+		cn->trevsorted = BATcount(cn) <= 1;
+		cn->tnil = 0;
+		cn->tnonil = 1;
+		*cntsp = cn;
 	}
 	BATsetcount(bn, ngrp);
 	bn->tkey = BATcount(bn) <= 1;
@@ -1511,6 +1514,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 	GDKfree(rems);
 	if (cntsp) {
 		BBPreclaim(*cntsp);
+		*cntsp = NULL;
 	} else if (cnts) {
 		GDKfree(cnts);
 	}
