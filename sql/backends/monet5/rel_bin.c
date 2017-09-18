@@ -1659,10 +1659,7 @@ releqjoin( backend *be, list *l1, list *l2, int used_hash, comp_type cmp_op, int
 		sql_subfunc *f = NULL;
 		stmt * cmp;
 
-		if (cmp_op == cmp_equal) 
-			f = sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(le), tail_type(le), F_FUNC);
-		else 
-			f = sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(le), tail_type(le), F_FUNC);
+		f = sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(le), tail_type(le), F_FUNC);
 		assert(f);
 
 		cmp = stmt_binop(be, le, re, f);
