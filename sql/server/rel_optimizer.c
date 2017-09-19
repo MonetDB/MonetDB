@@ -5398,7 +5398,7 @@ rel_remove_join(int *changes, mvc *sql, sql_rel *rel)
 			list_merge(rel->exps, r->exps, (fdup)NULL);
 		}
 	}
-	if (is_join(rel->op) && 0) {
+	if (is_join(rel->op) && /* DISABLES CODE */ (0)) {
 		sql_rel *l = rel->l;
 		sql_rel *r = rel->r;
 		int ldict = 0, rdict = 0;

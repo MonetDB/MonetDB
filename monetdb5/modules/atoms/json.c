@@ -958,7 +958,6 @@ JSONtoken(JSON *jt, const char *j, const char **next)
 		jt->error = createException(MAL, "json.parser", "Syntax error: value expected");
 		return idx;
 	}
-	return idx;
 }
 
 

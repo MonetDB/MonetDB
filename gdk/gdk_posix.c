@@ -306,25 +306,22 @@ MT_getrss(void)
 	size_t rss = 0;
 
 	kd = kvm_open(NULL, "/dev/null", NULL, O_RDONLY, "kvm_open");
-	if (kd == NULL)
-		return 0;
-
-	ki = kvm_getprocs(kd, KERN_PROC_PID, getpid(), &ski);
-	if (ki == NULL) {
-		kvm_close(kd);
-		return 0;
-	}
-
+	if (kd != NULL) {
+		ki = kvm_getprocs(kd, KERN_PROC_PID, getpid(), &ski);
+		if (ki != NULL) {
 #ifdef __NetBSD__		/* should we use configure for this? */
-	/* see bug 3217 */
-	rss = ki->kp_eproc.e_vm.vm_rssize;
+			/* see bug 3217 */
+			rss = ki->kp_eproc.e_vm.vm_rssize;
 #else
-	rss = ki->ki_rssize;
+			rss = ki->ki_rssize;
 #endif
+			kvm_close(kd);
 
-	kvm_close(kd);
-
-	return rss * MT_pagesize();
+			return rss * MT_pagesize();
+		} else {
+			kvm_close(kd);
+		}
+	}
 #elif defined(__linux__)
 	/* get RSS on Linux */
 	int fd;

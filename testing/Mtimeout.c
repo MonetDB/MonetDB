@@ -89,57 +89,57 @@ limit(char **argv)
 		perror("exec");
 
 		exit(EXIT_FAILURE);	/* could not exec binary */
-	} else {
-		if (timeout) {
-			/* We register the alarm handler in the parent process. If
-			 * we would put the alarm in the child process, the child
-			 * process could overrule it.  
-			 */
-			action.sa_handler = alarm_handler;
-			sigemptyset(&action.sa_mask);
-			action.sa_flags = 0;
-			sigaction(SIGALRM, &action, 0);
-			alarm(timeout);
-		}
-
-		while (waitpid(exec_pid, &status, 0) != exec_pid) ;
-
-		if (WIFEXITED(status)) {	/* Terminated normally */
-			return WEXITSTATUS(status);
-		} else if (WIFSIGNALED(status)) {	/* Got a signal */
-			if (exec_timeout) {
-				if (quiet) {
-					char *cp[1];
-
-					cp[0] = argv[9];	/* hardwired: the test output file */
-					invocation(stderr, "!Timeout: ", cp);
-				} else {
-					invocation(stderr, "Timeout: ", argv);
-				}
-				return 1;
-			} else {
-				int wts = WTERMSIG(status);
-				char msg[1024];
-
-#ifdef HAVE_STRSIGNAL
-				snprintf(msg, 1022, "%s (%d): ", strsignal(wts), wts);
-#else
-#ifdef HAVE__SYS_SIGLIST
-				snprintf(msg, 1022, "%s (%d): ", _sys_siglist[wts], wts);
-#else
-				snprintf(msg, 1022, "signal %d: ", wts);
-#endif
-#endif
-				invocation(stderr, msg, argv);
-				return ((wts > 0) ? wts : 1);
-			}
-		}
-
-		abort();
 	}
 
-	abort();
-	return 0;		/* to silence some compilers */
+	/* parent */
+
+	if (timeout) {
+		/* We register the alarm handler in the parent process. If
+		 * we would put the alarm in the child process, the child
+		 * process could overrule it.  
+		 */
+		action.sa_handler = alarm_handler;
+		sigemptyset(&action.sa_mask);
+		action.sa_flags = 0;
+		sigaction(SIGALRM, &action, 0);
+		alarm(timeout);
+	}
+
+	while (waitpid(exec_pid, &status, 0) != exec_pid)
+		;
+
+	if (WIFEXITED(status)) {	/* Terminated normally */
+		return WEXITSTATUS(status);
+	} else if (WIFSIGNALED(status)) {	/* Got a signal */
+		if (exec_timeout) {
+			if (quiet) {
+				char *cp[1];
+
+				cp[0] = argv[9];	/* hardwired: the test output file */
+				invocation(stderr, "!Timeout: ", cp);
+			} else {
+				invocation(stderr, "Timeout: ", argv);
+			}
+			return 1;
+		} else {
+			int wts = WTERMSIG(status);
+			char msg[1024];
+
+#ifdef HAVE_STRSIGNAL
+			snprintf(msg, 1022, "%s (%d): ", strsignal(wts), wts);
+#else
+#ifdef HAVE__SYS_SIGLIST
+			snprintf(msg, 1022, "%s (%d): ", _sys_siglist[wts], wts);
+#else
+			snprintf(msg, 1022, "signal %d: ", wts);
+#endif
+#endif
+			invocation(stderr, msg, argv);
+			return ((wts > 0) ? wts : 1);
+		}
+	}
+
+	return 0;		/* shouldn't get here */
 }
 
 

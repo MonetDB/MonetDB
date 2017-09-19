@@ -18,7 +18,7 @@
 #include "sql.h"
 #include <stdlib.h>
 #include "shp.h"
-#include "sql_scenario.h"
+#include "sql_execute.h"
 #include "mal_exception.h"
 
 #include <geom.h>

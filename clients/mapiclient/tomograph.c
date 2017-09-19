@@ -1394,7 +1394,7 @@ update(char *line, EventRecord *ev)
 	if (ev->state >= MDB_PING ) {
 		if (cpus == 0 && ev->state == MDB_PING) {
 			char *s;
-			if( (s= ev->stmt,'[')) 
+			if( (s= strchr(ev->stmt,'[')) != NULL)
 				s++;
 			else s = ev->stmt;
 			while (s && isspace((unsigned char) *s))

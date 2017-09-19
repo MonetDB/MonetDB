@@ -10,6 +10,7 @@
 #include "netcdf.h"
 #include "sql_mvc.h"
 #include "sql.h"
+#include "sql_execute.h"
 #include "sql_scenario.h"
 #include "mal_exception.h"
 #include "netcdf_vault.h"

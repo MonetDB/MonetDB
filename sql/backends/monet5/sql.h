@@ -88,7 +88,6 @@ sql5_export str BATleftproject(bat *result, const bat *col, const bat *l, const 
 
 sql5_export str mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-sql5_export str mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 sql5_export str mvc_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -299,7 +298,6 @@ sql5_export str checkSQLContext(Client cntxt);
 sql5_export str getSQLContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b);
 
 sql5_export void freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start);
-sql5_export str second_interval_daytime(lng *res, const daytime *s, const int *ek, const int *sk);
 sql5_export str second_interval_2_daytime(daytime *res, const lng *s, const int *d);
 sql5_export str timestamp_2_daytime(daytime *res, const timestamp *v, const int *d);
 sql5_export str date_2_timestamp(timestamp *res, const date *v, const int *d);

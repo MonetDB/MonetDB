@@ -12,7 +12,7 @@
  */
 #include "monetdb_config.h"
 #include "mal_backend.h"
-#include "sql_scenario.h"
+#include "sql_execute.h"
 #include "sql_mvc.h"
 #include <mtime.h>
 #include <unistd.h>
