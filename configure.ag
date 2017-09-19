@@ -629,6 +629,8 @@ AS_VAR_IF([enable_strict], [yes], [
 
 		# We can deal with -Wunrechable-code on modern
 		# compilers, but FreeBSD's clang (3.4.1) is too old.
+		# We need a version that understands the DISABLES
+		# CODE comment that is in the code at various places.
 		AS_CASE([$CC_ver],
 			[clang-3.*], [],
 			[MCHECK_ADD_FLAG([-Wunreachable-code])])
