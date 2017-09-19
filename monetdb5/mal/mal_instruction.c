@@ -759,8 +759,13 @@ cloneVariable(MalBlkPtr tm, MalBlkPtr mb, int x)
 void
 renameVariable(MalBlkPtr mb, int id, str pattern, int newid)
 {
+	(void) mb;
+	(void) id;
+	(void) pattern;
+	(void) newid;
+	assert(0);					/* unused, and unusable */
 	assert(id >=0 && id <mb->vtop);
-	snprintf(getVarName(mb,id),IDLENGTH,pattern,newid);
+	/* snprintf(getVarName(mb,id),IDLENGTH,pattern,newid); */
 }
 
 int
