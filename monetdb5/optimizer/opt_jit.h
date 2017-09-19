@@ -13,6 +13,4 @@
 
 mal_export str OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
-#define OPTDEBUGjit  if (/* DISABLES CODE */ (0))
-
 #endif
