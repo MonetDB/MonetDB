@@ -630,7 +630,6 @@ AS_VAR_IF([enable_strict], [yes], [
 dnl		MCHECK_ADD_FLAG([-Wnull-dereference])
 		MCHECK_ADD_FLAG([-Wjump-misses-init])
 dnl		MCHECK_ADD_FLAG([-Wshadow])
-		MCHECK_ADD_FLAG([-Wformat=2])
 
 		# With clang 2.8, 3.3, 5.0 (no other tested) and gcc < 4.5
 		# (tested 3.4.6, 4.2.1, 4.3.2, 4.4.4, 4.4.5, 4.5.1, 4.5.2),
