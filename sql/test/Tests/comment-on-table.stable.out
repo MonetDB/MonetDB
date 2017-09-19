@@ -121,6 +121,19 @@ Ready.
 % 3,	12,	12 # length
 [ "rem",	"REMOTE TABLE",	"remote table"	]
 [ "mrg",	"MERGE TABLE",	"merge table"	]
+#DROP TABLE rem;
+#DROP TABLE mrg;
+#SELECT * FROM new_comments();
+% .L1,	.L1,	.L1 # table_name
+% name,	source,	remark # name
+% varchar,	varchar,	clob # type
+% 0,	0,	0 # length
+#CREATE TEMPORARY TABLE banana (i INT);
+#SELECT * FROM new_comments();
+% .L1,	.L1,	.L1 # table_name
+% name,	source,	remark # name
+% varchar,	varchar,	clob # type
+% 0,	0,	0 # length
 
 # 14:25:22 >  
 # 14:25:22 >  "Done."

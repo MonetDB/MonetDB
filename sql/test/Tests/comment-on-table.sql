@@ -72,3 +72,12 @@ COMMENT ON TABLE rem IS 'remote table';
 CREATE MERGE TABLE mrg (i INT);
 COMMENT ON TABLE mrg IS 'merge table';
 SELECT * FROM new_comments();
+DROP TABLE rem;
+DROP TABLE mrg;
+SELECT * FROM new_comments();
+
+-- commenting on temporary tables is forbidden
+CREATE TEMPORARY TABLE banana (i INT);
+COMMENT ON TABLE tmp.banana IS 'temp table';
+COMMENT ON COLUMN tmp.banana.i IS 'temp table column';
+SELECT * FROM new_comments();

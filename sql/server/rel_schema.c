@@ -1967,6 +1967,27 @@ rel_alter_user(sql_allocator *sa, char *user, char *passwd, int enc, char *schem
 	return rel;
 }
 
+static sql_schema*
+current_or_designated_schema(mvc *sql, char *name) {
+	sql_schema *s;
+
+	if (!name)
+		return cur_schema(sql);
+
+	s = mvc_bind_schema(sql, name);
+	if (!s) {
+		sql_error(sql, 02, "3F000!COMMENT ON:no such schema: %s", name);
+		return NULL;
+	}
+
+	if (strcmp(s->base.name, "tmp") == 0) {
+		sql_error(sql, 2, "3F000!COMMENT ON tmp object not allowed");
+		return NULL;
+	}
+
+	return s;
+}
+
 static sqlid
 rel_find_designated_schema(mvc *sql, symbol *sym) {
 	char *sname;
@@ -1985,19 +2006,14 @@ static sqlid
 rel_find_designated_table(mvc *sql, symbol *sym) {
 	dlist *qname;
 	sql_schema *s;
-	char *sname;
 	char *tname;
 	sql_table *t;
 	int want_table = sym->token == SQL_TABLE;
 
 	assert(sym->type == type_list);
 	qname = sym->data.lval;
-	s = cur_schema(sql);
-	sname = qname_schema(qname);
-	if (sname && !(s = mvc_bind_schema(sql, sname))) {
-		sql_error(sql, 02, "3F000!COMMENT ON:no such schema: %s", sname);
+	if (!(s = current_or_designated_schema(sql, qname_schema(qname))))
 		return 0;
-	}
 	tname = qname_table(qname);
 	t = mvc_bind_table(sql, s, tname);
 	if (t && !want_table == !isKindOfTable(t))	/* comparing booleans can be tricky */
@@ -2033,11 +2049,8 @@ rel_find_designated_column(mvc *sql, symbol *sym) {
 		assert(colname->h->next->next->type == type_string);
 		cname = colname->h->next->next->data.sval;
 	}
-	s = cur_schema(sql);
-	if (sname && !(s = mvc_bind_schema(sql, sname))) {
-		sql_error(sql, 02, "3F000!COMMENT ON:no such schema: %s", sname);
+	if (!(s = current_or_designated_schema(sql, sname)))
 		return 0;
-	}
 	if (!(t = mvc_bind_table(sql, s, tname))) {
 		sql_error(sql, 02, "42S02!COMMENT ON:no such table: %s.%s", s->base.name, tname);
 		return 0;
@@ -2053,18 +2066,13 @@ static sqlid
 rel_find_designated_index(mvc *sql, symbol *sym) {
 	dlist *qname;
 	sql_schema *s;
-	char *sname;
 	char *iname;
 	sql_idx *idx;
 
 	assert(sym->type == type_list);
 	qname = sym->data.lval;
-	s = cur_schema(sql);
-	sname = qname_schema(qname);
-	if (sname && !(s = mvc_bind_schema(sql, sname))) {
-		sql_error(sql, 02, "3F000!COMMENT ON:no such schema: %s", sname);
+	if (!(s = current_or_designated_schema(sql, qname_schema(qname))))
 		return 0;
-	}
 	iname = qname_table(qname);
 	idx = mvc_bind_idx(sql, s, iname);
 	if (idx)
@@ -2081,18 +2089,13 @@ rel_find_designated_sequence(mvc *sql, symbol *sym) {
 	(void)sym;
 	dlist *qname;
 	sql_schema *s;
-	char *sname;
 	char *seqname;
 	sql_sequence *seq;
 
 	assert(sym->type == type_list);
 	qname = sym->data.lval;
-	s = cur_schema(sql);
-	sname = qname_schema(qname);
-	if (sname && !(s = mvc_bind_schema(sql, sname))) {
-		sql_error(sql, 02, "42000!COMMENT ON:no such schema: %s", sname);
+	if (!(s = current_or_designated_schema(sql, qname_schema(qname))))
 		return 0;
-	}
 	seqname = qname_table(qname);
 	seq = find_sql_sequence(s, seqname);
 	if (seq)
@@ -2112,7 +2115,6 @@ rel_find_designated_routine(mvc *sql, symbol *sym) {
 	dlist *qname;
 	dlist *typelist;
 	int func_type;
-	char *sname;
 	sql_schema *s;
 	char *fname;
 	sql_func *func;
@@ -2125,12 +2127,8 @@ rel_find_designated_routine(mvc *sql, symbol *sym) {
 	typelist = designator->h->next->data.lval;
 	func_type = designator->h->next->next->data.i_val;
 
-	s = cur_schema(sql);
-	sname = qname_schema(qname);
-	if (sname && !(s = mvc_bind_schema(sql, sname))) {
-		sql_error(sql, 02, "3F000!COMMENT ON:no such schema: %s", sname);
+	if (!(s = current_or_designated_schema(sql, qname_schema(qname))))
 		return 0;
-	}
 
 	fname = qname_func(qname);
 	func = resolve_func(sql, s, fname, typelist, func_type, "COMMENT");

@@ -31,7 +31,7 @@ stderr of test 'comment-on-view` in directory 'sql/test` itself:
 MAPI  = (monetdb) /var/tmp/mtest-29646/.s.monetdb.36441
 QUERY = COMMENT ON TABLE vivi is 'a mistake';
 ERROR = !COMMENT ON:no such table: sch.vivi
-CODE  = 3F000
+CODE  = 42S02
 
 # 16:43:54 >  
 # 16:43:54 >  "Done."
