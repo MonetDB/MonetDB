@@ -151,7 +151,6 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* Does this happen?
 		 * If so, what do we have TODO ? */
 		throw(MAL, "SYSMONpause", "type hge not handled, yet");
-		break;
 #endif
 	default:
 		assert(0);
@@ -182,7 +181,6 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* Does this happen?
 		 * If so, what do we have TODO ? */
 		throw(MAL, "SYSMONresume", "type hge not handled, yet");
-		break;
 #endif
 	default:
 		assert(0);
@@ -213,7 +211,6 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		/* Does this happen?
 		 * If so, what do we have TODO ? */
 		throw(MAL, "SYSMONstop", "type hge not handled, yet");
-		break;
 #endif
 	default:
 		assert(0);
