@@ -626,6 +626,7 @@ AS_VAR_IF([enable_strict], [yes], [
 		MCHECK_ADD_FLAG([-Wduplicated-cond])
 		MCHECK_ADD_FLAG([-Wduplicated-branches])
 		MCHECK_ADD_FLAG([-Wrestrict])
+		MCHECK_ADD_FLAG([-Wnested-externs])
 
 		# We can deal with -Wunrechable-code on modern
 		# compilers, but FreeBSD's clang (3.4.1) is too old.
@@ -646,7 +647,6 @@ AS_VAR_IF([enable_strict], [yes], [
 		dnl  MCHECK_ADD_FLAG([-Wfloat-equal])
 		dnl  MCHECK_ADD_FLAG([-Winline])
 		dnl  MCHECK_ADD_FLAG([-Wmissing-noreturn])
-		dnl  MCHECK_ADD_FLAG([-Wnested-externs])
 		dnl  MCHECK_ADD_FLAG([-Wpadded])
 		dnl  MCHECK_ADD_FLAG([-Wredundant-decls])
 		dnl  MCHECK_ADD_FLAG([-Wshadow])

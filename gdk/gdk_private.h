@@ -108,8 +108,6 @@ __hidden BUN binsearch_dbl(const oid *restrict indir, oid offset, const dbl *res
 	__attribute__((__visibility__("hidden")));
 __hidden Heap *createOIDXheap(BAT *b, int stable)
 	__attribute__((__visibility__("hidden")));
-__hidden void gdk_bbp_reset(void)
-	__attribute__((__visibility__("hidden")));
 __hidden gdk_return BUNreplace(BAT *b, oid left, const void *right, bit force)
 	__attribute__ ((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
@@ -117,9 +115,6 @@ __hidden gdk_return GDKextend(const char *fn, size_t size)
 	__attribute__ ((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKextendf(int fd, size_t size, const char *fn)
-	__attribute__ ((__warn_unused_result__))
-	__attribute__((__visibility__("hidden")));
-__hidden  gdk_return GDKextractParentAndLastDirFromPath(const char *path, char *last_dir_parent, char *last_dir)
 	__attribute__ ((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 __hidden int GDKfdlocate(int farmid, const char *nme, const char *mode, const char *ext)
