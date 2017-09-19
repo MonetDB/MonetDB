@@ -626,8 +626,6 @@ AS_VAR_IF([enable_strict], [yes], [
 		MCHECK_ADD_FLAG([-Wduplicated-cond])
 		MCHECK_ADD_FLAG([-Wduplicated-branches])
 		MCHECK_ADD_FLAG([-Wrestrict])
-dnl		MCHECK_ADD_FLAG([-Wnull-dereference])
-dnl		MCHECK_ADD_FLAG([-Wshadow])
 
 		# With clang 2.8, 3.3, 5.0 (no other tested) and gcc < 4.5
 		# (tested 3.4.6, 4.2.1, 4.3.2, 4.4.4, 4.4.5, 4.5.1, 4.5.2),
@@ -670,6 +668,7 @@ dnl		MCHECK_ADD_FLAG([-Wshadow])
 		dnl  MCHECK_ADD_FLAG([-Wstrict-overflow=5])
 		dnl  MCHECK_ADD_FLAG([-Wvla])
 		dnl  MCHECK_ADD_FLAG([-Wunsuffixed-float-constants])
+		dnl  MCHECK_ADD_FLAG([-Wnull-dereference])
 	],
 	[-*icc*-linux*|-*ecc*-linux*] ,[
 		# Intel ([ie]cc/[ie]cpc on Linux)
