@@ -27,7 +27,7 @@ timestamp_delta( sql_delta *d, int ts)
 {
 	while (d->next && d->wtime > ts) 
 		d = d->next;
-	if (0 && d && d->cached) {
+	if (/* DISABLES CODE */ (0) && d && d->cached) {
 		bat_destroy(d->cached);
 		d->cached = NULL;
 	}
@@ -39,7 +39,7 @@ timestamp_dbat( sql_dbat *d, int ts)
 {
 	while (d->next && d->wtime > ts) 
 		d = d->next;
-	if (0 && d && d->cached) {
+	if (/* DISABLES CODE */ (0) && d && d->cached) {
 		bat_destroy(d->cached);
 		d->cached = NULL;
 	}
@@ -2436,7 +2436,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			}
 			while (b && b->wtime >= oldest->stime)
 				b = b->next;
-			if (0 && b && b->wtime < oldest->stime) {
+			if (/* DISABLES CODE */ (0) && b && b->wtime < oldest->stime) {
 				/* anything older can go */
 				destroy_dbat(tr, b->next);
 				b->next = NULL;
@@ -2482,7 +2482,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				}
 				while (b && b->wtime >= oldest->stime) 
 					b = b->next;
-				if (0 && b && b->wtime < oldest->stime) {
+				if (/* DISABLES CODE */ (0) && b && b->wtime < oldest->stime) {
 					/* anything older can go */
 					destroy_bat(tr, b->next);
 					b->next = NULL;
@@ -2547,7 +2547,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					}
 					while (b && b->wtime >= oldest->stime) 
 						b = b->next;
-					if (0 && b && b->wtime < oldest->stime) {
+					if (/* DISABLES CODE */ (0) && b && b->wtime < oldest->stime) {
 						/* anything older can go */
 						destroy_bat(tr, b->next);
 						b->next = NULL;

@@ -636,10 +636,7 @@ AS_VAR_IF([enable_strict], [yes], [
 		# "-Wunreachable-code" with clang and gcc < 4.5 .
 		# At the same time, Apple deprecated OpenSSL in favour of
 		# their own CommonCrypto API.  We don't mind about that.
-		AS_CASE([$CC_ver],
-			[clang-*|gcc-[[0-3]].*|gcc-4.[[0-4]].*],
-				[MCHECK_ADD_FLAG([-Wno-deprecated-declarations])],
-			[MCHECK_ADD_FLAG([-Wunreachable-code])])
+		MCHECK_ADD_FLAG([-Wunreachable-code])
 
 		dnl  Our code is not (yet?) up to these:
 		dnl  MCHECK_ADD_FLAG([-pedantic-errors])

@@ -16,6 +16,7 @@ INCLUDES = ../include ../common ../storage \
 		   ../../gdk
 
 AM_YFLAGS = -d -p sql -r all
+sql_parser.tab_CFLAGS = -Wno-unreachable-code
 
 lib_sqlserver = {
 	NOINST
