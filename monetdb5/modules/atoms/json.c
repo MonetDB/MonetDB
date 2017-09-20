@@ -42,8 +42,9 @@
 	if (jt == NULL || jt->error) {										\
 		char *msg;														\
 		if (jt) {														\
-			msg = GDKstrdup(jt->error);									\
+			msg = jt->error;											\
 			JSONfree(jt);												\
+			jt->error = NULL;											\
 		} else {														\
 			msg = createException(MAL, "json.new", MAL_MALLOC_FAIL);	\
 		}																\
