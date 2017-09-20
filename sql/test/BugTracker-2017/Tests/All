@@ -70,3 +70,4 @@ udf_crash_subquery_scalar_paramters.Bug-6399
 side-effect.Bug-6397
 copy_into_crash.Bug-6404
 null_matches_in_outer.Bug-6398
+corr_coersion.Bug-6287
