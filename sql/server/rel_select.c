@@ -3441,22 +3441,53 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 
 	a = sql_bind_aggr_(sql->sa, s, aname, exp_types(sql->sa, exps));
 	if (!a && list_length(exps) > 1) { 
-		a = sql_bind_member_aggr(sql->sa, s, aname, exp_subtype(exps->h->data), list_length(exps));
-		if (a) {
-			node *n, *op = a->aggr->ops->h;
-			list *nexps = sa_list(sql->sa);
+		sql_subtype *t1 = exp_subtype(exps->h->data);
 
-			for (n = exps->h ; a && op && n; op = op->next, n = n->next ) {
-				sql_arg *arg = op->data;
-				sql_exp *e = n->data;
+		if (!EC_NUMBER(t1->type->eclass) || list_length(exps) != 2) {
+			a = sql_bind_member_aggr(sql->sa, s, aname, exp_subtype(exps->h->data), list_length(exps));
+			if (a) {
+				node *n, *op = a->aggr->ops->h;
+				list *nexps = sa_list(sql->sa);
 
-				e = rel_check_type(sql, &arg->type, e, type_equal);
-				if (!e)
-					a = NULL;
-				list_append(nexps, e);
+				for (n = exps->h ; a && op && n; op = op->next, n = n->next ) {
+					sql_arg *arg = op->data;
+					sql_exp *e = n->data;
+
+					e = rel_check_type(sql, &arg->type, e, type_equal);
+					if (!e)
+						a = NULL;
+					list_append(nexps, e);
+				}
+				if (a && list_length(nexps))  /* count(col) has |exps| != |nexps| */
+					exps = nexps;
+				}
+		} else {
+			sql_exp *l = exps->h->data, *ol = l;
+			sql_exp *r = exps->h->next->data, *or = r;
+			sql_subtype *t2 = exp_subtype(r);
+
+			if (rel_convert_types(sql, &l, &r, 1/*fix scale*/, type_equal) >= 0){
+				list *tps = sa_list(sql->sa);
+
+				t1 = exp_subtype(l);
+				list_append(tps, t1);
+				t2 = exp_subtype(r);
+				list_append(tps, t2);
+				a = sql_bind_aggr_(sql->sa, s, aname, tps);
 			}
-			if (a && list_length(nexps))  /* count(col) has |exps| != |nexps| */
+			if (!a) {
+				sql->session->status = 0;
+				sql->errstr[0] = '\0';
+
+				l = ol;
+				r = or;
+			} else {
+				list *nexps = sa_list(sql->sa);
+
+				append(nexps,l);
+				append(nexps,r);
 				exps = nexps;
+			}
 		}
 	}
 	if (!a) { /* find aggr + convert */
