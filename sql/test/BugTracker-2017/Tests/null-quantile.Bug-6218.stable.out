@@ -81,7 +81,7 @@ Ready.
 #select quantile(i,0.5),j from bug6218 group by j order by j;
 % sys.L3,	sys.bug6218 # table_name
 % L2,	j # name
-% hugeint,	int # type
+% int,	int # type
 % 1,	1 # length
 [ 1,	0	]
 [ NULL,	1	]

@@ -3442,9 +3442,11 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 	a = sql_bind_aggr_(sql->sa, s, aname, exp_types(sql->sa, exps));
 	if (!a && list_length(exps) > 1) { 
 		sql_subtype *t1 = exp_subtype(exps->h->data);
+		a = sql_bind_member_aggr(sql->sa, s, aname, exp_subtype(exps->h->data), list_length(exps));
 
-		if (!EC_NUMBER(t1->type->eclass) || list_length(exps) != 2) {
-			a = sql_bind_member_aggr(sql->sa, s, aname, exp_subtype(exps->h->data), list_length(exps));
+		if (list_length(exps) != 2 || (!EC_NUMBER(t1->type->eclass) || !a || subtype_cmp( 
+						&((sql_arg*)a->aggr->ops->h->data)->type,
+						&((sql_arg*)a->aggr->ops->h->next->data)->type) != 0) )  {
 			if (a) {
 				node *n, *op = a->aggr->ops->h;
 				list *nexps = sa_list(sql->sa);
