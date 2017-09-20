@@ -42,7 +42,7 @@
 	if (jt == NULL || jt->error) {										\
 		char *msg;														\
 		if (jt) {														\
-			msg = jt->error;											\
+			msg = GDKstrdup(jt->error);									\
 			JSONfree(jt);												\
 		} else {														\
 			msg = createException(MAL, "json.new", MAL_MALLOC_FAIL);	\
