@@ -1058,8 +1058,10 @@ mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		cnt = BATcount(ins);
 		BBPunfix(ins->batCacheid);
 	}
-	if (BATcount(tid))
-		v = *Tloc(tid, BATcount(tid)-1)+1;
+	if (BATcount(tid)) {
+		(void)BATmax(tid, &v);
+		v++;
+	}
 	for(;cnt>0; cnt--, v++) {
 		if (BUNappend(tid, &v, FALSE) != GDK_SUCCEED) {
 			BBPunfix(Tid);
