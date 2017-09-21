@@ -2625,7 +2625,6 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				sql_exp *le;
 
 				le = exps_bind_column2(right->exps, exp_relname(ident), exp_name(ident));
-				exp_label(sql->sa, le, ++sql->label);
 				le = exp_column(sql->sa, exp_relname(le), exp_name(le), exp_subtype(le), le->card, has_nil(le), is_intern(le));
 
 				right = rel_select(sql->sa, right, NULL);
