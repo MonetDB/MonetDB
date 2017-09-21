@@ -72,3 +72,4 @@ copy_into_crash.Bug-6404
 null_matches_in_outer.Bug-6398
 corr_coersion.Bug-6287
 sqlitelogictest-having-with-not-in.Bug-6409
+sqlitelogictest-having-with-in.Bug-6410
