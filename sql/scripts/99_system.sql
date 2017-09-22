@@ -5,8 +5,7 @@
 -- Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
 
 -- only system functions until now
-create table systemfunctions (function_id)
-	as (select id from functions) with data;
+insert into systemfunctions select id from functions;
 grant select on systemfunctions to public;
 
 -- only system tables until now

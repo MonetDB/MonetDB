@@ -2199,6 +2199,7 @@ showCommands(void)
 	mnstr_printf(toConsole, "\\q      - terminate session\n");
 }
 
+/* These values must match those used in sys.describe_all_objects() */
 #define MD_TABLE    1
 #define MD_VIEW     2
 #define MD_SEQ      4
@@ -2530,126 +2531,42 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 #endif
 					} else {
 						/* get all object names in current schema */
-						char *type, *name, *schema;
-						char q[4096];
-						char nameq[128];
-						char funcq[512];
+						char query[4096], *q = query, *endq = query + sizeof(query);
+						char *name_column = hasSchema ? "fullname" : "name";
+						char *type, *name; /* output columns */
 
-						if (!*line) {
-							line = "%";
-							hasSchema = 0;
+						/*
+						 * | LINE            | SCHEMA FILTER | NAME FILTER                   |
+						 * |-----------------+---------------+-------------------------------|
+						 * | ""              | yes           | -                             |
+						 * | "my_table"      | yes           | name LIKE 'my_table'          |
+						 * | "my*"           | yes           | name LIKE 'my%'               |
+						 * | "data.my_table" | no            | fullname LIKE 'data.my_table' |
+						 * | "data.my*"      | no            | fullname LIKE 'data.my%'      |
+						 * | "*a.my*"        | no            | fullname LIKE '%a.my%'        |
+						*/
+						q += snprintf(q, endq - q, "SELECT type, fullname, ntype FROM sys.describe_all_objects()\n");
+						q += snprintf(q, endq - q, "WHERE (ntype & %d > 0)\n", x);
+						if (!wantsSystem) {
+							q += snprintf(q, endq - q, "AND NOT system\n");
 						}
-						if (hasSchema) {
-							snprintf(nameq, sizeof(nameq),
-									"s.name || '.' || o.name LIKE '%s'",
-									line);
-						} else {
-							snprintf(nameq, sizeof(nameq),
-									"s.name = current_schema AND "
-									"o.name LIKE '%s'",
-									line);
+						if (!hasSchema) {
+							q += snprintf(q, endq - q, "AND (sname IS NULL OR sname = current_schema)\n");
 						}
-						snprintf(funcq, sizeof(funcq),
-							 "SELECT o.name, "
-								"(CASE WHEN sf.function_id IS NOT NULL "
-								      "THEN 'SYSTEM ' "
-								      "ELSE '' "
-								  "END || 'FUNCTION') AS type, "
-								 "CASE WHEN sf.function_id IS NULL "
-								      "THEN false "
-								      "ELSE true "
-								 "END AS system, "
-								 "s.name AS sname, "
-								 "%d AS ntype "
-							 "FROM sys.functions o "
-							       "LEFT JOIN sys.systemfunctions sf "
-								     "ON o.id = sf.function_id, "
-							       "sys.schemas s "
-							 "WHERE o.schema_id = s.id AND "
-							       "%s ",
-							 MD_FUNC,
-							 nameq);
-						snprintf(q, sizeof(q),
-							 "SELECT name, "
-								"CAST(type AS VARCHAR(30)) AS type, "
-								"system, "
-								"sname, "
-								"ntype "
-							 "FROM (SELECT o.name, "
-								      "(CASE o.system "
-									    "WHEN true THEN 'SYSTEM ' "
-									    "ELSE '' "
-								       "END || "
-								       "CASE o.type "
-									    "WHEN 0 THEN 'TABLE' "
-									    "WHEN 1 THEN 'VIEW' "
-									    "WHEN 3 THEN 'MERGE TABLE' "
-									    "WHEN 4 THEN 'STREAM TABLE' "
-									    "WHEN 5 THEN 'REMOTE TABLE' "
-									    "WHEN 6 THEN 'REPLICA TABLE' "
-									    "ELSE '' "
-								       "END) AS type, "
-								      "o.system, "
-								      "s.name AS sname, "
-								      "CASE o.type "
-									   "WHEN 0 THEN %d "
-									   "WHEN 1 THEN %d "
-									   "WHEN 3 THEN %d "
-									   "WHEN 4 THEN %d "
-									   "WHEN 5 THEN %d "
-									   "WHEN 6 THEN %d "
-									   "ELSE 0 "
-								      "END AS ntype "
-							       "FROM sys._tables o, "
-								    "sys.schemas s "
-							       "WHERE o.schema_id = s.id AND "
-								     "%s AND "
-								     "o.type IN (0, 1, 3, 4, 5, 6) "
-							       "UNION "
-							       "SELECT o.name, "
-								      "'SEQUENCE' AS type, "
-								      "false AS system, "
-								      "s.name AS sname, "
-								      "%d AS ntype "
-							       "FROM sys.sequences o, "
-								    "sys.schemas s "
-							       "WHERE o.schema_id = s.id AND "
-								     "%s "
-							       "UNION "
-							       "%s "
-							       "UNION "
-							       "SELECT NULL AS name, "
-								      "(CASE WHEN o.system THEN 'SYSTEM ' ELSE '' END || 'SCHEMA') AS type, "
-								      "o.system AS system, "
-								      "o.name AS sname, "
-								      "%d AS ntype "
-							       "FROM sys.schemas o "
-							       "WHERE o.name LIKE '%s'"
-							       ") AS \"all\" "
-							 "WHERE ntype & %u > 0 "
-							       "%s "
-							 "ORDER BY system, name, sname",
-							 MD_TABLE, MD_VIEW, MD_TABLE, MD_TABLE, MD_TABLE, MD_TABLE,
-							 nameq,
-							 MD_SEQ,
-							 nameq, funcq,
-							 MD_SCHEMA,
-							 line, x,
-							 (wantsSystem ?
-							   "" :
-							   "AND system = false"));
-						hdl = mapi_query(mid, q);
+						if (*line) {
+							q += snprintf(q, endq - q, "AND (%s LIKE '%s')\n", name_column, line);
+						}
+						q += snprintf(q, endq - q, ";\n");
+
+						hdl = mapi_query(mid, query);
 						CHECK_RESULT(mid, hdl, continue, buf, fp);
-						while (fetch_row(hdl) == 5) {
-							name = mapi_fetch_field(hdl, 0);
-							type = mapi_fetch_field(hdl, 1);
-							schema = mapi_fetch_field(hdl, 3);
+						while (fetch_row(hdl) == 3) {
+							type = mapi_fetch_field(hdl, 0);
+							name = mapi_fetch_field(hdl, 1);
 							mnstr_printf(toConsole,
-									  "%-*s  %s%s%s\n",
-									  mapi_get_len(hdl, 1),
-									  type, schema,
-									  name != NULL ? "." : "",
-									  name != NULL ? name : "");
+									  "%-*s  %s\n",
+									  mapi_get_len(hdl, 0), type,
+									  name);
 						}
 						mapi_close_handle(hdl);
 						hdl = NULL;
