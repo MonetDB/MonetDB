@@ -55,7 +55,6 @@
 static str statusname[7] = {"init", "register", "readytorun", "running", "waiting", "paused", "stopping"};
 
 static str CQstartScheduler(void);
-static int CQinit;
 static int pnstatus = CQINIT;
 static int cycleDelay = 200; /* be careful, it affects response/throughput timings */
 static MT_Lock ttrLock;
@@ -640,11 +639,15 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	pnettop++;
 
 unlock:
-	MT_lock_unset(&ttrLock);
-finish:
-	if(!msg && CQinit == 0) { /* start the scheduler if needed */
+	if(!msg && cq_pid == 0) { /* start the scheduler if needed */
+		if( pnettop == 1)
+			pnstatus = CQINIT;
+		MT_lock_unset(&ttrLock);
 		msg = CQstartScheduler();
+	} else {
+		MT_lock_unset(&ttrLock);
 	}
+finish:
 	return msg;
 }
 
@@ -712,7 +715,7 @@ CQresumeInternal(Client cntxt, MalBlkPtr mb, int with_alter)
 	}
 
 	/* start the scheduler if needed */
-	if(CQinit == 0) {
+	if(cq_pid == 0) {
 		msg = CQstartScheduler();
 	}
 
@@ -799,7 +802,7 @@ CQresumeAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		pnet[i].status = CQWAIT;
 
 	/* start the scheduler if needed */
-	if(CQinit == 0) {
+	if(cq_pid == 0) {
 		MT_lock_unset(&ttrLock);
 		msg = CQstartScheduler();
 	} else {
@@ -937,7 +940,7 @@ CQbeginAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for( ; idx < last; idx++)
 		pnet[idx].run = delay - (pnet[idx].beats > 0 ? pnet[idx].beats : 0);
 
-	finish:
+finish:
 	MT_lock_unset(&ttrLock);
 	return msg;
 }
@@ -975,7 +978,7 @@ CQcycles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for( ; idx < last; idx++)
 		pnet[idx].cycles = cycles;
 
-	finish:
+finish:
 	MT_lock_unset(&ttrLock);
 	return msg;
 }
@@ -1039,7 +1042,7 @@ CQheartbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		pnet[idx].beats = new_hearbeats;
 	}
 
-	finish:
+finish:
 	MT_lock_unset(&ttrLock);
 	return msg;
 }
@@ -1067,12 +1070,12 @@ CQderegisterInternal(MalBlkPtr mb, char* err_message)
 
 	MT_lock_set(&ttrLock);
 	if((msg = CQlocateMb(mb, &idx, &mb2str, "cquery.deregister")) != MAL_SUCCEED) {
-		goto finish;
+		goto unlock;
 	}
 	if(idx == pnettop) {
 		msg = createException(SQL, "cquery.deregister",
 							  SQLSTATE(42000) "The continuous %s %s has not yet started\n", err_message, mb2str);
-		goto finish;
+		goto unlock;
 	}
 	pnet[idx].status = CQSTOP;
 	MT_lock_unset(&ttrLock);
@@ -1082,13 +1085,20 @@ CQderegisterInternal(MalBlkPtr mb, char* err_message)
 	}
 	MT_lock_set(&ttrLock);
 	CQfree(idx);
-	if( pnettop == 0)
+	if( pnettop == 0) {
 		pnstatus = CQSTOP;
-
+		MT_lock_unset(&ttrLock);
+		if(cq_pid > 0) { //this check is need for the compiler
+			MT_join_thread(cq_pid);
+			cq_pid = 0;
+		}
+		goto finish;
+	}
+unlock:
+	MT_lock_unset(&ttrLock);
 finish:
 	if(mb2str)
 		GDKfree(mb2str);
-	MT_lock_unset(&ttrLock);
 	return msg;
 }
 
@@ -1146,8 +1156,11 @@ CQderegisterAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		i--;
 	}
 	pnstatus = CQSTOP;
-
 	MT_lock_unset(&ttrLock);
+	if(cq_pid > 0) {
+		MT_join_thread(cq_pid);
+		cq_pid = 0;
+	}
 	return msg;
 }
 
@@ -1208,7 +1221,9 @@ CQexecute( Client cntxt, int idx)
 	fprintFunction(stderr, node->mb, 0, LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_MAPI);
 #endif
 
+	MT_lock_unset(&ttrLock);
 	msg = runMALsequence(cntxt, node->mb, 1, 0, node->stk, 0, 0);
+	MT_lock_set(&ttrLock);
 	if( msg != MAL_SUCCEED)
 		pnet[idx].error = msg;
 
@@ -1216,10 +1231,8 @@ CQexecute( Client cntxt, int idx)
 #ifdef DEBUG_CQUERY
 		fprintf(stderr, "#cquery.execute %s.%s finished %s\n", node->mod, node->fcn, (msg?msg:""));
 #endif
-	MT_lock_set(&ttrLock);
 	if( node->status != CQSTOP)
 		node->status = CQWAIT;
-	MT_lock_unset(&ttrLock);
 }
 
 static void
@@ -1237,14 +1250,12 @@ CQscheduler(void *dummy)
 	fprintf(stderr, "#cquery.scheduler started\n");
 #endif
 
-	CQinit = 1;
 	MT_lock_set(&ttrLock);
-	pnstatus = CQRUNNING; // global state 
-	MT_lock_unset(&ttrLock);
+	pnstatus = CQRUNNING; // global state
 
 	while( pnstatus != CQSTOP  && ! GDKexiting()){
 		/* Determine which continuous queries are eligible to run.
-  		   Collect latest statistics, note that we don't need a lock here,
+		   Collect latest statistics, note that we don't need a lock here,
 		   because the count need not be accurate to the usec. It will simply
 		   come back. We also only have to check the places that are marked
 		   non empty. You can only trigger on empty baskets using a heartbeat */
@@ -1260,7 +1271,6 @@ CQscheduler(void *dummy)
 		}
 
 		pntasks=0;
-		MT_lock_set(&ttrLock); // analysis should be done with exclusive access
 		for (k = i = 0; i < pnettop; i++)
 		if ( pnet[i].status == CQWAIT ){
 			pnet[i].enabled = pnet[i].error == 0 && (pnet[i].cycles > 0 || pnet[i].cycles == CYCLES_NIL);
@@ -1271,7 +1281,7 @@ CQscheduler(void *dummy)
 			if( pnet[i].beats == HEARTBEAT_NIL && pnet[i].baskets[0] == 0)
 				pnet[i].enabled = 0;
 
-			if( pnet[i].enabled && (pnet[i].beats > 0 || pnet[i].run > 0)) {
+			if( pnet[i].enabled && ((pnet[i].beats != HEARTBEAT_NIL && pnet[i].beats > 0) || pnet[i].run > 0)) {
 				pnet[i].enabled = now >= pnet[i].run + (pnet[i].beats > 0 ? pnet[i].beats : 0);
 #ifdef DEBUG_CQUERY_SCHEDULER
 				fprintf(stderr,"#beat %s.%s  "LLFMT"("LLFMT") %s\n", pnet[i].mod, pnet[i].fcn,
@@ -1311,8 +1321,6 @@ CQscheduler(void *dummy)
 			pnet[i].status = CQDEREGISTER;
 			pnet[i].enabled = 0;
 		}
-		(void) fflush(stderr);
-		MT_lock_unset(&ttrLock);
 #ifdef DEBUG_CQUERY_SCHEDULER
 		if( pntasks)
 			fprintf(stderr, "#Transitions %d enabled:\n",pntasks);
@@ -1329,16 +1337,12 @@ CQscheduler(void *dummy)
 #ifdef DEBUG_CQUERY
 			fprintf(stderr, "#Run transition %s.%s cycle=%d \n", pnet[i].mod, pnet[i].fcn, pnet[i].cycles);
 #endif
-
 			t = GDKusec();
 			// Fork MAL execution thread
-			MT_lock_set(&ttrLock);
 			if (pnet[i].status != CQWAIT){
-				MT_lock_unset(&ttrLock);
 				goto wrapup;
 			}
 			pnet[i].status = CQRUNNING;
-			MT_lock_unset(&ttrLock);
 			if( !GDKexiting())
 				CQexecute(cntxt, i);
 /*
@@ -1375,9 +1379,9 @@ wrapup:
 		}
 
 #ifdef DEBUG_CQUERY
-		if (pnstatus == CQRUNNING && cycleDelay) MT_sleep_ms(cycleDelay);  
+		if (pnstatus == CQRUNNING && cycleDelay) MT_sleep_ms(cycleDelay);
 #endif
-		MT_sleep_ms(CQDELAY);  
+		MT_sleep_ms(CQDELAY);
 */
 		/* we should actually delay until the next heartbeat or insertion into the streams */
 		if (pntasks == 0  || pnstatus == CQPAUSE) {
@@ -1386,18 +1390,20 @@ wrapup:
 #endif
 			if( pnettop == 0)
 				break;
+			MT_lock_unset(&ttrLock);
 			MT_sleep_ms(delay);
 			if( delay < 20 * cycleDelay)
 				delay = (int) (delay *1.2);
+			MT_lock_set(&ttrLock);
 		}
 	}
 #ifdef DEBUG_CQUERY
 	fprintf(stderr, "#cquery.scheduler stopped\n");
 #endif
+	pnstatus = CQINIT;
+	MT_lock_unset(&ttrLock);
 	SQLexitClient(cntxt);
 	MCcloseClient(cntxt, CQ_CLIENT);
-	pnstatus = CQINIT;
-	CQinit = 0;
 }
 
 str
@@ -1474,10 +1480,6 @@ CQreset(void)
 {
 	if(pnet) {
 		CQderegisterAll(NULL, NULL, NULL, NULL); //stop all continuous queries
-		if(cq_pid > 0) {
-			MT_join_thread(cq_pid);
-			cq_pid = 0;
-		}
 		GDKfree(pnet);
 	}
 	pnet = NULL;
