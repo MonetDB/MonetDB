@@ -2533,7 +2533,6 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 						/* get all object names in current schema */
 						char query[4096], *q = query, *endq = query + sizeof(query);
 						char *name_column = hasSchema ? "fullname" : "name";
-						char *type, *name; /* output columns */
 
 						/*
 						 * | LINE            | SCHEMA FILTER | NAME FILTER                   |
@@ -2545,7 +2544,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 						 * | "data.my*"      | no            | fullname LIKE 'data.my%'      |
 						 * | "*a.my*"        | no            | fullname LIKE '%a.my%'        |
 						*/
-						q += snprintf(q, endq - q, "SELECT type, fullname, ntype FROM sys.describe_all_objects()\n");
+						q += snprintf(q, endq - q, "SELECT type, fullname, remark FROM sys.describe_all_objects()\n");
 						q += snprintf(q, endq - q, "WHERE (ntype & %d > 0)\n", x);
 						if (!wantsSystem) {
 							q += snprintf(q, endq - q, "AND NOT system\n");
@@ -2561,12 +2560,31 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 						hdl = mapi_query(mid, query);
 						CHECK_RESULT(mid, hdl, continue, buf, fp);
 						while (fetch_row(hdl) == 3) {
-							type = mapi_fetch_field(hdl, 0);
-							name = mapi_fetch_field(hdl, 1);
+							char *type = mapi_fetch_field(hdl, 0);
+							char *name = mapi_fetch_field(hdl, 1);
+							char *remark = mapi_fetch_field(hdl, 2);
+							int type_width = mapi_get_len(hdl, 0);
+							int name_width = mapi_get_len(hdl, 1);
 							mnstr_printf(toConsole,
-									  "%-*s  %s\n",
-									  mapi_get_len(hdl, 0), type,
-									  name);
+									  "%-*s  %-*s",
+									  type_width, type,
+									  name_width * (remark != NULL), name);
+							if (remark) {
+								char *c;
+								mnstr_printf(toConsole, "  '");
+								for (c = remark; *c; c++) {
+									switch (*c) {
+										case '\'':
+											mnstr_printf(toConsole, "''");
+											break;
+										default:
+											mnstr_writeChr(toConsole, *c);
+									}
+								}
+								mnstr_printf(toConsole, "'");
+							}
+							mnstr_printf(toConsole, "\n");
+
 						}
 						mapi_close_handle(hdl);
 						hdl = NULL;

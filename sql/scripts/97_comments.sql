@@ -36,7 +36,8 @@ RETURNS TABLE (
 	fullname VARCHAR(1024),
 	ntype INTEGER,   -- must match the MD_TABLE/VIEW/SEQ/FUNC/SCHEMA constants in mclient.c 
 	type VARCHAR(30),
-	system BOOLEAN
+	system BOOLEAN,
+	remark VARCHAR(65000)
 )
 BEGIN
 	RETURN TABLE (
@@ -90,15 +91,18 @@ BEGIN
 		    UNION
 		    SELECT * FROM schema_data
 	    )
+	    --
 	    SELECT DISTINCT 
 	            s.name AS sname,
 	            a.name AS name,
 	            COALESCE(s.name || '.', '') || a.name AS fullname,
 	            a.ntype AS ntype,
 	            (CASE WHEN a.system THEN 'SYSTEM ' ELSE '' END) || a.type AS type,
-	            a.system AS system
+	            a.system AS system,
+		    c.remark AS remark
 	    FROM    all_data a 
 	    LEFT OUTER JOIN sys.schemas s ON a.sid = s.id
+	    LEFT OUTER JOIN sys.comments c ON a.id = c.id
 	    ORDER BY system, name, fullname, ntype
 	);
 END;
