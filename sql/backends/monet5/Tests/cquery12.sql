@@ -18,8 +18,8 @@ end;
 
 create procedure cq_query11c()
 begin
-	insert into testing11a values (1);
-	insert into testing11b values (1);
+	insert into testing11a (select count(*) from testing11c);
+	insert into testing11b (select count(*) from testing11c);
 end;
 
 start continuous sys.cq_query11a() with cycles 1;
@@ -35,12 +35,6 @@ call cquery.wait(1000);
 stop continuous sys.cq_query11a();
 stop continuous sys.cq_query11b();
 stop continuous sys.cq_query11c();
-
-start continuous sys.cq_query11a() with cycles 1;
-
-call cquery.wait(1000);
-
-stop continuous sys.cq_query11a();
 
 select count(*) from results11a; --should be 1
 select count(*) from results11b; --should be 2

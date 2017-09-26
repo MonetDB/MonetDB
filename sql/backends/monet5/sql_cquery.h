@@ -26,19 +26,19 @@
 //#define DEBUG_CQUERY
 //#define DEBUG_CQUERY_SCHEDULER
 
-#define CQINIT     0
-#define CQREGISTER 1    /* being registered */
-#define CQWAIT 	   2    /* wait for data */
-#define CQRUNNING  3	/* query is running */
-#define CQPAUSE    4    /* not active now */
-#define CQSTOP	   5	/* stop the scheduler */
-#define CQDEREGISTER  6	/* stop the scheduler */
+#define CQINIT        0
+#define CQREGISTER    1 /* being registered */
+#define CQWAIT 	      2 /* wait for data */
+#define CQRUNNING     3 /* query is running */
+#define CQPAUSE       4 /* not active now */
+#define CQSTOP	      5 /* stop the scheduler */
+#define CQDEREGISTER  6 /* stop the scheduler */
 
-#define INITIAL_MAXCQ     32	/* it is the minimum, if we need more space GDKrealloc */
-#define MAXSTREAMS       128	/* limit the number of stream columns to be looked after per query*/
+#define INITIAL_MAXCQ  32 /* it is the minimum, if we need more space GDKrealloc */
+#define MAXSTREAMS    128 /* limit the number of stream columns to be looked after per query*/
 
-#define STREAM_IN	1
-#define STREAM_OUT	4
+#define STREAM_IN   1
+#define STREAM_OUT  2
 
 typedef struct {
 	str mod,fcn;	/* The SQL command to be used */
@@ -56,7 +56,7 @@ typedef struct {
 	lng beats;		/* heart beat stride for procedures activations -> must be in microseconds */
 	lng run;		/* start at the CQ at that precise moment (UNIX timestamp) -> must be in microseconds */
 
-	MT_Id	tid;	/* Thread responsible */
+	/*MT_Id	tid;	 Thread responsible */
 	timestamp seen;
 	str error;
 	lng time;

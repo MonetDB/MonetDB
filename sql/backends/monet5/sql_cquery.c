@@ -334,19 +334,21 @@ CQlocateBasketExternal(str schname, str tblname) //check if a stream table is be
 }
 
 static str
-CQlocateMb(MalBlkPtr mb, int* idx, str* res, const char* call)
+CQlocateMb(MalBlkPtr mb, MalStkPtr stk, int* idx, str* res, const char* dobject, const char* call)
 {
 	int i;
 	InstrPtr sig = getInstrPtr(mb,0);
-	str mb2str;
+	str mb2str = NULL;
 
 	for(i = 1; i< mb->stop; i++){
 		sig= getInstrPtr(mb,i);
 		if( getModuleId(sig) == userRef)
 			break;
 	}
-	assert(i != mb->stop);
-	if((mb2str = instruction2str(mb, NULL, sig, LIST_MAL_CALL)) == NULL) {
+	if( i == mb->stop) {
+		throw(SQL,call,SQLSTATE(3F000) "Cannot find %s call %s.%s.\n", dobject, getModuleId(sig), getFunctionId(sig));
+	}
+	if((mb2str = instruction2str(mb, stk, sig, LIST_MAL_CALL)) == NULL) {
 		throw(SQL,call,SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
@@ -409,7 +411,7 @@ CQshow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 CQanalysis(Client cntxt, MalBlkPtr mb, int idx)
 {
-	int i, j, bskt;
+	int i, j, bskt, binout;
 	InstrPtr p;
 	str msg= MAL_SUCCEED, sch, tbl;
 	(void) cntxt;
@@ -420,6 +422,7 @@ CQanalysis(Client cntxt, MalBlkPtr mb, int idx)
 		if (getModuleId(p) == basketRef && (getFunctionId(p) == registerRef || getFunctionId(p) == bindRef)){
 			sch = getVarConstant(mb, getArg(p,2)).val.sval;
 			tbl = getVarConstant(mb, getArg(p,3)).val.sval;
+			binout = getVarConstant(mb, getArg(p,4)).val.ival;
 
 			// find the stream basket definition
 			if((msg = BSKTregisterInternal(cntxt,mb,sch,tbl,&bskt)) != MAL_SUCCEED){
@@ -440,25 +443,7 @@ CQanalysis(Client cntxt, MalBlkPtr mb, int idx)
 				continue;
 
 			pnet[idx].baskets[j] = bskt;
-			pnet[idx].inout[j] = STREAM_IN;
-		}
-
-		// Pick up the window constraint from the query definition
-		if (getModuleId(p) == cqueryRef && getFunctionId(p) == windowRef){
-			/*int window = getVarConstant(mb, getArg(p,3)).val.ival;
-			int stride;*/
-			sch = getVarConstant(mb, getArg(p,1)).val.sval;
-			tbl = getVarConstant(mb, getArg(p,2)).val.sval;
-
-			// find the stream basket definition
-			if((msg = BSKTregisterInternal(cntxt,mb,sch,tbl,&bskt)) != MAL_SUCCEED){
-				continue;
-			}
-			/*if( p->argc == 5)
-				stride = getVarConstant(mb, getArg(p,4)).val.ival;
-			else stride = window;
-			baskets[bskt].window = window;
-			baskets[bskt].stride = stride;*/
+			pnet[idx].inout[j] = binout == 0 ? STREAM_IN : STREAM_OUT;
 		}
 	}
 	return msg;
@@ -479,8 +464,9 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	backend *be = (backend *) cntxt->sqlcontext;
 	mvc* sqlcontext;
 	AtomNode* start_atom = NULL;
-	char* err_message = "procedure";
-	int i, j, is_function = 0, cycles = DEFAULT_CP_CYCLES;
+	const char* err_message = "procedure";
+	str mb2str = NULL;
+	int i, j, is_function = 0, cycles = DEFAULT_CP_CYCLES, idx;
 	lng heartbeats = DEFAULT_CP_HEARTBEAT, start_at_parsed = 0;
 
 	(void) pci;
@@ -552,6 +538,15 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 		pnet = pnew;
 	}
 
+	if((msg = CQlocateMb(mb, stk, &idx, &mb2str, err_message, "cquery.register")) != MAL_SUCCEED) {
+		goto unlock;
+	}
+	if(idx != pnettop) {
+		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "The continuous %s %s is already registered.\n",
+							  err_message, mb2str);
+		goto unlock;
+	}
+
 	// access the actual procedure body
 	s = findSymbol(cntxt->usermodule, getModuleId(sig), getFunctionId(sig));
 	if ( s == NULL){
@@ -610,26 +605,17 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 		goto unlock;
 	}
 
-	pnet[pnettop].stmt = instruction2str(other,stk,sig,LIST_MAL_CALL);
-	if(pnet[pnettop].stmt == NULL) {
-		msg = createException(SQL,"cquery.register",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		freeMalBlk(other);
-		GDKfree(pnet[pnettop].mod);
-		GDKfree(pnet[pnettop].fcn);
-		goto unlock;
-	}
-
-	pnet[pnettop].mb = other;
-
 	pnet[pnettop].stk = prepareMALstack(other, other->vsize);
 	if(pnet[pnettop].stk == NULL) {
 		msg = createException(SQL,"cquery.register",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		freeMalBlk(other);
 		GDKfree(pnet[pnettop].mod);
 		GDKfree(pnet[pnettop].fcn);
-		GDKfree(pnet[pnettop].stmt);
 		goto unlock;
 	}
+
+	pnet[pnettop].stmt = mb2str;
+	pnet[pnettop].mb = other;
 	pnet[pnettop].cycles = cycles;
 	pnet[pnettop].beats = SET_HEARTBEATS(heartbeats);
 	//subtract the beats value so the CQ will start at the precise moment
@@ -648,18 +634,20 @@ unlock:
 		MT_lock_unset(&ttrLock);
 	}
 finish:
+	if(msg && mb2str)
+		GDKfree(mb2str);
 	return msg;
 }
 
 static str
-CQresumeInternal(Client cntxt, MalBlkPtr mb, int with_alter)
+CQresumeInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int with_alter)
 {
 	str msg = MAL_SUCCEED, mb2str = NULL;
 	int idx = 0, j, cycles = DEFAULT_CP_CYCLES;
 	lng heartbeats = DEFAULT_CP_HEARTBEAT, start_at_parsed = 0;
 	AtomNode* start_atom = NULL;
 	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
-	char* err_message = (sqlcontext && sqlcontext->continuous & mod_continuous_function) ? "function" : "procedure";
+	const char* err_message = (sqlcontext && sqlcontext->continuous & mod_continuous_function) ? "function" : "procedure";
 
 #ifdef DEBUG_CQUERY
 	fprintf(stderr, "#resume scheduler\n");
@@ -684,7 +672,7 @@ CQresumeInternal(Client cntxt, MalBlkPtr mb, int with_alter)
 
 	MT_lock_set(&ttrLock);
 
-	if((msg = CQlocateMb(mb, &idx, &mb2str, "cquery.resume")) != MAL_SUCCEED) {
+	if((msg = CQlocateMb(mb, stk, &idx, &mb2str, err_message, "cquery.resume")) != MAL_SUCCEED) {
 		goto unlock;
 	}
 	if( idx == pnettop) {
@@ -730,53 +718,15 @@ finish:
 str
 CQresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, k =-1;
-	InstrPtr q;
-	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
-	char* err_message = (sqlcontext && sqlcontext->continuous & mod_continuous_function) ? "function" : "procedure";
-	(void) stk;
 	(void) pci;
-
-	for( i=1; i < mb->stop; i++){
-		q = getInstrPtr(mb,i);
-
-		if( q->token == ENDsymbol )
-			break;
-		if( getModuleId(q) == userRef){
-			k = i;
-			break;
-		}
-	}
-	if( k >= 0 )
-		return CQresumeInternal(cntxt, mb, 1);
-	throw(SQL,"cquery.resume",SQLSTATE(3F000) "The continuous %s %s.%s was not found\n",
-			err_message, getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
+	return CQresumeInternal(cntxt, mb, stk, 1);
 }
 
 str
 CQresumeNoAlter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, k =-1;
-	InstrPtr q;
-	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
-	char* err_message = (sqlcontext && sqlcontext->continuous & mod_continuous_function) ? "function" : "procedure";
-	(void) stk;
 	(void) pci;
-
-	for( i=1; i < mb->stop; i++){
-		q = getInstrPtr(mb,i);
-
-		if( q->token == ENDsymbol )
-			break;
-		if( getModuleId(q) == userRef){
-			k = i;
-			break;
-		}
-	}
-	if( k >= 0 )
-		return CQresumeInternal(cntxt, mb, 0);
-	throw(SQL,"cquery.resume",SQLSTATE(3F000) "The continuous %s %s.%s was not found\n",
-			err_message, getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
+	return CQresumeInternal(cntxt, mb, stk, 0);
 }
 
 str
@@ -812,13 +762,15 @@ CQresumeAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-CQpauseInternal(MalBlkPtr mb, char* err_message)
+CQpauseInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
 	int idx = 0;
 	str msg = MAL_SUCCEED, mb2str = NULL;
+	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
+	const char* err_message = (sqlcontext && sqlcontext->continuous & mod_continuous_function) ? "function" : "procedure";
 
 	MT_lock_set(&ttrLock);
-	if((msg = CQlocateMb(mb, &idx, &mb2str, "cquery.pause")) != MAL_SUCCEED) {
+	if((msg = CQlocateMb(mb, stk, &idx, &mb2str, err_message, "cquery.pause")) != MAL_SUCCEED) {
 		goto finish;
 	}
 	if( idx == pnettop) {
@@ -851,26 +803,8 @@ finish:
 str
 CQpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i,k = -1;
-	InstrPtr q;
-	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
-	char* err_message = (sqlcontext && sqlcontext->continuous & mod_continuous_function) ? "function" : "procedure";
-	(void) stk;
 	(void) pci;
-
-	for( i=1; i < mb->stop; i++){
-		q = getInstrPtr(mb,i);
-		if( q->token == ENDsymbol )
-			break;
-		if( getModuleId(q) == userRef){
-			k = i;
-			break;
-		}
-	}
-	if( k >= 0)
-		return CQpauseInternal(mb, err_message);
-	throw(SQL,"cquery.pause",SQLSTATE(3F000) "The continuous %s %s.%s was not found\n",
-			err_message, getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
+	return CQpauseInternal(cntxt, mb, stk);
 }
 
 str
@@ -1063,13 +997,15 @@ CQwait(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 /*Remove a specific continuous query from the scheduler */
 
 static str
-CQderegisterInternal(MalBlkPtr mb, char* err_message)
+CQderegisterInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
 	int idx = 0;
 	str msg = MAL_SUCCEED, mb2str = NULL;
+	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
+	const char* err_message = (sqlcontext && sqlcontext->continuous & mod_continuous_function) ? "function" : "procedure";
 
 	MT_lock_set(&ttrLock);
-	if((msg = CQlocateMb(mb, &idx, &mb2str, "cquery.deregister")) != MAL_SUCCEED) {
+	if((msg = CQlocateMb(mb, stk, &idx, &mb2str, err_message, "cquery.deregister")) != MAL_SUCCEED) {
 		goto unlock;
 	}
 	if(idx == pnettop) {
@@ -1105,26 +1041,8 @@ finish:
 str
 CQderegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, k= -1;
-	InstrPtr q;
-	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
-	char* err_message = (sqlcontext && sqlcontext->continuous & mod_continuous_function) ? "function" : "procedure";
-	(void) stk;
 	(void) pci;
-
-	for( i=1; i < mb->stop; i++){
-		q = getInstrPtr(mb,i);
-		if( q->token == ENDsymbol )
-			break;
-		if( getModuleId(q) == userRef){
-			k = i;
-			break;
-		}
-	}
-	if( k>= 0 )
-		return CQderegisterInternal(mb, err_message);
-	throw(SQL,"cquery.deregister",SQLSTATE(3F000) "The continuous %s %s.%s was not found\n",
-			err_message, getModuleId(getInstrPtr(mb,k)), getFunctionId(getInstrPtr(mb,k)));
+	return CQderegisterInternal(cntxt, mb, stk);
 }
 
 str

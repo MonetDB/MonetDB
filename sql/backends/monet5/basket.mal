@@ -19,8 +19,7 @@ module basket;
 
 pattern register(mvc:int,sch:str,tbl:str,role:int):int
 address BSKTregister
-comment "Initialize a new basket based on a specific table definition.
-roles:input =0, output=2";
+comment "Initialize a new basket based on a specific table definition. roles:input=0, output=1";
 
 pattern tid(mvc:int,sch:str,tbl:str):bat[:oid]
 address BSKTtid
