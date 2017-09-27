@@ -768,6 +768,7 @@ CQpauseInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	str msg = MAL_SUCCEED, mb2str = NULL;
 	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
 	const char* err_message = (sqlcontext && sqlcontext->continuous & mod_continuous_function) ? "function" : "procedure";
+	MT_Id myID = MT_getpid();
 
 	MT_lock_set(&ttrLock);
 	if((msg = CQlocateMb(mb, stk, &idx, &mb2str, err_message, "cquery.pause")) != MAL_SUCCEED) {
@@ -784,12 +785,14 @@ CQpauseInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		goto finish;
 	}
 	// actually wait if the query was running
-	while( pnet[idx].status == CQRUNNING ){
-		MT_lock_unset(&ttrLock);
-		MT_sleep_ms(5);
-		MT_lock_set(&ttrLock);
-		if( pnet[idx].status == CQWAIT)
-			break;
+	if(myID != cq_pid) {
+		while( pnet[idx].status == CQRUNNING ){
+			MT_lock_unset(&ttrLock);
+			MT_sleep_ms(5);
+			MT_lock_set(&ttrLock);
+			if( pnet[idx].status == CQWAIT)
+				break;
+		}
 	}
 	pnet[idx].status = CQPAUSE;
 
@@ -812,6 +815,7 @@ CQpauseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	int i;
+	MT_Id myID = MT_getpid();
 	//mvc* smvc;
 
 	//ALL_ROOT_CHECK(cntxt, "cquery.pauseall", "PAUSE ");
@@ -827,12 +831,14 @@ CQpauseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	MT_lock_set(&ttrLock);
 	for(i = 0 ; i < pnettop; i++) {
-		while( pnet[i].status == CQRUNNING ){
-			MT_lock_unset(&ttrLock);
-			MT_sleep_ms(5);
-			MT_lock_set(&ttrLock);
-			if( pnet[i].status == CQWAIT)
-				break;
+		if(myID != cq_pid) {
+			while (pnet[i].status == CQRUNNING) {
+				MT_lock_unset(&ttrLock);
+				MT_sleep_ms(5);
+				MT_lock_set(&ttrLock);
+				if (pnet[i].status == CQWAIT)
+					break;
+			}
 		}
 		pnet[i].status = CQPAUSE;
 	}
@@ -1003,6 +1009,7 @@ CQderegisterInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	str msg = MAL_SUCCEED, mb2str = NULL;
 	mvc* sqlcontext = ((backend *) cntxt->sqlcontext)->mvc;
 	const char* err_message = (sqlcontext && sqlcontext->continuous & mod_continuous_function) ? "function" : "procedure";
+	MT_Id myID = MT_getpid();
 
 	MT_lock_set(&ttrLock);
 	if((msg = CQlocateMb(mb, stk, &idx, &mb2str, err_message, "cquery.deregister")) != MAL_SUCCEED) {
@@ -1013,22 +1020,26 @@ CQderegisterInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 							  SQLSTATE(42000) "The continuous %s %s has not yet started\n", err_message, mb2str);
 		goto unlock;
 	}
-	pnet[idx].status = CQSTOP;
-	MT_lock_unset(&ttrLock);
-	// actually wait if the query was running
-	while( pnet[idx].status != CQDEREGISTER ){
-		MT_sleep_ms(5);
-	}
-	MT_lock_set(&ttrLock);
-	CQfree(idx);
-	if( pnettop == 0) {
-		pnstatus = CQSTOP;
+	if(myID != cq_pid) {
+		pnet[idx].status = CQSTOP;
 		MT_lock_unset(&ttrLock);
-		if(cq_pid > 0) { //this check is need for the compiler
-			MT_join_thread(cq_pid);
-			cq_pid = 0;
+		// actually wait if the query was running
+		while (pnet[idx].status != CQDEREGISTER) {
+			MT_sleep_ms(5);
 		}
-		goto finish;
+		MT_lock_set(&ttrLock);
+		CQfree(idx);
+		if( pnettop == 0) {
+			pnstatus = CQSTOP;
+			MT_lock_unset(&ttrLock);
+			if(cq_pid > 0) {
+				MT_join_thread(cq_pid);
+				cq_pid = 0;
+			}
+			goto finish;
+		}
+	} else {
+		pnet[idx].status = CQDELETE;
 	}
 unlock:
 	MT_lock_unset(&ttrLock);
@@ -1050,6 +1061,7 @@ CQderegisterAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	int i;
+	MT_Id myID = MT_getpid();
 	//mvc* smvc;
 
 	//ALL_ROOT_CHECK(cntxt, "cquery.deregisterall", "STOP ");
@@ -1062,20 +1074,24 @@ CQderegisterAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_set(&ttrLock);
 
 	for(i = 0 ; i < pnettop; i++) {
-		pnet[i].status = CQSTOP;
-		MT_lock_unset(&ttrLock);
-
-		// actually wait if the query was running
-		while( pnet[i].status != CQDEREGISTER ){
-			MT_sleep_ms(5);
+		if(myID != cq_pid) {
+			pnet[i].status = CQSTOP;
+			MT_lock_unset(&ttrLock);
+			// actually wait if the query was running
+			while( pnet[i].status != CQDEREGISTER ){
+				MT_sleep_ms(5);
+			}
+			MT_lock_set(&ttrLock);
+			CQfree(i);
+		} else {
+			pnet[i].status = CQDELETE;
 		}
-		MT_lock_set(&ttrLock);
-		CQfree(i);
 		i--;
 	}
-	pnstatus = CQSTOP;
+	if(myID != cq_pid)
+		pnstatus = CQSTOP;
 	MT_lock_unset(&ttrLock);
-	if(cq_pid > 0) {
+	if(myID != cq_pid && cq_pid > 0) {
 		MT_join_thread(cq_pid);
 		cq_pid = 0;
 	}
@@ -1266,8 +1282,7 @@ CQscheduler(void *dummy)
 				pnet[i].cycles--;
 				if(pnet[i].cycles == 0) { //if it was the last cycle of the CQ, remove it
 					CQfree(i);
-					if( pnettop == 0)
-						pnstatus = CQSTOP;
+					i--;
 					continue; //an entry was deleted, so jump over!
 				}
 			}
@@ -1277,6 +1292,14 @@ CQscheduler(void *dummy)
 			pnet[i].enabled = 0;
 			CQentry(i);
 		}
+		for(i = pnettop ; i > 0; i--) { //more defensive way to stop continuous queries from the scheduler itself
+			if( pnet[i].status == CQDELETE){
+				CQfree(i);
+			}
+			i--;
+		}
+		if( pnettop == 0)
+			pnstatus = CQSTOP;
 		/* after one sweep all threads should be released */
 /*
 		for (m = 0; m < k; m++)

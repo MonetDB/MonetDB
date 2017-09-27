@@ -33,6 +33,7 @@
 #define CQPAUSE       4 /* not active now */
 #define CQSTOP	      5 /* stop the scheduler */
 #define CQDEREGISTER  6 /* stop the scheduler */
+#define CQDELETE      7 /* stop the scheduler, triggered by the scheduler itself */
 
 #define INITIAL_MAXCQ  32 /* it is the minimum, if we need more space GDKrealloc */
 #define MAXSTREAMS    128 /* limit the number of stream columns to be looked after per query*/

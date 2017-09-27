@@ -67,18 +67,21 @@
 #define mod_locked 	16 
 
 /* define the continuous query states */
-#define mod_start_continuous	        1
-#define mod_stop_continuous 	        2
-#define mod_pause_continuous 	        4
-#define mod_resume_continuous 	        8
+#define mod_start_continuous            1
+#define mod_stop_continuous             2
+#define mod_pause_continuous            4
+#define mod_resume_continuous           8
 #define mod_resume_continuous_no_alter 16
-/* apply to all? */
+/* apply to all CQs */
 #define mod_stop_all_continuous        32
 #define mod_pause_all_continuous       64
 #define mod_resume_all_continuous     128
 /* apply change to a continuous procedure or function? */
 #define mod_continuous_procedure      256
 #define mod_continuous_function       512
+/* very important - while creating an UDF or a trigger, this flag must be set, so the parser does not attempt to
+ * register the created udf in the scheduler if it has a continuous query all in the body */
+#define mod_creating_udf             1024
 
 typedef struct sql_var {
 	const char *name;

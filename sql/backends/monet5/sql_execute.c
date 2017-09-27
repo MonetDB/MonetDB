@@ -342,7 +342,8 @@ SQLrun(Client c, backend *be, mvc *m)
 	// This include template constants, BAT sizes.
 	if( m->emod & mod_debug)
 		mb->keephistory = TRUE;
-	if(!m->continuous) /* it's fine to not optimize the MAL block in a continuous query, as the plan it's just a user module call */
+	/* it's fine to not optimize the MAL block in a continuous query, as the plan it's just a user module call */
+	if(!m->continuous || (m->continuous & mod_creating_udf))
 		msg = SQLoptimizeQuery(c, mb);
 	mb->keephistory = FALSE;
 
@@ -361,23 +362,28 @@ SQLrun(Client c, backend *be, mvc *m)
 		SQLsetTrace(c,mb);
 		msg = runMAL(c, mb, 0, 0);
 		stopTrace(0);
-	} else if(m->continuous & mod_start_continuous) {
-		//mnstr_printf(c->fdout, "#Start continuous query\n");
-		// hand over the wrapper command to the scheduler
-		msg = CQregister(c,mb, 0,0);
-	} else if(m->continuous & mod_stop_continuous) {
-		//mnstr_printf(c->fdout, "#Stop continuous query\n");
-		msg = CQderegister(c,mb, 0,0);
-	} else if(m->continuous & mod_pause_continuous) {
-		//mnstr_printf(c->fdout, "#Stop continuous query\n");
-		msg = CQpause(c,mb, 0,0);
-	} else if(m->continuous & mod_resume_continuous) {
-		//mnstr_printf(c->fdout, "#Resume continuous query with changes\n");
-		msg = CQresume(c,mb, 0,0);
-	} else if(m->continuous & mod_resume_continuous_no_alter) {
-		//mnstr_printf(c->fdout, "#Resume continuous query with no changes\n");
-		msg = CQresumeNoAlter(c,mb, 0,0);
+	} else if((m->continuous & ~mod_creating_udf) && !(m->continuous & mod_creating_udf)) {
+		if(m->continuous & mod_start_continuous) {
+			//mnstr_printf(c->fdout, "#Start continuous query\n");
+			// hand over the wrapper command to the scheduler
+			msg = CQregister(c,mb, 0,0);
+		} else if(m->continuous & mod_stop_continuous) {
+			//mnstr_printf(c->fdout, "#Stop continuous query\n");
+			msg = CQderegister(c,mb, 0,0);
+		} else if(m->continuous & mod_pause_continuous) {
+			//mnstr_printf(c->fdout, "#Pause continuous query\n");
+			msg = CQpause(c,mb, 0,0);
+		} else if(m->continuous & mod_resume_continuous) {
+			//mnstr_printf(c->fdout, "#Resume continuous query with changes\n");
+			msg = CQresume(c,mb, 0,0);
+		} else if(m->continuous & mod_resume_continuous_no_alter) {
+			//mnstr_printf(c->fdout, "#Resume continuous query with no changes\n");
+			msg = CQresumeNoAlter(c,mb, 0,0);
+		} else {
+			assert(0);
+		}
 	} else {
+		m->continuous &= ~mod_creating_udf; //important disable the check
 		msg = runMAL(c, mb, 0, 0);
 	}
 	m->continuous = 0;

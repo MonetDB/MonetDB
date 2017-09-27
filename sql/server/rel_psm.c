@@ -1420,6 +1420,7 @@ rel_psm(mvc *sql, symbol *s)
 		int lang = l->h->next->next->next->next->next->next->data.i_val;
 		int repl = l->h->next->next->next->next->next->next->next->data.i_val;
 
+		sql->continuous |= mod_creating_udf;
 		ret = rel_create_func(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, type, lang, repl);
 		sql->type = Q_SCHEMA;
 	} 	break;
@@ -1479,6 +1480,7 @@ rel_psm(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
+		sql->continuous |= mod_creating_udf;
 		assert(l->h->next->type == type_int);
 		ret = create_trigger(sql, l->h->data.lval, l->h->next->data.i_val, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.lval);
 		sql->type = Q_SCHEMA;
