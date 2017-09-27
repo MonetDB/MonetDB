@@ -14,9 +14,7 @@ end;
 start continuous sys.cq_query13a() with heartbeat 3000;
 start continuous sys.cq_query13b() with cycles 1;
 
-call cquery.wait(1000);
-
-stop continuous sys.cq_query13b();
+call cquery.wait(1500);
 
 drop procedure sys.cq_query13a;
 drop procedure sys.cq_query13b;

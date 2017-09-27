@@ -1189,55 +1189,52 @@ CQscheduler(void *dummy)
 		}
 
 		pntasks=0;
-		for (k = i = 0; i < pnettop; i++)
-		if ( pnet[i].status == CQWAIT ){
-			pnet[i].enabled = pnet[i].error == 0 && (pnet[i].cycles > 0 || pnet[i].cycles == CYCLES_NIL);
-
-			/* Queries are triggered by the heartbeat or  all window constraints */
-			/* A heartbeat in combination with a window constraint is ambiguous */
-			/* At least one constraint should be set */
-			if( pnet[i].beats == HEARTBEAT_NIL && pnet[i].baskets[0] == 0)
-				pnet[i].enabled = 0;
-
-			if( pnet[i].enabled && ((pnet[i].beats != HEARTBEAT_NIL && pnet[i].beats > 0) || pnet[i].run > 0)) {
-				pnet[i].enabled = now >= pnet[i].run + (pnet[i].beats > 0 ? pnet[i].beats : 0);
+		for (k = i = 0; i < pnettop; i++) {
+			if ( pnet[i].status == CQWAIT ){
+				pnet[i].enabled = pnet[i].error == 0 && (pnet[i].cycles > 0 || pnet[i].cycles == CYCLES_NIL);
+				/* Queries are triggered by the heartbeat or  all window constraints */
+				/* A heartbeat in combination with a window constraint is ambiguous */
+				/* At least one constraint should be set */
+				if( pnet[i].beats == HEARTBEAT_NIL && pnet[i].baskets[0] == 0)
+					pnet[i].enabled = 0;
+				if( pnet[i].enabled && ((pnet[i].beats != HEARTBEAT_NIL && pnet[i].beats > 0) || pnet[i].run > 0)) {
+					pnet[i].enabled = now >= pnet[i].run + (pnet[i].beats > 0 ? pnet[i].beats : 0);
 #ifdef DEBUG_CQUERY_SCHEDULER
-				fprintf(stderr,"#beat %s.%s  "LLFMT"("LLFMT") %s\n", pnet[i].mod, pnet[i].fcn,
+					fprintf(stderr,"#beat %s.%s  "LLFMT"("LLFMT") %s\n", pnet[i].mod, pnet[i].fcn,
 					pnet[i].run + (pnet[i].beats > 0 ? pnet[i].beats : 0), now, (pnet[i].enabled? "enabled":"disabled"));
 #endif
-			}
-
-			/* check if all input baskets are available */
-			for (j = 0; pnet[i].enabled && pnet[i].baskets[j] && (b = baskets[pnet[i].baskets[j]].bats[0]); j++)
-				/* consider execution only if baskets are properly filled */
-				if ( pnet[i].inout[j] == STREAM_IN && (BUN) baskets[pnet[i].baskets[j]].window > BATcount(b)){
-					pnet[i].enabled = 0;
-					break;
 				}
-
-			/* check availability of all stream baskets */
-			for (j = 0; pnet[i].enabled && pnet[i].baskets[j]; j++){
-				for(k=0; claimed[k]; k++)
-					if(claimed[k]  ==  pnet[i].baskets[j]){
+				/* check if all input baskets are available */
+				for (j = 0; pnet[i].enabled && pnet[i].baskets[j] && (b = baskets[pnet[i].baskets[j]].bats[0]); j++)
+					/* consider execution only if baskets are properly filled */
+					if ( pnet[i].inout[j] == STREAM_IN && (BUN) baskets[pnet[i].baskets[j]].window > BATcount(b)){
 						pnet[i].enabled = 0;
+						break;
+					}
+				/* check availability of all stream baskets */
+				for (j = 0; pnet[i].enabled && pnet[i].baskets[j]; j++){
+					for(k=0; claimed[k]; k++)
+						if(claimed[k]  ==  pnet[i].baskets[j]){
+							pnet[i].enabled = 0;
 #ifdef DEBUG_CQUERY_SCHEDULER
 						fprintf(stderr, "#cquery: %s.%s,disgarded \n", pnet[i].mod, pnet[i].fcn);
 #endif
-						break;
-					}
-				if (pnet[i].enabled && claimed[k] == 0)
-					claimed[k] =  pnet[i].baskets[j];
-			}
-
+							break;
+						}
+					if (pnet[i].enabled && claimed[k] == 0)
+						claimed[k] =  pnet[i].baskets[j];
+				}
 #ifdef DEBUG_CQUERY_SCHEDULER
-			if( pnet[i].enabled)
-				fprintf(stderr, "#cquery: %s.%s enabled \n", pnet[i].mod, pnet[i].fcn);
+				if( pnet[i].enabled)
+					fprintf(stderr, "#cquery: %s.%s enabled \n", pnet[i].mod, pnet[i].fcn);
 #endif
-			pntasks += pnet[i].enabled;
-		} else
-		if( pnet[i].status == CQSTOP){
-			pnet[i].status = CQDEREGISTER;
-			pnet[i].enabled = 0;
+				pntasks += pnet[i].enabled;
+			} else if( pnet[i].status == CQSTOP) {
+				pnet[i].status = CQDEREGISTER;
+				pnet[i].enabled = 0;
+			} else {
+				pnet[i].enabled = 0;
+			}
 		}
 #ifdef DEBUG_CQUERY_SCHEDULER
 		if( pntasks)
@@ -1252,14 +1249,11 @@ CQscheduler(void *dummy)
 		/* Tricky part is here a single stream used by multiple transitions */
 		for (i = 0; i < pnettop  ; i++)
 		if( pnet[i].enabled){
+			delay = cycleDelay;
 #ifdef DEBUG_CQUERY
 			fprintf(stderr, "#Run transition %s.%s cycle=%d \n", pnet[i].mod, pnet[i].fcn, pnet[i].cycles);
 #endif
 			t = GDKusec();
-			// Fork MAL execution thread
-			if (pnet[i].status != CQWAIT){
-				goto wrapup;
-			}
 			pnet[i].status = CQRUNNING;
 			if( !GDKexiting())
 				CQexecute(cntxt, i);
@@ -1268,24 +1262,21 @@ CQscheduler(void *dummy)
 					msg= createException(MAL,"petrinet.scheduler","Can not fork the thread");
 				} else
 */
-			if( pnet[i].cycles != CYCLES_NIL && pnet[i].cycles > 0)
+			if( pnet[i].cycles != CYCLES_NIL && pnet[i].cycles > 0) {
 				pnet[i].cycles--;
+				if(pnet[i].cycles == 0) { //if it was the last cycle of the CQ, remove it
+					CQfree(i);
+					if( pnettop == 0)
+						pnstatus = CQSTOP;
+					continue; //an entry was deleted, so jump over!
+				}
+			}
 			pnet[i].run = now;				/* last executed */
 			pnet[i].time = GDKusec() - t;   /* keep around in microseconds */
 			(void) MTIMEcurrent_timestamp(&pnet[i].seen);
 			pnet[i].enabled = 0;
 			CQentry(i);
-			if (msg != MAL_SUCCEED ){
-				char buf[BUFSIZ];
-				if (pnet[i].error == NULL) {
-					snprintf(buf, BUFSIZ - 1, "Query %s.%s failed:%s", pnet[i].mod, pnet[i].fcn,msg);
-					pnet[i].error = GDKstrdup(buf);
-				} else
-					GDKfree(msg);
-			}
-			delay = cycleDelay;
 		}
-wrapup:
 		/* after one sweep all threads should be released */
 /*
 		for (m = 0; m < k; m++)
@@ -1302,12 +1293,10 @@ wrapup:
 		MT_sleep_ms(CQDELAY);
 */
 		/* we should actually delay until the next heartbeat or insertion into the streams */
-		if (pntasks == 0  || pnstatus == CQPAUSE) {
+		if ((pntasks == 0 && pnstatus != CQSTOP) || pnstatus == CQPAUSE) {
 #ifdef DEBUG_CQUERY
 			fprintf(stderr, "#cquery.scheduler paused\n");
 #endif
-			if( pnettop == 0)
-				break;
 			MT_lock_unset(&ttrLock);
 			MT_sleep_ms(delay);
 			if( delay < 20 * cycleDelay)
@@ -1345,7 +1334,7 @@ CQstartScheduler(void)
 	if( location == NULL)
 		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	sprintf(location, "%s%s%s", dbpath, DIR_SEP_STR, fpsin);
-	fin =  open_rastream_and_create(location);
+	fin = open_rastream_and_create(location);
 	GDKfree(location);
 	if( fin == NULL)
 		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize CQscheduler\n");
@@ -1354,7 +1343,7 @@ CQstartScheduler(void)
 	if( location == NULL)
 		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	sprintf(location, "%s%s%s", dbpath, DIR_SEP_STR, fpsout);
-	fout =  open_wastream(location);
+	fout = open_wastream(location);
 	GDKfree(location);
 	if( fout == NULL) {
 		mnstr_destroy(fin);

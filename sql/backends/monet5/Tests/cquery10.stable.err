@@ -24,118 +24,20 @@ stderr of test 'cquery10` in directory 'sql/backends/monet5` itself:
 # cmdline opt 	gdk_debug = 536870922
 #cquery register user.cq_cycles
 
+# 11:34:59 >  
+# 11:34:59 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16604" "--port=32786"
+# 11:34:59 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-16604/.s.monetdb.32786
+QUERY = pause continuous sys.cq_cycles();
+ERROR = !The continuous procedure user.cq_cycles(); has not yet started
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-16604/.s.monetdb.32786
+QUERY = stop continuous sys.cq_cycles();
+ERROR = !The continuous procedure user.cq_cycles(); has not yet started
+CODE  = 42000
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#set the heartbeat of sys.cq_cycles to 1000
-#Start CQscheduler
-#cquery.scheduler started
-#cquery.scheduler paused
-#set cycles 
-#resume scheduler
-#scheduler wait 4000 ms
-#cquery: sys.cq_cycles enabled 
-#Transitions 1 enabled:
-#Run transition sys.cq_cycles cycle=3 
-#cquery.execute sys.cq_cycles locked
-
-
-
-
-
-#cquery.execute sys.cq_cycles finised 
-#create query.log table
-#beat sys.cq_cycles  2273106(1275366) disabled
-#cquery.scheduler paused
-#beat sys.cq_cycles  2273106(1475599) disabled
-#cquery.scheduler paused
-#beat sys.cq_cycles  2273106(1715873) disabled
-#cquery.scheduler paused
-#beat sys.cq_cycles  2273106(2004196) disabled
-#cquery.scheduler paused
-#beat sys.cq_cycles  2273106(2349596) enabled
-#cquery: sys.cq_cycles enabled 
-#Transitions 1 enabled:
-#Run transition sys.cq_cycles cycle=2 
-#cquery.execute sys.cq_cycles locked
-
-
-
-
-
-#cquery.execute sys.cq_cycles finised 
-#beat sys.cq_cycles  3349596(2351847) disabled
-#cquery.scheduler paused
-#beat sys.cq_cycles  3349596(2552081) disabled
-#cquery.scheduler paused
-#beat sys.cq_cycles  3349596(2792391) disabled
-#cquery.scheduler paused
-#beat sys.cq_cycles  3349596(3080735) disabled
-#cquery.scheduler paused
-#beat sys.cq_cycles  3349596(3426141) enabled
-#cquery: sys.cq_cycles enabled 
-#Transitions 1 enabled:
-#Run transition sys.cq_cycles cycle=1 
-#cquery.execute sys.cq_cycles locked
-
-
-
-
-
-#cquery.execute sys.cq_cycles finised 
-#cquery.scheduler paused
-#cquery.scheduler paused
-#cquery.scheduler paused
-#cquery.scheduler paused
-#cquery.scheduler paused
-#cquery.scheduler paused
-#pause cqueries
-#deregister queries 0 - 1
-
-# 10:28:05 >  
-# 10:28:05 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25654" "--port=33494"
-# 10:28:05 >  
-
-
-# 10:28:09 >  
-# 10:28:09 >  "Done."
-# 10:28:09 >  
+# 11:35:03 >  
+# 11:35:03 >  "Done."
+# 11:35:03 >  
 
