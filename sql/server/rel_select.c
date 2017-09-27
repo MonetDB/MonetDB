@@ -33,10 +33,6 @@ rel_setsubquery(sql_rel*r)
 {
 	if (rel_is_ref(r))
 		return;
-	if (r->l && !is_base(r->op))
-		rel_setsubquery(r->l);
-	if (r->r && is_join(r->op))
-		rel_setsubquery(r->r);
 	set_subquery(r);
 }
 
@@ -1779,7 +1775,6 @@ rel_compare(mvc *sql, sql_rel *rel, symbol *lo, symbol *ro, symbol *ro2,
 				rel = r;
 			}
 		} else if (r) {
-			rel_setsubquery(r);
 			rs = rel_lastexp(sql, r);
 			if (r->card > CARD_ATOM) {
 				/* if single value (independed of relations), rewrite */
@@ -2024,7 +2019,6 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 					if (!rel_find_exp(l, ls))
 						rel_project_add_exp(sql, l, ls);
 				}
-				rel_setsubquery(r);
 				rs = rel_lastexp(sql, r);
 				if (r->card > CARD_ATOM) {
 					sql_subaggr *zero_or_one = sql_bind_aggr(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(rs));
@@ -2444,7 +2438,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		symbol *lo = NULL;
 		dnode *n = dl->h->next, *dn = NULL;
 		sql_rel *left = NULL, *right = NULL, *outer = rel;
-		sql_exp *l = NULL, *e, *r = NULL, *ident = NULL;
+		sql_exp *l = NULL, *e, *r = NULL, *outerident = NULL, *ident = NULL;
 		list *vals = NULL, *ll = sa_list(sql->sa);
 		int correlated = 0;
 		int l_is_value = 1, r_is_rel = 0;
@@ -2558,10 +2552,14 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 						sql->errstr[0] = 0;
 
 						if (l_is_value) {
-							outer = rel = rel_add_identity(sql, rel_dup(outer), &ident);
-							ident = exp_column(sql->sa, exp_relname(ident), exp_name(ident), exp_subtype(ident), ident->card, has_nil(ident), is_intern(ident));
-						} else
+							if (!outerident) {
+								outer = rel = rel_add_identity(sql, rel_dup(outer), &ident);
+								ident = exp_column(sql->sa, exp_relname(ident), exp_name(ident), exp_subtype(ident), ident->card, has_nil(ident), is_intern(ident));
+								outerident = ident;
+							}
+						} else {
 							rel = left = rel_dup(left);
+						}
 						r = rel_value_exp(sql, &rel, sval, f, ek);
 						if (r && !is_project(rel->op)) {
 							rel = rel_project(sql->sa, rel, NULL);
@@ -2583,9 +2581,17 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 						rl = rel_project_exp(sql->sa, exp_label(sql->sa, r, ++sql->label));
 					}
 					if (right) {
+						int ident_colnr = -1;
+
+						if (ident) { 
+							sql_exp *i = exps_bind_column2(right->exps, exp_relname(ident), exp_name(ident));
+							ident_colnr = list_position(right->exps, i);
+						}
 						rl = rel_setop(sql->sa, right, rl, op_union);
 						rl->exps = rel_projections(sql, rl, NULL, 0, 1);
 						set_processed(rl);
+						if (ident)
+							ident = list_fetch(rl->exps, ident_colnr);
 					}
 					right = rl;
 				}
@@ -2632,7 +2638,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 				rel = rel_crossproduct(sql->sa, outer, right, op_join);
 				rel->exps = sa_list(sql->sa);
-				le = exp_compare(sql->sa, ident, le, cmp_equal);
+				le = exp_compare(sql->sa, outerident, le, cmp_equal);
 				append(rel->exps, le);
 			} else {
 				rel = rel_crossproduct(sql->sa, left, right, op_join);
@@ -4461,7 +4467,6 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 			if (*rel) {
 				sql_rel *p = *rel;
 
-				rel_setsubquery(r);
 				/* in the selection phase we should have project/groupbys, unless 
 				 * this is the value (column) for the aggregation then the 
 				 * crossproduct is pushed under the project/groupby.  */ 
@@ -5065,7 +5070,8 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek, int app
 			/* remove the outer (running) project */
 			if (!is_processed(o) && is_project(o->op))
 				o = rel->l;
-			rel_setsubquery(res);
+			if (res)
+				rel_setsubquery(res);
 			outer = rel;
 			/* create dummy single row project */
 			rel = rel_project(sql->sa, NULL, applyexps = rel_projections(sql, o, NULL, 1, 1)); 
