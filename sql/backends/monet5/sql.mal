@@ -218,6 +218,10 @@ command getVersion(clientid:int):lng
 address mvc_getVersion
 comment "Return the database version identifier for a client.";
 
+pattern grow(tid:bat[:oid], :any_1):int
+address mvc_grow_wrap
+comment "Resize the tid column of a declared table.";
+
 pattern append(mvc:int, sname:str, tname:str, cname:str, ins:any):int
 address mvc_append_wrap
 comment "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.";
@@ -259,21 +263,6 @@ comment "Prepare a table result set for the COPY INTO stream";
 unsafe pattern export_table(fname:str, fmt:str, colsep:str, recsep:str, qout:str, nullrep:str, tbl:bat[:str], attr:bat[:str], tpe:bat[:str], len:bat[:int],scale:bat[:int], cols:bat[:any]...) :int 
 address mvc_export_table_wrap
 comment "Prepare a table result set for the COPY INTO stream";
-
-unsafe pattern declaredTable( name:str ) :int 
-address mvc_declared_table_wrap
-comment "Prepare a declared table"; 
-
-unsafe pattern dtColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:int) :void
-address mvc_declared_table_column_wrap;
-
-unsafe pattern dropDeclaredTable( name:str ) :void 
-address mvc_drop_declared_table_wrap
-comment "drop a declared table"; 
-
-unsafe pattern dropDeclaredTables( nr:int ) :void 
-address mvc_drop_declared_tables_wrap
-comment "drop top n declared tables"; 
 
 pattern drop_func_upgrade_oct2014(id:int) :int
 address UPGdrop_func

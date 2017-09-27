@@ -244,7 +244,7 @@ exp_atom_max(sql_allocator *sa, sql_subtype *tpe)
 	} else if (tpe->type->localtype == TYPE_lng) {
 		return exp_atom_lng(sa, GDK_lng_max);
 #ifdef HAVE_HGE
-	} else if (tpe->type->localtype == TYPE_lng) {
+	} else if (tpe->type->localtype == TYPE_hge) {
 		return exp_atom_hge(sa, GDK_hge_max);
 #endif
 	}

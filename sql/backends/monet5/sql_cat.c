@@ -878,7 +878,7 @@ SQLcreate_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLalter_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 {	mvc *sql = NULL;
-	str msg;
+	str msg = MAL_SUCCEED;
 	str sname = *getArgReference_str(stk, pci, 1); 
 	str seqname = *getArgReference_str(stk, pci, 2); 
 	sql_sequence *s = *(sql_sequence **) getArgReference(stk, pci, 3);
@@ -897,7 +897,7 @@ SQLalter_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLdrop_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 {	mvc *sql = NULL;
-	str msg;
+	str msg = MAL_SUCCEED;
 	str sname = *getArgReference_str(stk, pci, 1); 
 	str name = *getArgReference_str(stk, pci, 2);
 
@@ -909,7 +909,7 @@ SQLdrop_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLcreate_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 {	mvc *sql = NULL;
-	str msg;
+	str msg = MAL_SUCCEED;
 	str sname = *getArgReference_str(stk, pci, 1); 
 	str name = SaveArgReference(stk, pci, 2);
 	int auth_id;

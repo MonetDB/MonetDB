@@ -120,9 +120,11 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		}
 */
 	}
-	assert(p);
-	assert( p->token == ENDsymbol);
+	/* A good MAL plan should end with an END instruction */
 	pushInstruction(mb, p);
+	if( p && p->token != ENDsymbol){
+		throw(MAL, "optimizer.garbagecollector", SQLSTATE(42000) "Incorrect MAL plan encountered");
+	}
 	for (i++; i < limit; i++) 
 		pushInstruction(mb, old[i]);
 	for (; i < slimit; i++) 

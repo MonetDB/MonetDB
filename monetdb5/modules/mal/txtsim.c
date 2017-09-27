@@ -228,7 +228,7 @@ soundex_code(char *Name, char *Key)
 
 	/* keep first letter */
 	Key[0] = *Name;
-	if (!isupper((int) (Key[0])))
+	if (!isupper((unsigned char) (Key[0])))
 		Key[0] = toupper(Key[0]);
 
 	LastLetter = *Name;
@@ -239,7 +239,7 @@ soundex_code(char *Name, char *Key)
 	/* scan rest of string */
 	for (Index = 1; (Index <SoundexLen) &&*Name; Name++) {
 		/* use only letters */
-		if (isalpha((int) (*Name))) {
+		if (isalpha((unsigned char) (*Name))) {
 			/* ignore duplicate successive chars */
 			if (LastLetter != *Name) {
 				/* new LastLetter */

@@ -537,7 +537,7 @@ MCreadClient(Client c)
 #endif
 
 	while (in->pos < in->len &&
-		   (isspace((int) (in->buf[in->pos])) ||
+		   (isspace((unsigned char) (in->buf[in->pos])) ||
 			in->buf[in->pos] == ';' || !in->buf[in->pos]))
 		in->pos++;
 

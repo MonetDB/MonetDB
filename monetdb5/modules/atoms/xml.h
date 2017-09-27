@@ -24,8 +24,8 @@ typedef str xml;
 
 mal_export int TYPE_xml;
 
-mal_export int XMLfromString(const char *src, int *len, xml *x);
-mal_export int XMLtoString(str *s, int *len, const char *src);
+mal_export ssize_t XMLfromString(const char *src, size_t *len, xml *x);
+mal_export ssize_t XMLtoString(str *s, size_t *len, const char *src);
 
 mal_export str XMLxml2str(str *s, xml *x);
 mal_export str XMLstr2xml(xml *x, const char **s);

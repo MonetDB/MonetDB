@@ -28,12 +28,14 @@
 				break;							\
 	} while (0)
 
-#define hex(J)									\
-	do {										\
-		if ((*(J) >='0' && *(J) <='9') ||		\
-			(*(J) >='a' && *(J) <='f') ||		\
-			(*(J) >='A' && *(J) <='F'))			\
-			(J)++;								\
+#define hex(J)													\
+	do {														\
+		if ((*(J) >='0' && *(J) <='9') ||						\
+			(*(J) >='a' && *(J) <='f') ||						\
+			(*(J) >='A' && *(J) <='F'))							\
+			(J)++;												\
+		else													\
+			throw(MAL, "json.parser", "illegal escape char");	\
 	} while (0)
 
 #define CHECK_JSON(jt)													\
@@ -57,24 +59,22 @@ int TYPE_json;
 
 /* Internal constructors. */
 static int jsonhint = 8;
-static JSON *JSONparse(const char *j, int silent);
+static JSON *JSONparse(const char *j);
 
 static JSON *
-JSONnewtree(int size)
+JSONnewtree(void)
 {
 	JSON *js;
 
-	if (size == 0)
-		size = jsonhint;
 	js = (JSON *) GDKzalloc(sizeof(JSON));
 	if (js == NULL)
 		return NULL;
-	js->elm = (JSONterm *) GDKzalloc(sizeof(JSONterm) * size);
+	js->elm = (JSONterm *) GDKzalloc(sizeof(JSONterm) * jsonhint);
 	if (js->elm == NULL) {
 		GDKfree(js);
 		return NULL;
 	}
-	js->size = size;
+	js->size = jsonhint;
 	return js;
 }
 
@@ -104,41 +104,52 @@ JSONfree(JSON *c)
 {
 	if (c == 0)
 		return;
+	freeException(c->error);
 	GDKfree(c->elm);
 	GDKfree(c);
 }
 
-int
-JSONfromString(const char *src, int *len, json *j)
+ssize_t
+JSONfromString(const char *src, size_t *len, json *j)
 {
-	ssize_t slen = (ssize_t) strlen(src);
-	JSON *jt = JSONparse(src, FALSE);
+	size_t slen = strlen(src);
+	JSON *jt;
 
-	if (*j)
-		GDKfree(*j);
+	if (GDK_STRNIL(src)) {
+		if (*len < 2 || *j == NULL) {
+			GDKfree(*j);
+			if ((*j = GDKmalloc(2)) == NULL)
+				return -1;
+			*len = 2;
+		}
+		strcpy(*j, str_nil);
+		return 1;
+	}
 
-	if (!jt || jt->error) {
-		*j = GDKstrdup(str_nil);
-		if (jt)
-			JSONfree(jt);
-		return 0;
+	if ((jt = JSONparse(src)) == NULL)
+		return -1;
+	if (jt->error) {
+		GDKerror("%s", getExceptionMessageAndState(jt->error));
+		JSONfree(jt);
+		return -1;
 	}
 	JSONfree(jt);
 
-	*len = (int) slen;
-	*j = GDKstrdup(src);
-	if (*j == NULL ||
-		GDKstrFromStr((unsigned char *) *j, (const unsigned char *) src, slen) < 0) {
+	if (*len <= slen || *j == NULL) {
 		GDKfree(*j);
-		*j = GDKstrdup(str_nil);
-		*len = 2;
-		return 0;
+		if ((*j = GDKmalloc(slen + 1)) == NULL)
+			return -1;
+		*len = slen + 1;
 	}
-	return *len;
+	if (GDKstrFromStr((unsigned char *) *j,
+					  (const unsigned char *) src, (ssize_t) slen) < 0)
+		return -1;
+
+	return (ssize_t) strlen(*j);
 }
 
-int
-JSONtoString(str *s, int *len, const char *src)
+ssize_t
+JSONtoString(str *s, size_t *len, const char *src)
 {
 	size_t cnt;
 	const char *c;
@@ -174,7 +185,7 @@ JSONtoString(str *s, int *len, const char *src)
 		*s = GDKmalloc(cnt);
 		if (*s == NULL)
 			return -1;
-		*len = (int) cnt;
+		*len = cnt;
 	}
 	dst = *s;
 	*dst++ = '"';
@@ -196,7 +207,7 @@ JSONtoString(str *s, int *len, const char *src)
 	*dst++ = '"';
 	*dst++ = 0;
 	assert((size_t) (dst - *s) == cnt);
-	return (int) (cnt - 1);	/* length without \0 */
+	return cnt - 1;				/* length without \0 */
 }
 
 #define tab(D)									\
@@ -261,7 +272,7 @@ JSONdumpInternal(JSON *jt, int depth)
 str
 JSONdump(void *ret, json *val)
 {
-	JSON *jt = JSONparse(*val, FALSE);
+	JSON *jt = JSONparse(*val);
 
 	CHECK_JSON(jt);
 	(void) ret;
@@ -290,7 +301,7 @@ JSONjson2str(str *ret, json *j)
 str
 JSONstr2json(json *ret, str *j)
 {
-	JSON *jt = JSONparse(*j, FALSE);
+	JSON *jt = JSONparse(*j);
 
 	CHECK_JSON(jt);
 	JSONfree(jt);
@@ -302,12 +313,11 @@ JSONstr2json(json *ret, str *j)
 str
 JSONisvalid(bit *ret, json *j)
 {
-	JSON *jt = JSONparse(*j, FALSE);
+	JSON *jt = JSONparse(*j);
 
 	if (jt == NULL)
 		throw(MAL, "json.isvalid", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	*ret = jt->error == MAL_SUCCEED;
-	GDKfree(jt->error);
 	JSONfree(jt);
 	return MAL_SUCCEED;
 }
@@ -373,11 +383,13 @@ JSONappend(JSON *jt, int idx, int nxt)
 }
 
 /*
- * The JSON filter operation takes a path expression which is purposely kept simple,
- * It provides step (.), multistep (..) and indexed ([nr]) access to the JSON elements.
- * A wildcard * can be used as placeholder for a step identifier.
+ * The JSON filter operation takes a path expression which is
+ * purposely kept simple, It provides step (.), multistep (..) and
+ * indexed ([nr]) access to the JSON elements.  A wildcard * can be
+ * used as placeholder for a step identifier.
  *
- * A path expression is always validated upfront and can only be applied to valid json strings.
+ * A path expression is always validated upfront and can only be
+ * applied to valid json strings.
  * Path samples:
  * .store.book
  * .store.book[0]
@@ -643,7 +655,7 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 			throw(MAL,"JSONfilterInternal", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
-	jt = JSONparse(j, FALSE);
+	jt = JSONparse(j);
 	CHECK_JSON(jt);
 	memset(terms, 0, sizeof(terms));
 	msg = JSONcompile(*expr, terms);
@@ -690,10 +702,10 @@ JSONfilterInternal(json *ret, json *js, str *expr, str other)
 
 
 static str
-JSONstringParser(const char *j, const char **next, int silent)
+JSONstringParser(const char *j, const char **next)
 {
-	if (*j == '"')
-		j++;
+	assert(*j == '"');
+	j++;
 	for (; *j; j++) {
 		switch (*j) {
 		case '\\':
@@ -718,9 +730,6 @@ JSONstringParser(const char *j, const char **next, int silent)
 				break;
 			default:
 				*next = j;
-				if (silent) {
-					return MAL_SUCCEED;
-				}
 				throw(MAL, "json.parser", "illegal escape char");
 			}
 			break;
@@ -731,13 +740,11 @@ JSONstringParser(const char *j, const char **next, int silent)
 		}
 	}
 	*next = j;
-	if (!silent)
-		throw(MAL, "json.parser", "Nonterminated string");
-	return MAL_SUCCEED;
+	throw(MAL, "json.parser", "Nonterminated string");
 }
 
 static str
-JSONnumberParser(const char *j, const char **next, int silent)
+JSONnumberParser(const char *j, const char **next)
 {
 	const char *backup = j;
 
@@ -746,9 +753,7 @@ JSONnumberParser(const char *j, const char **next, int silent)
 	skipblancs(j);
 	if (*j < '0' || *j > '9') {
 		*next = j;
-		if (!silent)
-			throw(MAL, "json.parser", "Number expected");
-		return MAL_SUCCEED;
+		throw(MAL, "json.parser", "Number expected");
 	}
 	for (; *j; j++)
 		if (*j < '0' || *j > '9')
@@ -781,12 +786,11 @@ JSONnumberParser(const char *j, const char **next, int silent)
 }
 
 static int
-JSONtoken(JSON *jt, const char *j, const char **next, int silent)
+JSONtoken(JSON *jt, const char *j, const char **next)
 {
 	str msg;
 	int nxt, idx = JSONnew(jt);
 
-	assert(silent==0);
 	if (jt->error)
 		return idx;
 	skipblancs(j);
@@ -799,12 +803,11 @@ JSONtoken(JSON *jt, const char *j, const char **next, int silent)
 			skipblancs(j);
 			if (*j == '}')
 				break;
-			nxt = JSONtoken(jt, j, next, silent);
+			nxt = JSONtoken(jt, j, next);
 			if (jt->error)
 				return idx;
 			if (jt->elm[nxt].kind != JSON_ELEMENT) {
-				if (!silent)
-					jt->error = createException(MAL, "json.parser", "Syntax error : element expected");
+				jt->error = createException(MAL, "json.parser", "Syntax error : element expected");
 				return idx;
 			}
 			JSONappend(jt, idx, nxt);
@@ -815,15 +818,13 @@ JSONtoken(JSON *jt, const char *j, const char **next, int silent)
 			if (*j == '}')
 				break;
 			if (*j != '}' && *j != ',') {
-				if (!silent)
-					jt->error = createException(MAL, "json.parser", "Syntax error : ','  or '}' expected");
+				jt->error = createException(MAL, "json.parser", "Syntax error : ','  or '}' expected");
 				return idx;
 			}
 			j++;
 		}
 		if (*j != '}') {
-			if (!silent)
-				jt->error = createException(MAL, "json.parser", "Syntax error : '}' expected");
+			jt->error = createException(MAL, "json.parser", "Syntax error : '}' expected");
 			return idx;
 		} else
 			j++;
@@ -838,7 +839,7 @@ JSONtoken(JSON *jt, const char *j, const char **next, int silent)
 			skipblancs(j);
 			if (*j == ']')
 				break;
-			nxt = JSONtoken(jt, j, next, silent);
+			nxt = JSONtoken(jt, j, next);
 			if (jt->error)
 				return idx;
 			switch (jt->elm[nxt].kind) {
@@ -874,33 +875,29 @@ JSONtoken(JSON *jt, const char *j, const char **next, int silent)
 			if (*j == ']')
 				break;
 			if (jt->elm[nxt].kind == JSON_ELEMENT) {
-				if (!silent)
-					jt->error = createException(MAL, "json.parser", "Syntax error : Array value expected");
+				jt->error = createException(MAL, "json.parser", "Syntax error : Array value expected");
 				return idx;
 			}
 			if (*j != ']' && *j != ',') {
-				if (!silent)
-					jt->error = createException(MAL, "json.parser", "Syntax error : ','  or ']' expected");
+				jt->error = createException(MAL, "json.parser", "Syntax error : ','  or ']' expected");
 				return idx;
 			}
 			j++;
 			skipblancs(j);
 		}
 		if (*j != ']') {
-			if (!silent)
-				jt->error = createException(MAL, "json.parser", "Syntax error : ']' expected");
+			jt->error = createException(MAL, "json.parser", "Syntax error : ']' expected");
 		} else
 			j++;
 		*next = j;
 		jt->elm[idx].valuelen = *next - jt->elm[idx].value;
 		return idx;
 	case '"':
-		msg = JSONstringParser(j, next, silent);
-		if (!silent && msg) {
+		msg = JSONstringParser(j, next);
+		if (msg) {
 			jt->error = msg;
 			return idx;
 		}
-		freeException(msg);
 		jt->elm[idx].kind = JSON_STRING;
 		jt->elm[idx].value = j;
 		jt->elm[idx].valuelen = *next - j;
@@ -910,7 +907,7 @@ JSONtoken(JSON *jt, const char *j, const char **next, int silent)
 			j++;
 			skipblancs(j);
 			jt->elm[idx].kind = JSON_ELEMENT;
-			nxt = JSONtoken(jt, j, next, silent);
+			nxt = JSONtoken(jt, j, next);
 			if (jt->error)
 				return idx;
 			jt->elm[idx].child = nxt;
@@ -926,8 +923,7 @@ JSONtoken(JSON *jt, const char *j, const char **next, int silent)
 			jt->elm[idx].valuelen = 4;
 			return idx;
 		}
-		if (!silent)
-			jt->error = createException(MAL, "json.parser", "Syntax error: NULL expected");
+		jt->error = createException(MAL, "json.parser", "Syntax error: NULL expected");
 		return idx;
 	case 't':
 		if (strncmp("true", j, 4) == 0) {
@@ -937,8 +933,7 @@ JSONtoken(JSON *jt, const char *j, const char **next, int silent)
 			jt->elm[idx].valuelen = 4;
 			return idx;
 		}
-		if (!silent) 
-			jt->error = createException(MAL, "json.parser", "Syntax error: True expected");
+		jt->error = createException(MAL, "json.parser", "Syntax error: True expected");
 		return idx;
 	case 'f':
 		if (strncmp("false", j, 5) == 0) {
@@ -948,33 +943,28 @@ JSONtoken(JSON *jt, const char *j, const char **next, int silent)
 			jt->elm[idx].valuelen = 5;
 			return idx;
 		}
-		if (!silent)
-			jt->error = createException(MAL, "json.parser", "Syntax error: False expected");
+		jt->error = createException(MAL, "json.parser", "Syntax error: False expected");
 		return idx;
 	default:
 		if (*j == '-' || (*j >= '0' && *j <= '9')) {
 			jt->elm[idx].value = j;
-			msg = JSONnumberParser(j, next, silent);
-			if (!silent && msg)
+			msg = JSONnumberParser(j, next);
+			if (msg)
 				jt->error = msg;
-			else
-				freeException(msg);
 			jt->elm[idx].kind = JSON_NUMBER;
 			jt->elm[idx].valuelen = *next - jt->elm[idx].value;
 			return idx;
 		}
-		if (!silent)
-			jt->error = createException(MAL, "json.parser", "Syntax error: value expected");
+		jt->error = createException(MAL, "json.parser", "Syntax error: value expected");
 		return idx;
 	}
-	return idx;
 }
 
 
 static JSON *
-JSONparse(const char *j, int silent)
+JSONparse(const char *j)
 {
-	JSON *jt = JSONnewtree(0);
+	JSON *jt = JSONnewtree();
 
 	if (jt == NULL)
 		return NULL;
@@ -983,11 +973,11 @@ JSONparse(const char *j, int silent)
 		jt->error = createException(MAL, "json.parser", "Syntax error: json parse failed, expecting '{', '['");
 		return jt;
 	}
-	JSONtoken(jt, j, &j, silent);
+	JSONtoken(jt, j, &j);
 	if (jt->error)
 		return jt;
 	skipblancs(j);
-	if (*j && !silent)
+	if (*j)
 		jt->error = createException(MAL, "json.parser", "Syntax error: json parse failed");
 	return jt;
 }
@@ -996,7 +986,7 @@ str
 JSONlength(int *ret, json *j)
 {
 	int i, cnt = 0;
-	JSON *jt = JSONparse(*j, FALSE);
+	JSON *jt = JSONparse(*j);
 
 	CHECK_JSON(jt);
 	for (i = jt->elm[0].next; i; i = jt->elm[i].next)
@@ -1147,7 +1137,7 @@ JSONjson2text(str *ret, json *js)
 	size_t l;
 	str s;
 
-	jt = JSONparse(*js, FALSE);
+	jt = JSONparse(*js);
 
 	CHECK_JSON(jt);
 	l = strlen(*js) + 1;
@@ -1172,7 +1162,7 @@ JSONjson2textSeparator(str *ret, json *js, str *sep)
 	size_t l;
 	str s;
 
-	jt = JSONparse(*js, FALSE);
+	jt = JSONparse(*js);
 
 	CHECK_JSON(jt);
 	l = strlen(*js) + 1;
@@ -1197,7 +1187,7 @@ JSONjson2number(dbl *ret, json *js)
 	char *rest;
 
 	*ret = dbl_nil;
-	jt = JSONparse(*js, FALSE);
+	jt = JSONparse(*js);
 	CHECK_JSON(jt);
 	switch (jt->elm[0].kind) {
 	case JSON_NUMBER:
@@ -1230,7 +1220,7 @@ JSONjson2integer(lng *ret, json *js)
 	char *rest;
 
 	*ret = lng_nil;
-	jt = JSONparse(*js, FALSE);
+	jt = JSONparse(*js);
 	CHECK_JSON(jt);
 	switch (jt->elm[0].kind) {
 	case JSON_NUMBER:
@@ -1326,7 +1316,7 @@ JSONunfoldInternal(bat *od, bat *key, bat *val, json *js)
 	oid o = 0;
 	str msg = MAL_SUCCEED;
 
-	JSON *jt = JSONparse(*js, FALSE);
+	JSON *jt = JSONparse(*js);
 
 	CHECK_JSON(jt);
 	bk = COLnew(0, TYPE_str, 64, TRANSIENT);
@@ -1389,7 +1379,7 @@ JSONkeyTable(bat *ret, json *js)
 	int i;
 	JSON *jt;
 
-	jt = JSONparse(*js, FALSE);	// already validated
+	jt = JSONparse(*js);		// already validated
 	CHECK_JSON(jt);
 	bn = COLnew(0, TYPE_str, 64, TRANSIENT);
 	if (bn == NULL) {
@@ -1424,7 +1414,7 @@ JSONkeyArray(json *ret, json *js)
 	int i;
 	JSON *jt;
 
-	jt = JSONparse(*js, FALSE);	// already validated
+	jt = JSONparse(*js);		// already validated
 
 	CHECK_JSON(jt);
 	if (jt->elm[0].kind == JSON_OBJECT) {
@@ -1476,7 +1466,7 @@ JSONvalueTable(bat *ret, json *js)
 	int i;
 	JSON *jt;
 
-	jt = JSONparse(*js, FALSE);	// already validated
+	jt = JSONparse(*js);		// already validated
 	CHECK_JSON(jt);
 	bn = COLnew(0, TYPE_json, 64, TRANSIENT);
 	if (bn == NULL) {
@@ -1514,7 +1504,7 @@ JSONvalueArray(json *ret, json *js)
 	int i;
 	JSON *jt;
 
-	jt = JSONparse(*js, FALSE);	// already validated
+	jt = JSONparse(*js);		// already validated
 
 	CHECK_JSON(jt);
 	if (jt->elm[0].kind == JSON_OBJECT) {
@@ -1616,8 +1606,7 @@ JSONrenderRowObject(BAT **bl, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, BUN idx
 		bi = bat_iterator(bl[i + 1]);
 		p = BUNtail(bi, idx);
 		tpe = getBatType(getArgType(mb, pci, i + 1));
-		val = NULL;
-		if (ATOMformat(tpe, p, &val) < 0) {
+		if ((val = ATOMformat(tpe, p)) == NULL) {
 			GDKfree(row);
 			return NULL;
 		}
@@ -1732,8 +1721,7 @@ JSONrenderRowArray(BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 		bi = bat_iterator(bl[i]);
 		p = BUNtail(bi, idx);
 		tpe = getBatType(getArgType(mb, pci, i));
-		val = NULL;
-		if (ATOMformat(tpe, p, &val) < 0) {
+		if ((val = ATOMformat(tpe, p)) == NULL) {
 			goto memfail;
 		}
 		if (strcmp(val, "nil") == 0) {
@@ -1905,8 +1893,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 		if (tpe == TYPE_json)
 			val = p;
 		else {
-			val = NULL;
-			if (ATOMformat(tpe, p, &val) < 0)
+			if ((val = ATOMformat(tpe, p))  == NULL)
 				goto memfail;
 			if (strcmp(val, "nil") == 0) {
 				GDKfree(val);

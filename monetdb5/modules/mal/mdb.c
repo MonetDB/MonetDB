@@ -289,8 +289,8 @@ MDBgetFrame(BAT *b, BAT *bn, MalBlkPtr mb, MalStkPtr s, int depth, const char *n
 	if (s != 0)
 		for (i = 0; i < s->stktop; i++, v++) {
 			v = &s->stk[i];
-			ATOMformat(v->vtype, VALptr(v), &buf);
-			if (BUNappend(b, getVarName(mb, i), FALSE) != GDK_SUCCEED ||
+			if ((buf = ATOMformat(v->vtype, VALptr(v))) == NULL ||
+				BUNappend(b, getVarName(mb, i), FALSE) != GDK_SUCCEED ||
 				BUNappend(bn, buf, FALSE) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
 				BBPunfix(bn->batCacheid);

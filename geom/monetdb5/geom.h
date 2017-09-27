@@ -47,13 +47,13 @@ geom_export str geom_prelude(void *ret);
 geom_export str geom_epilogue(void *ret);
 
 /* the len argument is needed for correct storage and retrieval */
-geom_export int wkbTOSTR(char **geomWKT, int *len, const wkb *geomWKB);
-geom_export int mbrTOSTR(char **dst, int *len, const mbr *atom);
-geom_export int wkbaTOSTR(char **toStr, int* len, const wkba *fromArray);
+geom_export ssize_t wkbTOSTR(char **geomWKT, size_t *len, const wkb *geomWKB);
+geom_export ssize_t mbrTOSTR(char **dst, size_t *len, const mbr *atom);
+geom_export ssize_t wkbaTOSTR(char **toStr, size_t* len, const wkba *fromArray);
 
-geom_export int wkbFROMSTR(const char* geomWKT, int *len, wkb** geomWKB);
-geom_export int mbrFROMSTR(const char *src, int *len, mbr **atom);
-geom_export int wkbaFROMSTR(const char *fromStr, int *len, wkba **toArray);
+geom_export ssize_t wkbFROMSTR(const char* geomWKT, size_t *len, wkb** geomWKB);
+geom_export ssize_t mbrFROMSTR(const char *src, size_t *len, mbr **atom);
+geom_export ssize_t wkbaFROMSTR(const char *fromStr, size_t *len, wkba **toArray);
 
 geom_export const wkb *wkbNULL(void);
 geom_export const mbr *mbrNULL(void);
@@ -82,8 +82,8 @@ geom_export var_t wkbaPUT(Heap *h, var_t *bun, const wkba *val);
 geom_export void wkbDEL(Heap *h, var_t *index);
 geom_export void wkbaDEL(Heap *h, var_t *index);
 
-geom_export int wkbLENGTH(const wkb *p);
-geom_export int wkbaLENGTH(const wkba *p);
+geom_export size_t wkbLENGTH(const wkb *p);
+geom_export size_t wkbaLENGTH(const wkba *p);
 
 geom_export void wkbHEAP(Heap *heap, size_t capacity);
 geom_export void wkbaHEAP(Heap *heap, size_t capacity);

@@ -387,9 +387,9 @@
 #define MIN(A,B)	((A)>(B)?(B):(A))
 
 /* defines from ctype with casts that allow passing char values */
-#define GDKisspace(c)	isspace((int) (unsigned char) (c))
-#define GDKisalnum(c)	isalnum((int) (unsigned char) (c))
-#define GDKisdigit(c)	(((unsigned char) (c)) >= '0' && ((unsigned char) (c)) <= '9')
+#define GDKisspace(c)	isspace((unsigned char) (c))
+#define GDKisalnum(c)	isalnum((unsigned char) (c))
+#define GDKisdigit(c)	isdigit((unsigned char) (c))
 
 #ifndef NATIVE_WIN32
 #define BATDIR		"bat"
@@ -727,12 +727,13 @@ typedef struct {
 		hge hval;
 #endif
 	} val;
-	int len, vtype;
+	size_t len;
+	int vtype;
 } *ValPtr, ValRecord;
 
 /* interface definitions */
 gdk_export ptr VALconvert(int typ, ValPtr t);
-gdk_export int VALformat(char **buf, const ValRecord *res);
+gdk_export char *VALformat(const ValRecord *res);
 gdk_export ValPtr VALcopy(ValPtr dst, const ValRecord *src);
 gdk_export ValPtr VALinit(ValPtr d, int tpe, const void *s);
 gdk_export void VALempty(ValPtr v);
@@ -1718,18 +1719,16 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * @tab ATOMdelete      (int id);
  * @item str
  * @tab ATOMname        (int id);
- * @item int
+ * @item unsigned int
  * @tab ATOMsize        (int id);
- * @item int
- * @tab ATOMalign       (int id);
  * @item int
  * @tab ATOMvarsized    (int id);
  * @item ptr
  * @tab ATOMnilptr      (int id);
- * @item int
- * @tab ATOMfromstr     (int id, str s, int* len, ptr* v_dst);
- * @item int
- * @tab ATOMtostr       (int id, str s, int* len, ptr* v_dst);
+ * @item ssize_t
+ * @tab ATOMfromstr     (int id, str s, size_t* len, ptr* v_dst);
+ * @item ssize_t
+ * @tab ATOMtostr       (int id, str s, size_t* len, ptr* v_dst);
  * @item hash_t
  * @tab ATOMhash        (int id, ptr val, in mask);
  * @item int
@@ -1744,11 +1743,11 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * @tab ATOMput         (int id, Heap *hp, BUN pos_dst, ptr val_src);
  * @item int
  * @tab ATOMdel         (int id, Heap *hp, BUN v_src);
- * @item int
+ * @item size_t
  * @tab ATOMlen         (int id, ptr val);
  * @item ptr
  * @tab ATOMnil         (int id);
- * @item int
+ * @item ssize_t
  * @tab ATOMformat      (int id, ptr val, char** buf);
  * @item int
  * @tab ATOMprint       (int id, ptr val, stream *fd);
@@ -1776,11 +1775,6 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * using its id.
  *
  * @item The @emph{ATOMsize()} operation returns the atoms fixed size.
- *
- * @item The @emph{ATOMalign()} operation returns the atoms minimum
- * alignment. If the alignment info was not specified explicitly
- * during atom install, it assumes the maximum value of @verb{ {
- * }1,2,4,8@verb{ } } smaller than the atom size.
  *
  * @item The @emph{ATOMnilptr()} operation returns a pointer to the
  * nil-value of an atom. We usually take one dedicated value halfway
@@ -1825,7 +1819,8 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * @item The @emph{ATOMfromstr()} parses an atom value from string
  * `s'. The memory allocation policy is the same as in
  * @emph{ATOMget()}. The return value is the number of parsed
- * characters.
+ * characters or -1 on failure.  Also in case of failure, the output
+ * parameter buf is a valid pointer or NULL.
  *
  * @item The @emph{ATOMprint()} prints an ASCII description of the
  * atom value pointed to by `val' on file descriptor `fd'. The return
@@ -1847,20 +1842,32 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * and @emph{ATOMformat()}) just have the atom id parameter prepended
  * to them.
  */
+
+/* atomFromStr returns the number of bytes of the input string that
+ * were processed.  atomToStr returns the length of the string
+ * produced.  Both functions return -1 on (any kind of) failure.  If
+ * *dst is not NULL, *len specifies the available space.  If there is
+ * not enough space, of if *dst is NULL, *dst will be freed (if not
+ * NULL) and a new buffer will be allocated and returned in *dst.
+ * *len will be set to reflect the actual size allocated.  If
+ * allocation fails, *dst will be NULL on return and *len is
+ * undefined.  In any case, if the function returns, *buf is either
+ * NULL or a valid pointer and then *len is the size of the area *buf
+ * points to. */
+
 typedef struct {
 	/* simple attributes */
 	char name[IDLENGTH];
 	short storage;		/* stored as another type? */
 	short linear;		/* atom can be ordered linearly */
-	short size;		/* fixed size of atom */
-	short align;		/* alignment condition for values */
+	unsigned short size;	/* fixed size of atom */
 
 	/* automatically generated fields */
 	const void *atomNull;	/* global nil value */
 
 	/* generic (fixed + varsized atom) ADT functions */
-	int (*atomFromStr) (const char *src, int *len, ptr *dst);
-	int (*atomToStr) (str *dst, int *len, const void *src);
+	ssize_t (*atomFromStr) (const char *src, size_t *len, ptr *dst);
+	ssize_t (*atomToStr) (str *dst, size_t *len, const void *src);
 	void *(*atomRead) (void *dst, stream *s, size_t cnt);
 	gdk_return (*atomWrite) (const void *src, stream *s, size_t cnt);
 	int (*atomCmp) (const void *v1, const void *v2);
@@ -1872,7 +1879,7 @@ typedef struct {
 	/* varsized atom-only ADT functions */
 	var_t (*atomPut) (Heap *, var_t *off, const void *src);
 	void (*atomDel) (Heap *, var_t *atom);
-	int (*atomLen) (const void *atom);
+	size_t (*atomLen) (const void *atom);
 	void (*atomHeap) (Heap *, size_t);
 } atomDesc;
 
@@ -1883,11 +1890,11 @@ gdk_export int ATOMallocate(const char *nme);
 gdk_export int ATOMindex(const char *nme);
 
 gdk_export str ATOMname(int id);
-gdk_export int ATOMlen(int id, const void *v);
+gdk_export size_t ATOMlen(int id, const void *v);
 gdk_export ptr ATOMnil(int id);
 gdk_export int ATOMcmp(int id, const void *v_1, const void *v_2);
 gdk_export int ATOMprint(int id, const void *val, stream *fd);
-gdk_export int ATOMformat(int id, const void *val, char **buf);
+gdk_export char *ATOMformat(int id, const void *val);
 
 gdk_export ptr ATOMdup(int id, const void *val);
 

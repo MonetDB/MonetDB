@@ -341,7 +341,7 @@ BATattach(int tt, const char *heapfile, int role)
 		}
 	} else {
 		struct stat st;
-		int atomsize;
+		unsigned int atomsize;
 		BUN cap;
 		lng n;
 
@@ -662,7 +662,6 @@ wrongtype(int t1, int t2)
 			if (ATOMvarsized(t1) ||
 			    ATOMvarsized(t2) ||
 			    ATOMsize(t1) != ATOMsize(t2) ||
-			    ATOMalign(t1) != ATOMalign(t2) ||
 			    BATatoms[t1].atomFix ||
 			    BATatoms[t2].atomFix)
 				return TRUE;

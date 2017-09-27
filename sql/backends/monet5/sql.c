@@ -1093,6 +1093,42 @@ str mvc_append_column(sql_trans *t, sql_column *c, BAT *ins) {
 	return MAL_SUCCEED;
 }
 
+/*mvc_grow_wrap(int *bid, str *sname, str *tname, str *cname, ptr d) */
+str
+mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *res = getArgReference_int(stk, pci, 0);
+	bat Tid = *getArgReference_bat(stk, pci, 1);
+	ptr Ins = getArgReference(stk, pci, 2);
+	int tpe = getArgType(mb, pci, 2);
+	BAT *tid = 0, *ins = 0;
+	size_t cnt = 1;
+	oid v = 0;
+
+	(void)cntxt;
+	*res = 0;
+	if ((tid = BATdescriptor(Tid)) == NULL)
+		throw(SQL, "sql.grow", "Cannot access descriptor");
+	if (tpe > GDKatomcnt)
+		tpe = TYPE_bat;
+	if (tpe == TYPE_bat && (ins = BATdescriptor(*(int *) Ins)) == NULL)
+		throw(SQL, "sql.append", "Cannot access descriptor");
+	if (ins) {
+		cnt = BATcount(ins);
+		BBPunfix(ins->batCacheid);
+	}
+	if (BATcount(tid))
+		v = *Tloc(tid, BATcount(tid)-1)+1;
+	for(;cnt>0; cnt--, v++) {
+		if (BUNappend(tid, &v, FALSE) != GDK_SUCCEED) {
+			BBPunfix(Tid);
+			throw(SQL, "sql", MAL_MALLOC_FAIL);
+		}
+	}
+	BBPunfix(Tid);
+	return MAL_SUCCEED;
+}
+
 /*mvc_append_wrap(int *bid, str *sname, str *tname, str *cname, ptr d) */
 str
 mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -1993,7 +2029,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tpe = BATdescriptor(tpeId);
 	len = BATdescriptor(lenId);
 	scale = BATdescriptor(scaleId);
-	if( msg || tbl == NULL || atr == NULL || tpe == NULL || len == NULL || scale == NULL)
+	if( tbl == NULL || atr == NULL || tpe == NULL || len == NULL || scale == NULL)
 		goto wrapup_result_set1;
 	/* mimick the old rsColumn approach; */
 	itertbl = bat_iterator(tbl);
@@ -2015,6 +2051,9 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( b)
 			BBPunfix(bid);
 	}
+	if ( msg )
+		goto wrapup_result_set1;
+
 	/* now select the file channel */
 	if ( strcmp(filename,"stdout") == 0 )
 		s= cntxt->fdout;
@@ -2158,6 +2197,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	l = strlen((char *) R);
 	rsep = GDKmalloc(l + 1);
 	if(rsep == 0){
+		GDKfree(tsep);
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto wrapup_result_set;
 	}
@@ -2166,6 +2206,8 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	l = strlen((char *) S);
 	ssep = GDKmalloc(l + 1);
 	if(ssep == 0){
+		GDKfree(tsep);
+		GDKfree(rsep);
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto wrapup_result_set;
 	}
@@ -2174,6 +2216,9 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	l = strlen((char *) N);
 	ns = GDKmalloc(l + 1);
 	if(ns == 0){
+		GDKfree(tsep);
+		GDKfree(rsep);
+		GDKfree(ssep);
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto wrapup_result_set;
 	}
@@ -2265,112 +2310,6 @@ mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		res = createException(SQL, "sql.resultSet", SQLSTATE(45000) "Result set construction failed");
 	BBPunfix(order->batCacheid);
 	return res;
-}
-
-/* str mvc_declared_table_wrap(int *res_id, str *name); */
-str
-mvc_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *m = NULL;
-	str msg;
-	sql_schema *s = NULL;
-	int *res_id = getArgReference_int(stk, pci, 0);
-	const char *name = *getArgReference_str(stk, pci, 1);
-
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	s = mvc_bind_schema(m, dt_schema);
-	if (s == NULL)
-		throw(SQL, "sql.declared_table", SQLSTATE(3F000) "Schema missing %s",dt_schema);
-	(void) mvc_create_table(m, s, name, tt_table, TRUE, SQL_DECLARED_TABLE, CA_DROP, 0);
-	*res_id = 0;
-	return MAL_SUCCEED;
-}
-
-/* str mvc_declared_table_column_wrap(int *ret, int *rs, str *tname, str *name, str *type, int *digits, int *scale); */
-str
-mvc_declared_table_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *m = NULL;
-	str msg;
-	sql_schema *s = NULL;
-	sql_table *t = NULL;
-	sql_type *type = NULL;
-	sql_subtype tpe;
-	int rs = *getArgReference_int(stk, pci, 1);
-	const char *tname = *getArgReference_str(stk, pci, 2);
-	const char *name = *getArgReference_str(stk, pci, 3);
-	const char *typename = *getArgReference_str(stk, pci, 4);
-	int digits = *getArgReference_int(stk, pci, 5);
-	int scale = *getArgReference_int(stk, pci, 6);
-
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	if (rs != 0)
-		throw(SQL, "sql.dtColumn", SQLSTATE(HY005) "Cannot access declared table");
-	if (!sql_find_subtype(&tpe, typename, digits, scale) && (type = mvc_bind_type(m, typename)) == NULL)
-		throw(SQL, "sql.dtColumn", SQLSTATE(42S22) "Cannot find column type");
-	if (type)
-		sql_init_subtype(&tpe, type, 0, 0);
-	s = mvc_bind_schema(m, dt_schema);
-	if (s == NULL)
-		throw(SQL, "sql.declared_table_column", SQLSTATE(3F000) "Schema missing %s",dt_schema);
-	t = mvc_bind_table(m, s, tname);
-	if (t == NULL)
-		throw(SQL, "sql.declared_table_column", SQLSTATE(42S02) "Table missing");
-	(void) mvc_create_column(m, t, name, &tpe);
-	return MAL_SUCCEED;
-}
-
-str
-mvc_drop_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *m = NULL;
-	const char *name = *getArgReference_str(stk, pci, 1);
-	str msg;
-	sql_schema *s = NULL;
-	sql_table *t = NULL;
-
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	s = mvc_bind_schema(m, dt_schema);
-	if (s == NULL)
-		throw(SQL, "sql.drop", SQLSTATE(3F000) "Schema missing %s",dt_schema);
-	t = mvc_bind_table(m, s, name);
-	if (t == NULL)
-		throw(SQL, "sql.drop", SQLSTATE(42S02) "Table missing");
-	(void) mvc_drop_table(m, s, t, 0);
-	return MAL_SUCCEED;
-}
-
-str
-mvc_drop_declared_tables_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *m = NULL;
-	int i = *getArgReference_int(stk, pci, 1);
-	str msg;
-	sql_schema *s = NULL;
-	sql_table *t = NULL;
-
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	s = mvc_bind_schema(m, dt_schema);
-	if (s == NULL)
-		throw(SQL, "sql.drop", SQLSTATE(3F000) "Schema missing %s",dt_schema);
-	while (i && s->tables.set->t) {
-		t = s->tables.set->t->data;
-		(void) mvc_drop_table(m, s, t, 0);
-		i--;
-	}
-	return MAL_SUCCEED;
 }
 
 /* str mvc_affected_rows_wrap(int *m, int m, lng *nr, str *w); */
@@ -2856,7 +2795,8 @@ str
 zero_or_one(ptr ret, const bat *bid)
 {
 	BAT *b;
-	BUN c, _s;
+	BUN c;
+	size_t _s;
 	const void *p;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -2876,11 +2816,12 @@ zero_or_one(ptr ret, const bat *bid)
 	_s = ATOMsize(ATOMtype(b->ttype));
 	if (ATOMextern(b->ttype)) {
 		_s = ATOMlen(ATOMtype(b->ttype), p);
-		memcpy(*(ptr *) ret = GDKmalloc(_s), p, _s);
-		if(ret == NULL){
+		* (ptr *) ret = GDKmalloc(_s);
+		if (* (ptr *) ret == NULL) {
 			BBPunfix(b->batCacheid);
 			throw(SQL, "zero_or_one", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
+		memcpy(*(ptr *) ret, p, _s);
 	} else if (b->ttype == TYPE_bat) {
 		bat bid = *(bat *) p;
 		*(BAT **) ret = BATdescriptor(bid);
@@ -3076,7 +3017,8 @@ nil_2time_daytime(daytime *res, const void *v, const int *digits)
 str
 str_2time_daytimetz(daytime *res, const str *v, const int *digits, int *tz)
 {
-	int len = sizeof(daytime), pos;
+	size_t len = sizeof(daytime);
+	ssize_t pos;
 
 	if (!*v || strcmp(str_nil, *v) == 0) {
 		*res = daytime_nil;
@@ -3086,8 +3028,8 @@ str_2time_daytimetz(daytime *res, const str *v, const int *digits, int *tz)
 		pos = daytime_tz_fromstr(*v, &len, &res);
 	else
 		pos = daytime_fromstr(*v, &len, &res);
-	if (!pos || pos < (int)strlen(*v))
-	if (!pos || pos < (int)strlen(*v) || ATOMcmp(TYPE_daytime, res, ATOMnilptr(TYPE_daytime)) == 0)
+	if (pos < (ssize_t) strlen(*v) || /* includes pos < 0 */
+	    ATOMcmp(TYPE_daytime, res, ATOMnilptr(TYPE_daytime)) == 0)
 		throw(SQL, "daytime", SQLSTATE(22007) "Daytime (%s) has incorrect format", *v);
 	return daytime_2time_daytime(res, res, digits);
 }
@@ -3153,7 +3095,8 @@ nil_2time_timestamp(timestamp *res, const void *v, const int *digits)
 str
 str_2time_timestamptz(timestamp *res, const str *v, const int *digits, int *tz)
 {
-	int len = sizeof(timestamp), pos;
+	size_t len = sizeof(timestamp);
+	ssize_t pos;
 
 	if (!*v || strcmp(str_nil, *v) == 0) {
 		*res = *timestamp_nil;
@@ -3163,7 +3106,7 @@ str_2time_timestamptz(timestamp *res, const str *v, const int *digits, int *tz)
 		pos = timestamp_tz_fromstr(*v, &len, &res);
 	else
 		pos = timestamp_fromstr(*v, &len, &res);
-	if (!pos || pos < (int)strlen(*v) || ATOMcmp(TYPE_timestamp, res, ATOMnilptr(TYPE_timestamp)) == 0)
+	if (!pos || pos < (ssize_t) strlen(*v) || ATOMcmp(TYPE_timestamp, res, ATOMnilptr(TYPE_timestamp)) == 0)
 		throw(SQL, "timestamp", SQLSTATE(22007) "Timestamp (%s) has incorrect format", *v);
 	return timestamp_2time_timestamp(res, res, digits);
 }
@@ -3584,10 +3527,13 @@ sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
 	BAT *t[8];
+	str msg;
 
 	(void) cntxt;
 	(void) mb;
-	QLOGcatalog(t);
+	msg = QLOGcatalog(t);
+	if( msg != MAL_SUCCEED)
+		return msg;
 	for (i = 0; i < 8; i++) 
 	if( t[i]){
 		bat id = t[i]->batCacheid;
@@ -3604,10 +3550,13 @@ sql_querylog_calls(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
 	BAT *t[10];
+	str msg;
 
 	(void) cntxt;
 	(void) mb;
-	QLOGcalls(t);
+	msg = QLOGcalls(t);
+	if( msg != MAL_SUCCEED)
+		return msg;
 	for (i = 0; i < 9; i++) 
 	if( t[i]){
 		bat id = t[i]->batCacheid;
@@ -3626,8 +3575,7 @@ sql_querylog_empty(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	QLOGempty(NULL);
-	return MAL_SUCCEED;
+	return QLOGempty(NULL);
 }
 
 /* str sql_rowid(oid *rid, ptr v, str *sname, str *tname); */
@@ -4150,7 +4098,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sql_schema *s = (sql_schema *) nsch->data;
 		if( sname && strcmp(b->name, sname) )
 			continue;
-		if (isalpha((int) b->name[0]))
+		if (isalpha((unsigned char) b->name[0]))
 			if (s->tables.set)
 				for (ntab = (s)->tables.set->h; ntab; ntab = ntab->next) {
 					sql_base *bt = ntab->data;

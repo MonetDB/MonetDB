@@ -23,6 +23,7 @@
 #include "wlc.h"
 #include "wlr.h"
 #include "sql_scenario.h"
+#include "sql_execute.h"
 #include "opt_prelude.h"
 #include "mal_parser.h"
 #include "mal_client.h"
@@ -395,7 +396,7 @@ WLRinit(void)
 str
 WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str timelimit  = wlr_timelimit;
-	int size = 26;
+	size_t size = 26;
 	str msg;
 	(void) mb;
 
@@ -422,7 +423,8 @@ WLRreplicate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if( getArgType(mb, pci, pci->argc-1) == TYPE_timestamp){
-		timestamp_tz_tostr(&timelimit, &size, (timestamp*) getArgReference(stk,pci,1), &tzone_local);
+		if (timestamp_tz_tostr(&timelimit, &size, (timestamp*) getArgReference(stk,pci,1), &tzone_local) < 0)
+			throw(SQL, "wlr.replicate", GDK_EXCEPTION);
 		mnstr_printf(cntxt->fdout,"#time limit %s\n",timelimit);
 	} else
 	if( getArgType(mb, pci, pci->argc-1) == TYPE_bte)

@@ -60,28 +60,31 @@ CLRhextoint(char h, char l)
 	return r;
 }
 
-int
-color_fromstr(const char *colorStr, int *len, color **c)
+ssize_t
+color_fromstr(const char *colorStr, size_t *len, color **c)
 {
 	const char *p = colorStr;
 
-	if (*len < (int) sizeof(color) || *c == NULL) {
+	if (*len < sizeof(color) || *c == NULL) {
 		GDKfree(*c);
 		*c = GDKmalloc(sizeof(color));
 		if( *c == NULL)
-			return 0;
+			return -1;
 		*len = sizeof(color);
+	}
+
+	if (GDK_STRNIL(colorStr)) {
+		**c = color_nil;
+		return 1;
 	}
 
 	while (GDKisspace(*p))
 		p++;
-	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
-		color **sc = (color **) c;
-
-		**sc = color_nil;
+	if (strncmp(p, "nil", 3) == 0) {
+		**c = color_nil;
 		p += 3;
 	} else {
-		if (p[0] == '0' && p[1] == 'x' && p[2] == '0' && p[3] == '0') {
+		if (strncmp(p, "0x00", 4) == 0) {
 			int r = CLRhextoint(p[4], p[5]);
 			int g = CLRhextoint(p[6], p[7]);
 			int b = CLRhextoint(p[8], p[9]);
@@ -90,11 +93,11 @@ color_fromstr(const char *colorStr, int *len, color **c)
 		} else
 			**c = color_nil;
 	}
-	return (int) (p - colorStr);
+	return (ssize_t) (p - colorStr);
 }
 
-int
-color_tostr(char **colorStr, int *len, const color *c)
+ssize_t
+color_tostr(char **colorStr, size_t *len, const color *c)
 {
 	color sc = *c;
 
@@ -104,7 +107,7 @@ color_tostr(char **colorStr, int *len, const color *c)
 		GDKfree(*colorStr);
 		*colorStr = GDKmalloc(11);
 		if( *colorStr == NULL)
-			return 0;
+			return -1;
 		*len = 11;
 	}
 
@@ -114,17 +117,18 @@ color_tostr(char **colorStr, int *len, const color *c)
 	}
 	snprintf(*colorStr, *len, "0x%08X", (unsigned int) sc);
 
-	return (int) strlen(*colorStr);
+	return (ssize_t) strlen(*colorStr);
 }
 
 str
 CLRstr(str *s, const color *c)
 {
-	int len = 0;
+	size_t len = 0;
 	str t = 0;
 
-	color_tostr(&t, &len, c);
-	*s = (str) t;
+	if (color_tostr(&t, &len, c) < 0)
+		throw(MAL, "color.str", GDK_EXCEPTION);
+	*s = t;
 	return MAL_SUCCEED;
 }
 
@@ -371,9 +375,9 @@ CLRcb(int *cb, const color *c)
 str
 CLRcolor(color *c, const char **val)
 {
-	int len = (int) strlen(*val);
+	size_t len = sizeof(color);
 
-	color_fromstr(*val, &len, &c);
+	if (color_fromstr(*val, &len, &c) < 0)
+		throw(MAL, "color.color", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
-

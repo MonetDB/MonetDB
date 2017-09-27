@@ -623,19 +623,17 @@ AS_VAR_IF([enable_strict], [yes], [
 		MCHECK_ADD_FLAG([-Wjump-misses-init])
 		MCHECK_ADD_FLAG([-Wmissing-include-dirs])
 		MCHECK_ADD_FLAG([-Wlogical-op])
+		MCHECK_ADD_FLAG([-Wduplicated-cond])
+		MCHECK_ADD_FLAG([-Wduplicated-branches])
+		MCHECK_ADD_FLAG([-Wrestrict])
+		MCHECK_ADD_FLAG([-Wnested-externs])
 
-		# With clang 2.8, 3.3, 5.0 (no other tested) and gcc < 4.5
-		# (tested 3.4.6, 4.2.1, 4.3.2, 4.4.4, 4.4.5, 4.5.1, 4.5.2),
-		# "-Wunreachable-code" triggers numerous "will never be
-		# executed" (at least) in our stream code, mostly (if
-		# not all) false positives, though, as well as in
-		# YACC/BISON-generated code; thus, we do not use
-		# "-Wunreachable-code" with clang and gcc < 4.5 .
-		# At the same time, Apple deprecated OpenSSL in favour of
-		# their own CommonCrypto API.  We don't mind about that.
+		# We can deal with -Wunrechable-code on modern
+		# compilers, but FreeBSD's clang (3.4.1) is too old.
+		# We need a version that understands the DISABLES
+		# CODE comment that is in the code at various places.
 		AS_CASE([$CC_ver],
-			[clang-*|gcc-[[0-3]].*|gcc-4.[[0-4]].*],
-				[MCHECK_ADD_FLAG([-Wno-deprecated-declarations])],
+			[clang-3.*], [],
 			[MCHECK_ADD_FLAG([-Wunreachable-code])])
 
 		dnl  Our code is not (yet?) up to these:
@@ -649,7 +647,6 @@ AS_VAR_IF([enable_strict], [yes], [
 		dnl  MCHECK_ADD_FLAG([-Wfloat-equal])
 		dnl  MCHECK_ADD_FLAG([-Winline])
 		dnl  MCHECK_ADD_FLAG([-Wmissing-noreturn])
-		dnl  MCHECK_ADD_FLAG([-Wnested-externs])
 		dnl  MCHECK_ADD_FLAG([-Wpadded])
 		dnl  MCHECK_ADD_FLAG([-Wredundant-decls])
 		dnl  MCHECK_ADD_FLAG([-Wshadow])
@@ -665,6 +662,7 @@ AS_VAR_IF([enable_strict], [yes], [
 		dnl  MCHECK_ADD_FLAG([-Wstrict-overflow=5])
 		dnl  MCHECK_ADD_FLAG([-Wvla])
 		dnl  MCHECK_ADD_FLAG([-Wunsuffixed-float-constants])
+		dnl  MCHECK_ADD_FLAG([-Wnull-dereference])
 	],
 	[-*icc*-linux*|-*ecc*-linux*] ,[
 		# Intel ([ie]cc/[ie]cpc on Linux)

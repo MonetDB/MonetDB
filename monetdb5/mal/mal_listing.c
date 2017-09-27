@@ -70,7 +70,10 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 		} else if( stk)
 			val = &stk->stk[varid];
 
-		VALformat(&cv, val);
+		if ((cv = VALformat(val)) == NULL) {
+			addMalException(mb, "renderTerm:Failed to allocate");
+			return NULL;
+		}
 		if (len + strlen(cv) >= maxlen)
 			buf= GDKrealloc(buf, maxlen =len + strlen(cv) + BUFSIZ);
 
@@ -412,13 +415,17 @@ shortRenderingTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx)
 
 	if( isVarConstant(mb,varid) ){
 		val =&getVarConstant(mb, varid);
-		VALformat(&cv, val);
+		if ((cv = VALformat(val)) == NULL) {
+			GDKfree(s);
+			return NULL;
+		}
 		if (strlen(cv) >= len) {
 			char *nbuf;
 			len = strlen(cv);
 			nbuf = GDKrealloc(s, len + 1);
 			if (nbuf == NULL) {
 				GDKfree(s);
+				GDKfree(cv);
 				return NULL;
 			}
 			s = nbuf;
@@ -426,7 +433,10 @@ shortRenderingTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx)
 		snprintf(s,len + 1,"%s",cv);
 	} else {
 		val = &stk->stk[varid];
-		VALformat(&cv, val);
+		if ((cv = VALformat(val)) == NULL) {
+			GDKfree(s);
+			return NULL;
+		}
 		nme = getVarName(mb, varid);
 		if ( isaBatType(getArgType(mb,p,idx))){
 			b = BBPquickdesc(stk->stk[varid].val.bval,TRUE);

@@ -103,12 +103,12 @@ mal_export timestamp *timestamp_nil;
 #define tz_isnil(z)   (get_offset(&(z)) == get_offset(tzone_nil))
 #define ts_isnil(t)   ((t).days == timestamp_nil->days && (t).msecs == timestamp_nil->msecs)
 
-mal_export int daytime_tz_fromstr(const char *buf, int *len, daytime **ret);
-mal_export int timestamp_tz_fromstr(const char *buf, int *len, timestamp **ret);
+mal_export ssize_t daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret);
+mal_export ssize_t timestamp_tz_fromstr(const char *buf, size_t *len, timestamp **ret);
 mal_export str MTIMEcurrent_timestamp(timestamp *t);
 mal_export str MTIMEcurrent_date(date *d);
 mal_export str MTIMEcurrent_time(daytime *t);
-mal_export int timestamp_tz_tostr(str *buf, int *len, const timestamp *val, const tzone *timezone);
+mal_export ssize_t timestamp_tz_tostr(str *buf, size_t *len, const timestamp *val, const tzone *timezone);
 mal_export str MTIMEnil2date(date *ret, const void *src);
 mal_export str MTIMEdate2date(date *ret, const date *src);
 mal_export str MTIMEdaytime2daytime(daytime *ret, const daytime *src);
@@ -226,16 +226,16 @@ mal_export str MTIMEtimestamp_lng_bulk(bat *ret, bat *bid);
 mal_export str MTIMEruleDef0(rule *ret, const int *m, const int *d, const int *w, const int *h, const int *mint);
 mal_export str MTIMEruleDef1(rule *ret, const int *m, const char * const *dnme, const int *w, const int *h, const int *mint);
 mal_export str MTIMEruleDef2(rule *ret, const int *m, const char * const *dnme, const int *w, const int *mint);
-mal_export int date_fromstr(const char *buf, int *len, date **d);
-mal_export int date_tostr(str *buf, int *len, const date *val);
-mal_export int daytime_fromstr(const char *buf, int *len, daytime **ret);
-mal_export int daytime_tostr(str *buf, int *len, const daytime *val);
-mal_export int timestamp_fromstr(const char *buf, int *len, timestamp **ret);
-mal_export int timestamp_tostr(str *buf, int *len, const timestamp *val);
-mal_export int tzone_tostr(str *buf, int *len, const tzone *z);
-mal_export int rule_fromstr(const char *buf, int *len, rule **d);
-mal_export int rule_tostr(str *buf, int *len, const rule *r);
-mal_export int tzone_fromstr(const char *buf, int *len, tzone **d);
+mal_export ssize_t date_fromstr(const char *buf, size_t *len, date **d);
+mal_export ssize_t date_tostr(str *buf, size_t *len, const date *val);
+mal_export ssize_t daytime_fromstr(const char *buf, size_t *len, daytime **ret);
+mal_export ssize_t daytime_tostr(str *buf, size_t *len, const daytime *val);
+mal_export ssize_t timestamp_fromstr(const char *buf, size_t *len, timestamp **ret);
+mal_export ssize_t timestamp_tostr(str *buf, size_t *len, const timestamp *val);
+mal_export ssize_t tzone_tostr(str *buf, size_t *len, const tzone *z);
+mal_export ssize_t rule_fromstr(const char *buf, size_t *len, rule **d);
+mal_export ssize_t rule_tostr(str *buf, size_t *len, const rule *r);
+mal_export ssize_t tzone_fromstr(const char *buf, size_t *len, tzone **d);
 
 mal_export str MTIMEstr_to_date(date *d, const char * const *s, const char * const *format);
 mal_export str MTIMEdate_to_str(str *s, const date *d, const char * const *format);

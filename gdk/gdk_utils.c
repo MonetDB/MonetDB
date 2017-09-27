@@ -979,12 +979,8 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 		}
 		*dst = '\0';
 	} else {
-		/* construct format string because the format string
-		 * must start with ! */
-		char format[32];
-
-		snprintf(format, sizeof(format), "%s%%.*s%s", prefix ? prefix : "", suffix ? suffix : "");
-		THRprintf(GDKout, format, (int) messagelen, message);
+		THRprintf(GDKout, "%s%.*s%s", prefix ? prefix : "",
+			  (int) messagelen, message, suffix ? suffix : "");
 	}
 }
 

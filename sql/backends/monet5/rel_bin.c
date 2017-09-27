@@ -357,7 +357,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			stmt *r = exp_bin(be, e->l, left, right, grp, ext, cnt, sel);
 			return stmt_assign(be, e->name, r, GET_PSM_LEVEL(e->flag));
 		} else if (e->flag & PSM_VAR) {
-			if (e->f) /* TODO TABLE */
+			if (e->f)
 				return stmt_vars(be, e->name, e->f, 1, GET_PSM_LEVEL(e->flag));
 			else
 				return stmt_var(be, e->name, &e->tpe, 1, GET_PSM_LEVEL(e->flag));
@@ -365,6 +365,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			sql_exp *l = e->l;
 			stmt *r = exp_bin(be, l, left, right, grp, ext, cnt, sel);
 
+			if (!r)
+				return NULL;
 			/* handle table returning functions */
 			if (l->type == e_psm && l->flag & PSM_REL) {
 				stmt *lst = r->op1;
@@ -1583,7 +1585,7 @@ rel2bin_hash_lookup(backend *be, sql_rel *rel, stmt *left, stmt *right, sql_idx 
 			h = stmt_unop(be, s, hf);
 		}
 	}
-	if (h->nrcols) {
+	if (h && h->nrcols) {
 		if (!swap_rel) {
 			return stmt_join(be, idx, h, 0, cmp_equal);
 		} else {
@@ -1659,10 +1661,7 @@ releqjoin( backend *be, list *l1, list *l2, int used_hash, comp_type cmp_op, int
 		sql_subfunc *f = NULL;
 		stmt * cmp;
 
-		if (cmp_op == cmp_equal) 
-			f = sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(le), tail_type(le), F_FUNC);
-		else 
-			f = sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(le), tail_type(le), F_FUNC);
+		f = sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(le), tail_type(le), F_FUNC);
 		assert(f);
 
 		cmp = stmt_binop(be, le, re, f);
@@ -1952,11 +1951,12 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 				idx = 1;
 			/* stop on first non equality join */
 			if (!join) {
+				if (en->next && s->type != st_join && s->type != st_join2 && s->type != st_joinN) 
+					break;
 				join = s;
 			} else if (s->type != st_join && s->type != st_join2 && s->type != st_joinN) {
 				/* handle select expressions */
-				assert(0);
-				return NULL;
+				break;
 			}
 			if (s->type == st_join || s->type == st_join2 || s->type == st_joinN) { 
 				list_append(lje, s->op1);
@@ -1986,7 +1986,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		/* construct relation */
 		nl = sa_list(sql->sa);
 
-		/* first project using equi-joins */
+		/* first project after equi-joins */
 		for( n = left->op4.lval->h; n; n = n->next ) {
 			stmt *c = n->data;
 			const char *rnme = table_name(sql->sa, c);

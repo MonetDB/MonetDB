@@ -549,7 +549,7 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, ch
 		if(t == NULL) {
 			return -1;
 		}
-		while (t && isspace((int) *t))
+		while (t && isspace((unsigned char) *t))
 			t++;
 
 		querylog = q = newStmt(mb, querylogRef, defineRef);

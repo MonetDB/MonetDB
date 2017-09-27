@@ -81,7 +81,7 @@ strip_extra_zeros(char *s)
 {
 	char *res = s;
 
-	for (; *s && isspace((int) (unsigned char) *s); s++)
+	for (; *s && isspace((unsigned char) *s); s++)
 		;
 	res = s;
 	/* find end, and strip extra 0's */

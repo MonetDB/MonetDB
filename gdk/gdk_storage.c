@@ -900,12 +900,12 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	int i;
 	BUN n, cnt;
 	struct colinfo {
-		int (*s) (str *, int *, const void *);
+		ssize_t (*s) (str *, size_t *, const void *);
 		BATiter i;
 	} *colinfo;
 	char *buf;
-	int buflen = 0;
-	int len;
+	size_t buflen = 0;
+	ssize_t len;
 
 	/* error checking */
 	for (i = 0; i < argc; i++) {
@@ -953,6 +953,11 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 		mnstr_write(s, "[ ", 1, 2);
 		for (i = 0; i < argc; i++) {
 			len = colinfo[i].s(&buf, &buflen, BUNtail(colinfo[i].i, n));
+			if (len < 0) {
+				GDKfree(buf);
+				GDKfree(colinfo);
+				return GDK_FAIL;
+			}
 			if (i > 0)
 				mnstr_write(s, ",\t", 1, 2);
 			mnstr_write(s, buf, 1, len);

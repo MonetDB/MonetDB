@@ -902,14 +902,14 @@ doALGfetch(ptr ret, BAT *b, BUN pos)
 	assert(pos <= BUN_MAX);
 	if (ATOMextern(b->ttype)) {
 		ptr _src = BUNtail(bi,pos);
-		int _len = ATOMlen(b->ttype, _src);
+		size_t _len = ATOMlen(b->ttype, _src);
 		ptr _dst = GDKmalloc(_len);
 		if( _dst == NULL)
 			throw(MAL,"doAlgFetch", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		memcpy(_dst, _src, _len);
 		*(ptr*) ret = _dst;
 	} else {
-		int _s = ATOMsize(ATOMtype(b->ttype));
+		size_t _s = ATOMsize(ATOMtype(b->ttype));
 		if (b->ttype == TYPE_void) {
 			*(oid*) ret = b->tseqbase;
 			if (b->tseqbase != oid_nil)

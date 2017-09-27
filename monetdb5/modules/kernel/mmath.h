@@ -55,11 +55,6 @@ MNisinf(double x)
 # endif
 #endif /* HAVE_FPCLASSIFY */
 
-extern double sqrt(double x);
-extern double sin(double x);
-extern double cos(double x);
-extern double fabs(double x);
-
 #define unopbaseM5_export(X1,X2)\
 mal_export str MATHunary##X1##X2(X2 *res, const X2 *a);
 

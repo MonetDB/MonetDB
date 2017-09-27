@@ -327,8 +327,11 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 		} else {
 			for (m = collist->h; m; m = m->next) {
 				sql_column *c = m->data;
+				sql_exp *e;
 
-				inserts[c->colnr] = exps_bind_column2( r->exps, c->t->base.name, c->base.name);
+				e = exps_bind_column2( r->exps, c->t->base.name, c->base.name);
+				if (e)
+					inserts[c->colnr] = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
 			}
 		}
 	}

@@ -1716,7 +1716,7 @@ STRWChrAt(int *res, const str *arg1, const int *at)
 		return MAL_SUCCEED;
 	}
 	s = UTF8_strtail(s, *at);
-	if (*s == 0) {
+	if (s == NULL || *s == 0) {
 		*res = int_nil;
 		return MAL_SUCCEED;
 	}

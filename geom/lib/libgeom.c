@@ -195,7 +195,7 @@ geomerty_2_geometry(wkb *res, wkb **geom, int *columnType, int *columnSRID, int 
 {
 
 	//char* geomStr;
-	//int len = 0;
+	//size_t len = 0;
 	//fprintf(stderr, "geometry_2_geometry\n");
 	//wkbTOSTR(&geomStr, &len, *geom);
 	if (*geom != NULL)
