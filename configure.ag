@@ -2699,7 +2699,7 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 
 #    checks for library functions
 AS_CASE([$host],
-	[*-darwin1[[0123456]]*], [
+	[*-darwin1[[01234567]]*], [
 		# OSX 10.6 (Snow Leopard) and up somehow makes
 		# configure believe that fdatasync exists, in
 		# reality however, it does not on this platform.
