@@ -676,8 +676,10 @@ read_prop( mvc *sql, sql_exp *exp, char *r, int *pos)
 		r[*pos] = 0;
 		
 		s = mvc_bind_schema(sql, sname);
-		p = exp->p = prop_create(sql->sa, PROP_JOINIDX, exp->p);
-		p->value = mvc_bind_idx(sql, s, iname);
+		if (!find_prop(exp->p, PROP_JOINIDX)) {
+			p = exp->p = prop_create(sql->sa, PROP_JOINIDX, exp->p);
+			p->value = mvc_bind_idx(sql, s, iname);
+		}
 		r[*pos] = old;
 		skipWS(r,pos);
 	}
@@ -986,16 +988,22 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 	if (strncmp(r+*pos, "HASHIDX",  strlen("HASHIDX")) == 0) {
 		(*pos)+= (int) strlen("HASHIDX");
 		exp->p = prop_create(sql->sa, PROP_HASHIDX, exp->p);
+		if (!find_prop(exp->p, PROP_HASHIDX))
+			exp->p = prop_create(sql->sa, PROP_HASHIDX, exp->p);
 		skipWS(r,pos);
 	}
 	if (strncmp(r+*pos, "HASHCOL",  strlen("HASHCOL")) == 0) {
 		(*pos)+= (int) strlen("HASHCOL");
 		exp->p = prop_create(sql->sa, PROP_HASHCOL, exp->p);
+		if (!find_prop(exp->p, PROP_HASHCOL))
+			exp->p = prop_create(sql->sa, PROP_HASHCOL, exp->p);
 		skipWS(r,pos);
 	}
 	if (strncmp(r+*pos, "FETCH",  strlen("FETCH")) == 0) {
 		(*pos)+= (int) strlen("FETCH");
 		exp->p = prop_create(sql->sa, PROP_FETCH, exp->p);
+		if (!find_prop(exp->p, PROP_FETCH))
+			exp->p = prop_create(sql->sa, PROP_FETCH, exp->p);
 		skipWS(r,pos);
 	}
 	read_prop( sql, exp, r, pos);
