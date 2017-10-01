@@ -987,21 +987,18 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 	}
 	if (strncmp(r+*pos, "HASHIDX",  strlen("HASHIDX")) == 0) {
 		(*pos)+= (int) strlen("HASHIDX");
-		exp->p = prop_create(sql->sa, PROP_HASHIDX, exp->p);
 		if (!find_prop(exp->p, PROP_HASHIDX))
 			exp->p = prop_create(sql->sa, PROP_HASHIDX, exp->p);
 		skipWS(r,pos);
 	}
 	if (strncmp(r+*pos, "HASHCOL",  strlen("HASHCOL")) == 0) {
 		(*pos)+= (int) strlen("HASHCOL");
-		exp->p = prop_create(sql->sa, PROP_HASHCOL, exp->p);
 		if (!find_prop(exp->p, PROP_HASHCOL))
 			exp->p = prop_create(sql->sa, PROP_HASHCOL, exp->p);
 		skipWS(r,pos);
 	}
 	if (strncmp(r+*pos, "FETCH",  strlen("FETCH")) == 0) {
 		(*pos)+= (int) strlen("FETCH");
-		exp->p = prop_create(sql->sa, PROP_FETCH, exp->p);
 		if (!find_prop(exp->p, PROP_FETCH))
 			exp->p = prop_create(sql->sa, PROP_FETCH, exp->p);
 		skipWS(r,pos);
