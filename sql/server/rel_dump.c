@@ -998,6 +998,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 		exp->p = prop_create(sql->sa, PROP_FETCH, exp->p);
 		skipWS(r,pos);
 	}
+	read_prop( sql, exp, r, pos);
 
 	/* as alias */
 	if (strncmp(r+*pos, "as", 2) == 0) {
