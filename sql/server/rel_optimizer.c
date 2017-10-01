@@ -5962,13 +5962,7 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 		return rel;
 
 	switch(rel->op) {
-	case op_basetable: {
-		sql_table *t = rel->l;
-
-		if (t && (isMergeTable(t) || isReplicaTable(t))) 
-			return rel;
-	}
-		/* fall through */
+	case op_basetable:
 	case op_table:
 		if (rel->exps) {
 			node *n;
@@ -7679,6 +7673,22 @@ exp_range_overlap( mvc *sql, sql_exp *e, void *min, void *max, atom *emin, atom 
 	return 1;
 }
 
+static sql_rel *
+rel_rename_part(mvc *sql, sql_rel *p, char *tname, sql_table *mt) 
+{
+	node *n, *m;
+
+	assert(list_length(p->exps) >= list_length(mt->columns.set));
+	for( n = p->exps->h, m = mt->columns.set->h; n && m; n = n->next, m = m->next) {
+		sql_exp *ne = n->data;
+		sql_column *c = m->data;
+
+		exp_setname(sql->sa, ne, tname, c->base.name);
+	}
+	return p;
+}
+
+
 /* rewrite merge tables into union of base tables and call optimizer again */
 static sql_rel *
 rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
@@ -7771,8 +7781,9 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 					sql_part *pd = nt->data;
 					sql_table *pt = find_sql_table(t->s, pd->base.name);
 					sql_rel *prel = rel_basetable(sql, pt, tname);
-					node *n, *m;
+					node *n;
 					int skip = 0, j;
+					list *exps = NULL;
 
 					/* do not include empty partitions */
 					if ((nrel || nt->next) && 
@@ -7780,14 +7791,23 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 						continue;
 					}
 
+					prel = rel_rename_part(sql, prel, tname, t);
+
 					MT_lock_set(&prel->exps->ht_lock);
 					prel->exps->ht = NULL;
 					MT_lock_unset(&prel->exps->ht_lock);
-					for (n = rel->exps->h, m = prel->exps->h, j=0; n && m && (!skip || first); n = n->next, m = m->next, j++) {
-						sql_exp *e = n->data;
-						sql_exp *ne = m->data;
+					exps = sa_list(sql->sa);
+					for (n = rel->exps->h, j=0; n && (!skip || first); n = n->next, j++) {
+						sql_exp *e = n->data, *ne = NULL;
 						int i;
 
+						if (e)
+							ne = exps_bind_column2(prel->exps, e->l, e->r);
+						if (!e || !ne) {
+							(*changes)--;
+							assert(0);
+							return rel;
+						}
 						if (pt && isTable(pt) && pt->access == TABLE_READONLY && sel && (nrel || nt->next) && 
 							((first && (i=find_col_exp(cols, e)) != -1) ||
 							(!first && pos[j] > 0))) {
@@ -7823,12 +7843,9 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 						}
 						assert(e->type == e_column);
 						exp_setname(sql->sa, ne, e->l, e->r);
-						/* make sure we don't include additional indices */
-						if (!n->next && m->next) {
-							m->next = NULL;
-							prel->exps->cnt = rel->exps->cnt;
-						}
+						append(exps, ne);
 					}
+					prel->exps = exps;
 					first = 0;
 					if (!skip) {
 						append(tables, prel);
