@@ -5962,7 +5962,13 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 		return rel;
 
 	switch(rel->op) {
-	case op_basetable:
+	case op_basetable: {
+		sql_table *t = rel->l;
+
+		if (t && isReplicaTable(t)) /* TODO fix rewriting in rel_distribute.c */
+			return rel;
+	}
+	/* fall through */
 	case op_table:
 		if (rel->exps) {
 			node *n;
