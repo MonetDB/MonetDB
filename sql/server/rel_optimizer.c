@@ -7685,6 +7685,18 @@ rel_rename_part(mvc *sql, sql_rel *p, char *tname, sql_table *mt)
 
 		exp_setname(sql->sa, ne, tname, c->base.name);
 	}
+	if (n) /* skip TID */
+		n = n->next;
+	if (mt->idxs.set) {
+		/* also possible index name mismatches */
+		for( m = mt->idxs.set->h; n && m; n = n->next, m = m->next) {
+			sql_exp *ne = n->data;
+			sql_idx *i = m->data;
+			char *iname = sa_strconcat( sql->sa, "%", i->base.name);
+
+			exp_setname(sql->sa, ne, tname, iname);
+		}
+	}
 	return p;
 }
 
