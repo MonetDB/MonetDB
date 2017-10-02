@@ -135,46 +135,46 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 93 # length
+% 168 # length
 function user.s16_1():void;
-    X_1:void := querylog.define("explain select * from tmp3rle;", "sequential_pipe", 39:int);
-    X_22 := bat.new(nil:str);
-    X_28 := bat.new(nil:int);
-    X_26 := bat.new(nil:int);
-    X_25 := bat.new(nil:str);
-    X_24 := bat.new(nil:str);
-    X_4 := sql.mvc();
-    C_104:bat[:oid] := sql.tid(X_4, "sys", "tmp3rle");
-    X_5:bat[:oid] := mosaic.decompress(C_104);
-    X_18:bat[:timestamp] := sql.bind(X_4, "sys", "tmp3rle", "t", 0:int);
-    X_20 := mosaic.projection(X_5, X_18);
-    X_15:bat[:flt] := sql.bind(X_4, "sys", "tmp3rle", "f", 0:int);
-    X_17 := mosaic.projection(X_5, X_15);
-    X_12:bat[:bit] := sql.bind(X_4, "sys", "tmp3rle", "b", 0:int);
-    X_14 := mosaic.projection(X_5, X_12);
-    X_8:bat[:int] := sql.bind(X_4, "sys", "tmp3rle", "i", 0:int);
-    X_11 := mosaic.projection(X_5, X_8);
-    X_29 := bat.append(X_22, "sys.tmp3rle");
-    X_31 := bat.append(X_24, "i");
-    X_32 := bat.append(X_25, "int");
-    X_34 := bat.append(X_26, 32:int);
-    X_36 := bat.append(X_28, 0:int);
-    X_37 := bat.append(X_29, "sys.tmp3rle");
-    X_38 := bat.append(X_31, "b");
-    X_39 := bat.append(X_32, "boolean");
-    X_41 := bat.append(X_34, 1:int);
-    X_43 := bat.append(X_36, 0:int);
-    X_45 := bat.append(X_37, "sys.tmp3rle");
-    X_46 := bat.append(X_38, "f");
-    X_47 := bat.append(X_39, "real");
-    X_49 := bat.append(X_41, 24:int);
-    X_51 := bat.append(X_43, 0:int);
-    X_52 := bat.append(X_45, "sys.tmp3rle");
-    X_53 := bat.append(X_46, "t");
-    X_55 := bat.append(X_47, "timestamp");
-    X_57 := bat.append(X_49, 7:int);
-    X_59 := bat.append(X_51, 0:int);
-    sql.resultSet(X_52, X_53, X_55, X_57, X_59, X_11, X_14, X_17, X_20);
+    X_1:void := querylog.define("explain select * from tmp3rle;":str, "sequential_pipe":str, 39:int);
+    X_22:bat[:str] := bat.new(nil:str);
+    X_28:bat[:int] := bat.new(nil:int);
+    X_26:bat[:int] := bat.new(nil:int);
+    X_25:bat[:str] := bat.new(nil:str);
+    X_24:bat[:str] := bat.new(nil:str);
+    X_4:int := sql.mvc();
+    C_104:bat[:oid] := sql.tid(X_4:int, "sys":str, "tmp3rle":str);
+    X_5:bat[:oid] := mosaic.decompress(C_104:bat[:oid]);
+    X_18:bat[:timestamp] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "t":str, 0:int);
+    X_20:bat[:timestamp] := mosaic.projection(X_5:bat[:oid], X_18:bat[:timestamp]);
+    X_15:bat[:flt] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "f":str, 0:int);
+    X_17:bat[:flt] := mosaic.projection(X_5:bat[:oid], X_15:bat[:flt]);
+    X_12:bat[:bit] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "b":str, 0:int);
+    X_14:bat[:bit] := mosaic.projection(X_5:bat[:oid], X_12:bat[:bit]);
+    X_8:bat[:int] := sql.bind(X_4:int, "sys":str, "tmp3rle":str, "i":str, 0:int);
+    X_11:bat[:int] := mosaic.projection(X_5:bat[:oid], X_8:bat[:int]);
+    X_29:bat[:str] := bat.append(X_22:bat[:str], "sys.tmp3rle":str);
+    X_31:bat[:str] := bat.append(X_24:bat[:str], "i":str);
+    X_32:bat[:str] := bat.append(X_25:bat[:str], "int":str);
+    X_34:bat[:int] := bat.append(X_26:bat[:int], 32:int);
+    X_36:bat[:int] := bat.append(X_28:bat[:int], 0:int);
+    X_37:bat[:str] := bat.append(X_29:bat[:str], "sys.tmp3rle":str);
+    X_38:bat[:str] := bat.append(X_31:bat[:str], "b":str);
+    X_39:bat[:str] := bat.append(X_32:bat[:str], "boolean":str);
+    X_41:bat[:int] := bat.append(X_34:bat[:int], 1:int);
+    X_43:bat[:int] := bat.append(X_36:bat[:int], 0:int);
+    X_45:bat[:str] := bat.append(X_37:bat[:str], "sys.tmp3rle":str);
+    X_46:bat[:str] := bat.append(X_38:bat[:str], "f":str);
+    X_47:bat[:str] := bat.append(X_39:bat[:str], "real":str);
+    X_49:bat[:int] := bat.append(X_41:bat[:int], 24:int);
+    X_51:bat[:int] := bat.append(X_43:bat[:int], 0:int);
+    X_52:bat[:str] := bat.append(X_45:bat[:str], "sys.tmp3rle":str);
+    X_53:bat[:str] := bat.append(X_46:bat[:str], "t":str);
+    X_55:bat[:str] := bat.append(X_47:bat[:str], "timestamp":str);
+    X_57:bat[:int] := bat.append(X_49:bat[:int], 7:int);
+    X_59:bat[:int] := bat.append(X_51:bat[:int], 0:int);
+    sql.resultSet(X_52:bat[:str], X_53:bat[:str], X_55:bat[:str], X_57:bat[:int], X_59:bat[:int], X_11:bat[:int], X_14:bat[:bit], X_17:bat[:flt], X_20:bat[:timestamp]);
 end user.s16_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=2 usec 

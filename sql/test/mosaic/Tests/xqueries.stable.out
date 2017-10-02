@@ -58,17 +58,17 @@ Ready.
 % .explain # table_name
 % mal # name
 % clob # type
-% 108 # length
+% 116 # length
 function user.s14_1():void;
-    X_2:void := querylog.define("explain select count(*) from tmp3 where i <4;", "sequential_pipe", 12:int);
-    X_5 := sql.mvc();
-    X_9:bat[:int] := sql.bind(X_5, "sys", "tmp3", "i", 0:int);
-    C_71:bat[:oid] := sql.tid(X_5, "sys", "tmp3");
-    X_6:bat[:oid] := mosaic.decompress(C_71);
-    X_14 := mosaic.thetaselect(X_9, X_6, 4:int, "<");
-    X_16 := mosaic.projection(X_14, X_9);
-    X_17 := aggr.count(X_16);
-    sql.resultSet("sys.L4", "L3", "bigint", 64:int, 0:int, 7:int, X_17);
+    X_2:void := querylog.define("explain select count(*) from tmp3 where i <4;":str, "sequential_pipe":str, 12:int);
+    X_5:int := sql.mvc();
+    X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "tmp3":str, "i":str, 0:int);
+    C_71:bat[:oid] := sql.tid(X_5:int, "sys":str, "tmp3":str);
+    X_6:bat[:oid] := mosaic.decompress(C_71:bat[:oid]);
+    X_14:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 4:int, "<":str);
+    X_16:bat[:int] := mosaic.projection(X_14:bat[:oid], X_9:bat[:int]);
+    X_17:lng := aggr.count(X_16:bat[:int]);
+    sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_17:lng);
 end user.s14_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=2 usec 
@@ -102,17 +102,17 @@ end user.s14_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 109 # length
+% 117 # length
 function user.s16_1():void;
-    X_2:void := querylog.define("explain select count(*) from tmp3 where i = 7;", "sequential_pipe", 12:int);
-    X_5 := sql.mvc();
-    X_9:bat[:int] := sql.bind(X_5, "sys", "tmp3", "i", 0:int);
-    C_70:bat[:oid] := sql.tid(X_5, "sys", "tmp3");
-    X_6:bat[:oid] := mosaic.decompress(C_70);
-    X_14 := mosaic.thetaselect(X_9, X_6, 7:int, "==");
-    X_16 := mosaic.projection(X_14, X_9);
-    X_17 := aggr.count(X_16);
-    sql.resultSet("sys.L4", "L3", "bigint", 64:int, 0:int, 7:int, X_17);
+    X_2:void := querylog.define("explain select count(*) from tmp3 where i = 7;":str, "sequential_pipe":str, 12:int);
+    X_5:int := sql.mvc();
+    X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "tmp3":str, "i":str, 0:int);
+    C_70:bat[:oid] := sql.tid(X_5:int, "sys":str, "tmp3":str);
+    X_6:bat[:oid] := mosaic.decompress(C_70:bat[:oid]);
+    X_14:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 7:int, "==":str);
+    X_16:bat[:int] := mosaic.projection(X_14:bat[:oid], X_9:bat[:int]);
+    X_17:lng := aggr.count(X_16:bat[:int]);
+    sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_17:lng);
 end user.s16_1;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=3 usec 
@@ -172,17 +172,17 @@ end user.s16_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 108 # length
+% 116 # length
 function user.s32_1():void;
-    X_2:void := querylog.define("explain select count(*) from tmp3 where i <4;", "sequential_pipe", 12:int);
-    X_5 := sql.mvc();
-    X_9:bat[:int] := sql.bind(X_5, "sys", "tmp3", "i", 0:int);
-    C_71:bat[:oid] := sql.tid(X_5, "sys", "tmp3");
-    X_6:bat[:oid] := mosaic.decompress(C_71);
-    X_14 := mosaic.thetaselect(X_9, X_6, 4:int, "<");
-    X_16 := mosaic.projection(X_14, X_9);
-    X_17 := aggr.count(X_16);
-    sql.resultSet("sys.L4", "L3", "bigint", 64:int, 0:int, 7:int, X_17);
+    X_2:void := querylog.define("explain select count(*) from tmp3 where i <4;":str, "sequential_pipe":str, 12:int);
+    X_5:int := sql.mvc();
+    X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "tmp3":str, "i":str, 0:int);
+    C_71:bat[:oid] := sql.tid(X_5:int, "sys":str, "tmp3":str);
+    X_6:bat[:oid] := mosaic.decompress(C_71:bat[:oid]);
+    X_14:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 4:int, "<":str);
+    X_16:bat[:int] := mosaic.projection(X_14:bat[:oid], X_9:bat[:int]);
+    X_17:lng := aggr.count(X_16:bat[:int]);
+    sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_17:lng);
 end user.s32_1;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=2 usec 
@@ -215,17 +215,17 @@ end user.s32_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 109 # length
+% 117 # length
 function user.s34_1():void;
-    X_2:void := querylog.define("explain select count(*) from tmp3 where i = 7;", "sequential_pipe", 12:int);
-    X_5 := sql.mvc();
-    X_9:bat[:int] := sql.bind(X_5, "sys", "tmp3", "i", 0:int);
-    C_70:bat[:oid] := sql.tid(X_5, "sys", "tmp3");
-    X_6:bat[:oid] := mosaic.decompress(C_70);
-    X_14 := mosaic.thetaselect(X_9, X_6, 7:int, "==");
-    X_16 := mosaic.projection(X_14, X_9);
-    X_17 := aggr.count(X_16);
-    sql.resultSet("sys.L4", "L3", "bigint", 64:int, 0:int, 7:int, X_17);
+    X_2:void := querylog.define("explain select count(*) from tmp3 where i = 7;":str, "sequential_pipe":str, 12:int);
+    X_5:int := sql.mvc();
+    X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "tmp3":str, "i":str, 0:int);
+    C_70:bat[:oid] := sql.tid(X_5:int, "sys":str, "tmp3":str);
+    X_6:bat[:oid] := mosaic.decompress(C_70:bat[:oid]);
+    X_14:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 7:int, "==":str);
+    X_16:bat[:int] := mosaic.projection(X_14:bat[:oid], X_9:bat[:int]);
+    X_17:lng := aggr.count(X_16:bat[:int]);
+    sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_17:lng);
 end user.s34_1;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=3 usec 
@@ -273,17 +273,17 @@ end user.s34_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 108 # length
+% 116 # length
 function user.s46_1():void;
-    X_2:void := querylog.define("explain select count(*) from tmp3 where i <4;", "sequential_pipe", 12:int);
-    X_5 := sql.mvc();
-    X_9:bat[:int] := sql.bind(X_5, "sys", "tmp3", "i", 0:int);
-    C_71:bat[:oid] := sql.tid(X_5, "sys", "tmp3");
-    X_6:bat[:oid] := mosaic.decompress(C_71);
-    X_14 := mosaic.thetaselect(X_9, X_6, 4:int, "<");
-    X_16 := mosaic.projection(X_14, X_9);
-    X_17 := aggr.count(X_16);
-    sql.resultSet("sys.L4", "L3", "bigint", 64:int, 0:int, 7:int, X_17);
+    X_2:void := querylog.define("explain select count(*) from tmp3 where i <4;":str, "sequential_pipe":str, 12:int);
+    X_5:int := sql.mvc();
+    X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "tmp3":str, "i":str, 0:int);
+    C_71:bat[:oid] := sql.tid(X_5:int, "sys":str, "tmp3":str);
+    X_6:bat[:oid] := mosaic.decompress(C_71:bat[:oid]);
+    X_14:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 4:int, "<":str);
+    X_16:bat[:int] := mosaic.projection(X_14:bat[:oid], X_9:bat[:int]);
+    X_17:lng := aggr.count(X_16:bat[:int]);
+    sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_17:lng);
 end user.s46_1;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=2 usec 
@@ -316,17 +316,17 @@ end user.s46_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 109 # length
+% 117 # length
 function user.s48_1():void;
-    X_2:void := querylog.define("explain select count(*) from tmp3 where i = 7;", "sequential_pipe", 12:int);
-    X_5 := sql.mvc();
-    X_9:bat[:int] := sql.bind(X_5, "sys", "tmp3", "i", 0:int);
-    C_70:bat[:oid] := sql.tid(X_5, "sys", "tmp3");
-    X_6:bat[:oid] := mosaic.decompress(C_70);
-    X_14 := mosaic.thetaselect(X_9, X_6, 7:int, "==");
-    X_16 := mosaic.projection(X_14, X_9);
-    X_17 := aggr.count(X_16);
-    sql.resultSet("sys.L4", "L3", "bigint", 64:int, 0:int, 7:int, X_17);
+    X_2:void := querylog.define("explain select count(*) from tmp3 where i = 7;":str, "sequential_pipe":str, 12:int);
+    X_5:int := sql.mvc();
+    X_9:bat[:int] := sql.bind(X_5:int, "sys":str, "tmp3":str, "i":str, 0:int);
+    C_70:bat[:oid] := sql.tid(X_5:int, "sys":str, "tmp3":str);
+    X_6:bat[:oid] := mosaic.decompress(C_70:bat[:oid]);
+    X_14:bat[:oid] := mosaic.thetaselect(X_9:bat[:int], X_6:bat[:oid], 7:int, "==":str);
+    X_16:bat[:int] := mosaic.projection(X_14:bat[:oid], X_9:bat[:int]);
+    X_17:lng := aggr.count(X_16:bat[:int]);
+    sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_17:lng);
 end user.s48_1;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=1 usec 

@@ -35,7 +35,8 @@ returns table (
 	sorted boolean,
 	revsorted boolean,
 	"unique" boolean,
-	orderidx bigint
+	orderidx bigint,
+	compressed boolean
 )
 external name sql."storage";
 
@@ -60,7 +61,8 @@ returns table (
 	sorted boolean,
 	revsorted boolean,
 	"unique" boolean,
-	orderidx bigint
+	orderidx bigint,
+	compressed boolean
 )
 external name sql."storage";
 
@@ -82,7 +84,8 @@ returns table (
 	sorted boolean,
 	revsorted boolean,
 	"unique" boolean,
-	orderidx bigint
+	orderidx bigint,
+	compressed boolean
 )
 external name sql."storage";
 
@@ -104,7 +107,8 @@ returns table (
 	sorted boolean,
 	revsorted boolean,
 	"unique" boolean,
-	orderidx bigint
+	orderidx bigint,
+	compressed boolean
 )
 external name sql."storage";
 
@@ -124,7 +128,8 @@ create table sys.storagemodelinput(
 	"sorted" boolean,	-- if set there is no need for an index
 	revsorted boolean,
 	"unique" boolean,
-	"orderidx" bigint	-- an ordered oid index
+	"orderidx" bigint,
+	compressed boolean
 );
 -- this table can be adjusted to reflect the anticipated final database size
 
@@ -134,7 +139,7 @@ begin
 	delete from sys.storagemodelinput;
 
 	insert into sys.storagemodelinput
-	select X."schema", X."table", X."column", X."type", X.typewidth, X.count, 0, X.typewidth, false, X.sorted, X.revsorted, X."unique", X.orderidx from sys."storage"() X;
+	select X."schema", X."table", X."column", X."type", X.typewidth, X.count, 0, X.typewidth, false, X.sorted, X.revsorted, X."unique", X.orderidx, X.compressed from sys."storage"() X;
 
 	update sys.storagemodelinput
 	set reference = true
@@ -236,14 +241,15 @@ returns table (
 	sorted boolean,
 	revsorted boolean,
 	"unique" boolean,
-	orderidx bigint)
+	orderidx bigint,
+	compressed boolean)
 begin
 	return select I."schema", I."table", I."column", I."type", I."count",
 	columnsize(I."type", I.count, I."distinct"),
 	heapsize(I."type", I."distinct", I."atomwidth"),
 	hashsize(I."reference", I."count"),
 	imprintsize(I."count",I."type"),
-	I.sorted, I.revsorted, I."unique", I.orderidx
+	I.sorted, I.revsorted, I."unique", I.orderidx, I.compressed
 	from sys.storagemodelinput I;
 end;
 

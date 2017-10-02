@@ -30,6 +30,7 @@ stderr of test 'mix` in directory 'sql/test/mosaic` itself:
 MAPI  = (monetdb) /var/tmp/mtest-24824/.s.monetdb.37469
 QUERY = select * from mosaic_analysis('sys','mix0','i') order by factor desc;
 ERROR = !SELECT: no such operator 'mosaic_analysis'
+CODE  = 42000
 
 # 21:39:24 >  
 # 21:39:24 >  "Done."
