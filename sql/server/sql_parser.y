@@ -337,6 +337,7 @@ int yydebug=1;
 	XML_namespace_prefix
 	XML_PI_target
 	function_body
+	cq_alias
 
 %type <l>
 	passwd_schema
@@ -2157,9 +2158,9 @@ heartbeat_set:
 	;
 
 begin_at_set:
-	  /* empty */      { $$ = NULL; } /* CQ not delayed, so starts now */
-	| BEGIN literal    { $$ = $2; }   /* TODO 	| BEGIN query_expression { $$ = $2; } */
-	| NO_BEGIN         { $$ = NULL; }
+	  /* empty */   { $$ = NULL; } /* CQ not delayed, so starts now */
+	| BEGIN literal { $$ = $2; }
+	| NO_BEGIN      { $$ = NULL; }
 	;
 
 cycles_set:
@@ -2168,8 +2169,13 @@ cycles_set:
 	| NO_CYCLES     { $$ = DEFAULT_CP_CYCLES; }
 	;
 
+cq_alias:
+	  /* empty */ { $$ = NULL; } /* use the UDF name as the alias of the CQ */
+	| AS ident    { $$ = $2; }
+	;
+
 continuous_query_statement:
-	START_CONTINUOUS database_object func_ref WITH heartbeat_set begin_at_set cycles_set
+	START_CONTINUOUS database_object func_ref WITH heartbeat_set begin_at_set cycles_set cq_alias
 		{ dlist *l = L();
 		  append_int( l, mod_start_continuous);
 		  append_int( l, $2);
@@ -2177,8 +2183,9 @@ continuous_query_statement:
 		  append_lng( l, $5);
 		  append_symbol( l, $6);
 		  append_int( l, $7);
-		  $$ = _symbol_create_list( SQL_SINGLE_CONTINUOUS_QUERY, l ); }
-	| START_CONTINUOUS database_object func_ref
+		  append_string( l, $8);
+		  $$ = _symbol_create_list( SQL_START_CONTINUOUS_QUERY, l ); }
+	| START_CONTINUOUS database_object func_ref cq_alias
 		{ dlist *l = L();
 		  append_int( l, mod_start_continuous);
 		  append_int( l, $2);
@@ -2186,34 +2193,35 @@ continuous_query_statement:
 		  append_lng( l, DEFAULT_CP_HEARTBEAT);
 		  append_symbol( l, NULL);
 		  append_int( l, DEFAULT_CP_CYCLES);
-		  $$ = _symbol_create_list( SQL_SINGLE_CONTINUOUS_QUERY, l ); }
-	| STOP_CONTINUOUS database_object func_ref
+		  append_string( l, $4);
+		  $$ = _symbol_create_list( SQL_START_CONTINUOUS_QUERY, l ); }
+	| STOP_CONTINUOUS database_object ident
 		{ dlist *l = L();
 		  append_int( l, mod_stop_continuous);
 		  append_int( l, $2);
-		  append_symbol( l, $3);
-		  $$ = _symbol_create_list( SQL_SINGLE_CONTINUOUS_QUERY, l ); }
-	| PAUSE_CONTINUOUS database_object func_ref
+		  append_string( l, $3);
+		  $$ = _symbol_create_list( SQL_CHANGE_CONTINUOUS_QUERY, l ); }
+	| PAUSE_CONTINUOUS database_object ident
 		{ dlist *l = L();
 		  append_int( l, mod_pause_continuous);
 		  append_int( l, $2);
-		  append_symbol( l, $3);
-		  $$ = _symbol_create_list( SQL_SINGLE_CONTINUOUS_QUERY, l ); }
-	| RESUME_CONTINUOUS database_object func_ref WITH heartbeat_set begin_at_set cycles_set
+		  append_string( l, $3);
+		  $$ = _symbol_create_list( SQL_CHANGE_CONTINUOUS_QUERY, l ); }
+	| RESUME_CONTINUOUS database_object ident WITH heartbeat_set begin_at_set cycles_set
 		{ dlist *l = L();
 		  append_int( l, mod_resume_continuous);
 		  append_int( l, $2);
-		  append_symbol( l, $3);
+		  append_string( l, $3);
 		  append_lng( l, $5);
 		  append_symbol( l, $6);
 		  append_int( l, $7);
-		  $$ = _symbol_create_list( SQL_SINGLE_CONTINUOUS_QUERY, l ); }
-	| RESUME_CONTINUOUS database_object func_ref
+		  $$ = _symbol_create_list( SQL_CHANGE_CONTINUOUS_QUERY, l ); }
+	| RESUME_CONTINUOUS database_object ident
 		{ dlist *l = L();
 		  append_int( l, mod_resume_continuous_no_alter);
 		  append_int( l, $2);
-		  append_symbol( l, $3);
-		  $$ = _symbol_create_list( SQL_SINGLE_CONTINUOUS_QUERY, l ); }
+		  append_string( l, $3);
+		  $$ = _symbol_create_list( SQL_CHANGE_CONTINUOUS_QUERY, l ); }
 	| STOP ALL CONTINUOUS
 		{ $$ = _symbol_create_int( SQL_ALL_CONTINUOUS_QUERIES, mod_stop_all_continuous ); }
 	| PAUSE ALL CONTINUOUS

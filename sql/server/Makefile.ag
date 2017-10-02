@@ -57,5 +57,6 @@ lib_sqlserver = {
 		rel_updates.h rel_psm.h rel_xml.h sql_atom.h sql_datetime.h \
 		sql_decimal.h sql_env.h sql_mvc.h sql_parser.h \
 		sql_privileges.h sql_qc.h sql_scan.h \
-		sql_semantic.h sql_symbol.h
+		sql_semantic.h sql_symbol.h \
+		sql_timestamps.c sql_timestamps.h
 }

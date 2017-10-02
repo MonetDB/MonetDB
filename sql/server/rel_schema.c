@@ -17,6 +17,7 @@
 #include "rel_psm.h"
 #include "sql_parser.h"
 #include "sql_privileges.h"
+#include "sql_timestamps.h"
 
 #define qname_index(qname) qname_table(qname)
 #define qname_func(qname) qname_table(qname)
@@ -1179,14 +1180,62 @@ rel_drop_type(mvc *sql, dlist *qname, int drop_action)
 }
 
 static sql_rel *
-rel_continuous_queries(mvc *sql, int action) {
-	sql_rel *rel = rel_create(sql->sa);
-	list *exps = new_exp_list(sql->sa);
-	append(exps, exp_atom_int(sql->sa, action));
+rel_single_continuous_query(mvc *sql, dlist *l) {
+	sql_rel *rel;
+	list *exps;
+	int action = 0;
+	AtomNode* an;
+	lng start_at_parsed = 0;
+	str msg = NULL;
+
+	action |= l->h->data.i_val; /* pause, resume or stop query? */
+	action |= l->h->next->data.i_val; /* procedure or function? */
+
+	if(action & mod_resume_continuous) {
+		an = (AtomNode*) l->h->next->next->next->next->data.sym;
+		if(an){
+			if((msg = convert_atom_into_unix_timestamp(an->a, &start_at_parsed)) != NULL)
+				return sql_error(sql, 02, "%s", msg);
+		}
+	}
+
+	rel = rel_create(sql->sa);
+	exps = new_exp_list(sql->sa);
+
+	if(action & mod_resume_continuous) {
+		append(exps, exp_atom_clob(sql->sa, l->h->next->next->next->next->next->next->data.sval)); //alias
+		append(exps, exp_atom_int(sql->sa, action));
+		append(exps, exp_atom_lng(sql->sa, l->h->next->next->next->data.l_val)); //heartbeats
+		append(exps, exp_atom_lng(sql->sa, start_at_parsed)); //start at value
+		append(exps, exp_atom_int(sql->sa, l->h->next->next->next->next->next->data.i_val)); //cycles
+	} else {
+		append(exps, exp_atom_clob(sql->sa, l->h->next->next->data.sval));
+		append(exps, exp_atom_int(sql->sa, action));
+		append(exps, exp_atom_lng(sql->sa, 0));
+		append(exps, exp_atom_lng(sql->sa, 0));
+		append(exps, exp_atom_int(sql->sa, 0));
+	}
+
 	rel->l = NULL;
 	rel->r = NULL;
 	rel->op = op_ddl;
-	rel->flag = DDL_CHANGE_CP;
+	rel->flag = DDL_CHANGE_SINGLE_CP;
+	rel->exps = exps;
+	rel->card = 0;
+	rel->nrcols = 0;
+	return rel;
+}
+
+static sql_rel *
+rel_all_continuous_queries(mvc *sql, int action) {
+	sql_rel *rel = rel_create(sql->sa);
+	list *exps = new_exp_list(sql->sa);
+	append(exps, exp_atom_int(sql->sa, action));
+
+	rel->l = NULL;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = DDL_CHANGE_ALL_CP;
 	rel->exps = exps;
 	rel->card = 0;
 	rel->nrcols = 0;
@@ -2244,9 +2293,12 @@ rel_schemas(mvc *sql, symbol *s)
 		dlist *l = s->data.lval;
 		ret = rel_drop_type(sql, l->h->data.lval, l->h->next->data.i_val);
 	} 	break;
-	case SQL_ALL_CONTINUOUS_QUERIES:
-		ret = rel_continuous_queries(sql, s->data.i_val);
-		break;
+	case SQL_CHANGE_CONTINUOUS_QUERY: {
+		ret = rel_single_continuous_query(sql, s->data.lval);
+	} 	break;
+	case SQL_ALL_CONTINUOUS_QUERIES: {
+		ret = rel_all_continuous_queries(sql, s->data.i_val);
+	} 	break;
 	default:
 		return sql_error(sql, 01, SQLSTATE(M0M03) "Schema statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
 	}

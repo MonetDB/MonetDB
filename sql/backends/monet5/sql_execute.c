@@ -336,7 +336,8 @@ SQLrun(Client c, backend *be, mvc *m)
 			//set the cq parameters
 			m->continuous = be->q->continuous;
 			m->heartbeats = be->q->heartbeats;
-			m->startat_atom = be->q->startat_atom;
+			m->startat = be->q->startat;
+			m->cq_alias = be->q->cq_alias;
 			m->cycles = be->q->cycles;
 			break;
 		}
@@ -369,33 +370,19 @@ SQLrun(Client c, backend *be, mvc *m)
 		SQLsetTrace(c,mb);
 		msg = runMAL(c, mb, 0, 0);
 		stopTrace(0);
-	} else if((m->continuous & ~mod_creating_udf) && !(m->continuous & mod_creating_udf)) {
-		if(m->continuous & mod_start_continuous) {
-			//mnstr_printf(c->fdout, "#Start continuous query\n");
-			// hand over the wrapper command to the scheduler
-			msg = CQregister(c,mb, 0,0);
-		} else if(m->continuous & mod_stop_continuous) {
-			//mnstr_printf(c->fdout, "#Stop continuous query\n");
-			msg = CQderegister(c,mb, 0,0);
-		} else if(m->continuous & mod_pause_continuous) {
-			//mnstr_printf(c->fdout, "#Pause continuous query\n");
-			msg = CQpause(c,mb, 0,0);
-		} else if(m->continuous & mod_resume_continuous) {
-			//mnstr_printf(c->fdout, "#Resume continuous query with changes\n");
-			msg = CQresume(c,mb, 0,0);
-		} else if(m->continuous & mod_resume_continuous_no_alter) {
-			//mnstr_printf(c->fdout, "#Resume continuous query with no changes\n");
-			msg = CQresumeNoAlter(c,mb, 0,0);
-		} else {
-			assert(0);
-		}
+	} else if((m->continuous & mod_start_continuous) && !(m->continuous & mod_creating_udf)) {
+		// hand over the wrapper command to the scheduler
+		msg = CQregister(c,mb, 0,0);
 	} else {
 		m->continuous &= ~mod_creating_udf; //important disable the check
 		msg = runMAL(c, mb, 0, 0);
 	}
 	m->continuous = 0;
+	if(m->cq_alias)
+		GDKfree(m->cq_alias);
+	m->cq_alias = NULL;
 	m->heartbeats = DEFAULT_CP_HEARTBEAT;
-	m->startat_atom = NULL;
+	m->startat = 0;
 	m->cycles = DEFAULT_CP_CYCLES;
 
 	// release the resources

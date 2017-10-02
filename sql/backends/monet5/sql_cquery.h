@@ -48,7 +48,7 @@ typedef struct {
 
 	int status;     /* query status .../wait/running/paused */
 	int enabled;
-	str stmt;		/* actual statement call */
+	str alias;		/* the created alias for the continuous query */
 
 	int baskets[MAXSTREAMS];	/* reference into the registered basket tables catalog */
 	int inout[MAXSTREAMS]; /* how the stream tables are used, needed for locking */
@@ -70,25 +70,27 @@ sql5_export int CQlocateQueryExternal(str modname, str fcnname);
 sql5_export int CQlocateBasketExternal(str schname, str tblname);
 
 sql5_export str CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str CQprocedure(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str CQresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str CQresumeNoAlter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str CQresumeAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str CQpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str CQpauseAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str CQderegister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str CQderegisterAll(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
 sql5_export str CQwait(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQbeginAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQcycles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQheartbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str CQerror(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
+sql5_export str CQerror(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQshow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQstatus(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQlog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
+sql5_export str CQresume(str alias, int which, int with_alter, lng heartbeats, lng startat, int cycles);
+sql5_export str CQpause(str alias, int which);
+sql5_export str CQderegister(str alias, int which);
+
+sql5_export str CQpauseAll(void);
+sql5_export str CQresumeAll(void);
+sql5_export str CQderegisterAll(void);
+
 sql5_export str CQdump(void *ret);
 sql5_export void CQreset(void);
 sql5_export str CQprelude(void *ret);
+
 #endif

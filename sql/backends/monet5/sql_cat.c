@@ -427,17 +427,33 @@ drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
 }
 
 static str
-change_cp(Client cntxt, int action)
+change_single_cp(str alias, int action, lng heartbeat, lng startat, int cycles)
+{
+	if(action & mod_resume_continuous) {
+		return CQresume(alias, action, 1, heartbeat, startat, cycles);
+	} else if(action & mod_resume_continuous_no_alter) {
+		return CQresume(alias, action, 0, 0, 0, 0);
+	} else if(action & mod_pause_continuous) {
+		return CQpause(alias, action);
+	} else if(action & mod_stop_continuous) {
+		return CQderegister(alias, action);
+	} else {
+		throw(SQL,"sql.change_single_cp", SQLSTATE(342000) "ALL CONTINUOUS: Unknown option");
+	}
+}
+
+static str
+change_all_cp(int action)
 {
 	switch(action) {
-		case mod_stop_all_continuous:
-			return CQderegisterAll(cntxt, NULL, 0, 0);
 		case mod_pause_all_continuous:
-			return CQpauseAll(cntxt, NULL, 0, 0);
+			return CQpauseAll();
 		case mod_resume_all_continuous:
-			return CQresumeAll(cntxt, NULL, 0, 0);
+			return CQresumeAll();
+		case mod_stop_all_continuous:
+			return CQderegisterAll();
 		default:
-			throw(SQL,"sql.change_cp", SQLSTATE(342000) "ALL CONTINUOUS: Unknown option");
+			throw(SQL,"sql.change_all_cp", SQLSTATE(342000) "ALL CONTINUOUS: Unknown option");
 	}
 }
 
@@ -1284,15 +1300,30 @@ SQLdrop_index(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = drop_index(cntxt, sql, sname, iname);
 	return msg;
 }
+//alias:str, action:int, heartbeats:lng, startat:lng, cycles:int)
+str
+SQLchange_single_cp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{	mvc *sql = NULL;
+	str msg;
+	str alias = *getArgReference_str(stk, pci, 1);
+	int action = *getArgReference_int(stk, pci, 2);
+	lng heartbeat = *getArgReference_lng(stk, pci, 3);
+	lng startat = *getArgReference_lng(stk, pci, 4);
+	int cycles = *getArgReference_int(stk, pci, 5);
+
+	initcontext();
+	msg = change_single_cp(alias, action, heartbeat, startat, cycles);
+	return msg;
+}
 
 str
-SQLchange_cp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SQLchange_all_cp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
 	int action = *getArgReference_int(stk, pci, 1);
 
 	initcontext();
-	msg = change_cp(cntxt, action);
+	msg = change_all_cp(action);
 	return msg;
 }
 

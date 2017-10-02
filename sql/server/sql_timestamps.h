@@ -11,7 +11,9 @@
 
 #include "monetdb_config.h"
 #include "sql.h"
+#include "sql_atom.h"
+#include "gdk.h"
 
-sql5_export str convert_atom_into_unix_timestamp(atom *a, lng* res);
+extern str convert_atom_into_unix_timestamp(atom *a, lng* res);
 
 #endif //SQL_TIMESTAMPS_H

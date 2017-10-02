@@ -206,9 +206,13 @@ pattern drop_index( sname:str, iname:str, action:int)
 address WLCgeneric
 comment "Catalog operation drop_index";
 
-pattern change_cp( action:int)
+pattern change_single_cp( alias:str, action:int, heartbeats:lng, startat:lng, cycles:int)
 address WLCgeneric
-comment "Pause, resume or stop all continuous queries";
+comment "Catalog operation change_single_cp";
+
+pattern change_all_cp( action:int)
+address WLCgeneric
+comment "Catalog operation change_all_cp";
 
 pattern drop_function( sname:str, fname:str, fid:int, type:int, action:int)
 address WLCgeneric

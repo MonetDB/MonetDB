@@ -1169,8 +1169,9 @@ SQLparser(Client c)
 								  m->emode == m_prepare ? Q_PREPARE : m->type,	/* the type of the statement */
 								  escaped_q,
 								  m->continuous,
+								  m->cq_alias,
 								  m->heartbeats,
-								  (AtomNode*) m->startat_atom,
+								  m->startat,
 								  m->cycles);
 			}
 			GDKfree(q);

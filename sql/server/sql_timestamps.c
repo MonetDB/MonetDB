@@ -14,6 +14,8 @@
 
 #include "sql_timestamps.h"
 #include "sql.h"
+#include "sql_atom.h"
+#include "gdk.h"
 #include "mtime.h"
 
 static int GetSQLTypeFromAtom(sql_subtype *sql_subtype)

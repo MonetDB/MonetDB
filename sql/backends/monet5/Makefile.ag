@@ -47,7 +47,6 @@ lib__sql = {
 		sql_orderidx.c sql_orderidx.h \
 		sql_basket.c sql_basket.h \
 		sql_cquery.c sql_cquery.h \
-		sql_timestamps.c sql_timestamps.h \
 		wlr.c wlr.h \
 		sql_rank.c sql_rank.h
 	LIBS = ../../server/libsqlserver \

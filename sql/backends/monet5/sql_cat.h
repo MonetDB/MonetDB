@@ -56,7 +56,8 @@ sql5_export str SQLrename_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 sql5_export str SQLcreate_role(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;
 sql5_export str SQLdrop_role(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;
 sql5_export str SQLdrop_index(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;
-sql5_export str SQLchange_cp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;
+sql5_export str SQLchange_single_cp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLchange_all_cp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLdrop_function(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;
 sql5_export str SQLcreate_function(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;
 sql5_export str SQLcreate_trigger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;

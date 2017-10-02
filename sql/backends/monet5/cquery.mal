@@ -22,30 +22,6 @@ address CQregister
 comment "Add a continuous SQL procedure to the Petri-net scheduler. It will analyse
 the MAL block to determine the input/output dependencies and firing conditions.";
 
-pattern resume(mod:str, fcn:str)
-address CQresume
-comment "Activate a specific continuous query with no changes";
-
-pattern resume()
-address CQresumeAll
-comment "Activate all continuous queries";
-
-pattern pause(mod:str, fcn:str)
-address CQpause
-comment "Deactivate a continuous query";
-
-pattern pause()
-address CQpauseAll
-comment "Deactivate all continuous queries";
-
-pattern deregister(mod:str, fcn:str)
-address CQderegister
-comment "Remove a continuous query";
-
-pattern deregister()
-address CQderegisterAll
-comment "Remove all continuous queries";
-
 pattern wait(cnt:int)
 address CQwait
 comment "Sleep for some time";

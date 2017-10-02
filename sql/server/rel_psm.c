@@ -15,6 +15,7 @@
 #include "rel_exp.h"
 #include "rel_updates.h"
 #include "sql_privileges.h"
+#include "sql_timestamps.h"
 
 static list *sequential_block(mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk, char *opt_name, int is_func);
 
@@ -637,17 +638,24 @@ sequential_block (mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk,
 			sql->continuous = 0;
 			res = rel_psm_call(sql, s->data.sym, 0);
 			break;
-		case SQL_SINGLE_CONTINUOUS_QUERY: {
+		case SQL_START_CONTINUOUS_QUERY: {
 			dlist *l = s->data.lval;
-			sql->continuous |= l->h->data.i_val; /*start, pause, resume or stop query? */
-			sql->continuous |= l->h->next->data.i_val; /* procedure or function? */
-			if((sql->continuous & mod_start_continuous) || (sql->continuous & mod_resume_continuous)) {
-				sql->heartbeats = l->h->next->next->next->data.l_val;
-				sql->startat_atom = l->h->next->next->next->next->data.sym;
-				sql->cycles = l->h->next->next->next->next->next->data.i_val;
+			AtomNode* an = NULL;
+			lng start_at = 0;
+			str msg = NULL;
+
+			an = (AtomNode*) l->h->next->next->next->next->data.sym;
+			if(an && (msg = convert_atom_into_unix_timestamp(an->a, &start_at)) != NULL){
+				return sql_error(sql, 01, "%s", msg);
 			}
+
+			sql->continuous |= l->h->data.i_val; /* start query */
+			sql->heartbeats = l->h->next->next->next->data.l_val;
+			sql->startat = start_at;
+			sql->cycles = l->h->next->next->next->next->next->data.i_val;
+			sql->cq_alias = l->h->next->next->next->next->next->next->data.sval;
 			res = rel_psm_call(sql, l->h->next->next->data.sym, l->h->next->data.i_val);
-		}	break;
+		} break;
 		case SQL_RETURN:
 		case SQL_YIELD:
 			/*If it is not a function it cannot have a return statement*/
@@ -1455,15 +1463,22 @@ rel_psm(mvc *sql, symbol *s)
 		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, s->data.sym, 0));
 		sql->type = Q_UPDATE;
 		break;
-	case SQL_SINGLE_CONTINUOUS_QUERY: {
+	case SQL_START_CONTINUOUS_QUERY: {
 		dlist *l = s->data.lval;
-		sql->continuous |= l->h->data.i_val; /*start, pause, resume or stop query? */
-		sql->continuous |= l->h->next->data.i_val; /* procedure or function? */
-		if((sql->continuous & mod_start_continuous) || (sql->continuous & mod_resume_continuous)) {
-			sql->heartbeats = l->h->next->next->next->data.l_val;
-			sql->startat_atom = l->h->next->next->next->next->data.sym;
-			sql->cycles = l->h->next->next->next->next->next->data.i_val;
+		AtomNode* an = NULL;
+		lng start_at = 0;
+		str msg = NULL;
+
+		an = (AtomNode*) l->h->next->next->next->next->data.sym;
+		if(an && (msg = convert_atom_into_unix_timestamp(an->a, &start_at)) != NULL){
+			return sql_error(sql, 01, "%s", msg);
 		}
+
+		sql->continuous |= l->h->data.i_val; /* start query */
+		sql->heartbeats = l->h->next->next->next->data.l_val;
+		sql->startat = start_at;
+		sql->cycles = l->h->next->next->next->next->next->data.i_val;
+		sql->cq_alias = l->h->next->next->next->next->next->next->data.sval;
 		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, l->h->next->next->data.sym, l->h->next->data.i_val));
 		sql->type = Q_UPDATE;
 	}	break;
