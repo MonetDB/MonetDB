@@ -32,7 +32,7 @@ insert into testing11c values (3);
 
 call cquery.wait(1000);
 
-stop continuous sys.cq_query11b();
+stop continuous cq_query11b;
 
 select count(*) from results11a; --should be 1
 select count(*) from results11b; --should be 2

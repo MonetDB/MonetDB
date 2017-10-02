@@ -8,7 +8,7 @@ end;
 
 create procedure cq_query13b()
 begin
-	stop continuous sys.cq_query13a();
+	stop continuous cq_query13a;
 end;
 
 start continuous sys.cq_query13a() with heartbeat 3000;

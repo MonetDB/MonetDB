@@ -9,13 +9,13 @@ begin
 end;
 
 start continuous sys.cq_query12() with cycles 1;
-stop continuous sys.cq_query12();
+stop continuous cq_query12;
 
 start continuous sys.cq_query12() with cycles 12;
-stop continuous sys.cq_query12();
+stop continuous cq_query12;
 
 start continuous sys.cq_query12();
-stop continuous sys.cq_query12();
+stop continuous cq_query12;
 
 select count(*) from results12;
 

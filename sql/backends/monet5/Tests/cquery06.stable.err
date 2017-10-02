@@ -23,13 +23,13 @@ stderr of test 'cquery06` in directory 'sql/backends/monet5` itself:
 # cmdline opt 	gdk_dbpath = /home/ferreira/MonetDB-trails/BUILD/var/MonetDB/mTests_sql_backends_monet5
 # cmdline opt 	gdk_debug = 536870922
 
-# 10:26:37 >  
-# 10:26:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24395" "--port=39287"
-# 10:26:37 >  
+# 16:51:14 >  
+# 16:51:14 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5601" "--port=32593"
+# 16:51:14 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-24395/.s.monetdb.39287
-QUERY = pause continuous cq_basic06(); --error
-ERROR = !The continuous procedure user.cq_basic06(); has not yet started
+MAPI  = (monetdb) /var/tmp/mtest-5601/.s.monetdb.32593
+QUERY = pause continuous cq_basic06; --error
+ERROR = !The continuous procedure cq_basic06 has not yet started
 CODE  = 42000
 
 

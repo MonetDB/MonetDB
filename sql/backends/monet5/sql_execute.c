@@ -337,7 +337,13 @@ SQLrun(Client c, backend *be, mvc *m)
 			m->continuous = be->q->continuous;
 			m->heartbeats = be->q->heartbeats;
 			m->startat = be->q->startat;
-			m->cq_alias = be->q->cq_alias;
+			if(be->q->cq_alias) {
+				m->cq_alias = GDKstrdup(be->q->cq_alias);
+				if(!m->cq_alias)
+					throw(MAL, "sql.prepare", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
+			else
+				m->cq_alias = NULL;
 			m->cycles = be->q->cycles;
 			break;
 		}

@@ -72,6 +72,7 @@ cq_delete(int clientid, cq *q)
 
 	if(q->cq_alias)
 		_DELETE(q->cq_alias);
+	q->cq_alias = NULL;
 	_DELETE(q);
 }
 

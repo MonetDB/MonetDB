@@ -21,7 +21,7 @@ start continuous sys.cq_collector() with cycles 3;
 
 call cquery.wait(4000);
 
-pause continuous sys.cq_collector();
+pause continuous cq_collector;
 
 select * from tmp_aggregate;
 

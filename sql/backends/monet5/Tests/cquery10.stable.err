@@ -28,13 +28,13 @@ stderr of test 'cquery10` in directory 'sql/backends/monet5` itself:
 # 11:34:59 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16604" "--port=32786"
 # 11:34:59 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-16604/.s.monetdb.32786
-QUERY = pause continuous sys.cq_cycles();
-ERROR = !The continuous procedure user.cq_cycles(); has not yet started
+MAPI  = (monetdb) /var/tmp/mtest-5601/.s.monetdb.32593
+QUERY = pause continuous cq_cycles;
+ERROR = !The continuous procedure cq_cycles has not yet started
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-16604/.s.monetdb.32786
-QUERY = stop continuous sys.cq_cycles();
-ERROR = !The continuous procedure user.cq_cycles(); has not yet started
+MAPI  = (monetdb) /var/tmp/mtest-5601/.s.monetdb.32593
+QUERY = stop continuous cq_cycles;
+ERROR = !The continuous procedure cq_cycles has not yet started
 CODE  = 42000
 
 # 11:35:03 >  

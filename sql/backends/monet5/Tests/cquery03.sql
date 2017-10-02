@@ -15,8 +15,7 @@ call cqfoo(123);
 select * from cqtbl;
 
 start continuous cqfoo(321) with cycles 1;
-stop continuous cqfoo(321);
---stop continuous cqfoo;
+stop continuous cqfoo;
 select * from cqtbl;
 
 drop procedure cqfoo;

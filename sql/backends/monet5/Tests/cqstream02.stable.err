@@ -27,9 +27,9 @@ stderr of test 'cqstream02` in directory 'sql/backends/monet5` itself:
 # 13:01:24 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20007" "--port=32966"
 # 13:01:24 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-18505/.s.monetdb.34326
-QUERY = pause continuous sys.cq_collector();
-ERROR = !The continuous procedure user.cq_collector(); has not yet started
+MAPI  = (monetdb) /var/tmp/mtest-5601/.s.monetdb.32593
+QUERY = pause continuous cq_collector;
+ERROR = !The continuous procedure cq_collector has not yet started
 CODE  = 42000
 
 # 13:01:25 >  

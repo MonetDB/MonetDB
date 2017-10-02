@@ -40,7 +40,7 @@ call cquery.wait(1000);
 
 select aaa from cqresult02; --output 2 tuples with value 10 and 22
 
-stop continuous procedure sys.cq_basic02();
+stop continuous procedure cq_basic02;
 
 drop procedure cq_basic02;
 drop table cqinput02;

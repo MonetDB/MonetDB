@@ -17,7 +17,7 @@ start continuous sys.cq_cycles() with cycles 3;
 -- reactivate all continuous queries
 
 call cquery.wait(4000);
-pause continuous sys.cq_cycles();
+pause continuous cq_cycles;
 
 select 'RESULT';
 select * from result;
@@ -26,7 +26,7 @@ select * from result;
 --select * from cquery.log();
 
 -- ideally auto remove upon dropping the procedure
-stop continuous sys.cq_cycles();
+stop continuous cq_cycles;
 
 drop procedure cq_cycles;
 drop table result;

@@ -1202,15 +1202,13 @@ rel_single_continuous_query(mvc *sql, dlist *l) {
 	rel = rel_create(sql->sa);
 	exps = new_exp_list(sql->sa);
 
+	append(exps, exp_atom_clob(sql->sa, l->h->next->next->data.sval)); //alias
+	append(exps, exp_atom_int(sql->sa, action));
 	if(action & mod_resume_continuous) {
-		append(exps, exp_atom_clob(sql->sa, l->h->next->next->next->next->next->next->data.sval)); //alias
-		append(exps, exp_atom_int(sql->sa, action));
 		append(exps, exp_atom_lng(sql->sa, l->h->next->next->next->data.l_val)); //heartbeats
 		append(exps, exp_atom_lng(sql->sa, start_at_parsed)); //start at value
 		append(exps, exp_atom_int(sql->sa, l->h->next->next->next->next->next->data.i_val)); //cycles
 	} else {
-		append(exps, exp_atom_clob(sql->sa, l->h->next->next->data.sval));
-		append(exps, exp_atom_int(sql->sa, action));
 		append(exps, exp_atom_lng(sql->sa, 0));
 		append(exps, exp_atom_lng(sql->sa, 0));
 		append(exps, exp_atom_int(sql->sa, 0));
@@ -2111,6 +2109,13 @@ rel_schemas(mvc *sql, symbol *s)
 	if (s->token != SQL_CREATE_TABLE && s->token != SQL_CREATE_VIEW && STORE_READONLY) 
 		return sql_error(sql, 06, SQLSTATE(25006) "Schema statements cannot be executed on a readonly database.");
 
+	if(s->token == 21) {//case SQL_ALTER_TABLE:
+		dlist *l = s->data.lval;
+		ret = sql_alter_table(sql, l->h->data.lval, /* table name */l->h->next->data.sym);/* table element */
+		sql->type = Q_SCHEMA;
+		return ret;
+	}
+
 	switch (s->token) {
 	case SQL_CREATE_SCHEMA:
 	{
@@ -2173,14 +2178,6 @@ rel_schemas(mvc *sql, symbol *s)
 		assert(l->h->next->type == type_int);
 		sname = get_schema_name(sql, sname, tname);
 		ret = rel_schema(sql->sa, l->h->next->next->data.i_val ? DDL_DROP_VIEW_IF_EXISTS : DDL_DROP_VIEW, sname, tname, l->h->next->data.i_val);
-	} 	break;
-	case SQL_ALTER_TABLE:
-	{
-		dlist *l = s->data.lval;
-
-		ret = sql_alter_table(sql, 
-			l->h->data.lval,      /* table name */
-		  	l->h->next->data.sym);/* table element */
 	} 	break;
 	case SQL_GRANT_ROLES:
 	{

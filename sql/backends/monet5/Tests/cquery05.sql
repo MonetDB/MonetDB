@@ -11,13 +11,13 @@ start continuous sys.cq_basic() with heartbeat 1000;
 
 call cquery.wait(2400);
 
-pause continuous sys.cq_basic();
+pause continuous cq_basic;
 
 --select * from cquery.status();
 --select * from cquery.summary();
 --select * from cquery.log();
 
-stop continuous sys.cq_basic();
+stop continuous cq_basic;
 
 select 'RESULT';
 select * from cqresult05;

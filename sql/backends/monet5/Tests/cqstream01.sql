@@ -19,7 +19,7 @@ start continuous sys.cq_window();
 call cquery.wait(3000);
 
 -- STOP cq_window;
-pause continuous sys.cq_window();
+pause continuous cq_window;
 
 select 'RESULT';
 select val from stmp2;
@@ -28,7 +28,7 @@ select val from result2;
 --select * from cquery.log();
 
 -- ideally auto remove upon dropping the procedure
-stop continuous sys.cq_window();
+stop continuous cq_window;
 
 drop procedure cq_window;
 drop table stmp2;

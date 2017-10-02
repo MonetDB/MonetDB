@@ -19,7 +19,7 @@ call cquery.wait(1000); #give it time to start
 select aggr00(); #should return 1
 select aggr00(); #should return 2
 
-stop continuous function aggr00();
+stop continuous function aggr00;
 drop function aggr00;
 
 --factory factories.aggr00():int;             	#[0] (0)  0 

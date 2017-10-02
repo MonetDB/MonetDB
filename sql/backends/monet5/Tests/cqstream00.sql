@@ -24,7 +24,7 @@ start continuous sys.cq_splitter();
 call cquery.wait(5000);
 
 -- STOP cq_splitter;
-pause continuous sys.cq_splitter();
+pause continuous cq_splitter;
 
 --select * from cquery.status();
 --select * from cquery.status();
@@ -36,7 +36,7 @@ select val from result1;
 select val from result2;
 
 -- ideally auto remove upon dropping the procedure
-stop continuous sys.cq_splitter();
+stop continuous cq_splitter;
 
 drop procedure cq_splitter;
 drop table stmp2;

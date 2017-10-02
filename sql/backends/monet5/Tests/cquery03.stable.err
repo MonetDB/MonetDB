@@ -27,9 +27,9 @@ stderr of test 'cquery03` in directory 'sql/backends/monet5` itself:
 # 14:15:08 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10355" "--port=32676"
 # 14:15:08 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-16604/.s.monetdb.32786
-QUERY = stop continuous cqfoo(321);
-ERROR = !The continuous procedure user.cqfoo(X_4); has not yet started
+MAPI  = (monetdb) /var/tmp/mtest-5601/.s.monetdb.32593
+QUERY = stop continuous cqfoo;
+ERROR = !The continuous procedure cqfoo has not yet started
 CODE  = 42000
 
 # 14:15:08 >  

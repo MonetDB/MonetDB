@@ -22,24 +22,24 @@ start continuous function aggr01();
 call cquery.wait(1000); #wait to be started
 
 select aggr01(); #should return 0
-pause continuous function aggr01();
+pause continuous function aggr01;
 
 insert into ftmp values(1),(1);
-resume continuous function aggr01();
+resume continuous function aggr01;
 
 call cquery.wait(1000); #wait for processing
 select aggr01(); #should return 2
 
-pause continuous function aggr01();
+pause continuous function aggr01;
 insert into ftmp values(2),(2);
 insert into ftmp values(3),(3);
 
-resume continuous function aggr01();
+resume continuous function aggr01;
 select aggr01(); #should return 6
 
 call cquery.wait(1000);
 select aggr01(); #should return 6
 
-stop continuous function aggr01();
+stop continuous function aggr01;
 drop function aggr01;
 drop table ftmp;

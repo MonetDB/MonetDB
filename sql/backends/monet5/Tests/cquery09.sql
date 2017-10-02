@@ -6,15 +6,15 @@ begin
 	insert into sys.result9 values (inputA);
 end;
 
-start continuous sys.cq_c(1);
+start continuous sys.cq_c(1) as cq_ca;
 
 call cquery.wait(4000);
 
 drop table result9; --error
 
-stop continuous sys.cq_c(2); --error
+stop continuous cq_c; --error
 
-stop continuous sys.cq_c(1);
+stop continuous cq_ca;
 
 drop procedure cq_c;
 drop table result9; --no error
