@@ -67,6 +67,7 @@ sql5_export str SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Inst
 sql5_export str SQLtransaction2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
+sql5_export str mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_append_column(sql_trans *t, sql_column *c, BAT *ins);
 
@@ -87,7 +88,6 @@ sql5_export str BATleftproject(bat *result, const bat *col, const bat *l, const 
 
 sql5_export str mvc_table_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-sql5_export str mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 sql5_export str mvc_declared_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -298,7 +298,6 @@ sql5_export str checkSQLContext(Client cntxt);
 sql5_export str getSQLContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b);
 
 sql5_export void freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start);
-sql5_export str second_interval_daytime(lng *res, const daytime *s, const int *ek, const int *sk);
 sql5_export str second_interval_2_daytime(daytime *res, const lng *s, const int *d);
 sql5_export str timestamp_2_daytime(daytime *res, const timestamp *v, const int *d);
 sql5_export str date_2_timestamp(timestamp *res, const date *v, const int *d);
@@ -317,6 +316,6 @@ sql5_export str BATSTRstrings(bat *res, const bat *src);
 sql5_export str SQLflush_log(void *ret);
 
 sql5_export str SQLexist(bit *res, bat *id);
-sql5_export str SQLexist_val(bit *res, void *val);
+sql5_export str SQLexist_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _SQL_H */

@@ -41,6 +41,7 @@ Ready.
 \dSf
 \dn bam
 \dn json
+\dn mosaic
 \dn profiler
 \dn sys
 \dn tmp
@@ -345,6 +346,7 @@ Ready.
 \dSf sys."var_samp"
 SYSTEM SCHEMA  bam
 SYSTEM SCHEMA  json
+SYSTEM SCHEMA  mosaic
 SYSTEM SCHEMA  profiler
 SYSTEM SCHEMA  sys
 SYSTEM SCHEMA  tmp
@@ -788,6 +790,7 @@ SYSTEM FUNCTION  sys.year
 SYSTEM FUNCTION  sys.zero_or_one
 CREATE SCHEMA "bam" AUTHORIZATION "monetdb";
 CREATE SCHEMA "json" AUTHORIZATION "monetdb";
+CREATE SCHEMA "mosaic" AUTHORIZATION "monetdb";
 CREATE SCHEMA "profiler" AUTHORIZATION "monetdb";
 CREATE SCHEMA "sys";
 CREATE SCHEMA "tmp";
@@ -837,7 +840,7 @@ CREATE TABLE "tmp"."objects" ("id" INTEGER, "name" VARCHAR(1024), "nr" INTEGER);
 CREATE TABLE "tmp"."triggers" ("id" INTEGER, "name" VARCHAR(1024), "table_id" INTEGER, "time" SMALLINT, "orientation" SMALLINT, "event" SMALLINT, "old_name" VARCHAR(1024), "new_name" VARCHAR(1024), "condition" VARCHAR(2048), "statement" VARCHAR(2048));
 SELECT * FROM (SELECT p.* FROM "sys"."_columns" AS p UNION ALL SELECT t.* FROM "tmp"."_columns" AS t) AS columns;
 create view sys.environment as select * from sys.environment();
-create view geometry_columns as select e.value as f_table_catalog, s.name as f_table_schema, y.f_table_name, y.f_geometry_column, y.coord_dimension, y.srid, y.type from schemas s, environment e, (select t.schema_id, t.name as f_table_name, x.name as f_geometry_column, has_z(info)+has_m(info)+2 as coord_dimension, srid, get_type(info, 0) as type from tables t, (select name, table_id, type_digits as info, type_scale as srid from columns where type in (select distinct sqlname from types where systemname='wkb')) as x where t.id=x.table_id) y where y.schema_id=s.id and e.name='gdk_dbname';
+create view geometry_columns as select e.value as f_table_catalog, s.name as f_table_schema, y.f_table_name, y.f_geometry_column, y.coord_dimension, y.srid, y.type from schemas s, environment e, (select t.schema_id, t.name as f_table_name, x.name as f_geometry_column, cast(has_z(info)+has_m(info)+2 as integer) as coord_dimension, srid, get_type(info, 0) as type from tables t, (select name, table_id, type_digits as info, type_scale as srid from columns where type in (select distinct sqlname from types where systemname='wkb')) as x where t.id=x.table_id) y where y.schema_id=s.id and e.name='gdk_dbname';
 create view sys.optimizers as select * from sys.optimizers();
 create view sys.querylog_calls as select * from sys.querylog_calls();
 create view sys.querylog_catalog as select * from sys.querylog_catalog();
@@ -1310,6 +1313,7 @@ drop function pcre_replace(string, string, string, string);
 % 8,	1,	1,	5 # length
 [ "bam",	3,	3,	true	]
 [ "json",	3,	3,	true	]
+[ "mosaic",	3,	3,	true	]
 [ "profiler",	3,	3,	true	]
 [ "sys",	2,	3,	true	]
 [ "tmp",	2,	3,	true	]
@@ -1317,7 +1321,7 @@ drop function pcre_replace(string, string, string, string);
 % .s,	.t,	.L4,	.t,	.t,	.t,	.t # table_name
 % name,	name,	query,	type,	system,	commit_action,	access # name
 % varchar,	varchar,	varchar,	smallint,	boolean,	smallint,	smallint # type
-% 3,	18,	597,	1,	5,	1,	1 # length
+% 3,	18,	608,	1,	5,	1,	1 # length
 [ "bam",	"export",	NULL,	0,	true,	0,	0	]
 [ "bam",	"files",	NULL,	0,	true,	0,	0	]
 [ "bam",	"pg",	NULL,	0,	true,	0,	0	]
@@ -1335,7 +1339,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"function_languages",	NULL,	0,	true,	0,	1	]
 [ "sys",	"function_types",	NULL,	0,	true,	0,	1	]
 [ "sys",	"functions",	NULL,	0,	true,	0,	0	]
-[ "sys",	"geometry_columns",	"create view geometry_columns as select e.value as f_table_catalog, s.name as f_table_schema, y.f_table_name, y.f_geometry_column, y.coord_dimension, y.srid, y.type from schemas s, environment e, (select t.schema_id, t.name as f_table_name, x.name as f_geometry_column, has_z(info)+has_m(info)+2 as coord_dimension, srid, get_type(info, 0) as type from tables t, (select name, table_id, type_digits as info, type_scale as srid from columns where type in (select distinct sqlname from types where systemname='wkb')) as x where t.id=x.table_id) y where y.schema_id=s.id and e.name='gdk_dbname';",	1,	true,	0,	0	]
+[ "sys",	"geometry_columns",	"create view geometry_columns as select e.value as f_table_catalog, s.name as f_table_schema, y.f_table_name, y.f_geometry_column, y.coord_dimension, y.srid, y.type from schemas s, environment e, (select t.schema_id, t.name as f_table_name, x.name as f_geometry_column, cast(has_z(info)+has_m(info)+2 as integer) as coord_dimension, srid, get_type(info, 0) as type from tables t, (select name, table_id, type_digits as info, type_scale as srid from columns where type in (select distinct sqlname from types where systemname='wkb')) as x where t.id=x.table_id) y where y.schema_id=s.id and e.name='gdk_dbname';",	1,	true,	0,	0	]
 [ "sys",	"idxs",	NULL,	0,	true,	0,	0	]
 [ "sys",	"index_types",	NULL,	0,	true,	0,	1	]
 [ "sys",	"key_types",	NULL,	0,	true,	0,	1	]
@@ -1485,7 +1489,7 @@ drop function pcre_replace(string, string, string, string);
 [ "geometry_columns",	"f_table_schema",	"varchar",	1024,	0,	NULL,	true,	1,	NULL	]
 [ "geometry_columns",	"f_table_name",	"varchar",	1024,	0,	NULL,	true,	2,	NULL	]
 [ "geometry_columns",	"f_geometry_column",	"varchar",	1024,	0,	NULL,	true,	3,	NULL	]
-[ "geometry_columns",	"coord_dimension",	"hugeint",	128,	0,	NULL,	true,	4,	NULL	]
+[ "geometry_columns",	"coord_dimension",	"int",	32,	0,	NULL,	true,	4,	NULL	]
 [ "geometry_columns",	"srid",	"int",	32,	0,	NULL,	true,	5,	NULL	]
 [ "geometry_columns",	"type",	"clob",	0,	0,	NULL,	true,	6,	NULL	]
 [ "idxs",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
@@ -1779,7 +1783,7 @@ drop function pcre_replace(string, string, string, string);
 % sys.s,	.funcs,	.L275,	.funcs,	.funcs,	.funcs,	.funcs,	.funcs,	.funcs,	.arg16,	.arg16,	.arg16,	.arg16,	.L311,	.arg16,	.arg16,	.arg16,	.arg16,	.L317,	.arg16,	.arg16,	.arg16,	.arg16,	.L325,	.arg16,	.arg16,	.arg16,	.arg16,	.L333,	.arg16,	.arg16,	.arg16,	.arg16,	.L341,	.arg16,	.arg16,	.arg16,	.arg16,	.L347,	.arg16,	.arg16,	.arg16,	.arg16,	.L355,	.arg16,	.arg16,	.arg16,	.arg16,	.L363,	.arg16,	.arg16,	.arg16,	.arg16,	.L371,	.arg16,	.arg16,	.arg16,	.arg16,	.L377,	.arg16,	.arg16,	.arg16,	.arg16,	.L405,	.arg16,	.arg16,	.arg16,	.arg16,	.L413,	.arg16,	.arg16,	.arg16,	.arg16,	.L421,	.arg16,	.arg16,	.arg16,	.arg16,	.L427,	.arg16,	.arg16,	.arg16,	.arg16,	.L435,	.arg16,	.arg16,	.arg16,	.arg16,	.L443 # table_name
 % name,	name,	query,	mod,	language,	type,	side_effect,	varres,	vararg,	name0,	type0,	type_digits0,	type_scale0,	inout0,	name1,	type1,	type_digits1,	type_scale1,	inout1,	name2,	type2,	type_digits2,	type_scale2,	inout2,	name3,	type3,	type_digits3,	type_scale3,	inout3,	name4,	type4,	type_digits4,	type_scale4,	inout4,	name5,	type5,	type_digits5,	type_scale5,	inout5,	name6,	type6,	type_digits6,	type_scale6,	inout6,	name7,	type7,	type_digits7,	type_scale7,	inout7,	name8,	type8,	type_digits8,	type_scale8,	inout8,	name9,	type9,	type_digits9,	type_scale9,	inout9,	name10,	type10,	type_digits10,	type_scale10,	inout10,	name11,	type11,	type_digits11,	type_scale11,	inout11,	name12,	type12,	type_digits12,	type_scale12,	inout12,	name13,	type13,	type_digits13,	type_scale13,	inout13,	name14,	type14,	type_digits14,	type_scale14,	inout14,	name15,	type15,	type_digits15,	type_scale15,	inout15 # name
 % varchar,	varchar,	varchar,	varchar,	int,	char,	boolean,	boolean,	boolean,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char # type
-% 8,	35,	831,	9,	1,	17,	5,	5,	5,	11,	14,	4,	1,	0,	16,	14,	4,	1,	0,	16,	14,	3,	1,	0,	27,	12,	3,	1,	0,	12,	7,	2,	1,	0,	10,	7,	2,	1,	0,	8,	7,	2,	1,	0,	9,	6,	2,	1,	0,	10,	6,	2,	1,	0,	8,	7,	2,	1,	0,	9,	7,	2,	1,	0,	6,	7,	2,	1,	0,	8,	6,	2,	1,	0,	6,	7,	1,	1,	0,	9,	7,	1,	1,	0,	6,	7,	1,	1,	0 # length
+% 8,	35,	831,	9,	1,	17,	5,	5,	5,	11,	14,	4,	1,	0,	16,	14,	4,	1,	0,	16,	14,	3,	1,	0,	27,	12,	3,	1,	0,	12,	7,	2,	1,	0,	10,	7,	2,	1,	0,	8,	7,	2,	1,	0,	9,	6,	2,	1,	0,	11,	6,	2,	1,	0,	8,	7,	2,	1,	0,	9,	7,	2,	1,	0,	6,	7,	2,	1,	0,	8,	6,	2,	1,	0,	6,	7,	1,	1,	0,	9,	7,	1,	1,	0,	6,	7,	1,	1,	0 # length
 [ "bam",	"bam_drop_file",	"create procedure bam.bam_drop_file(file_id bigint, dbschema smallint) external name bam.bam_drop_file;",	"bam",	1,	"procedure",	true,	false,	false,	"file_id",	"bigint",	64,	0,	"in",	"dbschema",	"smallint",	16,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "bam",	"bam_export",	"create procedure bam.bam_export(output_path string) external name bam.bam_export;",	"bam",	1,	"procedure",	true,	false,	false,	"output_path",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "bam",	"bam_flag",	"create function bam.bam_flag(flag smallint, name string) returns boolean external name bam.bam_flag;",	"bam",	1,	"function",	false,	false,	false,	"result",	"boolean",	1,	0,	"out",	"flag",	"smallint",	16,	0,	"in",	"name",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -1814,6 +1818,9 @@ drop function pcre_replace(string, string, string, string);
 [ "json",	"tojsonarray",	"create aggregate json.tojsonarray(x double) returns string external name aggr.jsonaggr;",	"aggr",	1,	"aggregate",	false,	false,	false,	"result",	"clob",	0,	0,	"out",	"x",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "json",	"tojsonarray",	"create aggregate json.tojsonarray(x string) returns string external name aggr.jsonaggr;",	"aggr",	1,	"aggregate",	false,	false,	false,	"result",	"clob",	0,	0,	"out",	"x",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "json",	"valuearray",	"create function json.valuearray(js json) returns json external name json.valuearray;",	"json",	1,	"function",	false,	false,	false,	"result",	"json",	0,	0,	"out",	"js",	"json",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "mosaic",	"analysis",	"create function mosaic.analysis(sch string, tbl string, col string) returns table(technique string, outputsize bigint, factor float, \"compress\" bigint, \"decompress\" bigint) external name sql.mosaicanalysis;",	"sql",	1,	"table function",	false,	false,	false,	"technique",	"clob",	0,	0,	"out",	"outputsize",	"bigint",	64,	0,	"out",	"factor",	"double",	53,	0,	"out",	"compress",	"bigint",	64,	0,	"out",	"decompress",	"bigint",	64,	0,	"out",	"sch",	"clob",	0,	0,	"in",	"tbl",	"clob",	0,	0,	"in",	"col",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "mosaic",	"analysis",	"create function mosaic.analysis(sch string, tbl string, col string, compression string) returns table(technique string, outputsize bigint, factor float, \"compress\" bigint, \"decompress\" bigint) external name sql.mosaicanalysis;",	"sql",	1,	"table function",	false,	false,	false,	"technique",	"clob",	0,	0,	"out",	"outputsize",	"bigint",	64,	0,	"out",	"factor",	"double",	53,	0,	"out",	"compress",	"bigint",	64,	0,	"out",	"decompress",	"bigint",	64,	0,	"out",	"sch",	"clob",	0,	0,	"in",	"tbl",	"clob",	0,	0,	"in",	"col",	"clob",	0,	0,	"in",	"compression",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "mosaic",	"layout",	"create function mosaic.layout(sch string, tbl string, col string) returns table(technique string, \"count\" bigint, inputsize bigint, outputsize bigint,properties string) external name sql.mosaiclayout;",	"sql",	1,	"table function",	false,	false,	false,	"technique",	"clob",	0,	0,	"out",	"count",	"bigint",	64,	0,	"out",	"inputsize",	"bigint",	64,	0,	"out",	"outputsize",	"bigint",	64,	0,	"out",	"properties",	"clob",	0,	0,	"out",	"sch",	"clob",	0,	0,	"in",	"tbl",	"clob",	0,	0,	"in",	"col",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "profiler",	"getlimit",	"create function profiler.getlimit() returns integer external name profiler.getlimit;",	"profiler",	1,	"function",	false,	false,	false,	"result",	"int",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "profiler",	"setheartbeat",	"create procedure profiler.setheartbeat(beat int) external name profiler.setheartbeat;",	"profiler",	1,	"procedure",	true,	false,	false,	"beat",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "profiler",	"setlimit",	"create procedure profiler.setlimit(lim integer) external name profiler.setlimit;",	"profiler",	1,	"procedure",	true,	false,	false,	"lim",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -4112,23 +4119,32 @@ drop function pcre_replace(string, string, string, string);
 % sys.t,	sys.a,	.p,	.g,	.p # table_name
 % name,	name,	privileges,	name,	grantable # name
 % varchar,	varchar,	int,	varchar,	int # type
-% 16,	6,	1,	7,	1 # length
+% 18,	6,	1,	7,	1 # length
 [ "_columns",	"public",	1,	NULL,	0	]
 [ "_tables",	"public",	1,	NULL,	0	]
 [ "args",	"public",	1,	NULL,	0	]
 [ "auths",	"public",	1,	NULL,	0	]
 [ "columns",	"public",	1,	NULL,	0	]
 [ "dependencies",	"public",	1,	NULL,	0	]
+[ "dependency_types",	"public",	1,	"monetdb",	0	]
+[ "environment",	"public",	1,	"monetdb",	0	]
+[ "function_languages",	"public",	1,	"monetdb",	0	]
+[ "function_types",	"public",	1,	"monetdb",	0	]
 [ "functions",	"public",	1,	NULL,	0	]
 [ "geometry_columns",	"public",	1,	"monetdb",	0	]
 [ "idxs",	"public",	1,	NULL,	0	]
+[ "index_types",	"public",	1,	"monetdb",	0	]
+[ "key_types",	"public",	1,	"monetdb",	0	]
 [ "keys",	"public",	1,	NULL,	0	]
+[ "keywords",	"public",	1,	"monetdb",	0	]
 [ "objects",	"public",	1,	NULL,	0	]
+[ "privilege_codes",	"public",	1,	"monetdb",	0	]
 [ "privileges",	"public",	1,	NULL,	0	]
 [ "schemas",	"public",	1,	NULL,	0	]
 [ "sequences",	"public",	1,	NULL,	0	]
 [ "spatial_ref_sys",	"public",	1,	"monetdb",	0	]
 [ "systemfunctions",	"public",	1,	"monetdb",	0	]
+[ "table_types",	"public",	1,	"monetdb",	0	]
 [ "tables",	"public",	1,	NULL,	0	]
 [ "triggers",	"public",	1,	NULL,	0	]
 [ "types",	"public",	1,	NULL,	0	]
@@ -4157,6 +4173,7 @@ drop function pcre_replace(string, string, string, string);
 [ "date_to_str",	"public",	16,	"monetdb",	0	]
 [ "degrees",	"public",	16,	"monetdb",	0	]
 [ "env",	"public",	16,	NULL,	0	]
+[ "environment",	"public",	16,	"monetdb",	0	]
 [ "epoch",	"public",	16,	"monetdb",	0	]
 [ "epoch",	"public",	16,	"monetdb",	0	]
 [ "epoch",	"public",	16,	"monetdb",	0	]
@@ -4461,6 +4478,8 @@ drop function pcre_replace(string, string, string, string);
 [ "acos"	]
 [ "all"	]
 [ "alpha"	]
+[ "analysis"	]
+[ "analysis"	]
 [ "analyze"	]
 [ "analyze"	]
 [ "analyze"	]
@@ -4721,6 +4740,7 @@ drop function pcre_replace(string, string, string, string);
 [ "isvalid"	]
 [ "isvalid"	]
 [ "keyarray"	]
+[ "layout"	]
 [ "lcase"	]
 [ "lcase"	]
 [ "lcase"	]

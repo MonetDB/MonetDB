@@ -32,13 +32,15 @@ stderr of test 'pyloader06` in directory 'sql/backends/monet5` itself:
 MAPI  = (monetdb) /var/tmp/mtest-23860/.s.monetdb.39055
 QUERY = CREATE TABLE pyloader06table FROM LOADER pyloader06();
 ERROR = !No elements emitted by the loader.
-MAPI  = (monetdb) /var/tmp/mtest-23987/.s.monetdb.37585
+CODE  = PY000
+MAPI  = (monetdb) /var/tmp/mtest-11032/.s.monetdb.32138
 QUERY = CREATE TABLE pyloader06table FROM LOADER pyloader06();
 ERROR = !Python exception
         !def pyfun(_emit,_conn):
         !  return 3
         !
         !need dict
+CODE  = PY000
 
 # 15:10:44 >  
 # 15:10:44 >  "Done."

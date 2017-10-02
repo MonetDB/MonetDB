@@ -30,7 +30,7 @@ stderr of test 'nonutf8` in directory 'sql/test/copy` itself:
 # 15:39:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2478" "--port=31776"
 # 15:39:57 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-2478/.s.monetdb.31776
+MAPI  = (monetdb) /var/tmp/mtest-12398/.s.monetdb.34869
 QUERY = insert into nonutf8 values ('zwaar lange golf piek -dal ±10cm vak5');
         
         copy 2 records into nonutf8 from stdin;
@@ -38,7 +38,7 @@ QUERY = insert into nonutf8 values ('zwaar lange golf piek -dal ±10cm vak5');
         ±17 %
 ERROR = !42000!invalid start of UTF-8 sequence
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-12398/.s.monetdb.34869
 QUERY = insert into nonutf8 values ('zwaar lange golf piek -dal ±10cm vak5');
         
         copy 2 records into nonutf8 from stdin;
@@ -47,12 +47,8 @@ QUERY = insert into nonutf8 values ('zwaar lange golf piek -dal ±10cm vak5');
         
         select * from nonutf8;
 ERROR = !syntax error, unexpected sqlINT in: "7"
-        !Current transaction is aborted (please ROLLBACK)
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-ERROR = !Current transaction is aborted (please ROLLBACK)
-CODE  = 25005
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-12398/.s.monetdb.34869
 QUERY = drop table nonutf8;
 ERROR = !Current transaction is aborted (please ROLLBACK)
 CODE  = 25005

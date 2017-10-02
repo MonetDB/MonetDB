@@ -419,8 +419,10 @@ MT_init(void)
 static void THRinit(void);
 static void GDKlockHome(int farmid);
 
+#ifndef STATIC_CODE_ANALYSIS
 #ifndef NDEBUG
 static MT_Lock mallocsuccesslock MT_LOCK_INITIALIZER("mallocsuccesslock");
+#endif
 #endif
 
 int
@@ -979,12 +981,8 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 		}
 		*dst = '\0';
 	} else {
-		/* construct format string because the format string
-		 * must start with ! */
-		char format[32];
-
-		snprintf(format, sizeof(format), "%s%%.*s%s", prefix ? prefix : "", suffix ? suffix : "");
-		THRprintf(GDKout, format, (int) messagelen, message);
+		THRprintf(GDKout, "%s%.*s%s", prefix ? prefix : "",
+			  (int) messagelen, message, suffix ? suffix : "");
 	}
 }
 
@@ -1581,6 +1579,10 @@ GDKmalloc_internal(size_t size)
 		return NULL;
 	}
 #endif
+	if (GDKvm_cursize() + size >= GDK_vm_maxsize) {
+		GDKerror("allocating too much memory\n");
+		return NULL;
+	}
 
 	/* pad to multiple of eight bytes and add some extra space to
 	 * write real size in front; when debugging, also allocate
@@ -1718,6 +1720,11 @@ GDKrealloc(void *s, size_t size)
 	nsize = (size + 7) & ~7;
 	asize = ((size_t *) s)[-1]; /* how much allocated last */
 
+	if (nsize > asize &&
+	    GDKvm_cursize() + nsize - asize >= GDK_vm_maxsize) {
+		GDKerror("allocating too much memory\n");
+		return NULL;
+	}
 #ifndef NDEBUG
 	assert((asize & 2) == 0);   /* check against duplicate free */
 	/* check for out-of-bounds writes */
@@ -1814,8 +1821,10 @@ char *
 GDKstrndup(const char *s, size_t size)
 {
 	char *p = malloc(size + 1);
-	if (p == NULL)
+	if (p == NULL) {
 		GDKerror("GDKstrdup failed for %s\n", s);
+		return NULL;
+	}
 	memcpy(p, s, size);
 	p[size] = 0;
 	return p;

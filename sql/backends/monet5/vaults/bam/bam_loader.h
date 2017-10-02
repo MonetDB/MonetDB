@@ -17,7 +17,7 @@
 #ifndef _BAM_LOADER_H
 #define _BAM_LOADER_H
 
-#include "sql_scenario.h"
+#include "sql_execute.h"
 #include "sql_mvc.h"
 
 #ifdef WIN32

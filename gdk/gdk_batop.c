@@ -491,6 +491,8 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 	IMPSdestroy(b);		/* imprints do not support updates yet */
 	OIDXdestroy(b);
 	MOSdestroy(b);
+	PROPdestroy(b->tprops);
+	b->tprops = NULL;
 	if (b->thash == (Hash *) 1 || BATcount(b) == 0) {
 		/* don't bother first loading the hash to then change
 		 * it, or updating the hash if we replace the heap */
@@ -750,6 +752,8 @@ BATdel(BAT *b, BAT *d)
 	/* not sure about these anymore */
 	b->tnosorted = b->tnorevsorted = 0;
 	b->tnokey[0] = b->tnokey[1] = 0;
+	PROPdestroy(b->tprops);
+	b->tprops = NULL;
 
 	return GDK_SUCCEED;
 }
@@ -954,8 +958,8 @@ BATkeyed(BAT *b)
 			   (b->batPersistence == PERSISTENT &&
 			    BAThash(b, 0) == GDK_SUCCEED)
 #ifndef DISABLE_PARENT_HASH
-			   || ((parent = VIEWtparent(b)) != 0 &&
-			       BATcheckhash(BBPdescriptor(parent)))
+			   || (VIEWtparent(b) != 0 &&
+			       BATcheckhash(BBPdescriptor(VIEWtparent(b))))
 #endif
 			) {
 			/* we already have a hash table on b, or b is
@@ -966,8 +970,8 @@ BATkeyed(BAT *b)
 
 			hs = b->thash;
 #ifndef DISABLE_PARENT_HASH
-			if (b->thash == NULL && (parent = VIEWtparent(b)) != 0) {
-				BAT *b2 = BBPdescriptor(parent);
+			if (b->thash == NULL && VIEWtparent(b) != 0) {
+				BAT *b2 = BBPdescriptor(VIEWtparent(b));
 				lo = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
 				hs = b2->thash;
 			}
@@ -1279,9 +1283,10 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	}
 	assert(reverse == 0 || reverse == 1);
 	assert(stable == 0 || stable == 1);
-	if (sorted == NULL && order == NULL && groups == NULL) {
+	if (sorted == NULL && order == NULL) {
 		/* no place to put result, so we're done quickly */
-		return GDK_SUCCEED;
+		GDKerror("BATsort: no place to put the result.\n");
+		return GDK_FAIL;
 	}
 	if (g == NULL && !stable) {
 		/* pre-ordering doesn't make sense if we're not
@@ -1303,21 +1308,17 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			*sorted = bn;
 		}
 		if (order) {
-			on = COLnew(b->hseqbase, TYPE_void, BATcount(b), TRANSIENT);
+			on = BATdense(b->hseqbase, b->hseqbase, BATcount(b));
 			if (on == NULL)
 				goto error;
-			BATsetcount(on, BATcount(b));
-			BATtseqbase(on, b->hseqbase);
 			*order = on;
 		}
 		if (groups) {
 			if (BATtkey(b)) {
 				/* singleton groups */
-				gn = COLnew(0, TYPE_void, BATcount(b), TRANSIENT);
+				gn = BATdense(0, 0, BATcount(b));
 				if (gn == NULL)
 					goto error;
-				BATsetcount(gn, BATcount(b));
-				BATtseqbase(gn, 0);
 			} else {
 				/* single group */
 				const oid *o = 0;
@@ -1819,15 +1820,9 @@ BATcount_no_nil(BAT *b)
 static BAT *
 newdensecand(oid first, oid last)
 {
-	BAT *bn;
-
-	if ((bn = COLnew(0, TYPE_void, 0, TRANSIENT)) == NULL)
-		return NULL;
 	if (last < first)
 		first = last = 0; /* empty range */
-	BATsetcount(bn, last - first);
-	BATtseqbase(bn, first);
-	return bn;
+	return BATdense(0, first, last - first);
 }
 
 /* merge two candidate lists and produce a new one

@@ -114,9 +114,9 @@ skip_authority(const char *uri, const char **userp, const char **passp, const ch
 			if (passp)
 				*passp = NULL;
 		} else {
-			if (*userp)
+			if (userp)
 				*userp = user;
-			if (*passp)
+			if (passp)
 				*passp = pass;
 		}
 		if (portp)
@@ -176,7 +176,7 @@ skip_search(const char *uri)
 }
 
 static int needEscape(char c){
-	if( isalnum((int)c) )
+	if( isalnum((unsigned char)c) )
 		return 0;
 	if( c == '#' || c == '-' || c == '_' || c == '.' || c == '!' ||
 		c == '~' || c == '*' || c == '\'' || c == '(' || c == ')' )
@@ -286,40 +286,49 @@ x2c(char *what)
  * Here you find the wrappers around the V4 url library included above.
  */
 
-int
-URLfromString(str src, int *len, str *u)
+ssize_t
+URLfromString(const char *src, size_t *len, str *u)
 {
-	/* actually parse the message for valid url */
-	if (*u !=0)
+	size_t l = strlen(src) + 1;
+
+	if (*len < l || *u == NULL) {
 		GDKfree(*u);
+		*u = GDKmalloc(l);
+		if (*u == NULL)
+			return -1;
+		*len = l;
+	}
 
-	*len = (int) strlen(src);
-	*u = GDKstrdup(src);
+	/* actually parse the message for valid url */
 
-	return *len;
+	if (strcmp(src, "nil") == 0)
+		strcpy(*u, str_nil);
+	else
+		memcpy(*u, src, l);
+	return (ssize_t) l - 1;
 }
 
-int
-URLtoString(str *s, int *len, str src)
+ssize_t
+URLtoString(str *s, size_t *len, const char *src)
 {
-	int l;
+	size_t l;
 
 	if (GDK_STRNIL(src)) {
 		*s = GDKstrdup("nil");
-		return 0;
+		return *s ? 1 : -1;
 	}
-	l = (int) strlen(src) + 3;
+	l = strlen(src) + 3;
 	/* if( !*s) *s= (str)GDKmalloc(*len = l); */
 
 	if (l >= *len || *s == NULL) {
 		GDKfree(*s);
 		*s = (str) GDKmalloc(l);
 		if (*s == NULL)
-			return 0;
+			return -1;
 	}
 	snprintf(*s, l, "\"%s\"", src);
 	*len = l - 1;
-	return *len;
+	return (ssize_t) *len;
 }
 
 /* COMMAND "getAnchor": Extract an anchor (reference) from the URL

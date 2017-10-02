@@ -120,9 +120,11 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		}
 */
 	}
-	assert(p);
-	assert( p->token == ENDsymbol);
+	/* A good MAL plan should end with an END instruction */
 	pushInstruction(mb, p);
+	if( p && p->token != ENDsymbol){
+		throw(MAL, "optimizer.garbagecollector", SQLSTATE(42000) "Incorrect MAL plan encountered");
+	}
 	for (i++; i < limit; i++) 
 		pushInstruction(mb, old[i]);
 	for (; i < slimit; i++) 
@@ -160,16 +162,16 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 
 	/* leave a consistent scope admin behind */
 	setVariableScope(mb);
-    /* Defense line against incorrect plans */
-    if( actions > 0){
-        chkTypes(cntxt->usermodule, mb, FALSE);
-        chkFlow(mb);
-        chkDeclarations(mb);
-    }
-    /* keep all actions taken as a post block comment */
+	/* Defense line against incorrect plans */
+	if( actions > 0){
+		chkTypes(cntxt->usermodule, mb, FALSE);
+		chkFlow(mb);
+		chkDeclarations(mb);
+	}
+	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions, usec);
-    newComment(mb,buf);
+	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","garbagecollector",actions, usec);
+	newComment(mb,buf);
 	if( actions >= 0)
 		addtoMalBlkHistory(mb);
 

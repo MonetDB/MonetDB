@@ -69,7 +69,7 @@ getConsoleInput(Client c, const char *prompt, int linemode, int exit_on_error)
 			/* test for special commands */
 			while (length > 0 &&
 			       (*line & ~0x7F) == 0 &&
-			       isspace((int) *line)) {
+			       isspace((unsigned char) *line)) {
 				line++;
 				length--;
 			}

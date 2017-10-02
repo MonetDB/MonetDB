@@ -6,9 +6,6 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
-/*
- * The constants defined in math.h are defined in const.mx
- */
 #ifndef __MMATH_H__
 #define __MMATH_H__
 #include "mal.h"
@@ -57,11 +54,6 @@ MNisinf(double x)
 }
 # endif
 #endif /* HAVE_FPCLASSIFY */
-
-extern double sqrt(double x);
-extern double sin(double x);
-extern double cos(double x);
-extern double fabs(double x);
 
 #define unopbaseM5_export(X1,X2)\
 mal_export str MATHunary##X1##X2(X2 *res, const X2 *a);

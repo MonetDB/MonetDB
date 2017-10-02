@@ -62,7 +62,7 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 		break;
 	case 'f':
 		if (idcmp("fromstr", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomFromStr = (int (*)(const char *, int *, ptr *))pci->fcn;
+			BATatoms[tpe].atomFromStr = (ssize_t (*)(const char *, size_t *, ptr *))pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}
@@ -77,7 +77,6 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 			/* heap function makes an atom varsized */
 			BATatoms[tpe].size = sizeof(var_t);
 			assert_shift_width(ATOMelmshift(ATOMsize(tpe)), ATOMsize(tpe));
-			BATatoms[tpe].align = sizeof(var_t);
 			BATatoms[tpe].atomHeap = (void (*)(Heap *, size_t))pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
@@ -90,14 +89,14 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 		break;
 	case 'l':
 		if (idcmp("length", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomLen = (int (*)(const void *))pci->fcn;
+			BATatoms[tpe].atomLen = (size_t (*)(const void *))pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}
 		break;
 	case 'n':
 		if (idcmp("null", name) == 0 && pci->argc == 1) {
-			ptr atmnull = ((ptr (*)(void))pci->fcn)();
+			const void *atmnull = ((const void *(*)(void))pci->fcn)();
 
 			BATatoms[tpe].atomNull = atmnull;
 			setAtomName(pci);
@@ -125,7 +124,7 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 		break;
 	case 't':
 		if (idcmp("tostr", name) == 0 && pci->argc == 1) {
-			BATatoms[tpe].atomToStr = (int (*)(str *, int *, const void *))pci->fcn;
+			BATatoms[tpe].atomToStr = (ssize_t (*)(str *, size_t *, const void *))pci->fcn;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}
@@ -200,7 +199,7 @@ malAtomDefinition(str name, int tpe)
  * User defined modules may introduce fixed sized types
  * to store information in BATs.
  */
-int malAtomSize(int size, int align, char *name)
+int malAtomSize(int size, const char *name)
 {
 	int i = 0;
 
@@ -208,7 +207,6 @@ int malAtomSize(int size, int align, char *name)
 	BATatoms[i].storage = i;
 	BATatoms[i].size = size;
 	assert_shift_width(ATOMelmshift(ATOMsize(i)), ATOMsize(i));
-	BATatoms[i].align = align;
 	return i;
 }
 

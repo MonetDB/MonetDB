@@ -28,6 +28,8 @@ res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, int type,
 {
 	BAT *order = (BAT*)O;
 	res_table *t = ZNEW(res_table);
+	if(!t)
+		return NULL;
 
 	(void) tr;
 	t->id = res_id;
@@ -35,8 +37,12 @@ res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, int type,
 	t->query_type = type;
 	t->nr_cols = nr_cols;
 	t->cur_col = 0;
-	// FIXME unchecked_malloc NEW_ARRAY can return NULL
 	t->cols = NEW_ARRAY(res_col, nr_cols);
+	if(!t->cols) {
+		_DELETE(t);
+		return NULL;
+	}
+
 	memset((char*) t->cols, 0, nr_cols * sizeof(res_col));
 	t->tsep = t->rsep = t->ssep = t->ns = NULL;
 
@@ -85,26 +91,21 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 		/* we need to set the order bat otherwise mvc_export_result won't work with single-row result sets containing BATs */
 		if (!t->order) {
 			oid zero = 0;
-			BAT *o = COLnew(0, TYPE_oid, 1, TRANSIENT);
+			BAT *o = BATconstant(0, TYPE_oid, &zero, 1, TRANSIENT);
 			if (o == NULL) {
 				BBPreclaim(b);
 				_DELETE(c->tn);
 				_DELETE(c->name);
 				return NULL;
 			}
-			if (BUNappend(o, &zero, FALSE) != GDK_SUCCEED) {
-				BBPreclaim(b);
-				BBPreclaim(o);
-				_DELETE(c->tn);
-				_DELETE(c->name);
-				return NULL;
-			}
 			t->order = o->batCacheid;
-			bat_incref(t->order);
+			BBPkeepref(t->order);
 		}
 	}
 	c->b = b->batCacheid;
 	bat_incref(c->b);
+	if (mtype != TYPE_bat)
+		BBPunfix(c->b);
 	t->cur_col++;
 	assert(t->cur_col <= t->nr_cols);
 	return c;

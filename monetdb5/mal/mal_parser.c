@@ -39,7 +39,7 @@ lastline(Client cntxt)
     str s = CURRENT(cntxt);
     if (NL(*s))
         s++;
-    while (s && s > cntxt->fdin->buf && !NL(*s))
+    while (s > cntxt->fdin->buf && !NL(*s))
         s--;
     if (NL(*s))
         s++;
@@ -180,7 +180,7 @@ initParser(void)
 	int i;
 
 	for (i = 0; i < 256; i++) {
-		idCharacter2[i] = isalpha(i) || isdigit(i);
+		idCharacter2[i] = isalnum(i);
 		idCharacter[i] = isalpha(i);
 	}
 	for (i = 0; i < 256; i++)
@@ -197,9 +197,6 @@ initParser(void)
 	idCharacter2['@'] = 1;
 }
 
-#undef isdigit
-#define isdigit(X)  ((X) >= '0' && (X) <= '9')
-
 static int
 idLength(Client cntxt)
 {
@@ -210,20 +207,20 @@ idLength(Client cntxt)
 	s = CURRENT(cntxt);
 	t = s;
 
-	if (!idCharacter[(int) (*s)])
+	if (!idCharacter[(unsigned char) (*s)])
 		return 0;
 	/* avoid a clash with old temporaries */
 	if (s[0] == TMPMARKER)
 		s[0] = REFMARKER;
 	/* prepare escape of temporary names */
 	s++;
-	while (len < IDLENGTH && idCharacter2[(int) (*s)]){
+	while (len < IDLENGTH && idCharacter2[(unsigned char) (*s)]){
 		s++;
 		len++;
 	}
 	if( len == IDLENGTH)
 		// skip remainder
-		while (idCharacter2[(int) (*s)])
+		while (idCharacter2[(unsigned char) (*s)])
 			s++;
 	return (int) (s-t);;
 }
@@ -238,11 +235,11 @@ typeidLength(Client cntxt)
 	skipSpace(cntxt);
 	s = CURRENT(cntxt);
 
-	if (!idCharacter[(int) (*s)])
+	if (!idCharacter[(unsigned char) (*s)])
 		return 0;
 	l = 1;
 	*t++ = *s++;
-	while (l < IDLENGTH && (idCharacter[(int) (*s)] || isdigit(*s)) ) {
+	while (l < IDLENGTH && (idCharacter[(unsigned char) (*s)] || isdigit((unsigned char) *s)) ) {
 		*t++ = *s++;
 		l++;
 	}
@@ -275,16 +272,16 @@ MALlookahead(Client cntxt, str kw, int length)
 	/* avoid double test or use lowercase only. */
 	if (currChar(cntxt) == *kw &&
 		strncmp(CURRENT(cntxt), kw, length) == 0 &&
-		!idCharacter[(int) (CURRENT(cntxt)[length])] &&
-		!isdigit((int) (CURRENT(cntxt)[length]))) {
+		!idCharacter[(unsigned char) (CURRENT(cntxt)[length])] &&
+		!isdigit((unsigned char) (CURRENT(cntxt)[length]))) {
 		return 1;
 	}
 	/* check for captialized versions */
 	for (i = 0; i < length; i++)
 		if (tolower(CURRENT(cntxt)[i]) != kw[i])
 			return 0;
-	if (!idCharacter[(int) (CURRENT(cntxt)[length])] &&
-		!isdigit((int) (CURRENT(cntxt)[length]))) {
+	if (!idCharacter[(unsigned char) (CURRENT(cntxt)[length])] &&
+		!isdigit((unsigned char) (CURRENT(cntxt)[length]))) {
 		return 1;
 	}
 	return 0;
@@ -391,7 +388,7 @@ operatorLength(Client cntxt)
 
 	skipSpace(cntxt);
 	for (s = CURRENT(cntxt); *s; s++) {
-		if (opCharacter[(int) (*s)])
+		if (opCharacter[(unsigned char) (*s)])
 			l++;
 		else
 			return l;
@@ -431,7 +428,7 @@ cstToken(Client cntxt, ValPtr cst)
 		s++;
 		/* fall through */
 	case '0':
-		if ((s[1] == 'x' || s[1] == 'X')) {
+		if (s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) {
 			/* deal with hex */
 			hex = TRUE;
 			i += 2;
@@ -440,28 +437,27 @@ cstToken(Client cntxt, ValPtr cst)
 		/* fall through */
 	case '1': case '2': case '3': case '4': case '5':
 	case '6': case '7': case '8': case '9':
-		if (hex)
-			while (isdigit((int) *s) || isalpha((int) *s)) {
+		if (hex) {
+			while (isalnum((unsigned char) *s)) {
 				if (!((tolower(*s) >= 'a' && tolower(*s) <= 'f')
-					  || isdigit((int) *s)))
+					  || isdigit((unsigned char) *s)))
 					break;
 				i++;
 				s++;
 			}
-		else
-			while (isdigit((int) *s)) {
+			goto handleInts;
+		} else
+			while (isdigit((unsigned char) *s)) {
 				i++;
 				s++;
 			}
 
-		if (hex)
-			goto handleInts;
 		/* fall through */
 	case '.':
-		if (*s == '.' && isdigit(*(s + 1))) {
+		if (*s == '.' && isdigit((unsigned char) *(s + 1))) {
 			i++;
 			s++;
-			while (isdigit(*s)) {
+			while (isdigit((unsigned char) *s)) {
 				i++;
 				s++;
 			}
@@ -475,35 +471,34 @@ cstToken(Client cntxt, ValPtr cst)
 				s++;
 			}
 			cst->vtype = TYPE_dbl;
-			while (isdigit(*s)) {
+			while (isdigit((unsigned char) *s)) {
 				i++;
 				s++;
 			}
 		}
 		if (cst->vtype == TYPE_flt) {
-			int len = i;
-			float *pval = 0;
-			fltFromStr(CURRENT(cntxt), &len, &pval);
-			if (pval) {
-				cst->val.fval = *pval;
-				GDKfree(pval);
-			} else
-				cst->val.fval = 0;
+			size_t len = sizeof(flt);
+			float *pval = &cst->val.fval;
+			if (fltFromStr(CURRENT(cntxt), &len, &pval) < 0) {
+				parseError(cntxt, GDKerrbuf);
+				return i;
+			}
 		}
 		if (cst->vtype == TYPE_dbl) {
-			int len = i;
-			double *pval = 0;
-			dblFromStr(CURRENT(cntxt), &len, &pval);
-			if (pval) {
-				cst->val.dval = *pval;
-				GDKfree(pval);
-			} else
-				cst->val.dval = 0;
+			size_t len = sizeof(dbl);
+			double *pval = &cst->val.dval;
+			if (dblFromStr(CURRENT(cntxt), &len, &pval) < 0) {
+				parseError(cntxt, GDKerrbuf);
+				return i;
+			}
 		}
 		if (*s == '@') {
-			int len = (int) sizeof(lng);
+			size_t len = sizeof(lng);
 			lng l, *pval = &l;
-			lngFromStr(CURRENT(cntxt), &len, &pval);
+			if (lngFromStr(CURRENT(cntxt), &len, &pval) < 0) {
+				parseError(cntxt, GDKerrbuf);
+				return i;
+			}
 			if (l == lng_nil || l < 0
 #if SIZEOF_OID < SIZEOF_LNG
 				|| l > GDK_oid_max
@@ -515,7 +510,7 @@ cstToken(Client cntxt, ValPtr cst)
 			cst->vtype = TYPE_oid;
 			i++;
 			s++;
-			while (isdigit(*s)) {
+			while (isdigit((unsigned char) *s)) {
 				i++;
 				s++;
 			}
@@ -533,30 +528,26 @@ cstToken(Client cntxt, ValPtr cst)
 				s++;
 			}
 			if (cst->vtype == TYPE_dbl) {
-				int len = i;
-				double *pval = 0;
-				dblFromStr(CURRENT(cntxt), &len, &pval);
-				if (pval) {
-					cst->val.dval = *pval;
-					GDKfree(pval);
-				} else
-					cst->val.dval = 0;
+				size_t len = sizeof(dbl);
+				dbl *pval = &cst->val.dval;
+				if (dblFromStr(CURRENT(cntxt), &len, &pval) < 0) {
+					parseError(cntxt, GDKerrbuf);
+					return i;
+				}
 			} else {
-				int len = i;
-				lng *pval = 0;
-				lngFromStr(CURRENT(cntxt), &len, &pval);
-				if (pval) {
-					cst->val.lval = *pval;
-					GDKfree(pval);
-				} else
-					cst->val.lval = 0;
+				size_t len = sizeof(lng);
+				lng *pval = &cst->val.lval;
+				if (lngFromStr(CURRENT(cntxt), &len, &pval) < 0) {
+					parseError(cntxt, GDKerrbuf);
+					return i;
+				}
 			}
 			return i;
 		}
 #ifdef HAVE_HGE
 		if (*s == 'H' && cst->vtype == TYPE_int) {
-			int len = i;
-			hge *pval = 0;
+			size_t len = sizeof(hge);
+			hge *pval = &cst->val.hval;
 			cst->vtype = TYPE_hge;
 			i++;
 			s++;
@@ -564,12 +555,10 @@ cstToken(Client cntxt, ValPtr cst)
 				i++;
 				s++;
 			}
-			hgeFromStr(CURRENT(cntxt), &len, &pval);
-			if (pval) {
-				cst->val.hval = *pval;
-				GDKfree(pval);
-			} else
-				cst->val.hval = 0;
+			if (hgeFromStr(CURRENT(cntxt), &len, &pval) < 0) {
+				parseError(cntxt, GDKerrbuf);
+				return i;
+			}
 			return i;
 		}
 #endif
@@ -580,9 +569,9 @@ handleInts:
 #endif
 		if (cst->vtype == TYPE_int) {
 #ifdef HAVE_HGE
-			int len = (int) sizeof(hge);
+			size_t len = sizeof(hge);
 			hge l, *pval = &l;
-			if (hgeFromStr(CURRENT(cntxt), &len, &pval) <= 0 || l == hge_nil)
+			if (hgeFromStr(CURRENT(cntxt), &len, &pval) < 0)
 				l = hge_nil;
 
 			if ((hge) GDK_int_min < l && l <= (hge) GDK_int_max) {
@@ -599,9 +588,9 @@ handleInts:
 					parseError(cntxt, "convertConstant: integer parse error\n");
 			}
 #else
-			int len = (int) sizeof(lng);
+			size_t len = sizeof(lng);
 			lng l, *pval = &l;
-			if (lngFromStr(CURRENT(cntxt), &len, &pval) <= 0 || l == lng_nil)
+			if (lngFromStr(CURRENT(cntxt), &len, &pval) < 0)
 				l = lng_nil;
 
 			if ((lng) GDK_int_min < l && l <= (lng) GDK_int_max) {
@@ -618,7 +607,7 @@ handleInts:
 		return i;
 
 	case 'f':
-		if (strncmp(s, "false", 5) == 0 && !isalnum((int) *(s + 5)) &&
+		if (strncmp(s, "false", 5) == 0 && !isalnum((unsigned char) *(s + 5)) &&
 			*(s + 5) != '_') {
 			cst->vtype = TYPE_bit;
 			cst->val.btval = 0;
@@ -627,7 +616,7 @@ handleInts:
 		}
 		return 0;
 	case 't':
-		if (strncmp(s, "true", 4) == 0 && !isalnum((int) *(s + 4)) &&
+		if (strncmp(s, "true", 4) == 0 && !isalnum((unsigned char) *(s + 4)) &&
 			*(s + 4) != '_') {
 			cst->vtype = TYPE_bit;
 			cst->val.btval = 1;
@@ -636,7 +625,7 @@ handleInts:
 		}
 		return 0;
 	case 'n':
-		if (strncmp(s, "nil", 3) == 0 && !isalnum((int) *(s + 3)) &&
+		if (strncmp(s, "nil", 3) == 0 && !isalnum((unsigned char) *(s + 3)) &&
 			*(s + 3) != '_') {
 			cst->vtype = TYPE_void;
 			cst->len = 0;
@@ -1477,12 +1466,12 @@ parseEnd(Client cntxt)
  * This makes it easier to communicate types to MAL patterns.
  */
 
-#define GETvariable	\
+#define GETvariable(FREE)												\
 	if ((varid = findVariableLength(curBlk, CURRENT(cntxt), l)) == -1) { \
-		varid = newVariable(curBlk, CURRENT(cntxt),l, TYPE_any);	\
-		advance(cntxt, l);\
-		if(varid <  0) return;\
-	} else \
+		varid = newVariable(curBlk, CURRENT(cntxt),l, TYPE_any);		\
+		advance(cntxt, l);												\
+		if(varid <  0) { FREE; return; }								\
+	} else																\
 		advance(cntxt, l);
 
 /* The parameter of parseArguments is the return value of the enclosing function. */
@@ -1546,7 +1535,7 @@ parseAssign(Client cntxt, int cntrl)
 				pushInstruction(curBlk, curInstr);
 				return;
 			}
-			GETvariable;
+			GETvariable((void) 0);
 			if (currChar(cntxt) == ':') {
 				setVarUDFtype(curBlk, varid);
 				type = typeElm(cntxt, getVarType(curBlk, varid));
@@ -1598,7 +1587,7 @@ parseAssign(Client cntxt, int cntrl)
 		}
 
 		/* Get target variable details*/
-		GETvariable;
+		GETvariable((void) 0);
 		if (!(currChar(cntxt) == ':' && CURRENT(cntxt)[1] == '=')) {
 			curInstr->argv[0] = varid;
 			if (currChar(cntxt) == ':') {
@@ -1690,7 +1679,7 @@ part2:  /* consume <operator><term> part of expression */
 		advance(cntxt, i);
 		curInstr->modname = putName("calc");
 		if ((l = idLength(cntxt)) && !(l == 3 && strncmp(CURRENT(cntxt), "nil", 3) == 0)) {
-			GETvariable;
+			GETvariable(freeInstruction(curInstr));
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			goto part3;
 		}
@@ -1712,8 +1701,13 @@ part2:  /* consume <operator><term> part of expression */
 	}
 part3:
 	skipSpace(cntxt);
-	if (currChar(cntxt) != ';')
+	if (currChar(cntxt) != ';') {
 		parseError(cntxt, "';' expected\n");
+		skipToEnd(cntxt);
+		pushInstruction(curBlk, curInstr);
+		return;
+	}
+	skipToEnd(cntxt);
 	pushInstruction(curBlk, curInstr);
 	if (cntrl == RETURNsymbol && !(curInstr->token == ASSIGNsymbol || getModuleId(curInstr) != 0))
 		parseError(cntxt, "return assignment expected\n");
@@ -1741,7 +1735,7 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 			nextChar(cntxt);
 			continue;
 		case '#':
-		{ /* keep the full line comments unless it is a MX #line */
+		{ /* keep the full line comments */
 			char start[256], *e = start, c;
 			MalBlkPtr curBlk = cntxt->curprg->def;
 			InstrPtr curInstr;
@@ -1768,7 +1762,7 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 				curInstr->token= REMsymbol;
 				curInstr->barrier= 0;
 				cst.vtype = TYPE_str;
-				cst.len = (int) strlen(start);
+				cst.len = strlen(start);
 				cst.val.sval = GDKstrdup(start);
 				getArg(curInstr, 0) = defConstant(curBlk, TYPE_str, &cst);
 				clrVarConstant(curBlk, getArg(curInstr, 0));

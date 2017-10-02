@@ -10,25 +10,25 @@
 #define _COLOR_H
 typedef unsigned int color;
 
-mal_export str CLRstr(str *val, color *c);
-mal_export str CLRcolor(color *c, str *val);
-mal_export str CLRred(int *r, color *c);
-mal_export str CLRgreen(int *g, color *c);
-mal_export str CLRblue(int *b, color *c);
-mal_export str CLRhue(flt *r, color *c);
-mal_export str CLRsaturation(flt *g, color *c);
-mal_export str CLRvalue(flt *b, color *c);
-mal_export str CLRhueInt(int *r, color *c);
-mal_export str CLRsaturationInt(int *g, color *c);
-mal_export str CLRvalueInt(int *b, color *c);
-mal_export str CLRluminance(int *r, color *c);
-mal_export str CLRcr(int *r, color *c);
-mal_export str CLRcb(int *g, color *c);
-mal_export str CLRhsv(color *c, flt *h, flt *s, flt *v);
-mal_export str CLRrgb(color *rgb, int *r, int *g, int *b);
-mal_export str CLRycc(color *c, int *y, int *cr, int *cb);
-mal_export int color_fromstr(char *colorStr, int *len, color **c);
-mal_export int color_tostr(char **colorStr, int *len, color *c);
+mal_export str CLRstr(str *val, const color *c);
+mal_export str CLRcolor(color *c, const char **val);
+mal_export str CLRred(int *r, const color *c);
+mal_export str CLRgreen(int *g, const color *c);
+mal_export str CLRblue(int *b, const color *c);
+mal_export str CLRhue(flt *r, const color *c);
+mal_export str CLRsaturation(flt *g, const color *c);
+mal_export str CLRvalue(flt *b, const color *c);
+mal_export str CLRhueInt(int *r, const color *c);
+mal_export str CLRsaturationInt(int *g, const color *c);
+mal_export str CLRvalueInt(int *b, const color *c);
+mal_export str CLRluminance(int *r, const color *c);
+mal_export str CLRcr(int *r, const color *c);
+mal_export str CLRcb(int *g, const color *c);
+mal_export str CLRhsv(color *c, const flt *h, const flt *s, const flt *v);
+mal_export str CLRrgb(color *rgb, const int *r, const int *g, const int *b);
+mal_export str CLRycc(color *c, const int *y, const int *cr, const int *cb);
+mal_export ssize_t color_fromstr(const char *colorStr, size_t *len, color **c);
+mal_export ssize_t color_tostr(char **colorStr, size_t *len, const color *c);
 
 #define color_nil ((color)int_nil)
 

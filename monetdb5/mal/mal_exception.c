@@ -94,9 +94,8 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 	str ret;
 
 	if (GDKerrbuf &&
-		/* prevent recursion
-		 * note, sizeof("string") includes terminating NULL byte */
-		strncmp(format, SQLSTATE(HY001) MAL_MALLOC_FAIL ":", sizeof(MAL_MALLOC_FAIL)) != 0 &&
+		(ret = strstr(format, MAL_MALLOC_FAIL)) != NULL &&
+		ret[strlen(MAL_MALLOC_FAIL)] != ':' &&
 		(strncmp(GDKerrbuf, "GDKmalloc", 9) == 0 ||
 		 strncmp(GDKerrbuf, "GDKrealloc", 10) == 0 ||
 		 strncmp(GDKerrbuf, "GDKzalloc", 9) == 0 ||
@@ -114,15 +113,19 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 		char *p = GDKerrbuf;
 		if (strncmp(p, GDKERROR, strlen(GDKERROR)) == 0)
 			p += strlen(GDKERROR);
-		ret = createException(type, fcn, "GDK reported error: %s", p);
+		if (strlen(p) > 6 && p[5] == '!')
+			ret = createException(type, fcn, "%s", p);
+		else
+			ret = createException(type, fcn, "GDK reported error: %s", p);
 		GDKclrerr();
 		return ret;
 	}
 	va_start(ap, format);
 	ret = createExceptionInternal(type, fcn, format, ap);
 	va_end(ap);
+	GDKclrerr();
 
-	return(ret);
+	return ret;
 }
 
 void
@@ -329,7 +332,7 @@ getExceptionPlace(const char *exception)
  * Returns the informational message of the exception given.
  */
 str
-getExceptionMessage(const char *exception)
+getExceptionMessageAndState(const char *exception)
 {
 	const char *s, *t;
 	enum malexception i;
@@ -348,4 +351,24 @@ getExceptionMessage(const char *exception)
 	if (strncmp(exception, "!ERROR: ", 8) == 0)
 		return (str) (exception + 8);
 	return (str) exception;
+}
+
+str
+getExceptionMessage(const char *exception)
+{
+	char *msg = getExceptionMessageAndState(exception);
+
+	if (strlen(msg) > 6 && msg[5] == '!' &&
+		((msg[0] >= '0' && msg[0] <= '9') ||
+	     (msg[0] >= 'A' && msg[0] <= 'Z')) &&
+	    ((msg[1] >= '0' && msg[1] <= '9') ||
+	     (msg[1] >= 'A' && msg[1] <= 'Z')) &&
+	    ((msg[2] >= '0' && msg[2] <= '9') ||
+	     (msg[2] >= 'A' && msg[2] <= 'Z')) &&
+	    ((msg[3] >= '0' && msg[3] <= '9') ||
+	     (msg[3] >= 'A' && msg[3] <= 'Z')) &&
+	    ((msg[4] >= '0' && msg[4] <= '9') ||
+	     (msg[4] >= 'A' && msg[4] <= 'Z')))
+		msg += 6;
+	return msg;
 }

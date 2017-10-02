@@ -1,6 +1,21 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
+* Wed Aug 23 2017 Martin Kersten <mk@cwi.nl>
+- The EXPLAIN command now shows all the MAL type resolutions, because in
+  general users may not be aware of their signatures.  It also simplifies
+  programs to analyse such plans.
+
+* Sat Aug 19 2017 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented versions of group.(sub)group(done) that don't return
+  a histogram.
+
+* Mon Aug  7 2017 Sjoerd Mullender <sjoerd@acm.org>
+- Removed MAL functions streams.socketRead, streams.socketReadBytes,
+  streams.socketWrite, and streams.socketWriteBytes.
+- Removed MAL functions streams.openRead(s:streams):streams and
+  streams.openWrite(s:streams):streams.
+
 * Tue Aug  1 2017 Sjoerd Mullender <sjoerd@acm.org>
 - Lots of changes to streamline the internal error handling.
   In principle, all errors should now include a SQLSTATE error code

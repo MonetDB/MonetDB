@@ -58,7 +58,7 @@ mal_export int have_hge;
 #endif
 
 /*
-   See gdk/gdk.mx for the definition of all debug masks.
+   See gdk/gdk.h for the definition of all debug masks.
    See `man mserver5` or tools/mserver/mserver5.1
    for a documentation of all debug options.
 */
@@ -166,7 +166,7 @@ typedef struct VARRECORD {
 
 /* For performance analysis we keep track of the number of calls and
  * the total time spent while executing the instruction. (See
- * mal_profiler.mx) 
+ * mal_profiler.c) 
  */
 
 typedef struct {

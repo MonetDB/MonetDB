@@ -1716,7 +1716,7 @@ STRWChrAt(int *res, const str *arg1, const int *at)
 		return MAL_SUCCEED;
 	}
 	s = UTF8_strtail(s, *at);
-	if (*s == 0) {
+	if (s == NULL || *s == 0) {
 		*res = int_nil;
 		return MAL_SUCCEED;
 	}
@@ -2335,11 +2335,11 @@ str
 STRSubstitute(str *res, const str *arg1, const str *arg2, const str *arg3, const bit *g)
 {
 	const char *s = *arg1;
-	const char *src = *arg2;
-	const char *dst = *arg3;
+	const char *src = *arg2 ? *arg2 : "";
+	const char *dst = *arg3 ? *arg3 : "";
 	int repeat = *g;
-	size_t lsrc = src ? strlen(src) : 0;
-	size_t ldst = dst ? strlen(dst) : 0;
+	size_t lsrc = strlen(src);
+	size_t ldst = strlen(dst);
 	size_t l = strLen(s);
 	size_t n;
 	char *buf;
@@ -2361,15 +2361,23 @@ STRSubstitute(str *res, const str *arg1, const str *arg2, const str *arg3, const
 		throw(MAL, "str.substitute", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	pfnd = s;
+	if (lsrc == 0)
+		lsrc = 1;				/* make sure we make progress */
 	do {
 		fnd = strstr(pfnd, src);
 		if (fnd == NULL)
 			break;
 		n = fnd - pfnd;
-		strncpy(buf, pfnd, n);
-		buf += n;
-		strncpy(buf, dst, ldst);
-		buf += ldst;
+		if (n > 0) {
+			strncpy(buf, pfnd, n);
+			buf += n;
+		}
+		if (ldst > 0) {
+			strncpy(buf, dst, ldst);
+			buf += ldst;
+		}
+		if (*fnd == 0)
+			break;
 		pfnd = fnd + lsrc;
 	} while (repeat);
 	strcpy(buf, pfnd);

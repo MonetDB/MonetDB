@@ -91,6 +91,7 @@ Dependencies between database objects
 [ "monetdb",	"tmp",	"DEP_SCHEMA"	]
 [ "monetdb",	"json",	"DEP_SCHEMA"	]
 [ "monetdb",	"profiler",	"DEP_SCHEMA"	]
+[ "monetdb",	"mosaic",	"DEP_SCHEMA"	]
 [ "monetdb",	"bam",	"DEP_SCHEMA"	]
 [ "monetdb",	"test",	"DEP_SCHEMA"	]
 #SELECT t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, dependencies as dep where t.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type = 1;
@@ -586,6 +587,7 @@ Cleanup
 [ "monetdb",	"tmp",	"DEP_SCHEMA"	]
 [ "monetdb",	"json",	"DEP_SCHEMA"	]
 [ "monetdb",	"profiler",	"DEP_SCHEMA"	]
+[ "monetdb",	"mosaic",	"DEP_SCHEMA"	]
 [ "monetdb",	"bam",	"DEP_SCHEMA"	]
 #SELECT t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, dependencies as dep where t.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31);
 % .t,	.v,	.L100 # table_name

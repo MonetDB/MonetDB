@@ -16,7 +16,7 @@
 #ifndef _BAM_DB_INTERFACE_H
 #define _BAM_DB_INTERFACE_H
 
-#include "sql_scenario.h"
+#include "sql_execute.h"
 #include "sql_mvc.h"
 
 #include "bam_wrapper.h"

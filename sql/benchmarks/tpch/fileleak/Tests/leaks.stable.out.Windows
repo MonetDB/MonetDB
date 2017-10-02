@@ -25,22 +25,22 @@ Ready.
 # 16:01:26 >  "/usr/bin/python2" "leaks.SQL.py" "leaks"
 # 16:01:26 >  
 
-(u'l_comment', 262144, 0)
-(u'l_commitdate', 262144, 0)
-(u'l_discount', 524288, 0)
-(u'l_extendedprice', 524288, 0)
-(u'l_linenumber', 262144, 0)
+(u'l_comment', 65536, 0)
+(u'l_commitdate', 65536, 0)
+(u'l_discount', 65536, 0)
+(u'l_extendedprice', 65536, 0)
+(u'l_linenumber', 65536, 0)
 (u'l_linestatus', 0, 0)
-(u'l_orderkey', 262144, 0)
-(u'l_partkey', 262144, 0)
-(u'l_quantity', 524288, 0)
-(u'l_receiptdate', 262144, 0)
+(u'l_orderkey', 65536, 0)
+(u'l_partkey', 65536, 0)
+(u'l_quantity', 65536, 0)
+(u'l_receiptdate', 65536, 0)
 (u'l_returnflag', 0, 0)
-(u'l_shipdate', 262144, 0)
+(u'l_shipdate', 65536, 0)
 (u'l_shipinstruct', 0, 0)
 (u'l_shipmode', 0, 0)
-(u'l_suppkey', 262144, 0)
-(u'l_tax', 524288, 0)
+(u'l_suppkey', 65536, 0)
+(u'l_tax', 65536, 0)
 
 # 16:01:26 >  
 # 16:01:26 >  "Done."

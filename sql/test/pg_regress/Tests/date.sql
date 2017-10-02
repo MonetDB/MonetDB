@@ -53,7 +53,7 @@ SELECT f1, extract(century from f1) FROM DATE_TBL;
 SELECT f1, extract(millenium from f1) FROM DATE_TBL;
 SELECT f1, extract(epoch from f1) FROM DATE_TBL;
 
-SELECT f1, "week"(f1) FROM DATE_TBL;
+SELECT f1, week(f1) FROM DATE_TBL;
 SELECT f1, weekofyear(f1) FROM DATE_TBL;
 
 SELECT f1, dayofmonth(f1) FROM DATE_TBL;

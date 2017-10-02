@@ -21,6 +21,9 @@ INCLUDES = \
 
 MTSAFE
 
+# R include files contain redundant declarations
+rapi_CFLAGS = -Wno-redundant-decls
+
 lib__rapi = {
 	MODULE
 	DIR = libdir/monetdb5

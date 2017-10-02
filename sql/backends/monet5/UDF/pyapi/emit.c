@@ -66,6 +66,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 			if (el_count < 0) {
 				el_count = this_size;
 			} else if (el_count != this_size) {
+				/* don't use SZFMT since format given to Python */
 				PyErr_Format(
 					PyExc_TypeError, "Element %s has size %zu, but expected an "
 									 "element with size %zu",
@@ -137,8 +138,12 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 		if (potential_size > self->maxcols) {
 			// allocate space for new columns (if any new columns show up)
 			sql_emit_col *old = self->cols;
-			// FIXME unchecked_malloc GDKmalloc can return NULL
 			self->cols = GDKzalloc(sizeof(sql_emit_col) * potential_size);
+			if (self->cols == NULL) {
+				PyErr_Format(PyExc_TypeError, "Out of memory error");
+				error = true;
+				goto wrapup;
+			}
 			if (old) {
 				memcpy(self->cols, old, sizeof(sql_emit_col) * self->maxcols);
 				GDKfree(old);
@@ -227,6 +232,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 							msg = GDKstrdup("BUNappend failed.");
 						goto wrapup;
 					}
+				GDKfree(val);
 				} else {
 					switch (self->cols[i].b->ttype) {
 						case TYPE_bit:

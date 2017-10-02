@@ -1701,11 +1701,9 @@ store_needs_vacuum( sql_trans *tr )
 		if (!t->system)
 			continue;
 		/* no inserts, updates and enough deletes ? */
-		if (store_funcs.count_col(tr, c, 0) && 
-		    (store_funcs.count_col(tr, c, 1) -
-		    store_funcs.count_col(tr, c, 0)) == 0 && 
-		    !store_funcs.count_upd(tr, t) && 
-		    store_funcs.count_del(tr, t) >= max_dels) 
+		if (store_funcs.count_col(tr, c, 0) == 0 &&
+		    store_funcs.count_upd(tr, t) == 0 &&
+		    store_funcs.count_del(tr, t) >= max_dels)
 			return 1;
 	}
 	return 0;
@@ -1725,10 +1723,8 @@ store_vacuum( sql_trans *tr )
 
 		if (!t->system)
 			continue;
-		if (store_funcs.count_col(tr, c, 0) && 
-		    (store_funcs.count_col(tr, c, 1) -
-		    store_funcs.count_col(tr, c, 0)) == 0 && 
-		    !store_funcs.count_upd(tr, t) && 
+		if (store_funcs.count_col(tr, c, 0) == 0 &&
+		    store_funcs.count_upd(tr, t) == 0 &&
 		    store_funcs.count_del(tr, t) >= max_dels)
 			if (table_funcs.table_vacuum(tr, t) != SQL_OK)
 				return -1;
@@ -3324,6 +3320,7 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 		if (pfc->def)
 			fc->def = pfc->def;
 		fc->base.wtime = fc->base.rtime = 0;
+		fc->min = fc->max = NULL;
 	}
 	return LOG_OK;
 }
@@ -4132,12 +4129,11 @@ sql_trans_drop_func(sql_trans *tr, sql_schema *s, int id, int drop_action)
 	func->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
 	tr->schema_updates ++;
 	cs_del(&s->funcs, n, func->base.flag);
-	
+
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
-	
 }
 
 void
@@ -4906,8 +4902,9 @@ table_has_idx( sql_table *t, list *keycols)
 	node *n, *m, *o;
 	char *found = NULL;
 	int len = list_length(keycols);
-	// FIXME unchecked_malloc NEW_ARRAY can return NULL
 	found = NEW_ARRAY(char, len);
+	if(!found)
+		return NULL;
 	if (t->idxs.set) for ( n = t->idxs.set->h; n; n = n->next ) {
 		sql_idx *i = n->data;
 		int nr;

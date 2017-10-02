@@ -208,7 +208,7 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 }
 
 /*
- * The macro processor should be carefull in replacing the
+ * The macro processor should be careful in replacing the
  * instruction. In particular, any RETURN or YIELD statement
  * should be replaced by a jump. For the time being,
  * we only allow for a single return statement at the end
@@ -464,6 +464,7 @@ OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		for (t = s->space[j]; t != NULL; t = t->peer)
 			if (t->def->errors == 0) {
 				if (getSignature(t)->token == FUNCTIONsymbol) {
+					freeException(msg);
 					msg =ORCAMprocessor(cntxt, target, t);
 				}
 			}

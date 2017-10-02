@@ -11,7 +11,7 @@
  * Binary Association Tables
  * This module contains the commands and patterns to manage Binary
  * Association Tables (BATs). The relational operations you can execute
- * on BATs have the form of a neat algebra, described in algebra.mx
+ * on BATs have the form of a neat algebra, described in algebra.c
  *
  * But a database system needs more that just this algebra, since often it
  * is crucial to do table-updates (this would not be permitted in a strict
@@ -147,9 +147,10 @@ infoHeap(BAT *bk, BAT*bv, Heap *hp, str nme)
 }
 
 static inline char *
-oidtostr(oid i, char *p, int len)
+oidtostr(oid i, char *p, size_t len)
 {
-	(void) OIDtoStr(&p, &len, &i);
+	if (OIDtoStr(&p, &len, &i) < 0)
+		return NULL;
 	return p;
 }
 
@@ -624,6 +625,7 @@ BKCsetAccess(bat *res, const bat *bid, const char * const *param)
 		break;
 	default:
 		*res = 0;
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.setAccess", ILLEGAL_ARGUMENT " Got %c" " expected 'r','a', or 'w'", *param[0]);
 	}
 	if ((b = setaccess(b, m)) == NULL)
@@ -734,14 +736,14 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 	    BUNappend(bv, BATdirty(b) ? "dirty" : "clean", FALSE) != GDK_SUCCEED ||
 
 	    BUNappend(bk, "hseqbase", FALSE) != GDK_SUCCEED ||
-	    BUNappend(bv, oidtostr(b->hseqbase, bf, (int) sizeof(bf)), FALSE) != GDK_SUCCEED ||
+	    BUNappend(bv, oidtostr(b->hseqbase, bf, sizeof(bf)), FALSE) != GDK_SUCCEED ||
 
 	    BUNappend(bk, "tident", FALSE) != GDK_SUCCEED ||
 	    BUNappend(bv, b->tident, FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tdense", FALSE) != GDK_SUCCEED ||
 	    BUNappend(bv, local_itoa((ssize_t)(BATtdense(b))), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tseqbase", FALSE) != GDK_SUCCEED ||
-	    BUNappend(bv, oidtostr(b->tseqbase, bf, (int) sizeof(bf)), FALSE) != GDK_SUCCEED ||
+	    BUNappend(bv, oidtostr(b->tseqbase, bf, sizeof(bf)), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tsorted", FALSE) != GDK_SUCCEED ||
 	    BUNappend(bv, local_itoa((ssize_t)BATtordered(b)), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "trevsorted", FALSE) != GDK_SUCCEED ||
@@ -881,8 +883,10 @@ BKCsetName(void *r, const bat *bid, const char * const *s)
 		throw(MAL, "bat.setName", RUNTIME_OBJECT_MISSING);
 
 	for ( ; (c = *t) != 0; t++)
-		if (c != '_' && !GDKisalnum(c))
+		if (c != '_' && !GDKisalnum(c)) {
+			BBPunfix(b->batCacheid);
 			throw(MAL, "bat.setName", ILLEGAL_ARGUMENT ": identifier expected: %s", *s);
+		}
 
 	t = *s;
 	ret = BBPrename(b->batCacheid, t);
@@ -913,7 +917,7 @@ BKCgetBBPname(str *ret, const bat *bid)
 	}
 	*ret = GDKstrdup(BBPname(b->batCacheid));
 	BBPunfix(b->batCacheid);
-	return MAL_SUCCEED;
+	return *ret ? MAL_SUCCEED : createException(MAL, "bat.getName", MAL_MALLOC_FAIL);
 }
 
 str
@@ -945,6 +949,7 @@ BKCsave2(void *r, const bat *bid)
 		throw(MAL, "bat.save", RUNTIME_OBJECT_MISSING);
 	}
 	if ( b->batPersistence != TRANSIENT){
+		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.save", "Only save transient columns.");
 	}
 

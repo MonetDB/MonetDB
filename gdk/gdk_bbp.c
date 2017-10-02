@@ -321,9 +321,18 @@ BBPselectfarm(int role, int type, enum heaptype hptype)
 {
 	int i;
 
-	assert(role >= 0 && role < 32);
 	(void) type;		/* may use in future */
 	(void) hptype;		/* may use in future */
+
+	assert(role >= 0 && role < 32);
+#ifndef PERSISTENTHASH
+	if (hptype == hashheap)
+		role = TRANSIENT;
+#endif
+#ifndef PERSISTENTIDX
+	if (hptype == orderidxheap)
+		role = TRANSIENT;
+#endif
 	for (i = 0; i < MAXFARMS; i++)
 		if (BBPfarms[i].dirname && BBPfarms[i].roles & (1 << role))
 			return i;
@@ -937,7 +946,7 @@ headheapinit(oid *hseq, const char *buf, bat bid)
 	int n;
 
 	if (sscanf(buf,
-		   " %10s %hu %hu %hu %lld %lld %lld %lld %lld %lld %lld %lld %hu"
+		   " %10s %hu %hu %hu "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" %hu"
 		   "%n",
 		   type, &width, &var, &properties, &nokey0,
 		   &nokey1, &nosorted, &norevsorted, &base,
@@ -981,14 +990,14 @@ heapinit(BAT *b, const char *buf, int *hashash, const char *HT, int bbpversion, 
 	norevsorted = 0; /* default for first case */
 	if (bbpversion <= GDKLIBRARY_TALIGN ?
 	    sscanf(buf,
-		   " %10s %hu %hu %hu %lld %lld %lld %lld %lld %lld %lld %lld %hu"
+		   " %10s %hu %hu %hu "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" %hu"
 		   "%n",
 		   type, &width, &var, &properties, &nokey0,
 		   &nokey1, &nosorted, &norevsorted, &base,
 		   &align, &free, &size, &storage,
 		   &n) < 13 :
 		sscanf(buf,
-		   " %10s %hu %hu %hu %lld %lld %lld %lld %lld %lld %lld %hu"
+		   " %10s %hu %hu %hu "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" %hu"
 		   "%n",
 		   type, &width, &var, &properties, &nokey0,
 		   &nokey1, &nosorted, &norevsorted, &base,
@@ -1060,7 +1069,7 @@ vheapinit(BAT *b, const char *buf, int hashash, bat bid)
 		if (b->tvheap == NULL)
 			GDKfatal("BBPinit: cannot allocate memory for heap.");
 		if (sscanf(buf,
-			   " %lld %lld %hu"
+			   " "LLFMT" "LLFMT" %hu"
 			   "%n",
 			   &free, &size, &storage, &n) < 3)
 			GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
@@ -1118,7 +1127,7 @@ BBPreadEntries(FILE *fp, int bbpversion)
 
 		if (bbpversion <= GDKLIBRARY_INSERTED ?
 		    sscanf(buf,
-			   "%lld %hu %128s %128s %128s %d %u %lld %lld %lld %lld %lld %hu %hu %hu %hu"
+			   LLFMT" %hu %128s %128s %128s %d %u "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" %hu %hu %hu %hu"
 			   "%n",
 			   &batid, &status, headname, tailname, filename,
 			   &lastused, &properties, &inserted, &deleted, &first,
@@ -1127,7 +1136,7 @@ BBPreadEntries(FILE *fp, int bbpversion)
 			   &nread) < 16 :
 		    bbpversion <= GDKLIBRARY_HEADED ?
 		    sscanf(buf,
-			   "%lld %hu %128s %128s %128s %d %u %lld %lld %lld %hu %hu %hu %hu"
+			   LLFMT" %hu %128s %128s %128s %d %u "LLFMT" "LLFMT" "LLFMT" %hu %hu %hu %hu"
 			   "%n",
 			   &batid, &status, headname, tailname, filename,
 			   &lastused, &properties, &first,
@@ -1135,7 +1144,7 @@ BBPreadEntries(FILE *fp, int bbpversion)
 			   &map_theap,
 			   &nread) < 14 :
 		    sscanf(buf,
-			   "%lld %hu %128s %128s %u %lld %lld %lld"
+			   LLFMT" %hu %128s %128s %u "LLFMT" "LLFMT" "LLFMT
 			   "%n",
 			   &batid, &status, headname, filename,
 			   &properties,
@@ -1594,7 +1603,7 @@ vheap_entry(FILE *fp, Heap *h)
 }
 
 static gdk_return
-new_bbpentry(FILE *fp, bat i)
+new_bbpentry(FILE *fp, bat i, const char *prefix)
 {
 #ifndef NDEBUG
 	assert(i > 0);
@@ -1610,8 +1619,9 @@ new_bbpentry(FILE *fp, bat i)
 	}
 #endif
 
-	if (fprintf(fp, SSZFMT " %d %s %s %d " BUNFMT " "
-		    BUNFMT " " OIDFMT, /* BAT info */
+	if (fprintf(fp, "%s" SSZFMT " %d %s %s %d " BUNFMT " "
+		    BUNFMT " " OIDFMT, prefix,
+		    /* BAT info */
 		    (ssize_t) i,
 		    BBP_status(i) & BBPPERSISTENT,
 		    BBP_logical(i),
@@ -1709,10 +1719,10 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 			bat i = subcommit[j];
 			/* BBP.dir consists of all persistent bats only */
 			if (BBP_status(i) & BBPPERSISTENT) {
-				if (new_bbpentry(nbbpf, i) != GDK_SUCCEED) {
+				if (new_bbpentry(nbbpf, i, "") != GDK_SUCCEED) {
 					goto bailout;
 				}
-				IODEBUG new_bbpentry(stderr, i);
+				IODEBUG new_bbpentry(stderr, i, "#");
 			}
 			if (i == n)
 				n = 0;	/* read new entry (i.e. skip this one from old BBP.dir */
@@ -1725,7 +1735,7 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 				GDKsyserror("BBPdir_subcommit: Copying BBP.dir entry failed\n");
 				goto bailout;
 			}
-			IODEBUG fprintf(stderr, "%s", buf);
+			IODEBUG fprintf(stderr, "#%s", buf);
 			n = 0;
 		}
 	}
@@ -1787,10 +1797,10 @@ BBPdir(int cnt, bat *subcommit)
 		/* write the entry
 		 * BBP.dir consists of all persistent bats */
 		if (BBP_status(i) & BBPPERSISTENT) {
-			if (new_bbpentry(fp, i) != GDK_SUCCEED) {
+			if (new_bbpentry(fp, i, "") != GDK_SUCCEED) {
 				goto bailout;
 			}
-			IODEBUG new_bbpentry(stderr, i);
+			IODEBUG new_bbpentry(stderr, i, "#");
 		}
 	}
 
@@ -1908,7 +1918,9 @@ BBPdump(void)
 				vm += HEAPvmsize(b->thash->heap);
 			}
 		}
-		fprintf(stderr, "\n");
+		fprintf(stderr, " role: %s, persistence: %s\n",
+			b->batRole == PERSISTENT ? "persistent" : "transient",
+			b->batPersistence == PERSISTENT ? "persistent" : "transient");
 	}
 	fprintf(stderr,
 		"# %d bats: mem=" SZFMT ", vm=" SZFMT " %d cached bats: mem=" SZFMT ", vm=" SZFMT "\n",
@@ -3029,7 +3041,7 @@ file_exists(int farmid, const char *dir, const char *name, const char *ext)
 static gdk_return
 heap_move(Heap *hp, const char *srcdir, const char *dstdir, const char *nme, const char *ext)
 {
-	/* see doc at BATsetaccess()/gdk_bat.mx for an expose on mmap
+	/* see doc at BATsetaccess()/gdk_bat.c for an expose on mmap
 	 * heap modes */
 	if (file_exists(hp->farmid, dstdir, nme, ext)) {
 		/* dont overwrite heap with the committed state
@@ -3603,7 +3615,7 @@ BBPrecover_subdir(void)
 	if (ret == GDK_SUCCEED) {
 		ret = GDKremovedir(0, SUBDIR);
 		if (backup_dir == 2) {
-			IODEBUG fprintf(stderr, "BBPrecover_subdir: %s%cBBP.dir had disappeared!", SUBDIR, DIR_SEP);
+			IODEBUG fprintf(stderr, "#BBPrecover_subdir: %s%cBBP.dir had disappeared!", SUBDIR, DIR_SEP);
 			backup_dir = 0;
 		}
 	}
@@ -3686,9 +3698,6 @@ BBPdiskscan(const char *parent, size_t baseoff)
 			continue;
 
 		p = strchr(dent->d_name, '.');
-		bid = strtol(dent->d_name, NULL, 8);
-		ok = p && bid;
-		delete = FALSE;
 
 		if (strlen(dent->d_name) >= dstlen) {
 			/* found a file with too long a name
@@ -3705,58 +3714,66 @@ BBPdiskscan(const char *parent, size_t baseoff)
 			continue;
 		}
 
-		if (ok == FALSE || !persistent_bat(bid)) {
+		if (p && strcmp(p + 1, "tmp") == 0) {
 			delete = TRUE;
-		} else if (strstr(p + 1, ".tmp")) {
-			delete = 1;	/* throw away any .tmp file */
-		} else if (strncmp(p + 1, "tail", 4) == 0) {
-			BAT *b = getdesc(bid);
-			delete = (b == NULL || !b->ttype || b->batCopiedtodisk == 0);
-		} else if (strncmp(p + 1, "theap", 5) == 0) {
-			BAT *b = getdesc(bid);
-			delete = (b == NULL || !b->tvheap || b->batCopiedtodisk == 0);
-		} else if (strncmp(p + 1, "thash", 5) == 0) {
+			ok = TRUE;
+			bid = 0;
+		} else {
+			bid = strtol(dent->d_name, NULL, 8);
+			ok = p && bid;
+			delete = FALSE;
+
+			if (ok == FALSE || !persistent_bat(bid)) {
+				delete = TRUE;
+			} else if (strncmp(p + 1, "tail", 4) == 0) {
+				BAT *b = getdesc(bid);
+				delete = (b == NULL || !b->ttype || b->batCopiedtodisk == 0);
+			} else if (strncmp(p + 1, "theap", 5) == 0) {
+				BAT *b = getdesc(bid);
+				delete = (b == NULL || !b->tvheap || b->batCopiedtodisk == 0);
+			} else if (strncmp(p + 1, "thash", 5) == 0) {
 #ifdef PERSISTENTHASH
-			BAT *b = getdesc(bid);
-			delete = b == NULL;
-			if (!delete)
-				b->thash = (Hash *) 1;
+				BAT *b = getdesc(bid);
+				delete = b == NULL;
+				if (!delete)
+					b->thash = (Hash *) 1;
 #else
-			delete = TRUE;
+				delete = TRUE;
 #endif
 		} else if (strncmp(p + 1, "tmosaic", 9) == 0) {
 			BAT *b = getdesc(bid);
 			delete = b == NULL;
 			if (!delete)
 				b->tmosaic = (Heap *) 1;
-		} else if (strncmp(p + 1, "timprints", 9) == 0) {
-			BAT *b = getdesc(bid);
-			delete = b == NULL;
-			if (!delete)
-				b->timprints = (Imprints *) 1;
-		} else if (strncmp(p + 1, "torderidx", 9) == 0) {
+			} else if (strncmp(p + 1, "timprints", 9) == 0) {
+				BAT *b = getdesc(bid);
+				delete = b == NULL;
+				if (!delete)
+					b->timprints = (Imprints *) 1;
+			} else if (strncmp(p + 1, "torderidx", 9) == 0) {
 #ifdef PERSISTENTIDX
-			BAT *b = getdesc(bid);
-			delete = b == NULL;
-			if (!delete)
-				b->torderidx = (Heap *) 1;
+				BAT *b = getdesc(bid);
+				delete = b == NULL;
+				if (!delete)
+					b->torderidx = (Heap *) 1;
 #else
-			delete = TRUE;
+				delete = TRUE;
 #endif
-		} else if (strncmp(p + 1, "priv", 4) != 0 &&
-			   strncmp(p + 1, "new", 3) != 0 &&
-			   strncmp(p + 1, "head", 4) != 0 &&
-			   strncmp(p + 1, "tail", 4) != 0) {
-			ok = FALSE;
-		} else if (strncmp(p + 1, "head", 4) == 0 ||
-			   strncmp(p + 1, "hheap", 5) == 0 ||
-			   strncmp(p + 1, "hhash", 5) == 0 ||
-			   strncmp(p + 1, "himprints", 9) == 0 ||
-			   strncmp(p + 1, "horderidx", 9) == 0) {
-			/* head is VOID, so no head, hheap files, and
-			 * we do not support any indexes on the
-			 * head */
-			delete = 1;
+			} else if (strncmp(p + 1, "priv", 4) != 0 &&
+				   strncmp(p + 1, "new", 3) != 0 &&
+				   strncmp(p + 1, "head", 4) != 0 &&
+				   strncmp(p + 1, "tail", 4) != 0) {
+				ok = FALSE;
+			} else if (strncmp(p + 1, "head", 4) == 0 ||
+				   strncmp(p + 1, "hheap", 5) == 0 ||
+				   strncmp(p + 1, "hhash", 5) == 0 ||
+				   strncmp(p + 1, "himprints", 9) == 0 ||
+				   strncmp(p + 1, "horderidx", 9) == 0) {
+				/* head is VOID, so no head, hheap files, and
+				 * we do not support any indexes on the
+				 * head */
+				delete = 1;
+			}
 		}
 		if (!ok) {
 			/* found an unknown file; stop pruning in this

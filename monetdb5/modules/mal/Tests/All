@@ -41,6 +41,7 @@ remoteInit
 !BAD_HOSTNAME?remote09
 !BAD_HOSTNAME?remote11
 !BAD_HOSTNAME?remote12
+!BAD_HOSTNAME?remote13
 # needs Merovingian and aims at SQL
 #!BAD_HOSTNAME?remote88
 #!BAD_HOSTNAME?remote89

@@ -587,9 +587,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			for (i = 0; i < pci->argc; i++) {
 				int a = getArg(pci, i);
 
-				garbage[i] = -1;
 				if (stk->stk[a].vtype == TYPE_bat && getEndScope(mb, a) == stkpc && isNotUsedIn(pci, i + 1, a))
 					garbage[i] = a;
+				else
+					garbage[i] = -1;
 			}
 		}
 
@@ -815,8 +816,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 							continue;
 						}
 						b = BATdescriptor(stk->stk[getArg(pci, i)].val.bval);
-						BATassertProps(b);
-						BBPunfix(b->batCacheid);
+						if (b) {
+							BATassertProps(b);
+							BBPunfix(b->batCacheid);
+						}
 					}
 				}
 			}

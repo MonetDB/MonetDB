@@ -37,12 +37,15 @@ ERROR = !Python exception
         !  3.   result = dict()
         !  4.   result['n'] = str(res)
         !Loopback queries are not supported in parallel.
-MAPI  = (monetdb) /var/tmp/mtest-23452/.s.monetdb.39765
+CODE  = PY000
+MAPI  = (monetdb) /var/tmp/mtest-11032/.s.monetdb.32138
 QUERY = DROP TABLE mytable;
-ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-23452/.s.monetdb.39765
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
+MAPI  = (monetdb) /var/tmp/mtest-11032/.s.monetdb.32138
 QUERY = DROP FUNCTION myfunc;
-ERROR = !current transaction is aborted (please ROLLBACK)
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
 
 # 14:25:20 >  
 # 14:25:20 >  "Done."

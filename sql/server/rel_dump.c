@@ -581,7 +581,7 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 static void
 skipWS( char *r, int *pos)
 {
-	while(r[*pos] && (isspace(r[*pos]) || r[*pos] == '|')) 
+	while(r[*pos] && (isspace((unsigned char) r[*pos]) || r[*pos] == '|')) 
 		(*pos)++;
 }
 
@@ -594,7 +594,7 @@ skipIdent( char *r, int *pos)
 			(*pos)++;
 		(*pos)++;
 	} else {
-		while(r[*pos] && (isalnum(r[*pos]) || r[*pos] == '_' || r[*pos] == '%'))
+		while(r[*pos] && (isalnum((unsigned char) r[*pos]) || r[*pos] == '_' || r[*pos] == '%'))
 			(*pos)++;
 	}
 }
@@ -605,7 +605,7 @@ skipIdentOrSymbol( char *r, int *pos)
 	if (r[*pos] == '"') {
 		skipIdent(r, pos);
 	} else {
-		while(r[*pos] && (isalnum(r[*pos]) ||
+		while(r[*pos] && (isalnum((unsigned char) r[*pos]) ||
 				  r[*pos] == '_' || r[*pos] == '%' ||
 				  r[*pos] == '<' || r[*pos] == '>' ||
 				  r[*pos] == '/' || r[*pos] == '*' ||
@@ -620,7 +620,7 @@ readInt( char *r, int *pos)
 {
 	int res = 0;
 
-	while (isdigit(r[*pos])) {
+	while (isdigit((unsigned char) r[*pos])) {
 		res *= 10;
 		res += r[*pos]-'0';
 		(*pos)++;
@@ -677,8 +677,10 @@ read_prop( mvc *sql, sql_exp *exp, char *r, int *pos)
 		r[*pos] = 0;
 		
 		s = mvc_bind_schema(sql, sname);
-		p = exp->p = prop_create(sql->sa, PROP_JOINIDX, exp->p);
-		p->value = mvc_bind_idx(sql, s, iname);
+		if (!find_prop(exp->p, PROP_JOINIDX)) {
+			p = exp->p = prop_create(sql->sa, PROP_JOINIDX, exp->p);
+			p->value = mvc_bind_idx(sql, s, iname);
+		}
 		r[*pos] = old;
 		skipWS(r,pos);
 	}
@@ -911,7 +913,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 	}
 
 	if (!exp && b != e) { /* simple ident */
-		if (b[0] == 'A' && isdigit(b[1])) {
+		if (b[0] == 'A' && isdigit((unsigned char) b[1])) {
 			char *e2;
 			int nr = strtol(b+1,&e2,10);
 
@@ -986,19 +988,23 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 	}
 	if (strncmp(r+*pos, "HASHIDX",  strlen("HASHIDX")) == 0) {
 		(*pos)+= (int) strlen("HASHIDX");
-		exp->p = prop_create(sql->sa, PROP_HASHIDX, exp->p);
+		if (!find_prop(exp->p, PROP_HASHIDX))
+			exp->p = prop_create(sql->sa, PROP_HASHIDX, exp->p);
 		skipWS(r,pos);
 	}
 	if (strncmp(r+*pos, "HASHCOL",  strlen("HASHCOL")) == 0) {
 		(*pos)+= (int) strlen("HASHCOL");
-		exp->p = prop_create(sql->sa, PROP_HASHCOL, exp->p);
+		if (!find_prop(exp->p, PROP_HASHCOL))
+			exp->p = prop_create(sql->sa, PROP_HASHCOL, exp->p);
 		skipWS(r,pos);
 	}
 	if (strncmp(r+*pos, "FETCH",  strlen("FETCH")) == 0) {
 		(*pos)+= (int) strlen("FETCH");
-		exp->p = prop_create(sql->sa, PROP_FETCH, exp->p);
+		if (!find_prop(exp->p, PROP_FETCH))
+			exp->p = prop_create(sql->sa, PROP_FETCH, exp->p);
 		skipWS(r,pos);
 	}
+	read_prop( sql, exp, r, pos);
 
 	/* as alias */
 	if (strncmp(r+*pos, "as", 2) == 0) {

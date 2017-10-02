@@ -69,7 +69,7 @@ Ready.
 # 23:03:08 >  java Test_CisValid "jdbc:monetdb://toulouse:36086/mTests_sql_jdbc_tests?user=monetdb&password=monetdb"
 # 23:03:08 >  
 
-Validating connection: conn.isValid? false
+Validating connection: conn.isValid? true
 
 # 23:03:08 >  
 # 23:03:08 >  "Done."

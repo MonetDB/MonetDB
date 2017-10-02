@@ -7,14 +7,6 @@
  */
 
 #include "monetdb_config.h"
-
-/* Stefan: 
- * "Fake-include" to make msc.py create the proper dependencies;
- * otherwise, query.h doesn't get extracted from query.mx on Windows.
- * TODO: fix msc.py instead...
-#include "query.h"
-*/
-
 #include <sql_mem.h>
 
 sql_ref *

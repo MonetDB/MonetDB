@@ -34,19 +34,23 @@ keyword_key(char *k, int *l)
 	return (int) ((h & 0x80000000) ? ~h + 1 : h);
 }
 
-void
+int
 keywords_insert(char *k, int token)
 {
-	// FIXME unchecked_malloc MNEW can return NULL
 	keyword *kw = MNEW(keyword);
-	int len = 0;
-	int bucket = keyword_key(k = toLower(k), &len) & HASH_MASK;
+	if(kw) {
+		int len = 0;
+		int bucket = keyword_key(k = toLower(k), &len) & HASH_MASK;
 
-	kw->keyword = k;
-	kw->len = len;
-	kw->token = token;
-	kw->next = keywords[bucket];
-	keywords[bucket] = kw;
+		kw->keyword = k;
+		kw->len = len;
+		kw->token = token;
+		kw->next = keywords[bucket];
+		keywords[bucket] = kw;
+		return 0;
+	} else {
+		return -1;
+	}
 }
 
 keyword *

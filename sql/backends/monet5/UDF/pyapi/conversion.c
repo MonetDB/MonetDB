@@ -493,7 +493,7 @@ PyObject *PyDict_CheckForConversion(PyObject *pResult, int expected_columns,
 			msg = createException(
 				MAL, "pyapi.eval",
 				SQLSTATE(PY000) "Error converting dict return value \"%s\": %s.",
-				retcol_names[i], *return_message);
+				retcol_names[i], getExceptionMessage(*return_message));
 			GDKfree(*return_message);
 			goto wrapup;
 		}
@@ -1007,8 +1007,8 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 		BATiter li = bat_iterator(b);
 		BUN p = 0, q = 0;
 		char *result = NULL;
-		int length = 0;
-		int (*strConversion)(str *, int *, const void *) =
+		size_t length = 0;
+		ssize_t (*strConversion)(str *, size_t *, const void *) =
 			BATatoms[b->ttype].atomToStr;
 		*ret_bat = COLnew(0, TYPE_str, 0, TRANSIENT);
 		*ret_type = conv_type;
@@ -1019,7 +1019,7 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 		BATloop(b, p, q)
 		{
 			void *element = (void *)BUNtail(li, p);
-			if (strConversion(&result, &length, element) == 0) {
+			if (strConversion(&result, &length, element) < 0) {
 				return createException(MAL, "pyapi.eval",
 									   SQLSTATE(PY000) "Failed to convert element to string.");
 			}

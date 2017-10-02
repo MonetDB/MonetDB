@@ -215,7 +215,6 @@ if os.name == 'nt':
     if 'PYTHONPATH' in os.environ:
         p = os.environ['PYTHONPATH'] + os.pathsep + p
     os.environ['PYTHONPATH'] = p
-    os.environ['PYTHONHOME'] = sys.prefix
 
 import string                   # for whitespace
 def splitcommand(cmd):
@@ -1548,8 +1547,8 @@ def returnCode(proc, f = None):
                     # wait a few seconds for the core to be dumped
                     time.sleep(10)
                     if procdebug:
-                        print('Starting: coredumpctl info %d' % proc.pid)
-                    p = process.Popen(['coredumpctl', 'info', str(proc.pid)],
+                        print('Starting: coredumpctl -q info %d' % proc.pid)
+                    p = process.Popen(['coredumpctl', '-q' ,'info', str(proc.pid)],
                                       stdout = process.PIPE,
                                       stderr = process.PIPE,
                                       universal_newlines = True)
@@ -1570,8 +1569,8 @@ def returnCode(proc, f = None):
                     # wait a few seconds for the core to be dumped
                     time.sleep(10)
                     if procdebug:
-                        print('Starting: coredumpctl info %d' % proc.pid)
-                    p = process.Popen(['coredumpctl', 'info', str(proc.pid)],
+                        print('Starting: coredumpctl -q info %d' % proc.pid)
+                    p = process.Popen(['coredumpctl', '-q' ,'info', str(proc.pid)],
                                       stdout = process.PIPE,
                                       stderr = process.PIPE,
                                       universal_newlines = True)
@@ -2046,7 +2045,16 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
                 f.close()
                 if os.path.isfile(TSTSRC):
                     try:
-                        SymlinkOrCopy(TSTSRC, ff[:-4])
+                        if '.stable.' in ff:
+                            f1 = open(TSTSRC, "r")
+                            f2 = open(ff[:-4], "w")
+                            line = f1.readline()
+                            f2.write("%s of test '%s` in directory '%s` itself:\n" % (line[:6], TST, TSTDIR))
+                            f2.write(f1.read())
+                            f1.close()
+                            f2.close()
+                        else:
+                            SymlinkOrCopy(TSTSRC, ff[:-4])
                         links.append(ff[:-4])
                     except IOError as err:
                         ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."

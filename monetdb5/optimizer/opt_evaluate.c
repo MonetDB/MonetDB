@@ -19,6 +19,7 @@ OPTallConstant(Client cntxt, MalBlkPtr mb, InstrPtr p)
 	if ( !(p->token == ASSIGNsymbol ||
 		   getModuleId(p) == calcRef ||
 		   getModuleId(p) == strRef ||
+		   getModuleId(p) == mtimeRef ||
 		   getModuleId(p) == mmathRef))
 		return FALSE;
 	if (getModuleId(p) == mmathRef && strcmp(getFunctionId(p), "rand") == 0)
@@ -126,14 +127,14 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
-	cntxt->itrace = 0;
 	(void)stk;
 	(void)pci;
 
 	if ( mb->inlineProp )
 		return MAL_SUCCEED;
 
-	(void)cntxt;
+	cntxt->itrace = 0;
+
 #ifdef DEBUG_OPT_EVALUATE
 	fprintf(stderr, "Constant expression optimizer started\n");
 #endif
