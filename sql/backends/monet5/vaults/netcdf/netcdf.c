@@ -453,7 +453,7 @@ header: %s", nc_strerror(retval));
     	switch ( atype ) {
 		case NC_CHAR:
 			aval = (char *) GDKzalloc(alen + 1);
-			if ((retval = nc_get_att_text(ncid,NC_GLOBAL,aname,aval)))
+			if ((retval = nc_get_att_text(ncid,NC_GLOBAL,aname,aval))){
 				GDKfree(esc_str0);
 				if (dims != NULL ){
 					for (didx = 0; didx < ndims; didx++)
@@ -463,6 +463,7 @@ header: %s", nc_strerror(retval));
 				return createException(MAL, "netcdf.attach",
 									   SQLSTATE(NC000) "Cannot read global attribute %s value: %s",
 									   aname, nc_strerror(retval));
+			}
 		    fix_quote(aval, alen);
 			aval[alen] = '\0';
 			snprintf(buf, BUFSIZ, INSATTR, "GLOBAL", esc_str0, "string", aval, (int)fid, "root");
