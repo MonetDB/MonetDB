@@ -42,5 +42,5 @@ CREATE TABLE hmda_14 AS SELECT a.* , b.activityyear, b.fedtaxid, b.respondentnam
 
 select actiontype, propertytype, loanpurpose, count(*) as num_records from hmda_14 group by actiontype, propertytype, loanpurpose;
 
-select tables.name, columns.name, location from tables inner join columns on tables.id=columns.table_id left join storage on tables.name=storage.table and columns.name=storage.column where location is null and tables.name like 'hmda%';
+select tables.name, columns.name, location from tables inner join columns on tables.id=columns.table_id left join storage on tables.name=storage."table" and columns.name=storage."column" where location is null and tables.name like 'hmda%';
 

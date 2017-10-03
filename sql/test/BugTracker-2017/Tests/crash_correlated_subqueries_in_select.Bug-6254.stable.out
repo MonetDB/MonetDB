@@ -51,8 +51,8 @@ Ready.
 [ "sys",	2000,	"environment",	true,	2	]
 [ "sys",	2000,	"queue",	true,	8	]
 [ "sys",	2000,	"rejects",	true,	4	]
-[ "sys",	2000,	"storage",	true,	17	]
-[ "sys",	2000,	"storagemodel",	true,	13	]
+[ "sys",	2000,	"storage",	true,	18	]
+[ "sys",	2000,	"storagemodel",	true,	14	]
 [ "sys",	2000,	"tablestoragemodel",	true,	8	]
 [ "sys",	2000,	"view_stats",	false,	5	]
 #SELECT * FROM sys.view_stats WHERE is_system_view;
@@ -72,8 +72,8 @@ Ready.
 [ "sys",	2000,	"environment",	true,	2	]
 [ "sys",	2000,	"queue",	true,	8	]
 [ "sys",	2000,	"rejects",	true,	4	]
-[ "sys",	2000,	"storage",	true,	17	]
-[ "sys",	2000,	"storagemodel",	true,	13	]
+[ "sys",	2000,	"storage",	true,	18	]
+[ "sys",	2000,	"storagemodel",	true,	14	]
 [ "sys",	2000,	"tablestoragemodel",	true,	8	]
 #SELECT * FROM sys.view_stats WHERE NOT is_system_view;
 % .view_stats,	.view_stats,	.view_stats,	.view_stats,	.view_stats # table_name

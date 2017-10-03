@@ -139,8 +139,8 @@ CODE  = 22003
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT '' AS bad, f.f1 ^ '1e200' from FLOAT8_TBL f;
 
-CODE  = 22003
-MAPI  = (monetdb) /var/tmp/mtest-12398/.s.monetdb.34869
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-25681/.s.monetdb.37038
 QUERY = SELECT '' AS bad, f.f1 / '0.0' from FLOAT8_TBL f;
 ERROR = !division by zero.
 CODE  = 22012
