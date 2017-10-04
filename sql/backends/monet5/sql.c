@@ -4084,9 +4084,9 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (sch == NULL || tab == NULL || col == NULL || type == NULL || mode == NULL || loc == NULL || imprints == NULL || 
 	    sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL || phash == NULL ||
 	    revsort == NULL || key == NULL || oidx == NULL || compressed == NULL) {
-		goto bailout;
 		if (compressed)
 			BBPunfix(compressed->batCacheid);
+		goto bailout;
 	}
 	if( pci->argc - pci->retc >= 1)
 		sname = *getArgReference_str(stk, pci, pci->retc);
