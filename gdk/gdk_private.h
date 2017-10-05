@@ -36,6 +36,8 @@ __hidden int ATOMunknown_find(const char *nme)
 	__attribute__((__visibility__("hidden")));
 __hidden str ATOMunknown_name(int a)
 	__attribute__((__visibility__("hidden")));
+__hidden void ATOMunknown_clean(void)
+	__attribute__((__visibility__("hidden")));
 __hidden int BATcheckhash(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden int BATcheckimprints(BAT *b)

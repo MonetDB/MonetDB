@@ -2182,3 +2182,20 @@ ATOMunknown_name(int i)
 	assert(unknown[-i]);
 	return unknown[-i];
 }
+
+void
+ATOMunknown_clean(void)
+{
+	int i;
+
+	MT_lock_set(&GDKthreadLock);
+	for (i = 1; i < MAXATOMS; i++) {
+		if(unknown[i]) {
+			GDKfree(unknown[i]);
+			unknown[i] = NULL;
+		} else {
+			break;
+		}
+	}
+	MT_lock_unset(&GDKthreadLock);
+}
