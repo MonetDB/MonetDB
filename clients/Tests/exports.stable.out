@@ -1959,6 +1959,7 @@ void chkFlow(stream *out, MalBlkPtr mb);
 int chkInstruction(stream *out, Module s, MalBlkPtr mb, InstrPtr p);
 void chkProgram(stream *out, Module s, MalBlkPtr mb);
 void chkTypes(stream *out, Module s, MalBlkPtr mb, int silent);
+void cleanOptimizerPipe(void);
 str cleanupTraces(void);
 void clearStack(MalStkPtr s);
 void clearTrace(void);

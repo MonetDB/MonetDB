@@ -514,3 +514,14 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name)
 	}
 	return msg;
 }
+
+void
+cleanOptimizerPipe(void) {
+	int j;
+	for (j = 0; j < MAXOPTPIPES && pipes[j].def; j++) {
+		if (pipes[j].mb) {
+			freeMalBlk(pipes[j].mb);
+			pipes[j].mb = NULL;
+		}
+	}
+}
