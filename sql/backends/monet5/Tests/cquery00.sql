@@ -1,21 +1,21 @@
 -- test ordinary procedure call to update a stream
-create stream table testing (a int);
-insert into testing values(123);
+create stream table cqinput00 (a int);
+insert into cqinput00 values(123);
 
-create table results (a int);
+create table cqresults00 (a int);
 
-create procedure myproc()
+create procedure cquery00()
 begin 
-	insert into results select a from sys.testing; 
+	insert into cqresults00 select a from sys.cqinput00;
 END;
 
 -- a continuous procedure can be called like any other procedure
-call myproc();
+call cquery00();
 
-select * from results;
+select * from cqresults00;
 
---select * from functions where name = 'myproc';
+--select * from functions where name = 'cquery00';
 
-drop procedure myproc;
-drop table results;
-drop table testing;
+drop procedure cquery00;
+drop table cqresults00;
+drop table cqinput00;

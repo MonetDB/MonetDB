@@ -596,6 +596,87 @@ has_return( list *l )
 	return 0;
 }
 
+static sql_exp*
+start_continuous_query(mvc *sql, symbol *s) {
+	dlist *l = s->data.lval;
+	AtomNode* an = NULL;
+	lng start_at = 0;
+	str msg = NULL;
+
+	an = (AtomNode*) l->h->next->next->next->next->data.sym;
+	if(an && (msg = convert_atom_into_unix_timestamp(an->a, &start_at)) != NULL){
+		return sql_error(sql, 01, "%s", msg);
+	}
+
+	sql->continuous |= l->h->data.i_val; /* start query */
+	sql->heartbeats = l->h->next->next->next->data.l_val;
+	sql->startat = start_at;
+	sql->cycles = l->h->next->next->next->next->next->data.i_val;
+	sql->cq_alias = l->h->next->next->next->next->next->next->data.sval;
+	return rel_psm_call(sql, l->h->next->next->data.sym, l->h->next->data.i_val);
+}
+
+static sql_rel *
+rel_single_continuous_query(mvc *sql, dnode *w) {
+	sql_rel *rel;
+	list *exps;
+	int action = 0;
+	AtomNode* an;
+	lng start_at_parsed = 0;
+	str msg = NULL;
+
+	action |= w->data.i_val; /* pause, resume or stop query? */
+	action |= w->next->data.i_val; /* procedure or function? */
+
+	if(action & mod_resume_continuous) {
+		an = (AtomNode*) w->next->next->next->next->data.sym;
+		if(an){
+			if((msg = convert_atom_into_unix_timestamp(an->a, &start_at_parsed)) != NULL)
+				return sql_error(sql, 02, "%s", msg);
+		}
+	}
+
+	rel = rel_create(sql->sa);
+	exps = new_exp_list(sql->sa);
+
+	append(exps, exp_atom_clob(sql->sa, w->next->next->data.sval)); //alias
+	append(exps, exp_atom_int(sql->sa, action));
+	if(action & mod_resume_continuous) {
+		append(exps, exp_atom_lng(sql->sa, w->next->next->next->data.l_val)); //heartbeats
+		append(exps, exp_atom_lng(sql->sa, start_at_parsed)); //start at value
+		append(exps, exp_atom_int(sql->sa, w->next->next->next->next->next->data.i_val)); //cycles
+	} else {
+		append(exps, exp_atom_lng(sql->sa, 0));
+		append(exps, exp_atom_lng(sql->sa, 0));
+		append(exps, exp_atom_int(sql->sa, 0));
+	}
+
+	rel->l = NULL;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = DDL_CHANGE_SINGLE_CP;
+	rel->exps = exps;
+	rel->card = 0;
+	rel->nrcols = 0;
+	return rel;
+}
+
+static sql_rel *
+rel_all_continuous_queries(mvc *sql, int action) {
+	sql_rel *rel = rel_create(sql->sa);
+	list *exps = new_exp_list(sql->sa);
+	append(exps, exp_atom_int(sql->sa, action));
+
+	rel->l = NULL;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = DDL_CHANGE_ALL_CP;
+	rel->exps = exps;
+	rel->card = 0;
+	rel->nrcols = 0;
+	return rel;
+}
+
 static list *
 sequential_block (mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk, char *opt_label, int is_func) 
 {
@@ -635,27 +716,17 @@ sequential_block (mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk,
 			reslist = rel_psm_case(sql, restype, restypelist, s->data.lval->h, is_func);
 			break;
 		case SQL_CALL:
-			sql->continuous = 0;
 			res = rel_psm_call(sql, s->data.sym, 0);
 			break;
-		case SQL_START_CONTINUOUS_QUERY: {
-			dlist *l = s->data.lval;
-			AtomNode* an = NULL;
-			lng start_at = 0;
-			str msg = NULL;
-
-			an = (AtomNode*) l->h->next->next->next->next->data.sym;
-			if(an && (msg = convert_atom_into_unix_timestamp(an->a, &start_at)) != NULL){
-				return sql_error(sql, 01, "%s", msg);
-			}
-
-			sql->continuous |= l->h->data.i_val; /* start query */
-			sql->heartbeats = l->h->next->next->next->data.l_val;
-			sql->startat = start_at;
-			sql->cycles = l->h->next->next->next->next->next->data.i_val;
-			sql->cq_alias = l->h->next->next->next->next->next->next->data.sval;
-			res = rel_psm_call(sql, l->h->next->next->data.sym, l->h->next->data.i_val);
-		} break;
+		case SQL_START_CONTINUOUS_QUERY:
+			res = start_continuous_query(sql, s);
+			break;
+		case SQL_CHANGE_CONTINUOUS_QUERY:
+			res = exp_rel(sql, rel_single_continuous_query(sql, s->data.lval->h));
+			break;
+		case SQL_ALL_CONTINUOUS_QUERIES:
+			res = exp_rel(sql, rel_all_continuous_queries(sql, s->data.i_val));
+			break;
 		case SQL_RETURN:
 		case SQL_YIELD:
 			/*If it is not a function it cannot have a return statement*/
@@ -1463,25 +1534,18 @@ rel_psm(mvc *sql, symbol *s)
 		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, s->data.sym, 0));
 		sql->type = Q_UPDATE;
 		break;
-	case SQL_START_CONTINUOUS_QUERY: {
-		dlist *l = s->data.lval;
-		AtomNode* an = NULL;
-		lng start_at = 0;
-		str msg = NULL;
-
-		an = (AtomNode*) l->h->next->next->next->next->data.sym;
-		if(an && (msg = convert_atom_into_unix_timestamp(an->a, &start_at)) != NULL){
-			return sql_error(sql, 01, "%s", msg);
-		}
-
-		sql->continuous |= l->h->data.i_val; /* start query */
-		sql->heartbeats = l->h->next->next->next->data.l_val;
-		sql->startat = start_at;
-		sql->cycles = l->h->next->next->next->next->next->data.i_val;
-		sql->cq_alias = l->h->next->next->next->next->next->next->data.sval;
-		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, l->h->next->next->data.sym, l->h->next->data.i_val));
+	case SQL_START_CONTINUOUS_QUERY:
+		ret = rel_psm_stmt(sql->sa, start_continuous_query(sql, s));
 		sql->type = Q_UPDATE;
-	}	break;
+		break;
+	case SQL_CHANGE_CONTINUOUS_QUERY:
+		ret = rel_psm_stmt(sql->sa, exp_rel(sql, rel_single_continuous_query(sql, s->data.lval->h)));
+		sql->type = Q_UPDATE;
+		break;
+	case SQL_ALL_CONTINUOUS_QUERIES:
+		ret = rel_psm_stmt(sql->sa, exp_rel(sql, rel_all_continuous_queries(sql, s->data.i_val)));
+		sql->type = Q_UPDATE;
+		break;
 	case SQL_CREATE_TABLE_LOADER:
 	{
 	    dlist *l = s->data.lval;

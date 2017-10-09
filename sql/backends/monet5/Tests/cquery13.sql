@@ -12,9 +12,9 @@ begin
 end;
 
 start continuous sys.cq_query13a() with heartbeat 3000;
-start continuous sys.cq_query13b() with cycles 1;
+start continuous sys.cq_query13b() with heartbeat 1000 cycles 1;
 
-call cquery.wait(1500);
+call cquery.wait(2500);
 
 drop procedure sys.cq_query13a;
 drop procedure sys.cq_query13b;
