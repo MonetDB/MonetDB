@@ -17,6 +17,5 @@ mal_export str addPipeDefinition(Client cntxt, str name, str pipe);
 mal_export int isOptimizerPipe(str name);
 mal_export str addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name);
 mal_export str compileOptimizer(Client cntxt, str name);
-mal_export void cleanOptimizerPipe(void);
 
 #endif

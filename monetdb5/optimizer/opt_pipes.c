@@ -515,6 +515,8 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name)
 	return msg;
 }
 
+void cleanOptimizerPipe(void);
+
 void
 cleanOptimizerPipe(void) {
 	int j;
