@@ -121,6 +121,8 @@ int mal_init(void){
  * activity first.
  * This function should be called after you have issued sql_reset();
  */
+void cleanOptimizerPipe(void);
+
 void mserver_reset(int exit)
 {
 	str err = 0;
