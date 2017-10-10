@@ -436,8 +436,15 @@ compileOptimizer(Client cntxt, str name)
 	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++) {
 		if (strcmp(pipes[i].name, name) == 0 && pipes[i].mb == 0) {
 			/* precompile the pipeline as MAL string */
-			MCinitClientRecord(&c, cntxt->user, 0, 0);
+			if(MCinitClientRecord(&c, cntxt->user, 0, 0) == NULL) {
+				MT_lock_unset(&pipeLock);
+				throw(MAL, "optimizer.addOptimizerPipe", MAL_MALLOC_FAIL);
+			}
 			c.nspace = newModule(NULL, putName("user"));
+			if(c.nspace == NULL) {
+				MT_lock_unset(&pipeLock);
+				throw(MAL, "optimizer.addOptimizerPipe", MAL_MALLOC_FAIL);
+			}
 			c.father = cntxt;	/* to avoid conflicts on GDKin */
 			c.fdout = cntxt->fdout;
 			if (setScenario(&c, "mal")) {
@@ -454,9 +461,12 @@ compileOptimizer(Client cntxt, str name)
 						continue;
 					MSinitClientPrg(&c, "user", pipes[j].name);
 					msg = compileString(&sym, &c, pipes[j].def);
-					if (msg != MAL_SUCCEED) 
+					if (msg != MAL_SUCCEED)
 						break;
-					pipes[j].mb = copyMalBlk(sym->def);
+					if((pipes[j].mb = copyMalBlk(sym->def)) == NULL) {
+						msg = GDKstrdup(MAL_MALLOC_FAIL);
+						break;
+					}
 				}
 			}
 			/* don't cleanup thread info since the thread continues to

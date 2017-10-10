@@ -94,6 +94,10 @@ malLoadScript(Client c, str name, bstream **fdin)
 		throw(MAL, "malInclude", "file %s too large to process", name);
 	}
 	*fdin = bstream_create(fd, sz == 0 ? (size_t) (2 * 128 * BLOCK) : sz);
+	if(*fdin == NULL) {
+		mnstr_destroy(fd);
+		throw(MAL, "malInclude", MAL_MALLOC_FAIL);
+	}
 	if (bstream_next(*fdin) < 0)
 		mnstr_printf(c->fdout, "!WARNING: could not read %s\n", name);
 	return MAL_SUCCEED;

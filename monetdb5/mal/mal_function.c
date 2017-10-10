@@ -404,7 +404,11 @@ cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 		return NULL;
 	}
 	freeMalBlk(new->def);
-	new->def = copyMalBlk(proc->def);
+	if((new->def = copyMalBlk(proc->def)) == NULL) {
+		freeSymbol(new);
+		fprintf(stderr,"cloneFunction() failed");
+		return NULL;
+	}
 	/* now change the definition of the original proc */
 #ifdef DEBUG_CLONE
 	fprintf(stderr, "CLONED VERSION\n");

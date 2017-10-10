@@ -128,7 +128,9 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 	/*
 	 * Determine the variables to be upgraded and adjust their type
 	 */
-	mq= copyMalBlk(s->def);
+	if((mq = copyMalBlk(s->def)) == NULL) {
+		return 0;
+	}
 	sig= getInstrPtr(mq,0);
 #ifdef DEBUG_OPT_REMAP
 	fprintf(stderr,"#Modify the code\n");
