@@ -992,7 +992,7 @@ open_stream(const char *filename, const char *flags)
 
 #ifdef HAVE_LIBZ
 #if ZLIB_VERNUM < 0x1290
-typedef z_size_t size_t;
+typedef size_t z_size_t;
 
 /* simplistic version for ancient systems (CentOS 6, Ubuntu Trusty) */
 static z_size_t
