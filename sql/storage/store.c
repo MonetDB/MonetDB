@@ -697,13 +697,11 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	if (isStream(t)) {
 		streams_table_id = find_sql_column(streams, "table_id");
 		rs = table_funcs.rids_select(tr, streams_table_id, &t->base.id, &t->base.id, NULL);
-		for (rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) {
-			sql_stream *st = load_sql_stream(tr, t, rid);
-
+		if((rid = table_funcs.rids_next(rs)) != oid_nil) {
+			sql_stream *st = load_sql_stream(tr, t, rid); //there will be always only one stream entry per table
 			t->stream = st;
 			st->t = t;
 			list_append(s->streams, st);
-			break; //there will be always only one stream per table
 		}
 		table_funcs.rids_destroy(rs);
 	}

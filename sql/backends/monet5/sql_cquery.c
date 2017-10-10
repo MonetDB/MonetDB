@@ -444,7 +444,8 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	backend *be = (backend *) cntxt->sqlcontext;
 	mvc* sqlcontext;
 	const char* err_message = "procedure";
-	int i, j, is_function = 0, cycles = DEFAULT_CP_CYCLES, idx, ttlen;
+	int i, j, is_function = 0, cycles = DEFAULT_CP_CYCLES, idx;
+	size_t ttlen = 0;
 	lng heartbeats = DEFAULT_CP_HEARTBEAT, startat = 0;
 
 	(void) stk;
@@ -739,7 +740,7 @@ str
 CQpause(str alias, int which)
 {
 	int idx = 0;
-	str msg = MAL_SUCCEED;
+	str msg = MAL_SUCCEED, this_alias = NULL;
 	const char* err_message = (which & mod_continuous_function) ? "function" : "procedure";
 	MT_Id myID = MT_getpid();
 
@@ -757,15 +758,18 @@ CQpause(str alias, int which)
 	}
 	// actually wait if the query was running
 	if(myID != cq_pid) {
-		while( pnet[idx].status == CQRUNNING ){
+		this_alias = pnet[idx].alias; //the CQ might get removed during the sleep calls, so we have to make this check
+		while( idx < pnettop && this_alias == pnet[idx].alias && pnet[idx].status == CQRUNNING ){
 			MT_lock_unset(&ttrLock);
 			MT_sleep_ms(5);
 			MT_lock_set(&ttrLock);
-			if( pnet[idx].status == CQWAIT)
+			if( idx >= pnettop || pnet[idx].status == CQWAIT)
 				break;
 		}
 	}
-	pnet[idx].status = CQPAUSE;
+	if(idx < pnettop && this_alias == pnet[idx].alias) {
+		pnet[idx].status = CQPAUSE;
+	}
 
 finish:
 	MT_lock_unset(&ttrLock);
@@ -775,7 +779,7 @@ finish:
 str
 CQpauseAll(void)
 {
-	str msg = MAL_SUCCEED;
+	str msg = MAL_SUCCEED, this_alias = NULL;
 	int i;
 	MT_Id myID = MT_getpid();
 	//mvc* smvc;
@@ -788,15 +792,18 @@ CQpauseAll(void)
 	MT_lock_set(&ttrLock);
 	for(i = 0 ; i < pnettop; i++) {
 		if(myID != cq_pid) {
-			while (pnet[i].status == CQRUNNING) {
+			this_alias = pnet[i].alias;
+			while (i < pnettop && this_alias == pnet[i].alias && pnet[i].status == CQRUNNING) {
 				MT_lock_unset(&ttrLock);
 				MT_sleep_ms(5);
 				MT_lock_set(&ttrLock);
-				if (pnet[i].status == CQWAIT)
+				if (i >= pnettop && pnet[i].status == CQWAIT)
 					break;
 			}
 		}
-		pnet[i].status = CQPAUSE;
+		if(i < pnettop && this_alias == pnet[i].alias) {
+			pnet[i].status = CQPAUSE;
+		}
 	}
 	MT_lock_unset(&ttrLock);
 	return msg;
@@ -962,7 +969,7 @@ str
 CQderegister(str alias, int which)
 {
 	int idx = 0;
-	str msg = MAL_SUCCEED;
+	str msg = MAL_SUCCEED, this_alias = NULL;
 	const char* err_message = (which & mod_continuous_function) ? "function" : "procedure";
 	MT_Id myID = MT_getpid();
 
@@ -975,13 +982,17 @@ CQderegister(str alias, int which)
 	}
 	if(myID != cq_pid) {
 		pnet[idx].status = CQSTOP;
+		this_alias = pnet[idx].alias;
 		MT_lock_unset(&ttrLock);
 		// actually wait if the query was running
-		while (pnet[idx].status != CQDEREGISTER) {
+		// the CQ might get removed during the sleep calls, so we have to make this check
+		while (idx < pnettop && this_alias == pnet[idx].alias && pnet[idx].status != CQDEREGISTER) {
 			MT_sleep_ms(5);
 		}
 		MT_lock_set(&ttrLock);
-		CQfree(idx);
+		if(idx < pnettop && this_alias == pnet[idx].alias) {
+			CQfree(idx);
+		}
 		if( pnettop == 0) {
 			pnstatus = CQSTOP;
 			MT_lock_unset(&ttrLock);
@@ -1003,7 +1014,7 @@ finish:
 str
 CQderegisterAll(void)
 {
-	str msg = MAL_SUCCEED;
+	str msg = MAL_SUCCEED, this_alias = NULL;
 	int i;
 	MT_Id myID = MT_getpid();
 	//mvc* smvc;
@@ -1014,13 +1025,16 @@ CQderegisterAll(void)
 	for(i = 0 ; i < pnettop; i++) {
 		if(myID != cq_pid) {
 			pnet[i].status = CQSTOP;
+			this_alias = pnet[i].alias;
 			MT_lock_unset(&ttrLock);
 			// actually wait if the query was running
-			while( pnet[i].status != CQDEREGISTER ){
+			while(i < pnettop && this_alias == pnet[i].alias && pnet[i].status != CQDEREGISTER ){
 				MT_sleep_ms(5);
 			}
 			MT_lock_set(&ttrLock);
-			CQfree(i);
+			if(i < pnettop && this_alias == pnet[i].alias) {
+				CQfree(i);
+			}
 		} else {
 			pnet[i].status = CQDELETE;
 		}
