@@ -2747,11 +2747,12 @@ zero_or_one(ptr ret, const bat *bid)
 	_s = ATOMsize(ATOMtype(b->ttype));
 	if (ATOMextern(b->ttype)) {
 		_s = ATOMlen(ATOMtype(b->ttype), p);
-		memcpy(*(ptr *) ret = GDKmalloc(_s), p, _s);
-		if(ret == NULL){
+		*(ptr *) ret = GDKmalloc(_s);
+		if(*(ptr *) ret == NULL){
 			BBPunfix(b->batCacheid);
 			throw(SQL, "zero_or_one", MAL_MALLOC_FAIL);
 		}
+		memcpy(*(ptr *) ret, p, _s);
 	} else if (b->ttype == TYPE_bat) {
 		bat bid = *(bat *) p;
 		*(BAT **) ret = BATdescriptor(bid);
