@@ -72,7 +72,7 @@ SQLgetColumnSize(sql_trans *tr, sql_column *c, int access)
  * caused major degration on SF100 Q3 with SSD(>6x) 
  */
 static lng
-SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare, str *alterpipe)
+SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 {
 	sql_trans *tr = m->session->tr;
 	lng size,space = 0, i;
@@ -92,7 +92,6 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare, str *alterpipe)
 			t = mvc_bind_table(m, s, tname);
 			if (t && isStream(t)) {
 				setModuleId(p, basketRef);
-				*alterpipe= "cquery_pipe";
 				continue;
 			}
 		}
@@ -107,7 +106,6 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare, str *alterpipe)
 			t = mvc_bind_table(m, s, tname);
 			if (t && isStream(t)) {
 				setModuleId(p, basketRef);
-				*alterpipe= "cquery_pipe";
 				continue;
 			}
 		}
@@ -130,7 +128,6 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare, str *alterpipe)
 				continue;
 			if (isStream(t)) {
 				setModuleId(p, basketRef);
-				*alterpipe= "cquery_pipe";
 				p->argc =5;	// ignore partition
 			}
 			c = mvc_bind_column(m, t, cname);
@@ -168,7 +165,6 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare, str *alterpipe)
 					setModuleId(p,batRef);
 					setFunctionId(p,newRef);
 					p = pushType(mb, p, getArgType(mb,p,0));
-					*alterpipe= "cquery_pipe";
 				}
 
 				if (i && (!isRemote(i->t) && !isMergeTable(i->t) )) {
@@ -212,12 +208,11 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
 	InstrPtr q;
 	backend *be;
 	str msg= MAL_SUCCEED;
-	str alterpipe = "default_pipe";
 
 	be = (backend *) c->sqlcontext;
 	assert(be && be->mvc);	/* SQL clients should always have their state set */
 
-	(void) SQLgetSpace(be->mvc, mb, prepare, &alterpipe); // detect empty bats.
+	(void) SQLgetSpace(be->mvc, mb, prepare); // detect empty bats.
 	/* The volcano optimizer seems relevant for traditional HDD settings.
 	 * It produced about 8 % improvement onf TPCH SF 100 on a 16G machine.
 	 * In a SSD setting it was counter productive, leading to worse parallel behavior.
@@ -231,7 +226,7 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
 			pipe = "default_pipe";
 	} else
 	*/
-		pipe = pipe? pipe: "default_pipe";
+	pipe = pipe ? pipe : "default_pipe";
 	msg = addOptimizerPipe(c, mb, pipe);
 	if (msg){
 		return msg;
