@@ -1,0 +1,3 @@
+CREATE TABLE tab2(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+SELECT 9 - - col1 FROM tab2 GROUP BY col1 HAVING - CAST ( NULL AS INTEGER ) IN ( + - SUM ( - + 47 ), + MIN ( col2 ) );
+DROP TABLE tab2;

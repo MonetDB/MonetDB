@@ -561,6 +561,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			fprintf(stderr, "could not find %s.%s\n", (char*)e->l, (char*)e->r);
 			print_stmtlist(sql->sa, left);
 			print_stmtlist(sql->sa, right);
+			assert(s);
+			return NULL;
 		}
 	 }	break;
 	case e_cmp: {

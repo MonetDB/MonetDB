@@ -43,6 +43,7 @@
 		char *msg;														\
 		if (jt) {														\
 			msg = jt->error;											\
+			jt->error = NULL;											\
 			JSONfree(jt);												\
 		} else {														\
 			msg = createException(MAL, "json.new",						\

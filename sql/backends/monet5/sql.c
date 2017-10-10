@@ -1117,8 +1117,10 @@ mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		cnt = BATcount(ins);
 		BBPunfix(ins->batCacheid);
 	}
-	if (BATcount(tid))
-		v = *Tloc(tid, BATcount(tid)-1)+1;
+	if (BATcount(tid)) {
+		(void)BATmax(tid, &v);
+		v++;
+	}
 	for(;cnt>0; cnt--, v++) {
 		if (BUNappend(tid, &v, FALSE) != GDK_SUCCEED) {
 			BBPunfix(Tid);
@@ -1848,12 +1850,14 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (store_funcs.count_del(tr, t)) {
 		BAT *d = store_funcs.bind_del(tr, t, RD_INS);
 		BAT *diff;
-		if( d == NULL)
+		if (d == NULL)
 			throw(SQL,"sql.tid", SQLSTATE(45002) "Can not bind delete column");
 
 		diff = BATdiff(tids, d, NULL, NULL, 0, BUN_NONE);
 		BBPunfix(d->batCacheid);
 		BBPunfix(tids->batCacheid);
+		if (diff == NULL)
+			throw(SQL,"sql.tid","Cannot subtract delete column");
 		BAThseqbase(diff, sb);
 		tids = diff;
 	}
