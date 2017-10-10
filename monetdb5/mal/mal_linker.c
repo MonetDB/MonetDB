@@ -115,7 +115,18 @@ getAddress(stream *out, str modname, str fcnname, int silent)
 
 	adr = (MALfcn) dlsym(dl, fcnname);
 	filesLoaded[lastfile].modname = GDKstrdup("libmonetdb5");
+	if(filesLoaded[lastfile].modname == NULL) {
+		if (!silent)
+			showException(out, MAL,"MAL.getAddress", "could not allocate space");
+		return NULL;
+	}
 	filesLoaded[lastfile].fullname = GDKstrdup("libmonetdb5");
+	if(filesLoaded[lastfile].fullname == NULL) {
+		GDKfree(filesLoaded[lastfile].modname);
+		if (!silent)
+			showException(out, MAL,"MAL.getAddress", "could not allocate space");
+		return NULL;
+	}
 	filesLoaded[lastfile].handle = dl;
 	lastfile ++;
 	if(adr != NULL)
@@ -241,7 +252,16 @@ loadLibrary(str filename, int flag)
 		showException(GDKout, MAL,"loadModule", "internal error, too many modules loaded");
 	} else {
 		filesLoaded[lastfile].modname = GDKstrdup(filename);
+		if(filesLoaded[lastfile].modname == NULL) {
+			MT_lock_unset(&mal_contextLock);
+			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " could not allocate space");
+		}
 		filesLoaded[lastfile].fullname = GDKstrdup(handle ? nme : "");
+		if(filesLoaded[lastfile].fullname == NULL) {
+			GDKfree(filesLoaded[lastfile].modname);
+			MT_lock_unset(&mal_contextLock);
+			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " could not allocate space");
+		}
 		filesLoaded[lastfile].handle = handle ? handle : filesLoaded[0].handle;
 		lastfile ++;
 	}
