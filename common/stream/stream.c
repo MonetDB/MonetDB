@@ -1001,7 +1001,7 @@ gzfread(void *buf, z_size_t size, z_size_t nitems, gzFile file)
 	unsigned sz = nitems * size > (size_t) 1 << 30 ? 1 << 30 : (unsigned) (nitems * size);
 	int len;
 
-	len = gzread(fp, buf, sz);
+	len = gzread(file, buf, sz);
 	if (len == -1)
 		return 0;
 	return (z_size_t) len / size;
@@ -1020,7 +1020,7 @@ gzfwrite(const void *buf, z_size_t size, z_size_t nitems, gzFile file)
 		if (wlen <= 0)
 			return 0;
 		buf = (const void *) ((const char *) buf + wlen);
-		sz -= (z_wize_t) wlen;
+		sz -= (z_size_t) wlen;
 	}
 	return nitems;
 }
