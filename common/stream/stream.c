@@ -2328,7 +2328,11 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 			}
 			if (n == 0)	/* unexpected end of file */
 				break;
-			nr += n;
+			nr +=
+#ifdef _MSC_VER
+				(int)
+#endif
+				n;
 		}
 	}
 	return nr / (ssize_t) elmsize;
