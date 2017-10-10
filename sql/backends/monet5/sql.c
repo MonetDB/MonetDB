@@ -1853,7 +1853,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(d->batCacheid);
 		BBPunfix(tids->batCacheid);
 		if (diff == NULL)
-			throw(SQL,"sql.tid","Cannot subtract delete column");
+			throw(SQL,"sql.tid", SQLSTATE(45002) "Cannot subtract delete column");
 		BAThseqbase(diff, sb);
 		tids = diff;
 	}
