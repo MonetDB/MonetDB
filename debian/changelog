@@ -1,3 +1,47 @@
+monetdb (11.27.7) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#4017: server crashes when executing particular loopback query in
+    embedded python
+  * BZ#6239: Incorrect profiling
+  * BZ#6261: New handling of delta tables hurts badly reusage of bats
+  * BZ#6287: should the CORR function return some numeric type that allows
+    fractions?
+  * BZ#6321: Two-column aggregation on join result extremely slow.
+  * BZ#6343: MERGE TABLE issue: unable to find
+  * BZ#6348: Interference of procedure/table name
+  * BZ#6350: Carriage return and form feed in TEXT fields are returned as
+    'r' and 'f' in jdbcclient and ResultSets
+  * BZ#6352: Scope resolution problem (sqlsmith)
+  * BZ#6353: implicit NULL value not propagated in distributed/remote query
+  * BZ#6374: Wrong answer from merge table after content changes
+  * BZ#6379: Table UDF: SEGV raised when invoking a non existing function
+  * BZ#6380: unable to create new databases from clean installation
+  * BZ#6381: Parser misses error messages in conditional
+  * BZ#6382: Can't set JSON fields via PreparedStatement
+  * BZ#6384: crash when setting a wrong listenaddr
+  * BZ#6385: AGGREGATE UDFs with more than 2 parameters incorrectly
+    processed
+  * BZ#6386: Unexpected error from server for query with long floats
+  * BZ#6387: Performance degradation on multi column sort
+  * BZ#6388: JDBC Connection via user voc produces errors when fetching
+    certain meta data information
+  * BZ#6392: SELECT EXISTS (empty table) returns 'true'
+  * BZ#6395: BAT leak of scalar result sets
+  * BZ#6397: Isolation of generating functions not correct
+  * BZ#6398: Null Matches in outer join are not supported
+  * BZ#6399: UDF crashes when subquery and scalar values are passed
+    as pameters
+  * BZ#6400: getCharacterStream() currently not supported
+  * BZ#6404: COPY INTO crashes if table has primary key or foreign key
+    constraint
+  * BZ#6409: sqllogictest crash on aggregation query with NOT IN clause
+    in HAVING clause
+  * BZ#6410: Sqlitelogictest crash on aggregation query with IN clause
+  * BZ#6411: Sqlitelogictest crash in aggregation query
+
+ -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Wed, 11 Oct 2017 11:01:48 +0200
+
 monetdb (11.27.5) unstable; urgency=low
 
   * Rebuilt.
