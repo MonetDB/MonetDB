@@ -1244,11 +1244,10 @@ CQscheduler(void *dummy)
 			pnet[i].enabled = 0;
 			CQentry(i);
 		}
-		for(i = pnettop ; i > 0; i--) { //more defensive way to stop continuous queries from the scheduler itself
+		for(i = pnettop - 1; i >= 0; i--) { //more defensive way to stop continuous queries from the scheduler itself
 			if( pnet[i].status == CQDELETE){
 				CQfree(i);
 			}
-			i--;
 		}
 		if( pnettop == 0)
 			pnstatus = CQSTOP;
