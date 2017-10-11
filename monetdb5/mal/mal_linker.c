@@ -110,15 +110,11 @@ getAddress(str fcnname)
 	adr = (MALfcn) dlsym(dl, fcnname);
 	filesLoaded[lastfile].modname = GDKstrdup("libmonetdb5");
 	if(filesLoaded[lastfile].modname == NULL) {
-		if (!silent)
-			showException(out, MAL,"MAL.getAddress", "could not allocate space");
 		return NULL;
 	}
 	filesLoaded[lastfile].fullname = GDKstrdup("libmonetdb5");
 	if(filesLoaded[lastfile].fullname == NULL) {
 		GDKfree(filesLoaded[lastfile].modname);
-		if (!silent)
-			showException(out, MAL,"MAL.getAddress", "could not allocate space");
 		return NULL;
 	}
 	filesLoaded[lastfile].handle = dl;
