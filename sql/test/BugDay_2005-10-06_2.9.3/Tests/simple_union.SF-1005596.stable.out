@@ -26,8 +26,8 @@ Ready.
 
 % .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
 % TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	TABLE_TYPE,	REMARKS,	TYPE_CAT,	TYPE_SCHEM,	TYPE_NAME,	SELF_REFERENCING_COL_NAME,	REF_GENERATION # name
-% char,	varchar,	varchar,	char,	char,	char,	char,	char,	char,	char # type
-% 4,	3,	4,	20,	0,	0,	0,	0,	5,	6 # length
+% char,	varchar,	varchar,	char,	char,	smallint,	smallint,	smallint,	char,	char # type
+% 4,	3,	4,	20,	0,	1,	1,	1,	5,	6 # length
 [ "demo",	"sys",	"test",	"TABLE",	"",	NULL,	NULL,	NULL,	"rowid",	"SYSTEM"	]
 
 # 12:42:09 >  

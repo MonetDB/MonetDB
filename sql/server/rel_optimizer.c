@@ -489,7 +489,7 @@ exp_joins_rels(sql_exp *e, list *rels)
 
 	assert (e->type == e_cmp);
 		
-	if (e->flag == cmp_or) {
+	if (get_cmp(e) == cmp_or) {
 		l = NULL;
 	} else if (get_cmp(e) == cmp_filter) {
 		list *ll = e->l;
@@ -1205,14 +1205,14 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			return ne;
 		return e;
 	case e_cmp: 
-		if (e->flag == cmp_or || get_cmp(e) == cmp_filter) {
+		if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
 			list *l = exps_rename(sql, e->l, f, t);
 			list *r = exps_rename(sql, e->r, f, t);
 			if (l && r) {
 				if (get_cmp(e) == cmp_filter) 
 					ne = exp_filter(sql->sa, l, r, e->f, is_anti(e));
 				else
-					ne = exp_or(sql->sa, l,r);
+					ne = exp_or(sql->sa, l, r, is_anti(e));
 			}
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			sql_exp *l = exp_rename(sql, e->l, f, t);
@@ -1326,7 +1326,7 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			exp_setname(sql->sa, e, ne->rname, ne->name);
 		return e;
 	case e_cmp: 
-		if (e->flag == cmp_or || get_cmp(e) == cmp_filter) {
+		if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
 			list *l = exps_push_down(sql, e->l, f, t);
 			list *r = exps_push_down(sql, e->r, f, t);
 
@@ -1334,7 +1334,7 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 				return NULL;
 			if (get_cmp(e) == cmp_filter) 
 				return exp_filter(sql->sa, l, r, e->f, is_anti(e));
-			return exp_or(sql->sa, l, r);
+			return exp_or(sql->sa, l, r, is_anti(e));
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			list *r;
 
@@ -2106,7 +2106,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			e->p = prop_copy(sql->sa, ne->p);
 		return e;
 	case e_cmp: 
-		if (e->flag == cmp_or || get_cmp(e) == cmp_filter) {
+		if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
 			list *l = exps_push_down_prj(sql, e->l, f, t);
 			list *r = exps_push_down_prj(sql, e->r, f, t);
 
@@ -2114,7 +2114,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 				return NULL;
 			if (get_cmp(e) == cmp_filter) 
 				return exp_filter(sql->sa, l, r, e->f, is_anti(e));
-			return exp_or(sql->sa, l, r);
+			return exp_or(sql->sa, l, r, is_anti(e));
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			sql_exp *l = exp_push_down_prj(sql, e->l, f, t);
 			list *r = exps_push_down_prj(sql, e->r, f, t);
@@ -3167,7 +3167,7 @@ rel_merge_union(int *changes, mvc *sql, sql_rel *rel)
 
 		/* merge, ie. add 'or exp' */
 		(*changes)++;
-		ls->exps = append(new_exp_list(sql->sa), exp_or(sql->sa, ls->exps, rs->exps));
+		ls->exps = append(new_exp_list(sql->sa), exp_or(sql->sa, ls->exps, rs->exps, 0));
 		rs->exps = NULL;
 		rel = rel_inplace_project(sql->sa, rel, rel_dup(rel->l), rel->exps);
 		set_processed(rel);
@@ -3236,7 +3236,7 @@ exps_cse( sql_allocator *sa, list *oexps, list *l, list *r )
 				append(nr, n->data);
 
 		if (list_length(nl) && list_length(nr)) 
-			append(oexps, exp_or(sa, nl, nr)); 
+			append(oexps, exp_or(sa, nl, nr, 0)); 
 
 		for (n = l->h, lc = 0; n; n = n->next, lc++) {
 			if (lu[lc])
@@ -3245,7 +3245,7 @@ exps_cse( sql_allocator *sa, list *oexps, list *l, list *r )
 		res = 1;
 	} else {
 		append(oexps, exp_or(sa, list_dup(l, (fdup)NULL), 
-				     list_dup(r, (fdup)NULL)));
+				     list_dup(r, (fdup)NULL), 0));
 	}
 	free(lu);
 	free(ru);
@@ -5291,7 +5291,7 @@ exp_use_consts(mvc *sql, sql_exp *e, list *consts)
 			return e;
 		return ne;
 	case e_cmp: 
-		if (e->flag == cmp_or || get_cmp(e) == cmp_filter) {
+		if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
 			list *l = exps_use_consts(sql, e->l, consts);
 			list *r = exps_use_consts(sql, e->r, consts);
 
@@ -5299,7 +5299,7 @@ exp_use_consts(mvc *sql, sql_exp *e, list *consts)
 				return NULL;
 			if (get_cmp(e) == cmp_filter) 
 				return exp_filter(sql->sa, l, r, e->f, is_anti(e));
-			return exp_or(sql->sa, l, r);
+			return exp_or(sql->sa, l, r, is_anti(e));
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			sql_exp *l = exp_use_consts(sql, e->l, consts);
 			list *r = exps_use_consts(sql, e->r, consts);
@@ -5692,7 +5692,7 @@ exp_mark_used(sql_rel *subrel, sql_exp *e)
 		break;
 	}
 	case e_cmp:
-		if (e->flag == cmp_or || get_cmp(e) == cmp_filter) {
+		if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
 			list *l = e->l;
 			node *n;
 	
@@ -8049,14 +8049,14 @@ exp_apply_rename(mvc *sql, sql_exp *e, list *aliases, int setname)
 			ne = NULL;
 		break;
 	case e_cmp: 
-		if (e->flag == cmp_or || get_cmp(e) == cmp_filter) {
+		if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
 			list *l = exps_apply_rename(sql, e->l, aliases, setname);
 			list *r = exps_apply_rename(sql, e->r, aliases, setname);
 			if (l && r) {
 				if (get_cmp(e) == cmp_filter) 
 					ne = exp_filter(sql->sa, l, r, e->f, is_anti(e));
 				else
-					ne = exp_or(sql->sa, l,r);
+					ne = exp_or(sql->sa, l, r, is_anti(e));
 			}
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			sql_exp *l = exp_apply_rename(sql, e->l, aliases, setname);
