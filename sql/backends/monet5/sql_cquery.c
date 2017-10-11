@@ -539,7 +539,7 @@ CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci )
 	}
 
 	idx = CQlocateAlias(alias);
-	if(idx != pnettop) {
+	if(idx != pnettop && pnet[idx].status != CQDELETE) {
 		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "The continuous %s %s is already registered.\n",
 							  err_message, alias);
 		GDKfree(alias);
@@ -975,7 +975,7 @@ CQderegister(str alias, int which)
 
 	MT_lock_set(&ttrLock);
 	idx = CQlocateAlias(alias);
-	if(idx == pnettop) {
+	if(idx == pnettop || pnet[idx].status == CQDELETE) {
 		msg = createException(SQL, "cquery.deregister",
 							  SQLSTATE(42000) "The continuous %s %s has not yet started\n", err_message, alias);
 		goto unlock;
@@ -1339,6 +1339,10 @@ CQstartScheduler(void)
 	}
 
 	cntxt->curmodule = cntxt->usermodule = userModule();
+	if( cntxt->curmodule == NULL) {
+		MCcloseClient(cntxt, CQ_CLIENT);
+		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize CQscheduler\n");
+	}
 
 	if( SQLinitClient(cntxt) != MAL_SUCCEED) {
 		MCcloseClient(cntxt, CQ_CLIENT);
