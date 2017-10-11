@@ -116,12 +116,14 @@ getAddress(stream *out, str modname, str fcnname, int silent)
 	adr = (MALfcn) dlsym(dl, fcnname);
 	filesLoaded[lastfile].modname = GDKstrdup("libmonetdb5");
 	if(filesLoaded[lastfile].modname == NULL) {
+		dlclose(dl);
 		if (!silent)
 			showException(out, MAL,"MAL.getAddress", "could not allocate space");
 		return NULL;
 	}
 	filesLoaded[lastfile].fullname = GDKstrdup("libmonetdb5");
 	if(filesLoaded[lastfile].fullname == NULL) {
+		dlclose(dl);
 		GDKfree(filesLoaded[lastfile].modname);
 		if (!silent)
 			showException(out, MAL,"MAL.getAddress", "could not allocate space");
