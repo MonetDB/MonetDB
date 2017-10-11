@@ -1439,7 +1439,7 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must)
 		int mustl = 0, mustr = 0, mustf = 0;
 		sql_exp *l = e->l, *r = e->r, *f = e->f;
 
-		if (e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || get_cmp(e) == cmp_filter) 
+		if (get_cmp(e) == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || get_cmp(e) == cmp_filter) 
 			return 0;
 		return ((l->type == e_column || can_push_func(l, rel, &mustl)) && (*must = mustl)) || 
 	               (!f && (r->type == e_column || can_push_func(r, rel, &mustr)) && (*must = mustr)) || 
@@ -1501,7 +1501,7 @@ exp_needs_push_down(sql_exp *e)
 		return 0;
 	switch(e->type) {
 	case e_cmp: 
-		if (e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || get_cmp(e) == cmp_filter) 
+		if (get_cmp(e) == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || get_cmp(e) == cmp_filter) 
 			return 0;
 		return exp_needs_push_down(e->l) || exp_needs_push_down(e->r) || (e->f && exp_needs_push_down(e->f));
 	case e_convert:
@@ -6784,7 +6784,7 @@ split_exp(mvc *sql, sql_exp *e, sql_rel *rel)
 		}
 		return e;
 	case e_cmp:	
-		if (e->flag == cmp_or) {
+		if (get_cmp(e) == cmp_or) {
 			split_exps(sql, e->l, rel);
 			split_exps(sql, e->r, rel);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin || get_cmp(e) == cmp_filter) {
@@ -7939,7 +7939,7 @@ exp_uses_exps(sql_exp *e, list *exps)
 			return exps_uses_exps(e->l, exps);
 		break;
 	case e_cmp:	
-		if (e->flag == cmp_or) {
+		if (get_cmp(e) == cmp_or) {
 			return (exps_uses_exps(e->l, exps) || exps_uses_exps(e->r, exps));
 		} else if (e->flag == cmp_in || e->flag == cmp_notin || get_cmp(e) == cmp_filter) {
 			return (exp_uses_exps(e->l, exps) || exps_uses_exps(e->r, exps));
@@ -8266,7 +8266,7 @@ exp_find_conflicts(mvc *sql, sql_exp *e, list *aexps, list *conflicts)
 		break;
 	}
 	case e_cmp: 
-		if (e->flag == cmp_or || get_cmp(e) == cmp_filter) {
+		if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
 			exps_find_conflicts(sql, e->l, aexps, conflicts);
 			exps_find_conflicts(sql, e->r, aexps, conflicts);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
@@ -8303,6 +8303,8 @@ rel_find_conflicts(mvc *sql, sql_rel *rel, list *exps, list *conflicts)
 	switch(rel->op) {
 	case op_basetable:
 	case op_table: 
+		if (rel->op == op_basetable && rel->l)
+			exps_find_conflicts(sql, rel->exps, exps, conflicts);
 		exps_mark_conflicts(sql, rel->exps, conflicts, 1); 
 		return rel;
 	case op_topn: 
