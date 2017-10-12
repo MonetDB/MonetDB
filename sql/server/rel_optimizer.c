@@ -7790,7 +7790,6 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 					}
 				}
 			}
-			assert(!rel_is_ref(rel));
 			(*changes)++;
 			if (t->members.set) {
 				list *tables = sa_list(sql->sa);
