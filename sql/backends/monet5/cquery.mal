@@ -17,11 +17,6 @@
 
 module cquery;
 
-pattern register(mod:str, fcn:str)
-address CQregister
-comment "Add a continuous SQL procedure to the Petri-net scheduler. It will analyse
-the MAL block to determine the input/output dependencies and firing conditions.";
-
 pattern wait(cnt:int)
 address CQwait
 comment "Sleep for some time";

@@ -261,6 +261,7 @@ mal_export  str sqlcatalogRef;
 mal_export  str sqlRef;
 mal_export  str startRef;
 mal_export  str starttraceRef;
+mal_export  str start_cpRef;
 mal_export  str stopRef;
 mal_export  str stoptraceRef;
 mal_export  str streamsRef;

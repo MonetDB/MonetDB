@@ -79,9 +79,6 @@
 /* apply change to a continuous procedure or function? */
 #define mod_continuous_procedure      256
 #define mod_continuous_function       512
-/* very important - while creating an UDF or a trigger, this flag must be set, so the parser does not attempt to
- * register the created udf in the scheduler if it has a continuous query all in the body */
-#define mod_creating_udf             1024
 
 typedef struct sql_var {
 	const char *name;
@@ -135,11 +132,6 @@ typedef struct mvc {
 	char emod;		/* execution modifier */
 
 	int is_factory; /* while compiling an UDF it checks if it is a factory */
-	int continuous; /* scheduling action TODO maybe we could move the CQ information into a dedicated struct */
-	lng heartbeats; /* heartbeats value for the next continuous procedure */
-	int cycles; /* cycles value for the next continuous procedure */
-	lng startat; /* UNIX timestamp to start the continuous query */
-	str cq_alias; /* the CQ alias */
 
 	sql_session *session;	
 

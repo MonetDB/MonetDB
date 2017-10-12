@@ -427,6 +427,12 @@ drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
 }
 
 static str
+start_cp(Client cntxt, str alias, int action, lng heartbeat, lng startat, int cycles, MalBlkPtr fcall)
+{
+	return CQregister(cntxt, alias, action, heartbeat, startat, cycles, fcall);
+}
+
+static str
 change_single_cp(str alias, int action, lng heartbeat, lng startat, int cycles)
 {
 	if(action & mod_resume_continuous) {
@@ -1300,7 +1306,23 @@ SQLdrop_index(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = drop_index(cntxt, sql, sname, iname);
 	return msg;
 }
-//alias:str, action:int, heartbeats:lng, startat:lng, cycles:int)
+
+str
+SQLstart_cp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{	mvc *sql = NULL;
+	str msg;
+	str alias = *getArgReference_str(stk, pci, 1);
+	int action = *getArgReference_int(stk, pci, 2);
+	lng heartbeat = *getArgReference_lng(stk, pci, 3);
+	lng startat = *getArgReference_lng(stk, pci, 4);
+	int cycles = *getArgReference_int(stk, pci, 5);
+	MalBlkPtr fcall = *(MalBlkPtr*) getArgReference(stk, pci, 6);
+
+	initcontext();
+	msg = start_cp(cntxt, alias, action, heartbeat, startat, cycles, fcall);
+	return msg;
+}
+
 str
 SQLchange_single_cp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;

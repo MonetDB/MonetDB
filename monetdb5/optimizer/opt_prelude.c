@@ -262,6 +262,7 @@ str sqlcatalogRef;
 str sqlRef;
 str startRef;
 str starttraceRef;
+str start_cpRef;
 str stopRef;
 str stoptraceRef;
 str streamsRef;
@@ -567,6 +568,7 @@ void optimizerInit(void)
 	streamsRef = putName("streams");
 	startRef = putName("start");
 	starttraceRef = putName("starttrace");
+	start_cpRef = putName("start_cp");
 	stopRef = putName("stop");
 	stoptraceRef = putName("stoptrace");
 	strRef = putName("str");

@@ -70,9 +70,6 @@ cq_delete(int clientid, cq *q)
 	if (q->sa) 
 		sa_destroy(q->sa);
 
-	if(q->cq_alias)
-		_DELETE(q->cq_alias);
-	q->cq_alias = NULL;
 	_DELETE(q);
 }
 
@@ -243,7 +240,7 @@ qc_match(qc *cache, symbol *s, atom **params, int  plen, int key)
 
 cq *
 qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname,  symbol *s, atom **params, int paramlen, int key,
-		  int type, char *cmd, int continuous, str cq_alias, lng heartbeats, lng startat, int cycles)
+		  int type, char *cmd)
 {
 	int i, namelen;
 	cq *n = MNEW(cq);
@@ -286,22 +283,6 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname,  symbol *s, ato
 		return NULL;
 	}
 	strcpy(n->name, qname);
-	n->continuous = continuous;
-
-	if(cq_alias) {
-		n->cq_alias = GDKstrdup(cq_alias);
-		if(!n->cq_alias) {
-			_DELETE(n->name);
-			_DELETE(n->params);
-			_DELETE(n);
-			return NULL;
-		}
-	} else {
-		n->cq_alias = NULL;
-	}
-	n->heartbeats = heartbeats;
-	n->startat = startat;
-	n->cycles = cycles;
 	cache->q = n;
 	return n;
 }

@@ -359,6 +359,7 @@ typedef struct sql_subfunc {
 	list *res;
 	list *coltypes; /* we need this for copy into from loader */
 	list *colnames; /* we need this for copy into from loader */
+	list *cqparamters; /* we need this for continuous queries */
 	char *sname, *tname; /* we need this for create table from loader */
 } sql_subfunc;
 

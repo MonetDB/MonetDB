@@ -333,18 +333,6 @@ SQLrun(Client c, backend *be, mvc *m)
 				setVarFixed(mb, j+retc);
 			}
 			mb->stmt[0]->argc = 1;
-			//set the cq parameters
-			m->continuous = be->q->continuous;
-			m->heartbeats = be->q->heartbeats;
-			m->startat = be->q->startat;
-			if(be->q->cq_alias) {
-				m->cq_alias = GDKstrdup(be->q->cq_alias);
-				if(!m->cq_alias)
-					throw(MAL, "sql.prepare", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			}
-			else
-				m->cq_alias = NULL;
-			m->cycles = be->q->cycles;
 			break;
 		}
 	}
@@ -353,11 +341,9 @@ SQLrun(Client c, backend *be, mvc *m)
 	if( m->emod & mod_debug)
 		mb->keephistory = TRUE;
 	/* it's fine to not optimize the MAL block in a continuous query, as the plan it's just a user module call */
-	if(!m->continuous || (m->continuous & mod_creating_udf)) {
-		if((msg = SQLoptimizeQuery(c, mb)) != MAL_SUCCEED){
-			// freeMalBlk(mb);
-			return msg;
-		}
+	if((msg = SQLoptimizeQuery(c, mb)) != MAL_SUCCEED){
+		// freeMalBlk(mb);
+		return msg;
 	}
 	mb->keephistory = FALSE;
 
@@ -376,20 +362,9 @@ SQLrun(Client c, backend *be, mvc *m)
 		SQLsetTrace(c,mb);
 		msg = runMAL(c, mb, 0, 0);
 		stopTrace(0);
-	} else if((m->continuous & mod_start_continuous) && !(m->continuous & mod_creating_udf)) {
-		// hand over the wrapper command to the scheduler
-		msg = CQregister(c,mb, 0,0);
 	} else {
-		m->continuous &= ~mod_creating_udf; //important disable the check
 		msg = runMAL(c, mb, 0, 0);
 	}
-	m->continuous = 0;
-	if(m->cq_alias)
-		GDKfree(m->cq_alias);
-	m->cq_alias = NULL;
-	m->heartbeats = DEFAULT_CP_HEARTBEAT;
-	m->startat = 0;
-	m->cycles = DEFAULT_CP_CYCLES;
 
 	// release the resources
 	freeMalBlk(mb);

@@ -131,6 +131,10 @@ pattern drop_index( sname:str, iname:str, action:int)
 address SQLdrop_index
 comment "Catalog operation drop_index";
 
+pattern start_cp( alias:str, action:int, heartbeats:lng, startat:lng, cycles:int, mblock:ptr)
+address SQLstart_cp
+comment "Start a continuous query";
+
 pattern change_single_cp( alias:str, action:int, heartbeats:lng, startat:lng, cycles:int)
 address SQLchange_single_cp
 comment "Pause, resume or stop a single continuous query";

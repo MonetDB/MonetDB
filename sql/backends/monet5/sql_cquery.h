@@ -69,8 +69,6 @@ sql5_export int pnetLimit, pnettop;
 sql5_export int CQlocateQueryExternal(str modname, str fcnname);
 sql5_export int CQlocateBasketExternal(str schname, str tblname);
 
-sql5_export str CQregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
 sql5_export str CQwait(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQbeginAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQcycles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -81,6 +79,7 @@ sql5_export str CQshow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQstatus(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQlog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
+sql5_export str CQregister(Client cntxt, str alias, int which, lng heartbeats, lng startat, int cycles, MalBlkPtr mb);
 sql5_export str CQresume(str alias, int which, int with_alter, lng heartbeats, lng startat, int cycles);
 sql5_export str CQpause(str alias, int which);
 sql5_export str CQderegister(str alias, int which);

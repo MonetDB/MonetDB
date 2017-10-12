@@ -1167,12 +1167,7 @@ SQLparser(Client c)
 								  m->args,	/* the argument list */
 								  m->argc, m->scanner.key ^ m->session->schema->base.id,	/* the statement hash key */
 								  m->emode == m_prepare ? Q_PREPARE : m->type,	/* the type of the statement */
-								  escaped_q,
-								  m->continuous,
-								  m->cq_alias,
-								  m->heartbeats,
-								  m->startat,
-								  m->cycles);
+								  escaped_q);
 			}
 			GDKfree(q);
 			if(!be->q) {

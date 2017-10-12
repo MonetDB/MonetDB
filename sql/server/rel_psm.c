@@ -154,17 +154,18 @@ psm_set_exp(mvc *sql, dnode *n)
 }
 
 static sql_exp*
-rel_psm_call(mvc * sql, symbol *se, int continuous_query)
+rel_psm_call(mvc * sql, symbol *se, list *cq_parameters)
 {
 	sql_subtype *t;
 	sql_exp *res = NULL;
-	int card = (!continuous_query || continuous_query == mod_continuous_procedure) ? card_none : card_value;
-	exp_kind ek = {type_value, card, FALSE};
+	exp_kind ek = {type_value, card_none, FALSE};
 	sql_rel *rel = NULL;
 
 	res = rel_value_exp(sql, &rel, se, sql_sel, ek);
+	((sql_subfunc *)res->f)->cqparamters = cq_parameters; //for CQs we set the extra parameters here
+
 	/* only procedures or continuous queries */
-	if (!continuous_query && (!res || rel || ((t=exp_subtype(res)) && t->type)))
+	if (cq_parameters && (!res || rel || ((t=exp_subtype(res)) && t->type)))
 		return sql_error(sql, 01, SQLSTATE(42000) "Function calls are ignored");
 	return res;
 }
@@ -597,23 +598,25 @@ has_return( list *l )
 }
 
 static sql_exp*
-start_continuous_query(mvc *sql, symbol *s) {
-	dlist *l = s->data.lval;
+start_continuous_query(mvc *sql, dlist *l) {
 	AtomNode* an = NULL;
 	lng start_at = 0;
 	str msg = NULL;
-
+	list *cq_parameters = NULL;
 	an = (AtomNode*) l->h->next->next->next->next->data.sym;
+
 	if(an && (msg = convert_atom_into_unix_timestamp(an->a, &start_at)) != NULL){
 		return sql_error(sql, 01, "%s", msg);
 	}
 
-	sql->continuous |= l->h->data.i_val; /* start query */
-	sql->heartbeats = l->h->next->next->next->data.l_val;
-	sql->startat = start_at;
-	sql->cycles = l->h->next->next->next->next->next->data.i_val;
-	sql->cq_alias = l->h->next->next->next->next->next->next->data.sval;
-	return rel_psm_call(sql, l->h->next->next->data.sym, l->h->next->data.i_val);
+	cq_parameters = new_exp_list(sql->sa);
+	append(cq_parameters, exp_atom_clob(sql->sa, l->h->next->next->next->next->next->next->data.sval));  //alias
+	append(cq_parameters, exp_atom_int(sql->sa, l->h->data.i_val)); // start query
+	append(cq_parameters, exp_atom_lng(sql->sa, l->h->next->next->next->data.l_val)); //heartbeats
+	append(cq_parameters, exp_atom_lng(sql->sa, start_at)); //start at value
+	append(cq_parameters, exp_atom_int(sql->sa, l->h->next->next->next->next->next->data.i_val)); //cycles
+
+	return rel_psm_call(sql, l->h->next->next->data.sym, cq_parameters);
 }
 
 static sql_rel *
@@ -716,10 +719,10 @@ sequential_block (mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk,
 			reslist = rel_psm_case(sql, restype, restypelist, s->data.lval->h, is_func);
 			break;
 		case SQL_CALL:
-			res = rel_psm_call(sql, s->data.sym, 0);
+			res = rel_psm_call(sql, s->data.sym, NULL);
 			break;
 		case SQL_START_CONTINUOUS_QUERY:
-			res = start_continuous_query(sql, s);
+			res = start_continuous_query(sql, s->data.lval);
 			break;
 		case SQL_CHANGE_CONTINUOUS_QUERY:
 			res = exp_rel(sql, rel_single_continuous_query(sql, s->data.lval->h));
@@ -1499,7 +1502,6 @@ rel_psm(mvc *sql, symbol *s)
 		int lang = l->h->next->next->next->next->next->next->data.i_val;
 		int repl = l->h->next->next->next->next->next->next->next->data.i_val;
 
-		sql->continuous |= mod_creating_udf;
 		ret = rel_create_func(sql, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, type, lang, repl);
 		sql->type = Q_SCHEMA;
 	} 	break;
@@ -1531,11 +1533,11 @@ rel_psm(mvc *sql, symbol *s)
 		sql->type = Q_SCHEMA;
 		break;
 	case SQL_CALL:
-		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, s->data.sym, 0));
+		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, s->data.sym, NULL));
 		sql->type = Q_UPDATE;
 		break;
 	case SQL_START_CONTINUOUS_QUERY:
-		ret = rel_psm_stmt(sql->sa, start_continuous_query(sql, s));
+		ret = rel_psm_stmt(sql->sa, start_continuous_query(sql, s->data.lval));
 		sql->type = Q_UPDATE;
 		break;
 	case SQL_CHANGE_CONTINUOUS_QUERY:
@@ -1559,7 +1561,6 @@ rel_psm(mvc *sql, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		sql->continuous |= mod_creating_udf;
 		assert(l->h->next->type == type_int);
 		ret = create_trigger(sql, l->h->data.lval, l->h->next->data.i_val, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.lval);
 		sql->type = Q_SCHEMA;

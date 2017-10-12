@@ -2789,12 +2789,15 @@ stmt_binop(backend *be, stmt *op1, stmt *op2, sql_subfunc *op)
 stmt *
 stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 {
-	MalBlkPtr mb = be->mb;
-	InstrPtr q = NULL;
+	MalBlkPtr mb = be->mb, other = NULL;
+	mvc *m = be->mvc;
+	InstrPtr q = NULL, sig = NULL;
 	const char *mod, *fimp;
 	sql_subtype *tpe = NULL;
-	int special = 0;
-
+	int special = 0, i;
+	str alias;
+	atom *ato;
+	list *cqparamters = f->cqparamters;
 	node *n;
 	stmt *o = NULL;
 
@@ -2837,7 +2840,7 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 	} else {
 		fimp = convertOperator(fimp);
 		q = newStmt(mb, mod, fimp);
-		
+
 		if (f->res && list_length(f->res)) {
 			sql_subtype *res = f->res->h->data;
 
@@ -2869,7 +2872,63 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 		}
 		special = 0;
 	}
-	
+
+	if(cqparamters){
+		other = copyMalBlk(mb); //prepare the MAL block for the CQ
+		if(other == NULL){
+			return NULL;
+		}
+		for(i = 1; i < other->stop; i++){ //remove mvc and querylog references
+			sig= getInstrPtr(other,i);
+			if( getFunctionId(sig) == mvcRef || getModuleId(sig) == querylogRef ){
+				removeInstruction(other, sig);
+				i = 1; //restart the loop...
+			}
+		}
+		for (i = 0; i < m->argc; i++){
+			atom *arg = m->args[i];
+			ValPtr val = (ValPtr) &arg->data;
+			if (VALcopy(&other->var[i + 1].value, val) == NULL){
+				freeMalBlk(other);
+				return NULL;
+			}
+			setVarConstant(other, i + 1);
+			setVarFixed(other, i + 1);
+		}
+
+		removeInstruction(mb, q);
+		freeInstruction(q);
+		mb->stmt[mb->stop] = NULL;
+		q = newStmt(mb, sqlcatalogRef, start_cpRef);
+		if(q == NULL){
+			freeMalBlk(other);
+			return NULL;
+		}
+
+		ato = (atom *)(((sql_exp *) cqparamters->h->data)->l);
+		alias = (str) ato->data.val.sval;
+		if(alias)
+			q = pushStr(mb, q, alias);
+		else
+			q = pushNil(mb, q, TYPE_str);
+
+		ato = (atom *)(((sql_exp *) cqparamters->h->next->data)->l);
+		q = pushInt(mb, q, ato->data.val.ival); //action -> start query
+
+		ato = (atom *)(((sql_exp *) cqparamters->h->next->next->data)->l);
+		q = pushLng(mb, q, ato->data.val.lval); //heartbeats
+
+		ato = (atom *)(((sql_exp *) cqparamters->h->next->next->next->data)->l);
+		q = pushLng(mb, q, ato->data.val.lval); //start at
+
+		ato = (atom *)(((sql_exp *) cqparamters->h->next->next->next->next->data)->l);
+		q = pushInt(mb, q, ato->data.val.ival); //cycles
+
+		q = pushPtr(mb, q, other);
+		list_destroy(cqparamters);
+		f->cqparamters = NULL;
+	}
+
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_Nop);
 		if(!s) {
