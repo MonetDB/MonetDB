@@ -1659,11 +1659,12 @@ GDKstrndup(const char *s, size_t size)
 {
 	char *p;
 
-	if (s == NULL || size == 0)
+	if (s == NULL)
 		return NULL;
 	if ((p = GDKmalloc_internal(size + 1)) == NULL)
 		return NULL;
-	memcpy(p, s, size);
+	if (size > 0)
+		memcpy(p, s, size);
 	p[size] = '\0';		/* make sure it's NULL terminated */
 	return p;
 }
