@@ -1857,7 +1857,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(d->batCacheid);
 		BBPunfix(tids->batCacheid);
 		if (diff == NULL)
-			throw(SQL,"sql.tid","Cannot subtract delete column");
+			throw(SQL,"sql.tid", SQLSTATE(45002) "Cannot subtract delete column");
 		BAThseqbase(diff, sb);
 		tids = diff;
 	}
@@ -2820,8 +2820,8 @@ zero_or_one(ptr ret, const bat *bid)
 	_s = ATOMsize(ATOMtype(b->ttype));
 	if (ATOMextern(b->ttype)) {
 		_s = ATOMlen(ATOMtype(b->ttype), p);
-		* (ptr *) ret = GDKmalloc(_s);
-		if (* (ptr *) ret == NULL) {
+		*(ptr *) ret = GDKmalloc(_s);
+		if(*(ptr *) ret == NULL){
 			BBPunfix(b->batCacheid);
 			throw(SQL, "zero_or_one", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}

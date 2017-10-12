@@ -962,6 +962,8 @@ open_stream(const char *filename, const char *flags)
 
 #ifdef HAVE_LIBZ
 #if ZLIB_VERNUM < 0x1290
+typedef size_t z_size_t;
+
 /* simplistic version for ancient systems (CentOS 6, Ubuntu Trusty) */
 static z_size_t
 gzfread(void *buf, z_size_t size, z_size_t nitems, gzFile file)
@@ -969,7 +971,7 @@ gzfread(void *buf, z_size_t size, z_size_t nitems, gzFile file)
 	unsigned sz = nitems * size > (size_t) 1 << 30 ? 1 << 30 : (unsigned) (nitems * size);
 	int len;
 
-	len = gzread(fp, buf, sz);
+	len = gzread(file, buf, sz);
 	if (len == -1)
 		return 0;
 	return (z_size_t) len / size;
@@ -988,7 +990,7 @@ gzfwrite(const void *buf, z_size_t size, z_size_t nitems, gzFile file)
 		if (wlen <= 0)
 			return 0;
 		buf = (const void *) ((const char *) buf + wlen);
-		sz -= (z_wize_t) wlen;
+		sz -= (z_size_t) wlen;
 	}
 	return nitems;
 }
@@ -2286,7 +2288,11 @@ socket_read(stream *s, void *buf, size_t elmsize, size_t cnt)
 			}
 			if (n == 0)	/* unexpected end of file */
 				break;
-			nr += n;
+			nr +=
+#ifdef _MSC_VER
+				(int)
+#endif
+				n;
 		}
 	}
 	return nr / (ssize_t) elmsize;

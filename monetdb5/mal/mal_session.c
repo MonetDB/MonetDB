@@ -327,6 +327,12 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 		/* move this back !! */
 		if (c->usermodule == 0) {
 			c->curmodule = c->usermodule = userModule();
+			if(c->curmodule  == NULL) {
+				mnstr_printf(fout, "!could not allocate space\n");
+				exit_streams(fin, fout);
+				GDKfree(command);
+				return;
+			}
 		}
 
 		if ((s = setScenario(c, lang)) != NULL) {
