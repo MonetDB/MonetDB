@@ -437,7 +437,7 @@ str
 CQregister(Client cntxt, str alias, int which, lng heartbeats, lng startat, int cycles, MalBlkPtr mb)
 {
 	str msg = MAL_SUCCEED;
-	InstrPtr sig, q;
+	InstrPtr sig = NULL, q;
 	Symbol s;
 	CQnode *pnew;
 	const char* err_message = (which & mod_continuous_function) ? "function" : "procedure";
