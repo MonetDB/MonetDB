@@ -108,6 +108,8 @@ str SABAOTHgetLocalConnection(str *ret) {
 
 	if (stats != NULL)
 		SABAOTHfreeStatus(&stats);
+	if(*ret == NULL)
+		throw(MAL,"sabaoth.getlocalconnection", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return(MAL_SUCCEED);
 }
 

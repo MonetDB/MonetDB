@@ -110,3 +110,4 @@ WHERE_and_multiple_LEFT_JOIN_incorrect_results-JIRA-43
 WHERE_IN_subquery_incorrect_results-JIRA-44
 select_select_bug
 HAVE_GEOM?filter_error
+in

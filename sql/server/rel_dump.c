@@ -172,7 +172,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			exp_print(sql, fout, e->l, depth, refs, 0, alias);
 			cmp_print(sql, fout, get_cmp(e));
 			exps_print(sql, fout, e->r, depth, refs, alias, 1);
-		} else if (e->flag == cmp_or) {
+		} else if (get_cmp(e) == cmp_or) {
 			exps_print(sql, fout, e->l, depth, refs, alias, 1);
 			cmp_print(sql, fout, get_cmp(e));
 			exps_print(sql, fout, e->r, depth, refs, alias, 1);
@@ -827,7 +827,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 					
 				return exp_filter(sql->sa, lexps, rexps, func, anti);
 			}
-			return exp_or(sql->sa, lexps, rexps);
+			return exp_or(sql->sa, lexps, rexps, anti);
 		}
 		/* fall through */
 	case '[': 
@@ -1142,7 +1142,7 @@ rel_set_types(mvc *sql, sql_rel *rel)
 	list *iexps = rel_projections( sql, rel->l, NULL, 0, 1);
 	node *n, *m;
 
-	if (!iexps || list_length(iexps) >= list_length(rel->exps))
+	if (!iexps || list_length(iexps) > list_length(rel->exps))
 		return -1;
 	for(n=iexps->h, m=rel->exps->h; n && m; n = n->next, m = m->next) {
 		sql_exp *e = m->data;
@@ -1468,7 +1468,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		return NULL;
 	}
 	/* sometimes the properties are send */
-	if (strncmp(r+*pos, "REMOTE",  strlen("REMOTE")) == 0) {
+	while (strncmp(r+*pos, "REMOTE",  strlen("REMOTE")) == 0) {
 		(*pos)+= (int) strlen("REMOTE");
 		skipWS(r, pos);
 		skipUntilWS(r, pos);

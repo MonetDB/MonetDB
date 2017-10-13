@@ -409,6 +409,8 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 		 */
 		if (*env == NULL) {
 			stk = prepareMALstack(mb, mb->vsize);
+			if (stk == NULL)
+				throw(MAL, "mal.interpreter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			stk->up = 0;
 			*env = stk;
 		} else {

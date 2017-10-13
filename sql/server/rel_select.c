@@ -228,8 +228,10 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 		if (!columnrefs && sq->exps) {
 			node *ne;
 			if (is_topn(sq->op)) {
-				// if the current node is a LIMIT statement
-				// we perform the alias on the underlying projection
+				/* 
+				 * if the current node is a LIMIT statement
+				 * we perform the alias on the underlying projection
+				 */
 				assert(sq->l);
 				assert(is_project(((sql_rel*)sq->l)->op));
 				ne = ((sql_rel*)sq->l)->exps->h;
@@ -1409,7 +1411,7 @@ rel_convert_types(mvc *sql, sql_exp **L, sql_exp **R, int scale_fixing, int tpe)
 		sql_subtype *i = lt;
 		sql_subtype *r = rt;
 
-		if (subtype_cmp(lt, rt) != 0) {
+		if (subtype_cmp(lt, rt) != 0 || lt->type->localtype==0 || rt->type->localtype==0) {
 			sql_subtype super;
 
 			supertype(&super, r, i);
@@ -2440,12 +2442,17 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		dlist *dl = sc->data.lval;
 		symbol *lo = NULL;
 		dnode *n = dl->h->next, *dn = NULL;
-		sql_rel *left = NULL, *right = NULL, *outer = rel;
-		sql_exp *l = NULL, *e, *r = NULL, *outerident = NULL, *ident = NULL;
+		sql_rel *left = NULL, *right = NULL, *select = NULL;
+		sql_exp *l = NULL, *e, *r = NULL;
 		list *vals = NULL, *ll = sa_list(sql->sa);
-		int correlated = 0;
-		int l_is_value = 1, r_is_rel = 0;
+		int correlated = 0, l_is_value = 1;
 		list *pexps = NULL;
+
+		/* if left is a value (possibly NULL) we rewrite to a list of OR expressions */
+		
+		/* no input, assume single value */
+		if (!rel) 
+			rel = rel_project_exp(sql->sa, exp_atom_bool(sql->sa, 1));
 
 		/* complex case */
 		if (dl->h->type == type_list) { /* (a,b..) in (.. ) */
@@ -2464,30 +2471,33 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				sql->session->status = 0;
 				sql->errstr[0] = 0;
 				l = rel_value_exp(sql, &left, lo, f, ek);
-			} else if (!left) {
-				left = rel_project_exp(sql->sa, exp_label(sql->sa, l, ++sql->label));
+				rel = left;
 			}
 			if (!l)
 				return NULL;
 
 			ek.card = card_set;
+			select = rel_select(sql->sa, rel_dup(rel), NULL); /* dup to make sure we get a new select op */
+			rel_destroy(rel);
+			pexps = rel_projections(sql, rel, NULL, 1, 1);
 
 			/* first remove the NULLs */
-			if (sc->token == SQL_NOT_IN &&
+			if (!l_is_value && sc->token == SQL_NOT_IN &&
 		    	    l->card != CARD_ATOM && has_nil(l)) {
 				sql_exp *ol;
 
 				rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
-			       	pexps = rel_projections(sql, rel, NULL, 1, 1);
+				select->l = rel;
 				l = exp_label(sql->sa, l, ++sql->label);
 				append(rel->exps, l);
 				ol = l;
 				l = exp_column(sql->sa, exp_relname(ol), exp_name(ol), exp_subtype(ol), ol->card, has_nil(ol), is_intern(ol));
 				e = rel_unop_(sql, l, NULL, "isnull", card_value);
 				e = exp_compare(sql->sa, e, exp_atom_bool(sql->sa, 0), cmp_equal);
-				left = rel = rel_select(sql->sa, rel, e);
+				rel_select_add_exp(sql->sa, select, e);
 				l = exp_column(sql->sa, exp_relname(ol), exp_name(ol), exp_subtype(ol), ol->card, has_nil(ol), is_intern(ol));
 			}
+			rel = left = select;
 
 			append(ll, l);
 			lo = NULL;
@@ -2510,11 +2520,19 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				r = rel_value_exp(sql, &z, n->data.sym, f, ek);
 				if (z || !r)
 					break;
-				l = ll->h->data;
-				if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) 
-					return NULL;
-				ll->h->data = l;
-				list_append(vals, r);
+				if (l_is_value) {
+					sql_exp *e;
+
+					l = ll->h->data;
+					if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) 
+						return NULL;
+					e = exp_compare(sql->sa, l, r, cmp_equal );
+					if (!e)
+						return NULL;
+					list_append(vals, e);
+				} else {
+					list_append(vals, r);
+				}
 			}
 			if (!n) { /* correct types */
 				sql_subtype *st;
@@ -2545,6 +2563,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 					/* without correlation first */
 					sql_rel *z = NULL;
 					sql_rel *rl;
+					int r_is_rel = 0;
 
 					r = rel_value_exp(sql, &z, sval, f, ek);
 					if (z)
@@ -2554,21 +2573,12 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 						sql->session->status = 0;
 						sql->errstr[0] = 0;
 
-						if (l_is_value) {
-							if (!outerident) {
-								outer = rel = rel_add_identity(sql, rel_dup(outer), &ident);
-								ident = exp_column(sql->sa, exp_relname(ident), exp_name(ident), exp_subtype(ident), ident->card, has_nil(ident), is_intern(ident));
-								outerident = ident;
-							}
-						} else {
+						if (!l_is_value) 
 							rel = left = rel_dup(left);
-						}
 						r = rel_value_exp(sql, &rel, sval, f, ek);
-						if (r && !is_project(rel->op)) {
+						if (r && !l_is_value) {
 							rel = rel_project(sql->sa, rel, NULL);
 							rel_project_add_exp(sql, rel, r);
-							if (ident)
-								rel_project_add_exp(sql, rel, ident);
 						}
 						z = rel;
 						correlated = 1;
@@ -2577,31 +2587,84 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 						rel_destroy(right);
 						return NULL;
 					}
+					if (l_is_value && (!r_is_rel || correlated)) {
+						sql_exp *e;
+
+						l = ll->h->data;
+						if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) 
+							return NULL;
+						e = exp_compare(sql->sa, l, r, cmp_equal );
+						list_append(vals, e);
+						continue;
+					}
 					if (z) {
 						rl = z;
 					} else {
-						list_append(vals, r);
 						rl = rel_project_exp(sql->sa, exp_label(sql->sa, r, ++sql->label));
+						r = exp_column(sql->sa, exp_relname(r), exp_name(r), exp_subtype(r), r->card, has_nil(r), is_intern(r));
+						if (l_is_value && r_is_rel) {
+							sql_exp *l = ll->h->data;
+							sql_rel *in = select->l = rel_crossproduct(sql->sa, select->l, rl, op_join);
+
+							if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) 
+								return NULL;
+							in->exps = sa_list(sql->sa);
+							append(in->exps, exp_compare(sql->sa, l, r, cmp_equal ));
+							continue;
+						}
 					}
 					if (right) {
-						int ident_colnr = -1;
-
-						if (ident) { 
-							sql_exp *i = exps_bind_column2(right->exps, exp_relname(ident), exp_name(ident));
-							ident_colnr = list_position(right->exps, i);
-						}
 						rl = rel_setop(sql->sa, right, rl, op_union);
 						rl->exps = rel_projections(sql, rl, NULL, 0, 1);
-						set_processed(rl);
-						if (ident)
-							ident = list_fetch(rl->exps, ident_colnr);
 					}
 					right = rl;
 				}
 			}
-			if (!correlated) {
-				if (right->processed)
-					right = rel_label(sql, right, 0);
+			if (list_length(vals)) { /* correct types */
+				sql_subtype *st;
+				list *nvals = new_exp_list(sql->sa);
+				node *n;
+
+				if (list_length(ll) != 1)
+					return sql_error(sql, 02, SQLSTATE(42000) "IN: incorrect left hand side");
+
+				if (!l_is_value) {
+					l = ll->h->data;
+					/* convert types first (l type maybe unknown) */
+					n = vals->h;
+					r = n->data;
+					if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) 
+						return NULL;
+					list_append(nvals, r);
+					st = exp_subtype(l);
+					for (; n; n = n->next) {
+						if ((r = rel_check_type(sql, st, n->data, type_equal)) == NULL) 
+							return NULL;
+						list_append(nvals, r);
+					}
+					e = exp_in(sql->sa, l, nvals, sc->token==SQL_NOT_IN?cmp_notin:cmp_in);
+				} else {
+					sql_exp *cur = NULL;
+					for (n = vals->h; n; n = n->next) {
+						sql_exp *r = (sql_exp*)n->data;
+						if (cur) {
+							cur = exp_or(sql->sa,
+								list_append(sa_list(sql->sa), cur),
+								list_append(sa_list(sql->sa), r), 0);
+						} else {
+							cur = r;
+						}
+					}
+					e = cur;
+				}
+				assert(!right);
+				rel_select_add_exp(sql->sa, select, e);
+				if (l_is_value && sc->token == SQL_NOT_IN) 
+					set_anti(e);
+				if (pexps && !right) 
+					rel = rel_project(sql->sa, rel, pexps);
+				if (!right)
+					return rel;
 			}
 		} else {
 			return sql_error(sql, 02, SQLSTATE(42000) "IN: missing inner query");
@@ -2614,7 +2677,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 			/* list through all left/right expressions */
 			rexps = right->exps;
-			if (!is_project(right->op) || (list_length(ll)+((ident)?1:0)) != list_length(rexps)) {
+			if (!is_project(right->op) || list_length(ll) != list_length(rexps)) {
 				if (list_length(ll) == 1)
 					return sql_error(sql, 02, SQLSTATE(42000) "IN: inner query should return a single column");
 				return NULL;
@@ -2630,36 +2693,18 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				e = exp_compare(sql->sa, l, r, cmp_equal );
 				append(jexps, e);
 			}
-			if (correlated && l_is_value) {
-				sql_exp *le;
-
-				le = exps_bind_column2(right->exps, exp_relname(ident), exp_name(ident));
-				le = exp_column(sql->sa, exp_relname(le), exp_name(le), exp_subtype(le), le->card, has_nil(le), is_intern(le));
-
-				right = rel_select(sql->sa, right, NULL);
-				right->exps = jexps;
-
-				rel = rel_crossproduct(sql->sa, outer, right, op_join);
-				rel->exps = sa_list(sql->sa);
-				le = exp_compare(sql->sa, outerident, le, cmp_equal);
-				append(rel->exps, le);
-			} else {
+			if (!correlated || !l_is_value) {
 				rel = rel_crossproduct(sql->sa, left, right, op_join);
 				rel->exps = jexps;
 			}
-			if (correlated || l_is_value || r_is_rel) {
+			if (correlated || l_is_value) {
 				rel->op = (sc->token == SQL_IN)?op_semi:op_anti;
 			} else if (sc->token == SQL_NOT_IN) {
-				rel->op = op_left;
+				rel->op = op_anti;
 				set_processed(rel);
-				e = rel_unop_(sql, r, NULL, "isnull", card_value);
-				r = exp_atom_bool(sql->sa, 1);
-				e = exp_compare(sql->sa,  e, r, cmp_equal);
-				rel = rel_select(sql->sa, rel, e);
 			}
-			if (!correlated && l_is_value && outer)
-				rel = rel_crossproduct(sql->sa, rel_dup(outer), rel, op_join);
-			rel = rel_project(sql->sa, rel, rel_projections(sql, outer, NULL, 1, 1));
+			if (pexps)
+				rel = rel_project(sql->sa, rel, pexps);
 			set_processed(rel);
 			return rel;
 		}
@@ -3862,7 +3907,6 @@ rel_selection_ref(mvc *sql, sql_rel **rel, symbol *grp, dlist *selection )
 static list *
 rel_group_by(mvc *sql, sql_rel **rel, symbol *groupby, dlist *selection, int f )
 {
-	//sql_rel *or = rel;
 	dnode *o = groupby->data.lval->h;
 	list *exps = new_exp_list(sql->sa);
 
@@ -3870,10 +3914,6 @@ rel_group_by(mvc *sql, sql_rel **rel, symbol *groupby, dlist *selection, int f )
 		symbol *grp = o->data.sym;
 		sql_exp *e = rel_column_ref(sql, rel, grp, f);
 
-		/*
-		if (or != rel)
-			return NULL;
-			*/
 		if (!e) {
 			char buf[ERRSIZE];
 			/* reset error */
@@ -4490,7 +4530,28 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 				*is_last = 1;
 				return e;
 			} else {
-				*rel = r;
+				if (exp_card(e) <= CARD_ATOM) {
+
+					*rel = r;
+					while(r && e && !is_atom(e->type) && is_column(e->type)) {
+						sql_exp *ne = NULL;
+
+						if (e->l && e->r)
+							ne = rel_bind_column2(sql, r, e->l, e->r, 0);
+						else if (!e->l && e->r && /* DISABLES CODE */ (0)) {
+							ne = rel_bind_column(sql, r, e->r, 0);
+						}
+						if (ne) {
+							e = ne;
+							r = r->l;
+						} else 
+							break;
+					}
+					if (e && is_atom(e->type))
+						*rel = NULL;
+				} else {
+					*rel = r;
+				}
 			}
 			*is_last=1;
 			return e;
@@ -4660,7 +4721,7 @@ rel_simple_select(mvc *sql, sql_rel *rel, symbol *where, dlist *selection, int d
 			return NULL;
 		rel = r;
 	}
-	if (!rel || rel->op != op_project)
+	if (!rel || rel->op != op_project || !list_empty(rel->exps))
 		rel = rel_project(sql->sa, rel, new_exp_list(sql->sa));
 	inner = rel;
 	for (n = selection->h; n; n = n->next ) {

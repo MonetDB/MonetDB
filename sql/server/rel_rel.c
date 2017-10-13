@@ -1151,7 +1151,7 @@ rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps,
 
 	assert(!lexps || l == r);
 	if (l == r && lexps) { /* merge both lists */
-		sql_exp *e = exp_or(sql->sa, lexps, rexps);
+		sql_exp *e = exp_or(sql->sa, lexps, rexps, 0);
 		list *nl = oexps?oexps:new_exp_list(sql->sa); 
 		
 		rel_destroy(r);
@@ -1165,7 +1165,7 @@ rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps,
 	/* favor or expressions over union */
 	if (l->op == r->op && l->op == op_select &&
 	    ll == rl && ll == rel && !rel_is_ref(l) && !rel_is_ref(r)) {
-		sql_exp *e = exp_or(sql->sa, l->exps, r->exps);
+		sql_exp *e = exp_or(sql->sa, l->exps, r->exps, 0);
 		list *nl = new_exp_list(sql->sa); 
 		
 		rel_destroy(r);

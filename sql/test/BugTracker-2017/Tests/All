@@ -85,3 +85,4 @@ corr_coersion.Bug-6287
 sqlitelogictest-having-with-not-in.Bug-6409
 sqlitelogictest-having-with-in.Bug-6410
 sqlitelogictest-aggregation-distinct.Bug-6411
+sqlitelogictest-aggregation-not-in.Bug-6416
