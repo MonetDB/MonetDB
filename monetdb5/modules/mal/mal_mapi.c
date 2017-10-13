@@ -1156,7 +1156,9 @@ SERVERsetAlias(void *ret, int *key, str *dbalias){
 	int i;
 	Mapi mid;
 	accessTest(*key, "setAlias");
-    SERVERsessions[i].dbalias= GDKstrdup(*dbalias);
+	SERVERsessions[i].dbalias= GDKstrdup(*dbalias);
+	if(SERVERsessions[i].dbalias == NULL)
+		throw(MAL, "mapi.set_alias", MAL_MALLOC_FAIL);
 	(void) ret;
 	return MAL_SUCCEED;
 }
@@ -1347,6 +1349,8 @@ SERVERfetch_field_str(str *ret, int *key, int *fnr){
 	accessTest(*key, "fetch_field");
 	fld= mapi_fetch_field(SERVERsessions[i].hdl,*fnr);
 	*ret= GDKstrdup(fld? fld: str_nil);
+	if(*ret == NULL)
+		throw(MAL, "mapi.fetch_field_str", MAL_MALLOC_FAIL);
 	if( mapi_error(mid) )
 		throw(MAL, "mapi.fetch_field_str", "%s",
 			mapi_result_error(SERVERsessions[i].hdl));
@@ -1464,6 +1468,8 @@ SERVERfetch_line(str *ret, int *key){
 		throw(MAL, "mapi.fetch_line", "%s",
 			mapi_result_error(SERVERsessions[i].hdl));
 	*ret= GDKstrdup(fld? fld:str_nil);
+	if(*ret == NULL)
+		throw(MAL, "mapi.fetch_line", MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -1537,6 +1543,8 @@ SERVERgetError(str *ret, int *key){
 	int i;
 	accessTest(*key, "getError");
 	*ret= GDKstrdup(mapi_error_str(mid));
+	if(*ret == NULL)
+		throw(MAL, "mapi.get_error", MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -1547,6 +1555,8 @@ SERVERexplain(str *ret, int *key){
 
 	accessTest(*key, "explain");
 	*ret= GDKstrdup(mapi_error_str(mid));
+	if(*ret == NULL)
+		throw(MAL, "mapi.explain", MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 /*
@@ -1561,7 +1571,7 @@ SERVERexplain(str *ret, int *key){
  * The generic scheme for handling a remote MAL
  * procedure call with a single row answer.
  */
-static void SERVERfieldAnalysis(str fld, int tpe, ValPtr v){
+static int SERVERfieldAnalysis(str fld, int tpe, ValPtr v){
 	v->vtype= tpe;
 	switch(tpe){
 	case TYPE_void:
@@ -1622,14 +1632,17 @@ static void SERVERfieldAnalysis(str fld, int tpe, ValPtr v){
 		break;
 	case TYPE_str:
 		if(fld==0 || strcmp(fld,"nil")==0){
-			v->val.sval= GDKstrdup(str_nil);
+			if((v->val.sval= GDKstrdup(str_nil)) == NULL)
+				return -1;
 			v->len= (int) strlen(v->val.sval);
 		} else {
-			v->val.sval= GDKstrdup(fld);
+			if((v->val.sval= GDKstrdup(fld)) == NULL)
+				return -1;
 			v->len= (int) strlen(fld);
 		}
 		break;
 	}
+	return 0;
 }
 
 str
@@ -1649,9 +1662,11 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	/* glue all strings together */
 	for(i= pci->retc+1; i<pci->argc; i++){
 		fld= * getArgReference_str(stk,pci,i);
-		if( qry == 0)
+		if( qry == 0) {
 			qry= GDKstrdup(fld);
-		else {
+			if ( qry == NULL)
+				throw(MAL, "mapi.rpc",MAL_MALLOC_FAIL);
+		} else {
 			s= (char*) GDKmalloc(strlen(qry)+strlen(fld)+1);
 			if ( s == NULL) {
 				GDKfree(qry);
@@ -1688,9 +1703,8 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			case TYPE_flt:
 			case TYPE_dbl:
 			case TYPE_str:
-				SERVERfieldAnalysis(fld,
-					getVarType(mb,getArg(pci,j)),
-					&stk->stk[pci->argv[j]]);
+				if(SERVERfieldAnalysis(fld,getVarType(mb,getArg(pci,j)),&stk->stk[pci->argv[j]]) < 0)
+					throw(MAL, "mapi.rpc", MAL_MALLOC_FAIL);
 				break;
 			default:
 				throw(MAL, "mapi.rpc",
@@ -1736,7 +1750,10 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		throw(MAL,"mapi.rpc",MAL_MALLOC_FAIL);
 	while( mapi_fetch_row(hdl)){
 		fld2= mapi_fetch_field(hdl,1);
-		SERVERfieldAnalysis(fld2, tt, &tval);
+		if(SERVERfieldAnalysis(fld2, tt, &tval) < 0) {
+			BBPreclaim(b);
+			throw(MAL, "mapi.rpc", MAL_MALLOC_FAIL);
+		}
 		if (BUNappend(b,VALptr(&tval), FALSE) != GDK_SUCCEED) {
 			BBPreclaim(b);
 			throw(MAL, "mapi.rpc", MAL_MALLOC_FAIL);
@@ -1798,7 +1815,8 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		SERVERsessions[i].hdl= mapi_query(mid, buf);
 		break;
 	default:
-		ATOMformat(tpe,val,&w);
+		if(ATOMformat(tpe,val,&w) < 0)
+			throw(MAL,"mapi.put",MAL_MALLOC_FAIL);
 		snprintf(buf,BUFSIZ,"%s:=%s;",*nme,w);
 		GDKfree(w);
 		if( SERVERsessions[i].hdl)
@@ -1829,12 +1847,15 @@ SERVERputLocal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		snprintf(buf,BUFSIZ,"%s:=%s;",*nme,*(char**)val);
 		break;
 	default:
-		ATOMformat(tpe,val,&w);
+		if(ATOMformat(tpe,val,&w) < 0)
+			throw(MAL, "mapi.glue",MAL_MALLOC_FAIL);
 		snprintf(buf,BUFSIZ,"%s:=%s;",*nme,w);
 		GDKfree(w);
 		break;
 	}
 	*ret= GDKstrdup(buf);
+	if(*ret == NULL)
+		throw(MAL, "mapi.glue",MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 

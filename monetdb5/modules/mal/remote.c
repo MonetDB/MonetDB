@@ -240,6 +240,8 @@ str RMTconnectScen(
 	MT_lock_unset(&mal_remoteLock);
 
 	*ret = GDKstrdup(conn);
+	if(*ret == NULL)
+		throw(MAL,"remote.connect",MAL_MALLOC_FAIL);
 	return(MAL_SUCCEED);
 }
 
@@ -596,8 +598,11 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			throw(MAL, "remote.get", "could not read BAT JSON header");
 		}
 		if (buf[0] == '!') {
+			char *result;
 			MT_lock_unset(&c->lock);
-			return(GDKstrdup(buf));
+			if((result = GDKstrdup(buf)) == NULL)
+				throw(MAL, "remote.get", MAL_MALLOC_FAIL);
+			return result;
 		}
 
 		buf[sz] = '\0';
@@ -739,7 +744,11 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			bi = bat_iterator(b);
 			BATloop(b, p, q) {
 				tailv = NULL;
-				ATOMformat(getBatType(type), BUNtail(bi, p), &tailv);
+				if(ATOMformat(getBatType(type), BUNtail(bi, p), &tailv) < 0) {
+					BBPunfix(b->batCacheid);
+					MT_lock_unset(&c->lock);
+					throw(MAL, "remote.put", MAL_MALLOC_FAIL);
+				}
 				if (getBatType(type) > TYPE_str)
 					mnstr_printf(sout, "\"%s\"\n", tailv);
 				else
@@ -809,7 +818,8 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* return the identifier */
 	v = &stk->stk[pci->argv[0]];
 	v->vtype = TYPE_str;
-	v->val.sval = GDKstrdup(ident);
+	if((v->val.sval = GDKstrdup(ident)) == NULL)
+		throw(MAL, "remote.put", MAL_MALLOC_FAIL);
 	return(MAL_SUCCEED);
 }
 
