@@ -443,9 +443,8 @@ change_single_cp(str alias, int action, lng heartbeat, lng startat, int cycles)
 		return CQpause(alias, action);
 	} else if(action & mod_stop_continuous) {
 		return CQderegister(alias, action);
-	} else {
-		throw(SQL,"sql.change_single_cp", SQLSTATE(342000) "ALL CONTINUOUS: Unknown option");
 	}
+	assert(0);
 }
 
 static str
@@ -459,7 +458,7 @@ change_all_cp(int action)
 		case mod_stop_all_continuous:
 			return CQderegisterAll();
 		default:
-			throw(SQL,"sql.change_all_cp", SQLSTATE(342000) "ALL CONTINUOUS: Unknown option");
+			assert(0);
 	}
 }
 

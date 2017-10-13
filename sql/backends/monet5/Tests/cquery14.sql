@@ -19,8 +19,8 @@ call cquery.wait(2500);
 
 select count(*) from results14; --should be 2
 
-drop procedure sys.cq_query14a;
 drop procedure sys.cq_query14b;
+drop procedure sys.cq_query14a;
 
 drop table testing14;
 drop table results14;

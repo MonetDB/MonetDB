@@ -1,0 +1,47 @@
+stderr of test 'cquery16` in directory 'sql/backends/monet5` itself:
+
+
+# 15:37:36 >  
+# 15:37:36 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37794" "--set" "mapi_usock=/var/tmp/mtest-25778/.s.monetdb.37794" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/MonetDB-trails/BUILD/var/MonetDB/mTests_sql_backends_monet5" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 15:37:36 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/MonetDB-trails/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 37794
+# cmdline opt 	mapi_usock = /var/tmp/mtest-25778/.s.monetdb.37794
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/MonetDB-trails/BUILD/var/MonetDB/mTests_sql_backends_monet5
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 536870922
+
+# 15:37:37 >  
+# 15:37:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25778" "--port=37794"
+# 15:37:37 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-25778/.s.monetdb.37794
+QUERY = start continuous sys.cq_query16a(); --error
+ERROR = !SELECT: no such operator 'cq_query16a'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-25778/.s.monetdb.37794
+QUERY = create procedure cq_query16b() --error
+        begin
+        	start continuous sys.cq_query16a();
+        end;
+ERROR = !SELECT: no such operator 'cq_query16a'
+CODE  = 42000
+
+# 15:37:38 >  
+# 15:37:38 >  "Done."
+# 15:37:38 >  
+

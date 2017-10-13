@@ -162,6 +162,8 @@ rel_psm_call(mvc * sql, symbol *se, list *cq_parameters)
 	sql_rel *rel = NULL;
 
 	res = rel_value_exp(sql, &rel, se, sql_sel, ek);
+	if(sql->session->status) //there are errors in the generated expression, hence return
+		return NULL;
 	((sql_subfunc *)res->f)->cqparamters = cq_parameters; //for CQs we set the extra parameters here
 
 	/* only procedures or continuous queries */
