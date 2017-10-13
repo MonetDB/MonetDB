@@ -4515,7 +4515,7 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 
 						if (e->l && e->r)
 							ne = rel_bind_column2(sql, r, e->l, e->r, 0);
-						else if (!e->l && e->r && 0) {
+						else if (!e->l && e->r && /* DISABLES CODE */ (0)) {
 							ne = rel_bind_column(sql, r, e->r, 0);
 						}
 						if (ne) {
