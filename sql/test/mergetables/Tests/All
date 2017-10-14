@@ -20,6 +20,6 @@ part-elim
 mergedropcascade
 addtable
 
-mergedb
+mergedb_create
 mergedb.Bug-6820
 mergedb_drop

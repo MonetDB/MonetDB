@@ -1,0 +1,72 @@
+stdout of test 'mergedb.Bug-6820` in directory 'sql/test/mergetables` itself:
+
+
+# 23:53:19 >  
+# 23:53:19 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36041" "--set" "mapi_usock=/var/tmp/mtest-11852/.s.monetdb.36041" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_mergetables"
+# 23:53:19 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mergetables', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.330 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:36041/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11852/.s.monetdb.36041
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 23:53:19 >  
+# 23:53:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11852" "--port=36041"
+# 23:53:19 >  
+
+#select  
+#  sample_8.dimpos as c0, 
+#  ref_4.x as c1, 
+#  ref_2.y as c2
+#from 
+#  sys.r3 as ref_2
+#        left join tmp._tables as sample_6
+#        on (ref_2.y = sample_6.id )
+#      left join sys._tables as sample_7
+#          right join sys.netcdf_vardim as sample_8
+#            left join sys.querylog_catalog as ref_3
+#            on (sample_8.dimpos = ref_3.mal )
+#          on (true)
+#        left join sys.s1 as ref_4
+#        on (sample_8.dimpos = ref_4.x )
+#      on ((sample_7.id is NULL) 
+#          or (sample_8.var_id is not NULL))
+% .L14,	.L16,	.L20 # table_name
+% c0,	c1,	c2 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+#select
+#  ref_7.length as c0,
+#  sample_1.type as c1,
+#  ref_7.length as c2,
+#  sample_8.function_type_id as c3
+#from
+#  sys.columns as sample_1
+#    inner join bam.rg as ref_4
+#        left join sys.keys as ref_6
+#        on (ref_4.pi = ref_6.id )
+#      right join sys.table_types as sample_7
+#            left join sys.function_types as sample_8
+#              left join sys.r as sample_9
+#              on (sample_9.y is not NULL)
+#            on (sample_7.table_type_name = sample_8.function_type_name )
+#          left join sys.r as sample_10
+% .L14,	.L16,	.L20,	.L22 # table_name
+% c0,	c1,	c2,	c3 # name
+% int,	varchar,	int,	smallint # type
+% 1,	0,	1,	1 # length
+
+# 23:53:19 >  
+# 23:53:19 >  "Done."
+# 23:53:19 >  
+

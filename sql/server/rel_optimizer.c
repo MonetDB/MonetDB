@@ -7419,13 +7419,13 @@ rel_split_outerjoin(int *changes, mvc *sql, sql_rel *rel)
 {
 	if ((rel->op == op_left || rel->op == op_right || rel->op == op_full) && 
 			list_length(rel->exps) == 1 && exps_nr_of_or(rel->exps) == list_length(rel->exps)) { 
-		sql_rel *l = rel_dup(rel->l), *nl, *nll, *nlr;
-		sql_rel *r = rel_dup(rel->r), *nr;
+		sql_rel *l = rel->l, *nl, *nll, *nlr;
+		sql_rel *r = rel->r, *nr;
 		sql_exp *e;
 		list *exps;
 
-		nll = rel_crossproduct(sql->sa, l, r, op_join); 
-		nlr = rel_crossproduct(sql->sa, l, r, op_join); 
+		nll = rel_crossproduct(sql->sa, rel_dup(l), rel_dup(r), op_join); 
+		nlr = rel_crossproduct(sql->sa, rel_dup(l), rel_dup(r), op_join); 
 
 		/* TODO find or exp, ie handle rest with extra joins */
 		/* expect only a single or expr for now */
@@ -7435,16 +7435,11 @@ rel_split_outerjoin(int *changes, mvc *sql, sql_rel *rel)
 		nlr->exps = exps_copy(sql->sa, e->r);
 		nl = rel_or( sql, NULL, nll, nlr, NULL, NULL, NULL);
 
-		if (rel->op == op_full) {
-			l = rel_dup(l);
-			r = rel_dup(r);
-		}
-
 		if (rel->op == op_left || rel->op == op_full) {
 			/* split in 2 anti joins */
-			nr = rel_crossproduct(sql->sa, l, r, op_anti);
+			nr = rel_crossproduct(sql->sa, rel_dup(l), rel_dup(r), op_anti);
 			nr->exps = exps_copy(sql->sa, e->l);
-			nr = rel_crossproduct(sql->sa, nr, r, op_anti);
+			nr = rel_crossproduct(sql->sa, nr, rel_dup(r), op_anti);
 			nr->exps = exps_copy(sql->sa, e->r);
 
 			/* project left */
@@ -7459,9 +7454,9 @@ rel_split_outerjoin(int *changes, mvc *sql, sql_rel *rel)
 		}
 		if (rel->op == op_right || rel->op == op_full) {
 			/* split in 2 anti joins */
-			nr = rel_crossproduct(sql->sa, r, l, op_anti);
+			nr = rel_crossproduct(sql->sa, rel_dup(r), rel_dup(l), op_anti);
 			nr->exps = exps_copy(sql->sa, e->l);
-			nr = rel_crossproduct(sql->sa, nr, l, op_anti);
+			nr = rel_crossproduct(sql->sa, nr, rel_dup(l), op_anti);
 			nr->exps = exps_copy(sql->sa, e->r);
 
 			nr = rel_project(sql->sa, nr, sa_list(sql->sa));
@@ -7477,8 +7472,6 @@ rel_split_outerjoin(int *changes, mvc *sql, sql_rel *rel)
 			set_processed(nl);
 		}
 
-		rel->l = NULL;
-		rel->r = NULL;
 		rel_destroy(rel);
 		*changes = 1;
 		rel = nl;

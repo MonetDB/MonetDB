@@ -1,0 +1,115 @@
+stdout of test 'mergedb_create` in directory 'sql/test/mergetables` itself:
+
+
+# 23:53:18 >  
+# 23:53:18 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36041" "--set" "mapi_usock=/var/tmp/mtest-11852/.s.monetdb.36041" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_mergetables"
+# 23:53:18 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mergetables', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.330 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:36041/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11852/.s.monetdb.36041
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 23:53:18 >  
+# 23:53:18 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11852" "--port=36041"
+# 23:53:18 >  
+
+#CREATE TABLE R1 ( x integer primary key, y integer, z string);
+#COPY 4 RECORDS INTO R1 FROM stdin USING DELIMITERS ' ','\n';
+#0 0 hello
+#1 0 hello
+#2 1 world 
+#3 1 world 
+[ 4	]
+#CREATE TABLE R2 ( x integer primary key, y integer, z string);
+#COPY 4 RECORDS INTO R2 FROM stdin USING DELIMITERS ' ','\n';
+#5 0 hello
+#6 0 hello
+#7 1 world 
+#8 1 world 
+[ 4	]
+#CREATE TABLE R3 ( x integer primary key, y integer, z string);
+#COPY 4 RECORDS INTO R3 FROM stdin USING DELIMITERS ' ','\n';
+#10 0 hello
+#11 0 hello
+#12 1 world 
+#13 1 world 
+[ 4	]
+#CREATE MERGE TABLE R ( x integer primary key, y integer, z string);
+#ALTER TABLE R ADD TABLE R1;
+#ALTER TABLE R ADD TABLE R2;
+#ALTER TABLE R ADD TABLE R3;
+#SELECT * FROM R;
+% .r,	.r,	.r # table_name
+% x,	y,	z # name
+% int,	int,	clob # type
+% 2,	1,	5 # length
+[ 0,	0,	"hello"	]
+[ 1,	0,	"hello"	]
+[ 2,	1,	"world"	]
+[ 3,	1,	"world"	]
+[ 5,	0,	"hello"	]
+[ 6,	0,	"hello"	]
+[ 7,	1,	"world"	]
+[ 8,	1,	"world"	]
+[ 10,	0,	"hello"	]
+[ 11,	0,	"hello"	]
+[ 12,	1,	"world"	]
+[ 13,	1,	"world"	]
+#CREATE TABLE S1 ( x integer primary key, y integer, z string);
+#COPY 7 RECORDS INTO S1 FROM stdin USING DELIMITERS ' ','\n';
+#0 0 hello
+#1 0 hello
+#2 1 world 
+#3 1 world 
+#4 1 bye 
+#5 0 hello
+#6 0 hello
+[ 7	]
+#CREATE TABLE S2 ( x integer primary key, y integer, z string);
+#COPY 7 RECORDS INTO S2 FROM stdin USING DELIMITERS ' ','\n';
+#7 1 world 
+#8 1 world 
+#9 1 bye 
+#10 0 hello
+#11 0 hello
+#12 1 world 
+#13 1 world 
+[ 7	]
+#CREATE MERGE TABLE S ( x integer primary key, y integer, z string);
+#ALTER TABLE S ADD TABLE S1;
+#ALTER TABLE S ADD TABLE S2;
+#SELECT * FROM S;
+% .s,	.s,	.s # table_name
+% x,	y,	z # name
+% int,	int,	clob # type
+% 2,	1,	5 # length
+[ 0,	0,	"hello"	]
+[ 1,	0,	"hello"	]
+[ 2,	1,	"world"	]
+[ 3,	1,	"world"	]
+[ 4,	1,	"bye"	]
+[ 5,	0,	"hello"	]
+[ 6,	0,	"hello"	]
+[ 7,	1,	"world"	]
+[ 8,	1,	"world"	]
+[ 9,	1,	"bye"	]
+[ 10,	0,	"hello"	]
+[ 11,	0,	"hello"	]
+[ 12,	1,	"world"	]
+[ 13,	1,	"world"	]
+
+# 23:53:19 >  
+# 23:53:19 >  "Done."
+# 23:53:19 >  
+
