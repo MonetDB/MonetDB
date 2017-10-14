@@ -1962,8 +1962,12 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 				idx = 1;
 			/* stop on first non equality join */
 			if (!join) {
-				if (en->next && s->type != st_join && s->type != st_join2 && s->type != st_joinN) 
-					break;
+				if (s->type != st_join && s->type != st_join2 && s->type != st_joinN) {
+					if (!en->next && (s->type == st_uselect || s->type == st_uselect2))
+						join = s;
+					else
+						break;
+				}
 				join = s;
 			} else if (s->type != st_join && s->type != st_join2 && s->type != st_joinN) {
 				/* handle select expressions */
@@ -2025,6 +2029,10 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			if (!s) {
 				assert(0);
 				return NULL;
+			}
+			if (s->nrcols == 0) {
+				stmt *l = bin_first_column(be, sub);
+				s = stmt_uselect(be, stmt_const(be, l, stmt_bool(be, 1)), s, cmp_equal, sel, 0);
 			}
 			sel = s;
 		}
