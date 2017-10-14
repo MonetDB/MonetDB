@@ -19,3 +19,7 @@ singlekeyconstraint
 part-elim
 mergedropcascade
 addtable
+
+mergedb
+mergedb.Bug-6820
+mergedb_drop
