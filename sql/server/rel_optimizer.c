@@ -7418,10 +7418,11 @@ static sql_rel *
 rel_split_outerjoin(int *changes, mvc *sql, sql_rel *rel)
 {
 	if ((rel->op == op_left || rel->op == op_right || rel->op == op_full) && 
-			list_length(rel->exps) && exps_nr_of_or(rel->exps) == list_length(rel->exps)) { 
+			list_length(rel->exps) == 1 && exps_nr_of_or(rel->exps) == list_length(rel->exps)) { 
 		sql_rel *l = rel_dup(rel->l), *nl, *nll, *nlr;
 		sql_rel *r = rel_dup(rel->r), *nr;
 		sql_exp *e;
+		list *exps;
 
 		nll = rel_crossproduct(sql->sa, l, r, op_join); 
 		nlr = rel_crossproduct(sql->sa, l, r, op_join); 
@@ -7451,7 +7452,9 @@ rel_split_outerjoin(int *changes, mvc *sql, sql_rel *rel)
 				rel_projections(sql, l, NULL, 1, 1));
 			/* add null's for right */
 			add_nulls( sql, nr, r);
+			exps = rel_projections(sql, nl, NULL, 1, 1);
 			nl = rel_setop(sql->sa, nl, nr, op_union);
+			nl->exps = exps;
 			set_processed(nl);
 		}
 		if (rel->op == op_right || rel->op == op_full) {
@@ -7468,7 +7471,9 @@ rel_split_outerjoin(int *changes, mvc *sql, sql_rel *rel)
 			nr->exps = list_merge(nr->exps, 
 				rel_projections(sql, r, NULL, 1, 1),
 				(fdup)NULL);
+			exps = rel_projections(sql, nl, NULL, 1, 1);
 			nl = rel_setop(sql->sa, nl, nr, op_union);
+			nl->exps = exps;
 			set_processed(nl);
 		}
 
