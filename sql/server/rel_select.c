@@ -3386,7 +3386,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 	exp_kind ek = {type_value, card_column, FALSE};
 	sql_subaggr *a = NULL;
 	int no_nil = 0;
-	sql_rel *groupby = *rel, *gr;
+	sql_rel *groupby = *rel, *gr, *project = NULL;
 	list *exps = NULL;
 
 	if (!groupby) {
@@ -3403,6 +3403,8 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 
 	if (groupby->l && groupby->op == op_project) {
 		sql_rel *r = groupby->l;	
+		if (f == sql_having)
+			project = groupby;
 		if (r->op == op_groupby) {
 			groupby = r;
 		} else if (r->op == op_select && r->l) {
@@ -3442,7 +3444,11 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 		e = exp_aggr(sql->sa, NULL, a, distinct, 0, groupby->card, 0);
 		if (*rel == groupby && f == sql_sel) /* selection */
 			return e;
-		return rel_groupby_add_aggr(sql, groupby, e);
+		if (!project)
+			return rel_groupby_add_aggr(sql, groupby, e);
+		e = rel_groupby_add_aggr(sql, groupby, e);
+		rel_project_add_exp(sql, project, e);
+		return e;
 	} 
 
 	exps = sa_list(sql->sa);
@@ -3562,8 +3568,11 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 	if (a && execute_priv(sql,a->aggr)) {
 		sql_exp *e = exp_aggr(sql->sa, exps, a, distinct, no_nil, groupby->card, have_nil(exps));
 
-		if (*rel != groupby || f != sql_sel) /* selection */
+		if (*rel != groupby || f != sql_sel) { /* selection */
 			e = rel_groupby_add_aggr(sql, groupby, e);
+			if (project)
+				rel_project_add_exp(sql, project, e);
+		}
 		return e;
 	} else {
 		sql_exp *e;
