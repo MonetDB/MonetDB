@@ -445,6 +445,7 @@ change_single_cp(str alias, int action, lng heartbeat, lng startat, int cycles)
 		return CQderegister(alias, action);
 	}
 	assert(0);
+	return NULL;
 }
 
 static str
@@ -460,6 +461,7 @@ change_all_cp(int action)
 		default:
 			assert(0);
 	}
+	return NULL;
 }
 
 static str
