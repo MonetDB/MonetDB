@@ -108,7 +108,7 @@ end user.s4_1;
 % mal # name
 % clob # type
 % 106 # length
-function user.s12_1():void;
+function user.s16_1():void;
     X_1:void := querylog.define("explain select reverse(x) from udf_reverse;", "sequential_pipe", 22:int);
     X_22 := bat.new(nil:str);
     X_28 := bat.new(nil:int);
@@ -126,32 +126,29 @@ function user.s12_1():void;
     X_35 := bat.append(X_26, 0:int);
     X_36 := bat.append(X_28, 0:int);
     sql.resultSet(X_29, X_31, X_33, X_35, X_36, X_18);
-end user.s12_1;
-#inline               actions= 0 time=4 usec 
-#candidates           actions= 1 time=15 usec 
-#remap                actions= 1 time=25 usec 
-#costModel            actions= 1 time=12 usec 
-#coercions            actions= 0 time=2 usec 
-#evaluate             actions= 0 time=3 usec 
-#emptybind            actions= 0 time=4 usec 
-#pushselect           actions= 0 time=4 usec 
-#aliases              actions= 1 time=16 usec 
-#mergetable           actions= 0 time=23 usec 
-#deadcode             actions= 2 time=15 usec 
-#aliases              actions= 0 time=4 usec 
-#constants            actions= 0 time=5 usec 
-#commonTerms          actions= 0 time=5 usec 
-#projectionpath       actions= 0 time=4 usec 
-#reorder              actions= 1 time=25 usec 
-#deadcode             actions= 0 time=5 usec 
-#reduce               actions=26 time=26 usec 
-#matpack              actions= 0 time=4 usec 
-#querylog             actions= 0 time=1 usec 
-#multiplex            actions= 0 time=3 usec 
-#generator            actions= 0 time=2 usec 
-#profiler             actions= 1 time=10 usec 
-#garbageCollector     actions= 1 time=15 usec 
-#total                actions= 1 time=291 usec 
+end user.s16_1;
+#inline               actions= 0 time=3 usec 
+#remap                actions= 1 time=10 usec 
+#costmodel            actions= 1 time=2 usec 
+#coercion             actions= 0 time=2 usec 
+#evaluate             actions= 0 time=5 usec 
+#emptybind            actions= 3 time=18 usec 
+#pushselect           actions= 0 time=5 usec 
+#aliases              actions= 1 time=9 usec 
+#mergetable           actions= 0 time=46 usec 
+#deadcode             actions= 3 time=10 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 2 time=10 usec 
+#commonTerms          actions= 0 time=6 usec 
+#projectionpath       actions= 0 time=5 usec 
+#reorder              actions= 1 time=33 usec 
+#deadcode             actions= 0 time=6 usec 
+#matpack              actions= 0 time=1 usec 
+#multiplex            actions= 0 time=2 usec 
+#profiler             actions=1 time=2 usec 
+#candidates           actions=1 time=1 usec 
+#garbagecollector     actions= 1 time=52 usec 
+#total                actions=23 time=362 usec 
 #select reverse(x) from udf_reverse;
 % sys.L2 # table_name
 % L2 # name

@@ -25,10 +25,10 @@ Ready.
 # 11:50:54 >  
 
 #select NULLIF(NULLIF('first', 'second'), 'first');
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % char # type
-% 6 # length
+% 5 # length
 [ NULL	]
 
 # 12:45:31 >  

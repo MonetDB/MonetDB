@@ -37,10 +37,10 @@ Ready.
 % clob # type
 % 112 # length
 function user.s4_1():void;
-    X_2:void := querylog.define("explain select count(*) from tmp where i = 20160222;", "default_pipe", 12:int);
-    X_16 := bat.new(nil:int);
-    X_17 := aggr.count(X_16);
-    sql.resultSet("sys.L4", "L3", "bigint", 64:int, 0:int, 7:int, X_17);
+    X_2:void := querylog.define("explain select count(*) from tmp where i = 20160222;", "default_pipe", 13:int);
+    X_18 := bat.new(nil:int);
+    X_19 := aggr.count(X_18);
+    sql.resultSet("sys.L4", "L3", "bigint", 64:int, 0:int, 7:int, X_19);
 end user.s4_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
@@ -63,10 +63,10 @@ end user.s6_1;
 % clob # type
 % 113 # length
 function user.s8_1():void;
-    X_2:void := querylog.define("explain select count(*) from tmp where i = 201602221;", "default_pipe", 13:int);
-    X_20 := bat.new(nil:int);
-    X_21 := aggr.count(X_20);
-    sql.resultSet("sys.L4", "L3", "bigint", 64:int, 0:int, 7:int, X_21);
+    X_2:void := querylog.define("explain select count(*) from tmp where i = 201602221;", "default_pipe", 14:int);
+    X_21 := bat.new(nil:int);
+    X_22 := aggr.count(X_21);
+    sql.resultSet("sys.L4", "L3", "bigint", 64:int, 0:int, 7:int, X_22);
 end user.s8_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
