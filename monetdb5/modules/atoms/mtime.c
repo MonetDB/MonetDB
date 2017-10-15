@@ -2636,6 +2636,8 @@ MTIMEepoch2int(int *ret, const timestamp *t)
 		return err;
 	if (v == lng_nil)
 		*ret = int_nil;
+	else if ((v/1000) > GDK_int_max || (v/1000) <= GDK_int_min)
+		throw(MAL, "mtime.epoch", "22003!epoch value too large");
 	else
 		*ret = (int) (v / 1000);
 	return MAL_SUCCEED;
