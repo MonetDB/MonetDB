@@ -2355,13 +2355,11 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 			lr = rel_select_copy(sql->sa, lr, sa_list(sql->sa));
 			lr = rel_logical_exp(sql, lr, lo, f);
-			if (lr) {
-				lexps = lr->exps;
-				lr = lr->l;
-			}
 			rr = rel_select_copy(sql->sa, rr, sa_list(sql->sa));
 			rr = rel_logical_exp(sql, rr, ro, f);
-			if (rr) {
+			if (lr && rr && lr->l == rr->l) {
+				lexps = lr->exps;
+				lr = lr->l;
 				rexps = rr->exps;
 				rr = rr->l;
 			}
