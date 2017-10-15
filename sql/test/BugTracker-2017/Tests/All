@@ -21,7 +21,6 @@ HAVE_NETCDF?rel2bin_project-assert.Bug-6080
 str2decimal.Bug-6206
 integer_addition_overflow.Bug-6205
 dce_bug-6177
-default-insert-update.Bug-6429
 crash_on_NULL_ptr.Bug-6130
 HAVE_SAMTOOLS?sqlsmith01
 HAVE_NETCDF?sqlsmith02
@@ -60,7 +59,6 @@ delete_from_merge_table.Bug-3743
 statistics_nils_not_eq_zero.Bug-6331
 crash-select_after_MAL_error.Bug-6332
 handle-values-subqueries.Bug-6336
-spurious_errors.Bug-6344
 caching_stats_bug.6374
 HAVE_LIBPY?aggr_udf_with_more_than_2params.Bug-6385
 exists.Bug-6392
