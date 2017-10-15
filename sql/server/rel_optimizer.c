@@ -4297,7 +4297,7 @@ rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel)
 		for(n = exps->h; n; n = n->next) {
 			sql_exp *sje = n->data;
 
-			if (n != exps->h &&
+			if (n != exps->h && sje->type == e_cmp &&
 			    !is_complex_exp(sje->flag) &&
 			     rel_has_exp(rel->l, sje->l) >= 0 &&
 			     rel_has_exp(rel->l, sje->r) >= 0) {
