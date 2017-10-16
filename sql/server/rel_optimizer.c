@@ -4332,6 +4332,8 @@ rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel)
 		for(n = exps->h; n; n = n->next) {
 			sql_exp *sje = n->data;
 
+			if (sje->type != e_cmp)
+				return rel;
 			if (right &&
 				(is_complex_exp(sje->flag) || 
 			    	rel_has_exp(lr, sje->l) >= 0 ||

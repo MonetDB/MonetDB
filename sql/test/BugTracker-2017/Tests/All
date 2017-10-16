@@ -76,3 +76,5 @@ sqlitelogictest-aggregation-not-in.Bug-6416
 sqlsmith-semijoin-constant.bug-6417
 sqlsmith.Bug-6418
 sqlsmith.Bug-6423
+sqlsmith.Bug-6424
+sqlsmith.Bug-6425
