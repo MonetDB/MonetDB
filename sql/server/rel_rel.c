@@ -747,9 +747,11 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 		list *gexps = sa_list(sql->sa);
 
 		for (en = groupbyexps->h; en; en = en->next) {
-			sql_exp *e = en->data;
+			sql_exp *e = en->data, *ne;
 
-			if (!exps_find_exp(gexps, e))
+			if ((ne=exps_find_exp(gexps, e)) == NULL || 
+			    strcmp(exp_relname(e),exp_relname(ne)) != 0 || 
+			    strcmp(exp_name(e),exp_name(ne)) != 0  )
 				append(gexps, e);
 		}
 		groupbyexps = gexps;
