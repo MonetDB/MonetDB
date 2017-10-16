@@ -1,0 +1,41 @@
+stderr of test 'sqllitelogistest_case.Bug-6335` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 19:21:48 >  
+# 19:21:48 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34720" "--set" "mapi_usock=/var/tmp/mtest-30725/.s.monetdb.34720" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 19:21:48 >  
+
+# builtin opt 	gdk_dbpath = /home/niels/scratch/rc-monetdb/Linux-x86_64/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 34720
+# cmdline opt 	mapi_usock = /var/tmp/mtest-30725/.s.monetdb.34720
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017
+# cmdline opt 	gdk_debug = 536870922
+
+# 19:21:49 >  
+# 19:21:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30725" "--port=34720"
+# 19:21:49 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-30725/.s.monetdb.34720
+QUERY = SELECT DISTINCT 8 * + + CASE + NULLIF ( - - CASE - ( 52 ) WHEN + 18 - - COUNT ( * ) THEN + 4 WHEN + + 93 - - ( - 40 )
+        THEN - - 1 * 27 * MIN ( DISTINCT - 85 ) + - - 29 * - + CASE - CASE - 66 WHEN - + 87 / 51 THEN 25 * 78 END WHEN - 12 *
+        - 38 / + - 64 * - - CASE - - 61 WHEN + - 84 + 83 + + 36 * NULLIF ( - 46, - 21 ) * 21 + - 18 + - 21 THEN + 8 * 45 WHEN
+        + 40 THEN NULL END * 7 THEN NULL WHEN - 8 THEN SUM ( + 62 ) * 44 WHEN - ( - ( + ( 6 ) ) ) THEN + 91 + + 38 ELSE NULL END
+        END, + 57 ) WHEN - CAST ( NULL AS INTEGER ) THEN ( 46 ) ELSE NULL END * - 77;
+ERROR = !overflow in conversion of -616 to bte.
+
+# 19:21:49 >  
+# 19:21:49 >  "Done."
+# 19:21:49 >  
+

@@ -78,3 +78,4 @@ sqlsmith.Bug-6418
 sqlsmith.Bug-6423
 sqlsmith.Bug-6424
 sqlsmith.Bug-6425
+double-groupby-column.Bug-6207
