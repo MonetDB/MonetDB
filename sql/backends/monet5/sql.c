@@ -4086,8 +4086,6 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (sch == NULL || tab == NULL || col == NULL || type == NULL || mode == NULL || loc == NULL || imprints == NULL || 
 	    sort == NULL || cnt == NULL || atom == NULL || size == NULL || heap == NULL || indices == NULL || phash == NULL ||
 	    revsort == NULL || key == NULL || oidx == NULL || compressed == NULL) {
-		if (compressed)
-			BBPunfix(compressed->batCacheid);
 		goto bailout;
 	}
 	if( pci->argc - pci->retc >= 1)
@@ -4395,6 +4393,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(key->batCacheid);
 	if (oidx)
 		BBPunfix(oidx->batCacheid);
+	if (compressed)
+		BBPunfix(compressed->batCacheid);
 	throw(SQL, "sql.storage", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
