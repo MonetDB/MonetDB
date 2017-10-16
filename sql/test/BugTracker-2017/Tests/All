@@ -79,3 +79,4 @@ sqlsmith.Bug-6423
 sqlsmith.Bug-6424
 sqlsmith.Bug-6425
 double-groupby-column.Bug-6207
+sqlitelogictest-aggregation-having-avg.Bug-6428
