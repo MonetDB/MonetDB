@@ -15,7 +15,7 @@ if (length(args) > 1)
 	dbname <- args[[2]]
 
 dps <- MonetDBLite::src_monetdb(dbname=dbname, port=dbport)
-if (!DBI::dbExistsTable(con_acquire(dps), "AllstarFull")) copy_lahman(dps)
+if (!DBI::dbExistsTable(dps$con, "AllstarFull")) dbplyr::copy_lahman(dps)
 
 }))
 

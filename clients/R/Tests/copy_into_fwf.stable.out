@@ -26,6 +26,8 @@ Ready.
 
 <MonetDBResult>
   SQL  CREATE TABLE mtcars (mpg DOUBLE PRECISION, cyl DOUBLE PRECISION, disp DOUBLE PRECISION, hp DOUBLE PRECISION, drat DOUBLE PRECISION, wt DOUBLE PRECISION, qsec DOUBLE PRECISION, vs DOUBLE PRECISION, am DOUBLE PRECISION, gear DOUBLE PRECISION, carb DOUBLE PRECISION)
+  ROWS Fetched: 0 [complete]
+       Changed: NA
     mpg cyl  disp  hp drat    wt  qsec vs am gear carb
 1  21.0   6 160.0 110 3.90 2.620 16.46  0  1    4    4
 2  21.0   6 160.0 110 3.90 2.875 17.02  0  1    4    4
