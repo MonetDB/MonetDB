@@ -90,7 +90,7 @@ Ready.
 #SELECT CAST('namefield' AS text) AS "text(name)";
 % .L3 # table_name
 % text(name) # name
-% clob # type
+% char # type
 % 9 # length
 [ "namefield"	]
 #SELECT CAST(f1 AS char(10)) AS "char(text)" FROM TEXT_TBL;

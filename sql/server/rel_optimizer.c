@@ -1851,7 +1851,7 @@ rel_rename_exps( mvc *sql, list *exps1, list *exps2)
 		}
 	}
 
-	assert(list_length(exps1) == list_length(exps2)); 
+	assert(list_length(exps1) <= list_length(exps2)); 
 	for (n = exps1->h, m = exps2->h; n && m; n = n->next, m = m->next) {
 		sql_exp *e1 = n->data;
 		sql_exp *e2 = m->data;
@@ -4297,7 +4297,7 @@ rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel)
 		for(n = exps->h; n; n = n->next) {
 			sql_exp *sje = n->data;
 
-			if (n != exps->h &&
+			if (n != exps->h && sje->type == e_cmp &&
 			    !is_complex_exp(sje->flag) &&
 			     rel_has_exp(rel->l, sje->l) >= 0 &&
 			     rel_has_exp(rel->l, sje->r) >= 0) {
@@ -4332,6 +4332,8 @@ rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel)
 		for(n = exps->h; n; n = n->next) {
 			sql_exp *sje = n->data;
 
+			if (sje->type != e_cmp)
+				return rel;
 			if (right &&
 				(is_complex_exp(sje->flag) || 
 			    	rel_has_exp(lr, sje->l) >= 0 ||
@@ -5177,9 +5179,6 @@ rel_groupby_distinct(int *changes, mvc *sql, sql_rel *rel)
 		if (list_length(arg) != 1 || list_length(rel->r) + nr != list_length(rel->exps)) 
 			return rel;
 
-		darg = arg->h->data;
-		exp_label(sql->sa, darg, ++sql->label);
-
 		gbe = rel->r;
 		ngbe = sa_list(sql->sa);
 		exps = sa_list(sql->sa);
@@ -5187,17 +5186,21 @@ rel_groupby_distinct(int *changes, mvc *sql, sql_rel *rel)
 		for (n=rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 			if (e != distinct) {
-				e = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+				e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
 				append(ngbe, e);
 				append(exps, e);
-				e = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+				e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
 				append(nexps, e);
 			}
 		}
 
-		list_append(gbe, exp_copy(sql->sa, darg));
-		darg = exp_column(sql->sa, exp_find_rel_name(darg), exp_name(darg), exp_subtype(darg), darg->card, has_nil(darg), is_intern(darg));
-		list_append(exps, exp_copy(sql->sa, darg));
+		darg = arg->h->data;
+		list_append(gbe, darg = exp_copy(sql->sa, darg));
+		exp_label(sql->sa, darg, ++sql->label);
+
+		darg = exp_column(sql->sa, exp_relname(darg), exp_name(darg), exp_subtype(darg), darg->card, has_nil(darg), is_intern(darg));
+		list_append(exps, darg);
+		darg = exp_column(sql->sa, exp_relname(darg), exp_name(darg), exp_subtype(darg), darg->card, has_nil(darg), is_intern(darg));
 		arg->h->data = darg;
 		l = rel->l = rel_groupby(sql, rel->l, gbe);
 		l->exps = exps;
@@ -7418,13 +7421,14 @@ static sql_rel *
 rel_split_outerjoin(int *changes, mvc *sql, sql_rel *rel)
 {
 	if ((rel->op == op_left || rel->op == op_right || rel->op == op_full) && 
-			list_length(rel->exps) && exps_nr_of_or(rel->exps) == list_length(rel->exps)) { 
-		sql_rel *l = rel_dup(rel->l), *nl, *nll, *nlr;
-		sql_rel *r = rel_dup(rel->r), *nr;
+			list_length(rel->exps) == 1 && exps_nr_of_or(rel->exps) == list_length(rel->exps)) { 
+		sql_rel *l = rel->l, *nl, *nll, *nlr;
+		sql_rel *r = rel->r, *nr;
 		sql_exp *e;
+		list *exps;
 
-		nll = rel_crossproduct(sql->sa, l, r, op_join); 
-		nlr = rel_crossproduct(sql->sa, l, r, op_join); 
+		nll = rel_crossproduct(sql->sa, rel_dup(l), rel_dup(r), op_join); 
+		nlr = rel_crossproduct(sql->sa, rel_dup(l), rel_dup(r), op_join); 
 
 		/* TODO find or exp, ie handle rest with extra joins */
 		/* expect only a single or expr for now */
@@ -7434,16 +7438,11 @@ rel_split_outerjoin(int *changes, mvc *sql, sql_rel *rel)
 		nlr->exps = exps_copy(sql->sa, e->r);
 		nl = rel_or( sql, NULL, nll, nlr, NULL, NULL, NULL);
 
-		if (rel->op == op_full) {
-			l = rel_dup(l);
-			r = rel_dup(r);
-		}
-
 		if (rel->op == op_left || rel->op == op_full) {
 			/* split in 2 anti joins */
-			nr = rel_crossproduct(sql->sa, l, r, op_anti);
+			nr = rel_crossproduct(sql->sa, rel_dup(l), rel_dup(r), op_anti);
 			nr->exps = exps_copy(sql->sa, e->l);
-			nr = rel_crossproduct(sql->sa, nr, r, op_anti);
+			nr = rel_crossproduct(sql->sa, nr, rel_dup(r), op_anti);
 			nr->exps = exps_copy(sql->sa, e->r);
 
 			/* project left */
@@ -7451,14 +7450,16 @@ rel_split_outerjoin(int *changes, mvc *sql, sql_rel *rel)
 				rel_projections(sql, l, NULL, 1, 1));
 			/* add null's for right */
 			add_nulls( sql, nr, r);
+			exps = rel_projections(sql, nl, NULL, 1, 1);
 			nl = rel_setop(sql->sa, nl, nr, op_union);
+			nl->exps = exps;
 			set_processed(nl);
 		}
 		if (rel->op == op_right || rel->op == op_full) {
 			/* split in 2 anti joins */
-			nr = rel_crossproduct(sql->sa, r, l, op_anti);
+			nr = rel_crossproduct(sql->sa, rel_dup(r), rel_dup(l), op_anti);
 			nr->exps = exps_copy(sql->sa, e->l);
-			nr = rel_crossproduct(sql->sa, nr, l, op_anti);
+			nr = rel_crossproduct(sql->sa, nr, rel_dup(l), op_anti);
 			nr->exps = exps_copy(sql->sa, e->r);
 
 			nr = rel_project(sql->sa, nr, sa_list(sql->sa));
@@ -7468,12 +7469,12 @@ rel_split_outerjoin(int *changes, mvc *sql, sql_rel *rel)
 			nr->exps = list_merge(nr->exps, 
 				rel_projections(sql, r, NULL, 1, 1),
 				(fdup)NULL);
+			exps = rel_projections(sql, nl, NULL, 1, 1);
 			nl = rel_setop(sql->sa, nl, nr, op_union);
+			nl->exps = exps;
 			set_processed(nl);
 		}
 
-		rel->l = NULL;
-		rel->r = NULL;
 		rel_destroy(rel);
 		*changes = 1;
 		rel = nl;

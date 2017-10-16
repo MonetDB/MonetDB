@@ -347,7 +347,7 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 		garbageCollector(cntxt, mb, stk, env != stk);
 	if (stk && stk != env)
 		freeStack(stk);
-	if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout)
+	if (ret == MAL_SUCCEED && cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout)
 		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	return ret;
 }
@@ -439,10 +439,10 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 	default:
 		throw(MAL, "mal.interpreter", RUNTIME_UNKNOWN_INSTRUCTION);
 	}
-	if ( ret == MAL_SUCCEED && cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout)
-		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	if (stk) 
 		garbageCollector(cntxt, mb, stk, TRUE);
+	if ( ret == MAL_SUCCEED && cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout)
+		throw(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 	return ret;
 }
 
@@ -792,6 +792,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			continue;
 		runtimeProfileExit(cntxt, mb, stk, pci, &runtimeProfile);
 		/* check for strong debugging after each MAL statement */
+		/* when we find a timeout situation, then the result is already known 
+		 * and assigned,  the backup version is not removed*/
 		if ( pci->token != FACcall && ret== MAL_SUCCEED) {
 			for (i = 0; i < pci->retc; i++) {
 				lhs = &backup[i];

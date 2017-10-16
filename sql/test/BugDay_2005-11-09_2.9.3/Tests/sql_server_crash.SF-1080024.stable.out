@@ -28,7 +28,7 @@ Ready.
 % .L2 # table_name
 % L2 # name
 % char # type
-% 6 # length
+% 5 # length
 [ NULL	]
 
 # 12:45:31 >  

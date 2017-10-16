@@ -19,3 +19,8 @@ singlekeyconstraint
 part-elim
 mergedropcascade
 addtable
+
+mergedb_create
+mergedb.Bug-6820
+sqlsmith.Bug-6426
+mergedb_drop

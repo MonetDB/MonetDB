@@ -1209,14 +1209,10 @@ exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
 	atom *a;
 
 	/* exclude named variables and variable lists */
-	if (exp->type != e_atom || exp->r /* named */ || exp->f /* list */) 
+	if (exp->type != e_atom || exp->r /* named */ || exp->f /* list */ || !exp->l /* not direct atom */) 
 		return NULL;
 
-	if (exp->l)
-		a = exp->l;
-	else
-		a = sql_bind_arg(sql, exp->flag);
-
+	a = exp->l;
 	if (t->scale && t->type->eclass != EC_FLT)
 		return NULL;
 
@@ -2358,13 +2354,11 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 			lr = rel_select_copy(sql->sa, lr, sa_list(sql->sa));
 			lr = rel_logical_exp(sql, lr, lo, f);
-			if (lr) {
-				lexps = lr->exps;
-				lr = lr->l;
-			}
 			rr = rel_select_copy(sql->sa, rr, sa_list(sql->sa));
 			rr = rel_logical_exp(sql, rr, ro, f);
-			if (rr) {
+			if (lr && rr && lr->l == rr->l) {
+				lexps = lr->exps;
+				lr = lr->l;
 				rexps = rr->exps;
 				rr = rr->l;
 			}
@@ -3409,7 +3403,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 	exp_kind ek = {type_value, card_column, FALSE};
 	sql_subaggr *a = NULL;
 	int no_nil = 0;
-	sql_rel *groupby = *rel, *gr;
+	sql_rel *groupby = *rel, *gr, *project = NULL;
 	list *exps = NULL;
 
 	if (!groupby) {
@@ -3426,6 +3420,8 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 
 	if (groupby->l && groupby->op == op_project) {
 		sql_rel *r = groupby->l;	
+		if (f == sql_having)
+			project = groupby;
 		if (r->op == op_groupby) {
 			groupby = r;
 		} else if (r->op == op_select && r->l) {
@@ -3465,7 +3461,11 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 		e = exp_aggr(sql->sa, NULL, a, distinct, 0, groupby->card, 0);
 		if (*rel == groupby && f == sql_sel) /* selection */
 			return e;
-		return rel_groupby_add_aggr(sql, groupby, e);
+		if (!project)
+			return rel_groupby_add_aggr(sql, groupby, e);
+		e = rel_groupby_add_aggr(sql, groupby, e);
+		rel_project_add_exp(sql, project, e);
+		return e;
 	} 
 
 	exps = sa_list(sql->sa);
@@ -3585,8 +3585,11 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 	if (a && execute_priv(sql,a->aggr)) {
 		sql_exp *e = exp_aggr(sql->sa, exps, a, distinct, no_nil, groupby->card, have_nil(exps));
 
-		if (*rel != groupby || f != sql_sel) /* selection */
+		if (*rel != groupby || f != sql_sel) { /* selection */
 			e = rel_groupby_add_aggr(sql, groupby, e);
+			if (project)
+				rel_project_add_exp(sql, project, e);
+		}
 		return e;
 	} else {
 		sql_exp *e;

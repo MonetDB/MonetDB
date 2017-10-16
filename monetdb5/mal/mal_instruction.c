@@ -131,6 +131,7 @@ newMalBlk(int elements)
 	mb->sealedProp = 0;
 	mb->replica = NULL;
 	mb->trap = 0;
+	mb->starttime = 0;
 	mb->runtime = 0;
 	mb->calls = 0;
 	mb->optimize = 0;

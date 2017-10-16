@@ -52,7 +52,9 @@ Ready.
 % clob,	int # type
 % 78,	1 # length
 [ "select * from querycache();",	1	]
-[ "select i, s from qrys where i = 1 and s = \\'hello\\';",	3	]
+[ "select i, s from qrys where i = 3 and s = \\'new\\';",	1	]
+[ "select i, s from qrys where i = 2 and s = \\'brave\\';",	1	]
+[ "select i, s from qrys where i = 1 and s = \\'hello\\';",	1	]
 [ "insert into qrys values (1,\\'hello\\'),(2,\\'brave\\'),(3,\\'new\\'),(4,\\'world\\');",	1	]
 #drop table qrys;
 

@@ -86,3 +86,10 @@ sqlitelogictest-having-with-not-in.Bug-6409
 sqlitelogictest-having-with-in.Bug-6410
 sqlitelogictest-aggregation-distinct.Bug-6411
 sqlitelogictest-aggregation-not-in.Bug-6416
+sqlsmith-semijoin-constant.bug-6417
+sqlsmith.Bug-6418
+sqlsmith.Bug-6423
+sqlsmith.Bug-6424
+sqlsmith.Bug-6425
+double-groupby-column.Bug-6207
+sqlitelogictest-aggregation-having-avg.Bug-6428

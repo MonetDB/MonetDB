@@ -599,15 +599,25 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s)
 		return BATconstant(b1->hseqbase, TYPE_TPE, &res, cnt, TRANSIENT);
 	}
 
-	bn = BATcalcop_intern(b1->ttype == TYPE_void ? (void *) &b1->tseqbase : (void *) Tloc(b1, 0), ATOMtype(b1->ttype) == TYPE_oid ? b1->ttype : ATOMbasetype(b1->ttype), 1,
+	bn = BATcalcop_intern(b1->ttype == TYPE_void ? (const void *) &b1->tseqbase : (const void *) Tloc(b1, 0),
+			      ATOMtype(b1->ttype) == TYPE_oid ? b1->ttype : ATOMbasetype(b1->ttype),
+			      1,
 			      b1->tvheap ? b1->tvheap->base : NULL,
 			      b1->twidth,
-			      b2->ttype == TYPE_void ? (void *) &b2->tseqbase : (void *) Tloc(b2, 0), ATOMtype(b2->ttype) == TYPE_oid ? b2->ttype : ATOMbasetype(b2->ttype), 1,
+			      b2->ttype == TYPE_void ? (const void *) &b2->tseqbase : (const void *) Tloc(b2, 0),
+			      ATOMtype(b2->ttype) == TYPE_oid ? b2->ttype : ATOMbasetype(b2->ttype),
+			      1,
 			      b2->tvheap ? b2->tvheap->base : NULL,
 			      b2->twidth,
-			      cnt, start, end, cand, candend, b1->hseqbase,
+			      cnt,
+			      start,
+			      end,
+			      cand,
+			      candend,
+			      b1->hseqbase,
 			      cand == NULL && b1->tnonil && b2->tnonil,
-			      b1->hseqbase, __func__);
+			      b1->hseqbase,
+			      __func__);
 
 	return bn;
 }
@@ -623,14 +633,25 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATcalcop_intern(Tloc(b, 0), ATOMbasetype(b->ttype), 1,
+	bn = BATcalcop_intern(b->ttype == TYPE_void ? (const void *) &b->tseqbase : (const void *) Tloc(b, 0),
+			      ATOMtype(b->ttype) == TYPE_oid ? b->ttype : ATOMbasetype(b->ttype),
+			      1,
 			      b->tvheap ? b->tvheap->base : NULL,
 			      b->twidth,
-			      VALptr(v), ATOMbasetype(v->vtype), 0,
-			      NULL, 0,
-			      cnt, start, end, cand, candend, b->hseqbase,
+			      VALptr(v),
+			      ATOMtype(v->vtype) == TYPE_oid ? v->vtype : ATOMbasetype(v->vtype),
+			      0,
+			      NULL,
+			      0,
+			      cnt,
+			      start,
+			      end,
+			      cand,
+			      candend,
+			      b->hseqbase,
 			      cand == NULL && b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
-			      b->hseqbase, __func__);
+			      b->hseqbase,
+			      __func__);
 
 	return bn;
 }
@@ -646,14 +667,25 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s)
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
-	bn = BATcalcop_intern(VALptr(v), ATOMbasetype(v->vtype), 0,
-			      NULL, 0,
-			      Tloc(b, 0), ATOMbasetype(b->ttype), 1,
+	bn = BATcalcop_intern(VALptr(v),
+			      ATOMtype(v->vtype) == TYPE_oid ? v->vtype : ATOMbasetype(v->vtype),
+			      0,
+			      NULL,
+			      0,
+			      b->ttype == TYPE_void ? (const void *) &b->tseqbase : (const void *) Tloc(b, 0),
+			      ATOMtype(b->ttype) == TYPE_oid ? b->ttype : ATOMbasetype(b->ttype),
+			      1,
 			      b->tvheap ? b->tvheap->base : NULL,
 			      b->twidth,
-			      cnt, start, end, cand, candend, b->hseqbase,
+			      cnt,
+			      start,
+			      end,
+			      cand,
+			      candend,
+			      b->hseqbase,
 			      cand == NULL && b->tnonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
-			      b->hseqbase, __func__);
+			      b->hseqbase,
+			      __func__);
 
 	return bn;
 }
@@ -662,9 +694,24 @@ gdk_return
 VARcalcop(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
 	ret->vtype = TYPE_TPE;
-	if (op_typeswitchloop(VALptr(lft), ATOMbasetype(lft->vtype), 0, NULL, 0,
-			      VALptr(rgt), ATOMbasetype(rgt->vtype), 0, NULL, 0,
-			      VALget(ret), 1, 0, 1, NULL, NULL, 0, 0,
+	if (op_typeswitchloop(VALptr(lft),
+			      ATOMtype(lft->vtype) == TYPE_oid ? lft->vtype : ATOMbasetype(lft->vtype),
+			      0,
+			      NULL,
+			      0,
+			      VALptr(rgt),
+			      ATOMtype(rgt->vtype) == TYPE_oid ? rgt->vtype : ATOMbasetype(rgt->vtype),
+			      0,
+			      NULL,
+			      0,
+			      VALget(ret),
+			      1,
+			      0,
+			      1,
+			      NULL,
+			      NULL,
+			      0,
+			      0,
 			      __func__) == BUN_NONE)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
