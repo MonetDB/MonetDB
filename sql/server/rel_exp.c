@@ -795,6 +795,23 @@ exp_match( sql_exp *e1, sql_exp *e2)
 	return 0;
 }
 
+/* list already contains matching expression */
+int
+exps_find_exp( list *l, sql_exp *e) 
+{
+	node *n;
+
+	if (!l || !l->h)
+		return 0;
+
+	for(n=l->h; n; n = n->next) {
+		if (exp_match(n->data, e))
+			return 1;
+	}
+	return 0;
+}
+
+
 /* c refers to the parent p */
 int 
 exp_refers( sql_exp *p, sql_exp *c)

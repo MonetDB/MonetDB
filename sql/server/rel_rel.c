@@ -742,6 +742,19 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 	}
 
 	rel->card = CARD_ATOM;
+	/* reduce duplicates in groupbyexps */
+	if (groupbyexps && list_length(groupbyexps) > 1) {
+		list *gexps = sa_list(sql->sa);
+
+		for (en = groupbyexps->h; en; en = en->next) {
+			sql_exp *e = en->data;
+
+			if (!exps_find_exp(gexps, e))
+				append(gexps, e);
+		}
+		groupbyexps = gexps;
+	}
+
 	if (groupbyexps) {
 		rel->card = CARD_AGGR;
 		for (en = groupbyexps->h; en; en = en->next) {
