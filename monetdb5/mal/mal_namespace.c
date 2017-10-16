@@ -49,6 +49,7 @@ static struct namespace {
 } *namespace;
 
 void initNamespace(void) {
+	namespace = NULL;
 }
 
 void mal_namespace_reset(void) {

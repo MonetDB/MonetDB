@@ -875,12 +875,12 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 			freeVariable(mb, i);
 			continue;
 		}
-        if (i > cnt) {
-            /* remap temporary variables */
-            VarRecord t = mb->var[cnt];
-            mb->var[cnt] = mb->var[i];
-            mb->var[i] = t;
-        }
+		if (i > cnt) {
+			/* remap temporary variables */
+			VarRecord t = mb->var[cnt];
+			mb->var[cnt] = mb->var[i];
+			mb->var[i] = t;
+		}
 
 		/* valgrind finds a leak when we move these variable record
 		 * pointers around. */
@@ -1041,7 +1041,8 @@ convertConstant(int type, ValPtr vr)
 		str w;
 		if (vr->vtype == TYPE_void || ATOMcmp(vr->vtype, ATOMnilptr(vr->vtype), VALptr(vr)) == 0) {
 			vr->vtype = type;
-			vr->val.sval = GDKstrdup(str_nil);
+			if ((vr->val.sval = GDKstrdup(str_nil)) == NULL)
+				throw(SYNTAX, "convertConstant", SQLSTATE(HY001) GDK_EXCEPTION);
 			vr->len = (int) strlen(vr->val.sval);
 			return MAL_SUCCEED;
 		}
