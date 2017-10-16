@@ -1851,7 +1851,7 @@ rel_rename_exps( mvc *sql, list *exps1, list *exps2)
 		}
 	}
 
-	assert(list_length(exps1) == list_length(exps2)); 
+	assert(list_length(exps1) <= list_length(exps2)); 
 	for (n = exps1->h, m = exps2->h; n && m; n = n->next, m = m->next) {
 		sql_exp *e1 = n->data;
 		sql_exp *e2 = m->data;
