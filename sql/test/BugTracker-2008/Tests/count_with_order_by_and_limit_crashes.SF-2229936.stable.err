@@ -84,7 +84,7 @@ stderr of test 'count_with_order_by_and_limit_crashes.SF-2229936` in directory '
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select count(subtotal) from bigramlex order by subtotal;
-ERROR = !SELECT: identifier 'subtotal' unknown
+ERROR = !SELECT: cannot use non GROUP BY column 'subtotal' in query results without an aggregate function
 
 # 18:44:11 >  
 # 18:44:11 >  Done.
