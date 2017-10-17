@@ -512,6 +512,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	if (!schema || !mvc_set_schema(m, schema)) {
 		if (m->session->active)
 			mvc_rollback(m, 0, NULL);
+		GDKfree(username);
 		return NULL;
 	}
 	/* reset the user and schema names */
