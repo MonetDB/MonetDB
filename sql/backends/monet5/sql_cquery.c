@@ -459,6 +459,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 	sql_schema *s;
 	sql_subfunc *f;
 	list *l;
+	node *argn = NULL;
 
 	prev = be->mb;
 
@@ -486,7 +487,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		}
 	}
 
-	rschema = (sname == NULL || strcmp(sname, str_nil) == 0) ? m->session->schema_name : sname;
+	rschema = (!sname || strcmp(sname, str_nil) == 0) ? m->session->schema_name : sname;
 	if((s = mvc_bind_schema(m, rschema)) == NULL) { //bind the schema
 		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Failed to bind schema %s\n", rschema);
 		goto finish;
@@ -531,38 +532,16 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 	}
 	p->token = FUNCTIONsymbol;
 	p->barrier = 0;
-	varid = newVariable(mb, cq_id, strlen(cq_id), TYPE_any);
+	if((varid = newVariable(mb, cq_id, strlen(cq_id), TYPE_void)) < 0) {
+		FREE_CQ_MB(finish)
+	}
 	setDestVar(p, varid);
 	pushInstruction(mb, p);
 
-	for (i = 0; i < argc; i++) { //add variables to the MAL block
-		atom *a = args[i];
-		int type = atom_type(a)->type->localtype;
-		varid = 0;
-
-		(void) snprintf(buffer, sizeof(buffer), "A%d", i);
-		a->varid = varid = newVariable(mb, buffer, strlen(buffer), type);
-		if (varid < 0) {
-			FREE_CQ_MB(finish)
-		}
-		if ((p = pushArgument(mb, p, varid)) == NULL) {
-			FREE_CQ_MB(finish)
-		}
-		setVarType(mb, varid, type);
-		setVarUDFtype(mb, 0);
+	if((q = newStmt(mb, sqlRef, transactionRef)) == NULL) {
+		FREE_CQ_MB(finish)
 	}
-	for (i = 0; i < argc; i++) { //add assignments for arguments
-		p = newAssignment(mb);
-		if (p && args[i]->varid >= 0) {
-			p = pushArgument(mb, p, args[i]->varid);
-		} else if(p) {
-			(void) snprintf(buffer, sizeof(buffer), "A%d", i);
-			p = pushArgumentId(mb, p, buffer);
-		}
-		if (p == NULL) {
-			FREE_CQ_MB(finish)
-		}
-	}
+	setArgType(mb,q, 0, TYPE_void);
 	if ((p = newStmt(mb, "user", fname)) == NULL) { //add the UDF call statement
 		FREE_CQ_MB(finish)
 	}
@@ -571,34 +550,45 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		setVarType(mb, getArg(q, 0), res->type->localtype);
 		setVarUDFtype(mb, getArg(q, 0));
 	}*/
-	for (i = 0; i < argc; i++) { //add arguments assignments
-		if ((p = pushArgument(mb, p, i + 2)) == NULL) {
+	for (i = 0, argn = f->func->ops->h; i < argc && argn; i++, argn = argn->next) { //add variables to the MAL block
+		sql_subtype tpe = ((sql_arg *) argn->data)->type;
+		atom *a = args[i];
+		ValPtr val = (ValPtr) &a->data;
+		if(VALconvert(tpe.type->localtype, val) == NULL) {
+			msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Error while making a conversion\n");
+			GDKfree(ralias);
+			freeMalBlk(mb);
+			goto finish;
+		}
+		if((p = pushValue(mb, p, val)) == NULL) {
 			FREE_CQ_MB(finish)
 		}
 	}
-	for (i = 0; i < argc; i++) { //initialize arguments assignments
-		atom *arg = args[i];
-		ValPtr val = (ValPtr) &arg->data;
-		if (VALcopy(&mb->var[i + 2].value, val) == NULL) {
-			FREE_CQ_MB(finish)
-		}
-		setVarConstant(mb, i + 2);
-		setVarFixed(mb, i + 2);
+	if((q = newStmt(mb, sqlRef, commitRef)) == NULL) {
+		FREE_CQ_MB(finish)
+	}
+	setArgType(mb,q, 0, TYPE_void);
+	if(pushEndInstruction(mb) == NULL) {
+		FREE_CQ_MB(finish)
+	}
+	chkProgram(cntxt->usermodule, mb);
+	if(mb->errors) {
+		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "%s", mb->errors);
+		GDKfree(ralias);
+		freeMalBlk(mb);
+		goto finish;
 	}
 
 	if(!alias || strcmp(alias, str_nil) == 0) { //set the alias
-		if((ralias = GDKstrdup(fname)) == NULL) {
-			FREE_CQ_MB(finish)
-		}
+		ralias = GDKstrdup(fname);
 	} else {
-        ralias = GDKstrdup(alias);
+		ralias = GDKstrdup(alias);
 	}
 	if(ralias == NULL) {
 		FREE_CQ_MB(finish)
 	}
 	if ((sym = findSymbol(cntxt->usermodule, "user", fname)) == NULL){ // access the actual procedure body
-		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Cannot find %s user.%s.\n", err_message, fname);
-		GDKfree(cq_id);
+		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Cannot find %s user.%s\n", err_message, fname);
 		GDKfree(ralias);
 		freeMalBlk(mb);
 		goto finish;
@@ -630,13 +620,11 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 	if(idx != pnettop && pnet[idx].status != CQDELETE) {
 		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "The continuous %s %s is already registered.\n",
 				err_message, ralias);
-		GDKfree(cq_id);
 		GDKfree(ralias);
 		freeMalBlk(mb);
 		goto unlock;
 	}
 	if((msg = CQanalysis(cntxt, sym->def, pnettop)) != MAL_SUCCEED) {
-		GDKfree(cq_id);
 		GDKfree(ralias);
 		freeMalBlk(mb);
 		goto unlock;
@@ -646,25 +634,12 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 			if(baskets[pnet[pnettop].baskets[i]].window != DEFAULT_TABLE_WINDOW) {
 				msg = createException(SQL, "cquery.register",
 									  SQLSTATE(42000) "Heartbeat ignored, a window constraint exists\n");
-				GDKfree(cq_id);
 				GDKfree(ralias);
 				freeMalBlk(mb);
 				goto unlock;
 			}
 		}
 	}
-
-	if((q = newStmt(mb, sqlRef, transactionRef)) == NULL) {
-		FREE_CQ_MB(unlock)
-	}
-	setArgType(mb,q, 0, TYPE_void);
-	moveInstruction(mb, getPC(mb,q),1);
-	if((q = newStmt(mb, sqlRef, commitRef)) == NULL) {
-		FREE_CQ_MB(unlock)
-	}
-	setArgType(mb,q, 0, TYPE_void);
-	moveInstruction(mb, getPC(mb,q),mb->stop - 1);
-	chkProgram(cntxt->usermodule, mb);
 
 	if((pnet[pnettop].mod = GDKstrdup(sname)) == NULL) {
 		FREE_CQ_MB(unlock)
@@ -673,7 +648,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		GDKfree(pnet[pnettop].mod);
 		FREE_CQ_MB(unlock)
 	}
-	if((pnet[pnettop].stk = prepareMALstack(mb, mb->vsize)) == NULL) {
+	if((pnet[pnettop].stk = prepareMALstack(mb, mb->vsize)) == NULL) { //prepare MAL stack
 		GDKfree(pnet[pnettop].mod);
 		GDKfree(pnet[pnettop].fcn);
 		FREE_CQ_MB(unlock)

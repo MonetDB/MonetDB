@@ -1,0 +1,54 @@
+stdout of test 'cquery14` in directory 'sql/backends/monet5` itself:
+
+
+# 16:24:43 >  
+# 16:24:43 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34102" "--set" "mapi_usock=/var/tmp/mtest-23936/.s.monetdb.34102" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/MonetDB-trails/BUILD/var/MonetDB/mTests_sql_backends_monet5"
+# 16:24:43 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.498 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-120.eduroam.cwi.nl:34102/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-23936/.s.monetdb.34102
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Timetrails module loaded
+
+Ready.
+
+# 16:24:43 >  
+# 16:24:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23936" "--port=34102"
+# 16:24:43 >  
+
+#create stream table testing14 (a int) set window 1 stride 1;
+#create table results14 (a int);
+#create procedure cq_query14a()
+#begin
+#	insert into results14 (select * from testing14);
+#end;
+#create procedure cq_query14b()
+#begin
+#	insert into testing14 values (1), (2), (3);
+#	start continuous sys.cq_query14a() with cycles 2;
+#end;
+#start continuous sys.cq_query14b() with cycles 1;
+#select count(*) from results14; --should be 2
+% sys.L4 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 2	]
+#drop procedure sys.cq_query14b;
+#drop procedure sys.cq_query14a;
+#drop table testing14;
+#drop table results14;
+
+# 16:24:46 >  
+# 16:24:46 >  "Done."
+# 16:24:46 >  
+
