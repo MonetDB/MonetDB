@@ -1,4 +1,5 @@
 # autoinstall DBI and digest, we need those to install MonetDB.R
+options(warn = -1)
 packages_required <- c("digest", "DBI")
 
 cat("#~BeginProfilingOutput~#\n", file=stderr())

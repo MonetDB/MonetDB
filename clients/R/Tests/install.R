@@ -1,3 +1,4 @@
+options(warn = -1)
 cat("#~BeginProfilingOutput~#\n", file=stderr())
 cat("#~BeginProfilingOutput~#\n", file=stdout())
 

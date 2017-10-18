@@ -1030,7 +1030,7 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 			return rel_var_ref(sql, name, 0);
 		}
 		if (!exp && !var) {
-			if (rel && *rel && (*rel)->card == CARD_AGGR && f == sql_sel) {
+			if (rel && *rel && (*rel)->card <= CARD_AGGR && f == sql_sel) {
 				sql_rel *gb = *rel;
 
 				while(gb->l && !is_groupby(gb->op))
@@ -1038,6 +1038,8 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 				if (gb && gb->l && rel_bind_column(sql, gb->l, name, f)) 
 					return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
 			}
+			if (f == sql_having)
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s' in query results without an aggregate function", name);
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: identifier '%s' unknown", name);
 		}
 		
@@ -1058,11 +1060,7 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 					*rel = rel_crossproduct(sql->sa, *rel, v, op_join);
 				else
 					*rel = v;
-				/*
-				exp = rel_bind_column(sql, *rel, cname, f);
-				if (!exp)
-				*/
-					exp = rel_bind_column2(sql, *rel, tname, cname, f);
+				exp = rel_bind_column2(sql, *rel, tname, cname, f);
 			}
 		}
 		if (!exp) {
@@ -1074,6 +1072,8 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 				if (gb && is_groupby(gb->op) && gb->l && rel_bind_column2(sql, gb->l, tname, cname, f))
 					return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
 			}
+			if (f == sql_having)
+				return sql_error(sql, 02, SQLSTATE(42S22) "SELECT: cannot use non GROUP BY column '%s.%s' in query results without an aggregate function", tname, cname);
 			return sql_error(sql, 02, SQLSTATE(42S22) "SELECT: no such column '%s.%s'", tname, cname);
 		}
 	} else if (dlist_length(l) >= 3) {
@@ -4881,8 +4881,9 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 	if (sn->having) {
 		/* having implies group by, ie if not supplied do a group by */
 		if (rel->op != op_groupby)
-			rel = rel_groupby(sql,  rel, NULL);
+			rel = rel_groupby(sql, rel, NULL);
 		aggr = 1;
+		if (rel) set_processed(rel);
 	}
 
 	n = sn->selection->h;
