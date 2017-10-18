@@ -81,4 +81,5 @@ sqlsmith.Bug-6425
 double-groupby-column.Bug-6207
 sqlitelogictest-aggregation-having-avg.Bug-6428
 sqlitelogictest-aggregation-distinct-coalesce.Bug-6431
+sqlsmith.Bug-6432
 sqlitelogictest-select-in.Bug-6433

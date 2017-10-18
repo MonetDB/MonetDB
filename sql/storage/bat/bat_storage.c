@@ -1789,7 +1789,6 @@ empty_col(sql_column *c)
 			return LOG_ERR;
 		}
 		bat_destroy(b);
-
 	}
 	return LOG_OK;
 }
@@ -1835,6 +1834,43 @@ empty_idx(sql_idx *i)
 		bat_set_access(b, BAT_READ);
 		if (BATmode(b, PERSISTENT) != GDK_SUCCEED ||
 		    logger_add_bat(bat_logger, b, bat->name) != GDK_SUCCEED) {
+			bat_destroy(b);
+			return LOG_ERR;
+		}
+		bat_destroy(b);
+	}
+	return LOG_OK;
+}
+
+static int
+empty_del(sql_table *t)
+{
+	sql_dbat *bat = t->data;
+
+	if (bat->dbid == e_bat(TYPE_oid) &&
+	    (bat->dbid = copyBat(bat->dbid, TYPE_oid, 0)) == 0)
+		return LOG_ERR;
+
+	/* make new bat persistent */
+	{
+		BAT *b = temp_descriptor(bat->dbid);
+
+		if (b == NULL)
+			return LOG_ERR;
+
+		if (b->batRole != PERSISTENT) {
+			bat->dbid = copyBat(b->batCacheid, TYPE_oid, 0);
+			temp_destroy(b->batCacheid);
+			bat_destroy(b);
+			if (bat->dbid == 0)
+				return LOG_ERR;
+			b = temp_descriptor(bat->dbid);
+			if (b == NULL)
+				return LOG_ERR;
+		}
+		bat_set_access(b, BAT_READ);
+		if (BATmode(b, PERSISTENT) != GDK_SUCCEED ||
+		    logger_add_bat(bat_logger, b, bat->dname) != GDK_SUCCEED) {
 			bat_destroy(b);
 			return LOG_ERR;
 		}
@@ -2414,6 +2450,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				for (n = tt->idxs.set->h; n; n = n->next) 
 					(void)store_funcs.clear_idx(tr->parent, n->data);
 		} else {
+			empty_del(ft);
 			for (n = ft->columns.set->h; n; n = n->next) 
 				empty_col(n->data);
 			if (ft->idxs.set) 
