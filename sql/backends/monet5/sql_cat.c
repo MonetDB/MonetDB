@@ -427,12 +427,6 @@ drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
 }
 
 static str
-start_cp(Client cntxt, str alias, int action, lng heartbeat, lng startat, int cycles, MalBlkPtr fcall)
-{
-	return CQregister(cntxt, alias, action, heartbeat, startat, cycles, fcall);
-}
-
-static str
 change_single_cp(str alias, int action, lng heartbeat, lng startat, int cycles)
 {
 	if(action & mod_resume_continuous) {
@@ -1312,15 +1306,18 @@ str
 SQLstart_cp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
-	str alias = *getArgReference_str(stk, pci, 1);
-	int action = *getArgReference_int(stk, pci, 2);
-	lng heartbeat = *getArgReference_lng(stk, pci, 3);
-	lng startat = *getArgReference_lng(stk, pci, 4);
-	int cycles = *getArgReference_int(stk, pci, 5);
-	MalBlkPtr fcall = *(MalBlkPtr*) getArgReference(stk, pci, 6);
+	str sname = *getArgReference_str(stk, pci, 1);
+	str fname = *getArgReference_str(stk, pci, 2);
+	int argc = *getArgReference_int(stk, pci, 3);
+	atom **args = *(atom ***) getArgReference(stk, pci, 4);
+	str alias = *getArgReference_str(stk, pci, 5);
+	int action = *getArgReference_int(stk, pci, 6);
+	lng heartbeat = *getArgReference_lng(stk, pci, 7);
+	lng startat = *getArgReference_lng(stk, pci, 8);
+	int cycles = *getArgReference_int(stk, pci, 9);
 
 	initcontext();
-	msg = start_cp(cntxt, alias, action, heartbeat, startat, cycles, fcall);
+	msg = CQregister(cntxt, sname, fname, argc, args, alias, action, heartbeat, startat, cycles);
 	return msg;
 }
 

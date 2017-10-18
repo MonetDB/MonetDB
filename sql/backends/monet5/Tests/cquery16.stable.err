@@ -31,15 +31,8 @@ stderr of test 'cquery16` in directory 'sql/backends/monet5` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-25778/.s.monetdb.37794
 QUERY = start continuous sys.cq_query16a(); --error
-ERROR = !SELECT: no such operator 'cq_query16a'
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-25778/.s.monetdb.37794
-QUERY = create procedure cq_query16b() --error
-        begin
-        	start continuous sys.cq_query16a();
-        end;
-ERROR = !SELECT: no such operator 'cq_query16a'
-CODE  = 42000
+ERROR = !Failed to bind procedure sys.cq_query16a
+CODE  = 3F000
 
 # 15:37:38 >  
 # 15:37:38 >  "Done."

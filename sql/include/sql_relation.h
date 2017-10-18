@@ -117,8 +117,9 @@ typedef struct expression {
 
 #define DDL_DROP_INDEX             34
 
-#define DDL_CHANGE_SINGLE_CP       35
-#define DDL_CHANGE_ALL_CP          36
+#define DDL_START_SINGLE_CP        35
+#define DDL_CHANGE_SINGLE_CP       36
+#define DDL_CHANGE_ALL_CP          37
 
 #define DDL_CREATE_FUNCTION        41 
 #define DDL_DROP_FUNCTION          42 

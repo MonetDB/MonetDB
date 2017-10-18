@@ -2330,6 +2330,7 @@ stmt_catalog(backend *be, int type, stmt *args)
 	case DDL_CREATE_ROLE:	q = newStmt(mb, sqlcatalogRef, create_roleRef); break;
 	case DDL_DROP_ROLE:		q = newStmt(mb, sqlcatalogRef, drop_roleRef); break;
 	case DDL_DROP_INDEX:	q = newStmt(mb, sqlcatalogRef, drop_indexRef); break;
+	case DDL_START_SINGLE_CP:	q = newStmt(mb, sqlcatalogRef, start_cpRef); break;
 	case DDL_CHANGE_SINGLE_CP:	q = newStmt(mb, sqlcatalogRef, change_single_cpRef); break;
 	case DDL_CHANGE_ALL_CP:	q = newStmt(mb, sqlcatalogRef, change_all_cpRef); break;
 	case DDL_DROP_FUNCTION:	q = newStmt(mb, sqlcatalogRef, drop_functionRef); break;
@@ -2789,15 +2790,12 @@ stmt_binop(backend *be, stmt *op1, stmt *op2, sql_subfunc *op)
 stmt *
 stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 {
-	MalBlkPtr mb = be->mb, other = NULL;
-	mvc *m = be->mvc;
-	InstrPtr q = NULL, sig = NULL;
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = NULL;
 	const char *mod, *fimp;
 	sql_subtype *tpe = NULL;
-	int special = 0, i;
-	str alias;
-	atom *ato;
-	list *cqparamters = f->cqparamters;
+	int special = 0;
+
 	node *n;
 	stmt *o = NULL;
 
@@ -2871,62 +2869,6 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 			setVarUDFtype(mb, getArg(q, q->argc-1));
 		}
 		special = 0;
-	}
-
-	if(cqparamters){
-		other = copyMalBlk(mb); //prepare the MAL block for the CQ
-		if(other == NULL){
-			return NULL;
-		}
-		for(i = 1; i < other->stop; i++){ //remove mvc and querylog references
-			sig= getInstrPtr(other,i);
-			if( getFunctionId(sig) == mvcRef || getModuleId(sig) == querylogRef ){
-				removeInstruction(other, sig);
-				i = 1; //restart the loop...
-			}
-		}
-		for (i = 0; i < m->argc; i++){
-			atom *arg = m->args[i];
-			ValPtr val = (ValPtr) &arg->data;
-			if (VALcopy(&other->var[i + 1].value, val) == NULL){
-				freeMalBlk(other);
-				return NULL;
-			}
-			setVarConstant(other, i + 1);
-			setVarFixed(other, i + 1);
-		}
-
-		removeInstruction(mb, q);
-		freeInstruction(q);
-		mb->stmt[mb->stop] = NULL;
-		q = newStmt(mb, sqlcatalogRef, start_cpRef);
-		if(q == NULL){
-			freeMalBlk(other);
-			return NULL;
-		}
-
-		ato = (atom *)(((sql_exp *) cqparamters->h->data)->l);
-		alias = (str) ato->data.val.sval;
-		if(alias)
-			q = pushStr(mb, q, alias);
-		else
-			q = pushNil(mb, q, TYPE_str);
-
-		ato = (atom *)(((sql_exp *) cqparamters->h->next->data)->l);
-		q = pushInt(mb, q, ato->data.val.ival); //action -> start query
-
-		ato = (atom *)(((sql_exp *) cqparamters->h->next->next->data)->l);
-		q = pushLng(mb, q, ato->data.val.lval); //heartbeats
-
-		ato = (atom *)(((sql_exp *) cqparamters->h->next->next->next->data)->l);
-		q = pushLng(mb, q, ato->data.val.lval); //start at
-
-		ato = (atom *)(((sql_exp *) cqparamters->h->next->next->next->next->data)->l);
-		q = pushInt(mb, q, ato->data.val.ival); //cycles
-
-		q = pushPtr(mb, q, other);
-		list_destroy(cqparamters);
-		f->cqparamters = NULL;
 	}
 
 	if (q) {

@@ -154,7 +154,7 @@ psm_set_exp(mvc *sql, dnode *n)
 }
 
 static sql_exp*
-rel_psm_call(mvc * sql, symbol *se, list *cq_parameters)
+rel_psm_call(mvc * sql, symbol *se)
 {
 	sql_subtype *t;
 	sql_exp *res = NULL;
@@ -162,12 +162,9 @@ rel_psm_call(mvc * sql, symbol *se, list *cq_parameters)
 	sql_rel *rel = NULL;
 
 	res = rel_value_exp(sql, &rel, se, sql_sel, ek);
-	if(sql->session->status) //there are errors in the generated expression, hence return
-		return NULL;
-	((sql_subfunc *)res->f)->cqparamters = cq_parameters; //for CQs we set the extra parameters here
 
 	/* only procedures or continuous queries */
-	if (cq_parameters && (!res || rel || ((t=exp_subtype(res)) && t->type)))
+	if ((!res || rel || ((t=exp_subtype(res)) && t->type)))
 		return sql_error(sql, 01, SQLSTATE(42000) "Function calls are ignored");
 	return res;
 }
@@ -599,26 +596,41 @@ has_return( list *l )
 	return 0;
 }
 
-static sql_exp*
-start_continuous_query(mvc *sql, dlist *l) {
+static sql_rel*
+rel_start_continuous_query(mvc *sql, dnode *w) {
+	sql_rel *rel;
 	AtomNode* an = NULL;
 	lng start_at = 0;
 	str msg = NULL;
-	list *cq_parameters = NULL;
-	an = (AtomNode*) l->h->next->next->next->next->data.sym;
+	list *cq_parameters = new_exp_list(sql->sa);
+	symbol *sym = w->next->next->data.sym;
+	dnode *l = sym->data.lval->h;
+	char *sname = qname_schema(l->data.lval);
+	char *fname = qname_fname(l->data.lval);
 
+	an = (AtomNode*) w->next->next->next->next->data.sym;
 	if(an && (msg = convert_atom_into_unix_timestamp(an->a, &start_at)) != NULL){
 		return sql_error(sql, 01, "%s", msg);
 	}
-
-	cq_parameters = new_exp_list(sql->sa);
-	append(cq_parameters, exp_atom_clob(sql->sa, l->h->next->next->next->next->next->next->data.sval));  //alias
-	append(cq_parameters, exp_atom_int(sql->sa, l->h->data.i_val)); // start query
-	append(cq_parameters, exp_atom_lng(sql->sa, l->h->next->next->next->data.l_val)); //heartbeats
+	append(cq_parameters, exp_atom_clob(sql->sa, sname)); //function schema
+	append(cq_parameters, exp_atom_clob(sql->sa, fname)); //function name
+	append(cq_parameters, exp_atom_int(sql->sa, sql->argc)); //args
+	append(cq_parameters, exp_atom_ptr(sql->sa, sql->args)); //argv
+	append(cq_parameters, exp_atom_clob(sql->sa, w->next->next->next->next->next->next->data.sval)); //alias
+	append(cq_parameters, exp_atom_int(sql->sa, w->data.i_val)); //start query
+	append(cq_parameters, exp_atom_lng(sql->sa, w->next->next->next->data.l_val)); //heartbeats
 	append(cq_parameters, exp_atom_lng(sql->sa, start_at)); //start at value
-	append(cq_parameters, exp_atom_int(sql->sa, l->h->next->next->next->next->next->data.i_val)); //cycles
+	append(cq_parameters, exp_atom_int(sql->sa, w->next->next->next->next->next->data.i_val)); //cycles
 
-	return rel_psm_call(sql, l->h->next->next->data.sym, cq_parameters);
+	rel = rel_create(sql->sa);
+	rel->l = NULL;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = DDL_START_SINGLE_CP;
+	rel->exps = cq_parameters;
+	rel->card = 0;
+	rel->nrcols = 0;
+	return rel;
 }
 
 static sql_rel *
@@ -721,10 +733,10 @@ sequential_block (mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk,
 			reslist = rel_psm_case(sql, restype, restypelist, s->data.lval->h, is_func);
 			break;
 		case SQL_CALL:
-			res = rel_psm_call(sql, s->data.sym, NULL);
+			res = rel_psm_call(sql, s->data.sym);
 			break;
 		case SQL_START_CONTINUOUS_QUERY:
-			res = start_continuous_query(sql, s->data.lval);
+			res = exp_rel(sql, rel_start_continuous_query(sql, s->data.lval->h));
 			break;
 		case SQL_CHANGE_CONTINUOUS_QUERY:
 			res = exp_rel(sql, rel_single_continuous_query(sql, s->data.lval->h));
@@ -1535,11 +1547,11 @@ rel_psm(mvc *sql, symbol *s)
 		sql->type = Q_SCHEMA;
 		break;
 	case SQL_CALL:
-		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, s->data.sym, NULL));
+		ret = rel_psm_stmt(sql->sa, rel_psm_call(sql, s->data.sym));
 		sql->type = Q_UPDATE;
 		break;
 	case SQL_START_CONTINUOUS_QUERY:
-		ret = rel_psm_stmt(sql->sa, start_continuous_query(sql, s->data.lval));
+		ret = rel_psm_stmt(sql->sa, exp_rel(sql, rel_start_continuous_query(sql, s->data.lval->h)));
 		sql->type = Q_UPDATE;
 		break;
 	case SQL_CHANGE_CONTINUOUS_QUERY:

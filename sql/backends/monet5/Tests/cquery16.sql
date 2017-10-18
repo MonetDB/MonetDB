@@ -4,11 +4,6 @@ create table results16 (a int);
 
 start continuous sys.cq_query16a(); --error
 
-create procedure cq_query16b() --error
-begin
-	start continuous sys.cq_query16a();
-end;
-
 create procedure cq_query16a()
 begin
 	insert into results16 (select * from testing16);
