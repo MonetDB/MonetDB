@@ -52,7 +52,7 @@ typedef struct Ssabuplog {
 } sabuplog;
 
 #ifdef WIN32
-#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5) && !defined(LIBMOSAIC)
+#if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5) && !defined(LIBMOSAIC) && !defined(LIBMSABAOTH)
 #define msab_export extern __declspec(dllimport)
 #else
 #define msab_export extern __declspec(dllexport)
