@@ -488,12 +488,13 @@ find_table_function(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl)
 				for (n = exps->h, m = sf->func->ops->h; n && m; n = n->next, m = m->next) {
 					sql_arg *a = m->data;
 					sql_exp *e = n->data;
+					sql_subtype anytype = a->type;
 
 					if (a->type.type->eclass == EC_ANY) {
 						sql_subtype *st = &e->tpe;
-						sql_init_subtype(&a->type, st->type, st->digits, st->scale);
+						sql_init_subtype(&anytype, st->type, st->digits, st->scale);
 					}
-					e = rel_check_type(sql, &a->type, e, type_equal);
+					e = rel_check_type(sql, &anytype, e, type_equal);
 					if (!e) {
 						nexps = NULL;
 						break;
@@ -1818,12 +1819,13 @@ _rel_nop( mvc *sql, sql_schema *s, char *fname, list *tl, list *exps, sql_subtyp
 				  	n = n->next, m = m->next) {
 				sql_arg *a = m->data;
 				sql_exp *e = n->data;
+				sql_subtype anytype = a->type;
 
 				if (a->type.type->eclass == EC_ANY) {
 					sql_subtype *st = &e->tpe;
-					sql_init_subtype(&a->type, st->type, st->digits, st->scale);
+					sql_init_subtype(&anytype, st->type, st->digits, st->scale);
 				}
-				e = rel_check_type(sql, &a->type, e, type_equal);
+				e = rel_check_type(sql, &anytype, e, type_equal);
 				if (!e) {
 					nexps = NULL;
 					break;

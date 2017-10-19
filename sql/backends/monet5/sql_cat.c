@@ -871,7 +871,7 @@ SQLdrop_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = sql_message("42000!DROP SCHEMA: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (s == cur_schema(sql)) {
 		msg = sql_message("42000!DROP SCHEMA: cannot drop current schema");
-	} else if (strcmp(sname, "sys") == 0 || strcmp(sname, "tmp") == 0) {
+	} else if (s->system) {
 		msg = sql_message("42000!DROP SCHEMA: access denied for '%s'", sname);
 	} else if (sql_schema_has_user(sql, s)) {
 		msg = sql_message("2BM37!DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it", sname);
