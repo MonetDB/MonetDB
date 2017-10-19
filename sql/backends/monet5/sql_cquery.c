@@ -452,7 +452,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 	MalBlkPtr mb = NULL, prev;
 	const char* err_message = (which & mod_continuous_function) ? "function" : "procedure";
 	char* cq_id = NULL;
-	int i, idx, varid;
+	int i, idx, varid, cid;
 	char buffer[IDLENGTH];
 	backend* be = (backend*) cntxt->sqlcontext;
 	mvc *m = be->mvc;
@@ -493,22 +493,19 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		goto finish;
 	}
 
+	//Find the UDF
+	f = sql_find_func(m->sa, s, fname, argc > 0 ? argc : -1, (which & mod_continuous_function) ? F_FUNC : F_PROC, NULL);
+	if(!f) {
+		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Failed to bind %s %s.%s\n", err_message, sname, fname);
+		GDKfree(ralias);
+		goto finish;
+	}
 	if((l = list_create(NULL)) == NULL) {
 		FREE_CQ_MB(finish)
 	}
 	for (i = 0; i < argc; i++) { //prepare the arguments for the backend creation
 		atom *a = args[i];
 		list_append(l, stmt_varnr(be, i, &a->tpe));
-	}
-	if(argc)
-		f = sql_find_func(m->sa, s, fname, argc, (which & mod_continuous_function) ? F_FUNC : F_PROC, NULL); //bind the UDF
-	else
-		f = sql_bind_func_(m->sa, s, fname, l, (which & mod_continuous_function) ? F_FUNC : F_PROC);
-	if(!f) {
-		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Failed to bind %s %s.%s\n", err_message, sname, fname);
-		GDKfree(ralias);
-		list_destroy(l);
-		goto finish;
 	}
 	if (backend_create_subfunc(be, f, l) < 0) { //create the backend function
 		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Failed to generate backend function\n");
@@ -518,7 +515,10 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 	}
 	list_destroy(l);
 
-	(void) snprintf(buffer, sizeof(buffer), "cq_%d", ++CQ_counter); //set the CQ ID
+	MT_lock_set(&ttrLock);
+	cid = ++CQ_counter;
+	MT_lock_unset(&ttrLock);
+	(void) snprintf(buffer, sizeof(buffer), "cq_%d", cid); //set the CQ ID
 	if((cq_id = GDKstrdup(buffer)) == NULL) {
 		FREE_CQ_MB(finish)
 	}
