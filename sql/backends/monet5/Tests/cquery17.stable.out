@@ -1,0 +1,50 @@
+stdout of test 'cquery17` in directory 'sql/backends/monet5` itself:
+
+
+# 13:04:59 >  
+# 13:04:59 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31913" "--set" "mapi_usock=/var/tmp/mtest-23287/.s.monetdb.31913" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/MonetDB-trails/BUILD/var/MonetDB/mTests_sql_backends_monet5"
+# 13:04:59 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.498 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-120.eduroam.cwi.nl:31913/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-23287/.s.monetdb.31913
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Timetrails module loaded
+
+Ready.
+
+# 13:04:59 >  
+# 13:04:59 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23287" "--port=31913"
+# 13:04:59 >  
+
+#create table testing17(aaa integer, bbb real, ccc text, ddd date, eee time, fff timestamp);
+#create procedure cq_query17(aaa integer, bbb real, ccc text, ddd date, eee time, fff timestamp)
+#begin
+#	insert into testing17 values (aaa, bbb, ccc, ddd, eee, fff);
+#end;
+#start continuous cq_query17(null, null, null, null, null, null) with heartbeat 1000 cycles 1;
+#start continuous cq_query17('-2', 132, 'abc', date '2017-01-01', time '12:34:56', timestamp '2007-03-07 15:28:16.577') with heartbeat 1000 cycles 1;
+#start continuous cq_query17(0, '-10.51', 'just another string', date '1980-12-13', time '17:35:58', timestamp '2009-02-09 15:00:00') with heartbeat 1000 cycles 1;
+#select * from testing17;
+% sys.testing17,	sys.testing17,	sys.testing17,	sys.testing17,	sys.testing17,	sys.testing17 # table_name
+% aaa,	bbb,	ccc,	ddd,	eee,	fff # name
+% int,	real,	clob,	date,	time,	timestamp # type
+% 2,	15,	19,	10,	8,	26 # length
+[ NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ -2,	132,	"abc",	2017-01-01,	12:34:56,	2007-03-07 15:28:16.577000	]
+[ 0,	-10.51,	"just another string",	1980-12-13,	17:35:58,	2009-02-09 15:00:00.000000	]
+#drop procedure cq_query17;
+#drop table testing17;
+
+# 13:05:04 >  
+# 13:05:04 >  "Done."
+# 13:05:04 >  
+

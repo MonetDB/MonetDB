@@ -554,12 +554,25 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		sql_subtype tpe = ((sql_arg *) argn->data)->type;
 		atom *a = args[i];
 		ValPtr val = (ValPtr) &a->data;
-		if(VALconvert(tpe.type->localtype, val) == NULL) {
+		ValRecord dst;
+
+		dst.vtype = tpe.type->localtype;
+		/* use base tpe.type->localtype for user types */
+		if (val->vtype > TYPE_str)
+			val->vtype = ATOMstorage(val->vtype);
+		if (dst.vtype > TYPE_str)
+			dst.vtype = ATOMstorage(dst.vtype);
+		/* first convert into a new location */
+		if (VARconvert(&dst, val, 0) != GDK_SUCCEED) {
 			msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Error while making a conversion\n");
 			GDKfree(ralias);
 			freeMalBlk(mb);
 			goto finish;
 		}
+		/* and finally copy the result */
+		*val = dst;
+		/* make sure we return the correct type (not the storage type) */
+		val->vtype = tpe.type->localtype;
 		if((p = pushValue(mb, p, val)) == NULL) {
 			FREE_CQ_MB(finish)
 		}
@@ -1315,9 +1328,10 @@ CQscheduler(void *dummy)
 	fprintf(stderr, "#cquery.scheduler stopped\n");
 #endif
 	pnstatus = CQINIT;
-	MT_lock_unset(&ttrLock);
+	cq_pid = 0;
 	SQLexitClient(cntxt);
 	MCcloseClient(cntxt, CQ_CLIENT);
+	MT_lock_unset(&ttrLock);
 }
 
 str

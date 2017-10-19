@@ -2177,8 +2177,7 @@ cq_alias:
 continuous_query_statement:
 	START_CONTINUOUS database_object func_ref WITH heartbeat_set begin_at_set cycles_set cq_alias
 		{ dlist *l = L();
-		  append_int( l, mod_start_continuous);
-		  append_int( l, $2);
+		  append_int( l, mod_start_continuous | $2);
 		  append_symbol( l, $3);
 		  append_lng( l, $5);
 		  append_symbol( l, $6);
@@ -2187,8 +2186,7 @@ continuous_query_statement:
 		  $$ = _symbol_create_list( SQL_START_CONTINUOUS_QUERY, l ); }
 	| START_CONTINUOUS database_object func_ref cq_alias
 		{ dlist *l = L();
-		  append_int( l, mod_start_continuous);
-		  append_int( l, $2);
+		  append_int( l, mod_start_continuous | $2);
 		  append_symbol( l, $3);
 		  append_lng( l, DEFAULT_CP_HEARTBEAT);
 		  append_symbol( l, NULL);
@@ -2197,20 +2195,17 @@ continuous_query_statement:
 		  $$ = _symbol_create_list( SQL_START_CONTINUOUS_QUERY, l ); }
 	| STOP_CONTINUOUS database_object ident
 		{ dlist *l = L();
-		  append_int( l, mod_stop_continuous);
-		  append_int( l, $2);
+		  append_int( l, mod_stop_continuous | $2);
 		  append_string( l, $3);
 		  $$ = _symbol_create_list( SQL_CHANGE_CONTINUOUS_QUERY, l ); }
 	| PAUSE_CONTINUOUS database_object ident
 		{ dlist *l = L();
-		  append_int( l, mod_pause_continuous);
-		  append_int( l, $2);
+		  append_int( l, mod_pause_continuous | $2);
 		  append_string( l, $3);
 		  $$ = _symbol_create_list( SQL_CHANGE_CONTINUOUS_QUERY, l ); }
 	| RESUME_CONTINUOUS database_object ident WITH heartbeat_set begin_at_set cycles_set
 		{ dlist *l = L();
-		  append_int( l, mod_resume_continuous);
-		  append_int( l, $2);
+		  append_int( l, mod_resume_continuous | $2);
 		  append_string( l, $3);
 		  append_lng( l, $5);
 		  append_symbol( l, $6);
@@ -2218,8 +2213,7 @@ continuous_query_statement:
 		  $$ = _symbol_create_list( SQL_CHANGE_CONTINUOUS_QUERY, l ); }
 	| RESUME_CONTINUOUS database_object ident
 		{ dlist *l = L();
-		  append_int( l, mod_resume_continuous_no_alter);
-		  append_int( l, $2);
+		  append_int( l, mod_resume_continuous_no_alter | $2);
 		  append_string( l, $3);
 		  $$ = _symbol_create_list( SQL_CHANGE_CONTINUOUS_QUERY, l ); }
 	| STOP ALL CONTINUOUS

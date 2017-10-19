@@ -448,7 +448,7 @@ rel_psm_return( mvc *sql, sql_subtype *restype, list *restypelist, symbol *retur
 	int is_last = 0;
 	list *l = sa_list(sql->sa);
 	char* psm_Err = token == SQL_RETURN ? "RETURN" : "YIELD";
-    char* psm_err = token == SQL_RETURN ? "return" : "yield";
+	char* psm_err = token == SQL_RETURN ? "return" : "yield";
 
 	if (restypelist)
 		ek.card = card_relation;
@@ -603,12 +603,12 @@ rel_start_continuous_query(mvc *sql, dnode *w) {
 	lng start_at = 0;
 	str msg = NULL;
 	list *cq_parameters = new_exp_list(sql->sa);
-	symbol *sym = w->next->next->data.sym;
+	symbol *sym = w->next->data.sym;
 	dnode *l = sym->data.lval->h;
 	char *sname = qname_schema(l->data.lval);
 	char *fname = qname_fname(l->data.lval);
 
-	an = (AtomNode*) w->next->next->next->next->data.sym;
+	an = (AtomNode*) w->next->next->next->data.sym;
 	if(an && (msg = convert_atom_into_unix_timestamp(an->a, &start_at)) != NULL){
 		return sql_error(sql, 01, "%s", msg);
 	}
@@ -616,11 +616,11 @@ rel_start_continuous_query(mvc *sql, dnode *w) {
 	append(cq_parameters, exp_atom_clob(sql->sa, fname)); //function name
 	append(cq_parameters, exp_atom_int(sql->sa, sql->argc)); //args
 	append(cq_parameters, exp_atom_ptr(sql->sa, sql->args)); //argv
-	append(cq_parameters, exp_atom_clob(sql->sa, w->next->next->next->next->next->next->data.sval)); //alias
-	append(cq_parameters, exp_atom_int(sql->sa, w->data.i_val)); //start query
-	append(cq_parameters, exp_atom_lng(sql->sa, w->next->next->next->data.l_val)); //heartbeats
+	append(cq_parameters, exp_atom_clob(sql->sa, w->next->next->next->next->next->data.sval)); //alias
+	append(cq_parameters, exp_atom_int(sql->sa, w->data.i_val)); //start query, procedure or function?
+	append(cq_parameters, exp_atom_lng(sql->sa, w->next->next->data.l_val)); //heartbeats
 	append(cq_parameters, exp_atom_lng(sql->sa, start_at)); //start at value
-	append(cq_parameters, exp_atom_int(sql->sa, w->next->next->next->next->next->data.i_val)); //cycles
+	append(cq_parameters, exp_atom_int(sql->sa, w->next->next->next->next->data.i_val)); //cycles
 
 	rel = rel_create(sql->sa);
 	rel->l = NULL;
@@ -637,16 +637,13 @@ static sql_rel *
 rel_single_continuous_query(mvc *sql, dnode *w) {
 	sql_rel *rel;
 	list *exps;
-	int action = 0;
+	int action = w->data.i_val; //pause, resume or stop query? procedure or function?
 	AtomNode* an;
 	lng start_at_parsed = 0;
 	str msg = NULL;
 
-	action |= w->data.i_val; /* pause, resume or stop query? */
-	action |= w->next->data.i_val; /* procedure or function? */
-
 	if(action & mod_resume_continuous) {
-		an = (AtomNode*) w->next->next->next->next->data.sym;
+		an = (AtomNode*) w->next->next->next->data.sym;
 		if(an){
 			if((msg = convert_atom_into_unix_timestamp(an->a, &start_at_parsed)) != NULL)
 				return sql_error(sql, 02, "%s", msg);
@@ -656,12 +653,12 @@ rel_single_continuous_query(mvc *sql, dnode *w) {
 	rel = rel_create(sql->sa);
 	exps = new_exp_list(sql->sa);
 
-	append(exps, exp_atom_clob(sql->sa, w->next->next->data.sval)); //alias
+	append(exps, exp_atom_clob(sql->sa, w->next->data.sval)); //alias
 	append(exps, exp_atom_int(sql->sa, action));
 	if(action & mod_resume_continuous) {
-		append(exps, exp_atom_lng(sql->sa, w->next->next->next->data.l_val)); //heartbeats
+		append(exps, exp_atom_lng(sql->sa, w->next->next->data.l_val)); //heartbeats
 		append(exps, exp_atom_lng(sql->sa, start_at_parsed)); //start at value
-		append(exps, exp_atom_int(sql->sa, w->next->next->next->next->next->data.i_val)); //cycles
+		append(exps, exp_atom_int(sql->sa, w->next->next->next->next->data.i_val)); //cycles
 	} else {
 		append(exps, exp_atom_lng(sql->sa, 0));
 		append(exps, exp_atom_lng(sql->sa, 0));
