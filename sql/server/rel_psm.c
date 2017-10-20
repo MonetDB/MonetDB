@@ -637,7 +637,7 @@ static sql_rel *
 rel_single_continuous_query(mvc *sql, dnode *w) {
 	sql_rel *rel;
 	list *exps;
-	int action = w->data.i_val; //pause, resume or stop query? procedure or function?
+	int action = w->data.i_val; //pause, resume or stop query?
 	AtomNode* an;
 	lng start_at_parsed = 0;
 	str msg = NULL;

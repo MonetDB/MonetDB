@@ -29,7 +29,7 @@ stderr of test 'cquery03` in directory 'sql/backends/monet5` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-5601/.s.monetdb.32593
 QUERY = stop continuous cqfoo;
-ERROR = !The continuous procedure cqfoo has not yet started
+ERROR = !The continuous query cqfoo has not yet started
 CODE  = 42000
 
 # 14:15:08 >  

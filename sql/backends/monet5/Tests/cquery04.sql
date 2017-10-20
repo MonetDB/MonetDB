@@ -30,7 +30,7 @@ call cquery.wait(1000);
 
 select aaa from cqresult04; --output 3 tuples with value 2
 
-stop continuous procedure cq_basic04;
+stop continuous cq_basic04;
 
 drop procedure cq_basic04;
 drop table cqinput04;

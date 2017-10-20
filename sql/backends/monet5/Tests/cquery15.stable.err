@@ -33,11 +33,11 @@ ERROR = !The continuous procedure one_alias is already registered.
 CODE  = 3F000
 MAPI  = (monetdb) /var/tmp/mtest-13813/.s.monetdb.31830
 QUERY = stop continuous cq_basic15; --error
-ERROR = !The continuous procedure cq_basic15 has not yet started
+ERROR = !The continuous query cq_basic15 has not yet started
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-13813/.s.monetdb.31830
 QUERY = stop continuous one_aliasother; --error
-ERROR = !The continuous procedure one_aliasother has not yet started
+ERROR = !The continuous query one_aliasother has not yet started
 CODE  = 42000
 
 # 17:45:15 >  

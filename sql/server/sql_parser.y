@@ -2193,28 +2193,28 @@ continuous_query_statement:
 		  append_int( l, DEFAULT_CP_CYCLES);
 		  append_string( l, $4);
 		  $$ = _symbol_create_list( SQL_START_CONTINUOUS_QUERY, l ); }
-	| STOP_CONTINUOUS database_object ident
+	| STOP_CONTINUOUS ident
 		{ dlist *l = L();
-		  append_int( l, mod_stop_continuous | $2);
-		  append_string( l, $3);
+		  append_int( l, mod_stop_continuous);
+		  append_string( l, $2);
 		  $$ = _symbol_create_list( SQL_CHANGE_CONTINUOUS_QUERY, l ); }
-	| PAUSE_CONTINUOUS database_object ident
+	| PAUSE_CONTINUOUS ident
 		{ dlist *l = L();
-		  append_int( l, mod_pause_continuous | $2);
-		  append_string( l, $3);
+		  append_int( l, mod_pause_continuous);
+		  append_string( l, $2);
 		  $$ = _symbol_create_list( SQL_CHANGE_CONTINUOUS_QUERY, l ); }
-	| RESUME_CONTINUOUS database_object ident WITH heartbeat_set begin_at_set cycles_set
+	| RESUME_CONTINUOUS ident WITH heartbeat_set begin_at_set cycles_set
 		{ dlist *l = L();
-		  append_int( l, mod_resume_continuous | $2);
-		  append_string( l, $3);
-		  append_lng( l, $5);
-		  append_symbol( l, $6);
-		  append_int( l, $7);
+		  append_int( l, mod_resume_continuous);
+		  append_string( l, $2);
+		  append_lng( l, $4);
+		  append_symbol( l, $5);
+		  append_int( l, $6);
 		  $$ = _symbol_create_list( SQL_CHANGE_CONTINUOUS_QUERY, l ); }
-	| RESUME_CONTINUOUS database_object ident
+	| RESUME_CONTINUOUS ident
 		{ dlist *l = L();
-		  append_int( l, mod_resume_continuous_no_alter | $2);
-		  append_string( l, $3);
+		  append_int( l, mod_resume_continuous_no_alter);
+		  append_string( l, $2);
 		  $$ = _symbol_create_list( SQL_CHANGE_CONTINUOUS_QUERY, l ); }
 	| STOP ALL CONTINUOUS
 		{ $$ = _symbol_create_int( SQL_ALL_CONTINUOUS_QUERIES, mod_stop_all_continuous ); }

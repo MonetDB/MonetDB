@@ -33,7 +33,7 @@ ERROR = !Heartbeat ignored, a window constraint exists
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-5601/.s.monetdb.32593
 QUERY = stop continuous cq_agenda; --error
-ERROR = !The continuous procedure cq_agenda has not yet started
+ERROR = !The continuous query cq_agenda has not yet started
 CODE  = 42000
 
 

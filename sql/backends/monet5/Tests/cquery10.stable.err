@@ -30,11 +30,11 @@ stderr of test 'cquery10` in directory 'sql/backends/monet5` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-5601/.s.monetdb.32593
 QUERY = pause continuous cq_cycles;
-ERROR = !The continuous procedure cq_cycles has not yet started
+ERROR = !The continuous query cq_cycles has not yet started
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-5601/.s.monetdb.32593
 QUERY = stop continuous cq_cycles;
-ERROR = !The continuous procedure cq_cycles has not yet started
+ERROR = !The continuous query cq_cycles has not yet started
 CODE  = 42000
 
 # 11:35:03 >  

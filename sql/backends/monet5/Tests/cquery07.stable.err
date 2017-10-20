@@ -29,27 +29,27 @@ stderr of test 'cquery07` in directory 'sql/backends/monet5` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-17075/.s.monetdb.33483
 QUERY = stop continuous cq_basic07; --error
-ERROR = !The continuous procedure cq_basic07 has not yet started
+ERROR = !The continuous query cq_basic07 has not yet started
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-17075/.s.monetdb.33483
 QUERY = pause continuous cq_basic07; --error
-ERROR = !The continuous procedure cq_basic07 is already paused
+ERROR = !The continuous query cq_basic07 is already paused
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-17075/.s.monetdb.33483
 QUERY = resume continuous cq_basic07 WITH HEARTBEAT 2000 CYCLES 300; --error
-ERROR = !The continuous procedure cq_basic07 is already running
+ERROR = !The continuous query cq_basic07 is already running
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-17075/.s.monetdb.33483
 QUERY = stop continuous cq_basic07; --error
-ERROR = !The continuous procedure cq_basic07 has not yet started
+ERROR = !The continuous query cq_basic07 has not yet started
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-17075/.s.monetdb.33483
 QUERY = pause continuous cq_basic07; --error
-ERROR = !The continuous procedure cq_basic07 has not yet started
+ERROR = !The continuous query cq_basic07 has not yet started
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-17075/.s.monetdb.33483
 QUERY = resume continuous cq_basic07 WITH HEARTBEAT 2000 CYCLES 300; --error
-ERROR = !The continuous procedure cq_basic07 has not yet started
+ERROR = !The continuous query cq_basic07 has not yet started
 CODE  = 42000
 
 # 17:03:11 >  

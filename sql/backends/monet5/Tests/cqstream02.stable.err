@@ -29,7 +29,7 @@ stderr of test 'cqstream02` in directory 'sql/backends/monet5` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-5601/.s.monetdb.32593
 QUERY = pause continuous cq_collector;
-ERROR = !The continuous procedure cq_collector has not yet started
+ERROR = !The continuous query cq_collector has not yet started
 CODE  = 42000
 
 # 13:01:25 >  

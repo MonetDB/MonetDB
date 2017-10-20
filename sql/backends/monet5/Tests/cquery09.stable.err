@@ -33,7 +33,7 @@ ERROR = !DROP TABLE: unable to drop stream table 'result9': there are pending co
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-9183/.s.monetdb.35225
 QUERY = stop continuous cq_c; --error
-ERROR = !The continuous procedure cq_c has not yet started
+ERROR = !The continuous query cq_c has not yet started
 CODE  = 42000
 
 # 16:43:44 >  

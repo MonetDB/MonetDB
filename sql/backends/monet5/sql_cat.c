@@ -430,13 +430,13 @@ static str
 change_single_cp(str alias, int action, lng heartbeat, lng startat, int cycles)
 {
 	if(action & mod_resume_continuous) {
-		return CQresume(alias, action, 1, heartbeat, startat, cycles);
+		return CQresume(alias, 1, heartbeat, startat, cycles);
 	} else if(action & mod_resume_continuous_no_alter) {
-		return CQresume(alias, action, 0, 0, 0, 0);
+		return CQresume(alias, 0, 0, 0, 0);
 	} else if(action & mod_pause_continuous) {
-		return CQpause(alias, action);
+		return CQpause(alias);
 	} else if(action & mod_stop_continuous) {
-		return CQderegister(alias, action);
+		return CQderegister(alias);
 	}
 	assert(0);
 	return NULL;

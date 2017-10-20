@@ -692,11 +692,10 @@ finish:
 }
 
 str
-CQresume(str alias, int which, int with_alter, lng heartbeats, lng startat, int cycles)
+CQresume(str alias, int with_alter, lng heartbeats, lng startat, int cycles)
 {
 	str msg = MAL_SUCCEED;
 	int idx = 0, j;
-	const char* err_message = (which & mod_continuous_function) ? "function" : "procedure";
 
 #ifdef DEBUG_CQUERY
 	fprintf(stderr, "#resume scheduler\n");
@@ -720,12 +719,12 @@ CQresume(str alias, int which, int with_alter, lng heartbeats, lng startat, int 
 	idx = CQlocateAlias(alias);
 	if( idx == pnettop) {
 		msg = createException(SQL, "cquery.resume",
-							  SQLSTATE(42000) "The continuous %s %s has not yet started\n", err_message, alias);
+							  SQLSTATE(42000) "The continuous query %s has not yet started\n", alias);
 		goto unlock;
 	}
 	if( pnet[idx].status != CQPAUSE) {
 		msg = createException(SQL, "cquery.resume",
-							  SQLSTATE(42000) "The continuous %s %s is already running\n", err_message, alias);
+							  SQLSTATE(42000) "The continuous query %s is already running\n", alias);
 		goto unlock;
 	}
 	if(with_alter && heartbeats != HEARTBEAT_NIL) {
@@ -783,23 +782,22 @@ CQresumeAll(void)
 }
 
 str
-CQpause(str alias, int which)
+CQpause(str alias)
 {
 	int idx = 0;
 	str msg = MAL_SUCCEED, this_alias = NULL;
-	const char* err_message = (which & mod_continuous_function) ? "function" : "procedure";
 	MT_Id myID = MT_getpid();
 
 	MT_lock_set(&ttrLock);
 	idx = CQlocateAlias(alias);
 	if( idx == pnettop) {
 		msg = createException(SQL, "cquery.pause",
-							  SQLSTATE(42000) "The continuous %s %s has not yet started\n", err_message, alias);
+							  SQLSTATE(42000) "The continuous query %s has not yet started\n", alias);
 		goto finish;
 	}
 	if( pnet[idx].status == CQPAUSE) {
 		msg = createException(SQL, "cquery.pause",
-							  SQLSTATE(42000) "The continuous %s %s is already paused\n", err_message, alias);
+							  SQLSTATE(42000) "The continuous query %s is already paused\n", alias);
 		goto finish;
 	}
 	// actually wait if the query was running
@@ -1012,18 +1010,17 @@ CQwait(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 /* Remove a specific continuous query from the scheduler */
 
 str
-CQderegister(str alias, int which)
+CQderegister(str alias)
 {
 	int idx = 0;
 	str msg = MAL_SUCCEED, this_alias = NULL;
-	const char* err_message = (which & mod_continuous_function) ? "function" : "procedure";
 	MT_Id myID = MT_getpid();
 
 	MT_lock_set(&ttrLock);
 	idx = CQlocateAlias(alias);
 	if(idx == pnettop || pnet[idx].status == CQDELETE) {
 		msg = createException(SQL, "cquery.deregister",
-							  SQLSTATE(42000) "The continuous %s %s has not yet started\n", err_message, alias);
+							  SQLSTATE(42000) "The continuous query %s has not yet started\n", alias);
 		goto unlock;
 	}
 	if(myID != cq_pid) {
