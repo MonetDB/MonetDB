@@ -970,7 +970,7 @@ fi
 	--enable-monetdb5=yes \
 	--enable-netcdf=no \
 	--enable-odbc=yes \
-	--enable-optimize=yes \
+	--enable-optimize=no \
 	--enable-profile=no \
 	--enable-pyintegration=%{?with_pyintegration:yes}%{!?with_pyintegration:no} \
 	--enable-rintegration=%{?with_rintegration:yes}%{!?with_rintegration:no} \
