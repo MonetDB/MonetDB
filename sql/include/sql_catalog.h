@@ -115,7 +115,7 @@
 #define DEFAULT_CP_CYCLES        CYCLES_NIL /* run forever */
 #define STRIDE_ALL                       -1 /* discard all tuples from the table */
 #define DEFAULT_TABLE_WINDOW              0 /* run independently of the number of tuples in the table */
-#define DEFAULT_TABLE_STRIDE              0 /* never discard tuples */
+#define DEFAULT_TABLE_STRIDE     STRIDE_ALL /* discard all tuples */
 
 #define CHANGE_WINDOW 1
 #define CHANGE_STRIDE 2

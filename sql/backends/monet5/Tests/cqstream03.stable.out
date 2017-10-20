@@ -37,7 +37,7 @@ Ready.
 #end;
 #select * from cquery.status();
 % .L1,	.L1,	.L1,	.L1,	.L1,	.L1 # table_name
-% tick,	schema,	function,	state,	errors,	stmt # name
+% tick,	schema,	function,	alias,	state,	errors # name
 % timestamp,	clob,	clob,	clob,	clob,	clob # type
 % 26,	0,	0,	0,	0,	0 # length
 #drop procedure cq_agenda;

@@ -1047,9 +1047,9 @@ stream_window_update:
  ;
 
 stream_stride_update:
-    STRIDE intval { $$ = $2; }                   /* tumble N tuples each cycle */
- |  STRIDE ALL    { $$ = STRIDE_ALL; }           /* delete all tuples */
- |  NO_STRIDE     { $$ = DEFAULT_TABLE_STRIDE; } /* never tumble tuples */
+    STRIDE intval { $$ = $2; }         /* tumble N tuples each cycle */
+ |  STRIDE ALL    { $$ = STRIDE_ALL; } /* delete all tuples */
+ |  NO_STRIDE     { $$ = 0; }          /* never tumble tuples */
  ;
 
 alter_statement:
@@ -1364,10 +1364,10 @@ stream_window_set:
  ;
 
 stream_stride_set:
-    /* empty */   { $$ = DEFAULT_TABLE_STRIDE; } /* never tumble tuples */
+    /* empty */   { $$ = DEFAULT_TABLE_STRIDE; } /* delete all tuples */
  |  STRIDE intval { $$ = $2; }                   /* tumble N tuples each cycle */
  |  STRIDE ALL    { $$ = STRIDE_ALL; }           /* delete all tuples */
- |  NO_STRIDE     { $$ = DEFAULT_TABLE_STRIDE; }
+ |  NO_STRIDE     { $$ = 0; }
  ;
 
 stream_table_details:

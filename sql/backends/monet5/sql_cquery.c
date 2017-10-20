@@ -29,17 +29,17 @@
    taken out on each firing is set by the tumble().  
    The firing rule is an ordinary SQL procedure. It may result into placing multiple tokens into receiving baskets.
 
-   The scheduling amongst the transistions is currently deterministic. Upon each round of the scheduler, it determines all
-   transitions eligble to fire, i.e. have non-empty baskets or whose heartbeat ticks, which are then actived one after the other.
+   The scheduling amongst the transitions is currently deterministic. Upon each round of the scheduler, it determines all
+   transitions eligible to fire, i.e. have non-empty baskets or whose heartbeat ticks, which are then activated one after the other.
    Future implementations may relax this rigid scheme using a parallel implementation of the scheduler, such that each 
    transition by itself can decide to fire. However, when resources are limited to handle all complex continuous queries, 
    it may pay of to invest into a domain specific scheduler.
 
    The current implementation is limited to a fixed number of transitions. The scheduler can be stopped and restarted
    at any time. Even selectively for specific baskets. This provides the handle to debug a system before being deployed.
-   In general, event processing through multiple layers of continous queries is too fast to trace them one by one.
+   In general, event processing through multiple layers of continuous queries is too fast to trace them one by one.
    Some general statistics about number of events handled per transition is maintained, as well as the processing time
-   for each continous query step. This provides the information to re-design the event handling system.
+   for each continuous query step. This provides the information to re-design the event handling system.
  */
 
 #include "monetdb_config.h"
@@ -91,6 +91,8 @@ CQfree(int idx)
 		freeMalBlk(pnet[idx].mb);
 	if( pnet[idx].stk)
 		freeStack(pnet[idx].stk);
+	if(pnet[idx].error)
+		GDKfree(pnet[idx].error);
 	GDKfree(pnet[idx].mod);
 	GDKfree(pnet[idx].fcn);
 	GDKfree(pnet[idx].alias);
@@ -182,8 +184,8 @@ CQentry(int idx)
 
 str
 CQlog( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	BAT *tickbat = 0, *modbat = 0, *fcnbat = 0, *timebat = 0, *errbat = 0;
-	bat *tickret, *modret, *fcnret, *timeret, *errorret;
+	BAT *tickbat = 0, *modbat = 0, *fcnbat = 0, *aliasbat =0, *timebat = 0, *errbat = 0;
+	bat *tickret, *modret, *fcnret, *timeret, *aliasret = 0, *errorret;
 
 	(void) cntxt;
 	(void) mb;
@@ -191,8 +193,9 @@ CQlog( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	tickret = getArgReference_bat(stk, pci, 0);
 	modret = getArgReference_bat(stk, pci, 1);
 	fcnret = getArgReference_bat(stk, pci, 2);
-	timeret = getArgReference_bat(stk, pci, 3);
-	errorret = getArgReference_bat(stk, pci, 4);
+	aliasret = getArgReference_bat(stk, pci, 3);
+	timeret = getArgReference_bat(stk, pci, 4);
+	errorret = getArgReference_bat(stk, pci, 5);
 #ifdef DEBUG_CQUERY
 	fprintf(stderr,"#produce query.log table\n");
 #endif
@@ -206,6 +209,9 @@ CQlog( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	fcnbat = COLcopy(CQ_id_fcn, TYPE_str, 0, TRANSIENT);
 	if(fcnbat == NULL)
 		goto wrapup;
+	aliasbat = COLcopy(CQ_id_alias, TYPE_str, 0, TRANSIENT);
+	if(aliasbat == NULL)
+		goto wrapup;
 	timebat = COLcopy(CQ_id_time, TYPE_lng, 0, TRANSIENT);
 	if(timebat == NULL)
 		goto wrapup;
@@ -215,6 +221,7 @@ CQlog( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	BBPkeepref(*tickret = tickbat->batCacheid);
 	BBPkeepref(*modret = modbat->batCacheid);
 	BBPkeepref(*fcnret = fcnbat->batCacheid);
+	BBPkeepref(*aliasret = aliasbat->batCacheid);
 	BBPkeepref(*timeret = timebat->batCacheid);
 	BBPkeepref(*errorret = errbat->batCacheid);
 	return MAL_SUCCEED;
@@ -222,15 +229,16 @@ wrapup:
 	if( tickbat) BBPunfix(tickbat->batCacheid);
 	if( modbat) BBPunfix(modbat->batCacheid);
 	if( fcnbat) BBPunfix(fcnbat->batCacheid);
+	if( aliasbat) BBPunfix(aliasbat->batCacheid);
 	if( timebat) BBPunfix(timebat->batCacheid);
 	if( errbat) BBPunfix(errbat->batCacheid);
-	return MAL_SUCCEED;
+	throw(SQL,"cquery.log",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 str
 CQstatus( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
-	BAT *tickbat = 0, *modbat = 0, *fcnbat = 0, *statusbat = 0, *errbat = 0, *aliasbat =0;
-	bat *tickret = 0, *modret = 0, *fcnret = 0, *statusret = 0, *errorret = 0, *aliasret = 0;
+	BAT *tickbat = 0, *modbat = 0, *fcnbat = 0, *aliasbat =0, *statusbat = 0, *errbat = 0;
+	bat *tickret = 0, *modret = 0, *fcnret = 0, *aliasret = 0, *statusret = 0, *errorret = 0;
 	int idx;
 	str msg= MAL_SUCCEED;
 
@@ -240,9 +248,9 @@ CQstatus( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	tickret = getArgReference_bat(stk, pci, 0);
 	modret = getArgReference_bat(stk, pci, 1);
 	fcnret = getArgReference_bat(stk, pci, 2);
-	statusret = getArgReference_bat(stk, pci, 3);
-	errorret = getArgReference_bat(stk, pci, 4);
-	aliasret = getArgReference_bat(stk, pci, 5);
+	aliasret = getArgReference_bat(stk, pci, 3);
+	statusret = getArgReference_bat(stk, pci, 4);
+	errorret = getArgReference_bat(stk, pci, 5);
 
 	tickbat = COLnew(0, TYPE_timestamp, 0, TRANSIENT);
 	if(tickbat == NULL)
@@ -253,11 +261,11 @@ CQstatus( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	fcnbat = COLnew(0, TYPE_str, 0, TRANSIENT);
 	if(fcnbat == NULL)
 		goto wrapup;
-	statusbat = COLnew(0, TYPE_str, 0, TRANSIENT);
-	if(statusbat == NULL)
-		goto wrapup;
 	aliasbat = COLnew(0, TYPE_str, 0, TRANSIENT);
 	if(aliasbat == NULL)
+		goto wrapup;
+	statusbat = COLnew(0, TYPE_str, 0, TRANSIENT);
+	if(statusbat == NULL)
 		goto wrapup;
 	errbat = COLnew(0, TYPE_str, 0, TRANSIENT);
 	if(errbat == NULL)
@@ -267,25 +275,25 @@ CQstatus( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 		if( BUNappend(tickbat, &pnet[idx].seen,FALSE) != GDK_SUCCEED ||
 			BUNappend(modbat, pnet[idx].mod,FALSE) != GDK_SUCCEED ||
 			BUNappend(fcnbat, pnet[idx].fcn,FALSE) != GDK_SUCCEED ||
-			BUNappend(statusbat, statusname[pnet[idx].status],FALSE) != GDK_SUCCEED ||
 			BUNappend(aliasbat, (pnet[idx].alias ? pnet[idx].alias:""),FALSE) != GDK_SUCCEED ||
+			BUNappend(statusbat, statusname[pnet[idx].status],FALSE) != GDK_SUCCEED ||
 			BUNappend(errbat, (pnet[idx].error ? pnet[idx].error:""),FALSE) != GDK_SUCCEED )
 				msg = createException(SQL,"cquery.status",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	BBPkeepref(*tickret = tickbat->batCacheid);
 	BBPkeepref(*modret = modbat->batCacheid);
 	BBPkeepref(*fcnret = fcnbat->batCacheid);
+	BBPkeepref(*aliasret = aliasbat->batCacheid);
 	BBPkeepref(*statusret = statusbat->batCacheid);
 	BBPkeepref(*errorret = errbat->batCacheid);
-	BBPkeepref(*aliasret = aliasbat->batCacheid);
 	return msg;
 wrapup:
 	if( tickbat) BBPunfix(tickbat->batCacheid);
 	if( modbat) BBPunfix(modbat->batCacheid);
 	if( fcnbat) BBPunfix(fcnbat->batCacheid);
+	if( aliasbat) BBPunfix(aliasbat->batCacheid);
 	if( statusbat) BBPunfix(statusbat->batCacheid);
 	if( errbat) BBPunfix(errbat->batCacheid);
-	if( aliasbat) BBPunfix(aliasbat->batCacheid);
 	throw(SQL,"cquery.status",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
@@ -654,7 +662,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		}
 	}
 
-	if((pnet[pnettop].mod = GDKstrdup(sname)) == NULL) {
+	if((pnet[pnettop].mod = GDKstrdup(rschema)) == NULL) {
 		FREE_CQ_MB(unlock)
 	}
 	if((pnet[pnettop].fcn = GDKstrdup(fname)) == NULL) {
@@ -675,6 +683,8 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 	pnet[pnettop].run = startat - (pnet[pnettop].beats > 0 ? pnet[pnettop].beats : 0);
 	pnet[pnettop].seen = *timestamp_nil;
 	pnet[pnettop].status = CQWAIT;
+	pnet[pnettop].error = MAL_SUCCEED;
+	pnet[pnettop].time = 0;
 	pnettop++;
 
 unlock:
@@ -722,7 +732,7 @@ CQresume(str alias, int with_alter, lng heartbeats, lng startat, int cycles)
 							  SQLSTATE(42000) "The continuous query %s has not yet started\n", alias);
 		goto unlock;
 	}
-	if( pnet[idx].status != CQPAUSE) {
+	if( pnet[idx].status != CQPAUSE && pnet[idx].status != CQERROR) {
 		msg = createException(SQL, "cquery.resume",
 							  SQLSTATE(42000) "The continuous query %s is already running\n", alias);
 		goto unlock;
@@ -795,7 +805,7 @@ CQpause(str alias)
 							  SQLSTATE(42000) "The continuous query %s has not yet started\n", alias);
 		goto finish;
 	}
-	if( pnet[idx].status == CQPAUSE) {
+	if( pnet[idx].status == CQPAUSE || pnet[idx].status == CQERROR) {
 		msg = createException(SQL, "cquery.pause",
 							  SQLSTATE(42000) "The continuous query %s is already paused\n", alias);
 		goto finish;
@@ -807,11 +817,11 @@ CQpause(str alias)
 			MT_lock_unset(&ttrLock);
 			MT_sleep_ms(5);
 			MT_lock_set(&ttrLock);
-			if( idx >= pnettop || pnet[idx].status == CQWAIT)
+			if( idx >= pnettop || pnet[idx].status == CQWAIT || pnet[idx].status == CQERROR)
 				break;
 		}
 	}
-	if(idx < pnettop && this_alias == pnet[idx].alias) {
+	if(idx < pnettop && this_alias == pnet[idx].alias && pnet[idx].status != CQERROR) {
 		pnet[idx].status = CQPAUSE;
 	}
 
@@ -841,11 +851,11 @@ CQpauseAll(void)
 				MT_lock_unset(&ttrLock);
 				MT_sleep_ms(5);
 				MT_lock_set(&ttrLock);
-				if (i >= pnettop && pnet[i].status == CQWAIT)
+				if (i >= pnettop && (pnet[i].status == CQWAIT || pnet[i].status == CQERROR))
 					break;
 			}
 		}
-		if(i < pnettop && this_alias == pnet[i].alias) {
+		if(i < pnettop && this_alias == pnet[i].alias && pnet[i].status != CQERROR) {
 			pnet[i].status = CQPAUSE;
 		}
 	}
@@ -1153,15 +1163,16 @@ CQexecute( Client cntxt, int idx)
 	MT_lock_unset(&ttrLock);
 	msg = runMALsequence(cntxt, node->mb, 1, 0, node->stk, 0, 0);
 	MT_lock_set(&ttrLock);
-	if( msg != MAL_SUCCEED)
-		pnet[idx].error = msg;
 
-	// release all locks held
+	if( msg != MAL_SUCCEED) {
+		node->error = msg;
+		node->status = CQERROR;
+	} else if( node->status != CQSTOP && node->status != CQDELETE)
+		node->status = CQWAIT;
+
 #ifdef DEBUG_CQUERY
 		fprintf(stderr, "#cquery.execute %s.%s finished %s\n", node->mod, node->fcn, (msg?msg:""));
 #endif
-	if( node->status != CQSTOP)
-		node->status = CQWAIT;
 }
 
 static void

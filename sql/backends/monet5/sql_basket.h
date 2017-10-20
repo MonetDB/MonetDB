@@ -42,7 +42,7 @@ typedef struct{
 	str error;
 	/* concurrency control between petrinet/{receptor,emitter} */
 	MT_Lock lock;
-	MT_Id pid;
+	/*MT_Id pid;*/
 } *Basket, BasketRec;
 
 sql5_export BasketRec *baskets;   /* the global timetrails catalog */

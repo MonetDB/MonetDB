@@ -7,17 +7,13 @@ begin
 	insert into cqresult05 (select count(*) from cqresult05);
 end;
 
-start continuous sys.cq_basic() with heartbeat 1000;
+start continuous sys.cq_basic() with heartbeat 1000 cycles 3;
 
-call cquery.wait(2400);
-
-pause continuous cq_basic;
+call cquery.wait(3500);
 
 --select * from cquery.status();
 --select * from cquery.summary();
 --select * from cquery.log();
-
-stop continuous cq_basic;
 
 select 'RESULT';
 select * from cqresult05;

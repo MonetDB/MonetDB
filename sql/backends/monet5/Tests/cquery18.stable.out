@@ -1,0 +1,119 @@
+stdout of test 'cquery18` in directory 'sql/backends/monet5` itself:
+
+
+# 16:05:22 >  
+# 16:05:22 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37159" "--set" "mapi_usock=/var/tmp/mtest-1786/.s.monetdb.37159" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/MonetDB-trails/BUILD/var/MonetDB/mTests_sql_backends_monet5" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 16:05:22 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.498 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-120.eduroam.cwi.nl:37159/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1786/.s.monetdb.37159
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Timetrails module loaded
+# MonetDB/Python2 module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 50_cquery.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+#!ERROR: 22012!division by zero.
+
+# 16:05:22 >  
+# 16:05:22 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1786" "--port=37159"
+# 16:05:22 >  
+
+#create table testing18(aaa real);
+#create procedure cq_query18(ppp integer)
+#begin
+#	insert into testing18 values (1 / ppp);
+#end;
+#start continuous procedure cq_query18(1) with heartbeat 1000 cycles 1;
+#select aaa from testing18;
+% sys.testing18 # table_name
+% aaa # name
+% real # type
+% 15 # length
+[ 1	]
+#start continuous procedure cq_query18(0) with heartbeat 1000 cycles 2;
+#select aaa from testing18;
+% sys.testing18 # table_name
+% aaa # name
+% real # type
+% 15 # length
+[ 1	]
+#select "schema", "function", errors from cquery.status();
+% .L1,	.L1,	.L1 # table_name
+% schema,	function,	errors # name
+% clob,	clob,	clob # type
+% 3,	10,	36 # length
+[ "sys",	"cq_query18",	"MALException:calc./:operation failed"	]
+#resume continuous cq_query18; --ok
+#stop continuous cq_query18; --ok
+#start continuous procedure cq_query18(2) with heartbeat 1000 cycles 2; --ok
+#select aaa from testing18;
+% sys.testing18 # table_name
+% aaa # name
+% real # type
+% 15 # length
+[ 1	]
+[ 0	]
+[ 0	]
+#select "schema", "function", errors from cquery.status();
+% .L1,	.L1,	.L1 # table_name
+% schema,	function,	errors # name
+% clob,	clob,	clob # type
+% 0,	0,	0 # length
+#drop procedure cq_query18;
+#drop table testing18;
+
+# 16:05:26 >  
+# 16:05:26 >  "Done."
+# 16:05:26 >  
+

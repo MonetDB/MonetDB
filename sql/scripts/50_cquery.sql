@@ -56,21 +56,21 @@ create procedure cquery."window"("schema" string, "table" string, elem integer, 
 -- continuous query status analysis
 
 create function cquery.log()
- returns table(tick timestamp,  "schema" string, "function" string, time bigint, errors string)
+ returns table(tick timestamp, "schema" string, "function" string, alias string, "time" bigint, "errors" string)
  external name cquery.log;
 
 create function cquery.summary()
  returns table( "schema" string, "function" string, runs int, totaltime bigint)
 begin
- return select "schema","function", count(*), sum(time) from cquery.log() group by "schema","function";
+ return select "schema","function", count(*), sum("time") from cquery.log() group by "schema","function";
 end;
 
 create function cquery.status()
- returns table(tick timestamp,  "schema" string, "function" string, state string, errors string, stmt string)
+ returns table(tick timestamp, "schema" string, "function" string, alias string, state string, "errors" string)
  external name cquery.status;
 
 create function cquery.streams()
- returns table(tick timestamp,  "schema" string, "function" string, winsize integer, "stride" integer, events integer, "cycles" integer,  errors string)
+ returns table(tick timestamp, "schema" string, "function" string, winsize integer, "stride" integer, events integer, "cycles" integer, "errors" string)
  external name basket.status;
 
 create function cquery.show("schema" string, qryname string)

@@ -23,11 +23,11 @@ comment "Sleep for some time";
 
 pattern cycles(mod:str, fcn:str,cnt:int)
 address CQcycles
-comment "Limit number of petrinet steps";
+comment "Limit number of petrinet steps for a single continuous query";
 
 pattern cycles(cnt:int)
 address CQcycles
-comment "Limit number of petrinet steps";
+comment "Limit number of petrinet steps for all continuous queries";
 
 pattern beginat(mod:str, fcn:str,unixtime:lng)
 address CQbeginAt
@@ -51,11 +51,11 @@ address CQerror
 comment "Remember the error seen";
 
 # continuous query status analysis
-pattern status() (tick:bat[:timestamp],mod:bat[:str],fcn:bat[:str],state:bat[:str],error:bat[:str], stmt:bat[:str])
+pattern status() (tick:bat[:timestamp],mod:bat[:str],fcn:bat[:str],alias:bat[:str],state:bat[:str],error:bat[:str])
 address CQstatus
 comment "Status of all registered continuous queries";
 
-pattern log() (tick:bat[:timestamp],mod:bat[:str],fcn:bat[:str], time:bat[:lng],error:bat[:str])
+pattern log() (tick:bat[:timestamp],mod:bat[:str],fcn:bat[:str],alias:bat[:str],time:bat[:lng],error:bat[:str])
 address CQlog
 comment "The log of all CQ executions";
 
