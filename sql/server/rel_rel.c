@@ -794,6 +794,8 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 		rel->card = l->card;
 		rel->nrcols = l->nrcols;
 	}
+	if (e && !list_empty(e))
+		set_processed(rel);
 	return rel;
 }
 

@@ -1306,14 +1306,20 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		}
 		if (!ne && !e->l)
 			ne = rel_bind_column(sql, f, e->r, 0);
-		if (!ne)
+		if (!ne || ne->type != e_column)
 			return NULL;
 		e = NULL;
+		/*
 		if (ne->name && ne->rname)
 			e = rel_bind_column2(sql, t, ne->rname, ne->name, 0);
 		if (!e && ne->name && !ne->rname)
 			e = rel_bind_column(sql, t, ne->name, 0);
 		if (!e && ne->name && ne->r && ne->l) 
+			e = rel_bind_column2(sql, t, ne->l, ne->r, 0);
+		if (!e && ne->r && !ne->l)
+			e = rel_bind_column(sql, t, ne->r, 0);
+			*/
+		if (ne->l && ne->r)
 			e = rel_bind_column2(sql, t, ne->l, ne->r, 0);
 		if (!e && ne->r && !ne->l)
 			e = rel_bind_column(sql, t, ne->r, 0);
@@ -1327,10 +1333,13 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		return e;
 	case e_cmp: 
 		if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
-			list *l = exps_push_down(sql, e->l, f, t);
-			list *r = exps_push_down(sql, e->r, f, t);
+			list *l, *r;
 
-			if (!l || !r) 
+		       	l = exps_push_down(sql, e->l, f, t);
+			if (!l)
+				return NULL;
+			r = exps_push_down(sql, e->r, f, t);
+			if (!r) 
 				return NULL;
 			if (get_cmp(e) == cmp_filter) 
 				return exp_filter(sql->sa, l, r, e->f, is_anti(e));
@@ -1339,13 +1348,19 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			list *r;
 
 			l = _exp_push_down(sql, e->l, f, t);
+			if (!l)
+				return NULL;
 			r = exps_push_down(sql, e->r, f, t);
-			if (!l || !r)
+			if (!r)
 				return NULL;
 			return exp_in(sql->sa, l, r, e->flag);
 		} else {
 			l = _exp_push_down(sql, e->l, f, t);
+			if (!l)
+				return NULL;
 			r = _exp_push_down(sql, e->r, f, t);
+			if (!r)
+				return NULL;
 			if (e->f) {
 				r2 = _exp_push_down(sql, e->f, f, t);
 				if (l && r && r2)
@@ -8866,7 +8881,7 @@ rewrite_topdown(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes)
 }
 
 static sql_rel *
-_rel_optimizer(mvc *sql, sql_rel *rel, int level) 
+_rel_optimizer(mvc *sql, sql_rel *rel, int *g_changes, int level) 
 {
 	int changes = 0, e_changes = 0;
 	global_props gp; 
@@ -9026,20 +9041,16 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int level)
 	rel = rewrite_topdown(sql, rel, &rel_merge_table_rewrite, &changes);
 	if (level <= 0 && mvc_debug_on(sql,8))
 		rel = rewrite_topdown(sql, rel, &rel_add_dicts, &changes);
-
-	if (changes && level > 10) {
-		assert(0);
-		return rel;
-	}
-
-	if (changes || level == 0)
-		return _rel_optimizer(sql, rel, ++level);
-
+	*g_changes = changes;
 	return rel;
 }
 
 sql_rel *
 rel_optimizer(mvc *sql, sql_rel *rel) 
 {
-	return _rel_optimizer(sql, rel, 0);
+	int level = 0, changes = 1;
+
+	for( ;rel && level < 20 && changes; level++) 
+		rel = _rel_optimizer(sql, rel, &changes, level);
+	return rel;
 }

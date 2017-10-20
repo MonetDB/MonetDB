@@ -106,7 +106,6 @@ rel_project_exp(sql_allocator *sa, sql_exp *e)
 {
 	sql_rel *rel = rel_project(sa, NULL, append(new_exp_list(sa), e));
 
-	set_processed(rel);
 	return rel;
 }
 
@@ -172,7 +171,9 @@ rel_project2groupby(mvc *sql, sql_rel *g)
 				}
 			}
 		}
-		return rel_project(sql->sa, g, rel_projections(sql, g, NULL, 1, 1));
+		g = rel_project(sql->sa, g, rel_projections(sql, g, NULL, 1, 1));
+		reset_processed(g);
+		return g;
 	}
 	return NULL;
 }
@@ -487,12 +488,13 @@ find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list 
 				for (n = exps->h, m = (*sf)->func->ops->h; n && m; n = n->next, m = m->next) {
 					sql_arg *a = m->data;
 					sql_exp *e = n->data;
+					sql_subtype anytype = a->type;
 
 					if (a->type.type->eclass == EC_ANY) {
 						sql_subtype *st = &e->tpe;
-						sql_init_subtype(&a->type, st->type, st->digits, st->scale);
+						sql_init_subtype(&anytype, st->type, st->digits, st->scale);
 					}
-					e = rel_check_type(sql, &a->type, e, type_equal);
+					e = rel_check_type(sql, &anytype, e, type_equal);
 					if (!e) {
 						nexps = NULL;
 						break;
@@ -734,7 +736,6 @@ rel_named_table_operator(mvc *sql, sql_rel *rel, symbol *query)
 			dnode *n = column_spec->h;
 
 			sq = rel_project(sql->sa, sq, rel_projections(sql, sq, NULL, 1, 1));
-			set_processed(sq);
 			for (en = sq->exps->h; n && en; n = n->next, en = en->next) 
 				exp_setname(sql->sa, en->data, tname, n->data.sval );
 		}
@@ -828,7 +829,6 @@ rel_values( mvc *sql, symbol *tableref)
 		vals->f = nexps;
 	}
 	r = rel_project(sql->sa, NULL, exps);
-	set_processed(r);
 	rel_table_optname(sql, r, optname);
 	return r;
 }
@@ -898,7 +898,6 @@ table_ref(mvc *sql, sql_rel *rel, symbol *tableref, int lateral)
 			list *exps = rel_projections(sql, temp_table, NULL, 1, 1);
 
 			temp_table = rel_project(sql->sa, temp_table, exps);
-			set_processed(temp_table);
 			for (n = exps->h; n; n = n->next)
 				noninternexp_setname(sql->sa, n->data, tname, NULL);
 			return temp_table;
@@ -1823,12 +1822,13 @@ _rel_nop( mvc *sql, sql_schema *s, char *fname, list *tl, list *exps, sql_subtyp
 				  	n = n->next, m = m->next) {
 				sql_arg *a = m->data;
 				sql_exp *e = n->data;
+				sql_subtype anytype = a->type;
 
 				if (a->type.type->eclass == EC_ANY) {
 					sql_subtype *st = &e->tpe;
-					sql_init_subtype(&a->type, st->type, st->digits, st->scale);
+					sql_init_subtype(&anytype, st->type, st->digits, st->scale);
 				}
-				e = rel_check_type(sql, &a->type, e, type_equal);
+				e = rel_check_type(sql, &anytype, e, type_equal);
 				if (!e) {
 					nexps = NULL;
 					break;
@@ -2015,7 +2015,6 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 					if (!l->processed) { /* add all expressions to the project */
 						l->exps = list_merge(l->exps, rel_projections(sql, l->l, NULL, 1, 1), (fdup)NULL);
 						l->exps = list_distinct(l->exps, (fcmp)exp_equal, (fdup)NULL);
-						set_processed(l);
 					}
 					if (!rel_find_exp(l, ls))
 						rel_project_add_exp(sql, l, ls);
@@ -2140,9 +2139,10 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			set_processed(left);
 			e = exp_compare(sql->sa, l, r, cmp_equal );
 			rel_join_add_exp(sql->sa, left, e);
-			if (*rel && needproj)
+			if (*rel && needproj) {
 				left = *rel = rel_project(sql->sa, left, pexps);
-			else
+				reset_processed(left);
+			} else
 				*rel = left;
 			if (sc->token == SQL_NOT_IN)
 				e = rel_binop_(sql, l, r, NULL, "<>", card_value);
@@ -2655,8 +2655,10 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				rel_select_add_exp(sql->sa, select, e);
 				if (l_is_value && sc->token == SQL_NOT_IN) 
 					set_anti(e);
-				if (pexps && !right) 
+				if (pexps && !right) {
 					rel = rel_project(sql->sa, rel, pexps);
+					reset_processed(rel);
+				}
 				if (!right)
 					return rel;
 			}
@@ -2697,9 +2699,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				rel->op = op_anti;
 				set_processed(rel);
 			}
-			if (pexps)
+			if (pexps) 
 				rel = rel_project(sql->sa, rel, pexps);
-			set_processed(rel);
 			return rel;
 		}
 		return right;
@@ -4131,7 +4132,6 @@ rel_order_by_column_exp(mvc *sql, sql_rel **R, symbol *column_r, int f)
 	if (!is_project(r->op) || is_set(r->op)) {
 		r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
 		(*R)->l = r;
-		set_processed(r);
 	}
 
 	if (!e) {
@@ -4153,7 +4153,6 @@ rel_order_by_column_exp(mvc *sql, sql_rel **R, symbol *column_r, int f)
 			sql->session->status = 0;
 			sql->errstr[0] = '\0';
 
-			set_processed(nr);
 			e = rel_value_exp(sql, &nr, column_r, sql_sel, ek);
 			if (e) {
 				/* first rewrite e back into current column names */
@@ -4326,6 +4325,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	/* window operations are only allowed in the projection */
 	if (r && r->op != op_project) {
 		*rel = r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
+		reset_processed(r);
 		project_added = 1;
 	}
 	if (f != sql_sel || !r || r->op != op_project || is_processed(r))
@@ -4333,6 +4333,7 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 
 	p = r->l;
 	p = rel_project(sql->sa, p, rel_projections(sql, p, NULL, 1, 1));
+	reset_processed(p);
 
 	/* Partition By */
 	if (window_specification->h->data.sym) {
@@ -4445,7 +4446,6 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 	e = exp_op(sql->sa, args, wf);
 
 	r->l = p = rel_project(sql->sa, p, rel_projections(sql, p, NULL, 1, 1));
-	set_processed(p);
 	append(p->exps, e);
 	e = rel_lastexp(sql, p);
 	if (project_added) {
@@ -4745,9 +4745,10 @@ rel_simple_select(mvc *sql, sql_rel *rel, symbol *where, dlist *selection, int d
 		if (ce && exp_subtype(ce)) {
 			/* new relational, we need to rewrite */
 			if (!is_project(inner->op)) {
-				if (inner != o_inner && pre_prj) 
+				if (inner != o_inner && pre_prj) {
 					inner = rel_project(sql->sa, inner, pre_prj);
-				else
+					reset_processed(inner);
+				} else
 					inner = rel_project(sql->sa, inner, new_exp_list(sql->sa));
 			}
 			rel_project_add_exp(sql, inner, ce);
@@ -4820,7 +4821,6 @@ join_on_column_name(mvc *sql, sql_rel *rel, sql_rel *t1, sql_rel *t2, int op, in
 		append(outexps, re);
 	}
 	rel = rel_project(sql->sa, rel, outexps);
-	set_processed(rel);
 	return rel;
 }
 
@@ -4926,9 +4926,10 @@ rel_select_exp(mvc *sql, sql_rel *rel, SelectNode *sn, exp_kind ek)
 			   around this inner relation.
 			*/
 			if (!is_project(inner->op)) {
-				if (inner != o_inner && pre_prj) 
+				if (inner != o_inner && pre_prj) {
 					inner = rel_project(sql->sa, inner, pre_prj);
-				else
+					reset_processed(inner);
+				} else
 					inner = rel_project(sql->sa, inner, new_exp_list(sql->sa));
 			}
 			rel_project_add_exp(sql, inner, ce);
@@ -5217,7 +5218,6 @@ rel_setquery(mvc *sql, sql_rel *rel, symbol *q)
 		sql_rel *r = rel;
 
 		r = rel_project( sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
-		set_processed(r);
 		used = 1;
 
 		/* reset error */
@@ -5234,7 +5234,6 @@ rel_setquery(mvc *sql, sql_rel *rel, symbol *q)
 		if (used)
 			rel = rel_dup(rel);
 		r = rel_project( sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
-		set_processed(r);
 
 		/* reset error */
 		sql->session->status = 0;
@@ -5499,8 +5498,6 @@ rel_unionjoinquery(mvc *sql, sql_rel *rel, symbol *q)
 	}
 	lv = rel_project(sql->sa, lv, lexps);
 	rv = rel_project(sql->sa, rv, rexps);
-	set_processed(lv);
-	set_processed(rv);
 	rel = rel_setop(sql->sa, lv, rv, op_union);
 	rel->exps = rel_projections(sql, rel, NULL, 0, 1);
 	set_processed(rel);
