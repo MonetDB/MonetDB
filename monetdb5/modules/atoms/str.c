@@ -3717,7 +3717,7 @@ pad(const char *s, const char *pad, int len, int left)
 	repeats = ((size_t) len - slen) / padlen;
 	residual = ((size_t) len - slen) % padlen;
 	if (residual > 0)
-		residual = (size_t) (UTF8_strtail(pad, residual) - pad);
+		residual = (size_t) (UTF8_strtail(pad, (int) residual) - pad);
 	padlen = strlen(pad);
 	slen = strlen(s);
 	res = GDKmalloc(slen + repeats * padlen + residual + 1);
