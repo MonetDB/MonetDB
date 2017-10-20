@@ -2533,6 +2533,7 @@ str sqlcatalogRef;
 str startProfiler(void);
 str startRef;
 str startTrace(str path);
+str start_cpRef;
 str starttraceRef;
 str stopProfiler(void);
 str stopRef;

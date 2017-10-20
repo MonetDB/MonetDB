@@ -20,7 +20,7 @@ so <- function(x) {
 }
 
 my_db <- MonetDBLite::src_monetdb(dbname=dbname, port=dbport, wait=T)
-if (!DBI::dbExistsTable(con_acquire(my_db)  , 'flights')) DBI::dbWriteTable( con_acquire(my_db) , 'flights' , nycflights13::flights , csvdump=T, overwrite=T)
+if (!DBI::dbExistsTable(my_db$con  , 'flights')) DBI::dbWriteTable(my_db$con , 'flights' , nycflights13::flights , csvdump=T, overwrite=T)
 flights <- tbl( my_db , 'flights')
 
 dim(flights)

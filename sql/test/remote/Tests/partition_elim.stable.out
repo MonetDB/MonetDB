@@ -136,388 +136,392 @@ Ready.
 % clob # type
 % 130 # length
 function user.SQLanalyze():void;
-    X_5:void := querylog.define("explain select x,y from test where x between 4.0 and 6.0;":str, "default_pipe":str, 47:int);
-barrier X_140:bit := language.dataflow();
-    X_38:bat[:dbl] := bat.new(nil:dbl);
+    X_5:void := querylog.define("explain select x,y from test where x between 4.0 and 6.0;":str, "default_pipe":str, 51:int);
+barrier X_147:bit := language.dataflow();
+    X_43:bat[:dbl] := bat.new(nil:dbl);
     X_8:int := sql.mvc();
-    X_116:bat[:dbl] := sql.bind(X_8:int, "sys":str, "test2":str, "x":str, 0:int, 0:int, 2:int);
-    C_113:bat[:oid] := sql.tid(X_8:int, "sys":str, "test2":str, 0:int, 2:int);
-    C_121:bat[:oid] := algebra.select(X_116:bat[:dbl], C_113:bat[:oid], 4:dbl, 6:dbl, true:bit, true:bit, false:bit);
-    X_123:bat[:dbl] := algebra.projection(C_121:bat[:oid], X_116:bat[:dbl]);
-    X_117:bat[:dbl] := sql.bind(X_8:int, "sys":str, "test2":str, "x":str, 0:int, 1:int, 2:int);
-    C_115:bat[:oid] := sql.tid(X_8:int, "sys":str, "test2":str, 1:int, 2:int);
-    C_122:bat[:oid] := algebra.select(X_117:bat[:dbl], C_115:bat[:oid], 4:dbl, 6:dbl, true:bit, true:bit, false:bit);
-    X_124:bat[:dbl] := algebra.projection(C_122:bat[:oid], X_117:bat[:dbl]);
-    X_135:bat[:dbl] := mat.packIncrement(X_123:bat[:dbl], 2:int);
-    X_25:bat[:dbl] := mat.packIncrement(X_135:bat[:dbl], X_124:bat[:dbl]);
-    X_29:bat[:dbl] := sql.bind(X_8:int, "sys":str, "test3":str, "x":str, 0:int);
-    C_27:bat[:oid] := sql.tid(X_8:int, "sys":str, "test3":str);
-    C_35:bat[:oid] := algebra.select(X_29:bat[:dbl], C_27:bat[:oid], 4:dbl, 6:dbl, true:bit, true:bit, false:bit);
-    X_31:bat[:dbl] := sql.bind(X_8:int, "sys":str, "test3":str, "y":str, 0:int);
-    X_37:bat[:dbl] := algebra.projection(C_35:bat[:oid], X_31:bat[:dbl]);
-    X_36:bat[:dbl] := algebra.projection(C_35:bat[:oid], X_29:bat[:dbl]);
-    X_119:bat[:dbl] := sql.bind(X_8:int, "sys":str, "test2":str, "y":str, 0:int, 1:int, 2:int);
-    X_126:bat[:dbl] := algebra.projection(C_122:bat[:oid], X_119:bat[:dbl]);
-    X_118:bat[:dbl] := sql.bind(X_8:int, "sys":str, "test2":str, "y":str, 0:int, 0:int, 2:int);
-    X_125:bat[:dbl] := algebra.projection(C_121:bat[:oid], X_118:bat[:dbl]);
-    X_40:bat[:dbl] := bat.append(X_38:bat[:dbl], X_25:bat[:dbl], true:bit);
-    X_41:bat[:dbl] := bat.append(X_40:bat[:dbl], X_36:bat[:dbl], true:bit);
-    X_42:bat[:dbl] := bat.new(nil:dbl);
-    X_137:bat[:dbl] := mat.packIncrement(X_125:bat[:dbl], 2:int);
-    X_26:bat[:dbl] := mat.packIncrement(X_137:bat[:dbl], X_126:bat[:dbl]);
-    X_43:bat[:dbl] := bat.append(X_42:bat[:dbl], X_26:bat[:dbl], true:bit);
-    X_44:bat[:dbl] := bat.append(X_43:bat[:dbl], X_37:bat[:dbl], true:bit);
-    X_46:bat[:str] := bat.new(nil:str);
-    X_52:bat[:int] := bat.new(nil:int);
-    X_50:bat[:int] := bat.new(nil:int);
-    X_49:bat[:str] := bat.new(nil:str);
-    X_48:bat[:str] := bat.new(nil:str);
-    X_53:bat[:str] := bat.append(X_46:bat[:str], ".test":str);
-    X_55:bat[:str] := bat.append(X_48:bat[:str], "x":str);
-    X_57:bat[:str] := bat.append(X_49:bat[:str], "double":str);
-    X_59:bat[:int] := bat.append(X_50:bat[:int], 53:int);
-    X_61:bat[:int] := bat.append(X_52:bat[:int], 0:int);
-    X_63:bat[:str] := bat.append(X_53:bat[:str], ".test":str);
-    X_64:bat[:str] := bat.append(X_55:bat[:str], "y":str);
-    X_66:bat[:str] := bat.append(X_57:bat[:str], "double":str);
-    X_67:bat[:int] := bat.append(X_59:bat[:int], 53:int);
-    X_68:bat[:int] := bat.append(X_61:bat[:int], 0:int);
-    language.pass(X_116:bat[:dbl]);
-    language.pass(X_117:bat[:dbl]);
-    language.pass(C_35:bat[:oid]);
-    language.pass(X_29:bat[:dbl]);
-    language.pass(C_122:bat[:oid]);
-    language.pass(C_121:bat[:oid]);
-exit X_140:bit;
-    sql.resultSet(X_63:bat[:str], X_64:bat[:str], X_66:bat[:str], X_67:bat[:int], X_68:bat[:int], X_41:bat[:dbl], X_44:bat[:dbl]);
+    X_123:bat[:dbl] := sql.bind(X_8:int, "sys":str, "test2":str, "x":str, 0:int, 0:int, 2:int);
+    C_120:bat[:oid] := sql.tid(X_8:int, "sys":str, "test2":str, 0:int, 2:int);
+    C_128:bat[:oid] := algebra.select(X_123:bat[:dbl], C_120:bat[:oid], 4:dbl, 6:dbl, true:bit, true:bit, false:bit);
+    X_130:bat[:dbl] := algebra.projection(C_128:bat[:oid], X_123:bat[:dbl]);
+    X_124:bat[:dbl] := sql.bind(X_8:int, "sys":str, "test2":str, "x":str, 0:int, 1:int, 2:int);
+    C_122:bat[:oid] := sql.tid(X_8:int, "sys":str, "test2":str, 1:int, 2:int);
+    C_129:bat[:oid] := algebra.select(X_124:bat[:dbl], C_122:bat[:oid], 4:dbl, 6:dbl, true:bit, true:bit, false:bit);
+    X_131:bat[:dbl] := algebra.projection(C_129:bat[:oid], X_124:bat[:dbl]);
+    X_142:bat[:dbl] := mat.packIncrement(X_130:bat[:dbl], 2:int);
+    X_28:bat[:dbl] := mat.packIncrement(X_142:bat[:dbl], X_131:bat[:dbl]);
+    X_32:bat[:dbl] := sql.bind(X_8:int, "sys":str, "test3":str, "x":str, 0:int);
+    C_30:bat[:oid] := sql.tid(X_8:int, "sys":str, "test3":str);
+    C_40:bat[:oid] := algebra.select(X_32:bat[:dbl], C_30:bat[:oid], 4:dbl, 6:dbl, true:bit, true:bit, false:bit);
+    X_34:bat[:dbl] := sql.bind(X_8:int, "sys":str, "test3":str, "y":str, 0:int);
+    X_42:bat[:dbl] := algebra.projection(C_40:bat[:oid], X_34:bat[:dbl]);
+    X_41:bat[:dbl] := algebra.projection(C_40:bat[:oid], X_32:bat[:dbl]);
+    X_126:bat[:dbl] := sql.bind(X_8:int, "sys":str, "test2":str, "y":str, 0:int, 1:int, 2:int);
+    X_133:bat[:dbl] := algebra.projection(C_129:bat[:oid], X_126:bat[:dbl]);
+    X_125:bat[:dbl] := sql.bind(X_8:int, "sys":str, "test2":str, "y":str, 0:int, 0:int, 2:int);
+    X_132:bat[:dbl] := algebra.projection(C_128:bat[:oid], X_125:bat[:dbl]);
+    X_45:bat[:dbl] := bat.append(X_43:bat[:dbl], X_28:bat[:dbl], true:bit);
+    X_46:bat[:dbl] := bat.append(X_45:bat[:dbl], X_41:bat[:dbl], true:bit);
+    X_47:bat[:dbl] := bat.new(nil:dbl);
+    X_144:bat[:dbl] := mat.packIncrement(X_132:bat[:dbl], 2:int);
+    X_29:bat[:dbl] := mat.packIncrement(X_144:bat[:dbl], X_133:bat[:dbl]);
+    X_48:bat[:dbl] := bat.append(X_47:bat[:dbl], X_29:bat[:dbl], true:bit);
+    X_49:bat[:dbl] := bat.append(X_48:bat[:dbl], X_42:bat[:dbl], true:bit);
+    X_51:bat[:str] := bat.new(nil:str);
+    X_57:bat[:int] := bat.new(nil:int);
+    X_55:bat[:int] := bat.new(nil:int);
+    X_54:bat[:str] := bat.new(nil:str);
+    X_53:bat[:str] := bat.new(nil:str);
+    X_58:bat[:str] := bat.append(X_51:bat[:str], ".test":str);
+    X_60:bat[:str] := bat.append(X_53:bat[:str], "x":str);
+    X_62:bat[:str] := bat.append(X_54:bat[:str], "double":str);
+    X_64:bat[:int] := bat.append(X_55:bat[:int], 53:int);
+    X_66:bat[:int] := bat.append(X_57:bat[:int], 0:int);
+    X_68:bat[:str] := bat.append(X_58:bat[:str], ".test":str);
+    X_69:bat[:str] := bat.append(X_60:bat[:str], "y":str);
+    X_71:bat[:str] := bat.append(X_62:bat[:str], "double":str);
+    X_72:bat[:int] := bat.append(X_64:bat[:int], 53:int);
+    X_73:bat[:int] := bat.append(X_66:bat[:int], 0:int);
+    language.pass(X_123:bat[:dbl]);
+    language.pass(X_124:bat[:dbl]);
+    language.pass(C_40:bat[:oid]);
+    language.pass(X_32:bat[:dbl]);
+    language.pass(C_129:bat[:oid]);
+    language.pass(C_128:bat[:oid]);
+exit X_147:bit;
+    sql.resultSet(X_68:bat[:str], X_69:bat[:str], X_71:bat[:str], X_72:bat[:int], X_73:bat[:int], X_46:bat[:dbl], X_49:bat[:dbl]);
 end user.SQLanalyze;
-#inline               actions= 0 time=3 usec 
-#remap                actions= 0 time=8 usec 
-#costmodel            actions= 1 time=4 usec 
-#coercion             actions= 0 time=5 usec 
-#evaluate             actions= 6 time=48 usec 
-#emptybind            actions= 0 time=24 usec 
-#aliases              actions=10 time=24 usec 
-#mitosis              actions= 1 time=72 usec 
-#mergetable           actions= 3 time=157 usec 
-#deadcode             actions= 4 time=21 usec 
-#aliases              actions= 0 time=16 usec 
-#constants            actions= 7 time=17 usec 
-#commonTerms          actions= 0 time=18 usec 
-#projectionpath       actions= 0 time=12 usec 
-#deadcode             actions= 0 time=16 usec 
-#reorder              actions= 1 time=79 usec 
-#reduce               actions=43 time=23 usec 
-#matpack              actions= 2 time=17 usec 
-#dataflow             actions=27 time=63 usec 
-#multiplex            actions= 0 time=5 usec 
-#profiler             actions= 1 time=9 usec 
-#candidates           actions= 1 time=4 usec 
-#garbagecollector     actions= 1 time=44 usec 
-#total                actions= 1 time=984 usec 
+#inline               actions= 0 time=4 usec 
+#remap                actions= 0 time=7 usec 
+#costmodel            actions= 1 time=7 usec 
+#coercion             actions= 0 time=7 usec 
+#evaluate             actions=10 time=99 usec 
+#emptybind            actions= 0 time=1 usec 
+#pushselect           actions= 6 time=43 usec 
+#aliases              actions=14 time=40 usec 
+#mitosis              actions=1 time=93 usec 
+#mergetable           actions= 3 time=194 usec 
+#deadcode             actions= 4 time=40 usec 
+#aliases              actions= 0 time=1 usec 
+#constants            actions= 9 time=32 usec 
+#commonTerms          actions= 0 time=27 usec 
+#projectionpath       actions= 0 time=18 usec 
+#deadcode             actions= 0 time=32 usec 
+#reorder              actions= 1 time=130 usec 
+#matpack              actions= 2 time=23 usec 
+#dataflow             actions= 1 time=91 usec 
+#multiplex            actions= 0 time=7 usec 
+#profiler             actions=1 time=5 usec 
+#candidates           actions=1 time=4 usec 
+#wlc                  actions= 0 time=1 usec 
+#garbagecollector     actions= 1 time=247 usec 
+#total                actions=26 time=1497 usec 
 #explain select x,y from test where x between (7-3) and (7-1);
 % .explain # table_name
 % mal # name
 % clob # type
 % 130 # length
 function user.SQLanalyze():void;
-    X_8:void := querylog.define("explain select x,y from test where x between (7-3) and (7-1);":str, "default_pipe":str, 61:int);
-barrier X_160:bit := language.dataflow();
-    X_53:bat[:dbl] := bat.new(nil:dbl);
+    X_8:void := querylog.define("explain select x,y from test where x between (7-3) and (7-1);":str, "default_pipe":str, 69:int);
+barrier X_168:bit := language.dataflow();
+    X_61:bat[:dbl] := bat.new(nil:dbl);
     X_11:int := sql.mvc();
-    X_136:bat[:dbl] := sql.bind(X_11:int, "sys":str, "test2":str, "x":str, 0:int, 0:int, 2:int);
-    C_133:bat[:oid] := sql.tid(X_11:int, "sys":str, "test2":str, 0:int, 2:int);
-    C_141:bat[:oid] := algebra.select(X_136:bat[:dbl], C_133:bat[:oid], 4:dbl, 6:dbl, true:bit, true:bit, false:bit);
-    X_143:bat[:dbl] := algebra.projection(C_141:bat[:oid], X_136:bat[:dbl]);
-    X_137:bat[:dbl] := sql.bind(X_11:int, "sys":str, "test2":str, "x":str, 0:int, 1:int, 2:int);
-    C_135:bat[:oid] := sql.tid(X_11:int, "sys":str, "test2":str, 1:int, 2:int);
-    C_142:bat[:oid] := algebra.select(X_137:bat[:dbl], C_135:bat[:oid], 4:dbl, 6:dbl, true:bit, true:bit, false:bit);
-    X_144:bat[:dbl] := algebra.projection(C_142:bat[:oid], X_137:bat[:dbl]);
-    X_155:bat[:dbl] := mat.packIncrement(X_143:bat[:dbl], 2:int);
-    X_34:bat[:dbl] := mat.packIncrement(X_155:bat[:dbl], X_144:bat[:dbl]);
-    X_38:bat[:dbl] := sql.bind(X_11:int, "sys":str, "test3":str, "x":str, 0:int);
-    C_36:bat[:oid] := sql.tid(X_11:int, "sys":str, "test3":str);
-    C_50:bat[:oid] := algebra.select(X_38:bat[:dbl], C_36:bat[:oid], 4:dbl, 6:dbl, true:bit, true:bit, false:bit);
-    X_40:bat[:dbl] := sql.bind(X_11:int, "sys":str, "test3":str, "y":str, 0:int);
-    X_52:bat[:dbl] := algebra.projection(C_50:bat[:oid], X_40:bat[:dbl]);
-    X_51:bat[:dbl] := algebra.projection(C_50:bat[:oid], X_38:bat[:dbl]);
-    X_139:bat[:dbl] := sql.bind(X_11:int, "sys":str, "test2":str, "y":str, 0:int, 1:int, 2:int);
-    X_146:bat[:dbl] := algebra.projection(C_142:bat[:oid], X_139:bat[:dbl]);
-    X_138:bat[:dbl] := sql.bind(X_11:int, "sys":str, "test2":str, "y":str, 0:int, 0:int, 2:int);
-    X_145:bat[:dbl] := algebra.projection(C_141:bat[:oid], X_138:bat[:dbl]);
-    X_55:bat[:dbl] := bat.append(X_53:bat[:dbl], X_34:bat[:dbl], true:bit);
-    X_56:bat[:dbl] := bat.append(X_55:bat[:dbl], X_51:bat[:dbl], true:bit);
-    X_57:bat[:dbl] := bat.new(nil:dbl);
-    X_157:bat[:dbl] := mat.packIncrement(X_145:bat[:dbl], 2:int);
-    X_35:bat[:dbl] := mat.packIncrement(X_157:bat[:dbl], X_146:bat[:dbl]);
-    X_58:bat[:dbl] := bat.append(X_57:bat[:dbl], X_35:bat[:dbl], true:bit);
-    X_59:bat[:dbl] := bat.append(X_58:bat[:dbl], X_52:bat[:dbl], true:bit);
-    X_61:bat[:str] := bat.new(nil:str);
-    X_67:bat[:int] := bat.new(nil:int);
-    X_65:bat[:int] := bat.new(nil:int);
-    X_64:bat[:str] := bat.new(nil:str);
-    X_63:bat[:str] := bat.new(nil:str);
-    X_68:bat[:str] := bat.append(X_61:bat[:str], ".test":str);
-    X_70:bat[:str] := bat.append(X_63:bat[:str], "x":str);
-    X_72:bat[:str] := bat.append(X_64:bat[:str], "double":str);
-    X_74:bat[:int] := bat.append(X_65:bat[:int], 53:int);
-    X_76:bat[:int] := bat.append(X_67:bat[:int], 0:int);
-    X_78:bat[:str] := bat.append(X_68:bat[:str], ".test":str);
-    X_79:bat[:str] := bat.append(X_70:bat[:str], "y":str);
-    X_81:bat[:str] := bat.append(X_72:bat[:str], "double":str);
-    X_82:bat[:int] := bat.append(X_74:bat[:int], 53:int);
-    X_83:bat[:int] := bat.append(X_76:bat[:int], 0:int);
-    language.pass(X_136:bat[:dbl]);
-    language.pass(X_137:bat[:dbl]);
-    language.pass(C_50:bat[:oid]);
-    language.pass(X_38:bat[:dbl]);
-    language.pass(C_142:bat[:oid]);
-    language.pass(C_141:bat[:oid]);
-exit X_160:bit;
-    sql.resultSet(X_78:bat[:str], X_79:bat[:str], X_81:bat[:str], X_82:bat[:int], X_83:bat[:int], X_56:bat[:dbl], X_59:bat[:dbl]);
+    X_144:bat[:dbl] := sql.bind(X_11:int, "sys":str, "test2":str, "x":str, 0:int, 0:int, 2:int);
+    C_141:bat[:oid] := sql.tid(X_11:int, "sys":str, "test2":str, 0:int, 2:int);
+    C_149:bat[:oid] := algebra.select(X_144:bat[:dbl], C_141:bat[:oid], 4:dbl, 6:dbl, true:bit, true:bit, false:bit);
+    X_151:bat[:dbl] := algebra.projection(C_149:bat[:oid], X_144:bat[:dbl]);
+    X_145:bat[:dbl] := sql.bind(X_11:int, "sys":str, "test2":str, "x":str, 0:int, 1:int, 2:int);
+    C_143:bat[:oid] := sql.tid(X_11:int, "sys":str, "test2":str, 1:int, 2:int);
+    C_150:bat[:oid] := algebra.select(X_145:bat[:dbl], C_143:bat[:oid], 4:dbl, 6:dbl, true:bit, true:bit, false:bit);
+    X_152:bat[:dbl] := algebra.projection(C_150:bat[:oid], X_145:bat[:dbl]);
+    X_163:bat[:dbl] := mat.packIncrement(X_151:bat[:dbl], 2:int);
+    X_38:bat[:dbl] := mat.packIncrement(X_163:bat[:dbl], X_152:bat[:dbl]);
+    X_42:bat[:dbl] := sql.bind(X_11:int, "sys":str, "test3":str, "x":str, 0:int);
+    C_40:bat[:oid] := sql.tid(X_11:int, "sys":str, "test3":str);
+    C_58:bat[:oid] := algebra.select(X_42:bat[:dbl], C_40:bat[:oid], 4:dbl, 6:dbl, true:bit, true:bit, false:bit);
+    X_44:bat[:dbl] := sql.bind(X_11:int, "sys":str, "test3":str, "y":str, 0:int);
+    X_60:bat[:dbl] := algebra.projection(C_58:bat[:oid], X_44:bat[:dbl]);
+    X_59:bat[:dbl] := algebra.projection(C_58:bat[:oid], X_42:bat[:dbl]);
+    X_147:bat[:dbl] := sql.bind(X_11:int, "sys":str, "test2":str, "y":str, 0:int, 1:int, 2:int);
+    X_154:bat[:dbl] := algebra.projection(C_150:bat[:oid], X_147:bat[:dbl]);
+    X_146:bat[:dbl] := sql.bind(X_11:int, "sys":str, "test2":str, "y":str, 0:int, 0:int, 2:int);
+    X_153:bat[:dbl] := algebra.projection(C_149:bat[:oid], X_146:bat[:dbl]);
+    X_63:bat[:dbl] := bat.append(X_61:bat[:dbl], X_38:bat[:dbl], true:bit);
+    X_64:bat[:dbl] := bat.append(X_63:bat[:dbl], X_59:bat[:dbl], true:bit);
+    X_65:bat[:dbl] := bat.new(nil:dbl);
+    X_165:bat[:dbl] := mat.packIncrement(X_153:bat[:dbl], 2:int);
+    X_39:bat[:dbl] := mat.packIncrement(X_165:bat[:dbl], X_154:bat[:dbl]);
+    X_66:bat[:dbl] := bat.append(X_65:bat[:dbl], X_39:bat[:dbl], true:bit);
+    X_67:bat[:dbl] := bat.append(X_66:bat[:dbl], X_60:bat[:dbl], true:bit);
+    X_69:bat[:str] := bat.new(nil:str);
+    X_75:bat[:int] := bat.new(nil:int);
+    X_73:bat[:int] := bat.new(nil:int);
+    X_72:bat[:str] := bat.new(nil:str);
+    X_71:bat[:str] := bat.new(nil:str);
+    X_76:bat[:str] := bat.append(X_69:bat[:str], ".test":str);
+    X_78:bat[:str] := bat.append(X_71:bat[:str], "x":str);
+    X_80:bat[:str] := bat.append(X_72:bat[:str], "double":str);
+    X_82:bat[:int] := bat.append(X_73:bat[:int], 53:int);
+    X_84:bat[:int] := bat.append(X_75:bat[:int], 0:int);
+    X_86:bat[:str] := bat.append(X_76:bat[:str], ".test":str);
+    X_87:bat[:str] := bat.append(X_78:bat[:str], "y":str);
+    X_89:bat[:str] := bat.append(X_80:bat[:str], "double":str);
+    X_90:bat[:int] := bat.append(X_82:bat[:int], 53:int);
+    X_91:bat[:int] := bat.append(X_84:bat[:int], 0:int);
+    language.pass(X_144:bat[:dbl]);
+    language.pass(X_145:bat[:dbl]);
+    language.pass(C_58:bat[:oid]);
+    language.pass(X_42:bat[:dbl]);
+    language.pass(C_150:bat[:oid]);
+    language.pass(C_149:bat[:oid]);
+exit X_168:bit;
+    sql.resultSet(X_86:bat[:str], X_87:bat[:str], X_89:bat[:str], X_90:bat[:int], X_91:bat[:int], X_64:bat[:dbl], X_67:bat[:dbl]);
 end user.SQLanalyze;
-#inline               actions= 0 time=2 usec 
-#remap                actions= 0 time=6 usec 
-#costmodel            actions= 1 time=5 usec 
-#coercion             actions= 0 time=4 usec 
-#evaluate             actions=20 time=82 usec 
-#emptybind            actions= 0 time=19 usec 
-#aliases              actions=24 time=19 usec 
-#mitosis              actions= 1 time=47 usec 
-#mergetable           actions= 3 time=92 usec 
-#deadcode             actions= 4 time=15 usec 
-#aliases              actions= 0 time=12 usec 
-#constants            actions= 9 time=14 usec 
-#commonTerms          actions= 0 time=13 usec 
-#projectionpath       actions= 0 time=9 usec 
-#deadcode             actions= 0 time=13 usec 
-#reorder              actions= 1 time=54 usec 
-#reduce               actions=64 time=25 usec 
-#matpack              actions= 2 time=14 usec 
-#dataflow             actions=27 time=46 usec 
-#multiplex            actions= 0 time=5 usec 
-#profiler             actions= 1 time=7 usec 
-#candidates           actions= 1 time=2 usec 
-#garbagecollector     actions= 1 time=37 usec 
-#total                actions= 1 time=766 usec 
+#inline               actions= 0 time=4 usec 
+#remap                actions= 0 time=8 usec 
+#costmodel            actions= 1 time=6 usec 
+#coercion             actions= 8 time=47 usec 
+#evaluate             actions=20 time=154 usec 
+#emptybind            actions= 0 time=1 usec 
+#pushselect           actions= 6 time=48 usec 
+#aliases              actions=24 time=41 usec 
+#mitosis              actions=1 time=80 usec 
+#mergetable           actions= 3 time=192 usec 
+#deadcode             actions= 4 time=43 usec 
+#aliases              actions= 0 time=1 usec 
+#constants            actions= 9 time=34 usec 
+#commonTerms          actions= 0 time=24 usec 
+#projectionpath       actions= 0 time=19 usec 
+#deadcode             actions= 0 time=33 usec 
+#reorder              actions= 1 time=127 usec 
+#matpack              actions= 2 time=20 usec 
+#dataflow             actions= 1 time=111 usec 
+#multiplex            actions= 0 time=7 usec 
+#profiler             actions=1 time=6 usec 
+#candidates           actions=1 time=4 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=242 usec 
+#total                actions=26 time=1621 usec 
 #explain select x,y from test where x between 4.0 and 6.0 and y between 0.0 and 2.0;
 % .explain # table_name
 % mal # name
 % clob # type
 % 151 # length
 function user.SQLanalyze():void;
-    X_9:void := querylog.define("explain select x,y from test where x between 4.0 and 6.0 and y between 0.0 and 2.0;":str, "default_pipe":str, 36:int);
-barrier X_129:bit := language.dataflow();
-    X_35:bat[:str] := bat.new(nil:str);
-    X_41:bat[:int] := bat.new(nil:int);
-    X_39:bat[:int] := bat.new(nil:int);
-    X_38:bat[:str] := bat.new(nil:str);
-    X_37:bat[:str] := bat.new(nil:str);
+    X_9:void := querylog.define("explain select x,y from test where x between 4.0 and 6.0 and y between 0.0 and 2.0;":str, "default_pipe":str, 40:int);
+barrier X_139:bit := language.dataflow();
+    X_40:bat[:str] := bat.new(nil:str);
+    X_46:bat[:int] := bat.new(nil:int);
+    X_44:bat[:int] := bat.new(nil:int);
+    X_43:bat[:str] := bat.new(nil:str);
+    X_42:bat[:str] := bat.new(nil:str);
     X_12:int := sql.mvc();
-    X_106:bat[:dbl] := sql.bind(X_12:int, "sys":str, "test3":str, "y":str, 0:int, 1:int, 2:int);
-    X_104:bat[:dbl] := sql.bind(X_12:int, "sys":str, "test3":str, "x":str, 0:int, 1:int, 2:int);
-    C_102:bat[:oid] := sql.tid(X_12:int, "sys":str, "test3":str, 1:int, 2:int);
-    C_109:bat[:oid] := algebra.select(X_104:bat[:dbl], C_102:bat[:oid], 4:dbl, 6:dbl, true:bit, true:bit, false:bit);
-    C_111:bat[:oid] := algebra.select(X_106:bat[:dbl], C_109:bat[:oid], 0:dbl, 2:dbl, true:bit, true:bit, false:bit);
-    X_115:bat[:dbl] := algebra.projection(C_111:bat[:oid], X_106:bat[:dbl]);
-    X_105:bat[:dbl] := sql.bind(X_12:int, "sys":str, "test3":str, "y":str, 0:int, 0:int, 2:int);
-    X_103:bat[:dbl] := sql.bind(X_12:int, "sys":str, "test3":str, "x":str, 0:int, 0:int, 2:int);
-    C_100:bat[:oid] := sql.tid(X_12:int, "sys":str, "test3":str, 0:int, 2:int);
-    C_108:bat[:oid] := algebra.select(X_103:bat[:dbl], C_100:bat[:oid], 4:dbl, 6:dbl, true:bit, true:bit, false:bit);
-    C_110:bat[:oid] := algebra.select(X_105:bat[:dbl], C_108:bat[:oid], 0:dbl, 2:dbl, true:bit, true:bit, false:bit);
-    X_114:bat[:dbl] := algebra.projection(C_110:bat[:oid], X_105:bat[:dbl]);
-    X_113:bat[:dbl] := algebra.projection(C_111:bat[:oid], X_104:bat[:dbl]);
-    X_112:bat[:dbl] := algebra.projection(C_110:bat[:oid], X_103:bat[:dbl]);
-    X_42:bat[:str] := bat.append(X_35:bat[:str], "sys.test":str);
-    X_44:bat[:str] := bat.append(X_37:bat[:str], "x":str);
-    X_45:bat[:str] := bat.append(X_38:bat[:str], "double":str);
-    X_47:bat[:int] := bat.append(X_39:bat[:int], 53:int);
-    X_49:bat[:int] := bat.append(X_41:bat[:int], 0:int);
-    X_50:bat[:str] := bat.append(X_42:bat[:str], "sys.test":str);
-    X_51:bat[:str] := bat.append(X_44:bat[:str], "y":str);
-    X_52:bat[:str] := bat.append(X_45:bat[:str], "double":str);
-    X_53:bat[:int] := bat.append(X_47:bat[:int], 53:int);
-    X_54:bat[:int] := bat.append(X_49:bat[:int], 0:int);
-    X_124:bat[:dbl] := mat.packIncrement(X_112:bat[:dbl], 2:int);
-    X_32:bat[:dbl] := mat.packIncrement(X_124:bat[:dbl], X_113:bat[:dbl]);
-    X_126:bat[:dbl] := mat.packIncrement(X_114:bat[:dbl], 2:int);
-    X_33:bat[:dbl] := mat.packIncrement(X_126:bat[:dbl], X_115:bat[:dbl]);
-    language.pass(X_106:bat[:dbl]);
-    language.pass(X_105:bat[:dbl]);
-    language.pass(C_111:bat[:oid]);
-    language.pass(X_104:bat[:dbl]);
-    language.pass(C_110:bat[:oid]);
-    language.pass(X_103:bat[:dbl]);
-exit X_129:bit;
-    sql.resultSet(X_50:bat[:str], X_51:bat[:str], X_52:bat[:str], X_53:bat[:int], X_54:bat[:int], X_32:bat[:dbl], X_33:bat[:dbl]);
+    X_116:bat[:dbl] := sql.bind(X_12:int, "sys":str, "test3":str, "y":str, 0:int, 1:int, 2:int);
+    X_114:bat[:dbl] := sql.bind(X_12:int, "sys":str, "test3":str, "x":str, 0:int, 1:int, 2:int);
+    C_112:bat[:oid] := sql.tid(X_12:int, "sys":str, "test3":str, 1:int, 2:int);
+    C_119:bat[:oid] := algebra.select(X_114:bat[:dbl], C_112:bat[:oid], 4:dbl, 6:dbl, true:bit, true:bit, false:bit);
+    C_121:bat[:oid] := algebra.select(X_116:bat[:dbl], C_119:bat[:oid], 0:dbl, 2:dbl, true:bit, true:bit, false:bit);
+    X_125:bat[:dbl] := algebra.projection(C_121:bat[:oid], X_116:bat[:dbl]);
+    X_115:bat[:dbl] := sql.bind(X_12:int, "sys":str, "test3":str, "y":str, 0:int, 0:int, 2:int);
+    X_113:bat[:dbl] := sql.bind(X_12:int, "sys":str, "test3":str, "x":str, 0:int, 0:int, 2:int);
+    C_110:bat[:oid] := sql.tid(X_12:int, "sys":str, "test3":str, 0:int, 2:int);
+    C_118:bat[:oid] := algebra.select(X_113:bat[:dbl], C_110:bat[:oid], 4:dbl, 6:dbl, true:bit, true:bit, false:bit);
+    C_120:bat[:oid] := algebra.select(X_115:bat[:dbl], C_118:bat[:oid], 0:dbl, 2:dbl, true:bit, true:bit, false:bit);
+    X_124:bat[:dbl] := algebra.projection(C_120:bat[:oid], X_115:bat[:dbl]);
+    X_123:bat[:dbl] := algebra.projection(C_121:bat[:oid], X_114:bat[:dbl]);
+    X_122:bat[:dbl] := algebra.projection(C_120:bat[:oid], X_113:bat[:dbl]);
+    X_47:bat[:str] := bat.append(X_40:bat[:str], "sys.test":str);
+    X_49:bat[:str] := bat.append(X_42:bat[:str], "x":str);
+    X_51:bat[:str] := bat.append(X_43:bat[:str], "double":str);
+    X_53:bat[:int] := bat.append(X_44:bat[:int], 53:int);
+    X_55:bat[:int] := bat.append(X_46:bat[:int], 0:int);
+    X_57:bat[:str] := bat.append(X_47:bat[:str], "sys.test":str);
+    X_58:bat[:str] := bat.append(X_49:bat[:str], "y":str);
+    X_60:bat[:str] := bat.append(X_51:bat[:str], "double":str);
+    X_61:bat[:int] := bat.append(X_53:bat[:int], 53:int);
+    X_62:bat[:int] := bat.append(X_55:bat[:int], 0:int);
+    X_134:bat[:dbl] := mat.packIncrement(X_122:bat[:dbl], 2:int);
+    X_37:bat[:dbl] := mat.packIncrement(X_134:bat[:dbl], X_123:bat[:dbl]);
+    X_136:bat[:dbl] := mat.packIncrement(X_124:bat[:dbl], 2:int);
+    X_38:bat[:dbl] := mat.packIncrement(X_136:bat[:dbl], X_125:bat[:dbl]);
+    language.pass(X_116:bat[:dbl]);
+    language.pass(X_115:bat[:dbl]);
+    language.pass(C_121:bat[:oid]);
+    language.pass(X_114:bat[:dbl]);
+    language.pass(C_120:bat[:oid]);
+    language.pass(X_113:bat[:dbl]);
+exit X_139:bit;
+    sql.resultSet(X_57:bat[:str], X_58:bat[:str], X_60:bat[:str], X_61:bat[:int], X_62:bat[:int], X_37:bat[:dbl], X_38:bat[:dbl]);
 end user.SQLanalyze;
-#inline               actions= 0 time=2 usec 
-#remap                actions= 0 time=8 usec 
-#costmodel            actions= 1 time=3 usec 
-#coercion             actions= 0 time=3 usec 
-#evaluate             actions= 8 time=33 usec 
-#emptybind            actions= 0 time=14 usec 
-#aliases              actions=10 time=29 usec 
-#mitosis              actions= 1 time=41 usec 
-#mergetable           actions= 4 time=85 usec 
-#deadcode             actions= 5 time=14 usec 
-#aliases              actions= 0 time=10 usec 
-#constants            actions= 9 time=12 usec 
-#commonTerms          actions= 0 time=12 usec 
-#projectionpath       actions= 0 time=8 usec 
-#deadcode             actions= 0 time=10 usec 
-#reorder              actions= 1 time=45 usec 
-#reduce               actions=44 time=20 usec 
-#matpack              actions= 2 time=13 usec 
-#dataflow             actions=27 time=41 usec 
-#multiplex            actions= 0 time=4 usec 
-#profiler             actions= 1 time=6 usec 
-#candidates           actions= 1 time=2 usec 
-#garbagecollector     actions= 1 time=32 usec 
-#total                actions= 1 time=615 usec 
+#inline               actions= 0 time=3 usec 
+#remap                actions= 0 time=6 usec 
+#costmodel            actions= 1 time=5 usec 
+#coercion             actions= 0 time=5 usec 
+#evaluate             actions=12 time=130 usec 
+#emptybind            actions= 0 time=1 usec 
+#pushselect           actions= 3 time=33 usec 
+#aliases              actions=14 time=30 usec 
+#mitosis              actions=1 time=76 usec 
+#mergetable           actions= 4 time=174 usec 
+#deadcode             actions= 5 time=38 usec 
+#aliases              actions= 0 time=1 usec 
+#constants            actions=10 time=31 usec 
+#commonTerms          actions= 0 time=22 usec 
+#projectionpath       actions= 0 time=15 usec 
+#deadcode             actions= 0 time=26 usec 
+#reorder              actions= 1 time=108 usec 
+#matpack              actions= 2 time=22 usec 
+#dataflow             actions= 1 time=82 usec 
+#multiplex            actions= 0 time=7 usec 
+#profiler             actions=1 time=5 usec 
+#candidates           actions=1 time=3 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=215 usec 
+#total                actions=26 time=1344 usec 
 #explain select x,y from test where x between 4.0 and 6.0 and y between (1.0-1.0) and (4.0-2.0);
 % .explain # table_name
 % mal # name
 % clob # type
 % 164 # length
 function user.SQLanalyze():void;
-    X_12:void := querylog.define("explain select x,y from test where x between 4.0 and 6.0 and y between (1.0-1.0) and (4.0-2.0);":str, "default_pipe":str, 44:int);
-barrier X_145:bit := language.dataflow();
-    X_45:bat[:str] := bat.new(nil:str);
-    X_51:bat[:int] := bat.new(nil:int);
-    X_49:bat[:int] := bat.new(nil:int);
+    X_11:void := querylog.define("explain select x,y from test where x between 4.0 and 6.0 and y between (1.0-1.0) and (4.0-2.0);":str, "default_pipe":str, 46:int);
+barrier X_147:bit := language.dataflow();
+    X_46:bat[:str] := bat.new(nil:str);
+    X_52:bat[:int] := bat.new(nil:int);
+    X_50:bat[:int] := bat.new(nil:int);
+    X_49:bat[:str] := bat.new(nil:str);
     X_48:bat[:str] := bat.new(nil:str);
-    X_47:bat[:str] := bat.new(nil:str);
-    X_15:int := sql.mvc();
-    X_122:bat[:dbl] := sql.bind(X_15:int, "sys":str, "test3":str, "y":str, 0:int, 1:int, 2:int);
-    X_120:bat[:dbl] := sql.bind(X_15:int, "sys":str, "test3":str, "x":str, 0:int, 1:int, 2:int);
-    C_118:bat[:oid] := sql.tid(X_15:int, "sys":str, "test3":str, 1:int, 2:int);
-    C_125:bat[:oid] := algebra.select(X_120:bat[:dbl], C_118:bat[:oid], 4:dbl, 6:dbl, true:bit, true:bit, false:bit);
-    C_127:bat[:oid] := algebra.select(X_122:bat[:dbl], C_125:bat[:oid], 0:dbl, 2:dbl, true:bit, true:bit, false:bit);
-    X_131:bat[:dbl] := algebra.projection(C_127:bat[:oid], X_122:bat[:dbl]);
-    X_121:bat[:dbl] := sql.bind(X_15:int, "sys":str, "test3":str, "y":str, 0:int, 0:int, 2:int);
-    X_119:bat[:dbl] := sql.bind(X_15:int, "sys":str, "test3":str, "x":str, 0:int, 0:int, 2:int);
-    C_116:bat[:oid] := sql.tid(X_15:int, "sys":str, "test3":str, 0:int, 2:int);
-    C_124:bat[:oid] := algebra.select(X_119:bat[:dbl], C_116:bat[:oid], 4:dbl, 6:dbl, true:bit, true:bit, false:bit);
-    C_126:bat[:oid] := algebra.select(X_121:bat[:dbl], C_124:bat[:oid], 0:dbl, 2:dbl, true:bit, true:bit, false:bit);
-    X_130:bat[:dbl] := algebra.projection(C_126:bat[:oid], X_121:bat[:dbl]);
-    X_129:bat[:dbl] := algebra.projection(C_127:bat[:oid], X_120:bat[:dbl]);
-    X_128:bat[:dbl] := algebra.projection(C_126:bat[:oid], X_119:bat[:dbl]);
-    X_52:bat[:str] := bat.append(X_45:bat[:str], "sys.test":str);
-    X_54:bat[:str] := bat.append(X_47:bat[:str], "x":str);
-    X_56:bat[:str] := bat.append(X_48:bat[:str], "double":str);
-    X_58:bat[:int] := bat.append(X_49:bat[:int], 53:int);
-    X_60:bat[:int] := bat.append(X_51:bat[:int], 0:int);
-    X_62:bat[:str] := bat.append(X_52:bat[:str], "sys.test":str);
-    X_63:bat[:str] := bat.append(X_54:bat[:str], "y":str);
-    X_65:bat[:str] := bat.append(X_56:bat[:str], "double":str);
-    X_66:bat[:int] := bat.append(X_58:bat[:int], 53:int);
-    X_67:bat[:int] := bat.append(X_60:bat[:int], 0:int);
-    X_140:bat[:dbl] := mat.packIncrement(X_128:bat[:dbl], 2:int);
-    X_42:bat[:dbl] := mat.packIncrement(X_140:bat[:dbl], X_129:bat[:dbl]);
+    X_14:int := sql.mvc();
+    X_124:bat[:dbl] := sql.bind(X_14:int, "sys":str, "test3":str, "y":str, 0:int, 1:int, 2:int);
+    X_122:bat[:dbl] := sql.bind(X_14:int, "sys":str, "test3":str, "x":str, 0:int, 1:int, 2:int);
+    C_120:bat[:oid] := sql.tid(X_14:int, "sys":str, "test3":str, 1:int, 2:int);
+    C_127:bat[:oid] := algebra.select(X_122:bat[:dbl], C_120:bat[:oid], 4:dbl, 6:dbl, true:bit, true:bit, false:bit);
+    C_129:bat[:oid] := algebra.select(X_124:bat[:dbl], C_127:bat[:oid], 0:dbl, 2:dbl, true:bit, true:bit, false:bit);
+    X_133:bat[:dbl] := algebra.projection(C_129:bat[:oid], X_124:bat[:dbl]);
+    X_123:bat[:dbl] := sql.bind(X_14:int, "sys":str, "test3":str, "y":str, 0:int, 0:int, 2:int);
+    X_121:bat[:dbl] := sql.bind(X_14:int, "sys":str, "test3":str, "x":str, 0:int, 0:int, 2:int);
+    C_118:bat[:oid] := sql.tid(X_14:int, "sys":str, "test3":str, 0:int, 2:int);
+    C_126:bat[:oid] := algebra.select(X_121:bat[:dbl], C_118:bat[:oid], 4:dbl, 6:dbl, true:bit, true:bit, false:bit);
+    C_128:bat[:oid] := algebra.select(X_123:bat[:dbl], C_126:bat[:oid], 0:dbl, 2:dbl, true:bit, true:bit, false:bit);
+    X_132:bat[:dbl] := algebra.projection(C_128:bat[:oid], X_123:bat[:dbl]);
+    X_131:bat[:dbl] := algebra.projection(C_129:bat[:oid], X_122:bat[:dbl]);
+    X_130:bat[:dbl] := algebra.projection(C_128:bat[:oid], X_121:bat[:dbl]);
+    X_53:bat[:str] := bat.append(X_46:bat[:str], "sys.test":str);
+    X_55:bat[:str] := bat.append(X_48:bat[:str], "x":str);
+    X_57:bat[:str] := bat.append(X_49:bat[:str], "double":str);
+    X_59:bat[:int] := bat.append(X_50:bat[:int], 53:int);
+    X_61:bat[:int] := bat.append(X_52:bat[:int], 0:int);
+    X_63:bat[:str] := bat.append(X_53:bat[:str], "sys.test":str);
+    X_64:bat[:str] := bat.append(X_55:bat[:str], "y":str);
+    X_66:bat[:str] := bat.append(X_57:bat[:str], "double":str);
+    X_67:bat[:int] := bat.append(X_59:bat[:int], 53:int);
+    X_68:bat[:int] := bat.append(X_61:bat[:int], 0:int);
     X_142:bat[:dbl] := mat.packIncrement(X_130:bat[:dbl], 2:int);
     X_43:bat[:dbl] := mat.packIncrement(X_142:bat[:dbl], X_131:bat[:dbl]);
+    X_144:bat[:dbl] := mat.packIncrement(X_132:bat[:dbl], 2:int);
+    X_44:bat[:dbl] := mat.packIncrement(X_144:bat[:dbl], X_133:bat[:dbl]);
+    language.pass(X_124:bat[:dbl]);
+    language.pass(X_123:bat[:dbl]);
+    language.pass(C_129:bat[:oid]);
     language.pass(X_122:bat[:dbl]);
+    language.pass(C_128:bat[:oid]);
     language.pass(X_121:bat[:dbl]);
-    language.pass(C_127:bat[:oid]);
-    language.pass(X_120:bat[:dbl]);
-    language.pass(C_126:bat[:oid]);
-    language.pass(X_119:bat[:dbl]);
-exit X_145:bit;
-    sql.resultSet(X_62:bat[:str], X_63:bat[:str], X_65:bat[:str], X_66:bat[:int], X_67:bat[:int], X_42:bat[:dbl], X_43:bat[:dbl]);
+exit X_147:bit;
+    sql.resultSet(X_63:bat[:str], X_64:bat[:str], X_66:bat[:str], X_67:bat[:int], X_68:bat[:int], X_43:bat[:dbl], X_44:bat[:dbl]);
 end user.SQLanalyze;
-#inline               actions= 0 time=1 usec 
-#remap                actions= 0 time=5 usec 
+#inline               actions= 0 time=3 usec 
+#remap                actions= 0 time=14 usec 
 #costmodel            actions= 1 time=5 usec 
-#coercion             actions= 0 time=3 usec 
-#evaluate             actions=16 time=60 usec 
-#emptybind            actions= 0 time=16 usec 
-#aliases              actions=18 time=15 usec 
-#mitosis              actions= 1 time=40 usec 
-#mergetable           actions= 4 time=81 usec 
-#deadcode             actions= 5 time=13 usec 
-#aliases              actions= 0 time=10 usec 
-#constants            actions=11 time=14 usec 
-#commonTerms          actions= 0 time=11 usec 
-#projectionpath       actions= 0 time=7 usec 
-#deadcode             actions= 0 time=10 usec 
-#reorder              actions= 1 time=45 usec 
-#reduce               actions=58 time=22 usec 
-#matpack              actions= 2 time=13 usec 
-#dataflow             actions=27 time=40 usec 
-#multiplex            actions= 0 time=4 usec 
-#profiler             actions= 1 time=5 usec 
-#candidates           actions= 1 time=2 usec 
-#garbagecollector     actions= 1 time=33 usec 
-#total                actions= 1 time=638 usec 
+#coercion             actions= 0 time=6 usec 
+#evaluate             actions=18 time=124 usec 
+#emptybind            actions= 0 time=2 usec 
+#pushselect           actions= 3 time=35 usec 
+#aliases              actions=20 time=33 usec 
+#mitosis              actions=1 time=75 usec 
+#mergetable           actions= 4 time=183 usec 
+#deadcode             actions= 5 time=38 usec 
+#aliases              actions= 0 time=2 usec 
+#constants            actions=11 time=33 usec 
+#commonTerms          actions= 0 time=22 usec 
+#projectionpath       actions= 0 time=15 usec 
+#deadcode             actions= 0 time=28 usec 
+#reorder              actions= 1 time=108 usec 
+#matpack              actions= 2 time=22 usec 
+#dataflow             actions= 1 time=81 usec 
+#multiplex            actions= 0 time=7 usec 
+#profiler             actions=1 time=4 usec 
+#candidates           actions=1 time=4 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=208 usec 
+#total                actions=26 time=1367 usec 
 #explain select x,y from test where x between (7-3) and (7-1) and y between (1.0-1.0) and (4.0-2.0);
 % .explain # table_name
 % mal # name
 % clob # type
 % 168 # length
 function user.SQLanalyze():void;
-    X_15:void := querylog.define("explain select x,y from test where x between (7-3) and (7-1) and y between (1.0-1.0) and (4.0-2.0);":str, "default_pipe":str, 52:int);
-barrier X_159:bit := language.dataflow();
-    X_54:bat[:str] := bat.new(nil:str);
-    X_60:bat[:int] := bat.new(nil:int);
-    X_58:bat[:int] := bat.new(nil:int);
-    X_57:bat[:str] := bat.new(nil:str);
-    X_56:bat[:str] := bat.new(nil:str);
+    X_15:void := querylog.define("explain select x,y from test where x between (7-3) and (7-1) and y between (1.0-1.0) and (4.0-2.0);":str, "default_pipe":str, 56:int);
+barrier X_163:bit := language.dataflow();
+    X_58:bat[:str] := bat.new(nil:str);
+    X_64:bat[:int] := bat.new(nil:int);
+    X_62:bat[:int] := bat.new(nil:int);
+    X_61:bat[:str] := bat.new(nil:str);
+    X_60:bat[:str] := bat.new(nil:str);
     X_18:int := sql.mvc();
-    X_136:bat[:dbl] := sql.bind(X_18:int, "sys":str, "test3":str, "y":str, 0:int, 1:int, 2:int);
-    X_134:bat[:dbl] := sql.bind(X_18:int, "sys":str, "test3":str, "x":str, 0:int, 1:int, 2:int);
-    C_132:bat[:oid] := sql.tid(X_18:int, "sys":str, "test3":str, 1:int, 2:int);
-    C_139:bat[:oid] := algebra.select(X_134:bat[:dbl], C_132:bat[:oid], 4:dbl, 6:dbl, true:bit, true:bit, false:bit);
-    C_141:bat[:oid] := algebra.select(X_136:bat[:dbl], C_139:bat[:oid], 0:dbl, 2:dbl, true:bit, true:bit, false:bit);
-    X_145:bat[:dbl] := algebra.projection(C_141:bat[:oid], X_136:bat[:dbl]);
-    X_135:bat[:dbl] := sql.bind(X_18:int, "sys":str, "test3":str, "y":str, 0:int, 0:int, 2:int);
-    X_133:bat[:dbl] := sql.bind(X_18:int, "sys":str, "test3":str, "x":str, 0:int, 0:int, 2:int);
-    C_130:bat[:oid] := sql.tid(X_18:int, "sys":str, "test3":str, 0:int, 2:int);
-    C_138:bat[:oid] := algebra.select(X_133:bat[:dbl], C_130:bat[:oid], 4:dbl, 6:dbl, true:bit, true:bit, false:bit);
-    C_140:bat[:oid] := algebra.select(X_135:bat[:dbl], C_138:bat[:oid], 0:dbl, 2:dbl, true:bit, true:bit, false:bit);
-    X_144:bat[:dbl] := algebra.projection(C_140:bat[:oid], X_135:bat[:dbl]);
-    X_143:bat[:dbl] := algebra.projection(C_141:bat[:oid], X_134:bat[:dbl]);
-    X_142:bat[:dbl] := algebra.projection(C_140:bat[:oid], X_133:bat[:dbl]);
-    X_61:bat[:str] := bat.append(X_54:bat[:str], "sys.test":str);
-    X_63:bat[:str] := bat.append(X_56:bat[:str], "x":str);
-    X_65:bat[:str] := bat.append(X_57:bat[:str], "double":str);
-    X_67:bat[:int] := bat.append(X_58:bat[:int], 53:int);
-    X_69:bat[:int] := bat.append(X_60:bat[:int], 0:int);
-    X_71:bat[:str] := bat.append(X_61:bat[:str], "sys.test":str);
-    X_72:bat[:str] := bat.append(X_63:bat[:str], "y":str);
-    X_74:bat[:str] := bat.append(X_65:bat[:str], "double":str);
-    X_75:bat[:int] := bat.append(X_67:bat[:int], 53:int);
-    X_76:bat[:int] := bat.append(X_69:bat[:int], 0:int);
-    X_154:bat[:dbl] := mat.packIncrement(X_142:bat[:dbl], 2:int);
-    X_51:bat[:dbl] := mat.packIncrement(X_154:bat[:dbl], X_143:bat[:dbl]);
-    X_156:bat[:dbl] := mat.packIncrement(X_144:bat[:dbl], 2:int);
-    X_52:bat[:dbl] := mat.packIncrement(X_156:bat[:dbl], X_145:bat[:dbl]);
-    language.pass(X_136:bat[:dbl]);
-    language.pass(X_135:bat[:dbl]);
-    language.pass(C_141:bat[:oid]);
-    language.pass(X_134:bat[:dbl]);
-    language.pass(C_140:bat[:oid]);
-    language.pass(X_133:bat[:dbl]);
-exit X_159:bit;
-    sql.resultSet(X_71:bat[:str], X_72:bat[:str], X_74:bat[:str], X_75:bat[:int], X_76:bat[:int], X_51:bat[:dbl], X_52:bat[:dbl]);
+    X_140:bat[:dbl] := sql.bind(X_18:int, "sys":str, "test3":str, "y":str, 0:int, 1:int, 2:int);
+    X_138:bat[:dbl] := sql.bind(X_18:int, "sys":str, "test3":str, "x":str, 0:int, 1:int, 2:int);
+    C_136:bat[:oid] := sql.tid(X_18:int, "sys":str, "test3":str, 1:int, 2:int);
+    C_143:bat[:oid] := algebra.select(X_138:bat[:dbl], C_136:bat[:oid], 4:dbl, 6:dbl, true:bit, true:bit, false:bit);
+    C_145:bat[:oid] := algebra.select(X_140:bat[:dbl], C_143:bat[:oid], 0:dbl, 2:dbl, true:bit, true:bit, false:bit);
+    X_149:bat[:dbl] := algebra.projection(C_145:bat[:oid], X_140:bat[:dbl]);
+    X_139:bat[:dbl] := sql.bind(X_18:int, "sys":str, "test3":str, "y":str, 0:int, 0:int, 2:int);
+    X_137:bat[:dbl] := sql.bind(X_18:int, "sys":str, "test3":str, "x":str, 0:int, 0:int, 2:int);
+    C_134:bat[:oid] := sql.tid(X_18:int, "sys":str, "test3":str, 0:int, 2:int);
+    C_142:bat[:oid] := algebra.select(X_137:bat[:dbl], C_134:bat[:oid], 4:dbl, 6:dbl, true:bit, true:bit, false:bit);
+    C_144:bat[:oid] := algebra.select(X_139:bat[:dbl], C_142:bat[:oid], 0:dbl, 2:dbl, true:bit, true:bit, false:bit);
+    X_148:bat[:dbl] := algebra.projection(C_144:bat[:oid], X_139:bat[:dbl]);
+    X_147:bat[:dbl] := algebra.projection(C_145:bat[:oid], X_138:bat[:dbl]);
+    X_146:bat[:dbl] := algebra.projection(C_144:bat[:oid], X_137:bat[:dbl]);
+    X_65:bat[:str] := bat.append(X_58:bat[:str], "sys.test":str);
+    X_67:bat[:str] := bat.append(X_60:bat[:str], "x":str);
+    X_69:bat[:str] := bat.append(X_61:bat[:str], "double":str);
+    X_71:bat[:int] := bat.append(X_62:bat[:int], 53:int);
+    X_73:bat[:int] := bat.append(X_64:bat[:int], 0:int);
+    X_75:bat[:str] := bat.append(X_65:bat[:str], "sys.test":str);
+    X_76:bat[:str] := bat.append(X_67:bat[:str], "y":str);
+    X_78:bat[:str] := bat.append(X_69:bat[:str], "double":str);
+    X_79:bat[:int] := bat.append(X_71:bat[:int], 53:int);
+    X_80:bat[:int] := bat.append(X_73:bat[:int], 0:int);
+    X_158:bat[:dbl] := mat.packIncrement(X_146:bat[:dbl], 2:int);
+    X_55:bat[:dbl] := mat.packIncrement(X_158:bat[:dbl], X_147:bat[:dbl]);
+    X_160:bat[:dbl] := mat.packIncrement(X_148:bat[:dbl], 2:int);
+    X_56:bat[:dbl] := mat.packIncrement(X_160:bat[:dbl], X_149:bat[:dbl]);
+    language.pass(X_140:bat[:dbl]);
+    language.pass(X_139:bat[:dbl]);
+    language.pass(C_145:bat[:oid]);
+    language.pass(X_138:bat[:dbl]);
+    language.pass(C_144:bat[:oid]);
+    language.pass(X_137:bat[:dbl]);
+exit X_163:bit;
+    sql.resultSet(X_75:bat[:str], X_76:bat[:str], X_78:bat[:str], X_79:bat[:int], X_80:bat[:int], X_55:bat[:dbl], X_56:bat[:dbl]);
 end user.SQLanalyze;
-#inline               actions= 0 time=2 usec 
-#remap                actions= 0 time=8 usec 
-#costmodel            actions= 1 time=3 usec 
-#coercion             actions= 0 time=3 usec 
-#evaluate             actions=24 time=70 usec 
-#emptybind            actions= 0 time=17 usec 
-#aliases              actions=26 time=17 usec 
-#mitosis              actions= 1 time=42 usec 
-#mergetable           actions= 4 time=82 usec 
-#deadcode             actions= 5 time=14 usec 
-#aliases              actions= 0 time=11 usec 
-#constants            actions=12 time=32 usec 
-#commonTerms          actions= 0 time=12 usec 
-#projectionpath       actions= 0 time=7 usec 
-#deadcode             actions= 0 time=11 usec 
-#reorder              actions= 1 time=46 usec 
-#reduce               actions=72 time=26 usec 
+#inline               actions= 0 time=3 usec 
+#remap                actions= 0 time=10 usec 
+#costmodel            actions= 1 time=4 usec 
+#coercion             actions= 4 time=21 usec 
+#evaluate             actions=24 time=104 usec 
+#emptybind            actions= 0 time=1 usec 
+#pushselect           actions= 3 time=27 usec 
+#aliases              actions=26 time=27 usec 
+#mitosis              actions=1 time=51 usec 
+#mergetable           actions= 4 time=121 usec 
+#deadcode             actions= 5 time=27 usec 
+#aliases              actions= 0 time=1 usec 
+#constants            actions=13 time=27 usec 
+#commonTerms          actions= 0 time=15 usec 
+#projectionpath       actions= 0 time=11 usec 
+#deadcode             actions= 0 time=19 usec 
+#reorder              actions= 1 time=76 usec 
 #matpack              actions= 2 time=14 usec 
 #dataflow             actions=27 time=41 usec 
 #multiplex            actions= 0 time=5 usec 

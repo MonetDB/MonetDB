@@ -50,7 +50,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	for (i=0; i< mb->vtop; i++)
 		alias[ i]= i;
-	for (i=0; i< mb->vtop; i++)
+	for (i=0; i< mb->vtop && n < 100; i++)
 		if ( isVarConstant(mb,i)  && isVarFixed(mb,i)  && getVarType(mb,i) != TYPE_ptr){
 			x= getVar(mb,i); 
 			fnd = 0;
@@ -81,12 +81,13 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			} 
 		} 
 
-	if( actions)
+	if (actions)
 		for (i = 0; i < mb->stop; i++){
 			p= getInstrPtr(mb,i);
 			for (k=0; k < p->argc; k++)
 				getArg(p,k) = alias[getArg(p,k)];
 		}
+
     /* Defense line against incorrect plans */
 	/* Plan remains unaffected */
 	//chkTypes(cntxt->usermodule, mb, FALSE);
@@ -95,9 +96,9 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
     
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
-    snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","constants",actions,usec);
-    newComment(mb,buf);
-	if( actions >= 0)
+	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","constants",actions,usec);
+	newComment(mb,buf);
+	if (actions >= 0)
 		addtoMalBlkHistory(mb);
 
 wrapup:

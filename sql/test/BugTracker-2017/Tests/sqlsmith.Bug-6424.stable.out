@@ -1,0 +1,51 @@
+stdout of test 'sqlsmith.Bug-6424` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 08:07:16 >  
+# 08:07:16 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37745" "--set" "mapi_usock=/var/tmp/mtest-10220/.s.monetdb.37745" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 08:07:16 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.330 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:37745/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-10220/.s.monetdb.37745
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 08:07:16 >  
+# 08:07:16 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10220" "--port=37745"
+# 08:07:16 >  
+
+#select  
+#  ref_2.name as c0, 
+#  case when true then ref_3.dimpos else ref_3.dimpos end
+#     as c1
+#from 
+#  sys.tables as ref_0
+#      inner join sys.dependencies as ref_1
+#          right join sys.tables as ref_2
+#          on ((ref_2.temporary is NULL) 
+#              or (ref_2.system is not NULL))
+#        inner join bam.pg as sample_1
+#        on (false)
+#      on (ref_0.system = ref_2.system )
+#    inner join sys.netcdf_vardim as ref_3
+#    on (true)
+#where ref_2.commit_action is NULL;
+% .L76,	.L100 # table_name
+% c0,	c1 # name
+% varchar,	int # type
+% 0,	1 # length
+
+# 08:07:16 >  
+# 08:07:16 >  "Done."
+# 08:07:16 >  
+

@@ -110,10 +110,12 @@ getAddress(str fcnname)
 	adr = (MALfcn) dlsym(dl, fcnname);
 	filesLoaded[lastfile].modname = GDKstrdup("libmonetdb5");
 	if(filesLoaded[lastfile].modname == NULL) {
+		dlclose(dl);
 		return NULL;
 	}
 	filesLoaded[lastfile].fullname = GDKstrdup("libmonetdb5");
 	if(filesLoaded[lastfile].fullname == NULL) {
+		dlclose(dl);
 		GDKfree(filesLoaded[lastfile].modname);
 		return NULL;
 	}

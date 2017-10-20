@@ -1,0 +1,49 @@
+stdout of test 'sqlsmith.Bug-6425` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 08:07:16 >  
+# 08:07:16 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37745" "--set" "mapi_usock=/var/tmp/mtest-10220/.s.monetdb.37745" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 08:07:16 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.330 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:37745/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-10220/.s.monetdb.37745
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 08:07:17 >  
+# 08:07:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10220" "--port=37745"
+# 08:07:17 >  
+
+#select  
+#  sample_2.keyword as c0
+#from 
+#  sys.optimizers as sample_0
+#      right join sys.netcdf_vardim as sample_1
+#      on (((true) 
+#            or (false)) 
+#          or (true))
+#    right join sys.keywords as sample_2
+#      right join sys.privilege_codes as sample_3
+#      on (sample_2.keyword = sample_3.privilege_code_name )
+#    on (sample_1.var_id = sample_3.privilege_code_id )
+#where false
+#limit 106;
+% .L7 # table_name
+% c0 # name
+% varchar # type
+% 0 # length
+
+# 08:07:17 >  
+# 08:07:17 >  "Done."
+# 08:07:17 >  
+
