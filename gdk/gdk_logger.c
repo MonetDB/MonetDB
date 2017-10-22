@@ -1319,7 +1319,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 	    catalog_bid == list_bid &&
 	    catalog_nme == list_nme &&
 	    lg->catalog_bid == catalog_bid) {
-		BAT *bids, *nmes, *tids;
+		BAT *bids, *nmes, *tids, *b;
 
 		tids = bm_tids(catalog_bid, dcatalog);
 		if (tids == NULL) {
@@ -1328,6 +1328,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 		}
 		bids = logbat_new(TYPE_int, BATcount(tids), PERSISTENT);
 		nmes = logbat_new(TYPE_str, BATcount(tids), PERSISTENT);
+
 		if (bids == NULL || nmes == NULL) {
 			logbat_destroy(tids);
 			logbat_destroy(bids);
@@ -1335,6 +1336,29 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 			GDKfree(n);
 			return GDK_FAIL;
 		}
+
+		b = BATproject(tids, catalog_bid);
+		if (BATappend(bids, b, NULL, TRUE) != GDK_SUCCEED) {  
+			logbat_destroy(b);
+			logbat_destroy(tids);
+			logbat_destroy(bids);
+			logbat_destroy(nmes);
+			GDKfree(n);
+			return GDK_FAIL;
+		}
+		logbat_destroy(b);
+		b = BATproject(tids, catalog_nme);
+		if (BATappend(nmes, b, NULL, TRUE) != GDK_SUCCEED) {  
+			logbat_destroy(b);
+			logbat_destroy(tids);
+			logbat_destroy(bids);
+			logbat_destroy(nmes);
+			GDKfree(n);
+			return GDK_FAIL;
+		}
+		logbat_destroy(b);
+
+		/*
 		if (BATappend(bids, catalog_bid, tids, TRUE) != GDK_SUCCEED ||
 		    BATappend(nmes, catalog_nme, tids, TRUE) != GDK_SUCCEED) {
 			logbat_destroy(tids);
@@ -1343,6 +1367,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 			GDKfree(n);
 			return GDK_FAIL;
 		}
+		*/
 		logbat_destroy(tids);
 		BATclear(dcatalog, TRUE);
 
