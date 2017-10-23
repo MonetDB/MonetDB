@@ -226,7 +226,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, int force)
 		}
 	} else if (unshare_string_heap(b) != GDK_SUCCEED)
 		return GDK_FAIL;
-	if (toff == 0 && n->twidth == b->twidth) {
+	if (toff == 0 && n->twidth == b->twidth && cand == NULL) {
 		/* we don't need to do any translation of offset
 		 * values, so we can use fast memcpy */
 		memcpy(Tloc(b, BUNlast(b)), Tloc(n, start),
@@ -531,24 +531,27 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 
 	r = BUNlast(b);
 
-	if (BATcount(b) == 0 && cand == NULL) {
+	if (BATcount(b) == 0) {
 		BATiter ni = bat_iterator(n);
 
 		b->tsorted = n->tsorted;
-		b->tnosorted = start <= n->tnosorted && n->tnosorted < end ? n->tnosorted - start : 0;
 		b->trevsorted = n->trevsorted;
-		b->tnorevsorted = start <= n->tnorevsorted && n->tnorevsorted < end ? n->tnorevsorted - start : 0;
 		b->tdense = n->tdense && cand == NULL;
-		b->tnodense = start <= n->tnodense && n->tnodense < end ? n->tnodense - start : 0;
 		b->tnonil = n->tnonil;
 		b->tnil = n->tnil && cnt == BATcount(n);
 		b->tseqbase = oid_nil;
 		if (cand == NULL) {
+			b->tnosorted = start <= n->tnosorted && n->tnosorted < end ? n->tnosorted - start : 0;
+			b->tnorevsorted = start <= n->tnorevsorted && n->tnorevsorted < end ? n->tnorevsorted - start : 0;
+			b->tnodense = start <= n->tnodense && n->tnodense < end ? n->tnodense - start : 0;
 			if (n->tdense && n->ttype == TYPE_oid)
 				b->tseqbase = *(oid *) BUNtail(ni, start);
 			else if (n->ttype == TYPE_void &&
 				 n->tseqbase != oid_nil)
 				b->tseqbase = n->tseqbase + start;
+		} else {
+			b->tnosorted = 0;
+			b->tnorevsorted = 0;
 		}
 		/* if tunique, uniqueness is guaranteed above */
 		b->tkey = n->tkey | b->tunique;
