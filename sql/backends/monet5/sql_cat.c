@@ -874,7 +874,11 @@ SQLdrop_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else if (s->system) {
 		throw(SQL,"sql.drop_schema",SQLSTATE(42000) "DROP SCHEMA: access denied for '%s'", sname);
 	} else if (sql_schema_has_user(sql, s)) {
-		throw(SQL,"sql.drop_schema",SQLSTATE(2BM37) "DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it", sname);
+		throw(SQL,"sql.drop_schema",SQLSTATE(2BM37) "DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it)", sname);
+	} else if (!action /* RESTRICT */ && (
+		!list_empty(s->tables.set) || !list_empty(s->types.set) ||
+		!list_empty(s->funcs.set) || !list_empty(s->seqs.set))) {
+		throw(SQL,"sql.drop_schema",SQLSTATE(2BM37) "DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it)", sname);
 	} else {
 		mvc_drop_schema(sql, s, action);
 	}
