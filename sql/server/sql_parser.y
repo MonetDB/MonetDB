@@ -3481,7 +3481,7 @@ like_exp:
  |  scalar_exp ESCAPE string
  	{ const char *s = sql2str($3);
 	  if (_strlen(s) != 1) {
-		yyerror(m, SQLSTATE(22025) "ESCAPE must be one character");
+		yyerror(m, SQLSTATE(22019) "ESCAPE must be one character");
 		$$ = NULL;
 		YYABORT;
 	  } else {
