@@ -28,20 +28,19 @@ stderr of test 'cquery` in directory 'sql/backends/monet5` itself:
 # 22:02:28 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-9376" "--port=30916"
 # 22:02:28 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-9376/.s.monetdb.30916
+MAPI  = (monetdb) /var/tmp/mtest-1914/.s.monetdb.39899
 QUERY = # some simple MAL tests
         
         cquery.dump();
         
-        cquery.show("unknown","query");
+        cquery.show("noalias");
         
-        (tick:bat[:timestamp],mod:bat[:str],fcn:bat[:str],alias:bat[:str],time:bat[:lng],error:bat[:str]) := cquery.log();
+        (tick:bat[:timestamp],alias:bat[:str],time:bat[:lng],error:bat[:str]) := cquery.log();
         
-        io.print(tick,mod,fcn,time,error);
-ERROR = !SQLException:cquery.show:The continuous query unknown.query is not accessible
+        io.print(tick,alias,time,error);
+ERROR = !SQLException:cquery.show:42000!The continuous query noalias has not yet started
 
-
-# 22:02:28 >  
-# 22:02:28 >  "Done."
-# 22:02:28 >  
+# 18:08:15 >  
+# 18:08:15 >  "Done."
+# 18:08:15 >  
 

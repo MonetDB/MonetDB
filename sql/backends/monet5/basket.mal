@@ -72,6 +72,10 @@ pattern reset(mvc:int,sch:str,tbl:str):int
 address BSKTreset
 comment "Remove a basket content";
 
+pattern error(sch:str,tbl:str,msg:str)
+address BSKTerror
+comment "Remember the error seen";
+
 pattern drop(mvc:int,sch:str,tbl:str):int
 address BSKTdrop
 comment "Remove the basket";

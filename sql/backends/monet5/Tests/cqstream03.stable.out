@@ -36,10 +36,10 @@ Ready.
 #    end if;
 #end;
 #select * from cquery.status();
-% .L1,	.L1,	.L1,	.L1,	.L1,	.L1 # table_name
-% tick,	schema,	function,	alias,	state,	errors # name
-% timestamp,	clob,	clob,	clob,	clob,	clob # type
-% 26,	0,	0,	0,	0,	0 # length
+% .L1,	.L1,	.L1,	.L1 # table_name
+% tick,	alias,	state,	errors # name
+% timestamp,	clob,	clob,	clob # type
+% 26,	0,	0,	0 # length
 #drop procedure cq_agenda;
 #drop table tmp13;
 #drop table agenda13;

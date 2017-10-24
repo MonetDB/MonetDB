@@ -21,6 +21,7 @@
 #define _CQUERY_
 
 #include "mal_interpreter.h"
+#include "sql_catalog.h"
 #include "sql_scenario.h"
 
 //#define DEBUG_CQUERY
@@ -42,7 +43,7 @@
 #define STREAM_OUT  2
 
 typedef struct {
-	str mod,fcn;	/* The SQL command to be used */
+	sql_func *func; /* The UDF to be called */
 	MalBlkPtr mb;   /* The wrapped query block call in a transaction */
 	MalStkPtr stk;  /* Needed for execution */
 
@@ -63,10 +64,7 @@ typedef struct {
 	lng time;       /* the amount of time the last call took in microseconds */
 } CQnode;
 
-sql5_export CQnode *pnet;
-sql5_export int pnetLimit, pnettop;
-
-sql5_export int CQlocateQueryExternal(str modname, str fcnname);
+sql5_export int CQlocateUDF(sql_func *f);
 sql5_export int CQlocateBasketExternal(str schname, str tblname);
 
 sql5_export str CQwait(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
@@ -74,7 +72,6 @@ sql5_export str CQbeginAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 sql5_export str CQcycles(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQheartbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
-sql5_export str CQerror(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQshow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQstatus(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQlog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

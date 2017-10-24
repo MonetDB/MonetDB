@@ -88,12 +88,12 @@ Ready.
 % real # type
 % 15 # length
 [ 1	]
-#select "schema", "function", errors from cquery.status();
-% .L1,	.L1,	.L1 # table_name
-% schema,	function,	errors # name
-% clob,	clob,	clob # type
-% 3,	10,	36 # length
-[ "sys",	"cq_query18",	"MALException:calc./:operation failed"	]
+#select alias, errors from cquery.status();
+% .L1,	.L1 # table_name
+% alias,	errors # name
+% clob,	clob # type
+% 10,	36 # length
+[ "cq_query18",	"MALException:calc./:operation failed"	]
 #resume continuous cq_query18; --ok
 #stop continuous cq_query18; --ok
 #start continuous procedure cq_query18(2) with heartbeat 1000 cycles 2; --ok
@@ -105,11 +105,11 @@ Ready.
 [ 1	]
 [ 0	]
 [ 0	]
-#select "schema", "function", errors from cquery.status();
-% .L1,	.L1,	.L1 # table_name
-% schema,	function,	errors # name
-% clob,	clob,	clob # type
-% 0,	0,	0 # length
+#select alias, "errors" from cquery.status();
+% .L1,	.L1 # table_name
+% alias,	errors # name
+% clob,	clob # type
+% 0,	0 # length
 #drop procedure cq_query18;
 #drop table testing18;
 

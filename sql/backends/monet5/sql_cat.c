@@ -548,7 +548,7 @@ drop_func(mvc *sql, char *sname, char *name, int fid, int type, int action)
 			}
 			if (!action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
 				throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
-			if(IS_PROC(func) && CQlocateQueryExternal(sname, name))
+			if(CQlocateUDF(func))
 				throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s%s: there are continuous queries dependent on %s%s %s;", KF, F, kf, f, func->base.name);
 
 			mvc_drop_func(sql, s, func, action);
@@ -568,7 +568,7 @@ drop_func(mvc *sql, char *sname, char *name, int fid, int type, int action)
 				list_destroy(list_func);
 				throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
 			}
-			if(IS_PROC(func) && CQlocateQueryExternal(sname, name)) {
+			if(CQlocateUDF(func)) {
 				list_destroy(list_func);
 				throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s%s: there are continuous queries dependent on %s%s %s;", KF, F, kf, f, func->base.name);
 			}
@@ -603,7 +603,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, sql_func *fo, int r
 			throw(SQL,"sql.create_func", SQLSTATE(3F000) "CREATE OR REPLACE %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
 		if (mvc_check_dependency(sql, fo->base.id, !IS_PROC(fo) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
 			throw(SQL,"sql.create_func", SQLSTATE(3F000) "CREATE OR REPLACE %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, fn, fo->base.name);
-		if(IS_PROC(fo) && CQlocateQueryExternal(sname, fo->base.name))
+		if(CQlocateUDF(fo))
 			throw(SQL,"sql.create_func", SQLSTATE(3F000) "CREATE OR REPLACE %s%s: there are continuous queries dependent on %s%s %s;", KF, F, kf, fn, fo->base.name);
 
 		mvc_drop_func(sql, s, n->data, 0);

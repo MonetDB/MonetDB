@@ -257,7 +257,7 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				setVarUDFtype(mb, j);
 				r->barrier = CATCHsymbol;
 
-				r = newStmt(mb,cqueryRef, errorRef);
+				r = newStmt(mb,basketRef, errorRef);
 				r = pushStr(mb, r, getModuleId(old[0]));
 				r = pushStr(mb, r, getFunctionId(old[0]));
 				r = pushArgument(mb, r, j);
@@ -270,7 +270,7 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				setVarUDFtype(mb, j);
 				r->barrier = CATCHsymbol;
 
-				r = newStmt(mb,cqueryRef, errorRef);
+				r = newStmt(mb,basketRef, errorRef);
 				r = pushStr(mb, r, getModuleId(old[0]));
 				r = pushStr(mb, r, getFunctionId(old[0]));
 				r = pushArgument(mb, r, j);

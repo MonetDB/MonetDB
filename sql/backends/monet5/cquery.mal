@@ -21,7 +21,7 @@ pattern wait(cnt:int)
 address CQwait
 comment "Sleep for some time";
 
-pattern cycles(mod:str, fcn:str,cnt:int)
+pattern cycles(alias:str,cnt:int)
 address CQcycles
 comment "Limit number of petrinet steps for a single continuous query";
 
@@ -29,7 +29,7 @@ pattern cycles(cnt:int)
 address CQcycles
 comment "Limit number of petrinet steps for all continuous queries";
 
-pattern beginat(mod:str, fcn:str,unixtime:lng)
+pattern beginat(alias:str,unixtime:lng)
 address CQbeginAt
 comment "Delay beginning of a continuous query, where unixtime is an UNIX timestamp with microsecond precision";
 
@@ -38,7 +38,7 @@ address CQbeginAt
 comment "Delay beginning of all continuous queries, where unixtime is an UNIX timestamp with microsecond precision";
 
 # scheduler heart beat for each CQ
-pattern heartbeat(mod:str, fcn:str,cnt:lng)
+pattern heartbeat(alias:str,cnt:lng)
 address CQheartbeat
 comment "Awake the query after cnt milliseconds";
 
@@ -46,20 +46,16 @@ pattern heartbeat(cnt:lng)
 address CQheartbeat
 comment "Awake all queries after cnt milliseconds";
 
-pattern error(sch:str, tbl:str, msg:str)
-address CQerror
-comment "Remember the error seen";
-
 # continuous query status analysis
-pattern status() (tick:bat[:timestamp],mod:bat[:str],fcn:bat[:str],alias:bat[:str],state:bat[:str],error:bat[:str])
+pattern status() (tick:bat[:timestamp],alias:bat[:str],state:bat[:str],error:bat[:str])
 address CQstatus
 comment "Status of all registered continuous queries";
 
-pattern log() (tick:bat[:timestamp],mod:bat[:str],fcn:bat[:str],alias:bat[:str],time:bat[:lng],error:bat[:str])
+pattern log() (tick:bat[:timestamp],alias:bat[:str],time:bat[:lng],error:bat[:str])
 address CQlog
 comment "The log of all CQ executions";
 
-pattern show(sch:str,fcn:str)
+pattern show(alias:str)
 address CQshow
 comment "Debug a single continuous query";
 

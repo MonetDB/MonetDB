@@ -35,18 +35,15 @@ typedef struct{
 	BUN count;			/* number of events available in basket */
 	int window;			/* consumption size */
 	int stride;			/* stride forward after consumption  */
-
 	/* statistics */
 	timestamp seen;
 	BUN events; /* total number of events grabbed */
-	str error;
-	/* concurrency control between petrinet/{receptor,emitter} */
-	MT_Lock lock;
+	str error; /* error while manipulating the streaming table */
+	MT_Lock lock; /* concurrency control between petrinet/{receptor,emitter} */
 	/*MT_Id pid;*/
 } *Basket, BasketRec;
 
 sql5_export BasketRec *baskets;   /* the global timetrails catalog */
-sql5_export int bsktTop, bsktLimit;
 
 sql5_export int BSKTlocate(str sch, str tbl);
 sql5_export void BSKTclean(int idx);
@@ -66,16 +63,15 @@ sql5_export str BSKTlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 sql5_export str BSKTunlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 sql5_export str BSKTstatus( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-
 sql5_export str BSKTdrop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str BSKTerror(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 sql5_export str BSKTappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str BSKTupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str BSKTdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str BSKTlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str BSKTunlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 sql5_export str BSKTdump(void *ret);
 sql5_export void BSKTshutdown(void);
 sql5_export str BSKTprelude(void *ret);
+
 #endif

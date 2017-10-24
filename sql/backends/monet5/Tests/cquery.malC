@@ -2,8 +2,8 @@
 
 cquery.dump();
 
-cquery.show("unknown","query");
+cquery.show("noalias");
 
-(tick:bat[:timestamp],mod:bat[:str],fcn:bat[:str],alias:bat[:str],time:bat[:lng],error:bat[:str]) := cquery.log();
+(tick:bat[:timestamp],alias:bat[:str],time:bat[:lng],error:bat[:str]) := cquery.log();
 
-io.print(tick,mod,fcn,time,error);
+io.print(tick,alias,time,error);

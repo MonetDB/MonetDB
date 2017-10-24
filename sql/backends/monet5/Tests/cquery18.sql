@@ -23,7 +23,7 @@ start continuous procedure cq_query18(1) with heartbeat 1000 cycles 2; --error
 
 pause continuous cq_query18; --error
 
-select "schema", "function", errors from cquery.status();
+select alias, errors from cquery.status();
 
 resume continuous cq_query18; --ok
 
@@ -35,7 +35,7 @@ call cquery.wait(3000);
 
 select aaa from testing18;
 
-select "schema", "function", "errors" from cquery.status();
+select alias, "errors" from cquery.status();
 
 drop procedure cq_query18;
 drop table testing18;

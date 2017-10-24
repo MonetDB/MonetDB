@@ -36,7 +36,7 @@
 #define _DEBUG_BASKET_ if(0)
 
 BasketRec *baskets;   /* the global timetrails catalog */
-int bsktTop = 0, bsktLimit = 0;
+static int bsktTop = 0, bsktLimit = 0;
 
 // locate the basket in the basket catalog
 int
@@ -148,6 +148,7 @@ BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl, int* res)
 	baskets[idx].table = t;
 	baskets[idx].window = t->stream->window;
 	baskets[idx].stride = t->stream->stride;
+	baskets[idx].error = MAL_SUCCEED;
 	(void) MTIMEcurrent_timestamp(&baskets[idx].seen);
 
 	// Check the column types first
@@ -705,6 +706,27 @@ BSKTreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	MT_lock_unset(&baskets[idx].lock);
+	return MAL_SUCCEED;
+}
+
+str
+BSKTerror(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	str sname = *getArgReference_str(stk, pci, 1);
+	str tname = *getArgReference_str(stk, pci, 2);
+	str error = *getArgReference_str(stk, pci, 3);
+	int idx;
+
+	(void) cntxt;
+	(void) mb;
+
+	idx = BSKTlocate(sname,tname);
+	if( idx <= 0)
+		throw(SQL,"basket.error",SQLSTATE(3F000) "Stream table %s.%s not registered\n",sname,tname);
+
+	baskets[idx].error = GDKstrdup(error);
+	if(baskets[idx].error == NULL)
+		throw(SQL,"basket.error",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 

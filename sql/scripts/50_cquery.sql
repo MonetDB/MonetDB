@@ -28,17 +28,17 @@ create procedure cquery.wait(ms bigint)
 -- Limit the number of iterations of a CQ
 create procedure cquery."cycles"(cqcycles integer)
 	external name cquery."cycles";
-create procedure cquery."cycles"("schema" string, cqname string, cqcycles integer)
+create procedure cquery."cycles"(alias string, cqcycles integer)
 	external name cquery."cycles";
 
 -- set the cquery initialization time
-create procedure cquery."beginat"("schema" string, cqname string, unixtime bigint)
+create procedure cquery."beginat"(alias string, unixtime bigint)
 	external name cquery."beginat";
 create procedure cquery."beginat"(unixtime bigint)
 	external name cquery."beginat";
 
 -- set the scheduler heartbeat 
-create procedure cquery."heartbeat"("schema" string, cqname string, msec bigint)
+create procedure cquery."heartbeat"(alias string, msec bigint)
 	external name cquery."heartbeat";
 create procedure cquery."heartbeat"(msec bigint)
 	external name cquery."heartbeat";
@@ -56,24 +56,24 @@ create procedure cquery."window"("schema" string, "table" string, elem integer, 
 -- continuous query status analysis
 
 create function cquery.log()
- returns table(tick timestamp, "schema" string, "function" string, alias string, "time" bigint, "errors" string)
+ returns table(tick timestamp, alias string, "time" bigint, "errors" string)
  external name cquery.log;
 
 create function cquery.summary()
- returns table( "schema" string, "function" string, runs int, totaltime bigint)
+ returns table( alias string, runs int, totaltime bigint)
 begin
- return select "schema","function", count(*), sum("time") from cquery.log() group by "schema","function";
+ return select alias, count(*), sum("time") from cquery.log() group by alias;
 end;
 
 create function cquery.status()
- returns table(tick timestamp, "schema" string, "function" string, alias string, state string, "errors" string)
+ returns table(tick timestamp, alias string, state string, "errors" string)
  external name cquery.status;
 
 create function cquery.streams()
- returns table(tick timestamp, "schema" string, "function" string, winsize integer, "stride" integer, events integer, "cycles" integer, "errors" string)
+ returns table(tick timestamp, "schema" string, "table" string, winsize integer, "stride" integer, events integer, "cycles" integer, "errors" string)
  external name basket.status;
 
-create function cquery.show("schema" string, qryname string)
+create function cquery.show(alias string)
 returns string
 external name cquery.show;
 
