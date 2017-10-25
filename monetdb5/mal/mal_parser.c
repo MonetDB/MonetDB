@@ -1111,8 +1111,11 @@ fcnHeader(Client cntxt, int kind)
 	assert(!cntxt->backup);
 	cntxt->backup = cntxt->curprg;
 	cntxt->curprg = newFunction( modnme, fnme, kind);
-	cntxt->curprg->def->errors = cntxt->backup->def->errors;
-	cntxt->backup->def->errors = 0;
+	if(cntxt->curprg == NULL) {
+		parseError(cntxt, MAL_MALLOC_FAIL);
+		cntxt->curprg = cntxt->backup;
+		return 0;
+	}
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
 	curInstr = getInstrPtr(curBlk, 0);
@@ -1363,6 +1366,10 @@ parseFunction(Client cntxt, int kind)
 			return 0;
 		}
 		nme = idCopy(cntxt, i);
+		if (nme == NULL) {
+			parseError(cntxt, MAL_MALLOC_FAIL);
+			return 0;
+		}
 		curInstr->fcn = getAddress(nme);
 		GDKfree(nme);
 		if (curInstr->fcn == NULL) {
@@ -1515,7 +1522,11 @@ parseAssign(Client cntxt, int cntrl)
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
 	curInstr = newInstruction(curBlk, NULL, NULL);
-	
+	if((curInstr = newInstruction(curBlk, NULL, NULL)) == NULL) {
+		parseError(cntxt, MAL_MALLOC_FAIL);
+		return;
+	}
+
 	if( cntrl){
 		curInstr->token = ASSIGNsymbol;
 		curInstr->barrier = cntrl;
@@ -1758,12 +1769,19 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 				*e = 0;
 			if (! skipcomments && e > start && curBlk->stop > 0 ) {
 				ValRecord cst;
-				curInstr = newInstruction(curBlk, NULL, NULL);
+				if((curInstr = newInstruction(curBlk, NULL, NULL)) == NULL) {
+					parseError(cntxt, MAL_MALLOC_FAIL);
+					continue;
+				}
 				curInstr->token= REMsymbol;
 				curInstr->barrier= 0;
 				cst.vtype = TYPE_str;
-				cst.len = strlen(start);
-				cst.val.sval = GDKstrdup(start);
+				cst.len = (int) strlen(start);
+				if((cst.val.sval = GDKstrdup(start)) == NULL) {
+					parseError(cntxt, MAL_MALLOC_FAIL);
+					freeInstruction(curInstr);
+					continue;
+				}
 				getArg(curInstr, 0) = defConstant(curBlk, TYPE_str, &cst);
 				clrVarConstant(curBlk, getArg(curInstr, 0));
 				setVarDisabled(curBlk, getArg(curInstr, 0));

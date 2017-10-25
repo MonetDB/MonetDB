@@ -3951,7 +3951,7 @@ window_frame_end:
   ;
 
 window_frame_following:
-	value_exp PRECEDING	{ $$ = $1; }
+	value_exp FOLLOWING	{ $$ = $1; }
   ;
 
 window_frame_exclusion:

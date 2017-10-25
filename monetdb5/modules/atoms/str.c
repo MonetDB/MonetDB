@@ -3655,6 +3655,7 @@ STRLtrim2(str *res, const str *arg1, const str *arg2)
 			throw(MAL, "str.trim", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		len = strlen(s);
 		n = lstrip(s, len, chars, nchars);
+		GDKfree(chars);
 		*res = GDKstrndup(s + n, len - n);
 	}
 	if (*res == NULL)
@@ -3681,6 +3682,7 @@ STRRtrim2(str *res, const str *arg1, const str *arg2)
 			throw(MAL, "str.trim", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		len = strlen(s);
 		n = rstrip(s, len, chars, nchars);
+		GDKfree(chars);
 		*res = GDKstrndup(s, n);
 	}
 	if (*res == NULL)
