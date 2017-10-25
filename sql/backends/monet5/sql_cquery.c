@@ -84,9 +84,13 @@ CQfree(int idx)
 {
 	int i, j, k, found;
 	str sch, tbl;
+	InstrPtr p;
 
-	if( pnet[idx].mb)
+	if( pnet[idx].mb) {
+		p = getInstrPtr(pnet[idx].mb, 0);
+		GDKfree(p->fcnname); //Free the CQ id
 		freeMalBlk(pnet[idx].mb);
+	}
 	if( pnet[idx].stk)
 		freeStack(pnet[idx].stk);
 	if(pnet[idx].error)
@@ -360,6 +364,8 @@ CQanalysis(Client cntxt, MalBlkPtr mb, int idx)
 
 #define FREE_CQ_MB(X)                                                             \
 	msg = createException(SQL,"cquery.register",SQLSTATE(HY001) MAL_MALLOC_FAIL); \
+	if(cq_id)                                                                     \
+		GDKfree(cq_id);                                                           \
 	if(mb)                                                                        \
 		freeMalBlk(mb);                                                           \
 	if(ralias)                                                                    \
@@ -380,7 +386,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 	MalBlkPtr mb = NULL, prev;
 	const char* err_message = (which & mod_continuous_function) ? "function" : "procedure";
 	char* cq_id = NULL;
-	int i, idx, varid, cid;
+	int i, idx, varid, cid, freeMB = 0;
 	char buffer[IDLENGTH];
 	backend* be = (backend*) cntxt->sqlcontext;
 	mvc *m = be->mvc;
@@ -413,6 +419,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		if((be->mb = newMalBlk(8)) == NULL) {
 			FREE_CQ_MB(finish)
 		}
+		freeMB = 1;
 	}
 
 	rschema = (!sname || strcmp(sname, str_nil) == 0) ? m->session->schema_name : sname;
@@ -451,11 +458,9 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		FREE_CQ_MB(finish)
 	}
 	if((mb = newMalBlk(8)) == NULL) { //create MalBlk and initialize it
-		GDKfree(cq_id);
 		FREE_CQ_MB(finish)
 	}
 	if((p = newInstruction(NULL, "user", cq_id)) == NULL) {
-		GDKfree(cq_id);
 		FREE_CQ_MB(finish)
 	}
 	p->token = FUNCTIONsymbol;
@@ -494,6 +499,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		if (VARconvert(&dst, val, 0) != GDK_SUCCEED) {
 			msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Error while making a SQL type conversion\n");
 			GDKfree(ralias);
+			GDKfree(cq_id);
 			freeMalBlk(mb);
 			goto finish;
 		}
@@ -501,8 +507,11 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		*val = dst;
 		/* make sure we return the correct type (not the storage type) */
 		val->vtype = tpe.type->localtype;
-		if((p = pushValue(mb, p, val)) == NULL) {
-			FREE_CQ_MB(finish)
+		p = pushValue(mb, p, val);
+		if(val->vtype == TYPE_str) //if the input variable is of type str we must free it
+			GDKfree(val->val.sval);
+		if(p == NULL) {
+			FREE_CQ_MB(finish);
 		}
 	}
 	if((q = newStmt(mb, sqlRef, commitRef)) == NULL) {
@@ -516,6 +525,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 	if(mb->errors) {
 		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "%s", mb->errors);
 		GDKfree(ralias);
+		GDKfree(cq_id);
 		freeMalBlk(mb);
 		goto finish;
 	}
@@ -531,6 +541,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 	if ((sym = findSymbol(cntxt->usermodule, "user", fname)) == NULL){ // access the actual procedure body
 		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Cannot find %s user.%s\n", err_message, fname);
 		GDKfree(ralias);
+		GDKfree(cq_id);
 		freeMalBlk(mb);
 		goto finish;
 	}
@@ -562,11 +573,13 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "The continuous %s %s is already registered.\n",
 				err_message, ralias);
 		GDKfree(ralias);
+		GDKfree(cq_id);
 		freeMalBlk(mb);
 		goto unlock;
 	}
 	if((msg = CQanalysis(cntxt, sym->def, pnettop)) != MAL_SUCCEED) {
 		GDKfree(ralias);
+		GDKfree(cq_id);
 		freeMalBlk(mb);
 		goto unlock;
 	}
@@ -576,6 +589,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 				msg = createException(SQL, "cquery.register",
 									  SQLSTATE(42000) "Heartbeat ignored, a window constraint exists\n");
 				GDKfree(ralias);
+				GDKfree(cq_id);
 				freeMalBlk(mb);
 				goto unlock;
 			}
@@ -609,6 +623,8 @@ unlock:
 		MT_lock_unset(&ttrLock);
 	}
 finish:
+	if(freeMB)
+		freeMalBlk(be->mb);
 	be->mb = prev;
 	return msg;
 }
