@@ -1558,7 +1558,6 @@ parseAssign(Client cntxt, int cntrl)
 
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
-	curInstr = newInstruction(curBlk, NULL, NULL);
 	if((curInstr = newInstruction(curBlk, NULL, NULL)) == NULL) {
 		parseError(cntxt, MAL_MALLOC_FAIL);
 		return;
