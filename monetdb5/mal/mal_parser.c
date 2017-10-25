@@ -1116,6 +1116,8 @@ fcnHeader(Client cntxt, int kind)
 		cntxt->curprg = cntxt->backup;
 		return 0;
 	}
+	cntxt->curprg->def->errors = cntxt->backup->def->errors;
+	cntxt->backup->def->errors = 0;
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
 	curInstr = getInstrPtr(curBlk, 0);
