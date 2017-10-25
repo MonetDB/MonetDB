@@ -540,27 +540,20 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, ch
 	int old_mv = be->mvc_var;
 	MalBlkPtr old_mb = be->mb;
 	stmt *s;
-	char *t, *tt;
-       
+
 	// Always keep the SQL query around for monitoring
 
 	if (query) {
-		tt = t = GDKstrdup(query);
-		if(t == NULL) {
-			return -1;
-		}
-		while (t && isspace((int) *t))
-			t++;
+		while (*query && isspace((unsigned char) *query))
+			query++;
 
 		querylog = q = newStmt(mb, querylogRef, defineRef);
 		if (q == NULL) {
-			GDKfree(tt);
 			return -1;
 		}
 		setVarType(mb, getArg(q, 0), TYPE_void);
 		setVarUDFtype(mb, getArg(q, 0));
-		q = pushStr(mb, q, t);
-		GDKfree(tt);
+		q = pushStr(mb, q, query);
 		q = pushStr(mb, q, getSQLoptimizer(be->mvc));
 		if (q == NULL) {
 			return -1;
