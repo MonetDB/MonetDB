@@ -945,8 +945,11 @@ parseAtom(Client cntxt)
 		tpe = parseTypeId(cntxt, TYPE_int);
 	if( ATOMindex(modnme) >= 0)
 		parseError(cntxt, "Atom redefinition\n");
-	else
-		cntxt->curprg->def->errors = malAtomDefinition(modnme, tpe) ;
+	else {
+		if(cntxt->curprg->def->errors)
+			GDKfree(cntxt->curprg->def->errors);
+		cntxt->curprg->def->errors = malAtomDefinition(modnme, tpe);
+	}
 	if( strcmp(modnme,"user"))
 		cntxt->curmodule = fixModule(modnme);
 	else cntxt->curmodule = cntxt->usermodule;
@@ -1116,6 +1119,8 @@ fcnHeader(Client cntxt, int kind)
 		cntxt->curprg = cntxt->backup;
 		return 0;
 	}
+	cntxt->curprg->def->errors = cntxt->backup->def->errors;
+	cntxt->backup->def->errors = 0;
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
 	curInstr = getInstrPtr(curBlk, 0);
@@ -1285,6 +1290,8 @@ parseCommandPattern(Client cntxt, int kind)
 		else
 			insertSymbol(getModule(modnme), curPrg);
 		chkProgram(cntxt->usermodule, curBlk);
+		if(cntxt->curprg->def->errors)
+			GDKfree(cntxt->curprg->def->errors);
 		cntxt->curprg->def->errors = cntxt->backup->def->errors;
 		cntxt->backup->def->errors = 0;
 		cntxt->curprg = cntxt->backup;
@@ -1521,7 +1528,6 @@ parseAssign(Client cntxt, int cntrl)
 
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
-	curInstr = newInstruction(curBlk, NULL, NULL);
 	if((curInstr = newInstruction(curBlk, NULL, NULL)) == NULL) {
 		parseError(cntxt, MAL_MALLOC_FAIL);
 		return;
