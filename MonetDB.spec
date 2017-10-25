@@ -970,7 +970,7 @@ fi
 	--enable-monetdb5=yes \
 	--enable-netcdf=no \
 	--enable-odbc=yes \
-	--enable-optimize=yes \
+	--enable-optimize=no \
 	--enable-profile=no \
 	--enable-pyintegration=%{?with_pyintegration:yes}%{!?with_pyintegration:no} \
 	--enable-rintegration=%{?with_rintegration:yes}%{!?with_rintegration:no} \
@@ -1041,6 +1041,44 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Mon Oct 23 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.9-20171023
+- Rebuilt.
+- BZ#6207: identifier ambiguous when grouping and selecting the same
+  column twice
+- BZ#6335: Sqlitelogictest crash in complex SQL query
+- BZ#6405: Compilation error if DISABLE_PARENT_HASH not defined
+- BZ#6412: Overflow in sys.epoch
+- BZ#6413: Wrong answer for TPC-H Q17
+- BZ#6414: Using RPAD returns: could not allocate space
+- BZ#6416: Sqlitelogictest crash in aggregation query with a NOT IN clause
+- BZ#6417: Segfault encountered (sqlsmith)
+- BZ#6418: Segfault in renaming (sqlsmith)
+- BZ#6419: segfault in rel_optimizer (sqlsmith)
+- BZ#6420: Assertion error in mergetable task (sqlsmith)
+- BZ#6422: Another assertion error in rel_or (sqlsmith)
+- BZ#6423: Dereference null pointer (sqlsmith)
+- BZ#6424: Assertion error in rel_rename_expr (sqlsmith)
+- BZ#6425: Assertion error in exp_bin (sqlsmith)
+- BZ#6426: Assertion error in rel_find_exp_ (sqlsmith)
+- BZ#6427: Assertion error in eq_typeswitchloop (sqlsmith)
+- BZ#6428: Sqlitelogictest crash in aggregation query
+- BZ#6430: Assertion raised in another eq_typeswitch error (sqlsmith)
+- BZ#6431: Sqlitelogictest crash in aggregation query with a long
+  having clause
+- BZ#6432: Assertion error in exp_bin (sqlsmith)
+- BZ#6433: Sqlitelogictest crash in complex SELECT query with IN operator
+- BZ#6435: Sqlitelogictest crash in simple select query
+- BZ#6437: System schemas "profiler" and "json" shouldn't be allowed to
+  be dropped.
+- BZ#6438: Implement functionality to enforce the restrict option in:
+  DROP SCHEMA xyz RESTRICT;
+- BZ#6440: Faulty plan generated. Query returns more rows than expected
+  or existing in the view sys.tables.
+
+* Mon Oct 23 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.9-20171023
+- gdk: A serious bug, possibly resulting in database corruption, having to
+  do with appending data to a string BAT was fixed.
+
 * Wed Oct 11 2017 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.27.7-20171011
 - Rebuilt.
 - BZ#4017: server crashes when executing particular loopback query in

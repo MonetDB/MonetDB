@@ -1051,7 +1051,7 @@ rel_column_ref(mvc *sql, sql_rel **rel, symbol *column_r, int f)
 
 		/* some views are just in the stack,
 		   like before and after updates views */
-		if (!exp && sql->use_views) {
+		if (rel && !exp && sql->use_views) {
 			sql_rel *v = stack_find_rel_view(sql, tname);
 
 			if (v) {
@@ -2693,7 +2693,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				rel = rel_crossproduct(sql->sa, left, right, op_join);
 				rel->exps = jexps;
 			}
-			if (correlated || l_is_value) {
+			if (sc->token == SQL_IN || correlated || l_is_value) {
 				rel->op = (sc->token == SQL_IN)?op_semi:op_anti;
 			} else if (sc->token == SQL_NOT_IN) {
 				rel->op = op_anti;

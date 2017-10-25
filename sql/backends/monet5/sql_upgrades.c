@@ -235,7 +235,7 @@ sql_update_hugeint(Client c, mvc *sql)
 			"    external name \"aggr\".\"median\";\n"
 			"create aggregate quantile(val HUGEINT, q DOUBLE) returns HUGEINT\n"
 			"    external name \"aggr\".\"quantile\";\n"
-			"create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns HUGEINT\n"
+			"create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n"
 			"    external name \"aggr\".\"corr\";\n");
 
 	/* 40_json_hge.sql */

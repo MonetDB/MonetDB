@@ -1314,6 +1314,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 		}
 		bids = logbat_new(TYPE_int, BATcount(tids), PERSISTENT);
 		nmes = logbat_new(TYPE_str, BATcount(tids), PERSISTENT);
+
 		if (bids == NULL || nmes == NULL) {
 			logbat_destroy(tids);
 			logbat_destroy(bids);
@@ -1321,6 +1322,7 @@ bm_subcommit(logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT *ca
 			GDKfree(n);
 			return GDK_FAIL;
 		}
+
 		if (BATappend(bids, catalog_bid, tids, TRUE) != GDK_SUCCEED ||
 		    BATappend(nmes, catalog_nme, tids, TRUE) != GDK_SUCCEED) {
 			logbat_destroy(tids);

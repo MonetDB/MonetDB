@@ -174,8 +174,12 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, int force)
 				}
 				memcpy(b->tvheap->base + toff, n->tvheap->base, n->tvheap->free);
 				b->tvheap->free = toff + n->tvheap->free;
-				/* flush double-elimination hash table */
-				memset(b->tvheap->base, 0, GDK_STRHASHSIZE);
+				if (toff > 0) {
+					/* flush double-elimination
+					 * hash table */
+					memset(b->tvheap->base, 0,
+					       GDK_STRHASHSIZE);
+				}
 			}
 		}
 		if (toff != ~(size_t) 0) {
@@ -195,38 +199,10 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, int force)
 					goto bunins_failed;
 				}
 			}
-			switch (b->twidth) {
-			case 1:
-				b->ttype = TYPE_bte;
-				tp = &tbv;
-				break;
-			case 2:
-				b->ttype = TYPE_sht;
-				tp = &tsv;
-				break;
-#if SIZEOF_VAR_T == 8
-			case 4:
-				b->ttype = TYPE_int;
-				tp = &tiv;
-				break;
-			case 8:
-				b->ttype = TYPE_lng;
-				tp = &v;
-				break;
-#else
-			case 4:
-				b->ttype = TYPE_int;
-				tp = &v;
-				break;
-#endif
-			default:
-				assert(0);
-			}
-			b->tvarsized = 0;
 		}
 	} else if (unshare_string_heap(b) != GDK_SUCCEED)
 		return GDK_FAIL;
-	if (toff == 0 && n->twidth == b->twidth) {
+	if (toff == 0 && n->twidth == b->twidth && cand == NULL) {
 		/* we don't need to do any translation of offset
 		 * values, so we can use fast memcpy */
 		memcpy(Tloc(b, BUNlast(b)), Tloc(n, start),
@@ -250,6 +226,34 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, int force)
 #endif
 		const var_t *restrict tvp = (const var_t *) Tloc(n, 0);
 
+		switch (b->twidth) {
+		case 1:
+			b->ttype = TYPE_bte;
+			tp = &tbv;
+			break;
+		case 2:
+			b->ttype = TYPE_sht;
+			tp = &tsv;
+			break;
+#if SIZEOF_VAR_T == 8
+		case 4:
+			b->ttype = TYPE_int;
+			tp = &tiv;
+			break;
+		case 8:
+			b->ttype = TYPE_lng;
+			tp = &v;
+			break;
+#else
+		case 4:
+			b->ttype = TYPE_int;
+			tp = &v;
+			break;
+#endif
+		default:
+			assert(0);
+		}
+		b->tvarsized = 0;
 		for (;;) {
 			if (cand) {
 				if (cand == candend)
@@ -299,6 +303,8 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, int force)
 			}
 			bunfastapp(b, tp);
 		}
+		b->tvarsized = 1;
+		b->ttype = TYPE_str;
 	} else if (b->tvheap->free < n->tvheap->free / 2 ||
 		   GDK_ELIMDOUBLES(b->tvheap)) {
 		/* if b's string heap is much smaller than n's string
@@ -394,8 +400,6 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, int force)
 			r++;
 		}
 	}
-	b->tvarsized = 1;
-	b->ttype = TYPE_str;
 	return GDK_SUCCEED;
       bunins_failed:
 	b->tvarsized = 1;
@@ -531,24 +535,27 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 
 	r = BUNlast(b);
 
-	if (BATcount(b) == 0 && cand == NULL) {
+	if (BATcount(b) == 0) {
 		BATiter ni = bat_iterator(n);
 
 		b->tsorted = n->tsorted;
-		b->tnosorted = start <= n->tnosorted && n->tnosorted < end ? n->tnosorted - start : 0;
 		b->trevsorted = n->trevsorted;
-		b->tnorevsorted = start <= n->tnorevsorted && n->tnorevsorted < end ? n->tnorevsorted - start : 0;
 		b->tdense = n->tdense && cand == NULL;
-		b->tnodense = start <= n->tnodense && n->tnodense < end ? n->tnodense - start : 0;
 		b->tnonil = n->tnonil;
 		b->tnil = n->tnil && cnt == BATcount(n);
 		b->tseqbase = oid_nil;
 		if (cand == NULL) {
+			b->tnosorted = start <= n->tnosorted && n->tnosorted < end ? n->tnosorted - start : 0;
+			b->tnorevsorted = start <= n->tnorevsorted && n->tnorevsorted < end ? n->tnorevsorted - start : 0;
+			b->tnodense = start <= n->tnodense && n->tnodense < end ? n->tnodense - start : 0;
 			if (n->tdense && n->ttype == TYPE_oid)
 				b->tseqbase = *(oid *) BUNtail(ni, start);
 			else if (n->ttype == TYPE_void &&
 				 n->tseqbase != oid_nil)
 				b->tseqbase = n->tseqbase + start;
+		} else {
+			b->tnosorted = 0;
+			b->tnorevsorted = 0;
 		}
 		/* if tunique, uniqueness is guaranteed above */
 		b->tkey = n->tkey | b->tunique;
@@ -559,7 +566,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 			b->tnokey[0] = b->tnokey[1] = 0;
 		}
 	} else {
-		BUN last = BUNlast(b) - 1;
+		BUN last = r - 1;
 		BATiter ni = bat_iterator(n);
 		BATiter bi = bat_iterator(b);
 		int xx = ATOMcmp(b->ttype, BUNtail(ni, start), BUNtail(bi, last));
