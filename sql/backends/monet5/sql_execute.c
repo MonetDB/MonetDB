@@ -349,6 +349,8 @@ SQLrun(Client c, backend *be, mvc *m)
 	if (mb->errors){
 		// freeMalBlk(mb);
 		// mal block might be so broken free causes segfault
+		msg = mb->errors;
+		mb->errors = 0;
 		return msg;
 	}
 
