@@ -98,3 +98,5 @@ sqlsmith.Bug-6432
 sqlitelogictest-select-in.Bug-6433
 sqlitelogictest-select-not-in.Bug-6435
 sqlitelogictest-cast-decimal.Bug-6445
+HAVE_LIBPY?table_returning_with.Bug-6444
+insert_into_multiple_subqueries.Bug-6448

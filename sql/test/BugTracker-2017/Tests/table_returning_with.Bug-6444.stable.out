@@ -1,0 +1,86 @@
+stdout of test 'table_returning_with.Bug-6444` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 11:38:03 >  
+# 11:38:03 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34277" "--set" "mapi_usock=/var/tmp/mtest-1506/.s.monetdb.34277" "--set" "monet_prompt=" "--forcemito" "--dbpath=/Users/rkoopmanschap/projects/monetdb/MonetDB/install/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 11:38:03 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-apple-darwin16.1.0/64bit with 128bit integers
+# Found 16.000 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-41.eduroam.cwi.nl:34277/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-1506/.s.monetdb.34277
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 11:38:03 >  
+# 11:38:03 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1506" "--port=34277"
+# 11:38:03 >  
+
+#CREATE TABLE test_table(x STRING, y STRING, z STRING);
+#INSERT INTO test_table VALUES ('test value 1', 'test value 2', 'test value 3');
+[ 1	]
+#CREATE FUNCTION test_function(x STRING, y STRING, z STRING) RETURNS TABLE(a STRING, b STRING, c FLOAT) LANGUAGE PYTHON {
+#    result = dict()
+#    result['a'] = ['test value a']
+#    result['b'] = ['test value b']
+#    result['c'] = [3]
+#
+#    return result
+#};
+[ 1	]
+#CREATE TABLE results_table AS (
+#    WITH test_table_tmp AS (
+#        SELECT * FROM test_table
+#    )
+#    SELECT * FROM test_function(test_table_tmp.x, test_table_tmp.y, test_table_tmp.z)
+#);
+[ 1 ]
+#SELECT * FROM results_table;
+[ test value 1, test value 2, test value 3 ]
+# 11:38:04 >  
+# 11:38:04 >  "Done."
+# 11:38:04 >   
