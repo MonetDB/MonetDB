@@ -2178,6 +2178,8 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	}	
 	case e_atom:
 	case e_psm:
+		if (e->type == e_atom && e->f) /* value list */
+			return NULL;
 		return e;
 	}
 	return NULL;
@@ -3002,7 +3004,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				} else if (exp_subtype(le)->type->eclass == EC_FLT) {
 					a = atom_float(sql->sa, exp_subtype(le), 0);
 				} else {
-					return 0;
+					return e;
 				}
 				ne = exp_atom(sql->sa, a);
 				(*changes)++;
