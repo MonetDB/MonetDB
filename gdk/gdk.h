@@ -1791,7 +1791,7 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * value. `val' is a direct pointer to the atom value. Its return
  * value should be an hash_t between 0 and 'mask'.
  *
- * @item The @emph{ATOMcmp()} operation computes two atomic
+ * @item The @emph{ATOMcmp()} operation compares two atomic
  * values. Its parameters are pointers to atomic values.
  *
  * @item The @emph{ATOMlen()} operation computes the byte length for a
@@ -1892,7 +1892,6 @@ gdk_export int ATOMindex(const char *nme);
 gdk_export str ATOMname(int id);
 gdk_export size_t ATOMlen(int id, const void *v);
 gdk_export ptr ATOMnil(int id);
-gdk_export int ATOMcmp(int id, const void *v_1, const void *v_2);
 gdk_export int ATOMprint(int id, const void *val, stream *fd);
 gdk_export char *ATOMformat(int id, const void *val);
 

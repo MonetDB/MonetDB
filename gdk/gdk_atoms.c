@@ -282,31 +282,6 @@ ATOMheap(int t, Heap *hp, size_t cap)
 	return GDK_SUCCEED;
 }
 
-int
-ATOMcmp(int t, const void *l, const void *r)
-{
-	switch (ATOMbasetype(t)) {
-	case TYPE_bte:
-		return simple_CMP(l, r, bte);
-	case TYPE_sht:
-		return simple_CMP(l, r, sht);
-	case TYPE_int:
-		return simple_CMP(l, r, int);
-	case TYPE_flt:
-		return simple_CMP(l, r, flt);
-	case TYPE_lng:
-		return simple_CMP(l, r, lng);
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		return simple_CMP(l, r, hge);
-#endif
-	case TYPE_dbl:
-		return simple_CMP(l, r, dbl);
-	default:
-		return (l == r) ? 0 : atom_CMP(l, r, t);
-	}
-}
-
 /*
  * Atom print avoids coercion to strings for built-in types.
  * The comparison against the NULL value is hard coded for speed.

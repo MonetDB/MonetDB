@@ -18,22 +18,8 @@
  * code in one CPP macro we use the following #defines for comparing
  * atoms:
  */
-#define simple_CMP(x,y,tpe)	(simple_GT(x,y,tpe) - simple_LT(x,y,tpe))
+#define simple_CMP(x,y,tpe)	(((*(const tpe*) (x))  > (*(const tpe*) (y))) - ((*(const tpe*) (x))  < (*(const tpe*) (y))))
 #define simple_EQ(x,y,tpe)	((*(const tpe*) (x)) == (*(const tpe*) (y)))
-#define simple_NE(x,y,tpe,nl)	((*(const tpe*)(y)) != nl && (*(const tpe*) (x)) != (*(const tpe*) (y)))
-#define simple_LT(x,y,tpe)	((*(const tpe*) (x))  < (*(const tpe*) (y)))
-#define simple_GT(x,y,tpe)	((*(const tpe*) (x))  > (*(const tpe*) (y)))
-#define simple_LE(x,y,tpe)	((*(const tpe*) (x)) <= (*(const tpe*) (y)))
-#define simple_GE(x,y,tpe)	((*(const tpe*) (x)) >= (*(const tpe*) (y)))
-#define atom_CMP(x,y,id)	(*ATOMcompare(id))(x,y)
-#define atom_EQ(x,y,id)		((*ATOMcompare(id))(x,y) == 0)
-#define atom_NE(x,y,id,nl)	((*ATOMcompare(id))(y,ATOMnilptr(id)) != 0 && (*ATOMcompare(id))(x,y) != 0)
-#define atom_LT(x,y,id)		((*ATOMcompare(id))(x,y) < 0)
-#define atom_GT(x,y,id)		((*ATOMcompare(id))(x,y) > 0)
-#define atom_LE(x,y,id)		((*ATOMcompare(id))(x,y) <= 0)
-#define atom_GE(x,y,id)		((*ATOMcompare(id))(x,y) >= 0)
-#define simple_HASH(v,tpe,dst)	((dst) *(const tpe *) (v))
-#define atom_HASH(v,id,dst)	((dst) ATOMhash(id, v))
 
 /*
  * @- maximum atomic string lengths
@@ -188,6 +174,7 @@ gdk_export const ptr ptr_nil;
 #define ATOMfromstr(t,s,l,src)	BATatoms[t].atomFromStr(src,l,s)
 #define ATOMnilptr(t)		BATatoms[t].atomNull
 #define ATOMcompare(t)		BATatoms[t].atomCmp
+#define ATOMcmp(t,l,r)		((*ATOMcompare(t))(l, r))
 #define ATOMhash(t,src)		BATatoms[t].atomHash(src)
 #define ATOMdel(t,hp,src)	do if (BATatoms[t].atomDel) BATatoms[t].atomDel(hp,src); while (0)
 #define ATOMvarsized(t)		(BATatoms[t].atomPut != NULL)
