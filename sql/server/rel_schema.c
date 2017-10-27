@@ -188,8 +188,9 @@ mvc_create_table_as_subquery( mvc *sql, sql_rel *sq, sql_schema *s, const char *
 	sql_table *t;
 	int tt;
 
-	if(temp == SQL_STREAM) {
-		t = mvc_create_stream_table(sql, s, tname, 0, SQL_DECLARED_TABLE, commit_action, -1, window_size, stride);
+	if(temp == SQL_PERSISTED_STREAM || temp == SQL_GLOBAL_TEMP_STREAM) {
+		tt =(temp == SQL_PERSISTED_STREAM)?tt_stream_per:tt_stream_temp;
+		t = mvc_create_stream_table(sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1, window_size, stride);
 	} else {
 		tt =(temp == SQL_REMOTE)?tt_remote:
 			(temp == SQL_MERGE_TABLE)?tt_merge_table:
@@ -914,7 +915,8 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 	int deps = (sql->emode == m_deps);
 	int create = (!instantiate && !deps);
 	int tt = (temp == SQL_REMOTE)?tt_remote:
-		 (temp == SQL_STREAM)?tt_stream:
+	         (temp == SQL_PERSISTED_STREAM)?tt_stream_per:
+	         (temp == SQL_GLOBAL_TEMP_STREAM)?tt_stream_temp:
 	         (temp == SQL_MERGE_TABLE)?tt_merge_table:
 	         (temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
 	int window_size = DEFAULT_TABLE_WINDOW, stride = DEFAULT_TABLE_STRIDE;
@@ -923,12 +925,12 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: no such schema '%s'", sname);
 
-	if (temp != SQL_PERSIST && tt == tt_table && 
+	if (temp != SQL_PERSIST && temp != SQL_PERSISTED_STREAM && (tt == tt_table || tt == tt_stream_temp) &&
 			commit_action == CA_COMMIT)
 		commit_action = CA_DELETE;
 	
 	if (temp != SQL_DECLARED_TABLE) {
-		if (temp != SQL_PERSIST && tt == tt_table) {
+		if (temp != SQL_PERSIST && temp != SQL_PERSISTED_STREAM && (tt == tt_table || tt == tt_stream_temp)) {
 			s = mvc_bind_schema(sql, "tmp");
 			if (temp == SQL_LOCAL_TEMP && sname && strcmp(sname, s->base.name) != 0)
 				return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: local temporary tables should be stored in the '%s' schema", s->base.name);
@@ -937,7 +939,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 		}
 	}
 
-	if(tt == tt_stream) {
+	if(tt == tt_stream_per || tt == tt_stream_temp) {
 		window_size = stream_details->h->data.i_val;
 		stride = stream_details->h->next->data.i_val;
 		if(window_size < 0)
@@ -970,8 +972,8 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 			if (!mapiuri_valid(loc))
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: incorrect uri '%s' for remote table '%s'", loc, name);
 			t = mvc_create_remote(sql, s, name, SQL_DECLARED_TABLE, loc);
-		} else if(tt == tt_stream) {
-			t = mvc_create_stream_table(sql, s, name, 0, SQL_DECLARED_TABLE, commit_action, -1, window_size, stride);
+		} else if(tt == tt_stream_per || tt == tt_stream_temp) {
+			t = mvc_create_stream_table(sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1, window_size, stride);
 		} else {
 			t = mvc_create_table(sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
 		}
@@ -985,7 +987,8 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 			if (res == SQL_ERR) 
 				return NULL;
 		}
-		temp = (tt == tt_table)?temp:SQL_PERSIST;
+		temp = (tt == tt_table || tt == tt_stream_temp)?temp:
+			   (tt == tt_stream_per)?SQL_PERSISTED_STREAM:SQL_PERSIST;
 		return rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
 	} else { /* [col name list] as subquery with or without data */
 		sql_rel *sq = NULL, *res = NULL;
@@ -1010,7 +1013,8 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 		}
 
 		/* insert query result into this table */
-		temp = (tt == tt_table)?temp:SQL_PERSIST;
+		temp = (tt == tt_table || tt == tt_stream_temp)?temp:
+			   (tt == tt_stream_per)?SQL_PERSISTED_STREAM:SQL_PERSIST;
 		res = rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
 		if (with_data) {
 			res = rel_insert(sql, res, sq);
@@ -1326,7 +1330,10 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te)
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
 	sql_schema *s = NULL;
-	sql_table *t = NULL;
+	sql_table *t = NULL, *nt = NULL;
+	node *n;
+	sql_rel *res = NULL, *r;
+	sql_exp ** updates, *e;
 
 	if (sname && !(s=mvc_bind_schema(sql, sname))) {
 		(void) sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", sname);
@@ -1335,123 +1342,122 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te)
 	if (!s)
 		s = cur_schema(sql);
 
-	if ((t = mvc_bind_table(sql, s, tname)) == NULL) {
-		if (mvc_bind_table(sql, mvc_bind_schema(sql, "tmp"), tname) != NULL) 
+	if ((t = mvc_bind_table(sql, s, tname)) == NULL) { //trails -> I added permission to change temporary stream tables
+		s = mvc_bind_schema(sql, "tmp");
+		t = mvc_bind_table(sql, s, tname);
+		if (t != NULL && (!te || (te->token != SQL_STREAM_TABLE_WINDOW && te->token != SQL_STREAM_TABLE_STRIDE))) {
 			return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: not supported on TEMPORARY table '%s'", tname);
-		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", tname, s->base.name);
-	} else {
-		node *n;
-		sql_rel *res = NULL, *r;
-		sql_table *nt = NULL;
-		sql_exp ** updates, *e;
-
-		assert(te);
-		if (t && te && te->token == SQL_DROP_CONSTRAINT) {
-			dlist *l = te->data.lval;
-			char *kname = l->h->data.sval;
-			int drop_action = l->h->next->data.i_val;
-			
-			sname = get_schema_name(sql, sname, tname);
-			return rel_schema(sql->sa, DDL_DROP_CONSTRAINT, sname, kname, drop_action);
+		} else if (!t) {
+			return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", tname, sname);
 		}
-
-		if (t->persistence != SQL_DECLARED_TABLE)
-			sname = s->base.name;
-
-		if (t && te && (te->token == SQL_STREAM_TABLE_WINDOW || te->token == SQL_STREAM_TABLE_STRIDE)) {
-			int operation = CHANGE_WINDOW, new_value = te->data.i_val, minimum = 0;
-			char* opname = NULL;
-
-			if(!isStream(t))
-				return sql_error(sql, 02, SQLSTATE(42S02) "ALTER STREAM TABLE: table '%s' is not a stream table", tname);
-			switch (te->token) {
-				case SQL_STREAM_TABLE_WINDOW:
-					operation = CHANGE_WINDOW;
-					opname = "window";
-					minimum = 0;
-					break;
-				case SQL_STREAM_TABLE_STRIDE:
-					operation = CHANGE_STRIDE;
-					opname = "stride";
-					minimum = -1;
-					break;
-				default:
-					assert(0);
-			}
-			if(new_value < minimum)
-				return sql_error(sql, 02, SQLSTATE(42S02) "ALTER STREAM TABLE: %s size must be non negative", opname);
-			return rel_alter_stream_table(sql->sa, sname, tname, operation, new_value);
-		}
-
-		if (te && (te->token == SQL_TABLE || te->token == SQL_DROP_TABLE)) {
-			char *ntname = te->data.lval->h->data.sval;
-
-			/* TODO partition sname */
-			if (te->token == SQL_TABLE) {
-				return rel_alter_table(sql->sa, DDL_ALTER_TABLE_ADD_TABLE, sname, tname, sname, ntname, 0);
-			} else {
-				int drop_action = te->data.lval->h->next->data.i_val;
-
-				return rel_alter_table(sql->sa, DDL_ALTER_TABLE_DEL_TABLE, sname, tname, sname, ntname, drop_action);
-			}
-		}
-
-		/* read only or read write */
-		if (te && te->token == SQL_ALTER_TABLE) {
-			int state = te->data.i_val;
-
-			if (state == tr_readonly) 
-				state = TABLE_READONLY;
-			else if (state == tr_append) 
-				state = TABLE_APPENDONLY;
-			else
-				state = TABLE_WRITABLE;
-			return rel_alter_table(sql->sa, DDL_ALTER_TABLE_SET_ACCESS, sname, tname, NULL, NULL, state);
-		}
-
-	       	nt = dup_sql_table(sql->sa, t);
-		if (!nt || (te && table_element(sql, te, s, nt, 1) == SQL_ERR)) 
-			return NULL;
-
-		if (t->s && !nt->s)
-			nt->s = t->s;
-
-		res = rel_table(sql, DDL_ALTER_TABLE, sname, nt, 0);
-
-		if (!isTable(nt))
-			return res;
-
-		/* new columns need update with default values */
-		updates = table_update_array(sql, nt);
-		e = exp_column(sql->sa, nt->base.name, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-		r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
-		if (nt->columns.nelm) {
-			list *cols = new_exp_list(sql->sa);
-			for (n = nt->columns.nelm; n; n = n->next) {
-				sql_column *c = n->data;
-				if (c->def) {
-					char *d = sql_message("select %s;", c->def);
-					e = rel_parse_val(sql, d, sql->emode);
-					_DELETE(d);
-				} else {
-					e = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
-				}
-				if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL) {
-					rel_destroy(r);
-					return NULL;
-				}
-				list_append(cols, exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0));
-
-				assert(!updates[c->colnr]);
-				exp_setname(sql->sa, e, c->t->base.name, c->base.name);
-				updates[c->colnr] = e;
-			}
-			res = rel_update(sql, res, r, updates, cols); 
-		} else { /* new indices or keys */
-			res = rel_update(sql, res, r, updates, NULL); 
-		}
-		return res;
 	}
+
+	assert(te);
+	if (t && te && te->token == SQL_DROP_CONSTRAINT) {
+		dlist *l = te->data.lval;
+		char *kname = l->h->data.sval;
+		int drop_action = l->h->next->data.i_val;
+
+		sname = get_schema_name(sql, sname, tname);
+		return rel_schema(sql->sa, DDL_DROP_CONSTRAINT, sname, kname, drop_action);
+	}
+
+	if (t->persistence != SQL_DECLARED_TABLE)
+		sname = s->base.name;
+
+	if (t && te && (te->token == SQL_STREAM_TABLE_WINDOW || te->token == SQL_STREAM_TABLE_STRIDE)) {
+		int operation = CHANGE_WINDOW, new_value = te->data.i_val, minimum = 0;
+		char* opname = NULL;
+
+		if(!isStream(t))
+			return sql_error(sql, 02, SQLSTATE(42S02) "ALTER STREAM TABLE: table '%s' is not a stream table", tname);
+		switch (te->token) {
+			case SQL_STREAM_TABLE_WINDOW:
+				operation = CHANGE_WINDOW;
+				opname = "window";
+				minimum = 0;
+				break;
+			case SQL_STREAM_TABLE_STRIDE:
+				operation = CHANGE_STRIDE;
+				opname = "stride";
+				minimum = -1;
+				break;
+			default:
+				assert(0);
+		}
+		if(new_value < minimum)
+			return sql_error(sql, 02, SQLSTATE(42S02) "ALTER STREAM TABLE: %s size must be non negative", opname);
+		return rel_alter_stream_table(sql->sa, sname, tname, operation, new_value);
+	}
+
+	if (te && (te->token == SQL_TABLE || te->token == SQL_DROP_TABLE)) {
+		char *ntname = te->data.lval->h->data.sval;
+
+		/* TODO partition sname */
+		if (te->token == SQL_TABLE) {
+			return rel_alter_table(sql->sa, DDL_ALTER_TABLE_ADD_TABLE, sname, tname, sname, ntname, 0);
+		} else {
+			int drop_action = te->data.lval->h->next->data.i_val;
+
+			return rel_alter_table(sql->sa, DDL_ALTER_TABLE_DEL_TABLE, sname, tname, sname, ntname, drop_action);
+		}
+	}
+
+	/* read only or read write */
+	if (te && te->token == SQL_ALTER_TABLE) {
+		int state = te->data.i_val;
+
+		if (state == tr_readonly)
+			state = TABLE_READONLY;
+		else if (state == tr_append)
+			state = TABLE_APPENDONLY;
+		else
+			state = TABLE_WRITABLE;
+		return rel_alter_table(sql->sa, DDL_ALTER_TABLE_SET_ACCESS, sname, tname, NULL, NULL, state);
+	}
+
+		nt = dup_sql_table(sql->sa, t);
+	if (!nt || (te && table_element(sql, te, s, nt, 1) == SQL_ERR))
+		return NULL;
+
+	if (t->s && !nt->s)
+		nt->s = t->s;
+
+	res = rel_table(sql, DDL_ALTER_TABLE, sname, nt, 0);
+
+	if (!isTable(nt))
+		return res;
+
+	/* new columns need update with default values */
+	updates = table_update_array(sql, nt);
+	e = exp_column(sql->sa, nt->base.name, "%TID%", sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+	r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
+	if (nt->columns.nelm) {
+		list *cols = new_exp_list(sql->sa);
+		for (n = nt->columns.nelm; n; n = n->next) {
+			sql_column *c = n->data;
+			if (c->def) {
+				char *d = sql_message("select %s;", c->def);
+				e = rel_parse_val(sql, d, sql->emode);
+				_DELETE(d);
+			} else {
+				e = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
+			}
+			if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL) {
+				rel_destroy(r);
+				return NULL;
+			}
+			list_append(cols, exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0));
+
+			assert(!updates[c->colnr]);
+			exp_setname(sql->sa, e, c->t->base.name, c->base.name);
+			updates[c->colnr] = e;
+		}
+		res = rel_update(sql, res, r, updates, cols);
+	} else { /* new indices or keys */
+		res = rel_update(sql, res, r, updates, NULL);
+	}
+	return res;
 }
 
 static sql_rel *

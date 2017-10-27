@@ -47,6 +47,7 @@
 #include "sql_gencode.h"
 #include "sql_cquery.h"
 #include "sql_basket.h"
+#include "sql_execute.h"
 #include "mal_builder.h"
 #include "opt_prelude.h"
 #include "mtime.h"
@@ -67,6 +68,8 @@ static BAT *CQ_id_error = 0;
 
 static CQnode *pnet = 0;
 static int pnetLimit = 0, pnettop = 0;
+
+#define CQ_SQL_QUERY_SIZE  1024
 
 #define SET_HEARTBEATS(X) (X != HEARTBEAT_NIL) ? X : HEARTBEAT_NIL /* minimal 1 ms */
 
@@ -362,15 +365,18 @@ CQanalysis(Client cntxt, MalBlkPtr mb, int idx)
 	return msg;
 }
 
-#define FREE_CQ_MB(X)                                                             \
-	msg = createException(SQL,"cquery.register",SQLSTATE(HY001) MAL_MALLOC_FAIL); \
-	if(cq_id)                                                                     \
-		GDKfree(cq_id);                                                           \
-	if(mb)                                                                        \
-		freeMalBlk(mb);                                                           \
-	if(ralias)                                                                    \
-		GDKfree(ralias);                                                          \
+#define FREE_CQ_MB(X)    \
+	if(cq_id)            \
+		GDKfree(cq_id);  \
+	if(mb)               \
+		freeMalBlk(mb);  \
+	if(ralias)           \
+		GDKfree(ralias); \
 	goto X;
+
+#define CQ_MALLOC_FAIL(X)                                                         \
+	msg = createException(SQL,"cquery.register",SQLSTATE(HY001) MAL_MALLOC_FAIL); \
+	FREE_CQ_MB(X)
 
 /* Every SQL statement is wrapped with a caller function that
  * regulates transaction bounds, debugger
@@ -385,13 +391,15 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 	CQnode *pnew;
 	MalBlkPtr mb = NULL, prev;
 	const char* err_message = (which & mod_continuous_function) ? "function" : "procedure";
-	char* cq_id = NULL;
-	int i, idx, varid, cid, freeMB = 0;
+	char* cq_id = NULL, *sqlquery = NULL;
 	char buffer[IDLENGTH];
+	int i, idx, varid, cid, freeMB = 0;
+	/*size_t sqlquerysize = CQ_SQL_QUERY_SIZE, pos = 0;*/
 	backend* be = (backend*) cntxt->sqlcontext;
 	mvc *m = be->mvc;
 	sql_schema *s;
-	sql_subfunc *f;
+	sql_subfunc *f = NULL;
+	sql_func* found = NULL;
 	list *l;
 	node *argn = NULL;
 
@@ -412,12 +420,12 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 
 	if (!m->sa) {
 		if((m->sa = sa_create()) == NULL) {
-			FREE_CQ_MB(finish)
+			CQ_MALLOC_FAIL(finish)
 		}
 	}
 	if (!be->mb) {
 		if((be->mb = newMalBlk(8)) == NULL) {
-			FREE_CQ_MB(finish)
+			CQ_MALLOC_FAIL(finish)
 		}
 		freeMB = 1;
 	}
@@ -430,13 +438,15 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 
 	//Find the UDF
 	f = sql_find_func(m->sa, s, fname, argc > 0 ? argc : -1, (which & mod_continuous_function) ? F_FUNC : F_PROC, NULL);
+	if(!f && which & mod_continuous_function) { //If an UDF returns a table, it gets compiled into a F_UNION
+		f = sql_find_func(m->sa, s, fname, argc > 0 ? argc : -1, F_UNION, NULL);
+	}
 	if(!f) {
-		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Failed to bind %s %s.%s\n", err_message, sname, fname);
-		GDKfree(ralias);
-		goto finish;
+		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Failed to bind %s %s.%s\n", err_message, rschema, fname);
+		FREE_CQ_MB(finish)
 	}
 	if((l = list_create(NULL)) == NULL) {
-		FREE_CQ_MB(finish)
+		CQ_MALLOC_FAIL(finish)
 	}
 	for (i = 0; i < argc; i++) { //prepare the arguments for the backend creation
 		atom *a = args[i];
@@ -444,46 +454,68 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 	}
 	if (backend_create_subfunc(be, f, l) < 0) { //create the backend function
 		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Failed to generate backend function\n");
-		GDKfree(ralias);
 		list_destroy(l);
-		goto finish;
+		FREE_CQ_MB(finish)
 	}
 	list_destroy(l);
+
+	found = f->func;
+	/*if(found->res && list_length(found->res)) { //for functions we have to store the results somewhere
+		if(IS_UNION(found)) { //if it is a UNION (returning a table), we store it in a
+			if((sqlquery = GDKmalloc(CQ_SQL_QUERY_SIZE)) == NULL) {
+				CQ_MALLOC_FAIL(finish)
+			}
+			sqlquery[0] = '\0';
+			pos = 0;
+			pos += snprintf(sqlquery + pos, sqlquerysize - pos, "create temporary stream table \"%s\" (", found->imp);
+			for (argn = found->res->h; argn; argn = argn->next) {
+				sql_arg* argument = (sql_arg *) argn->data;
+				pos += snprintf(sqlquery + pos, sqlquerysize - pos, "\"%s\" %s%s",
+								argument->name, argument->type.type->sqlname, argn->next ? "," : "");
+			}
+			pos += snprintf(sqlquery + pos, sqlquerysize - pos, ");");
+			if((msg = SQLstatementIntern(cntxt, &sqlquery, "cquery.register", 1, 0, NULL))) {
+				FREE_CQ_MB(finish)
+			}
+		} else if(IS_FUNC(found)) {
+
+		}
+	}*/
 
 	MT_lock_set(&ttrLock);
 	cid = ++CQ_counter;
 	MT_lock_unset(&ttrLock);
 	(void) snprintf(buffer, sizeof(buffer), "cq_%d", cid); //set the CQ ID
 	if((cq_id = GDKstrdup(buffer)) == NULL) {
-		FREE_CQ_MB(finish)
+		CQ_MALLOC_FAIL(finish)
 	}
 	if((mb = newMalBlk(8)) == NULL) { //create MalBlk and initialize it
-		FREE_CQ_MB(finish)
+		CQ_MALLOC_FAIL(finish)
 	}
 	if((p = newInstruction(NULL, "user", cq_id)) == NULL) {
-		FREE_CQ_MB(finish)
+		CQ_MALLOC_FAIL(finish)
 	}
 	p->token = FUNCTIONsymbol;
 	p->barrier = 0;
 	if((varid = newVariable(mb, cq_id, strlen(cq_id), TYPE_void)) < 0) {
-		FREE_CQ_MB(finish)
+		CQ_MALLOC_FAIL(finish)
 	}
 	setDestVar(p, varid);
 	pushInstruction(mb, p);
 
 	if((q = newStmt(mb, sqlRef, transactionRef)) == NULL) {
-		FREE_CQ_MB(finish)
+		CQ_MALLOC_FAIL(finish)
 	}
 	setArgType(mb,q, 0, TYPE_void);
 	if ((p = newStmt(mb, "user", fname)) == NULL) { //add the UDF call statement
-		FREE_CQ_MB(finish)
+		CQ_MALLOC_FAIL(finish)
 	}
 	/*if (f->res && list_length(f->res)) {
 		sql_subtype *res = f->res->h->data;
 		setVarType(mb, getArg(q, 0), res->type->localtype);
 		setVarUDFtype(mb, getArg(q, 0));
 	}*/
-	for (i = 0, argn = f->func->ops->h; i < argc && argn; i++, argn = argn->next) { //add variables to the MAL block
+	for (i = 0, argn = found->ops->h; i < argc && argn; i++, argn = argn->next) { //add variables to the MAL block
 		sql_subtype tpe = ((sql_arg *) argn->data)->type;
 		atom *a = args[i];
 		ValPtr val = (ValPtr) &a->data;
@@ -498,10 +530,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		/* first convert into a new location */
 		if (VARconvert(&dst, val, 0) != GDK_SUCCEED) {
 			msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Error while making a SQL type conversion\n");
-			GDKfree(ralias);
-			GDKfree(cq_id);
-			freeMalBlk(mb);
-			goto finish;
+			FREE_CQ_MB(finish)
 		}
 		/* and finally copy the result */
 		*val = dst;
@@ -511,23 +540,20 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		if(val->vtype == TYPE_str) //if the input variable is of type str we must free it
 			GDKfree(val->val.sval);
 		if(p == NULL) {
-			FREE_CQ_MB(finish);
+			CQ_MALLOC_FAIL(finish);
 		}
 	}
 	if((q = newStmt(mb, sqlRef, commitRef)) == NULL) {
-		FREE_CQ_MB(finish)
+		CQ_MALLOC_FAIL(finish)
 	}
 	setArgType(mb,q, 0, TYPE_void);
 	if(pushEndInstruction(mb) == NULL) {
-		FREE_CQ_MB(finish)
+		CQ_MALLOC_FAIL(finish)
 	}
 	chkProgram(cntxt->usermodule, mb);
 	if(mb->errors) {
 		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "%s", mb->errors);
-		GDKfree(ralias);
-		GDKfree(cq_id);
-		freeMalBlk(mb);
-		goto finish;
+		FREE_CQ_MB(finish)
 	}
 
 	if(!alias || strcmp(alias, str_nil) == 0) { //set the alias
@@ -536,14 +562,11 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		ralias = GDKstrdup(alias);
 	}
 	if(ralias == NULL) {
-		FREE_CQ_MB(finish)
+		CQ_MALLOC_FAIL(finish)
 	}
 	if ((sym = findSymbol(cntxt->usermodule, "user", fname)) == NULL){ // access the actual procedure body
 		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Cannot find %s user.%s\n", err_message, fname);
-		GDKfree(ralias);
-		GDKfree(cq_id);
-		freeMalBlk(mb);
-		goto finish;
+		FREE_CQ_MB(finish)
 	}
 
 #ifdef DEBUG_CQUERY
@@ -554,15 +577,14 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 	if( pnet == 0){
 		pnew = (CQnode *) GDKzalloc((INITIAL_MAXCQ) * sizeof(CQnode));
 		if( pnew == NULL) {
-			FREE_CQ_MB(unlock)
+			CQ_MALLOC_FAIL(unlock)
 		}
 		pnetLimit = INITIAL_MAXCQ;
 		pnet = pnew;
-	} else
-	if (pnettop == pnetLimit) {
+	} else if (pnettop == pnetLimit) {
 		pnew = (CQnode *) GDKrealloc(pnet, (pnetLimit+INITIAL_MAXCQ) * sizeof(CQnode));
 		if( pnew == NULL) {
-			FREE_CQ_MB(unlock)
+			CQ_MALLOC_FAIL(unlock)
 		}
 		pnetLimit += INITIAL_MAXCQ;
 		pnet = pnew;
@@ -572,36 +594,27 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 	if(idx != pnettop && pnet[idx].status != CQDELETE) {
 		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "The continuous %s %s is already registered.\n",
 				err_message, ralias);
-		GDKfree(ralias);
-		GDKfree(cq_id);
-		freeMalBlk(mb);
-		goto unlock;
+		FREE_CQ_MB(unlock)
 	}
 	if((msg = CQanalysis(cntxt, sym->def, pnettop)) != MAL_SUCCEED) {
-		GDKfree(ralias);
-		GDKfree(cq_id);
-		freeMalBlk(mb);
-		goto unlock;
+		FREE_CQ_MB(unlock)
 	}
 	if(heartbeats != HEARTBEAT_NIL) {
 		for(i=0; i < MAXSTREAMS && pnet[pnettop].baskets[i]; i++) {
 			if(baskets[pnet[pnettop].baskets[i]].window != DEFAULT_TABLE_WINDOW) {
 				msg = createException(SQL, "cquery.register",
 									  SQLSTATE(42000) "Heartbeat ignored, a window constraint exists\n");
-				GDKfree(ralias);
-				GDKfree(cq_id);
-				freeMalBlk(mb);
-				goto unlock;
+				FREE_CQ_MB(unlock)
 			}
 		}
 	}
 
 	if((pnet[pnettop].stk = prepareMALstack(mb, mb->vsize)) == NULL) { //prepare MAL stack
-		FREE_CQ_MB(unlock)
+		CQ_MALLOC_FAIL(unlock)
 	}
 
 	pnet[pnettop].alias = ralias;
-	pnet[pnettop].func = f->func;
+	pnet[pnettop].func = found;
 	pnet[pnettop].mb = mb;
 	pnet[pnettop].cycles = cycles;
 	pnet[pnettop].beats = SET_HEARTBEATS(heartbeats);
@@ -625,6 +638,8 @@ unlock:
 finish:
 	if(freeMB)
 		freeMalBlk(be->mb);
+	if(sqlquery)
+		GDKfree(sqlquery);
 	be->mb = prev;
 	return msg;
 }

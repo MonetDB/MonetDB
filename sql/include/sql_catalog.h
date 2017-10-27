@@ -128,9 +128,10 @@ typedef enum temp_t {
 	SQL_GLOBAL_TEMP = 2,
 	SQL_DECLARED_TABLE = 3,	/* variable inside a stored procedure */
 	SQL_MERGE_TABLE = 4,
-	SQL_STREAM = 5,
-	SQL_REMOTE = 6,
-	SQL_REPLICA_TABLE = 7
+	SQL_PERSISTED_STREAM = 5,
+	SQL_GLOBAL_TEMP_STREAM = 6,
+	SQL_REMOTE = 7,
+	SQL_REPLICA_TABLE = 8
 } temp_t;
 
 typedef enum comp_type {
@@ -484,15 +485,18 @@ typedef enum table_types {
 	tt_table = 0, 		/* table */
 	tt_view = 1, 		/* view */
 	tt_merge_table = 3,	/* multiple tables form one table */
-	tt_stream = 4,		/* stream */
-	tt_remote = 5,		/* stored on a remote server */
-	tt_replica_table = 6	/* multiple replica of the same table */
+	tt_stream_per = 4,		/* persisted stream */
+	tt_stream_temp = 5,		/* temporary stream */
+	tt_remote = 6,		/* stored on a remote server */
+	tt_replica_table = 7	/* multiple replica of the same table */
 } table_types;
 
-#define isTable(x) 	  (x->type==tt_table || x->type == tt_stream)
+#define isTable(x) 	  (x->type==tt_table || x->type == tt_stream_per || x->type == tt_stream_temp)
 #define isView(x)  	  (x->type==tt_view)
 #define isMergeTable(x)   (x->type==tt_merge_table)
-#define isStream(x)  	  (x->type==tt_stream)
+#define isPerStream(x)    (x->type==tt_stream_per)
+#define isTempStream(x)   (x->type==tt_stream_temp)
+#define isStream(x)       (isPerStream(x) || isTempStream(x))
 #define isRemote(x)  	  (x->type==tt_remote)
 #define isReplicaTable(x) (x->type==tt_replica_table)
 #define isKindOfTable(x)  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x))

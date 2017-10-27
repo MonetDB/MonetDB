@@ -67,7 +67,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 	if (first || catalog_version) {
 		sql_schema *s;
 		sql_table *t;
-		sqlid tid = 0, ntid, cid = 0, ncid;
+		sqlid tid = 0, ntid, sid = 0, stid, cid = 0, ncid;
 		mvc *m = mvc_create(0, stk, 0, NULL, NULL);
 		if (!m) {
 			fprintf(stderr, "!mvc_init: malloc failure\n");
@@ -94,6 +94,9 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		if (!first) {
 			t = mvc_bind_table(m, s, "tables");
 			tid = t->base.id;
+			mvc_drop_table(m, s, t, 0);
+			t = mvc_bind_table(m, s, "streams");
+			sid = t->base.id;
 			mvc_drop_table(m, s, t, 0);
 			t = mvc_bind_table(m, s, "columns");
 			cid = t->base.id;
@@ -124,6 +127,28 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
 			while ((rid = table_funcs.column_find_row(m->session->tr, depids, &tid, NULL)) != oid_nil) {
 				table_funcs.column_update_value(m->session->tr, depids, rid, &ntid);
+			}
+		}
+
+		t = mvc_create_view(m, s, "streams", SQL_PERSIST, "SELECT \"id\", \"table_id\", \"window\", \"stride\" FROM \"sys\".\"_streams\" UNION ALL SELECT \"id\", \"table_id\", \"window\", \"stride\" FROM \"tmp\".\"_streams\";", 1);
+		stid = t->base.id;
+		mvc_create_column_(m, t, "id", "int", 32);
+		mvc_create_column_(m, t, "table_id", "int", 32);
+		mvc_create_column_(m, t, "window", "int", 32);
+		mvc_create_column_(m, t, "stride", "int", 32);
+
+		if (!first) {
+			int pub = ROLE_PUBLIC;
+			int p = PRIV_SELECT;
+			int zero = 0;
+			sql_table *privs = find_sql_table(s, "privileges");
+			sql_table *deps = find_sql_table(s, "dependencies");
+			sql_column *depids = find_sql_column(deps, "id");
+			oid rid;
+
+			table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
+			while ((rid = table_funcs.column_find_row(m->session->tr, depids, &sid, NULL)) != oid_nil) {
+				table_funcs.column_update_value(m->session->tr, depids, rid, &stid);
 			}
 		}
 
@@ -1155,18 +1180,19 @@ mvc_create_remote(mvc *m, sql_schema *s, const char *name, int persistence, cons
 }
 
 sql_table *
-mvc_create_stream_table(mvc *m, sql_schema *s, const char *name, bit system, int persistence, int commit_action, int sz, int window, int stride)
+mvc_create_stream_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz, int window, int stride)
 {
 	sql_table *t = NULL;
 
 	if (mvc_debug)
-		fprintf(stderr, "#mvc_create_stream_table %s %s %d %d %d %d %d %d\n", s->base.name, name, tt_stream, system, persistence, commit_action, window, stride);
+		fprintf(stderr, "#mvc_create_stream_table %s %s %d %d %d %d %d %d\n", s->base.name, name, tt, system,
+				persistence, commit_action, window, stride);
 
 	if (persistence == SQL_DECLARED_TABLE && (!s || strcmp(s->base.name, dt_schema))) {
-		t = create_sql_table(m->sa, name, tt_stream, system, persistence, commit_action, window, stride);
+		t = create_sql_table(m->sa, name, tt, system, persistence, commit_action, window, stride);
 		t->s = s;
 	} else {
-		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt_stream, system, persistence, commit_action, sz, window, stride);
+		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt, system, persistence, commit_action, sz, window, stride);
 	}
 	return t;
 }

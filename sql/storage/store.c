@@ -628,10 +628,12 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	t->persistence = SQL_PERSIST; 
 	if (t->commit_action)
 		t->persistence = SQL_GLOBAL_TEMP;
-	if (isStream(t))
-		t->persistence = SQL_STREAM;
 	if (isRemote(t))
 		t->persistence = SQL_REMOTE;
+	if (isPerStream(t))
+		t->persistence = SQL_PERSISTED_STREAM;
+	if (isTempStream(t))
+		t->persistence = SQL_GLOBAL_TEMP_STREAM;
 	t->cleared = 0;
 	v = table_funcs.column_find_value(tr, find_sql_column(tables, "access"),rid);
 	t->access = *(sht*)v;	_DELETE(v);
@@ -1256,8 +1258,7 @@ create_sql_table_with_id(sql_allocator *sa, int id, const char *name, sht type, 
 	sql_table *t = SA_ZNEW(sa, sql_table);
 
 	assert(sa);
-	assert((persistence==SQL_PERSIST ||
-		persistence==SQL_DECLARED_TABLE || 
+	assert((persistence==SQL_PERSIST || persistence==SQL_PERSISTED_STREAM || persistence==SQL_DECLARED_TABLE ||
 		commit_action) && commit_action>=0);
 	assert(id);
 	base_init(sa, &t->base, id, TR_NEW, name);
@@ -3967,9 +3968,8 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 	if (isKindOfTable(t) || isView(t))
 		sys_drop_columns(tr, t, drop_action);
 
-	if (isStream(t)) {
+	if (isStream(t))
 		sys_drop_sql_stream(tr, t->stream);
-	}
 
 	if (isGlobal(t)) 
 		tr->schema_updates ++;
@@ -4381,11 +4381,17 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 	t->sz = sz;
 	if (sz < 0)
 		t->sz = COLSIZE;
+	if(isStream(t)) {
+		base_init(tr->sa, &t->stream->base, next_oid(), TR_NEW, name);
+		list_append(t->s->streams, t->stream);
+	}
 	cs_add(&s->tables, t, TR_NEW);
-	if (isStream(t))
-		t->persistence = SQL_STREAM;
 	if (isRemote(t))
 		t->persistence = SQL_REMOTE;
+	if (isPerStream(t))
+		t->persistence = SQL_PERSISTED_STREAM;
+	if (isTempStream(t))
+		t->persistence = SQL_GLOBAL_TEMP_STREAM;
 
 	if (isTable(t)) {
 		if (store_funcs.create_del(tr, t) != LOG_OK) {
@@ -4396,20 +4402,18 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 	}
 
 	ca = t->commit_action;
-	if (!isDeclaredTable(t))
+	if (!isDeclaredTable(t)) {
 		table_funcs.table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id,
-			(t->query) ? t->query : ATOMnilptr(TYPE_str), &t->type,
-			&t->system, &ca, &t->access);
-
-	if(isStream(t)) {
-		base_init(tr->sa, &t->stream->base, next_oid(), TR_NEW, NULL);
-		list_append(t->s->streams, t->stream);
-
-		streamtable = find_sql_table(syss, "_streams");
-		table_funcs.table_insert(tr, streamtable, &t->stream->base.id, &t->base.id, &t->stream->window, &t->stream->stride);
+								 (t->query) ? t->query : ATOMnilptr(TYPE_str), &t->type, &t->system, &ca, &t->access);
+		if(isStream(t)) {
+			streamtable = find_sql_table(syss, "_streams");
+			table_funcs.table_insert(tr, streamtable, &t->stream->base.id, &t->base.id, &t->stream->window, &t->stream->stride);
+		}
 	}
 
 	t->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
+	if (isStream(t))
+		t->stream->base.wtime = t->base.wtime;
 	if (isGlobal(t)) 
 		tr->schema_updates ++;
 	return t;

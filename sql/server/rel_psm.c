@@ -1029,7 +1029,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: procedures "
 						"cannot have return statements", KF, F);
 			}
-			if(sql->is_factory && (is_aggr || is_loader || !is_func || is_table)) {
+			if(sql->is_factory && (is_aggr || is_loader || !is_func)) {
 				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s%s: %s%ss "
 					"cannot have yield statements", KF, F, kf, fn);
 			}

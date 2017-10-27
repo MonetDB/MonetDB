@@ -468,6 +468,7 @@ int yydebug=1;
 	opt_ref_action
 	opt_sign
 	opt_temp
+	opt_temp_stream
 	opt_minmax
 	opt_XML_content_option
 	opt_XML_returning_clause
@@ -1357,6 +1358,16 @@ table_opt_storage:
  |  STORAGE ident STRING { $$ = append_string(append_string(L(), $2), $3); } 
  ;
 
+opt_temp_stream:
+    /* empty */      { $$ = SQL_PERSISTED_STREAM; }
+ |  TEMP             { $$ = SQL_GLOBAL_TEMP_STREAM; }
+ |  TEMPORARY        { $$ = SQL_GLOBAL_TEMP_STREAM; }
+ |  LOCAL TEMPORARY  { $$ = yyerror(m, "LOCAL TEMPORARY STREAM tables not supported, only GLOBAL"); $$ = SQL_GLOBAL_TEMP_STREAM; }
+ |  LOCAL TEMP       { $$ = yyerror(m, "LOCAL TEMPORARY STREAM tables not supported, only GLOBAL"); $$ = SQL_GLOBAL_TEMP_STREAM; }
+ |  GLOBAL TEMPORARY { $$ = SQL_GLOBAL_TEMP_STREAM; }
+ |  GLOBAL TEMP      { $$ = SQL_GLOBAL_TEMP_STREAM; }
+ ;
+
 stream_window_set:
     /* empty */   { $$ = DEFAULT_TABLE_WINDOW; } /* don't set a window constraint, make CP time based */
  |  WINDOW intval { $$ = $2; }                   /* trigger every N tuples */
@@ -1396,17 +1407,17 @@ table_def:
       append_symbol(l, $6);
       $$ = _symbol_create_list( SQL_CREATE_TABLE_LOADER, l);
     }
- |  STREAM TABLE if_not_exists qname table_content_source stream_table_details
-	{ int commit_action = CA_COMMIT, tpe = SQL_STREAM;
+ |  opt_temp_stream STREAM TABLE if_not_exists qname table_content_source stream_table_details
+	{ int tpe = $1;
 	  dlist *l = L();
 
 	  append_int(l, tpe);
-	  append_list(l, $4);
-	  append_symbol(l, $5);
-	  append_int(l, commit_action);
+	  append_list(l, $5);
+	  append_symbol(l, $6);
+	  append_int(l, (tpe == SQL_PERSISTED_STREAM) ? CA_COMMIT : CA_PRESERVE);
 	  append_string(l, NULL);
-	  append_int(l, $3);
-	  append_list(l, $6);
+	  append_int(l, $4);
+	  append_list(l, $7);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  |  MERGE TABLE if_not_exists qname table_content_source 
 	{ int commit_action = CA_COMMIT, tpe = SQL_MERGE_TABLE;
