@@ -365,7 +365,7 @@ sql_create_auth_id(mvc *m, unsigned int id, str auth)
 str
 sql_create_role(mvc *m, str auth, int grantor)
 {
-	oid id;
+	int id;
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
 	sql_table *auths = find_sql_table(sys, "auths");
 	sql_column *auth_name = find_sql_column(auths, "name");
@@ -555,7 +555,7 @@ sql_revoke_role(mvc *m, str grantee, str role, int grantor, int admin)
 	role_id = *(int*)val; 
 	_DELETE(val);
 	if (!admin_privs(grantor) && !role_granting_privs(m, rid, role_id, grantor)) 
-		return sql_message("0P000!GRANT: insufficient privileges to grant ROLE '%s'", role);
+		return sql_message("0P000!REVOKE: insufficient privileges to revoke ROLE '%s'", role);
 
 	if (!admin) { 
 		rid = table_funcs.column_find_row(m->session->tr, roles_login_id, &grantee_id, roles_role_id, &role_id, NULL);

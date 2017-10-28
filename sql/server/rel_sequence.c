@@ -16,7 +16,7 @@
 char*
 sql_next_seq_name(mvc *m)
 {
-	oid id = store_next_oid();
+	int id = store_next_oid();
 	oid len = 5 + ((id+7)>>3);
 	char *msg = sa_alloc(m->sa, len);
 
