@@ -8324,11 +8324,11 @@ rel_find_conflicts(mvc *sql, sql_rel *rel, list *exps, list *conflicts)
 			exps_find_conflicts(sql, rel->exps, exps, conflicts);
 		exps_mark_conflicts(sql, rel->exps, conflicts, 1); 
 		return rel;
-	case op_topn: 
-	case op_sample: 
-		return rel;
 	case op_select: 
 		exps_find_conflicts(sql, rel->exps, exps, conflicts);
+		/* fall through */
+	case op_topn: 
+	case op_sample: 
 		rel->l = rel_find_conflicts(sql, rel->l, exps, conflicts);
 		return rel;
 	case op_project:
@@ -8472,7 +8472,7 @@ rel_apply(mvc *sql, sql_rel *l, sql_rel *r, list *exps, int flag)
 static sql_rel *
 rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel) 
 {
-	sql_rel *l, *r;
+	sql_rel *l, *r, *topn = NULL;
 
 	if (rel->op == op_project && rel->exps) { /* check card */
 		node *n;
@@ -8592,14 +8592,17 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 		(*changes)++;
 		return l;
 	}
+	if (r->op == op_topn || r->op == op_sample) {
+		/* first handle project, then topn/sample */
+		topn = rel_dup(r);
+		r = r->l;
+	}
 	if (r->op == op_project) { /* merge projections */
 		if (!r->l) { 
 			sql_rel *nrel = rel_dup(l);
 
 			rel_destroy(rel);
 			rel = nrel;
-			(*changes)++;
-			return rel;
 		} else {
 			list *p = rel_projections(sql, l, NULL, 1, 1);
 
@@ -8607,9 +8610,13 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			r = rel_apply(sql, rel_dup(l), rel_dup(r->l), rel->exps, rel->flag);
 			rel_destroy(rel);
 			rel = rel_project(sql->sa, r, p);
-			(*changes)++;
-			return rel;
 		}
+		if (topn) {
+			topn->l = rel;
+			rel = topn;
+		}
+		(*changes)++;
+		return rel;
 	}
 	if (r->op == op_select) { 
 		sql_rel *n = rel_apply(sql, rel_dup(rel->l), rel_dup(r->l), rel->exps, rel->flag);
