@@ -129,7 +129,7 @@ typedef enum temp_t {
 	SQL_DECLARED_TABLE = 3,	/* variable inside a stored procedure */
 	SQL_MERGE_TABLE = 4,
 	SQL_PERSISTED_STREAM = 5,
-	SQL_GLOBAL_TEMP_STREAM = 6,
+	SQL_LOCAL_TEMP_STREAM = 6,
 	SQL_REMOTE = 7,
 	SQL_REPLICA_TABLE = 8
 } temp_t;

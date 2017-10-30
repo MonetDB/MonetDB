@@ -69,24 +69,45 @@ static BAT *CQ_id_error = 0;
 static CQnode *pnet = 0;
 static int pnetLimit = 0, pnettop = 0;
 
-#define CQ_SQL_QUERY_SIZE  1024
+#define CQ_SCHEDULER_CLIENTID     0
+#define CQ_SQL_QUERY_SIZE      1024
 
 #define SET_HEARTBEATS(X) (X != HEARTBEAT_NIL) ? X : HEARTBEAT_NIL /* minimal 1 ms */
 
-#define ALL_ROOT_CHECK(cntxt, malcal, name)                                                                            \
-	do {                                                                                                               \
-		smvc = ((backend *) cntxt->sqlcontext)->mvc;                                                                   \
-		if(!smvc)                                                                                                      \
-			throw(SQL,malcal,SQLSTATE(42000) "##name##ALL CONTINUOUS: SQL clients only\n");                            \
-		 else if (smvc->user_id != USER_MONETDB && smvc->role_id != ROLE_SYSADMIN)                                     \
-			throw(SQL,malcal,SQLSTATE(42000) "##name##ALL CONTINUOUS: insufficient privileges for the current user\n");\
-	} while(0);
+#define ALL_ROOT_CHECK(cntxt, malcal, name)                                                                        \
+do {                                                                                                               \
+	smvc = ((backend *) cntxt->sqlcontext)->mvc;                                                                   \
+	if(!smvc)                                                                                                      \
+		throw(SQL,malcal,SQLSTATE(42000) "##name##ALL CONTINUOUS: SQL clients only\n");                            \
+	 else if (smvc->user_id != USER_MONETDB && smvc->role_id != ROLE_SYSADMIN)                                     \
+		throw(SQL,malcal,SQLSTATE(42000) "##name##ALL CONTINUOUS: insufficient privileges for the current user\n");\
+} while(0);
+
+#define CLEAN_BASKETS(idx)                                                                    \
+do {                                                                                          \
+	for(int m=0; m< MAXSTREAMS && pnet[idx].baskets[m]; m++) {                                \
+		int found = 0;                                                                        \
+		str sch = baskets[pnet[idx].baskets[m]].table->s->base.name;                          \
+		str tbl = baskets[pnet[idx].baskets[m]].table->base.name;                             \
+		for(int n=0; n < pnettop && !found; n++) {                                            \
+			if(n != idx) {                                                                    \
+				for(int o=0; o< MAXSTREAMS && pnet[n].baskets[o] && !found; o++) {            \
+					if (strcmp(sch, baskets[pnet[n].baskets[o]].table->s->base.name) == 0 &&  \
+						strcmp(tbl, baskets[pnet[n].baskets[o]].table->base.name) == 0)       \
+						found = 1;                                                            \
+				}                                                                             \
+			}                                                                                 \
+		}                                                                                     \
+		if(!found) {                                                                          \
+			BSKTclean(pnet[idx].baskets[m]);                                                  \
+		}                                                                                     \
+	}                                                                                         \
+} while(0);
 
 static void
 CQfree(int idx)
 {
-	int i, j, k, found;
-	str sch, tbl;
+	int i;
 	InstrPtr p;
 
 	if( pnet[idx].mb) {
@@ -99,24 +120,8 @@ CQfree(int idx)
 	if(pnet[idx].error)
 		GDKfree(pnet[idx].error);
 	GDKfree(pnet[idx].alias);
-	//try delete the baskets
-	for( j=0; j< MAXSTREAMS && pnet[idx].baskets[j]; j++) {
-		found = 0;
-		sch = baskets[pnet[idx].baskets[j]].table->s->base.name;
-		tbl = baskets[pnet[idx].baskets[j]].table->base.name;
-		for( i=0; i < pnettop && !found; i++) {
-			if(i != idx) {
-				for( k=0; k< MAXSTREAMS && pnet[i].baskets[k] && !found; k++) {
-					if (strcmp(sch, baskets[pnet[i].baskets[k]].table->s->base.name) == 0 &&
-						strcmp(tbl, baskets[pnet[i].baskets[k]].table->base.name) == 0)
-						found = 1;
-				}
-			}
-		}
-		if(!found) {
-			BSKTclean(pnet[idx].baskets[j]);
-		}
-	}
+	//clean the baskets if so
+	CLEAN_BASKETS(idx)
 	// compact the pnet table
 	for(i=idx; i<pnettop-1; i++)
 		pnet[i] = pnet[i+1];
@@ -438,7 +443,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 
 	//Find the UDF
 	f = sql_find_func(m->sa, s, fname, argc > 0 ? argc : -1, (which & mod_continuous_function) ? F_FUNC : F_PROC, NULL);
-	if(!f && which & mod_continuous_function) { //If an UDF returns a table, it gets compiled into a F_UNION
+	if(!f && (which & mod_continuous_function)) { //If an UDF returns a table, it gets compiled into a F_UNION
 		f = sql_find_func(m->sa, s, fname, argc > 0 ? argc : -1, F_UNION, NULL);
 	}
 	if(!f) {
@@ -597,6 +602,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		FREE_CQ_MB(unlock)
 	}
 	if((msg = CQanalysis(cntxt, sym->def, pnettop)) != MAL_SUCCEED) {
+		CLEAN_BASKETS(pnettop)
 		FREE_CQ_MB(unlock)
 	}
 	if(heartbeats != HEARTBEAT_NIL) {
@@ -604,12 +610,14 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 			if(baskets[pnet[pnettop].baskets[i]].window != DEFAULT_TABLE_WINDOW) {
 				msg = createException(SQL, "cquery.register",
 									  SQLSTATE(42000) "Heartbeat ignored, a window constraint exists\n");
+				CLEAN_BASKETS(pnettop)
 				FREE_CQ_MB(unlock)
 			}
 		}
 	}
 
 	if((pnet[pnettop].stk = prepareMALstack(mb, mb->vsize)) == NULL) { //prepare MAL stack
+		CLEAN_BASKETS(pnettop)
 		CQ_MALLOC_FAIL(unlock)
 	}
 
@@ -1326,7 +1334,7 @@ CQstartScheduler(void)
 		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize CQscheduler\n");
 	}
 
-	cntxt = MCinitClient(0,bin,fout);
+	cntxt = MCinitClient(CQ_SCHEDULER_CLIENTID,bin,fout);
 	if( cntxt == NULL) {
 		bstream_destroy(cntxt->fdin);
 		mnstr_destroy(cntxt->fdout);
