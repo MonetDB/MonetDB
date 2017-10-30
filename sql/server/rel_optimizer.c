@@ -6078,43 +6078,20 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
-static list *
-merge_refs(list *l, list *r)
+static void
+rel_dep_graph( char *deps, list *refs, sql_rel *parent, sql_rel *rel) 
 {
-	node *n, *m, *np = l->h, *mp = r->h;
-	list *nl = sa_list(l->sa);
+	if (!parent)
+		return ;
 
-	for( n = np; n; n = n->next) {
-		sql_rel *lr = n->data;
-		for (m = mp; m; m = m->next) {
-			sql_rel *rr = m->data;
+	if (rel_is_ref(rel) && parent != rel) {
+		int n = list_length(refs);
+		int pnr = list_position(refs, parent);
+		int cnr = list_position(refs, rel);
 
-			if (lr == rr) {
-				for( ; np != n; np = np->next) 
-					append(nl, np->data);
-				np = np->next;
-				for( ; mp != m; mp = mp->next) 
-					append(nl, mp->data);
-				append(nl, mp->data); 
-				mp = mp->next;
-				break;
-			}
-		}
+		deps[pnr*n + cnr] = 1;
+		parent = rel;
 	}
-	for( ; np; np = np->next) 
-		append(nl, np->data);
-	for( ; mp; mp = mp->next) 
-		append(nl, mp->data);
-	return nl;
-}
-
-static list *
-rel_dce_refs(mvc *sql, sql_rel *rel) 
-{
-	list *l = NULL, *r = NULL;
-
-	if (!rel)
-		return NULL;
 
 	switch(rel->op) {
 	case op_table:
@@ -6125,7 +6102,7 @@ rel_dce_refs(mvc *sql, sql_rel *rel)
 	case op_select: 
 
 		if (rel->l && (rel->op != op_table || rel->flag != 2))
-			l = rel_dce_refs(sql, rel->l);
+			rel_dep_graph(deps, refs, parent, rel->l);
 
 	case op_basetable:
 	case op_insert:
@@ -6136,7 +6113,7 @@ rel_dce_refs(mvc *sql, sql_rel *rel)
 	case op_delete:
 
 		if (rel->r)
-			r = rel_dce_refs(sql, rel->r);
+			rel_dep_graph(deps, refs, parent, rel->r);
 		break;
 
 
@@ -6151,25 +6128,152 @@ rel_dce_refs(mvc *sql, sql_rel *rel)
 	case op_anti: 
 
 		if (rel->l)
-			l = rel_dce_refs(sql, rel->l);
+			rel_dep_graph(deps, refs, parent, rel->l);
 		if (rel->r)
-			r = rel_dce_refs(sql, rel->r);
+			rel_dep_graph(deps, refs, parent, rel->r);
+		break;
+
+	case op_apply: 
+		assert(0);
+	}
+}
+
+/*
+extern void _rel_print(mvc *sql, sql_rel *rel);
+
+static void 
+print_deps(mvc *sql, char *deps, list *refs) 
+{
+	int i, j;
+	int n = list_length(refs);
+
+	for (i=0; i<n; i++) {
+		sql_rel *r = list_fetch(refs, i);
+		printf("dep %d\n", i);
+		_rel_print(sql,r);
+	}
+	for (i=0; i<n; i++) {
+		for (j=0; j<n; j++) {
+			printf("%c ", i==j?'x' : deps[i*n + j]?'1':'0');
+		}
+		printf("\n");
+	}
+
+}	
+*/
+
+static int 
+depends_on(int nr, char *deps, int n, int dnr) 
+{
+	for(;dnr < n; dnr++) {
+		if (dnr == nr)
+			dnr++;
+		if (deps[nr*n + dnr])
+			return dnr;
+	}
+	return -1;
+}
+
+static void
+flatten_dep(list *nrefs, list *refs, int nr, char *deps, int n) 
+{
+	int dnr = 0;
+
+	if (deps[nr*n + nr])
+		return;
+	for (;(dnr = depends_on(nr, deps, n, dnr)) >= 0 && dnr < n; dnr++) 
+		flatten_dep(nrefs, refs, dnr, deps, n);
+	if (!deps[nr*n + nr]) {
+		list_prepend(nrefs, list_fetch(refs,nr));
+		deps[nr*n+nr] = 1; /* mark done */
+	}
+}
+
+static list *
+flatten_dep_graph(mvc *sql, char *deps, list *refs)
+{
+	list *nrefs = sa_list(sql->sa);
+	int n = list_length(refs), nr = 0;
+
+	for (nr = 0; nr < n; nr++) {
+		if (deps[nr*n + nr])
+			continue;
+		flatten_dep(nrefs, refs, nr, deps, n);
+	}
+	return nrefs;
+}
+
+static list *
+rel_dependencies(mvc *sql, list *refs)
+{
+	int n = list_length(refs);
+
+	if (n > 1) {
+		char *deps = SA_NEW_ARRAY(sql->sa, char, n*n);
+		node *m;
+
+		memset(deps, 0, n*n);
+		for (m = refs->h; m; m = m->next) {
+			rel_dep_graph(deps, refs, m->data, m->data);
+		}
+		refs = flatten_dep_graph(sql, deps, refs);
+		//print_deps(sql, deps, refs);
+	}
+	return refs;
+}
+
+static void
+rel_dce_refs(mvc *sql, sql_rel *rel, list *refs) 
+{
+	if (!rel)
+		return ;
+
+	switch(rel->op) {
+	case op_table:
+	case op_topn: 
+	case op_sample: 
+	case op_project:
+	case op_groupby: 
+	case op_select: 
+
+		if (rel->l && (rel->op != op_table || rel->flag != 2))
+			rel_dce_refs(sql, rel->l, refs);
+
+	case op_basetable:
+	case op_insert:
+	case op_ddl:
+		break;
+
+	case op_update:
+	case op_delete:
+
+		if (rel->r)
+			rel_dce_refs(sql, rel->r, refs);
+		break;
+
+
+	case op_union: 
+	case op_inter: 
+	case op_except: 
+	case op_join: 
+	case op_left: 
+	case op_right: 
+	case op_full: 
+	case op_semi: 
+	case op_anti: 
+
+		if (rel->l)
+			rel_dce_refs(sql, rel->l, refs);
+		if (rel->r)
+			rel_dce_refs(sql, rel->r, refs);
 		break;
 
 	case op_apply: 
 		assert(0);
 	}
 
-	if (l && r)
-		l = merge_refs(l, r);
-	if (!l) 
-		l = r;
-	if (rel_is_ref(rel)) {
-		if (!l)
-			l = sa_list(sql->sa);
-		list_prepend(l, rel);
-	}
-	return l;
+	if (rel_is_ref(rel) && !list_find(refs, rel, NULL)) 
+		list_prepend(refs, rel);
 }
 
 static sql_rel *
@@ -6348,17 +6452,19 @@ rel_add_projects(mvc *sql, sql_rel *rel)
 sql_rel *
 rel_dce(mvc *sql, sql_rel *rel)
 {
-	list *refs;
+	list *refs = sa_list(sql->sa);
 	node *n;
 
-	refs = rel_dce_refs(sql, rel);
+	rel_dce_refs(sql, rel, refs);
 	rel = rel_add_projects(sql, rel);
 	rel_used(rel);
 	rel_dce_sub(sql, rel, refs);
 
-	if (refs)
+	if (refs) {
+		refs = rel_dependencies(sql, refs);
 		for (n = refs->h; n; n = n->next)
 			rel_dce_sub(sql, n->data, refs);
+	}
 	return rel;
 }
 

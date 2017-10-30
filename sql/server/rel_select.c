@@ -210,6 +210,8 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 		list *l = sa_list(sql->sa);
 
 		columnrefs = optname->data.lval->h->next->data.lval;
+		if (!is_project(sq->op) && !is_base(sq->op)) 
+			sq = rel_project(sql->sa, sq, rel_projections(sql, sq, NULL, 1, 1));
 		if (columnrefs && sq->exps) {
 			dnode *d = columnrefs->h;
 			node *ne = sq->exps->h;
