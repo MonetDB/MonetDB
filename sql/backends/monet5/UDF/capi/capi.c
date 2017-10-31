@@ -62,6 +62,7 @@ typedef struct _cached_functions {
 
 static cached_functions *function_cache[FUNCTION_CACHE_SIZE];
 static MT_Lock cache_lock;
+static int cudf_initialized = 0;
 
 static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					bit grouped);
@@ -79,7 +80,10 @@ str CUDFevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str CUDFprelude(void *ret)
 {
 	(void)ret;
-	MT_lock_init(&cache_lock, "cache_lock");
+	if (!cudf_initialized) {
+		MT_lock_init(&cache_lock, "cache_lock");
+		cudf_initialized = true;
+	}
 	return MAL_SUCCEED;
 }
 
@@ -1455,7 +1459,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		// return the BAT from the function
 		if (isaBatType(getArgType(mb, pci, i))) {
 			*getArgReference_bat(stk, pci, i) = b->batCacheid;
-			// BBPkeepref(b->batCacheid);
+			BBPkeepref(b->batCacheid);
 		} else {
 			// single value return, only for non-grouped aggregations
 			BATiter li = bat_iterator(b);
