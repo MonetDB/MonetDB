@@ -1,0 +1,46 @@
+stderr of test 'cquery20` in directory 'sql/backends/monet5` itself:
+
+
+# 11:09:21 >  
+# 11:09:21 >  "/usr/bin/python2" "cquery20.py" "cquery20"
+# 11:09:21 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/MonetDB-trails/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38287
+# cmdline opt 	mapi_usock = /var/tmp/mtest-31962/.s.monetdb.38287
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/MonetDB-trails/BUILD/var/MonetDB/mTests_sql_backends_monet5
+# cmdline opt 	gdk_debug = 536870922
+# builtin opt 	gdk_dbpath = /home/ferreira/MonetDB-trails/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 38287
+# cmdline opt 	mapi_usock = /var/tmp/mtest-31962/.s.monetdb.38287
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/MonetDB-trails/BUILD/var/MonetDB/mTests_sql_backends_monet5
+# cmdline opt 	gdk_debug = 536870922
+
+# 11:09:23 >  
+# 11:09:23 >  "Done."
+# 11:09:23 >  
+

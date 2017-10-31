@@ -427,7 +427,7 @@ drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
 }
 
 static str
-change_single_cp(str alias, int action, lng heartbeat, lng startat, int cycles)
+change_single_cp(Client cntxt, str alias, int action, lng heartbeat, lng startat, int cycles)
 {
 	if(action & mod_resume_continuous) {
 		return CQresume(alias, 1, heartbeat, startat, cycles);
@@ -436,14 +436,14 @@ change_single_cp(str alias, int action, lng heartbeat, lng startat, int cycles)
 	} else if(action & mod_pause_continuous) {
 		return CQpause(alias);
 	} else if(action & mod_stop_continuous) {
-		return CQderegister(alias);
+		return CQderegister(cntxt, alias);
 	}
 	assert(0);
 	return NULL;
 }
 
 static str
-change_all_cp(int action)
+change_all_cp(Client cntxt, int action)
 {
 	switch(action) {
 		case mod_pause_all_continuous:
@@ -451,7 +451,7 @@ change_all_cp(int action)
 		case mod_resume_all_continuous:
 			return CQresumeAll();
 		case mod_stop_all_continuous:
-			return CQderegisterAll();
+			return CQderegisterAll(cntxt);
 		default:
 			assert(0);
 	}
@@ -1336,7 +1336,7 @@ SQLchange_single_cp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int cycles = *getArgReference_int(stk, pci, 5);
 
 	initcontext();
-	msg = change_single_cp(alias, action, heartbeat, startat, cycles);
+	msg = change_single_cp(cntxt, alias, action, heartbeat, startat, cycles);
 	return msg;
 }
 
@@ -1347,7 +1347,7 @@ SQLchange_all_cp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int action = *getArgReference_int(stk, pci, 1);
 
 	initcontext();
-	msg = change_all_cp(action);
+	msg = change_all_cp(cntxt, action);
 	return msg;
 }
 

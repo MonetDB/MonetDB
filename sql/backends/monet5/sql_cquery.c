@@ -50,6 +50,7 @@
 #include "sql_execute.h"
 #include "mal_builder.h"
 #include "opt_prelude.h"
+#include "mal_authorize.h"
 #include "mtime.h"
 
 static str statusname[7] = {"init", "register", "readytorun", "running", "waiting", "paused", "stopping"};
@@ -83,33 +84,56 @@ do {                                                                            
 		throw(SQL,malcal,SQLSTATE(42000) "##name##ALL CONTINUOUS: insufficient privileges for the current user\n");\
 } while(0);
 
-#define CLEAN_BASKETS(idx)                                                                    \
-do {                                                                                          \
-	for(int m=0; m< MAXSTREAMS && pnet[idx].baskets[m]; m++) {                                \
-		int found = 0;                                                                        \
-		str sch = baskets[pnet[idx].baskets[m]].table->s->base.name;                          \
-		str tbl = baskets[pnet[idx].baskets[m]].table->base.name;                             \
-		for(int n=0; n < pnettop && !found; n++) {                                            \
-			if(n != idx) {                                                                    \
-				for(int o=0; o< MAXSTREAMS && pnet[n].baskets[o] && !found; o++) {            \
-					if (strcmp(sch, baskets[pnet[n].baskets[o]].table->s->base.name) == 0 &&  \
-						strcmp(tbl, baskets[pnet[n].baskets[o]].table->base.name) == 0)       \
-						found = 1;                                                            \
-				}                                                                             \
-			}                                                                                 \
-		}                                                                                     \
-		if(!found) {                                                                          \
-			BSKTclean(pnet[idx].baskets[m]);                                                  \
-		}                                                                                     \
-	}                                                                                         \
-} while(0);
+static void
+cleanBaskets(int idx)
+{
+	int m, n, o, found;
+	str sch, tbl;
+
+	for(m=0; m< MAXSTREAMS && pnet[idx].baskets[m]; m++) {
+		found = 0;
+		sch = baskets[pnet[idx].baskets[m]].table->s->base.name;
+		tbl = baskets[pnet[idx].baskets[m]].table->base.name;
+		for(n=0; n < pnettop && !found; n++) {
+			if(n != idx) {
+				for(o=0; o< MAXSTREAMS && pnet[n].baskets[o] && !found; o++) {
+					if (strcmp(sch, baskets[pnet[n].baskets[o]].table->s->base.name) == 0 &&
+						strcmp(tbl, baskets[pnet[n].baskets[o]].table->base.name) == 0)
+						found = 1;
+				}
+			}
+		}
+		if(!found) {
+			BSKTclean(pnet[idx].baskets[m]);
+		}
+	}
+}
 
 static void
-CQfree(int idx)
+CQfree(Client cntxt, int idx)
 {
 	int i;
 	InstrPtr p;
 
+	if(cntxt && IS_UNION(pnet[idx].func)) {
+		oid prevID;
+		str prevUserName;
+
+		//change IDs
+		prevID = cntxt->user;
+		prevUserName = cntxt->username;
+		cntxt->user = CQ_SCHEDULER_CLIENTID;
+		if(AUTHgetUsername(&cntxt->username, cntxt) == MAL_SUCCEED) {
+			backend* be = (backend*) cntxt->sqlcontext;
+			mvc *m = be->mvc;
+			sql_schema *s = mvc_bind_schema(m, "tmp");
+			sql_table *t = mvc_bind_table(m, s, pnet[idx].alias);
+			mvc_drop_table(m, s, t, 0);
+			GDKfree(cntxt->username);
+		}
+		cntxt->user = prevID;
+		cntxt->username = prevUserName;
+	}
 	if( pnet[idx].mb) {
 		p = getInstrPtr(pnet[idx].mb, 0);
 		GDKfree(p->fcnname); //Free the CQ id
@@ -121,7 +145,7 @@ CQfree(int idx)
 		GDKfree(pnet[idx].error);
 	GDKfree(pnet[idx].alias);
 	//clean the baskets if so
-	CLEAN_BASKETS(idx)
+	cleanBaskets(idx);
 	// compact the pnet table
 	for(i=idx; i<pnettop-1; i++)
 		pnet[i] = pnet[i+1];
@@ -396,13 +420,13 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 	CQnode *pnew;
 	MalBlkPtr mb = NULL, prev;
 	const char* err_message = (which & mod_continuous_function) ? "function" : "procedure";
-	char* cq_id = NULL, *sqlquery = NULL;
+	char* cq_id = NULL;
 	char buffer[IDLENGTH];
 	int i, idx, varid, cid, freeMB = 0;
-	/*size_t sqlquerysize = CQ_SQL_QUERY_SIZE, pos = 0;*/
 	backend* be = (backend*) cntxt->sqlcontext;
 	mvc *m = be->mvc;
-	sql_schema *s;
+	sql_schema *s = NULL, *tmp_schema = NULL;
+	sql_table *t = NULL;
 	sql_subfunc *f = NULL;
 	sql_func* found = NULL;
 	list *l;
@@ -464,28 +488,61 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 	}
 	list_destroy(l);
 
+	if(!alias || strcmp(alias, str_nil) == 0) { //set the alias
+		ralias = GDKstrdup(fname);
+	} else {
+		ralias = GDKstrdup(alias);
+	}
+	if(!ralias) {
+		CQ_MALLOC_FAIL(finish)
+	}
+
 	found = f->func;
-	/*if(found->res && list_length(found->res)) { //for functions we have to store the results somewhere
+	if(found->res && list_length(found->res)) { //for functions we have to store the results somewhere
 		if(IS_UNION(found)) { //if it is a UNION (returning a table), we store it in a
-			if((sqlquery = GDKmalloc(CQ_SQL_QUERY_SIZE)) == NULL) {
-				CQ_MALLOC_FAIL(finish)
+			oid prevID;
+			str prevUserName;
+			//change IDs
+			prevID = cntxt->user;
+			prevUserName = cntxt->username;
+			cntxt->user = CQ_SCHEDULER_CLIENTID;
+			if((msg = AUTHgetUsername(&cntxt->username, cntxt)) == MAL_SUCCEED) {
+				if((tmp_schema = mvc_bind_schema(m, "tmp")) == NULL) {
+					msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Failed to bind tmp schema\n");
+					goto revertids;
+				}
+				if(mvc_bind_table(m, tmp_schema, ralias)) {
+					msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Table tmp.%s already exists\n", ralias);
+					goto revertids;
+				}
+				if((t = mvc_create_stream_table(m, tmp_schema, ralias, tt_stream_temp, 0, SQL_DECLARED_TABLE, CA_COMMIT,
+												-1, DEFAULT_TABLE_WINDOW, DEFAULT_TABLE_STRIDE)) == NULL) {
+					msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Failed create internal stream table\n");
+					goto revertids;
+				}
+				for (argn = found->res->h; argn; argn = argn->next) {
+					sql_arg* arg = (sql_arg *) argn->data;
+					if(!mvc_create_column(m, t, arg->name, &arg->type)) {
+						msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Failed to create internal stream table\n");
+						goto revertids;
+					}
+				}
+				msg = create_table_or_view(m, "tmp", ralias, t, tt_stream_temp);
+				//msg = sql_grant_table_privs(m, "public", PRIV_SELECT, "tmp", ralias, NULL, 0, USER_MONETDB);
 			}
-			sqlquery[0] = '\0';
-			pos = 0;
-			pos += snprintf(sqlquery + pos, sqlquerysize - pos, "create temporary stream table \"%s\" (", found->imp);
-			for (argn = found->res->h; argn; argn = argn->next) {
-				sql_arg* argument = (sql_arg *) argn->data;
-				pos += snprintf(sqlquery + pos, sqlquerysize - pos, "\"%s\" %s%s",
-								argument->name, argument->type.type->sqlname, argn->next ? "," : "");
-			}
-			pos += snprintf(sqlquery + pos, sqlquerysize - pos, ");");
-			if((msg = SQLstatementIntern(cntxt, &sqlquery, "cquery.register", 1, 0, NULL))) {
+	revertids:
+			//set the IDs back
+			if(cntxt->username)
+				GDKfree(cntxt->username);
+			cntxt->user = prevID;
+			cntxt->username = prevUserName;
+			if(msg) {
 				FREE_CQ_MB(finish)
 			}
-		} else if(IS_FUNC(found)) {
+		} /*else if(IS_FUNC(found)) {
 
-		}
-	}*/
+		}*/
+	}
 
 	MT_lock_set(&ttrLock);
 	cid = ++CQ_counter;
@@ -561,14 +618,6 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		FREE_CQ_MB(finish)
 	}
 
-	if(!alias || strcmp(alias, str_nil) == 0) { //set the alias
-		ralias = GDKstrdup(fname);
-	} else {
-		ralias = GDKstrdup(alias);
-	}
-	if(ralias == NULL) {
-		CQ_MALLOC_FAIL(finish)
-	}
 	if ((sym = findSymbol(cntxt->usermodule, "user", fname)) == NULL){ // access the actual procedure body
 		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Cannot find %s user.%s\n", err_message, fname);
 		FREE_CQ_MB(finish)
@@ -602,7 +651,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		FREE_CQ_MB(unlock)
 	}
 	if((msg = CQanalysis(cntxt, sym->def, pnettop)) != MAL_SUCCEED) {
-		CLEAN_BASKETS(pnettop)
+		cleanBaskets(pnettop);
 		FREE_CQ_MB(unlock)
 	}
 	if(heartbeats != HEARTBEAT_NIL) {
@@ -610,14 +659,14 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 			if(baskets[pnet[pnettop].baskets[i]].window != DEFAULT_TABLE_WINDOW) {
 				msg = createException(SQL, "cquery.register",
 									  SQLSTATE(42000) "Heartbeat ignored, a window constraint exists\n");
-				CLEAN_BASKETS(pnettop)
+				cleanBaskets(pnettop);
 				FREE_CQ_MB(unlock)
 			}
 		}
 	}
 
 	if((pnet[pnettop].stk = prepareMALstack(mb, mb->vsize)) == NULL) { //prepare MAL stack
-		CLEAN_BASKETS(pnettop)
+		cleanBaskets(pnettop);
 		CQ_MALLOC_FAIL(unlock)
 	}
 
@@ -644,10 +693,10 @@ unlock:
 		MT_lock_unset(&ttrLock);
 	}
 finish:
+	/*if(msg && tmp_schema && t)
+		mvc_drop_table(m, s, t, 0);*/
 	if(freeMB)
 		freeMalBlk(be->mb);
-	if(sqlquery)
-		GDKfree(sqlquery);
 	be->mb = prev;
 	return msg;
 }
@@ -968,7 +1017,7 @@ CQwait(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 /* Remove a specific continuous query from the scheduler */
 
 str
-CQderegister(str alias)
+CQderegister(Client cntxt, str alias)
 {
 	int idx = 0;
 	str msg = MAL_SUCCEED, this_alias = NULL;
@@ -992,7 +1041,7 @@ CQderegister(str alias)
 		}
 		MT_lock_set(&ttrLock);
 		if(idx < pnettop && this_alias == pnet[idx].alias) {
-			CQfree(idx);
+			CQfree(cntxt, idx);
 		}
 		if( pnettop == 0) {
 			pnstatus = CQSTOP;
@@ -1013,7 +1062,7 @@ finish:
 }
 
 str
-CQderegisterAll(void)
+CQderegisterAll(Client cntxt)
 {
 	str msg = MAL_SUCCEED, this_alias = NULL;
 	int i;
@@ -1034,7 +1083,7 @@ CQderegisterAll(void)
 			}
 			MT_lock_set(&ttrLock);
 			if(i < pnettop && this_alias == pnet[i].alias) {
-				CQfree(i);
+				CQfree(cntxt, i);
 			}
 		} else {
 			pnet[i].status = CQDELETE;
@@ -1235,7 +1284,7 @@ CQscheduler(void *dummy)
 			if( pnet[i].cycles != CYCLES_NIL && pnet[i].cycles > 0) {
 				pnet[i].cycles--;
 				if(pnet[i].cycles == 0) { //if it was the last cycle of the CQ, remove it
-					CQfree(i);
+					CQfree(cntxt, i);
 					i--;
 					continue; //an entry was deleted, so jump over!
 				}
@@ -1248,7 +1297,7 @@ CQscheduler(void *dummy)
 		}
 		for(i = pnettop - 1; i >= 0; i--) { //more defensive way to stop continuous queries from the scheduler itself
 			if( pnet[i].status == CQDELETE){
-				CQfree(i);
+				CQfree(cntxt, i);
 			}
 		}
 		if( pnettop == 0)
@@ -1367,7 +1416,7 @@ void
 CQreset(void)
 {
 	if(pnet) {
-		CQderegisterAll(); //stop all continuous queries
+		CQderegisterAll(NULL); //stop all continuous queries
 		GDKfree(pnet);
 	}
 	pnet = NULL;

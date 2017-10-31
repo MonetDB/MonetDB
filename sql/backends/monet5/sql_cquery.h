@@ -79,11 +79,11 @@ sql5_export str CQlog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias, int which, lng heartbeats, lng startat, int cycles);
 sql5_export str CQresume(str alias, int with_alter, lng heartbeats, lng startat, int cycles);
 sql5_export str CQpause(str alias);
-sql5_export str CQderegister(str alias);
+sql5_export str CQderegister(Client cntxt, str alias);
 
 sql5_export str CQpauseAll(void);
 sql5_export str CQresumeAll(void);
-sql5_export str CQderegisterAll(void);
+sql5_export str CQderegisterAll(Client cntxt);
 
 sql5_export str CQdump(void *ret);
 sql5_export void CQreset(void);
