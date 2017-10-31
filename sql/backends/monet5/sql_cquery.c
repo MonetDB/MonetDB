@@ -115,6 +115,8 @@ CQfree(Client cntxt, int idx)
 	int i;
 	InstrPtr p;
 
+	//clean the baskets if so
+	cleanBaskets(idx);
 	if(cntxt && IS_UNION(pnet[idx].func)) {
 		oid prevID;
 		str prevUserName;
@@ -144,8 +146,6 @@ CQfree(Client cntxt, int idx)
 	if(pnet[idx].error)
 		GDKfree(pnet[idx].error);
 	GDKfree(pnet[idx].alias);
-	//clean the baskets if so
-	cleanBaskets(idx);
 	// compact the pnet table
 	for(i=idx; i<pnettop-1; i++)
 		pnet[i] = pnet[i+1];
@@ -354,15 +354,15 @@ finish:
 /* Make sure we do not re-use the same source more than once */
 /* Avoid any concurrency conflict */
 static str
-CQanalysis(Client cntxt, MalBlkPtr mb, int idx)
+CQanalysis(Client cntxt, MalBlkPtr mb, int idx, int isUnion, str alias)
 {
 	int i, j, bskt, binout;
 	InstrPtr p;
-	str msg= MAL_SUCCEED, sch, tbl;
+	str msg = MAL_SUCCEED, sch, tbl;
 	(void) cntxt;
 
 	p = getInstrPtr(mb, 0);
-	for (i = 0; msg== MAL_SUCCEED && i < mb->stop; i++) {
+	for (i = 0; msg == MAL_SUCCEED && i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		if (getModuleId(p) == basketRef && (getFunctionId(p) == registerRef || getFunctionId(p) == bindRef)){
 			sch = getVarConstant(mb, getArg(p,2)).val.sval;
@@ -380,7 +380,7 @@ CQanalysis(Client cntxt, MalBlkPtr mb, int idx)
 				strcmp(tbl, baskets[pnet[idx].baskets[j]].table->base.name) == 0 )
 				break;
 			if ( j == MAXSTREAMS){
-				msg = createException(MAL,"cquery.analysis",SQLSTATE(3F000) "too many stream table columns\n");
+				msg = createException(MAL,"cquery.analysis",SQLSTATE(3F000) "Too many stream table columns\n");
 				continue;
 			}
 
@@ -389,6 +389,22 @@ CQanalysis(Client cntxt, MalBlkPtr mb, int idx)
 
 			pnet[idx].baskets[j] = bskt;
 			pnet[idx].inout[j] = binout == 0 ? STREAM_IN : STREAM_OUT;
+		}
+	}
+	if(isUnion && msg == MAL_SUCCEED) { //register the output stream into the baskets
+		if((msg = BSKTregisterInternal(cntxt,mb,"tmp",alias,&bskt)) == MAL_SUCCEED) {
+			for( j=0; j< MAXSTREAMS && pnet[idx].baskets[j]; j++)
+				if( strcmp(sch, baskets[pnet[idx].baskets[j]].table->s->base.name) == 0 &&
+					strcmp(tbl, baskets[pnet[idx].baskets[j]].table->base.name) == 0 )
+					break;
+			if ( j == MAXSTREAMS){
+				msg = createException(MAL,"cquery.analysis",SQLSTATE(3F000) "Too many stream table columns\n");
+			} else if ( pnet[idx].baskets[j] ) {
+				msg = createException(MAL,"cquery.analysis",SQLSTATE(3F000) "The output stream is already used inside the function body\n");
+			} else {
+				pnet[idx].baskets[j] = bskt;
+				pnet[idx].inout[j] = STREAM_OUT;
+			}
 		}
 	}
 	return msg;
@@ -650,7 +666,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 				err_message, ralias);
 		FREE_CQ_MB(unlock)
 	}
-	if((msg = CQanalysis(cntxt, sym->def, pnettop)) != MAL_SUCCEED) {
+	if((msg = CQanalysis(cntxt, sym->def, pnettop, IS_UNION(found), ralias)) != MAL_SUCCEED) {
 		cleanBaskets(pnettop);
 		FREE_CQ_MB(unlock)
 	}
@@ -693,8 +709,6 @@ unlock:
 		MT_lock_unset(&ttrLock);
 	}
 finish:
-	/*if(msg && tmp_schema && t)
-		mvc_drop_table(m, s, t, 0);*/
 	if(freeMB)
 		freeMalBlk(be->mb);
 	be->mb = prev;
