@@ -599,7 +599,7 @@ dosum(const void *restrict values, int nonil, oid seqb, BUN start, BUN end,
 	BUN nils = 0;
 	BUN i;
 	oid gid;
-	unsigned int *restrict seen; /* bitmask for groups that we've seen */
+	unsigned int *restrict seen = NULL; /* bitmask for groups that we've seen */
 
 	switch (tp2) {
 	case TYPE_flt:
