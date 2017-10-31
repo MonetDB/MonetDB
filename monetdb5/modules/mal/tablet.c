@@ -133,7 +133,7 @@ str
 TABLETcreate_bats(Tablet *as, BUN est)
 {
 	Column *fmt = as->format;
-	BUN i;
+	BUN i, nr = 0;
 
 	for (i = 0; i < as->nr_attrs; i++) {
 		if (fmt[i].skip)
@@ -147,7 +147,10 @@ TABLETcreate_bats(Tablet *as, BUN est)
 			throw(SQL, "copy", "Failed to create bat of size " BUNFMT "\n", as->nr);
 		}
 		fmt[i].ci = bat_iterator(fmt[i].c);
+		nr++;
 	}
+	if (!nr) 
+		throw(SQL, "copy", "At least one column should be read from the input\n");
 	return MAL_SUCCEED;
 }
 
@@ -264,10 +267,10 @@ TABLET_error(stream *s)
    with UDP, where you may loose most of the information using short writes
 */
 static inline int
-output_line(char **buf, int *len, char **localbuf, int *locallen, Column *fmt, stream *fd, BUN nr_attrs, oid id)
+output_line(char **buf, size_t *len, char **localbuf, size_t *locallen, Column *fmt, stream *fd, BUN nr_attrs, oid id)
 {
 	BUN i;
-	int fill = 0;
+	ssize_t fill = 0;
 
 	for (i = 0; i < nr_attrs; i++) {
 		if (fmt[i].c == NULL)
@@ -280,19 +283,21 @@ output_line(char **buf, int *len, char **localbuf, int *locallen, Column *fmt, s
 		for (i = 0; i < nr_attrs; i++) {
 			Column *f = fmt + i;
 			const char *p;
-			int l;
+			ssize_t l;
 
 			if (f->c) {
 				p = BUNtail(f->ci, f->p);
 
 				if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) == 0) {
 					p = f->nullstr;
-					l = (int) strlen(f->nullstr);
+					l = (ssize_t) strlen(f->nullstr);
 				} else {
 					l = f->tostr(f->extra, localbuf, locallen, f->adt, p);
+					if (l < 0)
+						return -1;
 					p = *localbuf;
 				}
-				if (fill + l + f->seplen >= *len) {
+				if (fill + l + f->seplen >= (ssize_t) *len) {
 					/* extend the buffer */
 					char *nbuf;
 					nbuf = GDKrealloc(*buf, fill + l + f->seplen + BUFSIZ);
@@ -314,27 +319,29 @@ output_line(char **buf, int *len, char **localbuf, int *locallen, Column *fmt, s
 }
 
 static inline int
-output_line_dense(char **buf, int *len, char **localbuf, int *locallen, Column *fmt, stream *fd, BUN nr_attrs)
+output_line_dense(char **buf, size_t *len, char **localbuf, size_t *locallen, Column *fmt, stream *fd, BUN nr_attrs)
 {
 	BUN i;
-	int fill = 0;
+	ssize_t fill = 0;
 
 	for (i = 0; i < nr_attrs; i++) {
 		Column *f = fmt + i;
 		const char *p;
-		int l;
+		ssize_t l;
 
 		if (f->c) {
 			p = BUNtail(f->ci, f->p);
 
 			if (!p || ATOMcmp(f->adt, ATOMnilptr(f->adt), p) == 0) {
 				p = f->nullstr;
-				l = (int) strlen(p);
+				l = (ssize_t) strlen(p);
 			} else {
 				l = f->tostr(f->extra, localbuf, locallen, f->adt, p);
+				if (l < 0)
+					return -1;
 				p = *localbuf;
 			}
-			if (fill + l + f->seplen >= *len) {
+			if (fill + l + f->seplen >= (ssize_t) *len) {
 				/* extend the buffer */
 				char *nbuf;
 				nbuf = GDKrealloc(*buf, fill + l + f->seplen + BUFSIZ);
@@ -356,7 +363,7 @@ output_line_dense(char **buf, int *len, char **localbuf, int *locallen, Column *
 }
 
 static inline int
-output_line_lookup(char **buf, int *len, Column *fmt, stream *fd, BUN nr_attrs, oid id)
+output_line_lookup(char **buf, size_t *len, Column *fmt, stream *fd, BUN nr_attrs, oid id)
 {
 	BUN i;
 
@@ -371,9 +378,9 @@ output_line_lookup(char **buf, int *len, Column *fmt, stream *fd, BUN nr_attrs, 
 				if (mnstr_write(fd, f->nullstr, 1, l) != (ssize_t) l)
 					return TABLET_error(fd);
 			} else {
-				int l = f->tostr(f->extra, buf, len, f->adt, p);
+				ssize_t l = f->tostr(f->extra, buf, len, f->adt, p);
 
-				if (mnstr_write(fd, *buf, 1, l) != l)
+				if (l < 0 || mnstr_write(fd, *buf, 1, l) != l)
 					return TABLET_error(fd);
 			}
 		}
@@ -456,7 +463,8 @@ tablet_read_more(bstream *in, stream *out, size_t n)
 static int
 output_file_default(Tablet *as, BAT *order, stream *fd)
 {
-	int len = BUFSIZ, locallen = BUFSIZ, res = 0;
+	size_t len = BUFSIZ, locallen = BUFSIZ;
+	int res = 0;
 	char *buf = GDKzalloc(len);
 	char *localbuf = GDKzalloc(len);
 	BUN p, q;
@@ -489,7 +497,8 @@ output_file_default(Tablet *as, BAT *order, stream *fd)
 static int
 output_file_dense(Tablet *as, stream *fd)
 {
-	int len = BUFSIZ, locallen = BUFSIZ, res = 0;
+	size_t len = BUFSIZ, locallen = BUFSIZ;
+	int res = 0;
 	char *buf = GDKzalloc(len);
 	char *localbuf = GDKzalloc(len);
 	BUN i = 0;
@@ -518,7 +527,8 @@ output_file_dense(Tablet *as, stream *fd)
 static int
 output_file_ordered(Tablet *as, BAT *order, stream *fd)
 {
-	int len = BUFSIZ, res = 0;
+	size_t len = BUFSIZ;
+	int res = 0;
 	char *buf = GDKzalloc(len);
 	BUN p, q;
 	BUN i = 0;

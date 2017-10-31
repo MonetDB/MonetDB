@@ -149,14 +149,13 @@ CMDBATpartition2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 		hval = lval+step;
 	bn =  BATslice(b, lval,hval);
-	BAThseqbase(bn, lval + b->hseqbase) ;
+	BAThseqbase(bn, lval + b->hseqbase);
+	BBPunfix(b->batCacheid);
 	if (bn== NULL){
-		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.partition",  INTERNAL_OBJ_CREATE);
 	}
 	ret= getArgReference_bat(stk,pci,0);
 	BBPkeepref(*ret = bn->batCacheid);
-	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 

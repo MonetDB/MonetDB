@@ -44,7 +44,7 @@
 #define SESSION_RO 1
 
 str
-sql_update_var(mvc *m, char *name, char *sval, lng sgn)
+sql_update_var(mvc *m, const char *name, char *sval, lng sgn)
 {
 	if (strcmp(name, "debug") == 0) {
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);

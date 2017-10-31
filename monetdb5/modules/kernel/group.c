@@ -24,9 +24,12 @@ GRPsubgroup5(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, co
 	e = eid ? BATdescriptor(*eid) : NULL;
 	h = hid ? BATdescriptor(*hid) : NULL;
 	if (b == NULL ||
+		(sid != NULL && s == NULL) ||
 		(gid != NULL && g == NULL) ||
 		(eid != NULL && e == NULL) ||
 		(hid != NULL && h == NULL)) {
+		if (b)
+			BBPunfix(b->batCacheid);
 		if (s)
 			BBPunfix(s->batCacheid);
 		if (g)

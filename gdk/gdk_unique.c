@@ -64,12 +64,7 @@ BATunique(BAT *b, BAT *s)
 		/* we can return all values */
 		ALGODEBUG fprintf(stderr, "#BATunique(b=%s#" BUNFMT ",s=NULL): trivial case: already unique, return all\n",
 				  BATgetId(b), BATcount(b));
-		bn = COLnew(0, TYPE_void, BATcount(b), TRANSIENT);
-		if (bn == NULL)
-			return NULL;
-		BATsetcount(bn, BATcount(b));
-		BATtseqbase(bn, b->hseqbase);
-		return bn;
+		return BATdense(0, b->hseqbase, BATcount(b));
 	}
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -80,12 +75,7 @@ BATunique(BAT *b, BAT *s)
 				  BATgetId(b), BATcount(b),
 				  s ? BATgetId(s) : "NULL",
 				  s ? BATcount(s) : 0);
-		bn = COLnew(0, TYPE_void, 0, TRANSIENT);
-		if (bn == NULL)
-			return NULL;
-		BATsetcount(bn, 0);
-		BATtseqbase(bn, b->hseqbase);
-		return bn;
+		return BATdense(0, b->hseqbase, 0);
 	}
 
 	if ((BATordered(b) && BATordered_rev(b)) ||
@@ -95,12 +85,7 @@ BATunique(BAT *b, BAT *s)
 				  BATgetId(b), BATcount(b),
 				  s ? BATgetId(s) : "NULL",
 				  s ? BATcount(s) : 0);
-		bn = COLnew(0, TYPE_void, 1, TRANSIENT);
-		if (bn == NULL)
-			return NULL;
-		BATsetcount(bn, 1);
-		BATtseqbase(bn, cand ? *cand : b->hseqbase);
-		return bn;
+		return BATdense(0, cand ? *cand : b->hseqbase, 1);
 	}
 
 	if (cand && BATcount(b) > 16 * BATcount(s)) {

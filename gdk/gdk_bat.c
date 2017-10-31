@@ -246,10 +246,10 @@ BATdense(oid hseq, oid tseq, BUN cnt)
 	BAT *bn;
 
 	bn = COLnew(hseq, TYPE_void, 0, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-	BATtseqbase(bn, tseq);
-	BATsetcount(bn, cnt);
+	if (bn != NULL) {
+		BATtseqbase(bn, tseq);
+		BATsetcount(bn, cnt);
+	}
 	return bn;
 }
 
@@ -341,7 +341,7 @@ BATattach(int tt, const char *heapfile, int role)
 		}
 	} else {
 		struct stat st;
-		int atomsize;
+		unsigned int atomsize;
 		BUN cap;
 		lng n;
 
@@ -662,7 +662,6 @@ wrongtype(int t1, int t2)
 			if (ATOMvarsized(t1) ||
 			    ATOMvarsized(t2) ||
 			    ATOMsize(t1) != ATOMsize(t2) ||
-			    ATOMalign(t1) != ATOMalign(t2) ||
 			    BATatoms[t1].atomFix ||
 			    BATatoms[t2].atomFix)
 				return TRUE;
@@ -1380,6 +1379,7 @@ BATsetcount(BAT *b, BUN cnt)
 {
 	/* head column is always VOID, and some head properties never change */
 	assert(b->hseqbase != oid_nil);
+	assert(cnt <= BUN_MAX);
 
 	b->batCount = cnt;
 	b->batDirtydesc = TRUE;
@@ -1655,8 +1655,8 @@ BATroles(BAT *b, const char *tnme)
  * commit, because the commit may fail and then the more unsafe
  * transient mmap modes would be present on a persistent bat.
  *
- * See dirty_bat() in BBPsync() -- gdk_bbp.mx and epilogue() in
- * gdk_tm.mx
+ * See dirty_bat() in BBPsync() -- gdk_bbp.c and epilogue() in
+ * gdk_tm.c.
  *
  * Including the exception states, we have 11 of the 16
  * combinations. As for the 5 avoided states, all four

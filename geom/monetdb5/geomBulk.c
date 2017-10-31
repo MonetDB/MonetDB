@@ -1347,7 +1347,9 @@ wkbMakeLine_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	BUN i;
 
 	//get the BATs
-	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL || (bBAT = BATdescriptor(*bBAT_id)) == NULL) {
+	aBAT = BATdescriptor(*aBAT_id);
+	bBAT = BATdescriptor(*bBAT_id);
+	if (aBAT == NULL || bBAT == NULL) {
 		if (aBAT)
 			BBPunfix(aBAT->batCacheid);
 		if (bBAT)
@@ -1410,7 +1412,9 @@ wkbUnion_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	BUN i;
 
 	//get the BATs
-	if ((aBAT = BATdescriptor(*aBAT_id)) == NULL || (bBAT = BATdescriptor(*bBAT_id)) == NULL) {
+	aBAT = BATdescriptor(*aBAT_id);
+	bBAT = BATdescriptor(*bBAT_id);
+	if (aBAT == NULL || bBAT == NULL) {
 		if (aBAT)
 			BBPunfix(aBAT->batCacheid);
 		if (bBAT)

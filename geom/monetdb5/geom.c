@@ -2063,7 +2063,7 @@ geom_prelude(void *ret)
 {
 	(void) ret;
 	libgeom_init();
-	TYPE_mbr = malAtomSize(sizeof(mbr), sizeof(oid), "mbr");
+	TYPE_mbr = malAtomSize(sizeof(mbr), "mbr");
 	geomcatalogfix_set(geom_catalog_upgrade);
 	geomsqlfix_set(geom_sql_upgrade);
 
@@ -2081,7 +2081,7 @@ geom_epilogue(void *ret)
 
 /* Check if fixed-sized atom mbr is null */
 static int
-mbr_isnil(mbr *m)
+mbr_isnil(const mbr *m)
 {
 	if (m == NULL || m->xmin == flt_nil || m->ymin == flt_nil || m->xmax == flt_nil || m->ymax == flt_nil)
 		return 1;
@@ -2136,27 +2136,27 @@ strncasecmp(const char *s1, const char *s2, size_t n)
 /* Creates WKB representation (including srid) from WKT representation */
 /* return number of parsed characters. */
 static str
-wkbFROMSTR_withSRID(char *geomWKT, int *len, wkb **geomWKB, int srid, size_t *nread)
+wkbFROMSTR_withSRID(const char *geomWKT, size_t *len, wkb **geomWKB, int srid, size_t *nread)
 {
 	GEOSGeom geosGeometry = NULL;	/* The geometry object that is parsed from the src string. */
 	GEOSWKTReader *WKT_reader;
 	const char *polyhedralSurface = "POLYHEDRALSURFACE";
 	const char *multiPolygon = "MULTIPOLYGON";
-	char *geomWKT_original = NULL;
+	char *geomWKT_new = NULL;
 	size_t parsedCharacters = 0;
 
 	*nread = 0;
-	if (*len > 0) {
-		/* we always allocate new memory */
-		GDKfree(*geomWKB);
-	}
+
+	/* we always allocate new memory */
+	GDKfree(*geomWKB);
 	*len = 0;
 	*geomWKB = NULL;
-	if (strcmp(geomWKT, str_nil) == 0) {
+
+	if (GDK_STRNIL(geomWKT)) {
 		*geomWKB = wkbNULLcopy();
 		if (*geomWKB == NULL)
 			throw(MAL, "wkb.FromText", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		*len = (int) sizeof(wkb_nil);
+		*len = sizeof(wkb_nil);
 		return MAL_SUCCEED;
 	}
 	//check whether the representation is binary (hex)
@@ -2166,7 +2166,7 @@ wkbFROMSTR_withSRID(char *geomWKT, int *len, wkb **geomWKB, int srid, size_t *nr
 		if (ret != MAL_SUCCEED)
 			return ret;
 		*nread = strlen(geomWKT);
-		*len = (int) wkb_size((*geomWKB)->len);
+		*len = (size_t) wkb_size((*geomWKB)->len);
 		return MAL_SUCCEED;
 	}
 	//check whether the geometry type is polyhedral surface
@@ -2176,34 +2176,32 @@ wkbFROMSTR_withSRID(char *geomWKT, int *len, wkb **geomWKB, int srid, size_t *nr
 	//not work correctly.
 	if (strncasecmp(geomWKT, polyhedralSurface, strlen(polyhedralSurface)) == 0) {
 		size_t sizeOfInfo = strlen(geomWKT) - strlen(polyhedralSurface);
-		geomWKT_original = geomWKT;
-		geomWKT = GDKmalloc(sizeOfInfo + strlen(multiPolygon) + 1);
-		if (geomWKT == NULL)
+		geomWKT_new = GDKmalloc(sizeOfInfo + strlen(multiPolygon) + 1);
+		if (geomWKT_new == NULL)
 			throw(MAL, "wkb.FromText", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		strcpy(geomWKT, multiPolygon);
-		memcpy(geomWKT + strlen(multiPolygon), &geomWKT_original[strlen(polyhedralSurface)], sizeOfInfo);
-		geomWKT[sizeOfInfo + strlen(multiPolygon)] = '\0';
+		sprintf(geomWKT_new, "%s%s", multiPolygon, geomWKT + strlen(polyhedralSurface));
+		geomWKT = geomWKT_new;
 	}
 	////////////////////////// UP TO HERE ///////////////////////////
 
 	WKT_reader = GEOSWKTReader_create();
 	if (WKT_reader == NULL) {
-		if (geomWKT_original)
-			GDKfree(geomWKT);
+		if (geomWKT_new)
+			GDKfree(geomWKT_new);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSWKTReader_create failed");
 	}
 	geosGeometry = GEOSWKTReader_read(WKT_reader, geomWKT);
 	GEOSWKTReader_destroy(WKT_reader);
 
 	if (geosGeometry == NULL) {
-		if (geomWKT_original)
-			GDKfree(geomWKT);
+		if (geomWKT_new)
+			GDKfree(geomWKT_new);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSWKTReader_read failed");
 	}
 
 	if (GEOSGeomTypeId(geosGeometry) == -1) {
-		if (geomWKT_original)
-			GDKfree(geomWKT);
+		if (geomWKT_new)
+			GDKfree(geomWKT_new);
 		GEOSGeom_destroy(geosGeometry);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation GEOSGeomTypeId failed");
 	}
@@ -2217,26 +2215,23 @@ wkbFROMSTR_withSRID(char *geomWKT, int *len, wkb **geomWKB, int srid, size_t *nr
 	*geomWKB = geos2wkb(geosGeometry);
 	GEOSGeom_destroy(geosGeometry);
 	if (*geomWKB == NULL) {
-		if (geomWKT_original)
-			GDKfree(geomWKT);
+		if (geomWKT_new)
+			GDKfree(geomWKT_new);
 		throw(MAL, "wkb.FromText", SQLSTATE(38000) "Geos operation geos2wkb failed");
 	}
 
-	*len = (int) wkb_size((*geomWKB)->len);
-
-	if (geomWKT_original) {
-		GDKfree(geomWKT);
-		geomWKT = geomWKT_original;
-	}
-
+	*len = (size_t) wkb_size((*geomWKB)->len);
 	parsedCharacters = strlen(geomWKT);
 	assert(parsedCharacters <= GDK_int_max);
+
+	GDKfree(geomWKT_new);
+
 	*nread = parsedCharacters;
 	return MAL_SUCCEED;
 }
 
-static int
-wkbaFROMSTR_withSRID(char *fromStr, int *len, wkba **toArray, int srid)
+static ssize_t
+wkbaFROMSTR_withSRID(const char *fromStr, size_t *len, wkba **toArray, int srid)
 {
 	int items, i;
 	size_t skipBytes = 0;
@@ -2248,20 +2243,21 @@ wkbaFROMSTR_withSRID(char *fromStr, int *len, wkba **toArray, int srid)
 	skipBytes += sizeof(int);
 	*toArray = GDKmalloc(wkba_size(items));
 	if (*toArray == NULL)
-		return 0;
+		return -1;
 
 	for (i = 0; i < items; i++) {
 		size_t parsedBytes;
 		str err = wkbFROMSTR_withSRID(fromStr + skipBytes, len, &(*toArray)->data[i], srid, &parsedBytes);
 		if (err != MAL_SUCCEED) {
+			GDKerror("%s", getExceptionMessageAndState(err));
 			freeException(err);
-			return 0;
+			return -1;
 		}
 		skipBytes += parsedBytes;
 	}
 
 	assert(skipBytes <= GDK_int_max);
-	return (int) skipBytes;
+	return (ssize_t) skipBytes;
 }
 
 /* create the WKB out of the GEOSGeometry
@@ -2442,7 +2438,7 @@ decit(char hex)
 }
 
 str
-wkbFromBinary(wkb **geomWKB, char **inStr)
+wkbFromBinary(wkb **geomWKB, const char **inStr)
 {
 	size_t strLength, wkbLength, i;
 	wkb *w;
@@ -2516,7 +2512,7 @@ wkbFromWKB(wkb **w, wkb **src)
 str
 wkbFromText(wkb **geomWKB, str *geomWKT, int *srid, int *tpe)
 {
-	int len = 0;
+	size_t len = 0;
 	int te = 0;
 	str err;
 	size_t parsedBytes;
@@ -2550,10 +2546,9 @@ wkbFromText(wkb **geomWKB, str *geomWKT, int *srid, int *tpe)
 str
 wkbAsText(char **txt, wkb **geomWKB, int *withSRID)
 {
-	int len = 0;
+	size_t len = 0;
 	char *wkt = NULL;
 	const char *sridTxt = "SRID:";
-	size_t len2 = 0;
 
 	if (wkb_isnil(*geomWKB) || (withSRID && *withSRID == int_nil)) {
 		if ((*txt = GDKstrdup(str_nil)) == NULL)
@@ -2564,7 +2559,7 @@ wkbAsText(char **txt, wkb **geomWKB, int *withSRID)
 	if ((*geomWKB)->srid < 0)
 		throw(MAL, "geom.AsText", SQLSTATE(38000) "Geod negative SRID");
 
-	if (wkbTOSTR(&wkt, &len, *geomWKB) == 0)
+	if (wkbTOSTR(&wkt, &len, *geomWKB) < 0)
 		throw(MAL, "geom.AsText", SQLSTATE(38000) "Geos failed to create Text from Well Known Format");
 
 	if (withSRID == NULL || *withSRID == 0) {	//accepting NULL withSRID to make internal use of it easier
@@ -2573,14 +2568,14 @@ wkbAsText(char **txt, wkb **geomWKB, int *withSRID)
 	}
 
 	/* 10 for maximum number of digits to represent an INT */
-	len2 = strlen(wkt) + 10 + strlen(sridTxt) + 2;
-	*txt = GDKmalloc(len2);
+	len = strlen(wkt) + 10 + strlen(sridTxt) + 2;
+	*txt = GDKmalloc(len);
 	if (*txt == NULL) {
 		GDKfree(wkt);
 		throw(MAL, "geom.AsText", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
-	snprintf(*txt, len2, "%s%d;%s", sridTxt, (*geomWKB)->srid, wkt);
+	snprintf(*txt, len, "%s%d;%s", sridTxt, (*geomWKB)->srid, wkt);
 
 	GDKfree(wkt);
 	return MAL_SUCCEED;
@@ -5002,14 +4997,16 @@ wkbCoordinateFromWKB(dbl *coordinateValue, wkb **geomWKB, int *coordinateIdx)
 }
 
 str
-mbrFromString(mbr **w, str *src)
+mbrFromString(mbr **w, const char **src)
 {
-	int len = *w ? (int) sizeof(mbr) : 0;
+	size_t len = *w ? sizeof(mbr) : 0;
 	char *errbuf;
 	str ex;
 
-	if (mbrFROMSTR(*src, &len, w))
+	if (mbrFROMSTR(*src, &len, w) >= 0)
 		return MAL_SUCCEED;
+	GDKfree(*w);
+	*w = NULL;
 	errbuf = GDKerrbuf;
 	if (errbuf) {
 		if (strncmp(errbuf, "!ERROR: ", 8) == 0)
@@ -5058,8 +5055,8 @@ ordinatesMBR(mbr **res, flt *minX, flt *minY, flt *maxX, flt *maxY)
 
 /* Creates the string representation (WKT) of a WKB */
 /* return length of resulting string. */
-int
-wkbTOSTR(char **geomWKT, int *len, wkb *geomWKB)
+ssize_t
+wkbTOSTR(char **geomWKT, size_t *len, const wkb *geomWKB)
 {
 	char *wkt = NULL;
 	size_t dstStrLen = 5;	/* "nil" */
@@ -5075,6 +5072,10 @@ wkbTOSTR(char **geomWKT, int *len, wkb *geomWKB)
 		GEOSWKTWriter_setOutputDimension(WKT_wr, GEOSGeom_getCoordinateDimension(geosGeometry));
 		GEOSWKTWriter_setTrim(WKT_wr, 1);
 		wkt = GEOSWKTWriter_write(WKT_wr, geosGeometry);
+		if (wkt == NULL) {
+			GDKerror("GEOSWKTWriter_write failed\n");
+			return -1;
+		}
 		l = strlen(wkt);
 		assert(l < GDK_int_max);
 		dstStrLen = l + 2;	/* add quotes */
@@ -5083,12 +5084,12 @@ wkbTOSTR(char **geomWKT, int *len, wkb *geomWKB)
 	}
 
 	if (wkt) {
-		if (*len < (int) dstStrLen + 1 || *geomWKT == NULL) {
-			*len = (int) dstStrLen + 1;
+		if (*len < dstStrLen + 1 || *geomWKT == NULL) {
+			*len = dstStrLen + 1;
 			GDKfree(*geomWKT);
 			if ((*geomWKT = GDKmalloc(*len)) == NULL) {
 				GEOSFree(wkt);
-				return 0;
+				return -1;
 			}
 		}
 		snprintf(*geomWKT, *len, "\"%s\"", wkt);
@@ -5097,31 +5098,32 @@ wkbTOSTR(char **geomWKT, int *len, wkb *geomWKB)
 		if (*len < 4 || *geomWKT == NULL) {
 			GDKfree(*geomWKT);
 			if ((*geomWKT = GDKmalloc(*len = 4)) == NULL)
-				return 0;
+				return -1;
 		}
 		strcpy(*geomWKT, "nil");
 	}
 
 	assert(dstStrLen <= GDK_int_max);
-	return (int) dstStrLen;
+	return (ssize_t) dstStrLen;
 }
 
-int
-wkbFROMSTR(char *geomWKT, int *len, wkb **geomWKB)
+ssize_t
+wkbFROMSTR(const char *geomWKT, size_t *len, wkb **geomWKB)
 {
 	size_t parsedBytes;
 	str err;
 
 	err = wkbFROMSTR_withSRID(geomWKT, len, geomWKB, 0, &parsedBytes);
 	if (err != MAL_SUCCEED) {
+		GDKerror("%s", getExceptionMessageAndState(err));
 		freeException(err);
-		return 0;
+		return -1;
 	}
-	return (int) parsedBytes;
+	return (ssize_t) parsedBytes;
 }
 
 BUN
-wkbHASH(wkb *w)
+wkbHASH(const wkb *w)
 {
 	int i;
 	BUN h = 0;
@@ -5134,14 +5136,14 @@ wkbHASH(wkb *w)
 }
 
 /* returns a pointer to a null wkb */
-wkb *
+const wkb *
 wkbNULL(void)
 {
 	return (&wkb_nil);
 }
 
 int
-wkbCOMP(wkb *l, wkb *r)
+wkbCOMP(const wkb *l, const wkb *r)
 {
 	int len = l->len;
 
@@ -5182,7 +5184,7 @@ wkbREAD(wkb *a, stream *s, size_t cnt)
 
 /* write wkb to log */
 gdk_return
-wkbWRITE(wkb *a, stream *s, size_t cnt)
+wkbWRITE(const wkb *a, stream *s, size_t cnt)
 {
 	int len = a->len;
 	int srid = a->srid;
@@ -5200,14 +5202,14 @@ wkbWRITE(wkb *a, stream *s, size_t cnt)
 }
 
 var_t
-wkbPUT(Heap *h, var_t *bun, wkb *val)
+wkbPUT(Heap *h, var_t *bun, const wkb *val)
 {
 	char *base;
 
 	*bun = HEAP_malloc(h, wkb_size(val->len));
 	base = h->base;
 	if (*bun) {
-		memcpy(&base[*bun], (char *) val, wkb_size(val->len));
+		memcpy(&base[*bun], val, wkb_size(val->len));
 		h->dirty = 1;
 	}
 	return *bun;
@@ -5219,12 +5221,12 @@ wkbDEL(Heap *h, var_t *index)
 	HEAP_free(h, *index);
 }
 
-int
-wkbLENGTH(wkb *p)
+size_t
+wkbLENGTH(const wkb *p)
 {
 	var_t len = wkb_size(p->len);
 	assert(len <= GDK_int_max);
-	return (int) len;
+	return (size_t) len;
 }
 
 void
@@ -5241,8 +5243,8 @@ wkbHEAP(Heap *heap, size_t capacity)
 
 /* TOSTR: print atom in a string. */
 /* return length of resulting string. */
-int
-mbrTOSTR(char **dst, int *len, mbr *atom)
+ssize_t
+mbrTOSTR(char **dst, size_t *len, const mbr *atom)
 {
 	static char tempWkt[MBR_WKTLEN];
 	size_t dstStrLen = 3;
@@ -5253,23 +5255,23 @@ mbrTOSTR(char **dst, int *len, mbr *atom)
 		assert(dstStrLen < GDK_int_max);
 	}
 
-	if (*len < (int) dstStrLen + 1 || *dst == NULL) {
+	if (*len < dstStrLen + 1 || *dst == NULL) {
 		GDKfree(*dst);
-		if ((*dst = GDKmalloc(*len = (int) dstStrLen + 1)) == NULL)
-			return 0;
+		if ((*dst = GDKmalloc(*len = dstStrLen + 1)) == NULL)
+			return -1;
 	}
 
 	if (dstStrLen > 3)
 		snprintf(*dst, *len, "\"%s\"", tempWkt);
 	else
 		strcpy(*dst, "nil");
-	return (int) dstStrLen;
+	return (ssize_t) dstStrLen;
 }
 
 /* FROMSTR: parse string to mbr. */
 /* return number of parsed characters. */
-int
-mbrFROMSTR(char *src, int *len, mbr **atom)
+ssize_t
+mbrFROMSTR(const char *src, size_t *len, mbr **atom)
 {
 	int nil = 0;
 	size_t nchars = 0;	/* The number of characters parsed; the return value. */
@@ -5284,20 +5286,22 @@ mbrFROMSTR(char *src, int *len, mbr **atom)
 		/* Parse the mbr */
 		if ((c - src) != 3 && (c - src) != 4) {
 			GDKerror("ParseException: Expected a string like 'MBR(0 0,1 1)' or 'MBR (0 0,1 1)'\n");
-			return 0;
+			return -1;
 		}
 
 		if (sscanf(c, "(%lf %lf,%lf %lf)", &xmin, &ymin, &xmax, &ymax) != 4) {
 			GDKerror("ParseException: Not enough coordinates.\n");
-			return 0;
+			return -1;
 		}
-	} else if (!nil && (geosMbr = GEOSGeomFromWKT(src)) == NULL)
-		return 0;
+	} else if (!nil && (geosMbr = GEOSGeomFromWKT(src)) == NULL) {
+		GDKerror("GEOSGeomFromWKT failed\n");
+		return -1;
+	}
 
-	if (*len < (int) sizeof(mbr) || *atom == NULL) {
+	if (*len < sizeof(mbr) || *atom == NULL) {
 		GDKfree(*atom);
 		if ((*atom = GDKmalloc(*len = sizeof(mbr))) == NULL)
-			return 0;
+			return -1;
 	}
 	if (nil) {
 		nchars = 3;
@@ -5316,13 +5320,13 @@ mbrFROMSTR(char *src, int *len, mbr **atom)
 	if (geosMbr)
 		GEOSGeom_destroy(geosMbr);
 	assert(nchars <= GDK_int_max);
-	return (int) nchars;
+	return (ssize_t) nchars;
 }
 
 /* HASH: compute a hash value. */
 /* returns a positive integer hash value */
 BUN
-mbrHASH(mbr *atom)
+mbrHASH(const mbr *atom)
 {
 	return (BUN) (((int) atom->xmin * (int)atom->ymin) *((int) atom->xmax * (int)atom->ymax));
 }
@@ -5336,7 +5340,7 @@ static mbr mbrNIL = {
 	GDK_flt_min
 };
 
-mbr *
+const mbr *
 mbrNULL(void)
 {
 	return &mbrNIL;
@@ -5345,7 +5349,7 @@ mbrNULL(void)
 /* COMP: compare two mbrs. */
 /* returns int <0 if l<r, 0 if l==r, >0 else */
 int
-mbrCOMP(mbr *l, mbr *r)
+mbrCOMP(const mbr *l, const mbr *r)
 {
 	/* simple lexicographical ordering on (x,y) */
 	int res;
@@ -5391,7 +5395,7 @@ mbrREAD(mbr *A, stream *s, size_t cnt)
 
 /* write mbr to log */
 gdk_return
-mbrWRITE(mbr *c, stream *s, size_t cnt)
+mbrWRITE(const mbr *c, stream *s, size_t cnt)
 {
 	size_t i;
 	flt vals[4];
@@ -5415,14 +5419,8 @@ mbrWRITE(mbr *c, stream *s, size_t cnt)
 
 /* Creates the string representation of a wkb_array */
 /* return length of resulting string. */
-
-/* StM: Open question / ToDo:
- * why is len of type int,
- * while the returned length (correctly!) is of type size_t ?
- * (not only here, but also elsewhere in this file / the geom code)
- */
-int
-wkbaTOSTR(char **toStr, int *len, wkba *fromArray)
+ssize_t
+wkbaTOSTR(char **toStr, size_t *len, const wkba *fromArray)
 {
 	int items = fromArray->itemsNum, i;
 	int itemsNumDigits = (int) ceil(log10(items));
@@ -5432,7 +5430,7 @@ wkbaTOSTR(char **toStr, int *len, wkba *fromArray)
 	char *toStrPtr = NULL, *itemsNumStr = GDKmalloc((itemsNumDigits + 1) * sizeof(char));
 
 	if (itemsNumStr == NULL)
-		return 0;
+		return -1;
 
 	sprintf(itemsNumStr, "%d", items);
 	dataSize = strlen(itemsNumStr);
@@ -5441,19 +5439,19 @@ wkbaTOSTR(char **toStr, int *len, wkba *fromArray)
 	partialStrs = GDKzalloc(items * sizeof(char *));
 	if (partialStrs == NULL) {
 		GDKfree(itemsNumStr);
-		return 0;
+		return -1;
 	}
 	//create the string version of each wkb
 	for (i = 0; i < items; i++) {
-		int llen = 0;
-		int ds;
+		size_t llen = 0;
+		ssize_t ds;
 		ds = wkbTOSTR(&partialStrs[i], &llen, fromArray->data[i]);
-		if (ds <= 0) {
+		if (ds < 0) {
 			GDKfree(itemsNumStr);
 			while (i >= 0)
 				GDKfree(partialStrs[i--]);
 			GDKfree(partialStrs);
-			return 0;
+			return -1;
 		}
 		dataSize += ds - 2;	//remove quotes
 
@@ -5465,7 +5463,7 @@ wkbaTOSTR(char **toStr, int *len, wkba *fromArray)
 			if (*len < 4 || *toStr == NULL) {
 				GDKfree(*toStr);
 				if ((*toStr = GDKmalloc(*len = 4)) == NULL)
-					return 0;
+					return -1;
 			}
 			strcpy(*toStr, "nil");
 			return 3;
@@ -5478,15 +5476,15 @@ wkbaTOSTR(char **toStr, int *len, wkba *fromArray)
 	dataSize += 2 * sizeof(char) * items;
 
 	//copy all partial strings to a single one
-	if (*len < (int) dataSize + 3 || *toStr == NULL) {
+	if (*len < dataSize + 3 || *toStr == NULL) {
 		GDKfree(*toStr);
-		*toStr = GDKmalloc(*len = (int) dataSize + 3);	/* plus quotes + termination character */
+		*toStr = GDKmalloc(*len = dataSize + 3);	/* plus quotes + termination character */
 		if (*toStr == NULL) {
 			for (i = 0; i < items; i++)
 				GDKfree(partialStrs[i]);
 			GDKfree(partialStrs);
 			GDKfree(itemsNumStr);
-			return 0;
+			return -1;
 		}
 	}
 	toStrPtr = *toStr;
@@ -5515,19 +5513,18 @@ wkbaTOSTR(char **toStr, int *len, wkba *fromArray)
 	GDKfree(itemsNumStr);
 
 	assert(strlen(*toStr) + 1 < (size_t) GDK_int_max);
-	*len = (int) strlen(*toStr) + 1;
-	return (int) (toStrPtr - *toStr);
+	return (ssize_t) (toStrPtr - *toStr);
 }
 
 /* return number of parsed characters. */
-int
-wkbaFROMSTR(char *fromStr, int *len, wkba **toArray)
+ssize_t
+wkbaFROMSTR(const char *fromStr, size_t *len, wkba **toArray)
 {
 	return wkbaFROMSTR_withSRID(fromStr, len, toArray, 0);
 }
 
 /* returns a pointer to a null wkba */
-wkba *
+const wkba *
 wkbaNULL(void)
 {
 	static wkba nullval = {~0};
@@ -5536,7 +5533,7 @@ wkbaNULL(void)
 }
 
 BUN
-wkbaHASH(wkba *wArray)
+wkbaHASH(const wkba *wArray)
 {
 	int j, i;
 	BUN h = 0;
@@ -5552,7 +5549,7 @@ wkbaHASH(wkba *wArray)
 }
 
 int
-wkbaCOMP(wkba *l, wkba *r)
+wkbaCOMP(const wkba *l, const wkba *r)
 {
 	int i, res = 0;;
 
@@ -5595,7 +5592,7 @@ wkbaREAD(wkba *a, stream *s, size_t cnt)
 
 /* write wkb to log */
 gdk_return
-wkbaWRITE(wkba *a, stream *s, size_t cnt)
+wkbaWRITE(const wkba *a, stream *s, size_t cnt)
 {
 	int i, items = a->itemsNum;
 	gdk_return ret = GDK_SUCCEED;
@@ -5615,14 +5612,14 @@ wkbaWRITE(wkba *a, stream *s, size_t cnt)
 }
 
 var_t
-wkbaPUT(Heap *h, var_t *bun, wkba *val)
+wkbaPUT(Heap *h, var_t *bun, const wkba *val)
 {
 	char *base;
 
 	*bun = HEAP_malloc(h, wkba_size(val->itemsNum));
 	base = h->base;
 	if (*bun) {
-		memcpy(&base[*bun], (char *) val, wkba_size(val->itemsNum));
+		memcpy(&base[*bun], val, wkba_size(val->itemsNum));
 		h->dirty = 1;
 	}
 	return *bun;
@@ -5634,12 +5631,12 @@ wkbaDEL(Heap *h, var_t *index)
 	HEAP_free(h, *index);
 }
 
-int
-wkbaLENGTH(wkba *p)
+size_t
+wkbaLENGTH(const wkba *p)
 {
 	var_t len = wkba_size(p->itemsNum);
 	assert(len <= GDK_int_max);
-	return (int) len;
+	return (size_t) len;
 }
 
 void

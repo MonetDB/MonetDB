@@ -202,7 +202,7 @@ keyvalueparser(char *txt, EventRecord *ev)
 	*c++ = 0;
 	skipto(':');
 	c++;
-	while( *c && isspace((int)*c)) c++;
+	while( *c && isspace((unsigned char) *c)) c++;
 	if( *c == '"'){
 		val = ++c;
 		skipstr();
@@ -508,7 +508,7 @@ lineparser(char *row, EventRecord *ev)
 			*c=':';
 			ev->fcn = c + 2;
 			/* find genuine function calls */
-			while (isspace((int) *ev->fcn) && *ev->fcn)
+			while (isspace((unsigned char) *ev->fcn) && *ev->fcn)
 				ev->fcn++;
 			if (strchr(ev->fcn, '.') == 0) 
 				ev->fcn = 0;

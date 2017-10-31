@@ -701,7 +701,7 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 			sql_exp *e;
 			sql_idx *i = cn->data;
 			sql_subtype *t = sql_bind_localtype("lng"); /* hash "lng" */
-			char *iname = sa_strconcat( sa, "%", i->base.name);
+			char *iname = NULL;
 
 			/* do not include empty indices in the plan */
 			if (hash_index(i->type) && list_length(i->columns) <= 1)
@@ -710,6 +710,7 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 			if (i->type == join_idx)
 				t = sql_bind_localtype("oid"); 
 
+			iname = sa_strconcat( sa, "%", i->base.name);
 			e = exp_alias(sa, atname, iname, tname, iname, t, CARD_MULTI, 0, 1);
 			/* index names are prefixed, to make them independent */
 			if (hash_index(i->type)) {
@@ -741,6 +742,21 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 	}
 
 	rel->card = CARD_ATOM;
+	/* reduce duplicates in groupbyexps */
+	if (groupbyexps && list_length(groupbyexps) > 1) {
+		list *gexps = sa_list(sql->sa);
+
+		for (en = groupbyexps->h; en; en = en->next) {
+			sql_exp *e = en->data, *ne;
+
+			if ((ne=exps_find_exp(gexps, e)) == NULL || 
+			    strcmp(exp_relname(e),exp_relname(ne)) != 0 || 
+			    strcmp(exp_name(e),exp_name(ne)) != 0  )
+				append(gexps, e);
+		}
+		groupbyexps = gexps;
+	}
+
 	if (groupbyexps) {
 		rel->card = CARD_AGGR;
 		for (en = groupbyexps->h; en; en = en->next) {
@@ -778,6 +794,8 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 		rel->card = l->card;
 		rel->nrcols = l->nrcols;
 	}
+	if (e && !list_empty(e))
+		set_processed(rel);
 	return rel;
 }
 
@@ -1150,7 +1168,7 @@ rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps,
 
 	assert(!lexps || l == r);
 	if (l == r && lexps) { /* merge both lists */
-		sql_exp *e = exp_or(sql->sa, lexps, rexps);
+		sql_exp *e = exp_or(sql->sa, lexps, rexps, 0);
 		list *nl = oexps?oexps:new_exp_list(sql->sa); 
 		
 		rel_destroy(r);
@@ -1164,7 +1182,7 @@ rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps,
 	/* favor or expressions over union */
 	if (l->op == r->op && l->op == op_select &&
 	    ll == rl && ll == rel && !rel_is_ref(l) && !rel_is_ref(r)) {
-		sql_exp *e = exp_or(sql->sa, l->exps, r->exps);
+		sql_exp *e = exp_or(sql->sa, l->exps, r->exps, 0);
 		list *nl = new_exp_list(sql->sa); 
 		
 		rel_destroy(r);

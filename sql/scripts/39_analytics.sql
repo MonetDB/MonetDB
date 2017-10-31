@@ -185,19 +185,19 @@ create aggregate quantile(val TIMESTAMP, q DOUBLE) returns TIMESTAMP
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(TIMESTAMP, DOUBLE) TO PUBLIC;
 
-create aggregate corr(e1 TINYINT, e2 TINYINT) returns TINYINT
+create aggregate corr(e1 TINYINT, e2 TINYINT) returns DOUBLE
 	external name "aggr"."corr";
 GRANT EXECUTE ON AGGREGATE corr(TINYINT, TINYINT) TO PUBLIC;
-create aggregate corr(e1 SMALLINT, e2 SMALLINT) returns SMALLINT
+create aggregate corr(e1 SMALLINT, e2 SMALLINT) returns DOUBLE
 	external name "aggr"."corr";
 GRANT EXECUTE ON AGGREGATE corr(SMALLINT, SMALLINT) TO PUBLIC;
-create aggregate corr(e1 INTEGER, e2 INTEGER) returns INTEGER
+create aggregate corr(e1 INTEGER, e2 INTEGER) returns DOUBLE
 	external name "aggr"."corr";
 GRANT EXECUTE ON AGGREGATE corr(INTEGER, INTEGER) TO PUBLIC;
-create aggregate corr(e1 BIGINT, e2 BIGINT) returns BIGINT
+create aggregate corr(e1 BIGINT, e2 BIGINT) returns DOUBLE
 	external name "aggr"."corr";
 GRANT EXECUTE ON AGGREGATE corr(BIGINT, BIGINT) TO PUBLIC;
-create aggregate corr(e1 REAL, e2 REAL) returns REAL
+create aggregate corr(e1 REAL, e2 REAL) returns DOUBLE
 	external name "aggr"."corr";
 GRANT EXECUTE ON AGGREGATE corr(REAL, REAL) TO PUBLIC;
 create aggregate corr(e1 DOUBLE, e2 DOUBLE) returns DOUBLE

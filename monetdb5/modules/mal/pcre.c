@@ -1291,6 +1291,7 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 		r = COLnew(strs->hseqbase, TYPE_bit, BATcount(strs), TRANSIENT);
 		if( r==NULL) {
 			GDKfree(ppat);
+			BBPunfix(strs->batCacheid);
 			throw(MAL,"pcre.like3", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		br = (bit*)Tloc(r, 0);
@@ -1497,8 +1498,12 @@ PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 			ppat = NULL;
 			if (*caseignore) {
 				ppat = GDKmalloc(strlen(*pat) + 3);
-				if (ppat == NULL)
+				if (ppat == NULL) {
+					BBPunfix(b->batCacheid);
+					if (s)
+						BBPunfix(s->batCacheid);
 					throw(MAL, "algebra.likeselect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				}
 				ppat[0] = '^';
 				strcpy(ppat + 1, *pat);
 				strcat(ppat, "$");

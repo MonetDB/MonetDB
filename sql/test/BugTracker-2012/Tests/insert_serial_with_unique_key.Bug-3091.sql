@@ -17,7 +17,7 @@ VALUES
 ;
 
 DROP TABLE "meta"."program_specs";
-DROP SCHEMA "meta";
+DROP SCHEMA "meta" CASCADE;
 
 create table t30(
   a varchar(100),

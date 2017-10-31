@@ -119,13 +119,12 @@ AUTHrequireAdminOrUser(Client cntxt, const char *username) {
 		return(MAL_SUCCEED);
 
 	rethrow("requireAdminOrUser", tmp, AUTHresolveUser(&user, id));
-	if (username == NULL || strcmp(username, user) != 0) {
-		GDKfree(user);
-		throw(INVCRED, "requireAdminOrUser", INVCRED_ACCESS_DENIED " '%s'", user);
-	}
-	GDKfree(user);
+	if (username == NULL || strcmp(username, user) != 0)
+		tmp = createException(INVCRED, "requireAdminOrUser",
+							  INVCRED_ACCESS_DENIED " '%s'", user);
 
-	return(MAL_SUCCEED);
+	GDKfree(user);
+	return tmp;
 }
 
 static void

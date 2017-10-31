@@ -1135,7 +1135,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					bat_data->data[j] = NULL;
 				} else {
 					char *result = NULL;
-					int length = 0;
+					size_t length = 0;
 					if (BATatoms[bat_type].atomToStr(&result, &length, t) ==
 						0) {
 						msg = createException(
@@ -1408,7 +1408,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				GDKfree(data);
 			} else {
 				char **source_base = (char **)data;
-				int len = 0;
+				size_t len = 0;
 				void *element = NULL;
 				for (j = 0; j < count; j++) {
 					const char *ptr = source_base[j];

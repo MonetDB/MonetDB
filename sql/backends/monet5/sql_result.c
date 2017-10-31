@@ -71,7 +71,7 @@ mnstr_swap_lng(stream *s, lng lngval) {
 		int scale = (int) (ptrdiff_t) extra;			\
 		int cur = 63, i, done = 0;				\
 		int neg = v < 0;					\
-		int l;							\
+		ssize_t l;						\
 		if (v == TYPE##_nil) {					\
 			if (*len < 5){					\
 				if (*Buf)				\
@@ -79,7 +79,7 @@ mnstr_swap_lng(stream *s, lng lngval) {
 				*len = 5;				\
 				*Buf = GDKzalloc(*len);			\
 				if (*Buf == NULL) {			\
-					return 0;			\
+					return -1;			\
 				}					\
 			}						\
 			strcpy(*Buf, "NULL");				\
@@ -105,21 +105,21 @@ mnstr_swap_lng(stream *s, lng lngval) {
 		if (neg)						\
 			buf[cur--] = '-';				\
 		l = (64-cur-1);						\
-		if (*len < l){						\
+		if ((ssize_t) *len < l){				\
 			if (*Buf)					\
 				GDKfree(*Buf);				\
-			*len = l+1;					\
+			*len = (size_t) l+1;				\
 			*Buf = GDKzalloc(*len);				\
 			if (*Buf == NULL) {				\
-				return 0;				\
+				return -1;				\
 			}						\
 		}							\
 		strcpy(*Buf, buf+cur+1);				\
 		return l-1;						\
 	} while (0)
 
-static int
-dec_tostr(void *extra, char **Buf, int *len, int type, const void *a)
+static ssize_t
+dec_tostr(void *extra, char **Buf, size_t *len, int type, const void *a)
 {
 	/* support dec map to bte, sht, int and lng */
 	if (type == TYPE_bte) {
@@ -137,7 +137,7 @@ dec_tostr(void *extra, char **Buf, int *len, int type, const void *a)
 	} else {
 		GDKerror("Decimal cannot be mapped to %s\n", ATOMname(type));
 	}
-	return 0;
+	return -1;
 }
 
 struct time_res {
@@ -146,11 +146,13 @@ struct time_res {
 	lng timezone;
 };
 
-static int
-sql_time_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
+static ssize_t
+sql_time_tostr(void *TS_RES, char **buf, size_t *len, int type, const void *A)
 {
 	struct time_res *ts_res = TS_RES;
-	int i, len1, big = 128;
+	int i;
+	ssize_t len1;
+	size_t big = 128;
 	char buf1[128], *s1 = buf1, *s;
 	lng val = 0, timezone = ts_res->timezone;
 	daytime tmp;
@@ -169,13 +171,15 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 	tmp = (daytime) val;
 
 	len1 = daytime_tostr(&s1, &big, &tmp);
+	if (len1 < 0)
+		return -1;
 	if (len1 == 3 && strcmp(s1, "nil") == 0) {
 		if (*len < 4 || *buf == NULL) {
 			if (*buf)
 				GDKfree(*buf);
 			*buf = (str) GDKzalloc(*len = 4);
 			if (*buf == NULL) {
-				return 0;
+				return -1;
 			}
 		}
 		strcpy(*buf, s1);
@@ -187,12 +191,12 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 	if (ts_res->fraction == 0)
 		len1--;
 
-	if (*len < len1 + 8) {
+	if (*len < (size_t) len1 + 8) {
 		if (*buf)
 			GDKfree(*buf);
 		*buf = (str) GDKzalloc(*len = len1 + 8);
 		if (*buf == NULL) {
-			return 0;
+			return -1;
 		}
 	}
 	s = *buf;
@@ -209,14 +213,16 @@ sql_time_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 		sprintf(s, "%02d:%02d", (int) (llabs(timezone) / 60), (int) (llabs(timezone) % 60));
 		s += 5;
 	}
-	return (int) (s - *buf);
+	return (ssize_t) (s - *buf);
 }
 
-static int
-sql_timestamp_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
+static ssize_t
+sql_timestamp_tostr(void *TS_RES, char **buf, size_t *len, int type, const void *A)
 {
 	struct time_res *ts_res = TS_RES;
-	int i, len1, len2, big = 128;
+	int i;
+	ssize_t len1, len2;
+	size_t big = 128;
 	char buf1[128], buf2[128], *s, *s1 = buf1, *s2 = buf2;
 	timestamp tmp;
 	const timestamp *a = A;
@@ -231,18 +237,23 @@ sql_timestamp_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 		len1 = date_tostr(&s1, &big, &a->days);
 		len2 = daytime_tostr(&s2, &big, &a->msecs);
 	}
+	if (len1 < 0 || len2 < 0) {
+		GDKfree(s1);
+		GDKfree(s2);
+		return -1;
+	}
 
 	/* fixup the fraction, default is 3 */
 	len2 += (ts_res->fraction - 3);
 	if (ts_res->fraction == 0)
 		len2--;
 
-	if (*len < len1 + len2 + 8) {
+	if (*len < (size_t) len1 + (size_t) len2 + 8) {
 		if (*buf)
 			GDKfree(*buf);
-		*buf = (str) GDKzalloc(*len = len1 + len2 + 8);
+		*buf = (str) GDKzalloc(*len = (size_t) (len1 + len2 + 8));
 		if (*buf == NULL) {
-			return 0;
+			return -1;
 		}
 	}
 	s = *buf;
@@ -262,7 +273,7 @@ sql_timestamp_tostr(void *TS_RES, char **buf, int *len, int type, const void *A)
 		sprintf(s, "%02d:%02d", (int) (llabs(timezone) / 60), (int) (llabs(timezone) % 60));
 		s += 5;
 	}
-	return (int) (s - *buf);
+	return (ssize_t) (s - *buf);
 }
 
 static int
@@ -609,7 +620,7 @@ bat_max_hgelength(BAT *b)
 		unsigned int i, neg = 0;				\
 		X *r;							\
 		X res = 0;						\
-		while(isspace(*s))					\
+		while(isspace((unsigned char) *s))			\
 			s++;						\
 		if (*s == '-'){						\
 			neg = 1;					\
@@ -631,7 +642,7 @@ bat_max_hgelength(BAT *b)
 				res *= 10;				\
 			}						\
 		}							\
-		while(isspace(*s))					\
+		while(isspace((unsigned char) *s))			\
 			s++;						\
 		if (*s) {						\
 			if (*s != '.')					\
@@ -641,7 +652,7 @@ bat_max_hgelength(BAT *b)
 				res *= 10;				\
 				res += *s - '0';			\
 			}						\
-			while(isspace(*s))				\
+			while(isspace((unsigned char) *s))		\
 				s++;					\
 			for (; i < t->scale; i++) {			\
 				res *= 10;				\
@@ -651,7 +662,7 @@ bat_max_hgelength(BAT *b)
 			return NULL;					\
 		r = c->data;						\
 		if (r == NULL &&					\
-			(r = GDKzalloc(sizeof(X))) == NULL)			\
+		    (r = GDKzalloc(sizeof(X))) == NULL)			\
 			return NULL;					\
 		c->data = r;						\
 		if (neg)						\
@@ -747,23 +758,23 @@ sec_frstr(Column *c, int type, const char *s)
 static void *
 _ASCIIadt_frStr(Column *c, int type, const char *s)
 {
-	int len;
+	ssize_t len;
 	const char *e; 
 
 	if (type == TYPE_str) {
 		sql_column *col = (sql_column *) c->extra;
-		int len, slen;
+		int slen;
 
 		for (e = s; *e; e++)
 			;
-		len = (int) (e - s + 1);	/* 64bit: should check for overflow */
+		len = (ssize_t) (e - s + 1);
 
 		/* or shouldn't len rather be ssize_t, here? */
 
-		if (c->len < len) {
+		if ((ssize_t) c->len < len) {
 			void *p;
-			c->len = len;
-			if ((p = GDKrealloc(c->data, len)) == NULL) {
+			c->len = (size_t) len;
+			if ((p = GDKrealloc(c->data, c->len)) == NULL) {
 				GDKfree(c->data);
 				c->data = NULL;
 				c->len = 0;
@@ -774,16 +785,14 @@ _ASCIIadt_frStr(Column *c, int type, const char *s)
 		if (s == e || *s == 0) {
 			len = -1;
 			*(char *) c->data = 0;
-		} else if ((len = (int) GDKstrFromStr(c->data, (unsigned char *) s, (ssize_t) (e - s))) < 0) {
-			/* 64bit: should check for overflow */
-			/* or shouldn't len rather be ssize_t, here? */
+		} else if ((len = GDKstrFromStr(c->data, (unsigned char *) s, (ssize_t) (e - s))) < 0) {
 			return NULL;
 		}
 		s = c->data;
 		STRLength(&slen, (const str *) &s);
 		if (col->type.digits > 0 && len > 0 && slen > (int) col->type.digits) {
 			len = STRwidth(c->data);
-			if (len > (int) col->type.digits)
+			if (len > (ssize_t) col->type.digits)
 				return NULL;
 		}
 		return c->data;
@@ -792,7 +801,7 @@ _ASCIIadt_frStr(Column *c, int type, const char *s)
 	if( strcmp(s,"nil")== 0)
 		return NULL;
 
-	len = (*BATatoms[type].atomFromStr) (s, &c->len, (ptr) &c->data);
+	len = (*BATatoms[type].atomFromStr) (s, &c->len, &c->data);
 	if (len < 0)
 		return NULL;
 	if (len == 0 || s[len]) {
@@ -817,14 +826,14 @@ _ASCIIadt_frStr(Column *c, int type, const char *s)
 }
 
 
-static int
-_ASCIIadt_toStr(void *extra, char **buf, int *len, int type, const void *a)
+static ssize_t
+_ASCIIadt_toStr(void *extra, char **buf, size_t *len, int type, const void *a)
 {
 	if (type == TYPE_str) {
 		Column *c = extra;
 		char *dst;
 		const char *src = a;
-		int l = escapedStrlen(src, c->sep, c->rsep, c->quote), l2 = 0;
+		size_t l = escapedStrlen(src, c->sep, c->rsep, c->quote), l2 = 0;
 
 		if (c->quote)
 			l = escapedStrlen(src, NULL, NULL, c->quote);
@@ -835,7 +844,7 @@ _ASCIIadt_toStr(void *extra, char **buf, int *len, int type, const void *a)
 			*len = 2 * l + 3;
 			*buf = GDKzalloc(*len);
 			if (*buf == NULL) {
-				return 0;
+				return -1;
 			}
 		}
 		dst = *buf;
@@ -939,7 +948,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			fmt[i].tostr = &_ASCIIadt_toStr;
 			fmt[i].frstr = &_ASCIIadt_frStr;
 			fmt[i].extra = col;
-			fmt[i].len = fmt[i].nillen = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
+			fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
 			fmt[i].data = GDKzalloc(fmt[i].len);
 			fmt[i].c = NULL;
 			fmt[i].ws = !has_whitespace(fmt[i].sep);
@@ -1281,26 +1290,27 @@ mvc_send_hge(stream *s, hge cnt){
 int
 convert2str(mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, int len)
 {
-	int l = 0;
+	size_t len2 = (size_t) len;
+	ssize_t l = 0;
 
 	if (!p || ATOMcmp(mtype, ATOMnilptr(mtype), p) == 0) {
 		(*buf)[0] = '\200';
 		(*buf)[1] = 0;
 	} else if (eclass == EC_DEC) {
-		l = dec_tostr((void *) (ptrdiff_t) sc, buf, &len, mtype, p);
+		l = dec_tostr((void *) (ptrdiff_t) sc, buf, &len2, mtype, p);
 	} else if (eclass == EC_TIME) {
 		struct time_res ts_res;
 		ts_res.has_tz = has_tz;
 		ts_res.fraction = d ? d - 1 : 0;
 		ts_res.timezone = m->timezone;
-		l = sql_time_tostr((void *) &ts_res, buf, &len, mtype, p);
+		l = sql_time_tostr((void *) &ts_res, buf, &len2, mtype, p);
 
 	} else if (eclass == EC_TIMESTAMP) {
 		struct time_res ts_res;
 		ts_res.has_tz = has_tz;
 		ts_res.fraction = d ? d - 1 : 0;
 		ts_res.timezone = m->timezone;
-		l = sql_timestamp_tostr((void *) &ts_res, buf, &len, mtype, p);
+		l = sql_timestamp_tostr((void *) &ts_res, buf, &len2, mtype, p);
 	} else if (eclass == EC_BIT) {
 		bit b = *(bit *) p;
 		if (len <= 0 || len > 5) {
@@ -1313,42 +1323,44 @@ convert2str(mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, cha
 			(*buf)[1] = 0;
 		}
 	} else {
-		l = (*BATatoms[mtype].atomToStr) (buf, &len, p);
+		l = (*BATatoms[mtype].atomToStr) (buf, &len2, p);
 	}
-	return l;
+	return (int) l;
 }
 
 static int
-export_value(mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p, int mtype, char **buf, int *len, str ns)
+export_value(mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p, int mtype, char **buf, size_t *len, str ns)
 {
 	int ok = 0;
-	int l = 0;
+	ssize_t l = 0;
 
 	if (!p || ATOMcmp(mtype, ATOMnilptr(mtype), p) == 0) {
 		size_t ll = strlen(ns);
 		ok = (mnstr_write(s, ns, ll, 1) == 1);
 	} else if (eclass == EC_DEC) {
 		l = dec_tostr((void *) (ptrdiff_t) sc, buf, len, mtype, p);
-		ok = (mnstr_write(s, *buf, l, 1) == 1);
+		if (l > 0)
+			ok = (mnstr_write(s, *buf, l, 1) == 1);
 	} else if (eclass == EC_TIME) {
 		struct time_res ts_res;
 		ts_res.has_tz = (strcmp(sqlname, "timetz") == 0);
 		ts_res.fraction = d ? d - 1 : 0;
 		ts_res.timezone = m->timezone;
 		l = sql_time_tostr((void *) &ts_res, buf, len, mtype, p);
-
-		ok = (mnstr_write(s, *buf, l, 1) == 1);
+		if (l >= 0)
+			ok = (mnstr_write(s, *buf, l, 1) == 1);
 	} else if (eclass == EC_TIMESTAMP) {
 		struct time_res ts_res;
 		ts_res.has_tz = (strcmp(sqlname, "timestamptz") == 0);
 		ts_res.fraction = d ? d - 1 : 0;
 		ts_res.timezone = m->timezone;
 		l = sql_timestamp_tostr((void *) &ts_res, buf, len, mtype, p);
-
-		ok = (mnstr_write(s, *buf, l, 1) == 1);
+		if (l >= 0)
+			ok = (mnstr_write(s, *buf, l, 1) == 1);
 	} else if (eclass == EC_SEC) {
 		l = dec_tostr((void *) (ptrdiff_t) 3, buf, len, mtype, p);
-		ok = mnstr_write(s, *buf, l, 1) == 1;
+		if (l >= 0)
+			ok = mnstr_write(s, *buf, l, 1) == 1;
 	} else {
 		switch (mtype) {
 		case TYPE_bte:
@@ -1368,10 +1380,10 @@ export_value(mvc *m, stream *s, int eclass, char *sqlname, int d, int sc, ptr p,
 			ok = mvc_send_hge(s, *(hge*)p);
 			break;
 #endif
-		default:{
+		default:
 			l = (*BATatoms[mtype].atomToStr) (buf, len, p);
-			ok = (mnstr_write(s, *buf, l, 1) == 1);
-		}
+			if (l >= 0)
+				ok = (mnstr_write(s, *buf, l, 1) == 1);
 		}
 	}
 	return ok;
@@ -1384,7 +1396,7 @@ mvc_export_row(backend *b, stream *s, res_table *t, str btag, str sep, str rsep,
 	size_t seplen = strlen(sep);
 	size_t rseplen = strlen(rsep);
 	char *buf = NULL;
-	int len = 0;
+	size_t len = 0;
 	int i, ok = 1;
 	int csv = (b->output_format == OFMT_CSV);
 	int json = (b->output_format == OFMT_JSON);
@@ -1412,8 +1424,7 @@ mvc_export_row(backend *b, stream *s, res_table *t, str btag, str sep, str rsep,
 		}
 		ok = export_value(m, s, c->type.type->eclass, c->type.type->sqlname, c->type.digits, c->type.scale, c->p, c->mtype, &buf, &len, ns);
 	}
-	if (len)
-		_DELETE(buf);
+	_DELETE(buf);
 	if (ok)
 		ok = (mnstr_write(s, rsep, rseplen, 1) == 1);
 	m->results = res_tables_remove(m->results, t);
@@ -1460,15 +1471,14 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 	size_t bsize = b->client->blocksize;
 	BATiter *iterators = NULL;
 	char *result = NULL;
-	int length = 0;
+	size_t length = 0;
 	int initial_transfer = 1;
 
 	(void) order; // FIXME: respect explicitly ordered output
 
 	iterators = GDKzalloc(sizeof(BATiter) * t->nr_cols);
 	if (!iterators) {
-		fres = -1;
-		goto cleanup;
+		return -1;
 	}
 
 	// ensure the buffer is currently empty
@@ -1478,11 +1488,21 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 	for (i = 0; i < (size_t) t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 		BAT *b = BATdescriptor(c->b);
-		int mtype = b->ttype;
-		int typelen = ATOMsize(mtype);
+		int mtype;
+		size_t typelen;
 		int convert_to_string = !type_supports_binary_transfer(c->type.type);
 		sql_type *type = c->type.type;
 
+		if (b == NULL) {
+			while (i > 0) {
+				i--;
+				BBPunfix(iterators[i].b->batCacheid);
+			}
+			GDKfree(iterators);
+			return -1;
+		}
+		mtype = b->ttype;
+		typelen = ATOMsize(mtype);
 		iterators[i] = bat_iterator(b);
 		
 		if (type->eclass == EC_TIMESTAMP || type->eclass == EC_DATE) {
@@ -1491,7 +1511,6 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 			typelen = sizeof(lng);	
 		}
 		if (ATOMvarsized(mtype) || convert_to_string) {
-			typelen = -1;
 			varsized++;
 			length_prefixed++;
 		} else {
@@ -1536,15 +1555,15 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 							blob *b = (blob*) BUNtail(iterators[i], row);
 							rowsize += sizeof(lng) + ((b->nitems == ~(size_t) 0) ? 0 : b->nitems);
 						} else {
-							size_t slen = 0;
+							ssize_t slen = 0;
 							if (convert_to_string) {
 								void *element = (void*) BUNtail(iterators[i], crow);
-								if ((slen = BATatoms[mtype].atomToStr(&result, &length, element)) == 0) {
+								if ((slen = BATatoms[mtype].atomToStr(&result, &length, element)) < 0) {
 									fres = -1;
 									goto cleanup;
 								}
 							} else {
-								slen = strlen((const char*) BUNtail(iterators[i], row));
+								slen = (ssize_t) strlen((const char*) BUNtail(iterators[i], row));
 							}
 							rowsize += slen + 1;
 						}
@@ -1631,7 +1650,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 							if (BATatoms[mtype].atomCmp(element, BATatoms[mtype].atomNull) == 0) {
 								str = str_nil;
 							} else {
-								if (BATatoms[mtype].atomToStr(&result, &length, element) == 0) {
+								if (BATatoms[mtype].atomToStr(&result, &length, element) < 0) {
 									fres = -1;
 									goto cleanup;
 								}
@@ -1656,7 +1675,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 					*((lng*)startbuf) = mnstr_swap_lng(s, buf - (startbuf + sizeof(lng)));
 				}
 			} else {
-				int atom_size = ATOMsize(mtype);
+				size_t atom_size = ATOMsize(mtype);
 				if (c->type.type->eclass == EC_DEC) {
 					atom_size = ATOMsize(ATOMstorage(mtype));
 				}
@@ -1749,6 +1768,11 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 		srow = row;
 	}
 cleanup:
+	if (iterators) {
+		for (i = 0; i < (size_t) t->nr_cols; i++)
+			BBPunfix(iterators[i].b->batCacheid);
+		GDKfree(iterators);
+	}
 	if (result) {
 		GDKfree(result);
 	}
@@ -1798,6 +1822,13 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 			break;
 
 		fmt[i].c = BATdescriptor(c->b);
+		if (fmt[i].c == NULL) {
+			while (--i >= 1)
+				BBPunfix(fmt[i].c->batCacheid);
+			GDKfree(fmt);
+			GDKfree(tres);
+			return -1;
+		}
 		fmt[i].ci = bat_iterator(fmt[i].c);
 		fmt[i].name = NULL;
 		if (csv) {
@@ -1840,7 +1871,6 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 		fmt[i].extra = fmt + i;
 		fmt[i].data = NULL;
 		fmt[i].len = 0;
-		fmt[i].nillen = 0;
 		fmt[i].ws = 0;
 		fmt[i].quote = ssep ? ssep[0] : 0;
 		fmt[i].nullstr = ns;
@@ -2152,20 +2182,26 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 	for (i = 0; i < (size_t) t->nr_cols; i++) {
 		res_col *c = t->cols + i;
 		BAT *b = BATdescriptor(c->b);
-		int mtype = b->ttype;
-		int typelen = ATOMsize(mtype);
+		int mtype;
+		int typelen;
 		int nil_len = -1;
-		int nil_type = ATOMstorage(mtype);
+		int nil_type;
 		int retval = -1;
 		int convert_to_string = !type_supports_binary_transfer(c->type.type);
 		sql_type *type = c->type.type;
 		lng print_width = -1;
-		
+
+		if (b == NULL)
+			return -1;
+
+		mtype = b->ttype;
+		typelen = ATOMsize(mtype);
+		nil_type = ATOMstorage(mtype);
+
 		// if the client wants print widths, we compute them for this column
 		if (compute_lengths) {
 			print_width = get_print_width(mtype, type->eclass, c->type.digits, c->type.scale, type_has_tz(&c->type), b->batCacheid, c->p);
 		}
-		BBPunfix(b->batCacheid);
 
 		if (type->eclass == EC_TIMESTAMP || type->eclass == EC_DATE) {
 			// timestamps are converted to Unix Timestamps
@@ -2190,6 +2226,7 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 		if (!write_str_term(s, c->tn) || !write_str_term(s, c->name) || !write_str_term(s, type->sqlname) ||
 				!mnstr_writeInt(s, typelen) || !mnstr_writeInt(s, c->type.digits) || !mnstr_writeInt(s, type->eclass == EC_SEC ? 3 : c->type.scale)) {
 			fres = -1;
+			BBPunfix(b->batCacheid);
 			goto cleanup;
 		}
 
@@ -2197,6 +2234,7 @@ mvc_export_head_prot10(backend *b, stream *s, int res_id, int only_header, int c
 			nil_len = 0;
 		}
 
+		BBPunfix(b->batCacheid);
 
 		// write NULL values for this column to the stream
 		// NULL values are encoded as [size:int][NULL value] ([size] is always [typelen] for fixed size columns)
@@ -2540,9 +2578,7 @@ mvc_export_chunk(backend *b, stream *s, int res_id, BUN offset, BUN nr)
 	}
 
 	res = mvc_export_table(b, s, t, order, offset, cnt, "[ ", ",\t", "\t]\n", "\"", "NULL");
-	if (order) {
-		BBPunfix(order->batCacheid);	
-	}
+	BBPunfix(order->batCacheid);	
 	return res;
 }
 
@@ -2563,7 +2599,7 @@ mvc_result_column(mvc *m, char *tn, char *name, char *typename, int digits, int 
 }
 
 int
-mvc_result_value(mvc *m, char *tn, char *name, char *typename, int digits, int scale, ptr *p, int mtype)
+mvc_result_value(mvc *m, const char *tn, const char *name, const char *typename, int digits, int scale, ptr *p, int mtype)
 {
 	/* return 0 on success, non-zero on failure */
 	return res_col_create(m->session->tr, m->results, tn, name, typename, digits, scale, mtype, p) == NULL;

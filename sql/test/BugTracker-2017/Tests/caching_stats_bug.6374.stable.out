@@ -45,11 +45,11 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 64 # length
+% 46 # length
 project (
 | group by (
 | | select (
-| | | table(sys.sub2) [ "mt"."i", "mt"."%TID%" NOT NULL ] COUNT 
+| | | table(sys.sub2) [ "mt"."i" ] COUNT 
 | | ) [ int "5" <= "mt"."i" < int "100" ]
 | ) [  ] [ sys.count() NOT NULL as "L3"."L3" ]
 ) [ "L3" NOT NULL as "L4"."L3" ]
@@ -67,23 +67,23 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 102 # length
+% 61 # length
 project (
 | group by (
 | | union (
 | | | group by (
 | | | | project (
 | | | | | select (
-| | | | | | table(sys.sub1) [ "sub1"."i" as "mt"."i", "sub1"."%TID%" NOT NULL as "mt"."%TID%" ] COUNT 
+| | | | | | table(sys.sub1) [ "sub1"."i" as "mt"."i" ] COUNT 
 | | | | | ) [ int "5" <= "mt"."i" < int "100" ]
-| | | | ) [ "mt"."i", "mt"."%TID%" NOT NULL ]
+| | | | ) [ "mt"."i" ]
 | | | ) [  ] [ sys.count() NOT NULL as "L3"."L3" ],
 | | | group by (
 | | | | project (
 | | | | | select (
-| | | | | | table(sys.sub2) [ "sub2"."i" as "mt"."i", "sub2"."%TID%" NOT NULL as "mt"."%TID%" ] COUNT 
+| | | | | | table(sys.sub2) [ "sub2"."i" as "mt"."i" ] COUNT 
 | | | | | ) [ int "5" <= "mt"."i" < int "100" ]
-| | | | ) [ "mt"."i", "mt"."%TID%" NOT NULL ]
+| | | | ) [ "mt"."i" ]
 | | | ) [  ] [ sys.count() NOT NULL as "L3"."L3" ]
 | | ) [ "L3"."L3" ]
 | ) [  ] [ sys.sum no nil ("L3"."L3") COUNT  as "L3"."L3" ]

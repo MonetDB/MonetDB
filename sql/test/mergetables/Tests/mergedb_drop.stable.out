@@ -1,0 +1,38 @@
+stdout of test 'mergedb_drop` in directory 'sql/test/mergetables` itself:
+
+
+# 23:53:19 >  
+# 23:53:19 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36041" "--set" "mapi_usock=/var/tmp/mtest-11852/.s.monetdb.36041" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_mergetables"
+# 23:53:19 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mergetables', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.330 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:36041/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-11852/.s.monetdb.36041
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 23:53:19 >  
+# 23:53:19 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-11852" "--port=36041"
+# 23:53:19 >  
+
+#drop table R;
+#drop table R1;
+#drop table R2;
+#drop table R3;
+#drop table S;
+#drop table S1;
+#drop table S2;
+
+# 23:53:19 >  
+# 23:53:19 >  "Done."
+# 23:53:19 >  
+

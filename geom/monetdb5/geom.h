@@ -47,48 +47,48 @@ geom_export str geom_prelude(void *ret);
 geom_export str geom_epilogue(void *ret);
 
 /* the len argument is needed for correct storage and retrieval */
-geom_export int wkbTOSTR(char **geomWKT, int *len, wkb *geomWKB);
-geom_export int mbrTOSTR(char **dst, int *len, mbr *atom);
-geom_export int wkbaTOSTR(char **toStr, int* len, wkba *fromArray);
+geom_export ssize_t wkbTOSTR(char **geomWKT, size_t *len, const wkb *geomWKB);
+geom_export ssize_t mbrTOSTR(char **dst, size_t *len, const mbr *atom);
+geom_export ssize_t wkbaTOSTR(char **toStr, size_t* len, const wkba *fromArray);
 
-geom_export int wkbFROMSTR(char* geomWKT, int *len, wkb** geomWKB);
-geom_export int mbrFROMSTR(char *src, int *len, mbr **atom);
-geom_export int wkbaFROMSTR(char *fromStr, int *len, wkba **toArray);
+geom_export ssize_t wkbFROMSTR(const char* geomWKT, size_t *len, wkb** geomWKB);
+geom_export ssize_t mbrFROMSTR(const char *src, size_t *len, mbr **atom);
+geom_export ssize_t wkbaFROMSTR(const char *fromStr, size_t *len, wkba **toArray);
 
-geom_export wkb *wkbNULL(void);
-geom_export mbr *mbrNULL(void);
-geom_export wkba *wkbaNULL(void);
+geom_export const wkb *wkbNULL(void);
+geom_export const mbr *mbrNULL(void);
+geom_export const wkba *wkbaNULL(void);
 
-geom_export BUN wkbHASH(wkb *w);
-geom_export BUN mbrHASH(mbr *atom);
-geom_export BUN wkbaHASH(wkba *w);
+geom_export BUN wkbHASH(const wkb *w);
+geom_export BUN mbrHASH(const mbr *atom);
+geom_export BUN wkbaHASH(const wkba *w);
 
-geom_export int wkbCOMP(wkb *l, wkb *r);
-geom_export int mbrCOMP(mbr *l, mbr *r);
-geom_export int wkbaCOMP(wkba *l, wkba *r);
+geom_export int wkbCOMP(const wkb *l, const wkb *r);
+geom_export int mbrCOMP(const mbr *l, const mbr *r);
+geom_export int wkbaCOMP(const wkba *l, const wkba *r);
 
 /* read/write to/from log */
 geom_export wkb *wkbREAD(wkb *a, stream *s, size_t cnt);
 geom_export mbr *mbrREAD(mbr *a, stream *s, size_t cnt);
 geom_export wkba* wkbaREAD(wkba *a, stream *s, size_t cnt);
 
-geom_export gdk_return wkbWRITE(wkb *a, stream *s, size_t cnt);
-geom_export gdk_return mbrWRITE(mbr *c, stream *s, size_t cnt);
-geom_export gdk_return wkbaWRITE(wkba *c, stream *s, size_t cnt);
+geom_export gdk_return wkbWRITE(const wkb *a, stream *s, size_t cnt);
+geom_export gdk_return mbrWRITE(const mbr *c, stream *s, size_t cnt);
+geom_export gdk_return wkbaWRITE(const wkba *c, stream *s, size_t cnt);
 
-geom_export var_t wkbPUT(Heap *h, var_t *bun, wkb *val);
-geom_export var_t wkbaPUT(Heap *h, var_t *bun, wkba *val);
+geom_export var_t wkbPUT(Heap *h, var_t *bun, const wkb *val);
+geom_export var_t wkbaPUT(Heap *h, var_t *bun, const wkba *val);
 
 geom_export void wkbDEL(Heap *h, var_t *index);
 geom_export void wkbaDEL(Heap *h, var_t *index);
 
-geom_export int wkbLENGTH(wkb *p);
-geom_export int wkbaLENGTH(wkba *p);
+geom_export size_t wkbLENGTH(const wkb *p);
+geom_export size_t wkbaLENGTH(const wkba *p);
 
 geom_export void wkbHEAP(Heap *heap, size_t capacity);
 geom_export void wkbaHEAP(Heap *heap, size_t capacity);
 
-geom_export str mbrFromString(mbr **w, str *src);
+geom_export str mbrFromString(mbr **w, const char **src);
 geom_export str wkbIsnil(bit *r, wkb **v);
 
 /* functions that are used when a column is added to an existing table */
@@ -108,7 +108,7 @@ geom_export mbr* mbrFromGeos(const GEOSGeom geosGeometry);
 geom_export str wkbFromText(wkb **geomWKB, str *geomWKT, int* srid, int *tpe);
 geom_export str wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe);
 
-geom_export str wkbMLineStringToPolygon(wkb** geomWKB, str* geomWKT, int* srid, int* flag);
+geom_export str wkbMLineStringToPolygon(wkb** geomWKB, str *geomWKT, int* srid, int* flag);
 
 
 /* Basic Methods on Geometric objects (OGC) */
@@ -124,7 +124,7 @@ geom_export str wkbAsText(char **outTXT, wkb **inWKB, int *withSRID);
 geom_export str wkbAsText_bat(bat *inBAT_id, bat *outBAT_id, int *withSRID);
 
 geom_export str wkbAsBinary(char**, wkb**);
-geom_export str wkbFromBinary(wkb**, char**);
+geom_export str wkbFromBinary(wkb**, const char**);
 
 geom_export str wkbIsEmpty(bit*, wkb**);
 geom_export str wkbIsEmpty_bat(bat *inBAT_id, bat *outBAT_id);

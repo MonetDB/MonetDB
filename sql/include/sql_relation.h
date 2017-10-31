@@ -213,6 +213,8 @@ typedef enum operator_type {
 	(op == op_inter)
 #define is_except(rel) \
 	(op == op_except)
+#define is_simple_project(op) \
+	(op == op_project)
 #define is_project(op) \
 	(op == op_project || op == op_groupby || is_set(op))
 #define is_groupby(op) \

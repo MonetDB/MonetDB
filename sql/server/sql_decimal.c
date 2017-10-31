@@ -26,7 +26,7 @@ decimal_from_str(char *dec, char **end)
 #endif
 	int neg = 0;
 
-	while(isspace(*dec))
+	while(isspace((unsigned char) *dec))
 		dec++;
 	if (*dec == '-') {
 		neg = 1;
@@ -42,7 +42,7 @@ decimal_from_str(char *dec, char **end)
 			res += *dec - '0';
 		}
 	}
-	while(isspace(*dec))
+	while(isspace((unsigned char) *dec))
 		dec++;
 	if (end)
 		*end = dec;

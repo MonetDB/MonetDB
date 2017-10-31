@@ -67,36 +67,36 @@
  */
 
 #ifdef HAVE_HGE
-gdk_export int hgeFromStr(const char *src, int *len, hge **dst);
-gdk_export int hgeToStr(str *dst, int *len, const hge *src);
+gdk_export ssize_t hgeFromStr(const char *src, size_t *len, hge **dst);
+gdk_export ssize_t hgeToStr(str *dst, size_t *len, const hge *src);
 #endif
-gdk_export int lngFromStr(const char *src, int *len, lng **dst);
-gdk_export int lngToStr(str *dst, int *len, const lng *src);
-gdk_export int intFromStr(const char *src, int *len, int **dst);
-gdk_export int intToStr(str *dst, int *len, const int *src);
-gdk_export int batFromStr(const char *src, int *len, bat **dst);
-gdk_export int batToStr(str *dst, int *len, const bat *src);
-gdk_export int ptrFromStr(const char *src, int *len, ptr **dst);
-gdk_export int ptrToStr(str *dst, int *len, const ptr *src);
-gdk_export int bitFromStr(const char *src, int *len, bit **dst);
-gdk_export int bitToStr(str *dst, int *len, const bit *src);
-gdk_export int OIDfromStr(const char *src, int *len, oid **dst);
-gdk_export int OIDtoStr(str *dst, int *len, const oid *src);
-gdk_export int shtFromStr(const char *src, int *len, sht **dst);
-gdk_export int shtToStr(str *dst, int *len, const sht *src);
-gdk_export int bteFromStr(const char *src, int *len, bte **dst);
-gdk_export int bteToStr(str *dst, int *len, const bte *src);
-gdk_export int fltFromStr(const char *src, int *len, flt **dst);
-gdk_export int fltToStr(str *dst, int *len, const flt *src);
-gdk_export int dblFromStr(const char *src, int *len, dbl **dst);
-gdk_export int dblToStr(str *dst, int *len, const dbl *src);
+gdk_export ssize_t lngFromStr(const char *src, size_t *len, lng **dst);
+gdk_export ssize_t lngToStr(str *dst, size_t *len, const lng *src);
+gdk_export ssize_t intFromStr(const char *src, size_t *len, int **dst);
+gdk_export ssize_t intToStr(str *dst, size_t *len, const int *src);
+gdk_export ssize_t batFromStr(const char *src, size_t *len, bat **dst);
+gdk_export ssize_t batToStr(str *dst, size_t *len, const bat *src);
+gdk_export ssize_t ptrFromStr(const char *src, size_t *len, ptr **dst);
+gdk_export ssize_t ptrToStr(str *dst, size_t *len, const ptr *src);
+gdk_export ssize_t bitFromStr(const char *src, size_t *len, bit **dst);
+gdk_export ssize_t bitToStr(str *dst, size_t *len, const bit *src);
+gdk_export ssize_t OIDfromStr(const char *src, size_t *len, oid **dst);
+gdk_export ssize_t OIDtoStr(str *dst, size_t *len, const oid *src);
+gdk_export ssize_t shtFromStr(const char *src, size_t *len, sht **dst);
+gdk_export ssize_t shtToStr(str *dst, size_t *len, const sht *src);
+gdk_export ssize_t bteFromStr(const char *src, size_t *len, bte **dst);
+gdk_export ssize_t bteToStr(str *dst, size_t *len, const bte *src);
+gdk_export ssize_t fltFromStr(const char *src, size_t *len, flt **dst);
+gdk_export ssize_t fltToStr(str *dst, size_t *len, const flt *src);
+gdk_export ssize_t dblFromStr(const char *src, size_t *len, dbl **dst);
+gdk_export ssize_t dblToStr(str *dst, size_t *len, const dbl *src);
 gdk_export ssize_t GDKstrFromStr(unsigned char *dst, const unsigned char *src, ssize_t len);
-gdk_export int strFromStr(const char *src, int *len, str *dst);
+gdk_export ssize_t strFromStr(const char *src, size_t *len, str *dst);
 gdk_export BUN strHash(const char *s);
-gdk_export int strLen(const char *s);
+gdk_export size_t strLen(const char *s);
 gdk_export int strNil(const char *s);
-gdk_export int escapedStrlen(const char *src, const char *sep1, const char *sep2, int quote);
-gdk_export int escapedStr(char *dst, const char *src, int dstlen, const char *sep1, const char *sep2, int quote);
+gdk_export size_t escapedStrlen(const char *src, const char *sep1, const char *sep2, int quote);
+gdk_export size_t escapedStr(char *dst, const char *src, size_t dstlen, const char *sep1, const char *sep2, int quote);
 /*
  * @- nil values
  * All types have a single value designated as a NIL value. It
@@ -168,8 +168,8 @@ gdk_export const ptr ptr_nil;
  * @code{ ptr} types to @code{ lng} instead of @code{ int}.
  *
  * Derived types mimic their fathers in many ways. They inherit the
- * @code{ size}, @code{ linear}, @code{ null} and
- * @code{ align} properties of their father.  The same goes for the
+ * @code{ size}, @code{ linear}, and @code{ null}
+ * properties of their father.  The same goes for the
  * ADT functions HASH, CMP, PUT, NULL, DEL, LEN, and HEAP. So, a
  * derived type differs in only two ways from its father:
  * @table @code
@@ -185,7 +185,6 @@ gdk_export const ptr ptr_nil;
 /* use "do ... while(0)" so that lhs can safely be used in if statements */
 #define ATOMstorage(t)		BATatoms[t].storage
 #define ATOMsize(t)		BATatoms[t].size
-#define ATOMalign(t)		BATatoms[t].align
 #define ATOMfromstr(t,s,l,src)	BATatoms[t].atomFromStr(src,l,s)
 #define ATOMnilptr(t)		BATatoms[t].atomNull
 #define ATOMcompare(t)		BATatoms[t].atomCmp
@@ -228,34 +227,34 @@ gdk_export const ptr ptr_nil;
 		if ((*BATatoms[type].atomPut)(heap, dst, src) == 0)	\
 			goto bunins_failed;				\
 	} while (0)
-#define ATOMputFIX(type, dst, src)					\
-	do {								\
-		int t_ = (type);					\
-		void *d_ = (dst);					\
-		const void *s_ = (src);					\
-									\
-		assert(BATatoms[t_].atomPut == NULL);			\
-		ATOMfix(t_, s_);					\
-		switch (ATOMsize(t_)) {					\
-		case 0:		/* void */				\
-			break;						\
-		case 1:							\
-			* (bte *) d_ = * (bte *) s_;			\
-			break;						\
-		case 2:							\
-			* (sht *) d_ = * (sht *) s_;			\
-			break;						\
-		case 4:							\
-			* (int *) d_ = * (int *) s_;			\
-			break;						\
-		case 8:							\
-			* (lng *) d_ = * (lng *) s_;			\
-			break;						\
-		ATOM_CASE_16_hge;					\
-		default:						\
-			memcpy(d_, s_, (size_t) ATOMsize(t_));		\
-			break;						\
-		}							\
+#define ATOMputFIX(type, dst, src)			\
+	do {						\
+		int t_ = (type);			\
+		void *d_ = (dst);			\
+		const void *s_ = (src);			\
+							\
+		assert(BATatoms[t_].atomPut == NULL);	\
+		ATOMfix(t_, s_);			\
+		switch (ATOMsize(t_)) {			\
+		case 0:		/* void */		\
+			break;				\
+		case 1:					\
+			* (bte *) d_ = * (bte *) s_;	\
+			break;				\
+		case 2:					\
+			* (sht *) d_ = * (sht *) s_;	\
+			break;				\
+		case 4:					\
+			* (int *) d_ = * (int *) s_;	\
+			break;				\
+		case 8:					\
+			* (lng *) d_ = * (lng *) s_;	\
+			break;				\
+		ATOM_CASE_16_hge;			\
+		default:				\
+			memcpy(d_, s_, ATOMsize(t_));	\
+			break;				\
+		}					\
 	} while (0)
 
 #define ATOMreplaceVAR(type, heap, dst, src)				\
@@ -274,35 +273,35 @@ gdk_export const ptr ptr_nil;
 		*d_ = loc_;						\
 		ATOMfix(t_, s_);					\
 	} while (0)
-#define ATOMreplaceFIX(type, dst, src)					\
-	do {								\
-		int t_ = (type);					\
-		void *d_ = (dst);					\
-		const void *s_ = (src);					\
-									\
-		assert(BATatoms[t_].atomPut == NULL);			\
-		ATOMfix(t_, s_);					\
-		ATOMunfix(t_, d_);					\
-		switch (ATOMsize(t_)) {					\
-		case 0:	     /* void */					\
-			break;						\
-		case 1:							\
-			* (bte *) d_ = * (bte *) s_;			\
-			break;						\
-		case 2:							\
-			* (sht *) d_ = * (sht *) s_;			\
-			break;						\
-		case 4:							\
-			* (int *) d_ = * (int *) s_;			\
-			break;						\
-		case 8:							\
-			* (lng *) d_ = * (lng *) s_;			\
-			break;						\
-		ATOM_CASE_16_hge;					\
-		default:						\
-			memcpy(d_, s_, (size_t) ATOMsize(t_));		\
-			break;						\
-		}							\
+#define ATOMreplaceFIX(type, dst, src)			\
+	do {						\
+		int t_ = (type);			\
+		void *d_ = (dst);			\
+		const void *s_ = (src);			\
+							\
+		assert(BATatoms[t_].atomPut == NULL);	\
+		ATOMfix(t_, s_);			\
+		ATOMunfix(t_, d_);			\
+		switch (ATOMsize(t_)) {			\
+		case 0:	     /* void */			\
+			break;				\
+		case 1:					\
+			* (bte *) d_ = * (bte *) s_;	\
+			break;				\
+		case 2:					\
+			* (sht *) d_ = * (sht *) s_;	\
+			break;				\
+		case 4:					\
+			* (int *) d_ = * (int *) s_;	\
+			break;				\
+		case 8:					\
+			* (lng *) d_ = * (lng *) s_;	\
+			break;				\
+		ATOM_CASE_16_hge;			\
+		default:				\
+			memcpy(d_, s_, ATOMsize(t_));	\
+			break;				\
+		}					\
 	} while (0)
 
 /* string heaps:
@@ -344,7 +343,7 @@ gdk_export const ptr ptr_nil;
  * though we have to take corrective action to ensure that str(nil) is
  * the smallest value of the domain.
  */
-#define GDK_STRNIL(s)    ((s) == NULL || *(char*) (s) == '\200')
+#define GDK_STRNIL(s)    ((s) == NULL || *(const char*) (s) == '\200')
 #define GDK_STRLEN(s)    ((GDK_STRNIL(s)?1:strlen(s))+1)
 #define GDK_STRCMP(l,r)  (GDK_STRNIL(l)?(GDK_STRNIL(r)?0:-1):GDK_STRNIL(r)?1: \
 			  (*(const unsigned char*)(l) < *(const unsigned char*)(r))?-1: \

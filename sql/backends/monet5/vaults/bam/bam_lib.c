@@ -398,6 +398,7 @@ seq_length_bat(bat * ret, bat * bid)
 	/* allocate result BAT */
 	output = COLnew(input->hseqbase, TYPE_int, BATcount(input), TRANSIENT);
 	if (output == NULL) {
+		BBPunfix(input->batCacheid);
 		throw(MAL, "seq_length_bat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
@@ -407,6 +408,7 @@ seq_length_bat(bat * ret, bat * bid)
 	BATloop(input, p, q) {
 		cur_in = (str) BUNtail(li, p);
 		if ((msg = seq_length(cur_out, &cur_in)) != MAL_SUCCEED) {
+			BBPunfix(input->batCacheid);
 			BBPunfix(output->batCacheid);
 			return msg;
 		}

@@ -863,7 +863,7 @@ memojoins_print( list *joins )
 static void
 memoitem_print( memoitem *mi )
 {
-	printf("# %s(count=%lld,width=%lld,cost=%f): ", mi->name, mi->count, mi->width, mi->cost);
+	printf("# %s(count="LLFMT",width="LLFMT",cost=%f): ", mi->name, mi->count, mi->width, mi->cost);
 	memojoins_print(mi->joins);
 }
 

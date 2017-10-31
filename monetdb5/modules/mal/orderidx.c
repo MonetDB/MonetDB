@@ -102,7 +102,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	smb = snew->def;
 	q = getInstrPtr(smb, 0);
 	arg = newTmpVariable(smb, tpe);
-	pushArgument(smb, q, arg);
+	q= pushArgument(smb, q, arg);
 	getArg(q,0) = newTmpVariable(smb, TYPE_void);
 
 	resizeMalBlk(smb, 2*pieces+10); // large enough

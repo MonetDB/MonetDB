@@ -137,7 +137,7 @@ exp_filter(sql_allocator *sa, list *l, list *r, sql_subfunc *f, int anti)
 }
 
 sql_exp *
-exp_or(sql_allocator *sa, list *l, list *r)
+exp_or(sql_allocator *sa, list *l, list *r, int anti)
 {
 	sql_exp *f = NULL;
 	sql_exp *e = exp_create(sa, e_cmp);
@@ -149,6 +149,8 @@ exp_or(sql_allocator *sa, list *l, list *r)
 	assert(f);
 	e->f = f;
 	e->flag = cmp_or;
+	if (anti)
+		set_anti(e);
 	return e;
 }
 
@@ -244,7 +246,7 @@ exp_atom_max(sql_allocator *sa, sql_subtype *tpe)
 	} else if (tpe->type->localtype == TYPE_lng) {
 		return exp_atom_lng(sa, GDK_lng_max);
 #ifdef HAVE_HGE
-	} else if (tpe->type->localtype == TYPE_lng) {
+	} else if (tpe->type->localtype == TYPE_hge) {
 		return exp_atom_hge(sa, GDK_hge_max);
 #endif
 	}
@@ -793,6 +795,23 @@ exp_match( sql_exp *e1, sql_exp *e2)
 	return 0;
 }
 
+/* list already contains matching expression */
+sql_exp*
+exps_find_exp( list *l, sql_exp *e) 
+{
+	node *n;
+
+	if (!l || !l->h)
+		return NULL;
+
+	for(n=l->h; n; n = n->next) {
+		if (exp_match(n->data, e))
+			return n->data;
+	}
+	return NULL;
+}
+
+
 /* c refers to the parent p */
 int 
 exp_refers( sql_exp *p, sql_exp *c)
@@ -937,7 +956,7 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 			    exp_match_exp(e1->r, e2->r) && 
 			    ((!e1->f && !e2->f) || exp_match_exp(e1->f, e2->f)))
 				return 1;
-			else if (e1->flag == e2->flag && e1->flag == cmp_or &&
+			else if (e1->flag == e2->flag && get_cmp(e1) == cmp_or &&
 		            exp_match_list(e1->l, e2->l) && 
 			    exp_match_list(e1->r, e2->r))
 				return 1;
@@ -1021,7 +1040,7 @@ exp_is_complex_select( sql_exp *e )
 		list *l = e->l;
 
 		if (r && l)
-			for (n = l->h; n; n = n->next) 
+			for (n = l->h; n && !r; n = n->next) 
 				r |= exp_is_complex_select(n->data);
 		return r;
 	}
@@ -1330,7 +1349,7 @@ exp_is_atom( sql_exp *e )
 		list *l = e->l;
 
 		if (r && l)
-			for (n = l->h; n; n = n->next) 
+			for (n = l->h; n && r; n = n->next) 
 				r &= exp_is_atom(n->data);
 		return r;
 	}
@@ -1379,7 +1398,7 @@ exp_has_func( sql_exp *e )
 			return exps_has_func(e->l);
 		return 0;
 	case e_cmp:
-		if (e->flag == cmp_or) {
+		if (get_cmp(e) == cmp_or) {
 			return (exps_has_func(e->l) || exps_has_func(e->r));
 		} else if (e->flag == cmp_in || e->flag == cmp_notin || get_cmp(e) == cmp_filter) {
 			return (exp_has_func(e->l) || exps_has_func(e->r));
@@ -1757,14 +1776,14 @@ exp_copy( sql_allocator *sa, sql_exp * e)
 		ne->flag = e->flag;
 		break;
 	case e_cmp:
-		if (e->flag == cmp_or || get_cmp(e) == cmp_filter) {
+		if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
 			list *l = exps_copy(sa, e->l);
 			list *r = exps_copy(sa, e->r);
 			if (l && r) {
 				if (get_cmp(e) == cmp_filter)
 					ne = exp_filter(sa, l, r, e->f, is_anti(e));
 				else
-					ne = exp_or(sa, l, r);
+					ne = exp_or(sa, l, r, is_anti(e));
 			}
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			sql_exp *l = exp_copy(sa, e->l);

@@ -243,7 +243,7 @@ OLTPtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	for( i = 0; msg ==  MAL_SUCCEED && i < MAXOLTPLOCKS; i++)
 	if (oltp_locks[i].used ){
-		now = oltp_locks[i].start * 1000; // convert to timestamp microsecond
+		now = (lng) oltp_locks[i].start * 1000; // convert to timestamp microsecond
 		if ((msg = MTIMEunix_epoch(&ts)) != MAL_SUCCEED ||
 			(msg = MTIMEtimestamp_add(&tsn, &ts, &now)) != MAL_SUCCEED ||
 			BUNappend(bs, oltp_locks[i].start ? &tsn : timestamp_nil, FALSE) != GDK_SUCCEED ||

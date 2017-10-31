@@ -837,7 +837,7 @@ schema:
   |	drop SCHEMA if_exists qname drop_action
 		{ dlist *l = L();
 		append_list(l, $4);
-		append_int(l, $5);
+		append_int(l, 1 /*$5 use CASCADE in the release */);
 		append_int(l, $3);
 		$$ = _symbol_create_list( SQL_DROP_SCHEMA, l); }
  ;
@@ -3491,7 +3491,7 @@ like_exp:
  |  scalar_exp ESCAPE string
  	{ const char *s = sql2str($3);
 	  if (_strlen(s) != 1) {
-		yyerror(m, SQLSTATE(22025) "ESCAPE must be one character");
+		yyerror(m, SQLSTATE(22019) "ESCAPE must be one character");
 		$$ = NULL;
 		YYABORT;
 	  } else {
@@ -3961,7 +3961,7 @@ window_frame_end:
   ;
 
 window_frame_following:
-	value_exp PRECEDING	{ $$ = $1; }
+	value_exp FOLLOWING	{ $$ = $1; }
   ;
 
 window_frame_exclusion:
@@ -4433,12 +4433,12 @@ literal:
 		  }
 		}
  |  OIDNUM
-		{ int err = 0, len = sizeof(lng);
+		{ int err = 0;
+		  size_t len = sizeof(lng);
 		  lng value, *p = &value;
 		  sql_subtype t;
 
-		  lngFromStr($1, &len, &p);
-		  if (value == lng_nil)
+		  if (lngFromStr($1, &len, &p) < 0 || value == lng_nil)
 		  	err = 2;
 
 		  if (!err) {
@@ -4467,22 +4467,20 @@ literal:
 		{ int digits = _strlen($1), err = 0;
 #ifdef HAVE_HGE
 		  hge value, *p = &value;
-		  int len = sizeof(hge);
+		  size_t len = sizeof(hge);
 		  const hge one = 1;
 #else
 		  lng value, *p = &value;
-		  int len = sizeof(lng);
+		  size_t len = sizeof(lng);
 		  const lng one = 1;
 #endif
 		  sql_subtype t;
 
 #ifdef HAVE_HGE
-		  hgeFromStr($1, &len, &p);
-		  if (value == hge_nil)
+		  if (hgeFromStr($1, &len, &p) < 0 || value == hge_nil)
 		  	err = 2;
 #else
-		  lngFromStr($1, &len, &p);
-		  if (value == lng_nil)
+		  if (lngFromStr($1, &len, &p) < 0 || value == lng_nil)
 		  	err = 2;
 #endif
 
