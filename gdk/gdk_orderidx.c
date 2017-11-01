@@ -13,44 +13,40 @@
 #define ORDERIDX_VERSION	((oid) 3)
 
 #ifdef PERSISTENTIDX
-struct idxsync {
-	Heap *hp;
-	bat id;
-	const char *func;
-};
-
 static void
 BATidxsync(void *arg)
 {
-	struct idxsync *hs = arg;
-	Heap *hp = hs->hp;
+	BAT *b = arg;
+	Heap *hp;
 	int fd;
 	lng t0 = 0;
 
 	ALGODEBUG t0 = GDKusec();
 
-	if (HEAPsave(hp, hp->filename, NULL) != GDK_SUCCEED ||
-	    (fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) < 0) {
-		BBPunfix(hs->id);
-		GDKfree(arg);
-		return;
-	}
-	((oid *) hp->base)[0] |= (oid) 1 << 24;
-	if (write(fd, hp->base, SIZEOF_SIZE_T) < 0)
-		perror("write orderidx");
-	if (!(GDKdebug & FORCEMITOMASK)) {
+	MT_lock_set(&GDKhashLock(b->batCacheid));
+	if ((hp = b->torderidx) != NULL) {
+		if (HEAPsave(hp, hp->filename, NULL) == GDK_SUCCEED &&
+		    (fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) >= 0) {
+			((oid *) hp->base)[0] |= (oid) 1 << 24;
+			if (write(fd, hp->base, SIZEOF_SIZE_T) >= 0) {
+				if (!(GDKdebug & FORCEMITOMASK)) {
 #if defined(NATIVE_WIN32)
-		_commit(fd);
+					_commit(fd);
 #elif defined(HAVE_FDATASYNC)
-		fdatasync(fd);
+					fdatasync(fd);
 #elif defined(HAVE_FSYNC)
-		fsync(fd);
+					fsync(fd);
 #endif
+				}
+			} else {
+				perror("write orderidx");
+			}
+			close(fd);
+		}
+		ALGODEBUG fprintf(stderr, "#BATidxsync: persisting orderidx %s (" LLFMT " usec)\n", hp->filename, GDKusec() - t0);
 	}
-	close(fd);
-	BBPunfix(hs->id);
-	ALGODEBUG fprintf(stderr, "#%s: persisting orderidx %s (" LLFMT " usec)\n", hs->func, hp->filename, GDKusec() - t0);
-	GDKfree(arg);
+	MT_lock_unset(&GDKhashLock(b->batCacheid));
+	BBPunfix(b->batCacheid);
 }
 #endif
 
@@ -153,14 +149,9 @@ persistOIDX(BAT *b)
 	if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
 	    b->batInserted == b->batCount) {
 		MT_Id tid;
-		struct idxsync *hs = GDKmalloc(sizeof(*hs));
-		if (hs != NULL) {
-			BBPfix(b->batCacheid);
-			hs->id = b->batCacheid;
-			hs->hp = b->torderidx;
-			hs->func = "BATorderidx";
-			MT_create_thread(&tid, BATidxsync, hs, MT_THR_DETACHED);
-		}
+		BBPfix(b->batCacheid);
+		if (MT_create_thread(&tid, BATidxsync, b, MT_THR_DETACHED) < 0)
+			BBPunfix(b->batCacheid);
 	} else
 		ALGODEBUG fprintf(stderr, "#BATorderidx: NOT persisting index %d\n", b->batCacheid);
 #else
@@ -479,24 +470,19 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		GDKfree(q);
 	}
 
+	b->torderidx = m;
 #ifdef PERSISTENTIDX
 	if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
 	    b->batInserted == b->batCount) {
 		MT_Id tid;
-		struct idxsync *hs = GDKmalloc(sizeof(*hs));
-		if (hs != NULL) {
-			BBPfix(b->batCacheid);
-			hs->id = b->batCacheid;
-			hs->hp = m;
-			hs->func = "GDKmergeidx";
-			MT_create_thread(&tid, BATidxsync, hs, MT_THR_DETACHED);
-		}
+		BBPfix(b->batCacheid);
+		if (MT_create_thread(&tid, BATidxsync, b, MT_THR_DETACHED) < 0)
+			BBPunfix(b->batCacheid);
 	} else
 		ALGODEBUG fprintf(stderr, "#GDKmergeidx: NOT persisting index %d\n", b->batCacheid);
 #endif
 
 	b->batDirtydesc = TRUE;
-	b->torderidx = m;
 	MT_lock_unset(&GDKhashLock(b->batCacheid));
 	return GDK_SUCCEED;
 }
