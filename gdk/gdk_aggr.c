@@ -10,7 +10,11 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
+#ifdef __INTEL_COMPILER
+#include <mathimf.h>
+#else
 #include <math.h>
+#endif
 
 /* grouped aggregates
  *
@@ -163,7 +167,7 @@ samesign(double x, double y)
  * fact that the sum returns INFINITY in *hi of the correct sign
  * (i.e. isinf() returns TRUE) in case of overflow. */
 static inline void
-twosum(double *hi, double *lo, double x, double y)
+twosum(volatile double *hi, volatile double *lo, double x, double y)
 {
 	volatile double yr;
 
@@ -200,7 +204,7 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 	size_t i;
 	BUN grp;
 	double x, y;
-	double lo, hi;
+	volatile double lo, hi;
 	double twopow = pow((double) FLT_RADIX, (double) (DBL_MAX_EXP - 1));
 	BUN nils = 0;
 
@@ -275,7 +279,8 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 			twosum(&hi, &lo, x, y);
 			if (isinf(hi)) {
 				int sign = hi > 0 ? 1 : -1;
-				x = x - twopow * sign - twopow * sign;
+				hi = x - twopow * sign;
+				x = hi - twopow * sign;
 				pergroup[grp].partials[0] += sign;
 				if (fabs(x) < fabs(y))
 					exchange(&x, &y);
@@ -336,12 +341,15 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 		    !samesign(pergroup[grp].partials[0], pergroup[grp].partials[pergroup[grp].npartials - 1])) {
 			twosum(&hi, &lo, pergroup[grp].partials[0] * twopow, pergroup[grp].partials[pergroup[grp].npartials - 1] / 2);
 			if (isinf(2 * hi)) {
-				if (hi + 2 * lo - hi == 2 * lo &&
+				y = 2 * lo;
+				x = hi + y;
+				x -= hi;
+				if (x == y &&
 				    pergroup[grp].npartials > 2 &&
 				    samesign(lo, pergroup[grp].partials[pergroup[grp].npartials - 2])) {
 					GDKfree(pergroup[grp].partials);
 					pergroup[grp].partials = NULL;
-					x = 2 * (hi + 2 * lo);
+					x = 2 * (hi + y);
 					if (tp2 == TYPE_flt) {
 						if (x > GDK_flt_max ||
 						    x <= GDK_flt_min) {
@@ -386,10 +394,10 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 		if (pergroup[grp].partials[0] != 0)
 			goto overflow;
 
-		/* accumulate into x */
-		x = pergroup[grp].partials[--pergroup[grp].npartials];
+		/* accumulate into hi */
+		hi = pergroup[grp].partials[--pergroup[grp].npartials];
 		while (pergroup[grp].npartials > 0) {
-			twosum(&x, &lo, x, pergroup[grp].partials[--pergroup[grp].npartials]);
+			twosum(&hi, &lo, hi, pergroup[grp].partials[--pergroup[grp].npartials]);
 			if (lo) {
 				pergroup[grp].partials[pergroup[grp].npartials++] = lo;
 				break;
@@ -398,28 +406,28 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 
 		if (pergroup[grp].npartials >= 2 &&
 		    samesign(pergroup[grp].partials[pergroup[grp].npartials - 1], pergroup[grp].partials[pergroup[grp].npartials - 2]) &&
-		    x + 2 * pergroup[grp].partials[pergroup[grp].npartials - 1] - x == 2 * pergroup[grp].partials[pergroup[grp].npartials - 1]) {
-			x += 2 * pergroup[grp].partials[pergroup[grp].npartials - 1];
+		    hi + 2 * pergroup[grp].partials[pergroup[grp].npartials - 1] - hi == 2 * pergroup[grp].partials[pergroup[grp].npartials - 1]) {
+			hi += 2 * pergroup[grp].partials[pergroup[grp].npartials - 1];
 			pergroup[grp].partials[pergroup[grp].npartials - 1] = -pergroup[grp].partials[pergroup[grp].npartials - 1];
 		}
 
 		GDKfree(pergroup[grp].partials);
 		pergroup[grp].partials = NULL;
 		if (tp2 == TYPE_flt) {
-			if (x > GDK_flt_max || x <= GDK_flt_min) {
+			if (hi > GDK_flt_max || hi <= GDK_flt_min) {
 				if (abort_on_error)
 					goto overflow;
 				((flt *) results)[grp] = flt_nil;
 				nils++;
 			} else
-				((flt *) results)[grp] = (flt) x;
-		} else if (x == GDK_dbl_min) {
+				((flt *) results)[grp] = (flt) hi;
+		} else if (hi == GDK_dbl_min) {
 			if (abort_on_error)
 				goto overflow;
 			((dbl *) results)[grp] = dbl_nil;
 			nils++;
 		} else
-			((dbl *) results)[grp] = x;
+			((dbl *) results)[grp] = hi;
 	}
 	GDKfree(pergroup);
 	return nils;
