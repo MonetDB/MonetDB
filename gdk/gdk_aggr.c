@@ -186,6 +186,7 @@ exchange(double *x, double *y)
 	*y = t;
 }
 
+/* this function was adapted from https://bugs.python.org/file10357/msum4.py */
 static BUN
 dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
        void *restrict results, BUN ngrp, int tp1, int tp2,
