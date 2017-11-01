@@ -2768,7 +2768,7 @@ gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
 	for (hb = HASHget(h, hash_##TYPE(h, v));		\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (simple_EQ(v, BUNtloc(bi, hb), TYPE))
+		if (* (const TYPE *) v == * (const TYPE *) BUNtloc(bi, hb))
 
 #define HASHloop_bte(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
 #define HASHloop_sht(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, sht)

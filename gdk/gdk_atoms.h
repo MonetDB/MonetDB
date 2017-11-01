@@ -12,16 +12,6 @@
 #define MAXATOMS	128
 
 /*
- * @- comparison macro's
- * In order to get maximum performance, we extensively use
- * out-factoring of type checks using CPP macros. To catch diverging
- * code in one CPP macro we use the following #defines for comparing
- * atoms:
- */
-#define simple_CMP(x,y,tpe)	(((*(const tpe*) (x))  > (*(const tpe*) (y))) - ((*(const tpe*) (x))  < (*(const tpe*) (y))))
-#define simple_EQ(x,y,tpe)	((*(const tpe*) (x)) == (*(const tpe*) (y)))
-
-/*
  * @- maximum atomic string lengths
  */
 #define bitStrlen	8
