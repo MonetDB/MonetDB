@@ -360,6 +360,7 @@ CONDITIONALS = {
     'HAVE_PHP'             : "",
     'HAVE_PYMONETDB'       : "",
     'HAVE_RUBY'            : "",
+    'HAVE_DATA_PATH'       : "",
     'MERCURIAL'            : "",
     'RELEASERUN'           : "",
     'BAD_HOSTNAME'         : "",
@@ -1223,6 +1224,10 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
     if os.name == 'nt':
         os.environ['PYTHON2PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', 'lib', 'python2'))
         os.environ['PYTHON3PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', 'lib', 'python3'))
+    if 'TSTDATAPATH' not in os.environ and TSTDATAPATH:
+        env['TSTDATAPATH'] = TSTDATAPATH
+        os.environ['TSTDATAPATH'] = TSTDATAPATH
+
 
     #STDERR.flush()
     #for v in 'RELSRCDIR':
@@ -3586,6 +3591,8 @@ def main(argv) :
              'automatically add required tests when testing individual tests'),
             ('global_timeout', 'T', 'global_timeout', '<sec>',
              'global timeout'),
+            ('data_path', 'D', 'data_path', '<path>',
+             "Path to the root directory of the data files needed for testing"),
             ]
 
     if THISFILE == 'Mtest.py':
@@ -3715,6 +3722,9 @@ def main(argv) :
         a = opts.get('global_timeout')
         if a is not None:
             global_timeout = int(a)
+        a = opts.get('data_path')
+        if a is not None:
+            env['TSTDATAPATH'] = a
     if THISFILE == 'Mapprove.py':
         a = opts.get('ext')
         if a is None:
@@ -3768,6 +3778,8 @@ def main(argv) :
         pass
     else:
         CONDITIONALS['HAVE_LIBPANDAS'] = '#'
+    if env.get('TSTDATAPATH'):
+        CONDITIONALS['HAVE_DATA_PATH'] = '#'
     if CheckExec('perl'):
         proc = process.Popen(['perl', '-e', 'use MonetDB::CLI::MapiPP'],
                              stdout = process.PIPE, stderr = process.PIPE,
@@ -3870,6 +3882,8 @@ def main(argv) :
     TSTTRGBASE = env['TSTTRGBASE']
     global TSTSRCBASE
     TSTSRCBASE = env['TSTSRCBASE']
+    global TSTDATAPATH
+    TSTDATAPATH = env.get('TSTDATAPATH')
 
     if THISFILE == "Mapprove.py" \
        and not os.path.exists(os.path.join(TSTTRGBASE, dftTSTPREF )) \
@@ -3951,6 +3965,7 @@ def main(argv) :
     if THISFILE == "Mtest.py":
         vars_ = vars_ + ['GDK_DBFARM']
         vars_ = vars_ + ['setMONETDB_MOD_PATH']
+        vars_ = vars_ + ['TSTDATAPATH']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars_
     for v in vars_:

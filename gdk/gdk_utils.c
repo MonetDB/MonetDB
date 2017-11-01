@@ -1316,7 +1316,7 @@ THRhighwater(void)
 	if (s != NULL) {
 		c = THRsp();
 		diff = c < s->sp ? s->sp - c : c - s->sp;
-		if (diff > THREAD_STACK_SIZE - 16 * 1024)
+		if (diff > THREAD_STACK_SIZE - 80 * 1024)
 			rc = 1;
 	}
 	MT_lock_unset(&GDKthreadLock);

@@ -84,7 +84,7 @@ stderr of test 'drop_schema_crash.SF-1504794` in directory 'sql/test/BugTracker`
 # 03:52:03 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -h beo-13 -p 39034 -d mTests_src_test_BugTracker -f "../../../../../../sql/src/test/BugTracker/Tests/drop_schema_crash.SF-1504794-data.sql"
 # 03:52:03 >  
 
-Error on line 5: [2BM37] DROP SCHEMA: unable to drop schema 'dbtapestry' (there are database objects which depend on it
+Error on line 5: [2BM37] DROP SCHEMA: unable to drop schema 'dbtapestry' (there are database objects which depend on it)
 
 # 03:52:03 >  
 # 03:52:03 >  Done.
