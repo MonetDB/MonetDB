@@ -1,0 +1,85 @@
+stderr of test 'fsum` in directory 'sql/test` itself:
+
+
+# 10:54:41 >  
+# 10:54:41 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=1" "--set" "mapi_open=true" "--set" "mapi_port=36044" "--set" "mapi_usock=/var/tmp/mtest-23556/.s.monetdb.36044" "--set" "monet_prompt=" "--dbpath=/ufs/sjoerd/@Monet-stable/var/MonetDB/mTests_sql_test"
+# 10:54:41 >  
+
+# builtin opt 	gdk_dbpath = /ufs/sjoerd/@Monet-stable/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 1
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 36044
+# cmdline opt 	mapi_usock = /var/tmp/mtest-23556/.s.monetdb.36044
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /ufs/sjoerd/@Monet-stable/var/MonetDB/mTests_sql_test
+# cmdline opt 	gdk_debug = 10
+
+# 10:54:43 >  
+# 10:54:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23556" "--port=36044"
+# 10:54:43 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-23556/.s.monetdb.36044
+QUERY = select sum(val) from t where gid = 14;
+ERROR = !overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-23556/.s.monetdb.36044
+QUERY = select sum(val) from t where gid = 20;
+ERROR = !overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-23556/.s.monetdb.36044
+QUERY = select sum(val) from t where gid = 21;
+ERROR = !overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-23556/.s.monetdb.36044
+QUERY = select sum(val) from t where gid = 23;
+ERROR = !overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-23556/.s.monetdb.36044
+QUERY = select sum(val) from t where gid = 24;
+ERROR = !overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-23556/.s.monetdb.36044
+QUERY = select sum(val) from t where gid = 25;
+ERROR = !overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-23556/.s.monetdb.36044
+QUERY = select sum(val) from t where gid = 26;
+ERROR = !overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-23556/.s.monetdb.36044
+QUERY = select sum(val) from t where gid = 27;
+ERROR = !overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-23556/.s.monetdb.36044
+QUERY = select sum(val) from t where gid = 28;
+ERROR = !overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-23556/.s.monetdb.36044
+QUERY = select sum(val) from t where gid = 29;
+ERROR = !overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-23556/.s.monetdb.36044
+QUERY = select sum(val) from t where gid = 30;
+ERROR = !overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-23556/.s.monetdb.36044
+QUERY = select sum(val) from t where gid = 32;
+ERROR = !overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-23556/.s.monetdb.36044
+QUERY = select sum(val) from t where gid = 34;
+ERROR = !overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-23556/.s.monetdb.36044
+QUERY = select sum(val) from t where gid = 35;
+ERROR = !overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-23556/.s.monetdb.36044
+QUERY = select sum(val) from t where gid = 36;
+ERROR = !overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-23556/.s.monetdb.36044
+QUERY = select sum(val) from t where gid = 37;
+ERROR = !overflow in calculation.
+MAPI  = (monetdb) /var/tmp/mtest-23556/.s.monetdb.36044
+QUERY = select sum(val) from t where gid = 38;
+ERROR = !overflow in calculation.
+
+# 10:54:43 >  
+# 10:54:43 >  "Done."
+# 10:54:43 >  
+

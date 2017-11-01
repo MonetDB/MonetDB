@@ -592,7 +592,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token CHECK CONSTRAINT CREATE
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE 
-%token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREPARE EXECUTE
+%token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREP PREPARE EXEC EXECUTE
 %token DEFAULT DISTINCT DROP
 %token FOREIGN
 %token RENAME ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
@@ -629,7 +629,7 @@ sqlstmt:
 		YYACCEPT;
 	}
 
- | PREPARE 		{
+ | prepare 		{
 		  	  m->emode = m_prepare; 
 			  m->scanner.as = m->scanner.yycur; 
 			  m->scanner.key = 0;
@@ -695,6 +695,17 @@ sqlstmt:
  | error SCOLON		{ m->sym = $$ = NULL; YYACCEPT; }
  | LEX_ERROR		{ m->sym = $$ = NULL; YYABORT; }
  ;
+
+
+prepare:
+       PREPARE
+ |     PREP
+ ; 
+
+execute:
+       EXECUTE
+ |     EXEC
+ ; 
 
 
 create:
@@ -1011,7 +1022,7 @@ operation:
  |  UPDATE opt_column_list          { $$ = _symbol_create_list(SQL_UPDATE,$2); }
  |  SELECT opt_column_list	    { $$ = _symbol_create_list(SQL_SELECT,$2); }
  |  REFERENCES opt_column_list 	    { $$ = _symbol_create_list(SQL_SELECT,$2); }
- |  EXECUTE			    { $$ = _symbol_create(SQL_EXECUTE,NULL); }
+ |  execute			    { $$ = _symbol_create(SQL_EXECUTE,NULL); }
  ;
 
 grantee_commalist:
@@ -5279,7 +5290,9 @@ non_reserved_word:
 |  WEEK 	{ $$ = sa_strdup(SA, "week"); }
 |  IMPRINTS	{ $$ = sa_strdup(SA, "imprints"); }
 
+|  PREP		{ $$ = sa_strdup(SA, "prep"); }
 |  PREPARE	{ $$ = sa_strdup(SA, "prepare"); }
+|  EXEC		{ $$ = sa_strdup(SA, "exec"); }
 |  EXECUTE	{ $$ = sa_strdup(SA, "execute"); }
 |  SQL_EXPLAIN	{ $$ = sa_strdup(SA, "explain"); }
 |  SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
@@ -5407,7 +5420,7 @@ string:
  ;
 
 exec:
-     EXECUTE exec_ref
+     execute exec_ref
 		{
 		  m->emode = m_execute;
 		  $$ = $2; }
@@ -6026,6 +6039,7 @@ char *token2string(int token)
 	SQL(DECLARE);
 	SQL(SET);
 	SQL(PREP);
+	SQL(PREPARE);
 	SQL(NAME);
 	SQL(USER);
 	SQL(PATH);
@@ -6094,6 +6108,7 @@ char *token2string(int token)
 	SQL(GRANT_ROLES);
 	SQL(REVOKE);
 	SQL(REVOKE_ROLES);
+	SQL(EXEC);
 	SQL(EXECUTE);
 	SQL(PRIVILEGES);
 	SQL(ROLE);
