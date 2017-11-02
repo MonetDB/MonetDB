@@ -152,8 +152,12 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 /* sum */
 
 #if defined(_MSC_VER) && _MSC_VER < 1800
+#ifndef isnan
 #define isnan(x)	_isnan(x)
+#endif
+#ifndef isinf
 #define isinf(x)	(_fpclass(x) & (_FPCLASS_NINF | _FPCLASS_PINF))
+#endif
 #endif
 
 static inline int
