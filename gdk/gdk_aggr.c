@@ -10,7 +10,7 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
-#ifdef __INTEL_COMPILER
+#if defined(_MSC_VER) && defined(__INTEL_COMPILER)
 #include <mathimf.h>
 #else
 #include <math.h>
@@ -151,13 +151,11 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 /* ---------------------------------------------------------------------- */
 /* sum */
 
-#if defined(_MSC_VER) && _MSC_VER < 1800
-#ifndef isnan
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && _MSC_VER < 1800
+#include <float.h>
 #define isnan(x)	_isnan(x)
-#endif
-#ifndef isinf
 #define isinf(x)	(_fpclass(x) & (_FPCLASS_NINF | _FPCLASS_PINF))
-#endif
+#define isfinite(x)	_finite(x)
 #endif
 
 static inline int
