@@ -152,8 +152,12 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 /* sum */
 
 #if defined(_MSC_VER) && _MSC_VER < 1800
+#ifndef isnan
 #define isnan(x)	_isnan(x)
+#endif
+#ifndef isinf
 #define isinf(x)	(_fpclass(x) & (_FPCLASS_NINF | _FPCLASS_PINF))
+#endif
 #endif
 
 static inline int
@@ -186,6 +190,7 @@ exchange(double *x, double *y)
 	*y = t;
 }
 
+/* this function was adapted from https://bugs.python.org/file10357/msum4.py */
 static BUN
 dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
        void *restrict results, BUN ngrp, int tp1, int tp2,

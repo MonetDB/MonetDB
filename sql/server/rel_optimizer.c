@@ -8345,13 +8345,6 @@ exp_mark_conflicts(mvc *sql, sql_exp *e, list *conflicts, int always)
 			if (!ne->used)
 				exp_label_table(sql->sa, ne, ++sql->label);
 			ne->used = 1;
-		} else if (!ne && always && e->name[0] == '%') {
-			ne = exp_column(sql->sa, e->l, e->r, exp_subtype(e), e->card, has_nil(e), is_intern(e));
-			exp_label_table(sql->sa, ne, ++sql->label);
-			ne->used = 1;
-			if (e->p)
-				ne->p = prop_copy(sql->sa, e->p);
-			append(conflicts, ne);
 		}
 	}
 }
@@ -8692,6 +8685,7 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 		nl = rel_apply(sql, rel_dup(rel->l), rel_dup(r->l), rel->exps, rel->flag);
 		nr = rel_apply(sql, rel_dup(rel->l), rel_dup(r->r), rel->exps, rel->flag);
 		l = rel_setop(sql->sa, nl, nr, op_union);
+		l->flag = r->flag;
 		l->exps = list_merge(p, r->exps, (fdup)NULL);
 		set_processed(l);
 		rel_destroy(rel);
@@ -8759,7 +8753,6 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			sql_rel *nl = rel_apply(sql, rel_dup(rel->l), rel_dup(r->l), rel->exps, rel->flag);
 			sql_rel *nr = rel_apply(sql, rel_dup(rel->l), rel_dup(r->r), rel->exps, rel->flag);
 
-			assert(is_semi(r->op));
 			l = rel_crossproduct(sql->sa, nl, nr, r->op);
 			l->exps = exps_copy(sql->sa, r->exps);
 			rel_destroy(rel);
