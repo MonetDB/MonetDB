@@ -567,8 +567,11 @@ void
 HASHdestroy(BAT *b)
 {
 	if (b) {
-		Hash *hs = b->thash;
+		Hash *hs;
+		MT_lock_set(&GDKhashLock(b->batCacheid));
+		hs = b->thash;
 		b->thash = NULL;
+		MT_lock_unset(&GDKhashLock(b->batCacheid));
 		if (hs == (Hash *) 1) {
 			GDKunlink(BBPselectfarm(b->batRole, b->ttype, hashheap),
 				  BATDIR,
