@@ -389,19 +389,12 @@ CQanalysis(Client cntxt, MalBlkPtr mb, int idx, int isUnion, str alias)
 		}
 	}
 	if(isUnion && msg == MAL_SUCCEED) { //register the output stream into the baskets
-		if((msg = BSKTregisterInternal(cntxt,mb,"tmp",alias,&bskt)) == MAL_SUCCEED) {
-			for( j=0; j< MAXSTREAMS && pnet[idx].baskets[j]; j++)
-				if( strcmp(sch, baskets[pnet[idx].baskets[j]].table->s->base.name) == 0 &&
-					strcmp(tbl, baskets[pnet[idx].baskets[j]].table->base.name) == 0 )
-					break;
-			if ( j == MAXSTREAMS){
-				msg = createException(MAL,"cquery.analysis",SQLSTATE(3F000) "Too many stream table columns\n");
-			} else if ( pnet[idx].baskets[j] ) {
-				msg = createException(MAL,"cquery.analysis",SQLSTATE(3F000) "The output stream is already used inside the function body\n");
-			} else {
-				pnet[idx].baskets[j] = bskt;
-				pnet[idx].inout[j] = STREAM_OUT;
-			}
+		for( j=0; j< MAXSTREAMS && pnet[idx].baskets[j]; j++);
+		if ( j == MAXSTREAMS){
+			msg = createException(MAL,"cquery.analysis",SQLSTATE(3F000) "Too many stream table columns\n");
+		} else if((msg = BSKTregisterInternal(cntxt,mb,"tmp",alias,&bskt)) == MAL_SUCCEED) {
+			pnet[idx].baskets[j] = bskt;
+			pnet[idx].inout[j] = STREAM_OUT;
 		}
 	}
 	return msg;
@@ -500,6 +493,9 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		FREE_CQ_MB(finish)
 	}
 	list_destroy(l);
+	if((msg = be->client->curprg->def->errors) != NULL) {
+		FREE_CQ_MB(finish)
+	}
 
 	if(!alias || strcmp(alias, str_nil) == 0) { //set the alias
 		ralias = GDKstrdup(fname);
@@ -616,7 +612,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		/* make sure we return the correct type (not the storage type) */
 		val->vtype = tpe.type->localtype;
 		q = pushValue(mb, q, val);
-		if(val->vtype == TYPE_str) //if the input variable is of type str we must free it
+		if(ATOMextern(val->vtype)) //if the input variable is of type str we must free it
 			GDKfree(val->val.sval);
 		if(q == NULL) {
 			CQ_MALLOC_FAIL(finish);
@@ -647,7 +643,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 			int nextbid = newTmpVariable(mb, type);
 			p = pushReturn(mb, p, nextbid);
 
-			q= newStmt(mb, basketRef, appendRef); //append to the basket the output results of teh UDF
+			q= newStmt(mb, basketRef, appendRef); //append to the basket the output results of the UDF
 			q= pushArgument(mb, q, mvc_var);
 			getArg(q, 0) = mvc_var = newTmpVariable(mb, TYPE_int);
 			q= pushStr(mb, q, "tmp");
