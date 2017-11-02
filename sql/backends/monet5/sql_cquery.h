@@ -41,6 +41,7 @@
 
 #define STREAM_IN   1
 #define STREAM_OUT  2
+#define CQ_OUT      3  /* Output stream in continuous functions */
 
 typedef struct {
 	sql_func *func; /* The UDF to be called */
@@ -58,7 +59,6 @@ typedef struct {
 	lng beats;		/* heart beat stride for procedures activations -> must be in microseconds */
 	lng run;		/* start at the CQ at that precise moment (UNIX timestamp) -> must be in microseconds */
 
-	/*MT_Id	tid;	 Thread responsible */
 	timestamp seen; /* last time the query was seen by the scheduler */
 	str error;      /* error message if happened during a call */
 	lng time;       /* the amount of time the last call took in microseconds */
