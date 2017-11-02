@@ -15,8 +15,11 @@
 const char *
 rel_name( sql_rel *r )
 {
-	if (!is_project(r->op) && !is_base(r->op) && r->l)
+	if (!is_project(r->op) && !is_base(r->op) && r->l) {
+		if (is_apply(r->op))
+			return rel_name(r->r);
 		return rel_name(r->l);
+	}
 	if (r->exps && list_length(r->exps)) {
 		sql_exp *e = r->exps->h->data;
 		if (e->rname)

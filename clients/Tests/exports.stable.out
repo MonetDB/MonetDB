@@ -10,7 +10,6 @@ void ALIGNsetH(BAT *b1, BAT *b2);
 void ALIGNsetT(BAT *b1, BAT *b2);
 int ALIGNsynced(BAT *b1, BAT *b2);
 int ATOMallocate(const char *nme);
-int ATOMcmp(int id, const void *v_1, const void *v_2);
 ptr ATOMdup(int id, const void *val);
 bte ATOMelmshift(int sz);
 char *ATOMformat(int id, const void *val);

@@ -34,45 +34,45 @@
 static int
 bteCmp(const bte *l, const bte *r)
 {
-	return simple_CMP(l, r, bte);
+	return (*l > *r) - (*l < *r);
 }
 
 static int
 shtCmp(const sht *l, const sht *r)
 {
-	return simple_CMP(l, r, sht);
+	return (*l > *r) - (*l < *r);
 }
 
 static int
 intCmp(const int *l, const int *r)
 {
-	return simple_CMP(l, r, int);
+	return (*l > *r) - (*l < *r);
 }
 
 static int
 fltCmp(const flt *l, const flt *r)
 {
-	return simple_CMP(l, r, flt);
+	return (*l > *r) - (*l < *r);
 }
 
 static int
 lngCmp(const lng *l, const lng *r)
 {
-	return simple_CMP(l, r, lng);
+	return (*l > *r) - (*l < *r);
 }
 
 #ifdef HAVE_HGE
 static int
 hgeCmp(const hge *l, const hge *r)
 {
-	return simple_CMP(l, r, hge);
+	return (*l > *r) - (*l < *r);
 }
 #endif
 
 static int
 dblCmp(const dbl *l, const dbl *r)
 {
-	return simple_CMP(l, r, dbl);
+	return (*l > *r) - (*l < *r);
 }
 
 /*
@@ -280,31 +280,6 @@ ATOMheap(int t, Heap *hp, size_t cap)
 			return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
-}
-
-int
-ATOMcmp(int t, const void *l, const void *r)
-{
-	switch (ATOMbasetype(t)) {
-	case TYPE_bte:
-		return simple_CMP(l, r, bte);
-	case TYPE_sht:
-		return simple_CMP(l, r, sht);
-	case TYPE_int:
-		return simple_CMP(l, r, int);
-	case TYPE_flt:
-		return simple_CMP(l, r, flt);
-	case TYPE_lng:
-		return simple_CMP(l, r, lng);
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		return simple_CMP(l, r, hge);
-#endif
-	case TYPE_dbl:
-		return simple_CMP(l, r, dbl);
-	default:
-		return (l == r) ? 0 : atom_CMP(l, r, t);
-	}
 }
 
 /*

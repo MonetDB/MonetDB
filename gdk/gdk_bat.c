@@ -910,7 +910,7 @@ static void
 setcolprops(BAT *b, const void *x)
 {
 	int isnil = b->ttype != TYPE_void &&
-		atom_CMP(x, ATOMnilptr(b->ttype), b->ttype) == 0;
+		ATOMcmp(b->ttype, x, ATOMnilptr(b->ttype)) == 0;
 	BATiter bi;
 	BUN pos;
 	const void *prv;
@@ -965,7 +965,7 @@ setcolprops(BAT *b, const void *x)
 		bi = bat_iterator(b);
 		pos = BUNlast(b);
 		prv = BUNtail(bi, pos - 1);
-		cmp = atom_CMP(prv, x, b->ttype);
+		cmp = ATOMcmp(b->ttype, prv, x);
 
 		if (!b->tunique && /* assume outside check if tunique */
 		    b->tkey &&
@@ -1152,8 +1152,8 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 
 	ALIGNinp(b, "BUNinplace", force, GDK_FAIL);	/* zap alignment info */
 	if (b->tnil &&
-	    atom_CMP(BUNtail(bi, p), ATOMnilptr(b->ttype), b->ttype) == 0 &&
-	    atom_CMP(t, ATOMnilptr(b->ttype), b->ttype) != 0) {
+	    ATOMcmp(b->ttype, BUNtail(bi, p), ATOMnilptr(b->ttype)) == 0 &&
+	    ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0) {
 		/* if old value is nil and new value isn't, we're not
 		 * sure anymore about the nil property, so we must
 		 * clear it */
@@ -1210,7 +1210,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 	} else if (!b->tkey && (b->tnokey[0] == p || b->tnokey[1] == p))
 		b->tnokey[0] = b->tnokey[1] = 0;
 	if (b->tnonil)
-		b->tnonil = t && atom_CMP(t, ATOMnilptr(b->ttype), b->ttype) != 0;
+		b->tnonil = t && ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0;
 	b->theap.dirty = TRUE;
 	if (b->tvheap)
 		b->tvheap->dirty = TRUE;

@@ -88,7 +88,7 @@
 			}						\
 		}							\
 		if (extents)						\
-			exts[ngrp] = hseqb + p;				\
+			exts[ngrp] = hseqb + p - lo;			\
 		if (histo)						\
 			cnts[ngrp] = 1;					\
 		ngrps[r] = ngrp++;					\
@@ -545,6 +545,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	bat parent;
 #endif
 	BUN start, end, cnt;
+	BUN lo = 0;
 	const oid *restrict cand, *candend;
 	oid maxgrp = oid_nil;	/* maximum value of g BAT (if subgrouping) */
 	PROPrec *prop;
@@ -1006,8 +1007,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		       BATcheckhash(BBPdescriptor(parent)))
 #endif
 		) {
-		BUN lo;
-
 		/* we already have a hash table on b, or b is
 		 * persistent and we could create a hash table, or b
 		 * is a view on a bat that already has a hash table */
@@ -1034,11 +1033,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			bi = bat_iterator(b);
 			start += lo;
 			end += lo;
-		} else
-#endif
-		{
-			lo = 0;
 		}
+#endif
 		hs = b->thash;
 		gn->tsorted = 1; /* be optimistic */
 
