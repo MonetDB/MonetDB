@@ -510,7 +510,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 			if (n->ttype != TYPE_void)
 				f = *(oid *) Tloc(n, start);
 
-			if (BATcount(b) == 0 && f != oid_nil)
+			if (BATcount(b) == 0 && !is_oid_nil(f))
 				BATtseqbase(b, f);
 			if (BATcount(b) + b->tseqbase == f) {
 				BATsetcount(b, BATcount(b) + cnt);
@@ -551,7 +551,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 			if (n->tdense && n->ttype == TYPE_oid)
 				b->tseqbase = *(oid *) BUNtail(ni, start);
 			else if (n->ttype == TYPE_void &&
-				 n->tseqbase != oid_nil)
+				 !is_oid_nil(n->tseqbase))
 				b->tseqbase = n->tseqbase + start;
 		} else {
 			b->tnosorted = 0;
@@ -888,7 +888,7 @@ BATslice(BAT *b, BUN l, BUN h)
 			bn->tdense = TRUE;
 			BATtseqbase(bn, 0);
 		} else if (bn->tsorted &&
-			   (foid = *(oid *) BUNtloc(bni, 0)) != oid_nil &&
+			   !is_oid_nil((foid = *(oid *) BUNtloc(bni, 0))) &&
 			   foid + BATcount(bn) - 1 == *(oid *) BUNtloc(bni, BUNlast(bn) - 1)) {
 			bn->tdense = TRUE;
 			BATtseqbase(bn, *(oid *) BUNtloc(bni, 0));
@@ -927,7 +927,7 @@ BATkeyed(BAT *b)
 	Hash *hs = NULL;
 
 	if (b->ttype == TYPE_void)
-		return b->tseqbase != oid_nil || BATcount(b) <= 1;
+		return !is_oid_nil(b->tseqbase) || BATcount(b) <= 1;
 	if (BATcount(b) <= 1)
 		return 1;
 	if (b->twidth < SIZEOF_BUN &&
@@ -1172,7 +1172,7 @@ BATordered_rev(BAT *b)
 	if (b == NULL)
 		return 0;
 	if (b->ttype == TYPE_void)
-		return b->tseqbase == oid_nil;
+		return is_oid_nil(b->tseqbase);
 	MT_lock_set(&GDKhashLock(b->batCacheid));
 	if (!b->trevsorted && b->tnorevsorted == 0) {
 		BATiter bi = bat_iterator(b);
@@ -1273,7 +1273,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	     BATcount(o) != BATcount(b) ||     /* same size as b */
 	     (o->ttype == TYPE_void &&	       /* no nil tail */
 	      BATcount(o) != 0 &&
-	      o->tseqbase == oid_nil))) {
+	      is_oid_nil(o->tseqbase)))) {
 		GDKerror("BATsort: o must be [dense,oid] and same size as b\n");
 		return GDK_FAIL;
 	}
@@ -1283,7 +1283,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	     BATcount(o) != BATcount(b) ||     /* same size as b */
 	     (g->ttype == TYPE_void &&	       /* no nil tail */
 	      BATcount(g) != 0 &&
-	      g->tseqbase == oid_nil))) {
+	      is_oid_nil(g->tseqbase)))) {
 		GDKerror("BATsort: g must be [dense,oid], sorted on the tail, and same size as b\n");
 		return GDK_FAIL;
 	}
@@ -1515,8 +1515,8 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		}
 		if (b->ttype == TYPE_void) {
 			b->tsorted = 1;
-			b->trevsorted = b->tseqbase == oid_nil || b->batCount <= 1;
-			b->tkey = b->tseqbase != oid_nil;
+			b->trevsorted = is_oid_nil(b->tseqbase) || b->batCount <= 1;
+			b->tkey = !is_oid_nil(b->tseqbase);
 		} else if (b->batCount <= 1) {
 			b->tsorted = b->trevsorted = 1;
 		}
@@ -1744,37 +1744,37 @@ BATcount_no_nil(BAT *b)
 	t = ATOMbasetype(b->ttype);
 	switch (t) {
 	case TYPE_void:
-		cnt = b->tseqbase == oid_nil ? 0 : n;
+		cnt = n * !is_oid_nil(b->tseqbase);
 		break;
 	case TYPE_bte:
 		for (i = 0; i < n; i++)
-			cnt += ((const bte *) p)[i] != bte_nil;
+			cnt += !is_bte_nil(((const bte *) p)[i]);
 		break;
 	case TYPE_sht:
 		for (i = 0; i < n; i++)
-			cnt += ((const sht *) p)[i] != sht_nil;
+			cnt += !is_sht_nil(((const sht *) p)[i]);
 		break;
 	case TYPE_int:
 		for (i = 0; i < n; i++)
-			cnt += ((const int *) p)[i] != int_nil;
+			cnt += !is_int_nil(((const int *) p)[i]);
 		break;
 	case TYPE_lng:
 		for (i = 0; i < n; i++)
-			cnt += ((const lng *) p)[i] != lng_nil;
+			cnt += !is_lng_nil(((const lng *) p)[i]);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		for (i = 0; i < n; i++)
-			cnt += ((const hge *) p)[i] != hge_nil;
+			cnt += !is_hge_nil(((const hge *) p)[i]);
 		break;
 #endif
 	case TYPE_flt:
 		for (i = 0; i < n; i++)
-			cnt += ((const flt *) p)[i] != flt_nil;
+			cnt += !is_flt_nil(((const flt *) p)[i]);
 		break;
 	case TYPE_dbl:
 		for (i = 0; i < n; i++)
-			cnt += ((const dbl *) p)[i] != dbl_nil;
+			cnt += !is_dbl_nil(((const dbl *) p)[i]);
 		break;
 	case TYPE_str:
 		base = b->tvheap->base;

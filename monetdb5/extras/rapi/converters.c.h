@@ -21,7 +21,7 @@
 		} else {                                            \
 		for (j = 0; j < BATcount(bat); j++) {				\
 			v = p[j];                                       \
-			if ( v == tpe##_nil)							\
+			if ( is_##tpe##_nil(v))							\
 				valptr[j] = naval;	                        \
 			else											\
 				valptr[j] = (ctype) v;	                    \
@@ -46,10 +46,10 @@
 			*p = (tpe) access_fun(s)[j];							    \
 			if (na_check){ b->tnil = 1; 	b->tnonil = 0; 	*p= tpe##_nil;} \
 			if (j > 0){													\
-				if (*p > prev && b->trevsorted){						\
+				if (b->trevsorted && !is_##tpe##_nil(*p) && (is_##tpe##_nil(prev) || *p > prev)){						\
 					b->trevsorted = 0;									\
 				} else													\
-					if (*p < prev && b->tsorted){						\
+					if (b->tsorted && !is_##tpe##_nil(prev) && (is_##tpe##_nil(*p) || *p < prev)){ \
 						b->tsorted = 0;									\
 					}													\
 			}															\

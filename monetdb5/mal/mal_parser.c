@@ -499,7 +499,7 @@ cstToken(Client cntxt, ValPtr cst)
 				parseError(cntxt, GDKerrbuf);
 				return i;
 			}
-			if (l == lng_nil || l < 0
+			if (is_lng_nil(l) || l < 0
 #if SIZEOF_OID < SIZEOF_LNG
 				|| l > GDK_oid_max
 #endif
@@ -584,7 +584,7 @@ handleInts:
 			} else {
 				cst->vtype = TYPE_hge;
 				cst->val.hval = l;
-				if (l == hge_nil)
+				if (is_hge_nil(l))
 					parseError(cntxt, "convertConstant: integer parse error\n");
 			}
 #else
@@ -599,7 +599,7 @@ handleInts:
 			} else {
 				cst->vtype = TYPE_lng;
 				cst->val.lval = l;
-				if (l == lng_nil)
+				if (is_lng_nil(l))
 					parseError(cntxt, "convertConstant: integer parse error\n");
 			}
 #endif

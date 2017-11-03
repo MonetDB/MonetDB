@@ -105,7 +105,7 @@ slice(BAT **retval, BAT *b, lng start, lng end)
 		GDKerror("CMDslice: start position of slice should >= 0\n");
 		return GDK_FAIL;
 	}
-	if (end == lng_nil)
+	if (is_lng_nil(end))
 		end = BATcount(b);
 	if (start > (lng) BUN_MAX || end >= (lng) BUN_MAX) {
 		GDKerror("CMDslice: argument out of range\n");
@@ -240,7 +240,7 @@ ALGselect2(bat *result, const bat *bid, const bat *sid, const void *low, const v
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
 	}
-	if (sid && *sid != bat_nil && (s = BATdescriptor(*sid)) == NULL) {
+	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
 	}
@@ -278,7 +278,7 @@ ALGthetaselect2(bat *result, const bat *bid, const bat *sid, const void *val, co
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.thetaselect", RUNTIME_OBJECT_MISSING);
 	}
-	if (sid && *sid != bat_nil && (s = BATdescriptor(*sid)) == NULL) {
+	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.thetaselect", RUNTIME_OBJECT_MISSING);
 	}
@@ -357,11 +357,11 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id, const
 		goto fail;
 	if ((right = BATdescriptor(*rid)) == NULL)
 		goto fail;
-	if (slid && *slid != bat_nil && (candleft = BATdescriptor(*slid)) == NULL)
+	if (slid && !is_bat_nil(*slid) && (candleft = BATdescriptor(*slid)) == NULL)
 		goto fail;
-	if (srid && *srid != bat_nil && (candright = BATdescriptor(*srid)) == NULL)
+	if (srid && !is_bat_nil(*srid) && (candright = BATdescriptor(*srid)) == NULL)
 		goto fail;
-	if (estimate == NULL || *estimate < 0 || *estimate == lng_nil || *estimate > (lng) BUN_MAX)
+	if (estimate == NULL || *estimate < 0 || is_lng_nil(*estimate) || *estimate > (lng) BUN_MAX)
 		est = BUN_NONE;
 	else
 		est = (BUN) *estimate;
@@ -635,7 +635,7 @@ ALGunique2(bat *result, const bat *bid, const bat *sid)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.unique", RUNTIME_OBJECT_MISSING);
 	}
-	if (sid && *sid != bat_nil && (s = BATdescriptor(*sid)) == NULL) {
+	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.unique", RUNTIME_OBJECT_MISSING);
 	}
@@ -693,11 +693,11 @@ ALGsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *orde
 
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.sort", RUNTIME_OBJECT_MISSING);
-	if (order && *order != bat_nil && (o = BATdescriptor(*order)) == NULL) {
+	if (order && !is_bat_nil(*order) && (o = BATdescriptor(*order)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.sort", RUNTIME_OBJECT_MISSING);
 	}
-	if (group && *group != bat_nil && (g = BATdescriptor(*group)) == NULL) {
+	if (group && !is_bat_nil(*group) && (g = BATdescriptor(*group)) == NULL) {
 		if (o)
 			BBPunfix(o->batCacheid);
 		BBPunfix(b->batCacheid);
@@ -837,7 +837,7 @@ str
 ALGslice_int(bat *ret, const bat *bid, const int *start, const int *end)
 {
 	lng s = *start;
-	lng e = (*end == int_nil ? lng_nil : *end);
+	lng e = (is_int_nil(*end) ? lng_nil : *end);
 
 	return ALGslice(ret, bid, &s, &e);
 }
@@ -856,8 +856,8 @@ ALGslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end)
 str
 ALGslice_oid(bat *ret, const bat *bid, const oid *start, const oid *end)
 {
-	lng s = (lng) (*start == oid_nil ? 0 : (lng) *start);
-	lng e = (*end == oid_nil ? lng_nil : (lng) *end);
+	lng s = (lng) (is_oid_nil(*start) ? 0 : (lng) *start);
+	lng e = (is_oid_nil(*end) ? lng_nil : (lng) *end);
 
 	return ALGslice(ret, bid, &s, &e) ;
 }
@@ -869,14 +869,14 @@ ALGsubslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end)
 	BUN s, e;
 
 	if (*start < 0 || *start > (lng) BUN_MAX ||
-		(*end < 0 && *end != lng_nil) || *end >= (lng) BUN_MAX)
+		(*end < 0 && !is_lng_nil(*end)) || *end >= (lng) BUN_MAX)
 		throw(MAL, "algebra.subslice", ILLEGAL_ARGUMENT);
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.subslice", RUNTIME_OBJECT_MISSING);
 	s = (BUN) *start;
 	if (s > BATcount(b))
 		s = BATcount(b);
-	e = *end == lng_nil ? BATcount(b) : (BUN) *end + 1;
+	e = is_lng_nil(*end) ? BATcount(b) : (BUN) *end + 1;
 	if (e > BATcount(b))
 		e = BATcount(b);
 	if (e < s)
@@ -912,7 +912,7 @@ doALGfetch(ptr ret, BAT *b, BUN pos)
 		size_t _s = ATOMsize(ATOMtype(b->ttype));
 		if (b->ttype == TYPE_void) {
 			*(oid*) ret = b->tseqbase;
-			if (b->tseqbase != oid_nil)
+			if (!is_oid_nil(b->tseqbase))
 				*(oid*)ret += pos;
 		} else if (_s == 4) {
 			*(int*) ret = *(int*) Tloc(b, pos);
@@ -1067,7 +1067,7 @@ ALGstdev(dbl *res, const bat *bid)
 		throw(MAL, "aggr.stdev", RUNTIME_OBJECT_MISSING);
 	stdev = BATcalcstdev_sample(NULL, b);
 	BBPunfix(b->batCacheid);
-	if (stdev == dbl_nil && GDKerrbuf && GDKerrbuf[0])
+	if (is_dbl_nil(stdev) && GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "aggr.stdev", SEMANTIC_TYPE_MISMATCH);
 	*res = stdev;
 	return MAL_SUCCEED;
@@ -1083,7 +1083,7 @@ ALGstdevp(dbl *res, const bat *bid)
 		throw(MAL, "aggr.stdevp", RUNTIME_OBJECT_MISSING);
 	stdev = BATcalcstdev_population(NULL, b);
 	BBPunfix(b->batCacheid);
-	if (stdev == dbl_nil && GDKerrbuf && GDKerrbuf[0])
+	if (is_dbl_nil(stdev) && GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "aggr.stdevp", SEMANTIC_TYPE_MISMATCH);
 	*res = stdev;
 	return MAL_SUCCEED;
@@ -1102,7 +1102,7 @@ ALGvariance(dbl *res, const bat *bid)
 		throw(MAL, "aggr.variance", RUNTIME_OBJECT_MISSING);
 	variance = BATcalcvariance_sample(NULL, b);
 	BBPunfix(b->batCacheid);
-	if (variance == dbl_nil && GDKerrbuf && GDKerrbuf[0])
+	if (is_dbl_nil(variance) && GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "aggr.variance", SEMANTIC_TYPE_MISMATCH);
 	*res = variance;
 	return MAL_SUCCEED;
@@ -1118,7 +1118,7 @@ ALGvariancep(dbl *res, const bat *bid)
 		throw(MAL, "aggr.variancep", RUNTIME_OBJECT_MISSING);
 	variance = BATcalcvariance_population(NULL, b);
 	BBPunfix(b->batCacheid);
-	if (variance == dbl_nil && GDKerrbuf && GDKerrbuf[0])
+	if (is_dbl_nil(variance) && GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "aggr.variancep", SEMANTIC_TYPE_MISMATCH);
 	*res = variance;
 	return MAL_SUCCEED;

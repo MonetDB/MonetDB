@@ -126,6 +126,20 @@ gdk_export const ptr ptr_nil;
 #endif
 
 #define void_nil	oid_nil
+
+#define is_bit_nil(v)	((v) == bit_nil)
+#define is_bte_nil(v)	((v) == bte_nil)
+#define is_sht_nil(v)	((v) == sht_nil)
+#define is_int_nil(v)	((v) == int_nil)
+#define is_lng_nil(v)	((v) == lng_nil)
+#ifdef HAVE_HGE
+#define is_hge_nil(v)	((v) == hge_nil)
+#endif
+#define is_oid_nil(v)	((v) == oid_nil)
+#define is_flt_nil(v)	((v) == flt_nil)
+#define is_dbl_nil(v)	((v) == dbl_nil)
+#define is_bat_nil(v)	((v) == bat_nil || (v) == 0)
+
 /*
  * @- Derived types
  * In all algorithms across GDK, you will find switches on the types

@@ -236,7 +236,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	rs = table_funcs.rids_select(m->session->tr, col, (void *) fid, (void *) fid, NULL);
 	GDKfree(fid);
 
-	while ((rid = table_funcs.rids_next(rs)) != oid_nil)
+	while ((rid = table_funcs.rids_next(rs)), !is_oid_nil(rid))
 	{
 		col = mvc_bind_column(m, column, "name");
 		name = (char *) table_funcs.column_find_value(m->session->tr, col, rid);
@@ -718,7 +718,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* check if the file is already attached */
 	col = mvc_bind_column(m, fits_fl, "name");
 	rid = table_funcs.column_find_row(m->session->tr, col, fname, NULL);
-	if (rid != oid_nil) {
+	if (!is_oid_nil(rid)) {
 		fits_close_file(fptr, &status);
 		msg = createException(SQL, "fits.attach", SQLSTATE(FI000) "File %s already attached\n", fname);
 		return msg;
@@ -761,7 +761,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			rid = table_funcs.column_find_row(m->session->tr, col, tname_low, NULL);
 			/* or as regular SQL table */
 			tbl = mvc_bind_table(m, sch, tname_low);
-			if (rid != oid_nil || tbl) {
+			if (!is_oid_nil(rid) || tbl) {
 				snprintf(tname, BUFSIZ, "%s_%d", bname, i);
 				tname_low = toLower(tname);
 			}
@@ -903,7 +903,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	col = mvc_bind_column(m, fits_tbl, "name");
 	rid = table_funcs.column_find_row(m->session->tr, col, tname, NULL);
-	if (rid == oid_nil) {
+	if (is_oid_nil(rid)) {
 		msg = createException(MAL, "fits.loadtable", SQLSTATE(FI000) "Table %s is unknown in FITS catalog. Attach first the containing file\n", tname);
 		return msg;
 	}

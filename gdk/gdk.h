@@ -1293,13 +1293,13 @@ gdk_export BUN ORDERfndlast(BAT *b, const void *v);
 gdk_export BUN BUNfnd(BAT *b, const void *right);
 
 #define BUNfndVOID(b, v)						\
-	(((*(const oid*)(v) == oid_nil) ^ ((b)->tseqbase == oid_nil)) | \
+	((is_oid_nil(*(const oid*)(v)) ^ is_oid_nil((b)->tseqbase)) |	\
 		(*(const oid*)(v) < (b)->tseqbase) |			\
 		(*(const oid*)(v) >= (b)->tseqbase + (b)->batCount) ?	\
 	 BUN_NONE :							\
 	 (BUN) (*(const oid*)(v) - (b)->tseqbase))
 
-#define BATttype(b)	((b)->ttype == TYPE_void && (b)->tseqbase != oid_nil ? \
+#define BATttype(b)	((b)->ttype == TYPE_void && !is_oid_nil((b)->tseqbase) ? \
 			 TYPE_oid : (b)->ttype)
 #define Tbase(b)	((b)->tvheap->base)
 
@@ -1528,19 +1528,19 @@ gdk_export void GDKqsort(void *h, void *t, const void *base, size_t n, int hs, i
 gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe);
 
 #define BATtordered(b)	((b)->ttype == TYPE_void || (b)->tsorted)
-#define BATtrevordered(b) (((b)->ttype == TYPE_void && (b)->tseqbase == oid_nil) || (b)->trevsorted)
-#define BATtdense(b)	(BATtvoid(b) && (b)->tseqbase != oid_nil)
+#define BATtrevordered(b) (((b)->ttype == TYPE_void && is_oid_nil((b)->tseqbase)) || (b)->trevsorted)
+#define BATtdense(b)	(BATtvoid(b) && !is_oid_nil((b)->tseqbase))
 #define BATtvoid(b)	(((b)->tdense && (b)->tsorted) || (b)->ttype==TYPE_void)
 #define BATtkey(b)	(b->tkey != FALSE || BATtdense(b))
 
 /* set some properties that are trivial to deduce */
 #define BATsettrivprop(b)						\
 	do {								\
-		assert((b)->hseqbase != oid_nil);			\
+		assert(!is_oid_nil((b)->hseqbase));			\
 		(b)->batDirtydesc = 1;	/* likely already set */	\
 		/* the other head properties should already be correct */ \
 		if ((b)->ttype == TYPE_void) {				\
-			if ((b)->tseqbase == oid_nil) {			\
+			if (is_oid_nil((b)->tseqbase)) {		\
 				(b)->tnonil = (b)->batCount == 0;	\
 				(b)->tnil = !(b)->tnonil;		\
 				(b)->trevsorted = 1;			\
@@ -1570,7 +1570,7 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
 			} else if ((b)->ttype == TYPE_oid) {		\
 				/* b->batCount == 1 */			\
 				oid sqbs;				\
-				if ((sqbs = ((oid *) (b)->theap.base)[0]) == oid_nil) { \
+				if (is_oid_nil((sqbs = ((oid *) (b)->theap.base)[0]))) { \
 					(b)->tdense = 0;		\
 					(b)->tnonil = 0;		\
 					(b)->tnil = 1;			\
@@ -2427,7 +2427,7 @@ gdk_export void *THRdata[THREADDATA];
 static inline bat
 BBPcheck(bat x, const char *y)
 {
-	if (x && x != bat_nil) {
+	if (!is_bat_nil(x)) {
 		assert(x > 0);
 
 		if (x < 0 || x >= getBBPsize() || BBP_logical(x) == NULL) {
@@ -2457,7 +2457,7 @@ static inline char *
 Tpos(BATiter *bi, BUN p)
 {
 	bi->tvid = bi->b->tseqbase;
-	if (bi->tvid != oid_nil)
+	if (!is_oid_nil(bi->tvid))
 		bi->tvid += p;
 	return (char*)&bi->tvid;
 }

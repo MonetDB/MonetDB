@@ -1838,7 +1838,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		/* select on update, with nil bat */
 		if (match == 1 && fm == 1 && isSelect(p) && p->retc == 1 && 
 		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 && bats == 2 &&
-		   isaBatType(getArgType(mb,p,2)) && isVarConstant(mb,getArg(p,2)) && getVarConstant(mb,getArg(p,2)).val.bval == bat_nil) {
+			isaBatType(getArgType(mb,p,2)) && isVarConstant(mb,getArg(p,2)) &&
+			is_bat_nil(getVarConstant(mb,getArg(p,2)).val.bval)) {
 			if ((r = mat_apply1(mb, p, &ml, m, fm)) != NULL)
 				mat_add(&ml, r, mat_type(ml.v, m), getFunctionId(p));
 			actions++;

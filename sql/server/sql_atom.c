@@ -1085,7 +1085,7 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 		if ((at->type->eclass == EC_DEC || 
 		     at->type->eclass == EC_NUM) && 
 		    tp->type->eclass == EC_FLT) {
-			if (a->d == dbl_nil) {
+			if (is_dbl_nil(a->d)) {
 				ptr p = &a->d;
 				char *s;
 #ifdef HAVE_HGE

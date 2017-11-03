@@ -122,7 +122,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			oid rid;
 
 			table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-			while ((rid = table_funcs.column_find_row(m->session->tr, depids, &tid, NULL)) != oid_nil) {
+			while ((rid = table_funcs.column_find_row(m->session->tr, depids, &tid, NULL)), !is_oid_nil(rid)) {
 				table_funcs.column_update_value(m->session->tr, depids, rid, &ntid);
 			}
 		}
@@ -150,7 +150,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			oid rid;
 
 			table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-			while ((rid = table_funcs.column_find_row(m->session->tr, depids, &cid, NULL)) != oid_nil) {
+			while ((rid = table_funcs.column_find_row(m->session->tr, depids, &cid, NULL)), !is_oid_nil(rid)) {
 				table_funcs.column_update_value(m->session->tr, depids, rid, &ncid);
 			}
 		} else { 

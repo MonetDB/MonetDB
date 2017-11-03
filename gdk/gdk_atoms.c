@@ -37,6 +37,15 @@
 #define isfinite(x)	_finite(x)
 #endif
 
+/* the *Cmp functions return a value less than zero if the first
+ * argument is less than the second; they return zero if the two
+ * values are equal; and they return a value greater than zero if the
+ * first argument is greater than the second.  Remember that in all
+ * cases, nil is considered smaller than any other value and nil is
+ * equal to itself (this has repercussions for the floating point
+ * implementation if and when its NIL value is the floating point
+ * NaN). */
+
 static int
 bteCmp(const bte *l, const bte *r)
 {
@@ -58,7 +67,7 @@ intCmp(const int *l, const int *r)
 static int
 fltCmp(const flt *l, const flt *r)
 {
-	return (*l > *r) - (*l < *r);
+	return is_flt_nil(*l) ? -!is_flt_nil(*r) : is_flt_nil(*r) ? 1 : (*l > *r) - (*l < *r);
 }
 
 static int
@@ -78,7 +87,7 @@ hgeCmp(const hge *l, const hge *r)
 static int
 dblCmp(const dbl *l, const dbl *r)
 {
-	return (*l > *r) - (*l < *r);
+	return is_dbl_nil(*l) ? -!is_dbl_nil(*r) : is_dbl_nil(*r) ? 1 : (*l > *r) - (*l < *r);
 }
 
 /*
@@ -385,12 +394,14 @@ ATOMdup(int t, const void *p)
 		}					\
 	} while (0)
 
+#define is_ptr_nil(val)		((val) == ptr_nil)
+
 #define atomtostr(TYPE, FMT, FMTCAST)			\
 ssize_t							\
 TYPE##ToStr(char **dst, size_t *len, const TYPE *src)	\
 {							\
 	atommem(TYPE##Strlen);				\
-	if (*src == TYPE##_nil) {			\
+	if (is_##TYPE##_nil(*src)) {			\
 		return snprintf(*dst, *len, "nil");	\
 	}						\
 	return snprintf(*dst, *len, FMT, FMTCAST *src);	\
@@ -469,7 +480,7 @@ bitToStr(char **dst, size_t *len, const bit *src)
 {
 	atommem(6);
 
-	if (*src == bit_nil)
+	if (is_bit_nil(*src))
 		return snprintf(*dst, *len, "nil");
 	if (*src)
 		return snprintf(*dst, *len, "true");
@@ -521,7 +532,7 @@ batToStr(char **dst, size_t *len, const bat *src)
 	size_t i;
 	str s;
 
-	if (b == bat_nil || (s = BBPname(b)) == NULL || *s == 0) {
+	if (is_bat_nil(b) || (s = BBPname(b)) == NULL || *s == 0) {
 		atommem(4);
 		return snprintf(*dst, *len, "nil");
 	}
@@ -846,7 +857,7 @@ ssize_t
 hgeToStr(char **dst, size_t *len, const hge *src)
 {
 	atommem(hgeStrlen);
-	if (*src == hge_nil) {
+	if (is_hge_nil(*src)) {
 		strncpy(*dst, "nil", *len);
 		return 3;
 	}
@@ -968,7 +979,7 @@ dblToStr(char **dst, size_t *len, const dbl *src)
 	int i;
 
 	atommem(dblStrlen);
-	if (*src == dbl_nil) {
+	if (is_dbl_nil(*src)) {
 		return snprintf(*dst, *len, "nil");
 	}
 	for (i = 4; i < 18; i++) {
@@ -1040,7 +1051,7 @@ fltToStr(char **dst, size_t *len, const flt *src)
 	int i;
 
 	atommem(fltStrlen);
-	if (*src == flt_nil) {
+	if (is_flt_nil(*src)) {
 		return snprintf(*dst, *len, "nil");
 	}
 	for (i = 4; i < 10; i++) {
@@ -1856,7 +1867,7 @@ OIDtoStr(char **dst, size_t *len, const oid *src)
 {
 	atommem(oidStrlen);
 
-	if (*src == oid_nil) {
+	if (is_oid_nil(*src)) {
 		return snprintf(*dst, *len, "nil");
 	}
 	return snprintf(*dst, *len, OIDFMT "@0", *src);

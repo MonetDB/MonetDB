@@ -477,7 +477,7 @@ fixsorted(void)
 			} else if (b->ttype == TYPE_void) {
 				/* void is only revsorted if nil */
 				b->batDirtydesc = 1;
-				if (b->tseqbase == oid_nil ||
+				if (is_oid_nil(b->tseqbase) ||
 				    b->batCount <= 1) {
 					b->tnorevsorted = 0;
 					b->trevsorted = 1;
@@ -1973,7 +1973,7 @@ BBPindex(const char *nme)
 BAT *
 BBPgetdesc(bat i)
 {
-	if (i == bat_nil)
+	if (is_bat_nil(i))
 		return NULL;
 	if (i < 0)
 		i = -i;
@@ -2430,7 +2430,7 @@ incref(bat i, int logical, int lock)
 	BAT *b;
 	int load = 0;
 
-	if (i == bat_nil) {
+	if (is_bat_nil(i)) {
 		/* Stefan: May this happen? Or should we better call
 		 * GDKerror(), here? */
 		/* GDKerror("BBPincref() called with bat_nil!\n"); */
@@ -2672,7 +2672,7 @@ BBPrelease(bat i)
 void
 BBPkeepref(bat i)
 {
-	if (i == bat_nil)
+	if (is_bat_nil(i))
 		return;
 	if (BBPcheck(i, "BBPkeepref")) {
 		int lock = locked_by ? MT_getpid() != locked_by : 1;
@@ -2944,7 +2944,7 @@ BBPquickdesc(bat bid, int delaccess)
 {
 	BAT *b;
 
-	if (bid == bat_nil || bid == 0)
+	if (is_bat_nil(bid))
 		return NULL;
 	if (bid < 0) {
 		GDKerror("BBPquickdesc: called with negative batid.\n");

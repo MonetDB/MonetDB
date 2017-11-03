@@ -4439,7 +4439,7 @@ literal:
 		  lng value, *p = &value;
 		  sql_subtype t;
 
-		  if (lngFromStr($1, &len, &p) < 0 || value == lng_nil)
+		  if (lngFromStr($1, &len, &p) < 0 || is_lng_nil(value))
 		  	err = 2;
 
 		  if (!err) {
@@ -4478,10 +4478,10 @@ literal:
 		  sql_subtype t;
 
 #ifdef HAVE_HGE
-		  if (hgeFromStr($1, &len, &p) < 0 || value == hge_nil)
+		  if (hgeFromStr($1, &len, &p) < 0 || is_hge_nil(value))
 		  	err = 2;
 #else
-		  if (lngFromStr($1, &len, &p) < 0 || value == lng_nil)
+		  if (lngFromStr($1, &len, &p) < 0 || is_lng_nil(value))
 		  	err = 2;
 #endif
 
@@ -4552,7 +4552,7 @@ literal:
 
 			errno = 0;
 			val = strtod($1,&p);
-			if (p == $1 || val == dbl_nil || (errno == ERANGE && (val < -1 || val > 1))) {
+			if (p == $1 || is_dbl_nil(val) || (errno == ERANGE && (val < -1 || val > 1))) {
 				char *msg = sql_message(SQLSTATE(22003) "Double value too large or not a number (%s)", $1);
 
 				yyerror(m, msg);
@@ -4571,7 +4571,7 @@ literal:
 
 		  errno = 0;
  		  val = strtod($1,&p);
-		  if (p == $1 || val == dbl_nil || (errno == ERANGE && (val < -1 || val > 1))) {
+		  if (p == $1 || is_dbl_nil(val) || (errno == ERANGE && (val < -1 || val > 1))) {
 			char *msg = sql_message(SQLSTATE(22003) "Double value too large or not a number (%s)", $1);
 
 			yyerror(m, msg);

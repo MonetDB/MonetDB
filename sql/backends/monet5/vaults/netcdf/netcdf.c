@@ -264,7 +264,7 @@ NCDFattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* check if the file is already attached */
 	col = mvc_bind_column(m, tfiles, "location");
 	rid = table_funcs.column_find_row(m->session->tr, col, fname, NULL);
-	if (rid != oid_nil) 
+	if (!is_oid_nil(rid)) 
 	    return createException(SQL, "netcdf.attach", SQLSTATE(NC000) "File %s is already attached\n", fname);
 
 	/* Open NetCDF file  */
@@ -729,7 +729,7 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (col == NULL)
 		return createException(MAL, "netcdf.importvar", SQLSTATE(NC000) "Could not find \"netcdf_files\".\"file_id\"\n");
 	rid = table_funcs.column_find_row(m->session->tr, col, (void *)&fid, NULL);
-	if (rid == oid_nil)
+	if (is_oid_nil(rid))
 		return createException(MAL, "netcdf.importvar", SQLSTATE(NC000) "File %d not in the NetCDF vault\n", fid);
 
 

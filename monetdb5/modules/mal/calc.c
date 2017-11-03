@@ -115,7 +115,7 @@ CMDvarADDstrint(str *ret, str *s1, int *i)
 	str s;
 	size_t len;
 
-	if (strNil(*s1) || *i == int_nil) {
+	if (strNil(*s1) || is_int_nil(*i)) {
 		*ret= GDKstrdup(str_nil);
 		return MAL_SUCCEED;
 	}
@@ -621,7 +621,7 @@ CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t1 != t2)
 		return mythrow(MAL, "ifthenelse", SEMANTIC_TYPE_MISMATCH);
 
-	if (b == bit_nil) {
+	if (is_bit_nil(b)) {
 		if (VALinit(&stk->stk[pci->argv[0]], t1, ATOMnilptr(t1)) == NULL)
 			return mythrow(MAL, "ifthenelse", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;

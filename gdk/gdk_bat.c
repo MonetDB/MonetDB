@@ -795,7 +795,7 @@ COLcopy(BAT *b, int tt, int writable, int role)
 			/* case (4): optimized for unary void
 			 * materialization */
 			oid cur = b->tseqbase, *dst = (oid *) bn->theap.base;
-			oid inc = (cur != oid_nil);
+			oid inc = !is_oid_nil(cur);
 
 			bn->theap.free = bunstocopy * sizeof(oid);
 			bn->theap.dirty |= bunstocopy > 0;
@@ -929,7 +929,7 @@ setcolprops(BAT *b, const void *x)
 			if (x) {
 				b->tseqbase = * (const oid *) x;
 			}
-			b->tnil = b->tseqbase == oid_nil;
+			b->tnil = is_oid_nil(b->tseqbase);
 			b->tnonil = !b->tnil;
 		} else {
 			b->tnil = isnil;
@@ -945,7 +945,7 @@ setcolprops(BAT *b, const void *x)
 		/* not the first value in a VOID column: we keep the
 		 * seqbase, and x is not used, so only some properties
 		 * are affected */
-		if (b->tseqbase != oid_nil) {
+		if (!is_oid_nil(b->tseqbase)) {
 			if (b->trevsorted) {
 				b->tnorevsorted = BUNlast(b);
 				b->trevsorted = 0;
@@ -1031,10 +1031,10 @@ BUNappend(BAT *b, const void *t, bit force)
 	if (b->thash && b->tvheap)
 		tsize = b->tvheap->size;
 
-	if (b->ttype == TYPE_void && b->tseqbase != oid_nil) {
+	if (b->ttype == TYPE_void && !is_oid_nil(b->tseqbase)) {
 		if (b->batCount == 0) {
 			b->tseqbase = * (const oid *) t;
-		} else if (* (oid *) t == oid_nil ||
+		} else if (is_oid_nil(* (oid *) t) ||
 			   b->tseqbase + b->batCount != *(const oid *) t) {
 			if (BATmaterialize(b) != GDK_SUCCEED)
 				return GDK_FAIL;
@@ -1078,7 +1078,7 @@ BUNdelete(BAT *b, oid o)
 	BUN p;
 	BATiter bi = bat_iterator(b);
 
-	assert(b->hseqbase != oid_nil || BATcount(b) == 0);
+	assert(!is_oid_nil(b->hseqbase) || BATcount(b) == 0);
 	if (o < b->hseqbase || o >= b->hseqbase + BATcount(b)) {
 		/* value already not there */
 		return GDK_SUCCEED;
@@ -1093,7 +1093,7 @@ BUNdelete(BAT *b, oid o)
 	ATOMunfix(b->ttype, BUNtail(bi, p));
 	ATOMdel(b->ttype, b->tvheap, (var_t *) BUNtloc(bi, p));
 	if (p != BUNlast(b) - 1 &&
-	    (b->ttype != TYPE_void || b->tseqbase != oid_nil)) {
+	    (b->ttype != TYPE_void || !is_oid_nil(b->tseqbase))) {
 		/* replace to-be-delete BUN with last BUN; materialize
 		 * void column before doing so */
 		if (b->ttype == TYPE_void &&
@@ -1237,7 +1237,7 @@ BUNreplace(BAT *b, oid id, const void *t, bit force)
 	}
 	if (b->ttype == TYPE_void) {
 		/* no need to materialize if value doesn't change */
-		if (b->tseqbase == oid_nil ||
+		if (is_oid_nil(b->tseqbase) ||
 		    b->tseqbase + id - b->hseqbase == *(const oid *) t)
 			return GDK_SUCCEED;
 		if (BATmaterialize(b) != GDK_SUCCEED)
@@ -1378,7 +1378,7 @@ void
 BATsetcount(BAT *b, BUN cnt)
 {
 	/* head column is always VOID, and some head properties never change */
-	assert(b->hseqbase != oid_nil);
+	assert(!is_oid_nil(b->hseqbase));
 	assert(cnt <= BUN_MAX);
 
 	b->batCount = cnt;
@@ -1403,7 +1403,7 @@ BATsetcount(BAT *b, BUN cnt)
 	}
 	if (b->ttype == TYPE_void) {
 		b->tsorted = 1;
-		if (b->tseqbase == oid_nil) {
+		if (is_oid_nil(b->tseqbase)) {
 			b->tkey = cnt <= 1;
 			b->trevsorted = 1;
 			b->tnil = 1;
@@ -1458,11 +1458,11 @@ BATkey(BAT *b, int flag)
 	assert(flag == 0 || flag == 1);
 	assert(!b->tunique || flag);
 	if (b->ttype == TYPE_void) {
-		if (b->tseqbase != oid_nil && flag == FALSE) {
+		if (!is_oid_nil(b->tseqbase) && flag == FALSE) {
 			GDKerror("BATkey: dense column must be unique.\n");
 			return GDK_FAIL;
 		}
-		if (b->tseqbase == oid_nil && flag == TRUE && b->batCount > 1) {
+		if (is_oid_nil(b->tseqbase) && flag == TRUE && b->batCount > 1) {
 			GDKerror("BATkey: void column cannot be unique.\n");
 			return GDK_FAIL;
 		}
@@ -1508,21 +1508,21 @@ BATtseqbase(BAT *b, oid o)
 	if (b == NULL)
 		return;
 	assert(o <= oid_nil);
-	assert(o == oid_nil || o + BATcount(b) < oid_nil);
+	assert(is_oid_nil(o) || o + BATcount(b) < oid_nil);
 	assert(b->batCacheid > 0);
 	if (ATOMtype(b->ttype) == TYPE_oid) {
 		if (b->tseqbase != o) {
 			b->batDirtydesc = TRUE;
 		}
 		b->tseqbase = o;
-		if (b->ttype == TYPE_oid && o == oid_nil) {
+		if (b->ttype == TYPE_oid && is_oid_nil(o)) {
 			b->tdense = 0;
 			b->tnodense = 0;
 		}
 
 		/* adapt keyness */
 		if (BATtvoid(b)) {
-			if (o == oid_nil) {
+			if (is_oid_nil(o)) {
 				b->tkey = b->batCount <= 1;
 				b->tnonil = b->batCount == 0;
 				b->tnil = b->batCount > 0;
@@ -2067,7 +2067,7 @@ BATassertProps(BAT *b)
 	if (b->ttype == TYPE_void) {
 		assert(b->tshift == 0);
 		assert(b->twidth == 0);
-		if (b->tseqbase == oid_nil) {
+		if (is_oid_nil(b->tseqbase)) {
 			assert(BATcount(b) == 0 || !b->tnonil);
 			assert(BATcount(b) <= 1 || !b->tkey);
 			/* assert(!b->tdense); */
@@ -2089,9 +2089,9 @@ BATassertProps(BAT *b)
 	assert(1 << b->tshift == b->twidth);
 	if (b->ttype == TYPE_oid && b->tdense) {
 		assert(b->tsorted);
-		assert(b->tseqbase != oid_nil);
+		assert(!is_oid_nil(b->tseqbase));
 		if (b->batCount > 0) {
-			assert(b->tseqbase != oid_nil);
+			assert(!is_oid_nil(b->tseqbase));
 			assert(* (oid *) BUNtail(bi, 0) == b->tseqbase);
 		}
 	}

@@ -48,14 +48,14 @@ mystpcpy (char *yydest, const char *yysrc) {
 
 #define normal_int_SWAP(i) (((0x000000ff&(i))<<24) | ((0x0000ff00&(i))<<8) | \
 			    ((0x00ff0000&(i))>>8)  | ((0xff000000&(i))>>24))
-#define long_long_SWAP(l) \
-		((((lng)normal_int_SWAP(l))<<32) |\
+#define long_long_SWAP(l)				\
+		((((lng)normal_int_SWAP(l))<<32) |	\
 		 (0xffffffff&normal_int_SWAP(l>>32)))
 #endif
 
 #ifdef HAVE_HGE
-#define huge_int_SWAP(h) \
-		((((hge)long_long_SWAP(h))<<64) |\
+#define huge_int_SWAP(h)					\
+		((((hge)long_long_SWAP(h))<<64) |		\
 		 (0xffffffffffffffff&long_long_SWAP(h>>64)))
 #endif
 
@@ -72,7 +72,7 @@ mnstr_swap_lng(stream *s, lng lngval) {
 		int cur = 63, i, done = 0;				\
 		int neg = v < 0;					\
 		ssize_t l;						\
-		if (v == TYPE##_nil) {					\
+		if (is_##TYPE##_nil(v)) {				\
 			if (*len < 5){					\
 				if (*Buf)				\
 					GDKfree(*Buf);			\
@@ -449,7 +449,7 @@ bat_max_strlength(BAT *b)
 	BATloop(b, p, q) {
 		l = STRwidth((const char *) BUNtail(bi, p));
 
-		if (l == int_nil)
+		if (is_int_nil(l))
 			l = 0;
 		if (l > max)
 			max = l;
@@ -470,7 +470,7 @@ bat_max_btelength(BAT *b)
 		lng m = 0;
 		bte l = *((bte *) BUNtail(bi, p));
 
-		if (l != bte_nil)
+		if (!is_bte_nil(l))
 			m = l;
 		if (m > max)
 			max = m;
@@ -501,7 +501,7 @@ bat_max_shtlength(BAT *b)
 		lng m = 0;
 		sht l = *((sht *) BUNtail(bi, p));
 
-		if (l != sht_nil)
+		if (!is_sht_nil(l))
 			m = l;
 		if (m > max)
 			max = m;
@@ -532,7 +532,7 @@ bat_max_intlength(BAT *b)
 		lng m = 0;
 		int l = *((int *) BUNtail(bi, p));
 
-		if (l != int_nil)
+		if (!is_int_nil(l))
 			m = l;
 		if (m > max)
 			max = m;
@@ -563,7 +563,7 @@ bat_max_lnglength(BAT *b)
 		lng m = 0;
 		lng l = *((lng *) BUNtail(bi, p));
 
-		if (l != lng_nil)
+		if (!is_lng_nil(l))
 			m = l;
 		if (m > max)
 			max = m;
@@ -595,7 +595,7 @@ bat_max_hgelength(BAT *b)
 		hge m = 0;
 		hge l = *((hge *)BUNtail(bi, p));
 
-		if (l != hge_nil)
+		if (!is_hge_nil(l))
 			m = l;
 		if (m > max) max = m;
 		if (m < min) min = m;
@@ -648,7 +648,7 @@ bat_max_hgelength(BAT *b)
 			if (*s != '.')					\
 				return NULL;				\
 			s++;						\
-			for (i = 0; *s && *s >= '0' && *s <= '9' && i < t->scale; i++, s++) {	\
+			for (i = 0; *s && *s >= '0' && *s <= '9' && i < t->scale; i++, s++) { \
 				res *= 10;				\
 				res += *s - '0';			\
 			}						\
@@ -1954,7 +1954,7 @@ get_print_width(int mtype, int eclass, int digits, int scale, int tz, bat bid, p
 				}
 			} else if (p) {
 				l = STRwidth((const char *) p);
-				if (l == int_nil)
+				if (is_int_nil(l))
 					l = 0;
 			}
 			return l;

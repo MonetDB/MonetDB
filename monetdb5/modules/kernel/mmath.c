@@ -37,7 +37,7 @@
 str																	\
 MATHunary##NAME##TYPE(TYPE *res , const TYPE *a)					\
 {																	\
-	if (*a == TYPE##_nil) {											\
+	if (is_##TYPE##_nil(*a)) {										\
 		*res = TYPE##_nil;											\
 	} else {														\
 		double a1 = *a, r;											\
@@ -72,7 +72,7 @@ MATHunary##NAME##TYPE(TYPE *res , const TYPE *a)					\
 str																	\
 MATHbinary##NAME##TYPE(TYPE *res, const TYPE *a, const TYPE *b)		\
 {																	\
-	if (*a == TYPE##_nil || *b == TYPE##_nil) {						\
+	if (is_##TYPE##_nil(*a) || is_##TYPE##_nil(*b)) {				\
 		*res = TYPE##_nil;											\
 	} else {														\
 		double r1, a1 = *a, b1 = *b;								\
@@ -119,7 +119,7 @@ MATHunary##NAME##flt(flt *res , const flt *a)	\
 str																\
 MATHbinary_ROUND##TYPE(TYPE *res, const TYPE *x, const int *y)	\
 {																\
-	if (*x == TYPE##_nil || *y == int_nil) {					\
+	if (is_##TYPE##_nil(*x) || is_int_nil(*y)) {				\
 		*res = TYPE##_nil;										\
 	} else {													\
 		dbl factor = pow(10,*y), integral;						\
@@ -174,7 +174,7 @@ unopM5(_FLOOR,floor)
 str
 MATHunary_FABSdbl(dbl *res , const dbl *a)
 {
-	*res = *a == dbl_nil ? dbl_nil : fabs(*a);
+	*res = is_dbl_nil(*a) ? dbl_nil : fabs(*a);
 	return MAL_SUCCEED;
 }
 
@@ -184,7 +184,7 @@ roundM5(flt)
 str
 MATHunary_ISNAN(bit *res, const dbl *a)
 {
-	if (*a == dbl_nil) {
+	if (is_dbl_nil(*a)) {
 		*res = bit_nil;
 	} else {
 		*res = MNisnan(*a);
@@ -195,7 +195,7 @@ MATHunary_ISNAN(bit *res, const dbl *a)
 str
 MATHunary_ISINF(int *res, const dbl *a)
 {
-	if (*a == dbl_nil) {
+	if (is_dbl_nil(*a)) {
 		*res = int_nil;
 	} else {
 		if (MNisinf(*a)) {
@@ -210,7 +210,7 @@ MATHunary_ISINF(int *res, const dbl *a)
 str
 MATHunary_FINITE(bit *res, const dbl *a)
 {
-	if (*a == dbl_nil) {
+	if (is_dbl_nil(*a)) {
 		*res = bit_nil;
 	} else {
 		*res = MNfinite(*a);

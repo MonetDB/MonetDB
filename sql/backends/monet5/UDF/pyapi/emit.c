@@ -17,7 +17,7 @@
 
 #define scalar_convert(tpe)                                                    \
 	{                                                                          \
-		tpe val = (tpe)tpe##_nil;                                              \
+		tpe val = tpe##_nil;                                                   \
 		msg = pyobject_to_##tpe(&dictEntry, 42, &val);                         \
 		if (msg != MAL_SUCCEED ||                                              \
 			BUNappend(self->cols[i].b, &val, 0) != GDK_SUCCEED) {              \

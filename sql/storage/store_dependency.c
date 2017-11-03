@@ -32,7 +32,7 @@ sql_trans_create_dependency(sql_trans* tr, sqlid id, sqlid depend_id, short depe
 	sql_column *c_dep_id = find_sql_column(t, "depend_id");
 	sql_column *c_dep_type = find_sql_column(t, "depend_type");
 
-	if (table_funcs.column_find_row(tr, c_id, &id, c_dep_id, &depend_id, c_dep_type, &depend_type, NULL) == oid_nil)
+	if (is_oid_nil(table_funcs.column_find_row(tr, c_id, &id, c_dep_id, &depend_id, c_dep_type, &depend_type, NULL)))
 		table_funcs.table_insert(tr, t, &id, &depend_id, &depend_type);
 }
 
@@ -47,7 +47,7 @@ sql_trans_drop_dependencies(sql_trans* tr, sqlid depend_id)
 	rids *rs;
 	
 	rs = table_funcs.rids_select(tr, dep_dep_id, &depend_id, &depend_id, NULL);
-	for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) 
+	for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) 
 		table_funcs.table_delete(tr, deps, rid);
 	table_funcs.rids_destroy(rs);
 }
@@ -65,7 +65,7 @@ sql_trans_drop_dependency(sql_trans* tr, sqlid obj_id, sqlid depend_id, short de
 	rids *rs;
 	
 	rs = table_funcs.rids_select(tr, dep_obj_id, &obj_id, &obj_id, dep_dep_id, &depend_id, &depend_id, dep_dep_type, &depend_type, &depend_type, NULL);
-	for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) 
+	for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) 
 		table_funcs.table_delete(tr, deps, rid);
 	table_funcs.rids_destroy(rs);
 }
@@ -88,7 +88,7 @@ sql_trans_get_dependencies(sql_trans* tr, int id, short depend_type, list * igno
 	dep_dep_type = find_sql_column(deps, "depend_type");
 
 	rs = table_funcs.rids_select(tr, dep_id, &id, &id, NULL);
-	for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)){
+	for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)){
 		v = table_funcs.column_find_value(tr, dep_dep_id, rid);
 		id = *(sqlid*)v;		
 		if (!(ignore_ids  && list_find_func_id(ignore_ids, id))) {
@@ -108,7 +108,7 @@ sql_trans_get_dependencies(sql_trans* tr, int id, short depend_type, list * igno
 		depend_type = TRIGGER_DEPENDENCY;
 
 		rs = table_funcs.rids_select(tr, table_id, &id, &id, NULL);
-		for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) {
+		for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
 			v = table_funcs.column_find_value(tr, tri_id, rid);
 			list_append(dep_list, v);
 			v = MNEW(sht);
@@ -139,7 +139,7 @@ sql_trans_get_dependency_type(sql_trans *tr, int id, short depend_type)
 	dep_dep_type = find_sql_column(dep, "depend_type");
 
 	rid = table_funcs.column_find_row(tr, dep_id, &id, dep_dep_type, &depend_type, NULL);
-	if (rid != oid_nil) {	
+	if (!is_oid_nil(rid)) {	
 		int r, *v = table_funcs.column_find_value(tr, dep_dep_id, rid);
 
 		r = *v;
@@ -168,7 +168,7 @@ sql_trans_check_dependency(sql_trans *tr, int id, int depend_id, short depend_ty
 	dep_dep_type = find_sql_column(dep, "depend_type");
 
 	rid = table_funcs.column_find_row(tr, dep_id, &id, dep_dep_id, &depend_id, dep_dep_type, &depend_type, NULL);
-	if (rid != oid_nil)	
+	if (!is_oid_nil(rid))	
 		return 1;
 	else return 0;
 }
@@ -189,7 +189,7 @@ sql_trans_schema_user_dependencies(sql_trans *tr, int schema_id)
 	rids *users = backend_schema_user_dependencies(tr, schema_id);
 	oid rid;
 	
-	for(rid = table_funcs.rids_next(users); rid != oid_nil; rid = table_funcs.rids_next(users)) {
+	for(rid = table_funcs.rids_next(users); !is_oid_nil(rid); rid = table_funcs.rids_next(users)) {
 		v = table_funcs.column_find_value(tr, auth_id, rid);
 		list_append(l,v);
 		v = MNEW(sht);
@@ -215,7 +215,7 @@ sql_trans_owner_schema_dependencies(sql_trans *tr, int owner_id)
 	rids *rs = table_funcs.rids_select(tr, schema_owner, &owner_id, &owner_id, NULL);
 	oid rid;
 	
-	for(rid = table_funcs.rids_next(rs); rid != oid_nil; rid = table_funcs.rids_next(rs)) {
+	for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
 		v = table_funcs.column_find_value(tr, schema_id, rid);
 		list_append(l, v);
 		v = MNEW(sht);

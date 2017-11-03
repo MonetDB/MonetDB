@@ -36,21 +36,21 @@ CMDraise(str *ret, str *msg)
 str
 MALassertBit(void *ret, bit *val, str *msg){
 	(void) ret;
-	if( *val == 0 || *val == bit_nil)
+	if( *val == 0 || is_bit_nil(*val))
 		throw(MAL, "mal.assert", "%s", *msg);
 	return MAL_SUCCEED;
 }
 str
 MALassertInt(void *ret, int *val, str *msg){
 	(void) ret;
-	if( *val == 0 || *val == int_nil)
+	if( *val == 0 || is_int_nil(*val))
 		throw(MAL, "mal.assert", "%s", *msg);
 	return MAL_SUCCEED;
 }
 str
 MALassertLng(void *ret, lng *val, str *msg){
 	(void) ret;
-	if( *val == 0 || *val == lng_nil)
+	if( *val == 0 || is_lng_nil(*val))
 		throw(MAL, "mal.assert", "%s", *msg);
 	return MAL_SUCCEED;
 }
@@ -58,7 +58,7 @@ MALassertLng(void *ret, lng *val, str *msg){
 str
 MALassertHge(void *ret, hge *val, str *msg){
 	(void) ret;
-	if( *val == 0 || *val == hge_nil)
+	if( *val == 0 || is_hge_nil(*val))
 		throw(MAL, "mal.assert", "%s", *msg);
 	return MAL_SUCCEED;
 }
@@ -66,14 +66,14 @@ MALassertHge(void *ret, hge *val, str *msg){
 str
 MALassertSht(void *ret, sht *val, str *msg){
 	(void) ret;
-	if( *val == 0 || *val == sht_nil)
+	if( *val == 0 || is_sht_nil(*val))
 		throw(MAL, "mal.assert", "%s", *msg);
 	return MAL_SUCCEED;
 }
 str
 MALassertOid(void *ret, oid *val, str *msg){
 	(void) ret;
-	if( *val == oid_nil)
+	if( is_oid_nil(*val))
 		throw(MAL, "mal.assert", "%s", *msg);
 	return MAL_SUCCEED;
 }

@@ -31,5 +31,6 @@ mal_export ssize_t color_fromstr(const char *colorStr, size_t *len, color **c);
 mal_export ssize_t color_tostr(char **colorStr, size_t *len, const color *c);
 
 #define color_nil ((color)int_nil)
+#define is_color_nil(v)		is_int_nil((int) (v))
 
 #endif

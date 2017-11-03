@@ -104,12 +104,12 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 				gids = (const oid *) Tloc(g, 0);
 				/* find first non-nil */
 				for (i = 0, ngrp = BATcount(g); i < ngrp; i++, gids++) {
-					if (*gids != oid_nil) {
+					if (!is_oid_nil(*gids)) {
 						min = *gids;
 						break;
 					}
 				}
-				if (min != oid_nil) {
+				if (!is_oid_nil(min)) {
 					/* found a non-nil, max must be last
 					 * value (and there is one!) */
 					max = * (const oid *) Tloc(g, BUNlast(g) - 1);
@@ -118,7 +118,7 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 				/* we'll do a complete scan */
 				gids = (const oid *) Tloc(g, 0);
 				for (i = 0, ngrp = BATcount(g); i < ngrp; i++, gids++) {
-					if (*gids != oid_nil) {
+					if (!is_oid_nil(*gids)) {
 						if (*gids < min)
 							min = *gids;
 						if (*gids > max)
@@ -260,9 +260,9 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 			continue;
 		if (pergroup[grp].partials == NULL)
 			continue;
-		if (tp1 == TYPE_flt && ((const flt *) values)[listi] != flt_nil)
+		if (tp1 == TYPE_flt && !is_flt_nil(((const flt *) values)[listi]))
 			x = ((const flt *) values)[listi];
-		else if (tp1 == TYPE_dbl && ((const dbl *) values)[listi] != dbl_nil)
+		else if (tp1 == TYPE_dbl && !is_dbl_nil(((const dbl *) values)[listi]))
 			x = ((const dbl *) values)[listi];
 		else {
 			/* it's a nil */
@@ -370,7 +370,7 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 							nils++;
 						} else
 							((flt *) results)[grp] = (flt) x;
-					} else if (x == GDK_dbl_min) {
+					} else if (is_dbl_nil(x)) {
 						if (abort_on_error)
 							goto overflow;
 						((dbl *) results)[grp] = dbl_nil;
@@ -439,7 +439,7 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 				nils++;
 			} else
 				((flt *) results)[grp] = (flt) hi;
-		} else if (hi == GDK_dbl_min) {
+		} else if (is_dbl_nil(hi)) {
 			if (abort_on_error)
 				goto overflow;
 			((dbl *) results)[grp] = dbl_nil;
@@ -486,7 +486,7 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 				int seenval = 0;			\
 				for (i = start; i < end && nils == 0; i++) { \
 					x = vals[i];			\
-					if (x == TYPE1##_nil) {		\
+					if (is_##TYPE1##_nil(x)) {	\
 						if (!skip_nils) {	\
 							sum = TYPE2##_nil; \
 							nils = 1;	\
@@ -519,7 +519,7 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 				if (i >= end)				\
 					break;				\
 				x = vals[i];				\
-				if (x == TYPE1##_nil) {			\
+				if (is_##TYPE1##_nil(x)) {		\
 					if (!skip_nils) {		\
 						sum = TYPE2##_nil;	\
 						nils = 1;		\
@@ -547,10 +547,10 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 				    (gids[i] >= min && gids[i] <= max)) { \
 					gid = gids ? gids[i] - min : (oid) i; \
 					x = vals[i];			\
-					if (x == TYPE1##_nil) {		\
+					if (is_##TYPE1##_nil(x)) {	\
 						if (!skip_nils) {	\
 							sums[gid] = TYPE2##_nil; \
-							nils++;	\
+							nils++;		\
 						}			\
 					} else {			\
 						if (nil_if_empty &&	\
@@ -558,7 +558,7 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 							seen[gid >> 5] |= 1U << (gid & 0x1F); \
 							sums[gid] = 0;	\
 						}			\
-						if (sums[gid] != TYPE2##_nil) { \
+						if (!is_##TYPE2##_nil(sums[gid])) { \
 							ADD_WITH_CHECK(	\
 								TYPE1,	\
 								x,	\
@@ -584,10 +584,10 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 				if (i >= end)				\
 					break;				\
 				if (gids == NULL ||			\
-				    (gids[i] >= min && gids[i] <= max)) {	\
+				    (gids[i] >= min && gids[i] <= max)) { \
 					gid = gids ? gids[i] - min : (oid) i; \
 					x = vals[i];			\
-					if (x == TYPE1##_nil) {		\
+					if (is_##TYPE1##_nil(x)) {	\
 						if (!skip_nils) {	\
 							sums[gid] = TYPE2##_nil; \
 							nils++;		\
@@ -598,7 +598,7 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 							seen[gid >> 5] |= 1U << (gid & 0x1F); \
 							sums[gid] = 0;	\
 						}			\
-						if (sums[gid] != TYPE2##_nil) { \
+						if (!is_##TYPE2##_nil(sums[gid])) { \
 							ADD_WITH_CHECK(	\
 								TYPE1,	\
 								x,	\
@@ -899,7 +899,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 				avg = dbl_nil;
 			}
 			if (tp == TYPE_flt) {
-				if (avg == dbl_nil)
+				if (is_dbl_nil(avg))
 					*(flt *) res = flt_nil;
 				else if (cnt > 0 &&
 					 GDK_flt_max / cnt < fabs(avg)) {
@@ -912,7 +912,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 					*(flt *) res = (flt) avg * cnt;
 				}
 			} else {
-				if (avg == dbl_nil) {
+				if (is_dbl_nil(avg)) {
 					*(dbl *) res = dbl_nil;
 				} else if (cnt > 0 &&
 					   GDK_dbl_max / cnt < fabs(avg)) {
@@ -976,7 +976,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 					else				\
 						gid = (oid) i;		\
 				}					\
-				if (vals[i] == TYPE1##_nil) {		\
+				if (is_##TYPE1##_nil(vals[i])) {	\
 					if (!skip_nils) {		\
 						prods[gid] = TYPE2##_nil; \
 						nils++;			\
@@ -987,7 +987,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 						seen[gid >> 5] |= 1U << (gid & 0x1F); \
 						prods[gid] = 1;		\
 					}				\
-					if (prods[gid] != TYPE2##_nil) { \
+					if (!is_##TYPE2##_nil(prods[gid])) { \
 						MUL4_WITH_CHECK(	\
 							TYPE1, vals[i],	\
 							TYPE2, prods[gid], \
@@ -1032,12 +1032,12 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 					seen[gid >> 5] |= 1U << (gid & 0x1F); \
 					prods[gid] = 1;			\
 				}					\
-				if (vals[i] == TYPE##_nil) {		\
+				if (is_##TYPE##_nil(vals[i])) {		\
 					if (!skip_nils) {		\
 						prods[gid] = hge_nil;	\
 						nils++;			\
 					}				\
-				} else if (prods[gid] != hge_nil) {	\
+				} else if (!is_hge_nil(prods[gid])) {	\
 					HGEMUL_CHECK(TYPE, vals[i],	\
 						     hge, prods[gid],	\
 						     prods[gid],	\
@@ -1073,7 +1073,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 					else				\
 						gid = (oid) i;		\
 				}					\
-				if (vals[i] == TYPE##_nil) {		\
+				if (is_##TYPE##_nil(vals[i])) {		\
 					if (!skip_nils) {		\
 						prods[gid] = lng_nil;	\
 						nils++;			\
@@ -1084,7 +1084,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 						seen[gid >> 5] |= 1U << (gid & 0x1F); \
 						prods[gid] = 1;		\
 					}				\
-					if (prods[gid] != lng_nil) {	\
+					if (!is_lng_nil(prods[gid])) {	\
 						LNGMUL_CHECK(		\
 							TYPE, vals[i],	\
 							lng, prods[gid], \
@@ -1123,18 +1123,18 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 					else				\
 						gid = (oid) i;		\
 				}					\
-				if (vals[i] == TYPE1##_nil) {		\
+				if (is_##TYPE1##_nil(vals[i])) {	\
 					if (!skip_nils) {		\
 						prods[gid] = TYPE2##_nil; \
 						nils++;			\
 					}				\
 				} else {				\
-					if (nil_if_empty && \
+					if (nil_if_empty &&		\
 					    !(seen[gid >> 5] & (1U << (gid & 0x1F)))) { \
 						seen[gid >> 5] |= 1U << (gid & 0x1F); \
 						prods[gid] = 1;		\
 					}				\
-					if (prods[gid] != TYPE2##_nil) { \
+					if (!is_##TYPE2##_nil(prods[gid])) { \
 						if (ABSOLUTE(vals[i]) > 1 && \
 						    GDK_##TYPE2##_max / ABSOLUTE(vals[i]) < ABSOLUTE(prods[gid])) { \
 							if (abort_on_error) \
@@ -1576,10 +1576,10 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 					gid = gids[i] - min;		\
 				else					\
 					gid = (oid) i;			\
-				if (vals[i] == TYPE##_nil) {		\
+				if (is_##TYPE##_nil(vals[i])) {		\
 					if (!skip_nils)			\
 						cnts[gid] = lng_nil;	\
-				} else if (cnts[gid] != lng_nil) {	\
+				} else if (!is_lng_nil(cnts[gid])) {	\
 					AVERAGE_ITER(TYPE, vals[i],	\
 						     avgs[gid],		\
 						     rems[gid],		\
@@ -1588,7 +1588,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 			}						\
 		}							\
 		for (i = 0; i < ngrp; i++) {				\
-			if (cnts[i] == 0 || cnts[i] == lng_nil) {	\
+			if (cnts[i] == 0 || is_lng_nil(cnts[i])) {	\
 				dbls[i] = dbl_nil;			\
 				cnts[i] = 0;				\
 				nils++;					\
@@ -1622,10 +1622,10 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 					gid = gids[i] - min;		\
 				else					\
 					gid = (oid) i;			\
-				if (vals[i] == TYPE##_nil) {		\
+				if (is_##TYPE##_nil(vals[i])) {		\
 					if (!skip_nils)			\
 						cnts[gid] = lng_nil;	\
-				} else if (cnts[gid] != lng_nil) {	\
+				} else if (!is_lng_nil(cnts[gid])) {	\
 					AVERAGE_ITER_FLOAT(TYPE, vals[i], \
 							   dbls[gid],	\
 							   cnts[gid]);	\
@@ -1633,7 +1633,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 			}						\
 		}							\
 		for (i = 0; i < ngrp; i++) {				\
-			if (cnts[i] == 0 || cnts[i] == lng_nil) {	\
+			if (cnts[i] == 0 || is_lng_nil(cnts[i])) {	\
 				dbls[i] = dbl_nil;			\
 				cnts[i] = 0;				\
 				nils++;					\
@@ -1839,7 +1839,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 					break;				\
 			}						\
 			x = ((const TYPE *) src)[i];			\
-			if (x == TYPE##_nil)				\
+			if (is_##TYPE##_nil(x))				\
 				continue;				\
 			ADD_WITH_CHECK(TYPE, x,				\
 				       lng_hge, sum,			\
@@ -1891,7 +1891,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 				if (i >= end)				\
 					break;				\
 				x = ((const TYPE *) src)[i];		\
-				if (x == TYPE##_nil)			\
+				if (is_##TYPE##_nil(x))			\
 					continue;			\
 				AVERAGE_ITER(TYPE, x, a, r, n);		\
 			}						\
@@ -1922,7 +1922,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 					break;			\
 			}					\
 			x = ((const TYPE *) src)[i];		\
-			if (x == TYPE##_nil)			\
+			if (is_##TYPE##_nil(x))			\
 				continue;			\
 			AVERAGE_ITER_FLOAT(TYPE, x, a, n);	\
 		}						\
@@ -2007,7 +2007,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 					gid = gids[i] - min;		\
 				else					\
 					gid = (oid) i;			\
-				if (!skip_nils || vals[i] != TYPE##_nil) { \
+				if (!skip_nils || !is_##TYPE##_nil(vals[i])) { \
 					cnts[gid]++;			\
 				}					\
 			}						\
@@ -2222,7 +2222,7 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 					if (i >= end)			\
 						break;			\
 					if (!skip_nils ||		\
-					    vals[i] != TYPE##_nil) {	\
+					    !is_##TYPE##_nil(vals[i])) { \
 						oids[i] = i + b->hseqbase; \
 						nils--;			\
 					}				\
@@ -2230,7 +2230,7 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 			} else {					\
 				for (i = start; i < end; i++) {		\
 					if (!skip_nils ||		\
-					    vals[i] != TYPE##_nil) {	\
+					    !is_##TYPE##_nil(vals[i])) { \
 						oids[i] = i + b->hseqbase; \
 						nils--;			\
 					}				\
@@ -2254,12 +2254,12 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 				    (gids[i] >= min && gids[i] <= max)) { \
 					if (gids)			\
 						gid = gids[i] - min;	\
-					if (!skip_nils || vals[i] != TYPE##_nil) { \
-						if (oids[gid] == oid_nil) { \
+					if (!skip_nils || !is_##TYPE##_nil(vals[i])) { \
+						if (is_oid_nil(oids[gid])) { \
 							oids[gid] = i + b->hseqbase; \
 							nils--;		\
-						} else if (vals[oids[gid] - b->hseqbase] != TYPE##_nil && \
-							   (vals[i] == TYPE##_nil || \
+						} else if (!is_##TYPE##_nil(vals[oids[gid] - b->hseqbase]) && \
+							   (is_##TYPE##_nil(vals[i]) || \
 							    OP(vals[i], vals[oids[gid] - b->hseqbase]))) \
 							oids[gid] = i + b->hseqbase; \
 					}				\
@@ -2373,7 +2373,7 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 						gid = gids[i] - min;
 					if (!skip_nils ||
 					    (*atomcmp)(v, nil) != 0) {
-						if (oids[gid] == oid_nil) {
+						if (is_oid_nil(oids[gid])) {
 							oids[gid] = i + b->hseqbase;
 							nils--;
 						} else if (t != TYPE_void) {
@@ -2498,7 +2498,7 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 						gid = gids[i] - min;
 					if (!skip_nils ||
 					    (*atomcmp)(v, nil) != 0) {
-						if (oids[gid] == oid_nil) {
+						if (is_oid_nil(oids[gid])) {
 							oids[gid] = i + b->hseqbase;
 							nils--;
 						} else {
@@ -2622,7 +2622,7 @@ BATminmax(BAT *b, void *aggr,
 		(void) (*minmax)(&pos, b, NULL, 1, 0, 0, 0, BATcount(b),
 				 NULL, NULL, BATcount(b), 1, 0);
 	}
-	if (pos == oid_nil) {
+	if (is_oid_nil(pos)) {
 		res = ATOMnilptr(b->ttype);
 	} else {
 		bi = bat_iterator(b);
@@ -2902,18 +2902,18 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 /* ---------------------------------------------------------------------- */
 /* standard deviation (both biased and non-biased) */
 
-#define AGGR_STDEV_SINGLE(TYPE)						\
-	do {								\
-		TYPE x;							\
-		for (i = 0; i < cnt; i++) {				\
-			x = ((const TYPE *) values)[i];			\
-			if (x == TYPE##_nil)				\
-				continue;				\
-			n++;						\
-			delta = (dbl) x - mean;				\
-			mean += delta / n;				\
-			m2 += delta * ((dbl) x - mean);			\
-		}							\
+#define AGGR_STDEV_SINGLE(TYPE)				\
+	do {						\
+		TYPE x;					\
+		for (i = 0; i < cnt; i++) {		\
+			x = ((const TYPE *) values)[i];	\
+			if (is_##TYPE##_nil(x))		\
+				continue;		\
+			n++;				\
+			delta = (dbl) x - mean;		\
+			mean += delta / n;		\
+			m2 += delta * ((dbl) x - mean);	\
+		}					\
 	} while (0)
 
 static dbl
@@ -2971,7 +2971,7 @@ BATcalcstdev_population(dbl *avgp, BAT *b)
 	dbl v = calcvariance(avgp, (const void *) Tloc(b, 0),
 			     BATcount(b), b->ttype, 0,
 			     "BATcalcstdev_population");
-	return v == dbl_nil ? dbl_nil : sqrt(v);
+	return is_dbl_nil(v) ? dbl_nil : sqrt(v);
 }
 
 dbl
@@ -2980,7 +2980,7 @@ BATcalcstdev_sample(dbl *avgp, BAT *b)
 	dbl v = calcvariance(avgp, (const void *) Tloc(b, 0),
 			     BATcount(b), b->ttype, 1,
 			     "BATcalcstdev_sample");
-	return v == dbl_nil ? dbl_nil : sqrt(v);
+	return is_dbl_nil(v) ? dbl_nil : sqrt(v);
 }
 
 dbl
@@ -3006,7 +3006,7 @@ BATcalcvariance_sample(dbl *avgp, BAT *b)
 			if (cand) {					\
 				if (cand == candend)			\
 					break;				\
-				i = *cand++ - b->hseqbase;			\
+				i = *cand++ - b->hseqbase;		\
 				if (i >= end)				\
 					break;				\
 			} else {					\
@@ -3020,7 +3020,7 @@ BATcalcvariance_sample(dbl *avgp, BAT *b)
 					gid = gids[i] - min;		\
 				else					\
 					gid = (oid) i;			\
-				if (vals[i] == TYPE##_nil) {		\
+				if (is_##TYPE##_nil(vals[i])) {		\
 					if (!skip_nils)			\
 						cnts[gid] = BUN_NONE;	\
 				} else if (cnts[gid] != BUN_NONE) {	\

@@ -259,7 +259,7 @@
 				}                                                              \
 				((mtpe_to *)Tloc(bat, 0))[index + iu] = value;                 \
 				if (bat->tnil == 0)                                            \
-					bat->tnil = value == mtpe_to##_nil ? 1 : 0;                \
+					bat->tnil = is_##mtpe_to##_nil(value);                     \
 			}                                                                  \
 		} else {                                                               \
 			for (iu = 0; iu < ret->count; iu++) {                              \
@@ -276,7 +276,7 @@
 					}                                                          \
 					((mtpe_to *)Tloc(bat, 0))[index + iu] = value;             \
 					if (bat->tnil == 0)                                        \
-						bat->tnil = value == mtpe_to##_nil ? 1 : 0;            \
+						bat->tnil = is_##mtpe_to##_nil(value);                 \
 				}                                                              \
 			}                                                                  \
 		}                                                                      \

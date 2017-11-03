@@ -322,7 +322,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 	if (b) {
 		ht = TYPE_void;
 		tt = b->ttype;
-		if (tt == TYPE_void && b->tseqbase != oid_nil)
+		if (tt == TYPE_void && !is_oid_nil(b->tseqbase))
 			tseq = 1;
 	} else {		/* search trans action for create statement */
 		int i;
@@ -483,9 +483,9 @@ la_bat_updates(logger *lg, logaction *la)
 				/* if value doesn't exist, insert it;
 				 * if b void headed, maintain that by
 				 * inserting nils */
-				if (b->batCount == 0 && h != oid_nil)
+				if (b->batCount == 0 && !is_oid_nil(h))
 					b->hseqbase = h;
-				if (b->hseqbase != oid_nil && h != oid_nil) {
+				if (!is_oid_nil(b->hseqbase) && !is_oid_nil(h)) {
 					const void *tv = ATOMnilptr(b->ttype);
 
 					while (b->hseqbase + b->batCount < h) {
