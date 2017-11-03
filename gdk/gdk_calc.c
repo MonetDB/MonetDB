@@ -13439,7 +13439,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
 		if (is_##TYPE1##_nil(src[i])) {				\
 			dst[i] = TYPE2##_nil;				\
 				nils++;					\
-		} else if (src[i] <= (TYPE1) GDK_##TYPE2##_min ||	\
+		} else if (src[i] < (TYPE1) GDK_##TYPE2##_min ||	\
 			   src[i] > (TYPE1) GDK_##TYPE2##_max) {	\
 			if (abort_on_error)				\
 				CONV_OVERFLOW(TYPE1, #TYPE2, src[i]);	\
@@ -13491,7 +13491,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
 		if (is_##TYPE1##_nil(src[i])) {				\
 			dst[i] = TYPE2##_nil;				\
 			nils++;						\
-		} else if (src[i] <= (TYPE1) GDK_##TYPE2##_min ||	\
+		} else if (src[i] < (TYPE1) GDK_##TYPE2##_min ||	\
 			   src[i] > (TYPE1) GDK_##TYPE2##_max) {	\
 			if (abort_on_error)				\
 				CONV_OVERFLOW(TYPE1, #TYPE2, src[i]);	\

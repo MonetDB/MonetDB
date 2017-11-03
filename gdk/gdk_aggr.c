@@ -363,7 +363,7 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 					x = 2 * (hi + y);
 					if (tp2 == TYPE_flt) {
 						if (x > GDK_flt_max ||
-						    x <= GDK_flt_min) {
+						    x < GDK_flt_min) {
 							if (abort_on_error)
 								goto overflow;
 							((flt *) results)[grp] = flt_nil;
@@ -432,7 +432,7 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 		GDKfree(pergroup[grp].partials);
 		pergroup[grp].partials = NULL;
 		if (tp2 == TYPE_flt) {
-			if (hi > GDK_flt_max || hi <= GDK_flt_min) {
+			if (hi > GDK_flt_max || hi < GDK_flt_min) {
 				if (abort_on_error)
 					goto overflow;
 				((flt *) results)[grp] = flt_nil;

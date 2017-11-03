@@ -958,7 +958,7 @@ headheapinit(oid *hseq, const char *buf, bat bid)
 		GDKfatal("BBPinit: head column must be VOID (ID = %d).", (int) bid);
 	if (base < 0
 #if SIZEOF_OID < SIZEOF_LNG
-	    || base >= (lng) oid_nil
+	    || base > (lng) GDK_oid_max
 #endif
 		)
 		GDKfatal("BBPinit: head seqbase out of range (ID = %d, seq = "LLFMT").", (int) bid, base);
@@ -1192,7 +1192,7 @@ BBPreadEntries(FILE *fp, int bbpversion)
 		} else {
 			if (base < 0
 #if SIZEOF_OID < SIZEOF_LNG
-			    || base >= (lng) oid_nil
+			    || base > (lng) GDK_oid_max
 #endif
 				)
 				GDKfatal("BBPinit: head seqbase out of range (ID = "LLFMT", seq = "LLFMT").", batid, base);

@@ -474,7 +474,7 @@ dec2second_interval(lng *res, const int *sc, const TYPE *dec, const int *ek, con
 		value /= scales[d];
 	}
 #if defined(HAVE_HGE) && TPE(TYPE) == TYPE_hge
-	assert((hge) GDK_lng_min < value && value <= (hge) GDK_lng_max);
+	assert((hge) GDK_lng_min <= value && value <= (hge) GDK_lng_max);
 #endif
 	*res = value;
 	return MAL_SUCCEED;

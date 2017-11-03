@@ -40,7 +40,7 @@ FUN(do_,TP1,_dec2dec_,TP2) (TP2 *restrict res, int s1, TP1 val, int p, int s2)
 
 #ifdef DOWNCAST
 	if (s2 > s1) {
-		if (val <= GDKmin(TP2) / scales[s2 - s1] ||
+		if (val < GDKmin(TP2) / scales[s2 - s1] ||
 		    val > GDKmax(TP2) / scales[s2 - s1]) {
 			char *buf = NULL, *msg;
 			size_t len = 0;
@@ -53,7 +53,7 @@ FUN(do_,TP1,_dec2dec_,TP2) (TP2 *restrict res, int s1, TP1 val, int p, int s2)
 		}
 		val *= (TP1) scales[s2 - s1];
 	} else if (s2 < s1) {
-		if (val / scales[s1 - s2] <= GDKmin(TP2) ||
+		if (val / scales[s1 - s2] < GDKmin(TP2) ||
 		    val / scales[s1 - s2] > GDKmax(TP2)) {
 			char *buf = NULL, *msg;
 			size_t len = 0;
@@ -69,7 +69,7 @@ FUN(do_,TP1,_dec2dec_,TP2) (TP2 *restrict res, int s1, TP1 val, int p, int s2)
 			      + (val < 0 ? -5 : 5) * scales[s1 - s2 - 1]
 #endif
 				     ) / scales[s1 - s2]);
-	} else if (val <= GDKmin(TP2) || val > GDKmax(TP2)) {
+	} else if (val < GDKmin(TP2) || val > GDKmax(TP2)) {
 		char *buf = NULL, *msg;
 		size_t len = 0;
 		if (BATatoms[TPE(TP1)].atomToStr(&buf, &len, &val) < 0)

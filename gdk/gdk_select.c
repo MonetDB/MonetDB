@@ -470,16 +470,16 @@ do {									\
 #define NEXTVALUEflt(x)	nextafterf((x), GDK_flt_max)
 #define NEXTVALUEdbl(x)	nextafter((x), GDK_dbl_max)
 
-#define MINVALUEbte	NEXTVALUEbte(GDK_bte_min)
-#define MINVALUEsht	NEXTVALUEsht(GDK_sht_min)
-#define MINVALUEint	NEXTVALUEint(GDK_int_min)
-#define MINVALUElng	NEXTVALUElng(GDK_lng_min)
+#define MINVALUEbte	GDK_bte_min
+#define MINVALUEsht	GDK_sht_min
+#define MINVALUEint	GDK_int_min
+#define MINVALUElng	GDK_lng_min
 #ifdef HAVE_HGE
-#define MINVALUEhge	NEXTVALUEhge(GDK_hge_min)
+#define MINVALUEhge	GDK_hge_min
 #endif
 #define MINVALUEoid	GDK_oid_min
-#define MINVALUEflt	NEXTVALUEflt(GDK_flt_min)
-#define MINVALUEdbl	NEXTVALUEdbl(GDK_dbl_min)
+#define MINVALUEflt	GDK_flt_min
+#define MINVALUEdbl	GDK_dbl_min
 
 #define MAXVALUEbte	GDK_bte_max
 #define MAXVALUEsht	GDK_sht_max

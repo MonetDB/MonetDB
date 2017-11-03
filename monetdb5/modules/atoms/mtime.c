@@ -2623,7 +2623,7 @@ MTIMEsecs2daytime(daytime *ret, const lng *s)
 {
 	*ret = is_lng_nil(*s) ||
 			*s > GDK_int_max / 1000 ||
-			*s <= GDK_int_min / 1000 ?
+			*s < GDK_int_min / 1000 ?
 		daytime_nil : (daytime) (*s * 1000);
 	return MAL_SUCCEED;
 }
@@ -2650,7 +2650,7 @@ MTIMEsecs2daytime_bulk(bat *ret, bat *bid)
 	for (n = BATcount(b); n > 0; n--, s++, dt++) {
 		if (is_lng_nil(*s) ||
 			*s > GDK_int_max / 1000 ||
-			*s <= GDK_int_min / 1000) {
+			*s < GDK_int_min / 1000) {
 			*dt = daytime_nil;
 			bn->tnil = 1;
 		} else {
@@ -2713,7 +2713,7 @@ MTIMEepoch2int(int *ret, const timestamp *t)
 		return err;
 	if (is_lng_nil(v))
 		*ret = int_nil;
-	else if ((v/1000) > GDK_int_max || (v/1000) <= GDK_int_min)
+	else if ((v/1000) > GDK_int_max || (v/1000) < GDK_int_min)
 		throw(MAL, "mtime.epoch", "22003!epoch value too large");
 	else
 		*ret = (int) (v / 1000);

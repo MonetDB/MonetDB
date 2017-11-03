@@ -84,22 +84,22 @@ gdk_export size_t escapedStr(char *dst, const char *src, size_t dstlen, const ch
 #define GDK_bit_max ((bit) 1)
 #define GDK_bit_min ((bit) 0)
 #define GDK_bte_max ((bte) SCHAR_MAX)
-#define GDK_bte_min ((bte) SCHAR_MIN)
+#define GDK_bte_min ((bte) SCHAR_MIN+1)
 #define GDK_sht_max ((sht) SHRT_MAX)
-#define GDK_sht_min ((sht) SHRT_MIN)
+#define GDK_sht_min ((sht) SHRT_MIN+1)
 #define GDK_int_max INT_MAX
-#define GDK_int_min INT_MIN
+#define GDK_int_min (INT_MIN+1)
 #define GDK_flt_max ((flt) FLT_MAX)
-#define GDK_flt_min (-GDK_flt_max)
+#define GDK_flt_min (-3.4028233e+38F) /* nextafterf(-FLT_MAX,0) */
 #define GDK_lng_max ((lng) LLONG_MAX)
-#define GDK_lng_min ((lng) LLONG_MIN)
+#define GDK_lng_min ((lng) LLONG_MIN+1)
 #ifdef HAVE_HGE
 #define GDK_hge_max ((((hge) 1) << 126) - 1 + \
                      (((hge) 1) << 126))
-#define GDK_hge_min (-GDK_hge_max-1)
+#define GDK_hge_min (-GDK_hge_max)
 #endif
 #define GDK_dbl_max ((dbl) DBL_MAX)
-#define GDK_dbl_min (-GDK_dbl_max)
+#define GDK_dbl_min (-1.7976931348623155e+308) /* nextafter(-DBL_MAX,0) */
 /* GDK_oid_max see below */
 #define GDK_oid_min ((oid) 0)
 /* representation of the nil */

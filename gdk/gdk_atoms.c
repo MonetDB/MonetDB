@@ -248,14 +248,14 @@ ATOMisdescendant(int tpe, int parent)
 }
 
 
-const bte bte_nil = GDK_bte_min;
-const sht sht_nil = GDK_sht_min;
-const int int_nil = GDK_int_min;
-const flt flt_nil = GDK_flt_min;
-const dbl dbl_nil = GDK_dbl_min;
-const lng lng_nil = GDK_lng_min;
+const bte bte_nil = GDK_bte_min-1;
+const sht sht_nil = GDK_sht_min-1;
+const int int_nil = GDK_int_min-1;
+const flt flt_nil = -FLT_MAX;
+const dbl dbl_nil = -DBL_MAX;
+const lng lng_nil = GDK_lng_min-1;
 #ifdef HAVE_HGE
-const hge hge_nil = GDK_hge_min;
+const hge hge_nil = GDK_hge_min-1;
 #endif
 const oid oid_nil = (oid) 1 << (sizeof(oid) * 8 - 1);
 const char str_nil[2] = { '\200', 0 };
@@ -718,7 +718,7 @@ numFromStr(const char *src, size_t *len, void **dst, int tp)
 	switch (sz) {
 	case 1: {
 		bte **dstbte = (bte **) dst;
-		if (base <= GDK_bte_min || base > GDK_bte_max) {
+		if (base < GDK_bte_min || base > GDK_bte_max) {
 			goto overflow;
 		}
 		**dstbte = (bte) base;
@@ -726,7 +726,7 @@ numFromStr(const char *src, size_t *len, void **dst, int tp)
 	}
 	case 2: {
 		sht **dstsht = (sht **) dst;
-		if (base <= GDK_sht_min || base > GDK_sht_max) {
+		if (base < GDK_sht_min || base > GDK_sht_max) {
 			goto overflow;
 		}
 		**dstsht = (sht) base;
@@ -734,7 +734,7 @@ numFromStr(const char *src, size_t *len, void **dst, int tp)
 	}
 	case 4: {
 		int **dstint = (int **) dst;
-		if (base <= GDK_int_min || base > GDK_int_max) {
+		if (base < GDK_int_min || base > GDK_int_max) {
 			goto overflow;
 		}
 		**dstint = (int) base;
@@ -743,7 +743,7 @@ numFromStr(const char *src, size_t *len, void **dst, int tp)
 	case 8: {
 		lng **dstlng = (lng **) dst;
 #ifdef HAVE_HGE
-		if (base <= GDK_lng_min || base > GDK_lng_max) {
+		if (base < GDK_lng_min || base > GDK_lng_max) {
 			goto overflow;
 		}
 #endif
@@ -861,7 +861,7 @@ hgeToStr(char **dst, size_t *len, const hge *src)
 		strncpy(*dst, "nil", *len);
 		return 3;
 	}
-	if ((hge) GDK_lng_min < *src && *src <= (hge) GDK_lng_max) {
+	if ((hge) GDK_lng_min <= *src && *src <= (hge) GDK_lng_max) {
 		lng s = (lng) *src;
 		return lngToStr(dst, len, &s);
 	} else {

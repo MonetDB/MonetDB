@@ -1493,8 +1493,8 @@ BAThseqbase(BAT *b, oid o)
 {
 	if (b == NULL)
 		return;
-	assert(o < oid_nil);	/* i.e., not oid_nil */
-	assert(o + BATcount(b) < oid_nil);
+	assert(o <= GDK_oid_max);	/* i.e., not oid_nil */
+	assert(o + BATcount(b) <= GDK_oid_max);
 	assert(b->batCacheid > 0);
 	if (b->hseqbase != o) {
 		b->batDirtydesc = TRUE;
@@ -1508,7 +1508,7 @@ BATtseqbase(BAT *b, oid o)
 	if (b == NULL)
 		return;
 	assert(o <= oid_nil);
-	assert(is_oid_nil(o) || o + BATcount(b) < oid_nil);
+	assert(is_oid_nil(o) || o + BATcount(b) <= GDK_oid_max);
 	assert(b->batCacheid > 0);
 	if (ATOMtype(b->ttype) == TYPE_oid) {
 		if (b->tseqbase != o) {
@@ -2018,8 +2018,8 @@ BATassertProps(BAT *b)
 	assert(b->batCount >= b->batInserted);
 
 	/* headless */
-	assert(b->hseqbase < oid_nil); /* non-nil seqbase */
-	assert(b->hseqbase + BATcount(b) < oid_nil);
+	assert(b->hseqbase <= GDK_oid_max); /* non-nil seqbase */
+	assert(b->hseqbase + BATcount(b) <= GDK_oid_max);
 
 	bbpstatus = BBP_status(b->batCacheid);
 	/* only at most one of BBPDELETED, BBPEXISTING, BBPNEW may be set */
