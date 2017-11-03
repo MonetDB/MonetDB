@@ -199,8 +199,13 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 	struct pergroup {
 		int npartials;
 		int maxpartials;
-		double *partials;
 		int valseen;
+#ifdef INFINITES_ALLOWED
+		float infs;
+#else
+		int infs;
+#endif
+		double *partials;
 	} *pergroup;
 	BUN listi;
 	int parti;
@@ -228,9 +233,10 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 	if (pergroup == NULL)
 		return BUN_NONE;
 	for (grp = 0; grp < ngrp; grp++) {
-		pergroup[grp].npartials = 1;
+		pergroup[grp].npartials = 0;
 		pergroup[grp].valseen = 0;
-		pergroup[grp].maxpartials = 32;
+		pergroup[grp].maxpartials = 2;
+		pergroup[grp].infs = 0;
 		pergroup[grp].partials = GDKmalloc(pergroup[grp].maxpartials * sizeof(double));
 		if (pergroup[grp].partials == NULL) {
 			while (grp > 0)
@@ -238,7 +244,6 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 			GDKfree(pergroup);
 			return BUN_NONE;
 		}
-		pergroup[grp].partials[0] = 0;
 	}
 	for (;;) {
 		if (cand) {
@@ -274,8 +279,14 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 			continue;
 		}
 		pergroup[grp].valseen = 1;
-		i = 1;
-		for (parti = 1; parti < pergroup[grp].npartials; parti++) {
+#ifdef INFINITES_ALLOWED
+		if (isinf(x)) {
+			pergroup[grp].infs += x;
+			continue;
+		}
+#endif
+		i = 0;
+		for (parti = 0; parti < pergroup[grp].npartials; parti++) {
 			y = pergroup[grp].partials[parti];
 			if (fabs(x) < fabs(y))
 				exchange(&x, &y);
@@ -284,7 +295,7 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 				int sign = hi > 0 ? 1 : -1;
 				hi = x - twopow * sign;
 				x = hi - twopow * sign;
-				pergroup[grp].partials[0] += sign;
+				pergroup[grp].infs += sign;
 				if (fabs(x) < fabs(y))
 					exchange(&x, &y);
 				twosum(&hi, &lo, x, y);
@@ -294,9 +305,7 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 			x = hi;
 		}
 		if (x != 0) {
-			if (i == pergroup[grp].maxpartials - 1) {
-				/* -1 to make sure we have one spare
-                                 * for the final step below */
+			if (i == pergroup[grp].maxpartials) {
 				double *temp;
 				pergroup[grp].maxpartials += pergroup[grp].maxpartials;
 				temp = GDKrealloc(pergroup[grp].partials, pergroup[grp].maxpartials * sizeof(double));
@@ -322,10 +331,8 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 			pergroup[grp].partials = NULL;
 			continue;
 		}
-		if (isinf(pergroup[grp].partials[0]) ||
-		    isnan(pergroup[grp].partials[0])) {
-			/* isnan: cannot happen: infinities of both
-			 * signs in summands */
+#ifdef INFINITES_ALLOWED
+		if (isinf(pergroup[grp].infs) || isnan(pergroup[grp].infs)) {
 			if (abort_on_error) {
 				goto overflow;
 			}
@@ -338,17 +345,18 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 			pergroup[grp].partials = NULL;
 			continue;
 		}
+#endif
 
-		if (fabs(pergroup[grp].partials[0]) == 1.0 &&
-		    pergroup[grp].npartials > 1 &&
-		    !samesign(pergroup[grp].partials[0], pergroup[grp].partials[pergroup[grp].npartials - 1])) {
-			twosum(&hi, &lo, pergroup[grp].partials[0] * twopow, pergroup[grp].partials[pergroup[grp].npartials - 1] / 2);
+		if ((pergroup[grp].infs == 1 || pergroup[grp].infs == -1) &&
+		    pergroup[grp].npartials > 0 &&
+		    !samesign(pergroup[grp].infs, pergroup[grp].partials[pergroup[grp].npartials - 1])) {
+			twosum(&hi, &lo, pergroup[grp].infs * twopow, pergroup[grp].partials[pergroup[grp].npartials - 1] / 2);
 			if (isinf(2 * hi)) {
 				y = 2 * lo;
 				x = hi + y;
 				x -= hi;
 				if (x == y &&
-				    pergroup[grp].npartials > 2 &&
+				    pergroup[grp].npartials > 1 &&
 				    samesign(lo, pergroup[grp].partials[pergroup[grp].npartials - 2])) {
 					GDKfree(pergroup[grp].partials);
 					pergroup[grp].partials = NULL;
@@ -373,17 +381,26 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 				}
 			} else {
 				if (lo) {
-					/* we made sure above that we
-					 * have space for one more
-					 * partial */
+					if (pergroup[grp].npartials == pergroup[grp].maxpartials) {
+						double *temp;
+						/* we need space for one more */
+						pergroup[grp].maxpartials++;
+						temp = GDKrealloc(pergroup[grp].partials, pergroup[grp].maxpartials * sizeof(double));
+						if (temp == NULL)
+							goto bailout;
+						pergroup[grp].partials = temp;
+					}
 					pergroup[grp].partials[pergroup[grp].npartials - 1] = 2 * lo;
 					pergroup[grp].partials[pergroup[grp].npartials++] = 2 * hi;
 				} else {
 					pergroup[grp].partials[pergroup[grp].npartials - 1] = 2 * hi;
 				}
-				pergroup[grp].partials[0] = 0;
+				pergroup[grp].infs = 0;
 			}
 		}
+
+		if (pergroup[grp].infs != 0)
+			goto overflow;
 
 		if (pergroup[grp].npartials == 0) {
 			GDKfree(pergroup[grp].partials);
@@ -394,8 +411,6 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 				((dbl *) results)[grp] = 0;
 			continue;
 		}
-		if (pergroup[grp].partials[0] != 0)
-			goto overflow;
 
 		/* accumulate into hi */
 		hi = pergroup[grp].partials[--pergroup[grp].npartials];
