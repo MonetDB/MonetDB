@@ -299,7 +299,7 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
                                  * for the final step below */
 				double *temp;
 				pergroup[grp].maxpartials += pergroup[grp].maxpartials;
-				temp = GDKrealloc(pergroup[grp].partials, pergroup[grp].maxpartials);
+				temp = GDKrealloc(pergroup[grp].partials, pergroup[grp].maxpartials * sizeof(double));
 				if (temp == NULL)
 					goto bailout;
 				pergroup[grp].partials = temp;
