@@ -14,6 +14,10 @@
 #include "geom.h"
 #include "mal_exception.h"
 
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && _MSC_VER < 1800
+#define isnan(x)	_isnan(x)
+#endif
+
 int TYPE_mbr;
 
 static wkb *geos2wkb(const GEOSGeometry *geosGeometry);
@@ -2964,6 +2968,8 @@ wkbGetCoordinate(dbl *out, wkb **geom, int *dimNum)
 		err = createException(MAL, "geom.GetCoordinate", "GEOSGeom_getCoordSeq failed");
 	} else if (!GEOSCoordSeq_getOrdinate(gcs, 0, *dimNum, out))
 		err = createException(MAL, "geom.GetCoordinate", "GEOSCoordSeq_getOrdinate failed");
+	else if (isnan(*out))
+		*out = dbl_nil;
 	GEOSGeom_destroy(geosGeometry);
 
 	return err;
