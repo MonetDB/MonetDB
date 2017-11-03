@@ -197,14 +197,14 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
        int nil_if_empty, const char *func)
 {
 	struct pergroup {
-		size_t npartials;
-		size_t maxpartials;
+		int npartials;
+		int maxpartials;
 		double *partials;
 		int valseen;
 	} *pergroup;
-	size_t listi;
-	size_t parti;
-	size_t i;
+	BUN listi;
+	int parti;
+	int i;
 	BUN grp;
 	double x, y;
 	volatile double lo, hi;
