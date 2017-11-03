@@ -160,14 +160,6 @@
 /* Define if the fits module is to be enabled */
 /* #undef HAVE_FITS */
 
-/* Define to 1 if you have the `fpclass' function. */
-#define HAVE_FPCLASS 1		/* uses _fpclass, see mmath.c */
-
-/* Define to 1 if you have the `fpclassify' function. */
-#if defined(_MSC_VER) && _MSC_VER > 1600
-#define HAVE_FPCLASSIFY 1
-#endif
-
 /* Define to 1 if fseeko (and presumably ftello) exists and is declared. */
 /* #undef HAVE_FSEEKO */
 

@@ -23,12 +23,18 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#include <math.h>		/* for isfinite macro */
-#ifdef HAVE_IEEEFP_H
-#include <ieeefp.h>		/* for Solaris */
-#ifndef isfinite
-#define isfinite(f)	finite(f)
+#if defined(_MSC_VER) && defined(__INTEL_COMPILER)
+#include <mathimf.h>			/* Intel compiler on Windows */
+#else
+#include <math.h>				/* anywhere else */
 #endif
+
+/* these are only for older Visual Studio compilers (VS 2010) */
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && _MSC_VER < 1800
+#include <float.h>
+#define isnan(x)	_isnan(x)
+#define isinf(x)	(_fpclass(x) & (_FPCLASS_NINF | _FPCLASS_PINF))
+#define isfinite(x)	_finite(x)
 #endif
 
 static int
@@ -906,10 +912,6 @@ atom_io(ptr, Int, int)
 #else /* SIZEOF_VOID_P == SIZEOF_LNG */
 atom_io(ptr, Lng, lng)
 #endif
-#if defined(_MSC_VER) && !defined(isfinite)
-/* with more recent Visual Studio, isfinite is defined */
-#define isfinite(x)	_finite(x)
-#endif
 
 ssize_t
 dblFromStr(const char *src, size_t *len, dbl **dst)
@@ -947,9 +949,7 @@ dblFromStr(const char *src, size_t *len, dbl **dst)
 			p = pe;
 		n = (ssize_t) (p - src);
 		if (n == 0 || (errno == ERANGE && (d < -1 || d > 1))
-#ifdef isfinite
 		    || !isfinite(d) /* no NaN or Infinte */
-#endif
 		    ) {
 			GDKerror("overflow or not a number\n");
 			return -1;
@@ -1021,9 +1021,7 @@ fltFromStr(const char *src, size_t *len, flt **dst)
 #else /* no strtof, try sscanf */
 		if (sscanf(src, "%f%n", &f, &n) <= 0 || n <= 0
 #endif
-#ifdef isfinite
 		    || !isfinite(f) /* no NaN or infinite */
-#endif
 		    ) {
 			GDKerror("overflow or not a number\n");
 			return -1;
