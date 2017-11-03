@@ -1,0 +1,59 @@
+stdout of test 'cfunction02` in directory 'sql/backends/monet5` itself:
+
+
+# 17:04:52 >  
+# 17:04:52 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39818" "--set" "mapi_usock=/var/tmp/mtest-27977/.s.monetdb.39818" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/MonetDB-trails/BUILD/var/MonetDB/mTests_sql_backends_monet5"
+# 17:04:52 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.498 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-120.eduroam.cwi.nl:39818/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27977/.s.monetdb.39818
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Timetrails module loaded
+
+Ready.
+
+# 17:04:52 >  
+# 17:04:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27977" "--port=39818"
+# 17:04:52 >  
+
+#create table results3 (aa int, bb text);
+#create function cfunc3(input text) returns table (aa integer, bb text) begin
+#    declare s int;
+#    set s = 0;
+#    while true do
+#        set s = s + 1;
+#        yield table (select s, input);
+#    end while;
+#end;
+#start continuous function cfunc3('test') with heartbeat 1000 cycles 3;
+#pause continuous cfunc3;
+#create procedure cproc3() begin
+#    insert into results3 (select aa, bb from tmp.cfunc3);
+#end;
+#start continuous procedure cproc3() with cycles 3;
+#stop continuous cfunc3;
+#select aa, bb from results3;
+% sys.results3,	sys.results3 # table_name
+% aa,	bb # name
+% int,	clob # type
+% 1,	4 # length
+[ 1,	"test"	]
+[ 1,	"test"	]
+[ 1,	"test"	]
+#drop function cfunc3;
+#drop procedure cproc3;
+#drop table results3;
+
+# 17:04:58 >  
+# 17:04:58 >  "Done."
+# 17:04:58 >  
+

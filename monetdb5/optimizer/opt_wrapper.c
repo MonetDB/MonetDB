@@ -26,6 +26,7 @@
 #include "opt_candidates.h"
 #include "opt_constants.h"
 #include "opt_costModel.h"
+#include "opt_cquery.h"
 #include "opt_dataflow.h"
 #include "opt_deadcode.h"
 #include "opt_emptybind.h"
@@ -48,7 +49,6 @@
 #include "opt_remap.h"
 #include "opt_remoteQueries.h"
 #include "opt_reorder.h"
-#include "opt_cquery.h"
 #include "opt_volcano.h"
 #include "opt_wlc.h"
 
@@ -64,6 +64,7 @@ struct{
 	{"commonTerms", &OPTcommonTermsImplementation,0,0},
 	{"constants", &OPTconstantsImplementation,0,0},
 	{"costModel", &OPTcostModelImplementation,0,0},
+	{"cquery", &OPTcqueryImplementation,0,0},
 	{"dataflow", &OPTdataflowImplementation,0,0},
 	{"deadcode", &OPTdeadcodeImplementation,0,0},
 	{"emptybind", &OPTemptybindImplementation,0,0},
@@ -71,7 +72,6 @@ struct{
 	{"garbageCollector", &OPTgarbageCollectorImplementation,0,0},
 	{"generator", &OPTgeneratorImplementation,0,0},
 	{"inline", &OPTinlineImplementation,0,0},
-	{"cquery", &OPTcqueryImplementation,0,0},
 	{"jit", &OPTjitImplementation,0,0},
 	{"json", &OPTjsonImplementation,0,0},
 	{"matpack", &OPTmatpackImplementation,0,0},

@@ -143,8 +143,21 @@ runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrP
 		}
 		pl->stk->stkbot= mb->vtop;	/* stack already initialized */
 		msg = runMAL(cntxt, mb, 0, pl->stk);
-	 } else {
+	} else {
 		msg = reenterMAL(cntxt, mb, pl->pc, -1, pl->stk);
+	}
+	if(pl->stk) {
+		i = psig->retc;
+		for (k = pci->retc; i < pci->argc; i++, k++) { //for subsequent calls, the previous arguments must be freed
+			lhs = &pl->stk->stk[psig->argv[k]];
+			/* variable arguments ? */
+			if (k == psig->argc - 1)
+				k--;
+			if (lhs->vtype == TYPE_str) {
+				GDKfree(lhs->val.sval);
+				lhs->val.sval = NULL;
+			}
+		}
 	}
 	/* propagate change in debugging status */
 	if (cmd && pl->stk && pl->stk->cmd != cmd && cmd != 'x')
@@ -341,10 +354,6 @@ shutdownFactory(Client cntxt, MalBlkPtr mb)
 			pl->caller = NULL;
 			pl->pci = NULL;
 			pl->env = NULL;
-			pl->client = NULL;
-			pl->caller = NULL;
-			pl->env= NULL;
-			pl->pci = NULL;
 		}
 	return MAL_SUCCEED;
 }
@@ -400,10 +409,6 @@ void mal_factory_reset(void)
 			pl->caller = NULL;
 			pl->pci = NULL;
 			pl->env = NULL;
-			pl->client = NULL;
-			pl->caller = NULL;
-			pl->env= NULL;
-			pl->pci = NULL;
 	}
 	plantId = 1;
 	lastPlant = 0;

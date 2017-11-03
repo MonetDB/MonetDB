@@ -583,7 +583,8 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, ch
 			return -1;
 	}
 	/* generate a dummy return assignment for functions */
-	if (getArgType(mb, getInstrPtr(mb, 0), 0) != TYPE_void && getInstrPtr(mb, mb->stop - 1)->barrier != RETURNsymbol) {
+	if (getArgType(mb, getInstrPtr(mb, 0), 0) != TYPE_void && getInstrPtr(mb, mb->stop - 1)->barrier != RETURNsymbol &&
+		getInstrPtr(mb, 0)->token != FACTORYsymbol) {
 		q = newAssignment(mb);
 		if (q == NULL)
 			return -1;
@@ -917,7 +918,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 {
 	mvc *m = be->mvc;
 	MalBlkPtr curBlk = NULL;
-	InstrPtr curInstr = NULL;
+	InstrPtr curInstr = NULL, p = NULL, q = NULL/*, o*/;
 	Client c = be->client;
 	Symbol backup = NULL, curPrg = NULL;
 	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg), no_inline = 0;
@@ -1011,7 +1012,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	/* check the function for side effects and make that explicit */
 	sideeffects = 0;
 	for (i = 1; i < curBlk->stop; i++) {
-		InstrPtr p = getInstrPtr(curBlk, i);
+		p = getInstrPtr(curBlk, i);
 		if (getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef)
 			continue;
 		sideeffects = sideeffects || hasSideEffects(curBlk, p, FALSE); 
@@ -1023,6 +1024,34 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		curBlk->inlineProp = 1;
 	if (sideeffects)
 		curBlk->unsafeProp = 1;
+	p = getInstrPtr(curBlk, 0);
+	if(p->token == FACTORYsymbol) { //for table returning factories we must have a "fake" return in the end
+		q = getInstrPtr(curBlk, curBlk->stop - 2);
+		if(q->barrier != RETURNsymbol) {
+			q = newAssignment(curBlk);
+			if (q == NULL)
+				return -1;
+			q->barrier = RETURNsymbol;
+			moveInstruction(curBlk, curBlk->stop - 1, curBlk->stop - 2);
+		}
+		/*q->gc |= GARBAGECONTROL;
+		o = getInstrPtr(curBlk, curBlk->stop - 3);
+		if(getModuleId(o) == sqlRef && getFunctionId(o) == mvcRef) {
+			removeInstruction(curBlk, o);
+		}*/
+		if (f->type == F_UNION) {
+			q->retc = q->argc = 0;
+			for (i = 0; i < p->retc; i++) {
+				q = pushArgument(curBlk, q, getArg(p, i));
+			}
+			q->retc = q->argc;
+			for (i = 0; i < p->retc; i++) {
+				q = pushArgument(curBlk, q, getArg(p, i));
+			}
+		} else {
+			setVarType(curBlk, getArg(q, 0), getVarType(curBlk, getArg(p, 0)));
+		}
+	}
 	/* optimize the code */
 	SQLaddQueryToCache(c);
 	if( curBlk->inlineProp == 0 && !c->curprg->def->errors) {
