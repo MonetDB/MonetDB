@@ -890,7 +890,7 @@ Group: Applications/Databases
 %if "%{_selinux_policy_version}" != ""
 Requires:       selinux-policy >= %{_selinux_policy_version}
 %endif
-Requires:       %{name}-SQL-server5 = %{version}-%{release}
+Requires:       %{name}-SQL-server5 = %{version}
 Requires(post):   /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles, MonetDB-SQL-server5, MonetDB5-server
 Requires(postun): /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles, MonetDB-SQL-server5, MonetDB5-server
 BuildArch: noarch
@@ -1041,6 +1041,9 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Sun Nov  5 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.9-20171105
+- BZ#6460 - selinux doen't allow mmap
+
 * Mon Oct 23 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.9-20171023
 - Rebuilt.
 - BZ#6207: identifier ambiguous when grouping and selecting the same
