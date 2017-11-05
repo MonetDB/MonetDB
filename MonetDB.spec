@@ -885,7 +885,7 @@ developer, but if you do want to test, this is the package you need.
 
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 %package selinux
-Summary: MonetDB - Monet Database Management System
+Summary: SELinux policy files for MonetDB
 Group: Applications/Databases
 %if "%{_selinux_policy_version}" != ""
 Requires:       selinux-policy >= %{_selinux_policy_version}
