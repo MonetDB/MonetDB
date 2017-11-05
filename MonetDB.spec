@@ -1041,6 +1041,9 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Sun Nov  5 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.9-20171105
+- BZ#6460 - selinux doen't allow mmap
+
 * Mon Oct 23 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.9-20171023
 - Rebuilt.
 - BZ#6207: identifier ambiguous when grouping and selecting the same
