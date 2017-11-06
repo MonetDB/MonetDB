@@ -24,27 +24,27 @@ Ready.
 # 08:52:53 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4722" "--port=34679"
 # 08:52:53 >  
 
-#select name,name from sys.functions group by name limit 2;
-% sys.functions,	sys.functions # table_name
-% name,	name # name
+#select privilege_code_name,privilege_code_name from sys.privilege_codes group by privilege_code_name limit 2;
+% sys.privilege_codes,	sys.privilege_codes # table_name
+% privilege_code_name,	privilege_code_name # name
 % varchar,	varchar # type
-% 11,	11 # length
-[ "mbr_overlap",	"mbr_overlap"	]
-[ "mbr_above",	"mbr_above"	]
-#select name, name from sys.functions group by name,name limit 2;
-% sys.functions,	sys.functions # table_name
-% name,	name # name
+% 6,	6 # length
+[ "SELECT",	"SELECT"	]
+[ "UPDATE",	"UPDATE"	]
+#select privilege_code_name, privilege_code_name from sys.privilege_codes group by privilege_code_name,privilege_code_name limit 2;
+% sys.privilege_codes,	sys.privilege_codes # table_name
+% privilege_code_name,	privilege_code_name # name
 % varchar,	varchar # type
-% 11,	11 # length
-[ "mbr_overlap",	"mbr_overlap"	]
-[ "mbr_above",	"mbr_above"	]
-#select f.name, f.name from sys.functions AS f group by name,name limit 2;
+% 6,	6 # length
+[ "SELECT",	"SELECT"	]
+[ "UPDATE",	"UPDATE"	]
+#select f.privilege_code_name, f.privilege_code_name from sys.privilege_codes AS f group by privilege_code_name,privilege_code_name limit 2;
 % sys.f,	sys.f # table_name
-% name,	name # name
+% privilege_code_name,	privilege_code_name # name
 % varchar,	varchar # type
-% 11,	11 # length
-[ "mbr_overlap",	"mbr_overlap"	]
-[ "mbr_above",	"mbr_above"	]
+% 6,	6 # length
+[ "SELECT",	"SELECT"	]
+[ "UPDATE",	"UPDATE"	]
 
 # 08:52:53 >  
 # 08:52:53 >  "Done."
