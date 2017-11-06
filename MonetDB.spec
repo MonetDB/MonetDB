@@ -1002,6 +1002,11 @@ make %{?_smp_mflags}
 
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 cd buildtools/selinux
+%if 0%{?fedora} < 27
+# no `map' policy available before Fedora 27
+sed -i '/map/d' monetdb.te
+%endif
+
 for selinuxvariant in %{selinux_variants}
 do
   make NAME=${selinuxvariant} -f /usr/share/selinux/devel/Makefile
