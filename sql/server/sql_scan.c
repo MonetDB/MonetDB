@@ -363,9 +363,9 @@ scanner_init_keywords(void)
 	failed += keywords_insert("DEBUG", SQL_DEBUG);
 	failed += keywords_insert("TRACE", SQL_TRACE);
 	failed += keywords_insert("PREPARE", PREPARE);
-	failed += keywords_insert("PREP", PREPARE);
+	failed += keywords_insert("PREP", PREP);
 	failed += keywords_insert("EXECUTE", EXECUTE);
-	failed += keywords_insert("EXEC", EXECUTE);
+	failed += keywords_insert("EXEC", EXEC);
 
 	failed += keywords_insert("INDEX", INDEX);
 

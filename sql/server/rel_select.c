@@ -204,12 +204,16 @@ static sql_rel * rel_unionjoinquery(mvc *sql, sql_rel *rel, symbol *sq);
 static sql_rel *
 rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 {
+	sql_rel *osq = sq;
+
 	if (optname && optname->token == SQL_NAME) {
 		dlist *columnrefs = NULL;
 		char *tname = optname->data.lval->h->data.sval;
 		list *l = sa_list(sql->sa);
 
 		columnrefs = optname->data.lval->h->next->data.lval;
+		if (is_apply(sq->op))
+			sq = sq->r;
 		if (columnrefs && sq->exps) {
 			dnode *d = columnrefs->h;
 			node *ne = sq->exps->h;
@@ -249,7 +253,7 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 			}
 		}
 	}
-	return sq;
+	return osq;
 }
 
 static sql_rel *
@@ -4432,6 +4436,8 @@ rel_rankop(mvc *sql, sql_rel **rel, symbol *se, int f)
 		oe = exp_atom_bool(sql->sa, 0);
 	}
 
+	if (!e || !pe || !oe)
+		return NULL;
 	types = sa_list(sql->sa);
 	append(types, exp_subtype(e));
 	append(types, exp_subtype(pe));
@@ -5302,7 +5308,13 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 	}
 
 	lateral = check_is_lateral(tab2);
-	t1 = table_ref(sql, rel, tab1, 0);
+	t1 = table_ref(sql, NULL, tab1, 0);
+	if (rel && !t1 && sql->session->status != -ERR_AMBIGUOUS) {
+		/* reset error */
+		sql->session->status = 0;
+		sql->errstr[0] = 0;
+		t1 = table_ref(sql, rel_dup(rel), tab1, 0);
+	}
 	if (t1) {
 		if (lateral) {
 			list *pre_exps = rel_projections(sql, t1, NULL, 1, 1);
@@ -5313,9 +5325,17 @@ rel_joinquery_(mvc *sql, sql_rel *rel, symbol *tab1, int natural, jt jointype, s
 				t2->exps = list_merge(t2->exps, pre_exps, (fdup)NULL);
 			}
 		} else {
-			t2 = table_ref(sql, rel, tab2, 0);
+			t2 = table_ref(sql, NULL, tab2, 0);
+			if (rel && !t2 && sql->session->status != -ERR_AMBIGUOUS) {
+				/* reset error */
+				sql->session->status = 0;
+				sql->errstr[0] = 0;
+				t2 = table_ref(sql, rel_dup(rel), tab2, 0);
+			}
 		}
 	}
+	if (rel)
+		rel_destroy(rel);
 	if (!t1 || !t2)
 		return NULL;
 

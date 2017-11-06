@@ -2178,6 +2178,8 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 	}	
 	case e_atom:
 	case e_psm:
+		if (e->type == e_atom && e->f) /* value list */
+			return NULL;
 		return e;
 	}
 	return NULL;
@@ -3002,7 +3004,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				} else if (exp_subtype(le)->type->eclass == EC_FLT) {
 					a = atom_float(sql->sa, exp_subtype(le), 0);
 				} else {
-					return 0;
+					return e;
 				}
 				ne = exp_atom(sql->sa, a);
 				(*changes)++;
@@ -6076,43 +6078,20 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
-static list *
-merge_refs(list *l, list *r)
+static void
+rel_dep_graph( char *deps, list *refs, sql_rel *parent, sql_rel *rel) 
 {
-	node *n, *m, *np = l->h, *mp = r->h;
-	list *nl = sa_list(l->sa);
+	if (!parent)
+		return ;
 
-	for( n = np; n; n = n->next) {
-		sql_rel *lr = n->data;
-		for (m = mp; m; m = m->next) {
-			sql_rel *rr = m->data;
+	if (rel_is_ref(rel) && parent != rel) {
+		int n = list_length(refs);
+		int pnr = list_position(refs, parent);
+		int cnr = list_position(refs, rel);
 
-			if (lr == rr) {
-				for( ; np != n; np = np->next) 
-					append(nl, np->data);
-				np = np->next;
-				for( ; mp != m; mp = mp->next) 
-					append(nl, mp->data);
-				append(nl, mp->data); 
-				mp = mp->next;
-				break;
-			}
-		}
+		deps[pnr*n + cnr] = 1;
+		parent = rel;
 	}
-	for( ; np; np = np->next) 
-		append(nl, np->data);
-	for( ; mp; mp = mp->next) 
-		append(nl, mp->data);
-	return nl;
-}
-
-static list *
-rel_dce_refs(mvc *sql, sql_rel *rel) 
-{
-	list *l = NULL, *r = NULL;
-
-	if (!rel)
-		return NULL;
 
 	switch(rel->op) {
 	case op_table:
@@ -6123,7 +6102,7 @@ rel_dce_refs(mvc *sql, sql_rel *rel)
 	case op_select: 
 
 		if (rel->l && (rel->op != op_table || rel->flag != 2))
-			l = rel_dce_refs(sql, rel->l);
+			rel_dep_graph(deps, refs, parent, rel->l);
 
 	case op_basetable:
 	case op_insert:
@@ -6134,7 +6113,7 @@ rel_dce_refs(mvc *sql, sql_rel *rel)
 	case op_delete:
 
 		if (rel->r)
-			r = rel_dce_refs(sql, rel->r);
+			rel_dep_graph(deps, refs, parent, rel->r);
 		break;
 
 
@@ -6149,25 +6128,152 @@ rel_dce_refs(mvc *sql, sql_rel *rel)
 	case op_anti: 
 
 		if (rel->l)
-			l = rel_dce_refs(sql, rel->l);
+			rel_dep_graph(deps, refs, parent, rel->l);
 		if (rel->r)
-			r = rel_dce_refs(sql, rel->r);
+			rel_dep_graph(deps, refs, parent, rel->r);
+		break;
+
+	case op_apply: 
+		assert(0);
+	}
+}
+
+/*
+extern void _rel_print(mvc *sql, sql_rel *rel);
+
+static void 
+print_deps(mvc *sql, char *deps, list *refs) 
+{
+	int i, j;
+	int n = list_length(refs);
+
+	for (i=0; i<n; i++) {
+		sql_rel *r = list_fetch(refs, i);
+		printf("dep %d\n", i);
+		_rel_print(sql,r);
+	}
+	for (i=0; i<n; i++) {
+		for (j=0; j<n; j++) {
+			printf("%c ", i==j?'x' : deps[i*n + j]?'1':'0');
+		}
+		printf("\n");
+	}
+
+}	
+*/
+
+static int 
+depends_on(int nr, char *deps, int n, int dnr) 
+{
+	for(;dnr < n; dnr++) {
+		if (dnr == nr)
+			dnr++;
+		if (deps[nr*n + dnr])
+			return dnr;
+	}
+	return -1;
+}
+
+static void
+flatten_dep(list *nrefs, list *refs, int nr, char *deps, int n) 
+{
+	int dnr = 0;
+
+	if (deps[nr*n + nr])
+		return;
+	for (;(dnr = depends_on(nr, deps, n, dnr)) >= 0 && dnr < n; dnr++) 
+		flatten_dep(nrefs, refs, dnr, deps, n);
+	if (!deps[nr*n + nr]) {
+		list_prepend(nrefs, list_fetch(refs,nr));
+		deps[nr*n+nr] = 1; /* mark done */
+	}
+}
+
+static list *
+flatten_dep_graph(mvc *sql, char *deps, list *refs)
+{
+	list *nrefs = sa_list(sql->sa);
+	int n = list_length(refs), nr = 0;
+
+	for (nr = 0; nr < n; nr++) {
+		if (deps[nr*n + nr])
+			continue;
+		flatten_dep(nrefs, refs, nr, deps, n);
+	}
+	return nrefs;
+}
+
+static list *
+rel_dependencies(mvc *sql, list *refs)
+{
+	int n = list_length(refs);
+
+	if (n > 1) {
+		char *deps = SA_NEW_ARRAY(sql->sa, char, n*n);
+		node *m;
+
+		memset(deps, 0, n*n);
+		for (m = refs->h; m; m = m->next) {
+			rel_dep_graph(deps, refs, m->data, m->data);
+		}
+		refs = flatten_dep_graph(sql, deps, refs);
+		//print_deps(sql, deps, refs);
+	}
+	return refs;
+}
+
+static void
+rel_dce_refs(mvc *sql, sql_rel *rel, list *refs) 
+{
+	if (!rel)
+		return ;
+
+	switch(rel->op) {
+	case op_table:
+	case op_topn: 
+	case op_sample: 
+	case op_project:
+	case op_groupby: 
+	case op_select: 
+
+		if (rel->l && (rel->op != op_table || rel->flag != 2))
+			rel_dce_refs(sql, rel->l, refs);
+
+	case op_basetable:
+	case op_insert:
+	case op_ddl:
+		break;
+
+	case op_update:
+	case op_delete:
+
+		if (rel->r)
+			rel_dce_refs(sql, rel->r, refs);
+		break;
+
+
+	case op_union: 
+	case op_inter: 
+	case op_except: 
+	case op_join: 
+	case op_left: 
+	case op_right: 
+	case op_full: 
+	case op_semi: 
+	case op_anti: 
+
+		if (rel->l)
+			rel_dce_refs(sql, rel->l, refs);
+		if (rel->r)
+			rel_dce_refs(sql, rel->r, refs);
 		break;
 
 	case op_apply: 
 		assert(0);
 	}
 
-	if (l && r)
-		l = merge_refs(l, r);
-	if (!l) 
-		l = r;
-	if (rel_is_ref(rel)) {
-		if (!l)
-			l = sa_list(sql->sa);
-		list_prepend(l, rel);
-	}
-	return l;
+	if (rel_is_ref(rel) && !list_find(refs, rel, NULL)) 
+		list_prepend(refs, rel);
 }
 
 static sql_rel *
@@ -6346,17 +6452,19 @@ rel_add_projects(mvc *sql, sql_rel *rel)
 sql_rel *
 rel_dce(mvc *sql, sql_rel *rel)
 {
-	list *refs;
+	list *refs = sa_list(sql->sa);
 	node *n;
 
-	refs = rel_dce_refs(sql, rel);
+	rel_dce_refs(sql, rel, refs);
 	rel = rel_add_projects(sql, rel);
 	rel_used(rel);
 	rel_dce_sub(sql, rel, refs);
 
-	if (refs)
+	if (refs) {
+		refs = rel_dependencies(sql, refs);
 		for (n = refs->h; n; n = n->next)
 			rel_dce_sub(sql, n->data, refs);
+	}
 	return rel;
 }
 
@@ -8237,13 +8345,6 @@ exp_mark_conflicts(mvc *sql, sql_exp *e, list *conflicts, int always)
 			if (!ne->used)
 				exp_label_table(sql->sa, ne, ++sql->label);
 			ne->used = 1;
-		} else if (!ne && always && e->name[0] == '%') {
-			ne = exp_column(sql->sa, e->l, e->r, exp_subtype(e), e->card, has_nil(e), is_intern(e));
-			exp_label_table(sql->sa, ne, ++sql->label);
-			ne->used = 1;
-			if (e->p)
-				ne->p = prop_copy(sql->sa, e->p);
-			append(conflicts, ne);
 		}
 	}
 }
@@ -8322,11 +8423,11 @@ rel_find_conflicts(mvc *sql, sql_rel *rel, list *exps, list *conflicts)
 			exps_find_conflicts(sql, rel->exps, exps, conflicts);
 		exps_mark_conflicts(sql, rel->exps, conflicts, 1); 
 		return rel;
-	case op_topn: 
-	case op_sample: 
-		return rel;
 	case op_select: 
 		exps_find_conflicts(sql, rel->exps, exps, conflicts);
+		/* fall through */
+	case op_topn: 
+	case op_sample: 
 		rel->l = rel_find_conflicts(sql, rel->l, exps, conflicts);
 		return rel;
 	case op_project:
@@ -8470,7 +8571,7 @@ rel_apply(mvc *sql, sql_rel *l, sql_rel *r, list *exps, int flag)
 static sql_rel *
 rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel) 
 {
-	sql_rel *l, *r;
+	sql_rel *l, *r, *topn = NULL;
 
 	if (rel->op == op_project && rel->exps) { /* check card */
 		node *n;
@@ -8584,11 +8685,17 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 		nl = rel_apply(sql, rel_dup(rel->l), rel_dup(r->l), rel->exps, rel->flag);
 		nr = rel_apply(sql, rel_dup(rel->l), rel_dup(r->r), rel->exps, rel->flag);
 		l = rel_setop(sql->sa, nl, nr, op_union);
+		l->flag = r->flag;
 		l->exps = list_merge(p, r->exps, (fdup)NULL);
 		set_processed(l);
 		rel_destroy(rel);
 		(*changes)++;
 		return l;
+	}
+	if (r->op == op_topn || r->op == op_sample) {
+		/* first handle project, then topn/sample */
+		topn = rel_dup(r);
+		r = r->l;
 	}
 	if (r->op == op_project) { /* merge projections */
 		if (!r->l) { 
@@ -8596,8 +8703,6 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 
 			rel_destroy(rel);
 			rel = nrel;
-			(*changes)++;
-			return rel;
 		} else {
 			list *p = rel_projections(sql, l, NULL, 1, 1);
 
@@ -8605,9 +8710,13 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			r = rel_apply(sql, rel_dup(l), rel_dup(r->l), rel->exps, rel->flag);
 			rel_destroy(rel);
 			rel = rel_project(sql->sa, r, p);
-			(*changes)++;
-			return rel;
 		}
+		if (topn) {
+			topn->l = rel;
+			rel = topn;
+		}
+		(*changes)++;
+		return rel;
 	}
 	if (r->op == op_select) { 
 		sql_rel *n = rel_apply(sql, rel_dup(rel->l), rel_dup(r->l), rel->exps, rel->flag);
@@ -8644,7 +8753,6 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			sql_rel *nl = rel_apply(sql, rel_dup(rel->l), rel_dup(r->l), rel->exps, rel->flag);
 			sql_rel *nr = rel_apply(sql, rel_dup(rel->l), rel_dup(r->r), rel->exps, rel->flag);
 
-			assert(is_semi(r->op));
 			l = rel_crossproduct(sql->sa, nl, nr, r->op);
 			l->exps = exps_copy(sql->sa, r->exps);
 			rel_destroy(rel);

@@ -1,0 +1,45 @@
+stderr of test 'table_returning_with.Bug-6444` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 15:36:00 >  
+# 15:36:00 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39208" "--set" "mapi_usock=/var/tmp/mtest-83731/.s.monetdb.39208" "--set" "monet_prompt=" "--forcemito" "--dbpath=/Users/rkoopmanschap/projects/MonetDB/monetdb/install/var/MonetDB/mTests_sql_test_BugTracker-2017" "--set" "embedded_py=true"
+# 15:36:00 >  
+
+# builtin opt 	gdk_dbpath = /Users/rkoopmanschap/projects/MonetDB/monetdb/install/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 39208
+# cmdline opt 	mapi_usock = /var/tmp/mtest-83731/.s.monetdb.39208
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /Users/rkoopmanschap/projects/MonetDB/monetdb/install/var/MonetDB/mTests_sql_test_BugTracker-2017
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 536870922
+
+# 15:36:00 >  
+# 15:36:00 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-83731" "--port=39208"
+# 15:36:00 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-83731/.s.monetdb.39208
+QUERY = CREATE TABLE results_table AS (
+            WITH test_table_tmp AS (
+                SELECT * FROM test_table
+            )
+            SELECT * FROM test_function(test_table_tmp.x, test_table_tmp.y, test_table_tmp.z)
+        );
+ERROR = !SELECT: no such column 'test_table_tmp.x'
+MAPI  = (monetdb) /var/tmp/mtest-83731/.s.monetdb.39208
+QUERY = SELECT * FROM results_table;
+ERROR = !current transaction is aborted (please ROLLBACK)
+
+# 15:36:01 >  
+# 15:36:01 >  "Done."
+# 15:36:01 >  

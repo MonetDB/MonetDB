@@ -2054,7 +2054,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
                             f1 = open(TSTSRC, "r")
                             f2 = open(ff[:-4], "w")
                             line = f1.readline()
-                            f2.write("%s of test '%s` in directory '%s` itself:\n" % (line[:6], TST, TSTDIR))
+                            f2.write("%s of test '%s` in directory '%s` itself:\n" % (line[:6], TST, TSTDIR.replace('\\', '/')))
                             f2.write(f1.read())
                             f1.close()
                             f2.close()

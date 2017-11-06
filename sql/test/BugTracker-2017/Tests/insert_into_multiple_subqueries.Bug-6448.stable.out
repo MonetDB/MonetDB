@@ -1,0 +1,42 @@
+stdout of test 'insert_into_multiple_subqueries.Bug-6448` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 15:36:01 >  
+# 15:36:01 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39208" "--set" "mapi_usock=/var/tmp/mtest-83731/.s.monetdb.39208" "--set" "monet_prompt=" "--forcemito" "--dbpath=/Users/rkoopmanschap/projects/MonetDB/monetdb/install/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 15:36:01 >  
+
+# MonetDB 5 server v11.27.10
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-apple-darwin16.1.0/64bit with 128bit integers
+# Found 16.000 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-41.eduroam.cwi.nl:39208/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-83731/.s.monetdb.39208
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 15:36:01 >  
+# 15:36:01 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-83731" "--port=39208"
+# 15:36:01 >  
+
+#START TRANSACTION;
+#CREATE TABLE test_table(x VARCHAR(10), y INTEGER);
+#INSERT INTO test_table VALUES ('test1', (SELECT 1)), ('test3', (SELECT 1));
+[ 2	]
+#SELECT * FROM test_table;
+% sys.test_table,	sys.test_table # table_name
+% x,	y # name
+% varchar,	int # type
+% 5,	1 # length
+[ "test1",	1	]
+[ "test3",	1	]
+#ROLLBACK;
+
+# 15:36:01 >  
+# 15:36:01 >  "Done."
+# 15:36:01 >  

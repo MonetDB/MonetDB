@@ -885,7 +885,7 @@ developer, but if you do want to test, this is the package you need.
 
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 %package selinux
-Summary: MonetDB - Monet Database Management System
+Summary: SELinux policy files for MonetDB
 Group: Applications/Databases
 %if "%{_selinux_policy_version}" != ""
 Requires:       selinux-policy >= %{_selinux_policy_version}
@@ -1002,6 +1002,11 @@ make %{?_smp_mflags}
 
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 cd buildtools/selinux
+%if 0%{?fedora} < 27
+# no `map' policy available before Fedora 27
+sed -i '/map/d' monetdb.te
+%endif
+
 for selinuxvariant in %{selinux_variants}
 do
   make NAME=${selinuxvariant} -f /usr/share/selinux/devel/Makefile
@@ -1041,6 +1046,9 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Sun Nov  5 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.9-20171105
+- BZ#6460 - selinux doen't allow mmap
+
 * Mon Oct 23 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.9-20171023
 - Rebuilt.
 - BZ#6207: identifier ambiguous when grouping and selecting the same

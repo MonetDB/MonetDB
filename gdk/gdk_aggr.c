@@ -10,7 +10,11 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
+#if defined(_MSC_VER) && defined(__INTEL_COMPILER)
+#include <mathimf.h>
+#else
 #include <math.h>
+#endif
 
 /* grouped aggregates
  *
@@ -146,6 +150,314 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 
 /* ---------------------------------------------------------------------- */
 /* sum */
+
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && _MSC_VER < 1800
+#include <float.h>
+#define isnan(x)	_isnan(x)
+#define isinf(x)	(_fpclass(x) & (_FPCLASS_NINF | _FPCLASS_PINF))
+#define isfinite(x)	_finite(x)
+#endif
+
+static inline int
+samesign(double x, double y)
+{
+	return (x >= 0) == (y >= 0);
+}
+
+/* Add two values, producing the sum and the remainder due to limited
+ * range of floating point arithmetic.  This function depends on the
+ * fact that the sum returns INFINITY in *hi of the correct sign
+ * (i.e. isinf() returns TRUE) in case of overflow. */
+static inline void
+twosum(volatile double *hi, volatile double *lo, double x, double y)
+{
+	volatile double yr;
+
+	assert(fabs(x) >= fabs(y));
+
+	*hi = x + y;
+	yr = *hi - x;
+	*lo = y - yr;
+}
+
+static inline void
+exchange(double *x, double *y)
+{
+	double t = *x;
+	*x = *y;
+	*y = t;
+}
+
+/* this function was adapted from https://bugs.python.org/file10357/msum4.py */
+static BUN
+dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
+       void *restrict results, BUN ngrp, int tp1, int tp2,
+       const oid *restrict cand, const oid *candend, const oid *restrict gids,
+       oid min, oid max, int skip_nils, int abort_on_error,
+       int nil_if_empty, const char *func)
+{
+	struct pergroup {
+		int npartials;
+		int maxpartials;
+		int valseen;
+#ifdef INFINITES_ALLOWED
+		float infs;
+#else
+		int infs;
+#endif
+		double *partials;
+	} *pergroup;
+	BUN listi;
+	int parti;
+	int i;
+	BUN grp;
+	double x, y;
+	volatile double lo, hi;
+	double twopow = pow((double) FLT_RADIX, (double) (DBL_MAX_EXP - 1));
+	BUN nils = 0;
+
+	ALGODEBUG fprintf(stderr, "#%s: floating point summation\n", func);
+	/* we only deal with the two floating point types */
+	assert(tp1 == TYPE_flt || tp1 == TYPE_dbl);
+	assert(tp2 == TYPE_flt || tp2 == TYPE_dbl);
+	/* if input is dbl, then so it output */
+	assert(tp2 == TYPE_flt || tp1 == TYPE_dbl);
+	/* if no gids, then we have a single group */
+	assert(ngrp == 1 || gids != NULL);
+	if (gids == NULL || ngrp == 1) {
+		min = max = 0;
+		ngrp = 1;
+		gids = NULL;
+	}
+	pergroup = GDKmalloc(ngrp * sizeof(*pergroup));
+	if (pergroup == NULL)
+		return BUN_NONE;
+	for (grp = 0; grp < ngrp; grp++) {
+		pergroup[grp].npartials = 0;
+		pergroup[grp].valseen = 0;
+		pergroup[grp].maxpartials = 2;
+		pergroup[grp].infs = 0;
+		pergroup[grp].partials = GDKmalloc(pergroup[grp].maxpartials * sizeof(double));
+		if (pergroup[grp].partials == NULL) {
+			while (grp > 0)
+				GDKfree(pergroup[--grp].partials);
+			GDKfree(pergroup);
+			return BUN_NONE;
+		}
+	}
+	for (;;) {
+		if (cand) {
+			if (cand >= candend)
+				break;
+			listi = *cand++ - seqb;
+		} else {
+			if (start >= end)
+				break;
+			listi = start++;
+		}
+		grp = gids ? gids[listi] : 0;
+		if (grp < min || grp > max)
+			continue;
+		if (pergroup[grp].partials == NULL)
+			continue;
+		if (tp1 == TYPE_flt && ((const flt *) values)[listi] != flt_nil)
+			x = ((const flt *) values)[listi];
+		else if (tp1 == TYPE_dbl && ((const dbl *) values)[listi] != dbl_nil)
+			x = ((const dbl *) values)[listi];
+		else {
+			/* it's a nil */
+			if (!skip_nils) {
+				if (tp2 == TYPE_flt)
+					((flt *) results)[grp] = flt_nil;
+				else
+					((dbl *) results)[grp] = dbl_nil;
+				GDKfree(pergroup[grp].partials);
+				pergroup[grp].partials = NULL;
+				if (++nils == ngrp)
+					break;
+			}
+			continue;
+		}
+		pergroup[grp].valseen = 1;
+#ifdef INFINITES_ALLOWED
+		if (isinf(x)) {
+			pergroup[grp].infs += x;
+			continue;
+		}
+#endif
+		i = 0;
+		for (parti = 0; parti < pergroup[grp].npartials; parti++) {
+			y = pergroup[grp].partials[parti];
+			if (fabs(x) < fabs(y))
+				exchange(&x, &y);
+			twosum(&hi, &lo, x, y);
+			if (isinf(hi)) {
+				int sign = hi > 0 ? 1 : -1;
+				hi = x - twopow * sign;
+				x = hi - twopow * sign;
+				pergroup[grp].infs += sign;
+				if (fabs(x) < fabs(y))
+					exchange(&x, &y);
+				twosum(&hi, &lo, x, y);
+			}
+			if (lo != 0)
+				pergroup[grp].partials[i++] = lo;
+			x = hi;
+		}
+		if (x != 0) {
+			if (i == pergroup[grp].maxpartials) {
+				double *temp;
+				pergroup[grp].maxpartials += pergroup[grp].maxpartials;
+				temp = GDKrealloc(pergroup[grp].partials, pergroup[grp].maxpartials * sizeof(double));
+				if (temp == NULL)
+					goto bailout;
+				pergroup[grp].partials = temp;
+			}
+			pergroup[grp].partials[i++] = x;
+		}
+		pergroup[grp].npartials = i;
+	}
+
+	for (grp = 0; grp < ngrp; grp++) {
+		if (pergroup[grp].partials == NULL)
+			continue;
+		if (!pergroup[grp].valseen) {
+			if (tp2 == TYPE_flt)
+				((flt *) results)[grp] = nil_if_empty ? flt_nil : 0;
+			else
+				((dbl *) results)[grp] = nil_if_empty ? dbl_nil : 0;
+			nils += nil_if_empty;
+			GDKfree(pergroup[grp].partials);
+			pergroup[grp].partials = NULL;
+			continue;
+		}
+#ifdef INFINITES_ALLOWED
+		if (isinf(pergroup[grp].infs) || isnan(pergroup[grp].infs)) {
+			if (abort_on_error) {
+				goto overflow;
+			}
+			if (tp2 == TYPE_flt)
+				((flt *) results)[grp] = flt_nil;
+			else
+				((dbl *) results)[grp] = dbl_nil;
+			nils++;
+			GDKfree(pergroup[grp].partials);
+			pergroup[grp].partials = NULL;
+			continue;
+		}
+#endif
+
+		if ((pergroup[grp].infs == 1 || pergroup[grp].infs == -1) &&
+		    pergroup[grp].npartials > 0 &&
+		    !samesign(pergroup[grp].infs, pergroup[grp].partials[pergroup[grp].npartials - 1])) {
+			twosum(&hi, &lo, pergroup[grp].infs * twopow, pergroup[grp].partials[pergroup[grp].npartials - 1] / 2);
+			if (isinf(2 * hi)) {
+				y = 2 * lo;
+				x = hi + y;
+				x -= hi;
+				if (x == y &&
+				    pergroup[grp].npartials > 1 &&
+				    samesign(lo, pergroup[grp].partials[pergroup[grp].npartials - 2])) {
+					GDKfree(pergroup[grp].partials);
+					pergroup[grp].partials = NULL;
+					x = 2 * (hi + y);
+					if (tp2 == TYPE_flt) {
+						if (x > GDK_flt_max ||
+						    x <= GDK_flt_min) {
+							if (abort_on_error)
+								goto overflow;
+							((flt *) results)[grp] = flt_nil;
+							nils++;
+						} else
+							((flt *) results)[grp] = (flt) x;
+					} else if (x == GDK_dbl_min) {
+						if (abort_on_error)
+							goto overflow;
+						((dbl *) results)[grp] = dbl_nil;
+						nils++;
+					} else
+						((dbl *) results)[grp] = x;
+					continue;
+				}
+			} else {
+				if (lo) {
+					if (pergroup[grp].npartials == pergroup[grp].maxpartials) {
+						double *temp;
+						/* we need space for one more */
+						pergroup[grp].maxpartials++;
+						temp = GDKrealloc(pergroup[grp].partials, pergroup[grp].maxpartials * sizeof(double));
+						if (temp == NULL)
+							goto bailout;
+						pergroup[grp].partials = temp;
+					}
+					pergroup[grp].partials[pergroup[grp].npartials - 1] = 2 * lo;
+					pergroup[grp].partials[pergroup[grp].npartials++] = 2 * hi;
+				} else {
+					pergroup[grp].partials[pergroup[grp].npartials - 1] = 2 * hi;
+				}
+				pergroup[grp].infs = 0;
+			}
+		}
+
+		if (pergroup[grp].infs != 0)
+			goto overflow;
+
+		if (pergroup[grp].npartials == 0) {
+			GDKfree(pergroup[grp].partials);
+			pergroup[grp].partials = NULL;
+			if (tp2 == TYPE_flt)
+				((flt *) results)[grp] = 0;
+			else
+				((dbl *) results)[grp] = 0;
+			continue;
+		}
+
+		/* accumulate into hi */
+		hi = pergroup[grp].partials[--pergroup[grp].npartials];
+		while (pergroup[grp].npartials > 0) {
+			twosum(&hi, &lo, hi, pergroup[grp].partials[--pergroup[grp].npartials]);
+			if (lo) {
+				pergroup[grp].partials[pergroup[grp].npartials++] = lo;
+				break;
+			}
+		}
+
+		if (pergroup[grp].npartials >= 2 &&
+		    samesign(pergroup[grp].partials[pergroup[grp].npartials - 1], pergroup[grp].partials[pergroup[grp].npartials - 2]) &&
+		    hi + 2 * pergroup[grp].partials[pergroup[grp].npartials - 1] - hi == 2 * pergroup[grp].partials[pergroup[grp].npartials - 1]) {
+			hi += 2 * pergroup[grp].partials[pergroup[grp].npartials - 1];
+			pergroup[grp].partials[pergroup[grp].npartials - 1] = -pergroup[grp].partials[pergroup[grp].npartials - 1];
+		}
+
+		GDKfree(pergroup[grp].partials);
+		pergroup[grp].partials = NULL;
+		if (tp2 == TYPE_flt) {
+			if (hi > GDK_flt_max || hi <= GDK_flt_min) {
+				if (abort_on_error)
+					goto overflow;
+				((flt *) results)[grp] = flt_nil;
+				nils++;
+			} else
+				((flt *) results)[grp] = (flt) hi;
+		} else if (hi == GDK_dbl_min) {
+			if (abort_on_error)
+				goto overflow;
+			((dbl *) results)[grp] = dbl_nil;
+			nils++;
+		} else
+			((dbl *) results)[grp] = hi;
+	}
+	GDKfree(pergroup);
+	return nils;
+
+  overflow:
+	GDKerror("22003!overflow in calculation.\n");
+  bailout:
+	for (grp = 0; grp < ngrp; grp++)
+		GDKfree(pergroup[grp].partials);
+	GDKfree(pergroup);
+	return BUN_NONE;
+}
 
 #define AGGR_SUM(TYPE1, TYPE2)						\
 	do {								\
@@ -313,7 +625,18 @@ dosum(const void *restrict values, int nonil, oid seqb, BUN start, BUN end,
 	BUN nils = 0;
 	BUN i;
 	oid gid;
-	unsigned int *restrict seen; /* bitmask for groups that we've seen */
+	unsigned int *restrict seen = NULL; /* bitmask for groups that we've seen */
+
+	switch (tp2) {
+	case TYPE_flt:
+		if (tp1 != TYPE_flt)
+			goto unsupported;
+		/* fall through */
+	case TYPE_dbl:
+		if (tp1 != TYPE_flt && tp1 != TYPE_dbl)
+			goto unsupported;
+		return dofsum(values, seqb, start, end, results, ngrp, tp1, tp2, cand, candend, gids, min, max, skip_nils, abort_on_error, nil_if_empty, func);
+	}
 
 	/* allocate bitmap for seen group ids */
 	seen = GDKzalloc(((ngrp + 31) / 32) * sizeof(int));
@@ -410,31 +733,6 @@ dosum(const void *restrict values, int nonil, oid seqb, BUN start, BUN end,
 		break;
 	}
 #endif
-	case TYPE_flt: {
-		flt *restrict sums = (flt *) results;
-		switch (tp1) {
-		case TYPE_flt:
-			AGGR_SUM(flt, flt);
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	}
-	case TYPE_dbl: {
-		dbl *restrict sums = (dbl *) results;
-		switch (tp1) {
-		case TYPE_flt:
-			AGGR_SUM(flt, dbl);
-			break;
-		case TYPE_dbl:
-			AGGR_SUM(dbl, dbl);
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	}
 	default:
 		goto unsupported;
 	}
