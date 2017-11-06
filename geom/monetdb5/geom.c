@@ -2095,9 +2095,7 @@ geom_epilogue(void *ret)
 static int
 mbr_isnil(const mbr *m)
 {
-	if (m == NULL || is_flt_nil(m->xmin) || is_flt_nil(m->ymin) || is_flt_nil(m->xmax) || is_flt_nil(m->ymax))
-		return 1;
-	return 0;
+	return (m == NULL || is_flt_nil(m->xmin) || is_flt_nil(m->ymin) || is_flt_nil(m->xmax) || is_flt_nil(m->ymax));
 }
 
 /* returns the size of variable-sized atom wkb */
