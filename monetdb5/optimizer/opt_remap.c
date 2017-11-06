@@ -23,6 +23,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module s
 	char buf[1024];
 	int i, retc = pci->retc;
 	InstrPtr p;
+	str bufName, fcnName;
 
 	(void) stk;
 	mod = VALget(&getVar(mb, getArg(pci, retc+0))->value);
@@ -35,7 +36,12 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module s
 #endif
 
 	snprintf(buf,1024,"bat%s",mod);
-	p= newInstruction(mb, putName(buf), putName(fcn));
+	bufName = putName(buf);
+	fcnName = putName(fcn);
+	if(bufName == NULL || fcnName == NULL)
+		return 0;
+
+	p= newInstruction(mb, bufName, fcnName);
 
 	for(i=0; i<pci->retc; i++)
 		if (i<1)

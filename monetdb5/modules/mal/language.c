@@ -180,18 +180,26 @@ CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *code = getArgReference_str(stk,pci,3);
 	str *help = getArgReference_str(stk,pci,4);
 	InstrPtr sig;
-	str msg;
+	str msg, fcnName, modName, ahelp;
 
 	msg= compileString(&sym, cntxt,*code);
 	if( sym) {
 		mnstr_printf(cntxt->fdout,"#register FUNCTION %s.%s\n",
 			getModuleId(sym->def->stmt[0]), getFunctionId(sym->def->stmt[0]));
 		mb= sym->def;
+		fcnName = putName(*fcn);
+		modName = putName(*mod);
+		ahelp = GDKstrdup(*help);
+		if(fcnName == NULL || modName == NULL || help == NULL) {
+			freeSymbol(sym);
+			GDKfree(ahelp);
+			throw(MAL, "language.register", MAL_MALLOC_FAIL);
+		}
 		if( help)
-			mb->help= GDKstrdup(*help);
+			mb->help= ahelp;
 		sig= getSignature(sym);
-		sym->name= putName(*fcn);
-		setModuleId(sig, putName(*mod));
+		sym->name= fcnName;
+		setModuleId(sig, modName);
 		setFunctionId(sig, sym->name);
 		insertSymbol(findModule(cntxt->nspace, getModuleId(sig)), sym);
 	}
