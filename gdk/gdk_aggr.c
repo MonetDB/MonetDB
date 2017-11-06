@@ -215,6 +215,7 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 	volatile double lo, hi;
 	double twopow = pow((double) FLT_RADIX, (double) (DBL_MAX_EXP - 1));
 	BUN nils = 0;
+	volatile flt f;
 
 	ALGODEBUG fprintf(stderr, "#%s: floating point summation\n", func);
 	/* we only deal with the two floating point types */
@@ -362,14 +363,16 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 					pergroup[grp].partials = NULL;
 					x = 2 * (hi + y);
 					if (tp2 == TYPE_flt) {
-						if (x > GDK_flt_max ||
-						    x < GDK_flt_min) {
+						f = (flt) x;
+						if (isinf(f) ||
+						    isnan(f) ||
+						    is_flt_nil(f)) {
 							if (abort_on_error)
 								goto overflow;
 							((flt *) results)[grp] = flt_nil;
 							nils++;
 						} else
-							((flt *) results)[grp] = (flt) x;
+							((flt *) results)[grp] = f;
 					} else if (is_dbl_nil(x)) {
 						if (abort_on_error)
 							goto overflow;
@@ -432,13 +435,14 @@ dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
 		GDKfree(pergroup[grp].partials);
 		pergroup[grp].partials = NULL;
 		if (tp2 == TYPE_flt) {
-			if (hi > GDK_flt_max || hi < GDK_flt_min) {
+			f = (flt) hi;
+			if (isinf(f) || isnan(f) || is_flt_nil(f)) {
 				if (abort_on_error)
 					goto overflow;
 				((flt *) results)[grp] = flt_nil;
 				nils++;
 			} else
-				((flt *) results)[grp] = (flt) hi;
+				((flt *) results)[grp] = f;
 		} else if (is_dbl_nil(hi)) {
 			if (abort_on_error)
 				goto overflow;
