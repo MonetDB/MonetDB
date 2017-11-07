@@ -41,6 +41,8 @@
  * return BUN_NONE, and the other functions return the location of the
  * next larger value, or BATcount if the value being searched for is
  * larger (smaller if reverse sorted) than any in the column.
+ *
+ * Note that the NIL value is considered smaller than all other values.
  */
 
 #include "monetdb_config.h"

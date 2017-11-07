@@ -5806,9 +5806,14 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, int incr1,		\
 			dst[k] = TYPE3##_nil;				\
 			nils++;						\
 		} else {						\
-			FLTDBLMUL_CHECK(TYPE1, lft[i], TYPE2, rgt[j],	\
-					TYPE3, dst[k], max,		\
-					ON_OVERFLOW(TYPE1, TYPE2, "*")); \
+			/* only check for overflow, not for underflow */ \
+			dst[k] = (TYPE3) (lft[i] * rgt[j]);		\
+			if (isinf(dst[k]) || ABSOLUTE(dst[k]) > max) {	\
+				if (abort_on_error)			\
+					ON_OVERFLOW(TYPE1, TYPE2, "*");	\
+				dst[k] = TYPE3##_nil;			\
+				nils++;					\
+			}						\
 		}							\
 	}								\
 	CANDLOOP(dst, k, TYPE3##_nil, end, cnt);			\

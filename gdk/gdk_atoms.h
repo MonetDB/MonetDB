@@ -90,7 +90,7 @@ gdk_export size_t escapedStr(char *dst, const char *src, size_t dstlen, const ch
 #define GDK_int_max INT_MAX
 #define GDK_int_min (INT_MIN+1)
 #define GDK_flt_max ((flt) FLT_MAX)
-#define GDK_flt_min (-3.4028233e+38F) /* nextafterf(-FLT_MAX,0) */
+#define GDK_flt_min ((flt) -FLT_MAX)
 #define GDK_lng_max ((lng) LLONG_MAX)
 #define GDK_lng_min ((lng) LLONG_MIN+1)
 #ifdef HAVE_HGE
@@ -99,7 +99,7 @@ gdk_export size_t escapedStr(char *dst, const char *src, size_t dstlen, const ch
 #define GDK_hge_min (-GDK_hge_max)
 #endif
 #define GDK_dbl_max ((dbl) DBL_MAX)
-#define GDK_dbl_min (-1.7976931348623155e+308) /* nextafter(-DBL_MAX,0) */
+#define GDK_dbl_min ((dbl) -DBL_MAX)
 /* GDK_oid_max see below */
 #define GDK_oid_min ((oid) 0)
 /* representation of the nil */
@@ -136,9 +136,19 @@ gdk_export const ptr ptr_nil;
 #define is_hge_nil(v)	((v) == hge_nil)
 #endif
 #define is_oid_nil(v)	((v) == oid_nil)
-#define is_flt_nil(v)	((v) == flt_nil)
-#define is_dbl_nil(v)	((v) == dbl_nil)
+#define is_flt_nil(v)	isnan(v)
+#define is_dbl_nil(v)	isnan(v)
 #define is_bat_nil(v)	((v) == bat_nil || (v) == 0)
+
+#if defined(_MSC_VER) && defined(__INTEL_COMPILER)
+#include <mathimf.h>
+#else
+#include <math.h>
+#endif
+
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && _MSC_VER < 1800
+#define isnan(x)	_isnan(x)
+#endif
 
 /*
  * @- Derived types

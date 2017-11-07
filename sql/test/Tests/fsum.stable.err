@@ -39,11 +39,7 @@ MAPI  = (monetdb) /var/tmp/mtest-21571/.s.monetdb.31912
 QUERY = select sum(val) from t where gid = 21;
 ERROR = !overflow in calculation.
 CODE  = 22003
-MAPI  = (monetdb) /var/tmp/mtest-21571/.s.monetdb.31912
-QUERY = select sum(val) from t where gid = 23;
-ERROR = !overflow in calculation.
-CODE  = 22003
-MAPI  = (monetdb) /var/tmp/mtest-21571/.s.monetdb.31912
+MAPI  = (monetdb) /var/tmp/mtest-24476/.s.monetdb.36041
 QUERY = select sum(val) from t where gid = 24;
 ERROR = !overflow in calculation.
 CODE  = 22003
@@ -79,19 +75,11 @@ MAPI  = (monetdb) /var/tmp/mtest-21571/.s.monetdb.31912
 QUERY = select sum(val) from t where gid = 34;
 ERROR = !overflow in calculation.
 CODE  = 22003
-MAPI  = (monetdb) /var/tmp/mtest-21571/.s.monetdb.31912
-QUERY = select sum(val) from t where gid = 35;
-ERROR = !overflow in calculation.
-CODE  = 22003
-MAPI  = (monetdb) /var/tmp/mtest-21571/.s.monetdb.31912
+MAPI  = (monetdb) /var/tmp/mtest-24476/.s.monetdb.36041
 QUERY = select sum(val) from t where gid = 36;
 ERROR = !overflow in calculation.
 CODE  = 22003
-MAPI  = (monetdb) /var/tmp/mtest-21571/.s.monetdb.31912
-QUERY = select sum(val) from t where gid = 37;
-ERROR = !overflow in calculation.
-CODE  = 22003
-MAPI  = (monetdb) /var/tmp/mtest-21571/.s.monetdb.31912
+MAPI  = (monetdb) /var/tmp/mtest-24476/.s.monetdb.36041
 QUERY = select sum(val) from t where gid = 38;
 ERROR = !overflow in calculation.
 CODE  = 22003

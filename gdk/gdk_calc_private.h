@@ -257,17 +257,3 @@
 	} while (0)
 #endif	/* HAVE___BUILTIN_ADD_OVERFLOW */
 #endif	/* HAVE_HGE */
-
-#define FLTDBLMUL_CHECK(TYPE1, lft, TYPE2, rgt, TYPE3, dst, max, on_overflow) \
-	do {								\
-		/* only check for overflow, not for underflow */	\
-		if (ABSOLUTE(lft) > 1 &&				\
-		    (max) / ABSOLUTE(lft) < ABSOLUTE(rgt)) {		\
-			if (abort_on_error)				\
-				on_overflow;				\
-			(dst) = TYPE3##_nil;				\
-			nils++;						\
-		} else {						\
-			(dst) = (TYPE3) (lft) * (rgt);			\
-		}							\
-	} while (0)

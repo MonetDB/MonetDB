@@ -251,8 +251,8 @@ ATOMisdescendant(int tpe, int parent)
 const bte bte_nil = GDK_bte_min-1;
 const sht sht_nil = GDK_sht_min-1;
 const int int_nil = GDK_int_min-1;
-const flt flt_nil = -FLT_MAX;
-const dbl dbl_nil = -DBL_MAX;
+const flt flt_nil = NAN;
+const dbl dbl_nil = NAN;
 const lng lng_nil = GDK_lng_min-1;
 #ifdef HAVE_HGE
 const hge hge_nil = GDK_hge_min-1;
