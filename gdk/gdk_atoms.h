@@ -106,8 +106,15 @@ gdk_export size_t escapedStr(char *dst, const char *src, size_t dstlen, const ch
 gdk_export const bte bte_nil;
 gdk_export const sht sht_nil;
 gdk_export const int int_nil;
-gdk_export const flt flt_nil;
-gdk_export const dbl dbl_nil;
+#ifdef __INTEL_COMPILER
+/* stupid Intel compiler uses a value that cannot be used in an
+ * initializer for NAN, so we have to initialize at run time */
+#define NANCONST
+#else
+#define NANCONST const
+#endif
+gdk_export NANCONST flt flt_nil;
+gdk_export NANCONST dbl dbl_nil;
 gdk_export const lng lng_nil;
 #ifdef HAVE_HGE
 gdk_export const hge hge_nil;
