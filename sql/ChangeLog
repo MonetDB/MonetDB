@@ -1,6 +1,11 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue Nov  7 2017 Sjoerd Mullender <sjoerd@acm.org>
+- The internal NULL representation of the REAL (FLOAT) and DOUBLE
+  types was changed from the smallest representable finite value to NaN
+  (not-a-number).
+
 * Tue Aug  1 2017 Sjoerd Mullender <sjoerd@acm.org>
 - Lots of changes to streamline the internal error handling.
   In principle, all errors should now include a SQLSTATE error code
