@@ -859,7 +859,8 @@ typedef struct {
 #define GDKLIBRARY_NOKEY	061034	/* nokey values can't be trusted */
 #define GDKLIBRARY_BADEMPTY	061035	/* possibility of duplicate empty str */
 #define GDKLIBRARY_TALIGN	061036	/* talign field in BBP.dir */
-#define GDKLIBRARY		061037
+#define GDKLIBRARY_NIL_NAN	061037	/* flt/dbl NIL not represented by NaN */
+#define GDKLIBRARY		061040
 
 typedef struct BAT {
 	/* static bat properties */
