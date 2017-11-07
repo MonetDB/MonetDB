@@ -1842,6 +1842,10 @@ idle_manager(void)
 		}
 
 		s = sql_session_create(gtrans->stk, 0);
+		if(!s) {
+			MT_lock_unset(&bs_lock);
+			continue;
+		}
 		sql_trans_begin(s);
 		if (store_vacuum( s->tr ) == 0)
 			sql_trans_commit(s->tr);

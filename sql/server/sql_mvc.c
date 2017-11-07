@@ -561,6 +561,13 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	store_lock();
 	m->session = sql_session_create(stk, 1 /*autocommit on*/);
 	store_unlock();
+	if(!m->session) {
+		qc_destroy(m->qc);
+		_DELETE(m->vars);
+		_DELETE(m->args);
+		_DELETE(m);
+		return NULL;
+	}
 
 	m->type = Q_PARSE;
 	m->pushdown = 1;
