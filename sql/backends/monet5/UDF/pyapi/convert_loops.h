@@ -282,6 +282,24 @@
 		}                                                                      \
 	}
 
+
+static gdk_return
+convert_and_append(BAT* b, const char* text, bit force) {
+	if (b->ttype == TYPE_str) {
+		return BUNappend(b, text, force);	
+	} else if (text == str_nil) {
+		return BUNappend(b, BATatoms[b->ttype].atomNull, force);
+	} else {
+		void* element = NULL;
+		int len = 0;
+
+		BATatoms[b->ttype].atomFromStr(text, &len, &element);
+		gdk_return ret = BUNappend(b, element, force);
+		GDKfree(element);
+		return ret;
+	}
+}
+
 // This #define is for converting a numeric numpy array into a string BAT.
 // 'conv' is a function that turns a numeric value of type 'mtpe' to a char*
 // array.
@@ -291,7 +309,7 @@
 			snprintf(utf8_string, utf8string_minlength, fmt,                   \
 					 *((mtpe *)&data[(index_offset * ret->count + iu) *        \
 									 ret->memory_size]));                      \
-			if (BUNappend(bat, utf8_string, FALSE) != GDK_SUCCEED) {           \
+			if (convert_and_append(bat, utf8_string, FALSE) != GDK_SUCCEED) {           \
 				msg =                                                          \
 					createException(MAL, "pyapi.eval", "BUNappend failed.\n"); \
 				goto wrapup;                                                   \
@@ -301,7 +319,7 @@
 		for (iu = 0; iu < ret->count; iu++) {                                  \
 			if (mask[index_offset * ret->count + iu] == TRUE) {                \
 				bat->tnil = 1;                                                 \
-				if (BUNappend(bat, str_nil, FALSE) != GDK_SUCCEED) {           \
+				if (convert_and_append(bat, str_nil, FALSE) != GDK_SUCCEED) {           \
 					msg = createException(MAL, "pyapi.eval",                   \
 										  "BUNappend failed.\n");              \
 					goto wrapup;                                               \
@@ -310,7 +328,7 @@
 				snprintf(utf8_string, utf8string_minlength, fmt,               \
 						 *((mtpe *)&data[(index_offset * ret->count + iu) *    \
 										 ret->memory_size]));                  \
-				if (BUNappend(bat, utf8_string, FALSE) != GDK_SUCCEED) {       \
+				if (convert_and_append(bat, utf8_string, FALSE) != GDK_SUCCEED) {       \
 					msg = createException(MAL, "pyapi.eval",                   \
 										  "BUNappend failed.\n");              \
 					goto wrapup;                                               \
@@ -434,7 +452,7 @@
 				if (mask != NULL &&                                            \
 					(mask[index_offset * ret->count + iu]) == TRUE) {          \
 					b->tnil = 1;                                               \
-					if (BUNappend(b, str_nil, FALSE) != GDK_SUCCEED) {         \
+					if (convert_and_append(b, str_nil, FALSE) != GDK_SUCCEED) {         \
 						msg = createException(MAL, "pyapi.eval",               \
 											  "BUNappend failed.\n");          \
 						goto wrapup;                                           \
@@ -450,7 +468,7 @@
 											  "object.\n");                    \
 						goto wrapup;                                           \
 					}                                                          \
-					if (BUNappend(b, utf8_string, FALSE) != GDK_SUCCEED) {     \
+					if (convert_and_append(b, utf8_string, FALSE) != GDK_SUCCEED) {     \
 						msg = createException(MAL, "pyapi.eval",               \
 											  "BUNappend failed.\n");          \
 						goto wrapup;                                           \
@@ -463,7 +481,7 @@
 				if (mask != NULL &&                                            \
 					(mask[index_offset * ret->count + iu]) == TRUE) {          \
 					b->tnil = 1;                                               \
-					if (BUNappend(b, str_nil, FALSE) != GDK_SUCCEED) {         \
+					if (convert_and_append(b, str_nil, FALSE) != GDK_SUCCEED) {         \
 						msg = createException(MAL, "pyapi.eval",               \
 											  "BUNappend failed.\n");          \
 						goto wrapup;                                           \
@@ -474,7 +492,7 @@
 						(const Py_UNICODE                                      \
 							 *)(&data[(index_offset * ret->count + iu) *       \
 									  ret->memory_size]));                     \
-					if (BUNappend(b, utf8_string, FALSE) != GDK_SUCCEED) {     \
+					if (convert_and_append(b, utf8_string, FALSE) != GDK_SUCCEED) {     \
 						msg = createException(MAL, "pyapi.eval",               \
 											  "BUNappend failed.\n");          \
 						goto wrapup;                                           \
