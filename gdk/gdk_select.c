@@ -2399,9 +2399,11 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 #endif
 			case TYPE_flt: {
 				flt vl, vh;
-				if (is_flt_nil((vl = *(flt *) vrl)))
+				vl = *(flt *) vrl;
+				if (is_flt_nil(vl))
 					continue;
-				if (is_flt_nil((vh = *(flt *) vrh)))
+				vh = *(flt *) vrh;
+				if (is_flt_nil(vh))
 					continue;
 				if (!li) {
 					if (vl == MAXVALUEflt)
@@ -2431,9 +2433,11 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 			}
 			case TYPE_dbl: {
 				dbl vl, vh;
-				if (is_dbl_nil((vl = *(dbl *) vrl)))
+				vl = *(dbl *) vrl;
+				if (is_dbl_nil(vl))
 					continue;
-				if (is_dbl_nil((vh = *(dbl *) vrh)))
+				vh = *(dbl *) vrh;
+				if (is_dbl_nil(vh))
 					continue;
 				if (!li) {
 					if (vl == MAXVALUEdbl)
