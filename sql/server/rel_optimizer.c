@@ -3729,7 +3729,7 @@ rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel)
 				set_has_nil(e);
 				e = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
 				ne = exp_aggr1(sql->sa, e, a, need_distinct(e), 1, e->card, 1);
-				if (cnt)
+				if (0 && cnt)
 					ne->p = prop_create(sql->sa, PROP_COUNT, ne->p);
 			} else {
 				ne = exp_copy(sql->sa, oa);
@@ -5387,7 +5387,7 @@ exps_remove_dictexps(mvc *sql, list *exps, sql_rel *r)
 static sql_rel *
 rel_remove_join(int *changes, mvc *sql, sql_rel *rel)
 {
-	if (is_join(rel->op) && !is_outerjoin(rel->op)) {
+	if (is_join(rel->op) && !is_outerjoin(rel->op) && 0) {
 		sql_rel *l = rel->l;
 		sql_rel *r = rel->r;
 		int lconst = 0, rconst = 0;
@@ -9153,11 +9153,56 @@ _rel_optimizer(mvc *sql, sql_rel *rel, int *g_changes, int level)
 	return rel;
 }
 
+static void
+rel_reset_subquery(sql_rel *rel)
+{
+	if (!rel)
+		return;
+
+	rel->subquery = 0;
+	switch(rel->op){
+	case op_basetable:
+	case op_table:
+	case op_ddl:
+
+	case op_insert:
+	case op_update:
+	case op_delete:
+		break;
+	case op_select:
+	case op_topn:
+	case op_sample:
+
+	case op_project:
+	case op_groupby:
+		if (rel->l)
+			rel_reset_subquery(rel->l);
+		break;
+	case op_join:
+	case op_left:
+	case op_right:
+	case op_full:
+	case op_apply:
+	case op_semi:
+	case op_anti:
+
+	case op_union:
+	case op_inter:
+	case op_except:
+		if (rel->l)
+			rel_reset_subquery(rel->l);
+		if (rel->r)
+			rel_reset_subquery(rel->r);
+	}
+
+}
+
 sql_rel *
 rel_optimizer(mvc *sql, sql_rel *rel) 
 {
 	int level = 0, changes = 1;
 
+	rel_reset_subquery(rel);
 	for( ;rel && level < 20 && changes; level++) 
 		rel = _rel_optimizer(sql, rel, &changes, level);
 	return rel;

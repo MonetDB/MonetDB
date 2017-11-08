@@ -1,0 +1,44 @@
+stderr of test 'sqlsmith.Bug-6459` in directory 'sql/test/mergetables` itself:
+
+
+# 18:45:50 >  
+# 18:45:50 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30960" "--set" "mapi_usock=/var/tmp/mtest-30179/.s.monetdb.30960" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_mergetables"
+# 18:45:50 >  
+
+# builtin opt 	gdk_dbpath = /home/niels/scratch/rc-monetdb/Linux-x86_64/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30960
+# cmdline opt 	mapi_usock = /var/tmp/mtest-30179/.s.monetdb.30960
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_mergetables
+# cmdline opt 	gdk_debug = 536870922
+#WARNING To speedup aggr.exist a bulk operator implementation is needed
+#    X_621:bat[:bit] := mal.multiplex("aggr":str, "exist":str, X_609:bat[:hge]);
+#WARNING To speedup aggr.exist a bulk operator implementation is needed
+#    X_628:bat[:bit] := mal.multiplex("aggr":str, "exist":str, X_609:bat[:hge]);
+#WARNING To speedup aggr.exist a bulk operator implementation is needed
+#    X_996:bat[:bit] := mal.multiplex("aggr":str, "exist":str, X_984:bat[:sht]);
+#WARNING To speedup aggr.exist a bulk operator implementation is needed
+#    X_1003:bat[:bit] := mal.multiplex("aggr":str, "exist":str, X_984:bat[:sht]);
+#WARNING To speedup aggr.exist a bulk operator implementation is needed
+#    X_478:bat[:bit] := mal.multiplex("aggr":str, "exist":str, X_467:bat[:int]);
+
+# 18:45:51 >  
+# 18:45:51 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30179" "--port=30960"
+# 18:45:51 >  
+
+
+# 18:45:51 >  
+# 18:45:51 >  "Done."
+# 18:45:51 >  
+
