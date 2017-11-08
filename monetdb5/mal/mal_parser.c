@@ -499,7 +499,7 @@ cstToken(Client cntxt, ValPtr cst)
 				parseError(cntxt, GDKerrbuf);
 				return i;
 			}
-			if (l == lng_nil || l < 0
+			if (is_lng_nil(l) || l < 0
 #if SIZEOF_OID < SIZEOF_LNG
 				|| l > GDK_oid_max
 #endif
@@ -574,17 +574,17 @@ handleInts:
 			if (hgeFromStr(CURRENT(cntxt), &len, &pval) < 0)
 				l = hge_nil;
 
-			if ((hge) GDK_int_min < l && l <= (hge) GDK_int_max) {
+			if ((hge) GDK_int_min <= l && l <= (hge) GDK_int_max) {
 				cst->vtype = TYPE_int;
 				cst->val.ival = (int) l;
 			} else
-			if ((hge) GDK_lng_min < l && l <= (hge) GDK_lng_max) {
+			if ((hge) GDK_lng_min <= l && l <= (hge) GDK_lng_max) {
 				cst->vtype = TYPE_lng;
 				cst->val.lval = (lng) l;
 			} else {
 				cst->vtype = TYPE_hge;
 				cst->val.hval = l;
-				if (l == hge_nil)
+				if (is_hge_nil(l))
 					parseError(cntxt, "convertConstant: integer parse error\n");
 			}
 #else
@@ -593,13 +593,13 @@ handleInts:
 			if (lngFromStr(CURRENT(cntxt), &len, &pval) < 0)
 				l = lng_nil;
 
-			if ((lng) GDK_int_min < l && l <= (lng) GDK_int_max) {
+			if ((lng) GDK_int_min <= l && l <= (lng) GDK_int_max) {
 				cst->vtype = TYPE_int;
 				cst->val.ival = (int) l;
 			} else {
 				cst->vtype = TYPE_lng;
 				cst->val.lval = l;
-				if (l == lng_nil)
+				if (is_lng_nil(l))
 					parseError(cntxt, "convertConstant: integer parse error\n");
 			}
 #endif

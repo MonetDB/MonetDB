@@ -822,7 +822,7 @@ mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	if (start == lng_nil)
+	if (is_lng_nil(start))
 		throw(SQL, "sql.restart", SQLSTATE(HY050) "Cannot (re)start sequence %s.%s with NULL",sname,seqname);
 	s = mvc_bind_schema(m, sname);
 	if (s) {
@@ -3123,7 +3123,7 @@ SQLcst_alpha_cst(dbl *res, const dbl *decl, const dbl *theta)
 {
 	dbl s, c1, c2;
 	char *msg = MAL_SUCCEED;
-	if (*decl == dbl_nil || *theta == dbl_nil) {
+	if (is_dbl_nil(*decl) || is_dbl_nil(*theta)) {
 		*res = dbl_nil;
 	} else if (fabs(*decl) + *theta > 89.9) {
 		*res = 180.0;
@@ -3150,7 +3150,7 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 	dbl s, c1, c2, r;
 	char *msg = NULL;
 
-	if (*theta == dbl_nil) {
+	if (is_dbl_nil(*theta)) {
 		throw(SQL, "SQLbat_alpha", SQLSTATE(42000) "Parameter theta should not be nil");
 	}
 	if ((b = BATdescriptor(*decl)) == NULL) {
@@ -3165,7 +3165,7 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 	s = sin(radians(*theta));
 	BATloop(b, p, q) {
 		dbl d = *(dbl *) BUNtail(bi, p);
-		if (d == dbl_nil)
+		if (is_dbl_nil(d))
 			r = dbl_nil;
 		else if (fabs(d) + *theta > 89.9)
 			r = 180.0;
@@ -3207,7 +3207,7 @@ SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *theta)
 		dbl d = *decl;
 		dbl *theta = (dbl *) BUNtail(bi, p);
 
-		if (d == dbl_nil)
+		if (is_dbl_nil(d))
 			r = dbl_nil;
 		else if (fabs(d) + *theta > 89.9)
 			r = (dbl) 180.0;

@@ -22,8 +22,8 @@ addtable
 
 mergedb_create
 HAVE_NETCDF&HAVE_SAMTOOLS?mergedb.Bug-6820
-HAVE_NETCDF?sqlsmith.Bug-6426
+HAVE_NETCDF&HAVE_SAMTOOLS?sqlsmith.Bug-6426
 HAVE_NETCDF?sqlsmith.Bug-6451
 HAVE_NETCDF?sqlsmith.Bug-6453
-HAVE_NETCDF?sqlsmith.Bug-6455
+HAVE_NETCDF&HAVE_SAMTOOLS?sqlsmith.Bug-6455
 mergedb_drop

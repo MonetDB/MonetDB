@@ -1937,9 +1937,14 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
             elif cond.startswith('THREADS='):
-                if env['GDK_NR_THREADS'] == '0':
+                if negate:
+                    reason = "impossible combination of THREADS= and negation"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+                elif env['GDK_NR_THREADS'] == '0' or \
+                   int(env['TST_THREADS']) >= int(cond[8:]):
                     threads = cond[8:]
-                elif (env['TST_THREADS'] == cond[8:]) == negate:
+                elif env['TST_THREADS'] != cond[8:]:
                     reason = "as number of threads is wrong"
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break

@@ -4449,11 +4449,11 @@ literal:
 		  lng value, *p = &value;
 		  sql_subtype t;
 
-		  if (lngFromStr($1, &len, &p) < 0 || value == lng_nil)
+		  if (lngFromStr($1, &len, &p) < 0 || is_lng_nil(value))
 		  	err = 2;
 
 		  if (!err) {
-		    if ((value > GDK_lng_min && value <= GDK_lng_max))
+		    if ((value >= GDK_lng_min && value <= GDK_lng_max))
 #if SIZEOF_OID == SIZEOF_INT
 		  	  sql_find_subtype(&t, "oid", 31, 0 );
 #else
@@ -4488,10 +4488,10 @@ literal:
 		  sql_subtype t;
 
 #ifdef HAVE_HGE
-		  if (hgeFromStr($1, &len, &p) < 0 || value == hge_nil)
+		  if (hgeFromStr($1, &len, &p) < 0 || is_hge_nil(value))
 		  	err = 2;
 #else
-		  if (lngFromStr($1, &len, &p) < 0 || value == lng_nil)
+		  if (lngFromStr($1, &len, &p) < 0 || is_lng_nil(value))
 		  	err = 2;
 #endif
 
@@ -4508,16 +4508,16 @@ literal:
 		       (bits == 8 || bits == 16 || bits == 32 || bits == 64))
 				bits++;
 		
-		    if (value > GDK_bte_min && value <= GDK_bte_max)
+		    if (value >= GDK_bte_min && value <= GDK_bte_max)
 		  	  sql_find_subtype(&t, "tinyint", bits, 0 );
-		    else if (value > GDK_sht_min && value <= GDK_sht_max)
+		    else if (value >= GDK_sht_min && value <= GDK_sht_max)
 		  	  sql_find_subtype(&t, "smallint", bits, 0 );
-		    else if (value > GDK_int_min && value <= GDK_int_max)
+		    else if (value >= GDK_int_min && value <= GDK_int_max)
 		  	  sql_find_subtype(&t, "int", bits, 0 );
-		    else if (value > GDK_lng_min && value <= GDK_lng_max)
+		    else if (value >= GDK_lng_min && value <= GDK_lng_max)
 		  	  sql_find_subtype(&t, "bigint", bits, 0 );
 #ifdef HAVE_HGE
-		    else if (value > GDK_hge_min && value <= GDK_hge_max && have_hge)
+		    else if (value >= GDK_hge_min && value <= GDK_hge_max && have_hge)
 		  	  sql_find_subtype(&t, "hugeint", bits, 0 );
 #endif
 		    else
@@ -4562,7 +4562,7 @@ literal:
 
 			errno = 0;
 			val = strtod($1,&p);
-			if (p == $1 || val == dbl_nil || (errno == ERANGE && (val < -1 || val > 1))) {
+			if (p == $1 || is_dbl_nil(val) || (errno == ERANGE && (val < -1 || val > 1))) {
 				char *msg = sql_message(SQLSTATE(22003) "Double value too large or not a number (%s)", $1);
 
 				yyerror(m, msg);
@@ -4581,7 +4581,7 @@ literal:
 
 		  errno = 0;
  		  val = strtod($1,&p);
-		  if (p == $1 || val == dbl_nil || (errno == ERANGE && (val < -1 || val > 1))) {
+		  if (p == $1 || is_dbl_nil(val) || (errno == ERANGE && (val < -1 || val > 1))) {
 			char *msg = sql_message(SQLSTATE(22003) "Double value too large or not a number (%s)", $1);
 
 			yyerror(m, msg);
@@ -5406,7 +5406,7 @@ intval:
 		      tpe->type->localtype == TYPE_sht ||
 		      tpe->type->localtype == TYPE_bte ) {
 			lng sgn = stack_get_number(m, name);
-			assert((lng) GDK_int_min < sgn && sgn <= (lng) GDK_int_max);
+			assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
 			$$ = (int) sgn;
 		  } else {
 			char *msg = sql_message(SQLSTATE(22000) "Constant (%s) has wrong type (number expected)", $1);

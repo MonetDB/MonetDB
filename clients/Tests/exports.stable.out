@@ -378,7 +378,7 @@ const bte bte_nil;
 int closedir(DIR *dir);
 ssize_t dblFromStr(const char *src, size_t *len, dbl **dst);
 ssize_t dblToStr(str *dst, size_t *len, const dbl *src);
-const dbl dbl_nil;
+NANCONST dbl dbl_nil;
 char *dirname(char *path);
 int dlclose(void *handle);
 char *dlerror(void);
@@ -388,7 +388,7 @@ size_t escapedStr(char *dst, const char *src, size_t dstlen, const char *sep1, c
 size_t escapedStrlen(const char *src, const char *sep1, const char *sep2, int quote);
 ssize_t fltFromStr(const char *src, size_t *len, flt **dst);
 ssize_t fltToStr(str *dst, size_t *len, const flt *src);
-const flt flt_nil;
+NANCONST flt flt_nil;
 geomcatalogfix_fptr geomcatalogfix_get(void);
 void geomcatalogfix_set(geomcatalogfix_fptr);
 geomsqlfix_fptr geomsqlfix_get(void);

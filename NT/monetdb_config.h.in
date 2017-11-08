@@ -33,6 +33,12 @@
 #define _CRT_SECURE_NO_DEPRECATE 1
 #endif
 
+/* include Intel's mathimf.h early, before any other include files
+ * might try to include math.h */
+#ifdef __INTEL_COMPILER
+#include <mathimf.h>
+#endif
+
 #include <malloc.h>
 
 #if defined(_DEBUG) && defined(_CRTDBG_MAP_ALLOC)
@@ -229,11 +235,6 @@
 /* Define to 1 if you have the <io.h> header file. */
 #define HAVE_IO_H 1
 
-/* Define to 1 if you have the `isinf' function. */
-#if !defined(_MSC_VER) || _MSC_VER > 1600
-#define HAVE_ISINF 1
-#endif
-
 /* Define to 1 if you have the <kvm.h> header file. */
 /* #undef HAVE_KVM_H */
 
@@ -361,7 +362,7 @@
 /* #undef HAVE_NL_LANGINFO */
 
 /* Define to 1 if you have the `nextafterf' function. */
-#if !defined(_MSC_VER) || _MSC_VER > 1600
+#if defined(__INTEL_COMPILER) || !defined(_MSC_VER) || _MSC_VER > 1600
 #define HAVE_NEXTAFTERF 1
 #endif
 
@@ -422,7 +423,7 @@
 /* #undef HAVE_RESTRICT */
 
 /* Define to 1 if you have the `round' function. */
-#if !defined(_MSC_VER) || _MSC_VER > 1600
+#if defined(__INTEL_COMPILER) || !defined(_MSC_VER) || _MSC_VER > 1600
 #define HAVE_ROUND 1
 #endif
 

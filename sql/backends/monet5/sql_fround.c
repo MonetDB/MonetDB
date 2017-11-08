@@ -50,6 +50,7 @@ trunc(double val)
 #define CONCAT_3(a, b, c)	a##b##c
 
 #define NIL(t)			CONCAT_2(t, _nil)
+#define ISNIL(t)		CONCAT_3(is_, t, _nil)
 #define TPE(t)			CONCAT_2(TYPE_, t)
 #define GDKmin(t)		CONCAT_3(GDK_, t, _min)
 #define GDKmax(t)		CONCAT_3(GDK_, t, _max)
