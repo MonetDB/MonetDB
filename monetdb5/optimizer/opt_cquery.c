@@ -45,14 +45,12 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, j, k, fnd, limit, slimit, extra_stmts = 0;
 	InstrPtr r, p, *old;
-	int *alias;
+	int *alias = NULL;
 	str schemas[MAXBSKTOPT];
 	str tables[MAXBSKTOPT];
 	int input[MAXBSKTOPT]= {0};
 	int output[MAXBSKTOPT]= {0};
-	int btop=0, lastmvc=0;
-	int noerror=0;
-	int mvcseen = 0;
+	int btop=0, lastmvc=0, lastrealmvc=0, manymvc=0, retseen = 0, noerror=0, mvcseen = 0;
 	int cq= strncmp(getFunctionId(getInstrPtr(mb,0)),"cq",2) == 0;
 	char buf[256];
 	lng usec = GDKusec();
@@ -138,17 +136,6 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			lastmvc = getArg(p,0);
 		if( getModuleId(p)== cqueryRef && getFunctionId(p) == tumbleRef )
 			lastmvc = getArg(p,1);
-		/*if( getModuleId(p) == sqlRef && getFunctionId(p)== mvcRef ){
-			if( mvcseen){
-				extra_stmts++;
-			}
-			mvcseen=1;
-			extra_stmts += 2;
-		}
-		if( getModuleId(p)== cqueryRef && getFunctionId(p)==errorRef )
-			noerror++;
-		if( p->token == ENDsymbol && btop > 0 && noerror==0 )
-			extra_stmts += 2;*/
 	}
 #ifdef DEBUG_OPT_CQUERY
 	mnstr_printf(cntxt->fdout, "#cquery optimizer started with %d streams, mvc %d\n", btop,lastmvc);
@@ -162,12 +149,12 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (alias == 0)
 		return MAL_SUCCEED;
 
-	if (newMalBlkStmt(mb, slimit + extra_stmts) < 0)
+	if (newMalBlkStmt(mb, slimit + extra_stmts) < 0) {
+		GDKfree(alias);
 		return MAL_SUCCEED;
+	}
 
 	pushInstruction(mb, old[0]);
-	/*mvcseen = 0;
-	noerror = 0;*/
 	for (i = 1; i < limit; i++)
 		if (old[i]) {
 			p = old[i];
@@ -178,18 +165,8 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			if(getModuleId(p) == sqlRef && getFunctionId(p)== mvcRef){
 				pushInstruction(mb,p);
-				lastmvc = getArg(p,0);
-				// watch out for second transaction in same block
-				if( mvcseen){
-					// unlock the tables
-					for( j=btop-1; j>= 0; j--){
-						r= newStmt(mb,basketRef,unlockRef);
-						r= pushArgument(mb,r,lastmvc);
-						r= pushStr(mb,r, schemas[j]);
-						r= pushStr(mb,r, tables[j]);
-						lastmvc= getArg(r,0);
-					}
-				}
+				lastmvc = lastrealmvc = getArg(p,0);
+				manymvc++;
 				// register and lock all baskets used
 				for( j=0; j<btop; j++){
 					p= newStmt(mb,basketRef,registerRef);
@@ -199,7 +176,7 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					p= pushInt(mb,p, output[j]);
 					alias[lastmvc] = getArg(p,0);
 					lastmvc = getArg(p,0);
-	
+
 					p= newStmt(mb,basketRef,lockRef);
 					p= pushArgument(mb,p,lastmvc);
 					p= pushStr(mb,p, schemas[j]);
@@ -240,59 +217,65 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if( getModuleId(p)== cqueryRef && getFunctionId(p)==errorRef)
 				noerror++;
-			if (p->token == ENDsymbol && btop > 0 && noerror==0) {
-				// empty all baskets used only when we are optimizing a cq
-				for(j = 0; j < btop; j++)
-				if( input[j] && !output[j] ){
-					r =  newStmt(mb, basketRef, tumbleRef);
-					r =  pushArgument(mb,r, lastmvc);
-					r =  pushStr(mb,r, schemas[j]);
-					r =  pushStr(mb,r, tables[j]);
-					lastmvc = getArg(r,0);
+			if ((p->barrier == YIELDsymbol || p->barrier == RETURNsymbol || p->token == ENDsymbol) && btop > 0) {
+
+				if(p->barrier == YIELDsymbol || p->barrier == RETURNsymbol)
+					retseen = 1;
+
+				if(p->token != ENDsymbol || !retseen) {
+					// watch out for second transaction in same block
+					if( mvcseen){
+						// unlock the tables
+						for( j=btop-1; j>= 0; j--){
+							r= newStmt(mb,basketRef,unlockRef);
+							r= pushArgument(mb,r,lastmvc);
+							r= pushStr(mb,r, schemas[j]);
+							r= pushStr(mb,r, tables[j]);
+							lastmvc= getArg(r,0);
+						}
+					}
+					// empty all baskets used only when we are optimizing a cq
+					for(j = 0; j < btop; j++)
+						if( input[j] && !output[j] ){
+							r =  newStmt(mb, basketRef, tumbleRef);
+							r =  pushArgument(mb,r, lastmvc);
+							r =  pushStr(mb,r, schemas[j]);
+							r =  pushStr(mb,r, tables[j]);
+							lastmvc = getArg(r,0);
+					}
 				}
 
-				/* catch any exception left behind */
-				r = newAssignment(mb);
-				j = getArg(r, 0) = newVariable(mb, "SQLexception", 12, TYPE_str);
-				setVarUDFtype(mb, j);
-				r->barrier = CATCHsymbol;
+				if (p->token == ENDsymbol && noerror==0) {
+					/* catch any exception left behind */
+					r = newAssignment(mb);
+					j = getArg(r, 0) = newVariable(mb, "SQLexception", 12, TYPE_str);
+					setVarUDFtype(mb, j);
+					r->barrier = CATCHsymbol;
 
-				r = newStmt(mb,basketRef, errorRef);
-				r = pushStr(mb, r, getModuleId(old[0]));
-				r = pushStr(mb, r, getFunctionId(old[0]));
-				r = pushArgument(mb, r, j);
+					r = newStmt(mb,basketRef, errorRef);
+					r = pushStr(mb, r, getModuleId(old[0]));
+					r = pushStr(mb, r, getFunctionId(old[0]));
+					r = pushArgument(mb, r, j);
 
-				r = newAssignment(mb);
-				getArg(r, 0) = j;
-				r->barrier = EXITsymbol;
-				r = newAssignment(mb);
-				j = getArg(r, 0) = newVariable(mb, "MALexception",12, TYPE_str);
-				setVarUDFtype(mb, j);
-				r->barrier = CATCHsymbol;
+					r = newAssignment(mb);
+					getArg(r, 0) = j;
+					r->barrier = EXITsymbol;
+					r = newAssignment(mb);
+					j = getArg(r, 0) = newVariable(mb, "MALexception",12, TYPE_str);
+					setVarUDFtype(mb, j);
+					r->barrier = CATCHsymbol;
 
-				r = newStmt(mb,basketRef, errorRef);
-				r = pushStr(mb, r, getModuleId(old[0]));
-				r = pushStr(mb, r, getFunctionId(old[0]));
-				r = pushArgument(mb, r, j);
+					r = newStmt(mb,basketRef, errorRef);
+					r = pushStr(mb, r, getModuleId(old[0]));
+					r = pushStr(mb, r, getFunctionId(old[0]));
+					r = pushArgument(mb, r, j);
 
-				r = newAssignment(mb);
-				getArg(r, 0) = j;
-				r->barrier = EXITsymbol;
+					r = newAssignment(mb);
+					getArg(r, 0) = j;
+					r->barrier = EXITsymbol;
 
-				/* non-contiguous queries call for releasing the lock on the basket */
-				for( j=btop-1; j>= 0; j--){
-					r= newStmt(mb,basketRef,unlockRef);
-					r= pushArgument(mb,r,lastmvc);
-					r= pushStr(mb,r, schemas[j]);
-					r= pushStr(mb,r, tables[j]);
-					lastmvc= getArg(r,0);
+					break;
 				}
-					//p= newStmt(mb,basketRef,commitRef);
-					//p= pushArgument(mb,p, lastmvc);
-					//p= pushStr(mb,p, schemas[j]);
-					//p= pushStr(mb,p, tables[j]);
-					//lastmvc = getArg(p,0);
-				break;
 			}
 
 			for (j = 0; j < p->argc; j++)
@@ -309,6 +292,24 @@ OPTcqueryImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			pushInstruction(mb, p);
 		}
+
+	// a basket lock is performed for each sql.mvc, but we need to remove the last one if there are more than 1 sql.mvc
+	// in the generated MAL plan
+	if(manymvc > 1) {
+		for (j = mb->stop - 1; j >= 0; j--) {
+			p = getInstrPtr(mb, j);
+			if(getModuleId(p) == sqlRef && getFunctionId(p) == mvcRef) {
+				break;
+			} else if(getModuleId(p) == basketRef && getFunctionId(p) == unlockRef) {
+				getArg(p,1) = lastrealmvc;
+			} else if(getModuleId(p) == basketRef &&
+				(getFunctionId(p) == registerRef || getFunctionId(p) == lockRef || getFunctionId(p) == tumbleRef)) {
+				removeInstruction(mb, p);
+				freeInstruction(p);
+				mb->stmt[mb->stop] = NULL;
+			}
+		}
+	}
 
 	/* take the remainder as is */
 	for (; i<limit; i++)

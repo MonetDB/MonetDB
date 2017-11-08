@@ -918,7 +918,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 {
 	mvc *m = be->mvc;
 	MalBlkPtr curBlk = NULL;
-	InstrPtr curInstr = NULL, p = NULL, q = NULL/*, o*/;
+	InstrPtr curInstr = NULL, p = NULL, q = NULL;
 	Client c = be->client;
 	Symbol backup = NULL, curPrg = NULL;
 	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg), no_inline = 0;
@@ -1034,11 +1034,6 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			q->barrier = RETURNsymbol;
 			moveInstruction(curBlk, curBlk->stop - 1, curBlk->stop - 2);
 		}
-		/*q->gc |= GARBAGECONTROL;
-		o = getInstrPtr(curBlk, curBlk->stop - 3);
-		if(getModuleId(o) == sqlRef && getFunctionId(o) == mvcRef) {
-			removeInstruction(curBlk, o);
-		}*/
 		if (f->type == F_UNION) {
 			q->retc = q->argc = 0;
 			for (i = 0; i < p->retc; i++) {
