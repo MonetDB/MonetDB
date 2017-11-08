@@ -2722,8 +2722,6 @@ AC_CHECK_FUNCS([\
 	fabsf \
 	fallocate \
 	fcntl \
-	fpclass \
-	fpclassify \
 	fsync \
 	ftime \
 	getexecname \
@@ -2732,7 +2730,6 @@ AC_CHECK_FUNCS([\
 	getopt_long \
 	gettimeofday \
 	getuid \
-	isinf \
 	llabs \
 	localtime_r \
 	lockf \

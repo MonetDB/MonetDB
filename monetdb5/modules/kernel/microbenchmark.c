@@ -57,9 +57,9 @@ BATrandom(BAT **bn, oid *base, lng *size, int *domain, int seed)
 	val = (int *) Tloc(b, 0);
 
 	/* create BUNs with random distribution */
-	if (seed != int_nil)
+	if (!is_int_nil(seed))
 		srand(seed);
-	if (*domain == int_nil) {
+	if (is_int_nil(*domain)) {
 	        for (i = 0; i < n; i++) {
 			val[i] = rand();
 		}

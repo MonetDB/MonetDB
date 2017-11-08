@@ -412,7 +412,7 @@ delta_update_val( sql_delta *bat, oid rid, void *upd)
 {
 	BAT *b = NULL;
 
-	assert(rid != oid_nil);
+	assert(!is_oid_nil(rid));
 
 	if (bat->cached) {
 		bat_destroy(bat->cached);

@@ -19,7 +19,7 @@ catalog_name_qualifier.Bug-3948
 stream_table_crash.Bug-3952
 null_in_null.Bug-3900
 rank_rewrite.Bug-3890
-HAVE_LIBBZ2?min-max-uuid-column-wrong-results.Bug-3953
+min-max-uuid-column-wrong-results.Bug-3953
 update_crash.Bug-3954
 group_distinct_quantile.Bug-3927
 HAVE_GEOM?merge_project.Bug-3955

@@ -111,7 +111,7 @@ color_tostr(char **colorStr, size_t *len, const color *c)
 		*len = 11;
 	}
 
-	if (sc == color_nil) {
+	if (is_color_nil(sc)) {
 		strcpy(*colorStr, "nil");
 		return 3;
 	}

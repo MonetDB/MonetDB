@@ -18,6 +18,7 @@
 #define CONCAT_4(a,b,c,d) a##b##c##d
 
 #define NIL(t)       CONCAT_2(t,_nil)
+#define ISNIL(t)     CONCAT_3(is_,t,_nil)
 #define TPE(t)       CONCAT_2(TYPE_,t)
 #define GDKmin(t)    CONCAT_3(GDK_,t,_min)
 #define GDKmax(t)    CONCAT_3(GDK_,t,_max)
@@ -39,7 +40,7 @@ FUN(do_,TP1,_dec2dec_,TP2) (TP2 *restrict res, int s1, TP1 val, int p, int s2)
 
 #ifdef DOWNCAST
 	if (s2 > s1) {
-		if (val <= GDKmin(TP2) / scales[s2 - s1] ||
+		if (val < GDKmin(TP2) / scales[s2 - s1] ||
 		    val > GDKmax(TP2) / scales[s2 - s1]) {
 			char *buf = NULL, *msg;
 			size_t len = 0;
@@ -52,7 +53,7 @@ FUN(do_,TP1,_dec2dec_,TP2) (TP2 *restrict res, int s1, TP1 val, int p, int s2)
 		}
 		val *= (TP1) scales[s2 - s1];
 	} else if (s2 < s1) {
-		if (val / scales[s1 - s2] <= GDKmin(TP2) ||
+		if (val / scales[s1 - s2] < GDKmin(TP2) ||
 		    val / scales[s1 - s2] > GDKmax(TP2)) {
 			char *buf = NULL, *msg;
 			size_t len = 0;
@@ -68,7 +69,7 @@ FUN(do_,TP1,_dec2dec_,TP2) (TP2 *restrict res, int s1, TP1 val, int p, int s2)
 			      + (val < 0 ? -5 : 5) * scales[s1 - s2 - 1]
 #endif
 				     ) / scales[s1 - s2]);
-	} else if (val <= GDKmin(TP2) || val > GDKmax(TP2)) {
+	} else if (val < GDKmin(TP2) || val > GDKmax(TP2)) {
 		char *buf = NULL, *msg;
 		size_t len = 0;
 		if (BATatoms[TPE(TP1)].atomToStr(&buf, &len, &val) < 0)
@@ -111,7 +112,7 @@ str
 FUN(,TP1,_dec2_,TP2) (TP2 *res, const int *s1, const TP1 *v)
 {
 	/* shortcut nil */
-	if (*v == NIL(TP1)) {
+	if (ISNIL(TP1)(*v)) {
 		*res = NIL(TP2);
 		return (MAL_SUCCEED);
 	}
@@ -123,7 +124,7 @@ str
 FUN(,TP1,_dec2dec_,TP2) (TP2 *res, const int *S1, const TP1 *v, const int *d2, const int *S2)
 {
 	/* shortcut nil */
-	if (*v == NIL(TP1)) {
+	if (ISNIL(TP1)(*v)) {
 		*res = NIL(TP2);
 		return (MAL_SUCCEED);
 	}
@@ -135,7 +136,7 @@ str
 FUN(,TP1,_num2dec_,TP2) (TP2 *res, const TP1 *v, const int *d2, const int *s2)
 {
 	/* shortcut nil */
-	if (*v == NIL(TP1)) {
+	if (ISNIL(TP1)(*v)) {
 		*res = NIL(TP2);
 		return (MAL_SUCCEED);
 	}
@@ -176,7 +177,7 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid)
 	} else {
 		for (; p < q; p++, o++) {
 			/* shortcut nil */
-			if (*p == NIL(TP1)) {
+			if (ISNIL(TP1)(*p)) {
 				*o = NIL(TP2);
 				bn->tnonil = 0;
 				bn->tnil = 1;
@@ -222,7 +223,7 @@ FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const int *
 		TP2 r;
 
 		/* shortcut nil */
-		if (val == NIL(TP1)) {
+		if (ISNIL(TP1)(val)) {
 			r = NIL(TP2);
 			bn->tnonil = 0;
 			bn->tnil = 1;
@@ -266,7 +267,7 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 		TP1 val = * (TP1 *) BUNtail(bi, p);
 		TP2 r;
 		/* shortcut nil */
-		if (val == NIL(TP1)) {
+		if (ISNIL(TP1)(val)) {
 			r = NIL(TP2);
 			bn->tnonil = 0;
 			bn->tnil = 1;
@@ -293,6 +294,7 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 /* undo local defines */
 #undef FUN
 #undef NIL
+#undef ISNIL
 #undef TPE
 #undef GDKmin
 #undef GDKmax

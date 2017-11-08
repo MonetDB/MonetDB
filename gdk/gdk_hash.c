@@ -354,7 +354,7 @@ BAThash(BAT *b, BUN masksize)
 			cnt = BATcapacity(b);
 
 		if (b->ttype == TYPE_void) {
-			if (b->tseqbase == oid_nil) {
+			if (is_oid_nil(b->tseqbase)) {
 				MT_lock_unset(&GDKhashLock(b->batCacheid));
 				ALGODEBUG fprintf(stderr, "#BAThash: cannot create hash-table on void-NIL column.\n");
 				GDKfree(hp->filename);

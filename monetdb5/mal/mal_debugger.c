@@ -1290,7 +1290,7 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 	mnstr_printf(f, "\n");
 	GDKfree(nmeOnStk);
 
-	if (cnt && v && (isaBatType(n->type) || v->vtype == TYPE_bat) && v->val.bval != bat_nil) {
+	if (cnt && v && (isaBatType(n->type) || v->vtype == TYPE_bat) && !is_bat_nil(v->val.bval)) {
 		printBATelm(f,v->val.bval,cnt,first);
 	}
 }

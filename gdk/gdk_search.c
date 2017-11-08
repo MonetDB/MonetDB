@@ -41,6 +41,8 @@
  * return BUN_NONE, and the other functions return the location of the
  * next larger value, or BATcount if the value being searched for is
  * larger (smaller if reverse sorted) than any in the column.
+ *
+ * Note that the NIL value is considered smaller than all other values.
  */
 
 #include "monetdb_config.h"
@@ -50,6 +52,44 @@
 #define VALUE(x)	(vars ?					\
 			 vars + VarHeapVal(vals, (x), width) :	\
 			 (const char *) vals + ((x) * width))
+
+#define bte_LT(a, b)	((a) < (b))
+#define bte_LE(a, b)	((a) <= (b))
+#define bte_GT(a, b)	((a) > (b))
+#define bte_GE(a, b)	((a) >= (b))
+#define bte_EQ(a, b)	((a) == (b))
+#define sht_LT(a, b)	((a) < (b))
+#define sht_LE(a, b)	((a) <= (b))
+#define sht_GT(a, b)	((a) > (b))
+#define sht_GE(a, b)	((a) >= (b))
+#define sht_EQ(a, b)	((a) == (b))
+#define int_LT(a, b)	((a) < (b))
+#define int_LE(a, b)	((a) <= (b))
+#define int_GT(a, b)	((a) > (b))
+#define int_GE(a, b)	((a) >= (b))
+#define int_EQ(a, b)	((a) == (b))
+#define lng_LT(a, b)	((a) < (b))
+#define lng_LE(a, b)	((a) <= (b))
+#define lng_GT(a, b)	((a) > (b))
+#define lng_GE(a, b)	((a) >= (b))
+#define lng_EQ(a, b)	((a) == (b))
+#ifdef HAVE_HGE
+#define hge_LT(a, b)	((a) < (b))
+#define hge_LE(a, b)	((a) <= (b))
+#define hge_GT(a, b)	((a) > (b))
+#define hge_GE(a, b)	((a) >= (b))
+#define hge_EQ(a, b)	((a) == (b))
+#endif
+#define flt_LT(a, b)	(!is_flt_nil(b) && (is_flt_nil(a) || (a) < (b)))
+#define flt_LE(a, b)	(is_flt_nil(a) || (!is_flt_nil(b) && (a) <= (b)))
+#define flt_GT(a, b)	(!is_flt_nil(a) && (is_flt_nil(b) || (a) > (b)))
+#define flt_GE(a, b)	(is_flt_nil(b) || (!is_flt_nil(a) && (a) >= (b)))
+#define flt_EQ(a, b)	(is_flt_nil(a) ? is_flt_nil(b) : !is_flt_nil(b) && (a) == (b))
+#define dbl_LT(a, b)	(!is_dbl_nil(b) && (is_dbl_nil(a) || (a) < (b)))
+#define dbl_LE(a, b)	(is_dbl_nil(a) || (!is_dbl_nil(b) && (a) <= (b)))
+#define dbl_GT(a, b)	(!is_dbl_nil(a) && (is_dbl_nil(b) || (a) > (b)))
+#define dbl_GE(a, b)	(is_dbl_nil(b) || (!is_dbl_nil(a) && (a) >= (b)))
+#define dbl_EQ(a, b)	(is_dbl_nil(a) ? is_dbl_nil(b) : !is_dbl_nil(b) && (a) == (b))
 
 #define BINSEARCHFUNC(TYPE)						\
 BUN									\
@@ -66,31 +106,37 @@ binsearch_##TYPE(const oid *restrict indir, oid offset,			\
 	if (ordering > 0) {						\
 		if (indir) {						\
 			if (last > 0) {					\
-				if ((x = vals[indir[lo] - offset]) > v) \
+				x = vals[indir[lo] - offset];		\
+				if (TYPE##_GT(x, v))			\
 					return lo;			\
-				if ((x = vals[indir[hi] - offset]) <= v) \
+				x = vals[indir[hi] - offset];		\
+				if (TYPE##_LE(x, v))			\
 					return hi + 1;			\
 									\
 				/* loop invariant: */			\
 				/* value@lo <= v < value@hi */		\
 				while (hi - lo > 1) {			\
 					mid = (hi + lo) / 2;		\
-					if (vals[indir[mid] - offset] > v) \
+					x = vals[indir[mid] - offset];	\
+					if (TYPE##_GT(x, v))		\
 						hi = mid;		\
 					else				\
 						lo = mid;		\
 				}					\
 			} else {					\
-				if ((x = vals[indir[lo] - offset]) >= v) \
-					return last == 0 || x == v ? lo : BUN_NONE; \
-				if ((x = vals[indir[hi] - offset]) < v) \
+				x = vals[indir[lo] - offset];		\
+				if (TYPE##_GE(x, v))			\
+					return last == 0 || TYPE##_EQ(x, v) ? lo : BUN_NONE; \
+				x = vals[indir[hi] - offset];		\
+				if (TYPE##_LT(x, v))			\
 					return last == 0 ? hi + 1 : BUN_NONE; \
 									\
 				/* loop invariant: */			\
 				/* value@lo < v <= value@hi */		\
 				while (hi - lo > 1) {			\
 					mid = (hi + lo) / 2;		\
-					if (vals[indir[mid] - offset] >= v) \
+					x = vals[indir[mid] - offset];	\
+					if (TYPE##_GE(x, v))		\
 						hi = mid;		\
 					else				\
 						lo = mid;		\
@@ -98,31 +144,37 @@ binsearch_##TYPE(const oid *restrict indir, oid offset,			\
 			}						\
 		} else {						\
 			if (last > 0) {					\
-				if ((x = vals[lo]) > v)			\
+				x = vals[lo];				\
+				if (TYPE##_GT(x, v))			\
 					return lo;			\
-				if ((x = vals[hi]) <= v)		\
+				x = vals[hi];				\
+				if (TYPE##_LE(x, v))			\
 					return hi + 1;			\
 									\
 				/* loop invariant: */			\
 				/* value@lo <= v < value@hi */		\
 				while (hi - lo > 1) {			\
 					mid = (hi + lo) / 2;		\
-					if (vals[mid] > v)		\
+					x = vals[mid];			\
+					if (TYPE##_GT(x, v))		\
 						hi = mid;		\
 					else				\
 						lo = mid;		\
 				}					\
 			} else {					\
-				if ((x = vals[lo]) >= v)		\
-					return last == 0 || x == v ? lo : BUN_NONE; \
-				if ((x = vals[hi]) < v)			\
+				x = vals[lo];				\
+				if (TYPE##_GE(x, v))			\
+					return last == 0 || TYPE##_EQ(x, v) ? lo : BUN_NONE; \
+				x = vals[hi];				\
+				if (TYPE##_LT(x, v))			\
 					return last == 0 ? hi + 1 : BUN_NONE; \
 									\
 				/* loop invariant: */			\
 				/* value@lo < v <= value@hi */		\
 				while (hi - lo > 1) {			\
 					mid = (hi + lo) / 2;		\
-					if (vals[mid] >= v)		\
+					x = vals[mid];			\
+					if (TYPE##_GE(x, v))		\
 						hi = mid;		\
 					else				\
 						lo = mid;		\
@@ -132,31 +184,37 @@ binsearch_##TYPE(const oid *restrict indir, oid offset,			\
 	} else {							\
 		if (indir) {						\
 			if (last > 0) {					\
-				if ((x = vals[indir[lo] - offset]) < v) \
+				x = vals[indir[lo] - offset];		\
+				if (TYPE##_LT(x, v))			\
 					return lo;			\
-				if ((x = vals[indir[hi] - offset]) >= v) \
+				x = vals[indir[hi] - offset];		\
+				if (TYPE##_GE(x, v))			\
 					return hi + 1;			\
 									\
 				/* loop invariant: */			\
 				/* value@lo >= v > value@hi */		\
 				while (hi - lo > 1) {			\
 					mid = (hi + lo) / 2;		\
-					if (vals[indir[mid] - offset] < v) \
+					x = vals[indir[mid] - offset];	\
+					if (TYPE##_LT(x, v))		\
 						hi = mid;		\
 					else				\
 						lo = mid;		\
 				}					\
 			} else {					\
-				if ((x = vals[indir[lo] - offset]) <= v) \
-					return last == 0 || x == v ? lo : BUN_NONE; \
-				if ((x = vals[indir[hi] - offset]) > v) \
+				x = vals[indir[lo] - offset];		\
+				if (TYPE##_LE(x, v))			\
+					return last == 0 || TYPE##_EQ(x, v) ? lo : BUN_NONE; \
+				x = vals[indir[hi] - offset];		\
+				if (TYPE##_GT(x, v))			\
 					return last == 0 ? hi + 1 : BUN_NONE; \
 									\
 				/* loop invariant: */			\
 				/* value@lo > v >= value@hi */		\
 				while (hi - lo > 1) {			\
 					mid = (hi + lo) / 2;		\
-					if (vals[indir[mid] - offset] <= v) \
+					x = vals[indir[mid] - offset];	\
+					if (TYPE##_LE(x, v))		\
 						hi = mid;		\
 					else				\
 						lo = mid;		\
@@ -164,31 +222,37 @@ binsearch_##TYPE(const oid *restrict indir, oid offset,			\
 			}						\
 		} else {						\
 			if (last  > 0) {				\
-				if ((x = vals[lo]) < v)			\
+				x = vals[lo];				\
+				if (TYPE##_LT(x, v))			\
 					return lo;			\
-				if ((x = vals[hi]) >= v)		\
+				x = vals[hi];				\
+				if (TYPE##_GE(x, v))			\
 					return hi + 1;			\
 									\
 				/* loop invariant: */			\
 				/* value@lo >= v > value@hi */		\
 				while (hi - lo > 1) {			\
 					mid = (hi + lo) / 2;		\
-					if (vals[mid] < v)		\
+					x = vals[mid];			\
+					if (TYPE##_LT(x, v))		\
 						hi = mid;		\
 					else				\
 						lo = mid;		\
 				}					\
 			} else {					\
-				if ((x = vals[lo]) <= v)		\
-					return last == 0 || x == v ? lo : BUN_NONE; \
-				if ((x = vals[hi]) > v)			\
+				x = vals[lo];				\
+				if (TYPE##_LE(x, v))			\
+					return last == 0 || TYPE##_EQ(x, v) ? lo : BUN_NONE; \
+				x = vals[hi];				\
+				if (TYPE##_GT(x, v))			\
 					return last == 0 ? hi + 1 : BUN_NONE; \
 									\
 				/* loop invariant: */			\
 				/* value@lo > v >= value@hi */		\
 				while (hi - lo > 1) {			\
 					mid = (hi + lo) / 2;		\
-					if (vals[mid] <= v)		\
+					x = vals[mid];			\
+					if (TYPE##_LE(x, v))		\
 						hi = mid;		\
 					else				\
 						lo = mid;		\
@@ -196,7 +260,7 @@ binsearch_##TYPE(const oid *restrict indir, oid offset,			\
 			}						\
 		}							\
 	}								\
-	return last >= 0 || (indir ? vals[indir[hi] - offset] : vals[hi]) == v ? hi : BUN_NONE; \
+	return last >= 0 || (x = (indir ? vals[indir[hi] - offset] : vals[hi]), TYPE##_EQ(x, v)) ? hi : BUN_NONE; \
 }
 
 BINSEARCHFUNC(bte)
@@ -313,15 +377,15 @@ SORTfnd(BAT *b, const void *v)
 	if (BATcount(b) == 0)
 		return BUN_NONE;
 	if (BATtdense(b)) {
-		if (*(oid*)v == oid_nil ||
+		if (is_oid_nil(*(oid*)v) ||
 		    *(oid*)v < b->tseqbase ||
 		    *(oid*)v >= b->tseqbase + BATcount(b))
 			return BUN_NONE;
 		return *(oid*)v - b->tseqbase;
 	}
 	if (b->ttype == TYPE_void) {
-		assert(b->tseqbase == oid_nil);
-		if (*(const oid *) v == oid_nil)
+		assert(is_oid_nil(b->tseqbase));
+		if (is_oid_nil(*(const oid *) v))
 			return 0;
 		return BUN_NONE;
 	}
@@ -351,14 +415,14 @@ SORTfndfirst(BAT *b, const void *v)
 	if (BATcount(b) == 0)
 		return 0;
 	if (BATtdense(b)) {
-		if (*(oid*)v == oid_nil || *(oid*)v <= b->tseqbase)
+		if (is_oid_nil(*(oid*)v) || *(oid*)v <= b->tseqbase)
 			return 0;
 		if (*(oid*)v >= b->tseqbase + BATcount(b))
 			return BATcount(b);
 		return *(oid*)v - b->tseqbase;
 	}
 	if (b->ttype == TYPE_void) {
-		assert(b->tseqbase == oid_nil);
+		assert(is_oid_nil(b->tseqbase));
 		return 0;
 	}
 	return binsearch(NULL, 0, b->ttype, Tloc(b, 0),
@@ -386,15 +450,15 @@ SORTfndlast(BAT *b, const void *v)
 	if (BATcount(b) == 0)
 		return 0;
 	if (BATtdense(b)) {
-		if (*(oid*)v == oid_nil || *(oid*)v <= b->tseqbase)
+		if (is_oid_nil(*(oid*)v) || *(oid*)v <= b->tseqbase)
 			return 0;
 		if (*(oid*)v >= b->tseqbase + BATcount(b))
 			return BATcount(b);
 		return *(oid*)v - b->tseqbase;
 	}
 	if (b->ttype == TYPE_void) {
-		assert(b->tseqbase == oid_nil);
-		if (*(const oid *) v == oid_nil)
+		assert(is_oid_nil(b->tseqbase));
+		if (is_oid_nil(*(const oid *) v))
 			return 0;
 		return BATcount(b);
 	}

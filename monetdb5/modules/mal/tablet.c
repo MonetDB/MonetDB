@@ -567,7 +567,8 @@ TABLEToutput_file(Tablet *as, BAT *order, stream *s)
 	if (as->nr == BUN_NONE || as->nr > maxnr)
 		as->nr = maxnr;
 
-	if ((base = check_BATs(as)) != oid_nil) {
+	base = check_BATs(as);
+	if (!is_oid_nil(base)) {
 		if (order->hseqbase == base)
 			ret = output_file_dense(as, s);
 		else
@@ -667,7 +668,7 @@ tablet_error(READERtask *task, lng row, int col, const char *msg, const char *fc
 			task->as->error = createException(MAL, "sql.copy_from", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			task->besteffort = 0;
 		}
-		if (row != lng_nil && task->rowerror)
+		if (!is_lng_nil(row) && task->rowerror)
 			task->rowerror[row]++;
 #ifdef _DEBUG_TABLET_
 		mnstr_printf(GDKout, "#tablet_error: " LLFMT ",%d:%s:%s\n",

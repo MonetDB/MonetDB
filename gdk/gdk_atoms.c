@@ -23,13 +23,19 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#include <math.h>		/* for isfinite macro */
-#ifdef HAVE_IEEEFP_H
-#include <ieeefp.h>		/* for Solaris */
-#ifndef isfinite
-#define isfinite(f)	finite(f)
+
+#ifndef NAN
+#define NAN		((float)(((float)(1e300 * 1e300)) * 0.0F))
 #endif
-#endif
+
+/* the *Cmp functions return a value less than zero if the first
+ * argument is less than the second; they return zero if the two
+ * values are equal; and they return a value greater than zero if the
+ * first argument is greater than the second.  Remember that in all
+ * cases, nil is considered smaller than any other value and nil is
+ * equal to itself (this has repercussions for the floating point
+ * implementation if and when its NIL value is the floating point
+ * NaN). */
 
 static int
 bteCmp(const bte *l, const bte *r)
@@ -52,7 +58,7 @@ intCmp(const int *l, const int *r)
 static int
 fltCmp(const flt *l, const flt *r)
 {
-	return (*l > *r) - (*l < *r);
+	return is_flt_nil(*l) ? -!is_flt_nil(*r) : is_flt_nil(*r) ? 1 : (*l > *r) - (*l < *r);
 }
 
 static int
@@ -72,7 +78,7 @@ hgeCmp(const hge *l, const hge *r)
 static int
 dblCmp(const dbl *l, const dbl *r)
 {
-	return (*l > *r) - (*l < *r);
+	return is_dbl_nil(*l) ? -!is_dbl_nil(*r) : is_dbl_nil(*r) ? 1 : (*l > *r) - (*l < *r);
 }
 
 /*
@@ -233,14 +239,21 @@ ATOMisdescendant(int tpe, int parent)
 }
 
 
-const bte bte_nil = GDK_bte_min;
-const sht sht_nil = GDK_sht_min;
-const int int_nil = GDK_int_min;
-const flt flt_nil = GDK_flt_min;
-const dbl dbl_nil = GDK_dbl_min;
-const lng lng_nil = GDK_lng_min;
+const bte bte_nil = GDK_bte_min-1;
+const sht sht_nil = GDK_sht_min-1;
+const int int_nil = GDK_int_min-1;
+#ifdef __INTEL_COMPILER
+/* stupid Intel compiler uses a value that cannot be used in an
+ * initializer for NAN, so we have to initialize at run time */
+flt flt_nil;
+dbl dbl_nil;
+#else
+const flt flt_nil = NAN;
+const dbl dbl_nil = NAN;
+#endif
+const lng lng_nil = GDK_lng_min-1;
 #ifdef HAVE_HGE
-const hge hge_nil = GDK_hge_min;
+const hge hge_nil = GDK_hge_min-1;
 #endif
 const oid oid_nil = (oid) 1 << (sizeof(oid) * 8 - 1);
 const char str_nil[2] = { '\200', 0 };
@@ -379,12 +392,14 @@ ATOMdup(int t, const void *p)
 		}					\
 	} while (0)
 
+#define is_ptr_nil(val)		((val) == ptr_nil)
+
 #define atomtostr(TYPE, FMT, FMTCAST)			\
 ssize_t							\
 TYPE##ToStr(char **dst, size_t *len, const TYPE *src)	\
 {							\
 	atommem(TYPE##Strlen);				\
-	if (*src == TYPE##_nil) {			\
+	if (is_##TYPE##_nil(*src)) {			\
 		return snprintf(*dst, *len, "nil");	\
 	}						\
 	return snprintf(*dst, *len, FMT, FMTCAST *src);	\
@@ -463,7 +478,7 @@ bitToStr(char **dst, size_t *len, const bit *src)
 {
 	atommem(6);
 
-	if (*src == bit_nil)
+	if (is_bit_nil(*src))
 		return snprintf(*dst, *len, "nil");
 	if (*src)
 		return snprintf(*dst, *len, "true");
@@ -515,7 +530,7 @@ batToStr(char **dst, size_t *len, const bat *src)
 	size_t i;
 	str s;
 
-	if (b == bat_nil || (s = BBPname(b)) == NULL || *s == 0) {
+	if (is_bat_nil(b) || (s = BBPname(b)) == NULL || *s == 0) {
 		atommem(4);
 		return snprintf(*dst, *len, "nil");
 	}
@@ -701,7 +716,7 @@ numFromStr(const char *src, size_t *len, void **dst, int tp)
 	switch (sz) {
 	case 1: {
 		bte **dstbte = (bte **) dst;
-		if (base <= GDK_bte_min || base > GDK_bte_max) {
+		if (base < GDK_bte_min || base > GDK_bte_max) {
 			goto overflow;
 		}
 		**dstbte = (bte) base;
@@ -709,7 +724,7 @@ numFromStr(const char *src, size_t *len, void **dst, int tp)
 	}
 	case 2: {
 		sht **dstsht = (sht **) dst;
-		if (base <= GDK_sht_min || base > GDK_sht_max) {
+		if (base < GDK_sht_min || base > GDK_sht_max) {
 			goto overflow;
 		}
 		**dstsht = (sht) base;
@@ -717,7 +732,7 @@ numFromStr(const char *src, size_t *len, void **dst, int tp)
 	}
 	case 4: {
 		int **dstint = (int **) dst;
-		if (base <= GDK_int_min || base > GDK_int_max) {
+		if (base < GDK_int_min || base > GDK_int_max) {
 			goto overflow;
 		}
 		**dstint = (int) base;
@@ -726,7 +741,7 @@ numFromStr(const char *src, size_t *len, void **dst, int tp)
 	case 8: {
 		lng **dstlng = (lng **) dst;
 #ifdef HAVE_HGE
-		if (base <= GDK_lng_min || base > GDK_lng_max) {
+		if (base < GDK_lng_min || base > GDK_lng_max) {
 			goto overflow;
 		}
 #endif
@@ -840,11 +855,11 @@ ssize_t
 hgeToStr(char **dst, size_t *len, const hge *src)
 {
 	atommem(hgeStrlen);
-	if (*src == hge_nil) {
+	if (is_hge_nil(*src)) {
 		strncpy(*dst, "nil", *len);
 		return 3;
 	}
-	if ((hge) GDK_lng_min < *src && *src <= (hge) GDK_lng_max) {
+	if ((hge) GDK_lng_min <= *src && *src <= (hge) GDK_lng_max) {
 		lng s = (lng) *src;
 		return lngToStr(dst, len, &s);
 	} else {
@@ -906,10 +921,6 @@ atom_io(ptr, Int, int)
 #else /* SIZEOF_VOID_P == SIZEOF_LNG */
 atom_io(ptr, Lng, lng)
 #endif
-#if defined(_MSC_VER) && !defined(isfinite)
-/* with more recent Visual Studio, isfinite is defined */
-#define isfinite(x)	_finite(x)
-#endif
 
 ssize_t
 dblFromStr(const char *src, size_t *len, dbl **dst)
@@ -947,9 +958,7 @@ dblFromStr(const char *src, size_t *len, dbl **dst)
 			p = pe;
 		n = (ssize_t) (p - src);
 		if (n == 0 || (errno == ERANGE && (d < -1 || d > 1))
-#ifdef isfinite
 		    || !isfinite(d) /* no NaN or Infinte */
-#endif
 		    ) {
 			GDKerror("overflow or not a number\n");
 			return -1;
@@ -968,7 +977,7 @@ dblToStr(char **dst, size_t *len, const dbl *src)
 	int i;
 
 	atommem(dblStrlen);
-	if (*src == dbl_nil) {
+	if (is_dbl_nil(*src)) {
 		return snprintf(*dst, *len, "nil");
 	}
 	for (i = 4; i < 18; i++) {
@@ -1021,9 +1030,7 @@ fltFromStr(const char *src, size_t *len, flt **dst)
 #else /* no strtof, try sscanf */
 		if (sscanf(src, "%f%n", &f, &n) <= 0 || n <= 0
 #endif
-#ifdef isfinite
 		    || !isfinite(f) /* no NaN or infinite */
-#endif
 		    ) {
 			GDKerror("overflow or not a number\n");
 			return -1;
@@ -1042,7 +1049,7 @@ fltToStr(char **dst, size_t *len, const flt *src)
 	int i;
 
 	atommem(fltStrlen);
-	if (*src == flt_nil) {
+	if (is_flt_nil(*src)) {
 		return snprintf(*dst, *len, "nil");
 	}
 	for (i = 4; i < 10; i++) {
@@ -1858,7 +1865,7 @@ OIDtoStr(char **dst, size_t *len, const oid *src)
 {
 	atommem(oidStrlen);
 
-	if (*src == oid_nil) {
+	if (is_oid_nil(*src)) {
 		return snprintf(*dst, *len, "nil");
 	}
 	return snprintf(*dst, *len, OIDFMT "@0", *src);

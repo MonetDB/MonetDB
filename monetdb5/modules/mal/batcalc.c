@@ -1318,7 +1318,7 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	} else {
 		bit v = *getArgReference_bit(stk, pci, 1);
-		if (v ==  bit_nil) {
+		if (is_bit_nil(v)) {
 			if (b1 != NULL)
 				bn = BATconstant(b1->hseqbase, b1->ttype, ATOMnilptr(b1->ttype), BATcount(b1), TRANSIENT);
 			else

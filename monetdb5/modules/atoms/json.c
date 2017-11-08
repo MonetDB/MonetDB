@@ -2055,7 +2055,7 @@ JSONgroupStr(str *ret, const bat *bid)
 			break;
 		case TYPE_dbl:
 			val = (const double *) BUNtail(bi, p);
-			nil = (*val == dbl_nil);
+			nil = is_dbl_nil(*val);
 			if (!nil)
 				snprintf(temp, sizeof(temp), "%f", *val);
 			t = (const char *) temp;
@@ -2187,7 +2187,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 					break;
 				case TYPE_dbl:
 					val = (const double *) BUNtail(bi, (map ? (BUN) map[p] : p + mapoff));
-					if (*val != dbl_nil) {
+					if (!is_dbl_nil(*val)) {
 						snprintf(temp, sizeof(temp), "%f", *val);
 						v = (const char *) temp;
 					} else {
@@ -2276,7 +2276,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				break;
 			case TYPE_dbl:
 				val = (const double *) BUNtail(bi, (map ? (BUN) map[p] : p + mapoff));
-				if (*val != dbl_nil) {
+				if (!is_dbl_nil(*val)) {
 					snprintf(temp, sizeof(temp), "%f", *val);
 					v = (const char *) temp;
 				} else {
@@ -2332,7 +2332,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				break;
 			case TYPE_dbl:
 				val = (const double *) BUNtail(bi, p);
-				if (*val != dbl_nil) {
+				if (!is_dbl_nil(*val)) {
 					snprintf(temp, sizeof(temp), "%f", *val);
 					v = (const char *) temp;
 				} else {

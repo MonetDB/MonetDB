@@ -1169,22 +1169,24 @@ SQLparser(Client c)
 								  m->emode == m_prepare ? Q_PREPARE : m->type,	/* the type of the statement */
 								  escaped_q);
 			}
-			GDKfree(q);
 			if(!be->q) {
 				err = 1;
 				msg = createException(PARSE, "SQLparser", MAL_MALLOC_FAIL);
-			} else {
-				scanner_query_processed(&(m->scanner));
-				be->q->code = (backend_code) backend_dumpproc(be, c, be->q, r);
-				if (!be->q->code)
-					err = 1;
-				be->q->stk = 0;
+			}
+			GDKfree(q);
+			scanner_query_processed(&(m->scanner));
+			be->q->code = (backend_code) backend_dumpproc(be, c, be->q, r);
+			if (!be->q->code)
+				err = 1;
+			be->q->stk = 0;
 
-				/* passed over to query cache, used during dumpproc */
-				m->sa = NULL;
-				m->sym = NULL;
-				/* register name in the namespace */
-				be->q->name = putName(be->q->name);
+			/* passed over to query cache, used during dumpproc */
+			m->sa = NULL;
+			m->sym = NULL;
+			/* register name in the namespace */
+			if(!be->q->name) {
+				err = 1;
+				msg = createException(PARSE, "SQLparser", MAL_MALLOC_FAIL);
 			}
 		}
 	}

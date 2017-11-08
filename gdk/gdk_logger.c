@@ -308,6 +308,45 @@ log_read_seq(logger *lg, logformat *l)
 	return LOG_OK;
 }
 
+#ifdef GDKLIBRARY_NIL_NAN
+static void *
+fltRead(void *dst, stream *s, size_t cnt)
+{
+	flt *ptr;
+	size_t i;
+
+	if ((ptr = BATatoms[TYPE_flt].atomRead(dst, s, cnt)) == NULL)
+		return NULL;
+	for (i = 0; i < cnt; i++)
+		if (ptr[i] == GDK_flt_min)
+			ptr[i] = flt_nil;
+	return ptr;
+}
+
+static void *
+dblRead(void *dst, stream *s, size_t cnt)
+{
+	dbl *ptr;
+	size_t i;
+
+	if ((ptr = BATatoms[TYPE_dbl].atomRead(dst, s, cnt)) == NULL)
+		return NULL;
+	for (i = 0; i < cnt; i++)
+		if (ptr[i] == GDK_dbl_min)
+			ptr[i] = dbl_nil;
+	return ptr;
+}
+
+static void *
+mbrRead(void *dst, stream *s, size_t cnt)
+{
+	/* an MBR consists of 4 flt values; here we don't care about
+	 * anything else, we just need to convert the old NIL to NaN
+	 * for all those values */
+	return fltRead(dst, s, cnt * 4);
+}
+#endif
+
 static log_return
 log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 {
@@ -322,7 +361,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 	if (b) {
 		ht = TYPE_void;
 		tt = b->ttype;
-		if (tt == TYPE_void && b->tseqbase != oid_nil)
+		if (tt == TYPE_void && !is_oid_nil(b->tseqbase))
 			tseq = 1;
 	} else {		/* search trans action for create statement */
 		int i;
@@ -352,6 +391,16 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 
 		if (ATOMstorage(tt) < TYPE_str)
 			tv = lg->buf;
+#ifdef GDKLIBRARY_NIL_NAN
+		if (lg->convert_nil_nan) {
+			if (tt == TYPE_flt)
+				rt = fltRead;
+			else if (tt == TYPE_dbl)
+				rt = dblRead;
+			else if (tt > TYPE_str && strcmp(BATatoms[tt].name, "mbr") == 0)
+				rt = mbrRead;
+		}
+#endif
 
 		assert(l->nr <= (lng) BUN_MAX);
 		if (l->flag == LOG_UPDATE) {
@@ -483,9 +532,9 @@ la_bat_updates(logger *lg, logaction *la)
 				/* if value doesn't exist, insert it;
 				 * if b void headed, maintain that by
 				 * inserting nils */
-				if (b->batCount == 0 && h != oid_nil)
+				if (b->batCount == 0 && !is_oid_nil(h))
 					b->hseqbase = h;
-				if (b->hseqbase != oid_nil && h != oid_nil) {
+				if (!is_oid_nil(b->hseqbase) && !is_oid_nil(h)) {
 					const void *tv = ATOMnilptr(b->ttype);
 
 					while (b->hseqbase + b->batCount < h) {
@@ -1782,15 +1831,124 @@ logger_load(int debug, const char *fn, char filename[PATHLENGTH], logger *lg)
 	}
 
 	if (fp != NULL) {
+#ifdef GDKLIBRARY_NIL_NAN
+		char cvfile[PATHLENGTH];
+#endif
+
 		if (check_version(lg, fp) != GDK_SUCCEED) {
 			goto error;
 		}
 
+#ifdef GDKLIBRARY_NIL_NAN
+		/* When a file *_nil-nan-convert exists in the
+		 * database, it was left there by the BBP
+		 * initialization code when it did a conversion of old
+		 * style NILs to NaNs.  If the file exists, we first
+		 * create a file called convert-nil-nan in the log
+		 * directory and we write the current log ID into that
+		 * file.  After this file is created, we delete the
+		 * *_nil-nan-convert file in the database.  We then
+		 * know that while reading the logs, we have to
+		 * convert old style NILs to NaNs (this is indicated
+		 * by setting the convert_nil_nan flag).  When we're
+		 * done reading the logs, we remove the file and
+		 * reset the flag.  If we get interrupted before we
+		 * have written this file, the file in the database
+		 * will still exist, so the next time we're started,
+		 * BBPinit will not convert NILs (that was done before
+		 * we got interrupted), but we will still know to
+		 * convert the NILs ourselves.  If we get interrupted
+		 * after we have deleted the file from the database,
+		 * we check whether the file convert-nil-nan exists
+		 * and if it contains the expected ID.  If it does, we
+		 * again know that we have to convert.  If the ID is
+		 * not what we expect, the conversion was apparently
+		 * done already, and so we can delete the file. */
+
+		/* Do not do conversion if logger is shared/read-only */
+		if (!lg->shared) {
+			FILE *fp1;
+			long off; /* type long required by ftell() & fseek() */
+			int curid;
+
+			snprintf(cvfile, sizeof(cvfile), "%sconvert-nil-nan",
+				 lg->dir);
+			snprintf(bak, sizeof(bak), "%s_nil-nan-convert", fn);
+			/* read the current log id without disturbing
+			 * the file pointer */
+			off = ftell(fp);
+			if (off < 0) /* should never happen */
+				goto error;
+			if (fscanf(fp, "%d", &curid) != 1)
+				curid = -1; /* shouldn't happen? */
+			fseek(fp, off, SEEK_SET);
+
+			if ((fp1 = GDKfileopen(0, NULL, bak, NULL, "r")) != NULL) {
+				/* file indicating that we need to do
+				 * a NIL to NaN conversion exists;
+				 * record the fact in case we get
+				 * interrupted, and set the flag so
+				 * that we actually do what's asked */
+				fclose(fp1);
+				/* first create a versioned file using
+				 * the current log id */
+				if ((fp1 = GDKfileopen(farmid, NULL, cvfile, NULL, "w")) == NULL ||
+				    fprintf(fp1, "%d\n", curid) < 2 ||
+				    fflush(fp1) != 0 || /* make sure it's save on disk */
+#if defined(_MSC_VER)
+				    _commit(_fileno(fp1)) < 0 ||
+#elif defined(HAVE_FDATASYNC)
+				    fdatasync(fileno(fp1)) < 0 ||
+#elif defined(HAVE_FSYNC)
+				    fsync(fileno(fp1)) < 0 ||
+#endif
+				    fclose(fp1) != 0) {
+					GDKerror("logger_load: failed to write %s\n", cvfile);
+					goto error;
+				}
+				/* then remove the unversioned file
+				 * that gdk_bbp created (in this
+				 * order!) */
+				if (GDKunlink(0, NULL, bak, NULL) != GDK_SUCCEED) {
+					GDKerror("logger_load: failed to unlink %s\n", bak);
+					goto error;
+				}
+				/* set the flag that we need to convert */
+				lg->convert_nil_nan = 1;
+			} else if ((fp1 = GDKfileopen(farmid, NULL, cvfile, NULL, "r")) != NULL) {
+				/* the versioned conversion file
+				 * exists: check version */
+				int newid;
+
+				if (fscanf(fp1, "%d", &newid) == 1 &&
+				    newid == curid) {
+					/* versions match, we need to
+					 * convert */
+					lg->convert_nil_nan = 1;
+				}
+				fclose(fp1);
+				if (!lg->convert_nil_nan) {
+					/* no conversion, so we can
+					 * remove the versioned
+					 * file */
+					GDKunlink(0, NULL, cvfile, NULL);
+				}
+			}
+		}
+#endif
 		if (logger_readlogs(lg, fp, filename) != GDK_SUCCEED) {
 			goto error;
 		}
 		fclose(fp);
 		fp = NULL;
+#ifdef GDKLIBRARY_NIL_NAN
+		if (lg->convert_nil_nan && !lg->shared) {
+			/* we converted, remove versioned file and
+			 * reset conversion flag */
+			GDKunlink(0, NULL, cvfile, NULL);
+			lg->convert_nil_nan = 0;
+		}
+#endif
 		if (lg->postfuncp && (*lg->postfuncp)(lg) != GDK_SUCCEED)
 			goto error;
 
@@ -1843,6 +2001,9 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	lg->id = 1;
 
 	lg->tid = 0;
+#ifdef GDKLIBRARY_NIL_NAN
+	lg->convert_nil_nan = 0;
+#endif
 
 	lg->dbfarm_role = logger_set_logdir_path(filename, fn, logdir, shared);;
 	lg->fn = GDKstrdup(fn);
