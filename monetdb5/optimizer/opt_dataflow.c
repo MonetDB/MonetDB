@@ -258,7 +258,7 @@ OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			// implicitly a new flow block starts unless we have a hard side-effect
 			memset((char*) states, 0, vlimit * sizeof(char));
 			top = 0;
-			if ( p->token == ENDsymbol  || (hasSideEffects(mb,p,FALSE) && !blockStart(p)) || isMultiplex(p)){
+			if ( p->token == ENDsymbol  || (hasSideEffects(mb,p,FALSE) && !blockStart(p)) || isMultiplex(p) || p->barrier == YIELDsymbol){
 				start = i+1;
 				pushInstruction(mb,p);
 				continue;
