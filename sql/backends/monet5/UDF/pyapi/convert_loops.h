@@ -292,9 +292,10 @@ convert_and_append(BAT* b, const char* text, bit force) {
 	} else {
 		void* element = NULL;
 		int len = 0;
+		gdk_return ret;
 
 		BATatoms[b->ttype].atomFromStr(text, &len, &element);
-		gdk_return ret = BUNappend(b, element, force);
+		ret = BUNappend(b, element, force);
 		GDKfree(element);
 		return ret;
 	}
