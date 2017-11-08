@@ -154,7 +154,10 @@ gdk_export const ptr ptr_nil;
 #endif
 
 #if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && _MSC_VER < 1800
+#include <float.h>
 #define isnan(x)	_isnan(x)
+#define isinf(x)	(_fpclass(x) & (_FPCLASS_NINF | _FPCLASS_PINF))
+#define isfinite(x)	_finite(x)
 #endif
 
 /*

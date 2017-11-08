@@ -12,10 +12,6 @@
 
 #include <longintrepr.h>
 
-#if defined(_MSC_VER) && _MSC_VER <= 1600
-#define isnan(x) _isnan(x)
-#endif
-
 #if PY_MAJOR_VERSION >= 3
 #define IS_PY3K
 #define PyInt_Check PyLong_Check

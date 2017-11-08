@@ -23,18 +23,9 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#if defined(_MSC_VER) && defined(__INTEL_COMPILER)
-#include <mathimf.h>			/* Intel compiler on Windows */
-#else
-#include <math.h>				/* anywhere else */
-#endif
 
-/* these are only for older Visual Studio compilers (VS 2010) */
-#if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && _MSC_VER < 1800
-#include <float.h>
-#define isnan(x)	_isnan(x)
-#define isinf(x)	(_fpclass(x) & (_FPCLASS_NINF | _FPCLASS_PINF))
-#define isfinite(x)	_finite(x)
+#ifndef NAN
+#define NAN		((float)(((float)(1e300 * 1e300)) * 0.0F))
 #endif
 
 /* the *Cmp functions return a value less than zero if the first

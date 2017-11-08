@@ -187,7 +187,7 @@ MATHunary_ISNAN(bit *res, const dbl *a)
 	if (is_dbl_nil(*a)) {
 		*res = bit_nil;
 	} else {
-		*res = MNisnan(*a);
+		*res = isnan(*a);
 	}
 	return MAL_SUCCEED;
 }
@@ -198,7 +198,7 @@ MATHunary_ISINF(int *res, const dbl *a)
 	if (is_dbl_nil(*a)) {
 		*res = int_nil;
 	} else {
-		if (MNisinf(*a)) {
+		if (isinf(*a)) {
 			*res = (*a < 0.0) ? -1 : 1;
 		} else {
 			*res = 0;
@@ -213,7 +213,7 @@ MATHunary_FINITE(bit *res, const dbl *a)
 	if (is_dbl_nil(*a)) {
 		*res = bit_nil;
 	} else {
-		*res = MNfinite(*a);
+		*res = isfinite(*a);
 	}
 	return MAL_SUCCEED;
 }

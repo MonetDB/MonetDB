@@ -29,10 +29,6 @@
 // 'bat' is a BAT* pointer, which will contain the new BAT. TYPE_'mtpe' is the
 // BAT type, and 'batstore' is the heap storage type of the BAT (this should be
 // STORE_CMEM or STORE_SHARED)
-#if defined(_MSC_VER) && _MSC_VER <= 1600
-#define isnan(x) _isnan(x)
-#endif
-
 #define nancheck_flt(bat)                                                      \
 	do {                                                                       \
 		for (iu = 0; iu < ret->count; iu++) {                                  \

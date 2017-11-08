@@ -14,10 +14,6 @@
 #include "geom.h"
 #include "mal_exception.h"
 
-#if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && _MSC_VER < 1800
-#define isnan(x)	_isnan(x)
-#endif
-
 int TYPE_mbr;
 
 static wkb *geos2wkb(const GEOSGeometry *geosGeometry);
