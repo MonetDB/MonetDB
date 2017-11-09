@@ -1141,7 +1141,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				runtimeProfileFinish(cntxt, mb, stk);
 			if ( backup != backups) GDKfree(backup);
 			if ( garbage != garbages) GDKfree(garbage);
-			return yieldFactory(mb, pci, stkpc);
+			return yieldFactory(cntxt, mb, pci, stkpc);
 		case RETURNsymbol:
 			/* Return from factory involves cleanup */
 

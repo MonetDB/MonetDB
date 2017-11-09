@@ -28,10 +28,7 @@ enum clientmode {
 };
 
 #define PROCESSTIMEOUT  2   /* seconds */
-
-#define REGULAR_CLIENT  0
-#define CQ_CLIENT       1
-#define WLR_CLIENT      2
+#define MAXPLANTS 256
 
 /*
  * The prompt structure is designed to simplify recognition of the
@@ -59,6 +56,23 @@ typedef struct CURRENT_INSTR{
 	MalStkPtr	stk;
 	InstrPtr	pci;
 } Workset;
+
+/*
+ * MAL factories definition.
+ */
+typedef struct {
+	int id;			/* unique plant number */
+	MalBlkPtr factory;
+	MalStkPtr stk;		/* private state */
+	int pc;			/* where we are */
+	int inuse;		/* able to handle it */
+	int next;		/* next plant of same factory */
+	int policy;		/* flags to control behavior */
+
+	MalBlkPtr caller;	/* from routine */
+	MalStkPtr env;		/* with the stack  */
+	InstrPtr pci;		/* with the instruction */
+} PlantRecord, *Plant;
 
 typedef struct CLIENT {
 	int idx;        /* entry in mal_clients */
@@ -195,6 +209,10 @@ typedef struct CLIENT {
 	size_t blocksize;
 	protocol_version protocol;
 	int compute_column_widths;
+
+	PlantRecord *plants;
+	int lastPlant;
+	int plantId;
 } *Client, ClientRec;
 
 mal_export void    MCinit(void);
@@ -211,7 +229,7 @@ mal_export Client  MCforkClient(Client father);
 mal_export void	   MCstopClients(Client c);
 mal_export int     MCshutdowninprogress(void);
 mal_export int	   MCactiveClients(void);
-mal_export void    MCcloseClient(Client c, int which_client);
+mal_export void    MCcloseClient(Client c);
 mal_export str     MCsuspendClient(int id);
 mal_export str     MCawakeClient(int id);
 mal_export int     MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt);

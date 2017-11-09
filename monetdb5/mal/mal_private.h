@@ -27,11 +27,13 @@ __hidden void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 
 __hidden str runFactory(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr stk, InstrPtr pci)
 	__attribute__((__visibility__("hidden")));
-__hidden int yieldResult(MalBlkPtr mb, InstrPtr p, int pc)
+__hidden int yieldResult(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 	__attribute__((__visibility__("hidden")));
-__hidden str yieldFactory(MalBlkPtr mb, InstrPtr p, int pc)
+__hidden str yieldFactory(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 	__attribute__((__visibility__("hidden")));
 __hidden str callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[],char flag)
+	__attribute__((__visibility__("hidden")));
+__hidden mal_export void mal_factory_reset(Client cntxt)
 	__attribute__((__visibility__("hidden")));
 
 #endif
@@ -90,9 +92,6 @@ __hidden mal_export void mal_client_reset(void)
 	__attribute__((__visibility__("hidden")));
 
 __hidden mal_export void mal_dataflow_reset(void)
-	__attribute__((__visibility__("hidden")));
-
-__hidden mal_export void mal_factory_reset(void)
 	__attribute__((__visibility__("hidden")));
 
 __hidden mal_export void mal_linker_reset(void)

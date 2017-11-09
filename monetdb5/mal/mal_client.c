@@ -260,6 +260,10 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->blocksize = BLOCK;
 	c->protocol = PROTOCOL_9;
 	c->compute_column_widths = 0;
+
+	c->lastPlant = 0;
+	c->plantId = 1;
+	c->plants = 0;
 	MT_sema_init(&c->s, 0, "Client->s");
 	return c;
 }
@@ -417,6 +421,7 @@ freeClient(Client c)
 	if (t)
 		THRdel(t);  /* you may perform suicide */
 	MT_sema_destroy(&c->s);
+	mal_factory_reset(c);
 	c->mode = MCshutdowninprogress()? BLOCKCLIENT: FREECLIENT;
 }
 
@@ -475,7 +480,7 @@ MCactiveClients(void)
 }
 
 void
-MCcloseClient(Client c, int which_client)
+MCcloseClient(Client c)
 {
 #ifdef MAL_DEBUG_CLIENT
 	fprintf(stderr,"closeClient %d " OIDFMT "\n", (int) (c - mal_clients), c->user);
@@ -484,15 +489,11 @@ MCcloseClient(Client c, int which_client)
 	if (!isAdministrator(c)) {
 		freeClient(c);
 		return;
-	} else if(which_client == WLR_CLIENT) {
-		freeClient(c);
 	}
 
 	/* adm is set to disallow new clients entering */
 	mal_clients[CONSOLE].mode = FINISHCLIENT;
-	if(which_client != CQ_CLIENT) {
-		mal_exit();
-	}
+	mal_exit();
 }
 
 str

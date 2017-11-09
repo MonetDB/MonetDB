@@ -149,7 +149,6 @@ void mserver_reset(int exit)
 	MTIMEreset();
 #endif
 */
-	mal_factory_reset();
 	mal_dataflow_reset();
 	THRdel(mal_clients->mythread);
 	GDKfree(mal_clients->errbuf);

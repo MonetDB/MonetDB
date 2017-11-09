@@ -324,7 +324,7 @@ wrapup:
 	(void) mnstr_flush(c->fdout);
 	close_stream(c->fdout);
 	SQLexitClient(c);
-	MCcloseClient(c, WLR_CLIENT);
+	MCcloseClient(c);
 	if(prev)
 		freeSymbol(prev);
 }
