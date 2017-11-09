@@ -449,6 +449,13 @@ GDKinit(opt *set, int setlen)
 	assert(sizeof(size_t) == SIZEOF_SIZE_T);
 	assert(SIZEOF_OID == SIZEOF_INT || SIZEOF_OID == SIZEOF_LNG);
 
+#ifdef __INTEL_COMPILER
+	/* stupid Intel compiler uses a value that cannot be used in an
+	 * initializer for NAN, so we have to initialize at run time */
+	flt_nil = NAN;
+	dbl_nil = NAN;
+#endif
+
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&MT_system_lock,"MT_system_lock");
 	ATOMIC_INIT(GDKstoppedLock);
@@ -1318,7 +1325,7 @@ THRhighwater(void)
 	if (s != NULL) {
 		c = THRsp();
 		diff = c < s->sp ? s->sp - c : c - s->sp;
-		if (diff > THREAD_STACK_SIZE - 16 * 1024)
+		if (diff > THREAD_STACK_SIZE - 80 * 1024)
 			rc = 1;
 	}
 	MT_lock_unset(&GDKthreadLock);

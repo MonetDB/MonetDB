@@ -73,6 +73,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	(void)sql;
 	if (!e)
 		return;
+	//mnstr_printf(fout, "%p ", e);
 	switch(e->type) {
 	case e_psm: {
 		if (e->flag & PSM_SET) {

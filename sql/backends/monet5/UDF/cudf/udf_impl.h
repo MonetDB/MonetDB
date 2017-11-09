@@ -13,14 +13,16 @@
 
 /* ! ENSURE THAT THESE LOCAL MACROS ARE UNDEFINED AT THE END OF THIS FILE ! */
 
-/* concatenate two or five tokens */
+/* concatenate two, three or five tokens */
 #define U_CONCAT_2(a,b)       a##b
+#define U_CONCAT_3(a,b,c)     a##b##c
 #define U_CONCAT_5(a,b,c,d,e) a##b##c##d##e
 
 /* function names, *_nil & TYPE_* macros */
 #define UF(p,i,o,s) U_CONCAT_5(p,i,_,o,s)
 #define UN(t)       U_CONCAT_2(t,_nil)
 #define UT(t)       U_CONCAT_2(TYPE_,t)
+#define NL(t)       U_CONCAT_3(is_,t,_nil)
 
 
 /* scalar fuse */
@@ -35,7 +37,7 @@ UF(UDFfuse_,UI,UO,_) ( UO *ret , UI one , UI two )
 	/* assert calling sanity */
 	assert(ret != NULL);
 
-	if (one == UN(UI) || two == UN(UI))
+	if (NL(UI)(one) || NL(UI)(two))
 		/* NULL/nil in => NULL/nil out */
 		*ret = UN(UO);
 	else
@@ -72,7 +74,7 @@ UF(UDFarrayfuse_,UI,UO,)  ( UO *res, const UI *one, const UI *two, BUN n )
 
 	/* iterate over all values/tuples and do the work */
 	for (i = 0; i < n; i++)
-		if (one[i] == UN(UI) || two[i] == UN(UI))
+		if (NL(UI)(one[i]) || NL(UI)(two[i]))
 			/* NULL/nil in => NULL/nil out */
 			res[i] = UN(UO);
 		else
@@ -122,6 +124,7 @@ UF(UDFBATfuse_,UI,UO,)  ( const BAT *bres, const BAT *bone, const BAT *btwo, BUN
 #undef UT
 #undef UN
 #undef UF
+#undef NL
 #undef U_CONCAT_5
+#undef U_CONCAT_3
 #undef U_CONCAT_2
-

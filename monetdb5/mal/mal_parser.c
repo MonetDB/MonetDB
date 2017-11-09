@@ -499,7 +499,7 @@ cstToken(Client cntxt, ValPtr cst)
 				parseError(cntxt, GDKerrbuf);
 				return i;
 			}
-			if (l == lng_nil || l < 0
+			if (is_lng_nil(l) || l < 0
 #if SIZEOF_OID < SIZEOF_LNG
 				|| l > GDK_oid_max
 #endif
@@ -574,17 +574,17 @@ handleInts:
 			if (hgeFromStr(CURRENT(cntxt), &len, &pval) < 0)
 				l = hge_nil;
 
-			if ((hge) GDK_int_min < l && l <= (hge) GDK_int_max) {
+			if ((hge) GDK_int_min <= l && l <= (hge) GDK_int_max) {
 				cst->vtype = TYPE_int;
 				cst->val.ival = (int) l;
 			} else
-			if ((hge) GDK_lng_min < l && l <= (hge) GDK_lng_max) {
+			if ((hge) GDK_lng_min <= l && l <= (hge) GDK_lng_max) {
 				cst->vtype = TYPE_lng;
 				cst->val.lval = (lng) l;
 			} else {
 				cst->vtype = TYPE_hge;
 				cst->val.hval = l;
-				if (l == hge_nil)
+				if (is_hge_nil(l))
 					parseError(cntxt, "convertConstant: integer parse error\n");
 			}
 #else
@@ -593,13 +593,13 @@ handleInts:
 			if (lngFromStr(CURRENT(cntxt), &len, &pval) < 0)
 				l = lng_nil;
 
-			if ((lng) GDK_int_min < l && l <= (lng) GDK_int_max) {
+			if ((lng) GDK_int_min <= l && l <= (lng) GDK_int_max) {
 				cst->vtype = TYPE_int;
 				cst->val.ival = (int) l;
 			} else {
 				cst->vtype = TYPE_lng;
 				cst->val.lval = l;
-				if (l == lng_nil)
+				if (is_lng_nil(l))
 					parseError(cntxt, "convertConstant: integer parse error\n");
 			}
 #endif
@@ -945,8 +945,11 @@ parseAtom(Client cntxt)
 		tpe = parseTypeId(cntxt, TYPE_int);
 	if( ATOMindex(modnme) >= 0)
 		parseError(cntxt, "Atom redefinition\n");
-	else
-		cntxt->curprg->def->errors = malAtomDefinition(modnme, tpe) ;
+	else {
+		if(cntxt->curprg->def->errors)
+			GDKfree(cntxt->curprg->def->errors);
+		cntxt->curprg->def->errors = malAtomDefinition(modnme, tpe);
+	}
 	if( strcmp(modnme,"user"))
 		cntxt->curmodule = fixModule(modnme);
 	else cntxt->curmodule = cntxt->usermodule;
@@ -1111,6 +1114,11 @@ fcnHeader(Client cntxt, int kind)
 	assert(!cntxt->backup);
 	cntxt->backup = cntxt->curprg;
 	cntxt->curprg = newFunction( modnme, fnme, kind);
+	if(cntxt->curprg == NULL) {
+		parseError(cntxt, MAL_MALLOC_FAIL);
+		cntxt->curprg = cntxt->backup;
+		return 0;
+	}
 	cntxt->curprg->def->errors = cntxt->backup->def->errors;
 	cntxt->backup->def->errors = 0;
 	curPrg = cntxt->curprg;
@@ -1282,6 +1290,8 @@ parseCommandPattern(Client cntxt, int kind)
 		else
 			insertSymbol(getModule(modnme), curPrg);
 		chkProgram(cntxt->usermodule, curBlk);
+		if(cntxt->curprg->def->errors)
+			GDKfree(cntxt->curprg->def->errors);
 		cntxt->curprg->def->errors = cntxt->backup->def->errors;
 		cntxt->backup->def->errors = 0;
 		cntxt->curprg = cntxt->backup;
@@ -1363,6 +1373,10 @@ parseFunction(Client cntxt, int kind)
 			return 0;
 		}
 		nme = idCopy(cntxt, i);
+		if (nme == NULL) {
+			parseError(cntxt, MAL_MALLOC_FAIL);
+			return 0;
+		}
 		curInstr->fcn = getAddress(nme);
 		GDKfree(nme);
 		if (curInstr->fcn == NULL) {
@@ -1514,8 +1528,11 @@ parseAssign(Client cntxt, int cntrl)
 
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
-	curInstr = newInstruction(curBlk, NULL, NULL);
-	
+	if((curInstr = newInstruction(curBlk, NULL, NULL)) == NULL) {
+		parseError(cntxt, MAL_MALLOC_FAIL);
+		return;
+	}
+
 	if( cntrl){
 		curInstr->token = ASSIGNsymbol;
 		curInstr->barrier = cntrl;
@@ -1758,12 +1775,19 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 				*e = 0;
 			if (! skipcomments && e > start && curBlk->stop > 0 ) {
 				ValRecord cst;
-				curInstr = newInstruction(curBlk, NULL, NULL);
+				if((curInstr = newInstruction(curBlk, NULL, NULL)) == NULL) {
+					parseError(cntxt, MAL_MALLOC_FAIL);
+					continue;
+				}
 				curInstr->token= REMsymbol;
 				curInstr->barrier= 0;
 				cst.vtype = TYPE_str;
-				cst.len = strlen(start);
-				cst.val.sval = GDKstrdup(start);
+				cst.len = (int) strlen(start);
+				if((cst.val.sval = GDKstrdup(start)) == NULL) {
+					parseError(cntxt, MAL_MALLOC_FAIL);
+					freeInstruction(curInstr);
+					continue;
+				}
 				getArg(curInstr, 0) = defConstant(curBlk, TYPE_str, &cst);
 				clrVarConstant(curBlk, getArg(curInstr, 0));
 				setVarDisabled(curBlk, getArg(curInstr, 0));

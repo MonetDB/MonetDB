@@ -617,7 +617,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			if (c->null == 0) {
 				const void *nilptr = ATOMnilptr(c->type.type->localtype);
 				rids *nils = table_funcs.rids_select(sql->session->tr, nc, nilptr, NULL, NULL);
-				int has_nils = (table_funcs.rids_next(nils) != oid_nil);
+				int has_nils = !is_oid_nil(table_funcs.rids_next(nils));
 
 				table_funcs.rids_destroy(nils);
 				if (has_nils)
@@ -805,7 +805,7 @@ SQLalter_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	initcontext();
 	if (getArgType(mb, pci, 4) == TYPE_lng)
 		val = getArgReference_lng(stk, pci, 4);
-	if (val == NULL || *val == lng_nil)
+	if (val == NULL || is_lng_nil(*val))
 		msg = createException(SQL,"sql.alter_seq", SQLSTATE(42M36) "ALTER SEQUENCE: cannot (re)start with NULL");
 	else
 		msg = alter_seq(sql, sname, seqname, s, val);
@@ -871,10 +871,14 @@ SQLdrop_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL,"sql.drop_schema",SQLSTATE(42000) "DROP SCHEMA: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (s == cur_schema(sql)) {
 		throw(SQL,"sql.drop_schema",SQLSTATE(42000) "DROP SCHEMA: cannot drop current schema");
-	} else if (strcmp(sname, "sys") == 0 || strcmp(sname, "tmp") == 0) {
+	} else if (s->system) {
 		throw(SQL,"sql.drop_schema",SQLSTATE(42000) "DROP SCHEMA: access denied for '%s'", sname);
 	} else if (sql_schema_has_user(sql, s)) {
-		throw(SQL,"sql.drop_schema",SQLSTATE(2BM37) "DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it", sname);
+		throw(SQL,"sql.drop_schema",SQLSTATE(2BM37) "DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it)", sname);
+	} else if (!action /* RESTRICT */ && (
+		!list_empty(s->tables.set) || !list_empty(s->types.set) ||
+		!list_empty(s->funcs.set) || !list_empty(s->seqs.set))) {
+		throw(SQL,"sql.drop_schema",SQLSTATE(2BM37) "DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it)", sname);
 	} else {
 		mvc_drop_schema(sql, s, action);
 	}

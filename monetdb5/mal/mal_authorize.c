@@ -551,7 +551,7 @@ AUTHresolveUser(str *username, oid uid)
 	BUN p;
 	BATiter useri;
 
-	if (uid == oid_nil || (p = (BUN) uid) >= BATcount(user))
+	if (is_oid_nil(uid) || (p = (BUN) uid) >= BATcount(user))
 		throw(ILLARG, "resolveUser", "userid should not be nil");
 
 	assert(username != NULL);

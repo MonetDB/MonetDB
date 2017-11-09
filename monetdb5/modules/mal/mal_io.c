@@ -93,7 +93,7 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 	if (isaBatType(tpe) ) {
 		BAT *b[2];
 
-		if (*(bat *) val == bat_nil || *(bat *) val == 0) {
+		if (is_bat_nil(*(bat *) val)) {
 			if (hd)
 				mnstr_printf(fp, "%s", hd);
 			mnstr_printf(fp,"nil");

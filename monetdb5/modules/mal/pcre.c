@@ -1473,7 +1473,7 @@ PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "algebra.likeselect", RUNTIME_OBJECT_MISSING);
 	}
-	if (sid && (*sid) != bat_nil && *sid && (s = BATdescriptor(*sid)) == NULL) {
+	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "algebra.likeselect", RUNTIME_OBJECT_MISSING);
 	}
@@ -1868,9 +1868,9 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid,
 		goto fail;
 	if ((right = BATdescriptor(rid)) == NULL)
 		goto fail;
-	if (slid != bat_nil && (candleft = BATdescriptor(slid)) == NULL)
+	if (!is_bat_nil(slid) && (candleft = BATdescriptor(slid)) == NULL)
 		goto fail;
-	if (srid != bat_nil && (candright = BATdescriptor(srid)) == NULL)
+	if (!is_bat_nil(srid) && (candright = BATdescriptor(srid)) == NULL)
 		goto fail;
 	result1 = COLnew(0, TYPE_oid, BATcount(left), TRANSIENT);
 	result2 = COLnew(0, TYPE_oid, BATcount(left), TRANSIENT);

@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Tue Nov  7 2017 Sjoerd Mullender <sjoerd@acm.org>
+- The NIL representation of the internal flt and dbl types was changed
+  from the smallest representable finite value to NaN (not-a-number).
+
 * Mon Sep 18 2017 Sjoerd Mullender <sjoerd@acm.org>
 - Changed the interface of ATOMformat and VALformat: they now return a
   pointer to the allocated string.

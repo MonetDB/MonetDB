@@ -43,12 +43,12 @@ Ready.
 # 15:20:08 >  "/usr/bin/python" "AVG_of_SQRT.SF-2757642.SQL.py" "AVG_of_SQRT.SF-2757642"
 # 15:20:08 >  
 
-[ 100000000	]
-% .L2,	sys.L6 # table_name
-% L2,	L5 # name
+#select 'avg(sqrt(n8)) == 1.1', avg(cast(1.1 as real)) from generate_series(cast(0 as integer), 100000000, 1);
+% .L6,	.L13 # table_name
+% L6,	L12 # name
 % char,	double # type
 % 20,	24 # length
-[ "avg(sqrt(n8)) == 1.1",	1.1	]
+[ "avg(sqrt(n8)) == 1.1",	1.100000024	]
 
 # 15:21:14 >  
 # 15:21:14 >  "Done."

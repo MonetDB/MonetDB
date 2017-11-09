@@ -70,7 +70,7 @@ ALIGNsetT(BAT *b1, BAT *b2)
 		/* b2 is either dense or has a void(nil) tail */
 		if (b1->ttype != TYPE_void)
 			b1->tdense = TRUE;
-		else if (b2->tseqbase == oid_nil)
+		else if (is_oid_nil(b2->tseqbase))
 			b1->tnonil = FALSE;
 		BATtseqbase(b1, b2->tseqbase);
 	} else if (b1->ttype != TYPE_void) {
@@ -106,8 +106,8 @@ ALIGNsynced(BAT *b1, BAT *b2)
 	BATcheck(b1, "ALIGNsynced: bat 1 required", 0);
 	BATcheck(b2, "ALIGNsynced: bat 2 required", 0);
 
-	assert(b1->hseqbase != oid_nil);
-	assert(b2->hseqbase != oid_nil);
+	assert(!is_oid_nil(b1->hseqbase));
+	assert(!is_oid_nil(b2->hseqbase));
 
 	return BATcount(b1) == BATcount(b2) && b1->hseqbase == b2->hseqbase;
 }

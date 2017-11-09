@@ -306,25 +306,25 @@ VALisnil(const ValRecord *v)
 	case TYPE_void:
 		return 1;
 	case TYPE_bte:
-		return v->val.btval == bte_nil;
+		return is_bte_nil(v->val.btval);
 	case TYPE_sht:
-		return v->val.shval == sht_nil;
+		return is_sht_nil(v->val.shval);
 	case TYPE_int:
-		return v->val.ival == int_nil;
+		return is_int_nil(v->val.ival);
 	case TYPE_lng:
-		return v->val.lval == lng_nil;
+		return is_lng_nil(v->val.lval);
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		return v->val.hval == hge_nil;
+		return is_hge_nil(v->val.hval);
 #endif
 	case TYPE_flt:
-		return v->val.fval == flt_nil;
+		return is_flt_nil(v->val.fval);
 	case TYPE_dbl:
-		return v->val.dval == dbl_nil;
+		return is_dbl_nil(v->val.dval);
 	case TYPE_oid:
-		return v->val.oval == oid_nil;
+		return is_oid_nil(v->val.oval);
 	case TYPE_bat:
-		return v->val.bval == bat_nil || v->val.bval == 0;
+		return is_bat_nil(v->val.bval);
 	default:
 		break;
 	}

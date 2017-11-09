@@ -1184,6 +1184,10 @@ SQLparser(Client c)
 			m->sym = NULL;
 			/* register name in the namespace */
 			be->q->name = putName(be->q->name);
+			if(!be->q->name) {
+				err = 1;
+				msg = createException(PARSE, "SQLparser", MAL_MALLOC_FAIL);
+			}
 		}
 	}
 	if (err)

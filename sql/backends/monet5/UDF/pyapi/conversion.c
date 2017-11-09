@@ -406,7 +406,7 @@ wrapup:
 	{                                                                          \
 		tpe *bat_ptr = (tpe *)b->theap.base;                                   \
 		for (j = 0; j < count; j++) {                                          \
-			mask_data[j] = bat_ptr[j] == tpe##_nil;                            \
+			mask_data[j] = is_##tpe##_nil(bat_ptr[j]);                         \
 			found_nil = found_nil || mask_data[j];                             \
 		}                                                                      \
 	}

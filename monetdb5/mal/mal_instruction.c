@@ -48,6 +48,10 @@ newSymbol(str nme, int kind)
 	if (cur == NULL)
 		return NULL;
 	cur->name = putName(nme);
+	if(cur->name == NULL) {
+		GDKfree(cur);
+		return NULL;
+	}
 	cur->kind = kind;
 	cur->peer = NULL;
 	cur->def = newMalBlk(kind == FUNCTIONsymbol? STMT_INCREMENT : 2);
@@ -131,6 +135,7 @@ newMalBlk(int elements)
 	mb->sealedProp = 0;
 	mb->replica = NULL;
 	mb->trap = 0;
+	mb->starttime = 0;
 	mb->runtime = 0;
 	mb->calls = 0;
 	mb->optimize = 0;

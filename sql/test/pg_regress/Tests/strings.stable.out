@@ -99,7 +99,7 @@ Ready.
 #SELECT CAST('namefield' AS text) AS "text(name)";
 % .L3 # table_name
 % text(name) # name
-% clob # type
+% char # type
 % 9 # length
 [ "namefield"	]
 #CREATE TABLE TEXT_TBL (f1 text);
@@ -159,7 +159,7 @@ Ready.
 #SELECT CAST('namefield' AS string) AS "varchar(name)";
 % .L3 # table_name
 % varchar(name) # name
-% clob # type
+% char # type
 % 9 # length
 [ "namefield"	]
 #DROP TABLE CHAR_TBL;
@@ -712,7 +712,7 @@ Ready.
 % .L2 # table_name
 % joeuser # name
 % char # type
-% 18 # length
+% 20 # length
 [ "joeuser"     ]
 
 #select md5('') = 'd41d8cd98f00b204e9800998ecf8427e' AS "TRUE";

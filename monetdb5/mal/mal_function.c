@@ -23,6 +23,9 @@ Symbol newFunction(str mod, str nme,int kind){
 	InstrPtr p;
 	int varid;
 
+	if(mod == NULL || nme == NULL)
+		return NULL;
+
 	s = newSymbol(nme,kind);
 	if (s == NULL)
 		return NULL;

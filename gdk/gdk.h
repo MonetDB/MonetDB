@@ -861,7 +861,8 @@ typedef struct {
 #define GDKLIBRARY_NOKEY	061034	/* nokey values can't be trusted */
 #define GDKLIBRARY_BADEMPTY	061035	/* possibility of duplicate empty str */
 #define GDKLIBRARY_TALIGN	061036	/* talign field in BBP.dir */
-#define GDKLIBRARY		061037
+#define GDKLIBRARY_NIL_NAN	061037	/* flt/dbl NIL not represented by NaN */
+#define GDKLIBRARY		061040
 
 typedef struct BAT {
 	/* static bat properties */
@@ -1296,13 +1297,13 @@ gdk_export BUN ORDERfndlast(BAT *b, const void *v);
 gdk_export BUN BUNfnd(BAT *b, const void *right);
 
 #define BUNfndVOID(b, v)						\
-	(((*(const oid*)(v) == oid_nil) ^ ((b)->tseqbase == oid_nil)) | \
+	((is_oid_nil(*(const oid*)(v)) ^ is_oid_nil((b)->tseqbase)) |	\
 		(*(const oid*)(v) < (b)->tseqbase) |			\
 		(*(const oid*)(v) >= (b)->tseqbase + (b)->batCount) ?	\
 	 BUN_NONE :							\
 	 (BUN) (*(const oid*)(v) - (b)->tseqbase))
 
-#define BATttype(b)	((b)->ttype == TYPE_void && (b)->tseqbase != oid_nil ? \
+#define BATttype(b)	((b)->ttype == TYPE_void && !is_oid_nil((b)->tseqbase) ? \
 			 TYPE_oid : (b)->ttype)
 #define Tbase(b)	((b)->tvheap->base)
 
@@ -1531,19 +1532,19 @@ gdk_export void GDKqsort(void *h, void *t, const void *base, size_t n, int hs, i
 gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe);
 
 #define BATtordered(b)	((b)->ttype == TYPE_void || (b)->tsorted)
-#define BATtrevordered(b) (((b)->ttype == TYPE_void && (b)->tseqbase == oid_nil) || (b)->trevsorted)
-#define BATtdense(b)	(BATtvoid(b) && (b)->tseqbase != oid_nil)
+#define BATtrevordered(b) (((b)->ttype == TYPE_void && is_oid_nil((b)->tseqbase)) || (b)->trevsorted)
+#define BATtdense(b)	(BATtvoid(b) && !is_oid_nil((b)->tseqbase))
 #define BATtvoid(b)	(((b)->tdense && (b)->tsorted) || (b)->ttype==TYPE_void)
 #define BATtkey(b)	(b->tkey != FALSE || BATtdense(b))
 
 /* set some properties that are trivial to deduce */
 #define BATsettrivprop(b)						\
 	do {								\
-		assert((b)->hseqbase != oid_nil);			\
+		assert(!is_oid_nil((b)->hseqbase));			\
 		(b)->batDirtydesc = 1;	/* likely already set */	\
 		/* the other head properties should already be correct */ \
 		if ((b)->ttype == TYPE_void) {				\
-			if ((b)->tseqbase == oid_nil) {			\
+			if (is_oid_nil((b)->tseqbase)) {		\
 				(b)->tnonil = (b)->batCount == 0;	\
 				(b)->tnil = !(b)->tnonil;		\
 				(b)->trevsorted = 1;			\
@@ -1573,7 +1574,7 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
 			} else if ((b)->ttype == TYPE_oid) {		\
 				/* b->batCount == 1 */			\
 				oid sqbs;				\
-				if ((sqbs = ((oid *) (b)->theap.base)[0]) == oid_nil) { \
+				if (is_oid_nil((sqbs = ((oid *) (b)->theap.base)[0]))) { \
 					(b)->tdense = 0;		\
 					(b)->tnonil = 0;		\
 					(b)->tnil = 1;			\
@@ -1794,7 +1795,7 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * value. `val' is a direct pointer to the atom value. Its return
  * value should be an hash_t between 0 and 'mask'.
  *
- * @item The @emph{ATOMcmp()} operation computes two atomic
+ * @item The @emph{ATOMcmp()} operation compares two atomic
  * values. Its parameters are pointers to atomic values.
  *
  * @item The @emph{ATOMlen()} operation computes the byte length for a
@@ -1895,7 +1896,6 @@ gdk_export int ATOMindex(const char *nme);
 gdk_export str ATOMname(int id);
 gdk_export size_t ATOMlen(int id, const void *v);
 gdk_export ptr ATOMnil(int id);
-gdk_export int ATOMcmp(int id, const void *v_1, const void *v_2);
 gdk_export int ATOMprint(int id, const void *val, stream *fd);
 gdk_export char *ATOMformat(int id, const void *val);
 
@@ -2437,7 +2437,7 @@ gdk_export void *THRdata[THREADDATA];
 static inline bat
 BBPcheck(bat x, const char *y)
 {
-	if (x && x != bat_nil) {
+	if (!is_bat_nil(x)) {
 		assert(x > 0);
 
 		if (x < 0 || x >= getBBPsize() || BBP_logical(x) == NULL) {
@@ -2467,7 +2467,7 @@ static inline char *
 Tpos(BATiter *bi, BUN p)
 {
 	bi->tvid = bi->b->tseqbase;
-	if (bi->tvid != oid_nil)
+	if (!is_oid_nil(bi->tvid))
 		bi->tvid += p;
 	return (char*)&bi->tvid;
 }
@@ -2778,7 +2778,7 @@ gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
 	for (hb = HASHget(h, hash_##TYPE(h, v));		\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (simple_EQ(v, BUNtloc(bi, hb), TYPE))
+		if (* (const TYPE *) v == * (const TYPE *) BUNtloc(bi, hb))
 
 #define HASHloop_bte(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
 #define HASHloop_sht(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, sht)

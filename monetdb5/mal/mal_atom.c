@@ -181,7 +181,7 @@ malAtomDefinition(str name, int tpe)
 		throw(TYPE, "atomDefinition", "Atom name too long '%s'", name);
 
 	i = ATOMallocate(name);
-	if (i == int_nil)
+	if (is_int_nil(i))
 		throw(TYPE,"atomDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	/* overload atom ? */
 	if (tpe) {

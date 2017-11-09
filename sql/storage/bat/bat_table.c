@@ -227,7 +227,7 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 static int
 column_update_value(sql_trans *tr, sql_column *c, oid rid, void *value)
 {
-	assert(rid != oid_nil);
+	assert(!is_oid_nil(rid));
 
 	store_funcs.update_col(tr, c, &rid, value, c->type.type->localtype);
 	return LOG_OK;
@@ -262,7 +262,7 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 static int
 table_delete(sql_trans *tr, sql_table *t, oid rid)
 {
-	assert(rid != oid_nil);
+	assert(!is_oid_nil(rid));
 
 	store_funcs.delete_tab(tr, t, &rid, TYPE_oid);
 	return LOG_OK;

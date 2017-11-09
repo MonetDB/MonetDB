@@ -63,7 +63,7 @@ str CMDscience_bat_##TYPE##_##FUNC(bat *ret, const bat *bid)		\
 			*o = FUNC##SUFF(*p);									\
 	} else {														\
 		for (; p < q; o++, p++)										\
-			*o = *p == TYPE##_nil ? TYPE##_nil : FUNC##SUFF(*p);	\
+			*o = is_##TYPE##_nil(*p) ? TYPE##_nil : FUNC##SUFF(*p);	\
 	}																\
 	if ((e = errno) != 0 ||											\
 		(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |				\
@@ -115,7 +115,7 @@ str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
 			*o = FUNC##SUFF(*p, *d);									\
 	} else {															\
 		for (; p < q; o++, p++)											\
-			*o = *p == TYPE##_nil ? TYPE##_nil : FUNC##SUFF(*p, *d);	\
+			*o = is_##TYPE##_nil(*p) ? TYPE##_nil : FUNC##SUFF(*p, *d);	\
 	}																	\
 	if ((e = errno) != 0 ||												\
 		(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |					\
@@ -166,7 +166,7 @@ str CMDscience_cst_bat_##FUNC##_##TYPE(bat *ret, const TYPE *d,			\
 			*o = FUNC##SUFF(*d, *p);									\
 	} else {															\
 		for (; p < q; o++, p++)											\
-			*o = *p == TYPE##_nil ? TYPE##_nil : FUNC##SUFF(*d, *p);	\
+			*o = is_##TYPE##_nil(*p) ? TYPE##_nil : FUNC##SUFF(*d, *p);	\
 	}																	\
 	if ((e = errno) != 0 ||												\
 		(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |					\

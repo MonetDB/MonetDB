@@ -107,7 +107,7 @@ MKEYbathash(bat *res, const bat *bid)
 	switch (ATOMstorage(b->ttype)) {
 	case TYPE_void: {
 		oid o = b->tseqbase;
-		if (o == oid_nil)
+		if (is_oid_nil(o))
 			while (n-- > 0)
 				*r++ = lng_nil;
 		else

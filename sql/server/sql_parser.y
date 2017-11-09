@@ -592,7 +592,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token CHECK CONSTRAINT CREATE
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE 
-%token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREPARE EXECUTE
+%token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREP PREPARE EXEC EXECUTE
 %token DEFAULT DISTINCT DROP
 %token FOREIGN
 %token RENAME ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
@@ -629,7 +629,7 @@ sqlstmt:
 		YYACCEPT;
 	}
 
- | PREPARE 		{
+ | prepare 		{
 		  	  m->emode = m_prepare; 
 			  m->scanner.as = m->scanner.yycur; 
 			  m->scanner.key = 0;
@@ -695,6 +695,17 @@ sqlstmt:
  | error SCOLON		{ m->sym = $$ = NULL; YYACCEPT; }
  | LEX_ERROR		{ m->sym = $$ = NULL; YYABORT; }
  ;
+
+
+prepare:
+       PREPARE
+ |     PREP
+ ; 
+
+execute:
+       EXECUTE
+ |     EXEC
+ ; 
 
 
 create:
@@ -837,7 +848,7 @@ schema:
   |	drop SCHEMA if_exists qname drop_action
 		{ dlist *l = L();
 		append_list(l, $4);
-		append_int(l, $5);
+		append_int(l, 1 /*$5 use CASCADE in the release */);
 		append_int(l, $3);
 		$$ = _symbol_create_list( SQL_DROP_SCHEMA, l); }
  ;
@@ -1011,7 +1022,7 @@ operation:
  |  UPDATE opt_column_list          { $$ = _symbol_create_list(SQL_UPDATE,$2); }
  |  SELECT opt_column_list	    { $$ = _symbol_create_list(SQL_SELECT,$2); }
  |  REFERENCES opt_column_list 	    { $$ = _symbol_create_list(SQL_SELECT,$2); }
- |  EXECUTE			    { $$ = _symbol_create(SQL_EXECUTE,NULL); }
+ |  execute			    { $$ = _symbol_create(SQL_EXECUTE,NULL); }
  ;
 
 grantee_commalist:
@@ -3481,7 +3492,7 @@ like_exp:
  |  scalar_exp ESCAPE string
  	{ const char *s = sql2str($3);
 	  if (_strlen(s) != 1) {
-		yyerror(m, SQLSTATE(22025) "ESCAPE must be one character");
+		yyerror(m, SQLSTATE(22019) "ESCAPE must be one character");
 		$$ = NULL;
 		YYABORT;
 	  } else {
@@ -3951,7 +3962,7 @@ window_frame_end:
   ;
 
 window_frame_following:
-	value_exp PRECEDING	{ $$ = $1; }
+	value_exp FOLLOWING	{ $$ = $1; }
   ;
 
 window_frame_exclusion:
@@ -4428,11 +4439,11 @@ literal:
 		  lng value, *p = &value;
 		  sql_subtype t;
 
-		  if (lngFromStr($1, &len, &p) < 0 || value == lng_nil)
+		  if (lngFromStr($1, &len, &p) < 0 || is_lng_nil(value))
 		  	err = 2;
 
 		  if (!err) {
-		    if ((value > GDK_lng_min && value <= GDK_lng_max))
+		    if ((value >= GDK_lng_min && value <= GDK_lng_max))
 #if SIZEOF_OID == SIZEOF_INT
 		  	  sql_find_subtype(&t, "oid", 31, 0 );
 #else
@@ -4467,10 +4478,10 @@ literal:
 		  sql_subtype t;
 
 #ifdef HAVE_HGE
-		  if (hgeFromStr($1, &len, &p) < 0 || value == hge_nil)
+		  if (hgeFromStr($1, &len, &p) < 0 || is_hge_nil(value))
 		  	err = 2;
 #else
-		  if (lngFromStr($1, &len, &p) < 0 || value == lng_nil)
+		  if (lngFromStr($1, &len, &p) < 0 || is_lng_nil(value))
 		  	err = 2;
 #endif
 
@@ -4487,16 +4498,16 @@ literal:
 		       (bits == 8 || bits == 16 || bits == 32 || bits == 64))
 				bits++;
 		
-		    if (value > GDK_bte_min && value <= GDK_bte_max)
+		    if (value >= GDK_bte_min && value <= GDK_bte_max)
 		  	  sql_find_subtype(&t, "tinyint", bits, 0 );
-		    else if (value > GDK_sht_min && value <= GDK_sht_max)
+		    else if (value >= GDK_sht_min && value <= GDK_sht_max)
 		  	  sql_find_subtype(&t, "smallint", bits, 0 );
-		    else if (value > GDK_int_min && value <= GDK_int_max)
+		    else if (value >= GDK_int_min && value <= GDK_int_max)
 		  	  sql_find_subtype(&t, "int", bits, 0 );
-		    else if (value > GDK_lng_min && value <= GDK_lng_max)
+		    else if (value >= GDK_lng_min && value <= GDK_lng_max)
 		  	  sql_find_subtype(&t, "bigint", bits, 0 );
 #ifdef HAVE_HGE
-		    else if (value > GDK_hge_min && value <= GDK_hge_max && have_hge)
+		    else if (value >= GDK_hge_min && value <= GDK_hge_max && have_hge)
 		  	  sql_find_subtype(&t, "hugeint", bits, 0 );
 #endif
 		    else
@@ -4541,7 +4552,7 @@ literal:
 
 			errno = 0;
 			val = strtod($1,&p);
-			if (p == $1 || val == dbl_nil || (errno == ERANGE && (val < -1 || val > 1))) {
+			if (p == $1 || is_dbl_nil(val) || (errno == ERANGE && (val < -1 || val > 1))) {
 				char *msg = sql_message(SQLSTATE(22003) "Double value too large or not a number (%s)", $1);
 
 				yyerror(m, msg);
@@ -4560,7 +4571,7 @@ literal:
 
 		  errno = 0;
  		  val = strtod($1,&p);
-		  if (p == $1 || val == dbl_nil || (errno == ERANGE && (val < -1 || val > 1))) {
+		  if (p == $1 || is_dbl_nil(val) || (errno == ERANGE && (val < -1 || val > 1))) {
 			char *msg = sql_message(SQLSTATE(22003) "Double value too large or not a number (%s)", $1);
 
 			yyerror(m, msg);
@@ -5279,7 +5290,9 @@ non_reserved_word:
 |  WEEK 	{ $$ = sa_strdup(SA, "week"); }
 |  IMPRINTS	{ $$ = sa_strdup(SA, "imprints"); }
 
+|  PREP		{ $$ = sa_strdup(SA, "prep"); }
 |  PREPARE	{ $$ = sa_strdup(SA, "prepare"); }
+|  EXEC		{ $$ = sa_strdup(SA, "exec"); }
 |  EXECUTE	{ $$ = sa_strdup(SA, "execute"); }
 |  SQL_EXPLAIN	{ $$ = sa_strdup(SA, "explain"); }
 |  SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
@@ -5383,7 +5396,7 @@ intval:
 		      tpe->type->localtype == TYPE_sht ||
 		      tpe->type->localtype == TYPE_bte ) {
 			lng sgn = stack_get_number(m, name);
-			assert((lng) GDK_int_min < sgn && sgn <= (lng) GDK_int_max);
+			assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
 			$$ = (int) sgn;
 		  } else {
 			char *msg = sql_message(SQLSTATE(22000) "Constant (%s) has wrong type (number expected)", $1);
@@ -5407,7 +5420,7 @@ string:
  ;
 
 exec:
-     EXECUTE exec_ref
+     execute exec_ref
 		{
 		  m->emode = m_execute;
 		  $$ = $2; }
@@ -6026,6 +6039,7 @@ char *token2string(int token)
 	SQL(DECLARE);
 	SQL(SET);
 	SQL(PREP);
+	SQL(PREPARE);
 	SQL(NAME);
 	SQL(USER);
 	SQL(PATH);
@@ -6094,6 +6108,7 @@ char *token2string(int token)
 	SQL(GRANT_ROLES);
 	SQL(REVOKE);
 	SQL(REVOKE_ROLES);
+	SQL(EXEC);
 	SQL(EXECUTE);
 	SQL(PRIVILEGES);
 	SQL(ROLE);

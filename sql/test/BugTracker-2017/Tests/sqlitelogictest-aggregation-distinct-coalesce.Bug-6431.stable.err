@@ -1,0 +1,37 @@
+stderr of test 'sqlitelogictest-aggregation-distinct-coalesce.Bug-6431` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 12:05:34 >  
+# 12:05:34 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35713" "--set" "mapi_usock=/var/tmp/mtest-26937/.s.monetdb.35713" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 12:05:34 >  
+
+# builtin opt 	gdk_dbpath = /home/niels/scratch/rc-monetdb/Linux-x86_64/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 35713
+# cmdline opt 	mapi_usock = /var/tmp/mtest-26937/.s.monetdb.35713
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017
+# cmdline opt 	gdk_debug = 536870922
+
+# 12:05:34 >  
+# 12:05:34 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26937" "--port=35713"
+# 12:05:34 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-26937/.s.monetdb.35713
+QUERY = SELECT DISTINCT + ( - col2 ) AS col0 FROM tab2 AS cor0 WHERE NOT ( - 1 * col2 ) <> ( 37 ) GROUP BY col2 HAVING ( col2 ) IN ( COALESCE ( + ( + COALESCE ( - 64, COUNT ( * ) + ( col0 ) * 12 ) ), + COUNT ( * ), COUNT ( * ) / 97 ) );
+ERROR = !SELECT: no such aggregate 'sql_add'
+
+# 12:05:34 >  
+# 12:05:34 >  "Done."
+# 12:05:34 >  
+

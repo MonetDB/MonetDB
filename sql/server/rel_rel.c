@@ -15,8 +15,11 @@
 const char *
 rel_name( sql_rel *r )
 {
-	if (!is_project(r->op) && !is_base(r->op) && r->l)
+	if (!is_project(r->op) && !is_base(r->op) && r->l) {
+		if (is_apply(r->op))
+			return rel_name(r->r);
 		return rel_name(r->l);
+	}
 	if (r->exps && list_length(r->exps)) {
 		sql_exp *e = r->exps->h->data;
 		if (e->rname)
@@ -742,6 +745,21 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 	}
 
 	rel->card = CARD_ATOM;
+	/* reduce duplicates in groupbyexps */
+	if (groupbyexps && list_length(groupbyexps) > 1) {
+		list *gexps = sa_list(sql->sa);
+
+		for (en = groupbyexps->h; en; en = en->next) {
+			sql_exp *e = en->data, *ne;
+
+			if ((ne=exps_find_exp(gexps, e)) == NULL || 
+			    strcmp(exp_relname(e),exp_relname(ne)) != 0 || 
+			    strcmp(exp_name(e),exp_name(ne)) != 0  )
+				append(gexps, e);
+		}
+		groupbyexps = gexps;
+	}
+
 	if (groupbyexps) {
 		rel->card = CARD_AGGR;
 		for (en = groupbyexps->h; en; en = en->next) {
@@ -779,6 +797,8 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 		rel->card = l->card;
 		rel->nrcols = l->nrcols;
 	}
+	if (e && !list_empty(e))
+		set_processed(rel);
 	return rel;
 }
 
