@@ -15,20 +15,19 @@ begin
 END;
 select * from functions where name ='aggr01';
 
--- a continuous function can be called used like any other function?
-select aggr01(); #should return 0
+select result from tmp.aggr01; #error
 
 start continuous function aggr01();
 call cquery.wait(1000); #wait to be started
 
-select aggr01(); #should return 0
+select result from tmp.aggr01; #should be empty
 pause continuous aggr01;
 
 insert into ftmp values(1),(1);
 resume continuous aggr01;
 
 call cquery.wait(1000); #wait for processing
-select aggr01(); #should return 2
+select result from tmp.aggr01; #should return 2
 
 pause continuous aggr01;
 insert into ftmp values(2),(2);
@@ -36,10 +35,10 @@ insert into ftmp values(3),(3);
 
 resume continuous aggr01;
 call cquery.wait(1000);
-select aggr01(); #should return 6
+select result from tmp.aggr01; #should return 2,4,6
 
 call cquery.wait(1000);
-select aggr01(); #should return 6
+select result from tmp.aggr01; #should return 2,4,6
 
 stop continuous aggr01;
 drop function aggr01;

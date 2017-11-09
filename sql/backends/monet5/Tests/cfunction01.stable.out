@@ -84,27 +84,20 @@ Ready.
 % id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
 % int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
 % 4,	6,	175,	4,	1,	1,	5,	5,	5,	4 # length
-[ 8669,	"aggr01",	"create function aggr01() \nreturns integer\nbegin\n declare s int;\n set s = 0;\n while (true)\n do\n set s = s + (select count(*) from ftmp);\n yield s ; \n end while;\n return s;\nend;",	"user",	2,	1,	false,	false,	false,	2000	]
-#select aggr01(); #should return 0
-% .L2 # table_name
-% L2 # name
-% int # type
-% 1 # length
-[ 0	]
+[ 8727,	"aggr01",	"create function aggr01() \nreturns integer\nbegin\n declare s int;\n set s = 0;\n while (true)\n do\n set s = s + (select count(*) from ftmp);\n yield s ; \n end while;\n return s;\nend;",	"user",	2,	1,	false,	false,	false,	2000	]
 #start continuous function aggr01();
-#select aggr01(); #should return 0
-% .L2 # table_name
-% L2 # name
+#select result from tmp.aggr01; #should be empty
+% tmp.aggr01 # table_name
+% result # name
 % int # type
 % 1 # length
-[ 0	]
 #pause continuous aggr01;
 #insert into ftmp values(1),(1);
 [ 2	]
 #resume continuous aggr01;
-#select aggr01(); #should return 2
-% .L2 # table_name
-% L2 # name
+#select result from tmp.aggr01; #should return 2
+% tmp.aggr01 # table_name
+% result # name
 % int # type
 % 1 # length
 [ 2	]
@@ -114,17 +107,21 @@ Ready.
 #insert into ftmp values(3),(3);
 [ 2	]
 #resume continuous aggr01;
-#select aggr01(); #should return 6
-% .L2 # table_name
-% L2 # name
+#select result from tmp.aggr01; #should return 2,4,6
+% tmp.aggr01 # table_name
+% result # name
 % int # type
 % 1 # length
+[ 2	]
+[ 4	]
 [ 6	]
-#select aggr01(); #should return 6
-% .L2 # table_name
-% L2 # name
+#select result from tmp.aggr01; #should return 2,4,6
+% tmp.aggr01 # table_name
+% result # name
 % int # type
 % 1 # length
+[ 2	]
+[ 4	]
 [ 6	]
 #stop continuous aggr01;
 #drop function aggr01;

@@ -27,6 +27,10 @@ stderr of test 'cfunction01` in directory 'sql/backends/monet5` itself:
 # 16:27:02 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-2361" "--port=36085"
 # 16:27:02 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-26476/.s.monetdb.32321
+QUERY = select result from tmp.aggr01; #error
+ERROR = !SELECT: no such table 'aggr01'
+CODE  = 42S02
 
 # 16:27:07 >  
 # 16:27:07 >  "Done."
