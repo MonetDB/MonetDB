@@ -5387,7 +5387,7 @@ exps_remove_dictexps(mvc *sql, list *exps, sql_rel *r)
 static sql_rel *
 rel_remove_join(int *changes, mvc *sql, sql_rel *rel)
 {
-	if (is_join(rel->op) && !is_outerjoin(rel->op) && 0) {
+	if (is_join(rel->op) && !is_outerjoin(rel->op) && /* DISABLES CODE */ (0)) {
 		sql_rel *l = rel->l;
 		sql_rel *r = rel->r;
 		int lconst = 0, rconst = 0;
