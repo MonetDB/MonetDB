@@ -258,8 +258,8 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 		fkeys[nkeys - 1] = c_fcolumn;
 		while ((cnt = mapi_fetch_row(hdl)) != 0 && strcmp(mapi_fetch_field(hdl, 4), "0") != 0) {
 			nkeys++;
-			pkeys = realloc(pkeys, nkeys * sizeof(*pkeys));
-			fkeys = realloc(fkeys, nkeys * sizeof(*fkeys));
+			pkeys = realloc((void *) pkeys, nkeys * sizeof(*pkeys));
+			fkeys = realloc((void *) fkeys, nkeys * sizeof(*fkeys));
 			pkeys[nkeys - 1] = mapi_fetch_field(hdl, 2);
 			fkeys[nkeys - 1] = mapi_fetch_field(hdl, 3);
 		}
@@ -286,8 +286,8 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 				     i > 0 ? ", " : "", pkeys[i]);
 		}
 		mnstr_printf(toConsole, ")");
-		free(fkeys);
-		free(pkeys);
+		free((void *) fkeys);
+		free((void *) pkeys);
 		if (c_faction) {
 			int action = atoi(c_faction);
 			int on_update;
