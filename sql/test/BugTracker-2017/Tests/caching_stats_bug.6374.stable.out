@@ -86,7 +86,7 @@ project (
 | | | | ) [ "mt"."i" ]
 | | | ) [  ] [ sys.count() NOT NULL as "L3"."L3" ]
 | | ) [ "L3"."L3" ]
-| ) [  ] [ sys.sum no nil ("L3"."L3") COUNT  as "L3"."L3" ]
+| ) [  ] [ sys.sum no nil ("L3"."L3") as "L3"."L3" ]
 ) [ "L3" NOT NULL as "L4"."L3" ]
 #drop table mt;
 #drop table sub1;

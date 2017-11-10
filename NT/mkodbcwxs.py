@@ -51,7 +51,16 @@ def main():
     print(r'    <CustomAction Id="driverinstall" FileKey="odbcinstall" ExeCommand="/Install" Execute="deferred" Impersonate="no"/>')
     print(r'    <CustomAction Id="driveruninstall" FileKey="odbcinstall" ExeCommand="/Uninstall" Execute="deferred" Impersonate="no"/>')
     print(r'    <Directory Id="TARGETDIR" Name="SourceDir">')
-    print(r'      <Merge Id="VCRedist" DiskId="1" Language="0" SourceFile="C:\Program Files (x86)\Common Files\Merge Modules\Microsoft_VC%s0_CRT_%s.msm"/>' % (vs, arch))
+    if vs == '17':
+        msvc = r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Redist\MSVC'
+        d = sorted(os.listdir(msvc))[-1]
+        msm = '_CRT_%s.msm' % arch
+        for f in sorted(os.listdir(os.path.join(msvc, d, 'MergeModules'))):
+            if msm in f:
+                fn = f
+        print(r'      <Merge Id="VCRedist" DiskId="1" Language="0" SourceFile="%s\%s\MergeModules\%s"/>' % (msvc, d, fn))
+    else:
+        print(r'      <Merge Id="VCRedist" DiskId="1" Language="0" SourceFile="C:\Program Files (x86)\Common Files\Merge Modules\Microsoft_VC%s0_CRT_%s.msm"/>' % (vs, arch))
     print(r'      <Directory Id="%s">' % folder)
     print(r'        <Directory Id="ProgramFilesMonetDB" Name="MonetDB">')
     print(r'          <Directory Id="INSTALLDIR" Name="MonetDB ODBC Driver">')

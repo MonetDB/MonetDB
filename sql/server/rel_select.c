@@ -2011,6 +2011,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				}
 			} else if (r) {
 				sql_rel *l = *rel;
+				sql_exp *rls = ls;
 
 				if (!l) {
 					l = *rel = rel_project(sql->sa, NULL, new_exp_list(sql->sa));
@@ -2020,7 +2021,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 						l->exps = list_merge(l->exps, rel_projections(sql, l->l, NULL, 1, 1), (fdup)NULL);
 						l->exps = list_distinct(l->exps, (fcmp)exp_equal, (fdup)NULL);
 					}
-					if (!rel_find_exp(l, ls))
+					if (!(rls = rel_find_exp(l, ls)) || rls == ls /* constant atom */)
 						rel_project_add_exp(sql, l, ls);
 				}
 				rs = rel_lastexp(sql, r);

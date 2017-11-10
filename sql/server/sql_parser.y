@@ -1839,31 +1839,30 @@ func_def:
   | create_or_replace FUNCTION qname
 	'(' opt_paramlist ')'
     RETURNS func_data_type
-    LANGUAGE IDENT function_body { 
+    LANGUAGE IDENT function_body
+		{
 			int lang = 0;
 			dlist *f = L();
 			char l = *$10;
 
 			if (l == 'R' || l == 'r')
 				lang = FUNC_LANG_R;
-			else if (l == 'P' || l == 'p')
-            {
-            	// code does not get cleaner than this people
-                if (strcasecmp($10, "PYTHON_MAP") == 0) {
+			else if (l == 'P' || l == 'p') {
+				// code does not get cleaner than this people
+				if (strcasecmp($10, "PYTHON_MAP") == 0) {
 					lang = FUNC_LANG_MAP_PY;
-                } else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
-                	lang = FUNC_LANG_MAP_PY3;
-                } else if (strcasecmp($10, "PYTHON3") == 0) {
-                	lang = FUNC_LANG_PY3;
-                } else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
-                	lang = FUNC_LANG_MAP_PY2;
-                } else if (strcasecmp($10, "PYTHON2") == 0) {
-                	lang = FUNC_LANG_PY2;
-                } else {
-                	lang = FUNC_LANG_PY;
-                }
-            }
-			else if (l == 'C' || l == 'c')
+				} else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
+					lang = FUNC_LANG_MAP_PY3;
+				} else if (strcasecmp($10, "PYTHON3") == 0) {
+					lang = FUNC_LANG_PY3;
+				} else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
+					lang = FUNC_LANG_MAP_PY2;
+				} else if (strcasecmp($10, "PYTHON2") == 0) {
+					lang = FUNC_LANG_PY2;
+				} else {
+					lang = FUNC_LANG_PY;
+				}
+			} else if (l == 'C' || l == 'c')
 				lang = FUNC_LANG_C;
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;
@@ -1876,12 +1875,13 @@ func_def:
 			append_list(f, $3);
 			append_list(f, $5);
 			append_symbol(f, $8);
-			append_list(f, NULL); 
+			append_list(f, NULL);
 			append_list(f, append_string(L(), $11));
 			append_int(f, F_FUNC);
 			append_int(f, lang);
 			append_int(f, $1);
-			$$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
+			$$ = _symbol_create_list( SQL_CREATE_FUNC, f );
+		}
   | create_or_replace FILTER FUNCTION qname
 	'(' opt_paramlist ')'
     EXTERNAL sqlNAME external_function_name 	
@@ -1913,30 +1913,29 @@ func_def:
   | create_or_replace AGGREGATE qname
 	'(' opt_paramlist ')'
     RETURNS func_data_type
-    LANGUAGE IDENT function_body { 
+    LANGUAGE IDENT function_body
+		{
 			int lang = 0;
 			dlist *f = L();
 			char l = *$10;
 
 			if (l == 'R' || l == 'r')
 				lang = FUNC_LANG_R;
-			else if (l == 'P' || l == 'p')
-            {
-                if (strcasecmp($10, "PYTHON_MAP") == 0) {
+			else if (l == 'P' || l == 'p') {
+				if (strcasecmp($10, "PYTHON_MAP") == 0) {
 					lang = FUNC_LANG_MAP_PY;
-                } else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
-                	lang = FUNC_LANG_MAP_PY3;
-                } else if (strcasecmp($10, "PYTHON3") == 0) {
-                	lang = FUNC_LANG_PY3;
-                } else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
-                	lang = FUNC_LANG_MAP_PY2;
-                } else if (strcasecmp($10, "PYTHON2") == 0) {
-                	lang = FUNC_LANG_PY2;
-                } else {
-                	lang = FUNC_LANG_PY;
-                }
-            }
-			else if (l == 'C' || l == 'c')
+				} else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
+					lang = FUNC_LANG_MAP_PY3;
+				} else if (strcasecmp($10, "PYTHON3") == 0) {
+					lang = FUNC_LANG_PY3;
+				} else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
+					lang = FUNC_LANG_MAP_PY2;
+				} else if (strcasecmp($10, "PYTHON2") == 0) {
+					lang = FUNC_LANG_PY2;
+				} else {
+					lang = FUNC_LANG_PY;
+				}
+			} else if (l == 'C' || l == 'c')
 				lang = FUNC_LANG_C;
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;
@@ -1989,11 +1988,9 @@ func_def:
 			dlist *f = L();
 			char l = *$8;
 			/* other languages here if we ever get to it */
-			if (l == 'P' || l == 'p')
-            {
-                lang = FUNC_LANG_PY;
-            }
-			else
+			if (l == 'P' || l == 'p') {
+				lang = FUNC_LANG_PY;
+			} else
 				yyerror(m, sql_message("Language name P(ython) expected, received '%c'", l));
 
 			append_list(f, $3);
