@@ -1220,72 +1220,209 @@ dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe,
 	return rc;
 }
 
+static int
+dump_function(Mapi mid, stream *toConsole, const char *sname, const char *fname, int hashge)
+{
+	MapiHdl hdl;
+	size_t qlen = 200 + strlen(sname) + strlen(fname);
+	char *query = malloc(qlen);
+	const char *sep;
+	char *fid, *ffunc;
+	int flang, ftype;
+
+	snprintf(query, qlen, "select f.id, f.func, f.language, f.type from sys.functions f, sys.schemas s where f.schema_id = s.id and s.name = '%s' and f.name = '%s'", sname, fname);
+	hdl = mapi_query(mid, query);
+	if (mapi_fetch_row(hdl) == 0) {
+		free(query);
+		mapi_close_handle(hdl);
+		return 0;	/* no such function, apparently */
+	}
+	fid = mapi_fetch_field(hdl, 0);
+	ffunc = mapi_fetch_field(hdl, 1);
+	flang = atoi(mapi_fetch_field(hdl, 2));
+	ftype = atoi(mapi_fetch_field(hdl, 3));
+	if (flang == 1 || flang == 2) {
+		/* all information is stored in the func column */
+		mnstr_printf(toConsole, "%s\n", ffunc);
+		mapi_close_handle(hdl);
+		return 0;
+	}
+	mnstr_printf(toConsole, "CREATE ");
+	switch (ftype) {
+	case 1:			/* scalar function */
+	case 5:			/* table returning function */
+		mnstr_printf(toConsole, "FUNCTION");
+		break;
+	case 2:
+		mnstr_printf(toConsole, "PROCEDURE");
+		break;
+	case 3:
+		mnstr_printf(toConsole, "AGGREGATE");
+		break;
+	case 4:
+		mnstr_printf(toConsole, "FILTER FUNCTION");
+		break;
+	case 7:
+		mnstr_printf(toConsole, "LOADER");
+		break;
+	default:
+		/* shouldn't happen (6 is F_ANALYTIC, but no syntax to
+		 * create, or values are not defined) */
+		free(query);
+		mapi_close_handle(hdl);
+		return -1;
+	}
+	ffunc = strdup(ffunc);
+	mnstr_printf(toConsole, " ");
+	quoted_print(toConsole, sname, 0);
+	mnstr_printf(toConsole, ".");
+	quoted_print(toConsole, fname, 0);
+	mnstr_printf(toConsole, "(");
+	snprintf(query, qlen, "select a.name, a.type, a.type_digits, a.type_scale, a.inout from sys.args a, sys.functions f where a.func_id = f.id and f.id = %s order by a.inout desc, a.number", fid);
+	mapi_close_handle(hdl);
+	hdl = mapi_query(mid, query);
+	free(query);
+	sep = "";
+	while (mapi_fetch_row(hdl) != 0) {
+		char *aname = mapi_fetch_field(hdl, 0);
+		char *atype = mapi_fetch_field(hdl, 1);
+		char *adigs = mapi_fetch_field(hdl, 2);
+		char *ascal = mapi_fetch_field(hdl, 3);
+		char *ainou = mapi_fetch_field(hdl, 4);
+
+		if (strcmp(ainou, "0") == 0) {
+			/* end of arguments */
+			break;
+		}
+
+		mnstr_printf(toConsole, "%s", sep);
+		quoted_print(toConsole, aname, 0);
+		mnstr_printf(toConsole, " ");
+		dump_type(mid, toConsole, atype, adigs, ascal, hashge);
+		sep = ", ";
+	}
+	mnstr_printf(toConsole, ")");
+	if (ftype == 1 || ftype == 3 || ftype == 5) {
+		sep = "TABLE (";
+		mnstr_printf(toConsole, " RETURNS ");
+		do {
+			char *aname = mapi_fetch_field(hdl, 0);
+			char *atype = mapi_fetch_field(hdl, 1);
+			char *adigs = mapi_fetch_field(hdl, 2);
+			char *ascal = mapi_fetch_field(hdl, 3);
+
+			assert(strcmp(mapi_fetch_field(hdl, 4), "0") == 0);
+			if (ftype == 5) {
+				mnstr_printf(toConsole, "%s", sep);
+				quoted_print(toConsole, aname, 0);
+				mnstr_printf(toConsole, " ");
+				sep = ", ";
+			}
+			dump_type(mid, toConsole, atype, adigs, ascal, hashge);
+		} while (mapi_fetch_row(hdl) != 0);
+	}
+	mapi_close_handle(hdl);
+	mnstr_printf(toConsole, " LANGUAGE ");
+	switch (flang) {
+	case 3:
+		mnstr_printf(toConsole, "R");
+		break;
+	case 4:
+		mnstr_printf(toConsole, "C");
+		break;
+	case 5:
+		mnstr_printf(toConsole, "J");
+		break;
+	case 6:
+		mnstr_printf(toConsole, "PYTHON");
+		break;
+	case 7:
+		mnstr_printf(toConsole, "PYTHON_MAP");
+		break;
+	case 8:
+		mnstr_printf(toConsole, "PYTHON2");
+		break;
+	case 9:
+		mnstr_printf(toConsole, "PYTHON2_MAP");
+		break;
+	case 10:
+		mnstr_printf(toConsole, "PYTHON3");
+		break;
+	case 11:
+		mnstr_printf(toConsole, "PYTHON3_MAP");
+		break;
+	default:		/* unknown language */
+		free(ffunc);
+		return -1;
+	}
+	mnstr_printf(toConsole, "\n%s\n", ffunc);
+	free(ffunc);
+	return 0;
+}
+
 int
 dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname)
 {
 	const char functions[] =
-		"SELECT f.func "
+		"SELECT s.name, f.name "
 		"FROM sys.schemas s, "
 		     "sys.functions f "
-		"WHERE f.language BETWEEN 1 AND 2 AND "
-		      "s.id = f.schema_id "
-		      "%s%s"
-		      "%s%s%s%s%s%s"
+		"WHERE s.id = f.schema_id AND "
+		      "f.id NOT IN (SELECT function_id FROM sys.systemfunctions) "
+		      "%s%s%s"
 		"ORDER BY f.func";
 	MapiHdl hdl;
 	char *q;
 	size_t l;
-	char dumpSystem;
-	char *schema = NULL;
+	int hashge = has_hugeint(mid);
 
-	if (sname == NULL) {
-		if (fname == NULL) {
-			schema = NULL;
-		} else if ((schema = strchr(fname, '.')) != NULL) {
-			size_t len = schema - fname;
+	if (fname != NULL) {
+		/* dump a single function */
+		int rc;
+		char *schema = NULL;
 
-			schema = malloc(len + 1);
-			strncpy(schema, fname, len);
-			schema[len] = 0;
-			fname += len + 1;
-		} else if ((schema = get_schema(mid)) == NULL) {
-			return 1;
+		if (sname == NULL) {
+			/* no schema given, so figure it out */
+			if ((schema = strchr(fname, '.')) != NULL) {
+				size_t len = schema - fname;
+
+				schema = malloc(len + 1);
+				strncpy(schema, fname, len);
+				schema[len] = 0;
+				fname += len + 1;
+			} else if ((schema = get_schema(mid)) == NULL) {
+				return 1;
+			}
+			sname = schema;
 		}
-		sname = schema;
+		rc = dump_function(mid, toConsole, sname, fname, hashge);
+		if (schema)
+			free(schema);
+		return rc;
 	}
-
-	dumpSystem = sname && fname;
 
 	l = sizeof(functions) + (sname ? strlen(sname) : 0) + 100;
 	q = malloc(l);
 	snprintf(q, l, functions,
-		 dumpSystem ? "" : "AND f.id ",
-		 dumpSystem ? "" : "NOT IN (SELECT function_id FROM sys.systemfunctions) ",
 		 sname ? "AND s.name = '" : "",
 		 sname ? sname : "",
-		 sname ? "' " : "",
-		 fname ? "AND f.name = '" : "",
-		 fname ? fname : "",
-		 fname ? "' " : "");
+		 sname ? "' " : "");
 	hdl = mapi_query(mid, q);
 	free(q);
 	if (hdl == NULL || mapi_error(mid))
 		goto bailout;
 	while (!mnstr_errnr(toConsole) && mapi_fetch_row(hdl) != 0) {
-		char *query = mapi_fetch_field(hdl, 0);
+		sname = mapi_fetch_field(hdl, 0);
+		fname = mapi_fetch_field(hdl, 1);
 
-		mnstr_printf(toConsole, "%s\n", query);
+		dump_function(mid, toConsole, sname, fname, hashge);
 	}
 	if (mapi_error(mid))
 		goto bailout;
-	if (schema)
-		free(schema);
 	mapi_close_handle(hdl);
 	return mnstr_errnr(toConsole) != 0;
 
   bailout:
-	if (schema)
-		free(schema);
 	if (hdl) {
 		if (mapi_result_error(hdl))
 			mapi_explain_result(hdl, stderr);
@@ -1450,10 +1587,12 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 	/* we must dump views, functions and triggers in order of
 	 * creation since they can refer to each other */
 	const char *views_functions_triggers =
-		"WITH vft AS ("
+		"WITH vft (sname, name, id, query, type) AS ("
 			"SELECT s.name AS sname, "
+			       "t.name AS name, "
 			       "t.id AS id, "
-			       "t.query AS query "
+			       "t.query AS query, "
+			       "'view' AS type "
 			"FROM sys.schemas s, "
 			     "sys._tables t "
 			"WHERE t.type = 1 AND "
@@ -1462,29 +1601,33 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 			      "s.name <> 'tmp' "
 			"UNION "
 			"SELECT s.name AS sname, "
+			       "f.name AS name, "
 			       "f.id AS id, "
-			       "f.func AS query "
+			       "f.func AS query, "
+			       "'function' AS type "
 			"FROM sys.schemas s, "
 			     "sys.functions f "
-			"WHERE f.language < 3 AND "
-			      "s.id = f.schema_id "
+			"WHERE s.id = f.schema_id "
 			"AND f.id NOT IN (SELECT function_id FROM sys.systemfunctions) "
 			"UNION "
 			"SELECT s.name AS sname, "
+			       "tr.name AS name, "
 			       "tr.id AS id, "
-			       "tr.\"statement\" AS query "
+			       "tr.\"statement\" AS query, "
+			       "'trigger' AS type "
 			"FROM sys.triggers tr, "
 			     "sys.schemas s, "
 			     "sys._tables t "
 			"WHERE s.id = t.schema_id AND "
 			      "t.id = tr.table_id"
 		") "
-		"SELECT sname, query FROM vft ORDER BY id";
+		"SELECT sname, name, query, type FROM vft ORDER BY id";
 	char *sname = NULL;
 	char *curschema = NULL;
 	MapiHdl hdl;
 	int create_hash_func = 0;
 	int rc = 0;
+	int hashge;
 
 	/* start a transaction for the dump */
 	if (!describe)
@@ -1720,6 +1863,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 	mapi_close_handle(hdl);
 	hdl = NULL;
 
+	hashge = has_hugeint(mid);
+
 	/* dump views, functions, and triggers */
 	if ((hdl = mapi_query(mid, views_functions_triggers)) == NULL ||
 	    mapi_error(mid))
@@ -1729,7 +1874,9 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 	       !mnstr_errnr(toConsole) &&
 	       mapi_fetch_row(hdl) != 0) {
 		char *schema = mapi_fetch_field(hdl, 0);
-		char *func = mapi_fetch_field(hdl, 1);
+		char *name = mapi_fetch_field(hdl, 1);
+		char *func = mapi_fetch_field(hdl, 2);
+		char *type = mapi_fetch_field(hdl, 3);
 
 		if (mapi_error(mid))
 			goto bailout;
@@ -1746,7 +1893,10 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 			mnstr_printf(toConsole, "SET SCHEMA \"%s\";\n",
 				     curschema);
 		}
-		mnstr_printf(toConsole, "%s\n", func);
+		if (type[0] == 'f')
+			dump_function(mid, toConsole, schema, name, hashge);
+		else
+			mnstr_printf(toConsole, "%s\n", func);
 	}
 	mapi_close_handle(hdl);
 	hdl = NULL;
