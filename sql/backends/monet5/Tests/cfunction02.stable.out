@@ -39,19 +39,18 @@ Ready.
 #create procedure cproc3() begin
 #    insert into results3 (select aa, bb from tmp.cfunc3);
 #end;
-#start continuous procedure cproc3() with cycles 3;
-#stop continuous cfunc3;
-#select aa, bb from results3;
-% sys.results3,	sys.results3 # table_name
+#start continuous procedure cproc2() with cycles 2;
+#stop continuous cfunc2;
+#select aa, bb from results2;
+% sys.results2,	sys.results2 # table_name
 % aa,	bb # name
 % int,	clob # type
 % 1,	4 # length
 [ 1,	"test"	]
 [ 1,	"test"	]
-[ 1,	"test"	]
-#drop function cfunc3;
-#drop procedure cproc3;
-#drop table results3;
+#drop function cfunc2;
+#drop procedure cproc2;
+#drop table results2;
 
 # 17:04:58 >  
 # 17:04:58 >  "Done."

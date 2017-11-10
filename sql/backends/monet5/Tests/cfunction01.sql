@@ -13,7 +13,6 @@ begin
 	end while;
 	return s;
 END;
-select * from functions where name ='aggr01';
 
 select result from tmp.aggr01; #error
 

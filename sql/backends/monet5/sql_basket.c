@@ -723,9 +723,11 @@ BSKTerror(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( idx <= 0)
 		throw(SQL,"basket.error",SQLSTATE(3F000) "Stream table %s.%s not registered\n",sname,tname);
 
-	baskets[idx].error = GDKstrdup(error);
-	if(baskets[idx].error == NULL)
-		throw(SQL,"basket.error",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	if(error) {
+		baskets[idx].error = GDKstrdup(error);
+		if(baskets[idx].error == NULL)
+			throw(SQL,"basket.error",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 	return MAL_SUCCEED;
 }
 

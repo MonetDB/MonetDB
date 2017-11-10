@@ -60,7 +60,6 @@ static int pnstatus = CQINIT;
 static int cycleDelay = 200; /* be careful, it affects response/throughput timings */
 static MT_Lock ttrLock;
 static MT_Id cq_pid = 0;
-static int CQ_counter = 0;
 
 static BAT *CQ_id_tick = 0;
 static BAT *CQ_id_alias = 0;
@@ -401,8 +400,6 @@ CQanalysis(Client cntxt, MalBlkPtr mb, int idx, sql_func* func, str alias)
 }
 
 #define FREE_CQ_MB(X)    \
-	if(cq_id)            \
-		GDKfree(cq_id);  \
 	if(mb)               \
 		freeMalBlk(mb);  \
 	if(ralias)           \
@@ -420,15 +417,13 @@ CQanalysis(Client cntxt, MalBlkPtr mb, int idx, sql_func* func, str alias)
 str
 CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias, int which, lng heartbeats, lng startat, int cycles)
 {
-	str msg = MAL_SUCCEED, rschema = NULL, ralias = NULL;
+	str msg = MAL_SUCCEED, rschema = NULL, ralias = NULL, raliasdup = NULL;
 	InstrPtr p = NULL, q = NULL;
 	Symbol sym;
 	CQnode *pnew;
 	MalBlkPtr mb = NULL, prev;
 	const char* err_message = (which & mod_continuous_function) ? "function" : "procedure";
-	char* cq_id = NULL;
-	char buffer[IDLENGTH];
-	int i, idx, varid, cid, freeMB = 0, mvc_var = 0;
+	int i, idx, varid, freeMB = 0, mvc_var = 0;
 	backend* be = (backend*) cntxt->sqlcontext;
 	mvc *m = be->mvc;
 	sql_schema *s = NULL, *tmp_schema = NULL;
@@ -549,22 +544,20 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		}
 	}
 
-	MT_lock_set(&ttrLock);
-	cid = ++CQ_counter;
-	MT_lock_unset(&ttrLock);
-	(void) snprintf(buffer, sizeof(buffer), "cq_%d", cid); //set the CQ ID
-	if((cq_id = GDKstrdup(buffer)) == NULL) {
-		CQ_MALLOC_FAIL(finish)
-	}
 	if((mb = newMalBlk(8)) == NULL) { //create MalBlk and initialize it
 		CQ_MALLOC_FAIL(finish)
 	}
-	if((q = newInstruction(NULL, "user", cq_id)) == NULL) {
+	if((raliasdup = GDKstrdup(ralias)) == NULL) {
+		CQ_MALLOC_FAIL(finish)
+	}
+	if((q = newInstruction(NULL, "tmp", raliasdup)) == NULL) {
+		GDKfree(raliasdup);
 		CQ_MALLOC_FAIL(finish)
 	}
 	q->token = FUNCTIONsymbol;
 	q->barrier = 0;
-	if((varid = newVariable(mb, cq_id, strlen(cq_id), TYPE_void)) < 0) {
+	if((varid = newVariable(mb, ralias, strlen(ralias), TYPE_void)) < 0) {
+		freeInstruction(q);
 		CQ_MALLOC_FAIL(finish)
 	}
 	setDestVar(q, varid);
@@ -652,8 +645,8 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		q->barrier = CATCHsymbol;
 
 		q = newStmt(mb,basketRef, errorRef);
-		q = pushStr(mb, q, "user");
-		q = pushStr(mb, q, cq_id);
+		q = pushStr(mb, q, "tmp");
+		q = pushStr(mb, q, ralias);
 		q = pushArgument(mb, q, except_var);
 
 		q = newAssignment(mb);
@@ -666,8 +659,8 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		q->barrier = CATCHsymbol;
 
 		q = newStmt(mb,basketRef, errorRef);
-		q = pushStr(mb, q, "user");
-		q = pushStr(mb, q, cq_id);
+		q = pushStr(mb, q, "tmp");
+		q = pushStr(mb, q, ralias);
 		q = pushArgument(mb, q, except_var);
 
 		q = newAssignment(mb);

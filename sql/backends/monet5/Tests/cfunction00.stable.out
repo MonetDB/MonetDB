@@ -37,12 +37,7 @@ Ready.
 #	end while;
 #	return s;
 #END;
-#select name from functions where name ='aggr00';
-% sys.functions # table_name
-% name # name
-% varchar # type
-% 6 # length
-[ "aggr00"	]
+#start continuous function aggr00();
 #select aggr00(); #should return 1
 % .L2 # table_name
 % L2 # name

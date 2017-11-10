@@ -10,7 +10,6 @@ begin
 	end while;
 	return s;
 END;
-select name from functions where name ='aggr00';
 
 -- to call a continuous function in the scheduler, we must pass the keyword "function" explicitly
 start continuous function aggr00();

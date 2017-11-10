@@ -1,7 +1,7 @@
 -- Test a continuous function returning a table
-create table results3 (aa int, bb text);
+create table results2 (aa int, bb text);
 
-create function cfunc3(input text) returns table (aa integer, bb text) begin
+create function cfunc2(input text) returns table (aa integer, bb text) begin
     declare s int;
     set s = 0;
     while true do
@@ -10,22 +10,22 @@ create function cfunc3(input text) returns table (aa integer, bb text) begin
     end while;
 end;
 
-start continuous function cfunc3('test') with heartbeat 1000 cycles 3;
+start continuous function cfunc2('test') with heartbeat 1000 cycles 3;
 
-pause continuous cfunc3;
+pause continuous cfunc2;
 
-create procedure cproc3() begin
-    insert into results3 (select aa, bb from tmp.cfunc3);
+create procedure cproc2() begin
+    insert into results2 (select aa, bb from tmp.cfunc2);
 end;
 
-start continuous procedure cproc3() with cycles 3;
+start continuous procedure cproc2() with cycles 2;
 
 call cquery.wait(4000);
 
-stop continuous cfunc3;
+stop continuous cfunc2;
 
-select aa, bb from results3;
+select aa, bb from results2;
 
-drop function cfunc3;
-drop procedure cproc3;
-drop table results3;
+drop function cfunc2;
+drop procedure cproc2;
+drop table results2;
