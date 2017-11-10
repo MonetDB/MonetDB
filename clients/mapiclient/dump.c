@@ -235,16 +235,16 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 
 	cnt = mapi_fetch_row(hdl);
 	while (cnt != 0) {
-		char *c_psname = mapi_fetch_field(hdl, 0);
-		char *c_ptname = mapi_fetch_field(hdl, 1);
-		char *c_pcolumn = mapi_fetch_field(hdl, 2);
-		char *c_fcolumn = mapi_fetch_field(hdl, 3);
-		char *c_nr = mapi_fetch_field(hdl, 4);
-		char *c_fkname = mapi_fetch_field(hdl, 5);
-		char *c_faction = mapi_fetch_field(hdl, 6);
-		char *c_fsname = mapi_fetch_field(hdl, 7);
-		char *c_ftname = mapi_fetch_field(hdl, 8);
-		char **fkeys, **pkeys;
+		const char *c_psname = mapi_fetch_field(hdl, 0);
+		const char *c_ptname = mapi_fetch_field(hdl, 1);
+		const char *c_pcolumn = mapi_fetch_field(hdl, 2);
+		const char *c_fcolumn = mapi_fetch_field(hdl, 3);
+		const char *c_nr = mapi_fetch_field(hdl, 4);
+		const char *c_fkname = mapi_fetch_field(hdl, 5);
+		const char *c_faction = mapi_fetch_field(hdl, 6);
+		const char *c_fsname = mapi_fetch_field(hdl, 7);
+		const char *c_ftname = mapi_fetch_field(hdl, 8);
+		const char **fkeys, **pkeys;
 		int nkeys = 0;
 
 		if (mapi_error(mid))
@@ -366,7 +366,7 @@ static const char *geomsubtypes[] = {
 };
 
 static int
-dump_type(Mapi mid, stream *toConsole, char *c_type, char *c_type_digits, char *c_type_scale, int hashge)
+dump_type(Mapi mid, stream *toConsole, const char *c_type, const char *c_type_digits, const char *c_type_scale, int hashge)
 {
 	int space = 0;
 
@@ -562,12 +562,12 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 	slen = mapi_get_len(hdl, 0);
 	cnt = 0;
 	while ((mapi_fetch_row(hdl)) != 0) {
-		char *c_name = mapi_fetch_field(hdl, 0);
-		char *c_type = mapi_fetch_field(hdl, 1);
-		char *c_type_digits = mapi_fetch_field(hdl, 2);
-		char *c_type_scale = mapi_fetch_field(hdl, 3);
-		char *c_null = mapi_fetch_field(hdl, 4);
-		char *c_default = mapi_fetch_field(hdl, 5);
+		const char *c_name = mapi_fetch_field(hdl, 0);
+		const char *c_type = mapi_fetch_field(hdl, 1);
+		const char *c_type_digits = mapi_fetch_field(hdl, 2);
+		const char *c_type_scale = mapi_fetch_field(hdl, 3);
+		const char *c_null = mapi_fetch_field(hdl, 4);
+		const char *c_default = mapi_fetch_field(hdl, 5);
 		int space;
 
 		if (mapi_error(mid))
@@ -631,8 +631,8 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 		goto bailout;
 	cnt = 0;
 	while ((mapi_fetch_row(hdl)) != 0) {
-		char *c_column = mapi_fetch_field(hdl, 0);
-		char *k_name = mapi_fetch_field(hdl, 2);
+		const char *c_column = mapi_fetch_field(hdl, 0);
+		const char *k_name = mapi_fetch_field(hdl, 2);
 
 		if (mapi_error(mid))
 			goto bailout;
@@ -690,9 +690,9 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 		goto bailout;
 	cnt = 0;
 	while ((mapi_fetch_row(hdl)) != 0) {
-		char *c_column = mapi_fetch_field(hdl, 0);
-		char *kc_nr = mapi_fetch_field(hdl, 1);
-		char *k_name = mapi_fetch_field(hdl, 2);
+		const char *c_column = mapi_fetch_field(hdl, 0);
+		const char *kc_nr = mapi_fetch_field(hdl, 1);
+		const char *k_name = mapi_fetch_field(hdl, 2);
 
 		if (mapi_error(mid))
 			goto bailout;
@@ -745,7 +745,7 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 }
 
 int
-describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int foreign)
+describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsole, int foreign)
 {
 	int cnt;
 	MapiHdl hdl = NULL;
@@ -854,10 +854,10 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 			goto bailout;
 		cnt = 0;
 		while (mapi_fetch_row(hdl) != 0) {
-			char *i_name = mapi_fetch_field(hdl, 0);
-			char *k_name = mapi_fetch_field(hdl, 1);
-			char *kc_nr = mapi_fetch_field(hdl, 2);
-			char *c_name = mapi_fetch_field(hdl, 3);
+			const char *i_name = mapi_fetch_field(hdl, 0);
+			const char *k_name = mapi_fetch_field(hdl, 1);
+			const char *kc_nr = mapi_fetch_field(hdl, 2);
+			const char *c_name = mapi_fetch_field(hdl, 3);
 
 			if (mapi_error(mid))
 				goto bailout;
@@ -914,7 +914,7 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 }
 
 int
-describe_sequence(Mapi mid, char *schema, char *tname, stream *toConsole)
+describe_sequence(Mapi mid, const char *schema, const char *tname, stream *toConsole)
 {
 	MapiHdl hdl = NULL;
 	char *query;
@@ -958,13 +958,13 @@ describe_sequence(Mapi mid, char *schema, char *tname, stream *toConsole)
 		goto bailout;
 
 	while (mapi_fetch_row(hdl) != 0) {
-		char *schema = mapi_fetch_field(hdl, 0);
-		char *name = mapi_fetch_field(hdl, 1);
-		char *start = mapi_fetch_field(hdl, 2);
-		char *minvalue = mapi_fetch_field(hdl, 3);
-		char *maxvalue = mapi_fetch_field(hdl, 4);
-		char *increment = mapi_fetch_field(hdl, 5);
-		char *cycle = mapi_fetch_field(hdl, 6);
+		const char *schema = mapi_fetch_field(hdl, 0);
+		const char *name = mapi_fetch_field(hdl, 1);
+		const char *start = mapi_fetch_field(hdl, 2);
+		const char *minvalue = mapi_fetch_field(hdl, 3);
+		const char *maxvalue = mapi_fetch_field(hdl, 4);
+		const char *increment = mapi_fetch_field(hdl, 5);
+		const char *cycle = mapi_fetch_field(hdl, 6);
 
 		mnstr_printf(toConsole,
 				 "CREATE SEQUENCE \"%s\".\"%s\" START WITH %s",
@@ -1009,7 +1009,7 @@ bailout:
 }
 
 int
-describe_schema(Mapi mid, char *sname, stream *toConsole)
+describe_schema(Mapi mid, const char *sname, stream *toConsole)
 {
 	MapiHdl hdl = NULL;
 	char schemas[256];
@@ -1037,8 +1037,8 @@ describe_schema(Mapi mid, char *sname, stream *toConsole)
 	}
 
 	while (mapi_fetch_row(hdl) != 0) {
-		char *sname = mapi_fetch_field(hdl, 0);
-		char *aname = mapi_fetch_field(hdl, 1);
+		const char *sname = mapi_fetch_field(hdl, 0);
+		const char *aname = mapi_fetch_field(hdl, 1);
 
 		mnstr_printf(toConsole, "CREATE SCHEMA \"%s\"", sname);
 		if (strcmp(aname, "sysadmin") != 0) {
@@ -1052,7 +1052,7 @@ describe_schema(Mapi mid, char *sname, stream *toConsole)
 }
 
 static int
-dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole,
+dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConsole,
 		const char useInserts)
 {
 	int cnt, i;
@@ -1113,7 +1113,7 @@ dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole,
 		if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 			goto bailout;
 		if (mapi_fetch_row(hdl)) {
-			char *cntfld = mapi_fetch_field(hdl, 0);
+			const char *cntfld = mapi_fetch_field(hdl, 0);
 
 			if (strcmp(cntfld, "0") == 0) {
 				/* no records to dump, so return early */
@@ -1210,7 +1210,7 @@ dump_table_data(Mapi mid, char *schema, char *tname, stream *toConsole,
 }
 
 int
-dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe, int foreign, const char useInserts)
+dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole, int describe, int foreign, const char useInserts)
 {
 	int rc;
 
@@ -1284,11 +1284,11 @@ dump_function(Mapi mid, stream *toConsole, const char *sname, const char *fname,
 	free(query);
 	sep = "";
 	while (mapi_fetch_row(hdl) != 0) {
-		char *aname = mapi_fetch_field(hdl, 0);
-		char *atype = mapi_fetch_field(hdl, 1);
-		char *adigs = mapi_fetch_field(hdl, 2);
-		char *ascal = mapi_fetch_field(hdl, 3);
-		char *ainou = mapi_fetch_field(hdl, 4);
+		const char *aname = mapi_fetch_field(hdl, 0);
+		const char *atype = mapi_fetch_field(hdl, 1);
+		const char *adigs = mapi_fetch_field(hdl, 2);
+		const char *ascal = mapi_fetch_field(hdl, 3);
+		const char *ainou = mapi_fetch_field(hdl, 4);
 
 		if (strcmp(ainou, "0") == 0) {
 			/* end of arguments */
@@ -1306,10 +1306,10 @@ dump_function(Mapi mid, stream *toConsole, const char *sname, const char *fname,
 		sep = "TABLE (";
 		mnstr_printf(toConsole, " RETURNS ");
 		do {
-			char *aname = mapi_fetch_field(hdl, 0);
-			char *atype = mapi_fetch_field(hdl, 1);
-			char *adigs = mapi_fetch_field(hdl, 2);
-			char *ascal = mapi_fetch_field(hdl, 3);
+			const char *aname = mapi_fetch_field(hdl, 0);
+			const char *atype = mapi_fetch_field(hdl, 1);
+			const char *adigs = mapi_fetch_field(hdl, 2);
+			const char *ascal = mapi_fetch_field(hdl, 3);
 
 			assert(strcmp(mapi_fetch_field(hdl, 4), "0") == 0);
 			if (ftype == 5) {
@@ -1650,7 +1650,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 			goto bailout;
 
 		while (mapi_fetch_row(hdl) != 0) {
-			char *name = mapi_fetch_field(hdl, 0);
+			const char *name = mapi_fetch_field(hdl, 0);
 
 			mnstr_printf(toConsole, "CREATE ROLE \"%s\";\n", name);
 		}
@@ -1676,10 +1676,10 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 			goto bailout;
 
 		while (mapi_fetch_row(hdl) != 0) {
-			char *uname = mapi_fetch_field(hdl, 0);
-			char *fullname = mapi_fetch_field(hdl, 1);
-			char *pwhash = mapi_fetch_field(hdl, 2);
-			char *sname = mapi_fetch_field(hdl, 3);
+			const char *uname = mapi_fetch_field(hdl, 0);
+			const char *fullname = mapi_fetch_field(hdl, 1);
+			const char *pwhash = mapi_fetch_field(hdl, 2);
+			const char *sname = mapi_fetch_field(hdl, 3);
 
 			mnstr_printf(toConsole, "CREATE USER \"%s\" ", uname);
 			if (describe)
@@ -1703,8 +1703,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 			goto bailout;
 
 		while (mapi_fetch_row(hdl) != 0) {
-			char *sname = mapi_fetch_field(hdl, 0);
-			char *aname = mapi_fetch_field(hdl, 1);
+			const char *sname = mapi_fetch_field(hdl, 0);
+			const char *aname = mapi_fetch_field(hdl, 1);
 
 			mnstr_printf(toConsole, "CREATE SCHEMA \"%s\"", sname);
 			if (strcmp(aname, "sysadmin") != 0) {
@@ -1724,8 +1724,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 				goto bailout;
 
 			while (mapi_fetch_row(hdl) != 0) {
-				char *uname = mapi_fetch_field(hdl, 0);
-				char *sname = mapi_fetch_field(hdl, 3);
+				const char *uname = mapi_fetch_field(hdl, 0);
+				const char *sname = mapi_fetch_field(hdl, 3);
 
 				if (strcmp(sname, "sys") == 0)
 					continue;
@@ -1752,8 +1752,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 			goto bailout;
 
 		while (mapi_fetch_row(hdl) != 0) {
-			char *uname = mapi_fetch_field(hdl, 0);
-			char *rname = mapi_fetch_field(hdl, 1);
+			const char *uname = mapi_fetch_field(hdl, 0);
+			const char *rname = mapi_fetch_field(hdl, 1);
 
 			mnstr_printf(toConsole, "GRANT \"%s\" TO ", rname);
 			if (strcmp(uname, "public") == 0)
@@ -1778,8 +1778,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 		goto bailout;
 
 	while (mapi_fetch_row(hdl) != 0) {
-		char *schema = mapi_fetch_field(hdl, 0);
-		char *name = mapi_fetch_field(hdl, 1);
+		const char *schema = mapi_fetch_field(hdl, 0);
+		const char *name = mapi_fetch_field(hdl, 1);
 
 		if (sname != NULL && strcmp(schema, sname) != 0)
 			continue;
@@ -1837,10 +1837,10 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 	while (rc == 0 &&
 	       !mnstr_errnr(toConsole) &&
 	       mapi_fetch_row(hdl) != 0) {
-		char *schema1 = mapi_fetch_field(hdl, 0);
-		char *tname1 = mapi_fetch_field(hdl, 1);
-		char *schema2 = mapi_fetch_field(hdl, 2);
-		char *tname2 = mapi_fetch_field(hdl, 3);
+		const char *schema1 = mapi_fetch_field(hdl, 0);
+		const char *tname1 = mapi_fetch_field(hdl, 1);
+		const char *schema2 = mapi_fetch_field(hdl, 2);
+		const char *tname2 = mapi_fetch_field(hdl, 3);
 
 		if (mapi_error(mid))
 			goto bailout;
@@ -1873,10 +1873,10 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 	while (rc == 0 &&
 	       !mnstr_errnr(toConsole) &&
 	       mapi_fetch_row(hdl) != 0) {
-		char *schema = mapi_fetch_field(hdl, 0);
-		char *name = mapi_fetch_field(hdl, 1);
-		char *func = mapi_fetch_field(hdl, 2);
-		char *type = mapi_fetch_field(hdl, 3);
+		const char *schema = mapi_fetch_field(hdl, 0);
+		const char *name = mapi_fetch_field(hdl, 1);
+		const char *func = mapi_fetch_field(hdl, 2);
+		const char *type = mapi_fetch_field(hdl, 3);
 
 		if (mapi_error(mid))
 			goto bailout;
@@ -1924,13 +1924,13 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 			goto bailout;
 
 		while (mapi_fetch_row(hdl) != 0) {
-			char *schema = mapi_fetch_field(hdl, 0);
-			char *name = mapi_fetch_field(hdl, 1);
-			char *restart = mapi_fetch_field(hdl, 2);
-			char *minvalue = mapi_fetch_field(hdl, 3);
-			char *maxvalue = mapi_fetch_field(hdl, 4);
-			char *increment = mapi_fetch_field(hdl, 5);
-			char *cycle = mapi_fetch_field(hdl, 6);
+			const char *schema = mapi_fetch_field(hdl, 0);
+			const char *name = mapi_fetch_field(hdl, 1);
+			const char *restart = mapi_fetch_field(hdl, 2);
+			const char *minvalue = mapi_fetch_field(hdl, 3);
+			const char *maxvalue = mapi_fetch_field(hdl, 4);
+			const char *increment = mapi_fetch_field(hdl, 5);
+			const char *cycle = mapi_fetch_field(hdl, 6);
 
 			if (sname != NULL && strcmp(schema, sname) != 0)
 				continue;
@@ -1960,11 +1960,11 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 		goto bailout;
 
 	while (mapi_fetch_row(hdl) != 0) {
-		char *schema = mapi_fetch_field(hdl, 0);
-		char *tname = mapi_fetch_field(hdl, 1);
-		char *aname = mapi_fetch_field(hdl, 2);
+		const char *schema = mapi_fetch_field(hdl, 0);
+		const char *tname = mapi_fetch_field(hdl, 1);
+		const char *aname = mapi_fetch_field(hdl, 2);
 		int priv = atoi(mapi_fetch_field(hdl, 3));
-		char *grantable = mapi_fetch_field(hdl, 5);
+		const char *grantable = mapi_fetch_field(hdl, 5);
 
 		if (sname != NULL && strcmp(schema, sname) != 0)
 			continue;
@@ -2020,12 +2020,12 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 		goto bailout;
 
 	while (mapi_fetch_row(hdl) != 0) {
-		char *schema = mapi_fetch_field(hdl, 0);
-		char *tname = mapi_fetch_field(hdl, 1);
-		char *cname = mapi_fetch_field(hdl, 2);
-		char *aname = mapi_fetch_field(hdl, 3);
-		char *priv = mapi_fetch_field(hdl, 4);
-		char *grantable = mapi_fetch_field(hdl, 6);
+		const char *schema = mapi_fetch_field(hdl, 0);
+		const char *tname = mapi_fetch_field(hdl, 1);
+		const char *cname = mapi_fetch_field(hdl, 2);
+		const char *aname = mapi_fetch_field(hdl, 3);
+		const char *priv = mapi_fetch_field(hdl, 4);
+		const char *grantable = mapi_fetch_field(hdl, 6);
 
 		if (sname != NULL && strcmp(schema, sname) != 0)
 			continue;
@@ -2051,11 +2051,11 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 		goto bailout;
 
 	while (mapi_fetch_row(hdl) != 0) {
-		char *schema = mapi_fetch_field(hdl, 0);
-		char *fname = mapi_fetch_field(hdl, 1);
-		char *aname = mapi_fetch_field(hdl, 2);
-		char *priv = mapi_fetch_field(hdl, 3);
-		char *grantable = mapi_fetch_field(hdl, 5);
+		const char *schema = mapi_fetch_field(hdl, 0);
+		const char *fname = mapi_fetch_field(hdl, 1);
+		const char *aname = mapi_fetch_field(hdl, 2);
+		const char *priv = mapi_fetch_field(hdl, 3);
+		const char *grantable = mapi_fetch_field(hdl, 5);
 
 		if (sname != NULL && strcmp(schema, sname) != 0)
 			continue;
