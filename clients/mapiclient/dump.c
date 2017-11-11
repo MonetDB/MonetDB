@@ -1245,6 +1245,7 @@ dump_function(Mapi mid, stream *toConsole, const char *sname, const char *fname,
 		/* all information is stored in the func column */
 		mnstr_printf(toConsole, "%s\n", ffunc);
 		mapi_close_handle(hdl);
+		free(query);
 		return 0;
 	}
 	mnstr_printf(toConsole, "CREATE ");
