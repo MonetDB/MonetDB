@@ -1477,7 +1477,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 			     "sys.schemas s, "
 			     "sys._tables t "
 			"WHERE s.id = t.schema_id AND "
-			      "t.id = tr.table_id"
+			      "t.id = tr.table_id AND t.system = FALSE"
 		") "
 		"SELECT sname, query FROM vft ORDER BY id";
 	char *sname = NULL;

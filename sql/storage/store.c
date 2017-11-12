@@ -574,6 +574,13 @@ load_part(sql_trans *tr, sql_table *t, oid rid)
 	cs_add(&t->members, pt, TR_OLD);
 }
 
+void
+sql_trans_update_tables(sql_trans* tr, sql_schema *s)
+{
+	(void)tr;
+	(void)s;
+}
+
 static sql_table *
 load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 {
@@ -873,6 +880,34 @@ set_members(changeset *ts)
 	}
 }
 
+static void 
+sql_trans_update_schema(sql_trans *tr, oid rid)
+{
+	void *v;
+	sql_schema *s = NULL, *syss = find_sql_schema(tr, "sys");
+	sql_table *ss = find_sql_table(syss, "schemas");
+	sqlid sid;
+
+	v = table_funcs.column_find_value(tr, find_sql_column(ss, "id"), rid);
+	sid = *(sqlid *)v; 	_DELETE(v);
+	s = find_sql_schema_id(tr, sid);
+
+	if (s==NULL) 
+		return ;
+
+	if (bs_debug)
+		fprintf(stderr, "#update schema %s %d\n", s->base.name, s->base.id);
+
+	v = table_funcs.column_find_value(tr, find_sql_column(ss, "name"), rid);
+	base_init(tr->sa, &s->base, sid, TR_OLD, v); _DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(ss, "authorization"), rid);
+	s->auth_id = *(sqlid *)v; 	_DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(ss, "system"), rid);
+	s->system = *(bit *)v;          _DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(ss, "owner"), rid);
+	s->owner = *(sqlid *)v;		_DELETE(v);
+}
+
 static sql_schema *
 load_schema(sql_trans *tr, sqlid id, oid rid)
 {
@@ -1006,6 +1041,24 @@ create_trans(sql_allocator *sa, backend_stack stk)
 
 	cs_new(&t->schemas, t->sa, (fdestroy) &schema_destroy);
 	return t;
+}
+
+void
+sql_trans_update_schemas(sql_trans* tr)
+{
+	sql_schema *syss = find_sql_schema(tr, "sys");
+	sql_table *sysschema = find_sql_table(syss, "schemas");
+	sql_column *sysschema_ids = find_sql_column(sysschema, "id");
+	rids *schemas = table_funcs.rids_select(tr, sysschema_ids, NULL, NULL);
+	oid rid;
+	
+	if (bs_debug)
+		fprintf(stderr, "#update schemas\n");
+
+	for(rid = table_funcs.rids_next(schemas); rid != oid_nil; rid = table_funcs.rids_next(schemas)) {
+		sql_trans_update_schema(tr, rid);
+	}
+	table_funcs.rids_destroy(schemas);
 }
 
 static void

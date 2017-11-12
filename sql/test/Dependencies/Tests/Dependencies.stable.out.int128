@@ -110,7 +110,9 @@ Dependencies between database objects
 % .L115,	.L115,	.L115 # table_name
 % name,	trigname,	L44 # name
 % varchar,	varchar,	char # type
-% 2,	14,	11 # length
+% 7,	21,	11 # length
+[ "schemas",	"system_update_schemas",	"DEP_TRIGGER"	]
+[ "_tables",	"system_update_tables",	"DEP_TRIGGER"	]
 [ "t1",	"trigger_test",	"DEP_TRIGGER"	]
 [ "t1",	"trigger_test_4",	"DEP_TRIGGER"	]
 [ "t2",	"trigger_test",	"DEP_TRIGGER"	]
@@ -606,7 +608,9 @@ Cleanup
 % .L111,	.L111,	.L111 # table_name
 % name,	name,	L42 # name
 % varchar,	varchar,	char # type
-% 0,	0,	11 # length
+% 7,	21,	11 # length
+[ "schemas",	"system_update_schemas",	"DEP_TRIGGER"	]
+[ "_tables",	"system_update_tables",	"DEP_TRIGGER"	]
 #SELECT t.name, fk.name, 'DEP_FKEY' from tables as t, keys as k, keys as fk where fk.rkey = k.id and k.table_id = t.id;
 % .t,	.fk,	.L42 # table_name
 % name,	name,	L42 # name

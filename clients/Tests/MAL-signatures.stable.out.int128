@@ -10789,6 +10789,8 @@ Ready.
 [ "sql",	"transaction_release",	"pattern sql.transaction_release(chain:int, name:str):void ",	"SQLtransaction_release;",	"A transaction statement (type can be commit,release,rollback or start)"	]
 [ "sql",	"transaction_rollback",	"pattern sql.transaction_rollback(chain:int, name:str):void ",	"SQLtransaction_rollback;",	"A transaction statement (type can be commit,release,rollback or start)"	]
 [ "sql",	"update",	"pattern sql.update(mvc:int, sname:str, tname:str, cname:str, rids:any, upd:any):int ",	"mvc_update_wrap;",	"Update the values of the column tname.cname. Returns sequence number for order dependence)"	]
+[ "sql",	"update_schemas",	"pattern sql.update_schemas():void ",	"SYSupdate_schemas;",	"Procedure triggered on update of the sys.schemas table"	]
+[ "sql",	"update_tables",	"pattern sql.update_tables():void ",	"SYSupdate_tables;",	"Procedure triggered on update of the sys._tables table"	]
 [ "sql",	"vacuum",	"pattern sql.vacuum(sch:str, tbl:str):void ",	"SQLvacuum;",	"Choose an approach to consolidate the deletions"	]
 [ "sql",	"zero_or_one",	"command sql.zero_or_one(col:bat[:any_1]):any_1 ",	"zero_or_one;",	"if col contains exactly one value return this. Incase of more raise an exception else return nil"	]
 [ "sqlblob",	"#fromstr",	"command sqlblob.#fromstr():void ",	"SQLBLOBfromstr;",	""	]
