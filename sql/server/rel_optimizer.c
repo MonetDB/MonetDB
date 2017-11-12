@@ -3729,7 +3729,7 @@ rel_push_aggr_down(int *changes, mvc *sql, sql_rel *rel)
 				set_has_nil(e);
 				e = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
 				ne = exp_aggr1(sql->sa, e, a, need_distinct(e), 1, e->card, 1);
-				if (0 && cnt)
+				if (/* DISABLES CODE */ (0) && cnt)
 					ne->p = prop_create(sql->sa, PROP_COUNT, ne->p);
 			} else {
 				ne = exp_copy(sql->sa, oa);

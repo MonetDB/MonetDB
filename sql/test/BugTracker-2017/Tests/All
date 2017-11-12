@@ -91,3 +91,4 @@ sqlitelogictest-cast-decimal.Bug-6445
 HAVE_LIBPY?table_returning_with.Bug-6444
 insert_into_multiple_subqueries.Bug-6448
 HAVE_SAMTOOLS?sqlsmith.Bug-6449
+HAVE_LIBPY?python_loader_clobbers_default_with_null.Bug-6464

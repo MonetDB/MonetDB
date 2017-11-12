@@ -6,10 +6,10 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
-extern int describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int foreign);
-extern int describe_sequence(Mapi mid, char *schema, char *sname, stream *toConsole);
-extern int describe_schema(Mapi mid, char *sname, stream *toConsole);
-extern int dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe, int foreign, const char useInserts);
+extern int describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsole, int foreign);
+extern int describe_sequence(Mapi mid, const char *schema, const char *sname, stream *toConsole);
+extern int describe_schema(Mapi mid, const char *sname, stream *toConsole);
+extern int dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole, int describe, int foreign, const char useInserts);
 extern int dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname);
 extern int dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts);
 extern void dump_version(Mapi mid, stream *toConsole, const char *prefix);

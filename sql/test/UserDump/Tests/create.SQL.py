@@ -13,7 +13,6 @@ def client(lang, user = 'monetdb', passwd = 'monetdb', input = None):
     sys.stdout.write(out)
     sys.stderr.write(err)
 
-sql_client = os.getenv('SQL_CLIENT')
 client('sql', input = """\
 create user voc with password 'voc' name 'VOC Explorer' schema sys;
 create schema voc authorization voc;
