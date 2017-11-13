@@ -42,7 +42,7 @@ AGGRgrouped(bat *retval1, bat *retval2, BAT *b, BAT *g, BAT *e, int tp,
 			BBPunfix(e->batCacheid);
 		if (quantile)
 			BBPunfix(quantile->batCacheid);
-		throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	assert(quantile == NULL || quantilefunc != NULL);
 	assert(b->hseqbase == g->hseqbase);
@@ -382,7 +382,7 @@ AGGRsubgroupedExt(bat *retval1, bat *retval2, const bat *bid, const bat *gid, co
 			BBPunfix(e->batCacheid);
 		if (q)
 			BBPunfix(q->batCacheid);
-		throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if (tp == TYPE_any && (grpfunc1 == BATgroupmedian || quantilefunc == BATgroupquantile))
 		tp = b->ttype;
@@ -397,7 +397,7 @@ AGGRsubgroupedExt(bat *retval1, bat *retval2, const bat *bid, const bat *gid, co
 				BBPunfix(e->batCacheid);
 			if (q)
 				BBPunfix(q->batCacheid);
-			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+			throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 	} else
 		s = NULL;

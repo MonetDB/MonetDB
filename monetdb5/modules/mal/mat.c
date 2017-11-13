@@ -105,7 +105,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) cntxt;
 	b = BATdescriptor( stk->stk[getArg(p,1)].val.ival);
 	if ( b == NULL)
-		throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "mat.pack", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if ( getArgType(mb,p,2) == TYPE_int){
 		/* first step, estimate with some slack */

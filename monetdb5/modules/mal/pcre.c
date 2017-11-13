@@ -1073,7 +1073,7 @@ PCREreplace_bat_wrap(bat *res, const bat *bid, const str *pat, const str *repl, 
 	BAT *b,*bn = NULL;
 	str msg;
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "pcre.replace", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "pcre.replace", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	msg = pcre_replace_bat(&bn,b,*pat,*repl,*flags);
 	if( msg == MAL_SUCCEED){
@@ -1471,11 +1471,11 @@ PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 	int use_strcmp = 0;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.likeselect", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.likeselect", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	/* no escape, try if a simple list of keywords works */
@@ -1921,7 +1921,7 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid,
 		BBPunfix(result2->batCacheid);
 	if (msg)
 		return msg;
-	throw(MAL, "pcre.join", RUNTIME_OBJECT_MISSING);
+	throw(MAL, "pcre.join", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
 
 str

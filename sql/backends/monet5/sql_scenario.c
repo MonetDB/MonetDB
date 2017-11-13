@@ -460,7 +460,7 @@ SQLinitClient(Client c)
 	if (c->sqlcontext == 0) {
 		m = mvc_create(c->idx, 0, SQLdebug, c->fdin, c->fdout);
 		if( m == NULL)
-			throw(SQL,"sql.initClient",MAL_MALLOC_FAIL);
+			throw(SQL,"sql.initClient",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		global_variables(m, "monetdb", "sys");
 		if (isAdministrator(c) || strcmp(c->scenario, "msql") == 0)	/* console should return everything */
 			m->reply_size = -1;
@@ -518,16 +518,16 @@ SQLinitClient(Client c)
 			stream* createdb_stream;
 			bstream* createdb_bstream;
 			if ((createdb_buf = GDKmalloc(sizeof(buffer))) == NULL)
-				throw(MAL, "createdb", MAL_MALLOC_FAIL);
+				throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			buffer_init(createdb_buf, createdb_inline, createdb_len);
 			if ((createdb_stream = buffer_rastream(createdb_buf, "createdb.sql")) == NULL) {
 				GDKfree(createdb_buf);
-				throw(MAL, "createdb", MAL_MALLOC_FAIL);
+				throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			if ((createdb_bstream = bstream_create(createdb_stream, createdb_len)) == NULL) {
 				mnstr_destroy(createdb_stream);
 				GDKfree(createdb_buf);
-				throw(MAL, "createdb", MAL_MALLOC_FAIL);
+				throw(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			if (bstream_next(createdb_bstream) >= 0)
 				msg = SQLstatementIntern(c, &createdb_bstream->buf, "sql.init", TRUE, FALSE, NULL);
@@ -597,7 +597,7 @@ SQLinitClient(Client c)
 		if (!m->sa)
 			m->sa = sa_create();
 		if (!m->sa) {
-			msg = createException(MAL, "createdb", MAL_MALLOC_FAIL);
+			msg = createException(MAL, "createdb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		} else if (maybeupgrade) {
 			SQLupgrades(c,m);
 		}
@@ -1151,13 +1151,13 @@ SQLparser(Client c)
 			be->q = NULL;
 			if(!q) {
 				err = 1;
-				msg = createException(PARSE, "SQLparser", MAL_MALLOC_FAIL);
+				msg = createException(PARSE, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			(void) snprintf(qname, IDLENGTH, "%c%d_%d", (m->emode == m_prepare?'p':'s'), m->qc->id++, m->qc->clientid);
 			escaped_q = sql_escape_str(q);
 			if(!escaped_q) {
 				err = 1;
-				msg = createException(PARSE, "SQLparser", MAL_MALLOC_FAIL);
+				msg = createException(PARSE, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			} else {
 				be->q = qc_insert(m->qc, m->sa,	/* the allocator */
 						  r,	/* keep relational query */
@@ -1170,7 +1170,7 @@ SQLparser(Client c)
 			}
 			if(!be->q) {
 				err = 1;
-				msg = createException(PARSE, "SQLparser", MAL_MALLOC_FAIL);
+				msg = createException(PARSE, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			GDKfree(q);
 			scanner_query_processed(&(m->scanner));
@@ -1186,7 +1186,7 @@ SQLparser(Client c)
 			be->q->name = putName(be->q->name);
 			if(!be->q->name) {
 				err = 1;
-				msg = createException(PARSE, "SQLparser", MAL_MALLOC_FAIL);
+				msg = createException(PARSE, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 		}
 	}

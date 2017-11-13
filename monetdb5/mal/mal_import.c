@@ -320,7 +320,7 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	b = (buffer *) GDKzalloc(sizeof(buffer));
 	if (b == NULL) {
 		GDKfree(qry);
-		return MAL_MALLOC_FAIL;
+		throw(MAL,"mal.eval",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	buffer_init(b, qry, len);

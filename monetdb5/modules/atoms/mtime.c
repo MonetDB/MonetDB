@@ -1676,7 +1676,7 @@ MTIMEtimestamp_create_from_date_bulk(bat *ret, bat *bid)
 	lng add = get_offset(&tzone_local) * (lng) -60000;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batcalc.timestamp", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batcalc.timestamp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if ((bn = COLnew(b->hseqbase, TYPE_timestamp, BATcount(b), TRANSIENT)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batcalc.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -1919,7 +1919,7 @@ MTIMEtimestamp_extract_daytime_default_bulk(bat *ret, bat *bid)
 	lng add = (lng) 3600000;	/* one hour */
 
 	if (b == NULL)
-		throw(MAL, "batcalc.daytime", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batcalc.daytime", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	bn = COLnew(b->hseqbase, TYPE_daytime, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
@@ -1994,7 +1994,7 @@ MTIMEtimestamp_extract_date_default_bulk(bat *ret, bat *bid)
 	lng add = (lng) 3600000;	/* one hour */
 
 	if (b == NULL)
-		throw(MAL, "batcalc.date", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batcalc.date", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	bn = COLnew(b->hseqbase, TYPE_date, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
@@ -2143,7 +2143,7 @@ MTIMEdate_diff_bulk(bat *ret, const bat *bid1, const bat *bid2)
 			BBPunfix(b1->batCacheid);
 		if (b2)
 			BBPunfix(b2->batCacheid);
-		throw(MAL, "batmtime.diff", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batmtime.diff", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	n = BATcount(b1);
 	if (n != BATcount(b2)) {
@@ -2222,7 +2222,7 @@ MTIMEtimestamp_diff_bulk(bat *ret, const bat *bid1, const bat *bid2)
 			BBPunfix(b1->batCacheid);
 		if (b2)
 			BBPunfix(b2->batCacheid);
-		throw(MAL, "batmtime.diff", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batmtime.diff", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	n = BATcount(b1);
 	if (n != BATcount(b2)) {
@@ -2638,7 +2638,7 @@ MTIMEsecs2daytime_bulk(bat *ret, bat *bid)
 	BUN n;
 
 	if (b == NULL)
-		throw(MAL, "batcalc.daytime", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batcalc.daytime", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	bn = COLnew(b->hseqbase, TYPE_daytime, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
@@ -2751,7 +2751,7 @@ MTIMEepoch_bulk(bat *ret, bat *bid)
 	if ((msg = MTIMEunix_epoch(&epoch)) != MAL_SUCCEED)
 		return msg;
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "batcalc.epoch", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batcalc.epoch", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	n = BATcount(b);
 	if ((bn = COLnew(b->hseqbase, TYPE_lng, n, TRANSIENT)) == NULL) {
@@ -2830,7 +2830,7 @@ MTIMEtimestamp_bulk(bat *ret, bat *bid)
 	if ((msg = MTIMEunix_epoch(&e)) != MAL_SUCCEED)
 		return msg;
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batcalc.timestamp", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batcalc.timestamp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if ((bn = COLnew(b->hseqbase, TYPE_timestamp, BATcount(b), TRANSIENT)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batcalc.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -2888,7 +2888,7 @@ MTIMEtimestamp_lng_bulk(bat *ret, bat *bid)
 	if ((msg = MTIMEunix_epoch(&e)) != MAL_SUCCEED)
 		return msg;
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batcalc.timestamp", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batcalc.timestamp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if ((bn = COLnew(b->hseqbase, TYPE_timestamp, BATcount(b), TRANSIENT)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batcalc.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
