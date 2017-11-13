@@ -599,6 +599,7 @@ extern node *find_sql_func_node(sql_schema *s, int id);
 typedef struct {
 	BAT *b;
 	char* name;
+	void* def;
 } sql_emit_col;
 
 #endif /* SQL_CATALOG_H */

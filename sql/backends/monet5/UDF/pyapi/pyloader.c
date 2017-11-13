@@ -146,6 +146,9 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			assert(i < pci->retc);
 			cols[i].name = GDKstrdup(*((char **)n->data));
 			n = n->next;
+			assert(n);
+			cols[i].def = n->data;
+			n = n->next;
 			cols[i].b =
 				COLnew(0, getBatType(getArgType(mb, pci, i)), 0, TRANSIENT);
 			cols[i].b->tnil = 0;
