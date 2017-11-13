@@ -23,6 +23,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module s
 	char buf[1024];
 	int i, retc = pci->retc;
 	InstrPtr p;
+	str bufName, fcnName;
 
 	(void) cntxt;
 	(void) stk;
@@ -36,7 +37,12 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, Module s
 #endif
 
 	snprintf(buf,1024,"bat%s",mod);
-	p= newInstruction(mb, putName(buf), putName(fcn));
+	bufName = putName(buf);
+	fcnName = putName(fcn);
+	if(bufName == NULL || fcnName == NULL)
+		return 0;
+
+	p= newInstruction(mb, bufName, fcnName);
 
 	for(i=0; i<pci->retc; i++)
 		if (i<1)
@@ -109,6 +115,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 	int refbat=0, retc = p->retc;
 	bit *upgrade;
 	Symbol s;
+	str msg;
 
 
 	s= findSymbol(cntxt->usermodule, 
@@ -128,7 +135,9 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 	/*
 	 * Determine the variables to be upgraded and adjust their type
 	 */
-	mq= copyMalBlk(s->def);
+	if((mq = copyMalBlk(s->def)) == NULL) {
+		return 0;
+	}
 	sig= getInstrPtr(mq,0);
 #ifdef DEBUG_OPT_REMAP
 	fprintf(stderr,"#Modify the code\n");
@@ -274,7 +283,9 @@ terminateMX:
 		GDKfree(upgrade);
 
 		/* ugh ugh, fallback to non inline, but optimized code */
-		OPTmultiplexSimple(cntxt, s->def);
+		msg = OPTmultiplexSimple(cntxt, s->def);
+		if(msg) 
+			freeException(msg);
 		s->def->inlineProp = 0;
 		return 0;
 	}

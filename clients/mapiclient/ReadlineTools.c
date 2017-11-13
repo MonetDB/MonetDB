@@ -177,9 +177,9 @@ mal_help(int cnt, int key)
 	(void) key;
 
 	c = rl_line_buffer + strlen(rl_line_buffer) - 1;
-	while (c > rl_line_buffer && isspace(*c))
+	while (c > rl_line_buffer && isspace((unsigned char) *c))
 		c--;
-	while (c > rl_line_buffer && !isspace(*c))
+	while (c > rl_line_buffer && !isspace((unsigned char) *c))
 		c--;
 	if ((buf = malloc(strlen(c) + 20)) == NULL)
 		return 0;
@@ -221,7 +221,7 @@ mal_command_generator(const char *text, int state)
 
 	/* we pick our own portion of the linebuffer */
 	text = rl_line_buffer + strlen(rl_line_buffer) - 1;
-	while (text > rl_line_buffer && !isspace((int) *text))
+	while (text > rl_line_buffer && !isspace((unsigned char) *text))
 		text--;
 	if (!state) {
 		idx = 0;
@@ -245,7 +245,7 @@ mal_command_generator(const char *text, int state)
 		c = strstr(text, ":=");
 		if (c)
 			text = c + 2;
-		while (isspace((int) *text))
+		while (isspace((unsigned char) *text))
 			text++;
 		if ((buf = malloc(strlen(text) + 32)) == NULL)
 			return NULL;

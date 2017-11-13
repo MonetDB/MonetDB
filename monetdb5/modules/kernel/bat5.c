@@ -11,7 +11,7 @@
  * Binary Association Tables
  * This module contains the commands and patterns to manage Binary
  * Association Tables (BATs). The relational operations you can execute
- * on BATs have the form of a neat algebra, described in algebra.mx
+ * on BATs have the form of a neat algebra, described in algebra.c
  *
  * But a database system needs more that just this algebra, since often it
  * is crucial to do table-updates (this would not be permitted in a strict
@@ -147,9 +147,10 @@ infoHeap(BAT *bk, BAT*bv, Heap *hp, str nme)
 }
 
 static inline char *
-oidtostr(oid i, char *p, int len)
+oidtostr(oid i, char *p, size_t len)
 {
-	(void) OIDtoStr(&p, &len, &i);
+	if (OIDtoStr(&p, &len, &i) < 0)
+		return NULL;
 	return p;
 }
 
@@ -735,14 +736,14 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 	    BUNappend(bv, BATdirty(b) ? "dirty" : "clean", FALSE) != GDK_SUCCEED ||
 
 	    BUNappend(bk, "hseqbase", FALSE) != GDK_SUCCEED ||
-	    BUNappend(bv, oidtostr(b->hseqbase, bf, (int) sizeof(bf)), FALSE) != GDK_SUCCEED ||
+	    BUNappend(bv, oidtostr(b->hseqbase, bf, sizeof(bf)), FALSE) != GDK_SUCCEED ||
 
 	    BUNappend(bk, "tident", FALSE) != GDK_SUCCEED ||
 	    BUNappend(bv, b->tident, FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tdense", FALSE) != GDK_SUCCEED ||
 	    BUNappend(bv, local_itoa((ssize_t)(BATtdense(b))), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tseqbase", FALSE) != GDK_SUCCEED ||
-	    BUNappend(bv, oidtostr(b->tseqbase, bf, (int) sizeof(bf)), FALSE) != GDK_SUCCEED ||
+	    BUNappend(bv, oidtostr(b->tseqbase, bf, sizeof(bf)), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tsorted", FALSE) != GDK_SUCCEED ||
 	    BUNappend(bv, local_itoa((ssize_t)BATtordered(b)), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "trevsorted", FALSE) != GDK_SUCCEED ||

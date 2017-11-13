@@ -201,7 +201,7 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, int lkey, int rkey,
 	return maxsize;
 }
 
-#define VALUE(s, x)	(s##vars ? \
+#define VALUE(s, x)	(s##vars ?					\
 			 s##vars + VarHeapVal(s##vals, (x), s##width) : \
 			 (const char *) s##vals + ((x) * s##width))
 #define FVALUE(s, x)	((const char *) s##vals + ((x) * s##width))
@@ -812,18 +812,18 @@ mergejoin_int(BAT *r1, BAT *r2, BAT *l, BAT *r,
 
 	if (!nil_matches) {
 		/* skip over nils at the start of the columns */
-		if (lscan < lend - lstart && lvals[lstart + lscan] == int_nil) {
+		if (lscan < lend - lstart && is_int_nil(lvals[lstart + lscan])) {
 			lstart = binsearch_int(NULL, 0, lvals, lstart + lscan,
 					       lend - 1, int_nil, 1, 1);
 		} else {
-			while (lvals[lstart] == int_nil)
+			while (is_int_nil(lvals[lstart]))
 				lstart++;
 		}
-		if (rscan < rend - rstart && rvals[rstart + rscan] == int_nil) {
+		if (rscan < rend - rstart && is_int_nil(rvals[rstart + rscan])) {
 			rstart = binsearch_int(NULL, 0, rvals, rstart + rscan,
 					       rend - 1, int_nil, 1, 1);
 		} else {
-			while (rvals[rstart] == int_nil)
+			while (is_int_nil(rvals[rstart]))
 				rstart++;
 		}
 	}
@@ -1109,18 +1109,18 @@ mergejoin_lng(BAT *r1, BAT *r2, BAT *l, BAT *r,
 
 	if (!nil_matches) {
 		/* skip over nils at the start of the columns */
-		if (lscan < lend - lstart && lvals[lstart + lscan] == lng_nil) {
+		if (lscan < lend - lstart && is_lng_nil(lvals[lstart + lscan])) {
 			lstart = binsearch_lng(NULL, 0, lvals, lstart + lscan,
 					       lend - 1, lng_nil, 1, 1);
 		} else {
-			while (lvals[lstart] == lng_nil)
+			while (is_lng_nil(lvals[lstart]))
 				lstart++;
 		}
-		if (rscan < rend - rstart && rvals[rstart + rscan] == lng_nil) {
+		if (rscan < rend - rstart && is_lng_nil(rvals[rstart + rscan])) {
 			rstart = binsearch_lng(NULL, 0, rvals, rstart + rscan,
 					       rend - 1, lng_nil, 1, 1);
 		} else {
-			while (rvals[rstart] == lng_nil)
+			while (is_lng_nil(rvals[rstart]))
 				rstart++;
 		}
 	}
@@ -1475,14 +1475,14 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	if (lstart == lend ||
 	    rstart == rend ||
 	    (!nil_matches &&
-	     ((BATtvoid(l) && l->tseqbase == oid_nil) ||
-	      (BATtvoid(r) && r->tseqbase == oid_nil))) ||
-	    (BATtvoid(l) && l->tseqbase == oid_nil &&
+	     ((BATtvoid(l) && is_oid_nil(l->tseqbase)) ||
+	      (BATtvoid(r) && is_oid_nil(r->tseqbase)))) ||
+	    (BATtvoid(l) && is_oid_nil(l->tseqbase) &&
 	     (r->tnonil ||
-	      (BATtvoid(r) && r->tseqbase != oid_nil))) ||
-	    (BATtvoid(r) && r->tseqbase == oid_nil &&
+	      (BATtvoid(r) && !is_oid_nil(r->tseqbase)))) ||
+	    (BATtvoid(r) && is_oid_nil(r->tseqbase) &&
 	     (l->tnonil ||
-	      (BATtvoid(l) && l->tseqbase != oid_nil)))) {
+	      (BATtvoid(l) && !is_oid_nil(l->tseqbase))))) {
 		/* there are no matches */
 		return nomatch(r1, r2, l, r, lstart, lend, lcand, lcandend,
 			       nil_on_miss, only_misses, "mergejoin", t0);
@@ -1529,7 +1529,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			lstart = 0;
 			lend = (BUN) (lcandend - lcand);
 		}
-		if (l->tseqbase == oid_nil)
+		if (is_oid_nil(l->tseqbase))
 			loff = lng_nil;
 		else
 			loff = (lng) l->tseqbase - (lng) l->hseqbase;
@@ -1540,7 +1540,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			rstart = 0;
 			rend = (BUN) (rcandend - rcand);
 		}
-		if (r->tseqbase == oid_nil)
+		if (is_oid_nil(r->tseqbase))
 			roff = lng_nil;
 		else
 			roff = (lng) r->tseqbase - (lng) r->hseqbase;
@@ -1607,7 +1607,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				} else if (rvals) {
 					v = VALUE(r, (equal_order ? rcand[0] : rcandend[-1]) - r->hseqbase);
 				} else {
-					rval = roff == lng_nil ? oid_nil : (oid) ((lng) (equal_order ? rcand[0] : rcandend[-1]) + roff);
+					rval = is_lng_nil(roff) ? oid_nil : (oid) ((lng) (equal_order ? rcand[0] : rcandend[-1]) + roff);
 					v = &rval;
 				}
 			} else {
@@ -1616,7 +1616,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				} else if (rvals) {
 					v = VALUE(r, equal_order ? rstart : rend - 1);
 				} else {
-					if (roff == lng_nil)
+					if (is_lng_nil(roff))
 						rval = oid_nil;
 					else if (equal_order)
 						rval = (oid) ((lng) rstart + r->tseqbase);
@@ -1635,9 +1635,9 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					nlx = lend - lstart;
 					lstart = lend;
 				}
-			} else if (loff == lng_nil) {
+			} else if (is_lng_nil(loff)) {
 				/* all l values are NIL, and the type is OID */
-				if (* (oid *) v != oid_nil) {
+				if (!is_oid_nil(* (oid *) v)) {
 					/* value we're looking at in r
 					 * is not NIL, so we match
 					 * nothing */
@@ -1677,7 +1677,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 							v = NULL;
 					}
 				}
-			} else if (*(const oid *)v != oid_nil) {
+			} else if (!is_oid_nil(*(const oid *)v)) {
 				if (*(const oid *)v > l->tseqbase) {
 					nlx = lstart;
 					lstart = *(const oid *)v - l->tseqbase;
@@ -1750,7 +1750,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		nl = 1;		/* we'll match (at least) one in l */
 		nr = 0;		/* maybe we won't match anything in r */
 		if (lcand) {
-			if (loff == lng_nil) {
+			if (is_lng_nil(loff)) {
 				/* all values are nil */
 				lval = oid_nil;
 				v = &lval;
@@ -1804,7 +1804,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				       cmp(v, VALUE(l, lstart)) == 0)
 					nl++;
 			}
-		} else if (loff == lng_nil) {
+		} else if (is_lng_nil(loff)) {
 			lval = oid_nil;
 			v = &lval;
 			nl = lend - lstart;
@@ -1837,8 +1837,8 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		 * than rscan away). */
 		if (v == NULL) {
 			nr = 0;	/* nils don't match anything */
-		} else if (roff == lng_nil) {
-			if (*(const oid *) v == oid_nil) {
+		} else if (is_lng_nil(roff)) {
+			if (is_oid_nil(*(const oid *) v)) {
 				/* all values in r match */
 				nr = rcand ? (BUN) (rcandend - rcand) : rend - rstart;
 			} else {
@@ -1951,7 +1951,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 							 cmp(v, VALUE(r, rstart)) == 0);
 					}
 				}
-			} else if ((rval = *(const oid *)v) != oid_nil) {
+			} else if (!is_oid_nil((rval = *(const oid *)v))) {
 				/* r is dense or void-nil, so we don't
 				 * need to search, we know there is
 				 * either zero or one match (note that
@@ -2071,7 +2071,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 							 cmp(v, VALUE(r, rend - 1)) == 0);
 					}
 				}
-			} else if ((rval = *(const oid *)v) != oid_nil) {
+			} else if (!is_oid_nil((rval = *(const oid *)v))) {
 				/* r is dense or void-nil, so we don't
 				 * need to search, we know there is
 				 * either zero or one match (note that
@@ -2382,12 +2382,12 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 		    (cmp == NULL ||			\
 		     (*cmp)(v, BUNtail(bi, hb)) == 0))
 
-#define HASHloop_bound_TYPE(bi, h, hb, v, lo, hi, TYPE)		\
-	for (hb = HASHget(h, hash_##TYPE(h, v));		\
-	     hb != HASHnil(h);					\
-	     hb = HASHgetlink(h,hb))				\
-		if (hb >= (lo) && hb < (hi) &&			\
-		    simple_EQ(v, BUNtloc(bi, hb), TYPE))
+#define HASHloop_bound_TYPE(bi, h, hb, v, lo, hi, TYPE)			\
+	for (hb = HASHget(h, hash_##TYPE(h, v));			\
+	     hb != HASHnil(h);						\
+	     hb = HASHgetlink(h,hb))					\
+		if (hb >= (lo) && hb < (hi) &&				\
+		    * (const TYPE *) v == * (const TYPE *) BUNtloc(bi, hb))
 
 #define HASHJOIN(TYPE, WIDTH)						\
 	do {								\
@@ -2398,7 +2398,7 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 			v = FVALUE(l, lstart);				\
 			lstart++;					\
 			nr = 0;						\
-			if (*(const TYPE*)v != TYPE##_nil) {		\
+			if (!is_##TYPE##_nil(*(const TYPE*)v)) {	\
 				for (rb = HASHget##WIDTH(hsh, hash_##TYPE(hsh, v)); \
 				     rb != hashnil;			\
 				     rb = HASHgetlink##WIDTH(hsh, rb))	\
@@ -2592,7 +2592,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 		while (lcand < lcandend) {
 			lo = *lcand++;
 			if (BATtvoid(l)) {
-				if (l->tseqbase != oid_nil)
+				if (!is_oid_nil(l->tseqbase))
 					lval = lo - l->hseqbase + l->tseqbase;
 			} else {
 				v = VALUE(l, lo - l->hseqbase);
@@ -2682,7 +2682,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 	} else {
 		for (lo = lstart + l->hseqbase; lstart < lend; lo++) {
 			if (BATtvoid(l)) {
-				if (l->tseqbase != oid_nil)
+				if (!is_oid_nil(l->tseqbase))
 					lval = lo - l->hseqbase + l->tseqbase;
 			} else {
 				v = VALUE(l, lstart);
@@ -2707,7 +2707,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 			} else {
 				switch (t) {
 				case TYPE_int:
-					if (nil_matches || *(const int*)v != int_nil) {
+					if (nil_matches || !is_int_nil(*(const int*)v)) {
 						HASHloop_bound_TYPE(ri, hsh, rb, v, rl, rh, int) {
 							ro = (oid) (rb - rl + rseq);
 							if (only_misses) {
@@ -2721,7 +2721,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 					}
 					break;
 				case TYPE_lng:
-					if (nil_matches || *(const lng*)v != lng_nil) {
+					if (nil_matches || !is_lng_nil(*(const lng*)v)) {
 						HASHloop_bound_TYPE(ri, hsh, rb, v, rl, rh, lng) {
 							ro = (oid) (rb - rl + rseq);
 							if (only_misses) {
@@ -2736,7 +2736,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 					break;
 #ifdef HAVE_HGE
 				case TYPE_hge:
-					if (nil_matches || *(const hge*)v != hge_nil) {
+					if (nil_matches || !is_hge_nil(*(const hge*)v)) {
 						HASHloop_bound_TYPE(ri, hsh, rb, v, rl, rh, hge) {
 							ro = (oid) (rb - rl + rseq);
 							if (only_misses) {
@@ -2941,7 +2941,7 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BUN ma
 	rwidth = r->twidth;
 
 	if (BATtvoid(l)) {
-		if (l->tseqbase == oid_nil) {
+		if (is_oid_nil(l->tseqbase)) {
 			/* trivial: nils don't match anything */
 			return GDK_SUCCEED;
 		}
@@ -2955,7 +2955,7 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BUN ma
 		loff = (lng) l->tseqbase - (lng) l->hseqbase;
 	}
 	if (BATtvoid(r)) {
-		if (r->tseqbase == oid_nil) {
+		if (is_oid_nil(r->tseqbase)) {
 			/* trivial: nils don't match anything */
 			return GDK_SUCCEED;
 		}
@@ -3154,52 +3154,52 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	switch (t) {
 	case TYPE_bte:
-		if (*(const bte *)c1 == bte_nil ||
-		    *(const bte *)c2 == bte_nil ||
+		if (is_bte_nil(*(const bte *)c1) ||
+		    is_bte_nil(*(const bte *)c2) ||
 		    -*(const bte *)c1 > *(const bte *)c2 ||
 		    ((!hi || !li) && -*(const bte *)c1 == *(const bte *)c2))
 			return GDK_SUCCEED;
 		break;
 	case TYPE_sht:
-		if (*(const sht *)c1 == sht_nil ||
-		    *(const sht *)c2 == sht_nil ||
+		if (is_sht_nil(*(const sht *)c1) ||
+		    is_sht_nil(*(const sht *)c2) ||
 		    -*(const sht *)c1 > *(const sht *)c2 ||
 		    ((!hi || !li) && -*(const sht *)c1 == *(const sht *)c2))
 			return GDK_SUCCEED;
 		break;
 	case TYPE_int:
-		if (*(const int *)c1 == int_nil ||
-		    *(const int *)c2 == int_nil ||
+		if (is_int_nil(*(const int *)c1) ||
+		    is_int_nil(*(const int *)c2) ||
 		    -*(const int *)c1 > *(const int *)c2 ||
 		    ((!hi || !li) && -*(const int *)c1 == *(const int *)c2))
 			return GDK_SUCCEED;
 		break;
 	case TYPE_lng:
-		if (*(const lng *)c1 == lng_nil ||
-		    *(const lng *)c2 == lng_nil ||
+		if (is_lng_nil(*(const lng *)c1) ||
+		    is_lng_nil(*(const lng *)c2) ||
 		    -*(const lng *)c1 > *(const lng *)c2 ||
 		    ((!hi || !li) && -*(const lng *)c1 == *(const lng *)c2))
 			return GDK_SUCCEED;
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		if (*(const hge *)c1 == hge_nil ||
-		    *(const hge *)c2 == hge_nil ||
+		if (is_hge_nil(*(const hge *)c1) ||
+		    is_hge_nil(*(const hge *)c2) ||
 		    -*(const hge *)c1 > *(const hge *)c2 ||
 		    ((!hi || !li) && -*(const hge *)c1 == *(const hge *)c2))
 			return GDK_SUCCEED;
 		break;
 #endif
 	case TYPE_flt:
-		if (*(const flt *)c1 == flt_nil ||
-		    *(const flt *)c2 == flt_nil ||
+		if (is_flt_nil(*(const flt *)c1) ||
+		    is_flt_nil(*(const flt *)c2) ||
 		    -*(const flt *)c1 > *(const flt *)c2 ||
 		    ((!hi || !li) && -*(const flt *)c1 == *(const flt *)c2))
 			return GDK_SUCCEED;
 		break;
 	case TYPE_dbl:
-		if (*(const dbl *)c1 == dbl_nil ||
-		    *(const dbl *)c2 == dbl_nil ||
+		if (is_dbl_nil(*(const dbl *)c1) ||
+		    is_dbl_nil(*(const dbl *)c2) ||
 		    -*(const dbl *)c1 > *(const dbl *)c2 ||
 		    ((!hi || !li) && -*(const dbl *)c1 == *(const dbl *)c2))
 			return GDK_SUCCEED;
@@ -3262,7 +3262,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			case TYPE_bte: {
 				sht v1 = (sht) *(const bte *) vr, v2;
 
-				if (v1 == bte_nil)
+				if (is_bte_nil(v1))
 					continue;
 				v2 = v1;
 				v1 -= *(const bte *)c1;
@@ -3278,7 +3278,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			case TYPE_sht: {
 				int v1 = (int) *(const sht *) vr, v2;
 
-				if (v1 == sht_nil)
+				if (is_sht_nil(v1))
 					continue;
 				v2 = v1;
 				v1 -= *(const sht *)c1;
@@ -3294,7 +3294,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			case TYPE_int: {
 				lng v1 = (lng) *(const int *) vr, v2;
 
-				if (v1 == int_nil)
+				if (is_int_nil(v1))
 					continue;
 				v2 = v1;
 				v1 -= *(const int *)c1;
@@ -3311,7 +3311,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			case TYPE_lng: {
 				hge v1 = (hge) *(const lng *) vr, v2;
 
-				if (v1 == lng_nil)
+				if (is_lng_nil(v1))
 					continue;
 				v2 = v1;
 				v1 -= *(const lng *)c1;
@@ -3329,7 +3329,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			case TYPE_lng: {
 				__int128 v1 = (__int128) *(const lng *) vr, v2;
 
-				if (v1 == lng_nil)
+				if (is_lng_nil(v1))
 					continue;
 				v2 = v1;
 				v1 -= *(const lng *)c1;
@@ -3347,7 +3347,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				lng v1, v2;
 				int abort_on_error = 1;
 
-				if (*(const lng *)vr == lng_nil)
+				if (is_lng_nil(*(const lng *)vr))
 					continue;
 				SUB_WITH_CHECK(lng, *(const lng *)vr,
 					       lng, *(const lng *)c1,
@@ -3378,7 +3378,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				hge v1, v2;
 				int abort_on_error = 1;
 
-				if (*(const hge *)vr == hge_nil)
+				if (is_hge_nil(*(const hge *)vr))
 					continue;
 				SUB_WITH_CHECK(hge, *(const hge *)vr,
 					       hge, *(const hge *)c1,
@@ -3406,7 +3406,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			case TYPE_flt: {
 				dbl v1 = (dbl) *(const flt *) vr, v2;
 
-				if (v1 == flt_nil)
+				if (is_flt_nil(v1))
 					continue;
 				v2 = v1;
 				v1 -= *(const flt *)c1;
@@ -3423,7 +3423,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				dbl v1, v2;
 				int abort_on_error = 1;
 
-				if (*(const dbl *)vr == dbl_nil)
+				if (is_dbl_nil(*(const dbl *)vr))
 					continue;
 				SUB_WITH_CHECK(dbl, *(const dbl *)vr,
 					       dbl, *(const dbl *)c1,

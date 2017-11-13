@@ -35,3 +35,8 @@ SELECT '#' || rpad(s, n, s2) || '#' FROM p2;
 DROP TABLE p;
 DROP TABLE p2;
 
+-- see bug 6414
+SELECT '#' || rpad('hi颖xyäbcdef', 0) || '#';
+SELECT '#' || lpad('hi颖xyäbcdef', 0) || '#';
+SELECT '#' || rpad('hi颖xyäbcdef', 0, 'junk') || '#';
+SELECT '#' || lpad('hi颖xyäbcdef', 0, 'junk') || '#';

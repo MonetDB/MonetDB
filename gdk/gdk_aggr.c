@@ -10,7 +10,11 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
+#if defined(_MSC_VER) && defined(__INTEL_COMPILER)
+#include <mathimf.h>
+#else
 #include <math.h>
+#endif
 
 /* grouped aggregates
  *
@@ -100,12 +104,12 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 				gids = (const oid *) Tloc(g, 0);
 				/* find first non-nil */
 				for (i = 0, ngrp = BATcount(g); i < ngrp; i++, gids++) {
-					if (*gids != oid_nil) {
+					if (!is_oid_nil(*gids)) {
 						min = *gids;
 						break;
 					}
 				}
-				if (min != oid_nil) {
+				if (!is_oid_nil(min)) {
 					/* found a non-nil, max must be last
 					 * value (and there is one!) */
 					max = * (const oid *) Tloc(g, BUNlast(g) - 1);
@@ -114,7 +118,7 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 				/* we'll do a complete scan */
 				gids = (const oid *) Tloc(g, 0);
 				for (i = 0, ngrp = BATcount(g); i < ngrp; i++, gids++) {
-					if (*gids != oid_nil) {
+					if (!is_oid_nil(*gids)) {
 						if (*gids < min)
 							min = *gids;
 						if (*gids > max)
@@ -147,6 +151,311 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 /* ---------------------------------------------------------------------- */
 /* sum */
 
+static inline int
+samesign(double x, double y)
+{
+	return (x >= 0) == (y >= 0);
+}
+
+/* Add two values, producing the sum and the remainder due to limited
+ * range of floating point arithmetic.  This function depends on the
+ * fact that the sum returns INFINITY in *hi of the correct sign
+ * (i.e. isinf() returns TRUE) in case of overflow. */
+static inline void
+twosum(volatile double *hi, volatile double *lo, double x, double y)
+{
+	volatile double yr;
+
+	assert(fabs(x) >= fabs(y));
+
+	*hi = x + y;
+	yr = *hi - x;
+	*lo = y - yr;
+}
+
+static inline void
+exchange(double *x, double *y)
+{
+	double t = *x;
+	*x = *y;
+	*y = t;
+}
+
+/* this function was adapted from https://bugs.python.org/file10357/msum4.py */
+static BUN
+dofsum(const void *restrict values, oid seqb, BUN start, BUN end,
+       void *restrict results, BUN ngrp, int tp1, int tp2,
+       const oid *restrict cand, const oid *candend, const oid *restrict gids,
+       oid min, oid max, int skip_nils, int abort_on_error,
+       int nil_if_empty, const char *func)
+{
+	struct pergroup {
+		int npartials;
+		int maxpartials;
+		int valseen;
+#ifdef INFINITES_ALLOWED
+		float infs;
+#else
+		int infs;
+#endif
+		double *partials;
+	} *pergroup;
+	BUN listi;
+	int parti;
+	int i;
+	BUN grp;
+	double x, y;
+	volatile double lo, hi;
+	double twopow = pow((double) FLT_RADIX, (double) (DBL_MAX_EXP - 1));
+	BUN nils = 0;
+	volatile flt f;
+
+	ALGODEBUG fprintf(stderr, "#%s: floating point summation\n", func);
+	/* we only deal with the two floating point types */
+	assert(tp1 == TYPE_flt || tp1 == TYPE_dbl);
+	assert(tp2 == TYPE_flt || tp2 == TYPE_dbl);
+	/* if input is dbl, then so it output */
+	assert(tp2 == TYPE_flt || tp1 == TYPE_dbl);
+	/* if no gids, then we have a single group */
+	assert(ngrp == 1 || gids != NULL);
+	if (gids == NULL || ngrp == 1) {
+		min = max = 0;
+		ngrp = 1;
+		gids = NULL;
+	}
+	pergroup = GDKmalloc(ngrp * sizeof(*pergroup));
+	if (pergroup == NULL)
+		return BUN_NONE;
+	for (grp = 0; grp < ngrp; grp++) {
+		pergroup[grp].npartials = 0;
+		pergroup[grp].valseen = 0;
+		pergroup[grp].maxpartials = 2;
+		pergroup[grp].infs = 0;
+		pergroup[grp].partials = GDKmalloc(pergroup[grp].maxpartials * sizeof(double));
+		if (pergroup[grp].partials == NULL) {
+			while (grp > 0)
+				GDKfree(pergroup[--grp].partials);
+			GDKfree(pergroup);
+			return BUN_NONE;
+		}
+	}
+	for (;;) {
+		if (cand) {
+			if (cand >= candend)
+				break;
+			listi = *cand++ - seqb;
+		} else {
+			if (start >= end)
+				break;
+			listi = start++;
+		}
+		grp = gids ? gids[listi] : 0;
+		if (grp < min || grp > max)
+			continue;
+		if (pergroup[grp].partials == NULL)
+			continue;
+		if (tp1 == TYPE_flt && !is_flt_nil(((const flt *) values)[listi]))
+			x = ((const flt *) values)[listi];
+		else if (tp1 == TYPE_dbl && !is_dbl_nil(((const dbl *) values)[listi]))
+			x = ((const dbl *) values)[listi];
+		else {
+			/* it's a nil */
+			if (!skip_nils) {
+				if (tp2 == TYPE_flt)
+					((flt *) results)[grp] = flt_nil;
+				else
+					((dbl *) results)[grp] = dbl_nil;
+				GDKfree(pergroup[grp].partials);
+				pergroup[grp].partials = NULL;
+				if (++nils == ngrp)
+					break;
+			}
+			continue;
+		}
+		pergroup[grp].valseen = 1;
+#ifdef INFINITES_ALLOWED
+		if (isinf(x)) {
+			pergroup[grp].infs += x;
+			continue;
+		}
+#endif
+		i = 0;
+		for (parti = 0; parti < pergroup[grp].npartials; parti++) {
+			y = pergroup[grp].partials[parti];
+			if (fabs(x) < fabs(y))
+				exchange(&x, &y);
+			twosum(&hi, &lo, x, y);
+			if (isinf(hi)) {
+				int sign = hi > 0 ? 1 : -1;
+				hi = x - twopow * sign;
+				x = hi - twopow * sign;
+				pergroup[grp].infs += sign;
+				if (fabs(x) < fabs(y))
+					exchange(&x, &y);
+				twosum(&hi, &lo, x, y);
+			}
+			if (lo != 0)
+				pergroup[grp].partials[i++] = lo;
+			x = hi;
+		}
+		if (x != 0) {
+			if (i == pergroup[grp].maxpartials) {
+				double *temp;
+				pergroup[grp].maxpartials += pergroup[grp].maxpartials;
+				temp = GDKrealloc(pergroup[grp].partials, pergroup[grp].maxpartials * sizeof(double));
+				if (temp == NULL)
+					goto bailout;
+				pergroup[grp].partials = temp;
+			}
+			pergroup[grp].partials[i++] = x;
+		}
+		pergroup[grp].npartials = i;
+	}
+
+	for (grp = 0; grp < ngrp; grp++) {
+		if (pergroup[grp].partials == NULL)
+			continue;
+		if (!pergroup[grp].valseen) {
+			if (tp2 == TYPE_flt)
+				((flt *) results)[grp] = nil_if_empty ? flt_nil : 0;
+			else
+				((dbl *) results)[grp] = nil_if_empty ? dbl_nil : 0;
+			nils += nil_if_empty;
+			GDKfree(pergroup[grp].partials);
+			pergroup[grp].partials = NULL;
+			continue;
+		}
+#ifdef INFINITES_ALLOWED
+		if (isinf(pergroup[grp].infs) || isnan(pergroup[grp].infs)) {
+			if (abort_on_error) {
+				goto overflow;
+			}
+			if (tp2 == TYPE_flt)
+				((flt *) results)[grp] = flt_nil;
+			else
+				((dbl *) results)[grp] = dbl_nil;
+			nils++;
+			GDKfree(pergroup[grp].partials);
+			pergroup[grp].partials = NULL;
+			continue;
+		}
+#endif
+
+		if ((pergroup[grp].infs == 1 || pergroup[grp].infs == -1) &&
+		    pergroup[grp].npartials > 0 &&
+		    !samesign(pergroup[grp].infs, pergroup[grp].partials[pergroup[grp].npartials - 1])) {
+			twosum(&hi, &lo, pergroup[grp].infs * twopow, pergroup[grp].partials[pergroup[grp].npartials - 1] / 2);
+			if (isinf(2 * hi)) {
+				y = 2 * lo;
+				x = hi + y;
+				x -= hi;
+				if (x == y &&
+				    pergroup[grp].npartials > 1 &&
+				    samesign(lo, pergroup[grp].partials[pergroup[grp].npartials - 2])) {
+					GDKfree(pergroup[grp].partials);
+					pergroup[grp].partials = NULL;
+					x = 2 * (hi + y);
+					if (tp2 == TYPE_flt) {
+						f = (flt) x;
+						if (isinf(f) ||
+						    isnan(f) ||
+						    is_flt_nil(f)) {
+							if (abort_on_error)
+								goto overflow;
+							((flt *) results)[grp] = flt_nil;
+							nils++;
+						} else
+							((flt *) results)[grp] = f;
+					} else if (is_dbl_nil(x)) {
+						if (abort_on_error)
+							goto overflow;
+						((dbl *) results)[grp] = dbl_nil;
+						nils++;
+					} else
+						((dbl *) results)[grp] = x;
+					continue;
+				}
+			} else {
+				if (lo) {
+					if (pergroup[grp].npartials == pergroup[grp].maxpartials) {
+						double *temp;
+						/* we need space for one more */
+						pergroup[grp].maxpartials++;
+						temp = GDKrealloc(pergroup[grp].partials, pergroup[grp].maxpartials * sizeof(double));
+						if (temp == NULL)
+							goto bailout;
+						pergroup[grp].partials = temp;
+					}
+					pergroup[grp].partials[pergroup[grp].npartials - 1] = 2 * lo;
+					pergroup[grp].partials[pergroup[grp].npartials++] = 2 * hi;
+				} else {
+					pergroup[grp].partials[pergroup[grp].npartials - 1] = 2 * hi;
+				}
+				pergroup[grp].infs = 0;
+			}
+		}
+
+		if (pergroup[grp].infs != 0)
+			goto overflow;
+
+		if (pergroup[grp].npartials == 0) {
+			GDKfree(pergroup[grp].partials);
+			pergroup[grp].partials = NULL;
+			if (tp2 == TYPE_flt)
+				((flt *) results)[grp] = 0;
+			else
+				((dbl *) results)[grp] = 0;
+			continue;
+		}
+
+		/* accumulate into hi */
+		hi = pergroup[grp].partials[--pergroup[grp].npartials];
+		while (pergroup[grp].npartials > 0) {
+			twosum(&hi, &lo, hi, pergroup[grp].partials[--pergroup[grp].npartials]);
+			if (lo) {
+				pergroup[grp].partials[pergroup[grp].npartials++] = lo;
+				break;
+			}
+		}
+
+		if (pergroup[grp].npartials >= 2 &&
+		    samesign(pergroup[grp].partials[pergroup[grp].npartials - 1], pergroup[grp].partials[pergroup[grp].npartials - 2]) &&
+		    hi + 2 * pergroup[grp].partials[pergroup[grp].npartials - 1] - hi == 2 * pergroup[grp].partials[pergroup[grp].npartials - 1]) {
+			hi += 2 * pergroup[grp].partials[pergroup[grp].npartials - 1];
+			pergroup[grp].partials[pergroup[grp].npartials - 1] = -pergroup[grp].partials[pergroup[grp].npartials - 1];
+		}
+
+		GDKfree(pergroup[grp].partials);
+		pergroup[grp].partials = NULL;
+		if (tp2 == TYPE_flt) {
+			f = (flt) hi;
+			if (isinf(f) || isnan(f) || is_flt_nil(f)) {
+				if (abort_on_error)
+					goto overflow;
+				((flt *) results)[grp] = flt_nil;
+				nils++;
+			} else
+				((flt *) results)[grp] = f;
+		} else if (is_dbl_nil(hi)) {
+			if (abort_on_error)
+				goto overflow;
+			((dbl *) results)[grp] = dbl_nil;
+			nils++;
+		} else
+			((dbl *) results)[grp] = hi;
+	}
+	GDKfree(pergroup);
+	return nils;
+
+  overflow:
+	GDKerror("22003!overflow in calculation.\n");
+  bailout:
+	for (grp = 0; grp < ngrp; grp++)
+		GDKfree(pergroup[grp].partials);
+	GDKfree(pergroup);
+	return BUN_NONE;
+}
+
 #define AGGR_SUM(TYPE1, TYPE2)						\
 	do {								\
 		TYPE1 x;						\
@@ -174,7 +483,7 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 				int seenval = 0;			\
 				for (i = start; i < end && nils == 0; i++) { \
 					x = vals[i];			\
-					if (x == TYPE1##_nil) {		\
+					if (is_##TYPE1##_nil(x)) {	\
 						if (!skip_nils) {	\
 							sum = TYPE2##_nil; \
 							nils = 1;	\
@@ -207,7 +516,7 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 				if (i >= end)				\
 					break;				\
 				x = vals[i];				\
-				if (x == TYPE1##_nil) {			\
+				if (is_##TYPE1##_nil(x)) {		\
 					if (!skip_nils) {		\
 						sum = TYPE2##_nil;	\
 						nils = 1;		\
@@ -235,10 +544,10 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 				    (gids[i] >= min && gids[i] <= max)) { \
 					gid = gids ? gids[i] - min : (oid) i; \
 					x = vals[i];			\
-					if (x == TYPE1##_nil) {		\
+					if (is_##TYPE1##_nil(x)) {	\
 						if (!skip_nils) {	\
 							sums[gid] = TYPE2##_nil; \
-							nils++;	\
+							nils++;		\
 						}			\
 					} else {			\
 						if (nil_if_empty &&	\
@@ -246,7 +555,7 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 							seen[gid >> 5] |= 1U << (gid & 0x1F); \
 							sums[gid] = 0;	\
 						}			\
-						if (sums[gid] != TYPE2##_nil) { \
+						if (!is_##TYPE2##_nil(sums[gid])) { \
 							ADD_WITH_CHECK(	\
 								TYPE1,	\
 								x,	\
@@ -272,10 +581,10 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 				if (i >= end)				\
 					break;				\
 				if (gids == NULL ||			\
-				    (gids[i] >= min && gids[i] <= max)) {	\
+				    (gids[i] >= min && gids[i] <= max)) { \
 					gid = gids ? gids[i] - min : (oid) i; \
 					x = vals[i];			\
-					if (x == TYPE1##_nil) {		\
+					if (is_##TYPE1##_nil(x)) {	\
 						if (!skip_nils) {	\
 							sums[gid] = TYPE2##_nil; \
 							nils++;		\
@@ -286,7 +595,7 @@ BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
 							seen[gid >> 5] |= 1U << (gid & 0x1F); \
 							sums[gid] = 0;	\
 						}			\
-						if (sums[gid] != TYPE2##_nil) { \
+						if (!is_##TYPE2##_nil(sums[gid])) { \
 							ADD_WITH_CHECK(	\
 								TYPE1,	\
 								x,	\
@@ -313,7 +622,18 @@ dosum(const void *restrict values, int nonil, oid seqb, BUN start, BUN end,
 	BUN nils = 0;
 	BUN i;
 	oid gid;
-	unsigned int *restrict seen; /* bitmask for groups that we've seen */
+	unsigned int *restrict seen = NULL; /* bitmask for groups that we've seen */
+
+	switch (tp2) {
+	case TYPE_flt:
+		if (tp1 != TYPE_flt)
+			goto unsupported;
+		/* fall through */
+	case TYPE_dbl:
+		if (tp1 != TYPE_flt && tp1 != TYPE_dbl)
+			goto unsupported;
+		return dofsum(values, seqb, start, end, results, ngrp, tp1, tp2, cand, candend, gids, min, max, skip_nils, abort_on_error, nil_if_empty, func);
+	}
 
 	/* allocate bitmap for seen group ids */
 	seen = GDKzalloc(((ngrp + 31) / 32) * sizeof(int));
@@ -410,31 +730,6 @@ dosum(const void *restrict values, int nonil, oid seqb, BUN start, BUN end,
 		break;
 	}
 #endif
-	case TYPE_flt: {
-		flt *restrict sums = (flt *) results;
-		switch (tp1) {
-		case TYPE_flt:
-			AGGR_SUM(flt, flt);
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	}
-	case TYPE_dbl: {
-		dbl *restrict sums = (dbl *) results;
-		switch (tp1) {
-		case TYPE_flt:
-			AGGR_SUM(flt, dbl);
-			break;
-		case TYPE_dbl:
-			AGGR_SUM(dbl, dbl);
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
-	}
 	default:
 		goto unsupported;
 	}
@@ -601,7 +896,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 				avg = dbl_nil;
 			}
 			if (tp == TYPE_flt) {
-				if (avg == dbl_nil)
+				if (is_dbl_nil(avg))
 					*(flt *) res = flt_nil;
 				else if (cnt > 0 &&
 					 GDK_flt_max / cnt < fabs(avg)) {
@@ -614,7 +909,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 					*(flt *) res = (flt) avg * cnt;
 				}
 			} else {
-				if (avg == dbl_nil) {
+				if (is_dbl_nil(avg)) {
 					*(dbl *) res = dbl_nil;
 				} else if (cnt > 0 &&
 					   GDK_dbl_max / cnt < fabs(avg)) {
@@ -678,7 +973,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 					else				\
 						gid = (oid) i;		\
 				}					\
-				if (vals[i] == TYPE1##_nil) {		\
+				if (is_##TYPE1##_nil(vals[i])) {	\
 					if (!skip_nils) {		\
 						prods[gid] = TYPE2##_nil; \
 						nils++;			\
@@ -689,7 +984,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 						seen[gid >> 5] |= 1U << (gid & 0x1F); \
 						prods[gid] = 1;		\
 					}				\
-					if (prods[gid] != TYPE2##_nil) { \
+					if (!is_##TYPE2##_nil(prods[gid])) { \
 						MUL4_WITH_CHECK(	\
 							TYPE1, vals[i],	\
 							TYPE2, prods[gid], \
@@ -734,12 +1029,12 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 					seen[gid >> 5] |= 1U << (gid & 0x1F); \
 					prods[gid] = 1;			\
 				}					\
-				if (vals[i] == TYPE##_nil) {		\
+				if (is_##TYPE##_nil(vals[i])) {		\
 					if (!skip_nils) {		\
 						prods[gid] = hge_nil;	\
 						nils++;			\
 					}				\
-				} else if (prods[gid] != hge_nil) {	\
+				} else if (!is_hge_nil(prods[gid])) {	\
 					HGEMUL_CHECK(TYPE, vals[i],	\
 						     hge, prods[gid],	\
 						     prods[gid],	\
@@ -775,7 +1070,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 					else				\
 						gid = (oid) i;		\
 				}					\
-				if (vals[i] == TYPE##_nil) {		\
+				if (is_##TYPE##_nil(vals[i])) {		\
 					if (!skip_nils) {		\
 						prods[gid] = lng_nil;	\
 						nils++;			\
@@ -786,7 +1081,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 						seen[gid >> 5] |= 1U << (gid & 0x1F); \
 						prods[gid] = 1;		\
 					}				\
-					if (prods[gid] != lng_nil) {	\
+					if (!is_lng_nil(prods[gid])) {	\
 						LNGMUL_CHECK(		\
 							TYPE, vals[i],	\
 							lng, prods[gid], \
@@ -825,18 +1120,18 @@ BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int
 					else				\
 						gid = (oid) i;		\
 				}					\
-				if (vals[i] == TYPE1##_nil) {		\
+				if (is_##TYPE1##_nil(vals[i])) {	\
 					if (!skip_nils) {		\
 						prods[gid] = TYPE2##_nil; \
 						nils++;			\
 					}				\
 				} else {				\
-					if (nil_if_empty && \
+					if (nil_if_empty &&		\
 					    !(seen[gid >> 5] & (1U << (gid & 0x1F)))) { \
 						seen[gid >> 5] |= 1U << (gid & 0x1F); \
 						prods[gid] = 1;		\
 					}				\
-					if (prods[gid] != TYPE2##_nil) { \
+					if (!is_##TYPE2##_nil(prods[gid])) { \
 						if (ABSOLUTE(vals[i]) > 1 && \
 						    GDK_##TYPE2##_max / ABSOLUTE(vals[i]) < ABSOLUTE(prods[gid])) { \
 							if (abort_on_error) \
@@ -1278,10 +1573,10 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 					gid = gids[i] - min;		\
 				else					\
 					gid = (oid) i;			\
-				if (vals[i] == TYPE##_nil) {		\
+				if (is_##TYPE##_nil(vals[i])) {		\
 					if (!skip_nils)			\
 						cnts[gid] = lng_nil;	\
-				} else if (cnts[gid] != lng_nil) {	\
+				} else if (!is_lng_nil(cnts[gid])) {	\
 					AVERAGE_ITER(TYPE, vals[i],	\
 						     avgs[gid],		\
 						     rems[gid],		\
@@ -1290,7 +1585,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 			}						\
 		}							\
 		for (i = 0; i < ngrp; i++) {				\
-			if (cnts[i] == 0 || cnts[i] == lng_nil) {	\
+			if (cnts[i] == 0 || is_lng_nil(cnts[i])) {	\
 				dbls[i] = dbl_nil;			\
 				cnts[i] = 0;				\
 				nils++;					\
@@ -1324,10 +1619,10 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 					gid = gids[i] - min;		\
 				else					\
 					gid = (oid) i;			\
-				if (vals[i] == TYPE##_nil) {		\
+				if (is_##TYPE##_nil(vals[i])) {		\
 					if (!skip_nils)			\
 						cnts[gid] = lng_nil;	\
-				} else if (cnts[gid] != lng_nil) {	\
+				} else if (!is_lng_nil(cnts[gid])) {	\
 					AVERAGE_ITER_FLOAT(TYPE, vals[i], \
 							   dbls[gid],	\
 							   cnts[gid]);	\
@@ -1335,7 +1630,7 @@ BATprod(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, in
 			}						\
 		}							\
 		for (i = 0; i < ngrp; i++) {				\
-			if (cnts[i] == 0 || cnts[i] == lng_nil) {	\
+			if (cnts[i] == 0 || is_lng_nil(cnts[i])) {	\
 				dbls[i] = dbl_nil;			\
 				cnts[i] = 0;				\
 				nils++;					\
@@ -1355,7 +1650,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 	BUN *restrict rems = NULL;
 	lng *restrict cnts = NULL;
 	dbl *restrict dbls;
-	BAT *bn = NULL;
+	BAT *bn = NULL, *cn = NULL;
 	BUN start, end;
 	const oid *cand = NULL, *candend = NULL;
 	const char *err;
@@ -1384,11 +1679,12 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		}
 		if (cntsp) {
 			lng zero = 0;
-			if ((*cntsp = BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &zero, ngrp, TRANSIENT)) == NULL) {
+			if ((cn = BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &zero, ngrp, TRANSIENT)) == NULL) {
 				GDKerror("BATgroupavg: failed to create BAT\n");
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
+			*cntsp = cn;
 		}
 		*bnp = bn;
 		return GDK_SUCCEED;
@@ -1404,10 +1700,11 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 			return GDK_FAIL;
 		if (cntsp) {
 			lng one = 1;
-			if ((*cntsp = BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &one, ngrp, TRANSIENT)) == NULL) {
+			if ((cn = BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &one, ngrp, TRANSIENT)) == NULL) {
 				BBPreclaim(bn);
 				return GDK_FAIL;
 			}
+			*cntsp = cn;
 		}
 		*bnp = bn;
 		return GDK_SUCCEED;
@@ -1430,9 +1727,9 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		break;
 	}
 	if (cntsp) {
-		if ((*cntsp = COLnew(min, TYPE_lng, ngrp, TRANSIENT)) == NULL)
+		if ((cn = COLnew(min, TYPE_lng, ngrp, TRANSIENT)) == NULL)
 			goto alloc_fail;
-		cnts = (lng *) Tloc(*cntsp, 0);
+		cnts = (lng *) Tloc(cn, 0);
 		memset(cnts, 0, ngrp * sizeof(lng));
 	} else {
 		cnts = GDKzalloc(ngrp * sizeof(lng));
@@ -1476,8 +1773,8 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		break;
 	default:
 		GDKfree(rems);
-		if (cntsp)
-			BBPreclaim(*cntsp);
+		if (cn)
+			BBPreclaim(cn);
 		else
 			GDKfree(cnts);
 		BBPunfix(bn->batCacheid);
@@ -1486,15 +1783,16 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 		return GDK_FAIL;
 	}
 	GDKfree(rems);
-	if (cntsp == NULL)
+	if (cn == NULL)
 		GDKfree(cnts);
 	else {
-		BATsetcount(*cntsp, ngrp);
-		(*cntsp)->tkey = BATcount(*cntsp) <= 1;
-		(*cntsp)->tsorted = BATcount(*cntsp) <= 1;
-		(*cntsp)->trevsorted = BATcount(*cntsp) <= 1;
-		(*cntsp)->tnil = 0;
-		(*cntsp)->tnonil = 1;
+		BATsetcount(cn, ngrp);
+		cn->tkey = BATcount(cn) <= 1;
+		cn->tsorted = BATcount(cn) <= 1;
+		cn->trevsorted = BATcount(cn) <= 1;
+		cn->tnil = 0;
+		cn->tnonil = 1;
+		*cntsp = cn;
 	}
 	BATsetcount(bn, ngrp);
 	bn->tkey = BATcount(bn) <= 1;
@@ -1511,6 +1809,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 	GDKfree(rems);
 	if (cntsp) {
 		BBPreclaim(*cntsp);
+		*cntsp = NULL;
 	} else if (cnts) {
 		GDKfree(cnts);
 	}
@@ -1537,7 +1836,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 					break;				\
 			}						\
 			x = ((const TYPE *) src)[i];			\
-			if (x == TYPE##_nil)				\
+			if (is_##TYPE##_nil(x))				\
 				continue;				\
 			ADD_WITH_CHECK(TYPE, x,				\
 				       lng_hge, sum,			\
@@ -1589,7 +1888,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 				if (i >= end)				\
 					break;				\
 				x = ((const TYPE *) src)[i];		\
-				if (x == TYPE##_nil)			\
+				if (is_##TYPE##_nil(x))			\
 					continue;			\
 				AVERAGE_ITER(TYPE, x, a, r, n);		\
 			}						\
@@ -1620,7 +1919,7 @@ BATgroupavg(BAT **bnp, BAT **cntsp, BAT *b, BAT *g, BAT *e, BAT *s, int tp, int 
 					break;			\
 			}					\
 			x = ((const TYPE *) src)[i];		\
-			if (x == TYPE##_nil)			\
+			if (is_##TYPE##_nil(x))			\
 				continue;			\
 			AVERAGE_ITER_FLOAT(TYPE, x, a, n);	\
 		}						\
@@ -1705,7 +2004,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 					gid = gids[i] - min;		\
 				else					\
 					gid = (oid) i;			\
-				if (!skip_nils || vals[i] != TYPE##_nil) { \
+				if (!skip_nils || !is_##TYPE##_nil(vals[i])) { \
 					cnts[gid]++;			\
 				}					\
 			}						\
@@ -1920,7 +2219,7 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 					if (i >= end)			\
 						break;			\
 					if (!skip_nils ||		\
-					    vals[i] != TYPE##_nil) {	\
+					    !is_##TYPE##_nil(vals[i])) { \
 						oids[i] = i + b->hseqbase; \
 						nils--;			\
 					}				\
@@ -1928,7 +2227,7 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 			} else {					\
 				for (i = start; i < end; i++) {		\
 					if (!skip_nils ||		\
-					    vals[i] != TYPE##_nil) {	\
+					    !is_##TYPE##_nil(vals[i])) { \
 						oids[i] = i + b->hseqbase; \
 						nils--;			\
 					}				\
@@ -1952,12 +2251,12 @@ BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on
 				    (gids[i] >= min && gids[i] <= max)) { \
 					if (gids)			\
 						gid = gids[i] - min;	\
-					if (!skip_nils || vals[i] != TYPE##_nil) { \
-						if (oids[gid] == oid_nil) { \
+					if (!skip_nils || !is_##TYPE##_nil(vals[i])) { \
+						if (is_oid_nil(oids[gid])) { \
 							oids[gid] = i + b->hseqbase; \
 							nils--;		\
-						} else if (vals[oids[gid] - b->hseqbase] != TYPE##_nil && \
-							   (vals[i] == TYPE##_nil || \
+						} else if (!is_##TYPE##_nil(vals[oids[gid] - b->hseqbase]) && \
+							   (is_##TYPE##_nil(vals[i]) || \
 							    OP(vals[i], vals[oids[gid] - b->hseqbase]))) \
 							oids[gid] = i + b->hseqbase; \
 					}				\
@@ -2071,7 +2370,7 @@ do_groupmin(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 						gid = gids[i] - min;
 					if (!skip_nils ||
 					    (*atomcmp)(v, nil) != 0) {
-						if (oids[gid] == oid_nil) {
+						if (is_oid_nil(oids[gid])) {
 							oids[gid] = i + b->hseqbase;
 							nils--;
 						} else if (t != TYPE_void) {
@@ -2196,7 +2495,7 @@ do_groupmax(oid *restrict oids, BAT *b, const oid *restrict gids, BUN ngrp,
 						gid = gids[i] - min;
 					if (!skip_nils ||
 					    (*atomcmp)(v, nil) != 0) {
-						if (oids[gid] == oid_nil) {
+						if (is_oid_nil(oids[gid])) {
 							oids[gid] = i + b->hseqbase;
 							nils--;
 						} else {
@@ -2289,28 +2588,29 @@ BATminmax(BAT *b, void *aggr,
 {
 	oid pos;
 	const void *res;
-	int s;
-	int needdecref = 0;
+	size_t s;
 	BATiter bi;
 
 	if ((VIEWtparent(b) == 0 ||
 	     BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b)))) &&
 	    BATcheckimprints(b)) {
 		Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(VIEWtparent(b))->timprints : b->timprints;
+		int i;
+
 		pos = oid_nil;
 		if (minmax == do_groupmin) {
 			/* find first non-empty bin */
-			for (s = 0; s < imprints->bits; s++) {
-				if (imprints->stats[s + 128]) {
-					pos = imprints->stats[s] + b->hseqbase;
+			for (i = 0; i < imprints->bits; i++) {
+				if (imprints->stats[i + 128]) {
+					pos = imprints->stats[i] + b->hseqbase;
 					break;
 				}
 			}
 		} else {
 			/* find last non-empty bin */
-			for (s = imprints->bits - 1; s >= 0; s--) {
-				if (imprints->stats[s + 128]) {
-					pos = imprints->stats[s + 64] + b->hseqbase;
+			for (i = imprints->bits - 1; i >= 0; i--) {
+				if (imprints->stats[i + 128]) {
+					pos = imprints->stats[i + 64] + b->hseqbase;
 					break;
 				}
 			}
@@ -2319,7 +2619,7 @@ BATminmax(BAT *b, void *aggr,
 		(void) (*minmax)(&pos, b, NULL, 1, 0, 0, 0, BATcount(b),
 				 NULL, NULL, BATcount(b), 1, 0);
 	}
-	if (pos == oid_nil) {
+	if (is_oid_nil(pos)) {
 		res = ATOMnilptr(b->ttype);
 	} else {
 		bi = bat_iterator(b);
@@ -2333,8 +2633,6 @@ BATminmax(BAT *b, void *aggr,
 	}
 	if (aggr != NULL)	/* else: malloc error */
 		memcpy(aggr, res, s);
-	if (needdecref)
-		BBPunfix(b->batCacheid);
 	return aggr;
 }
 
@@ -2601,18 +2899,18 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 /* ---------------------------------------------------------------------- */
 /* standard deviation (both biased and non-biased) */
 
-#define AGGR_STDEV_SINGLE(TYPE)						\
-	do {								\
-		TYPE x;							\
-		for (i = 0; i < cnt; i++) {				\
-			x = ((const TYPE *) values)[i];			\
-			if (x == TYPE##_nil)				\
-				continue;				\
-			n++;						\
-			delta = (dbl) x - mean;				\
-			mean += delta / n;				\
-			m2 += delta * ((dbl) x - mean);			\
-		}							\
+#define AGGR_STDEV_SINGLE(TYPE)				\
+	do {						\
+		TYPE x;					\
+		for (i = 0; i < cnt; i++) {		\
+			x = ((const TYPE *) values)[i];	\
+			if (is_##TYPE##_nil(x))		\
+				continue;		\
+			n++;				\
+			delta = (dbl) x - mean;		\
+			mean += delta / n;		\
+			m2 += delta * ((dbl) x - mean);	\
+		}					\
 	} while (0)
 
 static dbl
@@ -2670,7 +2968,7 @@ BATcalcstdev_population(dbl *avgp, BAT *b)
 	dbl v = calcvariance(avgp, (const void *) Tloc(b, 0),
 			     BATcount(b), b->ttype, 0,
 			     "BATcalcstdev_population");
-	return v == dbl_nil ? dbl_nil : sqrt(v);
+	return is_dbl_nil(v) ? dbl_nil : sqrt(v);
 }
 
 dbl
@@ -2679,7 +2977,7 @@ BATcalcstdev_sample(dbl *avgp, BAT *b)
 	dbl v = calcvariance(avgp, (const void *) Tloc(b, 0),
 			     BATcount(b), b->ttype, 1,
 			     "BATcalcstdev_sample");
-	return v == dbl_nil ? dbl_nil : sqrt(v);
+	return is_dbl_nil(v) ? dbl_nil : sqrt(v);
 }
 
 dbl
@@ -2705,7 +3003,7 @@ BATcalcvariance_sample(dbl *avgp, BAT *b)
 			if (cand) {					\
 				if (cand == candend)			\
 					break;				\
-				i = *cand++ - b->hseqbase;			\
+				i = *cand++ - b->hseqbase;		\
 				if (i >= end)				\
 					break;				\
 			} else {					\
@@ -2719,7 +3017,7 @@ BATcalcvariance_sample(dbl *avgp, BAT *b)
 					gid = gids[i] - min;		\
 				else					\
 					gid = (oid) i;			\
-				if (vals[i] == TYPE##_nil) {		\
+				if (is_##TYPE##_nil(vals[i])) {		\
 					if (!skip_nils)			\
 						cnts[gid] = BUN_NONE;	\
 				} else if (cnts[gid] != BUN_NONE) {	\

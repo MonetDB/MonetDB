@@ -18,7 +18,7 @@
 #include "sql.h"
 #include <stdlib.h>
 #include "shp.h"
-#include "sql_scenario.h"
+#include "sql_execute.h"
 #include "mal_exception.h"
 
 #include <geom.h>
@@ -223,7 +223,7 @@ SHPattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* check if the file is already attached */
 	col = mvc_bind_column(m, fls, "path");
 	rid = table_funcs.column_find_row(m->session->tr, col, fname, NULL);
-	if (rid != oid_nil) {
+	if (!is_oid_nil(rid)) {
 		GDALWClose(shp_conn_ptr);
 		return createException(MAL, "shp.attach", SQLSTATE(38000) "File %s already attached\n", fname);
 	}
@@ -272,8 +272,10 @@ SHPattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			sprintf(temp_buf + strlen(temp_buf), "\"%s\" INT, ", nameToLowerCase);
 		} else if (strcmp(field_definitions[i].fieldType, "Real") == 0) {
 			sprintf(temp_buf + strlen(temp_buf), "\"%s\" FLOAT, ", nameToLowerCase);
+#if 0
 		} else if (strcmp(field_definitions[i].fieldType, "Date") == 0) {
 			sprintf(temp_buf + strlen(temp_buf), "\"%s\" STRING, ", nameToLowerCase);
+#endif
         	} else 
 			sprintf(temp_buf + strlen(temp_buf), "\"%s\" STRING, ", nameToLowerCase);
 		GDKfree(nameToLowerCase);
@@ -352,7 +354,7 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 	if(!(col = mvc_bind_column(m, fls_table, "id")))
 		return createException(MAL, "shp.import", SQLSTATE(38000) "Column '%s.%s(id)' missing", sch_name, fls_table_name);
 	irid = table_funcs.column_find_row(m->session->tr, col, (void *)&vid, NULL);
-	if (irid == oid_nil)
+	if (is_oid_nil(irid))
 		return createException(MAL, "shp.import", SQLSTATE(38000) "Shapefile with id %d not in the %s.%s table\n", vid, sch_name, fls_table_name);
 	if(!(col = mvc_bind_column(m, fls_table, "path")))
 		return createException(MAL, "shp.import", SQLSTATE(38000) "Column '%s.%s(path)' missing", sch_name, fls_table_name);
@@ -364,7 +366,7 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 	if(!(col = mvc_bind_column(m, shps_table, "fileid")))
 		return createException(MAL, "shp.import", SQLSTATE(38000) "Column '%s.%s(fileid)' missing", sch_name, shps_table_name);
 	irid = table_funcs.column_find_row(m->session->tr, col, (void *)&vid, NULL);
-	if (irid == oid_nil)
+	if (is_oid_nil(irid))
 		return createException(MAL, "shp.import", SQLSTATE(38000) "Shapefile with id %d not in the Shapefile catalog\n", vid);
 	if(!(col = mvc_bind_column(m, shps_table, "datatable")))
 		return createException(MAL, "shp.import", SQLSTATE(38000) "Column '%s.%s(datatable)' missing", sch_name, shps_table_name);
@@ -451,11 +453,13 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 				msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto unfree4;
 			}
+#if 0
 		} else if (strcmp(field_definitions[i].fieldType, "Date") == 0) {
-        	if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT))) {
+			if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT))) {
 				msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto unfree4;
 			}
+#endif
 		} else {
 			if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT))) {
 				msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -616,7 +620,7 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	if(!(col = mvc_bind_column(m, fls_table, "id")))
 		return createException(MAL, "shp.import", SQLSTATE(38000) "Column '%s.%s(id)' missing", sch_name, fls_table_name);
 	irid = table_funcs.column_find_row(m->session->tr, col, (void *)&vid, NULL);
-	if (irid == oid_nil)
+	if (is_oid_nil(irid))
 		return createException(MAL, "shp.import", SQLSTATE(38000) "Shapefile with id %d not in the %s.%s table\n", vid, sch_name, fls_table_name);
 	if(!(col = mvc_bind_column(m, fls_table, "path")))
 		return createException(MAL, "shp.import", SQLSTATE(38000) "Column '%s.%s(path)' missing", sch_name, fls_table_name);
@@ -628,7 +632,7 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	if(!(col = mvc_bind_column(m, shps_table, "fileid")))
 		return createException(MAL, "shp.import", SQLSTATE(38000) "Column '%s.%s(fileid)' missing", sch_name, shps_table_name);
 	irid = table_funcs.column_find_row(m->session->tr, col, (void *)&vid, NULL);
-	if (irid == oid_nil)
+	if (is_oid_nil(irid))
 		return createException(MAL, "shp.import", SQLSTATE(38000) "Shapefile with id %d not in the Shapefile catalog\n", vid);
 	if(!(col = mvc_bind_column(m, shps_table, "datatable")))
 		return createException(MAL, "shp.import", SQLSTATE(38000) "Column '%s.%s(datatable)' missing", sch_name, shps_table_name);
@@ -675,11 +679,13 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 				msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
+#if 0
 		} else if (strcmp(field_definitions[i].fieldType, "Date") == 0) {
 			if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT))) {
 				msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
+#endif
 		} else {
 			if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT))) {
 				msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);

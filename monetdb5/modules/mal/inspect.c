@@ -58,8 +58,9 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == 0)
 		throw(MAL, "inspect.getgetFunctionId", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
-
 	getModuleList(&moduleList, &length);
+	if (moduleList == NULL)
+		goto bailout;
 	for(j = -1; j < length; j++) {
 		s = j < 0 ? cntxt->usermodule : moduleList[j];
 		for (i = 0; s && i < MAXSCOPE; i++) {
@@ -72,13 +73,14 @@ INSPECTgetAllFunctions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
-	freeModuleList(moduleList);
 	if (pseudo(ret,b,"view","symbol","function"))
 		goto bailout;
+	freeModuleList(moduleList);
 
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
+	freeModuleList(moduleList);
 	throw(MAL, "inspect.getgetFunctionId", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
@@ -98,6 +100,8 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "inspect.getmodule", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	getModuleList(&moduleList, &length);
+	if (moduleList == NULL)
+		goto bailout;
 	for(j = -1; j < length; j++) {
 		s = j < 0 ? cntxt->usermodule : moduleList[j];
 		for (i = 0; s && i < MAXSCOPE; i++) {
@@ -111,12 +115,13 @@ INSPECTgetAllModules(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
-	freeModuleList(moduleList);
 	if (pseudo(ret,b,"view","symbol","module"))
 		goto bailout;
+	freeModuleList(moduleList);
 
 	return MAL_SUCCEED;
   bailout:
+	freeModuleList(moduleList);
 	BBPreclaim(b);
 	throw(MAL, "inspect.getmodule", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
@@ -137,6 +142,8 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "inspect.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	getModuleList(&moduleList, &length);
+	if (moduleList == NULL)
+		goto bailout;
 	for(j = -1; j < length; j++) {
 		s = j < 0 ? cntxt->usermodule : moduleList[j];
 		for (i = 0; s && i < MAXSCOPE; i++) {
@@ -150,13 +157,14 @@ INSPECTgetkind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 		}
 	}
-	freeModuleList(moduleList);
 	if (pseudo(ret,b,"view","symbol","kind"))
 		goto bailout;
+	freeModuleList(moduleList);
 
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
+	freeModuleList(moduleList);
 	throw(MAL, "inspect.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
@@ -178,6 +186,8 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "inspect.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	getModuleList(&moduleList, &length);
+	if (moduleList == NULL)
+		goto bailout;
 	for(j = -1; j < length; j++) {
 		s = j < 0 ? cntxt->usermodule : moduleList[j];
 		for (i = 0; s && i < MAXSCOPE; i++)
@@ -191,13 +201,14 @@ INSPECTgetAllSignatures(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 	}
-	freeModuleList(moduleList);
 	if (pseudo(ret,b,"view"," symbol","address"))
 		goto bailout;
+	freeModuleList(moduleList);
 
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
+	freeModuleList(moduleList);
 	throw(MAL, "inspect.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 str
@@ -217,8 +228,9 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == 0)
 		throw(MAL, "inspect.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
-
 	getModuleList(&moduleList, &length);
+	if (moduleList == NULL)
+		goto bailout;
 	for(j = -1; j < length; j++) {
 		s = j < 0 ? cntxt->usermodule : moduleList[j];
 		for (i = 0; s && i < MAXSCOPE; i++)
@@ -227,20 +239,21 @@ INSPECTgetAllAddresses(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					fcnDefinition(t->def, getSignature(t), sig, 0,sig,BLOCK);
 					a= strstr(sig,"address");
 					if( a)
-						for( a=a+7; isspace((int) *a); a++)
+						for( a=a+7; isspace((unsigned char) *a); a++)
 							;
 					if (BUNappend(b, (a? a: "nil"), FALSE) != GDK_SUCCEED)
 						goto bailout;
 				}
 			}
 	}
-	freeModuleList(moduleList);
 	if (pseudo(ret,b,"view"," symbol","address"))
 		goto bailout;
+	freeModuleList(moduleList);
 
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
+	freeModuleList(moduleList);
 	throw(MAL, "inspect.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
@@ -368,7 +381,7 @@ INSPECTgetAddress(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			tail= strstr(c,"address");
 			if( tail){
 				*tail = 0;
-				for( tail=tail+7; isspace((int) *tail); tail++)  ;
+				for( tail=tail+7; isspace((unsigned char) *tail); tail++)  ;
 			}
 			if (tail && (w=strchr(tail, ';')) )
 				*w = 0;

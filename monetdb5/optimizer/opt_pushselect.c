@@ -190,7 +190,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 				if (no_updates(old, vars, getArg(q,1), getArg(p,1)) &&
 				    ((sname == Qsname && tname == Qtname) ||
-				    (0 && strcmp(getVarConstant(mb, sname).val.sval, getVarConstant(mb, Qsname).val.sval) == 0 &&
+				    (/* DISABLES CODE */ (0) && strcmp(getVarConstant(mb, sname).val.sval, getVarConstant(mb, Qsname).val.sval) == 0 &&
 				     strcmp(getVarConstant(mb, tname).val.sval, getVarConstant(mb, Qtname).val.sval) == 0))) {
 					clrFunction(p);
 					p->retc = 1;

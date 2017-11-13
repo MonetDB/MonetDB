@@ -223,7 +223,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 		if (stmt) {
 			c = stmt;
 
-			while (*c && isspace((int)*c))
+			while (*c && isspace((unsigned char)*c))
 				c++;
 			if( *c){
 				stmtq = mal_quote(c, strlen(c));
@@ -348,8 +348,7 @@ This information can be used to determine memory footprint and variable life tim
 					char *truncated = NULL;
 					tname = getTypeName(tpe);
 					logadd("\"type\":\"%s\",%s", tname,pret);
-					cv = 0;
-					VALformat(&cv, &stk->stk[getArg(pci,j)]);
+					cv = VALformat(&stk->stk[getArg(pci,j)]);
 					stmtq = mal_quote(cv, strlen(cv));
 					if (stmtq != NULL && strlen(stmtq) > LOGLEN/2) {
 						truncated = truncate_string(stmtq);
@@ -411,7 +410,7 @@ getCPULoad(char cpuload[BUFSIZ]){
 			if (s == NULL)		/* unexpected format of file */
 				break;
 
-			while( *s && isspace((int)*s)) s++;
+			while( *s && isspace((unsigned char)*s)) s++;
 			i= sscanf(s,LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT,  &user, &nice, &system, &idle, &iowait);
 			if ( i != 5 )
 				goto skip;
@@ -876,7 +875,7 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	stmt = instruction2str(mb, stk, pci, LIST_MAL_ALL);
 	c = stmt;
 
-	while (c && *c && (isspace((int)*c) || *c == '!'))
+	while (c && *c && (isspace((unsigned char)*c) || *c == '!'))
 		c++;
 
 #ifdef HAVE_SYS_RESOURCE_H

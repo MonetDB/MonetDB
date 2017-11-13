@@ -119,13 +119,12 @@ AUTHrequireAdminOrUser(Client cntxt, const char *username) {
 		return(MAL_SUCCEED);
 
 	rethrow("requireAdminOrUser", tmp, AUTHresolveUser(&user, id));
-	if (username == NULL || strcmp(username, user) != 0) {
-		GDKfree(user);
-		throw(INVCRED, "requireAdminOrUser", INVCRED_ACCESS_DENIED " '%s'", user);
-	}
-	GDKfree(user);
+	if (username == NULL || strcmp(username, user) != 0)
+		tmp = createException(INVCRED, "requireAdminOrUser",
+							  INVCRED_ACCESS_DENIED " '%s'", user);
 
-	return(MAL_SUCCEED);
+	GDKfree(user);
+	return tmp;
 }
 
 static void
@@ -552,7 +551,7 @@ AUTHresolveUser(str *username, oid uid)
 	BUN p;
 	BATiter useri;
 
-	if (uid == oid_nil || (p = (BUN) uid) >= BATcount(user))
+	if (is_oid_nil(uid) || (p = (BUN) uid) >= BATcount(user))
 		throw(ILLARG, "resolveUser", "userid should not be nil");
 
 	assert(username != NULL);

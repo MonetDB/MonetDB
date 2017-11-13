@@ -33,6 +33,12 @@
 #define _CRT_SECURE_NO_DEPRECATE 1
 #endif
 
+/* include Intel's mathimf.h early, before any other include files
+ * might try to include math.h */
+#ifdef __INTEL_COMPILER
+#include <mathimf.h>
+#endif
+
 #include <malloc.h>
 
 #if defined(_DEBUG) && defined(_CRTDBG_MAP_ALLOC)
@@ -160,14 +166,6 @@
 /* Define if the fits module is to be enabled */
 /* #undef HAVE_FITS */
 
-/* Define to 1 if you have the `fpclass' function. */
-#define HAVE_FPCLASS 1		/* uses _fpclass, see mmath.c */
-
-/* Define to 1 if you have the `fpclassify' function. */
-#if defined(_MSC_VER) && _MSC_VER > 1600
-#define HAVE_FPCLASSIFY 1
-#endif
-
 /* Define to 1 if fseeko (and presumably ftello) exists and is declared. */
 /* #undef HAVE_FSEEKO */
 
@@ -236,11 +234,6 @@
 
 /* Define to 1 if you have the <io.h> header file. */
 #define HAVE_IO_H 1
-
-/* Define to 1 if you have the `isinf' function. */
-#if !defined(_MSC_VER) || _MSC_VER > 1600
-#define HAVE_ISINF 1
-#endif
 
 /* Define to 1 if you have the <kvm.h> header file. */
 /* #undef HAVE_KVM_H */
@@ -369,7 +362,7 @@
 /* #undef HAVE_NL_LANGINFO */
 
 /* Define to 1 if you have the `nextafterf' function. */
-#if !defined(_MSC_VER) || _MSC_VER > 1600
+#if defined(__INTEL_COMPILER) || !defined(_MSC_VER) || _MSC_VER > 1600
 #define HAVE_NEXTAFTERF 1
 #endif
 
@@ -430,7 +423,7 @@
 /* #undef HAVE_RESTRICT */
 
 /* Define to 1 if you have the `round' function. */
-#if !defined(_MSC_VER) || _MSC_VER > 1600
+#if defined(__INTEL_COMPILER) || !defined(_MSC_VER) || _MSC_VER > 1600
 #define HAVE_ROUND 1
 #endif
 
@@ -754,9 +747,6 @@
 
 /* Release name or "unreleased" */
 #define MONETDB_RELEASE "unreleased"
-
-/* Suffix for C++ files */
-#define MX_CXX_SUFFIX "cxx"
 
 /* Define if you do not want assertions */
 /* #undef NDEBUG */

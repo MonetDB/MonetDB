@@ -182,7 +182,7 @@ CLTLogin(bat *nme, bat *ret)
 
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
-		if (c->mode >= RUNCLIENT && c->user != oid_nil) {
+		if (c->mode >= RUNCLIENT && !is_oid_nil(c->user)) {
 			CLTtimeConvert((time_t) c->login,s);
 			if (BUNappend(b, s, FALSE) != GDK_SUCCEED ||
 				BUNappend(u, &c->user, FALSE) != GDK_SUCCEED)
@@ -211,7 +211,7 @@ CLTLastCommand(bat *ret)
 		throw(MAL, "clients.getLastCommand", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
-		if (c->mode >= RUNCLIENT && c->user != oid_nil) {
+		if (c->mode >= RUNCLIENT && !is_oid_nil(c->user)) {
 			CLTtimeConvert((time_t) c->lastcmd,s);
 			if (BUNappend(b, s, FALSE) != GDK_SUCCEED)
 				goto bailout;
@@ -236,7 +236,7 @@ CLTActions(bat *ret)
 		throw(MAL, "clients.getActions", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
-		if (c->mode >= RUNCLIENT && c->user != oid_nil) {
+		if (c->mode >= RUNCLIENT && !is_oid_nil(c->user)) {
 			if (BUNappend(b, &c->actions, FALSE) != GDK_SUCCEED)
 				goto bailout;
 		}
@@ -262,7 +262,7 @@ CLTusers(bat *ret)
 		throw(MAL, "clients.users", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
-		if (c->mode >= RUNCLIENT && c->user != oid_nil &&
+		if (c->mode >= RUNCLIENT && !is_oid_nil(c->user) &&
 			BUNappend(b, &i, FALSE) != GDK_SUCCEED)
 			goto bailout;
 	}

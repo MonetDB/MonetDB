@@ -22,6 +22,7 @@
 #define CONCAT_4(a,b,c,d) a##b##c##d
 
 #define NIL(t)       CONCAT_2(t,_nil)
+#define ISNIL(t)     CONCAT_3(is_,t,_nil)
 #define TPE(t)       CONCAT_2(TYPE_,t)
 #define GDKmin(t)    CONCAT_3(GDK_,t,_min)
 #define GDKmax(t)    CONCAT_3(GDK_,t,_max)
@@ -39,7 +40,7 @@ FUN(,TP1,_num2dec_,TP2)(TP2 *res, const TP1 *v, const int *d2, const int *s2)
 	int precision = *d2;
 	int inlen;
 
-	if (val == NIL(TP1)) {
+	if (ISNIL(TP1)(val)) {
 		*res = NIL(TP2);
 		return MAL_SUCCEED;
 	}
@@ -111,6 +112,7 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 /* undo local defines */
 #undef FUN
 #undef NIL
+#undef ISNIL
 #undef TPE
 #undef GDKmin
 #undef GDKmax

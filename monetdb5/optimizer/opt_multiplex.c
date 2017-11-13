@@ -57,6 +57,8 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mod = putName(mod);
 	fcn = VALget(&getVar(mb, getArg(pci, pci->retc+1))->value);
 	fcn = putName(fcn);
+	if(mod == NULL || fcn == NULL)
+		throw(MAL, "optimizer.multiplex", MAL_MALLOC_FAIL);
 #ifndef NDEBUG
 	fprintf(stderr,"#WARNING To speedup %s.%s a bulk operator implementation is needed\n#", mod,fcn);
 	fprintInstruction(stderr, mb, stk, pci, LIST_MAL_DEBUG);
@@ -202,13 +204,14 @@ OPTmultiplexSimple(Client cntxt, MalBlkPtr mb)
 			}
 		}
 	if( doit) {
-		OPTmultiplexImplementation(cntxt, mb, 0, 0);
+		msg = OPTmultiplexImplementation(cntxt, mb, 0, 0);
 		chkTypes(cntxt->usermodule, mb,TRUE);
 		chkFlow(mb);
 		chkDeclarations(mb);
 	}
 	return msg;
 }
+
 str
 OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {

@@ -47,7 +47,6 @@ do {									\
 	uint##B##_t *restrict im = (uint##B##_t *) imps;		\
 	const TYPE *restrict col = (TYPE *) Tloc(b, 0);			\
 	const TYPE *restrict bins = (TYPE *) inbins;			\
-	const TYPE nil = TYPE##_nil;					\
 	const BUN page = IMPS_PAGE / sizeof(TYPE);			\
 	prvmask = 0;							\
 	for (i = 0; i < b->batCount; ) {				\
@@ -59,9 +58,9 @@ do {									\
 			register const TYPE val = col[i];		\
 			GETBIN(bin,val,B);				\
 			mask = IMPSsetBit(B,mask,bin);			\
-			if (val != nil) { /* do not count nils */	\
+			if (!is_##TYPE##_nil(val)) { /* do not count nils */ \
 				if (!cnt_bins[bin]++) {			\
-					min_bins[bin] = max_bins[bin] = i;\
+					min_bins[bin] = max_bins[bin] = i; \
 				} else {				\
 					if (val < col[min_bins[bin]])	\
 						min_bins[bin] = i;	\

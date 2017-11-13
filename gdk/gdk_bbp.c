@@ -477,7 +477,7 @@ fixsorted(void)
 			} else if (b->ttype == TYPE_void) {
 				/* void is only revsorted if nil */
 				b->batDirtydesc = 1;
-				if (b->tseqbase == oid_nil ||
+				if (is_oid_nil(b->tseqbase) ||
 				    b->batCount <= 1) {
 					b->tnorevsorted = 0;
 					b->trevsorted = 1;
@@ -922,6 +922,179 @@ fixstrbats(void)
 }
 #endif
 
+#ifdef GDKLIBRARY_NIL_NAN
+static void
+fixfltheap(BAT *b)
+{
+	long_str filename;
+	Heap h1;		/* old heap */
+	Heap h2;		/* new heap */
+	const char *nme, *bnme;
+	char *srcdir;
+	BUN i;
+	int nofix = 1;
+
+	nme = BBP_physical(b->batCacheid);
+	srcdir = GDKfilepath(NOFARM, BATDIR, nme, NULL);
+	if (srcdir == NULL)
+		GDKfatal("fixfltheap: GDKmalloc failed\n");
+	*strrchr(srcdir, DIR_SEP) = 0;
+
+	if ((bnme = strrchr(nme, DIR_SEP)) != NULL)
+		bnme++;
+	else
+		bnme = nme;
+	sprintf(filename, "BACKUP%c%s", DIR_SEP, bnme);
+
+	/* make backup of heap */
+	if (GDKmove(b->theap.farmid, srcdir, bnme, "tail", BAKDIR, bnme, "tail") != GDK_SUCCEED)
+		GDKfatal("fixfltheap: cannot make backup of %s.tail\n", nme);
+	/* load old heap */
+	h1 = b->theap;
+	h1.filename = NULL;
+	h1.base = NULL;
+	h1.dirty = 0;
+	if (HEAPload(&h1, filename, "tail", 0) != GDK_SUCCEED)
+		GDKfatal("fixfltheap: loading old tail heap "
+			 "for BAT %d failed\n", b->batCacheid);
+
+	/* create new heap */
+	h2 = b->theap;
+	h2.filename = GDKfilepath(NOFARM, NULL, nme, "tail");
+	if (h2.filename == NULL)
+		GDKfatal("fixfltheap: GDKmalloc failed\n");
+	if (HEAPalloc(&h2, b->batCapacity, b->twidth) != GDK_SUCCEED)
+		GDKfatal("fixfltheap: allocating new tail heap "
+			 "for BAT %d failed\n", b->batCacheid);
+	h2.dirty = TRUE;
+	h2.free = h1.free;
+
+	switch (b->ttype) {
+	case TYPE_flt: {
+		const flt *restrict o = (const flt *) h1.base;
+		flt *restrict n = (flt *) h2.base;
+
+		for (i = 0; i < b->batCount; i++) {
+			if (o[i] == GDK_flt_min) {
+				b->tnil = 1;
+				n[i] = flt_nil;
+				nofix = 0;
+			} else {
+				n[i] = o[i];
+			}
+		}
+		break;
+	}
+	case TYPE_dbl: {
+		const dbl *restrict o = (const dbl *) h1.base;
+		dbl *restrict n = (dbl *) h2.base;
+
+		for (i = 0; i < b->batCount; i++) {
+			if (o[i] == GDK_dbl_min) {
+				b->tnil = 1;
+				n[i] = dbl_nil;
+				nofix = 0;
+			} else {
+				n[i] = o[i];
+			}
+		}
+		break;
+	}
+	default: {
+		struct mbr {
+			float xmin, ymin, xmax, ymax;
+		};
+		const struct mbr *restrict o = (const struct mbr *) h1.base;
+		struct mbr *restrict n = (struct mbr *) h2.base;
+
+		assert(strcmp(ATOMunknown_name(b->ttype), "mbr") == 0);
+		assert(b->twidth == 4 * sizeof(flt));
+
+		for (i = 0; i < b->batCount; i++) {
+			if (o[i].xmin == GDK_flt_min ||
+			    o[i].xmax == GDK_flt_min ||
+			    o[i].ymin == GDK_flt_min ||
+			    o[i].ymax == GDK_flt_min) {
+				b->tnil = 1;
+				n[i].xmin = n[i].xmax = n[i].ymin = n[i].ymax = flt_nil;
+				nofix = 0;
+			} else {
+				n[i] = o[i];
+			}
+		}
+		break;
+	}
+	}
+
+	/* cleanup */
+	HEAPfree(&h1, 0);
+	if (nofix) {
+		/* didn't fix anything, move backup back */
+		HEAPfree(&h2, 1);
+		if (GDKmove(b->theap.farmid, BAKDIR, bnme, "tail", srcdir, bnme, "tail") != GDK_SUCCEED)
+			GDKfatal("fixfltheap: cannot restore backup of %s.tail\n", nme);
+	} else {
+		/* heap was fixed */
+		b->batDirtydesc = 1;
+		if (HEAPsave(&h2, nme, "tail") != GDK_SUCCEED)
+			GDKfatal("fixfltheap: saving heap failed\n");
+		HEAPfree(&h2, 0);
+		b->theap = h2;
+	}
+	GDKfree(srcdir);
+}
+
+static void
+fixfloatbats(void)
+{
+	bat bid;
+	BAT *b;
+	char filename[PATHLENGTH];
+	FILE *fp;
+	size_t len;
+
+	for (bid = 1; bid < (bat) ATOMIC_GET(BBPsize, BBPsizeLock); bid++) {
+		if ((b = BBP_desc(bid)) == NULL) {
+			/* not a valid BAT */
+			continue;
+		}
+		if (BBP_logical(bid) &&
+		    (len = strlen(BBP_logical(bid))) > 12 &&
+		    strcmp(BBP_logical(bid) + len - 12, "_catalog_nme") == 0) {
+			/* this is one of the files used by the
+			 * logger.  We need to communicate to the
+			 * logger that it also needs to do a
+			 * conversion.  That is done by creating a
+			 * file here based on the name of this BAT. */
+			snprintf(filename, sizeof(filename),
+				 "%s/%.*s_nil-nan-convert",
+				 BBPfarms[0].dirname,
+				 (int) (len - 12), BBP_logical(bid));
+			fp = fopen(filename, "w");
+			if (fp == NULL)
+				GDKfatal("fixfloatbats: cannot create file %s\n",
+					 filename);
+			fclose(fp);
+		}
+		if (b->batCount == 0 || b->tnonil) {
+			/*  no NILs to convert */
+			continue;
+		}
+		if (b->ttype < 0) {
+			const char *anme;
+
+			/* as yet unknown tail column type */
+			anme = ATOMunknown_name(b->ttype);
+			/* known string types */
+			if (strcmp(anme, "mbr") != 0)
+				continue;
+		} else if (b->ttype != TYPE_flt && b->ttype != TYPE_dbl)
+			continue;
+		fixfltheap(b);
+	}
+}
+#endif
+
 /*
  * A read only BAT can be shared in a file system by reading its
  * descriptor separately.  The default src=0 is to read the full
@@ -946,7 +1119,7 @@ headheapinit(oid *hseq, const char *buf, bat bid)
 	int n;
 
 	if (sscanf(buf,
-		   " %10s %hu %hu %hu %lld %lld %lld %lld %lld %lld %lld %lld %hu"
+		   " %10s %hu %hu %hu "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" %hu"
 		   "%n",
 		   type, &width, &var, &properties, &nokey0,
 		   &nokey1, &nosorted, &norevsorted, &base,
@@ -958,7 +1131,7 @@ headheapinit(oid *hseq, const char *buf, bat bid)
 		GDKfatal("BBPinit: head column must be VOID (ID = %d).", (int) bid);
 	if (base < 0
 #if SIZEOF_OID < SIZEOF_LNG
-	    || base >= (lng) oid_nil
+	    || base > (lng) GDK_oid_max
 #endif
 		)
 		GDKfatal("BBPinit: head seqbase out of range (ID = %d, seq = "LLFMT").", (int) bid, base);
@@ -990,14 +1163,14 @@ heapinit(BAT *b, const char *buf, int *hashash, const char *HT, int bbpversion, 
 	norevsorted = 0; /* default for first case */
 	if (bbpversion <= GDKLIBRARY_TALIGN ?
 	    sscanf(buf,
-		   " %10s %hu %hu %hu %lld %lld %lld %lld %lld %lld %lld %lld %hu"
+		   " %10s %hu %hu %hu "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" %hu"
 		   "%n",
 		   type, &width, &var, &properties, &nokey0,
 		   &nokey1, &nosorted, &norevsorted, &base,
 		   &align, &free, &size, &storage,
 		   &n) < 13 :
 		sscanf(buf,
-		   " %10s %hu %hu %hu %lld %lld %lld %lld %lld %lld %lld %hu"
+		   " %10s %hu %hu %hu "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" %hu"
 		   "%n",
 		   type, &width, &var, &properties, &nokey0,
 		   &nokey1, &nosorted, &norevsorted, &base,
@@ -1069,7 +1242,7 @@ vheapinit(BAT *b, const char *buf, int hashash, bat bid)
 		if (b->tvheap == NULL)
 			GDKfatal("BBPinit: cannot allocate memory for heap.");
 		if (sscanf(buf,
-			   " %lld %lld %hu"
+			   " "LLFMT" "LLFMT" %hu"
 			   "%n",
 			   &free, &size, &storage, &n) < 3)
 			GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
@@ -1127,7 +1300,7 @@ BBPreadEntries(FILE *fp, int bbpversion)
 
 		if (bbpversion <= GDKLIBRARY_INSERTED ?
 		    sscanf(buf,
-			   "%lld %hu %128s %128s %128s %d %u %lld %lld %lld %lld %lld %hu %hu %hu %hu"
+			   LLFMT" %hu %128s %128s %128s %d %u "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" %hu %hu %hu %hu"
 			   "%n",
 			   &batid, &status, headname, tailname, filename,
 			   &lastused, &properties, &inserted, &deleted, &first,
@@ -1136,7 +1309,7 @@ BBPreadEntries(FILE *fp, int bbpversion)
 			   &nread) < 16 :
 		    bbpversion <= GDKLIBRARY_HEADED ?
 		    sscanf(buf,
-			   "%lld %hu %128s %128s %128s %d %u %lld %lld %lld %hu %hu %hu %hu"
+			   LLFMT" %hu %128s %128s %128s %d %u "LLFMT" "LLFMT" "LLFMT" %hu %hu %hu %hu"
 			   "%n",
 			   &batid, &status, headname, tailname, filename,
 			   &lastused, &properties, &first,
@@ -1144,7 +1317,7 @@ BBPreadEntries(FILE *fp, int bbpversion)
 			   &map_theap,
 			   &nread) < 14 :
 		    sscanf(buf,
-			   "%lld %hu %128s %128s %u %lld %lld %lld"
+			   LLFMT" %hu %128s %128s %u "LLFMT" "LLFMT" "LLFMT
 			   "%n",
 			   &batid, &status, headname, filename,
 			   &properties,
@@ -1192,7 +1365,7 @@ BBPreadEntries(FILE *fp, int bbpversion)
 		} else {
 			if (base < 0
 #if SIZEOF_OID < SIZEOF_LNG
-			    || base >= (lng) oid_nil
+			    || base > (lng) GDK_oid_max
 #endif
 				)
 				GDKfatal("BBPinit: head seqbase out of range (ID = "LLFMT", seq = "LLFMT").", batid, base);
@@ -1263,7 +1436,8 @@ BBPheader(FILE *fp)
 	    bbpversion != GDKLIBRARY_OLDWKB &&
 	    bbpversion != GDKLIBRARY_INSERTED &&
 	    bbpversion != GDKLIBRARY_HEADED &&
-	    bbpversion != GDKLIBRARY_TALIGN) {
+	    bbpversion != GDKLIBRARY_TALIGN &&
+	    bbpversion != GDKLIBRARY_NIL_NAN) {
 		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.\n"
 			 "This database was probably created by %s version of MonetDB.",
 			 GDKLIBRARY, bbpversion,
@@ -1472,6 +1646,10 @@ BBPinit(void)
 #ifdef GDKLIBRARY_BADEMPTY
 	if (bbpversion <= GDKLIBRARY_BADEMPTY)
 		fixstrbats();
+#endif
+#ifdef GDKLIBRARY_NIL_NAN
+	if (bbpversion <= GDKLIBRARY_NIL_NAN)
+		fixfloatbats();
 #endif
 	if (bbpversion < GDKLIBRARY)
 		TMcommit();
@@ -1973,7 +2151,7 @@ BBPindex(const char *nme)
 BAT *
 BBPgetdesc(bat i)
 {
-	if (i == bat_nil)
+	if (is_bat_nil(i))
 		return NULL;
 	if (i < 0)
 		i = -i;
@@ -2430,7 +2608,7 @@ incref(bat i, int logical, int lock)
 	BAT *b;
 	int load = 0;
 
-	if (i == bat_nil) {
+	if (is_bat_nil(i)) {
 		/* Stefan: May this happen? Or should we better call
 		 * GDKerror(), here? */
 		/* GDKerror("BBPincref() called with bat_nil!\n"); */
@@ -2672,7 +2850,7 @@ BBPrelease(bat i)
 void
 BBPkeepref(bat i)
 {
-	if (i == bat_nil)
+	if (is_bat_nil(i))
 		return;
 	if (BBPcheck(i, "BBPkeepref")) {
 		int lock = locked_by ? MT_getpid() != locked_by : 1;
@@ -2944,7 +3122,7 @@ BBPquickdesc(bat bid, int delaccess)
 {
 	BAT *b;
 
-	if (bid == bat_nil || bid == 0)
+	if (is_bat_nil(bid))
 		return NULL;
 	if (bid < 0) {
 		GDKerror("BBPquickdesc: called with negative batid.\n");
@@ -3041,7 +3219,7 @@ file_exists(int farmid, const char *dir, const char *name, const char *ext)
 static gdk_return
 heap_move(Heap *hp, const char *srcdir, const char *dstdir, const char *nme, const char *ext)
 {
-	/* see doc at BATsetaccess()/gdk_bat.mx for an expose on mmap
+	/* see doc at BATsetaccess()/gdk_bat.c for an expose on mmap
 	 * heap modes */
 	if (file_exists(hp->farmid, dstdir, nme, ext)) {
 		/* dont overwrite heap with the committed state

@@ -209,6 +209,8 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 		radix = i->type->radix;
 		tpe = i->type->sqlname;
 	}
+	if (!lsuper.type->localtype)
+		tpe = "smallint";
 	/* 
 	 * Incase of different radix we should change one. 
 	 */

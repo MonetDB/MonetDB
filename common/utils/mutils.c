@@ -197,7 +197,7 @@ basename(const char *file_name)
 	if (file_name == NULL)
 		return NULL;
 
-	if (isalpha((int) (unsigned char) file_name[0]) && file_name[1] == ':')
+	if (isalpha((unsigned char) file_name[0]) && file_name[1] == ':')
 		file_name += 2;	/* skip over drive letter */
 
 	base = NULL;

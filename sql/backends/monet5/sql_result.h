@@ -29,7 +29,7 @@ extern str mvc_import_table(Client cntxt, BAT ***bats, mvc *c, bstream *s, sql_t
 extern int mvc_result_table(mvc *m, oid query_id, int nr_cols, int type, BAT *order);
 
 extern int mvc_result_column(mvc *m, char *tn, char *name, char *typename, int digits, int scale, BAT *b);
-extern int mvc_result_value(mvc *m, char *tn, char *name, char *typename, int digits, int scale, ptr *p, int mtype);
+extern int mvc_result_value(mvc *m, const char *tn, const char *name, const char *typename, int digits, int scale, ptr *p, int mtype);
 
 extern int convert2str(mvc *m, int eclass, int d, int sc, int has_tz, ptr p, int mtype, char **buf, int len);
 

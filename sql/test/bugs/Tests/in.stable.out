@@ -1,0 +1,381 @@
+stdout of test 'in` in directory 'sql/test/bugs` itself:
+
+
+# 14:08:25 >  
+# 14:08:25 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31839" "--set" "mapi_usock=/var/tmp/mtest-9047/.s.monetdb.31839" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_bugs"
+# 14:08:25 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_bugs', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.330 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:31839/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-9047/.s.monetdb.31839
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 14:08:26 >  
+# 14:08:26 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9047" "--port=31839"
+# 14:08:26 >  
+
+#select 'hello world' where 1 in (1);
+% .L4 # table_name
+% L4 # name
+% char # type
+% 11 # length
+[ "hello world"	]
+#select 'hello world' where 1 in (0);
+% .L4 # table_name
+% L4 # name
+% char # type
+% 11 # length
+#select 'hello world' where 1 not in (1);
+% .L4 # table_name
+% L4 # name
+% char # type
+% 11 # length
+#select 'hello world' where 1 not in (0);
+% .L4 # table_name
+% L4 # name
+% char # type
+% 11 # length
+[ "hello world"	]
+#select 'hello world' where NULL in (NULL);
+% .L4 # table_name
+% L4 # name
+% char # type
+% 11 # length
+#select 'hello world' where NULL in (0);
+% .L4 # table_name
+% L4 # name
+% char # type
+% 11 # length
+#select 'hello world' where NULL not in (NULL);
+% .L4 # table_name
+% L4 # name
+% char # type
+% 11 # length
+#select 'hello world' where NULL not in (0);
+% .L4 # table_name
+% L4 # name
+% char # type
+% 11 # length
+#select 'hello world' where 1 in (1,5);
+% .L4 # table_name
+% L4 # name
+% char # type
+% 11 # length
+[ "hello world"	]
+#select 'hello world' where 1 in (0,5);
+% .L4 # table_name
+% L4 # name
+% char # type
+% 11 # length
+#select 'hello world' where 1 not in (1,5);
+% .L4 # table_name
+% L4 # name
+% char # type
+% 11 # length
+#select 'hello world' where 1 not in (0,5);
+% .L4 # table_name
+% L4 # name
+% char # type
+% 11 # length
+[ "hello world"	]
+#select 'hello world' where NULL in (NULL,5);
+% .L4 # table_name
+% L4 # name
+% char # type
+% 11 # length
+#select 'hello world' where NULL in (0,5);
+% .L4 # table_name
+% L4 # name
+% char # type
+% 11 # length
+#select 'hello world' where NULL not in (NULL,5);
+% .L4 # table_name
+% L4 # name
+% char # type
+% 11 # length
+#select 'hello world' where NULL not in (0,5);
+% .L4 # table_name
+% L4 # name
+% char # type
+% 11 # length
+#select 'hello world' where 1 in (4,1,5);
+% .L4 # table_name
+% L4 # name
+% char # type
+% 11 # length
+[ "hello world"	]
+#select 'hello world' where 1 in (4,0,5);
+% .L4 # table_name
+% L4 # name
+% char # type
+% 11 # length
+#select 'hello world' where 1 not in (4,1,5);
+% .L4 # table_name
+% L4 # name
+% char # type
+% 11 # length
+#select 'hello world' where 1 not in (4,0,5);
+% .L4 # table_name
+% L4 # name
+% char # type
+% 11 # length
+[ "hello world"	]
+#select 'hello world' where 1 in (select 1);
+% .L10 # table_name
+% L10 # name
+% char # type
+% 11 # length
+[ "hello world"	]
+#select 'hello world' where 1 in (select 0);
+% .L10 # table_name
+% L10 # name
+% char # type
+% 11 # length
+#select 'hello world' where 1 not in (select 1);
+% .L10 # table_name
+% L10 # name
+% char # type
+% 11 # length
+#select 'hello world' where 1 not in (select 0);
+% .L10 # table_name
+% L10 # name
+% char # type
+% 11 # length
+[ "hello world"	]
+#select 'hello world' where (1,1) in (select 1,1);
+% .L15 # table_name
+% L15 # name
+% char # type
+% 11 # length
+[ "hello world"	]
+#select 'hello world' where (1,1) in (select 1,5);
+% .L15 # table_name
+% L15 # name
+% char # type
+% 11 # length
+#select 'hello world' where (1,1) not in (select 1,1);
+% .L15 # table_name
+% L15 # name
+% char # type
+% 11 # length
+#select 'hello world' where (1,1) not in (select 1,5);
+% .L15 # table_name
+% L15 # name
+% char # type
+% 11 # length
+[ "hello world"	]
+#create table in_table( in_col int, colid int, helloworld varchar(20));
+#insert into in_table values (1, 10, 'hello'), (2, 12,  'world'), (3, 14, '\n');
+[ 3	]
+#select helloworld from in_table where 1 in (1);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 5 # length
+[ "hello"	]
+[ "world"	]
+[ "\n"	]
+#select helloworld from in_table where 1 in (0);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 0 # length
+#select helloworld from in_table where 1 not in (1);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 0 # length
+#select helloworld from in_table where 1 not in (0);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 5 # length
+[ "hello"	]
+[ "world"	]
+[ "\n"	]
+#select helloworld from in_table where NULL in (NULL);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 0 # length
+#select helloworld from in_table where NULL in (0);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 0 # length
+#select helloworld from in_table where NULL not in (NULL);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 0 # length
+#select helloworld from in_table where NULL not in (0);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 0 # length
+#select helloworld from in_table where 1 in (in_col);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 5 # length
+[ "hello"	]
+#select helloworld from in_table where 0 in (in_col);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 0 # length
+#select helloworld from in_table where 1 not in (in_col);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 5 # length
+[ "world"	]
+[ "\n"	]
+#select helloworld from in_table where 0 not in (in_col);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 5 # length
+[ "hello"	]
+[ "world"	]
+[ "\n"	]
+#select helloworld from in_table where 1 in (in_col,1,in_col);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 5 # length
+[ "hello"	]
+[ "world"	]
+[ "\n"	]
+#select helloworld from in_table where 0 in (in_col,1,in_col);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 0 # length
+#select helloworld from in_table where 1 not in (in_col,1,in_col);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 0 # length
+#select helloworld from in_table where 0 not in (in_col,1,in_col);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 5 # length
+[ "hello"	]
+[ "world"	]
+[ "\n"	]
+#select helloworld from in_table where 1 in (in_col,1,in_col,colid);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 5 # length
+[ "hello"	]
+[ "world"	]
+[ "\n"	]
+#select helloworld from in_table where 0 in (in_col,1,in_col,colid);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 0 # length
+#select helloworld from in_table where 1 not in (in_col,1,in_col,colid);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 0 # length
+#select helloworld from in_table where 0 not in (in_col,1,in_col,colid);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 5 # length
+[ "hello"	]
+[ "world"	]
+[ "\n"	]
+#select helloworld from in_table where in_col in (1);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 5 # length
+[ "hello"	]
+#select helloworld from in_table where in_col in (0);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 0 # length
+#select helloworld from in_table where in_col not in (1);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 5 # length
+[ "world"	]
+[ "\n"	]
+#select helloworld from in_table where in_col not in (0);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 5 # length
+[ "hello"	]
+[ "world"	]
+[ "\n"	]
+#select helloworld from in_table where in_col in (1,5);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 5 # length
+[ "hello"	]
+#select helloworld from in_table where in_col in (0,5);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 0 # length
+#select helloworld from in_table where in_col not in (1,5);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 5 # length
+[ "world"	]
+[ "\n"	]
+#select helloworld from in_table where in_col not in (0,5);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 5 # length
+[ "hello"	]
+[ "world"	]
+[ "\n"	]
+#select helloworld from in_table where NULL in (in_col);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 0 # length
+#select helloworld from in_table where NULL not in (in_col);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 0 # length
+#select helloworld from in_table where in_col in (NULL);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 0 # length
+#select helloworld from in_table where in_col not in (NULL);
+% sys.in_table # table_name
+% helloworld # name
+% varchar # type
+% 0 # length
+#drop table in_table;
+
+# 14:08:26 >  
+# 14:08:26 >  "Done."
+# 14:08:26 >  
+

@@ -123,7 +123,9 @@ Ready.
 % .t1,	sys.t1,	sys.t1 # table_name
 % CAT,	A,	C # name
 % char,	int,	varchar # type
-% 1,	1,	0 # length
+% 1,	2,	4 # length
+[ NULL,	1,	"tien"	]
+[ NULL,	11,	"elf"	]
 #SELECT * FROM (SELECT cast(null as char(1)) AS "CAT", a AS "A", c AS "C" FROM t_alias) T1 WHERE "CAT" IS NULL or "CAT" = NULL;
 % .t1,	sys.t1,	sys.t1 # table_name
 % CAT,	A,	C # name
@@ -131,6 +133,11 @@ Ready.
 % 1,	2,	4 # length
 [ NULL,	1,	"tien"	]
 [ NULL,	11,	"elf"	]
+#SELECT * FROM (SELECT cast(null as char(1)) AS "CAT", a AS "A", c AS "C" FROM t_alias) T1 WHERE "CAT" IS NULL and "CAT" = NULL;
+% .t1,	sys.t1,	sys.t1 # table_name
+% CAT,	A,	C # name
+% char,	int,	varchar # type
+% 1,	1,	0 # length
 #SELECT a AS "A", b AS "B", c AS "C" FROM t_alias ORDER BY "C", "A", "B";
 % sys.L2,	sys.L4,	sys.L6 # table_name
 % A,	B,	C # name

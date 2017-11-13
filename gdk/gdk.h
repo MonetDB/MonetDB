@@ -387,9 +387,9 @@
 #define MIN(A,B)	((A)>(B)?(B):(A))
 
 /* defines from ctype with casts that allow passing char values */
-#define GDKisspace(c)	isspace((int) (unsigned char) (c))
-#define GDKisalnum(c)	isalnum((int) (unsigned char) (c))
-#define GDKisdigit(c)	(((unsigned char) (c)) >= '0' && ((unsigned char) (c)) <= '9')
+#define GDKisspace(c)	isspace((unsigned char) (c))
+#define GDKisalnum(c)	isalnum((unsigned char) (c))
+#define GDKisdigit(c)	isdigit((unsigned char) (c))
 
 #ifndef NATIVE_WIN32
 #define BATDIR		"bat"
@@ -727,12 +727,13 @@ typedef struct {
 		hge hval;
 #endif
 	} val;
-	int len, vtype;
+	size_t len;
+	int vtype;
 } *ValPtr, ValRecord;
 
 /* interface definitions */
 gdk_export ptr VALconvert(int typ, ValPtr t);
-gdk_export int VALformat(char **buf, const ValRecord *res);
+gdk_export char *VALformat(const ValRecord *res);
 gdk_export ValPtr VALcopy(ValPtr dst, const ValRecord *src);
 gdk_export ValPtr VALinit(ValPtr d, int tpe, const void *s);
 gdk_export void VALempty(ValPtr v);
@@ -858,7 +859,8 @@ typedef struct {
 #define GDKLIBRARY_NOKEY	061034	/* nokey values can't be trusted */
 #define GDKLIBRARY_BADEMPTY	061035	/* possibility of duplicate empty str */
 #define GDKLIBRARY_TALIGN	061036	/* talign field in BBP.dir */
-#define GDKLIBRARY		061037
+#define GDKLIBRARY_NIL_NAN	061037	/* flt/dbl NIL not represented by NaN */
+#define GDKLIBRARY		061040
 
 typedef struct BAT {
 	/* static bat properties */
@@ -1292,13 +1294,13 @@ gdk_export BUN ORDERfndlast(BAT *b, const void *v);
 gdk_export BUN BUNfnd(BAT *b, const void *right);
 
 #define BUNfndVOID(b, v)						\
-	(((*(const oid*)(v) == oid_nil) ^ ((b)->tseqbase == oid_nil)) | \
+	((is_oid_nil(*(const oid*)(v)) ^ is_oid_nil((b)->tseqbase)) |	\
 		(*(const oid*)(v) < (b)->tseqbase) |			\
 		(*(const oid*)(v) >= (b)->tseqbase + (b)->batCount) ?	\
 	 BUN_NONE :							\
 	 (BUN) (*(const oid*)(v) - (b)->tseqbase))
 
-#define BATttype(b)	((b)->ttype == TYPE_void && (b)->tseqbase != oid_nil ? \
+#define BATttype(b)	((b)->ttype == TYPE_void && !is_oid_nil((b)->tseqbase) ? \
 			 TYPE_oid : (b)->ttype)
 #define Tbase(b)	((b)->tvheap->base)
 
@@ -1527,19 +1529,19 @@ gdk_export void GDKqsort(void *h, void *t, const void *base, size_t n, int hs, i
 gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe);
 
 #define BATtordered(b)	((b)->ttype == TYPE_void || (b)->tsorted)
-#define BATtrevordered(b) (((b)->ttype == TYPE_void && (b)->tseqbase == oid_nil) || (b)->trevsorted)
-#define BATtdense(b)	(BATtvoid(b) && (b)->tseqbase != oid_nil)
+#define BATtrevordered(b) (((b)->ttype == TYPE_void && is_oid_nil((b)->tseqbase)) || (b)->trevsorted)
+#define BATtdense(b)	(BATtvoid(b) && !is_oid_nil((b)->tseqbase))
 #define BATtvoid(b)	(((b)->tdense && (b)->tsorted) || (b)->ttype==TYPE_void)
 #define BATtkey(b)	(b->tkey != FALSE || BATtdense(b))
 
 /* set some properties that are trivial to deduce */
 #define BATsettrivprop(b)						\
 	do {								\
-		assert((b)->hseqbase != oid_nil);			\
+		assert(!is_oid_nil((b)->hseqbase));			\
 		(b)->batDirtydesc = 1;	/* likely already set */	\
 		/* the other head properties should already be correct */ \
 		if ((b)->ttype == TYPE_void) {				\
-			if ((b)->tseqbase == oid_nil) {			\
+			if (is_oid_nil((b)->tseqbase)) {		\
 				(b)->tnonil = (b)->batCount == 0;	\
 				(b)->tnil = !(b)->tnonil;		\
 				(b)->trevsorted = 1;			\
@@ -1569,7 +1571,7 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
 			} else if ((b)->ttype == TYPE_oid) {		\
 				/* b->batCount == 1 */			\
 				oid sqbs;				\
-				if ((sqbs = ((oid *) (b)->theap.base)[0]) == oid_nil) { \
+				if (is_oid_nil((sqbs = ((oid *) (b)->theap.base)[0]))) { \
 					(b)->tdense = 0;		\
 					(b)->tnonil = 0;		\
 					(b)->tnil = 1;			\
@@ -1718,18 +1720,16 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * @tab ATOMdelete      (int id);
  * @item str
  * @tab ATOMname        (int id);
- * @item int
+ * @item unsigned int
  * @tab ATOMsize        (int id);
- * @item int
- * @tab ATOMalign       (int id);
  * @item int
  * @tab ATOMvarsized    (int id);
  * @item ptr
  * @tab ATOMnilptr      (int id);
- * @item int
- * @tab ATOMfromstr     (int id, str s, int* len, ptr* v_dst);
- * @item int
- * @tab ATOMtostr       (int id, str s, int* len, ptr* v_dst);
+ * @item ssize_t
+ * @tab ATOMfromstr     (int id, str s, size_t* len, ptr* v_dst);
+ * @item ssize_t
+ * @tab ATOMtostr       (int id, str s, size_t* len, ptr* v_dst);
  * @item hash_t
  * @tab ATOMhash        (int id, ptr val, in mask);
  * @item int
@@ -1744,11 +1744,11 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * @tab ATOMput         (int id, Heap *hp, BUN pos_dst, ptr val_src);
  * @item int
  * @tab ATOMdel         (int id, Heap *hp, BUN v_src);
- * @item int
+ * @item size_t
  * @tab ATOMlen         (int id, ptr val);
  * @item ptr
  * @tab ATOMnil         (int id);
- * @item int
+ * @item ssize_t
  * @tab ATOMformat      (int id, ptr val, char** buf);
  * @item int
  * @tab ATOMprint       (int id, ptr val, stream *fd);
@@ -1777,11 +1777,6 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  *
  * @item The @emph{ATOMsize()} operation returns the atoms fixed size.
  *
- * @item The @emph{ATOMalign()} operation returns the atoms minimum
- * alignment. If the alignment info was not specified explicitly
- * during atom install, it assumes the maximum value of @verb{ {
- * }1,2,4,8@verb{ } } smaller than the atom size.
- *
  * @item The @emph{ATOMnilptr()} operation returns a pointer to the
  * nil-value of an atom. We usually take one dedicated value halfway
  * down the negative extreme of the atom range (if such a concept
@@ -1797,7 +1792,7 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * value. `val' is a direct pointer to the atom value. Its return
  * value should be an hash_t between 0 and 'mask'.
  *
- * @item The @emph{ATOMcmp()} operation computes two atomic
+ * @item The @emph{ATOMcmp()} operation compares two atomic
  * values. Its parameters are pointers to atomic values.
  *
  * @item The @emph{ATOMlen()} operation computes the byte length for a
@@ -1825,7 +1820,8 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * @item The @emph{ATOMfromstr()} parses an atom value from string
  * `s'. The memory allocation policy is the same as in
  * @emph{ATOMget()}. The return value is the number of parsed
- * characters.
+ * characters or -1 on failure.  Also in case of failure, the output
+ * parameter buf is a valid pointer or NULL.
  *
  * @item The @emph{ATOMprint()} prints an ASCII description of the
  * atom value pointed to by `val' on file descriptor `fd'. The return
@@ -1847,20 +1843,32 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * and @emph{ATOMformat()}) just have the atom id parameter prepended
  * to them.
  */
+
+/* atomFromStr returns the number of bytes of the input string that
+ * were processed.  atomToStr returns the length of the string
+ * produced.  Both functions return -1 on (any kind of) failure.  If
+ * *dst is not NULL, *len specifies the available space.  If there is
+ * not enough space, of if *dst is NULL, *dst will be freed (if not
+ * NULL) and a new buffer will be allocated and returned in *dst.
+ * *len will be set to reflect the actual size allocated.  If
+ * allocation fails, *dst will be NULL on return and *len is
+ * undefined.  In any case, if the function returns, *buf is either
+ * NULL or a valid pointer and then *len is the size of the area *buf
+ * points to. */
+
 typedef struct {
 	/* simple attributes */
 	char name[IDLENGTH];
 	short storage;		/* stored as another type? */
 	short linear;		/* atom can be ordered linearly */
-	short size;		/* fixed size of atom */
-	short align;		/* alignment condition for values */
+	unsigned short size;	/* fixed size of atom */
 
 	/* automatically generated fields */
 	const void *atomNull;	/* global nil value */
 
 	/* generic (fixed + varsized atom) ADT functions */
-	int (*atomFromStr) (const char *src, int *len, ptr *dst);
-	int (*atomToStr) (str *dst, int *len, const void *src);
+	ssize_t (*atomFromStr) (const char *src, size_t *len, ptr *dst);
+	ssize_t (*atomToStr) (str *dst, size_t *len, const void *src);
 	void *(*atomRead) (void *dst, stream *s, size_t cnt);
 	gdk_return (*atomWrite) (const void *src, stream *s, size_t cnt);
 	int (*atomCmp) (const void *v1, const void *v2);
@@ -1872,7 +1880,7 @@ typedef struct {
 	/* varsized atom-only ADT functions */
 	var_t (*atomPut) (Heap *, var_t *off, const void *src);
 	void (*atomDel) (Heap *, var_t *atom);
-	int (*atomLen) (const void *atom);
+	size_t (*atomLen) (const void *atom);
 	void (*atomHeap) (Heap *, size_t);
 } atomDesc;
 
@@ -1883,11 +1891,10 @@ gdk_export int ATOMallocate(const char *nme);
 gdk_export int ATOMindex(const char *nme);
 
 gdk_export str ATOMname(int id);
-gdk_export int ATOMlen(int id, const void *v);
+gdk_export size_t ATOMlen(int id, const void *v);
 gdk_export ptr ATOMnil(int id);
-gdk_export int ATOMcmp(int id, const void *v_1, const void *v_2);
 gdk_export int ATOMprint(int id, const void *val, stream *fd);
-gdk_export int ATOMformat(int id, const void *val, char **buf);
+gdk_export char *ATOMformat(int id, const void *val);
 
 gdk_export ptr ATOMdup(int id, const void *val);
 
@@ -2421,7 +2428,7 @@ gdk_export void *THRdata[THREADDATA];
 static inline bat
 BBPcheck(bat x, const char *y)
 {
-	if (x && x != bat_nil) {
+	if (!is_bat_nil(x)) {
 		assert(x > 0);
 
 		if (x < 0 || x >= getBBPsize() || BBP_logical(x) == NULL) {
@@ -2451,7 +2458,7 @@ static inline char *
 Tpos(BATiter *bi, BUN p)
 {
 	bi->tvid = bi->b->tseqbase;
-	if (bi->tvid != oid_nil)
+	if (!is_oid_nil(bi->tvid))
 		bi->tvid += p;
 	return (char*)&bi->tvid;
 }
@@ -2762,7 +2769,7 @@ gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
 	for (hb = HASHget(h, hash_##TYPE(h, v));		\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (simple_EQ(v, BUNtloc(bi, hb), TYPE))
+		if (* (const TYPE *) v == * (const TYPE *) BUNtloc(bi, hb))
 
 #define HASHloop_bte(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
 #define HASHloop_sht(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, sht)

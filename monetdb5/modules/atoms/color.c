@@ -60,28 +60,31 @@ CLRhextoint(char h, char l)
 	return r;
 }
 
-int
-color_fromstr(char *colorStr, int *len, color **c)
+ssize_t
+color_fromstr(const char *colorStr, size_t *len, color **c)
 {
-	char *p = colorStr;
+	const char *p = colorStr;
 
-	if (*len < (int) sizeof(color) || *c == NULL) {
+	if (*len < sizeof(color) || *c == NULL) {
 		GDKfree(*c);
 		*c = GDKmalloc(sizeof(color));
 		if( *c == NULL)
-			return 0;
+			return -1;
 		*len = sizeof(color);
+	}
+
+	if (GDK_STRNIL(colorStr)) {
+		**c = color_nil;
+		return 1;
 	}
 
 	while (GDKisspace(*p))
 		p++;
-	if (p[0] == 'n' && p[1] == 'i' && p[2] == 'l') {
-		color **sc = (color **) c;
-
-		**sc = color_nil;
+	if (strncmp(p, "nil", 3) == 0) {
+		**c = color_nil;
 		p += 3;
 	} else {
-		if (p[0] == '0' && p[1] == 'x' && p[2] == '0' && p[3] == '0') {
+		if (strncmp(p, "0x00", 4) == 0) {
 			int r = CLRhextoint(p[4], p[5]);
 			int g = CLRhextoint(p[6], p[7]);
 			int b = CLRhextoint(p[8], p[9]);
@@ -90,11 +93,11 @@ color_fromstr(char *colorStr, int *len, color **c)
 		} else
 			**c = color_nil;
 	}
-	return (int) (p - colorStr);
+	return (ssize_t) (p - colorStr);
 }
 
-int
-color_tostr(char **colorStr, int *len, color *c)
+ssize_t
+color_tostr(char **colorStr, size_t *len, const color *c)
 {
 	color sc = *c;
 
@@ -104,53 +107,54 @@ color_tostr(char **colorStr, int *len, color *c)
 		GDKfree(*colorStr);
 		*colorStr = GDKmalloc(11);
 		if( *colorStr == NULL)
-			return 0;
+			return -1;
 		*len = 11;
 	}
 
-	if (sc == color_nil) {
+	if (is_color_nil(sc)) {
 		strcpy(*colorStr, "nil");
 		return 3;
 	}
 	snprintf(*colorStr, *len, "0x%08X", (unsigned int) sc);
 
-	return (int) strlen(*colorStr);
+	return (ssize_t) strlen(*colorStr);
 }
 
 str
-CLRstr(str *s, color *c)
+CLRstr(str *s, const color *c)
 {
-	int len = 0;
+	size_t len = 0;
 	str t = 0;
 
-	color_tostr(&t, &len, c);
-	*s = (str) t;
+	if (color_tostr(&t, &len, c) < 0)
+		throw(MAL, "color.str", GDK_EXCEPTION);
+	*s = t;
 	return MAL_SUCCEED;
 }
 
 str
-CLRrgb(color *rgb, int *r, int *g, int *b)
+CLRrgb(color *rgb, const int *r, const int *g, const int *b)
 {
 	*rgb = (color) (((*r & 0xFF) << 16) | ((*g & 0xFF) << 8) | (*b & 0xFF));
 	return (MAL_SUCCEED);
 }
 
 str
-CLRred(int *r, color *c)
+CLRred(int *r, const color *c)
 {
 	*r = (int) ((*c >> 16) & 0xFF);
 	return (MAL_SUCCEED);
 }
 
 str
-CLRgreen(int *g, color *c)
+CLRgreen(int *g, const color *c)
 {
 	*g = (int) ((*c >> 8) & 0xFF);
 	return (MAL_SUCCEED);
 }
 
 str
-CLRblue(int *b, color *c)
+CLRblue(int *b, const color *c)
 {
 	*b = (int) (*c & 0xFF);
 	return (MAL_SUCCEED);
@@ -199,7 +203,7 @@ color_rgb2hsv(float *h, float *s, float *v, int R, int G, int B)
 }
 
 str
-CLRhsv(color *c, flt *h, flt *s, flt *v)
+CLRhsv(color *c, const flt *h, const flt *s, const flt *v)
 {
 	int r, g, b;
 	float Rtmp, Gtmp, Btmp;
@@ -253,7 +257,7 @@ CLRhsv(color *c, flt *h, flt *s, flt *v)
 }
 
 str
-CLRhue(flt *f, color *c)
+CLRhue(flt *f, const color *c)
 {
 	float h, s, v;
 
@@ -263,7 +267,7 @@ CLRhue(flt *f, color *c)
 }
 
 str
-CLRhueInt(int *f, color *c)
+CLRhueInt(int *f, const color *c)
 {
 	float h, s, v;
 
@@ -273,7 +277,7 @@ CLRhueInt(int *f, color *c)
 }
 
 str
-CLRsaturation(flt *f, color *c)
+CLRsaturation(flt *f, const color *c)
 {
 	float h, s, v;
 
@@ -283,7 +287,7 @@ CLRsaturation(flt *f, color *c)
 }
 
 str
-CLRsaturationInt(int *f, color *c)
+CLRsaturationInt(int *f, const color *c)
 {
 	float h, s, v;
 
@@ -293,7 +297,7 @@ CLRsaturationInt(int *f, color *c)
 }
 
 str
-CLRvalue(flt *f, color *c)
+CLRvalue(flt *f, const color *c)
 {
 	float h, s, v;
 
@@ -303,7 +307,7 @@ CLRvalue(flt *f, color *c)
 }
 
 str
-CLRvalueInt(int *f, color *c)
+CLRvalueInt(int *f, const color *c)
 {
 	float h, s, v;
 
@@ -318,7 +322,7 @@ CLRvalueInt(int *f, color *c)
 #endif
 
 str
-CLRycc(color *c, int *y, int *cr, int *cb)
+CLRycc(color *c, const int *y, const int *cr, const int *cb)
 {
 	int r, g, b;
 	float Y = (float) *y;
@@ -335,7 +339,7 @@ CLRycc(color *c, int *y, int *cr, int *cb)
 }
 
 str
-CLRluminance(int *y, color *c)
+CLRluminance(int *y, const color *c)
 {
 	int r = (int) ((*c >> 16) & 0xFF);
 	int g = (int) ((*c >> 8) & 0xFF);
@@ -347,7 +351,7 @@ CLRluminance(int *y, color *c)
 }
 
 str
-CLRcr(int *cr, color *c)
+CLRcr(int *cr, const color *c)
 {
 	int r = (int) ((*c >> 16) & 0xFF);
 	int g = (int) ((*c >> 8) & 0xFF);
@@ -358,7 +362,7 @@ CLRcr(int *cr, color *c)
 }
 
 str
-CLRcb(int *cb, color *c)
+CLRcb(int *cb, const color *c)
 {
 	int r = (int) ((*c >> 16) & 0xFF);
 	int g = (int) ((*c >> 8) & 0xFF);
@@ -369,11 +373,11 @@ CLRcb(int *cb, color *c)
 }
 
 str
-CLRcolor(color *c, str *val)
+CLRcolor(color *c, const char **val)
 {
-	int len = (int) strlen(*val);
+	size_t len = sizeof(color);
 
-	color_fromstr(*val, &len, &c);
+	if (color_fromstr(*val, &len, &c) < 0)
+		throw(MAL, "color.color", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
-

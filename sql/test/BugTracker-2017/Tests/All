@@ -1,3 +1,6 @@
+# keep drop_system_schema.Bug-6437 as first test as it appears that the behavior is different (wrong) when it is the first test or not
+drop_system_schema.Bug-6437
+check_system_schema.Bug-6437
 unknown_col_in_order_by.Bug-3535
 extract_quarter_week_from_date.Bug-3831
 insert_self_ref_FK.Bug-6131
@@ -77,3 +80,28 @@ HAVE_LIBPY?aggr_udf_with_more_than_2params.Bug-6385
 exists.Bug-6392
 case.Bug-6386
 sqllitelogistest_case.Bug-6335
+udf_crash_subquery_scalar_paramters.Bug-6399
+side-effect.Bug-6397
+copy_into_crash.Bug-6404
+null_matches_in_outer.Bug-6398
+corr_coersion.Bug-6287
+sqlitelogictest-having-with-not-in.Bug-6409
+sqlitelogictest-having-with-in.Bug-6410
+sqlitelogictest-aggregation-distinct.Bug-6411
+sqlitelogictest-aggregation-not-in.Bug-6416
+HAVE_NETCDF?sqlsmith-semijoin-constant.bug-6417
+sqlsmith.Bug-6418
+HAVE_SAMTOOLS?sqlsmith.Bug-6423
+HAVE_SAMTOOLS?sqlsmith.Bug-6424
+HAVE_NETCDF?sqlsmith.Bug-6425
+double-groupby-column.Bug-6207
+sqlitelogictest-aggregation-having-avg.Bug-6428
+sqlitelogictest-aggregation-distinct-coalesce.Bug-6431
+sqlsmith.Bug-6432
+sqlitelogictest-select-in.Bug-6433
+sqlitelogictest-select-not-in.Bug-6435
+drop_schema_restrict.Bug-6438
+sqlitelogictest-cast-decimal.Bug-6445
+HAVE_LIBPY?table_returning_with.Bug-6444
+insert_into_multiple_subqueries.Bug-6448
+HAVE_SAMTOOLS?sqlsmith.Bug-6449

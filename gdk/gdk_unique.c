@@ -79,7 +79,7 @@ BATunique(BAT *b, BAT *s)
 	}
 
 	if ((BATordered(b) && BATordered_rev(b)) ||
-	    (b->ttype == TYPE_void && b->tseqbase == oid_nil)) {
+	    (b->ttype == TYPE_void && is_oid_nil(b->tseqbase))) {
 		/* trivial: all values are the same */
 		ALGODEBUG fprintf(stderr, "#BATunique(b=%s#" BUNFMT ",s=%s#" BUNFMT "): trivial case: all equal\n",
 				  BATgetId(b), BATcount(b),

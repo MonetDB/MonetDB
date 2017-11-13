@@ -9,6 +9,9 @@
 /* This file contains the prototype declarations of the stream
  * functions that need special include files (sockets) */
 
+#ifndef _STREAM_SOCKET_H_
+#define _STREAM_SOCKET_H_
+
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
 #endif
@@ -27,3 +30,5 @@ stream_export stream *socket_rstream(SOCKET socket, const char *name);
 stream_export stream *socket_wstream(SOCKET socket, const char *name);
 stream_export stream *socket_rastream(SOCKET socket, const char *name);
 stream_export stream *socket_wastream(SOCKET socket, const char *name);
+
+#endif	/* _STREAM_SOCKET_H_ */

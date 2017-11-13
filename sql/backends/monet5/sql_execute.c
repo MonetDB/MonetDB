@@ -308,6 +308,7 @@ SQLrun(Client c, backend *be, mvc *m)
 		if( getFunctionId(p) &&  p->blk && qc_isaquerytemplate(getFunctionId(p)) ) {
 			mc = copyMalBlk(p->blk);
 			if (!mc) {
+				freeMalBlk(mb);
 				throw(SQL, "sql.prepare", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			retc = p->retc;
@@ -323,8 +324,10 @@ SQLrun(Client c, backend *be, mvc *m)
 					throw(SQL, "sql.prepare", SQLSTATE(07001) "EXEC: wrong type for argument %d of " "query template : %s, expected %s", i + 1, atom_type(arg)->type->sqlname, pt->type->sqlname);
 				}
 				val= (ValPtr) &arg->data;
-				if (VALcopy(&mb->var[j+retc].value, val) == NULL)
+				if (VALcopy(&mb->var[j+retc].value, val) == NULL){
+					freeMalBlk(mb);
 					throw(MAL, "sql.prepare", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				}
 				setVarConstant(mb, j+retc);
 				setVarFixed(mb, j+retc);
 			}
@@ -337,11 +340,17 @@ SQLrun(Client c, backend *be, mvc *m)
 	if( m->emod & mod_debug)
 		mb->keephistory = TRUE;
 	msg = SQLoptimizeQuery(c, mb);
+	if( msg != MAL_SUCCEED){
+		// freeMalBlk(mb);
+		return msg;
+	}
 	mb->keephistory = FALSE;
 
 	if (mb->errors){
-		//freeMalBlk(mb);
+		// freeMalBlk(mb);
 		// mal block might be so broken free causes segfault
+		msg = mb->errors;
+		mb->errors = 0;
 		return msg;
 	}
 
@@ -507,6 +516,8 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	if (!m->sa)
 		m->sa = sa_create();
 	if (!m->sa) {
+		*m = *o;
+		_DELETE(o);
 		bstream_destroy(m->scanner.rs);
 		throw(SQL,"sql.statement",MAL_MALLOC_FAIL);
 	}
@@ -830,7 +841,8 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = SQLoptimizeFunction(c,c->curprg->def);
 		}
 		rel_destroy(rel);
-		SQLrun(c,b,m);
+		if( msg == MAL_SUCCEED)
+			msg = SQLrun(c,b,m);
 		if (!msg) {
 			resetMalBlk(c->curprg->def, oldstop);
 			freeVariables(c, c->curprg->def, NULL, oldvtop);
@@ -843,7 +855,7 @@ static int
 is_a_number(char *v)
 {
 	while(*v) {
-		if (!isdigit(*v))
+		if (!isdigit((unsigned char) *v))
 			return 0;
 		v++;
 	}
@@ -879,7 +891,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	stack_push_frame(m, NULL);
 	ops = sa_list(m->sa);
-	while (c && *c && !isspace(*c)) {
+	while (c && *c && !isspace((unsigned char) *c)) {
 		char *vnme = c, *tnme;
 		char *p = strchr(++c, (int)' ');
 		int d,s,nr = -1;

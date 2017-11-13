@@ -132,7 +132,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Jul2017-SP1/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jul2017-SP2/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 # we need checkpolicy and selinux-policy-devel for the SELinux policy
@@ -885,7 +885,7 @@ developer, but if you do want to test, this is the package you need.
 
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 %package selinux
-Summary: MonetDB - Monet Database Management System
+Summary: SELinux policy files for MonetDB
 Group: Applications/Databases
 %if "%{_selinux_policy_version}" != ""
 Requires:       selinux-policy >= %{_selinux_policy_version}
@@ -970,7 +970,7 @@ fi
 	--enable-monetdb5=yes \
 	--enable-netcdf=no \
 	--enable-odbc=yes \
-	--enable-optimize=yes \
+	--enable-optimize=no \
 	--enable-profile=no \
 	--enable-pyintegration=%{?with_pyintegration:yes}%{!?with_pyintegration:no} \
 	--enable-rintegration=%{?with_rintegration:yes}%{!?with_rintegration:no} \
@@ -1002,6 +1002,11 @@ make %{?_smp_mflags}
 
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 cd buildtools/selinux
+%if 0%{?fedora} < 27
+# no `map' policy available before Fedora 27
+sed -i '/map/d' monetdb.te
+%endif
+
 for selinuxvariant in %{selinux_variants}
 do
   make NAME=${selinuxvariant} -f /usr/share/selinux/devel/Makefile
@@ -1041,6 +1046,88 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Sun Nov  5 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.9-20171105
+- BZ#6460 - selinux doen't allow mmap
+
+* Mon Oct 23 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.9-20171023
+- Rebuilt.
+- BZ#6207: identifier ambiguous when grouping and selecting the same
+  column twice
+- BZ#6335: Sqlitelogictest crash in complex SQL query
+- BZ#6405: Compilation error if DISABLE_PARENT_HASH not defined
+- BZ#6412: Overflow in sys.epoch
+- BZ#6413: Wrong answer for TPC-H Q17
+- BZ#6414: Using RPAD returns: could not allocate space
+- BZ#6416: Sqlitelogictest crash in aggregation query with a NOT IN clause
+- BZ#6417: Segfault encountered (sqlsmith)
+- BZ#6418: Segfault in renaming (sqlsmith)
+- BZ#6419: segfault in rel_optimizer (sqlsmith)
+- BZ#6420: Assertion error in mergetable task (sqlsmith)
+- BZ#6422: Another assertion error in rel_or (sqlsmith)
+- BZ#6423: Dereference null pointer (sqlsmith)
+- BZ#6424: Assertion error in rel_rename_expr (sqlsmith)
+- BZ#6425: Assertion error in exp_bin (sqlsmith)
+- BZ#6426: Assertion error in rel_find_exp_ (sqlsmith)
+- BZ#6427: Assertion error in eq_typeswitchloop (sqlsmith)
+- BZ#6428: Sqlitelogictest crash in aggregation query
+- BZ#6430: Assertion raised in another eq_typeswitch error (sqlsmith)
+- BZ#6431: Sqlitelogictest crash in aggregation query with a long
+  having clause
+- BZ#6432: Assertion error in exp_bin (sqlsmith)
+- BZ#6433: Sqlitelogictest crash in complex SELECT query with IN operator
+- BZ#6435: Sqlitelogictest crash in simple select query
+- BZ#6437: System schemas "profiler" and "json" shouldn't be allowed to
+  be dropped.
+- BZ#6438: Implement functionality to enforce the restrict option in:
+  DROP SCHEMA xyz RESTRICT;
+- BZ#6440: Faulty plan generated. Query returns more rows than expected
+  or existing in the view sys.tables.
+
+* Mon Oct 23 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.9-20171023
+- gdk: A serious bug, possibly resulting in database corruption, having to
+  do with appending data to a string BAT was fixed.
+
+* Wed Oct 11 2017 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.27.7-20171011
+- Rebuilt.
+- BZ#4017: server crashes when executing particular loopback query in
+  embedded python
+- BZ#6239: Incorrect profiling
+- BZ#6261: New handling of delta tables hurts badly reusage of bats
+- BZ#6287: should the CORR function return some numeric type that allows
+  fractions?
+- BZ#6321: Two-column aggregation on join result extremely slow.
+- BZ#6343: MERGE TABLE issue: unable to find
+- BZ#6348: Interference of procedure/table name
+- BZ#6350: Carriage return and form feed in TEXT fields are returned as
+  'r' and 'f' in jdbcclient and ResultSets
+- BZ#6352: Scope resolution problem (sqlsmith)
+- BZ#6353: implicit NULL value not propagated in distributed/remote query
+- BZ#6374: Wrong answer from merge table after content changes
+- BZ#6379: Table UDF: SEGV raised when invoking a non existing function
+- BZ#6380: unable to create new databases from clean installation
+- BZ#6381: Parser misses error messages in conditional
+- BZ#6382: Can't set JSON fields via PreparedStatement
+- BZ#6384: crash when setting a wrong listenaddr
+- BZ#6385: AGGREGATE UDFs with more than 2 parameters incorrectly
+  processed
+- BZ#6386: Unexpected error from server for query with long floats
+- BZ#6387: Performance degradation on multi column sort
+- BZ#6388: JDBC Connection via user voc produces errors when fetching
+  certain meta data information
+- BZ#6392: SELECT EXISTS (empty table) returns 'true'
+- BZ#6395: BAT leak of scalar result sets
+- BZ#6397: Isolation of generating functions not correct
+- BZ#6398: Null Matches in outer join are not supported
+- BZ#6399: UDF crashes when subquery and scalar values are passed
+  as pameters
+- BZ#6400: getCharacterStream() currently not supported
+- BZ#6404: COPY INTO crashes if table has primary key or foreign key
+  constraint
+- BZ#6409: sqllogictest crash on aggregation query with NOT IN clause
+  in HAVING clause
+- BZ#6410: Sqlitelogictest crash on aggregation query with IN clause
+- BZ#6411: Sqlitelogictest crash in aggregation query
+
 * Thu Jul 27 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.5-20170727
 - Rebuilt.
 - BZ#6375: MAL profiler truncates JSON objects larger than 8192 characters

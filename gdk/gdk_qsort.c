@@ -195,17 +195,17 @@ struct qsort_t {
 			SWAP1((i) * buf->ts, (j) * buf->ts, t, buf->ts); \
 	} while (0)
 #define GDKqsort_impl GDKqsort_impl_flt
-#define EQ(i, j)	(((flt *) h)[i] == ((flt *) h)[j])
-#define LE(i, j)	(((flt *) h)[i] <= ((flt *) h)[j])
-#define LT(i, j)	(((flt *) h)[i] < ((flt *) h)[j])
+#define EQ(i, j)	(is_flt_nil(((flt *)h)[i]) ? is_flt_nil(((flt *)h)[j]) : !is_flt_nil(((flt *)h)[j]) && ((flt *)h)[i] == ((flt *)h)[j])
+#define LE(i, j)	(is_flt_nil(((flt *)h)[i]) || (!is_flt_nil(((flt *)h)[j]) && ((flt *)h)[i] <= ((flt *)h)[j]))
+#define LT(i, j)	(!is_flt_nil(((flt *)h)[j]) && (is_flt_nil(((flt *)h)[i]) || ((flt *)h)[i] < ((flt *)h)[j]))
 #include "gdk_qsort_impl.h"
 #undef GDKqsort_impl
 #undef LE
 #undef LT
 
 #define GDKqsort_impl GDKqsort_impl_flt_rev
-#define LE(i, j)	(((flt *) h)[i] >= ((flt *) h)[j])
-#define LT(i, j)	(((flt *) h)[i] > ((flt *) h)[j])
+#define LE(i, j)	(is_flt_nil(((flt *)h)[j]) || (!is_flt_nil(((flt *)h)[i]) && ((flt *)h)[i] >= ((flt *)h)[j]))
+#define LT(i, j)	(!is_flt_nil(((flt *)h)[i]) && (is_flt_nil(((flt *)h)[j]) || ((flt *)h)[i] > ((flt *)h)[j]))
 #include "gdk_qsort_impl.h"
 #undef GDKqsort_impl
 #undef LE
@@ -222,17 +222,17 @@ struct qsort_t {
 			SWAP1((i) * buf->ts, (j) * buf->ts, t, buf->ts); \
 	} while (0)
 #define GDKqsort_impl GDKqsort_impl_dbl
-#define EQ(i, j)	(((dbl *) h)[i] == ((dbl *) h)[j])
-#define LE(i, j)	(((dbl *) h)[i] <= ((dbl *) h)[j])
-#define LT(i, j)	(((dbl *) h)[i] < ((dbl *) h)[j])
+#define EQ(i, j)	(is_dbl_nil(((dbl *)h)[i]) ? is_dbl_nil(((dbl *)h)[j]) : !is_dbl_nil(((dbl *)h)[j]) && ((dbl *)h)[i] == ((dbl *)h)[j])
+#define LE(i, j)	(is_dbl_nil(((dbl *)h)[i]) || (!is_dbl_nil(((dbl *)h)[j]) && ((dbl *)h)[i] <= ((dbl *)h)[j]))
+#define LT(i, j)	(!is_dbl_nil(((dbl *)h)[j]) && (is_dbl_nil(((dbl *)h)[i]) || ((dbl *)h)[i] < ((dbl *)h)[j]))
 #include "gdk_qsort_impl.h"
 #undef GDKqsort_impl
 #undef LE
 #undef LT
 
 #define GDKqsort_impl GDKqsort_impl_dbl_rev
-#define LE(i, j)	(((dbl *) h)[i] >= ((dbl *) h)[j])
-#define LT(i, j)	(((dbl *) h)[i] > ((dbl *) h)[j])
+#define LE(i, j)	(is_dbl_nil(((dbl *)h)[j]) || (!is_dbl_nil(((dbl *)h)[i]) && ((dbl *)h)[i] >= ((dbl *)h)[j]))
+#define LT(i, j)	(!is_dbl_nil(((dbl *)h)[i]) && (is_dbl_nil(((dbl *)h)[j]) || ((dbl *)h)[i] > ((dbl *)h)[j]))
 #include "gdk_qsort_impl.h"
 #undef GDKqsort_impl
 #undef LE

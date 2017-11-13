@@ -19,7 +19,7 @@
 static inline TYPE
 dec_round_body_nonil(TYPE v, TYPE r)
 {
-	assert(v != NIL(TYPE));
+	assert(!ISNIL(TYPE)(v));
 
 	return v / r;
 }
@@ -28,7 +28,7 @@ static inline TYPE
 dec_round_body(TYPE v, TYPE r)
 {
 	/* shortcut nil */
-	if (v == NIL(TYPE)) {
+	if (ISNIL(TYPE)(v)) {
 		return NIL(TYPE);
 	} else {
 		return dec_round_body_nonil(v, r);
@@ -84,7 +84,7 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 			dst[i] = dec_round_body_nonil(src[i], *r);
 	} else {
 		for (i = 0; i < cnt; i++) {
-			if (src[i] == NIL(TYPE)) {
+			if (ISNIL(TYPE)(src[i])) {
 				nonil = FALSE;
 				dst[i] = NIL(TYPE);
 			} else {
@@ -119,7 +119,7 @@ round_body_nonil(TYPE v, int r)
 {
 	TYPE res = NIL(TYPE);
 
-	assert(v != NIL(TYPE));
+	assert(!ISNIL(TYPE)(v));
 
 	if (r < 0) {
 		int d = -r;
@@ -140,7 +140,7 @@ static inline TYPE
 round_body(TYPE v, int r)
 {
 	/* shortcut nil */
-	if (v == NIL(TYPE)) {
+	if (ISNIL(TYPE)(v)) {
 		return NIL(TYPE);
 	} else {
 		return round_body_nonil(v, r);
@@ -196,7 +196,7 @@ bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 			dst[i] = round_body_nonil(src[i], *r);
 	} else {
 		for (i = 0; i < cnt; i++) {
-			if (src[i] == NIL(TYPE)) {
+			if (ISNIL(TYPE)(src[i])) {
 				nonil = FALSE;
 				dst[i] = NIL(TYPE);
 			} else {
@@ -230,7 +230,7 @@ str
 trunc_wrap(TYPE *res, const TYPE *v, const int *r)
 {
 	/* shortcut nil */
-	if (*v == NIL(TYPE)) {
+	if (ISNIL(TYPE)(*v)) {
 		*res = NIL(TYPE);
 	} else if (*r < 0) {
 		int d = -*r;

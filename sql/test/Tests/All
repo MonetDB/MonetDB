@@ -116,3 +116,8 @@ truncate-statements
 truncate-statements-extra
 create-or-replace-triggers
 create-or-replace-views
+
+constant-not-in
+
+fsum
+THREADS=1?fsum1

@@ -55,8 +55,10 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		fprintf(stderr, "#mvc_init shared_drift_threshold %d\n", log_settings.shared_drift_threshold);
 	}
 	keyword_init();
-	scanner_init_keywords();
-
+	if(scanner_init_keywords() != 0) {
+		fprintf(stderr, "!mvc_init: malloc failure\n");
+		return -1;
+	}
 
 	if ((first = store_init(debug, store, ro, su, &log_settings, stk)) < 0) {
 		fprintf(stderr, "!mvc_init: unable to create system tables\n");
@@ -120,7 +122,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			oid rid;
 
 			table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-			while ((rid = table_funcs.column_find_row(m->session->tr, depids, &tid, NULL)) != oid_nil) {
+			while ((rid = table_funcs.column_find_row(m->session->tr, depids, &tid, NULL)), !is_oid_nil(rid)) {
 				table_funcs.column_update_value(m->session->tr, depids, rid, &ntid);
 			}
 		}
@@ -148,7 +150,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			oid rid;
 
 			table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-			while ((rid = table_funcs.column_find_row(m->session->tr, depids, &cid, NULL)) != oid_nil) {
+			while ((rid = table_funcs.column_find_row(m->session->tr, depids, &cid, NULL)), !is_oid_nil(rid)) {
 				table_funcs.column_update_value(m->session->tr, depids, rid, &ncid);
 			}
 		} else { 
@@ -559,6 +561,13 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	store_lock();
 	m->session = sql_session_create(stk, 1 /*autocommit on*/);
 	store_unlock();
+	if(!m->session) {
+		qc_destroy(m->qc);
+		_DELETE(m->vars);
+		_DELETE(m->args);
+		_DELETE(m);
+		return NULL;
+	}
 
 	m->type = Q_PARSE;
 	m->pushdown = 1;

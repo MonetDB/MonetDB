@@ -419,8 +419,10 @@ MT_init(void)
 static void THRinit(void);
 static void GDKlockHome(int farmid);
 
+#ifndef STATIC_CODE_ANALYSIS
 #ifndef NDEBUG
 static MT_Lock mallocsuccesslock MT_LOCK_INITIALIZER("mallocsuccesslock");
+#endif
 #endif
 
 int
@@ -446,6 +448,13 @@ GDKinit(opt *set, int setlen)
 	assert(sizeof(void *) == SIZEOF_VOID_P);
 	assert(sizeof(size_t) == SIZEOF_SIZE_T);
 	assert(SIZEOF_OID == SIZEOF_INT || SIZEOF_OID == SIZEOF_LNG);
+
+#ifdef __INTEL_COMPILER
+	/* stupid Intel compiler uses a value that cannot be used in an
+	 * initializer for NAN, so we have to initialize at run time */
+	flt_nil = NAN;
+	dbl_nil = NAN;
+#endif
 
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_init(&MT_system_lock,"MT_system_lock");
@@ -807,6 +816,7 @@ GDKreset(int status, int exit)
 		MT_lock_unset(&GDKthreadLock);
 		//gdk_system_reset(); CHECK OUT
 	}
+	ATOMunknown_clean();
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_destroy(&MT_system_lock);
 #if defined(USE_PTHREAD_LOCKS) && defined(ATOMIC_LOCK)
@@ -977,12 +987,8 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 		}
 		*dst = '\0';
 	} else {
-		/* construct format string because the format string
-		 * must start with ! */
-		char format[32];
-
-		snprintf(format, sizeof(format), "%s%%.*s%s", prefix ? prefix : "", suffix ? suffix : "");
-		THRprintf(GDKout, format, (int) messagelen, message);
+		THRprintf(GDKout, "%s%.*s%s", prefix ? prefix : "",
+			  (int) messagelen, message, suffix ? suffix : "");
 	}
 }
 
@@ -1317,7 +1323,7 @@ THRhighwater(void)
 	if (s != NULL) {
 		c = THRsp();
 		diff = c < s->sp ? s->sp - c : c - s->sp;
-		if (diff > THREAD_STACK_SIZE - 16 * 1024)
+		if (diff > THREAD_STACK_SIZE - 80 * 1024)
 			rc = 1;
 	}
 	MT_lock_unset(&GDKthreadLock);
@@ -1660,11 +1666,12 @@ GDKstrndup(const char *s, size_t size)
 {
 	char *p;
 
-	if (s == NULL || size == 0)
+	if (s == NULL)
 		return NULL;
 	if ((p = GDKmalloc_internal(size + 1)) == NULL)
 		return NULL;
-	memcpy(p, s, size);
+	if (size > 0)
+		memcpy(p, s, size);
 	p[size] = '\0';		/* make sure it's NULL terminated */
 	return p;
 }
@@ -1821,8 +1828,10 @@ char *
 GDKstrndup(const char *s, size_t size)
 {
 	char *p = malloc(size + 1);
-	if (p == NULL)
+	if (p == NULL) {
 		GDKerror("GDKstrdup failed for %s\n", s);
+		return NULL;
+	}
 	memcpy(p, s, size);
 	p[size] = 0;
 	return p;

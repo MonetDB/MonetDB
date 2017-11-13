@@ -24,17 +24,6 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade-hge` itself:
 # MonetDB/R   module loaded
 
 Ready.
-Running database upgrade commands:
-GRANT SELECT ON sys.keywords TO PUBLIC;
-GRANT SELECT ON sys.table_types TO PUBLIC;
-GRANT SELECT ON sys.dependency_types TO PUBLIC;
-GRANT SELECT ON sys.function_types TO PUBLIC;
-GRANT SELECT ON sys.function_languages TO PUBLIC;
-GRANT SELECT ON sys.key_types TO PUBLIC;
-GRANT SELECT ON sys.index_types TO PUBLIC;
-GRANT SELECT ON sys.privilege_codes TO PUBLIC;
-GRANT EXECUTE ON FUNCTION sys.environment() TO PUBLIC;
-GRANT SELECT ON sys.environment TO PUBLIC;
 
 Running database upgrade commands:
 set schema "sys";

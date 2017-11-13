@@ -81,7 +81,7 @@ strip_extra_zeros(char *s)
 {
 	char *res = s;
 
-	for (; *s && isspace((int) (unsigned char) *s); s++)
+	for (; *s && isspace((unsigned char) *s); s++)
 		;
 	res = s;
 	/* find end, and strip extra 0's */
@@ -180,7 +180,6 @@ const char *
 sql_escape_ident(const char *s)
 {
 	size_t l = strlen(s);
-	// FIXME unchecked_malloc NEW_ARRAY can return NULL
 	char *res, *r = NEW_ARRAY(char, (l * 2) + 1);
 
 	res = r;
