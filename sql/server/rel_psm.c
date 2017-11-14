@@ -939,6 +939,11 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 					f->mod = _STRDUP(fmod);
 				if (!f->imp || strcmp(f->imp, fnme)) 
 					f->imp = (f->sa)?sa_strdup(f->sa, fnme):_STRDUP(fnme);
+				if(!f->mod || !f->imp) {
+					_DELETE(f->mod);
+					_DELETE(f->imp);
+					return sql_error(sql, 02, SQLSTATE(HY001) "CREATE %s%s: could not allocate space", KF, F);
+				}
 				f->sql = 0; /* native */
 				f->lang = FUNC_LANG_INT;
 			}

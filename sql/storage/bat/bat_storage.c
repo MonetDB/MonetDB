@@ -484,6 +484,8 @@ dup_delta(sql_trans *tr, sql_delta *obat, sql_delta *bat, int type, int oc_isnew
 	bat->wtime = obat->wtime;
 
 	bat->name = _STRDUP(obat->name);
+	if(!bat->name)
+		return LOG_ERR;
 
 	if (!bat->ibid)
 		return LOG_OK;
@@ -724,6 +726,8 @@ dup_dbat( sql_trans *tr, sql_dbat *obat, sql_dbat *bat, int is_new, int temp)
 	bat->cnt = obat->cnt;
 	bat->dname = _STRDUP(obat->dname);
 	bat->wtime = obat->wtime;
+	if(!bat->dname)
+		return LOG_ERR;
 	if (bat->dbid) {
 		if (is_new) {
 			obat->dbid = temp_copy(bat->dbid, temp);
