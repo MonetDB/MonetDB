@@ -207,10 +207,10 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 
 		sql->sa = sa_create();
 		if(!sql->sa)
-			throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
+			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		buf = sa_strdup(sql->sa, query);
 		if(!buf)
-			throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
+			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
 			r = rel_optimizer(sql, r);
@@ -521,10 +521,10 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 
 		sql->sa = sa_create();
 		if(!sql->sa)
-			throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
+			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		buf = sa_strdup(sql->sa, nf->query);
 		if(!buf)
-			throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
+			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
 			r = rel_optimizer(sql, r);
@@ -728,7 +728,7 @@ UPGcreate_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc_set_schema(sql, sname);
 	sa = sa_create();
 	if(!sa)
-		throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
+		throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	s = sql_parse(be, sa, func, 0);
 	if (s && s->type == st_catalog) {
 		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
@@ -763,7 +763,7 @@ UPGcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc_set_schema(sql, sname);
 	sa = sa_create();
 	if(!sa)
-		throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
+		throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	s = sql_parse(be, sa, view, 0);
 	if (s && s->type == st_catalog) {
 		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;

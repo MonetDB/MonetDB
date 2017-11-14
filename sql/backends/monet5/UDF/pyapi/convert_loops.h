@@ -526,7 +526,7 @@ convert_and_append(BAT* b, const char* text, bit force) {
 				if (mask != NULL &&                                            \
 					(mask[index_offset * ret->count + iu]) == TRUE) {          \
 					b->tnil = 1;                                               \
-					if (BUNappend(b, str_nil, FALSE) != GDK_SUCCEED) {         \
+					if (convert_and_append(b, str_nil, FALSE) != GDK_SUCCEED) {         \
 						msg = createException(MAL, "pyapi.eval",               \
 											  SQLSTATE(PY000) "BUNappend failed.\n");          \
 						goto wrapup;                                           \
@@ -537,7 +537,7 @@ convert_and_append(BAT* b, const char* text, bit force) {
 						((PyObject **)&data[(index_offset * ret->count + iu) * \
 											ret->memory_size]),                \
 						utf8_size, &utf8_string);                              \
-					if (BUNappend(b, utf8_string, FALSE) != GDK_SUCCEED) {     \
+					if (convert_and_append(b, utf8_string, FALSE) != GDK_SUCCEED) {     \
 						msg = createException(MAL, "pyapi.eval",               \
 											  SQLSTATE(PY000) "BUNappend failed.\n");          \
 						goto wrapup;                                           \

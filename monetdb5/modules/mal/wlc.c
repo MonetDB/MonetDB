@@ -674,7 +674,7 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (isaBatType(tpe) ){
 		b= BATdescriptor(bid);
 		if (b == NULL)
-			throw(MAL, "wlc.delete", RUNTIME_OBJECT_MISSING); 
+			throw(MAL, "wlc.delete", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		o = b->tseqbase;
 		last = o + BATcount(b);
 		if( b->ttype == TYPE_void){

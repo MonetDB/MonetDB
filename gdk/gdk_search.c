@@ -365,7 +365,7 @@ binsearch(const oid *restrict indir, oid offset,
 		else
 			lo = mid;
 	}
-	return hi;
+	return last >= 0 || cmp(VALUE(indir ? indir[hi] - offset : hi), v) == 0 ? hi : BUN_NONE;
 }
 
 /* Return the BUN of any tail value in b that is equal to v; if no

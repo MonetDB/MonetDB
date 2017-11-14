@@ -92,7 +92,7 @@ MKEYbathash(bat *res, const bat *bid)
 	BUN n;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(SQL, "mkey.bathash", RUNTIME_OBJECT_MISSING);
+		throw(SQL, "mkey.bathash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	n = BATcount(b);
 	dst = COLnew(b->hseqbase, TYPE_lng, n, TRANSIENT);
@@ -249,12 +249,12 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 	BUN n;
 
 	if ((hb = BATdescriptor(*hid)) == NULL)
-        throw(MAL, "mkey.rotate_xor_hash", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		BBPunfix(hb->batCacheid);
-        throw(MAL, "mkey.rotate_xor_hash",  RUNTIME_OBJECT_MISSING);
-    }
+		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
 
 	if (!ALIGNsynced(hb, b) && (BATcount(b) || BATcount(hb))) {
 		BBPunfix(hb->batCacheid);
@@ -385,7 +385,7 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	(void) cntxt;
 
 	if ((hb = BATdescriptor(*hid)) == NULL)
-        throw(MAL, "mkey.rotate_xor_hash", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	n = BATcount(hb);
 
@@ -458,7 +458,7 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 	BUN n;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-        throw(MAL, "mkey.rotate_xor_hash",  RUNTIME_OBJECT_MISSING);
+		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	n = BATcount(b);
 

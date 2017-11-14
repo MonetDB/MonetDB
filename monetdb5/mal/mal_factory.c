@@ -306,7 +306,7 @@ yieldFactory(MalBlkPtr mb, InstrPtr p, int pc)
 		pl->env = NULL;
 		return MAL_SUCCEED;
 	}
-	throw(MAL, "factory.yield", RUNTIME_OBJECT_MISSING);
+	throw(MAL, "factory.yield", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
 
 /*

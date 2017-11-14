@@ -312,10 +312,10 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 
 			sql->sa = sa_create();
 			if(!sql->sa)
-				throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
+				throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			buf = sa_alloc(sql->sa, strlen(c->def) + 8);
 			if(!buf)
-				throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
+				throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			snprintf(buf, BUFSIZ, "select %s;", c->def);
 			r = rel_parse(sql, s, buf, m_deps);
 			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 || rel_check_type(sql, &c->type, r->exps->h->data, type_equal) == NULL)
@@ -353,7 +353,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 
 		sql->sa = sa_create();
 		if(!sql->sa)
-			throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
+			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, nt->query, m_deps);
 		if (r)
 			r = rel_optimizer(sql, r);
@@ -385,7 +385,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 	/* for some reason we don't have an allocator here, so make one */
 	sql->sa = sa_create();
 	if(!sql->sa)
-		throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
+		throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	if (!sname)
 		sname = "sys";
@@ -1120,7 +1120,7 @@ mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for(;cnt>0; cnt--, v++) {
 		if (BUNappend(tid, &v, FALSE) != GDK_SUCCEED) {
 			BBPunfix(Tid);
-			throw(SQL, "sql", MAL_MALLOC_FAIL);
+			throw(SQL, "sql", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPunfix(Tid);

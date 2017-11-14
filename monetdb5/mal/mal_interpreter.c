@@ -815,7 +815,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						b = BBPquickdesc(stk->stk[getArg(pci, i)].val.bval, FALSE);
 						if (b == NULL) {
 							if (ret == MAL_SUCCEED)
-								ret = createException(MAL, "mal.propertyCheck", RUNTIME_OBJECT_MISSING);
+								ret = createException(MAL, "mal.propertyCheck", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 							continue;
 						}
 						b = BATdescriptor(stk->stk[getArg(pci, i)].val.bval);

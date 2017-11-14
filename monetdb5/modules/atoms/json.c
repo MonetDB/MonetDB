@@ -1826,7 +1826,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 	if (key) {
 		bk = BATdescriptor(*key);
 		if (bk == NULL) {
-			throw(MAL, "json.fold", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "json.fold", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 	}
 
@@ -1834,7 +1834,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 	if (bv == NULL) {
 		if (bk)
 			BBPunfix(bk->batCacheid);
-		throw(MAL, "json.fold", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "json.fold", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	tpe = bv->ttype;
 	cnt = BATcount(bv);
@@ -1847,7 +1847,7 @@ JSONfoldKeyValue(str *ret, const bat *id, const bat *key, const bat *values)
 			if (bk)
 				BBPunfix(bk->batCacheid);
 			BBPunfix(bv->batCacheid);
-			throw(MAL, "json.nest", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "json.nest", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 	}
 
@@ -2038,7 +2038,7 @@ JSONgroupStr(str *ret, const bat *bid)
 		throw(MAL, "json.group", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		GDKfree(buf);
-		throw(MAL, "json.agg", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "json.agg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	assert(b->ttype == TYPE_str || b->ttype == TYPE_dbl);
 
@@ -2072,7 +2072,7 @@ JSONgroupStr(str *ret, const bat *bid)
 			size += len + 128;
 			nbuf = GDKrealloc(buf, size);
 			if (nbuf == NULL) {
-				err = MAL_MALLOC_FAIL;
+				err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
 				goto failed;
 			}
 			buf = nbuf;
@@ -2130,7 +2130,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	if (BATcount(b) == 0 || ngrp == 0) {
 		bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_str, ATOMnilptr(TYPE_str), ngrp, TRANSIENT);
 		if (bn == NULL)
-			return MAL_MALLOC_FAIL;
+			return SQLSTATE(HY001) MAL_MALLOC_FAIL;
 		*bnp = bn;
 		return NULL;
 	}
@@ -2153,13 +2153,13 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 
 	maxlen = BUFSIZ;
 	if ((buf = GDKmalloc(maxlen)) == NULL) {
-		err = MAL_MALLOC_FAIL;
+		err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
 		goto out;
 	}
 	buflen = 0;
 	bn = COLnew(min, TYPE_str, ngrp, TRANSIENT);
 	if (bn == NULL) {
-		err = MAL_MALLOC_FAIL;
+		err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
 		goto out;
 	}
 	bi = bat_iterator(b);
@@ -2219,7 +2219,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 						maxlen += len + BUFSIZ;
 						buf2 = GDKrealloc(buf, maxlen);
 						if (buf2 == NULL) {
-							err = MAL_MALLOC_FAIL;
+							err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
 							goto bunins_failed;
 						}
 						buf = buf2;
@@ -2295,7 +2295,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 					maxlen += len + BUFSIZ;
 					buf2 = GDKrealloc(buf, maxlen);
 					if (buf2 == NULL) {
-						err = MAL_MALLOC_FAIL;
+						err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
 						goto bunins_failed;
 					}
 					buf = buf2;
@@ -2353,7 +2353,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				maxlen += len + BUFSIZ;
 				buf2 = GDKrealloc(buf, maxlen);
 				if (buf2 == NULL) {
-					err = MAL_MALLOC_FAIL;
+					err = SQLSTATE(HY001) MAL_MALLOC_FAIL;
 					goto bunins_failed;
 				}
 				buf = buf2;
@@ -2405,7 +2405,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 
   bunins_failed:
 	if (err == NULL)
-		err = MAL_MALLOC_FAIL;	/* insertion into result BAT failed */
+		err = SQLSTATE(HY001) MAL_MALLOC_FAIL;	/* insertion into result BAT failed */
 	goto out;
 }
 
@@ -2423,7 +2423,7 @@ JSONsubjsoncand(bat *retval, bat *bid, bat *gid, bat *eid, bat *sid, bit *skip_n
 		(gid != NULL && g == NULL) ||
 		(eid != NULL && e == NULL) ||
 		(sid != NULL && s == NULL)) {
-		err = RUNTIME_OBJECT_MISSING;
+		err = SQLSTATE(HY002) RUNTIME_OBJECT_MISSING;
 	} else {
 		err = JSONjsonaggr(&bn, b, g, e, s, *skip_nils);
 	}

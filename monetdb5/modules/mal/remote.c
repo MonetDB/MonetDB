@@ -727,7 +727,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			if ((b = BATdescriptor(bid)) == NULL){
 				MT_lock_unset(&c->lock);
 				GDKfree(tail);
-				throw(MAL, "remote.put", RUNTIME_OBJECT_MISSING);
+				throw(MAL, "remote.put", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			}
 		}
 

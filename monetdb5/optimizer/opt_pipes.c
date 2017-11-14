@@ -274,7 +274,7 @@ addPipeDefinition(Client cntxt, const char *name, const char *pipe)
 		pipes[i].def = oldpipe.def;
 		pipes[i].status = oldpipe.status;
 		MT_lock_unset(&pipeLock);
-		throw(MAL, "optimizer.addPipeDefinition", MAL_MALLOC_FAIL);
+		throw(MAL, "optimizer.addPipeDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	pipes[i].mb = NULL;
 	MT_lock_unset(&pipeLock);

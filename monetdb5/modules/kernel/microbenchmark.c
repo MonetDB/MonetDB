@@ -365,7 +365,7 @@ MBMmix(bat *bn, bat *batid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*batid)) == NULL)
-		throw(MAL, "microbenchmark.mix", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "microbenchmark.mix", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	n = BATcount(b);
 	/* mix BUNs randomly */

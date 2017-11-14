@@ -60,7 +60,7 @@ FCTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	s = findSymbol(cntxt->usermodule, putName(mod), putName(fcn));
 	if (s == NULL)
-		throw(MAL, "factories.shutdown", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "factories.shutdown", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	shutdownFactory(cntxt,s->def);
 	return MAL_SUCCEED;
 }

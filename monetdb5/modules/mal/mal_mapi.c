@@ -940,7 +940,7 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 																		\
 			l = 2 * strlen(err) + 8192;									\
 			newerr = (str) GDKmalloc(l);								\
-			if(newerr == NULL) { err = MAL_MALLOC_FAIL; break;}			\
+			if(newerr == NULL) { err = SQLSTATE(HY001) MAL_MALLOC_FAIL; break;}	\
 																		\
 			f = newerr;													\
 			/* I think this code tries to deal with multiple errors, this \
@@ -1705,7 +1705,7 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			case TYPE_dbl:
 			case TYPE_str:
 				if(SERVERfieldAnalysis(fld,getVarType(mb,getArg(pci,j)),&stk->stk[pci->argv[j]]) < 0)
-					throw(MAL, "mapi.rpc", MAL_MALLOC_FAIL);
+					throw(MAL, "mapi.rpc", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				break;
 			default:
 				throw(MAL, "mapi.rpc",
