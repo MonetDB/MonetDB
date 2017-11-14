@@ -180,6 +180,9 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			sql_subtype* tpe = (sql_subtype*) n2->data;
 			cols[i].name = GDKstrdup(*((char **)n->data));
 			n = n->next;
+			assert(n);
+			cols[i].def = n->data;
+			n = n->next;
 			cols[i].b =
 				COLnew(0, tpe->type->localtype, 0, TRANSIENT);
 			n2 = n2->next;

@@ -1312,3 +1312,29 @@ SQLcallback(Client c, str msg){
 	}
 	return MALcallback(c,msg);
 }
+
+str
+SYSupdate_tables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = ((backend *) cntxt->sqlcontext)->mvc;
+
+	(void) mb;
+	(void) stk;
+	(void) pci;
+
+	sql_trans_update_tables(m->session->tr, mvc_bind_schema(m, "sys"));
+	return MAL_SUCCEED;
+}
+
+str
+SYSupdate_schemas(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *m = ((backend *) cntxt->sqlcontext)->mvc;
+
+	(void) mb;
+	(void) stk;
+	(void) pci;
+
+	sql_trans_update_schemas(m->session->tr);
+	return MAL_SUCCEED;
+}

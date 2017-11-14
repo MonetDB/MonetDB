@@ -1194,7 +1194,8 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 {
 	sql_func *t = SA_ZNEW(sa, sql_func);
 
-	assert(res && ops);
+	if (!ops)
+		ops = sa_list(sa);
 	base_init(sa, &t->base, store_next_oid(), TR_OLD, name);
 	t->imp = sa_strdup(sa, imp);
 	t->mod = sa_strdup(sa, mod);
@@ -1812,6 +1813,10 @@ sqltypeinit( sql_allocator *sa)
 			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), 
 			create_arg(sa, NULL, sql_create_subtype(sa, STR, 0, 0), ARG_IN)), sres, FALSE, F_UNION, SCALE_FIX);
 	f->varres = 1;
+
+	/* sys_update_schemas, sys_update_tables */
+	f = sql_create_func_(sa, "sys_update_schemas", "sql", "update_schemas", NULL, NULL, FALSE, F_PROC, SCALE_NONE);
+	f = sql_create_func_(sa, "sys_update_tables", "sql", "update_tables", NULL, NULL, FALSE, F_PROC, SCALE_NONE);
 }
 
 void

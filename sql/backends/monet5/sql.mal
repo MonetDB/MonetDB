@@ -1078,6 +1078,14 @@ command batcalc.strings(v:bat[:str]) :bat[:str]
 address BATSTRstrings
 comment "Return the strings";
 
+pattern update_tables():void 
+address SYSupdate_tables
+comment "Procedure triggered on update of the sys._tables table";
+
+pattern update_schemas():void 
+address SYSupdate_schemas
+comment "Procedure triggered on update of the sys.schemas table";
+
 include sql_decimal;
 include sql_rank;
 #include sql_cast;

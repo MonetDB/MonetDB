@@ -824,6 +824,9 @@ BATload_intern(bat bid, int lock)
 		}
 		if (ATOMstorage(b->ttype) == TYPE_str) {
 			strCleanHash(b->tvheap, FALSE);	/* ensure consistency */
+		} else {
+			HEAP_recover(b->tvheap, (const var_t *) Tloc(b, 0),
+				     BATcount(b));
 		}
 	}
 

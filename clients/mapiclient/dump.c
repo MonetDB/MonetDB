@@ -1238,6 +1238,7 @@ dump_function(Mapi mid, stream *toConsole, const char *sname, const char *fname,
 		/* all information is stored in the func column */
 		mnstr_printf(toConsole, "%s\n", ffunc);
 		mapi_close_handle(hdl);
+		free(query);
 		return 0;
 	}
 	mnstr_printf(toConsole, "CREATE ");
@@ -1612,7 +1613,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 			     "sys.schemas s, "
 			     "sys._tables t "
 			"WHERE s.id = t.schema_id AND "
-			      "t.id = tr.table_id"
+			      "t.id = tr.table_id AND t.system = FALSE"
 		") "
 		"SELECT sname, name, query, type FROM vft ORDER BY id";
 	char *sname = NULL;

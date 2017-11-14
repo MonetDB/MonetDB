@@ -5077,7 +5077,6 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek, int app
 	if (ek.card != card_relation && sn->orderby)
 		return sql_error(sql, 01, SQLSTATE(42000) "SELECT: ORDER BY only allowed on outermost SELECT");
 
-
 	sql->use_views = 1;
 	if (sn->from) {		/* keep variable list with tables and names */
 		dlist *fl = sn->from->data.lval;
@@ -5100,7 +5099,7 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek, int app
 				 */ 
 				if (used && rel)
 					rel = rel_dup(rel);
-				if (!used && (!sn->lateral && !lateral) && rel) {
+				if (!used && ((!sn->lateral && !lateral) || (apply == APPLY_EXISTS || apply == APPLY_NOTEXISTS)) && rel) {
 					sql_rel *o = rel;
 
 					/* remove the outer (running) project */
