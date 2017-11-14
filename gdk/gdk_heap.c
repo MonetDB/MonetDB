@@ -1003,7 +1003,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 	 */
 	ttrail = 0;
 	trail = 0;
-	for (block = hheader->head; block != 0; block = HEAP_index(heap, block, CHUNK)->next) {
+	for (block = hheader->head; block != 0; block = blockp->next) {
 		blockp = HEAP_index(heap, block, CHUNK);
 
 #ifdef TRACE
@@ -1169,5 +1169,120 @@ HEAP_free(Heap *heap, var_t mem)
 		 * Add block at head of free list.
 		 */
 		hheader->head = block;
+	}
+}
+
+void
+HEAP_recover(Heap *h, const var_t *offsets, BUN noffsets)
+{
+	HEADER *hheader;
+	CHUNK *blockp;
+	size_t dirty = 0;
+	var_t maxoff = 0;
+	BUN i;
+
+	if (!h->cleanhash)
+		return;
+	hheader = HEAP_index(h, 0, HEADER);
+	assert(h->free >= sizeof(HEADER));
+	assert(hheader->version == HEAPVERSION);
+	assert(h->size >= hheader->firstblock);
+	for (i = 0; i < noffsets; i++)
+		if (offsets[i] > maxoff)
+			maxoff = offsets[i];
+	assert(maxoff < h->free);
+	if (maxoff == 0) {
+		if (hheader->head != hheader->firstblock) {
+			hheader->head = hheader->firstblock;
+			dirty = sizeof(HEADER);
+		}
+		blockp = HEAP_index(h, hheader->firstblock, CHUNK);
+		if (blockp->next != 0 ||
+		    blockp->size != h->size - hheader->head) {
+			blockp->size = (size_t) (h->size - hheader->head);
+			blockp->next = 0;
+			dirty = hheader->firstblock + sizeof(CHUNK);
+		}
+	} else {
+		size_t block = maxoff - hheader->alignment;
+		size_t end = block + *HEAP_index(h, block, size_t);
+		size_t trail;
+
+		assert(end <= h->free);
+		if (end + sizeof(CHUNK) <= h->free) {
+			blockp = HEAP_index(h, end, CHUNK);
+			if (hheader->head <= end &&
+			    blockp->next == 0 &&
+			    blockp->size == h->free - end)
+				return;
+		} else if (hheader->head == 0) {
+			/* no free space after last allocated block
+			 * and no free list */
+			return;
+		}
+		block = hheader->head;
+		trail = 0;
+		while (block < maxoff && block != 0) {
+			blockp = HEAP_index(h, block, CHUNK);
+			trail = block;
+			block = blockp->next;
+		}
+		if (trail == 0) {
+			/* no free list */
+			if (end + sizeof(CHUNK) > h->free) {
+				/* no free space after last allocated
+				 * block */
+				if (hheader->head != 0) {
+					hheader->head = 0;
+					dirty = sizeof(HEADER);
+				}
+			} else {
+				/* there is free space after last
+				 * allocated block */
+				if (hheader->head != end) {
+					hheader->head = end;
+					dirty = sizeof(HEADER);
+				}
+				blockp = HEAP_index(h, end, CHUNK);
+				if (blockp->next != 0 ||
+				    blockp->size != h->free - end) {
+					blockp->next = 0;
+					blockp->size = h->free - end;
+					dirty = end + sizeof(CHUNK);
+				}
+			}
+		} else {
+			/* there is a free list */
+			blockp = HEAP_index(h, trail, CHUNK);
+			if (end + sizeof(CHUNK) > h->free) {
+				/* no free space after last allocated
+				 * block */
+				if (blockp->next != 0) {
+					blockp->next = 0;
+					dirty = trail + sizeof(CHUNK);
+				}
+			} else {
+				/* there is free space after last
+				 * allocated block */
+				if (blockp->next != end) {
+					blockp->next = end;
+					dirty = trail + sizeof(CHUNK);
+				}
+				blockp = HEAP_index(h, end, CHUNK);
+				if (blockp->next != 0 ||
+				    blockp->size != h->free - end) {
+					blockp->next = 0;
+					blockp->size = h->free - end;
+					dirty = end + sizeof(CHUNK);
+				}
+			}
+		}
+	}
+	h->cleanhash = 0;
+	if (dirty) {
+		if (h->storage == STORE_MMAP)
+			(void) MT_msync(h->base, dirty);
+		else
+			h->dirty = 1;
 	}
 }
