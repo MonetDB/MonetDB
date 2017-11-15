@@ -93,3 +93,4 @@ insert_into_multiple_subqueries.Bug-6448
 HAVE_SAMTOOLS?sqlsmith.Bug-6449
 HAVE_LIBPY?python_loader_clobbers_default_with_null.Bug-6464
 skip_problem_best_effort.Bug-6442
+date_to_str.Bug-6467
