@@ -129,7 +129,8 @@ SQLtransaction_begin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql->session->auto_commit = 0;
 	sql->session->ac_on_commit = 1;
 	sql->session->level = chain;
-	(void) mvc_trans(sql);
+	if(mvc_trans(sql) < 0)
+		throw(SQL, "sql.trans", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -154,7 +155,8 @@ SQLtransaction2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql->session->auto_commit = 0;
 	sql->session->ac_on_commit = 1;
 	sql->session->level = 0;
-	(void) mvc_trans(sql);
+	if(mvc_trans(sql) < 0)
+		throw(SQL, "sql.trans", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return msg;
 }
 

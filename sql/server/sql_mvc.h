@@ -136,7 +136,7 @@ extern void mvc_logmanager(void);
 extern void mvc_idlemanager(void);
 
 extern mvc *mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws);
-extern void mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars);
+extern int mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars);
 extern void mvc_destroy(mvc *c);
 
 extern int mvc_status(mvc *c);
@@ -150,7 +150,7 @@ extern int mvc_debug_on(mvc *m, int flag);
  */
 #define has_snapshots(tr) ((tr) && (tr)->parent && (tr)->parent->parent)
 
-extern void mvc_trans(mvc *c);
+extern int mvc_trans(mvc *c);
 extern int mvc_commit(mvc *c, int chain, const char *name);
 extern int mvc_rollback(mvc *c, int chain, const char *name);
 extern int mvc_release(mvc *c, const char *name);

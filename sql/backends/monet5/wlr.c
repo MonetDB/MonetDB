@@ -266,27 +266,30 @@ WLRprocess(void *arg)
 					sql->session->auto_commit = 0;
 					sql->session->ac_on_commit = 1;
 					sql->session->level = 0;
-					(void) mvc_trans(sql);
-					//printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
-					msg= runMAL(c,mb,0,0);
-					wlr_tag++;
-					WLRsetConfig( );
-					// ignore warnings
-					if (msg && strstr(msg,"WARNING"))
-						msg = MAL_SUCCEED;
-					if( msg != MAL_SUCCEED){
-						// they should always succeed
-						mnstr_printf(GDKerr,"ERROR in processing batch %d :%s\n", i, msg);
-						printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
-						mvc_rollback(sql,0,NULL);
-						// cleanup
-						fprintFunction(stderr,mb,0,63);
-						resetMalBlkAndFreeInstructions(mb, 1);
-						trimMalVariables(mb, NULL);
-						pc = 0;
-					} else
-					if( mvc_commit(sql, 0, 0) < 0)
-						mnstr_printf(GDKerr,"#wlr.process transaction commit failed");
+					if(mvc_trans(sql) < 0) {
+						mnstr_printf(GDKerr,"Allocation failure while starting the transaction \n");
+					} else {
+						//printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
+						msg= runMAL(c,mb,0,0);
+						wlr_tag++;
+						WLRsetConfig( );
+						// ignore warnings
+						if (msg && strstr(msg,"WARNING"))
+							msg = MAL_SUCCEED;
+						if( msg != MAL_SUCCEED){
+							// they should always succeed
+							mnstr_printf(GDKerr,"ERROR in processing batch %d :%s\n", i, msg);
+							printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
+							mvc_rollback(sql,0,NULL);
+							// cleanup
+							fprintFunction(stderr,mb,0,63);
+							resetMalBlkAndFreeInstructions(mb, 1);
+							trimMalVariables(mb, NULL);
+							pc = 0;
+						} else
+						if( mvc_commit(sql, 0, 0) < 0)
+							mnstr_printf(GDKerr,"#wlr.process transaction commit failed");
+					}
 				} else {
 					char line[PATHLENGTH];
 					snprintf(line, PATHLENGTH,"#wlr.process:typechecking failed '%s':\n",path);

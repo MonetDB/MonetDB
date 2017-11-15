@@ -87,7 +87,11 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		m->history = 0;
 		/* disable size header */
 		m->sizeheader = 0;
-		mvc_trans(m);
+		if(mvc_trans(m) < 0) {
+			mvc_destroy(m);
+			fprintf(stderr, "!mvc_init: failed to start transaction\n");
+			return -1;
+		}
 		s = m->session->schema = mvc_bind_schema(m, "sys");
 		assert(m->session->schema != NULL);
 
@@ -226,7 +230,7 @@ mvc_debug_on(mvc *m, int flg)
 	return 0;
 }
 
-void
+int
 mvc_trans(mvc *m)
 {
 	int schema_changed = 0, err = m->session->status;
@@ -240,11 +244,17 @@ mvc_trans(mvc *m)
 			if (m->qc)
 				qc_destroy(m->qc);
 			m->qc = qc_create(m->clientid, seqnr);
+			if (!m->qc) {
+				sql_trans_end(m->session);
+				store_unlock();
+				return -1;
+			}
 		} else { /* clean all but the prepared statements */
 			qc_clean(m->qc);
 		}
 	}
 	store_unlock();
+	return 0;
 }
 
 static sql_trans *
@@ -301,7 +311,7 @@ mvc_commit(mvc *m, int chain, const char *name)
 
 	assert(tr);
 	assert(m->session->active);	/* only commit an active transaction */
-	
+
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_commit %s\n", (name) ? name : "");
 
@@ -318,6 +328,12 @@ mvc_commit(mvc *m, int chain, const char *name)
 			fprintf(stderr, "#mvc_savepoint\n");
 		store_lock();
 		m->session->tr = sql_trans_create(m->session->stk, tr, name);
+		if(!m->session->tr) {
+			store_unlock();
+			(void) sql_error(m, 02, SQLSTATE(HY001) "Allocation failure while committing the transaction, will ROLLBACK instead");
+			mvc_rollback(m, chain, name);
+			return -1;
+		}
 		WLCcommit(m->clientid);
 		store_unlock();
 		m->type = Q_TRANS;
@@ -579,7 +595,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	return m;
 }
 
-void
+int
 mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 {
 	int i;
@@ -644,6 +660,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 	m->results = NULL;
 
 	scanner_init(&m->scanner, rs, ws);
+	return m->sa ? 0 : -1;
 }
 
 void

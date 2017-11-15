@@ -445,7 +445,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	}
 	if (msg){
 		freeException(msg);
-		throw(SQL, "SQLstatement", SQLSTATE(HY002) "Catalogue not available");
+		throw(SQL, "sql.statement", SQLSTATE(HY002) "Catalogue not available");
 	}
 
 	initSQLreferences();
@@ -455,7 +455,7 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	if (!o) {
 		if (inited)
 			SQLresetClient(c);
-		throw(SQL, "SQLstatement", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.statement", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	*o = *m;
 	/* hide query cache, this causes crashes in SQLtrans() due to uninitialized memory otherwise */
@@ -464,13 +464,23 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 	/* create private allocator */
 	m->sa = NULL;
 	SQLtrans(m);
+	if(*m->errstr) {
+		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
+			msg = createException(SQL, "sql.statement", "%s", m->errstr);
+		else
+			msg = createException(SQL, "sql.statement", SQLSTATE(42000) "%s", m->errstr);
+		*m->errstr=0;
+		if (inited)
+			SQLresetClient(c);
+		return msg;
+	}
 	status = m->session->status;
 
 	m->type = Q_PARSE;
 	be = sql;
 	sql = backend_create(m, c);
 	if( sql == NULL)
-		throw(SQL,"SQLstatement",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL,"sql.statement",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	sql->output_format = be->output_format;
 	if (!output) {
 		sql->output_format = OFMT_NONE;

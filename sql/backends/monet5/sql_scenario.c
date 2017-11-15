@@ -387,7 +387,10 @@ SQLtrans(mvc *m)
 	if (!m->session->active) {
 		sql_session *s;
 
-		mvc_trans(m);
+		if(mvc_trans(m) < 0) {
+			(void) sql_error(m, 02, SQLSTATE(HY001) "Allocation failure while starting the transaction");
+			return;
+		}
 		s = m->session;
 		if (!s->schema) {
 			if (s->schema_name)
@@ -470,7 +473,8 @@ SQLinitClient(Client c)
 	} else {
 		be = c->sqlcontext;
 		m = be->mvc;
-		mvc_reset(m, c->fdin, c->fdout, SQLdebug, NR_GLOBAL_VARS);
+		if(mvc_reset(m, c->fdin, c->fdout, SQLdebug, NR_GLOBAL_VARS) < 0)
+			throw(SQL,"sql.init", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		backend_reset(be);
 	}
 	if (m->session->tr)
@@ -976,6 +980,15 @@ SQLparser(Client c)
 	m->type = Q_PARSE;
 	if (be->language != 'X')
 		SQLtrans(m);
+	if(*m->errstr) {
+		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
+			msg = createException(PARSE, "SQLparser", "%s", m->errstr);
+		else
+			msg = createException(PARSE, "SQLparser", SQLSTATE(42000) "%s", m->errstr);
+		*m->errstr=0;
+		c->mode = FINISHCLIENT;
+		return msg;
+	}
 	pstatus = m->session->status;
 
 	/* sqlparse needs sql allocator to be available.  It can be NULL at
