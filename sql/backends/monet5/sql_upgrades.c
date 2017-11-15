@@ -1526,6 +1526,54 @@ sql_update_jul2017_sp2(Client c)
 	return err;		/* usually NULL */
 }
 
+static str
+sql_update_jul2017_sp3(Client c, mvc *sql)
+{
+	char *err = NULL;
+	sql_schema *sys;
+	sql_table *tab;
+	sql_column *col;
+	oid rid;
+
+	/* if there is no value "sys_update_schemas" in
+	 * sys.functions.name, we need to update the sys.functions
+	 * table */
+	sys = find_sql_schema(sql->session->tr, "sys");
+	tab = find_sql_table(sys, "functions");
+	col = find_sql_column(tab, "name");
+	rid = table_funcs.column_find_row(sql->session->tr, col, "sys_update_schemas", NULL);
+	if (rid == oid_nil) {
+		err = sql_fix_system_tables(c, sql);
+		if (err != NULL)
+			return err;
+	}
+	/* if there is no value "system_update_schemas" in
+	 * sys.triggers.name, we need to add the triggers */
+	tab = find_sql_table(sys, "triggers");
+	col = find_sql_column(tab, "name");
+	rid = table_funcs.column_find_row(sql->session->tr, col, "system_update_schemas", NULL);
+	if (rid == oid_nil) {
+		char *schema = stack_get_string(sql, "current_schema");
+		size_t bufsize = 1024, pos = 0;
+		char *buf = GDKmalloc(bufsize);
+		if (buf == NULL)
+			throw(SQL, "sql_update_jul2017_sp3", MAL_MALLOC_FAIL);
+		pos += snprintf(
+			buf + pos,
+			bufsize - pos,
+			"set schema \"sys\";\n"
+			"create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas();\n"
+			"create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables();\n");
+		if (schema)
+			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+		assert(pos < bufsize);
+		printf("Running database upgrade commands:\n%s\n", buf);
+		err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+		GDKfree(buf);
+	}
+	return err;
+}
+
 void
 SQLupgrades(Client c, mvc *m)
 {
@@ -1655,6 +1703,11 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_jul2017_sp2(c)) != NULL) {
+		fprintf(stderr, "!%s\n", err);
+		freeException(err);
+	}
+
+	if ((err = sql_update_jul2017_sp3(c, m)) != NULL) {
 		fprintf(stderr, "!%s\n", err);
 		freeException(err);
 	}
