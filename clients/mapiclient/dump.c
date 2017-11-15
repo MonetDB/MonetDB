@@ -1214,26 +1214,27 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole, i
 }
 
 static int
-dump_function(Mapi mid, stream *toConsole, const char *sname, const char *fname, int hashge)
+dump_function(Mapi mid, stream *toConsole, const char *fid, int hashge)
 {
 	MapiHdl hdl;
-	size_t qlen = 200 + strlen(sname) + strlen(fname);
+	size_t qlen = 200 + strlen(fid);
 	char *query = malloc(qlen);
 	const char *sep;
-	char *fid, *ffunc;
+	char *ffunc, *sname, *fname;
 	int flang, ftype;
 
-	snprintf(query, qlen, "select f.id, f.func, f.language, f.type from sys.functions f, sys.schemas s where f.schema_id = s.id and s.name = '%s' and f.name = '%s'", sname, fname);
+	snprintf(query, qlen, "SELECT f.id, f.func, f.language, f.type, s.name, f.name FROM sys.functions f, sys.schemas s WHERE f.schema_id = s.id AND f.id = %s", fid);
 	hdl = mapi_query(mid, query);
 	if (mapi_fetch_row(hdl) == 0) {
 		free(query);
 		mapi_close_handle(hdl);
 		return 0;	/* no such function, apparently */
 	}
-	fid = mapi_fetch_field(hdl, 0);
 	ffunc = mapi_fetch_field(hdl, 1);
 	flang = atoi(mapi_fetch_field(hdl, 2));
 	ftype = atoi(mapi_fetch_field(hdl, 3));
+	sname = mapi_fetch_field(hdl, 4);
+	fname = mapi_fetch_field(hdl, 5);
 	if (flang == 1 || flang == 2) {
 		/* all information is stored in the func column */
 		mnstr_printf(toConsole, "%s\n", ffunc);
@@ -1357,22 +1358,14 @@ dump_function(Mapi mid, stream *toConsole, const char *sname, const char *fname,
 int
 dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname)
 {
-	const char functions[] =
-		"SELECT s.name, f.name "
-		"FROM sys.schemas s, "
-		     "sys.functions f "
-		"WHERE s.id = f.schema_id AND "
-		      "f.id NOT IN (SELECT function_id FROM sys.systemfunctions) "
-		      "%s%s%s"
-		"ORDER BY f.func";
 	MapiHdl hdl;
 	char *q;
 	size_t l;
 	int hashge = has_hugeint(mid);
+	const char *fid;
 
 	if (fname != NULL) {
 		/* dump a single function */
-		int rc;
 		char *schema = NULL;
 
 		if (sname == NULL) {
@@ -1389,27 +1382,42 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 			}
 			sname = schema;
 		}
-		rc = dump_function(mid, toConsole, sname, fname, hashge);
+		l = 200 + strlen(sname) + strlen(fname);
+		q = malloc(l);
+		snprintf(q, l,
+			 "SELECT f.id "
+			 "FROM sys.schemas s, sys.functions f "
+			 "WHERE s.id = f.schema_id AND "
+			 "s.name = '%s' AND "
+			 "f.name = '%s' AND "
+			 "f.language > 0 "
+			 "ORDER BY f.func, f.id",
+			 sname, fname);
 		if (schema)
 			free(schema);
-		return rc;
+	} else {
+		l = 200 + (sname ? strlen(sname) : 0) + 100;
+		q = malloc(l);
+		snprintf(q, l,
+			 "SELECT f.id "
+			 "FROM sys.schemas s, "
+			 "sys.functions f "
+			 "WHERE s.id = f.schema_id AND "
+			 "f.id NOT IN (SELECT function_id FROM sys.systemfunctions) AND "
+			 "f.language > 0 "
+			 "%s%s%s"
+			 "ORDER BY f.func, f.id",
+			 sname ? "AND s.name = '" : "",
+			 sname ? sname : "",
+			 sname ? "' " : "");
 	}
-
-	l = sizeof(functions) + (sname ? strlen(sname) : 0) + 100;
-	q = malloc(l);
-	snprintf(q, l, functions,
-		 sname ? "AND s.name = '" : "",
-		 sname ? sname : "",
-		 sname ? "' " : "");
 	hdl = mapi_query(mid, q);
 	free(q);
 	if (hdl == NULL || mapi_error(mid))
 		goto bailout;
 	while (!mnstr_errnr(toConsole) && mapi_fetch_row(hdl) != 0) {
-		sname = mapi_fetch_field(hdl, 0);
-		fname = mapi_fetch_field(hdl, 1);
-
-		dump_function(mid, toConsole, sname, fname, hashge);
+		fid = mapi_fetch_field(hdl, 0);
+		dump_function(mid, toConsole, fid, hashge);
 	}
 	if (mapi_error(mid))
 		goto bailout;
@@ -1621,7 +1629,6 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 	MapiHdl hdl;
 	int create_hash_func = 0;
 	int rc = 0;
-	int hashge;
 
 	/* start a transaction for the dump */
 	if (!describe)
@@ -1857,8 +1864,6 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 	mapi_close_handle(hdl);
 	hdl = NULL;
 
-	hashge = has_hugeint(mid);
-
 	/* dump views, functions, and triggers */
 	if ((hdl = mapi_query(mid, views_functions_triggers)) == NULL ||
 	    mapi_error(mid))
@@ -1888,7 +1893,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 				     curschema);
 		}
 		if (type[0] == 'f')
-			dump_function(mid, toConsole, schema, name, hashge);
+			dump_functions(mid, toConsole, schema, name);
 		else
 			mnstr_printf(toConsole, "%s\n", func);
 	}

@@ -5166,6 +5166,8 @@ insert into sys.functions values (1386, 'copyfrom', 'importTable', 'sql', 0, 5, 
 insert into sys.args values (15965, 1386, 'res_0', 'table', 0, 0, 0, 0);
 insert into sys.args values (15966, 1386, 'arg_1', 'varchar', 0, 0, 1, 1);
 insert into sys.args values (15967, 1386, 'arg_2', 'varchar', 0, 0, 1, 2);
+insert into sys.functions values (1387, 'sys_update_schemas', 'update_schemas', 'sql', 0, 2, false, false, false, 2000);
+insert into sys.functions values (1388, 'sys_update_tables', 'update_tables', 'sql', 0, 2, false, false, false, 2000);
 insert into sys.functions values (61, 'not_unique', 'not_unique', 'sql', 0, 3, false, false, false, 2000);
 insert into sys.args values (15968, 61, 'res', 'boolean', 1, 0, 0, 0);
 insert into sys.args values (15969, 61, 'arg', 'oid', 63, 0, 1, 1);
@@ -5342,6 +5344,12 @@ grant execute on aggregate sys.median(hugeint) to public;
 grant execute on aggregate sys.quantile(hugeint, double) to public;
 grant execute on aggregate sys.corr(hugeint, hugeint) to public;
 grant execute on function json.filter(json, hugeint) to public;
+set schema "testschema";
+
+Running database upgrade commands:
+set schema "sys";
+create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas();
+create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables();
 set schema "testschema";
 
 Running database upgrade commands:
