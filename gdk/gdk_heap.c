@@ -1024,7 +1024,8 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		size_t newsize;
 
 		assert(heap->free + MAX(heap->free, nbytes) <= VAR_MAX);
-		newsize = (size_t) roundup_8(heap->free + MAX(heap->free, nbytes));
+		newsize = MIN(heap->free, (size_t) 1 << 20);
+		newsize = (size_t) roundup_8(heap->free + MAX(newsize, nbytes));
 		assert(heap->free <= VAR_MAX);
 		block = (size_t) heap->free;	/* current end-of-heap */
 
@@ -1032,8 +1033,7 @@ HEAP_malloc(Heap *heap, size_t nbytes)
 		fprintf(stderr, "#No block found\n");
 #endif
 
-		/* Double the size of the heap.
-		 * TUNE: increase heap by different amount. */
+		/* Increase the size of the heap. */
 		HEAPDEBUG fprintf(stderr, "#HEAPextend in HEAP_malloc %s " SZFMT " " SZFMT "\n", heap->filename, heap->size, newsize);
 		if (HEAPextend(heap, newsize, FALSE) != GDK_SUCCEED)
 			return 0;
