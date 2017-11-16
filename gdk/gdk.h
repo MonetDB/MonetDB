@@ -2370,7 +2370,7 @@ typedef struct threadStruct {
 	MT_Id pid;		/* physical thread id (pointer-sized) from the OS thread library */
 	str name;
 	ptr data[THREADDATA];
-	size_t sp;
+	uintptr_t sp;
 } ThreadRec, *Thread;
 
 

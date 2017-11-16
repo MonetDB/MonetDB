@@ -1224,13 +1224,13 @@ THRget(int tid)
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #pragma warning(disable : 4172)
 #endif
-static inline size_t
+static inline uintptr_t
 THRsp(void)
 {
 	int l = 0;
 	uintptr_t sp = (uintptr_t) (&l);
 
-	return (size_t) sp;
+	return sp;
 }
 
 static Thread
@@ -1283,7 +1283,7 @@ THRnew(const char *name)
 		s->data[0] = THRdata[0];
 		s->sp = THRsp();
 
-		PARDEBUG fprintf(stderr, "#%x " SZFMT " sp = " SZFMT "\n", s->tid, (size_t) pid, s->sp);
+		PARDEBUG fprintf(stderr, "#%x " SZFMT " sp = " SZFMT "\n", s->tid, (size_t) pid, (size_t) s->sp);
 		PARDEBUG fprintf(stderr, "#nrofthreads %d\n", GDKnrofthreads);
 
 		GDKnrofthreads++;
@@ -1313,7 +1313,7 @@ THRdel(Thread t)
 int
 THRhighwater(void)
 {
-	size_t c;
+	uintptr_t c;
 	Thread s;
 	size_t diff;
 	int rc = 0;
