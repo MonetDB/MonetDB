@@ -162,7 +162,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	if (sqlmorefun->colnames) {
 		n = sqlmorefun->colnames->h;
 		n2 = sqlmorefun->coltypes->h;
-		ncols = pyapi_list_length(sqlmorefun->colnames);
+		ncols = pyapi_list_length(sqlmorefun->coltypes);
 		if (ncols == 0) {
 			msg = createException(MAL, "pyapi.eval_loader",
 								  "No columns supplied.");
@@ -174,7 +174,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 								  SQLSTATE(HY001) MAL_MALLOC_FAIL "column list");
 			goto wrapup;
 		}
-		assert(pyapi_list_length(sqlmorefun->colnames) == pyapi_list_length(sqlmorefun->coltypes));
+		assert(pyapi_list_length(sqlmorefun->colnames) == pyapi_list_length(sqlmorefun->coltypes) * 2);
 		i = 0;
 		while (n) {
 			sql_subtype* tpe = (sql_subtype*) n2->data;
