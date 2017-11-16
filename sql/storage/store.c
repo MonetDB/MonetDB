@@ -3519,7 +3519,8 @@ sql_trans_create(backend_stack stk, sql_trans *parent, const char *name)
 #ifdef STORE_DEBUG
 			fprintf(stderr, "#new trans (%p)\n", tr);
 #endif
-			transactions++;
+			if(tr)
+				transactions++;
 		}
 	}
 	return tr;
@@ -5445,7 +5446,11 @@ sql_session_create(backend_stack stk, int ac )
 	s->schema_name = NULL;
 	s->active = 0;
 	s->stk = stk;
-	sql_session_reset(s, ac);
+	if(!sql_session_reset(s, ac)) {
+		sql_trans_destroy(s->tr);
+		_DELETE(s);
+		return NULL;
+	}
 	nr_sessions++;
 	return s;
 }
@@ -5462,17 +5467,18 @@ sql_session_destroy(sql_session *s)
 	nr_sessions--;
 }
 
-void
+int
 sql_session_reset(sql_session *s, int ac) 
 {
 	sql_schema *tmp;
+	char *def_schema_name = _STRDUP("sys");
 
-	if (!s->tr)
-		return;
+	if (!s->tr || !def_schema_name)
+		return 0;
 
 	/* TODO cleanup "dt" schema */
 	tmp = find_sql_schema(s->tr, "tmp");
-		
+
 	if (tmp->tables.set) {
 		node *n;
 		for (n = tmp->tables.set->h; n; n = n->next) {
@@ -5486,10 +5492,11 @@ sql_session_reset(sql_session *s, int ac)
 
 	if (s->schema_name)
 		_DELETE(s->schema_name);
-	s->schema_name = _STRDUP("sys");
+	s->schema_name = def_schema_name;
 	s->schema = NULL;
 	s->auto_commit = s->ac_on_commit = ac;
 	s->level = ISO_SERIALIZABLE;
+	return 1;
 }
 
 int

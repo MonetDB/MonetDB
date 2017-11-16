@@ -500,14 +500,14 @@ atom2sql(atom *a)
 	case EC_TIMESTAMP:
 		if (a->data.vtype == TYPE_str) {
 			if (a->data.val.sval)
-				sprintf(buf, "%s '%s'", a->tpe.type->sqlname, 
+				sprintf(buf, "%s '%s'", a->tpe.type->sqlname,
 					a->data.val.sval);
 			else
 				sprintf(buf, "NULL");
 		}
 		break;
-        default:
-                snprintf(buf, BUFSIZ, "atom2sql(TYPE_%d) not implemented", a->data.vtype);
+	default:
+		snprintf(buf, BUFSIZ, "atom2sql(TYPE_%d) not implemented", a->data.vtype);
 	}
 	return _STRDUP(buf);
 }

@@ -2882,7 +2882,12 @@ null:
 		/* replace by argument */
 		atom *a = atom_general(SA, sql_bind_localtype("void"), NULL);
 
-		sql_add_arg( m, a);
+		if(!sql_add_arg( m, a)) {
+			char *msg = sql_message(SQLSTATE(HY001) "allocation failure");
+			yyerror(m, msg);
+			_DELETE(msg);
+			YYABORT;
+		}
 		$$ = _symbol_create_list( SQL_COLUMN,
 			append_int(L(), m->argc-1));
 	   } else {
@@ -4157,22 +4162,27 @@ opt_alias_name:
 atom:
     literal
 	{ 
-	  if (m->emode == m_normal && m->caching) { 
-	  	/* replace by argument */
-	  	AtomNode *an = (AtomNode*)$1;
-	
-	  	sql_add_arg( m, an->a);
+	  if (m->emode == m_normal && m->caching) {
+		/* replace by argument */
+		AtomNode *an = (AtomNode*)$1;
+
+		if(!sql_add_arg( m, an->a)) {
+			char *msg = sql_message(SQLSTATE(HY001) "allocation failure");
+			yyerror(m, msg);
+			_DELETE(msg);
+			YYABORT;
+		}
 		an->a = NULL;
-	  	/* we miss use SQL_COLUMN also for param's, maybe
-	     		change SQL_COLUMN to SQL_IDENT */
- 	  	$$ = _symbol_create_list( SQL_COLUMN,
+		/* we miss use SQL_COLUMN also for param's, maybe
+				change SQL_COLUMN to SQL_IDENT */
+		$$ = _symbol_create_list( SQL_COLUMN,
 			append_int(L(), m->argc-1));
-	   } else {
-	  	AtomNode *an = (AtomNode*)$1;
+	  } else {
+		AtomNode *an = (AtomNode*)$1;
 		atom *a = an->a; 
 		an->a = atom_dup(SA, a); 
 		$$ = $1;
-	   }
+	  }
 	}
  ;
 
@@ -5133,7 +5143,7 @@ data_type:
 		_DELETE(msg);
 		YYABORT;
 	} else if (geoSubType == -1) {
-		char *msg = sql_message("allocation failure");
+		char *msg = sql_message(SQLSTATE(HY001) "allocation failure");
 		$$.type = NULL;
 		yyerror(m, msg);
 		_DELETE(msg);
@@ -5159,7 +5169,7 @@ subgeometry_type:
 		_DELETE(msg);
 		YYABORT;
 	} else if(subtype == -1) {
-		char *msg = sql_message("allocation failure");
+		char *msg = sql_message(SQLSTATE(HY001) "allocation failure");
 		yyerror(m, msg);
 		_DELETE(msg);
 		YYABORT;
@@ -5176,7 +5186,7 @@ subgeometry_type:
 		_DELETE(msg);
 		YYABORT;
 	} else if (subtype == -1) {
-		char *msg = sql_message("allocation failure");
+		char *msg = sql_message(SQLSTATE(HY001) "allocation failure");
 		yyerror(m, msg);
 		_DELETE(msg);
 		YYABORT;

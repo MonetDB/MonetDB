@@ -598,7 +598,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 int
 mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 {
-	int i;
+	int i, res = 1;
 	sql_trans *tr;
 
 	if (mvc_debug)
@@ -611,13 +611,15 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 			tr = sql_trans_destroy(tr);
 		store_unlock();
 	}
-	if (tr)
-		sql_session_reset(m->session, 1 /*autocommit on*/);
+	if (tr && !sql_session_reset(m->session, 1 /*autocommit on*/))
+		res = 0;
 
 	if (m->sa)
 		m->sa = sa_reset(m->sa);
-	else 
+	else
 		m->sa = sa_create();
+	if(!m->sa)
+		res = 0;
 
 	m->errstr[0] = '\0';
 
@@ -660,7 +662,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 	m->results = NULL;
 
 	scanner_init(&m->scanner, rs, ws);
-	return m->sa ? 0 : -1;
+	return res;
 }
 
 void

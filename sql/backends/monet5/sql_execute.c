@@ -922,7 +922,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		d = strtol(p, &p, 10);
 		p++; /* skip , */
 		s = strtol(p, &p, 10);
-		
+
 		sql_find_subtype(&t, tnme, d, s);
 		a = atom_general(m->sa, &t, NULL);
 		/* the argument list may have holes and maybe out of order, ie
@@ -931,7 +931,8 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		 * */
 		if (nr >= 0) { 
 			append(ops, exp_atom_ref(m->sa, nr, &t));
-			sql_set_arg(m, nr, a);
+			if(!sql_set_arg(m, nr, a))
+				return createException(SQL,"RAstatement2",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		} else {
 			if(!stack_push_var(m, vnme+1, &t))
 				return createException(SQL,"RAstatement2",SQLSTATE(HY001) MAL_MALLOC_FAIL);
