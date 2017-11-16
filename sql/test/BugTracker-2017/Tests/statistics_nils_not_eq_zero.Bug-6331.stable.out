@@ -77,55 +77,55 @@ Ready.
 % L3 # name
 % bigint # type
 % 1 # length
-[ 3	]
+[ 6	]
 #SELECT count(*) FROM sys.statistics WHERE nils <> 0 AND (minval = 'nil' OR maxval = 'nil');
 % sys.L4 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
-[ 2	]
+[ 5	]
 #SELECT count(*) FROM sys.statistics WHERE count > 0 AND (minval = 'nil' OR maxval = 'nil');
 % sys.L4 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
-[ 2	]
+[ 5	]
 #SELECT count(*) FROM sys.statistics WHERE nils <> 0;
 % sys.L4 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
-[ 3	]
+[ 6	]
 #SELECT count(*) FROM sys.statistics WHERE nils <> 0 AND (minval = 'nil' OR maxval = 'nil');
 % sys.L4 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
-[ 2	]
+[ 5	]
 #SELECT count(*) FROM sys.statistics WHERE count > 0 AND (minval = 'nil' OR maxval = 'nil');
 % sys.L4 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
-[ 2	]
+[ 5	]
 #SELECT count(*) FROM sys.statistics WHERE nils <> 0;
 % sys.L4 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
-[ 3	]
+[ 6	]
 #SELECT count(*) FROM sys.statistics WHERE nils <> 0 AND (minval = 'nil' OR maxval = 'nil');
 % sys.L4 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
-[ 2	]
+[ 5	]
 #SELECT count(*) FROM sys.statistics WHERE count > 0 AND (minval = 'nil' OR maxval = 'nil');
 % sys.L4 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
-[ 2	]
+[ 5	]
 
 # 13:40:17 >  
 # 13:40:17 >  "Done."
