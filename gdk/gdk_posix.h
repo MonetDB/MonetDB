@@ -11,10 +11,6 @@
 
 #include <sys/types.h>
 
-#ifdef HAVE_MALLOC_H
-# include <malloc.h>
-#endif
-
 #ifdef HAVE_FTIME
 #include <sys/timeb.h>
 #endif

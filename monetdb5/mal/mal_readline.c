@@ -13,9 +13,6 @@
 #include "mal_scenario.h"
 #include "mal_readline.h"
 #include "mal_debugger.h"
-#ifdef HAVE_STRINGS_H
-#include <strings.h>		/* for strncasecmp */
-#endif
 
 #ifndef S_ISCHR
 #define S_ISCHR(m)  (((m) & S_IFMT) == S_IFCHR)

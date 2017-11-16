@@ -30,12 +30,9 @@
 #include <string.h>
 #endif
 #ifdef HAVE_STRINGS_H
-#include <strings.h>
+#include <strings.h>		/* strcasecmp */
 #endif
 
-#ifdef HAVE_MALLOC_H
-#include <malloc.h>
-#endif
 #ifdef HAVE_LIBREADLINE
 #include <readline/readline.h>
 #include <readline/history.h>

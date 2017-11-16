@@ -33,14 +33,12 @@
 #define _CRT_SECURE_NO_DEPRECATE 1
 #endif
 
-#include <malloc.h>
-
+#include <stdlib.h>
 #if defined(_DEBUG) && defined(_CRTDBG_MAP_ALLOC)
 /* In this case, malloc and friends are redefined in crtdbg.h to debug
    versions.  We need to include stdlib.h and malloc.h first or else
    we get conflicting declarations.
 */
-#include <stdlib.h>
 #include <crtdbg.h>
 #endif
 
@@ -51,7 +49,6 @@
 
 #include <sys/types.h>
 #include <stdio.h>		/* NULL, printf etc. */
-#include <stdlib.h>
 #include <errno.h>
 #include <stdarg.h>		/* va_alist.. */
 
@@ -330,9 +327,6 @@
 
 /* Define to 1 if you have the `madvise' function. */
 /* #undef HAVE_MADVISE */
-
-/* Define to 1 if you have the <malloc.h> header file. */
-#define HAVE_MALLOC_H 1
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
@@ -639,9 +633,6 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1		/* generate by the Makefile */
 
-/* Define if you have mallinfo */
-/* #undef HAVE_USEFUL_MALLINFO */
-
 /* Define if you have the LibUriParser library */
 /* #undef HAVE_URIPARSER */
 
@@ -827,9 +818,6 @@
 	STACK_DIRECTION < 0 => grows toward lower addresses
 	STACK_DIRECTION = 0 => direction of growth unknown */
 /* #undef STACK_DIRECTION */
-
-/* Define to 1 if you have the ANSI C header files. */
-#define STDC_HEADERS 1
 
 /* read-only single-machine data */
 #define SYSCONFDIR PREFIX "\\etc"

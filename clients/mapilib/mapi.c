@@ -744,10 +744,6 @@
 # include <sys/uio.h>
 #endif
 
-#ifdef HAVE_MALLOC_H
-#include <malloc.h>
-#endif
-
 #include  <signal.h>
 #include  <string.h>
 #include  <memory.h>
