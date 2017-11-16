@@ -277,7 +277,8 @@ rel_with_query(mvc *sql, symbol *q )
 	symbol *select = d->next->data.sym;
 	sql_rel *rel;
 
-	stack_push_frame(sql, "WITH");
+	if(!stack_push_frame(sql, "WITH"))
+		return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	/* first handle all with's (ie inlined views) */
 	for (d = d->data.lval->h; d; d = d->next) {
 		symbol *sym = d->data.sym;
@@ -293,7 +294,10 @@ rel_with_query(mvc *sql, symbol *q )
 			stack_pop_frame(sql);
 			return NULL;
 		}
-		stack_push_rel_view(sql, name, nrel);
+		if(!stack_push_rel_view(sql, name, nrel)) {
+			stack_pop_frame(sql);
+			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
 		if (!is_project(nrel->op)) {
 			if (is_topn(nrel->op) || is_sample(nrel->op)) {
 				nrel = rel_project(sql->sa, nrel, rel_projections(sql, nrel, NULL, 1, 1));

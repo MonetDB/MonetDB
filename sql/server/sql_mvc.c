@@ -1258,10 +1258,9 @@ int
 mvc_check_dependency(mvc * m, int id, int type, list *ignore_ids)
 {
 	list *dep_list = NULL;
-	
+
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_check_dependency on %d\n", id);
-
 
 	switch(type) {
 		case OWNER_DEPENDENCY : 
@@ -1283,12 +1282,15 @@ mvc_check_dependency(mvc * m, int id, int type, list *ignore_ids)
 		default: 
 			dep_list =  sql_trans_get_dependencies(m->session->tr, id, COLUMN_DEPENDENCY, NULL);
 	}
-	
+
+	if(!dep_list)
+		return DEPENDENCY_CHECK_ERROR;
+
 	if ( list_length(dep_list) >= 2 ) {
 		list_destroy(dep_list);
 		return HAS_DEPENDENCY;
 	}
-	
+
 	list_destroy(dep_list);
 	return NO_DEPENDENCY;
 }
@@ -1371,13 +1373,20 @@ mvc_is_sorted(mvc *m, sql_column *col)
 }
 
 /* variable management */
-static void
+static sql_var*
 stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, sql_table *t, int view, int frame)
 {
-	sql_var *v;
-	if (var == sql->sizevars) {
-		sql->sizevars <<= 1;
-		sql->vars = RENEW_ARRAY(sql_var,sql->vars,sql->sizevars);
+	sql_var *v, *nvars;
+	int nextsize = sql->sizevars;
+	if (var == nextsize) {
+		nextsize <<= 1;
+		nvars = RENEW_ARRAY(sql_var,sql->vars,nextsize);
+		if(!nvars) {
+			return NULL;
+		} else {
+			sql->vars = nvars;
+			sql->sizevars = nextsize;
+		}
 	}
 	v = sql->vars+var;
 
@@ -1392,35 +1401,49 @@ stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, 
 		VALset(&sql->vars[var].a.data, tpe, (ptr) ATOMnilptr(tpe));
 		v->a.tpe = *type;
 	}
-	if (name)
+	if (name) {
 		v->name = _STRDUP(name);
+		if(!v->name)
+			return NULL;
+	}
+	return v;
 }
 
-void 
+sql_var*
 stack_push_var(mvc *sql, const char *name, sql_subtype *type)
 {
-	stack_set(sql, sql->topvars++, name, type, NULL, NULL, 0, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, type, NULL, NULL, 0, 0);
+	if(res)
+		sql->topvars++;
+	return res;
 }
 
-void 
+sql_var*
 stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql_subtype *type)
 {
-	stack_set(sql, sql->topvars++, name, type, var, NULL, 0, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, type, var, NULL, 0, 0);
+	if(res)
+		sql->topvars++;
+	return res;
 }
 
-void 
+sql_var*
 stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_table *t)
 {
-	stack_set(sql, sql->topvars++, name, NULL, var, t, 0, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, NULL, var, t, 0, 0);
+	if(res)
+		sql->topvars++;
+	return res;
 }
 
-
-void 
+sql_var*
 stack_push_rel_view(mvc *sql, const char *name, sql_rel *var)
 {
-	stack_set(sql, sql->topvars++, name, NULL, var, NULL, 1, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, NULL, var, NULL, 1, 0);
+	if(res)
+		sql->topvars++;
+	return res;
 }
-
 
 void
 stack_set_var(mvc *sql, const char *name, ValRecord *v)
@@ -1453,11 +1476,15 @@ stack_get_var(mvc *sql, const char *name)
 	return NULL;
 }
 
-void 
+sql_var*
 stack_push_frame(mvc *sql, const char *name)
 {
-	stack_set(sql, sql->topvars++, name, NULL, NULL, NULL, 0, 1);
-	sql->frame++;
+	sql_var* res = stack_set(sql, sql->topvars, name, NULL, NULL, NULL, 0, 1);
+	if(res) {
+		sql->topvars++;
+		sql->frame++;
+	}
+	return res;
 }
 
 void

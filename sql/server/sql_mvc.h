@@ -216,13 +216,13 @@ extern void mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, int dep
 extern int mvc_check_dependency(mvc * m, int id, int type, list *ignore_ids);
 
 /* variable management */
-extern void stack_push_var(mvc *sql, const char *name, sql_subtype *type);
-extern void stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql_subtype *type);
-extern void stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_table *t);
-extern void stack_push_rel_view(mvc *sql, const char *name, sql_rel *view);
+extern sql_var* stack_push_var(mvc *sql, const char *name, sql_subtype *type);
+extern sql_var* stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql_subtype *type);
+extern sql_var* stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_table *t);
+extern sql_var* stack_push_rel_view(mvc *sql, const char *name, sql_rel *view);
 extern void stack_update_rel_view(mvc *sql, const char *name, sql_rel *view);
 
-extern void stack_push_frame(mvc *sql, const char *name);
+extern sql_var* stack_push_frame(mvc *sql, const char *name);
 extern void stack_pop_frame(mvc *sql);
 extern void stack_pop_until(mvc *sql, int top);
 extern sql_subtype *stack_find_type(mvc *sql, const char *name);

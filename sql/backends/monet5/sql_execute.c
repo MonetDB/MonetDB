@@ -899,7 +899,8 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* keep copy of signature and relational expression */
 	snprintf(buf, BUFSIZ, "%s %s", *sig, *expr);
 
-	stack_push_frame(m, NULL);
+	if(!stack_push_frame(m, NULL))
+		return createException(SQL,"RAstatement2",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	ops = sa_list(m->sa);
 	while (c && *c && !isspace((unsigned char) *c)) {
 		char *vnme = c, *tnme;
@@ -932,7 +933,8 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			append(ops, exp_atom_ref(m->sa, nr, &t));
 			sql_set_arg(m, nr, a);
 		} else {
-			stack_push_var(m, vnme+1, &t);
+			if(!stack_push_var(m, vnme+1, &t))
+				return createException(SQL,"RAstatement2",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			append(ops, exp_var(m->sa, sa_strdup(m->sa, vnme+1), &t, m->frame));
 		}
 		c = strchr(p, (int)',');

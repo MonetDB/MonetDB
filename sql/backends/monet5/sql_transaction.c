@@ -36,10 +36,10 @@
 #include <orderidx.h>
 
 #define initcontext() \
-    if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)\
-        return msg;\
-    if ((msg = checkSQLContext(cntxt)) != NULL)\
-        return msg; \
+	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)\
+		return msg;\
+	if ((msg = checkSQLContext(cntxt)) != NULL)\
+		return msg; \
 	if (name && strcmp(name, str_nil) == 0)\
 		name = NULL;
 

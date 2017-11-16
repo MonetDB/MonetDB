@@ -281,9 +281,11 @@ SQLinit(void)
 	return MAL_SUCCEED;
 }
 
-#define SQLglobal(name, val) \
-	stack_push_var(sql, name, &ctype);	   \
-	stack_set_var(sql, name, VALset(&src, ctype.type->localtype, val));
+#define SQLglobal(name, val, failure)                                       \
+	if(stack_push_var(sql, name, &ctype))                                   \
+		stack_set_var(sql, name, VALset(&src, ctype.type->localtype, val)); \
+	else                                                                    \
+		failure++;                                                          \
 
 #define NR_GLOBAL_VARS 10
 /* NR_GLOBAL_VAR should match exactly the number of variables created
@@ -298,37 +300,38 @@ global_variables(mvc *sql, char *user, char *schema)
 	bit F = FALSE;
 	ValRecord src;
 	str opt;
+	int failure = 0;
 
 	typename = "int";
 	sql_find_subtype(&ctype, typename, 0, 0);
-	SQLglobal("debug", &sql->debug);
-	SQLglobal("cache", &sql->cache);
+	SQLglobal("debug", &sql->debug, failure);
+	SQLglobal("cache", &sql->cache, failure);
 
 	typename = "varchar";
 	sql_find_subtype(&ctype, typename, 1024, 0);
-	SQLglobal("current_schema", schema);
-	SQLglobal("current_user", user);
-	SQLglobal("current_role", user);
+	SQLglobal("current_schema", schema, failure);
+	SQLglobal("current_user", user, failure);
+	SQLglobal("current_role", user, failure);
 
 	/* inherit the optimizer from the server */
 	opt = GDKgetenv("sql_optimizer");
 	if (!opt)
 		opt = "default_pipe";
-	SQLglobal("optimizer", opt);
+	SQLglobal("optimizer", opt, failure);
 
 	typename = "sec_interval";
 	sql_find_subtype(&ctype, typename, inttype2digits(ihour, isec), 0);
-	SQLglobal("current_timezone", &sec);
+	SQLglobal("current_timezone", &sec, failure);
 
 	typename = "boolean";
 	sql_find_subtype(&ctype, typename, 0, 0);
-	SQLglobal("history", &F);
+	SQLglobal("history", &F, failure);
 
 	typename = "bigint";
 	sql_find_subtype(&ctype, typename, 0, 0);
-	SQLglobal("last_id", &sql->last_id);
-	SQLglobal("rowcnt", &sql->rowcnt);
-	return 0;
+	SQLglobal("last_id", &sql->last_id, failure);
+	SQLglobal("rowcnt", &sql->rowcnt, failure);
+	return failure;
 }
 
 #define TRANS_ABORTED SQLSTATE(25005) "Current transaction is aborted (please ROLLBACK)\n"
@@ -464,17 +467,18 @@ SQLinitClient(Client c)
 		m = mvc_create(c->idx, 0, SQLdebug, c->fdin, c->fdout);
 		if( m == NULL)
 			throw(SQL,"sql.initClient",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		global_variables(m, "monetdb", "sys");
+		if(global_variables(m, "monetdb", "sys"))
+			throw(SQL,"sql.initClient",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		if (isAdministrator(c) || strcmp(c->scenario, "msql") == 0)	/* console should return everything */
 			m->reply_size = -1;
 		be = (void *) backend_create(m, c);
 		if( be == NULL)
-			throw(SQL,"sql.init", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL,"sql.initClient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
 		be = c->sqlcontext;
 		m = be->mvc;
 		if(mvc_reset(m, c->fdin, c->fdout, SQLdebug, NR_GLOBAL_VARS) < 0)
-			throw(SQL,"sql.init", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(SQL,"sql.initClient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		backend_reset(be);
 	}
 	if (m->session->tr)
@@ -1145,16 +1149,20 @@ SQLparser(Client c)
 
 		if ((!caching(m) || !cachable(m, r)) && m->emode != m_prepare) {
 			char *q = query_cleaned(QUERY(m->scanner));
-
-			/* Query template should not be cached */
-			scanner_query_processed(&(m->scanner));
-
-			err = 0;
-			if (backend_callinline(be, c) < 0 ||
-			    backend_dumpstmt(be, c->curprg->def, r, 1, 0, q) < 0)
+			if(!q) {
 				err = 1;
-			else opt = 1;
-			GDKfree(q);
+				msg = createException(PARSE, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			} else {
+				/* Query template should not be cached */
+				scanner_query_processed(&(m->scanner));
+
+				err = 0;
+				if (backend_callinline(be, c) < 0 ||
+					backend_dumpstmt(be, c->curprg->def, r, 1, 0, q) < 0)
+					err = 1;
+				else opt = 1;
+				GDKfree(q);
+			}
 		} else {
 			/* Add the query tree to the SQL query cache
 			 * and bake a MAL program for it.

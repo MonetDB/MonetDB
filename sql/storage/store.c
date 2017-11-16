@@ -1024,6 +1024,9 @@ create_trans(sql_allocator *sa, backend_stack stk)
 {
 	sql_trans *t = ZNEW(sql_trans);
 
+	if(!t)
+		return NULL;
+
 	t->sa = sa;
 	t->name = NULL;
 	t->wtime = t->rtime = 0;
@@ -1432,12 +1435,16 @@ store_load(void) {
 
 #define FUNC_OIDS 2000
 	// TODO: Niels: Are we fine running this twice?
-	
+
 	/* we store some spare oids */
 	store_oid = FUNC_OIDS;
 
-	sequences_init();
+	if(!sequences_init())
+		return -1;
 	gtrans = tr = create_trans(sa, backend_stk);
+	if(!gtrans)
+		return -1;
+
 	transactions = 0;
 	active_sessions = sa_list(sa);
 
@@ -3609,7 +3616,7 @@ sql_trans_commit(sql_trans *tr)
 }
 
 
-static void
+static int
 sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type)
 {
 	int dep_id=0, t_id = -1;
@@ -3617,7 +3624,12 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type
 	sql_table *t = NULL;
 
 	list *dep = sql_trans_get_dependencies(tr, id, type, NULL);
-	node *n = dep->h;
+	node *n;
+
+	if(!dep)
+		return DEPENDENCY_CHECK_ERROR;
+
+	n = dep->h;
 
 	while (n) {
 		dep_id = *(int*) n->data;
@@ -3664,10 +3676,11 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type
 							break;
 			}
 		}
-		
-		n = n->next->next;	
+
+		n = n->next->next;
 	}
 	list_destroy(dep);
+	return DEPENDENCY_CHECK_OK;
 }
 
 static void
@@ -4183,7 +4196,7 @@ sql_trans_drop_func(sql_trans *tr, sql_schema *s, int id, int drop_action)
 		// FIXME unchecked_malloc MNEW can return NULL
 		int *local_id = MNEW(int);
 
-		if (! tr->dropped) 
+		if (! tr->dropped)
 			tr->dropped = list_create((fdestroy) GDKfree);
 		*local_id = func->base.id;
 		list_append(tr->dropped, local_id);
@@ -4212,7 +4225,7 @@ sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list * list_func, int drop
 	for (n = list_func->h; n ; n = n->next ) {
 		func = (sql_func *) n->data;
 
-		if (! list_find_id(tr->dropped, func->base.id)){ 
+		if (! list_find_id(tr->dropped, func->base.id)){
 			// FIXME unchecked_malloc MNEW can return NULL
 			int *local_id = MNEW(int);
 
@@ -4221,12 +4234,12 @@ sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list * list_func, int drop
 			sql_trans_drop_func(tr, s, func->base.id, drop_action ? DROP_CASCADE : DROP_RESTRICT);
 		}
 	}
-	
+
 	if ( tr->dropped) {
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
-	
+
 }
 
 sql_schema *
