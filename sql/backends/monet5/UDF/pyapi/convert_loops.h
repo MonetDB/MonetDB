@@ -434,7 +434,7 @@ convert_and_append(BAT* b, const char* text, bit force) {
 			NP_COL_BAT_STR_LOOP(b, unsigned long, "%lu");                      \
 			break;                                                             \
 		case NPY_ULONGLONG:                                                    \
-			NP_COL_BAT_STR_LOOP(b, unsigned long long, ULLFMT);                \
+			NP_COL_BAT_STR_LOOP(b, ulng, ULLFMT);                              \
 			break;                                                             \
 		case NPY_FLOAT16:                                                      \
 		case NPY_FLOAT:                                                        \
