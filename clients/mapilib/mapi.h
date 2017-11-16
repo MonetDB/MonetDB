@@ -10,6 +10,7 @@
 #define _MAPI_H_INCLUDED 1
 
 #include <stdio.h>		/* for FILE * */
+#include <stdint.h>		/* for int64_t */
 
 #define MAPI_AUTO	0	/* automatic type detection */
 #define MAPI_TINY	1
@@ -92,16 +93,6 @@ extern "C" {
 #endif
 #else
 #define mapi_export extern
-#endif
-
-#if defined(_MSC_VER)
-/* Microsoft & Intel compilers under Windows have type __int64 */
-typedef unsigned __int64 mapi_uint64;
-typedef __int64 mapi_int64;
-#else
-/* gcc and other (Unix-) compilers (usually) have type long long */
-typedef unsigned long long mapi_uint64;
-typedef long long mapi_int64;
 #endif
 
 /* three structures used for communicating date/time information */
@@ -190,15 +181,15 @@ mapi_export MapiHdl mapi_stream_query(Mapi mid, const char *cmd, int windowsize)
 mapi_export MapiMsg mapi_cache_limit(Mapi mid, int limit);
 mapi_export MapiMsg mapi_cache_shuffle(MapiHdl hdl, int percentage);
 mapi_export MapiMsg mapi_cache_freeup(MapiHdl hdl, int percentage);
-mapi_export MapiMsg mapi_seek_row(MapiHdl hdl, mapi_int64 rowne, int whence);
+mapi_export MapiMsg mapi_seek_row(MapiHdl hdl, int64_t rowne, int whence);
 
 mapi_export MapiMsg mapi_timeout(Mapi mid, unsigned int time);
 mapi_export int mapi_fetch_row(MapiHdl hdl);
-mapi_export mapi_int64 mapi_fetch_all_rows(MapiHdl hdl);
+mapi_export int64_t mapi_fetch_all_rows(MapiHdl hdl);
 mapi_export int mapi_get_field_count(MapiHdl hdl);
-mapi_export mapi_int64 mapi_get_row_count(MapiHdl hdl);
-mapi_export mapi_int64 mapi_get_last_id(MapiHdl hdl);
-mapi_export mapi_int64 mapi_rows_affected(MapiHdl hdl);
+mapi_export int64_t mapi_get_row_count(MapiHdl hdl);
+mapi_export int64_t mapi_get_last_id(MapiHdl hdl);
+mapi_export int64_t mapi_rows_affected(MapiHdl hdl);
 
 mapi_export char *mapi_fetch_field(MapiHdl hdl, int fnr);
 mapi_export size_t mapi_fetch_field_len(MapiHdl hdl, int fnr);

@@ -1296,7 +1296,7 @@ SERVERget_row_count(lng *ret, int *key){
 	Mapi mid;
 	int i;
 	accessTest(*key, "get_row_count");
-	*ret= mapi_get_row_count(SERVERsessions[i].hdl);
+	*ret= (lng) mapi_get_row_count(SERVERsessions[i].hdl);
 	if( mapi_error(mid) )
 		throw(MAL, "mapi.get_row_count", "%s",
 			mapi_result_error(SERVERsessions[i].hdl));
@@ -1320,7 +1320,7 @@ SERVERrows_affected(lng *ret, int *key){
 	Mapi mid;
 	int i;
 	accessTest(*key, "rows_affected");
-	*ret= mapi_rows_affected(SERVERsessions[i].hdl);
+	*ret= (lng) mapi_rows_affected(SERVERsessions[i].hdl);
 	return MAL_SUCCEED;
 }
 
@@ -1338,7 +1338,7 @@ SERVERfetch_all_rows(lng *ret, int *key){
 	Mapi mid;
 	int i;
 	accessTest(*key, "fetch_all_rows");
-	*ret= mapi_fetch_all_rows(SERVERsessions[i].hdl);
+	*ret= (lng) mapi_fetch_all_rows(SERVERsessions[i].hdl);
 	return MAL_SUCCEED;
 }
 
