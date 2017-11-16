@@ -7,7 +7,7 @@ from
       from 
         sys.spatial_ref_sys as sample_0
       where true
-      limit 134) as subq_0
+      limit 14) as subq_0
 where (true)
   or ((select pc from sys.tracelog)
        is not NULL);

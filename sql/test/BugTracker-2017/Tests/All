@@ -62,7 +62,7 @@ type-resolution-error.Bugs-6313
 lateral02.Bug-6314
 exist-bigint-missing.Bug-6315
 coalesc-limit.Bug-6316
-limit.Bug-6322
+HAVE_GEOM?limit.Bug-6322
 simplify_math.Bug-6324
 HAVE_GEOM?push_subslice.Bug-6322
 create_table_as-missing_not_null.Bug-6329

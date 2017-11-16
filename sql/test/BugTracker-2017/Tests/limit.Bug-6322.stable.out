@@ -1,0 +1,102 @@
+stdout of test 'limit.Bug-6322` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 15:23:44 >  
+# 15:23:44 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39066" "--set" "mapi_usock=/var/tmp/mtest-7612/.s.monetdb.39066" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2017" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 15:23:44 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 31.312 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://catskill.da.cwi.nl:39066/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-7612/.s.monetdb.39066
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python2 module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 15:23:45 >  
+# 15:23:45 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7612" "--port=39066"
+# 15:23:45 >  
+
+#select
+#  subq_0.c3 as c2
+#from 
+#  (select  
+#        sample_0.proj4text as c3,
+#        sample_0.auth_name as c7
+#      from 
+#        sys.spatial_ref_sys as sample_0
+#      where true
+#      limit 14) as subq_0
+#where (true)
+#  or ((select pc from sys.tracelog)
+#       is not NULL);
+% .L23 # table_name
+% c2 # name
+% varchar # type
+% 93 # length
+[ "+proj=longlat +ellps=bessel +towgs84=595.48,121.69,515.35,4.115,-2.9383,0.853,-3.408 +no_defs"	]
+[ "+proj=longlat +ellps=aust_SA +no_defs"	]
+[ "+proj=longlat +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +no_defs"	]
+[ "+proj=longlat +ellps=bessel +towgs84=682,-203,480,0,0,0,0 +no_defs"	]
+[ "+proj=longlat +ellps=airy +no_defs"	]
+[ "+proj=longlat +ellps=mod_airy +no_defs"	]
+[ "+proj=longlat +ellps=bessel +no_defs"	]
+[ "+proj=longlat +a=6377492.018 +b=6356173.508712696 +no_defs"	]
+[ "+proj=longlat +ellps=bess_nam +no_defs"	]
+[ "+proj=longlat +a=6378293.645208759 +b=6356617.987679838 +no_defs"	]
+[ "+proj=longlat +ellps=clrk66 +no_defs"	]
+[ "+proj=longlat +a=6378450.047548896 +b=6356826.621488444 +no_defs"	]
+
+# 15:23:45 >  
+# 15:23:45 >  "Done."
+# 15:23:45 >  
+
