@@ -24,6 +24,7 @@ Ready.
 # 15:20:23 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5456" "--port=32985"
 # 15:20:23 >  
 
+#drop table if exists t;
 #start transaction;
 #create table t ( c1 int , c2 int );
 #copy 1 records into t (c1) from stdin (c1,c2) best effort;

@@ -1,3 +1,4 @@
+drop table if exists t;
 
 start transaction;
 create table t ( c1 int , c2 int );
