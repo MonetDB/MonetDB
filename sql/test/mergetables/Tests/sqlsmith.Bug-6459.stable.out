@@ -47,7 +47,7 @@ Ready.
 #            where false) then ref_4.auth_srid else ref_4.auth_srid end
 % .L154 # table_name
 % c0 # name
-% bigint # type
+% int # type
 % 1 # length
 #select
 #  subq_0.c0 as c0
@@ -73,7 +73,7 @@ Ready.
 #          select
 % .L364 # table_name
 % c0 # name
-% bigint # type
+% int # type
 % 1 # length
 #select
 #  cast(coalesce(cast(coalesce(subq_0.c0,
