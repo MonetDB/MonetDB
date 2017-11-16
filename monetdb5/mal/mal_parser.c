@@ -81,11 +81,11 @@ parseError(Client cntxt, str msg)
 	ssize_t i;
 
 	s= buf;
-    	for (t = l; *t && *t != '\n' && s < buf+sizeof(buf)-4; t++) {
-        	*s++ = *t;
-    	}
-    	*s++ = '\n';
-    	*s = 0;
+	for (t = l; *t && *t != '\n' && s < buf+sizeof(buf)-4; t++) {
+		*s++ = *t;
+	}
+	*s++ = '\n';
+	*s = 0;
 	line = createException( SYNTAX, "parseError", "%s", buf);
 
 	/* produce the position marker*/
@@ -1458,12 +1458,19 @@ parseEnd(Client cntxt)
 				errors = new;
 			}
 		}
-		
-        	if (cntxt->backup) {
-            		cntxt->curprg = cntxt->backup;
-            		cntxt->backup = 0;
-        	} else {
-			(void) MSinitClientPrg(cntxt,cntxt->curmodule->name,"main");
+
+		if (cntxt->backup) {
+			cntxt->curprg = cntxt->backup;
+			cntxt->backup = 0;
+		} else {
+			str msg;
+			if((msg = MSinitClientPrg(cntxt,cntxt->curmodule->name,"main")) != MAL_SUCCEED) {
+				if(!errors)
+					cntxt->curprg->def->errors = msg;
+				else
+					GDKfree(msg);
+				return 1;
+			}
 		}
 		// pass collected errors to context
 		assert(cntxt->curprg->def->errors == NULL);

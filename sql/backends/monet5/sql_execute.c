@@ -573,7 +573,9 @@ SQLstatementIntern(Client c, str *expr, str nme, bit execute, bit output, res_ta
 		 * optimize and produce code.
 		 * We don't search the cache for a previous incarnation yet.
 		 */
-		MSinitClientPrg(c, "user", nme);
+		if((msg = MSinitClientPrg(c, "user", nme)) != MAL_SUCCEED) {
+			goto endofcompile;
+		}
 		oldvtop = c->curprg->def->vtop;
 		oldstop = c->curprg->def->stop;
 		r = sql_symbol2relation(m, m->sym);
@@ -840,7 +842,10 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (*opt)
 			rel = rel_optimizer(m, rel);
 
-		MSinitClientPrg(c, "user", "test");
+		if ((msg = MSinitClientPrg(c, "user", "test")) != MAL_SUCCEED) {
+			rel_destroy(rel);
+			return msg;
+		}
 
 		/* generate MAL code, ignoring any code generation error */
 		if (backend_callinline(b, c) < 0 ||

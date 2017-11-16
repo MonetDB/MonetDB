@@ -372,10 +372,13 @@ char *symbol2string(mvc *sql, symbol *se, char **err)
 		const char *seq = qname_table(se->data.lval);
 		const char *sname = qname_schema(se->data.lval);
 		const char *s;
-		
+
 		if (!sname)
 			sname = sql->session->schema->base.name;
-		len = snprintf( buf+len, BUFSIZ-len, "next value for \"%s\".\"%s\"", sname, s=sql_escape_ident(seq)); 
+		s = sql_escape_ident(seq);
+		if(!s)
+			return NULL;
+		len = snprintf( buf+len, BUFSIZ-len, "next value for \"%s\".\"%s\"", sname, s);
 		c_delete(s);
 	}	break;
 	case SQL_COLUMN: {

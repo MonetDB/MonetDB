@@ -649,11 +649,20 @@ main(int argc, char **av)
 		return 0;
 	}
 
-	MSinitClientPrg(mal_clients, "user", "main");
+	if((err = MSinitClientPrg(mal_clients, "user", "main")) != MAL_SUCCEED) {
+		msab_registerStop();
+		GDKfatal("%s", err);
+		GDKfree(err);
+	}
 	if (dbinit == NULL)
 		dbinit = GDKgetenv("dbinit");
-	if (dbinit)
-		callString(mal_clients, dbinit, listing);
+	if (dbinit) {
+		if((err = callString(mal_clients, dbinit, listing)) != MAL_SUCCEED) {
+			msab_registerStop();
+			GDKfatal("%s", err);
+			GDKfree(err);
+		}
+	}
 
 	emergencyBreakpoint();
 	for (i = 0; monet_script[i]; i++) {
