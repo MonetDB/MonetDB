@@ -407,6 +407,113 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, int force)
 	return GDK_FAIL;
 }
 
+static gdk_return
+append_varsized_bat(BAT *b, BAT *n, BAT *s)
+{
+	BATiter ni;
+	BUN start, end, cnt, r;
+	const oid *restrict cand = NULL, *candend = NULL;
+
+	/* only transient bats can use some other bat's vheap */
+	assert(b->batRole == TRANSIENT || b->tvheap->parentid == b->batCacheid);
+	/* make sure the bats use var_t */
+	assert(b->twidth == n->twidth);
+	assert(b->twidth == SIZEOF_VAR_T);
+	if (n->batCount == 0 || (s && s->batCount == 0))
+		return GDK_SUCCEED;
+	CANDINIT(n, s, start, end, cnt, cand, candend);
+	cnt = cand ? (BUN) (candend - cand) : end - start;
+	if (cnt == 0)
+		return GDK_SUCCEED;
+	if (BATcount(b) == 0 &&
+	    b->batRole == TRANSIENT &&
+	    n->batRestricted == BAT_READ &&
+	    b->tvheap != n->tvheap) {
+		/* if b is still empty, in the transient farm, and n
+		 * is read-only, we replace b's vheap with a reference
+		 * to n's */
+		if (b->tvheap->parentid != b->batCacheid) {
+			BBPunshare(b->tvheap->parentid);
+		} else {
+			HEAPfree(b->tvheap, 1);
+			GDKfree(b->tvheap);
+		}
+		BBPshare(n->tvheap->parentid);
+		b->tvheap = n->tvheap;
+	}
+	if (b->tvheap == n->tvheap) {
+		/* if b and n use the same vheap, we only need to copy
+		 * the offsets from n to b */
+		HASHdestroy(b);	/* not maintaining, so destroy it */
+		if (cand == NULL) {
+			/* fast memcpy since we copy a consecutive
+			 * chunk of memory */
+			memcpy(Tloc(b, BUNlast(b)),
+			       Tloc(n, start),
+			       cnt * b->twidth);
+		} else {
+			var_t *restrict dst = (var_t *) Tloc(b, BUNlast(b));
+			oid hseq = n->hseqbase;
+			const var_t *restrict src = (const var_t *) Tloc(n, 0);
+			while (cand < candend)
+				*dst++ = src[*cand++ - hseq];
+		}
+		BATsetcount(b, BATcount(b) + cnt);
+		return GDK_SUCCEED;
+	}
+	/* b and n do not share their vheap, so we need to copy data */
+	if (b->tvheap->parentid != b->batCacheid) {
+		/* if b shares its vheap with some other bat, unshare it */
+		Heap *h = GDKzalloc(sizeof(Heap));
+		if (h == NULL)
+			return GDK_FAIL;
+		h->parentid = b->batCacheid;
+		h->farmid = BBPselectfarm(b->batRole, b->ttype, varheap);
+		if (b->tvheap->filename) {
+			const char *nme = BBP_physical(b->batCacheid);
+			h->filename = GDKfilepath(NOFARM, NULL, nme, "theap");
+			if (h->filename == NULL) {
+				GDKfree(h);
+				return GDK_FAIL;
+			}
+		}
+		if (HEAPcopy(h, b->tvheap) != GDK_SUCCEED) {
+			HEAPfree(h, 1);
+			GDKfree(h);
+			return GDK_FAIL;
+		}
+		BBPunshare(b->tvheap->parentid);
+		b->tvheap = h;
+	}
+	/* copy data from n to b */
+	ni = bat_iterator(n);
+	r = BUNlast(b);
+	if (cand) {
+		oid hseq = n->hseqbase;
+		while (cand < candend) {
+			const void *t = BUNtvar(ni, *cand - hseq);
+			bunfastapp_nocheck(b, r, t, Tsize(b));
+			HASHins(b, r, t);
+			r++;
+			cand++;
+		}
+	} else {
+		while (start < end) {
+			const void *t = BUNtvar(ni, start);
+			bunfastapp_nocheck(b, r, t, Tsize(b));
+			HASHins(b, r, t);
+			r++;
+			start++;
+		}
+	}
+	return GDK_SUCCEED;
+
+      bunins_failed:
+	if (b->tunique)
+		BBPunfix(s->batCacheid);
+	return GDK_FAIL;
+}
+
 /* Append the contents of BAT n (subject to the optional candidate
  * list s) to BAT b.  If b is empty, b will get the seqbase of s if it
  * was passed in, and else the seqbase of n. */
@@ -421,9 +528,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 		return GDK_SUCCEED;
 	}
 	assert(b->batCacheid > 0);
-	/* almost: assert(!isVIEW(b)); */
-	assert(b->theap.parentid == 0 &&
-	       (b->tvheap == NULL || b->tvheap->parentid == b->batCacheid || b->ttype == TYPE_str));
+	assert(b->theap.parentid == 0);
 
 	ALIGNapp(b, "BATappend", force, GDK_FAIL);
 	BATcompatible(b, n, GDK_FAIL, "BATappend");
@@ -605,9 +710,14 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 				BBPunfix(s->batCacheid);
 			return GDK_FAIL;
 		}
+	} else if (ATOMvarsized(b->ttype)) {
+		if (append_varsized_bat(b, n, s) != GDK_SUCCEED) {
+			if (b->tunique)
+				BBPunfix(s->batCacheid);
+			return GDK_FAIL;
+		}
 	} else {
-		if (!ATOMvarsized(b->ttype) &&
-		    BATatoms[b->ttype].atomFix == NULL &&
+		if (BATatoms[b->ttype].atomFix == NULL &&
 		    b->ttype != TYPE_void &&
 		    n->ttype != TYPE_void &&
 		    cand == NULL) {
