@@ -643,10 +643,10 @@ main(int argc, char *argv[])
 	snprintf(mapi_usock, sizeof(mapi_usock), "%s/" MERO_SOCK "%d",
 			p, port);
 
-	if ((unlink(control_usock) == -1 && errno != ENOENT) ||
-		(unlink(mapi_usock) == -1 && errno != ENOENT)) {
-		/* cannot unlink socket files */
-		Mfprintf(stderr, "cannot unlink socket files\n");
+	if ((remove(control_usock) != 0 && errno != ENOENT) ||
+		(remove(mapi_usock) != 0 && errno != ENOENT)) {
+		/* cannot remove socket files */
+		Mfprintf(stderr, "cannot remove socket files\n");
 		MERO_EXIT_CLEAN(1);
 	}
 
@@ -900,11 +900,11 @@ main(int argc, char *argv[])
 	}
 
 	/* control channel is already closed at this point */
-	if (unsock != -1 && unlink(control_usock) == -1)
-		Mfprintf(stderr, "unable to unlink control socket '%s': %s\n",
+	if (unsock != -1 && remove(control_usock) != 0)
+		Mfprintf(stderr, "unable to remove control socket '%s': %s\n",
 				control_usock, strerror(errno));
-	if (socku != -1 && unlink(mapi_usock) == -1)
-		Mfprintf(stderr, "unable to unlink mapi socket '%s': %s\n",
+	if (socku != -1 && remove(mapi_usock) != 0)
+		Mfprintf(stderr, "unable to remove mapi socket '%s': %s\n",
 				mapi_usock, strerror(errno));
 
 	if (e != NO_ERR) {
@@ -977,7 +977,7 @@ shutdown:
 
 	/* remove files that suggest our existence */
 	if (pidfilename != NULL) {
-		unlink(pidfilename);
+		remove(pidfilename);
 	}
 
 	/* mostly for valgrind... */

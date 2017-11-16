@@ -3600,10 +3600,10 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 
 		/* step 1: remove the X.new file that is going to be
 		 * overridden by X */
-		if (unlink(dstpath) < 0 && errno != ENOENT) {
+		if (remove(dstpath) != 0 && errno != ENOENT) {
 			/* if it exists and cannot be removed, all
 			 * this is going to fail */
-			GDKsyserror("force_move: unlink(%s)\n", dstpath);
+			GDKsyserror("force_move: remove(%s)\n", dstpath);
 			GDKfree(dstpath);
 			return GDK_FAIL;
 		}
@@ -3612,9 +3612,9 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 		/* step 2: now remove the .kill file. This one is
 		 * crucial, otherwise we'll never finish recovering */
 		killfile = GDKfilepath(farmid, srcdir, name, NULL);
-		if (unlink(killfile) < 0) {
+		if (remove(killfile) != 0) {
 			ret = GDK_FAIL;
-			GDKsyserror("force_move: unlink(%s)\n", killfile);
+			GDKsyserror("force_move: remove(%s)\n", killfile);
 		}
 		GDKfree(killfile);
 		return ret;
@@ -3629,9 +3629,9 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 		 * doesn't exist */
 		dstpath = GDKfilepath(farmid, dstdir, name, NULL);
 		srcpath = GDKfilepath(farmid, srcdir, name, NULL);
-		if (unlink(dstpath) < 0)	/* clear destination */
+		if (remove(dstpath) != 0)	/* clear destination */
 			ret = GDK_FAIL;
-		IODEBUG fprintf(stderr, "#unlink %s = %d\n", dstpath, (int) ret);
+		IODEBUG fprintf(stderr, "#remove %s = %d\n", dstpath, (int) ret);
 
 		(void) GDKcreatedir(dstdir); /* if fails, move will fail */
 		ret = GDKmove(farmid, srcdir, name, NULL, dstdir, name, NULL);
@@ -3695,8 +3695,8 @@ BBPrecover(int farmid)
 				continue;
 			fn = GDKfilepath(farmid, BAKDIR, dent->d_name, NULL);
 			if (fn) {
-				int uret = unlink(fn);
-				IODEBUG fprintf(stderr, "#unlink %s = %d\n",
+				int uret = remove(fn);
+				IODEBUG fprintf(stderr, "#remove %s = %d\n",
 						fn, uret);
 				GDKfree(fn);
 			}
@@ -3955,11 +3955,11 @@ BBPdiskscan(const char *parent, size_t baseoff)
 			break;
 		}
 		if (delete) {
-			if (unlink(fullname) < 0 && errno != ENOENT) {
-				GDKsyserror("BBPdiskscan: unlink(%s)", fullname);
+			if (remove(fullname) != 0 && errno != ENOENT) {
+				GDKsyserror("BBPdiskscan: remove(%s)", fullname);
 				continue;
 			}
-			IODEBUG fprintf(stderr, "#BBPcleanup: unlink(%s) = 0\n", fullname);
+			IODEBUG fprintf(stderr, "#BBPcleanup: remove(%s) = 0\n", fullname);
 		}
 	}
 	closedir(dirp);

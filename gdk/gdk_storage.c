@@ -161,13 +161,13 @@ GDKremovedir(int farmid, const char *dirname)
 			continue;
 		}
 		path = GDKfilepath(farmid, dirname, dent->d_name, NULL);
-		ret = unlink(path);
-		IODEBUG fprintf(stderr, "#unlink %s = %d\n", path, ret);
+		ret = remove(path);
+		IODEBUG fprintf(stderr, "#remove %s = %d\n", path, ret);
 		GDKfree(path);
 	}
 	closedir(dirp);
 	ret = rmdir(dirnamestr);
-	if (ret < 0)
+	if (ret != 0)
 		GDKsyserror("GDKremovedir: rmdir(%s) failed.\n", dirnamestr);
 	IODEBUG fprintf(stderr, "#rmdir %s = %d\n", dirnamestr, ret);
 	GDKfree(dirnamestr);
@@ -263,7 +263,7 @@ GDKfileopen(int farmid, const char * dir, const char *name, const char *extensio
 	return NULL;
 }
 
-/* unlink the file */
+/* remove the file */
 gdk_return
 GDKunlink(int farmid, const char *dir, const char *nme, const char *ext)
 {
@@ -272,9 +272,9 @@ GDKunlink(int farmid, const char *dir, const char *nme, const char *ext)
 
 		path = GDKfilepath(farmid, dir, nme, ext);
 		/* if file already doesn't exist, we don't care */
-		if (unlink(path) == -1 && errno != ENOENT) {
+		if (remove(path) != 0 && errno != ENOENT) {
 			GDKsyserror("GDKunlink(%s)\n", path);
-			IODEBUG fprintf(stderr, "#unlink %s = -1\n", path);
+			IODEBUG fprintf(stderr, "#remove %s = -1\n", path);
 			GDKfree(path);
 			return GDK_FAIL;
 		}

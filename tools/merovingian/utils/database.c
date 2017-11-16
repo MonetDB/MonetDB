@@ -153,9 +153,9 @@ static char* deletedir(const char *dir) {
 		if (errno == ENOENT)
 			return(NULL);
 		if (errno == ENOTDIR) {
-			if (unlink(dir) == -1 && errno != ENOENT) {
+			if (remove(dir) != 0 && errno != ENOENT) {
 				snprintf(buf, sizeof(buf),
-					 "unable to unlink file %s: %s",
+					 "unable to remove file %s: %s",
 					 dir, strerror(errno));
 				return(strdup(buf));
 			}
@@ -365,7 +365,7 @@ char *db_release(char *dbname) {
 	/* get this database out of maintenance mode */
 	snprintf(path, sizeof(path), "%s/.maintenance", stats->path);
 	msab_freeStatus(&stats);
-	if (unlink(path) != 0) {
+	if (remove(path) != 0) {
 		snprintf(buf, sizeof(buf), "could not remove '%s' for '%s': %s",
 				path, dbname, strerror(errno));
 		return(strdup(buf));

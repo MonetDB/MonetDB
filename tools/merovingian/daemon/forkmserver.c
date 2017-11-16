@@ -1035,7 +1035,7 @@ shutdown_profiler(char *dbname, sabdb **stats)
 	}
 
 	/* All went well. Remove the pidfile */
-	if (unlink(pidfilename) != 0) {
+	if (remove(pidfilename) != 0) {
 		error = newErr("Profiler seems to have stopped, but cannot remove pid file.");
 	}
 

@@ -1564,7 +1564,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		lg->id ++;
 		if (fprintf(fp, "%06d\n\n" LLFMT "\n", lg->version, lg->id) < 0) {
 			fclose(fp);
-			unlink(filename);
+			remove(filename);
 			GDKerror("logger_load: writing log file %s failed",
 				 filename);
 			goto error;
@@ -1578,7 +1578,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		    fsync(fileno(fp)) < 0 ||
 #endif
 		    fclose(fp) < 0) {
-			unlink(filename);
+			remove(filename);
 			GDKerror("logger_load: closing log file %s failed",
 				 filename);
 			goto error;
@@ -1591,7 +1591,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 
 		if (bm_subcommit(lg, lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->dcatalog, NULL, lg->debug) != GDK_SUCCEED) {
 			/* cannot commit catalog, so remove log */
-			unlink(filename);
+			remove(filename);
 			BBPrelease(lg->catalog_bid->batCacheid);
 			BBPrelease(lg->catalog_nme->batCacheid);
 			BBPrelease(lg->dcatalog->batCacheid);
@@ -2281,9 +2281,9 @@ logger_unlink(int farmid, const char *dir, const char *nme, const char *ext)
 	path = GDKfilepath(farmid, dir, nme, ext);
 	if (path == NULL)
 		return GDK_FAIL;
-	u = unlink(path);
+	u = remove(path);
 	GDKfree(path);
-	return u < 0 ? GDK_FAIL : GDK_SUCCEED;
+	return u != 0 ? GDK_FAIL : GDK_SUCCEED;
 }
 
 static void

@@ -734,11 +734,11 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 		userver.sun_path[sizeof(userver.sun_path) - 1] = 0;
 
 		length = (SOCKLEN) sizeof(userver);
-		unlink(usockfile);
+		remove(usockfile);
 		if (bind(usock, (SOCKPTR) &userver, length) == SOCKET_ERROR) {
 			char *e;
 			closesocket(usock);
-			unlink(usockfile);
+			remove(usockfile);
 			GDKfree(psock);
 			e = createException(IO, "mal_mapi.listen",
 								OPERATION_FAILED

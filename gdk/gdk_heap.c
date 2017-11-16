@@ -564,9 +564,9 @@ HEAPcopy(Heap *dst, Heap *src)
 }
 
 /* Free the memory associated with the heap H.
- * Unlinks (removes) the associated file if the remove flag is set. */
+ * Unlinks (removes) the associated file if the rmheap flag is set. */
 void
-HEAPfree(Heap *h, int remove)
+HEAPfree(Heap *h, int rmheap)
 {
 	if (h->base) {
 		if (h->storage == STORE_MEM) {	/* plain memory */
@@ -594,7 +594,7 @@ HEAPfree(Heap *h, int remove)
 #ifdef HAVE_FORK
 	if (h->storage == STORE_MMAPABS)  { 
 		// heap is stored in a mmap() file, but h->filename points to the absolute path
-		if (h->filename && unlink(h->filename) < 0 && errno != ENOENT) {
+		if (h->filename && remove(h->filename) != 0 && errno != ENOENT) {
 			perror(h->filename);
 		}
 		GDKfree(h->filename);
@@ -603,13 +603,13 @@ HEAPfree(Heap *h, int remove)
 #endif
 	h->base = NULL;
 	if (h->filename) {
-		if (remove) {
+		if (rmheap) {
 			char *path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
-			if (path && unlink(path) < 0 && errno != ENOENT)
+			if (path && remove(path) != 0 && errno != ENOENT)
 				perror(path);
 			GDKfree(path);
 			path = GDKfilepath(h->farmid, BATDIR, h->filename, "new");
-			if (path && unlink(path) < 0 && errno != ENOENT)
+			if (path && remove(path) != 0 && errno != ENOENT)
 				perror(path);
 			GDKfree(path);
 		}

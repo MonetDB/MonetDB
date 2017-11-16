@@ -407,27 +407,27 @@ clear_bam_wrapper(bam_wrapper * bw)
 
 	/* And remove the write stream files that still exist */
 	for (i = 0; i < 6; ++i) {
-		unlink(bw->fp_files[i]);
+		remove(bw->fp_files[i]);
 	}
 	for (i = 0; i < 7; ++i) {
-		unlink(bw->fp_sq[i]);
+		remove(bw->fp_sq[i]);
 	}
 	for (i = 0; i < 13; ++i) {
-		unlink(bw->fp_rg[i]);
+		remove(bw->fp_rg[i]);
 	}
 	for (i = 0; i < 6; ++i) {
-		unlink(bw->fp_pg[i]);
+		remove(bw->fp_pg[i]);
 	}
 	for (i = 0; i < 12; ++i) {
-		unlink(bw->fp_alignments[i]);
+		remove(bw->fp_alignments[i]);
 	}
 	for (i = 0; i < 4; ++i) {
-		unlink(bw->fp_alignments_extra[i]);
+		remove(bw->fp_alignments_extra[i]);
 	}
 	if (bw->dbschema == 1) {
 		for (i = 0; i < 23; ++i) {
-			unlink(bw->fp_alignments_paired_primary[i]);
-			unlink(bw->fp_alignments_paired_primary[i]);
+			remove(bw->fp_alignments_paired_primary[i]);
+			remove(bw->fp_alignments_paired_primary[i]);
 		}
 	}
 

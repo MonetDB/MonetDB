@@ -1706,9 +1706,9 @@ backup_new(Heap *hp, int lockbat)
 		IODEBUG fprintf(stderr, "#rename(%s,%s) = %d\n", batpath, bakpath, ret);
 	} else if (batret == 0) {
 		/* there is a backup already; just remove the X.new */
-		if ((ret = unlink(batpath)) < 0)
-			GDKsyserror("backup_new: unlink %s failed\n", batpath);
-		IODEBUG fprintf(stderr, "#unlink(%s) = %d\n", batpath, ret);
+		if ((ret = remove(batpath)) != 0)
+			GDKsyserror("backup_new: remove %s failed\n", batpath);
+		IODEBUG fprintf(stderr, "#remove(%s) = %d\n", batpath, ret);
 	}
 	GDKfree(batpath);
 	GDKfree(bakpath);
