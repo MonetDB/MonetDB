@@ -57,7 +57,8 @@ static char *
 sql_tablename_generator(const char *text, int state)
 {
 
-	static int seekpos, len, rowcount;
+	static int64_t seekpos, rowcount;
+	static size_t len;
 	static MapiHdl table_hdl;
 
 	if (!state) {
@@ -170,7 +171,7 @@ static int
 mal_help(int cnt, int key)
 {
 	char *name, *c, *buf;
-	int seekpos = 0, rowcount;
+	int64_t seekpos = 0, rowcount;
 	MapiHdl table_hdl;
 
 	(void) cnt;
@@ -215,7 +216,8 @@ mal_command_generator(const char *text, int state)
 {
 
 	static int idx;
-	static int seekpos, len, rowcount;
+	static int64_t seekpos, rowcount;
+	static size_t len;
 	static MapiHdl table_hdl;
 	char *name, *buf;
 
