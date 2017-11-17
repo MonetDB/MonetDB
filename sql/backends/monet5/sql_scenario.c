@@ -550,12 +550,12 @@ SQLinitClient(Client c)
 		}
 
 #else
-		char path[PATHLENGTH];
+		char path[FILENAME_MAX];
 		str fullname;
 
 		SQLnewcatalog = 0;
 		maybeupgrade = 0;
-		snprintf(path, PATHLENGTH, "createdb");
+		snprintf(path, FILENAME_MAX, "createdb");
 		slash_2_dir_sep(path);
 		fullname = MSP_locate_sqlscript(path, 1);
 		if (fullname) {

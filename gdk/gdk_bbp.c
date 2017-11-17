@@ -1049,7 +1049,7 @@ fixfloatbats(void)
 {
 	bat bid;
 	BAT *b;
-	char filename[PATHLENGTH];
+	char filename[FILENAME_MAX];
 	FILE *fp;
 	size_t len;
 
@@ -3844,7 +3844,7 @@ BBPdiskscan(const char *parent, size_t baseoff)
 {
 	DIR *dirp = opendir(parent);
 	struct dirent *dent;
-	char fullname[PATHLENGTH];
+	char fullname[FILENAME_MAX];
 	str dst = fullname;
 	size_t dstlen = sizeof(fullname);
 	const char *src = parent;

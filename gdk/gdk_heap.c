@@ -166,7 +166,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 gdk_return
 HEAPextend(Heap *h, size_t size, int mayshare)
 {
-	char nme[PATHLENGTH], *ext = NULL;
+	char nme[FILENAME_MAX], *ext = NULL;
 	const char *failure = "None";
 
 	if (h->filename) {
@@ -326,7 +326,7 @@ HEAPshrink(Heap *h, size_t size)
 				  PTRFMT "\n", h->size, size,
 				  PTRFMTCAST h->base, PTRFMTCAST p);
 	} else {
-		char nme[PATHLENGTH], *ext = NULL;
+		char nme[FILENAME_MAX], *ext = NULL;
 		char *path;
 
 		if (h->filename) {

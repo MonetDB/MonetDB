@@ -144,7 +144,7 @@ str
 loadLibrary(str filename, int flag)
 {
 	int mode = RTLD_NOW | RTLD_GLOBAL;
-	char nme[PATHLENGTH];
+	char nme[FILENAME_MAX];
 	void *handle = NULL;
 	str s;
 	int idx;
@@ -186,11 +186,11 @@ loadLibrary(str filename, int flag)
 
 		/* try hardcoded SO_EXT if that is the same for modules */
 #ifdef _AIX
-		snprintf(nme, PATHLENGTH, "%.*s%c%s_%s%s(%s_%s.0)",
+		snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s%s(%s_%s.0)",
 				 (int) (p - mod_path),
 				 mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT, SO_PREFIX, s);
 #else
-		snprintf(nme, PATHLENGTH, "%.*s%c%s_%s%s",
+		snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s%s",
 				 (int) (p - mod_path),
 				 mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT);
 #endif
@@ -200,7 +200,7 @@ loadLibrary(str filename, int flag)
 		}
 		if (handle == NULL && strcmp(SO_EXT, ".so") != 0) {
 			/* try .so */
-			snprintf(nme, PATHLENGTH, "%.*s%c%s_%s.so",
+			snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.so",
 					 (int) (p - mod_path),
 					 mod_path, DIR_SEP, SO_PREFIX, s);
 			handle = dlopen(nme, mode);
@@ -211,7 +211,7 @@ loadLibrary(str filename, int flag)
 #ifdef __APPLE__
 		if (handle == NULL && strcmp(SO_EXT, ".bundle") != 0) {
 			/* try .bundle */
-			snprintf(nme, PATHLENGTH, "%.*s%c%s_%s.bundle",
+			snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.bundle",
 					 (int) (p - mod_path),
 					 mod_path, DIR_SEP, SO_PREFIX, s);
 			handle = dlopen(nme, mode);

@@ -45,10 +45,10 @@ slash_2_dir_sep(str fname)
 static str
 malResolveFile(str fname)
 {
-	char path[PATHLENGTH];
+	char path[FILENAME_MAX];
 	str script;
 
-	snprintf(path, PATHLENGTH, "%s", fname);
+	snprintf(path, FILENAME_MAX, "%s", fname);
 	slash_2_dir_sep(path);
 	if ((script = MSP_locate_script(path)) == NULL) {
 		/* this function is also called for scripts that are not located

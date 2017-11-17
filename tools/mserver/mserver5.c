@@ -286,7 +286,7 @@ main(int argc, char **av)
 		GDKfatal("cannot set locale\n");
 	}
 
-	if (getcwd(monet_cwd, PATHLENGTH - 1) == NULL) {
+	if (getcwd(monet_cwd, FILENAME_MAX - 1) == NULL) {
 		perror("pwd");
 		fprintf(stderr,"monet_init: could not determine current directory\n");
 		exit(-1);

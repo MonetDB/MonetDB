@@ -152,11 +152,11 @@
 
 MT_Lock     wlc_lock MT_LOCK_INITIALIZER("wlc_lock");
 
-static char wlc_snapshot[PATHLENGTH]; // The location of the snapshot against which the logs work
+static char wlc_snapshot[FILENAME_MAX]; // The location of the snapshot against which the logs work
 static stream *wlc_fd = 0;
 
 // These properties are needed by the replica to direct the roll-forward.
-char wlc_dir[PATHLENGTH]; 	// The location in the global file store for the logs
+char wlc_dir[FILENAME_MAX]; 	// The location in the global file store for the logs
 char wlc_name[IDLENGTH];  	// The master database name
 lng   wlc_id = 0;			// next transaction id
 int  wlc_state = 0;			// The current status of the in the life cycle
@@ -180,13 +180,13 @@ WLCused(void)
 /* The master configuration file is a simple key=value table */
 void
 WLCreadConfig(FILE *fd)
-{	char path[PATHLENGTH];
-	while( fgets(path, PATHLENGTH, fd) ){
+{	char path[FILENAME_MAX];
+	while( fgets(path, FILENAME_MAX, fd) ){
 		path[strlen(path)-1] = 0;
 		if( strncmp("logs=", path,5) == 0)
-			strncpy(wlc_dir, path + 5, PATHLENGTH);
+			strncpy(wlc_dir, path + 5, FILENAME_MAX);
 		if( strncmp("snapshot=", path,9) == 0)
-			strncpy(wlc_snapshot, path + 9, PATHLENGTH);
+			strncpy(wlc_snapshot, path + 9, FILENAME_MAX);
 		if( strncmp("id=", path,3) == 0)
 			wlc_id = atol(path+ 3);
 		if( strncmp("write=", path,6) == 0)
@@ -243,12 +243,12 @@ str WLCsetConfig(void){
 static str
 WLCsetlogger(void)
 {
-	char path[PATHLENGTH];
+	char path[FILENAME_MAX];
 
 	if( wlc_dir[0] == 0)
 		throw(MAL,"wlc.setlogger","Path not initalized");
 	MT_lock_set(&wlc_lock);
-	snprintf(path,PATHLENGTH,"%s%c%s_%012d", wlc_dir, DIR_SEP, wlc_name, wlc_batches);
+	snprintf(path,FILENAME_MAX,"%s%c%s_%012d", wlc_dir, DIR_SEP, wlc_name, wlc_batches);
 	wlc_fd = open_wastream(path);
 	if( wlc_fd == 0){
 		MT_lock_unset(&wlc_lock);
@@ -393,7 +393,7 @@ WLCgetmasterbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str 
 WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	
-	char path[PATHLENGTH];
+	char path[FILENAME_MAX];
 	str l;
 
 	(void) cntxt;
@@ -403,17 +403,17 @@ WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( wlc_state == WLC_RUN)
 		throw(MAL,"master","WARNING: already in master mode, call ignored");
 	if( pci->argc == 2)
-		strncpy(path, *getArgReference_str(stk, pci,1), PATHLENGTH);
+		strncpy(path, *getArgReference_str(stk, pci,1), FILENAME_MAX);
 	else{
 		l = GDKfilepath(0,0,"wlc_logs",0);
-		snprintf(path,PATHLENGTH,"%s%c",l, DIR_SEP);
+		snprintf(path,FILENAME_MAX,"%s%c",l, DIR_SEP);
 		GDKfree(l);
 	}
 	// set location for logs
 	if( GDKcreatedir(path) == GDK_FAIL)
 		throw(SQL,"wlc.master","Could not create %s\n", path);
 	strncpy(wlc_name, GDKgetenv("gdk_dbname"),IDLENGTH );
-	strncpy(wlc_dir,path, PATHLENGTH);
+	strncpy(wlc_dir,path, FILENAME_MAX);
 	wlc_state= WLC_RUN;
 	WLCsetConfig();
 	return MAL_SUCCEED;

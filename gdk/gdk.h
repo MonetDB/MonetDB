@@ -346,9 +346,6 @@
 #ifdef HAVE_SYS_FILE_H
 # include <sys/file.h>
 #endif
-#ifdef HAVE_SYS_PARAM_H
-# include <sys/param.h>		/* MAXPATHLEN */
-#endif
 
 #ifdef HAVE_DIRENT_H
 # include <dirent.h>
@@ -403,12 +400,6 @@
 #define BAKDIR		"bat\\BACKUP"
 #define SUBDIR		"bat\\BACKUP\\SUBCOMMIT"
 #define LEFTDIR		"bat\\LEFTOVERS"
-#endif
-
-#ifdef MAXPATHLEN
-#define PATHLENGTH	MAXPATHLEN
-#else
-#define PATHLENGTH	1024	/* maximum file pathname length */
 #endif
 
 /*
