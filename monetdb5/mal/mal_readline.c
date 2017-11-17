@@ -9,7 +9,6 @@
 #include "monetdb_config.h"
 #ifndef HAVE_EMBEDDED
 #include "mal.h"
-#undef FILENAME_MAX
 #include "mal_client.h"
 #include "mal_scenario.h"
 #include "mal_readline.h"
