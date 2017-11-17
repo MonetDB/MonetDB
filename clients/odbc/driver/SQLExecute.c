@@ -28,6 +28,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 #include "ODBCUtil.h"
+#include <limits.h>
 
 static struct msql_types {
 	char *name;
