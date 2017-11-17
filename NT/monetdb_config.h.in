@@ -33,12 +33,6 @@
 #define _CRT_SECURE_NO_DEPRECATE 1
 #endif
 
-/* include Intel's mathimf.h early, before any other include files
- * might try to include math.h */
-#ifdef __INTEL_COMPILER
-#include <mathimf.h>
-#endif
-
 #include <malloc.h>
 
 #if defined(_DEBUG) && defined(_CRTDBG_MAP_ALLOC)
