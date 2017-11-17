@@ -652,7 +652,6 @@ main(int argc, char **av)
 	if((err = MSinitClientPrg(mal_clients, "user", "main")) != MAL_SUCCEED) {
 		msab_registerStop();
 		GDKfatal("%s", err);
-		GDKfree(err);
 	}
 	if (dbinit == NULL)
 		dbinit = GDKgetenv("dbinit");
@@ -660,7 +659,6 @@ main(int argc, char **av)
 		if((err = callString(mal_clients, dbinit, listing)) != MAL_SUCCEED) {
 			msab_registerStop();
 			GDKfatal("%s", err);
-			GDKfree(err);
 		}
 	}
 
