@@ -1868,7 +1868,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		/* Do not do conversion if logger is shared/read-only */
 		if (!lg->shared) {
 			FILE *fp1;
-			long off; /* type long required by ftell() & fseek() */
+			fpos_t off;
 			int curid;
 
 			snprintf(cvfile, sizeof(cvfile), "%sconvert-nil-nan",
@@ -1876,12 +1876,12 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			snprintf(bak, sizeof(bak), "%s_nil-nan-convert", fn);
 			/* read the current log id without disturbing
 			 * the file pointer */
-			off = ftell(fp);
-			if (off < 0) /* should never happen */
-				goto error;
+			if (fgetpos(fp, &off) != 0)
+				goto error; /* should never happen */
 			if (fscanf(fp, "%d", &curid) != 1)
 				curid = -1; /* shouldn't happen? */
-			fseek(fp, off, SEEK_SET);
+			if (fsetpos(fp, &off) != 0)
+				goto error; /* should never happen */
 
 			if ((fp1 = GDKfileopen(0, NULL, bak, NULL, "r")) != NULL) {
 				/* file indicating that we need to do
