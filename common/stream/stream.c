@@ -1329,6 +1329,7 @@ open_bzstream(const char *filename, const char *flags)
 	stream *s;
 	int err;
 	struct bz *bzp;
+	char fl[3];
 
 	if ((bzp = malloc(sizeof(struct bz))) == NULL)
 		return NULL;
@@ -1336,10 +1337,13 @@ open_bzstream(const char *filename, const char *flags)
 		free(bzp);
 		return NULL;
 	}
+	fl[0] = flags[0];	/* 'r' or 'w' */
+	fl[1] = 'b';		/* always binary */
+	fl[2] = '\0';
 #ifdef HAVE__WFOPEN
 	{
 		wchar_t *wfname = utf8towchar(filename);
-		wchar_t *wflags = utf8towchar(flags);
+		wchar_t *wflags = utf8towchar(fl);
 		if (wfname != NULL && wflags != NULL)
 			bzp->f = _wfopen(wfname, wflags);
 		else
@@ -1353,7 +1357,7 @@ open_bzstream(const char *filename, const char *flags)
 	{
 		char *fname = cvfilename(filename);
 		if (fname) {
-			bzp->f = fopen(fname, flags);
+			bzp->f = fopen(fname, fl);
 			free(fname);
 		} else
 			bzp->f = NULL;
@@ -1631,11 +1635,10 @@ open_xzstream(const char *filename, const char *flags)
 	stream *s;
 	xz_stream *xz;
 	uint32_t preset = 0;
+	char fl[3];
 
-	if ((xz = malloc(sizeof(struct xz_stream))) == NULL)
+	if ((xz = calloc(1, sizeof(struct xz_stream))) == NULL)
 		return NULL;
-	if (xz)
-		memset(xz, 0, sizeof(xz_stream));
 	if (((flags[0] == 'r' &&
 	      lzma_stream_decoder(&xz->strm, UINT64_MAX, LZMA_CONCATENATED) != LZMA_OK)) ||
 	    (flags[0] == 'w' &&
@@ -1647,10 +1650,13 @@ open_xzstream(const char *filename, const char *flags)
 		free(xz);
 		return NULL;
 	}
+	fl[0] = flags[0];	/* 'r' or 'w' */
+	fl[1] = 'b';		/* always binary */
+	fl[2] = '\0';
 #ifdef HAVE__WFOPEN
 	{
 		wchar_t *wfname = utf8towchar(filename);
-		wchar_t *wflags = utf8towchar(flags);
+		wchar_t *wflags = utf8towchar(fl);
 		if (wfname != NULL)
 			xz->fp = _wfopen(wfname, wflags);
 		else
@@ -1664,7 +1670,7 @@ open_xzstream(const char *filename, const char *flags)
 	{
 		char *fname = cvfilename(filename);
 		if (fname) {
-			xz->fp = fopen(fname, flags);
+			xz->fp = fopen(fname, fl);
 			free(fname);
 		} else
 			xz->fp = NULL;
