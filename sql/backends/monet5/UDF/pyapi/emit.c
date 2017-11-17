@@ -352,21 +352,19 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 				self->cols[i].b->tnonil = 1 - self->cols[i].b->tnil;
 			}
 		} else {
-			void* nill_value = ATOMnil(self->cols[i].b->ttype);
-			void* default_value = self->cols[i].def ?
-								self->cols[i].def :
-								nill_value;
+			if (self->cols[i].def != NULL) {
+				msg = GDKstrdup("Inserting into columns with default values is not supported currently.");
+				goto wrapup;
+			}
 			for (ai = 0; ai < (size_t)el_count; ai++) {
 				if (BUNappend(self->cols[i].b,
-							  default_value,
+							  ATOMnil(self->cols[i].b->ttype),
 							  0) != GDK_SUCCEED) {
 					goto wrapup;
 				}
 			}
-			if (BATatoms[self->cols[i].b->ttype].atomCmp(default_value, nill_value) == 0) {
-				self->cols[i].b->tnil = 1;
-				self->cols[i].b->tnonil = 0;
-			}
+			self->cols[i].b->tnil = 1;
+			self->cols[i].b->tnonil = 0;
 		}
 		BATsetcount(self->cols[i].b, self->nvals + el_count);
 	}

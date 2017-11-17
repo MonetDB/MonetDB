@@ -23,10 +23,7 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-
-#ifndef NAN
-#define NAN		((float)(((float)(1e300 * 1e300)) * 0.0F))
-#endif
+#include <math.h>
 
 /* the *Cmp functions return a value less than zero if the first
  * argument is less than the second; they return zero if the two

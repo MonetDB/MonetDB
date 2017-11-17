@@ -1,7 +1,7 @@
 
 START TRANSACTION;
 
-CREATE TABLE mytable(a DOUBLE, d int, s STRING DEFAULT 'hello');
+CREATE TABLE mytable(a DOUBLE, d int, s STRING);
 
 CREATE LOADER myfunc() LANGUAGE PYTHON {
 	_emit.emit({'a':42,'d':1})

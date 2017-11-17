@@ -8,7 +8,7 @@
 
 #include "monetdb_config.h"
 #include "gdk.h"
-#include "math.h"
+#include <math.h>
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 
