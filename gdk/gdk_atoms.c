@@ -23,11 +23,7 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#if defined(_MSC_VER) && defined(__INTEL_COMPILER)
-#include <mathimf.h>			/* Intel compiler on Windows */
-#else
-#include <math.h>				/* anywhere else */
-#endif
+#include <math.h>
 
 /* these are only for older Visual Studio compilers (VS 2010) */
 #if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && _MSC_VER < 1800

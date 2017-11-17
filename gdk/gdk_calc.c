@@ -10,11 +10,7 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
-#if defined(_MSC_VER) && defined(__INTEL_COMPILER)
-#include <mathimf.h>
-#else
 #include <math.h>
-#endif
 
 /* Define symbol FULL_IMPLEMENTATION to get implementations for all
  * sensible output types for +, -, *, /.  Without the symbol, all
