@@ -142,6 +142,7 @@ extern void mvc_destroy(mvc *c);
 extern int mvc_status(mvc *c);
 extern int mvc_type(mvc *c);
 extern int mvc_debug_on(mvc *m, int flag);
+extern void mvc_cancel_session(mvc *m);
 
 /* since Savepoints and transactions are related the 
  * commit function includes the savepoint creation.
@@ -242,7 +243,7 @@ extern atom * stack_get_var(mvc *sql, const char *name);
 extern void stack_set_var(mvc *sql, const char *name, ValRecord *v);
 
 extern str stack_get_string(mvc *sql, const char *name);
-extern void stack_set_string(mvc *sql, const char *name, const char *v);
+extern str stack_set_string(mvc *sql, const char *name, const char *v);
 #ifdef HAVE_HGE
 extern hge val_get_number(ValRecord *val);
 extern hge stack_get_number(mvc *sql, const char *name);

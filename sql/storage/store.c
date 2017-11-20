@@ -5473,8 +5473,11 @@ sql_session_reset(sql_session *s, int ac)
 	sql_schema *tmp;
 	char *def_schema_name = _STRDUP("sys");
 
-	if (!s->tr || !def_schema_name)
+	if (!s->tr || !def_schema_name) {
+		if(def_schema_name)
+			_DELETE(def_schema_name);
 		return 0;
+	}
 
 	/* TODO cleanup "dt" schema */
 	tmp = find_sql_schema(s->tr, "tmp");

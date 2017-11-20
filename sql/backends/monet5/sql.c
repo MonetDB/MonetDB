@@ -557,10 +557,14 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				msg = addPipeDefinition(cntxt, buf, newopt);
 				if (msg)
 					return msg;
-				if (stack_find_var(m, varname))
-					stack_set_string(m, varname, buf);
-			} else if (stack_find_var(m, varname))
-				stack_set_string(m, varname, newopt);
+				if (stack_find_var(m, varname)) {
+					if(!stack_set_string(m, varname, buf))
+						throw(SQL, "sql.setVariable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				}
+			} else if (stack_find_var(m, varname)) {
+				if(!stack_set_string(m, varname, newopt))
+					throw(SQL, "sql.setVariable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
 		}
 		return MAL_SUCCEED;
 	}

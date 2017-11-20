@@ -230,6 +230,14 @@ mvc_debug_on(mvc *m, int flg)
 	return 0;
 }
 
+void
+mvc_cancel_session(mvc *m)
+{
+	store_lock();
+	sql_trans_end(m->session);
+	store_unlock();
+}
+
 int
 mvc_trans(mvc *m)
 {
@@ -779,7 +787,7 @@ mvc_bind_table(mvc *m, sql_schema *s, const char *tname)
 		if (tpe) {
 			t = tpe;
 		} else { /* during exection they are in the declared table schema */
-			s = mvc_bind_schema(m, dt_schema);
+				s = mvc_bind_schema(m, dt_schema);
 			return mvc_bind_table(m, s, tname);
 		}
 	} else {
@@ -1653,18 +1661,23 @@ stack_nr_of_declared_tables(mvc *sql)
 	return dt;
 }
 
-void
+str
 stack_set_string(mvc *sql, const char *name, const char *val)
 {
 	atom *a = stack_get_var(sql, name);
+	str new_val = _STRDUP(val);
 
-	if (a != NULL) {
+	if (a != NULL && new_val != NULL) {
 		ValRecord *v = &a->data;
 
 		if (v->val.sval)
 			_DELETE(v->val.sval);
-		v->val.sval = _STRDUP(val);
+		v->val.sval = new_val;
+		return new_val;
+	} else if(new_val) {
+		_DELETE(new_val);
 	}
+	return NULL;
 }
 
 str
