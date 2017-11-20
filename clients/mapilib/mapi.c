@@ -484,19 +484,19 @@
  *
  * Return the number of fields in the current row.
  *
- * @item mapi_int64 mapi_get_row_count(MapiHdl mid)
+ * @item int64_t mapi_get_row_count(MapiHdl mid)
  *
  * If possible, return the number of rows in the last select call.  A -1
  * is returned if this information is not available.
  *
- * @item mapi_int64 mapi_get_last_id(MapiHdl mid)
+ * @item int64_t mapi_get_last_id(MapiHdl mid)
  *
  * If possible, return the last inserted id of auto_increment (or alike) column. 
  * A -1 is returned if this information is not available. We restrict this to
  * single row inserts and one auto_increment column per table. If the restrictions
  * do not hold, the result is unspecified.
  *
- * @item mapi_int64 mapi_rows_affected(MapiHdl hdl)
+ * @item int64_t mapi_rows_affected(MapiHdl hdl)
  *
  * Return the number of rows affected by a database update command
  * such as SQL's INSERT/DELETE/UPDATE statements.
@@ -509,13 +509,13 @@
  * returned upon encountering end of sequence or error. This can be
  * analyzed in using @code{mapi_error()}.
  *
- * @item mapi_int64 mapi_fetch_all_rows(MapiHdl hdl)
+ * @item int64_t mapi_fetch_all_rows(MapiHdl hdl)
  *
  * All rows are cached at the client side first. Subsequent calls to
  * @code{mapi_fetch_row()} will take the row from the cache. The number or
  * rows cached is returned.
  *
- * @item MapiMsg mapi_seek_row(MapiHdl hdl, mapi_int64 rownr, int whence)
+ * @item MapiMsg mapi_seek_row(MapiHdl hdl, int64_t rownr, int whence)
  *
  * Reset the row pointer to the requested row number.  If whence is
  * @code{MAPI_SEEK_SET}, rownr is the absolute row number (0 being the
@@ -716,6 +716,7 @@
 #include "monetdb_config.h"
 #include <stream.h>		/* include before mapi.h */
 #include <stream_socket.h>
+#include <inttypes.h>		/* for PRId64, PRIu64, SCNd64 format macros */
 #include "mapi.h"
 #include "mcrypt.h"
 
@@ -819,13 +820,13 @@ struct MapiRowBuf {
 	int limit;		/* current storage space limit */
 	int writer;
 	int reader;
-	mapi_int64 first;	/* row # of first tuple */
-	mapi_int64 tuplecount;	/* number of tuples in the cache */
+	int64_t first;		/* row # of first tuple */
+	int64_t tuplecount;	/* number of tuples in the cache */
 	struct {
 		int fldcnt;	/* actual number of fields in each row */
 		char *rows;	/* string representation of rows received */
 		int tupleindex;	/* index of tuple rows */
-		mapi_int64 tuplerev;	/* reverse map of tupleindex */
+		int64_t tuplerev;	/* reverse map of tupleindex */
 		char **anchors;	/* corresponding field pointers */
 		size_t *lens;	/* corresponding field lenghts */
 	} *line;
@@ -884,9 +885,9 @@ struct MapiResultSet {
 	struct MapiStatement *hdl;
 	int tableid;		/* SQL id of current result set */
 	int querytype;		/* type of SQL query */
-	mapi_int64 tuple_count;
-	mapi_int64 row_count;
-	mapi_int64 last_id;
+	int64_t tuple_count;
+	int64_t row_count;
+	int64_t last_id;
 	int fieldcnt;
 	int maxfields;
 	char *errorstr;		/* error from server */
@@ -1342,20 +1343,20 @@ mapi_get_autocommit(Mapi mid)
 	return mid->auto_commit;
 }
 
-static mapi_int64
+static int64_t
 usec(void)
 {
 #ifdef HAVE_GETTIMEOFDAY
 	struct timeval tp;
 
 	gettimeofday(&tp, NULL);
-	return ((mapi_int64) tp.tv_sec) * 1000000 + (mapi_int64) tp.tv_usec;
+	return ((int64_t) tp.tv_sec) * 1000000 + (int64_t) tp.tv_usec;
 #else
 #ifdef HAVE_FTIME
 	struct timeb tb;
 
 	ftime(&tb);
-	return ((mapi_int64) tb.time) * 1000000 + ((mapi_int64) tb.millitm) * 1000;
+	return ((int64_t) tb.time) * 1000000 + ((int64_t) tb.millitm) * 1000;
 #endif
 #endif
 }
@@ -1364,15 +1365,15 @@ usec(void)
 static void
 mapi_log_header(Mapi mid, char *mark)
 {
-	static mapi_int64 firstcall = 0;
-	mapi_int64 now;
+	static int64_t firstcall = 0;
+	int64_t now;
 
 	if (mid->tracelog == NULL)
 		return;
 	if (firstcall == 0)
 		firstcall = usec();
 	now = (usec() - firstcall) / 1000;
-	mnstr_printf(mid->tracelog, ":"LLFMT"[%d]:%s\n", now, mid->index, mark);
+	mnstr_printf(mid->tracelog, ":%"PRId64"[%d]:%s\n", now, mid->index, mark);
 	mnstr_flush(mid->tracelog);
 }
 
@@ -3328,11 +3329,11 @@ mapi_param_store(MapiHdl hdl)
 				break;
 			case MAPI_LONGLONG:
 				checkSpace(30);
-				sprintf(hdl->query + k, LLFMT, *(mapi_int64 *) src);
+				sprintf(hdl->query + k, "%"PRId64, *(int64_t *) src);
 				break;
 			case MAPI_ULONGLONG:
 				checkSpace(30);
-				sprintf(hdl->query + k, ULLFMT, *(mapi_uint64 *) src);
+				sprintf(hdl->query + k, "%"PRIu64, *(uint64_t *) src);
 				break;
 			case MAPI_FLOAT:
 				checkSpace(30);
@@ -3603,7 +3604,7 @@ static MapiMsg
 mapi_cache_freeup_internal(struct MapiResultSet *result, int k)
 {
 	int i;			/* just a counter */
-	mapi_int64 n = 0;	/* # of tuples being deleted from front */
+	int64_t n = 0;	/* # of tuples being deleted from front */
 
 	result->cache.tuplecount = 0;
 	for (i = 0; i < result->cache.writer - k; i++) {
@@ -3773,7 +3774,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 			break;
 		case Q_TABLE:
 		case Q_PREPARE:{
-			sscanf(nline, "%d " LLFMT " %d " LLFMT, &result->tableid, &result->row_count, &result->fieldcnt, &result->tuple_count);
+			sscanf(nline, "%d %" SCNd64 " %d %" SCNd64, &result->tableid, &result->row_count, &result->fieldcnt, &result->tuple_count);
 			break;
 		}
 		case Q_BLOCK:
@@ -4409,7 +4410,7 @@ mapi_fetch_reset(MapiHdl hdl)
 }
 
 MapiMsg
-mapi_seek_row(MapiHdl hdl, mapi_int64 rownr, int whence)
+mapi_seek_row(MapiHdl hdl, int64_t rownr, int whence)
 {
 	struct MapiResultSet *result;
 
@@ -4520,12 +4521,12 @@ mapi_fetch_line(MapiHdl hdl)
 		hdl->active = result;
 		if (hdl->mid->tracelog) {
 			mapi_log_header(hdl->mid, "W");
-			mnstr_printf(hdl->mid->tracelog, "X" "export %d " LLFMT "\n",
+			mnstr_printf(hdl->mid->tracelog, "X" "export %d %" PRId64 "\n",
 				      result->tableid,
 				      result->cache.first + result->cache.tuplecount);
 			mnstr_flush(hdl->mid->tracelog);
 		}
-		if (mnstr_printf(hdl->mid->to, "X" "export %d " LLFMT "\n",
+		if (mnstr_printf(hdl->mid->to, "X" "export %d %" PRId64 "\n",
 				  result->tableid,
 				  result->cache.first + result->cache.tuplecount) < 0 ||
 		    mnstr_flush(hdl->mid->to))
@@ -4833,12 +4834,12 @@ store_field(struct MapiResultSet *result, int cr, int fnr, int outtype, void *ds
 		break;
 #ifdef HAVE_STRTOLL
 	case MAPI_LONGLONG:
-		*(mapi_int64 *) dst = strtoll(val, NULL, 0);
+		*(int64_t *) dst = strtoll(val, NULL, 0);
 		break;
 #endif
 #ifdef HAVE_STRTOULL
 	case MAPI_ULONGLONG:
-		*(mapi_uint64 *) dst = strtoull(val, NULL, 0);
+		*(uint64_t *) dst = strtoull(val, NULL, 0);
 		break;
 #endif
 	case MAPI_CHAR:
@@ -5041,7 +5042,7 @@ mapi_fetch_row(MapiHdl hdl)
 /*
  * All rows can be cached first as well.
  */
-mapi_int64
+int64_t
 mapi_fetch_all_rows(MapiHdl hdl)
 {
 	Mapi mid;
@@ -5060,11 +5061,11 @@ mapi_fetch_all_rows(MapiHdl hdl)
 			hdl->active = result;
 			if (mid->tracelog) {
 				mapi_log_header(mid, "W");
-				mnstr_printf(mid->tracelog, "X" "export %d " LLFMT "\n",
+				mnstr_printf(mid->tracelog, "X" "export %d %" PRId64 "\n",
 					      result->tableid, result->cache.first + result->cache.tuplecount);
 				mnstr_flush(mid->tracelog);
 			}
-			if (mnstr_printf(mid->to, "X" "export %d " LLFMT "\n",
+			if (mnstr_printf(mid->to, "X" "export %d %" PRId64 "\n",
 					  result->tableid, result->cache.first + result->cache.tuplecount) < 0 ||
 			    mnstr_flush(mid->to))
 				check_stream(mid, mid->to, mnstr_error(mid->to), "mapi_fetch_line", 0);
@@ -5149,14 +5150,14 @@ mapi_get_field_count(MapiHdl hdl)
 	return hdl->result ? hdl->result->fieldcnt : 0;
 }
 
-mapi_int64
+int64_t
 mapi_get_row_count(MapiHdl hdl)
 {
 	mapi_hdl_check(hdl, "mapi_get_row_count");
 	return hdl->result ? hdl->result->row_count : 0;
 }
 
-mapi_int64
+int64_t
 mapi_get_last_id(MapiHdl hdl)
 {
 	mapi_hdl_check(hdl, "mapi_get_last_id");
@@ -5275,7 +5276,7 @@ mapi_get_tableid(MapiHdl hdl)
 	return 0;
 }
 
-mapi_int64
+int64_t
 mapi_rows_affected(MapiHdl hdl)
 {
 	struct MapiResultSet *result;

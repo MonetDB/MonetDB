@@ -96,13 +96,13 @@ GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 gdk_return
 GDKcreatedir(const char *dir)
 {
-	char path[PATHLENGTH];
+	char path[FILENAME_MAX];
 	char *r;
 	DIR *dirp;
 
 	IODEBUG fprintf(stderr, "#GDKcreatedir(%s)\n", dir);
 	assert(MT_path_absolute(dir));
-	if (strlen(dir) >= PATHLENGTH) {
+	if (strlen(dir) >= FILENAME_MAX) {
 		GDKerror("GDKcreatedir: directory name too long\n");
 		return GDK_FAIL;
 	}
@@ -824,6 +824,9 @@ BATload_intern(bat bid, int lock)
 		}
 		if (ATOMstorage(b->ttype) == TYPE_str) {
 			strCleanHash(b->tvheap, FALSE);	/* ensure consistency */
+		} else {
+			HEAP_recover(b->tvheap, (const var_t *) Tloc(b, 0),
+				     BATcount(b));
 		}
 	}
 

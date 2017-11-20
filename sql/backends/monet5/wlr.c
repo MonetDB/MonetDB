@@ -39,7 +39,7 @@
 
 /* The current status of the replica  processing */
 static char wlr_master[IDLENGTH];
-static char wlr_error[PATHLENGTH];		// errors should stop the process
+static char wlr_error[FILENAME_MAX];		// errors should stop the process
 static int wlr_batches; 	// the next file to be processed
 static lng wlr_tag;			// the next transaction id to be processed
 static lng wlr_limit = -1;		// stop re-processing transactions when limit is reached
@@ -77,7 +77,7 @@ WLRgetConfig(void){
 		if( strncmp("timelimit=", line, 10) == 0)
 			strcpy(wlr_timelimit, line + 10);
 		if( strncmp("error=", line, 6) == 0)
-			strncpy(wlr_error, line+ 6, PATHLENGTH);
+			strncpy(wlr_error, line+ 6, FILENAME_MAX);
 	}
 	fclose(fd);
 }
@@ -118,7 +118,7 @@ WLRsetConfig(void){
 static void
 WLRgetMaster(void)
 {
-	char path[PATHLENGTH];
+	char path[FILENAME_MAX];
 	str dir;
 	FILE *fd;
 
@@ -126,7 +126,7 @@ WLRgetMaster(void)
 		return ;
 
 	/* collect master properties */
-	snprintf(path,PATHLENGTH,"..%c%s",DIR_SEP,wlr_master);
+	snprintf(path,FILENAME_MAX,"..%c%s",DIR_SEP,wlr_master);
 	dir = GDKfilepath(0,path,"wlc.config",0);
 
 	fd = fopen(dir,"r");
@@ -148,7 +148,7 @@ WLRprocess(void *arg)
 {
 	Client cntxt = (Client) arg;
 	int i, pc;
-	char path[PATHLENGTH];
+	char path[FILENAME_MAX];
 	stream *fd = NULL;
 	Client c;
 	size_t sz;
@@ -195,7 +195,7 @@ WLRprocess(void *arg)
 #endif
 	path[0]=0;
 	for( i= wlr_batches; wlr_state == WLR_RUN && i < wlc_batches && ! GDKexiting(); i++){
-		snprintf(path,PATHLENGTH,"%s%c%s_%012d", wlc_dir, DIR_SEP, wlr_master, i);
+		snprintf(path,FILENAME_MAX,"%s%c%s_%012d", wlc_dir, DIR_SEP, wlr_master, i);
 		fd= open_rstream(path);
 		if( fd == NULL){
 			mnstr_printf(GDKerr,"#wlr.process:'%s' can not be accessed \n",path);
@@ -224,9 +224,9 @@ WLRprocess(void *arg)
 			parseMAL(c, c->curprg, 1, 1);
 			mb = c->curprg->def; // needed
 			if( mb->errors){
-				char line[PATHLENGTH];
-				snprintf(line, PATHLENGTH,"#wlr.process:failed further parsing '%s':\n",path);
-				strncpy(wlr_error,line, PATHLENGTH);
+				char line[FILENAME_MAX];
+				snprintf(line, FILENAME_MAX,"#wlr.process:failed further parsing '%s':\n",path);
+				strncpy(wlr_error,line, FILENAME_MAX);
 				mnstr_printf(GDKerr,"%s",line);
 				printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
 			}
@@ -266,31 +266,34 @@ WLRprocess(void *arg)
 					sql->session->auto_commit = 0;
 					sql->session->ac_on_commit = 1;
 					sql->session->level = 0;
-					(void) mvc_trans(sql);
-					//printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
-					msg= runMAL(c,mb,0,0);
-					wlr_tag++;
-					WLRsetConfig( );
-					// ignore warnings
-					if (msg && strstr(msg,"WARNING"))
-						msg = MAL_SUCCEED;
-					if( msg != MAL_SUCCEED){
-						// they should always succeed
-						mnstr_printf(GDKerr,"ERROR in processing batch %d :%s\n", i, msg);
-						printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
-						mvc_rollback(sql,0,NULL);
-						// cleanup
-						fprintFunction(stderr,mb,0,63);
-						resetMalBlkAndFreeInstructions(mb, 1);
-						trimMalVariables(mb, NULL);
-						pc = 0;
-					} else
-					if( mvc_commit(sql, 0, 0) < 0)
-						mnstr_printf(GDKerr,"#wlr.process transaction commit failed");
+					if(mvc_trans(sql) < 0) {
+						mnstr_printf(GDKerr,"Allocation failure while starting the transaction \n");
+					} else {
+						//printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
+						msg= runMAL(c,mb,0,0);
+						wlr_tag++;
+						WLRsetConfig( );
+						// ignore warnings
+						if (msg && strstr(msg,"WARNING"))
+							msg = MAL_SUCCEED;
+						if( msg != MAL_SUCCEED){
+							// they should always succeed
+							mnstr_printf(GDKerr,"ERROR in processing batch %d :%s\n", i, msg);
+							printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
+							mvc_rollback(sql,0,NULL);
+							// cleanup
+							fprintFunction(stderr,mb,0,63);
+							resetMalBlkAndFreeInstructions(mb, 1);
+							trimMalVariables(mb, NULL);
+							pc = 0;
+						} else
+						if( mvc_commit(sql, 0, 0) < 0)
+							mnstr_printf(GDKerr,"#wlr.process transaction commit failed");
+					}
 				} else {
-					char line[PATHLENGTH];
-					snprintf(line, PATHLENGTH,"#wlr.process:typechecking failed '%s':\n",path);
-					strncpy(wlr_error, line, PATHLENGTH);
+					char line[FILENAME_MAX];
+					snprintf(line, FILENAME_MAX,"#wlr.process:typechecking failed '%s':\n",path);
+					strncpy(wlr_error, line, FILENAME_MAX);
 					mnstr_printf(GDKerr,"%s",line);
 					printFunction(GDKerr, mb, 0, LIST_MAL_DEBUG );
 				}

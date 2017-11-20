@@ -44,23 +44,19 @@ Ready.
 % varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean # type
 % 6,	32,	5,	1,	1,	5,	5,	5 # length
 [ "myfunc",	"{\n\t_emit.emit({'a':42,'d':1})\n};",	"pyapi",	6,	7,	true,	true,	false	]
-#COPY INTO mytable FROM LOADER myfunc3(46, 'asdf', 3.2);
-[ 1	]
-#COPY INTO mytable FROM LOADER myfunc2(45, 'asdf');
-[ 1	]
-#COPY INTO mytable FROM LOADER myfunc1(44);
-[ 1	]
-#COPY INTO mytable FROM LOADER myfunc();
-[ 1	]
+#COPY LOADER INTO mytable FROM myfunc();
+#COPY LOADER INTO mytable FROM myfunc3(46, 'asdf', 3.2);
+#COPY LOADER INTO mytable FROM myfunc2(45, 'asdf');
+#COPY LOADER INTO mytable FROM myfunc1(44);
 #SELECT * FROM mytable;
 % sys.mytable,	sys.mytable,	sys.mytable # table_name
 % a,	d,	s # name
 % double,	int,	clob # type
-% 24,	1,	5 # length
+% 24,	1,	7 # length
+[ 42,	1,	"'hello'"	]
 [ 46,	4,	"hello"	]
-[ 45,	3,	NULL	]
-[ 44,	2,	NULL	]
-[ 42,	1,	NULL	]
+[ 45,	3,	"'hello'"	]
+[ 44,	2,	"'hello'"	]
 #DROP TABLE mytable;
 #DROP ALL LOADER myfunc;
 #CREATE LOADER myfunc() LANGUAGE PYTHON {

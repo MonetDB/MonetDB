@@ -8684,9 +8684,12 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 		p = rel_projections(sql, rel, NULL, 1, 1);
 		nl = rel_apply(sql, rel_dup(rel->l), rel_dup(r->l), rel->exps, rel->flag);
 		nr = rel_apply(sql, rel_dup(rel->l), rel_dup(r->r), rel->exps, rel->flag);
+		nl = rel_project(sql->sa, nl, rel_projections(sql, nl, NULL, 1, 1));
+		nr = rel_project(sql->sa, nr, rel_projections(sql, nr, NULL, 1, 1));
 		l = rel_setop(sql->sa, nl, nr, op_union);
 		l->flag = r->flag;
-		l->exps = list_merge(p, r->exps, (fdup)NULL);
+		l->exps = p; //list_merge(p, r->exps, (fdup)NULL);
+		assert(list_length(nl->exps) == list_length(nr->exps) && list_length(nl->exps) == list_length(l->exps));
 		set_processed(l);
 		rel_destroy(rel);
 		(*changes)++;
@@ -8760,11 +8763,17 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			return l;
 		} else { /* both unused */
 			int flag = rel->flag;
-			list *exps = r->exps;
 
-			assert(is_join(r->op));
-			r = rel_crossproduct(sql->sa, rel_dup(r->l), rel_dup(r->r), flag == APPLY_LOJ?op_left:op_join);
-			r->exps = exps_copy(sql->sa, exps);
+			assert(is_join(r->op) || is_semi(r->op));
+			if (is_join(r->op)) {
+				list *exps = r->exps;
+
+				r = rel_crossproduct(sql->sa, rel_dup(r->l), rel_dup(r->r), flag == APPLY_LOJ?op_left:op_join);
+				r->exps = exps_copy(sql->sa, exps);
+			} else if (is_semi(r->op)) {
+				assert(flag != APPLY_LOJ);
+				r = rel_dup(r);
+			}
 			rel_destroy(rel);
 			(*changes)++;
 			return r;

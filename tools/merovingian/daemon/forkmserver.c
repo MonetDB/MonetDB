@@ -51,7 +51,7 @@ terminateProcess(pid_t pid, char *dbname, mtype type, int lock)
 	if (er != NULL) {
 		if (lock)
 			pthread_mutex_unlock(&fork_lock);
-		Mfprintf(stderr, "cannot terminate process " LLFMT ": %s\n",
+		Mfprintf(stderr, "cannot terminate process %lld: %s\n",
 				(long long int)pid, er);
 		free(er);
 		free(dbname);
@@ -61,7 +61,7 @@ terminateProcess(pid_t pid, char *dbname, mtype type, int lock)
 	if (stats == NULL) {
 		if (lock)
 			pthread_mutex_unlock(&fork_lock);
-		Mfprintf(stderr, "strange, process " LLFMT " serves database '%s' "
+		Mfprintf(stderr, "strange, process %lld serves database '%s' "
 				"which does not exist\n", (long long int)pid, dbname);
 		free(dbname);
 		return;
@@ -75,7 +75,7 @@ terminateProcess(pid_t pid, char *dbname, mtype type, int lock)
 			if (lock)
 				pthread_mutex_unlock(&fork_lock);
 			Mfprintf(stderr, "cannot shut down database '%s', mserver "
-					"(pid " LLFMT ") has crashed\n",
+					"(pid %lld) has crashed\n",
 					dbname, (long long int)pid);
 			msab_freeStatus(&stats);
 			free(dbname);
@@ -123,7 +123,7 @@ terminateProcess(pid_t pid, char *dbname, mtype type, int lock)
 	}
 
 	/* ok, once we get here, we'll be shutting down the server */
-	Mfprintf(stdout, "sending process " LLFMT " (database '%s') the "
+	Mfprintf(stdout, "sending process %lld (database '%s') the "
 			"TERM signal\n", (long long int)pid, dbname);
 	kill(pid, SIGTERM);
 	kv = findConfKey(_mero_props, "exittimeout");
@@ -167,7 +167,7 @@ terminateProcess(pid_t pid, char *dbname, mtype type, int lock)
 			}
 		}
 	}
-	Mfprintf(stderr, "timeout of %s seconds expired, sending process " LLFMT
+	Mfprintf(stderr, "timeout of %s seconds expired, sending process %lld"
 			" (database '%s') the KILL signal\n",
 			kv->val, (long long int)pid, dbname);
 	kill(pid, SIGKILL);

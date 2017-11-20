@@ -27,8 +27,8 @@
 
 static void setAtomName(InstrPtr pci)
 {
-	char buf[PATHLENGTH];
-	snprintf(buf, PATHLENGTH, "#%s", getFunctionId(pci));
+	char buf[FILENAME_MAX];
+	snprintf(buf, FILENAME_MAX, "#%s", getFunctionId(pci));
 	setFunctionId(pci, putName(buf));
 }
 

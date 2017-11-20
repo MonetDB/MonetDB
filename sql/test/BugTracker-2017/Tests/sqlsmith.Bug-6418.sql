@@ -1,4 +1,4 @@
-CREATE TABLE PARTSUPP ( PS_PARTKEY     INTEGER NOT NULL,
+CREATE TABLE PARTSUPP_6418 ( PS_PARTKEY     INTEGER NOT NULL,
                              PS_SUPPKEY     INTEGER NOT NULL,
                              PS_AVAILQTY    INTEGER NOT NULL,
                              PS_SUPPLYCOST  DECIMAL(15,2)  NOT NULL,
@@ -14,10 +14,10 @@ from
           or ((sample_0.name is NULL) 
             or (sample_0.type is not NULL)))
     inner join sys.key_types as ref_2
-      left join sys.partsupp as ref_3
+      left join sys.partsupp_6418 as ref_3
       on (ref_2.key_type_id is not NULL)
     on (sample_1.schema_id is NULL)
 where true
 limit 116;
 
-drop table partsupp;
+drop table partsupp_6418;

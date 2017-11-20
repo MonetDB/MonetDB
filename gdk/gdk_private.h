@@ -172,6 +172,8 @@ __hidden void HEAPfree(Heap *h, int remove)
 __hidden gdk_return HEAPload(Heap *h, const char *nme, const char *ext, int trunc)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
+__hidden void HEAP_recover(Heap *, const var_t *, BUN)
+	__attribute__((__visibility__("hidden")));
 __hidden gdk_return HEAPsave(Heap *h, const char *nme, const char *ext)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));

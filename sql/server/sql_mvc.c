@@ -87,7 +87,11 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		m->history = 0;
 		/* disable size header */
 		m->sizeheader = 0;
-		mvc_trans(m);
+		if(mvc_trans(m) < 0) {
+			mvc_destroy(m);
+			fprintf(stderr, "!mvc_init: failed to start transaction\n");
+			return -1;
+		}
 		s = m->session->schema = mvc_bind_schema(m, "sys");
 		assert(m->session->schema != NULL);
 
@@ -226,7 +230,7 @@ mvc_debug_on(mvc *m, int flg)
 	return 0;
 }
 
-void
+int
 mvc_trans(mvc *m)
 {
 	int schema_changed = 0, err = m->session->status;
@@ -240,11 +244,17 @@ mvc_trans(mvc *m)
 			if (m->qc)
 				qc_destroy(m->qc);
 			m->qc = qc_create(m->clientid, seqnr);
+			if (!m->qc) {
+				sql_trans_end(m->session);
+				store_unlock();
+				return -1;
+			}
 		} else { /* clean all but the prepared statements */
 			qc_clean(m->qc);
 		}
 	}
 	store_unlock();
+	return 0;
 }
 
 static sql_trans *
@@ -301,7 +311,7 @@ mvc_commit(mvc *m, int chain, const char *name)
 
 	assert(tr);
 	assert(m->session->active);	/* only commit an active transaction */
-	
+
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_commit %s\n", (name) ? name : "");
 
@@ -318,6 +328,12 @@ mvc_commit(mvc *m, int chain, const char *name)
 			fprintf(stderr, "#mvc_savepoint\n");
 		store_lock();
 		m->session->tr = sql_trans_create(m->session->stk, tr, name);
+		if(!m->session->tr) {
+			store_unlock();
+			(void) sql_error(m, 02, SQLSTATE(HY001) "Allocation failure while committing the transaction, will ROLLBACK instead");
+			mvc_rollback(m, chain, name);
+			return -1;
+		}
 		WLCcommit(m->clientid);
 		store_unlock();
 		m->type = Q_TRANS;
@@ -579,10 +595,10 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	return m;
 }
 
-void
+int
 mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 {
-	int i;
+	int i, res = 1;
 	sql_trans *tr;
 
 	if (mvc_debug)
@@ -595,13 +611,15 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 			tr = sql_trans_destroy(tr);
 		store_unlock();
 	}
-	if (tr)
-		sql_session_reset(m->session, 1 /*autocommit on*/);
+	if (tr && !sql_session_reset(m->session, 1 /*autocommit on*/))
+		res = 0;
 
 	if (m->sa)
 		m->sa = sa_reset(m->sa);
-	else 
+	else
 		m->sa = sa_create();
+	if(!m->sa)
+		res = 0;
 
 	m->errstr[0] = '\0';
 
@@ -644,6 +662,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 	m->results = NULL;
 
 	scanner_init(&m->scanner, rs, ws);
+	return res;
 }
 
 void
@@ -1241,10 +1260,9 @@ int
 mvc_check_dependency(mvc * m, int id, int type, list *ignore_ids)
 {
 	list *dep_list = NULL;
-	
+
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_check_dependency on %d\n", id);
-
 
 	switch(type) {
 		case OWNER_DEPENDENCY : 
@@ -1266,12 +1284,15 @@ mvc_check_dependency(mvc * m, int id, int type, list *ignore_ids)
 		default: 
 			dep_list =  sql_trans_get_dependencies(m->session->tr, id, COLUMN_DEPENDENCY, NULL);
 	}
-	
+
+	if(!dep_list)
+		return DEPENDENCY_CHECK_ERROR;
+
 	if ( list_length(dep_list) >= 2 ) {
 		list_destroy(dep_list);
 		return HAS_DEPENDENCY;
 	}
-	
+
 	list_destroy(dep_list);
 	return NO_DEPENDENCY;
 }
@@ -1354,13 +1375,20 @@ mvc_is_sorted(mvc *m, sql_column *col)
 }
 
 /* variable management */
-static void
+static sql_var*
 stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, sql_table *t, int view, int frame)
 {
-	sql_var *v;
-	if (var == sql->sizevars) {
-		sql->sizevars <<= 1;
-		sql->vars = RENEW_ARRAY(sql_var,sql->vars,sql->sizevars);
+	sql_var *v, *nvars;
+	int nextsize = sql->sizevars;
+	if (var == nextsize) {
+		nextsize <<= 1;
+		nvars = RENEW_ARRAY(sql_var,sql->vars,nextsize);
+		if(!nvars) {
+			return NULL;
+		} else {
+			sql->vars = nvars;
+			sql->sizevars = nextsize;
+		}
 	}
 	v = sql->vars+var;
 
@@ -1375,35 +1403,49 @@ stack_set(mvc *sql, int var, const char *name, sql_subtype *type, sql_rel *rel, 
 		VALset(&sql->vars[var].a.data, tpe, (ptr) ATOMnilptr(tpe));
 		v->a.tpe = *type;
 	}
-	if (name)
+	if (name) {
 		v->name = _STRDUP(name);
+		if(!v->name)
+			return NULL;
+	}
+	return v;
 }
 
-void 
+sql_var*
 stack_push_var(mvc *sql, const char *name, sql_subtype *type)
 {
-	stack_set(sql, sql->topvars++, name, type, NULL, NULL, 0, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, type, NULL, NULL, 0, 0);
+	if(res)
+		sql->topvars++;
+	return res;
 }
 
-void 
+sql_var*
 stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql_subtype *type)
 {
-	stack_set(sql, sql->topvars++, name, type, var, NULL, 0, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, type, var, NULL, 0, 0);
+	if(res)
+		sql->topvars++;
+	return res;
 }
 
-void 
+sql_var*
 stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_table *t)
 {
-	stack_set(sql, sql->topvars++, name, NULL, var, t, 0, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, NULL, var, t, 0, 0);
+	if(res)
+		sql->topvars++;
+	return res;
 }
 
-
-void 
+sql_var*
 stack_push_rel_view(mvc *sql, const char *name, sql_rel *var)
 {
-	stack_set(sql, sql->topvars++, name, NULL, var, NULL, 1, 0);
+	sql_var* res = stack_set(sql, sql->topvars, name, NULL, var, NULL, 1, 0);
+	if(res)
+		sql->topvars++;
+	return res;
 }
-
 
 void
 stack_set_var(mvc *sql, const char *name, ValRecord *v)
@@ -1436,11 +1478,15 @@ stack_get_var(mvc *sql, const char *name)
 	return NULL;
 }
 
-void 
+sql_var*
 stack_push_frame(mvc *sql, const char *name)
 {
-	stack_set(sql, sql->topvars++, name, NULL, NULL, NULL, 0, 1);
-	sql->frame++;
+	sql_var* res = stack_set(sql, sql->topvars, name, NULL, NULL, NULL, 0, 1);
+	if(res) {
+		sql->topvars++;
+		sql->frame++;
+	}
+	return res;
 }
 
 void

@@ -9,7 +9,7 @@
 #ifndef _BATMATH_H
 #define _BATMATH_H
 #include "gdk.h"
-#include "math.h"
+#include <math.h>
 #include "mal_exception.h"
 
 #define radians(x)       ((x) * 3.14159265358979323846 / 180.0)

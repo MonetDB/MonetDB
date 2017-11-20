@@ -62,7 +62,7 @@ type-resolution-error.Bugs-6313
 lateral02.Bug-6314
 exist-bigint-missing.Bug-6315
 coalesc-limit.Bug-6316
-limit.Bug-6322
+HAVE_GEOM?limit.Bug-6322
 simplify_math.Bug-6324
 HAVE_GEOM?push_subslice.Bug-6322
 create_table_as-missing_not_null.Bug-6329
@@ -105,3 +105,6 @@ sqlitelogictest-cast-decimal.Bug-6445
 HAVE_LIBPY?table_returning_with.Bug-6444
 insert_into_multiple_subqueries.Bug-6448
 HAVE_SAMTOOLS?sqlsmith.Bug-6449
+HAVE_LIBPY?python_loader_clobbers_default_with_null.Bug-6464
+skip_problem_best_effort.Bug-6442
+date_to_str.Bug-6467

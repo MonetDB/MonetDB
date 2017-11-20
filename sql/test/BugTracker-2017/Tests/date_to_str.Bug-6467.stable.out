@@ -1,0 +1,37 @@
+stdout of test 'date_to_str.Bug-6467` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 14:32:50 >  
+# 14:32:50 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30624" "--set" "mapi_usock=/var/tmp/mtest-29760/.s.monetdb.30624" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 14:32:50 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.330 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:30624/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29760/.s.monetdb.30624
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 14:32:51 >  
+# 14:32:51 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29760" "--port=30624"
+# 14:32:51 >  
+
+#SELECT date '2017-11-14', EXTRACT(year from date '2017-11-14'), date_to_str(date '2017-11-14', '%Y %m %d -A:%A -G:%G V:%V w:%w W:%W');
+% .L2,	.L4,	.L6 # table_name
+% L2,	L4,	L6 # name
+% date,	int,	clob # type
+% 10,	4,	43 # length
+[ 2017-11-14,	2017,	"2017 11 14 -A:Tuesday -G:2017 V:46 w:2 W:46"	]
+
+# 14:32:51 >  
+# 14:32:51 >  "Done."
+# 14:32:51 >  
+

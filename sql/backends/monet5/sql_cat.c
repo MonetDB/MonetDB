@@ -725,7 +725,8 @@ UPGcreate_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	osname = cur_schema(sql)->base.name;
-	mvc_set_schema(sql, sname);
+	if (!mvc_set_schema(sql, sname))
+		throw(SQL,"sql.catalog", SQLSTATE(3F000) "Schema (%s) missing\n", sname);
 	sa = sa_create();
 	if(!sa)
 		throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -735,9 +736,10 @@ UPGcreate_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		sql_func *func = (sql_func*)((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.pval;
 
 		msg = create_func(sql, schema, fname, func);
-		mvc_set_schema(sql, osname);
+		if (!mvc_set_schema(sql, osname))
+			throw(SQL,"sql.catalog", SQLSTATE(3F000) "Schema (%s) missing\n", osname);
 	} else {
-		mvc_set_schema(sql, osname);
+		(void) mvc_set_schema(sql, osname);
 		throw(SQL, "sql.catalog", SQLSTATE(42000) "function creation failed '%s'", func);
 	}
 	return msg;
@@ -758,9 +760,9 @@ UPGcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-                                                              
 	osname = cur_schema(sql)->base.name;
-	mvc_set_schema(sql, sname);
+	if (!mvc_set_schema(sql, sname))
+		throw(SQL,"sql.catalog", SQLSTATE(3F000) "Schema (%s) missing\n", sname);
 	sa = sa_create();
 	if(!sa)
 		throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -771,9 +773,10 @@ UPGcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int temp = ((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.ival;
 
 		msg = create_table_or_view(sql, schema, v->base.name, v, temp);
-		mvc_set_schema(sql, osname);
+		if (!mvc_set_schema(sql, osname))
+			throw(SQL,"sql.catalog", SQLSTATE(3F000) "Schema (%s) missing\n", osname);
 	} else {
-		mvc_set_schema(sql, osname);
+		(void) mvc_set_schema(sql, osname);
 		throw(SQL, "sql.catalog", SQLSTATE(42000) "view creation failed '%s'", view);
 	}
 	return msg;

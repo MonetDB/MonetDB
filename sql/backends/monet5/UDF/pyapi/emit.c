@@ -199,6 +199,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 
 				self->cols[self->ncols].b = COLnew(0, bat_type, 0, TRANSIENT);
 				self->cols[self->ncols].name = GDKstrdup(val);
+				self->cols[self->ncols].def = NULL;
 				if (self->nvals > 0) {
 					// insert NULL values up until the current entry
 					for (ai = 0; ai < self->nvals; ai++) {
@@ -209,9 +210,9 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 							goto wrapup;
 						}
 					}
-					self->cols[i].b->tnil = 1;
-					self->cols[i].b->tnonil = 0;
-					BATsetcount(self->cols[i].b, self->nvals);
+					self->cols[self->ncols].b->tnil = 1;
+					self->cols[self->ncols].b->tnonil = 0;
+					BATsetcount(self->cols[self->ncols].b, self->nvals);
 				}
 				self->ncols++;
 			}
@@ -351,8 +352,13 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 				self->cols[i].b->tnonil = 1 - self->cols[i].b->tnil;
 			}
 		} else {
+			if (self->cols[i].def != NULL) {
+				msg = GDKstrdup("Inserting into columns with default values is not supported currently.");
+				goto wrapup;
+			}
 			for (ai = 0; ai < (size_t)el_count; ai++) {
-				if (BUNappend(self->cols[i].b, ATOMnil(self->cols[i].b->ttype),
+				if (BUNappend(self->cols[i].b,
+							  ATOMnil(self->cols[i].b->ttype),
 							  0) != GDK_SUCCEED) {
 					goto wrapup;
 				}

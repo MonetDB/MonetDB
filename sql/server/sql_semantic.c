@@ -33,28 +33,44 @@
  * !SQL  <informative message, reserved for ...rows affected>
  */
 
-void
+atom *
 sql_add_arg(mvc *sql, atom *v)
 {
-	if (sql->argc == sql->argmax) {
-		sql->argmax *= 2;
-		sql->args = RENEW_ARRAY(atom*,sql->args,sql->argmax);
+	atom** new_args;
+	int next_size = sql->argmax;
+	if (sql->argc == next_size) {
+		next_size *= 2;
+		new_args = RENEW_ARRAY(atom*,sql->args,next_size);
+		if(new_args) {
+			sql->args = new_args;
+			sql->argmax = next_size;
+		} else
+			return NULL;
 	}
 	sql->args[sql->argc++] = v;
+	return v;
 }
 
-void
+atom *
 sql_set_arg(mvc *sql, int nr, atom *v)
 {
-	if (nr >= sql->argmax) {
-		sql->argmax *= 2;
-		if (nr >= sql->argmax)
-			sql->argmax = nr*2;
-		sql->args = RENEW_ARRAY(atom*,sql->args,sql->argmax);
+	atom** new_args;
+	int next_size = sql->argmax;
+	if (nr >= next_size) {
+		next_size *= 2;
+		if (nr >= next_size)
+			next_size = nr*2;
+		new_args = RENEW_ARRAY(atom*,sql->args,next_size);
+		if(new_args) {
+			sql->args = new_args;
+			sql->argmax = next_size;
+		} else
+			return NULL;
 	}
 	if (sql->argc < nr+1)
 		sql->argc = nr+1;
 	sql->args[nr] = v;
+	return v;
 }
 
 void
@@ -212,7 +228,7 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 	if (!lsuper.type->localtype)
 		tpe = "smallint";
 	/* 
-	 * Incase of different radix we should change one. 
+	 * In case of different radix we should change one.
 	 */
 	if (i->type->radix != r->type->radix) {
 		if (radix == 10 || radix == 0 /* strings */) {
@@ -356,10 +372,13 @@ char *symbol2string(mvc *sql, symbol *se, char **err)
 		const char *seq = qname_table(se->data.lval);
 		const char *sname = qname_schema(se->data.lval);
 		const char *s;
-		
+
 		if (!sname)
 			sname = sql->session->schema->base.name;
-		len = snprintf( buf+len, BUFSIZ-len, "next value for \"%s\".\"%s\"", sname, s=sql_escape_ident(seq)); 
+		s = sql_escape_ident(seq);
+		if(!s)
+			return NULL;
+		len = snprintf( buf+len, BUFSIZ-len, "next value for \"%s\".\"%s\"", sname, s);
 		c_delete(s);
 	}	break;
 	case SQL_COLUMN: {

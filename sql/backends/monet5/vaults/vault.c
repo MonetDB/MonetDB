@@ -223,7 +223,7 @@ VLTprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 #endif
 	if ( vaultpath[0] == 0){
-		snprintf(vaultpath, PATHLENGTH, "%s%cvault", GDKgetenv("gdk_dbpath"), DIR_SEP);
+		snprintf(vaultpath, FILENAME_MAX, "%s%cvault", GDKgetenv("gdk_dbpath"), DIR_SEP);
 		if (mkdir(vaultpath, 0755) < 0 && errno != EEXIST)
 			return createException(MAL,"vault.getLocation", SQLSTATE(42000) "can not access vault directory");
 	}
@@ -263,7 +263,7 @@ VLTepilogue(void *ret)
 
 str
 VLTsetLocation(str *ret, str *src){
-	strncpy(vaultpath,*src,PATHLENGTH);
+	strncpy(vaultpath,*src,FILENAME_MAX);
 	*ret= GDKstrdup(vaultpath);
 	return MAL_SUCCEED;
 }

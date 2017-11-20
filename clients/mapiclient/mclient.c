@@ -22,6 +22,7 @@
 # endif
 #endif
 #include "mapi.h"
+#include <inttypes.h>		/* for PRId64 format macro */
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -109,8 +110,8 @@ int csvheader = 0;		/* include header line in CSV format */
 #define DEFWIDTH 80
 
 /* use a 64 bit integer for the timer */
-typedef lng timertype;
-#define TTFMT LLFMT
+typedef int64_t timertype;
+#define TTFMT "%" PRId64
 #if 0
 static char *mark, *mark2;
 #endif
@@ -1463,7 +1464,7 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 	char **rest = NULL;
 	char buf[50];
 	int ps = rowsperpage, silent = 0;
-	mapi_int64 rows = 0;
+	int64_t rows = 0;
 
 	/* in case of interactive mode, we should show timing on request */
 	singleinstr = showtiming? 1 :singleinstr;
@@ -1669,11 +1670,11 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 	if (fields)
 		SQLseparator(len, printfields, '-');
 	rows = mapi_get_row_count(hdl);
-	snprintf(buf, sizeof(buf), LLFMT " rows", rows);
+	snprintf(buf, sizeof(buf), "%" PRId64 " rows", rows);
 #if 0
 	mark2 = strdup(buf);	/* for the timer output */
 #endif
-	printf(LLFMT " tuple%s%s%s%s", rows, rows != 1 ? "s" : "",
+	printf("%" PRId64 " tuple%s%s%s%s", rows, rows != 1 ? "s" : "",
 			singleinstr ? " (" : "",
 			singleinstr && formatter != TESTformatter ? timerHuman() : "",
 			singleinstr ? ")" : "");
@@ -1682,7 +1683,7 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 		printf(" !");
 	if (fields != printfields) {
 		rows = fields - printfields;
-		printf(LLFMT " column%s dropped", rows, rows != 1 ? "s" : "");
+		printf("%" PRId64 " column%s dropped", rows, rows != 1 ? "s" : "");
 	}
 	if (fields != printfields && croppedfields > 0)
 		printf(", ");
@@ -1826,7 +1827,7 @@ static int
 format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 {
 	MapiMsg rc = MERROR;
-	mapi_int64 aff, lid;
+	int64_t aff, lid;
 	char *reply;
 #ifdef HAVE_POPEN
 	stream *saveFD;
@@ -1862,20 +1863,20 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			SQLqueryEcho(hdl);
 			if (formatter == RAWformatter ||
 			    formatter == TESTformatter)
-				mnstr_printf(toConsole, "[ " LLFMT "\t]\n", mapi_rows_affected(hdl));
+				mnstr_printf(toConsole, "[ %" PRId64 "\t]\n", mapi_rows_affected(hdl));
 			else if (formatter == TIMERformatter)
 				printf("%s\n", timerHuman());
 			else {
 				aff = mapi_rows_affected(hdl);
 				lid = mapi_get_last_id(hdl);
 				mnstr_printf(toConsole,
-					     LLFMT " affected row%s",
+					     "%" PRId64 " affected row%s",
 					     aff,
 					     aff != 1 ? "s" : "");
 				if (lid != -1) {
 					mnstr_printf(toConsole,
 						     ", last generated key: "
-						     LLFMT,
+						     "%" PRId64,
 						     lid);
 				}
 				if (singleinstr && formatter != TESTformatter)
@@ -2949,7 +2950,7 @@ set_timezone(Mapi mid)
 	tmp = localtime(&t);
 	tmp->tm_isdst=0; /* We need the difference without dst */
 	lt = mktime(tmp);
-	assert((lng) gt - (lng) lt >= (lng) INT_MIN && (lng) gt - (lng) lt <= (lng) INT_MAX);
+	assert((int64_t) gt - (int64_t) lt >= (int64_t) INT_MIN && (int64_t) gt - (int64_t) lt <= (int64_t) INT_MAX);
 	tzone = (int) (gt - lt);
 #endif
 	if (tzone < 0)

@@ -77,7 +77,7 @@ GDKenvironment(const char *dbpath)
 		fprintf(stderr, "!GDKenvironment: database name missing.\n");
 		return 0;
 	}
-	if (strlen(dbpath) >= PATHLENGTH) {
+	if (strlen(dbpath) >= FILENAME_MAX) {
 		fprintf(stderr, "!GDKenvironment: database name too long.\n");
 		return 0;
 	}

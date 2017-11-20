@@ -26,15 +26,18 @@ sequence_destroy( store_sequence *s )
 	_DELETE(s);
 }
 
-void sequences_init(void)
+void* sequences_init(void)
 {
 	sql_seqs = list_create( (fdestroy)sequence_destroy );
+	return (void*) sql_seqs;
 }
 
 void sequences_exit(void)
 {
-	list_destroy(sql_seqs);
-	sql_seqs = NULL;
+	if(sql_seqs) {
+		list_destroy(sql_seqs);
+		sql_seqs = NULL;
+	}
 }
 
 /* lock is held */

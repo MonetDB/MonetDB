@@ -1834,6 +1834,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 			int width;
 
 			for (attr = 0; attr < as->nr_attrs; attr++) {
+				if (as->format[attr].skip)
+					continue;
 				width = as->format[attr].c->twidth;
 				switch (width){
 				case 1:

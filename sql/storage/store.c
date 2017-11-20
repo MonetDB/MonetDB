@@ -570,6 +570,13 @@ load_part(sql_trans *tr, sql_table *t, oid rid)
 	cs_add(&t->members, pt, TR_OLD);
 }
 
+void
+sql_trans_update_tables(sql_trans* tr, sql_schema *s)
+{
+	(void)tr;
+	(void)s;
+}
+
 static sql_table *
 load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 {
@@ -869,6 +876,34 @@ set_members(changeset *ts)
 	}
 }
 
+static void 
+sql_trans_update_schema(sql_trans *tr, oid rid)
+{
+	void *v;
+	sql_schema *s = NULL, *syss = find_sql_schema(tr, "sys");
+	sql_table *ss = find_sql_table(syss, "schemas");
+	sqlid sid;
+
+	v = table_funcs.column_find_value(tr, find_sql_column(ss, "id"), rid);
+	sid = *(sqlid *)v; 	_DELETE(v);
+	s = find_sql_schema_id(tr, sid);
+
+	if (s==NULL) 
+		return ;
+
+	if (bs_debug)
+		fprintf(stderr, "#update schema %s %d\n", s->base.name, s->base.id);
+
+	v = table_funcs.column_find_value(tr, find_sql_column(ss, "name"), rid);
+	base_init(tr->sa, &s->base, sid, TR_OLD, v); _DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(ss, "authorization"), rid);
+	s->auth_id = *(sqlid *)v; 	_DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(ss, "system"), rid);
+	s->system = *(bit *)v;          _DELETE(v);
+	v = table_funcs.column_find_value(tr, find_sql_column(ss, "owner"), rid);
+	s->owner = *(sqlid *)v;		_DELETE(v);
+}
+
 static sql_schema *
 load_schema(sql_trans *tr, sqlid id, oid rid)
 {
@@ -989,6 +1024,9 @@ create_trans(sql_allocator *sa, backend_stack stk)
 {
 	sql_trans *t = ZNEW(sql_trans);
 
+	if(!t)
+		return NULL;
+
 	t->sa = sa;
 	t->name = NULL;
 	t->wtime = t->rtime = 0;
@@ -1002,6 +1040,24 @@ create_trans(sql_allocator *sa, backend_stack stk)
 
 	cs_new(&t->schemas, t->sa, (fdestroy) &schema_destroy);
 	return t;
+}
+
+void
+sql_trans_update_schemas(sql_trans* tr)
+{
+	sql_schema *syss = find_sql_schema(tr, "sys");
+	sql_table *sysschema = find_sql_table(syss, "schemas");
+	sql_column *sysschema_ids = find_sql_column(sysschema, "id");
+	rids *schemas = table_funcs.rids_select(tr, sysschema_ids, NULL, NULL);
+	oid rid;
+	
+	if (bs_debug)
+		fprintf(stderr, "#update schemas\n");
+
+	for(rid = table_funcs.rids_next(schemas); rid != oid_nil; rid = table_funcs.rids_next(schemas)) {
+		sql_trans_update_schema(tr, rid);
+	}
+	table_funcs.rids_destroy(schemas);
 }
 
 static void
@@ -1373,16 +1429,22 @@ store_load(void) {
 	sqlid id = 0;
 
 	sa = sa_create();
+	if(!sa)
+		return -1;
 	types_init(sa, logger_debug);
 
 #define FUNC_OIDS 2000
 	// TODO: Niels: Are we fine running this twice?
-	
+
 	/* we store some spare oids */
 	store_oid = FUNC_OIDS;
 
-	sequences_init();
+	if(!sequences_init())
+		return -1;
 	gtrans = tr = create_trans(sa, backend_stk);
+	if(!gtrans)
+		return -1;
+
 	transactions = 0;
 	active_sessions = sa_list(sa);
 
@@ -1393,6 +1455,8 @@ store_load(void) {
 			return -1;
 		}
 		tr = sql_trans_create(backend_stk, NULL, NULL);
+		if(!tr)
+			return -1;
 	} else {
 		first = 0;
 	}
@@ -1758,22 +1822,22 @@ store_manager(void)
 		}
 
 		MT_lock_set(&bs_lock);
-        	if (GDKexiting()) {
-            		MT_lock_unset(&bs_lock);
-            		return;
-        	}
-        	if ((!need_flush && logger_funcs.changes() < 1000000 && shared_transactions_drift < shared_drift_threshold)) {
-            		MT_lock_unset(&bs_lock);
-            		continue;
-        	}
+		if (GDKexiting()) {
+			MT_lock_unset(&bs_lock);
+			return;
+		}
+		if ((!need_flush && logger_funcs.changes() < 1000000 && shared_transactions_drift < shared_drift_threshold)) {
+			MT_lock_unset(&bs_lock);
+			continue;
+		}
 		need_flush = 0;
-        	while (store_nr_active) { /* find a moment to flush */
-            		MT_lock_unset(&bs_lock);
+		while (store_nr_active) { /* find a moment to flush */
+			MT_lock_unset(&bs_lock);
 			if (GDKexiting())
 				return;
-            		MT_sleep_ms(sleeptime);
-            		MT_lock_set(&bs_lock);
-        	}
+			MT_sleep_ms(sleeptime);
+			MT_lock_set(&bs_lock);
+		}
 
 		if (create_shared_logger) {
 			/* (re)load data from shared write-ahead log */
@@ -2568,7 +2632,14 @@ trans_dup(backend_stack stk, sql_trans *ot, const char *newname)
 	node *n;
 	sql_trans *t = ZNEW(sql_trans);
 
+	if(!t)
+		return NULL;
+
 	t->sa = sa_create();
+	if(!t->sa) {
+		_DELETE(t);
+		return NULL;
+	}
 	t = trans_init(t, stk, ot);
 
 	cs_new(&t->schemas, t->sa, (fdestroy) &schema_destroy);
@@ -3448,7 +3519,8 @@ sql_trans_create(backend_stack stk, sql_trans *parent, const char *name)
 #ifdef STORE_DEBUG
 			fprintf(stderr, "#new trans (%p)\n", tr);
 #endif
-			transactions++;
+			if(tr)
+				transactions++;
 		}
 	}
 	return tr;
@@ -3545,7 +3617,7 @@ sql_trans_commit(sql_trans *tr)
 }
 
 
-static void
+static int
 sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type)
 {
 	int dep_id=0, t_id = -1;
@@ -3553,7 +3625,12 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type
 	sql_table *t = NULL;
 
 	list *dep = sql_trans_get_dependencies(tr, id, type, NULL);
-	node *n = dep->h;
+	node *n;
+
+	if(!dep)
+		return DEPENDENCY_CHECK_ERROR;
+
+	n = dep->h;
 
 	while (n) {
 		dep_id = *(int*) n->data;
@@ -3600,10 +3677,11 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sql_schema *s, int id, short type
 							break;
 			}
 		}
-		
-		n = n->next->next;	
+
+		n = n->next->next;
 	}
 	list_destroy(dep);
+	return DEPENDENCY_CHECK_OK;
 }
 
 static void
@@ -4119,7 +4197,7 @@ sql_trans_drop_func(sql_trans *tr, sql_schema *s, int id, int drop_action)
 		// FIXME unchecked_malloc MNEW can return NULL
 		int *local_id = MNEW(int);
 
-		if (! tr->dropped) 
+		if (! tr->dropped)
 			tr->dropped = list_create((fdestroy) GDKfree);
 		*local_id = func->base.id;
 		list_append(tr->dropped, local_id);
@@ -4148,7 +4226,7 @@ sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list * list_func, int drop
 	for (n = list_func->h; n ; n = n->next ) {
 		func = (sql_func *) n->data;
 
-		if (! list_find_id(tr->dropped, func->base.id)){ 
+		if (! list_find_id(tr->dropped, func->base.id)){
 			// FIXME unchecked_malloc MNEW can return NULL
 			int *local_id = MNEW(int);
 
@@ -4157,12 +4235,12 @@ sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list * list_func, int drop
 			sql_trans_drop_func(tr, s, func->base.id, drop_action ? DROP_CASCADE : DROP_RESTRICT);
 		}
 	}
-	
+
 	if ( tr->dropped) {
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
 	}
-	
+
 }
 
 sql_schema *
@@ -5361,10 +5439,18 @@ sql_session_create(backend_stack stk, int ac )
 	if (!s)
 		return NULL;
 	s->tr = sql_trans_create(s->stk, NULL, NULL);
+	if(!s->tr) {
+		_DELETE(s);
+		return NULL;
+	}
 	s->schema_name = NULL;
 	s->active = 0;
 	s->stk = stk;
-	sql_session_reset(s, ac);
+	if(!sql_session_reset(s, ac)) {
+		sql_trans_destroy(s->tr);
+		_DELETE(s);
+		return NULL;
+	}
 	nr_sessions++;
 	return s;
 }
@@ -5381,17 +5467,18 @@ sql_session_destroy(sql_session *s)
 	nr_sessions--;
 }
 
-void
+int
 sql_session_reset(sql_session *s, int ac) 
 {
 	sql_schema *tmp;
+	char *def_schema_name = _STRDUP("sys");
 
-	if (!s->tr)
-		return;
+	if (!s->tr || !def_schema_name)
+		return 0;
 
 	/* TODO cleanup "dt" schema */
 	tmp = find_sql_schema(s->tr, "tmp");
-		
+
 	if (tmp->tables.set) {
 		node *n;
 		for (n = tmp->tables.set->h; n; n = n->next) {
@@ -5405,10 +5492,11 @@ sql_session_reset(sql_session *s, int ac)
 
 	if (s->schema_name)
 		_DELETE(s->schema_name);
-	s->schema_name = _STRDUP("sys");
+	s->schema_name = def_schema_name;
 	s->schema = NULL;
 	s->auto_commit = s->ac_on_commit = ac;
 	s->level = ISO_SERIALIZABLE;
+	return 1;
 }
 
 int

@@ -16,7 +16,7 @@
 #include "algebra.h"
 #include "generator.h"
 #include "mtime.h"
-#include "math.h"
+#include <math.h>
 
 
 #define IDENTITY(x)	(x)

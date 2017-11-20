@@ -30,8 +30,6 @@
 
 #include <errno.h>
 
-#define PATHLENGTH	256	/* maximum file pathname length. */
-
 static const char *sql_commands[] = {
 	"SELECT",
 	"INSERT",
@@ -49,7 +47,7 @@ static const char *sql_commands[] = {
 };
 
 static Mapi _mid;
-static char _history_file[PATHLENGTH];
+static char _history_file[FILENAME_MAX];
 static int _save_history = 0;
 static char *language;
 
@@ -57,7 +55,8 @@ static char *
 sql_tablename_generator(const char *text, int state)
 {
 
-	static int seekpos, len, rowcount;
+	static int64_t seekpos, rowcount;
+	static size_t len;
 	static MapiHdl table_hdl;
 
 	if (!state) {
@@ -170,7 +169,7 @@ static int
 mal_help(int cnt, int key)
 {
 	char *name, *c, *buf;
-	int seekpos = 0, rowcount;
+	int64_t seekpos = 0, rowcount;
 	MapiHdl table_hdl;
 
 	(void) cnt;
@@ -215,7 +214,8 @@ mal_command_generator(const char *text, int state)
 {
 
 	static int idx;
-	static int seekpos, len, rowcount;
+	static int64_t seekpos, rowcount;
+	static size_t len;
 	static MapiHdl table_hdl;
 	char *name, *buf;
 
@@ -330,13 +330,13 @@ init_readline(Mapi mid, char *lang, int save_history)
 	if (save_history) {
 #ifndef NATIVE_WIN32
 		if (getenv("HOME") != NULL) {
-			snprintf(_history_file, PATHLENGTH,
+			snprintf(_history_file, FILENAME_MAX,
 				 "%s/.mapiclient_history_%s",
 				 getenv("HOME"), language);
 			_save_history = 1;
 		}
 #else
-		snprintf(_history_file, PATHLENGTH,
+		snprintf(_history_file, FILENAME_MAX,
 			 "%s%c_mapiclient_history_%s",
 			 mo_find_option(NULL, 0, "prefix"), DIR_SEP, language);
 		_save_history = 1;

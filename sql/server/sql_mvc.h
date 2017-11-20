@@ -136,7 +136,7 @@ extern void mvc_logmanager(void);
 extern void mvc_idlemanager(void);
 
 extern mvc *mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws);
-extern void mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars);
+extern int mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars);
 extern void mvc_destroy(mvc *c);
 
 extern int mvc_status(mvc *c);
@@ -150,7 +150,7 @@ extern int mvc_debug_on(mvc *m, int flag);
  */
 #define has_snapshots(tr) ((tr) && (tr)->parent && (tr)->parent->parent)
 
-extern void mvc_trans(mvc *c);
+extern int mvc_trans(mvc *c);
 extern int mvc_commit(mvc *c, int chain, const char *name);
 extern int mvc_rollback(mvc *c, int chain, const char *name);
 extern int mvc_release(mvc *c, const char *name);
@@ -216,13 +216,13 @@ extern void mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, int dep
 extern int mvc_check_dependency(mvc * m, int id, int type, list *ignore_ids);
 
 /* variable management */
-extern void stack_push_var(mvc *sql, const char *name, sql_subtype *type);
-extern void stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql_subtype *type);
-extern void stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_table *t);
-extern void stack_push_rel_view(mvc *sql, const char *name, sql_rel *view);
+extern sql_var* stack_push_var(mvc *sql, const char *name, sql_subtype *type);
+extern sql_var* stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql_subtype *type);
+extern sql_var* stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_table *t);
+extern sql_var* stack_push_rel_view(mvc *sql, const char *name, sql_rel *view);
 extern void stack_update_rel_view(mvc *sql, const char *name, sql_rel *view);
 
-extern void stack_push_frame(mvc *sql, const char *name);
+extern sql_var* stack_push_frame(mvc *sql, const char *name);
 extern void stack_pop_frame(mvc *sql);
 extern void stack_pop_until(mvc *sql, int top);
 extern sql_subtype *stack_find_type(mvc *sql, const char *name);

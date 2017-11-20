@@ -277,7 +277,8 @@ rel_with_query(mvc *sql, symbol *q )
 	symbol *select = d->next->data.sym;
 	sql_rel *rel;
 
-	stack_push_frame(sql, "WITH");
+	if(!stack_push_frame(sql, "WITH"))
+		return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	/* first handle all with's (ie inlined views) */
 	for (d = d->data.lval->h; d; d = d->next) {
 		symbol *sym = d->data.sym;
@@ -293,7 +294,10 @@ rel_with_query(mvc *sql, symbol *q )
 			stack_pop_frame(sql);
 			return NULL;
 		}
-		stack_push_rel_view(sql, name, nrel);
+		if(!stack_push_rel_view(sql, name, nrel)) {
+			stack_pop_frame(sql);
+			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
 		if (!is_project(nrel->op)) {
 			if (is_topn(nrel->op) || is_sample(nrel->op)) {
 				nrel = rel_project(sql->sa, nrel, rel_projections(sql, nrel, NULL, 1, 1));
@@ -5077,7 +5081,6 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek, int app
 	if (ek.card != card_relation && sn->orderby)
 		return sql_error(sql, 01, SQLSTATE(42000) "SELECT: ORDER BY only allowed on outermost SELECT");
 
-
 	sql->use_views = 1;
 	if (sn->from) {		/* keep variable list with tables and names */
 		dlist *fl = sn->from->data.lval;
@@ -5100,7 +5103,7 @@ rel_query(mvc *sql, sql_rel *rel, symbol *sq, int toplevel, exp_kind ek, int app
 				 */ 
 				if (used && rel)
 					rel = rel_dup(rel);
-				if (!used && (!sn->lateral && !lateral) && rel) {
+				if (!used && ((!sn->lateral && !lateral) || (apply == APPLY_EXISTS || apply == APPLY_NOTEXISTS)) && rel) {
 					sql_rel *o = rel;
 
 					/* remove the outer (running) project */

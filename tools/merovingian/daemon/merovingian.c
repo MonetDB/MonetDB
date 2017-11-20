@@ -150,7 +150,7 @@ logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream, int res
 		strftime(mytime, sizeof(mytime), "%Y-%m-%d %H:%M:%S", tmp);
 		while ((p = strchr(q, '\n')) != NULL) {
 			if (writeident == 1)
-				fprintf(stream, "%s %s %s[" LLFMT "]: ",
+				fprintf(stream, "%s %s %s[%lld]: ",
 						mytime, type, dbname, pid);
 			*p = '\0';
 			fprintf(stream, "%s\n", q);
@@ -159,7 +159,7 @@ logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream, int res
 		}
 		if ((int)(q - buf) < len) {
 			if (writeident == 1)
-				fprintf(stream, "%s %s %s[" LLFMT "]: ",
+				fprintf(stream, "%s %s %s[%lld]: ",
 						mytime, type, dbname, pid);
 			writeident = 0;
 			fprintf(stream, "%s\n", q);

@@ -3,7 +3,14 @@ select
                 then (true)
                 else (false)
         end
-from sys.tables;
+from sys.table_types limit 3;
+
+select 
+        case when EXISTS ( select count(hashes) from sys.tablestoragemodel )
+                then (true)
+                else (false)
+        end
+from sys.table_types limit 3;
 
 
 insert into sys.privileges values (

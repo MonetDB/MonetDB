@@ -1,0 +1,92 @@
+stdout of test 'skip_problem_best_effort.Bug-6442` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 15:20:22 >  
+# 15:20:22 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32985" "--set" "mapi_usock=/var/tmp/mtest-5456/.s.monetdb.32985" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 15:20:22 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.330 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:32985/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5456/.s.monetdb.32985
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 15:20:23 >  
+# 15:20:23 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5456" "--port=32985"
+# 15:20:23 >  
+
+#drop table if exists t;
+#start transaction;
+#create table t ( c1 int , c2 int );
+#copy 1 records into t (c1) from stdin (c1,c2) best effort;
+#1|2
+[ 1	]
+#select * from t;
+% sys.t,	sys.t # table_name
+% c1,	c2 # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	NULL	]
+#rollback;
+#start transaction;
+#create table t ( c1 int , c2 int );
+#copy 1 records into t (c2) from stdin (c1,c2) best effort;
+#1|2
+[ 1	]
+#select * from t;
+% sys.t,	sys.t # table_name
+% c1,	c2 # name
+% int,	int # type
+% 1,	1 # length
+[ NULL,	2	]
+#rollback;
+#start transaction;
+#create table t ( c1 int , c2 int );
+#copy 1 records into t (c1,c2) from stdin (x,c1,c2) best effort;
+#0|1|2
+[ 1	]
+#select * from t;
+% sys.t,	sys.t # table_name
+% c1,	c2 # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	2	]
+#rollback;
+#start transaction;
+#create table t ( c1 int , c2 int );
+#copy 1 records into t (c1,c2) from stdin (c1,x,c2) best effort;
+#1|0|2
+[ 1	]
+#select * from t;
+% sys.t,	sys.t # table_name
+% c1,	c2 # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	2	]
+#rollback;
+#start transaction;
+#create table t ( c1 int , c2 int );
+#copy 1 records into t (c1,c2) from stdin (c1,c2,x) best effort;
+#1|2|0
+[ 1	]
+#select * from t;
+% sys.t,	sys.t # table_name
+% c1,	c2 # name
+% int,	int # type
+% 1,	1 # length
+[ 1,	2	]
+#rollback;
+
+# 15:20:23 >  
+# 15:20:23 >  "Done."
+# 15:20:23 >  
+

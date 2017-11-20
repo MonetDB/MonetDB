@@ -584,16 +584,16 @@ static int tracecounter = 0;
 str
 startTrace(str path)
 {
-	char buf[PATHLENGTH];
+	char buf[FILENAME_MAX];
 
 	if( path && eventstream == NULL){
 		// create a file to keep the events, unless we
 		// already have a profiler stream
 		MT_lock_set(&mal_profileLock );
 		if(eventstream == NULL && offlinestore ==0){
-			snprintf(buf,PATHLENGTH,"%s%c%s",GDKgetenv("gdk_dbname"), DIR_SEP, path);
+			snprintf(buf,FILENAME_MAX,"%s%c%s",GDKgetenv("gdk_dbname"), DIR_SEP, path);
 			(void) mkdir(buf,0755);
-			snprintf(buf,PATHLENGTH,"%s%c%s%ctrace_%d",GDKgetenv("gdk_dbname"), DIR_SEP, path,DIR_SEP,tracecounter++ % MAXTRACEFILES);
+			snprintf(buf,FILENAME_MAX,"%s%c%s%ctrace_%d",GDKgetenv("gdk_dbname"), DIR_SEP, path,DIR_SEP,tracecounter++ % MAXTRACEFILES);
 			eventstream = open_wastream(buf);
 			offlinestore++;
 		}

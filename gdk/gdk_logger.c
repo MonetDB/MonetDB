@@ -1156,7 +1156,7 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 	}
 
 	while (fgets(id, sizeof(id), fp) != NULL) {
-		char log_filename[PATHLENGTH];
+		char log_filename[FILENAME_MAX];
 		lng lid = strtoll(id, NULL, 10);
 
 		if (lg->debug & 1) {
@@ -1420,8 +1420,8 @@ logger_set_logdir_path(char *filename, const char *fn,
 	int role = PERSISTENT; /* default role is persistent, i.e. the default dbfarm */
 
 	if (MT_path_absolute(logdir)) {
-		char logdir_parent_path[PATHLENGTH] = "";
-		char logdir_name[PATHLENGTH] = "";
+		char logdir_parent_path[FILENAME_MAX] = "";
+		char logdir_name[FILENAME_MAX] = "";
 
 		/* split the logdir string into absolute parent dir
 		 * path and (relative) log dir name */
@@ -1429,7 +1429,7 @@ logger_set_logdir_path(char *filename, const char *fn,
 			/* set the new relative logdir location
 			 * including the logger function name
 			 * subdir */
-			snprintf(filename, PATHLENGTH, "%s%c%s%c",
+			snprintf(filename, FILENAME_MAX, "%s%c%s%c",
 				 logdir_name, DIR_SEP, fn, DIR_SEP);
 
 			/* add a new dbfarm for the logger directory
@@ -1447,7 +1447,7 @@ logger_set_logdir_path(char *filename, const char *fn,
 		}
 	} else {
 		/* just concat the logdir and fn with appropriate separators */
-		snprintf(filename, PATHLENGTH, "%s%c%s%c",
+		snprintf(filename, FILENAME_MAX, "%s%c%s%c",
 			 logdir, DIR_SEP, fn, DIR_SEP);
 	}
 
@@ -1459,18 +1459,18 @@ logger_set_logdir_path(char *filename, const char *fn,
  * unless running in read-only mode
  * Load data and persist it in the BATs */
 static gdk_return
-logger_load(int debug, const char *fn, char filename[PATHLENGTH], logger *lg)
+logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 {
 	int id = LOG_SID;
 	FILE *fp;
-	char bak[PATHLENGTH];
+	char bak[FILENAME_MAX];
 	str filenamestr = NULL;
 	log_bid snapshots_bid = 0;
 	bat catalog_bid, catalog_nme, dcatalog, bid;
 	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
 
 	filenamestr = GDKfilepath(farmid, lg->dir, LOGFILE, NULL);
-	snprintf(filename, PATHLENGTH, "%s", filenamestr);
+	snprintf(filename, FILENAME_MAX, "%s", filenamestr);
 	snprintf(bak, sizeof(bak), "%s.bak", filename);
 	GDKfree(filenamestr);
 
@@ -1832,7 +1832,7 @@ logger_load(int debug, const char *fn, char filename[PATHLENGTH], logger *lg)
 
 	if (fp != NULL) {
 #ifdef GDKLIBRARY_NIL_NAN
-		char cvfile[PATHLENGTH];
+		char cvfile[FILENAME_MAX];
 #endif
 
 		if (check_version(lg, fp) != GDK_SUCCEED) {
@@ -1868,7 +1868,7 @@ logger_load(int debug, const char *fn, char filename[PATHLENGTH], logger *lg)
 		/* Do not do conversion if logger is shared/read-only */
 		if (!lg->shared) {
 			FILE *fp1;
-			long off; /* type long required by ftell() & fseek() */
+			fpos_t off;
 			int curid;
 
 			snprintf(cvfile, sizeof(cvfile), "%sconvert-nil-nan",
@@ -1876,12 +1876,12 @@ logger_load(int debug, const char *fn, char filename[PATHLENGTH], logger *lg)
 			snprintf(bak, sizeof(bak), "%s_nil-nan-convert", fn);
 			/* read the current log id without disturbing
 			 * the file pointer */
-			off = ftell(fp);
-			if (off < 0) /* should never happen */
-				goto error;
+			if (fgetpos(fp, &off) != 0)
+				goto error; /* should never happen */
 			if (fscanf(fp, "%d", &curid) != 1)
 				curid = -1; /* shouldn't happen? */
-			fseek(fp, off, SEEK_SET);
+			if (fsetpos(fp, &off) != 0)
+				goto error; /* should never happen */
 
 			if ((fp1 = GDKfileopen(0, NULL, bak, NULL, "r")) != NULL) {
 				/* file indicating that we need to do
@@ -1984,8 +1984,8 @@ static logger *
 logger_new(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int shared, const char *local_logdir)
 {
 	logger *lg = (struct logger *) GDKmalloc(sizeof(struct logger));
-	char filename[PATHLENGTH];
-	char shared_log_filename[PATHLENGTH];
+	char filename[FILENAME_MAX];
+	char shared_log_filename[FILENAME_MAX];
 
 	if (lg == NULL) {
 		fprintf(stderr, "!ERROR: logger_new: allocating logger structure failed\n");
@@ -2091,7 +2091,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 gdk_return
 logger_reload(logger *lg)
 {
-	char filename[PATHLENGTH];
+	char filename[FILENAME_MAX];
 
 	snprintf(filename, sizeof(filename), "%s", lg->dir);
 	if (lg->debug & 1) {
@@ -2185,7 +2185,7 @@ gdk_return
 logger_exit(logger *lg)
 {
 	FILE *fp;
-	char filename[PATHLENGTH];
+	char filename[FILENAME_MAX];
 	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
 
 	logger_close(lg);
@@ -2197,7 +2197,7 @@ logger_exit(logger *lg)
 
 	snprintf(filename, sizeof(filename), "%s%s", lg->dir, LOGFILE);
 	if ((fp = GDKfileopen(farmid, NULL, filename, NULL, "w")) != NULL) {
-		char ext[PATHLENGTH];
+		char ext[FILENAME_MAX];
 
 		if (fprintf(fp, "%06d\n\n", lg->version) < 0) {
 			(void) fclose(fp);
@@ -2393,7 +2393,7 @@ logger_changes(logger *lg)
 lng
 logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, int role)
 {
-	char filename[PATHLENGTH];
+	char filename[FILENAME_MAX];
 	FILE *fp;
 	char id[BUFSIZ];
 	lng lid = GDK_FAIL;

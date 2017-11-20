@@ -42,8 +42,6 @@
 #define fdopen _fdopen
 #endif
 
-#define PATHLENGTH 4096
-
 /** the directory where the databases are (aka dbfarm) */
 char *_sabaoth_internal_dbfarm = NULL;
 /** the database which is "active" */
@@ -203,7 +201,7 @@ msab_init(const char *dbfarm, const char *dbname)
 void
 msab_dbpathinit(const char *dbpath)
 {
-	char dbfarm[PATHLENGTH];
+	char dbfarm[FILENAME_MAX];
 	const char *p;
 
 	p = strrchr(dbpath, DIR_SEP);
@@ -259,7 +257,7 @@ msab_marchScenario(const char *lang)
 	FILE *f;
 	char buf[256];	/* should be enough for now */
 	size_t len;
-	char pathbuf[PATHLENGTH];
+	char pathbuf[FILENAME_MAX];
 	char *tmp;
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), SCENARIOFILE)) != NULL)
@@ -303,7 +301,7 @@ msab_retreatScenario(const char *lang)
 	FILE *f;
 	char buf[256];	/* should be enough to hold the entire file */
 	size_t len;
-	char pathbuf[PATHLENGTH];
+	char pathbuf[FILENAME_MAX];
 	char *tmp;
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), SCENARIOFILE)) != NULL)
@@ -374,7 +372,7 @@ char *
 msab_marchConnection(const char *host, const int port)
 {
 	FILE *f;
-	char pathbuf[PATHLENGTH];
+	char pathbuf[FILENAME_MAX];
 	char *tmp;
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), CONNECTIONFILE)) != NULL)
@@ -395,7 +393,7 @@ msab_marchConnection(const char *host, const int port)
 		(void)fclose(f);
 		return(NULL);
 	} else {
-		char buf[PATHLENGTH + 1024];
+		char buf[FILENAME_MAX + 1024];
 		snprintf(buf, sizeof(buf), "failed to open file: %s (%s)",
 				strerror(errno), pathbuf);
 		return(strdup(buf));
@@ -411,7 +409,7 @@ msab_marchConnection(const char *host, const int port)
 char *
 msab_wildRetreat(void)
 {
-	char pathbuf[PATHLENGTH];
+	char pathbuf[FILENAME_MAX];
 	char *tmp;
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), SCENARIOFILE)) != NULL)
@@ -450,7 +448,7 @@ msab_registerStarting(void)
 	 * uplog. */
 
 	FILE *f;
-	char pathbuf[PATHLENGTH];
+	char pathbuf[FILENAME_MAX];
 	char *tmp;
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), UPLOGFILE)) != NULL)
@@ -462,7 +460,7 @@ msab_registerStarting(void)
 		(void)fflush(f);
 		(void)fclose(f);
 	} else {
-		char buf[PATHLENGTH];
+		char buf[FILENAME_MAX];
 		snprintf(buf, sizeof(buf), "failed to open file: %s (%s)",
 				strerror(errno), pathbuf);
 		return(strdup(buf));
@@ -496,7 +494,7 @@ msab_registerStarting(void)
 char *
 msab_registerStarted(void)
 {
-	char pathbuf[PATHLENGTH];
+	char pathbuf[FILENAME_MAX];
 	char *tmp;
 	FILE *fp;
 
@@ -520,7 +518,7 @@ char *
 msab_registerStop(void)
 {
 	FILE *f;
-	char pathbuf[PATHLENGTH];
+	char pathbuf[FILENAME_MAX];
 	char *tmp;
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), UPLOGFILE)) != NULL)
@@ -532,7 +530,7 @@ msab_registerStop(void)
 		(void)fflush(f);
 		(void)fclose(f);
 	} else {
-		char buf[PATHLENGTH];
+		char buf[FILENAME_MAX];
 		snprintf(buf, sizeof(buf), "failed to open file: %s (%s)",
 				strerror(errno), pathbuf);
 		return(strdup(buf));
@@ -570,9 +568,9 @@ msab_getMyStatus(sabdb** ret)
 static sabdb *
 msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 {
-	char buf[PATHLENGTH];
+	char buf[FILENAME_MAX];
 	char data[8096];
-	char log[PATHLENGTH];
+	char log[FILENAME_MAX];
 	FILE *f;
 	int fd;
 	struct stat statbuf;
@@ -734,7 +732,7 @@ msab_getStatus(sabdb** ret, char *dbname)
 	DIR *d;
 	struct dirent *e;
 	char data[8096];
-	char pathbuf[PATHLENGTH];
+	char pathbuf[FILENAME_MAX];
 	char *p;
 
 	/* Caching strategies (might be nice) should create a new struct with
@@ -819,7 +817,7 @@ msab_freeStatus(sabdb** ret)
 char *
 msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 {
-	char log[PATHLENGTH];
+	char log[FILENAME_MAX];
 	char data[24];
 	char *p;
 	FILE *f;
@@ -909,7 +907,7 @@ msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 		}
 		(void)fclose(f);
 	} else {
-		char buf[PATHLENGTH];
+		char buf[FILENAME_MAX];
 		snprintf(buf, sizeof(buf), "could not open file %s: %s",
 				log, strerror(errno));
 		return(strdup(buf));
@@ -992,7 +990,7 @@ msab_deserialise(sabdb **ret, char *sdb)
 	sablist *l;
 	char *p;
 	char *lasts;
-	char buf[PATHLENGTH];
+	char buf[FILENAME_MAX];
 	char protover = 0;
 
 	lasts = sdb;
