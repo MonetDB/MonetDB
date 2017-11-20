@@ -277,15 +277,12 @@ SQLinit(void)
 		}
 		GDKregister(idlethread);
 	}
-	WLCinit();
-	return MAL_SUCCEED;
+	return WLCinit();
 }
 
-#define SQLglobal(name, val, failure)                                       \
-	if(stack_push_var(sql, name, &ctype))                                   \
-		stack_set_var(sql, name, VALset(&src, ctype.type->localtype, val)); \
-	else                                                                    \
-		failure--;                                                          \
+#define SQLglobal(name, val, failure)                                                                             \
+	if(!stack_push_var(sql, name, &ctype) || !stack_set_var(sql, name, VALset(&src, ctype.type->localtype, val))) \
+		failure--;
 
 #define NR_GLOBAL_VARS 10
 /* NR_GLOBAL_VAR should match exactly the number of variables created

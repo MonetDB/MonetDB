@@ -578,7 +578,8 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			_DELETE(msg);
 			throw(SQL, "sql.setVariable", SQLSTATE(42100) "%s", buf);
 		}
-		stack_set_var(m, varname, src);
+		if(!stack_set_var(m, varname, src))
+			throw(SQL, "sql.setVariable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
 		snprintf(buf, BUFSIZ, "variable '%s' unknown", varname);
 		throw(SQL, "sql.setVariable", SQLSTATE(42100) "%s", buf);

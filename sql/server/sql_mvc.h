@@ -239,8 +239,8 @@ extern int stack_find_frame(mvc *sql, const char *name);
 extern int stack_has_frame(mvc *sql, const char *name);
 extern int stack_nr_of_declared_tables(mvc *sql);
 
-extern atom * stack_get_var(mvc *sql, const char *name);
-extern void stack_set_var(mvc *sql, const char *name, ValRecord *v);
+extern atom* stack_get_var(mvc *sql, const char *name);
+extern atom* stack_set_var(mvc *sql, const char *name, ValRecord *v);
 
 extern str stack_get_string(mvc *sql, const char *name);
 extern str stack_set_string(mvc *sql, const char *name, const char *v);

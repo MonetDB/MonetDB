@@ -1455,22 +1455,26 @@ stack_push_rel_view(mvc *sql, const char *name, sql_rel *var)
 	return res;
 }
 
-void
+atom *
 stack_set_var(mvc *sql, const char *name, ValRecord *v)
 {
 	int i;
+	atom *res = NULL;
 
 	for (i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && strcmp(sql->vars[i].name, name)==0) {
 			VALclear(&sql->vars[i].a.data);
-			VALcopy(&sql->vars[i].a.data, v);
+			if(VALcopy(&sql->vars[i].a.data, v) == NULL)
+				return NULL;
 			sql->vars[i].a.isnull = VALisnil(v);
 			if (v->vtype == TYPE_flt)
 				sql->vars[i].a.d = v->val.fval;
 			else if (v->vtype == TYPE_dbl)
 				sql->vars[i].a.d = v->val.dval;
+			res = &sql->vars[i].a;
 		}
 	}
+	return res;
 }
 
 atom *
