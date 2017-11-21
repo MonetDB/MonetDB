@@ -159,7 +159,11 @@ init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
 			throw(MAL, "init_bam_wrapper", MAL_MALLOC_FAIL);
 		}
 		while (TRUE) {
-			int read = mnstr_readline(bw->sam.input, bw->sam.header + header_len, bufsize - header_len);
+			ssize_t read;
+			lng header_pos;
+
+			mnstr_fgetpos(bw->sam.input, &header_pos);
+			read = mnstr_readline(bw->sam.input, bw->sam.header + header_len, bufsize - header_len);
 
 			if (read <= 0) {
 				throw(MAL, "init_bam_wrapper",
@@ -170,7 +174,7 @@ init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
 			if (bw->sam.header[header_len] != '@') {
 				/* This is not a header line, we assume that the header is finished.
 				 * Rewind stream to start of line and stop reading */
-				if (mnstr_fsetpos(bw->sam.input, header_len) < 0) {
+				if (mnstr_fsetpos(bw->sam.input, header_pos) < 0) {
 					throw(MAL, "init_bam_wrapper",
 					  ERR_INIT_BAM_WRAPPER "Could not read last line of SAM header",
 					  file_location);
@@ -188,7 +192,7 @@ init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
 					throw(MAL, "init_bam_wrapper", MAL_MALLOC_FAIL);
 				}
 				bw->sam.header = tmp;
-				if (mnstr_fsetpos(bw->sam.input, header_len) < 0) {
+				if (mnstr_fsetpos(bw->sam.input, header_pos) < 0) {
 					throw(MAL, "init_bam_wrapper",
 					  ERR_INIT_BAM_WRAPPER "Could not read last line of SAM header",
 					  file_location);
