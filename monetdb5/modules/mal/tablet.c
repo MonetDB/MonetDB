@@ -1700,7 +1700,10 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		goto bailout;
 	}
 
-	MT_create_thread(&task.tid, SQLproducer, (void *) &task, MT_THR_JOINABLE);
+	if(MT_create_thread(&task.tid, SQLproducer, (void *) &task, MT_THR_JOINABLE) < 0) {
+		tablet_error(&task, lng_nil, int_nil, SQLSTATE(42000) "failed to start producer thread", "SQLload_file");
+		goto bailout;
+	}
 #ifdef _DEBUG_TABLET_
 	mnstr_printf(GDKout, "#parallel bulk load " LLFMT " - " BUNFMT "\n",
 				 skip, task.maxrow);
@@ -1720,7 +1723,10 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 #endif
 		MT_sema_init(&ptask[j].sema, 0, "ptask[j].sema");
 		MT_sema_init(&ptask[j].reply, 0, "ptask[j].reply");
-		MT_create_thread(&ptask[j].tid, SQLworker, (void *) &ptask[j], MT_THR_JOINABLE);
+		if(MT_create_thread(&ptask[j].tid, SQLworker, (void *) &ptask[j], MT_THR_JOINABLE) < 0) {
+			tablet_error(&task, lng_nil, int_nil, SQLSTATE(42000) "failed to start worker thread", "SQLload_file");
+			goto bailout;
+		}
 	}
 
 	tio = GDKusec();

@@ -316,6 +316,7 @@ mvc_commit(mvc *m, int chain, const char *name)
 {
 	sql_trans *cur, *tr = m->session->tr, *ctr;
 	int ok = SQL_OK;//, wait = 0;
+	str msg;
 
 	assert(tr);
 	assert(m->session->active);	/* only commit an active transaction */
@@ -342,8 +343,13 @@ mvc_commit(mvc *m, int chain, const char *name)
 			mvc_rollback(m, chain, name);
 			return -1;
 		}
-		WLCcommit(m->clientid);
+		msg = WLCcommit(m->clientid);
 		store_unlock();
+		if(msg != MAL_SUCCEED) {
+			(void) sql_error(m, 02, "%s\n", msg);
+			mvc_rollback(m, chain, name);
+			return -1;
+		}
 		m->type = Q_TRANS;
 		if (m->qc) /* clean query cache, protect against concurrent access on the hash tables (when functions already exists, concurrent mal will
 build up the hash (not copied in the trans dup)) */
@@ -378,10 +384,15 @@ build up the hash (not copied in the trans dup)) */
 		if (!chain) 
 			sql_trans_end(m->session);
 		m->type = Q_TRANS;
-		WLCcommit(m->clientid);
+		msg = WLCcommit(m->clientid);
+		store_unlock();
+		if(msg != MAL_SUCCEED) {
+			(void) sql_error(m, 02, "%s\n", msg);
+			mvc_rollback(m, chain, name);
+			return -1;
+		}
 		if (mvc_debug)
 			fprintf(stderr, "#mvc_commit %s done\n", (name) ? name : "");
-		store_unlock();
 		return 0;
 	}
 
@@ -411,7 +422,13 @@ build up the hash (not copied in the trans dup)) */
 		mvc_rollback(m, chain, name);
 		return -1;
 	}
-	WLCcommit(m->clientid);
+	msg = WLCcommit(m->clientid);
+	if(msg != MAL_SUCCEED) {
+		store_unlock();
+		(void) sql_error(m, 02, "%s\n", msg);
+		mvc_rollback(m, chain, name);
+		return -1;
+	}
 	sql_trans_end(m->session);
 	if (chain) 
 		sql_trans_begin(m->session);
@@ -427,6 +444,7 @@ mvc_rollback(mvc *m, int chain, const char *name)
 {
 	int res = 0;
 	sql_trans *tr = m->session->tr;
+	str msg;
 
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_rollback %s\n", (name) ? name : "");
@@ -471,8 +489,13 @@ mvc_rollback(mvc *m, int chain, const char *name)
 		if (chain) 
 			sql_trans_begin(m->session);
 	}
-	WLCrollback(m->clientid);
+	msg = WLCrollback(m->clientid);
 	store_unlock();
+	if (msg != MAL_SUCCEED) {
+		(void)sql_error(m, 02, "%s\n", msg);
+		m->session->status = -1;
+		return -1;
+	}
 	m->type = Q_TRANS;
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_rollback %s done\n", (name) ? name : "");
