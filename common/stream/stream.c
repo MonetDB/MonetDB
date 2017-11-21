@@ -1826,43 +1826,6 @@ open_wastream(const char *filename)
 	return s;
 }
 
-/* some lower-level access functions */
-FILE *
-getFile(stream *s)
-{
-#ifdef _MSC_VER
-	if (s->read == console_read)
-		return stdin;
-	if (s->write == console_write)
-		return stdout;
-#endif
-	if (s->read != file_read)
-		return NULL;
-	return (FILE *) s->stream_data.p;
-}
-
-int
-getFileNo(stream *s)
-{
-	FILE *f;
-
-	f = getFile(s);
-	if (f == NULL)
-		return -1;
-	return fileno(f);
-}
-
-size_t
-getFileSize(stream *s)
-{
-	struct stat stb;
-	int fd = getFileNo(s);
-
-	if (fd >= 0 && fstat(fd, &stb) == 0)
-		return (size_t) stb.st_size;
-	return 0;		/* unknown */
-}
-
 /* ------------------------------------------------------------------ */
 /* streams working on a remote file using cURL */
 
@@ -2802,6 +2765,43 @@ file_wastream(FILE *restrict fp, const char *restrict name)
 #endif
 	s->stream_data.p = (void *) fp;
 	return s;
+}
+
+/* some lower-level access functions */
+FILE *
+getFile(stream *s)
+{
+#ifdef _MSC_VER
+	if (s->read == console_read)
+		return stdin;
+	if (s->write == console_write)
+		return stdout;
+#endif
+	if (s->read != file_read)
+		return NULL;
+	return (FILE *) s->stream_data.p;
+}
+
+int
+getFileNo(stream *s)
+{
+	FILE *f;
+
+	f = getFile(s);
+	if (f == NULL)
+		return -1;
+	return fileno(f);
+}
+
+size_t
+getFileSize(stream *s)
+{
+	struct stat stb;
+	int fd = getFileNo(s);
+
+	if (fd >= 0 && fstat(fd, &stb) == 0)
+		return (size_t) stb.st_size;
+	return 0;		/* unknown */
 }
 
 /* ------------------------------------------------------------------ */
