@@ -2215,7 +2215,7 @@ struct myread_t {
 };
 
 static ssize_t
-myread(void *private, void *buf, size_t elmsize, size_t cnt)
+myread(void *restrict private, void *restrict buf, size_t elmsize, size_t cnt)
 {
 	struct myread_t *p = private;
 	size_t size = elmsize * cnt;
