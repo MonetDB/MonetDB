@@ -210,7 +210,7 @@ WLCgetConfig(void){
 	fd = fopen(l,"r");
 	GDKfree(l);
 	if( fd == NULL)
-		throw(MAL,"wlc.getConfig","Could not access %s\n",l);
+		throw(MAL,"wlc.getConfig","Could not access wlc.config file\n");
 	WLCreadConfig(fd);
 	return MAL_SUCCEED;
 }
