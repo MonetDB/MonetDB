@@ -17,7 +17,7 @@
 #include "msqldump.h"
 
 static void
-quoted_print(stream *f, const char *s, const char singleq)
+quoted_print(stream *f, const char *s, char singleq)
 {
 	mnstr_write(f, singleq ? "'" : "\"", 1, 1);
 	while (*s) {
@@ -1046,7 +1046,7 @@ describe_schema(Mapi mid, const char *sname, stream *toConsole)
 
 static int
 dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConsole,
-		const char useInserts)
+		char useInserts)
 {
 	int cnt, i;
 	MapiHdl hdl = NULL;
@@ -1139,7 +1139,7 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 			     strcmp(mapi_get_type(hdl, i), "timestamptz") == 0);
 	}
 	while (mapi_fetch_row(hdl)) {
-		char *s;
+		const char *s;
 
 		if (useInserts)
 			mnstr_printf(toConsole, "INSERT INTO \"%s\".\"%s\" VALUES (",
@@ -1203,7 +1203,7 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 }
 
 int
-dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole, int describe, int foreign, const char useInserts)
+dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole, int describe, int foreign, char useInserts)
 {
 	int rc;
 
@@ -1220,7 +1220,8 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, int hashge)
 	size_t qlen = 200 + strlen(fid);
 	char *query = malloc(qlen);
 	const char *sep;
-	char *ffunc, *sname, *fname;
+	char *ffunc;
+	const char *sname, *fname;
 	int flang, ftype;
 
 	snprintf(query, qlen, "SELECT f.id, f.func, f.language, f.type, s.name, f.name FROM sys.functions f, sys.schemas s WHERE f.schema_id = s.id AND f.id = %s", fid);
@@ -1437,7 +1438,7 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 }
 
 int
-dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
+dump_database(Mapi mid, stream *toConsole, int describe, char useInserts)
 {
 	const char *start = "START TRANSACTION";
 	const char *end = "ROLLBACK";
@@ -2121,7 +2122,7 @@ dump_version(Mapi mid, stream *toConsole, const char *prefix)
 {
 	MapiHdl hdl;
 	char *dbname = NULL, *uri = NULL, *dbver = NULL, *dbrel = NULL;
-	char *name, *val;
+	const char *name, *val;
 
 	if ((hdl = mapi_query(mid,
 			      "SELECT name, value "
