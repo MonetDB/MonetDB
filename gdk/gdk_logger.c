@@ -79,6 +79,16 @@
 #define printf(fmt,...) ((void) 0)
 #endif
 
+#ifdef WIN32
+#define getfilepos _ftelli64
+#else
+#ifdef HAVE_FSEEKO
+#define getfilepos ftello
+#else
+#define getfilepos ftell
+#endif
+#endif
+
 static char *log_commands[] = {
 	NULL,
 	"LOG_START",
@@ -1019,7 +1029,8 @@ logger_readlog(logger *lg, char *filename)
 			lng fpos;
 			t0 = t1;
 			/* not more than once every 10 seconds */
-			if (mnstr_fgetpos(lg->log, &fpos) == 0) {
+			fpos = (lng) getfilepos(getFile(lg->log));
+			if (fpos >= 0) {
 				printf("# still reading write-ahead log \"%s\" (%d%% done)\n", filename, (int) ((fpos * 100 + 50) / sb.st_size));
 				fflush(stdout);
 			}
@@ -2706,7 +2717,8 @@ pre_allocate(logger *lg)
 	// FIXME: this causes serious issues on Windows at least with MinGW
 #ifndef WIN32
 	lng p;
-	if (mnstr_fgetpos(lg->log, &p) != 0)
+	p = (lng) getfilepos(getFile(lg->log));
+	if (p == -1)
 		return GDK_FAIL;
 	if (p + DBLKSZ > lg->end) {
 		p &= ~(DBLKSZ - 1);

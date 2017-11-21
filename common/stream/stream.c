@@ -206,8 +206,8 @@ struct stream {
 	void (*destroy)(stream *s);
 	int (*flush)(stream *s);
 	int (*fsync)(stream *s);
-	int (*fgetpos)(stream *s, lng *p);
-	int (*fsetpos)(stream *s, lng p);
+	int (*fgetpos)(stream *s, fpos_t *p);
+	int (*fsetpos)(stream *s, fpos_t *p);
 	void (*update_timeout)(stream *s);
 	int (*isalive)(stream *s);
 };
@@ -531,7 +531,7 @@ mnstr_fsync(stream *s)
 }
 
 int
-mnstr_fgetpos(stream *s, lng *p)
+mnstr_fgetpos(stream *s, fpos_t *p)
 {
 	if (s == NULL || p == NULL)
 		return -1;
@@ -546,7 +546,7 @@ mnstr_fgetpos(stream *s, lng *p)
 }
 
 int
-mnstr_fsetpos(stream *s, lng p)
+mnstr_fsetpos(stream *s, fpos_t *p)
 {
 	if (s == NULL)
 		return -1;
@@ -842,55 +842,23 @@ file_fsync(stream *s)
 }
 
 static int
-file_fgetpos(stream *s, lng *p)
+file_fgetpos(stream *s, fpos_t *p)
 {
 	FILE *fp = (FILE *) s->stream_data.p;
 
 	if (fp == NULL || p == NULL)
 		return -1;
-#ifdef WIN32
-	*p = (lng) _ftelli64(fp);	/* returns __int64 */
-#else
-#ifdef HAVE_FSEEKO
-	*p = (lng) ftello(fp);	/* returns off_t */
-#else
-	*p = (lng) ftell(fp);	/* returns long */
-#endif
-#endif
-	return *p < 0 ? -1 : 0;
+	return fgetpos(fp, p) ? -1 : 0;
 }
 
 static int
-file_fsetpos(stream *s, lng p)
+file_fsetpos(stream *s, fpos_t *p)
 {
-	int res = 0;
 	FILE *fp = (FILE *) s->stream_data.p;
 
-	if (fp == NULL)
+	if (fp == NULL || p == NULL)
 		return -1;
-#ifdef WIN32
-	res = _fseeki64(fp, (__int64) p, SEEK_SET);
-#else
-#ifdef HAVE_FSEEKO
-	res = fseeko(fp, (off_t) p, SEEK_SET);
-#else
-	res = fseek(fp, (long) p, SEEK_SET);
-#endif
-#endif
-	return res;
-}
-
-size_t
-getFileSize(stream *s)
-{
-	if (s->read == file_read) {
-		struct stat stb;
-
-		if (fstat(fileno((FILE *) s->stream_data.p), &stb) == 0)
-			return (size_t) stb.st_size;
-		/* we shouldn't get here... */
-	}
-	return 0;		/* unknown */
+	return fsetpos(fp, p) ? -1 : 0;
 }
 
 static stream *
@@ -898,7 +866,7 @@ open_stream(const char *filename, const char *flags)
 {
 	stream *s;
 	FILE *fp;
-	lng pos;
+	fpos_t pos;
 	char buf[UTF8BOMLENGTH + 1];
 
 	if ((s = create_stream(filename)) == NULL)
@@ -943,11 +911,11 @@ open_stream(const char *filename, const char *flags)
 	/* if a text file is opened for reading, and it starts with
 	 * the UTF-8 encoding of the Unicode Byte Order Mark, skip the
 	 * mark, and mark the stream as being a UTF-8 stream */
-	if (flags[0] == 'r' && flags[1] != 'b' && file_fgetpos(s, &pos) == 0) {
+	if (flags[0] == 'r' && flags[1] != 'b' && fgetpos(fp, &pos) == 0) {
 		if (file_read(s, buf, 1, UTF8BOMLENGTH) == UTF8BOMLENGTH &&
 		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0)
 			s->isutf8 = 1;
-		else if (file_fsetpos(s, pos) < 0) {
+		else if (fsetpos(fp, &pos) != 0) {
 			/* unlikely: we couldn't seek the file back */
 			fclose(fp);
 			destroy(s);
@@ -1858,6 +1826,43 @@ open_wastream(const char *filename)
 	return s;
 }
 
+/* some lower-level access functions */
+FILE *
+getFile(stream *s)
+{
+#ifdef _MSC_VER
+	if (s->read == console_read)
+		return stdin;
+	if (s->write == console_write)
+		return stdout;
+#endif
+	if (s->read != file_read)
+		return NULL;
+	return (FILE *) s->stream_data.p;
+}
+
+int
+getFileNo(stream *s)
+{
+	FILE *f;
+
+	f = getFile(s);
+	if (f == NULL)
+		return -1;
+	return fileno(f);
+}
+
+size_t
+getFileSize(stream *s)
+{
+	struct stat stb;
+	int fd = getFileNo(s);
+
+	if (fd >= 0 && fstat(fd, &stb) == 0)
+		return (size_t) stb.st_size;
+	return 0;		/* unknown */
+}
+
 /* ------------------------------------------------------------------ */
 /* streams working on a remote file using cURL */
 
@@ -2711,7 +2716,7 @@ stream *
 file_rastream(FILE *fp, const char *name)
 {
 	stream *s;
-	lng pos;
+	fpos_t pos;
 	char buf[UTF8BOMLENGTH + 1];
 	struct stat stb;
 
@@ -2726,13 +2731,13 @@ file_rastream(FILE *fp, const char *name)
 	s->stream_data.p = (void *) fp;
 	if (fstat(fileno(fp), &stb) == 0 &&
 	    S_ISREG(stb.st_mode) &&
-	    file_fgetpos(s, &pos) == 0) {
+	    fgetpos(fp, &pos) == 0) {
 		if (file_read(s, buf, 1, UTF8BOMLENGTH) == UTF8BOMLENGTH &&
 		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0) {
 			s->isutf8 = 1;
 			return s;
 		}
-		if (file_fsetpos(s, pos) < 0) {
+		if (fsetpos(fp, &pos) != 0) {
 			/* unlikely: we couldn't seek the file back */
 			destroy(s);
 			return NULL;
@@ -5028,34 +5033,6 @@ callback_stream(void *private,
 	s->destroy = cb_destroy;
 	s->close = cb_close;
 	return s;
-}
-
-/* Front-ends may wish to have more control over the designated file
- * activity. For this they need access to the file descriptor or even
- * duplicate it. (e.g. tablet loader) */
-FILE *
-getFile(stream *s)
-{
-#ifdef _MSC_VER
-	if (s->read == console_read)
-		return stdin;
-	if (s->write == console_write)
-		return stdout;
-#endif
-	if (s->read != file_read)
-		return NULL;
-	return (FILE *) s->stream_data.p;
-}
-
-int
-getFileNo(stream *s)
-{
-	FILE *f;
-
-	f = getFile(s);
-	if (f == NULL)
-		return -1;
-	return fileno(f);
 }
 
 static ssize_t
