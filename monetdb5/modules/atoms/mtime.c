@@ -1555,6 +1555,8 @@ str
 MTIMEmonth_to_str(str *ret, const int *month)
 {
 	*ret = GDKstrdup(MONTHS[(*month < 1 || *month > 12) ? 0 : *month]);
+	if (*ret == NULL)
+		throw(MAL, "mtime.month_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -1574,6 +1576,8 @@ str
 MTIMEday_to_str(str *ret, const int *day)
 {
 	*ret = GDKstrdup(DAYS[(*day < 1 || *day > 7) ? 0 : *day]);
+	if (*ret == NULL)
+		throw(MAL, "mtime.day_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -3617,6 +3621,8 @@ MTIMEdate_to_str(str *s, const date *d, const char * const *format)
 
 	if (date_isnil(*d) || strcmp(*format, str_nil) == 0) {
 		*s = GDKstrdup(str_nil);
+		if (*s == NULL)
+			throw(MAL, "mtime.date_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	memset(&t, 0, sizeof(struct tm));
@@ -3663,6 +3669,8 @@ MTIMEtime_to_str(str *s, const daytime *d, const char * const *format)
 
 	if (daytime_isnil(*d) || strcmp(*format, str_nil) == 0) {
 		*s = GDKstrdup(str_nil);
+		if (*s == NULL)
+			throw(MAL, "mtime.time_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	memset(&t, 0, sizeof(struct tm));
@@ -3709,6 +3717,8 @@ MTIMEtimestamp_to_str(str *s, const timestamp *ts, const char * const *format)
 
 	if (timestamp_isnil(*ts) || strcmp(*format, str_nil) == 0) {
 		*s = GDKstrdup(str_nil);
+		if (*s == NULL)
+			throw(MAL, "mtime.timestamp_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	memset(&t, 0, sizeof(struct tm));

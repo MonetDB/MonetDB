@@ -461,6 +461,8 @@ BKCgetColumnType(str *res, const bat *bid)
 		}
 	}
 	*res = GDKstrdup(ret);
+	if(*res == NULL)
+		throw(MAL,"bat.getColumnType", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -474,6 +476,8 @@ BKCgetRole(str *res, const bat *bid)
 	}
 	*res = GDKstrdup(b->tident);
 	BBPunfix(b->batCacheid);
+	if(*res == NULL)
+		throw(MAL,"bat.getRole", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -657,6 +661,8 @@ BKCgetAccess(str *res, const bat *bid)
 		break;
 	}
 	BBPunfix(b->batCacheid);
+	if(*res == NULL)
+		throw(MAL,"bat.getAccess", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 

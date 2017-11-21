@@ -281,8 +281,10 @@ prepareMALstack(MalBlkPtr mb, int size)
 	stk->blk = mb;
 
 	initStack(0, res);
-	if(!res)
+	if(!res) {
+		freeStack(stk);
 		return NULL;
+	}
 	return stk;
 }
 
