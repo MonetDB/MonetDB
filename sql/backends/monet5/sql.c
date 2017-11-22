@@ -1927,7 +1927,7 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( b)
 			BBPunfix(bid);
 	}
-	/* now sent it to the channel cntxt->fdout */
+	/* now send it to the channel cntxt->fdout */
 	if (mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res))
 		msg = createException(SQL, "sql.resultset", SQLSTATE(45000) "Result set construction failed");
   wrapup_result_set:
