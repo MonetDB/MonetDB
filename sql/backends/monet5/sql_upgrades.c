@@ -910,6 +910,38 @@ sql_update_default(Client c, mvc *sql)
 		throw(SQL, "sql_update_jul2017", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
+	/* 39_analytics.sql, 39_analytics_hge.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop aggregate corr(tinyint, tinyint);\n"
+			"drop aggregate corr(smallint, smallint);\n"
+			"drop aggregate corr(integer, integer);\n"
+			"drop aggregate corr(bigint, bigint);\n"
+			"drop aggregate corr(real, real);\n");
+#ifdef HAVE_HGE
+	if (have_hge)
+		pos += snprintf(buf + pos, bufsize - pos,
+				"drop aggregate corr(hugeint, hugeint);\n");
+#endif
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create aggregate corr(e1 TINYINT, e2 TINYINT) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(tinyint, tinyint) to public;\n"
+			"create aggregate corr(e1 SMALLINT, e2 SMALLINT) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(smallint, smallint) to public;\n"
+			"create aggregate corr(e1 INTEGER, e2 INTEGER) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(integer, integer) to public;\n"
+			"create aggregate corr(e1 BIGINT, e2 BIGINT) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(bigint, bigint) to public;\n"
+			"create aggregate corr(e1 REAL, e2 REAL) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(real, real) to public;\n");
+#ifdef HAVE_HGE
+	if (have_hge)
+		pos += snprintf(buf + pos, bufsize - pos,
+				"create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(hugeint, hugeint) to public;\n");
+#endif
+	pos += snprintf(buf + pos, bufsize - pos,
+			"insert into sys.systemfunctions (select id from sys.functions where name = 'corr' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
+
 	/* 60_wlcr.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"create procedure master()\n"

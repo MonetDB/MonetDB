@@ -5309,6 +5309,31 @@ set schema "testschema";
 
 Running database upgrade commands:
 set schema "sys";
+drop aggregate corr(tinyint, tinyint);
+drop aggregate corr(smallint, smallint);
+drop aggregate corr(integer, integer);
+drop aggregate corr(bigint, bigint);
+drop aggregate corr(real, real);
+drop aggregate corr(hugeint, hugeint);
+create aggregate corr(e1 TINYINT, e2 TINYINT) returns DOUBLE
+	external name "aggr"."corr";
+grant execute on aggregate sys.corr(tinyint, tinyint) to public;
+create aggregate corr(e1 SMALLINT, e2 SMALLINT) returns DOUBLE
+	external name "aggr"."corr";
+grant execute on aggregate sys.corr(smallint, smallint) to public;
+create aggregate corr(e1 INTEGER, e2 INTEGER) returns DOUBLE
+	external name "aggr"."corr";
+grant execute on aggregate sys.corr(integer, integer) to public;
+create aggregate corr(e1 BIGINT, e2 BIGINT) returns DOUBLE
+	external name "aggr"."corr";
+grant execute on aggregate sys.corr(bigint, bigint) to public;
+create aggregate corr(e1 REAL, e2 REAL) returns DOUBLE
+	external name "aggr"."corr";
+grant execute on aggregate sys.corr(real, real) to public;
+create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
+	external name "aggr"."corr";
+grant execute on aggregate sys.corr(hugeint, hugeint) to public;
+insert into sys.systemfunctions (select id from sys.functions where name = 'corr' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
 create procedure master()
 external name wlc.master;
 create procedure master(path string)
