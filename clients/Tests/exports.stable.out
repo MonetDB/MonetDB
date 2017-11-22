@@ -533,6 +533,7 @@ char *mapi_get_monet_version(Mapi mid);
 char *mapi_get_motd(Mapi mid);
 char *mapi_get_name(MapiHdl hdl, int fnr);
 char *mapi_get_query(MapiHdl hdl);
+int64_t mapi_get_querytime(MapiHdl hdl);
 int mapi_get_querytype(MapiHdl hdl);
 int64_t mapi_get_row_count(MapiHdl hdl);
 int mapi_get_scale(MapiHdl hdl, int fnr);
