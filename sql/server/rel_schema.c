@@ -188,7 +188,7 @@ mvc_create_table_as_subquery( mvc *sql, sql_rel *sq, sql_schema *s, const char *
 	sql_table *t;
 	int tt;
 
-	if(temp == SQL_PERSISTED_STREAM || temp == SQL_LOCAL_TEMP_STREAM) {
+	if(temp == SQL_PERSISTED_STREAM || temp == SQL_TEMP_STREAM) {
 		tt =(temp == SQL_PERSISTED_STREAM)?tt_stream_per:tt_stream_temp;
 		t = mvc_create_stream_table(sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1, window_size, stride);
 	} else {
@@ -916,7 +916,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 	int create = (!instantiate && !deps);
 	int tt = (temp == SQL_REMOTE)?tt_remote:
 	         (temp == SQL_PERSISTED_STREAM)?tt_stream_per:
-	         (temp == SQL_LOCAL_TEMP_STREAM)?tt_stream_temp:
+	         (temp == SQL_TEMP_STREAM)?tt_stream_temp:
 	         (temp == SQL_MERGE_TABLE)?tt_merge_table:
 	         (temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
 	int window_size = DEFAULT_TABLE_WINDOW, stride = DEFAULT_TABLE_STRIDE;
@@ -932,7 +932,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 	if (temp != SQL_DECLARED_TABLE) {
 		if (temp != SQL_PERSIST && temp != SQL_PERSISTED_STREAM && (tt == tt_table || tt == tt_stream_temp)) {
 			s = mvc_bind_schema(sql, "tmp");
-			if ((temp == SQL_LOCAL_TEMP || temp == SQL_LOCAL_TEMP_STREAM) && sname && strcmp(sname, s->base.name) != 0)
+			if ((temp == SQL_LOCAL_TEMP || temp == SQL_TEMP_STREAM) && sname && strcmp(sname, s->base.name) != 0)
 				return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: local temporary tables should be stored in the '%s' schema", s->base.name);
 		} else if (s == NULL) {
 			s = ss;

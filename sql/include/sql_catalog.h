@@ -129,9 +129,9 @@ typedef enum temp_t {
 	SQL_DECLARED_TABLE = 3,	/* variable inside a stored procedure */
 	SQL_MERGE_TABLE = 4,
 	SQL_PERSISTED_STREAM = 5,
-	SQL_LOCAL_TEMP_STREAM = 6,
-	SQL_REMOTE = 7,
-	SQL_REPLICA_TABLE = 8
+	SQL_REMOTE = 6,
+	SQL_REPLICA_TABLE = 7,
+	SQL_TEMP_STREAM = 8
 } temp_t;
 
 typedef enum comp_type {
@@ -499,7 +499,7 @@ typedef enum table_types {
 #define isStream(x)       (isPerStream(x) || isTempStream(x))
 #define isRemote(x)  	  (x->type==tt_remote)
 #define isReplicaTable(x) (x->type==tt_replica_table)
-#define isKindOfTable(x)  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x))
+#define isKindOfTable(x)  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x) || isStream(x))
 #define isPartition(x)    (isTable(x) && x->p)
 
 #define TABLE_WRITABLE	0

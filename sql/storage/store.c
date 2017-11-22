@@ -187,7 +187,7 @@ trans_drop_tmp(sql_trans *tr)
 			node *nxt = n->next;
 			sql_table *t = n->data;
 
-			if (t->persistence == SQL_LOCAL_TEMP || t->persistence == SQL_LOCAL_TEMP_STREAM)
+			if (t->persistence == SQL_LOCAL_TEMP)
 				cs_remove_node(&tmp->tables, n);
 			n = nxt;
 		}
@@ -633,7 +633,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	if (isPerStream(t))
 		t->persistence = SQL_PERSISTED_STREAM;
 	if (isTempStream(t))
-		t->persistence = SQL_LOCAL_TEMP_STREAM;
+		t->persistence = SQL_TEMP_STREAM;
 	t->cleared = 0;
 	v = table_funcs.column_find_value(tr, find_sql_column(tables, "access"),rid);
 	t->access = *(sht*)v;	_DELETE(v);
@@ -2593,7 +2593,7 @@ schema_dup(sql_trans *tr, int flag, sql_schema *os, sql_trans *o)
 		for (n = os->tables.set->h; n; n = n->next) {
 			sql_table *ot = n->data;
 
-			if (ot->persistence != SQL_LOCAL_TEMP && ot->persistence != SQL_LOCAL_TEMP_STREAM)
+			if (ot->persistence != SQL_LOCAL_TEMP)
 				cs_add(&s->tables, table_dup(tr, flag, ot, s), tr_flag(&ot->base, flag));
 		}
 		if (tr->parent == gtrans)
@@ -4395,7 +4395,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 	if (isPerStream(t))
 		t->persistence = SQL_PERSISTED_STREAM;
 	if (isTempStream(t))
-		t->persistence = SQL_LOCAL_TEMP_STREAM;
+		t->persistence = SQL_TEMP_STREAM;
 
 	if (isTable(t)) {
 		if (store_funcs.create_del(tr, t) != LOG_OK) {

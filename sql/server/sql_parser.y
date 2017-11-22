@@ -1370,13 +1370,9 @@ table_opt_storage:
  ;
 
 opt_temp_stream:
-    /* empty */      { $$ = SQL_PERSISTED_STREAM; }
- |  TEMP             { $$ = SQL_LOCAL_TEMP_STREAM; }
- |  TEMPORARY        { $$ = SQL_LOCAL_TEMP_STREAM; }
- |  LOCAL TEMPORARY  { $$ = SQL_LOCAL_TEMP_STREAM; }
- |  LOCAL TEMP       { $$ = SQL_LOCAL_TEMP_STREAM; }
- |  GLOBAL TEMPORARY { $$ = yyerror(m, "GLOBAL TEMPORARY STREAM tables not supported, only LOCAL"); }
- |  GLOBAL TEMP      { $$ = yyerror(m, "GLOBAL TEMPORARY STREAM tables not supported, only LOCAL"); }
+    /* empty */ { $$ = SQL_PERSISTED_STREAM; }
+ |  TEMP        { $$ = SQL_TEMP_STREAM; }
+ |  TEMPORARY   { $$ = SQL_TEMP_STREAM; }
  ;
 
 stream_window_set:

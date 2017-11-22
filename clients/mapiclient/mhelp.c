@@ -198,7 +198,7 @@ SQLhelp sqlhelp[] = {
 	 "",
 	 "CREATE TABLE [ IF NOT EXISTS ] qname table_source [STORAGE ident string]\n"
 	 "CREATE TABLE [ IF NOT EXISTS ] qname FROM LOADER function_ref\n"
-	 "CREATE [ LOCAL | GLOBAL ] TEMP[ORARY] TABLE [ IF NOT EXISTS ] qname table_source [on_commit]",
+	 "CREATE TEMP[ORARY] TABLE [ IF NOT EXISTS ] qname table_source [on_commit]",
 	 "table_source,on_commit,function_ref",
 	 NULL},
 	{"CREATE TRIGGER",
