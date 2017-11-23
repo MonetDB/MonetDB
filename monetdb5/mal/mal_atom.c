@@ -55,7 +55,7 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 	case 'c':
 		if (idcmp("cmp", name) == 0 && pci->argc == 1) {
 			BATatoms[tpe].atomCmp = (int (*)(const void *, const void *))pci->fcn;
-			BATatoms[tpe].linear = 1;
+			BATatoms[tpe].linear = true;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}
@@ -191,7 +191,7 @@ malAtomDefinition(str name, int tpe)
 		BATatoms[i].storage = ATOMstorage(tpe);
 	} else { /* cannot overload void atoms */
 		BATatoms[i].storage = i;
-		BATatoms[i].linear = 0;
+		BATatoms[i].linear = false;
 	}
 	return MAL_SUCCEED;
 }

@@ -1828,8 +1828,8 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
 typedef struct {
 	/* simple attributes */
 	char name[IDLENGTH];
-	short storage;		/* stored as another type? */
-	short linear;		/* atom can be ordered linearly */
+	uint8_t storage;	/* stored as another type? */
+	bool linear;		/* atom can be ordered linearly */
 	unsigned short size;	/* fixed size of atom */
 
 	/* automatically generated fields */
