@@ -96,6 +96,8 @@ CMDvarADDstr(str *ret, str *s1, str *s2)
 
 	if (strNil(*s1) || strNil(*s2)) {
 		*ret= GDKstrdup(str_nil);
+		if (*ret == NULL)
+			return mythrow(MAL, "calc.+", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	s = GDKzalloc((l1 = strlen(*s1)) + strlen(*s2) + 1);
@@ -117,6 +119,8 @@ CMDvarADDstrint(str *ret, str *s1, int *i)
 
 	if (strNil(*s1) || is_int_nil(*i)) {
 		*ret= GDKstrdup(str_nil);
+		if (*ret == NULL)
+			return mythrow(MAL, "calc.+", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	len = strlen(*s1) + 16;		/* maxint = 2147483647 which fits easily */

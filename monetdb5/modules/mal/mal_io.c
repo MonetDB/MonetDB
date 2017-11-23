@@ -243,6 +243,8 @@ IOprintf_(str *res, str format, ...)
 		throw(MAL,"io.printf", ILLEGAL_ARGUMENT " NULL pointer passed as format.\n");
 	} else if (strchr(format, '%') == NULL) {
 		*res = GDKstrdup(format);
+		if (*res == NULL)
+			throw(MAL,"io.printf", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	buf = dst = (str) GDKmalloc(size = 80);
