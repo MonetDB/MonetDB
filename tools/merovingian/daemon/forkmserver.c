@@ -51,7 +51,7 @@ terminateProcess(pid_t pid, char *dbname, mtype type, int lock)
 		if (lock)
 			pthread_mutex_unlock(&fork_lock);
 		Mfprintf(stderr, "cannot terminate process " LLFMT ": %s\n",
-				(long long int)pid, er);
+				 (long long int)pid, er);
 		free(er);
 		free(dbname);
 		return;
@@ -61,47 +61,47 @@ terminateProcess(pid_t pid, char *dbname, mtype type, int lock)
 		if (lock)
 			pthread_mutex_unlock(&fork_lock);
 		Mfprintf(stderr, "strange, process " LLFMT " serves database '%s' "
-				"which does not exist\n", (long long int)pid, dbname);
+				 "which does not exist\n", (long long int)pid, dbname);
 		free(dbname);
 		return;
 	}
 
 	switch (stats->state) {
-		case SABdbRunning:
-			/* ok, what we expect */
+	case SABdbRunning:
+		/* ok, what we expect */
 		break;
-		case SABdbCrashed:
-			if (lock)
-				pthread_mutex_unlock(&fork_lock);
-			Mfprintf(stderr, "cannot shut down database '%s', mserver "
-					"(pid " LLFMT ") has crashed\n",
-					dbname, (long long int)pid);
-			msab_freeStatus(&stats);
-			free(dbname);
-			return;
-		case SABdbInactive:
-			if (lock)
-				pthread_mutex_unlock(&fork_lock);
-			Mfprintf(stdout, "database '%s' appears to have shut down already\n",
-					dbname);
-			fflush(stdout);
-			msab_freeStatus(&stats);
-			free(dbname);
-			return;
-		case SABdbStarting:
-			if (lock)
-				pthread_mutex_unlock(&fork_lock);
-			Mfprintf(stderr, "database '%s' appears to be starting up\n",
-					 dbname);
-			/* starting up, so we'll go to the shut down phase */
-			break;
-		default:
-			if (lock)
-				pthread_mutex_unlock(&fork_lock);
-			Mfprintf(stderr, "unknown state: %d\n", (int)stats->state);
-			msab_freeStatus(&stats);
-			free(dbname);
-			return;
+	case SABdbCrashed:
+		if (lock)
+			pthread_mutex_unlock(&fork_lock);
+		Mfprintf(stderr, "cannot shut down database '%s', mserver "
+				 "(pid " LLFMT ") has crashed\n",
+				 dbname, (long long int)pid);
+		msab_freeStatus(&stats);
+		free(dbname);
+		return;
+	case SABdbInactive:
+		if (lock)
+			pthread_mutex_unlock(&fork_lock);
+		Mfprintf(stdout, "database '%s' appears to have shut down already\n",
+				 dbname);
+		fflush(stdout);
+		msab_freeStatus(&stats);
+		free(dbname);
+		return;
+	case SABdbStarting:
+		if (lock)
+			pthread_mutex_unlock(&fork_lock);
+		Mfprintf(stderr, "database '%s' appears to be starting up\n",
+				 dbname);
+		/* starting up, so we'll go to the shut down phase */
+		break;
+	default:
+		if (lock)
+			pthread_mutex_unlock(&fork_lock);
+		Mfprintf(stderr, "unknown state: %d\n", (int)stats->state);
+		msab_freeStatus(&stats);
+		free(dbname);
+		return;
 	}
 
 	if (type == MEROFUN) {
@@ -123,7 +123,7 @@ terminateProcess(pid_t pid, char *dbname, mtype type, int lock)
 
 	/* ok, once we get here, we'll be shutting down the server */
 	Mfprintf(stdout, "sending process " LLFMT " (database '%s') the "
-			"TERM signal\n", (long long int)pid, dbname);
+			 "TERM signal\n", (long long int)pid, dbname);
 	kill(pid, SIGTERM);
 	kv = findConfKey(_mero_props, "exittimeout");
 	for (i = 0; i < atoi(kv->val) * 2; i++) {
@@ -137,38 +137,38 @@ terminateProcess(pid_t pid, char *dbname, mtype type, int lock)
 			/* don't die, just continue, so we KILL in the end */
 		} else if (stats == NULL) {
 			Mfprintf(stderr, "hmmmm, database '%s' suddenly doesn't exist "
-					"any more\n", dbname);
+					 "any more\n", dbname);
 		} else {
 			switch (stats->state) {
-				case SABdbRunning:
-				case SABdbStarting:
-					/* ok, try again */
+			case SABdbRunning:
+			case SABdbStarting:
+				/* ok, try again */
 				break;
-				case SABdbCrashed:
-					if (lock)
-						pthread_mutex_unlock(&fork_lock);
-					Mfprintf (stderr, "database '%s' crashed after SIGTERM\n",
-							dbname);
-					msab_freeStatus(&stats);
-					free(dbname);
-					return;
-				case SABdbInactive:
-					if (lock)
-						pthread_mutex_unlock(&fork_lock);
-					Mfprintf(stdout, "database '%s' has shut down\n", dbname);
-					fflush(stdout);
-					msab_freeStatus(&stats);
-					free(dbname);
-					return;
-				default:
-					Mfprintf(stderr, "unknown state: %d\n", (int)stats->state);
+			case SABdbCrashed:
+				if (lock)
+					pthread_mutex_unlock(&fork_lock);
+				Mfprintf (stderr, "database '%s' crashed after SIGTERM\n",
+						  dbname);
+				msab_freeStatus(&stats);
+				free(dbname);
+				return;
+			case SABdbInactive:
+				if (lock)
+					pthread_mutex_unlock(&fork_lock);
+				Mfprintf(stdout, "database '%s' has shut down\n", dbname);
+				fflush(stdout);
+				msab_freeStatus(&stats);
+				free(dbname);
+				return;
+			default:
+				Mfprintf(stderr, "unknown state: %d\n", (int)stats->state);
 				break;
 			}
 		}
 	}
 	Mfprintf(stderr, "timeout of %s seconds expired, sending process " LLFMT
-			" (database '%s') the KILL signal\n",
-			kv->val, (long long int)pid, dbname);
+			 " (database '%s') the KILL signal\n",
+			 kv->val, (long long int)pid, dbname);
 	kill(pid, SIGKILL);
 	msab_freeStatus(&stats);
 	free(dbname);
@@ -255,14 +255,14 @@ forkMserver(char *database, sabdb** stats, int force)
 	if ((*stats)->locked == 1) {
 		if (force == 0) {
 			Mfprintf(stdout, "%s '%s' is under maintenance\n",
-					kv->val, database);
+					 kv->val, database);
 			freeConfFile(ckv);
 			free(ckv);
 			pthread_mutex_unlock(&fork_lock);
 			return(NO_ERR);
 		} else {
 			Mfprintf(stdout, "startup of %s under maintenance "
-					"'%s' forced\n", kv->val, database);
+					 "'%s' forced\n", kv->val, database);
 		}
 	}
 
@@ -279,48 +279,48 @@ forkMserver(char *database, sabdb** stats, int force)
 	}
 
 	switch ((*stats)->state) {
-		case SABdbRunning:
-			freeConfFile(ckv);
-			free(ckv);
-			pthread_mutex_unlock(&fork_lock);
-			return(NO_ERR);
-		case SABdbCrashed:
-			t = localtime(&info.lastcrash);
-			strftime(tstr, sizeof(tstr), "%Y-%m-%d %H:%M:%S", t);
-			secondsToString(upmin, info.minuptime, 1);
-			secondsToString(upavg, info.avguptime, 1);
-			secondsToString(upmax, info.maxuptime, 1);
-			Mfprintf(stdout, "%s '%s' has crashed after start on %s, "
-					"attempting restart, "
-					"up min/avg/max: %s/%s/%s, "
-					"crash average: %d.00 %.2f %.2f (%d-%d=%d)\n",
-					kv->val, database, tstr,
-					upmin, upavg, upmax,
-					info.crashavg1, info.crashavg10, info.crashavg30,
-					info.startcntr, info.stopcntr, info.crashcntr);
+	case SABdbRunning:
+		freeConfFile(ckv);
+		free(ckv);
+		pthread_mutex_unlock(&fork_lock);
+		return(NO_ERR);
+	case SABdbCrashed:
+		t = localtime(&info.lastcrash);
+		strftime(tstr, sizeof(tstr), "%Y-%m-%d %H:%M:%S", t);
+		secondsToString(upmin, info.minuptime, 1);
+		secondsToString(upavg, info.avguptime, 1);
+		secondsToString(upmax, info.maxuptime, 1);
+		Mfprintf(stdout, "%s '%s' has crashed after start on %s, "
+				 "attempting restart, "
+				 "up min/avg/max: %s/%s/%s, "
+				 "crash average: %d.00 %.2f %.2f (%d-%d=%d)\n",
+				 kv->val, database, tstr,
+				 upmin, upavg, upmax,
+				 info.crashavg1, info.crashavg10, info.crashavg30,
+				 info.startcntr, info.stopcntr, info.crashcntr);
 		break;
-		case SABdbInactive:
-			secondsToString(upmin, info.minuptime, 1);
-			secondsToString(upavg, info.avguptime, 1);
-			secondsToString(upmax, info.maxuptime, 1);
-			Mfprintf(stdout, "starting %s '%s', "
-					"up min/avg/max: %s/%s/%s, "
-					"crash average: %d.00 %.2f %.2f (%d-%d=%d)\n",
-					kv->val, database,
-					upmin, upavg, upmax,
-					info.crashavg1, info.crashavg10, info.crashavg30,
-					info.startcntr, info.stopcntr, info.crashcntr);
+	case SABdbInactive:
+		secondsToString(upmin, info.minuptime, 1);
+		secondsToString(upavg, info.avguptime, 1);
+		secondsToString(upmax, info.maxuptime, 1);
+		Mfprintf(stdout, "starting %s '%s', "
+				 "up min/avg/max: %s/%s/%s, "
+				 "crash average: %d.00 %.2f %.2f (%d-%d=%d)\n",
+				 kv->val, database,
+				 upmin, upavg, upmax,
+				 info.crashavg1, info.crashavg10, info.crashavg30,
+				 info.startcntr, info.stopcntr, info.crashcntr);
 		break;
-		default:
-			/* this also includes SABdbStarting, which we shouldn't ever
-			 * see due to the global starting lock */
-			state = (*stats)->state;
-			msab_freeStatus(stats);
-			freeConfFile(ckv);
-			free(ckv);
-			pthread_mutex_unlock(&fork_lock);
-			return(newErr("unknown or impossible state: %d",
-						(int)state));
+	default:
+		/* this also includes SABdbStarting, which we shouldn't ever
+		 * see due to the global starting lock */
+		state = (*stats)->state;
+		msab_freeStatus(stats);
+		freeConfFile(ckv);
+		free(ckv);
+		pthread_mutex_unlock(&fork_lock);
+		return(newErr("unknown or impossible state: %d",
+					  (int)state));
 	}
 
 	/* create the pipes (filedescriptors) now, such that we and the
@@ -363,10 +363,9 @@ forkMserver(char *database, sabdb** stats, int force)
 
 		kv = findConfKey(ckv, "mfunnel");
 		if ((er = multiplexInit(database, kv->val,
-						fdopen(pfdo[1], "a"), fdopen(pfde[1], "a"))) != NO_ERR)
-		{
+								fdopen(pfdo[1], "a"), fdopen(pfde[1], "a"))) != NO_ERR) {
 			Mfprintf(stderr, "failed to create multiplex-funnel: %s\n",
-					getErrMsg(er));
+					 getErrMsg(er));
 			freeConfFile(ckv);
 			free(ckv);
 			pthread_mutex_unlock(&fork_lock);
@@ -399,8 +398,8 @@ forkMserver(char *database, sabdb** stats, int force)
 		free(ckv);
 		pthread_mutex_unlock(&fork_lock);
 		return(newErr("cannot start database '%s': no .vaultkey found "
-					"(did you create the database with `monetdb create %s`?)",
-					database, database));
+					  "(did you create the database with `monetdb create %s`?)",
+					  database, database));
 	}
 
 	pid = fork();
@@ -501,18 +500,18 @@ forkMserver(char *database, sabdb** stats, int force)
 
 		/* ok, now exec that mserver we want */
 		snprintf(dbpath, sizeof(dbpath),
-				"--dbpath=%s/%s", sabdbfarm, database);
+				 "--dbpath=%s/%s", sabdbfarm, database);
 		snprintf(vaultkey, sizeof(vaultkey),
-				"monet_vault_key=%s/.vaultkey", (*stats)->path);
+				 "monet_vault_key=%s/.vaultkey", (*stats)->path);
 		snprintf(muri, sizeof(muri),
-				"merovingian_uri=mapi:monetdb://%s:%u/%s",
-				_mero_hostname, mport, database);
+				 "merovingian_uri=mapi:monetdb://%s:%u/%s",
+				 _mero_hostname, mport, database);
 		argv[c++] = _mero_mserver;
 		argv[c++] = dbpath;
 		argv[c++] = "--set"; argv[c++] = muri;
 		if (dbextra != NULL) {
 			snprintf(dbextra_path, sizeof(dbextra_path),
-					"--dbextra=%s", dbextra);
+					 "--dbextra=%s", dbextra);
 			argv[c++] = dbextra_path;
 		}
 		if (mydoproxy == 1) {
@@ -524,7 +523,7 @@ forkMserver(char *database, sabdb** stats, int force)
 			if (strlen((*stats)->path) + 11 < sizeof(s.sun_path)) {
 				snprintf(port, sizeof(port), "mapi_port=0");
 				snprintf(usock, sizeof(usock), "mapi_usock=%s/.mapi.sock",
-						(*stats)->path);
+						 (*stats)->path);
 			} else {
 				argv[c++] = "--set"; argv[c++] = "mapi_autosense=true";
 				/* for logic here, see comment below */
@@ -666,8 +665,7 @@ forkMserver(char *database, sabdb** stats, int force)
 				(*stats)->conns != NULL &&
 				(*stats)->conns->val != NULL &&
 				(*stats)->scens != NULL &&
-				(*stats)->scens->val != NULL)
-			{
+				(*stats)->scens->val != NULL) {
 				sablist *scen = (*stats)->scens;
 				do {
 					if (scen->val != NULL && strcmp(scen->val, "sql") == 0)
