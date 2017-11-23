@@ -841,11 +841,7 @@ atomtostr(lng, LLFMT, )
 atom_io(lng, Lng, lng)
 
 #ifdef HAVE_HGE
-#ifdef WIN32
-#define HGE_LL018FMT "%018I64d"
-#else
-#define HGE_LL018FMT "%018lld"
-#endif
+#define HGE_LL018FMT "%018" PRId64
 #define HGE_LL18DIGITS LL_CONSTANT(1000000000000000000)
 #define HGE_ABS(a) (((a) < 0) ? -(a) : (a))
 ssize_t

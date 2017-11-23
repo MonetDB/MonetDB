@@ -517,9 +517,9 @@
 #endif
 #define TYPE_any	255	/* limit types to <255! */
 
-typedef signed char bit;
-typedef signed char bte;
-typedef short sht;
+typedef int8_t bit;
+typedef int8_t bte;
+typedef int16_t sht;
 
 #define SIZEOF_OID	SIZEOF_SIZE_T
 typedef size_t oid;
@@ -533,15 +533,7 @@ typedef float flt;
 typedef double dbl;
 typedef char *str;
 
-#if SIZEOF_INT==8
-#	define LL_CONSTANT(val)	(val)
-#elif SIZEOF_LONG==8
-#	define LL_CONSTANT(val)	(val##L)
-#elif defined(HAVE_LONG_LONG)
-#	define LL_CONSTANT(val)	(val##LL)
-#elif defined(HAVE___INT64)
-#	define LL_CONSTANT(val)	(val##i64)
-#endif
+#define LL_CONSTANT(val)	INT64_C(val)
 
 typedef oid var_t;		/* type used for heap index of var-sized BAT */
 #define SIZEOF_VAR_T	SIZEOF_OID
@@ -578,10 +570,10 @@ typedef uint32_t BUN4type;
 #if SIZEOF_BUN > 4
 typedef uint64_t BUN8type;
 #endif
-#define BUN2_NONE ((BUN2type) 0xFFFF)
-#define BUN4_NONE ((BUN4type) 0xFFFFFFFF)
+#define BUN2_NONE ((BUN2type) UINT16_C(0xFFFF))
+#define BUN4_NONE ((BUN4type) UINT32_C(0xFFFFFFFF))
 #if SIZEOF_BUN > 4
-#define BUN8_NONE ((BUN8type) LL_CONSTANT(0xFFFFFFFFFFFFFFFF))
+#define BUN8_NONE ((BUN8type) UINT64_C(0xFFFFFFFFFFFFFFFF))
 #endif
 
 
