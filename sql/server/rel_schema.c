@@ -1329,7 +1329,7 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te)
 {
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
-	sql_schema *s = NULL;
+	sql_schema *s = NULL, *ts = NULL;
 	sql_table *t = NULL, *nt = NULL;
 	node *n;
 	sql_rel *res = NULL, *r;
@@ -1343,12 +1343,14 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te)
 		s = cur_schema(sql);
 
 	if ((t = mvc_bind_table(sql, s, tname)) == NULL) { //trails -> I added permission to change temporary stream tables
-		s = mvc_bind_schema(sql, "tmp");
-		t = mvc_bind_table(sql, s, tname);
-		if (t != NULL && (!te || (te->token != SQL_STREAM_TABLE_WINDOW && te->token != SQL_STREAM_TABLE_STRIDE))) {
-			return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: not supported on TEMPORARY table '%s'", tname);
-		} else if (!t) {
-			return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", tname, sname);
+		ts = mvc_bind_schema(sql, "tmp");
+		t = mvc_bind_table(sql, ts, tname);
+		if(!te || (te->token != SQL_STREAM_TABLE_WINDOW && te->token != SQL_STREAM_TABLE_STRIDE)) {
+			if (t)
+				return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: not supported on TEMPORARY table '%s'", tname);
+			return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", tname, s->base.name);
+		} else {
+			s = ts;
 		}
 	}
 

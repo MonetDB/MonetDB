@@ -112,6 +112,7 @@ static void
 CQfree(Client cntxt, int idx)
 {
 	int i;
+	InstrPtr p;
 
 	//clean the baskets if so
 	cleanBaskets(idx);
@@ -122,8 +123,11 @@ CQfree(Client cntxt, int idx)
 		sql_table *t = mvc_bind_table(m, s, pnet[idx].alias);
 		mvc_drop_table(m, s, t, 0);
 	}
-	if( pnet[idx].mb)
+	if( pnet[idx].mb) {
+		p = getInstrPtr(pnet[idx].mb, 0);
+		GDKfree(p->fcnname); //Free the CQ id
 		freeMalBlk(pnet[idx].mb);
+	}
 	if( pnet[idx].stk)
 		freeStack(pnet[idx].stk);
 	if(pnet[idx].error)
