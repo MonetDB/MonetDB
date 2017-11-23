@@ -1442,7 +1442,7 @@ static int utf8chkmsk[] = {
 };
 
 ssize_t
-GDKstrFromStr(unsigned char *dst, const unsigned char *src, ssize_t len)
+GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len)
 {
 	unsigned char *p = dst;
 	const unsigned char *cur = src, *end = src + len;
@@ -1599,7 +1599,7 @@ GDKstrFromStr(unsigned char *dst, const unsigned char *src, ssize_t len)
 }
 
 ssize_t
-strFromStr(const char *src, size_t *len, char **dst)
+strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst)
 {
 	const char *cur = src, *start = NULL;
 	size_t l = 1;
@@ -1665,7 +1665,7 @@ strFromStr(const char *src, size_t *len, char **dst)
 #endif
 
 size_t
-escapedStrlen(const char *src, const char *sep1, const char *sep2, int quote)
+escapedStrlen(const char *restrict src, const char *sep1, const char *sep2, int quote)
 {
 	size_t end, sz = 0;
 	size_t sep1len, sep2len;
@@ -1700,7 +1700,7 @@ escapedStrlen(const char *src, const char *sep1, const char *sep2, int quote)
 }
 
 size_t
-escapedStr(char *dst, const char *src, size_t dstlen, const char *sep1, const char *sep2, int quote)
+escapedStr(char *restrict dst, const char *restrict src, size_t dstlen, const char *sep1, const char *sep2, int quote)
 {
 	size_t cur = 0, l = 0;
 	size_t sep1len, sep2len;
@@ -1753,7 +1753,7 @@ escapedStr(char *dst, const char *src, size_t dstlen, const char *sep1, const ch
 }
 
 static ssize_t
-strToStr(char **dst, size_t *len, const char *src)
+strToStr(char **restrict dst, size_t *restrict len, const char *restrict src)
 {
 	if (GDK_STRNIL(src)) {
 		atommem(4);
