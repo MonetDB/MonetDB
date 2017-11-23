@@ -113,8 +113,11 @@ rel_create_seq(
 	seq->bedropped = bedropped;
 	res = rel_seq(sql->sa, DDL_CREATE_SEQ, s->base.name, seq, NULL, NULL);
 	/* for multi statements we keep the sequence around */
-	if (res && stack_has_frame(sql, "MUL") != 0)
-		stack_push_rel_view(sql, name, rel_dup(res));
+	if (res && stack_has_frame(sql, "MUL") != 0) {
+		if(!stack_push_rel_view(sql, name, rel_dup(res)))
+			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
+
 	return res;
 }
 

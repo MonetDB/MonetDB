@@ -313,23 +313,9 @@
 #ifdef HAVE_SYS_STAT_H
 # include <sys/stat.h>
 #endif
-#ifdef STDC_HEADERS
-# include <stdlib.h>
-# include <stddef.h>
-#else
-# ifdef HAVE_STDLIB_H
-#  include <stdlib.h>
-# endif
-#endif
-#ifdef HAVE_STRING_H
-# if !defined(STDC_HEADERS) && defined(HAVE_MEMORY_H)
-#  include <memory.h>
-# endif
-# include <string.h>
-#endif
-#ifdef HAVE_STRINGS_H
-# include <strings.h>
-#endif
+#include <stdlib.h>
+#include <stddef.h>
+#include <string.h>
 #ifdef HAVE_INTTYPES_H
 # include <inttypes.h>
 #else
@@ -345,9 +331,6 @@
 
 #ifdef HAVE_SYS_FILE_H
 # include <sys/file.h>
-#endif
-#ifdef HAVE_SYS_PARAM_H
-# include <sys/param.h>		/* MAXPATHLEN */
 #endif
 
 #ifdef HAVE_DIRENT_H
@@ -403,12 +386,6 @@
 #define BAKDIR		"bat\\BACKUP"
 #define SUBDIR		"bat\\BACKUP\\SUBCOMMIT"
 #define LEFTDIR		"bat\\LEFTOVERS"
-#endif
-
-#ifdef MAXPATHLEN
-#define PATHLENGTH	MAXPATHLEN
-#else
-#define PATHLENGTH	1024	/* maximum file pathname length */
 #endif
 
 /*
@@ -2393,7 +2370,7 @@ typedef struct threadStruct {
 	MT_Id pid;		/* physical thread id (pointer-sized) from the OS thread library */
 	str name;
 	ptr data[THREADDATA];
-	size_t sp;
+	uintptr_t sp;
 } ThreadRec, *Thread;
 
 

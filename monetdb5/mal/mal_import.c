@@ -45,10 +45,10 @@ slash_2_dir_sep(str fname)
 static str
 malResolveFile(str fname)
 {
-	char path[PATHLENGTH];
+	char path[FILENAME_MAX];
 	str script;
 
-	snprintf(path, PATHLENGTH, "%s", fname);
+	snprintf(path, FILENAME_MAX, "%s", fname);
 	slash_2_dir_sep(path);
 	if ((script = MSP_locate_script(path)) == NULL) {
 		/* this function is also called for scripts that are not located
@@ -278,7 +278,10 @@ evalFile(str fname, int listing)
 		MCcloseClient(c);
 		throw(MAL,"mal.eval","%s",msg);
 	}
-	MSinitClientPrg(c, "user", "main");
+	if((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
+		MCcloseClient(c);
+		return msg;
+	}
 
 	msg = runScenario(c,0);
 	MCcloseClient(c);
@@ -320,7 +323,7 @@ compileString(Symbol *fcn, Client cntxt, str s)
 	b = (buffer *) GDKzalloc(sizeof(buffer));
 	if (b == NULL) {
 		GDKfree(qry);
-		return MAL_MALLOC_FAIL;
+		throw(MAL,"mal.eval",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	buffer_init(b, qry, len);
@@ -346,7 +349,7 @@ compileString(Symbol *fcn, Client cntxt, str s)
 		throw(MAL,"mal.compile","%s",msg);
 	}
 
-	MSinitClientPrg(c, "user", "main");  /* create new context */
+	msg = MSinitClientPrg(c, "user", "main");/* create new context */
 	if(msg == MAL_SUCCEED && c->phase[MAL_SCENARIO_PARSER])
 		msg = (str) (*c->phase[MAL_SCENARIO_PARSER])(c);
 	if(msg == MAL_SUCCEED && c->phase[MAL_SCENARIO_OPTIMIZE])
@@ -372,8 +375,12 @@ callString(Client cntxt, str s, int listing)
 
 	s = mal_cmdline(s, &len);
 	qry = s;
-	if (old == s)
+	if (old == s) {
 		qry = GDKstrdup(s);
+		if(!qry)
+			throw(MAL,"callstring", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
+
 	mal_unquote(qry);
 	b = (buffer *) GDKzalloc(sizeof(buffer));
 	if (b == NULL){
@@ -401,7 +408,13 @@ callString(Client cntxt, str s, int listing)
 		throw(MAL,"mal.call","%s",msg);
 	}
 
-	MSinitClientPrg(c, "user", "main");  /* create new context */
+	if((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {/* create new context */
+		c->usermodule = 0;
+		GDKfree(b);
+		GDKfree(qry);
+		MCcloseClient(c);
+		return msg;
+	}
 	runScenario(c,1);
 	// The command may have changed the environment of the calling client.
 	// These settings should be propagated for further use.

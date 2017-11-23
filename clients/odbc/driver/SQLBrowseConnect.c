@@ -29,7 +29,7 @@
 #include "ODBCDbc.h"
 #include "ODBCUtil.h"
 #ifdef HAVE_STRINGS_H
-#include <strings.h>
+#include <strings.h>		/* strcasecmp */
 #endif
 
 #ifdef HAVE_ODBCINST_H

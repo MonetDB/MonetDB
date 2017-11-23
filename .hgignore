@@ -80,7 +80,6 @@ NT/clients
 NT/common
 NT/gdk
 NT/geom
-NT/inttypes.h
 NT/java
 NT/monetdb5
 NT/monetdb_config.h

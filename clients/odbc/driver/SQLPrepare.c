@@ -116,7 +116,7 @@ MNDBPrepare(ODBCStmt *stmt,
 			addStmtError(stmt, "42000", m, 0);
 		return SQL_ERROR;
 	}
-	if (mapi_rows_affected(hdl) > (1 << 16)) {
+	if (mapi_rows_affected(hdl) > ((int64_t) 1 << 16)) {
 		/* arbitrarily limit the number of parameters */
 		/* Memory allocation error */
 		addStmtError(stmt, "HY001", 0, 0);

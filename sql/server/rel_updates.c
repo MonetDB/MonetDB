@@ -1187,7 +1187,7 @@ table_column_types(sql_allocator *sa, sql_table *t)
 }
 
 static list *
-table_column_names(sql_allocator *sa, sql_table *t)
+table_column_names_and_defaults(sql_allocator *sa, sql_table *t)
 {
 	node *n;
 	list *types = sa_list(sa);
@@ -1195,6 +1195,7 @@ table_column_names(sql_allocator *sa, sql_table *t)
 	if (t->columns.set) for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 		append(types, &c->base.name);
+		append(types, c->def);
 	}
 	return types;
 }
@@ -1586,7 +1587,7 @@ copyfromloader(mvc *sql, dlist *qname, symbol *fcall)
 	loader->sname = sname ? sa_zalloc(sql->sa, strlen(sname) + 1) : NULL;
 	loader->tname = tname ? sa_zalloc(sql->sa, strlen(tname) + 1) : NULL;
 	loader->coltypes = table_column_types(sql->sa, t);
-	loader->colnames = table_column_names(sql->sa, t);
+	loader->colnames = table_column_names_and_defaults(sql->sa, t);
 
 	if (sname) strcpy(loader->sname, sname);
 	if (tname) strcpy(loader->tname, tname);

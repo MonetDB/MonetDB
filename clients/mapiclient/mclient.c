@@ -22,6 +22,7 @@
 # endif
 #endif
 #include "mapi.h"
+#include <inttypes.h>		/* for PRId64 format macro */
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -29,12 +30,9 @@
 #include <string.h>
 #endif
 #ifdef HAVE_STRINGS_H
-#include <strings.h>
+#include <strings.h>		/* strcasecmp */
 #endif
 
-#ifdef HAVE_MALLOC_H
-#include <malloc.h>
-#endif
 #ifdef HAVE_LIBREADLINE
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -109,8 +107,8 @@ int csvheader = 0;		/* include header line in CSV format */
 #define DEFWIDTH 80
 
 /* use a 64 bit integer for the timer */
-typedef lng timertype;
-#define TTFMT LLFMT
+typedef int64_t timertype;
+#define TTFMT "%" PRId64
 #if 0
 static char *mark, *mark2;
 #endif
@@ -297,18 +295,18 @@ timerHuman(void)
 	assert(th >= t0);
 
 	if (itimemode == T_MILLIS || (itimemode == T_HUMAN && t / 1000 < 950)) {
-		snprintf(htimbuf, 32, TTFMT ".%03dms", t / 1000, (int) (t % 1000));
+		snprintf(htimbuf, sizeof(htimbuf), TTFMT ".%03dms", t / 1000, (int) (t % 1000));
 		return(htimbuf);
 	}
 	t /= 1000;
 	if (itimemode == T_SECS || (itimemode == T_HUMAN && t / 1000 < 60)) {
-		snprintf(htimbuf, 32, TTFMT ".%ds", t / 1000,
+		snprintf(htimbuf, sizeof(htimbuf), TTFMT ".%ds", t / 1000,
 				(int) ((t % 1000) / 100));
 		return(htimbuf);
 	}
 	t /= 1000;
 	/* itimemode == T_MINSECS || itimemode == T_HUMAN */
-	snprintf(htimbuf, 32, TTFMT "m %ds", t / 60, (int) (t % 60));
+	snprintf(htimbuf, sizeof(htimbuf), TTFMT "m %ds", t / 60, (int) (t % 60));
 	return(htimbuf);
 }
 
@@ -1303,11 +1301,11 @@ RAWrenderer(MapiHdl hdl)
 }
 
 static void
-TIMERrenderer(MapiHdl hdl)
+TIMERrenderer(MapiHdl hdl, int64_t querytime)
 {
 	SQLqueryEcho(hdl);
 	mapi_next_result(hdl);
-	printf("%s\n", timerHuman());
+	printf("%" PRId64 " %s\n", querytime, timerHuman());
 }
 
 
@@ -1463,7 +1461,7 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 	char **rest = NULL;
 	char buf[50];
 	int ps = rowsperpage, silent = 0;
-	mapi_int64 rows = 0;
+	int64_t rows = 0;
 
 	/* in case of interactive mode, we should show timing on request */
 	singleinstr = showtiming? 1 :singleinstr;
@@ -1669,11 +1667,11 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 	if (fields)
 		SQLseparator(len, printfields, '-');
 	rows = mapi_get_row_count(hdl);
-	snprintf(buf, sizeof(buf), LLFMT " rows", rows);
+	snprintf(buf, sizeof(buf), "%" PRId64 " rows", rows);
 #if 0
 	mark2 = strdup(buf);	/* for the timer output */
 #endif
-	printf(LLFMT " tuple%s%s%s%s", rows, rows != 1 ? "s" : "",
+	printf("%" PRId64 " tuple%s%s%s%s", rows, rows != 1 ? "s" : "",
 			singleinstr ? " (" : "",
 			singleinstr && formatter != TESTformatter ? timerHuman() : "",
 			singleinstr ? ")" : "");
@@ -1682,7 +1680,7 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 		printf(" !");
 	if (fields != printfields) {
 		rows = fields - printfields;
-		printf(LLFMT " column%s dropped", rows, rows != 1 ? "s" : "");
+		printf("%" PRId64 " column%s dropped", rows, rows != 1 ? "s" : "");
 	}
 	if (fields != printfields && croppedfields > 0)
 		printf(", ");
@@ -1826,8 +1824,9 @@ static int
 format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 {
 	MapiMsg rc = MERROR;
-	mapi_int64 aff, lid;
+	int64_t aff, lid;
 	char *reply;
+	int64_t querytime;
 #ifdef HAVE_POPEN
 	stream *saveFD;
 
@@ -1853,29 +1852,31 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 		}
 
 		timerHumanStop();
+		querytime = 0;
 		switch (mapi_get_querytype(hdl)) {
 		case Q_BLOCK:
 		case Q_PARSE:
 			/* should never see these */
 			continue;
 		case Q_UPDATE:
+			querytime = mapi_get_querytime(hdl);
 			SQLqueryEcho(hdl);
 			if (formatter == RAWformatter ||
 			    formatter == TESTformatter)
-				mnstr_printf(toConsole, "[ " LLFMT "\t]\n", mapi_rows_affected(hdl));
+				mnstr_printf(toConsole, "[ %" PRId64 "\t]\n", mapi_rows_affected(hdl));
 			else if (formatter == TIMERformatter)
-				printf("%s\n", timerHuman());
+				printf("%" PRId64 " %s\n", querytime, timerHuman());
 			else {
 				aff = mapi_rows_affected(hdl);
 				lid = mapi_get_last_id(hdl);
 				mnstr_printf(toConsole,
-					     LLFMT " affected row%s",
+					     "%" PRId64 " affected row%s",
 					     aff,
 					     aff != 1 ? "s" : "");
 				if (lid != -1) {
 					mnstr_printf(toConsole,
 						     ", last generated key: "
-						     LLFMT,
+						     "%" PRId64,
 						     lid);
 				}
 				if (singleinstr && formatter != TESTformatter)
@@ -1885,6 +1886,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			}
 			continue;
 		case Q_SCHEMA:
+			querytime = mapi_get_querytime(hdl);
 			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter) {
 				mnstr_printf(toConsole, "operation successful");
@@ -1893,7 +1895,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 						     timerHuman());
 				mnstr_printf(toConsole, "\n");
 			} else if (formatter == TIMERformatter)
-				printf("%s\n", timerHuman());
+				printf("%" PRId64 " %s\n", querytime, timerHuman());
 			continue;
 		case Q_TRANS:
 			SQLqueryEcho(hdl);
@@ -1909,8 +1911,9 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 					     "execute prepared statement "
 					     "using: EXEC %d(...)\n",
 					     mapi_get_tableid(hdl));
-			/* fall through */
+			break;
 		case Q_TABLE:
+			querytime = mapi_get_querytime(hdl);
 			break;
 		default:
 			if (formatter == TABLEformatter && specials != DEBUGmodifier) {
@@ -1971,7 +1974,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 				}
 				break;
 			case TIMERformatter:
-				TIMERrenderer(hdl);
+				TIMERrenderer(hdl, querytime);
 				break;
 			case SAMformatter:
 				SAMrenderer(hdl);
@@ -2217,7 +2220,7 @@ struct myread_t {
 };
 
 static ssize_t
-myread(void *private, void *buf, size_t elmsize, size_t cnt)
+myread(void *restrict private, void *restrict buf, size_t elmsize, size_t cnt)
 {
 	struct myread_t *p = private;
 	size_t size = elmsize * cnt;
@@ -2949,7 +2952,7 @@ set_timezone(Mapi mid)
 	tmp = localtime(&t);
 	tmp->tm_isdst=0; /* We need the difference without dst */
 	lt = mktime(tmp);
-	assert((lng) gt - (lng) lt >= (lng) INT_MIN && (lng) gt - (lng) lt <= (lng) INT_MAX);
+	assert((int64_t) gt - (int64_t) lt >= (int64_t) INT_MIN && (int64_t) gt - (int64_t) lt <= (int64_t) INT_MAX);
 	tzone = (int) (gt - lt);
 #endif
 	if (tzone < 0)

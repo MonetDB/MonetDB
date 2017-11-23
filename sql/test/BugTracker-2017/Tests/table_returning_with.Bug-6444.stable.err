@@ -36,9 +36,11 @@ QUERY = CREATE TABLE results_table AS (
             SELECT * FROM test_function(test_table_tmp.x, test_table_tmp.y, test_table_tmp.z)
         );
 ERROR = !SELECT: no such column 'test_table_tmp.x'
+CODE  = 42S22
 MAPI  = (monetdb) /var/tmp/mtest-83731/.s.monetdb.39208
 QUERY = SELECT * FROM results_table;
-ERROR = !current transaction is aborted (please ROLLBACK)
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
 
 # 15:36:01 >  
 # 15:36:01 >  "Done."

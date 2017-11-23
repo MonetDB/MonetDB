@@ -46,12 +46,12 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "bbp.bind", IDENTIFIER_EXPECTED);
 	i = BBPindex(name);
 	if (i == 0)
-		throw(MAL, "bbp.bind", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "bbp.bind", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	/* make sure you load the descriptors and heaps */
 	b = (BAT *) BATdescriptor(i);
 	if (b == 0)
 		/* Simple ignore the binding if you can't find the bat */
-		throw(MAL, "bbp.bind", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "bbp.bind", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	/* check conformity of the actual type and the one requested */
 	tt= getBatType(getArgType(mb,pci,0));
@@ -65,7 +65,7 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( BBP_refs(b->batCacheid) == 1 &&
 		BBP_lrefs(b->batCacheid) == 0){
 		BBPunfix(i);
-		throw(MAL, "bbp.bind", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "bbp.bind", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	BBPkeepref(b->batCacheid);
@@ -169,10 +169,10 @@ CMDbbpLocation(bat *ret)
 {
 	BAT *b;
 	int i;
-	char buf[PATHLENGTH];
-	char cwd[PATHLENGTH];
+	char buf[FILENAME_MAX];
+	char cwd[FILENAME_MAX];
 
-	if (getcwd(cwd, PATHLENGTH) == NULL)
+	if (getcwd(cwd, FILENAME_MAX) == NULL)
 		throw(MAL, "catalog.bbpLocation", RUNTIME_DIR_ERROR);
 
 	b = COLnew(0, TYPE_str, getBBPsize(), TRANSIENT);
@@ -183,7 +183,7 @@ CMDbbpLocation(bat *ret)
 	for (i = 1; i < getBBPsize(); i++)
 		if (i != b->batCacheid) {
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
-				snprintf(buf,PATHLENGTH,"%s/bat/%s",cwd,BBP_physical(i));
+				snprintf(buf,FILENAME_MAX,"%s/bat/%s",cwd,BBP_physical(i));
 				if (BUNappend(b, buf, FALSE) != GDK_SUCCEED) {
 					BBPunlock();
 					BBPreclaim(b);
@@ -381,7 +381,7 @@ str CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *
 {
 	BAT *id, *ns, *tt, *cnt, *refcnt, *lrefcnt, *location, *heat, *dirty, *status, *kind, *bn;
 	bat	i;
-	char buf[PATHLENGTH];
+	char buf[FILENAME_MAX];
 	bat sz = getBBPsize();
 
 	id = COLnew(0, TYPE_int, (BUN) sz, TRANSIENT);
@@ -412,7 +412,7 @@ str CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *
 
 				if ((BBP_status(i) & BBPDELETED) || !(BBP_status(i) & BBPPERSISTENT))
 					mode = "transient";
-				snprintf(buf, PATHLENGTH, "%s", BBP_physical(i));
+				snprintf(buf, FILENAME_MAX, "%s", BBP_physical(i));
 				if (BUNappend(id, &i, FALSE) != GDK_SUCCEED ||
 					BUNappend(ns, BBP_logical(i), FALSE) != GDK_SUCCEED ||
 					BUNappend(tt, BATatoms[BATttype(bn)].name, FALSE) != GDK_SUCCEED ||

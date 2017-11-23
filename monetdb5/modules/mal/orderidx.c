@@ -190,7 +190,7 @@ OIDXcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	b = BATdescriptor( *getArgReference_bat(stk, pci, 1));
 	if (b == NULL)
-		throw(MAL, "bat.orderidx", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "bat.orderidx", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	msg = OIDXcreateImplementation(cntxt, getArgType(mb,pci,1), b, pieces);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -208,7 +208,7 @@ OIDXhasorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	b = BATdescriptor(bid);
 	if (b == NULL)
-		throw(MAL, "bat.hasorderidx", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "bat.hasorderidx", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	*ret = b->torderidx != NULL;
 
@@ -229,11 +229,11 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	b = BATdescriptor(bid);
 	if (b == NULL)
-		throw(MAL, "bat.getorderidx", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "bat.getorderidx", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if (b->torderidx == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.getorderidx", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "bat.getorderidx", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	if ((bn = COLnew(0, TYPE_oid, BATcount(b), TRANSIENT)) == NULL) {
@@ -262,7 +262,7 @@ OIDXorderidx(bat *ret, const bat *bid, const bit *stable)
 	(void) ret;
 	b = BATdescriptor(*bid);
 	if (b == NULL)
-		throw(MAL, "algebra.orderidx", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.orderidx", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	r = BATorderidx(b, *stable);
 	if (r != GDK_SUCCEED) {
@@ -299,7 +299,7 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = *getArgReference_bat(stk, pci, 1);
 	b = BATdescriptor(bid);
 	if (b == NULL)
-		throw(MAL, "bat.orderidx", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "bat.orderidx", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	assert(b->torderidx == NULL);
 
@@ -336,7 +336,7 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			GDKfree(a);
 			BBPunfix(bid);
-			throw(MAL, "bat.orderidx", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "bat.orderidx", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		m_sz += BATcount(a[i]);
 		if (BATcount(a[i]) == 0) {

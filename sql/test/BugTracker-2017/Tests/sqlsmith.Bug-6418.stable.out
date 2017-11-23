@@ -24,7 +24,7 @@ Ready.
 # 23:28:48 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25365" "--port=30700"
 # 23:28:48 >  
 
-#CREATE TABLE PARTSUPP ( PS_PARTKEY     INTEGER NOT NULL,
+#CREATE TABLE PARTSUPP_6418 ( PS_PARTKEY     INTEGER NOT NULL,
 #                             PS_SUPPKEY     INTEGER NOT NULL,
 #                             PS_AVAILQTY    INTEGER NOT NULL,
 #                             PS_SUPPLYCOST  DECIMAL(15,2)  NOT NULL,
@@ -40,7 +40,7 @@ Ready.
 #          or ((sample_0.name is NULL) 
 #            or (sample_0.type is not NULL)))
 #    inner join sys.key_types as ref_2
-#      left join sys.partsupp as ref_3
+#      left join sys.partsupp_6418 as ref_3
 #      on (ref_2.key_type_id is not NULL)
 #    on (sample_1.schema_id is NULL)
 #where true
@@ -49,7 +49,7 @@ Ready.
 % c0,	c1,	c2 # name
 % smallint,	int,	varchar # type
 % 1,	1,	0 # length
-#drop table partsupp;
+#drop table partsupp_6418;
 
 # 23:28:48 >  
 # 23:28:48 >  "Done."

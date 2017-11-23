@@ -400,7 +400,7 @@ TKNZRdepositFile(void *r, str *fnme)
 	bstream *bs;
 	char *s, *t;
 	int len = 0;
-	char buf[PATHLENGTH];
+	char buf[FILENAME_MAX];
 	oid pos;
 	str msg= MAL_SUCCEED;
 
@@ -409,9 +409,9 @@ TKNZRdepositFile(void *r, str *fnme)
 
 	(void) r;
 	if (**fnme == '/')
-		snprintf(buf, PATHLENGTH, "%s", *fnme);
+		snprintf(buf, FILENAME_MAX, "%s", *fnme);
 	else
-		snprintf(buf, PATHLENGTH, "%s/%s", monet_cwd, *fnme);
+		snprintf(buf, FILENAME_MAX, "%s/%s", monet_cwd, *fnme);
 	/* later, handle directory separator */
 	fs = open_rastream(buf);
 	if (fs == NULL)

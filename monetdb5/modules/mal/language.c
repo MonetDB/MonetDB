@@ -115,8 +115,7 @@ CMDcallString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	s = getArgReference_str(stk, pci, 1);
 	if (strlen(*s) == 0)
 		return MAL_SUCCEED;
-	callString(cntxt, *s, FALSE);
-	return MAL_SUCCEED;
+	return callString(cntxt, *s, FALSE);
 }
 
 str
@@ -131,8 +130,7 @@ CMDcallFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return MAL_SUCCEED;
 	// lazy implementation of the call
 	snprintf(buf,BUFSIZ,"%s.%s();",mod,fcn);
-	callString(cntxt, buf, FALSE);
-	return MAL_SUCCEED;
+	return callString(cntxt, buf, FALSE);
 }
 
 str
@@ -194,7 +192,7 @@ CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(fcnName == NULL || modName == NULL || help == NULL) {
 			freeSymbol(sym);
 			GDKfree(ahelp);
-			throw(MAL, "language.register", MAL_MALLOC_FAIL);
+			throw(MAL, "language.register", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		if( help)
 			mb->help= ahelp;

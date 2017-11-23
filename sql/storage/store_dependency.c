@@ -83,6 +83,9 @@ sql_trans_get_dependencies(sql_trans* tr, int id, short depend_type, list * igno
 	oid rid;
 	rids *rs;
 
+	if(!dep_list)
+		return NULL;
+
 	dep_id = find_sql_column(deps, "id");
 	dep_dep_id = find_sql_column(deps, "depend_id");
 	dep_dep_type = find_sql_column(deps, "depend_type");
@@ -112,8 +115,12 @@ sql_trans_get_dependencies(sql_trans* tr, int id, short depend_type, list * igno
 			v = table_funcs.column_find_value(tr, tri_id, rid);
 			list_append(dep_list, v);
 			v = MNEW(sht);
-			if(v)
-				*(sht*)v = depend_type;
+			if(v) {
+				*(sht *) v = depend_type;
+			} else {
+				list_destroy(dep_list);
+				return NULL;
+			}
 			list_append(dep_list, v);
 		}
 		table_funcs.rids_destroy(rs);
@@ -186,15 +193,25 @@ sql_trans_schema_user_dependencies(sql_trans *tr, int schema_id)
 	sql_column *auth_id = find_sql_column(auths, "id");
 	short type = USER_DEPENDENCY;
 	list *l = list_create((fdestroy) GDKfree);
-	rids *users = backend_schema_user_dependencies(tr, schema_id);
+	rids *users;
 	oid rid;
-	
+
+	if(!l)
+		return NULL;
+
+	users = backend_schema_user_dependencies(tr, schema_id);
+
 	for(rid = table_funcs.rids_next(users); !is_oid_nil(rid); rid = table_funcs.rids_next(users)) {
 		v = table_funcs.column_find_value(tr, auth_id, rid);
 		list_append(l,v);
 		v = MNEW(sht);
-		if(v)
+		if(v) {
 			*(sht*)v = type;
+		} else {
+			list_destroy(l);
+			table_funcs.rids_destroy(users);
+			return NULL;
+		}
 		list_append(l,v);
 	}
 	table_funcs.rids_destroy(users);
@@ -212,15 +229,25 @@ sql_trans_owner_schema_dependencies(sql_trans *tr, int owner_id)
 	sql_column *schema_id = find_sql_column(schemas, "id");
 	short type = SCHEMA_DEPENDENCY;
 	list *l = list_create((fdestroy) GDKfree);
-	rids *rs = table_funcs.rids_select(tr, schema_owner, &owner_id, &owner_id, NULL);
+	rids *rs;
 	oid rid;
-	
+
+	if(!l)
+		return NULL;
+
+	rs = table_funcs.rids_select(tr, schema_owner, &owner_id, &owner_id, NULL);
+
 	for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
 		v = table_funcs.column_find_value(tr, schema_id, rid);
 		list_append(l, v);
 		v = MNEW(sht);
-		if(v)
+		if(v) {
 			*(sht*)v = type;
+		} else {
+			list_destroy(l);
+			table_funcs.rids_destroy(rs);
+			return NULL;
+		}
 		list_append(l,v);
 	}
 	table_funcs.rids_destroy(rs);

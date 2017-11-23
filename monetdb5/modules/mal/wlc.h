@@ -39,7 +39,7 @@
 #endif
 
 mal_export MT_Lock wlc_lock;
-mal_export char wlc_dir[PATHLENGTH];
+mal_export char wlc_dir[FILENAME_MAX];
 mal_export lng wlc_id;
 mal_export int wlc_batches;
 mal_export int wlc_state;

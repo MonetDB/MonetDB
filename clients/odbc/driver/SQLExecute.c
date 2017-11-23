@@ -28,6 +28,7 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 #include "ODBCUtil.h"
+#include <limits.h>
 
 static struct msql_types {
 	char *name;
@@ -129,7 +130,7 @@ ODBCInitResult(ODBCStmt *stmt)
 	nrCols = mapi_get_field_count(hdl);
 	stmt->querytype = mapi_get_querytype(hdl);
 #if SIZEOF_SIZE_T == SIZEOF_INT
-	if (mapi_rows_affected(hdl) >= (mapi_int64) 1 << (sizeof(int) * 8)) {
+	if (mapi_rows_affected(hdl) >= (int64_t) 1 << (sizeof(int) * CHAR_BIT)) {
 		/* General error */
 		addStmtError(stmt, "HY000", "Too many rows to handle", 0);
 		return SQL_ERROR;

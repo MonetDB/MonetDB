@@ -22,11 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#if defined(_MSC_VER) && defined(__INTEL_COMPILER)
-#include <mathimf.h>
-#else
 #include <math.h>
-#endif
 #include <time.h>
 
 #include <gdk_logger.h>

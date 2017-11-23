@@ -187,13 +187,7 @@ UDFBATreverse(bat *ret, const bat *arg)
 
 #ifdef HAVE_HGE
 #define UI lng
-#ifdef HAVE_LONG_LONG
-#define UU unsigned long long
-#else
-#ifdef HAVE___INT64
-#define UU unsigned __int64
-#endif
-#endif
+#define UU ulng
 #define UO hge
 #include "udf_impl.h"
 #undef UI

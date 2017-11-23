@@ -52,6 +52,7 @@
 #include "opt_prelude.h"
 #include "mal_authorize.h"
 #include "mtime.h"
+#include "../../../monetdb5/mal/mal_client.h"
 
 static const str statusname[8] = {"init", "paused", "running", "pausing", "error", "stopping", "stopping", "stopping"};
 
@@ -1474,6 +1475,11 @@ CQstartScheduler(void)
 	if( cntxt == NULL) {
 		bstream_destroy(cntxt->fdin);
 		mnstr_destroy(cntxt->fdout);
+		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize CQscheduler\n");
+	}
+
+	if( (cntxt->scenario = GDKstrdup("sql")) == NULL) {
+		MCcloseClient(cntxt);
 		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize CQscheduler\n");
 	}
 

@@ -147,11 +147,7 @@ gdk_export const ptr ptr_nil;
 #define is_dbl_nil(v)	isnan(v)
 #define is_bat_nil(v)	((v) == bat_nil || (v) == 0)
 
-#if defined(_MSC_VER) && defined(__INTEL_COMPILER)
-#include <mathimf.h>
-#else
 #include <math.h>
-#endif
 
 #if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && _MSC_VER < 1800
 #include <float.h>

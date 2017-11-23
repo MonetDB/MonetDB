@@ -43,20 +43,20 @@
 # endif
 #endif
 
-static mapi_int64
+static int64_t
 gettime(void)
 {
 #ifdef HAVE_GETTIMEOFDAY
 	struct timeval tp;
 
 	gettimeofday(&tp, NULL);
-	return (mapi_int64) tp.tv_sec * 1000000 + (mapi_int64) tp.tv_usec;
+	return (int64_t) tp.tv_sec * 1000000 + (int64_t) tp.tv_usec;
 #else
 #ifdef HAVE_FTIME
 	struct timeb tb;
 
 	ftime(&tb);
-	return (mapi_int64) tb.time * 1000000 + (mapi_int64) tb.millitm * 1000;
+	return (int64_t) tb.time * 1000000 + (int64_t) tb.millitm * 1000;
 #endif
 #endif
 }
@@ -83,7 +83,7 @@ main(int argc, char **av)
 	char *prog = *av;
 	opt *set = NULL;
 	int setlen = 0, timeflag = 0;
-	mapi_int64 t0 = 0;
+	int64_t t0 = 0;
 	Mapi mid;
 	MapiHdl hdl;
 	char *buf, *line;

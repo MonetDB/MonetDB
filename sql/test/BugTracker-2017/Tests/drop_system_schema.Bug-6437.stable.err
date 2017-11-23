@@ -1,0 +1,70 @@
+stderr of test 'drop_system_schema.Bug-6437` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 13:50:35 >  
+# 13:50:35 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36212" "--set" "mapi_usock=/var/tmp/mtest-25647/.s.monetdb.36212" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 13:50:35 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 36212
+# cmdline opt 	mapi_usock = /var/tmp/mtest-25647/.s.monetdb.36212
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2017
+# cmdline opt 	gdk_debug = 536870922
+
+# 13:50:35 >  
+# 13:50:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25647" "--port=36212"
+# 13:50:35 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-25647/.s.monetdb.36212
+QUERY = drop schema profiler;
+ERROR = !DROP SCHEMA: cannot drop current schema
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-25647/.s.monetdb.36212
+QUERY = drop schema profiler restrict;
+ERROR = !DROP SCHEMA: access denied for 'profiler'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-25647/.s.monetdb.36212
+QUERY = drop schema json restrict;
+ERROR = !DROP SCHEMA: access denied for 'json'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-25647/.s.monetdb.36212
+QUERY = drop schema tmp restrict;
+ERROR = !DROP SCHEMA: access denied for 'tmp'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-25647/.s.monetdb.36212
+QUERY = drop schema sys restrict;
+ERROR = !DROP SCHEMA: access denied for 'sys'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-8455/.s.monetdb.31322
+QUERY = drop schema profiler cascade;
+ERROR = !DROP SCHEMA: access denied for 'profiler'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-8455/.s.monetdb.31322
+QUERY = drop schema json cascade;
+ERROR = !DROP SCHEMA: access denied for 'json'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-8455/.s.monetdb.31322
+QUERY = drop schema tmp cascade;
+ERROR = !DROP SCHEMA: access denied for 'tmp'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-8455/.s.monetdb.31322
+QUERY = drop schema sys cascade;
+ERROR = !DROP SCHEMA: access denied for 'sys'
+CODE  = 42000
+
+# 13:50:35 >  
+# 13:50:35 >  "Done."
+# 13:50:35 >  
+

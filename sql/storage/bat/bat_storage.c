@@ -484,6 +484,8 @@ dup_delta(sql_trans *tr, sql_delta *obat, sql_delta *bat, int type, int oc_isnew
 	bat->wtime = obat->wtime;
 
 	bat->name = _STRDUP(obat->name);
+	if(!bat->name)
+		return LOG_ERR;
 
 	if (!bat->ibid)
 		return LOG_OK;
@@ -566,11 +568,16 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 	if (!c->data || !c->base.allocated) {
 		int type = c->type.type->localtype;
 		sql_column *oc = tr_find_column(tr->parent, c);
-		sql_delta *bat = c->data = ZNEW(sql_delta), *obat = timestamp_delta(oc->data, tr->stime);
-		(void)dup_bat(tr, c->t, obat, bat, type, isNew(oc), c->base.flag == TR_NEW); 
+		sql_delta* bat = ZNEW(sql_delta),*obat;
+		if(!bat)
+			return LOG_ERR;
+		c->data = bat;
+		obat = timestamp_delta(oc->data, tr->stime);
+		if(dup_bat(tr, c->t, obat, bat, type, isNew(oc), c->base.flag == TR_NEW) == LOG_ERR)
+			return LOG_ERR;
 		c->base.allocated = 1;
 	}
-       	bat = c->data;
+	bat = c->data;
 	bat->wtime = c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
 	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->rtime = tr->stime;
 	if (tpe == TYPE_bat)
@@ -591,11 +598,16 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 	if (!i->data || !i->base.allocated) {
 		int type = (oid_index(i->type))?TYPE_oid:TYPE_lng;
 		sql_idx *oi = tr_find_idx(tr->parent, i);
-		sql_delta *bat = i->data = ZNEW(sql_delta), *obat = timestamp_delta(oi->data, tr->stime);
-		(void)dup_bat(tr, i->t, obat, bat, type, isNew(i), i->base.flag == TR_NEW); 
+		sql_delta* bat = ZNEW(sql_delta), *obat;
+		if(!bat)
+			return LOG_ERR;
+		i->data = bat;
+		obat = timestamp_delta(oi->data, tr->stime);
+		if(dup_bat(tr, i->t, obat, bat, type, isNew(i), i->base.flag == TR_NEW) == LOG_ERR)
+			return LOG_ERR;
 		i->base.allocated = 1;
 	}
-       	bat = i->data;
+	bat = i->data;
 	bat->wtime = i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->wstime;
 	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->rtime = tr->stime;
 	if (tpe == TYPE_bat)
@@ -694,9 +706,14 @@ dup_col(sql_trans *tr, sql_column *oc, sql_column *c )
 
 	if (oc->data) {
 		int type = c->type.type->localtype;
-		sql_delta *bat = c->data = ZNEW(sql_delta), *obat = oc->data;
-		ok = dup_bat(tr, c->t, obat, bat, type, isNew(oc), c->base.flag == TR_NEW);
-		c->base.allocated = 1;
+		sql_delta *bat = ZNEW(sql_delta), *obat = oc->data;
+		if (!bat)
+			ok = LOG_ERR;
+		else {
+			c->data = bat;
+			ok = dup_bat(tr, c->t, obat, bat, type, isNew(oc), c->base.flag == TR_NEW);
+			c->base.allocated = 1;
+		}
 	}
 	return ok;
 }
@@ -710,9 +727,14 @@ dup_idx(sql_trans *tr, sql_idx *i, sql_idx *ni )
 		return ok;
 	if (i->data) {
 		int type = (oid_index(ni->type))?TYPE_oid:TYPE_lng;
-		sql_delta *bat = ni->data = ZNEW(sql_delta), *obat = i->data;
-		ok = dup_bat(tr, ni->t, obat, bat, type, isNew(i), ni->base.flag == TR_NEW);
-		ni->base.allocated = 1;
+		sql_delta *bat = ZNEW(sql_delta), *obat = i->data;
+		if (!bat)
+			ok = LOG_ERR;
+		else {
+			ni->data = bat;
+			ok = dup_bat(tr, ni->t, obat, bat, type, isNew(i), ni->base.flag == TR_NEW);
+			ni->base.allocated = 1;
+		}
 	}
 	return ok;
 }
@@ -724,6 +746,8 @@ dup_dbat( sql_trans *tr, sql_dbat *obat, sql_dbat *bat, int is_new, int temp)
 	bat->cnt = obat->cnt;
 	bat->dname = _STRDUP(obat->dname);
 	bat->wtime = obat->wtime;
+	if(!bat->dname)
+		return LOG_ERR;
 	if (bat->dbid) {
 		if (is_new) {
 			obat->dbid = temp_copy(bat->dbid, temp);
@@ -740,8 +764,12 @@ dup_dbat( sql_trans *tr, sql_dbat *obat, sql_dbat *bat, int is_new, int temp)
 static int
 dup_del(sql_trans *tr, sql_table *ot, sql_table *t)
 {
-	sql_dbat *bat = t->data = ZNEW(sql_dbat), *obat = ot->data;
-	int ok = dup_dbat( tr, obat, bat, isNew(t), isTempTable(t));
+	int ok;
+	sql_dbat *bat = ZNEW(sql_dbat), *obat = ot->data;
+	if (!bat)
+		return LOG_ERR;
+	t->data = bat;
+	ok = dup_dbat( tr, obat, bat, isNew(t), isTempTable(t));
 	assert(t->base.allocated == 0);
 	t->base.allocated = 1;
 	return ok;
@@ -760,11 +788,22 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 	if (!c->data || !c->base.allocated) {
 		int type = c->type.type->localtype;
 		sql_column *oc = tr_find_column(tr->parent, c);
-		sql_delta *bat = c->data = ZNEW(sql_delta), *obat = timestamp_delta(oc->data, tr->stime);
-		(void)dup_bat(tr, c->t, obat, bat, type, isNew(oc), c->base.flag == TR_NEW); 
-		c->base.allocated = 1;
+		sql_delta *bat = ZNEW(sql_delta), *obat;
+		if (!bat)
+			ok = LOG_ERR;
+		else {
+			c->data = bat;
+			obat = timestamp_delta(oc->data, tr->stime);
+			ok = dup_bat(tr, c->t, obat, bat, type, isNew(oc), c->base.flag == TR_NEW);
+			if(ok == LOG_OK)
+				c->base.allocated = 1;
+		}
 	}
-       	bat = c->data;
+
+	if(ok == LOG_ERR)
+		return ok;
+
+	bat = c->data;
 	/* appends only write */
 	bat->wtime = c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
 	/* inserts are ordered with the current delta implementation */
@@ -776,8 +815,12 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 		ok = delta_append_val(bat, i);
 	if (!c->t->data || !c->t->base.allocated) {
 		sql_table *ot = tr_find_table(tr->parent, c->t);
-		sql_dbat *bat = c->t->data = ZNEW(sql_dbat), *obat = timestamp_dbat(ot->data, tr->stime);
-		dup_dbat(tr, obat, bat, isNew(ot), isTempTable(c->t)); 
+		sql_dbat *bat = ZNEW(sql_dbat), *obat;
+		if (!bat)
+			return LOG_ERR;
+		c->t->data = bat;
+		obat = timestamp_dbat(ot->data, tr->stime);
+		dup_dbat(tr, obat, bat, isNew(ot), isTempTable(c->t));
 		c->t->base.allocated = 1;
 	}
 	if (c->t && c->t->data && ((sql_dbat*)c->t->data)->cached) {
@@ -802,11 +845,22 @@ append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
 	if (!i->data || !i->base.allocated) {
 		int type = (oid_index(i->type))?TYPE_oid:TYPE_lng;
 		sql_idx *oi = tr_find_idx(tr->parent, i);
-		sql_delta *bat = i->data = ZNEW(sql_delta), *obat = timestamp_delta(oi->data, tr->stime);
-		(void)dup_bat(tr, i->t, obat, bat, type, isNew(i), i->base.flag == TR_NEW); 
-		i->base.allocated = 1;
+		sql_delta *bat = ZNEW(sql_delta), *obat;
+		if(!bat)
+			ok = LOG_ERR;
+		else {
+			i->data = bat;
+			obat = timestamp_delta(oi->data, tr->stime);
+			ok = dup_bat(tr, i->t, obat, bat, type, isNew(i), i->base.flag == TR_NEW);
+			if(ok != LOG_ERR)
+				i->base.allocated = 1;
+		}
 	}
-       	bat = i->data;
+
+	if(ok == LOG_ERR)
+		return ok;
+
+	bat = i->data;
 	/* appends only write */
 	bat->wtime = i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->wstime;
 	if (tpe == TYPE_bat)
@@ -815,10 +869,20 @@ append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
 		ok = delta_append_val(bat, ib);
 	if (!i->t->data || !i->t->base.allocated) {
 		sql_table *ot = tr_find_table(tr->parent, i->t);
-		sql_dbat *bat = i->t->data = ZNEW(sql_dbat), *obat = timestamp_dbat(ot->data, tr->stime);
-		dup_dbat(tr, obat, bat, isNew(ot), isTempTable(i->t)); 
-		i->t->base.allocated = 1;
+		sql_dbat *bat = ZNEW(sql_dbat), *obat;
+		if(!bat)
+			ok = LOG_ERR;
+		else {
+			i->t->data = bat;
+			obat = timestamp_dbat(ot->data, tr->stime);
+			dup_dbat(tr, obat, bat, isNew(ot), isTempTable(i->t));
+			i->t->base.allocated = 1;
+		}
 	}
+
+	if(ok == LOG_ERR)
+		return ok;
+
 	if (i->t && i->t->data && ((sql_dbat*)i->t->data)->cached) {
 		sql_dbat *bat = i->t->data;
 
@@ -891,11 +955,15 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 
 	if (!t->data || !t->base.allocated) {
 		sql_table *ot = tr_find_table(tr->parent, t);
-		sql_dbat *bat = t->data = ZNEW(sql_dbat), *obat = timestamp_dbat(ot->data, tr->stime);
-		dup_dbat(tr, obat, bat, isNew(ot), isTempTable(t)); 
+		sql_dbat *bat = ZNEW(sql_dbat), *obat;
+		if(!bat)
+			return LOG_ERR;
+		t->data = bat;
+		obat = timestamp_dbat(ot->data, tr->stime);
+		dup_dbat(tr, obat, bat, isNew(ot), isTempTable(t));
 		t->base.allocated = 1;
 	}
-       	bat = t->data;
+	bat = t->data;
 	/* delete all cached copies */
 
 	if (bat->cached) {
@@ -1298,6 +1366,8 @@ create_col(sql_trans *tr, sql_column *c)
 
 	if (!bat || !c->base.allocated) {
 		c->data = bat = ZNEW(sql_delta);
+		if(!bat)
+			return LOG_ERR;
 		bat->wtime = c->base.wtime = tr->wstime;
 		c->base.allocated = 1;
 	}
@@ -1369,6 +1439,8 @@ create_idx(sql_trans *tr, sql_idx *ni)
 
 	if (!bat || !ni->base.allocated) {
 		ni->data = bat = ZNEW(sql_delta);
+		if(!bat)
+			return LOG_ERR;
 		bat->wtime = ni->base.wtime = tr->wstime;
 		ni->base.allocated = 1;
 	}
@@ -1441,6 +1513,8 @@ create_del(sql_trans *tr, sql_table *t)
 
 	if (!bat) {
 		t->data = bat = ZNEW(sql_dbat);
+		if(!bat)
+			return LOG_ERR;
 		bat->wtime = t->base.wtime = t->s->base.wtime = tr->wstime;
 		t->base.allocated = 1;
 	}
@@ -1715,9 +1789,13 @@ clear_col(sql_trans *tr, sql_column *c)
 	if (!c->data || !c->base.allocated) {
 		int type = c->type.type->localtype;
 		sql_column *oc = tr_find_column(tr->parent, c);
-		sql_delta *bat = c->data = ZNEW(sql_delta), *obat = timestamp_delta(oc->data, tr->stime);
+		sql_delta *bat = c->data = ZNEW(sql_delta), *obat;
+		if(!bat)
+			return 0;
+		obat = timestamp_delta(oc->data, tr->stime);
 		assert(tr != gtrans);
-		(void)dup_bat(tr, c->t, obat, bat, type, isNew(oc), c->base.flag == TR_NEW); 
+		if(dup_bat(tr, c->t, obat, bat, type, isNew(oc), c->base.flag == TR_NEW) == LOG_ERR)
+			return 0;
 		c->base.allocated = 1;
 	}
 	if (c->data)
@@ -1734,9 +1812,11 @@ clear_idx(sql_trans *tr, sql_idx *i)
 		int type = (oid_index(i->type))?TYPE_oid:TYPE_lng;
 		sql_idx *oi = tr_find_idx(tr->parent, i);
 		sql_delta *bat = i->data = ZNEW(sql_delta), *obat;
-	       
+		if(!bat)
+			return 0;
 		obat = timestamp_delta(oi->data, tr->stime);
-		(void)dup_bat(tr, i->t, obat, bat, type, isNew(i), i->base.flag == TR_NEW); 
+		if(dup_bat(tr, i->t, obat, bat, type, isNew(i), i->base.flag == TR_NEW))
+			return 0;
 		i->base.allocated = 1;
 	}
 	if (i->data)
@@ -1908,7 +1988,10 @@ clear_del(sql_trans *tr, sql_table *t)
 {
 	if (!t->data || !t->base.allocated) {
 		sql_table *ot = tr_find_table(tr->parent, t);
-		sql_dbat *bat = t->data = ZNEW(sql_dbat), *obat = timestamp_dbat(ot->data, tr->stime);
+		sql_dbat *bat = t->data = ZNEW(sql_dbat), *obat;
+		if(!bat)
+			return 0;
+		obat = timestamp_dbat(ot->data, tr->stime);
 		dup_dbat(tr, obat, bat, isNew(ot), isTempTable(t)); 
 		t->base.allocated = 1;
 	}

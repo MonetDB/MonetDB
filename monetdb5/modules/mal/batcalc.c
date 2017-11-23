@@ -8,7 +8,7 @@
 
 #include "monetdb_config.h"
 #include "gdk.h"
-#include "math.h"
+#include <math.h>
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 
@@ -43,12 +43,12 @@ CMDbatUNARY(MalStkPtr stk, InstrPtr pci,
 
 	bid = getArgReference_bat(stk, pci, 1);
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (pci->argc == 3) {
 		bat *sid = getArgReference_bat(stk, pci, 2);
 		if (*sid && (s = BATdescriptor(*sid)) == NULL) {
 			BBPunfix(b->batCacheid);
-			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+			throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 	}
 
@@ -73,12 +73,12 @@ CMDbatUNARY1(MalStkPtr stk, InstrPtr pci, int abort_on_error,
 
 	bid = getArgReference_bat(stk, pci, 1);
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+		throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (pci->argc == 3) {
 		bat *sid = getArgReference_bat(stk, pci, 2);
 		if (*sid && (s = BATdescriptor(*sid)) == NULL) {
 			BBPunfix(b->batCacheid);
-			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+			throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 	}
 
@@ -308,7 +308,7 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (pci->argc == 4) {
 		bat *sid = getArgReference_bat(stk, pci, 3);
 		if (*sid && (s = BATdescriptor(*sid)) == NULL)
-			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+			throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	if (tp1 == TYPE_bat || isaBatType(tp1)) {
@@ -318,7 +318,7 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		if (b == NULL) {
 			if (s)
 				BBPunfix(s->batCacheid);
-			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+			throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		if (tp2 == TYPE_bat || isaBatType(tp2)) {
 			bid = getArgReference_bat(stk, pci, 2);
@@ -327,7 +327,7 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				BBPunfix(b->batCacheid);
 				if (s)
 					BBPunfix(s->batCacheid);
-				throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+				throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			}
 		}
 		if (b2) {
@@ -349,7 +349,7 @@ CMDbatBINARY2(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		if (b == NULL) {
 			if (s)
 				BBPunfix(s->batCacheid);
-			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+			throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		if (tp3 == TYPE_any)
 			tp3 = (*typefunc)(tp1, b->ttype);
@@ -381,7 +381,7 @@ CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
 	if (pci->argc == 4) {
 		bat *sid = getArgReference_bat(stk, pci, 3);
 		if (*sid && (s = BATdescriptor(*sid)) == NULL)
-			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+			throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	if (tp1 == TYPE_bat || isaBatType(tp1)) {
@@ -391,7 +391,7 @@ CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
 		if (b == NULL) {
 			if (s)
 				BBPunfix(s->batCacheid);
-			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+			throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		if (tp2 == TYPE_bat || isaBatType(tp2)) {
 			bid = getArgReference_bat(stk, pci, 2);
@@ -400,7 +400,7 @@ CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
 				BBPunfix(b->batCacheid);
 				if (s)
 					BBPunfix(s->batCacheid);
-				throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+				throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			}
 		}
 		if (b2) {
@@ -417,7 +417,7 @@ CMDbatBINARY1(MalStkPtr stk, InstrPtr pci,
 		if (b == NULL) {
 			if (s)
 				BBPunfix(s->batCacheid);
-			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+			throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b, s, abort_on_error);
 	}
@@ -448,7 +448,7 @@ CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
 	if (pci->argc == 4) {
 		bat *sid = getArgReference_bat(stk, pci, 3);
 		if (*sid && (s = BATdescriptor(*sid)) == NULL)
-			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+			throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	if (tp1 == TYPE_bat || isaBatType(tp1)) {
@@ -458,7 +458,7 @@ CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
 		if (b == NULL) {
 			if (s)
 				BBPunfix(s->batCacheid);
-			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+			throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		if (tp2 == TYPE_bat || isaBatType(tp2)) {
 			bid = getArgReference_bat(stk, pci, 2);
@@ -467,7 +467,7 @@ CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
 				BBPunfix(b->batCacheid);
 				if (s)
 					BBPunfix(s->batCacheid);
-				throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+				throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			}
 		}
 		if (b2) {
@@ -491,7 +491,7 @@ CMDbatBINARY0(MalStkPtr stk, InstrPtr pci,
 		if (b == NULL) {
 			if (s)
 				BBPunfix(s->batCacheid);
-			throw(MAL, malfunc, RUNTIME_OBJECT_MISSING);
+			throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		bn = (*batfunc2)(&stk->stk[getArg(pci, 1)], b, s);
 	}
@@ -877,7 +877,7 @@ callbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int sym)
 	if (pci->argc == 5) {
 		bat *sid = getArgReference_bat(stk, pci, 4);
 		if (*sid && (s = BATdescriptor(*sid)) == NULL)
-			throw(MAL, "batcalc.between", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "batcalc.between", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	if (tp1 != TYPE_bat && !isaBatType(tp1)) {
@@ -890,7 +890,7 @@ callbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int sym)
 	if (b == NULL) {
 		if (s)
 			BBPunfix(s->batCacheid);
-		throw(MAL, "batcalc.between", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batcalc.between", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	if (tp2 == TYPE_bat || isaBatType(tp2)) {
@@ -900,7 +900,7 @@ callbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int sym)
 			BBPunfix(b->batCacheid);
 			if (s)
 				BBPunfix(s->batCacheid);
-			throw(MAL, "batcalc.between", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "batcalc.between", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 	}
 	if (tp3 == TYPE_bat || isaBatType(tp3)) {
@@ -912,7 +912,7 @@ callbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int sym)
 				BBPunfix(lo->batCacheid);
 			if (s)
 				BBPunfix(s->batCacheid);
-			throw(MAL, "batcalc.between", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "batcalc.between", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 	}
 	if (lo == NULL) {
@@ -976,12 +976,12 @@ CMDcalcavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	bid = getArgReference_bat(stk, pci, pci->retc + 0);
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "aggr.avg", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (pci->retc == pci->retc + 2) {
 		bat *sid = getArgReference_bat(stk, pci, pci->retc + 1);
 		if (*sid && (s = BATdescriptor(*sid)) == NULL) {
 			BBPunfix(b->batCacheid);
-			throw(MAL, "aggr.avg", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 	}
 	ret = BATcalcavg(b, s, &avg, &vals);
@@ -1004,12 +1004,12 @@ CMDconvertbat(MalStkPtr stk, InstrPtr pci, int tp, int abort_on_error)
 
 	bid = getArgReference_bat(stk, pci, 1);
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batcalc.convert", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batcalc.convert", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (pci->argc == 3) {
 		bat *sid = getArgReference_bat(stk, pci, 2);
 		if (*sid && (s = BATdescriptor(*sid)) == NULL) {
 			BBPunfix(b->batCacheid);
-			throw(MAL, "batcalc.convert", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "batcalc.convert", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 	}
 
@@ -1262,7 +1262,7 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tp0 == TYPE_bat || isaBatType(tp0)) {
 		b = BATdescriptor(* getArgReference_bat(stk, pci, 1));
 		if (b == NULL)
-			throw(MAL, "batcalc.ifthenelse", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "batcalc.ifthenelse", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		cnt = BATcount(b);
 	}
 	if (tp1 == TYPE_bat || isaBatType(tp1)) {
@@ -1270,7 +1270,7 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (b1 == NULL) {
 			if (b)
 				BBPunfix(b->batCacheid);
-			throw(MAL, "batcalc.ifthenelse", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "batcalc.ifthenelse", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		if (cnt == BUN_NONE)
 			cnt = BATcount(b1);
@@ -1286,7 +1286,7 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPunfix(b->batCacheid);
 			if (b1)
 				BBPunfix(b1->batCacheid);
-			throw(MAL, "batcalc.ifthenelse", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "batcalc.ifthenelse", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		if (cnt == BUN_NONE)
 			cnt = BATcount(b2);

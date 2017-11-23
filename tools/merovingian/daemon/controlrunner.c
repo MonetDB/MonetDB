@@ -450,7 +450,7 @@ static void ctl_handle_client(
 								freeException(err);
 							} else {
 								/* don't start locked */
-								unlink(".maintenance");
+								remove(".maintenance");
 							}
 
 							exit(0); /* return to the parent */

@@ -29,69 +29,24 @@ Ready.
 #                then (true)
 #                else (false)
 #        end
-#from sys.tables;
+#from sys.table_types limit 3;
 % .L72 # table_name
 % L72 # name
 % boolean # type
 % 5 # length
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
-[ true	]
+[ false	]
+[ false	]
+[ false	]
+#select 
+#        case when EXISTS ( select count(hashes) from sys.tablestoragemodel )
+#                then (true)
+#                else (false)
+#        end
+#from sys.table_types limit 3;
+% .L72 # table_name
+% L72 # name
+% boolean # type
+% 5 # length
 [ true	]
 [ true	]
 [ true	]

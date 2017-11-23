@@ -1,3 +1,6 @@
+# keep drop_system_schema.Bug-6437 as first test as it appears that the behavior is different (wrong) when it is the first test or not
+drop_system_schema.Bug-6437
+check_system_schema.Bug-6437
 unknown_col_in_order_by.Bug-3535
 extract_quarter_week_from_date.Bug-3831
 insert_self_ref_FK.Bug-6131
@@ -59,7 +62,7 @@ type-resolution-error.Bugs-6313
 lateral02.Bug-6314
 exist-bigint-missing.Bug-6315
 coalesc-limit.Bug-6316
-limit.Bug-6322
+HAVE_GEOM?limit.Bug-6322
 simplify_math.Bug-6324
 HAVE_GEOM?push_subslice.Bug-6322
 create_table_as-missing_not_null.Bug-6329
@@ -97,7 +100,11 @@ sqlitelogictest-aggregation-distinct-coalesce.Bug-6431
 sqlsmith.Bug-6432
 sqlitelogictest-select-in.Bug-6433
 sqlitelogictest-select-not-in.Bug-6435
+drop_schema_restrict.Bug-6438
 sqlitelogictest-cast-decimal.Bug-6445
 HAVE_LIBPY?table_returning_with.Bug-6444
 insert_into_multiple_subqueries.Bug-6448
 HAVE_SAMTOOLS?sqlsmith.Bug-6449
+HAVE_LIBPY?python_loader_clobbers_default_with_null.Bug-6464
+skip_problem_best_effort.Bug-6442
+date_to_str.Bug-6467

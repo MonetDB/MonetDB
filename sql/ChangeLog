@@ -1,6 +1,12 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Nov  9 2017 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Implemented behavior for DROP SCHEMA my_schema RESTRICT command.
+  Previously the RESTRICT keyword was accepted but not obeyed. It would
+  always do a CASCADE operation.  Also the default behavior of DROP SCHEMA
+  my_schema command is now changed into RESTRICT behavior (was CASCADE).
+
 * Tue Nov  7 2017 Sjoerd Mullender <sjoerd@acm.org>
 - The internal NULL representation of the REAL (FLOAT) and DOUBLE
   types was changed from the smallest representable finite value to NaN

@@ -25,7 +25,6 @@
 /* this function can be used to recreate the system tables (types,
  * functions, args) when internal types and/or functions have changed
  * (i.e. the ones in sql_types.c) */
-#ifdef HAVE_HGE			/* currently only used in sql_update_hugeint */
 static str
 sql_fix_system_tables(Client c, mvc *sql)
 {
@@ -183,7 +182,6 @@ sql_fix_system_tables(Client c, mvc *sql)
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
-#endif
 
 #ifdef HAVE_HGE
 static str
@@ -666,7 +664,7 @@ sql_update_dec2016_sp3(Client c, mvc *sql)
 	char *schema = stack_get_string(sql, "current_schema");
 
 	if (buf == NULL)
-		throw(SQL, "sql_update_dec2016_sp3", MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_dec2016_sp3", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"set schema \"sys\";\n"
 			"drop procedure sys.settimeout(bigint);\n"
@@ -826,7 +824,7 @@ sql_update_jul2017_sp2(Client c)
 			char *buf = GDKmalloc(bufsize);
 
 			if (buf== NULL)
-				throw(SQL, "sql_update_jul2017_sp2", MAL_MALLOC_FAIL);
+				throw(SQL, "sql_update_jul2017_sp2", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 			/* 51_sys_schema_extensions.sql and 25_debug.sql */
 			pos += snprintf(buf + pos, bufsize - pos,
@@ -854,6 +852,54 @@ sql_update_jul2017_sp2(Client c)
 }
 
 static str
+sql_update_jul2017_sp3(Client c, mvc *sql)
+{
+	char *err = NULL;
+	sql_schema *sys;
+	sql_table *tab;
+	sql_column *col;
+	oid rid;
+
+	/* if there is no value "sys_update_schemas" in
+	 * sys.functions.name, we need to update the sys.functions
+	 * table */
+	sys = find_sql_schema(sql->session->tr, "sys");
+	tab = find_sql_table(sys, "functions");
+	col = find_sql_column(tab, "name");
+	rid = table_funcs.column_find_row(sql->session->tr, col, "sys_update_schemas", NULL);
+	if (rid == oid_nil) {
+		err = sql_fix_system_tables(c, sql);
+		if (err != NULL)
+			return err;
+	}
+	/* if there is no value "system_update_schemas" in
+	 * sys.triggers.name, we need to add the triggers */
+	tab = find_sql_table(sys, "triggers");
+	col = find_sql_column(tab, "name");
+	rid = table_funcs.column_find_row(sql->session->tr, col, "system_update_schemas", NULL);
+	if (rid == oid_nil) {
+		char *schema = stack_get_string(sql, "current_schema");
+		size_t bufsize = 1024, pos = 0;
+		char *buf = GDKmalloc(bufsize);
+		if (buf == NULL)
+			throw(SQL, "sql_update_jul2017_sp3", MAL_MALLOC_FAIL);
+		pos += snprintf(
+			buf + pos,
+			bufsize - pos,
+			"set schema \"sys\";\n"
+			"create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas();\n"
+			"create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables();\n");
+		if (schema)
+			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+		assert(pos < bufsize);
+		printf("Running database upgrade commands:\n%s\n", buf);
+		err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+		GDKfree(buf);
+	}
+	return err;
+}
+
+static str
 sql_update_default(Client c, mvc *sql)
 {
 	size_t bufsize = 10000, pos = 0;
@@ -863,6 +909,38 @@ sql_update_default(Client c, mvc *sql)
 	if( buf== NULL)
 		throw(SQL, "sql_update_jul2017", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	/* 39_analytics.sql, 39_analytics_hge.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop aggregate corr(tinyint, tinyint);\n"
+			"drop aggregate corr(smallint, smallint);\n"
+			"drop aggregate corr(integer, integer);\n"
+			"drop aggregate corr(bigint, bigint);\n"
+			"drop aggregate corr(real, real);\n");
+#ifdef HAVE_HGE
+	if (have_hge)
+		pos += snprintf(buf + pos, bufsize - pos,
+				"drop aggregate corr(hugeint, hugeint);\n");
+#endif
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create aggregate corr(e1 TINYINT, e2 TINYINT) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(tinyint, tinyint) to public;\n"
+			"create aggregate corr(e1 SMALLINT, e2 SMALLINT) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(smallint, smallint) to public;\n"
+			"create aggregate corr(e1 INTEGER, e2 INTEGER) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(integer, integer) to public;\n"
+			"create aggregate corr(e1 BIGINT, e2 BIGINT) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(bigint, bigint) to public;\n"
+			"create aggregate corr(e1 REAL, e2 REAL) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(real, real) to public;\n");
+#ifdef HAVE_HGE
+	if (have_hge)
+		pos += snprintf(buf + pos, bufsize - pos,
+				"create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(hugeint, hugeint) to public;\n");
+#endif
+	pos += snprintf(buf + pos, bufsize - pos,
+			"insert into sys.systemfunctions (select id from sys.functions where name = 'corr' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
 
 	/* 60_wlcr.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1082,6 +1160,11 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_jul2017_sp2(c)) != NULL) {
+		fprintf(stderr, "!%s\n", err);
+		freeException(err);
+	}
+
+	if ((err = sql_update_jul2017_sp3(c, m)) != NULL) {
 		fprintf(stderr, "!%s\n", err);
 		freeException(err);
 	}

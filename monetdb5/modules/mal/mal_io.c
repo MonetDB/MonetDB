@@ -103,7 +103,7 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 		}
 		b[1] = BATdescriptor(*(bat *) val);
 		if (b[1] == NULL) {
-			throw(MAL, "io.print", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "io.print", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		if (nobat) {
 			if (hd)
@@ -602,7 +602,7 @@ IOexport(void *ret, bat *bid, str *fnme)
 
 	(void) ret;
 	if ((b = BATdescriptor(*bid)) == NULL) 
-		throw(MAL, "io.export", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "io.export", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	
 	s = open_wastream(*fnme);
 	if (s == NULL ){
@@ -642,7 +642,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		if (fp)
 			fclose(fp);
-		throw(MAL, "io.import", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "io.import", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	tconvert = BATatoms[BATttype(b)].atomFromStr;

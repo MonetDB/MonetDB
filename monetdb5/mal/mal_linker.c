@@ -144,7 +144,7 @@ str
 loadLibrary(str filename, int flag)
 {
 	int mode = RTLD_NOW | RTLD_GLOBAL;
-	char nme[PATHLENGTH];
+	char nme[FILENAME_MAX];
 	void *handle = NULL;
 	str s;
 	int idx;
@@ -186,11 +186,11 @@ loadLibrary(str filename, int flag)
 
 		/* try hardcoded SO_EXT if that is the same for modules */
 #ifdef _AIX
-		snprintf(nme, PATHLENGTH, "%.*s%c%s_%s%s(%s_%s.0)",
+		snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s%s(%s_%s.0)",
 				 (int) (p - mod_path),
 				 mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT, SO_PREFIX, s);
 #else
-		snprintf(nme, PATHLENGTH, "%.*s%c%s_%s%s",
+		snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s%s",
 				 (int) (p - mod_path),
 				 mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT);
 #endif
@@ -200,7 +200,7 @@ loadLibrary(str filename, int flag)
 		}
 		if (handle == NULL && strcmp(SO_EXT, ".so") != 0) {
 			/* try .so */
-			snprintf(nme, PATHLENGTH, "%.*s%c%s_%s.so",
+			snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.so",
 					 (int) (p - mod_path),
 					 mod_path, DIR_SEP, SO_PREFIX, s);
 			handle = dlopen(nme, mode);
@@ -211,7 +211,7 @@ loadLibrary(str filename, int flag)
 #ifdef __APPLE__
 		if (handle == NULL && strcmp(SO_EXT, ".bundle") != 0) {
 			/* try .bundle */
-			snprintf(nme, PATHLENGTH, "%.*s%c%s_%s.bundle",
+			snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.bundle",
 					 (int) (p - mod_path),
 					 mod_path, DIR_SEP, SO_PREFIX, s);
 			handle = dlopen(nme, mode);
@@ -240,12 +240,16 @@ loadLibrary(str filename, int flag)
 		filesLoaded[lastfile].modname = GDKstrdup(filename);
 		if(filesLoaded[lastfile].modname == NULL) {
 			MT_lock_unset(&mal_contextLock);
+			if (handle)
+				dlclose(handle);
 			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " could not allocate space");
 		}
 		filesLoaded[lastfile].fullname = GDKstrdup(handle ? nme : "");
 		if(filesLoaded[lastfile].fullname == NULL) {
-			GDKfree(filesLoaded[lastfile].modname);
 			MT_lock_unset(&mal_contextLock);
+			GDKfree(filesLoaded[lastfile].modname);
+			if (handle)
+				dlclose(handle);
 			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " could not allocate space");
 		}
 		filesLoaded[lastfile].handle = handle ? handle : filesLoaded[0].handle;
