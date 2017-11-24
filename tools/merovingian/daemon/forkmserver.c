@@ -574,6 +574,7 @@ forkMserver(char *database, sabdb** stats, int force)
 	if (pid == 0) {
 		/* redirect stdout and stderr to a new pair of fds for
 		 * logging help */
+		ssize_t write_error;	/* to avoid compiler warning */
 		close(pfdo[0]);
 		dup2(pfdo[1], 1);
 		close(pfdo[1]);
@@ -582,17 +583,19 @@ forkMserver(char *database, sabdb** stats, int force)
 		dup2(pfde[1], 2);
 		close(pfde[1]);
 
-		write(1, "arguments:", 10);
+		write_error = write(1, "arguments:", 10);
 		for (c = 0; argv[c] != NULL; c++) {
 			/* very stupid heuristic to make copy/paste easier from
 			 * merovingian's log */
 			int q = strchr(argv[c], ' ') != NULL;
-			write(1, " \"", 1 + q);
-			write(1, argv[c], strlen(argv[c]));
+			write_error |= write(1, " \"", 1 + q);
+			write_error |= write(1, argv[c], strlen(argv[c]));
 			if (q)
-				write(1, "\"", 1);
+				write_error |= write(1, "\"", 1);
 		}
-		write(1, "\n", 1);
+		write_error |= write(1, "\n", 1);
+		if (write_error < 0)
+			perror("write");
 
 		execv(_mero_mserver, argv);
 		/* if the exec returns, it is because of a failure */
