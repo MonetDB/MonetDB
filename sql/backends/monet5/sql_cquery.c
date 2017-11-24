@@ -84,7 +84,7 @@ do {                                                                            
 } while(0);
 
 static void
-cleanBaskets(int idx)
+cleanBaskets(int idx) //Always called within a lock
 {
 	int m, n, o, found;
 	str sch, tbl;
@@ -109,7 +109,7 @@ cleanBaskets(int idx)
 }
 
 static void
-CQfree(Client cntxt, int idx)
+CQfree(Client cntxt, int idx) //Always called within a lock
 {
 	int i;
 	InstrPtr p;
@@ -304,7 +304,7 @@ CQlocateBasketExternal(str schname, str tblname) //check if a stream table is be
 }
 
 static int
-CQlocateAlias(str alias)
+CQlocateAlias(str alias) //Always called within a lock
 {
 	int i;
 	for (i = 0; i < pnettop; i++){
@@ -734,11 +734,9 @@ unlock:
 	if(!msg && cq_pid == 0) { /* start the scheduler if needed */
 		if( pnettop == 1)
 			pnstatus = CQINIT;
-		MT_lock_unset(&ttrLock);
 		msg = CQstartScheduler();
-	} else {
-		MT_lock_unset(&ttrLock);
 	}
+	MT_lock_unset(&ttrLock);
 finish:
 	if(freeMB)
 		freeMalBlk(be->mb);
@@ -804,10 +802,8 @@ CQresume(str alias, int with_alter, lng heartbeats, lng startat, int cycles)
 	}
 
 	/* start the scheduler if needed */
-	if(cq_pid == 0) {
+	if(cq_pid == 0)
 		msg = CQstartScheduler();
-	}
-
 unlock:
 	MT_lock_unset(&ttrLock);
 finish:
@@ -836,12 +832,9 @@ CQresumeAll(void)
 	}
 
 	/* start the scheduler if needed */
-	if(cq_pid == 0) {
-		MT_lock_unset(&ttrLock);
+	if(cq_pid == 0)
 		msg = CQstartScheduler();
-	} else {
-		MT_lock_unset(&ttrLock);
-	}
+	MT_lock_unset(&ttrLock);
 	return msg;
 }
 
@@ -996,12 +989,13 @@ str
 CQheartbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str alias, msg = MAL_SUCCEED;
-	int j, there_is_window_constraint, idx=0, last= pnettop;
+	int j, there_is_window_constraint, idx=0, last;
 	lng heartbeats;
 	(void) cntxt;
 	(void) mb;
 
 	MT_lock_set(&ttrLock);
+	last = pnettop;
 	if( pci->argc >2){
 		alias = *getArgReference_str(stk,pci,1);
 		idx = CQlocateAlias(alias);
@@ -1075,7 +1069,7 @@ CQderegister(Client cntxt, str alias)
 {
 	int idx = 0, i, j;
 	str msg = MAL_SUCCEED, this_alias = NULL, falias = NULL;
-	MT_Id myID = MT_getpid();
+	MT_Id myID = MT_getpid(), previous_scheduler_ID;
 
 	MT_lock_set(&ttrLock);
 	idx = CQlocateAlias(alias);
@@ -1116,11 +1110,10 @@ CQderegister(Client cntxt, str alias)
 		}
 		if( pnettop == 0) {
 			pnstatus = CQSTOP;
+			previous_scheduler_ID = cq_pid;
 			MT_lock_unset(&ttrLock);
-			if(cq_pid > 0) {
-				MT_join_thread(cq_pid);
-				cq_pid = 0;
-			}
+			if(previous_scheduler_ID > 0)
+				MT_join_thread(previous_scheduler_ID);
 			goto finish;
 		}
 	} else {
@@ -1137,14 +1130,15 @@ CQderegisterAll(Client cntxt)
 {
 	str msg = MAL_SUCCEED, this_alias = NULL;
 	int i;
-	MT_Id myID = MT_getpid();
+	MT_Id myID = MT_getpid(), previous_scheduler_ID;
 	//mvc* smvc;
 	//ALL_ROOT_CHECK(cntxt, "cquery.deregisterall", "STOP ");
 
 	MT_lock_set(&ttrLock);
+	previous_scheduler_ID = cq_pid;
 
 	for(i = 0 ; i < pnettop; i++) {
-		if(myID != cq_pid) {
+		if(myID != previous_scheduler_ID) {
 			pnet[i].status = CQSTOP;
 			this_alias = pnet[i].alias;
 			MT_lock_unset(&ttrLock);
@@ -1161,13 +1155,11 @@ CQderegisterAll(Client cntxt)
 		}
 		i--;
 	}
-	if(myID != cq_pid)
+	if(myID != previous_scheduler_ID)
 		pnstatus = CQSTOP;
 	MT_lock_unset(&ttrLock);
-	if(myID != cq_pid && cq_pid > 0) {
-		MT_join_thread(cq_pid);
-		cq_pid = 0;
-	}
+	if(myID != previous_scheduler_ID && previous_scheduler_ID > 0)
+		MT_join_thread(previous_scheduler_ID);
 	return msg;
 }
 
