@@ -628,6 +628,11 @@ dnl		MCHECK_ADD_FLAG([-Wdeclaration-after-statement])
 		MCHECK_ADD_FLAG([-Wrestrict])
 		MCHECK_ADD_FLAG([-Wnested-externs])
 
+		# since we use values of type "int8_t" as subscript,
+		# and int8_t may be defined as plain "char", we cannot
+		# allow this warning (part of -Wall)
+		MCHECK_ADD_FLAG([-Wno-char-subscripts])
+
 		# We can deal with -Wunrechable-code on modern
 		# compilers, but FreeBSD's clang (3.4.1) is too old.
 		# We need a version that understands the DISABLES
