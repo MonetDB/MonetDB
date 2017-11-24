@@ -217,8 +217,8 @@ int BBPout = 0;			/* bats saved statistic */
  * operations may be ongoing while at the same time at most one BBP
  * write operation @strong{on a different BAT} is executing.  This
  * holds for accesses to the public (quasi-) arrays @emph{BBPcache},
- * @emph{BBPstatus}, @emph{BBPrefs}, @emph{BBPlogical} and
- * @emph{BBPphysical}. These arrays are called quasi as now they are
+ * @emph{BBPstatus} and @emph{BBPrefs}.
+ * These arrays are called quasi as now they are
  * actually stored together in one big BBPrec array called BBP, that
  * is allocated in anonymous VM space, so we can reallocate this
  * structure without changing the base address (a crucial feature if
@@ -2159,32 +2159,6 @@ BBPgetdesc(bat i)
 		return BBP_desc(i);
 	}
 	return NULL;
-}
-
-str
-BBPlogical(bat bid, str buf)
-{
-	if (buf == NULL) {
-		return NULL;
-	} else if (BBPcheck(bid, "BBPlogical")) {
-		strcpy(buf, BBP_logical(bid));
-	} else {
-		*buf = 0;
-	}
-	return buf;
-}
-
-str
-BBPphysical(bat bid, str buf)
-{
-	if (buf == NULL) {
-		return NULL;
-	} else if (BBPcheck(bid, "BBPphysical")) {
-		strcpy(buf, BBP_physical(bid));
-	} else {
-		*buf = 0;
-	}
-	return buf;
 }
 
 /*

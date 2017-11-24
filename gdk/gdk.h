@@ -1580,11 +1580,7 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
  * @end multitable
  *
  * The BAT Buffer Pool module contains the code to manage the storage
- * location of BATs. It uses two tables BBPlogical and BBphysical to
- * relate the BAT name with its corresponding file system name.  This
- * information is retained in an ASCII file within the database home
- * directory for ease of inspection. It is loaded upon restart of the
- * server and saved upon transaction commit (if necessary).
+ * location of BATs.
  *
  * The remaining BBP tables contain status information to load, swap
  * and migrate the BATs. The core table is BBPcache which contains a
@@ -1666,8 +1662,6 @@ gdk_export void BBPlock(void);
 
 gdk_export void BBPunlock(void);
 
-gdk_export str BBPlogical(bat b, str buf);
-gdk_export str BBPphysical(bat b, str buf);
 gdk_export BAT *BBPquickdesc(bat b, int delaccess);
 
 /*
