@@ -1606,11 +1606,11 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
  */
 typedef struct {
 	BAT *cache;		/* if loaded: BAT* handle */
-	str logical;		/* logical name */
-	str bak;		/* logical name backup */
+	char *logical;		/* logical name (may point at bak) */
+	char bak[16];		/* logical name backup (tmp_%o) */
 	bat next;		/* next BBP slot in linked list */
 	BAT *desc;		/* the BAT descriptor */
-	str physical;		/* dir + basename for storage */
+	char physical[24];	/* dir + basename for storage */
 	str options;		/* A string list of options */
 	int refs;		/* in-memory references on which the loaded status of a BAT relies */
 	int lrefs;		/* logical references on which the existence of a BAT relies */
@@ -1626,7 +1626,12 @@ gdk_export bat BBPlimit;
 #define BBPINITLOG	14
 #endif
 #define BBPINIT		(1 << BBPINITLOG)
-/* absolute maximum number of BATs is N_BBPINIT * BBPINIT */
+/* absolute maximum number of BATs is N_BBPINIT * BBPINIT
+ * this also gives the longest possible "physical" name and "bak" name
+ * of a BAT: the "bak" name is "tmp_%o", so at most 12 + \0 bytes on
+ * 64 bit architecture and 11 + \0 on 32 bit architecture; the
+ * physical name is a bit more complicated, but the longest possible
+ * name is 17 + \0 bytes (16 + \0 on 32 bits) */
 gdk_export BBPrec *BBP[N_BBPINIT];
 
 /* fast defines without checks; internal use only  */

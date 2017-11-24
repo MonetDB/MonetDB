@@ -378,24 +378,6 @@ BBPextend(int idx, int buildhash)
 	return GDK_SUCCEED;
 }
 
-static inline char *
-BBPtmpname(char *s, size_t len, bat i)
-{
-	snprintf(s, len, "tmp_%o", (int) i);
-	return s;
-}
-
-static inline str
-BBPphysicalname(str s, int len, bat i)
-{
-	s[--len] = 0;
-	while (i > 0) {
-		s[--len] = '0' + (i & 7);
-		i >>= 3;
-	}
-	return s + len;
-}
-
 static gdk_return
 recover_dir(int farmid, int direxists)
 {
@@ -1276,7 +1258,7 @@ BBPreadEntries(FILE *fp, int bbpversion)
 		lng batid;
 		unsigned short status;
 		char headname[129];
-		char filename[129];
+		char filename[24];
 		unsigned int properties;
 		int lastused;
 		int nread;
@@ -1300,7 +1282,7 @@ BBPreadEntries(FILE *fp, int bbpversion)
 
 		if (bbpversion <= GDKLIBRARY_INSERTED ?
 		    sscanf(buf,
-			   LLFMT" %hu %128s %128s %128s %d %u "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" %hu %hu %hu %hu"
+			   LLFMT" %hu %128s %128s %23s %d %u "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" %hu %hu %hu %hu"
 			   "%n",
 			   &batid, &status, headname, tailname, filename,
 			   &lastused, &properties, &inserted, &deleted, &first,
@@ -1309,7 +1291,7 @@ BBPreadEntries(FILE *fp, int bbpversion)
 			   &nread) < 16 :
 		    bbpversion <= GDKLIBRARY_HEADED ?
 		    sscanf(buf,
-			   LLFMT" %hu %128s %128s %128s %d %u "LLFMT" "LLFMT" "LLFMT" %hu %hu %hu %hu"
+			   LLFMT" %hu %128s %128s %23s %d %u "LLFMT" "LLFMT" "LLFMT" %hu %hu %hu %hu"
 			   "%n",
 			   &batid, &status, headname, tailname, filename,
 			   &lastused, &properties, &first,
@@ -1317,13 +1299,16 @@ BBPreadEntries(FILE *fp, int bbpversion)
 			   &map_theap,
 			   &nread) < 14 :
 		    sscanf(buf,
-			   LLFMT" %hu %128s %128s %u "LLFMT" "LLFMT" "LLFMT
+			   LLFMT" %hu %128s %23s %u "LLFMT" "LLFMT" "LLFMT
 			   "%n",
 			   &batid, &status, headname, filename,
 			   &properties,
 			   &count, &capacity, &base,
 			   &nread) < 8)
 			GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
+
+		if (batid >= N_BBPINIT * BBPINIT)
+			GDKfatal("BBPinit: bat ID (" LLFMT ") too large to accomodate (max %d).", batid, N_BBPINIT * BBPINIT - 1);
 
 		/* convert both / and \ path separators to our own DIR_SEP */
 #if DIR_SEP != '/'
@@ -1389,16 +1374,18 @@ BBPreadEntries(FILE *fp, int bbpversion)
 		BBP_desc(bid) = bn;
 		BBP_status(bid) = BBPEXISTING;	/* do we need other status bits? */
 		if ((s = strchr(headname, '~')) != NULL && s == headname) {
-			s = BBPtmpname(logical, sizeof(logical), bid);
+			snprintf(logical, sizeof(logical), "tmp_%o", (int) bid);
 		} else {
 			if (s)
 				*s = 0;
 			strncpy(logical, headname, sizeof(logical));
-			s = logical;
 		}
+		s = logical;
 		BBP_logical(bid) = GDKstrdup(s);
 		/* tailname is ignored */
-		BBP_physical(bid) = GDKstrdup(filename);
+		if (strlen(filename) >= sizeof(BBP_physical(bid)))
+			GDKfatal("BBPinit: physical name for BAT (%s) is too long (" SZFMT " bytes).", filename, sizeof(BBP_physical(bid)) - 1);
+		strncpy(BBP_physical(bid), filename, sizeof(BBP_physical(bid)));
 		BBP_options(bid) = NULL;
 		if (options)
 			BBP_options(bid) = GDKstrdup(options);
@@ -1716,18 +1703,9 @@ BBPexit(void)
 				}
 				BBPuncacheit(i, TRUE);
 				if (BBP_logical(i) != BBP_bak(i))
-					GDKfree(BBP_bak(i));
-				BBP_bak(i) = NULL;
-				GDKfree(BBP_logical(i));
+					GDKfree(BBP_logical(i));
 				BBP_logical(i) = NULL;
 			}
-			if (BBP_physical(i)) {
-				GDKfree(BBP_physical(i));
-				BBP_physical(i) = NULL;
-			}
-			if (BBP_bak(i))
-				GDKfree(BBP_bak(i));
-			BBP_bak(i) = NULL;
 		}
 	} while (skipped);
 	GDKfree(BBP_hash);
@@ -2262,8 +2240,7 @@ BBPinsert(BAT *bn)
 {
 	MT_Id pid = MT_getpid();
 	int lock = locked_by ? pid != locked_by : 1;
-	const char *s;
-	long_str dirname;
+	char dirname[24];
 	bat i;
 	int idx = threadmask(pid);
 
@@ -2330,21 +2307,20 @@ BBPinsert(BAT *bn)
 		havehge = 1;
 #endif
 
-	if (BBP_bak(i) == NULL) {
-		s = BBPtmpname(dirname, 64, i);
-		BBP_logical(i) = GDKstrdup(s);
-		BBP_bak(i) = BBP_logical(i);
-	} else
-		BBP_logical(i) = BBP_bak(i);
+	if (*BBP_bak(i) == 0)
+		snprintf(BBP_bak(i), sizeof(BBP_bak(i)), "tmp_%o", (int) i);
+	BBP_logical(i) = BBP_bak(i);
 
 	/* Keep the physical location around forever */
-	if (BBP_physical(i) == NULL) {
-		char name[64], *nme;
-
+	if (*BBP_physical(i) == 0) {
 		BBPgetsubdir(dirname, i);
-		nme = BBPphysicalname(name, 64, i);
 
-		BBP_physical(i) = GDKfilepath(NOFARM, dirname, nme, NULL);
+		if (*dirname)	/* i.e., i >= 0100 */
+			snprintf(BBP_physical(i), sizeof(BBP_physical(i)),
+				 "%s%c%o", dirname, DIR_SEP, i);
+		else
+			snprintf(BBP_physical(i), sizeof(BBP_physical(i)),
+				 "%o", i);
 
 		BATDEBUG fprintf(stderr, "#%d = new %s(%s)\n", (int) i, BBPname(i), ATOMname(bn->ttype));
 	}
@@ -2491,7 +2467,7 @@ int
 BBPrename(bat bid, const char *nme)
 {
 	BAT *b = BBPdescriptor(bid);
-	long_str dirname;
+	char dirname[24];
 	bat tmpid = 0, i;
 	int idx;
 
