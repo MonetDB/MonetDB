@@ -50,14 +50,23 @@ static void *
 HEAPcreatefile(int farmid, size_t *maxsz, const char *fn)
 {
 	void *base = NULL;
+	char *path = NULL;
 	int fd;
 
+	if (farmid != NOFARM) {
+		/* call GDKfilepath once here instead of twice inside
+		 * the calls to GDKfdlocate and GDKload */
+		if ((path = GDKfilepath(farmid, BATDIR, fn, NULL)) == NULL)
+			return NULL;
+		fn = path;
+	}
 	/* round up to mulitple of GDK_mmap_pagesize */
-	fd = GDKfdlocate(farmid, fn, "wb", NULL);
+	fd = GDKfdlocate(NOFARM, fn, "wb", NULL);
 	if (fd >= 0) {
 		close(fd);
-		base = GDKload(farmid, fn, NULL, *maxsz, maxsz, STORE_MMAP);
+		base = GDKload(NOFARM, fn, NULL, *maxsz, maxsz, STORE_MMAP);
 	}
+	GDKfree(path);
 	return base;
 }
 
@@ -117,14 +126,14 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		nme = GDKfilepath(h->farmid, BATDIR, of, NULL);
 		if (stat(nme, &st) < 0) {
 			h->storage = STORE_MMAP;
-			h->base = HEAPcreatefile(h->farmid, &h->size, of);
+			h->base = HEAPcreatefile(NOFARM, &h->size, nme);
 			h->filename = of;
 		} else {
 			char *ext;
 			int fd;
 
 			ext = decompose_filename(of);
-			fd = GDKfdlocate(h->farmid, of, "wb", ext);
+			fd = GDKfdlocate(NOFARM, nme, "wb", NULL);
 			if (fd >= 0) {
 				close(fd);
 				h->newstorage = STORE_MMAP;

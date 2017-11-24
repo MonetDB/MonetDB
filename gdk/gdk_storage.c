@@ -184,15 +184,19 @@ GDKremovedir(int farmid, const char *dirname)
 int
 GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension)
 {
-	char *path;
+	char *path = NULL;
 	int fd, flags = 0;
 
 	if (nme == NULL || *nme == 0)
 		return -1;
 
-	path = GDKfilepath(farmid, BATDIR, nme, extension);
-	if (path == NULL)
-		return -1;
+	assert(farmid != NOFARM || extension == NULL);
+	if (farmid != NOFARM) {
+		path = GDKfilepath(farmid, BATDIR, nme, extension);
+		if (path == NULL)
+			return -1;
+		nme = path;
+	}
 
 	if (*mode == 'm') {	/* file open for mmap? */
 		mode++;
@@ -212,13 +216,13 @@ GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension
 #ifdef WIN32
 	flags |= strchr(mode, 'b') ? O_BINARY : O_TEXT;
 #endif
-	fd = open(path, flags | O_CLOEXEC, MONETDB_MODE);
+	fd = open(nme, flags | O_CLOEXEC, MONETDB_MODE);
 	if (fd < 0 && *mode == 'w') {
 		/* try to create the directory, in case that was the problem */
-		if (GDKcreatedir(path) == GDK_SUCCEED) {
-			fd = open(path, flags | O_CLOEXEC, MONETDB_MODE);
+		if (GDKcreatedir(nme) == GDK_SUCCEED) {
+			fd = open(nme, flags | O_CLOEXEC, MONETDB_MODE);
 			if (fd < 0)
-				GDKsyserror("GDKfdlocate: cannot open file %s\n", path);
+				GDKsyserror("GDKfdlocate: cannot open file %s\n", nme);
 		}
 	}
 	/* don't generate error if we can't open a file for reading */
@@ -504,6 +508,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 	char *ret = NULL;
 
 	assert(size <= *maxsize);
+	assert(farmid != NOFARM || ext == NULL);
 	IODEBUG {
 		fprintf(stderr, "#GDKload: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
 	}
@@ -552,25 +557,28 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 			GDKerror("GDKload: cannot open: name=%s, ext=%s\n", nme, ext ? ext : "");
 		}
 	} else {
-		char *path;
+		char *path = NULL;
 
 		/* round up to multiple of GDK_mmap_pagesize with a
 		 * minimum of one */
 		size = (*maxsize + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
 		if (size == 0)
 			size = GDK_mmap_pagesize;
-		path = GDKfilepath(farmid, BATDIR, nme, ext);
-		if (path != NULL && GDKextend(path, size) == GDK_SUCCEED) {
+		if (farmid != NOFARM) {
+			path = GDKfilepath(farmid, BATDIR, nme, ext);
+			nme = path;
+		}
+		if (nme != NULL && GDKextend(nme, size) == GDK_SUCCEED) {
 			int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL | MMAP_SYNC;
 
 			if (mode == STORE_PRIV)
 				mod |= MMAP_COPY;
-			ret = GDKmmap(path, mod, size);
+			ret = GDKmmap(nme, mod, size);
 			if (ret != NULL) {
 				/* success: update allocated size */
 				*maxsize = size;
 			}
-			IODEBUG fprintf(stderr, "#mmap(NULL, 0, maxsize " SZFMT ", mod %d, path %s, 0) = " PTRFMT "\n", size, mod, path, PTRFMTCAST(void *)ret);
+			IODEBUG fprintf(stderr, "#mmap(NULL, 0, maxsize " SZFMT ", mod %d, path %s, 0) = " PTRFMT "\n", size, mod, nme, PTRFMTCAST(void *)ret);
 		}
 		GDKfree(path);
 	}
