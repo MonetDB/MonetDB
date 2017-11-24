@@ -31,7 +31,7 @@ unshare_string_heap(BAT *b)
 		h->parentid = b->batCacheid;
 		h->farmid = BBPselectfarm(b->batRole, TYPE_str, varheap);
 		if (b->tvheap->filename) {
-			char *nme = BBP_physical(b->batCacheid);
+			const char *nme = BBP_physical(b->batCacheid);
 			h->filename = GDKfilepath(NOFARM, NULL, nme, "theap");
 			if (h->filename == NULL) {
 				GDKfree(h);

@@ -326,7 +326,7 @@ VIEWreset(BAT *b)
 	tvp = VIEWvtparent(b);
 	if (tp || tvp) {
 		BUN cnt;
-		str nme;
+		const char *nme;
 		size_t nmelen;
 
 		/* alloc heaps */
@@ -334,7 +334,7 @@ VIEWreset(BAT *b)
 
 		cnt = BATcount(b) + 1;
 		nme = BBP_physical(b->batCacheid);
-		nmelen = nme ? strlen(nme) : 0;
+		nmelen = strlen(nme);
 
 		assert(b->batCacheid > 0);
 		assert(tp || tvp || !b->ttype);

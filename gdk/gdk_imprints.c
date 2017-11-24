@@ -206,7 +206,7 @@ BATcheckimprints(BAT *b)
 	if (b->timprints == (Imprints *) 1) {
 		Imprints *imprints;
 		Heap *hp;
-		str nme = BBP_physical(b->batCacheid);
+		const char *nme = BBP_physical(b->batCacheid);
 
 		b->timprints = NULL;
 		if ((hp = GDKzalloc(sizeof(Heap))) != NULL &&
@@ -316,7 +316,7 @@ BATimprints(BAT *b)
 	ALGODEBUG t0 = GDKusec();
 	if (b->timprints == NULL) {
 		BUN cnt;
-		str nme = BBP_physical(b->batCacheid);
+		const char *nme = BBP_physical(b->batCacheid);
 		size_t pages;
 		int fd;
 

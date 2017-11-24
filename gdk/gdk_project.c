@@ -358,7 +358,7 @@ BATproject(BAT *l, BAT *r)
 			bn->tvheap->parentid = bn->batCacheid;
 			bn->tvheap->farmid = BBPselectfarm(bn->batRole, TYPE_str, varheap);
 			if (r->tvheap->filename) {
-				char *nme = BBP_physical(bn->batCacheid);
+				const char *nme = BBP_physical(bn->batCacheid);
 				bn->tvheap->filename = GDKfilepath(NOFARM, NULL, nme, "theap");
 				if (bn->tvheap->filename == NULL)
 					goto bailout;

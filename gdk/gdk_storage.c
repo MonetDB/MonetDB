@@ -596,7 +596,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 static BAT *
 DESCload(int i)
 {
-	str s, nme = BBP_physical(i);
+	const char *s, *nme = BBP_physical(i);
 	BAT *b = NULL;
 	int tt;
 
@@ -729,7 +729,7 @@ gdk_return
 BATsave(BAT *bd)
 {
 	gdk_return err = GDK_SUCCEED;
-	char *nme;
+	const char *nme;
 	BAT bs;
 	BAT *b = bd;
 
@@ -791,7 +791,7 @@ BATsave(BAT *bd)
 BAT *
 BATload_intern(bat bid, int lock)
 {
-	str nme;
+	const char *nme;
 	BAT *b;
 
 	assert(bid > 0);
@@ -863,7 +863,7 @@ void
 BATdelete(BAT *b)
 {
 	bat bid = b->batCacheid;
-	str o = BBP_physical(bid);
+	const char *o = BBP_physical(bid);
 	BAT *loaded = BBP_cache(bid);
 
 	assert(bid > 0);
