@@ -687,7 +687,7 @@ clear_bam_header_line(bam_header_line * hl)
 /**
  * Macros for appending data to the streams, evaluate to 0 on failure
  */
-#define APPEND_STR(strm, s) (mnstr_writeBteArray(strm, (signed char*)s, strlen(s)) && mnstr_writeBte(strm, '\n'))
+#define APPEND_STR(strm, s) (mnstr_writeBteArray(strm, (int8_t*)s, strlen(s)) && mnstr_writeBte(strm, '\n'))
 #define APPEND_SHT(strm, i) mnstr_writeSht(strm, i)
 #define APPEND_INT(strm, i) mnstr_writeInt(strm, i)
 #define APPEND_LNG(strm, i) mnstr_writeLng(strm, i)
@@ -1468,7 +1468,7 @@ typedef bit (*buffer_check)(alignment *, int);
 static inline int
 next_alignment_field(stream * input, alignment * a,
 	str buffer, buffer_check bc, bit delim_tab, bit * eol, bit * eof) {
-	signed char c;
+	int8_t c;
 	int index = 0;
 	if (mnstr_readBte(input, &c) == 0) {
 		*eof = TRUE;

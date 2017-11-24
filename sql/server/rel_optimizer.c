@@ -4880,7 +4880,7 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 
 	if (is_groupby(rel->op) && rel->r && !rel_is_ref(rel)) {
 		node *n, *m;
-		signed char *scores = malloc(list_length(gbe));
+		int8_t *scores = malloc(list_length(gbe));
 		int k, j, i;
 		sql_column *c;
 		sql_table **tbls;
