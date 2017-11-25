@@ -114,21 +114,19 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 	 * very large writes.
 	 */
 	assert(bn->batCacheid > 0);
-	bn->theap.filename = NULL;
+	bn->theap.filename[0] = 0;
 	bn->theap.farmid = BBPselectfarm(role, bn->ttype, offheap);
 	if (heapnames) {
 		const char *nme = BBP_physical(bn->batCacheid);
 
 		if (tt) {
-			bn->theap.filename = GDKfilepath(NOFARM, NULL, nme, "tail");
-			if (bn->theap.filename == NULL)
-				goto bailout;
+			snprintf(bn->theap.filename, sizeof(bn->theap.filename), "%s.tail", nme);
 		}
 
 		if (ATOMneedheap(tt)) {
-			if ((bn->tvheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL ||
-			    (bn->tvheap->filename = GDKfilepath(NOFARM, NULL, nme, "theap")) == NULL)
+			if ((bn->tvheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL)
 				goto bailout;
+			snprintf(bn->tvheap->filename, sizeof(bn->tvheap->filename), "%s.theap", nme);
 			bn->tvheap->parentid = bn->batCacheid;
 			bn->tvheap->farmid = BBPselectfarm(role, bn->ttype, varheap);
 		}
@@ -631,11 +629,9 @@ BATdestroy(BAT *b)
 static gdk_return
 heapcopy(BAT *bn, char *ext, Heap *dst, Heap *src)
 {
-	if (src->filename && src->newstorage != STORE_MEM) {
-		const char *nme = BBP_physical(bn->batCacheid);
-
-		if ((dst->filename = GDKfilepath(NOFARM, NULL, nme, ext)) == NULL)
-			return GDK_FAIL;
+	if (src->filename[0] && src->newstorage != STORE_MEM) {
+		snprintf(dst->filename, sizeof(dst->filename), "%s.%s",
+			 BBP_physical(bn->batCacheid), ext);
 	}
 	return HEAPcopy(dst, src);
 }
@@ -643,9 +639,8 @@ heapcopy(BAT *bn, char *ext, Heap *dst, Heap *src)
 static void
 heapmove(Heap *dst, Heap *src)
 {
-	if (src->filename == NULL) {
-		src->filename = dst->filename;
-		dst->filename = NULL;
+	if (src->filename[0] == 0) {
+		strncpy(src->filename, dst->filename, sizeof(src->filename));
 	}
 	HEAPfree(dst, 0);
 	*dst = *src;
@@ -2190,8 +2185,7 @@ BATassertProps(BAT *b)
 			Hash *hs = NULL;
 			BUN mask;
 
-			if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
-			    (hp->filename = GDKmalloc(nmelen + 30)) == NULL) {
+			if ((hp = GDKzalloc(sizeof(Heap))) == NULL) {
 				if (hp)
 					GDKfree(hp);
 				fprintf(stderr,
@@ -2199,7 +2193,7 @@ BATassertProps(BAT *b)
 					"hash table\n");
 				goto abort_check;
 			}
-			snprintf(hp->filename, nmelen + 30,
+			snprintf(hp->filename, sizeof(hp->filename),
 				 "%s.hash" SZFMT, nme, MT_getpid());
 			ext = GDKstrdup(hp->filename + nmelen + 1);
 			if (ATOMsize(b->ttype) == 1)
@@ -2213,7 +2207,6 @@ BATassertProps(BAT *b)
 			    (hs = HASHnew(hp, b->ttype, BUNlast(b),
 					  mask, BUN_NONE)) == NULL) {
 				GDKfree(ext);
-				GDKfree(hp->filename);
 				GDKfree(hp);
 				fprintf(stderr,
 					"#BATassertProps: cannot allocate "

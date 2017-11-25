@@ -109,7 +109,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		GDKerror("HEAPalloc: allocating more than heap can accomodate\n");
 		return GDK_FAIL;
 	}
-	if (h->filename == NULL ||
+	if (h->filename[0] == 0 ||
 	    h->size < 4 * GDK_mmap_pagesize ||
 	    (GDKmem_cursize() + h->size < GDK_mem_maxsize &&
 	     h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient))) {
@@ -117,32 +117,30 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		h->base = (char *) GDKmalloc(h->size);
 		HEAPDEBUG fprintf(stderr, "#HEAPalloc " SZFMT " " PTRFMT "\n", h->size, PTRFMTCAST h->base);
 	}
-	if (h->filename && h->base == NULL) {
-		char *nme, *of;
+	if (h->filename[0] && h->base == NULL) {
+		char *nme;
 		struct stat st;
 
-		of = h->filename;
-		h->filename = NULL;
-		nme = GDKfilepath(h->farmid, BATDIR, of, NULL);
+		nme = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
 		if (stat(nme, &st) < 0) {
 			h->storage = STORE_MMAP;
 			h->base = HEAPcreatefile(NOFARM, &h->size, nme);
-			h->filename = of;
 		} else {
-			char *ext;
 			int fd;
 
-			ext = decompose_filename(of);
 			fd = GDKfdlocate(NOFARM, nme, "wb", NULL);
 			if (fd >= 0) {
+				char of[sizeof(h->filename)];
+				char *ext;
 				close(fd);
+				strncpy(of, h->filename, sizeof(h->filename));
+				ext = decompose_filename(of);
 				h->newstorage = STORE_MMAP;
 				if (HEAPload(h, of, ext, FALSE) != GDK_SUCCEED)
 					h->base = NULL; /* superfluous */
 				/* success checked by looking at
 				 * h->base below */
 			}
-			GDKfree(of);
 		}
 		GDKfree(nme);
 	}
@@ -175,14 +173,11 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 gdk_return
 HEAPextend(Heap *h, size_t size, int mayshare)
 {
-	char nme[FILENAME_MAX], *ext = NULL;
+	char nme[sizeof(h->filename)], *ext;
 	const char *failure = "None";
 
-	if (h->filename) {
-		strncpy(nme, h->filename, sizeof(nme));
-		nme[sizeof(nme) - 1] = 0;
-		ext = decompose_filename(nme);
-	}
+	strncpy(nme, h->filename, sizeof(nme));
+	ext = decompose_filename(nme);
 	if (size <= h->size)
 		return GDK_SUCCEED;	/* nothing to do */
 
@@ -218,7 +213,7 @@ HEAPextend(Heap *h, size_t size, int mayshare)
 		 * file-mapped storage */
 		Heap bak = *h;
 		int exceeds_swap = size >= 4 * GDK_mmap_pagesize && size + GDKmem_cursize() >= GDK_mem_maxsize;
-		int must_mmap = h->filename != NULL && (exceeds_swap || h->newstorage != STORE_MEM || size >= (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient));
+		int must_mmap = h->filename[0] != 0 && (exceeds_swap || h->newstorage != STORE_MEM || size >= (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient));
 
 		h->size = size;
 
@@ -235,13 +230,12 @@ HEAPextend(Heap *h, size_t size, int mayshare)
 			failure = "h->storage == STORE_MEM && !must_map && !h->base";
 		}
 		/* too big: convert it to a disk-based temporary heap */
-		if (h->filename != NULL) {
+		if (h->filename[0] != 0) {
 			int fd;
 			int existing = 0;
 
 			assert(h->storage == STORE_MEM);
 			assert(ext != NULL);
-			h->filename = NULL;
 			/* if the heap file already exists, we want to
 			 * switch to STORE_PRIV (copy-on-write memory
 			 * mapped files), but if the heap file doesn't
@@ -254,12 +248,7 @@ HEAPextend(Heap *h, size_t size, int mayshare)
 			} else {
 				/* no pre-existing heap file, so
 				 * create a new one */
-				h->filename = GDKmalloc(strlen(nme) + strlen(ext) + 2);
-				if (h->filename == NULL) {
-					failure = "h->storage == STORE_MEM && can_map && h->filename == NULL";
-					goto failed;
-				}
-				sprintf(h->filename, "%s.%s", nme, ext);
+				snprintf(h->filename, sizeof(h->filename), "%s.%s", nme, ext);
 				h->base = HEAPcreatefile(h->farmid, &h->size, h->filename);
 				if (h->base) {
 					h->newstorage = h->storage = STORE_MMAP;
@@ -335,14 +324,11 @@ HEAPshrink(Heap *h, size_t size)
 				  PTRFMT "\n", h->size, size,
 				  PTRFMTCAST h->base, PTRFMTCAST p);
 	} else {
-		char nme[FILENAME_MAX], *ext = NULL;
+		char nme[sizeof(h->filename)], *ext;
 		char *path;
 
-		if (h->filename) {
-			strncpy(nme, h->filename, sizeof(nme));
-			nme[sizeof(nme) - 1] = 0;
-			ext = decompose_filename(nme);
-		}
+		strncpy(nme, h->filename, sizeof(nme));
+		ext = decompose_filename(nme);
 		/* shrink memory mapped file */
 		/* round up to multiple of GDK_mmap_pagesize with
 		 * minimum of one */
@@ -606,12 +592,11 @@ HEAPfree(Heap *h, int rmheap)
 		if (h->filename && remove(h->filename) != 0 && errno != ENOENT) {
 			perror(h->filename);
 		}
-		GDKfree(h->filename);
-		h->filename = NULL;
+		h->filename[0] = 0;
 	}
 #endif
 	h->base = NULL;
-	if (h->filename) {
+	if (h->filename[0]) {
 		if (rmheap) {
 			char *path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
 			if (path && remove(path) != 0 && errno != ENOENT)
@@ -622,8 +607,7 @@ HEAPfree(Heap *h, int rmheap)
 				perror(path);
 			GDKfree(path);
 		}
-		GDKfree(h->filename);
-		h->filename = NULL;
+		h->filename[0] = 0;
 	}
 }
 
@@ -644,11 +628,7 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 	int t0;
 
 	h->storage = h->newstorage = h->size < 4 * GDK_mmap_pagesize ? STORE_MEM : STORE_MMAP;
-	if (h->filename == NULL)
-		h->filename = (char *) GDKmalloc(strlen(nme) + strlen(ext) + 2);
-	if (h->filename == NULL)
-		return GDK_FAIL;
-	sprintf(h->filename, "%s.%s", nme, ext);
+	snprintf(h->filename, sizeof(h->filename), "%s.%s", nme, ext);
 
 	minsize = (h->size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
 	if (h->storage != STORE_MEM && minsize != h->size)

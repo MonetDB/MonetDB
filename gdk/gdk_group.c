@@ -1118,15 +1118,12 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		bits = 8 * SIZEOF_OID - pop(mask - 1);
 		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
 		    (hp->farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
-		    (hp->filename = GDKmalloc(nmelen + 30)) == NULL ||
-		    snprintf(hp->filename, nmelen + 30,
+		    snprintf(hp->filename, sizeof(hp->filename),
 			     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
 		    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
 		    (hs = HASHnew(hp, b->ttype, BUNlast(b),
 				  mask, BUN_NONE)) == NULL) {
 			if (hp) {
-				if (hp->filename)
-					GDKfree(hp->filename);
 				GDKfree(hp);
 			}
 			if (ext)

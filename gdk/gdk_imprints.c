@@ -210,11 +210,10 @@ BATcheckimprints(BAT *b)
 
 		b->timprints = NULL;
 		if ((hp = GDKzalloc(sizeof(Heap))) != NULL &&
-		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, imprintsheap)) >= 0 &&
-		    (hp->filename = GDKmalloc(strlen(nme) + 12)) != NULL) {
+		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, imprintsheap)) >= 0) {
 			int fd;
 
-			sprintf(hp->filename, "%s.timprints", nme);
+			snprintf(hp->filename, sizeof(hp->filename), "%s.timprints", nme);
 			/* check whether a persisted imprints index
 			 * can be found */
 			if ((fd = GDKfdlocate(hp->farmid, nme, "rb", "timprints")) >= 0) {
@@ -261,7 +260,6 @@ BATcheckimprints(BAT *b)
 				/* unlink unusable file */
 				GDKunlink(hp->farmid, BATDIR, nme, "timprints");
 			}
-			GDKfree(hp->filename);
 		}
 		GDKfree(hp);
 		GDKclrerr();	/* we're not currently interested in errors */
@@ -330,15 +328,13 @@ BATimprints(BAT *b)
 			return GDK_FAIL;
 		}
 		imprints->imprints = GDKzalloc(sizeof(Heap));
-		if (imprints->imprints == NULL ||
-		    (imprints->imprints->filename =
-		     GDKmalloc(strlen(nme) + 12)) == NULL) {
+		if (imprints->imprints == NULL) {
 			MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 			GDKfree(imprints->imprints);
 			GDKfree(imprints);
 			return GDK_FAIL;
 		}
-		sprintf(imprints->imprints->filename, "%s.timprints", nme);
+		snprintf(imprints->imprints->filename, sizeof(imprints->imprints->filename), "%s.timprints", nme);
 		pages = (((size_t) BATcount(b) * b->twidth) + IMPS_PAGE - 1) / IMPS_PAGE;
 		imprints->imprints->farmid = BBPselectfarm(b->batRole, b->ttype,
 							   imprintsheap);
@@ -347,7 +343,6 @@ BATimprints(BAT *b)
 		s1 = BATsample(b, SMP_SIZE);
 		if (s1 == NULL) {
 			MT_lock_unset(&GDKimprintsLock(b->batCacheid));
-			GDKfree(imprints->imprints->filename);
 			GDKfree(imprints->imprints);
 			GDKfree(imprints);
 			return GDK_FAIL;
@@ -356,7 +351,6 @@ BATimprints(BAT *b)
 		if (s2 == NULL) {
 			MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 			BBPunfix(s1->batCacheid);
-			GDKfree(imprints->imprints->filename);
 			GDKfree(imprints->imprints);
 			GDKfree(imprints);
 			return GDK_FAIL;
@@ -366,7 +360,6 @@ BATimprints(BAT *b)
 			MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 			BBPunfix(s1->batCacheid);
 			BBPunfix(s2->batCacheid);
-			GDKfree(imprints->imprints->filename);
 			GDKfree(imprints->imprints);
 			GDKfree(imprints);
 			return GDK_FAIL;
@@ -377,7 +370,6 @@ BATimprints(BAT *b)
 			BBPunfix(s1->batCacheid);
 			BBPunfix(s2->batCacheid);
 			BBPunfix(s3->batCacheid);
-			GDKfree(imprints->imprints->filename);
 			GDKfree(imprints->imprints);
 			GDKfree(imprints);
 			return GDK_FAIL;
@@ -412,7 +404,6 @@ BATimprints(BAT *b)
 			      pages * sizeof(cchdc_t), /* dict */
 			      1) != GDK_SUCCEED) {
 			MT_lock_unset(&GDKimprintsLock(b->batCacheid));
-			GDKfree(imprints->imprints->filename);
 			GDKfree(imprints->imprints);
 			GDKfree(imprints);
 			GDKerror("#BATimprints: memory allocation error");

@@ -600,7 +600,7 @@ typedef struct {
 	size_t free;		/* index where free area starts. */
 	size_t size;		/* size of the heap (bytes) */
 	char *base;		/* base pointer in memory. */
-	str filename;		/* file containing image of the heap */
+	char filename[32];	/* file containing image of the heap */
 
 	unsigned int copied:1,	/* a copy of an existing map. */
 		hashash:1,	/* the string heap contains hash values */

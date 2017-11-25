@@ -567,22 +567,21 @@ fixwkbheap(void)
 		GDKfree(newname);
 
 		h1 = b->theap;
-		h1.filename = NULL;
 		h1.base = NULL;
 		h1.dirty = 0;
+		h1.filename[0] = 0;
 		h2 = *b->tvheap;
-		h2.filename = NULL;
 		h2.base = NULL;
 		h2.dirty = 0;
+		h2.filename[0] = 0;
 
 		/* load old heaps */
 		if (HEAPload(&h1, filename, "tail", 0) != GDK_SUCCEED ||
 		    HEAPload(&h2, filename, "theap", 0) != GDK_SUCCEED)
 			GDKfatal("fixwkbheap: cannot load old heaps for BAT %d\n", bid);
 		/* create new heaps */
-		if ((b->theap.filename = GDKfilepath(NOFARM, NULL, nme, "tail")) == NULL ||
-		    (b->tvheap->filename = GDKfilepath(NOFARM, NULL, nme, "theap")) == NULL)
-			GDKfatal("fixwkbheap: out of memory\n");
+		snprintf(b->theap.filename, sizeof(b->theap.filename), "%s.tail", nme);
+		snprintf(b->tvheap->filename, sizeof(b->tvheap->filename), "%s.theap", nme);
 		if (HEAPalloc(&b->theap, b->batCapacity, SIZEOF_VAR_T) != GDK_SUCCEED)
 			GDKfatal("fixwkbheap: cannot allocate heap\n");
 		b->theap.dirty = TRUE;
@@ -709,9 +708,7 @@ fixstroffheap(BAT *b, int *restrict offsets)
 		h2 = *b->tvheap;
 		if (GDKmove(h2.farmid, srcdir, bnme, "theap", BAKDIR, bnme, "theap") != GDK_SUCCEED)
 			GDKfatal("fixstroffheap: cannot make backup of %s.theap\n", nme);
-		h2.filename = GDKfilepath(NOFARM, NULL, nme, "theap");
-		if (h2.filename == NULL)
-			GDKfatal("fixstroffheap: GDKmalloc failed\n");
+		snprintf(h2.filename, sizeof(h2.filename), "%s.theap", nme);
 		h2.base = NULL;
 		if (HEAPalloc(&h2, h2.size, 1) != GDK_SUCCEED)
 			GDKfatal("fixstroffheap: allocating new string heap "
@@ -721,7 +718,7 @@ fixstroffheap(BAT *b, int *restrict offsets)
 		h2.free = b->tvheap->free;
 		/* load old offset heap and copy contents to new heap */
 		h1 = *b->tvheap;
-		h1.filename = NULL;
+		h1.filename[0] = 0;
 		h1.base = NULL;
 		h1.dirty = 0;
 		if (HEAPload(&h1, filename, "theap", 0) != GDK_SUCCEED)
@@ -748,7 +745,7 @@ fixstroffheap(BAT *b, int *restrict offsets)
 		GDKfatal("fixstroffheap: cannot make backup of %s.tail\n", nme);
 	/* load old offset heap */
 	h1 = b->theap;
-	h1.filename = NULL;
+	h1.filename[0] = 0;
 	h1.base = NULL;
 	h1.dirty = 0;
 	if (HEAPload(&h1, filename, "tail", 0) != GDK_SUCCEED)
@@ -757,9 +754,7 @@ fixstroffheap(BAT *b, int *restrict offsets)
 
 	/* create new offset heap */
 	h3 = b->theap;
-	h3.filename = GDKfilepath(NOFARM, NULL, nme, "tail");
-	if (h3.filename == NULL)
-		GDKfatal("fixstroffheap: GDKmalloc failed\n");
+	snprintf(h3.filename, sizeof(h3.filename), "%s.tail", nme);
 	if (HEAPalloc(&h3, b->batCapacity, width) != GDK_SUCCEED)
 		GDKfatal("fixstroffheap: allocating new tail heap "
 			 "for BAT %d failed\n", b->batCacheid);
@@ -933,7 +928,7 @@ fixfltheap(BAT *b)
 		GDKfatal("fixfltheap: cannot make backup of %s.tail\n", nme);
 	/* load old heap */
 	h1 = b->theap;
-	h1.filename = NULL;
+	h1.filename[0] = 0;
 	h1.base = NULL;
 	h1.dirty = 0;
 	if (HEAPload(&h1, filename, "tail", 0) != GDK_SUCCEED)
@@ -942,9 +937,7 @@ fixfltheap(BAT *b)
 
 	/* create new heap */
 	h2 = b->theap;
-	h2.filename = GDKfilepath(NOFARM, NULL, nme, "tail");
-	if (h2.filename == NULL)
-		GDKfatal("fixfltheap: GDKmalloc failed\n");
+	snprintf(h2.filename, sizeof(h2.filename), "%s.tail", nme);
 	if (HEAPalloc(&h2, b->batCapacity, b->twidth) != GDK_SUCCEED)
 		GDKfatal("fixfltheap: allocating new tail heap "
 			 "for BAT %d failed\n", b->batCacheid);
@@ -1201,7 +1194,7 @@ heapinit(BAT *b, const char *buf, int *hashash, const char *HT, int bbpversion, 
 	b->theap.free = (size_t) free;
 	b->theap.size = (size_t) size;
 	b->theap.base = NULL;
-	b->theap.filename = NULL;
+	b->theap.filename[0] = 0;
 	b->theap.storage = (storage_t) storage;
 	b->theap.copied = 0;
 	b->theap.newstorage = (storage_t) storage;
@@ -1231,7 +1224,7 @@ vheapinit(BAT *b, const char *buf, int hashash, bat bid)
 		b->tvheap->free = (size_t) free;
 		b->tvheap->size = (size_t) size;
 		b->tvheap->base = NULL;
-		b->tvheap->filename = NULL;
+		b->tvheap->filename[0] = 0;
 		b->tvheap->storage = (storage_t) storage;
 		b->tvheap->copied = 0;
 		b->tvheap->hashash = hashash != 0;
@@ -3175,7 +3168,7 @@ heap_move(Heap *hp, const char *srcdir, const char *dstdir, const char *nme, con
 		/* dont overwrite heap with the committed state
 		 * already in dstdir */
 		return GDK_SUCCEED;
-	} else if (hp->filename &&
+	} else if (hp->filename[0] &&
 		   hp->newstorage == STORE_PRIV &&
 		   !file_exists(hp->farmid, srcdir, nme, ext)) {
 

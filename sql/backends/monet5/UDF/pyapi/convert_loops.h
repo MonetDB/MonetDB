@@ -106,8 +106,8 @@
 				 * the absolute path */                                        \
 				char address[100];                                             \
 				GDKmmapfile(address, sizeof(address), ret->mmap_id);           \
-				bat->theap.filename =                                          \
-					GDKfilepath(NOFARM, BATDIR, address, "tmp");               \
+				snprintf(bat->theap.filename, sizeof(bat->theap.filename),     \
+					"%s%c%s.tmp", BATDIR, DIR_SEP, address);                   \
 				ret->mmap_id = -1;                                             \
 			}                                                                  \
 		}                                                                      \

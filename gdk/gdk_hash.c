@@ -206,9 +206,8 @@ BATcheckhash(BAT *b)
 
 		b->thash = NULL;
 		if ((hp = GDKzalloc(sizeof(*hp))) != NULL &&
-		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) >= 0 &&
-		    (hp->filename = GDKmalloc(strlen(nme) + 12)) != NULL) {
-			sprintf(hp->filename, "%s.thash", nme);
+		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) >= 0) {
+			snprintf(hp->filename, sizeof(hp->filename), "%s.thash", nme);
 
 			/* check whether a persisted hash can be found */
 			if ((fd = GDKfdlocate(hp->farmid, nme, "rb+", "thash")) >= 0) {
@@ -261,7 +260,6 @@ BATcheckhash(BAT *b)
 				/* unlink unusable file */
 				GDKunlink(hp->farmid, BATDIR, nme, "thash");
 			}
-			GDKfree(hp->filename);
 		}
 		GDKfree(hp);
 		GDKclrerr();	/* we're not currently interested in errors */
@@ -339,14 +337,13 @@ BAThash(BAT *b, BUN masksize)
 
 		ALGODEBUG fprintf(stderr, "#BAThash: create hash(%s#" BUNFMT ");\n", BATgetId(b), BATcount(b));
 		if ((hp = GDKzalloc(sizeof(*hp))) == NULL ||
-		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) < 0 ||
-		    (hp->filename = GDKmalloc(strlen(nme) + 12)) == NULL) {
+		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) < 0) {
 			MT_lock_unset(&GDKhashLock(b->batCacheid));
 			GDKfree(hp);
 			return GDK_FAIL;
 		}
 		hp->dirty = TRUE;
-		sprintf(hp->filename, "%s.thash", nme);
+		snprintf(hp->filename, sizeof(hp->filename), "%s.thash", nme);
 
 		/* cnt = 0, hopefully there is a proper capacity from
 		 * which we can derive enough information */
@@ -357,7 +354,6 @@ BAThash(BAT *b, BUN masksize)
 			if (is_oid_nil(b->tseqbase)) {
 				MT_lock_unset(&GDKhashLock(b->batCacheid));
 				ALGODEBUG fprintf(stderr, "#BAThash: cannot create hash-table on void-NIL column.\n");
-				GDKfree(hp->filename);
 				GDKfree(hp);
 				GDKerror("BAThash: no hash on void/nil column\n");
 				return GDK_FAIL;
@@ -396,15 +392,15 @@ BAThash(BAT *b, BUN masksize)
 
 			r = 0;
 			if (h) {
-				char *fnme;
+				char fnme[sizeof(hp->filename)];
 				bte farmid;
 
 				ALGODEBUG fprintf(stderr, "#BAThash: retry hash construction\n");
-				fnme = GDKstrdup(hp->filename);
+				strncpy(fnme, hp->filename, sizeof(hp->filename));
 				farmid = hp->farmid;
 				HEAPfree(hp, 1);
 				memset(hp, 0, sizeof(*hp));
-				hp->filename = fnme;
+				strncpy(hp->filename, fnme, sizeof(hp->filename));
 				hp->farmid = farmid;
 				GDKfree(h);
 				h = NULL;
@@ -413,7 +409,6 @@ BAThash(BAT *b, BUN masksize)
 			if ((h = HASHnew(hp, ATOMtype(b->ttype), BATcapacity(b), mask, BATcount(b))) == NULL) {
 
 				MT_lock_unset(&GDKhashLock(b->batCacheid));
-				GDKfree(hp->filename);
 				GDKfree(hp);
 				return GDK_FAIL;
 			}
