@@ -114,22 +114,18 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 	 * very large writes.
 	 */
 	assert(bn->batCacheid > 0);
-	bn->theap.filename[0] = 0;
+
+	const char *nme = BBP_physical(bn->batCacheid);
+	snprintf(bn->theap.filename, sizeof(bn->theap.filename),
+		 "%s.tail", nme);
 	bn->theap.farmid = BBPselectfarm(role, bn->ttype, offheap);
-	if (heapnames) {
-		const char *nme = BBP_physical(bn->batCacheid);
-
-		if (tt) {
-			snprintf(bn->theap.filename, sizeof(bn->theap.filename), "%s.tail", nme);
-		}
-
-		if (ATOMneedheap(tt)) {
-			if ((bn->tvheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL)
-				goto bailout;
-			snprintf(bn->tvheap->filename, sizeof(bn->tvheap->filename), "%s.theap", nme);
-			bn->tvheap->parentid = bn->batCacheid;
-			bn->tvheap->farmid = BBPselectfarm(role, bn->ttype, varheap);
-		}
+	if (heapnames && ATOMneedheap(tt)) {
+		if ((bn->tvheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL)
+			goto bailout;
+		snprintf(bn->tvheap->filename, sizeof(bn->tvheap->filename),
+			 "%s.theap", nme);
+		bn->tvheap->parentid = bn->batCacheid;
+		bn->tvheap->farmid = BBPselectfarm(role, bn->ttype, varheap);
 	}
 	bn->batDirty = TRUE;
 	return bn;
@@ -201,7 +197,7 @@ BATnewstorage(oid hseq, int tt, BUN cap, int role)
 		goto bailout;
 	}
 
-	if (ATOMheap(tt, bn->tvheap, cap) != GDK_SUCCEED) {
+	if (bn->tvheap && ATOMheap(tt, bn->tvheap, cap) != GDK_SUCCEED) {
 		GDKfree(bn->tvheap);
 		goto bailout;
 	}
@@ -519,6 +515,7 @@ BATclear(BAT *b, int force)
 
 			memset(&th, 0, sizeof(th));
 			th.farmid = b->tvheap->farmid;
+			strncpy(th.filename, b->tvheap->filename, sizeof(th.filename));
 			if (ATOMheap(b->ttype, &th, 0) != GDK_SUCCEED)
 				return GDK_FAIL;
 			th.parentid = b->tvheap->parentid;
@@ -626,22 +623,9 @@ BATdestroy(BAT *b)
  * which ensures that the original cannot be modified or destroyed
  * (which could affect the shared heaps).
  */
-static gdk_return
-heapcopy(BAT *bn, char *ext, Heap *dst, Heap *src)
-{
-	if (src->filename[0] && src->newstorage != STORE_MEM) {
-		snprintf(dst->filename, sizeof(dst->filename), "%s.%s",
-			 BBP_physical(bn->batCacheid), ext);
-	}
-	return HEAPcopy(dst, src);
-}
-
 static void
 heapmove(Heap *dst, Heap *src)
 {
-	if (src->filename[0] == 0) {
-		strncpy(src->filename, dst->filename, sizeof(src->filename));
-	}
 	HEAPfree(dst, 0);
 	*dst = *src;
 }
@@ -754,8 +738,12 @@ COLcopy(BAT *b, int tt, int writable, int role)
 
 			bthp.farmid = BBPselectfarm(role, b->ttype, offheap);
 			thp.farmid = BBPselectfarm(role, b->ttype, varheap);
-			if ((b->ttype && heapcopy(bn, "tail", &bthp, &b->theap) != GDK_SUCCEED) ||
-			    (bn->tvheap && heapcopy(bn, "theap", &thp, b->tvheap) != GDK_SUCCEED)) {
+			snprintf(bthp.filename, sizeof(bthp.filename),
+				 "%s.tail", BBP_physical(bn->batCacheid));
+			snprintf(thp.filename, sizeof(thp.filename), "%s.theap",
+				 BBP_physical(bn->batCacheid));
+			if ((b->ttype && HEAPcopy(&bthp, &b->theap) != GDK_SUCCEED) ||
+			    (bn->tvheap && HEAPcopy(&thp, b->tvheap) != GDK_SUCCEED)) {
 				HEAPfree(&thp, 1);
 				HEAPfree(&bthp, 1);
 				BBPreclaim(bn);
@@ -2186,8 +2174,6 @@ BATassertProps(BAT *b)
 			BUN mask;
 
 			if ((hp = GDKzalloc(sizeof(Heap))) == NULL) {
-				if (hp)
-					GDKfree(hp);
 				fprintf(stderr,
 					"#BATassertProps: cannot allocate "
 					"hash table\n");

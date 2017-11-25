@@ -551,7 +551,8 @@ fixwkbheap(void)
 			bnme = nme;
 		else
 			bnme++;
-		snprintf(filename, sizeof(filename), "BACKUP%c%s", DIR_SEP, bnme);
+		snprintf(filename, sizeof(filename),
+			 "BACKUP%c%s", DIR_SEP, bnme);
 		if ((oldname = GDKfilepath(b->theap.farmid, BATDIR, nme, "tail")) == NULL ||
 		    (newname = GDKfilepath(b->theap.farmid, BAKDIR, bnme, "tail")) == NULL ||
 		    GDKcreatedir(newname) != GDK_SUCCEED ||
@@ -569,19 +570,17 @@ fixwkbheap(void)
 		h1 = b->theap;
 		h1.base = NULL;
 		h1.dirty = 0;
-		h1.filename[0] = 0;
+		snprintf(h1.filename, sizeof(h1.filename), "%s.tail", filename);
 		h2 = *b->tvheap;
 		h2.base = NULL;
 		h2.dirty = 0;
-		h2.filename[0] = 0;
+		snprintf(h2.filename, sizeof(h2.filename), "%s.theap", filename);
 
 		/* load old heaps */
 		if (HEAPload(&h1, filename, "tail", 0) != GDK_SUCCEED ||
 		    HEAPload(&h2, filename, "theap", 0) != GDK_SUCCEED)
 			GDKfatal("fixwkbheap: cannot load old heaps for BAT %d\n", bid);
 		/* create new heaps */
-		snprintf(b->theap.filename, sizeof(b->theap.filename), "%s.tail", nme);
-		snprintf(b->tvheap->filename, sizeof(b->tvheap->filename), "%s.theap", nme);
 		if (HEAPalloc(&b->theap, b->batCapacity, SIZEOF_VAR_T) != GDK_SUCCEED)
 			GDKfatal("fixwkbheap: cannot allocate heap\n");
 		b->theap.dirty = TRUE;
@@ -718,7 +717,7 @@ fixstroffheap(BAT *b, int *restrict offsets)
 		h2.free = b->tvheap->free;
 		/* load old offset heap and copy contents to new heap */
 		h1 = *b->tvheap;
-		h1.filename[0] = 0;
+		snprintf(h1.filename, sizeof(h1.filename), "%s.theap", filename);
 		h1.base = NULL;
 		h1.dirty = 0;
 		if (HEAPload(&h1, filename, "theap", 0) != GDK_SUCCEED)
@@ -745,7 +744,7 @@ fixstroffheap(BAT *b, int *restrict offsets)
 		GDKfatal("fixstroffheap: cannot make backup of %s.tail\n", nme);
 	/* load old offset heap */
 	h1 = b->theap;
-	h1.filename[0] = 0;
+	snprintf(h1.filename, sizeof(h1.filename), "%s.tail", filename);
 	h1.base = NULL;
 	h1.dirty = 0;
 	if (HEAPload(&h1, filename, "tail", 0) != GDK_SUCCEED)
@@ -928,7 +927,7 @@ fixfltheap(BAT *b)
 		GDKfatal("fixfltheap: cannot make backup of %s.tail\n", nme);
 	/* load old heap */
 	h1 = b->theap;
-	h1.filename[0] = 0;
+	snprintf(h1.filename, sizeof(h1.filename), "%s.tail", filename);
 	h1.base = NULL;
 	h1.dirty = 0;
 	if (HEAPload(&h1, filename, "tail", 0) != GDK_SUCCEED)
@@ -1115,7 +1114,7 @@ headheapinit(oid *hseq, const char *buf, bat bid)
 }
 
 static int
-heapinit(BAT *b, const char *buf, int *hashash, const char *HT, int bbpversion, bat bid)
+heapinit(BAT *b, const char *buf, int *hashash, const char *HT, int bbpversion, bat bid, const char *filename)
 {
 	int t;
 	char type[11];
@@ -1194,7 +1193,8 @@ heapinit(BAT *b, const char *buf, int *hashash, const char *HT, int bbpversion, 
 	b->theap.free = (size_t) free;
 	b->theap.size = (size_t) size;
 	b->theap.base = NULL;
-	b->theap.filename[0] = 0;
+	snprintf(b->theap.filename, sizeof(b->theap.filename),
+		 "%s.tail", filename);
 	b->theap.storage = (storage_t) storage;
 	b->theap.copied = 0;
 	b->theap.newstorage = (storage_t) storage;
@@ -1206,7 +1206,7 @@ heapinit(BAT *b, const char *buf, int *hashash, const char *HT, int bbpversion, 
 }
 
 static int
-vheapinit(BAT *b, const char *buf, int hashash, bat bid)
+vheapinit(BAT *b, const char *buf, int hashash, bat bid, const char *filename)
 {
 	int n = 0;
 	lng free, size;
@@ -1224,7 +1224,8 @@ vheapinit(BAT *b, const char *buf, int hashash, bat bid)
 		b->tvheap->free = (size_t) free;
 		b->tvheap->size = (size_t) size;
 		b->tvheap->base = NULL;
-		b->tvheap->filename[0] = 0;
+		snprintf(b->tvheap->filename, sizeof(b->tvheap->filename),
+			 "%s.theap", filename);
 		b->tvheap->storage = (storage_t) storage;
 		b->tvheap->copied = 0;
 		b->tvheap->hashash = hashash != 0;
@@ -1349,8 +1350,8 @@ BBPreadEntries(FILE *fp, int bbpversion)
 				GDKfatal("BBPinit: head seqbase out of range (ID = "LLFMT", seq = "LLFMT").", batid, base);
 			bn->hseqbase = (oid) base;
 		}
-		nread += heapinit(bn, buf + nread, &Thashash, "T", bbpversion, bid);
-		nread += vheapinit(bn, buf + nread, Thashash, bid);
+		nread += heapinit(bn, buf + nread, &Thashash, "T", bbpversion, bid, filename);
+		nread += vheapinit(bn, buf + nread, Thashash, bid, filename);
 
 		if (bbpversion <= GDKLIBRARY_NOKEY &&
 		    (bn->tnokey[0] != 0 || bn->tnokey[1] != 0)) {
@@ -3168,8 +3169,7 @@ heap_move(Heap *hp, const char *srcdir, const char *dstdir, const char *nme, con
 		/* dont overwrite heap with the committed state
 		 * already in dstdir */
 		return GDK_SUCCEED;
-	} else if (hp->filename[0] &&
-		   hp->newstorage == STORE_PRIV &&
+	} else if (hp->newstorage == STORE_PRIV &&
 		   !file_exists(hp->farmid, srcdir, nme, ext)) {
 
 		/* In order to prevent half-saved X.new files

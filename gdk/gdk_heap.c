@@ -109,15 +109,14 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		GDKerror("HEAPalloc: allocating more than heap can accomodate\n");
 		return GDK_FAIL;
 	}
-	if (h->filename[0] == 0 ||
-	    h->size < 4 * GDK_mmap_pagesize ||
+	if (h->size < 4 * GDK_mmap_pagesize ||
 	    (GDKmem_cursize() + h->size < GDK_mem_maxsize &&
 	     h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient))) {
 		h->storage = STORE_MEM;
 		h->base = (char *) GDKmalloc(h->size);
 		HEAPDEBUG fprintf(stderr, "#HEAPalloc " SZFMT " " PTRFMT "\n", h->size, PTRFMTCAST h->base);
 	}
-	if (h->filename[0] && h->base == NULL) {
+	if (h->base == NULL) {
 		char *nme;
 		struct stat st;
 
@@ -213,7 +212,7 @@ HEAPextend(Heap *h, size_t size, int mayshare)
 		 * file-mapped storage */
 		Heap bak = *h;
 		int exceeds_swap = size >= 4 * GDK_mmap_pagesize && size + GDKmem_cursize() >= GDK_mem_maxsize;
-		int must_mmap = h->filename[0] != 0 && (exceeds_swap || h->newstorage != STORE_MEM || size >= (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient));
+		int must_mmap = exceeds_swap || h->newstorage != STORE_MEM || size >= (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient);
 
 		h->size = size;
 
@@ -230,77 +229,70 @@ HEAPextend(Heap *h, size_t size, int mayshare)
 			failure = "h->storage == STORE_MEM && !must_map && !h->base";
 		}
 		/* too big: convert it to a disk-based temporary heap */
-		if (h->filename[0] != 0) {
-			int fd;
-			int existing = 0;
+		int existing = 0;
 
-			assert(h->storage == STORE_MEM);
-			assert(ext != NULL);
-			/* if the heap file already exists, we want to
-			 * switch to STORE_PRIV (copy-on-write memory
-			 * mapped files), but if the heap file doesn't
-			 * exist yet, the BAT is new and we can use
-			 * STORE_MMAP */
-			fd = GDKfdlocate(h->farmid, nme, "rb", ext);
-			if (fd >= 0) {
-				existing = 1;
-				close(fd);
-			} else {
-				/* no pre-existing heap file, so
-				 * create a new one */
-				snprintf(h->filename, sizeof(h->filename), "%s.%s", nme, ext);
-				h->base = HEAPcreatefile(h->farmid, &h->size, h->filename);
-				if (h->base) {
-					h->newstorage = h->storage = STORE_MMAP;
-					memcpy(h->base, bak.base, bak.free);
-					HEAPfree(&bak, 0);
-					return GDK_SUCCEED;
-				}
-			}
-			fd = GDKfdlocate(h->farmid, nme, "wb", ext);
-			if (fd >= 0) {
-				close(fd);
-				h->storage = h->newstorage == STORE_MMAP && existing && !h->forcemap && !mayshare ? STORE_PRIV : h->newstorage;
-				/* make sure we really MMAP */
-				if (must_mmap && h->newstorage == STORE_MEM)
-					h->storage = STORE_MMAP;
-				h->newstorage = h->storage;
-				h->forcemap = 0;
-
-				h->base = NULL;
-				HEAPDEBUG fprintf(stderr, "#HEAPextend: converting malloced to %s mmapped heap\n", h->newstorage == STORE_MMAP ? "shared" : "privately");
-				/* try to allocate a memory-mapped
-				 * based heap */
-				if (HEAPload(h, nme, ext, FALSE) == GDK_SUCCEED) {
-					/* copy data to heap and free
-					 * old memory */
-					memcpy(h->base, bak.base, bak.free);
-					HEAPfree(&bak, 0);
-					return GDK_SUCCEED;
-				}
-				failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload() != GDK_SUCCEED";
-				/* couldn't allocate, now first save
-				 * data to file */
-				if (HEAPsave_intern(&bak, nme, ext, ".tmp") != GDK_SUCCEED) {
-					failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPsave_intern() != GDK_SUCCEED";
-					goto failed;
-				}
-				/* then free memory */
-				HEAPfree(&bak, 0);
-				/* and load heap back in via
-				 * memory-mapped file */
-				if (HEAPload_intern(h, nme, ext, ".tmp", FALSE) == GDK_SUCCEED) {
-					/* success! */
-					GDKclrerr();	/* don't leak errors from e.g. HEAPload */
-					return GDK_SUCCEED;
-				}
-				failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload_intern() != GDK_SUCCEED";
-				/* we failed */
-			} else {
-				failure = "h->storage == STORE_MEM && can_map && fd < 0";
-			}
+		assert(h->storage == STORE_MEM);
+		assert(ext != NULL);
+		/* if the heap file already exists, we want to switch
+		 * to STORE_PRIV (copy-on-write memory mapped files),
+		 * but if the heap file doesn't exist yet, the BAT is
+		 * new and we can use STORE_MMAP */
+		int fd = GDKfdlocate(h->farmid, nme, "rb", ext);
+		if (fd >= 0) {
+			existing = 1;
+			close(fd);
 		} else {
-			failure = "h->storage == STORE_MEM && !can_map";
+			/* no pre-existing heap file, so create a new
+			 * one */
+			h->base = HEAPcreatefile(h->farmid, &h->size, h->filename);
+			if (h->base) {
+				h->newstorage = h->storage = STORE_MMAP;
+				memcpy(h->base, bak.base, bak.free);
+				HEAPfree(&bak, 0);
+				return GDK_SUCCEED;
+			}
+		}
+		fd = GDKfdlocate(h->farmid, nme, "wb", ext);
+		if (fd >= 0) {
+			close(fd);
+			h->storage = h->newstorage == STORE_MMAP && existing && !h->forcemap && !mayshare ? STORE_PRIV : h->newstorage;
+			/* make sure we really MMAP */
+			if (must_mmap && h->newstorage == STORE_MEM)
+				h->storage = STORE_MMAP;
+			h->newstorage = h->storage;
+			h->forcemap = 0;
+
+			h->base = NULL;
+			HEAPDEBUG fprintf(stderr, "#HEAPextend: converting malloced to %s mmapped heap\n", h->newstorage == STORE_MMAP ? "shared" : "privately");
+			/* try to allocate a memory-mapped based
+			 * heap */
+			if (HEAPload(h, nme, ext, FALSE) == GDK_SUCCEED) {
+				/* copy data to heap and free old
+				 * memory */
+				memcpy(h->base, bak.base, bak.free);
+				HEAPfree(&bak, 0);
+				return GDK_SUCCEED;
+			}
+			failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload() != GDK_SUCCEED";
+			/* couldn't allocate, now first save data to
+			 * file */
+			if (HEAPsave_intern(&bak, nme, ext, ".tmp") != GDK_SUCCEED) {
+				failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPsave_intern() != GDK_SUCCEED";
+				goto failed;
+			}
+			/* then free memory */
+			HEAPfree(&bak, 0);
+			/* and load heap back in via memory-mapped
+			 * file */
+			if (HEAPload_intern(h, nme, ext, ".tmp", FALSE) == GDK_SUCCEED) {
+				/* success! */
+				GDKclrerr();	/* don't leak errors from e.g. HEAPload */
+				return GDK_SUCCEED;
+			}
+			failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload_intern() != GDK_SUCCEED";
+			/* we failed */
+		} else {
+			failure = "h->storage == STORE_MEM && can_map && fd < 0";
 		}
 	  failed:
 		*h = bak;
@@ -324,11 +316,8 @@ HEAPshrink(Heap *h, size_t size)
 				  PTRFMT "\n", h->size, size,
 				  PTRFMTCAST h->base, PTRFMTCAST p);
 	} else {
-		char nme[sizeof(h->filename)], *ext;
 		char *path;
 
-		strncpy(nme, h->filename, sizeof(nme));
-		ext = decompose_filename(nme);
 		/* shrink memory mapped file */
 		/* round up to multiple of GDK_mmap_pagesize with
 		 * minimum of one */
@@ -339,7 +328,7 @@ HEAPshrink(Heap *h, size_t size)
 			/* don't grow */
 			return GDK_SUCCEED;
 		}
-		path = GDKfilepath(h->farmid, BATDIR, nme, ext);
+		path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
 		p = GDKmremap(path,
 			      h->storage == STORE_PRIV ?
 				MMAP_COPY | MMAP_READ | MMAP_WRITE :
@@ -587,27 +576,25 @@ HEAPfree(Heap *h, int rmheap)
 		}
 	}
 #ifdef HAVE_FORK
-	if (h->storage == STORE_MMAPABS)  { 
-		// heap is stored in a mmap() file, but h->filename points to the absolute path
-		if (h->filename && remove(h->filename) != 0 && errno != ENOENT) {
+	if (h->storage == STORE_MMAPABS)  {
+		/* heap is stored in a mmap() file, but h->filename
+		 * is the absolute path */
+		if (remove(h->filename) != 0 && errno != ENOENT) {
 			perror(h->filename);
 		}
-		h->filename[0] = 0;
+		rmheap = 0;
 	}
 #endif
 	h->base = NULL;
-	if (h->filename[0]) {
-		if (rmheap) {
-			char *path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
-			if (path && remove(path) != 0 && errno != ENOENT)
-				perror(path);
-			GDKfree(path);
-			path = GDKfilepath(h->farmid, BATDIR, h->filename, "new");
-			if (path && remove(path) != 0 && errno != ENOENT)
-				perror(path);
-			GDKfree(path);
-		}
-		h->filename[0] = 0;
+	if (rmheap) {
+		char *path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
+		if (path && remove(path) != 0 && errno != ENOENT)
+			perror(path);
+		GDKfree(path);
+		path = GDKfilepath(h->farmid, BATDIR, h->filename, "new");
+		if (path && remove(path) != 0 && errno != ENOENT)
+			perror(path);
+		GDKfree(path);
 	}
 }
 
@@ -628,7 +615,6 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, i
 	int t0;
 
 	h->storage = h->newstorage = h->size < 4 * GDK_mmap_pagesize ? STORE_MEM : STORE_MMAP;
-	snprintf(h->filename, sizeof(h->filename), "%s.%s", nme, ext);
 
 	minsize = (h->size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
 	if (h->storage != STORE_MEM && minsize != h->size)

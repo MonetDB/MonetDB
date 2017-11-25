@@ -338,11 +338,9 @@ VIEWreset(BAT *b)
 		assert(tp || tvp || !b->ttype);
 
 		tail.farmid = BBPselectfarm(b->batRole, b->ttype, offheap);
-		if (b->ttype) {
-			snprintf(tail.filename, sizeof(tail.filename), "%s.tail", nme);
-			if (b->ttype && HEAPalloc(&tail, cnt, Tsize(b)) != GDK_SUCCEED)
-				goto bailout;
-		}
+		snprintf(tail.filename, sizeof(tail.filename), "%s.tail", nme);
+		if (b->ttype && HEAPalloc(&tail, cnt, Tsize(b)) != GDK_SUCCEED)
+			goto bailout;
 		if (b->tvheap) {
 			th = GDKzalloc(sizeof(Heap));
 			if (th == NULL)
@@ -488,7 +486,6 @@ VIEWdestroy(BAT *b)
 		HEAPfree(&b->theap, 0);
 	} else {
 		b->theap.base = NULL;
-		b->theap.filename[0] = 0;
 	}
 	b->tvheap = NULL;
 	BATfree(b);

@@ -30,7 +30,8 @@ unshare_string_heap(BAT *b)
 			return GDK_FAIL;
 		h->parentid = b->batCacheid;
 		h->farmid = BBPselectfarm(b->batRole, TYPE_str, varheap);
-		snprintf(h->filename, sizeof(h->filename), "%s.theap", BBP_physical(b->batCacheid));
+		snprintf(h->filename, sizeof(h->filename),
+			 "%s.theap", BBP_physical(b->batCacheid));
 		if (HEAPcopy(h, b->tvheap) != GDK_SUCCEED) {
 			HEAPfree(h, 1);
 			GDKfree(h);
@@ -462,7 +463,8 @@ append_varsized_bat(BAT *b, BAT *n, BAT *s)
 			return GDK_FAIL;
 		h->parentid = b->batCacheid;
 		h->farmid = BBPselectfarm(b->batRole, b->ttype, varheap);
-		snprintf(h->filename, sizeof(h->filename), "%s.theap", BBP_physical(b->batCacheid));
+		snprintf(h->filename, sizeof(h->filename),
+			 "%s.theap", BBP_physical(b->batCacheid));
 		if (HEAPcopy(h, b->tvheap) != GDK_SUCCEED) {
 			HEAPfree(h, 1);
 			GDKfree(h);
