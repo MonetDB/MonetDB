@@ -275,6 +275,18 @@ Ready.
 [ 1	]
 #COPY LOADER INTO t FROM myloader(-20,'abcdef');
 [ 1	]
+#COPY LOADER INTO t FROM myloader(-30,'abcdeg');
+[ 1	]
+#COPY LOADER INTO t FROM myloader(-40,'abcdfg');
+[ 1	]
+#COPY LOADER INTO t FROM myloader(-50,'abcefg');
+[ 1	]
+#COPY LOADER INTO t FROM myloader(-60,'abdefg');
+[ 1	]
+#COPY LOADER INTO t FROM myloader(-70,'acdefg');
+[ 1	]
+#COPY LOADER INTO t FROM myloader(-80,'bcdefg');
+[ 1	]
 #select * from t;
 % sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t # table_name
 % a,	b,	c,	d,	e,	f,	g # name
@@ -282,6 +294,12 @@ Ready.
 % 3,	3,	3,	3,	3,	3,	3 # length
 [ -11,	-12,	-13,	-14,	-15,	-16,	-17	]
 [ -21,	-22,	-23,	-24,	-25,	-26,	NULL	]
+[ -31,	-32,	-33,	-34,	-35,	6,	-37	]
+[ -41,	-42,	-43,	-44,	5,	-46,	-47	]
+[ -51,	-52,	-53,	4,	-55,	-56,	-57	]
+[ -61,	-62,	3,	-64,	-65,	-66,	-67	]
+[ -71,	2,	-73,	-74,	-75,	-76,	-77	]
+[ 1,	-82,	-83,	-84,	-85,	-86,	-87	]
 #drop table t;
 #drop loader myloader;
 #CREATE LOADER myloader(x integer, y string) LANGUAGE PYTHON {
@@ -306,6 +324,18 @@ Ready.
 [ 2	]
 #COPY LOADER INTO t FROM myloader(-200,'abcdef');
 [ 2	]
+#COPY LOADER INTO t FROM myloader(-300,'abcdeg');
+[ 2	]
+#COPY LOADER INTO t FROM myloader(-400,'abcdfg');
+[ 2	]
+#COPY LOADER INTO t FROM myloader(-500,'abcefg');
+[ 2	]
+#COPY LOADER INTO t FROM myloader(-600,'abdefg');
+[ 2	]
+#COPY LOADER INTO t FROM myloader(-700,'acdefg');
+[ 2	]
+#COPY LOADER INTO t FROM myloader(-800,'bcdefg');
+[ 2	]
 #select * from t;
 % sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t # table_name
 % a,	b,	c,	d,	e,	f,	g # name
@@ -315,6 +345,18 @@ Ready.
 [ -121,	-122,	-123,	-124,	-125,	-126,	-127	]
 [ -211,	-212,	-213,	-214,	-215,	-216,	NULL	]
 [ -221,	-222,	-223,	-224,	-225,	-226,	NULL	]
+[ -311,	-312,	-313,	-314,	-315,	6,	-317	]
+[ -321,	-322,	-323,	-324,	-325,	6,	-327	]
+[ -411,	-412,	-413,	-414,	5,	-416,	-417	]
+[ -421,	-422,	-423,	-424,	5,	-426,	-427	]
+[ -511,	-512,	-513,	4,	-515,	-516,	-517	]
+[ -521,	-522,	-523,	5,	-525,	-526,	-527	]
+[ -611,	-612,	3,	-614,	-615,	-616,	-617	]
+[ -621,	-622,	4,	-624,	-625,	-626,	-627	]
+[ -711,	2,	-713,	-714,	-715,	-716,	-717	]
+[ -721,	3,	-723,	-724,	-725,	-726,	-727	]
+[ 1,	-812,	-813,	-814,	-815,	-816,	-817	]
+[ 2,	-822,	-823,	-824,	-825,	-826,	-827	]
 #drop table t;
 #drop loader myloader;
 
