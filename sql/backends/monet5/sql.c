@@ -137,6 +137,7 @@ sqlcleanup(mvc *c, int err)
 {
 	sql_destroy_params(c);
 	sql_destroy_args(c);
+	c->sqs = NULL;
 
 	if ((c->emod & mod_locked) == mod_locked) {
 		/* here we should commit the transaction */

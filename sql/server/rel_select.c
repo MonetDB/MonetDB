@@ -123,6 +123,19 @@ rel_parent( sql_rel *rel )
 }
 
 static sql_exp *
+_rel_lastexp(mvc *sql, sql_rel *rel )
+{
+	sql_exp *e;
+
+	if (!is_processed(rel))
+		rel = rel_parent(rel);
+	assert(list_length(rel->exps));
+	assert(is_project(rel->op));
+	e = rel->exps->t->data;
+	return exp_column(sql->sa, e->rname, e->name, exp_subtype(e), e->card, has_nil(e), is_intern(e));
+}
+
+static sql_exp *
 rel_lastexp(mvc *sql, sql_rel *rel )
 {
 	sql_exp *e;
@@ -1588,6 +1601,17 @@ rel_filter_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, 
 	return rel_filter(sql, rel, l, r, "sys", filter_op, anti);
 }
 
+static int
+exp_is_subquery( mvc *sql, sql_exp *e)
+{
+	if (e->type == e_column) {
+		if (mvc_find_subquery(sql, e->l?e->l:e->r, e->r))
+			return 1;
+	}
+	if (e->type == e_convert) 
+		return exp_is_subquery( sql, e->l);
+	return 0;
+}
 
 static sql_rel *
 rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, int type, int anti )
@@ -1635,8 +1659,8 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 		else
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 	}
-	if (rs->card <= CARD_ATOM && exp_is_atom(rs) && 
-	   (!rs2 || (rs2->card <= CARD_ATOM && exp_is_atom(rs2)))) {
+	if (rs->card <= CARD_ATOM && (exp_is_atom(rs) || exp_is_subquery(sql, rs)) && 
+	   (!rs2 || (rs2->card <= CARD_ATOM && (exp_is_atom(rs2) || exp_is_subquery(sql, rs2))))) {
 		if ((ls->card == rs->card && !rs2) || rel->processed)  /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 
@@ -4500,12 +4524,13 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 			r = rel_with_query(sql, se);
 		else
 			r = rel_subquery(sql, NULL, se, ek, APPLY_JOIN);
+
 		if (r) {
 			sql_exp *e;
 
 			if (ek.card <= card_column && is_project(r->op) && list_length(r->exps) > 1) 
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: subquery must return only one column");
-			e = rel_lastexp(sql, r);
+			e = _rel_lastexp(sql, r);
 
 			/* group by needed ? */
 			if (e->card > CARD_ATOM && e->card > ek.card) {
@@ -4524,6 +4549,7 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 			if (*rel) {
 				sql_rel *p = *rel;
 
+
 				/* in the selection phase we should have project/groupbys, unless 
 				 * this is the value (column) for the aggregation then the 
 				 * crossproduct is pushed under the project/groupby.  */ 
@@ -4532,14 +4558,20 @@ rel_value_exp2(mvc *sql, sql_rel **rel, symbol *se, int f, exp_kind ek, int *is_
 
 					exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
 					e = ne;
-				} else if (f == sql_sel && is_project(p->op) && !is_processed(p)) {
-					if (p->l) {
-						p->l = rel_crossproduct(sql->sa, p->l, r, op_join);
+				} else if (e->card > CARD_ATOM) {
+					if (f == sql_sel && is_project(p->op) && !is_processed(p)) {
+						if (p->l) {
+							p->l = rel_crossproduct(sql->sa, p->l, r, op_join);
+						} else {
+							p->l = r;
+						}
 					} else {
-						p->l = r;
+						*rel = rel_crossproduct(sql->sa, p, r, op_join);
 					}
 				} else {
-					*rel = rel_crossproduct(sql->sa, p, r, op_join);
+					if (!exp_relname(e))
+						exp_setname(sql->sa, e, exp_name(e), exp_name(e));
+					mvc_push_subquery(sql, exp_relname(e), r);
 				}
 				*is_last = 1;
 				return e;

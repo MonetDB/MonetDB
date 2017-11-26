@@ -18,6 +18,7 @@
 #include "sql_semantic.h"
 #include "sql_privileges.h"
 #include "rel_rel.h"
+#include "rel_exp.h"
 #include "gdk_logger.h"
 #include "wlc.h"
 
@@ -727,6 +728,7 @@ mvc_destroy(mvc *m)
 	if (m->qc)
 		qc_destroy(m->qc);
 	m->qc = NULL;
+	m->sqs = NULL;
 
 	_DELETE(m->args);
 	m->args = NULL;
@@ -1804,4 +1806,62 @@ sql_idx *
 mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i)
 {
 	return sql_trans_copy_idx(m->session->tr, t, i);
+}
+
+sql_rel *
+mvc_push_subquery(mvc *m, const char *name, sql_rel *r)
+{
+	sql_rel *res = NULL;
+
+	if (!m->sqs)
+		m->sqs = sa_list(m->sa);
+	if (m->sqs) {
+		sql_var *v = SA_NEW(m->sa, sql_var);
+
+		v->name = name;
+		v->rel = r;
+		list_append(m->sqs, v);
+		res = r;
+	}
+	return res;
+}
+
+sql_rel *
+mvc_find_subquery(mvc *m, const char *rname, const char *name) 
+{
+	node *n;
+
+	if (!m->sqs)
+		return NULL;
+	for (n = m->sqs->h; n; n = n->next) {
+		sql_var *v = n->data;
+
+		if (strcmp(v->name, rname) == 0) {
+			sql_exp *ne = exps_bind_column2(v->rel->exps, rname, name);
+
+			if (ne)
+				return v->rel;
+		}
+	}
+	return NULL;
+}
+
+sql_exp *
+mvc_find_subexp(mvc *m, const char *rname, const char *name) 
+{
+	node *n;
+
+	if (!m->sqs)
+		return NULL;
+	for (n = m->sqs->h; n; n = n->next) {
+		sql_var *v = n->data;
+
+		if (strcmp(v->name, rname) == 0) {
+			sql_exp *ne = exps_bind_column2(v->rel->exps, rname, name);
+
+			if (ne)
+				return ne;
+		}
+	}
+	return NULL;
 }
