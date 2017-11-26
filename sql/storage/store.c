@@ -3819,6 +3819,22 @@ sys_drop_sequence(sql_trans *tr, sql_sequence * seq, int drop_action)
 }
 
 static void
+sys_drop_statistics(sql_trans *tr, sql_column *col)
+{
+	if (isGlobal(col->t)) {
+		sql_schema *syss = find_sql_schema(tr, "sys"); 
+		sql_table *sysstats = find_sql_table(syss, "statistics");
+
+		oid rid = table_funcs.column_find_row(tr, find_sql_column(sysstats, "column_id"), &col->base.id, NULL);
+
+		if (rid == oid_nil)
+			return ;
+
+		table_funcs.table_delete(tr, sysstats, rid);
+	}
+}
+
+static void
 sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 {
 	str seq_pos = NULL;
@@ -3851,6 +3867,7 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 	if (isGlobal(col->t)) 
 		tr->schema_updates ++;
 
+	sys_drop_statistics(tr, col);
 	if (drop_action) 
 		sql_trans_drop_all_dependencies(tr, col->t->s, col->base.id, COLUMN_DEPENDENCY);
 	if (col->type.type->s) 
