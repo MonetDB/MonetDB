@@ -1298,7 +1298,7 @@ rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char 
 		if (e && !ambiguous)
 			return exp_alias(sa, e->rname, exp_name(e), e->rname, cname, exp_subtype(e), e->card, has_nil(e), is_intern(e));
 	}
-	if (is_project(rel->op) && rel->l) {
+	if (is_project(rel->op) && rel->l && !is_processed(rel)) {
 		return rel_find_column(sa, rel->l, tname, cname);
 	} else if (is_join(rel->op)) {
 		sql_exp *e = rel_find_column(sa, rel->l, tname, cname);

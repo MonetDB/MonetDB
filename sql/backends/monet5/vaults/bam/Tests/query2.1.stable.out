@@ -36,7 +36,7 @@ Ready.
 #    FROM alig
 #    WHERE qname IN (
 #        SELECT qname
-% bam.L46,	bam.L50,	bam.L52,	bam.L54,	bam.L56 # table_name
+% bam.L44,	bam.L46,	bam.L50,	bam.L52,	bam.L54 # table_name
 % qname,	l_seq,	qual1,	r_seq,	qual2 # name
 % clob,	clob,	clob,	clob,	clob # type
 % 0,	0,	0,	0,	0 # length

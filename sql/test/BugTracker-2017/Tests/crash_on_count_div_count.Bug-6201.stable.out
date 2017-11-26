@@ -28,7 +28,7 @@ Ready.
 #insert into t1 values (1);
 [ 1	]
 #select count(*) / (select count(*) from t1) as c2 from t1;
-% .L10 # table_name
+% sys.L10 # table_name
 % c2 # name
 % bigint # type
 % 1 # length

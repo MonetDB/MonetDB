@@ -1306,6 +1306,19 @@ exp_is_correlation(sql_exp *e, sql_rel *r )
 }
 
 int
+exp_is_true(mvc *sql, sql_exp *e) 
+{
+	if (e->type == e_atom) {
+		if (e->l) {
+			return atom_is_true(e->l);
+		} else if(sql->emode == m_normal && sql->argc > e->flag && EC_BOOLEAN(exp_subtype(e)->type->eclass)) {
+			return atom_is_true(sql->args[e->flag]);
+		}
+	}
+	return 0;
+}
+
+int
 exp_is_zero(mvc *sql, sql_exp *e) 
 {
 	if (e->type == e_atom) {
