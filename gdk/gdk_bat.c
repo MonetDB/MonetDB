@@ -2180,7 +2180,7 @@ BATassertProps(BAT *b)
 				goto abort_check;
 			}
 			snprintf(hp->filename, sizeof(hp->filename),
-				 "%s.hash" SZFMT, nme, MT_getpid());
+				 "%s.hash%d", nme, THRgettid());
 			ext = GDKstrdup(hp->filename + nmelen + 1);
 			if (ATOMsize(b->ttype) == 1)
 				mask = 1 << 8;

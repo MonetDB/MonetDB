@@ -315,7 +315,7 @@ BATunique(BAT *b, BAT *s)
 		}
 		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
 		    snprintf(hp->filename, sizeof(hp->filename),
-			     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
+			     "%s.hash%d", nme, THRgettid()) < 0 ||
 		    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
 		    (hs = HASHnew(hp, b->ttype, BUNlast(b), mask, BUN_NONE)) == NULL) {
 			GDKfree(hp);
