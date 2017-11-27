@@ -1610,7 +1610,7 @@ typedef struct {
 	char bak[16];		/* logical name backup (tmp_%o) */
 	bat next;		/* next BBP slot in linked list */
 	BAT *desc;		/* the BAT descriptor */
-	char physical[24];	/* dir + basename for storage */
+	char physical[20];	/* dir + basename for storage */
 	str options;		/* A string list of options */
 	int refs;		/* in-memory references on which the loaded status of a BAT relies */
 	int lrefs;		/* logical references on which the existence of a BAT relies */
