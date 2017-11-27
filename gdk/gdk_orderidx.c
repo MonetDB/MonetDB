@@ -70,9 +70,8 @@ BATcheckorderidx(BAT *b)
 
 		b->torderidx = NULL;
 		if ((hp = GDKzalloc(sizeof(*hp))) != NULL &&
-		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) >= 0 &&
-		    (hp->filename = GDKmalloc(strlen(nme) + 11)) != NULL) {
-			sprintf(hp->filename, "%s.torderidx", nme);
+		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) >= 0) {
+			snprintf(hp->filename, sizeof(hp->filename), "%s.torderidx", nme);
 
 			/* check whether a persisted orderidx can be found */
 			if ((fd = GDKfdlocate(hp->farmid, nme, "rb+", "torderidx")) >= 0) {
@@ -100,7 +99,6 @@ BATcheckorderidx(BAT *b)
 				/* unlink unusable file */
 				GDKunlink(hp->farmid, BATDIR, nme, "torderidx");
 			}
-			GDKfree(hp->filename);
 		}
 		GDKfree(hp);
 		GDKclrerr();	/* we're not currently interested in errors */
@@ -116,19 +114,14 @@ Heap *
 createOIDXheap(BAT *b, int stable)
 {
 	Heap *m;
-	size_t nmelen;
 	oid *restrict mv;
 	const char *nme;
 
 	nme = BBP_physical(b->batCacheid);
-	nmelen = strlen(nme) + 12;
 	if ((m = GDKzalloc(sizeof(Heap))) == NULL ||
 	    (m->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) < 0 ||
-	    (m->filename = GDKmalloc(nmelen)) == NULL ||
-	    snprintf(m->filename, nmelen, "%s.torderidx", nme) < 0 ||
+	    snprintf(m->filename, sizeof(m->filename), "%s.torderidx", nme) < 0 ||
 	    HEAPalloc(m, BATcount(b) + ORDERIDXOFF, SIZEOF_OID) != GDK_SUCCEED) {
-		if (m)
-			GDKfree(m->filename);
 		GDKfree(m);
 		return NULL;
 	}
@@ -345,7 +338,6 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 {
 	Heap *m;
 	int i;
-	size_t nmelen;
 	oid *restrict mv;
 	const char *nme = BBP_physical(b->batCacheid);
 
@@ -356,14 +348,10 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		MT_lock_unset(&GDKhashLock(b->batCacheid));
 		return GDK_SUCCEED;
 	}
-	nmelen = strlen(nme) + 12;
 	if ((m = GDKzalloc(sizeof(Heap))) == NULL ||
 	    (m->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) < 0 ||
-	    (m->filename = GDKmalloc(nmelen)) == NULL ||
-	    snprintf(m->filename, nmelen, "%s.torderidx", nme) < 0 ||
+	    snprintf(m->filename, sizeof(m->filename), "%s.torderidx", nme) < 0 ||
 	    HEAPalloc(m, BATcount(b) + ORDERIDXOFF, SIZEOF_OID) != GDK_SUCCEED) {
-		if (m)
-			GDKfree(m->filename);
 		GDKfree(m);
 		MT_lock_unset(&GDKhashLock(b->batCacheid));
 		return GDK_FAIL;

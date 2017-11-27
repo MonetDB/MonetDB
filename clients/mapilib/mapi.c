@@ -744,10 +744,6 @@
 # include <sys/uio.h>
 #endif
 
-#ifdef HAVE_MALLOC_H
-#include <malloc.h>
-#endif
-
 #include  <signal.h>
 #include  <string.h>
 #include  <memory.h>
@@ -888,6 +884,7 @@ struct MapiResultSet {
 	int64_t tuple_count;
 	int64_t row_count;
 	int64_t last_id;
+	int64_t querytime;
 	int fieldcnt;
 	int maxfields;
 	char *errorstr;		/* error from server */
@@ -1452,6 +1449,7 @@ new_result(MapiHdl hdl)
 	result->tableid = -1;
 	result->querytype = -1;
 	result->errorstr = NULL;
+	result->querytime = 0;
 	memset(result->sqlstate, 0, sizeof(result->sqlstate));
 
 	result->tuple_count = 0;
@@ -3749,6 +3747,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 	if (line[0] == '&') {
 		char *nline = line;
 		int qt;
+		uint64_t queryid;
 
 		/* handle fields &qt */
 
@@ -3759,9 +3758,13 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 			result = new_result(hdl);
 		result->querytype = qt;
 		result->commentonly = 0;
+		result->querytime = 0;
 
 		nline++;	/* skip space */
 		switch (qt) {
+		case Q_SCHEMA:
+			result->querytime = strtoll(nline, &nline, 10);
+			break;
 		case Q_TRANS:
 			if (*nline == 'f')
 				hdl->mid->auto_commit = 0;
@@ -3769,14 +3772,24 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 				hdl->mid->auto_commit = 1;
 			break;
 		case Q_UPDATE:
-			result->row_count = strtoll(nline, &nline, 0);
-			result->last_id = strtoll(nline, &nline, 0);
+			result->row_count = strtoll(nline, &nline, 10);
+			result->last_id = strtoll(nline, &nline, 10);
+			queryid = strtoll(nline, &nline, 10);
+			result->querytime = strtoll(nline, &nline, 10);
 			break;
 		case Q_TABLE:
-		case Q_PREPARE:{
-			sscanf(nline, "%d %" SCNd64 " %d %" SCNd64, &result->tableid, &result->row_count, &result->fieldcnt, &result->tuple_count);
+			if (sscanf(nline, "%d %" SCNd64 " %d %" SCNd64 " %" SCNu64 " %" SCNd64,
+				   &result->tableid, &result->row_count,
+				   &result->fieldcnt, &result->tuple_count,
+				   &queryid, &result->querytime) < 6)
+				result->querytime = 0;
+			(void) queryid; /* ignored for now */
 			break;
-		}
+		case Q_PREPARE:
+			sscanf(nline, "%d %" SCNd64 " %d %" SCNd64,
+			       &result->tableid, &result->row_count,
+			       &result->fieldcnt, &result->tuple_count);
+			break;
 		case Q_BLOCK:
 			/* Mapi ignores the Q_BLOCK header, so spoof the querytype
 			 * back to a Q_TABLE to let it go unnoticed */
@@ -5285,6 +5298,17 @@ mapi_rows_affected(MapiHdl hdl)
 	if ((result = hdl->result) == NULL)
 		return 0;
 	return result->row_count;
+}
+
+int64_t
+mapi_get_querytime(MapiHdl hdl)
+{
+	struct MapiResultSet *result;
+
+	mapi_hdl_check(hdl, "mapi_get_querytime");
+	if ((result = hdl->result) == NULL)
+		return 0;
+	return result->querytime;
 }
 
 char *

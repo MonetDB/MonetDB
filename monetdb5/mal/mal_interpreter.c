@@ -238,13 +238,14 @@ str malCommandCall(MalStkPtr stk, InstrPtr pci)
  * Also we cannot overwrite values on the stack as this maybe part of a
  * sequence of factory calls.
  */
-#define initStack(S)\
+#define initStack(S, R)\
 	for (i = S; i < mb->vtop; i++) {\
 		lhs = &stk->stk[i];\
 		if (isVarConstant(mb, i) > 0) {\
 			if (!isVarDisabled(mb, i)) {\
 				rhs = &getVarConstant(mb, i);\
-				VALcopy(lhs, rhs);\
+				if(VALcopy(lhs, rhs) == NULL) \
+					R = 0; \
 			}\
 		} else {\
 			lhs->vtype = getVarGDKType(mb, i);\
@@ -267,7 +268,7 @@ MalStkPtr
 prepareMALstack(MalBlkPtr mb, int size)
 {
 	MalStkPtr stk = NULL;
-	int i;
+	int i, res = 1;
 	ValPtr lhs, rhs;
 
 	stk = newGlobalStack(size);
@@ -279,7 +280,11 @@ prepareMALstack(MalBlkPtr mb, int size)
 	stk->stktop = mb->vtop;
 	stk->blk = mb;
 
-	initStack(0);
+	initStack(0, res);
+	if(!res) {
+		freeStack(stk);
+		return NULL;
+	}
 	return stk;
 }
 
@@ -307,12 +312,15 @@ str runMAL(Client cntxt, MalBlkPtr mb, MalBlkPtr mbcaller, MalStkPtr env)
 	 */
 	cntxt->lastcmd= time(0);
 	if (env != NULL) {
+		int res = 1;
 		stk = env;
 		if (mb != stk->blk)
 			throw(MAL, "mal.interpreter","misalignment of symbols");
 		if (mb->vtop > stk->stksize)
 			throw(MAL, "mal.interpreter","stack too small");
-		initStack(env->stkbot);
+		initStack(env->stkbot, res);
+		if(!res)
+			throw(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
 	} else {
 		stk = prepareMALstack(mb, mb->vsize);
 		if (stk == 0)
@@ -415,9 +423,12 @@ callMAL(Client cntxt, MalBlkPtr mb, MalStkPtr *env, ValPtr argv[], char debug)
 			*env = stk;
 		} else {
 			ValPtr lhs, rhs;
+			int res = 1;
 
 			stk = *env;
-			initStack(0);
+			initStack(0, res);
+			if(!res)
+				throw(MAL, "mal.interpreter", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		assert(stk);
 		for (i = pci->retc; i < pci->argc; i++) {
@@ -618,8 +629,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			for (k = 0, i = pci->retc; k < pci->retc && i < pci->argc; i++, k++) {
 				lhs = &stk->stk[pci->argv[k]];
 				rhs = &stk->stk[pci->argv[i]];
-				VALcopy(lhs, rhs);
-				if (lhs->vtype == TYPE_bat && !is_bat_nil(lhs->val.bval))
+				if(VALcopy(lhs, rhs) == NULL) {
+					ret = createException(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
+					break;
+				} else if (lhs->vtype == TYPE_bat && !is_bat_nil(lhs->val.bval))
 					BBPretain(lhs->val.bval);
 			}
 			freeException(ret);
@@ -627,7 +640,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			break;
 		case PATcall:
 			if (pci->fcn == NULL) {
-				ret = createException(MAL,"interpreter", "address of pattern %s.%s missing", pci->modname, pci->fcnname);
+				ret = createException(MAL,"mal.interpreter", "address of pattern %s.%s missing", pci->modname, pci->fcnname);
 			} else {
 				ret = (*pci->fcn)(cntxt, mb, stk, pci);
 #ifndef NDEBUG
@@ -685,7 +698,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			 * counting.
 			 */
 			if (pci->blk == NULL)
-				ret = createException(MAL,"interpreter", "%s.%s[%d] reference to MAL function missing", getModuleId(pci), getFunctionId(pci), pci->pc);
+				ret = createException(MAL,"mal.interpreter", "%s.%s[%d] reference to MAL function missing", getModuleId(pci), getFunctionId(pci), pci->pc);
 			else {
 				/* show call before entering the factory */
 				if (cntxt->itrace || mb->trap) {
@@ -740,15 +753,20 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				for (ii = pci->retc; ii < pci->argc; ii++,arg++) {
 					lhs = &nstk->stk[q->argv[arg]];
 					rhs = &stk->stk[pci->argv[ii]];
-					VALcopy(lhs, rhs);
-					if (lhs->vtype == TYPE_bat)
+					if(VALcopy(lhs, rhs) == NULL) {
+						GDKfree(nstk);
+						ret = createException(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
+						break;
+					} else if (lhs->vtype == TYPE_bat)
 						BBPretain(lhs->val.bval);
 				}
-				ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, stk, pci);
-				for (ii = 0; ii < nstk->stktop; ii++)
-					if (ATOMextern(nstk->stk[ii].vtype))
-						GDKfree(nstk->stk[ii].val.pval);
-				GDKfree(nstk);
+				if(!ret) {
+					ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, stk, pci);
+					for (ii = 0; ii < nstk->stktop; ii++)
+						if (ATOMextern(nstk->stk[ii].vtype))
+							GDKfree(nstk->stk[ii].val.pval);
+					GDKfree(nstk);
+				}
 			}
 			break;
 		case NOOPsymbol:
@@ -1004,7 +1022,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					stkpc = pci->jump;
 				break;
 			default:
-				ret = createException(MAL,"interpreter", "%s: Unknown barrier type", getVarName(mb, getDestVar(pci)));
+				ret = createException(MAL,"mal.interpreter", "%s: Unknown barrier type", getVarName(mb, getDestVar(pci)));
 			}
 			stkpc++;
 			break;
@@ -1156,8 +1174,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					for (i = 0; i < pci->retc; i++) {
 						rhs = &stk->stk[pp->argv[i]];
 						lhs = &env->stk[pci->argv[i]];
-						VALcopy(lhs, rhs);
-						if (lhs->vtype == TYPE_bat)
+						if(VALcopy(lhs, rhs) == NULL) {
+							ret = createException(MAL, "mal.interpreter", MAL_MALLOC_FAIL);
+							break;
+						} else if (lhs->vtype == TYPE_bat)
 							BBPretain(lhs->val.bval);
 					}
 					if (garbageControl(getInstrPtr(mb, 0)))

@@ -85,6 +85,7 @@ typedef struct mvc {
 	int clientid;		/* id of the owner */
 	struct scanner scanner;
 
+	list *sqs;		/* list of subqueries */
 	list *params;
 	sql_func *forward;	/* forward definitions for recursive functions */
 	sql_var *vars; 		/* stack of variables, frames are simply a
@@ -142,6 +143,7 @@ extern void mvc_destroy(mvc *c);
 extern int mvc_status(mvc *c);
 extern int mvc_type(mvc *c);
 extern int mvc_debug_on(mvc *m, int flag);
+extern void mvc_cancel_session(mvc *m);
 
 /* since Savepoints and transactions are related the 
  * commit function includes the savepoint creation.
@@ -238,11 +240,11 @@ extern int stack_find_frame(mvc *sql, const char *name);
 extern int stack_has_frame(mvc *sql, const char *name);
 extern int stack_nr_of_declared_tables(mvc *sql);
 
-extern atom * stack_get_var(mvc *sql, const char *name);
-extern void stack_set_var(mvc *sql, const char *name, ValRecord *v);
+extern atom* stack_get_var(mvc *sql, const char *name);
+extern atom* stack_set_var(mvc *sql, const char *name, ValRecord *v);
 
 extern str stack_get_string(mvc *sql, const char *name);
-extern void stack_set_string(mvc *sql, const char *name, const char *v);
+extern str stack_set_string(mvc *sql, const char *name, const char *v);
 #ifdef HAVE_HGE
 extern hge val_get_number(ValRecord *val);
 extern hge stack_get_number(mvc *sql, const char *name);
@@ -259,5 +261,9 @@ extern sql_idx *mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i);
 
 extern void *sql_error(mvc *sql, int error_code, _In_z_ _Printf_format_string_ char *format, ...)
 	__attribute__((__format__(__printf__, 3, 4)));
+
+extern sql_rel *mvc_push_subquery(mvc *m, const char *name, sql_rel *r);
+extern sql_rel *mvc_find_subquery(mvc *m, const char *rname, const char *name);
+extern sql_exp *mvc_find_subexp(mvc *m, const char *rname, const char *name);
 
 #endif /*_SQL_MVC_H*/

@@ -321,6 +321,7 @@ SQLrun(Client c, backend *be, mvc *m)
 				atom *arg = m->args[j];
 				
 				if (!atom_cast(m->sa, arg, pt)) {
+					freeMalBlk(mb);
 					throw(SQL, "sql.prepare", SQLSTATE(07001) "EXEC: wrong type for argument %d of " "query template : %s, expected %s", i + 1, atom_type(arg)->type->sqlname, pt->type->sqlname);
 				}
 				val= (ValPtr) &arg->data;

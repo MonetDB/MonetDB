@@ -18,6 +18,7 @@
 #include "sql_semantic.h"
 #include "sql_privileges.h"
 #include "rel_rel.h"
+#include "rel_exp.h"
 #include "gdk_logger.h"
 #include "wlc.h"
 
@@ -230,6 +231,14 @@ mvc_debug_on(mvc *m, int flg)
 	return 0;
 }
 
+void
+mvc_cancel_session(mvc *m)
+{
+	store_lock();
+	sql_trans_end(m->session);
+	store_unlock();
+}
+
 int
 mvc_trans(mvc *m)
 {
@@ -308,6 +317,7 @@ mvc_commit(mvc *m, int chain, const char *name)
 {
 	sql_trans *cur, *tr = m->session->tr, *ctr;
 	int ok = SQL_OK;//, wait = 0;
+	str msg;
 
 	assert(tr);
 	assert(m->session->active);	/* only commit an active transaction */
@@ -334,8 +344,13 @@ mvc_commit(mvc *m, int chain, const char *name)
 			mvc_rollback(m, chain, name);
 			return -1;
 		}
-		WLCcommit(m->clientid);
+		msg = WLCcommit(m->clientid);
 		store_unlock();
+		if(msg != MAL_SUCCEED) {
+			(void) sql_error(m, 02, "%s\n", msg);
+			mvc_rollback(m, chain, name);
+			return -1;
+		}
 		m->type = Q_TRANS;
 		if (m->qc) /* clean query cache, protect against concurrent access on the hash tables (when functions already exists, concurrent mal will
 build up the hash (not copied in the trans dup)) */
@@ -370,10 +385,15 @@ build up the hash (not copied in the trans dup)) */
 		if (!chain) 
 			sql_trans_end(m->session);
 		m->type = Q_TRANS;
-		WLCcommit(m->clientid);
+		msg = WLCcommit(m->clientid);
+		store_unlock();
+		if(msg != MAL_SUCCEED) {
+			(void) sql_error(m, 02, "%s\n", msg);
+			mvc_rollback(m, chain, name);
+			return -1;
+		}
 		if (mvc_debug)
 			fprintf(stderr, "#mvc_commit %s done\n", (name) ? name : "");
-		store_unlock();
 		return 0;
 	}
 
@@ -403,7 +423,13 @@ build up the hash (not copied in the trans dup)) */
 		mvc_rollback(m, chain, name);
 		return -1;
 	}
-	WLCcommit(m->clientid);
+	msg = WLCcommit(m->clientid);
+	if(msg != MAL_SUCCEED) {
+		store_unlock();
+		(void) sql_error(m, 02, "%s\n", msg);
+		mvc_rollback(m, chain, name);
+		return -1;
+	}
 	sql_trans_end(m->session);
 	if (chain) 
 		sql_trans_begin(m->session);
@@ -419,6 +445,7 @@ mvc_rollback(mvc *m, int chain, const char *name)
 {
 	int res = 0;
 	sql_trans *tr = m->session->tr;
+	str msg;
 
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_rollback %s\n", (name) ? name : "");
@@ -463,8 +490,13 @@ mvc_rollback(mvc *m, int chain, const char *name)
 		if (chain) 
 			sql_trans_begin(m->session);
 	}
-	WLCrollback(m->clientid);
+	msg = WLCrollback(m->clientid);
 	store_unlock();
+	if (msg != MAL_SUCCEED) {
+		(void)sql_error(m, 02, "%s\n", msg);
+		m->session->status = -1;
+		return -1;
+	}
 	m->type = Q_TRANS;
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_rollback %s done\n", (name) ? name : "");
@@ -696,6 +728,7 @@ mvc_destroy(mvc *m)
 	if (m->qc)
 		qc_destroy(m->qc);
 	m->qc = NULL;
+	m->sqs = NULL;
 
 	_DELETE(m->args);
 	m->args = NULL;
@@ -779,7 +812,7 @@ mvc_bind_table(mvc *m, sql_schema *s, const char *tname)
 		if (tpe) {
 			t = tpe;
 		} else { /* during exection they are in the declared table schema */
-			s = mvc_bind_schema(m, dt_schema);
+				s = mvc_bind_schema(m, dt_schema);
 			return mvc_bind_table(m, s, tname);
 		}
 	} else {
@@ -1447,22 +1480,26 @@ stack_push_rel_view(mvc *sql, const char *name, sql_rel *var)
 	return res;
 }
 
-void
+atom *
 stack_set_var(mvc *sql, const char *name, ValRecord *v)
 {
 	int i;
+	atom *res = NULL;
 
 	for (i = sql->topvars-1; i >= 0; i--) {
 		if (!sql->vars[i].frame && strcmp(sql->vars[i].name, name)==0) {
 			VALclear(&sql->vars[i].a.data);
-			VALcopy(&sql->vars[i].a.data, v);
+			if(VALcopy(&sql->vars[i].a.data, v) == NULL)
+				return NULL;
 			sql->vars[i].a.isnull = VALisnil(v);
 			if (v->vtype == TYPE_flt)
 				sql->vars[i].a.d = v->val.fval;
 			else if (v->vtype == TYPE_dbl)
 				sql->vars[i].a.d = v->val.dval;
+			res = &sql->vars[i].a;
 		}
 	}
+	return res;
 }
 
 atom *
@@ -1653,18 +1690,23 @@ stack_nr_of_declared_tables(mvc *sql)
 	return dt;
 }
 
-void
+str
 stack_set_string(mvc *sql, const char *name, const char *val)
 {
 	atom *a = stack_get_var(sql, name);
+	str new_val = _STRDUP(val);
 
-	if (a != NULL) {
+	if (a != NULL && new_val != NULL) {
 		ValRecord *v = &a->data;
 
 		if (v->val.sval)
 			_DELETE(v->val.sval);
-		v->val.sval = _STRDUP(val);
+		v->val.sval = new_val;
+		return new_val;
+	} else if(new_val) {
+		_DELETE(new_val);
 	}
+	return NULL;
 }
 
 str
@@ -1764,4 +1806,62 @@ sql_idx *
 mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i)
 {
 	return sql_trans_copy_idx(m->session->tr, t, i);
+}
+
+sql_rel *
+mvc_push_subquery(mvc *m, const char *name, sql_rel *r)
+{
+	sql_rel *res = NULL;
+
+	if (!m->sqs)
+		m->sqs = sa_list(m->sa);
+	if (m->sqs) {
+		sql_var *v = SA_NEW(m->sa, sql_var);
+
+		v->name = name;
+		v->rel = r;
+		list_append(m->sqs, v);
+		res = r;
+	}
+	return res;
+}
+
+sql_rel *
+mvc_find_subquery(mvc *m, const char *rname, const char *name) 
+{
+	node *n;
+
+	if (!m->sqs)
+		return NULL;
+	for (n = m->sqs->h; n; n = n->next) {
+		sql_var *v = n->data;
+
+		if (strcmp(v->name, rname) == 0) {
+			sql_exp *ne = exps_bind_column2(v->rel->exps, rname, name);
+
+			if (ne)
+				return v->rel;
+		}
+	}
+	return NULL;
+}
+
+sql_exp *
+mvc_find_subexp(mvc *m, const char *rname, const char *name) 
+{
+	node *n;
+
+	if (!m->sqs)
+		return NULL;
+	for (n = m->sqs->h; n; n = n->next) {
+		sql_var *v = n->data;
+
+		if (strcmp(v->name, rname) == 0) {
+			sql_exp *ne = exps_bind_column2(v->rel->exps, rname, name);
+
+			if (ne)
+				return ne;
+		}
+	}
+	return NULL;
 }

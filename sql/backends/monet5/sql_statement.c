@@ -1237,7 +1237,11 @@ stmt_atom(backend *be, atom *a)
 	if (atom_null(a)) {
 		q = pushNil(mb, q, atom_type(a)->type->localtype);
 	} else {
-		int k = constantAtom(be, mb, a);
+		int k;
+		if((k = constantAtom(be, mb, a)) == -1) {
+			freeInstruction(q);
+			return NULL;
+		}
 
 		q = pushArgument(mb, q, k);
 	}

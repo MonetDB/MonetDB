@@ -30,14 +30,8 @@ unshare_string_heap(BAT *b)
 			return GDK_FAIL;
 		h->parentid = b->batCacheid;
 		h->farmid = BBPselectfarm(b->batRole, TYPE_str, varheap);
-		if (b->tvheap->filename) {
-			char *nme = BBP_physical(b->batCacheid);
-			h->filename = GDKfilepath(NOFARM, NULL, nme, "theap");
-			if (h->filename == NULL) {
-				GDKfree(h);
-				return GDK_FAIL;
-			}
-		}
+		snprintf(h->filename, sizeof(h->filename),
+			 "%s.theap", BBP_physical(b->batCacheid));
 		if (HEAPcopy(h, b->tvheap) != GDK_SUCCEED) {
 			HEAPfree(h, 1);
 			GDKfree(h);
@@ -469,14 +463,8 @@ append_varsized_bat(BAT *b, BAT *n, BAT *s)
 			return GDK_FAIL;
 		h->parentid = b->batCacheid;
 		h->farmid = BBPselectfarm(b->batRole, b->ttype, varheap);
-		if (b->tvheap->filename) {
-			const char *nme = BBP_physical(b->batCacheid);
-			h->filename = GDKfilepath(NOFARM, NULL, nme, "theap");
-			if (h->filename == NULL) {
-				GDKfree(h);
-				return GDK_FAIL;
-			}
-		}
+		snprintf(h->filename, sizeof(h->filename),
+			 "%s.theap", BBP_physical(b->batCacheid));
 		if (HEAPcopy(h, b->tvheap) != GDK_SUCCEED) {
 			HEAPfree(h, 1);
 			GDKfree(h);
@@ -1110,15 +1098,12 @@ BATkeyed(BAT *b)
 			b->tkey = 1;
 		} else {
 			const char *nme;
-			size_t nmelen;
 			BUN prb;
 			BUN mask;
-			char *ext = NULL;
 			Heap *hp = NULL;
 
 			GDKclrerr(); /* not interested in BAThash errors */
 			nme = BBP_physical(b->batCacheid);
-			nmelen = strlen(nme);
 			if (ATOMbasetype(b->ttype) == TYPE_bte) {
 				mask = (BUN) 1 << 8;
 				cmpf = NULL; /* no compare needed, "hash" is perfect */
@@ -1131,17 +1116,12 @@ BATkeyed(BAT *b)
 					mask = (BUN) 1 << 16;
 			}
 			if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
-			    (hp->filename = GDKmalloc(nmelen + 30)) == NULL ||
-			    snprintf(hp->filename, nmelen + 30,
-				     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
-			    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
+			    snprintf(hp->filename, sizeof(hp->filename),
+				     "%s.hash%d", nme, THRgettid()) < 0 ||
 			    (hs = HASHnew(hp, b->ttype, BUNlast(b), mask, BUN_NONE)) == NULL) {
 				if (hp) {
-					if (hp->filename)
-						GDKfree(hp->filename);
 					GDKfree(hp);
 				}
-				GDKfree(ext);
 				/* err on the side of caution: not keyed */
 				goto doreturn;
 			}
@@ -1167,7 +1147,6 @@ BATkeyed(BAT *b)
 			HEAPfree(hp, 1);
 			GDKfree(hp);
 			GDKfree(hs);
-			GDKfree(ext);
 			if (p == q) {
 				/* we completed the complete scan: no
 				 * duplicates */

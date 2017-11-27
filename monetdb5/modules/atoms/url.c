@@ -749,6 +749,8 @@ str
 URLnew(url *u, str *val)
 {
 	*u = GDKstrdup(*val);
+	if (*u == NULL)
+		throw(MAL, "url.new", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -792,5 +794,7 @@ URLnew4(url *u, str *protocol, str *server, int *port, str *file)
 str URLnoop(url *u, url *val)
 {
 	*u = GDKstrdup(*val);
+	if (*u == NULL)
+		throw(MAL, "url.noop", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }

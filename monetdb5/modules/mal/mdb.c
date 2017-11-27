@@ -589,6 +589,8 @@ MDBgetExceptionVariable(str *ret, str *msg)
 
 	*tail = 0;
 	*ret = GDKstrdup(*msg);
+	if (*ret == NULL)
+		throw(MAL, "mdb.getExceptionVariable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	*tail = ':';
 	return MAL_SUCCEED;
 }
@@ -607,6 +609,8 @@ MDBgetExceptionContext(str *ret, str *msg)
 
 	*tail2 = 0;
 	*ret = GDKstrdup(tail + 1);
+	if (*ret == NULL)
+		throw(MAL, "mdb.getExceptionContext", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	*tail2 = ':';
 	return MAL_SUCCEED;
 }
@@ -624,6 +628,8 @@ MDBgetExceptionReason(str *ret, str *msg)
 		throw(MAL, "mdb.getExceptionReason", OPERATION_FAILED " ':' missing");
 
 	*ret = GDKstrdup(tail + 1);
+	if( *ret == NULL)
+		throw(MAL, "mdb.getExceptionReason", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 

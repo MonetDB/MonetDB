@@ -249,7 +249,7 @@ VLTbasename(str *ret, str *fname, str *split)
 
 str VLTremove(timestamp *ret, str *t)
 {
-	(void) unlink(*t);
+	(void) remove(*t);
 	*ret = *timestamp_nil;
 	return MAL_SUCCEED;
 }

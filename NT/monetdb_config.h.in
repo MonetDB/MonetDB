@@ -33,14 +33,12 @@
 #define _CRT_SECURE_NO_DEPRECATE 1
 #endif
 
-#include <malloc.h>
-
+#include <stdlib.h>
 #if defined(_DEBUG) && defined(_CRTDBG_MAP_ALLOC)
 /* In this case, malloc and friends are redefined in crtdbg.h to debug
    versions.  We need to include stdlib.h and malloc.h first or else
    we get conflicting declarations.
 */
-#include <stdlib.h>
 #include <crtdbg.h>
 #endif
 
@@ -51,9 +49,34 @@
 
 #include <sys/types.h>
 #include <stdio.h>		/* NULL, printf etc. */
-#include <stdlib.h>
 #include <errno.h>
 #include <stdarg.h>		/* va_alist.. */
+#if !defined(_MSC_VER) || _MSC_VER >= 1800
+#include <inttypes.h>
+#include <stdbool.h>
+#else
+#error old versions of Visual Studio are no longer supported
+/* ... but this is how you might be able to do it (untested) */
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
+/* old Visual Studio */
+#include <stdint.h>
+#else
+/* ancient Visual Studio */
+typedef unsigned char uint8_t;
+typedef unsigned short uint16_t;
+typedef unsigned int uint32_t;
+typedef unsigned __int64 uint64_t;
+typedef int64_t __int64;
+typedef uint64_t unsigned __int64;
+#endif
+/* normally defined in inttypes.h */
+#define PRId64 "I64d"
+#define PRIu64 "I64u"
+/* normally defined in stdbool.h */
+#define true 1
+#define false 0
+#define __bool_true_false_are_defined 1
+#endif
 
 #include <assert.h>
 
@@ -221,11 +244,6 @@
 /* Define to 1 if you have the <ieeefp.h> header file. */
 /* #undef HAVE_IEEEFP_H */
 
-/* Define to 1 if you have the <inttypes.h> header file. */
-#if !defined(_MSC_VER) || _MSC_VER >= 1800
-#define HAVE_INTTYPES_H 1
-#endif
-
 /* Define to 1 if you have the <io.h> header file. */
 #define HAVE_IO_H 1
 
@@ -330,9 +348,6 @@
 
 /* Define to 1 if you have the `madvise' function. */
 /* #undef HAVE_MADVISE */
-
-/* Define to 1 if you have the <malloc.h> header file. */
-#define HAVE_MALLOC_H 1
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
@@ -639,9 +654,6 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1		/* generate by the Makefile */
 
-/* Define if you have mallinfo */
-/* #undef HAVE_USEFUL_MALLINFO */
-
 /* Define if you have the LibUriParser library */
 /* #undef HAVE_URIPARSER */
 
@@ -828,9 +840,6 @@
 	STACK_DIRECTION = 0 => direction of growth unknown */
 /* #undef STACK_DIRECTION */
 
-/* Define to 1 if you have the ANSI C header files. */
-#define STDC_HEADERS 1
-
 /* read-only single-machine data */
 #define SYSCONFDIR PREFIX "\\etc"
 
@@ -999,29 +1008,13 @@ c99_snprintf(char *outBuf, size_t size, const char *format, ...)
 #define va_copy(x,y) ((x) = (y))
 #endif
 
-typedef unsigned char uint8_t;
-typedef unsigned short uint16_t;
-typedef unsigned int uint32_t;
-typedef unsigned __int64 uint64_t;
-
-/* normally defined in stdbool.h, but that doesn't exist on Windows */
-#define true 1
-#define false 0
-#define __bool_true_false_are_defined 1
-
 /* normally defined in fcntl.h, but not on Windows */
 #define O_CLOEXEC 0
 
 
-#ifdef HAVE_LONG_LONG
-typedef long long lng;
-typedef unsigned long long ulng;
-# define SIZEOF_LNG SIZEOF_LONG_LONG
-#else
-typedef __int64 lng;
-typedef unsigned __int64 ulng;
-# define SIZEOF_LNG SIZEOF___INT64
-#endif
+typedef int64_t lng;
+typedef uint64_t ulng;
+#define SIZEOF_LNG 8
 
 #ifdef HAVE___INT128
 typedef __int128 hge;
@@ -1038,10 +1031,10 @@ typedef __uint128_t uhge;
 #endif
 
 /* Format to print 64 bit signed integers. */
-#define LLFMT "%I64d"
+#define LLFMT "%" PRId64
 
 /* Format to print 64 bit unsigned integers. */
-#define ULLFMT "%I64u"
+#define ULLFMT "%" PRIu64
 
 /* define printf formats for printing size_t and ssize_t variables */
 #if SIZEOF_SIZE_T == SIZEOF_INT

@@ -236,7 +236,7 @@ BATmaterialize(BAT *b)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 
-	b->theap.filename = NULL;
+	snprintf(b->theap.filename, sizeof(b->theap.filename), "%s.tail", BBP_physical(b->batCacheid));
 	if (HEAPalloc(&b->theap, cnt, sizeof(oid)) != GDK_SUCCEED) {
 		b->theap = tail;
 		return GDK_FAIL;
@@ -326,37 +326,27 @@ VIEWreset(BAT *b)
 	tvp = VIEWvtparent(b);
 	if (tp || tvp) {
 		BUN cnt;
-		str nme;
-		size_t nmelen;
+		const char *nme;
 
 		/* alloc heaps */
 		memset(&tail, 0, sizeof(Heap));
 
 		cnt = BATcount(b) + 1;
 		nme = BBP_physical(b->batCacheid);
-		nmelen = nme ? strlen(nme) : 0;
 
 		assert(b->batCacheid > 0);
 		assert(tp || tvp || !b->ttype);
 
 		tail.farmid = BBPselectfarm(b->batRole, b->ttype, offheap);
-		if (b->ttype) {
-			tail.filename = (str) GDKmalloc(nmelen + 12);
-			if (tail.filename == NULL)
-				goto bailout;
-			snprintf(tail.filename, nmelen + 12, "%s.tail", nme);
-			if (b->ttype && HEAPalloc(&tail, cnt, Tsize(b)) != GDK_SUCCEED)
-				goto bailout;
-		}
+		snprintf(tail.filename, sizeof(tail.filename), "%s.tail", nme);
+		if (b->ttype && HEAPalloc(&tail, cnt, Tsize(b)) != GDK_SUCCEED)
+			goto bailout;
 		if (b->tvheap) {
 			th = GDKzalloc(sizeof(Heap));
 			if (th == NULL)
 				goto bailout;
 			th->farmid = BBPselectfarm(b->batRole, b->ttype, varheap);
-			th->filename = (str) GDKmalloc(nmelen + 12);
-			if (th->filename == NULL)
-				goto bailout;
-			snprintf(th->filename, nmelen + 12, "%s.theap", nme);
+			snprintf(th->filename, sizeof(th->filename), "%s.theap", nme);
 			if (ATOMheap(b->ttype, th, cnt) != GDK_SUCCEED)
 				goto bailout;
 		}
@@ -496,7 +486,6 @@ VIEWdestroy(BAT *b)
 		HEAPfree(&b->theap, 0);
 	} else {
 		b->theap.base = NULL;
-		b->theap.filename = NULL;
 	}
 	b->tvheap = NULL;
 	BATfree(b);

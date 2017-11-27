@@ -21,12 +21,12 @@
 
 /* #define _DEBUG_REMOTE */
 
-#define RMTT_L_ENDIAN   0<<1
-#define RMTT_B_ENDIAN   1<<1
-#define RMTT_32_BITS    0<<2
-#define RMTT_64_BITS    1<<2
-#define RMTT_32_OIDS    0<<3
-#define RMTT_64_OIDS    1<<3
+#define RMTT_L_ENDIAN   (0<<1)
+#define RMTT_B_ENDIAN   (1<<1)
+#define RMTT_32_BITS    (0<<2)
+#define RMTT_64_BITS    (1<<2)
+#define RMTT_32_OIDS    (0<<3)
+#define RMTT_64_OIDS    (1<<3)
 
 typedef struct _connection {
 	MT_Lock            lock;      /* lock to avoid interference */

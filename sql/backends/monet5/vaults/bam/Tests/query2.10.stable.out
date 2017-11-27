@@ -37,7 +37,7 @@ Ready.
 #        GROUP BY qname
 #        HAVING COUNT(*) = 2
 #           AND SUM(bam.bam_flag(flag, 'firs_segm')) = 1
-% bam.L26,	bam.L30,	bam.L32,	bam.L34,	bam.L36,	bam.L40,	bam.L42,	bam.L44,	bam.L46,	bam.L50,	bam.L52,	bam.L54,	bam.L56,	bam.L60,	bam.L62,	bam.L64,	bam.L66,	bam.L70,	bam.L72,	bam.L74,	bam.L76 # table_name
+% bam.L24,	bam.L26,	bam.L30,	bam.L32,	bam.L34,	bam.L36,	bam.L40,	bam.L42,	bam.L44,	bam.L46,	bam.L50,	bam.L52,	bam.L54,	bam.L56,	bam.L60,	bam.L62,	bam.L64,	bam.L66,	bam.L70,	bam.L72,	bam.L74 # table_name
 % qname,	l_flag,	l_rname,	l_pos,	l_mapq,	l_cigar,	l_rnext,	l_pnext,	l_tlen,	l_seq,	qual1,	r_flag,	r_rname,	r_pos,	r_mapq,	r_cigar,	r_rnext,	r_pnext,	r_tlen,	r_seq,	qual2 # name
 % clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob,	smallint,	clob,	int,	smallint,	clob,	clob,	int,	int,	clob,	clob # type
 % 0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0,	1,	0,	1,	1,	0,	0,	1,	1,	0,	0 # length

@@ -1,0 +1,76 @@
+stdout of test 'cleanup_statistics.Bug-6439` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 17:52:04 >  
+# 17:52:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33623" "--set" "mapi_usock=/var/tmp/mtest-15308/.s.monetdb.33623" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 17:52:04 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.330 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:33623/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-15308/.s.monetdb.33623
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 17:52:04 >  
+# 17:52:04 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15308" "--port=33623"
+# 17:52:04 >  
+
+#CREATE TABLE sys.abc (a INT, b VARCHAR(10));
+#INSERT INTO sys.abc VALUES (1, 'one');
+[ 1	]
+#INSERT INTO sys.abc VALUES (2, 'two');
+[ 1	]
+#SELECT * FROM sys.abc;
+% sys.abc,	sys.abc # table_name
+% a,	b # name
+% int,	varchar # type
+% 1,	3 # length
+[ 1,	"one"	]
+[ 2,	"two"	]
+#DELETE FROM sys.statistics;
+[ 207	]
+#SELECT /* column_id, */ type, width, /* stamp, */ "sample", "count", "unique", nils, minval, maxval, sorted, revsorted FROM sys.statistics;
+% sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
+% type,	width,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% clob,	int,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
+% 7,	1,	1,	1,	1,	1,	5,	5,	5,	5 # length
+[ "int",	4,	2,	2,	2,	0,	"1",	"2",	true,	false	]
+[ "varchar",	1,	2,	2,	2,	0,	"\"one\"",	"\"two\"",	true,	false	]
+#SELECT /* column_id, */ type, width, /* stamp, */ "sample", "count", "unique", nils, minval, maxval, sorted, revsorted FROM sys.statistics where column_id not in (select id from sys.columns);
+% sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
+% type,	width,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% clob,	int,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
+% 0,	1,	1,	1,	1,	1,	0,	0,	5,	5 # length
+#ALTER TABLE sys.abc DROP COLUMN b;
+#SELECT /* column_id, */ type, width, /* stamp, */ "sample", "count", "unique", nils, minval, maxval, sorted, revsorted FROM sys.statistics where column_id not in (select id from sys.columns);
+% sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
+% type,	width,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% clob,	int,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
+% 0,	1,	1,	1,	1,	1,	0,	0,	5,	5 # length
+#DROP TABLE sys.abc CASCADE;
+#SELECT /* column_id, */ type, width, /* stamp, */ "sample", "count", "unique", nils, minval, maxval, sorted, revsorted FROM sys.statistics where column_id not in (select id from sys.columns);
+% sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
+% type,	width,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% clob,	int,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
+% 0,	1,	1,	1,	1,	1,	0,	0,	5,	5 # length
+#SELECT /* column_id, */ type, width, /* stamp, */ "sample", "count", "unique", nils, minval, maxval, sorted, revsorted FROM sys.statistics;
+% sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
+% type,	width,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
+% clob,	int,	bigint,	bigint,	bigint,	bigint,	clob,	clob,	boolean,	boolean # type
+% 0,	1,	1,	1,	1,	1,	0,	0,	5,	5 # length
+#DELETE FROM sys.statistics;
+[ 0	]
+
+# 17:52:04 >  
+# 17:52:04 >  "Done."
+# 17:52:04 >  
+

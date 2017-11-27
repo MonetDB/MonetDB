@@ -40,8 +40,16 @@ malBootstrap(void)
 	str bootfile = "mal_init", s = NULL;
 
 	c = MCinitClient((oid) 0, 0, 0);
+	if(c == NULL) {
+		fprintf(stderr,"#malBootstrap:Failed to initialise client");
+		mal_exit();
+	}
 	assert(c != NULL);
 	c->curmodule = c->usermodule = userModule();
+	if(c->usermodule == NULL) {
+		fprintf(stderr,"#malBootstrap:Failed to initialise client MAL module");
+		mal_exit();
+	}
 	if ( (msg = defaultScenario(c)) ) {
 		GDKfree(msg);
 		fprintf(stderr,"#malBootstrap:Failed to initialise default scenario");

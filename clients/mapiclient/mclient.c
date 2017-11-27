@@ -30,12 +30,9 @@
 #include <string.h>
 #endif
 #ifdef HAVE_STRINGS_H
-#include <strings.h>
+#include <strings.h>		/* strcasecmp */
 #endif
 
-#ifdef HAVE_MALLOC_H
-#include <malloc.h>
-#endif
 #ifdef HAVE_LIBREADLINE
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -298,18 +295,18 @@ timerHuman(void)
 	assert(th >= t0);
 
 	if (itimemode == T_MILLIS || (itimemode == T_HUMAN && t / 1000 < 950)) {
-		snprintf(htimbuf, 32, TTFMT ".%03dms", t / 1000, (int) (t % 1000));
+		snprintf(htimbuf, sizeof(htimbuf), TTFMT ".%03dms", t / 1000, (int) (t % 1000));
 		return(htimbuf);
 	}
 	t /= 1000;
 	if (itimemode == T_SECS || (itimemode == T_HUMAN && t / 1000 < 60)) {
-		snprintf(htimbuf, 32, TTFMT ".%ds", t / 1000,
+		snprintf(htimbuf, sizeof(htimbuf), TTFMT ".%ds", t / 1000,
 				(int) ((t % 1000) / 100));
 		return(htimbuf);
 	}
 	t /= 1000;
 	/* itimemode == T_MINSECS || itimemode == T_HUMAN */
-	snprintf(htimbuf, 32, TTFMT "m %ds", t / 60, (int) (t % 60));
+	snprintf(htimbuf, sizeof(htimbuf), TTFMT "m %ds", t / 60, (int) (t % 60));
 	return(htimbuf);
 }
 
@@ -1304,11 +1301,11 @@ RAWrenderer(MapiHdl hdl)
 }
 
 static void
-TIMERrenderer(MapiHdl hdl)
+TIMERrenderer(MapiHdl hdl, int64_t querytime)
 {
 	SQLqueryEcho(hdl);
 	mapi_next_result(hdl);
-	printf("%s\n", timerHuman());
+	printf("%" PRId64 " %s\n", querytime, timerHuman());
 }
 
 
@@ -1829,6 +1826,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 	MapiMsg rc = MERROR;
 	int64_t aff, lid;
 	char *reply;
+	int64_t querytime;
 #ifdef HAVE_POPEN
 	stream *saveFD;
 
@@ -1854,18 +1852,20 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 		}
 
 		timerHumanStop();
+		querytime = 0;
 		switch (mapi_get_querytype(hdl)) {
 		case Q_BLOCK:
 		case Q_PARSE:
 			/* should never see these */
 			continue;
 		case Q_UPDATE:
+			querytime = mapi_get_querytime(hdl);
 			SQLqueryEcho(hdl);
 			if (formatter == RAWformatter ||
 			    formatter == TESTformatter)
 				mnstr_printf(toConsole, "[ %" PRId64 "\t]\n", mapi_rows_affected(hdl));
 			else if (formatter == TIMERformatter)
-				printf("%s\n", timerHuman());
+				printf("%" PRId64 " %s\n", querytime, timerHuman());
 			else {
 				aff = mapi_rows_affected(hdl);
 				lid = mapi_get_last_id(hdl);
@@ -1886,6 +1886,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			}
 			continue;
 		case Q_SCHEMA:
+			querytime = mapi_get_querytime(hdl);
 			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter) {
 				mnstr_printf(toConsole, "operation successful");
@@ -1894,7 +1895,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 						     timerHuman());
 				mnstr_printf(toConsole, "\n");
 			} else if (formatter == TIMERformatter)
-				printf("%s\n", timerHuman());
+				printf("%" PRId64 " %s\n", querytime, timerHuman());
 			continue;
 		case Q_TRANS:
 			SQLqueryEcho(hdl);
@@ -1910,8 +1911,9 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 					     "execute prepared statement "
 					     "using: EXEC %d(...)\n",
 					     mapi_get_tableid(hdl));
-			/* fall through */
+			break;
 		case Q_TABLE:
+			querytime = mapi_get_querytime(hdl);
 			break;
 		default:
 			if (formatter == TABLEformatter && specials != DEBUGmodifier) {
@@ -1972,7 +1974,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 				}
 				break;
 			case TIMERformatter:
-				TIMERrenderer(hdl);
+				TIMERrenderer(hdl, querytime);
 				break;
 			case SAMformatter:
 				SAMrenderer(hdl);
@@ -2218,7 +2220,7 @@ struct myread_t {
 };
 
 static ssize_t
-myread(void *private, void *buf, size_t elmsize, size_t cnt)
+myread(void *restrict private, void *restrict buf, size_t elmsize, size_t cnt)
 {
 	struct myread_t *p = private;
 	size_t size = elmsize * cnt;

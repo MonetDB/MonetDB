@@ -186,10 +186,10 @@ msab_init(const char *dbfarm, const char *dbname)
 				}
 			}
 			closedir(d);
-			/* unlink in a separate loop after reading the directory,
+			/* remove in a separate loop after reading the directory,
 			 * so as to not have any interference */
 			while (dbe != NULL) {
-				unlink(dbe->path);
+				remove(dbe->path);
 				db = dbe;
 				dbe = dbe->next;
 				free(db);
@@ -339,7 +339,7 @@ msab_retreatScenario(const char *lang)
 				return(NULL);
 			} else {
 				(void)fclose(f);
-				unlink(pathbuf);
+				remove(pathbuf);
 				return(NULL);
 			}
 		} else {
@@ -350,7 +350,7 @@ msab_retreatScenario(const char *lang)
 				(void)fclose(f);
 				return strdup(buf);
 			} else
-				unlink(pathbuf);  /* empty file? try to remove */
+				remove(pathbuf);  /* empty file? try to remove */
 			(void)fclose(f);
 			return(NULL);
 		}
@@ -414,19 +414,19 @@ msab_wildRetreat(void)
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), SCENARIOFILE)) != NULL)
 		return(tmp);
-	unlink(pathbuf);
+	remove(pathbuf);
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), CONNECTIONFILE)) != NULL)
 		return(tmp);
-	unlink(pathbuf);
+	remove(pathbuf);
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), STARTEDFILE)) != NULL)
 		return(tmp);
-	unlink(pathbuf);
+	remove(pathbuf);
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), _sabaoth_internal_uuid)) != NULL)
 		return(tmp);
-	unlink(pathbuf);
+	remove(pathbuf);
 
 	return(NULL);
 }
@@ -480,7 +480,7 @@ msab_registerStarting(void)
 	/* remove any stray file that would suggest we've finished starting up */
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), STARTEDFILE)) != NULL)
 		return(tmp);
-	unlink(pathbuf);
+	remove(pathbuf);
 
 
 	return(NULL);
@@ -540,7 +540,7 @@ msab_registerStop(void)
 	 * but for the sake of keeping things clean ... */
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), _sabaoth_internal_uuid)) != NULL)
 		return(tmp);
-	unlink(pathbuf);
+	remove(pathbuf);
 	return(NULL);
 }
 

@@ -565,7 +565,7 @@ cleanup:
 		bam_destroy1(alig);
 	}
 	if (strcmp(output_header_path, "") != 0) {
-		unlink(output_header_path);
+		remove(output_header_path);
 	}
 	return msg;
 #endif

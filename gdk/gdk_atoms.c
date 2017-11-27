@@ -188,7 +188,7 @@ ATOMallocate(const char *id)
 		memset(BATatoms + t, 0, sizeof(atomDesc));
 		strcpy(BATatoms[t].name, id);
 		BATatoms[t].size = sizeof(int);		/* default */
-		BATatoms[t].linear = 1;			/* default */
+		BATatoms[t].linear = true;		/* default */
 		BATatoms[t].storage = t;		/* default */
 	}
 	MT_lock_unset(&GDKthreadLock);
@@ -841,11 +841,7 @@ atomtostr(lng, LLFMT, )
 atom_io(lng, Lng, lng)
 
 #ifdef HAVE_HGE
-#ifdef WIN32
-#define HGE_LL018FMT "%018I64d"
-#else
-#define HGE_LL018FMT "%018lld"
-#endif
+#define HGE_LL018FMT "%018" PRId64
 #define HGE_LL18DIGITS LL_CONSTANT(1000000000000000000)
 #define HGE_ABS(a) (((a) < 0) ? -(a) : (a))
 ssize_t
@@ -1446,7 +1442,7 @@ static int utf8chkmsk[] = {
 };
 
 ssize_t
-GDKstrFromStr(unsigned char *dst, const unsigned char *src, ssize_t len)
+GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len)
 {
 	unsigned char *p = dst;
 	const unsigned char *cur = src, *end = src + len;
@@ -1603,7 +1599,7 @@ GDKstrFromStr(unsigned char *dst, const unsigned char *src, ssize_t len)
 }
 
 ssize_t
-strFromStr(const char *src, size_t *len, char **dst)
+strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst)
 {
 	const char *cur = src, *start = NULL;
 	size_t l = 1;
@@ -1669,7 +1665,7 @@ strFromStr(const char *src, size_t *len, char **dst)
 #endif
 
 size_t
-escapedStrlen(const char *src, const char *sep1, const char *sep2, int quote)
+escapedStrlen(const char *restrict src, const char *sep1, const char *sep2, int quote)
 {
 	size_t end, sz = 0;
 	size_t sep1len, sep2len;
@@ -1704,7 +1700,7 @@ escapedStrlen(const char *src, const char *sep1, const char *sep2, int quote)
 }
 
 size_t
-escapedStr(char *dst, const char *src, size_t dstlen, const char *sep1, const char *sep2, int quote)
+escapedStr(char *restrict dst, const char *restrict src, size_t dstlen, const char *sep1, const char *sep2, int quote)
 {
 	size_t cur = 0, l = 0;
 	size_t sep1len, sep2len;
@@ -1757,7 +1753,7 @@ escapedStr(char *dst, const char *src, size_t dstlen, const char *sep1, const ch
 }
 
 static ssize_t
-strToStr(char **dst, size_t *len, const char *src)
+strToStr(char **restrict dst, size_t *restrict len, const char *restrict src)
 {
 	if (GDK_STRNIL(src)) {
 		atommem(4);
@@ -1871,7 +1867,7 @@ OIDtoStr(char **dst, size_t *len, const oid *src)
 atomDesc BATatoms[MAXATOMS] = {
 	{"void",		/* name */
 	 TYPE_void,		/* storage */
-	 1,			/* linear */
+	 true,			/* linear */
 	 0,			/* size */
 #if SIZEOF_OID == SIZEOF_INT
 	 (ptr) &int_nil,	/* atomNull */
@@ -1898,7 +1894,7 @@ atomDesc BATatoms[MAXATOMS] = {
 	},
 	{"bit",			/* name */
 	 TYPE_bte,		/* storage */
-	 1,			/* linear */
+	 true,			/* linear */
 	 sizeof(bit),		/* size */
 	 (ptr) &bte_nil,	/* atomNull */
 	 (ssize_t (*)(const char *, size_t *, ptr *)) bitFromStr,   /* atomFromStr */
@@ -1916,7 +1912,7 @@ atomDesc BATatoms[MAXATOMS] = {
 	},
 	{"bte",			/* name */
 	 TYPE_bte,		/* storage */
-	 1,			/* linear */
+	 true,			/* linear */
 	 sizeof(bte),		/* size */
 	 (ptr) &bte_nil,	/* atomNull */
 	 (ssize_t (*)(const char *, size_t *, ptr *)) bteFromStr,   /* atomFromStr */
@@ -1934,7 +1930,7 @@ atomDesc BATatoms[MAXATOMS] = {
 	},
 	{"sht",			/* name */
 	 TYPE_sht,		/* storage */
-	 1,			/* linear */
+	 true,			/* linear */
 	 sizeof(sht),		/* size */
 	 (ptr) &sht_nil,	/* atomNull */
 	 (ssize_t (*)(const char *, size_t *, ptr *)) shtFromStr,   /* atomFromStr */
@@ -1952,7 +1948,7 @@ atomDesc BATatoms[MAXATOMS] = {
 	},
 	{"BAT",			/* name */
 	 TYPE_int,		/* storage */
-	 1,			/* linear */
+	 true,			/* linear */
 	 sizeof(bat),		/* size */
 	 (ptr) &int_nil,	/* atomNull */
 	 (ssize_t (*)(const char *, size_t *, ptr *)) batFromStr,   /* atomFromStr */
@@ -1970,7 +1966,7 @@ atomDesc BATatoms[MAXATOMS] = {
 	},
 	{"int",			/* name */
 	 TYPE_int,		/* storage */
-	 1,			/* linear */
+	 true,			/* linear */
 	 sizeof(int),		/* size */
 	 (ptr) &int_nil,	/* atomNull */
 	 (ssize_t (*)(const char *, size_t *, ptr *)) intFromStr,   /* atomFromStr */
@@ -1992,7 +1988,7 @@ atomDesc BATatoms[MAXATOMS] = {
 #else
 	 TYPE_lng,		/* storage */
 #endif
-	 1,			/* linear */
+	 true,			/* linear */
 	 sizeof(oid),		/* size */
 #if SIZEOF_OID == SIZEOF_INT
 	 (ptr) &int_nil,	/* atomNull */
@@ -2021,7 +2017,7 @@ atomDesc BATatoms[MAXATOMS] = {
 	},
 	{"ptr",			/* name */
 	 TYPE_ptr,		/* storage */
-	 1,			/* linear */
+	 true,			/* linear */
 	 sizeof(ptr),		/* size */
 	 (ptr) &ptr_nil,	/* atomNull */
 	 (ssize_t (*)(const char *, size_t *, ptr *)) ptrFromStr,   /* atomFromStr */
@@ -2044,7 +2040,7 @@ atomDesc BATatoms[MAXATOMS] = {
 	},
 	{"flt",			/* name */
 	 TYPE_flt,		/* storage */
-	 1,			/* linear */
+	 true,			/* linear */
 	 sizeof(flt),		/* size */
 	 (ptr) &flt_nil,	/* atomNull */
 	 (ssize_t (*)(const char *, size_t *, ptr *)) fltFromStr,   /* atomFromStr */
@@ -2062,7 +2058,7 @@ atomDesc BATatoms[MAXATOMS] = {
 	},
 	{"dbl",			/* name */
 	 TYPE_dbl,		/* storage */
-	 1,			/* linear */
+	 true,			/* linear */
 	 sizeof(dbl),		/* size */
 	 (ptr) &dbl_nil,	/* atomNull */
 	 (ssize_t (*)(const char *, size_t *, ptr *)) dblFromStr,   /* atomFromStr */
@@ -2080,7 +2076,7 @@ atomDesc BATatoms[MAXATOMS] = {
 	},
 	{"lng",			/* name */
 	 TYPE_lng,		/* storage */
-	 1,			/* linear */
+	 true,			/* linear */
 	 sizeof(lng),		/* size */
 	 (ptr) &lng_nil,	/* atomNull */
 	 (ssize_t (*)(const char *, size_t *, ptr *)) lngFromStr,   /* atomFromStr */
@@ -2099,7 +2095,7 @@ atomDesc BATatoms[MAXATOMS] = {
 #ifdef HAVE_HGE
 	{"hge",			/* name */
 	 TYPE_hge,		/* storage */
-	 1,			/* linear */
+	 true,			/* linear */
 	 sizeof(hge),		/* size */
 	 (ptr) &hge_nil,	/* atomNull */
 	 (ssize_t (*)(const char *, size_t *, ptr *)) hgeFromStr,   /* atomFromStr */
@@ -2118,7 +2114,7 @@ atomDesc BATatoms[MAXATOMS] = {
 #endif
 	{"str",			/* name */
 	 TYPE_str,		/* storage */
-	 1,			/* linear */
+	 true,			/* linear */
 	 sizeof(var_t),		/* size */
 	 (ptr) str_nil,		/* atomNull */
 	 (ssize_t (*)(const char *, size_t *, ptr *)) strFromStr,   /* atomFromStr */

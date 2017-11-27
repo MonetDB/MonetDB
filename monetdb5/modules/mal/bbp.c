@@ -128,6 +128,8 @@ str
 CMDbbpName(str *ret, bat *bid)
 {
 	*ret = (str) GDKstrdup(BBP_logical(*bid));
+	if (*ret == NULL)
+		throw(MAL, "catalog.bbpName", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -472,5 +474,7 @@ CMDsetName(str *rname, const bat *bid, str *name)
 	}
 	*rname = GDKstrdup(*name);
 	BBPunfix(b->batCacheid);
+	if (*rname == NULL)
+		throw(MAL, "bbp.setName", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }

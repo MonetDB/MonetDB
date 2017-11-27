@@ -277,15 +277,12 @@ SQLinit(void)
 		}
 		GDKregister(idlethread);
 	}
-	WLCinit();
-	return MAL_SUCCEED;
+	return WLCinit();
 }
 
-#define SQLglobal(name, val, failure)                                       \
-	if(stack_push_var(sql, name, &ctype))                                   \
-		stack_set_var(sql, name, VALset(&src, ctype.type->localtype, val)); \
-	else                                                                    \
-		failure++;                                                          \
+#define SQLglobal(name, val, failure)                                                                             \
+	if(!stack_push_var(sql, name, &ctype) || !stack_set_var(sql, name, VALset(&src, ctype.type->localtype, val))) \
+		failure--;
 
 #define NR_GLOBAL_VARS 10
 /* NR_GLOBAL_VAR should match exactly the number of variables created
@@ -399,6 +396,11 @@ SQLtrans(mvc *m)
 			if (s->schema_name)
 				GDKfree(s->schema_name);
 			s->schema_name = monet5_user_get_def_schema(m, m->user_id);
+			if(!s->schema_name) {
+				mvc_cancel_session(m);
+				(void) sql_error(m, 02, SQLSTATE(HY001) "Allocation failure while starting the transaction");
+				return;
+			}
 			assert(s->schema_name);
 			s->schema = find_sql_schema(s->tr, s->schema_name);
 			assert(s->schema);
@@ -427,7 +429,10 @@ SQLinitClient(Client c)
 	if (SQLinitialized == 0 && (msg = SQLprelude(NULL)) != MAL_SUCCEED)
 		return msg;
 	MT_lock_set(&sql_contextLock);
-	WLRinit();
+	if ((msg = WLRinit()) != MAL_SUCCEED) {
+		MT_lock_unset(&sql_contextLock);
+		return msg;
+	}
 	/*
 	 * Based on the initialization return value we can prepare a SQLinit
 	 * string with all information needed to initialize the catalog
@@ -441,6 +446,7 @@ SQLinitClient(Client c)
 		bstream *fdin;
 
 		if( b == NULL || cbuf == NULL) {
+			MT_lock_unset(&sql_contextLock);
 			GDKfree(b);
 			GDKfree(cbuf);
 			throw(SQL,"sql.initClient",SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -449,12 +455,14 @@ SQLinitClient(Client c)
 		buffer_init(b, cbuf, len);
 		buf = buffer_rastream(b, "si");
 		if( buf == NULL) {
+			MT_lock_unset(&sql_contextLock);
 			buffer_destroy(b);
 			throw(SQL,"sql.initClient",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 
 		fdin = bstream_create(buf, b->len);
 		if( fdin == NULL) {
+			MT_lock_unset(&sql_contextLock);
 			buffer_destroy(b);
 			throw(SQL,"sql.initClient",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
@@ -465,20 +473,30 @@ SQLinitClient(Client c)
 	}
 	if (c->sqlcontext == 0) {
 		m = mvc_create(c->idx, 0, SQLdebug, c->fdin, c->fdout);
-		if( m == NULL)
+		if( m == NULL) {
+			MT_lock_unset(&sql_contextLock);
 			throw(SQL,"sql.initClient",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		if(global_variables(m, "monetdb", "sys"))
+		}
+		if(global_variables(m, "monetdb", "sys") < 0) {
+			MT_lock_unset(&sql_contextLock);
+			mvc_destroy(m);
 			throw(SQL,"sql.initClient",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
 		if (isAdministrator(c) || strcmp(c->scenario, "msql") == 0)	/* console should return everything */
 			m->reply_size = -1;
 		be = (void *) backend_create(m, c);
-		if( be == NULL)
+		if( be == NULL) {
+			MT_lock_unset(&sql_contextLock);
+			mvc_destroy(m);
 			throw(SQL,"sql.initClient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
 	} else {
 		be = c->sqlcontext;
 		m = be->mvc;
-		if(mvc_reset(m, c->fdin, c->fdout, SQLdebug, NR_GLOBAL_VARS) < 0)
+		if(mvc_reset(m, c->fdin, c->fdout, SQLdebug, NR_GLOBAL_VARS) < 0) {
+			MT_lock_unset(&sql_contextLock);
 			throw(SQL,"sql.initClient", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
 		backend_reset(be);
 	}
 	if (m->session->tr)
@@ -488,6 +506,7 @@ SQLinitClient(Client c)
 	schema = monet5_user_set_def_schema(m, c->user);
 	if (!schema) {
 		_DELETE(schema);
+		MT_lock_unset(&sql_contextLock);
 		throw(PERMD, "SQLinitClient", SQLSTATE(08004) "schema authorization error");
 	}
 	_DELETE(schema);
@@ -547,6 +566,7 @@ SQLinitClient(Client c)
 			if (m->sa)
 				sa_destroy(m->sa);
 			m->sa = NULL;
+			m->sqs = NULL;
 		}
 
 #else
@@ -591,6 +611,7 @@ SQLinitClient(Client c)
 					if (m->sa)
 						sa_destroy(m->sa);
 					m->sa = NULL;
+					m->sqs = NULL;
 					if (newmsg){
 						fprintf(stderr,"%s",newmsg);
 						GDKfree(newmsg);
@@ -602,6 +623,7 @@ SQLinitClient(Client c)
 			fprintf(stderr, "!could not read createdb.sql\n");
 #endif
 	} else {		/* handle upgrades */
+		m->sqs = NULL;
 		if (!m->sa)
 			m->sa = sa_create();
 		if (!m->sa) {
@@ -715,6 +737,8 @@ SQLcompile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = SQLstatementIntern(cntxt, expr, "SQLcompile", FALSE, FALSE, NULL);
 	if (msg == MAL_SUCCEED)
 		*ret = _STRDUP("SQLcompile");
+	if(*ret == NULL)
+		throw(SQL,"sql.compile",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return msg;
 }
 
@@ -761,6 +785,7 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (m->sa)
 		sa_destroy(m->sa);
 	m->sa = NULL;
+	m->sqs = NULL;
 	(void) mb;
 	return msg;
 }
@@ -997,7 +1022,8 @@ SQLparser(Client c)
 
 	/* sqlparse needs sql allocator to be available.  It can be NULL at
 	 * this point if this is a recursive call. */
-	if (!m->sa)
+	m->sqs = NULL;
+	if (!m->sa) 
 		m->sa = sa_create();
 	if (!m->sa) {
 		c->mode = FINISHCLIENT;

@@ -553,7 +553,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	BUN p, q, r;
 	const void *v, *pv;
 	BATiter bi;
-	char *ext = NULL;
 	Hash *hs = NULL;
 	BUN hb;
 	BUN maxgrps;
@@ -1085,7 +1084,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	} else {
 		bit gc = g && (BATordered(g) || BATordered_rev(g));
 		const char *nme;
-		size_t nmelen;
 		Heap *hp = NULL;
 		BUN prb;
 		int bits;
@@ -1111,28 +1109,20 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted, gc ? " (g clustered)" : "");
 		nme = BBP_physical(b->batCacheid);
-		nmelen = strlen(nme);
 		mask = MAX(HASHmask(cnt), 1 << 16);
 		/* mask is a power of two, so pop(mask - 1) tells us
 		 * which power of two */
 		bits = 8 * SIZEOF_OID - pop(mask - 1);
 		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
 		    (hp->farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
-		    (hp->filename = GDKmalloc(nmelen + 30)) == NULL ||
-		    snprintf(hp->filename, nmelen + 30,
-			     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
-		    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
+		    snprintf(hp->filename, sizeof(hp->filename),
+			     "%s.hash%d", nme, THRgettid()) < 0 ||
 		    (hs = HASHnew(hp, b->ttype, BUNlast(b),
 				  mask, BUN_NONE)) == NULL) {
 			if (hp) {
-				if (hp->filename)
-					GDKfree(hp->filename);
 				GDKfree(hp);
 			}
-			if (ext)
-				GDKfree(ext);
 			hp = NULL;
-			ext = NULL;
 			GDKerror("BATgroup: cannot allocate hash table\n");
 			goto error;
 		}
@@ -1223,7 +1213,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		HEAPfree(hp, 1);
 		GDKfree(hp);
 		GDKfree(hs);
-		GDKfree(ext);
 	}
 	if (extents) {
 		BATsetcount(en, (BUN) ngrp);
