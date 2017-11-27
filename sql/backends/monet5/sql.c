@@ -4196,7 +4196,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								sz = IMPSimprintsize(bn);
 								if (BUNappend(imprints, &sz, FALSE) != GDK_SUCCEED)
 									goto bailout;
-								/*printf(" indices "BUNFMT, bn->thash?bn->thash->heap->size:0); */
+								/*printf(" indices "BUNFMT, bn->thash?bn->thash->heap.size:0); */
 								/*printf("\n"); */
 
 								bitval = BATtordered(bn);
@@ -4297,7 +4297,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									if (BUNappend(heap, &sz, FALSE) != GDK_SUCCEED)
 										goto bailout;
 
-									sz = bn->thash && bn->thash != (Hash *) 1 ? bn->thash->heap->size : 0; /* HASHsize() */
+									sz = bn->thash && bn->thash != (Hash *) 1 ? bn->thash->heap.size : 0; /* HASHsize() */
 									if (BUNappend(indices, &sz, FALSE) != GDK_SUCCEED)
 										goto bailout;
 									bitval = 0; /* HASHispersistent(bn); */
@@ -4307,7 +4307,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									sz = IMPSimprintsize(bn);
 									if (BUNappend(imprints, &sz, FALSE) != GDK_SUCCEED)
 										goto bailout;
-									/*printf(" indices "BUNFMT, bn->thash?bn->thash->heap->size:0); */
+									/*printf(" indices "BUNFMT, bn->thash?bn->thash->heap.size:0); */
 									/*printf("\n"); */
 									bitval = BATtordered(bn);
 									if (!bitval && bn->tnosorted == 0)

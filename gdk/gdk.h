@@ -621,7 +621,7 @@ typedef struct {
 	BUN mask;		/* number of hash buckets-1 (power of 2) */
 	void *Hash;		/* hash table */
 	void *Link;		/* collision list */
-	Heap *heap;		/* heap where the hash is stored */
+	Heap heap;		/* heap where the hash is stored */
 } Hash;
 
 typedef struct Imprints Imprints;
