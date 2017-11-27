@@ -2180,9 +2180,9 @@ BATassertProps(BAT *b)
 			snprintf(hp->filename, sizeof(hp->filename),
 				 "%s.hash%d", nme, THRgettid());
 			if (ATOMsize(b->ttype) == 1)
-				mask = 1 << 8;
+				mask = (BUN) 1 << 8;
 			else if (ATOMsize(b->ttype) == 2)
-				mask = 1 << 16;
+				mask = (BUN) 1 << 16;
 			else
 				mask = HASHmask(b->batCount);
 			if ((hp->farmid = BBPselectfarm(TRANSIENT, b->ttype,
