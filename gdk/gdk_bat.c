@@ -1163,6 +1163,8 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 	HASHdestroy(b);
 	PROPdestroy(b->tprops);
 	b->tprops = NULL;
+	OIDXdestroy(b);
+	IMPSdestroy(b);
 	Treplacevalue(b, BUNtloc(bi, p), t);
 
 	tt = b->ttype;
