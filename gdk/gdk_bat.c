@@ -2167,8 +2167,6 @@ BATassertProps(BAT *b)
 			/* we need to check for uniqueness the hard
 			 * way (i.e. using a hash table) */
 			const char *nme = BBP_physical(b->batCacheid);
-			char *ext;
-			size_t nmelen = strlen(nme);
 			Heap *hp;
 			Hash *hs = NULL;
 			BUN mask;
@@ -2181,7 +2179,6 @@ BATassertProps(BAT *b)
 			}
 			snprintf(hp->filename, sizeof(hp->filename),
 				 "%s.hash%d", nme, THRgettid());
-			ext = GDKstrdup(hp->filename + nmelen + 1);
 			if (ATOMsize(b->ttype) == 1)
 				mask = 1 << 8;
 			else if (ATOMsize(b->ttype) == 2)
@@ -2192,7 +2189,6 @@ BATassertProps(BAT *b)
 							hashheap)) < 0 ||
 			    (hs = HASHnew(hp, b->ttype, BUNlast(b),
 					  mask, BUN_NONE)) == NULL) {
-				GDKfree(ext);
 				GDKfree(hp);
 				fprintf(stderr,
 					"#BATassertProps: cannot allocate "
@@ -2219,7 +2215,6 @@ BATassertProps(BAT *b)
 			HEAPfree(hp, 1);
 			GDKfree(hp);
 			GDKfree(hs);
-			GDKfree(ext);
 		}
 	  abort_check:
 		assert(!b->tnil || seennil);

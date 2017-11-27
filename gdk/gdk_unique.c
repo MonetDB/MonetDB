@@ -34,7 +34,6 @@ BATunique(BAT *b, BAT *s)
 	oid i, o;
 	unsigned short *seen = NULL;
 	const char *nme;
-	char *ext = NULL;
 	Heap *hp = NULL;
 	Hash *hs = NULL;
 	BUN hb;
@@ -287,7 +286,6 @@ BATunique(BAT *b, BAT *s)
 			}
 		}
 	} else {
-		size_t nmelen;
 		BUN prb;
 		BUN p;
 		BUN mask;
@@ -298,7 +296,6 @@ BATunique(BAT *b, BAT *s)
 				  s ? BATgetId(s) : "NULL",
 				  s ? BATcount(s) : 0);
 		nme = BBP_physical(b->batCacheid);
-		nmelen = strlen(nme);
 		if (ATOMbasetype(b->ttype) == TYPE_bte) {
 			mask = (BUN) 1 << 8;
 			cmp = NULL; /* no compare needed, "hash" is perfect */
@@ -316,13 +313,9 @@ BATunique(BAT *b, BAT *s)
 		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
 		    snprintf(hp->filename, sizeof(hp->filename),
 			     "%s.hash%d", nme, THRgettid()) < 0 ||
-		    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
 		    (hs = HASHnew(hp, b->ttype, BUNlast(b), mask, BUN_NONE)) == NULL) {
 			GDKfree(hp);
-			if (ext)
-				GDKfree(ext);
 			hp = NULL;
-			ext = NULL;
 			GDKerror("BATunique: cannot allocate hash table\n");
 			goto bunins_failed;
 		}
@@ -358,7 +351,6 @@ BATunique(BAT *b, BAT *s)
 		HEAPfree(hp, 1);
 		GDKfree(hp);
 		GDKfree(hs);
-		GDKfree(ext);
 	}
 
 	bn->tsorted = 1;
@@ -375,7 +367,6 @@ BATunique(BAT *b, BAT *s)
 		HEAPfree(hp, 1);
 		GDKfree(hp);
 		GDKfree(hs);
-		GDKfree(ext);
 	}
 	BBPreclaim(bn);
 	return NULL;
