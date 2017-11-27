@@ -53,7 +53,7 @@
 char *
 GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 {
-	char sep[2];
+	const char *sep;
 	size_t pathlen;
 	char *path;
 
@@ -67,10 +67,9 @@ GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 	if (dir && *dir == DIR_SEP)
 		dir++;
 	if (dir == NULL || dir[0] == 0 || dir[strlen(dir) - 1] == DIR_SEP) {
-		sep[0] = 0;
+		sep = "";
 	} else {
-		sep[0] = DIR_SEP;
-		sep[1] = 0;
+		sep = DIR_SEP_STR;
 	}
 	pathlen = (farmid == NOFARM ? 0 : strlen(BBPfarms[farmid].dirname) + 1) +
 		(dir ? strlen(dir) : 0) + strlen(sep) + strlen(name) +
@@ -250,7 +249,7 @@ GDKfilelocate(int farmid, const char *nme, const char *mode, const char *extensi
 }
 
 FILE *
-GDKfileopen(int farmid, const char * dir, const char *name, const char *extension, const char *mode)
+GDKfileopen(int farmid, const char *dir, const char *name, const char *extension, const char *mode)
 {
 	char *path;
 
