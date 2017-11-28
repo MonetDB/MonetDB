@@ -320,6 +320,22 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 
 	if (BATcheckorderidx(b))
 		return GDK_SUCCEED;
+	switch (ATOMstorage(b->ttype)) {
+	case TYPE_bte:
+	case TYPE_sht:
+	case TYPE_int:
+	case TYPE_lng:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
+	case TYPE_flt:
+	case TYPE_dbl:
+		break;
+	default:
+		GDKerror("GDKmergeidx: type %s not supported.\n",
+			 ATOMname(b->ttype));
+		return GDK_FAIL;
+	}
 	MT_lock_set(&GDKhashLock(b->batCacheid));
 	if (b->torderidx) {
 		MT_lock_unset(&GDKhashLock(b->batCacheid));
@@ -384,7 +400,6 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 #endif
 		case TYPE_flt: BINARY_MERGE(flt); break;
 		case TYPE_dbl: BINARY_MERGE(dbl); break;
-		case TYPE_str:
 		default:
 			/* TODO: support strings, date, timestamps etc. */
 			assert(0);
