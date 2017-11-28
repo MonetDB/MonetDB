@@ -191,6 +191,7 @@ mapi_export int64_t mapi_get_row_count(MapiHdl hdl);
 mapi_export int64_t mapi_get_last_id(MapiHdl hdl);
 mapi_export int64_t mapi_rows_affected(MapiHdl hdl);
 mapi_export int64_t mapi_get_querytime(MapiHdl hdl);
+mapi_export int64_t mapi_get_maloptimizertime(MapiHdl hdl);
 
 mapi_export char *mapi_fetch_field(MapiHdl hdl, int fnr);
 mapi_export size_t mapi_fetch_field_len(MapiHdl hdl, int fnr);

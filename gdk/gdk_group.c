@@ -1084,7 +1084,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	} else {
 		bit gc = g && (BATordered(g) || BATordered_rev(g));
 		const char *nme;
-		Heap *hp = NULL;
 		BUN prb;
 		int bits;
 		BUN mask;
@@ -1113,16 +1112,14 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		/* mask is a power of two, so pop(mask - 1) tells us
 		 * which power of two */
 		bits = 8 * SIZEOF_OID - pop(mask - 1);
-		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
-		    (hp->farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
-		    snprintf(hp->filename, sizeof(hp->filename),
+		if ((hs = GDKzalloc(sizeof(Hash))) == NULL ||
+		    (hs->heap.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
+		    snprintf(hs->heap.filename, sizeof(hs->heap.filename),
 			     "%s.hash%d", nme, THRgettid()) < 0 ||
-		    (hs = HASHnew(hp, b->ttype, BUNlast(b),
-				  mask, BUN_NONE)) == NULL) {
-			if (hp) {
-				GDKfree(hp);
-			}
-			hp = NULL;
+		    HASHnew(hs, b->ttype, BUNlast(b),
+			    mask, BUN_NONE) != GDK_SUCCEED) {
+			GDKfree(hs);
+			hs = NULL;
 			GDKerror("BATgroup: cannot allocate hash table\n");
 			goto error;
 		}
@@ -1210,8 +1207,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			GRP_create_partial_hash_table_any();
 		}
 
-		HEAPfree(hp, 1);
-		GDKfree(hp);
+		HEAPfree(&hs->heap, 1);
 		GDKfree(hs);
 	}
 	if (extents) {
@@ -1247,6 +1243,10 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	*groups = gn;
 	return GDK_SUCCEED;
   error:
+	if (hs != NULL && hs != b->thash) {
+		HEAPfree(&hs->heap, 1);
+		GDKfree(hs);
+	}
 	if (gn)
 		BBPunfix(gn->batCacheid);
 	if (en)

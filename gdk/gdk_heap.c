@@ -575,6 +575,7 @@ HEAPfree(Heap *h, int rmheap)
 					  h->size, (int) ret);
 		}
 	}
+	h->base = NULL;
 #ifdef HAVE_FORK
 	if (h->storage == STORE_MMAPABS)  {
 		/* heap is stored in a mmap() file, but h->filename
@@ -582,10 +583,8 @@ HEAPfree(Heap *h, int rmheap)
 		if (remove(h->filename) != 0 && errno != ENOENT) {
 			perror(h->filename);
 		}
-		rmheap = 0;
-	}
+	} else
 #endif
-	h->base = NULL;
 	if (rmheap) {
 		char *path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
 		if (path && remove(path) != 0 && errno != ENOENT)

@@ -2061,14 +2061,14 @@ BBPdump(void)
 		if (b->thash && b->thash != (Hash *) -1) {
 			fprintf(stderr,
 				" Thash=[" SZFMT "," SZFMT "]",
-				HEAPmemsize(b->thash->heap),
-				HEAPvmsize(b->thash->heap));
+				HEAPmemsize(&b->thash->heap),
+				HEAPvmsize(&b->thash->heap));
 			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-				cmem += HEAPmemsize(b->thash->heap);
-				cvm += HEAPvmsize(b->thash->heap);
+				cmem += HEAPmemsize(&b->thash->heap);
+				cvm += HEAPvmsize(&b->thash->heap);
 			} else {
-				mem += HEAPmemsize(b->thash->heap);
-				vm += HEAPvmsize(b->thash->heap);
+				mem += HEAPmemsize(&b->thash->heap);
+				vm += HEAPvmsize(&b->thash->heap);
 			}
 		}
 		fprintf(stderr, " role: %s, persistence: %s\n",

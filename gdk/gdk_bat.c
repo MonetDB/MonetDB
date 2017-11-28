@@ -1145,6 +1145,8 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 	HASHdestroy(b);
 	PROPdestroy(b->tprops);
 	b->tprops = NULL;
+	OIDXdestroy(b);
+	IMPSdestroy(b);
 	Treplacevalue(b, BUNtloc(bi, p), t);
 
 	tt = b->ttype;
@@ -1408,7 +1410,7 @@ BATvmsize(BAT *b, int dirty)
 	if (b->batDirty || (b->batPersistence != TRANSIENT && !b->batCopiedtodisk))
 		dirty = 0;
 	return (!dirty || b->theap.dirty ? HEAPvmsize(&b->theap) : 0) +
-		((!dirty || b->theap.dirty) && b->thash && b->thash != (Hash *) 1 ? HEAPvmsize(b->thash->heap) : 0) +
+		((!dirty || b->theap.dirty) && b->thash && b->thash != (Hash *) 1 ? HEAPvmsize(&b->thash->heap) : 0) +
 		(b->tvheap && (!dirty || b->tvheap->dirty) ? HEAPvmsize(b->tvheap) : 0);
 }
 
@@ -1421,7 +1423,7 @@ BATmemsize(BAT *b, int dirty)
 		dirty = 0;
 	return (!dirty || b->batDirtydesc ? sizeof(BAT) : 0) +
 		(!dirty || b->theap.dirty ? HEAPmemsize(&b->theap) : 0) +
-		((!dirty || b->theap.dirty) && b->thash && b->thash != (Hash *) 1 ? HEAPmemsize(b->thash->heap) : 0) +
+		((!dirty || b->theap.dirty) && b->thash && b->thash != (Hash *) 1 ? HEAPmemsize(&b->thash->heap) : 0) +
 		(b->tvheap && (!dirty || b->tvheap->dirty) ? HEAPmemsize(b->tvheap) : 0);
 }
 
@@ -2167,17 +2169,16 @@ BATassertProps(BAT *b)
 			/* we need to check for uniqueness the hard
 			 * way (i.e. using a hash table) */
 			const char *nme = BBP_physical(b->batCacheid);
-			Heap *hp;
 			Hash *hs = NULL;
 			BUN mask;
 
-			if ((hp = GDKzalloc(sizeof(Heap))) == NULL) {
+			if ((hs = GDKzalloc(sizeof(Hash))) == NULL) {
 				fprintf(stderr,
 					"#BATassertProps: cannot allocate "
 					"hash table\n");
 				goto abort_check;
 			}
-			snprintf(hp->filename, sizeof(hp->filename),
+			snprintf(hs->heap.filename, sizeof(hs->heap.filename),
 				 "%s.hash%d", nme, THRgettid());
 			if (ATOMsize(b->ttype) == 1)
 				mask = (BUN) 1 << 8;
@@ -2185,11 +2186,11 @@ BATassertProps(BAT *b)
 				mask = (BUN) 1 << 16;
 			else
 				mask = HASHmask(b->batCount);
-			if ((hp->farmid = BBPselectfarm(TRANSIENT, b->ttype,
+			if ((hs->heap.farmid = BBPselectfarm(TRANSIENT, b->ttype,
 							hashheap)) < 0 ||
-			    (hs = HASHnew(hp, b->ttype, BUNlast(b),
-					  mask, BUN_NONE)) == NULL) {
-				GDKfree(hp);
+			    HASHnew(hs, b->ttype, BUNlast(b),
+				    mask, BUN_NONE) != GDK_SUCCEED) {
+				GDKfree(hs);
 				fprintf(stderr,
 					"#BATassertProps: cannot allocate "
 					"hash table\n");
@@ -2212,8 +2213,7 @@ BATassertProps(BAT *b)
 				if (cmp == 0)
 					seennil = 1;
 			}
-			HEAPfree(hp, 1);
-			GDKfree(hp);
+			HEAPfree(&hs->heap, 1);
 			GDKfree(hs);
 		}
 	  abort_check:
