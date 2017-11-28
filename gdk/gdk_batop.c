@@ -1378,6 +1378,11 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		GDKerror("BATsort: b must exist\n");
 		return GDK_FAIL;
 	}
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("BATsort: type %s cannot be sorted\n",
+			 ATOMname(b->ttype));
+		return GDK_FAIL;
+	}
 	if (o != NULL &&
 	    (ATOMtype(o->ttype) != TYPE_oid || /* oid tail */
 	     BATcount(o) != BATcount(b) ||     /* same size as b */
