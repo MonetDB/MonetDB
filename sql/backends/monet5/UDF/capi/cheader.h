@@ -1,4 +1,6 @@
 
+#include <stdint.h>
+
 typedef void *(*malloc_function_ptr)(size_t);
 
 typedef struct {
@@ -40,7 +42,7 @@ DEFAULT_STRUCT_DEFINITION(signed char, bit);
 DEFAULT_STRUCT_DEFINITION(signed char, bte);
 DEFAULT_STRUCT_DEFINITION(short, sht);
 DEFAULT_STRUCT_DEFINITION(int, int);
-DEFAULT_STRUCT_DEFINITION(long long, lng);
+DEFAULT_STRUCT_DEFINITION(int64_t, lng);
 DEFAULT_STRUCT_DEFINITION(float, flt);
 DEFAULT_STRUCT_DEFINITION(double, dbl);
 DEFAULT_STRUCT_DEFINITION(char *, str);
