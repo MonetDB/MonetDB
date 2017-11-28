@@ -526,6 +526,7 @@ char *mapi_get_host(Mapi mid);
 char *mapi_get_lang(Mapi mid);
 int64_t mapi_get_last_id(MapiHdl hdl);
 int mapi_get_len(MapiHdl hdl, int fnr);
+int64_t mapi_get_maloptimizertime(MapiHdl hdl);
 char *mapi_get_mapi_version(Mapi mid);
 char *mapi_get_monet_version(Mapi mid);
 char *mapi_get_motd(Mapi mid);
