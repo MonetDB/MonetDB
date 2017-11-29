@@ -1854,6 +1854,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 
 		timerHumanStop();
 		querytime = 0;
+		maloptimizer = 0;
 		switch (mapi_get_querytype(hdl)) {
 		case Q_BLOCK:
 		case Q_PARSE:
