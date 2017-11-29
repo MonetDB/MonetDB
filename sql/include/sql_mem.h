@@ -62,9 +62,9 @@ typedef struct sql_allocator {
 
 extern sql_allocator *sa_create(void);
 extern sql_allocator *sa_reset( sql_allocator *sa );
-extern char *sa_alloc( sql_allocator *sa,  size_t sz );
-extern char *sa_zalloc( sql_allocator *sa,  size_t sz );
-extern char *sa_realloc( sql_allocator *sa,  void *ptr, size_t sz, size_t osz );
+extern void *sa_alloc( sql_allocator *sa,  size_t sz );
+extern void *sa_zalloc( sql_allocator *sa,  size_t sz );
+extern void *sa_realloc( sql_allocator *sa,  void *ptr, size_t sz, size_t osz );
 extern void sa_destroy( sql_allocator *sa );
 extern char *sa_strndup( sql_allocator *sa, const char *s, size_t l);
 extern char *sa_strdup( sql_allocator *sa, const char *s);

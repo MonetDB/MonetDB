@@ -3786,14 +3786,14 @@ def main(argv) :
     if env.get('TSTDATAPATH'):
         CONDITIONALS['HAVE_DATA_PATH'] = '#'
     if CheckExec('perl'):
-        proc = process.Popen(['perl', '-e', 'use MonetDB::CLI::MapiPP'],
+        proc = process.Popen(['perl', '-e', 'use MonetDB::CLI::MapiPP; use DBI;'],
                              stdout = process.PIPE, stderr = process.PIPE,
                              universal_newlines = True)
         perl_out, perl_err = proc.communicate()
         if proc.returncode == 0:
             CONDITIONALS['HAVE_PERL'] = '#'
         else:
-            print('Perl available, but MonetDB driver not available')
+            print('Perl available, but MonetDB driver or DBI module not available')
     if CONDITIONALS['HAVE_LIBR'] and CheckExec('R'):
         proc = process.Popen(['R', '--slave', '--no-save', '--no-restore',
                               '-e', 'print(Sys.getenv("R_LIBS_USER"))'],
