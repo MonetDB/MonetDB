@@ -1,0 +1,57 @@
+stderr of test 'sqlsmith.Bug-6477` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 14:26:12 >  
+# 14:26:12 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39335" "--set" "mapi_usock=/var/tmp/mtest-23479/.s.monetdb.39335" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 14:26:12 >  
+
+# builtin opt 	gdk_dbpath = /home/niels/scratch/rc-monetdb/Linux-x86_64/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 39335
+# cmdline opt 	mapi_usock = /var/tmp/mtest-23479/.s.monetdb.39335
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017
+# cmdline opt 	gdk_debug = 536870922
+
+# 14:26:12 >  
+# 14:26:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23479" "--port=39335"
+# 14:26:12 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-23479/.s.monetdb.39335
+QUERY = select
+          cast(coalesce(ref_0.stop,
+            ref_0.stop) as timestamp) as c0,
+          ref_0.id as c1,
+          cast(coalesce(ref_0.cpu,
+            ref_0.io) as int) as c2,
+          ref_0.run as c3,
+          ref_0.stop as c4,
+          ref_0.cpu as c5,
+          case when cast(nullif(ref_0.tuples,
+                ref_0.tuples) as bigint) is not NULL then ref_0.io else ref_0.io end
+             as c6
+        from
+          sys.querylog_calls as ref_0
+        where cast(coalesce(ref_0.tuples,
+            case when EXISTS (
+                select
+                    ref_1.id as c0
+                  from
+                    sys.args as ref_1
+                      left join tmp.objects as ref_2
+ERROR = !cardinality violation, scalar value expected
+
+# 14:26:12 >  
+# 14:26:12 >  "Done."
+# 14:26:12 >  
+
