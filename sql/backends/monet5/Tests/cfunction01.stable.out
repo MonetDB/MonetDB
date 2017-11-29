@@ -80,8 +80,8 @@ Ready.
 #	return s;
 #END;
 #start continuous function aggr01();
-#select result from tmp.aggr01; #should be empty
-% tmp.aggr01 # table_name
+#select result from cquery.aggr01; #should be empty
+% cquery.aggr01 # table_name
 % result # name
 % int # type
 % 1 # length
@@ -89,8 +89,8 @@ Ready.
 #insert into ftmp values(1),(1);
 [ 2	]
 #resume continuous aggr01;
-#select result from tmp.aggr01; #should return 2
-% tmp.aggr01 # table_name
+#select result from cquery.aggr01; #should return 2
+% cquery.aggr01 # table_name
 % result # name
 % int # type
 % 1 # length
@@ -101,16 +101,16 @@ Ready.
 #insert into ftmp values(3),(3);
 [ 2	]
 #resume continuous aggr01;
-#select result from tmp.aggr01; #should return 2,4,6
-% tmp.aggr01 # table_name
+#select result from cquery.aggr01; #should return 2,4,6
+% cquery.aggr01 # table_name
 % result # name
 % int # type
 % 1 # length
 [ 2	]
 [ 4	]
 [ 6	]
-#select result from tmp.aggr01; #should return 2,4,6
-% tmp.aggr01 # table_name
+#select result from cquery.aggr01; #should return 2,4,6
+% cquery.aggr01 # table_name
 % result # name
 % int # type
 % 1 # length

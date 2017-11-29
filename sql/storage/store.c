@@ -4657,6 +4657,18 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action)
 	}
 }
 
+void
+sql_trans_drop_all_tables(sql_trans *tr, sql_schema *s, list * list_tables, int drop_action)
+{
+	node *n = NULL;
+	sql_table *table = NULL;
+
+	for (n = list_tables->h; n ; n = n->next ) {
+		table = (sql_table *) n->data;
+		sql_trans_drop_table(tr, s, table->base.id, drop_action);
+	}
+}
+
 BUN
 sql_trans_clear_table(sql_trans *tr, sql_table *t)
 {

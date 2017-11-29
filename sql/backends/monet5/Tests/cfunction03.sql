@@ -8,7 +8,7 @@ create function cfunc3(input time) returns table (aa time) begin
     end while;
 end;
 
-start continuous function cfunc3(time '15:00:00') with heartbeat 1000 cycles 3;
+start continuous function cfunc3(time '15:00:00') with heartbeat 100 cycles 3;
 
 call cquery.wait(2000);
 

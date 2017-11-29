@@ -27,7 +27,7 @@
 //#define DEBUG_CQUERY
 //#define DEBUG_CQUERY_SCHEDULER
 
-#define CQINIT        0 /* scheduler about to start */
+#define CQINIT        0 /* scheduler / CQ about to start */
 #define CQWAIT 	      1 /* wait for data */
 #define CQRUNNING     2 /* query is running */
 #define CQPAUSE       3 /* not active now */
@@ -49,7 +49,8 @@ typedef struct {
 	MalStkPtr stk;  /* Needed for execution */
 
 	int status;     /* query status .../wait/running/paused */
-	int enabled;
+	int prev_status;/* previous status when resuming a CQ, either CQINIT or CQWAIT */
+	int enabled;    /* will the query run in the next scheduler's round? */
 	str alias;		/* the created alias for the continuous query */
 
 	int baskets[MAXSTREAMS];	/* reference into the registered basket tables catalog */

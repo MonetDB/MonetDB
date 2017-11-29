@@ -362,6 +362,7 @@ extern sql_table *sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *p
 extern sql_table *sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action);
 
 extern void sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action);
+extern void sql_trans_drop_all_tables(sql_trans *tr, sql_schema *s, list *list_table, int drop_action);
 extern BUN sql_trans_clear_table(sql_trans *tr, sql_table *t);
 extern sql_table *sql_trans_alter_access(sql_trans *tr, sql_table *t, sht access);
 extern sql_table *sql_trans_alter_stream_table(sql_trans *tr, sql_table *t, int operation, int token);

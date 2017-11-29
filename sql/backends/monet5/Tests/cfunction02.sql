@@ -15,7 +15,7 @@ start continuous function cfunc2('test') with heartbeat 1000 cycles 3;
 pause continuous cfunc2;
 
 create procedure cproc2() begin
-    insert into results2 (select aa, bb from tmp.cfunc2);
+    insert into results2 (select aa, bb from cquery.cfunc2);
 end;
 
 start continuous procedure cproc2() with cycles 2;

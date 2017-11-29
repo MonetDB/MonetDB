@@ -1,0 +1,48 @@
+stdout of test 'cfunction03` in directory 'sql/backends/monet5` itself:
+
+
+# 11:35:56 >  
+# 11:35:56 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31963" "--set" "mapi_usock=/var/tmp/mtest-28584/.s.monetdb.31963" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-trails/BUILD/var/MonetDB/mTests_sql_backends_monet5"
+# 11:35:56 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.498 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-170.eduroam.cwi.nl:31963/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28584/.s.monetdb.31963
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Timetrails module loaded
+
+Ready.
+
+# 11:35:56 >  
+# 11:35:56 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28584" "--port=31963"
+# 11:35:56 >  
+
+#create table results3 (aa time);
+#create function cfunc3(input time) returns table (aa time) begin
+#    while true do
+#        insert into results3 values (input);
+#        yield table (select input);
+#    end while;
+#end;
+#start continuous function cfunc3(time '15:00:00') with heartbeat 100 cycles 3;
+#select count(*) from results3;
+% sys.L4 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 3	]
+#drop function cfunc3;
+#drop table results3;
+
+# 11:35:58 >  
+# 11:35:58 >  "Done."
+# 11:35:58 >  
+

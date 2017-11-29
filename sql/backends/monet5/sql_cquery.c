@@ -54,7 +54,7 @@
 #include "mtime.h"
 #include "../../../monetdb5/mal/mal_client.h"
 
-static const str statusname[8] = {"init", "paused", "running", "pausing", "error", "stopping", "stopping", "stopping"};
+static const str statusname[8] = {"starting", "paused", "running", "pausing", "error", "stopping", "stopping", "stopping"};
 
 static str CQstartScheduler(void);
 static int pnstatus = CQINIT;
@@ -113,15 +113,19 @@ CQfree(Client cntxt, int idx) //Always called within a lock
 {
 	int i;
 	InstrPtr p;
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
 
 	//clean the baskets if so
 	cleanBaskets(idx);
 	if(cntxt && pnet[idx].func->res) {
 		backend* be = (backend*) cntxt->sqlcontext;
 		mvc *m = be->mvc;
-		sql_schema *s = mvc_bind_schema(m, "tmp");
-		sql_table *t = mvc_bind_table(m, s, pnet[idx].alias);
-		mvc_drop_table(m, s, t, 0);
+		s = mvc_bind_schema(m, "cquery");
+		if(s)
+			t = mvc_bind_table(m, s, pnet[idx].alias);
+		if(s && t)
+			mvc_drop_table(m, s, t, 0);
 	}
 	if( pnet[idx].mb) {
 		p = getInstrPtr(pnet[idx].mb, 0);
@@ -341,7 +345,7 @@ finish:
 /* Make sure we do not re-use the same source more than once */
 /* Avoid any concurrency conflict */
 static str
-CQanalysis(Client cntxt, MalBlkPtr mb, int idx, sql_func* func, str alias)
+CQanalysis(Client cntxt, MalBlkPtr mb, int idx)
 {
 	int i, j, bskt, binout;
 	InstrPtr p;
@@ -378,15 +382,6 @@ CQanalysis(Client cntxt, MalBlkPtr mb, int idx, sql_func* func, str alias)
 			pnet[idx].inout[j] = binout == 0 ? STREAM_IN : STREAM_OUT;
 		}
 	}
-	if(func->res && msg == MAL_SUCCEED) { //register the output stream into the baskets
-		for( j=0; j< MAXSTREAMS && pnet[idx].baskets[j]; j++);
-		if ( j == MAXSTREAMS){
-			msg = createException(MAL,"cquery.analysis",SQLSTATE(3F000) "Too many stream table columns\n");
-		} else if((msg = BSKTregisterInternal(cntxt,mb,"tmp",alias,&bskt)) == MAL_SUCCEED) {
-			pnet[idx].baskets[j] = bskt;
-			pnet[idx].inout[j] = CQ_OUT;
-		}
-	}
 	return msg;
 }
 
@@ -417,8 +412,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 	int i, idx, varid, freeMB = 0, mvc_var = 0;
 	backend* be = (backend*) cntxt->sqlcontext;
 	mvc *m = be->mvc;
-	sql_schema *s = NULL, *tmp_schema = NULL;
-	sql_table *t = NULL;
+	sql_schema *s = NULL;
 	sql_subfunc *f = NULL;
 	sql_func* found = NULL;
 	list *l;
@@ -466,6 +460,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Failed to bind %s %s.%s\n", err_message, rschema, fname);
 		FREE_CQ_MB(finish)
 	}
+	found = f->func;
 	if((l = list_create(NULL)) == NULL) {
 		CQ_MALLOC_FAIL(finish)
 	}
@@ -496,40 +491,13 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 	if(!ralias) {
 		CQ_MALLOC_FAIL(finish)
 	}
-
-	found = f->func;
-	if(found->res) { //for functions we have to store the results in an output result table
-		if((tmp_schema = mvc_bind_schema(m, "tmp")) == NULL) {
-			msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Failed to bind tmp schema\n");
-			FREE_CQ_MB(finish)
-		}
-		if(mvc_bind_table(m, tmp_schema, ralias)) {
-			msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Table tmp.%s already exists\n", ralias);
-			FREE_CQ_MB(finish)
-		}
-		if((t = mvc_create_stream_table(m, tmp_schema, ralias, tt_stream_temp, 0, SQL_DECLARED_TABLE,
-										CA_PRESERVE, -1, DEFAULT_TABLE_WINDOW, DEFAULT_TABLE_STRIDE)) == NULL) {
-			msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Failed create internal stream table\n");
-			FREE_CQ_MB(finish)
-		}
-		for (argn = found->res->h; argn; argn = argn->next) {
-			sql_arg* arg = (sql_arg *) argn->data;
-			if(!mvc_create_column(m, t, arg->name, &arg->type)) {
-				msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "Failed to create internal stream table\n");
-				FREE_CQ_MB(finish)
-			}
-		}
-		msg = create_table_or_view(m, "tmp", ralias, t, SQL_TEMP_STREAM);
-		//msg = sql_grant_table_privs(m, "public", PRIV_SELECT, "tmp", ralias, NULL, 0, USER_MONETDB);
-	}
-
 	if((mb = newMalBlk(8)) == NULL) { //create MalBlk and initialize it
 		CQ_MALLOC_FAIL(finish)
 	}
 	if((raliasdup = GDKstrdup(ralias)) == NULL) {
 		CQ_MALLOC_FAIL(finish)
 	}
-	if((q = newInstruction(NULL, "tmp", raliasdup)) == NULL) {
+	if((q = newInstruction(NULL, "cquery", raliasdup)) == NULL) {
 		GDKfree(raliasdup);
 		CQ_MALLOC_FAIL(finish)
 	}
@@ -594,14 +562,14 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		q= newStmt(mb, basketRef, registerRef); //register the output basket
 		q= pushArgument(mb, q, mvc_var);
 		getArg(q, 0) = mvc_var = newTmpVariable(mb, TYPE_int);
-		q= pushStr(mb, q, "tmp");
+		q= pushStr(mb, q, "cquery");
 		q= pushStr(mb, q, ralias);
 		q= pushInt(mb, q, 1);
 
 		q= newStmt(mb, basketRef, lockRef); //lock it
 		q= pushArgument(mb, q, mvc_var);
 		getArg(q, 0) = mvc_var = newTmpVariable(mb, TYPE_int);
-		q= pushStr(mb, q, "tmp");
+		q= pushStr(mb, q, "cquery");
 		q= pushStr(mb, q, ralias);
 
 		for (argn = found->res->h; argn; argn = argn->next) {
@@ -613,7 +581,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 			q= newStmt(mb, basketRef, appendRef); //append to the basket the output results of the UDF
 			q= pushArgument(mb, q, mvc_var);
 			getArg(q, 0) = mvc_var = newTmpVariable(mb, TYPE_int);
-			q= pushStr(mb, q, "tmp");
+			q= pushStr(mb, q, "cquery");
 			q= pushStr(mb, q, ralias);
 			q= pushStr(mb, q, arg->name);
 			q= pushArgument(mb, q, nextbid);
@@ -624,7 +592,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		q->barrier = CATCHsymbol;
 
 		q = newStmt(mb,basketRef, errorRef);
-		q = pushStr(mb, q, "tmp");
+		q = pushStr(mb, q, "cquery");
 		q = pushStr(mb, q, ralias);
 		q = pushArgument(mb, q, except_var);
 
@@ -638,7 +606,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		q->barrier = CATCHsymbol;
 
 		q = newStmt(mb,basketRef, errorRef);
-		q = pushStr(mb, q, "tmp");
+		q = pushStr(mb, q, "cquery");
 		q = pushStr(mb, q, ralias);
 		q = pushArgument(mb, q, except_var);
 
@@ -648,7 +616,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 
 		q= newStmt(mb, basketRef, unlockRef); //unlock basket in the end
 		q= pushArgument(mb, q, mvc_var);
-		q= pushStr(mb, q, "tmp");
+		q= pushStr(mb, q, "cquery");
 		q= pushStr(mb, q, ralias);
 	}
 
@@ -697,7 +665,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 				err_message, ralias);
 		FREE_CQ_MB(unlock)
 	}
-	if((msg = CQanalysis(cntxt, sym->def, pnettop, found, ralias)) != MAL_SUCCEED) {
+	if((msg = CQanalysis(cntxt, sym->def, pnettop)) != MAL_SUCCEED) {
 		cleanBaskets(pnettop);
 		FREE_CQ_MB(unlock)
 	}
@@ -725,9 +693,11 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 	//subtract the beats value so the CQ will start at the precise moment
 	pnet[pnettop].run = startat - (pnet[pnettop].beats > 0 ? pnet[pnettop].beats : 0);
 	pnet[pnettop].seen = *timestamp_nil;
-	pnet[pnettop].status = CQWAIT;
+	pnet[pnettop].prev_status = CQINIT;
+	pnet[pnettop].status = CQINIT;
 	pnet[pnettop].error = MAL_SUCCEED;
 	pnet[pnettop].time = 0;
+	pnet[pnettop].enabled = 0;
 	pnettop++;
 
 unlock:
@@ -790,7 +760,7 @@ CQresume(str alias, int with_alter, lng heartbeats, lng startat, int cycles)
 		}
 	}
 
-	pnet[idx].status = CQWAIT;
+	pnet[idx].status = pnet[idx].prev_status;
 	if(pnet[idx].error) { //if there was an error registered, delete it
 		GDKfree(pnet[idx].error);
 		pnet[idx].error = MAL_SUCCEED;
@@ -801,9 +771,6 @@ CQresume(str alias, int with_alter, lng heartbeats, lng startat, int cycles)
 		pnet[idx].run = startat - (pnet[idx].beats > 0 ? pnet[idx].beats : 0);
 	}
 
-	/* start the scheduler if needed */
-	if(cq_pid == 0)
-		msg = CQstartScheduler();
 unlock:
 	MT_lock_unset(&ttrLock);
 finish:
@@ -824,16 +791,12 @@ CQresumeAll(void)
 
 	MT_lock_set(&ttrLock);
 	for(i = 0 ; i < pnettop; i++) {
-		pnet[i].status = CQWAIT;
+		pnet[i].status = pnet[i].prev_status;
 		if(pnet[i].error) {
 			GDKfree(pnet[i].error);
 			pnet[i].error = MAL_SUCCEED;
 		}
 	}
-
-	/* start the scheduler if needed */
-	if(cq_pid == 0)
-		msg = CQstartScheduler();
 	MT_lock_unset(&ttrLock);
 	return msg;
 }
@@ -1072,13 +1035,14 @@ CQderegister(Client cntxt, str alias)
 	MT_Id myID = MT_getpid(), previous_scheduler_ID;
 
 	MT_lock_set(&ttrLock);
+	previous_scheduler_ID = cq_pid;
 	idx = CQlocateAlias(alias);
 	if(idx == pnettop || pnet[idx].status == CQDELETE) {
 		msg = createException(SQL, "cquery.deregister",
 							  SQLSTATE(42000) "The continuous query %s has not yet started\n", alias);
 		goto unlock;
 	}
-	if(myID != cq_pid) {
+	if(myID != previous_scheduler_ID) {
 		pnet[idx].status = CQSTOP;
 		this_alias = pnet[idx].alias;
 		if(pnet[idx].func->res) {
@@ -1098,19 +1062,18 @@ CQderegister(Client cntxt, str alias)
 				goto unlock;
 			}
 		}
-		MT_lock_unset(&ttrLock);
 		// actually wait if the query was running
 		// the CQ might get removed during the sleep calls, so we have to make this check
 		while (idx < pnettop && this_alias == pnet[idx].alias && pnet[idx].status != CQDEREGISTER) {
+			MT_lock_unset(&ttrLock);
 			MT_sleep_ms(5);
+			MT_lock_set(&ttrLock);
 		}
-		MT_lock_set(&ttrLock);
 		if(idx < pnettop && this_alias == pnet[idx].alias) {
 			CQfree(cntxt, idx);
 		}
 		if( pnettop == 0) {
 			pnstatus = CQSTOP;
-			previous_scheduler_ID = cq_pid;
 			MT_lock_unset(&ttrLock);
 			if(previous_scheduler_ID > 0)
 				MT_join_thread(previous_scheduler_ID);
@@ -1141,12 +1104,12 @@ CQderegisterAll(Client cntxt)
 		if(myID != previous_scheduler_ID) {
 			pnet[i].status = CQSTOP;
 			this_alias = pnet[i].alias;
-			MT_lock_unset(&ttrLock);
 			// actually wait if the query was running
 			while(i < pnettop && this_alias == pnet[i].alias && pnet[i].status != CQDEREGISTER ){
+				MT_lock_unset(&ttrLock);
 				MT_sleep_ms(5);
+				MT_lock_set(&ttrLock);
 			}
-			MT_lock_set(&ttrLock);
 			if(i < pnettop && this_alias == pnet[i].alias) {
 				CQfree(cntxt, i);
 			}
@@ -1155,8 +1118,7 @@ CQderegisterAll(Client cntxt)
 		}
 		i--;
 	}
-	if(myID != previous_scheduler_ID)
-		pnstatus = CQSTOP;
+	pnstatus = CQSTOP;
 	MT_lock_unset(&ttrLock);
 	if(myID != previous_scheduler_ID && previous_scheduler_ID > 0)
 		MT_join_thread(previous_scheduler_ID);
@@ -1194,6 +1156,125 @@ CQdump(void *ret)
 	return MAL_SUCCEED;
 }
 
+static void
+CQdropAllTables(Client cntxt)
+{
+	backend* be = (backend*) cntxt->sqlcontext;
+	mvc *m = be->mvc;
+	sql_schema *cquery_schema = NULL;
+	list *list_tables;
+
+	if((cquery_schema = mvc_bind_schema(m, "cquery")) == NULL) {
+		fprintf(stderr, "CQscheduler internal error: Could not bind cquery schema\n");
+		return;
+	}
+	list_tables = schema_bind_tables(m, cquery_schema);
+	if(list_tables) {
+		mvc_drop_all_tables(m, cquery_schema, list_tables, DROP_RESTRICT);
+		list_destroy(list_tables);
+	}
+}
+
+static int
+CQinitTransaction(mvc* m)
+{
+	*m->errstr = 0;
+	SQLtrans(m);
+	if (*m->errstr) {
+		fprintf(stderr, "CQscheduler internal error: %s\n", m->errstr);
+		*m->errstr = 0;
+		return -1;
+	}
+	if (!m->sa) {
+		m->sa = sa_create();
+		if (!m->sa) {
+			fprintf(stderr, "CQscheduler internal error: allocation failure\n");
+			return -1;
+		}
+	}
+	return 0;
+}
+
+static int
+CQcommitTransaction(mvc* m)
+{
+	str msg;
+	if((msg = SQLautocommit(m)) != MAL_SUCCEED) {
+		fprintf(stderr, "CQscheduler internal error: %s\n", msg);
+		return -1;
+	}
+	return 0;
+}
+
+static void
+CQinitOutputTable(Client cntxt, int idx) //Called within the lock
+{
+	int j, bskt;
+	backend* be = (backend*) cntxt->sqlcontext;
+	mvc *m = be->mvc;
+	node *argn = NULL;
+	sql_schema *cquery_schema = NULL;
+	sql_table *t = NULL;
+	sql_func* cqfunc = pnet[idx].func;
+
+	if(pnet[idx].error) {
+		GDKfree(pnet[idx].error);
+		pnet[idx].error = MAL_SUCCEED;
+	}
+	if(cqfunc->res) { //for functions we have to store the results in an output result table
+		if(CQinitTransaction(m)) {
+			pnet[idx].error = createException(SQL,"cquery.register",SQLSTATE(3F000) "Could not start internal transaction\n");
+			goto finish;
+		}
+		if((cquery_schema = mvc_bind_schema(m, "cquery")) == NULL) {
+			pnet[idx].error = createException(SQL,"cquery.register",SQLSTATE(3F000) "Failed to bind cquery schema\n");
+			goto finish;
+		}
+		if(mvc_bind_table(m, cquery_schema, pnet[idx].alias)) {
+			pnet[idx].error = createException(SQL,"cquery.register",SQLSTATE(3F000) "Table cquery.%s already exists\n", pnet[idx].alias);
+			goto finish;
+		}
+		if((t = mvc_create_stream_table(m, cquery_schema, pnet[idx].alias, tt_stream_per, 0, SQL_DECLARED_TABLE,
+										CA_COMMIT, -1, DEFAULT_TABLE_WINDOW, DEFAULT_TABLE_STRIDE)) == NULL) {
+			pnet[idx].error = createException(SQL,"cquery.register",SQLSTATE(3F000) "Failed create internal stream table\n");
+			goto finish;
+		}
+		for (argn = cqfunc->res->h; argn; argn = argn->next) {
+			sql_arg* arg = (sql_arg *) argn->data;
+			if(!mvc_create_column(m, t, arg->name, &arg->type)) {
+				pnet[idx].error = createException(SQL,"cquery.register",SQLSTATE(3F000) "Failed to create internal stream table\n");
+				goto finish;
+			}
+		}
+		if((pnet[idx].error = create_table_or_view(m, "cquery", pnet[idx].alias, t, SQL_PERSISTED_STREAM)) != MAL_SUCCEED)
+			goto finish;
+		//msg = sql_grant_table_privs(m, "public", PRIV_SELECT, "cquery", ralias, NULL, 0, USER_MONETDB);
+
+		for( j=0; j< MAXSTREAMS && pnet[idx].baskets[j]; j++); //register the output stream into the baskets
+		if ( j == MAXSTREAMS){
+			pnet[idx].error = createException(MAL,"cquery.analysis",SQLSTATE(3F000) "Too many stream table columns\n");
+		} else if((pnet[idx].error = BSKTregisterInternal(cntxt, pnet[idx].mb, "cquery", pnet[idx].alias, &bskt)) == MAL_SUCCEED) {
+			pnet[idx].baskets[j] = bskt;
+			pnet[idx].inout[j] = CQ_OUT;
+		}
+	finish:
+		if(pnet[idx].error) {
+			m->session->status = -1; //rollback the transaction
+			pnet[idx].status = CQERROR;
+		}
+		if(CQcommitTransaction(m) && !pnet[idx].error) {
+			pnet[idx].error = createException(SQL,"cquery.register",SQLSTATE(3F000) "Could not commit internal transaction\n");
+			pnet[idx].status = CQERROR;
+		}
+	}
+	if(pnet[idx].error) {
+		CQentry(idx);
+	} else {
+		pnet[idx].prev_status = CQWAIT;
+		pnet[idx].status = CQWAIT;
+	}
+}
+
 /*
  * The PetriNet scheduler lives in an separate thread.
  * It cycles through all transition nodes, hunting for paused queries that can fire.
@@ -1224,16 +1305,30 @@ CQexecute( Client cntxt, int idx)
 	msg = runMALsequence(cntxt, node->mb, 1, 0, node->stk, 0, 0);
 	MT_lock_set(&ttrLock);
 
-	if( msg != MAL_SUCCEED) {
-		node->error = msg;
-		node->status = CQERROR;
-	} else if( node->status != CQSTOP && node->status != CQDELETE)
-		node->status = CQWAIT;
-
+	if(node->status == CQRUNNING) {
+		if( msg != MAL_SUCCEED) {
+			node->error = msg;
+			node->status = CQERROR;
+			CQentry(idx);
+		} else {
+			node->status = CQWAIT;
+		}
+	}
 #ifdef DEBUG_CQUERY
 	fprintf(stderr, "#cquery.execute %s finished %s\n", node->alias, (msg?msg:""));
 #endif
 }
+
+#define DROP_ALL_CQUERY_TABLES                                                                          \
+	do {                                                                                                \
+		if(!CQinitTransaction(m)) {                                                                     \
+			CQdropAllTables(c);                                                                         \
+			if(CQcommitTransaction(m))                                                                  \
+				fprintf(stderr, "CQscheduler internal error: Could not commit internal transaction\n"); \
+		} else {                                                                                        \
+			fprintf(stderr, "CQscheduler internal error: Could not start internal transaction\n");      \
+		}                                                                                               \
+	} while(0);
 
 static void
 CQscheduler(void *dummy)
@@ -1259,6 +1354,7 @@ CQscheduler(void *dummy)
 	}
 
 	MT_lock_set(&ttrLock);
+	DROP_ALL_CQUERY_TABLES
 	pnstatus = CQRUNNING; // global state
 
 	while( pnstatus != CQSTOP  && ! GDKexiting()){
@@ -1282,7 +1378,12 @@ CQscheduler(void *dummy)
 
 		pntasks=0;
 		for (k = i = 0; i < pnettop; i++) {
-			if ( pnet[i].status == CQWAIT ){
+			if ( pnet[i].status == CQINIT || pnet[i].status == CQWAIT ){
+				if(pnet[i].status == CQINIT) {
+					CQinitOutputTable(c, i); //initialize the output streaming table
+					if(pnet[i].status != CQWAIT) //in case of error just skip
+						continue;
+				}
 				pnet[i].enabled = pnet[i].error == 0 && (pnet[i].cycles > 0 || pnet[i].cycles == CYCLES_NIL);
 				/* Queries are triggered by the heartbeat or  all window constraints */
 				/* A heartbeat in combination with a window constraint is ambiguous */
@@ -1371,30 +1472,15 @@ CQscheduler(void *dummy)
 		for (i = 0; i < pnettop ; i++) { //if there is a continuous function to delete, we must start a transaction
 			if (pnet[i].status == CQDELETE) {
 				if (pnet[i].func->res) {
-					*m->errstr = 0;
-					SQLtrans(m);
-					if (*m->errstr) {
-						fprintf(stderr, "CQscheduler internal error: %s\n", m->errstr);
-						*m->errstr = 0;
+					if(CQinitTransaction(m))
 						goto terminate;
-					}
-					if (!m->sa) {
-						m->sa = sa_create();
-						if (!m->sa) {
-							fprintf(stderr, "CQscheduler internal error: allocation failure\n");
-							goto terminate;
-						}
-					}
 					start_trans = 1;
 				}
 				CQfree(c, i);
 				if (start_trans) {
 					start_trans = 0;
-					if((msg = SQLautocommit(m)) != MAL_SUCCEED) {
-						fprintf(stderr, "CQscheduler internal error: %s\n", msg);
-						GDKfree(msg);
+					if(CQcommitTransaction(m))
 						goto terminate;
-					}
 				}
 			}
 		}
@@ -1407,8 +1493,8 @@ CQscheduler(void *dummy)
 #endif
 			MT_lock_unset(&ttrLock);
 			MT_sleep_ms(delay);
-			if( delay < 20 * cycleDelay)
-				delay = (int) (delay *1.2);
+			/*if( delay < 20 * cycleDelay)
+				delay = (int) (delay *1.2);*/
 			MT_lock_set(&ttrLock);
 		}
 	}
@@ -1416,6 +1502,7 @@ CQscheduler(void *dummy)
 	fprintf(stderr, "#cquery.scheduler stopped\n");
 #endif
 terminate:
+	//DROP_ALL_CQUERY_TABLES
 	pnstatus = CQINIT;
 	cq_pid = 0;
 	SQLexitClient(c);
@@ -1521,8 +1608,10 @@ CQprelude(void *ret)
 	pnet = (CQnode *) GDKzalloc(INITIAL_MAXCQ * sizeof(CQnode));
 	pnetLimit = INITIAL_MAXCQ;
 	pnettop = 0;
-	if(pnet == NULL)
+	if(pnet == NULL) {
+		MT_lock_destroy(&ttrLock);
 		throw(MAL, "cquery.prelude",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 	cqfix_set(CQreset);
 	printf("# MonetDB/Timetrails module loaded\n");
 	return MAL_SUCCEED;

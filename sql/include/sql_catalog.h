@@ -604,6 +604,7 @@ extern sql_idx *find_sql_idx(sql_table *t, const char *kname);
 extern sql_column *find_sql_column(sql_table *t, const char *cname);
 
 extern sql_table *find_sql_table(sql_schema *s, const char *tname);
+extern list *find_all_sql_tables(sql_schema *s);
 extern sql_table *find_sql_table_id(sql_schema *s, int id);
 extern node *find_sql_table_node(sql_schema *s, int id);
 

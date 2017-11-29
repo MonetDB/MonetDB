@@ -849,6 +849,19 @@ mvc_bind_table(mvc *m, sql_schema *s, const char *tname)
 	return t;
 }
 
+list *
+schema_bind_tables(mvc *sql, sql_schema * s)
+{
+	list *tables_list = find_all_sql_tables(s);
+
+	(void) sql;
+	if (!tables_list)
+		return NULL;
+	if (mvc_debug)
+		fprintf(stderr, "#schema_bind_tables\n");
+	return tables_list;
+}
+
 sql_column *
 mvc_bind_column(mvc *m, sql_table *t, const char *cname)
 {
@@ -1261,6 +1274,15 @@ mvc_drop_table(mvc *m, sql_schema *s, sql_table *t, int drop_action)
 		fprintf(stderr, "#mvc_drop_table %s %s\n", s->base.name, t->base.name);
 
 	sql_trans_drop_table(m->session->tr, s, t->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
+}
+
+void
+mvc_drop_all_tables(mvc *m, sql_schema *s, list *list_table, int drop_action)
+{
+	if (mvc_debug)
+		fprintf(stderr, "#mvc_drop_all_tables %s\n", s->base.name);
+
+	sql_trans_drop_all_tables(m->session->tr, s, list_table, drop_action);
 }
 
 BUN

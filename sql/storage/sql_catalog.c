@@ -184,6 +184,26 @@ find_sql_table(sql_schema *s, const char *tname)
 	return _cs_find_name(&s->tables, tname);
 }
 
+list *
+find_all_sql_tables(sql_schema * s)
+{
+	list *l = s->tables.set, *res = NULL;
+	node *n = NULL;
+
+	if (l) {
+		for (n = l->h; n; n = n->next) {
+			sql_table *t = n->data;
+			if (!res)
+				res = list_create((fdestroy)NULL);
+			if (!res) {
+				return NULL;
+			}
+			list_append(res, t);
+		}
+	}
+	return res;
+}
+
 sql_table *
 find_sql_table_id(sql_schema *s, int id)
 {

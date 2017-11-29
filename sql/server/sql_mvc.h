@@ -179,6 +179,7 @@ extern list *schema_bind_func(mvc *sql, sql_schema * s, const char *name, int ty
 
 extern sql_schema *mvc_bind_schema(mvc *c, const char *sname);
 extern sql_table *mvc_bind_table(mvc *c, sql_schema *s, const char *tname);
+extern list *schema_bind_tables(mvc *sql, sql_schema *s);
 extern sql_column *mvc_bind_column(mvc *c, sql_table *t, const char *cname);
 extern sql_column *mvc_first_column(mvc *c, sql_table *t);
 extern sql_idx *mvc_bind_idx(mvc *c, sql_schema *s, const char *iname);
@@ -197,6 +198,7 @@ extern void mvc_drop_schema(mvc *c, sql_schema *s, int drop_action);
 extern sql_schema *mvc_create_schema(mvc *m, const char *name, int auth_id, int owner);
 extern BUN mvc_clear_table(mvc *m, sql_table *t);
 extern void mvc_drop_table(mvc *c, sql_schema *s, sql_table * t, int drop_action);
+extern void mvc_drop_all_tables(mvc *m, sql_schema *s, list *list_table, int drop_action);
 extern sql_table *mvc_create_table(mvc *c, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz);
 extern sql_table *mvc_create_view(mvc *c, sql_schema *s, const char *name, int persistence, const char *sql, bit system);
 extern sql_table *mvc_create_remote(mvc *c, sql_schema *s, const char *name, int persistence, const char *loc);
