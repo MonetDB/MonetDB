@@ -95,3 +95,4 @@ HAVE_LIBPY?python_loader_clobbers_default_with_null.Bug-6464
 skip_problem_best_effort.Bug-6442
 date_to_str.Bug-6467
 cleanup_statistics.Bug-6439
+update_on_procedure.Bug-6479.sql
