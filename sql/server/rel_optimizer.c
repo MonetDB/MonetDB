@@ -1192,8 +1192,11 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		} else {
 			ne = exps_bind_column(f->exps, e->r, NULL);
 		}
-		if (!ne) 
+		if (!ne) {
 			ne = mvc_find_subexp(sql, e->l?e->l:e->r, e->r);
+			if (ne)
+				return e;
+		}
 		if (!ne)
 			return e;
 		e = NULL;
