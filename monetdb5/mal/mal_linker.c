@@ -256,12 +256,16 @@ loadLibrary(str filename, int flag)
 		filesLoaded[lastfile].modname = GDKstrdup(filename);
 		if(filesLoaded[lastfile].modname == NULL) {
 			MT_lock_unset(&mal_contextLock);
+			if (handle)
+				dlclose(handle);
 			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " could not allocate space");
 		}
 		filesLoaded[lastfile].fullname = GDKstrdup(handle ? nme : "");
 		if(filesLoaded[lastfile].fullname == NULL) {
 			GDKfree(filesLoaded[lastfile].modname);
 			MT_lock_unset(&mal_contextLock);
+			if (handle)
+				dlclose(handle);
 			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " could not allocate space");
 		}
 		filesLoaded[lastfile].handle = handle ? handle : filesLoaded[0].handle;
