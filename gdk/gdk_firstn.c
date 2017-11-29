@@ -735,7 +735,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 			BBPunfix(bn1->batCacheid);
 			return  GDK_FAIL;
 		}
-		bn4 = BATselect(b, bn3, BUNtail(bi, last - b->hseqbase), NULL, 1, 0, 0);
+		bn4 = BATselect(b, bn3, BUNtail(bi, BUNlast(b) - b->hseqbase), NULL, 1, 0, 0);
 		BBPunfix(bn3->batCacheid);
 		if (bn4 == NULL) {
 			BBPunfix(bn1->batCacheid);
