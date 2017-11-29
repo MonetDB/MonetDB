@@ -38,16 +38,25 @@ typedef struct {
 		void *bat;                                                             \
 	}
 
-DEFAULT_STRUCT_DEFINITION(signed char, bit);
-DEFAULT_STRUCT_DEFINITION(signed char, bte);
-DEFAULT_STRUCT_DEFINITION(short, sht);
+typedef int8_t bit;
+typedef int8_t bte;
+typedef int16_t sht;
+typedef int64_t lng;
+typedef size_t oid;
+typedef float flt;
+typedef double dbl;
+typedef char *str;
+
+DEFAULT_STRUCT_DEFINITION(bit, bit);
+DEFAULT_STRUCT_DEFINITION(bte, bte);
+DEFAULT_STRUCT_DEFINITION(sht, sht);
 DEFAULT_STRUCT_DEFINITION(int, int);
-DEFAULT_STRUCT_DEFINITION(int64_t, lng);
-DEFAULT_STRUCT_DEFINITION(float, flt);
-DEFAULT_STRUCT_DEFINITION(double, dbl);
-DEFAULT_STRUCT_DEFINITION(char *, str);
+DEFAULT_STRUCT_DEFINITION(lng, lng);
+DEFAULT_STRUCT_DEFINITION(flt, flt);
+DEFAULT_STRUCT_DEFINITION(dbl, dbl);
+DEFAULT_STRUCT_DEFINITION(str, str);
 DEFAULT_STRUCT_DEFINITION(cudf_data_date, date);
 DEFAULT_STRUCT_DEFINITION(cudf_data_time, time);
 DEFAULT_STRUCT_DEFINITION(cudf_data_timestamp, timestamp);
 DEFAULT_STRUCT_DEFINITION(cudf_data_blob, blob);
-DEFAULT_STRUCT_DEFINITION(size_t, oid);
+DEFAULT_STRUCT_DEFINITION(oid, oid);
