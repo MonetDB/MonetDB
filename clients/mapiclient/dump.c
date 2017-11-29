@@ -15,6 +15,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "msqldump.h"
+#include "dumpcomment.h"
 
 static void
 quoted_print(stream *f, const char *s, const char singleq)
@@ -347,6 +348,7 @@ toUpper(const char *s)
 static int dump_column_definition(
 	Mapi mid,
 	stream *toConsole,
+	comment_buffer *comments,
 	const char *schema,
 	const char *tname,
 	const char *tid,
@@ -464,7 +466,7 @@ dump_type(Mapi mid, stream *toConsole, char *c_type, char *c_type_digits, char *
 		space = mnstr_printf(toConsole, "DECIMAL");
 	} else if (strcmp(c_type, "table") == 0) {
 		mnstr_printf(toConsole, "TABLE ");
-		dump_column_definition(mid, toConsole, NULL, NULL, c_type_digits, 1, hashge);
+		dump_column_definition(mid, toConsole, NULL, NULL, NULL, c_type_digits, 1, hashge);
 	} else if (strcmp(c_type, "geometry") == 0 &&
 		   strcmp(c_type_digits, "0") != 0) {
 		const char *geom = NULL;
@@ -500,7 +502,7 @@ dump_type(Mapi mid, stream *toConsole, char *c_type, char *c_type_digits, char *
 }
 
 static int
-dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const char *tname, const char *tid, int foreign, int hashge)
+dump_column_definition(Mapi mid, stream *toConsole, comment_buffer *comments, const char *schema, const char *tname, const char *tid, int foreign, int hashge)
 {
 	MapiHdl hdl = NULL;
 	char *query;
@@ -528,8 +530,9 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 				"c.type_scale, "	/* 3 */
 				"c.\"null\", "		/* 4 */
 				"c.\"default\", "	/* 5 */
-				"c.number "		/* 6 */
-			 "FROM sys._columns c "
+				"c.number, "		/* 6 */
+				"rem.remark "            /* 7 */
+			 "FROM sys._columns c LEFT OUTER JOIN sys.comments rem ON c.id = rem.id "
 			 "WHERE c.table_id = %s "
 			 "ORDER BY number", tid);
 	else
@@ -540,8 +543,9 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 				"c.type_scale, "	/* 3 */
 				"c.\"null\", "		/* 4 */
 				"c.\"default\", "	/* 5 */
-				"c.number "		/* 6 */
-			 "FROM sys._columns c, "
+				"c.number, "		/* 6 */
+				"rem.remark "		/* 7 */
+			 "FROM sys._columns c LEFT OUTER JOIN sys.comments rem ON c.id = rem.id, "
 			      "sys._tables t, "
 			      "sys.schemas s "
 			 "WHERE c.table_id = t.id AND "
@@ -561,6 +565,7 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 		char *c_type_scale = mapi_fetch_field(hdl, 3);
 		char *c_null = mapi_fetch_field(hdl, 4);
 		char *c_default = mapi_fetch_field(hdl, 5);
+		char *c_remark = mapi_fetch_field(hdl, 7);
 		int space;
 
 		if (mapi_error(mid))
@@ -579,6 +584,9 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const ch
 		if (c_default != NULL)
 			mnstr_printf(toConsole, "%*s DEFAULT %s",
 					CAP(13 - space), "", c_default);
+
+		if (schema && tname) 
+			append_comment(comments, "COLUMN", schema, tname, c_name, NULL, c_remark);
 		cnt++;
 		if (mnstr_errnr(toConsole))
 			goto bailout;
@@ -744,10 +752,12 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 	MapiHdl hdl = NULL;
 	char *query;
 	char *view = NULL;
+	char *remark = NULL;
 	int type = 0;
 	size_t maxquerylen;
 	char *sname = NULL;
 	int hashge;
+	comment_buffer *comments = comment_buffer_create();
 
 	if (schema == NULL) {
 		if ((sname = strchr(tname, '.')) != NULL) {
@@ -769,8 +779,8 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 
 	query = malloc(maxquerylen);
 	snprintf(query, maxquerylen,
-		 "SELECT t.name, t.query, t.type "
-		 "FROM sys._tables t, sys.schemas s "
+		 "SELECT t.name, t.query, t.type, c.remark "
+		 "FROM sys.schemas s, sys._tables t LEFT OUTER JOIN sys.comments c ON t.id = c.id "
 		 "WHERE s.name = '%s' AND "
 		       "t.schema_id = s.id AND "
 		       "t.name = '%s'",
@@ -785,11 +795,13 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 		if (view)
 			type = atoi(view);
 		view = mapi_fetch_field(hdl, 1);
+		remark = mapi_fetch_field(hdl, 3);
 	}
 	if (mapi_error(mid)) {
 		view = NULL;
 		goto bailout;
 	}
+	append_comment(comments, type != 1 ? "TABLE" : "VIEW", sname, tname, NULL, NULL, remark);
 	if (view)
 		view = strdup(view);
 	mapi_close_handle(hdl);
@@ -817,7 +829,7 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 			     "",
 			     schema, tname);
 
-		if (dump_column_definition(mid, toConsole, schema, tname, NULL, foreign, hashge))
+		if (dump_column_definition(mid, toConsole, comments, schema, tname, NULL, foreign, hashge))
 			goto bailout;
 		if (type == 5)
 			mnstr_printf(toConsole, " ON '%s'", view);
@@ -878,6 +890,9 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 			goto bailout;
 	}
 
+	write_comment_buffer(toConsole, comments);
+	comment_buffer_destroy(comments);
+
 	if (hdl)
 		mapi_close_handle(hdl);
 	if (view)
@@ -903,6 +918,7 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 		free(sname);
 	if (query != NULL)
 		free(query);
+	comment_buffer_destroy(comments);
 	return 1;
 }
 
@@ -1006,11 +1022,12 @@ describe_schema(Mapi mid, char *sname, stream *toConsole)
 {
 	MapiHdl hdl = NULL;
 	char schemas[256];
+	comment_buffer *comments = comment_buffer_create();
 
 	snprintf(schemas, 256,
-		"SELECT s.name, a.name "
-		"FROM sys.schemas s, "
-		     "sys.auths a "
+		"SELECT s.name, a.name, c.remark "
+		"FROM sys.auths a, "
+		     "sys.schemas s LEFT OUTER JOIN sys.comments c ON s.id = c.id "
 		"WHERE s.\"authorization\" = a.id AND "
 		      "s.name = '%s' "
 		"ORDER BY s.name",
@@ -1032,6 +1049,7 @@ describe_schema(Mapi mid, char *sname, stream *toConsole)
 	while (mapi_fetch_row(hdl) != 0) {
 		char *sname = mapi_fetch_field(hdl, 0);
 		char *aname = mapi_fetch_field(hdl, 1);
+		char *remark = mapi_fetch_field(hdl, 2);
 
 		mnstr_printf(toConsole, "CREATE SCHEMA \"%s\"", sname);
 		if (strcmp(aname, "sysadmin") != 0) {
@@ -1039,8 +1057,11 @@ describe_schema(Mapi mid, char *sname, stream *toConsole)
 					 " AUTHORIZATION \"%s\"", aname);
 		}
 		mnstr_printf(toConsole, ";\n");
+		append_comment(comments, "SCHEMA", NULL, sname, NULL, NULL, remark);
 	}
 
+	write_comment_buffer(toConsole, comments);
+	comment_buffer_destroy(comments);  
 	return 0;
 }
 
