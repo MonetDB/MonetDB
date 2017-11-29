@@ -1258,13 +1258,6 @@ THRnew(const char *name)
 	s = GDK_find_thread(pid);
 	if (s == NULL) {
 		for (s = GDKthreads, t = s + THREADS; s < t; s++) {
-			if (s->pid == pid) {
-				MT_lock_unset(&GDKthreadLock);
-				IODEBUG fprintf(stderr, "#THRnew:duplicate " SZFMT "\n", (size_t) pid);
-				return s;
-			}
-		}
-		for (s = GDKthreads, t = s + THREADS; s < t; s++) {
 			if (s->pid == 0) {
 				break;
 			}

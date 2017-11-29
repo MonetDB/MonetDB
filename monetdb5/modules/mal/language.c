@@ -29,8 +29,14 @@
 str
 CMDraise(str *ret, str *msg)
 {
+	str res;
 	*ret = GDKstrdup(*msg);
-	return GDKstrdup(*msg);
+	if( *ret == NULL)
+		throw(MAL, "mal.raise", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	res = GDKstrdup(*msg);
+	if( res == NULL)
+		throw(MAL, "mal.raise", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	return res;
 }
 
 str

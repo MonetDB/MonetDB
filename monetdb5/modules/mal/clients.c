@@ -65,6 +65,8 @@ CLTgetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*getArgReference_str(stk,pci,0) = GDKstrdup(cntxt->scenario);
 	else
 		*getArgReference_str(stk,pci,0) = GDKstrdup("nil");
+	if(*getArgReference_str(stk,pci,0) == NULL)
+		throw(MAL, "clients.getScenario", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -76,8 +78,11 @@ CLTsetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	msg = setScenario(cntxt, *getArgReference_str(stk,pci,1));
 	*getArgReference_str(stk,pci,0) = 0;
-	if (msg == NULL)
+	if (msg == NULL) {
 		*getArgReference_str(stk,pci,0) = GDKstrdup(cntxt->scenario);
+		if(*getArgReference_str(stk,pci,0) == NULL)
+			throw(MAL, "clients.setScenario", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 	return msg;
 }
 
@@ -372,6 +377,8 @@ str CLTmd5sum(str *ret, str *pw) {
 	char *mret = mcrypt_MD5Sum(*pw, strlen(*pw));
 	*ret = GDKstrdup(mret);
 	free(mret);
+	if(*ret == NULL)
+		throw(MAL, "clients.md5sum", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 #else
 	(void) ret;
@@ -385,6 +392,8 @@ str CLTsha1sum(str *ret, str *pw) {
 	char *mret = mcrypt_SHA1Sum(*pw, strlen(*pw));
 	*ret = GDKstrdup(mret);
 	free(mret);
+	if(*ret == NULL)
+		throw(MAL, "clients.sha1sum", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 #else
 	(void) ret;
@@ -398,6 +407,8 @@ str CLTripemd160sum(str *ret, str *pw) {
 	char *mret = mcrypt_RIPEMD160Sum(*pw, strlen(*pw));
 	*ret = GDKstrdup(mret);
 	free(mret);
+	if(*ret == NULL)
+		throw(MAL, "clients.ripemd160sum", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 #else
 	(void) ret;
@@ -435,6 +446,8 @@ str CLTsha2sum(str *ret, str *pw, int *bits) {
 	}
 	*ret = GDKstrdup(mret);
 	free(mret);
+	if(*ret == NULL)
+		throw(MAL, "clients.sha2sum", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -442,6 +455,8 @@ str CLTbackendsum(str *ret, str *pw) {
 	char *mret = mcrypt_BackendSum(*pw, strlen(*pw));
 	*ret = GDKstrdup(mret);
 	free(mret);
+	if(*ret == NULL)
+		throw(MAL, "clients.backendsum", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -584,6 +599,8 @@ CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	*ret = GDKstrdup(buf);
 	if ( force)
 		mal_exit();
+	if(*ret == NULL)
+		throw(MAL, "mal.shutdown", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 

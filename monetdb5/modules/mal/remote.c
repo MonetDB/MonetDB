@@ -407,7 +407,7 @@ RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
 }
 
 str RMTprelude(void *ret) {
-	int type = 0;
+	unsigned int type = 0;
 
 	(void)ret;
 #ifdef WORDS_BIGENDIAN
@@ -415,15 +415,15 @@ str RMTprelude(void *ret) {
 #else
 	type |= RMTT_L_ENDIAN;
 #endif
-#if SIZEOF_SIZE_T == SIZEOF_LONG_LONG
+#if SIZEOF_SIZE_T == SIZEOF_LNG
 	type |= RMTT_64_BITS;
 #else
 	type |= RMTT_32_BITS;
 #endif
-#if SIZEOF_SIZE_T == SIZEOF_INT
-	type |= RMTT_32_OIDS;
-#else
+#if SIZEOF_OID == SIZEOF_LNG
 	type |= RMTT_64_OIDS;
+#else
+	type |= RMTT_32_OIDS;
 #endif
 	localtype = (unsigned char)type;
 
@@ -1374,15 +1374,15 @@ str RMTbintype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 #else
 	type |= RMTT_L_ENDIAN;
 #endif
-#if SIZEOF_SIZE_T == SIZEOF_LONG_LONG
+#if SIZEOF_SIZE_T == SIZEOF_LNG
 	type |= RMTT_64_BITS;
 #else
 	type |= RMTT_32_BITS;
 #endif
-#if SIZEOF_SIZE_T == SIZEOF_INT
-	type |= RMTT_32_OIDS;
-#else
+#if SIZEOF_OID == SIZEOF_LNG
 	type |= RMTT_64_OIDS;
+#else
+	type |= RMTT_32_OIDS;
 #endif
 
 	mnstr_printf(cntxt->fdout, "[ %d ]\n", type);

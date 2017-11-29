@@ -271,6 +271,10 @@ evalFile(str fname, int listing)
 		throw(MAL,"mal.eval","Can not create user context");
 	}
 	c->curmodule = c->usermodule = userModule();
+	if(c->curmodule == NULL) {
+		MCcloseClient(c);
+		throw(MAL,"mal.eval",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 	c->promptlength = 0;
 	c->listing = listing;
 
@@ -317,8 +321,12 @@ compileString(Symbol *fcn, Client cntxt, str s)
 
 	s = mal_cmdline(s, &len);
 	qry = s;
-	if (old == s)
+	if (old == s) {
 		qry = GDKstrdup(s);
+		if(!qry)
+			throw(MAL,"mal.eval",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
+
 	mal_unquote(qry);
 	b = (buffer *) GDKzalloc(sizeof(buffer));
 	if (b == NULL) {

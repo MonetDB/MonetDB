@@ -243,7 +243,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 			} else {					\
 				BUN _c = HASHprobe((b)->thash, (v));	\
 				HASHputall((b)->thash, (i), _c);	\
-				(b)->thash->heap->dirty = TRUE;		\
+				(b)->thash->heap.dirty = TRUE;		\
 			}						\
 		}							\
 	} while (0)

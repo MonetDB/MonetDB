@@ -1301,11 +1301,11 @@ RAWrenderer(MapiHdl hdl)
 }
 
 static void
-TIMERrenderer(MapiHdl hdl, int64_t querytime)
+TIMERrenderer(MapiHdl hdl, int64_t querytime, int64_t maloptimizertime)
 {
 	SQLqueryEcho(hdl);
 	mapi_next_result(hdl);
-	printf("%" PRId64 " %s\n", querytime, timerHuman());
+	printf("%s sql:0 opt:%" PRId64 " run:%" PRId64 "\n", timerHuman(),  maloptimizertime, querytime);
 }
 
 
@@ -1827,6 +1827,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 	int64_t aff, lid;
 	char *reply;
 	int64_t querytime;
+	int64_t maloptimizer;
 #ifdef HAVE_POPEN
 	stream *saveFD;
 
@@ -1860,12 +1861,13 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			continue;
 		case Q_UPDATE:
 			querytime = mapi_get_querytime(hdl);
+			maloptimizer = mapi_get_maloptimizertime(hdl);
 			SQLqueryEcho(hdl);
 			if (formatter == RAWformatter ||
 			    formatter == TESTformatter)
 				mnstr_printf(toConsole, "[ %" PRId64 "\t]\n", mapi_rows_affected(hdl));
 			else if (formatter == TIMERformatter)
-				printf("%" PRId64 " %s\n", querytime, timerHuman());
+				TIMERrenderer(hdl, querytime, maloptimizer);
 			else {
 				aff = mapi_rows_affected(hdl);
 				lid = mapi_get_last_id(hdl);
@@ -1887,6 +1889,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			continue;
 		case Q_SCHEMA:
 			querytime = mapi_get_querytime(hdl);
+			maloptimizer = mapi_get_maloptimizertime(hdl);
 			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter) {
 				mnstr_printf(toConsole, "operation successful");
@@ -1895,7 +1898,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 						     timerHuman());
 				mnstr_printf(toConsole, "\n");
 			} else if (formatter == TIMERformatter)
-				printf("%" PRId64 " %s\n", querytime, timerHuman());
+				TIMERrenderer(hdl, querytime, maloptimizer);
 			continue;
 		case Q_TRANS:
 			SQLqueryEcho(hdl);
@@ -1914,6 +1917,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			break;
 		case Q_TABLE:
 			querytime = mapi_get_querytime(hdl);
+			maloptimizer = mapi_get_maloptimizertime(hdl);
 			break;
 		default:
 			if (formatter == TABLEformatter && specials != DEBUGmodifier) {
@@ -1974,7 +1978,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 				}
 				break;
 			case TIMERformatter:
-				TIMERrenderer(hdl, querytime);
+				TIMERrenderer(hdl, querytime, maloptimizer);
 				break;
 			case SAMformatter:
 				SAMrenderer(hdl);

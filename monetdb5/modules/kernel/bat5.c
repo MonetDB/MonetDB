@@ -133,7 +133,7 @@ infoHeap(BAT *bk, BAT*bv, Heap *hp, str nme)
 		return GDK_FAIL;
 	strcpy(p, "storage");
 	if (BUNappend(bk, buf, FALSE) != GDK_SUCCEED ||
-		BUNappend(bv, (hp->base == NULL || hp->base == (char*)1) ? "absent" : (hp->storage == STORE_MMAP) ? (hp->filename ? "memory mapped" : "anonymous vm") : (hp->storage == STORE_PRIV) ? "private map" : "malloced", FALSE) != GDK_SUCCEED)
+		BUNappend(bv, (hp->base == NULL || hp->base == (char*)1) ? "absent" : (hp->storage == STORE_MMAP) ? (hp->filename[0] ? "memory mapped" : "anonymous vm") : (hp->storage == STORE_PRIV) ? "private map" : "malloced", FALSE) != GDK_SUCCEED)
 		return GDK_FAIL;
 	strcpy(p, "newstorage");
 	if (BUNappend(bk, buf, FALSE) != GDK_SUCCEED ||
@@ -141,7 +141,7 @@ infoHeap(BAT *bk, BAT*bv, Heap *hp, str nme)
 		return GDK_FAIL;
 	strcpy(p, "filename");
 	if (BUNappend(bk, buf, FALSE) != GDK_SUCCEED ||
-		BUNappend(bv, hp->filename ? hp->filename : "no file", FALSE) != GDK_SUCCEED)
+		BUNappend(bv, hp->filename[0] ? hp->filename : "no file", FALSE) != GDK_SUCCEED)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }

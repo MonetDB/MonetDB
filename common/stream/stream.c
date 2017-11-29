@@ -4485,7 +4485,7 @@ mnstr_writeChr(stream *s, char val)
 }
 
 int
-mnstr_readBte(stream *restrict s, signed char *restrict val)
+mnstr_readBte(stream *restrict s, int8_t *restrict val)
 {
 	if (s == NULL || val == NULL)
 		return -1;
@@ -4493,7 +4493,7 @@ mnstr_readBte(stream *restrict s, signed char *restrict val)
 }
 
 int
-mnstr_writeBte(stream *s, signed char val)
+mnstr_writeBte(stream *s, int8_t val)
 {
 	if (s == NULL || s->errnr)
 		return 0;
@@ -4646,7 +4646,7 @@ mnstr_writeHge(stream *s, hge val)
 #endif
 
 int
-mnstr_readBteArray(stream *restrict s, signed char *restrict val, size_t cnt)
+mnstr_readBteArray(stream *restrict s, int8_t *restrict val, size_t cnt)
 {
 	if (s == NULL || val == NULL)
 		return 0;
@@ -4661,7 +4661,7 @@ mnstr_readBteArray(stream *restrict s, signed char *restrict val, size_t cnt)
 }
 
 int
-mnstr_writeBteArray(stream *restrict s, const signed char *restrict val, size_t cnt)
+mnstr_writeBteArray(stream *restrict s, const int8_t *restrict val, size_t cnt)
 {
 	if (s == NULL || s->errnr || val == NULL)
 		return 0;

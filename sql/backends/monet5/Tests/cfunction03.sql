@@ -10,7 +10,7 @@ end;
 
 start continuous function cfunc3(time '15:00:00') with heartbeat 100 cycles 3;
 
-call cquery.wait(2000);
+call cquery.wait(3000);
 
 select count(*) from results3;
 

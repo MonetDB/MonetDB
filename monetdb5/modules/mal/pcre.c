@@ -680,6 +680,11 @@ pcre_replace(str *res, const char *origin_str, const char *pattern, const char *
 		tmpres[k] = '\0';
 	} else { /* no captured substrings, return the original string*/
 		tmpres = GDKstrdup(origin_str);
+		if (!tmpres) {
+			my_pcre_free(pcre_code);
+			GDKfree(ovector);
+			throw(MAL, "pcre_replace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
 	}
 
 	my_pcre_free(pcre_code);
@@ -1020,6 +1025,8 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 		if (escaped)
 			throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);
 		*r = GDKstrdup(str_nil);
+		if (*r == NULL)
+			throw(MAL, "pcre.sql2pcre", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
 		*ppat++ = '$';
 		*ppat = 0;

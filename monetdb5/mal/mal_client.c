@@ -103,6 +103,10 @@ MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt)
 	c->fdin = new_input;
 	c->listing = listing;
 	c->prompt = prompt ? GDKstrdup(prompt) : GDKstrdup("");
+	if(c->prompt == 0) {
+		GDKfree(x);
+		return -1;
+	}
 	c->promptlength = strlen(c->prompt);
 	c->yycur = 0;
 	return 0;
@@ -328,10 +332,14 @@ Client
 MCforkClient(Client father)
 {
 	Client son = NULL;
+	str prompt;
+
 	if (father == NULL)
 		return NULL;
 	if (father->father != NULL)
 		father = father->father;
+	if((prompt = GDKstrdup(father->prompt)) == NULL)
+		return NULL;
 	if ((son = MCinitClient(father->user, father->fdin, father->fdout))) {
 		son->fdin = NULL;
 		son->fdout = father->fdout;
@@ -341,11 +349,18 @@ MCforkClient(Client father)
 		son->scenario = father->scenario;
 		if (son->prompt)
 			GDKfree(son->prompt);
-		son->prompt = GDKstrdup(father->prompt);
-		son->promptlength = strlen(father->prompt);
+		son->prompt = prompt;
+		son->promptlength = strlen(prompt);
 		/* reuse the scopes wherever possible */
-		if (son->usermodule == 0)
+		if (son->usermodule == 0) {
 			son->usermodule = userModule();
+			if(son->usermodule == 0) {
+				MCcloseClient(son);
+				return NULL;
+			}
+		}
+	} else {
+		GDKfree(prompt);
 	}
 	return son;
 }

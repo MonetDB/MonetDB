@@ -157,7 +157,7 @@ __hidden int HASHgonebad(BAT *b, const void *v)
 	__attribute__((__visibility__("hidden")));
 __hidden BUN HASHmask(BUN cnt)
 	__attribute__((__visibility__("hidden")));
-__hidden Hash *HASHnew(Heap *hp, int tpe, BUN size, BUN mask, BUN count)
+__hidden gdk_return HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	__attribute__((__warn_unused_result__))
@@ -237,7 +237,7 @@ struct PROPrec {
 
 struct Imprints {
 	bte bits;		/* how many bits in imprints */
-	Heap *imprints;
+	Heap imprints;
 	void *bins;		/* pointer into imprints heap (bins borders)  */
 	BUN *stats;		/* pointer into imprints heap (stats per bin) */
 	void *imps;		/* pointer into imprints heap (bit vectors)   */

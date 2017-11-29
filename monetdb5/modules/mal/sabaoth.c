@@ -112,6 +112,10 @@ str SABgetLocalConnectionHost(str *ret) {
 
 	*ret = GDKstrdup(con + 3);
 	GDKfree(tmp);
+	if( *ret == NULL) {
+		p = createException(MAL, "sabaoth.getLocalConnectionHost", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return(p);
+	}
 	return(MAL_SUCCEED);
 }
 

@@ -102,11 +102,11 @@ stream_export int mnstr_init(void);
  *  0 on error
  * !0 on success
  */
-stream_export int mnstr_readBte(stream *restrict s, signed char *restrict val);
+stream_export int mnstr_readBte(stream *restrict s, int8_t *restrict val);
 stream_export int mnstr_readChr(stream *restrict s, char *restrict val);
 stream_export int mnstr_writeChr(stream *s, char val);
 
-stream_export int mnstr_writeBte(stream *s, signed char val);
+stream_export int mnstr_writeBte(stream *s, int8_t val);
 stream_export int mnstr_readSht(stream *restrict s, short *restrict val);
 stream_export int mnstr_writeSht(stream *s, short val);
 stream_export int mnstr_readInt(stream *restrict s, int *restrict val);
@@ -123,8 +123,8 @@ stream_export int mnstr_readHge(stream *restrict s, hge *restrict val);
 stream_export int mnstr_writeHge(stream *s, hge val);
 #endif
 
-stream_export int mnstr_readBteArray(stream *restrict s, signed char *restrict val, size_t cnt);
-stream_export int mnstr_writeBteArray(stream *restrict s, const signed char *restrict val, size_t cnt);
+stream_export int mnstr_readBteArray(stream *restrict s, int8_t *restrict val, size_t cnt);
+stream_export int mnstr_writeBteArray(stream *restrict s, const int8_t *restrict val, size_t cnt);
 stream_export int mnstr_writeStr(stream *restrict s, const char *restrict val);
 stream_export int mnstr_readStr(stream *restrict s, char *restrict val);
 

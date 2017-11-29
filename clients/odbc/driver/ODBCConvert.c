@@ -23,12 +23,12 @@
 #define space(c)	((c) == ' ' || (c) == '\t')
 
 typedef struct {
-	unsigned char precision; /* total number of digits */
-	signed char scale;	/* how far to shift decimal point (>
+	uint8_t precision;	/* total number of digits */
+	int8_t scale;		/* how far to shift decimal point (>
 				 * 0: shift left, i.e. number has
 				 * fraction; < 0: shift right,
 				 * i.e. multiply with power of 10) */
-	unsigned char sign;	/* 1 pos, 0 neg */
+	uint8_t sign;		/* 1 pos, 0 neg */
 	uint64_t val;		/* the value */
 } bignum_t;
 
@@ -2959,8 +2959,8 @@ ODBCStore(ODBCStmt *stmt,
 		nval.val = * (SQLUBIGINT *) ptr;
 		break;
 	case SQL_C_NUMERIC:
-		nval.precision = (unsigned char) apdrec->sql_desc_precision;
-		nval.scale = (signed char) apdrec->sql_desc_scale;
+		nval.precision = (uint8_t) apdrec->sql_desc_precision;
+		nval.scale = (int8_t) apdrec->sql_desc_scale;
 		nval.sign = ((SQL_NUMERIC_STRUCT *) ptr)->sign;
 		nval.val = 0;
 		for (i = 0; i < SQL_MAX_NUMERIC_LEN; i++)

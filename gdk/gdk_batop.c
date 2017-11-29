@@ -30,14 +30,8 @@ unshare_string_heap(BAT *b)
 			return GDK_FAIL;
 		h->parentid = b->batCacheid;
 		h->farmid = BBPselectfarm(b->batRole, TYPE_str, varheap);
-		if (b->tvheap->filename) {
-			char *nme = BBP_physical(b->batCacheid);
-			h->filename = GDKfilepath(NOFARM, NULL, nme, "theap");
-			if (h->filename == NULL) {
-				GDKfree(h);
-				return GDK_FAIL;
-			}
-		}
+		snprintf(h->filename, sizeof(h->filename),
+			 "%s.theap", BBP_physical(b->batCacheid));
 		if (HEAPcopy(h, b->tvheap) != GDK_SUCCEED) {
 			HEAPfree(h, 1);
 			GDKfree(h);
@@ -469,14 +463,8 @@ append_varsized_bat(BAT *b, BAT *n, BAT *s)
 			return GDK_FAIL;
 		h->parentid = b->batCacheid;
 		h->farmid = BBPselectfarm(b->batRole, b->ttype, varheap);
-		if (b->tvheap->filename) {
-			const char *nme = BBP_physical(b->batCacheid);
-			h->filename = GDKfilepath(NOFARM, NULL, nme, "theap");
-			if (h->filename == NULL) {
-				GDKfree(h);
-				return GDK_FAIL;
-			}
-		}
+		snprintf(h->filename, sizeof(h->filename),
+			 "%s.theap", BBP_physical(b->batCacheid));
 		if (HEAPcopy(h, b->tvheap) != GDK_SUCCEED) {
 			HEAPfree(h, 1);
 			GDKfree(h);
@@ -1110,15 +1098,11 @@ BATkeyed(BAT *b)
 			b->tkey = 1;
 		} else {
 			const char *nme;
-			size_t nmelen;
 			BUN prb;
 			BUN mask;
-			char *ext = NULL;
-			Heap *hp = NULL;
 
 			GDKclrerr(); /* not interested in BAThash errors */
 			nme = BBP_physical(b->batCacheid);
-			nmelen = strlen(nme);
 			if (ATOMbasetype(b->ttype) == TYPE_bte) {
 				mask = (BUN) 1 << 8;
 				cmpf = NULL; /* no compare needed, "hash" is perfect */
@@ -1130,18 +1114,11 @@ BATkeyed(BAT *b)
 				if (mask < ((BUN) 1 << 16))
 					mask = (BUN) 1 << 16;
 			}
-			if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
-			    (hp->filename = GDKmalloc(nmelen + 30)) == NULL ||
-			    snprintf(hp->filename, nmelen + 30,
-				     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
-			    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
-			    (hs = HASHnew(hp, b->ttype, BUNlast(b), mask, BUN_NONE)) == NULL) {
-				if (hp) {
-					if (hp->filename)
-						GDKfree(hp->filename);
-					GDKfree(hp);
-				}
-				GDKfree(ext);
+			if ((hs = GDKzalloc(sizeof(Hash))) == NULL ||
+			    snprintf(hs->heap.filename, sizeof(hs->heap.filename),
+				     "%s.hash%d", nme, THRgettid()) < 0 ||
+			    HASHnew(hs, b->ttype, BUNlast(b), mask, BUN_NONE) != GDK_SUCCEED) {
+				GDKfree(hs);
 				/* err on the side of caution: not keyed */
 				goto doreturn;
 			}
@@ -1164,10 +1141,8 @@ BATkeyed(BAT *b)
 				HASHput(hs, prb, p);
 			}
 		  doreturn_free:
-			HEAPfree(hp, 1);
-			GDKfree(hp);
+			HEAPfree(&hs->heap, 1);
 			GDKfree(hs);
-			GDKfree(ext);
 			if (p == q) {
 				/* we completed the complete scan: no
 				 * duplicates */
@@ -1378,6 +1353,11 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		GDKerror("BATsort: b must exist\n");
 		return GDK_FAIL;
 	}
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("BATsort: type %s cannot be sorted\n",
+			 ATOMname(b->ttype));
+		return GDK_FAIL;
+	}
 	if (o != NULL &&
 	    (ATOMtype(o->ttype) != TYPE_oid || /* oid tail */
 	     BATcount(o) != BATcount(b) ||     /* same size as b */
@@ -1458,7 +1438,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	} else {
 		pb = b;
 	}
-	if (g == NULL && groups == NULL && o == NULL && !reverse &&
+	if (g == NULL && o == NULL && !reverse &&
 	    pb != NULL && BATcheckorderidx(pb) &&
 	    /* if we want a stable sort, the order index must be
 	     * stable, if we don't want stable, we don't care */
@@ -1474,12 +1454,28 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		on->tnonil = 1;
 		on->tsorted = on->trevsorted = 0;
 		on->tdense = 0;
-		if (sorted) {
+		if (sorted || groups) {
 			bn = BATproject(on, b);
 			if (bn == NULL)
 				goto error;
 			bn->tsorted = 1;
-			*sorted = bn;
+			if (groups) {
+				if (BATgroup_internal(groups, NULL, NULL, bn, NULL, g, NULL, NULL, 1) != GDK_SUCCEED)
+					goto error;
+				if (sorted &&
+				    (*groups)->tkey &&
+				    g == NULL) {
+					/* if new groups bat is key
+					 * and since there is no input
+					 * groups bat, we know the
+					 * result bat is key */
+					bn->tkey = 1;
+				}
+			}
+			if (sorted)
+				*sorted = bn;
+			else
+				BBPunfix(bn->batCacheid);
 		}
 		if (order)
 			*order = on;
@@ -1496,6 +1492,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			BBPunfix(bn->batCacheid);
 			bn = b;
 		}
+		pb = NULL;
 	} else {
 		bn = COLcopy(b, b->ttype, TRUE, TRANSIENT);
 	}
@@ -1636,8 +1633,13 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			     ords,
 			     bn->tvheap ? bn->tvheap->base : NULL,
 			     BATcount(bn), Tsize(bn), ords ? sizeof(oid) : 0,
-			     bn->ttype, reverse, stable) != GDK_SUCCEED))
+			     bn->ttype, reverse, stable) != GDK_SUCCEED)) {
+			if (m != NULL) {
+				HEAPfree(m, 1);
+				GDKfree(m);
+			}
 			goto error;
+		}
 		bn->tsorted = !reverse;
 		bn->trevsorted = reverse;
 		if (m != NULL) {
