@@ -99,11 +99,14 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 		strcpy(m->errstr, errstr);
 	} else {
 		int label = m->label;
+		list *sqs = m->sqs;
+
 		while (m->topvars > o.topvars) {
 			if (m->vars[--m->topvars].name)
 				c_delete(m->vars[m->topvars].name);
 		}
 		*m = o;
+		m->sqs = sqs;
 		m->label = label;
 	}
 	m->session->schema = c;
