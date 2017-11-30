@@ -1,40 +1,76 @@
 stdout of test 'numeric` in directory 'sql/test/pg_regress` itself:
 
 
-# 12:56:24 >  
-# 12:56:24 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31190" "--set" "mapi_usock=/var/tmp/mtest-27974/.s.monetdb.31190" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/dinther/INSTALL/var/MonetDB/mTests_sql_test_pg_regress" "--set" "mal_listing=0" "--set" "embedded_r=yes"
-# 12:56:24 >  
+# 14:10:39 >  
+# 14:10:39 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34907" "--set" "mapi_usock=/var/tmp/mtest-73037/.s.monetdb.34907" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/sjoerd/@Monet-stable/var/MonetDB/mTests_sql_test_pg_regress" "--set" "embedded_py=true"
+# 14:10:39 >  
 
-# MonetDB 5 server v11.20.0
+# MonetDB 5 server v11.27.10 (hg id: 6bfbf16160a6)
 # This is an unreleased version
-# Serving database 'mTests_sql_test_pg_regress', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
-# Found 15.356 GiB available main-memory.
+# Serving database 'mTests_sql_test_pg_regress', using 3 threads
+# Compiled for amd64-unknown-freebsd10.3/64bit with 128bit integers
+# Found 1.976 GiB available main-memory.
 # Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
-# Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://uwakai.da.cwi.nl:31190/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27974/.s.monetdb.31190
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://freebsd.testweb.private:34907/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-73037/.s.monetdb.34907
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-# MonetDB/R   module loaded
+# MonetDB/Python2 module loaded
 
 Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
 
-# 12:56:25 >  
-# 12:56:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27974" "--port=31190"
-# 12:56:25 >  
+# 14:10:39 >  
+# 14:10:39 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-73037" "--port=34907"
+# 14:10:39 >  
 
-#CREATE TABLE num_data (id integer, val numeric(38,20));
-#CREATE TABLE num_exp_add (id1 integer, id2 integer, expected numeric(38,20));
-#CREATE TABLE num_exp_sub (id1 integer, id2 integer, expected numeric(38,20));
-#CREATE TABLE num_exp_div (id1 integer, id2 integer, expected numeric(38,20));
-#CREATE TABLE num_exp_mul (id1 integer, id2 integer, expected numeric(38,20));
-#CREATE TABLE num_exp_sqrt (id integer, expected numeric(38,20));
-#CREATE TABLE num_exp_ln (id integer, expected numeric(38,20));
-#CREATE TABLE num_exp_log10 (id integer, expected numeric(38,20));
-#CREATE TABLE num_exp_power_10_ln (id integer, expected numeric(38,20));
-#CREATE TABLE num_result (id1 integer, id2 integer, result numeric(38,20));
+#set optimizer = 'sequential_pipe'; -- to get predictable errors
+#CREATE TABLE num_data (id integer, val numeric(18,9));
+#CREATE TABLE num_exp_add (id1 integer, id2 integer, expected numeric(38,19));
+#CREATE TABLE num_exp_sub (id1 integer, id2 integer, expected numeric(38,19));
+#CREATE TABLE num_exp_div (id1 integer, id2 integer, expected numeric(38,19));
+#CREATE TABLE num_exp_mul (id1 integer, id2 integer, expected numeric(38,19));
+#CREATE TABLE num_exp_sqrt (id integer, expected numeric(38,19));
+#CREATE TABLE num_exp_ln (id integer, expected numeric(38,19));
+#CREATE TABLE num_exp_log10 (id integer, expected numeric(38,19));
+#CREATE TABLE num_exp_power_10_ln (id integer, expected numeric(38,19));
+#CREATE TABLE num_result (id1 integer, id2 integer, result numeric(38,19));
 #INSERT INTO num_exp_add VALUES (0,0,'0.0');
 [ 1	]
 #INSERT INTO num_exp_sub VALUES (0,0,'0.0');
@@ -979,11 +1015,11 @@ Ready.
 #    FROM num_result t1, num_exp_div t2
 #    WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
 #    AND t1.result <> t2.expected
-#  ORDER BY 1,2,3,4;
+# ORDER BY 1,2,3,4;
 % sys.t1,	sys.t1,	sys.t1,	sys.t2 # table_name
 % id1,	id2,	result,	expected # name
 % int,	int,	decimal,	decimal # type
-% 1,    1,      40,     40 # length
+% 1,	1,	40,	40 # length
 [ 2,	3,	-7967167.5673775050000000000,	-7967167.5673775051044083527	]
 [ 2,	4,	-4.4026748000000000000,	-4.4026748004683011669	]
 [ 2,	5,	-2094.1886691450000000000,	-2094.1886691456353549643	]
@@ -1189,14 +1225,14 @@ Ready.
 % id1,	result,	expected # name
 % int,	decimal,	decimal # type
 % 1,	40,	40 # length
-[ 2,	224790267919917474.7670186294205480960,	224790267919917955.1326161858364265318	]
+[ 2,	224790267919917445.2522281114852655104,	224790267919917955.1326161858364265318	]
 [ 3,	28.9026659944515502080,	28.9026659944515595739	]
 [ 4,	7405685069595000.8314951387276378112,	7405685069594999.0773399946938627764	]
 [ 5,	5068226527.3212631954447400960,	5068226527.3212726540858464010	]
 [ 6,	281839893606.9936518081860861952,	281839893606.9937234335704781907	]
-[ 7,	1716699575118595848.3960788631060217856,	1716699575118597095.4233081991064024762	]
+[ 7,	1716699575118595612.2777547196237611008,	1716699575118597095.4233081991064024762	]
 [ 8,	167361463828.0748873417400254464,	167361463828.0749132006901612595	]
-[ 9,	107511333880051856.8737742196435845120,	107511333880052007.0414112467354033746	]
+[ 9,	107511333880051871.6311694786112258048,	107511333880052007.0414112467354033746	]
 #SELECT AVG(val) FROM num_data;
 % sys.L4 # table_name
 % L3 # name
@@ -1309,7 +1345,7 @@ Ready.
 #DROP TABLE num_exp_power_10_ln;
 #DROP TABLE num_result;
 
-# 12:56:27 >  
-# 12:56:27 >  "Done."
-# 12:56:27 >  
+# 14:10:41 >  
+# 14:10:41 >  "Done."
+# 14:10:41 >  
 
