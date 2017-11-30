@@ -2087,9 +2087,7 @@ mvc_export_operation(backend *b, stream *s, str w, lng starttime, lng mal_optimi
 
 	assert(m->type == Q_SCHEMA || m->type == Q_TRANS);
 	if (m->type == Q_SCHEMA) {
-		if (!s || mnstr_printf(s, "&3 " LLFMT "\n", starttime > 0 ? GDKusec() - starttime : 0) < 0)
-			return -1;
-		if (!s || mnstr_printf(s, "&3 " LLFMT "\n", mal_optimizer) < 0)
+		if (!s || mnstr_printf(s, "&3 " LLFMT " " LLFMT "\n", starttime > 0 ? GDKusec() - starttime : 0, mal_optimizer) < 0)
 			return -1;
 	} else {
 		if (m->session->auto_commit) {

@@ -3767,6 +3767,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 		switch (qt) {
 		case Q_SCHEMA:
 			result->querytime = strtoll(nline, &nline, 10);
+			result->maloptimizertime = strtoll(nline, &nline, 10);
 			break;
 		case Q_TRANS:
 			if (*nline == 'f')
