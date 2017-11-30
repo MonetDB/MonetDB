@@ -1003,7 +1003,7 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			double t = LASPoint_GetTime(p);
 			char anglerank = LASPoint_GetScanAngleRank (p);
 			unsigned short sourceid = LASPoint_GetPointSourceId (p);
-				fprintf(stderr, 
+			fprintf(stderr,
 				"(point # %d)"
 				"X (raw)           : %f (%ld)\n"
 				"Z (raw)           : %f (%ld)\n"

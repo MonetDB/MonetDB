@@ -6,4 +6,4 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
-extern void sql_help(char *pattern, stream *toConsole, int pagewidth);
+extern void sql_help(const char *pattern, stream *toConsole, int pagewidth);

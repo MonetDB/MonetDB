@@ -58,6 +58,8 @@
 #define NO_DEPENDENCY 0
 #define HAS_DEPENDENCY 1
 #define CICLE_DEPENDENCY 2
+#define DEPENDENCY_CHECK_ERROR 3
+#define DEPENDENCY_CHECK_OK 0
 
 #define NO_TRIGGER 0
 #define IS_TRIGGER 1
@@ -600,6 +602,7 @@ extern node *find_sql_func_node(sql_schema *s, int id);
 typedef struct {
 	BAT *b;
 	char* name;
+	void* def;
 } sql_emit_col;
 
 #endif /* SQL_CATALOG_H */

@@ -61,7 +61,8 @@ constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 
 	(void) sql;
 	cst.vtype = 0;
-	VALcopy(&cst, vr);
+	if(VALcopy(&cst, vr) == NULL)
+		return -1;
 	idx = defConstant(mb, vr->vtype, &cst);
 	return idx;
 }
@@ -625,7 +626,9 @@ backend_callinline(backend *be, Client c)
 				sql_subtype *t = atom_type(a);
 				(void) pushNil(curBlk, curInstr, t->type->localtype);
 			} else {
-				int _t = constantAtom(be, curBlk, a);
+				int _t;
+				if((_t = constantAtom(be, curBlk, a)) == -1)
+					return -1;
 				(void) pushArgument(curBlk, curInstr, _t);
 			}
 		}
@@ -755,7 +758,11 @@ backend_call(backend *be, Client c, cq *cq)
 				/* need type from the prepared argument */
 				q = pushNil(mb, q, t->type->localtype);
 			} else {
-				int _t = constantAtom(be, mb, a);
+				int _t;
+				if((_t = constantAtom(be, mb, a)) == -1) {
+					(void) sql_error(m, 02, SQLSTATE(HY001) "Allocation failure during function call: %s\n", atom_type(a)->type->sqlname);
+					break;
+				}
 				q = pushArgument(mb, q, _t);
 			}
 		}

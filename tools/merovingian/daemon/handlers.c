@@ -156,13 +156,13 @@ void reinitialize(void)
 #if O_CLOEXEC == 0
 		fcntl(t, F_SETFD, FD_CLOEXEC);
 #endif
-		Mfprintf(_mero_logfile, "%s END merovingian[" LLFMT "]: "
+		Mfprintf(_mero_logfile, "%s END merovingian[%lld]: "
 				"caught SIGHUP, closing logfile\n",
 				mytime, (long long int)_mero_topdp->next->pid);
 		fflush(_mero_logfile);
 		_mero_topdp->out = _mero_topdp->err = t;
 		_mero_logfile = fdopen(t, "a");
-		Mfprintf(_mero_logfile, "%s BEG merovingian[" LLFMT "]: "
+		Mfprintf(_mero_logfile, "%s BEG merovingian[%lld]: "
 				"reopening logfile\n",
 				mytime, (long long int)_mero_topdp->next->pid);
 	}

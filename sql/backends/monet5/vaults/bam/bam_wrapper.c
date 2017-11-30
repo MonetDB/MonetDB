@@ -159,7 +159,11 @@ init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
 			throw(MAL, "init_bam_wrapper", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		while (TRUE) {
-			int read = mnstr_readline(bw->sam.input, bw->sam.header + header_len, bufsize - header_len);
+			ssize_t read;
+			fpos_t header_pos;
+
+			mnstr_fgetpos(bw->sam.input, &header_pos);
+			read = mnstr_readline(bw->sam.input, bw->sam.header + header_len, bufsize - header_len);
 
 			if (read <= 0) {
 				throw(MAL, "init_bam_wrapper",
@@ -170,7 +174,7 @@ init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
 			if (bw->sam.header[header_len] != '@') {
 				/* This is not a header line, we assume that the header is finished.
 				 * Rewind stream to start of line and stop reading */
-				if (mnstr_fsetpos(bw->sam.input, header_len) < 0) {
+				if (mnstr_fsetpos(bw->sam.input, &header_pos) < 0) {
 					throw(MAL, "init_bam_wrapper",
 					  ERR_INIT_BAM_WRAPPER "Could not read last line of SAM header",
 					  file_location);
@@ -188,7 +192,7 @@ init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
 					throw(MAL, "init_bam_wrapper", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				}
 				bw->sam.header = tmp;
-				if (mnstr_fsetpos(bw->sam.input, header_len) < 0) {
+				if (mnstr_fsetpos(bw->sam.input, &header_pos) < 0) {
 					throw(MAL, "init_bam_wrapper",
 					  ERR_INIT_BAM_WRAPPER "Could not read last line of SAM header",
 					  file_location);
@@ -407,27 +411,27 @@ clear_bam_wrapper(bam_wrapper * bw)
 
 	/* And remove the write stream files that still exist */
 	for (i = 0; i < 6; ++i) {
-		unlink(bw->fp_files[i]);
+		remove(bw->fp_files[i]);
 	}
 	for (i = 0; i < 7; ++i) {
-		unlink(bw->fp_sq[i]);
+		remove(bw->fp_sq[i]);
 	}
 	for (i = 0; i < 13; ++i) {
-		unlink(bw->fp_rg[i]);
+		remove(bw->fp_rg[i]);
 	}
 	for (i = 0; i < 6; ++i) {
-		unlink(bw->fp_pg[i]);
+		remove(bw->fp_pg[i]);
 	}
 	for (i = 0; i < 12; ++i) {
-		unlink(bw->fp_alignments[i]);
+		remove(bw->fp_alignments[i]);
 	}
 	for (i = 0; i < 4; ++i) {
-		unlink(bw->fp_alignments_extra[i]);
+		remove(bw->fp_alignments_extra[i]);
 	}
 	if (bw->dbschema == 1) {
 		for (i = 0; i < 23; ++i) {
-			unlink(bw->fp_alignments_paired_primary[i]);
-			unlink(bw->fp_alignments_paired_primary[i]);
+			remove(bw->fp_alignments_paired_primary[i]);
+			remove(bw->fp_alignments_paired_primary[i]);
 		}
 	}
 
@@ -683,7 +687,7 @@ clear_bam_header_line(bam_header_line * hl)
 /**
  * Macros for appending data to the streams, evaluate to 0 on failure
  */
-#define APPEND_STR(strm, s) (mnstr_writeBteArray(strm, (signed char*)s, strlen(s)) && mnstr_writeBte(strm, '\n'))
+#define APPEND_STR(strm, s) (mnstr_writeBteArray(strm, (int8_t*)s, strlen(s)) && mnstr_writeBte(strm, '\n'))
 #define APPEND_SHT(strm, i) mnstr_writeSht(strm, i)
 #define APPEND_INT(strm, i) mnstr_writeInt(strm, i)
 #define APPEND_LNG(strm, i) mnstr_writeLng(strm, i)
@@ -1464,7 +1468,7 @@ typedef bit (*buffer_check)(alignment *, int);
 static inline int
 next_alignment_field(stream * input, alignment * a,
 	str buffer, buffer_check bc, bit delim_tab, bit * eol, bit * eof) {
-	signed char c;
+	int8_t c;
 	int index = 0;
 	if (mnstr_readBte(input, &c) == 0) {
 		*eof = TRUE;

@@ -106,8 +106,8 @@
 				 * the absolute path */                                        \
 				char address[100];                                             \
 				GDKmmapfile(address, sizeof(address), ret->mmap_id);           \
-				bat->theap.filename =                                          \
-					GDKfilepath(NOFARM, BATDIR, address, "tmp");               \
+				snprintf(bat->theap.filename, sizeof(bat->theap.filename),     \
+					"%s%c%s.tmp", BATDIR, DIR_SEP, address);                   \
 				ret->mmap_id = -1;                                             \
 			}                                                                  \
 		}                                                                      \
@@ -434,7 +434,7 @@ convert_and_append(BAT* b, const char* text, bit force) {
 			NP_COL_BAT_STR_LOOP(b, unsigned long, "%lu");                      \
 			break;                                                             \
 		case NPY_ULONGLONG:                                                    \
-			NP_COL_BAT_STR_LOOP(b, unsigned long long, ULLFMT);                \
+			NP_COL_BAT_STR_LOOP(b, ulng, ULLFMT);                              \
 			break;                                                             \
 		case NPY_FLOAT16:                                                      \
 		case NPY_FLOAT:                                                        \
@@ -526,7 +526,7 @@ convert_and_append(BAT* b, const char* text, bit force) {
 				if (mask != NULL &&                                            \
 					(mask[index_offset * ret->count + iu]) == TRUE) {          \
 					b->tnil = 1;                                               \
-					if (BUNappend(b, str_nil, FALSE) != GDK_SUCCEED) {         \
+					if (convert_and_append(b, str_nil, FALSE) != GDK_SUCCEED) {         \
 						msg = createException(MAL, "pyapi.eval",               \
 											  SQLSTATE(PY000) "BUNappend failed.\n");          \
 						goto wrapup;                                           \
@@ -537,7 +537,7 @@ convert_and_append(BAT* b, const char* text, bit force) {
 						((PyObject **)&data[(index_offset * ret->count + iu) * \
 											ret->memory_size]),                \
 						utf8_size, &utf8_string);                              \
-					if (BUNappend(b, utf8_string, FALSE) != GDK_SUCCEED) {     \
+					if (convert_and_append(b, utf8_string, FALSE) != GDK_SUCCEED) {     \
 						msg = createException(MAL, "pyapi.eval",               \
 											  SQLSTATE(PY000) "BUNappend failed.\n");          \
 						goto wrapup;                                           \

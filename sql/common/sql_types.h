@@ -35,6 +35,7 @@
 #define EC_INTERVAL(e)	(e==EC_MONTH||e==EC_SEC)
 #define EC_NUMBER(e)	(e==EC_POS||e==EC_NUM||EC_INTERVAL(e)||e==EC_DEC||e==EC_FLT)
 #define EC_COMPUTE(e)	(e==EC_NUM||e==EC_FLT)
+#define EC_BOOLEAN(e)	(e==EC_BIT||e==EC_NUM||e==EC_FLT)
 
 #define EC_TIME		12
 #define EC_DATE		13

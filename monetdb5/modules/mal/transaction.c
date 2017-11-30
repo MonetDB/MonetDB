@@ -59,7 +59,7 @@ TRNsubcommit(bit *ret, bat *bid)
 	BAT *b;
 	b= BATdescriptor(*bid);
 	if( b == NULL)
-		throw(MAL, "transaction.subcommit", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "transaction.subcommit", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	*ret = TMsubcommit(b) == GDK_SUCCEED;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -77,7 +77,7 @@ TRNtrans_clean(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = p->retc; i < p->argc; i++) {
 		bid = getArgReference_bat(stk, p, i);
 		if ((b = BATdescriptor(*bid)) == NULL) {
-			throw(MAL, "transaction.commit",  RUNTIME_OBJECT_MISSING);
+			throw(MAL, "transaction.commit", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 
 		BATfakeCommit(b);
@@ -98,7 +98,7 @@ TRNtrans_abort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = p->retc; i < p->argc; i++) {
 		bid = getArgReference_bat(stk, p, i);
 		if ((b = BATdescriptor(*bid)) == NULL) {
-			throw(MAL, "transaction.abort",  RUNTIME_OBJECT_MISSING);
+			throw(MAL, "transaction.abort", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		BATundo(b);
 		BBPunfix(b->batCacheid);
@@ -118,7 +118,7 @@ TRNtrans_commit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = p->retc; i < p->argc; i++) {
 		bid = getArgReference_bat(stk, p, i);
 		if ((b = BATdescriptor(*bid)) == NULL) {
-			throw(MAL, "transaction.commit",  RUNTIME_OBJECT_MISSING);
+			throw(MAL, "transaction.commit", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		BATcommit(b);
 		BBPunfix(b->batCacheid);

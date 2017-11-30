@@ -12,9 +12,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
-#ifdef HAVE_STRINGS_H
-# include <strings.h>
-#endif
+#include <string.h>
 #include "mutils.h"
 
 #if defined(HAVE_EXECINFO_H) && defined(HAVE_BACKTRACE)

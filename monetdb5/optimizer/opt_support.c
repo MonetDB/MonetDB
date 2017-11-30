@@ -98,6 +98,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	if ( mb->inlineProp)
         	return 0;
 
+	mb->optimize = 0;
 	if (mb->errors)
 		throw(MAL, "optimizer.MALoptimizer", "Start with inconsistent MAL plan");
 
@@ -141,8 +142,10 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 					} 
 					goto wrapup;
 				}
-				if (cntxt->mode == FINISHCLIENT)
+				if (cntxt->mode == FINISHCLIENT){
+					mb->optimize = GDKusec() - clk;
 					throw(MAL, "optimizeMALBlock", "prematurely stopped client");
+				}
 				pc= -1;
 			}
 		}

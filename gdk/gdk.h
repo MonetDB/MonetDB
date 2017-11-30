@@ -313,23 +313,9 @@
 #ifdef HAVE_SYS_STAT_H
 # include <sys/stat.h>
 #endif
-#ifdef STDC_HEADERS
-# include <stdlib.h>
-# include <stddef.h>
-#else
-# ifdef HAVE_STDLIB_H
-#  include <stdlib.h>
-# endif
-#endif
-#ifdef HAVE_STRING_H
-# if !defined(STDC_HEADERS) && defined(HAVE_MEMORY_H)
-#  include <memory.h>
-# endif
-# include <string.h>
-#endif
-#ifdef HAVE_STRINGS_H
-# include <strings.h>
-#endif
+#include <stdlib.h>
+#include <stddef.h>
+#include <string.h>
 #ifdef HAVE_INTTYPES_H
 # include <inttypes.h>
 #else
@@ -345,9 +331,6 @@
 
 #ifdef HAVE_SYS_FILE_H
 # include <sys/file.h>
-#endif
-#ifdef HAVE_SYS_PARAM_H
-# include <sys/param.h>		/* MAXPATHLEN */
 #endif
 
 #ifdef HAVE_DIRENT_H
@@ -403,12 +386,6 @@
 #define BAKDIR		"bat\\BACKUP"
 #define SUBDIR		"bat\\BACKUP\\SUBCOMMIT"
 #define LEFTDIR		"bat\\LEFTOVERS"
-#endif
-
-#ifdef MAXPATHLEN
-#define PATHLENGTH	MAXPATHLEN
-#else
-#define PATHLENGTH	1024	/* maximum file pathname length */
 #endif
 
 /*
@@ -540,9 +517,9 @@
 #endif
 #define TYPE_any	255	/* limit types to <255! */
 
-typedef signed char bit;
-typedef signed char bte;
-typedef short sht;
+typedef int8_t bit;
+typedef int8_t bte;
+typedef int16_t sht;
 
 #define SIZEOF_OID	SIZEOF_SIZE_T
 typedef size_t oid;
@@ -556,15 +533,7 @@ typedef float flt;
 typedef double dbl;
 typedef char *str;
 
-#if SIZEOF_INT==8
-#	define LL_CONSTANT(val)	(val)
-#elif SIZEOF_LONG==8
-#	define LL_CONSTANT(val)	(val##L)
-#elif defined(HAVE_LONG_LONG)
-#	define LL_CONSTANT(val)	(val##LL)
-#elif defined(HAVE___INT64)
-#	define LL_CONSTANT(val)	(val##i64)
-#endif
+#define LL_CONSTANT(val)	INT64_C(val)
 
 typedef oid var_t;		/* type used for heap index of var-sized BAT */
 #define SIZEOF_VAR_T	SIZEOF_OID
@@ -601,10 +570,10 @@ typedef uint32_t BUN4type;
 #if SIZEOF_BUN > 4
 typedef uint64_t BUN8type;
 #endif
-#define BUN2_NONE ((BUN2type) 0xFFFF)
-#define BUN4_NONE ((BUN4type) 0xFFFFFFFF)
+#define BUN2_NONE ((BUN2type) UINT16_C(0xFFFF))
+#define BUN4_NONE ((BUN4type) UINT32_C(0xFFFFFFFF))
 #if SIZEOF_BUN > 4
-#define BUN8_NONE ((BUN8type) LL_CONSTANT(0xFFFFFFFFFFFFFFFF))
+#define BUN8_NONE ((BUN8type) UINT64_C(0xFFFFFFFFFFFFFFFF))
 #endif
 
 
@@ -631,7 +600,7 @@ typedef struct {
 	size_t free;		/* index where free area starts. */
 	size_t size;		/* size of the heap (bytes) */
 	char *base;		/* base pointer in memory. */
-	str filename;		/* file containing image of the heap */
+	char filename[32];	/* file containing image of the heap */
 
 	unsigned int copied:1,	/* a copy of an existing map. */
 		hashash:1,	/* the string heap contains hash values */
@@ -652,7 +621,7 @@ typedef struct {
 	BUN mask;		/* number of hash buckets-1 (power of 2) */
 	void *Hash;		/* hash table */
 	void *Link;		/* collision list */
-	Heap *heap;		/* heap where the hash is stored */
+	Heap heap;		/* heap where the hash is stored */
 } Hash;
 
 typedef struct Imprints Imprints;
@@ -1614,11 +1583,7 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
  * @end multitable
  *
  * The BAT Buffer Pool module contains the code to manage the storage
- * location of BATs. It uses two tables BBPlogical and BBphysical to
- * relate the BAT name with its corresponding file system name.  This
- * information is retained in an ASCII file within the database home
- * directory for ease of inspection. It is loaded upon restart of the
- * server and saved upon transaction commit (if necessary).
+ * location of BATs.
  *
  * The remaining BBP tables contain status information to load, swap
  * and migrate the BATs. The core table is BBPcache which contains a
@@ -1644,11 +1609,11 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
  */
 typedef struct {
 	BAT *cache;		/* if loaded: BAT* handle */
-	str logical;		/* logical name */
-	str bak;		/* logical name backup */
+	char *logical;		/* logical name (may point at bak) */
+	char bak[16];		/* logical name backup (tmp_%o) */
 	bat next;		/* next BBP slot in linked list */
 	BAT *desc;		/* the BAT descriptor */
-	str physical;		/* dir + basename for storage */
+	char physical[20];	/* dir + basename for storage */
 	str options;		/* A string list of options */
 	int refs;		/* in-memory references on which the loaded status of a BAT relies */
 	int lrefs;		/* logical references on which the existence of a BAT relies */
@@ -1664,7 +1629,12 @@ gdk_export bat BBPlimit;
 #define BBPINITLOG	14
 #endif
 #define BBPINIT		(1 << BBPINITLOG)
-/* absolute maximum number of BATs is N_BBPINIT * BBPINIT */
+/* absolute maximum number of BATs is N_BBPINIT * BBPINIT
+ * this also gives the longest possible "physical" name and "bak" name
+ * of a BAT: the "bak" name is "tmp_%o", so at most 12 + \0 bytes on
+ * 64 bit architecture and 11 + \0 on 32 bit architecture; the
+ * physical name is a bit more complicated, but the longest possible
+ * name is 17 + \0 bytes (16 + \0 on 32 bits) */
 gdk_export BBPrec *BBP[N_BBPINIT];
 
 /* fast defines without checks; internal use only  */
@@ -1700,8 +1670,6 @@ gdk_export void BBPlock(void);
 
 gdk_export void BBPunlock(void);
 
-gdk_export str BBPlogical(bat b, str buf);
-gdk_export str BBPphysical(bat b, str buf);
 gdk_export BAT *BBPquickdesc(bat b, int delaccess);
 
 /*
@@ -1862,8 +1830,8 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
 typedef struct {
 	/* simple attributes */
 	char name[IDLENGTH];
-	short storage;		/* stored as another type? */
-	short linear;		/* atom can be ordered linearly */
+	uint8_t storage;	/* stored as another type? */
+	bool linear;		/* atom can be ordered linearly */
 	unsigned short size;	/* fixed size of atom */
 
 	/* automatically generated fields */
@@ -2402,7 +2370,7 @@ typedef struct threadStruct {
 	MT_Id pid;		/* physical thread id (pointer-sized) from the OS thread library */
 	str name;
 	ptr data[THREADDATA];
-	size_t sp;
+	uintptr_t sp;
 } ThreadRec, *Thread;
 
 

@@ -1555,6 +1555,8 @@ str
 MTIMEmonth_to_str(str *ret, const int *month)
 {
 	*ret = GDKstrdup(MONTHS[(*month < 1 || *month > 12) ? 0 : *month]);
+	if (*ret == NULL)
+		throw(MAL, "mtime.month_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -1574,6 +1576,8 @@ str
 MTIMEday_to_str(str *ret, const int *day)
 {
 	*ret = GDKstrdup(DAYS[(*day < 1 || *day > 7) ? 0 : *day]);
+	if (*ret == NULL)
+		throw(MAL, "mtime.day_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -1676,7 +1680,7 @@ MTIMEtimestamp_create_from_date_bulk(bat *ret, bat *bid)
 	lng add = get_offset(&tzone_local) * (lng) -60000;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batcalc.timestamp", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batcalc.timestamp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if ((bn = COLnew(b->hseqbase, TYPE_timestamp, BATcount(b), TRANSIENT)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batcalc.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -1919,7 +1923,7 @@ MTIMEtimestamp_extract_daytime_default_bulk(bat *ret, bat *bid)
 	lng add = (lng) 3600000;	/* one hour */
 
 	if (b == NULL)
-		throw(MAL, "batcalc.daytime", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batcalc.daytime", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	bn = COLnew(b->hseqbase, TYPE_daytime, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
@@ -1994,7 +1998,7 @@ MTIMEtimestamp_extract_date_default_bulk(bat *ret, bat *bid)
 	lng add = (lng) 3600000;	/* one hour */
 
 	if (b == NULL)
-		throw(MAL, "batcalc.date", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batcalc.date", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	bn = COLnew(b->hseqbase, TYPE_date, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
@@ -2143,7 +2147,7 @@ MTIMEdate_diff_bulk(bat *ret, const bat *bid1, const bat *bid2)
 			BBPunfix(b1->batCacheid);
 		if (b2)
 			BBPunfix(b2->batCacheid);
-		throw(MAL, "batmtime.diff", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batmtime.diff", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	n = BATcount(b1);
 	if (n != BATcount(b2)) {
@@ -2222,7 +2226,7 @@ MTIMEtimestamp_diff_bulk(bat *ret, const bat *bid1, const bat *bid2)
 			BBPunfix(b1->batCacheid);
 		if (b2)
 			BBPunfix(b2->batCacheid);
-		throw(MAL, "batmtime.diff", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batmtime.diff", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	n = BATcount(b1);
 	if (n != BATcount(b2)) {
@@ -2638,7 +2642,7 @@ MTIMEsecs2daytime_bulk(bat *ret, bat *bid)
 	BUN n;
 
 	if (b == NULL)
-		throw(MAL, "batcalc.daytime", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batcalc.daytime", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	bn = COLnew(b->hseqbase, TYPE_daytime, BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
@@ -2751,7 +2755,7 @@ MTIMEepoch_bulk(bat *ret, bat *bid)
 	if ((msg = MTIMEunix_epoch(&epoch)) != MAL_SUCCEED)
 		return msg;
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "batcalc.epoch", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batcalc.epoch", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	n = BATcount(b);
 	if ((bn = COLnew(b->hseqbase, TYPE_lng, n, TRANSIENT)) == NULL) {
@@ -2830,7 +2834,7 @@ MTIMEtimestamp_bulk(bat *ret, bat *bid)
 	if ((msg = MTIMEunix_epoch(&e)) != MAL_SUCCEED)
 		return msg;
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batcalc.timestamp", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batcalc.timestamp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if ((bn = COLnew(b->hseqbase, TYPE_timestamp, BATcount(b), TRANSIENT)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batcalc.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -2888,7 +2892,7 @@ MTIMEtimestamp_lng_bulk(bat *ret, bat *bid)
 	if ((msg = MTIMEunix_epoch(&e)) != MAL_SUCCEED)
 		return msg;
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batcalc.timestamp", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batcalc.timestamp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if ((bn = COLnew(b->hseqbase, TYPE_timestamp, BATcount(b), TRANSIENT)) == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(MAL, "batcalc.timestamp", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -3617,12 +3621,15 @@ MTIMEdate_to_str(str *s, const date *d, const char * const *format)
 
 	if (date_isnil(*d) || strcmp(*format, str_nil) == 0) {
 		*s = GDKstrdup(str_nil);
+		if (*s == NULL)
+			throw(MAL, "mtime.date_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	memset(&t, 0, sizeof(struct tm));
 	fromdate(*d, &t.tm_mday, &mon, &year);
 	t.tm_mon = mon - 1;
 	t.tm_year = year - 1900;
+	(void)mktime(&t); /* corrects the tm_wday etc */
 	if ((sz = strftime(buf, BUFSIZ, *format, &t)) == 0)
 		throw(MAL, "mtime.date_to_str", "failed to convert date to string using format '%s'\n", *format);
 	*s = GDKmalloc(sz + 1);
@@ -3662,11 +3669,14 @@ MTIMEtime_to_str(str *s, const daytime *d, const char * const *format)
 
 	if (daytime_isnil(*d) || strcmp(*format, str_nil) == 0) {
 		*s = GDKstrdup(str_nil);
+		if (*s == NULL)
+			throw(MAL, "mtime.time_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	memset(&t, 0, sizeof(struct tm));
 	fromtime(*d, &t.tm_hour, &t.tm_min, &t.tm_sec, &msec);
 	(void)msec;
+	(void)mktime(&t); /* corrects the tm_wday etc */
 	if ((sz = strftime(buf, BUFSIZ, *format, &t)) == 0)
 		throw(MAL, "mtime.time_to_str", "failed to convert time to string using format '%s'\n", *format);
 	*s = GDKmalloc(sz + 1);
@@ -3707,6 +3717,8 @@ MTIMEtimestamp_to_str(str *s, const timestamp *ts, const char * const *format)
 
 	if (timestamp_isnil(*ts) || strcmp(*format, str_nil) == 0) {
 		*s = GDKstrdup(str_nil);
+		if (*s == NULL)
+			throw(MAL, "mtime.timestamp_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	memset(&t, 0, sizeof(struct tm));
@@ -3714,6 +3726,7 @@ MTIMEtimestamp_to_str(str *s, const timestamp *ts, const char * const *format)
 	t.tm_mon = mon - 1;
 	t.tm_year = year - 1900;
 	fromtime(ts->msecs, &t.tm_hour, &t.tm_min, &t.tm_sec, &msec);
+	(void)mktime(&t); /* corrects the tm_wday etc */
 	(void)msec;
 	if ((sz = strftime(buf, BUFSIZ, *format, &t)) == 0)
 		throw(MAL, "mtime.timestamp_to_str", "failed to convert timestampt to string using format '%s'\n", *format);

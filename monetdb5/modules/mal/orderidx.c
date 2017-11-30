@@ -48,6 +48,9 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 		return MAL_SUCCEED;
 
 	switch (ATOMbasetype(b->ttype)) {
+	case TYPE_void:
+		/* trivially supported */
+		return MAL_SUCCEED;
 	case TYPE_bte:
 	case TYPE_sht:
 	case TYPE_int:
@@ -57,35 +60,33 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 #endif
 	case TYPE_flt:
 	case TYPE_dbl:
-		break;
-	case TYPE_str:
-		/* TODO: support strings etc. */
-	case TYPE_void:
-	case TYPE_ptr:
+		if (GDKnr_threads > 1 && BATcount(b) >= 2 * MIN_PIECE && (GDKdebug & FORCEMITOMASK) == 0)
+			break;
+		/* fall through */
 	default:
-		throw(MAL, "bat.orderidx", TYPE_NOT_SUPPORTED);
+		if (BATorderidx(b, 1) != GDK_SUCCEED)
+			throw(MAL, "bat.orderidx", TYPE_NOT_SUPPORTED);
+		return MAL_SUCCEED;
 	}
 
-	if( pieces < 0 ){
+	if( pieces <= 0 ){
 		if (GDKnr_threads <= 1) {
 			pieces = 1;
+		} else if (GDKdebug & FORCEMITOMASK) {
+			/* we want many pieces, even tiny ones */
+			if (BATcount(b) < 4)
+				pieces = 1;
+			else if (BATcount(b) / 2 < (BUN) GDKnr_threads)
+				pieces = (int) (BATcount(b) / 2);
+			else
+				pieces = GDKnr_threads;
 		} else {
-			if (GDKdebug & FORCEMITOMASK) {
-				/* we want many pieces, even tiny ones */
-				if (BATcount(b) < 4)
-					pieces = 1;
-				else if (BATcount(b) / 2 < (BUN) GDKnr_threads)
-					pieces = (int) (BATcount(b) / 2);
-				else
-					pieces = GDKnr_threads;
-			} else {
-				if (BATcount(b) < 2 * MIN_PIECE)
-					pieces = 1;
-				else if (BATcount(b) / MIN_PIECE < (BUN) GDKnr_threads)
-					pieces = (int) (BATcount(b) / MIN_PIECE);
-				else
-					pieces = GDKnr_threads;
-			}
+			if (BATcount(b) < 2 * MIN_PIECE)
+				pieces = 1;
+			else if (BATcount(b) / MIN_PIECE < (BUN) GDKnr_threads)
+				pieces = (int) (BATcount(b) / MIN_PIECE);
+			else
+				pieces = GDKnr_threads;
 		}
 	} else if (BATcount(b) < (BUN) pieces || BATcount(b) < MIN_PIECE) {
 		pieces = 1;
@@ -190,7 +191,7 @@ OIDXcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	b = BATdescriptor( *getArgReference_bat(stk, pci, 1));
 	if (b == NULL)
-		throw(MAL, "bat.orderidx", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "bat.orderidx", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	msg = OIDXcreateImplementation(cntxt, getArgType(mb,pci,1), b, pieces);
 	BBPunfix(b->batCacheid);
 	return msg;
@@ -208,7 +209,7 @@ OIDXhasorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	b = BATdescriptor(bid);
 	if (b == NULL)
-		throw(MAL, "bat.hasorderidx", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "bat.hasorderidx", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	*ret = b->torderidx != NULL;
 
@@ -229,11 +230,11 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	b = BATdescriptor(bid);
 	if (b == NULL)
-		throw(MAL, "bat.getorderidx", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "bat.getorderidx", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if (b->torderidx == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "bat.getorderidx", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "bat.getorderidx", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	if ((bn = COLnew(0, TYPE_oid, BATcount(b), TRANSIENT)) == NULL) {
@@ -262,7 +263,7 @@ OIDXorderidx(bat *ret, const bat *bid, const bit *stable)
 	(void) ret;
 	b = BATdescriptor(*bid);
 	if (b == NULL)
-		throw(MAL, "algebra.orderidx", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.orderidx", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	r = BATorderidx(b, *stable);
 	if (r != GDK_SUCCEED) {
@@ -299,7 +300,7 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bid = *getArgReference_bat(stk, pci, 1);
 	b = BATdescriptor(bid);
 	if (b == NULL)
-		throw(MAL, "bat.orderidx", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "bat.orderidx", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	assert(b->torderidx == NULL);
 
@@ -336,7 +337,7 @@ OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			GDKfree(a);
 			BBPunfix(bid);
-			throw(MAL, "bat.orderidx", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "bat.orderidx", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		m_sz += BATcount(a[i]);
 		if (BATcount(a[i]) == 0) {

@@ -27,15 +27,18 @@
 #include "monetdb_config.h"
 #include <ctype.h>
 #include <string.h>
+#ifdef HAVE_STRINGS_H
+#include <strings.h>		/* for strncasecmp */
+#endif
 #include "stream.h"
 #include "mhelp.h"
 
 typedef struct {
-	char *command;
-	char *synopsis;
-	char *syntax;
-	char *rules;
-	char *comments;
+	const char *command;
+	const char *synopsis;
+	const char *syntax;
+	const char *rules;
+	const char *comments;
 } SQLhelp;
 
 SQLhelp sqlhelp[] = {
@@ -740,33 +743,40 @@ SQLhelp sqlhelp[] = {
 	{NULL, NULL, NULL, NULL, NULL}	/* End of list marker */
 };
 
-// matching is against a substring of the command string
+#ifndef HAVE_STRNCASECMP
 static int
-strmatch(const char *heap, const char *needle)
+strncasecmp(const char *s1, const char *s2, size_t n)
 {
-	char heapbuf[2048], *s = heapbuf;
-	char needlebuf[2048], *t = needlebuf;
+	int c1, c2;
 
-	for (; *heap; heap++)
-		*s++ = (char) tolower((int) *heap);
-	*s = 0;
-	for (; *needle; needle++)
-		*t++ = (char) tolower((int) *needle);
-	*t = 0;
-	return strncmp(heapbuf, needlebuf, strlen(needlebuf)) == 0;
+	while (n > 0) {
+		c1 = (unsigned char) *s1++;
+		c2 = (unsigned char) *s2++;
+		if (c1 == 0)
+			return -c2;
+		if (c2 == 0)
+			return c1;
+		if (c1 != c2 && tolower(c1) != tolower(c2))
+			return tolower(c1) - tolower(c2);
+		n--;
+	}
+	return 0;
 }
+#endif
 
 static const char *
 sql_grammar_rule(const char *word, stream *toConsole)
 {
 	char buf[65], *s = buf;
+	size_t buflen;
 	int i;
 	while (s < buf + 64 && *word != ',' && *word && !isspace((unsigned char) *word))
 		*s++ = *word++;
 	*s = 0;
+	buflen = (size_t) (s - buf);
 
 	for (i = 0; sqlhelp[i].command; i++) {
-		if (strmatch(sqlhelp[i].command, buf) && sqlhelp[i].synopsis == NULL) {
+		if (strncasecmp(sqlhelp[i].command, buf, buflen) == 0 && sqlhelp[i].synopsis == NULL) {
 			mnstr_printf(toConsole, "%s : %s\n", buf, sqlhelp[i].syntax);
 		}
 	}
@@ -821,7 +831,7 @@ sql_word(const char *word, size_t maxlen, stream *toConsole)
 }
 
 void
-sql_help(char *pattern, stream *toConsole, int pagewidth)
+sql_help(const char *pattern, stream *toConsole, int pagewidth)
 {
 	size_t maxlen = 1, len;
 	int i, step, ncolumns, total = 0;
@@ -835,13 +845,14 @@ sql_help(char *pattern, stream *toConsole, int pagewidth)
 		pattern++;
 	}
 
-	if (*pattern && pattern[strlen(pattern) - 1] == '\n')
-		pattern[strlen(pattern) - 1] = 0;
-
 	if (*pattern && *pattern != '*') {
 		int first = 1;
+		size_t patlen = strlen(pattern);
+		/* ignore possible final newline in pattern */
+		if (pattern[patlen - 1] == '\n')
+			patlen--;
 		for (i = 0; *pattern && sqlhelp[i].command; i++)
-			if (strmatch(sqlhelp[i].command, pattern)) {
+			if (strncasecmp(sqlhelp[i].command, pattern, patlen) == 0) {
 				if (!first)
 					mnstr_printf(toConsole, "\n");
 				sql_grammar(i, toConsole);

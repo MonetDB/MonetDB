@@ -422,23 +422,46 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc, oid *lastp,
 	oid item;
 	BUN pos, childpos;
 
-	if (BATtdense(g)) {
-		/* trivial: g determines ordering, return initial
-		 * slice of s */
-		return BATslice(s, 0, n);
-	}
-
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
+	cnt = cand ? (BUN) (candend - cand) : end - start;
 	if (n > cnt)
 		n = cnt;
-	if (cand && n > (BUN) (candend - cand))
-		n = (BUN) (candend - cand);
 
 	if (n == 0) {
 		/* candidate list might refer only to values outside
 		 * of the bat and hence be effectively empty */
+		if (lastp)
+			*lastp = 0;
+		if (lastgp)
+			*lastgp = 0;
 		return BATdense(0, 0, 0);
+	}
+
+	if (BATtdense(g)) {
+		/* trivial: g determines ordering, return reference to
+		 * initial part of b (or slice of s) */
+		if (lastgp)
+			*lastgp = g->tseqbase + n - 1;
+		if (cand) {
+			if (lastp)
+				*lastp = cand[n - 1];
+			bn = COLnew(0, TYPE_oid, n, TRANSIENT);
+			if (bn == NULL)
+				return NULL;
+			memcpy(Tloc(bn, 0), cand, n * sizeof(oid));
+			BATsetcount(bn, n);
+			bn->tsorted = 1;
+			bn->trevsorted = n <= 1;
+			bn->tkey = 1;
+			bn->tseqbase = (bn->tdense = n <= 1) != 0 ? cand[0] : oid_nil;
+			bn->tnil = 0;
+			bn->tnonil = 1;
+			return bn;
+		}
+		if (lastp)
+			*lastp = b->hseqbase + start + n - 1;
+		return BATdense(0, b->hseqbase + start, n);
 	}
 
 	bn = COLnew(0, TYPE_oid, n, TRANSIENT);

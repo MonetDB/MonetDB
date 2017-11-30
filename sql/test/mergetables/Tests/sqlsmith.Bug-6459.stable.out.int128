@@ -1,0 +1,110 @@
+stdout of test 'sqlsmith.Bug-6459` in directory 'sql/test/mergetables` itself:
+
+
+# 18:45:50 >  
+# 18:45:50 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30960" "--set" "mapi_usock=/var/tmp/mtest-30179/.s.monetdb.30960" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_mergetables"
+# 18:45:50 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mergetables', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.330 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:30960/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-30179/.s.monetdb.30960
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 18:45:51 >  
+# 18:45:51 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30179" "--port=30960"
+# 18:45:51 >  
+
+#select  
+#  subq_0.c0 as c0
+#from 
+#  (select  
+#        ref_2.coord_dimension as c0
+#      from 
+#        sys.geometry_columns as ref_2
+#      where ref_2.f_table_catalog is not NULL) as subq_0
+#where EXISTS (
+#  select  
+#      ref_4.srtext as c0
+#    from 
+#      sys.spatial_ref_sys as ref_4
+#        right join sys.tracelog as ref_5
+#        on (ref_4.proj4text = ref_5.clk )
+#    where case when EXISTS (
+#          select  
+#              subq_0.c0 as c0
+#            from 
+#              sys._tables as ref_6
+#            where false) then ref_4.auth_srid else ref_4.auth_srid end
+% .L154 # table_name
+% c0 # name
+% int # type
+% 1 # length
+#select
+#  subq_0.c0 as c0
+#from
+#  (select
+#        ref_2.coord_dimension as c0
+#      from
+#        sys.geometry_columns as ref_2
+#      where ref_2.f_table_catalog is not NULL
+#      limit 127) as subq_0
+#where EXISTS (
+#  select
+#      ref_4.srtext as c0,
+#      ref_4.auth_srid as c1,
+#      37 as c2,
+#      subq_0.c0 as c3,
+#      ref_5.minflt as c4
+#    from
+#      sys.spatial_ref_sys as ref_4
+#        right join sys.tracelog as ref_5
+#        on (ref_4.proj4text = ref_5.clk )
+#    where case when EXISTS (
+#          select
+% .L364 # table_name
+% c0 # name
+% int # type
+% 1 # length
+#select
+#  cast(coalesce(cast(coalesce(subq_0.c0,
+#      subq_0.c0) as clob),
+#    subq_0.c0) as clob) as c0,
+#  subq_0.c3 as c1,
+#  subq_0.c1 as c2,
+#  subq_0.c2 as c3,
+#  subq_0.c1 as c4,
+#  subq_0.c2 as c5,
+#  subq_0.c1 as c6,
+#  subq_0.c2 as c7,
+#  subq_0.c0 as c8,
+#  subq_0.c2 as c9,
+#  subq_0.c3 as c10
+#from
+#  (select
+#        ref_0.z as c0,
+#        ref_0.x as c1,
+#        case when false then ref_0.x else ref_0.x end
+#           as c2,
+#        case when EXISTS (
+#            select
+#                ref_0.x as c0,
+#                ref_1.type as c1,
+% .L144,	.L146,	.L150,	.L152,	.L154,	.L156,	.L160,	.L162,	.L164,	.L166,	.L170 # table_name
+% c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7,	c8,	c9,	c10 # name
+% clob,	int,	int,	int,	int,	int,	int,	int,	clob,	int,	int # type
+% 0,	1,	1,	1,	1,	1,	1,	1,	0,	1,	1 # length
+
+# 18:45:51 >  
+# 18:45:51 >  "Done."
+# 18:45:51 >  
+

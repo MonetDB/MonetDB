@@ -540,6 +540,8 @@ INSPECTgetEnvironmentKey(str *ret, str *key)
 	if (s == 0)
 		throw(MAL, "inspect.getEnvironment", "environment variable '%s' not found", *key);
 	*ret = GDKstrdup(s);
+	if (*ret == NULL)
+		throw(MAL, "inspect.getEnvironment", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 

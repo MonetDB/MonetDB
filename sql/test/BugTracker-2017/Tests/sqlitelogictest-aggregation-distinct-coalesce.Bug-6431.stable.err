@@ -30,6 +30,7 @@ stderr of test 'sqlitelogictest-aggregation-distinct-coalesce.Bug-6431` in direc
 MAPI  = (monetdb) /var/tmp/mtest-26937/.s.monetdb.35713
 QUERY = SELECT DISTINCT + ( - col2 ) AS col0 FROM tab2 AS cor0 WHERE NOT ( - 1 * col2 ) <> ( 37 ) GROUP BY col2 HAVING ( col2 ) IN ( COALESCE ( + ( + COALESCE ( - 64, COUNT ( * ) + ( col0 ) * 12 ) ), + COUNT ( * ), COUNT ( * ) / 97 ) );
 ERROR = !SELECT: no such aggregate 'sql_add'
+CODE  = 42000
 
 # 12:05:34 >  
 # 12:05:34 >  "Done."

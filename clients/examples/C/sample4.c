@@ -9,12 +9,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 #include <mapi.h>
-#ifdef _MSC_VER
-#define LLFMT "%I64d"
-#else
-#define LLFMT "%lld"
-#endif
 
 #define die(dbh,hdl)	do {						\
 				if (hdl)				\
@@ -31,7 +27,7 @@ main(int argc, char **argv)
 {
 	Mapi dbh;
 	MapiHdl hdl = NULL;
-	mapi_int64 rows;
+	int64_t rows;
 
 	if (argc != 4) {
 		printf("usage:%s <host> <port> <language>\n", argv[0]);
@@ -66,7 +62,7 @@ main(int argc, char **argv)
 		rows = mapi_fetch_all_rows(hdl);
 		if (mapi_error(dbh))
 			die(dbh, hdl);
-		printf("rows received " LLFMT "\n", rows);
+		printf("rows received %" PRId64 "\n", rows);
 		while (mapi_fetch_row(hdl)) {
 			char *nme = mapi_fetch_field(hdl, 0);
 			char *age = mapi_fetch_field(hdl, 1);
@@ -97,7 +93,7 @@ main(int argc, char **argv)
 		rows = mapi_fetch_all_rows(hdl);
 		if (mapi_error(dbh))
 			die(dbh, hdl);
-		printf("rows received " LLFMT "\n", rows);
+		printf("rows received %" PRId64 "\n", rows);
 		while (mapi_fetch_row(hdl)) {
 			char *nme = mapi_fetch_field(hdl, 1);
 			char *age = mapi_fetch_field(hdl, 2);

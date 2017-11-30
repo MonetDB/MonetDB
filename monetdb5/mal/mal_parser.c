@@ -81,11 +81,11 @@ parseError(Client cntxt, str msg)
 	ssize_t i;
 
 	s= buf;
-    	for (t = l; *t && *t != '\n' && s < buf+sizeof(buf)-4; t++) {
-        	*s++ = *t;
-    	}
-    	*s++ = '\n';
-    	*s = 0;
+	for (t = l; *t && *t != '\n' && s < buf+sizeof(buf)-4; t++) {
+		*s++ = *t;
+	}
+	*s++ = '\n';
+	*s = 0;
 	line = createException( SYNTAX, "parseError", "%s", buf);
 
 	/* produce the position marker*/
@@ -1115,7 +1115,7 @@ fcnHeader(Client cntxt, int kind)
 	cntxt->backup = cntxt->curprg;
 	cntxt->curprg = newFunction( modnme, fnme, kind);
 	if(cntxt->curprg == NULL) {
-		parseError(cntxt, MAL_MALLOC_FAIL);
+		parseError(cntxt, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		cntxt->curprg = cntxt->backup;
 		return 0;
 	}
@@ -1374,7 +1374,7 @@ parseFunction(Client cntxt, int kind)
 		}
 		nme = idCopy(cntxt, i);
 		if (nme == NULL) {
-			parseError(cntxt, MAL_MALLOC_FAIL);
+			parseError(cntxt, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			return 0;
 		}
 		curInstr->fcn = getAddress(nme);
@@ -1458,12 +1458,19 @@ parseEnd(Client cntxt)
 				errors = new;
 			}
 		}
-		
-        	if (cntxt->backup) {
-            		cntxt->curprg = cntxt->backup;
-            		cntxt->backup = 0;
-        	} else {
-			(void) MSinitClientPrg(cntxt,cntxt->curmodule->name,"main");
+
+		if (cntxt->backup) {
+			cntxt->curprg = cntxt->backup;
+			cntxt->backup = 0;
+		} else {
+			str msg;
+			if((msg = MSinitClientPrg(cntxt,cntxt->curmodule->name,"main")) != MAL_SUCCEED) {
+				if(!errors)
+					cntxt->curprg->def->errors = msg;
+				else
+					GDKfree(msg);
+				return 1;
+			}
 		}
 		// pass collected errors to context
 		assert(cntxt->curprg->def->errors == NULL);
@@ -1529,7 +1536,7 @@ parseAssign(Client cntxt, int cntrl)
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
 	if((curInstr = newInstruction(curBlk, NULL, NULL)) == NULL) {
-		parseError(cntxt, MAL_MALLOC_FAIL);
+		parseError(cntxt, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return;
 	}
 
@@ -1776,7 +1783,7 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 			if (! skipcomments && e > start && curBlk->stop > 0 ) {
 				ValRecord cst;
 				if((curInstr = newInstruction(curBlk, NULL, NULL)) == NULL) {
-					parseError(cntxt, MAL_MALLOC_FAIL);
+					parseError(cntxt, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 					continue;
 				}
 				curInstr->token= REMsymbol;
@@ -1784,7 +1791,7 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 				cst.vtype = TYPE_str;
 				cst.len = (int) strlen(start);
 				if((cst.val.sval = GDKstrdup(start)) == NULL) {
-					parseError(cntxt, MAL_MALLOC_FAIL);
+					parseError(cntxt, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 					freeInstruction(curInstr);
 					continue;
 				}

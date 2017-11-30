@@ -357,12 +357,7 @@ BATproject(BAT *l, BAT *r)
 				goto bailout;
 			bn->tvheap->parentid = bn->batCacheid;
 			bn->tvheap->farmid = BBPselectfarm(bn->batRole, TYPE_str, varheap);
-			if (r->tvheap->filename) {
-				char *nme = BBP_physical(bn->batCacheid);
-				bn->tvheap->filename = GDKfilepath(NOFARM, NULL, nme, "theap");
-				if (bn->tvheap->filename == NULL)
-					goto bailout;
-			}
+			snprintf(bn->tvheap->filename, sizeof(bn->tvheap->filename), "%s.theap", BBP_physical(bn->batCacheid));
 			if (HEAPcopy(bn->tvheap, r->tvheap) != GDK_SUCCEED)
 				goto bailout;
 		}
