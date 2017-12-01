@@ -455,8 +455,8 @@ BSKTtumble(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = BSKTregisterInternal(cntxt, mb, sch, tbl, &idx);
 	if( msg != MAL_SUCCEED)
 		return msg;
-	// don't tumble when the window constraint has not been set to at least 0
-	if( baskets[idx].window < 0)
+	// don't tumble when the window constraint has not been set to at least 0 o
+	if( baskets[idx].window < 0 || !cntxt->iscqscheduleruser)
 		return MAL_SUCCEED;
 	/* also take care of time-based tumbling */
 	elw =(int) baskets[idx].window;

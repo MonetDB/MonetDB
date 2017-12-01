@@ -78,6 +78,7 @@ typedef struct CLIENT {
 	int idx;        /* entry in mal_clients */
 	oid user;       /* user id in the auth administration */
 	str username;	/* for event processor */
+	int iscqscheduleruser; /* is the continious query client? */
 	/*
 	 * The actions for a client is separated into several stages:
 	 * parsing, strategic optimization, tactical optimization, and

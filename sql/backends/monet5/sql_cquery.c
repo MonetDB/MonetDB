@@ -1560,6 +1560,7 @@ CQstartScheduler(void)
 		mnstr_destroy(cntxt->fdout);
 		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize CQscheduler\n");
 	}
+	cntxt->iscqscheduleruser = 1;
 
 	if( (cntxt->scenario = GDKstrdup("sql")) == NULL) {
 		MCcloseClient(cntxt);
