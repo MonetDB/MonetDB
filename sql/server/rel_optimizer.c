@@ -1204,7 +1204,7 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			e = rel_bind_column2(sql, t, ne->l, ne->r, 0);
 		if (!e && ne->r)
 			e = rel_bind_column(sql, t, ne->r, 0);
-		if (!e) {
+		if (!e && ne->type == e_column) {
 			e = mvc_find_subexp(sql, ne->l?ne->l:ne->r, ne->r);
 			if (e)
 				e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
