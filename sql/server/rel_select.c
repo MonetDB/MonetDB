@@ -509,7 +509,7 @@ find_table_function(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl)
 		} else {
 			node *n, *m;
 			list *nexps;
-			sql_subtype *atp;
+			sql_subtype *atp = NULL;
 			sql_arg *aa = NULL;
 
 	       		nexps = new_exp_list(sql->sa);
@@ -1884,7 +1884,7 @@ _rel_nop( mvc *sql, sql_schema *s, char *fname, list *tl, list *exps, sql_subtyp
 		} else {
 			node *n, *m;
 			list *nexps;
-			sql_subtype *atp;
+			sql_subtype *atp = NULL;
 			sql_arg *aa = NULL;
 
 	       		nexps = new_exp_list(sql->sa);
