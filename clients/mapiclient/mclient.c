@@ -283,8 +283,9 @@ static enum itimers {
 	T_HUMAN = 0,
 	T_MILLIS,
 	T_SECS,
-	T_MINSECS
-} itimemode = T_HUMAN;
+	T_MINSECS,
+	T_MICRO
+} timermode = T_HUMAN;
 
 static char htimbuf[32];
 static char *
@@ -294,19 +295,37 @@ timerHuman(void)
 
 	assert(th >= t0);
 
-	if (itimemode == T_MILLIS || (itimemode == T_HUMAN && t / 1000 < 950)) {
-		snprintf(htimbuf, sizeof(htimbuf), TTFMT ".%03dms", t / 1000, (int) (t % 1000));
+	if (timermode == T_HUMAN){
+		if( t / 1000 < 950) {
+			snprintf(htimbuf, sizeof(htimbuf), TTFMT ".%03d ms", t / 1000, (int) (t % 1000));
+			return(htimbuf);
+		}
+		t /= 1000;
+		if (t / 1000 < 60) {
+			snprintf(htimbuf, sizeof(htimbuf), TTFMT ".%d seconds", t / 1000,
+					(int) ((t % 1000) / 100));
+			return(htimbuf);
+		}
+		t /= 1000;
+		snprintf(htimbuf, sizeof(htimbuf), TTFMT ":%02d minutes", t / 60, (int) (t % 60));
+		return(htimbuf);
+	}
+	/* the scale is not strictly needed because it is part of the command line and simplifies parsing*/
+	if (timermode == T_MICRO){ 
+		snprintf(htimbuf, sizeof(htimbuf), TTFMT , t );
+		return(htimbuf);
+	}
+	if (timermode == T_MILLIS ){
+		snprintf(htimbuf, sizeof(htimbuf), TTFMT ".%03d", t / 1000, (int) (t % 1000));
 		return(htimbuf);
 	}
 	t /= 1000;
-	if (itimemode == T_SECS || (itimemode == T_HUMAN && t / 1000 < 60)) {
-		snprintf(htimbuf, sizeof(htimbuf), TTFMT ".%ds", t / 1000,
-				(int) ((t % 1000) / 100));
+	if (timermode == T_SECS ){
+		snprintf(htimbuf, sizeof(htimbuf), TTFMT ".%03d", t / 1000, (int) ((t % 1000) / 100));
 		return(htimbuf);
 	}
 	t /= 1000;
-	/* itimemode == T_MINSECS || itimemode == T_HUMAN */
-	snprintf(htimbuf, sizeof(htimbuf), TTFMT "m %ds", t / 60, (int) (t % 60));
+	snprintf(htimbuf, sizeof(htimbuf), TTFMT ":%03d", t / 60, (int) (t % 60));
 	return(htimbuf);
 }
 
@@ -1715,8 +1734,6 @@ setFormatter(const char *s)
 #endif
 	if (strcmp(s, "sql") == 0) {
 		formatter = TABLEformatter;
-	} else if (strcmp(s, "jaql") == 0) {
-		formatter = CLEANformatter;
 	} else if (strcmp(s, "csv") == 0) {
 		formatter = CSVformatter;
 		separator = strdup(",");
@@ -1826,8 +1843,8 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 	MapiMsg rc = MERROR;
 	int64_t aff, lid;
 	char *reply;
-	int64_t querytime;
-	int64_t maloptimizer;
+	int64_t querytime = 0;
+	int64_t maloptimizer = 0;
 #ifdef HAVE_POPEN
 	stream *saveFD;
 
@@ -2830,9 +2847,6 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 						case TESTformatter:
 							mnstr_printf(toConsole, "test\n");
 							break;
-						case CLEANformatter:
-							mnstr_printf(toConsole, "jaql\n");
-							break;
 						case XMLformatter:
 							mnstr_printf(toConsole, "xml\n");
 							break;
@@ -3004,7 +3018,8 @@ usage(const char *prog, int xit)
 #endif
 	fprintf(stderr, " -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml}\n");
 	fprintf(stderr, " -H          | --history          load/save cmdline history (default off)\n");
-	fprintf(stderr, " -i          | --interactive[=tm] interpret `\\' commands on stdin, use time formatting {ms,s,m}\n");
+	fprintf(stderr, " -i          | --interactive      interpret `\\' commands on stdin\n");
+	fprintf(stderr, " -t          | --timer            use time formatting {milliseconds,seconds,minutes,ticks}\n");
 	fprintf(stderr, " -l language | --language=lang    {sql,mal}\n");
 	fprintf(stderr, " -L logfile  | --log=logfile      save client/server interaction\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt   run single statement\n");
@@ -3067,6 +3082,7 @@ main(int argc, char **argv)
 		{"history", 0, 0, 'H'},
 		{"host", 1, 0, 'h'},
 		{"interactive", 2, 0, 'i'},
+		{"timer", 2, 0, 't'},
 		{"language", 1, 0, 'l'},
 		{"log", 1, 0, 'L'},
 		{"null", 1, 0, 'n'},
@@ -3122,7 +3138,7 @@ main(int argc, char **argv)
 #ifdef HAVE_ICONV
 				"E:"
 #endif
-				"f:h:i::L:l:n:"
+				"f:h:i:t:L:l:n:"
 #ifdef HAVE_POPEN
 				"|:"
 #endif
@@ -3198,18 +3214,22 @@ main(int argc, char **argv)
 			break;
 		case 'i':
 			interactive = 1;
+			break;
+		case 't':
 			showtiming = 1;
 			if (optarg != NULL) {
-				if (strcmp(optarg, "ms") == 0) {
-					itimemode = T_MILLIS;
-				} else if (strcmp(optarg, "s") == 0) {
-					itimemode = T_SECS;
-				} else if (strcmp(optarg, "m") == 0) {
-					itimemode = T_MINSECS;
+				if (strcmp(optarg, "ms") == 0 || strcmp(optarg,"milliseconds") == 0 ){
+					timermode = T_MILLIS;
+				} else if (strcmp(optarg, "s") == 0 || strcmp(optarg,"seconds") == 0){
+					timermode = T_SECS;
+				} else if (strcmp(optarg, "m") == 0 || strcmp(optarg,"minutes") == 0) {
+					timermode = T_MINSECS;
+				} else if (strcmp(optarg,"mcs") == 0  || strcmp(optarg,"microseconds") == 0) {
+					timermode = T_MICRO;
 				} else if (*optarg != '\0') {
 					fprintf(stderr, "warning: invalid argument to -i: %s\n",
 							optarg);
-				}
+				} 
 			}
 			break;
 		case 'h':
