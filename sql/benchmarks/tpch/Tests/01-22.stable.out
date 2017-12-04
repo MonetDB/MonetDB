@@ -610,7 +610,7 @@ Ready.
 #	and l_shipdate < l_commitdate
 #	and l_receiptdate >= date '1994-01-01'
 #	and l_receiptdate < date '1994-01-01' + interval '1' year
-% sys.lineitem,	sys.L4,	sys.L7 # table_name
+% sys.lineitem,	sys.L6,	sys.L11 # table_name
 % l_shipmode,	high_line_count,	low_line_count # name
 % char,	bigint,	bigint # type
 % 10,	2,	2 # length
@@ -739,7 +739,7 @@ Ready.
 #	p_brand,
 #	p_type,
 #	p_size;
-% sys.part,	sys.part,	sys.part,	sys.L15 # table_name
+% sys.part,	sys.part,	sys.part,	sys.L13 # table_name
 % p_brand,	p_type,	p_size,	supplier_cnt # name
 % char,	varchar,	int,	bigint # type
 % 10,	25,	2,	1 # length
@@ -1104,8 +1104,8 @@ Ready.
 #	o_totalprice desc,
 #	o_orderdate
 #limit 100;
-% sys.customer,	sys.customer,	sys.orders,	sys.orders,	sys.orders,	sys.L22 # table_name
-% c_name,	c_custkey,	o_orderkey,	o_orderdate,	o_totalprice,	L21 # name
+% sys.customer,	sys.customer,	sys.orders,	sys.orders,	sys.orders,	sys.L17 # table_name
+% c_name,	c_custkey,	o_orderkey,	o_orderdate,	o_totalprice,	L16 # name
 % varchar,	int,	int,	date,	decimal,	decimal # type
 % 18,	3,	5,	10,	17,	20 # length
 [ "Customer#000000667",	667,	29158,	1995-10-21,	439687.23,	305.00	]
@@ -1136,7 +1136,7 @@ Ready.
 #		and p_brand = 'Brand#23'
 #		and p_container in ('MED BAG', 'MED BOX', 'MED PKG', 'MED PACK')
 #		and l_quantity >= 10 and l_quantity <= 10 + 10
-% sys.L4 # table_name
+% sys.L33 # table_name
 % revenue # name
 % decimal # type
 % 20 # length
