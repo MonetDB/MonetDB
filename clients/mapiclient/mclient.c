@@ -109,9 +109,6 @@ int csvheader = 0;		/* include header line in CSV format */
 /* use a 64 bit integer for the timer */
 typedef int64_t timertype;
 #define TTFMT "%" PRId64
-#if 0
-static char *mark, *mark2;
-#endif
 
 static timertype t0, t1;	/* used for timing */
 
@@ -264,12 +261,6 @@ timerEnd(void)
 	mnstr_flush(toConsole);
 	t1 = gettime();
 	assert(t1 >= t0);
-#if 0
-	if (mark && specials == NOmodifier) {
-		fprintf(stderr, "%s " TTFMT ".%03d msec %s\n", mark, (t1 - t0) / 1000, (int) ((t1 - t0) % 1000), mark2 ? mark2 : "");
-		fflush(stderr);
-	}
-#endif
 }
 
 static timertype th = 0;
@@ -587,6 +578,10 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 	size_t ulen;
 	int *cutafter = malloc(sizeof(int) * fields);
 
+	if (cutafter == NULL){
+		fprintf(stderr,"Malloc for SQLrow failed");
+		exit(2);
+	}
 	/* trim the text if needed */
 	if (trim == 1) {
 		for (i = 0; i < fields; i++) {
@@ -1415,6 +1410,10 @@ SQLheader(MapiHdl hdl, int *len, int fields, char more)
 		char **names = (char **) malloc(fields * sizeof(char *));
 		int *numeric = (int *) malloc(fields * sizeof(int));
 
+		if (names == NULL || numeric == NULL){
+			fprintf(stderr,"Malloc for SQLheader failed");
+			exit(2);
+		}
 		for (i = 0; i < fields; i++) {
 			names[i] = mapi_get_name(hdl, i);
 			numeric[i] = 0;
@@ -1484,11 +1483,6 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 
 	/* in case of interactive mode, we should show timing on request */
 	singleinstr = showtiming? 1 :singleinstr;
-#if 0
-	if (mark2)
-		free(mark2);
-	mark2 = NULL;
-#endif
 
 	croppedfields = 0;
 	fields = mapi_get_field_count(hdl);
@@ -1687,9 +1681,6 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 		SQLseparator(len, printfields, '-');
 	rows = mapi_get_row_count(hdl);
 	snprintf(buf, sizeof(buf), "%" PRId64 " rows", rows);
-#if 0
-	mark2 = strdup(buf);	/* for the timer output */
-#endif
 	printf("%" PRId64 " tuple%s%s%s%s", rows, rows != 1 ? "s" : "",
 			singleinstr ? " (" : "",
 			singleinstr && formatter != TESTformatter ? timerHuman() : "",
@@ -2206,9 +2197,6 @@ showCommands(void)
 	mnstr_printf(toConsole, "\\history - show the readline history\n");
 #endif
 	mnstr_printf(toConsole, "\\help    - synopsis of the SQL syntax\n");
-#if 0
-	mnstr_printf(toConsole, "\\t      - toggle timer\n");
-#endif
 	if (mode == SQL) {
 		mnstr_printf(toConsole, "\\D table- dumps the table, or the complete database if none given.\n");
 		mnstr_printf(toConsole, "\\d[Stvsfn]+ [obj] - list database objects, or describe if obj given\n");
@@ -2339,6 +2327,10 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 	bufsiz = READBLOCK;
 	buf = malloc(bufsiz);
 
+	if (buf == NULL ){
+		fprintf(stderr,"Malloc for doFile failed");
+		exit(2);
+	}
 	do {
 		int seen_null_byte = 0;
 
@@ -2422,14 +2414,6 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 				case 'q':
 					free(buf);
 					goto bailout;
-#if 0
-				case 't':
-					mark = mark ? NULL : "Timer";
-					if (mark2)
-						free(mark2);
-					mark2 = strdup(line + 2);
-					continue;
-#endif
 				case 'X':
 					/* toggle interaction trace */
 					mapi_trace(mid, !mapi_get_trace(mid));
@@ -3019,7 +3003,7 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml}\n");
 	fprintf(stderr, " -H          | --history          load/save cmdline history (default off)\n");
 	fprintf(stderr, " -i          | --interactive      interpret `\\' commands on stdin\n");
-	fprintf(stderr, " -t          | --timer            use time formatting {milliseconds,seconds,minutes,ticks}\n");
+	fprintf(stderr, " -t          | --timer=format     use time formatting {human,minutes,seconds,milliseconds,microseconds}\n");
 	fprintf(stderr, " -l language | --language=lang    {sql,mal}\n");
 	fprintf(stderr, " -L logfile  | --log=logfile      save client/server interaction\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt   run single statement\n");
@@ -3081,7 +3065,7 @@ main(int argc, char **argv)
 		{"help", 0, 0, '?'},
 		{"history", 0, 0, 'H'},
 		{"host", 1, 0, 'h'},
-		{"interactive", 2, 0, 'i'},
+		{"interactive", 0, 0, 'i'},
 		{"timer", 2, 0, 't'},
 		{"language", 1, 0, 'l'},
 		{"log", 1, 0, 'L'},
@@ -3092,9 +3076,6 @@ main(int argc, char **argv)
 		{"port", 1, 0, 'p'},
 		{"rows", 1, 0, 'r'},
 		{"statement", 1, 0, 's'},
-#if 0
-		{"time", 0, 0, 't'},
-#endif
 		{"user", 1, 0, 'u'},
 		{"version", 0, 0, 'v'},
 		{"width", 1, 0, 'w'},
@@ -3115,11 +3096,6 @@ main(int argc, char **argv)
 	toConsole = stdout_stream = file_wastream(stdout, "stdout");
 	stderr_stream = file_wastream(stderr, "stderr");
 
-#if 0
-	mark = NULL;
-	mark2 = NULL;
-#endif
-
 	/* parse config file first, command line options override */
 	parse_dotmonetdb(&user, &passwd, &dbname, &language, &save_history, &output, &pagewidth);
 	pagewidthset = pagewidth != 0;
@@ -3138,12 +3114,10 @@ main(int argc, char **argv)
 #ifdef HAVE_ICONV
 				"E:"
 #endif
-				"f:h:i:t:L:l:n:"
+				//"f:h:i:t:L:l:n:"
+				"f:h::t:L:l:n:"
 #ifdef HAVE_POPEN
 				"|:"
-#endif
-#if 0
-				"t"
 #endif
 				"w:r:p:s:Xu:vzHP?",
 				long_options, &option_index)) != -1) {
@@ -3218,14 +3192,16 @@ main(int argc, char **argv)
 		case 't':
 			showtiming = 1;
 			if (optarg != NULL) {
-				if (strcmp(optarg, "ms") == 0 || strcmp(optarg,"milliseconds") == 0 ){
+				if (strncmp(optarg, "milli", 5) == 0 || strcmp(optarg,"milliseconds") == 0 ){
 					timermode = T_MILLIS;
-				} else if (strcmp(optarg, "s") == 0 || strcmp(optarg,"seconds") == 0){
+				} else if (strncmp(optarg, "sec", 3) == 0 || strcmp(optarg,"seconds") == 0){
 					timermode = T_SECS;
-				} else if (strcmp(optarg, "m") == 0 || strcmp(optarg,"minutes") == 0) {
+				} else if (strncmp(optarg, "milli", 5) == 0 || strcmp(optarg,"minutes") == 0) {
 					timermode = T_MINSECS;
-				} else if (strcmp(optarg,"mcs") == 0  || strcmp(optarg,"microseconds") == 0) {
+				} else if (strncmp(optarg,"micro", 5) == 0  || strcmp(optarg,"microseconds") == 0) {
 					timermode = T_MICRO;
+				} else if (strcmp(optarg,"human") == 0  ) {
+					timermode = T_HUMAN;
 				} else if (*optarg != '\0') {
 					fprintf(stderr, "warning: invalid argument to -i: %s\n",
 							optarg);
@@ -3269,11 +3245,6 @@ main(int argc, char **argv)
 		case '|':
 			assert(optarg);
 			pager = optarg;
-			break;
-#endif
-#if 0
-		case 't':
-			mark = "Timer";
 			break;
 #endif
 		case 'X':
@@ -3452,6 +3423,11 @@ main(int argc, char **argv)
 			int factor = 4;
 			size_t tolen = factor * fromlen + 1;
 			char *to = malloc(tolen);
+
+			if( to == NULL){
+				fprintf(stderr,"Malloc in main failed");
+				exit(2);
+			}
 			free_command = 1;
 
 		  try_again:
@@ -3470,6 +3446,10 @@ main(int argc, char **argv)
 					tolen = factor * fromlen + 1;
 					free(command);
 					to = malloc(tolen);
+					if( to == NULL){
+						fprintf(stderr,"Malloc in main failed");
+						exit(2);
+					}
 					goto try_again;
 				case EINVAL:
 					/* incomplete multibyte sequence */
