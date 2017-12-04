@@ -1204,7 +1204,7 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			e = rel_bind_column2(sql, t, ne->l, ne->r, 0);
 		if (!e && ne->r)
 			e = rel_bind_column(sql, t, ne->r, 0);
-		if (!e) {
+		if (!e && ne->type == e_column) {
 			e = mvc_find_subexp(sql, ne->l?ne->l:ne->r, ne->r);
 			if (e)
 				e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
@@ -4536,6 +4536,8 @@ rel_push_join_down_union(int *changes, mvc *sql, sql_rel *rel)
 			nr = rel_crossproduct(sql->sa, lr, rel_dup(or), rel->op);
 			nl->exps = exps_copy(sql->sa, exps);
 			nr->exps = exps_copy(sql->sa, exps);
+			nl = rel_project(sql->sa, nl, rel_projections(sql, nl, NULL, 1, 1));
+			nr = rel_project(sql->sa, nr, rel_projections(sql, nr, NULL, 1, 1));
 			(*changes)++;
 			return rel_inplace_setop(rel, nl, nr, op_union, rel_projections(sql, rel, NULL, 1, 1));
 		} else if (is_union(l->op) && !need_distinct(l) &&
@@ -4577,7 +4579,8 @@ rel_push_join_down_union(int *changes, mvc *sql, sql_rel *rel)
 			nr = rel_crossproduct(sql->sa, lr, rr, rel->op);
 			nl->exps = exps_copy(sql->sa, exps);
 			nr->exps = exps_copy(sql->sa, exps);
-
+			nl = rel_project(sql->sa, nl, rel_projections(sql, nl, NULL, 1, 1));
+			nr = rel_project(sql->sa, nr, rel_projections(sql, nr, NULL, 1, 1));
 			(*changes)++;
 			return rel_inplace_setop(rel, nl, nr, op_union, rel_projections(sql, rel, NULL, 1, 1));
 		} else if (!is_union(l->op) && 
@@ -4605,7 +4608,8 @@ rel_push_join_down_union(int *changes, mvc *sql, sql_rel *rel)
 			nr = rel_crossproduct(sql->sa, rel_dup(ol), rr, rel->op);
 			nl->exps = exps_copy(sql->sa, exps);
 			nr->exps = exps_copy(sql->sa, exps);
-
+			nl = rel_project(sql->sa, nl, rel_projections(sql, nl, NULL, 1, 1));
+			nr = rel_project(sql->sa, nr, rel_projections(sql, nr, NULL, 1, 1));
 			(*changes)++;
 			return rel_inplace_setop(rel, nl, nr, op_union, rel_projections(sql, rel, NULL, 1, 1));
 		/* {semi}join ( A1, union (A2, B)) [A1.partkey = A2.partkey] ->
