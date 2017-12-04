@@ -132,7 +132,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Jul2017-SP2/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jul2017-SP3/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 # we need checkpolicy and selinux-policy-devel for the SELinux policy
@@ -1046,6 +1046,48 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Mon Dec 04 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.11-20171204
+- Rebuilt.
+- BZ#3898: Deadlock on insertion
+- BZ#6429: ROUND produces wrong data type
+- BZ#6436: Query sequence with 2x ifthenelse() and next nullif() causes
+  mserver5 Segmentation fault
+- BZ#6439: Invalid references to sys.columns.id from
+  sys.statistics.column_id
+- BZ#6442: SEGFAULT with COPY INTO BEST EFFORT and skipping input columns
+- BZ#6443: complex(?) query forgets(?) column name
+- BZ#6444: Using 'with' keyword with table returning function crashes
+  monetdb
+- BZ#6445: Sqlitelogictest crash in MySQL query
+- BZ#6446: sql_parser.y bug?
+- BZ#6448: 'insert into' with multiple rows containing subqueries crashes
+- BZ#6449: Assertion error in rel_dce_refs (sqlsmith)
+- BZ#6450: Assertion error in exp_bin (sqlsmith)
+- BZ#6451: Assertion error in sql_ref_dec (sqlsmith)
+- BZ#6453: Assertion error  in rel_rename_exps (sqlsmith)
+- BZ#6454: SQL lexical error
+- BZ#6455: Assertion error in rel_apply_rewrite (sqlsmith)
+- BZ#6456: NULL becomes 0 in outer join
+- BZ#6459: Assertion error in exp_bin (sqlsmith)
+- BZ#6462: large virtual memory spike on BLOB column select
+- BZ#6465: appending to variables sized atom bats other than str bats
+  with force flag may result in corrupted heap
+- BZ#6467: date_to_str formatter is wrong
+- BZ#6470: mitosis gets in the way of simple select
+- BZ#6471: calls to sys.generate_series should auto-convert arguments
+- BZ#6472: Assertion failure in rel_rename (Sqlsmith)
+- BZ#6477: assertion eror rel_push_project_up (sqlsmith)
+- BZ#6478: Crash with nested order by/ limit offset
+- BZ#6479: Mserver receives an assertion error on a procedure call
+- BZ#6480: Segfault in mvc_find_subexp (sqlsmith)
+
+* Sun Nov  5 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.11-20171204
+- gdk: Reimplemented summing of a column of floating point (flt and dbl)
+  values.  The old code could give wildly inaccurate results when adding
+  up lots and lots of values due to lack of precision.  Try SELECT sum(c)
+  FROM t; where t is 100,000,000 rows, c is of type REAL and all values
+  are equal to 1.1.  (The old code returned 33554432 instead of 1.1e8.)
+
 * Sun Nov  5 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.9-20171105
 - BZ#6460 - selinux doen't allow mmap
 
