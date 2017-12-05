@@ -87,18 +87,18 @@ static int errseen = 0;
 #define setPrompt() sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language)
 #define debugMode() (strncmp(promptbuf, "mdb", 3) == 0)
 
-/* the internal formatters */
+/* the internal result set formatters */
 enum formatters {
 	NOformatter,
-	RAWformatter,
-	TABLEformatter,
-	CSVformatter,
-	XMLformatter,
+	RAWformatter,		// as the data is received
+	TABLEformatter,		// render as a bordered table
+	CSVformatter,		// render as a comma separate file
+	XMLformatter,		// render as a valid XML document
 	TESTformatter,
 	CLEANformatter,
 	TIMERformatter,
-	SAMformatter,
-	EXPANDEDformatter
+	SAMformatter,		// render a SAM result set
+	EXPANDEDformatter	// render as multi-row single record
 };
 static enum formatters formatter = NOformatter;
 char *separator = NULL;		/* column separator for CSV/TAB format */
@@ -263,30 +263,27 @@ timerEnd(void)
 	assert(t1 >= t0);
 }
 
-static timertype th = 0;
 static void
 timerHumanStop(void)
 {
-	th = gettime();
 }
 
 static enum itimers {
-	T_HUMAN = 0,
+	T_CLOCK = 0,
 	T_MILLIS,
 	T_SECS,
 	T_MINSECS,
 	T_MICRO
-} timermode = T_HUMAN;
+} timermode = T_CLOCK;
 
 static char htimbuf[32];
 static char *
-timerHuman(void)
+timerHuman(int64_t elapsed)
 {
-	timertype t = th - t0;
+	timertype t = elapsed;
 
-	assert(th >= t0);
 
-	if (timermode == T_HUMAN){
+	if (timermode == T_CLOCK){
 		if( t / 1000 < 950) {
 			snprintf(htimbuf, sizeof(htimbuf), TTFMT ".%03d ms", t / 1000, (int) (t % 1000));
 			return(htimbuf);
@@ -1315,11 +1312,12 @@ RAWrenderer(MapiHdl hdl)
 }
 
 static void
-TIMERrenderer(MapiHdl hdl, int64_t querytime, int64_t maloptimizertime)
+TIMERrenderer(MapiHdl hdl, int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime)
 {
+	(void) sqloptimizer;
 	SQLqueryEcho(hdl);
 	mapi_next_result(hdl);
-	printf("%s sql:0 opt:%" PRId64 " run:%" PRId64 "\n", timerHuman(),  maloptimizertime, querytime);
+	printf("%s sql:0 opt:%" PRId64 " run:%" PRId64 "\n", timerHuman(sqloptimizer + maloptimizer + querytime),  maloptimizer, querytime);
 }
 
 
@@ -1480,6 +1478,9 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 	char buf[50];
 	int ps = rowsperpage, silent = 0;
 	int64_t rows = 0;
+	int64_t sqloptimizer = 0;
+	int64_t maloptimizer = 0;
+	int64_t querytime = 0;
 
 	/* in case of interactive mode, we should show timing on request */
 	singleinstr = showtiming? 1 :singleinstr;
@@ -1680,10 +1681,13 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 	if (fields)
 		SQLseparator(len, printfields, '-');
 	rows = mapi_get_row_count(hdl);
+	sqloptimizer = 0;
+	maloptimizer = mapi_get_maloptimizertime(hdl);
+	querytime = mapi_get_querytime(hdl);
 	snprintf(buf, sizeof(buf), "%" PRId64 " rows", rows);
 	printf("%" PRId64 " tuple%s%s%s%s", rows, rows != 1 ? "s" : "",
 			singleinstr ? " (" : "",
-			singleinstr && formatter != TESTformatter ? timerHuman() : "",
+			singleinstr && formatter != TESTformatter ? timerHuman(sqloptimizer + maloptimizer + querytime) : "",
 			singleinstr ? ")" : "");
 
 	if (fields != printfields || croppedfields > 0)
@@ -1745,7 +1749,7 @@ setFormatter(const char *s)
 		} else
 			separator = strdup(s + 4);
 		csvheader = 1;
-	} else if (strcmp(s, "tab") == 0) {
+	} else if (strcmp(s, "tsv") == 0) {
 		formatter = CSVformatter;
 		separator = strdup("\t");
 	} else if (strcmp(s, "raw") == 0) {
@@ -1834,8 +1838,9 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 	MapiMsg rc = MERROR;
 	int64_t aff, lid;
 	char *reply;
-	int64_t querytime = 0;
+	int64_t sqloptimizer = 0;
 	int64_t maloptimizer = 0;
+	int64_t querytime = 0;
 #ifdef HAVE_POPEN
 	stream *saveFD;
 
@@ -1860,23 +1865,23 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			continue;
 		}
 
+		// get the timings as reported by the backend
+		sqloptimizer = 0;
+		maloptimizer = mapi_get_maloptimizertime(hdl);
+		querytime = mapi_get_querytime(hdl);
 		timerHumanStop();
-		querytime = 0;
-		maloptimizer = 0;
 		switch (mapi_get_querytype(hdl)) {
 		case Q_BLOCK:
 		case Q_PARSE:
 			/* should never see these */
 			continue;
 		case Q_UPDATE:
-			querytime = mapi_get_querytime(hdl);
-			maloptimizer = mapi_get_maloptimizertime(hdl);
 			SQLqueryEcho(hdl);
 			if (formatter == RAWformatter ||
 			    formatter == TESTformatter)
 				mnstr_printf(toConsole, "[ %" PRId64 "\t]\n", mapi_rows_affected(hdl));
 			else if (formatter == TIMERformatter)
-				TIMERrenderer(hdl, querytime, maloptimizer);
+				TIMERrenderer(hdl, 0, maloptimizer, querytime);
 			else {
 				aff = mapi_rows_affected(hdl);
 				lid = mapi_get_last_id(hdl);
@@ -1892,22 +1897,20 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 				}
 				if (singleinstr && formatter != TESTformatter)
 					mnstr_printf(toConsole, " (%s)",
-						     timerHuman());
+						     timerHuman(sqloptimizer + maloptimizer + querytime));
 				mnstr_printf(toConsole, "\n");
 			}
 			continue;
 		case Q_SCHEMA:
-			querytime = mapi_get_querytime(hdl);
-			maloptimizer = mapi_get_maloptimizertime(hdl);
 			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter) {
 				mnstr_printf(toConsole, "operation successful");
 				if (singleinstr)
 					mnstr_printf(toConsole, " (%s)",
-						     timerHuman());
+						     timerHuman(sqloptimizer + maloptimizer + querytime));
 				mnstr_printf(toConsole, "\n");
 			} else if (formatter == TIMERformatter)
-				TIMERrenderer(hdl, querytime, maloptimizer);
+				TIMERrenderer(hdl, 0, maloptimizer, querytime);
 			continue;
 		case Q_TRANS:
 			SQLqueryEcho(hdl);
@@ -1925,8 +1928,6 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 					     mapi_get_tableid(hdl));
 			break;
 		case Q_TABLE:
-			querytime = mapi_get_querytime(hdl);
-			maloptimizer = mapi_get_maloptimizertime(hdl);
 			break;
 		default:
 			if (formatter == TABLEformatter && specials != DEBUGmodifier) {
@@ -1987,7 +1988,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 				}
 				break;
 			case TIMERformatter:
-				TIMERrenderer(hdl, querytime, maloptimizer);
+				TIMERrenderer(hdl, 0, maloptimizer, querytime);
 				break;
 			case SAMformatter:
 				SAMrenderer(hdl);
@@ -3200,8 +3201,8 @@ main(int argc, char **argv)
 					timermode = T_MINSECS;
 				} else if (strncmp(optarg,"micro", 5) == 0  || strcmp(optarg,"microseconds") == 0) {
 					timermode = T_MICRO;
-				} else if (strcmp(optarg,"human") == 0  ) {
-					timermode = T_HUMAN;
+				} else if (strcmp(optarg,"clock") == 0  ) {
+					timermode = T_CLOCK;
 				} else if (*optarg != '\0') {
 					fprintf(stderr, "warning: invalid argument to -i: %s\n",
 							optarg);
