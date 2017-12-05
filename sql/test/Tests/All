@@ -101,10 +101,7 @@ median_stdev
 ifexists
 ifexists-views
 subqueries
-comment-on-schema
-comment-on-table
-comment-on-view
-comment-on-column
+comment-on
 comment-on-index
 comment-on-sequence
 comment-on-routine
