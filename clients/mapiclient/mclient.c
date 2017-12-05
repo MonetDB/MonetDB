@@ -95,7 +95,6 @@ enum formatters {
 	CSVformatter,		// render as a comma separate file
 	XMLformatter,		// render as a valid XML document
 	TESTformatter,
-	CLEANformatter,
 	TIMERformatter,
 	SAMformatter,		// render a SAM result set
 	EXPANDEDformatter	// render as multi-row single record
@@ -1284,21 +1283,6 @@ TESTrenderer(MapiHdl hdl)
 }
 
 static void
-CLEANrenderer(MapiHdl hdl)
-{
-	char *reply;
-
-	SQLqueryEcho(hdl);
-	while (!mnstr_errnr(toConsole) && (reply = fetch_line(hdl)) != 0) {
-		if (*reply == '%')
-			continue;
-		if (*reply == '=')
-			reply++;
-		mnstr_printf(toConsole, "%s\n", reply);
-	}
-}
-
-static void
 RAWrenderer(MapiHdl hdl)
 {
 	char *line;
@@ -1853,7 +1837,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 		/* handle errors first */
 		if (mapi_result_error(hdl) != NULL) {
 			mnstr_flush(toConsole);
-			if (formatter == TABLEformatter || formatter == CLEANformatter) {
+			if (formatter == TABLEformatter ) {
 				mapi_noexplain(mid, "");
 			} else {
 				mapi_noexplain(mid, NULL);
@@ -1974,9 +1958,6 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			case TESTformatter:
 				TESTrenderer(hdl);
 				break;
-			case CLEANformatter:
-				CLEANrenderer(hdl);
-				break;
 			case TABLEformatter:
 				switch (specials) {
 				case DEBUGmodifier:
@@ -2023,7 +2004,7 @@ doRequest(Mapi mid, const char *buf)
 		SQLsetSpecial(buf);
 
 	if ((hdl = mapi_query(mid, buf)) == NULL) {
-		if (formatter == TABLEformatter || formatter == CLEANformatter) {
+		if (formatter == TABLEformatter ) {
 			mapi_noexplain(mid, "");
 		} else {
 			mapi_noexplain(mid, NULL);
@@ -2050,8 +2031,7 @@ doRequest(Mapi mid, const char *buf)
 			break;						\
 		case MERROR:						\
 			/* some error, but try to continue */		\
-			if (formatter == TABLEformatter ||		\
-			    formatter == CLEANformatter) {		\
+			if (formatter == TABLEformatter ) {		\
 				mapi_noexplain(mid, "");		\
 			} else {					\
 				mapi_noexplain(mid, NULL);		\
@@ -2066,8 +2046,7 @@ doRequest(Mapi mid, const char *buf)
 			break_or_continue;				\
 		case MTIMEOUT:						\
 			/* lost contact with the server */		\
-			if (formatter == TABLEformatter ||		\
-			    formatter == CLEANformatter) {		\
+			if (formatter == TABLEformatter ) {		\
 				mapi_noexplain(mid, "");		\
 			} else {					\
 				mapi_noexplain(mid, NULL);		\
@@ -2968,7 +2947,7 @@ set_timezone(Mapi mid)
 			 "SET TIME ZONE INTERVAL '-%02d:%02d' HOUR TO MINUTE",
 			 tzone / 3600, (tzone % 3600) / 60);
 	if ((hdl = mapi_query(mid, buf)) == NULL) {
-		if (formatter == TABLEformatter || formatter == CLEANformatter) {
+		if (formatter == TABLEformatter ) {
 			mapi_noexplain(mid, "");
 		} else {
 			mapi_noexplain(mid, NULL);
