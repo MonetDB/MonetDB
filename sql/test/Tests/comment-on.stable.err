@@ -30,19 +30,19 @@ stderr of test 'comment-on` in directory 'sql/test` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-10547/.s.monetdb.37253
 QUERY = COMMENT ON VIEW tab IS '';
-
+ERROR = !COMMENT ON:no such view: foo.tab
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-10547/.s.monetdb.37253
 QUERY = COMMENT ON TABLE vivi IS '';
-
+ERROR = !COMMENT ON:no such table: foo.vivi
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-10547/.s.monetdb.37253
 QUERY = COMMENT ON TABLE tempo IS 'temporary';
-
+ERROR = !COMMENT ON:no such table: foo.tempo
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-10547/.s.monetdb.37253
 QUERY = COMMENT ON TABLE tmp.tempo IS 'temporary';
-
+ERROR = !COMMENT ON tmp object not allowed
 CODE  = 3F000
 
 # 15:45:23 >  

@@ -84,3 +84,17 @@ COMMENT ON TABLE tmp.tempo IS 'temporary';
 COMMENT ON COLUMN tab.j IS 'jj';
 COMMENT ON COLUMN foo.tab.i IS 'ii';
 \d tab
+
+/* comment on sequence works */
+CREATE SEQUENCE counter AS INT;
+\ds
+COMMENT ON SEQUENCE counter IS 'counting';
+\ds
+\ds counter
+
+/* comment on schema.sequence also works */
+SET SCHEMA sys;
+COMMENT ON SEQUENCE foo.counter IS NULL;
+SET SCHEMA foo;
+\ds
+

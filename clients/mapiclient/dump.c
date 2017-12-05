@@ -929,6 +929,7 @@ describe_sequence(Mapi mid, char *schema, char *tname, stream *toConsole)
 	char *query;
 	size_t maxquerylen;
 	char *sname = NULL;
+	comment_buffer *comments = comment_buffer_create();
 
 	if (schema == NULL) {
 		if ((sname = strchr(tname, '.')) != NULL) {
@@ -954,8 +955,9 @@ describe_sequence(Mapi mid, char *schema, char *tname, stream *toConsole)
 		     "seq.\"minvalue\", "
 		     "seq.\"maxvalue\", "
 		     "seq.\"increment\", "
-		     "seq.\"cycle\" "
-		"FROM sys.sequences seq, "
+		     "seq.\"cycle\", "
+		     "rem.\"remark\" "
+		"FROM sys.sequences seq LEFT OUTER JOIN sys.comments rem ON seq.id = rem.id, "
 		     "sys.schemas s "
 		"WHERE s.id = seq.schema_id AND "
 		      "s.name = '%s' AND "
@@ -974,6 +976,7 @@ describe_sequence(Mapi mid, char *schema, char *tname, stream *toConsole)
 		char *maxvalue = mapi_fetch_field(hdl, 4);
 		char *increment = mapi_fetch_field(hdl, 5);
 		char *cycle = mapi_fetch_field(hdl, 6);
+		char *remark = mapi_fetch_field(hdl, 7);
 
 		mnstr_printf(toConsole,
 				 "CREATE SEQUENCE \"%s\".\"%s\" START WITH %s",
@@ -985,12 +988,15 @@ describe_sequence(Mapi mid, char *schema, char *tname, stream *toConsole)
 		if (strcmp(maxvalue, "0") != 0)
 			mnstr_printf(toConsole, " MAXVALUE %s", maxvalue);
 		mnstr_printf(toConsole, " %sCYCLE;\n", strcmp(cycle, "true") == 0 ? "" : "NO ");
+		append_comment(comments, "SEQUENCE", schema, tname, NULL, NULL, remark);
 		if (mnstr_errnr(toConsole)) {
 			mapi_close_handle(hdl);
 			hdl = NULL;
 			goto bailout;
 		}
 	}
+	write_comment_buffer(toConsole, comments);
+	comment_buffer_destroy(comments);
 	if (mapi_error(mid))
 		goto bailout;
 	if (sname != NULL)
@@ -1002,6 +1008,7 @@ describe_sequence(Mapi mid, char *schema, char *tname, stream *toConsole)
 	return 0;
 
 bailout:
+	comment_buffer_destroy(comments);
 	if (hdl) {
 		if (mapi_result_error(hdl))
 			mapi_explain_result(hdl, stderr);

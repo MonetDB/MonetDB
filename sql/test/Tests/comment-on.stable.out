@@ -122,6 +122,14 @@ CREATE TABLE "foo"."tab" (
 COMMENT ON TABLE "foo"."tab" IS 'table';
 COMMENT ON COLUMN "foo"."tab"."i" IS 'ii';
 COMMENT ON COLUMN "foo"."tab"."j" IS 'jj';
+#CREATE SEQUENCE counter AS INT;
+SEQUENCE  foo.counter
+SEQUENCE  foo.counter  'counting'
+CREATE SEQUENCE "foo"."counter" START WITH 1 NO CYCLE;
+COMMENT ON SEQUENCE "foo"."counter" IS 'counting';
+#SET SCHEMA sys;
+#SET SCHEMA foo;
+SEQUENCE  foo.counter
 
 # 15:45:23 >  
 # 15:45:23 >  "Done."
