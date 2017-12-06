@@ -488,9 +488,9 @@ find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list 
 		e = exp_op(sql->sa, exps, *sf);
 	} else if (list_length(tl)) { 
 		int len, match = 0;
-		list *funcs = sql_find_funcs(sql->sa, s, fname, list_length(tl), F_UNION); 
+		list *funcs = sql_find_funcs(sql->sa, s, fname, list_length(tl), type); 
 		if (!funcs)
-			return sql_error(sql, 02, "SELECT: Malloc failed");
+			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		len = list_length(funcs);
 		if (len > 1) {
 			int i, score = 0; 
@@ -1868,7 +1868,7 @@ _rel_nop( mvc *sql, sql_schema *s, char *fname, list *tl, list *exps, sql_subtyp
 		int len, match = 0;
 		list *funcs = sql_find_funcs(sql->sa, s, fname, list_length(tl), type); 
 		if (!funcs)
-			return sql_error(sql, 02, "SELECT: Malloc failed");
+			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		len = list_length(funcs);
 		if (len > 1) {
 			int i, score = 0; 
@@ -1883,7 +1883,7 @@ _rel_nop( mvc *sql, sql_schema *s, char *fname, list *tl, list *exps, sql_subtyp
 			}
 		}
 		if (list_empty(funcs))
-			return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such operator '%s'", fname);
 
 		f = list_fetch(funcs, match);
 		if (f->func->vararg) {
