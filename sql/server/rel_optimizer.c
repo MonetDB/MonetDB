@@ -5177,14 +5177,14 @@ rel_groupby_distinct2(int *changes, mvc *sql, sql_rel *rel)
 			exp_setname(sql->sa, v, exp_find_rel_name(e), exp_name(e));
 			append(naggrs, v);
 		} else { /* group by col */
-			if (list_find_exp(gbes, e)) {  /* group by exp are needed in the aggr list, simple (alias or project) expressions are just needed in the result */
+			if (list_find_exp(gbes, e) || !list_find_exp(naggrs, e)) { 
 				append(aggrs, e);
 	
 				e = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
 			}
 			append(naggrs, e);
 		}
-	}	
+	}
 
 	l = rel->l = rel_groupby(sql, rel->l, gbes);
 	l->exps = aggrs;
