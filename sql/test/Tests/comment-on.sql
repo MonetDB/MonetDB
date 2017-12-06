@@ -85,6 +85,11 @@ COMMENT ON COLUMN tab.j IS 'jj';
 COMMENT ON COLUMN foo.tab.i IS 'ii';
 \d tab
 
+/* comment on index works */
+CREATE INDEX idx ON tab(j,i);
+COMMENT ON INDEX idx IS 'index on j';
+\d tab
+
 /* comment on sequence works */
 CREATE SEQUENCE counter AS INT;
 \ds

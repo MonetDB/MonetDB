@@ -839,9 +839,11 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 			 "SELECT i.name, "		/* 0 */
 				"k.name, "		/* 1 */
 				"kc.nr, "		/* 2 */
-				"c.name "		/* 3 */
-			 "FROM sys.idxs AS i LEFT JOIN sys.keys AS k "
-					"ON i.name = k.name, "
+				"c.name, "		/* 3 */
+				"rem.remark "		/* 4 */
+			 "FROM sys.idxs AS i "
+			 	"LEFT JOIN sys.keys AS k ON i.name = k.name "
+				"LEFT OUTER JOIN sys.comments rem ON i.id = rem.id, "
 			      "sys.objects AS kc, "
 			      "sys._columns AS c, "
 			      "sys.schemas s, "
@@ -863,6 +865,7 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 			char *k_name = mapi_fetch_field(hdl, 1);
 			char *kc_nr = mapi_fetch_field(hdl, 2);
 			char *c_name = mapi_fetch_field(hdl, 3);
+			char *remark = mapi_fetch_field(hdl, 4);
 
 			if (mapi_error(mid))
 				goto bailout;
@@ -877,6 +880,7 @@ describe_table(Mapi mid, char *schema, char *tname, stream *toConsole, int forei
 				mnstr_printf(toConsole,
 					     "CREATE INDEX \"%s\" ON \"%s\".\"%s\" (",
 					     i_name, schema, tname);
+				append_comment(comments, "INDEX", schema, i_name, NULL, NULL, remark);
 				cnt = 1;
 			} else
 				mnstr_printf(toConsole, ", ");
