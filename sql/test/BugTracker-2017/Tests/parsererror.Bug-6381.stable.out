@@ -34,12 +34,12 @@ Ready.
 #    end while;
 #    return s;
 #END;
-#select * from functions where name ='mycounter1';
-% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
-% id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
-% int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
-% 4,	10,	123,	4,	1,	1,	5,	5,	5,	4 # length
-[ 9027,	"mycounter1",	"create function mycounter1()\nreturns integer\nbegin\n declare s int;\n while (true)\n do\n set s =1;\n end while;\n return s;\nend;",	"user",	2,	1,	false,	false,	false,	2000	]
+#select name, func, "mod", language, "type", side_effect from functions where name ='mycounter1';
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% name,	func,	mod,	language,	type,	side_effect # name
+% varchar,	varchar,	varchar,	int,	int,	boolean # type
+% 10,	123,	4,	1,	1,	5 # length
+[ "mycounter1",	"create function mycounter1()\nreturns integer\nbegin\n declare s int;\n while (true)\n do\n set s =1;\n end while;\n return s;\nend;",	"user",	2,	1,	false	]
 #create function mycounter2()
 #returns integer
 #begin
@@ -50,12 +50,12 @@ Ready.
 #    end while;
 #    return s;
 #END;
-#select * from functions where name ='mycounter2';
-% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
-% id,	name,	func,	mod,	language,	type,	side_effect,	varres,	vararg,	schema_id # name
-% int,	varchar,	varchar,	varchar,	int,	int,	boolean,	boolean,	boolean,	int # type
-% 4,	10,	130,	4,	1,	1,	5,	5,	5,	4 # length
-[ 9030,	"mycounter2",	"create function mycounter2()\nreturns integer\nbegin\n declare s int;\n while (select true)\n do\n set s =1;\n end while;\n return s;\nend;",	"user",	2,	1,	false,	false,	false,	2000	]
+#select name, func, "mod", language, "type", side_effect from functions where name ='mycounter2';
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% name,	func,	mod,	language,	type,	side_effect # name
+% varchar,	varchar,	varchar,	int,	int,	boolean # type
+% 10,	130,	4,	1,	1,	5 # length
+[ "mycounter2",	"create function mycounter2()\nreturns integer\nbegin\n declare s int;\n while (select true)\n do\n set s =1;\n end while;\n return s;\nend;",	"user",	2,	1,	false	]
 #drop function mycounter1;
 #drop function mycounter2;
 
