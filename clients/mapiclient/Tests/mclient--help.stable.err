@@ -19,9 +19,10 @@ Options are:
  -d database | --database=database  database to connect to (may be URI)
  -e          | --echo            echo the query
  -E charset  | --encoding=charset specify encoding (character set) of the terminal
- -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml}
+ -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml,trash}
  -H          | --history         load/save cmdline history (default off)
- -i          | --interactive[=tm] interpret `\' commands on stdin, use time formatting {ms,s,m}
+ -i          | --interactive      interpret `\' commands on stdin
+ -t          | --timer=format     use time formatting {clock,minutes,seconds,milliseconds,microseconds,none}
  -l language | --language=lang    {sql,mal}
  -L logfile  | --log=logfile     save client/server interaction
  -s stmt     | --statement=stmt  run single statement

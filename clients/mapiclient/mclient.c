@@ -2859,7 +2859,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 						timermode = T_SECS;
 					} else if (strncmp(line, "milli", 5) == 0 || strcmp(line,"milliseconds") == 0) {
 						timermode = T_MILLIS;
-					} else if (strncmp(line, "min", 53 == 0 || strcmp(line,"minutes") == 0) {
+					} else if (strncmp(line, "min", 3) == 0 || strcmp(line,"minutes") == 0) {
 						timermode = T_MINUTES;
 					} else if (strncmp(line,"micro", 5) == 0  || strcmp(line,"microseconds") == 0) {
 						timermode = T_MICRO;
@@ -3144,7 +3144,7 @@ main(int argc, char **argv)
 #ifdef HAVE_ICONV
 				"E:"
 #endif
-				"f:h:i:t:L:l:n:"
+				"f:h:it:L:l:n:"
 #ifdef HAVE_POPEN
 				"|:"
 #endif
