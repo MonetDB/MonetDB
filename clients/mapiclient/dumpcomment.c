@@ -54,16 +54,37 @@ struct comment_buffer {
 comment_buffer*
 comment_buffer_create(void)
 {
+        buffer *buf;
+        stream *s;
         comment_buffer *comments;
 
-        comments = malloc(sizeof(*comments));
-        if (comments == NULL)
+        buf = buffer_create(4000);
+        if (!buf)
+        return NULL;
+
+        s = buffer_wastream(buf, "comments_buffer");
+        if (s == NULL) {
+                buffer_destroy(buf);
                 return NULL;
-        
-        comments->buf = NULL;
-        comments->append = NULL;
+        }
+
+        comments = malloc(sizeof(*comments));
+        if (comments == NULL) {
+                mnstr_destroy(s);
+                buffer_destroy(buf);
+                return NULL;
+        }
+
+        comments->buf = buf;
+        comments->append = s;
 
         return comments;
+}
+
+stream *
+comment_appender(comment_buffer *comments)
+{
+        return comments->append;
 }
 
 int
@@ -80,23 +101,6 @@ append_comment(
 
         if (!remark)
                 return 0;
-
-        assert((comments->buf == NULL) == (comments->append == NULL));
-        if (comments->buf == NULL) {
-                buffer *buf;
-                stream *s;
-
-                buf  = buffer_create(4000);
-                if (buf == NULL)
-                        return 1;
-                s = buffer_wastream(buf, "comments_buffer");
-                if (s == NULL) {
-                        buffer_destroy(buf);
-                        return 1;
-                }
-                comments->buf = buf;
-                comments->append = s;
-        }
 
         mnstr_printf(comments->append, "COMMENT ON %s ", obj_type);
         if (schema_name) {
@@ -122,7 +126,7 @@ append_comment(
 
         return 0;
 }
-  
+
 int
 write_comment_buffer(stream *out, comment_buffer *comments)
 {
@@ -144,11 +148,7 @@ write_comment_buffer(stream *out, comment_buffer *comments)
 void
 comment_buffer_destroy(comment_buffer *comments)
 {
-        if (comments == NULL) 
-                return;
-        if (comments->append)
-                mnstr_destroy(comments->append);
-        if (comments->buf)
-                buffer_destroy(comments->buf);
+        mnstr_destroy(comments->append);
+        buffer_destroy(comments->buf);
         free(comments);
 }

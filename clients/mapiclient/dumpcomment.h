@@ -12,6 +12,8 @@ typedef struct comment_buffer comment_buffer;
 
 comment_buffer *comment_buffer_create(void);
 
+stream *comment_appender(comment_buffer *comments);
+
 int append_comment(
         comment_buffer *comments,
         const char *obj_type,

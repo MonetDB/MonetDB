@@ -2523,7 +2523,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 						if (x & MD_SEQ)
 							describe_sequence(mid, NULL, line, toConsole);
 						if (x & MD_FUNC)
-							dump_functions(mid, toConsole, NULL, line);
+							dump_functions(mid, toConsole, line);
 						if (x & MD_SCHEMA)
 							describe_schema(mid, line, toConsole);
 #ifdef HAVE_POPEN

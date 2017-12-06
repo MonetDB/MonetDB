@@ -1246,7 +1246,7 @@ dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe,
 }
 
 int
-dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname)
+dump_functions(Mapi mid, stream *toConsole, const char *fname)
 {
 	const char functions[] =
 		"SELECT f.func "
@@ -1261,22 +1261,20 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 	char *q;
 	size_t l;
 	char dumpSystem;
-	char *schema = NULL;
+	char *sname = NULL;
+	char *dot = NULL; /* location of dot in fname */
 
-	if (sname == NULL) {
-		if (fname == NULL) {
-			schema = NULL;
-		} else if ((schema = strchr(fname, '.')) != NULL) {
-			size_t len = schema - fname;
+	if (fname == NULL) {
+		sname = NULL;
+	} else if ((dot = strchr(fname, '.')) != NULL) {
+		size_t len = dot - fname;
 
-			schema = malloc(len + 1);
-			strncpy(schema, fname, len);
-			schema[len] = 0;
-			fname += len + 1;
-		} else if ((schema = get_schema(mid)) == NULL) {
-			return 1;
-		}
-		sname = schema;
+		sname = malloc(len + 1);
+		strncpy(sname, fname, len);
+		sname[len] = 0;
+		fname += len + 1;
+	} else if ((sname = get_schema(mid)) == NULL) {
+		return 1;
 	}
 
 	dumpSystem = sname && fname;
@@ -1303,14 +1301,14 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 	}
 	if (mapi_error(mid))
 		goto bailout;
-	if (schema)
-		free(schema);
+	if (sname)
+		free(sname);
 	mapi_close_handle(hdl);
 	return mnstr_errnr(toConsole) != 0;
 
   bailout:
-	if (schema)
-		free(schema);
+	if (sname)
+		free(sname);
 	if (hdl) {
 		if (mapi_result_error(hdl))
 			mapi_explain_result(hdl, stderr);

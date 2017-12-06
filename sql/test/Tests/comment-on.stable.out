@@ -81,7 +81,7 @@ COMMENT ON SCHEMA "foo" IS 'foo bar';
 SCHEMA  foo
 CREATE SCHEMA "foo" AUTHORIZATION "monetdb";
 #CREATE SCHEMA "space separated";
-SCHEMA  foo
+SCHEMA  foo              'one final comment'
 SCHEMA  space separated  'space separated'
 CREATE SCHEMA "space separated" AUTHORIZATION "monetdb";
 COMMENT ON SCHEMA "space separated" IS 'space separated';
@@ -139,7 +139,7 @@ CREATE SEQUENCE "foo"."counter" START WITH 1 NO CYCLE;
 COMMENT ON SEQUENCE "foo"."counter" IS 'counting';
 #SET SCHEMA sys;
 #SET SCHEMA foo;
-SEQUENCE  foo.counter
+SEQUENCE  foo.counter  'still counting'
 
 # 15:45:23 >  
 # 15:45:23 >  "Done."
