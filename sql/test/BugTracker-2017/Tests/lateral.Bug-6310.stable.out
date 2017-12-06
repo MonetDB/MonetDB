@@ -40,6 +40,28 @@ Ready.
 #                             PS_COMMENT     VARCHAR(199) NOT NULL,
 #                             PRIMARY KEY    (PS_PARTKEY,PS_SUPPKEY),
 #                             FOREIGN KEY (PS_PARTKEY) references PART );
+#select
+#  ref_0.message as c0
+#from
+#  sys.rejects as ref_0,
+#  lateral (select
+#		(select name from sys.objects)
+#		   as c0
+#	  from
+#		sys.args as sample_1
+#		  right join tmp._columns as ref_4
+#			  inner join sys.part as ref_6
+#				  inner join sys.types as sample_5
+#				  on (ref_6.p_comment = sample_5.systemname )
+#				right join sys.netcdf_vars as ref_7
+#				on (sample_5.digits = ref_7.var_id )
+#			  on (ref_4.name = sample_5.systemname )
+#			right join sys.user_role as sample_8
+#			  inner join sys.partsupp as ref_10
+% .L13 # table_name
+% c0 # name
+% clob # type
+% 0 # length
 
 # 16:49:27 >  
 # 16:49:27 >  "Done."
