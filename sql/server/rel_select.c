@@ -2585,27 +2585,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 					list_append(vals, r);
 				}
 			}
-			if (!n) { /* correct types */
-				sql_subtype *st;
-				list *nvals = new_exp_list(sql->sa);
-				node *n;
-
-				if (list_length(ll) != 1)
-					return sql_error(sql, 02, SQLSTATE(42000) "IN: incorrect left hand side");
-
-				l = ll->h->data;
-				st = exp_subtype(l);
-				for (n=vals->h; n; n = n->next) {
-					if ((r = rel_check_type(sql, st, n->data, type_equal)) == NULL) 
-						return NULL;
-					list_append(nvals, r);
-				}
-				e = exp_in(sql->sa, l, nvals, sc->token==SQL_NOT_IN?cmp_notin:cmp_in);
-				rel = rel_select(sql->sa, rel, e);
-				if (pexps) 
-					rel = rel_project(sql->sa, rel, pexps);
-				return rel;
-			} else { /* complex case */
+			if (n) { /* complex case */
 				vals = new_exp_list(sql->sa);
 				n = dl->h->next;
 				n = n->data.lval->h;
