@@ -31,6 +31,9 @@ COMMENT ON SCHEMA foo IS '';
 \dn
 \dn foo
 
+/* leave the comment set so we can test msqldump */
+COMMENT ON SCHEMA foo IS 'one final comment';
+
 /* finally, awkward names work as well */
 CREATE SCHEMA "space separated";
 COMMENT ON SCHEMA "space separated" IS 'space separated';
@@ -99,7 +102,7 @@ COMMENT ON SEQUENCE counter IS 'counting';
 
 /* comment on schema.sequence also works */
 SET SCHEMA sys;
-COMMENT ON SEQUENCE foo.counter IS NULL;
+COMMENT ON SEQUENCE foo.counter IS 'still counting';
 SET SCHEMA foo;
 \ds
 

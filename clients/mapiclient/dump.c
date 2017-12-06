@@ -1417,8 +1417,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 		      "AND f.id NOT IN (SELECT function_id FROM sys.systemfunctions) "
 		"ORDER BY s.name, f.name, a.name, g.name, p.grantable";
 	const char *schemas =
-		"SELECT s.name, a.name "
-		"FROM sys.schemas s, "
+		"SELECT s.name, a.name, rem.remark "
+		"FROM sys.schemas s LEFT OUTER JOIN sys.comments rem ON s.id = rem.id, "
 		     "sys.auths a "
 		"WHERE s.\"authorization\" = a.id AND "
 		      "s.system = FALSE "
@@ -1443,9 +1443,9 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 	   anymore.
 	 */
 	const char *sequences1 =
-		"SELECT sch.name,seq.name "
+		"SELECT sch.name,seq.name, rem.remark "
 		"FROM sys.schemas sch, "
-		     "sys.sequences seq "
+		     "sys.sequences seq LEFT OUTER JOIN sys.comments rem ON seq.id = rem.id "
 		"WHERE sch.id = seq.schema_id "
 		"ORDER BY sch.name,seq.name";
 	const char *sequences2 =
@@ -1476,40 +1476,50 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 	 * creation since they can refer to each other */
 	const char *views_functions_triggers =
 		"WITH vft AS ("
-			"SELECT s.name AS sname, "
-			       "t.id AS id, "
-			       "t.query AS query "
-			"FROM sys.schemas s, "
+			"SELECT t.id AS id, "
+			       "s.name AS sname, "
+			       "t.name AS name, "
+			       "'VIEW' AS objtype, "
+			       "t.query AS query, "
+			       "rem.remark AS remark "
+			"FROM sys.schemas s LEFT OUTER JOIN sys.comments rem ON s.id = rem.id, "
 			     "sys._tables t "
 			"WHERE t.type = 1 AND "
 			      "t.system = FALSE AND "
 			      "s.id = t.schema_id AND "
 			      "s.name <> 'tmp' "
 			"UNION "
-			"SELECT s.name AS sname, "
-			       "f.id AS id, "
-			       "f.func AS query "
+			"SELECT f.id AS id, "
+			       "s.name AS sname, "
+			       "f.name AS name, "
+			       "NULL AS objtype, "
+			       "f.func AS query, "
+			       "NULL AS remark "
 			"FROM sys.schemas s, "
 			     "sys.functions f "
 			"WHERE f.language < 3 AND "
 			      "s.id = f.schema_id "
 			"AND f.id NOT IN (SELECT function_id FROM sys.systemfunctions) "
 			"UNION "
-			"SELECT s.name AS sname, "
-			       "tr.id AS id, "
-			       "tr.\"statement\" AS query "
+			"SELECT tr.id AS id, "
+			       "s.name AS sname, "
+			       "tr.name AS name, "
+			       "NULL AS objtype, "
+			       "tr.\"statement\" AS query, "
+			       "NULL AS remark "
 			"FROM sys.triggers tr, "
 			     "sys.schemas s, "
 			     "sys._tables t "
 			"WHERE s.id = t.schema_id AND "
 			      "t.id = tr.table_id"
 		") "
-		"SELECT sname, query FROM vft ORDER BY id";
+		"SELECT sname, name, objtype, query, remark FROM vft ORDER BY id";
 	char *sname = NULL;
 	char *curschema = NULL;
 	MapiHdl hdl;
 	int create_hash_func = 0;
 	int rc = 0;
+	comment_buffer *comments = comment_buffer_create();
 
 	/* start a transaction for the dump */
 	if (!describe)
@@ -1587,17 +1597,20 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 		while (mapi_fetch_row(hdl) != 0) {
 			char *sname = mapi_fetch_field(hdl, 0);
 			char *aname = mapi_fetch_field(hdl, 1);
+			char *remark = mapi_fetch_field(hdl, 2);
 
 			mnstr_printf(toConsole, "CREATE SCHEMA \"%s\"", sname);
 			if (strcmp(aname, "sysadmin") != 0) {
 				mnstr_printf(toConsole,
 					     " AUTHORIZATION \"%s\"", aname);
 			}
+			append_comment(comments, "SCHEMA", NULL, sname, NULL, NULL, remark);
 			mnstr_printf(toConsole, ";\n");
 		}
 		if (mapi_error(mid))
 			goto bailout;
 		mapi_close_handle(hdl);
+		write_comment_buffer(toConsole, comments);
 
 		if (!describe) {
 			/* dump users, part 2 */
@@ -1662,13 +1675,16 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 	while (mapi_fetch_row(hdl) != 0) {
 		char *schema = mapi_fetch_field(hdl, 0);
 		char *name = mapi_fetch_field(hdl, 1);
+		char *remark = mapi_fetch_field(hdl, 2);
 
 		if (sname != NULL && strcmp(schema, sname) != 0)
 			continue;
 		mnstr_printf(toConsole,
 			     "CREATE SEQUENCE \"%s\".\"%s\" AS INTEGER;\n",
 			     schema, name);
+		append_comment(comments, "SEQUENCE", schema, name, NULL, NULL, remark);
 	}
+	write_comment_buffer(toConsole, comments);
 	if (mapi_error(mid))
 		goto bailout;
 	mapi_close_handle(hdl);
@@ -1754,7 +1770,10 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 	       !mnstr_errnr(toConsole) &&
 	       mapi_fetch_row(hdl) != 0) {
 		char *schema = mapi_fetch_field(hdl, 0);
-		char *func = mapi_fetch_field(hdl, 1);
+		char *name = mapi_fetch_field(hdl, 1);
+		char *objtype = mapi_fetch_field(hdl, 2);
+		char *query = mapi_fetch_field(hdl, 3);
+		char *remark = mapi_fetch_field(hdl, 4);
 
 		if (mapi_error(mid))
 			goto bailout;
@@ -1771,8 +1790,11 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 			mnstr_printf(toConsole, "SET SCHEMA \"%s\";\n",
 				     curschema);
 		}
-		mnstr_printf(toConsole, "%s\n", func);
+		mnstr_printf(toConsole, "%s\n", query);
+		assert(/* no remark without objtype */ !remark || objtype);
+		append_comment(comments, objtype, sname, name, NULL, NULL, remark);
 	}
+	write_comment_buffer(toConsole, comments);
 	mapi_close_handle(hdl);
 	hdl = NULL;
 
@@ -1969,9 +1991,11 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 		mnstr_printf(toConsole, "COMMIT;\n");
 	if (sname)
 		free(sname);
+	comment_buffer_destroy(comments);
 	return rc;
 
   bailout:
+	comment_buffer_destroy(comments);
 	if (hdl) {
 		if (mapi_result_error(hdl))
 			mapi_explain_result(hdl, stderr);
