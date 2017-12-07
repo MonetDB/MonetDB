@@ -488,9 +488,9 @@ find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list 
 		e = exp_op(sql->sa, exps, *sf);
 	} else if (list_length(tl)) { 
 		int len, match = 0;
-		list *funcs = sql_find_funcs(sql->sa, s, fname, list_length(tl), F_UNION); 
+		list *funcs = sql_find_funcs(sql->sa, s, fname, list_length(tl), type); 
 		if (!funcs)
-			return sql_error(sql, 02, "SELECT: Malloc failed");
+			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		len = list_length(funcs);
 		if (len > 1) {
 			int i, score = 0; 
@@ -1868,7 +1868,7 @@ _rel_nop( mvc *sql, sql_schema *s, char *fname, list *tl, list *exps, sql_subtyp
 		int len, match = 0;
 		list *funcs = sql_find_funcs(sql->sa, s, fname, list_length(tl), type); 
 		if (!funcs)
-			return sql_error(sql, 02, "SELECT: Malloc failed");
+			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		len = list_length(funcs);
 		if (len > 1) {
 			int i, score = 0; 
@@ -1883,7 +1883,7 @@ _rel_nop( mvc *sql, sql_schema *s, char *fname, list *tl, list *exps, sql_subtyp
 			}
 		}
 		if (list_empty(funcs))
-			return sql_error(sql, 02, "SELECT: no such operator '%s'", fname);
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such operator '%s'", fname);
 
 		f = list_fetch(funcs, match);
 		if (f->func->vararg) {
@@ -2585,27 +2585,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 					list_append(vals, r);
 				}
 			}
-			if (!n) { /* correct types */
-				sql_subtype *st;
-				list *nvals = new_exp_list(sql->sa);
-				node *n;
-
-				if (list_length(ll) != 1)
-					return sql_error(sql, 02, SQLSTATE(42000) "IN: incorrect left hand side");
-
-				l = ll->h->data;
-				st = exp_subtype(l);
-				for (n=vals->h; n; n = n->next) {
-					if ((r = rel_check_type(sql, st, n->data, type_equal)) == NULL) 
-						return NULL;
-					list_append(nvals, r);
-				}
-				e = exp_in(sql->sa, l, nvals, sc->token==SQL_NOT_IN?cmp_notin:cmp_in);
-				rel = rel_select(sql->sa, rel, e);
-				if (pexps) 
-					rel = rel_project(sql->sa, rel, pexps);
-				return rel;
-			} else { /* complex case */
+			if (n) { /* complex case */
 				vals = new_exp_list(sql->sa);
 				n = dl->h->next;
 				n = n->data.lval->h;

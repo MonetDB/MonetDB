@@ -49,7 +49,8 @@ QUERY = select
                   from
                     sys.args as ref_1
                       left join tmp.objects as ref_2
-ERROR = !cardinality violation, scalar value expected
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
 
 # 14:26:12 >  
 # 14:26:12 >  "Done."

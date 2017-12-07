@@ -2799,7 +2799,8 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 				nils++;
 			} else {
 				/* round *down* to nearest integer */
-				qindex = r + p - (BUN) (p + 0.5 - (p - r - 1) * quantile);
+				double f = (p - r - 1) * quantile;
+				qindex = r + p - (BUN) (p + 0.5 - f);
 				/* be a little paranoid about the index */
 				assert(qindex >= r && qindex <  p);
 				v = BUNtail(bi, qindex);
@@ -2854,11 +2855,13 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			v = nil;
 			nils++;
 		} else {
+			double f;
 			bi = bat_iterator(b);
 			/* round (p-r-1)*quantile *down* to nearest
 			 * integer (i.e., 1.49 and 1.5 are rounded to
 			 * 1, 1.51 is rounded to 2) */
-			index = r + p - (BUN) (p + 0.5 - (p - r - 1) * quantile);
+			f = (p - r - 1) * quantile;
+			index = r + p - (BUN) (p + 0.5 - f);
 			if (ords)
 				index = ords[index] - b->hseqbase;
 			else

@@ -8,7 +8,7 @@ begin
     end while;
     return s;
 END;
-select * from functions where name ='mycounter1';
+select name, func, "mod", language, "type", side_effect from functions where name ='mycounter1';
 
 -- This semantic identical function is not recognized
 create function mycounter2()
@@ -21,7 +21,7 @@ begin
     end while;
     return s;
 END;
-select * from functions where name ='mycounter2';
+select name, func, "mod", language, "type", side_effect from functions where name ='mycounter2';
 
 drop function mycounter1;
 drop function mycounter2;
