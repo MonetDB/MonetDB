@@ -1245,6 +1245,94 @@ dump_table(Mapi mid, char *schema, char *tname, stream *toConsole, int describe,
 	return rc;
 }
 
+static int
+dump_function_comments(Mapi mid, stream *toConsole, const char *schema, const char *fname, char wantSystem)
+{
+	size_t len = 400 + (schema ? strlen(schema) : 0) + (fname ? strlen(fname) : 0);
+	char *query = malloc(len);
+	char *q = query;
+	char *end_q = q + len;
+	char *where = "WHERE";
+	MapiHdl hdl = NULL;
+	int hashge;
+	
+	if (!query)
+		return 1;
+
+	q += snprintf(q, end_q - q, "SELECT category, schema, name, type, type_digits, type_scale, remark ");
+	q += snprintf(q, end_q - q, "FROM sys.commented_function_signatures");
+	if (!wantSystem) {
+		q += snprintf(q, end_q - q, " %s system = FALSE", where);
+		where = "AND";
+	}
+	if (schema) {
+		q += snprintf(q, end_q - q, " %s schema = '%s'", where, schema);
+		where = "AND";
+	}
+	if (fname) {
+		q += snprintf(q, end_q - q, " %s fname = '%s'", where, fname);
+		where = "AND";
+	}
+	q += snprintf(q, end_q - q, " ORDER BY line;");
+	if (q >= end_q - 1)
+		goto bailout;
+
+	hashge = has_hugeint(mid);
+	hdl = mapi_query(mid, query);
+	if (hdl == NULL || mapi_error(mid))
+		goto bailout;
+	while (!mnstr_errnr(toConsole) && mapi_fetch_row(hdl) != 0) {
+		int i = 0;
+		char *category = mapi_fetch_field(hdl, i++);
+		char *sname = mapi_fetch_field(hdl, i++);
+		char *name = mapi_fetch_field(hdl, i++);
+		char *type = mapi_fetch_field(hdl, i++);
+		char *type_digits = mapi_fetch_field(hdl, i++);
+		char *type_scale = mapi_fetch_field(hdl, i++);
+		char *remark = mapi_fetch_field(hdl, i++);
+
+		if (name) {
+			mnstr_printf(toConsole, "COMMENT ON %s ", category);
+			quoted_print(toConsole, sname, 0);
+			mnstr_printf(toConsole, ".");
+			quoted_print(toConsole, name, 0);
+			mnstr_printf(toConsole, "(");
+		} else {
+			mnstr_printf(toConsole, ", ");
+		}
+
+		if (type) {
+			dump_type(NULL, toConsole, type, type_digits, type_scale, hashge);
+		}
+
+		if (remark) {
+			mnstr_printf(toConsole, ") IS ");
+			quoted_print(toConsole, remark, 1);
+			mnstr_printf(toConsole, ";\n");
+		}
+	}
+	if (mapi_error(mid))
+		goto bailout;
+
+	free(query);
+	mapi_close_handle(hdl);
+	return 0;
+
+	bailout:
+	if (query)
+		free(query);
+	if (hdl) {
+		if (mapi_result_error(hdl))
+			mapi_explain_result(hdl, stderr);
+		else
+			mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+	} else
+		mapi_explain(mid, stderr);
+
+	return 1;
+}
+
 int
 dump_functions(Mapi mid, stream *toConsole, const char *fname)
 {
@@ -1277,7 +1365,7 @@ dump_functions(Mapi mid, stream *toConsole, const char *fname)
 		return 1;
 	}
 
-	dumpSystem = sname && fname;
+	dumpSystem = !!fname;
 
 	l = sizeof(functions) + (sname ? strlen(sname) : 0) + 100;
 	q = malloc(l);
@@ -1299,6 +1387,12 @@ dump_functions(Mapi mid, stream *toConsole, const char *fname)
 
 		mnstr_printf(toConsole, "%s\n", query);
 	}
+	if (mapi_error(mid))
+		goto bailout;
+
+	if (dump_function_comments(mid, toConsole, sname, fname, fname != NULL) != 0)
+		goto bailout;
+
 	if (mapi_error(mid))
 		goto bailout;
 	if (sname)
@@ -1795,6 +1889,9 @@ dump_database(Mapi mid, stream *toConsole, int describe, const char useInserts)
 	write_comment_buffer(toConsole, comments);
 	mapi_close_handle(hdl);
 	hdl = NULL;
+
+	if (dump_function_comments(mid, toConsole, NULL, NULL, 0) != 0)
+		goto bailout;
 
 	if (curschema) {
 		if (strcmp(sname ? sname : "sys", curschema) != 0) {

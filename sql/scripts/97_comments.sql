@@ -22,7 +22,6 @@ END;
 
 
 
--- Temporary home for this function.
 -- We have to create table systemfunctions first, because describe_all_objects uses it
 -- to recognize system functions.  For some reason, the functions table does not have a
 -- 'system' column.
@@ -68,7 +67,7 @@ BEGIN
 		    SELECT  schema_id AS sid,
 			    id,
 			    name,
-			    (id IN (SELECT function_id FROM sys.systemfunctions)) AS system,
+			    EXISTS (SELECT function_id FROM sys.systemfunctions WHERE function_id = id) AS system,
 			    8 AS ntype,
 			    'FUNCTION' AS type
 		    FROM sys.functions
@@ -106,3 +105,45 @@ BEGIN
 	    ORDER BY system, name, fullname, ntype
 	);
 END;
+
+CREATE VIEW commented_function_signatures AS
+WITH
+params AS (
+        SELECT * FROM sys.args WHERE inout = 1
+),
+commented_function_params AS (
+        SELECT  f.id AS fid,
+                f.name AS fname,
+                s.name AS schema,
+                f.type AS ftype,
+                c.remark AS remark,
+                p.number AS n,
+                p.name AS aname,
+                p.type AS type,
+                p.type_digits AS type_digits,
+                p.type_scale AS type_scale,
+                RANK() OVER (PARTITION BY f.id ORDER BY number ASC) AS asc_rank,
+                RANK() OVER (PARTITION BY f.id ORDER BY number DESC) AS desc_rank
+        FROM    sys.functions f
+                JOIN sys.schemas s ON f.schema_id = s.id
+                JOIN sys.comments c ON f.id = c.id
+                LEFT OUTER JOIN params p ON f.id = p.func_id
+)
+SELECT  
+        schema,
+        fname,
+        CASE ftype
+                WHEN 1 THEN 'FUNCTION'
+                WHEN 2 THEN 'PROCEDURE'
+                WHEN 3 THEN 'AGGREGATE'
+                WHEN 4 THEN 'FILTER FUNCTION'
+                WHEN 7 THEN 'LOADER'
+                ELSE 'ROUTINE'
+        END AS category,
+        EXISTS (SELECT function_id FROM sys.systemfunctions WHERE fid = function_id) AS system,
+        CASE WHEN asc_rank = 1 THEN fname ELSE NULL END AS name,
+        CASE WHEN desc_rank = 1 THEN remark ELSE NULL END AS remark,
+        type, type_digits, type_scale,
+        ROW_NUMBER() OVER (ORDER BY fid, n) AS line
+FROM commented_function_params
+ORDER BY line;

@@ -106,3 +106,31 @@ COMMENT ON SEQUENCE foo.counter IS 'still counting';
 SET SCHEMA foo;
 \ds
 
+/* comment on function works */
+CREATE FUNCTION f() RETURNS INT BEGIN RETURN 42; END;
+COMMENT ON FUNCTION f() IS '0 parms';
+
+CREATE FUNCTION f(i INT) RETURNS INT BEGIN RETURN 43; END;
+COMMENT ON FUNCTION f(INT) IS '1 parm';
+
+CREATE FUNCTION f(i INT, j INT) RETURNS INT BEGIN RETURN 44; END;
+COMMENT ON FUNCTION f(INTEGER, INTEGER) IS '2 parms';
+
+/* these two are merged in \df but shown separately in \df f */
+CREATE FUNCTION f(i INT, j INT, k INT) RETURNS INT BEGIN RETURN 45; END;
+CREATE FUNCTION f(i INT, j INT, k INT, l INT) RETURNS INT BEGIN RETURN 45; END;
+
+CREATE PROCEDURE g() BEGIN DELETE FROM tab WHERE FALSE; END;
+COMMENT ON PROCEDURE g() IS 'proc';
+
+\df
+\df f
+\df g
+\df foo.g
+
+-- if there is no ambiguity we can leave out the parameter list
+COMMENT ON PROCEDURE g IS 'proc!';
+\df g
+
+-- if there is ambiguity we can't
+COMMENT ON FUNCTION f IS 'ambiguous';
