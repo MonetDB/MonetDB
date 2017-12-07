@@ -112,3 +112,5 @@ cleanup_statistics.Bug-6439
 update_on_procedure.Bug-6479
 HAVE_GEOM?sqlsmith.Bug-6477
 crash-in-topn.Bug-6478
+function-resolution.Bug-6436
+generate-resolution.Bug-6471

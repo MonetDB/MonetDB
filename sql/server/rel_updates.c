@@ -25,7 +25,10 @@ insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s)
 		return exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
 	} else if (s->token == SQL_DEFAULT) {
 		if (c->def) {
-			return rel_parse_val(sql, sa_message(sql->sa, "select CAST(%s AS %s);", c->def, c->type.type->sqlname), sql->emode);
+			sql_exp *e = rel_parse_val(sql, sa_message(sql->sa, "select CAST(%s AS %s);", c->def, c->type.type->sqlname), sql->emode);
+			if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
+				return NULL;
+			return e;
 		} else {
 			return sql_error(sql, 02, "INSERT INTO: column '%s' has no valid default value", c->base.name);
 		}
@@ -1734,7 +1737,10 @@ rel_parse_val(mvc *m, char *query, char emode)
 		m->session->status = status;
 		strcpy(m->errstr, errstr);
 	} else {
+		int label = m->label;
 		*m = o;
+
+		m->label = label;
 	}
 	return e;
 }
