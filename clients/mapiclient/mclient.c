@@ -272,10 +272,6 @@ timerHumanStop(void)
 
 static enum itimers {
 	T_CLOCK = 0,	// render wallclock time in human readable format
-	T_MICRO,		// render as microseconds
-	T_MILLIS,		// render as milliseconds
-	T_SECS,
-	T_MINUTES,
 	T_PERF,		// return detailed performance
 	T_NONE		// don't render the timing information
 } timermode = T_CLOCK;
@@ -288,10 +284,6 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime)
 
 
 	(void) sqloptimizer;
-	if (timermode == T_NONE){
-		htimbuf[0] = 0;
-		return htimbuf;
-	}
 	if (timermode == T_CLOCK){
 		if( t / 1000 < 950) {
 			snprintf(htimbuf, sizeof(htimbuf), "clk: " TTFMT ".%03d ms" , t / 1000, (int) (t % 1000));
@@ -315,23 +307,7 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime)
 			querytime /1000, (int)(querytime % 1000));
 		return(htimbuf);
 	}
-	/* the scale is not strictly needed because it is part of the command line and simplifies parsing*/
-	if (timermode == T_MICRO){ 
-			snprintf(htimbuf, sizeof(htimbuf), TTFMT " mu", t);
-		return(htimbuf);
-	}
-	if (timermode == T_MILLIS ){
-			snprintf(htimbuf, sizeof(htimbuf), TTFMT ".%03d ms", t / 1000, (int) (t % 1000));
-		return(htimbuf);
-	}
-	t /= 1000;
-	if (timermode == T_SECS ){
-		snprintf(htimbuf, sizeof(htimbuf), TTFMT ".%02d sec", t / 1000, (int) ((t % 1000) / 100));
-		return(htimbuf);
-	}
-	// T_MINUTES
-	t /= 1000;
-	snprintf(htimbuf, sizeof(htimbuf),  TTFMT ".%02d min",t / 60, (int) (t % 60));
+	htimbuf[0] = 0;
 	return(htimbuf);
 }
 
@@ -2839,31 +2815,12 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 						;
 					if (*line == 0) {
 						mnstr_printf(toConsole, "Current time formatter: ");
-						if( timermode == T_MICRO)
-							mnstr_printf(toConsole,"microseconds\n");
-						if( timermode == T_MILLIS)
-							mnstr_printf(toConsole,"milliseconds\n");
-						if( timermode == T_SECS)
-							mnstr_printf(toConsole,"seconds\n");
-						if( timermode == T_MINUTES)
-							mnstr_printf(toConsole,"minutes\n");
 						if( timermode == T_PERF)
 							mnstr_printf(toConsole,"performance\n");
 						if( timermode == T_NONE)
 							mnstr_printf(toConsole,"none\n");
 						if( timermode == T_CLOCK)
 							mnstr_printf(toConsole,"clock\n");
-					} else 
-					if (strncmp(line, "milli", 5) == 0 || strcmp(line,"milliseconds") == 0 ){
-						timermode = T_MILLIS;
-					} else if (strncmp(line, "sec", 3) == 0 || strcmp(line,"seconds") == 0){
-						timermode = T_SECS;
-					} else if (strncmp(line, "milli", 5) == 0 || strcmp(line,"milliseconds") == 0) {
-						timermode = T_MILLIS;
-					} else if (strncmp(line, "min", 3) == 0 || strcmp(line,"minutes") == 0) {
-						timermode = T_MINUTES;
-					} else if (strncmp(line,"micro", 5) == 0  || strcmp(line,"microseconds") == 0) {
-						timermode = T_MICRO;
 					} else if (strncmp(line,"perf",4) == 0 || strcmp(line,"performance") == 0  ) {
 						timermode = T_PERF;
 					} else if (strcmp(line,"none") == 0  ) {
@@ -3222,17 +3179,7 @@ main(int argc, char **argv)
 		case 't':
 			showtiming = 1;
 			if (optarg != NULL) {
-				if (strncmp(optarg, "milli", 5) == 0 || strcmp(optarg,"milliseconds") == 0 ){
-					timermode = T_MILLIS;
-				} else if (strncmp(optarg, "sec", 3) == 0 || strcmp(optarg,"seconds") == 0){
-					timermode = T_SECS;
-				} else if (strncmp(optarg, "min", 3) == 0 || strcmp(optarg,"minutes") == 0) {
-					timermode = T_MINUTES;
-				} else if (strncmp(optarg, "milli", 5) == 0 || strcmp(optarg,"milliseconds") == 0) {
-					timermode = T_MILLIS;
-				} else if (strncmp(optarg,"micro", 5) == 0  || strcmp(optarg,"microseconds") == 0) {
-					timermode = T_MICRO;
-				} else if (strncmp(optarg,"perf",4) == 0 || strcmp(optarg,"performance") == 0  ) {
+				if (strncmp(optarg,"perf",4) == 0 || strcmp(optarg,"performance") == 0  ) {
 					timermode = T_PERF;
 				} else if (strcmp(optarg,"none") == 0  ) {
 					timermode = T_NONE;
