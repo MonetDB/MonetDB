@@ -593,12 +593,11 @@ Cleanup
 % .t,	.v,	.L103 # table_name
 % name,	name,	L103 # name
 % varchar,	varchar,	char # type
-% 11,	16,	8 # length
-[ "tables",	"geometry_columns",	"DEP_VIEW"	]
+% 7,	16,	8 # length
 [ "columns",	"geometry_columns",	"DEP_VIEW"	]
+[ "tables",	"geometry_columns",	"DEP_VIEW"	]
 [ "types",	"geometry_columns",	"DEP_VIEW"	]
 [ "schemas",	"geometry_columns",	"DEP_VIEW"	]
-[ "environment",	"geometry_columns",	"DEP_VIEW"	]
 #SELECT t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys) and t.type in (0, 10, 20, 30);
 % .t,	.i,	.L54 # table_name
 % name,	name,	L54 # name
