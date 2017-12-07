@@ -120,6 +120,7 @@ BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl, int* res)
 	BAT *b;
 	node *o;
 	str msg = getSQLContext(cntxt, mb, &m, NULL);
+	timestamp tseen;
 
 	if ( msg != MAL_SUCCEED)
 		return msg;
@@ -129,6 +130,9 @@ BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl, int* res)
 		*res = idx;
 		return MAL_SUCCEED;
 	}
+
+	if((msg = MTIMEcurrent_timestamp(&tseen)) != MAL_SUCCEED)
+		return msg;
 
 	if ((msg = checkSQLContext(cntxt)) != MAL_SUCCEED)
 		return msg;
@@ -149,7 +153,7 @@ BSKTregisterInternal(Client cntxt, MalBlkPtr mb, str sch, str tbl, int* res)
 	baskets[idx].window = t->stream->window;
 	baskets[idx].stride = t->stream->stride;
 	baskets[idx].error = MAL_SUCCEED;
-	(void) MTIMEcurrent_timestamp(&baskets[idx].seen);
+	baskets[idx].seen = tseen;
 
 	// Check the column types first
 	for (o = t->columns.set->h; o ; o = o->next){
@@ -455,7 +459,7 @@ BSKTtumble(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = BSKTregisterInternal(cntxt, mb, sch, tbl, &idx);
 	if( msg != MAL_SUCCEED)
 		return msg;
-	// don't tumble when the window constraint has not been set to at least 0 o
+	// don't tumble when the window constraint has not been set to at least 0 or we are not querying from a CQ
 	if( baskets[idx].window < 0 || !cntxt->iscqscheduleruser)
 		return MAL_SUCCEED;
 	/* also take care of time-based tumbling */

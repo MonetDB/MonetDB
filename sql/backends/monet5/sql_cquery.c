@@ -1336,7 +1336,7 @@ CQscheduler(void *dummy)
 	int i, j, k = -1, pntasks, delay = cycleDelay, start_trans = 0;
 	Client c = (Client) dummy;
 	mvc* m;
-	str msg = MAL_SUCCEED;
+	str msg = MAL_SUCCEED, omsg;
 	lng t, now;
 	timestamp aux;
 	int claimed[MAXSTREAMS];
@@ -1463,7 +1463,13 @@ CQscheduler(void *dummy)
 				if(pnet[i].status != CQDELETE) {
 					pnet[i].run = now;				/* last executed */
 					pnet[i].time = GDKusec() - t;   /* keep around in microseconds */
-					(void) MTIMEcurrent_timestamp(&pnet[i].seen);
+					if((omsg = MTIMEcurrent_timestamp(&pnet[i].seen)) != MAL_SUCCEED && !pnet[i].error) {
+						pnet[i].error = omsg;
+						pnet[i].status = CQERROR;
+					} else if(omsg) {
+						fprintf(stderr, "CQscheduler internal error: %s\n", omsg);
+						GDKfree(omsg);
+					}
 					pnet[i].enabled = 0;
 					CQentry(i);
 				}
