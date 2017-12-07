@@ -3739,3 +3739,20 @@ MTIMEtimestamp_to_str(str *s, const timestamp *ts, const char * const *format)
 	throw(MAL, "mtime.timestamp_to_str", "strftime support missing");
 #endif
 }
+
+
+date MTIMEtodate(int day, int month, int year) {
+	return todate(day, month, year);
+}
+
+void MTIMEfromdate(date n, int *d, int *m, int *y) {
+	fromdate(n, d, m, y);
+}
+
+daytime MTIMEtotime(int hour, int min, int sec, int msec) {
+	return totime(hour, min, sec, msec);
+}
+
+void MTIMEfromtime(daytime n, int *hour, int *min, int *sec, int *msec) {
+	fromtime(n, hour, min, sec, msec);
+}

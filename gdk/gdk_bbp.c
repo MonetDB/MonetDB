@@ -1545,6 +1545,9 @@ BBPinit(void)
 		BBPaddfarm(".", 1 << TRANSIENT);
 	}
 
+	if (GDKremovedir(0, TEMPDIR) != GDK_SUCCEED)
+		GDKfatal("BBPinit: cannot remove directory %s\n", TEMPDIR);
+
 	if (GDKremovedir(0, DELDIR) != GDK_SUCCEED)
 		GDKfatal("BBPinit: cannot remove directory %s\n", DELDIR);
 

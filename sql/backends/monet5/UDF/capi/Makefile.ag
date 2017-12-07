@@ -1,0 +1,44 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+
+INCLUDES = \
+	../../../../../clients/mapilib \
+	../../../../../common/options \
+	../../../../../common/stream \
+	../../../../../monetdb5/modules/atoms \
+	../../../../../monetdb5/modules/mal \
+	../../../../../gdk \
+	../../../../../monetdb5/mal \
+	../../../../../sql/backends/monet5 \
+	../../../../../sql/common \
+	../../../../../sql/include \
+	../../../../../sql/server \
+	../../../../../sql/storage
+
+MTSAFE
+
+lib__capi = {
+	MODULE
+	DIR = libdir/monetdb5
+	SOURCES = capi.c capi.h cheader.h cheader.text.h
+	LIBS = ../../../../../monetdb5/tools/libmonetdb5 \
+	       ../../../../../gdk/libbat \
+	$(MALLOC_LIBS)
+}
+
+headers_cudf_mal = {
+	HEADERS = mal
+	DIR = libdir/monetdb5
+	SOURCES = capi.mal
+}
+
+headers_autoload = {
+	HEADERS = mal
+	DIR = libdir/monetdb5/autoload
+	SOURCES = 50_capi.mal
+}
+
+EXTRA_DIST_DIR = Tests

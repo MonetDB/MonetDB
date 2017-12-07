@@ -919,6 +919,27 @@ backend_create_map_py3_func(backend *be, sql_func *f)
 	return 0;
 }
 
+/* Create the MAL block for a registered function and optimize it */
+static int
+backend_create_c_func(backend *be, sql_func *f)
+{
+	(void)be;
+	switch(f->type) {
+	case  F_AGGR:
+		f->mod = "capi";
+		f->imp = "eval_aggr";
+		break;
+	case F_LOADER:
+	case F_PROC: /* no output */
+	case F_FUNC:
+	default: /* ie also F_FILT and F_UNION for now */
+		f->mod = "capi";
+		f->imp = "eval";
+		break;
+	}
+	return 0;
+}
+
 static int
 backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 {
@@ -1073,6 +1094,8 @@ backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 	case FUNC_LANG_MAP_PY3:
 		return backend_create_map_py3_func(be, f);
 	case FUNC_LANG_C:
+	case FUNC_LANG_CPP:
+		return backend_create_c_func(be, f);
 	case FUNC_LANG_J:
 	default:
 		return -1;
