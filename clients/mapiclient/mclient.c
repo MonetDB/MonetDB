@@ -280,7 +280,7 @@ static enum itimers {
 	T_NONE		// don't render the timing information
 } timermode = T_CLOCK;
 
-static char htimbuf[64];
+static char htimbuf[128];
 static char *
 timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime)
 {
