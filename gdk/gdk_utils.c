@@ -809,6 +809,7 @@ GDKreset(int status, int exit)
 		MT_lock_unset(&GDKthreadLock);
 		//gdk_system_reset(); CHECK OUT
 	}
+	ATOMunknown_clean();
 #ifdef NEED_MT_LOCK_INIT
 	MT_lock_destroy(&MT_system_lock);
 #if defined(USE_PTHREAD_LOCKS) && defined(ATOMIC_LOCK)
@@ -979,12 +980,8 @@ doGDKaddbuf(const char *prefix, const char *message, size_t messagelen, const ch
 		}
 		*dst = '\0';
 	} else {
-		/* construct format string because the format string
-		 * must start with ! */
-		char format[32];
-
-		snprintf(format, sizeof(format), "%s%%.*s%s", prefix ? prefix : "", suffix ? suffix : "");
-		THRprintf(GDKout, format, (int) messagelen, message);
+		THRprintf(GDKout, "%s%.*s%s", prefix ? prefix : "",
+			  (int) messagelen, message, suffix ? suffix : "");
 	}
 }
 
@@ -1319,7 +1316,7 @@ THRhighwater(void)
 	if (s != NULL) {
 		c = THRsp();
 		diff = c < s->sp ? s->sp - c : c - s->sp;
-		if (diff > THREAD_STACK_SIZE - 16 * 1024)
+		if (diff > THREAD_STACK_SIZE - 80 * 1024)
 			rc = 1;
 	}
 	MT_lock_unset(&GDKthreadLock);
@@ -1662,11 +1659,12 @@ GDKstrndup(const char *s, size_t size)
 {
 	char *p;
 
-	if (s == NULL || size == 0)
+	if (s == NULL)
 		return NULL;
 	if ((p = GDKmalloc_internal(size + 1)) == NULL)
 		return NULL;
-	memcpy(p, s, size);
+	if (size > 0)
+		memcpy(p, s, size);
 	p[size] = '\0';		/* make sure it's NULL terminated */
 	return p;
 }

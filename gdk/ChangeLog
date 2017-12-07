@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Mon Sep 18 2017 Sjoerd Mullender <sjoerd@acm.org>
+- Changed the interface of ATOMformat and VALformat: they now return a
+  pointer to the allocated string.
+
 * Thu Sep 14 2017 Sjoerd Mullender <sjoerd@acm.org>
 - The length "method" for atoms now returns a size_t, the "len" field of
   a ValRecord is now a size_t, the "size" field of the atomDesc structure

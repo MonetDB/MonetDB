@@ -1,0 +1,44 @@
+stderr of test 'sqlsmith.Bug-6455` in directory 'sql/test/mergetables` itself:
+
+
+# 13:19:13 >  
+# 13:19:13 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31757" "--set" "mapi_usock=/var/tmp/mtest-3545/.s.monetdb.31757" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_mergetables"
+# 13:19:13 >  
+
+# builtin opt 	gdk_dbpath = /home/niels/scratch/rc-monetdb/Linux-x86_64/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 31757
+# cmdline opt 	mapi_usock = /var/tmp/mtest-3545/.s.monetdb.31757
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_mergetables
+# cmdline opt 	gdk_debug = 536870922
+#WARNING To speedup user.columnsize a bulk operator implementation is needed
+#    X_110:bat[:lng] := mal.multiplex("user":str, "columnsize":str, X_46:bat[:str], X_60:bat[:lng], X_67:bat[:lng]);
+#WARNING To speedup user.heapsize a bulk operator implementation is needed
+#    X_113:bat[:lng] := mal.multiplex("user":str, "heapsize":str, X_46:bat[:str], X_67:bat[:lng], X_74:bat[:int]);
+#WARNING To speedup user.hashsize a bulk operator implementation is needed
+#    X_115:bat[:lng] := mal.multiplex("user":str, "hashsize":str, X_81:bat[:bit], X_60:bat[:lng]);
+#WARNING To speedup user.imprintsize a bulk operator implementation is needed
+#    X_117:bat[:lng] := mal.multiplex("user":str, "imprintsize":str, X_60:bat[:lng], X_46:bat[:str]);
+#WARNING To speedup aggr.exist a bulk operator implementation is needed
+#    X_1489:bat[:bit] := mal.multiplex("aggr":str, "exist":str, X_1474:bat[:int]);
+
+# 13:19:14 >  
+# 13:19:14 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3545" "--port=31757"
+# 13:19:14 >  
+
+
+# 13:19:14 >  
+# 13:19:14 >  "Done."
+# 13:19:14 >  
+

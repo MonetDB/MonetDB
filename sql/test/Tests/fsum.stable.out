@@ -1,0 +1,85 @@
+stdout of test 'fsum` in directory 'sql/test` itself:
+
+
+# 10:54:41 >  
+# 10:54:41 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=1" "--set" "mapi_open=true" "--set" "mapi_port=36044" "--set" "mapi_usock=/var/tmp/mtest-23556/.s.monetdb.36044" "--set" "monet_prompt=" "--dbpath=/ufs/sjoerd/@Monet-stable/var/MonetDB/mTests_sql_test"
+# 10:54:41 >  
+
+# MonetDB 5 server v11.27.10 (hg id: 3c6eff05597a+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test', using 1 thread
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 62.700 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:36044/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-23556/.s.monetdb.36044
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 10:54:43 >  
+# 10:54:43 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23556" "--port=36044"
+# 10:54:43 >  
+
+#create table t (val double, gid int);
+#copy 3131 records into t from stdin using delimiters ' ','\n' null as 'nan';
+#-1.7976931348623157E+308 23
+#9007199254740992.0 9
+#-5e-324 38
+#-8.98846567431158e+307 35
+#8.988465674311579e+307 12
+#8.98846567431158e+307 26
+#8.98846567431158e+307 40
+#8.98846567431158e+307 7
+#9.076030935533344e+279 39
+#-8.98846567431158e+307 37
+#1.7976931348623157E+308 22
+#8.98846567431158e+307 28
+#-8.98846567431158e+307 36
+#0.7 17
+#8.98846567431158e+307 26
+#1e+308 5
+#-1e+308 5
+#0.0 1
+#9007199254741002.0 10
+#8.98846567431158e+307 29
+#1.0 15
+#8.988465674311579e+307 25
+[ 3131	]
+#select gid, sum(val) from t where gid in (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 22, 31, 33, 39, 40) group by gid order by gid;
+% sys.t,	sys.L5 # table_name
+% gid,	L4 # name
+% int,	double # type
+% 2,	24 # length
+[ 1,	0	]
+[ 2,	1e-100	]
+[ 3,	1e+308	]
+[ 4,	1e+308	]
+[ 5,	1e+308	]
+[ 6,	1.797693028e+308	]
+[ 7,	8.988465674e+307	]
+[ 8,	9.007199255e+15	]
+[ 9,	9.007199255e+15	]
+[ 10,	9.007199255e+15	]
+[ 11,	9.007199255e+15	]
+[ 12,	1.797693135e+308	]
+[ 13,	1.797693135e+308	]
+[ 15,	7.485470861	]
+[ 16,	-0.6926474306	]
+[ 17,	-1	]
+[ 18,	1.797693135e+308	]
+[ 19,	1.797693135e+308	]
+[ 22,	1.797693135e+308	]
+[ 31,	1.797693135e+308	]
+[ 33,	1.797693135e+308	]
+[ 39,	1.797693135e+308	]
+[ 40,	1.697693135e+308	]
+#drop table t;
+
+# 10:54:43 >  
+# 10:54:43 >  "Done."
+# 10:54:43 >  
+

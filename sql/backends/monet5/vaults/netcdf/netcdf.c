@@ -10,6 +10,7 @@
 #include "netcdf.h"
 #include "sql_mvc.h"
 #include "sql.h"
+#include "sql_execute.h"
 #include "sql_scenario.h"
 #include "mal_exception.h"
 #include "netcdf_vault.h"
@@ -186,21 +187,21 @@ NCDFARRAYseries(bat *bid, bte start, bte step, int stop, int group, int series)
 
 		bn = COLnew(0, TYPE_bte, cnt, TRANSIENT);
 		if ( bn == NULL)
-			throw(MAL, "array.series", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "ntcdf.loadvar", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		array_series(sta, ste, sto, bte);
 	} else if (stop <= (int) GDK_sht_max) {
 		sht sta = (sht) start, ste = (sht) step, sto = (sht) stop;
 
 		bn = COLnew(0, TYPE_sht, cnt, TRANSIENT);
 		if ( bn == NULL)
-			throw(MAL, "array.series", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "netcdf.loadvar", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		array_series(sta, ste, sto, sht);
 	} else {
 		int sta = (int) start, ste = (int) step, sto = (int) stop;
 
 		bn = COLnew(0, TYPE_int, cnt, TRANSIENT);
 		if ( bn == NULL)
-			throw(MAL, "array.series", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			throw(MAL, "netcdf.loadvar", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		array_series(sta, ste, sto, int);
 	}
 
@@ -432,10 +433,16 @@ header: %s", nc_strerror(retval));
 								   SQLSTATE(NC000) "Cannot read global attribute %d: %s",
 								   aidx, nc_strerror(retval));
 
-		if ((retval = nc_inq_att(ncid,NC_GLOBAL,aname,&atype,&alen)) != 0)
+		if ((retval = nc_inq_att(ncid,NC_GLOBAL,aname,&atype,&alen)) != 0){
+			if (dims != NULL ){
+				for (didx = 0; didx < ndims; didx++)
+					GDKfree(dims[didx]);
+				GDKfree(dims);
+			}
 	        return createException(MAL, "netcdf.attach",
 								   SQLSTATE(NC000) "Cannot read global attribute %s type and length: %s",
 								   aname, nc_strerror(retval));
+		}
 
 		esc_str0 = SQLescapeString(aname);
 		if (!esc_str0) {
@@ -446,39 +453,67 @@ header: %s", nc_strerror(retval));
     	switch ( atype ) {
 		case NC_CHAR:
 			aval = (char *) GDKzalloc(alen + 1);
-			if ((retval = nc_get_att_text(ncid,NC_GLOBAL,aname,aval)))
+			if ((retval = nc_get_att_text(ncid,NC_GLOBAL,aname,aval))) {
+				GDKfree(esc_str0);
+				if (dims != NULL ){
+					for (didx = 0; didx < ndims; didx++)
+						GDKfree(dims[didx]);
+					GDKfree(dims);
+				}
 				return createException(MAL, "netcdf.attach",
-									   SQLSTATE(NC000) "Cannot read global attribute %s value: %s",
-									   aname, nc_strerror(retval));
-		    fix_quote(aval, alen);
+						       SQLSTATE(NC000) "Cannot read global attribute %s value: %s",
+						       aname, nc_strerror(retval));
+			}
+			fix_quote(aval, alen);
 			aval[alen] = '\0';
 			snprintf(buf, BUFSIZ, INSATTR, "GLOBAL", esc_str0, "string", aval, (int)fid, "root");
 			GDKfree(aval);
 			break;
 
 		case NC_INT:
-			if ((retval = nc_get_att_int(ncid,NC_GLOBAL,aname,&avalint)))
+			if ((retval = nc_get_att_int(ncid,NC_GLOBAL,aname,&avalint))){
+				GDKfree(esc_str0);
+				if (dims != NULL ){
+					for (didx = 0; didx < ndims; didx++)
+						GDKfree(dims[didx]);
+					GDKfree(dims);
+				}
 				return createException(MAL, "netcdf.attach",
 									   SQLSTATE(NC000) "Cannot read global attribute %s of type %s : %s",
 									   aname, prim_type_name(atype), nc_strerror(retval));
+			}
 			snprintf(abuf,80,"%d",avalint);
 			snprintf(buf, BUFSIZ, INSATTR, "GLOBAL", esc_str0, prim_type_name(atype), abuf, (int)fid, "root");
 			break;
 
 		case NC_FLOAT:
-			if ((retval = nc_get_att_float(ncid,NC_GLOBAL,aname,&avalfl)))
+			if ((retval = nc_get_att_float(ncid,NC_GLOBAL,aname,&avalfl))){
+				GDKfree(esc_str0);
+				if (dims != NULL ){
+					for (didx = 0; didx < ndims; didx++)
+						GDKfree(dims[didx]);
+					GDKfree(dims);
+				}
 				return createException(MAL, "netcdf.attach",
 									   SQLSTATE(NC000) "Cannot read global attribute %s of type %s: %s",
 									   aname, prim_type_name(atype), nc_strerror(retval));
+			}
 			snprintf(abuf,80,"%7.2f",avalfl);
 			snprintf(buf, BUFSIZ, INSATTR, "GLOBAL", esc_str0, prim_type_name(atype), abuf, (int)fid, "root");
 			break;
 
 		case NC_DOUBLE:
-			if ((retval = nc_get_att_double(ncid,NC_GLOBAL,aname,&avaldbl)))
+			if ((retval = nc_get_att_double(ncid,NC_GLOBAL,aname,&avaldbl))){
+				GDKfree(esc_str0);
+				if (dims != NULL ){
+					for (didx = 0; didx < ndims; didx++)
+						GDKfree(dims[didx]);
+					GDKfree(dims);
+				}
 				return createException(MAL, "netcdf.attach",
 									   SQLSTATE(NC000) "Cannot read global attribute %s value: %s",
 									   aname, nc_strerror(retval));
+			}
 			snprintf(abuf,80,"%7.2e",avaldbl);
 			snprintf(buf, BUFSIZ, INSATTR, "GLOBAL", esc_str0, prim_type_name(atype), abuf, (int)fid, "root");
 			break;
@@ -595,7 +630,8 @@ NCDFloadVar(bat **dim, bat *v, int ncid, int varid, nc_type vtype, int vndims, i
 	}
 
 	default:
-	  return createException(MAL, "netcdf.importvar",
+		GDKfree(dlen);
+		return createException(MAL, "netcdf.importvar",
 			   SQLSTATE(NC000) "Type %s not supported yet",
 			   prim_type_name(vtype));
 
@@ -640,7 +676,7 @@ NCDFloadVar(bat **dim, bat *v, int ncid, int varid, nc_type vtype, int vndims, i
 			GDKfree(dlen);
 			GDKfree(val_rep);
 			GDKfree(grp_rep);
-			return createException(MAL, "netcdf.loadvar", SQLSTATE(NC000) "Failed to create a dimension of variable %d", varid);
+			return sermsg;
 		}
 	}
 	/* to do : is descriptor check of dim_bids is needed? */
@@ -753,16 +789,21 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* execute 'create table ' */
 	msg = SQLstatementIntern(cntxt, &s, "netcdf.importvar", TRUE, FALSE, NULL);
-	if (msg != MAL_SUCCEED)
+	if (msg != MAL_SUCCEED){
+		GDKfree(dname);
 		return msg;
+	}
 
 /* load variable data */
 	dim_bids = (bat *)GDKmalloc(sizeof(bat) * vndims);
-	if (dim_bids == NULL)
+	if (dim_bids == NULL){
+		GDKfree(dname);
 		throw(MAL, "netcdf.importvar", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 
 	msg = NCDFloadVar(&dim_bids, &vbatid, ncid, varid, vtype, vndims, vdims);
 	if ( msg != MAL_SUCCEED ) {
+		GDKfree(dname);
 		GDKfree(dim_bids);
 		return msg;
 	}
@@ -770,12 +811,18 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* associate columns in the table with loaded variable data */
 	aname_sys = toLower(aname);
 	arr_table = mvc_bind_table(m, sch, aname_sys);
-	if (arr_table == NULL)
+	if (arr_table == NULL){
+		GDKfree(dname);
+		GDKfree(dim_bids);
 		return createException(MAL, "netcdf.importvar", SQLSTATE(NC000) "netcdf table %s missing\n", aname_sys);
+	}
 
 	col = mvc_bind_column(m, arr_table, "value");
-	if (col == NULL)
+	if (col == NULL){
+		GDKfree(dname);
+		GDKfree(dim_bids);
 		return createException(MAL, "netcdf.importvar", SQLSTATE(NC000) "Cannot find column %s.value\n", aname_sys);
+	}
 
 	vbat = BATdescriptor(vbatid);
 	store_funcs.append_col(m->session->tr, col, vbat, TYPE_bat);
@@ -786,8 +833,11 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* associate dimension bats  */
 	for (i = 0; i < vndims; i++){
 		col = mvc_bind_column(m, arr_table, dname[i]);
-		if (col == NULL)
-			return createException(MAL, "netcdf.importvar", SQLSTATE(NC000) "Cannot find column %s.%s\n", aname_sys, dname[i]);
+		if (col == NULL){
+			GDKfree(dname);
+			GDKfree(dim_bids);
+			throw(MAL, "netcdf.importvar", SQLSTATE(NC000) "Cannot find column %s.%s\n", aname_sys, dname[i]);
+		}
 
 		dimbat = BATdescriptor(dim_bids[i]);
 		store_funcs.append_col(m->session->tr, col, dimbat, TYPE_bat);

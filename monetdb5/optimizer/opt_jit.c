@@ -22,6 +22,12 @@
 #include "mal_builder.h"
 #include "opt_jit.h"
 
+#if 0
+#define OPTDEBUGjit(CODE) { CODE }
+#else
+#define OPTDEBUGjit(CODE)
+#endif
+
 str
 OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -36,10 +42,10 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) pci;
 
-	OPTDEBUGjit{
+	OPTDEBUGjit(
 		fprintf(stderr, "#Optimize JIT\n");
 		fprintFunction(stderr, mb, 0, LIST_MAL_DEBUG);
-	}
+	)
 
 	setVariableScope(mb);
 	if ( newMalBlkStmt(mb, mb->ssize) < 0)
@@ -66,22 +72,22 @@ OPTjitImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if( q && getArg(q,0) == getArg(p,2) && getModuleId(q) == algebraRef && getFunctionId(q) == projectionRef ){
 				getArg(p,2)=  getArg(q,2);
 				p= pushArgument(mb,p, getArg(q,1));
-				OPTDEBUGjit{
+				OPTDEBUGjit(
 					fprintf(stderr, "#Optimize JIT case 1\n");
 					fprintInstruction(stderr, mb,0,p,LIST_MAL_DEBUG);
-				}
+				)
 			}
 		}
 		pushInstruction(mb,p);
 	}
 
-	OPTDEBUGjit{
+	OPTDEBUGjit(
 		chkTypes(cntxt->usermodule,mb,TRUE);
 		GDKfree(msg);
 		msg = MAL_SUCCEED;
 		fprintf(stderr, "#Optimize JIT done\n");
 		fprintFunction(stderr, mb, 0, LIST_MAL_DEBUG);
-	}
+	)
 
 	GDKfree(old);
     /* Defense line against incorrect plans */

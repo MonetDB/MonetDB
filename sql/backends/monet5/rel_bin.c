@@ -561,6 +561,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			fprintf(stderr, "could not find %s.%s\n", (char*)e->l, (char*)e->r);
 			print_stmtlist(sql->sa, left);
 			print_stmtlist(sql->sa, right);
+			assert(s);
+			return NULL;
 		}
 	 }	break;
 	case e_cmp: {
@@ -614,22 +616,28 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (e->flag == cmp_in || e->flag == cmp_notin) {
 			return handle_in_exps(be, e->l, e->r, left, right, grp, ext, cnt, sel, (e->flag == cmp_in), 0);
 		}
-		if (e->flag == cmp_or && (!right || right->nrcols == 1)) {
+		if (get_cmp(e) == cmp_or && (!right || right->nrcols == 1)) {
+			sql_subtype *bt = sql_bind_localtype("bit");
 			list *l = e->l;
 			node *n;
 			stmt *sel1 = NULL, *sel2 = NULL;
+			int anti = is_anti(e);
 
 			sel1 = sel;
 			sel2 = sel;
 			for( n = l->h; n; n = n->next ) {
+				sql_exp *c = n->data;
 				stmt *sin = (sel1 && sel1->nrcols)?sel1:NULL;
 
-				s = exp_bin(be, n->data, left, right, grp, ext, cnt, sin); 
+				/* propagate the anti flag */
+				if (anti) 
+					set_anti(c);
+				s = exp_bin(be, c, left, right, grp, ext, cnt, sin); 
 				if (!s) 
 					return s;
+
 				if (!sin && sel1 && sel1->nrcols == 0 && s->nrcols == 0) {
-					sql_subtype *bt = sql_bind_localtype("bit");
-					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, "and", bt, bt, F_FUNC);
+					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, anti?"or":"and", bt, bt, F_FUNC);
 					assert(f);
 					s = stmt_binop(be, sel1, s, f);
 				} else if (sel1 && (sel1->nrcols == 0 || s->nrcols == 0)) {
@@ -637,22 +645,26 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				
 					predicate = stmt_const(be, predicate, stmt_bool(be, 1));
 					if (s->nrcols == 0)
-						s = stmt_uselect(be, predicate, s, cmp_equal, sel1, 0);
+						s = stmt_uselect(be, predicate, s, cmp_equal, sel1, anti);
 					else
-						s = stmt_uselect(be, predicate, sel1, cmp_equal, s, 0);
+						s = stmt_uselect(be, predicate, sel1, cmp_equal, s, anti);
 				}
 				sel1 = s;
 			}
 			l = e->r;
 			for( n = l->h; n; n = n->next ) {
+				sql_exp *c = n->data;
 				stmt *sin = (sel2 && sel2->nrcols)?sel2:NULL;
 
-				s = exp_bin(be, n->data, left, right, grp, ext, cnt, sin); 
+				/* propagate the anti flag */
+				if (anti) 
+					set_anti(c);
+				s = exp_bin(be, c, left, right, grp, ext, cnt, sin); 
 				if (!s) 
 					return s;
+
 				if (!sin && sel2 && sel2->nrcols == 0 && s->nrcols == 0) {
-					sql_subtype *bt = sql_bind_localtype("bit");
-					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, "and", bt, bt, F_FUNC);
+					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, anti?"or":"and", bt, bt, F_FUNC);
 					assert(f);
 					s = stmt_binop(be, sel2, s, f);
 				} else if (sel2 && (sel2->nrcols == 0 || s->nrcols == 0)) {
@@ -660,15 +672,14 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				
 					predicate = stmt_const(be, predicate, stmt_bool(be, 1));
 					if (s->nrcols == 0)
-						s = stmt_uselect(be, predicate, s, cmp_equal, sel2, 0);
+						s = stmt_uselect(be, predicate, s, cmp_equal, sel2, anti);
 					else
-						s = stmt_uselect(be, predicate, sel2, cmp_equal, s, 0);
+						s = stmt_uselect(be, predicate, sel2, cmp_equal, s, anti);
 				}
 				sel2 = s;
 			}
 			if (sel1->nrcols == 0 && sel2->nrcols == 0) {
-				sql_subtype *bt = sql_bind_localtype("bit");
-				sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, "or", bt, bt, F_FUNC);
+				sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema, anti?"and":"or", bt, bt, F_FUNC);
 				assert(f);
 				return stmt_binop(be, sel1, sel2, f);
 			}
@@ -676,17 +687,19 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				stmt *predicate = bin_first_column(be, left);
 				
 				predicate = stmt_const(be, predicate, stmt_bool(be, 1));
-				sel1 = stmt_uselect(be, predicate, sel1, cmp_equal, NULL, 0);
+				sel1 = stmt_uselect(be, predicate, sel1, cmp_equal, NULL, anti);
 			}
 			if (sel2->nrcols == 0) {
 				stmt *predicate = bin_first_column(be, left);
 				
 				predicate = stmt_const(be, predicate, stmt_bool(be, 1));
-				sel2 = stmt_uselect(be, predicate, sel2, cmp_equal, NULL, 0);
+				sel2 = stmt_uselect(be, predicate, sel2, cmp_equal, NULL, anti);
 			}
+			if (anti)
+				return stmt_project(be, stmt_tinter(be, sel1, sel2), sel1);
 			return stmt_tunion(be, sel1, sel2);
 		}
-		if (e->flag == cmp_or && right) {  /* join */
+		if (get_cmp(e) == cmp_or && right) {  /* join */
 			assert(0);
 		}
 
@@ -773,13 +786,13 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				/* value compare or select */
 				if (l->nrcols == 0 && r->nrcols == 0) {
 					sql_subfunc *f = sql_bind_func(sql->sa, sql->session->schema,
-							compare_func((comp_type)e->flag, is_anti(e)),
+							compare_func((comp_type)get_cmp(e), is_anti(e)),
 							tail_type(l), tail_type(l), F_FUNC);
 					assert(f);
 					s = stmt_binop(be, l, r, f);
 				} else {
 					/* this can still be a join (as relational algebra and single value subquery results still means joins */
-					s = stmt_uselect(be, l, r, (comp_type)e->flag, sel, is_anti(e));
+					s = stmt_uselect(be, l, r, (comp_type)get_cmp(e), sel, is_anti(e));
 				}
 			}
 		}
@@ -1259,7 +1272,7 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 	case e_psm:
 		return args;
 	case e_cmp:
-		if (e->flag == cmp_or || get_cmp(e) == cmp_filter) {
+		if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
 			args = exps2bin_args(be, e->l, args);
 			args = exps2bin_args(be, e->r, args);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
@@ -1585,7 +1598,7 @@ rel2bin_hash_lookup(backend *be, sql_rel *rel, stmt *left, stmt *right, sql_idx 
 			h = stmt_unop(be, s, hf);
 		}
 	}
-	if (h->nrcols) {
+	if (h && h->nrcols) {
 		if (!swap_rel) {
 			return stmt_join(be, idx, h, 0, cmp_equal);
 		} else {
@@ -1661,10 +1674,7 @@ releqjoin( backend *be, list *l1, list *l2, int used_hash, comp_type cmp_op, int
 		sql_subfunc *f = NULL;
 		stmt * cmp;
 
-		if (cmp_op == cmp_equal) 
-			f = sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(le), tail_type(le), F_FUNC);
-		else 
-			f = sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(le), tail_type(le), F_FUNC);
+		f = sql_bind_func(sql->sa, sql->session->schema, "=", tail_type(le), tail_type(le), F_FUNC);
 		assert(f);
 
 		cmp = stmt_binop(be, le, re, f);
@@ -1729,11 +1739,8 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			prop *p;
 
 			/* only handle simple joins here */		
-			if ((exp_has_func(e) && e->flag != cmp_filter) ||
-			    (e->flag == cmp_or && 
-			     exps_card(e->l) == CARD_MULTI &&
-			     exps_card(e->r) == CARD_MULTI) 
-					) {
+			if ((exp_has_func(e) && get_cmp(e) != cmp_filter) ||
+			    (get_cmp(e) == cmp_or)) {
 				if (!join && !list_length(lje)) {
 					stmt *l = bin_first_column(be, left);
 					stmt *r = bin_first_column(be, right);
@@ -1938,10 +1945,8 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			/* only handle simple joins here */		
 			if (list_length(lje) && (idx || e->type != e_cmp || e->flag != cmp_equal))
 				break;
-			if ((exp_has_func(e) && e->flag != cmp_filter) ||
-			    (e->flag == cmp_or && 
-			     exps_card(e->l) == CARD_MULTI &&
-			     exps_card(e->r) == CARD_MULTI) ) { 
+			if ((exp_has_func(e) && get_cmp(e) != cmp_filter) ||
+			    (get_cmp(e) == cmp_or)) { 
 				break;
 			}
 
@@ -1954,8 +1959,12 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 				idx = 1;
 			/* stop on first non equality join */
 			if (!join) {
-				if (en->next && s->type != st_join && s->type != st_join2 && s->type != st_joinN) 
-					break;
+				if (s->type != st_join && s->type != st_join2 && s->type != st_joinN) {
+					if (!en->next && (s->type == st_uselect || s->type == st_uselect2))
+						join = s;
+					else
+						break;
+				}
 				join = s;
 			} else if (s->type != st_join && s->type != st_join2 && s->type != st_joinN) {
 				/* handle select expressions */
@@ -2017,6 +2026,10 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			if (!s) {
 				assert(0);
 				return NULL;
+			}
+			if (s->nrcols == 0) {
+				stmt *l = bin_first_column(be, sub);
+				s = stmt_uselect(be, stmt_const(be, l, stmt_bool(be, 1)), s, cmp_equal, sel, 0);
 			}
 			sel = s;
 		}
@@ -4968,7 +4981,7 @@ exp_deps(sql_allocator *sa, sql_exp *e, list *refs, list *l)
 			cond_append(l, &a->aggr->base.id);
 		} break;
 	case e_cmp: {
-			if (e->flag == cmp_or || get_cmp(e) == cmp_filter) {
+			if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
 				if (get_cmp(e) == cmp_filter) {
 					sql_subfunc *f = e->f;
 					cond_append(l, &f->func->base.id);

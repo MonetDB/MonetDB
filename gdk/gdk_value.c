@@ -226,11 +226,10 @@ VALinit(ValPtr d, int tpe, const void *s)
 
 /* Format the value in RES in the standard way for the type of RES
  * into a newly allocated buffer which is returned through BUF. */
-ssize_t
-VALformat(char **buf, const ValRecord *res)
+char *
+VALformat(const ValRecord *res)
 {
-	*buf = 0;
-	return ATOMformat(res->vtype, VALptr(res), buf);
+	return ATOMformat(res->vtype, VALptr(res));
 }
 
 /* Convert (cast) the value in T to the type TYP, do this in place.

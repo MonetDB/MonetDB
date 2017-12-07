@@ -1,0 +1,3 @@
+CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+SELECT cor0.col1 FROM tab1 AS cor0 GROUP BY cor0.col1 HAVING NULL NOT IN ( - cor0.col1 );
+DROP TABLE tab1;

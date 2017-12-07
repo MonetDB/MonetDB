@@ -593,8 +593,8 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token<sval> ASC DESC AUTHORIZATION
 %token CHECK CONSTRAINT CREATE COMMENT
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
-%token CALL LANGUAGE
-%token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREPARE EXECUTE
+%token CALL LANGUAGE 
+%token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREP PREPARE EXEC EXECUTE
 %token DEFAULT DISTINCT DROP
 %token FOREIGN
 %token RENAME ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
@@ -631,7 +631,7 @@ sqlstmt:
 		YYACCEPT;
 	}
 
- | PREPARE 		{
+ | prepare 		{
 		  	  m->emode = m_prepare; 
 			  m->scanner.as = m->scanner.yycur; 
 			  m->scanner.key = 0;
@@ -697,6 +697,17 @@ sqlstmt:
  | error SCOLON		{ m->sym = $$ = NULL; YYACCEPT; }
  | LEX_ERROR		{ m->sym = $$ = NULL; YYABORT; }
  ;
+
+
+prepare:
+       PREPARE
+ |     PREP
+ ; 
+
+execute:
+       EXECUTE
+ |     EXEC
+ ; 
 
 
 create:
@@ -840,7 +851,7 @@ schema:
   |	drop SCHEMA if_exists qname drop_action
 		{ dlist *l = L();
 		append_list(l, $4);
-		append_int(l, $5);
+		append_int(l, 1 /*$5 use CASCADE in the release */);
 		append_int(l, $3);
 		$$ = _symbol_create_list( SQL_DROP_SCHEMA, l); }
  ;
@@ -1014,7 +1025,7 @@ operation:
  |  UPDATE opt_column_list          { $$ = _symbol_create_list(SQL_UPDATE,$2); }
  |  SELECT opt_column_list	    { $$ = _symbol_create_list(SQL_SELECT,$2); }
  |  REFERENCES opt_column_list 	    { $$ = _symbol_create_list(SQL_SELECT,$2); }
- |  EXECUTE			    { $$ = _symbol_create(SQL_EXECUTE,NULL); }
+ |  execute			    { $$ = _symbol_create(SQL_EXECUTE,NULL); }
  ;
 
 grantee_commalist:
@@ -3484,7 +3495,7 @@ like_exp:
  |  scalar_exp ESCAPE string
  	{ const char *s = sql2str($3);
 	  if (_strlen(s) != 1) {
-		yyerror(m, SQLSTATE(22025) "ESCAPE must be one character");
+		yyerror(m, SQLSTATE(22019) "ESCAPE must be one character");
 		$$ = NULL;
 		YYABORT;
 	  } else {
@@ -3954,7 +3965,7 @@ window_frame_end:
   ;
 
 window_frame_following:
-	value_exp PRECEDING	{ $$ = $1; }
+	value_exp FOLLOWING	{ $$ = $1; }
   ;
 
 window_frame_exclusion:
@@ -5282,7 +5293,9 @@ non_reserved_word:
 |  WEEK 	{ $$ = sa_strdup(SA, "week"); }
 |  IMPRINTS	{ $$ = sa_strdup(SA, "imprints"); }
 
+|  PREP		{ $$ = sa_strdup(SA, "prep"); }
 |  PREPARE	{ $$ = sa_strdup(SA, "prepare"); }
+|  EXEC		{ $$ = sa_strdup(SA, "exec"); }
 |  EXECUTE	{ $$ = sa_strdup(SA, "execute"); }
 |  SQL_EXPLAIN	{ $$ = sa_strdup(SA, "explain"); }
 |  SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
@@ -5411,7 +5424,7 @@ string:
  ;
 
 exec:
-     EXECUTE exec_ref
+     execute exec_ref
 		{
 		  m->emode = m_execute;
 		  $$ = $2; }
@@ -6069,6 +6082,7 @@ char *token2string(int token)
 	SQL(COMMENT);
 	SQL(SET);
 	SQL(PREP);
+	SQL(PREPARE);
 	SQL(NAME);
 	SQL(USER);
 	SQL(PATH);
@@ -6140,6 +6154,7 @@ char *token2string(int token)
 	SQL(GRANT_ROLES);
 	SQL(REVOKE);
 	SQL(REVOKE_ROLES);
+	SQL(EXEC);
 	SQL(EXECUTE);
 	SQL(PRIVILEGES);
 	SQL(ROLE);

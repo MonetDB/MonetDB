@@ -511,7 +511,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 							inner = rel_crossproduct(sql->sa, inner, r, op_join);
 						else if (r) 
 							inner = r;
-						if (inner && !ins->name && !is_atom(ins->type)) {
+						if (inner && !ins->name && !exp_is_atom(ins)) {
 							exp_label(sql->sa, ins, ++sql->label);
 							ins = exp_column(sql->sa, exp_relname(ins), exp_name(ins), exp_subtype(ins), ins->card, has_nil(ins), is_intern(ins));
 						}
@@ -1022,6 +1022,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 							r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
 							if (r)
 								list_merge(r->exps, val_exps, (fdup)NULL);
+							reset_processed(r);
 						}
 					}
 				}
@@ -1035,6 +1036,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 							exp_label(sql->sa, v, ++sql->label);
 						rel_val = rel_project(sql->sa, rel_val, rel_projections(sql, rel_val, NULL, 0, 1));
 						rel_project_add_exp(sql, rel_val, v);
+						reset_processed(rel_val);
 					}
 					r = rel_crossproduct(sql->sa, r, rel_val, op_left);
 					if (single) 

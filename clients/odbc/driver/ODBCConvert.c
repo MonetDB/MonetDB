@@ -1215,6 +1215,7 @@ ODBCFetch(ODBCStmt *stmt,
 		SQLPOINTER origptr;
 		SQLLEN origbuflen;
 		SQLLEN *origlenp;
+		SQLLEN sz;
 
 		if (buflen < 0) {
 			/* Invalid string or buffer length */
@@ -1251,8 +1252,6 @@ ODBCFetch(ODBCStmt *stmt,
 			lenp = NULL;
 		}
 		switch (sql_type) {
-			SQLLEN sz;
-
 		default:
 		case SQL_CHAR:
 		case SQL_VARCHAR:

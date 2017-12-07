@@ -19,7 +19,7 @@ analysis by optimizers.
 */
 #include "monetdb_config.h"
 #include "sql_statistics.h"
-#include "sql_scenario.h"
+#include "sql_execute.h"
 
 #define atommem(size)					\
 	do {						\

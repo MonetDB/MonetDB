@@ -232,6 +232,30 @@ Ready.
 [ "#hi颖xyäbcd#"	]
 #DROP TABLE p;
 #DROP TABLE p2;
+#SELECT '#' || rpad('hi颖xyäbcdef', 0) || '#';
+% .L2 # table_name
+% L2 # name
+% varchar # type
+% 2 # length
+[ "##"	]
+#SELECT '#' || lpad('hi颖xyäbcdef', 0) || '#';
+% .L2 # table_name
+% L2 # name
+% varchar # type
+% 2 # length
+[ "##"	]
+#SELECT '#' || rpad('hi颖xyäbcdef', 0, 'junk') || '#';
+% .L2 # table_name
+% L2 # name
+% varchar # type
+% 2 # length
+[ "##"	]
+#SELECT '#' || lpad('hi颖xyäbcdef', 0, 'junk') || '#';
+% .L2 # table_name
+% L2 # name
+% varchar # type
+% 2 # length
+[ "##"	]
 
 # 22:57:30 >  
 # 22:57:30 >  "Done."

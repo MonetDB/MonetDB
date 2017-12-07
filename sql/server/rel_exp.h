@@ -26,7 +26,7 @@ extern int compare2range( int l, int r );
 extern sql_exp *exp_compare(sql_allocator *sa, sql_exp *l, sql_exp *r, int cmptype);
 extern sql_exp *exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *h, int cmptype);
 extern sql_exp *exp_filter(sql_allocator *sa, list *l, list *r, sql_subfunc *f, int anti);
-extern sql_exp *exp_or(sql_allocator *sa, list *l, list *r);
+extern sql_exp *exp_or(sql_allocator *sa, list *l, list *r, int anti);
 extern sql_exp *exp_in(sql_allocator *sa, sql_exp *l, list *r, int cmptype);
 
 #define exp_fromtype(e)	((list*)e->r)->h->data
@@ -109,6 +109,7 @@ extern int exp_cmp( sql_exp *e1, sql_exp *e2);
 extern int exp_equal( sql_exp *e1, sql_exp *e2);
 extern int exp_refers( sql_exp *p, sql_exp *c);
 extern int exp_match( sql_exp *e1, sql_exp *e2);
+extern sql_exp* exps_find_exp( list *l, sql_exp *e);
 extern int exp_match_exp( sql_exp *e1, sql_exp *e2);
 /* match just the column (cmp equality) expressions */
 extern int exp_match_col_exps( sql_exp *e, list *l);

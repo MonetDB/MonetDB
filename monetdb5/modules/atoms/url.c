@@ -114,9 +114,9 @@ skip_authority(const char *uri, const char **userp, const char **passp, const ch
 			if (passp)
 				*passp = NULL;
 		} else {
-			if (*userp)
+			if (userp)
 				*userp = user;
-			if (*passp)
+			if (passp)
 				*passp = pass;
 		}
 		if (portp)

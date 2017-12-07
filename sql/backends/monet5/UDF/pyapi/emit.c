@@ -232,6 +232,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 							msg = GDKstrdup("BUNappend failed.");
 						goto wrapup;
 					}
+				GDKfree(val);
 				} else {
 					switch (self->cols[i].b->ttype) {
 						case TYPE_bit:

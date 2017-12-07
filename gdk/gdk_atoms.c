@@ -34,45 +34,45 @@
 static int
 bteCmp(const bte *l, const bte *r)
 {
-	return simple_CMP(l, r, bte);
+	return (*l > *r) - (*l < *r);
 }
 
 static int
 shtCmp(const sht *l, const sht *r)
 {
-	return simple_CMP(l, r, sht);
+	return (*l > *r) - (*l < *r);
 }
 
 static int
 intCmp(const int *l, const int *r)
 {
-	return simple_CMP(l, r, int);
+	return (*l > *r) - (*l < *r);
 }
 
 static int
 fltCmp(const flt *l, const flt *r)
 {
-	return simple_CMP(l, r, flt);
+	return (*l > *r) - (*l < *r);
 }
 
 static int
 lngCmp(const lng *l, const lng *r)
 {
-	return simple_CMP(l, r, lng);
+	return (*l > *r) - (*l < *r);
 }
 
 #ifdef HAVE_HGE
 static int
 hgeCmp(const hge *l, const hge *r)
 {
-	return simple_CMP(l, r, hge);
+	return (*l > *r) - (*l < *r);
 }
 #endif
 
 static int
 dblCmp(const dbl *l, const dbl *r)
 {
-	return simple_CMP(l, r, dbl);
+	return (*l > *r) - (*l < *r);
 }
 
 /*
@@ -282,31 +282,6 @@ ATOMheap(int t, Heap *hp, size_t cap)
 	return GDK_SUCCEED;
 }
 
-int
-ATOMcmp(int t, const void *l, const void *r)
-{
-	switch (ATOMbasetype(t)) {
-	case TYPE_bte:
-		return simple_CMP(l, r, bte);
-	case TYPE_sht:
-		return simple_CMP(l, r, sht);
-	case TYPE_int:
-		return simple_CMP(l, r, int);
-	case TYPE_flt:
-		return simple_CMP(l, r, flt);
-	case TYPE_lng:
-		return simple_CMP(l, r, lng);
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		return simple_CMP(l, r, hge);
-#endif
-	case TYPE_dbl:
-		return simple_CMP(l, r, dbl);
-	default:
-		return (l == r) ? 0 : atom_CMP(l, r, t);
-	}
-}
-
 /*
  * Atom print avoids coercion to strings for built-in types.
  * The comparison against the NULL value is hard coded for speed.
@@ -347,24 +322,22 @@ ATOMprint(int t, const void *p, stream *s)
 }
 
 
-ssize_t
-ATOMformat(int t, const void *p, char **buf)
+char *
+ATOMformat(int t, const void *p)
 {
 	ssize_t (*tostr) (str *, size_t *, const void *);
 
 	if (p && 0 <= t && t < GDKatomcnt && (tostr = BATatoms[t].atomToStr)) {
 		size_t sz = 0;
-		ssize_t res = (*tostr) (buf, &sz, p);
-		if (res < 0 && *buf) {
-			GDKfree(*buf);
-			*buf = NULL;
+		char *buf = NULL;
+		ssize_t res = (*tostr) (&buf, &sz, p);
+		if (res < 0 && buf) {
+			GDKfree(buf);
+			buf = NULL;
 		}
-		return res;
+		return buf;
 	}
-	*buf = GDKstrdup("nil");
-	if (*buf == NULL)
-		return -1;
-	return 3;		/* strlen(*buf) */
+	return GDKstrdup("nil");
 }
 
 ptr
@@ -2206,4 +2179,21 @@ ATOMunknown_name(int i)
 {
 	assert(unknown[-i]);
 	return unknown[-i];
+}
+
+void
+ATOMunknown_clean(void)
+{
+	int i;
+
+	MT_lock_set(&GDKthreadLock);
+	for (i = 1; i < MAXATOMS; i++) {
+		if(unknown[i]) {
+			GDKfree(unknown[i]);
+			unknown[i] = NULL;
+		} else {
+			break;
+		}
+	}
+	MT_lock_unset(&GDKthreadLock);
 }

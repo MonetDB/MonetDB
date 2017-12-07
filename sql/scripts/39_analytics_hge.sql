@@ -22,6 +22,6 @@ GRANT EXECUTE ON AGGREGATE median(HUGEINT) TO PUBLIC;
 create aggregate quantile(val HUGEINT, q DOUBLE) returns HUGEINT
 	external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(HUGEINT, DOUBLE) TO PUBLIC;
-create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns HUGEINT
+create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
 	external name "aggr"."corr";
 GRANT EXECUTE ON AGGREGATE corr(HUGEINT, HUGEINT) TO PUBLIC;

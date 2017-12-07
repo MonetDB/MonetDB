@@ -908,9 +908,6 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 		s->auth_id = *(sqlid *)v; 	_DELETE(v);
 		v = table_funcs.column_find_value(tr, find_sql_column(ss, "system"), rid);
 		s->system = *(bit *)v;          _DELETE(v);
-		v = table_funcs.column_find_value(tr,
-			find_sql_column(tables, "system"), rid);
-		s->system = *(bit *)v;		_DELETE(v);
 		v = table_funcs.column_find_value(tr, find_sql_column(ss, "owner"), rid);
 		s->owner = *(sqlid *)v;		_DELETE(v);
 		s->keys = list_new(tr->sa, (fdestroy) NULL);
@@ -3320,6 +3317,7 @@ reset_column(sql_trans *tr, sql_column *fc, sql_column *pfc)
 		if (pfc->def)
 			fc->def = pfc->def;
 		fc->base.wtime = fc->base.rtime = 0;
+		fc->min = fc->max = NULL;
 	}
 	return LOG_OK;
 }

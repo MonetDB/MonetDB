@@ -240,6 +240,8 @@ str RMTconnectScen(
 	MT_lock_unset(&mal_remoteLock);
 
 	*ret = GDKstrdup(conn);
+	if(*ret == NULL)
+		throw(MAL,"remote.connect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return(MAL_SUCCEED);
 }
 
@@ -597,8 +599,11 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			throw(MAL, "remote.get", "could not read BAT JSON header");
 		}
 		if (buf[0] == '!') {
+			char *result;
 			MT_lock_unset(&c->lock);
-			return(GDKstrdup(buf));
+			if((result = GDKstrdup(buf)) == NULL)
+				throw(MAL, "remote.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			return result;
 		}
 
 		buf[sz] = '\0';
@@ -741,8 +746,12 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		if (b) {
 			bi = bat_iterator(b);
 			BATloop(b, p, q) {
-				tailv = NULL;
-				ATOMformat(getBatType(type), BUNtail(bi, p), &tailv);
+				tailv = ATOMformat(getBatType(type), BUNtail(bi, p));
+				if (tailv == NULL) {
+					BBPunfix(b->batCacheid);
+					MT_lock_unset(&c->lock);
+					throw(MAL, "remote.put", GDK_EXCEPTION);
+				}
 				if (getBatType(type) > TYPE_str)
 					mnstr_printf(sout, "\"%s\"\n", tailv);
 				else
@@ -771,16 +780,16 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		mnstr_flush(sout);
 		GDKfree(typename);
 	} else {
-		ssize_t l = 0;
-		str val = NULL;
+		size_t l;
+		str val;
 		char *tpe;
 		char qbuf[512], *nbuf = qbuf;
 		if (ATOMvarsized(type)) {
-			l = ATOMformat(type, *(str *)value, &val);
+			val = ATOMformat(type, *(str *)value);
 		} else {
-			l = ATOMformat(type, value, &val);
+			val = ATOMformat(type, value);
 		}
-		if (l < 0) {
+		if (val == NULL) {
 			MT_lock_unset(&c->lock);
 			throw(MAL, "remote.put", GDK_EXCEPTION);
 		}
@@ -790,7 +799,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			GDKfree(val);
 			throw(MAL, "remote.put", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
-		l += strlen(tpe) + strlen(ident) + 10;
+		l = strlen(val) + strlen(tpe) + strlen(ident) + 10;
 		if (l > (ssize_t) sizeof(qbuf) && (nbuf = GDKmalloc(l)) == NULL) {
 			MT_lock_unset(&c->lock);
 			GDKfree(val);
@@ -820,7 +829,8 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* return the identifier */
 	v = &stk->stk[pci->argv[0]];
 	v->vtype = TYPE_str;
-	v->val.sval = GDKstrdup(ident);
+	if((v->val.sval = GDKstrdup(ident)) == NULL)
+		throw(MAL, "remote.put", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return(MAL_SUCCEED);
 }
 

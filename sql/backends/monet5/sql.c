@@ -1113,8 +1113,10 @@ mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		cnt = BATcount(ins);
 		BBPunfix(ins->batCacheid);
 	}
-	if (BATcount(tid))
-		v = *Tloc(tid, BATcount(tid)-1)+1;
+	if (BATcount(tid)) {
+		(void)BATmax(tid, &v);
+		v++;
+	}
 	for(;cnt>0; cnt--, v++) {
 		if (BUNappend(tid, &v, FALSE) != GDK_SUCCEED) {
 			BBPunfix(Tid);
@@ -1844,12 +1846,14 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (store_funcs.count_del(tr, t)) {
 		BAT *d = store_funcs.bind_del(tr, t, RD_INS);
 		BAT *diff;
-		if( d == NULL)
+		if (d == NULL)
 			throw(SQL,"sql.tid", SQLSTATE(45002) "Can not bind delete column");
 
 		diff = BATdiff(tids, d, NULL, NULL, 0, BUN_NONE);
 		BBPunfix(d->batCacheid);
 		BBPunfix(tids->batCacheid);
+		if (diff == NULL)
+			throw(SQL,"sql.tid", SQLSTATE(45002) "Cannot subtract delete column");
 		BAThseqbase(diff, sb);
 		tids = diff;
 	}
@@ -2025,7 +2029,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tpe = BATdescriptor(tpeId);
 	len = BATdescriptor(lenId);
 	scale = BATdescriptor(scaleId);
-	if( msg || tbl == NULL || atr == NULL || tpe == NULL || len == NULL || scale == NULL)
+	if( tbl == NULL || atr == NULL || tpe == NULL || len == NULL || scale == NULL)
 		goto wrapup_result_set1;
 	/* mimick the old rsColumn approach; */
 	itertbl = bat_iterator(tbl);
@@ -2047,6 +2051,9 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( b)
 			BBPunfix(bid);
 	}
+	if ( msg )
+		goto wrapup_result_set1;
+
 	/* now select the file channel */
 	if ( strcmp(filename,"stdout") == 0 )
 		s= cntxt->fdout;
@@ -2190,6 +2197,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	l = strlen((char *) R);
 	rsep = GDKmalloc(l + 1);
 	if(rsep == 0){
+		GDKfree(tsep);
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto wrapup_result_set;
 	}
@@ -2198,6 +2206,8 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	l = strlen((char *) S);
 	ssep = GDKmalloc(l + 1);
 	if(ssep == 0){
+		GDKfree(tsep);
+		GDKfree(rsep);
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto wrapup_result_set;
 	}
@@ -2206,6 +2216,9 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	l = strlen((char *) N);
 	ns = GDKmalloc(l + 1);
 	if(ns == 0){
+		GDKfree(tsep);
+		GDKfree(rsep);
+		GDKfree(ssep);
 		msg = createException(SQL, "sql.resultSet", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto wrapup_result_set;
 	}
@@ -2803,8 +2816,8 @@ zero_or_one(ptr ret, const bat *bid)
 	_s = ATOMsize(ATOMtype(b->ttype));
 	if (ATOMextern(b->ttype)) {
 		_s = ATOMlen(ATOMtype(b->ttype), p);
-		* (ptr *) ret = GDKmalloc(_s);
-		if (* (ptr *) ret == NULL) {
+		*(ptr *) ret = GDKmalloc(_s);
+		if(*(ptr *) ret == NULL){
 			BBPunfix(b->batCacheid);
 			throw(SQL, "zero_or_one", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
@@ -3514,10 +3527,13 @@ sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
 	BAT *t[8];
+	str msg;
 
 	(void) cntxt;
 	(void) mb;
-	QLOGcatalog(t);
+	msg = QLOGcatalog(t);
+	if( msg != MAL_SUCCEED)
+		return msg;
 	for (i = 0; i < 8; i++) 
 	if( t[i]){
 		bat id = t[i]->batCacheid;
@@ -3534,10 +3550,13 @@ sql_querylog_calls(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
 	BAT *t[10];
+	str msg;
 
 	(void) cntxt;
 	(void) mb;
-	QLOGcalls(t);
+	msg = QLOGcalls(t);
+	if( msg != MAL_SUCCEED)
+		return msg;
 	for (i = 0; i < 9; i++) 
 	if( t[i]){
 		bat id = t[i]->batCacheid;
@@ -3556,8 +3575,7 @@ sql_querylog_empty(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	QLOGempty(NULL);
-	return MAL_SUCCEED;
+	return QLOGempty(NULL);
 }
 
 /* str sql_rowid(oid *rid, ptr v, str *sname, str *tname); */

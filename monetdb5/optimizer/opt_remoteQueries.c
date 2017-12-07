@@ -56,7 +56,10 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 				if( v->type == TYPE_void) {
 					sprintf(msg+len, "nil");
 				} else {
-					VALformat(&cv, &v->value);
+					if ((cv = VALformat(&v->value)) == NULL) {
+						GDKfree(msg);
+						return NULL;
+					}
 					sprintf(msg+len,"%s:%s",cv, ATOMname(v->type));
 					GDKfree(cv);
 				}

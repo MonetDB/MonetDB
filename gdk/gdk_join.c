@@ -2387,7 +2387,7 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
 		if (hb >= (lo) && hb < (hi) &&			\
-		    simple_EQ(v, BUNtloc(bi, hb), TYPE))
+		    * (const TYPE *) v == * (const TYPE *) BUNtloc(bi, hb))
 
 #define HASHJOIN(TYPE, WIDTH)						\
 	do {								\

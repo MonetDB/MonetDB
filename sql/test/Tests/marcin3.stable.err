@@ -13,17 +13,16 @@ stderr of test 'marcin3` in directory 'sql/test` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select id, sum(val) AS valsum from nutki group by id having val>1;
-ERROR = !SELECT: identifier 'val' unknown
+ERROR = !SELECT: cannot use non GROUP BY column 'val' in query results without an aggregate function
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-26937/.s.monetdb.35713
 QUERY = select id, sum(val) AS valsum from nutki group by id having val>2;
-ERROR = !SELECT: identifier 'val' unknown
+ERROR = !SELECT: cannot use non GROUP BY column 'val' in query results without an aggregate function
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-26937/.s.monetdb.35713
 QUERY = select id, sum(val) AS valsum from nutki group by id having valsum>3;
-ERROR = !SELECT: identifier 'valsum' unknown
+ERROR = !SELECT: cannot use non GROUP BY column 'valsum' in query results without an aggregate function
 CODE  = 42000
-
 
 # 21:15:41 >  
 # 21:15:41 >  Done.

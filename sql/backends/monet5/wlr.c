@@ -23,6 +23,7 @@
 #include "wlc.h"
 #include "wlr.h"
 #include "sql_scenario.h"
+#include "sql_execute.h"
 #include "opt_prelude.h"
 #include "mal_parser.h"
 #include "mal_client.h"

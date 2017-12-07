@@ -520,6 +520,14 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 					s = pushArgument(mb,s,getArg(mat[n].mi,j));
 				}
 			}
+			if (s->retc == 1 && s->argc == 2){ /* only one input, change into an assignment */
+				getFunctionId(s) = NULL; 
+				getModuleId(s) = NULL; 
+				s->token = ASSIGNsymbol; 
+				s->typechk = TYPE_UNKNOWN;
+        			s->fcn = NULL;
+        			s->blk = NULL;
+			}
 			pushInstruction(mb,s);
 
 			getArg(q,0) = newTmpVariable(mb, tpe);

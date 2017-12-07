@@ -39,7 +39,7 @@ lastline(Client cntxt)
     str s = CURRENT(cntxt);
     if (NL(*s))
         s++;
-    while (s && s > cntxt->fdin->buf && !NL(*s))
+    while (s > cntxt->fdin->buf && !NL(*s))
         s--;
     if (NL(*s))
         s++;
@@ -945,8 +945,11 @@ parseAtom(Client cntxt)
 		tpe = parseTypeId(cntxt, TYPE_int);
 	if( ATOMindex(modnme) >= 0)
 		parseError(cntxt, "Atom redefinition\n");
-	else
-		cntxt->curprg->def->errors = malAtomDefinition(modnme, tpe) ;
+	else {
+		if(cntxt->curprg->def->errors)
+			GDKfree(cntxt->curprg->def->errors);
+		cntxt->curprg->def->errors = malAtomDefinition(modnme, tpe);
+	}
 	if( strcmp(modnme,"user"))
 		cntxt->curmodule = fixModule(modnme);
 	else cntxt->curmodule = cntxt->usermodule;
@@ -1111,6 +1114,11 @@ fcnHeader(Client cntxt, int kind)
 	assert(!cntxt->backup);
 	cntxt->backup = cntxt->curprg;
 	cntxt->curprg = newFunction( modnme, fnme, kind);
+	if(cntxt->curprg == NULL) {
+		parseError(cntxt, MAL_MALLOC_FAIL);
+		cntxt->curprg = cntxt->backup;
+		return 0;
+	}
 	cntxt->curprg->def->errors = cntxt->backup->def->errors;
 	cntxt->backup->def->errors = 0;
 	curPrg = cntxt->curprg;
@@ -1282,6 +1290,8 @@ parseCommandPattern(Client cntxt, int kind)
 		else
 			insertSymbol(getModule(modnme), curPrg);
 		chkProgram(cntxt->usermodule, curBlk);
+		if(cntxt->curprg->def->errors)
+			GDKfree(cntxt->curprg->def->errors);
 		cntxt->curprg->def->errors = cntxt->backup->def->errors;
 		cntxt->backup->def->errors = 0;
 		cntxt->curprg = cntxt->backup;
@@ -1363,6 +1373,10 @@ parseFunction(Client cntxt, int kind)
 			return 0;
 		}
 		nme = idCopy(cntxt, i);
+		if (nme == NULL) {
+			parseError(cntxt, MAL_MALLOC_FAIL);
+			return 0;
+		}
 		curInstr->fcn = getAddress(nme);
 		GDKfree(nme);
 		if (curInstr->fcn == NULL) {
@@ -1514,8 +1528,11 @@ parseAssign(Client cntxt, int cntrl)
 
 	curPrg = cntxt->curprg;
 	curBlk = curPrg->def;
-	curInstr = newInstruction(curBlk, NULL, NULL);
-	
+	if((curInstr = newInstruction(curBlk, NULL, NULL)) == NULL) {
+		parseError(cntxt, MAL_MALLOC_FAIL);
+		return;
+	}
+
 	if( cntrl){
 		curInstr->token = ASSIGNsymbol;
 		curInstr->barrier = cntrl;
@@ -1758,12 +1775,19 @@ parseMAL(Client cntxt, Symbol curPrg, int skipcomments, int lines)
 				*e = 0;
 			if (! skipcomments && e > start && curBlk->stop > 0 ) {
 				ValRecord cst;
-				curInstr = newInstruction(curBlk, NULL, NULL);
+				if((curInstr = newInstruction(curBlk, NULL, NULL)) == NULL) {
+					parseError(cntxt, MAL_MALLOC_FAIL);
+					continue;
+				}
 				curInstr->token= REMsymbol;
 				curInstr->barrier= 0;
 				cst.vtype = TYPE_str;
-				cst.len = strlen(start);
-				cst.val.sval = GDKstrdup(start);
+				cst.len = (int) strlen(start);
+				if((cst.val.sval = GDKstrdup(start)) == NULL) {
+					parseError(cntxt, MAL_MALLOC_FAIL);
+					freeInstruction(curInstr);
+					continue;
+				}
 				getArg(curInstr, 0) = defConstant(curBlk, TYPE_str, &cst);
 				clrVarConstant(curBlk, getArg(curInstr, 0));
 				setVarDisabled(curBlk, getArg(curInstr, 0));

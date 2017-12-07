@@ -953,49 +953,23 @@ showio(void)
 static void
 fprintf_time(FILE *f, lng time)
 {
-	int TME = TME_DD|TME_HH|TME_MM|TME_SS|TME_MS|TME_US;
-	int tail = 0;
-	const char *fmt = NULL;
-
-	if (TME & TME_DD && (tail || time >= US_DD)) {
-		fmt = LLFMT"%s";
-		fprintf(f, fmt, time / US_DD, " d ");
-		time %= US_DD;
-		TME &= TME_HH;
-		tail = 1;
-	}
-	if (TME & TME_HH && (tail || time >= US_HH)) {
-		fmt = tail ? "%02d%s" : "%d%s";
-		fprintf(f, fmt, (int) (time / US_HH), " h ");
-		time %= US_HH;
-		TME &= TME_MM;
-		tail = 1;
-	}
-	if (TME & TME_MM && (tail || time >= US_MM)) {
-		fmt = tail ? "%02d%s" : "%d%s";
-		fprintf(f, fmt, (int) (time / US_MM), " m ");
-		time %= US_MM;
-		TME &= TME_SS;
-		tail = 1;
-	}
-	if (TME & TME_SS && (tail || time >= US_SS)) {
-		fmt = tail ? "%02d%s" : "%d%s";
-		fprintf(f, fmt, (int) (time / US_SS), (TME & TME_MS) ? "." : " s ");
-		time %= US_SS;
-		TME &= TME_MS;
-		tail = 1;
-	}
-	if (TME & TME_MS && (tail || time >= US_MS)) {
-		fmt = tail ? "%03d%s" : "%d%s";
-		fprintf(f, fmt, (int) (time / US_MS), (TME & TME_US) ? "." : " s ");
-		time %= US_MS;
-		TME &= TME_US;
-		tail = 1;
-	}
-	if (TME & TME_US) {
-		fmt = tail ? "%03d%s" : "%d%s";
-		fprintf(f, fmt, (int) time, tail ? " ms " : " us ");
-	}
+	if (time >= US_DD)
+		fprintf(f, LLFMT " d %02d h ", time / US_DD,
+			(int) ((time % US_DD) / US_HH));
+	else if (time >= US_HH)
+		fprintf(f, "%d h %02d m ", (int) (time / US_HH),
+			(int) ((time % US_HH) / US_MM));
+	else if (time >= US_MM)
+		fprintf(f, "%d m %02d s ", (int) (time / US_MM),
+			(int) ((time % US_MM) / US_SS));
+	else if (time >= US_SS)
+		fprintf(f, "%d.%03d s ", (int) (time / US_SS),
+			(int) ((time % US_SS) / US_MS));
+	else if (time >= US_MS)
+		fprintf(f, "%d.%03d ms ", (int) (time / US_MS),
+			(int) ((time % US_MS)));
+	else
+		fprintf(f, "%d us ", (int) time);
 }
 
 /* produce a legenda image for the color map */
@@ -1420,7 +1394,7 @@ update(char *line, EventRecord *ev)
 	if (ev->state >= MDB_PING ) {
 		if (cpus == 0 && ev->state == MDB_PING) {
 			char *s;
-			if( (s= ev->stmt,'[')) 
+			if( (s= strchr(ev->stmt,'[')) != NULL)
 				s++;
 			else s = ev->stmt;
 			while (s && isspace((unsigned char) *s))

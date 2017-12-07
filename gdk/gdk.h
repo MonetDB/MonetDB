@@ -733,7 +733,7 @@ typedef struct {
 
 /* interface definitions */
 gdk_export ptr VALconvert(int typ, ValPtr t);
-gdk_export ssize_t VALformat(char **buf, const ValRecord *res);
+gdk_export char *VALformat(const ValRecord *res);
 gdk_export ValPtr VALcopy(ValPtr dst, const ValRecord *src);
 gdk_export ValPtr VALinit(ValPtr d, int tpe, const void *s);
 gdk_export void VALempty(ValPtr v);
@@ -1791,7 +1791,7 @@ gdk_export BAT *BBPquickdesc(bat b, int delaccess);
  * value. `val' is a direct pointer to the atom value. Its return
  * value should be an hash_t between 0 and 'mask'.
  *
- * @item The @emph{ATOMcmp()} operation computes two atomic
+ * @item The @emph{ATOMcmp()} operation compares two atomic
  * values. Its parameters are pointers to atomic values.
  *
  * @item The @emph{ATOMlen()} operation computes the byte length for a
@@ -1892,9 +1892,8 @@ gdk_export int ATOMindex(const char *nme);
 gdk_export str ATOMname(int id);
 gdk_export size_t ATOMlen(int id, const void *v);
 gdk_export ptr ATOMnil(int id);
-gdk_export int ATOMcmp(int id, const void *v_1, const void *v_2);
 gdk_export int ATOMprint(int id, const void *val, stream *fd);
-gdk_export ssize_t ATOMformat(int id, const void *val, char **buf);
+gdk_export char *ATOMformat(int id, const void *val);
 
 gdk_export ptr ATOMdup(int id, const void *val);
 
@@ -2769,7 +2768,7 @@ gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
 	for (hb = HASHget(h, hash_##TYPE(h, v));		\
 	     hb != HASHnil(h);					\
 	     hb = HASHgetlink(h,hb))				\
-		if (simple_EQ(v, BUNtloc(bi, hb), TYPE))
+		if (* (const TYPE *) v == * (const TYPE *) BUNtloc(bi, hb))
 
 #define HASHloop_bte(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, bte)
 #define HASHloop_sht(bi, h, hb, v)	HASHloop_TYPE(bi, h, hb, v, sht)

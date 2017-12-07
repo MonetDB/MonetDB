@@ -1,0 +1,38 @@
+stdout of test 'sqlitelogictest-having-with-not-in.Bug-6409` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 13:37:57 >  
+# 13:37:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31716" "--set" "mapi_usock=/var/tmp/mtest-5089/.s.monetdb.31716" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 13:37:57 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.330 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:31716/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-5089/.s.monetdb.31716
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 13:37:57 >  
+# 13:37:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5089" "--port=31716"
+# 13:37:57 >  
+
+#CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#SELECT cor0.col1 FROM tab1 AS cor0 GROUP BY cor0.col1 HAVING NULL NOT IN ( - cor0.col1 );
+% sys.cor0 # table_name
+% col1 # name
+% int # type
+% 1 # length
+#DROP TABLE tab1;
+
+# 13:37:58 >  
+# 13:37:58 >  "Done."
+# 13:37:58 >  
+

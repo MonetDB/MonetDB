@@ -25,6 +25,7 @@
 #include "mutils.h"
 #include "sql_mvc.h"
 #include "sql_scenario.h"
+#include "sql_execute.h"
 #include "sql.h"
 #include "clients.h"
 #include "mal_exception.h"

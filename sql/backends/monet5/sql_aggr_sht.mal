@@ -4,52 +4,51 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
 
-function aggr.covar(e1:bat[:sht], e2:bat[:sht]):sht;
-	e0:bat[:sht] := batcalc.*(e1,e2);
-	s0:sht := aggr.sum(e0);
-	s1:sht := aggr.sum(e1);
-	s2:sht := aggr.sum(e2);
-	v2:sht := calc.*(s1,s2);
-	c := aggr.count(e1);
-	n:sht := calc.sht(c);
-	v3:sht := calc./(v2,n);
-	v1:sht := calc.-(s0,v3);
-	v:sht := calc./(v1,n);
+function aggr.covar(e1:bat[:sht], e2:bat[:sht]):dbl;
+	e0:bat[:int] := batcalc.*(e1,e2);
+	s0:dbl := aggr.avg(e0);
+	# ignore "mutual" NILs:
+	e1n  := algebra.select(e1,    nil:sht,nil:sht,false,false,false);
+	e12n := algebra.select(e1,e1n,nil:sht,nil:sht,false,false,false);
+	s1:dbl := batcalc.avg(e1,e12n);
+	s2:dbl := batcalc.avg(e2,e12n);
+	s3:dbl := calc.*(s1,s2);
+	v:dbl := calc.-(s0,s3);
 	return v;
 end aggr.covar;
 
-function aggr.corr(e1:bat[:sht], e2:bat[:sht]):sht;
-	cv:sht := aggr.covar(e1,e2);
+function aggr.corr(e1:bat[:sht], e2:bat[:sht]):dbl;
+	cv := aggr.covar(e1,e2);
 	sd1 := aggr.stdev(e1);
 	sd2 := aggr.stdev(e2);
 	sd := calc.*(sd1,sd2);
-	r := calc./(cv,sd);
-	res := calc.sht(r);
+	sdn := calc.==(sd,0:dbl);
+	sds := calc.ifthenelse(sdn,nil:dbl,sd);
+	res := calc./(cv,sds);
 	return res;
 end aggr.corr;
 
-function aggr.subcovar(e1:bat[:sht], e2:bat[:sht], g:bat[:oid], e:bat[:any_2], f:bit):bat[:sht];
-	e0:bat[:sht] := batcalc.*(e1,e2);
-	s0:bat[:sht] := aggr.subsum(e0,g,e,f,true);
-	s1:bat[:sht] := aggr.subsum(e1,g,e,f,true);
-	s2:bat[:sht] := aggr.subsum(e2,g,e,f,true);
-	v2:bat[:sht] := batcalc.*(s1,s2);
-	c := aggr.subcount(e1,g,e,f);
-	n:bat[:sht] := batcalc.sht(c);
-	v3:bat[:sht] := batcalc./(v2,n);
-	v1:bat[:sht] := batcalc.-(s0,v3);
-	v:bat[:sht] := batcalc./(v1,n);
+function aggr.subcovar(e1:bat[:sht], e2:bat[:sht], g:bat[:oid], e:bat[:any_2], f:bit):bat[:dbl];
+	e0:bat[:int] := batcalc.*(e1,e2);
+	s0:bat[:dbl] := aggr.subavg(e0,g,e,f,true);
+	# ignore "mutual" NILs:
+	t := calc.not(f);
+	e1n  := algebra.select(e1,    nil:sht,nil:sht,t,t,false);
+	e12n := algebra.select(e1,e1n,nil:sht,nil:sht,t,t,false);
+	s1:bat[:dbl] := aggr.subavg(e1,g,e,e12n,f,true);
+	s2:bat[:dbl] := aggr.subavg(e2,g,e,e12n,f,true);
+	s3:bat[:dbl] := batcalc.*(s1,s2);
+	v:bat[:dbl] := batcalc.-(s0,s3);
 	return v;
 end aggr.subcovar;
 
-function aggr.subcorr(e1:bat[:sht], e2:bat[:sht], g:bat[:oid],e:bat[:any_2], f:bit):bat[:sht];
-	cv:bat[:sht] := aggr.subcovar(e1,e2,g,e,f);
+function aggr.subcorr(e1:bat[:sht], e2:bat[:sht], g:bat[:oid],e:bat[:any_2], f:bit):bat[:dbl];
+	cv := aggr.subcovar(e1,e2,g,e,f);
 	sd1 := aggr.substdevp(e1,g,e,f,true);
 	sd2 := aggr.substdevp(e2,g,e,f,true);
 	sd := batcalc.*(sd1,sd2);
-	sdn := batcalc.==(sd,0:sht);
-	sds := batcalc.ifthenelse(sdn,1:dbl,sd);
-	r := batcalc./(cv,sds);
-	res := batcalc.sht(r);
+	sdn := batcalc.==(sd,0:dbl);
+	sds := batcalc.ifthenelse(sdn,nil:dbl,sd);
+	res := batcalc./(cv,sds);
 	return res;
 end aggr.subcorr;
