@@ -144,19 +144,19 @@ SEQUENCE  foo.counter  'still counting'
 #CREATE FUNCTION f(i INT) RETURNS INT BEGIN RETURN 43; END;
 #CREATE FUNCTION f(i INT, j INT) RETURNS INT BEGIN RETURN 44; END;
 #CREATE PROCEDURE g() BEGIN DELETE FROM tab WHERE FALSE; END;
-FUNCTION  foo.f  '0 parms'
 FUNCTION  foo.f  '1 parm'
 FUNCTION  foo.f  '2 parms'
 FUNCTION  foo.f
+FUNCTION  foo.f  '0 parms'
 FUNCTION  foo.g  'proc'
 create function f() returns int begin return 42; end;
+COMMENT ON FUNCTION "foo"."f"() IS '0 parms';
 create function f(i int) returns int begin return 43; end;
+COMMENT ON FUNCTION "foo"."f"(INTEGER) IS '1 parm';
 create function f(i int, j int) returns int begin return 44; end;
+COMMENT ON FUNCTION "foo"."f"(INTEGER, INTEGER) IS '2 parms';
 create function f(i int, j int, k int) returns int begin return 45; end;
 create function f(i int, j int, k int, l int) returns int begin return 45; end;
-COMMENT ON FUNCTION "foo"."f"() IS '0 parms';
-COMMENT ON FUNCTION "foo"."f"(INTEGER) IS '1 parm';
-COMMENT ON FUNCTION "foo"."f"(INTEGER, INTEGER) IS '2 parms';
 create procedure g() begin delete from tab where false; end;
 COMMENT ON PROCEDURE "foo"."g"() IS 'proc';
 create procedure g() begin delete from tab where false; end;

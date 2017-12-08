@@ -1246,36 +1246,21 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole, i
 }
 
 static int
-dump_function_comments(Mapi mid, stream *toConsole, const char *schema, const char *fname, char wantSystem)
+dump_function_comment(Mapi mid, stream *toConsole, const char *id)
 {
-	size_t len = 400 + (schema ? strlen(schema) : 0) + (fname ? strlen(fname) : 0);
+	int len = 1000;
 	char *query = malloc(len);
-	char *q = query;
-	char *end_q = q + len;
-	char *where = "WHERE";
 	MapiHdl hdl = NULL;
 	int hashge;
-	
+
 	if (!query)
 		return 1;
 
-	q += snprintf(q, end_q - q, "SELECT category, schema, name, type, type_digits, type_scale, remark ");
-	q += snprintf(q, end_q - q, "FROM sys.commented_function_signatures");
-	if (!wantSystem) {
-		q += snprintf(q, end_q - q, " %s system = FALSE", where);
-		where = "AND";
-	}
-	if (schema) {
-		q += snprintf(q, end_q - q, " %s schema = '%s'", where, schema);
-		where = "AND";
-	}
-	if (fname) {
-		q += snprintf(q, end_q - q, " %s fname = '%s'", where, fname);
-		where = "AND";
-	}
-	q += snprintf(q, end_q - q, " ORDER BY line;");
-	if (q >= end_q - 1)
-		goto bailout;
+	snprintf(query, len,
+		"SELECT category, schema, name, type, type_digits, type_scale, remark "
+		"FROM sys.commented_function_signatures "
+		"WHERE fid = %s "
+		"ORDER BY line;", id);
 
 	hashge = has_hugeint(mid);
 	hdl = mapi_query(mid, query);
@@ -1343,6 +1328,9 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, int hashge)
 	char *ffunc;
 	const char *sname, *fname;
 	int flang, ftype;
+
+	if (!query)
+		return 1;
 
 	snprintf(query, qlen, "SELECT f.id, f.func, f.language, f.type, s.name, f.name FROM sys.functions f, sys.schemas s WHERE f.schema_id = s.id AND f.id = %s", fid);
 	hdl = mapi_query(mid, query);
@@ -1477,14 +1465,13 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, int hashge)
 }
 
 int
-dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname)
+dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname, const char *id)
 {
 	MapiHdl hdl;
-	char *q;
-	size_t l;
+	char *query, *q, *end_q;
+	size_t len;
 	int hashge = has_hugeint(mid);
-	char *schema = NULL;
-	const char *fid;
+	char *to_free = NULL;
 	char wantSystem;
 
 	if (fname != NULL) {
@@ -1493,62 +1480,63 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 
 		if (sname == NULL) {
 			/* no schema given, so figure it out */
-			if ((schema = strchr(fname, '.')) != NULL) {
-				size_t len = schema - fname;
+			const char *dot = strchr(fname, '.');
+			if (dot != NULL) {
+				size_t len = dot - fname;
 
-				schema = malloc(len + 1);
-				strncpy(schema, fname, len);
-				schema[len] = 0;
+				to_free = malloc(len + 1);
+				strncpy(to_free, fname, len);
+				to_free[len] = 0;
 				fname += len + 1;
-			} else if ((schema = get_schema(mid)) == NULL) {
+			} else if ((to_free = get_schema(mid)) == NULL) {
 				return 1;
 			}
-			sname = schema;
+			sname = to_free;
 		}
-		l = 200 + strlen(sname) + strlen(fname);
-		q = malloc(l);
-		snprintf(q, l,
-			 "SELECT f.id "
-			 "FROM sys.schemas s, sys.functions f "
-			 "WHERE s.id = f.schema_id AND "
-			 "s.name = '%s' AND "
-			 "f.name = '%s' AND "
-			 "f.language > 0 "
-			 "ORDER BY f.func, f.id",
-			 sname, fname);
 	} else {
 		wantSystem = 0;
-		l = 200 + (sname ? strlen(sname) : 0) + 100;
-		q = malloc(l);
-		snprintf(q, l,
-			 "SELECT f.id "
-			 "FROM sys.schemas s, "
-			 "sys.functions f "
-			 "WHERE s.id = f.schema_id AND "
-			 "f.id NOT IN (SELECT function_id FROM sys.systemfunctions) AND "
-			 "f.language > 0 "
-			 "%s%s%s"
-			 "ORDER BY f.func, f.id",
-			 sname ? "AND s.name = '" : "",
-			 sname ? sname : "",
-			 sname ? "' " : "");
 	}
-	hdl = mapi_query(mid, q);
-	free(q);
+
+	len = 500 + (sname ? strlen(sname) : 0) + (fname ? strlen(fname) : 0);
+	query = malloc(len);
+	if (!query)
+		return 1;
+	q = query;
+	end_q = q + len;
+
+	q += snprintf(q, end_q - q,
+		"SELECT f.id, LENGTH(rem.remark) "
+		"FROM sys.schemas s "
+		"JOIN sys.functions f ON s.id = f.schema_id "
+		"LEFT OUTER JOIN sys.comments rem ON f.id = rem.id "
+		"WHERE f.language > 0 ");
+	if (sname)
+		q += snprintf(q, end_q - q, "AND s.name = '%s' ", sname);
+	if (fname)
+		q += snprintf(q, end_q - q, "AND f.name = '%s' ", fname);
+	if (id)
+		q += snprintf(q, end_q - q, "AND f.id = %s ", id);
+	if (!wantSystem)
+		q += snprintf(q, end_q - q, "AND f.id NOT IN (SELECT function_id FROM sys.systemfunctions) ");
+	q += snprintf(q, end_q - q, " ORDER BY f.func, f.id");
+
+	hdl = mapi_query(mid, query);
+	free(query);
 	if (hdl == NULL || mapi_error(mid))
 		goto bailout;
 	while (!mnstr_errnr(toConsole) && mapi_fetch_row(hdl) != 0) {
-		fid = mapi_fetch_field(hdl, 0);
+		const char *fid = mapi_fetch_field(hdl, 0);
+		const char *remark_len = mapi_fetch_field(hdl, 1);
 		dump_function(mid, toConsole, fid, hashge);
+		if (remark_len)
+			dump_function_comment(mid, toConsole, fid);
 	}
 	if (mapi_error(mid))
 		goto bailout;
 	mapi_close_handle(hdl);
 
-	dump_function_comments(mid, toConsole, sname, fname, wantSystem);
-
-	if (schema)
-		free(schema);
+	if (to_free)
+		free(to_free);
 	return mnstr_errnr(toConsole) != 0;
 
   bailout:
@@ -1560,8 +1548,8 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 		mapi_close_handle(hdl);
 	} else
 		mapi_explain(mid, stderr);
-	if (schema)
-		free(schema);
+	if (to_free)
+		free(to_free);
 	return 1;
 }
 
@@ -1758,7 +1746,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, char useInserts)
 			"WHERE s.id = t.schema_id AND "
 			      "t.id = tr.table_id AND t.system = FALSE"
 		") "
-		"SELECT sname, name, query, routine, type, remark FROM vft ORDER BY id";
+		"SELECT id, sname, name, query, routine, type, remark FROM vft ORDER BY id";
 	char *sname = NULL;
 	char *curschema = NULL;
 	MapiHdl hdl;
@@ -2014,12 +2002,13 @@ dump_database(Mapi mid, stream *toConsole, int describe, char useInserts)
 	while (rc == 0 &&
 	       !mnstr_errnr(toConsole) &&
 	       mapi_fetch_row(hdl) != 0) {
-		const char *schema = mapi_fetch_field(hdl, 0);
-		const char *name = mapi_fetch_field(hdl, 1);
-		const char *query = mapi_fetch_field(hdl, 2);
-		const char *routine = mapi_fetch_field(hdl, 3);
-		const char *type = mapi_fetch_field(hdl, 4);
-		const char *remark = mapi_fetch_field(hdl, 5);
+		const char *id = mapi_fetch_field(hdl, 0);
+		const char *schema = mapi_fetch_field(hdl, 1);
+		const char *name = mapi_fetch_field(hdl, 2);
+		const char *query = mapi_fetch_field(hdl, 3);
+		const char *routine = mapi_fetch_field(hdl, 4);
+		const char *type = mapi_fetch_field(hdl, 5);
+		const char *remark = mapi_fetch_field(hdl, 6);
 
 		if (mapi_error(mid))
 			goto bailout;
@@ -2037,7 +2026,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, char useInserts)
 				     curschema);
 		}
 		if (routine)
-			dump_functions(mid, toConsole, schema, name);
+			dump_functions(mid, toConsole, schema, name, id);
 		else
 			mnstr_printf(toConsole, "%s\n", query);
 		append_comment(comments, type, sname, name, NULL, NULL, remark);

@@ -129,7 +129,7 @@ commented_function_params AS (
                 JOIN sys.comments c ON f.id = c.id
                 LEFT OUTER JOIN params p ON f.id = p.func_id
 )
-SELECT  
+SELECT  fid,
         schema,
         fname,
         CASE ftype
