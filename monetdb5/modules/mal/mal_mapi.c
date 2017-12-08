@@ -32,8 +32,8 @@
 #ifdef HAVE_MAPI
 #include "mal_mapi.h"
 #include <sys/types.h>
-#include <stream_socket.h>
-#include <mapi.h>
+#include "stream_socket.h"
+#include "mapi.h"
 #ifdef HAVE_OPENSSL
 # include <openssl/rand.h>		/* RAND_bytes() */
 #else

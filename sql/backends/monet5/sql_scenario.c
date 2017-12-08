@@ -36,7 +36,7 @@
 #include "mal_linker.h"
 #include "bat5.h"
 #include "msabaoth.h"
-#include <mtime.h>
+#include "mtime.h"
 #include "optimizer.h"
 #include "opt_prelude.h"
 #include "opt_pipes.h"

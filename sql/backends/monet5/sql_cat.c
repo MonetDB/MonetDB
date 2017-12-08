@@ -25,15 +25,15 @@
 #include "mal_builder.h"
 #include "mal_debugger.h"
 
-#include <rel_select.h>
-#include <rel_optimizer.h>
-#include <rel_prop.h>
-#include <rel_rel.h>
-#include <rel_exp.h>
-#include <rel_bin.h>
-#include <rel_dump.h>
-#include <rel_remote.h>
-#include <orderidx.h>
+#include "rel_select.h"
+#include "rel_optimizer.h"
+#include "rel_prop.h"
+#include "rel_rel.h"
+#include "rel_exp.h"
+#include "rel_bin.h"
+#include "rel_dump.h"
+#include "rel_remote.h"
+#include "orderidx.h"
 
 #define initcontext() \
     if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)\

@@ -21,12 +21,12 @@
 #endif
 #include <fcntl.h>
 
-#include <msabaoth.h>
-#include <mcrypt.h>
-#include <stream.h>
-#include <stream_socket.h>
-#include <utils/utils.h> /* freeConfFile */
-#include <utils/properties.h> /* readProps */
+#include "msabaoth.h"
+#include "mcrypt.h"
+#include "stream.h"
+#include "stream_socket.h"
+#include "utils/utils.h" /* freeConfFile */
+#include "utils/properties.h" /* readProps */
 
 #include "merovingian.h"
 #include "forkmserver.h"

@@ -11,7 +11,7 @@
  */
 
 
-#include <geom.h>
+#include "geom.h"
 
 static char *
 N(char *buf, const char *pre, const char *schema, const char *post)

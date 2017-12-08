@@ -6,7 +6,7 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
-#include <monetdb_config.h>
+#include "monetdb_config.h"
 #include "sql.h"
 #include "monet_options.h"
 #include "embeddedclient.h"

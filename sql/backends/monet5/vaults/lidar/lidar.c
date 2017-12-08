@@ -12,8 +12,8 @@
  * This module contains primitives for accessing data in LiDAR file format.
  */
 
-#include <monetdb_config.h>
-#include <glob.h>
+#include "monetdb_config.h"
+#include "glob.h"
 
 /* clash with GDK? */
 // #undef ttype
@@ -22,13 +22,13 @@
 #include <liblas/capi/las_version.h>
 #include <liblas/capi/las_config.h>
 
-#include <lidar.h>
-#include <mutils.h>
-#include <sql_mvc.h>
-#include <sql_scenario.h>
-#include <sql.h>
-#include <clients.h>
-#include <mal_exception.h>
+#include "lidar.h"
+#include "mutils.h"
+#include "sql_mvc.h"
+#include "sql_scenario.h"
+#include "sql.h"
+#include "clients.h"
+#include "mal_exception.h"
 
 #define LIDAR_INS_COL "INSERT INTO lidar_columns(id, name, type, units, number, table_id) \
 	 VALUES(%d,'%s','%s','%s',%d,%d);"

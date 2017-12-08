@@ -9,7 +9,7 @@
 #ifndef JSON_H
 #define JSON_H
 
-#include <gdk.h>
+#include "gdk.h"
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_instruction.h"

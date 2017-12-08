@@ -22,7 +22,7 @@
 #ifndef _MONETTIME_H_
 #define _MONETTIME_H_
 
-#include <gdk.h>
+#include "gdk.h"
 #include "mal.h"
 #include "mal_exception.h"
 

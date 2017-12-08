@@ -18,7 +18,7 @@
  *
  */
 #include "monetdb_config.h"
-#include <gdk.h>
+#include "gdk.h"
 #include "mal.h"
 #include "mal_exception.h"
 

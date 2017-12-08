@@ -15,7 +15,7 @@
 #ifndef URL_H
 #define URL_H
 
-#include <gdk.h>
+#include "gdk.h"
 #include <ctype.h>
 
 typedef str url;

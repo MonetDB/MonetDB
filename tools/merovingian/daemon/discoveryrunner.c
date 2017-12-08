@@ -16,10 +16,10 @@
 #include <fcntl.h>
 #include <time.h>
 
-#include <msabaoth.h>
-#include <utils/glob.h>
-#include <utils/utils.h>
-#include <utils/properties.h>
+#include "msabaoth.h"
+#include "utils/glob.h"
+#include "utils/utils.h"
+#include "utils/properties.h"
 
 #include "merovingian.h"
 #include "multiplex-funnel.h"

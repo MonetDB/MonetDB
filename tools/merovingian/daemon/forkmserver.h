@@ -9,7 +9,7 @@
 #ifndef _FORKMSERVER_H
 #define _FORKMSERVER_H 1
 
-#include <msabaoth.h> /* sabdb */
+#include "msabaoth.h" /* sabdb */
 #include "merovingian.h" /* err */
 
 err forkMserver(char* database, sabdb** stats, int force);

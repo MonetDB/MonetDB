@@ -12,10 +12,10 @@
 #include "store_dependency.h"
 #include "store_sequence.h"
 
-#include <bat/bat_utils.h>
-#include <bat/bat_storage.h>
-#include <bat/bat_table.h>
-#include <bat/bat_logger.h>
+#include "bat/bat_utils.h"
+#include "bat/bat_storage.h"
+#include "bat/bat_table.h"
+#include "bat/bat_logger.h"
 
 /* version 05.21.00 of catalog */
 #define CATALOG_VERSION 52201

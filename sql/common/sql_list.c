@@ -7,7 +7,7 @@
  */
 
 #include "monetdb_config.h"
-#include <gdk.h>		/* for GDKmalloc() & GDKfree() */
+#include "gdk.h"		/* for GDKmalloc() & GDKfree() */
 #include "sql_list.h"
 
 static node *

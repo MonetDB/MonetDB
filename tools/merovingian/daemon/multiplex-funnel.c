@@ -13,8 +13,8 @@
 #include <string.h>
 #include <sys/types.h>
 
-#include <mapi.h>
-#include <mutils.h> /* MT_lockf */
+#include "mapi.h"
+#include "mutils.h" /* MT_lockf */
 #include <fcntl.h>
 
 #include "utils/glob.h"

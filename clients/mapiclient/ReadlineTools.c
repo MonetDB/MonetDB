@@ -10,7 +10,7 @@
  * Readline specific stuff
  */
 #include "monetdb_config.h"
-#include <monet_options.h>
+#include "monet_options.h"
 
 #ifdef HAVE_LIBREADLINE
 

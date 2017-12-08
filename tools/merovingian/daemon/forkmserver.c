@@ -17,10 +17,10 @@
 #include <time.h> /* localtime */
 #include <errno.h>
 
-#include <msabaoth.h>
-#include <utils/utils.h>
-#include <utils/glob.h>
-#include <utils/properties.h>
+#include "msabaoth.h"
+#include "utils/utils.h"
+#include "utils/glob.h"
+#include "utils/properties.h"
 
 #include "merovingian.h"
 #include "discoveryrunner.h" /* remotedb */

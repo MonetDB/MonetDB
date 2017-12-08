@@ -13,7 +13,7 @@
  * used to optimize search in expression and statement lists 
  */
 
-#include <sql_mem.h>
+#include "sql_mem.h"
 
 #define HASH_MIN_SIZE 4
 

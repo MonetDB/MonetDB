@@ -19,8 +19,8 @@
 #ifndef _EVENT_PARSER_
 #define _EVENT_PARSER_
 
-#include <mapi.h>
-#include <stream.h>
+#include "mapi.h"
+#include "stream.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

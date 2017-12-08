@@ -9,7 +9,7 @@
 /* multi version catalog */
 
 #include "monetdb_config.h"
-#include <gdk.h>
+#include "gdk.h"
 
 #include "sql_mvc.h"
 #include "sql_qc.h"

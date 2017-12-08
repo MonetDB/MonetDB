@@ -14,7 +14,7 @@
 #ifndef _MAL_H
 #define _MAL_H
 
-#include <gdk.h>
+#include "gdk.h"
 
 #ifdef WIN32
 #if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)

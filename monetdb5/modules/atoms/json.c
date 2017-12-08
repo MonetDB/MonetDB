@@ -12,8 +12,8 @@
 #include "monetdb_config.h"
 #include "json.h"
 #include "mal.h"
-#include <mal_instruction.h>
-#include <mal_interpreter.h>
+#include "mal_instruction.h"
+#include "mal_interpreter.h"
 
 // just validate the string according to www.json.org
 // A straightforward recursive solution

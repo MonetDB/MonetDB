@@ -714,8 +714,8 @@
  */
 
 #include "monetdb_config.h"
-#include <stream.h>		/* include before mapi.h */
-#include <stream_socket.h>
+#include "stream.h"		/* include before mapi.h */
+#include "stream_socket.h"
 #include "mapi.h"
 #include "mcrypt.h"
 

@@ -9,7 +9,7 @@
 #ifndef _GDK_UTILS_H_
 #define _GDK_UTILS_H_
 
-#include <monet_options.h>
+#include "monet_options.h"
 #include <setjmp.h>
 
 gdk_export BAT *GDKkey;

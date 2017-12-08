@@ -26,8 +26,8 @@
 #include "properties.h"
 #include "glob.h"
 #include "control.h"
-#include <msabaoth.h>
-#include <mutils.h>
+#include "msabaoth.h"
+#include "mutils.h"
 #include <stdlib.h> /* exit, getenv, qsort */
 #include <stdarg.h>	/* variadic stuff */
 #include <stdio.h> /* fprintf, rename */

@@ -7,8 +7,8 @@
  */
 
 /* (author) M. Kersten */
-#include <monetdb_config.h>
-#include <mal.h>
+#include "monetdb_config.h"
+#include "mal.h"
 
 char 	monet_cwd[PATHLENGTH] = { 0 };
 size_t 	monet_memory = 0;
