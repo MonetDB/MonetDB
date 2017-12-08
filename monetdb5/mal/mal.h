@@ -72,7 +72,7 @@ mal_export int have_hge;
 #define GRPalgorithms (ALGOMASK | ESTIMASK)
 #define GRPperformance (DEADBEEFMASK)
 #define GRPoptimizers  (OPTMASK)
-#define GRPforcemito (FORCEMITOMASK)
+#define GRPforcemito (FORCEMITOMASK | NOSYNCMASK)
 
 mal_export MT_Lock  mal_contextLock;
 mal_export MT_Lock  mal_remoteLock;

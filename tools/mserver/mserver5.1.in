@@ -151,9 +151,12 @@ combination of):
                              (for join, select)
 .\"    8388608 = XPROPMASK    = extended property checking:
 .\"                             tells also about not set properties
-.\"   16777216 = JOINPROPMASK = disable property checking with
-.\"                             join & outerjoin (e.g., for
-.\"                             performance measurements)
+   16777216 = NOSYNCMASK = disable forcefully synchronizing files
+                             to disk.  If this flag is set, there is
+                             no guarantee that the database remains
+                             consistent after a crash.  DO NOT USE
+                             (unless you really don't care about your
+                             data).
    33554432 = DEADBEEFMASK = disable "cleaning" of freed memory
                              in GDKfree() (e.g., for performance
                              measurements)
@@ -191,7 +194,7 @@ these debug flags as well:
   \-\-algorithms    (ALGOMASK | ESTIMASK)
   \-\-performance   (DEADBEEFMASK)
   \-\-optimizers    (OPTMASK)
-  \-\-forcemito     (FORCEMITOMASK)
+  \-\-forcemito     (FORCEMITOMASK | NOSYNCMASK)
 .EE
 
 Default:

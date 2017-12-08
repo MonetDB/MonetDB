@@ -1747,17 +1747,13 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 	}
 
 	if (fflush(nbbpf) == EOF ||
-	    (!(GDKdebug & FORCEMITOMASK) &&
-#ifdef NATIVE_WIN32
-	     _commit(_fileno(nbbpf)) < 0
-#else
-#ifdef HAVE_FDATASYNC
-	     fdatasync(fileno(nbbpf)) < 0
-#else
-#ifdef HAVE_FSYNC
-	     fsync(fileno(nbbpf)) < 0
-#endif
-#endif
+	    (!(GDKdebug & NOSYNCMASK)
+#if defined(NATIVE_WIN32)
+	     && _commit(_fileno(nbbpf)) < 0
+#elif defined(HAVE_FDATASYNC)
+	     && fdatasync(fileno(nbbpf)) < 0
+#elif defined(HAVE_FSYNC)
+	     && fsync(fileno(nbbpf)) < 0
 #endif
 		    )) {
 		GDKsyserror("BBPdir_subcommit: Syncing BBP.dir file failed\n");
@@ -1811,18 +1807,15 @@ BBPdir(int cnt, bat *subcommit)
 	}
 
 	if (fflush(fp) == EOF ||
-#ifdef NATIVE_WIN32
-	    _commit(_fileno(fp)) < 0
-#else
-#ifdef HAVE_FDATASYNC
-	    fdatasync(fileno(fp)) < 0
-#else
-#ifdef HAVE_FSYNC
-	    fsync(fileno(fp)) < 0
+	    (!(GDKdebug & NOSYNCMASK)
+#if defined(NATIVE_WIN32)
+	     && _commit(_fileno(fp)) < 0
+#elif defined(HAVE_FDATASYNC)
+	     && fdatasync(fileno(fp)) < 0
+#elif defined(HAVE_FSYNC)
+	     && fsync(fileno(fp)) < 0
 #endif
-#endif
-#endif
-		) {
+		    )) {
 		GDKsyserror("BBPdir: Syncing BBP.dir file failed\n");
 		goto bailout;
 	}
