@@ -1,6 +1,21 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Dec  7 2017 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Removed system function sys.environment(). It was a duplicate of system
+  function sys.env().
+
+* Thu Nov  9 2017 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Implemented behavior for DROP SCHEMA my_schema RESTRICT command.
+  Previously the RESTRICT keyword was accepted but not obeyed. It would
+  always do a CASCADE operation.  Also the default behavior of DROP SCHEMA
+  my_schema command is now changed into RESTRICT behavior (was CASCADE).
+
+* Tue Nov  7 2017 Sjoerd Mullender <sjoerd@acm.org>
+- The internal NULL representation of the REAL (FLOAT) and DOUBLE
+  types was changed from the smallest representable finite value to NaN
+  (not-a-number).
+
 * Tue Aug  1 2017 Sjoerd Mullender <sjoerd@acm.org>
 - Lots of changes to streamline the internal error handling.
   In principle, all errors should now include a SQLSTATE error code

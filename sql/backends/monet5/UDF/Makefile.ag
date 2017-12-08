@@ -4,4 +4,4 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
 
-SUBDIRS = cudf HAVE_LIBPY?pyapi HAVE_LIBPY3?pyapi3
+SUBDIRS = udf NOT_WIN32?capi HAVE_LIBPY?pyapi HAVE_LIBPY3?pyapi3

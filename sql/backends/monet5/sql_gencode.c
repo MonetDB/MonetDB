@@ -61,7 +61,8 @@ constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 
 	(void) sql;
 	cst.vtype = 0;
-	VALcopy(&cst, vr);
+	if(VALcopy(&cst, vr) == NULL)
+		return -1;
 	idx = defConstant(mb, vr->vtype, &cst);
 	return idx;
 }
@@ -625,7 +626,9 @@ backend_callinline(backend *be, Client c)
 				sql_subtype *t = atom_type(a);
 				(void) pushNil(curBlk, curInstr, t->type->localtype);
 			} else {
-				int _t = constantAtom(be, curBlk, a);
+				int _t;
+				if((_t = constantAtom(be, curBlk, a)) == -1)
+					return -1;
 				(void) pushArgument(curBlk, curInstr, _t);
 			}
 		}
@@ -755,7 +758,11 @@ backend_call(backend *be, Client c, cq *cq)
 				/* need type from the prepared argument */
 				q = pushNil(mb, q, t->type->localtype);
 			} else {
-				int _t = constantAtom(be, mb, a);
+				int _t;
+				if((_t = constantAtom(be, mb, a)) == -1) {
+					(void) sql_error(m, 02, SQLSTATE(HY001) "Allocation failure during function call: %s\n", atom_type(a)->type->sqlname);
+					break;
+				}
 				q = pushArgument(mb, q, _t);
 			}
 		}
@@ -909,6 +916,27 @@ backend_create_map_py3_func(backend *be, sql_func *f)
 {
 	backend_create_map_py_func(be, f);
 	f->mod = "pyapi3map";
+	return 0;
+}
+
+/* Create the MAL block for a registered function and optimize it */
+static int
+backend_create_c_func(backend *be, sql_func *f)
+{
+	(void)be;
+	switch(f->type) {
+	case  F_AGGR:
+		f->mod = "capi";
+		f->imp = "eval_aggr";
+		break;
+	case F_LOADER:
+	case F_PROC: /* no output */
+	case F_FUNC:
+	default: /* ie also F_FILT and F_UNION for now */
+		f->mod = "capi";
+		f->imp = "eval";
+		break;
+	}
 	return 0;
 }
 
@@ -1066,6 +1094,8 @@ backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 	case FUNC_LANG_MAP_PY3:
 		return backend_create_map_py3_func(be, f);
 	case FUNC_LANG_C:
+	case FUNC_LANG_CPP:
+		return backend_create_c_func(be, f);
 	case FUNC_LANG_J:
 	default:
 		return -1;

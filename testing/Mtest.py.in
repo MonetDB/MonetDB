@@ -1937,9 +1937,14 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
             elif cond.startswith('THREADS='):
-                if env['GDK_NR_THREADS'] == '0':
+                if negate:
+                    reason = "impossible combination of THREADS= and negation"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+                elif env['GDK_NR_THREADS'] == '0' or \
+                   int(env['TST_THREADS']) >= int(cond[8:]):
                     threads = cond[8:]
-                elif (env['TST_THREADS'] == cond[8:]) == negate:
+                elif env['TST_THREADS'] != cond[8:]:
                     reason = "as number of threads is wrong"
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
@@ -2054,7 +2059,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
                             f1 = open(TSTSRC, "r")
                             f2 = open(ff[:-4], "w")
                             line = f1.readline()
-                            f2.write("%s of test '%s` in directory '%s` itself:\n" % (line[:6], TST, TSTDIR))
+                            f2.write("%s of test '%s` in directory '%s` itself:\n" % (line[:6], TST, TSTDIR.replace('\\', '/')))
                             f2.write(f1.read())
                             f1.close()
                             f2.close()
@@ -3504,8 +3509,8 @@ def main(argv) :
         dft['MONETDB_MOD_PATH'] = "''"
         dft['setMONETDB_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONETDB_MOD_PATH']+'\"'"
         dft['MAPIPORT']       = "str(randomPort(30000,39999)[0])"
-        dft['MALCLIENT']      = "'mclient -lmal -ftest -Eutf-8'"
-        dft['SQLCLIENT']      = "'mclient -lsql -ftest -Eutf-8'"
+        dft['MALCLIENT']      = "'mclient -lmal -ftest -tnone -Eutf-8'"
+        dft['SQLCLIENT']      = "'mclient -lsql -ftest -tnone -Eutf-8'"
         dft['SQLDUMP']        = "'msqldump -q'"
         dft['RCLIENT']        = "'R --vanilla --slave'"
         dft['RUBYCLIENT']        = "'ruby'"
@@ -3781,14 +3786,14 @@ def main(argv) :
     if env.get('TSTDATAPATH'):
         CONDITIONALS['HAVE_DATA_PATH'] = '#'
     if CheckExec('perl'):
-        proc = process.Popen(['perl', '-e', 'use MonetDB::CLI::MapiPP'],
+        proc = process.Popen(['perl', '-e', 'use MonetDB::CLI::MapiPP; use DBI;'],
                              stdout = process.PIPE, stderr = process.PIPE,
                              universal_newlines = True)
         perl_out, perl_err = proc.communicate()
         if proc.returncode == 0:
             CONDITIONALS['HAVE_PERL'] = '#'
         else:
-            print('Perl available, but MonetDB driver not available')
+            print('Perl available, but MonetDB driver or DBI module not available')
     if CONDITIONALS['HAVE_LIBR'] and CheckExec('R'):
         proc = process.Popen(['R', '--slave', '--no-save', '--no-restore',
                               '-e', 'print(Sys.getenv("R_LIBS_USER"))'],

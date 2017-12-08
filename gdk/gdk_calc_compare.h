@@ -28,15 +28,15 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 		if (lft)
 			v = * (const oid *) lft;
 		CANDLOOP(dst, k, TPE_nil, 0, start);
-		if (v == oid_nil || tp2 == TYPE_void) {
-			TPE res = v == oid_nil || * (const oid *) rgt == oid_nil ?
+		if (is_oid_nil(v) || tp2 == TYPE_void) {
+			TPE res = is_oid_nil(v) || is_oid_nil(* (const oid *) rgt) ?
 				TPE_nil :
 				OP(v, * (const oid *) rgt);
 
-			if (res == TPE_nil || cand == NULL) {
+			if (is_TPE_nil(res) || cand == NULL) {
 				for (k = start; k < end; k++)
 					dst[k] = res;
-				if (res == TPE_nil)
+				if (is_TPE_nil(res))
 					nils = end - start;
 			} else {
 				for (k = start; k < end; k++) {
@@ -49,7 +49,7 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			     k < end;
 			     v++, j += incr2, k++) {
 				CHECKCAND(dst, k, candoff, TPE_nil);
-				if (((const oid *) rgt)[j] == oid_nil) {
+				if (is_oid_nil(((const oid *) rgt)[j])) {
 					nils++;
 					dst[k] = TPE_nil;
 				} else {
@@ -430,7 +430,7 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 			oid v;
 
 			v = * (const oid *) rgt;
-			if (v == oid_nil) {
+			if (is_oid_nil(v)) {
 				for (k = 0; k < cnt; k++)
 					dst[k] = TPE_nil;
 				nils = cnt;
@@ -439,7 +439,7 @@ op_typeswitchloop(const void *lft, int tp1, int incr1, const char *hp1, int wd1,
 				for (i = start * incr1, v += start, k = start;
 				     k < end; i += incr1, v++, k++) {
 					CHECKCAND(dst, k, candoff, TPE_nil);
-					if (((const oid *) lft)[i] == oid_nil) {
+					if (is_oid_nil(((const oid *) lft)[i])) {
 						nils++;
 						dst[k] = TPE_nil;
 					} else {
@@ -591,7 +591,7 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s)
 	if (BATtvoid(b1) && BATtvoid(b2) && cand == NULL) {
 		TPE res;
 
-		if (b1->tseqbase == oid_nil || b2->tseqbase == oid_nil)
+		if (is_oid_nil(b1->tseqbase) || is_oid_nil(b2->tseqbase))
 			res = TPE_nil;
 		else
 			res = OP(b1->tseqbase, b2->tseqbase);

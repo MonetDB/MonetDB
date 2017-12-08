@@ -48,14 +48,14 @@ mystpcpy (char *yydest, const char *yysrc) {
 
 #define normal_int_SWAP(i) (((0x000000ff&(i))<<24) | ((0x0000ff00&(i))<<8) | \
 			    ((0x00ff0000&(i))>>8)  | ((0xff000000&(i))>>24))
-#define long_long_SWAP(l) \
-		((((lng)normal_int_SWAP(l))<<32) |\
+#define long_long_SWAP(l)				\
+		((((lng)normal_int_SWAP(l))<<32) |	\
 		 (0xffffffff&normal_int_SWAP(l>>32)))
 #endif
 
 #ifdef HAVE_HGE
-#define huge_int_SWAP(h) \
-		((((hge)long_long_SWAP(h))<<64) |\
+#define huge_int_SWAP(h)					\
+		((((hge)long_long_SWAP(h))<<64) |		\
 		 (0xffffffffffffffff&long_long_SWAP(h>>64)))
 #endif
 
@@ -72,7 +72,7 @@ mnstr_swap_lng(stream *s, lng lngval) {
 		int cur = 63, i, done = 0;				\
 		int neg = v < 0;					\
 		ssize_t l;						\
-		if (v == TYPE##_nil) {					\
+		if (is_##TYPE##_nil(v)) {				\
 			if (*len < 5){					\
 				if (*Buf)				\
 					GDKfree(*Buf);			\
@@ -449,7 +449,7 @@ bat_max_strlength(BAT *b)
 	BATloop(b, p, q) {
 		l = STRwidth((const char *) BUNtail(bi, p));
 
-		if (l == int_nil)
+		if (is_int_nil(l))
 			l = 0;
 		if (l > max)
 			max = l;
@@ -470,7 +470,7 @@ bat_max_btelength(BAT *b)
 		lng m = 0;
 		bte l = *((bte *) BUNtail(bi, p));
 
-		if (l != bte_nil)
+		if (!is_bte_nil(l))
 			m = l;
 		if (m > max)
 			max = m;
@@ -501,7 +501,7 @@ bat_max_shtlength(BAT *b)
 		lng m = 0;
 		sht l = *((sht *) BUNtail(bi, p));
 
-		if (l != sht_nil)
+		if (!is_sht_nil(l))
 			m = l;
 		if (m > max)
 			max = m;
@@ -532,7 +532,7 @@ bat_max_intlength(BAT *b)
 		lng m = 0;
 		int l = *((int *) BUNtail(bi, p));
 
-		if (l != int_nil)
+		if (!is_int_nil(l))
 			m = l;
 		if (m > max)
 			max = m;
@@ -563,7 +563,7 @@ bat_max_lnglength(BAT *b)
 		lng m = 0;
 		lng l = *((lng *) BUNtail(bi, p));
 
-		if (l != lng_nil)
+		if (!is_lng_nil(l))
 			m = l;
 		if (m > max)
 			max = m;
@@ -595,7 +595,7 @@ bat_max_hgelength(BAT *b)
 		hge m = 0;
 		hge l = *((hge *)BUNtail(bi, p));
 
-		if (l != hge_nil)
+		if (!is_hge_nil(l))
 			m = l;
 		if (m > max) max = m;
 		if (m < min) min = m;
@@ -648,7 +648,7 @@ bat_max_hgelength(BAT *b)
 			if (*s != '.')					\
 				return NULL;				\
 			s++;						\
-			for (i = 0; *s && *s >= '0' && *s <= '9' && i < t->scale; i++, s++) {	\
+			for (i = 0; *s && *s >= '0' && *s <= '9' && i < t->scale; i++, s++) { \
 				res *= 10;				\
 				res += *s - '0';			\
 			}						\
@@ -1954,7 +1954,7 @@ get_print_width(int mtype, int eclass, int digits, int scale, int tz, bat bid, p
 				}
 			} else if (p) {
 				l = STRwidth((const char *) p);
-				if (l == int_nil)
+				if (is_int_nil(l))
 					l = 0;
 			}
 			return l;
@@ -2081,13 +2081,13 @@ export_length(stream *s, int mtype, int eclass, int digits, int scale, int tz, b
 }
 
 int
-mvc_export_operation(backend *b, stream *s, str w)
+mvc_export_operation(backend *b, stream *s, str w, lng starttime, lng mal_optimizer)
 {
 	mvc *m = b->mvc;
 
 	assert(m->type == Q_SCHEMA || m->type == Q_TRANS);
 	if (m->type == Q_SCHEMA) {
-		if (!s || mnstr_write(s, "&3\n", 3, 1) != 1)
+		if (!s || mnstr_printf(s, "&3 " LLFMT " " LLFMT "\n", starttime > 0 ? GDKusec() - starttime : 0, mal_optimizer) < 0)
 			return -1;
 	} else {
 		if (m->session->auto_commit) {
@@ -2105,7 +2105,7 @@ mvc_export_operation(backend *b, stream *s, str w)
 }
 
 int
-mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id)
+mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng starttime, lng maloptimizer)
 {
 	mvc *m = b->mvc;
 	/* if we don't have a stream, nothing can go wrong, so we return
@@ -2119,9 +2119,17 @@ mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id)
 
 	m->rowcnt = val;
 	stack_set_number(m, "rowcnt", m->rowcnt);
-	if (mnstr_write(s, "&2 ", 3, 1) != 1 || !mvc_send_lng(s, val) || mnstr_write(s, " ", 1, 1) != 1
-			|| !mvc_send_lng(s, m->last_id) || mnstr_write(s, " ", 1, 1) != 1
-			|| !mvc_send_lng(s, (lng) query_id) || mnstr_write(s, "\n", 1, 1) != 1)
+	if (mnstr_write(s, "&2 ", 3, 1) != 1 ||
+	    !mvc_send_lng(s, val) ||
+	    mnstr_write(s, " ", 1, 1) != 1 ||
+	    !mvc_send_lng(s, m->last_id) ||
+	    mnstr_write(s, " ", 1, 1) != 1 ||
+	    !mvc_send_lng(s, (lng) query_id) ||
+	    mnstr_write(s, " ", 1, 1) != 1 ||
+	    !mvc_send_lng(s, starttime > 0 ? GDKusec() - starttime : 0) ||
+	    mnstr_write(s, " ", 1, 1) != 1 ||
+	    !mvc_send_lng(s, maloptimizer) ||
+	    mnstr_write(s, "\n", 1, 1) != 1)
 		return -1;
 	if (mvc_export_warning(s, w) != 1)
 		return -1;
@@ -2299,7 +2307,7 @@ cleanup:
 }
 
 int
-mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_lengths)
+mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_lengths, lng starttime, lng maloptimizer)
 {
 	mvc *m = b->mvc;
 	int i, res = 0;
@@ -2350,6 +2358,14 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 
 	// export query id
 	if (mnstr_write(s, " ", 1, 1) != 1 || !mvc_send_lng(s, (lng) t->query_id))
+		return -1;
+
+	// export query time
+	if (mnstr_write(s, " ", 1, 1) != 1 || !mvc_send_lng(s, starttime > 0 ? GDKusec() - starttime : 0))
+		return -1;
+
+	// export MAL optimizer time
+	if (mnstr_write(s, " ", 1, 1) != 1 || !mvc_send_lng(s, maloptimizer))
 		return -1;
 
 	if (mnstr_write(s, "\n% ", 3, 1) != 1)
@@ -2436,7 +2452,7 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 }
 
 static int
-mvc_export_file(backend *b, stream *s, res_table *t)
+mvc_export_file(backend *b, stream *s, res_table *t, lng starttime, lng maloptimizer)
 {
 	mvc *m = b->mvc;
 	int res = 0;
@@ -2445,7 +2461,7 @@ mvc_export_file(backend *b, stream *s, res_table *t)
 
 	if (m->scanner.ws == s)
 		/* need header */
-		mvc_export_head(b, s, t->id, TRUE, TRUE);
+		mvc_export_head(b, s, t->id, TRUE, TRUE, starttime, maloptimizer);
 
 	if (!t->order) {
 		res = mvc_export_row(b, s, t, "", t->tsep, t->rsep, t->ssep, t->ns);
@@ -2463,7 +2479,7 @@ mvc_export_file(backend *b, stream *s, res_table *t)
 }
 
 int
-mvc_export_result(backend *b, stream *s, int res_id)
+mvc_export_result(backend *b, stream *s, int res_id, lng starttime, lng maloptimizer)
 {
 	mvc *m = b->mvc;
 	int clean = 0, res = 0;
@@ -2482,10 +2498,10 @@ mvc_export_result(backend *b, stream *s, int res_id)
 	/* we shouldn't have anything else but Q_TABLE here */
 	assert(t->query_type == Q_TABLE);
 	if (t->tsep)
-		return mvc_export_file(b, s, t);
+		return mvc_export_file(b, s, t, starttime, maloptimizer);
 
 	if (!json) {
-		mvc_export_head(b, s, res_id, TRUE, TRUE);
+		mvc_export_head(b, s, res_id, TRUE, TRUE, starttime, maloptimizer);
 	}
 
 	assert(t->order);

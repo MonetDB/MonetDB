@@ -413,8 +413,8 @@ wkbTransform(wkb **transformedWKB, wkb **geomWKB, int *srid_src, int *srid_dst, 
 		throw(MAL, "geom.Transform", SQLSTATE(38000) "Geos wkb format is null");
 
 	if (wkb_isnil(*geomWKB) ||
-	    *srid_src == int_nil ||
-	    *srid_dst == int_nil ||
+	    is_int_nil(*srid_src) ||
+	    is_int_nil(*srid_dst) ||
 	    strcmp(*proj4_src_str, str_nil) == 0 ||
 	    strcmp(*proj4_dst_str, str_nil) == 0) {
 		if ((*transformedWKB = wkbNULLcopy()) == NULL)
@@ -770,7 +770,7 @@ wkbForceDim(wkb **outWKB, wkb **geomWKB, int *dim)
 	GEOSGeom geosGeometry;
 	str err;
 
-	if (wkb_isnil(*geomWKB) || *dim == int_nil) {
+	if (wkb_isnil(*geomWKB) || is_int_nil(*dim)) {
 		if ((*outWKB = wkbNULLcopy()) == NULL)
 			throw(MAL, "geom.ForceDim", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -1146,7 +1146,7 @@ wkbSegmentize(wkb **outWKB, wkb **geomWKB, dbl *sz)
 	GEOSGeom geosGeometry;
 	str err;
 
-	if (wkb_isnil(*geomWKB) || *sz == dbl_nil) {
+	if (wkb_isnil(*geomWKB) || is_dbl_nil(*sz)) {
 		if ((*outWKB = wkbNULLcopy()) == NULL)
 			throw(MAL, "geom.Segmentize", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -1464,7 +1464,7 @@ wkbTranslate(wkb **outWKB, wkb **geomWKB, dbl *dx, dbl *dy, dbl *dz)
 	GEOSGeom geosGeometry;
 	str err;
 
-	if (wkb_isnil(*geomWKB) || *dx == dbl_nil || *dy == dbl_nil || *dz == dbl_nil) {
+	if (wkb_isnil(*geomWKB) || is_dbl_nil(*dx) || is_dbl_nil(*dy) || is_dbl_nil(*dz)) {
 		if ((*outWKB = wkbNULLcopy()) == NULL)
 			throw(MAL, "geom.Translate", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -1504,7 +1504,7 @@ wkbDelaunayTriangles(wkb **outWKB, wkb **geomWKB, dbl *tolerance, int *flag)
 	GEOSGeom outGeometry;
 	GEOSGeom geosGeometry;
 
-	if (wkb_isnil(*geomWKB) || *tolerance == dbl_nil || *flag == int_nil) {
+	if (wkb_isnil(*geomWKB) || is_dbl_nil(*tolerance) || is_int_nil(*flag)) {
 		if ((*outWKB = wkbNULLcopy()) == NULL)
 			throw(MAL, "geom.DelaunayTriangles", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -1978,7 +1978,7 @@ geom_2_geom(wkb **resWKB, wkb **valueWKB, int *columnType, int *columnSRID)
 
 	int valueSRID = (*valueWKB)->srid;
 
-	if (wkb_isnil(*valueWKB) || *columnType == int_nil || *columnSRID == int_nil) {
+	if (wkb_isnil(*valueWKB) || is_int_nil(*columnType) || is_int_nil(*columnSRID)) {
 		*resWKB = wkbNULLcopy();
 		if (*resWKB == NULL)
 			throw(MAL, "calc.wkb", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -2019,7 +2019,7 @@ geom_2_geom(wkb **resWKB, wkb **valueWKB, int *columnType, int *columnSRID)
 str
 geoHasZ(int *res, int *info)
 {
-	if (*info == int_nil)
+	if (is_int_nil(*info))
 		*res = int_nil;
 	else if (geometryHasZ(*info))
 		*res = 1;
@@ -2033,7 +2033,7 @@ geoHasZ(int *res, int *info)
 str
 geoHasM(int *res, int *info)
 {
-	if (*info == int_nil)
+	if (is_int_nil(*info))
 		*res = int_nil;
 	else if (geometryHasM(*info))
 		*res = 1;
@@ -2047,7 +2047,7 @@ geoHasM(int *res, int *info)
 str
 geoGetType(char **res, int *info, int *flag)
 {
-	if (*info == int_nil || *flag == int_nil) {
+	if (is_int_nil(*info) || is_int_nil(*flag)) {
 		if ((*res = GDKstrdup(str_nil)) == NULL)
 			throw(MAL, "geom.getType", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -2058,10 +2058,18 @@ geoGetType(char **res, int *info, int *flag)
 }
 
 /* initialize geos */
+/* NULL: generic nil mbr. */
+/* returns a pointer to a nil-mbr. */
+static mbr mbrNIL;		/* to be filled in */
+
 str
 geom_prelude(void *ret)
 {
 	(void) ret;
+	mbrNIL.xmin = flt_nil;
+	mbrNIL.xmax = flt_nil;
+	mbrNIL.ymin = flt_nil;
+	mbrNIL.ymax = flt_nil;
 	libgeom_init();
 	TYPE_mbr = malAtomSize(sizeof(mbr), "mbr");
 	geomcatalogfix_set(geom_catalog_upgrade);
@@ -2083,9 +2091,7 @@ geom_epilogue(void *ret)
 static int
 mbr_isnil(const mbr *m)
 {
-	if (m == NULL || m->xmin == flt_nil || m->ymin == flt_nil || m->xmax == flt_nil || m->ymax == flt_nil)
-		return 1;
-	return 0;
+	return (m == NULL || is_flt_nil(m->xmin) || is_flt_nil(m->ymin) || is_flt_nil(m->xmax) || is_flt_nil(m->ymax));
 }
 
 /* returns the size of variable-sized atom wkb */
@@ -2518,7 +2524,7 @@ wkbFromText(wkb **geomWKB, str *geomWKT, int *srid, int *tpe)
 	size_t parsedBytes;
 
 	*geomWKB = NULL;
-	if (strcmp(*geomWKT, str_nil) == 0 || *srid == int_nil || *tpe == int_nil) {
+	if (strcmp(*geomWKT, str_nil) == 0 || is_int_nil(*srid) || is_int_nil(*tpe)) {
 		if ((*geomWKB = wkbNULLcopy()) == NULL)
 			throw(MAL, "wkb.FromText", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -2550,7 +2556,7 @@ wkbAsText(char **txt, wkb **geomWKB, int *withSRID)
 	char *wkt = NULL;
 	const char *sridTxt = "SRID:";
 
-	if (wkb_isnil(*geomWKB) || (withSRID && *withSRID == int_nil)) {
+	if (wkb_isnil(*geomWKB) || (withSRID && is_int_nil(*withSRID))) {
 		if ((*txt = GDKstrdup(str_nil)) == NULL)
 			throw(MAL, "geom.AsText", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -2592,7 +2598,7 @@ wkbMLineStringToPolygon(wkb **geomWKB, str *geomWKT, int *srid, int *flag)
 	double *linestringsArea;
 	bit ordered = 0;
 
-	if (strcmp(*geomWKT, str_nil) == 0 || *srid == int_nil || *flag == int_nil) {
+	if (strcmp(*geomWKT, str_nil) == 0 || is_int_nil(*srid) || is_int_nil(*flag)) {
 		if ((*geomWKB = wkbNULLcopy()) == NULL)
 			throw(MAL, "geom.MLineStringToPolygon", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -2782,7 +2788,7 @@ wkbMakePoint(wkb **out, dbl *x, dbl *y, dbl *z, dbl *m, int *zmFlag)
 	GEOSGeom geosGeometry;
 	GEOSCoordSeq seq;
 
-	if (*x == dbl_nil || *y == dbl_nil || *z == dbl_nil || *m == dbl_nil || *zmFlag == int_nil) {
+	if (is_dbl_nil(*x) || is_dbl_nil(*y) || is_dbl_nil(*z) || is_dbl_nil(*m) || is_int_nil(*zmFlag)) {
 		if ((*out = wkbNULLcopy()) == NULL)
 			throw(MAL, "geom.MakePoint", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -2872,7 +2878,7 @@ wkbGeometryType(char **out, wkb **geomWKB, int *flag)
 	ret = wkbBasicInt(&typeId, *geomWKB, GEOSGeomTypeId, "geom.GeometryType");
 	if (ret != MAL_SUCCEED)
 		return ret;
-	if (typeId != int_nil)	/* geoGetType deals with nil */
+	if (!is_int_nil(typeId))	/* geoGetType deals with nil */
 		typeId = (typeId + 1) << 2;
 	return geoGetType(out, &typeId, flag);
 }
@@ -2904,7 +2910,7 @@ wkbSetSRID(wkb **resultGeomWKB, wkb **geomWKB, int *srid)
 {
 	GEOSGeom geosGeometry;
 
-	if (wkb_isnil(*geomWKB) || *srid == int_nil) {
+	if (wkb_isnil(*geomWKB) || is_int_nil(*srid)) {
 		if ((*resultGeomWKB = wkbNULLcopy()) == NULL)
 			throw(MAL, "geom.setSRID", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -2930,7 +2936,7 @@ wkbGetCoordinate(dbl *out, wkb **geom, int *dimNum)
 	const GEOSCoordSequence *gcs;
 	str err = MAL_SUCCEED;
 
-	if (wkb_isnil(*geom) || *dimNum == int_nil) {
+	if (wkb_isnil(*geom) || is_int_nil(*dimNum)) {
 		*out = dbl_nil;
 		return MAL_SUCCEED;
 	}
@@ -2959,6 +2965,8 @@ wkbGetCoordinate(dbl *out, wkb **geom, int *dimNum)
 		err = createException(MAL, "geom.GetCoordinate", SQLSTATE(38000) "Geos operation GEOSGeom_getCoordSeq failed");
 	} else if (!GEOSCoordSeq_getOrdinate(gcs, 0, *dimNum, out))
 		err = createException(MAL, "geom.GetCoordinate", SQLSTATE(38000) "Geos operation GEOSCoordSeq_getOrdinate failed");
+	else if (isnan(*out))
+		*out = dbl_nil;
 	GEOSGeom_destroy(geosGeometry);
 
 	return err;
@@ -3016,7 +3024,7 @@ wkbEnvelopeFromCoordinates(wkb **out, dbl *xmin, dbl *ymin, dbl *xmax, dbl *ymax
 	GEOSGeom geosGeometry, linearRingGeometry;
 	GEOSCoordSeq coordSeq;
 
-	if (*xmin == dbl_nil || *ymin == dbl_nil || *xmax == dbl_nil || *ymax == dbl_nil || *srid == int_nil) {
+	if (is_dbl_nil(*xmin) || is_dbl_nil(*ymin) || is_dbl_nil(*xmax) || is_dbl_nil(*ymax) || is_int_nil(*srid)) {
 		if ((*out = wkbNULLcopy()) == NULL)
 			throw(MAL, "geom.MakeEnvelope", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -3071,7 +3079,7 @@ wkbMakePolygon(wkb **out, wkb **external, bat *internalBAT_id, int *srid)
 	GEOSCoordSeq coordSeq_copy;
 	str err;
 
-	if (wkb_isnil(*external) || *srid == int_nil) {
+	if (wkb_isnil(*external) || is_int_nil(*srid)) {
 		if ((*out = wkbNULLcopy()) == NULL)
 			throw(MAL, "geom.Polygon", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -3474,7 +3482,7 @@ wkbNumPoints(int *out, wkb **geom, int *check)
 	char *geomSTR = NULL;
 	unsigned int pointsNum;
 
-	if (wkb_isnil(*geom) || *check == int_nil) {
+	if (wkb_isnil(*geom) || is_int_nil(*check)) {
 		*out = int_nil;
 		return MAL_SUCCEED;
 	}
@@ -3525,7 +3533,7 @@ wkbPointN(wkb **out, wkb **geom, int *n)
 	GEOSGeom new;
 	str err = MAL_SUCCEED;
 
-	if (wkb_isnil(*geom) || *n == int_nil) {
+	if (wkb_isnil(*geom) || is_int_nil(*n)) {
 		if ((*out = wkbNULLcopy()) == NULL)
 			throw(MAL, "geom.PointN", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -3619,7 +3627,7 @@ wkbInteriorRingN(wkb **interiorRingWKB, wkb **geom, int *ringNum)
 	//initialize to NULL
 	*interiorRingWKB = NULL;
 
-	if (wkb_isnil(*geom) || *ringNum == int_nil) {
+	if (wkb_isnil(*geom) || is_int_nil(*ringNum)) {
 		if ((*interiorRingWKB = wkbNULLcopy()) == NULL)
 			throw(MAL, "geom.InteriorRingN", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -3746,7 +3754,7 @@ wkbNumRings(int *out, wkb **geom, int *exteriorRing)
 	bit empty;
 	GEOSGeom geosGeometry;
 
-	if (wkb_isnil(*geom) || *exteriorRing == int_nil) {
+	if (wkb_isnil(*geom) || is_int_nil(*exteriorRing)) {
 		*out = int_nil;
 		return MAL_SUCCEED;
 	}
@@ -4278,7 +4286,7 @@ wkbBuffer(wkb **out, wkb **geom, dbl *distance)
 	GEOSGeom geosGeometry;
 	GEOSGeom new;
 
-	if (wkb_isnil(*geom) || *distance == dbl_nil) {
+	if (wkb_isnil(*geom) || is_dbl_nil(*distance)) {
 		if ((*out = wkbNULLcopy()) == NULL)
 			throw(MAL, "geom.Buffer", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -4452,7 +4460,7 @@ wkbDWithin(bit *out, wkb **geomWKB_a, wkb **geomWKB_b, dbl *distance)
 	double distanceComputed;
 	str err;
 
-	if (wkb_isnil(*geomWKB_a) || wkb_isnil(*geomWKB_b) || *distance == dbl_nil) {
+	if (wkb_isnil(*geomWKB_a) || wkb_isnil(*geomWKB_b) || is_dbl_nil(*distance)) {
 		*out = bit_nil;
 		return MAL_SUCCEED;
 	}
@@ -4473,7 +4481,7 @@ wkbGeometryN(wkb **out, wkb **geom, const int *geometryNum)
 	GEOSGeom geosGeometry = NULL;
 
 	//no geometry at this position
-	if (wkb_isnil(*geom) || *geometryNum == int_nil || *geometryNum <= 0) {
+	if (wkb_isnil(*geom) || is_int_nil(*geometryNum) || *geometryNum <= 0) {
 		if ((*out = wkbNULLcopy()) == NULL)
 			throw(MAL, "geom.GeometryN", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -4939,7 +4947,7 @@ str
 wkbCoordinateFromMBR(dbl *coordinateValue, mbr **geomMBR, int *coordinateIdx)
 {
 	//check if the MBR is null
-	if (mbr_isnil(*geomMBR) || *coordinateIdx == int_nil) {
+	if (mbr_isnil(*geomMBR) || is_int_nil(*coordinateIdx)) {
 		*coordinateValue = dbl_nil;
 		return MAL_SUCCEED;
 	}
@@ -4971,7 +4979,7 @@ wkbCoordinateFromWKB(dbl *coordinateValue, wkb **geomWKB, int *coordinateIdx)
 	str ret = MAL_SUCCEED;
 	bit empty;
 
-	if (wkb_isnil(*geomWKB) || *coordinateIdx == int_nil) {
+	if (wkb_isnil(*geomWKB) || is_int_nil(*coordinateIdx)) {
 		*coordinateValue = dbl_nil;
 		return MAL_SUCCEED;
 	}
@@ -5038,7 +5046,7 @@ ordinatesMBR(mbr **res, flt *minX, flt *minY, flt *maxX, flt *maxY)
 {
 	if ((*res = GDKmalloc(sizeof(mbr))) == NULL)
 		throw(MAL, "geom.mbr", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	if (*minX == flt_nil || *minY == flt_nil || *maxX == flt_nil || *maxY == flt_nil)
+	if (is_flt_nil(*minX) || is_flt_nil(*minY) || is_flt_nil(*maxX) || is_flt_nil(*maxY))
 		**res = *mbrNULL();
 	else {
 		(*res)->xmin = *minX;
@@ -5331,15 +5339,6 @@ mbrHASH(const mbr *atom)
 	return (BUN) (((int) atom->xmin * (int)atom->ymin) *((int) atom->xmax * (int)atom->ymax));
 }
 
-/* NULL: generic nil mbr. */
-/* returns a pointer to a nil-mbr. */
-static mbr mbrNIL = {
-	GDK_flt_min,		/* flt_nil */
-	GDK_flt_min,
-	GDK_flt_min,
-	GDK_flt_min
-};
-
 const mbr *
 mbrNULL(void)
 {
@@ -5353,6 +5352,10 @@ mbrCOMP(const mbr *l, const mbr *r)
 {
 	/* simple lexicographical ordering on (x,y) */
 	int res;
+	if (mbr_isnil(l))
+		return -!mbr_isnil(r);
+	if (mbr_isnil(r))
+		return 1;
 	if (l->xmin == r->xmin)
 		res = (l->ymin < r->ymin) ? -1 : (l->ymin != r->ymin);
 	else

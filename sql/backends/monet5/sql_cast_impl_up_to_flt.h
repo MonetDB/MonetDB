@@ -18,9 +18,11 @@
 
 /* concatenate two or four tokens */
 #define CONCAT_2(a,b)     a##b
+#define CONCAT_3(a,b,c)   a##b##c
 #define CONCAT_4(a,b,c,d) a##b##c##d
 
 #define NIL(t)       CONCAT_2(t,_nil)
+#define ISNIL(t)     CONCAT_3(is_,t,_nil)
 #define TPE(t)       CONCAT_2(TYPE_,t)
 #define FUN(a,b,c,d) CONCAT_4(a,b,c,d)
 
@@ -32,7 +34,7 @@ FUN(,TP1,_dec2_,TP2) (TP2 *res, const int *s1, const TP1 *v)
 	TP2 r;
 
 	/* shortcut nil */
-	if (*v == NIL(TP1)) {
+	if (ISNIL(TP1)(*v)) {
 		*res = NIL(TP2);
 		return (MAL_SUCCEED);
 	}
@@ -55,7 +57,7 @@ FUN(,TP1,_dec2dec_,TP2) (TP2 *res, const int *S1, const TP1 *v, const int *d2, c
 	TP2 r;
 
 	/* shortcut nil */
-	if (*v == NIL(TP1)) {
+	if (ISNIL(TP1)(*v)) {
 		*res = NIL(TP2);
 		return (MAL_SUCCEED);
 	}
@@ -113,7 +115,7 @@ FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid)
 			*o = (((TP2) *p) / scales[scale]);
 	} else {
 		for (; p < q; p++, o++) {
-			if (*p == NIL(TP1)) {
+			if (ISNIL(TP1)(*p)) {
 				*o = NIL(TP2);
 				bn->tnonil = FALSE;
 			} else
@@ -207,9 +209,11 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 
 /* undo local defines */
 #undef FUN
+#undef ISNIL
 #undef NIL
 #undef TPE
 #undef CONCAT_2
+#undef CONCAT_3
 #undef CONCAT_4
 #undef STRNG
 #undef _STRNG_

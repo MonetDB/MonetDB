@@ -9,12 +9,7 @@
 #include "monetdb_config.h"
 #include "dotmonetdb.h"
 #include <stdio.h>
-#ifdef HAVE_STRING_H
 #include <string.h>
-#endif
-#ifdef HAVE_STRINGS_H
-#include <strings.h>
-#endif
 
 void
 parse_dotmonetdb(char **user, char **passwd, char **dbname, char **language, int *save_history, char **output, int *pagewidth)

@@ -207,10 +207,10 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 
 		sql->sa = sa_create();
 		if(!sql->sa)
-			throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
+			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		buf = sa_strdup(sql->sa, query);
 		if(!buf)
-			throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
+			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
 			r = rel_optimizer(sql, r);
@@ -521,10 +521,10 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 
 		sql->sa = sa_create();
 		if(!sql->sa)
-			throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
+			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		buf = sa_strdup(sql->sa, nf->query);
 		if(!buf)
-			throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
+			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
 			r = rel_optimizer(sql, r);
@@ -617,7 +617,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			if (c->null == 0) {
 				const void *nilptr = ATOMnilptr(c->type.type->localtype);
 				rids *nils = table_funcs.rids_select(sql->session->tr, nc, nilptr, NULL, NULL);
-				int has_nils = (table_funcs.rids_next(nils) != oid_nil);
+				int has_nils = !is_oid_nil(table_funcs.rids_next(nils));
 
 				table_funcs.rids_destroy(nils);
 				if (has_nils)
@@ -725,19 +725,21 @@ UPGcreate_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	osname = cur_schema(sql)->base.name;
-	mvc_set_schema(sql, sname);
+	if (!mvc_set_schema(sql, sname))
+		throw(SQL,"sql.catalog", SQLSTATE(3F000) "Schema (%s) missing\n", sname);
 	sa = sa_create();
 	if(!sa)
-		throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
+		throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	s = sql_parse(be, sa, func, 0);
 	if (s && s->type == st_catalog) {
 		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
 		sql_func *func = (sql_func*)((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.pval;
 
 		msg = create_func(sql, schema, fname, func);
-		mvc_set_schema(sql, osname);
+		if (!mvc_set_schema(sql, osname))
+			throw(SQL,"sql.catalog", SQLSTATE(3F000) "Schema (%s) missing\n", osname);
 	} else {
-		mvc_set_schema(sql, osname);
+		(void) mvc_set_schema(sql, osname);
 		throw(SQL, "sql.catalog", SQLSTATE(42000) "function creation failed '%s'", func);
 	}
 	return msg;
@@ -758,12 +760,12 @@ UPGcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-                                                              
 	osname = cur_schema(sql)->base.name;
-	mvc_set_schema(sql, sname);
+	if (!mvc_set_schema(sql, sname))
+		throw(SQL,"sql.catalog", SQLSTATE(3F000) "Schema (%s) missing\n", sname);
 	sa = sa_create();
 	if(!sa)
-		throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
+		throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	s = sql_parse(be, sa, view, 0);
 	if (s && s->type == st_catalog) {
 		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
@@ -771,9 +773,10 @@ UPGcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int temp = ((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.ival;
 
 		msg = create_table_or_view(sql, schema, v->base.name, v, temp);
-		mvc_set_schema(sql, osname);
+		if (!mvc_set_schema(sql, osname))
+			throw(SQL,"sql.catalog", SQLSTATE(3F000) "Schema (%s) missing\n", osname);
 	} else {
-		mvc_set_schema(sql, osname);
+		(void) mvc_set_schema(sql, osname);
 		throw(SQL, "sql.catalog", SQLSTATE(42000) "view creation failed '%s'", view);
 	}
 	return msg;
@@ -805,7 +808,7 @@ SQLalter_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	initcontext();
 	if (getArgType(mb, pci, 4) == TYPE_lng)
 		val = getArgReference_lng(stk, pci, 4);
-	if (val == NULL || *val == lng_nil)
+	if (val == NULL || is_lng_nil(*val))
 		msg = createException(SQL,"sql.alter_seq", SQLSTATE(42M36) "ALTER SEQUENCE: cannot (re)start with NULL");
 	else
 		msg = alter_seq(sql, sname, seqname, s, val);

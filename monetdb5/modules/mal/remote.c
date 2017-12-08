@@ -407,7 +407,7 @@ RMTquery(MapiHdl *ret, str func, Mapi conn, str query) {
 }
 
 str RMTprelude(void *ret) {
-	int type = 0;
+	unsigned int type = 0;
 
 	(void)ret;
 #ifdef WORDS_BIGENDIAN
@@ -415,15 +415,15 @@ str RMTprelude(void *ret) {
 #else
 	type |= RMTT_L_ENDIAN;
 #endif
-#if SIZEOF_SIZE_T == SIZEOF_LONG_LONG
+#if SIZEOF_SIZE_T == SIZEOF_LNG
 	type |= RMTT_64_BITS;
 #else
 	type |= RMTT_32_BITS;
 #endif
-#if SIZEOF_SIZE_T == SIZEOF_INT
-	type |= RMTT_32_OIDS;
-#else
+#if SIZEOF_OID == SIZEOF_LNG
 	type |= RMTT_64_OIDS;
+#else
+	type |= RMTT_32_OIDS;
 #endif
 	localtype = (unsigned char)type;
 
@@ -705,7 +705,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		msg = createException(MAL, "remote.put", "unsupported type: %s", tpe);
 		GDKfree(tpe);
 		return msg;
-	} else if (isaBatType(type) && *(bat*) value != 0 && *(bat*) value != int_nil) {
+	} else if (isaBatType(type) && !is_bat_nil(*(bat*) value)) {
 		BATiter bi;
 		/* naive approach using bat.new() and bat.insert() calls */
 		char *tail;
@@ -727,7 +727,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			if ((b = BATdescriptor(bid)) == NULL){
 				MT_lock_unset(&c->lock);
 				GDKfree(tail);
-				throw(MAL, "remote.put", RUNTIME_OBJECT_MISSING);
+				throw(MAL, "remote.put", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			}
 		}
 
@@ -771,7 +771,7 @@ str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 			return tmp;
 		}
 		mapi_close_handle(mhdl);
-	} else if (isaBatType(type) && *(bat*) value == int_nil) {
+	} else if (isaBatType(type) && is_bat_nil(*(bat*) value)) {
 		stream *sout;
 		str typename = getTypeName(type);
 		sout = mapi_get_to(c->mconn);
@@ -1374,15 +1374,15 @@ str RMTbintype(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 #else
 	type |= RMTT_L_ENDIAN;
 #endif
-#if SIZEOF_SIZE_T == SIZEOF_LONG_LONG
+#if SIZEOF_SIZE_T == SIZEOF_LNG
 	type |= RMTT_64_BITS;
 #else
 	type |= RMTT_32_BITS;
 #endif
-#if SIZEOF_SIZE_T == SIZEOF_INT
-	type |= RMTT_32_OIDS;
-#else
+#if SIZEOF_OID == SIZEOF_LNG
 	type |= RMTT_64_OIDS;
+#else
+	type |= RMTT_32_OIDS;
 #endif
 
 	mnstr_printf(cntxt->fdout, "[ %d ]\n", type);

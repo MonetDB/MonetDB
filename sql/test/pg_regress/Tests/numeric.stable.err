@@ -134,35 +134,7 @@ MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO num_exp_power_10_ln VALUES (1,'NaN');
 ERROR = !Decimal (NaN) doesn't have format (38.19)
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-QUERY = SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 20) as expected
-            FROM num_result t1, num_exp_add t2
-            WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
-            AND t1.result <> round(t2.expected, 20);
-ERROR = !Value (-343384922153970470000000000) exceeds limits of type int
-CODE  = 22003
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-QUERY = SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 40) as expected
-            FROM num_result t1, num_exp_sub t2
-            WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
-            AND t1.result <> round(t2.expected, 40);
-ERROR = !Value (343384922153970470000000000) exceeds limits of type int
-CODE  = 22003
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-QUERY = SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 30) as expected
-            FROM num_result t1, num_exp_mul t2
-            WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
-            AND t1.result <> round(t2.expected, 30);
-ERROR = !Value (11791320476268835968621358563202090) exceeds limits of type int
-CODE  = 22003
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
-QUERY = SELECT t1.id1, t1.id2, t1.result, round(t2.expected, 80) as expected
-            FROM num_result t1, num_exp_div t2
-            WHERE t1.id1 = t2.id1 AND t1.id2 = t2.id2
-            AND t1.result <> round(t2.expected, 80);
-ERROR = !Value (10000000000000000000) exceeds limits of type int
-CODE  = 22003
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-12357/.s.monetdb.39793
 QUERY = SELECT STDDEV(val) FROM num_data;
 ERROR = !SELECT: no such unary operator 'stddev(decimal)'
 CODE  = 42000

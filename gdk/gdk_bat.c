@@ -114,24 +114,18 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 	 * very large writes.
 	 */
 	assert(bn->batCacheid > 0);
-	bn->theap.filename = NULL;
+
+	const char *nme = BBP_physical(bn->batCacheid);
+	snprintf(bn->theap.filename, sizeof(bn->theap.filename),
+		 "%s.tail", nme);
 	bn->theap.farmid = BBPselectfarm(role, bn->ttype, offheap);
-	if (heapnames) {
-		const char *nme = BBP_physical(bn->batCacheid);
-
-		if (tt) {
-			bn->theap.filename = GDKfilepath(NOFARM, NULL, nme, "tail");
-			if (bn->theap.filename == NULL)
-				goto bailout;
-		}
-
-		if (ATOMneedheap(tt)) {
-			if ((bn->tvheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL ||
-			    (bn->tvheap->filename = GDKfilepath(NOFARM, NULL, nme, "theap")) == NULL)
-				goto bailout;
-			bn->tvheap->parentid = bn->batCacheid;
-			bn->tvheap->farmid = BBPselectfarm(role, bn->ttype, varheap);
-		}
+	if (heapnames && ATOMneedheap(tt)) {
+		if ((bn->tvheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL)
+			goto bailout;
+		snprintf(bn->tvheap->filename, sizeof(bn->tvheap->filename),
+			 "%s.theap", nme);
+		bn->tvheap->parentid = bn->batCacheid;
+		bn->tvheap->farmid = BBPselectfarm(role, bn->ttype, varheap);
 	}
 	bn->batDirty = TRUE;
 	return bn;
@@ -203,7 +197,7 @@ BATnewstorage(oid hseq, int tt, BUN cap, int role)
 		goto bailout;
 	}
 
-	if (ATOMheap(tt, bn->tvheap, cap) != GDK_SUCCEED) {
+	if (bn->tvheap && ATOMheap(tt, bn->tvheap, cap) != GDK_SUCCEED) {
 		GDKfree(bn->tvheap);
 		goto bailout;
 	}
@@ -521,6 +515,7 @@ BATclear(BAT *b, int force)
 
 			memset(&th, 0, sizeof(th));
 			th.farmid = b->tvheap->farmid;
+			strncpy(th.filename, b->tvheap->filename, sizeof(th.filename));
 			if (ATOMheap(b->ttype, &th, 0) != GDK_SUCCEED)
 				return GDK_FAIL;
 			th.parentid = b->tvheap->parentid;
@@ -628,25 +623,9 @@ BATdestroy(BAT *b)
  * which ensures that the original cannot be modified or destroyed
  * (which could affect the shared heaps).
  */
-static gdk_return
-heapcopy(BAT *bn, char *ext, Heap *dst, Heap *src)
-{
-	if (src->filename && src->newstorage != STORE_MEM) {
-		const char *nme = BBP_physical(bn->batCacheid);
-
-		if ((dst->filename = GDKfilepath(NOFARM, NULL, nme, ext)) == NULL)
-			return GDK_FAIL;
-	}
-	return HEAPcopy(dst, src);
-}
-
 static void
 heapmove(Heap *dst, Heap *src)
 {
-	if (src->filename == NULL) {
-		src->filename = dst->filename;
-		dst->filename = NULL;
-	}
 	HEAPfree(dst, 0);
 	*dst = *src;
 }
@@ -759,8 +738,12 @@ COLcopy(BAT *b, int tt, int writable, int role)
 
 			bthp.farmid = BBPselectfarm(role, b->ttype, offheap);
 			thp.farmid = BBPselectfarm(role, b->ttype, varheap);
-			if ((b->ttype && heapcopy(bn, "tail", &bthp, &b->theap) != GDK_SUCCEED) ||
-			    (bn->tvheap && heapcopy(bn, "theap", &thp, b->tvheap) != GDK_SUCCEED)) {
+			snprintf(bthp.filename, sizeof(bthp.filename),
+				 "%s.tail", BBP_physical(bn->batCacheid));
+			snprintf(thp.filename, sizeof(thp.filename), "%s.theap",
+				 BBP_physical(bn->batCacheid));
+			if ((b->ttype && HEAPcopy(&bthp, &b->theap) != GDK_SUCCEED) ||
+			    (bn->tvheap && HEAPcopy(&thp, b->tvheap) != GDK_SUCCEED)) {
 				HEAPfree(&thp, 1);
 				HEAPfree(&bthp, 1);
 				BBPreclaim(bn);
@@ -795,7 +778,7 @@ COLcopy(BAT *b, int tt, int writable, int role)
 			/* case (4): optimized for unary void
 			 * materialization */
 			oid cur = b->tseqbase, *dst = (oid *) bn->theap.base;
-			oid inc = (cur != oid_nil);
+			oid inc = !is_oid_nil(cur);
 
 			bn->theap.free = bunstocopy * sizeof(oid);
 			bn->theap.dirty |= bunstocopy > 0;
@@ -929,7 +912,7 @@ setcolprops(BAT *b, const void *x)
 			if (x) {
 				b->tseqbase = * (const oid *) x;
 			}
-			b->tnil = b->tseqbase == oid_nil;
+			b->tnil = is_oid_nil(b->tseqbase);
 			b->tnonil = !b->tnil;
 		} else {
 			b->tnil = isnil;
@@ -945,7 +928,7 @@ setcolprops(BAT *b, const void *x)
 		/* not the first value in a VOID column: we keep the
 		 * seqbase, and x is not used, so only some properties
 		 * are affected */
-		if (b->tseqbase != oid_nil) {
+		if (!is_oid_nil(b->tseqbase)) {
 			if (b->trevsorted) {
 				b->tnorevsorted = BUNlast(b);
 				b->trevsorted = 0;
@@ -1031,10 +1014,10 @@ BUNappend(BAT *b, const void *t, bit force)
 	if (b->thash && b->tvheap)
 		tsize = b->tvheap->size;
 
-	if (b->ttype == TYPE_void && b->tseqbase != oid_nil) {
+	if (b->ttype == TYPE_void && !is_oid_nil(b->tseqbase)) {
 		if (b->batCount == 0) {
 			b->tseqbase = * (const oid *) t;
-		} else if (* (oid *) t == oid_nil ||
+		} else if (is_oid_nil(* (oid *) t) ||
 			   b->tseqbase + b->batCount != *(const oid *) t) {
 			if (BATmaterialize(b) != GDK_SUCCEED)
 				return GDK_FAIL;
@@ -1078,7 +1061,7 @@ BUNdelete(BAT *b, oid o)
 	BUN p;
 	BATiter bi = bat_iterator(b);
 
-	assert(b->hseqbase != oid_nil || BATcount(b) == 0);
+	assert(!is_oid_nil(b->hseqbase) || BATcount(b) == 0);
 	if (o < b->hseqbase || o >= b->hseqbase + BATcount(b)) {
 		/* value already not there */
 		return GDK_SUCCEED;
@@ -1093,7 +1076,7 @@ BUNdelete(BAT *b, oid o)
 	ATOMunfix(b->ttype, BUNtail(bi, p));
 	ATOMdel(b->ttype, b->tvheap, (var_t *) BUNtloc(bi, p));
 	if (p != BUNlast(b) - 1 &&
-	    (b->ttype != TYPE_void || b->tseqbase != oid_nil)) {
+	    (b->ttype != TYPE_void || !is_oid_nil(b->tseqbase))) {
 		/* replace to-be-delete BUN with last BUN; materialize
 		 * void column before doing so */
 		if (b->ttype == TYPE_void &&
@@ -1162,6 +1145,8 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 	HASHdestroy(b);
 	PROPdestroy(b->tprops);
 	b->tprops = NULL;
+	OIDXdestroy(b);
+	IMPSdestroy(b);
 	Treplacevalue(b, BUNtloc(bi, p), t);
 
 	tt = b->ttype;
@@ -1237,7 +1222,7 @@ BUNreplace(BAT *b, oid id, const void *t, bit force)
 	}
 	if (b->ttype == TYPE_void) {
 		/* no need to materialize if value doesn't change */
-		if (b->tseqbase == oid_nil ||
+		if (is_oid_nil(b->tseqbase) ||
 		    b->tseqbase + id - b->hseqbase == *(const oid *) t)
 			return GDK_SUCCEED;
 		if (BATmaterialize(b) != GDK_SUCCEED)
@@ -1378,7 +1363,7 @@ void
 BATsetcount(BAT *b, BUN cnt)
 {
 	/* head column is always VOID, and some head properties never change */
-	assert(b->hseqbase != oid_nil);
+	assert(!is_oid_nil(b->hseqbase));
 	assert(cnt <= BUN_MAX);
 
 	b->batCount = cnt;
@@ -1403,7 +1388,7 @@ BATsetcount(BAT *b, BUN cnt)
 	}
 	if (b->ttype == TYPE_void) {
 		b->tsorted = 1;
-		if (b->tseqbase == oid_nil) {
+		if (is_oid_nil(b->tseqbase)) {
 			b->tkey = cnt <= 1;
 			b->trevsorted = 1;
 			b->tnil = 1;
@@ -1425,7 +1410,7 @@ BATvmsize(BAT *b, int dirty)
 	if (b->batDirty || (b->batPersistence != TRANSIENT && !b->batCopiedtodisk))
 		dirty = 0;
 	return (!dirty || b->theap.dirty ? HEAPvmsize(&b->theap) : 0) +
-		((!dirty || b->theap.dirty) && b->thash && b->thash != (Hash *) 1 ? HEAPvmsize(b->thash->heap) : 0) +
+		((!dirty || b->theap.dirty) && b->thash && b->thash != (Hash *) 1 ? HEAPvmsize(&b->thash->heap) : 0) +
 		(b->tvheap && (!dirty || b->tvheap->dirty) ? HEAPvmsize(b->tvheap) : 0);
 }
 
@@ -1438,7 +1423,7 @@ BATmemsize(BAT *b, int dirty)
 		dirty = 0;
 	return (!dirty || b->batDirtydesc ? sizeof(BAT) : 0) +
 		(!dirty || b->theap.dirty ? HEAPmemsize(&b->theap) : 0) +
-		((!dirty || b->theap.dirty) && b->thash && b->thash != (Hash *) 1 ? HEAPmemsize(b->thash->heap) : 0) +
+		((!dirty || b->theap.dirty) && b->thash && b->thash != (Hash *) 1 ? HEAPmemsize(&b->thash->heap) : 0) +
 		(b->tvheap && (!dirty || b->tvheap->dirty) ? HEAPmemsize(b->tvheap) : 0);
 }
 
@@ -1458,11 +1443,11 @@ BATkey(BAT *b, int flag)
 	assert(flag == 0 || flag == 1);
 	assert(!b->tunique || flag);
 	if (b->ttype == TYPE_void) {
-		if (b->tseqbase != oid_nil && flag == FALSE) {
+		if (!is_oid_nil(b->tseqbase) && flag == FALSE) {
 			GDKerror("BATkey: dense column must be unique.\n");
 			return GDK_FAIL;
 		}
-		if (b->tseqbase == oid_nil && flag == TRUE && b->batCount > 1) {
+		if (is_oid_nil(b->tseqbase) && flag == TRUE && b->batCount > 1) {
 			GDKerror("BATkey: void column cannot be unique.\n");
 			return GDK_FAIL;
 		}
@@ -1493,8 +1478,8 @@ BAThseqbase(BAT *b, oid o)
 {
 	if (b == NULL)
 		return;
-	assert(o < oid_nil);	/* i.e., not oid_nil */
-	assert(o + BATcount(b) < oid_nil);
+	assert(o <= GDK_oid_max);	/* i.e., not oid_nil */
+	assert(o + BATcount(b) <= GDK_oid_max);
 	assert(b->batCacheid > 0);
 	if (b->hseqbase != o) {
 		b->batDirtydesc = TRUE;
@@ -1508,21 +1493,21 @@ BATtseqbase(BAT *b, oid o)
 	if (b == NULL)
 		return;
 	assert(o <= oid_nil);
-	assert(o == oid_nil || o + BATcount(b) < oid_nil);
+	assert(is_oid_nil(o) || o + BATcount(b) <= GDK_oid_max);
 	assert(b->batCacheid > 0);
 	if (ATOMtype(b->ttype) == TYPE_oid) {
 		if (b->tseqbase != o) {
 			b->batDirtydesc = TRUE;
 		}
 		b->tseqbase = o;
-		if (b->ttype == TYPE_oid && o == oid_nil) {
+		if (b->ttype == TYPE_oid && is_oid_nil(o)) {
 			b->tdense = 0;
 			b->tnodense = 0;
 		}
 
 		/* adapt keyness */
 		if (BATtvoid(b)) {
-			if (o == oid_nil) {
+			if (is_oid_nil(o)) {
 				b->tkey = b->batCount <= 1;
 				b->tnonil = b->batCount == 0;
 				b->tnil = b->batCount > 0;
@@ -1706,9 +1691,9 @@ backup_new(Heap *hp, int lockbat)
 		IODEBUG fprintf(stderr, "#rename(%s,%s) = %d\n", batpath, bakpath, ret);
 	} else if (batret == 0) {
 		/* there is a backup already; just remove the X.new */
-		if ((ret = unlink(batpath)) < 0)
-			GDKsyserror("backup_new: unlink %s failed\n", batpath);
-		IODEBUG fprintf(stderr, "#unlink(%s) = %d\n", batpath, ret);
+		if ((ret = remove(batpath)) != 0)
+			GDKsyserror("backup_new: remove %s failed\n", batpath);
+		IODEBUG fprintf(stderr, "#remove(%s) = %d\n", batpath, ret);
 	}
 	GDKfree(batpath);
 	GDKfree(bakpath);
@@ -2018,8 +2003,8 @@ BATassertProps(BAT *b)
 	assert(b->batCount >= b->batInserted);
 
 	/* headless */
-	assert(b->hseqbase < oid_nil); /* non-nil seqbase */
-	assert(b->hseqbase + BATcount(b) < oid_nil);
+	assert(b->hseqbase <= GDK_oid_max); /* non-nil seqbase */
+	assert(b->hseqbase + BATcount(b) <= GDK_oid_max);
 
 	bbpstatus = BBP_status(b->batCacheid);
 	/* only at most one of BBPDELETED, BBPEXISTING, BBPNEW may be set */
@@ -2067,7 +2052,7 @@ BATassertProps(BAT *b)
 	if (b->ttype == TYPE_void) {
 		assert(b->tshift == 0);
 		assert(b->twidth == 0);
-		if (b->tseqbase == oid_nil) {
+		if (is_oid_nil(b->tseqbase)) {
 			assert(BATcount(b) == 0 || !b->tnonil);
 			assert(BATcount(b) <= 1 || !b->tkey);
 			/* assert(!b->tdense); */
@@ -2089,9 +2074,9 @@ BATassertProps(BAT *b)
 	assert(1 << b->tshift == b->twidth);
 	if (b->ttype == TYPE_oid && b->tdense) {
 		assert(b->tsorted);
-		assert(b->tseqbase != oid_nil);
+		assert(!is_oid_nil(b->tseqbase));
 		if (b->batCount > 0) {
-			assert(b->tseqbase != oid_nil);
+			assert(!is_oid_nil(b->tseqbase));
 			assert(* (oid *) BUNtail(bi, 0) == b->tseqbase);
 		}
 	}
@@ -2184,37 +2169,28 @@ BATassertProps(BAT *b)
 			/* we need to check for uniqueness the hard
 			 * way (i.e. using a hash table) */
 			const char *nme = BBP_physical(b->batCacheid);
-			char *ext;
-			size_t nmelen = strlen(nme);
-			Heap *hp;
 			Hash *hs = NULL;
 			BUN mask;
 
-			if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
-			    (hp->filename = GDKmalloc(nmelen + 30)) == NULL) {
-				if (hp)
-					GDKfree(hp);
+			if ((hs = GDKzalloc(sizeof(Hash))) == NULL) {
 				fprintf(stderr,
 					"#BATassertProps: cannot allocate "
 					"hash table\n");
 				goto abort_check;
 			}
-			snprintf(hp->filename, nmelen + 30,
-				 "%s.hash" SZFMT, nme, MT_getpid());
-			ext = GDKstrdup(hp->filename + nmelen + 1);
+			snprintf(hs->heap.filename, sizeof(hs->heap.filename),
+				 "%s.hash%d", nme, THRgettid());
 			if (ATOMsize(b->ttype) == 1)
-				mask = 1 << 8;
+				mask = (BUN) 1 << 8;
 			else if (ATOMsize(b->ttype) == 2)
-				mask = 1 << 16;
+				mask = (BUN) 1 << 16;
 			else
 				mask = HASHmask(b->batCount);
-			if ((hp->farmid = BBPselectfarm(TRANSIENT, b->ttype,
+			if ((hs->heap.farmid = BBPselectfarm(TRANSIENT, b->ttype,
 							hashheap)) < 0 ||
-			    (hs = HASHnew(hp, b->ttype, BUNlast(b),
-					  mask, BUN_NONE)) == NULL) {
-				GDKfree(ext);
-				GDKfree(hp->filename);
-				GDKfree(hp);
+			    HASHnew(hs, b->ttype, BUNlast(b),
+				    mask, BUN_NONE) != GDK_SUCCEED) {
+				GDKfree(hs);
 				fprintf(stderr,
 					"#BATassertProps: cannot allocate "
 					"hash table\n");
@@ -2237,10 +2213,8 @@ BATassertProps(BAT *b)
 				if (cmp == 0)
 					seennil = 1;
 			}
-			HEAPfree(hp, 1);
-			GDKfree(hp);
+			HEAPfree(&hs->heap, 1);
 			GDKfree(hs);
-			GDKfree(ext);
 		}
 	  abort_check:
 		assert(!b->tnil || seennil);

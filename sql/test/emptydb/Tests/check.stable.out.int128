@@ -137,7 +137,6 @@ Ready.
 \dSf sys."dependencies_views_on_triggers"
 \dSf sys."droporderindex"
 \dSf sys."env"
-\dSf sys."environment"
 \dSf sys."epoch"
 \dSf sys."evalalgebra"
 \dSf sys."fitsattach"
@@ -475,7 +474,6 @@ SYSTEM FUNCTION  sys.droporderindex
 SYSTEM FUNCTION  sys.editdistance
 SYSTEM FUNCTION  sys.editdistance2
 SYSTEM FUNCTION  sys.env
-SYSTEM FUNCTION  sys.environment
 SYSTEM FUNCTION  sys.epoch
 SYSTEM FUNCTION  sys.evalalgebra
 SYSTEM FUNCTION  sys.exist
@@ -765,6 +763,8 @@ SYSTEM FUNCTION  sys.strings
 SYSTEM FUNCTION  sys.substr
 SYSTEM FUNCTION  sys.substring
 SYSTEM FUNCTION  sys.sum
+SYSTEM FUNCTION  sys.sys_update_schemas
+SYSTEM FUNCTION  sys.sys_update_tables
 SYSTEM FUNCTION  sys.tan
 SYSTEM FUNCTION  sys.tanh
 SYSTEM FUNCTION  sys.text
@@ -836,8 +836,8 @@ CREATE TABLE "tmp"."keys" ("id" INTEGER, "table_id" INTEGER, "type" INTEGER, "na
 CREATE TABLE "tmp"."objects" ("id" INTEGER, "name" VARCHAR(1024), "nr" INTEGER);
 CREATE TABLE "tmp"."triggers" ("id" INTEGER, "name" VARCHAR(1024), "table_id" INTEGER, "time" SMALLINT, "orientation" SMALLINT, "event" SMALLINT, "old_name" VARCHAR(1024), "new_name" VARCHAR(1024), "condition" VARCHAR(2048), "statement" VARCHAR(2048));
 SELECT * FROM (SELECT p.* FROM "sys"."_columns" AS p UNION ALL SELECT t.* FROM "tmp"."_columns" AS t) AS columns;
-create view sys.environment as select * from sys.environment();
-create view geometry_columns as select e.value as f_table_catalog, s.name as f_table_schema, y.f_table_name, y.f_geometry_column, y.coord_dimension, y.srid, y.type from schemas s, environment e, (select t.schema_id, t.name as f_table_name, x.name as f_geometry_column, cast(has_z(info)+has_m(info)+2 as integer) as coord_dimension, srid, get_type(info, 0) as type from tables t, (select name, table_id, type_digits as info, type_scale as srid from columns where type in (select distinct sqlname from types where systemname='wkb')) as x where t.id=x.table_id) y where y.schema_id=s.id and e.name='gdk_dbname';
+create view sys.environment as select * from sys.env();
+create view sys.geometry_columns as select cast(null as varchar(1)) as f_table_catalog, s.name as f_table_schema, t.name as f_table_name, c.name as f_geometry_column, cast(has_z(c.type_digits) + has_m(c.type_digits) +2 as integer) as coord_dimension, c.type_scale as srid, get_type(c.type_digits, 0) as type from sys.columns c, sys.tables t, sys.schemas s where c.table_id = t.id and t.schema_id = s.id and c.type in (select sqlname from sys.types where systemname in ('wkb', 'wkba'));
 create view sys.optimizers as select * from sys.optimizers();
 create view sys.querylog_calls as select * from sys.querylog_calls();
 create view sys.querylog_catalog as select * from sys.querylog_catalog();
@@ -893,7 +893,6 @@ create function dependencies_views_on_functions() returns table (sch varchar(100
 create function dependencies_views_on_triggers() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select v.name, tri.name, 'DEP_TRIGGER' from tables as v, triggers as tri, dependencies as dep where dep.id = v.id and dep.depend_id =tri.id and dep.depend_type = 8 and v.type = 1);
 create procedure sys.droporderindex(sys string, tab string, col string) external name sql.droporderindex;
 CREATE FUNCTION env () RETURNS TABLE(name varchar(1024), value varchar(2048)) EXTERNAL NAME sql.sql_environment;
-create function sys.environment() returns table ("name" string, value string) external name sql.sql_environment;
 create function sys."epoch"(sec bigint) returns timestamp external name timestamp."epoch";
 create function sys."epoch"(sec int) returns timestamp external name timestamp."epoch";
 create function sys."epoch"(ts timestamp with time zone) returns int external name timestamp."epoch";
@@ -1317,7 +1316,7 @@ drop function pcre_replace(string, string, string, string);
 % .s,	.t,	.L4,	.t,	.t,	.t,	.t # table_name
 % name,	name,	query,	type,	system,	commit_action,	access # name
 % varchar,	varchar,	varchar,	smallint,	boolean,	smallint,	smallint # type
-% 3,	18,	608,	1,	5,	1,	1 # length
+% 3,	18,	597,	1,	5,	1,	1 # length
 [ "bam",	"export",	NULL,	0,	true,	0,	0	]
 [ "bam",	"files",	NULL,	0,	true,	0,	0	]
 [ "bam",	"pg",	NULL,	0,	true,	0,	0	]
@@ -1331,11 +1330,11 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"db_user_info",	NULL,	0,	true,	0,	0	]
 [ "sys",	"dependencies",	NULL,	0,	true,	0,	0	]
 [ "sys",	"dependency_types",	NULL,	0,	true,	0,	1	]
-[ "sys",	"environment",	"create view sys.environment as select * from sys.environment();",	1,	true,	0,	0	]
+[ "sys",	"environment",	"create view sys.environment as select * from sys.env();",	1,	true,	0,	0	]
 [ "sys",	"function_languages",	NULL,	0,	true,	0,	1	]
 [ "sys",	"function_types",	NULL,	0,	true,	0,	1	]
 [ "sys",	"functions",	NULL,	0,	true,	0,	0	]
-[ "sys",	"geometry_columns",	"create view geometry_columns as select e.value as f_table_catalog, s.name as f_table_schema, y.f_table_name, y.f_geometry_column, y.coord_dimension, y.srid, y.type from schemas s, environment e, (select t.schema_id, t.name as f_table_name, x.name as f_geometry_column, cast(has_z(info)+has_m(info)+2 as integer) as coord_dimension, srid, get_type(info, 0) as type from tables t, (select name, table_id, type_digits as info, type_scale as srid from columns where type in (select distinct sqlname from types where systemname='wkb')) as x where t.id=x.table_id) y where y.schema_id=s.id and e.name='gdk_dbname';",	1,	true,	0,	0	]
+[ "sys",	"geometry_columns",	"create view sys.geometry_columns as select cast(null as varchar(1)) as f_table_catalog, s.name as f_table_schema, t.name as f_table_name, c.name as f_geometry_column, cast(has_z(c.type_digits) + has_m(c.type_digits) +2 as integer) as coord_dimension, c.type_scale as srid, get_type(c.type_digits, 0) as type from sys.columns c, sys.tables t, sys.schemas s where c.table_id = t.id and t.schema_id = s.id and c.type in (select sqlname from sys.types where systemname in ('wkb', 'wkba'));",	1,	true,	0,	0	]
 [ "sys",	"idxs",	NULL,	0,	true,	0,	0	]
 [ "sys",	"index_types",	NULL,	0,	true,	0,	1	]
 [ "sys",	"key_types",	NULL,	0,	true,	0,	1	]
@@ -1448,8 +1447,8 @@ drop function pcre_replace(string, string, string, string);
 [ "dependencies",	"depend_type",	"smallint",	16,	0,	NULL,	true,	2,	NULL	]
 [ "dependency_types",	"dependency_type_id",	"smallint",	16,	0,	NULL,	false,	0,	NULL	]
 [ "dependency_types",	"dependency_type_name",	"varchar",	15,	0,	NULL,	false,	1,	NULL	]
-[ "environment",	"name",	"clob",	0,	0,	NULL,	true,	0,	NULL	]
-[ "environment",	"value",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
+[ "environment",	"name",	"varchar",	1024,	0,	NULL,	true,	0,	NULL	]
+[ "environment",	"value",	"varchar",	2048,	0,	NULL,	true,	1,	NULL	]
 [ "export",	"qname",	"clob",	0,	0,	NULL,	false,	0,	NULL	]
 [ "export",	"flag",	"smallint",	16,	0,	NULL,	false,	1,	NULL	]
 [ "export",	"rname",	"clob",	0,	0,	NULL,	false,	2,	NULL	]
@@ -1481,7 +1480,7 @@ drop function pcre_replace(string, string, string, string);
 [ "functions",	"varres",	"boolean",	1,	0,	NULL,	true,	7,	NULL	]
 [ "functions",	"vararg",	"boolean",	1,	0,	NULL,	true,	8,	NULL	]
 [ "functions",	"schema_id",	"int",	32,	0,	NULL,	true,	9,	NULL	]
-[ "geometry_columns",	"f_table_catalog",	"clob",	0,	0,	NULL,	true,	0,	NULL	]
+[ "geometry_columns",	"f_table_catalog",	"varchar",	1,	0,	NULL,	true,	0,	NULL	]
 [ "geometry_columns",	"f_table_schema",	"varchar",	1024,	0,	NULL,	true,	1,	NULL	]
 [ "geometry_columns",	"f_table_name",	"varchar",	1024,	0,	NULL,	true,	2,	NULL	]
 [ "geometry_columns",	"f_geometry_column",	"varchar",	1024,	0,	NULL,	true,	3,	NULL	]
@@ -2002,7 +2001,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"editdistance2",	"editdistance2",	"txtsim",	0,	"function",	false,	false,	false,	"res_0",	"int",	32,	0,	"out",	"arg_1",	"clob",	0,	0,	"in",	"arg_2",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"editdistance2",	"editdistance2",	"txtsim",	0,	"function",	false,	false,	false,	"res_0",	"int",	32,	0,	"out",	"arg_1",	"varchar",	0,	0,	"in",	"arg_2",	"varchar",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"env",	"CREATE FUNCTION env () RETURNS TABLE(name varchar(1024), value varchar(2048)) EXTERNAL NAME sql.sql_environment;",	"sql",	2,	"table function",	false,	false,	false,	"name",	"varchar",	1024,	0,	"out",	"value",	"varchar",	2048,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"environment",	"create function sys.environment() returns table (\"name\" string, value string) external name sql.sql_environment;",	"sql",	1,	"table function",	false,	false,	false,	"name",	"clob",	0,	0,	"out",	"value",	"clob",	0,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"epoch",	"create function sys.\"epoch\"(sec bigint) returns timestamp external name timestamp.\"epoch\";",	"timestamp",	1,	"function",	false,	false,	false,	"result",	"timestamp",	7,	0,	"out",	"sec",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"epoch",	"create function sys.\"epoch\"(sec int) returns timestamp external name timestamp.\"epoch\";",	"timestamp",	1,	"function",	false,	false,	false,	"result",	"timestamp",	7,	0,	"out",	"sec",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"epoch",	"create function sys.\"epoch\"(ts timestamp with time zone) returns int external name timestamp.\"epoch\";",	"timestamp",	1,	"function",	false,	false,	false,	"result",	"int",	32,	0,	"out",	"ts",	"timestamptz",	7,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -3489,6 +3487,8 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"sum",	"sum",	"aggr",	0,	"aggregate",	false,	false,	false,	"res",	"month_interval",	32,	0,	"out",	"arg",	"month_interval",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"sum",	"sum",	"aggr",	0,	"aggregate",	false,	false,	false,	"res",	"real",	24,	0,	"out",	"arg",	"real",	24,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"sum",	"sum",	"aggr",	0,	"aggregate",	false,	false,	false,	"res",	"sec_interval",	13,	0,	"out",	"arg",	"sec_interval",	13,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"sys_update_schemas",	"update_schemas",	"sql",	0,	"procedure",	false,	false,	false,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"sys_update_tables",	"update_tables",	"sql",	0,	"procedure",	false,	false,	false,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"tan",	"tan",	"mmath",	0,	"function",	false,	false,	false,	"res_0",	"double",	53,	0,	"out",	"arg_1",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"tan",	"tan",	"mmath",	0,	"function",	false,	false,	false,	"res_0",	"real",	24,	0,	"out",	"arg_1",	"real",	24,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"tanh",	"tanh",	"mmath",	0,	"function",	false,	false,	false,	"res_0",	"double",	53,	0,	"out",	"arg_1",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -3868,9 +3868,8 @@ drop function pcre_replace(string, string, string, string);
 % sys.s1,	sys.t1,	sys.s2,	sys.t2,	.dt # table_name
 % name,	name,	name,	name,	name # name
 % varchar,	varchar,	varchar,	varchar,	char # type
-% 3,	11,	3,	16,	20 # length
+% 3,	7,	3,	16,	20 # length
 [ "sys",	"columns",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
-[ "sys",	"environment",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
 [ "sys",	"schemas",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
 [ "sys",	"tables",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
 [ "sys",	"types",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
@@ -4166,7 +4165,6 @@ drop function pcre_replace(string, string, string, string);
 [ "date_to_str",	"public",	16,	"monetdb",	0	]
 [ "degrees",	"public",	16,	"monetdb",	0	]
 [ "env",	"public",	16,	NULL,	0	]
-[ "environment",	"public",	16,	"monetdb",	0	]
 [ "epoch",	"public",	16,	"monetdb",	0	]
 [ "epoch",	"public",	16,	"monetdb",	0	]
 [ "epoch",	"public",	16,	"monetdb",	0	]
@@ -4634,7 +4632,6 @@ drop function pcre_replace(string, string, string, string);
 [ "editdistance2"	]
 [ "editdistance2"	]
 [ "env"	]
-[ "environment"	]
 [ "epoch"	]
 [ "epoch"	]
 [ "epoch"	]
@@ -6146,6 +6143,8 @@ drop function pcre_replace(string, string, string, string);
 [ "sum"	]
 [ "sum"	]
 [ "sum"	]
+[ "sys_update_schemas"	]
+[ "sys_update_tables"	]
 [ "tan"	]
 [ "tan"	]
 [ "tanh"	]
@@ -6212,7 +6211,9 @@ drop function pcre_replace(string, string, string, string);
 % .t,	.g,	.g,	.g,	.g,	.g,	.g,	.g,	.g # table_name
 % name,	name,	time,	orientation,	event,	old_name,	new_name,	condition,	statement # name
 % varchar,	varchar,	smallint,	smallint,	smallint,	varchar,	varchar,	varchar,	varchar # type
-% 0,	0,	1,	1,	1,	0,	0,	0,	0 # length
+% 7,	21,	1,	1,	1,	0,	0,	0,	110 # length
+[ "_tables",	"system_update_tables",	1,	1,	2,	NULL,	NULL,	NULL,	"create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables();"	]
+[ "schemas",	"system_update_schemas",	1,	1,	2,	NULL,	NULL,	NULL,	"create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas();"	]
 #select s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, t.eclass from sys.types t left outer join sys.schemas s on s.id = t.schema_id order by s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, t.eclass;
 % .s,	.t,	.t,	.t,	.t,	.t,	.t # table_name
 % name,	systemname,	sqlname,	digits,	scale,	radix,	eclass # name

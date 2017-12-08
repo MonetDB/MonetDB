@@ -902,7 +902,7 @@ CMDqgramselfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid, f
 			BBPunfix(pos->batCacheid);
 		if (len)
 			BBPunfix(len->batCacheid);
-		throw(MAL, "txtsim.qgramselfjoin", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "txtsim.qgramselfjoin", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	if (qgram->ttype != TYPE_oid)

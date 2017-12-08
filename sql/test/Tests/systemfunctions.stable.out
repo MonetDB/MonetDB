@@ -584,8 +584,6 @@ Ready.
 [ "sys",	"editdistance2",	2,	"clob",	""	]
 [ "sys",	"env",	0,	"varchar",	"CREATE FUNCTION env () RETURNS TABLE( name varchar(1024), value varchar(2048)) EXTERNAL NAME sql.sql_environment;"	]
 [ "sys",	"env",	1,	"varchar",	""	]
-[ "sys",	"environment",	0,	"clob",	"create function sys.environment()\n returns table (\"name\" string, value string)\n external name sql.sql_environment;"	]
-[ "sys",	"environment",	1,	"clob",	""	]
 [ "sys",	"epoch",	0,	"timestamp",	"create function sys.\"epoch\"(sec bigint) returns timestamp\n external name timestamp.\"epoch\";"	]
 [ "sys",	"epoch",	1,	"bigint",	""	]
 [ "sys",	"epoch",	0,	"timestamp",	"create function sys.\"epoch\"(sec int) returns timestamp\n external name timestamp.\"epoch\";"	]

@@ -105,7 +105,7 @@ slice(BAT **retval, BAT *b, lng start, lng end)
 		GDKerror("CMDslice: start position of slice should >= 0\n");
 		return GDK_FAIL;
 	}
-	if (end == lng_nil)
+	if (is_lng_nil(end))
 		end = BATcount(b);
 	if (start > (lng) BUN_MAX || end >= (lng) BUN_MAX) {
 		GDKerror("CMDslice: argument out of range\n");
@@ -134,7 +134,7 @@ ALGminany(ptr result, const bat *bid)
 	str msg = MAL_SUCCEED;
 
 	if (result == NULL || (b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.min", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.min", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if (!ATOMlinear(b->ttype)) {
 		msg = createException(MAL, "algebra.min",
@@ -162,7 +162,7 @@ ALGmaxany(ptr result, const bat *bid)
 	str msg = MAL_SUCCEED;
 
 	if (result == NULL || (b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.max", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.max", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if (!ATOMlinear(b->ttype)) {
 		msg = createException(MAL, "algebra.max",
@@ -189,12 +189,12 @@ ALGgroupby(bat *res, const bat *gids, const bat *cnts)
 
 	g = BATdescriptor(*gids);
 	if (g == NULL) {
-		throw(MAL, "algebra.groupby", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.groupby", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	c = BATdescriptor(*cnts);
 	if (c == NULL) {
 		BBPunfix(g->batCacheid);
-		throw(MAL, "algebra.groupby", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.groupby", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if( CMDgen_group(&bn, g, c) != GDK_SUCCEED){
 		BBPunfix(g->batCacheid);
@@ -214,7 +214,7 @@ ALGcard(lng *result, const bat *bid)
 	BAT *b, *en;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.card", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.card", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	en = BATunique(b, NULL);
 	BBPunfix(b->batCacheid);
@@ -238,11 +238,11 @@ ALGselect2(bat *result, const bat *bid, const bat *sid, const void *low, const v
 		throw(MAL, "algebra.select", ILLEGAL_ARGUMENT);
 	}
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.select", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	if (sid && *sid != bat_nil && (s = BATdescriptor(*sid)) == NULL) {
+	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.select", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.select", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	derefStr(b, low);
 	derefStr(b, high);
@@ -276,11 +276,11 @@ ALGthetaselect2(bat *result, const bat *bid, const bat *sid, const void *val, co
 	BAT *b, *s = NULL, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.thetaselect", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.thetaselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	if (sid && *sid != bat_nil && (s = BATdescriptor(*sid)) == NULL) {
+	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.thetaselect", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.thetaselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	derefStr(b, val);
 	bn = BATthetaselect(b, s, val, *op);
@@ -306,7 +306,7 @@ ALGselectNotNil(bat *result, const bat *bid)
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.selectNotNil", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.selectNotNil", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if( BATcount_no_nil(b) != BATcount(b) ){
 		BAT *s = NULL;
@@ -357,11 +357,11 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id, const
 		goto fail;
 	if ((right = BATdescriptor(*rid)) == NULL)
 		goto fail;
-	if (slid && *slid != bat_nil && (candleft = BATdescriptor(*slid)) == NULL)
+	if (slid && !is_bat_nil(*slid) && (candleft = BATdescriptor(*slid)) == NULL)
 		goto fail;
-	if (srid && *srid != bat_nil && (candright = BATdescriptor(*srid)) == NULL)
+	if (srid && !is_bat_nil(*srid) && (candright = BATdescriptor(*srid)) == NULL)
 		goto fail;
-	if (estimate == NULL || *estimate < 0 || *estimate == lng_nil || *estimate > (lng) BUN_MAX)
+	if (estimate == NULL || *estimate < 0 || is_lng_nil(*estimate) || *estimate > (lng) BUN_MAX)
 		est = BUN_NONE;
 	else
 		est = (BUN) *estimate;
@@ -390,7 +390,7 @@ do_join(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *r2id, const
 	} else if (rangefunc) {
 		assert(difffunc == NULL);
 		if ((right2 = BATdescriptor(*r2id)) == NULL) {
-			err = RUNTIME_OBJECT_MISSING;
+			err = SQLSTATE(HY002) RUNTIME_OBJECT_MISSING;
 			goto fail;
 		}
 		if ((*rangefunc)(&result1, &result2, left, right, right2, candleft, candright, li, hi, est) != GDK_SUCCEED)
@@ -544,19 +544,19 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ret2 = getArgReference_bat(stk, pci, 1);
 	bid = *getArgReference_bat(stk, pci, pci->retc);
 	if ((b = BATdescriptor(bid)) == NULL)
-		throw(MAL, "algebra.firstn", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.firstn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (pci->argc - pci->retc > 4) {
 		sid = *getArgReference_bat(stk, pci, pci->retc + 1);
 		if ((s = BATdescriptor(sid)) == NULL) {
 			BBPunfix(bid);
-			throw(MAL, "algebra.firstn", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "algebra.firstn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		if (pci->argc - pci->retc > 5) {
 			gid = *getArgReference_bat(stk, pci, pci->retc + 2);
 			if ((g = BATdescriptor(gid)) == NULL) {
 				BBPunfix(bid);
 				BBPunfix(sid);
-				throw(MAL, "algebra.firstn", RUNTIME_OBJECT_MISSING);
+				throw(MAL, "algebra.firstn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			}
 		}
 	}
@@ -582,7 +582,7 @@ ALGunary(bat *result, const bat *bid, BAT *(*func)(BAT *), const char *name)
 	BAT *b,*bn;
 
 	if ((b= BATdescriptor(*bid)) == NULL) {
-		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	bn = (*func)(b);
 	BBPunfix(b->batCacheid);
@@ -599,11 +599,11 @@ ALGbinary(bat *result, const bat *lid, const bat *rid, BAT *(*func)(BAT *, BAT *
 	BAT *left, *right,*bn= NULL;
 
 	if ((left = BATdescriptor(*lid)) == NULL) {
-		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if ((right = BATdescriptor(*rid)) == NULL) {
 		BBPunfix(left->batCacheid);
-		throw(MAL, name, RUNTIME_OBJECT_MISSING);
+		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	bn = (*func)(left, right);
 	BBPunfix(left->batCacheid);
@@ -633,11 +633,11 @@ ALGunique2(bat *result, const bat *bid, const bat *sid)
 	BAT *b, *s = NULL, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.unique", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.unique", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	if (sid && *sid != bat_nil && (s = BATdescriptor(*sid)) == NULL) {
+	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.unique", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.unique", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	bn = BATunique(b, s);
 	BBPunfix(b->batCacheid);
@@ -663,11 +663,11 @@ ALGcrossproduct2( bat *l, bat *r, const bat *left, const bat *right)
 	gdk_return ret;
 
 	if ((L = BATdescriptor(*left)) == NULL) {
-		throw(MAL, "algebra.crossproduct", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.crossproduct", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if ((R = BATdescriptor(*right)) == NULL) {
 		BBPunfix(L->batCacheid);
-		throw(MAL, "algebra.crossproduct", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.crossproduct", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	ret = BATsubcross(&bn1, &bn2, L, R, NULL, NULL);
 	BBPunfix(L->batCacheid);
@@ -692,16 +692,16 @@ ALGsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, const bat *orde
 	BAT *b = NULL, *o = NULL, *g = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.sort", RUNTIME_OBJECT_MISSING);
-	if (order && *order != bat_nil && (o = BATdescriptor(*order)) == NULL) {
+		throw(MAL, "algebra.sort", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if (order && !is_bat_nil(*order) && (o = BATdescriptor(*order)) == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.sort", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.sort", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	if (group && *group != bat_nil && (g = BATdescriptor(*group)) == NULL) {
+	if (group && !is_bat_nil(*group) && (g = BATdescriptor(*group)) == NULL) {
 		if (o)
 			BBPunfix(o->batCacheid);
 		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.sort", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.sort", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if (BATsort(result ? &bn : NULL,
 				   norder ? &on : NULL,
@@ -782,7 +782,7 @@ ALGcount_bat(lng *result, const bat *bid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "aggr.count", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	*result = (lng) BATcount(b);
 	BBPunfix(b->batCacheid);
@@ -796,7 +796,7 @@ ALGcount_nil(lng *result, const bat *bid, const bit *ignore_nils)
 	BUN cnt;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "aggr.count", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if (*ignore_nils)
 		cnt = BATcount_no_nil(b);
@@ -821,7 +821,7 @@ ALGslice(bat *ret, const bat *bid, const lng *start, const lng *end)
 	BAT *b, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.slice", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.slice", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if (slice(&bn, b, *start, *end) == GDK_SUCCEED) {
 		*ret = bn->batCacheid;
@@ -837,7 +837,7 @@ str
 ALGslice_int(bat *ret, const bat *bid, const int *start, const int *end)
 {
 	lng s = *start;
-	lng e = (*end == int_nil ? lng_nil : *end);
+	lng e = (is_int_nil(*end) ? lng_nil : *end);
 
 	return ALGslice(ret, bid, &s, &e);
 }
@@ -856,8 +856,8 @@ ALGslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end)
 str
 ALGslice_oid(bat *ret, const bat *bid, const oid *start, const oid *end)
 {
-	lng s = (lng) (*start == oid_nil ? 0 : (lng) *start);
-	lng e = (*end == oid_nil ? lng_nil : (lng) *end);
+	lng s = (lng) (is_oid_nil(*start) ? 0 : (lng) *start);
+	lng e = (is_oid_nil(*end) ? lng_nil : (lng) *end);
 
 	return ALGslice(ret, bid, &s, &e) ;
 }
@@ -869,14 +869,14 @@ ALGsubslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end)
 	BUN s, e;
 
 	if (*start < 0 || *start > (lng) BUN_MAX ||
-		(*end < 0 && *end != lng_nil) || *end >= (lng) BUN_MAX)
+		(*end < 0 && !is_lng_nil(*end)) || *end >= (lng) BUN_MAX)
 		throw(MAL, "algebra.subslice", ILLEGAL_ARGUMENT);
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.subslice", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.subslice", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	s = (BUN) *start;
 	if (s > BATcount(b))
 		s = BATcount(b);
-	e = *end == lng_nil ? BATcount(b) : (BUN) *end + 1;
+	e = is_lng_nil(*end) ? BATcount(b) : (BUN) *end + 1;
 	if (e > BATcount(b))
 		e = BATcount(b);
 	if (e < s)
@@ -912,7 +912,7 @@ doALGfetch(ptr ret, BAT *b, BUN pos)
 		size_t _s = ATOMsize(ATOMtype(b->ttype));
 		if (b->ttype == TYPE_void) {
 			*(oid*) ret = b->tseqbase;
-			if (b->tseqbase != oid_nil)
+			if (!is_oid_nil(b->tseqbase))
 				*(oid*)ret += pos;
 		} else if (_s == 4) {
 			*(int*) ret = *(int*) Tloc(b, pos);
@@ -940,7 +940,7 @@ ALGfetch(ptr ret, const bat *bid, const lng *pos)
 	str msg;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.fetch", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.fetch", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if ((*pos < (lng) 0) || (*pos >= (lng) BUNlast(b))) {
 		BBPunfix(b->batCacheid);
@@ -966,7 +966,7 @@ ALGexist(bit *ret, const bat *bid, const void *val)
 	BUN q;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.exist", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.exist", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	derefStr(b, val);
 	q = BUNfnd(b, val);
@@ -983,7 +983,7 @@ ALGfind(oid *ret, const bat *bid, ptr val)
 	str msg= MAL_SUCCEED;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.find", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.find", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	derefStr(b, val);
 	q = BUNfnd(b, val);
@@ -1010,7 +1010,7 @@ ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( isaBatType(getArgType(mb,pci,2)) )
 		throw(MAL,"algebra.project","Scalar value expected");
 	if ((b = BATdescriptor(bid)) == NULL)
-		throw(MAL, "algebra.project", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	bn = BATconstant(b->hseqbase, v->vtype, VALptr(v), BATcount(b), TRANSIENT);
 	BBPunfix(b->batCacheid);
 	if (bn == NULL) {
@@ -1027,7 +1027,7 @@ str ALGreuse(bat *ret, const bat *bid)
 {
 	BAT *b,*bn;
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.reuse", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.reuse", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if( b->batPersistence != TRANSIENT || b->batRestricted != BAT_WRITE){
 		if( ATOMvarsized(b->ttype) ){
@@ -1064,10 +1064,10 @@ ALGstdev(dbl *res, const bat *bid)
 	dbl stdev;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "aggr.stdev", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.stdev", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	stdev = BATcalcstdev_sample(NULL, b);
 	BBPunfix(b->batCacheid);
-	if (stdev == dbl_nil && GDKerrbuf && GDKerrbuf[0])
+	if (is_dbl_nil(stdev) && GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "aggr.stdev", SEMANTIC_TYPE_MISMATCH);
 	*res = stdev;
 	return MAL_SUCCEED;
@@ -1080,10 +1080,10 @@ ALGstdevp(dbl *res, const bat *bid)
 	dbl stdev;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "aggr.stdevp", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.stdevp", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	stdev = BATcalcstdev_population(NULL, b);
 	BBPunfix(b->batCacheid);
-	if (stdev == dbl_nil && GDKerrbuf && GDKerrbuf[0])
+	if (is_dbl_nil(stdev) && GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "aggr.stdevp", SEMANTIC_TYPE_MISMATCH);
 	*res = stdev;
 	return MAL_SUCCEED;
@@ -1099,10 +1099,10 @@ ALGvariance(dbl *res, const bat *bid)
 	dbl variance;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "aggr.variance", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.variance", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	variance = BATcalcvariance_sample(NULL, b);
 	BBPunfix(b->batCacheid);
-	if (variance == dbl_nil && GDKerrbuf && GDKerrbuf[0])
+	if (is_dbl_nil(variance) && GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "aggr.variance", SEMANTIC_TYPE_MISMATCH);
 	*res = variance;
 	return MAL_SUCCEED;
@@ -1115,10 +1115,10 @@ ALGvariancep(dbl *res, const bat *bid)
 	dbl variance;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "aggr.variancep", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.variancep", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	variance = BATcalcvariance_population(NULL, b);
 	BBPunfix(b->batCacheid);
-	if (variance == dbl_nil && GDKerrbuf && GDKerrbuf[0])
+	if (is_dbl_nil(variance) && GDKerrbuf && GDKerrbuf[0])
 		throw(MAL, "aggr.variancep", SEMANTIC_TYPE_MISMATCH);
 	*res = variance;
 	return MAL_SUCCEED;

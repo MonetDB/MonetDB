@@ -349,6 +349,9 @@ extern sql_func *sql_trans_create_func(sql_trans *tr, sql_schema * s, const char
 extern void sql_trans_drop_func(sql_trans *tr, sql_schema *s, int id, int drop_action);
 extern void sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func, int drop_action);
 
+extern void sql_trans_update_tables(sql_trans *tr, sql_schema *s);
+extern void sql_trans_update_schemas(sql_trans *tr);
+
 extern void reset_functions(sql_trans *tr);
 
 extern sql_schema *sql_trans_create_schema(sql_trans *tr, const char *name, int auth_id, int owner);
@@ -395,7 +398,7 @@ extern lng sql_trans_sequence_restart(sql_trans *tr, sql_sequence *seq, lng star
 
 extern sql_session * sql_session_create(backend_stack stk, int autocommit);
 extern void sql_session_destroy(sql_session *s);
-extern void sql_session_reset(sql_session *s, int autocommit);
+extern int sql_session_reset(sql_session *s, int autocommit);
 extern int sql_trans_begin(sql_session *s);
 extern void sql_trans_end(sql_session *s);
 

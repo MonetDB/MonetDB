@@ -1,0 +1,68 @@
+stdout of test 'check_system_schema.Bug-6437` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 14:30:39 >  
+# 14:30:39 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34250" "--set" "mapi_usock=/var/tmp/mtest-23107/.s.monetdb.34250" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 14:30:39 >  
+
+# MonetDB 5 server v11.27.10
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 31.312 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://catskill.da.cwi.nl:34250/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-23107/.s.monetdb.34250
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 14:30:39 >  
+# 14:30:39 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-23107" "--port=34250"
+# 14:30:39 >  
+
+#select name, authorization, owner, "system" from sys.schemas where name IN ('sys', 'tmp', 'json', 'profiler') order by name;
+% sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
+% name,	authorization,	owner,	system # name
+% varchar,	int,	int,	boolean # type
+% 8,	1,	1,	5 # length
+[ "json",	3,	3,	true	]
+[ "profiler",	3,	3,	true	]
+[ "sys",	2,	3,	true	]
+[ "tmp",	2,	3,	true	]
+#set schema profiler;
+#select current_schema;
+% .L2 # table_name
+% L2 # name
+% varchar # type
+% 8 # length
+[ "profiler"	]
+#set schema json;
+#select current_schema;
+% .L2 # table_name
+% L2 # name
+% varchar # type
+% 4 # length
+[ "json"	]
+#set schema tmp;
+#select current_schema;
+% .L2 # table_name
+% L2 # name
+% varchar # type
+% 3 # length
+[ "tmp"	]
+#set schema sys;
+#select current_schema;
+% .L2 # table_name
+% L2 # name
+% varchar # type
+% 3 # length
+[ "sys"	]
+
+# 14:30:39 >  
+# 14:30:39 >  "Done."
+# 14:30:39 >  
+

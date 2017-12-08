@@ -44,7 +44,7 @@ comment "Change the profiler event limit counter";
 
 pattern openstream(mode:int):void
 address CMDopenProfilerStream
-comment "Start profiling the events, sent to output stream";
+comment "Start profiling the events, send to output stream";
 
 command closestream():void
 address CMDcloseProfilerStream

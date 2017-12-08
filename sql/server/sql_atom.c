@@ -500,14 +500,14 @@ atom2sql(atom *a)
 	case EC_TIMESTAMP:
 		if (a->data.vtype == TYPE_str) {
 			if (a->data.val.sval)
-				sprintf(buf, "%s '%s'", a->tpe.type->sqlname, 
+				sprintf(buf, "%s '%s'", a->tpe.type->sqlname,
 					a->data.val.sval);
 			else
 				sprintf(buf, "NULL");
 		}
 		break;
-        default:
-                snprintf(buf, BUFSIZ, "atom2sql(TYPE_%d) not implemented", a->data.vtype);
+	default:
+		snprintf(buf, BUFSIZ, "atom2sql(TYPE_%d) not implemented", a->data.vtype);
 	}
 	return _STRDUP(buf);
 }
@@ -1085,7 +1085,7 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 		if ((at->type->eclass == EC_DEC || 
 		     at->type->eclass == EC_NUM) && 
 		    tp->type->eclass == EC_FLT) {
-			if (a->d == dbl_nil) {
+			if (is_dbl_nil(a->d)) {
 				ptr p = &a->d;
 				char *s;
 #ifdef HAVE_HGE
@@ -1292,6 +1292,34 @@ atom_is_zero( atom *a )
 		return a->data.val.fval == 0;
 	case TYPE_dbl:
 		return a->data.val.dval == 0;
+	default:
+		break;
+	}
+	return 0;
+}
+
+int
+atom_is_true( atom *a )
+{
+	switch(a->tpe.type->localtype) {
+	case TYPE_bit:
+		return a->data.val.btval != 0;
+	case TYPE_bte:
+		return a->data.val.btval != 0;
+	case TYPE_sht:
+		return a->data.val.shval != 0;
+	case TYPE_int:
+		return a->data.val.ival != 0;
+	case TYPE_lng:
+		return a->data.val.lval != 0;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		return a->data.val.hval != 0;
+#endif
+	case TYPE_flt:
+		return a->data.val.fval != 0;
+	case TYPE_dbl:
+		return a->data.val.dval != 0;
 	default:
 		break;
 	}

@@ -1,4 +1,4 @@
-policy_module(monetdb, 0.1)
+policy_module(monetdb, 0.2)
 # The above line declares that this file is a SELinux policy file. Its
 # name is monetdb, so the file should be saved as monetdb.te
 
@@ -39,6 +39,7 @@ manage_files_pattern(mserver5_t, mserver5_db_t, mserver5_db_t)
 manage_dirs_pattern(mserver5_t, mserver5_db_t, mserver5_db_t)
 manage_files_pattern(monetdbd_t, mserver5_db_t, mserver5_db_t)
 manage_dirs_pattern(monetdbd_t, mserver5_db_t, mserver5_db_t)
+allow mserver5_t mserver5_db_t:file { map };
 
 # the context used for the configuration files
 type monetdbd_etc_t;

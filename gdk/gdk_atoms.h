@@ -66,13 +66,13 @@ gdk_export ssize_t fltFromStr(const char *src, size_t *len, flt **dst);
 gdk_export ssize_t fltToStr(str *dst, size_t *len, const flt *src);
 gdk_export ssize_t dblFromStr(const char *src, size_t *len, dbl **dst);
 gdk_export ssize_t dblToStr(str *dst, size_t *len, const dbl *src);
-gdk_export ssize_t GDKstrFromStr(unsigned char *dst, const unsigned char *src, ssize_t len);
-gdk_export ssize_t strFromStr(const char *src, size_t *len, str *dst);
+gdk_export ssize_t GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len);
+gdk_export ssize_t strFromStr(const char *restrict src, size_t *restrict len, str *restrict dst);
 gdk_export BUN strHash(const char *s);
 gdk_export size_t strLen(const char *s);
 gdk_export int strNil(const char *s);
-gdk_export size_t escapedStrlen(const char *src, const char *sep1, const char *sep2, int quote);
-gdk_export size_t escapedStr(char *dst, const char *src, size_t dstlen, const char *sep1, const char *sep2, int quote);
+gdk_export size_t escapedStrlen(const char *restrict src, const char *sep1, const char *sep2, int quote);
+gdk_export size_t escapedStr(char *restrict dst, const char *restrict src, size_t dstlen, const char *sep1, const char *sep2, int quote);
 /*
  * @- nil values
  * All types have a single value designated as a NIL value. It
@@ -84,30 +84,37 @@ gdk_export size_t escapedStr(char *dst, const char *src, size_t dstlen, const ch
 #define GDK_bit_max ((bit) 1)
 #define GDK_bit_min ((bit) 0)
 #define GDK_bte_max ((bte) SCHAR_MAX)
-#define GDK_bte_min ((bte) SCHAR_MIN)
+#define GDK_bte_min ((bte) SCHAR_MIN+1)
 #define GDK_sht_max ((sht) SHRT_MAX)
-#define GDK_sht_min ((sht) SHRT_MIN)
+#define GDK_sht_min ((sht) SHRT_MIN+1)
 #define GDK_int_max INT_MAX
-#define GDK_int_min INT_MIN
+#define GDK_int_min (INT_MIN+1)
 #define GDK_flt_max ((flt) FLT_MAX)
-#define GDK_flt_min (-GDK_flt_max)
+#define GDK_flt_min ((flt) -FLT_MAX)
 #define GDK_lng_max ((lng) LLONG_MAX)
-#define GDK_lng_min ((lng) LLONG_MIN)
+#define GDK_lng_min ((lng) LLONG_MIN+1)
 #ifdef HAVE_HGE
 #define GDK_hge_max ((((hge) 1) << 126) - 1 + \
                      (((hge) 1) << 126))
-#define GDK_hge_min (-GDK_hge_max-1)
+#define GDK_hge_min (-GDK_hge_max)
 #endif
 #define GDK_dbl_max ((dbl) DBL_MAX)
-#define GDK_dbl_min (-GDK_dbl_max)
+#define GDK_dbl_min ((dbl) -DBL_MAX)
 /* GDK_oid_max see below */
 #define GDK_oid_min ((oid) 0)
 /* representation of the nil */
 gdk_export const bte bte_nil;
 gdk_export const sht sht_nil;
 gdk_export const int int_nil;
-gdk_export const flt flt_nil;
-gdk_export const dbl dbl_nil;
+#ifdef __INTEL_COMPILER
+/* stupid Intel compiler uses a value that cannot be used in an
+ * initializer for NAN, so we have to initialize at run time */
+#define NANCONST
+#else
+#define NANCONST const
+#endif
+gdk_export NANCONST flt flt_nil;
+gdk_export NANCONST dbl dbl_nil;
 gdk_export const lng lng_nil;
 #ifdef HAVE_HGE
 gdk_export const hge hge_nil;
@@ -126,6 +133,29 @@ gdk_export const ptr ptr_nil;
 #endif
 
 #define void_nil	oid_nil
+
+#define is_bit_nil(v)	((v) == bit_nil)
+#define is_bte_nil(v)	((v) == bte_nil)
+#define is_sht_nil(v)	((v) == sht_nil)
+#define is_int_nil(v)	((v) == int_nil)
+#define is_lng_nil(v)	((v) == lng_nil)
+#ifdef HAVE_HGE
+#define is_hge_nil(v)	((v) == hge_nil)
+#endif
+#define is_oid_nil(v)	((v) == oid_nil)
+#define is_flt_nil(v)	isnan(v)
+#define is_dbl_nil(v)	isnan(v)
+#define is_bat_nil(v)	((v) == bat_nil || (v) == 0)
+
+#include <math.h>
+
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && _MSC_VER < 1800
+#include <float.h>
+#define isnan(x)	_isnan(x)
+#define isinf(x)	(_fpclass(x) & (_FPCLASS_NINF | _FPCLASS_PINF))
+#define isfinite(x)	_finite(x)
+#endif
+
 /*
  * @- Derived types
  * In all algorithms across GDK, you will find switches on the types

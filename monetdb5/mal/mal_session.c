@@ -40,14 +40,26 @@ malBootstrap(void)
 	str bootfile = "mal_init", s = NULL;
 
 	c = MCinitClient((oid) 0, 0, 0);
+	if(c == NULL) {
+		fprintf(stderr,"#malBootstrap:Failed to initialise client");
+		mal_exit();
+	}
 	assert(c != NULL);
 	c->curmodule = c->usermodule = userModule();
+	if(c->usermodule == NULL) {
+		fprintf(stderr,"#malBootstrap:Failed to initialise client MAL module");
+		mal_exit();
+	}
 	if ( (msg = defaultScenario(c)) ) {
 		GDKfree(msg);
 		fprintf(stderr,"#malBootstrap:Failed to initialise default scenario");
 		mal_exit();
 	}
-	MSinitClientPrg(c, "user", "main");
+	if((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
+		GDKfree(msg);
+		fprintf(stderr,"#malBootstrap:Failed to initialise client");
+		mal_exit();
+	}
 	if( MCinitClientThread(c) < 0){
 		fprintf(stderr,"#malBootstrap:Failed to create client thread");
 		mal_exit();
@@ -187,6 +199,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 {
 	char *user = command, *algo = NULL, *passwd = NULL, *lang = NULL;
 	char *database = NULL, *s, *dbname;
+	str msg = MAL_SUCCEED;
 	Client c;
 
 	/* decode BIG/LIT:user:{cypher}passwordchal:lang:database: line */
@@ -352,7 +365,13 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 		}
 	}
 
-	(void) MSinitClientPrg(c, "user", "main");
+	if((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
+		mnstr_printf(fout, "!could not allocate space\n");
+		exit_streams(fin, fout);
+		GDKfree(msg);
+		GDKfree(command);
+		return;
+	}
 
 	GDKfree(command);
 

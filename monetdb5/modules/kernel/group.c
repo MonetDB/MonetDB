@@ -38,7 +38,7 @@ GRPsubgroup5(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, co
 			BBPunfix(e->batCacheid);
 		if (h)
 			BBPunfix(h->batCacheid);
-		throw(MAL, gid ? "group.subgroup" : "group.group", RUNTIME_OBJECT_MISSING);
+		throw(MAL, gid ? "group.subgroup" : "group.group", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if ((r = BATgroup(&gn, &en, nhis ? &hn : NULL, b, s, g, e, h)) == GDK_SUCCEED) {
 		*ngid = gn->batCacheid;

@@ -10,50 +10,6 @@
 #define __MMATH_H__
 #include "mal.h"
 #include "mal_exception.h"
-#include <math.h>
-
-#ifdef WIN32
-# include <float.h>
-#if _MSC_VER <= 1600
-/* Windows spells these differently */
-# define isnan(x)	_isnan(x)
-#endif
-# define finite(x)	_finite(x)
-/* NOTE: HAVE_FPCLASS assumed... */
-# define fpclass(x)	_fpclass(x)
-# define FP_NINF		_FPCLASS_NINF
-# define FP_PINF		_FPCLASS_PINF
-#else /* !_MSC_VER */
-# ifdef HAVE_IEEEFP_H
-#  include <ieeefp.h>
-# endif
-#endif
-
-#if defined(HAVE_FPCLASSIFY) || defined(fpclassify)
-/* C99 interface: fpclassify */
-# define MNisinf(x)		(fpclassify(x) == FP_INFINITE)
-# define MNisnan(x)		(fpclassify(x) == FP_NAN)
-# define MNfinite(x)	(!MNisinf(x) && !MNisnan(x))
-#else
-# define MNisnan(x)		isnan(x)
-# define MNfinite(x)	finite(x)
-# ifdef HAVE_ISINF
-#  define MNisinf(x)	isinf(x)
-# else
-static inline int
-MNisinf(double x)
-{
-#ifdef HAVE_FPCLASS
-	int cl = fpclass(x);
-
-	return ((cl == FP_NINF) || (cl == FP_PINF));
-#else
-	(void)x;
-	return 0;		/* XXX not correct if infinite */
-#endif
-}
-# endif
-#endif /* HAVE_FPCLASSIFY */
 
 #define unopbaseM5_export(X1,X2)\
 mal_export str MATHunary##X1##X2(X2 *res, const X2 *a);

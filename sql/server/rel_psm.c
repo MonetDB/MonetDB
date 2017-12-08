@@ -186,7 +186,9 @@ rel_psm_declare(mvc *sql, dnode *n)
 			/* variables are put on stack, 
  			 * TODO make sure on plan/explain etc they only 
  			 * exist during plan phase */
-			stack_push_var(sql, name, ctype);
+			if(!stack_push_var(sql, name, ctype)) {
+				return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
 			r = exp_var(sql->sa, sa_strdup(sql->sa, name), ctype, sql->frame);
 			append(l, r);
 			ids = ids->next;
@@ -218,7 +220,8 @@ rel_psm_declare_table(mvc *sql, dnode *n)
 		return NULL;
 
 	t = (sql_table*)((atom*)((sql_exp*)rel->exps->t->data)->l)->data.val.pval;
-	stack_push_table(sql, name, rel, t);
+	if(!stack_push_table(sql, name, rel, t))
+		return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return exp_table(sql->sa, sa_strdup(sql->sa, name), t, sql->frame);
 }
 
@@ -602,7 +605,8 @@ sequential_block (mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk,
 
 	if (blk->h)
  		l = sa_list(sql->sa);
-	stack_push_frame(sql, opt_label);
+	if(!stack_push_frame(sql, opt_label))
+		return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	for (n = blk->h; n; n = n->next ) {
 		sql_exp *res = NULL;
 		list *reslist = NULL;
@@ -871,7 +875,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 			char *lang_body = body->h->data.sval;
 			char *mod = 	
 					(lang == FUNC_LANG_R)?"rapi":
-					(lang == FUNC_LANG_C)?"capi":
+					(lang == FUNC_LANG_C || lang == FUNC_LANG_CPP)?"capi":
 					(lang == FUNC_LANG_J)?"japi":
 					(lang == FUNC_LANG_PY)?"pyapi":
  					(lang == FUNC_LANG_MAP_PY)?"pyapimap":"unknown";
@@ -939,6 +943,11 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 					f->mod = _STRDUP(fmod);
 				if (!f->imp || strcmp(f->imp, fnme)) 
 					f->imp = (f->sa)?sa_strdup(f->sa, fnme):_STRDUP(fnme);
+				if(!f->mod || !f->imp) {
+					_DELETE(f->mod);
+					_DELETE(f->imp);
+					return sql_error(sql, 02, SQLSTATE(HY001) "CREATE %s%s: could not allocate space", KF, F);
+				}
 				f->sql = 0; /* native */
 				f->lang = FUNC_LANG_INT;
 			}
@@ -1135,12 +1144,11 @@ rel_create_trigger(mvc *sql, const char *sname, const char *tname, const char *t
 	return rel;
 }
 
-static void
+static sql_var*
 _stack_push_table(mvc *sql, const char *tname, sql_table *t)
 {
 	sql_rel *r = rel_basetable(sql, t, tname );
-		
-	stack_push_rel_view(sql, tname, r);
+	return stack_push_rel_view(sql, tname, r);
 }
 
 static sql_rel *
@@ -1204,12 +1212,17 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, dlist *t
 
 	if (!instantiate) {
 		t = mvc_bind_table(sql, ss, tname);
-		stack_push_frame(sql, "OLD-NEW");
+		if(!stack_push_frame(sql, "OLD-NEW"))
+			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		/* we need to add the old and new tables */
-		if (!instantiate && new_name)
-			_stack_push_table(sql, new_name, t);
-		if (!instantiate && old_name)
-			_stack_push_table(sql, old_name, t);
+		if (!instantiate && new_name) {
+			if(!_stack_push_table(sql, new_name, t))
+				return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
+		if (!instantiate && old_name) {
+			if(!_stack_push_table(sql, old_name, t))
+				return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
 	}
 	if (condition) {
 		sql_rel *rel = NULL;

@@ -34,7 +34,7 @@
 str
 getTypeName(malType tpe)
 {
-	char buf[PATHLENGTH];
+	char buf[FILENAME_MAX];
 	int k;
 
 	if (tpe == TYPE_any)

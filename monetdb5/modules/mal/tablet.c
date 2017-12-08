@@ -567,7 +567,8 @@ TABLEToutput_file(Tablet *as, BAT *order, stream *s)
 	if (as->nr == BUN_NONE || as->nr > maxnr)
 		as->nr = maxnr;
 
-	if ((base = check_BATs(as)) != oid_nil) {
+	base = check_BATs(as);
+	if (!is_oid_nil(base)) {
 		if (order->hseqbase == base)
 			ret = output_file_dense(as, s);
 		else
@@ -667,7 +668,7 @@ tablet_error(READERtask *task, lng row, int col, const char *msg, const char *fc
 			task->as->error = createException(MAL, "sql.copy_from", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			task->besteffort = 0;
 		}
-		if (row != lng_nil && task->rowerror)
+		if (!is_lng_nil(row) && task->rowerror)
 			task->rowerror[row]++;
 #ifdef _DEBUG_TABLET_
 		mnstr_printf(GDKout, "#tablet_error: " LLFMT ",%d:%s:%s\n",
@@ -1699,7 +1700,10 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 		goto bailout;
 	}
 
-	MT_create_thread(&task.tid, SQLproducer, (void *) &task, MT_THR_JOINABLE);
+	if(MT_create_thread(&task.tid, SQLproducer, (void *) &task, MT_THR_JOINABLE) < 0) {
+		tablet_error(&task, lng_nil, int_nil, SQLSTATE(42000) "failed to start producer thread", "SQLload_file");
+		goto bailout;
+	}
 #ifdef _DEBUG_TABLET_
 	mnstr_printf(GDKout, "#parallel bulk load " LLFMT " - " BUNFMT "\n",
 				 skip, task.maxrow);
@@ -1719,7 +1723,10 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 #endif
 		MT_sema_init(&ptask[j].sema, 0, "ptask[j].sema");
 		MT_sema_init(&ptask[j].reply, 0, "ptask[j].reply");
-		MT_create_thread(&ptask[j].tid, SQLworker, (void *) &ptask[j], MT_THR_JOINABLE);
+		if(MT_create_thread(&ptask[j].tid, SQLworker, (void *) &ptask[j], MT_THR_JOINABLE) < 0) {
+			tablet_error(&task, lng_nil, int_nil, SQLSTATE(42000) "failed to start worker thread", "SQLload_file");
+			goto bailout;
+		}
 	}
 
 	tio = GDKusec();
@@ -1833,6 +1840,8 @@ SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out, const char *csep
 			int width;
 
 			for (attr = 0; attr < as->nr_attrs; attr++) {
+				if (as->format[attr].skip)
+					continue;
 				width = as->format[attr].c->twidth;
 				switch (width){
 				case 1:

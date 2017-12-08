@@ -66,9 +66,9 @@ rel_no_mitosis(sql_rel *rel)
 {
 	int is_point = 0;
 
-	if (!rel)
+	if (!rel || is_basetable(rel->op))
 		return 1;
-	if (is_project(rel->op))
+	if (is_topn(rel->op) || is_project(rel->op))
 		return rel_no_mitosis(rel->l);
 	if (is_modify(rel->op) && rel->card <= CARD_AGGR)
 		return rel_no_mitosis(rel->r);
@@ -137,6 +137,7 @@ sqlcleanup(mvc *c, int err)
 {
 	sql_destroy_params(c);
 	sql_destroy_args(c);
+	c->sqs = NULL;
 
 	if ((c->emod & mod_locked) == mod_locked) {
 		/* here we should commit the transaction */
@@ -312,10 +313,10 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 
 			sql->sa = sa_create();
 			if(!sql->sa)
-				throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
+				throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			buf = sa_alloc(sql->sa, strlen(c->def) + 8);
 			if(!buf)
-				throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
+				throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			snprintf(buf, BUFSIZ, "select %s;", c->def);
 			r = rel_parse(sql, s, buf, m_deps);
 			if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 || rel_check_type(sql, &c->type, r->exps->h->data, type_equal) == NULL)
@@ -353,7 +354,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 
 		sql->sa = sa_create();
 		if(!sql->sa)
-			throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
+			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, nt->query, m_deps);
 		if (r)
 			r = rel_optimizer(sql, r);
@@ -385,7 +386,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 	/* for some reason we don't have an allocator here, so make one */
 	sql->sa = sa_create();
 	if(!sql->sa)
-		throw(SQL, "sql.catalog",MAL_MALLOC_FAIL);
+		throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	if (!sname)
 		sname = "sys";
@@ -557,10 +558,14 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				msg = addPipeDefinition(cntxt, buf, newopt);
 				if (msg)
 					return msg;
-				if (stack_find_var(m, varname))
-					stack_set_string(m, varname, buf);
-			} else if (stack_find_var(m, varname))
-				stack_set_string(m, varname, newopt);
+				if (stack_find_var(m, varname)) {
+					if(!stack_set_string(m, varname, buf))
+						throw(SQL, "sql.setVariable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				}
+			} else if (stack_find_var(m, varname)) {
+				if(!stack_set_string(m, varname, newopt))
+					throw(SQL, "sql.setVariable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
 		}
 		return MAL_SUCCEED;
 	}
@@ -574,7 +579,8 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			_DELETE(msg);
 			throw(SQL, "sql.setVariable", SQLSTATE(42100) "%s", buf);
 		}
-		stack_set_var(m, varname, src);
+		if(!stack_set_var(m, varname, src))
+			throw(SQL, "sql.setVariable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
 		snprintf(buf, BUFSIZ, "variable '%s' unknown", varname);
 		throw(SQL, "sql.setVariable", SQLSTATE(42100) "%s", buf);
@@ -822,7 +828,7 @@ mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
-	if (start == lng_nil)
+	if (is_lng_nil(start))
 		throw(SQL, "sql.restart", SQLSTATE(HY050) "Cannot (re)start sequence %s.%s with NULL",sname,seqname);
 	s = mvc_bind_schema(m, sname);
 	if (s) {
@@ -1120,7 +1126,7 @@ mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for(;cnt>0; cnt--, v++) {
 		if (BUNappend(tid, &v, FALSE) != GDK_SUCCEED) {
 			BBPunfix(Tid);
-			throw(SQL, "sql", MAL_MALLOC_FAIL);
+			throw(SQL, "sql", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPunfix(Tid);
@@ -1922,8 +1928,8 @@ mvc_result_set_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( b)
 			BBPunfix(bid);
 	}
-	/* now sent it to the channel cntxt->fdout */
-	if (mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res))
+	/* now send it to the channel cntxt->fdout */
+	if (mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res, mb->starttime, mb->optimize))
 		msg = createException(SQL, "sql.resultset", SQLSTATE(45000) "Result set construction failed");
   wrapup_result_set:
 	if( tbl) BBPunfix(tblId);
@@ -2065,7 +2071,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				      filename?filename:"stdout", strerror(errnr));
 		goto wrapup_result_set1;
 	}
-	if (mvc_export_result(cntxt->sqlcontext, s, res))
+	if (mvc_export_result(cntxt->sqlcontext, s, res, mb->starttime, mb->optimize))
 		msg = createException(SQL, "sql.resultset", SQLSTATE(45000) "Result set construction failed");
 	if( s != cntxt->fdout)
 		close_stream(s);
@@ -2131,7 +2137,7 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (mvc_result_value(m, tblname, colname, tpename, *digits++, *scaledigits++, v, mtype))
 			throw(SQL, "sql.rsColumn", SQLSTATE(45000) "Result set construction failed");
 	}
-	if (mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res))
+	if (mvc_export_result(cntxt->sqlcontext, cntxt->fdout, res, mb->starttime, mb->optimize))
 		msg = createException(SQL, "sql.resultset", SQLSTATE(45000) "Result set construction failed");
   wrapup_result_set:
 	if( tbl) BBPunfix(tblId);
@@ -2265,7 +2271,7 @@ mvc_export_row_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				      filename?filename:"stdout", strerror(errnr));
 		goto wrapup_result_set;
 	}
-	if (mvc_export_result(cntxt->sqlcontext, s, res))
+	if (mvc_export_result(cntxt->sqlcontext, s, res, mb->starttime, mb->optimize))
 		msg = createException(SQL, "sql.resultset", SQLSTATE(45000) "Result set construction failed");
 	if( s != cntxt->fdout)
 		mnstr_close(s);
@@ -2331,7 +2337,7 @@ mvc_affected_rows_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert(mtype == TYPE_lng);
 	nr = *getArgReference_lng(stk, pci, 2);
 	b = cntxt->sqlcontext;
-	error = mvc_export_affrows(b, b->out, nr, "", mb->tag);
+	error = mvc_export_affrows(b, b->out, nr, "", mb->tag, mb->starttime, mb->optimize);
 	if (error)
 		throw(SQL, "sql.affectedRows", SQLSTATE(45000) "Result set construction failed");
 	return MAL_SUCCEED;
@@ -2350,7 +2356,7 @@ mvc_export_head_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	b = cntxt->sqlcontext;
-	if (mvc_export_head(b, *s, res_id, FALSE, TRUE))
+	if (mvc_export_head(b, *s, res_id, FALSE, TRUE, mb->starttime, mb->optimize))
 		throw(SQL, "sql.exportHead", SQLSTATE(45000) "Result set construction failed");
 	return MAL_SUCCEED;
 }
@@ -2370,9 +2376,9 @@ mvc_export_result_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = cntxt->sqlcontext;
 	if( pci->argc > 5){
 		res_id = *getArgReference_int(stk, pci, 2);
-		if (mvc_export_result(b, cntxt->fdout, res_id))
+		if (mvc_export_result(b, cntxt->fdout, res_id, mb->starttime, mb->optimize))
 			throw(SQL, "sql.exportResult", SQLSTATE(45000) "Result set construction failed");
-	} else if (mvc_export_result(b, *s, res_id))
+	} else if (mvc_export_result(b, *s, res_id, mb->starttime, mb->optimize))
 		throw(SQL, "sql.exportResult", SQLSTATE(45000) "Result set construction failed");
 	return MAL_SUCCEED;
 }
@@ -2409,13 +2415,12 @@ mvc_export_operation_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	backend *b = NULL;
 	str msg;
 
-	(void) mb;		/* NOT USED */
 	(void) stk;		/* NOT USED */
 	(void) pci;		/* NOT USED */
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	b = cntxt->sqlcontext;
-	if (mvc_export_operation(b, b->out, ""))
+	if (mvc_export_operation(b, b->out, "", mb->starttime, mb->optimize))
 		throw(SQL, "sql.exportOperation", SQLSTATE(45000) "Result set construction failed");
 	return NULL;
 }
@@ -2448,7 +2453,7 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b->output_format == OFMT_NONE) {
 		return MAL_SUCCEED;
 	}
-	if (mvc_export_result(b, b->out, res_id) < 0) {
+	if (mvc_export_result(b, b->out, res_id, mb->starttime, mb->optimize) < 0) {
 		throw(SQL, "sql.exportValue", SQLSTATE(45000) "Result set construction failed");
 	}
 	return MAL_SUCCEED;
@@ -3123,7 +3128,7 @@ SQLcst_alpha_cst(dbl *res, const dbl *decl, const dbl *theta)
 {
 	dbl s, c1, c2;
 	char *msg = MAL_SUCCEED;
-	if (*decl == dbl_nil || *theta == dbl_nil) {
+	if (is_dbl_nil(*decl) || is_dbl_nil(*theta)) {
 		*res = dbl_nil;
 	} else if (fabs(*decl) + *theta > 89.9) {
 		*res = 180.0;
@@ -3150,7 +3155,7 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 	dbl s, c1, c2, r;
 	char *msg = NULL;
 
-	if (*theta == dbl_nil) {
+	if (is_dbl_nil(*theta)) {
 		throw(SQL, "SQLbat_alpha", SQLSTATE(42000) "Parameter theta should not be nil");
 	}
 	if ((b = BATdescriptor(*decl)) == NULL) {
@@ -3165,7 +3170,7 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 	s = sin(radians(*theta));
 	BATloop(b, p, q) {
 		dbl d = *(dbl *) BUNtail(bi, p);
-		if (d == dbl_nil)
+		if (is_dbl_nil(d))
 			r = dbl_nil;
 		else if (fabs(d) + *theta > 89.9)
 			r = 180.0;
@@ -3207,7 +3212,7 @@ SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *theta)
 		dbl d = *decl;
 		dbl *theta = (dbl *) BUNtail(bi, p);
 
-		if (d == dbl_nil)
+		if (is_dbl_nil(d))
 			r = dbl_nil;
 		else if (fabs(d) + *theta > 89.9)
 			r = (dbl) 180.0;
@@ -4191,7 +4196,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								sz = IMPSimprintsize(bn);
 								if (BUNappend(imprints, &sz, FALSE) != GDK_SUCCEED)
 									goto bailout;
-								/*printf(" indices "BUNFMT, bn->thash?bn->thash->heap->size:0); */
+								/*printf(" indices "BUNFMT, bn->thash?bn->thash->heap.size:0); */
 								/*printf("\n"); */
 
 								bitval = BATtordered(bn);
@@ -4292,7 +4297,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									if (BUNappend(heap, &sz, FALSE) != GDK_SUCCEED)
 										goto bailout;
 
-									sz = bn->thash && bn->thash != (Hash *) 1 ? bn->thash->heap->size : 0; /* HASHsize() */
+									sz = bn->thash && bn->thash != (Hash *) 1 ? bn->thash->heap.size : 0; /* HASHsize() */
 									if (BUNappend(indices, &sz, FALSE) != GDK_SUCCEED)
 										goto bailout;
 									bitval = 0; /* HASHispersistent(bn); */
@@ -4302,7 +4307,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									sz = IMPSimprintsize(bn);
 									if (BUNappend(imprints, &sz, FALSE) != GDK_SUCCEED)
 										goto bailout;
-									/*printf(" indices "BUNFMT, bn->thash?bn->thash->heap->size:0); */
+									/*printf(" indices "BUNFMT, bn->thash?bn->thash->heap.size:0); */
 									/*printf("\n"); */
 									bitval = BATtordered(bn);
 									if (!bitval && bn->tnosorted == 0)

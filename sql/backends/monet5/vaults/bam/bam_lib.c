@@ -268,8 +268,8 @@ seq_char(str * ret, int * ref_pos, str * alg_seq, int * alg_pos, str * alg_cigar
 		(c == 0 || *cur_out >= prev_out); \
 	output->trevsorted = output->trevsorted && \
 		(c == 0 || *cur_out <= prev_out); \
-	output->tnil = output->tnil || *cur_out == TPE##_nil; \
-	output->tnonil = output->tnonil && *cur_out != TPE##_nil; \
+	output->tnil = output->tnil || is_##TPE##_nil(*cur_out); \
+	output->tnonil = output->tnonil && !is_##TPE##_nil(*cur_out); \
 }
 
 #define finish_props() { \

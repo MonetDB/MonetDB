@@ -15,38 +15,21 @@
 #include <strings.h>		/* for strncasecmp */
 #endif
 #include <float.h>		/* for FLT_MAX */
+#include <inttypes.h>
 
-#if SIZEOF_INT==8
-# define ULL_CONSTANT(val)	(val)
-# define O_ULLFMT		"u"
-# define O_ULLCAST	(unsigned int)
-#elif SIZEOF_LONG==8
-# define ULL_CONSTANT(val)	(val##UL)
-# define O_ULLFMT		"lu"
-# define O_ULLCAST	(unsigned long)
-#elif defined(HAVE_LONG_LONG)
-# define ULL_CONSTANT(val)	(val##ULL)
-# define O_ULLFMT		"llu"
-# define O_ULLCAST	(unsigned long long)
-#elif defined(HAVE___INT64)
-# define ULL_CONSTANT(val)	(val##ui64)
-# define O_ULLFMT		"I64u"
-# define O_ULLCAST	(unsigned __int64)
-#endif
-
-#define MAXBIGNUM10	ULL_CONSTANT(1844674407370955161) /* (2**64-1)/10 */
-#define MAXBIGNUMLAST	'5'	/* (2**64-1)%10 */
+#define MAXBIGNUM10	(UINT64_MAX / 10)
+#define MAXBIGNUMLAST	('0' + (int) (UINT64_MAX % 10))
 
 #define space(c)	((c) == ' ' || (c) == '\t')
 
 typedef struct {
-	unsigned char precision; /* total number of digits */
-	signed char scale;	/* how far to shift decimal point (>
+	uint8_t precision;	/* total number of digits */
+	int8_t scale;		/* how far to shift decimal point (>
 				 * 0: shift left, i.e. number has
 				 * fraction; < 0: shift right,
 				 * i.e. multiply with power of 10) */
-	unsigned char sign;	/* 1 pos, 0 neg */
-	SQLUBIGINT val;		/* the value */
+	uint8_t sign;		/* 1 pos, 0 neg */
+	uint64_t val;		/* the value */
 } bignum_t;
 
 #ifndef HAVE_STRNCASECMP
@@ -1343,14 +1326,14 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_INTEGER:
 		case SQL_BIGINT:
 		case SQL_BIT: {
-			SQLUBIGINT f;
+			uint64_t f;
 			int n;
 
 			data = (char *) ptr;
 
 			for (n = 0, f = 1; n < nval.scale; n++)
 				f *= 10;
-			sz = snprintf(data, buflen, "%s%" O_ULLFMT, nval.sign ? "" : "-", O_ULLCAST (nval.val / f));
+			sz = snprintf(data, buflen, "%s%" PRIu64, nval.sign ? "" : "-", (uint64_t) (nval.val / f));
 			if (sz < 0 || sz >= buflen) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
@@ -1367,7 +1350,7 @@ ODBCFetch(ODBCStmt *stmt,
 				if (lenp)
 					*lenp += nval.scale + 1;
 				if (buflen > 2)
-					sz = (SQLLEN) snprintf(data, buflen, ".%0*" O_ULLFMT, nval.scale, O_ULLCAST (nval.val % f));
+					sz = (SQLLEN) snprintf(data, buflen, ".%0*" PRIu64, nval.scale, (uint64_t) (nval.val % f));
 				if (buflen <= 2 || sz < 0 || sz >= buflen) {
 					data[buflen - 1] = 0;
 					/* String data, right-truncated */
@@ -1978,7 +1961,7 @@ ODBCFetch(ODBCStmt *stmt,
 	case SQL_C_SLONG:
 	case SQL_C_LONG:
 	case SQL_C_SBIGINT: {
-		SQLUBIGINT maxval = 1;
+		uint64_t maxval = 1;
 
 		switch (type) {
 		case SQL_C_STINYINT:
@@ -2082,7 +2065,7 @@ ODBCFetch(ODBCStmt *stmt,
 	case SQL_C_USHORT:
 	case SQL_C_ULONG:
 	case SQL_C_UBIGINT: {
-		SQLUBIGINT maxval = 1;
+		uint64_t maxval = 1;
 
 		switch (type) {
 		case SQL_C_UTINYINT:
@@ -2261,7 +2244,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_INTEGER:
 		case SQL_BIGINT:
 		case SQL_BIT:
-			fval = (double) (SQLBIGINT) nval.val;
+			fval = (double) (int64_t) nval.val;
 			i = 1;
 			while (nval.scale > 0) {
 				nval.scale--;
@@ -2976,12 +2959,12 @@ ODBCStore(ODBCStmt *stmt,
 		nval.val = * (SQLUBIGINT *) ptr;
 		break;
 	case SQL_C_NUMERIC:
-		nval.precision = (unsigned char) apdrec->sql_desc_precision;
-		nval.scale = (signed char) apdrec->sql_desc_scale;
+		nval.precision = (uint8_t) apdrec->sql_desc_precision;
+		nval.scale = (int8_t) apdrec->sql_desc_scale;
 		nval.sign = ((SQL_NUMERIC_STRUCT *) ptr)->sign;
 		nval.val = 0;
 		for (i = 0; i < SQL_MAX_NUMERIC_LEN; i++)
-			nval.val |= (SQLUBIGINT) ((SQL_NUMERIC_STRUCT *) ptr)->val[i] << (i * 8);
+			nval.val |= (uint64_t) ((SQL_NUMERIC_STRUCT *) ptr)->val[i] << (i * 8);
 		break;
 	case SQL_C_FLOAT:
 		fval = * (SQLREAL *) ptr;
@@ -3169,10 +3152,10 @@ ODBCStore(ODBCStmt *stmt,
 
 			for (n = 0, f = 1; n < nval.scale; n++)
 				f *= 10;
-			snprintf(data, sizeof(data), "%s%" O_ULLFMT, nval.sign ? "" : "-", O_ULLCAST (nval.val / f));
+			snprintf(data, sizeof(data), "%s%" PRIu64, nval.sign ? "" : "-", (uint64_t) (nval.val / f));
 			assigns(buf, bufpos, buflen, data, stmt);
 			if (nval.scale > 0) {
-				snprintf(data, sizeof(data), ".%0*" O_ULLFMT, nval.scale, O_ULLCAST (nval.val % f));
+				snprintf(data, sizeof(data), ".%0*" PRIu64, nval.scale, (uint64_t) (nval.val % f));
 				assigns(buf, bufpos, buflen, data, stmt);
 			}
 			break;
@@ -3698,11 +3681,11 @@ ODBCStore(ODBCStmt *stmt,
 					addStmtError(stmt, "22001", NULL, 0);
 				}
 			} else {
-				snprintf(data, sizeof(data), "%s%" O_ULLFMT, nval.sign ? "" : "-", O_ULLCAST (nval.val / f));
+				snprintf(data, sizeof(data), "%s%" PRIu64, nval.sign ? "" : "-", (uint64_t) (nval.val / f));
 				assigns(buf, bufpos, buflen, data, stmt);
 				if (nval.scale > 0) {
 					if (sqltype == SQL_DECIMAL) {
-						snprintf(data, sizeof(data), ".%0*" O_ULLFMT, nval.scale, O_ULLCAST (nval.val % f));
+						snprintf(data, sizeof(data), ".%0*" PRIu64, nval.scale, (uint64_t) (nval.val % f));
 						assigns(buf, bufpos, buflen, data, stmt);
 					} else {
 						/* Fractional truncation */
@@ -3740,7 +3723,7 @@ ODBCStore(ODBCStmt *stmt,
 		case SQL_C_SBIGINT:
 		case SQL_C_UBIGINT:
 		case SQL_C_NUMERIC:
-			fval = (double) (SQLBIGINT) nval.val;
+			fval = (double) (int64_t) nval.val;
 			i = 1;
 			while (nval.scale > 0) {
 				nval.scale--;

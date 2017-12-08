@@ -70,9 +70,8 @@ BATcheckorderidx(BAT *b)
 
 		b->torderidx = NULL;
 		if ((hp = GDKzalloc(sizeof(*hp))) != NULL &&
-		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) >= 0 &&
-		    (hp->filename = GDKmalloc(strlen(nme) + 11)) != NULL) {
-			sprintf(hp->filename, "%s.torderidx", nme);
+		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) >= 0) {
+			snprintf(hp->filename, sizeof(hp->filename), "%s.torderidx", nme);
 
 			/* check whether a persisted orderidx can be found */
 			if ((fd = GDKfdlocate(hp->farmid, nme, "rb+", "torderidx")) >= 0) {
@@ -100,7 +99,6 @@ BATcheckorderidx(BAT *b)
 				/* unlink unusable file */
 				GDKunlink(hp->farmid, BATDIR, nme, "torderidx");
 			}
-			GDKfree(hp->filename);
 		}
 		GDKfree(hp);
 		GDKclrerr();	/* we're not currently interested in errors */
@@ -116,19 +114,14 @@ Heap *
 createOIDXheap(BAT *b, int stable)
 {
 	Heap *m;
-	size_t nmelen;
 	oid *restrict mv;
 	const char *nme;
 
 	nme = BBP_physical(b->batCacheid);
-	nmelen = strlen(nme) + 12;
 	if ((m = GDKzalloc(sizeof(Heap))) == NULL ||
 	    (m->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) < 0 ||
-	    (m->filename = GDKmalloc(nmelen)) == NULL ||
-	    snprintf(m->filename, nmelen, "%s.torderidx", nme) < 0 ||
+	    snprintf(m->filename, sizeof(m->filename), "%s.torderidx", nme) < 0 ||
 	    HEAPalloc(m, BATcount(b) + ORDERIDXOFF, SIZEOF_OID) != GDK_SUCCEED) {
-		if (m)
-			GDKfree(m->filename);
 		GDKfree(m);
 		return NULL;
 	}
@@ -162,72 +155,41 @@ persistOIDX(BAT *b)
 gdk_return
 BATorderidx(BAT *b, int stable)
 {
-	Heap *m;
-	oid *restrict mv;
-	oid seq;
-	BUN p, q;
-	BAT *bn = NULL;
-
 	if (BATcheckorderidx(b))
 		return GDK_SUCCEED;
-	MT_lock_set(&GDKhashLock(b->batCacheid));
-	if (b->torderidx) {
-		MT_lock_unset(&GDKhashLock(b->batCacheid));
-		return GDK_SUCCEED;
-	}
-	if ((m = createOIDXheap(b, stable)) == NULL) {
-		MT_lock_unset(&GDKhashLock(b->batCacheid));
-		return GDK_FAIL;
-	}
-
-	mv = (oid *) m->base + ORDERIDXOFF;
-
-	seq = b->hseqbase;
-	for (p = 0, q = BATcount(b); p < q; p++)
-		mv[p] = seq + p;
-
 	if (!BATtdense(b)) {
-		/* we need to sort a copy of the column so as not to
-		 * change the original */
-		bn = COLcopy(b, b->ttype, TRUE, TRANSIENT);
-		if (bn == NULL) {
-			HEAPfree(m, 1);
-			GDKfree(m);
-			MT_lock_unset(&GDKhashLock(b->batCacheid));
+		BAT *on;
+		if (BATsort(NULL, &on, NULL, b, NULL, NULL, 0, stable) != GDK_SUCCEED)
 			return GDK_FAIL;
-		}
-		if (stable) {
-			if (GDKssort(Tloc(bn, 0), mv,
-				     bn->tvheap ? bn->tvheap->base : NULL,
-				     BATcount(bn), Tsize(bn), SIZEOF_OID,
-				     bn->ttype) != GDK_SUCCEED) {
-				HEAPfree(m, 1);
-				GDKfree(m);
-				MT_lock_unset(&GDKhashLock(b->batCacheid));
-				BBPunfix(bn->batCacheid);
-				return GDK_FAIL;
+		assert(BATcount(b) == BATcount(on));
+		if (on->tdense) {
+			/* if the order bat is dense, the input was
+			 * sorted and we don't need an order index */
+			assert(b->tnosorted == 0);
+			if (!b->tsorted) {
+				b->tsorted = 1;
+				b->tnosorted = 0;
+				b->batDirtydesc = 1;
 			}
 		} else {
-			GDKqsort(Tloc(bn, 0), mv,
-				 bn->tvheap ? bn->tvheap->base : NULL,
-				 BATcount(bn), Tsize(bn), SIZEOF_OID,
-				 bn->ttype);
+			/* BATsort quite possibly already created the
+			 * order index, but just to be sure... */
+			MT_lock_set(&GDKhashLock(b->batCacheid));
+			if (b->torderidx == NULL) {
+				Heap *m;
+				if ((m = createOIDXheap(b, stable)) == NULL) {
+					MT_lock_unset(&GDKhashLock(b->batCacheid));
+					return GDK_FAIL;
+				}
+				memcpy((oid *) m->base + ORDERIDXOFF, Tloc(on, 0), BATcount(on) * sizeof(oid));
+				b->torderidx = m;
+				b->batDirtydesc = 1;
+				persistOIDX(b);
+			}
+			MT_lock_unset(&GDKhashLock(b->batCacheid));
 		}
-		/* we must unfix after releasing the lock since we
-		 * might get deadlock otherwise (we're holding a lock
-		 * based on b->batCacheid; unfix tries to get a lock
-		 * based on bn->batCacheid, usually but (crucially)
-		 * not always a different lock) */
+		BBPunfix(on->batCacheid);
 	}
-
-	b->torderidx = m;
-	b->batDirtydesc = TRUE;
-	persistOIDX(b);
-	MT_lock_unset(&GDKhashLock(b->batCacheid));
-
-	if (bn)
-		BBPunfix(bn->batCacheid);
-
 	return GDK_SUCCEED;
 }
 
@@ -345,25 +307,36 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 {
 	Heap *m;
 	int i;
-	size_t nmelen;
 	oid *restrict mv;
 	const char *nme = BBP_physical(b->batCacheid);
 
 	if (BATcheckorderidx(b))
 		return GDK_SUCCEED;
+	switch (ATOMstorage(b->ttype)) {
+	case TYPE_bte:
+	case TYPE_sht:
+	case TYPE_int:
+	case TYPE_lng:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
+	case TYPE_flt:
+	case TYPE_dbl:
+		break;
+	default:
+		GDKerror("GDKmergeidx: type %s not supported.\n",
+			 ATOMname(b->ttype));
+		return GDK_FAIL;
+	}
 	MT_lock_set(&GDKhashLock(b->batCacheid));
 	if (b->torderidx) {
 		MT_lock_unset(&GDKhashLock(b->batCacheid));
 		return GDK_SUCCEED;
 	}
-	nmelen = strlen(nme) + 12;
 	if ((m = GDKzalloc(sizeof(Heap))) == NULL ||
 	    (m->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) < 0 ||
-	    (m->filename = GDKmalloc(nmelen)) == NULL ||
-	    snprintf(m->filename, nmelen, "%s.torderidx", nme) < 0 ||
+	    snprintf(m->filename, sizeof(m->filename), "%s.torderidx", nme) < 0 ||
 	    HEAPalloc(m, BATcount(b) + ORDERIDXOFF, SIZEOF_OID) != GDK_SUCCEED) {
-		if (m)
-			GDKfree(m->filename);
 		GDKfree(m);
 		MT_lock_unset(&GDKhashLock(b->batCacheid));
 		return GDK_FAIL;
@@ -415,7 +388,6 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 #endif
 		case TYPE_flt: BINARY_MERGE(flt); break;
 		case TYPE_dbl: BINARY_MERGE(dbl); break;
-		case TYPE_str:
 		default:
 			/* TODO: support strings, date, timestamps etc. */
 			assert(0);

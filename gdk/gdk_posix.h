@@ -11,10 +11,6 @@
 
 #include <sys/types.h>
 
-#ifdef HAVE_MALLOC_H
-# include <malloc.h>
-#endif
-
 #ifdef HAVE_FTIME
 #include <sys/timeb.h>
 #endif
@@ -192,7 +188,7 @@ gdk_export int win_mkdir(const char *, const int mode);
 #define mkdir		win_mkdir
 #define rmdir		win_rmdir
 #define rename		win_rename
-#define unlink		win_unlink
+#define remove		win_unlink
 
 #endif	/* NATIVE_WIN32 */
 

@@ -1,0 +1,65 @@
+stdout of test 'parsererror.Bug-6381` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 20:17:45 >  
+# 20:17:45 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39126" "--set" "mapi_usock=/var/tmp/mtest-7242/.s.monetdb.39126" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 20:17:45 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.331 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:39126/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-7242/.s.monetdb.39126
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 20:17:45 >  
+# 20:17:45 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7242" "--port=39126"
+# 20:17:45 >  
+
+#create function mycounter1()
+#returns integer
+#begin
+#    declare s int;
+#    while (true)
+#    do
+#        set s =1;
+#    end while;
+#    return s;
+#END;
+#select name, func, "mod", language, "type", side_effect from functions where name ='mycounter1';
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% name,	func,	mod,	language,	type,	side_effect # name
+% varchar,	varchar,	varchar,	int,	int,	boolean # type
+% 10,	123,	4,	1,	1,	5 # length
+[ "mycounter1",	"create function mycounter1()\nreturns integer\nbegin\n declare s int;\n while (true)\n do\n set s =1;\n end while;\n return s;\nend;",	"user",	2,	1,	false	]
+#create function mycounter2()
+#returns integer
+#begin
+#    declare s int;
+#    while (select true)
+#    do
+#        set s =1;
+#    end while;
+#    return s;
+#END;
+#select name, func, "mod", language, "type", side_effect from functions where name ='mycounter2';
+% sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions,	sys.functions # table_name
+% name,	func,	mod,	language,	type,	side_effect # name
+% varchar,	varchar,	varchar,	int,	int,	boolean # type
+% 10,	130,	4,	1,	1,	5 # length
+[ "mycounter2",	"create function mycounter2()\nreturns integer\nbegin\n declare s int;\n while (select true)\n do\n set s =1;\n end while;\n return s;\nend;",	"user",	2,	1,	false	]
+#drop function mycounter1;
+#drop function mycounter2;
+
+# 20:17:45 >  
+# 20:17:45 >  "Done."
+# 20:17:45 >  
+

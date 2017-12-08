@@ -110,7 +110,9 @@ Dependencies between database objects
 % .L115,	.L115,	.L115 # table_name
 % name,	trigname,	L44 # name
 % varchar,	varchar,	char # type
-% 2,	14,	11 # length
+% 7,	21,	11 # length
+[ "schemas",	"system_update_schemas",	"DEP_TRIGGER"	]
+[ "_tables",	"system_update_tables",	"DEP_TRIGGER"	]
 [ "t1",	"trigger_test",	"DEP_TRIGGER"	]
 [ "t1",	"trigger_test_4",	"DEP_TRIGGER"	]
 [ "t2",	"trigger_test",	"DEP_TRIGGER"	]
@@ -591,12 +593,11 @@ Cleanup
 % .t,	.v,	.L103 # table_name
 % name,	name,	L103 # name
 % varchar,	varchar,	char # type
-% 11,	16,	8 # length
-[ "tables",	"geometry_columns",	"DEP_VIEW"	]
+% 7,	16,	8 # length
 [ "columns",	"geometry_columns",	"DEP_VIEW"	]
+[ "tables",	"geometry_columns",	"DEP_VIEW"	]
 [ "types",	"geometry_columns",	"DEP_VIEW"	]
 [ "schemas",	"geometry_columns",	"DEP_VIEW"	]
-[ "environment",	"geometry_columns",	"DEP_VIEW"	]
 #SELECT t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys) and t.type in (0, 10, 20, 30);
 % .t,	.i,	.L54 # table_name
 % name,	name,	L54 # name
@@ -606,7 +607,9 @@ Cleanup
 % .L111,	.L111,	.L111 # table_name
 % name,	name,	L42 # name
 % varchar,	varchar,	char # type
-% 0,	0,	11 # length
+% 7,	21,	11 # length
+[ "schemas",	"system_update_schemas",	"DEP_TRIGGER"	]
+[ "_tables",	"system_update_tables",	"DEP_TRIGGER"	]
 #SELECT t.name, fk.name, 'DEP_FKEY' from tables as t, keys as k, keys as fk where fk.rkey = k.id and k.table_id = t.id;
 % .t,	.fk,	.L42 # table_name
 % name,	name,	L42 # name

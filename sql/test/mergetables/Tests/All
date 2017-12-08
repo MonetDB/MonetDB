@@ -21,9 +21,13 @@ mergedropcascade
 addtable
 
 mergedb_create
-mergedb.Bug-6820
-sqlsmith.Bug-6426
-sqlsmith.Bug-6451
-sqlsmith.Bug-6453
-sqlsmith.Bug-6455
+HAVE_NETCDF&HAVE_SAMTOOLS?mergedb.Bug-6820
+HAVE_NETCDF&HAVE_SAMTOOLS?sqlsmith.Bug-6426
+HAVE_NETCDF?sqlsmith.Bug-6451
+HAVE_NETCDF?sqlsmith.Bug-6453
+HAVE_NETCDF&HAVE_SAMTOOLS?sqlsmith.Bug-6455
+HAVE_GEOM?sqlsmith.Bug-6459
+HAVE_NETCDF?sqlsmith-exist-lateral
+HAVE_NETCDF?sqlsmith-apply-outer-join-or
+HAVE_NETCDF?sqlsmith.Bug-6472
 mergedb_drop

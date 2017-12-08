@@ -5,7 +5,6 @@
 -- Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
 
 -- make sure you load the geom module before loading this sql module
--- create spatial_ref_sys metadata table
 
 CREATE FUNCTION Has_Z(info integer) RETURNS integer EXTERNAL NAME geom."hasZ";
 GRANT EXECUTE ON FUNCTION Has_Z(integer) TO PUBLIC;
@@ -15,7 +14,8 @@ CREATE FUNCTION get_type(info integer, format integer) RETURNS string EXTERNAL N
 GRANT EXECUTE ON FUNCTION get_type(integer, integer) TO PUBLIC;
 
 
-
+-- create spatial_ref_sys metadata table
+-- ref: https://postgis.net/docs/using_postgis_dbmanagement.html#spatial_ref_sys
 CREATE TABLE spatial_ref_sys (
 	srid INTEGER NOT NULL PRIMARY KEY,
 	auth_name VARCHAR (256),
@@ -26,25 +26,20 @@ CREATE TABLE spatial_ref_sys (
 GRANT SELECT ON spatial_ref_sys TO PUBLIC;
 
 -- create geometry_columns metadata view
-create view geometry_columns as
-	select e.value as f_table_catalog,
+-- ref: https://postgis.net/docs/using_postgis_dbmanagement.html#geometry_columns
+create view sys.geometry_columns as
+	select cast(null as varchar(1)) as f_table_catalog,
 		s.name as f_table_schema,
-		y.f_table_name, y.f_geometry_column, y.coord_dimension, y.srid, y.type
-	from schemas s, environment e, (
-		select t.schema_id,
-			t.name as f_table_name,
-			x.name as f_geometry_column,
-			cast(has_z(info)+has_m(info)+2 as integer) as coord_dimension,
-			srid, get_type(info, 0) as type
-		from tables t, (
-			select name, table_id, type_digits AS info, type_scale AS srid
-			from columns
-			where type in ( select distinct sqlname from types where systemname='wkb')
-			) as x
-		where t.id=x.table_id
-		) y
-	where y.schema_id=s.id and e.name='gdk_dbname';
-GRANT SELECT ON geometry_columns TO PUBLIC;
+		t.name as f_table_name,
+		c.name as f_geometry_column,
+		cast(has_z(c.type_digits) + has_m(c.type_digits) +2 as integer) as coord_dimension,
+		c.type_scale as srid,
+		get_type(c.type_digits, 0) as type
+	from sys.columns c, sys.tables t, sys.schemas s
+	where c.table_id = t.id and t.schema_id = s.id
+	  and c.type in (select sqlname from sys.types where systemname in ('wkb', 'wkba'));
+
+GRANT SELECT ON sys.geometry_columns TO PUBLIC;
 
 
 copy 3911 records into spatial_ref_sys from stdin using delimiters '|';

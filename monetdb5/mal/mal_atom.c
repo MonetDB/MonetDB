@@ -27,8 +27,8 @@
 
 static void setAtomName(InstrPtr pci)
 {
-	char buf[PATHLENGTH];
-	snprintf(buf, PATHLENGTH, "#%s", getFunctionId(pci));
+	char buf[FILENAME_MAX];
+	snprintf(buf, FILENAME_MAX, "#%s", getFunctionId(pci));
 	setFunctionId(pci, putName(buf));
 }
 
@@ -55,7 +55,7 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 	case 'c':
 		if (idcmp("cmp", name) == 0 && pci->argc == 1) {
 			BATatoms[tpe].atomCmp = (int (*)(const void *, const void *))pci->fcn;
-			BATatoms[tpe].linear = 1;
+			BATatoms[tpe].linear = true;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}
@@ -181,7 +181,7 @@ malAtomDefinition(str name, int tpe)
 		throw(TYPE, "atomDefinition", "Atom name too long '%s'", name);
 
 	i = ATOMallocate(name);
-	if (i == int_nil)
+	if (is_int_nil(i))
 		throw(TYPE,"atomDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	/* overload atom ? */
 	if (tpe) {
@@ -191,7 +191,7 @@ malAtomDefinition(str name, int tpe)
 		BATatoms[i].storage = ATOMstorage(tpe);
 	} else { /* cannot overload void atoms */
 		BATatoms[i].storage = i;
-		BATatoms[i].linear = 0;
+		BATatoms[i].linear = false;
 	}
 	return MAL_SUCCEED;
 }

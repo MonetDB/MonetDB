@@ -20,7 +20,7 @@
 #include "monetdb_config.h"
 #include "batcolor.h"
 
-#define BATwalk(NAME,FUNC,TYPE1,NIL,TYPE2)								\
+#define BATwalk(NAME,FUNC,TYPE1,ISNIL,TYPE2)							\
 str CLRbat##NAME(bat *ret, const bat *l)								\
 {																		\
 	BATiter bi;															\
@@ -30,7 +30,7 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 	TYPE2 y, *yp = &y;													\
 																		\
 	if( (b= BATdescriptor(*l)) == NULL )								\
-		throw(MAL, "batcolor." #NAME, RUNTIME_OBJECT_MISSING);			\
+		throw(MAL, "batcolor." #NAME, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);	\
 	bn= COLnew(b->hseqbase,getAtomIndex(#TYPE2,-1,TYPE_int),BATcount(b), TRANSIENT); \
 	if( bn == NULL){													\
 		BBPunfix(b->batCacheid);										\
@@ -45,7 +45,7 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 																		\
 	BATloop(b, p, q) {													\
 		x= (const TYPE1 *) BUNtail(bi,p);								\
-		if (x== 0 || *x == NIL) {										\
+		if (x== 0 || ISNIL(*x)) {										\
 			y = (TYPE2) TYPE2##_nil;									\
 			bn->tnonil = 0;												\
 			bn->tnil = 1;												\
@@ -63,24 +63,24 @@ bunins_failed:															\
 	throw(MAL, "batcolor." #NAME, OPERATION_FAILED " During bulk operation"); \
 }
 
-BATwalk(Color,CLRcolor,char *,str_nil,color)
-BATwalk(Str,CLRstr,color,color_nil,str)
+BATwalk(Color,CLRcolor,char *,GDK_STRNIL,color)
+BATwalk(Str,CLRstr,color,is_color_nil,str)
 
-BATwalk(Red,CLRred,color,color_nil,int)
-BATwalk(Green,CLRgreen,color,color_nil,int)
-BATwalk(Blue,CLRblue,color,color_nil,int)
+BATwalk(Red,CLRred,color,is_color_nil,int)
+BATwalk(Green,CLRgreen,color,is_color_nil,int)
+BATwalk(Blue,CLRblue,color,is_color_nil,int)
 
-BATwalk(Hue,CLRhue,color,color_nil,flt)
-BATwalk(Saturation,CLRsaturation,color,color_nil,flt)
-BATwalk(Value,CLRvalue,color,color_nil,flt)
+BATwalk(Hue,CLRhue,color,is_color_nil,flt)
+BATwalk(Saturation,CLRsaturation,color,is_color_nil,flt)
+BATwalk(Value,CLRvalue,color,is_color_nil,flt)
 
-BATwalk(HueInt,CLRhueInt,color,color_nil,int)
-BATwalk(SaturationInt,CLRsaturationInt,color,color_nil,int)
-BATwalk(ValueInt,CLRvalueInt,color,color_nil,int)
+BATwalk(HueInt,CLRhueInt,color,is_color_nil,int)
+BATwalk(SaturationInt,CLRsaturationInt,color,is_color_nil,int)
+BATwalk(ValueInt,CLRvalueInt,color,is_color_nil,int)
 
-BATwalk(Luminance,CLRluminance,color,color_nil,int)
-BATwalk(Cr,CLRcr,color,color_nil,int)
-BATwalk(Cb,CLRcb,color,color_nil,int)
+BATwalk(Luminance,CLRluminance,color,is_color_nil,int)
+BATwalk(Cr,CLRcr,color,is_color_nil,int)
+BATwalk(Cb,CLRcb,color,is_color_nil,int)
 
 #define BATwalk3(NAME,FUNC,TYPE)										\
 str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
@@ -101,7 +101,7 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 			BBPunfix(b2->batCacheid);									\
 		if (b3)															\
 			BBPunfix(b3->batCacheid);									\
-		throw(MAL, "batcolor." #NAME, RUNTIME_OBJECT_MISSING);			\
+		throw(MAL, "batcolor." #NAME, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);	\
 	}																	\
 	bn= COLnew(b->hseqbase,getAtomIndex("color",5,TYPE_int),BATcount(b), TRANSIENT); \
 	if( bn == NULL){													\
@@ -123,9 +123,9 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 		x= (const TYPE *) BUNtail(bi,p);								\
 		x2= (const TYPE *) BUNtail(b2i,p);								\
 		x3= (const TYPE *) BUNtail(b3i,p);								\
-		if (x== 0 || *x == TYPE##_nil ||								\
-			x2== 0 || *x2 == TYPE##_nil ||								\
-			x3== 0 || *x3 == TYPE##_nil) {								\
+		if (x== 0 || is_##TYPE##_nil(*x) ||								\
+			x2== 0 || is_##TYPE##_nil(*x2) ||							\
+			x3== 0 || is_##TYPE##_nil(*x3)) {							\
 			y = color_nil;												\
 			bn->tnonil = 0;												\
 			bn->tnil = 1;												\

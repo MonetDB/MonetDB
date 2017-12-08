@@ -22,6 +22,7 @@
 # endif
 #endif
 #include "mapi.h"
+#include <inttypes.h>		/* for PRId64 format macro */
 #include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -29,12 +30,9 @@
 #include <string.h>
 #endif
 #ifdef HAVE_STRINGS_H
-#include <strings.h>
+#include <strings.h>		/* strcasecmp */
 #endif
 
-#ifdef HAVE_MALLOC_H
-#include <malloc.h>
-#endif
 #ifdef HAVE_LIBREADLINE
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -89,18 +87,18 @@ static int errseen = 0;
 #define setPrompt() sprintf(promptbuf, "%.*s>", (int) sizeof(promptbuf) - 2, language)
 #define debugMode() (strncmp(promptbuf, "mdb", 3) == 0)
 
-/* the internal formatters */
+/* the internal result set formatters */
 enum formatters {
 	NOformatter,
-	RAWformatter,
-	TABLEformatter,
-	CSVformatter,
-	XMLformatter,
-	TESTformatter,
-	CLEANformatter,
-	TIMERformatter,
-	SAMformatter,
-	EXPANDEDformatter
+	RAWformatter,		// as the data is received
+	TABLEformatter,		// render as a bordered table
+	CSVformatter,		// render as a comma separate file
+	XMLformatter,		// render as a valid XML document
+	JSONformatter,		// render as a valid JSON document
+	TESTformatter,		// for testing, escape characters
+	TRASHformatter,		// remove the result set 
+	SAMformatter,		// render a SAM result set
+	EXPANDEDformatter	// render as multi-row single record
 };
 static enum formatters formatter = NOformatter;
 char *separator = NULL;		/* column separator for CSV/TAB format */
@@ -109,11 +107,8 @@ int csvheader = 0;		/* include header line in CSV format */
 #define DEFWIDTH 80
 
 /* use a 64 bit integer for the timer */
-typedef lng timertype;
-#define TTFMT LLFMT
-#if 0
-static char *mark, *mark2;
-#endif
+typedef int64_t timertype;
+#define TTFMT "%" PRId64
 
 static timertype t0, t1;	/* used for timing */
 
@@ -266,12 +261,6 @@ timerEnd(void)
 	mnstr_flush(toConsole);
 	t1 = gettime();
 	assert(t1 >= t0);
-#if 0
-	if (mark && specials == NOmodifier) {
-		fprintf(stderr, "%s " TTFMT ".%03d msec %s\n", mark, (t1 - t0) / 1000, (int) ((t1 - t0) % 1000), mark2 ? mark2 : "");
-		fflush(stderr);
-	}
-#endif
 }
 
 static timertype th = 0;
@@ -282,33 +271,43 @@ timerHumanStop(void)
 }
 
 static enum itimers {
-	T_HUMAN = 0,
-	T_MILLIS,
-	T_SECS,
-	T_MINSECS
-} itimemode = T_HUMAN;
+	T_CLOCK = 0,	// render wallclock time in human readable format
+	T_PERF,		// return detailed performance
+	T_NONE		// don't render the timing information
+} timermode = T_CLOCK;
 
-static char htimbuf[32];
+static char htimbuf[128];
 static char *
-timerHuman(void)
+timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime)
 {
 	timertype t = th - t0;
 
-	assert(th >= t0);
 
-	if (itimemode == T_MILLIS || (itimemode == T_HUMAN && t / 1000 < 950)) {
-		snprintf(htimbuf, 32, TTFMT ".%03dms", t / 1000, (int) (t % 1000));
+	(void) sqloptimizer;
+	if (timermode == T_CLOCK){
+		if( t / 1000 < 950) {
+			snprintf(htimbuf, sizeof(htimbuf), "clk: " TTFMT ".%03d ms" , t / 1000, (int) (t % 1000));
+			return(htimbuf);
+		}
+		t /= 1000;
+		if (t / 1000 < 60) {
+			snprintf(htimbuf, sizeof(htimbuf), "clk: " TTFMT ".%02d sec", t / 1000, (int) ((t % 1000) / 100));
+			return(htimbuf);
+		}
+		t /= 1000;
+		snprintf(htimbuf, sizeof(htimbuf), "clk: " TTFMT ":%02d min", t / 60, (int) (t % 60));
 		return(htimbuf);
 	}
-	t /= 1000;
-	if (itimemode == T_SECS || (itimemode == T_HUMAN && t / 1000 < 60)) {
-		snprintf(htimbuf, 32, TTFMT ".%ds", t / 1000,
-				(int) ((t % 1000) / 100));
+	/* for performance measures we use milliseconds as the base */
+	if (timermode == T_PERF){ 
+			snprintf(htimbuf, sizeof(htimbuf), "clk:%" PRId64 ".%03d sql:%" PRId64 ".%03d opt:%" PRId64 ".%03d run:%" PRId64 ".%03d ms", 
+			t / 1000, (int)(t % 1000),
+			sqloptimizer/1000, (int)(sqloptimizer % 1000), 
+			maloptimizer /1000, (int)(maloptimizer % 1000), 
+			querytime /1000, (int)(querytime % 1000));
 		return(htimbuf);
 	}
-	t /= 1000;
-	/* itimemode == T_MINSECS || itimemode == T_HUMAN */
-	snprintf(htimbuf, 32, TTFMT "m %ds", t / 60, (int) (t % 60));
+	htimbuf[0] = 0;
 	return(htimbuf);
 }
 
@@ -570,6 +569,10 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 	size_t ulen;
 	int *cutafter = malloc(sizeof(int) * fields);
 
+	if (cutafter == NULL){
+		fprintf(stderr,"Malloc for SQLrow failed");
+		exit(2);
+	}
 	/* trim the text if needed */
 	if (trim == 1) {
 		for (i = 0; i < fields; i++) {
@@ -1275,21 +1278,6 @@ TESTrenderer(MapiHdl hdl)
 }
 
 static void
-CLEANrenderer(MapiHdl hdl)
-{
-	char *reply;
-
-	SQLqueryEcho(hdl);
-	while (!mnstr_errnr(toConsole) && (reply = fetch_line(hdl)) != 0) {
-		if (*reply == '%')
-			continue;
-		if (*reply == '=')
-			reply++;
-		mnstr_printf(toConsole, "%s\n", reply);
-	}
-}
-
-static void
 RAWrenderer(MapiHdl hdl)
 {
 	char *line;
@@ -1301,15 +1289,6 @@ RAWrenderer(MapiHdl hdl)
 		mnstr_printf(toConsole, "%s\n", line);
 	}
 }
-
-static void
-TIMERrenderer(MapiHdl hdl)
-{
-	SQLqueryEcho(hdl);
-	mapi_next_result(hdl);
-	printf("%s\n", timerHuman());
-}
-
 
 static void
 SAMrenderer(MapiHdl hdl)
@@ -1398,6 +1377,10 @@ SQLheader(MapiHdl hdl, int *len, int fields, char more)
 		char **names = (char **) malloc(fields * sizeof(char *));
 		int *numeric = (int *) malloc(fields * sizeof(int));
 
+		if (names == NULL || numeric == NULL){
+			fprintf(stderr,"Malloc for SQLheader failed");
+			exit(2);
+		}
 		for (i = 0; i < fields; i++) {
 			names[i] = mapi_get_name(hdl, i);
 			numeric[i] = 0;
@@ -1463,15 +1446,10 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 	char **rest = NULL;
 	char buf[50];
 	int ps = rowsperpage, silent = 0;
-	mapi_int64 rows = 0;
+	int64_t rows = 0;
 
 	/* in case of interactive mode, we should show timing on request */
 	singleinstr = showtiming? 1 :singleinstr;
-#if 0
-	if (mark2)
-		free(mark2);
-	mark2 = NULL;
-#endif
 
 	croppedfields = 0;
 	fields = mapi_get_field_count(hdl);
@@ -1669,20 +1647,14 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 	if (fields)
 		SQLseparator(len, printfields, '-');
 	rows = mapi_get_row_count(hdl);
-	snprintf(buf, sizeof(buf), LLFMT " rows", rows);
-#if 0
-	mark2 = strdup(buf);	/* for the timer output */
-#endif
-	printf(LLFMT " tuple%s%s%s%s", rows, rows != 1 ? "s" : "",
-			singleinstr ? " (" : "",
-			singleinstr && formatter != TESTformatter ? timerHuman() : "",
-			singleinstr ? ")" : "");
+	snprintf(buf, sizeof(buf), "%" PRId64 " rows", rows);
+	printf("%" PRId64 " tuple%s", rows, rows != 1 ? "s" : "");
 
 	if (fields != printfields || croppedfields > 0)
 		printf(" !");
 	if (fields != printfields) {
 		rows = fields - printfields;
-		printf(LLFMT " column%s dropped", rows, rows != 1 ? "s" : "");
+		printf("%" PRId64 " column%s dropped", rows, rows != 1 ? "s" : "");
 	}
 	if (fields != printfields && croppedfields > 0)
 		printf(", ");
@@ -1717,8 +1689,6 @@ setFormatter(const char *s)
 #endif
 	if (strcmp(s, "sql") == 0) {
 		formatter = TABLEformatter;
-	} else if (strcmp(s, "jaql") == 0) {
-		formatter = CLEANformatter;
 	} else if (strcmp(s, "csv") == 0) {
 		formatter = CSVformatter;
 		separator = strdup(",");
@@ -1739,20 +1709,23 @@ setFormatter(const char *s)
 		} else
 			separator = strdup(s + 4);
 		csvheader = 1;
-	} else if (strcmp(s, "tab") == 0) {
+	} else if (strcmp(s, "tsv") == 0) {
 		formatter = CSVformatter;
 		separator = strdup("\t");
 	} else if (strcmp(s, "raw") == 0) {
 		formatter = RAWformatter;
 	} else if (strcmp(s, "xml") == 0) {
 		formatter = XMLformatter;
+	} else if (strcmp(s, "json") == 0) {
+		formatter = JSONformatter;
 	} else if (strcmp(s, "test") == 0) {
 #ifdef _TWO_DIGIT_EXPONENT
 		_set_output_format(_TWO_DIGIT_EXPONENT);
 #endif
 		formatter = TESTformatter;
-	} else if (strcmp(s, "timer") == 0) {
-		formatter = TIMERformatter;
+		timermode = T_NONE;
+	} else if (strcmp(s, "trash") == 0) {
+		formatter = TRASHformatter;
 	} else if (strcmp(s, "sam") == 0) {
 		formatter = SAMformatter;
 	} else if (strcmp(s, "x") == 0 || strcmp(s, "expanded") == 0) {
@@ -1826,8 +1799,11 @@ static int
 format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 {
 	MapiMsg rc = MERROR;
-	mapi_int64 aff, lid;
+	int64_t aff, lid;
 	char *reply;
+	int64_t sqloptimizer = 0;
+	int64_t maloptimizer = 0;
+	int64_t querytime = 0;
 #ifdef HAVE_POPEN
 	stream *saveFD;
 
@@ -1840,7 +1816,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 		/* handle errors first */
 		if (mapi_result_error(hdl) != NULL) {
 			mnstr_flush(toConsole);
-			if (formatter == TABLEformatter || formatter == CLEANformatter) {
+			if (formatter == TABLEformatter ) {
 				mapi_noexplain(mid, "");
 			} else {
 				mapi_noexplain(mid, NULL);
@@ -1852,6 +1828,10 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			continue;
 		}
 
+		// get the timings as reported by the backend
+		sqloptimizer = 0;
+		maloptimizer = mapi_get_maloptimizertime(hdl);
+		querytime = mapi_get_querytime(hdl);
 		timerHumanStop();
 		switch (mapi_get_querytype(hdl)) {
 		case Q_BLOCK:
@@ -1862,25 +1842,26 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			SQLqueryEcho(hdl);
 			if (formatter == RAWformatter ||
 			    formatter == TESTformatter)
-				mnstr_printf(toConsole, "[ " LLFMT "\t]\n", mapi_rows_affected(hdl));
-			else if (formatter == TIMERformatter)
-				printf("%s\n", timerHuman());
-			else {
+				mnstr_printf(toConsole, "[ %" PRId64 "\t]\n", mapi_rows_affected(hdl));
+			else if (formatter == TRASHformatter){
+				mapi_next_result(hdl);
+				printf("%s\n", timerHuman(sqloptimizer, maloptimizer, querytime));
+			} else {
 				aff = mapi_rows_affected(hdl);
 				lid = mapi_get_last_id(hdl);
 				mnstr_printf(toConsole,
-					     LLFMT " affected row%s",
+					     "%" PRId64 " affected row%s",
 					     aff,
 					     aff != 1 ? "s" : "");
 				if (lid != -1) {
 					mnstr_printf(toConsole,
 						     ", last generated key: "
-						     LLFMT,
+						     "%" PRId64,
 						     lid);
 				}
 				if (singleinstr && formatter != TESTformatter)
 					mnstr_printf(toConsole, " (%s)",
-						     timerHuman());
+						     timerHuman(sqloptimizer, maloptimizer, querytime));
 				mnstr_printf(toConsole, "\n");
 			}
 			continue;
@@ -1888,12 +1869,14 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter) {
 				mnstr_printf(toConsole, "operation successful");
-				if (singleinstr)
+				if (singleinstr &&  timermode != T_NONE)
 					mnstr_printf(toConsole, " (%s)",
-						     timerHuman());
+						     timerHuman(sqloptimizer, maloptimizer, querytime));
 				mnstr_printf(toConsole, "\n");
-			} else if (formatter == TIMERformatter)
-				printf("%s\n", timerHuman());
+			} else if (formatter == TRASHformatter){
+				mapi_next_result(hdl);
+				printf("%s\n", timerHuman(sqloptimizer, maloptimizer, querytime));
+			}
 			continue;
 		case Q_TRANS:
 			SQLqueryEcho(hdl);
@@ -1909,7 +1892,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 					     "execute prepared statement "
 					     "using: EXEC %d(...)\n",
 					     mapi_get_tableid(hdl));
-			/* fall through */
+			break;
 		case Q_TABLE:
 			break;
 		default:
@@ -1947,6 +1930,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 		if (debugMode())
 			RAWrenderer(hdl);
 		else {
+			char *s;
 			switch (formatter) {
 			case XMLformatter:
 				XMLrenderer(hdl);
@@ -1956,9 +1940,6 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 				break;
 			case TESTformatter:
 				TESTrenderer(hdl);
-				break;
-			case CLEANformatter:
-				CLEANrenderer(hdl);
 				break;
 			case TABLEformatter:
 				switch (specials) {
@@ -1970,19 +1951,19 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 					break;
 				}
 				break;
-			case TIMERformatter:
-				TIMERrenderer(hdl);
-				break;
 			case SAMformatter:
 				SAMrenderer(hdl);
 				break;
 			case EXPANDEDformatter:
 				EXPANDEDrenderer(hdl);
 				break;
-			default:
-				RAWrenderer(hdl);
-				break;
+			default: 
+				if ( formatter != TRASHformatter)
+					RAWrenderer(hdl);
 			}
+			s= timerHuman(sqloptimizer, maloptimizer, querytime);
+			if (*s)
+				printf("%s\n", s);
 		}
 	} while (!mnstr_errnr(toConsole) && (rc = mapi_next_result(hdl)) == 1);
 	if (mnstr_errnr(toConsole)) {
@@ -2006,7 +1987,7 @@ doRequest(Mapi mid, const char *buf)
 		SQLsetSpecial(buf);
 
 	if ((hdl = mapi_query(mid, buf)) == NULL) {
-		if (formatter == TABLEformatter || formatter == CLEANformatter) {
+		if (formatter == TABLEformatter ) {
 			mapi_noexplain(mid, "");
 		} else {
 			mapi_noexplain(mid, NULL);
@@ -2033,8 +2014,7 @@ doRequest(Mapi mid, const char *buf)
 			break;						\
 		case MERROR:						\
 			/* some error, but try to continue */		\
-			if (formatter == TABLEformatter ||		\
-			    formatter == CLEANformatter) {		\
+			if (formatter == TABLEformatter ) {		\
 				mapi_noexplain(mid, "");		\
 			} else {					\
 				mapi_noexplain(mid, NULL);		\
@@ -2049,8 +2029,7 @@ doRequest(Mapi mid, const char *buf)
 			break_or_continue;				\
 		case MTIMEOUT:						\
 			/* lost contact with the server */		\
-			if (formatter == TABLEformatter ||		\
-			    formatter == CLEANformatter) {		\
+			if (formatter == TABLEformatter ) {		\
 				mapi_noexplain(mid, "");		\
 			} else {					\
 				mapi_noexplain(mid, NULL);		\
@@ -2181,9 +2160,6 @@ showCommands(void)
 	mnstr_printf(toConsole, "\\history - show the readline history\n");
 #endif
 	mnstr_printf(toConsole, "\\help    - synopsis of the SQL syntax\n");
-#if 0
-	mnstr_printf(toConsole, "\\t      - toggle timer\n");
-#endif
 	if (mode == SQL) {
 		mnstr_printf(toConsole, "\\D table- dumps the table, or the complete database if none given.\n");
 		mnstr_printf(toConsole, "\\d[Stvsfn]+ [obj] - list database objects, or describe if obj given\n");
@@ -2191,7 +2167,8 @@ showCommands(void)
 		mnstr_printf(toConsole, "\\a      - disable auto commit\n");
 	}
 	mnstr_printf(toConsole, "\\e      - echo the query in sql formatting mode\n");
-	mnstr_printf(toConsole, "\\f      - format using a built-in renderer {csv,tab,raw,sql,xml,sam}\n");
+	mnstr_printf(toConsole, "\\t      - set the timer {clock,minutes,seconds,milliseconds,microseconds,none}\n");
+	mnstr_printf(toConsole, "\\f      - format using a built-in renderer {csv,tab,raw,sql,xml,trash}\n");
 	mnstr_printf(toConsole, "\\w#     - set maximal page width (-1=unlimited, 0=terminal width, >0=limit to num)\n");
 	mnstr_printf(toConsole, "\\r#     - set maximum rows per page (-1=raw)\n");
 	mnstr_printf(toConsole, "\\L file - save client/server interaction\n");
@@ -2218,7 +2195,7 @@ struct myread_t {
 };
 
 static ssize_t
-myread(void *private, void *buf, size_t elmsize, size_t cnt)
+myread(void *restrict private, void *restrict buf, size_t elmsize, size_t cnt)
 {
 	struct myread_t *p = private;
 	size_t size = elmsize * cnt;
@@ -2315,6 +2292,10 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 	bufsiz = READBLOCK;
 	buf = malloc(bufsiz);
 
+	if (buf == NULL ){
+		fprintf(stderr,"Malloc for doFile failed");
+		exit(2);
+	}
 	do {
 		int seen_null_byte = 0;
 
@@ -2398,14 +2379,6 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 				case 'q':
 					free(buf);
 					goto bailout;
-#if 0
-				case 't':
-					mark = mark ? NULL : "Timer";
-					if (mark2)
-						free(mark2);
-					mark2 = strdup(line + 2);
-					continue;
-#endif
 				case 'X':
 					/* toggle interaction trace */
 					mapi_trace(mid, !mapi_get_trace(mid));
@@ -2523,7 +2496,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 						if (x & MD_SEQ)
 							describe_sequence(mid, NULL, line, toConsole);
 						if (x & MD_FUNC)
-							dump_functions(mid, toConsole, line);
+							dump_functions(mid, toConsole, NULL, line);
 						if (x & MD_SCHEMA)
 							describe_schema(mid, line, toConsole);
 #ifdef HAVE_POPEN
@@ -2754,11 +2727,8 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 						case CSVformatter:
 							mnstr_printf(toConsole, "%s\n", separator[0] == '\t' ? "tab" : "csv");
 							break;
-						case TESTformatter:
-							mnstr_printf(toConsole, "test\n");
-							break;
-						case CLEANformatter:
-							mnstr_printf(toConsole, "jaql\n");
+						case TRASHformatter:
+							mnstr_printf(toConsole, "trash\n");
 							break;
 						case XMLformatter:
 							mnstr_printf(toConsole, "xml\n");
@@ -2772,6 +2742,30 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 						}
 					} else
 						setFormatter(line);
+					continue;
+				case 't':
+					while (my_isspace(line[length - 1]))
+						line[--length] = 0;
+					for (line += 2; *line && my_isspace(*line); line++)
+						;
+					if (*line == 0) {
+						mnstr_printf(toConsole, "Current time formatter: ");
+						if( timermode == T_PERF)
+							mnstr_printf(toConsole,"performance\n");
+						if( timermode == T_NONE)
+							mnstr_printf(toConsole,"none\n");
+						if( timermode == T_CLOCK)
+							mnstr_printf(toConsole,"clock\n");
+					} else if (strncmp(line,"perf",4) == 0 || strcmp(line,"performance") == 0  ) {
+						timermode = T_PERF;
+					} else if (strcmp(line,"none") == 0  ) {
+						timermode = T_NONE;
+					} else if (strcmp(line,"clock") == 0  ) {
+						timermode = T_CLOCK;
+					} else if (*line != '\0') {
+						fprintf(stderr, "warning: invalid argument to -t: %s\n",
+								line);
+					}
 					continue;
 				default:
 					showCommands();
@@ -2884,7 +2878,7 @@ set_timezone(Mapi mid)
 	tmp = localtime(&t);
 	tmp->tm_isdst=0; /* We need the difference without dst */
 	lt = mktime(tmp);
-	assert((lng) gt - (lng) lt >= (lng) INT_MIN && (lng) gt - (lng) lt <= (lng) INT_MAX);
+	assert((int64_t) gt - (int64_t) lt >= (int64_t) INT_MIN && (int64_t) gt - (int64_t) lt <= (int64_t) INT_MAX);
 	tzone = (int) (gt - lt);
 #endif
 	if (tzone < 0)
@@ -2896,7 +2890,7 @@ set_timezone(Mapi mid)
 			 "SET TIME ZONE INTERVAL '-%02d:%02d' HOUR TO MINUTE",
 			 tzone / 3600, (tzone % 3600) / 60);
 	if ((hdl = mapi_query(mid, buf)) == NULL) {
-		if (formatter == TABLEformatter || formatter == CLEANformatter) {
+		if (formatter == TABLEformatter ) {
 			mapi_noexplain(mid, "");
 		} else {
 			mapi_noexplain(mid, NULL);
@@ -2929,9 +2923,10 @@ usage(const char *prog, int xit)
 #ifdef HAVE_ICONV
 	fprintf(stderr, " -E charset  | --encoding=charset specify encoding (character set) of the terminal\n");
 #endif
-	fprintf(stderr, " -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml}\n");
+	fprintf(stderr, " -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml,trash}\n");
 	fprintf(stderr, " -H          | --history          load/save cmdline history (default off)\n");
-	fprintf(stderr, " -i          | --interactive[=tm] interpret `\\' commands on stdin, use time formatting {ms,s,m}\n");
+	fprintf(stderr, " -i          | --interactive      interpret `\\' commands on stdin\n");
+	fprintf(stderr, " -t          | --timer=format     use time formatting {clock,minutes,seconds,milliseconds,microseconds,none}\n");
 	fprintf(stderr, " -l language | --language=lang    {sql,mal}\n");
 	fprintf(stderr, " -L logfile  | --log=logfile      save client/server interaction\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt   run single statement\n");
@@ -2993,7 +2988,8 @@ main(int argc, char **argv)
 		{"help", 0, 0, '?'},
 		{"history", 0, 0, 'H'},
 		{"host", 1, 0, 'h'},
-		{"interactive", 2, 0, 'i'},
+		{"interactive", 0, 0, 'i'},
+		{"timer", 2, 0, 't'},
 		{"language", 1, 0, 'l'},
 		{"log", 1, 0, 'L'},
 		{"null", 1, 0, 'n'},
@@ -3003,9 +2999,6 @@ main(int argc, char **argv)
 		{"port", 1, 0, 'p'},
 		{"rows", 1, 0, 'r'},
 		{"statement", 1, 0, 's'},
-#if 0
-		{"time", 0, 0, 't'},
-#endif
 		{"user", 1, 0, 'u'},
 		{"version", 0, 0, 'v'},
 		{"width", 1, 0, 'w'},
@@ -3026,11 +3019,6 @@ main(int argc, char **argv)
 	toConsole = stdout_stream = file_wastream(stdout, "stdout");
 	stderr_stream = file_wastream(stderr, "stderr");
 
-#if 0
-	mark = NULL;
-	mark2 = NULL;
-#endif
-
 	/* parse config file first, command line options override */
 	parse_dotmonetdb(&user, &passwd, &dbname, &language, &save_history, &output, &pagewidth);
 	pagewidthset = pagewidth != 0;
@@ -3049,12 +3037,9 @@ main(int argc, char **argv)
 #ifdef HAVE_ICONV
 				"E:"
 #endif
-				"f:h:i::L:l:n:"
+				"f:h:it:L:l:n:"
 #ifdef HAVE_POPEN
 				"|:"
-#endif
-#if 0
-				"t"
 #endif
 				"w:r:p:s:Xu:vzHP?",
 				long_options, &option_index)) != -1) {
@@ -3125,18 +3110,20 @@ main(int argc, char **argv)
 			break;
 		case 'i':
 			interactive = 1;
+			break;
+		case 't':
 			showtiming = 1;
 			if (optarg != NULL) {
-				if (strcmp(optarg, "ms") == 0) {
-					itimemode = T_MILLIS;
-				} else if (strcmp(optarg, "s") == 0) {
-					itimemode = T_SECS;
-				} else if (strcmp(optarg, "m") == 0) {
-					itimemode = T_MINSECS;
+				if (strncmp(optarg,"perf",4) == 0 || strcmp(optarg,"performance") == 0  ) {
+					timermode = T_PERF;
+				} else if (strcmp(optarg,"none") == 0  ) {
+					timermode = T_NONE;
+				} else if (strcmp(optarg,"clock") == 0  ) {
+					timermode = T_CLOCK;
 				} else if (*optarg != '\0') {
-					fprintf(stderr, "warning: invalid argument to -i: %s\n",
+					fprintf(stderr, "warning: invalid argument to -t: %s\n",
 							optarg);
-				}
+				} 
 			}
 			break;
 		case 'h':
@@ -3176,11 +3163,6 @@ main(int argc, char **argv)
 		case '|':
 			assert(optarg);
 			pager = optarg;
-			break;
-#endif
-#if 0
-		case 't':
-			mark = "Timer";
 			break;
 #endif
 		case 'X':
@@ -3316,9 +3298,6 @@ main(int argc, char **argv)
 			setFormatter("raw");
 		}
 	}
-	if (formatter == TIMERformatter) {
-		mapi_cache_limit(mid, 1);
-	}
 	/* give the user a welcome message with some general info */
 	if (!has_fileargs && command == NULL && isatty(fileno(stdin))) {
 		char *lang;
@@ -3359,6 +3338,11 @@ main(int argc, char **argv)
 			int factor = 4;
 			size_t tolen = factor * fromlen + 1;
 			char *to = malloc(tolen);
+
+			if( to == NULL){
+				fprintf(stderr,"Malloc in main failed");
+				exit(2);
+			}
 			free_command = 1;
 
 		  try_again:
@@ -3377,6 +3361,10 @@ main(int argc, char **argv)
 					tolen = factor * fromlen + 1;
 					free(command);
 					to = malloc(tolen);
+					if( to == NULL){
+						fprintf(stderr,"Malloc in main failed");
+						exit(2);
+					}
 					goto try_again;
 				case EINVAL:
 					/* incomplete multibyte sequence */

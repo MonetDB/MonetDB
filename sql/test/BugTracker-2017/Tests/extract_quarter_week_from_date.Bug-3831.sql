@@ -1,3 +1,5 @@
+set time zone interval '+02:00' hour to minute;
+
 create table my_dates(dt date, ts timestamp, tstz timestamp with time zone);
 insert into my_dates values (date '2017-06-14', timestamp '2017-06-14 12:12:12.12', timestamp with time zone '2017-06-14 12:12:12.12 CET+1');
 insert into my_dates values (date '2016-07-14', timestamp '2016-07-14 12:12:12.12', timestamp with time zone '2016-07-14 12:12:12.12 CET+1');

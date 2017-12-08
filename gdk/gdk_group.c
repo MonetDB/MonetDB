@@ -159,12 +159,20 @@
 		}							\
 	} while(0)
 
+#define flt_neq(a, b)	(is_flt_nil(a) ? !is_flt_nil(b) : is_flt_nil(b) || (a) != (b))
+#define dbl_neq(a, b)	(is_dbl_nil(a) ? !is_dbl_nil(b) : is_dbl_nil(b) || (a) != (b))
+#define bte_neq(a, b)	((a) != (b))
+#define sht_neq(a, b)	((a) != (b))
+#define int_neq(a, b)	((a) != (b))
+#define lng_neq(a, b)	((a) != (b))
+#define hge_neq(a, b)	((a) != (b))
+
 #define GRP_compare_consecutive_values_tpe(TYPE)		\
 	GRP_compare_consecutive_values(				\
 	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0);	\
 			TYPE pw = 0			,	\
 	/* INIT_1 */					,	\
-	/* COMP   */	w[p] != pw			,	\
+	/* COMP   */	TYPE##_neq(w[p], pw)		,	\
 	/* KEEP   */	pw = w[p]				\
 	)
 
@@ -227,12 +235,20 @@
 		}							\
 	} while(0)
 
+#define flt_equ(a, b)	(is_flt_nil(a) ? is_flt_nil(b) : !is_flt_nil(b) && (a) == (b))
+#define dbl_equ(a, b)	(is_dbl_nil(a) ? is_dbl_nil(b) : !is_dbl_nil(b) && (a) == (b))
+#define bte_equ(a, b)	((a) == (b))
+#define sht_equ(a, b)	((a) == (b))
+#define int_equ(a, b)	((a) == (b))
+#define lng_equ(a, b)	((a) == (b))
+#define hge_equ(a, b)	((a) == (b))
+
 #define GRP_subscan_old_groups_tpe(TYPE)			\
 	GRP_subscan_old_groups(					\
 	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0);	\
 		    	TYPE pw = 0			,	\
 	/* INIT_1 */					,	\
-	/* COMP   */	w[p] == pw			,	\
+	/* COMP   */	TYPE##_equ(w[p], pw)		,	\
 	/* KEEP   */	pw = w[p]				\
 	)
 
@@ -361,7 +377,7 @@
 	GRP_use_existing_hash_table(				\
 	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0),	\
 	/* INIT_1 */					,	\
-	/* COMP   */	w[p] == w[hb]				\
+	/* COMP   */	TYPE##_equ(w[p], w[hb])			\
 	)
 
 #define GRP_use_existing_hash_table_any()			\
@@ -498,7 +514,7 @@ pop(oid x)
 		if (grps) {						\
 			if (gc) {					\
 				GRP_create_partial_hash_table_core(INIT_1,HASH,COMP,assert(HASHgetlink(hs, hb) == HASHnil(hs) || HASHgetlink(hs, hb) < hb),GCGRPTST); \
-			} else {				\
+			} else {					\
 				GRP_create_partial_hash_table_core(INIT_1,HASH ^ (rev(grps[r]) >> bits),COMP,(void)0,GRPTST); \
 			}						\
 		} else {						\
@@ -511,7 +527,7 @@ pop(oid x)
 	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0),	\
 	/* INIT_1 */					,	\
 	/* HASH   */	hash_##TYPE(hs, &w[p])		,	\
-	/* COMP   */	w[p] == w[hb]				\
+	/* COMP   */	TYPE##_equ(w[p], w[hb])			\
 	)
 
 #define GRP_create_partial_hash_table_any()			\
@@ -537,7 +553,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	BUN p, q, r;
 	const void *v, *pv;
 	BATiter bi;
-	char *ext = NULL;
 	Hash *hs = NULL;
 	BUN hb;
 	BUN maxgrps;
@@ -707,7 +722,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			gn = COLcopy(g, g->ttype, 0, TRANSIENT);
 			if (gn == NULL)
 				goto error;
-			if (maxgrp != oid_nil) {
+			if (!is_oid_nil(maxgrp)) {
 				prop = BATgetprop(g, GDK_MAX_VALUE);
 				if (prop)
 					BATsetprop(gn, GDK_MAX_VALUE, TYPE_oid, &maxgrp);
@@ -737,7 +752,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		goto error;
 	ngrps = (oid *) Tloc(gn, 0);
 	maxgrps = cnt / 10;
-	if (maxgrp != oid_nil && maxgrps < maxgrp)
+	if (!is_oid_nil(maxgrp) && maxgrps < maxgrp)
 		maxgrps += maxgrp;
 	if (e && maxgrps < BATcount(e))
 		maxgrps += BATcount(e);
@@ -1069,8 +1084,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	} else {
 		bit gc = g && (BATordered(g) || BATordered_rev(g));
 		const char *nme;
-		size_t nmelen;
-		Heap *hp = NULL;
 		BUN prb;
 		int bits;
 		BUN mask;
@@ -1095,28 +1108,18 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted, gc ? " (g clustered)" : "");
 		nme = BBP_physical(b->batCacheid);
-		nmelen = strlen(nme);
 		mask = MAX(HASHmask(cnt), 1 << 16);
 		/* mask is a power of two, so pop(mask - 1) tells us
 		 * which power of two */
 		bits = 8 * SIZEOF_OID - pop(mask - 1);
-		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
-		    (hp->farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
-		    (hp->filename = GDKmalloc(nmelen + 30)) == NULL ||
-		    snprintf(hp->filename, nmelen + 30,
-			     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
-		    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
-		    (hs = HASHnew(hp, b->ttype, BUNlast(b),
-				  mask, BUN_NONE)) == NULL) {
-			if (hp) {
-				if (hp->filename)
-					GDKfree(hp->filename);
-				GDKfree(hp);
-			}
-			if (ext)
-				GDKfree(ext);
-			hp = NULL;
-			ext = NULL;
+		if ((hs = GDKzalloc(sizeof(Hash))) == NULL ||
+		    (hs->heap.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
+		    snprintf(hs->heap.filename, sizeof(hs->heap.filename),
+			     "%s.hash%d", nme, THRgettid()) < 0 ||
+		    HASHnew(hs, b->ttype, BUNlast(b),
+			    mask, BUN_NONE) != GDK_SUCCEED) {
+			GDKfree(hs);
+			hs = NULL;
 			GDKerror("BATgroup: cannot allocate hash table\n");
 			goto error;
 		}
@@ -1124,7 +1127,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 
 		switch (t) {
 		case TYPE_bte:
-			if (grps && maxgrp != oid_nil
+			if (grps && !is_oid_nil(maxgrp)
 #if SIZEOF_OID == SIZEOF_LNG
 			    && maxgrp < ((oid) 1 << (SIZEOF_LNG * 8 - 8))
 #endif
@@ -1141,7 +1144,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				GRP_create_partial_hash_table_tpe(bte);
 			break;
 		case TYPE_sht:
-			if (grps && maxgrp != oid_nil
+			if (grps && !is_oid_nil(maxgrp)
 #if SIZEOF_OID == SIZEOF_LNG
 			    && maxgrp < ((oid) 1 << (SIZEOF_LNG * 8 - 16))
 #endif
@@ -1158,7 +1161,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				GRP_create_partial_hash_table_tpe(sht);
 			break;
 		case TYPE_int:
-			if (grps && maxgrp != oid_nil
+			if (grps && !is_oid_nil(maxgrp)
 #if SIZEOF_OID == SIZEOF_LNG
 			    && maxgrp < ((oid) 1 << (SIZEOF_LNG * 8 - 32))
 #endif
@@ -1204,10 +1207,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			GRP_create_partial_hash_table_any();
 		}
 
-		HEAPfree(hp, 1);
-		GDKfree(hp);
+		HEAPfree(&hs->heap, 1);
 		GDKfree(hs);
-		GDKfree(ext);
 	}
 	if (extents) {
 		BATsetcount(en, (BUN) ngrp);
@@ -1242,6 +1243,10 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	*groups = gn;
 	return GDK_SUCCEED;
   error:
+	if (hs != NULL && hs != b->thash) {
+		HEAPfree(&hs->heap, 1);
+		GDKfree(hs);
+	}
 	if (gn)
 		BBPunfix(gn->batCacheid);
 	if (en)

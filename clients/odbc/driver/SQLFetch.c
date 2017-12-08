@@ -28,10 +28,6 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 #include "ODBCUtil.h"
-#include <time.h>
-#ifdef HAVE_STRINGS_H
-#include <strings.h>		/* for strncasecmp */
-#endif
 
 SQLRETURN
 MNDBFetch(ODBCStmt *stmt, SQLUSMALLINT *RowStatusArray)

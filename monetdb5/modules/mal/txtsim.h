@@ -16,8 +16,6 @@
 #include "mal.h"
 #include <string.h>
 #include "gdk.h"
-#ifdef HAVE_MALLOC_H
-#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>

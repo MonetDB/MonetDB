@@ -11,7 +11,7 @@
 
 #include "sql_catalog.h"
 
-extern void sequences_init(void);
+extern void* sequences_init(void);
 extern void sequences_exit(void);
 
 extern int seq_next_value(sql_sequence *seq, lng *val);

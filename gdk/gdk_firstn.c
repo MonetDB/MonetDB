@@ -87,12 +87,26 @@
 			siftup(OPER, i - 1, SWAP);	\
 	} while (0)
 
-#define LTany(p1, p2)	(cmp(BUNtail(bi, oids[p1] - b->hseqbase), \
+#define LTany(p1, p2)	(cmp(BUNtail(bi, oids[p1] - b->hseqbase),	\
 			     BUNtail(bi, oids[p2] - b->hseqbase)) < 0)
-#define GTany(p1, p2)	(cmp(BUNtail(bi, oids[p1] - b->hseqbase), \
+#define GTany(p1, p2)	(cmp(BUNtail(bi, oids[p1] - b->hseqbase),	\
 			     BUNtail(bi, oids[p2] - b->hseqbase)) > 0)
-#define LTfix(p1, p2)	(vals[oids[p1] - b->hseqbase] < vals[oids[p2] - b->hseqbase])
-#define GTfix(p1, p2)	(vals[oids[p1] - b->hseqbase] > vals[oids[p2] - b->hseqbase])
+#define LTflt(a, b)	((bit) (!is_flt_nil(b) && (is_flt_nil(a) || (a) < (b))))
+#define LTdbl(a, b)	((bit) (!is_dbl_nil(b) && (is_dbl_nil(a) || (a) < (b))))
+#define GTflt(a, b)	((bit) (!is_flt_nil(a) && (is_flt_nil(b) || (a) > (b))))
+#define GTdbl(a, b)	((bit) (!is_dbl_nil(a) && (is_dbl_nil(b) || (a) > (b))))
+#define LTfltfix(p1, p2)	LTflt(vals[oids[p1] - b->hseqbase],	\
+				      vals[oids[p2] - b->hseqbase])
+#define GTfltfix(p1, p2)	GTflt(vals[oids[p1] - b->hseqbase],	\
+				      vals[oids[p2] - b->hseqbase])
+#define LTdblfix(p1, p2)	LTdbl(vals[oids[p1] - b->hseqbase],	\
+				      vals[oids[p2] - b->hseqbase])
+#define GTdblfix(p1, p2)	GTdbl(vals[oids[p1] - b->hseqbase],	\
+				      vals[oids[p2] - b->hseqbase])
+#define LTfix(p1, p2)		LT(vals[oids[p1] - b->hseqbase],	\
+				   vals[oids[p2] - b->hseqbase])
+#define GTfix(p1, p2)		GT(vals[oids[p1] - b->hseqbase],	\
+				   vals[oids[p2] - b->hseqbase])
 #define SWAP1(p1, p2)				\
 	do {					\
 		item = oids[p1];		\
@@ -248,10 +262,10 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc, oid *lastp)
 			break;
 #endif
 		case TYPE_flt:
-			shuffle_unique(flt, LT);
+			shuffle_unique(flt, LTflt);
 			break;
 		case TYPE_dbl:
-			shuffle_unique(dbl, LT);
+			shuffle_unique(dbl, LTdbl);
 			break;
 		default:
 			heapify(LTany, SWAP1);
@@ -285,10 +299,10 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc, oid *lastp)
 			break;
 #endif
 		case TYPE_flt:
-			shuffle_unique(flt, GT);
+			shuffle_unique(flt, GTflt);
 			break;
 		case TYPE_dbl:
-			shuffle_unique(dbl, GT);
+			shuffle_unique(dbl, GTdbl);
 			break;
 		default:
 			heapify(GTany, SWAP1);
@@ -316,14 +330,30 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc, oid *lastp)
 	return bn;
 }
 
-#define LTfixgrp(p1, p2)						\
-	(goids[p1] < goids[p2] ||					\
-	 (goids[p1] == goids[p2] &&					\
-	  vals[oids[p1] - b->hseqbase] < vals[oids[p2] - b->hseqbase]))
-#define GTfixgrp(p1, p2)						\
-	(goids[p1] < goids[p2] ||					\
-	 (goids[p1] == goids[p2] &&					\
-	  vals[oids[p1] - b->hseqbase] > vals[oids[p2] - b->hseqbase]))
+#define LTfixgrp(p1, p2)			\
+	(goids[p1] < goids[p2] ||		\
+	 (goids[p1] == goids[p2] &&		\
+	  LTfix(p1, p2)))
+#define LTfltfixgrp(p1, p2)			\
+	(goids[p1] < goids[p2] ||		\
+	 (goids[p1] == goids[p2] &&		\
+	  LTfltfix(p1, p2)))
+#define LTdblfixgrp(p1, p2)			\
+	(goids[p1] < goids[p2] ||		\
+	 (goids[p1] == goids[p2] &&		\
+	  LTdblfix(p1, p2)))
+#define GTfixgrp(p1, p2)			\
+	(goids[p1] < goids[p2] ||		\
+	 (goids[p1] == goids[p2] &&		\
+	  GTfix(p1, p2)))
+#define GTfltfixgrp(p1, p2)			\
+	(goids[p1] < goids[p2] ||		\
+	 (goids[p1] == goids[p2] &&		\
+	  GTfltfix(p1, p2)))
+#define GTdblfixgrp(p1, p2)			\
+	(goids[p1] < goids[p2] ||		\
+	 (goids[p1] == goids[p2] &&		\
+	  GTdblfix(p1, p2)))
 #define LTvoidgrp(p1, p2)					\
 	(goids[p1] < goids[p2] ||				\
 	 (goids[p1] == goids[p2] && oids[p1] < oids[p2]))
@@ -333,13 +363,11 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc, oid *lastp)
 #define LTanygrp(p1, p2)					\
 	(goids[p1] < goids[p2] ||				\
 	 (goids[p1] == goids[p2] &&				\
-	  cmp(BUNtail(bi, oids[p1] - b->hseqbase),		\
-	      BUNtail(bi, oids[p2] - b->hseqbase)) < 0))
+	  LTany(p1, p2)))
 #define GTanygrp(p1, p2)					\
 	(goids[p1] < goids[p2] ||				\
 	 (goids[p1] == goids[p2] &&				\
-	  cmp(BUNtail(bi, oids[p1] - b->hseqbase),		\
-	      BUNtail(bi, oids[p2] - b->hseqbase)) > 0))
+	  GTany(p1, p2)))
 #define SWAP2(p1, p2)				\
 	do {					\
 		item = oids[p1];		\
@@ -394,23 +422,46 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc, oid *lastp,
 	oid item;
 	BUN pos, childpos;
 
-	if (BATtdense(g)) {
-		/* trivial: g determines ordering, return initial
-		 * slice of s */
-		return BATslice(s, 0, n);
-	}
-
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
+	cnt = cand ? (BUN) (candend - cand) : end - start;
 	if (n > cnt)
 		n = cnt;
-	if (cand && n > (BUN) (candend - cand))
-		n = (BUN) (candend - cand);
 
 	if (n == 0) {
 		/* candidate list might refer only to values outside
 		 * of the bat and hence be effectively empty */
+		if (lastp)
+			*lastp = 0;
+		if (lastgp)
+			*lastgp = 0;
 		return BATdense(0, 0, 0);
+	}
+
+	if (BATtdense(g)) {
+		/* trivial: g determines ordering, return reference to
+		 * initial part of b (or slice of s) */
+		if (lastgp)
+			*lastgp = g->tseqbase + n - 1;
+		if (cand) {
+			if (lastp)
+				*lastp = cand[n - 1];
+			bn = COLnew(0, TYPE_oid, n, TRANSIENT);
+			if (bn == NULL)
+				return NULL;
+			memcpy(Tloc(bn, 0), cand, n * sizeof(oid));
+			BATsetcount(bn, n);
+			bn->tsorted = 1;
+			bn->trevsorted = n <= 1;
+			bn->tkey = 1;
+			bn->tseqbase = (bn->tdense = n <= 1) != 0 ? cand[0] : oid_nil;
+			bn->tnil = 0;
+			bn->tnonil = 1;
+			return bn;
+		}
+		if (lastp)
+			*lastp = b->hseqbase + start + n - 1;
+		return BATdense(0, b->hseqbase + start, n);
 	}
 
 	bn = COLnew(0, TYPE_oid, n, TRANSIENT);
@@ -475,10 +526,10 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc, oid *lastp,
 			break;
 #endif
 		case TYPE_flt:
-			shuffle_unique_with_groups(flt, LT);
+			shuffle_unique_with_groups(flt, LTflt);
 			break;
 		case TYPE_dbl:
-			shuffle_unique_with_groups(dbl, LT);
+			shuffle_unique_with_groups(dbl, LTdbl);
 			break;
 		default:
 			heapify(LTanygrp, SWAP2);
@@ -530,10 +581,10 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc, oid *lastp,
 			break;
 #endif
 		case TYPE_flt:
-			shuffle_unique_with_groups(flt, GT);
+			shuffle_unique_with_groups(flt, GTflt);
 			break;
 		case TYPE_dbl:
-			shuffle_unique_with_groups(dbl, GT);
+			shuffle_unique_with_groups(dbl, GTdbl);
 			break;
 		default:
 			heapify(GTanygrp, SWAP2);

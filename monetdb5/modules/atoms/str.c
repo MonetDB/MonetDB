@@ -3203,7 +3203,7 @@ STRTail(str *res, const str *arg1, const int *offset)
 	int off = *offset;
 	const char *s = *arg1;
 
-	if (strNil(s) || off == int_nil) {
+	if (strNil(s) || is_int_nil(off)) {
 		*res = GDKstrdup(str_nil);
 	} else {
 		if (off < 0) {
@@ -3228,7 +3228,7 @@ STRSubString(str *res, const str *arg1, const int *offset, const int *length)
 	int off = *offset, l = *length;
 	const char *s = *arg1;
 
-	if (strNil(s) || off == int_nil || l == int_nil) {
+	if (strNil(s) || is_int_nil(off) || is_int_nil(l)) {
 		*res = GDKstrdup(str_nil);
 		if (*res == NULL)
 			throw(MAL, "str.substring", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -3267,7 +3267,7 @@ STRFromWChr(str *res, const int *c)
 {
 	str s;
 
-	if (*c == int_nil) {
+	if (is_int_nil(*c)) {
 		*res = GDKstrdup(str_nil);
 		if (*res == NULL)
 			throw(MAL, "str.unicode", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -3293,7 +3293,7 @@ STRWChrAt(int *res, const str *arg1, const int *at)
 /* 64bit: should have lng arg */
 	const char *s = *arg1;
 
-	if (strNil(s) || *at == int_nil || *at < 0) {
+	if (strNil(s) || is_int_nil(*at) || *at < 0) {
 		*res = int_nil;
 		return MAL_SUCCEED;
 	}
@@ -3412,7 +3412,7 @@ STRsplitpart(str *res, str *haystack, str *needle, int *field)
 	const char *s = *haystack;
 	const char *s2 = *needle;
 
-	if (strNil(s) || *field == int_nil) {
+	if (strNil(s) || is_int_nil(*field)) {
 		*res = GDKstrdup(str_nil);
 		if (*res == NULL)
 			throw(MAL, "str.splitpart", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -3599,7 +3599,7 @@ trimchars(const char *s, size_t *n)
 
 	while (*s) {
 		UTF8_GETCHAR(c, s);
-		assert(c != int_nil);
+		assert(!is_int_nil(c));
 		chars[len++] = c;
 	}
 	*n = len;
@@ -3696,7 +3696,7 @@ pad(const char *s, const char *pad, int len, int left)
 	size_t slen, padlen, repeats, residual, i;
 	char *res;
 
-	if (GDK_STRNIL(s) || GDK_STRNIL(pad) || len == int_nil)
+	if (GDK_STRNIL(s) || GDK_STRNIL(pad) || is_int_nil(len))
 		return GDKstrdup(str_nil);
 
 	if (len < 0)

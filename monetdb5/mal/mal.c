@@ -10,9 +10,9 @@
 #include <monetdb_config.h>
 #include <mal.h>
 
-char 	monet_cwd[PATHLENGTH] = { 0 };
+char 	monet_cwd[FILENAME_MAX] = { 0 };
 size_t 	monet_memory = 0;
-char 	monet_characteristics[PATHLENGTH];
+char 	monet_characteristics[4096];
 int		mal_trace;		/* enable profile events on console */
 str     mal_session_uuid;   /* unique marker for the session */
 

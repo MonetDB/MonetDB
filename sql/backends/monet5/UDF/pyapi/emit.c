@@ -12,12 +12,13 @@
 #include "convert_loops.h"
 #include "type_conversion.h"
 #include "gdk_interprocess.h"
+#include "mtime.h"
 
 #include "unicode.h"
 
 #define scalar_convert(tpe)                                                    \
 	{                                                                          \
-		tpe val = (tpe)tpe##_nil;                                              \
+		tpe val = tpe##_nil;                                                   \
 		msg = pyobject_to_##tpe(&dictEntry, 42, &val);                         \
 		if (msg != MAL_SUCCEED ||                                              \
 			BUNappend(self->cols[i].b, &val, 0) != GDK_SUCCEED) {              \
@@ -198,6 +199,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 
 				self->cols[self->ncols].b = COLnew(0, bat_type, 0, TRANSIENT);
 				self->cols[self->ncols].name = GDKstrdup(val);
+				self->cols[self->ncols].def = NULL;
 				if (self->nvals > 0) {
 					// insert NULL values up until the current entry
 					for (ai = 0; ai < self->nvals; ai++) {
@@ -208,9 +210,9 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 							goto wrapup;
 						}
 					}
-					self->cols[i].b->tnil = 1;
-					self->cols[i].b->tnonil = 0;
-					BATsetcount(self->cols[i].b, self->nvals);
+					self->cols[self->ncols].b->tnil = 1;
+					self->cols[self->ncols].b->tnonil = 0;
+					BATsetcount(self->cols[self->ncols].b, self->nvals);
 				}
 				self->ncols++;
 			}
@@ -264,7 +266,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 							scalar_convert(hge);
 							break;
 #endif
-						case TYPE_str: {
+						default: {
 							str val = NULL;
 							gdk_return retval;
 							msg = pyobject_to_str(&dictEntry, 42, &val);
@@ -272,18 +274,13 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 								goto wrapup;
 							}
 							assert(val);
-							retval = BUNappend(self->cols[i].b, val, 0);
+							retval = convert_and_append(self->cols[i].b, val, 0);
 							free(val);
 							if (retval != GDK_SUCCEED) {
 								msg = GDKstrdup("BUNappend failed.");
 								goto wrapup;
 							}
 						} break;
-						default:
-							PyErr_Format(PyExc_TypeError, "Unsupported BAT Type %s",
-										 BatType_Format(self->cols[i].b->ttype));
-							error = true;
-							goto wrapup;
 					}
 				}
 			} else {
@@ -309,6 +306,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 				mask = (bool *)ret->mask_data;
 				data = (char *)ret->array_data;
 				assert((size_t)el_count == (size_t)ret->count);
+
 				switch (self->cols[i].b->ttype) {
 					case TYPE_bit:
 						NP_INSERT_BAT(self->cols[i].b, bit, self->nvals);
@@ -339,7 +337,7 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 						NP_INSERT_BAT(self->cols[i].b, hge, self->nvals);
 						break;
 #endif
-					case TYPE_str: {
+					default: {
 						char *utf8_string = NULL;
 						if (ret->result_type != NPY_OBJECT) {
 							utf8_string = GDKzalloc(utf8string_minlength +
@@ -348,20 +346,19 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 										ret->memory_size] = '\0';
 						}
 						NP_INSERT_STRING_BAT(self->cols[i].b);
-						if (utf8_string)
-							GDKfree(utf8_string);
-					} break;
-					default:
-						PyErr_Format(PyExc_TypeError, "Unsupported BAT Type %s",
-									 BatType_Format(self->cols[i].b->ttype));
-						error = true;
-						goto wrapup;
+						GDKfree(utf8_string);
+					}
 				}
 				self->cols[i].b->tnonil = 1 - self->cols[i].b->tnil;
 			}
 		} else {
+			if (self->cols[i].def != NULL) {
+				msg = GDKstrdup("Inserting into columns with default values is not supported currently.");
+				goto wrapup;
+			}
 			for (ai = 0; ai < (size_t)el_count; ai++) {
-				if (BUNappend(self->cols[i].b, ATOMnil(self->cols[i].b->ttype),
+				if (BUNappend(self->cols[i].b,
+							  ATOMnil(self->cols[i].b->ttype),
 							  0) != GDK_SUCCEED) {
 					goto wrapup;
 				}

@@ -261,4 +261,10 @@ mal_export int TYPE_timestamp;
 mal_export int TYPE_tzone;
 mal_export int TYPE_rule;
 
+mal_export date MTIMEtodate(int day, int month, int year);
+mal_export void MTIMEfromdate(date n, int *d, int *m, int *y);
+
+mal_export daytime MTIMEtotime(int hour, int min, int sec, int msec);
+mal_export void MTIMEfromtime(daytime n, int *hour, int *min, int *sec, int *msec);
+
 #endif /* _MONETTIME_H_ */

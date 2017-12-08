@@ -555,6 +555,8 @@ INEThost(str *retval, const inet *val)
 
 	if (in_isnil(val)) {
 		*retval = GDKstrdup(str_nil);
+		if( *retval == NULL)
+			throw(MAL,"INEThost", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
 		ip = GDKmalloc(sizeof(char) * 16);
 		if( ip == NULL)
@@ -700,6 +702,8 @@ INETtext(str *retval, const inet *val)
 
 	if (in_isnil(val)) {
 		*retval = GDKstrdup(str_nil);
+		if( *retval == NULL)
+			throw(MAL,"INETtext", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
 		ip = GDKmalloc(sizeof(char) * 20);
 		if( ip == NULL)
@@ -723,6 +727,8 @@ INETabbrev(str *retval, const inet *val)
 
 	if (in_isnil(val)) {
 		*retval = GDKstrdup(str_nil);
+		if (*retval == NULL)
+			throw(MAL, "inet.abbrev", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
 		unsigned int msk;
 		unsigned char m[4];

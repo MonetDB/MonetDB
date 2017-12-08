@@ -5171,6 +5171,8 @@ insert into sys.functions values (1386, 'copyfrom', 'importTable', 'sql', 0, 5, 
 insert into sys.args values (11454, 1386, 'res_0', 'table', 0, 0, 0, 0);
 insert into sys.args values (11455, 1386, 'arg_1', 'varchar', 0, 0, 1, 1);
 insert into sys.args values (11456, 1386, 'arg_2', 'varchar', 0, 0, 1, 2);
+insert into sys.functions values (1387, 'sys_update_schemas', 'update_schemas', 'sql', 0, 2, false, false, false, 2000);
+insert into sys.functions values (1388, 'sys_update_tables', 'update_tables', 'sql', 0, 2, false, false, false, 2000);
 insert into sys.functions values (61, 'not_unique', 'not_unique', 'sql', 0, 3, false, false, false, 2000);
 insert into sys.args values (11457, 61, 'res', 'boolean', 1, 0, 0, 0);
 insert into sys.args values (11458, 61, 'arg', 'oid', 63, 0, 1, 1);
@@ -5351,6 +5353,37 @@ set schema "sys";
 
 Running database upgrade commands:
 set schema "sys";
+create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas();
+create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables();
+set schema "sys";
+
+Running database upgrade commands:
+set schema "sys";
+drop aggregate corr(tinyint, tinyint);
+drop aggregate corr(smallint, smallint);
+drop aggregate corr(integer, integer);
+drop aggregate corr(bigint, bigint);
+drop aggregate corr(real, real);
+drop aggregate corr(hugeint, hugeint);
+create aggregate corr(e1 TINYINT, e2 TINYINT) returns DOUBLE
+	external name "aggr"."corr";
+grant execute on aggregate sys.corr(tinyint, tinyint) to public;
+create aggregate corr(e1 SMALLINT, e2 SMALLINT) returns DOUBLE
+	external name "aggr"."corr";
+grant execute on aggregate sys.corr(smallint, smallint) to public;
+create aggregate corr(e1 INTEGER, e2 INTEGER) returns DOUBLE
+	external name "aggr"."corr";
+grant execute on aggregate sys.corr(integer, integer) to public;
+create aggregate corr(e1 BIGINT, e2 BIGINT) returns DOUBLE
+	external name "aggr"."corr";
+grant execute on aggregate sys.corr(bigint, bigint) to public;
+create aggregate corr(e1 REAL, e2 REAL) returns DOUBLE
+	external name "aggr"."corr";
+grant execute on aggregate sys.corr(real, real) to public;
+create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
+	external name "aggr"."corr";
+grant execute on aggregate sys.corr(hugeint, hugeint) to public;
+insert into sys.systemfunctions (select id from sys.functions where name = 'corr' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
 create procedure master()
 external name wlc.master;
 create procedure master(path string)

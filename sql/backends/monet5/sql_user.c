@@ -36,7 +36,7 @@ sql_find_auth_schema(mvc *m, str auth)
 
 	rid = table_funcs.column_find_row(m->session->tr, users_name, auth, NULL);
 
-	if (rid != oid_nil) {
+	if (!is_oid_nil(rid)) {
 		sql_column *users_schema = find_sql_column(users, "default_schema");
 		int *p = (int *) table_funcs.column_find_value(m->session->tr, users_schema, rid);
 
@@ -71,7 +71,7 @@ monet5_drop_user(ptr _mvc, str user)
 	users_name = find_sql_column(users, "name");
 
 	rid = table_funcs.column_find_row(m->session->tr, users_name, user, NULL);
-	if (rid != oid_nil)
+	if (!is_oid_nil(rid))
 		table_funcs.table_delete(m->session->tr, users, rid);
 	/* FIXME: We have to ignore this inconsistency here, because the
 	 * user was already removed from the system authorisation. Once
@@ -221,7 +221,7 @@ monet5_schema_has_user(ptr _mvc, sql_schema *s)
 	sqlid schema_id = s->base.id;
 
 	rid = table_funcs.column_find_row(m->session->tr, users_schema, &schema_id, NULL);
-	if (rid == oid_nil)
+	if (is_oid_nil(rid))
 		return FALSE;
 	return TRUE;
 }
@@ -312,7 +312,7 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 
 		/* FIXME: we don't really check against the backend here */
 		rid = table_funcs.column_find_row(m->session->tr, users_name, user, NULL);
-		if (rid == oid_nil)
+		if (is_oid_nil(rid))
 			return FALSE;
 
 		table_funcs.column_update_value(m->session->tr, users_schema, rid, &schema_id);
@@ -341,7 +341,7 @@ monet5_rename_user(ptr _mvc, str olduser, str newuser)
 	}
 
 	rid = table_funcs.column_find_row(m->session->tr, users_name, olduser, NULL);
-	if (rid == oid_nil) {
+	if (is_oid_nil(rid)) {
 		(void) sql_error(m, 02, "ALTER USER: local inconsistency, "
 				 "your database is damaged, user not found in SQL catalog");
 		return (FALSE);
@@ -349,7 +349,7 @@ monet5_rename_user(ptr _mvc, str olduser, str newuser)
 	table_funcs.column_update_value(m->session->tr, users_name, rid, newuser);
 
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, olduser, NULL);
-	if (rid == oid_nil) {
+	if (is_oid_nil(rid)) {
 		(void) sql_error(m, 02, "ALTER USER: local inconsistency, "
 				 "your database is damaged, auth not found in SQL catalog");
 		return (FALSE);
@@ -419,13 +419,15 @@ monet5_user_get_def_schema(mvc *m, int user)
 	auths = find_sql_table(sys, "auths");
 	auths_id = find_sql_column(auths, "id");
 	auths_name = find_sql_column(auths, "name");
-	if ((rid = table_funcs.column_find_row(m->session->tr, auths_id, &user, NULL)) != oid_nil)
+	rid = table_funcs.column_find_row(m->session->tr, auths_id, &user, NULL);
+	if (!is_oid_nil(rid))
 		username = table_funcs.column_find_value(m->session->tr, auths_name, rid);
 
 	user_info = find_sql_table(sys, "db_user_info");
 	users_name = find_sql_column(user_info, "name");
 	users_schema = find_sql_column(user_info, "default_schema");
-	if ((rid = table_funcs.column_find_row(m->session->tr, users_name, username, NULL)) != oid_nil)
+	rid = table_funcs.column_find_row(m->session->tr, users_name, username, NULL);
+	if (!is_oid_nil(rid))
 		p = table_funcs.column_find_value(m->session->tr, users_schema, rid);
 
 	_DELETE(username);
@@ -437,9 +439,11 @@ monet5_user_get_def_schema(mvc *m, int user)
 	schemas_name = find_sql_column(schemas, "name");
 	schemas_id = find_sql_column(schemas, "id");
 
-	if ((rid = table_funcs.column_find_row(m->session->tr, schemas_id, &schema_id, NULL)) != oid_nil)
+	rid = table_funcs.column_find_row(m->session->tr, schemas_id, &schema_id, NULL);
+	if (!is_oid_nil(rid))
 		schema = table_funcs.column_find_value(m->session->tr, schemas_name, rid);
-	stack_set_string(m, "current_schema", schema);
+	if(!stack_set_string(m, "current_schema", schema))
+		return NULL;
 	return schema;
 }
 
@@ -472,14 +476,18 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		return (NULL);	/* don't reveal that the user doesn't exist */
 	}
 
-	mvc_trans(m);
+	if(mvc_trans(m) < 0) {
+		GDKfree(username);
+		return NULL;
+	}
 
 	sys = find_sql_schema(m->session->tr, "sys");
 	user_info = find_sql_table(sys, "db_user_info");
 	users_name = find_sql_column(user_info, "name");
 	users_schema = find_sql_column(user_info, "default_schema");
 
-	if ((rid = table_funcs.column_find_row(m->session->tr, users_name, username, NULL)) != oid_nil)
+	rid = table_funcs.column_find_row(m->session->tr, users_name, username, NULL);
+	if (!is_oid_nil(rid))
 		p = table_funcs.column_find_value(m->session->tr, users_schema, rid);
 
 	assert(p);
@@ -492,12 +500,13 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	auths = find_sql_table(sys, "auths");
 	auths_name = find_sql_column(auths, "name");
 
-	if ((rid = table_funcs.column_find_row(m->session->tr, schemas_id, &schema_id, NULL)) != oid_nil)
+	rid = table_funcs.column_find_row(m->session->tr, schemas_id, &schema_id, NULL);
+	if (!is_oid_nil(rid))
 		schema = table_funcs.column_find_value(m->session->tr, schemas_name, rid);
 
 	/* only set schema if user is found */
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, username, NULL);
-	if (rid != oid_nil) {
+	if (!is_oid_nil(rid)) {
 		sql_column *auths_id = find_sql_column(auths, "id");
 		int id;
 		p = table_funcs.column_find_value(m->session->tr, auths_id, rid);
@@ -516,9 +525,11 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		return NULL;
 	}
 	/* reset the user and schema names */
-	stack_set_string(m, "current_schema", schema);
-	stack_set_string(m, "current_user", username);
-	stack_set_string(m, "current_role", username);
+	if(!stack_set_string(m, "current_schema", schema) ||
+		!stack_set_string(m, "current_user", username) ||
+		!stack_set_string(m, "current_role", username)) {
+		schema = NULL;
+	}
 	GDKfree(username);
 	mvc_rollback(m, 0, NULL);
 	return schema;

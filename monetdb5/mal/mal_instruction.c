@@ -48,6 +48,10 @@ newSymbol(str nme, int kind)
 	if (cur == NULL)
 		return NULL;
 	cur->name = putName(nme);
+	if(cur->name == NULL) {
+		GDKfree(cur);
+		return NULL;
+	}
 	cur->kind = kind;
 	cur->peer = NULL;
 	cur->def = newMalBlk(kind == FUNCTIONsymbol? STMT_INCREMENT : 2);
@@ -1238,7 +1242,8 @@ defConstant(MalBlkPtr mb, int type, ValPtr cst)
 		setVarCleanup(mb, k);
 	else
 		clrVarCleanup(mb, k);
-	VALcopy( &getVarConstant(mb, k),cst);
+	if(VALcopy( &getVarConstant(mb, k),cst) == NULL)
+		return -1;
 	if (ATOMextern(cst->vtype) && cst->val.pval)
 		VALclear(cst);
 	return k;

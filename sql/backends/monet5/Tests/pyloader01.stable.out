@@ -53,10 +53,10 @@ Ready.
 % a,	d,	s # name
 % double,	int,	clob # type
 % 24,	1,	5 # length
+[ 42,	1,	NULL	]
 [ 46,	4,	"hello"	]
 [ 45,	3,	NULL	]
 [ 44,	2,	NULL	]
-[ 42,	1,	NULL	]
 #DROP TABLE mytable;
 #DROP ALL LOADER myfunc;
 #CREATE LOADER myfunc() LANGUAGE PYTHON {
