@@ -9,7 +9,7 @@
 #ifndef _DISCOVERYRUNNER_H
 #define _DISCOVERYRUNNER_H 1
 
-#include <msabaoth.h>
+#include "msabaoth.h"
 
 void broadcast(char *msg);
 void registerMessageTap(int fd);

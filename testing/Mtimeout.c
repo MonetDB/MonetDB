@@ -8,7 +8,7 @@
 
 #define _GNU_SOURCE		/* to get declaration of strsignal on Linux */
 
-#include <monetdb_config.h>
+#include "monetdb_config.h"
 #include <stdio.h>
 #include <sys/types.h>
 #ifdef HAVE_UNISTD_H

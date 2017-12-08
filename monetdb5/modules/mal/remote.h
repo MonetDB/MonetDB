@@ -10,13 +10,13 @@
 #define _REMOTE_DEF
 #ifdef HAVE_MAPI
 
-#include <mal.h>
-#include <mal_exception.h>
-#include <mal_interpreter.h>
-#include <mal_function.h> /* for printFunction */
-#include <mal_listing.h>
-#include <mal_instruction.h> /* for getmodule/func macros */
-#include <mapi.h>
+#include "mal.h"
+#include "mal_exception.h"
+#include "mal_interpreter.h"
+#include "mal_function.h" /* for printFunction */
+#include "mal_listing.h"
+#include "mal_instruction.h" /* for getmodule/func macros */
+#include "mapi.h"
 #include "mutils.h"
 
 /* #define _DEBUG_REMOTE */

@@ -9,7 +9,7 @@
 #ifndef SQL_RELATION_H
 #define SQL_RELATION_H
 
-#include <sql_catalog.h>
+#include "sql_catalog.h"
 
 #define BASETABLE 0
 #define RELATION 1

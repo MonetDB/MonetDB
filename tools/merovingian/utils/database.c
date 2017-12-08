@@ -9,7 +9,7 @@
 /* NOTE: for this file to work correctly, msab_init must be called. */
 
 #include "monetdb_config.h"
-#include <msabaoth.h>
+#include "msabaoth.h"
 #include <stdio.h> /* fprintf, rename */
 #include <unistd.h> /* stat, rmdir, unlink, ioctl */
 #include <dirent.h> /* readdir */

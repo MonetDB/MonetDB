@@ -9,13 +9,13 @@
 #ifndef _SQL2MAL_H
 #define _SQL2MAL_H
 
-#include <sql.h>
-#include <mal_backend.h>
-#include <sql_atom.h>
-#include <sql_statement.h>
-#include <sql_env.h>
-#include <sql_mvc.h>
-#include <mal_function.h>
+#include "sql.h"
+#include "mal_backend.h"
+#include "sql_atom.h"
+#include "sql_statement.h"
+#include "sql_env.h"
+#include "sql_mvc.h"
+#include "mal_function.h"
 
 sql5_export Symbol backend_dumpproc(backend *be, Client c, cq *q, sql_rel *r);
 sql5_export int backend_callinline(backend *be, Client c);

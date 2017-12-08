@@ -21,8 +21,8 @@
 # include <sys/uio.h>
 #endif
 
-#include <stream.h>
-#include <stream_socket.h>
+#include "stream.h"
+#include "stream_socket.h"
 
 #include "merovingian.h"
 #include "proxy.h"

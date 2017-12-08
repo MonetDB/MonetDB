@@ -7,7 +7,7 @@
  */
 
 #include "monetdb_config.h"
-#include <sql_stack.h>
+#include "sql_stack.h"
 
 sql_stack *
 sql_stack_new(sql_allocator *sa, int size)

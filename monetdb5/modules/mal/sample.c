@@ -30,8 +30,8 @@
  */
 
 #include "monetdb_config.h"
-#include <gdk.h>
-#include <mal_exception.h>
+#include "gdk.h"
+#include "mal_exception.h"
 #include "sample.h"
 
 /*

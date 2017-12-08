@@ -19,8 +19,8 @@
 #include <string.h> /* strerror */
 #include <errno.h>
 
-#include <stream.h>
-#include <stream_socket.h>
+#include "stream.h"
+#include "stream_socket.h"
 
 #include "merovingian.h"
 #include "connections.h"

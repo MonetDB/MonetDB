@@ -6,8 +6,8 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
-#include "stdio.h"
-#include "stdlib.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include <sys/param.h>
 #include <sys/times.h>
 #include <limits.h>

@@ -9,10 +9,10 @@
 #ifndef _SQL_QC_H_
 #define _SQL_QC_H_
 
-#include <sql_mem.h>
-#include <sql_list.h>
-#include <sql_symbol.h>
-#include <sql_backend.h>
+#include "sql_mem.h"
+#include "sql_list.h"
+#include "sql_symbol.h"
+#include "sql_backend.h"
 
 #define DEFAULT_CACHESIZE 100
 typedef struct cq {

@@ -40,17 +40,17 @@
 #include "mal_builder.h"
 #include "mal_debugger.h"
 
-#include <rel_select.h>
-#include <rel_optimizer.h>
-#include <rel_distribute.h>
-#include <rel_partition.h>
-#include <rel_prop.h>
-#include <rel_rel.h>
-#include <rel_exp.h>
-#include <rel_psm.h>
-#include <rel_bin.h>
-#include <rel_dump.h>
-#include <rel_remote.h>
+#include "rel_select.h"
+#include "rel_optimizer.h"
+#include "rel_distribute.h"
+#include "rel_partition.h"
+#include "rel_prop.h"
+#include "rel_rel.h"
+#include "rel_exp.h"
+#include "rel_psm.h"
+#include "rel_bin.h"
+#include "rel_dump.h"
+#include "rel_remote.h"
 
 int
 constantAtom(backend *sql, MalBlkPtr mb, atom *a)

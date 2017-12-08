@@ -3618,7 +3618,7 @@ subleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		    BATcount(r) * (Tsize(r) + (r->tvheap ? r->tvheap->size : 0) + 2 * sizeof(BUN)) > GDK_mem_maxsize / (GDKnr_threads ? GDKnr_threads : 1)))
 		return mergejoin(r1, r2, l, r, sl, sr, nil_matches,
 				 nil_on_miss, semi, only_misses, maxsize, t0, 0);
-	if (BATtdense(l) && BATordered(r) && (rcount * 1024) < lcount && ATOMtype(l->ttype) == TYPE_oid && !sl && !sr && !nil_matches && !only_misses)
+	if (BATtdense(l) && ATOMtype(l->ttype) == TYPE_oid && sl == NULL && sr == NULL && !semi && !nil_matches && !only_misses && (rcount * 1024) < lcount && BATordered(r))
 		return fetchjoin(r1, r2, l, r);
 	return hashjoin(r1, r2, l, r, sl, sr, nil_matches,
 			nil_on_miss, semi, only_misses, maxsize, t0, 0, "leftjoin");

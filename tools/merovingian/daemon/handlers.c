@@ -18,7 +18,7 @@
 #include <fcntl.h> /* open */
 #include <errno.h>
 
-#include <utils/properties.h>
+#include "utils/properties.h"
 
 #include "merovingian.h"
 #include "handlers.h"

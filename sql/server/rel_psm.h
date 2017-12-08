@@ -11,8 +11,8 @@
 
 #include <stdio.h>
 #include <stdarg.h>
-#include <sql_list.h>
-#include <sql_relation.h>
+#include "sql_list.h"
+#include "sql_relation.h"
 #include "sql_symbol.h"
 #include "sql_mvc.h"
 

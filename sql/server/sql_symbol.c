@@ -7,7 +7,7 @@
  */
 
 #include "monetdb_config.h"
-#include <sql_mem.h>
+#include "sql_mem.h"
 #include "sql_symbol.h"
 #include "sql_parser.h"
 
