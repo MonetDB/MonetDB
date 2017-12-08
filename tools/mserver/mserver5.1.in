@@ -100,6 +100,9 @@ Print list of options.
 .TP
 .B \-\-version
 Print version and compile configuration.
+.TP
+.B \-\-trace
+Print information about MAL instructions as they are executed.
 .SH GDK PARAMETERS
 GDK (Goblin Database Kernel) is the current columnar storage kernel
 engine of the MonetDB 5 database.
@@ -189,7 +192,6 @@ these debug flags as well:
   \-\-performance   (DEADBEEFMASK)
   \-\-optimizers    (OPTMASK)
   \-\-forcemito     (FORCEMITOMASK)
-  \-\-trace[=stethoscope argument]
 .EE
 
 Default:
