@@ -1589,7 +1589,7 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, int hashge)
 }
 
 int
-dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname, const char *id)
+dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, const char *fname, const char *id)
 {
 	MapiHdl hdl;
 	char *query, *q, *end_q;
@@ -1597,6 +1597,7 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 	int hashge = has_hugeint(mid);
 	char *to_free = NULL;
 	char wantSystem;
+	long prev_sid;
 
 	if (fname != NULL) {
 		/* dump a single function */
@@ -1629,7 +1630,7 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 	end_q = q + len;
 
 	q += snprintf(q, end_q - q,
-		"SELECT f.id, LENGTH(rem.remark) "
+		"SELECT s.id, s.name, f.id, LENGTH(rem.remark) AS remark_len "
 		"FROM sys.schemas s "
 		"JOIN sys.functions f ON s.id = f.schema_id "
 		"LEFT OUTER JOIN sys.comments rem ON f.id = rem.id "
@@ -1648,9 +1649,18 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 	free(query);
 	if (hdl == NULL || mapi_error(mid))
 		goto bailout;
+	prev_sid = 0;
 	while (!mnstr_errnr(toConsole) && mapi_fetch_row(hdl) != 0) {
-		const char *fid = mapi_fetch_field(hdl, 0);
-		const char *remark_len = mapi_fetch_field(hdl, 1);
+		long sid = strtol(mapi_fetch_field(hdl, 0), NULL, 10);
+		const char *schema = mapi_fetch_field(hdl, 1);
+		const char *fid = mapi_fetch_field(hdl, 2);
+		const char *remark_len = mapi_fetch_field(hdl, 3);
+		if (set_schema && sid != prev_sid) {
+			mnstr_printf(toConsole, "SET SCHEMA ");
+			quoted_print(toConsole, schema, 0);
+			mnstr_printf(toConsole, ";\n");
+			prev_sid = sid;
+		}
 		dump_function(mid, toConsole, fid, hashge);
 		if (remark_len)
 			dump_function_comment(mid, toConsole, fid);
@@ -2150,7 +2160,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, char useInserts)
 				     curschema);
 		}
 		if (routine)
-			dump_functions(mid, toConsole, schema, name, id);
+			dump_functions(mid, toConsole, 0, schema, name, id);
 		else
 			mnstr_printf(toConsole, "%s\n", query);
 		append_comment(comments, type, sname, name, NULL, NULL, remark);
