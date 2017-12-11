@@ -2504,10 +2504,15 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 #endif
 					} else {
 						/* get all object names in current schema */
-						char query[4096], *q = query, *endq = query + sizeof(query);
+						size_t len = 500 + strlen(line);
+						char *query = malloc(len);
+						char *q = query, *endq = query + len;
 						char *name_column = hasSchema ? "fullname" : "name";
 
-						/*
+						if (!query)
+							return 1;
+
+							/*
 						 * | LINE            | SCHEMA FILTER | NAME FILTER                   |
 						 * |-----------------+---------------+-------------------------------|
 						 * | ""              | yes           | -                             |
@@ -2531,6 +2536,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 						q += snprintf(q, endq - q, ";\n");
 
 						hdl = mapi_query(mid, query);
+						free(query);
 						CHECK_RESULT(mid, hdl, continue, buf, fp);
 						while (fetch_row(hdl) == 3) {
 							char *type = mapi_fetch_field(hdl, 0);
