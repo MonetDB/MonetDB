@@ -18,10 +18,10 @@
 
 #include "monetdb_config.h"
 #include "monet_options.h"
-#include <stream.h>
+#include "stream.h"
 #include <stdio.h>
-#include <stream_socket.h>
-#include <mapi.h>
+#include "stream_socket.h"
+#include "mapi.h"
 #include <string.h>
 #include <stdlib.h>
 #include <sys/stat.h>

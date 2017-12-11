@@ -9,7 +9,7 @@
 #ifndef ALGEBRA_H
 #define ALGEBRA_H
 
-#include <gdk.h>
+#include "gdk.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 

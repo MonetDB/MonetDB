@@ -15,11 +15,11 @@
 #include <sys/stat.h>
 #include <signal.h> /* kill */
 
-#include <mutils.h> /* MT_lockf */
-#include <mcrypt.h> /* mcrypt_BackendSum */
-#include <utils/utils.h>
-#include <utils/properties.h>
-#include <utils/control.h>
+#include "mutils.h" /* MT_lockf */
+#include "mcrypt.h" /* mcrypt_BackendSum */
+#include "utils/utils.h"
+#include "utils/properties.h"
+#include "utils/control.h"
 
 #include "merovingian.h"
 #include "argvcmds.h"
@@ -30,7 +30,7 @@ command_help(int argc, char *argv[])
 	int exitcode = 0;
 
 	if (argc < 2) {
-		printf("usage: monetdbd [ command [ command-options ] ] <dbfarm>\n");
+		printf("usage: monetdbd [ command [ command-options ] ] <dbfarm>Q\n");
 		printf("  where command is one of:\n");
 		printf("    create, start, stop, get, set, version or help\n");
 		printf("  use the help command to get help for a particular command\n");

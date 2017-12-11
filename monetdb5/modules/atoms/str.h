@@ -8,10 +8,10 @@
 
 #ifndef __string_H__
 #define __string_H__
-#include <gdk.h>
+#include "gdk.h"
 #include "mal.h"
 #include "mal_exception.h"
-#include "ctype.h"
+#include <ctype.h>
 
 mal_export str strPrelude(void *ret);
 mal_export str strEpilogue(void *ret);

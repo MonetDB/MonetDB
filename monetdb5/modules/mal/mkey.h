@@ -103,7 +103,7 @@
 
 /*#define _DEBUG_MKEY_  */
 
-#include <mal.h>
+#include "mal.h"
 #include "mal_interpreter.h"
 #include "mal_exception.h"
 

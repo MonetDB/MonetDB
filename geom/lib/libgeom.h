@@ -9,7 +9,7 @@
 #ifndef LIBGEOM_H
 #define LIBGEOM_H
 
-#include <gdk.h>
+#include "gdk.h"
 
 /*
  * @+ Geos
@@ -29,7 +29,7 @@
 #include <geos_c.h>
 
 #ifdef HAVE_PROJ
-#include "proj_api.h" //it is needed to transform from one srid to another
+#include <proj_api.h> //it is needed to transform from one srid to another
 #endif
 
 /* geos does not support 3d envelope */

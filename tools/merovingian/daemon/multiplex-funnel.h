@@ -11,8 +11,8 @@
 
 #include <stdio.h> /* FILE */
 
-#include <mapi.h>
-#include <stream.h>
+#include "mapi.h"
+#include "stream.h"
 
 #include "merovingian.h"
 

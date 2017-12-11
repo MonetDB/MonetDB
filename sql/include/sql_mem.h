@@ -9,7 +9,7 @@
 #ifndef _SQL_MEM_H_
 #define _SQL_MEM_H_
 
-#include <gdk.h>
+#include "gdk.h"
 
 #define SQL_OK 	1
 #define SQL_ERR 0

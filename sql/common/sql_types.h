@@ -9,12 +9,12 @@
 #ifndef SQL_TYPES_H
 #define SQL_TYPES_H
 
-#include <sql_mem.h>
-#include <sql_list.h>
-#include <sql_string.h>
-#include <sql_catalog.h>
-#include <sql_storage.h>
-#include <stream.h>
+#include "sql_mem.h"
+#include "sql_list.h"
+#include "sql_string.h"
+#include "sql_catalog.h"
+#include "sql_storage.h"
+#include "stream.h"
 
 #define EC_MAX 		17
 #define EC_ANY	 	0

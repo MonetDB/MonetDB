@@ -9,8 +9,8 @@
 #ifndef _BAT_H_
 #define _BAT_H_
 
-#include <mal.h>
-#include <gdk.h>
+#include "mal.h"
+#include "gdk.h"
 
 mal_export str BKCnewBAT(bat *res, const int *tt, const BUN *cap, int role);
 mal_export str BKCattach(bat *ret, const int *tt, const char * const *heapfile);

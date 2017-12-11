@@ -9,7 +9,7 @@
 #ifndef _REL_SEMANTIC_H_
 #define _REL_SEMANTIC_H_
 
-#include <sql_list.h>
+#include "sql_list.h"
 #include "sql_symbol.h"
 #include "sql_parser.h"
 #include "sql_relation.h"

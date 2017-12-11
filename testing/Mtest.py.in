@@ -45,15 +45,65 @@ start_time = time.time()
 # whether output goes to a tty
 isatty = os.isatty(sys.stdout.fileno())
 
-if os.name != 'nt' and isatty:
-    # color output a little
-    RED = '\033[1;31m'
-    GREEN = '\033[0;32m'
-    PURPLE = '\033[1;35m'       # actually magenta
-    BLACK = '\033[0;0m'
-else:
-    # no coloring if not to a tty
-    RED = GREEN = PURPLE = BLACK = ''
+# default is no color (these three functions may get redefined)
+def prred(str, write = sys.stdout.write):
+    write(str)
+def prgreen(str, write = sys.stdout.write):
+    write(str)
+def prpurple(str, write = sys.stdout.write):
+    write(str)
+if isatty:
+    if os.name != 'nt':
+        # color output a little
+        RED = '\033[1;31m'
+        GREEN = '\033[0;32m'
+        PURPLE = '\033[1;35m'       # actually magenta
+        BLACK = '\033[0;0m'
+        def prred(str, write = sys.stdout.write):
+            write(RED)
+            write(str)
+            write(BLACK)
+        def prgreen(str, write = sys.stdout.write):
+            write(GREEN)
+            write(str)
+            write(BLACK)
+        def prpurple(str, write = sys.stdout.write):
+            write(PURPLE)
+            write(str)
+            write(BLACK)
+    else:
+        try:
+            import ctypes
+        except ImportError:
+            pass
+        else:
+            STD_OUTPUT_HANDLE = -11
+            try:
+                handle = ctypes.windll.kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
+            except AttributeError:
+                pass
+            else:
+                def get_csbi_attributes(handle):
+                    # Based on IPython's winconsole.py, written by Alexander Belchenko
+                    csbi = ctypes.create_string_buffer(22)
+                    res = ctypes.windll.kernel32.GetConsoleScreenBufferInfo(handle, csbi)
+                    assert res
+                    (bufx, bufy, curx, cury, wattr,
+                    left, top, right, bottom, maxx, maxy) = struct.unpack("hhhhHhhhhhh", csbi.raw)
+                    return wattr
+                reset = get_csbi_attributes(handle)
+                def prred(str, write = sys.stdout.write, scta = ctypes.windll.kernel32.SetConsoleTextAttribute):
+                    scta(handle, 0x4)
+                    write(str)
+                    scta(handle, reset)
+                def prgreen(str, write = sys.stdout.write, scta = ctypes.windll.kernel32.SetConsoleTextAttribute):
+                    scta(handle, 0x2)
+                    write(str)
+                    scta(handle, reset)
+                def prpurple(str, write = sys.stdout.write, scta = ctypes.windll.kernel32.SetConsoleTextAttribute):
+                    scta(handle, 0x5)
+                    write(str)
+                    scta(handle, reset)
 
 if os.path.exists('/usr/bin/coredumpctl'):
     # probably Linux if /usr/bin/coredumpctl exists
@@ -2448,31 +2498,31 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
 
         if not verbose and not quiet:
             if tres == 'socket':
-                STDOUT.write("%sSOCKET%s" % (PURPLE, BLACK))
+                prpurple('SOCKET')
             elif tres == 'timeout':
-                STDOUT.write("%sTIMEOUT%s" % (PURPLE, BLACK))
+                prpurple('TIMEOUT')
             elif tres == 'recursion':
-                STDOUT.write("%sRECURSION%s" % (PURPLE, BLACK))
+                prpurple('RECURSION')
             elif tres == 'segfault':
-                STDOUT.write("%sCRASHED%s" % (PURPLE, BLACK))
+                prpurple('CRASHED')
             elif tres == 'abort':
-                STDOUT.write('%sABORTED%s' % (PURPLE, BLACK))
+                prpurple('ABORTED')
             elif tres == 'signal':
-                STDOUT.write('%sSIGNALED%s' % (PURPLE, BLACK))
+                prpurple('SIGNALED')
             else:
                 if FailedOut == F_OK:
-                    STDOUT.write('%sOK%s   ' % (GREEN, BLACK))
+                    prgreen('OK   ')
                 elif FailedOut == F_WARN:
-                    STDOUT.write('%sminor%s' % (GREEN, BLACK))
+                    prgreen('minor')
                 else:
-                    STDOUT.write('%sMAJOR%s' % (RED, BLACK))
+                    prred('MAJOR')
                 STDOUT.write(' ')
                 if FailedErr == F_OK:
-                    STDOUT.write('%sOK%s' % (GREEN, BLACK))
+                    prgreen('OK')
                 elif FailedErr == F_WARN:
-                    STDOUT.write('%sminor%s' % (GREEN, BLACK))
+                    prgreen('minor')
                 else:
-                    STDOUT.write('%sMAJOR%s' % (RED, BLACK))
+                    prred('MAJOR')
             STDOUT.write('\n')
 
     return TX,FailedOut,FailedErr,elem,reason,links

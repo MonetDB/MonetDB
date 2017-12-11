@@ -12,12 +12,12 @@
 
 #include "monetdb_config.h"
 #include "sql_result.h"
-#include <str.h>
-#include <tablet.h>
-#include <mtime.h>
-#include <bat/res_table.h>
-#include <bat/bat_storage.h>
-#include <rel_exp.h>
+#include "str.h"
+#include "tablet.h"
+#include "mtime.h"
+#include "bat/res_table.h"
+#include "bat/bat_storage.h"
+#include "rel_exp.h"
 
 #ifndef HAVE_LLABS
 #define llabs(x)	((x) < 0 ? -(x) : (x))

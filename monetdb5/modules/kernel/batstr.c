@@ -17,8 +17,8 @@
  * are provided that they are aligned.
  */
 #include "monetdb_config.h"
-#include <gdk.h>
-#include "ctype.h"
+#include "gdk.h"
+#include <ctype.h>
 #include <string.h>
 #include "mal_exception.h"
 #include "str.h"

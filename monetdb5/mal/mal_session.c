@@ -19,7 +19,7 @@
 #include "mal_builder.h"
 #include "mal_sabaoth.h"
 #include "mal_private.h"
-#include <gdk.h>	/* for opendir and friends */
+#include "gdk.h"	/* for opendir and friends */
 
 #ifdef HAVE_EMBEDDED
 // FIXME:

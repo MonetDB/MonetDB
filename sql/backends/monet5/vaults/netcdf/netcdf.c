@@ -6,8 +6,8 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
-#include <monetdb_config.h>
-#include "netcdf.h"
+#include "monetdb_config.h"
+#include <netcdf.h>
 #include "sql_mvc.h"
 #include "sql.h"
 #include "sql_execute.h"

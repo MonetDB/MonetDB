@@ -9,9 +9,9 @@
 #ifndef SQL_CATALOG_H
 #define SQL_CATALOG_H
 
-#include <sql_mem.h>
-#include <sql_list.h>
-#include <stream.h>
+#include "sql_mem.h"
+#include "sql_list.h"
+#include "stream.h"
 
 #define tr_none		0
 #define tr_readonly	1

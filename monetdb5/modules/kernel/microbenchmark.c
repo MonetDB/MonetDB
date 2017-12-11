@@ -16,9 +16,9 @@
  * @f microbenchmark
  */
 #include "monetdb_config.h"
-#include <mal.h>
+#include "mal.h"
 #include <math.h>
-#include <mal_exception.h>
+#include "mal_exception.h"
 #include "microbenchmark.h"
 
 #ifdef STATIC_CODE_ANALYSIS

@@ -11,7 +11,7 @@
 
 #include "sql_mem.h"
 #include "sql_types.h"
-#include <gdk.h>
+#include "gdk.h"
 
 #ifdef HAVE_HGE
 extern hge decimal_from_str(char *dec, char **end);

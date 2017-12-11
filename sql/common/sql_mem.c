@@ -7,7 +7,7 @@
  */
 
 #include "monetdb_config.h"
-#include <sql_mem.h>
+#include "sql_mem.h"
 
 sql_ref *
 sql_ref_init(sql_ref *r)

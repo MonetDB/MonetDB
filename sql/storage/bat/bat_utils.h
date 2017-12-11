@@ -10,7 +10,7 @@
 #define BAT_UTILS_H
 
 #include "sql_storage.h"
-#include <gdk_logger.h>
+#include "gdk_logger.h"
 
 /* when returning a log_bid, errors are reported using BID_NIL */
 #define BID_NIL 0
