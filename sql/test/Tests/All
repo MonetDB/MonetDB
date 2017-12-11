@@ -102,7 +102,7 @@ ifexists
 ifexists-views
 subqueries
 comment-on
-comment-on-routine
+comment-dump
 
 #HAVE_GEOM?trace
 
