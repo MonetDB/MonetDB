@@ -9,7 +9,7 @@ INCLUDES = ../mapilib ../../common/options ../../common/stream ../../common/util
 
 lib_mcutil = {
 	NOINST
-	SOURCES = dump.c dumpcomment.c dumpcomment.h dotmonetdb.c dotmonetdb.h eventparser.c eventparser.h
+	SOURCES = dump.c dotmonetdb.c dotmonetdb.h eventparser.c eventparser.h
 }
 
 bin_mclient = {

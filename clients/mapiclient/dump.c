@@ -15,7 +15,6 @@
 #include <string.h>
 #include <ctype.h>
 #include "msqldump.h"
-#include "dumpcomment.h"
 
 static void
 quoted_print(stream *f, const char *s, char singleq)
@@ -48,6 +47,131 @@ quoted_print(stream *f, const char *s, char singleq)
 		s++;
 	}
 	mnstr_write(f, singleq ? "'" : "\"", 1, 1);
+}
+
+/*Used to buffer comment values while we're in the process of
+ * dumping something else.  For example, while we're dumping the
+ * columns of a table, we buffer any column comments we find so we
+ * can emit them after the closing ')' of the CREATE TABLE statement.
+ */
+typedef struct comment_buffer {
+        buffer *buf;
+        stream *append;
+} comment_buffer;
+static comment_buffer *comment_buffer_create(void);
+stream *comment_appender(comment_buffer *comments);
+static int append_comment(
+        comment_buffer *comments,
+        const char *obj_type,
+        const char *schema_name,
+        const char *outer_name,
+        const char *inner_name,
+        void *parameter_types,
+        const char *remark
+);
+static int write_comment_buffer(stream *out, comment_buffer *comments);
+static void comment_buffer_destroy(comment_buffer *comments);
+
+comment_buffer*
+comment_buffer_create(void)
+{
+        buffer *buf;
+        stream *s;
+        comment_buffer *comments;
+
+        buf = buffer_create(4000);
+        if (!buf)
+        return NULL;
+
+        s = buffer_wastream(buf, "comments_buffer");
+        if (s == NULL) {
+                buffer_destroy(buf);
+                return NULL;
+        }
+
+        comments = malloc(sizeof(*comments));
+        if (comments == NULL) {
+                mnstr_destroy(s);
+                buffer_destroy(buf);
+                return NULL;
+        }
+
+        comments->buf = buf;
+        comments->append = s;
+
+        return comments;
+}
+
+stream *
+comment_appender(comment_buffer *comments)
+{
+        return comments->append;
+}
+
+int
+append_comment(
+        comment_buffer *comments,
+        const char *obj_type,
+        const char *schema_name,
+        const char *outer_name,
+        const char *inner_name,
+        void *parameter_types,
+        const char *remark
+) {
+        char *sep = "";
+
+        if (!remark)
+                return 0;
+
+        mnstr_printf(comments->append, "COMMENT ON %s ", obj_type);
+        if (schema_name) {
+                mnstr_printf(comments->append, "%s", sep);
+                quoted_print(comments->append, schema_name, 0);
+                sep = ".";
+        }
+        if (outer_name) {
+                mnstr_printf(comments->append, "%s", sep);
+                quoted_print(comments->append, outer_name, 0);
+                sep = ".";
+        }
+        if (inner_name) {
+                mnstr_printf(comments->append, "%s", sep);
+                quoted_print(comments->append, inner_name, 0);
+                sep = ".";
+        }
+        (void) parameter_types;
+
+        mnstr_printf(comments->append, " IS ");
+        quoted_print(comments->append, remark, 1);
+        mnstr_printf(comments->append, ";\n");
+
+        return 0;
+}
+
+int
+write_comment_buffer(stream *out, comment_buffer *comments)
+{
+        assert((comments->buf == NULL) == (comments->append == NULL));
+        if (comments->buf == NULL)
+                return 0;
+
+        if (out) {
+                char *text = buffer_get_buf(comments->buf);
+                if (text) {
+                        mnstr_printf(out, "%s", text);
+                        free(text);
+                }
+        }
+
+        return 0;
+}
+
+void
+comment_buffer_destroy(comment_buffer *comments)
+{
+        mnstr_destroy(comments->append);
+        buffer_destroy(comments->buf);
+        free(comments);
 }
 
 static char *actions[] = {
