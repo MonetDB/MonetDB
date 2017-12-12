@@ -542,6 +542,53 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 			free(nquery);
 			nquery = q;
 			q += n;
+		} else if (strncasecmp(p, "escape ", 7) == 0) {
+			/* note that in ODBC the syntax is
+			 * {escape '\'}
+			 * whereas MonetDB expects
+			 * ESCAPE '\\'
+			 */
+			char esc;
+			p += 7;
+			while (*p == ' ')
+				p++;
+			if (*p++ != '\'')
+				continue;
+			if (*p == '\'' && p[1] == '\'' && p[2] == '\'') {
+				esc = '\'';
+				p += 3;
+			} else if (*p != '\'' && p[1] == '\'') {
+				esc = *p;
+				if (esc & 0200)
+					continue;
+				p += 2;
+			} else
+				continue;
+			while (*p == ' ')
+				p++;
+			if (*p++ != '}')
+				continue;
+			n = (int) (q - nquery);
+			pr = (int) (p - q);
+			q = malloc(length - pr + 13 + 1);
+			if (q == NULL) {
+				free(nquery);
+				return NULL;
+			}
+			switch (esc) {
+			case '\'':
+				length = (size_t) sprintf(q, "%.*s ESCAPE '''' %s", n, nquery, p);
+				break;
+			case '\\':
+				length = (size_t) sprintf(q, "%.*s ESCAPE '\\\\' %s", n, nquery, p);
+				break;
+			default:
+				length = (size_t) sprintf(q, "%.*s ESCAPE '%c' %s", n, nquery, esc, p);
+				break;
+			}
+			free(nquery);
+			nquery = q;
+			q += n;
 		} else if (strncasecmp(p, "call ", 5) == 0) {
 			const char *proc, *procend;
 
