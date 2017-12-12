@@ -614,7 +614,6 @@ DESCload(int i)
 		return NULL;
 	}
 	b->ttype = tt;
-	b->thash = NULL;
 
 	/* reconstruct mode from BBP status (BATmode doesn't flush
 	 * descriptor, so loaded mode may be stale) */
