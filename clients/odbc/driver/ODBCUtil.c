@@ -456,7 +456,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(nquery);
 				return NULL;
 			}
-			sprintf(q, "%.*s%s%s", n, nquery, buf, p);
+			length = (size_t) sprintf(q, "%.*s%s%s", n, nquery, buf, p);
 			free(nquery);
 			nquery = q;
 			q += n;
@@ -496,7 +496,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(nquery);
 				return NULL;
 			}
-			sprintf(q, "%.*s%s%s", n, nquery, buf, p);
+			length = (size_t) sprintf(q, "%.*s%s%s", n, nquery, buf, p);
 			free(nquery);
 			nquery = q;
 			q += n;
@@ -516,7 +516,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(nquery);
 				return NULL;
 			}
-			sprintf(q, "%.*s%s%s", n, nquery, buf, p);
+			length = (size_t) sprintf(q, "%.*s%s%s", n, nquery, buf, p);
 			free(nquery);
 			nquery = q;
 			q += n;
@@ -538,7 +538,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(nquery);
 				return NULL;
 			}
-			sprintf(q, "%.*s%.*s%s", n, nquery, (int) intvl, intv, p);
+			length = (size_t) sprintf(q, "%.*s%.*s%s", n, nquery, (int) intvl, intv, p);
 			free(nquery);
 			nquery = q;
 			q += n;
@@ -585,7 +585,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(nquery);
 				return NULL;
 			}
-			sprintf(q, "%.*scall %.*s%s", n, nquery, (int) (procend - proc), proc, p);
+			length = (size_t) sprintf(q, "%.*scall %.*s%s", n, nquery, (int) (procend - proc), proc, p);
 			free(nquery);
 			nquery = q;
 			q += n;
@@ -695,7 +695,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 							free(nquery);
 							return NULL;
 						}
-						sprintf(q, "%.*s'%s'%s", n, nquery, dbc->Connected && dbc->uid ? dbc->uid : "", p);
+						length = (size_t) sprintf(q, "%.*s'%s'%s", n, nquery, dbc->Connected && dbc->uid ? dbc->uid : "", p);
 						free(nquery);
 						nquery = q;
 						q += n;
@@ -705,7 +705,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 							free(nquery);
 							return NULL;
 						}
-						sprintf(q, "%.*s'%s'%s", n, nquery, dbc->Connected && dbc->dbname ? dbc->dbname : "", p);
+						length = (size_t) sprintf(q, "%.*s'%s'%s", n, nquery, dbc->Connected && dbc->dbname ? dbc->dbname : "", p);
 						free(nquery);
 						nquery = q;
 						q += n;
@@ -719,7 +719,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 									free(nquery);
 									return NULL;
 								}
-								sprintf(q, "%.*scast(%.*s as %s)%s", n, nquery, (int) args[0].arglen, args[0].argstart, c->server, p);
+								length = (size_t) sprintf(q, "%.*scast(%.*s as %s)%s", n, nquery, (int) args[0].arglen, args[0].argstart, c->server, p);
 								free(nquery);
 								nquery = q;
 								break;
