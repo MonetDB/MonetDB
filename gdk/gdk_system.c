@@ -552,15 +552,23 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 	(void) sigfillset(&new_mask);
 	MT_thread_sigmask(&new_mask, &orig_mask);
 #endif
-	pthread_attr_init(&attr);
-	pthread_attr_setstacksize(&attr, THREAD_STACK_SIZE);
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+	if(pthread_attr_init(&attr))
+		return -1;
+	if(pthread_attr_setstacksize(&attr, THREAD_STACK_SIZE)) {
+		pthread_attr_destroy(&attr);
+		return -1;
+	}
+	if(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE)) {
+		pthread_attr_destroy(&attr);
+		return -1;
+	}
 	if (d == MT_THR_DETACHED) {
 		p = malloc(sizeof(struct posthread));
 		if (p == NULL) {
 #ifdef HAVE_PTHREAD_SIGMASK
 			MT_thread_sigmask(&orig_mask, NULL);
 #endif
+			pthread_attr_destroy(&attr);
 			return -1;
 		}
 		p->func = f;
@@ -698,7 +706,7 @@ pthread_sema_down(pthread_sema_t *s)
 #if !defined(WIN32) && defined(PROFILE) && defined(HAVE_PTHREAD_H)
 #undef pthread_create
 /* for profiling purposes (btw configure with --enable-profile *and*
- * --disable-shared --enable-static) without setting the ITIMER_PROF
+ * --disable-shared --enable-static) without setting the
  * per thread, all profiling info for everything except the main
  * thread is lost. */
 #include <stdlib.h>
@@ -746,9 +754,14 @@ gprof_pthread_create(pthread_t * __restrict thread, __const pthread_attr_t * __r
 	/* Initialize the wrapper structure */
 	wrapper_data.start_routine = start_routine;
 	wrapper_data.arg = arg;
-	getitimer(ITIMER_PROF, &wrapper_data.itimer);
-	pthread_cond_init(&wrapper_data.wait, NULL);
-	pthread_mutex_init(&wrapper_data.lock, NULL);
+	if((i_return = getitimer(ITIMER_PROF, &wrapper_data.itimer)))
+		return i_return;
+	if((i_return = pthread_cond_init(&wrapper_data.wait, NULL)))
+		return i_return;
+	if((i_return = pthread_mutex_init(&wrapper_data.lock, NULL))) {
+		pthread_cond_destroy(&wrapper_data.wait);
+		return i_return;
+	}
 	pthread_mutex_lock(&wrapper_data.lock);
 
 	/* The real pthread_create call */
@@ -803,9 +816,22 @@ smp_thread(void *data)
 }
 
 static int
+highest_power_of_two_bellow(int n)
+{
+	int res = 0;
+	for (int i = n; i >= 1; i--) {
+		if ((i & (i-1)) == 0) { //is power of 2
+			res = i;
+			break;
+		}
+	}
+	return res;
+}
+
+static int
 MT_check_nr_cores_(void)
 {
-	int i, curr = 1, cores = 1;
+	int i, j, curr = 1, cores = 1;
 	double lasttime = 0, thistime;
 	while (1) {
 		lng t0, t1;
@@ -815,10 +841,14 @@ MT_check_nr_cores_(void)
 			break;
 
 		t0 = GDKusec();
-		for (i = 0; i < curr; i++)
-			MT_create_thread(threads + i, smp_thread, NULL, MT_THR_JOINABLE);
-		for (i = 0; i < curr; i++)
-			MT_join_thread(threads[i]);
+		for (i = 0; i < curr; i++) {
+			if(MT_create_thread(threads + i, smp_thread, NULL, MT_THR_JOINABLE)) {
+				curr = highest_power_of_two_bellow(i);
+				break;
+			}
+		}
+		for (j = 0; j < i; j++)
+			MT_join_thread(threads[j]);
 		t1 = GDKusec();
 		free(threads);
 		thistime = (double) (t1 - t0) / 1000000;
