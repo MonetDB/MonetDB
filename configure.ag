@@ -357,21 +357,6 @@ AC_ARG_ENABLE([static-analysis],
 	[AS_HELP_STRING([--enable-static-analysis], [configure for static code analysis (use only if you know what you are doing)])],
 	AC_DEFINE([STATIC_CODE_ANALYSIS], 1, [compiling for static code analysis]))
 
-need_profile=no
-dft_profile=$need_profile
-AC_ARG_ENABLE([profile],
-	[AS_HELP_STRING([--enable-profile], [enable profiling (default=no)])],
-	[enable_profile=$enableval],
-	[enable_profile=$dft_profile])
-
-need_instrument=no
-dft_instrument=$need_instrument
-AC_ARG_ENABLE([instrument],
-	[AS_HELP_STRING([--enable-instrument],
-		[enable instrument (default=no)])],
-	[enable_instrument=$enableval],
-	[enable_instrument=$dft_instrument])
-
 # RIPEMD160 is patent free, academic and European, but unfortunately
 # can't use it by default, as that would exclude JDBC usage (Java
 # doesn't natively support RIPEMD160).
@@ -813,67 +798,35 @@ AC_SUBST([anttranslatepath])
 
 # check whether no (explictly chosen) mutual exclusive combinations
 # were made, compatability matrix:
-#                deb  ass  opt  pro  ins
-#  debug          \    C    X    C    C
-#  assert         C    \    C    C    C
-#  optimize       X    C    \    X    X
-#  profile        C    C    X    \    C
-#  instrument     C    C    X    C    \
+#                deb  ass  opt
+#  debug          \    C    X
+#  assert         C    \    C
+#  optimize       X    C    \
 
 # find conflicts
-AS_CASE([x$enable_debug.$enable_optimize.$enable_profile.$enable_instrument],
-	[xyes.yes.*.*],
+AS_CASE([x$enable_debug.$enable_optimize],
+	[xyes.yes],
 		[AC_MSG_ERROR([combining --enable-optimize and --enable-debug is not possible])],
-	[x*.yes.yes.*],
-		[AC_MSG_ERROR([combining --enable-optimize and --enable-profile is not possible])],
-	[x*.yes.*.yes],
-		[AC_MSG_ERROR([combining --enable-optimize and --enable-instrument is not possible])],
 	# handle defaults after user requests
-	[xyes.*.*.*], [
+	[xyes.*], [
 		enable_debug=yes
 		AS_VAR_IF([enable_optimize], [no], [],
 			[disable_optimize="(as debug is enabled)"])
 		enable_optimize=no
-		enable_profile=`echo $enable_profile | sed 's:^def_::'`
-		enable_instrument=`echo $enable_instrument | sed 's:^def_::'`
 		],
-	[x*.*.yes.*], [
-		enable_debug=`echo $enable_debug | sed 's:^def_::'`
-		AS_VAR_IF([enable_optimize], [no], [],
-			[disable_optimize="(as profile is enabled)"])
-		enable_optimize=no
-		enable_profile=yes
-		enable_instrument=`echo $enable_instrument | sed 's:^def_::'`
-		],
-	[x*.*.*.yes], [
-		enable_debug=`echo $enable_debug | sed 's:^def_::'`
-		AS_VAR_IF([enable_optimize], [no], [],
-			[disable_optimize="(as instrument is enabled)"])
-		enable_optimize=no
-		enable_profile=`echo $enable_profile | sed 's:^def_::'`
-		enable_instrument=yes
-		],
-	[x*.*no.*.*], [
+	[x*.*no], [
 		enable_debug=`echo $enable_debug | sed 's:^def_::'`
 		enable_optimize=no
-		enable_profile=`echo $enable_profile | sed 's:^def_::'`
-		enable_instrument=`echo $enable_instrument | sed 's:^def_::'`
 		],
-	[x*.*yes.*.*], [
+	[x*.*yes], [
 		# enable-optimize overrules other defaults
 		enable_optimize=yes
 		AS_VAR_IF([enable_debug], [no], [],
 			[disable_debug="(as optimize is enabled)"])
 		enable_debug=no
-		AS_VAR_IF([enable_profile], [no], [],
-			[disable_profile="(as optimize is enabled)"])
-		enable_profile=no
-		AS_VAR_IF([enable_instrument], [no], [],
-			[disable_instrument="(as optimize is enabled)"])
-		enable_instrument=no
 		],
 	[x*],
-		[AC_MSG_WARN([unhandled configuration $enable_debug.$enable_optimize.$enable_profile.$enable_instrument, please file a bug on bugs.monetdb.org])])
+		[AC_MSG_WARN([unhandled configuration $enable_debug.$enable_optimize, please file a bug on bugs.monetdb.org])])
 # make defaults real for flags which don't conflict with anything
 enable_assert=`echo $enable_assert | sed 's:^def_::'`
 
@@ -1066,27 +1019,6 @@ AS_VAR_IF([enable_optimize], [yes], [
 	# "normal" build, that is then caught by '-Wp,-D_FORTIFY_SOURCE=2' during `make rpm`.
 	MCHECK_ADD_FLAG([-D_FORTIFY_SOURCE=2])],
 	[AC_MSG_RESULT([no])])
-
-AC_MSG_CHECKING([for --enable-profile])
-AS_VAR_IF([enable_profile], [yes], [
-	AC_DEFINE([PROFILE], 1, [Compiler flag])
-	need_profile=yes
-	AS_VAR_IF([GCC], [yes], [
-		CFLAGS="$CFLAGS -pg"
-		AC_MSG_RESULT([yes: -pg])],
-		[AC_MSG_RESULT([no])])],
-	[AC_MSG_RESULT([no])])
-AM_CONDITIONAL([PROFILING], [test "x$need_profile" = xyes])
-
-AC_MSG_CHECKING([for --enable-instrument])
-AS_VAR_IF([enable_instrument], [yes], [
-	AC_DEFINE([PROFILE], 1, [Compiler flag])
-	need_instrument=yes
-	AS_VAR_IF([GCC], [yes], [
-		CFLAGS="$CFLAGS -finstrument-functions -g"
-		AC_MSG_RESULT([yes: -finstrument-functions -g])], [
-		AC_MSG_RESULT([no])])],
-		[AC_MSG_RESULT([no])])
 
 AC_PATH_PROG([BASH], [bash], [/usr/bin/bash], [$PATH])
 AC_CHECK_PROG([RM], [rm], [rm -f])
@@ -3171,8 +3103,6 @@ for comp in \
 	'optimize  ' \
 	'developer ' \
 	'sanitizer ' \
-	'instrument' \
-	'profile   ' \
 ; do
 	eval "dft=\$dft_$comp"
 	eval "enable=\$enable_$comp"
