@@ -30,4 +30,6 @@ HAVE_GEOM?sqlsmith.Bug-6459
 HAVE_NETCDF?sqlsmith-exist-lateral
 HAVE_NETCDF?sqlsmith-apply-outer-join-or
 HAVE_NETCDF?sqlsmith.Bug-6472
+sqlsmith.Bug-6480
 mergedb_drop
+
