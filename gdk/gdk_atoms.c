@@ -1150,19 +1150,15 @@ strHash(const char *s)
 void
 strCleanHash(Heap *h, int rebuild)
 {
-	char oldhash[GDK_STRHASHSIZE];
+	stridx_t newhash[GDK_STRHASHTABLE];
 	size_t pad, pos;
 	const size_t extralen = h->hashash ? EXTRALEN : 0;
-	stridx_t *bucket;
 	BUN off, strhash;
 	const char *s;
 
 	(void) rebuild;
 	if (!h->cleanhash)
 		return;
-	/* copy old hash table so we can check whether we changed it */
-	memcpy(oldhash, h->base, sizeof(oldhash));
-	h->cleanhash = 0;
 	/* rebuild hash table for double elimination
 	 *
 	 * If appending strings to the BAT was aborted, if the heap
@@ -1173,7 +1169,7 @@ strCleanHash(Heap *h, int rebuild)
 	 * Note that we will only do this the first time the heap is
 	 * loaded, and only for heaps that existed when the server was
 	 * started. */
-	memset(h->base, 0, GDK_STRHASHSIZE);
+	memset(newhash, 0, sizeof(newhash));
 	pos = GDK_STRHASHSIZE;
 	while (pos < h->free && pos < GDK_ELIMLIMIT) {
 		pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
@@ -1186,8 +1182,7 @@ strCleanHash(Heap *h, int rebuild)
 		else
 			GDK_STRHASH(s, strhash);
 		off = strhash & GDK_STRHASHMASK;
-		bucket = ((stridx_t *) h->base) + off;
-		*bucket = (stridx_t) (pos - extralen - sizeof(stridx_t));
+		newhash[off] = (stridx_t) (pos - extralen - sizeof(stridx_t));
 		pos += GDK_STRLEN(s);
 	}
 #ifndef NDEBUG
@@ -1205,13 +1200,14 @@ strCleanHash(Heap *h, int rebuild)
 	}
 #endif
 	/* only set dirty flag if the hash table actually changed */
-	if (!h->dirty &&
-	    memcmp(oldhash, h->base, sizeof(oldhash)) != 0) {
-		if (h->storage == STORE_MMAP)
+	if (memcmp(newhash, h->base, sizeof(newhash)) != 0) {
+		memcpy(h->base, newhash, sizeof(newhash));
+		if (h->storage == STORE_MMAP) {
 			(void) MT_msync(h->base, GDK_STRHASHSIZE);
-		else
+		} else
 			h->dirty = 1;
 	}
+	h->cleanhash = 0;
 }
 
 /*
