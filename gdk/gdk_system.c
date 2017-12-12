@@ -435,7 +435,7 @@ find_posthread_locked(pthread_t tid)
 	struct posthread *p;
 
 	for (p = posthreads; p; p = p->next)
-		if (p->tid == tid)
+		if (pthread_equal(p->tid, tid))
 			return p;
 	return NULL;
 }
