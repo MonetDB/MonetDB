@@ -461,7 +461,7 @@ BATimprints(BAT *b)
 			((size_t *) imprints->imprints.base)[0] |= (size_t) 1 << 16;
 			if (write(fd, imprints->imprints.base, sizeof(size_t)) < 0)
 				perror("write imprints");
-			if (!(GDKdebug & FORCEMITOMASK)) {
+			if (!(GDKdebug & NOSYNCMASK)) {
 #if defined(NATIVE_WIN32)
 				_commit(fd);
 #elif defined(HAVE_FDATASYNC)

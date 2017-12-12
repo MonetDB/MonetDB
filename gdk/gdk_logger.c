@@ -1581,13 +1581,15 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			goto error;
 		}
 		if (fflush(fp) < 0 ||
+		    (!(GDKdebug & NOSYNCMASK)
 #if defined(_MSC_VER)
-		    _commit(_fileno(fp)) < 0 ||
+		     && _commit(_fileno(fp)) < 0
 #elif defined(HAVE_FDATASYNC)
-		    fdatasync(fileno(fp)) < 0 ||
+		     && fdatasync(fileno(fp)) < 0
 #elif defined(HAVE_FSYNC)
-		    fsync(fileno(fp)) < 0 ||
+		     && fsync(fileno(fp)) < 0
 #endif
+			    ) ||
 		    fclose(fp) < 0) {
 			remove(filename);
 			GDKerror("logger_load: closing log file %s failed",
@@ -2232,14 +2234,15 @@ logger_exit(logger *lg)
 		}
 
 		if (fflush(fp) < 0 ||
+		    (!(GDKdebug & NOSYNCMASK)
 #if defined(WIN32)
-		    _commit(_fileno(fp)) < 0
+		     && _commit(_fileno(fp)) < 0
 #elif defined(HAVE_FDATASYNC)
-		    fdatasync(fileno(fp)) < 0
+		     && fdatasync(fileno(fp)) < 0
 #elif defined(HAVE_FSYNC)
-		    fsync(fileno(fp)) < 0
+		     && fsync(fileno(fp)) < 0
 #endif
-			) {
+			    )) {
 			(void) fclose(fp);
 			fprintf(stderr, "!ERROR: logger_exit: flush of %s failed\n",
 				filename);
@@ -2775,7 +2778,7 @@ log_tend(logger *lg)
 	if (res != GDK_SUCCEED ||
 	    log_write_format(lg, &l) != GDK_SUCCEED ||
 	    mnstr_flush(lg->log) ||
-	    mnstr_fsync(lg->log) ||
+	    (!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->log)) ||
 	    pre_allocate(lg) != GDK_SUCCEED) {
 		fprintf(stderr, "!ERROR: log_tend: write failed\n");
 		return GDK_FAIL;
@@ -2816,7 +2819,7 @@ log_sequence_(logger *lg, int seq, lng val, int flush)
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    !mnstr_writeLng(lg->log, val) ||
 	    (flush && mnstr_flush(lg->log)) ||
-	    (flush && mnstr_fsync(lg->log)) ||
+	    (flush && !(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->log)) ||
 	    pre_allocate(lg) != GDK_SUCCEED) {
 		fprintf(stderr, "!ERROR: log_sequence_: write failed\n");
 		return GDK_FAIL;
@@ -2843,7 +2846,7 @@ log_sequence_nrs(logger *lg)
 	}
 	if (ok != GDK_SUCCEED ||
 	    mnstr_flush(lg->log) ||
-	    mnstr_fsync(lg->log)) {
+	    (!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->log))) {
 		fprintf(stderr, "!ERROR: log_sequence_nrs: write failed\n");
 		return GDK_FAIL;
 	}

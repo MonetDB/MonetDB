@@ -282,7 +282,7 @@ BAThashsync(void *arg)
 			((size_t *) hp->base)[0] |= 1 << 24;
 			if (write(fd, hp->base, SIZEOF_SIZE_T) >= 0) {
 				failed = ""; /* not failed */
-				if (!(GDKdebug & FORCEMITOMASK)) {
+				if (!(GDKdebug & NOSYNCMASK)) {
 #if defined(NATIVE_WIN32)
 					_commit(fd);
 #elif defined(HAVE_FDATASYNC)

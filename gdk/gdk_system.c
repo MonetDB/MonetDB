@@ -552,15 +552,23 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 	(void) sigfillset(&new_mask);
 	MT_thread_sigmask(&new_mask, &orig_mask);
 #endif
-	pthread_attr_init(&attr);
-	pthread_attr_setstacksize(&attr, THREAD_STACK_SIZE);
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+	if(pthread_attr_init(&attr))
+		return -1;
+	if(pthread_attr_setstacksize(&attr, THREAD_STACK_SIZE)) {
+		pthread_attr_destroy(&attr);
+		return -1;
+	}
+	if(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE)) {
+		pthread_attr_destroy(&attr);
+		return -1;
+	}
 	if (d == MT_THR_DETACHED) {
 		p = malloc(sizeof(struct posthread));
 		if (p == NULL) {
 #ifdef HAVE_PTHREAD_SIGMASK
 			MT_thread_sigmask(&orig_mask, NULL);
 #endif
+			pthread_attr_destroy(&attr);
 			return -1;
 		}
 		p->func = f;

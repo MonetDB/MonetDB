@@ -29,7 +29,7 @@ BATidxsync(void *arg)
 		    (fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) >= 0) {
 			((oid *) hp->base)[0] |= (oid) 1 << 24;
 			if (write(fd, hp->base, SIZEOF_SIZE_T) >= 0) {
-				if (!(GDKdebug & FORCEMITOMASK)) {
+				if (!(GDKdebug & NOSYNCMASK)) {
 #if defined(NATIVE_WIN32)
 					_commit(fd);
 #elif defined(HAVE_FDATASYNC)
