@@ -714,49 +714,6 @@ MT_getpid(void)
 #endif
 }
 
-#define SMP_TOLERANCE 0.40
-#define SMP_ROUNDS 1024*1024*128
-
-static void
-smp_thread(void *data)
-{
-	unsigned int s = 1, r;
-
-	(void) data;
-	for (r = 0; r < SMP_ROUNDS; r++)
-		s = s * r + r;
-	(void) s;
-}
-
-static int
-MT_check_nr_cores_(void)
-{
-	int i, curr = 1, cores = 1;
-	double lasttime = 0, thistime;
-	while (1) {
-		lng t0, t1;
-		MT_Id *threads = malloc(sizeof(MT_Id) * curr);
-
-		if (threads == NULL)
-			break;
-
-		t0 = GDKusec();
-		for (i = 0; i < curr; i++)
-			MT_create_thread(threads + i, smp_thread, NULL, MT_THR_JOINABLE);
-		for (i = 0; i < curr; i++)
-			MT_join_thread(threads[i]);
-		t1 = GDKusec();
-		free(threads);
-		thistime = (double) (t1 - t0) / 1000000;
-		if (lasttime > 0 && thistime / lasttime > 1 + SMP_TOLERANCE)
-			break;
-		lasttime = thistime;
-		cores = curr;
-		curr *= 2;	/* only check for powers of 2 */
-	}
-	return cores;
-}
-
 int
 MT_check_nr_cores(void)
 {
@@ -786,7 +743,7 @@ MT_check_nr_cores(void)
 	 * http://ndevilla.free.fr/threads/ */
 
 	if (ncpus <= 0)
-		ncpus = MT_check_nr_cores_();
+		ncpus = 1;
 #if SIZEOF_SIZE_T == SIZEOF_INT
 	/* On 32-bits systems with large amounts of cpus/cores, we quickly
 	 * run out of space due to the amount of threads in use.  Since it
