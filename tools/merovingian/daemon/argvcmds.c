@@ -30,7 +30,7 @@ command_help(int argc, char *argv[])
 	int exitcode = 0;
 
 	if (argc < 2) {
-		printf("usage: monetdbd [ command [ command-options ] ] <dbfarm>Q\n");
+		printf("usage: monetdbd [ command [ command-options ] ] <dbfarm>\n");
 		printf("  where command is one of:\n");
 		printf("    create, start, stop, get, set, version or help\n");
 		printf("  use the help command to get help for a particular command\n");
