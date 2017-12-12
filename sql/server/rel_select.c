@@ -2132,6 +2132,32 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 					if (l)
 						st = exp_subtype(l);
 				}
+				if (l && !r && !n->next) { /* possibly a (not) in function call */
+					/* reset error */
+					sql->session->status = 0;
+					sql->errstr[0] = 0;
+
+					z = left;
+					r = rel_value_exp(sql, &z, sval, f, ek); 
+					if (z == left && r) {
+						sql_subfunc *f = NULL;
+
+						l = rel_check_type(sql, exp_subtype(r), l, type_equal);
+						if (!l) 
+							return NULL;
+						f = sql_bind_func(sql->sa, sql->session->schema, "=", exp_subtype(l), exp_subtype(r), F_FUNC);
+						if (f)
+							l = exp_binop(sql->sa, l, r, f);
+						if (f && l && sc->token == SQL_NOT_IN) {
+							f = sql_bind_func(sql->sa, sql->session->schema, "not", exp_subtype(l), NULL, F_FUNC);
+							return exp_unop(sql->sa, l, f);
+						} else if (f && l && sc->token == SQL_IN) {
+							return l;
+						}
+
+					}	
+					r = NULL;
+				}
 				if (!l || !r || !(r=rel_check_type(sql, st, r, type_equal))) {
 					rel_destroy(right);
 					return NULL;
