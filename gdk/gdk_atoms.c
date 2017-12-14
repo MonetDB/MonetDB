@@ -1177,6 +1177,15 @@ strCleanHash(Heap *h, int rebuild)
 		newhash[off] = (stridx_t) (pos - extralen - sizeof(stridx_t));
 		pos += GDK_STRLEN(s);
 	}
+	/* only set dirty flag if the hash table actually changed */
+	if (memcmp(newhash, h->base, sizeof(newhash)) != 0) {
+		memcpy(h->base, newhash, sizeof(newhash));
+		if (h->storage == STORE_MMAP) {
+			if (!(GDKdebug & NOSYNCMASK))
+				(void) MT_msync(h->base, GDK_STRHASHSIZE);
+		} else
+			h->dirty = 1;
+	}
 #ifndef NDEBUG
 	if (GDK_ELIMDOUBLES(h)) {
 		pos = GDK_STRHASHSIZE;
@@ -1191,15 +1200,6 @@ strCleanHash(Heap *h, int rebuild)
 		}
 	}
 #endif
-	/* only set dirty flag if the hash table actually changed */
-	if (memcmp(newhash, h->base, sizeof(newhash)) != 0) {
-		memcpy(h->base, newhash, sizeof(newhash));
-		if (h->storage == STORE_MMAP) {
-			if (!(GDKdebug & NOSYNCMASK))
-				(void) MT_msync(h->base, GDK_STRHASHSIZE);
-		} else
-			h->dirty = 1;
-	}
 	h->cleanhash = 0;
 }
 
