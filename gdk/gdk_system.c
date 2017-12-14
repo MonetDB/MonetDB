@@ -816,24 +816,12 @@ smp_thread(void *data)
 }
 
 static int
-highest_power_of_two_below(int n)
-{
-	int i, res = 0;
-	for (i = n; i >= 1; i--) {
-		if ((i & (i-1)) == 0) { //is power of 2
-			res = i;
-			break;
-		}
-	}
-	return res;
-}
-
-static int
 MT_check_nr_cores_(void)
 {
-	int i, j, curr = 1, cores = 1;
+	int i, curr = 1, cores = 1, failed = 0;
 	double lasttime = 0, thistime;
-	while (1) {
+
+	while (!failed) {
 		lng t0, t1;
 		MT_Id *threads = malloc(sizeof(MT_Id) * curr);
 
@@ -841,14 +829,14 @@ MT_check_nr_cores_(void)
 			break;
 
 		t0 = GDKusec();
-		for (i = 0; i < curr; i++) {
-			if(MT_create_thread(threads + i, smp_thread, NULL, MT_THR_JOINABLE)) {
-				curr = highest_power_of_two_below(i);
+		for (i = 0; i < curr; i++)
+			if (MT_create_thread(threads + i, smp_thread, NULL, MT_THR_JOINABLE) < 0) {
+				curr = i;
+				failed = 1;
 				break;
 			}
-		}
-		for (j = 0; j < i; j++)
-			MT_join_thread(threads[j]);
+		for (i = 0; i < curr; i++)
+			MT_join_thread(threads[i]);
 		t1 = GDKusec();
 		free(threads);
 		thistime = (double) (t1 - t0) / 1000000;
@@ -858,7 +846,7 @@ MT_check_nr_cores_(void)
 		cores = curr;
 		curr *= 2;	/* only check for powers of 2 */
 	}
-	return cores;
+	return cores ? cores : 1;
 }
 
 int
