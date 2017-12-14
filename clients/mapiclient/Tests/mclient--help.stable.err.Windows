@@ -17,15 +17,16 @@ Options are:
  -p portnr   | --port=portnr      port to connect to
  -u user     | --user=user        user id
  -d database | --database=database  database to connect to (may be URI)
- -e          | --echo            echo the query
+ -e          | --echo             echo the query
  -E charset  | --encoding=charset specify encoding (character set) of the terminal
- -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml}
+ -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml,trash}
  -H          | --history          load/save cmdline history (default off)
- -i          | --interactive[=tm] interpret `\' commands on stdin, use time formatting {ms,s,m}
+ -i          | --interactive      interpret `\' commands on stdin
+ -t          | --timer=format     use time formatting {clock,minutes,seconds,milliseconds,microseconds,none}
  -l language | --language=lang    {sql,mal}
- -L logfile  | --log=logfile     save client/server interaction
- -s stmt     | --statement=stmt  run single statement
- -X          | --Xdebug          trace mapi network interaction
+ -L logfile  | --log=logfile      save client/server interaction
+ -s stmt     | --statement=stmt   run single statement
+ -X          | --Xdebug           trace mapi network interaction
  -z          | --timezone         do not tell server our timezone
  -v          | --version          show version information and exit
  -?          | --help             show this usage message
