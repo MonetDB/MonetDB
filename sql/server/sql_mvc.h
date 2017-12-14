@@ -12,7 +12,6 @@
 
 #include "sql_mem.h"
 #include "gdk.h"
-#include <stdarg.h>
 #include "sql_scan.h"
 #include "sql_list.h"
 #include "sql_types.h"

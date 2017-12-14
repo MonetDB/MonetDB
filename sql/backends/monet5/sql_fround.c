@@ -22,30 +22,6 @@
 #include "clients.h"
 #include "mal_instruction.h"
 
-#ifndef HAVE_ROUND
-static inline double
-round(double val)
-{
-	/* round to nearest integer, away from zero */
-	if (val < 0)
-		return -floor(-val + 0.5);
-	else
-		return floor(val + 0.5);
-}
-#endif
-
-#ifndef HAVE_TRUNC
-static inline double
-trunc(double val)
-{
-	/* round to integer, towards zero */
-	if (val < 0)
-		return ceil(val);
-	else
-		return floor(val);
-}
-#endif
-
 #define CONCAT_2(a, b)		a##b
 #define CONCAT_3(a, b, c)	a##b##c
 

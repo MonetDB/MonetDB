@@ -10,7 +10,6 @@
 #define _STREAMS_H_
 
 #include "mal.h"
-#include <stdio.h>
 #include "stream_socket.h"
 
 typedef ptr Stream;

@@ -47,6 +47,7 @@ dnl  (including their trailing newline).
 
 AC_PREREQ([2.63])
 AC_INIT([MonetDB], [11.28.0], [https://bugs.monetdb.org/], [MonetDB], [https://www.monetdb.org/])
+AC_COPYRIGHT([Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
 AC_CANONICAL_HOST
@@ -415,6 +416,9 @@ AC_SYS_LARGEFILE
 AC_PROG_CPP()
 # check for compiler (also set GCC (yes/no)).
 AC_PROG_CC()
+AC_PROG_CC_C99()
+AS_VAR_IF([ac_cv_prog_cc_c99], [no],
+	[AC_MSG_ERROR([C99 is required to compile MonetDB])])
 
 # What do we need to get the msg_control and msg_controllen fields on
 # struct msg (filedescriptor passing)?  In the future this could be a
@@ -543,9 +547,7 @@ AC_DEFUN([MCHECK_ADD_FLAG], [
 			AC_LANG_SOURCE([[
 				@%:@include <stdio.h>
 				@%:@include <stdlib.h>
-				@%:@ifdef HAVE_STRING_H
 				@%:@include <string.h>
-				@%:@endif
 
 				@%:@if -_LARGEFILE64_SOURCE - -1 == 1
 				@%:@include <stdio.h>
@@ -2460,25 +2462,19 @@ AS_VAR_IF([have_atomic_ops], [yes], [
 
 #    checks for header files
 AC_HEADER_STDBOOL
-AC_HEADER_STDC
-AC_HEADER_TIME
-AC_HEADER_DIRENT
 # NOTE: these header files are in alphabetical order to ease maintenance
 AC_CHECK_HEADERS([ \
+	dirent.h \
 	dlfcn.h \
 	execinfo.h \
 	fcntl.h \
-	fenv.h \
 	getopt.h \
 	iconv.h \
-	ieeefp.h \
 	io.h \
 	kvm.h \
 	langinfo.h \
 	libgen.h \
 	libintl.h \
-	limits.h \
-	locale.h \
 	mach/mach_init.h \
 	mach/task.h \
 	mach-o/dyld.h \
@@ -2486,9 +2482,6 @@ AC_CHECK_HEADERS([ \
 	netinet/in.h \
 	procfs.h \
 	pwd.h \
-	signal.h \
-	stdint.h \
-	string.h \
 	strings.h \
 	stropts.h \
 	sys/file.h \
@@ -2506,7 +2499,6 @@ AC_CHECK_HEADERS([ \
 	sys/utime.h \
 	sys/wait.h \
 	termios.h \
-	time.h \
 	unistd.h \
 	uuid/uuid.h \
 	winsock.h \
@@ -2608,10 +2600,8 @@ AC_C_CHAR_UNSIGNED
 
 #    checks for structures
 #    checks for compiler characteristics
-AC_C_CONST
 AC_C_INLINE
 AC_C_RESTRICT
-AC_C_VOLATILE
 AC_C_FLEXIBLE_ARRAY_MEMBER
 
 AC_MSG_CHECKING([if your compiler understands `__hidden'])
@@ -2652,7 +2642,6 @@ AC_CHECK_FUNCS([\
 	cbrt \
 	clock_gettime \
 	ctime_r \
-	fabsf \
 	fallocate \
 	fcntl \
 	fsync \
@@ -2663,12 +2652,10 @@ AC_CHECK_FUNCS([\
 	getopt_long \
 	gettimeofday \
 	getuid \
-	llabs \
 	localtime_r \
 	lockf \
 	madvise \
 	mremap \
-	nextafterf \
 	nl_langinfo \
 	_NSGetExecutablePath \
 	popen \
@@ -2676,25 +2663,17 @@ AC_CHECK_FUNCS([\
 	posix_fallocate \
 	posix_madvise \
 	putenv \
-	round \
 	setenv \
-	setlocale \
 	setsid \
 	shutdown \
 	sigaction \
 	strcasestr \
-	strftime \
 	strncasecmp \
 	strptime \
 	strsignal \
-	strtod \
-	strtof \
-	strtoll \
-	strtoull \
 	sysconf \
 	task_info \
 	times \
-	trunc \
 	uname \
 	])
 LIBS="$save_LIBS"
@@ -2934,102 +2913,37 @@ AH_BOTTOM([
 @%:@include <errno.h>
 @%:@include <stdarg.h>		/* va_alist.. */
 @%:@include <inttypes.h>
-@%:@ifndef HAVE_INTPTR_T
-typedef ssize_t intptr_t;
-@%:@endif
-@%:@ifndef HAVE_UINTPTR_T
-typedef size_t uintptr_t;
-@%:@endif
-@%:@ifdef HAVE_STDBOOL_H
 @%:@include <stdbool.h>
-@%:@endif
-@%:@ifndef __bool_true_false_are_defined
-@%:@define true 1
-@%:@define false 0
-@%:@define __bool_true_false_are_defined 1
-@%:@endif
-
 @%:@include <assert.h>
-
-@%:@define SLASH_2_DIR_SEP(s) {char *t; for(t=strchr(s, '/'    ); t; t=strchr(t+1, '/'    )) *t=DIR_SEP;}
-@%:@define DIR_SEP_2_SLASH(s) {char *t; for(t=strchr(s, DIR_SEP); t; t=strchr(t+1, DIR_SEP)) *t='/'    ;}
 
 typedef int64_t lng;
 typedef uint64_t ulng;
-@%:@ define SIZEOF_LNG 8
-@%:@ define LLFMT "%" PRId64
-@%:@ define ULLFMT "%" PRIu64
+@%:@define SIZEOF_LNG 8
+@%:@define LLFMT "%" PRId64
+@%:@define ULLFMT "%" PRIu64
 
-
-@%:@ifdef HAVE___INT128
+@%:@if defined(HAVE___INT128)
 typedef __int128 hge;
 typedef unsigned __int128 uhge;
-@%:@ define HAVE_HGE 1
-@%:@ define SIZEOF_HGE SIZEOF___INT128
-@%:@else
-@%:@ if defined(HAVE___INT128_T) && defined(HAVE___UINT128_T)
+@%:@define HAVE_HGE 1
+@%:@define SIZEOF_HGE SIZEOF___INT128
+@%:@elif defined(HAVE___INT128_T) && defined(HAVE___UINT128_T)
 typedef __int128_t hge;
 typedef __uint128_t uhge;
-@%:@  define HAVE_HGE 1
-@%:@  define SIZEOF_HGE SIZEOF___INT128_T
-@%:@ endif
-@%:@endif
-
-
-@%:@ifndef HAVE_PTRDIFF_T
-@%:@ if SIZEOF_SIZE_T == SIZEOF_INT
-typedef int ptrdiff_t;
-@%:@ else
-typedef lng ptrdiff_t;
-@%:@ endif
+@%:@define HAVE_HGE 1
+@%:@define SIZEOF_HGE SIZEOF___INT128_T
 @%:@endif
 
 /* define printf formats for printing size_t and ssize_t variables */
-@%:@if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901 && !defined(__svr4__) && !defined(WIN32) && !defined(__sgi)) || __GNUC__ > 3
-@%:@ define SZFMT "%zu"
-@%:@ define SSZFMT "%zd"
-@%:@elif SIZEOF_SIZE_T == SIZEOF_INT
-@%:@ define SZFMT "%u"
-@%:@ define SSZFMT "%d"
-@%:@elif SIZEOF_SIZE_T == SIZEOF_LONG
-@%:@ define SZFMT "%lu"
-@%:@ define SSZFMT "%ld"
-@%:@elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG || SIZEOF_SIZE_T == SIZEOF___INT64
-@%:@ define SZFMT ULLFMT
-@%:@ define SSZFMT LLFMT
-@%:@else
-@%:@ error no definition for SZFMT/SSZFMT
-@%:@endif
+@%:@define SZFMT "%zu"
+@%:@define SSZFMT "%zd"
 
 /* define printf formats for printing ptrdiff_t variables */
-@%:@if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901 && !defined(__svr4__) && !defined(WIN32) && !defined(__sgi) || defined(__hpux)
 @%:@define PDFMT "%td"
-@%:@elif SIZEOF_PTRDIFF_T == SIZEOF_INT
-@%:@define PDFMT "%d"
-@%:@elif SIZEOF_PTRDIFF_T == SIZEOF_LONG
-@%:@define PDFMT "%ld"
-@%:@elif SIZEOF_PTRDIFF_T == SIZEOF_LONG_LONG || SIZEOF_PTRDIFF_T == SIZEOF___INT64
-@%:@define PDFMT LLFMT
-@%:@else
-@%:@error no definition for PDFMT
-@%:@endif
 
 /* define printf format for printing pointer values */
-@%:@if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
 @%:@define PTRFMT		"%p"
 @%:@define PTRFMTCAST		/* no cast needed */
-@%:@elif defined(_MSC_VER)
-@%:@define PTRFMT		"%p"
-@%:@define PTRFMTCAST		/* no cast needed */
-@%:@elif SIZEOF_VOID_P == 4
-@%:@define PTRFMT		"%" PRIx32
-@%:@define PTRFMTCAST	(uint32_t)
-@%:@elif SIZEOF_VOID_P == 8
-@%:@define PTRFMT		"%" PRIx64
-@%:@define PTRFMTCAST	(uint64_t)
-@%:@else
-@%:@error no definition for PTRFMT
-@%:@endif
 
 /* defines to help the compiler check printf-style format arguments */
 @%:@if !defined(__GNUC__) || __GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 5)

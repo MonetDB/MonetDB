@@ -9,8 +9,6 @@
 #ifndef _MULTIPLEX_H
 #define _MULTIPLEX_H 1
 
-#include <stdio.h> /* FILE */
-
 #include "mapi.h"
 #include "stream.h"
 

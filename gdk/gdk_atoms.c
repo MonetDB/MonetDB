@@ -1005,7 +1005,6 @@ fltFromStr(const char *src, size_t *len, flt **dst)
 		p += 3;
 		n = (ssize_t) (p - src);
 	} else {
-#ifdef HAVE_STRTOF
 		/* on overflow, strtof returns HUGE_VALF and sets
 		 * errno to ERANGE; on underflow, it returns a value
 		 * whose magnitude is no greater than the smallest
@@ -1020,11 +1019,7 @@ fltFromStr(const char *src, size_t *len, flt **dst)
 			p = pe;
 		n = (ssize_t) (p - src);
 		if (n == 0 || (errno == ERANGE && (f < -1 || f > 1))
-#else /* no strtof, try sscanf */
-		if (sscanf(src, "%f%n", &f, &n) <= 0 || n <= 0
-#endif
-		    || !isfinite(f) /* no NaN or infinite */
-		    ) {
+		    || !isfinite(f) /* no NaN or infinite */) {
 			GDKerror("overflow or not a number\n");
 			return -1;
 		} else {
@@ -1047,13 +1042,8 @@ fltToStr(char **dst, size_t *len, const flt *src)
 	}
 	for (i = 4; i < 10; i++) {
 		snprintf(*dst, *len, "%.*g", i, *src);
-#ifdef HAVE_STRTOF
 		if (strtof(*dst, NULL) == *src)
 			break;
-#else
-		if ((float) strtod(*dst, NULL) == *src)
-			break;
-#endif
 	}
 	return (ssize_t) strlen(*dst);
 }

@@ -18,7 +18,6 @@
  */
 
 #include "monetdb_config.h"
-#include <stdio.h> /* fseek, rewind */
 #include <unistd.h>	/* unlink and friends */
 #include <sys/types.h>
 #ifdef HAVE_DIRENT_H
@@ -26,10 +25,8 @@
 #endif
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <errno.h>
 #include <time.h>
 #include <string.h> /* for getting error messages */
-#include <assert.h>
 #include <stddef.h>
 
 #include "msabaoth.h"

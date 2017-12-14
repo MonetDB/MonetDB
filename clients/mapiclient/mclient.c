@@ -22,13 +22,8 @@
 # endif
 #endif
 #include "mapi.h"
-#include <inttypes.h>		/* for PRId64 format macro */
 #include <unistd.h>
-#include <stdlib.h>
-#include <errno.h>
-#ifdef HAVE_STRING_H
 #include <string.h>
-#endif
 #ifdef HAVE_STRINGS_H
 #include <strings.h>		/* strcasecmp */
 #endif
@@ -43,9 +38,8 @@
 #include "mprompt.h"
 #include "dotmonetdb.h"
 
-#ifdef HAVE_LOCALE_H
 #include <locale.h>
-#endif
+
 #ifdef HAVE_ICONV
 #ifdef HAVE_ICONV_H
 #include <iconv.h>
@@ -153,23 +147,15 @@ static char *nullstring = default_nullstring;
  * variable length columns */
 #define MINVARCOLSIZE 10
 
-/* stolen piece */
+#include <time.h>
 #ifdef HAVE_FTIME
-#include <sys/timeb.h>
+#include <sys/timeb.h>		/* ftime */
 #endif
-
-#ifdef TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>		/* gettimeofday */
 #endif
 #ifdef HAVE_STROPTS_H
-#include <stropts.h>		/* ioctl */
+#include <stropts.h>		/* ioctl on Solaris */
 #endif
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
@@ -1254,20 +1240,11 @@ TESTrenderer(MapiHdl hdl)
 				float v;
 				if (strcmp(s, "-0") == 0) /* normalize -0 */
 					s = "0";
-#ifdef HAVE_STRTOF
 				v = strtof(s, NULL);
-#else
-				v = (float) strtod(s, NULL);
-#endif
 				for (j = 4; j < 6; j++) {
 					snprintf(buf, sizeof(buf), "%.*g", j, v);
-#ifdef HAVE_STRTOF
 					if (v == strtof(buf, NULL))
 						break;
-#else
-					if (v == (float) strtod(buf, NULL))
-						break;
-#endif
 				}
 				mnstr_printf(toConsole, "%s", buf);
 			} else
@@ -3077,9 +3054,7 @@ main(int argc, char **argv)
 	 * causes the output to be converted (we could set it to
 	 * ".OCP" if we knew for sure that we were running in a cmd
 	 * window) */
-#ifdef HAVE_SETLOCALE
 	setlocale(LC_CTYPE, "");
-#endif
 #endif
 	toConsole = stdout_stream = file_wastream(stdout, "stdout");
 	stderr_stream = file_wastream(stderr, "stderr");

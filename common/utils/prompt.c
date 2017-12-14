@@ -8,8 +8,6 @@
 
 #include "monetdb_config.h"
 #include <unistd.h>
-#include <stdlib.h>
-#include <errno.h>
 #include <string.h>
 #ifndef _MSC_VER
 #ifdef HAVE_TERMIOS_H

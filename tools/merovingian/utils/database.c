@@ -10,13 +10,11 @@
 
 #include "monetdb_config.h"
 #include "msabaoth.h"
-#include <stdio.h> /* fprintf, rename */
 #include <unistd.h> /* stat, rmdir, unlink, ioctl */
 #include <dirent.h> /* readdir */
 #include <sys/stat.h> /* mkdir, stat, umask */
 #include <sys/types.h> /* mkdir, readdir */
 #include <string.h>
-#include <errno.h>
 #include "utils.h"
 #include "mutils.h"
 #include "database.h"

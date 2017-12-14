@@ -716,22 +716,20 @@
 #include "monetdb_config.h"
 #include "stream.h"		/* include before mapi.h */
 #include "stream_socket.h"
-#include <inttypes.h>		/* for PRId64, PRIu64, SCNd64 format macros */
 #include "mapi.h"
 #include "mcrypt.h"
 
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
-#include  <stdio.h>
 #ifdef HAVE_PWD_H
 #include  <pwd.h>
 #endif
 #include  <sys/types.h>
 
 #ifdef HAVE_SYS_UN_H
-#include <sys/un.h>
-#include <sys/stat.h>
+# include <sys/un.h>
+# include <sys/stat.h>
 # ifdef HAVE_DIRENT_H
 #  include <dirent.h>
 # endif
@@ -744,23 +742,15 @@
 # include <sys/uio.h>
 #endif
 
-#include  <signal.h>
-#include  <string.h>
-#include  <memory.h>
-
+#include <signal.h>
+#include <string.h>
+#include <memory.h>
+#include <time.h>
 #ifdef HAVE_FTIME
-#include <sys/timeb.h>
+# include <sys/timeb.h>		/* ftime */
 #endif
-
-#ifdef TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
+#ifdef HAVE_SYS_TIME_H
+# include <sys/time.h>		/* gettimeofday */
 #endif
 
 #ifdef HAVE_FCNTL_H
@@ -4852,29 +4842,21 @@ store_field(struct MapiResultSet *result, int cr, int fnr, int outtype, void *ds
 	case MAPI_ULONG:
 		*(unsigned long *) dst = strtoul(val, NULL, 0);
 		break;
-#ifdef HAVE_STRTOLL
 	case MAPI_LONGLONG:
 		*(int64_t *) dst = strtoll(val, NULL, 0);
 		break;
-#endif
-#ifdef HAVE_STRTOULL
 	case MAPI_ULONGLONG:
 		*(uint64_t *) dst = strtoull(val, NULL, 0);
 		break;
-#endif
 	case MAPI_CHAR:
 		*(char *) dst = *val;
 		break;
-#ifdef HAVE_STRTOF
 	case MAPI_FLOAT:
 		*(float *) dst = strtof(val, NULL);
 		break;
-#endif
-#ifdef HAVE_STRTOD
 	case MAPI_DOUBLE:
 		*(double *) dst = strtod(val, NULL);
 		break;
-#endif
 	case MAPI_DATE:
 		sscanf(val, "%hd-%hu-%hu",
 		       &((MapiDate *) dst)->year,

@@ -25,7 +25,6 @@
 #include <pwd.h>
 #endif
 #include <sys/types.h>
-#include <stdio.h>
 
 #define ODBCVER 0x0351
 

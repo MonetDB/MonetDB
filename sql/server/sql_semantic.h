@@ -9,8 +9,6 @@
 #ifndef _SQL_SEMANTIC_H_
 #define _SQL_SEMANTIC_H_
 
-#include <stdio.h>
-#include <stdarg.h>
 #include "sql_list.h"
 #include "sql_symbol.h"
 #include "sql_parser.h"

@@ -635,7 +635,6 @@ list_dup(list *l, fdup dup)
 
 
 #ifdef TEST
-#include <stdio.h>
 #include <string.h>
 
 void

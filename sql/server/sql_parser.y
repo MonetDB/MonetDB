@@ -22,7 +22,6 @@
 
 #include <unistd.h>
 #include <string.h>
-#include <stdlib.h>
 
 #define SA 	m->sa
 #define _symbol_create(t,d)         symbol_create( SA, t, d)

@@ -9,8 +9,6 @@
 #ifndef HELPERS_H
 #define HELPERS_H
 
-#include <stdio.h>
-
 #define MAX(a,b) (((a)>(b))?(a):(b))
 #define MIN(a,b) (((a)<(b))?(a):(b))
 

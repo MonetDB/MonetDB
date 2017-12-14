@@ -54,12 +54,7 @@
 #include "stream_socket.h"
 
 #include <string.h>
-#include <stdio.h>		/* NULL, printf etc. */
-#include <stdlib.h>
 #include <stddef.h>
-#include <errno.h>
-#include <stdarg.h>		/* va_alist.. */
-#include <assert.h>
 
 #ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>

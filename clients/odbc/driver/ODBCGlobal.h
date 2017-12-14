@@ -67,8 +67,6 @@
 
 /* standard C include files */
 #include <string.h>		/* for strcpy() etc. */
-#include <stdlib.h>
-#include <stdio.h>
 #include <ctype.h>
 
 #ifdef SQLLEN			/* it's a define for 32, a typedef for 64 */

@@ -10,7 +10,6 @@
 #define _INSPECT_H
 
 #include "gdk.h"
-#include <stdarg.h>
 #include <time.h>
 #include "mal_resolve.h"
 #include "mal_client.h"

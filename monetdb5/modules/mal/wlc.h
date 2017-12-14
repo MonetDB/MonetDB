@@ -10,7 +10,6 @@
 #define _WLC_H
 
 #include "gdk.h"
-#include <stdarg.h>
 #include <time.h>
 #include "mal_exception.h"
 #include "mal_interpreter.h"

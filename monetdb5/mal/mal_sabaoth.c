@@ -19,16 +19,13 @@
  */
 #include "monetdb_config.h"
 #include "mal_sabaoth.h"
-#include <stdio.h> /* fseek, rewind */
 #include <unistd.h>	/* unlink and friends */
 #include <sys/types.h>
 #ifdef HAVE_DIRENT_H
 #include <dirent.h> /* readdir, DIR */
 #endif
 #include <sys/stat.h>
-#include <errno.h>
 #include <string.h> /* for getting error messages */
-#include <assert.h>
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #define close _close

@@ -21,7 +21,6 @@
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
-#include <stdlib.h>
 #include "sql_keyword.h"
 #ifdef HAVE_HGE
 #include "mal.h"		/* for have_hge */

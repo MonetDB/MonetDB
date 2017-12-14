@@ -15,7 +15,6 @@
 #include "monetdb_config.h"
 #include "properties.h"
 #include "utils.h"
-#include <stdio.h> /* fprintf, fgets */
 #include <string.h> /* memcpy */
 #include <pthread.h>
 
