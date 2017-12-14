@@ -816,7 +816,7 @@ smp_thread(void *data)
 }
 
 static int
-highest_power_of_two_bellow(int n)
+highest_power_of_two_below(int n)
 {
 	int res = 0;
 	for (int i = n; i >= 1; i--) {
@@ -843,7 +843,7 @@ MT_check_nr_cores_(void)
 		t0 = GDKusec();
 		for (i = 0; i < curr; i++) {
 			if(MT_create_thread(threads + i, smp_thread, NULL, MT_THR_JOINABLE)) {
-				curr = highest_power_of_two_bellow(i);
+				curr = highest_power_of_two_below(i);
 				break;
 			}
 		}
