@@ -818,8 +818,8 @@ smp_thread(void *data)
 static int
 highest_power_of_two_below(int n)
 {
-	int res = 0;
-	for (int i = n; i >= 1; i--) {
+	int i, res = 0;
+	for (i = n; i >= 1; i--) {
 		if ((i & (i-1)) == 0) { //is power of 2
 			res = i;
 			break;
