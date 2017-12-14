@@ -1360,7 +1360,7 @@ AS_CASE([$host_os],
 org_have_bz2=auto
 have_bz2=$org_have_bz2
 BZ_CFLAGS=""
-BZ_LIBS=""
+BZ_LIBS="-lbz2"
 AC_ARG_WITH([bz2],
 	[AS_HELP_STRING([--with-bz2=DIR],
 		[bz2 library is installed in DIR])],
@@ -1370,31 +1370,23 @@ AS_CASE([$have_bz2],
 	[yes|no|auto], [],
 	[
 		BZ_CFLAGS="-I$withval/include"
-		BZ_LIBS="-L$withval/lib"])
+		BZ_LIBS="-L$withval/lib -lbz2"])
 
-AC_MSG_CHECKING([for bzip2])
 AS_VAR_IF([have_bz2], [no], [], [
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS $BZ_CFLAGS"
-	save_LIBS="$LIBS"
-	LIBS="$LIBS $BZ_LIBS -lbz2"
-	AC_LINK_IFELSE([AC_LANG_PROGRAM([[@%:@include <stdio.h>
-@%:@include <bzlib.h>]], [[(void)BZ2_bzopen("","");]])],
-		BZ_LIBS="$BZ_LIBS -lbz2",
-		[AS_VAR_IF([have_bz2], [auto], [], [
-			AC_MSG_ERROR([bz2 library not found])])
-		  have_bz2=no
-		  why_have_bz2="(bz2 library not found)" ])
-	LIBS="$save_LIBS"
+	save_LDFLAGS="$LDFLAGS"
+	LDFLAGS="$LDFLAGS $BZ_LIBS"
+	AC_CHECK_HEADER([bzlib.h],
+		[AC_CHECK_LIB([bz2], [BZ2_bzopen],
+			[AC_DEFINE([HAVE_LIBBZ2], 1, [Define if you have the bz2 library])],
+			[AS_VAR_IF([have_bz2], [auto], [], [AC_MSG_ERROR([-lbz2 library not found])])
+			 have_bz2=no; why_have_bz2="(bz2 library not found)"])],
+		[AS_VAR_IF([have_bz2], [auto], [], [AC_MSG_ERROR([bzlib.h header not found])])
+			 have_bz2=no; why_have_bz2="(bzlib.h header not found)"])
+	LDFLAGS="$save_LDFLAGS"
 	CPPFLAGS="$save_CPPFLAGS"])
-
-AS_VAR_IF([have_bz2], [no],
-	[BZ_CFLAGS=""
-	 BZ_LIBS=""
-	 AC_MSG_RESULT([no])],
-	[AC_DEFINE([HAVE_LIBBZ2], 1, [Define if you have the bz2 library])
-	 AC_MSG_RESULT([yes: $BZ_LIBS])])
-
+AS_VAR_IF([have_bz2], [no], [BZ_CFLAGS=""; BZ_LIBS=""])
 AC_SUBST([BZ_CFLAGS])
 AC_SUBST([BZ_LIBS])
 AM_CONDITIONAL([HAVE_LIBBZ2], [test x$have_bz2 != xno])
@@ -1405,7 +1397,7 @@ dnl  check for snappy (de)compression library
 org_have_snappy=auto
 have_snappy=$org_have_snappy
 snappy_CFLAGS=""
-snappy_LIBS=""
+snappy_LIBS="-lsnappy"
 AC_ARG_WITH([snappy],
 	[AS_HELP_STRING([--with-snappy=DIR],
 		[snappy library is installed in DIR])],
@@ -1415,31 +1407,23 @@ AS_CASE(["$have_snappy"],
 	[yes|no|auto], [],
 	[
 		snappy_CFLAGS="-I$withval/include"
-		snappy_LIBS="-L$withval/lib"])
+		snappy_LIBS="-L$withval/lib -lsnappy"])
 
-AC_MSG_CHECKING([for snappy])
 AS_VAR_IF([have_snappy], [no], [], [
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS $snappy_CFLAGS"
-	save_LIBS="$LIBS"
-	LIBS="$LIBS $snappy_LIBS -lsnappy"
-	AC_LINK_IFELSE([AC_LANG_PROGRAM([[@%:@include <stdio.h>
-@%:@include <snappy-c.h>]], [[(void)snappy_max_compressed_length(42);]])],
-		snappy_LIBS="$snappy_LIBS -lsnappy",
-		[ AS_VAR_IF([have_snappy], [auto], [], [
-			AC_MSG_ERROR([snappy library not found])])
-		  have_snappy=no
-		  why_have_snappy="(snappy library not found)" ])
-	LIBS="$save_LIBS"
+	save_LDFLAGS="$LDFLAGS"
+	LDFLAGS="$LDFLAGS $snappy_LDFLAGS"
+	AC_CHECK_HEADER([snappy-c.h],
+		[AC_CHECK_LIB([snappy], [snappy_max_compressed_length],
+			[AC_DEFINE([HAVE_LIBSNAPPY], 1, [Define if you have the snappy library])],
+			[AS_VAR_IF([have_snappy], [auto], [], [AC_MSG_ERROR([-lsnappy library not found])])
+			 have_snappy=no; why_have_snappy="(snappy library not found)"])],
+		[AS_VAR_IF([have_snappy], [auto], [], [AC_MSG_ERROR([snappy-c.h header not found])])
+			 have_snappy=no; why_have_snappy="(snappy-c.h header not found)"])
+	LDFLAGS="$save_LDFLAGS"
 	CPPFLAGS="$save_CPPFLAGS"])
-
-AS_VAR_IF([have_snappy], [no], [], [
-	AC_DEFINE([HAVE_LIBSNAPPY], 1, [Define if you have the snappy library])
-	AC_MSG_RESULT([yes: $snappy_LIBS])], [
-	snappy_CFLAGS=""
-	snappy_LIBS=""
-	AC_MSG_RESULT([no])])
-
+AS_VAR_IF([have_snappy], [no], [snappy_CFLAGS=""; snappy_LIBS=""])
 AC_SUBST([snappy_CFLAGS])
 AC_SUBST([snappy_LIBS])
 AM_CONDITIONAL([HAVE_LIBSNAPPY], [test x$have_snappy != xno])
@@ -1449,7 +1433,7 @@ dnl  check for lz4 (de)compression library
 org_have_lz4=auto
 have_lz4=$org_have_lz4
 lz4_CFLAGS=""
-lz4_LIBS=""
+lz4_LIBS="-llz4"
 AC_ARG_WITH([lz4],
 	[AS_HELP_STRING([--with-lz4=DIR],
 		[lz4 library is installed in DIR])],
@@ -1459,31 +1443,23 @@ AS_CASE(["$have_lz4"],
 	[yes|no|auto], [],
 	[
 		lz4_CFLAGS="-I$withval/include"
-		lz4_LIBS="-L$withval/lib"])
+		lz4_LIBS="-L$withval/lib -llz4"])
 
-AC_MSG_CHECKING([for lz4])
 AS_VAR_IF([have_lz4], [no], [], [
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS $lz4_CFLAGS"
-	save_LIBS="$LIBS"
-	LIBS="$LIBS $lz4_LIBS -llz4"
-	AC_LINK_IFELSE([AC_LANG_PROGRAM([[@%:@include <stdio.h>
-@%:@include <lz4.h>]], [[(void)LZ4_compressBound(42);]])],
-		lz4_LIBS="$lz4_LIBS -llz4",
-		[ AS_VAR_IF([have_lz4], [auto], [], [
-			AC_MSG_ERROR([lz4 library not found])])
-		  have_lz4=no
-		  why_have_lz4="(lz4 library not found)" ])
-	LIBS="$save_LIBS"
+	save_LDFLAGS="$LDFLAGS"
+	LDFLAGS="$LDFLAGS $lz4_LDFLAGS"
+	AC_CHECK_HEADER([lz4.h],
+		[AC_CHECK_LIB([lz4], [LZ4_compress_fast],
+			[AC_DEFINE([HAVE_LIBLZ4], 1, [Define if you have the lz4 library])],
+			[AS_VAR_IF([have_lz4], [auto], [], [AC_MSG_ERROR([-llz4 library not found])])
+			 have_lz4=no; why_have_lz4="(lz4 library not found)"])],
+		[AS_VAR_IF([have_lz4], [auto], [], [AC_MSG_ERROR([lz4.h header not found])])
+			 have_lz4=no; why_have_lz4="(lz4.h header not found)"])
+	LDFLAGS="$save_LDFLAGS"
 	CPPFLAGS="$save_CPPFLAGS"])
-
-AS_VAR_IF([have_lz4], [no], [], [
-	AC_DEFINE([HAVE_LIBLZ4], 1, [Define if you have the lz4 library])
-	AC_MSG_RESULT([yes: $lz4_LIBS])], [
-	lz4_CFLAGS=""
-	lz4_LIBS=""
-	AC_MSG_RESULT([no])])
-
+AS_VAR_IF([have_lz4], [no], [lz4_CFLAGS=""; lz4_LIBS=""])
 AC_SUBST([lz4_CFLAGS])
 AC_SUBST([lz4_LIBS])
 AM_CONDITIONAL([HAVE_LIBLZ4], [test x$have_lz4 != xno])
