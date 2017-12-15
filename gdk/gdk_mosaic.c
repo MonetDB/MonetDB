@@ -59,6 +59,7 @@ BATmosaic(BAT *bn, BUN cap)
 {
     const char *nme;
 	Heap *m;
+	char *fname = 0;
 
     MT_lock_set(&GDKmosaicLock(bn->batCacheid));
 	if( bn->tmosaic){
@@ -69,13 +70,14 @@ BATmosaic(BAT *bn, BUN cap)
     nme = BBP_physical(bn->batCacheid);
     if ( (m = (Heap*)GDKzalloc(sizeof(Heap))) == NULL ||
 		(m->farmid = BBPselectfarm(bn->batRole, bn->ttype, varheap)) < 0 ||
-        (m->filename = GDKfilepath(NOFARM, NULL, nme, "mosaic")) == NULL){
-			if( m)
-				GDKfree(m->filename);
+        (fname = GDKfilepath(NOFARM, NULL, nme, "mosaic")) == NULL){
+			if( fname)
+				GDKfree(fname);
 			GDKfree(m);
 			MT_lock_unset(&GDKmosaicLock(bn->batCacheid));
 			return GDK_FAIL;
 		}
+	strncpy(m->filename, fname, sizeof(m->filename));
 	
     if( HEAPalloc(m, cap, Tsize(bn)) != GDK_SUCCEED){
 		MT_lock_unset(&GDKmosaicLock(bn->batCacheid));
@@ -141,8 +143,7 @@ BATcheckmosaic(BAT *b)
 
 		b->tmosaic = NULL;
 		if ((hp = GDKzalloc(sizeof(*hp))) != NULL &&
-		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, mosaicheap)) >= 0 &&
-		    (hp->filename = GDKmalloc(strlen(nme) + 10)) != NULL) {
+		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, mosaicheap)) >= 0 ){
 
 			sprintf(hp->filename, "%s.%s", nme, ext);
 
