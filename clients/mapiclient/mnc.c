@@ -17,13 +17,10 @@
 
 #include "monetdb_config.h"
 #include "monet_options.h"
-#include <mapi.h>
-#include <stream.h>
-#include <stream_socket.h>
-#include <stdio.h>
+#include "mapi.h"
+#include "stream.h"
+#include "stream_socket.h"
 #include <string.h>
-#include <stdlib.h>
-#include <errno.h>
 #include <signal.h>
 #include <unistd.h>
 #ifdef HAVE_PTHREAD_H

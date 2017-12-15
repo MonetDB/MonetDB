@@ -25,13 +25,6 @@
 #endif
 #define ABSOLUTE(x)	((x) < 0 ? -(x) : (x))
 
-#ifndef HAVE_FABSF
-#define fabsf ABSOLUTE
-#endif
-#ifndef HAVE_LLABS
-#define llabs ABSOLUTE
-#endif
-
 #define LT(a, b)	((bit) ((a) < (b)))
 
 #define GT(a, b)	((bit) ((a) > (b)))

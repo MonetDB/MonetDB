@@ -12,16 +12,15 @@
  * stored in ESRI Shapefile documents.
  */
 
-#include <monetdb_config.h>
+#include "monetdb_config.h"
 #include <string.h>
 #include "sql_mvc.h"
 #include "sql.h"
-#include <stdlib.h>
 #include "shp.h"
 #include "sql_execute.h"
 #include "mal_exception.h"
 
-#include <geom.h>
+#include "geom.h"
 
 /* FIXME: the use of the 'rs' schema should be reconsidered so that the geotiff
  * catalog can be integrated into the SQL catalog.

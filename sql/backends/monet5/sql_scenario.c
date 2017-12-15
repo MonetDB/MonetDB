@@ -38,7 +38,7 @@
 #include "wlc.h"
 #include "wlr.h"
 #include "msabaoth.h"
-#include <mtime.h>
+#include "mtime.h"
 #include "optimizer.h"
 #include "opt_prelude.h"
 #include "opt_pipes.h"

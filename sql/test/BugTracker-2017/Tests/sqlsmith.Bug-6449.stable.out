@@ -48,7 +48,7 @@ Ready.
 #              left join bam.rg as ref_6
 % .L44,	sys.L46,	.L50,	.L52 # table_name
 % c0,	c1,	c2,	c3 # name
-% clob,	varchar,	clob,	clob # type
+% varchar,	varchar,	varchar,	varchar # type
 % 0,	0,	0,	0 # length
 
 # 11:12:49 >  

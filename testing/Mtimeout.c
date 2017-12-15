@@ -8,8 +8,7 @@
 
 #define _GNU_SOURCE		/* to get declaration of strsignal on Linux */
 
-#include <monetdb_config.h>
-#include <stdio.h>
+#include "monetdb_config.h"
 #include <sys/types.h>
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
@@ -21,12 +20,9 @@
 # include <sys/wait.h>
 #endif
 #include <signal.h>
-#include <stdlib.h>
 #include <ctype.h>
 #include <time.h>
-#ifdef HAVE_STRING_H
 #include <string.h>
-#endif
 
 #define DEFAULT_TIMEOUT 0
 

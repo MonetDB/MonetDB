@@ -7,15 +7,12 @@
  */
 
 #include "monetdb_config.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <inttypes.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
 
-#include <mapi.h>
-#include <mutils.h> /* MT_lockf */
+#include "mapi.h"
+#include "mutils.h" /* MT_lockf */
 #include <fcntl.h>
 
 #include "utils/glob.h"

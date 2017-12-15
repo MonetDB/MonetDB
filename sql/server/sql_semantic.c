@@ -16,12 +16,11 @@
 #include "sql_atom.h"
 
 #include <unistd.h>
-#include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 
-#include <rel_semantic.h>
-#include <rel_optimizer.h>
+#include "rel_semantic.h"
+#include "rel_optimizer.h"
 
 /* 
  * For debugging purposes we need to be able to convert sql-tokens to 

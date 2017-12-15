@@ -18,14 +18,11 @@
 
 #include "monetdb_config.h"
 #include "monet_options.h"
-#include <stream.h>
-#include <stdio.h>
-#include <stream_socket.h>
-#include <mapi.h>
+#include "stream.h"
+#include "stream_socket.h"
+#include "mapi.h"
 #include <string.h>
-#include <stdlib.h>
 #include <sys/stat.h>
-#include <errno.h>
 #include <signal.h>
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
@@ -42,16 +39,8 @@
 # endif
 #endif
 
-#ifdef TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
+#include <time.h>
+
 #ifdef NATIVE_WIN32
 #include <direct.h>
 #endif

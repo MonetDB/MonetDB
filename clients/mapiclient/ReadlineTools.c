@@ -10,7 +10,7 @@
  * Readline specific stuff
  */
 #include "monetdb_config.h"
-#include <monet_options.h>
+#include "monet_options.h"
 
 #ifdef HAVE_LIBREADLINE
 
@@ -21,14 +21,6 @@
 #ifdef HAVE_STRINGS_H
 #include <strings.h>		/* for strncasecmp */
 #endif
-
-#ifndef NATIVE_WIN32
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
-#endif
-
-#include <errno.h>
 
 static const char *sql_commands[] = {
 	"SELECT",

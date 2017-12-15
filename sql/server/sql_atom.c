@@ -8,8 +8,8 @@
 
 #include "monetdb_config.h"
 #include "sql_atom.h"
-#include <sql_string.h>
-#include <sql_decimal.h>
+#include "sql_string.h"
+#include "sql_decimal.h"
 
 static int atom_debug = 0;
 

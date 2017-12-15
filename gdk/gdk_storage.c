@@ -26,7 +26,6 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#include <stdlib.h>
 #include "gdk_storage.h"
 #include "mutils.h"
 #ifdef HAVE_FCNTL_H
@@ -417,7 +416,7 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 	IODEBUG fprintf(stderr, "#GDKsave: name=%s, ext=%s, mode %d, dosync=%d\n", nme, ext ? ext : "", (int) mode, dosync);
 
 	if (mode == STORE_MMAP) {
-		if (dosync && size && MT_msync(buf, size) < 0)
+		if (dosync && size && !(GDKdebug & NOSYNCMASK) && MT_msync(buf, size) < 0)
 			err = -1;
 		if (err)
 			GDKsyserror("GDKsave: error on: name=%s, ext=%s, "
@@ -459,15 +458,13 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 						(unsigned) MIN(1 << 30, size),
 						ret);
 			}
-			if (dosync && !(GDKdebug & FORCEMITOMASK) &&
+			if (dosync && !(GDKdebug & NOSYNCMASK)
 #if defined(NATIVE_WIN32)
-			    _commit(fd) < 0
+			    && _commit(fd) < 0
 #elif defined(HAVE_FDATASYNC)
-			    fdatasync(fd) < 0
+			    && fdatasync(fd) < 0
 #elif defined(HAVE_FSYNC)
-			    fsync(fd) < 0
-#else
-			    0
+			    && fsync(fd) < 0
 #endif
 				) {
 				GDKsyserror("GDKsave: error on: name=%s, "
@@ -621,7 +618,6 @@ DESCload(int i)
 		return NULL;
 	}
 	b->ttype = tt;
-	b->thash = NULL;
 
 	/* reconstruct mode from BBP status (BATmode doesn't flush
 	 * descriptor, so loaded mode may be stale) */
@@ -673,8 +669,8 @@ BATmsyncImplementation(void *arg)
 void
 BATmsync(BAT *b)
 {
-	/* we don't sync views */
-	if (isVIEW(b))
+	/* we don't sync views or if we're told not to */
+	if (isVIEW(b) || (GDKdebug & NOSYNCMASK))
 		return;
 	/* we don't sync transients */
 	if (b->theap.farmid != 0 ||

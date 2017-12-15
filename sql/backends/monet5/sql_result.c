@@ -12,12 +12,12 @@
 
 #include "monetdb_config.h"
 #include "sql_result.h"
-#include <str.h>
-#include <tablet.h>
-#include <mtime.h>
-#include <bat/res_table.h>
-#include <bat/bat_storage.h>
-#include <rel_exp.h>
+#include "str.h"
+#include "tablet.h"
+#include "mtime.h"
+#include "bat/res_table.h"
+#include "bat/bat_storage.h"
+#include "rel_exp.h"
 
 #ifndef HAVE_LLABS
 #define llabs(x)	((x) < 0 ? -(x) : (x))
@@ -2087,9 +2087,7 @@ mvc_export_operation(backend *b, stream *s, str w, lng starttime, lng mal_optimi
 
 	assert(m->type == Q_SCHEMA || m->type == Q_TRANS);
 	if (m->type == Q_SCHEMA) {
-		if (!s || mnstr_printf(s, "&3 " LLFMT "\n", starttime > 0 ? GDKusec() - starttime : 0) < 0)
-			return -1;
-		if (!s || mnstr_printf(s, "&3 " LLFMT "\n", mal_optimizer) < 0)
+		if (!s || mnstr_printf(s, "&3 " LLFMT " " LLFMT "\n", starttime > 0 ? GDKusec() - starttime : 0, mal_optimizer) < 0)
 			return -1;
 	} else {
 		if (m->session->auto_commit) {

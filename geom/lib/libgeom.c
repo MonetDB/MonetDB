@@ -13,7 +13,7 @@
  * @* The simple geom library
  */
 
-#include <monetdb_config.h>
+#include "monetdb_config.h"
 #include "libgeom.h"
 
 #include <math.h>

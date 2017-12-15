@@ -9,8 +9,8 @@
 #ifndef _SQL_ATOM_H_
 #define _SQL_ATOM_H_
 
-#include <sql_mem.h>
-#include <sql_types.h>
+#include "sql_mem.h"
+#include "sql_types.h"
 
 typedef struct atom {
 	int isnull;

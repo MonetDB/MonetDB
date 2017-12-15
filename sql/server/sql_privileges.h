@@ -10,8 +10,8 @@
 #define _SQL_PRIV_H_
 
 /* privileges */
-#include <sql_mvc.h>
-#include <sql_catalog.h>
+#include "sql_mvc.h"
+#include "sql_catalog.h"
 
 extern char * sql_grant_global_privs( mvc *sql, char *grantee, int privs, int grant, int grantor);
 extern char * sql_revoke_global_privs( mvc *sql, char *grantee, int privs, int grant, int grantor);

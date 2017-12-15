@@ -14,7 +14,7 @@
 #ifndef _MAL_H
 #define _MAL_H
 
-#include <gdk.h>
+#include "gdk.h"
 
 #ifdef WIN32
 #if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5) && !defined(LIBMOSAIC)
@@ -72,7 +72,7 @@ mal_export int have_hge;
 #define GRPalgorithms (ALGOMASK | ESTIMASK)
 #define GRPperformance (DEADBEEFMASK)
 #define GRPoptimizers  (OPTMASK)
-#define GRPforcemito (FORCEMITOMASK)
+#define GRPforcemito (FORCEMITOMASK | NOSYNCMASK)
 
 mal_export MT_Lock  mal_contextLock;
 mal_export MT_Lock  mal_remoteLock;

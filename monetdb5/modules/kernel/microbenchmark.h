@@ -12,7 +12,7 @@
  */
 #ifndef _MBM_H_
 #define _MBM_H_
-#include <mal.h>
+#include "mal.h"
 
 mal_export str MBMrandom(bat *ret, oid *base, lng *size, int *domain);
 mal_export str MBMrandom_seed(bat *ret, oid *base, lng *size, int *domain, const int *seed);

@@ -8,7 +8,7 @@
 
 #include "monetdb_config.h"
 #include <wctype.h>
-#include <sql_mem.h>
+#include "sql_mem.h"
 #include "sql_scan.h"
 #include "sql_types.h"
 #include "sql_symbol.h"
@@ -17,12 +17,11 @@
 #include "sql_semantic.h"
 #include "sql_parser.h"		/* for sql_error() */
 
-#include <stream.h>
+#include "stream.h"
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
-#include <stdlib.h>
-#include <sql_keyword.h>
+#include "sql_keyword.h"
 #ifdef HAVE_HGE
 #include "mal.h"		/* for have_hge */
 #endif

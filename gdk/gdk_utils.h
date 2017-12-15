@@ -9,7 +9,7 @@
 #ifndef _GDK_UTILS_H_
 #define _GDK_UTILS_H_
 
-#include <monet_options.h>
+#include "monet_options.h"
 #include <setjmp.h>
 
 gdk_export BAT *GDKkey;
@@ -17,8 +17,8 @@ gdk_export BAT *GDKval;
 
 gdk_export char *GDKgetenv(const char *name);
 
+gdk_export int GDKgetenv_istext(const char *name, const char* text);
 gdk_export int GDKgetenv_isyes(const char *name);
-
 gdk_export int GDKgetenv_istrue(const char *name);
 
 gdk_export int GDKgetenv_int(const char *name, int def);

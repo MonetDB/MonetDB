@@ -7,8 +7,6 @@
  */
 
 #include "monetdb_config.h"
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/un.h>
 #include <sys/stat.h>
@@ -16,13 +14,12 @@
 #include <unistd.h>
 #include <string.h> /* char ** */
 #include <time.h> /* localtime */
-#include <errno.h>
 
-#include <msabaoth.h>
-#include <utils/utils.h>
-#include <utils/glob.h>
-#include <utils/properties.h>
-#include <mutils.h>
+#include "msabaoth.h"
+#include "utils/utils.h"
+#include "utils/glob.h"
+#include "utils/properties.h"
+#include "mutils.h"
 
 #include "merovingian.h"
 #include "discoveryrunner.h" /* remotedb */

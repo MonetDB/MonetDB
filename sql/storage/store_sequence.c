@@ -9,7 +9,7 @@
 #include "monetdb_config.h"
 #include "store_sequence.h"
 #include "sql_storage.h"
-#include <gdk_logger.h>
+#include "gdk_logger.h"
 
 typedef struct store_sequence {
 	sqlid seqid;

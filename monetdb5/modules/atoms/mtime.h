@@ -22,19 +22,17 @@
 #ifndef _MONETTIME_H_
 #define _MONETTIME_H_
 
-#include <gdk.h>
+#include "gdk.h"
 #include "mal.h"
 #include "mal_exception.h"
 
-#ifdef TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
+#include <time.h>
+
+#ifdef HAVE_FTIME
+#include <sys/timeb.h>		/* ftime */
+#endif
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>		/* gettimeofday */
 #endif
 
 typedef int date;
@@ -260,5 +258,11 @@ mal_export int TYPE_daytime;
 mal_export int TYPE_timestamp;
 mal_export int TYPE_tzone;
 mal_export int TYPE_rule;
+
+mal_export date MTIMEtodate(int day, int month, int year);
+mal_export void MTIMEfromdate(date n, int *d, int *m, int *y);
+
+mal_export daytime MTIMEtotime(int hour, int min, int sec, int msec);
+mal_export void MTIMEfromtime(daytime n, int *hour, int *min, int *sec, int *msec);
 
 #endif /* _MONETTIME_H_ */

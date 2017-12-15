@@ -1,8 +1,3 @@
-#ifndef HAVE_NEXTAFTERF
-#define nextafter	_nextafter
-#include "mutils.h"		/* fnextafter */
-#endif
-
 #define PREVVALUEbit(x) ((x) - 1)
 #define PREVVALUEbte(x) ((x) - 1)
 #define PREVVALUEsht(x) ((x) - 1)

@@ -306,23 +306,14 @@
 #define _GDK_H_
 
 /* standard includes upon which all configure tests depend */
-#include <stdio.h>
 #ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>
 #endif
 #ifdef HAVE_SYS_STAT_H
 # include <sys/stat.h>
 #endif
-#include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
-#ifdef HAVE_INTTYPES_H
-# include <inttypes.h>
-#else
-# ifdef HAVE_STDINT_H
-#  include <stdint.h>
-# endif
-#endif
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
@@ -335,17 +326,6 @@
 
 #ifdef HAVE_DIRENT_H
 # include <dirent.h>
-#else
-# define dirent direct
-# ifdef HAVE_SYS_NDIR_H
-#  include <sys/ndir.h>
-# endif
-# ifdef HAVE_SYS_DIR_H
-#  include <sys/dir.h>
-# endif
-# ifdef HAVE_NDIR_H
-#  include <ndir.h>
-# endif
 #endif
 
 #include <limits.h>		/* for *_MIN and *_MAX */
@@ -362,7 +342,7 @@
 
 #include "gdk_system.h"
 #include "gdk_posix.h"
-#include <stream.h>
+#include "stream.h"
 
 #undef MIN
 #undef MAX
@@ -374,18 +354,22 @@
 #define GDKisalnum(c)	isalnum((unsigned char) (c))
 #define GDKisdigit(c)	isdigit((unsigned char) (c))
 
+#define TEMPDIR_NAME "TEMP_DATA"
+
 #ifndef NATIVE_WIN32
 #define BATDIR		"bat"
 #define DELDIR		"bat/DELETE_ME"
 #define BAKDIR		"bat/BACKUP"
 #define SUBDIR		"bat/BACKUP/SUBCOMMIT"
 #define LEFTDIR		"bat/LEFTOVERS"
+#define TEMPDIR     "bat/"TEMPDIR_NAME
 #else
 #define BATDIR		"bat"
 #define DELDIR		"bat\\DELETE_ME"
 #define BAKDIR		"bat\\BACKUP"
 #define SUBDIR		"bat\\BACKUP\\SUBCOMMIT"
 #define LEFTDIR		"bat\\LEFTOVERS"
+#define TEMPDIR     "bat\\"TEMPDIR_NAME
 #endif
 
 /*
@@ -446,10 +430,8 @@
 #define XPROPDEBUG	if (GDKdebug & XPROPMASK)
 */
 
-/* JOINPROPMASK not used anymore
-#define JOINPROPMASK	(1<<24)
-#define JOINPROPCHK	if (!(GDKdebug & JOINPROPMASK))
-*/
+#define NOSYNCMASK	(1<<24)
+
 #define DEADBEEFMASK	(1<<25)
 #define DEADBEEFCHK	if (!(GDKdebug & DEADBEEFMASK))
 

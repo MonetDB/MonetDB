@@ -10,12 +10,12 @@
 #define sql_result_H
 
 #include "mal_client.h"
-#include <stream.h>
-#include <sql.h>
-#include <sql_mvc.h>
-#include <sql_catalog.h>
-#include <sql_qc.h>
-#include <sql_parser.h>		/* sql_error */
+#include "stream.h"
+#include "sql.h"
+#include "sql_mvc.h"
+#include "sql_catalog.h"
+#include "sql_qc.h"
+#include "sql_parser.h"		/* sql_error */
 
 extern int mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng starttime, lng maloptimizer);
 extern int mvc_export_operation(backend *b, stream *s, str w, lng starttime, lng maloptimizer);

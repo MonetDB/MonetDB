@@ -12,11 +12,6 @@
 #include "gdk_private.h"
 #include <math.h>
 
-#ifndef HAVE_NEXTAFTERF
-#define nextafter	_nextafter
-#include "mutils.h"		/* nextafterf */
-#endif
-
 /* auxiliary functions and structs for imprints */
 #include "gdk_imprints.h"
 

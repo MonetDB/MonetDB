@@ -26,11 +26,8 @@
 #include "properties.h"
 #include "glob.h"
 #include "control.h"
-#include <msabaoth.h>
-#include <mutils.h>
-#include <stdlib.h> /* exit, getenv, qsort */
-#include <stdarg.h>	/* variadic stuff */
-#include <stdio.h> /* fprintf, rename */
+#include "msabaoth.h"
+#include "mutils.h"
 #include <string.h> /* strerror */
 #include <sys/stat.h> /* mkdir, stat, umask */
 #include <sys/types.h> /* mkdir, readdir */
@@ -42,7 +39,7 @@
 #include <sys/un.h> /* sockaddr_un */
 #endif
 #ifdef HAVE_STROPTS_H
-#include <stropts.h> /* ioctl */
+#include <stropts.h>		/* ioctl on Solaris */
 #endif
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
@@ -50,7 +47,6 @@
 #ifdef HAVE_TERMIOS_H
 #include <termios.h> /* TIOCGWINSZ/TIOCSWINSZ */
 #endif
-#include <errno.h>
 
 static char *mero_host = NULL;
 static int mero_port = -1;

@@ -456,7 +456,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(nquery);
 				return NULL;
 			}
-			sprintf(q, "%.*s%s%s", n, nquery, buf, p);
+			length = (size_t) sprintf(q, "%.*s%s%s", n, nquery, buf, p);
 			free(nquery);
 			nquery = q;
 			q += n;
@@ -496,7 +496,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(nquery);
 				return NULL;
 			}
-			sprintf(q, "%.*s%s%s", n, nquery, buf, p);
+			length = (size_t) sprintf(q, "%.*s%s%s", n, nquery, buf, p);
 			free(nquery);
 			nquery = q;
 			q += n;
@@ -516,7 +516,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(nquery);
 				return NULL;
 			}
-			sprintf(q, "%.*s%s%s", n, nquery, buf, p);
+			length = (size_t) sprintf(q, "%.*s%s%s", n, nquery, buf, p);
 			free(nquery);
 			nquery = q;
 			q += n;
@@ -538,7 +538,54 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(nquery);
 				return NULL;
 			}
-			sprintf(q, "%.*s%.*s%s", n, nquery, (int) intvl, intv, p);
+			length = (size_t) sprintf(q, "%.*s%.*s%s", n, nquery, (int) intvl, intv, p);
+			free(nquery);
+			nquery = q;
+			q += n;
+		} else if (strncasecmp(p, "escape ", 7) == 0) {
+			/* note that in ODBC the syntax is
+			 * {escape '\'}
+			 * whereas MonetDB expects
+			 * ESCAPE '\\'
+			 */
+			char esc;
+			p += 7;
+			while (*p == ' ')
+				p++;
+			if (*p++ != '\'')
+				continue;
+			if (*p == '\'' && p[1] == '\'' && p[2] == '\'') {
+				esc = '\'';
+				p += 3;
+			} else if (*p != '\'' && p[1] == '\'') {
+				esc = *p;
+				if (esc & 0200)
+					continue;
+				p += 2;
+			} else
+				continue;
+			while (*p == ' ')
+				p++;
+			if (*p++ != '}')
+				continue;
+			n = (int) (q - nquery);
+			pr = (int) (p - q);
+			q = malloc(length - pr + 13 + 1);
+			if (q == NULL) {
+				free(nquery);
+				return NULL;
+			}
+			switch (esc) {
+			case '\'':
+				length = (size_t) sprintf(q, "%.*s ESCAPE '''' %s", n, nquery, p);
+				break;
+			case '\\':
+				length = (size_t) sprintf(q, "%.*s ESCAPE '\\\\' %s", n, nquery, p);
+				break;
+			default:
+				length = (size_t) sprintf(q, "%.*s ESCAPE '%c' %s", n, nquery, esc, p);
+				break;
+			}
 			free(nquery);
 			nquery = q;
 			q += n;
@@ -587,7 +634,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(nquery);
 				return NULL;
 			}
-			sprintf(q, "%.*scall %.*s%s", n, nquery, (int) (procend - proc), proc, p);
+			length = (size_t) sprintf(q, "%.*scall %.*s%s", n, nquery, (int) (procend - proc), proc, p);
 			free(nquery);
 			nquery = q;
 			q += n;
@@ -699,7 +746,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 							free(nquery);
 							return NULL;
 						}
-						sprintf(q, "%.*s'%s'%s", n, nquery, dbc->Connected && dbc->uid ? dbc->uid : "", p);
+						length = (size_t) sprintf(q, "%.*s'%s'%s", n, nquery, dbc->Connected && dbc->uid ? dbc->uid : "", p);
 						free(nquery);
 						nquery = q;
 						q += n;
@@ -709,7 +756,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 							free(nquery);
 							return NULL;
 						}
-						sprintf(q, "%.*s'%s'%s", n, nquery, dbc->Connected && dbc->dbname ? dbc->dbname : "", p);
+						length = (size_t) sprintf(q, "%.*s'%s'%s", n, nquery, dbc->Connected && dbc->dbname ? dbc->dbname : "", p);
 						free(nquery);
 						nquery = q;
 						q += n;
@@ -723,7 +770,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 									free(nquery);
 									return NULL;
 								}
-								sprintf(q, "%.*scast(%.*s as %s)%s", n, nquery, (int) args[0].arglen, args[0].argstart, c->server, p);
+								length = (size_t) sprintf(q, "%.*scast(%.*s as %s)%s", n, nquery, (int) args[0].arglen, args[0].argstart, c->server, p);
 								free(nquery);
 								nquery = q;
 								break;
@@ -1480,8 +1527,6 @@ translateCompletionType(SQLSMALLINT CompletionType)
 }
 
 #if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901
-#include <stdarg.h>
-
 void
 ODBCLOG(const char *fmt, ...)
 {

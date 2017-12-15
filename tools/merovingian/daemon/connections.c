@@ -7,7 +7,6 @@
  */
 
 #include "monetdb_config.h"
-#include <stdio.h> /* fprintf */
 #include <sys/types.h>
 #include <sys/stat.h> /* stat */
 #include <sys/wait.h> /* wait */
@@ -17,10 +16,9 @@
 #include <netinet/in.h>
 #include <fcntl.h>
 #include <string.h> /* strerror */
-#include <errno.h>
 
-#include <stream.h>
-#include <stream_socket.h>
+#include "stream.h"
+#include "stream_socket.h"
 
 #include "merovingian.h"
 #include "connections.h"

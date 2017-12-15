@@ -7,7 +7,7 @@
  */
 
 #include "monetdb_config.h"
-#include <gdk.h>		/* for GDKmalloc() & GDKfree() */
+#include "gdk.h"		/* for GDKmalloc() & GDKfree() */
 #include "sql_list.h"
 
 static node *
@@ -635,7 +635,6 @@ list_dup(list *l, fdup dup)
 
 
 #ifdef TEST
-#include <stdio.h>
 #include <string.h>
 
 void

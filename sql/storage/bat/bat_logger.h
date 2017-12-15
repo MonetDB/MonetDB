@@ -10,7 +10,7 @@
 #define BAT_LOGGER_H
 
 #include "sql_storage.h"
-#include <gdk_logger.h>
+#include "gdk_logger.h"
 
 extern logger *bat_logger;
 

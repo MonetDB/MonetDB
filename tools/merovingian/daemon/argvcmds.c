@@ -7,19 +7,17 @@
  */
 
 #include "monetdb_config.h"
-#include <stdio.h>
 #include <unistd.h> /* chdir */
 #include <string.h> /* strerror */
-#include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <signal.h> /* kill */
 
-#include <mutils.h> /* MT_lockf */
-#include <mcrypt.h> /* mcrypt_BackendSum */
-#include <utils/utils.h>
-#include <utils/properties.h>
-#include <utils/control.h>
+#include "mutils.h" /* MT_lockf */
+#include "mcrypt.h" /* mcrypt_BackendSum */
+#include "utils/utils.h"
+#include "utils/properties.h"
+#include "utils/control.h"
 
 #include "merovingian.h"
 #include "argvcmds.h"

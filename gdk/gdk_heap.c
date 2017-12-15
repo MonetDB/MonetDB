@@ -435,13 +435,15 @@ GDKupgradevarheap(BAT *b, var_t v, int copyall, int mayshare)
 			base += ret;
 		}
 		if (ret < 0 ||
+		    (!(GDKdebug & NOSYNCMASK)
 #if defined(NATIVE_WIN32)
-		    _commit(fd) < 0 ||
+		     && _commit(fd) < 0
 #elif defined(HAVE_FDATASYNC)
-		    fdatasync(fd) < 0 ||
+		     && fdatasync(fd) < 0
 #elif defined(HAVE_FSYNC)
-		    fsync(fd) < 0 ||
+		     && fsync(fd) < 0
 #endif
+			    ) ||
 		    close(fd) < 0) {
 			/* something went wrong: abandon ship */
 			GDKsyserror("GDKupgradevarheap: syncing heap to disk failed\n");
@@ -1254,9 +1256,10 @@ HEAP_recover(Heap *h, const var_t *offsets, BUN noffsets)
 	}
 	h->cleanhash = 0;
 	if (dirty) {
-		if (h->storage == STORE_MMAP)
-			(void) MT_msync(h->base, dirty);
-		else
+		if (h->storage == STORE_MMAP) {
+			if (!(GDKdebug & NOSYNCMASK))
+				(void) MT_msync(h->base, dirty);
+		} else
 			h->dirty = 1;
 	}
 }

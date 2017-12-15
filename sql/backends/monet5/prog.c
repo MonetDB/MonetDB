@@ -6,33 +6,20 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
-#include <monetdb_config.h>
+#include "monetdb_config.h"
 #include "sql.h"
 #include "monet_options.h"
 #include "embeddedclient.h"
 
-#ifdef HAVE_STRING_H
 #include <string.h>
-#endif
 
-/* stolen piece */
+#include <time.h>
+
 #ifdef HAVE_FTIME
-#include <sys/timeb.h>
+#include <sys/timeb.h>		/* ftime */
 #endif
-
-#if TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# if HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
-
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>		/* gettimeofday */
 #endif
 
 #ifndef HAVE_GETOPT_LONG

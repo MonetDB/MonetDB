@@ -101,25 +101,26 @@ GDKgetenv(const char *name)
 }
 
 int
-GDKgetenv_isyes(const char *name)
+GDKgetenv_istext(const char *name, const char* text)
 {
 	char *val = GDKgetenv(name);
 
-	if (val && strcasecmp(val, "yes") == 0) {
+	if (val && strcasecmp(val, text) == 0) {
 		return 1;
 	}
 	return 0;
 }
 
 int
+GDKgetenv_isyes(const char *name)
+{
+	return GDKgetenv_istext(name, "yes");
+}
+
+int
 GDKgetenv_istrue(const char *name)
 {
-	char *val = GDKgetenv(name);
-
-	if (val && strcasecmp(val, "true") == 0) {
-		return 1;
-	}
-	return 0;
+	return GDKgetenv_istext(name, "true");
 }
 
 int

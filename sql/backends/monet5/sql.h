@@ -15,7 +15,7 @@
 #ifndef _SQL_H
 #define _SQL_H
 
-#include <sql_mem.h>
+#include "sql_mem.h"
 
 #ifdef WIN32
 #ifndef LIBSQL
@@ -29,20 +29,20 @@
 
 #include "mal_backend.h"
 #include "sql_mvc.h"
-#include <sql_backend.h>
-#include <mal_session.h>
+#include "sql_backend.h"
+#include "mal_session.h"
 
-#include <mal_function.h>
-#include <mal_stack.h>
-#include <mal_interpreter.h>
+#include "mal_function.h"
+#include "mal_stack.h"
+#include "mal_interpreter.h"
 
-#include <tablet.h>
-#include <streams.h>
-#include <mtime.h>
+#include "tablet.h"
+#include "streams.h"
+#include "mtime.h"
 #include <math.h>
-#include <blob.h>
-#include <mkey.h>
-#include <str.h>
+#include "blob.h"
+#include "mkey.h"
+#include "str.h"
 #include "sql_privileges.h"
 #include "sql_decimal.h"
 #include "sql_string.h"
@@ -51,8 +51,8 @@
 #include "sql_statement.h"
 #include "querylog.h"
 
-#include <bat/bat_storage.h>
-#include <bat/bat_utils.h>
+#include "bat/bat_storage.h"
+#include "bat/bat_utils.h"
 
 extern int sqlcleanup(mvc *c, int err);
 extern sql_rel *sql_symbol2relation(mvc *c, symbol *sym);

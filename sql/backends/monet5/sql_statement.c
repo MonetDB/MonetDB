@@ -2848,8 +2848,15 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 	}
 	if (LANG_EXT(f->func->lang))
 		q = pushPtr(mb, q, f);
-	if (f->func->lang == FUNC_LANG_R || f->func->lang >= FUNC_LANG_PY)
-		q = pushStr(mb, q, f->func->query);
+	if (f->func->lang == FUNC_LANG_C) {
+		q = pushBit(mb, q, 0);
+	} else if (f->func->lang == FUNC_LANG_CPP) {
+		q = pushBit(mb, q, 1);
+	}
+	if (f->func->lang == FUNC_LANG_R || f->func->lang >= FUNC_LANG_PY ||
+		f->func->lang == FUNC_LANG_C || f->func->lang == FUNC_LANG_CPP) {
+		q = pushStr(mb, q, f->func->query);	
+	}
 	/* first dynamic output of copy* functions */
 	if (f->func->type == F_UNION || (f->func->type == F_LOADER && f->res != NULL))
 		q = table_func_create_result(mb, q, f->func, f->res);
@@ -3020,12 +3027,19 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int red
 	if (LANG_EXT(op->aggr->lang))
 		q = pushPtr(mb, q, op->aggr);
 	if (op->aggr->lang == FUNC_LANG_R ||
-		op->aggr->lang >= FUNC_LANG_PY) {
+		op->aggr->lang >= FUNC_LANG_PY || 
+		op->aggr->lang == FUNC_LANG_C ||
+		op->aggr->lang == FUNC_LANG_CPP) {
 		if (!grp) {
 			setVarType(mb, getArg(q, 0), restype);
 			setVarUDFtype(mb, getArg(q, 0));
 		}
-		q = pushStr(mb, q, op->aggr->query);
+		if (op->aggr->lang == FUNC_LANG_C) {
+			q = pushBit(mb, q, 0);
+		} else if (op->aggr->lang == FUNC_LANG_CPP) {
+			q = pushBit(mb, q, 1);
+		}
+ 		q = pushStr(mb, q, op->aggr->query);
 	}
 
 	if (op1->type != st_list) {

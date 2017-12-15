@@ -8,7 +8,6 @@
 
 #include "monetdb_config.h"
 
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -21,14 +20,12 @@
 #include <signal.h>
 #include <fcntl.h>
 
-#include <errno.h>
-
-#include <msabaoth.h>
-#include <mcrypt.h>
-#include <utils/utils.h>
-#include <utils/properties.h>
-#include <utils/database.h>
-#include <utils/control.h>
+#include "msabaoth.h"
+#include "mcrypt.h"
+#include "utils/utils.h"
+#include "utils/properties.h"
+#include "utils/database.h"
+#include "utils/control.h"
 
 #include "gdk.h"  /* these three for creation of dbs with password */
 #include "mal_authorize.h"

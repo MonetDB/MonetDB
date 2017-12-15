@@ -11,8 +11,7 @@
 
 #include "sql_mem.h"
 #include "sql_list.h"
-#include <stream.h>
-#include <stdio.h>
+#include "stream.h"
 
 typedef enum { LINE_1, LINE_N } prot;
 

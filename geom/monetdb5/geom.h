@@ -10,22 +10,20 @@
  * @a Wouter Scherphof, Niels Nes, Foteini Alvanaki
  */
 
-#include <monetdb_config.h>
+#include "monetdb_config.h"
 #include "libgeom.h"
 
-#include <mal.h>
-#include <mal_atom.h>
-#include <mal_exception.h>
-#include <mal_client.h>
-#include <stream.h>
+#include "mal.h"
+#include "mal_atom.h"
+#include "mal_exception.h"
+#include "mal_client.h"
+#include "stream.h"
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <time.h>
 
-#include <gdk_logger.h>
+#include "gdk_logger.h"
 
 #ifdef WIN32
 #ifndef LIBGEOM

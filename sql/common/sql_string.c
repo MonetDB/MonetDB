@@ -7,8 +7,8 @@
  */
 
 #include "monetdb_config.h"
-#include <sql_mem.h>
-#include <gdk.h>
+#include "sql_mem.h"
+#include "gdk.h"
 #include "sql_string.h"
 #include "mal_exception.h"
 

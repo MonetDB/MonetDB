@@ -7,7 +7,6 @@
  */
 
 #include "monetdb_config.h"
-#include <stdio.h>
 #include <signal.h>
 #include <unistd.h> /* isatty */
 #include <time.h> /* time, localtime */
@@ -16,9 +15,8 @@
 #include <sys/wait.h> /* wait */
 #include <sys/stat.h> /* open */
 #include <fcntl.h> /* open */
-#include <errno.h>
 
-#include <utils/properties.h>
+#include "utils/properties.h"
 
 #include "merovingian.h"
 #include "handlers.h"

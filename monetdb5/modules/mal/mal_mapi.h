@@ -18,7 +18,7 @@
 #include "mal_authorize.h"
 #include "msabaoth.h"
 #include "mcrypt.h"
-#include <stream.h>
+#include "stream.h"
 #include "streams.h"			/* for Stream */
 
 

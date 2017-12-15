@@ -9,7 +9,6 @@
 #ifndef _MANUAL_H
 #define _MANUAL_H
 #include "gdk.h"
-#include <stdarg.h>
 #include <time.h>
 #include "mal_resolve.h"
 #include "mal_client.h"

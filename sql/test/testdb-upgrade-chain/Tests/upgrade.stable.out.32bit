@@ -1,0 +1,117 @@
+stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade-chain` itself:
+
+
+# 15:17:06 >  
+# 15:17:06 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/ufs/sjoerd/Monet-stable/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=36250" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_test_testdb-upgrade-chain" "--set" "mal_listing=0"
+# 15:17:06 >  
+
+# MonetDB 5 server v11.11.8 (hg id: 34fcf4e7226d+)
+# This is an unreleased version
+# Serving database 'mTests_test_testdb-upgrade-chain', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 15.629 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://madrid.ins.cwi.nl:36250/
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+Running database upgrade commands:
+set schema "sys";
+drop aggregate corr(tinyint, tinyint);
+drop aggregate corr(smallint, smallint);
+drop aggregate corr(integer, integer);
+drop aggregate corr(bigint, bigint);
+drop aggregate corr(real, real);
+create aggregate corr(e1 TINYINT, e2 TINYINT) returns DOUBLE
+	external name "aggr"."corr";
+grant execute on aggregate sys.corr(tinyint, tinyint) to public;
+create aggregate corr(e1 SMALLINT, e2 SMALLINT) returns DOUBLE
+	external name "aggr"."corr";
+grant execute on aggregate sys.corr(smallint, smallint) to public;
+create aggregate corr(e1 INTEGER, e2 INTEGER) returns DOUBLE
+	external name "aggr"."corr";
+grant execute on aggregate sys.corr(integer, integer) to public;
+create aggregate corr(e1 BIGINT, e2 BIGINT) returns DOUBLE
+	external name "aggr"."corr";
+grant execute on aggregate sys.corr(bigint, bigint) to public;
+create aggregate corr(e1 REAL, e2 REAL) returns DOUBLE
+	external name "aggr"."corr";
+grant execute on aggregate sys.corr(real, real) to public;
+insert into sys.systemfunctions (select id from sys.functions where name = 'corr' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+create procedure master()
+external name wlc.master;
+create procedure master(path string)
+external name wlc.master;
+create procedure stopmaster()
+external name wlc.stopmaster;
+create procedure masterbeat( duration int)
+external name wlc."setmasterbeat";
+create function masterClock() returns string
+external name wlc."getmasterclock";
+create function masterTick() returns bigint
+external name wlc."getmastertick";
+create procedure replicate()
+external name wlr.replicate;
+create procedure replicate(pointintime timestamp)
+external name wlr.replicate;
+create procedure replicate(dbname string)
+external name wlr.replicate;
+create procedure replicate(dbname string, pointintime timestamp)
+external name wlr.replicate;
+create procedure replicate(dbname string, id tinyint)
+external name wlr.replicate;
+create procedure replicate(dbname string, id smallint)
+external name wlr.replicate;
+create procedure replicate(dbname string, id integer)
+external name wlr.replicate;
+create procedure replicate(dbname string, id bigint)
+external name wlr.replicate;
+create procedure replicabeat(duration integer)
+external name wlr."setreplicabeat";
+create function replicaClock() returns string
+external name wlr."getreplicaclock";
+create function replicaTick() returns bigint
+external name wlr."getreplicatick";
+insert into sys.systemfunctions (select id from sys.functions where name in ('master', 'stopmaster', 'masterbeat', 'masterclock', 'mastertick', 'replicate', 'replicabeat', 'replicaclock', 'replicatick') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+delete from sys.systemfunctions where function_id not in (select id from sys.functions);
+set schema "testschema";
+
+Running database upgrade commands:
+set schema "sys";
+drop view sys.geometry_columns cascade;
+create view sys.geometry_columns as
+	select cast(null as varchar(1)) as f_table_catalog,
+		s.name as f_table_schema,
+		t.name as f_table_name,
+		c.name as f_geometry_column,
+		cast(has_z(c.type_digits) + has_m(c.type_digits) +2 as integer) as coord_dimension,
+		c.type_scale as srid,
+		get_type(c.type_digits, 0) as type
+	from sys.columns c, sys.tables t, sys.schemas s
+	where c.table_id = t.id and t.schema_id = s.id
+	  and c.type in (select sqlname from sys.types where systemname in ('wkb', 'wkba'));
+GRANT SELECT ON sys.geometry_columns TO PUBLIC;
+update sys._tables set system = true where name = 'geometry_columns' and schema_id in (select id from schemas where name = 'sys');
+delete from sys.systemfunctions where function_id not in (select id from sys.functions);
+set schema "testschema";
+
+
+# 15:42:25 >  
+# 15:42:25 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"
+# 15:42:25 >  
+
+#select count(*) from testschema.smallstring;
+% testschema.L4 # table_name
+% L3 # name
+% bigint # type
+% 2 # length
+[ 66	]
+
+# 15:17:06 >  
+# 15:17:06 >  "Done."
+# 15:17:06 >  
+

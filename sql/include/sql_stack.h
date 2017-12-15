@@ -18,7 +18,7 @@
  *			     stmt dependency (close to stmt generation)
  */
 
-#include <sql_mem.h>
+#include "sql_mem.h"
 
 typedef struct sql_stack {
 	sql_allocator *sa;

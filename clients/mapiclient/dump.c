@@ -7,11 +7,10 @@
  */
 
 #include "monetdb_config.h"
-#include <monet_options.h>
+#include "monet_options.h"
 #include "mapi.h"
 #include "stream.h"
 #include <unistd.h>
-#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include "msqldump.h"

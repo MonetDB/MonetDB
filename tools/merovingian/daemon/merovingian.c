@@ -45,18 +45,15 @@
  */
 
 #include "monetdb_config.h"
-#include <msabaoth.h>
-#include <mutils.h> /* MT_lockf */
-#include <mcrypt.h> /* mcrypt_BackendSum */
-#include <utils/utils.h>
-#include <utils/properties.h>
-#include <utils/glob.h>
-#include <utils/database.h>
-#include <utils/control.h>
+#include "msabaoth.h"
+#include "mutils.h" /* MT_lockf */
+#include "mcrypt.h" /* mcrypt_BackendSum */
+#include "utils/utils.h"
+#include "utils/properties.h"
+#include "utils/glob.h"
+#include "utils/database.h"
+#include "utils/control.h"
 
-#include <stdlib.h> /* exit, getenv, rand, srand */
-#include <stdarg.h>	/* variadic stuff */
-#include <stdio.h> /* fprintf */
 #include <sys/types.h>
 #include <sys/stat.h> /* stat */
 #include <sys/wait.h> /* wait */
@@ -67,7 +64,6 @@
 #include <fcntl.h>
 #include <unistd.h> /* unlink, isatty */
 #include <string.h> /* strerror */
-#include <errno.h>
 #include <signal.h> /* handle Ctrl-C, etc. */
 #include <time.h>
 
