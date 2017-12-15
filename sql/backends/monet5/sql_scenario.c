@@ -1157,6 +1157,7 @@ SQLparser(Client c)
 	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
 		/* query template was found in the query cache */
 		scanner_query_processed(&(m->scanner));
+		m->no_mitosis = be->q->no_mitosis;
 	} else {
 		sql_rel *r;
 
@@ -1213,7 +1214,8 @@ SQLparser(Client c)
 						  m->args,	/* the argument list */
 						  m->argc, m->scanner.key ^ m->session->schema->base.id,	/* the statement hash key */
 						  m->emode == m_prepare ? Q_PREPARE : m->type,	/* the type of the statement */
-						  escaped_q);
+						  escaped_q,
+						  m->no_mitosis);
 			}
 			if(!be->q) {
 				err = 1;
