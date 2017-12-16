@@ -4140,6 +4140,7 @@ column_exp:
 opt_alias_name:
     /* empty */	{ $$ = NULL; }
  |  AS ident	{ $$ = $2; }
+ |  ident	{ $$ = $1; }
  ;
 
 atom:
