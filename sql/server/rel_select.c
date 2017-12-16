@@ -1443,7 +1443,7 @@ rel_convert_types(mvc *sql, sql_exp **L, sql_exp **R, int scale_fixing, int tpe)
 		sql_subtype *i = lt;
 		sql_subtype *r = rt;
 
-		if (subtype_cmp(lt, rt) != 0 || lt->type->localtype==0 || rt->type->localtype==0) {
+		if (subtype_cmp(lt, rt) != 0 || (tpe == type_equal_no_any && (lt->type->localtype==0 || rt->type->localtype==0))) {
 			sql_subtype super;
 
 			supertype(&super, r, i);
@@ -2592,7 +2592,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 					sql_exp *e;
 
 					l = ll->h->data;
-					if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) 
+					if (rel_convert_types(sql, &l, &r, 1, type_equal_no_any) < 0) 
 						return NULL;
 					e = exp_compare(sql->sa, l, r, cmp_equal );
 					if (!e)
