@@ -26,8 +26,8 @@ Ready.
 
 % .ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables # table_name
 % TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	TABLE_TYPE,	REMARKS,	TYPE_CAT,	TYPE_SCHEM,	TYPE_NAME,	SELF_REFERENCING_COL_NAME,	REF_GENERATION # name
-% smallint,	varchar,	varchar,	char,	char,	smallint,	smallint,	smallint,	char,	char # type
-% 1,	3,	9,	12,	0,	1,	1,	1,	2,	6 # length
+% char,	varchar,	varchar,	char,	char,	char,	char,	char,	char,	char # type
+% 0,	3,	9,	12,	0,	0,	0,	0,	2,	6 # length
 [ NULL,	"sys",	"args",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"functions",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"idxs",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
@@ -50,8 +50,8 @@ Ready.
 #    'objects', 'key
 % .ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables,	.ttables # table_name
 % TABLE_CAT,	TABLE_SCHEM,	TABLE_NAME,	TABLE_TYPE,	REMARKS,	TYPE_CAT,	TYPE_SCHEM,	TYPE_NAME,	SELF_REFERENCING_COL_NAME,	REF_GENERATION # name
-% smallint,	varchar,	varchar,	char,	char,	smallint,	smallint,	smallint,	char,	char # type
-% 1,	3,	9,	23,	0,	1,	1,	1,	2,	6 # length
+% char,	varchar,	varchar,	char,	char,	char,	char,	char,	char,	char # type
+% 0,	3,	9,	23,	0,	0,	0,	0,	2,	6 # length
 [ NULL,	"sys",	"args",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"functions",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
 [ NULL,	"sys",	"idxs",	"SYSTEM TABLE",	"",	NULL,	NULL,	NULL,	"id",	"SYSTEM"	]
