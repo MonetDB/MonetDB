@@ -105,5 +105,5 @@ select-in-returns-null.Bug-6491
 sqlitelogictest-min-distinct-empty-table.Bug-6493
 sqlitelogictest-algebra-operators.Bug-6494
 sqlitelogictest-hidden-alias.Bug-6495
-sqlitelogictest-comparisons-between-floating-points-and-NULL.Bug-6496.sql
+sqlitelogictest-comparisons-between-floating-points-and-NULL.Bug-6496
 sqlitelogictest-not-between.Bug-6497
