@@ -712,16 +712,17 @@ create:
 create_or_replace:
 	create
 |	CREATE OR REPLACE { $$ = TRUE; }
-
+;
 
 if_exists:
 	/* empty */   { $$ = FALSE; }
 |	IF EXISTS     { $$ = TRUE; }
+;
 
 if_not_exists:
 	/* empty */   { $$ = FALSE; }
 |	IF NOT EXISTS { $$ = TRUE; }
-
+;
 
 drop:
     DROP 		
