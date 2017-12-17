@@ -394,8 +394,6 @@ SORTfndlast(BAT *b, const void *v)
 	}
 	if (b->ttype == TYPE_void) {
 		assert(b->tseqbase == oid_nil);
-		if (*(const oid *) v == oid_nil)
-			return 0;
 		return BATcount(b);
 	}
 	return binsearch(NULL, 0, b->ttype, Tloc(b, 0),
