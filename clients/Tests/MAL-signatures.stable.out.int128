@@ -10556,6 +10556,8 @@ Ready.
 [ "optimizer",	"optimize",	"pattern optimizer.optimize(mod:str, fcn:str):void ",	"QOToptimize;",	"Optimize a specific operation"	]
 [ "optimizer",	"orcam",	"pattern optimizer.orcam(mod:str, fcn:str, targetmod:str, targetfcn:str):void ",	"OPTorcam;",	"Inverse macro, find pattern and replace with a function call."	]
 [ "optimizer",	"orcam",	"pattern optimizer.orcam(targetmod:str, targetfcn:str):void ",	"OPTorcam;",	"Inverse macro processor for current function"	]
+[ "optimizer",	"postfix",	"pattern optimizer.postfix():str ",	"OPTwrapper;",	""	]
+[ "optimizer",	"postfix",	"pattern optimizer.postfix(mod:str, fcn:str):str ",	"OPTwrapper;",	"Postfix the plan,e.g. pushing projections"	]
 [ "optimizer",	"prelude",	"pattern optimizer.prelude():void ",	"optimizer_prelude;",	"Initialize the optimizer"	]
 [ "optimizer",	"profiler",	"pattern optimizer.profiler():str ",	"OPTwrapper;",	""	]
 [ "optimizer",	"profiler",	"pattern optimizer.profiler(mod:str, fcn:str):str ",	"OPTwrapper;",	"Collect properties for the profiler"	]

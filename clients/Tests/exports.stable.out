@@ -1579,6 +1579,7 @@ str OPTmultiplexSimple(Client cntxt, MalBlkPtr mb);
 str OPToltpImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str OPTorcamImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str OPTprofilerImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

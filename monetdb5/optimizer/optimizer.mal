@@ -273,5 +273,13 @@ pattern optimizer.wlc(mod:str, fcn:str):str
 address OPTwrapper
 comment "Inject the workload capture-replay primitives.";
 
+#opt_postfix.mal
+
+pattern optimizer.postfix():str
+address OPTwrapper;
+pattern optimizer.postfix(mod:str, fcn:str):str
+address OPTwrapper
+comment "Postfix the plan,e.g. pushing projections";
+
 optimizer.prelude();
 
