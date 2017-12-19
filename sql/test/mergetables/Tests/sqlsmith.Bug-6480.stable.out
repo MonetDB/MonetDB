@@ -1,0 +1,31 @@
+stdout of test 'sqlsmith.Bug-6480` in directory 'sql/test/mergetables` itself:
+
+
+# 23:33:03 >  
+# 23:33:03 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34932" "--set" "mapi_usock=/var/tmp/mtest-13741/.s.monetdb.34932" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_mergetables"
+# 23:33:03 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mergetables', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.330 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:34932/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-13741/.s.monetdb.34932
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 23:33:04 >  
+# 23:33:04 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13741" "--port=34932"
+# 23:33:04 >  
+
+
+# 23:33:04 >  
+# 23:33:04 >  "Done."
+# 23:33:04 >  
+
