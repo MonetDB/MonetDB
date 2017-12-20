@@ -1989,7 +1989,7 @@ current_or_designated_schema(mvc *sql, char *name) {
 }
 
 static sqlid
-rel_find_designated_schema(mvc *sql, symbol *sym) {
+rel_find_designated_schema(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	char *sname;
 	sql_schema *s;
 
@@ -1999,11 +1999,13 @@ rel_find_designated_schema(mvc *sql, symbol *sym) {
 		sql_error(sql, 02, "3F000!COMMENT ON:no such schema: %s", sname);
 		return 0;
 	}
+
+	*schema_out = s;
 	return s->base.id;
 }
 
 static sqlid
-rel_find_designated_table(mvc *sql, symbol *sym) {
+rel_find_designated_table(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	dlist *qname;
 	sql_schema *s;
 	char *tname;
@@ -2016,8 +2018,10 @@ rel_find_designated_table(mvc *sql, symbol *sym) {
 		return 0;
 	tname = qname_table(qname);
 	t = mvc_bind_table(sql, s, tname);
-	if (t && !want_table == !isKindOfTable(t))	/* comparing booleans can be tricky */
+	if (t && !want_table == !isKindOfTable(t)) {	/* comparing booleans can be tricky */
+		*schema_out = s;
 		return t->base.id;
+	}
 
 	sql_error(sql, 02, "42S02!COMMENT ON:no such %s: %s.%s",
 		want_table ? "table" : "view",
@@ -2026,7 +2030,7 @@ rel_find_designated_table(mvc *sql, symbol *sym) {
 }
 
 static sqlid
-rel_find_designated_column(mvc *sql, symbol *sym) {
+rel_find_designated_column(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	char *sname, *tname, *cname;
 	dlist *colname;
 	sql_schema *s;
@@ -2059,11 +2063,12 @@ rel_find_designated_column(mvc *sql, symbol *sym) {
 		sql_error(sql, 02, "42S22!COMMENT ON:no such column: %s.%s", tname, cname);
 		return 0;
 	}
+	*schema_out = s;
 	return c->base.id;
 }
 
 static sqlid
-rel_find_designated_index(mvc *sql, symbol *sym) {
+rel_find_designated_index(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	dlist *qname;
 	sql_schema *s;
 	char *iname;
@@ -2075,8 +2080,10 @@ rel_find_designated_index(mvc *sql, symbol *sym) {
 		return 0;
 	iname = qname_table(qname);
 	idx = mvc_bind_idx(sql, s, iname);
-	if (idx)
+	if (idx) {
+		*schema_out = s;
 		return idx->base.id;
+	}
 
 	sql_error(sql, 02, "42S12!COMMENT ON:no such index: %s.%s",
 		s->base.name, iname);
@@ -2084,7 +2091,7 @@ rel_find_designated_index(mvc *sql, symbol *sym) {
 }
 
 static sqlid
-rel_find_designated_sequence(mvc *sql, symbol *sym) {
+rel_find_designated_sequence(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	(void)sql;
 	(void)sym;
 	dlist *qname;
@@ -2098,8 +2105,10 @@ rel_find_designated_sequence(mvc *sql, symbol *sym) {
 		return 0;
 	seqname = qname_table(qname);
 	seq = find_sql_sequence(s, seqname);
-	if (seq)
+	if (seq) {
+		*schema_out = s;
 		return seq->base.id;
+	}
 
 	sql_error(sql, 02, "42000!COMMENT ON:no such sequence: %s.%s",
 		s->base.name, seqname);
@@ -2108,7 +2117,7 @@ rel_find_designated_sequence(mvc *sql, symbol *sym) {
 
 
 static sqlid
-rel_find_designated_routine(mvc *sql, symbol *sym) {
+rel_find_designated_routine(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	(void)sql;
 	(void)sym;
 	dlist *designator;
@@ -2136,8 +2145,10 @@ rel_find_designated_routine(mvc *sql, symbol *sym) {
 		// functions returning a table have a special type
 		func = resolve_func(sql, s, fname, typelist, F_UNION, "COMMENT");
 	}
-	if (func)
+	if (func) {
+		*schema_out = s;
 		return func->base.id;
+	}
 
 	if (sql->errstr[0] == '\0')
 		sql_error(sql, 02, "42000!COMMENT ON:no such routine: %s.%s", s->base.name, fname);
@@ -2145,23 +2156,26 @@ rel_find_designated_routine(mvc *sql, symbol *sym) {
 }
 
 static sqlid
-rel_find_designated_object(mvc *sql, symbol *sym) {
+rel_find_designated_object(mvc *sql, symbol *sym, sql_schema **schema_out) {
+	sql_schema *dummy;
 
+	if (schema_out == NULL)
+		schema_out = &dummy;
 	switch (sym->token) {
 		case SQL_SCHEMA:
-			return rel_find_designated_schema(sql, sym);
+			return rel_find_designated_schema(sql, sym, schema_out);
 		case SQL_TABLE:
-			return rel_find_designated_table(sql, sym);
+			return rel_find_designated_table(sql, sym, schema_out);
 		case SQL_VIEW:
-			return rel_find_designated_table(sql, sym);
+			return rel_find_designated_table(sql, sym, schema_out);
 		case SQL_COLUMN:
-			return rel_find_designated_column(sql, sym);
+			return rel_find_designated_column(sql, sym, schema_out);
 		case SQL_INDEX:
-			return rel_find_designated_index(sql, sym);
+			return rel_find_designated_index(sql, sym, schema_out);
 		case SQL_SEQUENCE:
-			return rel_find_designated_sequence(sql, sym);
+			return rel_find_designated_sequence(sql, sym, schema_out);
 		case SQL_ROUTINE:
-			return rel_find_designated_routine(sql, sym);
+			return rel_find_designated_routine(sql, sym, schema_out);
 		default:
 			sql_error(sql, 2, "42000!COMMENT ON %s is not supported", token2string(sym->token));
 			return 0;
@@ -2169,33 +2183,52 @@ rel_find_designated_object(mvc *sql, symbol *sym) {
 }
 
 static sql_rel *
-rel_comment_on(mvc *sql, sqlid obj_id, char *remark) {
-	// Impersonate EXEC sys.comment_on(obj_id, remark);
+rel_comment_on(mvc *sql, sqlid obj_id, sql_schema *schema, char *remark) {
+	// Impersonate CALL sys.comment_on(obj_id, remark);
 
-	sql_rel *rel;
-	list *exps;
-	sql_exp *exp, *left, *right;
-	sql_subtype *tpe;
+	buffer *buf = NULL;
+	stream *s = NULL;
+	char *escaped = NULL;
+	char *query = NULL;
+	sql_schema *sys;
+	sql_rel *rel = NULL;
 
-	// Imitate rel_psm_call()
-	tpe = sql_bind_localtype("str");
-	left = exp_atom_int(sql->sa, obj_id);
-	right = exp_atom_str(sql->sa, remark, tpe);
-	exp = rel_binop_(sql, left, right, mvc_bind_schema(sql, "sys"), "comment_on", card_none);
+	// Check authorization
+	if (!mvc_schema_privs(sql, schema)) {
+		return sql_error(sql, 02, SQLSTATE(42000) "COMMENT ON: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), schema->base.name);
+	}
+	
+	buf = buffer_create(4000);
+	if (!buf)
+		goto wrap_up;
 
-	// Imitate rel_psm_stmt()
-	exps = new_exp_list(sql->sa);
-	list_append(exps, exp);
+	s = buffer_wastream(buf, "comment_on_call");
+	if (!s)
+		goto wrap_up;
 
-	// Imitate rel_psm_block()
-	rel = rel_create(sql->sa);
-	rel->op = op_ddl;
-	rel->exps = exps;
-	rel->flag = DDL_PSM;
+	mnstr_printf(s, "CALL sys.comment_on(%d, ", obj_id);
+	if (!remark) {
+		mnstr_printf(s, "NULL");
+	} else {
+		escaped = sql_escape_str(remark);
+		if (!escaped)
+			goto wrap_up;
+		mnstr_printf(s, "'%s'", escaped);
+	}
+	mnstr_printf(s, ");");
+	query = buffer_get_buf(buf);
+	sys = mvc_bind_schema(sql, "sys");
+	rel = rel_parse(sql, sys, query, m_execute); // correct mode?
 
-	// Imitate rel_psm()
-	sql->type = Q_UPDATE;
-
+wrap_up:
+	// if (query)
+	// 	free(query);
+	// if (escaped)
+	// 	free(escaped);
+	// if (s)
+	// 	mnstr_destroy(s);
+	// if (buf)
+	// 	buffer_destroy(buf);
 	return rel;
 }
 
@@ -2391,18 +2424,19 @@ rel_schemas(mvc *sql, symbol *s)
 		dlist *l = s->data.lval;
 		symbol *catalog_object = l->h->data.sym;
 		char *remark;
+		sql_schema *s;
 		sqlid id;
 
 		assert(l->cnt == 2);
 		remark = l->h->next->data.sval;
 
-		id = rel_find_designated_object(sql, catalog_object);
+		id = rel_find_designated_object(sql, catalog_object, &s);
 		if (!id) {
 			/* rel_find_designated_object has already set the error message so we don't have to */
 			return NULL;
 		}
 
-		return rel_comment_on(sql, id, remark);
+		return rel_comment_on(sql, id, s, remark);
 	} 	break;
 	default:
 		return sql_error(sql, 01, SQLSTATE(M0M03) "Schema statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));

@@ -8,6 +8,7 @@ CREATE TABLE sys.comments (
         id INTEGER NOT NULL PRIMARY KEY,
         remark VARCHAR(65000) NOT NULL
 );
+GRANT SELECT ON sys.comments TO PUBLIC;
 
 CREATE PROCEDURE sys.comment_on(obj_id INTEGER, obj_remark VARCHAR(65000))
 BEGIN
@@ -19,14 +20,13 @@ BEGIN
                 INSERT INTO sys.comments VALUES (obj_id, obj_remark);
         END IF;
 END;
+-- do not grant to public
 
 
-
--- We have to create table systemfunctions first, because describe_all_objects uses it
--- to recognize system functions.  For some reason, the functions table does not have a
--- 'system' column.
-
+-- This used to be in 99_system.sql but we need the systemfunctions table
+-- in sys.describe_all_objects() defined below.
 CREATE TABLE systemfunctions (function_id INTEGER NOT NULL);
+GRANT SELECT ON systemfunctions TO PUBLIC;
 
 CREATE FUNCTION sys.describe_all_objects()
 RETURNS TABLE (
@@ -105,6 +105,7 @@ BEGIN
 	    ORDER BY system, name, fullname, ntype
 	);
 END;
+GRANT EXECUTE ON FUNCTION sys.describe_all_objects() TO PUBLIC;
 
 CREATE VIEW commented_function_signatures AS
 WITH
@@ -147,3 +148,4 @@ SELECT  fid,
         ROW_NUMBER() OVER (ORDER BY fid, n) AS line
 FROM commented_function_params
 ORDER BY line;
+GRANT SELECT ON sys.commented_function_signatures TO PUBLIC;
