@@ -17,8 +17,6 @@
 #include "mal.h"
 #include "mal_exception.h"
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 

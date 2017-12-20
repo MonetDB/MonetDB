@@ -18,7 +18,6 @@
 
 #undef HAVE_IO_H
 #undef HAVE_SYS_UTIME_H
-#undef HAVE_STRFTIME
 #undef PREFIX
 #undef EXEC_PREFIX
 #undef SIZEOF_VOID_P

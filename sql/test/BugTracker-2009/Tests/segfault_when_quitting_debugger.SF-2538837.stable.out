@@ -21,8 +21,8 @@ Ready.
 # 16:24:01 >  
 
 #debug select * from tables;
-mdb>#X_1=0@0:void := querylog.define("debug select * from tables;", "sequential_pipe", 191:int);
-mdb>#X_160=nil:bat[:int] := bat.new(nil:int);
+mdb>#X_1=0@0:void := querylog.define("debug select * from tables;", "sequential_pipe", 190:int);
+mdb>#X_159=nil:bat[:int] := bat.new(nil:int);
 
 # 16:24:01 >  
 # 16:24:01 >  "Done."

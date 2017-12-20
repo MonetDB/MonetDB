@@ -8,7 +8,6 @@
 
 #include "monetdb_config.h"
 
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -20,8 +19,6 @@
 #include <unistd.h>  /* select */
 #include <signal.h>
 #include <fcntl.h>
-
-#include <errno.h>
 
 #include "msabaoth.h"
 #include "mcrypt.h"

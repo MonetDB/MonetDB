@@ -3613,7 +3613,6 @@ MTIMEstr_to_date(date *d, const char * const *s, const char * const *format)
 str
 MTIMEdate_to_str(str *s, const date *d, const char * const *format)
 {
-#ifdef HAVE_STRFTIME
 	struct tm t;
 	char buf[BUFSIZ + 1];
 	size_t sz;
@@ -3637,9 +3636,6 @@ MTIMEdate_to_str(str *s, const date *d, const char * const *format)
 		throw(MAL, "mtime.date_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	strncpy(*s, buf, sz + 1);
 	return MAL_SUCCEED;
-#else
-	throw(MAL, "mtime.date_to_str", "strftime support missing");
-#endif
 }
 
 str
@@ -3661,7 +3657,6 @@ MTIMEstr_to_time(daytime *d, const char * const *s, const char * const *format)
 str
 MTIMEtime_to_str(str *s, const daytime *d, const char * const *format)
 {
-#ifdef HAVE_STRFTIME
 	struct tm t;
 	char buf[BUFSIZ + 1];
 	size_t sz;
@@ -3684,9 +3679,6 @@ MTIMEtime_to_str(str *s, const daytime *d, const char * const *format)
 		throw(MAL, "mtime.time_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	strncpy(*s, buf, sz + 1);
 	return MAL_SUCCEED;
-#else
-	throw(MAL, "mtime.time_to_str", "strftime support missing");
-#endif
 }
 
 str
@@ -3709,7 +3701,6 @@ MTIMEstr_to_timestamp(timestamp *ts, const char * const *s, const char * const *
 str
 MTIMEtimestamp_to_str(str *s, const timestamp *ts, const char * const *format)
 {
-#ifdef HAVE_STRFTIME
 	struct tm t;
 	char buf[BUFSIZ + 1];
 	size_t sz;
@@ -3735,9 +3726,6 @@ MTIMEtimestamp_to_str(str *s, const timestamp *ts, const char * const *format)
 		throw(MAL, "mtime.timestamp_to_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	strncpy(*s, buf, sz + 1);
 	return MAL_SUCCEED;
-#else
-	throw(MAL, "mtime.timestamp_to_str", "strftime support missing");
-#endif
 }
 
 

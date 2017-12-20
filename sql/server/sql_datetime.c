@@ -9,7 +9,6 @@
 #include "monetdb_config.h"
 #include "sql_datetime.h"
 #include "sql_string.h"
-#include <stdlib.h>
 
 int
 parse_interval_qualifier(mvc *sql, struct dlist *pers, int *sk, int *ek, int *sp, int *ep)

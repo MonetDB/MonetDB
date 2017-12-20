@@ -8,7 +8,6 @@
 
 #include "monetdb_config.h"
 #include "dotmonetdb.h"
-#include <stdio.h>
 #include <string.h>
 
 void

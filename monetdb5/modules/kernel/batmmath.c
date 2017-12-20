@@ -18,13 +18,14 @@
  */
 #include "monetdb_config.h"
 #include "batmmath.h"
-#ifdef HAVE_FENV_H
 #include <fenv.h>
-#else
-#define feclearexcept(x)
-#define fetestexcept(x)		0
+#ifndef FE_INVALID
 #define FE_INVALID			0
+#endif
+#ifndef FE_DIVBYZERO
 #define FE_DIVBYZERO		0
+#endif
+#ifndef FE_OVERFLOW
 #define FE_OVERFLOW			0
 #endif
 

@@ -493,10 +493,6 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
 }
-#ifndef HAVE_NEXTAFTERF
-#define nextafter   _nextafter
-#include "mutils.h"		/* nextafterf */
-#endif
 
 #define PREVVALUEbte(x) ((x) - 1)
 #define PREVVALUEsht(x) ((x) - 1)

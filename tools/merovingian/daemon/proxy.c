@@ -7,7 +7,6 @@
  */
 
 #include "monetdb_config.h"
-#include <stdio.h> /* fprintf */
 #include <sys/types.h>
 #include <sys/stat.h> /* stat */
 #include <sys/wait.h> /* wait */

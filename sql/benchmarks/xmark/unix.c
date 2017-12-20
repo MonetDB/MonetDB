@@ -9,11 +9,11 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
-#include <stdlib.h> 
 #include <math.h>
 #include <stdio.h>
-#include <stdio.h> 
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
 #include <unistd.h>
 extern char *pmoptarg;
 extern int pmoptind;

@@ -10,7 +10,6 @@
 
 #include "monetdb_config.h"
 #include "mal.h"
-#include <stdio.h>
 #include "monet_version.h"
 #ifdef HAVE_LIBPCRE
 #include <pcre.h>

@@ -13,7 +13,6 @@
 #include "sql_symbol.h"
 #include "sql_parser.h"
 #include "sql_relation.h"
-#include <stdarg.h>
 
 extern sql_rel *rel_semantic(mvc *sql, symbol *sym);
 extern sql_rel *rel_parse(mvc *m, sql_schema *s, char *query, char emode);

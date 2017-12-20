@@ -9,8 +9,7 @@
 #ifndef _SEEN_UTILS_H
 #define _SEEN_UTILS_H 1
 
-#include <stdio.h>  /* FILE* */
-#include <sys/types.h>   /* time_t */
+#include <time.h>   /* time_t */
 
 #define PROPLENGTH 64 /* Max number of properties */
 

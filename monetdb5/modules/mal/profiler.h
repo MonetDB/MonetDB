@@ -18,7 +18,6 @@
 #define _PROFILER_
 
 #include "gdk.h"
-#include <stdarg.h>
 #include <time.h>
 #include "mal_stack.h"
 #include "mal_resolve.h"

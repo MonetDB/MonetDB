@@ -306,23 +306,14 @@
 #define _GDK_H_
 
 /* standard includes upon which all configure tests depend */
-#include <stdio.h>
 #ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>
 #endif
 #ifdef HAVE_SYS_STAT_H
 # include <sys/stat.h>
 #endif
-#include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
-#ifdef HAVE_INTTYPES_H
-# include <inttypes.h>
-#else
-# ifdef HAVE_STDINT_H
-#  include <stdint.h>
-# endif
-#endif
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
@@ -335,17 +326,6 @@
 
 #ifdef HAVE_DIRENT_H
 # include <dirent.h>
-#else
-# define dirent direct
-# ifdef HAVE_SYS_NDIR_H
-#  include <sys/ndir.h>
-# endif
-# ifdef HAVE_SYS_DIR_H
-#  include <sys/dir.h>
-# endif
-# ifdef HAVE_NDIR_H
-#  include <ndir.h>
-# endif
 #endif
 
 #include <limits.h>		/* for *_MIN and *_MAX */
@@ -450,10 +430,8 @@
 #define XPROPDEBUG	if (GDKdebug & XPROPMASK)
 */
 
-/* JOINPROPMASK not used anymore
-#define JOINPROPMASK	(1<<24)
-#define JOINPROPCHK	if (!(GDKdebug & JOINPROPMASK))
-*/
+#define NOSYNCMASK	(1<<24)
+
 #define DEADBEEFMASK	(1<<25)
 #define DEADBEEFCHK	if (!(GDKdebug & DEADBEEFMASK))
 

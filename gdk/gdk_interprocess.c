@@ -14,8 +14,6 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-#include <stdlib.h>
-#include <assert.h>
 #include <string.h>
 
 #include <sys/types.h>
@@ -27,7 +25,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sched.h>
-#include <errno.h>
 #include <sys/sem.h>
 #include <time.h>
 

@@ -1,0 +1,37 @@
+stdout of test 'sqlitelogictest-algebra-operators.Bug-6494` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 16:01:45 >  
+# 16:01:45 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34700" "--set" "mapi_usock=/var/tmp/mtest-6129/.s.monetdb.34700" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-stable/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 16:01:45 >  
+
+# MonetDB 5 server v11.27.12 (hg id: a2f70a576335+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 62.700 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:34700/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6129/.s.monetdb.34700
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 16:01:45 >  
+# 16:01:45 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6129" "--port=34700"
+# 16:01:45 >  
+
+#SELECT 85 * + 52 * 50 * ( + + 82 ) + - 78;
+% .L2 # table_name
+% L2 # name
+% int # type
+% 8 # length
+[ 18121922	]
+
+# 16:01:45 >  
+# 16:01:45 >  "Done."
+# 16:01:45 >  
+

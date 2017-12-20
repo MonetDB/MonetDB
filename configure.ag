@@ -47,6 +47,7 @@ dnl  (including their trailing newline).
 
 AC_PREREQ([2.63])
 AC_INIT([MonetDB], [11.28.0], [https://bugs.monetdb.org/], [MonetDB], [https://www.monetdb.org/])
+AC_COPYRIGHT([Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
 AC_CANONICAL_HOST
@@ -357,21 +358,6 @@ AC_ARG_ENABLE([static-analysis],
 	[AS_HELP_STRING([--enable-static-analysis], [configure for static code analysis (use only if you know what you are doing)])],
 	AC_DEFINE([STATIC_CODE_ANALYSIS], 1, [compiling for static code analysis]))
 
-need_profile=no
-dft_profile=$need_profile
-AC_ARG_ENABLE([profile],
-	[AS_HELP_STRING([--enable-profile], [enable profiling (default=no)])],
-	[enable_profile=$enableval],
-	[enable_profile=$dft_profile])
-
-need_instrument=no
-dft_instrument=$need_instrument
-AC_ARG_ENABLE([instrument],
-	[AS_HELP_STRING([--enable-instrument],
-		[enable instrument (default=no)])],
-	[enable_instrument=$enableval],
-	[enable_instrument=$dft_instrument])
-
 # RIPEMD160 is patent free, academic and European, but unfortunately
 # can't use it by default, as that would exclude JDBC usage (Java
 # doesn't natively support RIPEMD160).
@@ -430,6 +416,9 @@ AC_SYS_LARGEFILE
 AC_PROG_CPP()
 # check for compiler (also set GCC (yes/no)).
 AC_PROG_CC()
+AC_PROG_CC_C99()
+AS_VAR_IF([ac_cv_prog_cc_c99], [no],
+	[AC_MSG_ERROR([C99 is required to compile MonetDB])])
 
 # What do we need to get the msg_control and msg_controllen fields on
 # struct msg (filedescriptor passing)?  In the future this could be a
@@ -558,9 +547,7 @@ AC_DEFUN([MCHECK_ADD_FLAG], [
 			AC_LANG_SOURCE([[
 				@%:@include <stdio.h>
 				@%:@include <stdlib.h>
-				@%:@ifdef HAVE_STRING_H
 				@%:@include <string.h>
-				@%:@endif
 
 				@%:@if -_LARGEFILE64_SOURCE - -1 == 1
 				@%:@include <stdio.h>
@@ -813,67 +800,35 @@ AC_SUBST([anttranslatepath])
 
 # check whether no (explictly chosen) mutual exclusive combinations
 # were made, compatability matrix:
-#                deb  ass  opt  pro  ins
-#  debug          \    C    X    C    C
-#  assert         C    \    C    C    C
-#  optimize       X    C    \    X    X
-#  profile        C    C    X    \    C
-#  instrument     C    C    X    C    \
+#                deb  ass  opt
+#  debug          \    C    X
+#  assert         C    \    C
+#  optimize       X    C    \
 
 # find conflicts
-AS_CASE([x$enable_debug.$enable_optimize.$enable_profile.$enable_instrument],
-	[xyes.yes.*.*],
+AS_CASE([x$enable_debug.$enable_optimize],
+	[xyes.yes],
 		[AC_MSG_ERROR([combining --enable-optimize and --enable-debug is not possible])],
-	[x*.yes.yes.*],
-		[AC_MSG_ERROR([combining --enable-optimize and --enable-profile is not possible])],
-	[x*.yes.*.yes],
-		[AC_MSG_ERROR([combining --enable-optimize and --enable-instrument is not possible])],
 	# handle defaults after user requests
-	[xyes.*.*.*], [
+	[xyes.*], [
 		enable_debug=yes
 		AS_VAR_IF([enable_optimize], [no], [],
 			[disable_optimize="(as debug is enabled)"])
 		enable_optimize=no
-		enable_profile=`echo $enable_profile | sed 's:^def_::'`
-		enable_instrument=`echo $enable_instrument | sed 's:^def_::'`
 		],
-	[x*.*.yes.*], [
-		enable_debug=`echo $enable_debug | sed 's:^def_::'`
-		AS_VAR_IF([enable_optimize], [no], [],
-			[disable_optimize="(as profile is enabled)"])
-		enable_optimize=no
-		enable_profile=yes
-		enable_instrument=`echo $enable_instrument | sed 's:^def_::'`
-		],
-	[x*.*.*.yes], [
-		enable_debug=`echo $enable_debug | sed 's:^def_::'`
-		AS_VAR_IF([enable_optimize], [no], [],
-			[disable_optimize="(as instrument is enabled)"])
-		enable_optimize=no
-		enable_profile=`echo $enable_profile | sed 's:^def_::'`
-		enable_instrument=yes
-		],
-	[x*.*no.*.*], [
+	[x*.*no], [
 		enable_debug=`echo $enable_debug | sed 's:^def_::'`
 		enable_optimize=no
-		enable_profile=`echo $enable_profile | sed 's:^def_::'`
-		enable_instrument=`echo $enable_instrument | sed 's:^def_::'`
 		],
-	[x*.*yes.*.*], [
+	[x*.*yes], [
 		# enable-optimize overrules other defaults
 		enable_optimize=yes
 		AS_VAR_IF([enable_debug], [no], [],
 			[disable_debug="(as optimize is enabled)"])
 		enable_debug=no
-		AS_VAR_IF([enable_profile], [no], [],
-			[disable_profile="(as optimize is enabled)"])
-		enable_profile=no
-		AS_VAR_IF([enable_instrument], [no], [],
-			[disable_instrument="(as optimize is enabled)"])
-		enable_instrument=no
 		],
 	[x*],
-		[AC_MSG_WARN([unhandled configuration $enable_debug.$enable_optimize.$enable_profile.$enable_instrument, please file a bug on bugs.monetdb.org])])
+		[AC_MSG_WARN([unhandled configuration $enable_debug.$enable_optimize, please file a bug on bugs.monetdb.org])])
 # make defaults real for flags which don't conflict with anything
 enable_assert=`echo $enable_assert | sed 's:^def_::'`
 
@@ -1066,27 +1021,6 @@ AS_VAR_IF([enable_optimize], [yes], [
 	# "normal" build, that is then caught by '-Wp,-D_FORTIFY_SOURCE=2' during `make rpm`.
 	MCHECK_ADD_FLAG([-D_FORTIFY_SOURCE=2])],
 	[AC_MSG_RESULT([no])])
-
-AC_MSG_CHECKING([for --enable-profile])
-AS_VAR_IF([enable_profile], [yes], [
-	AC_DEFINE([PROFILE], 1, [Compiler flag])
-	need_profile=yes
-	AS_VAR_IF([GCC], [yes], [
-		CFLAGS="$CFLAGS -pg"
-		AC_MSG_RESULT([yes: -pg])],
-		[AC_MSG_RESULT([no])])],
-	[AC_MSG_RESULT([no])])
-AM_CONDITIONAL([PROFILING], [test "x$need_profile" = xyes])
-
-AC_MSG_CHECKING([for --enable-instrument])
-AS_VAR_IF([enable_instrument], [yes], [
-	AC_DEFINE([PROFILE], 1, [Compiler flag])
-	need_instrument=yes
-	AS_VAR_IF([GCC], [yes], [
-		CFLAGS="$CFLAGS -finstrument-functions -g"
-		AC_MSG_RESULT([yes: -finstrument-functions -g])], [
-		AC_MSG_RESULT([no])])],
-		[AC_MSG_RESULT([no])])
 
 AC_PATH_PROG([BASH], [bash], [/usr/bin/bash], [$PATH])
 AC_CHECK_PROG([RM], [rm], [rm -f])
@@ -1365,7 +1299,7 @@ AS_CASE([$host_os],
 org_have_bz2=auto
 have_bz2=$org_have_bz2
 BZ_CFLAGS=""
-BZ_LIBS=""
+BZ_LIBS="-lbz2"
 AC_ARG_WITH([bz2],
 	[AS_HELP_STRING([--with-bz2=DIR],
 		[bz2 library is installed in DIR])],
@@ -1375,31 +1309,23 @@ AS_CASE([$have_bz2],
 	[yes|no|auto], [],
 	[
 		BZ_CFLAGS="-I$withval/include"
-		BZ_LIBS="-L$withval/lib"])
+		BZ_LIBS="-L$withval/lib -lbz2"])
 
-AC_MSG_CHECKING([for bzip2])
 AS_VAR_IF([have_bz2], [no], [], [
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS $BZ_CFLAGS"
-	save_LIBS="$LIBS"
-	LIBS="$LIBS $BZ_LIBS -lbz2"
-	AC_LINK_IFELSE([AC_LANG_PROGRAM([[@%:@include <stdio.h>
-@%:@include <bzlib.h>]], [[(void)BZ2_bzopen("","");]])],
-		BZ_LIBS="$BZ_LIBS -lbz2",
-		[AS_VAR_IF([have_bz2], [auto], [], [
-			AC_MSG_ERROR([bz2 library not found])])
-		  have_bz2=no
-		  why_have_bz2="(bz2 library not found)" ])
-	LIBS="$save_LIBS"
+	save_LDFLAGS="$LDFLAGS"
+	LDFLAGS="$LDFLAGS $BZ_LIBS"
+	AC_CHECK_HEADER([bzlib.h],
+		[AC_CHECK_LIB([bz2], [BZ2_bzopen],
+			[AC_DEFINE([HAVE_LIBBZ2], 1, [Define if you have the bz2 library])],
+			[AS_VAR_IF([have_bz2], [auto], [], [AC_MSG_ERROR([-lbz2 library not found])])
+			 have_bz2=no; why_have_bz2="(bz2 library not found)"])],
+		[AS_VAR_IF([have_bz2], [auto], [], [AC_MSG_ERROR([bzlib.h header not found])])
+			 have_bz2=no; why_have_bz2="(bzlib.h header not found)"])
+	LDFLAGS="$save_LDFLAGS"
 	CPPFLAGS="$save_CPPFLAGS"])
-
-AS_VAR_IF([have_bz2], [no],
-	[BZ_CFLAGS=""
-	 BZ_LIBS=""
-	 AC_MSG_RESULT([no])],
-	[AC_DEFINE([HAVE_LIBBZ2], 1, [Define if you have the bz2 library])
-	 AC_MSG_RESULT([yes: $BZ_LIBS])])
-
+AS_VAR_IF([have_bz2], [no], [BZ_CFLAGS=""; BZ_LIBS=""])
 AC_SUBST([BZ_CFLAGS])
 AC_SUBST([BZ_LIBS])
 AM_CONDITIONAL([HAVE_LIBBZ2], [test x$have_bz2 != xno])
@@ -1410,7 +1336,7 @@ dnl  check for snappy (de)compression library
 org_have_snappy=auto
 have_snappy=$org_have_snappy
 snappy_CFLAGS=""
-snappy_LIBS=""
+snappy_LIBS="-lsnappy"
 AC_ARG_WITH([snappy],
 	[AS_HELP_STRING([--with-snappy=DIR],
 		[snappy library is installed in DIR])],
@@ -1420,31 +1346,23 @@ AS_CASE(["$have_snappy"],
 	[yes|no|auto], [],
 	[
 		snappy_CFLAGS="-I$withval/include"
-		snappy_LIBS="-L$withval/lib"])
+		snappy_LIBS="-L$withval/lib -lsnappy"])
 
-AC_MSG_CHECKING([for snappy])
 AS_VAR_IF([have_snappy], [no], [], [
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS $snappy_CFLAGS"
-	save_LIBS="$LIBS"
-	LIBS="$LIBS $snappy_LIBS -lsnappy"
-	AC_LINK_IFELSE([AC_LANG_PROGRAM([[@%:@include <stdio.h>
-@%:@include <snappy-c.h>]], [[(void)snappy_max_compressed_length(42);]])],
-		snappy_LIBS="$snappy_LIBS -lsnappy",
-		[ AS_VAR_IF([have_snappy], [auto], [], [
-			AC_MSG_ERROR([snappy library not found])])
-		  have_snappy=no
-		  why_have_snappy="(snappy library not found)" ])
-	LIBS="$save_LIBS"
+	save_LDFLAGS="$LDFLAGS"
+	LDFLAGS="$LDFLAGS $snappy_LDFLAGS"
+	AC_CHECK_HEADER([snappy-c.h],
+		[AC_CHECK_LIB([snappy], [snappy_max_compressed_length],
+			[AC_DEFINE([HAVE_LIBSNAPPY], 1, [Define if you have the snappy library])],
+			[AS_VAR_IF([have_snappy], [auto], [], [AC_MSG_ERROR([-lsnappy library not found])])
+			 have_snappy=no; why_have_snappy="(snappy library not found)"])],
+		[AS_VAR_IF([have_snappy], [auto], [], [AC_MSG_ERROR([snappy-c.h header not found])])
+			 have_snappy=no; why_have_snappy="(snappy-c.h header not found)"])
+	LDFLAGS="$save_LDFLAGS"
 	CPPFLAGS="$save_CPPFLAGS"])
-
-AS_VAR_IF([have_snappy], [no], [], [
-	AC_DEFINE([HAVE_LIBSNAPPY], 1, [Define if you have the snappy library])
-	AC_MSG_RESULT([yes: $snappy_LIBS])], [
-	snappy_CFLAGS=""
-	snappy_LIBS=""
-	AC_MSG_RESULT([no])])
-
+AS_VAR_IF([have_snappy], [no], [snappy_CFLAGS=""; snappy_LIBS=""])
 AC_SUBST([snappy_CFLAGS])
 AC_SUBST([snappy_LIBS])
 AM_CONDITIONAL([HAVE_LIBSNAPPY], [test x$have_snappy != xno])
@@ -1454,7 +1372,7 @@ dnl  check for lz4 (de)compression library
 org_have_lz4=auto
 have_lz4=$org_have_lz4
 lz4_CFLAGS=""
-lz4_LIBS=""
+lz4_LIBS="-llz4"
 AC_ARG_WITH([lz4],
 	[AS_HELP_STRING([--with-lz4=DIR],
 		[lz4 library is installed in DIR])],
@@ -1464,31 +1382,23 @@ AS_CASE(["$have_lz4"],
 	[yes|no|auto], [],
 	[
 		lz4_CFLAGS="-I$withval/include"
-		lz4_LIBS="-L$withval/lib"])
+		lz4_LIBS="-L$withval/lib -llz4"])
 
-AC_MSG_CHECKING([for lz4])
 AS_VAR_IF([have_lz4], [no], [], [
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$CPPFLAGS $lz4_CFLAGS"
-	save_LIBS="$LIBS"
-	LIBS="$LIBS $lz4_LIBS -llz4"
-	AC_LINK_IFELSE([AC_LANG_PROGRAM([[@%:@include <stdio.h>
-@%:@include <lz4.h>]], [[(void)LZ4_compressBound(42);]])],
-		lz4_LIBS="$lz4_LIBS -llz4",
-		[ AS_VAR_IF([have_lz4], [auto], [], [
-			AC_MSG_ERROR([lz4 library not found])])
-		  have_lz4=no
-		  why_have_lz4="(lz4 library not found)" ])
-	LIBS="$save_LIBS"
+	save_LDFLAGS="$LDFLAGS"
+	LDFLAGS="$LDFLAGS $lz4_LDFLAGS"
+	AC_CHECK_HEADER([lz4.h],
+		[AC_CHECK_LIB([lz4], [LZ4_compress_fast],
+			[AC_DEFINE([HAVE_LIBLZ4], 1, [Define if you have the lz4 library])],
+			[AS_VAR_IF([have_lz4], [auto], [], [AC_MSG_ERROR([-llz4 library not found])])
+			 have_lz4=no; why_have_lz4="(lz4 library not found)"])],
+		[AS_VAR_IF([have_lz4], [auto], [], [AC_MSG_ERROR([lz4.h header not found])])
+			 have_lz4=no; why_have_lz4="(lz4.h header not found)"])
+	LDFLAGS="$save_LDFLAGS"
 	CPPFLAGS="$save_CPPFLAGS"])
-
-AS_VAR_IF([have_lz4], [no], [], [
-	AC_DEFINE([HAVE_LIBLZ4], 1, [Define if you have the lz4 library])
-	AC_MSG_RESULT([yes: $lz4_LIBS])], [
-	lz4_CFLAGS=""
-	lz4_LIBS=""
-	AC_MSG_RESULT([no])])
-
+AS_VAR_IF([have_lz4], [no], [lz4_CFLAGS=""; lz4_LIBS=""])
 AC_SUBST([lz4_CFLAGS])
 AC_SUBST([lz4_LIBS])
 AM_CONDITIONAL([HAVE_LIBLZ4], [test x$have_lz4 != xno])
@@ -2528,25 +2438,19 @@ AS_VAR_IF([have_atomic_ops], [yes], [
 
 #    checks for header files
 AC_HEADER_STDBOOL
-AC_HEADER_STDC
-AC_HEADER_TIME
-AC_HEADER_DIRENT
 # NOTE: these header files are in alphabetical order to ease maintenance
 AC_CHECK_HEADERS([ \
+	dirent.h \
 	dlfcn.h \
 	execinfo.h \
 	fcntl.h \
-	fenv.h \
 	getopt.h \
 	iconv.h \
-	ieeefp.h \
 	io.h \
 	kvm.h \
 	langinfo.h \
 	libgen.h \
 	libintl.h \
-	limits.h \
-	locale.h \
 	mach/mach_init.h \
 	mach/task.h \
 	mach-o/dyld.h \
@@ -2554,9 +2458,6 @@ AC_CHECK_HEADERS([ \
 	netinet/in.h \
 	procfs.h \
 	pwd.h \
-	signal.h \
-	stdint.h \
-	string.h \
 	strings.h \
 	stropts.h \
 	sys/file.h \
@@ -2574,7 +2475,6 @@ AC_CHECK_HEADERS([ \
 	sys/utime.h \
 	sys/wait.h \
 	termios.h \
-	time.h \
 	unistd.h \
 	uuid/uuid.h \
 	winsock.h \
@@ -2676,10 +2576,8 @@ AC_C_CHAR_UNSIGNED
 
 #    checks for structures
 #    checks for compiler characteristics
-AC_C_CONST
 AC_C_INLINE
 AC_C_RESTRICT
-AC_C_VOLATILE
 AC_C_FLEXIBLE_ARRAY_MEMBER
 
 AC_MSG_CHECKING([if your compiler understands `__hidden'])
@@ -2720,7 +2618,6 @@ AC_CHECK_FUNCS([\
 	cbrt \
 	clock_gettime \
 	ctime_r \
-	fabsf \
 	fallocate \
 	fcntl \
 	fsync \
@@ -2731,12 +2628,10 @@ AC_CHECK_FUNCS([\
 	getopt_long \
 	gettimeofday \
 	getuid \
-	llabs \
 	localtime_r \
 	lockf \
 	madvise \
 	mremap \
-	nextafterf \
 	nl_langinfo \
 	_NSGetExecutablePath \
 	popen \
@@ -2744,25 +2639,17 @@ AC_CHECK_FUNCS([\
 	posix_fallocate \
 	posix_madvise \
 	putenv \
-	round \
 	setenv \
-	setlocale \
 	setsid \
 	shutdown \
 	sigaction \
 	strcasestr \
-	strftime \
 	strncasecmp \
 	strptime \
 	strsignal \
-	strtod \
-	strtof \
-	strtoll \
-	strtoull \
 	sysconf \
 	task_info \
 	times \
-	trunc \
 	uname \
 	])
 LIBS="$save_LIBS"
@@ -3002,102 +2889,37 @@ AH_BOTTOM([
 @%:@include <errno.h>
 @%:@include <stdarg.h>		/* va_alist.. */
 @%:@include <inttypes.h>
-@%:@ifndef HAVE_INTPTR_T
-typedef ssize_t intptr_t;
-@%:@endif
-@%:@ifndef HAVE_UINTPTR_T
-typedef size_t uintptr_t;
-@%:@endif
-@%:@ifdef HAVE_STDBOOL_H
 @%:@include <stdbool.h>
-@%:@endif
-@%:@ifndef __bool_true_false_are_defined
-@%:@define true 1
-@%:@define false 0
-@%:@define __bool_true_false_are_defined 1
-@%:@endif
-
 @%:@include <assert.h>
-
-@%:@define SLASH_2_DIR_SEP(s) {char *t; for(t=strchr(s, '/'    ); t; t=strchr(t+1, '/'    )) *t=DIR_SEP;}
-@%:@define DIR_SEP_2_SLASH(s) {char *t; for(t=strchr(s, DIR_SEP); t; t=strchr(t+1, DIR_SEP)) *t='/'    ;}
 
 typedef int64_t lng;
 typedef uint64_t ulng;
-@%:@ define SIZEOF_LNG 8
-@%:@ define LLFMT "%" PRId64
-@%:@ define ULLFMT "%" PRIu64
+@%:@define SIZEOF_LNG 8
+@%:@define LLFMT "%" PRId64
+@%:@define ULLFMT "%" PRIu64
 
-
-@%:@ifdef HAVE___INT128
+@%:@if defined(HAVE___INT128)
 typedef __int128 hge;
 typedef unsigned __int128 uhge;
-@%:@ define HAVE_HGE 1
-@%:@ define SIZEOF_HGE SIZEOF___INT128
-@%:@else
-@%:@ if defined(HAVE___INT128_T) && defined(HAVE___UINT128_T)
+@%:@define HAVE_HGE 1
+@%:@define SIZEOF_HGE SIZEOF___INT128
+@%:@elif defined(HAVE___INT128_T) && defined(HAVE___UINT128_T)
 typedef __int128_t hge;
 typedef __uint128_t uhge;
-@%:@  define HAVE_HGE 1
-@%:@  define SIZEOF_HGE SIZEOF___INT128_T
-@%:@ endif
-@%:@endif
-
-
-@%:@ifndef HAVE_PTRDIFF_T
-@%:@ if SIZEOF_SIZE_T == SIZEOF_INT
-typedef int ptrdiff_t;
-@%:@ else
-typedef lng ptrdiff_t;
-@%:@ endif
+@%:@define HAVE_HGE 1
+@%:@define SIZEOF_HGE SIZEOF___INT128_T
 @%:@endif
 
 /* define printf formats for printing size_t and ssize_t variables */
-@%:@if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901 && !defined(__svr4__) && !defined(WIN32) && !defined(__sgi)) || __GNUC__ > 3
-@%:@ define SZFMT "%zu"
-@%:@ define SSZFMT "%zd"
-@%:@elif SIZEOF_SIZE_T == SIZEOF_INT
-@%:@ define SZFMT "%u"
-@%:@ define SSZFMT "%d"
-@%:@elif SIZEOF_SIZE_T == SIZEOF_LONG
-@%:@ define SZFMT "%lu"
-@%:@ define SSZFMT "%ld"
-@%:@elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG || SIZEOF_SIZE_T == SIZEOF___INT64
-@%:@ define SZFMT ULLFMT
-@%:@ define SSZFMT LLFMT
-@%:@else
-@%:@ error no definition for SZFMT/SSZFMT
-@%:@endif
+@%:@define SZFMT "%zu"
+@%:@define SSZFMT "%zd"
 
 /* define printf formats for printing ptrdiff_t variables */
-@%:@if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901 && !defined(__svr4__) && !defined(WIN32) && !defined(__sgi) || defined(__hpux)
 @%:@define PDFMT "%td"
-@%:@elif SIZEOF_PTRDIFF_T == SIZEOF_INT
-@%:@define PDFMT "%d"
-@%:@elif SIZEOF_PTRDIFF_T == SIZEOF_LONG
-@%:@define PDFMT "%ld"
-@%:@elif SIZEOF_PTRDIFF_T == SIZEOF_LONG_LONG || SIZEOF_PTRDIFF_T == SIZEOF___INT64
-@%:@define PDFMT LLFMT
-@%:@else
-@%:@error no definition for PDFMT
-@%:@endif
 
 /* define printf format for printing pointer values */
-@%:@if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901
 @%:@define PTRFMT		"%p"
 @%:@define PTRFMTCAST		/* no cast needed */
-@%:@elif defined(_MSC_VER)
-@%:@define PTRFMT		"%p"
-@%:@define PTRFMTCAST		/* no cast needed */
-@%:@elif SIZEOF_VOID_P == 4
-@%:@define PTRFMT		"%" PRIx32
-@%:@define PTRFMTCAST	(uint32_t)
-@%:@elif SIZEOF_VOID_P == 8
-@%:@define PTRFMT		"%" PRIx64
-@%:@define PTRFMTCAST	(uint64_t)
-@%:@else
-@%:@error no definition for PTRFMT
-@%:@endif
 
 /* defines to help the compiler check printf-style format arguments */
 @%:@if !defined(__GNUC__) || __GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 5)
@@ -3171,8 +2993,6 @@ for comp in \
 	'optimize  ' \
 	'developer ' \
 	'sanitizer ' \
-	'instrument' \
-	'profile   ' \
 ; do
 	eval "dft=\$dft_$comp"
 	eval "enable=\$enable_$comp"

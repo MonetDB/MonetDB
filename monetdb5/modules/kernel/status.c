@@ -21,7 +21,6 @@
 
 #include "monetdb_config.h"
 #include "gdk.h"
-#include <stdarg.h>
 #include <time.h>
 #include "mal_exception.h"
 #include "status.h"

@@ -9,7 +9,6 @@
 #include "monetdb_config.h"
 #include "helpers.h"
 #include <ctype.h>
-#include <stdlib.h>
 #include <string.h>
 
 #ifndef DIR_SEP

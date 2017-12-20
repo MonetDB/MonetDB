@@ -11,7 +11,6 @@
 
 #include "monetdb_config.h"
 #include "muuid.h"
-#include <stdlib.h> /* rand */
 #include <string.h> /* strdup */
 #ifdef HAVE_UUID_UUID_H
 # include <uuid/uuid.h>

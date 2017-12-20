@@ -22,14 +22,6 @@
 #include <strings.h>		/* for strncasecmp */
 #endif
 
-#ifndef NATIVE_WIN32
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
-#endif
-
-#include <errno.h>
-
 static const char *sql_commands[] = {
 	"SELECT",
 	"INSERT",

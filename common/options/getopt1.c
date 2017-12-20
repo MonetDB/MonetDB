@@ -30,18 +30,6 @@
 
 #include "monet_getopt.h"
 
-#if 0				/* already taken care of in config.h */
-#if !defined __STDC__ || !__STDC__
-/* This is a separate conditional since some stdc systems
-   reject `defined (const)'.  */
-#ifndef const
-#define const
-#endif
-#endif
-#endif
-
-#include <stdio.h>
-
 /* Comment out all this code if we are using the GNU C Library, and are not
    actually compiling the library itself.  This code is part of the GNU C
    Library, but also included in many other GNU distributions.  Compiling

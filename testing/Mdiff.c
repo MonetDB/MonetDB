@@ -8,8 +8,6 @@
 
 #include "monetdb_config.h"
 
-#include <stdlib.h>
-#include <stdio.h>
 #include "difflib.h"
 #ifdef HAVE_IO_H
 # include <io.h>

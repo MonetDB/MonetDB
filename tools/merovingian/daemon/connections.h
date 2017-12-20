@@ -9,7 +9,6 @@
 #ifndef _CONNECTIONS_H
 #define _CONNECTIONS_H 1
 
-#include <stdio.h>
 #include "merovingian.h"
 
 err openConnectionTCP(int *ret, const char *bindaddr, unsigned short port, FILE *log);

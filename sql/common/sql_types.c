@@ -350,8 +350,9 @@ subtype_cmp(sql_subtype *t1, sql_subtype *t2)
 {
 	if (!t1->type || !t2->type)
 		return -1;
+
 	if ( !(t1->type->eclass == t2->type->eclass && 
-	       EC_INTERVAL(t1->type->eclass)) &&
+	      (EC_INTERVAL(t1->type->eclass) || t1->type->eclass == EC_NUM)) &&
 	      (t1->digits != t2->digits || 
 	      (!(t1->type->eclass == t2->type->eclass && 
 	       t1->type->eclass == EC_FLT) &&

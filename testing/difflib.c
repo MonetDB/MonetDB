@@ -21,7 +21,6 @@
 #ifdef HAVE_IO_H
 # include <io.h>
 #endif
-#include <stdlib.h>
 #include <time.h>
 
 #ifdef NATIVE_WIN32

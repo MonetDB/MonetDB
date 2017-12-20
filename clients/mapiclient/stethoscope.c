@@ -21,11 +21,8 @@
 #include "stream.h"
 #include "stream_socket.h"
 #include "mapi.h"
-#include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 #include <sys/stat.h>
-#include <errno.h>
 #include <signal.h>
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>

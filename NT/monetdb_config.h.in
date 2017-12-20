@@ -17,7 +17,14 @@
  * _MSC_VER = 1600: Visual Studio 10.0
  * _MSC_VER = 1800: Visual Studio 12.0
  * _MSC_VER = 1900: Visual Studio 14.0
+ *
+ * versions below Visual Studio 12.0 are not supported: they lack
+ * required C-99 functionality.
  */
+
+#if defined(_MSC_VER) && _MSC_VER < 1800
+#error old versions of Visual Studio are no longer supported
+#endif
 
 #ifndef _SEEN_MONETDB_CONFIG_H
 #define _SEEN_MONETDB_CONFIG_H 1
@@ -36,51 +43,27 @@
 #include <stdlib.h>
 #if defined(_DEBUG) && defined(_CRTDBG_MAP_ALLOC)
 /* In this case, malloc and friends are redefined in crtdbg.h to debug
-   versions.  We need to include stdlib.h and malloc.h first or else
-   we get conflicting declarations.
-*/
+ * versions.  We need to include stdlib.h first or else we get
+ * conflicting declarations. */
 #include <crtdbg.h>
 #endif
 
+/* standard C-99 include files */
+#include <assert.h>
+#include <errno.h>
+#include <inttypes.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdio.h>
+
+/* Windows include files */
 #include <process.h>
 #include <windows.h>
-#include <stddef.h>
 #include <ws2tcpip.h>
 
+/* and one more include */
 #include <sys/types.h>
-#include <stdio.h>		/* NULL, printf etc. */
-#include <errno.h>
-#include <stdarg.h>		/* va_alist.. */
-#if !defined(_MSC_VER) || _MSC_VER >= 1800
-#include <inttypes.h>
-#include <stdbool.h>
-#else
-#error old versions of Visual Studio are no longer supported
-/* ... but this is how you might be able to do it (untested) */
-#if !defined(_MSC_VER) || _MSC_VER >= 1600
-/* old Visual Studio */
-#include <stdint.h>
-#else
-/* ancient Visual Studio */
-typedef unsigned char uint8_t;
-typedef unsigned short uint16_t;
-typedef unsigned int uint32_t;
-typedef unsigned __int64 uint64_t;
-typedef int64_t __int64;
-typedef uint64_t unsigned __int64;
-#endif
-/* normally defined in inttypes.h */
-#define PRId64 "I64d"
-#define PRIu64 "I64u"
-/* normally defined in stdbool.h */
-#define true 1
-#define false 0
-#define __bool_true_false_are_defined 1
-#endif
-
-#include <assert.h>
-
-#define __func__ __FUNCTION__
 
 /* indicate to sqltypes.h that windows.h has already been included and
    that it doesn't have to define Windows constants */
@@ -106,14 +89,6 @@ typedef uint64_t unsigned __int64;
 /* architecture-dependent files */
 #define EXEC_PREFIX PREFIX
 
-/* Define to 1 if you have the `asctime_r' function. */
-#define HAVE_ASCTIME_R 1
-
-/* Define if you have asctime_r(struct tm*,char *buf,size_t s) */
-#define HAVE_ASCTIME_R3 1
-/* there is something very similar to asctime_r on Windows: */
-#define asctime_r(t,b,s)	asctime_s(b,s,t)
-
 /* Define to nothing if C supports flexible array members, and to 1 if it does
    not. That way, with a declaration like `struct s { int n; double
    d[FLEXIBLE_ARRAY_MEMBER]; };', the struct hack can be used with pre-C99
@@ -123,45 +98,73 @@ typedef uint64_t unsigned __int64;
    MSVC and with C++ compilers. */
 #define FLEXIBLE_ARRAY_MEMBER
 
-#if !defined(_MSC_VER) || _MSC_VER >= 1800
+/* Define to 1 if you have the `asctime_r' function. */
+#define HAVE_ASCTIME_R 1
+
+/* Define if you have asctime_r(struct tm*,char *buf,size_t s) */
+#define HAVE_ASCTIME_R3 1
+/* there is something very similar to asctime_r on Windows: */
+#define asctime_r(t,b,s)	asctime_s(b,s,t)
+
+/* Define to 1 if you have the <atomic_ops.h> header file. */
+/* #undef HAVE_ATOMIC_OPS_H */
+
+/* Define to 1 if you have the `backtrace' function. */
+/* #undef HAVE_BACKTRACE */
+
+/* Define to 1 if you have the <bam/bam.h> header file. */
+/* #undef HAVE_BAM_BAM_H */
+
+/* Define to 1 if you have the <bam/bgzf.h> header file. */
+/* #undef HAVE_BAM_BGZF_H */
+
+/* Define to 1 if you have the <bam/kstring.h> header file. */
+/* #undef HAVE_BAM_KSTRING_H */
+
+/* Define to 1 if you have the <bam/sam.h> header file. */
+/* #undef HAVE_BAM_SAM_H */
+
 /* Define to 1 if you have the `cbrt' function. */
 #define HAVE_CBRT 1
-#endif
+
+/* Define to 1 if you have the `clock_gettime' function. */
+/* #undef HAVE_CLOCK_GETTIME */
+
+/* Define if you have the CommonCrypto library */
+/* #undef HAVE_COMMONCRYPTO */
 
 /* If the console should be used */
 #define HAVE_CONSOLE 1
 
-/* crypt */
-/* #undef HAVE_CRYPT */
-
-/* Define to 1 if you have the <crypt.h> header file. */
-/* #undef HAVE_CRYPT_H */
-
 /* Define to 1 if you have the `ctime_r' function. */
 #define HAVE_CTIME_R 1
 
-#ifdef _MSC_VER
 /* Define if you have ctime_r(time_t*,char *buf,size_t s) */
 #define HAVE_CTIME_R3 1
 /* there is something very similar to ctime_r on Windows: */
 #define ctime_r(t,b,s)	(ctime_s(b,s,t) ? NULL : (b))
-#endif
 
 /* Define if you have the cURL library */
 /* #undef HAVE_CURL */
 
-/* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
+/* Define to 1 if you have the declaration of `tzname', and to 0 if you don't.
    */
+/* #undef HAVE_DECL_TZNAME */
+
+/* Define to 1 if you have the <dirent.h> header file. */
 /* #undef HAVE_DIRENT_H */
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 /* #undef HAVE_DLFCN_H */
 
+/* Support for MonetDB as a library */
+/* #undef HAVE_EMBEDDED */
+
+/* Support for MonetDB as a library for R */
+/* #undef HAVE_EMBEDDED_R */
+
 /* Define to 1 if you have the <execinfo.h> header file. */
 /* #undef HAVE_EXECINFO_H */
-
-/* Define to 1 if you have the `fabsf' function. */
-#define HAVE_FABSF 1
 
 /* Define to 1 if you have the `fallocate' function. */
 /* #undef HAVE_FALLOCATE */
@@ -175,13 +178,11 @@ typedef uint64_t unsigned __int64;
 /* If the system has a working fdatasync */
 /* #undef HAVE_FDATASYNC */
 
-/* Define to 1 if you have the <fenv.h> header file. */
-#if !defined(_MSC_VER) || _MSC_VER >= 1800
-#define HAVE_FENV_H 1
-#endif
-
 /* Define if the fits module is to be enabled */
 /* #undef HAVE_FITS */
+
+/* Define if fork exists */
+/* #undef HAVE_FORK */
 
 /* Define to 1 if fseeko (and presumably ftello) exists and is declared. */
 /* #undef HAVE_FSEEKO */
@@ -192,25 +193,16 @@ typedef uint64_t unsigned __int64;
 /* Define to 1 if you have the `ftime' function. */
 #define HAVE_FTIME 1
 
-/* Define to 1 if you have the `ftruncate' function. */
-#define HAVE_FTRUNCATE 1
-#ifdef _MSC_VER
 #define ftruncate(fd, sz)	(-(_chsize_s((fd), (__int64) (sz)) != 0))
-#endif
 
-/* Define if you use garbage collection */
-/* #undef HAVE_GC */
-
-/* Define to 1 if you have the <geos_c.h> header file. */
-/* #undef HAVE_GEOS_C_H */
+/* Define if you have the gdal library */
+/* #undef HAVE_GDAL */
 
 /* Define to 1 if you have the `getaddrinfo' function. */
 #define HAVE_GETADDRINFO 1
 
 /* Define to 1 if you have the `GetDynamicTimeZoneInformation' function. */
-#ifdef _MSC_VER
 #define HAVE_GETDYNAMICTIMEZONEINFORMATION 1
-#endif
 
 /* Define to 1 if you have the `getexecname' function. */
 /* #undef HAVE_GETEXECNAME */
@@ -241,9 +233,6 @@ typedef uint64_t unsigned __int64;
 #define HAVE_ICONV_H 1
 #endif
 
-/* Define to 1 if you have the <ieeefp.h> header file. */
-/* #undef HAVE_IEEEFP_H */
-
 /* Define to 1 if you have the <io.h> header file. */
 #define HAVE_IO_H 1
 
@@ -259,83 +248,55 @@ typedef uint64_t unsigned __int64;
 /* Define if you have the bz2 library */
 /* #undef HAVE_LIBBZ2 */
 
-/* Define if you have the cpc library */
-/* #undef HAVE_LIBCPC */
-
-/* Define to 1 if you have the <libcpc.h> header file. */
-/* #undef HAVE_LIBCPC_H */
-
 /* Define to 1 if you have the <libgen.h> header file. */
 /* #undef HAVE_LIBGEN_H */
 
 /* Define to 1 if you have the <libintl.h> header file. */
 /* #undef HAVE_LIBINTL_H */
 
-/* Define if you have the pcl library */
-/* #undef HAVE_LIBPCL */
+/* Define if you have the lz4 library */
+/* #undef HAVE_LIBLZ4 */
+
+/* Define if you have the lzma library */
+/* #undef HAVE_LIBLZMA */
 
 /* Define if you have the pcre library */
 /* #undef HAVE_LIBPCRE */
 
-/* Define if you have the perfctr library */
-/* #undef HAVE_LIBPERFCTR */
-
-/* Define to 1 if you have the <libperfctr.h> header file. */
-/* #undef HAVE_LIBPERFCTR_H */
-
-/* Define if you have the perfmon library */
-/* #undef HAVE_LIBPERFMON */
-
-/* Define if you have the pfm library */
-/* #undef HAVE_LIBPFM */
-
-/* Define if you have the pperf library */
-/* #undef HAVE_LIBPPERF */
-
-/* Define to 1 if you have the <libpperf.h> header file. */
-/* #undef HAVE_LIBPPERF_H */
-
 /* Define if you have the pthread library */
 /* #undef HAVE_LIBPTHREAD */
+
+/* Define if we can link to python */
+/* #undef HAVE_LIBPY */
+
+/* Define if we can link to python */
+/* #undef HAVE_LIBPY3 */
+
+/* Define if you have libR installed */
+/* #undef HAVE_LIBR */
 
 /* Define if you have the readline library */
 /* #undef HAVE_LIBREADLINE */
 
+/* Define if you have the snappy library */
+/* #undef HAVE_LIBSNAPPY */
+
+/* Define if you have the xml library */
+/* #undef HAVE_LIBXML */
+
 /* Define if you have the z library */
 /* #undef HAVE_LIBZ */
 
-/* Define to 1 if you have the <limits.h> header file. */
-#define HAVE_LIMITS_H 1
-
-/* Define to 1 if you have the `llabs' function. */
-#define HAVE_LLABS 1
-#if defined(_MSC_VER) && _MSC_VER <= 1500
-#define llabs _abs64
-#endif
-
-/* Define to 1 if you have the <locale.h> header file. */
-#define HAVE_LOCALE_H 1
-#ifdef _MSC_VER
 /* Define to 1 if you have the `localtime_r' function. */
 #define HAVE_LOCALTIME_R 1
 /* there is something very similar to localtime_r on Windows: */
 #define localtime_r(tp,tm)	localtime_s(tm,tp)
-#endif
 
 /* Define to 1 if you have the `lockf' function. */
 /* #undef HAVE_LOCKF */
 
 /* Define to 1 if the system has the type `long long'. */
-#if (defined(_MSC_VER) && _MSC_VER > 1600) || (defined(__ICL) && __ICL >= 1010) || defined(__MINGW32__)
 #define HAVE_LONG_LONG 1
-#else
-#if defined(_MSC_VER) && _MSC_VER >= 1300
-/* Visual Studio .NET 2003 does have long long, but the printf %lld
- * format is interpreted the same as %ld, i.e. useless
- */
-/* #define HAVE_LONG_LONG 1 */
-#endif
-#endif
 
 /* Define to 1 if you have the <mach/mach_init.h> header file. */
 /* #undef HAVE_MACH_MACH_INIT_H */
@@ -355,10 +316,7 @@ typedef uint64_t unsigned __int64;
 /* Define to 1 if you have the `mremap' function. */
 /* #undef HAVE_MREMAP */
 
-/* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
-/* #undef HAVE_NDIR_H */
-
-/* Define if you have netcdf installed */
+/* Define if the netcdf module is to be enabled */
 /* #undef HAVE_NETCDF */
 
 /* Define to 1 if you have the <netdb.h> header file. */
@@ -370,25 +328,11 @@ typedef uint64_t unsigned __int64;
 /* Define to 1 if you have the `nl_langinfo' function. */
 /* #undef HAVE_NL_LANGINFO */
 
-/* Define to 1 if you have the `nextafterf' function. */
-#if defined(__INTEL_COMPILER) || !defined(_MSC_VER) || _MSC_VER > 1600
-#define HAVE_NEXTAFTERF 1
-#endif
-
-/* Define to 1 if you have the `_NSGetExecutablePath' function. */
-/* #undef HAVE__NSGETEXECUTABLEPATH */
-
 /* Define to 1 if you have the <odbcinst.h> header file. */
 #define HAVE_ODBCINST_H 1
 
 /* Define if you have the OpenSSL library */
 /* #undef HAVE_OPENSSL */
-
-/* Define to 1 if you have the <perfmon.h> header file. */
-/* #undef HAVE_PERFMON_H */
-
-/* Define to 1 if you have the <perfmon/pfmlib.h> header file. */
-/* #undef HAVE_PERFMON_PFMLIB_H */
 
 #ifdef pipe
 #undef pipe
@@ -401,13 +345,16 @@ typedef uint64_t unsigned __int64;
 /* Define to 1 if you have the `posix_fadvise' function. */
 /* #undef HAVE_POSIX_FADVISE */
 
+/* Define to 1 if you have the `posix_fallocate' function. */
+/* #undef HAVE_POSIX_FALLOCATE */
+
 /* Define to 1 if you have the `posix_madvise' function. */
 /* #undef HAVE_POSIX_MADVISE */
 
 /* Define to 1 if you have the <procfs.h> header file. */
 /* #undef HAVE_PROCFS_H */
 
-/* Define if you have the proj library */
+/* Define if the proj library exists */
 /* #undef HAVE_PROJ */
 
 /* Define to 1 if you have the <pthread.h> header file. */
@@ -428,19 +375,21 @@ typedef uint64_t unsigned __int64;
 /* Define to 1 if you have the <pwd.h> header file. */
 /* #undef HAVE_PWD_H */
 
-/* Define if the compiler supports the restrict keyword */
-/* #undef HAVE_RESTRICT */
-
-/* Define to 1 if you have the `round' function. */
-#if defined(__INTEL_COMPILER) || !defined(_MSC_VER) || _MSC_VER > 1600
-#define HAVE_ROUND 1
-#endif
-
-/* Define if you have the samtools (providing the bam library) */
+/* Define if you have the samtools version 0.1.x (providing the bam library)
+   */
 /* #undef HAVE_SAMTOOLS */
+
+/* Define to 1 if you have the <samtools/bam.h> header file. */
+/* #undef HAVE_SAMTOOLS_BAM_H */
+
+/* Define to 1 if you have the <samtools/bgzf.h> header file. */
+/* #undef HAVE_SAMTOOLS_BGZF_H */
 
 /* Define to 1 if you have the <samtools/kstring.h> header file. */
 /* #undef HAVE_SAMTOOLS_KSTRING_H */
+
+/* Define to 1 if you have the <samtools/sam.h> header file. */
+/* #undef HAVE_SAMTOOLS_SAM_H */
 
 /* Define to 1 if you have the <sched.h> header file. */
 /* #undef HAVE_SCHED_H */
@@ -448,11 +397,11 @@ typedef uint64_t unsigned __int64;
 /* Define to 1 if you have the <semaphore.h> header file. */
 /* #undef HAVE_SEMAPHORE_H */
 
+/* Define if semtimedop exists */
+/* #undef HAVE_SEMTIMEDOP */
+
 /* Define to 1 if you have the `setenv' function. */
 /* #undef HAVE_SETENV */
-
-/* Define to 1 if you have the `setlocale' function. */
-#define HAVE_SETLOCALE 1
 
 /* Define to 1 if you have the `setsid' function. */
 /* #undef HAVE_SETSID */
@@ -486,9 +435,6 @@ typedef uint64_t unsigned __int64;
 /* Define to 1 if you have the `sigaction' function. */
 /* #undef HAVE_SIGACTION */
 
-/* Define to 1 if you have the <signal.h> header file. */
-#define HAVE_SIGNAL_H 1
-
 /* Define to 1 if the system has the type `socklen_t'. */
 #define HAVE_SOCKLEN_T 1
 
@@ -496,17 +442,10 @@ typedef uint64_t unsigned __int64;
 #define HAVE_SQLGETPRIVATEPROFILESTRING 1
 
 /* Define to 1 if stdbool.h conforms to C99. */
-#if !defined(_MSC_VER) || _MSC_VER >= 1800
 #define HAVE_STDBOOL_H 1
-#endif
 
 /* Define to 1 if you have the <stddef.h> header file. */
 #define HAVE_STDDEF_H 1
-
-/* Define to 1 if you have the <stdint.h> header file. */
-#if !defined(_MSC_VER) || _MSC_VER >= 1600
-#define HAVE_STDINT_H 1
-#endif
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #define HAVE_STDLIB_H 1
@@ -523,16 +462,8 @@ typedef uint64_t unsigned __int64;
 /* Define to 1 if you have the `strcpy_s' function. */
 #define HAVE_STRCPY_S 1
 
-/* Define to 1 if you have the `strftime' function. */
-#if !defined(_MSC_VER) || _MSC_VER >= 1500
-#define HAVE_STRFTIME 1
-#endif
-
 /* Define to 1 if you have the <strings.h> header file. */
 /* #undef HAVE_STRINGS_H */
-
-/* Define to 1 if you have the <string.h> header file. */
-#define HAVE_STRING_H 1
 
 /* Define to 1 if you have the `strncasecmp' function. */
 #define HAVE_STRNCASECMP 1
@@ -549,38 +480,13 @@ typedef uint64_t unsigned __int64;
 /* Define to 1 if you have the `strsignal' function. */
 /* #undef HAVE_STRSIGNAL */
 
-/* Define to 1 if you have the `strtod' function. */
-#define HAVE_STRTOD 1
-
-/* Define to 1 if you have the `strtof' function. */
-#if !defined(_MSC_VER) || _MSC_VER > 1600
-#define HAVE_STRTOF 1
-#endif
-
 #define strtok_r(t,d,c) strtok_s(t,d,c)
 
-/* Define to 1 if you have the `strtoll' function. */
-#if !defined(_MSC_VER) || _MSC_VER >= 1300
-#define HAVE_STRTOLL 1
-#if defined(_MSC_VER) && _MSC_VER <= 1600 && !defined(strtoll)
-#define strtoll _strtoi64
-#endif
-#endif
-
-/* Define to 1 if you have the `strtoull' function. */
-#if !defined(_MSC_VER) || _MSC_VER >= 1300
-#define HAVE_STRTOULL 1
-#if defined(_MSC_VER) && _MSC_VER <= 1600 && !defined(strtoull)
-#define strtoull _strtoui64
-#endif
-#endif
+/* Define to 1 if `tm_zone' is a member of `struct tm'. */
+/* #undef HAVE_STRUCT_TM_TM_ZONE */
 
 /* Define to 1 if you have the `sysconf' function. */
 /* #undef HAVE_SYSCONF */
-
-/* Define to 1 if you have the <sys/dir.h> header file, and it defines `DIR'.
-   */
-/* #undef HAVE_SYS_DIR_H */
 
 /* Define to 1 if you have the <sys/file.h> header file. */
 /* #undef HAVE_SYS_FILE_H */
@@ -590,10 +496,6 @@ typedef uint64_t unsigned __int64;
 
 /* Define to 1 if you have the <sys/mman.h> header file. */
 /* #undef HAVE_SYS_MMAN_H */
-
-/* Define to 1 if you have the <sys/ndir.h> header file, and it defines `DIR'.
-   */
-/* #undef HAVE_SYS_NDIR_H */
 
 /* Define to 1 if you have the <sys/param.h> header file. */
 /* #undef HAVE_SYS_PARAM_H */
@@ -640,22 +542,11 @@ typedef uint64_t unsigned __int64;
 /* Define to 1 if you have the `times' function. */
 /* #undef HAVE_TIMES */
 
-/* Define to 1 if you have the <time.h> header file. */
-#define HAVE_TIME_H 1
-
-/* Define to 1 if you have the `trunc' function. */
-#if !defined(_MSC_VER) || _MSC_VER > 1600
-#define HAVE_TRUNC 1
-#endif
-
 /* Define to 1 if you have the `uname' function. */
 /* #undef HAVE_UNAME */
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1		/* generate by the Makefile */
-
-/* Define if you have the LibUriParser library */
-/* #undef HAVE_URIPARSER */
 
 /* uuid */
 /* #undef HAVE_UUID */
@@ -666,24 +557,28 @@ typedef uint64_t unsigned __int64;
 /* Define if you have valgrind installed and want to use it */
 /* #undef HAVE_VALGRIND */
 
-#ifdef _MSC_VER
 /* Define to 1 if you have the `_wfopen' function. */
 #define HAVE__WFOPEN 1
-#endif
 
 /* Define to 1 if you have the <winsock.h> header file. */
 #define HAVE_WINSOCK_H 1
 
 /* Define to 1 if the system has the type `_Bool'. */
-/* #undef HAVE__BOOL */
+#define HAVE__BOOL 1
 
-#ifdef _WIN64
 /* Define to 1 if you have the `_mul128' function. */
+#ifdef _WIN64
 #define HAVE__MUL128 1
 #endif
 
+/* Define to 1 if you have the `_NSGetExecutablePath' function. */
+/* #undef HAVE__NSGETEXECUTABLEPATH */
+
 /* Define if you have _sys_siglist */
 /* #undef HAVE__SYS_SIGLIST */
+
+/* Define if you have the `__builtin_{add,sub,mul}_overflow' functions. */
+/* #undef HAVE___BUILTIN_ADD_OVERFLOW */
 
 /* Define to 1 if the system has the type `__int128'. */
 /* #undef HAVE___INT128 */
@@ -691,14 +586,11 @@ typedef uint64_t unsigned __int64;
 /* Define to 1 if the system has the type `__int128_t'. */
 /* #undef HAVE___INT128_T */
 
-/* Define to 1 if the system has the type `__uint128_t'. */
-/* #undef HAVE___UINT128_T */
-
 /* Define to 1 if the system has the type `__int64'. */
 #define HAVE___INT64 1
 
-/* Define if the compiler supports the __restrict__ keyword */
-/* #undef HAVE___RESTRICT__ */
+/* Define to 1 if the system has the type `__uint128_t'. */
+/* #undef HAVE___UINT128_T */
 
 /* Host identifier */
 #ifdef _WIN64
@@ -740,15 +632,13 @@ typedef uint64_t unsigned __int64;
 #define S_ISDIR(mode)	(((mode) & _S_IFMT) == _S_IFDIR)
 #endif
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 /* #undef LT_OBJDIR */
-
-/* where Merovingian will store its logs by default */
-/* #undef MERO_LOG */
 
 /* The used password hash algorithm */
 #define MONETDB5_PASSWDHASH "SHA512"
+
+/* The used password hash algorithm */
 #define MONETDB5_PASSWDHASH_TOKEN SHA512
 
 /* Release name or "unreleased" */
@@ -759,9 +649,6 @@ typedef uint64_t unsigned __int64;
 
 /* Name of package */
 #define PACKAGE "MonetDB"
-
-/* Define to the version of this package. */
-#define PACKAGE_VERSION "11.28.0"
 
 /* Define to the address where bug reports for this package should be sent. */
 #define PACKAGE_BUGREPORT "https://bugs.monetdb.org/"
@@ -778,6 +665,9 @@ typedef uint64_t unsigned __int64;
 /* Define to the home page for this package. */
 #define PACKAGE_URL "https://www.monetdb.org/"
 
+/* Define to the version of this package. */
+#define PACKAGE_VERSION "11.28.0"
+
 /* Path separator */
 #define PATH_SEP ';'
 
@@ -786,9 +676,6 @@ typedef uint64_t unsigned __int64;
 
 /* architecture-independent files */
 #define PREFIX "@QXprefix@"
-
-/* Compiler flag */
-/* #undef PROFILE */
 
 /* The size of `char', as computed by sizeof. */
 #define SIZEOF_CHAR 1
@@ -802,6 +689,13 @@ typedef uint64_t unsigned __int64;
 /* The size of `long long', as computed by sizeof. */
 #ifdef HAVE_LONG_LONG
 #define SIZEOF_LONG_LONG 8
+#endif
+
+/* The size of `ptrdiff_t', as computed by sizeof. */
+#ifdef _WIN64
+#define SIZEOF_PTRDIFF_T 8
+#else
+#define SIZEOF_PTRDIFF_T 4
 #endif
 
 /* The size of `short', as computed by sizeof. */
@@ -820,6 +714,9 @@ typedef uint64_t unsigned __int64;
 /* The size of `void *', as computed by sizeof. */
 #define SIZEOF_VOID_P SIZEOF_SIZE_T
 
+/* The size of `wchar_t', as computed by sizeof. */
+#define SIZEOF_WCHAR_T 2
+
 /* The size of `__int64', as computed by sizeof. */
 #define SIZEOF___INT64 8
 
@@ -832,19 +729,11 @@ typedef uint64_t unsigned __int64;
 /* Shared Object prefix */
 #define SO_PREFIX "lib"
 
-/* If using the C implementation of alloca, define if you know the
-   direction of stack growth for your system; otherwise it will be
-   automatically deduced at runtime.
-	STACK_DIRECTION > 0 => grows toward higher addresses
-	STACK_DIRECTION < 0 => grows toward lower addresses
-	STACK_DIRECTION = 0 => direction of growth unknown */
-/* #undef STACK_DIRECTION */
+/* compiling for static code analysis */
+/* #undef STATIC_CODE_ANALYSIS */
 
 /* read-only single-machine data */
 #define SYSCONFDIR PREFIX "\\etc"
-
-/* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
-/* #undef TIME_WITH_SYS_TIME */
 
 /* Enable extensions on AIX 3, Interix.  */
 #ifndef _ALL_SOURCE
@@ -1003,11 +892,6 @@ c99_snprintf(char *outBuf, size_t size, const char *format, ...)
 #define ssize_t int
 #endif
 
-#if defined(_MSC_VER) && _MSC_VER <= 1600
-/* no va_copy in win32 */
-#define va_copy(x,y) ((x) = (y))
-#endif
-
 /* normally defined in fcntl.h, but not on Windows */
 #define O_CLOEXEC 0
 
@@ -1037,18 +921,10 @@ typedef __uint128_t uhge;
 #define ULLFMT "%" PRIu64
 
 /* define printf formats for printing size_t and ssize_t variables */
-#if SIZEOF_SIZE_T == SIZEOF_INT
-# define SZFMT "%u"
-# define SSZFMT "%d"
-#elif SIZEOF_SIZE_T == SIZEOF_LONG
-# define SZFMT "%lu"
-# define SSZFMT "%ld"
-#elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG || SIZEOF_SIZE_T == SIZEOF___INT64
-# define SZFMT ULLFMT
-# define SSZFMT LLFMT
-#else
-# error no definition for SZFMT/SSZFMT
-#endif
+/* In Visual Studio 2017 we can finally use %zu and %td, but %Iu/%Id
+ * also works */
+#define SZFMT "%Iu"
+#define SSZFMT "%Id"
 
 #define PDFMT SSZFMT
 

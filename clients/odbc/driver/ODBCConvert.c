@@ -9,13 +9,11 @@
 #include "ODBCGlobal.h"
 #include "ODBCStmt.h"
 #include "ODBCUtil.h"
-#include <errno.h>
 #include <time.h>
 #ifdef HAVE_STRINGS_H
 #include <strings.h>		/* for strncasecmp */
 #endif
 #include <float.h>		/* for FLT_MAX */
-#include <inttypes.h>
 
 #define MAXBIGNUM10	(UINT64_MAX / 10)
 #define MAXBIGNUMLAST	('0' + (int) (UINT64_MAX % 10))

@@ -53,6 +53,7 @@ QUERY = select
               ref_12.y as c9, 
               23 as c10, 
 ERROR = !SELECT: no such column 'ref_12.b'
+CODE  = 42S22
 
 # 23:33:04 >  
 # 23:33:04 >  "Done."

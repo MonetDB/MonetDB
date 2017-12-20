@@ -5063,6 +5063,9 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 
 				if (!exp_is_atom(e))
 					append(ngbe, e);
+				/* we need at least one gbe */
+				else if (!n->next && list_empty(ngbe))
+					append(ngbe, e);
 				else
 					append(dgbe, e);
 			}
@@ -5088,8 +5091,8 @@ rel_reduce_groupby_exps(int *changes, mvc *sql, sql_rel *rel)
 					append(nexps, e);
 				}
 				rel->exps = nexps;
+				(*changes)++;
 			}
-			(*changes)++;
 		}
 	}
 	return rel;

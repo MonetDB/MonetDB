@@ -21,20 +21,11 @@
 
 #include "mapi.h"
 #include "stream.h"
-#include <stdio.h>
 #include <string.h>
-#include <stdlib.h>
 #include <sys/stat.h>
-#include <errno.h>
 #include <signal.h>
 #include <unistd.h>
-
-#ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
-#endif
-#ifdef HAVE_TIME_H
 #include <time.h>
-#endif
 
 #define TME_US  1
 #define TME_MS  2

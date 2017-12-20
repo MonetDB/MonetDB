@@ -9,7 +9,6 @@
 #ifndef _MAT_H
 #define _MAT_H
 
-#include <stdarg.h>
 #include "mal_resolve.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"

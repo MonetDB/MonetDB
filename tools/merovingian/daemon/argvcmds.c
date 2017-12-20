@@ -7,10 +7,8 @@
  */
 
 #include "monetdb_config.h"
-#include <stdio.h>
 #include <unistd.h> /* chdir */
 #include <string.h> /* strerror */
-#include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <signal.h> /* kill */
