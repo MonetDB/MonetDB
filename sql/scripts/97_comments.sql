@@ -32,7 +32,7 @@ END;
 CREATE TABLE systemfunctions (function_id INTEGER NOT NULL);
 GRANT SELECT ON systemfunctions TO PUBLIC;
 
-CREATE FUNCTION sys.function_type_keyword(ftype INT) 
+CREATE FUNCTION sys.function_type_keyword(ftype INT)
 RETURNS VARCHAR(20)
 BEGIN
 	RETURN CASE ftype
@@ -51,14 +51,14 @@ RETURNS TABLE (
 	sname VARCHAR(1024),
 	name VARCHAR(1024),
 	fullname VARCHAR(1024),
-	ntype INTEGER,   -- must match the MD_TABLE/VIEW/SEQ/FUNC/SCHEMA constants in mclient.c 
+	ntype INTEGER,   -- must match the MD_TABLE/VIEW/SEQ/FUNC/SCHEMA constants in mclient.c
 	type VARCHAR(30),
 	system BOOLEAN,
 	remark VARCHAR(65000)
 )
 BEGIN
 	RETURN TABLE (
-	    WITH 
+	    WITH
 	    table_data AS (
 		    SELECT  schema_id AS sid,
 			    id,
@@ -109,7 +109,7 @@ BEGIN
 		    SELECT * FROM schema_data
 	    )
 	    --
-	    SELECT DISTINCT 
+	    SELECT DISTINCT
 	            s.name AS sname,
 	            a.name AS name,
 	            COALESCE(s.name || '.', '') || a.name AS fullname,
@@ -117,7 +117,7 @@ BEGIN
 	            (CASE WHEN a.system THEN 'SYSTEM ' ELSE '' END) || a.type AS type,
 	            a.system AS system,
 		    c.remark AS remark
-	    FROM    all_data a 
+	    FROM    all_data a
 	    LEFT OUTER JOIN sys.schemas s ON a.sid = s.id
 	    LEFT OUTER JOIN sys.comments c ON a.id = c.id
 	    ORDER BY system, name, fullname, ntype

@@ -2194,7 +2194,7 @@ rel_comment_on(mvc *sql, sqlid obj_id, sql_schema *schema, char *remark) {
 	if (!mvc_schema_privs(sql, schema)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "COMMENT ON: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), schema->base.name);
 	}
-	
+
 	buf = buffer_create(4000);
 	if (!buf)
 		goto wrap_up;

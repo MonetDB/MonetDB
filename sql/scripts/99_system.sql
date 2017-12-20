@@ -7,8 +7,8 @@
 -- only system functions until now
 insert into systemfunctions select id from functions;
 
-create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas(); 
-create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables(); 
+create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas();
+create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables();
 
 -- only system tables until now
 update _tables set system = true;

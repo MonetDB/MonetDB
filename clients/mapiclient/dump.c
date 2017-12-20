@@ -708,7 +708,7 @@ dump_column_definition(Mapi mid, stream *toConsole, comment_buffer *comments, co
 			mnstr_printf(toConsole, "%*s DEFAULT %s",
 					CAP(13 - space), "", c_default);
 
-		if (schema && tname) 
+		if (schema && tname)
 			append_comment(comments, "COLUMN", schema, tname, c_name, NULL, c_remark);
 		cnt++;
 		if (mnstr_errnr(toConsole))
@@ -1195,7 +1195,7 @@ describe_schema(Mapi mid, const char *sname, stream *toConsole)
 	}
 
 	write_comment_buffer(toConsole, comments);
-	comment_buffer_destroy(comments);  
+	comment_buffer_destroy(comments);
 	return 0;
 }
 
