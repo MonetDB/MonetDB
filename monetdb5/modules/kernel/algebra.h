@@ -60,6 +60,9 @@ mal_export str ALGsort33(bat *result, bat *norder, bat *ngroup, const bat *bid, 
 mal_export str ALGcount_bat(lng *result, const bat *bid);
 mal_export str ALGcount_nil(lng *result, const bat *bid, const bit *ignore_nils);
 mal_export str ALGcount_no_nil(lng *result, const bat *bid);
+mal_export str ALGcountCND_bat(lng *result, const bat *bid, const bat *cnd);
+mal_export str ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_nils);
+mal_export str ALGcountCND_no_nil(lng *result, const bat *bid, const bat *cnd);
 mal_export str ALGslice(bat *ret, const bat *bid, const lng *start, const lng *end);
 mal_export str ALGslice_int(bat *ret, const bat *bid, const int *start, const int *end);
 mal_export str ALGslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end);

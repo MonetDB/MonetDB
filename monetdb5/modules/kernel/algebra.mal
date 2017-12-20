@@ -286,6 +286,19 @@ address ALGcount_no_nil
 comment "Return the number of elements currently
 	in a BAT ignoring BUNs with nil-tail";
 
+# the variants with a candidate list
+command count( b:bat[:any], cnd:bat[:oid] ) :lng
+address ALGcountCND_bat
+comment "Return the current size (in number of elements) in a BAT.";
+command count ( b:bat[:any], cnd:bat[:oid], ignore_nils:bit ) :lng
+address ALGcountCND_nil
+comment "Return the number of elements currently in a BAT ignores
+		BUNs with nil-tail iff ignore_nils==TRUE.";
+command count_no_nil ( b:bat[:any_2], cnd:bat[:oid]) :lng
+address ALGcountCND_no_nil
+comment "Return the number of elements currently
+	in a BAT ignoring BUNs with nil-tail";
+
 #  Default Min and Max
 # Implementations a generic Min and Max routines get declared first. The
 # @emph{min()} and @emph{max()} routines below catch any tail-type.
