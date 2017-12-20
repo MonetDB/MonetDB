@@ -63,7 +63,9 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		}
 		if ( getModuleId(p) == batRef && isUpdateInstruction(p) && !p->barrier){
 			/* bat.append and friends are intermediates that need not be retained 
-			 * unless they are used */
+			 * unless they are not used outside of an update */
+			if( varused[getArg(p,1)] > 1 )
+				varused[getArg(p,0)]++; // force keeping it
 		} else
 		if (hasSideEffects(mb, p, FALSE) || !isLinearFlow(p) || 
 				(p->retc == 1 && mb->unsafeProp) || p->barrier /* ==side-effect */){
