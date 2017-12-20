@@ -1986,7 +1986,8 @@ doRequest(Mapi mid, const char *buf)
 	if (mode == SQL)
 		SQLsetSpecial(buf);
 
-	if ((hdl = mapi_query(mid, buf)) == NULL) {
+	hdl = mapi_query(mid, buf);
+	if (hdl == NULL) {
 		if (formatter == TABLEformatter ) {
 			mapi_noexplain(mid, "");
 		} else {
@@ -2533,6 +2534,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 						if (*line) {
 							q += snprintf(q, endq - q, "AND (%s LIKE '%s')\n", name_column, line);
 						}
+						q += snprintf(q, endq - q, "ORDER BY fullname, type, remark\n");
 						q += snprintf(q, endq - q, ";\n");
 
 						hdl = mapi_query(mid, query);

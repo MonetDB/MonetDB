@@ -2184,11 +2184,8 @@ rel_find_designated_object(mvc *sql, symbol *sym, sql_schema **schema_out) {
 
 static sql_rel *
 rel_comment_on(mvc *sql, sqlid obj_id, sql_schema *schema, char *remark) {
-	// Impersonate CALL sys.comment_on(obj_id, remark);
-
 	buffer *buf = NULL;
 	stream *s = NULL;
-	char *escaped = NULL;
 	char *query = NULL;
 	sql_schema *sys;
 	sql_rel *rel = NULL;
@@ -2210,25 +2207,24 @@ rel_comment_on(mvc *sql, sqlid obj_id, sql_schema *schema, char *remark) {
 	if (!remark) {
 		mnstr_printf(s, "NULL");
 	} else {
-		escaped = sql_escape_str(remark);
+		char *escaped = sql_escape_str(remark);
 		if (!escaped)
 			goto wrap_up;
 		mnstr_printf(s, "'%s'", escaped);
+		GDKfree(escaped);
 	}
 	mnstr_printf(s, ");");
 	query = buffer_get_buf(buf);
 	sys = mvc_bind_schema(sql, "sys");
-	rel = rel_parse(sql, sys, query, m_execute); // correct mode?
+	rel = rel_parse(sql, sys, query, m_normal); // correct mode?
 
 wrap_up:
-	// if (query)
-	// 	free(query);
-	// if (escaped)
-	// 	free(escaped);
-	// if (s)
-	// 	mnstr_destroy(s);
-	// if (buf)
-	// 	buffer_destroy(buf);
+	if (query)
+		free(query);
+	if (s)
+		mnstr_destroy(s);
+	if (buf)
+		buffer_destroy(buf);
 	return rel;
 }
 

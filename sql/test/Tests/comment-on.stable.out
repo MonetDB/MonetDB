@@ -144,11 +144,11 @@ SEQUENCE  foo.counter  'still counting'
 #CREATE FUNCTION f(i INT) RETURNS INT BEGIN RETURN 43; END;
 #CREATE FUNCTION f(i INT, j INT) RETURNS INT BEGIN RETURN 44; END;
 #CREATE PROCEDURE g() BEGIN DELETE FROM tab WHERE FALSE; END;
-FUNCTION  foo.f  '1 parm'
-FUNCTION  foo.f  '2 parms'
 FUNCTION  foo.f
 FUNCTION  foo.f  '0 parms'
-FUNCTION  foo.g  'proc'
+FUNCTION   foo.f  '1 parm'
+FUNCTION   foo.f  '2 parms'
+PROCEDURE  foo.g  'proc'
 create function f() returns int begin return 42; end;
 COMMENT ON FUNCTION "foo"."f"() IS '0 parms';
 create function f(i int) returns int begin return 43; end;

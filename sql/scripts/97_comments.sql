@@ -4,6 +4,10 @@
 --
 -- Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
 
+ALTER TABLE sys.keywords SET READ WRITE;
+INSERT INTO sys.keywords VALUES ('COMMENT');
+ALTER TABLE sys.keywords SET READ ONLY;
+
 CREATE TABLE sys.comments (
         id INTEGER NOT NULL PRIMARY KEY,
         remark VARCHAR(65000) NOT NULL
@@ -27,6 +31,20 @@ END;
 -- in sys.describe_all_objects() defined below.
 CREATE TABLE systemfunctions (function_id INTEGER NOT NULL);
 GRANT SELECT ON systemfunctions TO PUBLIC;
+
+CREATE FUNCTION sys.function_type_keyword(ftype INT) 
+RETURNS VARCHAR(20)
+BEGIN
+	RETURN CASE ftype
+                WHEN 1 THEN 'FUNCTION'
+                WHEN 2 THEN 'PROCEDURE'
+                WHEN 3 THEN 'AGGREGATE'
+                WHEN 4 THEN 'FILTER FUNCTION'
+                WHEN 7 THEN 'LOADER'
+                ELSE 'ROUTINE'
+        END;
+END;
+GRANT EXECUTE ON FUNCTION sys.function_type_keyword(INT) TO PUBLIC;
 
 CREATE FUNCTION sys.describe_all_objects()
 RETURNS TABLE (
@@ -69,7 +87,7 @@ BEGIN
 			    name,
 			    EXISTS (SELECT function_id FROM sys.systemfunctions WHERE function_id = id) AS system,
 			    8 AS ntype,
-			    'FUNCTION' AS type
+			    sys.function_type_keyword(type) AS type
 		    FROM sys.functions
 	    ),
 	    schema_data AS (
@@ -133,14 +151,7 @@ commented_function_params AS (
 SELECT  fid,
         schema,
         fname,
-        CASE ftype
-                WHEN 1 THEN 'FUNCTION'
-                WHEN 2 THEN 'PROCEDURE'
-                WHEN 3 THEN 'AGGREGATE'
-                WHEN 4 THEN 'FILTER FUNCTION'
-                WHEN 7 THEN 'LOADER'
-                ELSE 'ROUTINE'
-        END AS category,
+        sys.function_type_keyword(ftype) AS category,
         EXISTS (SELECT function_id FROM sys.systemfunctions WHERE fid = function_id) AS system,
         CASE WHEN asc_rank = 1 THEN fname ELSE NULL END AS name,
         CASE WHEN desc_rank = 1 THEN remark ELSE NULL END AS remark,

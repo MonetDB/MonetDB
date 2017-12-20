@@ -82,7 +82,7 @@ Ready.
 
 SCHEMA  schema_a  'set by super user'
 SCHEMA  schema_b  'set by super user'
-SCHEMA  schema_a  'set by user_a'
+SCHEMA  schema_a  'set by super user'
 SCHEMA  schema_b  'set by super user'
 
 # 14:17:02 >  
