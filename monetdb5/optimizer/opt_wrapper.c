@@ -104,8 +104,8 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str msg = MAL_SUCCEED;
 	lng clk;
 
-    if (cntxt->mode == FINISHCLIENT)
-        throw(MAL, "optimizer", "prematurely stopped client");
+    	if (cntxt->mode == FINISHCLIENT)
+        	throw(MAL, "optimizer", "prematurely stopped client");
 
 	if( p == NULL)
 		throw(MAL, "opt_wrapper", "missing optimizer statement");
@@ -154,8 +154,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	if (codes[i].nme == 0)
 		throw(MAL, optimizer, "Optimizer implementation '%s' missing", fcnnme);
 
-	//OPTIMIZERDEBUG {
-	{
+	OPTIMIZERDEBUG {
 		fprintf(stderr,"=FINISHED %s  %d\n",optimizer, actions);
 		fprintFunction(stderr,mb,0,LIST_MAL_DEBUG );
 	}
