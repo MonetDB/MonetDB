@@ -31,12 +31,6 @@ stderr of test 'hexadecimal_literals.Bug-3621` in directory 'sql/test/BugTracker
 # 17:24:30 >  
 
 MAPI  = (monetdb) /var/tmp/mtest-30147/.s.monetdb.33525
-QUERY = select 0xg;
-ERROR = !syntax error, unexpected IDENT, expecting SCOLON in: "select 0xg"
-MAPI  = (monetdb) /var/tmp/mtest-30147/.s.monetdb.33525
-QUERY = select 0xG;
-ERROR = !syntax error, unexpected IDENT, expecting SCOLON in: "select 0xg"
-MAPI  = (monetdb) /var/tmp/mtest-30147/.s.monetdb.33525
 QUERY = select 0x8000000000000000;
 ERROR = !invalid hexadecimal number or hexadecimal too large (0x8000000000000000) in: "select 0x8000000000000000"
 MAPI  = (monetdb) /var/tmp/mtest-30147/.s.monetdb.33525
@@ -76,12 +70,6 @@ MAPI  = (monetdb) /var/tmp/mtest-30147/.s.monetdb.33525
 QUERY = select 0x123456789abcdef0123456789abcdef01;
 ERROR = !invalid hexadecimal number or hexadecimal too large (0x123456789abcdef0123456789abcdef01) in: "select 0x123456789abcdef0123456789abcdef01"
 
-MAPI  = (monetdb) /var/tmp/mtest-30147/.s.monetdb.33525
-QUERY = select -0xg;
-ERROR = !syntax error, unexpected IDENT, expecting SCOLON in: "select -0xg"
-MAPI  = (monetdb) /var/tmp/mtest-30147/.s.monetdb.33525
-QUERY = select -0xG;
-ERROR = !syntax error, unexpected IDENT, expecting SCOLON in: "select -0xg"
 MAPI  = (monetdb) /var/tmp/mtest-30147/.s.monetdb.33525
 QUERY = select -0x8000000000000000;
 ERROR = !invalid hexadecimal number or hexadecimal too large (0x8000000000000000) in: "select -0x8000000000000000"
