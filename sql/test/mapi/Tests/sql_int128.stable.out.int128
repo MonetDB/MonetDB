@@ -134,9 +134,9 @@ end user.s6_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 90 # length
+% 89 # length
 function user.s8_1():void;
-    X_1:void := querylog.define("explain set c = a * b;":str, "default_pipe":str, 10:int);
+    X_1:void := querylog.define("explain set c = a * b;":str, "default_pipe":str, 9:int);
     X_4:int := sql.mvc();
     X_5:hge := sql.getVariable(X_4:int, "a":str);
     X_7:hge := sql.getVariable(X_4:int, "b":str);
@@ -175,9 +175,9 @@ end user.s8_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 90 # length
+% 89 # length
 function user.s10_1():void;
-    X_1:void := querylog.define("explain set d = c * b;":str, "default_pipe":str, 10:int);
+    X_1:void := querylog.define("explain set d = c * b;":str, "default_pipe":str, 9:int);
     X_4:int := sql.mvc();
     X_5:hge := sql.getVariable(X_4:int, "c":str);
     X_7:hge := sql.getVariable(X_4:int, "b":str);
@@ -216,14 +216,14 @@ end user.s10_1;
 % .explain # table_name
 % mal # name
 % clob # type
-% 90 # length
+% 89 # length
 function user.s12_1():void;
-    X_1:void := querylog.define("explain set e = d + a;":str, "default_pipe":str, 11:int);
+    X_1:void := querylog.define("explain set e = d + a;":str, "default_pipe":str, 9:int);
     X_4:int := sql.mvc();
     X_5:hge := sql.getVariable(X_4:int, "d":str);
-    X_8:hge := sql.getVariable(X_4:int, "a":str);
-    X_11:hge := calc.+(X_5:hge, X_8:hge);
-    sql.setVariable(X_4:int, "e":str, X_11:hge);
+    X_7:hge := sql.getVariable(X_4:int, "a":str);
+    X_9:hge := calc.+(X_5:hge, X_7:hge);
+    sql.setVariable(X_4:int, "e":str, X_9:hge);
     sql.exportOperation();
 end user.s12_1;
 #inline               actions= 0 time=3 usec 
@@ -277,10 +277,10 @@ end user.s12_1;
 % clob # type
 % 147 # length
 function user.s30_1():void;
-    X_2:void := querylog.define("explain insert into sql_int128 values (123456789098765432101234567890987654321);":str, "default_pipe":str, 9:int);
+    X_2:void := querylog.define("explain insert into sql_int128 values (123456789098765432101234567890987654321);":str, "default_pipe":str, 8:int);
     X_5:int := sql.mvc();
-    X_9:int := sql.append(X_5:int, "sys":str, "sql_int128":str, "i":str, 123456789098765432101234567890987654321:hge);
-    sql.affectedRows(X_9:int, 1:lng);
+    X_8:int := sql.append(X_5:int, "sys":str, "sql_int128":str, "i":str, 123456789098765432101234567890987654321:hge);
+    sql.affectedRows(X_8:int, 1:lng);
 end user.s30_1;
 # optimizer.mitosis()
 # optimizer.dataflow()

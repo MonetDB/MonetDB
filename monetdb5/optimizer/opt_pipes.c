@@ -91,6 +91,8 @@ static struct PIPELINES {
 	 "optimizer.mosaic();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.postfix();"
+	 "optimizer.deadcode();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
 	 "optimizer.wlc();"
@@ -127,6 +129,8 @@ static struct PIPELINES {
 	 "optimizer.mosaic();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.postfix();"
+	 "optimizer.deadcode();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
 	 "optimizer.wlc();"
@@ -167,6 +171,8 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.postfix();"
+	 "optimizer.deadcode();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
 	 "optimizer.mosaic();"
@@ -208,6 +214,8 @@ static struct PIPELINES {
 	 "optimizer.mosaic();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.postfix();"
+	 "optimizer.deadcode();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
 	 "optimizer.wlc();"

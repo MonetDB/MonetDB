@@ -30,6 +30,22 @@ Ready.
 % pk,	col0,	col1,	col2,	col3,	col4,	col5 # name
 % int,	int,	double,	clob,	int,	double,	clob # type
 % 1,	1,	24,	0,	1,	24,	0 # length
+#SELECT ALL * FROM tab0 AS cor0 WHERE NOT NULL IN ( col0, 59 + col4, + col1 );
+% sys.cor0,	sys.cor0,	sys.cor0,	sys.cor0,	sys.cor0,	sys.cor0,	sys.cor0 # table_name
+% pk,	col0,	col1,	col2,	col3,	col4,	col5 # name
+% int,	int,	double,	clob,	int,	double,	clob # type
+% 1,	1,	24,	0,	1,	24,	0 # length
+#SELECT + - COUNT ( * ) FROM tab0 WHERE NOT NULL NOT IN ( - col0, 4 );
+% sys.L12 # table_name
+% L12 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT * FROM tab0 AS cor0 WHERE NOT ( NULL ) IN ( - col3 + - 33 + + + col4 + + 54, - 51 + col4 );
+% sys.cor0,	sys.cor0,	sys.cor0,	sys.cor0,	sys.cor0,	sys.cor0,	sys.cor0 # table_name
+% pk,	col0,	col1,	col2,	col3,	col4,	col5 # name
+% int,	int,	double,	clob,	int,	double,	clob # type
+% 1,	1,	24,	0,	1,	24,	0 # length
 #DROP TABLE tab0;
 
 # 23:22:13 >  

@@ -816,6 +816,65 @@ ALGcount_no_nil(lng *result, const bat *bid)
 }
 
 str
+ALGcountCND_bat(lng *result, const bat *bid, const bat *cnd)
+{
+	BAT *b;
+
+	if ( *cnd) {
+		if ((b = BATdescriptor(*cnd)) == NULL) {
+			throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}		
+		*result = (lng) BATcount(b);
+		BBPunfix(b->batCacheid);
+		return MAL_SUCCEED;
+	}
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	*result = (lng) BATcount(b);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_nils)
+{
+	BAT *b;
+	BUN cnt;
+
+	if (*ignore_nils){
+		if ((b = BATdescriptor(*bid)) == NULL) {
+			throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		cnt = BATcount_no_nil(b);
+	} else{
+		if ( *cnd) {
+			if ((b = BATdescriptor(*cnd)) == NULL) {
+				throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			}		
+			*result = (lng) BATcount(b);
+			BBPunfix(b->batCacheid);
+			return MAL_SUCCEED;
+		}
+		if ((b = BATdescriptor(*bid)) == NULL) {
+			throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		cnt = BATcount(b);
+	}
+	*result = (lng) cnt;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+ALGcountCND_no_nil(lng *result, const bat *bid, const bat *cnd)
+{
+	bit ignore_nils = 1;
+
+	return ALGcountCND_nil(result, bid, cnd, &ignore_nils);
+}
+
+str
 ALGslice(bat *ret, const bat *bid, const lng *start, const lng *end)
 {
 	BAT *b, *bn = NULL;

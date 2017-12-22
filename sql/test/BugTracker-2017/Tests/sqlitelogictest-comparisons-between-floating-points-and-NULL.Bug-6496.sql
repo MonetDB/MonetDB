@@ -9,6 +9,7 @@ INSERT INTO tab0 VALUES(6,904,193.16,'eozui',48,698.55,'ejyzs');
 INSERT INTO tab0 VALUES(7,606,650.64,'ovmce',417,962.43,'dvkbh');
 INSERT INTO tab0 VALUES(8,535,18.11,'ijika',630,489.63,'hpnyu');
 INSERT INTO tab0 VALUES(9,501,776.40,'cvygg',725,75.5,'etlyv');
+SELECT * FROM tab0 AS cor0 WHERE NOT ( - col0 ) BETWEEN - + col4 AND NULL; --should be -5
 SELECT + - COUNT ( * ) FROM tab0 AS cor0 WHERE NOT ( - col0 ) BETWEEN - + col4 AND NULL; --should be -5
 DROP TABLE tab0;
 
@@ -16,5 +17,6 @@ CREATE TABLE tab1(col0 INTEGER, col1 INTEGER, col2 INTEGER);
 INSERT INTO tab1 VALUES(51,14,96);
 INSERT INTO tab1 VALUES(85,5,59);
 INSERT INTO tab1 VALUES(91,47,68);
+SELECT * FROM tab1 AS cor0 WHERE col2 + 5 > NULL; --should be 0
 SELECT ALL + COUNT ( DISTINCT 64 ) FROM tab1 AS cor0 WHERE col2 + 5 > NULL; --should be 0
 DROP TABLE tab1;

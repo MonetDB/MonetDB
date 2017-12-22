@@ -32,6 +32,7 @@ extern sql_subtype *supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i
 typedef enum {
 	type_set,	/* set operations have very limiting coersion rules */
 	type_equal,
+	type_equal_no_any,
 	type_cast	/* also truncate */
 } check_type;
 

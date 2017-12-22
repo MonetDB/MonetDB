@@ -115,8 +115,10 @@ crash-in-topn.Bug-6478
 function-resolution.Bug-6436
 generate-resolution.Bug-6471
 sqlitelogictest-select-in-column.Bug-6490
+select-in-returns-null.Bug-6491
 sqlitelogictest-min-distinct-empty-table.Bug-6493
 sqlitelogictest-algebra-operators.Bug-6494
 sqlitelogictest-hidden-alias.Bug-6495
-sqlitelogictest-comparisons-between-floating-points-and-NULL.Bug-6496.sql
+sqlitelogictest-comparisons-between-floating-points-and-NULL.Bug-6496
 sqlitelogictest-not-between.Bug-6497
+createorreplace-system-func.Bug-6499

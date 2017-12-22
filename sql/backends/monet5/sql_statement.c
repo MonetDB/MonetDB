@@ -1574,7 +1574,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 		q = pushBit(mb, q, TRUE);
 		q = pushBit(mb, q, TRUE);
 		q = pushBit(mb, q, TRUE);
-		q = pushBit(mb, q, FALSE);
+		q = pushBit(mb, q, (anti)?TRUE:FALSE);
 		if (q == NULL)
 			return NULL;
 	} else {
