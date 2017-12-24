@@ -296,9 +296,21 @@ ALGthetaselect2(bat *result, const bat *bid, const bat *sid, const void *val, co
 }
 
 str
+ALGthetaselectMsk2(bat *result, const bat *bid, const bat *sid, const void *val, const char **op)
+{
+	return ALGthetaselect2(result, bid, sid, val, op);
+}
+
+str
 ALGthetaselect1(bat *result, const bat *bid, const void *val, const char **op)
 {
 	return ALGthetaselect2(result, bid, NULL, val, op);
+}
+
+str
+ALGthetaselectMsk1(bat *result, const bat *bid, const void *val, const char **op)
+{
+	return ALGthetaselectMsk2(result, bid, NULL, val, op);
 }
 
 str

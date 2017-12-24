@@ -70,6 +70,8 @@ comment "Select all head values of the first input BAT for which the tail value
 	Note that the output is suitable as second input for this
 	function.";
 
+command thetaselect(b:bat[:any_1], val:any_1, op:str) :bat[:msk]
+address ALGthetaselectMsk1;
 command thetaselect(b:bat[:any_1], val:any_1, op:str) :bat[:oid]
 address ALGthetaselect1
 comment "Select all head values for which the tail value obeys the relation
@@ -78,6 +80,8 @@ comment "Select all head values for which the tail value obeys the relation
 	the tail the head value of the input BAT for which the
 	relationship holds.  The output BAT is sorted on the tail value.";
 
+command thetaselect(b:bat[:any_1], s:bat[:oid], val:any_1, op:str) :bat[:msk]
+address ALGthetaselectMsk2;
 command thetaselect(b:bat[:any_1], s:bat[:oid], val:any_1, op:str) :bat[:oid]
 address ALGthetaselect2
 comment "Select all head values of the first input BAT for which the tail value
