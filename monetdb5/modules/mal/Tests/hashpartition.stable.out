@@ -1,0 +1,155 @@
+stdout of test 'hashpartition` in directory 'monetdb5/modules/mal` itself:
+
+
+# 14:09:24 >  
+# 14:09:24 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39094" "--set" "mapi_usock=/var/tmp/mtest-4891/.s.monetdb.39094" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/home/mk/partition//Linux/var/MonetDB/mTests_monetdb5_modules_mal" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 14:09:24 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_mal', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.581 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://rocks073.scilens.private:39094/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-4891/.s.monetdb.39094
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python2 module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 14:09:25 >  
+# 14:09:25 >  "mclient" "-lmal" "-ftest" "-tnone" "-Eutf-8" "--host=/var/tmp/mtest-4891" "--port=39094"
+# 14:09:25 >  
+
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	0	]
+[ 1@0,	1	]
+[ 2@0,	2	]
+[ 3@0,	3	]
+[ 4@0,	4	]
+[ 5@0,	5	]
+[ 6@0,	6	]
+[ 7@0,	7	]
+[ 8@0,	8	]
+[ 9@0,	9	]
+[ 10@0,	10	]
+[ 11@0,	11	]
+[ 12@0,	12	]
+[ 13@0,	13	]
+[ 14@0,	14	]
+[ 15@0,	15	]
+[ 16@0,	16	]
+[ 17@0,	17	]
+[ 18@0,	18	]
+[ 19@0,	19	]
+[ 20@0,	20	]
+[ 21@0,	21	]
+[ 22@0,	22	]
+[ 23@0,	23	]
+[ 24@0,	24	]
+[ 25@0,	25	]
+[ 26@0,	26	]
+[ 27@0,	27	]
+[ 28@0,	28	]
+[ 29@0,	29	]
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	0	]
+[ 1@0,	2	]
+[ 2@0,	4	]
+[ 3@0,	6	]
+[ 4@0,	8	]
+[ 5@0,	10	]
+[ 6@0,	12	]
+[ 7@0,	14	]
+[ 8@0,	16	]
+[ 9@0,	18	]
+[ 10@0,	20	]
+[ 11@0,	22	]
+[ 12@0,	24	]
+[ 13@0,	26	]
+[ 14@0,	28	]
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	1	]
+[ 1@0,	3	]
+[ 2@0,	5	]
+[ 3@0,	7	]
+[ 4@0,	9	]
+[ 5@0,	11	]
+[ 6@0,	13	]
+[ 7@0,	15	]
+[ 8@0,	17	]
+[ 9@0,	19	]
+[ 10@0,	21	]
+[ 11@0,	23	]
+[ 12@0,	25	]
+[ 13@0,	27	]
+[ 14@0,	29	]
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	0	]
+[ 1@0,	5	]
+[ 2@0,	10	]
+[ 3@0,	15	]
+[ 4@0,	20	]
+[ 5@0,	25	]
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	1	]
+[ 1@0,	6	]
+[ 2@0,	11	]
+[ 3@0,	16	]
+[ 4@0,	21	]
+[ 5@0,	26	]
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	2	]
+[ 1@0,	7	]
+[ 2@0,	12	]
+[ 3@0,	17	]
+[ 4@0,	22	]
+[ 5@0,	27	]
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	3	]
+[ 1@0,	8	]
+[ 2@0,	13	]
+[ 3@0,	18	]
+[ 4@0,	23	]
+[ 5@0,	28	]
+#--------------------------#
+# h	t  # name
+# void	int  # type
+#--------------------------#
+[ 0@0,	4	]
+[ 1@0,	9	]
+[ 2@0,	14	]
+[ 3@0,	19	]
+[ 4@0,	24	]
+[ 5@0,	29	]
+
+# 14:09:25 >  
+# 14:09:25 >  "Done."
+# 14:09:25 >  
+

@@ -70,6 +70,7 @@ include mal_io;
 include manifold;
 include factories;
 include remote;
+include partition;
 
 include mat;
 include inspect;

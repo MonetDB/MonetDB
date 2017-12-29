@@ -38,6 +38,7 @@ lib_mal = {
 		oltp.c oltp.h \
 		wlc.c wlc.h \
 		pcre.c \
+		partition.c partition.h \
 		profiler.c profiler.h \
 		querylog.c querylog.h \
 		remote.c remote.h \
@@ -55,7 +56,7 @@ lib_mal = {
 headers_mal = {
 	HEADERS = mal
 	DIR = libdir/monetdb5
-	SOURCES = language.mal mal_init.mal bbp.mal \
+	SOURCES = language.mal mal_init.mal bbp.mal partition.mal \
 		profiler.mal batExtensions.mal orderidx.mal \
 		inspect.mal manual.mal mal_io.mal mkey.mal manifold.mal \
 		iterator.mal clients.mal \

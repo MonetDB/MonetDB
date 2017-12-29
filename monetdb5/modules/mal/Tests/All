@@ -55,6 +55,7 @@ remoteInit
 
 partition
 batpartition
+hashpartition
 printf
 #some remote related tests
 mapi04

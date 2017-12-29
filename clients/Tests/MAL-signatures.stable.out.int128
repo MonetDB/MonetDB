@@ -10586,6 +10586,7 @@ Ready.
 [ "optimizer",	"volcano_pipe",	"function optimizer.volcano_pipe():void;",	"",	""	]
 [ "optimizer",	"wlc",	"pattern optimizer.wlc():str ",	"OPTwrapper;",	""	]
 [ "optimizer",	"wlc",	"pattern optimizer.wlc(mod:str, fcn:str):str ",	"OPTwrapper;",	"Inject the workload capture-replay primitives."	]
+[ "partition",	"hash",	"pattern partition.hash(b:bat[:any_2]):bat[:any_2]... ",	"PARThash;",	"Perform a value based partition "	]
 [ "pcre",	"imatch",	"command pcre.imatch(s:str, pat:str):bit ",	"PCREimatch;",	"Caseless Perl Compatible Regular Expression pattern matching against a string"	]
 [ "pcre",	"index",	"command pcre.index(pat:pcre, s:str):int ",	"PCREindex;",	"match a pattern, return matched position (or 0 when not found)"	]
 [ "pcre",	"match",	"command pcre.match(s:str, pat:str):bit ",	"PCREmatch;",	"Perl Compatible Regular Expression pattern matching against a string"	]
