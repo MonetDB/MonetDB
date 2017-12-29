@@ -39,18 +39,16 @@ Ready.
 #  FROM t2a
 #  GROUP BY cods, elrik, ether, jaelen, sora;
 % .L11,	.L11,	.L11,	.L11,	.L11,	.L11 # table_name
-% cods,	elrik,	ether,	jaelen,	sora,	L1 # name
+% cods,	elrik,	ether,	jaelen,	sora,	L7 # name
 % int,	int,	int,	int,	int,	bigint # type
 % 1,	1,	1,	1,	1,	1 # length
-[ 0,	0,	0,	0,	0,	NULL	]
 #SELECT 0 AS cods, 0 AS elrik, 0 AS ether, 0 AS jaelen, 0 AS sora, SUM(tib0)
 # FROM t2a
 #GROUP BY cods, elrik, ether, jaelen, sora;
 % .L,	.L,	.L,	.L,	.L,	sys.L1 # table_name
-% cods,	elrik,	ether,	jaelen,	sora,	L1 # name
+% cods,	elrik,	ether,	jaelen,	sora,	L14 # name
 % tinyint,	tinyint,	tinyint,	tinyint,	tinyint,	bigint # type
 % 1,	1,	1,	1,	1,	1 # length
-[ 0,	0,	0,	0,	0,	NULL	]
 #drop table t2a;
 #drop table t1a;
 

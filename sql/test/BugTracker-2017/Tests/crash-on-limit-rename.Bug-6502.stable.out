@@ -1,0 +1,61 @@
+stdout of test 'crash-on-limit-rename.Bug-6502` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 15:09:56 >  
+# 15:09:56 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34138" "--set" "mapi_usock=/var/tmp/mtest-18064/.s.monetdb.34138" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 15:09:56 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.330 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:34138/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-18064/.s.monetdb.34138
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 15:09:56 >  
+# 15:09:56 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18064" "--port=34138"
+# 15:09:56 >  
+
+#start transaction;
+#CREATE TABLE "sys"."lineitem_denormalized_first1k_sanitised" (
+#	"Customer_Gender"        VARCHAR(255),
+#	"Customer_Region"        VARCHAR(255),
+#	"Customer_Country"       VARCHAR(255),
+#	"Customer_State"         VARCHAR(255),
+#	"Customer_City"          VARCHAR(255),
+#	"Customer_Date_Of_Birth" TIMESTAMP,
+#	"Customer_Id"            BIGINT,
+#	"Product_Family"         VARCHAR(255),
+#	"Product_Category"       VARCHAR(255),
+#	"Product_Subcategory"    VARCHAR(255),
+#	"Product_Name"           VARCHAR(255),
+#	"Product_Id"             BIGINT,
+#SELECT "t4jdu"."c4jdd_store_phone_number_8958366756", 
+#     "t4jdu"."c4jde_line_cost__singleton__3098294", 
+#     "t4jdu"."c4jdf_yyyymmdd__mean__3928221090907", 
+#     "t4jdu"."c4jdg_line_price__sum__145489358291", 
+#     "t4jdu"."c4jdh_month_begin_date__min__838817", 
+#     "t4jdu"."c4jdi_customer_state__max__67562250", 
+#     "t4jdu"."c4jdo_mode_product_family" , 
+#     "t4jdu"."c4jdp_product_subcategory__unique_v" 
+#FROM   ( 
+#        SELECT   "t4jds"."c4jdd_store_phone_number_8958366756", 
+#             "t4jds"."c4jde_line_cost__singleton__3098294", 
+% .t4jdu,	.t4jdu,	.t4jdu,	.t4jdu,	.t4jdu,	.t4jdu,	.t4jdu,	.t4jdu # table_name
+% c4jdd_store_phone_number_8958366756,	c4jde_line_cost__singleton__3098294,	c4jdf_yyyymmdd__mean__3928221090907,	c4jdg_line_price__sum__145489358291,	c4jdh_month_begin_date__min__838817,	c4jdi_customer_state__max__67562250,	c4jdo_mode_product_family,	c4jdp_product_subcategory__unique_v # name
+% varchar,	double,	double,	double,	timestamp,	varchar,	varchar,	bigint # type
+% 0,	24,	24,	24,	26,	0,	0,	1 # length
+#rollback;
+
+# 15:09:56 >  
+# 15:09:56 >  "Done."
+# 15:09:56 >  
+
