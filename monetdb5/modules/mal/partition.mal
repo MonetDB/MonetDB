@@ -9,3 +9,7 @@ module partition;
 pattern partition.hash(b:bat[:any_2]):bat[:any_2]...
 address PARThash
 comment "Perform a value based partition ";
+
+pattern partition.slice(b:bat[:any_2]):bat[:oid]...
+address PARTslice
+comment "Perform a value based partition to produce candidate lists ";

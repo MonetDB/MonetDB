@@ -14,5 +14,6 @@
 #include "mal_interpreter.h"
 
 mal_export str PARThash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+mal_export str PARTslice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif /* _PART_H */

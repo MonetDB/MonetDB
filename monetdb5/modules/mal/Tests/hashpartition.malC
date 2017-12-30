@@ -42,5 +42,18 @@ io.print(c2);
 io.print(c3);
 io.print(c4);
 io.print(c5);
+
+(o1,o2):= partition.slice(b);
+io.print(o1);
+io.print(o2);
+
+(o1,o2,o3,o4,o5):= partition.slice(b);
+io.print(o1);
+io.print(o2);
+io.print(o3);
+io.print(o4);
+io.print(o5);
+
 end tst;
+
 tst();
