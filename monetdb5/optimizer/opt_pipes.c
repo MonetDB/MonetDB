@@ -96,6 +96,41 @@ static struct PIPELINES {
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
+// Experiment with partition
+	{"default_pipe",
+	 "optimizer.inline();"
+	 "optimizer.remap();"
+	 "optimizer.costModel();"
+	 "optimizer.coercions();"
+	 "optimizer.evaluate();"
+	 "optimizer.emptybind();"
+	 "optimizer.pushselect();"
+	 "optimizer.aliases();"
+	 "optimizer.partition();"
+	 "optimizer.mitosis();"
+	 "optimizer.mergetable();"
+	 "optimizer.deadcode();"
+	 "optimizer.aliases();"
+	 "optimizer.constants();"
+	 "optimizer.commonTerms();"
+	 "optimizer.projectionpath();"
+	 "optimizer.deadcode();"
+	 "optimizer.reorder();"
+//	 "optimizer.reduce();" deprecated
+	 "optimizer.matpack();"
+	 "optimizer.dataflow();"
+	 "optimizer.querylog();"
+	 "optimizer.multiplex();"
+	 "optimizer.generator();"
+	 "optimizer.profiler();"
+	 "optimizer.candidates();"
+	 "optimizer.postfix();"
+	 "optimizer.deadcode();"
+//	 "optimizer.jit();" awaiting the new batcalc api
+//	 "optimizer.oltp();"awaiting the autocommit front-end changes
+	 "optimizer.wlc();"
+	 "optimizer.garbageCollector();",
+	 "stable", NULL, NULL, 1},
 /*
  * Volcano style execution produces a sequence of blocks from the source relation
  */

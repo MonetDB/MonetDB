@@ -39,6 +39,7 @@
 #include "opt_json.h"
 #include "opt_oltp.h"
 #include "opt_postfix.h"
+#include "opt_partition.h"
 #include "opt_mergetable.h"
 #include "opt_mitosis.h"
 #include "opt_multiplex.h"
@@ -79,6 +80,7 @@ struct{
 	{"multiplex", &OPTmultiplexImplementation,0,0},
 	{"oltp", &OPToltpImplementation,0,0},
 	{"postfix", &OPTpostfixImplementation,0,0},
+	{"partition", &OPTpartitionImplementation,0,0},
 	{"profiler", &OPTprofilerImplementation,0,0},
 	{"projectionpath", &OPTprojectionpathImplementation,0,0},
 	{"pushselect", &OPTpushselectImplementation,0,0},

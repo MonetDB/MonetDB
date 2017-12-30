@@ -50,6 +50,7 @@ struct OPTcatalog {
 {"multiplex",	0,	0,	0},
 {"oltp",		0,	0,	0},
 {"postfix",		0,	0,	0},
+{"partition",		0,	0,	0},
 {"reduce",		0,	0,	0},
 {"remap",		0,	0,	0},
 {"remote",		0,	0,	0},

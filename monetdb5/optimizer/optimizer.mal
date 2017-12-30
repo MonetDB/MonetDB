@@ -281,5 +281,13 @@ pattern optimizer.postfix(mod:str, fcn:str):str
 address OPTwrapper
 comment "Postfix the plan,e.g. pushing projections";
 
+#opt_postfix.mal
+
+pattern optimizer.partition():str
+address OPTwrapper;
+pattern optimizer.partition(mod:str, fcn:str):str
+address OPTwrapper
+comment "Partition a column for aggregates";
+
 optimizer.prelude();
 
