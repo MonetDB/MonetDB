@@ -42,6 +42,8 @@ io.print(c2);
 io.print(c3);
 io.print(c4);
 io.print(c5);
+k1 := partition.hash(b,0,5);
+io.print(k1);
 
 (o1,o2):= partition.slice(b);
 io.print(o1);
@@ -53,6 +55,8 @@ io.print(o2);
 io.print(o3);
 io.print(o4);
 io.print(o5);
+s1 := partition.slice(b,0,5);
+io.print(s1);
 
 end tst;
 

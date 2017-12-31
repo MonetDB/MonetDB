@@ -1597,7 +1597,9 @@ str OPTvolcanoImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 str OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str PARThash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str PARThashkeyed(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str PARTslice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+str PARTslicekeyed(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 str PCREilike2(bit *ret, const str *s, const str *pat);
 str PCREilike3(bit *ret, const str *s, const str *pat, const str *esc);
 str PCREimatch(bit *ret, const str *val, const str *pat);
