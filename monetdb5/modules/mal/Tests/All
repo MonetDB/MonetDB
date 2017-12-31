@@ -60,6 +60,7 @@ partition00
 partition01
 partition02
 partition03
+partition04
 printf
 #some remote related tests
 mapi04
