@@ -1,0 +1,70 @@
+# function user.s6_1():void;                                                                                                         |
+#     X_1:void := querylog.define("explain select i, count(*) from tmp2 group by i;":str, "minimal_pipe":str, 29:int);               |
+#     X_4:int := sql.mvc();                                                                                                          |
+#     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "tmp2":str);                                                                      |
+#     X_8:bat[:int] := sql.bind(X_4:int, "sys":str, "tmp2":str, "i":str, 0:int);                                                     |
+#     X_11:bat[:int] := sql.emptybind(X_4:int, "sys":str, "tmp2":str, "i":str, 1:int);                                               |
+#     (C_13:bat[:oid], X_14:bat[:int]) := sql.emptybind(X_4:int, "sys":str, "tmp2":str, "i":str, 2:int);                             |
+#     X_16:bat[:int] := sql.delta(X_8:bat[:int], C_13:bat[:oid], X_14:bat[:int], X_11:bat[:int]);                                    |
+#     X_17:bat[:int] := algebra.projection(C_5:bat[:oid], X_16:bat[:int]);                                                           |
+#     (X_18:bat[:oid], C_19:bat[:oid], X_20:bat[:lng]) := group.groupdone(X_17:bat[:int]);                                           |
+#     X_21:bat[:int] := algebra.projection(C_19:bat[:oid], X_17:bat[:int]);                                                          |
+#     X_22:bat[:lng] := aggr.subcount(X_18:bat[:oid], X_18:bat[:oid], C_19:bat[:oid], false:bit);                                    |
+#...
+#     sql.resultSet(X_40:bat[:str], X_42:bat[:str], X_44:bat[:str], X_46:bat[:int], X_48:bat[:int], X_21:bat[:int], X_22:bat[:lng]); |
+b:= bat.new(:int);
+bat.append(b,0);
+bat.append(b,1);
+bat.append(b,2);
+bat.append(b,3);
+bat.append(b,4);
+bat.append(b,5);
+bat.append(b,6);
+bat.append(b,7);
+bat.append(b,8);
+bat.append(b,9);
+d:= bat.new(:int);
+bat.append(d,0);
+bat.append(d,1);
+bat.append(d,1);
+bat.append(d,2);
+bat.append(d,2);
+bat.append(d,3);
+bat.append(d,3);
+bat.append(d,4);
+bat.append(d,4);
+bat.append(d,5);
+io.print(b,d);
+(o,g,c):= group.groupdone(d);
+io.print(o);
+io.print(g,c);
+j := algebra.projection(g,d);
+io.print(j);
+a:= aggr.subcount(o,o,g,false);
+io.print(j,a);
+
+(k1,k2,k3,k4):= partition.slice(d);
+p1 := algebra.projection(k1,d);
+p2 := algebra.projection(k2,d);
+p3 := algebra.projection(k3,d);
+p4 := algebra.projection(k4,d);
+(o1,g1,c1):= group.groupdone(p1);
+(o2,g2,c2):= group.groupdone(p2);
+(o3,g3,c3):= group.groupdone(p3);
+(o4,g4,c4):= group.groupdone(p4);
+a1:= aggr.subcount(o1,o1,g1,false);
+a2:= aggr.subcount(o2,o2,g2,false);
+a3:= aggr.subcount(o3,o3,g3,false);
+a4:= aggr.subcount(o4,o4,g4,false);
+ma:= mat.pack(a1,a2,a3,a4);
+j1 := algebra.projection(g1,k1);
+j2 := algebra.projection(g2,k2);
+j3 := algebra.projection(g3,k3);
+j4 := algebra.projection(g4,k4);
+l1 := algebra.projection(j1,d);
+l2 := algebra.projection(j2,d);
+l3 := algebra.projection(j3,d);
+l4 := algebra.projection(j4,d);
+ml := mat.pack(l1,l2,l3,l4);
+m2 := mat.pack(j1,j2,j3,j4);
+io.print(ml,ma);

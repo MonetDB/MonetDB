@@ -1,0 +1,52 @@
+# inspired by SQL query
+# function user.s14_1():void;                                                                                        |
+#     X_1:void := querylog.define("select count(*) from tmp group by i;":str, "minimal_pipe":str, 24:int);           |
+#     X_4:int := sql.mvc();                                                                                          |
+#     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "tmp":str);                                                       |
+#     X_8:bat[:int] := sql.bind(X_4:int, "sys":str, "tmp":str, "i":str, 0:int);                                      |
+#     X_11:bat[:int] := sql.emptybind(X_4:int, "sys":str, "tmp":str, "i":str, 1:int);                                |
+#     (C_13:bat[:oid], X_14:bat[:int]) := sql.emptybind(X_4:int, "sys":str, "tmp":str, "i":str, 2:int);              |
+#     X_16:bat[:int] := sql.delta(X_8:bat[:int], C_13:bat[:oid], X_14:bat[:int], X_11:bat[:int]);                    |
+#     X_17:bat[:int] := algebra.projection(C_5:bat[:oid], X_16:bat[:int]);                                           |
+#     (X_18:bat[:oid], C_19:bat[:oid], X_20:bat[:lng]) := group.groupdone(X_17:bat[:int]);                           |
+#     X_22:bat[:lng] := aggr.subcount(X_18:bat[:oid], X_18:bat[:oid], C_19:bat[:oid], false:bit);                    |
+b:= bat.new(:int);
+bat.append(b,0);
+bat.append(b,1);
+bat.append(b,2);
+bat.append(b,3);
+bat.append(b,4);
+bat.append(b,5);
+bat.append(b,6);
+bat.append(b,7);
+bat.append(b,8);
+bat.append(b,9);
+d:= bat.new(:int);
+bat.append(d,0);
+bat.append(d,1);
+bat.append(d,1);
+bat.append(d,2);
+bat.append(d,2);
+bat.append(d,3);
+bat.append(d,3);
+bat.append(d,4);
+bat.append(d,4);
+bat.append(d,5);
+io.print(b,d);
+(o,g,c):= group.groupdone(d);
+io.print(o);
+io.print(g,c);
+a:= aggr.subcount(o,o,g,false);
+io.print(a);
+
+(p1,p2,p3,p4):= partition.hash(d);
+(o1,g1,c1):= group.groupdone(p1);
+(o2,g2,c2):= group.groupdone(p2);
+(o3,g3,c3):= group.groupdone(p3);
+(o4,g4,c4):= group.groupdone(p4);
+a1:= aggr.subcount(o1,o1,g1,false);
+a2:= aggr.subcount(o2,o2,g2,false);
+a3:= aggr.subcount(o3,o3,g3,false);
+a4:= aggr.subcount(o4,o4,g4,false);
+m := mat.pack(a1,a2,a3,a4);
+io.print(m);

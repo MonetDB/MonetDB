@@ -1,0 +1,48 @@
+# inspired by SQL query
+# function user.s12_1():void;                                                                           |
+#     X_1:void := querylog.define("explain select count(*) from tmp;":str, "minimal_pipe":str, 12:int); |
+#     X_4:int := sql.mvc();                                                                             |
+#     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "tmp":str);                                          |
+#     X_8:bat[:int] := sql.bind(X_4:int, "sys":str, "tmp":str, "k":str, 0:int);                         |
+#     X_11:bat[:int] := sql.emptybind(X_4:int, "sys":str, "tmp":str, "k":str, 1:int);                   |
+#     (C_13:bat[:oid], X_14:bat[:int]) := sql.emptybind(X_4:int, "sys":str, "tmp":str, "k":str, 2:int); |
+#     X_16:bat[:int] := sql.delta(X_8:bat[:int], C_13:bat[:oid], X_14:bat[:int], X_11:bat[:int]);       |
+#     X_17:bat[:int] := algebra.projection(C_5:bat[:oid], X_16:bat[:int]);                              |
+#     X_18:lng := aggr.count(X_17:bat[:int]);                                                           |
+#     sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);   
+#
+b:= bat.new(:int);
+bat.append(b,0);
+bat.append(b,1);
+bat.append(b,2);
+bat.append(b,3);
+bat.append(b,4);
+bat.append(b,5);
+bat.append(b,6);
+bat.append(b,7);
+bat.append(b,8);
+bat.append(b,9);
+c:= bat.new(:int);
+bat.append(c,0);
+bat.append(c,1);
+bat.append(c,1);
+bat.append(c,2);
+bat.append(c,2);
+bat.append(c,3);
+bat.append(c,3);
+bat.append(c,4);
+bat.append(c,4);
+bat.append(c,5);
+io.print(b,c);
+a:= aggr.count(b);
+io.print(a);
+
+(p1,p2,p3,p4):= partition.hash(b);
+c1:= aggr.count(p1);
+c2:= aggr.count(p2);
+c3:= aggr.count(p3);
+c4:= aggr.count(p4);
+m := mat.pack(c1,c2,c3,c4);
+s := aggr.sum(m);
+io.print(s);
+
