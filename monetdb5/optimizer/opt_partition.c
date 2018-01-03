@@ -77,14 +77,27 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		p= old[i];
 		if( getModuleId(p) == groupRef && ( getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef)){
 #ifdef _PARTITION_DEBUG_
-			fprintf(stderr,"Found partition candidate %d\n", p->pc);
+			fprintf(stderr,"#Found partition candidate %d\n", p->pc);
 #endif
+#ifdef _SINGLE_HASH_
 			qh = newStmt(mb, partitionRef, hashRef);
 			qh->retc =0;
 			qh->argc =0;
 			for( j = 0; j < pieces; j++)
 				qh = pushReturn(mb, qh, newTmpVariable(mb, getArgType(mb, p, p->retc)));
 			pushArgument(mb, qh, getArg(p,p->retc));
+#else
+			/* do parallel partition construction */
+			qh = newInstruction(mb, languageRef, passRef);
+			qh->retc = qh->argc = 0;
+			for( j = 0; j < pieces; j++){
+				q = newStmt(mb, partitionRef, hashRef);
+				q = pushArgument(mb, q,  getArg(p,p->retc));
+				q = pushInt(mb, q, j);
+				q = pushInt(mb, q, pieces);
+				qh = pushReturn(mb, qh, getArg(q,0));
+			}
+#endif
 			qo = newInstruction(mb, matRef, packRef);
 			getArg(qo,0) =  getArg(p,0);
 			qg = newInstruction(mb, matRef, packRef);
@@ -130,6 +143,8 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			pushInstruction(mb,p);
 	}
 
+	if( getFunctionId(qh) == passRef)
+		freeInstruction(qh);
 	for( ; i < slimit; i++)
 		if( old[i])
 			freeInstruction(old[i]);
