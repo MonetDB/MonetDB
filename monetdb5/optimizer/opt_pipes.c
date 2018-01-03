@@ -97,7 +97,7 @@ static struct PIPELINES {
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
 // Experiment with partition
-	{"default_pipe",
+	{"partition_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
 	 "optimizer.costModel();"
@@ -107,8 +107,8 @@ static struct PIPELINES {
 	 "optimizer.pushselect();"
 	 "optimizer.aliases();"
 	 "optimizer.partition();"
-	 "optimizer.mitosis();"
-	 "optimizer.mergetable();"
+//	 "optimizer.mitosis();" not used now
+//	 "optimizer.mergetable();" not used now
 	 "optimizer.deadcode();"
 	 "optimizer.aliases();"
 	 "optimizer.constants();"
@@ -118,7 +118,7 @@ static struct PIPELINES {
 	 "optimizer.reorder();"
 //	 "optimizer.reduce();" deprecated
 	 "optimizer.matpack();"
-	 "optimizer.dataflow();"
+//	 "optimizer.dataflow();" not used now
 	 "optimizer.querylog();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
