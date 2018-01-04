@@ -104,6 +104,14 @@ update sys._tables set system = true where name = 'geometry_columns' and schema_
 delete from sys.systemfunctions where function_id not in (select id from sys.functions);
 set schema "sys";
 
+Running database upgrade commands:
+drop view sys.environment cascade;
+drop function sys.environment() cascade;
+create view sys.environment as select * from sys.env();
+GRANT SELECT ON sys.environment TO PUBLIC;
+update sys._tables set system = true where system = false and name = 'environment' and schema_id in (select id from schemas where name = 'sys');
+delete from sys.systemfunctions where function_id not in (select id from sys.functions);
+
 
 # 15:42:23 >  
 # 15:42:23 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10708" "--port=34422"

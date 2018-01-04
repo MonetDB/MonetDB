@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -162,8 +162,8 @@ monet_hello(void)
 	printf("# Database path:%s\n", GDKgetenv("gdk_dbpath"));
 	printf("# Module path:%s\n", GDKgetenv("monet_mod_path"));
 #endif
-	printf("# Copyright (c) 1993-July 2008 CWI.\n");
-	printf("# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved\n");
+	printf("# Copyright (c) 1993 - July 2008 CWI.\n");
+	printf("# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved\n");
 	printf("# Visit https://www.monetdb.org/ for further information\n");
 
 	// The properties shipped through the performance profiler

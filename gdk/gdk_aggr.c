@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1987,8 +1987,6 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 				if (cand == candend)			\
 					break;				\
 				i = *cand++ - b->hseqbase;		\
-				if (i >= end)				\
-					break;				\
 			} else {					\
 				i = start++;				\
 				if (i == end)				\
@@ -2000,7 +1998,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals)
 					gid = gids[i] - min;		\
 				else					\
 					gid = (oid) i;			\
-				if (!skip_nils || !is_##TYPE##_nil(vals[i])) { \
+				if (!is_##TYPE##_nil(vals[i])) {	\
 					cnts[gid]++;			\
 				}					\
 			}						\
@@ -2040,7 +2038,7 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_o
 	}
 
 	if (BATcount(b) == 0 || ngrp == 0) {
-		/* trivial: no products, so return bat aligned with g
+		/* trivial: no counts, so return bat aligned with g
 		 * with zero in the tail */
 		lng zero = 0;
 		return BATconstant(ngrp == 0 ? 0 : min, TYPE_lng, &zero, ngrp, TRANSIENT);
@@ -2057,62 +2055,89 @@ BATgroupcount(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_o
 	else
 		gids = (const oid *) Tloc(g, start);
 
-	t = b->ttype;
-	nil = ATOMnilptr(t);
-	atomcmp = ATOMcompare(t);
-	t = ATOMbasetype(t);
-	switch (t) {
-	case TYPE_bte:
-		AGGR_COUNT(bte);
-		break;
-	case TYPE_sht:
-		AGGR_COUNT(sht);
-		break;
-	case TYPE_int:
-		AGGR_COUNT(int);
-		break;
-	case TYPE_lng:
-		AGGR_COUNT(lng);
-		break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		AGGR_COUNT(hge);
-		break;
-#endif
-	case TYPE_flt:
-		AGGR_COUNT(flt);
-		break;
-	case TYPE_dbl:
-		AGGR_COUNT(dbl);
-		break;
-	default:
-		bi = bat_iterator(b);
-
-		for (;;) {
-			if (cand) {
-				if (cand == candend)
-					break;
-				i = *cand++ - b->hseqbase;
-				if (i >= end)
-					break;
+	if (!skip_nils || b->tnonil) {
+		/* if nils are nothing special, or if there are no
+		 * nils, we don't need to look at the values at all */
+		if (cand) {
+			if (gids) {
+				while (cand < candend) {
+					i = *cand++ - b->hseqbase;
+					if (gids[i] >= min && gids[i] <= max)
+						cnts[gids[i] - min]++;
+				}
 			} else {
-				i = start++;
-				if (i == end)
-					break;
-			}
-			if (gids == NULL ||
-			    (gids[i] >= min && gids[i] <= max)) {
-				if (gids)
-					gid = gids[i] - min;
-				else
-					gid = (oid) i;
-				if (!skip_nils ||
-				    (*atomcmp)(BUNtail(bi, i), nil) != 0) {
-					cnts[gid]++;
+				while (cand < candend) {
+					i = *cand++ - b->hseqbase;
+					cnts[i] = 1;
 				}
 			}
+		} else {
+			if (gids) {
+				for (i = start; i < end; i++) {
+					if (gids[i] >= min && gids[i] <= max)
+						cnts[gids[i] - min]++;
+				}
+			} else {
+				for (i = start; i < end; i++)
+					cnts[i] = 1;
+			}
 		}
-		break;
+	} else {
+		t = b->ttype;
+		nil = ATOMnilptr(t);
+		atomcmp = ATOMcompare(t);
+		t = ATOMbasetype(t);
+
+		switch (t) {
+		case TYPE_bte:
+			AGGR_COUNT(bte);
+			break;
+		case TYPE_sht:
+			AGGR_COUNT(sht);
+			break;
+		case TYPE_int:
+			AGGR_COUNT(int);
+			break;
+		case TYPE_lng:
+			AGGR_COUNT(lng);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			AGGR_COUNT(hge);
+			break;
+#endif
+		case TYPE_flt:
+			AGGR_COUNT(flt);
+			break;
+		case TYPE_dbl:
+			AGGR_COUNT(dbl);
+			break;
+		default:
+			bi = bat_iterator(b);
+
+			for (;;) {
+				if (cand) {
+					if (cand == candend)
+						break;
+					i = *cand++ - b->hseqbase;
+				} else {
+					i = start++;
+					if (i == end)
+						break;
+				}
+				if (gids == NULL ||
+				    (gids[i] >= min && gids[i] <= max)) {
+					if (gids)
+						gid = gids[i] - min;
+					else
+						gid = (oid) i;
+					if ((*atomcmp)(BUNtail(bi, i), nil) != 0) {
+						cnts[gid]++;
+					}
+				}
+			}
+			break;
+		}
 	}
 	BATsetcount(bn, ngrp);
 	bn->tkey = BATcount(bn) <= 1;
