@@ -2554,23 +2554,26 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			ek.card = card_set;
 			select = rel_select(sql->sa, rel_dup(rel), NULL); /* dup to make sure we get a new select op */
 			rel_destroy(rel);
-			pexps = rel_projections(sql, rel, NULL, 1, 1);
 
 			/* first remove the NULLs */
 			if (!l_is_value && sc->token == SQL_NOT_IN &&
 		    	    l->card != CARD_ATOM && has_nil(l)) {
 				sql_exp *ol;
 
-				rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
-				select->l = rel;
-				l = exp_label(sql->sa, l, ++sql->label);
-				append(rel->exps, l);
-				ol = l;
-				l = exp_column(sql->sa, exp_relname(ol), exp_name(ol), exp_subtype(ol), ol->card, has_nil(ol), is_intern(ol));
+				if (l->type != e_column) {
+					pexps = rel_projections(sql, rel, NULL, 1, 1);
+					rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
+					select->l = rel;
+					l = exp_label(sql->sa, l, ++sql->label);
+					append(rel->exps, l);
+					ol = l;
+					l = exp_column(sql->sa, exp_relname(ol), exp_name(ol), exp_subtype(ol), ol->card, has_nil(ol), is_intern(ol));
+				}			
 				e = rel_unop_(sql, l, NULL, "isnull", card_value);
 				e = exp_compare(sql->sa, e, exp_atom_bool(sql->sa, 0), cmp_equal);
 				rel_select_add_exp(sql->sa, select, e);
-				l = exp_column(sql->sa, exp_relname(ol), exp_name(ol), exp_subtype(ol), ol->card, has_nil(ol), is_intern(ol));
+				if (pexps)
+					l = exp_column(sql->sa, exp_relname(ol), exp_name(ol), exp_subtype(ol), ol->card, has_nil(ol), is_intern(ol));
 			}
 			rel = left = select;
 
@@ -2716,7 +2719,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				rel_select_add_exp(sql->sa, select, e);
 				if (l_is_value && sc->token == SQL_NOT_IN) 
 					set_anti(e);
-				if (pexps && !right) {
+				if (pexps && !right && sc->token == SQL_NOT_IN){
 					rel = rel_project(sql->sa, rel, pexps);
 					reset_processed(rel);
 				}
