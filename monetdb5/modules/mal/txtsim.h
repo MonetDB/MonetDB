@@ -16,10 +16,6 @@
 #include "mal.h"
 #include <string.h>
 #include "gdk.h"
-#ifdef HAVE_MALLOC_H
-#endif
-#include <stdio.h>
-#include <stdlib.h>
 #include <limits.h>
 
 mal_export str levenshtein_impl(int *result, str *s, str *t, int *insdel_cost, int *replace_cost, int *transpose_cost);

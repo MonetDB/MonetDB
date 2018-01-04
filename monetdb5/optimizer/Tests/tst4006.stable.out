@@ -36,7 +36,7 @@ barrier V12:bit := true:bit;            	#[4] (0)  6 <- 7  type check needed
 exit V12:bit;                           	#[7] (0)  6  type check needed 
     return V31:bat[:int] := V30:bat[:int];	#[8] (0)  9 <- 5  type check needed 
 end user.getz;                          	#[9] (0)   type check needed 
-#aliases              actions= 0 time=4 usec 
+#aliases              actions= 0 time=8 usec 
 #garbagecollector     actions= 0 time=8 usec 
 function user.getz(p:int):bat[:int];    	#[0] (0)  0 <- 1  type check needed 
     x:bat[:int] := bat.new(:int);       	#[1] (0) CMDBATnew 2 <- 3  type check needed 
@@ -48,8 +48,8 @@ barrier V12:bit := true:bit;            	#[4] (0)  6 <- 7  type check needed
 exit V12:bit;                           	#[7] (0)  6  type check needed 
     return V31:bat[:int] := V30:bat[:int];	#[8] (0)  9 <- 5  type check needed 
 end user.getz;                          	#[9] (0)   type check needed 
-#aliases              actions= 0 time=4 usec 
-#garbagecollector     actions= 1 time=12 usec 
+#aliases              actions= 0 time=8 usec 
+#garbagecollector     actions= 0 time=8 usec 
 
 # 15:27:10 >  
 # 15:27:10 >  "Done."

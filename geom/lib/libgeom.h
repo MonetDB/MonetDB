@@ -9,7 +9,7 @@
 #ifndef LIBGEOM_H
 #define LIBGEOM_H
 
-#include <gdk.h>
+#include "gdk.h"
 
 /*
  * @+ Geos
@@ -29,7 +29,7 @@
 #include <geos_c.h>
 
 #ifdef HAVE_PROJ
-#include "proj_api.h" //it is needed to transform from one srid to another
+#include <proj_api.h> //it is needed to transform from one srid to another
 #endif
 
 /* geos does not support 3d envelope */
@@ -136,10 +136,10 @@ libgeom_export void libgeom_exit(void);
 //#define wkb2geos( geom ) wkb_isnil((geom))? NULL: GEOSGeomFromWKB_buf((unsigned char *)((geom)->data), (geom)->len)
 #define mbr_nil mbrFromGeos(NULL); 
 
-libgeom_export int wkb_isnil(wkb *wkbp);
+libgeom_export int wkb_isnil(const wkb *wkbp);
 libgeom_export int getMbrGeos(mbr *mbr, const GEOSGeom geosGeometry);
 libgeom_export int getMbrGeom(mbr *res, wkb *geom);
-libgeom_export GEOSGeom wkb2geos(wkb* geomWKB);
+libgeom_export GEOSGeom wkb2geos(const wkb *geomWKB);
 
 //libgeom_export str geomerty_2_geometry(wkb *res, wkb **geom, int* columnType, int* columnSRID, int* valueSRID);
 

@@ -198,7 +198,7 @@ stopifnot(identical(1L, as.integer(dbGetQuery(con, "select cast('2015-03-02' as 
 # reserved words in data frame column names
 stopifnot(dbIsValid(conn))
 dbBegin(conn)
-dbWriteTable(conn, "evilt", data.frame(year=42, month=12, day=24, some.dot=12), transaction=F)
+dbWriteTable(conn, "evilt", data.frame(year=42, month=12, day=24, some.dot=12))
 stopifnot(dbExistsTable(conn, "evilt"))
 dbRollback(conn)
 
@@ -208,7 +208,7 @@ dbBegin(conn)
 data(api, package="survey")
 x <- apiclus1
 x$idkey <- seq( nrow( x ) )
-dbWriteTable( conn , 'x' , x , transaction=F)
+dbWriteTable( conn , 'x' , x )
 stopifnot(dbExistsTable(conn, "x"))
 dbRollback(conn)
 
@@ -217,7 +217,7 @@ stopifnot(!is.null(dbGetQuery(conn, "SELECT * FROM tables WHERE 1=0")))
 
 #non-standard dbwritetable use
 dbBegin(conn)
-dbWriteTable(conn, "vectable", 1:1000, transaction=F)
+dbWriteTable(conn, "vectable", 1:1000)
 stopifnot(dbExistsTable(conn, "vectable"))
 dbRollback(conn)
 

@@ -103,6 +103,10 @@ MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt)
 	c->fdin = new_input;
 	c->listing = listing;
 	c->prompt = prompt ? GDKstrdup(prompt) : GDKstrdup("");
+	if(c->prompt == 0) {
+		GDKfree(x);
+		return -1;
+	}
 	c->promptlength = strlen(c->prompt);
 	c->yycur = 0;
 	return 0;
@@ -208,6 +212,10 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->blkmode = 0;
 
 	c->fdin = fin ? fin : bstream_create(GDKin, 0);
+	if ( c->fdin == NULL){
+		showException(GDKout, MAL, "initClientRecord", MAL_MALLOC_FAIL);
+		return NULL;
+	}
 	c->yycur = 0;
 	c->bak = NULL;
 
@@ -218,8 +226,8 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->curprg = c->backup = 0;
 	c->glb = 0;
 
-	/* remove garbage from previous connection 
-	 * be aware, a user can introduce several modules 
+	/* remove garbage from previous connection
+	 * be aware, a user can introduce several modules
 	 * that should be freed to avoid memory leaks */
 	c->usermodule = c->curmodule = 0;
 
@@ -235,6 +243,10 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 
 	prompt = !fin ? GDKgetenv("monet_prompt") : PROMPT1;
 	c->prompt = GDKstrdup(prompt);
+	if ( c->prompt == NULL){
+		showException(GDKout, MAL, "initClientRecord", MAL_MALLOC_FAIL);
+		return NULL;
+	}
 	c->promptlength = strlen(prompt);
 
 	c->actions = 0;
@@ -268,7 +280,7 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 
 /*
  * The administrator should be initialized to enable interpretation of
- * the command line arguments, before it starts serviceing statements
+ * the command line arguments, before it starts servicing statements
  */
 int
 MCinitClientThread(Client c)
@@ -316,10 +328,14 @@ Client
 MCforkClient(Client father)
 {
 	Client son = NULL;
+	str prompt;
+
 	if (father == NULL)
 		return NULL;
 	if (father->father != NULL)
 		father = father->father;
+	if((prompt = GDKstrdup(father->prompt)) == NULL)
+		return NULL;
 	if ((son = MCinitClient(father->user, father->fdin, father->fdout))) {
 		son->fdin = NULL;
 		son->fdout = father->fdout;
@@ -329,11 +345,18 @@ MCforkClient(Client father)
 		son->scenario = father->scenario;
 		if (son->prompt)
 			GDKfree(son->prompt);
-		son->prompt = GDKstrdup(father->prompt);
-		son->promptlength = strlen(father->prompt);
+		son->prompt = prompt;
+		son->promptlength = strlen(prompt);
 		/* reuse the scopes wherever possible */
-		if (son->usermodule == 0)
+		if (son->usermodule == 0) {
 			son->usermodule = userModule();
+			if(son->usermodule == 0) {
+				MCcloseClient(son);
+				return NULL;
+			}
+		}
+	} else {
+		GDKfree(prompt);
 	}
 	return son;
 }
@@ -533,7 +556,7 @@ MCreadClient(Client c)
 #endif
 
 	while (in->pos < in->len &&
-		   (isspace((int) (in->buf[in->pos])) ||
+		   (isspace((unsigned char) (in->buf[in->pos])) ||
 			in->buf[in->pos] == ';' || !in->buf[in->pos]))
 		in->pos++;
 

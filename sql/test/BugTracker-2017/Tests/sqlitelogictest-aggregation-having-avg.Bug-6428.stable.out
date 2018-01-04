@@ -1,0 +1,38 @@
+stdout of test 'sqlitelogictest-aggregation-having-avg.Bug-6428` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 13:10:15 >  
+# 13:10:15 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33745" "--set" "mapi_usock=/var/tmp/mtest-24108/.s.monetdb.33745" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 13:10:15 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.330 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:33745/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-24108/.s.monetdb.33745
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 13:10:16 >  
+# 13:10:16 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-24108" "--port=33745"
+# 13:10:16 >  
+
+#CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#SELECT - col0 AS col1 FROM tab0 AS cor0 WHERE NOT + col0 IS NOT NULL GROUP BY col1, col0 HAVING NOT - col1 + + AVG ( DISTINCT col0 ) IS NULL;
+% sys.L2 # table_name
+% col1 # name
+% int # type
+% 1 # length
+#DROP TABLE tab0;
+
+# 13:10:16 >  
+# 13:10:16 >  "Done."
+# 13:10:16 >  
+

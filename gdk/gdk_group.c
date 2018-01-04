@@ -88,7 +88,7 @@
 			}						\
 		}							\
 		if (extents)						\
-			exts[ngrp] = hseqb + p;				\
+			exts[ngrp] = hseqb + p - lo;			\
 		if (histo)						\
 			cnts[ngrp] = 1;					\
 		ngrps[r] = ngrp++;					\
@@ -159,12 +159,20 @@
 		}							\
 	} while(0)
 
+#define flt_neq(a, b)	(is_flt_nil(a) ? !is_flt_nil(b) : is_flt_nil(b) || (a) != (b))
+#define dbl_neq(a, b)	(is_dbl_nil(a) ? !is_dbl_nil(b) : is_dbl_nil(b) || (a) != (b))
+#define bte_neq(a, b)	((a) != (b))
+#define sht_neq(a, b)	((a) != (b))
+#define int_neq(a, b)	((a) != (b))
+#define lng_neq(a, b)	((a) != (b))
+#define hge_neq(a, b)	((a) != (b))
+
 #define GRP_compare_consecutive_values_tpe(TYPE)		\
 	GRP_compare_consecutive_values(				\
 	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0);	\
 			TYPE pw = 0			,	\
 	/* INIT_1 */					,	\
-	/* COMP   */	w[p] != pw			,	\
+	/* COMP   */	TYPE##_neq(w[p], pw)		,	\
 	/* KEEP   */	pw = w[p]				\
 	)
 
@@ -227,12 +235,20 @@
 		}							\
 	} while(0)
 
+#define flt_equ(a, b)	(is_flt_nil(a) ? is_flt_nil(b) : !is_flt_nil(b) && (a) == (b))
+#define dbl_equ(a, b)	(is_dbl_nil(a) ? is_dbl_nil(b) : !is_dbl_nil(b) && (a) == (b))
+#define bte_equ(a, b)	((a) == (b))
+#define sht_equ(a, b)	((a) == (b))
+#define int_equ(a, b)	((a) == (b))
+#define lng_equ(a, b)	((a) == (b))
+#define hge_equ(a, b)	((a) == (b))
+
 #define GRP_subscan_old_groups_tpe(TYPE)			\
 	GRP_subscan_old_groups(					\
 	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0);	\
 		    	TYPE pw = 0			,	\
 	/* INIT_1 */					,	\
-	/* COMP   */	w[p] == pw			,	\
+	/* COMP   */	TYPE##_equ(w[p], pw)		,	\
 	/* KEEP   */	pw = w[p]				\
 	)
 
@@ -361,7 +377,7 @@
 	GRP_use_existing_hash_table(				\
 	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0),	\
 	/* INIT_1 */					,	\
-	/* COMP   */	w[p] == w[hb]				\
+	/* COMP   */	TYPE##_equ(w[p], w[hb])			\
 	)
 
 #define GRP_use_existing_hash_table_any()			\
@@ -468,8 +484,8 @@ pop(oid x)
 				     hb != HASHnil(hs) && hb >= start;	\
 				     hb = HASHgetlink(hs, hb)) {	\
 					ASSERT;				\
-					GRPTST(hb, r);			\
-					grp = ngrps[hb];		\
+					GRPTST(hb - start, r);		\
+					grp = ngrps[hb - start];	\
 					if (COMP) {			\
 						ngrps[r] = grp;		\
 						if (histo)		\
@@ -498,8 +514,8 @@ pop(oid x)
 		if (grps) {						\
 			if (gc) {					\
 				GRP_create_partial_hash_table_core(INIT_1,HASH,COMP,assert(HASHgetlink(hs, hb) == HASHnil(hs) || HASHgetlink(hs, hb) < hb),GCGRPTST); \
-			} else {				\
-				GRP_create_partial_hash_table_core(INIT_1,HASH ^ (rev(grps[p]) >> bits),COMP,(void)0,GRPTST); \
+			} else {					\
+				GRP_create_partial_hash_table_core(INIT_1,HASH ^ (rev(grps[r]) >> bits),COMP,(void)0,GRPTST); \
 			}						\
 		} else {						\
 			GRP_create_partial_hash_table_core(INIT_1,HASH,COMP,(void)0,NOGRPTST); \
@@ -511,7 +527,7 @@ pop(oid x)
 	/* INIT_0 */	const TYPE *w = (TYPE *) Tloc(b, 0),	\
 	/* INIT_1 */					,	\
 	/* HASH   */	hash_##TYPE(hs, &w[p])		,	\
-	/* COMP   */	w[p] == w[hb]				\
+	/* COMP   */	TYPE##_equ(w[p], w[hb])			\
 	)
 
 #define GRP_create_partial_hash_table_any()			\
@@ -537,7 +553,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	BUN p, q, r;
 	const void *v, *pv;
 	BATiter bi;
-	char *ext = NULL;
 	Hash *hs = NULL;
 	BUN hb;
 	BUN maxgrps;
@@ -545,8 +560,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	bat parent;
 #endif
 	BUN start, end, cnt;
+	BUN lo = 0;
 	const oid *restrict cand, *candend;
-	oid maxgrp = 0;		/* maximum value of g BAT (if subgrouping) */
+	oid maxgrp = oid_nil;	/* maximum value of g BAT (if subgrouping) */
 	PROPrec *prop;
 
 	if (b == NULL) {
@@ -599,18 +615,28 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
 		ngrp = cnt == 0  ? 0 : cand ? s->hseqbase + (cand - (const oid *) Tloc(s, 0)) : s ? s->hseqbase + start - s->tseqbase : b->hseqbase;
-		gn = COLnew(hseqb, TYPE_void, BATcount(b), TRANSIENT);
+		gn = BATdense(hseqb, 0, BATcount(b));
 		if (gn == NULL)
 			goto error;
-		BATsetcount(gn, BATcount(b));
-		BATtseqbase(gn, 0);
 		*groups = gn;
 		if (extents) {
-			en = COLnew(0, TYPE_void, BATcount(b), TRANSIENT);
-			if (en == NULL)
-				goto error;
-			BATsetcount(en, cnt);
-			BATtseqbase(en, ngrp);
+			if (cand) {
+				en = COLnew(0, TYPE_oid, cnt, TRANSIENT);
+				if (en == NULL)
+					goto error;
+				BATsetcount(en, cnt);
+				memcpy(Tloc(en, 0), cand, cnt * sizeof(oid));
+				en->tsorted = 1;
+				en->trevsorted = cnt <= 1;
+				en->tkey = 1;
+				en->tnil = 0;
+				en->tnonil = 1;
+				en->tdense = 0;
+			} else {
+				en = BATdense(0, b->hseqbase, cnt);
+				if (en == NULL)
+					goto error;
+			}
 			*extents = en;
 		}
 		if (histo) {
@@ -633,6 +659,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			if (prop)
 				maxgrp = prop->v.val.oval;
 		}
+		if (maxgrp == 0)
+			g = NULL; /* single group */
 	}
 	if (BATordered(b) && BATordered_rev(b)) {
 		/* all values are equal */
@@ -656,11 +684,10 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				goto error;
 			*groups = gn;
 			if (extents) {
-				ngrp = gn->hseqbase;
-				en = BATconstant(0, TYPE_void, &ngrp, 1, TRANSIENT);
+				ngrp = b->hseqbase + start;
+				en = BATdense(0, b->hseqbase + start, 1);
 				if (en == NULL)
 					goto error;
-				BATtseqbase(en, ngrp);
 				*extents = en;
 			}
 			if (histo) {
@@ -673,8 +700,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			}
 			return GDK_SUCCEED;
 		}
-		if ((extents == NULL) == (e == NULL) &&
-		    (histo == NULL) == (h == NULL)) {
+		if ((extents == NULL || e != NULL) &&
+		    (histo == NULL || h != NULL)) {
 			/* inherit given grouping; note that if
 			 * extents/histo is to be returned, we need
 			 * e/h available in order to copy them,
@@ -695,7 +722,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			gn = COLcopy(g, g->ttype, 0, TRANSIENT);
 			if (gn == NULL)
 				goto error;
-			if (maxgrp > 0) {
+			if (!is_oid_nil(maxgrp)) {
 				prop = BATgetprop(g, GDK_MAX_VALUE);
 				if (prop)
 					BATsetprop(gn, GDK_MAX_VALUE, TYPE_oid, &maxgrp);
@@ -725,7 +752,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		goto error;
 	ngrps = (oid *) Tloc(gn, 0);
 	maxgrps = cnt / 10;
-	if (maxgrps < maxgrp)
+	if (!is_oid_nil(maxgrp) && maxgrps < maxgrp)
 		maxgrps += maxgrp;
 	if (e && maxgrps < BATcount(e))
 		maxgrps += BATcount(e);
@@ -753,6 +780,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	/* don't bother looking at old groups if there is only one */
 	if (g && (!BATordered(g) || !BATordered_rev(g)))
 		grps = (const oid *) Tloc(g, 0);
+
+	hseqb = b->hseqbase;	/* abbreviation */
 
 	/* figure out if we can use the storage type also for
 	 * comparing values */
@@ -993,8 +1022,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		       BATcheckhash(BBPdescriptor(parent)))
 #endif
 		) {
-		BUN lo;
-
 		/* we already have a hash table on b, or b is
 		 * persistent and we could create a hash table, or b
 		 * is a view on a bat that already has a hash table */
@@ -1010,7 +1037,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  e ? BATgetId(e) : "NULL", e ? BATcount(e) : 0,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted);
-		hseqb = b->hseqbase;
 #ifndef DISABLE_PARENT_HASH
 		if (b->thash == NULL && (parent = VIEWtparent(b)) != 0) {
 			/* b is a view on another bat (b2 for now).
@@ -1022,11 +1048,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			bi = bat_iterator(b);
 			start += lo;
 			end += lo;
-		} else
-#endif
-		{
-			lo = 0;
 		}
+#endif
 		hs = b->thash;
 		gn->tsorted = 1; /* be optimistic */
 
@@ -1061,8 +1084,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	} else {
 		bit gc = g && (BATordered(g) || BATordered_rev(g));
 		const char *nme;
-		size_t nmelen;
-		Heap *hp = NULL;
 		BUN prb;
 		int bits;
 		BUN mask;
@@ -1087,28 +1108,18 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  h ? BATgetId(h) : "NULL", h ? BATcount(h) : 0,
 				  subsorted, gc ? " (g clustered)" : "");
 		nme = BBP_physical(b->batCacheid);
-		nmelen = strlen(nme);
 		mask = MAX(HASHmask(cnt), 1 << 16);
 		/* mask is a power of two, so pop(mask - 1) tells us
 		 * which power of two */
 		bits = 8 * SIZEOF_OID - pop(mask - 1);
-		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
-		    (hp->farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
-		    (hp->filename = GDKmalloc(nmelen + 30)) == NULL ||
-		    snprintf(hp->filename, nmelen + 30,
-			     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
-		    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
-		    (hs = HASHnew(hp, b->ttype, BUNlast(b),
-				  mask, BUN_NONE)) == NULL) {
-			if (hp) {
-				if (hp->filename)
-					GDKfree(hp->filename);
-				GDKfree(hp);
-			}
-			if (ext)
-				GDKfree(ext);
-			hp = NULL;
-			ext = NULL;
+		if ((hs = GDKzalloc(sizeof(Hash))) == NULL ||
+		    (hs->heap.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
+		    snprintf(hs->heap.filename, sizeof(hs->heap.filename),
+			     "%s.hash%d", nme, THRgettid()) < 0 ||
+		    HASHnew(hs, b->ttype, BUNlast(b),
+			    mask, BUN_NONE) != GDK_SUCCEED) {
+			GDKfree(hs);
+			hs = NULL;
 			GDKerror("BATgroup: cannot allocate hash table\n");
 			goto error;
 		}
@@ -1116,7 +1127,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 
 		switch (t) {
 		case TYPE_bte:
-			if (grps && maxgrp > 1
+			if (grps && !is_oid_nil(maxgrp)
 #if SIZEOF_OID == SIZEOF_LNG
 			    && maxgrp < ((oid) 1 << (SIZEOF_LNG * 8 - 8))
 #endif
@@ -1126,14 +1137,14 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				GRP_create_partial_hash_table_core(
 					(void) 0,
 					(v = ((ulng)grps[r]<<8)|(unsigned char)w[p], hash_lng(hs, &v)),
-					w[p] == w[hb] && grps[r] == grps[hb],
+					w[p] == w[hb] && grps[r] == grps[hb - start],
 					(void) 0,
 					NOGRPTST);
 			} else
 				GRP_create_partial_hash_table_tpe(bte);
 			break;
 		case TYPE_sht:
-			if (grps && maxgrp > 1
+			if (grps && !is_oid_nil(maxgrp)
 #if SIZEOF_OID == SIZEOF_LNG
 			    && maxgrp < ((oid) 1 << (SIZEOF_LNG * 8 - 16))
 #endif
@@ -1143,14 +1154,14 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				GRP_create_partial_hash_table_core(
 					(void) 0,
 					(v = ((ulng)grps[r]<<16)|(unsigned short)w[p], hash_lng(hs, &v)),
-					w[p] == w[hb] && grps[r] == grps[hb],
+					w[p] == w[hb] && grps[r] == grps[hb - start],
 					(void) 0,
 					NOGRPTST);
 			} else
 				GRP_create_partial_hash_table_tpe(sht);
 			break;
 		case TYPE_int:
-			if (grps && maxgrp > 1
+			if (grps && !is_oid_nil(maxgrp)
 #if SIZEOF_OID == SIZEOF_LNG
 			    && maxgrp < ((oid) 1 << (SIZEOF_LNG * 8 - 32))
 #endif
@@ -1160,7 +1171,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				GRP_create_partial_hash_table_core(
 					(void) 0,
 					(v = ((ulng)grps[r]<<32)|(unsigned int)w[p], hash_lng(hs, &v)),
-					w[p] == w[hb] && grps[r] == grps[hb],
+					w[p] == w[hb] && grps[r] == grps[hb - start],
 					(void) 0,
 					NOGRPTST);
 			} else
@@ -1168,13 +1179,13 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			break;
 		case TYPE_lng:
 #ifdef HAVE_HGE
-			if (grps && maxgrp > 1) {
+			if (grps) {
 				uhge v;
 				const lng *w = (lng *) Tloc(b, 0);
 				GRP_create_partial_hash_table_core(
 					(void) 0,
 					(v = ((uhge)grps[r]<<64)|(ulng)w[p], hash_hge(hs, &v)),
-					w[p] == w[hb] && grps[r] == grps[hb],
+					w[p] == w[hb] && grps[r] == grps[hb - start],
 					(void) 0,
 					NOGRPTST);
 			} else
@@ -1196,10 +1207,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			GRP_create_partial_hash_table_any();
 		}
 
-		HEAPfree(hp, 1);
-		GDKfree(hp);
+		HEAPfree(&hs->heap, 1);
 		GDKfree(hs);
-		GDKfree(ext);
 	}
 	if (extents) {
 		BATsetcount(en, (BUN) ngrp);
@@ -1234,6 +1243,10 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	*groups = gn;
 	return GDK_SUCCEED;
   error:
+	if (hs != NULL && hs != b->thash) {
+		HEAPfree(&hs->heap, 1);
+		GDKfree(hs);
+	}
 	if (gn)
 		BBPunfix(gn->batCacheid);
 	if (en)

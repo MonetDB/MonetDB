@@ -1,0 +1,63 @@
+stderr of test 'python_loader_clobbers_default_with_null.Bug-6464` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 17:58:11 >  
+# 17:58:11 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37503" "--set" "mapi_usock=/var/tmp/mtest-17258/.s.monetdb.37503" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/home/manegold/_/Monet/HG/Jul2017/prefix/_/var/MonetDB/mTests_sql_test_BugTracker-2017" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 17:58:11 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/home/manegold/_/Monet/HG/Jul2017/prefix/_/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 37503
+# cmdline opt 	mapi_usock = /var/tmp/mtest-17258/.s.monetdb.37503
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /export/scratch1/home/manegold/_/Monet/HG/Jul2017/prefix/_/var/MonetDB/mTests_sql_test_BugTracker-2017
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 536870922
+
+# 17:58:12 >  
+# 17:58:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17258" "--port=37503"
+# 17:58:12 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-17575/.s.monetdb.32655
+QUERY = copy 1 records into t (e) from stdin (e);
+        NULL
+ERROR = !INSERT INTO: NOT NULL constraint violated for column t.e
+MAPI  = (monetdb) /var/tmp/mtest-17575/.s.monetdb.32655
+QUERY = insert into t (e) values (NULL);
+ERROR = !INSERT INTO: NOT NULL constraint violated for column t.e
+MAPI  = (monetdb) /var/tmp/mtest-17575/.s.monetdb.32655
+QUERY = copy 1 records into t (c) from stdin (c);
+        NULL
+ERROR = !INSERT INTO: NOT NULL constraint violated for column t.c
+MAPI  = (monetdb) /var/tmp/mtest-17575/.s.monetdb.32655
+QUERY = insert into t (c) values (NULL);
+ERROR = !INSERT INTO: NOT NULL constraint violated for column t.c
+MAPI  = (monetdb) /var/tmp/mtest-17575/.s.monetdb.32655
+QUERY = insert into t (b) values (-2);
+ERROR = !INSERT INTO: UNIQUE constraint 't.t_b_unique' violated
+MAPI  = (monetdb) /var/tmp/mtest-17575/.s.monetdb.32655
+QUERY = copy 1 records into t (a) from stdin (a);
+        NULL
+ERROR = !INSERT INTO: NOT NULL constraint violated for column t.a
+MAPI  = (monetdb) /var/tmp/mtest-17575/.s.monetdb.32655
+QUERY = insert into t (a) values (NULL);
+ERROR = !INSERT INTO: NOT NULL constraint violated for column t.a
+MAPI  = (monetdb) /var/tmp/mtest-17575/.s.monetdb.32655
+QUERY = insert into t (a) values (-1);
+ERROR = !INSERT INTO: PRIMARY KEY constraint 't.t_a_pkey' violated
+
+# 17:58:15 >  
+# 17:58:15 >  "Done."
+# 17:58:15 >  
+

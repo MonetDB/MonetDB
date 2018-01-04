@@ -121,10 +121,10 @@ fill_bam_alig(str qname, sht flag, str rname, int pos,
 		if (cigar[0] != '*') {
 			uint32_t *cigar_enc;
 			for (s = cigar; *s != '\0'; ++s) {
-				if ((isalpha(*s)) || (*s=='=')) {
+				if ((isalpha((unsigned char) *s)) || (*s=='=')) {
 					++c->n_cigar;
 				}
-				else if (!isdigit(*s)) {
+				else if (!isdigit((unsigned char) *s)) {
 					throw(MAL, "fill_bam_alig",
 						FILL_BAM_ALIG_ERR "Parse error while parsing CIGAR string '%s'",
 						alignment_nr, cigar);
@@ -565,7 +565,7 @@ cleanup:
 		bam_destroy1(alig);
 	}
 	if (strcmp(output_header_path, "") != 0) {
-		unlink(output_header_path);
+		remove(output_header_path);
 	}
 	return msg;
 #endif

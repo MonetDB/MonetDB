@@ -268,8 +268,8 @@ seq_char(str * ret, int * ref_pos, str * alg_seq, int * alg_pos, str * alg_cigar
 		(c == 0 || *cur_out >= prev_out); \
 	output->trevsorted = output->trevsorted && \
 		(c == 0 || *cur_out <= prev_out); \
-	output->tnil = output->tnil || *cur_out == TPE##_nil; \
-	output->tnonil = output->tnonil && *cur_out != TPE##_nil; \
+	output->tnil = output->tnil || is_##TPE##_nil(*cur_out); \
+	output->tnonil = output->tnonil && !is_##TPE##_nil(*cur_out); \
 }
 
 #define finish_props() { \
@@ -398,6 +398,7 @@ seq_length_bat(bat * ret, bat * bid)
 	/* allocate result BAT */
 	output = COLnew(input->hseqbase, TYPE_int, BATcount(input), TRANSIENT);
 	if (output == NULL) {
+		BBPunfix(input->batCacheid);
 		throw(MAL, "seq_length_bat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
@@ -407,6 +408,7 @@ seq_length_bat(bat * ret, bat * bid)
 	BATloop(input, p, q) {
 		cur_in = (str) BUNtail(li, p);
 		if ((msg = seq_length(cur_out, &cur_in)) != MAL_SUCCEED) {
+			BBPunfix(input->batCacheid);
 			BBPunfix(output->batCacheid);
 			return msg;
 		}

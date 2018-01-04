@@ -7,14 +7,12 @@
  */
 
 #include "monetdb_config.h"
-#include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
 
-#include <mapi.h>
-#include <mutils.h> /* MT_lockf */
+#include "mapi.h"
+#include "mutils.h" /* MT_lockf */
 #include <fcntl.h>
 
 #include "utils/glob.h"
@@ -507,7 +505,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 	int i;
 	const char *t;
 	MapiHdl h;
-	mapi_int64 rlen;
+	int64_t rlen;
 	int fcnt;
 	int qtype;
 
@@ -642,7 +640,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 			/* Compose the header.  For the table id, we just send 0,
 			 * such that we never get a close request.  Steal headers
 			 * from the first node. */
-			mnstr_printf(fout, "&%d 0 " LLFMT " %d " LLFMT "\n",
+			mnstr_printf(fout, "&%d 0 %" PRId64 " %d %" PRId64 "\n",
 					Q_TABLE, rlen, fcnt, rlen);
 			/* now read the answers, and write them directly to the client */
 			for (i = 0; i < m->dbcc; i++) {
@@ -657,7 +655,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 			 * complement the transparency created for Q_TABLE results,
 			 * but forget about last id data (wouldn't make sense if
 			 * we'd emit multiple update counts either) */
-			mnstr_printf(fout, "&%d %lld -1\n", Q_UPDATE, rlen);
+			mnstr_printf(fout, "&%d %" PRId64 " -1\n", Q_UPDATE, rlen);
 			break;
 		case Q_SCHEMA:
 			mnstr_printf(fout, "&%d\n", Q_SCHEMA);

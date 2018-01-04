@@ -345,6 +345,7 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 			msg = createException(MAL, "rapi.eval",
 								  "Got "BUNFMT" rows, but can only handle "LLFMT". Sorry.",
 								  BATcount(b), (lng) RAPI_MAX_TUPLES);
+			BBPunfix(b->batCacheid);
 			goto wrapup;
 		}
 		varname = PROTECT(Rf_install(args[i]));
@@ -493,6 +494,8 @@ void* RAPIloopback(void *query) {
 				BAT *b = BATdescriptor(output->cols[i].b);
 				if (b == NULL || !(varvalue = bat_to_sexp(b))) {
 					UNPROTECT(i + 3);
+					if (b)
+						BBPunfix(b->batCacheid);
 					return ScalarString(RSTR("Conversion error"));
 				}
 				BBPunfix(b->batCacheid);

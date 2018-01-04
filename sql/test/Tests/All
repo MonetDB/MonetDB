@@ -111,3 +111,8 @@ str-trim
 alastair_udf_mergetable_bug
 
 copy-into-fwf
+
+constant-not-in
+
+fsum
+THREADS=1?fsum1

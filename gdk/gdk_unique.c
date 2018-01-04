@@ -34,8 +34,6 @@ BATunique(BAT *b, BAT *s)
 	oid i, o;
 	unsigned short *seen = NULL;
 	const char *nme;
-	char *ext = NULL;
-	Heap *hp = NULL;
 	Hash *hs = NULL;
 	BUN hb;
 	BATiter bi;
@@ -64,12 +62,7 @@ BATunique(BAT *b, BAT *s)
 		/* we can return all values */
 		ALGODEBUG fprintf(stderr, "#BATunique(b=%s#" BUNFMT ",s=NULL): trivial case: already unique, return all\n",
 				  BATgetId(b), BATcount(b));
-		bn = COLnew(0, TYPE_void, BATcount(b), TRANSIENT);
-		if (bn == NULL)
-			return NULL;
-		BATsetcount(bn, BATcount(b));
-		BATtseqbase(bn, b->hseqbase);
-		return bn;
+		return BATdense(0, b->hseqbase, BATcount(b));
 	}
 
 	CANDINIT(b, s, start, end, cnt, cand, candend);
@@ -80,27 +73,17 @@ BATunique(BAT *b, BAT *s)
 				  BATgetId(b), BATcount(b),
 				  s ? BATgetId(s) : "NULL",
 				  s ? BATcount(s) : 0);
-		bn = COLnew(0, TYPE_void, 0, TRANSIENT);
-		if (bn == NULL)
-			return NULL;
-		BATsetcount(bn, 0);
-		BATtseqbase(bn, b->hseqbase);
-		return bn;
+		return BATdense(0, b->hseqbase, 0);
 	}
 
 	if ((BATordered(b) && BATordered_rev(b)) ||
-	    (b->ttype == TYPE_void && b->tseqbase == oid_nil)) {
+	    (b->ttype == TYPE_void && is_oid_nil(b->tseqbase))) {
 		/* trivial: all values are the same */
 		ALGODEBUG fprintf(stderr, "#BATunique(b=%s#" BUNFMT ",s=%s#" BUNFMT "): trivial case: all equal\n",
 				  BATgetId(b), BATcount(b),
 				  s ? BATgetId(s) : "NULL",
 				  s ? BATcount(s) : 0);
-		bn = COLnew(0, TYPE_void, 1, TRANSIENT);
-		if (bn == NULL)
-			return NULL;
-		BATsetcount(bn, 1);
-		BATtseqbase(bn, cand ? *cand : b->hseqbase);
-		return bn;
+		return BATdense(0, cand ? *cand : b->hseqbase, 1);
 	}
 
 	if (cand && BATcount(b) > 16 * BATcount(s)) {
@@ -302,7 +285,6 @@ BATunique(BAT *b, BAT *s)
 			}
 		}
 	} else {
-		size_t nmelen;
 		BUN prb;
 		BUN p;
 		BUN mask;
@@ -313,7 +295,6 @@ BATunique(BAT *b, BAT *s)
 				  s ? BATgetId(s) : "NULL",
 				  s ? BATcount(s) : 0);
 		nme = BBP_physical(b->batCacheid);
-		nmelen = strlen(nme);
 		if (ATOMbasetype(b->ttype) == TYPE_bte) {
 			mask = (BUN) 1 << 8;
 			cmp = NULL; /* no compare needed, "hash" is perfect */
@@ -328,21 +309,12 @@ BATunique(BAT *b, BAT *s)
 			if (mask < ((BUN) 1 << 16))
 				mask = (BUN) 1 << 16;
 		}
-		if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
-		    (hp->filename = GDKmalloc(nmelen + 30)) == NULL ||
-		    snprintf(hp->filename, nmelen + 30,
-			     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
-		    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
-		    (hs = HASHnew(hp, b->ttype, BUNlast(b), mask, BUN_NONE)) == NULL) {
-			if (hp) {
-				if (hp->filename)
-					GDKfree(hp->filename);
-				GDKfree(hp);
-			}
-			if (ext)
-				GDKfree(ext);
-			hp = NULL;
-			ext = NULL;
+		if ((hs = GDKzalloc(sizeof(Hash))) == NULL ||
+		    snprintf(hs->heap.filename, sizeof(hs->heap.filename),
+			     "%s.hash%d", nme, THRgettid()) < 0 ||
+		    HASHnew(hs, b->ttype, BUNlast(b), mask, BUN_NONE) != GDK_SUCCEED) {
+			GDKfree(hs);
+			hs = NULL;
 			GDKerror("BATunique: cannot allocate hash table\n");
 			goto bunins_failed;
 		}
@@ -375,10 +347,8 @@ BATunique(BAT *b, BAT *s)
 				HASHput(hs, prb, p);
 			}
 		}
-		HEAPfree(hp, 1);
-		GDKfree(hp);
+		HEAPfree(&hs->heap, 1);
 		GDKfree(hs);
-		GDKfree(ext);
 	}
 
 	bn->tsorted = 1;
@@ -391,11 +361,9 @@ BATunique(BAT *b, BAT *s)
   bunins_failed:
 	if (seen)
 		GDKfree(seen);
-	if (hp) {
-		HEAPfree(hp, 1);
-		GDKfree(hp);
+	if (hs != NULL && hs != b->thash) {
+		HEAPfree(&hs->heap, 1);
 		GDKfree(hs);
-		GDKfree(ext);
 	}
 	BBPreclaim(bn);
 	return NULL;

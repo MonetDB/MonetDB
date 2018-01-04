@@ -9,8 +9,8 @@
 #ifndef _SQL_ATOM_H_
 #define _SQL_ATOM_H_
 
-#include <sql_mem.h>
-#include <sql_types.h>
+#include "sql_mem.h"
+#include "sql_types.h"
 
 typedef struct atom {
 	int isnull;
@@ -64,6 +64,7 @@ extern atom *atom_add(atom *a1, atom *a2);
 extern atom *atom_sub(atom *a1, atom *a2);
 extern atom *atom_mul(atom *a1, atom *a2);
 extern int atom_inc(atom *a);
+extern int atom_is_true(atom *a);
 extern int atom_is_zero(atom *a);
 
 #ifdef HAVE_HGE

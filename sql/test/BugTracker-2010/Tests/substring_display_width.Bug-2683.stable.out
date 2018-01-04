@@ -26,8 +26,8 @@ Ready.
 #select substring('123456789', 1, 3);
 % .L2 # table_name
 % L2 # name
-% char # type
-% 9 # length
+% clob # type
+% 3 # length
 [ "123"	]
 
 # 21:48:05 >  

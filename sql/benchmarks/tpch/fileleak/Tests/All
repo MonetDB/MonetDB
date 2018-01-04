@@ -1,6 +1,0 @@
-create
-check0
-load
-check1
-HAVE_PYMONETDB?delete_all
-HAVE_PYMONETDB?leaks

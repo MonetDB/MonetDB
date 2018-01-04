@@ -9,9 +9,8 @@
 #ifndef _STREAMS_H_
 #define _STREAMS_H_
 
-#include <mal.h>
-#include <stdio.h>
-#include <stream_socket.h>
+#include "mal.h"
+#include "stream_socket.h"
 
 typedef ptr Stream;
 typedef ptr Bstream;

@@ -289,8 +289,8 @@ MDBgetFrame(BAT *b, BAT *bn, MalBlkPtr mb, MalStkPtr s, int depth, const char *n
 	if (s != 0)
 		for (i = 0; i < s->stktop; i++, v++) {
 			v = &s->stk[i];
-			ATOMformat(v->vtype, VALptr(v), &buf);
-			if (BUNappend(b, getVarName(mb, i), FALSE) != GDK_SUCCEED ||
+			if ((buf = ATOMformat(v->vtype, VALptr(v))) == NULL ||
+				BUNappend(b, getVarName(mb, i), FALSE) != GDK_SUCCEED ||
 				BUNappend(bn, buf, FALSE) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
 				BBPunfix(bn->batCacheid);
@@ -414,6 +414,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	if (BUNappend(b, &k, FALSE) != GDK_SUCCEED ||
 		BUNappend(bn, buf, FALSE) != GDK_SUCCEED) {
 		GDKfree(msg);
+		GDKfree(buf);
 		BBPreclaim(b);
 		throw(MAL,"mdb.setTrace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
@@ -588,6 +589,8 @@ MDBgetExceptionVariable(str *ret, str *msg)
 
 	*tail = 0;
 	*ret = GDKstrdup(*msg);
+	if (*ret == NULL)
+		throw(MAL, "mdb.getExceptionVariable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	*tail = ':';
 	return MAL_SUCCEED;
 }
@@ -606,6 +609,8 @@ MDBgetExceptionContext(str *ret, str *msg)
 
 	*tail2 = 0;
 	*ret = GDKstrdup(tail + 1);
+	if (*ret == NULL)
+		throw(MAL, "mdb.getExceptionContext", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	*tail2 = ':';
 	return MAL_SUCCEED;
 }
@@ -623,6 +628,8 @@ MDBgetExceptionReason(str *ret, str *msg)
 		throw(MAL, "mdb.getExceptionReason", OPERATION_FAILED " ':' missing");
 
 	*ret = GDKstrdup(tail + 1);
+	if( *ret == NULL)
+		throw(MAL, "mdb.getExceptionReason", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -704,6 +711,8 @@ TBL_getdir(void)
 		dent->d_name[len - extlen] = 0;
 		if (BUNappend(b, dent->d_name, FALSE) != GDK_SUCCEED) {
 			BBPreclaim(b);
+			if (dirp)
+				closedir(dirp);
 			return NULL;
 		}
 		i++;

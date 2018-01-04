@@ -6,10 +6,8 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
-#include <monetdb_config.h>
+#include "monetdb_config.h"
 
-#include <stdlib.h>
-#include <stdio.h>
 #include "difflib.h"
 #ifdef HAVE_IO_H
 # include <io.h>

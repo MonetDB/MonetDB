@@ -89,8 +89,9 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.postfix();"
 	 "optimizer.batcalc();"
-	 "optimizer.deadcode();"  // remove what is left after batcalc
+	 "optimizer.deadcode();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
 	 "optimizer.wlc();"
@@ -126,8 +127,9 @@ static struct PIPELINES {
 	 "optimizer.volcano();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.postfix();"
 	 "optimizer.batcalc();"
-	 "optimizer.deadcode();"  // remove what is left after batcalc
+	 "optimizer.deadcode();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
 	 "optimizer.wlc();"
@@ -168,8 +170,9 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.postfix();"
 	 "optimizer.batcalc();"
-	 "optimizer.deadcode();"  // remove what is left after batcalc
+	 "optimizer.deadcode();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
 	 "optimizer.wlc();"
@@ -209,8 +212,9 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.postfix();"
 	 "optimizer.batcalc();"
-	 "optimizer.deadcode();"  // remove what is left after batcalc
+	 "optimizer.deadcode();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
 	 "optimizer.wlc();"
@@ -249,7 +253,7 @@ optPipeInit(void)
 
 /* the session_pipe is the one defined by the user */
 str
-addPipeDefinition(Client cntxt, str name, str pipe)
+addPipeDefinition(Client cntxt, const char *name, const char *pipe)
 {
 	int i;
 	str msg;
@@ -274,6 +278,16 @@ addPipeDefinition(Client cntxt, str name, str pipe)
 	pipes[i].name = GDKstrdup(name);
 	pipes[i].def = GDKstrdup(pipe);
 	pipes[i].status = GDKstrdup("experimental");
+	if(pipes[i].name == NULL || pipes[i].def == NULL || pipes[i].status == NULL) {
+		GDKfree(pipes[i].name);
+		GDKfree(pipes[i].def);
+		GDKfree(pipes[i].status);
+		pipes[i].name = oldpipe.name;
+		pipes[i].def = oldpipe.def;
+		pipes[i].status = oldpipe.status;
+		MT_lock_unset(&pipeLock);
+		throw(MAL, "optimizer.addPipeDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 	pipes[i].mb = NULL;
 	MT_lock_unset(&pipeLock);
 	msg = compileOptimizer(cntxt, name);
@@ -300,7 +314,7 @@ addPipeDefinition(Client cntxt, str name, str pipe)
 }
 
 int
-isOptimizerPipe(str name)
+isOptimizerPipe(const char *name)
 {
 	int i;
 
@@ -434,7 +448,7 @@ validateOptimizerPipes(void)
  * then copy the statements to the end of the MAL plan
 */
 str
-compileOptimizer(Client cntxt, str name)
+compileOptimizer(Client cntxt, const char *name)
 {
 	int i, j;
 	char buf[2048];
@@ -456,7 +470,7 @@ compileOptimizer(Client cntxt, str name)
 						if( compiled){
 							pipes[j].mb = compiled->def;
 							//fprintFunction(stderr, pipes[j].mb, 0, LIST_MAL_ALL);
-						} 
+						}
 					}
 				}
 			}
@@ -480,7 +494,7 @@ compileAllOptimizers(Client cntxt)
 	return msg;
 }
 str
-addOptimizerPipe(Client cntxt, MalBlkPtr mb, str name)
+addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 {
 	int i, j, k;
 	InstrPtr p,q;

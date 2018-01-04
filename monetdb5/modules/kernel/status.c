@@ -21,7 +21,6 @@
 
 #include "monetdb_config.h"
 #include "gdk.h"
-#include <stdarg.h>
 #include <time.h>
 #include "mal_exception.h"
 #include "status.h"
@@ -294,7 +293,7 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 			continue;
 		}
 		heap(1,&c->theap,tbuns,"tbuns");
-		heap(c->thash && c->thash != (Hash *) 1,c->thash->heap,thsh,"thsh");
+		heap(c->thash && c->thash != (Hash *) 1,&c->thash->heap,thsh,"thsh");
 		heap(c->tvheap,c->tvheap,tail,"tail");
 	}
 	/* totals per category */
@@ -393,7 +392,7 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 			continue;
 		}
 		heapvm(1,&c->theap,tbuns,"tcuns");
-		heapvm(c->thash && c->thash != (Hash *) 1,c->thash->heap,thsh,"thsh");
+		heapvm(c->thash && c->thash != (Hash *) 1,&c->thash->heap,thsh,"thsh");
 		heapvm(c->tvheap,c->tvheap,tail,"tail");
 	}
 	/* totals per category */

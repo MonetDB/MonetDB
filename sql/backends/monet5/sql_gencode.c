@@ -40,17 +40,17 @@
 #include "mal_builder.h"
 #include "mal_debugger.h"
 
-#include <rel_select.h>
-#include <rel_optimizer.h>
-#include <rel_distribute.h>
-#include <rel_partition.h>
-#include <rel_prop.h>
-#include <rel_rel.h>
-#include <rel_exp.h>
-#include <rel_psm.h>
-#include <rel_bin.h>
-#include <rel_dump.h>
-#include <rel_remote.h>
+#include "rel_select.h"
+#include "rel_optimizer.h"
+#include "rel_distribute.h"
+#include "rel_partition.h"
+#include "rel_prop.h"
+#include "rel_rel.h"
+#include "rel_exp.h"
+#include "rel_psm.h"
+#include "rel_bin.h"
+#include "rel_dump.h"
+#include "rel_remote.h"
 
 int
 constantAtom(backend *sql, MalBlkPtr mb, atom *a)
@@ -61,7 +61,8 @@ constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 
 	(void) sql;
 	cst.vtype = 0;
-	VALcopy(&cst, vr);
+	if(VALcopy(&cst, vr) == NULL)
+		return -1;
 	idx = defConstant(mb, vr->vtype, &cst);
 	return idx;
 }
@@ -194,7 +195,7 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 			int varid = 0;
 			char buf[64];
 
-			if (e->type == e_atom) 
+			if (e->type == e_atom)
 				snprintf(buf,64,"A%d",e->flag);
 			else
 				snprintf(buf,64,"A%s",e->name);
@@ -220,11 +221,12 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 		curBlk->inlineProp = 1;
 	/* optimize the code */
 	SQLaddQueryToCache(c);
-	if( curBlk->inlineProp == 0)
-		SQLoptimizeQuery(c, c->curprg->def);
-	else{
+	if (curBlk->inlineProp == 0 && !c->curprg->def->errors) {
+		c->curprg->def->errors = SQLoptimizeQuery(c, c->curprg->def);
+	} else if(curBlk->inlineProp != 0) {
 		chkProgram(c->usermodule, c->curprg->def);
-		SQLoptimizeFunction(c,c->curprg->def);
+		if(!c->curprg->def->errors)
+			c->curprg->def->errors = SQLoptimizeFunction(c,c->curprg->def);
 	}
 	if (backup)
 		c->curprg = backup;
@@ -491,7 +493,8 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 
 	SQLaddQueryToCache(c);
 	//chkProgram(c->usermodule, c->curprg->def);
-	SQLoptimizeFunction(c, c->curprg->def);
+	if(!c->curprg->def->errors)
+		c->curprg->def->errors = SQLoptimizeFunction(c, c->curprg->def);
 	if (backup)
 		c->curprg = backup;
 	GDKfree(lname);		/* make sure stub is called */
@@ -540,27 +543,20 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, ch
 	int old_mv = be->mvc_var;
 	MalBlkPtr old_mb = be->mb;
 	stmt *s;
-	char *t, *tt;
-       
+
 	// Always keep the SQL query around for monitoring
 
 	if (query) {
-		tt = t = GDKstrdup(query);
-		if(t == NULL) {
-			return -1;
-		}
-		while (t && isspace((int) *t))
-			t++;
+		while (*query && isspace((unsigned char) *query))
+			query++;
 
 		querylog = q = newStmt(mb, querylogRef, defineRef);
 		if (q == NULL) {
-			GDKfree(tt);
 			return -1;
 		}
 		setVarType(mb, getArg(q, 0), TYPE_void);
 		setVarUDFtype(mb, getArg(q, 0));
-		q = pushStr(mb, q, t);
-		GDKfree(tt);
+		q = pushStr(mb, q, query);
 		q = pushStr(mb, q, getSQLoptimizer(be->mvc));
 		if (q == NULL) {
 			return -1;
@@ -630,7 +626,9 @@ backend_callinline(backend *be, Client c)
 				sql_subtype *t = atom_type(a);
 				(void) pushNil(curBlk, curInstr, t->type->localtype);
 			} else {
-				int _t = constantAtom(be, curBlk, a);
+				int _t;
+				if((_t = constantAtom(be, curBlk, a)) == -1)
+					return -1;
 				(void) pushArgument(curBlk, curInstr, _t);
 			}
 		}
@@ -707,8 +705,8 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	if (cq){
 		SQLaddQueryToCache(c);
 		// optimize this code the 'old' way
-		if ( m->emode == m_prepare || !qc_isaquerytemplate(getFunctionId(getInstrPtr(c->curprg->def,0))) )
-			SQLoptimizeFunction(c,c->curprg->def);
+		if ( (m->emode == m_prepare || !qc_isaquerytemplate(getFunctionId(getInstrPtr(c->curprg->def,0)))) && !c->curprg->def->errors )
+			c->curprg->def->errors = SQLoptimizeFunction(c,c->curprg->def);
 	}
 
 	// restore the context for the wrapper code
@@ -760,7 +758,11 @@ backend_call(backend *be, Client c, cq *cq)
 				/* need type from the prepared argument */
 				q = pushNil(mb, q, t->type->localtype);
 			} else {
-				int _t = constantAtom(be, mb, a);
+				int _t;
+				if((_t = constantAtom(be, mb, a)) == -1) {
+					(void) sql_error(m, 02, SQLSTATE(HY001) "Allocation failure during function call: %s\n", atom_type(a)->type->sqlname);
+					break;
+				}
 				q = pushArgument(mb, q, _t);
 			}
 		}
@@ -917,6 +919,27 @@ backend_create_map_py3_func(backend *be, sql_func *f)
 	return 0;
 }
 
+/* Create the MAL block for a registered function and optimize it */
+static int
+backend_create_c_func(backend *be, sql_func *f)
+{
+	(void)be;
+	switch(f->type) {
+	case  F_AGGR:
+		f->mod = "capi";
+		f->imp = "eval_aggr";
+		break;
+	case F_LOADER:
+	case F_PROC: /* no output */
+	case F_FUNC:
+	default: /* ie also F_FILT and F_UNION for now */
+		f->mod = "capi";
+		f->imp = "eval";
+		break;
+	}
+	return 0;
+}
+
 static int
 backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 {
@@ -936,8 +959,8 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	r = rel_parse(m, f->s, f->query, m_instantiate);
 	if (r) {
 		r = rel_optimizer(m, r);
-                r = rel_distribute(m, r);
-                r = rel_partition(m, r);
+		r = rel_distribute(m, r);
+		r = rel_partition(m, r);
 	}
 	if (r && !f->sql) 	/* native function */
 		return 0;
@@ -1030,11 +1053,12 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		curBlk->unsafeProp = 1;
 	/* optimize the code */
 	SQLaddQueryToCache(c);
-	if( curBlk->inlineProp == 0)
-		SQLoptimizeFunction(c, c->curprg->def);
-	else{
+	if( curBlk->inlineProp == 0 && !c->curprg->def->errors) {
+		c->curprg->def->errors = SQLoptimizeFunction(c, c->curprg->def);
+	} else if(curBlk->inlineProp != 0){
 		chkProgram(c->usermodule, c->curprg->def);
-		SQLoptimizeFunction(c,c->curprg->def);
+		if(!c->curprg->def->errors)
+			c->curprg->def->errors = SQLoptimizeFunction(c,c->curprg->def);
 	}
 	if (backup)
 		c->curprg = backup;
@@ -1070,6 +1094,8 @@ backend_create_func(backend *be, sql_func *f, list *restypes, list *ops)
 	case FUNC_LANG_MAP_PY3:
 		return backend_create_map_py3_func(be, f);
 	case FUNC_LANG_C:
+	case FUNC_LANG_CPP:
+		return backend_create_c_func(be, f);
 	case FUNC_LANG_J:
 	default:
 		return -1;

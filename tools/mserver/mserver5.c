@@ -7,8 +7,6 @@
  */
 
 #include "monetdb_config.h"
-#include <stdio.h>
-#include <errno.h>
 #include <string.h> /* strerror */
 #include <locale.h>
 #include "monet_options.h"
@@ -286,7 +284,7 @@ main(int argc, char **av)
 		GDKfatal("cannot set locale\n");
 	}
 
-	if (getcwd(monet_cwd, PATHLENGTH - 1) == NULL) {
+	if (getcwd(monet_cwd, FILENAME_MAX - 1) == NULL) {
 		perror("pwd");
 		fprintf(stderr,"monet_init: could not determine current directory\n");
 		exit(-1);
@@ -649,11 +647,18 @@ main(int argc, char **av)
 		return 0;
 	}
 
-	MSinitClientPrg(mal_clients, "user", "main");
+	if((err = MSinitClientPrg(mal_clients, "user", "main")) != MAL_SUCCEED) {
+		msab_registerStop();
+		GDKfatal("%s", err);
+	}
 	if (dbinit == NULL)
 		dbinit = GDKgetenv("dbinit");
-	if (dbinit)
-		callString(mal_clients, dbinit, listing);
+	if (dbinit) {
+		if((err = callString(mal_clients, dbinit, listing)) != MAL_SUCCEED) {
+			msab_registerStop();
+			GDKfatal("%s", err);
+		}
+	}
 
 	emergencyBreakpoint();
 	for (i = 0; monet_script[i]; i++) {

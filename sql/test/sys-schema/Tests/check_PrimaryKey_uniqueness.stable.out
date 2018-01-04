@@ -260,7 +260,7 @@ Ready.
 #SELECT COUNT(*) AS duplicates, name FROM sys.environment GROUP BY name HAVING COUNT(*) > 1;
 % .L10,	.environment # table_name
 % duplicates,	name # name
-% bigint,	clob # type
+% bigint,	varchar # type
 % 1,	0 # length
 #SELECT COUNT(*) AS duplicates, keyword FROM sys.keywords GROUP BY keyword HAVING COUNT(*) > 1;
 % sys.L3,	sys.keywords # table_name

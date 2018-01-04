@@ -37,7 +37,7 @@ project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck)			\
 	if (nilcheck) {							\
 		for (; lo < hi; lo++) {					\
 			if (o[lo] < rseq || o[lo] >= rend) {		\
-				if (o[lo] == oid_nil) {			\
+				if (is_oid_nil(o[lo])) {		\
 					bt[lo] = TYPE##_nil;		\
 					bn->tnonil = 0;			\
 					bn->tnil = 1;			\
@@ -53,7 +53,7 @@ project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck)			\
 			} else {					\
 				v = rt[o[lo] - rseq];			\
 				bt[lo] = v;				\
-				if (v == TYPE##_nil && bn->tnonil) {	\
+				if (is_##TYPE##_nil(v) && bn->tnonil) {	\
 					bn->tnonil = 0;			\
 					bn->tnil = 1;			\
 					lo++;				\
@@ -64,7 +64,7 @@ project_##TYPE(BAT *bn, BAT *l, BAT *r, int nilcheck)			\
 	}								\
 	for (; lo < hi; lo++) {						\
 		if (o[lo] < rseq || o[lo] >= rend) {			\
-			if (o[lo] == oid_nil) {				\
+			if (is_oid_nil(o[lo])) {			\
 				bt[lo] = TYPE##_nil;			\
 				bn->tnonil = 0;				\
 				bn->tnil = 1;				\
@@ -105,7 +105,7 @@ project_void(BAT *bn, BAT *l, BAT *r)
 	const oid *o;
 	oid rseq, rend;
 
-	assert(r->tseqbase != oid_nil);
+	assert(!is_oid_nil(r->tseqbase));
 	o = (const oid *) Tloc(l, 0);
 	bt = (oid *) Tloc(bn, 0);
 	bn->tsorted = l->tsorted;
@@ -117,7 +117,7 @@ project_void(BAT *bn, BAT *l, BAT *r)
 	rend = rseq + BATcount(r);
 	for (lo = 0, hi = lo + BATcount(l); lo < hi; lo++) {
 		if (o[lo] < rseq || o[lo] >= rend) {
-			if (o[lo] == oid_nil) {
+			if (is_oid_nil(o[lo])) {
 				bt[lo] = oid_nil;
 				bn->tnonil = 0;
 				bn->tnil = 1;
@@ -156,7 +156,7 @@ project_any(BAT *bn, BAT *l, BAT *r, int nilcheck)
 	rend = rseq + BATcount(r);
 	for (lo = 0, hi = lo + BATcount(l); lo < hi; lo++, n++) {
 		if (o[lo] < rseq || o[lo] >= rend) {
-			if (o[lo] == oid_nil) {
+			if (is_oid_nil(o[lo])) {
 				tfastins_nocheck(bn, n, nil, Tsize(bn));
 				bn->tnonil = 0;
 				bn->tnil = 1;
@@ -227,7 +227,7 @@ BATproject(BAT *l, BAT *r)
 		return bn;
 	}
 	if (l->ttype == TYPE_void || BATcount(l) == 0 ||
-	    (r->ttype == TYPE_void && r->tseqbase == oid_nil)) {
+	    (r->ttype == TYPE_void && is_oid_nil(r->tseqbase))) {
 		/* trivial: all values are nil */
 		const void *nil = ATOMnilptr(r->ttype);
 
@@ -357,12 +357,7 @@ BATproject(BAT *l, BAT *r)
 				goto bailout;
 			bn->tvheap->parentid = bn->batCacheid;
 			bn->tvheap->farmid = BBPselectfarm(bn->batRole, TYPE_str, varheap);
-			if (r->tvheap->filename) {
-				char *nme = BBP_physical(bn->batCacheid);
-				bn->tvheap->filename = GDKfilepath(NOFARM, NULL, nme, "theap");
-				if (bn->tvheap->filename == NULL)
-					goto bailout;
-			}
+			snprintf(bn->tvheap->filename, sizeof(bn->tvheap->filename), "%s.theap", BBP_physical(bn->batCacheid));
 			if (HEAPcopy(bn->tvheap, r->tvheap) != GDK_SUCCEED)
 				goto bailout;
 		}
@@ -493,7 +488,7 @@ BATprojectchain(BAT **bats)
 						}
 					}
 					if (b->ttype == TYPE_void &&
-					    b->tseqbase == oid_nil) {
+					    is_oid_nil(b->tseqbase)) {
 						tseq = oid_nil;
 						allnil = 1;
 					} else
@@ -509,7 +504,7 @@ BATprojectchain(BAT **bats)
 				} else {
 					tseq = oid_nil;
 					if (b->ttype == TYPE_void &&
-					    b->tseqbase == oid_nil)
+					    is_oid_nil(b->tseqbase))
 						allnil = 1;
 					else
 						ba[i].vals = (const oid *) Tloc(b, 0);
@@ -604,7 +599,7 @@ BATprojectchain(BAT **bats)
 					}
 					o = ba[i].vals[o];
 				}
-				if (o == oid_nil) {
+				if (is_oid_nil(o)) {
 					*v++ = *(oid *) nil;
 				} else {
 					if (o < ba[n].hlo || o >= ba[n].cnt) {
@@ -631,7 +626,7 @@ BATprojectchain(BAT **bats)
 					}
 					o = ba[i].vals[o];
 				}
-				*v++ = (o == oid_nil) & !stringtrick ? *(oid *) nil : o;
+				*v++ = (is_oid_nil(o)) & !stringtrick ? *(oid *) nil : o;
 			}
 		}
 		assert(v == (oid *) Tloc(bn, cnt));
@@ -655,7 +650,7 @@ BATprojectchain(BAT **bats)
 				}
 				o = ba[i].vals[o];
 			}
-			if (o == oid_nil) {
+			if (is_oid_nil(o)) {
 				*dst++ = * (OTPE *) nil;
 			} else {
 				o -= ba[n].hlo;
@@ -688,7 +683,7 @@ BATprojectchain(BAT **bats)
 				}
 				o = ba[i].vals[o];
 			}
-			if (o != oid_nil) {
+			if (!is_oid_nil(o)) {
 				o -= ba[n].hlo;
 				if (o >= ba[n].cnt) {
 					GDKerror("BATprojectchain: does not match always\n");
@@ -719,7 +714,7 @@ BATprojectchain(BAT **bats)
 				}
 				o = ba[i].vals[o];
 			}
-			if (o != oid_nil) {
+			if (!is_oid_nil(o)) {
 				o -= ba[n].hlo;
 				if (o >= ba[n].cnt) {
 					GDKerror("BATprojectchain: does not match always\n");

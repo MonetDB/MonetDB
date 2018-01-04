@@ -9,9 +9,9 @@
 #ifndef _PRINT_H_
 #define _PRINT_H_
 
-#include <mal.h>
-#include <mal_instruction.h>
-#include <mal_interpreter.h>
+#include "mal.h"
+#include "mal_instruction.h"
+#include "mal_interpreter.h"
 
 typedef struct {
 	int up, down;

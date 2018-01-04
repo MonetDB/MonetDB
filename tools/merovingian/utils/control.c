@@ -8,8 +8,6 @@
 
 #include "monetdb_config.h"
 #include "control.h"
-#include <stdio.h>
-#include <stdlib.h> /* malloc, realloc */
 #include <unistd.h> /* close */
 #include <string.h> /* strerror */
 #include <sys/socket.h> /* socket */
@@ -18,7 +16,6 @@
 #endif
 #include <netdb.h>
 #include <netinet/in.h>
-#include <errno.h>
 #include <fcntl.h>
 
 #include "stream.h"

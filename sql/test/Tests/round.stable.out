@@ -28,31 +28,31 @@ Ready.
 % .L2,	.L4,	.L6,	.L10 # table_name
 % L2,	L4,	L6,	L10 # name
 % decimal,	decimal,	decimal,	decimal # type
-% 3,	4,	4,	5 # length
+% 7,	7,	7,	7 # length
 [ 750.00,	700.00,	1000.00,	0.00	]
 #SELECT ROUND(123.9994, 3),ROUND(123.9995, 3);
 % .L2,	.L4 # table_name
 % L2,	L4 # name
 % decimal,	decimal # type
-% 4,	4 # length
+% 9,	9 # length
 [ 123.9990,	124.0000	]
 #SELECT ROUND(123.4545, 2);
 % .L2 # table_name
 % L2 # name
 % decimal # type
-% 4 # length
+% 9 # length
 [ 123.4500	]
 #SELECT ROUND(123.45, -2);
 % .L2 # table_name
 % L2 # name
 % decimal # type
-% 4 # length
+% 7 # length
 [ 100.00	]
 #SELECT ROUND(150.75, 0);
 % .L2 # table_name
 % L2 # name
 % decimal # type
-% 10 # length
+% 7 # length
 [ 151.00	]
 
 # 15:17:10 >  

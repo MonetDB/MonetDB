@@ -25,7 +25,10 @@ insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s)
 		return exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
 	} else if (s->token == SQL_DEFAULT) {
 		if (c->def) {
-			return rel_parse_val(sql, sa_message(sql->sa, "select CAST(%s AS %s);", c->def, c->type.type->sqlname), sql->emode);
+			sql_exp *e = rel_parse_val(sql, sa_message(sql->sa, "select CAST(%s AS %s);", c->def, c->type.type->sqlname), sql->emode);
+			if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
+				return NULL;
+			return e;
 		} else {
 			return sql_error(sql, 02, "INSERT INTO: column '%s' has no valid default value", c->base.name);
 		}
@@ -327,8 +330,11 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 		} else {
 			for (m = collist->h; m; m = m->next) {
 				sql_column *c = m->data;
+				sql_exp *e;
 
-				inserts[c->colnr] = exps_bind_column2( r->exps, c->t->base.name, c->base.name);
+				e = exps_bind_column2( r->exps, c->t->base.name, c->base.name);
+				if (e)
+					inserts[c->colnr] = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
 			}
 		}
 	}
@@ -508,7 +514,7 @@ insert_into(mvc *sql, dlist *qname, dlist *columns, symbol *val_or_q)
 							inner = rel_crossproduct(sql->sa, inner, r, op_join);
 						else if (r) 
 							inner = r;
-						if (inner && !ins->name && !is_atom(ins->type)) {
+						if (inner && !ins->name && !exp_is_atom(ins)) {
 							exp_label(sql->sa, ins, ++sql->label);
 							ins = exp_column(sql->sa, exp_relname(ins), exp_name(ins), exp_subtype(ins), ins->card, has_nil(ins), is_intern(ins));
 						}
@@ -1019,6 +1025,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 							r = rel_project(sql->sa, r, rel_projections(sql, r, NULL, 1, 1));
 							if (r)
 								list_merge(r->exps, val_exps, (fdup)NULL);
+							reset_processed(r);
 						}
 					}
 				}
@@ -1032,6 +1039,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 							exp_label(sql->sa, v, ++sql->label);
 						rel_val = rel_project(sql->sa, rel_val, rel_projections(sql, rel_val, NULL, 0, 1));
 						rel_project_add_exp(sql, rel_val, v);
+						reset_processed(rel_val);
 					}
 					r = rel_crossproduct(sql->sa, r, rel_val, op_left);
 					if (single) 
@@ -1182,7 +1190,7 @@ table_column_types(sql_allocator *sa, sql_table *t)
 }
 
 static list *
-table_column_names(sql_allocator *sa, sql_table *t)
+table_column_names_and_defaults(sql_allocator *sa, sql_table *t)
 {
 	node *n;
 	list *types = sa_list(sa);
@@ -1190,6 +1198,7 @@ table_column_names(sql_allocator *sa, sql_table *t)
 	if (t->columns.set) for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 		append(types, &c->base.name);
+		append(types, c->def);
 	}
 	return types;
 }
@@ -1581,7 +1590,7 @@ copyfromloader(mvc *sql, dlist *qname, symbol *fcall)
 	loader->sname = sname ? sa_zalloc(sql->sa, strlen(sname) + 1) : NULL;
 	loader->tname = tname ? sa_zalloc(sql->sa, strlen(tname) + 1) : NULL;
 	loader->coltypes = table_column_types(sql->sa, t);
-	loader->colnames = table_column_names(sql->sa, t);
+	loader->colnames = table_column_names_and_defaults(sql->sa, t);
 
 	if (sname) strcpy(loader->sname, sname);
 	if (tname) strcpy(loader->tname, tname);
@@ -1661,14 +1670,19 @@ rel_parse_val(mvc *m, char *query, char emode)
 	int len = _strlen(query);
 	exp_kind ek = {type_value, card_value, FALSE};
 	stream *s;
+	bstream *bs;
 
 	m->qc = NULL;
 
 	m->caching = 0;
 	m->emode = emode;
-	// FIXME unchecked_malloc GDKmalloc can return NULL
 	b = (buffer*)GDKmalloc(sizeof(buffer));
 	n = GDKmalloc(len + 1 + 1);
+	if(!b || !n) {
+		GDKfree(b);
+		GDKfree(n);
+		return NULL;
+	}
 	strncpy(n, query, len);
 	query = n;
 	query[len] = '\n';
@@ -1676,7 +1690,16 @@ rel_parse_val(mvc *m, char *query, char emode)
 	len++;
 	buffer_init(b, query, len);
 	s = buffer_rastream(b, "sqlstatement");
-	scanner_init(&m->scanner, bstream_create(s, b->len), NULL);
+	if(!s) {
+		buffer_destroy(b);
+		return NULL;
+	}
+	bs = bstream_create(s, b->len);
+	if(bs == NULL) {
+		buffer_destroy(b);
+		return NULL;
+	}
+	scanner_init(&m->scanner, bs, NULL);
 	m->scanner.mode = LINE_1; 
 	bstream_next(m->scanner.rs);
 
@@ -1714,7 +1737,10 @@ rel_parse_val(mvc *m, char *query, char emode)
 		m->session->status = status;
 		strcpy(m->errstr, errstr);
 	} else {
+		int label = m->label;
 		*m = o;
+
+		m->label = label;
 	}
 	return e;
 }

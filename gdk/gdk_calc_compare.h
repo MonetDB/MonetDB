@@ -81,7 +81,7 @@ opswitch(BAT *b1, int tp1, const void *src1, const void *v1p,
 			for (i = 0; i < cnt; i++) {
 				if (src2)
 					v2 = ((const oid *) src2)[projected == 2 ? i : cand ? cand[i] - hoff : start + i];
-				if (v2 == oid_nil) {
+				if (is_oid_nil(v2)) {
 					dst[i] = tpe_nil;
 					nils++;
 				} else {
@@ -106,7 +106,7 @@ opswitch(BAT *b1, int tp1, const void *src1, const void *v1p,
 			for (i = 0; i < cnt; i++) {
 				if (src1)
 					v1 = ((const oid *) src1)[projected == 1 ? i : cand ? cand[i] - hoff : start + i];
-				if (v1 == oid_nil) {
+				if (is_oid_nil(v1)) {
 					dst[i] = tpe_nil;
 					nils++;
 				} else {
@@ -345,7 +345,7 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s, int projected)
 	CALC_POSTINIT(b1, b2);
 
 	if (b1->ttype == TYPE_void && b2->ttype == TYPE_void) {
-		if (b1->tseqbase == oid_nil || b2->tseqbase == oid_nil) {
+		if (is_oid_nil(b1->tseqbase) || is_oid_nil(b2->tseqbase)) {
 			tpe v = tpe_nil;
 			return BATconstant(hseq, TYPE_tpe, &v, cnt, TRANSIENT);
 		} else if (projected == 0) {
@@ -384,7 +384,7 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s)
 
 	CALC_INIT(b);
 
-	if (b->ttype == TYPE_void && b->tseqbase == oid_nil) {
+	if (b->ttype == TYPE_void && is_oid_nil(b->tseqbase)) {
 		tpe v = tpe_nil;
 		return BATconstant(hseq, TYPE_tpe, &v, cnt, TRANSIENT);
 	}
@@ -419,7 +419,7 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s)
 
 	CALC_INIT(b);
 
-	if (b->ttype == TYPE_void && b->tseqbase == oid_nil) {
+	if (b->ttype == TYPE_void && is_oid_nil(b->tseqbase)) {
 		tpe v = tpe_nil;
 		return BATconstant(hseq, TYPE_tpe, &v, cnt, TRANSIENT);
 	}

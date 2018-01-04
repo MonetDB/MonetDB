@@ -15,7 +15,6 @@
  */
 
 #include "monetdb_config.h"
-#include <stdlib.h>  /* NULL */
 #include "glob.h"
 
 /**

@@ -69,8 +69,9 @@ stderr of test 'bit_and.SF-2850341` in directory 'sql/test/BugTracker-2009` itse
 
 MAPI  = (monetdb) /var/tmp/mtest-28528/.s.monetdb.33240
 QUERY = select bit_and(3749090034127126942, 0xffffffffffffffff);
-ERROR = !invalid hexadecimal number or hexadecimal too large (0xffffffffffffffff) in: "select bit_and(3749090034127126942, 0xffffffffffffffff"
+ERROR = !Invalid hexadecimal number or hexadecimal too large (0xffffffffffffffff) in: "select bit_and(3749090034127126942, 0xffffffffffffffff"
         !syntax error, unexpected ')' in: ")"
+CODE  = 22003
 
 # 22:31:14 >  
 # 22:31:14 >  Done.

@@ -6,50 +6,49 @@
 
 function aggr.covar(e1:bat[:dbl], e2:bat[:dbl]):dbl;
 	e0:bat[:dbl] := batcalc.*(e1,e2);
-	s0:dbl := aggr.sum(e0);
-	s1:dbl := aggr.sum(e1);
-	s2:dbl := aggr.sum(e2);
-	v2:dbl := calc.*(s1,s2);
-	c := aggr.count(e1);
-	n:dbl := calc.dbl(c);
-	v3:dbl := calc./(v2,n);
-	v1:dbl := calc.-(s0,v3);
-	v:dbl := calc./(v1,n);
+	s0:dbl := aggr.avg(e0);
+	# ignore "mutual" NILs:
+	e1n  := algebra.select(e1,    nil:dbl,nil:dbl,false,false,false);
+	e12n := algebra.select(e1,e1n,nil:dbl,nil:dbl,false,false,false);
+	s1:dbl := batcalc.avg(e1,e12n);
+	s2:dbl := batcalc.avg(e2,e12n);
+	s3:dbl := calc.*(s1,s2);
+	v:dbl := calc.-(s0,s3);
 	return v;
 end aggr.covar;
 
 function aggr.corr(e1:bat[:dbl], e2:bat[:dbl]):dbl;
-	cv:dbl := aggr.covar(e1,e2);
+	cv := aggr.covar(e1,e2);
 	sd1 := aggr.stdev(e1);
 	sd2 := aggr.stdev(e2);
 	sd := calc.*(sd1,sd2);
-	r := calc./(cv,sd);
-	res := calc.dbl(r);
+	sdn := calc.==(sd,0:dbl);
+	sds := calc.ifthenelse(sdn,nil:dbl,sd);
+	res := calc./(cv,sds);
 	return res;
 end aggr.corr;
 
 function aggr.subcovar(e1:bat[:dbl], e2:bat[:dbl], g:bat[:oid], e:bat[:any_2], f:bit):bat[:dbl];
 	e0:bat[:dbl] := batcalc.*(e1,e2);
-	s0:bat[:dbl] := aggr.subsum(e0,g,e,f,true);
-	s1:bat[:dbl] := aggr.subsum(e1,g,e,f,true);
-	s2:bat[:dbl] := aggr.subsum(e2,g,e,f,true);
-	v2:bat[:dbl] := batcalc.*(s1,s2);
-	c := aggr.subcount(e1,g,e,f);
-	n:bat[:dbl] := batcalc.dbl(c);
-	v3:bat[:dbl] := batcalc./(v2,n);
-	v1:bat[:dbl] := batcalc.-(s0,v3);
-	v:bat[:dbl] := batcalc./(v1,n);
+	s0:bat[:dbl] := aggr.subavg(e0,g,e,f,true);
+	# ignore "mutual" NILs:
+	t := calc.not(f);
+	e1n  := algebra.select(e1,    nil:dbl,nil:dbl,t,t,false);
+	e12n := algebra.select(e1,e1n,nil:dbl,nil:dbl,t,t,false);
+	s1:bat[:dbl] := aggr.subavg(e1,g,e,e12n,f,true);
+	s2:bat[:dbl] := aggr.subavg(e2,g,e,e12n,f,true);
+	s3:bat[:dbl] := batcalc.*(s1,s2);
+	v:bat[:dbl] := batcalc.-(s0,s3);
 	return v;
 end aggr.subcovar;
 
 function aggr.subcorr(e1:bat[:dbl], e2:bat[:dbl], g:bat[:oid],e:bat[:any_2], f:bit):bat[:dbl];
-	cv:bat[:dbl] := aggr.subcovar(e1,e2,g,e,f);
+	cv := aggr.subcovar(e1,e2,g,e,f);
 	sd1 := aggr.substdevp(e1,g,e,f,true);
 	sd2 := aggr.substdevp(e2,g,e,f,true);
 	sd := batcalc.*(sd1,sd2);
 	sdn := batcalc.==(sd,0:dbl);
-	sds := batcalc.ifthenelse(sdn,1:dbl,sd);
-	r := batcalc./(cv,sds);
-	res := batcalc.dbl(r);
+	sds := batcalc.ifthenelse(sdn,nil:dbl,sd);
+	res := batcalc./(cv,sds);
 	return res;
 end aggr.subcorr;

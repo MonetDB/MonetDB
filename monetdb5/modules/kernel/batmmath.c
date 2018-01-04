@@ -18,13 +18,14 @@
  */
 #include "monetdb_config.h"
 #include "batmmath.h"
-#ifdef HAVE_FENV_H
 #include <fenv.h>
-#else
-#define feclearexcept(x)
-#define fetestexcept(x)		0
+#ifndef FE_INVALID
 #define FE_INVALID			0
+#endif
+#ifndef FE_DIVBYZERO
 #define FE_DIVBYZERO		0
+#endif
+#ifndef FE_OVERFLOW
 #define FE_OVERFLOW			0
 #endif
 
@@ -49,7 +50,7 @@ str CMDscience_bat_##TYPE##_##FUNC(bat *ret, const bat *bid)		\
 	int e = 0, ex = 0;												\
 																	\
 	if ((b = BATdescriptor(*bid)) == NULL) {						\
-		throw(MAL, #TYPE, RUNTIME_OBJECT_MISSING);					\
+		throw(MAL, #TYPE, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);	\
 	}																\
 	voidresultBAT(TYPE_##TYPE, "batcalc." #FUNC);					\
 	o = (TYPE *) Tloc(bn, 0);										\
@@ -63,13 +64,14 @@ str CMDscience_bat_##TYPE##_##FUNC(bat *ret, const bat *bid)		\
 			*o = FUNC##SUFF(*p);									\
 	} else {														\
 		for (; p < q; o++, p++)										\
-			*o = *p == TYPE##_nil ? TYPE##_nil : FUNC##SUFF(*p);	\
+			*o = is_##TYPE##_nil(*p) ? TYPE##_nil : FUNC##SUFF(*p);	\
 	}																\
 	if ((e = errno) != 0 ||											\
 		(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |				\
 						   FE_OVERFLOW)) != 0) {					\
 		const char *err;											\
 		BBPunfix(bn->batCacheid);									\
+		BBPunfix(b->batCacheid);									\
 		if (e) {													\
 			err = strerror(e);										\
 		} else if (ex & FE_DIVBYZERO)								\
@@ -100,7 +102,7 @@ str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
 	int e = 0, ex = 0;													\
 																		\
 	if ((b = BATdescriptor(*bid)) == NULL) {							\
-		throw(MAL, #TYPE, RUNTIME_OBJECT_MISSING);						\
+		throw(MAL, #TYPE, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);		\
 	}																	\
 	voidresultBAT(TYPE_##TYPE, "batcalc." #FUNC);						\
 	o = (TYPE *) Tloc(bn, 0);											\
@@ -114,12 +116,13 @@ str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
 			*o = FUNC##SUFF(*p, *d);									\
 	} else {															\
 		for (; p < q; o++, p++)											\
-			*o = *p == TYPE##_nil ? TYPE##_nil : FUNC##SUFF(*p, *d);	\
+			*o = is_##TYPE##_nil(*p) ? TYPE##_nil : FUNC##SUFF(*p, *d);	\
 	}																	\
 	if ((e = errno) != 0 ||												\
 		(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |					\
 						   FE_OVERFLOW)) != 0) {						\
 		const char *err;												\
+		BBPunfix(b->batCacheid);										\
 		BBPunfix(bn->batCacheid);										\
 		if (e) {														\
 			err = strerror(e);											\
@@ -150,7 +153,7 @@ str CMDscience_cst_bat_##FUNC##_##TYPE(bat *ret, const TYPE *d,			\
 	int e = 0, ex = 0;													\
 																		\
 	if ((b = BATdescriptor(*bid)) == NULL) {							\
-		throw(MAL, #TYPE, RUNTIME_OBJECT_MISSING);						\
+		throw(MAL, #TYPE, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);		\
 	}																	\
 	voidresultBAT(TYPE_##TYPE, "batcalc." #FUNC);						\
 	o = (TYPE *) Tloc(bn, 0);											\
@@ -164,12 +167,13 @@ str CMDscience_cst_bat_##FUNC##_##TYPE(bat *ret, const TYPE *d,			\
 			*o = FUNC##SUFF(*d, *p);									\
 	} else {															\
 		for (; p < q; o++, p++)											\
-			*o = *p == TYPE##_nil ? TYPE##_nil : FUNC##SUFF(*d, *p);	\
+			*o = is_##TYPE##_nil(*p) ? TYPE##_nil : FUNC##SUFF(*d, *p);	\
 	}																	\
 	if ((e = errno) != 0 ||												\
 		(ex = fetestexcept(FE_INVALID | FE_DIVBYZERO |					\
 						   FE_OVERFLOW)) != 0) {						\
 		const char *err;												\
+		BBPunfix(b->batCacheid);										\
 		BBPunfix(bn->batCacheid);										\
 		if (e) {														\
 			err = strerror(e);											\

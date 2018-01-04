@@ -6,33 +6,20 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
  */
 
-#include <monetdb_config.h>
+#include "monetdb_config.h"
 #include "sql.h"
 #include "monet_options.h"
 #include "embeddedclient.h"
 
-#ifdef HAVE_STRING_H
 #include <string.h>
-#endif
 
-/* stolen piece */
+#include <time.h>
+
 #ifdef HAVE_FTIME
-#include <sys/timeb.h>
+#include <sys/timeb.h>		/* ftime */
 #endif
-
-#if TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# if HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
-
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>		/* gettimeofday */
 #endif
 
 #ifndef HAVE_GETOPT_LONG
@@ -43,20 +30,20 @@
 # endif
 #endif
 
-static mapi_int64
+static int64_t
 gettime(void)
 {
 #ifdef HAVE_GETTIMEOFDAY
 	struct timeval tp;
 
 	gettimeofday(&tp, NULL);
-	return (mapi_int64) tp.tv_sec * 1000000 + (mapi_int64) tp.tv_usec;
+	return (int64_t) tp.tv_sec * 1000000 + (int64_t) tp.tv_usec;
 #else
 #ifdef HAVE_FTIME
 	struct timeb tb;
 
 	ftime(&tb);
-	return (mapi_int64) tb.time * 1000000 + (mapi_int64) tb.millitm * 1000;
+	return (int64_t) tb.time * 1000000 + (int64_t) tb.millitm * 1000;
 #endif
 #endif
 }
@@ -83,7 +70,7 @@ main(int argc, char **av)
 	char *prog = *av;
 	opt *set = NULL;
 	int setlen = 0, timeflag = 0;
-	mapi_int64 t0 = 0;
+	int64_t t0 = 0;
 	Mapi mid;
 	MapiHdl hdl;
 	char *buf, *line;

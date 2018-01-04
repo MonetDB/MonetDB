@@ -19,16 +19,13 @@
  */
 #include "monetdb_config.h"
 #include "mal_sabaoth.h"
-#include <stdio.h> /* fseek, rewind */
 #include <unistd.h>	/* unlink and friends */
 #include <sys/types.h>
 #ifdef HAVE_DIRENT_H
 #include <dirent.h> /* readdir, DIR */
 #endif
 #include <sys/stat.h>
-#include <errno.h>
 #include <string.h> /* for getting error messages */
-#include <assert.h>
 
 #if defined(_MSC_VER) && _MSC_VER >= 1400
 #define close _close
@@ -108,6 +105,8 @@ str SABAOTHgetLocalConnection(str *ret) {
 
 	if (stats != NULL)
 		SABAOTHfreeStatus(&stats);
+	if(*ret == NULL)
+		throw(MAL,"sabaoth.getlocalconnection", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return(MAL_SUCCEED);
 }
 

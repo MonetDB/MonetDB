@@ -32,26 +32,16 @@
 #include "gdk_system.h"
 #include "gdk_system_private.h"
 
-#ifdef TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
-#endif
+#include <time.h>
 
-#ifndef HAVE_GETTIMEOFDAY
 #ifdef HAVE_FTIME
-#include <sys/timeb.h>
+#include <sys/timeb.h>		/* ftime */
 #endif
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>		/* gettimeofday */
 #endif
 
-#ifdef HAVE_SIGNAL_H
-# include <signal.h>
-#endif
+#include <signal.h>
 
 #include <unistd.h>		/* for sysconf symbols */
 
@@ -435,7 +425,7 @@ find_posthread_locked(pthread_t tid)
 	struct posthread *p;
 
 	for (p = posthreads; p; p = p->next)
-		if (p->tid == tid)
+		if (pthread_equal(p->tid, tid))
 			return p;
 	return NULL;
 }
@@ -552,15 +542,23 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 	(void) sigfillset(&new_mask);
 	MT_thread_sigmask(&new_mask, &orig_mask);
 #endif
-	pthread_attr_init(&attr);
-	pthread_attr_setstacksize(&attr, THREAD_STACK_SIZE);
-	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+	if(pthread_attr_init(&attr))
+		return -1;
+	if(pthread_attr_setstacksize(&attr, THREAD_STACK_SIZE)) {
+		pthread_attr_destroy(&attr);
+		return -1;
+	}
+	if(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE)) {
+		pthread_attr_destroy(&attr);
+		return -1;
+	}
 	if (d == MT_THR_DETACHED) {
 		p = malloc(sizeof(struct posthread));
 		if (p == NULL) {
 #ifdef HAVE_PTHREAD_SIGMASK
 			MT_thread_sigmask(&orig_mask, NULL);
 #endif
+			pthread_attr_destroy(&attr);
 			return -1;
 		}
 		p->func = f;
@@ -695,80 +693,6 @@ pthread_sema_down(pthread_sema_t *s)
 #endif
 #endif
 
-#if !defined(WIN32) && defined(PROFILE) && defined(HAVE_PTHREAD_H)
-#undef pthread_create
-/* for profiling purposes (btw configure with --enable-profile *and*
- * --disable-shared --enable-static) without setting the ITIMER_PROF
- * per thread, all profiling info for everything except the main
- * thread is lost. */
-#include <stdlib.h>
-
-/* Our data structure passed to the wrapper */
-typedef struct wrapper_s {
-	void *(*start_routine) (void *);
-	void *arg;
-
-	pthread_mutex_t lock;
-	pthread_cond_t wait;
-
-	struct itimerval itimer;
-
-} wrapper_t;
-
-/* The wrapper function in charge for setting the itimer value */
-static void *
-wrapper_routine(void *data)
-{
-	/* Put user data in thread-local variables */
-	void *(*start_routine) (void *) = ((wrapper_t *) data)->start_routine;
-	void *arg = ((wrapper_t *) data)->arg;
-
-	/* Set the profile timer value */
-	setitimer(ITIMER_PROF, &((wrapper_t *) data)->itimer, NULL);
-
-	/* Tell the calling thread that we don't need its data anymore */
-	pthread_mutex_lock(&((wrapper_t *) data)->lock);
-
-	pthread_cond_signal(&((wrapper_t *) data)->wait);
-	pthread_mutex_unlock(&((wrapper_t *) data)->lock);
-
-	/* Call the real function */
-	return start_routine(arg);
-}
-
-/* Our wrapper function for the real pthread_create() */
-int
-gprof_pthread_create(pthread_t * __restrict thread, __const pthread_attr_t * __restrict attr, void *(*start_routine) (void *), void *__restrict arg)
-{
-	wrapper_t wrapper_data;
-	int i_return;
-
-	/* Initialize the wrapper structure */
-	wrapper_data.start_routine = start_routine;
-	wrapper_data.arg = arg;
-	getitimer(ITIMER_PROF, &wrapper_data.itimer);
-	pthread_cond_init(&wrapper_data.wait, NULL);
-	pthread_mutex_init(&wrapper_data.lock, NULL);
-	pthread_mutex_lock(&wrapper_data.lock);
-
-	/* The real pthread_create call */
-	i_return = pthread_create(thread, attr, &wrapper_routine, &wrapper_data);
-
-	/* If the thread was successfully spawned, wait for the data
-	 * to be released */
-	if (i_return == 0) {
-		pthread_cond_wait(&wrapper_data.wait, &wrapper_data.lock);
-	}
-
-	pthread_mutex_unlock(&wrapper_data.lock);
-	pthread_mutex_destroy(&wrapper_data.lock);
-
-	pthread_cond_destroy(&wrapper_data.wait);
-
-	return i_return;
-}
-#endif
-
 /* coverity[+kill] */
 void
 MT_global_exit(int s)
@@ -786,49 +710,6 @@ MT_getpid(void)
 #else
 	return (MT_Id) (((size_t) pthread_self()) + 1);
 #endif
-}
-
-#define SMP_TOLERANCE 0.40
-#define SMP_ROUNDS 1024*1024*128
-
-static void
-smp_thread(void *data)
-{
-	unsigned int s = 1, r;
-
-	(void) data;
-	for (r = 0; r < SMP_ROUNDS; r++)
-		s = s * r + r;
-	(void) s;
-}
-
-static int
-MT_check_nr_cores_(void)
-{
-	int i, curr = 1, cores = 1;
-	double lasttime = 0, thistime;
-	while (1) {
-		lng t0, t1;
-		MT_Id *threads = malloc(sizeof(MT_Id) * curr);
-
-		if (threads == NULL)
-			break;
-
-		t0 = GDKusec();
-		for (i = 0; i < curr; i++)
-			MT_create_thread(threads + i, smp_thread, NULL, MT_THR_JOINABLE);
-		for (i = 0; i < curr; i++)
-			MT_join_thread(threads[i]);
-		t1 = GDKusec();
-		free(threads);
-		thistime = (double) (t1 - t0) / 1000000;
-		if (lasttime > 0 && thistime / lasttime > 1 + SMP_TOLERANCE)
-			break;
-		lasttime = thistime;
-		cores = curr;
-		curr *= 2;	/* only check for powers of 2 */
-	}
-	return cores;
 }
 
 int
@@ -860,7 +741,7 @@ MT_check_nr_cores(void)
 	 * http://ndevilla.free.fr/threads/ */
 
 	if (ncpus <= 0)
-		ncpus = MT_check_nr_cores_();
+		ncpus = 1;
 #if SIZEOF_SIZE_T == SIZEOF_INT
 	/* On 32-bits systems with large amounts of cpus/cores, we quickly
 	 * run out of space due to the amount of threads in use.  Since it

@@ -435,7 +435,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bi
 					errno = 0;
 					msg = createException(
 						MAL, "waitpid",
-						SQLSTATE(PY000) "Error calling waitpid(%llu, &status, WNOHANG): %s",
+						SQLSTATE(PY000) "Error calling waitpid(" ULLFMT ", &status, WNOHANG): %s",
 						pid, err);
 					break;
 				}

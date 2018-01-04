@@ -10,7 +10,6 @@
 #define _MDB_H
 #include "gdk.h"
 #include "mutils.h"
-#include <stdarg.h>
 #include <time.h>
 #include <sys/types.h>
 #ifdef HAVE_DIRENT_H

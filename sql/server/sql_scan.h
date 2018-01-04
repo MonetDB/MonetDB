@@ -11,8 +11,7 @@
 
 #include "sql_mem.h"
 #include "sql_list.h"
-#include <stream.h>
-#include <stdio.h>
+#include "stream.h"
 
 typedef enum { LINE_1, LINE_N } prot;
 
@@ -44,6 +43,6 @@ extern void scanner_init(struct scanner *s, bstream *rs, stream *ws);
 extern void scanner_reset_key(struct scanner *s);
 extern void scanner_query_processed(struct scanner *s);
 
-extern void scanner_init_keywords(void);
+extern int scanner_init_keywords(void);
 #endif /* _SQL_SCAN_H_ */
 

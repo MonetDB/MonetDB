@@ -11,17 +11,17 @@
 #include "sql_result.h"
 #include "sql_cast.h"
 #include "sql_gencode.h"
-#include <sql_storage.h>
-#include <sql_scenario.h>
-#include <store_sequence.h>
-#include <sql_optimizer.h>
-#include <sql_datetime.h>
-#include <rel_optimizer.h>
-#include <rel_distribute.h>
-#include <rel_select.h>
-#include <rel_exp.h>
-#include <rel_dump.h>
-#include <opt_pipes.h>
+#include "sql_storage.h"
+#include "sql_scenario.h"
+#include "store_sequence.h"
+#include "sql_optimizer.h"
+#include "sql_datetime.h"
+#include "rel_optimizer.h"
+#include "rel_distribute.h"
+#include "rel_select.h"
+#include "rel_exp.h"
+#include "rel_dump.h"
+#include "opt_pipes.h"
 #include "clients.h"
 #include "mal_instruction.h"
 
@@ -37,8 +37,8 @@ str
 str_2_timestamp(timestamp *res, const str *val)
 {
 	ptr p = NULL;
-	int len = 0;
-	int e;
+	size_t len = 0;
+	ssize_t e;
 	char buf[BUFSIZ];
 
 	e = ATOMfromstr(TYPE_timestamp, &p, &len, *val);
@@ -132,8 +132,8 @@ str
 str_2_daytime(daytime *res, const str *val)
 {
 	ptr p = NULL;
-	int len = 0;
-	int e;
+	size_t len = 0;
+	ssize_t e;
 	char buf[BUFSIZ];
 
 	e = ATOMfromstr(TYPE_daytime, &p, &len, *val);
@@ -227,8 +227,8 @@ str
 str_2_date(date *res, const str *val)
 {
 	ptr p = NULL;
-	int len = 0;
-	int e;
+	size_t len = 0;
+	ssize_t e;
 	char buf[BUFSIZ];
 
 	e = ATOMfromstr(TYPE_date, &p, &len, *val);
@@ -250,8 +250,11 @@ str
 SQLdate_2_str(str *res, const date *val)
 {
 	char *p = NULL;
-	int len = 0;
-	date_tostr(&p, &len, val);
+	size_t len = 0;
+	if (date_tostr(&p, &len, val) < 0) {
+		GDKfree(p);
+		throw(SQL, "date", GDK_EXCEPTION);
+	}
 	*res = p;
 	return MAL_SUCCEED;
 }
@@ -324,8 +327,8 @@ str
 str_2_sqlblob(sqlblob **res, const str *val)
 {
 	ptr p = NULL;
-	int len = 0;
-	int e;
+	size_t len = 0;
+	ssize_t e;
 	char buf[BUFSIZ];
 
 	e = ATOMfromstr(TYPE_sqlblob, &p, &len, *val);
@@ -343,8 +346,11 @@ str
 SQLsqlblob_2_str(str *res, const sqlblob *val)
 {
 	char *p = NULL;
-	int len = 0;
-	SQLBLOBtostr(&p, &len, val);
+	size_t len = 0;
+	if (SQLBLOBtostr(&p, &len, val) < 0) {
+		GDKfree(p);
+		throw(SQL, "blob", GDK_EXCEPTION);
+	}
 	*res = p;
 	return MAL_SUCCEED;
 }
@@ -499,19 +505,6 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPunfix(b->batCacheid);
 	return msg;
 }
-
-#ifndef HAVE_ROUND
-static inline double
-round(double val)
-{
-	/* round to nearest integer, away from zero */
-	if (val < 0)
-		return -floor(-val + 0.5);
-	else
-		return floor(val + 0.5);
-}
-#define roundf(x)	((float)round((double)(x)))
-#endif
 
 /* up casting */
 

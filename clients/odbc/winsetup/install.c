@@ -10,8 +10,6 @@
 #include <winver.h>
 #include <shlwapi.h>
 #include <string.h>
-#include <stdio.h>
-#include <malloc.h>
 
 #ifdef __MINGW32__
 #define DLL "-0.dll"

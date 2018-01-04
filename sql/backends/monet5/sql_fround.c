@@ -10,46 +10,23 @@
 #include "sql.h"
 #include "sql_result.h"
 #include "sql_gencode.h"
-#include <sql_storage.h>
-#include <sql_scenario.h>
-#include <store_sequence.h>
-#include <sql_datetime.h>
-#include <rel_optimizer.h>
-#include <rel_distribute.h>
-#include <rel_select.h>
-#include <rel_exp.h>
-#include <rel_dump.h>
+#include "sql_storage.h"
+#include "sql_scenario.h"
+#include "store_sequence.h"
+#include "sql_datetime.h"
+#include "rel_optimizer.h"
+#include "rel_distribute.h"
+#include "rel_select.h"
+#include "rel_exp.h"
+#include "rel_dump.h"
 #include "clients.h"
 #include "mal_instruction.h"
-
-#ifndef HAVE_ROUND
-static inline double
-round(double val)
-{
-	/* round to nearest integer, away from zero */
-	if (val < 0)
-		return -floor(-val + 0.5);
-	else
-		return floor(val + 0.5);
-}
-#endif
-
-#ifndef HAVE_TRUNC
-static inline double
-trunc(double val)
-{
-	/* round to integer, towards zero */
-	if (val < 0)
-		return ceil(val);
-	else
-		return floor(val);
-}
-#endif
 
 #define CONCAT_2(a, b)		a##b
 #define CONCAT_3(a, b, c)	a##b##c
 
 #define NIL(t)			CONCAT_2(t, _nil)
+#define ISNIL(t)		CONCAT_3(is_, t, _nil)
 #define TPE(t)			CONCAT_2(TYPE_, t)
 #define GDKmin(t)		CONCAT_3(GDK_, t, _min)
 #define GDKmax(t)		CONCAT_3(GDK_, t, _max)

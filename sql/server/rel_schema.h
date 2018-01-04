@@ -9,9 +9,7 @@
 #ifndef _REL_SCHEMA_H_
 #define _REL_SCHEMA_H_
 
-#include <stdio.h>
-#include <stdarg.h>
-#include <sql_list.h>
+#include "sql_list.h"
 #include "sql_symbol.h"
 
 extern sql_rel *rel_schemas(mvc *sql, symbol *sym);

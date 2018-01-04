@@ -3150,7 +3150,7 @@ Ready.
 [ -2.1475e+09,	-2147483648	]
 [ 2.1475e+09,	2147483648	]
 [ 0.12,	0.1199999973	]
-[ -3.1416,	-3.141562939	]
+[ -3.1416,	-3.1415627	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, float(24)) from T_real;
 % sys.t_real,	sys.L3 # table_name
@@ -3201,7 +3201,7 @@ Ready.
 [ -2.1475e+09,	-2147483648	]
 [ 2.1475e+09,	2147483648	]
 [ 0.12,	0.1199999973	]
-[ -3.1416,	-3.141562939	]
+[ -3.1416,	-3.1415627	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, double precision) from T_real;
 % sys.t_real,	sys.L3 # table_name
@@ -3218,7 +3218,7 @@ Ready.
 [ -2.1475e+09,	-2147483648	]
 [ 2.1475e+09,	2147483648	]
 [ 0.12,	0.1199999973	]
-[ -3.1416,	-3.141562939	]
+[ -3.1416,	-3.1415627	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, numeric) from T_real;
 % sys.t_real,	sys.L3 # table_name
@@ -3337,7 +3337,7 @@ Ready.
 [ -2.1475e+09,	"-2.1474836e+09"	]
 [ 2.1475e+09,	"2.1474836e+09"	]
 [ 0.12,	"0.12"	]
-[ -3.1416,	"-3.141563"	]
+[ -3.1416,	"-3.1415627"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_real;
 % sys.t_real,	sys.L3 # table_name
@@ -3354,7 +3354,7 @@ Ready.
 [ -2.1475e+09,	"-2.1474836e+09"	]
 [ 2.1475e+09,	"2.1474836e+09"	]
 [ 0.12,	"0.12"	]
-[ -3.1416,	"-3.141563"	]
+[ -3.1416,	"-3.1415627"	]
 [ NULL,	NULL	]
 #SELECT v, convert(v, Clob) from T_real;
 % sys.t_real,	sys.L3 # table_name
@@ -3371,7 +3371,7 @@ Ready.
 [ -2.1475e+09,	"-2.1474836e+09"	]
 [ 2.1475e+09,	"2.1474836e+09"	]
 [ 0.12,	"0.12"	]
-[ -3.1416,	"-3.141563"	]
+[ -3.1416,	"-3.1415627"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as tinyint) from T_real where v between -127 and 127;
 % sys.t_real,	sys.L3 # table_name
@@ -3431,7 +3431,7 @@ Ready.
 [ -2.1475e+09,	-2147483648	]
 [ 2.1475e+09,	2147483648	]
 [ 0.12,	0.1199999973	]
-[ -3.1416,	-3.141562939	]
+[ -3.1416,	-3.1415627	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as float(24)) from T_real;
 % sys.t_real,	sys.L3 # table_name
@@ -3482,7 +3482,7 @@ Ready.
 [ -2.1475e+09,	-2147483648	]
 [ 2.1475e+09,	2147483648	]
 [ 0.12,	0.1199999973	]
-[ -3.1416,	-3.141562939	]
+[ -3.1416,	-3.1415627	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as double precision) from T_real;
 % sys.t_real,	sys.L3 # table_name
@@ -3499,7 +3499,7 @@ Ready.
 [ -2.1475e+09,	-2147483648	]
 [ 2.1475e+09,	2147483648	]
 [ 0.12,	0.1199999973	]
-[ -3.1416,	-3.141562939	]
+[ -3.1416,	-3.1415627	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as numeric) from T_real;
 % sys.t_real,	sys.L3 # table_name
@@ -3618,7 +3618,7 @@ Ready.
 [ -2.1475e+09,	"-2.1474836e+09"	]
 [ 2.1475e+09,	"2.1474836e+09"	]
 [ 0.12,	"0.12"	]
-[ -3.1416,	"-3.141563"	]
+[ -3.1416,	"-3.1415627"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_real;
 % sys.t_real,	sys.L3 # table_name
@@ -3635,7 +3635,7 @@ Ready.
 [ -2.1475e+09,	"-2.1474836e+09"	]
 [ 2.1475e+09,	"2.1474836e+09"	]
 [ 0.12,	"0.12"	]
-[ -3.1416,	"-3.141563"	]
+[ -3.1416,	"-3.1415627"	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Clob) from T_real;
 % sys.t_real,	sys.L3 # table_name
@@ -3652,7 +3652,7 @@ Ready.
 [ -2.1475e+09,	"-2.1474836e+09"	]
 [ 2.1475e+09,	"2.1474836e+09"	]
 [ 0.12,	"0.12"	]
-[ -3.1416,	"-3.141563"	]
+[ -3.1416,	"-3.1415627"	]
 [ NULL,	NULL	]
 #DROP TABLE T_real;
 #CREATE TABLE T_double (v DOUBLE);
@@ -5862,8 +5862,8 @@ Ready.
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Blob) from T_char where v in ('0123456789');
-% sys.t_char,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_char,	sys.L4 # table_name
+% v,	L4 # name
 % char,	blob # type
 % 33,	0 # length
 [ "0123456789",	0123456789	]
@@ -6202,8 +6202,8 @@ Ready.
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Blob) from T_varchar where v in ('0123456789');
-% sys.t_varchar,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_varchar,	sys.L4 # table_name
+% v,	L4 # name
 % varchar,	blob # type
 % 10,	0 # length
 [ "0123456789",	0123456789	]
@@ -6542,8 +6542,8 @@ Ready.
 [ "",	""	]
 [ NULL,	NULL	]
 #SELECT v, cast(v as Blob) from T_clob where v in ('0123456789');
-% sys.t_clob,	sys.L3 # table_name
-% v,	L3 # name
+% sys.t_clob,	sys.L4 # table_name
+% v,	L4 # name
 % clob,	blob # type
 % 10,	0 # length
 [ "0123456789",	0123456789	]

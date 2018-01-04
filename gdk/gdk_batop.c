@@ -30,14 +30,8 @@ unshare_string_heap(BAT *b)
 			return GDK_FAIL;
 		h->parentid = b->batCacheid;
 		h->farmid = BBPselectfarm(b->batRole, TYPE_str, varheap);
-		if (b->tvheap->filename) {
-			char *nme = BBP_physical(b->batCacheid);
-			h->filename = GDKfilepath(NOFARM, NULL, nme, "theap");
-			if (h->filename == NULL) {
-				GDKfree(h);
-				return GDK_FAIL;
-			}
-		}
+		snprintf(h->filename, sizeof(h->filename),
+			 "%s.theap", BBP_physical(b->batCacheid));
 		if (HEAPcopy(h, b->tvheap) != GDK_SUCCEED) {
 			HEAPfree(h, 1);
 			GDKfree(h);
@@ -174,8 +168,12 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, int force)
 				}
 				memcpy(b->tvheap->base + toff, n->tvheap->base, n->tvheap->free);
 				b->tvheap->free = toff + n->tvheap->free;
-				/* flush double-elimination hash table */
-				memset(b->tvheap->base, 0, GDK_STRHASHSIZE);
+				if (toff > 0) {
+					/* flush double-elimination
+					 * hash table */
+					memset(b->tvheap->base, 0,
+					       GDK_STRHASHSIZE);
+				}
 			}
 		}
 		if (toff != ~(size_t) 0) {
@@ -195,38 +193,10 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, int force)
 					goto bunins_failed;
 				}
 			}
-			switch (b->twidth) {
-			case 1:
-				b->ttype = TYPE_bte;
-				tp = &tbv;
-				break;
-			case 2:
-				b->ttype = TYPE_sht;
-				tp = &tsv;
-				break;
-#if SIZEOF_VAR_T == 8
-			case 4:
-				b->ttype = TYPE_int;
-				tp = &tiv;
-				break;
-			case 8:
-				b->ttype = TYPE_lng;
-				tp = &v;
-				break;
-#else
-			case 4:
-				b->ttype = TYPE_int;
-				tp = &v;
-				break;
-#endif
-			default:
-				assert(0);
-			}
-			b->tvarsized = 0;
 		}
 	} else if (unshare_string_heap(b) != GDK_SUCCEED)
 		return GDK_FAIL;
-	if (toff == 0 && n->twidth == b->twidth) {
+	if (toff == 0 && n->twidth == b->twidth && cand == NULL) {
 		/* we don't need to do any translation of offset
 		 * values, so we can use fast memcpy */
 		memcpy(Tloc(b, BUNlast(b)), Tloc(n, start),
@@ -250,6 +220,34 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, int force)
 #endif
 		const var_t *restrict tvp = (const var_t *) Tloc(n, 0);
 
+		switch (b->twidth) {
+		case 1:
+			b->ttype = TYPE_bte;
+			tp = &tbv;
+			break;
+		case 2:
+			b->ttype = TYPE_sht;
+			tp = &tsv;
+			break;
+#if SIZEOF_VAR_T == 8
+		case 4:
+			b->ttype = TYPE_int;
+			tp = &tiv;
+			break;
+		case 8:
+			b->ttype = TYPE_lng;
+			tp = &v;
+			break;
+#else
+		case 4:
+			b->ttype = TYPE_int;
+			tp = &v;
+			break;
+#endif
+		default:
+			assert(0);
+		}
+		b->tvarsized = 0;
 		for (;;) {
 			if (cand) {
 				if (cand == candend)
@@ -299,6 +297,8 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, int force)
 			}
 			bunfastapp(b, tp);
 		}
+		b->tvarsized = 1;
+		b->ttype = TYPE_str;
 	} else if (b->tvheap->free < n->tvheap->free / 2 ||
 		   GDK_ELIMDOUBLES(b->tvheap)) {
 		/* if b's string heap is much smaller than n's string
@@ -394,12 +394,111 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, int force)
 			r++;
 		}
 	}
-	b->tvarsized = 1;
-	b->ttype = TYPE_str;
 	return GDK_SUCCEED;
       bunins_failed:
 	b->tvarsized = 1;
 	b->ttype = TYPE_str;
+	return GDK_FAIL;
+}
+
+static gdk_return
+append_varsized_bat(BAT *b, BAT *n, BAT *s)
+{
+	BATiter ni;
+	BUN start, end, cnt, r;
+	const oid *restrict cand = NULL, *candend = NULL;
+
+	/* only transient bats can use some other bat's vheap */
+	assert(b->batRole == TRANSIENT || b->tvheap->parentid == b->batCacheid);
+	/* make sure the bats use var_t */
+	assert(b->twidth == n->twidth);
+	assert(b->twidth == SIZEOF_VAR_T);
+	if (n->batCount == 0 || (s && s->batCount == 0))
+		return GDK_SUCCEED;
+	CANDINIT(n, s, start, end, cnt, cand, candend);
+	cnt = cand ? (BUN) (candend - cand) : end - start;
+	if (cnt == 0)
+		return GDK_SUCCEED;
+	if (BATcount(b) == 0 &&
+	    b->batRole == TRANSIENT &&
+	    n->batRestricted == BAT_READ &&
+	    b->tvheap != n->tvheap) {
+		/* if b is still empty, in the transient farm, and n
+		 * is read-only, we replace b's vheap with a reference
+		 * to n's */
+		if (b->tvheap->parentid != b->batCacheid) {
+			BBPunshare(b->tvheap->parentid);
+		} else {
+			HEAPfree(b->tvheap, 1);
+			GDKfree(b->tvheap);
+		}
+		BBPshare(n->tvheap->parentid);
+		b->tvheap = n->tvheap;
+	}
+	if (b->tvheap == n->tvheap) {
+		/* if b and n use the same vheap, we only need to copy
+		 * the offsets from n to b */
+		HASHdestroy(b);	/* not maintaining, so destroy it */
+		if (cand == NULL) {
+			/* fast memcpy since we copy a consecutive
+			 * chunk of memory */
+			memcpy(Tloc(b, BUNlast(b)),
+			       Tloc(n, start),
+			       cnt * b->twidth);
+		} else {
+			var_t *restrict dst = (var_t *) Tloc(b, BUNlast(b));
+			oid hseq = n->hseqbase;
+			const var_t *restrict src = (const var_t *) Tloc(n, 0);
+			while (cand < candend)
+				*dst++ = src[*cand++ - hseq];
+		}
+		BATsetcount(b, BATcount(b) + cnt);
+		return GDK_SUCCEED;
+	}
+	/* b and n do not share their vheap, so we need to copy data */
+	if (b->tvheap->parentid != b->batCacheid) {
+		/* if b shares its vheap with some other bat, unshare it */
+		Heap *h = GDKzalloc(sizeof(Heap));
+		if (h == NULL)
+			return GDK_FAIL;
+		h->parentid = b->batCacheid;
+		h->farmid = BBPselectfarm(b->batRole, b->ttype, varheap);
+		snprintf(h->filename, sizeof(h->filename),
+			 "%s.theap", BBP_physical(b->batCacheid));
+		if (HEAPcopy(h, b->tvheap) != GDK_SUCCEED) {
+			HEAPfree(h, 1);
+			GDKfree(h);
+			return GDK_FAIL;
+		}
+		BBPunshare(b->tvheap->parentid);
+		b->tvheap = h;
+	}
+	/* copy data from n to b */
+	ni = bat_iterator(n);
+	r = BUNlast(b);
+	if (cand) {
+		oid hseq = n->hseqbase;
+		while (cand < candend) {
+			const void *t = BUNtvar(ni, *cand - hseq);
+			bunfastapp_nocheck(b, r, t, Tsize(b));
+			HASHins(b, r, t);
+			r++;
+			cand++;
+		}
+	} else {
+		while (start < end) {
+			const void *t = BUNtvar(ni, start);
+			bunfastapp_nocheck(b, r, t, Tsize(b));
+			HASHins(b, r, t);
+			r++;
+			start++;
+		}
+	}
+	return GDK_SUCCEED;
+
+      bunins_failed:
+	if (b->tunique)
+		BBPunfix(s->batCacheid);
 	return GDK_FAIL;
 }
 
@@ -417,9 +516,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 		return GDK_SUCCEED;
 	}
 	assert(b->batCacheid > 0);
-	/* almost: assert(!isVIEW(b)); */
-	assert(b->theap.parentid == 0 &&
-	       (b->tvheap == NULL || b->tvheap->parentid == b->batCacheid || b->ttype == TYPE_str));
+	assert(b->theap.parentid == 0);
 
 	ALIGNapp(b, "BATappend", force, GDK_FAIL);
 	BATcompatible(b, n, GDK_FAIL, "BATappend");
@@ -506,7 +603,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 			if (n->ttype != TYPE_void)
 				f = *(oid *) Tloc(n, start);
 
-			if (BATcount(b) == 0 && f != oid_nil)
+			if (BATcount(b) == 0 && !is_oid_nil(f))
 				BATtseqbase(b, f);
 			if (BATcount(b) + b->tseqbase == f) {
 				BATsetcount(b, BATcount(b) + cnt);
@@ -531,24 +628,27 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 
 	r = BUNlast(b);
 
-	if (BATcount(b) == 0 && cand == NULL) {
+	if (BATcount(b) == 0) {
 		BATiter ni = bat_iterator(n);
 
 		b->tsorted = n->tsorted;
-		b->tnosorted = start <= n->tnosorted && n->tnosorted < end ? n->tnosorted - start : 0;
 		b->trevsorted = n->trevsorted;
-		b->tnorevsorted = start <= n->tnorevsorted && n->tnorevsorted < end ? n->tnorevsorted - start : 0;
 		b->tdense = n->tdense && cand == NULL;
-		b->tnodense = start <= n->tnodense && n->tnodense < end ? n->tnodense - start : 0;
 		b->tnonil = n->tnonil;
 		b->tnil = n->tnil && cnt == BATcount(n);
 		b->tseqbase = oid_nil;
 		if (cand == NULL) {
+			b->tnosorted = start <= n->tnosorted && n->tnosorted < end ? n->tnosorted - start : 0;
+			b->tnorevsorted = start <= n->tnorevsorted && n->tnorevsorted < end ? n->tnorevsorted - start : 0;
+			b->tnodense = start <= n->tnodense && n->tnodense < end ? n->tnodense - start : 0;
 			if (n->tdense && n->ttype == TYPE_oid)
 				b->tseqbase = *(oid *) BUNtail(ni, start);
 			else if (n->ttype == TYPE_void &&
-				 n->tseqbase != oid_nil)
+				 !is_oid_nil(n->tseqbase))
 				b->tseqbase = n->tseqbase + start;
+		} else {
+			b->tnosorted = 0;
+			b->tnorevsorted = 0;
 		}
 		/* if tunique, uniqueness is guaranteed above */
 		b->tkey = n->tkey | b->tunique;
@@ -559,7 +659,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 			b->tnokey[0] = b->tnokey[1] = 0;
 		}
 	} else {
-		BUN last = BUNlast(b) - 1;
+		BUN last = r - 1;
 		BATiter ni = bat_iterator(n);
 		BATiter bi = bat_iterator(b);
 		int xx = ATOMcmp(b->ttype, BUNtail(ni, start), BUNtail(bi, last));
@@ -598,9 +698,14 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 				BBPunfix(s->batCacheid);
 			return GDK_FAIL;
 		}
+	} else if (ATOMvarsized(b->ttype)) {
+		if (append_varsized_bat(b, n, s) != GDK_SUCCEED) {
+			if (b->tunique)
+				BBPunfix(s->batCacheid);
+			return GDK_FAIL;
+		}
 	} else {
-		if (!ATOMvarsized(b->ttype) &&
-		    BATatoms[b->ttype].atomFix == NULL &&
+		if (BATatoms[b->ttype].atomFix == NULL &&
 		    b->ttype != TYPE_void &&
 		    n->ttype != TYPE_void &&
 		    cand == NULL) {
@@ -881,7 +986,7 @@ BATslice(BAT *b, BUN l, BUN h)
 			bn->tdense = TRUE;
 			BATtseqbase(bn, 0);
 		} else if (bn->tsorted &&
-			   (foid = *(oid *) BUNtloc(bni, 0)) != oid_nil &&
+			   !is_oid_nil((foid = *(oid *) BUNtloc(bni, 0))) &&
 			   foid + BATcount(bn) - 1 == *(oid *) BUNtloc(bni, BUNlast(bn) - 1)) {
 			bn->tdense = TRUE;
 			BATtseqbase(bn, *(oid *) BUNtloc(bni, 0));
@@ -920,7 +1025,7 @@ BATkeyed(BAT *b)
 	Hash *hs = NULL;
 
 	if (b->ttype == TYPE_void)
-		return b->tseqbase != oid_nil || BATcount(b) <= 1;
+		return !is_oid_nil(b->tseqbase) || BATcount(b) <= 1;
 	if (BATcount(b) <= 1)
 		return 1;
 	if (b->twidth < SIZEOF_BUN &&
@@ -957,8 +1062,8 @@ BATkeyed(BAT *b)
 			   (b->batPersistence == PERSISTENT &&
 			    BAThash(b, 0) == GDK_SUCCEED)
 #ifndef DISABLE_PARENT_HASH
-			   || ((parent = VIEWtparent(b)) != 0 &&
-			       BATcheckhash(BBPdescriptor(parent)))
+			   || (VIEWtparent(b) != 0 &&
+			       BATcheckhash(BBPdescriptor(VIEWtparent(b))))
 #endif
 			) {
 			/* we already have a hash table on b, or b is
@@ -969,8 +1074,8 @@ BATkeyed(BAT *b)
 
 			hs = b->thash;
 #ifndef DISABLE_PARENT_HASH
-			if (b->thash == NULL && (parent = VIEWtparent(b)) != 0) {
-				BAT *b2 = BBPdescriptor(parent);
+			if (b->thash == NULL && VIEWtparent(b) != 0) {
+				BAT *b2 = BBPdescriptor(VIEWtparent(b));
 				lo = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
 				hs = b2->thash;
 			}
@@ -993,15 +1098,11 @@ BATkeyed(BAT *b)
 			b->tkey = 1;
 		} else {
 			const char *nme;
-			size_t nmelen;
 			BUN prb;
 			BUN mask;
-			char *ext = NULL;
-			Heap *hp = NULL;
 
 			GDKclrerr(); /* not interested in BAThash errors */
 			nme = BBP_physical(b->batCacheid);
-			nmelen = strlen(nme);
 			if (ATOMbasetype(b->ttype) == TYPE_bte) {
 				mask = (BUN) 1 << 8;
 				cmpf = NULL; /* no compare needed, "hash" is perfect */
@@ -1013,18 +1114,11 @@ BATkeyed(BAT *b)
 				if (mask < ((BUN) 1 << 16))
 					mask = (BUN) 1 << 16;
 			}
-			if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
-			    (hp->filename = GDKmalloc(nmelen + 30)) == NULL ||
-			    snprintf(hp->filename, nmelen + 30,
-				     "%s.hash" SZFMT, nme, MT_getpid()) < 0 ||
-			    (ext = GDKstrdup(hp->filename + nmelen + 1)) == NULL ||
-			    (hs = HASHnew(hp, b->ttype, BUNlast(b), mask, BUN_NONE)) == NULL) {
-				if (hp) {
-					if (hp->filename)
-						GDKfree(hp->filename);
-					GDKfree(hp);
-				}
-				GDKfree(ext);
+			if ((hs = GDKzalloc(sizeof(Hash))) == NULL ||
+			    snprintf(hs->heap.filename, sizeof(hs->heap.filename),
+				     "%s.hash%d", nme, THRgettid()) < 0 ||
+			    HASHnew(hs, b->ttype, BUNlast(b), mask, BUN_NONE) != GDK_SUCCEED) {
+				GDKfree(hs);
 				/* err on the side of caution: not keyed */
 				goto doreturn;
 			}
@@ -1047,10 +1141,8 @@ BATkeyed(BAT *b)
 				HASHput(hs, prb, p);
 			}
 		  doreturn_free:
-			HEAPfree(hp, 1);
-			GDKfree(hp);
+			HEAPfree(&hs->heap, 1);
 			GDKfree(hs);
-			GDKfree(ext);
 			if (p == q) {
 				/* we completed the complete scan: no
 				 * duplicates */
@@ -1165,7 +1257,7 @@ BATordered_rev(BAT *b)
 	if (b == NULL)
 		return 0;
 	if (b->ttype == TYPE_void)
-		return b->tseqbase == oid_nil;
+		return is_oid_nil(b->tseqbase);
 	MT_lock_set(&GDKhashLock(b->batCacheid));
 	if (!b->trevsorted && b->tnorevsorted == 0) {
 		BATiter bi = bat_iterator(b);
@@ -1261,12 +1353,17 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		GDKerror("BATsort: b must exist\n");
 		return GDK_FAIL;
 	}
+	if (!ATOMlinear(b->ttype)) {
+		GDKerror("BATsort: type %s cannot be sorted\n",
+			 ATOMname(b->ttype));
+		return GDK_FAIL;
+	}
 	if (o != NULL &&
 	    (ATOMtype(o->ttype) != TYPE_oid || /* oid tail */
 	     BATcount(o) != BATcount(b) ||     /* same size as b */
 	     (o->ttype == TYPE_void &&	       /* no nil tail */
 	      BATcount(o) != 0 &&
-	      o->tseqbase == oid_nil))) {
+	      is_oid_nil(o->tseqbase)))) {
 		GDKerror("BATsort: o must be [dense,oid] and same size as b\n");
 		return GDK_FAIL;
 	}
@@ -1276,15 +1373,16 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	     BATcount(o) != BATcount(b) ||     /* same size as b */
 	     (g->ttype == TYPE_void &&	       /* no nil tail */
 	      BATcount(g) != 0 &&
-	      g->tseqbase == oid_nil))) {
+	      is_oid_nil(g->tseqbase)))) {
 		GDKerror("BATsort: g must be [dense,oid], sorted on the tail, and same size as b\n");
 		return GDK_FAIL;
 	}
 	assert(reverse == 0 || reverse == 1);
 	assert(stable == 0 || stable == 1);
-	if (sorted == NULL && order == NULL && groups == NULL) {
+	if (sorted == NULL && order == NULL) {
 		/* no place to put result, so we're done quickly */
-		return GDK_SUCCEED;
+		GDKerror("BATsort: no place to put the result.\n");
+		return GDK_FAIL;
 	}
 	if (g == NULL && !stable) {
 		/* pre-ordering doesn't make sense if we're not
@@ -1306,21 +1404,17 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			*sorted = bn;
 		}
 		if (order) {
-			on = COLnew(b->hseqbase, TYPE_void, BATcount(b), TRANSIENT);
+			on = BATdense(b->hseqbase, b->hseqbase, BATcount(b));
 			if (on == NULL)
 				goto error;
-			BATsetcount(on, BATcount(b));
-			BATtseqbase(on, b->hseqbase);
 			*order = on;
 		}
 		if (groups) {
 			if (BATtkey(b)) {
 				/* singleton groups */
-				gn = COLnew(0, TYPE_void, BATcount(b), TRANSIENT);
+				gn = BATdense(0, 0, BATcount(b));
 				if (gn == NULL)
 					goto error;
-				BATsetcount(gn, BATcount(b));
-				BATtseqbase(gn, 0);
 			} else {
 				/* single group */
 				const oid *o = 0;
@@ -1344,7 +1438,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	} else {
 		pb = b;
 	}
-	if (g == NULL && groups == NULL && o == NULL && !reverse &&
+	if (g == NULL && o == NULL && !reverse &&
 	    pb != NULL && BATcheckorderidx(pb) &&
 	    /* if we want a stable sort, the order index must be
 	     * stable, if we don't want stable, we don't care */
@@ -1360,12 +1454,28 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		on->tnonil = 1;
 		on->tsorted = on->trevsorted = 0;
 		on->tdense = 0;
-		if (sorted) {
+		if (sorted || groups) {
 			bn = BATproject(on, b);
 			if (bn == NULL)
 				goto error;
 			bn->tsorted = 1;
-			*sorted = bn;
+			if (groups) {
+				if (BATgroup_internal(groups, NULL, NULL, bn, NULL, g, NULL, NULL, 1) != GDK_SUCCEED)
+					goto error;
+				if (sorted &&
+				    (*groups)->tkey &&
+				    g == NULL) {
+					/* if new groups bat is key
+					 * and since there is no input
+					 * groups bat, we know the
+					 * result bat is key */
+					bn->tkey = 1;
+				}
+			}
+			if (sorted)
+				*sorted = bn;
+			else
+				BBPunfix(bn->batCacheid);
 		}
 		if (order)
 			*order = on;
@@ -1382,6 +1492,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			BBPunfix(bn->batCacheid);
 			bn = b;
 		}
+		pb = NULL;
 	} else {
 		bn = COLcopy(b, b->ttype, TRUE, TRANSIENT);
 	}
@@ -1511,8 +1622,8 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		}
 		if (b->ttype == TYPE_void) {
 			b->tsorted = 1;
-			b->trevsorted = b->tseqbase == oid_nil || b->batCount <= 1;
-			b->tkey = b->tseqbase != oid_nil;
+			b->trevsorted = is_oid_nil(b->tseqbase) || b->batCount <= 1;
+			b->tkey = !is_oid_nil(b->tseqbase);
 		} else if (b->batCount <= 1) {
 			b->tsorted = b->trevsorted = 1;
 		}
@@ -1522,8 +1633,13 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			     ords,
 			     bn->tvheap ? bn->tvheap->base : NULL,
 			     BATcount(bn), Tsize(bn), ords ? sizeof(oid) : 0,
-			     bn->ttype, reverse, stable) != GDK_SUCCEED))
+			     bn->ttype, reverse, stable) != GDK_SUCCEED)) {
+			if (m != NULL) {
+				HEAPfree(m, 1);
+				GDKfree(m);
+			}
 			goto error;
+		}
 		bn->tsorted = !reverse;
 		bn->trevsorted = reverse;
 		if (m != NULL) {
@@ -1740,37 +1856,37 @@ BATcount_no_nil(BAT *b)
 	t = ATOMbasetype(b->ttype);
 	switch (t) {
 	case TYPE_void:
-		cnt = b->tseqbase == oid_nil ? 0 : n;
+		cnt = n * !is_oid_nil(b->tseqbase);
 		break;
 	case TYPE_bte:
 		for (i = 0; i < n; i++)
-			cnt += ((const bte *) p)[i] != bte_nil;
+			cnt += !is_bte_nil(((const bte *) p)[i]);
 		break;
 	case TYPE_sht:
 		for (i = 0; i < n; i++)
-			cnt += ((const sht *) p)[i] != sht_nil;
+			cnt += !is_sht_nil(((const sht *) p)[i]);
 		break;
 	case TYPE_int:
 		for (i = 0; i < n; i++)
-			cnt += ((const int *) p)[i] != int_nil;
+			cnt += !is_int_nil(((const int *) p)[i]);
 		break;
 	case TYPE_lng:
 		for (i = 0; i < n; i++)
-			cnt += ((const lng *) p)[i] != lng_nil;
+			cnt += !is_lng_nil(((const lng *) p)[i]);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		for (i = 0; i < n; i++)
-			cnt += ((const hge *) p)[i] != hge_nil;
+			cnt += !is_hge_nil(((const hge *) p)[i]);
 		break;
 #endif
 	case TYPE_flt:
 		for (i = 0; i < n; i++)
-			cnt += ((const flt *) p)[i] != flt_nil;
+			cnt += !is_flt_nil(((const flt *) p)[i]);
 		break;
 	case TYPE_dbl:
 		for (i = 0; i < n; i++)
-			cnt += ((const dbl *) p)[i] != dbl_nil;
+			cnt += !is_dbl_nil(((const dbl *) p)[i]);
 		break;
 	case TYPE_str:
 		base = b->tvheap->base;
@@ -1822,15 +1938,9 @@ BATcount_no_nil(BAT *b)
 static BAT *
 newdensecand(oid first, oid last)
 {
-	BAT *bn;
-
-	if ((bn = COLnew(0, TYPE_void, 0, TRANSIENT)) == NULL)
-		return NULL;
 	if (last < first)
 		first = last = 0; /* empty range */
-	BATsetcount(bn, last - first);
-	BATtseqbase(bn, first);
-	return bn;
+	return BATdense(0, first, last - first);
 }
 
 /* merge two candidate lists and produce a new one

@@ -8,7 +8,7 @@
 
 #include "monetdb_config.h"
 #include "gdk.h"
-#include "math.h"
+#include <math.h>
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 
@@ -96,6 +96,8 @@ CMDvarADDstr(str *ret, str *s1, str *s2)
 
 	if (strNil(*s1) || strNil(*s2)) {
 		*ret= GDKstrdup(str_nil);
+		if (*ret == NULL)
+			return mythrow(MAL, "calc.+", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	s = GDKzalloc((l1 = strlen(*s1)) + strlen(*s2) + 1);
@@ -115,8 +117,10 @@ CMDvarADDstrint(str *ret, str *s1, int *i)
 	str s;
 	size_t len;
 
-	if (strNil(*s1) || *i == int_nil) {
+	if (strNil(*s1) || is_int_nil(*i)) {
 		*ret= GDKstrdup(str_nil);
+		if (*ret == NULL)
+			return mythrow(MAL, "calc.+", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	len = strlen(*s1) + 16;		/* maxint = 2147483647 which fits easily */
@@ -621,7 +625,7 @@ CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t1 != t2)
 		return mythrow(MAL, "ifthenelse", SEMANTIC_TYPE_MISMATCH);
 
-	if (b == bit_nil) {
+	if (is_bit_nil(b)) {
 		if (VALinit(&stk->stk[pci->argv[0]], t1, ATOMnilptr(t1)) == NULL)
 			return mythrow(MAL, "ifthenelse", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
@@ -762,7 +766,7 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	gdk_return r;
 
 	if ((b = BATdescriptor(bid)) == NULL)
-		throw(MAL, func, RUNTIME_OBJECT_MISSING);
+		throw(MAL, func, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (pci->argc >= 3) {
 		if (getArgType(mb, pci, 2) == TYPE_bit) {
 			assert(pci->argc == 3);
@@ -771,7 +775,7 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			bat sid = * getArgReference_bat(stk, pci, 2);
 			if ((s = BATdescriptor(sid)) == NULL) {
 				BBPunfix(b->batCacheid);
-				throw(MAL, func, RUNTIME_OBJECT_MISSING);
+				throw(MAL, func, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			}
 			if (pci->argc >= 4) {
 				assert(pci->argc == 4);

@@ -9,14 +9,12 @@
 /* NOTE: for this file to work correctly, msab_init must be called. */
 
 #include "monetdb_config.h"
-#include <msabaoth.h>
-#include <stdio.h> /* fprintf, rename */
+#include "msabaoth.h"
 #include <unistd.h> /* stat, rmdir, unlink, ioctl */
 #include <dirent.h> /* readdir */
 #include <sys/stat.h> /* mkdir, stat, umask */
 #include <sys/types.h> /* mkdir, readdir */
 #include <string.h>
-#include <errno.h>
 #include "utils.h"
 #include "mutils.h"
 #include "database.h"
@@ -153,9 +151,9 @@ static char* deletedir(const char *dir) {
 		if (errno == ENOENT)
 			return(NULL);
 		if (errno == ENOTDIR) {
-			if (unlink(dir) == -1 && errno != ENOENT) {
+			if (remove(dir) != 0 && errno != ENOENT) {
 				snprintf(buf, sizeof(buf),
-					 "unable to unlink file %s: %s",
+					 "unable to remove file %s: %s",
 					 dir, strerror(errno));
 				return(strdup(buf));
 			}
@@ -365,7 +363,7 @@ char *db_release(char *dbname) {
 	/* get this database out of maintenance mode */
 	snprintf(path, sizeof(path), "%s/.maintenance", stats->path);
 	msab_freeStatus(&stats);
-	if (unlink(path) != 0) {
+	if (remove(path) != 0) {
 		snprintf(buf, sizeof(buf), "could not remove '%s' for '%s': %s",
 				path, dbname, strerror(errno));
 		return(strdup(buf));

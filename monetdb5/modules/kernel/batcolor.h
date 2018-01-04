@@ -9,10 +9,10 @@
 #ifndef _BATCOLOR_H_
 #define _BATCOLOR_H_
 
-#include <gdk.h>
+#include "gdk.h"
 #include <string.h>
-#include <mal.h>
-#include <color.h>
+#include "mal.h"
+#include "color.h"
 #include "mal_exception.h"
 
 mal_export str CLRbatColor(bat *ret, const bat *l);

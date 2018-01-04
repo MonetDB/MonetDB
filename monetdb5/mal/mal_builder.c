@@ -38,8 +38,13 @@ newAssignment(MalBlkPtr mb)
 InstrPtr
 newStmt(MalBlkPtr mb, const char *module, const char *name)
 {
-	InstrPtr q = newInstruction(mb, putName(module), putName(name));
+	InstrPtr q;
+	str mName = putName(module), nName = putName(name);
 
+	if(mName == NULL || nName == NULL) {
+		return NULL;
+	}
+	q = newInstruction(mb, mName, nName);
 	if ( q == NULL)
 		return NULL;
 	setDestVar(q, newTmpVariable(mb, TYPE_any));
@@ -71,11 +76,18 @@ InstrPtr
 newFcnCall(MalBlkPtr mb, char *mod, char *fcn)
 {
 	InstrPtr q = newAssignment(mb);
+	str fcnName, modName;
 
 	if ( q == NULL || mod == NULL || fcn == NULL)
 		return NULL;
-	setModuleId(q, putName(mod));
-	setFunctionId(q, putName(fcn));
+	modName = putName(mod);
+	fcnName = putName(fcn);
+	if(modName == NULL || fcnName == NULL) {
+		freeInstruction(q);
+		return NULL;
+	}
+	setModuleId(q, modName);
+	setFunctionId(q, fcnName);
 	return q;
 }
 

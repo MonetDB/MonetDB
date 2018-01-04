@@ -20,13 +20,8 @@
 
 #include "monetdb_config.h"
 
-#include <drvcfg.h>
+#include "drvcfg.h"
 #include <string.h>		/* for memset(), memcpy(), strncpy() */
-
-#include <stdlib.h>		/* for malloc() on Darwin */
-#ifdef HAVE_MALLOC_H
-#include <malloc.h>
-#endif
 
 static const char *aHost[] = {
 	"localhost",

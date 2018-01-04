@@ -21,7 +21,7 @@
 #include "monetdb_config.h"
 #include "sql_privileges.h"
 #include "sql_semantic.h"
-#include <sql_parser.h>
+#include "sql_parser.h"
 #include "mal_exception.h"
 
 #define PRIV_ROLE_ADMIN 0
@@ -239,7 +239,7 @@ sql_delete_priv(mvc *sql, int auth_id, int obj_id, int privilege, int grantor, i
 	A = table_funcs.rids_select(tr, priv_auth, &auth_id, &auth_id, priv_priv, &privilege, &privilege, priv_obj, &obj_id, &obj_id, NULL );
 
 	/* remove them */
-	for(rid = table_funcs.rids_next(A); rid != oid_nil; rid = table_funcs.rids_next(A)) 
+	for(rid = table_funcs.rids_next(A); !is_oid_nil(rid); rid = table_funcs.rids_next(A)) 
 		table_funcs.table_delete(tr, privs, rid); 
 	table_funcs.rids_destroy(A);
 }
@@ -355,7 +355,7 @@ sql_create_auth_id(mvc *m, unsigned int id, str auth)
 	sql_table *auths = find_sql_table(sys, "auths");
 	sql_column *auth_name = find_sql_column(auths, "name");
 
-	if (table_funcs.column_find_row(m->session->tr, auth_name, auth, NULL) != oid_nil)
+	if (!is_oid_nil(table_funcs.column_find_row(m->session->tr, auth_name, auth, NULL)))
 		return FALSE;
 
 	table_funcs.table_insert(m->session->tr, auths, &id, auth, &grantor);
@@ -366,7 +366,7 @@ sql_create_auth_id(mvc *m, unsigned int id, str auth)
 str
 sql_create_role(mvc *m, str auth, int grantor)
 {
-	oid id;
+	int id;
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
 	sql_table *auths = find_sql_table(sys, "auths");
 	sql_column *auth_name = find_sql_column(auths, "name");
@@ -374,7 +374,7 @@ sql_create_role(mvc *m, str auth, int grantor)
 	if (!admin_privs(grantor)) 
 		throw(SQL, "sql.create_role", SQLSTATE(0P000) "Insufficient privileges to create role '%s'", auth);
 
-	if (table_funcs.column_find_row(m->session->tr, auth_name, auth, NULL) != oid_nil)
+	if (!is_oid_nil(table_funcs.column_find_row(m->session->tr, auth_name, auth, NULL)))
 		throw(SQL, "sql.create_role", SQLSTATE(0P000) "Role '%s' already exists", auth);
 
 	id = store_next_oid();
@@ -392,7 +392,7 @@ sql_drop_role(mvc *m, str auth)
 	sql_column *auth_name = find_sql_column(auths, "name");
 
 	rid = table_funcs.column_find_row(m->session->tr, auth_name, auth, NULL);
-	if (rid == oid_nil)
+	if (is_oid_nil(rid))
 		throw(SQL, "sql.drop_role", SQLSTATE(0P000) "DROP ROLE: no such role '%s'", auth);
 	table_funcs.table_delete(m->session->tr, auths, rid);
 	m->session->tr->schema_updates++;
@@ -418,7 +418,7 @@ sql_privilege(mvc *m, int auth_id, int obj_id, int priv, int sub)
 	oid rid = sql_privilege_rid(m, auth_id, obj_id, priv, sub);
 	int res = 0;
 
-	if (rid != oid_nil) {
+	if (!is_oid_nil(rid)) {
 		/* found priv */
 		res = priv;
 	}
@@ -499,7 +499,7 @@ sql_grant_role(mvc *m, str grantee, str role, int grantor, int admin)
 	void *val;
 
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, role, NULL);
-	if (rid == oid_nil) 
+	if (is_oid_nil(rid)) 
 		throw(SQL,  "sql.grant_role", SQLSTATE(M1M05) "Cannot grant ROLE '%s' to ROLE '%s'", role, grantee);
 	val = table_funcs.column_find_value(m->session->tr, auths_id, rid);
 	role_id = *(int*)val; 
@@ -510,7 +510,7 @@ sql_grant_role(mvc *m, str grantee, str role, int grantor, int admin)
 	if (!admin_privs(grantor) && !role_granting_privs(m, rid, role_id, grantor)) 
 		throw(SQL,"sql.grant_role", SQLSTATE(0P000) "Insufficient privileges to grant ROLE '%s'", role);
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, grantee, NULL);
-	if (rid == oid_nil)
+	if (is_oid_nil(rid))
 		throw(SQL,"sql.grant_role", SQLSTATE(M1M05) "Cannot grant ROLE '%s' to ROLE '%s'", role, grantee);
 	val = table_funcs.column_find_value(m->session->tr, auths_id, rid);
 	grantee_id = *(int*)val; 
@@ -543,28 +543,28 @@ sql_revoke_role(mvc *m, str grantee, str role, int grantor, int admin)
 	void *val;
 
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, grantee, NULL);
-	if (rid == oid_nil)
+	if (is_oid_nil(rid))
 		throw(SQL,"sql.revoke_role", SQLSTATE(42M32) "REVOKE: no such role '%s' or grantee '%s'", role, grantee);
 	val = table_funcs.column_find_value(m->session->tr, auths_id, rid);
 	grantee_id = *(int*)val; 
 	_DELETE(val);
 
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, role, NULL);
-	if (rid == oid_nil) 
+	if (is_oid_nil(rid)) 
 		throw(SQL,"sql.revoke_role", SQLSTATE(42M32) "REVOKE: no such role '%s' or grantee '%s'", role, grantee);
 	val = table_funcs.column_find_value(m->session->tr, auths_id, rid);
 	role_id = *(int*)val; 
 	_DELETE(val);
-	if (!admin_privs(grantor) && !role_granting_privs(m, rid, role_id, grantor)) 
-		throw(SQL,"sql.revoke_role", SQLSTATE(0P000) "Insufficient privileges to grant ROLE '%s'", role);
+	if (!admin_privs(grantor) && !role_granting_privs(m, rid, role_id, grantor))
+		throw(SQL,"sql.revoke_role", SQLSTATE(0P000) "REVOKE: insufficient privileges to revoke ROLE '%s'", role);
 
 	if (!admin) { 
 		rid = table_funcs.column_find_row(m->session->tr, roles_login_id, &grantee_id, roles_role_id, &role_id, NULL);
-		if (rid != oid_nil) 
+		if (!is_oid_nil(rid)) 
 			table_funcs.table_delete(m->session->tr, roles, rid);
 	} else {
 		rid = sql_privilege_rid(m, grantee_id, role_id, PRIV_ROLE_ADMIN, 0);
-		if (rid != oid_nil) 
+		if (!is_oid_nil(rid)) 
 			table_funcs.table_delete(m->session->tr, roles, rid);
 	}
 	m->session->tr->schema_updates++;
@@ -582,7 +582,7 @@ sql_find_auth(mvc *m, str auth)
 
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, auth, NULL);
 
-	if (rid != oid_nil) {
+	if (!is_oid_nil(rid)) {
 		sql_column *auths_id = find_sql_column(auths, "id");
 		int *p = (int *) table_funcs.column_find_value(m->session->tr, auths_id, rid);
 
@@ -605,7 +605,7 @@ sql_find_schema(mvc *m, str schema)
 
 	rid = table_funcs.column_find_row(m->session->tr, schemas_name, schema, NULL);
 
-	if (rid != oid_nil) {
+	if (!is_oid_nil(rid)) {
 		sql_column *schemas_id = find_sql_column(schemas, "id");
 		int *p = (int *) table_funcs.column_find_value(m->session->tr, schemas_id, rid);
 
@@ -640,7 +640,7 @@ sql_grantable_(mvc *m, int grantorid, int obj_id, int privs, int sub)
 		if (!(priv & privs))
 			continue;
 		rid = table_funcs.column_find_row(m->session->tr, priv_obj, &obj_id, priv_auth, &grantorid, priv_priv, &priv, NULL);
-		if (rid != oid_nil) {
+		if (!is_oid_nil(rid)) {
 			void *p = table_funcs.column_find_value(m->session->tr, priv_allowed, rid);
 			int allowed = *(int *)p;
 
@@ -676,7 +676,7 @@ mvc_set_role(mvc *m, char *role)
 		fprintf(stderr, "mvc_set_role %s\n", role);
 
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, role, NULL);
-	if (rid != oid_nil) {
+	if (!is_oid_nil(rid)) {
 		sql_column *auths_id = find_sql_column(auths, "id");
 		void *p = table_funcs.column_find_value(m->session->tr, auths_id, rid);
 		int id = *(int *)p;
@@ -693,7 +693,7 @@ mvc_set_role(mvc *m, char *role)
 
 			rid = table_funcs.column_find_row(m->session->tr, login_id, &m->user_id, role_id, &id, NULL);
 		
-			if (rid != oid_nil) {
+			if (!is_oid_nil(rid)) {
 				m->role_id = id;
 				res = 1;
 			}
@@ -707,15 +707,18 @@ mvc_set_schema(mvc *m, char *schema)
 {
 	int ret = 0;
 	sql_schema *s = find_sql_schema(m->session->tr, schema);
+	char* new_schema_name = _STRDUP(schema);
 
-	if (s) {
+	if (s && new_schema_name) {
 		if (m->session->schema_name)
 			_DELETE(m->session->schema_name);
-		m->session->schema_name = _STRDUP(schema);
+		m->session->schema_name = new_schema_name;
 		m->type = Q_TRANS;
-		if (m->session->active) 
+		if (m->session->active)
 			m->session->schema = s;
 		ret = 1;
+	} else if(new_schema_name) {
+		_DELETE(new_schema_name);
 	}
 	return ret;
 }

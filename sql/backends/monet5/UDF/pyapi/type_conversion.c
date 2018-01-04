@@ -12,10 +12,6 @@
 
 #include <longintrepr.h>
 
-#if defined(_MSC_VER) && _MSC_VER <= 1600
-#define isnan(x) _isnan(x)
-#endif
-
 #if PY_MAJOR_VERSION >= 3
 #define IS_PY3K
 #define PyInt_Check PyLong_Check
@@ -39,7 +35,7 @@ bool string_copy(char *source, char *dest, size_t max_size, bool allow_unicode)
 #ifdef HAVE_HGE
 int hge_to_string(char *str, hge x)
 {
-	int len = 256; /* assume str is large enough */
+	size_t len = 256; /* assume str is large enough */
 	hgeToStr(&str, &len, &x);
 	return TRUE;
 }
@@ -212,7 +208,7 @@ wrapup:
 #define STRING_TO_NUMBER_FACTORY(tpe)                                          \
 	str str_to_##tpe(char *ptr, size_t maxsize, tpe *value)                    \
 	{                                                                          \
-		int len = sizeof(tpe);                                                 \
+		size_t len = sizeof(tpe);                                              \
 		char buf[256];                                                         \
 		if (maxsize > 0) {                                                     \
 			if (maxsize >= sizeof(buf))                                        \
@@ -223,7 +219,7 @@ wrapup:
 				return GDKstrdup("string too long to convert.");               \
 			ptr = buf;                                                         \
 		}                                                                      \
-		if (BATatoms[TYPE_##tpe].atomFromStr(ptr, &len, (void **)&value) == 0) \
+		if (BATatoms[TYPE_##tpe].atomFromStr(ptr, &len, (void **)&value) < 0)  \
 			return GDKstrdup("Error converting string.");                      \
 		return MAL_SUCCEED;                                                    \
 	}

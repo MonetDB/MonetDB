@@ -21,7 +21,6 @@
 #ifdef HAVE_IO_H
 # include <io.h>
 #endif
-#include <stdlib.h>
 #include <time.h>
 
 #ifdef NATIVE_WIN32
@@ -36,7 +35,6 @@
 #endif
 
 #define getpid _getpid
-#define unlink _unlink
 #else
 #ifndef DIFF
 #define DIFF	"diff"
@@ -51,7 +49,7 @@
 #define UNLINK(x)
 #define ERRHNDL(r,s,t,u) ErrXit(s,t,u)
 #else
-#define UNLINK(x) unlink(x)
+#define UNLINK(x) remove(x)
 #define ERRHNDL(r,s,t,u) return r
 #endif
 
@@ -259,25 +257,25 @@ lw_diff2wc_diff(int mindiff, int doChar, char *lw_diff_fn, char *wc_diff_fn)
 						i = 0;
 					} while (line[strlen(line) - 1] != '\n' && (ok = fgets(line, BUFLEN, lw_diff_fp)));
 				} else {
-					space = isspace_((int) (line[1]));
-					alpha_ = isalpha_((int) (line[1]));
-					digit = isdigit_((int) (line[1]));
+					space = isspace((unsigned char) (line[1]));
+					alpha_ = isalpha((unsigned char) (line[1]));
+					digit = isdigit((unsigned char) (line[1]));
 					i = 1;
 					do {
 						for (; line[i] != '\n' && line[i] != '\0'; i++) {
-							if ((space && !isspace_((int) line[i])) ||
-							    (!space && isspace_((int) line[i])) ||
-							    (alpha_ && !isalpha_((int) line[i])) ||
-							    (!alpha_ && isalpha_((int) line[i])) ||
-							    (digit && !isdigit_((int) line[i])) ||
-							    (!digit && isdigit_((int) line[i])) ||
-							    (!isspace_((int) line[i]) &&
-							     !isalpha_((int) line[i]) &&
-							     !isdigit_((int) line[i]))) {
+							if ((space && !isspace((unsigned char) line[i])) ||
+							    (!space && isspace((unsigned char) line[i])) ||
+							    (alpha_ && !isalpha((unsigned char) line[i])) ||
+							    (!alpha_ && isalpha((unsigned char) line[i])) ||
+							    (digit && !isdigit((unsigned char) line[i])) ||
+							    (!digit && isdigit((unsigned char) line[i])) ||
+							    (!isspace((unsigned char) line[i]) &&
+							     !isalpha((unsigned char) line[i]) &&
+							     !isdigit((unsigned char) line[i]))) {
 								fprintf(fp[j], "\n");
-								space = isspace_((int) line[i]);
-								alpha_ = isalpha_((int) line[i]);
-								digit = isdigit_((int) line[i]);
+								space = isspace((unsigned char) line[i]);
+								alpha_ = isalpha((unsigned char) line[i]);
+								digit = isdigit((unsigned char) line[i]);
 								l[j]++;
 							}
 							fprintf(fp[j], "%c", line[i]);

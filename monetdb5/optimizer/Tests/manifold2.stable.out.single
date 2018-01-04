@@ -26,18 +26,18 @@ Ready.
 # 12:52:57 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-23074" "--port=30414"
 # 12:52:57 >  
 
-function user.tst(b:bat[:dbl],b2:bat[:dbl]):void;	#[0] (0)  0 <- 1 2 
+function user.tst(b:bat[:dbl], b2:bat[:dbl]):void;	#[0] (0)  0 <- 1 2 
     c:lng := aggr.count(b:bat[:dbl]);   	#[1] (0) ALGcount_bat 3 <- 1 
     c2:lng := aggr.count(b2:bat[:dbl]); 	#[2] (0) ALGcount_bat 4 <- 2 
     X_3:bat[:dbl] := bat.new(nil:dbl);  	#[3] (0) CMDBATnew 9 <- 10 
-barrier (X_6:oid,X_7:dbl) := iterator.new(b:bat[:dbl]);	#[4] (0) ITRbunIterator 12 13 <- 1 
-    X_9:dbl := algebra.fetch(b2:bat[:dbl],X_6:oid);	#[5] (0) ALGfetchoid 15 <- 2 12 
-    X_11:dbl := calc.max(X_7:dbl,X_9:dbl);	#[6] (0) CALCmax 17 <- 13 15 
-    bat.append(X_3:bat[:dbl],X_11:dbl); 	#[7] (0) BKCappend_val_wrap 18 <- 9 17 
-    redo (X_6:oid,X_7:dbl) := iterator.next(b:bat[:dbl]);	#[8] (0) ITRbunNext 12 13 <- 1 
-exit (X_6:oid,X_7:dbl);                 	#[9] (0)  12 13 
+barrier (X_6:oid, X_7:dbl) := iterator.new(b:bat[:dbl]);	#[4] (0) ITRbunIterator 12 13 <- 1 
+    X_9:dbl := algebra.fetch(b2:bat[:dbl], X_6:oid);	#[5] (0) ALGfetchoid 15 <- 2 12 
+    X_11:dbl := calc.max(X_7:dbl, X_9:dbl);	#[6] (0) CALCmax 17 <- 13 15 
+    bat.append(X_3:bat[:dbl], X_11:dbl);	#[7] (0) BKCappend_val_wrap 18 <- 9 17 
+    redo (X_6:oid, X_7:dbl) := iterator.next(b:bat[:dbl]);	#[8] (0) ITRbunNext 12 13 <- 1 
+exit (X_6:oid, X_7:dbl);                	#[9] (0)  12 13 
     z:bat[:dbl] := X_3:bat[:dbl];       	#[10] (0)  5 <- 9 
-    io.print(z:bat[:dbl],b:bat[:dbl],b2:bat[:dbl]);	#[11] (0) IOtable 8 <- 5 1 2 
+    io.print(z:bat[:dbl], b:bat[:dbl], b2:bat[:dbl]);	#[11] (0) IOtable 8 <- 5 1 2 
 end user.tst;                           	#[12] (0)  
 #multiplex            actions= 1 time=101 usec 
 #[ 1]     b (0,0,0) =  :bat[:dbl]  
@@ -51,18 +51,18 @@ end user.tst;                           	#[12] (0)
 #[13]   X_7 (0,0,0) =  :dbl  
 #[15]   X_9 (0,0,0) =  :dbl  
 #[17]  X_11 (0,0,0) =  :dbl  
-function user.tst(b:bat[:dbl],b2:bat[:dbl]):void;	#[0] (0)  0 <- 1 2 
+function user.tst(b:bat[:dbl], b2:bat[:dbl]):void;	#[0] (0)  0 <- 1 2 
     c:lng := aggr.count(b:bat[:dbl]);   	#[1] (0) ALGcount_bat 3 <- 1 
     c2:lng := aggr.count(b2:bat[:dbl]); 	#[2] (0) ALGcount_bat 4 <- 2 
     X_3:bat[:dbl] := bat.new(nil:dbl);  	#[3] (0) CMDBATnew 9 <- 10 
-barrier (X_6:oid,X_7:dbl) := iterator.new(b:bat[:dbl]);	#[4] (0) ITRbunIterator 12 13 <- 1 
-    X_9:dbl := algebra.fetch(b2:bat[:dbl],X_6:oid);	#[5] (0) ALGfetchoid 15 <- 2 12 
-    X_11:dbl := calc.max(X_7:dbl,X_9:dbl);	#[6] (0) CALCmax 17 <- 13 15 
-    bat.append(X_3:bat[:dbl],X_11:dbl); 	#[7] (0) BKCappend_val_wrap 18 <- 9 17 
-    redo (X_6:oid,X_7:dbl) := iterator.next(b:bat[:dbl]);	#[8] (0) ITRbunNext 12 13 <- 1 
-exit (X_6:oid,X_7:dbl);                 	#[9] (0)  12 13 
+barrier (X_6:oid, X_7:dbl) := iterator.new(b:bat[:dbl]);	#[4] (0) ITRbunIterator 12 13 <- 1 
+    X_9:dbl := algebra.fetch(b2:bat[:dbl], X_6:oid);	#[5] (0) ALGfetchoid 15 <- 2 12 
+    X_11:dbl := calc.max(X_7:dbl, X_9:dbl);	#[6] (0) CALCmax 17 <- 13 15 
+    bat.append(X_3:bat[:dbl], X_11:dbl);	#[7] (0) BKCappend_val_wrap 18 <- 9 17 
+    redo (X_6:oid, X_7:dbl) := iterator.next(b:bat[:dbl]);	#[8] (0) ITRbunNext 12 13 <- 1 
+exit (X_6:oid, X_7:dbl);                	#[9] (0)  12 13 
     z:bat[:dbl] := X_3:bat[:dbl];       	#[10] (0)  5 <- 9 
-    io.print(z:bat[:dbl],b:bat[:dbl],b2:bat[:dbl]);	#[11] (0) IOtable 8 <- 5 1 2 
+    io.print(z:bat[:dbl], b:bat[:dbl], b2:bat[:dbl]);	#[11] (0) IOtable 8 <- 5 1 2 
 end user.tst;                           	#[12] (0)  
 #multiplex            actions= 1 time=101 usec 
 

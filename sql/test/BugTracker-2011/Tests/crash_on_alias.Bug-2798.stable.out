@@ -31,12 +31,14 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 120 # length
+% 150 # length
 project (
-| group by (
-| | table(sys.dbg) [ "dbg"."a", "dbg"."b" ] COUNT 
-| ) [ "dbg"."a" as "d" ] [ "dbg"."d", sys.sum no nil ("dbg"."b") as "L3"."L3", "L3"."L3" as "L6"."L6" ]
-) [ "dbg"."d", "L3" as "L4"."L3", sys.sql_mul(sys.sql_div("L6", tinyint "2" as "L10"."L10"), tinyint "2") as "L11"."f" ]
+| project (
+| | group by (
+| | | table(sys.dbg) [ "dbg"."a", "dbg"."b" ] COUNT 
+| | ) [ "dbg"."a" as "d" ] [ "dbg"."d", sys.sum no nil ("dbg"."b") as "L3"."L3", "L3"."L3" as "L6"."L6" ]
+| ) [ "dbg"."d", "L3" as "L4"."L3", sys.sql_div("L6", tinyint "2" as "L10"."L10") as "L13"."L13", sys.sql_mul("L13"."L13", tinyint "2") as "L11"."f" ]
+) [ "dbg"."d", "L4"."L3", "L11"."f" ]
 #set optimizer = 'sequential_pipe';
 #set optimizer = 'default_pipe';
 #SELECT a as d, SUM(b), (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP BY d;
@@ -54,12 +56,14 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 119 # length
+% 149 # length
 project (
-| group by (
-| | table(sys.dbg) [ "dbg"."a", "dbg"."b" ] COUNT 
-| ) [ "dbg"."a" as "d" ] [ "dbg"."d", sys.sum no nil ("dbg"."b") as "L3"."L3", "L3"."L3" as "L6"."L6" ]
-) [ "dbg"."d", "L3" as "L4"."e", sys.sql_mul(sys.sql_div("L6", tinyint "2" as "L10"."L10"), tinyint "2") as "L11"."f" ]
+| project (
+| | group by (
+| | | table(sys.dbg) [ "dbg"."a", "dbg"."b" ] COUNT 
+| | ) [ "dbg"."a" as "d" ] [ "dbg"."d", sys.sum no nil ("dbg"."b") as "L3"."L3", "L3"."L3" as "L6"."L6" ]
+| ) [ "dbg"."d", "L3" as "L4"."e", sys.sql_div("L6", tinyint "2" as "L10"."L10") as "L13"."L13", sys.sql_mul("L13"."L13", tinyint "2") as "L11"."f" ]
+) [ "dbg"."d", "L4"."e", "L11"."f" ]
 #set optimizer = 'sequential_pipe';
 #set optimizer = 'default_pipe';
 #SELECT a as d, SUM(b) as e, (2 * (SUM(b) / (SELECT 2))) as f FROM dbg GROUP

@@ -12,11 +12,6 @@
 #include "gdk_calc_private.h"
 #include <math.h>
 
-#ifndef HAVE_NEXTAFTERF
-#define nextafter       _nextafter
-#include "mutils.h"             /* nextafterf */
-#endif
-
 /* Define symbol FULL_IMPLEMENTATION to get implementations for all
  * sensible output types for +, -, *, /.  Without the symbol, all
  * combinations of input types are supported, but only output types
@@ -184,7 +179,7 @@
 			if (cand) {					\
 				for (i = 0; i < cnt; i++) {		\
 					v = src[cand[i] - hoff];	\
-					if (v == TYPE1##_nil) {		\
+					if (is_##TYPE1##_nil(v)) {	\
 						nils++;			\
 						dst[i] = TYPE2##_nil;	\
 					} else {			\
@@ -194,7 +189,7 @@
 			} else {					\
 				for (i = 0; i < cnt; i++) {		\
 					v = src[start + i];		\
-					if (v == TYPE1##_nil) {		\
+					if (is_##TYPE1##_nil(v)) {	\
 						nils++;			\
 						dst[i] = TYPE2##_nil;	\
 					} else {			\
@@ -229,7 +224,7 @@
 				v1 = ((const TYPE1 *) src1)[projected == 1 ? i : cand ? cand[i] - hoff : start + i]; \
 			if (src2)					\
 				v2 = ((const TYPE2 *) src2)[projected == 2 ? i : cand ? cand[i] - hoff : start + i]; \
-			if (v1 == TYPE1##_nil || v2 == TYPE2##_nil) {	\
+			if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
 				((TYPE3 *) dst)[i] = TYPE3##_nil;	\
 				nils++;					\
 			} else {					\
@@ -248,7 +243,7 @@
 				v1 = ((const TYPE1 *) src1)[projected == 1 ? i : cand ? cand[i] - hoff : start + i]; \
 			if (src2)					\
 				v2 = ((const TYPE2 *) src2)[projected == 2 ? i : cand ? cand[i] - hoff : start + i]; \
-			if (v1 == TYPE1##_nil || v2 == TYPE2##_nil) {	\
+			if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
 				((TYPE3 *) dst)[i] = TYPE3##_nil;	\
 				nils++;					\
 			} else if (CHECK(v1, v2)) {			\
@@ -362,7 +357,7 @@ VARcalcnot(ValPtr ret, const ValRecord *v)
 	ret->vtype = v->vtype;
 	switch (ATOMbasetype(v->vtype)) {
 	case TYPE_bte:
-		if (v->val.btval == bit_nil)
+		if (is_bit_nil(v->val.btval))
 			ret->val.btval = bit_nil;
 		else if (v->vtype == TYPE_bit)
 			ret->val.btval = !v->val.btval;
@@ -370,26 +365,26 @@ VARcalcnot(ValPtr ret, const ValRecord *v)
 			ret->val.btval = ~v->val.btval;
 		break;
 	case TYPE_sht:
-		if (v->val.shval == sht_nil)
+		if (is_sht_nil(v->val.shval))
 			ret->val.shval = sht_nil;
 		else
 			ret->val.shval = ~v->val.shval;
 		break;
 	case TYPE_int:
-		if (v->val.ival == int_nil)
+		if (is_int_nil(v->val.ival))
 			ret->val.ival = int_nil;
 		else
 			ret->val.ival = ~v->val.ival;
 		break;
 	case TYPE_lng:
-		if (v->val.lval == lng_nil)
+		if (is_lng_nil(v->val.lval))
 			ret->val.lval = lng_nil;
 		else
 			ret->val.lval = ~v->val.lval;
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		if (v->val.hval == hge_nil)
+		if (is_hge_nil(v->val.hval))
 			ret->val.hval = hge_nil;
 		else
 			ret->val.hval = ~v->val.hval;
@@ -467,45 +462,45 @@ VARcalcnegate(ValPtr ret, const ValRecord *v)
 	ret->vtype = v->vtype;
 	switch (ATOMbasetype(v->vtype)) {
 	case TYPE_bte:
-		if (v->val.btval == bte_nil)
+		if (is_bte_nil(v->val.btval))
 			ret->val.btval = bte_nil;
 		else
 			ret->val.btval = -v->val.btval;
 		break;
 	case TYPE_sht:
-		if (v->val.shval == sht_nil)
+		if (is_sht_nil(v->val.shval))
 			ret->val.shval = sht_nil;
 		else
 			ret->val.shval = -v->val.shval;
 		break;
 	case TYPE_int:
-		if (v->val.ival == int_nil)
+		if (is_int_nil(v->val.ival))
 			ret->val.ival = int_nil;
 		else
 			ret->val.ival = -v->val.ival;
 		break;
 	case TYPE_lng:
-		if (v->val.lval == lng_nil)
+		if (is_lng_nil(v->val.lval))
 			ret->val.lval = lng_nil;
 		else
 			ret->val.lval = -v->val.lval;
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		if (v->val.hval == hge_nil)
+		if (is_hge_nil(v->val.hval))
 			ret->val.hval = hge_nil;
 		else
 			ret->val.hval = -v->val.hval;
 		break;
 #endif
 	case TYPE_flt:
-		if (v->val.fval == flt_nil)
+		if (is_flt_nil(v->val.fval))
 			ret->val.fval = flt_nil;
 		else
 			ret->val.fval = -v->val.fval;
 		break;
 	case TYPE_dbl:
-		if (v->val.dval == dbl_nil)
+		if (is_dbl_nil(v->val.dval))
 			ret->val.dval = dbl_nil;
 		else
 			ret->val.dval = -v->val.dval;
@@ -584,45 +579,45 @@ VARcalcabsolute(ValPtr ret, const ValRecord *v)
 	ret->vtype = v->vtype;
 	switch (ATOMbasetype(v->vtype)) {
 	case TYPE_bte:
-		if (v->val.btval == bte_nil)
+		if (is_bte_nil(v->val.btval))
 			ret->val.btval = bte_nil;
 		else
 			ret->val.btval = (bte) abs(v->val.btval);
 		break;
 	case TYPE_sht:
-		if (v->val.shval == sht_nil)
+		if (is_sht_nil(v->val.shval))
 			ret->val.shval = sht_nil;
 		else
 			ret->val.shval = (sht) abs(v->val.shval);
 		break;
 	case TYPE_int:
-		if (v->val.ival == int_nil)
+		if (is_int_nil(v->val.ival))
 			ret->val.ival = int_nil;
 		else
 			ret->val.ival = abs(v->val.ival);
 		break;
 	case TYPE_lng:
-		if (v->val.lval == lng_nil)
+		if (is_lng_nil(v->val.lval))
 			ret->val.lval = lng_nil;
 		else
 			ret->val.lval = llabs(v->val.lval);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		if (v->val.hval == hge_nil)
+		if (is_hge_nil(v->val.hval))
 			ret->val.hval = hge_nil;
 		else
 			ret->val.hval = ABSOLUTE(v->val.hval);
 		break;
 #endif
 	case TYPE_flt:
-		if (v->val.fval == flt_nil)
+		if (is_flt_nil(v->val.fval))
 			ret->val.fval = flt_nil;
 		else
 			ret->val.fval = fabsf(v->val.fval);
 		break;
 	case TYPE_dbl:
-		if (v->val.dval == dbl_nil)
+		if (is_dbl_nil(v->val.dval))
 			ret->val.dval = dbl_nil;
 		else
 			ret->val.dval = fabs(v->val.dval);
@@ -699,45 +694,45 @@ VARcalciszero(ValPtr ret, const ValRecord *v)
 	ret->vtype = TYPE_bit;
 	switch (ATOMbasetype(v->vtype)) {
 	case TYPE_bte:
-		if (v->val.btval == bte_nil)
+		if (is_bte_nil(v->val.btval))
 			ret->val.btval = bit_nil;
 		else
 			ret->val.btval = ISZERO(v->val.btval);
 		break;
 	case TYPE_sht:
-		if (v->val.shval == sht_nil)
+		if (is_sht_nil(v->val.shval))
 			ret->val.btval = bit_nil;
 		else
 			ret->val.btval = ISZERO(v->val.shval);
 		break;
 	case TYPE_int:
-		if (v->val.ival == int_nil)
+		if (is_int_nil(v->val.ival))
 			ret->val.btval = bit_nil;
 		else
 			ret->val.btval = ISZERO(v->val.ival);
 		break;
 	case TYPE_lng:
-		if (v->val.lval == lng_nil)
+		if (is_lng_nil(v->val.lval))
 			ret->val.btval = bit_nil;
 		else
 			ret->val.btval = ISZERO(v->val.lval);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		if (v->val.hval == hge_nil)
+		if (is_hge_nil(v->val.hval))
 			ret->val.btval = bit_nil;
 		else
 			ret->val.btval = ISZERO(v->val.hval);
 		break;
 #endif
 	case TYPE_flt:
-		if (v->val.fval == flt_nil)
+		if (is_flt_nil(v->val.fval))
 			ret->val.btval = bit_nil;
 		else
 			ret->val.btval = ISZERO(v->val.fval);
 		break;
 	case TYPE_dbl:
-		if (v->val.dval == dbl_nil)
+		if (is_dbl_nil(v->val.dval))
 			ret->val.btval = bit_nil;
 		else
 			ret->val.btval = ISZERO(v->val.dval);
@@ -818,45 +813,45 @@ VARcalcsign(ValPtr ret, const ValRecord *v)
 	ret->vtype = TYPE_bte;
 	switch (ATOMbasetype(v->vtype)) {
 	case TYPE_bte:
-		if (v->val.btval == bte_nil)
+		if (is_bte_nil(v->val.btval))
 			ret->val.btval = bte_nil;
 		else
 			ret->val.btval = SIGN(v->val.btval);
 		break;
 	case TYPE_sht:
-		if (v->val.shval == sht_nil)
+		if (is_sht_nil(v->val.shval))
 			ret->val.btval = bte_nil;
 		else
 			ret->val.btval = SIGN(v->val.shval);
 		break;
 	case TYPE_int:
-		if (v->val.ival == int_nil)
+		if (is_int_nil(v->val.ival))
 			ret->val.btval = bte_nil;
 		else
 			ret->val.btval = SIGN(v->val.ival);
 		break;
 	case TYPE_lng:
-		if (v->val.lval == lng_nil)
+		if (is_lng_nil(v->val.lval))
 			ret->val.btval = bte_nil;
 		else
 			ret->val.btval = SIGN(v->val.lval);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		if (v->val.hval == hge_nil)
+		if (is_hge_nil(v->val.hval))
 			ret->val.btval = bte_nil;
 		else
 			ret->val.btval = SIGN(v->val.hval);
 		break;
 #endif
 	case TYPE_flt:
-		if (v->val.fval == flt_nil)
+		if (is_flt_nil(v->val.fval))
 			ret->val.btval = bte_nil;
 		else
 			ret->val.btval = SIGN(v->val.fval);
 		break;
 	case TYPE_dbl:
-		if (v->val.dval == dbl_nil)
+		if (is_dbl_nil(v->val.dval))
 			ret->val.btval = bte_nil;
 		else
 			ret->val.btval = SIGN(v->val.dval);
@@ -1098,7 +1093,7 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 	nil = ATOMnilptr(b->ttype);
 	val = VALptr(v);
 
-	if ((b->ttype == TYPE_void && b->tseqbase == oid_nil) ||
+	if ((b->ttype == TYPE_void && is_oid_nil(b->tseqbase)) ||
 	    v->vtype == TYPE_void || (*cmp)(val, nil) == 0)
 		return BATconstant(hseq, ATOMtype(b->ttype), nil,
 				   cnt, TRANSIENT);
@@ -1152,7 +1147,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	nil = ATOMnilptr(b->ttype);
 	val = VALptr(v);
 
-	if (b->ttype == TYPE_void && b->tseqbase == oid_nil) {
+	if (b->ttype == TYPE_void && is_oid_nil(b->tseqbase)) {
 		if (v->vtype == TYPE_void || (*cmp)(val, nil) == 0)
 			return BATconstant(hseq, TYPE_void, &oid_nil,
 					   cnt, TRANSIENT);
@@ -1312,7 +1307,7 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 	nil = ATOMnilptr(b->ttype);
 	val = VALptr(v);
 
-	if ((b->ttype == TYPE_void && b->tseqbase == oid_nil) ||
+	if ((b->ttype == TYPE_void && is_oid_nil(b->tseqbase)) ||
 	    v->vtype == TYPE_void || (*cmp)(val, nil) == 0)
 		return BATconstant(hseq, ATOMtype(b->ttype), nil,
 				   cnt, TRANSIENT);
@@ -1366,7 +1361,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	nil = ATOMnilptr(b->ttype);
 	val = VALptr(v);
 
-	if (b->ttype == TYPE_void && b->tseqbase == oid_nil) {
+	if (b->ttype == TYPE_void && is_oid_nil(b->tseqbase)) {
 		if (v->vtype == TYPE_void || (*cmp)(val, nil) == 0)
 			return BATconstant(hseq, TYPE_void, &oid_nil,
 					   cnt, TRANSIENT);
@@ -1431,7 +1426,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 			v1 = src1[projected == 1 ? i : cand ? cand[i] - hoff : start + i]; \
 		if (src2)						\
 			v2 = src2[projected == 2 ? i : cand ? cand[i] - hoff : start + i]; \
-		if (v1 == TYPE1##_nil || v2 == TYPE2##_nil) {		\
+		if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) {	\
 			dst[i] = TYPE3##_nil;				\
 			nils++;						\
 		} else {						\
@@ -1467,7 +1462,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 			v1 = src1[projected == 1 ? i : cand ? cand[i] - hoff : start + i]; \
 		if (src2)						\
 			v2 = src2[projected == 2 ? i : cand ? cand[i] - hoff : start + i]; \
-		if (v1 == TYPE1##_nil || v2 == TYPE2##_nil) {		\
+		if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) {	\
 			dst[i] = TYPE3##_nil;				\
 			nils++;						\
 		} else {						\
@@ -2715,7 +2710,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 			v1 = src1[projected == 1 ? i : cand ? cand[i] - hoff : start + i]; \
 		if (src2)						\
 			v2 = src2[projected == 2 ? i : cand ? cand[i] - hoff : start + i]; \
-		if (v1 == TYPE1##_nil || v2 == TYPE2##_nil) {		\
+		if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) {	\
 			dst[i] = TYPE3##_nil;				\
 			nils++;						\
 		} else {						\
@@ -2751,7 +2746,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 			v1 = src1[projected == 1 ? i : cand ? cand[i] - hoff : start + i]; \
 		if (src2)						\
 			v2 = src2[projected == 2 ? i : cand ? cand[i] - hoff : start + i]; \
-		if (v1 == TYPE1##_nil || v2 == TYPE2##_nil) {		\
+		if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) {	\
 			dst[i] = TYPE3##_nil;				\
 			nils++;						\
 		} else {						\
@@ -3851,7 +3846,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 			v1 = src1[projected == 1 ? i : cand ? cand[i] - hoff : start + i]; \
 		if (src2)						\
 			v2 = src2[projected == 2 ? i : cand ? cand[i] - hoff : start + i]; \
-		if (v1 == TYPE1##_nil || v2 == TYPE2##_nil) {		\
+		if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) {	\
 			dst[i] = TYPE3##_nil;				\
 			nils++;						\
 		} else {						\
@@ -3881,7 +3876,7 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 			v1 = src1[projected == 1 ? i : cand ? cand[i] - hoff : start + i]; \
 		if (src2)						\
 			v2 = src2[projected == 2 ? i : cand ? cand[i] - hoff : start + i]; \
-		if (v1 == TYPE1##_nil || v2 == TYPE2##_nil) {		\
+		if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) {	\
 			dst[i] = TYPE3##_nil;				\
 			nils++;						\
 		} else {						\
@@ -3917,7 +3912,7 @@ mul_##TYPE1##_##TYPE2##_lng(const TYPE1 *src1, const TYPE1 *v1p,	\
 			v1 = src1[projected == 1 ? i : cand ? cand[i] - hoff : start + i]; \
 		if (src2)						\
 			v2 = src2[projected == 2 ? i : cand ? cand[i] - hoff : start + i]; \
-		if (v1 == TYPE1##_nil || v2 == TYPE2##_nil) {		\
+		if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) {	\
 			dst[i] = lng_nil;				\
 			nils++;						\
 		} else {						\
@@ -3949,7 +3944,7 @@ mul_##TYPE1##_##TYPE2##_hge(const TYPE1 *src1, const TYPE1 *v1p,	\
 			v1 = src1[projected == 1 ? i : cand ? cand[i] - hoff : start + i]; \
 		if (src2)						\
 			v2 = src2[projected == 2 ? i : cand ? cand[i] - hoff : start + i]; \
-		if (v1 == TYPE1##_nil || v2 == TYPE2##_nil) {		\
+		if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) {	\
 			dst[i] = hge_nil;				\
 			nils++;						\
 		} else {						\
@@ -3981,12 +3976,18 @@ mul_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 			v1 = src1[projected == 1 ? i : cand ? cand[i] - hoff : start + i]; \
 		if (src2)						\
 			v2 = src2[projected == 2 ? i : cand ? cand[i] - hoff : start + i]; \
-		if (v1 == TYPE1##_nil || v2 == TYPE2##_nil) {		\
+		if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) {	\
 			dst[i] = TYPE3##_nil;				\
 			nils++;						\
 		} else {						\
-			FLTDBLMUL_CHECK(TYPE1, v1, TYPE2, v2, TYPE3, dst[i], \
-					max, ON_OVERFLOW(TYPE1, TYPE2, "*")); \
+			/* only check for overflow, not for underflow */ \
+			dst[i] = (TYPE3) (v1 * v2);			\
+			if (isinf(dst[i]) || ABSOLUTE(dst[i]) > max) {	\
+				if (abort_on_error)			\
+					ON_OVERFLOW(TYPE1, TYPE2, "*");	\
+				dst[i] = TYPE3##_nil;			\
+				nils++;					\
+			}						\
 		}							\
 	}								\
 	return nils;							\
@@ -5062,7 +5063,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 			v1 = src1[projected == 1 ? i : cand ? cand[i] - hoff : start + i]; \
 		if (src2)						\
 			v2 = src2[projected == 2 ? i : cand ? cand[i] - hoff : start + i]; \
-		if (v1 == TYPE1##_nil || v2 == TYPE2##_nil) {		\
+		if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) {	\
 			dst[i] = TYPE3##_nil;				\
 			nils++;						\
 		} else if (v2 == 0) {					\
@@ -5103,7 +5104,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 			v1 = src1[projected == 1 ? i : cand ? cand[i] - hoff : start + i]; \
 		if (src2)						\
 			v2 = src2[projected == 2 ? i : cand ? cand[i] - hoff : start + i]; \
-		if (v1 == TYPE1##_nil || v2 == TYPE2##_nil) {		\
+		if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) {	\
 			dst[i] = TYPE3##_nil;				\
 			nils++;						\
 		} else if (v2 == 0) {					\
@@ -5144,7 +5145,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 			v1 = src1[projected == 1 ? i : cand ? cand[i] - hoff : start + i]; \
 		if (src2)						\
 			v2 = src2[projected == 2 ? i : cand ? cand[i] - hoff : start + i]; \
-		if (v1 == TYPE1##_nil || v2 == TYPE2##_nil) {		\
+		if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) {	\
 			dst[i] = TYPE3##_nil;				\
 			nils++;						\
 		} else if (v2 == 0) {					\
@@ -6482,7 +6483,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 			v1 = src1[projected == 1 ? i : cand ? cand[i] - hoff : start + i]; \
 		if (src2)						\
 			v2 = src2[projected == 2 ? i : cand ? cand[i] - hoff : start + i]; \
-		if (v1 == TYPE1##_nil || v2 == TYPE2##_nil) {		\
+		if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) {	\
 			dst[i] = TYPE3##_nil;				\
 			nils++;						\
 		} else if (v2 == 0) {					\
@@ -6517,7 +6518,7 @@ mod_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 			v1 = src1[projected == 1 ? i : cand ? cand[i] - hoff : start + i]; \
 		if (src2)						\
 			v2 = src2[projected == 2 ? i : cand ? cand[i] - hoff : start + i]; \
-		if (v1 == TYPE1##_nil || v2 == TYPE2##_nil) {		\
+		if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) {	\
 			dst[i] = TYPE3##_nil;				\
 			nils++;						\
 		} else if (v2 == 0) {					\
@@ -8856,7 +8857,7 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_
 				v2 = ((const TYPE2 *) src2)[projected == 2 ? i : cand ? cand[i] - hoff : start + i]; \
 			if (src3)					\
 				v3 = ((const TYPE2 *) src3)[projected == 2 ? i : cand ? cand[i] - hoff : start + i]; \
-			if (v1 == TYPE1##_nil || v2 == TYPE2##_nil || v3 == TYPE2##_nil) {	\
+			if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2) || is_##TYPE2##_nil(v3)) { \
 				((TYPE3 *) dst)[i] = TYPE3##_nil;	\
 				nils++;					\
 			} else {					\
@@ -8967,9 +8968,9 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, int symmetric, int projected)
 	if (b->ttype == TYPE_void &&
 	    lo->ttype == TYPE_void &&
 	    hi->ttype == TYPE_void) {
-		if (b->tseqbase == oid_nil ||
-		    lo->tseqbase == oid_nil ||
-		    hi->tseqbase == oid_nil) {
+		if (is_oid_nil(b->tseqbase) ||
+		    is_oid_nil(lo->tseqbase) ||
+		    is_oid_nil(hi->tseqbase)) {
 			bit v = bit_nil;
 			return BATconstant(hseq, TYPE_bit, &v, cnt, TRANSIENT);
 		} else if (projected == 0) {
@@ -9019,7 +9020,7 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi, BAT *s, i
 
 	CALC_INIT(b);
 
-	if (b->ttype == TYPE_void && b->tseqbase == oid_nil) {
+	if (b->ttype == TYPE_void && is_oid_nil(b->tseqbase)) {
 		bit v = bit_nil;
 		return BATconstant(hseq, TYPE_bit, &v, cnt, TRANSIENT);
 	}
@@ -9064,8 +9065,8 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, int symmetric
 	CALC_INIT(bn);
 	CALC_POSTINIT(b, lo);
 
-	if ((b->ttype == TYPE_void && b->tseqbase == oid_nil) ||
-	    (lo->ttype == TYPE_void && lo->tseqbase == oid_nil)) {
+	if ((b->ttype == TYPE_void && is_oid_nil(b->tseqbase)) ||
+	    (lo->ttype == TYPE_void && is_oid_nil(lo->tseqbase))) {
 		bit v = bit_nil;
 		return BATconstant(hseq, TYPE_bit, &v, cnt, TRANSIENT);
 	}
@@ -9112,8 +9113,8 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, int symmetric
 	CALC_INIT(bn);
 	CALC_POSTINIT(b, hi);
 
-	if ((b->ttype == TYPE_void && b->tseqbase == oid_nil) ||
-	    (hi->ttype == TYPE_void && hi->tseqbase == oid_nil)) {
+	if ((b->ttype == TYPE_void && is_oid_nil(b->tseqbase)) ||
+	    (hi->ttype == TYPE_void && is_oid_nil(hi->tseqbase))) {
 		bit v = bit_nil;
 		return BATconstant(hseq, TYPE_bit, &v, cnt, TRANSIENT);
 	}
@@ -9219,7 +9220,7 @@ ifthenelseswitch(const bit *src1, const bit *v1p,
 		for (i = 0; i < cnt; i++) {
 			if (src1)
 				v = src1[projected == 1 ? i : cand ? cand[i] - hoff : start + i];
-			if (v == bit_nil) {
+			if (is_bit_nil(v)) {
 				tfastins_nocheck(bn, i, nil, Tsize(bn));
 				nils++;
 			} else {
@@ -9305,7 +9306,7 @@ BATcalcifthencstelsecst(BAT *b, const ValRecord *v1, const ValRecord *v2, BAT *s
 
 	CALC_INIT(b);
 
-	if (b->ttype == TYPE_void && b->tseqbase == oid_nil) {
+	if (b->ttype == TYPE_void && is_oid_nil(b->tseqbase)) {
 		bit v = bit_nil;
 		return BATconstant(hseq, TYPE_bit, &v, cnt, TRANSIENT);
 	}
@@ -9434,7 +9435,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 									\
 	for (i = 0; i < cnt; i++) {					\
 		v1 = src[cand ? cand[i] - hoff : start + i];		\
-		if (v1 == TYPE1##_nil) {				\
+		if (is_##TYPE1##_nil(v1)) {				\
 			dst[i] = TYPE2##_nil;				\
 			nils++;						\
 		} else {						\
@@ -9462,7 +9463,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 									\
 	for (i = 0; i < cnt; i++) {					\
 		v1 = src[cand ? cand[i] - hoff : start + i];		\
-		if (v1 == TYPE1##_nil) {				\
+		if (is_##TYPE1##_nil(v1)) {				\
 			dst[i] = TYPE2##_nil;				\
 			nils++;						\
 		} else if (v1 < (TYPE1) min || v1 > (TYPE1) max) {	\
@@ -9485,19 +9486,6 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 #define rounddbl(x)	round(x)
 #endif
 
-#ifndef HAVE_ROUND
-static inline double
-round(double val)
-{
-	/* round to nearest integer, away from zero */
-	if (val < 0)
-		return -floor(-val + 0.5);
-	else
-		return floor(val + 0.5);
-}
-#define roundf(x)	((float)round((double)(x)))
-#endif
-
 #define CONVERT_float(TYPE1, TYPE2)					\
 static BUN								\
 convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
@@ -9510,7 +9498,7 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 									\
 	for (i = 0; i < cnt; i++) {					\
 		v1 = src[cand ? cand[i] - hoff : start + i];		\
-		if (v1 == TYPE1##_nil) {				\
+		if (is_##TYPE1##_nil(v1)) {				\
 			dst[i] = TYPE2##_nil;				\
 			nils++;						\
 		} else if (v1 < (TYPE1) min || v1 > (TYPE1) max) {	\
@@ -9520,6 +9508,8 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 			nils++;						\
 		} else {						\
 			dst[i] = (TYPE2) round##TYPE1(v1);		\
+			if (is_##TYPE2##_nil(dst[i]) && abort_on_error)	\
+				CONV_OVERFLOW(TYPE1, TYPE2, v1);	\
 		}							\
 	}								\
 	return nils;							\
@@ -9538,7 +9528,7 @@ convert_##TYPE##_bit(const TYPE *src, bit *restrict dst,		\
 	(void) min; (void) max;						\
 	for (i = 0; i < cnt; i++) {					\
 		v1 = src[cand ? cand[i] - hoff : start + i];		\
-		if (v1 == TYPE##_nil) {					\
+		if (is_##TYPE##_nil(v1)) {				\
 			dst[i] = bit_nil;				\
 			nils++;						\
 		} else {						\
@@ -9630,11 +9620,11 @@ convert_any_str(BAT *b, BAT *bn, const oid *restrict cand, BUN start, BUN cnt, o
 {
 	char *dst = NULL;
 	const void *src;
-	int len = 0;
+	size_t len = 0;
 	BUN nils = 0;
 	BUN i;
 	BATiter bi = bat_iterator(b);
-	int (*atomtostr)(str *, int *, const void *) = BATatoms[b->ttype].atomToStr;
+	ssize_t (*atomtostr)(str *, size_t *, const void *) = BATatoms[b->ttype].atomToStr;
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(b->ttype);
 	const void *nil = ATOMnilptr(b->ttype);
 
@@ -9644,7 +9634,8 @@ convert_any_str(BAT *b, BAT *bn, const oid *restrict cand, BUN start, BUN cnt, o
 			tfastins_nocheck(bn, i, str_nil, bn->twidth);
 			nils++;
 		} else {
-			(*atomtostr)(&dst, &len, src);
+			if ((*atomtostr)(&dst, &len, src) < 0)
+				goto bunins_failed;
 			tfastins_nocheck(bn, i, dst, bn->twidth);
 		}
 	}
@@ -9660,11 +9651,12 @@ convert_str_any(BAT *b, BAT *bn, const oid *restrict cand, BUN start, BUN cnt, o
 {
 	void *dst = NULL;
 	const char *src;
-	int len = 0, l;
+	size_t len = 0;
+	ssize_t l;
 	BUN nils = 0;
 	BUN i;
 	BATiter bi = bat_iterator(b);
-	int (*atomfromstr)(const char *, int *, ptr *) = BATatoms[bn->ttype].atomFromStr;
+	ssize_t (*atomfromstr)(const char *, size_t *, ptr *) = BATatoms[bn->ttype].atomFromStr;
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(bn->ttype);
 	const void *nil = ATOMnilptr(bn->ttype);
 
@@ -9674,9 +9666,10 @@ convert_str_any(BAT *b, BAT *bn, const oid *restrict cand, BUN start, BUN cnt, o
 			tfastins_nocheck(bn, i, nil, bn->twidth);
 			nils++;
 		} else {
-			if ((l = (*atomfromstr)(src, &len, &dst)) <= 0 ||
-			    l < (int) strlen(src)) {
+			if ((l = (*atomfromstr)(src, &len, &dst)) < 0 ||
+			    l < (ssize_t) strlen(src)) {
 				if (abort_on_error) {
+					GDKclrerr();
 					GDKerror("22018!conversion of string "
 						 "'%s' to type %s failed.\n",
 						 src, ATOMname(bn->ttype));
@@ -9707,29 +9700,29 @@ convertswitch(const void *src, int tp1, void *restrict dst, int tp, const oid *r
 		case TYPE_bte:
 			if (tp == TYPE_bit)
 				return convert_bte_bit(src, dst, cand, start, cnt, hoff, 0, 1);
-			return convert_bte_bte(src, dst, cand, start, cnt, hoff, GDK_bte_min+1, GDK_bte_max, abort_on_error);
+			return convert_bte_bte(src, dst, cand, start, cnt, hoff, GDK_bte_min, GDK_bte_max, abort_on_error);
 		case TYPE_sht:
-			return convert_bte_sht(src, dst, cand, start, cnt, hoff, GDK_sht_min+1, GDK_sht_max, abort_on_error);
+			return convert_bte_sht(src, dst, cand, start, cnt, hoff, GDK_sht_min, GDK_sht_max, abort_on_error);
 		case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 			if (tp == TYPE_oid)
 				return convert_bte_int(src, dst, cand, start, cnt, hoff, 0, GDK_int_max, abort_on_error);
 #endif
-			return convert_bte_int(src, dst, cand, start, cnt, hoff, GDK_int_min+1, GDK_int_max, abort_on_error);
+			return convert_bte_int(src, dst, cand, start, cnt, hoff, GDK_int_min, GDK_int_max, abort_on_error);
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			if (tp == TYPE_oid)
 				return convert_bte_lng(src, dst, cand, start, cnt, hoff, 0, GDK_lng_max, abort_on_error);
 #endif
-			return convert_bte_lng(src, dst, cand, start, cnt, hoff, GDK_lng_min+1, GDK_lng_max, abort_on_error);
+			return convert_bte_lng(src, dst, cand, start, cnt, hoff, GDK_lng_min, GDK_lng_max, abort_on_error);
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			return convert_bte_hge(src, dst, cand, start, cnt, hoff, GDK_hge_min+1, GDK_hge_max, abort_on_error);
+			return convert_bte_hge(src, dst, cand, start, cnt, hoff, GDK_hge_min, GDK_hge_max, abort_on_error);
 #endif
 		case TYPE_flt:
-			return convert_bte_flt(src, dst, cand, start, cnt, hoff, nextafterf(GDK_flt_min, 0), GDK_flt_max, abort_on_error);
+			return convert_bte_flt(src, dst, cand, start, cnt, hoff, GDK_flt_min, GDK_flt_max, abort_on_error);
 		case TYPE_dbl:
-			return convert_bte_dbl(src, dst, cand, start, cnt, hoff, nextafter(GDK_dbl_min, 0), GDK_dbl_max, abort_on_error);
+			return convert_bte_dbl(src, dst, cand, start, cnt, hoff, GDK_dbl_min, GDK_dbl_max, abort_on_error);
 		default:
 			return BUN_NONE + 1;
 		}
@@ -9738,29 +9731,29 @@ convertswitch(const void *src, int tp1, void *restrict dst, int tp, const oid *r
 		case TYPE_bte:
 			if (tp == TYPE_bit)
 				return convert_sht_bit(src, dst, cand, start, cnt, hoff, 0, 1);
-			return convert_sht_bte(src, dst, cand, start, cnt, hoff, GDK_bte_min+1, GDK_bte_max, abort_on_error);
+			return convert_sht_bte(src, dst, cand, start, cnt, hoff, GDK_bte_min, GDK_bte_max, abort_on_error);
 		case TYPE_sht:
-			return convert_sht_sht(src, dst, cand, start, cnt, hoff, GDK_sht_min+1, GDK_sht_max, abort_on_error);
+			return convert_sht_sht(src, dst, cand, start, cnt, hoff, GDK_sht_min, GDK_sht_max, abort_on_error);
 		case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 			if (tp == TYPE_oid)
 				return convert_sht_int(src, dst, cand, start, cnt, hoff, 0, GDK_int_max, abort_on_error);
 #endif
-			return convert_sht_int(src, dst, cand, start, cnt, hoff, GDK_int_min+1, GDK_int_max, abort_on_error);
+			return convert_sht_int(src, dst, cand, start, cnt, hoff, GDK_int_min, GDK_int_max, abort_on_error);
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			if (tp == TYPE_oid)
 				return convert_sht_lng(src, dst, cand, start, cnt, hoff, 0, GDK_lng_max, abort_on_error);
 #endif
-			return convert_sht_lng(src, dst, cand, start, cnt, hoff, GDK_lng_min+1, GDK_lng_max, abort_on_error);
+			return convert_sht_lng(src, dst, cand, start, cnt, hoff, GDK_lng_min, GDK_lng_max, abort_on_error);
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			return convert_sht_hge(src, dst, cand, start, cnt, hoff, GDK_hge_min+1, GDK_hge_max, abort_on_error);
+			return convert_sht_hge(src, dst, cand, start, cnt, hoff, GDK_hge_min, GDK_hge_max, abort_on_error);
 #endif
 		case TYPE_flt:
-			return convert_sht_flt(src, dst, cand, start, cnt, hoff, nextafterf(GDK_flt_min, 0), GDK_flt_max, abort_on_error);
+			return convert_sht_flt(src, dst, cand, start, cnt, hoff, GDK_flt_min, GDK_flt_max, abort_on_error);
 		case TYPE_dbl:
-			return convert_sht_dbl(src, dst, cand, start, cnt, hoff, nextafter(GDK_dbl_min, 0), GDK_dbl_max, abort_on_error);
+			return convert_sht_dbl(src, dst, cand, start, cnt, hoff, GDK_dbl_min, GDK_dbl_max, abort_on_error);
 		default:
 			return BUN_NONE + 1;
 		}
@@ -9769,29 +9762,29 @@ convertswitch(const void *src, int tp1, void *restrict dst, int tp, const oid *r
 		case TYPE_bte:
 			if (tp == TYPE_bit)
 				return convert_int_bit(src, dst, cand, start, cnt, hoff, 0, 1);
-			return convert_int_bte(src, dst, cand, start, cnt, hoff, GDK_bte_min+1, GDK_bte_max, abort_on_error);
+			return convert_int_bte(src, dst, cand, start, cnt, hoff, GDK_bte_min, GDK_bte_max, abort_on_error);
 		case TYPE_sht:
-			return convert_int_sht(src, dst, cand, start, cnt, hoff, GDK_sht_min+1, GDK_sht_max, abort_on_error);
+			return convert_int_sht(src, dst, cand, start, cnt, hoff, GDK_sht_min, GDK_sht_max, abort_on_error);
 		case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 			if (tp == TYPE_oid)
 				return convert_int_int(src, dst, cand, start, cnt, hoff, 0, GDK_int_max, abort_on_error);
 #endif
-			return convert_int_int(src, dst, cand, start, cnt, hoff, GDK_int_min+1, GDK_int_max, abort_on_error);
+			return convert_int_int(src, dst, cand, start, cnt, hoff, GDK_int_min, GDK_int_max, abort_on_error);
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			if (tp == TYPE_oid)
 				return convert_int_lng(src, dst, cand, start, cnt, hoff, 0, GDK_lng_max, abort_on_error);
 #endif
-			return convert_int_lng(src, dst, cand, start, cnt, hoff, GDK_lng_min+1, GDK_lng_max, abort_on_error);
+			return convert_int_lng(src, dst, cand, start, cnt, hoff, GDK_lng_min, GDK_lng_max, abort_on_error);
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			return convert_int_hge(src, dst, cand, start, cnt, hoff, GDK_hge_min+1, GDK_hge_max, abort_on_error);
+			return convert_int_hge(src, dst, cand, start, cnt, hoff, GDK_hge_min, GDK_hge_max, abort_on_error);
 #endif
 		case TYPE_flt:
-			return convert_int_flt(src, dst, cand, start, cnt, hoff, nextafterf(GDK_flt_min, 0), GDK_flt_max, abort_on_error);
+			return convert_int_flt(src, dst, cand, start, cnt, hoff, GDK_flt_min, GDK_flt_max, abort_on_error);
 		case TYPE_dbl:
-			return convert_int_dbl(src, dst, cand, start, cnt, hoff, nextafter(GDK_dbl_min, 0), GDK_dbl_max, abort_on_error);
+			return convert_int_dbl(src, dst, cand, start, cnt, hoff, GDK_dbl_min, GDK_dbl_max, abort_on_error);
 		default:
 			return BUN_NONE + 1;
 		}
@@ -9800,29 +9793,29 @@ convertswitch(const void *src, int tp1, void *restrict dst, int tp, const oid *r
 		case TYPE_bte:
 			if (tp == TYPE_bit)
 				return convert_lng_bit(src, dst, cand, start, cnt, hoff, 0, 1);
-			return convert_lng_bte(src, dst, cand, start, cnt, hoff, GDK_bte_min+1, GDK_bte_max, abort_on_error);
+			return convert_lng_bte(src, dst, cand, start, cnt, hoff, GDK_bte_min, GDK_bte_max, abort_on_error);
 		case TYPE_sht:
-			return convert_lng_sht(src, dst, cand, start, cnt, hoff, GDK_sht_min+1, GDK_sht_max, abort_on_error);
+			return convert_lng_sht(src, dst, cand, start, cnt, hoff, GDK_sht_min, GDK_sht_max, abort_on_error);
 		case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 			if (tp == TYPE_oid)
 				return convert_lng_int(src, dst, cand, start, cnt, hoff, 0, GDK_int_max, abort_on_error);
 #endif
-			return convert_lng_int(src, dst, cand, start, cnt, hoff, GDK_int_min+1, GDK_int_max, abort_on_error);
+			return convert_lng_int(src, dst, cand, start, cnt, hoff, GDK_int_min, GDK_int_max, abort_on_error);
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			if (tp == TYPE_oid)
 				return convert_lng_lng(src, dst, cand, start, cnt, hoff, 0, GDK_lng_max, abort_on_error);
 #endif
-			return convert_lng_lng(src, dst, cand, start, cnt, hoff, GDK_lng_min+1, GDK_lng_max, abort_on_error);
+			return convert_lng_lng(src, dst, cand, start, cnt, hoff, GDK_lng_min, GDK_lng_max, abort_on_error);
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			return convert_lng_hge(src, dst, cand, start, cnt, hoff, GDK_hge_min+1, GDK_hge_max, abort_on_error);
+			return convert_lng_hge(src, dst, cand, start, cnt, hoff, GDK_hge_min, GDK_hge_max, abort_on_error);
 #endif
 		case TYPE_flt:
-			return convert_lng_flt(src, dst, cand, start, cnt, hoff, nextafterf(GDK_flt_min, 0), GDK_flt_max, abort_on_error);
+			return convert_lng_flt(src, dst, cand, start, cnt, hoff, GDK_flt_min, GDK_flt_max, abort_on_error);
 		case TYPE_dbl:
-			return convert_lng_dbl(src, dst, cand, start, cnt, hoff, nextafter(GDK_dbl_min, 0), GDK_dbl_max, abort_on_error);
+			return convert_lng_dbl(src, dst, cand, start, cnt, hoff, GDK_dbl_min, GDK_dbl_max, abort_on_error);
 		default:
 			return BUN_NONE + 1;
 		}
@@ -9832,27 +9825,27 @@ convertswitch(const void *src, int tp1, void *restrict dst, int tp, const oid *r
 		case TYPE_bte:
 			if (tp == TYPE_bit)
 				return convert_hge_bit(src, dst, cand, start, cnt, hoff, 0, 1);
-			return convert_hge_bte(src, dst, cand, start, cnt, hoff, GDK_bte_min+1, GDK_bte_max, abort_on_error);
+			return convert_hge_bte(src, dst, cand, start, cnt, hoff, GDK_bte_min, GDK_bte_max, abort_on_error);
 		case TYPE_sht:
-			return convert_hge_sht(src, dst, cand, start, cnt, hoff, GDK_sht_min+1, GDK_sht_max, abort_on_error);
+			return convert_hge_sht(src, dst, cand, start, cnt, hoff, GDK_sht_min, GDK_sht_max, abort_on_error);
 		case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 			if (tp == TYPE_oid)
 				return convert_hge_int(src, dst, cand, start, cnt, hoff, 0, GDK_int_max, abort_on_error);
 #endif
-			return convert_hge_int(src, dst, cand, start, cnt, hoff, GDK_int_min+1, GDK_int_max, abort_on_error);
+			return convert_hge_int(src, dst, cand, start, cnt, hoff, GDK_int_min, GDK_int_max, abort_on_error);
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			if (tp == TYPE_oid)
 				return convert_hge_lng(src, dst, cand, start, cnt, hoff, 0, GDK_lng_max, abort_on_error);
 #endif
-			return convert_hge_lng(src, dst, cand, start, cnt, hoff, GDK_lng_min+1, GDK_lng_max, abort_on_error);
+			return convert_hge_lng(src, dst, cand, start, cnt, hoff, GDK_lng_min, GDK_lng_max, abort_on_error);
 		case TYPE_hge:
-			return convert_hge_hge(src, dst, cand, start, cnt, hoff, GDK_hge_min+1, GDK_hge_max, abort_on_error);
+			return convert_hge_hge(src, dst, cand, start, cnt, hoff, GDK_hge_min, GDK_hge_max, abort_on_error);
 		case TYPE_flt:
-			return convert_hge_flt(src, dst, cand, start, cnt, hoff, nextafterf(GDK_flt_min, 0), GDK_flt_max, abort_on_error);
+			return convert_hge_flt(src, dst, cand, start, cnt, hoff, GDK_flt_min, GDK_flt_max, abort_on_error);
 		case TYPE_dbl:
-			return convert_hge_dbl(src, dst, cand, start, cnt, hoff, nextafter(GDK_dbl_min, 0), GDK_dbl_max, abort_on_error);
+			return convert_hge_dbl(src, dst, cand, start, cnt, hoff, GDK_dbl_min, GDK_dbl_max, abort_on_error);
 		default:
 			return BUN_NONE + 1;
 		}
@@ -9862,29 +9855,29 @@ convertswitch(const void *src, int tp1, void *restrict dst, int tp, const oid *r
 		case TYPE_bte:
 			if (tp == TYPE_bit)
 				return convert_flt_bit(src, dst, cand, start, cnt, hoff, 0, 1);
-			return convert_flt_bte(src, dst, cand, start, cnt, hoff, GDK_bte_min+1, GDK_bte_max, abort_on_error);
+			return convert_flt_bte(src, dst, cand, start, cnt, hoff, GDK_bte_min, GDK_bte_max, abort_on_error);
 		case TYPE_sht:
-			return convert_flt_sht(src, dst, cand, start, cnt, hoff, GDK_sht_min+1, GDK_sht_max, abort_on_error);
+			return convert_flt_sht(src, dst, cand, start, cnt, hoff, GDK_sht_min, GDK_sht_max, abort_on_error);
 		case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 			if (tp == TYPE_oid)
 				return convert_flt_int(src, dst, cand, start, cnt, hoff, 0, GDK_int_max, abort_on_error);
 #endif
-			return convert_flt_int(src, dst, cand, start, cnt, hoff, GDK_int_min+1, GDK_int_max, abort_on_error);
+			return convert_flt_int(src, dst, cand, start, cnt, hoff, GDK_int_min, GDK_int_max, abort_on_error);
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			if (tp == TYPE_oid)
 				return convert_flt_lng(src, dst, cand, start, cnt, hoff, 0, GDK_lng_max, abort_on_error);
 #endif
-			return convert_flt_lng(src, dst, cand, start, cnt, hoff, GDK_lng_min+1, GDK_lng_max, abort_on_error);
+			return convert_flt_lng(src, dst, cand, start, cnt, hoff, GDK_lng_min, GDK_lng_max, abort_on_error);
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			return convert_flt_hge(src, dst, cand, start, cnt, hoff, GDK_hge_min+1, GDK_hge_max, abort_on_error);
+			return convert_flt_hge(src, dst, cand, start, cnt, hoff, GDK_hge_min, GDK_hge_max, abort_on_error);
 #endif
 		case TYPE_flt:
-			return convert_flt_flt(src, dst, cand, start, cnt, hoff, nextafterf(GDK_flt_min, 0), GDK_flt_max, abort_on_error);
+			return convert_flt_flt(src, dst, cand, start, cnt, hoff, GDK_flt_min, GDK_flt_max, abort_on_error);
 		case TYPE_dbl:
-			return convert_flt_dbl(src, dst, cand, start, cnt, hoff, nextafter(GDK_dbl_min, 0), GDK_dbl_max, abort_on_error);
+			return convert_flt_dbl(src, dst, cand, start, cnt, hoff, GDK_dbl_min, GDK_dbl_max, abort_on_error);
 		default:
 			return BUN_NONE + 1;
 		}
@@ -9893,29 +9886,29 @@ convertswitch(const void *src, int tp1, void *restrict dst, int tp, const oid *r
 		case TYPE_bte:
 			if (tp == TYPE_bit)
 				return convert_dbl_bit(src, dst, cand, start, cnt, hoff, 0, 1);
-			return convert_dbl_bte(src, dst, cand, start, cnt, hoff, GDK_bte_min+1, GDK_bte_max, abort_on_error);
+			return convert_dbl_bte(src, dst, cand, start, cnt, hoff, GDK_bte_min, GDK_bte_max, abort_on_error);
 		case TYPE_sht:
-			return convert_dbl_sht(src, dst, cand, start, cnt, hoff, GDK_sht_min+1, GDK_sht_max, abort_on_error);
+			return convert_dbl_sht(src, dst, cand, start, cnt, hoff, GDK_sht_min, GDK_sht_max, abort_on_error);
 		case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 			if (tp == TYPE_oid)
 				return convert_dbl_int(src, dst, cand, start, cnt, hoff, 0, GDK_int_max, abort_on_error);
 #endif
-			return convert_dbl_int(src, dst, cand, start, cnt, hoff, GDK_int_min+1, GDK_int_max, abort_on_error);
+			return convert_dbl_int(src, dst, cand, start, cnt, hoff, GDK_int_min, GDK_int_max, abort_on_error);
 		case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 			if (tp == TYPE_oid)
 				return convert_dbl_lng(src, dst, cand, start, cnt, hoff, 0, GDK_lng_max, abort_on_error);
 #endif
-			return convert_dbl_lng(src, dst, cand, start, cnt, hoff, GDK_lng_min+1, GDK_lng_max, abort_on_error);
+			return convert_dbl_lng(src, dst, cand, start, cnt, hoff, GDK_lng_min, GDK_lng_max, abort_on_error);
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			return convert_dbl_hge(src, dst, cand, start, cnt, hoff, GDK_hge_min+1, GDK_hge_max, abort_on_error);
+			return convert_dbl_hge(src, dst, cand, start, cnt, hoff, GDK_hge_min, GDK_hge_max, abort_on_error);
 #endif
 		case TYPE_flt:
-			return convert_dbl_flt(src, dst, cand, start, cnt, hoff, nextafterf(GDK_flt_min, 0), GDK_flt_max, abort_on_error);
+			return convert_dbl_flt(src, dst, cand, start, cnt, hoff, GDK_flt_min, GDK_flt_max, abort_on_error);
 		case TYPE_dbl:
-			return convert_dbl_dbl(src, dst, cand, start, cnt, hoff, nextafter(GDK_dbl_min, 0), GDK_dbl_max, abort_on_error);
+			return convert_dbl_dbl(src, dst, cand, start, cnt, hoff, GDK_dbl_min, GDK_dbl_max, abort_on_error);
 		default:
 			return BUN_NONE + 1;
 		}
@@ -10034,7 +10027,7 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 	if (tp == TYPE_void)
 		tp = TYPE_oid;
 
-	if (b->ttype == TYPE_void && b->tseqbase == oid_nil)
+	if (b->ttype == TYPE_void && is_oid_nil(b->tseqbase))
 		return BATconstant(hseq, tp, ATOMnilptr(tp), cnt, TRANSIENT);
 
 	bn = COLnew(hseq, tp, cnt, TRANSIENT);
@@ -10081,7 +10074,7 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 	}
 	if (ATOMstorage(v->vtype) == TYPE_str) {
 		void *p = NULL;
-		int l = 0;
+		size_t l = 0;
 
 		if (ATOMbasetype(ret->vtype) == TYPE_str) {
 			ret->val.sval = GDKstrdup(v->val.sval);
@@ -10089,7 +10082,7 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 			return ret->val.sval ? GDK_SUCCEED : GDK_FAIL;
 		}
 
-		if (ATOMfromstr(ret->vtype, &p, &l, v->val.sval) < (int) strlen(v->val.sval)) {
+		if (ATOMfromstr(ret->vtype, &p, &l, v->val.sval) < (ssize_t) strlen(v->val.sval)) {
 			GDKfree(p);
 			GDKerror("22018!conversion of string "
 				 "'%s' to type %s failed.\n",
@@ -10103,8 +10096,13 @@ VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error)
 	if (ATOMbasetype(ret->vtype) == TYPE_str) {
 		ret->val.sval = NULL;
 		ret->len = 0;
-		(*BATatoms[v->vtype].atomToStr)(&ret->val.sval, &ret->len, VALptr(v));
-		return ret->val.sval ? GDK_SUCCEED : GDK_FAIL;
+		if ((*BATatoms[v->vtype].atomToStr)(&ret->val.sval, &ret->len, VALptr(v)) < 0) {
+			GDKfree(ret->val.sval);
+			ret->val.sval = NULL;
+			ret->len = 0;
+			return GDK_FAIL;
+		}
+		return GDK_SUCCEED;
 	}
 	nils = convertswitch(VALptr(v), v->vtype, VALget(ret), ret->vtype, NULL, 0, 1, 0, abort_on_error);
 	if (nils == BUN_NONE + 1)

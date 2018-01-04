@@ -12,8 +12,8 @@
  * This module contains primitives for accessing data in LiDAR file format.
  */
 
-#include <monetdb_config.h>
-#include <glob.h>
+#include "monetdb_config.h"
+#include "glob.h"
 
 /* clash with GDK? */
 // #undef ttype
@@ -22,13 +22,13 @@
 #include <liblas/capi/las_version.h>
 #include <liblas/capi/las_config.h>
 
-#include <lidar.h>
-#include <mutils.h>
-#include <sql_mvc.h>
-#include <sql_scenario.h>
-#include <sql.h>
-#include <clients.h>
-#include <mal_exception.h>
+#include "lidar.h"
+#include "mutils.h"
+#include "sql_mvc.h"
+#include "sql_scenario.h"
+#include "sql.h"
+#include "clients.h"
+#include "mal_exception.h"
 
 #define LIDAR_INS_COL "INSERT INTO lidar_columns(id, name, type, units, number, table_id) \
 	 VALUES(%d,'%s','%s','%s',%d,%d);"
@@ -672,7 +672,7 @@ str LIDARattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* check if the file is already attached */
 	col = mvc_bind_column(m, lidar_fl, "name");
 	rid = table_funcs.column_find_row(m->session->tr, col, fname, NULL);
-	if (rid != oid_nil) {
+	if (!is_oid_nil(rid)) {
 		MT_lock_set(&mt_lidar_lock);
                 if (header != NULL) LASHeader_Destroy(header);
                 if (reader != NULL) LASReader_Destroy(reader);
@@ -707,7 +707,7 @@ str LIDARattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	rid = table_funcs.column_find_row(m->session->tr, col, tname_low, NULL);
 	/* or as regular SQL table */
 	tbl = mvc_bind_table(m, sch, tname_low);
-	if (rid != oid_nil || tbl) {
+	if (!is_oid_nil(rid) || tbl) {
 		MT_lock_set(&mt_lidar_lock);
                 if (header != NULL) LASHeader_Destroy(header);
                 if (reader != NULL) LASReader_Destroy(reader);
@@ -895,7 +895,7 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	col = mvc_bind_column(m, lidar_tbl, "name");
 	rid = table_funcs.column_find_row(m->session->tr, col, tname, NULL);
-	if (rid == oid_nil) {
+	if (is_oid_nil(rid)) {
 		msg = createException(MAL, "lidar.loadtable", SQLSTATE(LI000) "Table %s is unknown to the LIDAR catalog. Attach first the containing file\n", tname);
 		return msg;
 	}
@@ -1003,7 +1003,7 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			double t = LASPoint_GetTime(p);
 			char anglerank = LASPoint_GetScanAngleRank (p);
 			unsigned short sourceid = LASPoint_GetPointSourceId (p);
-				fprintf(stderr, 
+			fprintf(stderr,
 				"(point # %d)"
 				"X (raw)           : %f (%ld)\n"
 				"Z (raw)           : %f (%ld)\n"

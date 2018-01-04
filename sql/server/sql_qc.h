@@ -9,10 +9,10 @@
 #ifndef _SQL_QC_H_
 #define _SQL_QC_H_
 
-#include <sql_mem.h>
-#include <sql_list.h>
-#include <sql_symbol.h>
-#include <sql_backend.h>
+#include "sql_mem.h"
+#include "sql_list.h"
+#include "sql_symbol.h"
+#include "sql_backend.h"
 
 #define DEFAULT_CACHESIZE 100
 typedef struct cq {
@@ -29,6 +29,7 @@ typedef struct cq {
 	int key;		/* the hash key for the query text */
 	char *codestring;	/* keep code in string form to aid debugging */
 	char *name;		/* name of cache query */
+	int no_mitosis;		/* run query without mitosis */
 	int count;		/* number of times the query is matched */
 } cq;
 
@@ -44,7 +45,7 @@ extern void qc_destroy(qc *cache);
 extern void qc_clean(qc *cache);
 extern cq *qc_find(qc *cache, int id);
 extern cq *qc_match(qc *cache, symbol *s, atom **params, int plen, int key);
-extern cq *qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname, symbol *s, atom **params, int paramlen, int key, int type, char *codedstr);
+extern cq *qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname, symbol *s, atom **params, int paramlen, int key, int type, char *codedstr, int no_mitosis);
 extern void qc_delete(qc *cache, cq *q);
 extern int qc_size(qc *cache);
 extern int qc_isaquerytemplate(char *nme);

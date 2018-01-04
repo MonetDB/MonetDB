@@ -33,9 +33,9 @@
  * components that do facilitate the cloud, such as Merovingian.
  */
 #include "monetdb_config.h"
-#include <mal.h>
-#include <mal_exception.h>
-#include <mal_sabaoth.h>	/* for the implementation of the functions */
+#include "mal.h"
+#include "mal_exception.h"
+#include "mal_sabaoth.h"	/* for the implementation of the functions */
 #include "sabaoth.h"
 
 str SABprelude(void *ret) {
@@ -112,6 +112,10 @@ str SABgetLocalConnectionHost(str *ret) {
 
 	*ret = GDKstrdup(con + 3);
 	GDKfree(tmp);
+	if( *ret == NULL) {
+		p = createException(MAL, "sabaoth.getLocalConnectionHost", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return(p);
+	}
 	return(MAL_SUCCEED);
 }
 

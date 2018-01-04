@@ -9,7 +9,7 @@
 #ifndef _SQL_MEM_H_
 #define _SQL_MEM_H_
 
-#include <gdk.h>
+#include "gdk.h"
 
 #define SQL_OK 	1
 #define SQL_ERR 0
@@ -62,9 +62,9 @@ typedef struct sql_allocator {
 
 extern sql_allocator *sa_create(void);
 extern sql_allocator *sa_reset( sql_allocator *sa );
-extern char *sa_alloc( sql_allocator *sa,  size_t sz );
-extern char *sa_zalloc( sql_allocator *sa,  size_t sz );
-extern char *sa_realloc( sql_allocator *sa,  void *ptr, size_t sz, size_t osz );
+extern void *sa_alloc( sql_allocator *sa,  size_t sz );
+extern void *sa_zalloc( sql_allocator *sa,  size_t sz );
+extern void *sa_realloc( sql_allocator *sa,  void *ptr, size_t sz, size_t osz );
 extern void sa_destroy( sql_allocator *sa );
 extern char *sa_strndup( sql_allocator *sa, const char *s, size_t l);
 extern char *sa_strdup( sql_allocator *sa, const char *s);
@@ -88,7 +88,7 @@ extern size_t sa_size( sql_allocator *sa );
 			fprintf(stderr,					\
 				"#sa_alloc(" PTRFMT "," SZFMT ") -> " PTRFMT \
 				" %s[%s:%d]\n",				\
-				_sa, _sz, PTRFMTCAST _res,		\
+				PTRFMTCAST _sa, _sz, PTRFMTCAST _res,	\
 				__func__, __FILE__, __LINE__);		\
 		_res;							\
 	})
@@ -101,7 +101,7 @@ extern size_t sa_size( sql_allocator *sa );
 			fprintf(stderr,					\
 				"#sa_zalloc(" PTRFMT "," SZFMT ") -> " PTRFMT \
 				" %s[%s:%d]\n",				\
-				_sa, _sz, PTRFMTCAST _res,		\
+				PTRFMTCAST _sa, _sz, PTRFMTCAST _res,	\
 				__func__, __FILE__, __LINE__);		\
 		_res;							\
 	})
@@ -116,7 +116,7 @@ extern size_t sa_size( sql_allocator *sa );
 			fprintf(stderr,					\
 				"#sa_realloc(" PTRFMT "," PTRFMT "," SZFMT "," SZFMT ") -> " PTRFMT \
 				" %s[%s:%d]\n",				\
-				_sa, PTRFMTCAST _ptr, _sz, _osz,	\
+				PTRFMTCAST _sa, PTRFMTCAST _ptr, _sz, _osz, \
 				PTRFMTCAST _res,			\
 				__func__, __FILE__, __LINE__);		\
 		_res;							\
@@ -130,7 +130,7 @@ extern size_t sa_size( sql_allocator *sa );
 			fprintf(stderr,					\
 				"#sa_strdup(" PTRFMT ",len=" SZFMT ") -> " PTRFMT \
 				" %s[%s:%d]\n",				\
-				_sa, strlen(_s), PTRFMTCAST _res,	\
+				PTRFMTCAST _sa, strlen(_s), PTRFMTCAST _res, \
 				__func__, __FILE__, __LINE__);		\
 		_res;							\
 	})
@@ -144,7 +144,7 @@ extern size_t sa_size( sql_allocator *sa );
 			fprintf(stderr,					\
 				"#sa_strndup(" PTRFMT ",len=" SZFMT ") -> " PTRFMT \
 				" %s[%s:%d]\n",				\
-				_sa, _l, PTRFMTCAST _res,		\
+				PTRFMTCAST _sa, _l, PTRFMTCAST _res,	\
 				__func__, __FILE__, __LINE__);		\
 		_res;							\
 	})

@@ -148,22 +148,17 @@ these are supported.
 Specify the portnumber of the server (default:
 .BR 50000 ).
 .TP
-\fB\-\-interactive\fP[\fB=\fP\fItimermode\fP] (\fB\-i\fP[\fItimermode\fP])
+\fB\-\-interactive\fP
 When reading from standard input, interpret lines starting with
 .B \e
 (backslash) specially.
 See the section BACKSLASH COMMANDS below.
-This is the default if standard input is a terminal.
-The optional \fItimermode\fP argument controls the
-format of the time reported for queries.
-Note that no space is allowed between
-.B \-i
-and
-.IR timermode .
-The default mode is
-\fBhuman\fP which adjusts the time precision to the measured value.
-The modes \fBms\fP, \fBs\fP and \fBm\fP force millisecond, second and
-minute + second precision respectively.
+
+\fB\-\-timer\fP[\fB=\fP\fItimermode\fP] 
+The \fItimer\fP command controls the format of the time reported for queries.
+The default mode is \fBclock\fP which reports on the wall-clock time in a human friendly way.
+The timer mode \fBnone\fP turns off timing reporting.
+The timer mode \fBperformance\fP shows the timing components in millisecond resolution.
 .TP
 \fB\-\-user\fP\fB=\fP\fIuser\fP (\fB\-u\fP \fIuser\fP)
 Specify the user to connect as.

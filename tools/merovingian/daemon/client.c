@@ -8,9 +8,7 @@
 
 #include "monetdb_config.h"
 
-#include <stdio.h>
 #include <string.h>  /* strerror, strchr, strcmp */
-#include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -21,12 +19,12 @@
 #endif
 #include <fcntl.h>
 
-#include <msabaoth.h>
-#include <mcrypt.h>
-#include <stream.h>
-#include <stream_socket.h>
-#include <utils/utils.h> /* freeConfFile */
-#include <utils/properties.h> /* readProps */
+#include "msabaoth.h"
+#include "mcrypt.h"
+#include "stream.h"
+#include "stream_socket.h"
+#include "utils/utils.h" /* freeConfFile */
+#include "utils/properties.h" /* readProps */
 
 #include "merovingian.h"
 #include "forkmserver.h"

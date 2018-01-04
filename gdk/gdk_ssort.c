@@ -216,8 +216,8 @@ merge_getmem(MergeState *ms, ssize_t need, void **ap,
 #ifdef HAVE_HGE
 #define ISLT_hge(X, Y, ms)	(* (hge *) (X) < * (hge *) (Y))
 #endif
-#define ISLT_flt(X, Y, ms)	(* (flt *) (X) < * (flt *) (Y))
-#define ISLT_dbl(X, Y, ms)	(* (dbl *) (X) < * (dbl *) (Y))
+#define ISLT_flt(X, Y, ms)	(!is_flt_nil(*(flt*)(Y)) && (is_flt_nil(*(flt*)(X)) || *(flt*)(X) < *(flt*)(Y)))
+#define ISLT_dbl(X, Y, ms)	(!is_dbl_nil(*(dbl*)(Y)) && (is_dbl_nil(*(dbl*)(X)) || *(dbl*)(X) < *(dbl*)(Y)))
 #define ISLT_oid(X, Y, ms)	(* (oid *) (X) < * (oid *) (Y))
 #define ISLT_bte_rev(X, Y, ms)	(* (bte *) (X) > * (bte *) (Y))
 #define ISLT_sht_rev(X, Y, ms)	(* (sht *) (X) > * (sht *) (Y))
@@ -226,8 +226,8 @@ merge_getmem(MergeState *ms, ssize_t need, void **ap,
 #ifdef HAVE_HGE
 #define ISLT_hge_rev(X, Y, ms)	(* (hge *) (X) > * (hge *) (Y))
 #endif
-#define ISLT_flt_rev(X, Y, ms)	(* (flt *) (X) > * (flt *) (Y))
-#define ISLT_dbl_rev(X, Y, ms)	(* (dbl *) (X) > * (dbl *) (Y))
+#define ISLT_flt_rev(X, Y, ms)	(!is_flt_nil(*(flt*)(X)) && (is_flt_nil(*(flt*)(Y)) || *(flt*)(X) > *(flt*)(Y)))
+#define ISLT_dbl_rev(X, Y, ms)	(!is_dbl_nil(*(dbl*)(X)) && (is_dbl_nil(*(dbl*)(Y)) || *(dbl*)(X) > *(dbl*)(Y)))
 #define ISLT_oid_rev(X, Y, ms)	(* (oid *) (X) > * (oid *) (Y))
 
 /* Reverse a slice of a list in place, from lo up to (exclusive) hi. */

@@ -7,12 +7,12 @@
  */
 
 /* (author) M. Kersten */
-#include <monetdb_config.h>
-#include <mal.h>
+#include "monetdb_config.h"
+#include "mal.h"
 
-char 	monet_cwd[PATHLENGTH] = { 0 };
+char 	monet_cwd[FILENAME_MAX] = { 0 };
 size_t 	monet_memory = 0;
-char 	monet_characteristics[PATHLENGTH];
+char 	monet_characteristics[4096];
 int		mal_trace;		/* enable profile events on console */
 str     mal_session_uuid;   /* unique marker for the session */
 
@@ -121,6 +121,8 @@ int mal_init(void){
  * activity first.
  * This function should be called after you have issued sql_reset();
  */
+void cleanOptimizerPipe(void);
+
 void mserver_reset(int exit)
 {
 	str err = 0;

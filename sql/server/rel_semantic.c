@@ -19,7 +19,6 @@
 #include "rel_exp.h"
 
 #include <unistd.h>
-#include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -30,6 +29,8 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	mvc o = *m;
 	sql_rel *rel = NULL;
 	buffer *b;
+	bstream *bs;
+	stream *buf;
 	char *n;
 	int len = _strlen(query);
 	sql_schema *c = cur_schema(m);
@@ -56,9 +57,17 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	query[len+1] = 0;
 	len++;
 	buffer_init(b, query, len);
-	scanner_init( &m->scanner, 
-		bstream_create(buffer_rastream(b, "sqlstatement"), b->len),
-		NULL);
+	buf = buffer_rastream(b, "sqlstatement");
+	if(buf == NULL) {
+		buffer_destroy(b);
+		return NULL;
+	}
+	bs = bstream_create(buf, b->len);
+	if(bs == NULL) {
+		buffer_destroy(b);
+		return NULL;
+	}
+	scanner_init( &m->scanner, bs, NULL);
 	m->scanner.mode = LINE_1; 
 	bstream_next(m->scanner.rs);
 
@@ -89,11 +98,14 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 		strcpy(m->errstr, errstr);
 	} else {
 		int label = m->label;
+		list *sqs = m->sqs;
+
 		while (m->topvars > o.topvars) {
 			if (m->vars[--m->topvars].name)
 				c_delete(m->vars[m->topvars].name);
 		}
 		*m = o;
+		m->sqs = sqs;
 		m->label = label;
 	}
 	m->session->schema = c;
@@ -180,7 +192,8 @@ rel_semantic(mvc *sql, symbol *s)
 		dnode *d;
 		sql_rel *r = NULL;
 
-		stack_push_frame(sql, "MUL");
+		if(!stack_push_frame(sql, "MUL"))
+			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		for (d = s->data.lval->h; d; d = d->next) {
 			symbol *sym = d->data.sym;
 			sql_rel *nr = rel_semantic(sql, sym);

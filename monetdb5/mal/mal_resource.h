@@ -18,7 +18,7 @@
 
 //#define heapinfo(X,Id)	(((X) && (X)->base && ((X)->parentid == 0 || (X)->parentid == Id)) ? (X)->free : 0)
 #define heapinfo(X,Id)	(((X) && (X)->base ) ? (X)->free : 0)
-#define hashinfo(X,Id) ((X) && (X) != (Hash *) 1 ? heapinfo((X)->heap, Id) : 0)
+#define hashinfo(X,Id) ((X) && (X) != (Hash *) 1 ? heapinfo(&(X)->heap, Id) : 0)
 
 #define USE_MAL_ADMISSION
 #ifdef USE_MAL_ADMISSION

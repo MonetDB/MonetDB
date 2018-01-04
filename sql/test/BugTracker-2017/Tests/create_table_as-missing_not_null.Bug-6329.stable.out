@@ -74,7 +74,7 @@ CREATE TABLE "sys"."a_6329" (
 #create table b_6329 as select * from a_6329 with no data;
 CREATE TABLE "sys"."b_6329" (
 	"x" INTEGER,
-	"y" INTEGER       NOT NULL
+	"y" INTEGER
 );
 #DROP TABLE a_6329;
 #DROP TABLE b_6329;
@@ -86,9 +86,8 @@ CREATE TABLE "sys"."a_pk_6329" (
 );
 #create table b_pk_6329 as select * from a_pk_6329 with no data;
 CREATE TABLE "sys"."b_pk_6329" (
-	"x" INTEGER       NOT NULL,
-	"y" INTEGER       NOT NULL,
-	CONSTRAINT "b_pk_6329_x_pkey" PRIMARY KEY ("x")
+	"x" INTEGER,
+	"y" INTEGER
 );
 #DROP TABLE a_pk_6329;
 #DROP TABLE b_pk_6329;

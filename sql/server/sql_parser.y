@@ -8,7 +8,7 @@
 
 %{
 #include "monetdb_config.h"
-#include <sql_mem.h>
+#include "sql_mem.h"
 #include "sql_parser.h"
 #include "sql_symbol.h"
 #include "sql_datetime.h"
@@ -22,7 +22,6 @@
 
 #include <unistd.h>
 #include <string.h>
-#include <stdlib.h>
 
 #define SA 	m->sa
 #define _symbol_create(t,d)         symbol_create( SA, t, d)
@@ -592,7 +591,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token CHECK CONSTRAINT CREATE
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE 
-%token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREPARE EXECUTE
+%token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREP PREPARE EXEC EXECUTE
 %token DEFAULT DISTINCT DROP
 %token FOREIGN
 %token RENAME ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
@@ -629,7 +628,7 @@ sqlstmt:
 		YYACCEPT;
 	}
 
- | PREPARE 		{
+ | prepare 		{
 		  	  m->emode = m_prepare; 
 			  m->scanner.as = m->scanner.yycur; 
 			  m->scanner.key = 0;
@@ -697,22 +696,34 @@ sqlstmt:
  ;
 
 
+prepare:
+       PREPARE
+ |     PREP
+ ; 
+
+execute:
+       EXECUTE
+ |     EXEC
+ ; 
+
+
 create:
     CREATE  { $$ = FALSE; }
 
 create_or_replace:
 	create
 |	CREATE OR REPLACE { $$ = TRUE; }
-
+;
 
 if_exists:
 	/* empty */   { $$ = FALSE; }
 |	IF EXISTS     { $$ = TRUE; }
+;
 
 if_not_exists:
 	/* empty */   { $$ = FALSE; }
 |	IF NOT EXISTS { $$ = TRUE; }
-
+;
 
 drop:
     DROP 		
@@ -1011,7 +1022,7 @@ operation:
  |  UPDATE opt_column_list          { $$ = _symbol_create_list(SQL_UPDATE,$2); }
  |  SELECT opt_column_list	    { $$ = _symbol_create_list(SQL_SELECT,$2); }
  |  REFERENCES opt_column_list 	    { $$ = _symbol_create_list(SQL_SELECT,$2); }
- |  EXECUTE			    { $$ = _symbol_create(SQL_EXECUTE,NULL); }
+ |  execute			    { $$ = _symbol_create(SQL_EXECUTE,NULL); }
  ;
 
 grantee_commalist:
@@ -1828,17 +1839,17 @@ func_def:
   | create_or_replace FUNCTION qname
 	'(' opt_paramlist ')'
     RETURNS func_data_type
-    LANGUAGE IDENT function_body { 
+    LANGUAGE IDENT function_body
+		{
 			int lang = 0;
 			dlist *f = L();
 			char l = *$10;
 
 			if (l == 'R' || l == 'r')
 				lang = FUNC_LANG_R;
-			else if (l == 'P' || l == 'p')
-            {
-            	// code does not get cleaner than this people
-                if (strcasecmp($10, "PYTHON_MAP") == 0) {
+			else if (l == 'P' || l == 'p') {
+				// code does not get cleaner than this people
+				if (strcasecmp($10, "PYTHON_MAP") == 0) {
 					lang = FUNC_LANG_MAP_PY;
                 } else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
                 	lang = FUNC_LANG_MAP_PY3;
@@ -1852,8 +1863,13 @@ func_def:
                 	lang = FUNC_LANG_PY;
                 }
             }
-			else if (l == 'C' || l == 'c')
-				lang = FUNC_LANG_C;
+			else if (l == 'C' || l == 'c') {
+                if (strcasecmp($10, "CPP") == 0) {
+					lang = FUNC_LANG_CPP;
+				} else {
+					lang = FUNC_LANG_C;
+				}
+			}
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;
 			else {
@@ -1865,12 +1881,13 @@ func_def:
 			append_list(f, $3);
 			append_list(f, $5);
 			append_symbol(f, $8);
-			append_list(f, NULL); 
+			append_list(f, NULL);
 			append_list(f, append_string(L(), $11));
 			append_int(f, F_FUNC);
 			append_int(f, lang);
 			append_int(f, $1);
-			$$ = _symbol_create_list( SQL_CREATE_FUNC, f ); }
+			$$ = _symbol_create_list( SQL_CREATE_FUNC, f );
+		}
   | create_or_replace FILTER FUNCTION qname
 	'(' opt_paramlist ')'
     EXTERNAL sqlNAME external_function_name 	
@@ -1902,16 +1919,16 @@ func_def:
   | create_or_replace AGGREGATE qname
 	'(' opt_paramlist ')'
     RETURNS func_data_type
-    LANGUAGE IDENT function_body { 
+    LANGUAGE IDENT function_body
+		{
 			int lang = 0;
 			dlist *f = L();
 			char l = *$10;
 
 			if (l == 'R' || l == 'r')
 				lang = FUNC_LANG_R;
-			else if (l == 'P' || l == 'p')
-            {
-                if (strcasecmp($10, "PYTHON_MAP") == 0) {
+			else if (l == 'P' || l == 'p') {
+				if (strcasecmp($10, "PYTHON_MAP") == 0) {
 					lang = FUNC_LANG_MAP_PY;
                 } else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
                 	lang = FUNC_LANG_MAP_PY3;
@@ -1925,8 +1942,13 @@ func_def:
                 	lang = FUNC_LANG_PY;
                 }
             }
-			else if (l == 'C' || l == 'c')
-				lang = FUNC_LANG_C;
+            else if (l == 'C' || l == 'c') {
+                if (strcasecmp($10, "CPP") == 0) {
+					lang = FUNC_LANG_CPP;
+				} else {
+					lang = FUNC_LANG_C;
+				}
+			}
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;
 			else {
@@ -1978,11 +2000,9 @@ func_def:
 			dlist *f = L();
 			char l = *$8;
 			/* other languages here if we ever get to it */
-			if (l == 'P' || l == 'p')
-            {
-                lang = FUNC_LANG_PY;
-            }
-			else
+			if (l == 'P' || l == 'p') {
+				lang = FUNC_LANG_PY;
+			} else
 				yyerror(m, sql_message("Language name P(ython) expected, received '%c'", l));
 
 			append_list(f, $3);
@@ -2874,7 +2894,12 @@ null:
 		/* replace by argument */
 		atom *a = atom_general(SA, sql_bind_localtype("void"), NULL);
 
-		sql_add_arg( m, a);
+		if(!sql_add_arg( m, a)) {
+			char *msg = sql_message(SQLSTATE(HY001) "allocation failure");
+			yyerror(m, msg);
+			_DELETE(msg);
+			YYABORT;
+		}
 		$$ = _symbol_create_list( SQL_COLUMN,
 			append_int(L(), m->argc-1));
 	   } else {
@@ -3481,7 +3506,7 @@ like_exp:
  |  scalar_exp ESCAPE string
  	{ const char *s = sql2str($3);
 	  if (_strlen(s) != 1) {
-		yyerror(m, SQLSTATE(22025) "ESCAPE must be one character");
+		yyerror(m, SQLSTATE(22019) "ESCAPE must be one character");
 		$$ = NULL;
 		YYABORT;
 	  } else {
@@ -3951,7 +3976,7 @@ window_frame_end:
   ;
 
 window_frame_following:
-	value_exp PRECEDING	{ $$ = $1; }
+	value_exp FOLLOWING	{ $$ = $1; }
   ;
 
 window_frame_exclusion:
@@ -4144,27 +4169,33 @@ column_exp:
 opt_alias_name:
     /* empty */	{ $$ = NULL; }
  |  AS ident	{ $$ = $2; }
+ |  ident	{ $$ = $1; }
  ;
 
 atom:
     literal
 	{ 
-	  if (m->emode == m_normal && m->caching) { 
-	  	/* replace by argument */
-	  	AtomNode *an = (AtomNode*)$1;
-	
-	  	sql_add_arg( m, an->a);
+	  if (m->emode == m_normal && m->caching) {
+		/* replace by argument */
+		AtomNode *an = (AtomNode*)$1;
+
+		if(!sql_add_arg( m, an->a)) {
+			char *msg = sql_message(SQLSTATE(HY001) "allocation failure");
+			yyerror(m, msg);
+			_DELETE(msg);
+			YYABORT;
+		}
 		an->a = NULL;
-	  	/* we miss use SQL_COLUMN also for param's, maybe
-	     		change SQL_COLUMN to SQL_IDENT */
- 	  	$$ = _symbol_create_list( SQL_COLUMN,
+		/* we miss use SQL_COLUMN also for param's, maybe
+				change SQL_COLUMN to SQL_IDENT */
+		$$ = _symbol_create_list( SQL_COLUMN,
 			append_int(L(), m->argc-1));
-	   } else {
-	  	AtomNode *an = (AtomNode*)$1;
+	  } else {
+		AtomNode *an = (AtomNode*)$1;
 		atom *a = an->a; 
 		an->a = atom_dup(SA, a); 
 		$$ = $1;
-	   }
+	  }
 	}
  ;
 
@@ -4423,16 +4454,16 @@ literal:
 		  }
 		}
  |  OIDNUM
-		{ int err = 0, len = sizeof(lng);
+		{ int err = 0;
+		  size_t len = sizeof(lng);
 		  lng value, *p = &value;
 		  sql_subtype t;
 
-		  lngFromStr($1, &len, &p);
-		  if (value == lng_nil)
+		  if (lngFromStr($1, &len, &p) < 0 || is_lng_nil(value))
 		  	err = 2;
 
 		  if (!err) {
-		    if ((value > GDK_lng_min && value <= GDK_lng_max))
+		    if ((value >= GDK_lng_min && value <= GDK_lng_max))
 #if SIZEOF_OID == SIZEOF_INT
 		  	  sql_find_subtype(&t, "oid", 31, 0 );
 #else
@@ -4457,22 +4488,20 @@ literal:
 		{ int digits = _strlen($1), err = 0;
 #ifdef HAVE_HGE
 		  hge value, *p = &value;
-		  int len = sizeof(hge);
+		  size_t len = sizeof(hge);
 		  const hge one = 1;
 #else
 		  lng value, *p = &value;
-		  int len = sizeof(lng);
+		  size_t len = sizeof(lng);
 		  const lng one = 1;
 #endif
 		  sql_subtype t;
 
 #ifdef HAVE_HGE
-		  hgeFromStr($1, &len, &p);
-		  if (value == hge_nil)
+		  if (hgeFromStr($1, &len, &p) < 0 || is_hge_nil(value))
 		  	err = 2;
 #else
-		  lngFromStr($1, &len, &p);
-		  if (value == lng_nil)
+		  if (lngFromStr($1, &len, &p) < 0 || is_lng_nil(value))
 		  	err = 2;
 #endif
 
@@ -4489,16 +4518,16 @@ literal:
 		       (bits == 8 || bits == 16 || bits == 32 || bits == 64))
 				bits++;
 		
-		    if (value > GDK_bte_min && value <= GDK_bte_max)
+		    if (value >= GDK_bte_min && value <= GDK_bte_max)
 		  	  sql_find_subtype(&t, "tinyint", bits, 0 );
-		    else if (value > GDK_sht_min && value <= GDK_sht_max)
+		    else if (value >= GDK_sht_min && value <= GDK_sht_max)
 		  	  sql_find_subtype(&t, "smallint", bits, 0 );
-		    else if (value > GDK_int_min && value <= GDK_int_max)
+		    else if (value >= GDK_int_min && value <= GDK_int_max)
 		  	  sql_find_subtype(&t, "int", bits, 0 );
-		    else if (value > GDK_lng_min && value <= GDK_lng_max)
+		    else if (value >= GDK_lng_min && value <= GDK_lng_max)
 		  	  sql_find_subtype(&t, "bigint", bits, 0 );
 #ifdef HAVE_HGE
-		    else if (value > GDK_hge_min && value <= GDK_hge_max && have_hge)
+		    else if (value >= GDK_hge_min && value <= GDK_hge_max && have_hge)
 		  	  sql_find_subtype(&t, "hugeint", bits, 0 );
 #endif
 		    else
@@ -4543,7 +4572,7 @@ literal:
 
 			errno = 0;
 			val = strtod($1,&p);
-			if (p == $1 || val == dbl_nil || (errno == ERANGE && (val < -1 || val > 1))) {
+			if (p == $1 || is_dbl_nil(val) || (errno == ERANGE && (val < -1 || val > 1))) {
 				char *msg = sql_message(SQLSTATE(22003) "Double value too large or not a number (%s)", $1);
 
 				yyerror(m, msg);
@@ -4562,7 +4591,7 @@ literal:
 
 		  errno = 0;
  		  val = strtod($1,&p);
-		  if (p == $1 || val == dbl_nil || (errno == ERANGE && (val < -1 || val > 1))) {
+		  if (p == $1 || is_dbl_nil(val) || (errno == ERANGE && (val < -1 || val > 1))) {
 			char *msg = sql_message(SQLSTATE(22003) "Double value too large or not a number (%s)", $1);
 
 			yyerror(m, msg);
@@ -5127,7 +5156,7 @@ data_type:
 		_DELETE(msg);
 		YYABORT;
 	} else if (geoSubType == -1) {
-		char *msg = sql_message("allocation failure");
+		char *msg = sql_message(SQLSTATE(HY001) "allocation failure");
 		$$.type = NULL;
 		yyerror(m, msg);
 		_DELETE(msg);
@@ -5153,7 +5182,7 @@ subgeometry_type:
 		_DELETE(msg);
 		YYABORT;
 	} else if(subtype == -1) {
-		char *msg = sql_message("allocation failure");
+		char *msg = sql_message(SQLSTATE(HY001) "allocation failure");
 		yyerror(m, msg);
 		_DELETE(msg);
 		YYABORT;
@@ -5170,7 +5199,7 @@ subgeometry_type:
 		_DELETE(msg);
 		YYABORT;
 	} else if (subtype == -1) {
-		char *msg = sql_message("allocation failure");
+		char *msg = sql_message(SQLSTATE(HY001) "allocation failure");
 		yyerror(m, msg);
 		_DELETE(msg);
 		YYABORT;
@@ -5281,7 +5310,9 @@ non_reserved_word:
 |  WEEK 	{ $$ = sa_strdup(SA, "week"); }
 |  IMPRINTS	{ $$ = sa_strdup(SA, "imprints"); }
 
+|  PREP		{ $$ = sa_strdup(SA, "prep"); }
 |  PREPARE	{ $$ = sa_strdup(SA, "prepare"); }
+|  EXEC		{ $$ = sa_strdup(SA, "exec"); }
 |  EXECUTE	{ $$ = sa_strdup(SA, "execute"); }
 |  SQL_EXPLAIN	{ $$ = sa_strdup(SA, "explain"); }
 |  SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
@@ -5385,7 +5416,7 @@ intval:
 		      tpe->type->localtype == TYPE_sht ||
 		      tpe->type->localtype == TYPE_bte ) {
 			lng sgn = stack_get_number(m, name);
-			assert((lng) GDK_int_min < sgn && sgn <= (lng) GDK_int_max);
+			assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
 			$$ = (int) sgn;
 		  } else {
 			char *msg = sql_message(SQLSTATE(22000) "Constant (%s) has wrong type (number expected)", $1);
@@ -5409,7 +5440,7 @@ string:
  ;
 
 exec:
-     EXECUTE exec_ref
+     execute exec_ref
 		{
 		  m->emode = m_execute;
 		  $$ = $2; }
@@ -6028,6 +6059,7 @@ char *token2string(int token)
 	SQL(DECLARE);
 	SQL(SET);
 	SQL(PREP);
+	SQL(PREPARE);
 	SQL(NAME);
 	SQL(USER);
 	SQL(PATH);
@@ -6096,6 +6128,7 @@ char *token2string(int token)
 	SQL(GRANT_ROLES);
 	SQL(REVOKE);
 	SQL(REVOKE_ROLES);
+	SQL(EXEC);
 	SQL(EXECUTE);
 	SQL(PRIVILEGES);
 	SQL(ROLE);

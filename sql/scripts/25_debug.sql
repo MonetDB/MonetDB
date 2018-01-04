@@ -29,11 +29,7 @@ create function sys.optimizers ()
 create view sys.optimizers as select * from sys.optimizers();
 
 -- The environment table
-create function sys.environment()
-	returns table ("name" string, value string)
-	external name sql.sql_environment;
-create view sys.environment as select * from sys.environment();
-GRANT EXECUTE ON FUNCTION sys.environment() TO PUBLIC;
+create view sys.environment as select * from sys.env();
 GRANT SELECT ON sys.environment TO PUBLIC;
 
 -- The BAT buffer pool overview

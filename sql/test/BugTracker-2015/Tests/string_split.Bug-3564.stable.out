@@ -63,25 +63,25 @@ Ready.
 #select split_part('joeuser@mydatabase','@',1) AS "joeuser";
 % .L2 # table_name
 % joeuser # name
-% char # type
-% 18 # length
+% clob # type
+% 7 # length
 [ "joeuser"	]
 #select split_part('joeuser@mydatabase','@',2) AS "mydatabase";
 % .L2 # table_name
 % mydatabase # name
-% char # type
-% 18 # length
+% clob # type
+% 10 # length
 [ "mydatabase"	]
 #select split_part('joeuser@mydatabase','@',3) AS "empty string";
 % .L2 # table_name
 % "empty string" # name
-% char # type
-% 18 # length
+% clob # type
+% 0 # length
 [ ""	]
 #select split_part('','@',3) AS "error";
 % .L2 # table_name
 % error # name
-% char # type
+% clob # type
 % 0 # length
 [ ""	]
 #start transaction;
@@ -103,7 +103,7 @@ Ready.
 #select split_part(a,'@',1), split_part(a,'@',2) from somestrings;
 % sys.L2,	sys.L4 # table_name
 % L2,	L4 # name
-% varchar,	varchar # type
+% clob,	clob # type
 % 7,	10 # length
 [ "",	""	]
 [ " ",	""	]

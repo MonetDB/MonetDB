@@ -1145,10 +1145,14 @@ MNDBGetInfo(ODBCDbc *dbc,
 	if (sValue) {
 		copyString(sValue, strlen(sValue), InfoValuePtr, BufferLength, StringLengthPtr, SQLSMALLINT, addDbcError, dbc, return SQL_ERROR);
 	} else if (InfoValuePtr) {
-		if (len == sizeof(SQLULEN))
-			*(SQLULEN *) InfoValuePtr = (SQLULEN) nValue;
-		else if (len == sizeof(SQLUINTEGER))
+		if (len == sizeof(SQLUINTEGER))
 			*(SQLUINTEGER *) InfoValuePtr = (SQLUINTEGER) nValue;
+#ifndef SQLULEN
+		/* if SQLULEN is defined, it's defined as SQLUINTEGER
+		 * which we've handled */
+		else if (len == sizeof(SQLULEN))
+			*(SQLULEN *) InfoValuePtr = (SQLULEN) nValue;
+#endif
 		else if (len == sizeof(SQLUSMALLINT))
 			*(SQLUSMALLINT *) InfoValuePtr = (SQLUSMALLINT) nValue;
 		if (StringLengthPtr)

@@ -50,6 +50,7 @@ struct OPTcatalog {
 {"mitosis",		0,	0,	0},
 {"multiplex",	0,	0,	0},
 {"oltp",		0,	0,	0},
+{"postfix",		0,	0,	0},
 {"reduce",		0,	0,	0},
 {"remap",		0,	0,	0},
 {"remote",		0,	0,	0},
@@ -98,6 +99,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 	if ( mb->inlineProp)
         	return 0;
 
+	mb->optimize = 0;
 	if (mb->errors)
 		throw(MAL, "optimizer.MALoptimizer", "Start with inconsistent MAL plan");
 
@@ -130,16 +132,21 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 				msg = (str) (*p->fcn) (cntxt, mb, 0, p);
 				if (msg) {
 					str place = getExceptionPlace(msg);
-					str nmsg = createException(getExceptionType(msg), place, "%s", getExceptionMessageAndState(msg));
-					if (nmsg && place) {
-						freeException(msg);
-						msg = nmsg;
+					str nmsg = NULL;
+				       	if(place){
+						nmsg = createException(getExceptionType(msg), place, "%s", getExceptionMessageAndState(msg));
 						GDKfree(place);
 					}
+					if (nmsg ) {
+						freeException(msg);
+						msg = nmsg;
+					} 
 					goto wrapup;
 				}
-				if (cntxt->mode == FINISHCLIENT)
+				if (cntxt->mode == FINISHCLIENT){
+					mb->optimize = GDKusec() - clk;
 					throw(MAL, "optimizeMALBlock", "prematurely stopped client");
+				}
 				pc= -1;
 			}
 		}
@@ -176,7 +183,7 @@ MALoptimizer(Client c)
 		return MAL_SUCCEED;
 	msg= optimizeMALBlock(c, c->curprg->def);
 	if( msg == MAL_SUCCEED)
-		OPTmultiplexSimple(c, c->curprg->def);
+		msg = OPTmultiplexSimple(c, c->curprg->def);
 	return msg;
 }
 
@@ -406,7 +413,8 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		getModuleId(p) == pyapimapRef ||
 		getModuleId(p) == pyapi3Ref ||
 		getModuleId(p) == pyapi3mapRef ||
-		getModuleId(p) == rapiRef)
+		getModuleId(p) == rapiRef || 
+		getModuleId(p) == capiRef)
 		return TRUE;
 
 	if (getModuleId(p) == sqlcatalogRef)
@@ -532,7 +540,8 @@ int isMapOp(InstrPtr p){
 		 (getModuleId(p) == mkeyRef)) && !isOrderDepenent(p) &&
 		 getModuleId(p) != batrapiRef &&
 		 getModuleId(p) != batpyapiRef &&
-		 getModuleId(p) != batpyapi3Ref;
+		 getModuleId(p) != batpyapi3Ref &&
+		 getModuleId(p) != batcapiRef;
 }
 
 int isLikeOp(InstrPtr p){

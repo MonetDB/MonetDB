@@ -16,9 +16,9 @@
  * @f microbenchmark
  */
 #include "monetdb_config.h"
-#include <mal.h>
+#include "mal.h"
 #include <math.h>
-#include <mal_exception.h>
+#include "mal_exception.h"
 #include "microbenchmark.h"
 
 #ifdef STATIC_CODE_ANALYSIS
@@ -57,9 +57,9 @@ BATrandom(BAT **bn, oid *base, lng *size, int *domain, int seed)
 	val = (int *) Tloc(b, 0);
 
 	/* create BUNs with random distribution */
-	if (seed != int_nil)
+	if (!is_int_nil(seed))
 		srand(seed);
-	if (*domain == int_nil) {
+	if (is_int_nil(*domain)) {
 	        for (i = 0; i < n; i++) {
 			val[i] = rand();
 		}
@@ -353,7 +353,7 @@ MBMnormal(bat *ret, oid *base, lng *size, int *domain, int *stddev, int *mean){
 	BATnormal(&bn, base, size, domain, stddev, mean);
 	if( bn ){
 		BBPkeepref(*ret= bn->batCacheid);
-	} else throw(MAL, "microbenchmark.uniform", OPERATION_FAILED);
+	} else throw(MAL, "microbenchmark.normal", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
 
@@ -365,7 +365,7 @@ MBMmix(bat *bn, bat *batid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*batid)) == NULL)
-                throw(MAL, "microbenchmark.mix", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "microbenchmark.mix", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	n = BATcount(b);
 	/* mix BUNs randomly */
@@ -391,6 +391,6 @@ MBMskewed(bat *ret, oid *base, lng *size, int *domain, int *skew){
 	BATskewed(&bn, base, size, domain, skew);
 	if( bn ){
 		BBPkeepref(*ret= bn->batCacheid);
-	} else throw(MAL, "microbenchmark,uniform", OPERATION_FAILED);
+	} else throw(MAL, "microbenchmark.skewed", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }

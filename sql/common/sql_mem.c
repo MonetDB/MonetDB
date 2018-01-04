@@ -7,15 +7,7 @@
  */
 
 #include "monetdb_config.h"
-
-/* Stefan: 
- * "Fake-include" to make msc.py create the proper dependencies;
- * otherwise, query.h doesn't get extracted from query.mx on Windows.
- * TODO: fix msc.py instead...
-#include "query.h"
-*/
-
-#include <sql_mem.h>
+#include "sql_mem.h"
 
 sql_ref *
 sql_ref_init(sql_ref *r)
@@ -80,16 +72,16 @@ sql_allocator *sa_reset( sql_allocator *sa )
 
 #undef sa_realloc
 #undef sa_alloc
-char *sa_realloc( sql_allocator *sa, void *p, size_t sz, size_t oldsz )
+void *sa_realloc( sql_allocator *sa, void *p, size_t sz, size_t oldsz )
 {
-	char *r = sa_alloc(sa, sz);
+	void *r = sa_alloc(sa, sz);
 
-	memcpy(r, (char*)p, oldsz);
+	memcpy(r, p, oldsz);
 	return r;
 }
 
 #define round16(sz) ((sz+15)&~15)
-char *sa_alloc( sql_allocator *sa, size_t sz )
+void *sa_alloc( sql_allocator *sa, size_t sz )
 {
 	char *r;
 	sz = round16(sz);
@@ -126,9 +118,9 @@ char *sa_alloc( sql_allocator *sa, size_t sz )
 }
 
 #undef sa_zalloc
-char *sa_zalloc( sql_allocator *sa, size_t sz )
+void *sa_zalloc( sql_allocator *sa, size_t sz )
 {
-	char *r = sa_alloc(sa, sz);
+	void *r = sa_alloc(sa, sz);
 
 	if (r)
 		memset(r, 0, sz);
