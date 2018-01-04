@@ -5422,7 +5422,7 @@ drop view sys.geometry_columns cascade;
 create view sys.geometry_columns as
 	select cast(null as varchar(1)) as f_table_catalog,
 		s.name as f_table_schema,
-			t.name as f_table_name,
+		t.name as f_table_name,
 		c.name as f_geometry_column,
 		cast(has_z(c.type_digits) + has_m(c.type_digits) +2 as integer) as coord_dimension,
 		c.type_scale as srid,
@@ -5434,6 +5434,14 @@ GRANT SELECT ON sys.geometry_columns TO PUBLIC;
 update sys._tables set system = true where name = 'geometry_columns' and schema_id in (select id from schemas where name = 'sys');
 delete from sys.systemfunctions where function_id not in (select id from sys.functions);
 set schema "sys";
+
+Running database upgrade commands:
+drop view sys.environment cascade;
+drop function sys.environment() cascade;
+create view sys.environment as select * from sys.env();
+GRANT SELECT ON sys.environment TO PUBLIC;
+update sys._tables set system = true where system = false and name = 'environment' and schema_id in (select id from schemas where name = 'sys');
+delete from sys.systemfunctions where function_id not in (select id from sys.functions);
 
 
 # 16:53:35 >  
