@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*#define DEBUG*/
@@ -8862,9 +8862,17 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 						exp_label(sql->sa, col, ++sql->label);
 						append(r->exps, col);
 					}
+					/*
 				} else if (is_semi(rl->op)) {
 					sql_rel *l = rl->l;
+					if (!is_project(l->op)) 
+						rl->l = l = rel_project(sql->sa, l, rel_projections(sql, l, NULL, 1, 1));
 					col = l->exps->t->data;
+					*/
+				} else if (!is_project(rl->op)) {	
+					rl = rel_project(sql->sa, rl, rel_projections(sql, rl, NULL, 1, 1));
+					r->l = rl;
+					col = rl->exps->t->data;
 				} else if (is_project(rl->op) && rl->exps) {
 					col = rl->exps->t->data;
 					col = exp_column(sql->sa, exp_relname(col), exp_name(col), exp_subtype(col), col->card, has_nil(col), is_intern(col));
