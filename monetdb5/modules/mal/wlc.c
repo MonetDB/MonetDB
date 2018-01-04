@@ -3,11 +3,11 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
- * (c) 2017 Martin Kersten
+ * Martin Kersten
  * This module collects the workload-capture-replay statements during transaction execution,
  * also known as asynchronous logical replication management. It can be used for
  * multiple purposes: BACKUP, REPLICATION, and REPLAY
