@@ -32,16 +32,16 @@ OPTbatcalcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	return MAL_SUCCEED;
 
 	limit = mb->stop;
-        slimit = mb->ssize;
+	slimit = mb->ssize;
 	vars= (int*) GDKzalloc(sizeof(int)* mb->vtop);
 	if (vars == NULL)
 		throw(MAL,"optimizer.batcalc", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	old= mb->stmt;
-        if (newMalBlkStmt(mb, mb->ssize) < 0) {
+	if (newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(vars);
-                throw(MAL,"optimizer.batcalc", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-        }
+		throw(MAL,"optimizer.batcalc", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 
 	/* collect where variables are assigned last */
 	for ( i = 1; i < limit; i++){
