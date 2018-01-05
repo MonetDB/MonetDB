@@ -29,7 +29,7 @@ OPTbatcalcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	(void) cntxt;
 
 	// For now it is disabled, awaiting modified batcalc signatures
-	return MAL_SUCCEED;
+	if (/* DISABLES CODE */ (0)) {
 
 	limit = mb->stop;
 	slimit = mb->ssize;
@@ -114,5 +114,6 @@ OPTbatcalcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		addtoMalBlkHistory(mb);
 	GDKfree(vars);
 	GDKfree(old);
+	} /* if (0)  */
 	return msg;
 }
