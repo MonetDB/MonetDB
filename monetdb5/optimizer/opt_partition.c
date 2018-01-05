@@ -38,8 +38,8 @@
 str
 OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
-	int i, j, slimit, limit, actions=0;
-	InstrPtr qo, qg, qc, qh, q, *old = 0;
+	int i, j, slimit, limit, actions=0, hashed = 0;
+	InstrPtr qo, qg, qc, q, *old = 0;
 	lng usec = GDKusec();
 	char buf[256];
 	int vlimit;
@@ -77,33 +77,35 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		p= old[i];
 		if( getModuleId(p) == groupRef && ( getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef)){
 #ifdef _PARTITION_DEBUG_
-			fprintf(stderr,"#Found partition candidate %d and var %d\n", p->pc, p->retc);
+			fprintf(stderr,"#Found partition candidate group/groupdone %d and var %d\n", p->pc, p->argv[p->retc]);
 #endif
 			part = getArg(p, p->retc);
-			vars[part]= (int*) GDKzalloc(sizeof(int) * MAXPIECES);
+			if( vars[part] == NULL){
+				vars[part]= (int*) GDKzalloc(sizeof(int) * MAXPIECES);
+				hashed = 0;
+			} else hashed = 1;
+			if( hashed ==0){
 #ifdef _SINGLE_HASH_
-			qh = newStmt(mb, partitionRef, hashRef);
-			qh->retc =0;
-			qh->argc =0;
-			for( j = 0; j < pieces; j++){
-				int k = newTmpVariable(mb, getArgType(mb, p, part));
-				qh = pushReturn(mb, qh, k);
-				vars[part][j] = k;
-			}
-			pushArgument(mb, qh, part);
-#else
-			/* do parallel partition construction on all keys */
-			qh = newInstruction(mb, languageRef, passRef);
-			qh->retc = qh->argc = 0;
-			for( j = 0; j < pieces; j++){
 				q = newStmt(mb, partitionRef, hashRef);
-				q = pushArgument(mb, q,  part);
-				q = pushInt(mb, q, j);
-				q = pushInt(mb, q, pieces);
-				qh = pushReturn(mb, qh, getArg(q,0));
-				vars[part][j] = getArg(q,0);
-			}
+				q->retc =0;
+				q->argc =0;
+				for( j = 0; j < pieces; j++){
+					int k = newTmpVariable(mb, getArgType(mb, p, part));
+					q = pushReturn(mb, q, k);
+					vars[part][j] = k;
+				}
+				pushArgument(mb, q, part);
+#else
+				/* do parallel partition construction on all keys */
+				for( j = 0; j < pieces; j++){
+					q = newStmt(mb, partitionRef, hashRef);
+					q = pushArgument(mb, q,  part);
+					q = pushInt(mb, q, j);
+					q = pushInt(mb, q, pieces);
+					vars[part][j] = getArg(q,0);
+				}
 #endif
+			}
 			qo = newInstruction(mb, matRef, packRef);
 			getArg(qo,0) =  getArg(p,0);
 			vars[getArg(qo,0)]= (int*) GDKzalloc(sizeof(int) * MAXPIECES);
@@ -125,7 +127,7 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				getArg(q,0) = vars[getArg(p,0)][j];
 				q = pushReturn(mb, q, vars[getArg(p,1)][j]);
 				q = pushReturn(mb, q, vars[getArg(p,2)][j]);
-				pushArgument(mb, q, getArg(qh, j));
+				pushArgument(mb, q, vars[part][j]);
 				qo = pushArgument(mb, qo, getArg(q,0));
 				vars[getArg(qo,0)][j] =getArg(q,0);
 				qg = pushArgument(mb, qg, getArg(q,1));
@@ -139,6 +141,9 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		} else
 		if( getModuleId(p) == groupRef && getFunctionId(p) == subgroupdoneRef && vars[getArg(p,3)]  && vars[getArg(p,4)])
 		{
+#ifdef _PARTITION_DEBUG_
+			fprintf(stderr,"#Found partition candidate subgroupdone %d and var %d, %d\n", p->pc, getArg(p,3), getArg(p,4));
+#endif
 			qo = newInstruction(mb, matRef, packRef);
 			getArg(qo,0) =  getArg(p,0);
 			vars[getArg(qo,0)]= (int*) GDKzalloc(sizeof(int) * MAXPIECES);
@@ -160,8 +165,8 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				getArg(q,0) = vars[getArg(p,0)][j];
 				q = pushReturn(mb, q, vars[getArg(p,1)][j]);
 				q = pushReturn(mb, q, vars[getArg(p,2)][j]);
-				q = pushArgument(mb, q, getArg(q, vars[getArg(p, 3)][j]));
-				q = pushArgument(mb, q, getArg(q, vars[getArg(p, 4)][j] ));
+				q = pushArgument(mb, q, vars[getArg(p, 3)][j]);
+				q = pushArgument(mb, q, vars[getArg(p, 4)][j]);
 				qo = pushArgument(mb, qo, getArg(q,0));
 				vars[getArg(qo,0)][j] =getArg(q,0);
 				qg = pushArgument(mb, qg, getArg(q,1));
@@ -174,6 +179,9 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			pushInstruction(mb, qc);
 		} else
 		if( getModuleId(p) == aggrRef && getFunctionId(p) == subcountRef && vars[getArg(p, p->retc)] != NULL){
+#ifdef _PARTITION_DEBUG_
+			fprintf(stderr,"#Found partition candidate subcount %d and var %dd\n", p->pc, getArg(p,p->retc));
+#endif
 			/* subcount over the individual groups */
 			qo = newInstruction(mb, matRef, packRef);
 			getArg(qo,0) =  getArg(p,0);
@@ -188,11 +196,23 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			}
 			pushInstruction(mb, qo);
 		} else
+		if( getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef && vars[getArg(p, 1)] && vars[getArg(p,2)]){
+#ifdef _PARTITION_DEBUG_
+			fprintf(stderr,"#Found partition projection %d and var %dd\n", p->pc, getArg(p, 1));
+#endif
+			vars[getArg(p,0)]= (int*) GDKzalloc(sizeof(int) * MAXPIECES);
+			for( j = 0; j < pieces; j++){
+				vars[getArg(p,0)][j] = newTmpVariable(mb, getArgType(mb,p,0));
+				q = newStmt(mb, algebraRef, projectionRef);
+				getArg(q,0) = vars[getArg(p,0)][j];
+				q = pushArgument(mb, q, vars[getArg(p,1)][j]);
+				q = pushArgument(mb, q, vars[getArg(p,2)][j]);
+			}
+
+		} else
 			pushInstruction(mb,p);
 	}
 
-	if( getFunctionId(qh) == passRef)
-		freeInstruction(qh);
 	for( ; i < slimit; i++)
 		if( old[i])
 			freeInstruction(old[i]);
