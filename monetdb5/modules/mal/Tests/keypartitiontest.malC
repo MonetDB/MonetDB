@@ -1,0 +1,143 @@
+function init():bat[:lng];
+    t0:= alarm.usec();
+    b:= bat.new(:lng);
+    
+    INT_MAX := 2147483647;
+    dbgmsk_restore := mdb.getDebug();
+    dbgmsk_unset := 8+8388608;
+    dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset);
+    dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep);
+    mdb.setDebug(dbgmsk_set);
+    
+    r:= mmath.srand(0);
+    barrier i:= 0:int;
+    	k:= mmath.rand();
+    	l:= calc.lng(k);
+    	bat.append(b,l);
+    	redo i:= iterator.next(1:int,1000000:int);
+    exit i;
+    
+    mdb.setDebug(dbgmsk_restore);
+    
+    t1:= alarm.usec();
+    d0:= t1-t0;
+    io.printf("#initialized %4d\n",d0);
+	return b;
+end init;
+
+function keyserial(b:bat[:lng]);
+    t0:= alarm.usec();
+    p := partition.hash(b);
+    t1:= alarm.usec();
+    d0:= t1-t0;
+    io.printf("#key serial 1 partition  %4d usec\n",d0);
+
+    t0:= alarm.usec();
+    (p1,p2) := partition.hash(b);
+    t1:= alarm.usec();
+    d0:= t1-t0;
+    io.printf("#key serial 2 partitions %4d usec\n",d0);
+
+    t0:= alarm.usec();
+    (p1,p2,p2,p3,p4) := partition.hash(b);
+    t1:= alarm.usec();
+    d0:= t1-t0;
+    io.printf("#key serial 4 partitions %4d usec\n",d0);
+
+    t0:= alarm.usec();
+    (p1,p2,p2,p3,p4,p5,p6,p7,p8) := partition.hash(b);
+    t1:= alarm.usec();
+    d0:= t1-t0;
+    io.printf("#key serial 8 partitions %4d usec\n",d0);
+
+end keyserial;
+
+function keyparallel(b:bat[:lng]);
+    t0:= alarm.usec();
+barrier par:= language.dataflow();
+    p1 := partition.hash(b,0,1);
+exit par;
+    t1:= alarm.usec();
+    d0:= t1-t0;
+    io.printf("#key parallel 1 partition  %4d usec\n",d0);
+
+    t1:= alarm.usec();
+barrier par:= language.dataflow();
+    p1 := partition.hash(b,0,2);
+    p2 := partition.hash(b,1,2);
+exit par;
+    t1:= alarm.usec();
+    d0:= t1-t0;
+    io.printf("#key parallel 2 partitions %4d usec\n",d0);
+
+    t1:= alarm.usec();
+barrier par:= language.dataflow();
+    p1 := partition.hash(b,0,4);
+    p2 := partition.hash(b,1,4);
+    p3 := partition.hash(b,2,4);
+    p4 := partition.hash(b,3,4);
+exit par;
+    t1:= alarm.usec();
+    d0:= t1-t0;
+    io.printf("#key parallel 4 partitions %4d usec\n",d0);
+
+    t1:= alarm.usec();
+barrier par:= language.dataflow();
+    p1 := partition.hash(b,0,8);
+    p2 := partition.hash(b,1,8);
+    p3 := partition.hash(b,2,8);
+    p4 := partition.hash(b,3,8);
+    p5 := partition.hash(b,4,8);
+    p6 := partition.hash(b,5,8);
+    p7 := partition.hash(b,6,8);
+    p8 := partition.hash(b,7,8);
+exit par;
+    t1:= alarm.usec();
+    d0:= t1-t0;
+    io.printf("#key parallel 8 partitions %4d usec\n",d0);
+
+end keyparallel;
+
+function keysteps(b:bat[:lng]);
+    t0:= alarm.usec();
+    p1 := partition.hash(b,0,1);
+    t1:= alarm.usec();
+    d0:= t1-t0;
+    io.printf("#key parallel 1 partition  %4d usec\n",d0);
+
+    t1:= alarm.usec();
+    p1 := partition.hash(b,0,2);
+    p2 := partition.hash(b,1,2);
+    t1:= alarm.usec();
+    d0:= t1-t0;
+    io.printf("#key parallel 2 partitions %4d usec\n",d0);
+
+    t1:= alarm.usec();
+    p1 := partition.hash(b,0,4);
+    p2 := partition.hash(b,1,4);
+    p3 := partition.hash(b,2,4);
+    p4 := partition.hash(b,3,4);
+    t1:= alarm.usec();
+    d0:= t1-t0;
+    io.printf("#key parallel 4 partitions %4d usec\n",d0);
+
+    t1:= alarm.usec();
+    p1 := partition.hash(b,0,8);
+    p2 := partition.hash(b,1,8);
+    p3 := partition.hash(b,2,8);
+    p4 := partition.hash(b,3,8);
+    p5 := partition.hash(b,4,8);
+    p6 := partition.hash(b,5,8);
+    p7 := partition.hash(b,6,8);
+    p8 := partition.hash(b,7,8);
+    t1:= alarm.usec();
+    d0:= t1-t0;
+    io.printf("#key parallel 8 partitions %4d usec\n",d0);
+
+end keysteps;
+
+b := init();
+keyserial(b);
+keyparallel(b);
+keysteps(b);
+

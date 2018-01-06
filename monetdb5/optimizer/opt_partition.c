@@ -85,18 +85,17 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 				hashed = 0;
 			} else hashed = 1;
 			if( hashed ==0){
-#ifdef _SINGLE_HASH_
 				q = newStmt(mb, partitionRef, hashRef);
 				q->retc =0;
 				q->argc =0;
 				for( j = 0; j < pieces; j++){
-					int k = newTmpVariable(mb, getArgType(mb, p, part));
+					int k = newTmpVariable(mb, getArgType(mb, p, p->retc));
 					q = pushReturn(mb, q, k);
 					vars[part][j] = k;
 				}
 				pushArgument(mb, q, part);
-#else
 				/* do parallel partition construction on all keys */
+				/* It might be useful
 				for( j = 0; j < pieces; j++){
 					q = newStmt(mb, partitionRef, hashRef);
 					q = pushArgument(mb, q,  part);
@@ -104,7 +103,7 @@ OPTpartitionImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					q = pushInt(mb, q, pieces);
 					vars[part][j] = getArg(q,0);
 				}
-#endif
+				*/
 			}
 			qo = newInstruction(mb, matRef, packRef);
 			getArg(qo,0) =  getArg(p,0);
