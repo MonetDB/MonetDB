@@ -404,7 +404,7 @@ wrapup:
 		tpe *bat_ptr = (tpe *)b->theap.base;                                   \
 		for (j = 0; j < count; j++) {                                          \
 			mask_data[j] = bat_ptr[j] == tpe##_nil;                            \
-			found_nil = found_nil || mask_data[j];                             \
+			found_nil |= mask_data[j];                                         \
 		}                                                                      \
 	}
 
@@ -422,7 +422,7 @@ PyObject *PyNullMask_FromBAT(BAT *b, size_t t_start, size_t t_end)
 	BATiter bi = bat_iterator(b);
 	bool *mask_data = (bool *)PyArray_DATA(nullmask);
 
-	switch (ATOMstorage(getBatType(b->ttype))) {
+	switch (ATOMbasetype(getBatType(b->ttype))) {
 		case TYPE_bit:
 			CreateNullMask(bit);
 			break;
@@ -449,17 +449,14 @@ PyObject *PyNullMask_FromBAT(BAT *b, size_t t_start, size_t t_end)
 			CreateNullMask(hge);
 			break;
 #endif
-		case TYPE_str: {
+		default: {
 			int (*atomcmp)(const void *, const void *) = ATOMcompare(b->ttype);
 			for (j = 0; j < count; j++) {
 				mask_data[j] = (*atomcmp)(BUNtail(bi, (BUN)(j)), nil) == 0;
-				found_nil = found_nil || mask_data[j];
+				found_nil |= mask_data[j];
 			}
 			break;
 		}
-		default:
-			// todo: do something with the error?
-			return NULL;
 	}
 
 	if (!found_nil) {
