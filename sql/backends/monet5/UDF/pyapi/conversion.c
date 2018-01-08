@@ -92,7 +92,7 @@ wrapup:
 PyObject *PyMaskedArray_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 								char **return_message, bool copy)
 {
-	BAT *b = inp->bat;
+	BAT *b;
 	char *msg;
 	PyObject *vararray;
 
@@ -100,6 +100,7 @@ PyObject *PyMaskedArray_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 	if (vararray == NULL) {
 		return NULL;
 	}
+	b = inp->bat;
 	// To deal with null values, we use the numpy masked array structure
 	// The masked array structure is an object with two arrays of equal size, a
 	// data array and a mask array
