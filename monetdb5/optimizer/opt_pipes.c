@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -89,6 +89,8 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.postfix();"
+	 "optimizer.deadcode();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
 	 "optimizer.wlc();"
@@ -124,6 +126,8 @@ static struct PIPELINES {
 	 "optimizer.volcano();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.postfix();"
+	 "optimizer.deadcode();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
 	 "optimizer.wlc();"
@@ -164,6 +168,8 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.postfix();"
+	 "optimizer.deadcode();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
 	 "optimizer.wlc();"
@@ -203,6 +209,8 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.postfix();"
+	 "optimizer.deadcode();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
 	 "optimizer.wlc();"

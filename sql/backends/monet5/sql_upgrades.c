@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -1036,6 +1036,38 @@ sql_update_default_geom(Client c, mvc *sql, sql_table *t)
 }
 
 static str
+sql_remove_environment_func(Client c, mvc *sql)
+{
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	size_t bufsize = 1000, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	if (buf== NULL)
+		throw(SQL, "sql_remove_environment_func", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	/* because issueing sql: "drop view sys.environment cascade;" fails with with error: !SQLException:sql.drop_view:42000!DROP VIEW: cannot drop system view 'environment'
+	   we need to drop the system view using internal function: mvc_drop_table() */
+	s = mvc_bind_schema(sql, "sys");
+	t = mvc_bind_table(sql, s, "environment");
+	mvc_drop_table(sql, s, t, 1);	// drop the system view: sys.environment cascade
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop function sys.environment() cascade;\n"
+			"create view sys.environment as select * from sys.env();\n"
+			"GRANT SELECT ON sys.environment TO PUBLIC;\n"
+			"update sys._tables set system = true where system = false and name = 'environment' and schema_id in (select id from schemas where name = 'sys');\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\ndrop view sys.environment cascade;\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
 sql_create_comments_table(Client c)
 {
 	char *err, *q1, *q2;
@@ -1203,31 +1235,6 @@ sql_create_comments_table(Client c)
 	return SQLstatementIntern(c, &q2, "update", 1, 0, NULL);
 }
 
-static str
-sql_remove_environment_func(Client c)
-{
-	size_t bufsize = 1000, pos = 0;
-	char *buf = GDKmalloc(bufsize), *err = NULL;
-	if (buf== NULL)
-		throw(SQL, "sql_remove_environment_func", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-
-	pos += snprintf(buf + pos, bufsize - pos,
-			"drop view sys.environment cascade;\n"
-			"drop function sys.environment() cascade\n"
-			"create view sys.environment as select * from sys.env();\n"
-			"GRANT SELECT ON sys.environment TO PUBLIC;\n"
-			"update sys._tables set system = true where name = 'environment' and schema_id in (select id from schemas where name = 'sys');\n");
-
-	pos += snprintf(buf + pos, bufsize - pos,
-			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
-
-	assert(pos < bufsize);
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
 void
 SQLupgrades(Client c, mvc *m)
 {
@@ -1344,8 +1351,8 @@ SQLupgrades(Client c, mvc *m)
 		}
 	}
 
-	if (sql_bind_func(m->sa, s, "environment", NULL, NULL, F_FUNC)) {
-		if ((err = sql_remove_environment_func(c)) != NULL) {
+	if (sql_bind_func_(m->sa, s, "environment", NULL, F_UNION)) {
+		if ((err = sql_remove_environment_func(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}

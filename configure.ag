@@ -5,7 +5,7 @@ dnl This Source Code Form is subject to the terms of the Mozilla Public
 dnl License, v. 2.0.  If a copy of the MPL was not distributed with this
 dnl file, You can obtain one at http://mozilla.org/MPL/2.0/.
 dnl
-dnl Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+dnl Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
 dnl Process this file with autoconf to produce a configure script.
 
@@ -47,7 +47,7 @@ dnl  (including their trailing newline).
 
 AC_PREREQ([2.63])
 AC_INIT([MonetDB], [11.28.0], [https://bugs.monetdb.org/], [MonetDB], [https://www.monetdb.org/])
-AC_COPYRIGHT([Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.])
+AC_COPYRIGHT([Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.])
 AC_CONFIG_AUX_DIR([buildtools/conf])
 AC_CONFIG_MACRO_DIR([buildtools/conf])
 AC_CANONICAL_HOST

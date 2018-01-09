@@ -122,3 +122,4 @@ sqlitelogictest-hidden-alias.Bug-6495
 sqlitelogictest-comparisons-between-floating-points-and-NULL.Bug-6496
 sqlitelogictest-not-between.Bug-6497
 createorreplace-system-func.Bug-6499
+crash-on-limit-rename.Bug-6502

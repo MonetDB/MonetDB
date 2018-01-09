@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -813,6 +813,65 @@ ALGcount_no_nil(lng *result, const bat *bid)
 	bit ignore_nils = 1;
 
 	return ALGcount_nil(result, bid, &ignore_nils);
+}
+
+str
+ALGcountCND_bat(lng *result, const bat *bid, const bat *cnd)
+{
+	BAT *b;
+
+	if ( *cnd) {
+		if ((b = BATdescriptor(*cnd)) == NULL) {
+			throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}		
+		*result = (lng) BATcount(b);
+		BBPunfix(b->batCacheid);
+		return MAL_SUCCEED;
+	}
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	*result = (lng) BATcount(b);
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd, const bit *ignore_nils)
+{
+	BAT *b;
+	BUN cnt;
+
+	if (*ignore_nils){
+		if ((b = BATdescriptor(*bid)) == NULL) {
+			throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		cnt = BATcount_no_nil(b);
+	} else{
+		if ( *cnd) {
+			if ((b = BATdescriptor(*cnd)) == NULL) {
+				throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			}		
+			*result = (lng) BATcount(b);
+			BBPunfix(b->batCacheid);
+			return MAL_SUCCEED;
+		}
+		if ((b = BATdescriptor(*bid)) == NULL) {
+			throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		cnt = BATcount(b);
+	}
+	*result = (lng) cnt;
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+ALGcountCND_no_nil(lng *result, const bat *bid, const bat *cnd)
+{
+	bit ignore_nils = 1;
+
+	return ALGcountCND_nil(result, bid, cnd, &ignore_nils);
 }
 
 str
