@@ -1,6 +1,7 @@
 CREATE FUNCTION test_timestamp_with_nulls(actual_takeoff_datetime timestamp)
 RETURNS STRING LANGUAGE PYTHON {
-        return "it works";
+    import json
+    return json.dumps(actual_takeoff_datetime.tolist());
 };
 
 

@@ -66,7 +66,8 @@ Ready.
 
 #CREATE FUNCTION test_timestamp_with_nulls(actual_takeoff_datetime timestamp)
 #RETURNS STRING LANGUAGE PYTHON {
-#        return "it works";
+#    import json
+#    return json.dumps(actual_takeoff_datetime.tolist());
 #};
 #CREATE TABLE example (
 #    "column1" timestamp
@@ -79,8 +80,8 @@ Ready.
 % sys.L2 # table_name
 % L2 # name
 % clob # type
-% 8 # length
-[ "it works"	]
+% 33 # length
+[ "[\"2017-01-01 00:00:01.000\", null]"	]
 #drop table example;
 #drop function test_timestamp_with_nulls(timestamp);
 

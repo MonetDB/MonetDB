@@ -180,12 +180,9 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 									  "Failed to convert BAT.");
 				goto wrapup;
 			}
-			BBPunfix(inp->bat->batCacheid);
-			inp->bat = ret_bat;
+			b = ret_bat;
 		}
 	}
-
-	b = inp->bat;
 
 	if (IsBlobType(inp->bat_type)) {
 		PyObject **data;
@@ -393,9 +390,13 @@ PyObject *PyArrayObject_FromBAT(PyInput *inp, size_t t_start, size_t t_end,
 							  "Failed to convert BAT to Numpy array.");
 		goto wrapup;
 	}
+	if (b != inp->bat)
+		BBPunfix(b->batCacheid);
 	return vararray;
 wrapup:
 	*return_message = msg;
+	if (b != inp->bat)
+		BBPunfix(b->batCacheid);
 	return NULL;
 }
 
