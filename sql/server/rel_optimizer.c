@@ -8862,13 +8862,6 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 						exp_label(sql->sa, col, ++sql->label);
 						append(r->exps, col);
 					}
-					/*
-				} else if (is_semi(rl->op)) {
-					sql_rel *l = rl->l;
-					if (!is_project(l->op)) 
-						rl->l = l = rel_project(sql->sa, l, rel_projections(sql, l, NULL, 1, 1));
-					col = l->exps->t->data;
-					*/
 				} else if (!is_project(rl->op)) {	
 					rl = rel_project(sql->sa, rl, rel_projections(sql, rl, NULL, 1, 1));
 					r->l = rl;
