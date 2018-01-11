@@ -1,3 +1,5 @@
+CREATE SCHEMA foo;
+SET SCHEMA foo;
 
 /* Relations */
 CREATE TABLE comments(
