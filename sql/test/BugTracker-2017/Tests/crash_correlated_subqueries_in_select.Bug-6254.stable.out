@@ -38,7 +38,7 @@ Ready.
 % .view_stats,	.view_stats,	.view_stats,	.view_stats,	.view_stats # table_name
 % schema_nm,	schema_id,	table_nm,	is_system_view,	"# columns" # name
 % varchar,	int,	varchar,	boolean,	int # type
-% 3,	4,	17,	5,	2 # length
+% 3,	4,	29,	5,	2 # length
 [ "sys",	2000,	"tables",	true,	9	]
 [ "sys",	2000,	"columns",	true,	10	]
 [ "sys",	2000,	"users",	true,	3	]
@@ -54,12 +54,13 @@ Ready.
 [ "sys",	2000,	"storage",	true,	17	]
 [ "sys",	2000,	"storagemodel",	true,	13	]
 [ "sys",	2000,	"tablestoragemodel",	true,	8	]
+[ "sys",	2000,	"commented_function_signatures",	true,	11	]
 [ "sys",	2000,	"view_stats",	false,	5	]
 #SELECT * FROM sys.view_stats WHERE is_system_view;
 % .view_stats,	.view_stats,	.view_stats,	.view_stats,	.view_stats # table_name
 % schema_nm,	schema_id,	table_nm,	is_system_view,	"# columns" # name
 % varchar,	int,	varchar,	boolean,	int # type
-% 3,	4,	17,	5,	2 # length
+% 3,	4,	29,	5,	2 # length
 [ "sys",	2000,	"tables",	true,	9	]
 [ "sys",	2000,	"columns",	true,	10	]
 [ "sys",	2000,	"users",	true,	3	]
@@ -75,6 +76,7 @@ Ready.
 [ "sys",	2000,	"storage",	true,	17	]
 [ "sys",	2000,	"storagemodel",	true,	13	]
 [ "sys",	2000,	"tablestoragemodel",	true,	8	]
+[ "sys",	2000,	"commented_function_signatures",	true,	11	]
 #SELECT * FROM sys.view_stats WHERE NOT is_system_view;
 % .view_stats,	.view_stats,	.view_stats,	.view_stats,	.view_stats # table_name
 % schema_nm,	schema_id,	table_nm,	is_system_view,	"# columns" # name
