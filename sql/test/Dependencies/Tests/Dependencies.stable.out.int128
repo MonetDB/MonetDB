@@ -596,8 +596,8 @@ Cleanup
 % 7,	16,	8 # length
 [ "columns",	"geometry_columns",	"DEP_VIEW"	]
 [ "tables",	"geometry_columns",	"DEP_VIEW"	]
-[ "types",	"geometry_columns",	"DEP_VIEW"	]
 [ "schemas",	"geometry_columns",	"DEP_VIEW"	]
+[ "types",	"geometry_columns",	"DEP_VIEW"	]
 #SELECT t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys) and t.type in (0, 10, 20, 30);
 % .t,	.i,	.L54 # table_name
 % name,	name,	L54 # name
@@ -657,14 +657,14 @@ Cleanup
 [ "triggers",	"dependencies_tables_on_triggers",	"DEP_FUNC"	]
 [ "triggers",	"dependencies_views_on_triggers",	"DEP_FUNC"	]
 #SELECT c.name, v.name, 'DEP_VIEW' from columns as c, tables as v, dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31);
-% .c,	.v,	.L57 # table_name
-% name,	name,	L57 # name
+% .c,	.v,	.L54 # table_name
+% name,	name,	L54 # name
 % varchar,	varchar,	char # type
 % 10,	16,	8 # length
-[ "systemname",	"geometry_columns",	"DEP_VIEW"	]
-[ "sqlname",	"geometry_columns",	"DEP_VIEW"	]
 [ "id",	"geometry_columns",	"DEP_VIEW"	]
 [ "name",	"geometry_columns",	"DEP_VIEW"	]
+[ "systemname",	"geometry_columns",	"DEP_VIEW"	]
+[ "sqlname",	"geometry_columns",	"DEP_VIEW"	]
 #SELECT c.name, k.name, 'DEP_KEY' from columns as c, objects as kc, keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1;
 % .c,	.k,	.L16 # table_name
 % name,	name,	L16 # name
