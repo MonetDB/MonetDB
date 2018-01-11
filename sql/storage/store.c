@@ -5574,7 +5574,8 @@ sql_trans_drop_any_comment(sql_trans *tr, int id) {
 	assert(sys);
 
 	comments = find_sql_table(sys, "comments");
-	assert(comments);
+	if (!comments) /* for example during upgrades */
+		return;
 
 	id_col = find_sql_column(comments, "id");
 	assert(id_col);
