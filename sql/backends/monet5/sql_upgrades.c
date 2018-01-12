@@ -1232,12 +1232,6 @@ sql_create_comments_table(Client c)
 		"SET system = true\n"
 		"WHERE name = 'comments'\n"
 		"AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n";
-
-	err = SQLstatementIntern(c, &q, "update", 1, 0, NULL);
-	if (err)
-		return err;
-
-	q = "ALTER TABLE sys.keywords SET READ ONLY;";
 	return SQLstatementIntern(c, &q, "update", 1, 0, NULL);
 }
 
