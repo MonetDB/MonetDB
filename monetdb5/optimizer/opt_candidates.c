@@ -54,10 +54,6 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				setVarCList(mb,getArg(p,0));
 			else if(getFunctionId(p) == firstnRef )
 				setVarCList(mb,getArg(p,0));
-			else if(getFunctionId(p) == mergecandRef )
-				setVarCList(mb,getArg(p,0));
-			else if(getFunctionId(p) == intersectcandRef )
-				setVarCList(mb,getArg(p,0));
 			else if(getFunctionId(p) == subsliceRef )
 				setVarCList(mb,getArg(p,0));
 		}
@@ -73,6 +69,9 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef ||
 			    getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef)
 				setVarCList(mb, getArg(p, 1));
+		} else if (getModuleId(p) == batRef) {
+			if (getFunctionId(p) == mergecandRef || getFunctionId(p) == intersectcandRef)
+				setVarCList(mb,getArg(p,0));
 		}
 	}
 
