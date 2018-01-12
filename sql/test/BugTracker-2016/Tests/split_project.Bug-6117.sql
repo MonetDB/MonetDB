@@ -249,3 +249,5 @@ DROP TABLE places;
 DROP TABLE tags;
 DROP TABLE tagclasses;
 
+SET SCHEMA sys;
+DROP SCHEMA foo;
