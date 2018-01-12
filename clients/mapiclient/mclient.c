@@ -2501,7 +2501,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 						 * | "*a.my*"        | no            | fullname LIKE '%a.my%'        |
 						*/
 						q += snprintf(q, endq - q, "SELECT type, fullname, remark FROM sys.describe_all_objects()\n");
-						q += snprintf(q, endq - q, "WHERE (ntype & %d > 0)\n", x);
+						q += snprintf(q, endq - q, "WHERE (ntype & %u) > 0\n", x);
 						if (!wantsSystem) {
 							q += snprintf(q, endq - q, "AND NOT system\n");
 						}
