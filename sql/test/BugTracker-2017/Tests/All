@@ -109,3 +109,4 @@ sqlitelogictest-comparisons-between-floating-points-and-NULL.Bug-6496
 sqlitelogictest-not-between.Bug-6497
 createorreplace-system-func.Bug-6499
 crash-on-limit-rename.Bug-6502
+sqlitelogictest-wrong-aggregation-count.Bug-6510.sql
