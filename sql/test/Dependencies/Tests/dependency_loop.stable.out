@@ -118,8 +118,8 @@ Ready.
 % sys.L4 # table_name
 % L3 # name
 % bigint # type
-% 2 # length
-[ 83	]
+% 3 # length
+[ 104	]
 
 # 10:37:19 >  
 # 10:37:19 >  Done.

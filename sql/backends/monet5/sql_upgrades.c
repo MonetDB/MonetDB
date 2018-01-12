@@ -1067,6 +1067,180 @@ sql_remove_environment_func(Client c, mvc *sql)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_create_comments_table(Client c)
+{
+	char *err, *q;
+
+	q = ""
+		"ALTER TABLE sys.keywords SET READ WRITE;\n"
+		"INSERT INTO sys.keywords VALUES ('COMMENT');\n"
+		"-- ALTER TABLE sys.keywords SET READ ONLY;\n"
+		"\n"
+		"CREATE TABLE sys.comments (\n"
+		"        id INTEGER NOT NULL PRIMARY KEY,\n"
+		"        remark VARCHAR(65000) NOT NULL\n"
+		");\n"
+		"GRANT SELECT ON sys.comments TO PUBLIC;\n"
+		"\n"
+		"CREATE PROCEDURE sys.comment_on(obj_id INTEGER, obj_remark VARCHAR(65000))\n"
+		"BEGIN\n"
+		"        IF obj_remark IS NULL OR obj_remark = '' THEN\n"
+		"                DELETE FROM sys.comments WHERE id = obj_id;\n"
+		"        ELSEIF EXISTS (SELECT id FROM sys.comments WHERE id = obj_id) THEN\n"
+		"                UPDATE sys.comments SET remark = obj_remark WHERE id = obj_id;\n"
+		"        ELSE\n"
+		"                INSERT INTO sys.comments VALUES (obj_id, obj_remark);\n"
+		"        END IF;\n"
+		"END;\n"
+		"-- do not grant to public\n"
+		"\n"
+		"CREATE FUNCTION sys.function_type_keyword(ftype INT)\n"
+		"RETURNS VARCHAR(20)\n"
+		"BEGIN\n"
+		"	RETURN CASE ftype\n"
+		"                WHEN 1 THEN 'FUNCTION'\n"
+		"                WHEN 2 THEN 'PROCEDURE'\n"
+		"                WHEN 3 THEN 'AGGREGATE'\n"
+		"                WHEN 4 THEN 'FILTER FUNCTION'\n"
+		"                WHEN 7 THEN 'LOADER'\n"
+		"                ELSE 'ROUTINE'\n"
+		"        END;\n"
+		"END;\n"
+		"GRANT EXECUTE ON FUNCTION sys.function_type_keyword(INT) TO PUBLIC;\n"
+		"\n"
+		"CREATE FUNCTION sys.describe_all_objects()\n"
+		"RETURNS TABLE (\n"
+		"	sname VARCHAR(1024),\n"
+		"	name VARCHAR(1024),\n"
+		"	fullname VARCHAR(1024),\n"
+		"	ntype INTEGER,   -- must match the MD_TABLE/VIEW/SEQ/FUNC/SCHEMA constants in mclient.c\n"
+		"	type VARCHAR(30),\n"
+		"	system BOOLEAN,\n"
+		"	remark VARCHAR(65000)\n"
+		")\n"
+		"BEGIN\n"
+		"	RETURN TABLE (\n"
+		"	    WITH\n"
+		"	    table_data AS (\n"
+		"		    SELECT  schema_id AS sid,\n"
+		"			    id,\n"
+		"			    name,\n"
+		"			    system,\n"
+		"			    (CASE type\n"
+		"				WHEN 1 THEN 2 -- ntype for views\n"
+		"				ELSE 1	  -- ntype for tables\n"
+		"			    END) AS ntype,\n"
+		"			    table_type_name AS type\n"
+		"		    FROM sys._tables LEFT OUTER JOIN sys.table_types ON type = table_type_id\n"
+		"		    WHERE type IN (0, 1, 3, 4, 5, 6)\n"
+		"	    ),\n"
+		"	    sequence_data AS (\n"
+		"		    SELECT  schema_id AS sid,\n"
+		"			    id,\n"
+		"			    name,\n"
+		"			    false AS system,\n"
+		"			    4 AS ntype,\n"
+		"			    'SEQUENCE' AS type\n"
+		"		    FROM sys.sequences\n"
+		"	    ),\n"
+		"	    function_data AS (\n"
+		"		    SELECT  schema_id AS sid,\n"
+		"			    id,\n"
+		"			    name,\n"
+		"			    EXISTS (SELECT function_id FROM sys.systemfunctions WHERE function_id = id) AS system,\n"
+		"			    8 AS ntype,\n"
+		"			    sys.function_type_keyword(type) AS type\n"
+		"		    FROM sys.functions\n"
+		"	    ),\n"
+		"	    schema_data AS (\n"
+		"		    SELECT  0 AS sid,\n"
+		"			    id,\n"
+		"			    name,\n"
+		"			    system,\n"
+		"			    16 AS ntype,\n"
+		"			    'SCHEMA' AS type\n"
+		"		    FROM sys.schemas\n"
+		"	    ),\n"
+		"	    all_data AS (\n"
+		"		    SELECT * FROM table_data\n"
+		"		    UNION\n"
+		"		    SELECT * FROM sequence_data\n"
+		"		    UNION\n"
+		"		    SELECT * FROM function_data\n"
+		"		    UNION\n"
+		"		    SELECT * FROM schema_data\n"
+		"	    )\n"
+		"	    --\n"
+		"	    SELECT DISTINCT\n"
+		"	            s.name AS sname,\n"
+		"	            a.name AS name,\n"
+		"	            COALESCE(s.name || '.', '') || a.name AS fullname,\n"
+		"	            a.ntype AS ntype,\n"
+		"	            (CASE WHEN a.system THEN 'SYSTEM ' ELSE '' END) || a.type AS type,\n"
+		"	            a.system AS system,\n"
+		"		    c.remark AS remark\n"
+		"	    FROM    all_data a\n"
+		"	    LEFT OUTER JOIN sys.schemas s ON a.sid = s.id\n"
+		"	    LEFT OUTER JOIN sys.comments c ON a.id = c.id\n"
+		"	    ORDER BY system, name, fullname, ntype\n"
+		"	);\n"
+		"END;\n"
+		"GRANT EXECUTE ON FUNCTION sys.describe_all_objects() TO PUBLIC;\n"
+		"\n"
+		"CREATE VIEW commented_function_signatures AS\n"
+		"WITH\n"
+		"params AS (\n"
+		"        SELECT * FROM sys.args WHERE inout = 1\n"
+		"),\n"
+		"commented_function_params AS (\n"
+		"        SELECT  f.id AS fid,\n"
+		"                f.name AS fname,\n"
+		"                s.name AS schema,\n"
+		"                f.type AS ftype,\n"
+		"                c.remark AS remark,\n"
+		"                p.number AS n,\n"
+		"                p.name AS aname,\n"
+		"                p.type AS type,\n"
+		"                p.type_digits AS type_digits,\n"
+		"                p.type_scale AS type_scale,\n"
+		"                RANK() OVER (PARTITION BY f.id ORDER BY number ASC) AS asc_rank,\n"
+		"                RANK() OVER (PARTITION BY f.id ORDER BY number DESC) AS desc_rank\n"
+		"        FROM    sys.functions f\n"
+		"                JOIN sys.schemas s ON f.schema_id = s.id\n"
+		"                JOIN sys.comments c ON f.id = c.id\n"
+		"                LEFT OUTER JOIN params p ON f.id = p.func_id\n"
+		")\n"
+		"SELECT  fid,\n"
+		"        schema,\n"
+		"        fname,\n"
+		"        sys.function_type_keyword(ftype) AS category,\n"
+		"        EXISTS (SELECT function_id FROM sys.systemfunctions WHERE fid = function_id) AS system,\n"
+		"        CASE WHEN asc_rank = 1 THEN fname ELSE NULL END AS name,\n"
+		"        CASE WHEN desc_rank = 1 THEN remark ELSE NULL END AS remark,\n"
+		"        type, type_digits, type_scale,\n"
+		"        ROW_NUMBER() OVER (ORDER BY fid, n) AS line\n"
+		"FROM commented_function_params\n"
+		"ORDER BY line;\n"
+		"GRANT SELECT ON sys.commented_function_signatures TO PUBLIC;\n";
+	err = SQLstatementIntern(c, &q, "update", 1, 0, NULL);
+	if (err)
+		return err;
+
+	q = ""
+		"UPDATE sys._tables\n"
+		"SET system = true\n"
+		"WHERE name = 'comments'\n"
+		"AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n";
+
+	err = SQLstatementIntern(c, &q, "update", 1, 0, NULL);
+	if (err)
+		return err;
+
+	q = "ALTER TABLE sys.keywords SET READ ONLY;";
+	return SQLstatementIntern(c, &q, "update", 1, 0, NULL);
+}
+
 void
 SQLupgrades(Client c, mvc *m)
 {
@@ -1185,6 +1359,14 @@ SQLupgrades(Client c, mvc *m)
 
 	if (sql_bind_func_(m->sa, s, "environment", NULL, F_UNION)) {
 		if ((err = sql_remove_environment_func(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+	}
+
+	/* wrap into sql_update_default */
+	if (mvc_bind_table(m, s, "comments") == NULL) {
+		if ((err = sql_create_comments_table(c)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}

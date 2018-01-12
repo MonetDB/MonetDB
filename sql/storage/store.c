@@ -3725,6 +3725,7 @@ sys_drop_idx(sql_trans *tr, sql_idx * i, int drop_action)
 	if (is_oid_nil(rid))
 		return ;
 	table_funcs.table_delete(tr, sysidx, rid);
+	sql_trans_drop_any_comment(tr, i->base.id);
 
 	for (n = i->columns->h; n; n = n->next) {
 		sql_kc *ic = n->data;
@@ -3833,10 +3834,11 @@ sys_drop_sequence(sql_trans *tr, sql_sequence * seq, int drop_action)
 		return ;
 	table_funcs.table_delete(tr, sysseqs, rid);
 	sql_trans_drop_dependencies(tr, seq->base.id);
+	sql_trans_drop_any_comment(tr, seq->base.id);
 
 	if (drop_action)
 		sql_trans_drop_all_dependencies(tr, seq->s, seq->base.id, SEQ_DEPENDENCY);
-		
+
 }
 
 static void
@@ -3869,6 +3871,7 @@ sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 		return ;
 	table_funcs.table_delete(tr, syscolumn, rid);
 	sql_trans_drop_dependencies(tr, col->base.id);
+	sql_trans_drop_any_comment(tr, col->base.id);
 
 	if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
 		sql_sequence * seq = NULL;
@@ -3968,6 +3971,7 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 	if (isMergeTable(t) || isReplicaTable(t))
 		sys_drop_parts(tr, t, drop_action);
 
+	sql_trans_drop_any_comment(tr, t->base.id);
 	sql_trans_drop_dependencies(tr, t->base.id);
 
 	if (isKindOfTable(t) || isView(t))
@@ -4026,6 +4030,7 @@ sys_drop_func(sql_trans *tr, sql_func *func, int drop_action)
 	table_funcs.table_delete(tr, sys_tab_func, rid_func);
 
 	sql_trans_drop_dependencies(tr, func->base.id);
+	sql_trans_drop_any_comment(tr, func->base.id);
 
 	tr->schema_updates ++;
 
@@ -4311,6 +4316,7 @@ sql_trans_drop_schema(sql_trans *tr, int id, int drop_action)
 	sys_drop_tables(tr, s, drop_action);
 	sys_drop_types(tr, s, drop_action);
 	sys_drop_sequences(tr, s, drop_action);
+	sql_trans_drop_any_comment(tr, s->base.id);
 
 	s->base.wtime = tr->wtime = tr->wstime;
 	tr->schema_updates ++;
@@ -5555,4 +5561,27 @@ sql_trans_end(sql_session *s)
 	list_remove_data(active_sessions, s);
 	store_nr_active --;
 	assert(list_length(active_sessions) == store_nr_active);
+}
+
+void
+sql_trans_drop_any_comment(sql_trans *tr, int id) {
+	sql_schema *sys;
+	sql_column *id_col;
+	sql_table *comments;
+	oid row;
+
+	sys = find_sql_schema(tr, "sys");
+	assert(sys);
+
+	comments = find_sql_table(sys, "comments");
+	if (!comments) /* for example during upgrades */
+		return;
+
+	id_col = find_sql_column(comments, "id");
+	assert(id_col);
+
+	row = table_funcs.column_find_row(tr, id_col, &id, NULL);
+	if (row != oid_nil) {
+		table_funcs.table_delete(tr, comments, row);
+	}
 }

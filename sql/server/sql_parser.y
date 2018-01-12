@@ -130,6 +130,8 @@ int yydebug=1;
 	create_statement
 	drop_statement
 	declare_statement
+	comment_on_statement
+	catalog_object
 	set_statement
 	sql
 	sqlstmt
@@ -588,9 +590,9 @@ SQLCODE SQLERROR UNDER WHENEVER
 
 %token TEMP TEMPORARY STREAM MERGE REMOTE REPLICA
 %token<sval> ASC DESC AUTHORIZATION
-%token CHECK CONSTRAINT CREATE
+%token CHECK CONSTRAINT CREATE COMMENT
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
-%token CALL LANGUAGE 
+%token CALL LANGUAGE
 %token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREP PREPARE EXEC EXECUTE
 %token DEFAULT DISTINCT DROP
 %token FOREIGN
@@ -752,6 +754,7 @@ sql:
 		append_int(l, $5);
 		$$ = _symbol_create_list( SQL_ANALYZE, l); }
  |  call_procedure_statement
+ |  comment_on_statement
  ;
 
 opt_minmax:
@@ -5345,6 +5348,7 @@ non_reserved_word:
 |  STORAGE	{ $$ = sa_strdup(SA, "storage"); }
 |  GEOMETRY	{ $$ = sa_strdup(SA, "geometry"); }
 |  REPLACE	{ $$ = sa_strdup(SA, "replace"); }
+|  COMMENT	{ $$ = sa_strdup(SA, "comment"); }
 ;
 
 name_commalist:
@@ -5477,8 +5481,46 @@ path_specification:
 
 schema_name_list: name_commalist ;
 
+
+comment_on_statement:
+	COMMENT ON catalog_object IS string
+	{ dlist *l = L();
+	  append_symbol(l, $3);
+	  append_string(l, $5);
+	  $$ = _symbol_create_list( SQL_COMMENT, l );
+	}
+	| COMMENT ON catalog_object IS sqlNULL
+	{ dlist *l = L();
+	  append_symbol(l, $3);
+	  append_string(l, NULL);
+	  $$ = _symbol_create_list( SQL_COMMENT, l );
+	}
+	;
+
+catalog_object:
+	  SCHEMA ident { $$ = _symbol_create( SQL_SCHEMA, $2 ); }
+	| TABLE qname { $$ = _symbol_create_list( SQL_TABLE, $2 ); }
+	| VIEW qname { $$ = _symbol_create_list( SQL_VIEW, $2 ); }
+	| COLUMN ident '.' ident
+	{ dlist *l = L();
+	  append_string(l, $2);
+	  append_string(l, $4);
+	  $$ = _symbol_create_list( SQL_COLUMN, l );
+	}
+	| COLUMN ident '.' ident '.' ident
+	{ dlist *l = L();
+	  append_string(l, $2);
+	  append_string(l, $4);
+	  append_string(l, $6);
+	  $$ = _symbol_create_list( SQL_COLUMN, l );
+	}
+	| INDEX qname { $$ = _symbol_create_list( SQL_INDEX, $2 ); }
+	| SEQUENCE qname { $$ = _symbol_create_list( SQL_SEQUENCE, $2 ); }
+	| routine_designator { $$ = _symbol_create_list( SQL_ROUTINE, $1 ); }
+	;
+
 XML_value_expression:
-  XML_primary	
+  XML_primary
   ;
 
 XML_value_expression_list:
@@ -6057,6 +6099,7 @@ char *token2string(int token)
 	SQL(DROP_CONSTRAINT);
 	SQL(DROP_DEFAULT);
 	SQL(DECLARE);
+	SQL(COMMENT);
 	SQL(SET);
 	SQL(PREP);
 	SQL(PREPARE);
@@ -6066,7 +6109,10 @@ char *token2string(int token)
 	SQL(CHARSET);
 	SQL(SCHEMA);
 	SQL(TABLE);
+	SQL(VIEW);
+	SQL(INDEX);
 	SQL(TYPE);
+	SQL(SEQUENCE);
 	SQL(CASE);
 	SQL(CAST);
 	SQL(RETURN);
@@ -6139,6 +6185,7 @@ char *token2string(int token)
 	SQL(FRAME);
 	SQL(COMPARE);
 	SQL(FILTER);
+	SQL(ROUTINE);
 	SQL(TEMP_LOCAL);
 	SQL(TEMP_GLOBAL);
 	SQL(INT_VALUE);
