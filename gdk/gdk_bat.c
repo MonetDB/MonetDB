@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -114,24 +114,18 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 	 * very large writes.
 	 */
 	assert(bn->batCacheid > 0);
-	bn->theap.filename = NULL;
+
+	const char *nme = BBP_physical(bn->batCacheid);
+	snprintf(bn->theap.filename, sizeof(bn->theap.filename),
+		 "%s.tail", nme);
 	bn->theap.farmid = BBPselectfarm(role, bn->ttype, offheap);
-	if (heapnames) {
-		const char *nme = BBP_physical(bn->batCacheid);
-
-		if (tt) {
-			bn->theap.filename = GDKfilepath(NOFARM, NULL, nme, "tail");
-			if (bn->theap.filename == NULL)
-				goto bailout;
-		}
-
-		if (ATOMneedheap(tt)) {
-			if ((bn->tvheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL ||
-			    (bn->tvheap->filename = GDKfilepath(NOFARM, NULL, nme, "theap")) == NULL)
-				goto bailout;
-			bn->tvheap->parentid = bn->batCacheid;
-			bn->tvheap->farmid = BBPselectfarm(role, bn->ttype, varheap);
-		}
+	if (heapnames && ATOMneedheap(tt)) {
+		if ((bn->tvheap = (Heap *) GDKzalloc(sizeof(Heap))) == NULL)
+			goto bailout;
+		snprintf(bn->tvheap->filename, sizeof(bn->tvheap->filename),
+			 "%s.theap", nme);
+		bn->tvheap->parentid = bn->batCacheid;
+		bn->tvheap->farmid = BBPselectfarm(role, bn->ttype, varheap);
 	}
 	bn->batDirty = TRUE;
 	return bn;
@@ -203,7 +197,7 @@ BATnewstorage(oid hseq, int tt, BUN cap, int role)
 		goto bailout;
 	}
 
-	if (ATOMheap(tt, bn->tvheap, cap) != GDK_SUCCEED) {
+	if (bn->tvheap && ATOMheap(tt, bn->tvheap, cap) != GDK_SUCCEED) {
 		GDKfree(bn->tvheap);
 		goto bailout;
 	}
@@ -521,6 +515,7 @@ BATclear(BAT *b, int force)
 
 			memset(&th, 0, sizeof(th));
 			th.farmid = b->tvheap->farmid;
+			strncpy(th.filename, b->tvheap->filename, sizeof(th.filename));
 			if (ATOMheap(b->ttype, &th, 0) != GDK_SUCCEED)
 				return GDK_FAIL;
 			th.parentid = b->tvheap->parentid;
@@ -628,25 +623,9 @@ BATdestroy(BAT *b)
  * which ensures that the original cannot be modified or destroyed
  * (which could affect the shared heaps).
  */
-static gdk_return
-heapcopy(BAT *bn, char *ext, Heap *dst, Heap *src)
-{
-	if (src->filename && src->newstorage != STORE_MEM) {
-		const char *nme = BBP_physical(bn->batCacheid);
-
-		if ((dst->filename = GDKfilepath(NOFARM, NULL, nme, ext)) == NULL)
-			return GDK_FAIL;
-	}
-	return HEAPcopy(dst, src);
-}
-
 static void
 heapmove(Heap *dst, Heap *src)
 {
-	if (src->filename == NULL) {
-		src->filename = dst->filename;
-		dst->filename = NULL;
-	}
 	HEAPfree(dst, 0);
 	*dst = *src;
 }
@@ -759,8 +738,12 @@ COLcopy(BAT *b, int tt, int writable, int role)
 
 			bthp.farmid = BBPselectfarm(role, b->ttype, offheap);
 			thp.farmid = BBPselectfarm(role, b->ttype, varheap);
-			if ((b->ttype && heapcopy(bn, "tail", &bthp, &b->theap) != GDK_SUCCEED) ||
-			    (bn->tvheap && heapcopy(bn, "theap", &thp, b->tvheap) != GDK_SUCCEED)) {
+			snprintf(bthp.filename, sizeof(bthp.filename),
+				 "%s.tail", BBP_physical(bn->batCacheid));
+			snprintf(thp.filename, sizeof(thp.filename), "%s.theap",
+				 BBP_physical(bn->batCacheid));
+			if ((b->ttype && HEAPcopy(&bthp, &b->theap) != GDK_SUCCEED) ||
+			    (bn->tvheap && HEAPcopy(&thp, b->tvheap) != GDK_SUCCEED)) {
 				HEAPfree(&thp, 1);
 				HEAPfree(&bthp, 1);
 				BBPreclaim(bn);
@@ -1162,6 +1145,8 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 	HASHdestroy(b);
 	PROPdestroy(b->tprops);
 	b->tprops = NULL;
+	OIDXdestroy(b);
+	IMPSdestroy(b);
 	Treplacevalue(b, BUNtloc(bi, p), t);
 
 	tt = b->ttype;
@@ -1425,7 +1410,7 @@ BATvmsize(BAT *b, int dirty)
 	if (b->batDirty || (b->batPersistence != TRANSIENT && !b->batCopiedtodisk))
 		dirty = 0;
 	return (!dirty || b->theap.dirty ? HEAPvmsize(&b->theap) : 0) +
-		((!dirty || b->theap.dirty) && b->thash && b->thash != (Hash *) 1 ? HEAPvmsize(b->thash->heap) : 0) +
+		((!dirty || b->theap.dirty) && b->thash && b->thash != (Hash *) 1 ? HEAPvmsize(&b->thash->heap) : 0) +
 		(b->tvheap && (!dirty || b->tvheap->dirty) ? HEAPvmsize(b->tvheap) : 0);
 }
 
@@ -1438,7 +1423,7 @@ BATmemsize(BAT *b, int dirty)
 		dirty = 0;
 	return (!dirty || b->batDirtydesc ? sizeof(BAT) : 0) +
 		(!dirty || b->theap.dirty ? HEAPmemsize(&b->theap) : 0) +
-		((!dirty || b->theap.dirty) && b->thash && b->thash != (Hash *) 1 ? HEAPmemsize(b->thash->heap) : 0) +
+		((!dirty || b->theap.dirty) && b->thash && b->thash != (Hash *) 1 ? HEAPmemsize(&b->thash->heap) : 0) +
 		(b->tvheap && (!dirty || b->tvheap->dirty) ? HEAPmemsize(b->tvheap) : 0);
 }
 
@@ -1706,9 +1691,9 @@ backup_new(Heap *hp, int lockbat)
 		IODEBUG fprintf(stderr, "#rename(%s,%s) = %d\n", batpath, bakpath, ret);
 	} else if (batret == 0) {
 		/* there is a backup already; just remove the X.new */
-		if ((ret = unlink(batpath)) < 0)
-			GDKsyserror("backup_new: unlink %s failed\n", batpath);
-		IODEBUG fprintf(stderr, "#unlink(%s) = %d\n", batpath, ret);
+		if ((ret = remove(batpath)) != 0)
+			GDKsyserror("backup_new: remove %s failed\n", batpath);
+		IODEBUG fprintf(stderr, "#remove(%s) = %d\n", batpath, ret);
 	}
 	GDKfree(batpath);
 	GDKfree(bakpath);
@@ -2184,37 +2169,28 @@ BATassertProps(BAT *b)
 			/* we need to check for uniqueness the hard
 			 * way (i.e. using a hash table) */
 			const char *nme = BBP_physical(b->batCacheid);
-			char *ext;
-			size_t nmelen = strlen(nme);
-			Heap *hp;
 			Hash *hs = NULL;
 			BUN mask;
 
-			if ((hp = GDKzalloc(sizeof(Heap))) == NULL ||
-			    (hp->filename = GDKmalloc(nmelen + 30)) == NULL) {
-				if (hp)
-					GDKfree(hp);
+			if ((hs = GDKzalloc(sizeof(Hash))) == NULL) {
 				fprintf(stderr,
 					"#BATassertProps: cannot allocate "
 					"hash table\n");
 				goto abort_check;
 			}
-			snprintf(hp->filename, nmelen + 30,
-				 "%s.hash" SZFMT, nme, MT_getpid());
-			ext = GDKstrdup(hp->filename + nmelen + 1);
+			snprintf(hs->heap.filename, sizeof(hs->heap.filename),
+				 "%s.hash%d", nme, THRgettid());
 			if (ATOMsize(b->ttype) == 1)
-				mask = 1 << 8;
+				mask = (BUN) 1 << 8;
 			else if (ATOMsize(b->ttype) == 2)
-				mask = 1 << 16;
+				mask = (BUN) 1 << 16;
 			else
 				mask = HASHmask(b->batCount);
-			if ((hp->farmid = BBPselectfarm(TRANSIENT, b->ttype,
+			if ((hs->heap.farmid = BBPselectfarm(TRANSIENT, b->ttype,
 							hashheap)) < 0 ||
-			    (hs = HASHnew(hp, b->ttype, BUNlast(b),
-					  mask, BUN_NONE)) == NULL) {
-				GDKfree(ext);
-				GDKfree(hp->filename);
-				GDKfree(hp);
+			    HASHnew(hs, b->ttype, BUNlast(b),
+				    mask, BUN_NONE) != GDK_SUCCEED) {
+				GDKfree(hs);
 				fprintf(stderr,
 					"#BATassertProps: cannot allocate "
 					"hash table\n");
@@ -2237,10 +2213,8 @@ BATassertProps(BAT *b)
 				if (cmp == 0)
 					seennil = 1;
 			}
-			HEAPfree(hp, 1);
-			GDKfree(hp);
+			HEAPfree(&hs->heap, 1);
 			GDKfree(hs);
-			GDKfree(ext);
 		}
 	  abort_check:
 		assert(!b->tnil || seennil);

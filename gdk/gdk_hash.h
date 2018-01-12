@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef _GDK_SEARCH_H_
@@ -243,7 +243,7 @@ gdk_export BUN HASHlist(Hash *h, BUN i);
 			} else {					\
 				BUN _c = HASHprobe((b)->thash, (v));	\
 				HASHputall((b)->thash, (i), _c);	\
-				(b)->thash->heap->dirty = TRUE;		\
+				(b)->thash->heap.dirty = TRUE;		\
 			}						\
 		}							\
 	} while (0)

@@ -3,13 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef _SQL_MEM_H_
 #define _SQL_MEM_H_
 
-#include <gdk.h>
+#include "gdk.h"
 
 #define SQL_OK 	1
 #define SQL_ERR 0
@@ -62,9 +62,9 @@ typedef struct sql_allocator {
 
 extern sql_allocator *sa_create(void);
 extern sql_allocator *sa_reset( sql_allocator *sa );
-extern char *sa_alloc( sql_allocator *sa,  size_t sz );
-extern char *sa_zalloc( sql_allocator *sa,  size_t sz );
-extern char *sa_realloc( sql_allocator *sa,  void *ptr, size_t sz, size_t osz );
+extern void *sa_alloc( sql_allocator *sa,  size_t sz );
+extern void *sa_zalloc( sql_allocator *sa,  size_t sz );
+extern void *sa_realloc( sql_allocator *sa,  void *ptr, size_t sz, size_t osz );
 extern void sa_destroy( sql_allocator *sa );
 extern char *sa_strndup( sql_allocator *sa, const char *s, size_t l);
 extern char *sa_strdup( sql_allocator *sa, const char *s);

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -680,6 +680,11 @@ pcre_replace(str *res, const char *origin_str, const char *pattern, const char *
 		tmpres[k] = '\0';
 	} else { /* no captured substrings, return the original string*/
 		tmpres = GDKstrdup(origin_str);
+		if (!tmpres) {
+			my_pcre_free(pcre_code);
+			GDKfree(ovector);
+			throw(MAL, "pcre_replace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
 	}
 
 	my_pcre_free(pcre_code);
@@ -1020,6 +1025,8 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 		if (escaped)
 			throw(MAL, "pcre.sql2pcre", OPERATION_FAILED);
 		*r = GDKstrdup(str_nil);
+		if (*r == NULL)
+			throw(MAL, "pcre.sql2pcre", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
 		*ppat++ = '$';
 		*ppat = 0;
@@ -1073,7 +1080,7 @@ PCREreplace_bat_wrap(bat *res, const bat *bid, const str *pat, const str *repl, 
 	BAT *b,*bn = NULL;
 	str msg;
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "pcre.replace", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "pcre.replace", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	msg = pcre_replace_bat(&bn,b,*pat,*repl,*flags);
 	if( msg == MAL_SUCCEED){
@@ -1471,11 +1478,11 @@ PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 	int use_strcmp = 0;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(MAL, "algebra.likeselect", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.likeselect", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.likeselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	/* no escape, try if a simple list of keywords works */
@@ -1921,7 +1928,7 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid,
 		BBPunfix(result2->batCacheid);
 	if (msg)
 		return msg;
-	throw(MAL, "pcre.join", RUNTIME_OBJECT_MISSING);
+	throw(MAL, "pcre.join", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
 
 str

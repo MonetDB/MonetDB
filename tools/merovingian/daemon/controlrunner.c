@@ -3,12 +3,11 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -21,14 +20,12 @@
 #include <signal.h>
 #include <fcntl.h>
 
-#include <errno.h>
-
-#include <msabaoth.h>
-#include <mcrypt.h>
-#include <utils/utils.h>
-#include <utils/properties.h>
-#include <utils/database.h>
-#include <utils/control.h>
+#include "msabaoth.h"
+#include "mcrypt.h"
+#include "utils/utils.h"
+#include "utils/properties.h"
+#include "utils/database.h"
+#include "utils/control.h"
 
 #include "gdk.h"  /* these three for creation of dbs with password */
 #include "mal_authorize.h"
@@ -450,7 +447,7 @@ static void ctl_handle_client(
 								freeException(err);
 							} else {
 								/* don't start locked */
-								unlink(".maintenance");
+								remove(".maintenance");
 							}
 
 							exit(0); /* return to the parent */

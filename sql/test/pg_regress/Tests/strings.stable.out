@@ -576,7 +576,7 @@ Ready.
 #SELECT substring(f1, -1, 5) from toasttest;
 % sys.L2 # table_name
 % L2 # name
-% varchar # type
+% clob # type
 % 5 # length
 [ "12345"	]
 [ "12345"	]
@@ -585,7 +585,7 @@ Ready.
 #SELECT substring(f1, 5, -1) from toasttest;
 % sys.L2 # table_name
 % L2 # name
-% varchar # type
+% clob # type
 % 0 # length
 [ ""	]
 [ ""	]
@@ -603,7 +603,7 @@ Ready.
 #SELECT substring(f1, 99995, 10) from toasttest;
 % sys.L2 # table_name
 % L2 # name
-% varchar # type
+% clob # type
 % 6 # length
 [ "567890"	]
 [ "567890"	]
@@ -693,26 +693,26 @@ Ready.
 #select split_part('joeuser@mydatabase','@',1) AS "joeuser";
 % .L2 # table_name
 % joeuser # name
-% char # type
-% 18 # length
+% clob # type
+% 7 # length
 [ "joeuser"     ]
 #select split_part('joeuser@mydatabase','@',2) AS "mydatabase";
 % .L2 # table_name
 % mydatabase # name
-% char # type
-% 18 # length
+% clob # type
+% 10 # length
 [ "mydatabase"  ]
 #select split_part('joeuser@mydatabase','@',3) AS "empty string";
 % .L2 # table_name
 % "empty string" # name
-% char # type
-% 18 # length
+% clob # type
+% 0 # length
 [ ""    ]
 #select split_part('@joeuser@mydatabase@','@',2) AS "joeuser";
 % .L2 # table_name
 % joeuser # name
-% char # type
-% 20 # length
+% clob # type
+% 7 # length
 [ "joeuser"     ]
 
 #select md5('') = 'd41d8cd98f00b204e9800998ecf8427e' AS "TRUE";

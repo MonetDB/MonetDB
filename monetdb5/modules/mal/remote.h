@@ -3,30 +3,30 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef _REMOTE_DEF
 #define _REMOTE_DEF
 #ifdef HAVE_MAPI
 
-#include <mal.h>
-#include <mal_exception.h>
-#include <mal_interpreter.h>
-#include <mal_function.h> /* for printFunction */
-#include <mal_listing.h>
-#include <mal_instruction.h> /* for getmodule/func macros */
-#include <mapi.h>
+#include "mal.h"
+#include "mal_exception.h"
+#include "mal_interpreter.h"
+#include "mal_function.h" /* for printFunction */
+#include "mal_listing.h"
+#include "mal_instruction.h" /* for getmodule/func macros */
+#include "mapi.h"
 #include "mutils.h"
 
 /* #define _DEBUG_REMOTE */
 
-#define RMTT_L_ENDIAN   0<<1
-#define RMTT_B_ENDIAN   1<<1
-#define RMTT_32_BITS    0<<2
-#define RMTT_64_BITS    1<<2
-#define RMTT_32_OIDS    0<<3
-#define RMTT_64_OIDS    1<<3
+#define RMTT_L_ENDIAN   (0<<1)
+#define RMTT_B_ENDIAN   (1<<1)
+#define RMTT_32_BITS    (0<<2)
+#define RMTT_64_BITS    (1<<2)
+#define RMTT_32_OIDS    (0<<3)
+#define RMTT_64_OIDS    (1<<3)
 
 typedef struct _connection {
 	MT_Lock            lock;      /* lock to avoid interference */

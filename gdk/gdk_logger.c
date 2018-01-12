@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -77,6 +77,16 @@
 
 #ifdef HAVE_EMBEDDED
 #define printf(fmt,...) ((void) 0)
+#endif
+
+#ifdef WIN32
+#define getfilepos _ftelli64
+#else
+#ifdef HAVE_FSEEKO
+#define getfilepos ftello
+#else
+#define getfilepos ftell
+#endif
 #endif
 
 static char *log_commands[] = {
@@ -1019,7 +1029,8 @@ logger_readlog(logger *lg, char *filename)
 			lng fpos;
 			t0 = t1;
 			/* not more than once every 10 seconds */
-			if (mnstr_fgetpos(lg->log, &fpos) == 0) {
+			fpos = (lng) getfilepos(getFile(lg->log));
+			if (fpos >= 0) {
 				printf("# still reading write-ahead log \"%s\" (%d%% done)\n", filename, (int) ((fpos * 100 + 50) / sb.st_size));
 				fflush(stdout);
 			}
@@ -1156,7 +1167,7 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 	}
 
 	while (fgets(id, sizeof(id), fp) != NULL) {
-		char log_filename[PATHLENGTH];
+		char log_filename[FILENAME_MAX];
 		lng lid = strtoll(id, NULL, 10);
 
 		if (lg->debug & 1) {
@@ -1420,8 +1431,8 @@ logger_set_logdir_path(char *filename, const char *fn,
 	int role = PERSISTENT; /* default role is persistent, i.e. the default dbfarm */
 
 	if (MT_path_absolute(logdir)) {
-		char logdir_parent_path[PATHLENGTH] = "";
-		char logdir_name[PATHLENGTH] = "";
+		char logdir_parent_path[FILENAME_MAX] = "";
+		char logdir_name[FILENAME_MAX] = "";
 
 		/* split the logdir string into absolute parent dir
 		 * path and (relative) log dir name */
@@ -1429,7 +1440,7 @@ logger_set_logdir_path(char *filename, const char *fn,
 			/* set the new relative logdir location
 			 * including the logger function name
 			 * subdir */
-			snprintf(filename, PATHLENGTH, "%s%c%s%c",
+			snprintf(filename, FILENAME_MAX, "%s%c%s%c",
 				 logdir_name, DIR_SEP, fn, DIR_SEP);
 
 			/* add a new dbfarm for the logger directory
@@ -1447,7 +1458,7 @@ logger_set_logdir_path(char *filename, const char *fn,
 		}
 	} else {
 		/* just concat the logdir and fn with appropriate separators */
-		snprintf(filename, PATHLENGTH, "%s%c%s%c",
+		snprintf(filename, FILENAME_MAX, "%s%c%s%c",
 			 logdir, DIR_SEP, fn, DIR_SEP);
 	}
 
@@ -1459,18 +1470,18 @@ logger_set_logdir_path(char *filename, const char *fn,
  * unless running in read-only mode
  * Load data and persist it in the BATs */
 static gdk_return
-logger_load(int debug, const char *fn, char filename[PATHLENGTH], logger *lg)
+logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 {
 	int id = LOG_SID;
 	FILE *fp;
-	char bak[PATHLENGTH];
+	char bak[FILENAME_MAX];
 	str filenamestr = NULL;
 	log_bid snapshots_bid = 0;
 	bat catalog_bid, catalog_nme, dcatalog, bid;
 	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
 
 	filenamestr = GDKfilepath(farmid, lg->dir, LOGFILE, NULL);
-	snprintf(filename, PATHLENGTH, "%s", filenamestr);
+	snprintf(filename, FILENAME_MAX, "%s", filenamestr);
 	snprintf(bak, sizeof(bak), "%s.bak", filename);
 	GDKfree(filenamestr);
 
@@ -1564,21 +1575,23 @@ logger_load(int debug, const char *fn, char filename[PATHLENGTH], logger *lg)
 		lg->id ++;
 		if (fprintf(fp, "%06d\n\n" LLFMT "\n", lg->version, lg->id) < 0) {
 			fclose(fp);
-			unlink(filename);
+			remove(filename);
 			GDKerror("logger_load: writing log file %s failed",
 				 filename);
 			goto error;
 		}
 		if (fflush(fp) < 0 ||
+		    (!(GDKdebug & NOSYNCMASK)
 #if defined(_MSC_VER)
-		    _commit(_fileno(fp)) < 0 ||
+		     && _commit(_fileno(fp)) < 0
 #elif defined(HAVE_FDATASYNC)
-		    fdatasync(fileno(fp)) < 0 ||
+		     && fdatasync(fileno(fp)) < 0
 #elif defined(HAVE_FSYNC)
-		    fsync(fileno(fp)) < 0 ||
+		     && fsync(fileno(fp)) < 0
 #endif
+			    ) ||
 		    fclose(fp) < 0) {
-			unlink(filename);
+			remove(filename);
 			GDKerror("logger_load: closing log file %s failed",
 				 filename);
 			goto error;
@@ -1591,7 +1604,7 @@ logger_load(int debug, const char *fn, char filename[PATHLENGTH], logger *lg)
 
 		if (bm_subcommit(lg, lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->dcatalog, NULL, lg->debug) != GDK_SUCCEED) {
 			/* cannot commit catalog, so remove log */
-			unlink(filename);
+			remove(filename);
 			BBPrelease(lg->catalog_bid->batCacheid);
 			BBPrelease(lg->catalog_nme->batCacheid);
 			BBPrelease(lg->dcatalog->batCacheid);
@@ -1832,7 +1845,7 @@ logger_load(int debug, const char *fn, char filename[PATHLENGTH], logger *lg)
 
 	if (fp != NULL) {
 #ifdef GDKLIBRARY_NIL_NAN
-		char cvfile[PATHLENGTH];
+		char cvfile[FILENAME_MAX];
 #endif
 
 		if (check_version(lg, fp) != GDK_SUCCEED) {
@@ -1868,7 +1881,7 @@ logger_load(int debug, const char *fn, char filename[PATHLENGTH], logger *lg)
 		/* Do not do conversion if logger is shared/read-only */
 		if (!lg->shared) {
 			FILE *fp1;
-			long off; /* type long required by ftell() & fseek() */
+			fpos_t off;
 			int curid;
 
 			snprintf(cvfile, sizeof(cvfile), "%sconvert-nil-nan",
@@ -1876,12 +1889,12 @@ logger_load(int debug, const char *fn, char filename[PATHLENGTH], logger *lg)
 			snprintf(bak, sizeof(bak), "%s_nil-nan-convert", fn);
 			/* read the current log id without disturbing
 			 * the file pointer */
-			off = ftell(fp);
-			if (off < 0) /* should never happen */
-				goto error;
+			if (fgetpos(fp, &off) != 0)
+				goto error; /* should never happen */
 			if (fscanf(fp, "%d", &curid) != 1)
 				curid = -1; /* shouldn't happen? */
-			fseek(fp, off, SEEK_SET);
+			if (fsetpos(fp, &off) != 0)
+				goto error; /* should never happen */
 
 			if ((fp1 = GDKfileopen(0, NULL, bak, NULL, "r")) != NULL) {
 				/* file indicating that we need to do
@@ -1984,8 +1997,8 @@ static logger *
 logger_new(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, int shared, const char *local_logdir)
 {
 	logger *lg = (struct logger *) GDKmalloc(sizeof(struct logger));
-	char filename[PATHLENGTH];
-	char shared_log_filename[PATHLENGTH];
+	char filename[FILENAME_MAX];
+	char shared_log_filename[FILENAME_MAX];
 
 	if (lg == NULL) {
 		fprintf(stderr, "!ERROR: logger_new: allocating logger structure failed\n");
@@ -2091,7 +2104,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 gdk_return
 logger_reload(logger *lg)
 {
-	char filename[PATHLENGTH];
+	char filename[FILENAME_MAX];
 
 	snprintf(filename, sizeof(filename), "%s", lg->dir);
 	if (lg->debug & 1) {
@@ -2185,7 +2198,7 @@ gdk_return
 logger_exit(logger *lg)
 {
 	FILE *fp;
-	char filename[PATHLENGTH];
+	char filename[FILENAME_MAX];
 	int farmid = BBPselectfarm(lg->dbfarm_role, 0, offheap);
 
 	logger_close(lg);
@@ -2197,7 +2210,7 @@ logger_exit(logger *lg)
 
 	snprintf(filename, sizeof(filename), "%s%s", lg->dir, LOGFILE);
 	if ((fp = GDKfileopen(farmid, NULL, filename, NULL, "w")) != NULL) {
-		char ext[PATHLENGTH];
+		char ext[FILENAME_MAX];
 
 		if (fprintf(fp, "%06d\n\n", lg->version) < 0) {
 			(void) fclose(fp);
@@ -2221,14 +2234,15 @@ logger_exit(logger *lg)
 		}
 
 		if (fflush(fp) < 0 ||
+		    (!(GDKdebug & NOSYNCMASK)
 #if defined(WIN32)
-		    _commit(_fileno(fp)) < 0
+		     && _commit(_fileno(fp)) < 0
 #elif defined(HAVE_FDATASYNC)
-		    fdatasync(fileno(fp)) < 0
+		     && fdatasync(fileno(fp)) < 0
 #elif defined(HAVE_FSYNC)
-		    fsync(fileno(fp)) < 0
+		     && fsync(fileno(fp)) < 0
 #endif
-			) {
+			    )) {
 			(void) fclose(fp);
 			fprintf(stderr, "!ERROR: logger_exit: flush of %s failed\n",
 				filename);
@@ -2281,9 +2295,9 @@ logger_unlink(int farmid, const char *dir, const char *nme, const char *ext)
 	path = GDKfilepath(farmid, dir, nme, ext);
 	if (path == NULL)
 		return GDK_FAIL;
-	u = unlink(path);
+	u = remove(path);
 	GDKfree(path);
-	return u < 0 ? GDK_FAIL : GDK_SUCCEED;
+	return u != 0 ? GDK_FAIL : GDK_SUCCEED;
 }
 
 static void
@@ -2393,7 +2407,7 @@ logger_changes(logger *lg)
 lng
 logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, int role)
 {
-	char filename[PATHLENGTH];
+	char filename[FILENAME_MAX];
 	FILE *fp;
 	char id[BUFSIZ];
 	lng lid = GDK_FAIL;
@@ -2706,7 +2720,8 @@ pre_allocate(logger *lg)
 	// FIXME: this causes serious issues on Windows at least with MinGW
 #ifndef WIN32
 	lng p;
-	if (mnstr_fgetpos(lg->log, &p) != 0)
+	p = (lng) getfilepos(getFile(lg->log));
+	if (p == -1)
 		return GDK_FAIL;
 	if (p + DBLKSZ > lg->end) {
 		p &= ~(DBLKSZ - 1);
@@ -2763,7 +2778,7 @@ log_tend(logger *lg)
 	if (res != GDK_SUCCEED ||
 	    log_write_format(lg, &l) != GDK_SUCCEED ||
 	    mnstr_flush(lg->log) ||
-	    mnstr_fsync(lg->log) ||
+	    (!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->log)) ||
 	    pre_allocate(lg) != GDK_SUCCEED) {
 		fprintf(stderr, "!ERROR: log_tend: write failed\n");
 		return GDK_FAIL;
@@ -2804,7 +2819,7 @@ log_sequence_(logger *lg, int seq, lng val, int flush)
 	if (log_write_format(lg, &l) != GDK_SUCCEED ||
 	    !mnstr_writeLng(lg->log, val) ||
 	    (flush && mnstr_flush(lg->log)) ||
-	    (flush && mnstr_fsync(lg->log)) ||
+	    (flush && !(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->log)) ||
 	    pre_allocate(lg) != GDK_SUCCEED) {
 		fprintf(stderr, "!ERROR: log_sequence_: write failed\n");
 		return GDK_FAIL;
@@ -2831,7 +2846,7 @@ log_sequence_nrs(logger *lg)
 	}
 	if (ok != GDK_SUCCEED ||
 	    mnstr_flush(lg->log) ||
-	    mnstr_fsync(lg->log)) {
+	    (!(GDKdebug & NOSYNCMASK) && mnstr_fsync(lg->log))) {
 		fprintf(stderr, "!ERROR: log_sequence_nrs: write failed\n");
 		return GDK_FAIL;
 	}

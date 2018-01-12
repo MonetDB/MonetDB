@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -565,7 +565,7 @@ cleanup:
 		bam_destroy1(alig);
 	}
 	if (strcmp(output_header_path, "") != 0) {
-		unlink(output_header_path);
+		remove(output_header_path);
 	}
 	return msg;
 #endif

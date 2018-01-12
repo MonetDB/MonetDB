@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1643,7 +1643,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				mat_join2(mb, p, &ml, m, n);
 			} else {
 				if ( mat_joinNxM(cntxt, mb, p, &ml, bats)) {
-					msg = createException(MAL,"optimizer.mergetable",MAL_MALLOC_FAIL);
+					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 					goto cleanup;
 				}
 			}
@@ -1853,7 +1853,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		   (o=is_a_mat(getArg(p,fo), &ml)) >= 0){
 			assert(ml.v[m].mi->argc == ml.v[n].mi->argc); 
 			if(mat_apply3(mb, p, &ml, m, n, o, fm, fn, fo)) {
-				msg = createException(MAL,"optimizer.mergetable",MAL_MALLOC_FAIL);
+				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
 			actions++;

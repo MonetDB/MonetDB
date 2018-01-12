@@ -63,7 +63,7 @@ Ready.
 % sys.ceil_floor_round,	sys.L3 # table_name
 % a,	L3 # name
 % decimal,	decimal # type
-% 20,	10 # length
+% 20,	20 # length
 [ -5.500,	-6.000	]
 [ -5.499,	-5.000	]
 [ 0.000,	0.000	]

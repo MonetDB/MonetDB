@@ -35,12 +35,9 @@ Ready.
 #			res['a'+str(j+1)] = (i+1)*(j+1)
 #		_emit.emit(res)
 #};
-#COPY INTO mytable3 FROM LOADER myfunc(10, 3);
-[ 10	]
-#COPY INTO mytable4 FROM LOADER myfunc(10, 3);
-[ 10	]
-#COPY INTO mytable2 FROM LOADER myfunc(20, 2);
-[ 20	]
+#COPY LOADER INTO mytable3 FROM myfunc(10, 3);
+#COPY LOADER INTO mytable4 FROM myfunc(10, 3);
+#COPY LOADER INTO mytable2 FROM myfunc(20, 2);
 #SELECT * FROM mytable4;
 % sys.mytable4,	sys.mytable4,	sys.mytable4,	sys.mytable4 # table_name
 % a1,	a2,	a3,	a4 # name

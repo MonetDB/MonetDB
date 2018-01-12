@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -238,7 +238,7 @@ qc_match(qc *cache, symbol *s, atom **params, int  plen, int key)
 }
 
 cq *
-qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname,  symbol *s, atom **params, int paramlen, int key, int type, char *cmd)
+qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname,  symbol *s, atom **params, int paramlen, int key, int type, char *cmd, int no_mitosis)
 {
 	int i, namelen;
 	cq *n = MNEW(cq);
@@ -275,6 +275,7 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, char *qname,  symbol *s, ato
 	n->count = 1;
 	namelen = 5 + ((n->id+7)>>3) + ((cache->clientid+7)>>3);
 	n->name = sa_alloc(sa, namelen);
+	n->no_mitosis = no_mitosis;
 	if(!n->name) {
 		_DELETE(n->params);
 		_DELETE(n);

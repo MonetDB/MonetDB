@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
 module batsql;
 module sql;
@@ -1077,6 +1077,14 @@ comment "Return the strings";
 command batcalc.strings(v:bat[:str]) :bat[:str] 
 address BATSTRstrings
 comment "Return the strings";
+
+pattern update_tables():void 
+address SYSupdate_tables
+comment "Procedure triggered on update of the sys._tables table";
+
+pattern update_schemas():void 
+address SYSupdate_schemas
+comment "Procedure triggered on update of the sys.schemas table";
 
 include sql_decimal;
 include sql_rank;

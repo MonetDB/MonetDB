@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -29,8 +29,14 @@
 str
 CMDraise(str *ret, str *msg)
 {
+	str res;
 	*ret = GDKstrdup(*msg);
-	return GDKstrdup(*msg);
+	if( *ret == NULL)
+		throw(MAL, "mal.raise", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	res = GDKstrdup(*msg);
+	if( res == NULL)
+		throw(MAL, "mal.raise", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	return res;
 }
 
 str
@@ -115,8 +121,7 @@ CMDcallString(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	s = getArgReference_str(stk, pci, 1);
 	if (strlen(*s) == 0)
 		return MAL_SUCCEED;
-	callString(cntxt, *s, FALSE);
-	return MAL_SUCCEED;
+	return callString(cntxt, *s, FALSE);
 }
 
 str
@@ -131,8 +136,7 @@ CMDcallFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return MAL_SUCCEED;
 	// lazy implementation of the call
 	snprintf(buf,BUFSIZ,"%s.%s();",mod,fcn);
-	callString(cntxt, buf, FALSE);
-	return MAL_SUCCEED;
+	return callString(cntxt, buf, FALSE);
 }
 
 str
@@ -194,7 +198,7 @@ CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if(fcnName == NULL || modName == NULL || help == NULL) {
 			freeSymbol(sym);
 			GDKfree(ahelp);
-			throw(MAL, "language.register", MAL_MALLOC_FAIL);
+			throw(MAL, "language.register", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		if( help)
 			mb->help= ahelp;

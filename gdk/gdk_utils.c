@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -77,7 +77,7 @@ GDKenvironment(const char *dbpath)
 		fprintf(stderr, "!GDKenvironment: database name missing.\n");
 		return 0;
 	}
-	if (strlen(dbpath) >= PATHLENGTH) {
+	if (strlen(dbpath) >= FILENAME_MAX) {
 		fprintf(stderr, "!GDKenvironment: database name too long.\n");
 		return 0;
 	}
@@ -101,25 +101,26 @@ GDKgetenv(const char *name)
 }
 
 int
-GDKgetenv_isyes(const char *name)
+GDKgetenv_istext(const char *name, const char* text)
 {
 	char *val = GDKgetenv(name);
 
-	if (val && strcasecmp(val, "yes") == 0) {
+	if (val && strcasecmp(val, text) == 0) {
 		return 1;
 	}
 	return 0;
 }
 
 int
+GDKgetenv_isyes(const char *name)
+{
+	return GDKgetenv_istext(name, "yes");
+}
+
+int
 GDKgetenv_istrue(const char *name)
 {
-	char *val = GDKgetenv(name);
-
-	if (val && strcasecmp(val, "true") == 0) {
-		return 1;
-	}
-	return 0;
+	return GDKgetenv_istext(name, "true");
 }
 
 int
@@ -1224,13 +1225,13 @@ THRget(int tid)
 #if defined(_MSC_VER) && _MSC_VER >= 1900
 #pragma warning(disable : 4172)
 #endif
-static inline size_t
+static inline uintptr_t
 THRsp(void)
 {
 	int l = 0;
 	uintptr_t sp = (uintptr_t) (&l);
 
-	return (size_t) sp;
+	return sp;
 }
 
 static Thread
@@ -1258,13 +1259,6 @@ THRnew(const char *name)
 	s = GDK_find_thread(pid);
 	if (s == NULL) {
 		for (s = GDKthreads, t = s + THREADS; s < t; s++) {
-			if (s->pid == pid) {
-				MT_lock_unset(&GDKthreadLock);
-				IODEBUG fprintf(stderr, "#THRnew:duplicate " SZFMT "\n", (size_t) pid);
-				return s;
-			}
-		}
-		for (s = GDKthreads, t = s + THREADS; s < t; s++) {
 			if (s->pid == 0) {
 				break;
 			}
@@ -1283,7 +1277,7 @@ THRnew(const char *name)
 		s->data[0] = THRdata[0];
 		s->sp = THRsp();
 
-		PARDEBUG fprintf(stderr, "#%x " SZFMT " sp = " SZFMT "\n", s->tid, (size_t) pid, s->sp);
+		PARDEBUG fprintf(stderr, "#%x " SZFMT " sp = " SZFMT "\n", s->tid, (size_t) pid, (size_t) s->sp);
 		PARDEBUG fprintf(stderr, "#nrofthreads %d\n", GDKnrofthreads);
 
 		GDKnrofthreads++;
@@ -1313,7 +1307,7 @@ THRdel(Thread t)
 int
 THRhighwater(void)
 {
-	size_t c;
+	uintptr_t c;
 	Thread s;
 	size_t diff;
 	int rc = 0;

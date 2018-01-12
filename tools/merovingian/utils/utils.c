@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /**
@@ -17,22 +17,15 @@
 
 #include "monetdb_config.h"
 #include "utils.h"
-#include <stdio.h> /* fprintf, fgets */
 #include <unistd.h> /* unlink */
 #include <string.h> /* memcpy */
 #include <strings.h> /* strcasecmp */
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#ifdef TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
+#include <time.h>
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
 #endif
 #ifdef HAVE_OPENSSL
 #include <openssl/rand.h>		/* RAND_bytes */
@@ -451,7 +444,7 @@ generatePassphraseFile(const char *path)
 
 	/* delete such that we are sure we recreate the file with restricted
 	 * permissions */
-	unlink(path);
+	remove(path);
 	if ((fd = open(path, O_CREAT | O_WRONLY | O_CLOEXEC, S_IRUSR | S_IWUSR)) == -1) {
 		char err[512];
 		snprintf(err, sizeof(err), "unable to open '%s': %s",

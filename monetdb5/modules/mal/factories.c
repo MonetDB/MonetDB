@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -60,7 +60,7 @@ FCTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	s = findSymbol(cntxt->usermodule, putName(mod), putName(fcn));
 	if (s == NULL)
-		throw(MAL, "factories.shutdown", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "factories.shutdown", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	shutdownFactory(cntxt,s->def);
 	return MAL_SUCCEED;
 }

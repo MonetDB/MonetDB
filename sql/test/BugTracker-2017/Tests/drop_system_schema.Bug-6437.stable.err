@@ -30,30 +30,39 @@ stderr of test 'drop_system_schema.Bug-6437` in directory 'sql/test/BugTracker-2
 MAPI  = (monetdb) /var/tmp/mtest-25647/.s.monetdb.36212
 QUERY = drop schema profiler;
 ERROR = !DROP SCHEMA: cannot drop current schema
+CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-25647/.s.monetdb.36212
 QUERY = drop schema profiler restrict;
 ERROR = !DROP SCHEMA: access denied for 'profiler'
+CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-25647/.s.monetdb.36212
 QUERY = drop schema json restrict;
 ERROR = !DROP SCHEMA: access denied for 'json'
+CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-25647/.s.monetdb.36212
 QUERY = drop schema tmp restrict;
 ERROR = !DROP SCHEMA: access denied for 'tmp'
+CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-25647/.s.monetdb.36212
 QUERY = drop schema sys restrict;
 ERROR = !DROP SCHEMA: access denied for 'sys'
+CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-8455/.s.monetdb.31322
 QUERY = drop schema profiler cascade;
 ERROR = !DROP SCHEMA: access denied for 'profiler'
+CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-8455/.s.monetdb.31322
 QUERY = drop schema json cascade;
 ERROR = !DROP SCHEMA: access denied for 'json'
+CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-8455/.s.monetdb.31322
 QUERY = drop schema tmp cascade;
 ERROR = !DROP SCHEMA: access denied for 'tmp'
+CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-8455/.s.monetdb.31322
 QUERY = drop schema sys cascade;
 ERROR = !DROP SCHEMA: access denied for 'sys'
+CODE  = 42000
 
 # 13:50:35 >  
 # 13:50:35 >  "Done."

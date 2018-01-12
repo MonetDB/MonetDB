@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -17,8 +17,8 @@
  * are provided that they are aligned.
  */
 #include "monetdb_config.h"
-#include <gdk.h>
-#include "ctype.h"
+#include "gdk.h"
+#include <ctype.h>
 #include <string.h>
 #include "mal_exception.h"
 #include "str.h"
@@ -69,27 +69,27 @@ mal_export str STRbatsubstringcst(bat *ret, const bat *bid, const int *start, co
 mal_export str STRbatsubstring(bat *ret, const bat *l, const bat *r, const bat *t);
 
 
-#define prepareOperand(X,Y,Z)					\
-	if( (X= BATdescriptor(*Y)) == NULL )		\
-		throw(MAL, Z, RUNTIME_OBJECT_MISSING);
-#define prepareOperand2(X,Y,A,B,Z)				\
-	if( (X= BATdescriptor(*Y)) == NULL )		\
-		throw(MAL, Z, RUNTIME_OBJECT_MISSING);	\
-	if( (A= BATdescriptor(*B)) == NULL ){		\
-		BBPunfix(X->batCacheid);				\
-		throw(MAL, Z, RUNTIME_OBJECT_MISSING);	\
+#define prepareOperand(X,Y,Z)									\
+	if( (X= BATdescriptor(*Y)) == NULL )						\
+		throw(MAL, Z, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+#define prepareOperand2(X,Y,A,B,Z)								\
+	if( (X= BATdescriptor(*Y)) == NULL )						\
+		throw(MAL, Z, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);	\
+	if( (A= BATdescriptor(*B)) == NULL ){						\
+		BBPunfix(X->batCacheid);								\
+		throw(MAL, Z, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);	\
 	}
-#define prepareOperand3(X,Y,A,B,I,J,Z)			\
-	if( (X= BATdescriptor(*Y)) == NULL )		\
-		throw(MAL, Z, RUNTIME_OBJECT_MISSING);	\
-	if( (A= BATdescriptor(*B)) == NULL ){		\
-		BBPunfix(X->batCacheid);				\
-		throw(MAL, Z, RUNTIME_OBJECT_MISSING);	\
-	}											\
-	if( (I= BATdescriptor(*J)) == NULL ){		\
-		BBPunfix(X->batCacheid);				\
-		BBPunfix(A->batCacheid);				\
-		throw(MAL, Z, RUNTIME_OBJECT_MISSING);	\
+#define prepareOperand3(X,Y,A,B,I,J,Z)							\
+	if( (X= BATdescriptor(*Y)) == NULL )						\
+		throw(MAL, Z, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);	\
+	if( (A= BATdescriptor(*B)) == NULL ){						\
+		BBPunfix(X->batCacheid);								\
+		throw(MAL, Z, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);	\
+	}															\
+	if( (I= BATdescriptor(*J)) == NULL ){						\
+		BBPunfix(X->batCacheid);								\
+		BBPunfix(A->batCacheid);								\
+		throw(MAL, Z, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);	\
 	}
 #define prepareResult(X,Y,T,Z)							\
 	X= COLnew((Y)->hseqbase,T,BATcount(Y), TRANSIENT);	\
@@ -580,7 +580,7 @@ do_batstr_batint_batstr_str(bat *ret, const bat *l, const bat *n, const bat *l2,
 		BBPunfix(b->batCacheid);
 		BBPunfix(b2->batCacheid);
 		BBPunfix(b3->batCacheid);
-		throw(MAL, name, MAL_MALLOC_FAIL);
+		throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	bn->tsorted=0;
 	bn->trevsorted=0;
@@ -1207,7 +1207,7 @@ STRbatsubstringcst(bat *ret, const bat *bid, const int *start, const int *length
 	char *msg = MAL_SUCCEED;
 
 	if( (b= BATdescriptor(*bid)) == NULL)
-		throw(MAL, "batstr.substring",RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batstr.substring", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	bn= COLnew(b->hseqbase, TYPE_str, BATcount(b)/10+5, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
@@ -1247,15 +1247,15 @@ str STRbatsubstring(bat *ret, const bat *l, const bat *r, const bat *t)
 	str v;
 
 	if( (left= BATdescriptor(*l)) == NULL )
-		throw(MAL, "batstr.substring" , RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batstr.substring", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if( (start= BATdescriptor(*r)) == NULL ){
 		BBPunfix(left->batCacheid);
-		throw(MAL, "batstr.substring", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batstr.substring", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if( (length= BATdescriptor(*t)) == NULL ){
 		BBPunfix(left->batCacheid);
 		BBPunfix(start->batCacheid);
-		throw(MAL, "batstr.substring", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "batstr.substring", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if (BATcount(left) != BATcount(start) ||
 		BATcount(left) != BATcount(length)) {

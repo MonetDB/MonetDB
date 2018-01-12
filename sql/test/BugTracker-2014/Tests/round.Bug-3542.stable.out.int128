@@ -50,7 +50,7 @@ Ready.
 % sys.t1,	sys.t2,	sys.L4 # table_name
 % id,	id,	L4 # name
 % int,	int,	decimal # type
-% 1,	1,	7 # length
+% 1,	1,	38 # length
 [ 1,	1,	0.00000000000000000000	]
 [ 1,	2,	0.00000000000000000000	]
 [ 2,	1,	0.00000000000000000000	]

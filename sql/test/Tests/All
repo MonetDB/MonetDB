@@ -101,6 +101,9 @@ median_stdev
 ifexists
 ifexists-views
 subqueries
+comment-on
+comment-dump
+comment-auth
 
 #HAVE_GEOM?trace
 

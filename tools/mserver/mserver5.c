@@ -3,12 +3,10 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
-#include <stdio.h>
-#include <errno.h>
 #include <string.h> /* strerror */
 #include <locale.h>
 #include "monet_options.h"
@@ -164,8 +162,8 @@ monet_hello(void)
 	printf("# Database path:%s\n", GDKgetenv("gdk_dbpath"));
 	printf("# Module path:%s\n", GDKgetenv("monet_mod_path"));
 #endif
-	printf("# Copyright (c) 1993-July 2008 CWI.\n");
-	printf("# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved\n");
+	printf("# Copyright (c) 1993 - July 2008 CWI.\n");
+	printf("# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved\n");
 	printf("# Visit https://www.monetdb.org/ for further information\n");
 
 	// The properties shipped through the performance profiler
@@ -286,7 +284,7 @@ main(int argc, char **av)
 		GDKfatal("cannot set locale\n");
 	}
 
-	if (getcwd(monet_cwd, PATHLENGTH - 1) == NULL) {
+	if (getcwd(monet_cwd, FILENAME_MAX - 1) == NULL) {
 		perror("pwd");
 		fprintf(stderr,"monet_init: could not determine current directory\n");
 		exit(-1);
@@ -649,11 +647,18 @@ main(int argc, char **av)
 		return 0;
 	}
 
-	MSinitClientPrg(mal_clients, "user", "main");
+	if((err = MSinitClientPrg(mal_clients, "user", "main")) != MAL_SUCCEED) {
+		msab_registerStop();
+		GDKfatal("%s", err);
+	}
 	if (dbinit == NULL)
 		dbinit = GDKgetenv("dbinit");
-	if (dbinit)
-		callString(mal_clients, dbinit, listing);
+	if (dbinit) {
+		if((err = callString(mal_clients, dbinit, listing)) != MAL_SUCCEED) {
+			msab_registerStop();
+			GDKfatal("%s", err);
+		}
+	}
 
 	emergencyBreakpoint();
 	for (i = 0; monet_script[i]; i++) {

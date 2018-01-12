@@ -3,13 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "store_sequence.h"
 #include "sql_storage.h"
-#include <gdk_logger.h>
+#include "gdk_logger.h"
 
 typedef struct store_sequence {
 	sqlid seqid;
@@ -26,15 +26,18 @@ sequence_destroy( store_sequence *s )
 	_DELETE(s);
 }
 
-void sequences_init(void)
+void* sequences_init(void)
 {
 	sql_seqs = list_create( (fdestroy)sequence_destroy );
+	return (void*) sql_seqs;
 }
 
 void sequences_exit(void)
 {
-	list_destroy(sql_seqs);
-	sql_seqs = NULL;
+	if(sql_seqs) {
+		list_destroy(sql_seqs);
+		sql_seqs = NULL;
+	}
 }
 
 /* lock is held */

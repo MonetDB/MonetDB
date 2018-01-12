@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -749,6 +749,8 @@ str
 URLnew(url *u, str *val)
 {
 	*u = GDKstrdup(*val);
+	if (*u == NULL)
+		throw(MAL, "url.new", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -792,5 +794,7 @@ URLnew4(url *u, str *protocol, str *server, int *port, str *file)
 str URLnoop(url *u, url *val)
 {
 	*u = GDKstrdup(*val);
+	if (*u == NULL)
+		throw(MAL, "url.noop", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }

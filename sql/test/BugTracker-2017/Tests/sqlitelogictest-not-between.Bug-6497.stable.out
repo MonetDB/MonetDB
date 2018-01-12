@@ -1,0 +1,46 @@
+stdout of test 'sqlitelogictest-not-between.Bug-6497` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 11:27:12 >  
+# 11:27:12 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34397" "--set" "mapi_usock=/var/tmp/mtest-16005/.s.monetdb.34397" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 11:27:12 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.330 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:34397/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16005/.s.monetdb.34397
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 11:27:12 >  
+# 11:27:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16005" "--port=34397"
+# 11:27:12 >  
+
+#CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab0 VALUES(97,1,99);
+[ 1	]
+#INSERT INTO tab0 VALUES(15,81,47);
+[ 1	]
+#INSERT INTO tab0 VALUES(87,21,10);
+[ 1	]
+#SELECT * FROM tab0 WHERE + col1 NOT BETWEEN col2 + - 99 AND + 20;
+% sys.tab0,	sys.tab0,	sys.tab0 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 2,	2,	2 # length
+[ 15,	81,	47	]
+[ 87,	21,	10	]
+#DROP TABLE tab0;
+
+# 11:27:12 >  
+# 11:27:12 >  "Done."
+# 11:27:12 >  
+

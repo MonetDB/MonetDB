@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -27,8 +27,8 @@
 
 static void setAtomName(InstrPtr pci)
 {
-	char buf[PATHLENGTH];
-	snprintf(buf, PATHLENGTH, "#%s", getFunctionId(pci));
+	char buf[FILENAME_MAX];
+	snprintf(buf, FILENAME_MAX, "#%s", getFunctionId(pci));
 	setFunctionId(pci, putName(buf));
 }
 
@@ -55,7 +55,7 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 	case 'c':
 		if (idcmp("cmp", name) == 0 && pci->argc == 1) {
 			BATatoms[tpe].atomCmp = (int (*)(const void *, const void *))pci->fcn;
-			BATatoms[tpe].linear = 1;
+			BATatoms[tpe].linear = true;
 			setAtomName(pci);
 			return MAL_SUCCEED;
 		}
@@ -191,7 +191,7 @@ malAtomDefinition(str name, int tpe)
 		BATatoms[i].storage = ATOMstorage(tpe);
 	} else { /* cannot overload void atoms */
 		BATatoms[i].storage = i;
-		BATatoms[i].linear = 0;
+		BATatoms[i].linear = false;
 	}
 	return MAL_SUCCEED;
 }

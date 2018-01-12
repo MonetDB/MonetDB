@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -12,16 +12,15 @@
  * stored in ESRI Shapefile documents.
  */
 
-#include <monetdb_config.h>
+#include "monetdb_config.h"
 #include <string.h>
 #include "sql_mvc.h"
 #include "sql.h"
-#include <stdlib.h>
 #include "shp.h"
 #include "sql_execute.h"
 #include "mal_exception.h"
 
-#include <geom.h>
+#include "geom.h"
 
 /* FIXME: the use of the 'rs' schema should be reconsidered so that the geotiff
  * catalog can be integrated into the SQL catalog.

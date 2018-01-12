@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -357,12 +357,7 @@ BATproject(BAT *l, BAT *r)
 				goto bailout;
 			bn->tvheap->parentid = bn->batCacheid;
 			bn->tvheap->farmid = BBPselectfarm(bn->batRole, TYPE_str, varheap);
-			if (r->tvheap->filename) {
-				char *nme = BBP_physical(bn->batCacheid);
-				bn->tvheap->filename = GDKfilepath(NOFARM, NULL, nme, "theap");
-				if (bn->tvheap->filename == NULL)
-					goto bailout;
-			}
+			snprintf(bn->tvheap->filename, sizeof(bn->tvheap->filename), "%s.theap", BBP_physical(bn->batCacheid));
 			if (HEAPcopy(bn->tvheap, r->tvheap) != GDK_SUCCEED)
 				goto bailout;
 		}

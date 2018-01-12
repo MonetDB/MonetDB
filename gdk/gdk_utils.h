@@ -3,13 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef _GDK_UTILS_H_
 #define _GDK_UTILS_H_
 
-#include <monet_options.h>
+#include "monet_options.h"
 #include <setjmp.h>
 
 gdk_export BAT *GDKkey;
@@ -17,8 +17,8 @@ gdk_export BAT *GDKval;
 
 gdk_export char *GDKgetenv(const char *name);
 
+gdk_export int GDKgetenv_istext(const char *name, const char* text);
 gdk_export int GDKgetenv_isyes(const char *name);
-
 gdk_export int GDKgetenv_istrue(const char *name);
 
 gdk_export int GDKgetenv_int(const char *name, int def);

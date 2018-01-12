@@ -3,13 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "sql_atom.h"
-#include <sql_string.h>
-#include <sql_decimal.h>
+#include "sql_string.h"
+#include "sql_decimal.h"
 
 static int atom_debug = 0;
 
@@ -500,14 +500,14 @@ atom2sql(atom *a)
 	case EC_TIMESTAMP:
 		if (a->data.vtype == TYPE_str) {
 			if (a->data.val.sval)
-				sprintf(buf, "%s '%s'", a->tpe.type->sqlname, 
+				sprintf(buf, "%s '%s'", a->tpe.type->sqlname,
 					a->data.val.sval);
 			else
 				sprintf(buf, "NULL");
 		}
 		break;
-        default:
-                snprintf(buf, BUFSIZ, "atom2sql(TYPE_%d) not implemented", a->data.vtype);
+	default:
+		snprintf(buf, BUFSIZ, "atom2sql(TYPE_%d) not implemented", a->data.vtype);
 	}
 	return _STRDUP(buf);
 }
@@ -1199,6 +1199,13 @@ atom_add(atom *a1, atom *a2)
 	if ((!EC_COMPUTE(a1->tpe.type->eclass) && (a1->tpe.type->eclass != EC_DEC || a1->tpe.digits != a2->tpe.digits || a1->tpe.scale != a2->tpe.scale)) || a1->tpe.digits < a2->tpe.digits || a1->tpe.type->localtype != a2->tpe.type->localtype) {
 		return NULL;
 	}
+	if (a1->tpe.type->localtype < a2->tpe.type->localtype ||
+	    (a1->tpe.type->localtype == a2->tpe.type->localtype &&
+	     a1->tpe.digits < a2->tpe.digits)) {
+		atom *t = a1;
+		a1 = a2;
+		a2 = t;
+	}
 	dst.vtype = a1->tpe.type->localtype;
 	if (VARcalcadd(&dst, &a1->data, &a2->data, 1) != GDK_SUCCEED)
 		return NULL;
@@ -1216,9 +1223,18 @@ atom_sub(atom *a1, atom *a2)
 	if ((!EC_COMPUTE(a1->tpe.type->eclass) && (a1->tpe.type->eclass != EC_DEC || a1->tpe.digits != a2->tpe.digits || a1->tpe.scale != a2->tpe.scale)) || a1->tpe.digits < a2->tpe.digits || a1->tpe.type->localtype != a2->tpe.type->localtype) {
 		return NULL;
 	}
-	dst.vtype = a1->tpe.type->localtype;
+	if (a1->tpe.type->localtype < a2->tpe.type->localtype ||
+	    (a1->tpe.type->localtype == a2->tpe.type->localtype &&
+	     a1->tpe.digits < a2->tpe.digits))
+		dst.vtype = a2->tpe.type->localtype;
+	else
+		dst.vtype = a1->tpe.type->localtype;
 	if (VARcalcsub(&dst, &a1->data, &a2->data, 1) != GDK_SUCCEED)
 		return NULL;
+	if (a1->tpe.type->localtype < a2->tpe.type->localtype ||
+	    (a1->tpe.type->localtype == a2->tpe.type->localtype &&
+	     a1->tpe.digits < a2->tpe.digits))
+		a1 = a2;
 	a1->data = dst;
 	dst.vtype = TYPE_dbl;
 	if (VARconvert(&dst, &a1->data, 1) == GDK_SUCCEED)
@@ -1245,10 +1261,14 @@ atom_mul(atom *a1, atom *a2)
 		a1->d = a1->data.val.dval = dst.val.dval;
 		return a1;
 	}
-	if (a1->tpe.type->localtype >= a2->tpe.type->localtype)
-		dst.vtype = a1->tpe.type->localtype;
-	else
-		dst.vtype = a2->tpe.type->localtype;
+	if (a1->tpe.type->localtype < a2->tpe.type->localtype ||
+	    (a1->tpe.type->localtype == a2->tpe.type->localtype &&
+	     a1->tpe.digits < a2->tpe.digits)) {
+		atom *t = a1;
+		a1 = a2;
+		a2 = t;
+	}
+	dst.vtype = a1->tpe.type->localtype;
 	if (VARcalcmul(&dst, &a1->data, &a2->data, 1) != GDK_SUCCEED)
 		return NULL;
 	a1->data = dst;
@@ -1292,6 +1312,34 @@ atom_is_zero( atom *a )
 		return a->data.val.fval == 0;
 	case TYPE_dbl:
 		return a->data.val.dval == 0;
+	default:
+		break;
+	}
+	return 0;
+}
+
+int
+atom_is_true( atom *a )
+{
+	switch(a->tpe.type->localtype) {
+	case TYPE_bit:
+		return a->data.val.btval != 0;
+	case TYPE_bte:
+		return a->data.val.btval != 0;
+	case TYPE_sht:
+		return a->data.val.shval != 0;
+	case TYPE_int:
+		return a->data.val.ival != 0;
+	case TYPE_lng:
+		return a->data.val.lval != 0;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		return a->data.val.hval != 0;
+#endif
+	case TYPE_flt:
+		return a->data.val.fval != 0;
+	case TYPE_dbl:
+		return a->data.val.dval != 0;
 	default:
 		break;
 	}

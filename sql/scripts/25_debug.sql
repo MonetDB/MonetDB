@@ -2,7 +2,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
 -- show the optimizer statistics maintained by the SQL frontend
 create function sys.optimizer_stats()
@@ -29,11 +29,7 @@ create function sys.optimizers ()
 create view sys.optimizers as select * from sys.optimizers();
 
 -- The environment table
-create function sys.environment()
-	returns table ("name" string, value string)
-	external name sql.sql_environment;
-create view sys.environment as select * from sys.environment();
-GRANT EXECUTE ON FUNCTION sys.environment() TO PUBLIC;
+create view sys.environment as select * from sys.env();
 GRANT SELECT ON sys.environment TO PUBLIC;
 
 -- The BAT buffer pool overview

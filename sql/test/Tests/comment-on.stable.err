@@ -1,0 +1,55 @@
+stderr of test 'comment-on` in directory 'sql/test` itself:
+
+
+# 15:45:21 >  
+# 15:45:21 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37253" "--set" "mapi_usock=/var/tmp/mtest-10547/.s.monetdb.37253" "--set" "monet_prompt=" "--forcemito" "--dbpath=/Users/joeri/monets/default/var/MonetDB/mTests_sql_test" "--set" "embedded_r=yes"
+# 15:45:21 >  
+
+# builtin opt 	gdk_dbpath = /Users/joeri/monets/default/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 37253
+# cmdline opt 	mapi_usock = /var/tmp/mtest-10547/.s.monetdb.37253
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /Users/joeri/monets/default/var/MonetDB/mTests_sql_test
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+
+# 15:45:21 >  
+# 15:45:21 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10547" "--port=37253"
+# 15:45:21 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-10547/.s.monetdb.37253
+QUERY = COMMENT ON VIEW tab IS '';
+ERROR = !COMMENT ON:no such view: foo.tab
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-10547/.s.monetdb.37253
+QUERY = COMMENT ON TABLE vivi IS '';
+ERROR = !COMMENT ON:no such table: foo.vivi
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-10547/.s.monetdb.37253
+QUERY = COMMENT ON TABLE tempo IS 'temporary';
+ERROR = !COMMENT ON:no such table: foo.tempo
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-10547/.s.monetdb.37253
+QUERY = COMMENT ON TABLE tmp.tempo IS 'temporary';
+ERROR = !COMMENT ON tmp object not allowed
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-69226/.s.monetdb.37664
+QUERY = COMMENT ON FUNCTION f IS 'ambiguous';
+ERROR = !COMMENT FUNCTION: there are more than one function called 'f', please use the full signature
+CODE  = 42000
+
+# 15:45:23 >  
+# 15:45:23 >  "Done."
+# 15:45:23 >  
+

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -30,7 +30,7 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 	TYPE2 y, *yp = &y;													\
 																		\
 	if( (b= BATdescriptor(*l)) == NULL )								\
-		throw(MAL, "batcolor." #NAME, RUNTIME_OBJECT_MISSING);			\
+		throw(MAL, "batcolor." #NAME, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);	\
 	bn= COLnew(b->hseqbase,getAtomIndex(#TYPE2,-1,TYPE_int),BATcount(b), TRANSIENT); \
 	if( bn == NULL){													\
 		BBPunfix(b->batCacheid);										\
@@ -101,7 +101,7 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 			BBPunfix(b2->batCacheid);									\
 		if (b3)															\
 			BBPunfix(b3->batCacheid);									\
-		throw(MAL, "batcolor." #NAME, RUNTIME_OBJECT_MISSING);			\
+		throw(MAL, "batcolor." #NAME, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);	\
 	}																	\
 	bn= COLnew(b->hseqbase,getAtomIndex("color",5,TYPE_int),BATcount(b), TRANSIENT); \
 	if( bn == NULL){													\

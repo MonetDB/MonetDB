@@ -3,26 +3,25 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /* multi version catalog */
 #ifndef _SQL_MVC_H
 #define _SQL_MVC_H
 
-#include <sql_mem.h>
-#include <gdk.h>
-#include <stdarg.h>
-#include <sql_scan.h>
-#include <sql_list.h>
-#include <sql_types.h>
-#include <sql_backend.h>
-#include <sql_catalog.h>
-#include <sql_relation.h>
-#include <sql_storage.h>
-#include <sql_keyword.h>
-#include <sql_atom.h>
-#include <sql_query.h>
+#include "sql_mem.h"
+#include "gdk.h"
+#include "sql_scan.h"
+#include "sql_list.h"
+#include "sql_types.h"
+#include "sql_backend.h"
+#include "sql_catalog.h"
+#include "sql_relation.h"
+#include "sql_storage.h"
+#include "sql_keyword.h"
+#include "sql_atom.h"
+#include "sql_query.h"
 
 #define ERRSIZE 8192
 
@@ -85,6 +84,7 @@ typedef struct mvc {
 	int clientid;		/* id of the owner */
 	struct scanner scanner;
 
+	list *sqs;		/* list of subqueries */
 	list *params;
 	sql_func *forward;	/* forward definitions for recursive functions */
 	sql_var *vars; 		/* stack of variables, frames are simply a
@@ -136,12 +136,13 @@ extern void mvc_logmanager(void);
 extern void mvc_idlemanager(void);
 
 extern mvc *mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws);
-extern void mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars);
+extern int mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars);
 extern void mvc_destroy(mvc *c);
 
 extern int mvc_status(mvc *c);
 extern int mvc_type(mvc *c);
 extern int mvc_debug_on(mvc *m, int flag);
+extern void mvc_cancel_session(mvc *m);
 
 /* since Savepoints and transactions are related the 
  * commit function includes the savepoint creation.
@@ -150,7 +151,7 @@ extern int mvc_debug_on(mvc *m, int flag);
  */
 #define has_snapshots(tr) ((tr) && (tr)->parent && (tr)->parent->parent)
 
-extern void mvc_trans(mvc *c);
+extern int mvc_trans(mvc *c);
 extern int mvc_commit(mvc *c, int chain, const char *name);
 extern int mvc_rollback(mvc *c, int chain, const char *name);
 extern int mvc_release(mvc *c, const char *name);
@@ -210,19 +211,20 @@ extern sql_trigger * mvc_create_trigger(mvc *m, sql_table *t, const char *name, 
 extern sql_trigger * mvc_create_tc(mvc *m, sql_trigger * i, sql_column *c /*, extra options such as trunc */ );
 extern void mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger * tri);
 
+
 /*dependency control*/
 extern void mvc_create_dependency(mvc *m, int id, int depend_id, int depend_type);
 extern void mvc_create_dependencies(mvc *m, list *id_l, sqlid depend_id, int dep_type);
 extern int mvc_check_dependency(mvc * m, int id, int type, list *ignore_ids);
 
 /* variable management */
-extern void stack_push_var(mvc *sql, const char *name, sql_subtype *type);
-extern void stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql_subtype *type);
-extern void stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_table *t);
-extern void stack_push_rel_view(mvc *sql, const char *name, sql_rel *view);
+extern sql_var* stack_push_var(mvc *sql, const char *name, sql_subtype *type);
+extern sql_var* stack_push_rel_var(mvc *sql, const char *name, sql_rel *var, sql_subtype *type);
+extern sql_var* stack_push_table(mvc *sql, const char *name, sql_rel *var, sql_table *t);
+extern sql_var* stack_push_rel_view(mvc *sql, const char *name, sql_rel *view);
 extern void stack_update_rel_view(mvc *sql, const char *name, sql_rel *view);
 
-extern void stack_push_frame(mvc *sql, const char *name);
+extern sql_var* stack_push_frame(mvc *sql, const char *name);
 extern void stack_pop_frame(mvc *sql);
 extern void stack_pop_until(mvc *sql, int top);
 extern sql_subtype *stack_find_type(mvc *sql, const char *name);
@@ -238,11 +240,11 @@ extern int stack_find_frame(mvc *sql, const char *name);
 extern int stack_has_frame(mvc *sql, const char *name);
 extern int stack_nr_of_declared_tables(mvc *sql);
 
-extern atom * stack_get_var(mvc *sql, const char *name);
-extern void stack_set_var(mvc *sql, const char *name, ValRecord *v);
+extern atom* stack_get_var(mvc *sql, const char *name);
+extern atom* stack_set_var(mvc *sql, const char *name, ValRecord *v);
 
 extern str stack_get_string(mvc *sql, const char *name);
-extern void stack_set_string(mvc *sql, const char *name, const char *v);
+extern str stack_set_string(mvc *sql, const char *name, const char *v);
 #ifdef HAVE_HGE
 extern hge val_get_number(ValRecord *val);
 extern hge stack_get_number(mvc *sql, const char *name);
@@ -259,5 +261,9 @@ extern sql_idx *mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i);
 
 extern void *sql_error(mvc *sql, int error_code, _In_z_ _Printf_format_string_ char *format, ...)
 	__attribute__((__format__(__printf__, 3, 4)));
+
+extern sql_rel *mvc_push_subquery(mvc *m, const char *name, sql_rel *r);
+extern sql_rel *mvc_find_subquery(mvc *m, const char *rname, const char *name);
+extern sql_exp *mvc_find_subexp(mvc *m, const char *rname, const char *name);
 
 #endif /*_SQL_MVC_H*/

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef _REL_EXP_H_
@@ -119,6 +119,7 @@ extern int exp_is_eqjoin(sql_exp *e);
 extern int exp_is_correlation(sql_exp *e, sql_rel *r );
 extern int exp_is_join_exp(sql_exp *e);
 extern int exp_is_atom(sql_exp *e);
+extern int exp_is_true(mvc *sql, sql_exp *e);
 extern int exp_is_zero(mvc *sql, sql_exp *e);
 extern int exp_is_not_null(mvc *sql, sql_exp *e);
 extern int exps_are_atoms(list *exps);

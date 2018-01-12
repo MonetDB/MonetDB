@@ -42,7 +42,6 @@ Ready.
 % cods,	elrik,	ether,	jaelen,	sora,	L7 # name
 % int,	int,	int,	int,	int,	hugeint # type
 % 1,	1,	1,	1,	1,	1 # length
-[ 0,	0,	0,	0,	0,	NULL	]
 #SELECT 0 AS cods, 0 AS elrik, 0 AS ether, 0 AS jaelen, 0 AS sora, SUM(tib0)
 # FROM t2a
 #GROUP BY cods, elrik, ether, jaelen, sora;
@@ -50,7 +49,6 @@ Ready.
 % cods,	elrik,	ether,	jaelen,	sora,	L14 # name
 % tinyint,	tinyint,	tinyint,	tinyint,	tinyint,	hugeint # type
 % 1,	1,	1,	1,	1,	1 # length
-[ 0,	0,	0,	0,	0,	NULL	]
 #drop table t2a;
 #drop table t1a;
 

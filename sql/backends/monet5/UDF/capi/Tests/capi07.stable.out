@@ -1,0 +1,49 @@
+stdout of test 'capi07` in directory 'sql/backends/monet5/UDF/capi` itself:
+
+
+# 14:50:08 >  
+# 14:50:08 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31154" "--set" "mapi_usock=/var/tmp/mtest-15870/.s.monetdb.31154" "--set" "monet_prompt=" "--forcemito" "--dbpath=NONE/var/MonetDB/mTests_sql_backends_monet5_UDF_capi"
+# 14:50:08 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5_UDF_capi', using 4 threads
+# Compiled for x86_64-apple-darwin15.6.0/64bit with 128bit integers
+# Found 8.000 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-21.eduroam.cwi.nl:31154/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-15870/.s.monetdb.31154
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 14:50:08 >  
+# 14:50:08 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-15870" "--port=31154"
+# 14:50:08 >  
+
+#START TRANSACTION;
+#CREATE AGGREGATE capi06(inp INTEGER) RETURNS BIGINT LANGUAGE C {
+#	lng sum = 0;
+#	for(size_t i = 0; i < inp.count; i++) {
+#		sum += inp.data[i];
+#	}
+#	result->initialize(result, 1);
+#	result->data[0] = sum;
+#};
+#CREATE TABLE integers(i INTEGER);
+#INSERT INTO integers VALUES (3), (4), (1), (2), (5), (6);
+[ 6	]
+#SELECT capi06(i) FROM integers;
+% sys.L4 # table_name
+% L3 # name
+% bigint # type
+% 2 # length
+[ 21	]
+#ROLLBACK;
+
+# 14:50:08 >  
+# 14:50:08 >  "Done."
+# 14:50:08 >  
+

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef _GDK_ATOMS_H_
@@ -66,13 +66,13 @@ gdk_export ssize_t fltFromStr(const char *src, size_t *len, flt **dst);
 gdk_export ssize_t fltToStr(str *dst, size_t *len, const flt *src);
 gdk_export ssize_t dblFromStr(const char *src, size_t *len, dbl **dst);
 gdk_export ssize_t dblToStr(str *dst, size_t *len, const dbl *src);
-gdk_export ssize_t GDKstrFromStr(unsigned char *dst, const unsigned char *src, ssize_t len);
-gdk_export ssize_t strFromStr(const char *src, size_t *len, str *dst);
+gdk_export ssize_t GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len);
+gdk_export ssize_t strFromStr(const char *restrict src, size_t *restrict len, str *restrict dst);
 gdk_export BUN strHash(const char *s);
 gdk_export size_t strLen(const char *s);
 gdk_export int strNil(const char *s);
-gdk_export size_t escapedStrlen(const char *src, const char *sep1, const char *sep2, int quote);
-gdk_export size_t escapedStr(char *dst, const char *src, size_t dstlen, const char *sep1, const char *sep2, int quote);
+gdk_export size_t escapedStrlen(const char *restrict src, const char *sep1, const char *sep2, int quote);
+gdk_export size_t escapedStr(char *restrict dst, const char *restrict src, size_t dstlen, const char *sep1, const char *sep2, int quote);
 /*
  * @- nil values
  * All types have a single value designated as a NIL value. It
@@ -147,11 +147,7 @@ gdk_export const ptr ptr_nil;
 #define is_dbl_nil(v)	isnan(v)
 #define is_bat_nil(v)	((v) == bat_nil || (v) == 0)
 
-#if defined(_MSC_VER) && defined(__INTEL_COMPILER)
-#include <mathimf.h>
-#else
 #include <math.h>
-#endif
 
 #if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && _MSC_VER < 1800
 #include <float.h>

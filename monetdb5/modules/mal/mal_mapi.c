@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -32,8 +32,8 @@
 #ifdef HAVE_MAPI
 #include "mal_mapi.h"
 #include <sys/types.h>
-#include <stream_socket.h>
-#include <mapi.h>
+#include "stream_socket.h"
+#include "mapi.h"
 #ifdef HAVE_OPENSSL
 # include <openssl/rand.h>		/* RAND_bytes() */
 #else
@@ -734,11 +734,11 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 		userver.sun_path[sizeof(userver.sun_path) - 1] = 0;
 
 		length = (SOCKLEN) sizeof(userver);
-		unlink(usockfile);
+		remove(usockfile);
 		if (bind(usock, (SOCKPTR) &userver, length) == SOCKET_ERROR) {
 			char *e;
 			closesocket(usock);
-			unlink(usockfile);
+			remove(usockfile);
 			GDKfree(psock);
 			e = createException(IO, "mal_mapi.listen",
 								OPERATION_FAILED
@@ -940,7 +940,7 @@ SERVERclient(void *res, const Stream *In, const Stream *Out)
 																		\
 			l = 2 * strlen(err) + 8192;									\
 			newerr = (str) GDKmalloc(l);								\
-			if(newerr == NULL) { err = MAL_MALLOC_FAIL; break;}			\
+			if(newerr == NULL) { err = SQLSTATE(HY001) MAL_MALLOC_FAIL; break;}	\
 																		\
 			f = newerr;													\
 			/* I think this code tries to deal with multiple errors, this \
@@ -1296,7 +1296,7 @@ SERVERget_row_count(lng *ret, int *key){
 	Mapi mid;
 	int i;
 	accessTest(*key, "get_row_count");
-	*ret= mapi_get_row_count(SERVERsessions[i].hdl);
+	*ret= (lng) mapi_get_row_count(SERVERsessions[i].hdl);
 	if( mapi_error(mid) )
 		throw(MAL, "mapi.get_row_count", "%s",
 			mapi_result_error(SERVERsessions[i].hdl));
@@ -1320,7 +1320,7 @@ SERVERrows_affected(lng *ret, int *key){
 	Mapi mid;
 	int i;
 	accessTest(*key, "rows_affected");
-	*ret= mapi_rows_affected(SERVERsessions[i].hdl);
+	*ret= (lng) mapi_rows_affected(SERVERsessions[i].hdl);
 	return MAL_SUCCEED;
 }
 
@@ -1338,7 +1338,7 @@ SERVERfetch_all_rows(lng *ret, int *key){
 	Mapi mid;
 	int i;
 	accessTest(*key, "fetch_all_rows");
-	*ret= mapi_fetch_all_rows(SERVERsessions[i].hdl);
+	*ret= (lng) mapi_fetch_all_rows(SERVERsessions[i].hdl);
 	return MAL_SUCCEED;
 }
 
@@ -1705,7 +1705,7 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			case TYPE_dbl:
 			case TYPE_str:
 				if(SERVERfieldAnalysis(fld,getVarType(mb,getArg(pci,j)),&stk->stk[pci->argv[j]]) < 0)
-					throw(MAL, "mapi.rpc", MAL_MALLOC_FAIL);
+					throw(MAL, "mapi.rpc", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				break;
 			default:
 				throw(MAL, "mapi.rpc",

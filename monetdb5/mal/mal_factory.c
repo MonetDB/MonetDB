@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -306,7 +306,7 @@ yieldFactory(MalBlkPtr mb, InstrPtr p, int pc)
 		pl->env = NULL;
 		return MAL_SUCCEED;
 	}
-	throw(MAL, "factory.yield", RUNTIME_OBJECT_MISSING);
+	throw(MAL, "factory.yield", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
 
 /*

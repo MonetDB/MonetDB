@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -400,7 +400,7 @@ TKNZRdepositFile(void *r, str *fnme)
 	bstream *bs;
 	char *s, *t;
 	int len = 0;
-	char buf[PATHLENGTH];
+	char buf[FILENAME_MAX];
 	oid pos;
 	str msg= MAL_SUCCEED;
 
@@ -409,9 +409,9 @@ TKNZRdepositFile(void *r, str *fnme)
 
 	(void) r;
 	if (**fnme == '/')
-		snprintf(buf, PATHLENGTH, "%s", *fnme);
+		snprintf(buf, FILENAME_MAX, "%s", *fnme);
 	else
-		snprintf(buf, PATHLENGTH, "%s/%s", monet_cwd, *fnme);
+		snprintf(buf, FILENAME_MAX, "%s/%s", monet_cwd, *fnme);
 	/* later, handle directory separator */
 	fs = open_rastream(buf);
 	if (fs == NULL)

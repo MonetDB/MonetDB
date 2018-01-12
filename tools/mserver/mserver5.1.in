@@ -100,6 +100,9 @@ Print list of options.
 .TP
 .B \-\-version
 Print version and compile configuration.
+.TP
+.B \-\-trace
+Print information about MAL instructions as they are executed.
 .SH GDK PARAMETERS
 GDK (Goblin Database Kernel) is the current columnar storage kernel
 engine of the MonetDB 5 database.
@@ -148,9 +151,12 @@ combination of):
                              (for join, select)
 .\"    8388608 = XPROPMASK    = extended property checking:
 .\"                             tells also about not set properties
-.\"   16777216 = JOINPROPMASK = disable property checking with
-.\"                             join & outerjoin (e.g., for
-.\"                             performance measurements)
+   16777216 = NOSYNCMASK = disable forcefully synchronizing files
+                             to disk.  If this flag is set, there is
+                             no guarantee that the database remains
+                             consistent after a crash.  DO NOT USE
+                             (unless you really don't care about your
+                             data).
    33554432 = DEADBEEFMASK = disable "cleaning" of freed memory
                              in GDKfree() (e.g., for performance
                              measurements)
@@ -188,8 +194,7 @@ these debug flags as well:
   \-\-algorithms    (ALGOMASK | ESTIMASK)
   \-\-performance   (DEADBEEFMASK)
   \-\-optimizers    (OPTMASK)
-  \-\-forcemito     (FORCEMITOMASK)
-  \-\-trace[=stethoscope argument]
+  \-\-forcemito     (FORCEMITOMASK | NOSYNCMASK)
 .EE
 
 Default:
@@ -271,30 +276,30 @@ The following are possible pipes to use:
 .B minimal_pipe
 The minimal pipeline necessary by the server to operate correctly.
 .\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-minimal_pipe=inline,remap,deadcode,multiplex,garbageCollector
+minimal_pipe=inline,remap,deadcode,multiplex,generator,profiler,candidates,garbageCollector
 .TP
 .B default_pipe
-The default pipe line contains the mitosis-mergetable-reorder
+The default pipeline contains the mitosis-mergetable-reorder
 optimizers, aimed at large tables and improved access locality.
 .\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-default_pipe=inline,remap,costModel,coercions,evaluate,emptySet,aliases,pushselect,mitosis,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,matpack,dataflow,querylog,multiplex,garbageCollector
+default_pipe=inline,remap,costModel,coercions,evaluate,emptybind,pushselect,aliases,mitosis,mergetable,deadcode,aliases,constants,commonTerms,projectionpath,deadcode,reorder,matpack,dataflow,querylog,multiplex,generator,profiler,candidates,garbageCollector
 .TP
 .B no_mitosis_pipe
-The no_mitosis pipe line is identical to the default pipeline, except
+The no_mitosis pipeline is identical to the default pipeline, except
 that optimizer mitosis is omitted.
 It is used mainly to make some tests work deterministically, and to
 check/debug whether "unexpected" problems are related to mitosis
 (and/or mergetable).
 .\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-no_mitosis_pipe=inline,remap,costModel,coercions,evaluate,emptySet,aliases,pushselect,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,matpack,dataflow,querylog,multiplex,garbageCollector
+no_mitosis_pipe=inline,remap,costModel,coercions,evaluate,emptybind,pushselect,aliases,mergetable,deadcode,aliases,constants,commonTerms,projectionpath,reorder,deadcode,matpack,dataflow,querylog,multiplex,generator,profiler,candidates,garbageCollector
 .TP
 .B sequential_pipe
-The sequential pipe line is identical to the default pipeline, except
+The sequential pipeline is identical to the default pipeline, except
 that optimizers mitosis & dataflow are omitted.
 It is use mainly to make some tests work deterministically, i.e.,
 avoid ambigious output, by avoiding parallelism.
 .\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-sequential_pipe=inline,remap,costModel,coercions,evaluate,emptySet,aliases,pushselect,mergetable,deadcode,commonTerms,joinPath,reorder,deadcode,reduce,matpack,querylog,multiplex,garbageCollector
+sequential_pipe=inline,remap,costModel,coercions,evaluate,emptybind,pushselect,aliases,mergetable,deadcode,aliases,constants,commonTerms,projectionpath,reorder,deadcode,matpack,querylog,multiplex,generator,profiler,candidates,garbageCollector
 .SH CONFIG FILE FORMAT
 The configuration file readable by
 .I mserver5

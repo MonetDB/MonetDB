@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /* Getopt for GNU.
@@ -35,19 +35,7 @@
 # define _NO_PROTO
 #endif
 
-#include <monetdb_config.h>
-
-#if 0				/* already taken care of in config.h */
-#if !defined __STDC__ || !__STDC__
-/* This is a separate conditional since some stdc systems
-   reject `defined (const)'.  */
-# ifndef const
-#  define const
-# endif
-#endif
-#endif
-
-#include <stdio.h>
+#include "monetdb_config.h"
 
 /* Comment out all this code if we are using the GNU C Library, and are not
    actually compiling the library itself.  This code is part of the GNU C
@@ -211,11 +199,7 @@ static char *posixly_correct;
 # define my_index	strchr
 #else
 
-# if HAVE_STRING_H
-#  include <string.h>
-# else
-#  include <strings.h>
-# endif
+# include <string.h>
 
 /* Avoid depending on library functions or files
    whose names are inconsistent.  */

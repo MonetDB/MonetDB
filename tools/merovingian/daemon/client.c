@@ -3,14 +3,12 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 
-#include <stdio.h>
 #include <string.h>  /* strerror, strchr, strcmp */
-#include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -21,12 +19,12 @@
 #endif
 #include <fcntl.h>
 
-#include <msabaoth.h>
-#include <mcrypt.h>
-#include <stream.h>
-#include <stream_socket.h>
-#include <utils/utils.h> /* freeConfFile */
-#include <utils/properties.h> /* readProps */
+#include "msabaoth.h"
+#include "mcrypt.h"
+#include "stream.h"
+#include "stream_socket.h"
+#include "utils/utils.h" /* freeConfFile */
+#include "utils/properties.h" /* readProps */
 
 #include "merovingian.h"
 #include "forkmserver.h"

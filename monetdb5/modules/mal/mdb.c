@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -589,6 +589,8 @@ MDBgetExceptionVariable(str *ret, str *msg)
 
 	*tail = 0;
 	*ret = GDKstrdup(*msg);
+	if (*ret == NULL)
+		throw(MAL, "mdb.getExceptionVariable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	*tail = ':';
 	return MAL_SUCCEED;
 }
@@ -607,6 +609,8 @@ MDBgetExceptionContext(str *ret, str *msg)
 
 	*tail2 = 0;
 	*ret = GDKstrdup(tail + 1);
+	if (*ret == NULL)
+		throw(MAL, "mdb.getExceptionContext", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	*tail2 = ':';
 	return MAL_SUCCEED;
 }
@@ -624,6 +628,8 @@ MDBgetExceptionReason(str *ret, str *msg)
 		throw(MAL, "mdb.getExceptionReason", OPERATION_FAILED " ':' missing");
 
 	*ret = GDKstrdup(tail + 1);
+	if( *ret == NULL)
+		throw(MAL, "mdb.getExceptionReason", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 

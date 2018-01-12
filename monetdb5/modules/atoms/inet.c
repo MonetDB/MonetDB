@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -18,7 +18,7 @@
  *
  */
 #include "monetdb_config.h"
-#include <gdk.h>
+#include "gdk.h"
 #include "mal.h"
 #include "mal_exception.h"
 
@@ -555,6 +555,8 @@ INEThost(str *retval, const inet *val)
 
 	if (in_isnil(val)) {
 		*retval = GDKstrdup(str_nil);
+		if( *retval == NULL)
+			throw(MAL,"INEThost", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
 		ip = GDKmalloc(sizeof(char) * 16);
 		if( ip == NULL)
@@ -700,6 +702,8 @@ INETtext(str *retval, const inet *val)
 
 	if (in_isnil(val)) {
 		*retval = GDKstrdup(str_nil);
+		if( *retval == NULL)
+			throw(MAL,"INETtext", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
 		ip = GDKmalloc(sizeof(char) * 20);
 		if( ip == NULL)
@@ -723,6 +727,8 @@ INETabbrev(str *retval, const inet *val)
 
 	if (in_isnil(val)) {
 		*retval = GDKstrdup(str_nil);
+		if (*retval == NULL)
+			throw(MAL, "inet.abbrev", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	} else {
 		unsigned int msk;
 		unsigned char m[4];

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /* (c) M.L. Kersten
@@ -139,6 +139,7 @@ EXAMPLE:
 static void
 renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname)
 {
+	(void)usrname;
 	char logbuffer[LOGLEN], *logbase;
 	size_t loglen;
 	str stmt, c;
@@ -158,9 +159,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	/* make profile event tuple  */
 	lognew();
 	logadd("{%s",prettify); // fill in later with the event counter
-
-	if( usrname)
-		//logadd("\"user\":\"%s\",%s",usrname, prettify);
+	logadd("\"source\": \"trace\",%s", prettify);
 
 	logadd("\"clk\":"LLFMT",%s",usec,prettify);
 	logadd("\"ctime\":"LLFMT".%06ld,%s", sec, microseconds, prettify);
@@ -384,10 +383,10 @@ getCPULoad(char cpuload[BUFSIZ]){
 	static FILE *proc= NULL;
 	lng newload;
 
-	if ( proc == NULL || ferror(proc))
+	if (proc == NULL || ferror(proc))
 		proc = fopen("/proc/stat","r");
 	else rewind(proc);
-	if ( proc == NULL) {
+	if (proc == NULL) {
 		/* unexpected */
 		return -1;
 	}
@@ -395,10 +394,10 @@ getCPULoad(char cpuload[BUFSIZ]){
 	if ((n = fread(buf, 1, BUFSIZ,proc)) == 0 )
 		return -1;
 	buf[n] = 0;
-	for ( s= buf; *s; s++) {
-		if ( strncmp(s,"cpu",3)== 0){
+	for (s= buf; *s; s++) {
+		if (strncmp(s,"cpu",3)== 0){
 			s +=3;
-			if ( *s == ' ') {
+			if (*s == ' ') {
 				s++;
 				cpu = 255; // the cpu totals stored here
 			}  else {
@@ -428,12 +427,12 @@ getCPULoad(char cpuload[BUFSIZ]){
 			s++;
 	}
 
-	if( cpuload == 0)
+	if(cpuload == 0)
 		return 0;
 	// identify core processing
-	len += snprintf(cpuload, BUFSIZ, "[ ");
-	for ( cpu = 0; cpuload && cpu < 255 && corestat[cpu].user; cpu++) {
-		len +=snprintf(cpuload + len, BUFSIZ - len, "%c %.2f", (cpu?',':' '), corestat[cpu].load);
+	len += snprintf(cpuload, BUFSIZ, "[");
+	for (cpu = 0; cpuload && cpu < 255 && corestat[cpu].user; cpu++) {
+		len +=snprintf(cpuload + len, BUFSIZ - len, "%s%.2f", (cpu?",":""), corestat[cpu].load);
 	}
 	(void) snprintf(cpuload + len, BUFSIZ - len, "]");
 	return 0;
@@ -455,7 +454,7 @@ profilerHeartbeatEvent(char *alter)
 
 	lognew();
 	logadd("{%s",prettify); // fill in later with the event counter
-	logadd("\"user\":\"heartbeat\",%s", prettify);
+	logadd("\"source\":\"heartbeat\",%s", prettify);
 	logadd("\"rss\":"SZFMT ",%s", MT_getrss()/1024/1024, prettify);
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
@@ -472,7 +471,7 @@ profilerHeartbeatEvent(char *alter)
 	prevUsage = infoUsage;
 #endif
 	logadd("\"state\":\"%s\",%s",alter,prettify);
-	logadd("\"cpuload\":\"%s\",%s",cpuload,prettify);
+	logadd("\"cpuload\":%s%s",cpuload,prettify);
 	logadd("}\n"); // end marker
 	logjsonInternal(logbuffer);
 }
@@ -584,16 +583,16 @@ static int tracecounter = 0;
 str
 startTrace(str path)
 {
-	char buf[PATHLENGTH];
+	char buf[FILENAME_MAX];
 
 	if( path && eventstream == NULL){
 		// create a file to keep the events, unless we
 		// already have a profiler stream
 		MT_lock_set(&mal_profileLock );
 		if(eventstream == NULL && offlinestore ==0){
-			snprintf(buf,PATHLENGTH,"%s%c%s",GDKgetenv("gdk_dbname"), DIR_SEP, path);
+			snprintf(buf,FILENAME_MAX,"%s%c%s",GDKgetenv("gdk_dbname"), DIR_SEP, path);
 			(void) mkdir(buf,0755);
-			snprintf(buf,PATHLENGTH,"%s%c%s%ctrace_%d",GDKgetenv("gdk_dbname"), DIR_SEP, path,DIR_SEP,tracecounter++ % MAXTRACEFILES);
+			snprintf(buf,FILENAME_MAX,"%s%c%s%ctrace_%d",GDKgetenv("gdk_dbname"), DIR_SEP, path,DIR_SEP,tracecounter++ % MAXTRACEFILES);
 			eventstream = open_wastream(buf);
 			offlinestore++;
 		}

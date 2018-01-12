@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /* This file should not be included in any file outside of this directory */
@@ -157,7 +157,7 @@ __hidden int HASHgonebad(BAT *b, const void *v)
 	__attribute__((__visibility__("hidden")));
 __hidden BUN HASHmask(BUN cnt)
 	__attribute__((__visibility__("hidden")));
-__hidden Hash *HASHnew(Heap *hp, int tpe, BUN size, BUN mask, BUN count)
+__hidden gdk_return HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	__attribute__((__warn_unused_result__))
@@ -171,6 +171,8 @@ __hidden void HEAPfree(Heap *h, int remove)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return HEAPload(Heap *h, const char *nme, const char *ext, int trunc)
 	__attribute__((__warn_unused_result__))
+	__attribute__((__visibility__("hidden")));
+__hidden void HEAP_recover(Heap *, const var_t *, BUN)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return HEAPsave(Heap *h, const char *nme, const char *ext)
 	__attribute__((__warn_unused_result__))
@@ -235,7 +237,7 @@ struct PROPrec {
 
 struct Imprints {
 	bte bits;		/* how many bits in imprints */
-	Heap *imprints;
+	Heap imprints;
 	void *bins;		/* pointer into imprints heap (bins borders)  */
 	BUN *stats;		/* pointer into imprints heap (stats per bin) */
 	void *imps;		/* pointer into imprints heap (bit vectors)   */

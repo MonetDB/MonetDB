@@ -3,11 +3,10 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
-#include <stdio.h>
 #include <signal.h>
 #include <unistd.h> /* isatty */
 #include <time.h> /* time, localtime */
@@ -16,9 +15,8 @@
 #include <sys/wait.h> /* wait */
 #include <sys/stat.h> /* open */
 #include <fcntl.h> /* open */
-#include <errno.h>
 
-#include <utils/properties.h>
+#include "utils/properties.h"
 
 #include "merovingian.h"
 #include "handlers.h"
@@ -156,13 +154,13 @@ void reinitialize(void)
 #if O_CLOEXEC == 0
 		fcntl(t, F_SETFD, FD_CLOEXEC);
 #endif
-		Mfprintf(_mero_logfile, "%s END merovingian[" LLFMT "]: "
+		Mfprintf(_mero_logfile, "%s END merovingian[%lld]: "
 				"caught SIGHUP, closing logfile\n",
 				mytime, (long long int)_mero_topdp->next->pid);
 		fflush(_mero_logfile);
 		_mero_topdp->out = _mero_topdp->err = t;
 		_mero_logfile = fdopen(t, "a");
-		Mfprintf(_mero_logfile, "%s BEG merovingian[" LLFMT "]: "
+		Mfprintf(_mero_logfile, "%s BEG merovingian[%lld]: "
 				"reopening logfile\n",
 				mytime, (long long int)_mero_topdp->next->pid);
 	}

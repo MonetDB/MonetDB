@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -16,9 +16,9 @@
  * @f microbenchmark
  */
 #include "monetdb_config.h"
-#include <mal.h>
+#include "mal.h"
 #include <math.h>
-#include <mal_exception.h>
+#include "mal_exception.h"
 #include "microbenchmark.h"
 
 #ifdef STATIC_CODE_ANALYSIS
@@ -365,7 +365,7 @@ MBMmix(bat *bn, bat *batid)
 	BAT *b;
 
 	if ((b = BATdescriptor(*batid)) == NULL)
-		throw(MAL, "microbenchmark.mix", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "microbenchmark.mix", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	n = BATcount(b);
 	/* mix BUNs randomly */

@@ -1,0 +1,54 @@
+stdout of test 'capi09` in directory 'sql/backends/monet5/UDF/capi` itself:
+
+
+# 13:29:00 >  
+# 13:29:00 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38148" "--set" "mapi_usock=/var/tmp/mtest-81291/.s.monetdb.38148" "--set" "monet_prompt=" "--forcemito" "--dbpath=NONE/var/MonetDB/mTests_sql_backends_monet5_UDF_capi"
+# 13:29:00 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5_UDF_capi', using 4 threads
+# Compiled for x86_64-apple-darwin15.6.0/64bit with 128bit integers
+# Found 8.000 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-21.eduroam.cwi.nl:38148/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-81291/.s.monetdb.38148
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 13:29:00 >  
+# 13:29:00 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-81291" "--port=38148"
+# 13:29:00 >  
+
+#START TRANSACTION;
+#CREATE FUNCTION capi12(inp UUID) RETURNS UUID LANGUAGE C {
+#    result->initialize(result, inp.count);
+#    for(size_t i = 0; i < inp.count; i++) {
+#        if (inp.data[i] == inp.null_value) {
+#            result->data[i] = result->null_value;
+#        } else {
+#            result->data[i] = inp.data[i];
+#        }
+#    }
+#};
+#CREATE TABLE uuids(d UUID);
+#INSERT INTO uuids VALUES ('ad887b3d-08f7-c308-7285-354a1857cbc8'), (NULL);
+[ 2	]
+#SELECT capi12(d) FROM uuids;
+% sys.L2 # table_name
+% L2 # name
+% uuid # type
+% 0 # length
+[ ad887b3d-08f7-c308-7285-354a1857cbc8	]
+[ NULL	]
+#DROP FUNCTION capi12;
+#DROP TABLE uuids;
+#ROLLBACK;
+
+# 13:29:01 >  
+# 13:29:01 >  "Done."
+# 13:29:01 >  
+

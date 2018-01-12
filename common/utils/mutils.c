@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -11,10 +11,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <stdlib.h>
-#ifdef HAVE_STRINGS_H
-# include <strings.h>
-#endif
+#include <string.h>
 #include "mutils.h"
 
 #if defined(HAVE_EXECINFO_H) && defined(HAVE_BACKTRACE)
@@ -25,9 +22,7 @@
 # include <mach-o/dyld.h>  /* _NSGetExecutablePath on OSX >=10.5 */
 #endif
 
-#ifdef HAVE_LIMITS_H
-# include <limits.h>  /* PATH_MAX on Solaris */
-#endif
+#include <limits.h>		/* PATH_MAX on Solaris */
 
 #ifdef HAVE_SYS_PARAM_H
 # include <sys/param.h>  /* realpath on OSX, prerequisite of sys/sysctl on OpenBSD */
@@ -50,12 +45,6 @@ typedef int int32_t;
 #define BIG_ENDIAN	4321
 #define LITTLE_ENDIAN	1234
 #define BYTE_ORDER	LITTLE_ENDIAN
-
-#ifndef HAVE_NEXTAFTERF
-#include "s_nextafterf.c"
-#endif
-
-#include <stdio.h>
 
 /* translate Windows error code (GetLastError()) to Unix-style error */
 int

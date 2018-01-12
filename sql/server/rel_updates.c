@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -25,7 +25,10 @@ insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s)
 		return exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
 	} else if (s->token == SQL_DEFAULT) {
 		if (c->def) {
-			return rel_parse_val(sql, sa_message(sql->sa, "select CAST(%s AS %s);", c->def, c->type.type->sqlname), sql->emode);
+			sql_exp *e = rel_parse_val(sql, sa_message(sql->sa, "select CAST(%s AS %s);", c->def, c->type.type->sqlname), sql->emode);
+			if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
+				return NULL;
+			return e;
 		} else {
 			return sql_error(sql, 02, SQLSTATE(42000) "INSERT INTO: column '%s' has no valid default value", c->base.name);
 		}
@@ -1231,7 +1234,7 @@ table_column_types(sql_allocator *sa, sql_table *t)
 }
 
 static list *
-table_column_names(sql_allocator *sa, sql_table *t)
+table_column_names_and_defaults(sql_allocator *sa, sql_table *t)
 {
 	node *n;
 	list *types = sa_list(sa);
@@ -1239,6 +1242,7 @@ table_column_names(sql_allocator *sa, sql_table *t)
 	if (t->columns.set) for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 		append(types, &c->base.name);
+		append(types, c->def);
 	}
 	return types;
 }
@@ -1630,7 +1634,7 @@ copyfromloader(mvc *sql, dlist *qname, symbol *fcall)
 	loader->sname = sname ? sa_zalloc(sql->sa, strlen(sname) + 1) : NULL;
 	loader->tname = tname ? sa_zalloc(sql->sa, strlen(tname) + 1) : NULL;
 	loader->coltypes = table_column_types(sql->sa, t);
-	loader->colnames = table_column_names(sql->sa, t);
+	loader->colnames = table_column_names_and_defaults(sql->sa, t);
 
 	if (sname) strcpy(loader->sname, sname);
 	if (tname) strcpy(loader->tname, tname);
@@ -1777,7 +1781,10 @@ rel_parse_val(mvc *m, char *query, char emode)
 		m->session->status = status;
 		strcpy(m->errstr, errstr);
 	} else {
+		int label = m->label;
 		*m = o;
+
+		m->label = label;
 	}
 	return e;
 }

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /* This file contains shared definitions for gdk_calc.c and gdk_aggr.c */
@@ -24,13 +24,6 @@
 #undef ABSOLUTE
 #endif
 #define ABSOLUTE(x)	((x) < 0 ? -(x) : (x))
-
-#ifndef HAVE_FABSF
-#define fabsf ABSOLUTE
-#endif
-#ifndef HAVE_LLABS
-#define llabs ABSOLUTE
-#endif
 
 #define LT(a, b)	((bit) ((a) < (b)))
 

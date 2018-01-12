@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -106,8 +106,8 @@
 				 * the absolute path */                                        \
 				char address[100];                                             \
 				GDKmmapfile(address, sizeof(address), ret->mmap_id);           \
-				bat->theap.filename =                                          \
-					GDKfilepath(NOFARM, BATDIR, address, "tmp");               \
+				snprintf(bat->theap.filename, sizeof(bat->theap.filename),     \
+					"%s%c%s.tmp", BATDIR, DIR_SEP, address);                   \
 				ret->mmap_id = -1;                                             \
 			}                                                                  \
 		}                                                                      \
@@ -434,7 +434,7 @@ convert_and_append(BAT* b, const char* text, bit force) {
 			NP_COL_BAT_STR_LOOP(b, unsigned long, "%lu");                      \
 			break;                                                             \
 		case NPY_ULONGLONG:                                                    \
-			NP_COL_BAT_STR_LOOP(b, unsigned long long, ULLFMT);                \
+			NP_COL_BAT_STR_LOOP(b, ulng, ULLFMT);                              \
 			break;                                                             \
 		case NPY_FLOAT16:                                                      \
 		case NPY_FLOAT:                                                        \

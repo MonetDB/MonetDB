@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -105,7 +105,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) cntxt;
 	b = BATdescriptor( stk->stk[getArg(p,1)].val.ival);
 	if ( b == NULL)
-		throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "mat.pack", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if ( getArgType(mb,p,2) == TYPE_int){
 		/* first step, estimate with some slack */

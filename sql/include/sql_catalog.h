@@ -3,15 +3,15 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef SQL_CATALOG_H
 #define SQL_CATALOG_H
 
-#include <sql_mem.h>
-#include <sql_list.h>
-#include <stream.h>
+#include "sql_mem.h"
+#include "sql_list.h"
+#include "stream.h"
 
 #define tr_none		0
 #define tr_readonly	1
@@ -59,6 +59,8 @@
 #define NO_DEPENDENCY 0
 #define HAS_DEPENDENCY 1
 #define CICLE_DEPENDENCY 2
+#define DEPENDENCY_CHECK_ERROR 3
+#define DEPENDENCY_CHECK_OK 0
 
 #define NO_TRIGGER 0
 #define IS_TRIGGER 1
@@ -296,8 +298,8 @@ typedef struct sql_arg {
 #define FUNC_LANG_MAL 1 /* create sql external mod.func */
 #define FUNC_LANG_SQL 2 /* create ... sql function/procedure */
 #define FUNC_LANG_R   3 /* create .. language R */
-#define FUNC_LANG_C   4 /* create .. language C, Not used/implemented */
-#define FUNC_LANG_J   5 /* create .. language JavaScript, Not used/implemented */
+#define FUNC_LANG_C   4 /* create .. language C */
+#define FUNC_LANG_J   5
 // this should probably be done in a better way
 #define FUNC_LANG_PY  6 /* create .. language PYTHON */
 #define FUNC_LANG_MAP_PY  7 /* create .. language PYTHON_MAP */
@@ -305,6 +307,7 @@ typedef struct sql_arg {
 #define FUNC_LANG_MAP_PY2  9 /* create .. language PYTHON2_MAP */
 #define FUNC_LANG_PY3  10 /* create .. language PYTHON3 */
 #define FUNC_LANG_MAP_PY3  11 /* create .. language PYTHON3_MAP */
+#define FUNC_LANG_CPP   12 /* create .. language CPP */
 
 #define LANG_EXT(l)  (l>FUNC_LANG_SQL)
 
@@ -601,6 +604,7 @@ extern node *find_sql_func_node(sql_schema *s, int id);
 typedef struct {
 	BAT *b;
 	char* name;
+	void* def;
 } sql_emit_col;
 
 #endif /* SQL_CATALOG_H */

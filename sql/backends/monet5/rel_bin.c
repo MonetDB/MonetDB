@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -555,6 +555,17 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			s = bin_find_column(be, right, e->l, e->r);
 		if (!s && left) 
 			s = bin_find_column(be, left, e->l, e->r);
+		if (!s) {
+			sql_rel *rel = mvc_find_subquery(be->mvc, e->l?e->l:e->r, e->r);
+
+			if (rel) { 
+				stmt *s = rel->p;
+
+				if (s && s->type == st_list)
+					s = bin_find_column(be, s, e->l?e->l:e->r, e->r);
+				return s; /* ugh */
+			}
+		}
 		if (s && grp)
 			s = stmt_project(be, ext, s);
 		if (!s && right) {
@@ -1061,6 +1072,7 @@ rel_parse_value(backend *be, char *query, char emode)
 	bstream *bs;
 
 	m->qc = NULL;
+	m->sqs = NULL;
 
 	m->caching = 0;
 	m->emode = emode;
@@ -2874,6 +2886,7 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 	*o = *m;
 
 	m->qc = NULL;
+	m->sqs = NULL;
 
 	m->caching = 0;
 	m->emode = mode;
@@ -3182,7 +3195,7 @@ sql_insert_key(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stmt *
 	}
 }
 
-static void
+static int
 sql_stack_add_inserted( mvc *sql, const char *name, sql_table *t, stmt **updates) 
 {
 	/* Put single relation of updates and old values on to the stack */
@@ -3205,7 +3218,7 @@ sql_stack_add_inserted( mvc *sql, const char *name, sql_table *t, stmt **updates
 	r = rel_table_func(sql->sa, NULL, NULL, exps, 2);
 	r->l = ti;
 
-	stack_push_rel_view(sql, name, r);
+	return stack_push_rel_view(sql, name, r) ? 1 : 0;
 }
 
 static int
@@ -3221,15 +3234,17 @@ sql_insert_triggers(backend *be, sql_table *t, stmt **updates, int time)
 	for (n = t->triggers.set->h; n; n = n->next) {
 		sql_trigger *trigger = n->data;
 
-		stack_push_frame(sql, "OLD-NEW");
+		if(!stack_push_frame(sql, "OLD-NEW"))
+			return 0;
 		if (trigger->event == 0 && trigger->time == time) { 
 			stmt *s = NULL;
 			const char *n = trigger->new_name;
 
 			/* add name for the 'inserted' to the stack */
-			if (!n) n = "new"; 
-	
-			sql_stack_add_inserted(sql, n, t, updates);
+			if (!n) n = "new";
+
+			if(!sql_stack_add_inserted(sql, n, t, updates))
+				return 0;
 			s = sql_parse(be, sql->sa, trigger->statement, m_instantiate);
 			
 			if (!s) 
@@ -4097,7 +4112,7 @@ update_idxs_and_check_keys(backend *be, sql_table *t, stmt *rows, stmt **updates
 	return idx_updates;
 }
 
-static void
+static int
 sql_stack_add_updated(mvc *sql, const char *on, const char *nn, sql_table *t, stmt *tids, stmt **updates)
 {
 	/* Put single relation of updates and old values on to the stack */
@@ -4133,8 +4148,9 @@ sql_stack_add_updated(mvc *sql, const char *on, const char *nn, sql_table *t, st
 	r->l = ti;
 		
 	/* put single table into the stack with 2 names, needed for the psm code */
-	stack_push_rel_view(sql, on, r);
-	stack_push_rel_view(sql, nn, rel_dup(r));
+	if(!stack_push_rel_view(sql, on, r) || !stack_push_rel_view(sql, nn, rel_dup(r)))
+		return 0;
+	return 1;
 }
 
 static int
@@ -4150,7 +4166,8 @@ sql_update_triggers(backend *be, sql_table *t, stmt *tids, stmt **updates, int t
 	for (n = t->triggers.set->h; n; n = n->next) {
 		sql_trigger *trigger = n->data;
 
-		stack_push_frame(sql, "OLD-NEW");
+		if(!stack_push_frame(sql, "OLD-NEW"))
+			return 0;
 		if (trigger->event == 2 && trigger->time == time) {
 			stmt *s = NULL;
 	
@@ -4160,8 +4177,9 @@ sql_update_triggers(backend *be, sql_table *t, stmt *tids, stmt **updates, int t
 	
 			if (!n) n = "new"; 
 			if (!o) o = "old"; 
-	
-			sql_stack_add_updated(sql, o, n, t, tids, updates);
+
+			if(!sql_stack_add_updated(sql, o, n, t, tids, updates))
+				return 0;
 			s = sql_parse(be, sql->sa, trigger->statement, m_instantiate);
 			if (!s) 
 				return 0;
@@ -4348,8 +4366,8 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		sql->cascade_action = NULL;
 	return cnt;
 }
- 
-static void
+
+static int
 sql_stack_add_deleted(mvc *sql, const char *name, sql_table *t, stmt *tids, int type)
 {
 	/* Put single relation of updates and old values on to the stack */
@@ -4372,7 +4390,7 @@ sql_stack_add_deleted(mvc *sql, const char *name, sql_table *t, stmt *tids, int 
 	r = rel_table_func(sql->sa, NULL, NULL, exps, 2);
 	r->l = ti;
 
-	stack_push_rel_view(sql, name, r);
+	return stack_push_rel_view(sql, name, r) ? 1 : 0;
 }
 
 static int
@@ -4388,16 +4406,18 @@ sql_delete_triggers(backend *be, sql_table *t, stmt *tids, int time, int firing_
 	for (n = t->triggers.set->h; n; n = n->next) {
 		sql_trigger *trigger = n->data;
 
-		stack_push_frame(sql, "OLD-NEW");
+		if(!stack_push_frame(sql, "OLD-NEW"))
+			return 0;
 		if (trigger->event == firing_type && trigger->time == time) {
 			stmt *s = NULL;
-	
+
 			/* add name for the 'deleted' to the stack */
 			const char *o = trigger->old_name;
-		
-			if (!o) o = "old"; 
-		
-			sql_stack_add_deleted(sql, o, t, tids, internal_type);
+
+			if (!o) o = "old";
+
+			if(!sql_stack_add_deleted(sql, o, t, tids, internal_type))
+				return 0;
 			s = sql_parse(be, sql->sa, trigger->statement, m_instantiate);
 
 			if (!s) 
@@ -5060,13 +5080,28 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 	return s;
 }
 
+static stmt *
+_subrel_bin(backend *be, sql_rel *rel, list *refs) 
+{
+	if (be->mvc->sqs) {
+		node *n;
+
+		for(n = be->mvc->sqs->h; n; n = n->next) {
+			sql_var *v = n->data;
+
+			v->rel->p = subrel_bin(be, v->rel, refs);
+		}
+	}
+	return subrel_bin(be, rel, refs);
+}
+
 stmt *
 rel_bin(backend *be, sql_rel *rel) 
 {
 	mvc *sql = be->mvc;
 	list *refs = sa_list(sql->sa);
 	int sqltype = sql->type;
-	stmt *s = subrel_bin(be, rel, refs);
+	stmt *s = _subrel_bin(be, rel, refs);
 
 	if (sqltype == Q_SCHEMA)
 		sql->type = sqltype;  /* reset */
@@ -5080,7 +5115,7 @@ output_rel_bin(backend *be, sql_rel *rel )
 	mvc *sql = be->mvc;
 	list *refs = sa_list(sql->sa);
 	int sqltype = sql->type;
-	stmt *s = subrel_bin(be, rel, refs);
+	stmt *s = _subrel_bin(be, rel, refs);
 
 	if (sqltype == Q_SCHEMA)
 		sql->type = sqltype;  /* reset */

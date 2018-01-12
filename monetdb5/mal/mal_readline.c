@@ -3,20 +3,16 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #ifndef HAVE_EMBEDDED
 #include "mal.h"
-#undef PATHLENGTH
 #include "mal_client.h"
 #include "mal_scenario.h"
 #include "mal_readline.h"
 #include "mal_debugger.h"
-#ifdef HAVE_STRINGS_H
-#include <strings.h>		/* for strncasecmp */
-#endif
 
 #ifndef S_ISCHR
 #define S_ISCHR(m)  (((m) & S_IFMT) == S_IFCHR)

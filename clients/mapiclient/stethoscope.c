@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /* (c) M Kersten, S Manegold
@@ -18,14 +18,11 @@
 
 #include "monetdb_config.h"
 #include "monet_options.h"
-#include <stream.h>
-#include <stream_socket.h>
-#include <mapi.h>
-#include <stdio.h>
+#include "stream.h"
+#include "stream_socket.h"
+#include "mapi.h"
 #include <string.h>
-#include <stdlib.h>
 #include <sys/stat.h>
-#include <errno.h>
 #include <signal.h>
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>

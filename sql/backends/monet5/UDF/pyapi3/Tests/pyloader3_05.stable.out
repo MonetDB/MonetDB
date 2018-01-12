@@ -73,8 +73,7 @@ Ready.
 #    _emit.emit({'s': numpy.array([u'\u00D6', 'hello', 33])});
 #    _emit.emit({'s': numpy.arange(3).astype(numpy.float32)});
 #    _emit.emit({'s': numpy.arange(3).astype(numpy.float64)});
-#COPY INTO pyloader05table FROM LOADER pyloader05();
-[ 35	]
+#COPY LOADER INTO pyloader05table FROM pyloader05();
 #SELECT * FROM pyloader05table;
 % sys.pyloader05table # table_name
 % s # name

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -214,6 +214,11 @@ str pyapimapRef;
 str pyapiRef;
 str querylogRef;
 str queryRef;
+str capiRef;
+str batcapiRef;
+str subeval_aggrRef;
+str rankRef;
+str dense_rankRef;
 str raiseRef;
 str rangejoinRef;
 str rankRef;
@@ -507,6 +512,8 @@ void optimizerInit(void)
 	batrapiRef = putName("batrapi");
     pyapiRef = putName("pyapi");
     batpyapiRef = putName("batpyapi");
+    capiRef = putName("capi");
+    batcapiRef = putName("batcapi");
     pyapimapRef = putName("batpyapimap");
     pyapi3Ref = putName("pyapi3");
     batpyapi3Ref = putName("batpyapi3");

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -18,13 +18,14 @@
  */
 #include "monetdb_config.h"
 #include "batmmath.h"
-#ifdef HAVE_FENV_H
 #include <fenv.h>
-#else
-#define feclearexcept(x)
-#define fetestexcept(x)		0
+#ifndef FE_INVALID
 #define FE_INVALID			0
+#endif
+#ifndef FE_DIVBYZERO
 #define FE_DIVBYZERO		0
+#endif
+#ifndef FE_OVERFLOW
 #define FE_OVERFLOW			0
 #endif
 
@@ -49,7 +50,7 @@ str CMDscience_bat_##TYPE##_##FUNC(bat *ret, const bat *bid)		\
 	int e = 0, ex = 0;												\
 																	\
 	if ((b = BATdescriptor(*bid)) == NULL) {						\
-		throw(MAL, #TYPE, RUNTIME_OBJECT_MISSING);					\
+		throw(MAL, #TYPE, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);	\
 	}																\
 	voidresultBAT(TYPE_##TYPE, "batcalc." #FUNC);					\
 	o = (TYPE *) Tloc(bn, 0);										\
@@ -101,7 +102,7 @@ str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
 	int e = 0, ex = 0;													\
 																		\
 	if ((b = BATdescriptor(*bid)) == NULL) {							\
-		throw(MAL, #TYPE, RUNTIME_OBJECT_MISSING);						\
+		throw(MAL, #TYPE, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);		\
 	}																	\
 	voidresultBAT(TYPE_##TYPE, "batcalc." #FUNC);						\
 	o = (TYPE *) Tloc(bn, 0);											\
@@ -152,7 +153,7 @@ str CMDscience_cst_bat_##FUNC##_##TYPE(bat *ret, const TYPE *d,			\
 	int e = 0, ex = 0;													\
 																		\
 	if ((b = BATdescriptor(*bid)) == NULL) {							\
-		throw(MAL, #TYPE, RUNTIME_OBJECT_MISSING);						\
+		throw(MAL, #TYPE, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);		\
 	}																	\
 	voidresultBAT(TYPE_##TYPE, "batcalc." #FUNC);						\
 	o = (TYPE *) Tloc(bn, 0);											\

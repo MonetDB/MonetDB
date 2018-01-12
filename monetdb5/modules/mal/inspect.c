@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -540,6 +540,8 @@ INSPECTgetEnvironmentKey(str *ret, str *key)
 	if (s == 0)
 		throw(MAL, "inspect.getEnvironment", "environment variable '%s' not found", *key);
 	*ret = GDKstrdup(s);
+	if (*ret == NULL)
+		throw(MAL, "inspect.getEnvironment", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 

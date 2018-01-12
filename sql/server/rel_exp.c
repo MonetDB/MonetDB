@@ -3,10 +3,10 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
-#include <monetdb_config.h>
+#include "monetdb_config.h"
 #include "sql_relation.h"
 #include "rel_exp.h"
 #include "rel_prop.h" /* for prop_copy() */
@@ -1303,6 +1303,19 @@ exp_is_correlation(sql_exp *e, sql_rel *r )
 		}
 	}
 	return -1;
+}
+
+int
+exp_is_true(mvc *sql, sql_exp *e) 
+{
+	if (e->type == e_atom) {
+		if (e->l) {
+			return atom_is_true(e->l);
+		} else if(sql->emode == m_normal && sql->argc > e->flag && EC_BOOLEAN(exp_subtype(e)->type->eclass)) {
+			return atom_is_true(sql->args[e->flag]);
+		}
+	}
+	return 0;
 }
 
 int

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -67,27 +67,18 @@
 
 /* standard C include files */
 #include <string.h>		/* for strcpy() etc. */
-#include <stdlib.h>
-#include <stdio.h>
 #include <ctype.h>
 
 #ifdef SQLLEN			/* it's a define for 32, a typedef for 64 */
-#define LENFMT		"%d"
-#define ULENFMT		"%u"
-#define LENCAST		(int)
-#define ULENCAST	(unsigned int)
+#define LENFMT		"%" PRId32
+#define ULENFMT		"%" PRIu32
+#define LENCAST		(int32_t)
+#define ULENCAST	(uint32_t)
 #else
-#ifdef _MSC_VER
-#define LENFMT		"%I64d"
-#define ULENFMT		"%I64u"
-#define LENCAST		(__int64)
-#define ULENCAST	(unsigned __int64)
-#else
-#define LENFMT		"%ld"
-#define ULENFMT		"%lu"
-#define LENCAST		(long)
-#define ULENCAST	(unsigned long)
-#endif
+#define LENFMT		"%" PRId64
+#define ULENFMT		"%" PRIu64
+#define LENCAST		(int64_t)
+#define ULENCAST	(uint64_t)
 #endif
 
 /* these functions are called from within the library */

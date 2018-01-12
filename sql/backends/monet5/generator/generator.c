@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -16,7 +16,7 @@
 #include "algebra.h"
 #include "generator.h"
 #include "mtime.h"
-#include "math.h"
+#include <math.h>
 
 
 #define IDENTITY(x)	(x)
@@ -493,10 +493,6 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BBPkeepref(bn->batCacheid);
 	return MAL_SUCCEED;
 }
-#ifndef HAVE_NEXTAFTERF
-#define nextafter   _nextafter
-#include "mutils.h"		/* nextafterf */
-#endif
 
 #define PREVVALUEbte(x) ((x) - 1)
 #define PREVVALUEsht(x) ((x) - 1)

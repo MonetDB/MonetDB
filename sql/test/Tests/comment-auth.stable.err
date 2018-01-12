@@ -1,0 +1,55 @@
+stderr of test 'comment-auth` in directory 'sql/test` itself:
+
+
+# 14:17:01 >  
+# 14:17:01 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31868" "--set" "mapi_usock=/var/tmp/mtest-36372/.s.monetdb.31868" "--set" "monet_prompt=" "--forcemito" "--dbpath=/Users/joeri/monets/default/var/MonetDB/mTests_sql_test" "--set" "embedded_r=yes"
+# 14:17:01 >  
+
+# builtin opt 	gdk_dbpath = /Users/joeri/monets/default/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 31868
+# cmdline opt 	mapi_usock = /var/tmp/mtest-36372/.s.monetdb.31868
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /Users/joeri/monets/default/var/MonetDB/mTests_sql_test
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+#WARNING To speedup aggr.exist a bulk operator implementation is needed
+#    X_583:bat[:bit] := mal.multiplex("aggr":str, "exist":str, X_558:bat[:int]);
+
+# 14:17:01 >  
+# 14:17:01 >  "/usr/local/opt/python/bin/python2.7" "comment-auth.SQL.py" "comment-auth"
+# 14:17:01 >  
+
+
+# 14:17:01 >  
+# 14:17:01 >  Mtimeout -timeout 60 mclient -lsql -ftest -tnone -Eutf-8 -i -e --host=/var/tmp/mtest-36372 --port=31868 --database=mTests_sql_test < "/Users/joeri/extr/monet/MonetDB/sql/test/Tests/comment-auth-superuser.sql"
+# 14:17:01 >  
+
+
+# 14:17:02 >  
+# 14:17:02 >  Mtimeout -timeout 60 mclient -lsql -ftest -tnone -Eutf-8 -i -e --host=/var/tmp/mtest-36372 --port=31868 --database=mTests_sql_test < "/Users/joeri/extr/monet/MonetDB/sql/test/Tests/comment-auth-a.sql"
+# 14:17:02 >  
+
+MAPI  = (user_a) /var/tmp/mtest-36372/.s.monetdb.31868
+QUERY = COMMENT ON SCHEMA schema_b IS 'set by user_a';
+ERROR = !COMMENT ON: insufficient privileges for user 'user_a' in schema 'schema_b'
+CODE  = 42000
+MAPI  = (user_a) /var/tmp/mtest-89089/.s.monetdb.33054
+QUERY = COMMENT ON SCHEMA schema_a IS 'set by user_a';
+
+CODE  = 42000
+
+# 14:17:02 >  
+# 14:17:02 >  "Done."
+# 14:17:02 >  
+

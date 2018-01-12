@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -14,7 +14,7 @@
 #include "mal_backend.h"
 #include "sql_execute.h"
 #include "sql_mvc.h"
-#include <mtime.h>
+#include "mtime.h"
 #include <unistd.h>
 #include "sql_upgrades.h"
 
@@ -25,7 +25,6 @@
 /* this function can be used to recreate the system tables (types,
  * functions, args) when internal types and/or functions have changed
  * (i.e. the ones in sql_types.c) */
-#ifdef HAVE_HGE			/* currently only used in sql_update_hugeint */
 static str
 sql_fix_system_tables(Client c, mvc *sql)
 {
@@ -183,7 +182,6 @@ sql_fix_system_tables(Client c, mvc *sql)
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
-#endif
 
 #ifdef HAVE_HGE
 static str
@@ -251,7 +249,7 @@ sql_update_hugeint(Client c, mvc *sql)
 			"  sum(columnsize) as columnsize,\n"
 			"  sum(heapsize) as heapsize,\n"
 			"  sum(hashes) as hashes,\n"
-			"  sum(imprints) as imprints,\n"
+			"  sum(\"imprints\") as \"imprints\",\n"
 			"  sum(case when sorted = false then 8 * count else 0 end) as auxiliary\n"
 			"from sys.storagemodel() group by \"schema\",\"table\";\n");
 
@@ -666,7 +664,7 @@ sql_update_dec2016_sp3(Client c, mvc *sql)
 	char *schema = stack_get_string(sql, "current_schema");
 
 	if (buf == NULL)
-		throw(SQL, "sql_update_dec2016_sp3", MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_dec2016_sp3", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"set schema \"sys\";\n"
 			"drop procedure sys.settimeout(bigint);\n"
@@ -833,7 +831,7 @@ sql_update_jul2017_sp2(Client c)
 			char *buf = GDKmalloc(bufsize);
 
 			if (buf== NULL)
-				throw(SQL, "sql_update_jul2017_sp2", MAL_MALLOC_FAIL);
+				throw(SQL, "sql_update_jul2017_sp2", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 			/* 51_sys_schema_extensions.sql and 25_debug.sql */
 			pos += snprintf(buf + pos, bufsize - pos,
@@ -861,15 +859,95 @@ sql_update_jul2017_sp2(Client c)
 }
 
 static str
+sql_update_jul2017_sp3(Client c, mvc *sql)
+{
+	char *err = NULL;
+	sql_schema *sys;
+	sql_table *tab;
+	sql_column *col;
+	oid rid;
+
+	/* if there is no value "sys_update_schemas" in
+	 * sys.functions.name, we need to update the sys.functions
+	 * table */
+	sys = find_sql_schema(sql->session->tr, "sys");
+	tab = find_sql_table(sys, "functions");
+	col = find_sql_column(tab, "name");
+	rid = table_funcs.column_find_row(sql->session->tr, col, "sys_update_schemas", NULL);
+	if (rid == oid_nil) {
+		err = sql_fix_system_tables(c, sql);
+		if (err != NULL)
+			return err;
+	}
+	/* if there is no value "system_update_schemas" in
+	 * sys.triggers.name, we need to add the triggers */
+	tab = find_sql_table(sys, "triggers");
+	col = find_sql_column(tab, "name");
+	rid = table_funcs.column_find_row(sql->session->tr, col, "system_update_schemas", NULL);
+	if (rid == oid_nil) {
+		char *schema = stack_get_string(sql, "current_schema");
+		size_t bufsize = 1024, pos = 0;
+		char *buf = GDKmalloc(bufsize);
+		if (buf == NULL)
+			throw(SQL, "sql_update_jul2017_sp3", MAL_MALLOC_FAIL);
+		pos += snprintf(
+			buf + pos,
+			bufsize - pos,
+			"set schema \"sys\";\n"
+			"create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas();\n"
+			"create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables();\n");
+		if (schema)
+			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+		assert(pos < bufsize);
+		printf("Running database upgrade commands:\n%s\n", buf);
+		err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+		GDKfree(buf);
+	}
+	return err;
+}
+
+static str
 sql_update_default(Client c, mvc *sql)
 {
 	size_t bufsize = 10000, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *schema = stack_get_string(sql, "current_schema");
 
-	if( buf== NULL)
-		throw(SQL, "sql_update_jul2017", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	if (buf== NULL)
+		throw(SQL, "sql_update_default", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	/* 39_analytics.sql, 39_analytics_hge.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop aggregate corr(tinyint, tinyint);\n"
+			"drop aggregate corr(smallint, smallint);\n"
+			"drop aggregate corr(integer, integer);\n"
+			"drop aggregate corr(bigint, bigint);\n"
+			"drop aggregate corr(real, real);\n");
+#ifdef HAVE_HGE
+	if (have_hge)
+		pos += snprintf(buf + pos, bufsize - pos,
+				"drop aggregate corr(hugeint, hugeint);\n");
+#endif
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create aggregate corr(e1 TINYINT, e2 TINYINT) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(tinyint, tinyint) to public;\n"
+			"create aggregate corr(e1 SMALLINT, e2 SMALLINT) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(smallint, smallint) to public;\n"
+			"create aggregate corr(e1 INTEGER, e2 INTEGER) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(integer, integer) to public;\n"
+			"create aggregate corr(e1 BIGINT, e2 BIGINT) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(bigint, bigint) to public;\n"
+			"create aggregate corr(e1 REAL, e2 REAL) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(real, real) to public;\n");
+#ifdef HAVE_HGE
+	if (have_hge)
+		pos += snprintf(buf + pos, bufsize - pos,
+				"create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(hugeint, hugeint) to public;\n");
+#endif
+	pos += snprintf(buf + pos, bufsize - pos,
+			"insert into sys.systemfunctions (select id from sys.functions where name = 'corr' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
 
 	/* 60_wlcr.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -930,33 +1008,26 @@ sql_update_default_geom(Client c, mvc *sql, sql_table *t)
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *schema = stack_get_string(sql, "current_schema");
 
-	if( buf== NULL)
-		throw(SQL, "sql_update_jul2017", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	if (buf== NULL)
+		throw(SQL, "sql_update_default_geom", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	t->system = 0;
 	pos += snprintf(buf + pos, bufsize - pos,
-			"drop view sys.geometry_columns;\n"
-			"create view geometry_columns as\n"
-			"\tselect e.value as f_table_catalog,\n"
+			"drop view sys.geometry_columns cascade;\n"
+			"create view sys.geometry_columns as\n"
+			"\tselect cast(null as varchar(1)) as f_table_catalog,\n"
 			"\t\ts.name as f_table_schema,\n"
-			"\t\ty.f_table_name, y.f_geometry_column, y.coord_dimension, y.srid, y.type\n"
-			"\tfrom schemas s, environment e, (\n"
-			"\t\tselect t.schema_id,\n"
-			"\t\t\tt.name as f_table_name,\n"
-			"\t\t\tx.name as f_geometry_column,\n"
-			"\t\t\tcast(has_z(info)+has_m(info)+2 as integer) as coord_dimension,\n"
-			"\t\t\tsrid, get_type(info, 0) as type\n"
-			"\t\tfrom tables t, (\n"
-			"\t\t\tselect name, table_id, type_digits AS info, type_scale AS srid\n"
-			"\t\t\tfrom columns\n"
-			"\t\t\twhere type in ( select distinct sqlname from types where systemname='wkb')\n"
-			"\t\t\t) as x\n"
-			"\t\twhere t.id=x.table_id\n"
-			"\t\t) y\n"
-			"\twhere y.schema_id=s.id and e.name='gdk_dbname';\n"
-			"GRANT SELECT ON geometry_columns TO PUBLIC;\n"
-			"update sys._tables set system = true where name in ('geometry_columns') and schema_id = (select id from schemas where name = 'sys');\n");
+			"\t\tt.name as f_table_name,\n"
+			"\t\tc.name as f_geometry_column,\n"
+			"\t\tcast(has_z(c.type_digits) + has_m(c.type_digits) +2 as integer) as coord_dimension,\n"
+			"\t\tc.type_scale as srid,\n"
+			"\t\tget_type(c.type_digits, 0) as type\n"
+			"\tfrom sys.columns c, sys.tables t, sys.schemas s\n"
+			"\twhere c.table_id = t.id and t.schema_id = s.id\n"
+			"\t  and c.type in (select sqlname from sys.types where systemname in ('wkb', 'wkba'));\n"
+			"GRANT SELECT ON sys.geometry_columns TO PUBLIC;\n"
+			"update sys._tables set system = true where name = 'geometry_columns' and schema_id in (select id from schemas where name = 'sys');\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
@@ -969,6 +1040,206 @@ sql_update_default_geom(Client c, mvc *sql, sql_table *t)
 	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_remove_environment_func(Client c, mvc *sql)
+{
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+	size_t bufsize = 1000, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	if (buf== NULL)
+		throw(SQL, "sql_remove_environment_func", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	/* because issueing sql: "drop view sys.environment cascade;" fails with with error: !SQLException:sql.drop_view:42000!DROP VIEW: cannot drop system view 'environment'
+	   we need to drop the system view using internal function: mvc_drop_table() */
+	s = mvc_bind_schema(sql, "sys");
+	t = mvc_bind_table(sql, s, "environment");
+	mvc_drop_table(sql, s, t, 1);	// drop the system view: sys.environment cascade
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop function sys.environment() cascade;\n"
+			"create view sys.environment as select * from sys.env();\n"
+			"GRANT SELECT ON sys.environment TO PUBLIC;\n"
+			"update sys._tables set system = true where system = false and name = 'environment' and schema_id in (select id from schemas where name = 'sys');\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\ndrop view sys.environment cascade;\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_create_comments_table(Client c)
+{
+	char *err, *q;
+
+	q = ""
+		"ALTER TABLE sys.keywords SET READ WRITE;\n"
+		"INSERT INTO sys.keywords VALUES ('COMMENT');\n"
+		"-- ALTER TABLE sys.keywords SET READ ONLY;\n"
+		"\n"
+		"CREATE TABLE sys.comments (\n"
+		"        id INTEGER NOT NULL PRIMARY KEY,\n"
+		"        remark VARCHAR(65000) NOT NULL\n"
+		");\n"
+		"GRANT SELECT ON sys.comments TO PUBLIC;\n"
+		"\n"
+		"CREATE PROCEDURE sys.comment_on(obj_id INTEGER, obj_remark VARCHAR(65000))\n"
+		"BEGIN\n"
+		"        IF obj_remark IS NULL OR obj_remark = '' THEN\n"
+		"                DELETE FROM sys.comments WHERE id = obj_id;\n"
+		"        ELSEIF EXISTS (SELECT id FROM sys.comments WHERE id = obj_id) THEN\n"
+		"                UPDATE sys.comments SET remark = obj_remark WHERE id = obj_id;\n"
+		"        ELSE\n"
+		"                INSERT INTO sys.comments VALUES (obj_id, obj_remark);\n"
+		"        END IF;\n"
+		"END;\n"
+		"-- do not grant to public\n"
+		"\n"
+		"CREATE FUNCTION sys.function_type_keyword(ftype INT)\n"
+		"RETURNS VARCHAR(20)\n"
+		"BEGIN\n"
+		"	RETURN CASE ftype\n"
+		"                WHEN 1 THEN 'FUNCTION'\n"
+		"                WHEN 2 THEN 'PROCEDURE'\n"
+		"                WHEN 3 THEN 'AGGREGATE'\n"
+		"                WHEN 4 THEN 'FILTER FUNCTION'\n"
+		"                WHEN 7 THEN 'LOADER'\n"
+		"                ELSE 'ROUTINE'\n"
+		"        END;\n"
+		"END;\n"
+		"GRANT EXECUTE ON FUNCTION sys.function_type_keyword(INT) TO PUBLIC;\n"
+		"\n"
+		"CREATE FUNCTION sys.describe_all_objects()\n"
+		"RETURNS TABLE (\n"
+		"	sname VARCHAR(1024),\n"
+		"	name VARCHAR(1024),\n"
+		"	fullname VARCHAR(1024),\n"
+		"	ntype INTEGER,   -- must match the MD_TABLE/VIEW/SEQ/FUNC/SCHEMA constants in mclient.c\n"
+		"	type VARCHAR(30),\n"
+		"	system BOOLEAN,\n"
+		"	remark VARCHAR(65000)\n"
+		")\n"
+		"BEGIN\n"
+		"	RETURN TABLE (\n"
+		"	    WITH\n"
+		"	    table_data AS (\n"
+		"		    SELECT  schema_id AS sid,\n"
+		"			    id,\n"
+		"			    name,\n"
+		"			    system,\n"
+		"			    (CASE type\n"
+		"				WHEN 1 THEN 2 -- ntype for views\n"
+		"				ELSE 1	  -- ntype for tables\n"
+		"			    END) AS ntype,\n"
+		"			    table_type_name AS type\n"
+		"		    FROM sys._tables LEFT OUTER JOIN sys.table_types ON type = table_type_id\n"
+		"		    WHERE type IN (0, 1, 3, 4, 5, 6)\n"
+		"	    ),\n"
+		"	    sequence_data AS (\n"
+		"		    SELECT  schema_id AS sid,\n"
+		"			    id,\n"
+		"			    name,\n"
+		"			    false AS system,\n"
+		"			    4 AS ntype,\n"
+		"			    'SEQUENCE' AS type\n"
+		"		    FROM sys.sequences\n"
+		"	    ),\n"
+		"	    function_data AS (\n"
+		"		    SELECT  schema_id AS sid,\n"
+		"			    id,\n"
+		"			    name,\n"
+		"			    EXISTS (SELECT function_id FROM sys.systemfunctions WHERE function_id = id) AS system,\n"
+		"			    8 AS ntype,\n"
+		"			    sys.function_type_keyword(type) AS type\n"
+		"		    FROM sys.functions\n"
+		"	    ),\n"
+		"	    schema_data AS (\n"
+		"		    SELECT  0 AS sid,\n"
+		"			    id,\n"
+		"			    name,\n"
+		"			    system,\n"
+		"			    16 AS ntype,\n"
+		"			    'SCHEMA' AS type\n"
+		"		    FROM sys.schemas\n"
+		"	    ),\n"
+		"	    all_data AS (\n"
+		"		    SELECT * FROM table_data\n"
+		"		    UNION\n"
+		"		    SELECT * FROM sequence_data\n"
+		"		    UNION\n"
+		"		    SELECT * FROM function_data\n"
+		"		    UNION\n"
+		"		    SELECT * FROM schema_data\n"
+		"	    )\n"
+		"	    --\n"
+		"	    SELECT DISTINCT\n"
+		"	            s.name AS sname,\n"
+		"	            a.name AS name,\n"
+		"	            COALESCE(s.name || '.', '') || a.name AS fullname,\n"
+		"	            a.ntype AS ntype,\n"
+		"	            (CASE WHEN a.system THEN 'SYSTEM ' ELSE '' END) || a.type AS type,\n"
+		"	            a.system AS system,\n"
+		"		    c.remark AS remark\n"
+		"	    FROM    all_data a\n"
+		"	    LEFT OUTER JOIN sys.schemas s ON a.sid = s.id\n"
+		"	    LEFT OUTER JOIN sys.comments c ON a.id = c.id\n"
+		"	    ORDER BY system, name, fullname, ntype\n"
+		"	);\n"
+		"END;\n"
+		"GRANT EXECUTE ON FUNCTION sys.describe_all_objects() TO PUBLIC;\n"
+		"\n"
+		"CREATE VIEW commented_function_signatures AS\n"
+		"WITH\n"
+		"params AS (\n"
+		"        SELECT * FROM sys.args WHERE inout = 1\n"
+		"),\n"
+		"commented_function_params AS (\n"
+		"        SELECT  f.id AS fid,\n"
+		"                f.name AS fname,\n"
+		"                s.name AS schema,\n"
+		"                f.type AS ftype,\n"
+		"                c.remark AS remark,\n"
+		"                p.number AS n,\n"
+		"                p.name AS aname,\n"
+		"                p.type AS type,\n"
+		"                p.type_digits AS type_digits,\n"
+		"                p.type_scale AS type_scale,\n"
+		"                RANK() OVER (PARTITION BY f.id ORDER BY number ASC) AS asc_rank,\n"
+		"                RANK() OVER (PARTITION BY f.id ORDER BY number DESC) AS desc_rank\n"
+		"        FROM    sys.functions f\n"
+		"                JOIN sys.schemas s ON f.schema_id = s.id\n"
+		"                JOIN sys.comments c ON f.id = c.id\n"
+		"                LEFT OUTER JOIN params p ON f.id = p.func_id\n"
+		")\n"
+		"SELECT  fid,\n"
+		"        schema,\n"
+		"        fname,\n"
+		"        sys.function_type_keyword(ftype) AS category,\n"
+		"        EXISTS (SELECT function_id FROM sys.systemfunctions WHERE fid = function_id) AS system,\n"
+		"        CASE WHEN asc_rank = 1 THEN fname ELSE NULL END AS name,\n"
+		"        CASE WHEN desc_rank = 1 THEN remark ELSE NULL END AS remark,\n"
+		"        type, type_digits, type_scale,\n"
+		"        ROW_NUMBER() OVER (ORDER BY fid, n) AS line\n"
+		"FROM commented_function_params\n"
+		"ORDER BY line;\n"
+		"GRANT SELECT ON sys.commented_function_signatures TO PUBLIC;\n";
+	err = SQLstatementIntern(c, &q, "update", 1, 0, NULL);
+	if (err)
+		return err;
+
+	q = ""
+		"UPDATE sys._tables\n"
+		"SET system = true\n"
+		"WHERE name = 'comments'\n"
+		"AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n";
+	return SQLstatementIntern(c, &q, "update", 1, 0, NULL);
 }
 
 void
@@ -1066,6 +1337,11 @@ SQLupgrades(Client c, mvc *m)
 		freeException(err);
 	}
 
+	if ((err = sql_update_jul2017_sp3(c, m)) != NULL) {
+		fprintf(stderr, "!%s\n", err);
+		freeException(err);
+	}
+
 	if (!sql_bind_func(m->sa, s, "master", NULL, NULL, F_PROC)) {
 		if ((err = sql_update_default(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
@@ -1077,6 +1353,21 @@ SQLupgrades(Client c, mvc *m)
 	    (col = mvc_bind_column(m, t, "coord_dimension")) != NULL &&
 	    strcmp(col->type.type->sqlname, "int") != 0) {
 		if ((err = sql_update_default_geom(c, m, t)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+	}
+
+	if (sql_bind_func_(m->sa, s, "environment", NULL, F_UNION)) {
+		if ((err = sql_remove_environment_func(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+	}
+
+	/* wrap into sql_update_default */
+	if (mvc_bind_table(m, s, "comments") == NULL) {
+		if ((err = sql_create_comments_table(c)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}

@@ -3,11 +3,11 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
-#include <sql_mem.h>
+#include "sql_mem.h"
 
 sql_ref *
 sql_ref_init(sql_ref *r)
@@ -72,16 +72,16 @@ sql_allocator *sa_reset( sql_allocator *sa )
 
 #undef sa_realloc
 #undef sa_alloc
-char *sa_realloc( sql_allocator *sa, void *p, size_t sz, size_t oldsz )
+void *sa_realloc( sql_allocator *sa, void *p, size_t sz, size_t oldsz )
 {
-	char *r = sa_alloc(sa, sz);
+	void *r = sa_alloc(sa, sz);
 
-	memcpy(r, (char*)p, oldsz);
+	memcpy(r, p, oldsz);
 	return r;
 }
 
 #define round16(sz) ((sz+15)&~15)
-char *sa_alloc( sql_allocator *sa, size_t sz )
+void *sa_alloc( sql_allocator *sa, size_t sz )
 {
 	char *r;
 	sz = round16(sz);
@@ -118,9 +118,9 @@ char *sa_alloc( sql_allocator *sa, size_t sz )
 }
 
 #undef sa_zalloc
-char *sa_zalloc( sql_allocator *sa, size_t sz )
+void *sa_zalloc( sql_allocator *sa, size_t sz )
 {
-	char *r = sa_alloc(sa, sz);
+	void *r = sa_alloc(sa, sz);
 
 	if (r)
 		memset(r, 0, sz);

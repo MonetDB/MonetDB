@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -162,7 +162,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	if (sqlmorefun->colnames) {
 		n = sqlmorefun->colnames->h;
 		n2 = sqlmorefun->coltypes->h;
-		ncols = pyapi_list_length(sqlmorefun->colnames);
+		ncols = pyapi_list_length(sqlmorefun->coltypes);
 		if (ncols == 0) {
 			msg = createException(MAL, "pyapi.eval_loader",
 								  "No columns supplied.");
@@ -174,11 +174,14 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 								  SQLSTATE(HY001) MAL_MALLOC_FAIL "column list");
 			goto wrapup;
 		}
-		assert(pyapi_list_length(sqlmorefun->colnames) == pyapi_list_length(sqlmorefun->coltypes));
+		assert(pyapi_list_length(sqlmorefun->colnames) == pyapi_list_length(sqlmorefun->coltypes) * 2);
 		i = 0;
 		while (n) {
 			sql_subtype* tpe = (sql_subtype*) n2->data;
 			cols[i].name = GDKstrdup(*((char **)n->data));
+			n = n->next;
+			assert(n);
+			cols[i].def = n->data;
 			n = n->next;
 			cols[i].b =
 				COLnew(0, tpe->type->localtype, 0, TRANSIENT);

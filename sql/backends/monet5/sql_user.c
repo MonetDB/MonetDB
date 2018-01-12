@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -442,7 +442,8 @@ monet5_user_get_def_schema(mvc *m, int user)
 	rid = table_funcs.column_find_row(m->session->tr, schemas_id, &schema_id, NULL);
 	if (!is_oid_nil(rid))
 		schema = table_funcs.column_find_value(m->session->tr, schemas_name, rid);
-	stack_set_string(m, "current_schema", schema);
+	if(!stack_set_string(m, "current_schema", schema))
+		return NULL;
 	return schema;
 }
 
@@ -475,7 +476,10 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		return (NULL);	/* don't reveal that the user doesn't exist */
 	}
 
-	mvc_trans(m);
+	if(mvc_trans(m) < 0) {
+		GDKfree(username);
+		return NULL;
+	}
 
 	sys = find_sql_schema(m->session->tr, "sys");
 	user_info = find_sql_table(sys, "db_user_info");
@@ -521,9 +525,11 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		return NULL;
 	}
 	/* reset the user and schema names */
-	stack_set_string(m, "current_schema", schema);
-	stack_set_string(m, "current_user", username);
-	stack_set_string(m, "current_role", username);
+	if(!stack_set_string(m, "current_schema", schema) ||
+		!stack_set_string(m, "current_user", username) ||
+		!stack_set_string(m, "current_role", username)) {
+		schema = NULL;
+	}
 	GDKfree(username);
 	mvc_rollback(m, 0, NULL);
 	return schema;

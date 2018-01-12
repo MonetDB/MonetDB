@@ -3,18 +3,14 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
-#if defined(_MSC_VER) && defined(__INTEL_COMPILER)
-#include <mathimf.h>
-#else
 #include <math.h>
-#endif
 
 /* Define symbol FULL_IMPLEMENTATION to get implementations for all
  * sensible output types for +, -, *, /.  Without the symbol, all
@@ -13466,19 +13462,6 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst, BUN cnt, \
 #else
 #define roundflt(x)	roundf(x)
 #define rounddbl(x)	round(x)
-#endif
-
-#ifndef HAVE_ROUND
-static inline double
-round(double val)
-{
-	/* round to nearest integer, away from zero */
-	if (val < 0)
-		return -floor(-val + 0.5);
-	else
-		return floor(val + 0.5);
-}
-#define roundf(x)	((float)round((double)(x)))
 #endif
 
 #define convertimpl_reduce_float(TYPE1, TYPE2)				\

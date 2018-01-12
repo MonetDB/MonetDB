@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /**
@@ -45,18 +45,15 @@
  */
 
 #include "monetdb_config.h"
-#include <msabaoth.h>
-#include <mutils.h> /* MT_lockf */
-#include <mcrypt.h> /* mcrypt_BackendSum */
-#include <utils/utils.h>
-#include <utils/properties.h>
-#include <utils/glob.h>
-#include <utils/database.h>
-#include <utils/control.h>
+#include "msabaoth.h"
+#include "mutils.h" /* MT_lockf */
+#include "mcrypt.h" /* mcrypt_BackendSum */
+#include "utils/utils.h"
+#include "utils/properties.h"
+#include "utils/glob.h"
+#include "utils/database.h"
+#include "utils/control.h"
 
-#include <stdlib.h> /* exit, getenv, rand, srand */
-#include <stdarg.h>	/* variadic stuff */
-#include <stdio.h> /* fprintf */
 #include <sys/types.h>
 #include <sys/stat.h> /* stat */
 #include <sys/wait.h> /* wait */
@@ -67,7 +64,6 @@
 #include <fcntl.h>
 #include <unistd.h> /* unlink, isatty */
 #include <string.h> /* strerror */
-#include <errno.h>
 #include <signal.h> /* handle Ctrl-C, etc. */
 #include <time.h>
 
@@ -150,7 +146,7 @@ logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream, int res
 		strftime(mytime, sizeof(mytime), "%Y-%m-%d %H:%M:%S", tmp);
 		while ((p = strchr(q, '\n')) != NULL) {
 			if (writeident == 1)
-				fprintf(stream, "%s %s %s[" LLFMT "]: ",
+				fprintf(stream, "%s %s %s[%lld]: ",
 						mytime, type, dbname, pid);
 			*p = '\0';
 			fprintf(stream, "%s\n", q);
@@ -159,7 +155,7 @@ logFD(int fd, char *type, char *dbname, long long int pid, FILE *stream, int res
 		}
 		if ((int)(q - buf) < len) {
 			if (writeident == 1)
-				fprintf(stream, "%s %s %s[" LLFMT "]: ",
+				fprintf(stream, "%s %s %s[%lld]: ",
 						mytime, type, dbname, pid);
 			writeident = 0;
 			fprintf(stream, "%s\n", q);
@@ -643,10 +639,10 @@ main(int argc, char *argv[])
 	snprintf(mapi_usock, sizeof(mapi_usock), "%s/" MERO_SOCK "%d",
 			p, port);
 
-	if ((unlink(control_usock) == -1 && errno != ENOENT) ||
-		(unlink(mapi_usock) == -1 && errno != ENOENT)) {
-		/* cannot unlink socket files */
-		Mfprintf(stderr, "cannot unlink socket files\n");
+	if ((remove(control_usock) != 0 && errno != ENOENT) ||
+		(remove(mapi_usock) != 0 && errno != ENOENT)) {
+		/* cannot remove socket files */
+		Mfprintf(stderr, "cannot remove socket files\n");
 		MERO_EXIT_CLEAN(1);
 	}
 
@@ -900,11 +896,11 @@ main(int argc, char *argv[])
 	}
 
 	/* control channel is already closed at this point */
-	if (unsock != -1 && unlink(control_usock) == -1)
-		Mfprintf(stderr, "unable to unlink control socket '%s': %s\n",
+	if (unsock != -1 && remove(control_usock) != 0)
+		Mfprintf(stderr, "unable to remove control socket '%s': %s\n",
 				control_usock, strerror(errno));
-	if (socku != -1 && unlink(mapi_usock) == -1)
-		Mfprintf(stderr, "unable to unlink mapi socket '%s': %s\n",
+	if (socku != -1 && remove(mapi_usock) != 0)
+		Mfprintf(stderr, "unable to remove mapi socket '%s': %s\n",
 				mapi_usock, strerror(errno));
 
 	if (e != NO_ERR) {
@@ -977,7 +973,7 @@ shutdown:
 
 	/* remove files that suggest our existence */
 	if (pidfilename != NULL) {
-		unlink(pidfilename);
+		remove(pidfilename);
 	}
 
 	/* mostly for valgrind... */

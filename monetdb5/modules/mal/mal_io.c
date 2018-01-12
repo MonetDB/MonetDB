@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -103,7 +103,7 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 		}
 		b[1] = BATdescriptor(*(bat *) val);
 		if (b[1] == NULL) {
-			throw(MAL, "io.print", RUNTIME_OBJECT_MISSING);
+			throw(MAL, "io.print", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		if (nobat) {
 			if (hd)
@@ -243,6 +243,8 @@ IOprintf_(str *res, str format, ...)
 		throw(MAL,"io.printf", ILLEGAL_ARGUMENT " NULL pointer passed as format.\n");
 	} else if (strchr(format, '%') == NULL) {
 		*res = GDKstrdup(format);
+		if (*res == NULL)
+			throw(MAL,"io.printf", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 	buf = dst = (str) GDKmalloc(size = 80);
@@ -602,7 +604,7 @@ IOexport(void *ret, bat *bid, str *fnme)
 
 	(void) ret;
 	if ((b = BATdescriptor(*bid)) == NULL) 
-		throw(MAL, "io.export", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "io.export", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	
 	s = open_wastream(*fnme);
 	if (s == NULL ){
@@ -642,7 +644,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		if (fp)
 			fclose(fp);
-		throw(MAL, "io.import", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "io.import", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	tconvert = BATatoms[BATttype(b)].atomFromStr;

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -12,8 +12,8 @@
  * This module contains primitives for accessing data in LiDAR file format.
  */
 
-#include <monetdb_config.h>
-#include <glob.h>
+#include "monetdb_config.h"
+#include "glob.h"
 
 /* clash with GDK? */
 // #undef ttype
@@ -22,13 +22,13 @@
 #include <liblas/capi/las_version.h>
 #include <liblas/capi/las_config.h>
 
-#include <lidar.h>
-#include <mutils.h>
-#include <sql_mvc.h>
-#include <sql_scenario.h>
-#include <sql.h>
-#include <clients.h>
-#include <mal_exception.h>
+#include "lidar.h"
+#include "mutils.h"
+#include "sql_mvc.h"
+#include "sql_scenario.h"
+#include "sql.h"
+#include "clients.h"
+#include "mal_exception.h"
 
 #define LIDAR_INS_COL "INSERT INTO lidar_columns(id, name, type, units, number, table_id) \
 	 VALUES(%d,'%s','%s','%s',%d,%d);"
@@ -1003,7 +1003,7 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			double t = LASPoint_GetTime(p);
 			char anglerank = LASPoint_GetScanAngleRank (p);
 			unsigned short sourceid = LASPoint_GetPointSourceId (p);
-				fprintf(stderr, 
+			fprintf(stderr,
 				"(point # %d)"
 				"X (raw)           : %f (%ld)\n"
 				"Z (raw)           : %f (%ld)\n"
