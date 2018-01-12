@@ -1070,12 +1070,12 @@ sql_remove_environment_func(Client c, mvc *sql)
 static str
 sql_create_comments_table(Client c)
 {
-	char *err, *q1, *q2;
+	char *err, *q;
 
-	q1 = ""
+	q = ""
 		"ALTER TABLE sys.keywords SET READ WRITE;\n"
 		"INSERT INTO sys.keywords VALUES ('COMMENT');\n"
-		"ALTER TABLE sys.keywords SET READ ONLY;\n"
+		"-- ALTER TABLE sys.keywords SET READ ONLY;\n"
 		"\n"
 		"CREATE TABLE sys.comments (\n"
 		"        id INTEGER NOT NULL PRIMARY KEY,\n"
@@ -1223,16 +1223,22 @@ sql_create_comments_table(Client c)
 		"FROM commented_function_params\n"
 		"ORDER BY line;\n"
 		"GRANT SELECT ON sys.commented_function_signatures TO PUBLIC;\n";
-	err = SQLstatementIntern(c, &q1, "update", 1, 0, NULL);
+	err = SQLstatementIntern(c, &q, "update", 1, 0, NULL);
 	if (err)
 		return err;
 
-	q2 = ""
+	q = ""
 		"UPDATE sys._tables\n"
 		"SET system = true\n"
 		"WHERE name = 'comments'\n"
 		"AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n";
-	return SQLstatementIntern(c, &q2, "update", 1, 0, NULL);
+
+	err = SQLstatementIntern(c, &q, "update", 1, 0, NULL);
+	if (err)
+		return err;
+
+	q = "ALTER TABLE sys.keywords SET READ ONLY;";
+	return SQLstatementIntern(c, &q, "update", 1, 0, NULL);
 }
 
 void
