@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /* The Mapi Client Interface
@@ -22,13 +22,8 @@
 # endif
 #endif
 #include "mapi.h"
-#include <inttypes.h>		/* for PRId64 format macro */
 #include <unistd.h>
-#include <stdlib.h>
-#include <errno.h>
-#ifdef HAVE_STRING_H
 #include <string.h>
-#endif
 #ifdef HAVE_STRINGS_H
 #include <strings.h>		/* strcasecmp */
 #endif
@@ -43,9 +38,8 @@
 #include "mprompt.h"
 #include "dotmonetdb.h"
 
-#ifdef HAVE_LOCALE_H
 #include <locale.h>
-#endif
+
 #ifdef HAVE_ICONV
 #ifdef HAVE_ICONV_H
 #include <iconv.h>
@@ -153,23 +147,15 @@ static char *nullstring = default_nullstring;
  * variable length columns */
 #define MINVARCOLSIZE 10
 
-/* stolen piece */
+#include <time.h>
 #ifdef HAVE_FTIME
-#include <sys/timeb.h>
+#include <sys/timeb.h>		/* ftime */
 #endif
-
-#ifdef TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>		/* gettimeofday */
 #endif
 #ifdef HAVE_STROPTS_H
-#include <stropts.h>		/* ioctl */
+#include <stropts.h>		/* ioctl on Solaris */
 #endif
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
@@ -272,10 +258,6 @@ timerHumanStop(void)
 
 static enum itimers {
 	T_CLOCK = 0,	// render wallclock time in human readable format
-	T_MICRO,		// render as microseconds
-	T_MILLIS,		// render as milliseconds
-	T_SECS,
-	T_MINUTES,
 	T_PERF,		// return detailed performance
 	T_NONE		// don't render the timing information
 } timermode = T_CLOCK;
@@ -288,10 +270,6 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime)
 
 
 	(void) sqloptimizer;
-	if (timermode == T_NONE){
-		htimbuf[0] = 0;
-		return htimbuf;
-	}
 	if (timermode == T_CLOCK){
 		if( t / 1000 < 950) {
 			snprintf(htimbuf, sizeof(htimbuf), "clk: " TTFMT ".%03d ms" , t / 1000, (int) (t % 1000));
@@ -315,23 +293,7 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime)
 			querytime /1000, (int)(querytime % 1000));
 		return(htimbuf);
 	}
-	/* the scale is not strictly needed because it is part of the command line and simplifies parsing*/
-	if (timermode == T_MICRO){ 
-			snprintf(htimbuf, sizeof(htimbuf), TTFMT " mu", t);
-		return(htimbuf);
-	}
-	if (timermode == T_MILLIS ){
-			snprintf(htimbuf, sizeof(htimbuf), TTFMT ".%03d ms", t / 1000, (int) (t % 1000));
-		return(htimbuf);
-	}
-	t /= 1000;
-	if (timermode == T_SECS ){
-		snprintf(htimbuf, sizeof(htimbuf), TTFMT ".%02d sec", t / 1000, (int) ((t % 1000) / 100));
-		return(htimbuf);
-	}
-	// T_MINUTES
-	t /= 1000;
-	snprintf(htimbuf, sizeof(htimbuf),  TTFMT ".%02d min",t / 60, (int) (t % 60));
+	htimbuf[0] = 0;
 	return(htimbuf);
 }
 
@@ -1278,20 +1240,11 @@ TESTrenderer(MapiHdl hdl)
 				float v;
 				if (strcmp(s, "-0") == 0) /* normalize -0 */
 					s = "0";
-#ifdef HAVE_STRTOF
 				v = strtof(s, NULL);
-#else
-				v = (float) strtod(s, NULL);
-#endif
 				for (j = 4; j < 6; j++) {
 					snprintf(buf, sizeof(buf), "%.*g", j, v);
-#ifdef HAVE_STRTOF
 					if (v == strtof(buf, NULL))
 						break;
-#else
-					if (v == (float) strtod(buf, NULL))
-						break;
-#endif
 				}
 				mnstr_printf(toConsole, "%s", buf);
 			} else
@@ -2010,7 +1963,8 @@ doRequest(Mapi mid, const char *buf)
 	if (mode == SQL)
 		SQLsetSpecial(buf);
 
-	if ((hdl = mapi_query(mid, buf)) == NULL) {
+	hdl = mapi_query(mid, buf);
+	if (hdl == NULL) {
 		if (formatter == TABLEformatter ) {
 			mapi_noexplain(mid, "");
 		} else {
@@ -2200,6 +2154,7 @@ showCommands(void)
 	mnstr_printf(toConsole, "\\q      - terminate session\n");
 }
 
+/* These values must match those used in sys.describe_all_objects() */
 #define MD_TABLE    1
 #define MD_VIEW     2
 #define MD_SEQ      4
@@ -2519,7 +2474,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 						if (x & MD_SEQ)
 							describe_sequence(mid, NULL, line, toConsole);
 						if (x & MD_FUNC)
-							dump_functions(mid, toConsole, NULL, line);
+							dump_functions(mid, toConsole, 0, NULL, line, NULL);
 						if (x & MD_SCHEMA)
 							describe_schema(mid, line, toConsole);
 #ifdef HAVE_POPEN
@@ -2527,126 +2482,67 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 #endif
 					} else {
 						/* get all object names in current schema */
-						char *type, *name, *schema;
-						char q[4096];
-						char nameq[128];
-						char funcq[512];
+						size_t len = 500 + strlen(line);
+						char *query = malloc(len);
+						char *q = query, *endq = query + len;
+						char *name_column = hasSchema ? "fullname" : "name";
 
-						if (!*line) {
-							line = "%";
-							hasSchema = 0;
+						if (!query)
+							return 1;
+
+							/*
+						 * | LINE            | SCHEMA FILTER | NAME FILTER                   |
+						 * |-----------------+---------------+-------------------------------|
+						 * | ""              | yes           | -                             |
+						 * | "my_table"      | yes           | name LIKE 'my_table'          |
+						 * | "my*"           | yes           | name LIKE 'my%'               |
+						 * | "data.my_table" | no            | fullname LIKE 'data.my_table' |
+						 * | "data.my*"      | no            | fullname LIKE 'data.my%'      |
+						 * | "*a.my*"        | no            | fullname LIKE '%a.my%'        |
+						*/
+						q += snprintf(q, endq - q, "SELECT type, fullname, remark FROM sys.describe_all_objects()\n");
+						q += snprintf(q, endq - q, "WHERE (ntype & %u) > 0\n", x);
+						if (!wantsSystem) {
+							q += snprintf(q, endq - q, "AND NOT system\n");
 						}
-						if (hasSchema) {
-							snprintf(nameq, sizeof(nameq),
-									"s.name || '.' || o.name LIKE '%s'",
-									line);
-						} else {
-							snprintf(nameq, sizeof(nameq),
-									"s.name = current_schema AND "
-									"o.name LIKE '%s'",
-									line);
+						if (!hasSchema) {
+							q += snprintf(q, endq - q, "AND (sname IS NULL OR sname = current_schema)\n");
 						}
-						snprintf(funcq, sizeof(funcq),
-							 "SELECT o.name, "
-								"(CASE WHEN sf.function_id IS NOT NULL "
-								      "THEN 'SYSTEM ' "
-								      "ELSE '' "
-								  "END || 'FUNCTION') AS type, "
-								 "CASE WHEN sf.function_id IS NULL "
-								      "THEN false "
-								      "ELSE true "
-								 "END AS system, "
-								 "s.name AS sname, "
-								 "%d AS ntype "
-							 "FROM sys.functions o "
-							       "LEFT JOIN sys.systemfunctions sf "
-								     "ON o.id = sf.function_id, "
-							       "sys.schemas s "
-							 "WHERE o.schema_id = s.id AND "
-							       "%s ",
-							 MD_FUNC,
-							 nameq);
-						snprintf(q, sizeof(q),
-							 "SELECT name, "
-								"CAST(type AS VARCHAR(30)) AS type, "
-								"system, "
-								"sname, "
-								"ntype "
-							 "FROM (SELECT o.name, "
-								      "(CASE o.system "
-									    "WHEN true THEN 'SYSTEM ' "
-									    "ELSE '' "
-								       "END || "
-								       "CASE o.type "
-									    "WHEN 0 THEN 'TABLE' "
-									    "WHEN 1 THEN 'VIEW' "
-									    "WHEN 3 THEN 'MERGE TABLE' "
-									    "WHEN 4 THEN 'STREAM TABLE' "
-									    "WHEN 5 THEN 'REMOTE TABLE' "
-									    "WHEN 6 THEN 'REPLICA TABLE' "
-									    "ELSE '' "
-								       "END) AS type, "
-								      "o.system, "
-								      "s.name AS sname, "
-								      "CASE o.type "
-									   "WHEN 0 THEN %d "
-									   "WHEN 1 THEN %d "
-									   "WHEN 3 THEN %d "
-									   "WHEN 4 THEN %d "
-									   "WHEN 5 THEN %d "
-									   "WHEN 6 THEN %d "
-									   "ELSE 0 "
-								      "END AS ntype "
-							       "FROM sys._tables o, "
-								    "sys.schemas s "
-							       "WHERE o.schema_id = s.id AND "
-								     "%s AND "
-								     "o.type IN (0, 1, 3, 4, 5, 6) "
-							       "UNION "
-							       "SELECT o.name, "
-								      "'SEQUENCE' AS type, "
-								      "false AS system, "
-								      "s.name AS sname, "
-								      "%d AS ntype "
-							       "FROM sys.sequences o, "
-								    "sys.schemas s "
-							       "WHERE o.schema_id = s.id AND "
-								     "%s "
-							       "UNION "
-							       "%s "
-							       "UNION "
-							       "SELECT NULL AS name, "
-								      "(CASE WHEN o.system THEN 'SYSTEM ' ELSE '' END || 'SCHEMA') AS type, "
-								      "o.system AS system, "
-								      "o.name AS sname, "
-								      "%d AS ntype "
-							       "FROM sys.schemas o "
-							       "WHERE o.name LIKE '%s'"
-							       ") AS \"all\" "
-							 "WHERE ntype & %u > 0 "
-							       "%s "
-							 "ORDER BY system, name, sname",
-							 MD_TABLE, MD_VIEW, MD_TABLE, MD_TABLE, MD_TABLE, MD_TABLE,
-							 nameq,
-							 MD_SEQ,
-							 nameq, funcq,
-							 MD_SCHEMA,
-							 line, x,
-							 (wantsSystem ?
-							   "" :
-							   "AND system = false"));
-						hdl = mapi_query(mid, q);
+						if (*line) {
+							q += snprintf(q, endq - q, "AND (%s LIKE '%s')\n", name_column, line);
+						}
+						q += snprintf(q, endq - q, "ORDER BY fullname, type, remark\n");
+						q += snprintf(q, endq - q, ";\n");
+
+						hdl = mapi_query(mid, query);
+						free(query);
 						CHECK_RESULT(mid, hdl, continue, buf, fp);
-						while (fetch_row(hdl) == 5) {
-							name = mapi_fetch_field(hdl, 0);
-							type = mapi_fetch_field(hdl, 1);
-							schema = mapi_fetch_field(hdl, 3);
+						while (fetch_row(hdl) == 3) {
+							char *type = mapi_fetch_field(hdl, 0);
+							char *name = mapi_fetch_field(hdl, 1);
+							char *remark = mapi_fetch_field(hdl, 2);
+							int type_width = mapi_get_len(hdl, 0);
+							int name_width = mapi_get_len(hdl, 1);
 							mnstr_printf(toConsole,
-									  "%-*s  %s%s%s\n",
-									  mapi_get_len(hdl, 1),
-									  type, schema,
-									  name != NULL ? "." : "",
-									  name != NULL ? name : "");
+									  "%-*s  %-*s",
+									  type_width, type,
+									  name_width * (remark != NULL), name);
+							if (remark) {
+								char *c;
+								mnstr_printf(toConsole, "  '");
+								for (c = remark; *c; c++) {
+									switch (*c) {
+										case '\'':
+											mnstr_printf(toConsole, "''");
+											break;
+										default:
+											mnstr_writeChr(toConsole, *c);
+									}
+								}
+								mnstr_printf(toConsole, "'");
+							}
+							mnstr_printf(toConsole, "\n");
+
 						}
 						mapi_close_handle(hdl);
 						hdl = NULL;
@@ -2839,31 +2735,12 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 						;
 					if (*line == 0) {
 						mnstr_printf(toConsole, "Current time formatter: ");
-						if( timermode == T_MICRO)
-							mnstr_printf(toConsole,"microseconds\n");
-						if( timermode == T_MILLIS)
-							mnstr_printf(toConsole,"milliseconds\n");
-						if( timermode == T_SECS)
-							mnstr_printf(toConsole,"seconds\n");
-						if( timermode == T_MINUTES)
-							mnstr_printf(toConsole,"minutes\n");
 						if( timermode == T_PERF)
 							mnstr_printf(toConsole,"performance\n");
 						if( timermode == T_NONE)
 							mnstr_printf(toConsole,"none\n");
 						if( timermode == T_CLOCK)
 							mnstr_printf(toConsole,"clock\n");
-					} else 
-					if (strncmp(line, "milli", 5) == 0 || strcmp(line,"milliseconds") == 0 ){
-						timermode = T_MILLIS;
-					} else if (strncmp(line, "sec", 3) == 0 || strcmp(line,"seconds") == 0){
-						timermode = T_SECS;
-					} else if (strncmp(line, "milli", 5) == 0 || strcmp(line,"milliseconds") == 0) {
-						timermode = T_MILLIS;
-					} else if (strncmp(line, "min", 3) == 0 || strcmp(line,"minutes") == 0) {
-						timermode = T_MINUTES;
-					} else if (strncmp(line,"micro", 5) == 0  || strcmp(line,"microseconds") == 0) {
-						timermode = T_MICRO;
 					} else if (strncmp(line,"perf",4) == 0 || strcmp(line,"performance") == 0  ) {
 						timermode = T_PERF;
 					} else if (strcmp(line,"none") == 0  ) {
@@ -3120,9 +2997,7 @@ main(int argc, char **argv)
 	 * causes the output to be converted (we could set it to
 	 * ".OCP" if we knew for sure that we were running in a cmd
 	 * window) */
-#ifdef HAVE_SETLOCALE
 	setlocale(LC_CTYPE, "");
-#endif
 #endif
 	toConsole = stdout_stream = file_wastream(stdout, "stdout");
 	stderr_stream = file_wastream(stderr, "stderr");
@@ -3222,17 +3097,7 @@ main(int argc, char **argv)
 		case 't':
 			showtiming = 1;
 			if (optarg != NULL) {
-				if (strncmp(optarg, "milli", 5) == 0 || strcmp(optarg,"milliseconds") == 0 ){
-					timermode = T_MILLIS;
-				} else if (strncmp(optarg, "sec", 3) == 0 || strcmp(optarg,"seconds") == 0){
-					timermode = T_SECS;
-				} else if (strncmp(optarg, "min", 3) == 0 || strcmp(optarg,"minutes") == 0) {
-					timermode = T_MINUTES;
-				} else if (strncmp(optarg, "milli", 5) == 0 || strcmp(optarg,"milliseconds") == 0) {
-					timermode = T_MILLIS;
-				} else if (strncmp(optarg,"micro", 5) == 0  || strcmp(optarg,"microseconds") == 0) {
-					timermode = T_MICRO;
-				} else if (strncmp(optarg,"perf",4) == 0 || strcmp(optarg,"performance") == 0  ) {
+				if (strncmp(optarg,"perf",4) == 0 || strcmp(optarg,"performance") == 0  ) {
 					timermode = T_PERF;
 				} else if (strcmp(optarg,"none") == 0  ) {
 					timermode = T_NONE;

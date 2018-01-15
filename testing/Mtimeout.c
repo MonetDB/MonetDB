@@ -3,13 +3,12 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #define _GNU_SOURCE		/* to get declaration of strsignal on Linux */
 
-#include <monetdb_config.h>
-#include <stdio.h>
+#include "monetdb_config.h"
 #include <sys/types.h>
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
@@ -21,12 +20,9 @@
 # include <sys/wait.h>
 #endif
 #include <signal.h>
-#include <stdlib.h>
 #include <ctype.h>
 #include <time.h>
-#ifdef HAVE_STRING_H
 #include <string.h>
-#endif
 
 #define DEFAULT_TIMEOUT 0
 

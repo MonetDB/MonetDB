@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -101,25 +101,26 @@ GDKgetenv(const char *name)
 }
 
 int
-GDKgetenv_isyes(const char *name)
+GDKgetenv_istext(const char *name, const char* text)
 {
 	char *val = GDKgetenv(name);
 
-	if (val && strcasecmp(val, "yes") == 0) {
+	if (val && strcasecmp(val, text) == 0) {
 		return 1;
 	}
 	return 0;
 }
 
 int
+GDKgetenv_isyes(const char *name)
+{
+	return GDKgetenv_istext(name, "yes");
+}
+
+int
 GDKgetenv_istrue(const char *name)
 {
-	char *val = GDKgetenv(name);
-
-	if (val && strcasecmp(val, "true") == 0) {
-		return 1;
-	}
-	return 0;
+	return GDKgetenv_istext(name, "true");
 }
 
 int

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -26,15 +26,15 @@
 #include "mal_debugger.h"
 #include "sql_cquery.h"
 
-#include <rel_select.h>
-#include <rel_optimizer.h>
-#include <rel_prop.h>
-#include <rel_rel.h>
-#include <rel_exp.h>
-#include <rel_bin.h>
-#include <rel_dump.h>
-#include <rel_remote.h>
-#include <orderidx.h>
+#include "rel_select.h"
+#include "rel_optimizer.h"
+#include "rel_prop.h"
+#include "rel_rel.h"
+#include "rel_exp.h"
+#include "rel_bin.h"
+#include "rel_dump.h"
+#include "rel_remote.h"
+#include "orderidx.h"
 
 #define initcontext() \
     if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)\

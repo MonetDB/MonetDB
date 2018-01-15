@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -1545,6 +1545,9 @@ BBPinit(void)
 		BBPaddfarm(".", 1 << TRANSIENT);
 	}
 
+	if (GDKremovedir(0, TEMPDIR) != GDK_SUCCEED)
+		GDKfatal("BBPinit: cannot remove directory %s\n", TEMPDIR);
+
 	if (GDKremovedir(0, DELDIR) != GDK_SUCCEED)
 		GDKfatal("BBPinit: cannot remove directory %s\n", DELDIR);
 
@@ -1891,17 +1894,13 @@ BBPdir_subcommit(int cnt, bat *subcommit)
 	}
 
 	if (fflush(nbbpf) == EOF ||
-	    (!(GDKdebug & FORCEMITOMASK) &&
-#ifdef NATIVE_WIN32
-	     _commit(_fileno(nbbpf)) < 0
-#else
-#ifdef HAVE_FDATASYNC
-	     fdatasync(fileno(nbbpf)) < 0
-#else
-#ifdef HAVE_FSYNC
-	     fsync(fileno(nbbpf)) < 0
-#endif
-#endif
+	    (!(GDKdebug & NOSYNCMASK)
+#if defined(NATIVE_WIN32)
+	     && _commit(_fileno(nbbpf)) < 0
+#elif defined(HAVE_FDATASYNC)
+	     && fdatasync(fileno(nbbpf)) < 0
+#elif defined(HAVE_FSYNC)
+	     && fsync(fileno(nbbpf)) < 0
 #endif
 		    )) {
 		GDKsyserror("BBPdir_subcommit: Syncing BBP.dir file failed\n");
@@ -1955,18 +1954,15 @@ BBPdir(int cnt, bat *subcommit)
 	}
 
 	if (fflush(fp) == EOF ||
-#ifdef NATIVE_WIN32
-	    _commit(_fileno(fp)) < 0
-#else
-#ifdef HAVE_FDATASYNC
-	    fdatasync(fileno(fp)) < 0
-#else
-#ifdef HAVE_FSYNC
-	    fsync(fileno(fp)) < 0
+	    (!(GDKdebug & NOSYNCMASK)
+#if defined(NATIVE_WIN32)
+	     && _commit(_fileno(fp)) < 0
+#elif defined(HAVE_FDATASYNC)
+	     && fdatasync(fileno(fp)) < 0
+#elif defined(HAVE_FSYNC)
+	     && fsync(fileno(fp)) < 0
 #endif
-#endif
-#endif
-		) {
+		    )) {
 		GDKsyserror("BBPdir: Syncing BBP.dir file failed\n");
 		goto bailout;
 	}

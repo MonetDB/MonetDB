@@ -3,18 +3,18 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef SQL_TYPES_H
 #define SQL_TYPES_H
 
-#include <sql_mem.h>
-#include <sql_list.h>
-#include <sql_string.h>
-#include <sql_catalog.h>
-#include <sql_storage.h>
-#include <stream.h>
+#include "sql_mem.h"
+#include "sql_list.h"
+#include "sql_string.h"
+#include "sql_catalog.h"
+#include "sql_storage.h"
+#include "stream.h"
 
 #define EC_MAX 		17
 #define EC_ANY	 	0

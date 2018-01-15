@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -927,6 +927,9 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 				return sql_error(sql, 06, SQLSTATE(42000) "CREATE OR REPLACE %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
 			if (mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, fn, func->base.name);
+			if (!func->s) {
+				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s%s: not allowed to replace system %s%s %s;", KF, F, kf, fn, func->base.name);
+			}
 			//I moved the mvc_drop to the backend layer so there I can check if a procedure is on the Petri-net
 		} else {
 			if (params) {
@@ -990,7 +993,7 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 			char *lang_body = body->h->data.sval;
 			char *mod = 	
 					(lang == FUNC_LANG_R)?"rapi":
-					(lang == FUNC_LANG_C)?"capi":
+					(lang == FUNC_LANG_C || lang == FUNC_LANG_CPP)?"capi":
 					(lang == FUNC_LANG_J)?"japi":
 					(lang == FUNC_LANG_PY)?"pyapi":
  					(lang == FUNC_LANG_MAP_PY)?"pyapimap":"unknown";

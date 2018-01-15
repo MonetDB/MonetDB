@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
  /* (c) M. Kersten
@@ -49,6 +49,7 @@ struct OPTcatalog {
 {"mitosis",		0,	0,	0},
 {"multiplex",	0,	0,	0},
 {"oltp",		0,	0,	0},
+{"postfix",		0,	0,	0},
 {"reduce",		0,	0,	0},
 {"remap",		0,	0,	0},
 {"remote",		0,	0,	0},
@@ -411,7 +412,8 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		getModuleId(p) == pyapimapRef ||
 		getModuleId(p) == pyapi3Ref ||
 		getModuleId(p) == pyapi3mapRef ||
-		getModuleId(p) == rapiRef)
+		getModuleId(p) == rapiRef || 
+		getModuleId(p) == capiRef)
 		return TRUE;
 
 	if (getModuleId(p) == sqlcatalogRef)
@@ -542,7 +544,8 @@ int isMapOp(InstrPtr p){
 		 (getModuleId(p) == mkeyRef)) && !isOrderDepenent(p) &&
 		 getModuleId(p) != batrapiRef &&
 		 getModuleId(p) != batpyapiRef &&
-		 getModuleId(p) != batpyapi3Ref;
+		 getModuleId(p) != batpyapi3Ref &&
+		 getModuleId(p) != batcapiRef;
 }
 
 int isLikeOp(InstrPtr p){

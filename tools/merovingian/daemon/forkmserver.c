@@ -3,12 +3,10 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/un.h>
 #include <sys/stat.h>
@@ -16,13 +14,12 @@
 #include <unistd.h>
 #include <string.h> /* char ** */
 #include <time.h> /* localtime */
-#include <errno.h>
 
-#include <msabaoth.h>
-#include <utils/utils.h>
-#include <utils/glob.h>
-#include <utils/properties.h>
-#include <mutils.h>
+#include "msabaoth.h"
+#include "utils/utils.h"
+#include "utils/glob.h"
+#include "utils/properties.h"
+#include "mutils.h"
 
 #include "merovingian.h"
 #include "discoveryrunner.h" /* remotedb */

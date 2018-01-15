@@ -3,29 +3,27 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
  * @a Wouter Scherphof, Niels Nes, Foteini Alvanaki
  */
 
-#include <monetdb_config.h>
+#include "monetdb_config.h"
 #include "libgeom.h"
 
-#include <mal.h>
-#include <mal_atom.h>
-#include <mal_exception.h>
-#include <mal_client.h>
-#include <stream.h>
+#include "mal.h"
+#include "mal_atom.h"
+#include "mal_exception.h"
+#include "mal_client.h"
+#include "stream.h"
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <math.h>
 #include <time.h>
 
-#include <gdk_logger.h>
+#include "gdk_logger.h"
 
 #ifdef WIN32
 #ifndef LIBGEOM

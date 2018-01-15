@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef SQL_STORAGE_H
@@ -433,5 +433,7 @@ extern void drop_sql_key(sql_table *t, int id, int drop_action);
 extern sql_column *sql_trans_copy_column(sql_trans *tr, sql_table *t, sql_column *c);
 extern sql_key *sql_trans_copy_key(sql_trans *tr, sql_table *t, sql_key *k);
 extern sql_idx *sql_trans_copy_idx(sql_trans *tr, sql_table *t, sql_idx *i);
+
+extern void sql_trans_drop_any_comment(sql_trans *tr, int id);
 
 #endif /*SQL_STORAGE_H */

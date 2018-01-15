@@ -3,19 +3,19 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef sql_result_H
 #define sql_result_H
 
 #include "mal_client.h"
-#include <stream.h>
-#include <sql.h>
-#include <sql_mvc.h>
-#include <sql_catalog.h>
-#include <sql_qc.h>
-#include <sql_parser.h>		/* sql_error */
+#include "stream.h"
+#include "sql.h"
+#include "sql_mvc.h"
+#include "sql_catalog.h"
+#include "sql_qc.h"
+#include "sql_parser.h"		/* sql_error */
 
 extern int mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng starttime, lng maloptimizer);
 extern int mvc_export_operation(backend *b, stream *s, str w, lng starttime, lng maloptimizer);

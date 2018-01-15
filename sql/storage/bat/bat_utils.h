@@ -3,14 +3,14 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef BAT_UTILS_H
 #define BAT_UTILS_H
 
 #include "sql_storage.h"
-#include <gdk_logger.h>
+#include "gdk_logger.h"
 
 /* when returning a log_bid, errors are reported using BID_NIL */
 #define BID_NIL 0

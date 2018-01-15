@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*  author M.L. Kersten
@@ -39,6 +39,7 @@
 #include "opt_matpack.h"
 #include "opt_json.h"
 #include "opt_oltp.h"
+#include "opt_postfix.h"
 #include "opt_mergetable.h"
 #include "opt_mitosis.h"
 #include "opt_multiplex.h"
@@ -79,7 +80,7 @@ struct{
 	{"mitosis", &OPTmitosisImplementation,0,0},
 	{"multiplex", &OPTmultiplexImplementation,0,0},
 	{"oltp", &OPToltpImplementation,0,0},
-	{"wlc", &OPTwlcImplementation,0,0},
+	{"postfix", &OPTpostfixImplementation,0,0},
 	{"profiler", &OPTprofilerImplementation,0,0},
 	{"projectionpath", &OPTprojectionpathImplementation,0,0},
 	{"pushselect", &OPTpushselectImplementation,0,0},
@@ -89,6 +90,7 @@ struct{
 	{"remoteQueries", &OPTremoteQueriesImplementation,0,0},
 	{"reorder", &OPTreorderImplementation,0,0},
 	{"volcano", &OPTvolcanoImplementation,0,0},
+	{"wlc", &OPTwlcImplementation,0,0},
 	{0,0,0,0}
 };
 mal_export str OPTwrapper(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
@@ -104,8 +106,8 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str msg = MAL_SUCCEED;
 	lng clk;
 
-    if (cntxt->mode == FINISHCLIENT)
-        throw(MAL, "optimizer", "prematurely stopped client");
+    	if (cntxt->mode == FINISHCLIENT)
+        	throw(MAL, "optimizer", "prematurely stopped client");
 
 	if( p == NULL)
 		throw(MAL, "opt_wrapper", "missing optimizer statement");

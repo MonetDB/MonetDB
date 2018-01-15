@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -38,7 +38,7 @@
 #include "wlc.h"
 #include "wlr.h"
 #include "msabaoth.h"
-#include <mtime.h>
+#include "mtime.h"
 #include "optimizer.h"
 #include "opt_prelude.h"
 #include "opt_pipes.h"
@@ -1157,6 +1157,7 @@ SQLparser(Client c)
 	} else if (caching(m) && cachable(m, NULL) && m->emode != m_prepare && (be->q = qc_match(m->qc, m->sym, m->args, m->argc, m->scanner.key ^ m->session->schema->base.id)) != NULL) {
 		/* query template was found in the query cache */
 		scanner_query_processed(&(m->scanner));
+		m->no_mitosis = be->q->no_mitosis;
 	} else {
 		sql_rel *r;
 
@@ -1208,13 +1209,14 @@ SQLparser(Client c)
 				msg = createException(PARSE, "SQLparser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			} else {
 				be->q = qc_insert(m->qc, m->sa,	/* the allocator */
-								  r,	/* keep relational query */
-								  qname, /* its MAL name) */
-								  m->sym,	/* the sql symbol tree */
-								  m->args,	/* the argument list */
-								  m->argc, m->scanner.key ^ m->session->schema->base.id,	/* the statement hash key */
-								  m->emode == m_prepare ? Q_PREPARE : m->type,	/* the type of the statement */
-								  escaped_q);
+						  r,	/* keep relational query */
+						  qname, /* its MAL name) */
+						  m->sym,	/* the sql symbol tree */
+						  m->args,	/* the argument list */
+						  m->argc, m->scanner.key ^ m->session->schema->base.id,	/* the statement hash key */
+						  m->emode == m_prepare ? Q_PREPARE : m->type,	/* the type of the statement */
+						  escaped_q,
+						  m->no_mitosis);
 			}
 			if(!be->q) {
 				err = 1;

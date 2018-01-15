@@ -1,6 +1,10 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Thu Dec  7 2017 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Removed system function sys.environment(). It was a duplicate of system
+  function sys.env().
+
 * Thu Nov  9 2017 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Implemented behavior for DROP SCHEMA my_schema RESTRICT command.
   Previously the RESTRICT keyword was accepted but not obeyed. It would

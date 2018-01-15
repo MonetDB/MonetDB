@@ -3,13 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef LIBGEOM_H
 #define LIBGEOM_H
 
-#include <gdk.h>
+#include "gdk.h"
 
 /*
  * @+ Geos
@@ -29,7 +29,7 @@
 #include <geos_c.h>
 
 #ifdef HAVE_PROJ
-#include "proj_api.h" //it is needed to transform from one srid to another
+#include <proj_api.h> //it is needed to transform from one srid to another
 #endif
 
 /* geos does not support 3d envelope */

@@ -129,24 +129,24 @@ Ready.
 % function_id # name
 % int # type
 % 4 # length
-[ 7687	]
-[ 7690	]
-[ 7693	]
-[ 7696	]
+[ 7688	]
+[ 7691	]
+[ 7694	]
+[ 7697	]
 [ 7701	]
-[ 7706	]
-[ 7709	]
-[ 7714	]
-[ 7717	]
-[ 7722	]
-[ 7727	]
-[ 7733	]
-[ 7740	]
-[ 7746	]
-[ 7754	]
+[ 7705	]
+[ 7708	]
+[ 7712	]
+[ 7715	]
+[ 7720	]
+[ 7725	]
+[ 7731	]
+[ 7737	]
+[ 7742	]
+[ 7748	]
+[ 7758	]
+[ 7762	]
 [ 7764	]
-[ 7769	]
-[ 7771	]
 #SELECT * FROM sys.args WHERE func_id NOT IN (SELECT id FROM sys.functions);
 % sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args,	sys.args # table_name
 % id,	func_id,	name,	type,	type_digits,	type_scale,	inout,	number # name
@@ -498,12 +498,12 @@ Ready.
 % clob,	clob,	clob,	clob,	int,	bigint,	bigint,	int,	boolean,	boolean,	boolean,	boolean,	bigint # type
 % 0,	0,	0,	0,	1,	1,	1,	1,	5,	5,	5,	5,	1 # length
 #SELECT schema, table, count, columnsize, heapsize, hashes, imprints, cast(auxiliary as bigint) as auxiliary FROM sys.tablestoragemodel WHERE schema NOT IN (SELECT name FROM sys.schemas);
-% .tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.L52 # table_name
+% .tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.L43 # table_name
 % schema,	table,	count,	columnsize,	heapsize,	hashes,	imprints,	auxiliary # name
 % clob,	clob,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 0,	0,	1,	1,	1,	1,	1,	1 # length
 #SELECT schema, table, count, columnsize, heapsize, hashes, imprints, cast(auxiliary as bigint) as auxiliary FROM sys.tablestoragemodel WHERE table NOT IN (SELECT name FROM sys._tables);
-% .tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.L52 # table_name
+% .tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.tablestoragemodel,	.L43 # table_name
 % schema,	table,	count,	columnsize,	heapsize,	hashes,	imprints,	auxiliary # name
 % clob,	clob,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 0,	0,	1,	1,	1,	1,	1,	1 # length

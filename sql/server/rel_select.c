@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -245,17 +245,17 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 		}
 		if (!columnrefs && sq->exps) {
 			node *ne;
+
 			if (is_topn(sq->op)) {
-				/* 
-				 * if the current node is a LIMIT statement
-				 * we perform the alias on the underlying projection
-				 */
 				assert(sq->l);
 				assert(is_project(((sql_rel*)sq->l)->op));
-				ne = ((sql_rel*)sq->l)->exps->h;
-			} else {
-				ne = sq->exps->h;
+				sq = rel_project(sql->sa, sq, rel_projections(sql, sq, NULL, 1, 1));
+				if (osq != sq->l) /* apply */
+					osq->r = sq;
+				else
+					osq = sq;
 			}
+			ne = sq->exps->h;
 			for (; ne; ne = ne->next) {
 				sql_exp *e = ne->data;
 
@@ -1450,7 +1450,7 @@ rel_convert_types(mvc *sql, sql_exp **L, sql_exp **R, int scale_fixing, int tpe)
 		sql_subtype *i = lt;
 		sql_subtype *r = rt;
 
-		if (subtype_cmp(lt, rt) != 0 || lt->type->localtype==0 || rt->type->localtype==0) {
+		if (subtype_cmp(lt, rt) != 0 || (tpe == type_equal_no_any && (lt->type->localtype==0 || rt->type->localtype==0))) {
 			sql_subtype super;
 
 			supertype(&super, r, i);
@@ -2139,6 +2139,26 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 					if (l)
 						st = exp_subtype(l);
 				}
+				if (l && !r) { /* possibly a (not) in function call */
+					/* reset error */
+					sql->session->status = 0;
+					sql->errstr[0] = 0;
+
+					z = left;
+					r = rel_value_exp(sql, &z, sval, f, ek); 
+					if (z == left && r) {
+						if (l && r && IS_ANY(st->type->eclass)){
+							l = rel_check_type(sql, exp_subtype(r), l, type_equal);
+							if (l)
+								st = exp_subtype(l);
+							else
+								return NULL;
+						}
+						z = NULL;
+					} else {
+						r = NULL;
+					}
+				}
 				if (!l || !r || !(r=rel_check_type(sql, st, r, type_equal))) {
 					rel_destroy(right);
 					return NULL;
@@ -2201,7 +2221,11 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				reset_processed(left);
 			} else
 				*rel = left;
-			if (sc->token == SQL_NOT_IN)
+			if (f == sql_sel) {
+				e = rel_unop_(sql, r, NULL, "isnull", card_value);
+				if (sc->token == SQL_IN)
+					e = rel_unop_(sql, e, NULL, "not", card_value);
+			} else if (sc->token == SQL_NOT_IN)
 				e = rel_binop_(sql, l, r, NULL, "<>", card_value);
 			else
 				e = rel_binop_(sql, l, r, NULL, "=", card_value);
@@ -2530,23 +2554,26 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			ek.card = card_set;
 			select = rel_select(sql->sa, rel_dup(rel), NULL); /* dup to make sure we get a new select op */
 			rel_destroy(rel);
-			pexps = rel_projections(sql, rel, NULL, 1, 1);
 
 			/* first remove the NULLs */
 			if (!l_is_value && sc->token == SQL_NOT_IN &&
 		    	    l->card != CARD_ATOM && has_nil(l)) {
 				sql_exp *ol;
 
-				rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
-				select->l = rel;
-				l = exp_label(sql->sa, l, ++sql->label);
-				append(rel->exps, l);
-				ol = l;
-				l = exp_column(sql->sa, exp_relname(ol), exp_name(ol), exp_subtype(ol), ol->card, has_nil(ol), is_intern(ol));
+				if (l->type != e_column) {
+					pexps = rel_projections(sql, rel, NULL, 1, 1);
+					rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
+					select->l = rel;
+					l = exp_label(sql->sa, l, ++sql->label);
+					append(rel->exps, l);
+					ol = l;
+					l = exp_column(sql->sa, exp_relname(ol), exp_name(ol), exp_subtype(ol), ol->card, has_nil(ol), is_intern(ol));
+				}			
 				e = rel_unop_(sql, l, NULL, "isnull", card_value);
 				e = exp_compare(sql->sa, e, exp_atom_bool(sql->sa, 0), cmp_equal);
 				rel_select_add_exp(sql->sa, select, e);
-				l = exp_column(sql->sa, exp_relname(ol), exp_name(ol), exp_subtype(ol), ol->card, has_nil(ol), is_intern(ol));
+				if (pexps)
+					l = exp_column(sql->sa, exp_relname(ol), exp_name(ol), exp_subtype(ol), ol->card, has_nil(ol), is_intern(ol));
 			}
 			rel = left = select;
 
@@ -2575,7 +2602,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 					sql_exp *e;
 
 					l = ll->h->data;
-					if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) 
+					if (rel_convert_types(sql, &l, &r, 1, type_equal_no_any) < 0) 
 						return NULL;
 					e = exp_compare(sql->sa, l, r, cmp_equal );
 					if (!e)
@@ -2692,7 +2719,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				rel_select_add_exp(sql->sa, select, e);
 				if (l_is_value && sc->token == SQL_NOT_IN) 
 					set_anti(e);
-				if (pexps && !right) {
+				if (pexps && !right && sc->token == SQL_NOT_IN){
 					rel = rel_project(sql->sa, rel, pexps);
 					reset_processed(rel);
 				}

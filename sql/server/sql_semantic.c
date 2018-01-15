@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -16,12 +16,11 @@
 #include "sql_atom.h"
 
 #include <unistd.h>
-#include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 
-#include <rel_semantic.h>
-#include <rel_optimizer.h>
+#include "rel_semantic.h"
+#include "rel_optimizer.h"
 
 /* 
  * For debugging purposes we need to be able to convert sql-tokens to 

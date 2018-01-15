@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -29,7 +29,7 @@ BATidxsync(void *arg)
 		    (fd = GDKfdlocate(hp->farmid, hp->filename, "rb+", NULL)) >= 0) {
 			((oid *) hp->base)[0] |= (oid) 1 << 24;
 			if (write(fd, hp->base, SIZEOF_SIZE_T) >= 0) {
-				if (!(GDKdebug & FORCEMITOMASK)) {
+				if (!(GDKdebug & NOSYNCMASK)) {
 #if defined(NATIVE_WIN32)
 					_commit(fd);
 #elif defined(HAVE_FDATASYNC)

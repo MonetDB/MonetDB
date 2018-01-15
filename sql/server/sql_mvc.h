@@ -3,26 +3,25 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /* multi version catalog */
 #ifndef _SQL_MVC_H
 #define _SQL_MVC_H
 
-#include <sql_mem.h>
-#include <gdk.h>
-#include <stdarg.h>
-#include <sql_scan.h>
-#include <sql_list.h>
-#include <sql_types.h>
-#include <sql_backend.h>
-#include <sql_catalog.h>
-#include <sql_relation.h>
-#include <sql_storage.h>
-#include <sql_keyword.h>
-#include <sql_atom.h>
-#include <sql_query.h>
+#include "sql_mem.h"
+#include "gdk.h"
+#include "sql_scan.h"
+#include "sql_list.h"
+#include "sql_types.h"
+#include "sql_backend.h"
+#include "sql_catalog.h"
+#include "sql_relation.h"
+#include "sql_storage.h"
+#include "sql_keyword.h"
+#include "sql_atom.h"
+#include "sql_query.h"
 
 #define ERRSIZE 8192
 
@@ -230,6 +229,7 @@ extern void mvc_drop_idx(mvc *c, sql_schema *s, sql_idx * i);
 extern sql_trigger * mvc_create_trigger(mvc *m, sql_table *t, const char *name, sht time, sht orientation, sht event, const char *old_name, const char *new_name, const char *condition, const char *statement );
 extern sql_trigger * mvc_create_tc(mvc *m, sql_trigger * i, sql_column *c /*, extra options such as trunc */ );
 extern void mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger * tri);
+
 
 /*dependency control*/
 extern void mvc_create_dependency(mvc *m, int id, int depend_id, int depend_type);

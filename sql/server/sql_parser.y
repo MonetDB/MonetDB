@@ -3,12 +3,12 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 %{
 #include "monetdb_config.h"
-#include <sql_mem.h>
+#include "sql_mem.h"
 #include "sql_parser.h"
 #include "sql_symbol.h"
 #include "sql_datetime.h"
@@ -22,7 +22,6 @@
 
 #include <unistd.h>
 #include <string.h>
-#include <stdlib.h>
 
 #define SA 	m->sa
 #define _symbol_create(t,d)         symbol_create( SA, t, d)
@@ -131,6 +130,8 @@ int yydebug=1;
 	create_statement
 	drop_statement
 	declare_statement
+	comment_on_statement
+	catalog_object
 	set_statement
 	sql
 	sqlstmt
@@ -604,9 +605,9 @@ SQLCODE SQLERROR UNDER WHENEVER
 
 %token TEMP TEMPORARY STREAM MERGE REMOTE REPLICA
 %token<sval> ASC DESC AUTHORIZATION
-%token CHECK CONSTRAINT CREATE
+%token CHECK CONSTRAINT CREATE COMMENT
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
-%token CALL LANGUAGE 
+%token CALL LANGUAGE
 %token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREP PREPARE EXEC EXECUTE
 %token DEFAULT DISTINCT DROP
 %token FOREIGN
@@ -729,16 +730,17 @@ create:
 create_or_replace:
 	create
 |	CREATE OR REPLACE { $$ = TRUE; }
-
+;
 
 if_exists:
 	/* empty */   { $$ = FALSE; }
 |	IF EXISTS     { $$ = TRUE; }
+;
 
 if_not_exists:
 	/* empty */   { $$ = FALSE; }
 |	IF NOT EXISTS { $$ = TRUE; }
-
+;
 
 drop:
     DROP 		
@@ -767,6 +769,7 @@ sql:
 		append_int(l, $5);
 		$$ = _symbol_create_list( SQL_ANALYZE, l); }
  |  call_procedure_statement
+ |  comment_on_statement
  ;
 
 opt_minmax:
@@ -1917,19 +1920,25 @@ func_def:
 				// code does not get cleaner than this people
 				if (strcasecmp($10, "PYTHON_MAP") == 0) {
 					lang = FUNC_LANG_MAP_PY;
-				} else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
-					lang = FUNC_LANG_MAP_PY3;
-				} else if (strcasecmp($10, "PYTHON3") == 0) {
-					lang = FUNC_LANG_PY3;
-				} else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
-					lang = FUNC_LANG_MAP_PY2;
-				} else if (strcasecmp($10, "PYTHON2") == 0) {
-					lang = FUNC_LANG_PY2;
+                } else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
+                	lang = FUNC_LANG_MAP_PY3;
+                } else if (strcasecmp($10, "PYTHON3") == 0) {
+                	lang = FUNC_LANG_PY3;
+                } else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
+                	lang = FUNC_LANG_MAP_PY2;
+                } else if (strcasecmp($10, "PYTHON2") == 0) {
+                	lang = FUNC_LANG_PY2;
+                } else {
+                	lang = FUNC_LANG_PY;
+                }
+            }
+			else if (l == 'C' || l == 'c') {
+                if (strcasecmp($10, "CPP") == 0) {
+					lang = FUNC_LANG_CPP;
 				} else {
-					lang = FUNC_LANG_PY;
+					lang = FUNC_LANG_C;
 				}
-			} else if (l == 'C' || l == 'c')
-				lang = FUNC_LANG_C;
+			}
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;
 			else {
@@ -1990,19 +1999,25 @@ func_def:
 			else if (l == 'P' || l == 'p') {
 				if (strcasecmp($10, "PYTHON_MAP") == 0) {
 					lang = FUNC_LANG_MAP_PY;
-				} else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
-					lang = FUNC_LANG_MAP_PY3;
-				} else if (strcasecmp($10, "PYTHON3") == 0) {
-					lang = FUNC_LANG_PY3;
-				} else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
-					lang = FUNC_LANG_MAP_PY2;
-				} else if (strcasecmp($10, "PYTHON2") == 0) {
-					lang = FUNC_LANG_PY2;
+                } else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
+                	lang = FUNC_LANG_MAP_PY3;
+                } else if (strcasecmp($10, "PYTHON3") == 0) {
+                	lang = FUNC_LANG_PY3;
+                } else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
+                	lang = FUNC_LANG_MAP_PY2;
+                } else if (strcasecmp($10, "PYTHON2") == 0) {
+                	lang = FUNC_LANG_PY2;
+                } else {
+                	lang = FUNC_LANG_PY;
+                }
+            }
+            else if (l == 'C' || l == 'c') {
+                if (strcasecmp($10, "CPP") == 0) {
+					lang = FUNC_LANG_CPP;
 				} else {
-					lang = FUNC_LANG_PY;
+					lang = FUNC_LANG_C;
 				}
-			} else if (l == 'C' || l == 'c')
-				lang = FUNC_LANG_C;
+			}
 			else if (l == 'J' || l == 'j')
 				lang = FUNC_LANG_J;
 			else {
@@ -4305,6 +4320,7 @@ column_exp:
 opt_alias_name:
     /* empty */	{ $$ = NULL; }
  |  AS ident	{ $$ = $2; }
+ |  ident	{ $$ = $1; }
  ;
 
 atom:
@@ -5484,6 +5500,7 @@ non_reserved_word:
 |  STORAGE	{ $$ = sa_strdup(SA, "storage"); }
 |  GEOMETRY	{ $$ = sa_strdup(SA, "geometry"); }
 |  REPLACE	{ $$ = sa_strdup(SA, "replace"); }
+|  COMMENT	{ $$ = sa_strdup(SA, "comment"); }
 ;
 
 name_commalist:
@@ -5616,8 +5633,46 @@ path_specification:
 
 schema_name_list: name_commalist ;
 
+
+comment_on_statement:
+	COMMENT ON catalog_object IS string
+	{ dlist *l = L();
+	  append_symbol(l, $3);
+	  append_string(l, $5);
+	  $$ = _symbol_create_list( SQL_COMMENT, l );
+	}
+	| COMMENT ON catalog_object IS sqlNULL
+	{ dlist *l = L();
+	  append_symbol(l, $3);
+	  append_string(l, NULL);
+	  $$ = _symbol_create_list( SQL_COMMENT, l );
+	}
+	;
+
+catalog_object:
+	  SCHEMA ident { $$ = _symbol_create( SQL_SCHEMA, $2 ); }
+	| TABLE qname { $$ = _symbol_create_list( SQL_TABLE, $2 ); }
+	| VIEW qname { $$ = _symbol_create_list( SQL_VIEW, $2 ); }
+	| COLUMN ident '.' ident
+	{ dlist *l = L();
+	  append_string(l, $2);
+	  append_string(l, $4);
+	  $$ = _symbol_create_list( SQL_COLUMN, l );
+	}
+	| COLUMN ident '.' ident '.' ident
+	{ dlist *l = L();
+	  append_string(l, $2);
+	  append_string(l, $4);
+	  append_string(l, $6);
+	  $$ = _symbol_create_list( SQL_COLUMN, l );
+	}
+	| INDEX qname { $$ = _symbol_create_list( SQL_INDEX, $2 ); }
+	| SEQUENCE qname { $$ = _symbol_create_list( SQL_SEQUENCE, $2 ); }
+	| routine_designator { $$ = _symbol_create_list( SQL_ROUTINE, $1 ); }
+	;
+
 XML_value_expression:
-  XML_primary	
+  XML_primary
   ;
 
 XML_value_expression_list:
@@ -6196,6 +6251,7 @@ char *token2string(int token)
 	SQL(DROP_CONSTRAINT);
 	SQL(DROP_DEFAULT);
 	SQL(DECLARE);
+	SQL(COMMENT);
 	SQL(SET);
 	SQL(PREP);
 	SQL(PREPARE);
@@ -6205,7 +6261,10 @@ char *token2string(int token)
 	SQL(CHARSET);
 	SQL(SCHEMA);
 	SQL(TABLE);
+	SQL(VIEW);
+	SQL(INDEX);
 	SQL(TYPE);
+	SQL(SEQUENCE);
 	SQL(CASE);
 	SQL(CAST);
 	SQL(RETURN);
@@ -6278,6 +6337,7 @@ char *token2string(int token)
 	SQL(FRAME);
 	SQL(COMPARE);
 	SQL(FILTER);
+	SQL(ROUTINE);
 	SQL(TEMP_LOCAL);
 	SQL(TEMP_GLOBAL);
 	SQL(INT_VALUE);

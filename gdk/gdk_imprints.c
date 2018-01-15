@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -461,7 +461,7 @@ BATimprints(BAT *b)
 			((size_t *) imprints->imprints.base)[0] |= (size_t) 1 << 16;
 			if (write(fd, imprints->imprints.base, sizeof(size_t)) < 0)
 				perror("write imprints");
-			if (!(GDKdebug & FORCEMITOMASK)) {
+			if (!(GDKdebug & NOSYNCMASK)) {
 #if defined(NATIVE_WIN32)
 				_commit(fd);
 #elif defined(HAVE_FDATASYNC)

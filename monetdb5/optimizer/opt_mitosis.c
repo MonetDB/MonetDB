@@ -3,13 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "opt_mitosis.h"
 #include "mal_interpreter.h"
-#include <gdk_utils.h>
+#include "gdk_utils.h"
 
 static int
 eligible(MalBlkPtr mb)
@@ -87,7 +87,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			 getBatType(getArgType(mb, p, p->retc)) == TYPE_dbl))
 			return 0;
 
-		if (p->argc > 2 && (getModuleId(p) == rapiRef || getModuleId(p) == pyapiRef || getModuleId(p) == pyapi3Ref) && 
+		if (p->argc > 2 && (getModuleId(p) == capiRef || getModuleId(p) == rapiRef || getModuleId(p) == pyapiRef || getModuleId(p) == pyapi3Ref) && 
 		        getFunctionId(p) == subeval_aggrRef)
 			return 0;
 

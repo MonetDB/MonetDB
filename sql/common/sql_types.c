@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -350,8 +350,9 @@ subtype_cmp(sql_subtype *t1, sql_subtype *t2)
 {
 	if (!t1->type || !t2->type)
 		return -1;
+
 	if ( !(t1->type->eclass == t2->type->eclass && 
-	       EC_INTERVAL(t1->type->eclass)) &&
+	      (EC_INTERVAL(t1->type->eclass) || t1->type->eclass == EC_NUM)) &&
 	      (t1->digits != t2->digits || 
 	      (!(t1->type->eclass == t2->type->eclass && 
 	       t1->type->eclass == EC_FLT) &&

@@ -1,0 +1,117 @@
+stdout of test 'capi02` in directory 'sql/backends/monet5/UDF/capi` itself:
+
+
+# 22:49:10 >  
+# 22:49:10 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37477" "--set" "mapi_usock=/var/tmp/mtest-45783/.s.monetdb.37477" "--set" "monet_prompt=" "--forcemito" "--dbpath=NONE/var/MonetDB/mTests_sql_backends_monet5_UDF_capi"
+# 22:49:10 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5_UDF_capi', using 4 threads
+# Compiled for x86_64-apple-darwin15.6.0/64bit with 128bit integers
+# Found 8.000 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://marks-mbp.home:37477/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-45783/.s.monetdb.37477
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 22:49:11 >  
+# 22:49:11 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-45783" "--port=37477"
+# 22:49:11 >  
+
+#START TRANSACTION;
+#CREATE FUNCTION capi02_increment_year(d DATE) RETURNS DATE
+#language C
+#{
+#	result->initialize(result, d.count);
+#	for(size_t i = 0; i < result->count; i++) {
+#		if (d.is_null(d.data[i])) {
+#			result->data[i] = result->null_value;
+#		} else {
+#			result->data[i].year = d.data[i].year + 1;
+#			result->data[i].month = d.data[i].month;
+#			result->data[i].day = d.data[i].day;
+#		}
+#	}
+#};
+#CREATE TABLE dates(i DATE);
+#INSERT INTO dates VALUES ('1992-09-20'), ('2000-03-10'), ('1000-05-03'), (NULL);
+[ 4	]
+#SELECT capi02_increment_year(i) FROM dates;
+% sys.L2 # table_name
+% L2 # name
+% date # type
+% 10 # length
+[ 1993-09-20	]
+[ 2001-03-10	]
+[ 1001-05-03	]
+[ NULL	]
+#DROP FUNCTION capi02_increment_year;
+#DROP TABLE dates;
+#CREATE FUNCTION capi02_randomize_time(d TIME) RETURNS TIME
+#language C
+#{
+#	srand(1234);
+#	result->initialize(result, d.count);
+#	for(size_t i = 0; i < result->count; i++) {
+#		if (d.is_null(d.data[i])) {
+#			result->data[i] = result->null_value;
+#		} else {
+#			result->data[i].hours = rand() % 24;
+#			result->data[i].minutes = rand() % 60;
+#			result->data[i].seconds = rand() % 60;
+#			result->data[i].ms = rand() % 1000;
+#		}
+#	}
+#};
+#CREATE TABLE times(i TIME);
+#INSERT INTO times VALUES ('03:03:02.0101'), (NULL), ('03:03:02.0101');
+[ 3	]
+#SELECT capi02_randomize_time(i) FROM times;
+% sys.L2 # table_name
+% L2 # name
+% time # type
+% 8 # length
+[ 10:34:34	]
+[ NULL	]
+[ 12:36:36	]
+#DROP FUNCTION capi02_randomize_time;
+#DROP TABLE times;
+#CREATE FUNCTION capi02_increment_timestamp(d TIMESTAMP) RETURNS TIMESTAMP
+#language C
+#{
+#	srand(1234);
+#	result->initialize(result, d.count);
+#	for(size_t i = 0; i < result->count; i++) {
+#		if (d.is_null(d.data[i])) {
+#			result->data[i] = result->null_value;
+#		} else {
+#			result->data[i].date.year = d.data[i].date.year + 1;
+#			result->data[i].date.month = d.data[i].date.month;
+#			result->data[i].date.day = d.data[i].date.day;
+#
+#			result->data[i].time.hours = rand() % 24;
+#			result->data[i].time.minutes = rand() % 60;
+#CREATE TABLE times(i TIMESTAMP);
+#INSERT INTO times VALUES ('1992-09-20 03:03:02.0101'), (NULL), ('2000-03-10 03:03:02.0101');
+[ 3	]
+#SELECT capi02_increment_timestamp(i) FROM times;
+% sys.L2 # table_name
+% L2 # name
+% timestamp # type
+% 26 # length
+[ 1993-09-20 10:34:34.234000	]
+[ NULL	]
+[ 2001-03-10 12:36:36.236000	]
+#DROP FUNCTION capi02_increment_timestamp;
+#DROP TABLE times;
+#ROLLBACK;
+
+# 22:49:11 >  
+# 22:49:11 >  "Done."
+# 22:49:11 >  
+

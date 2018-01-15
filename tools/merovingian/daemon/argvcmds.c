@@ -3,23 +3,21 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
-#include <stdio.h>
 #include <unistd.h> /* chdir */
 #include <string.h> /* strerror */
-#include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <signal.h> /* kill */
 
-#include <mutils.h> /* MT_lockf */
-#include <mcrypt.h> /* mcrypt_BackendSum */
-#include <utils/utils.h>
-#include <utils/properties.h>
-#include <utils/control.h>
+#include "mutils.h" /* MT_lockf */
+#include "mcrypt.h" /* mcrypt_BackendSum */
+#include "utils/utils.h"
+#include "utils/properties.h"
+#include "utils/control.h"
 
 #include "merovingian.h"
 #include "argvcmds.h"

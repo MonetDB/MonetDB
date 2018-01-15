@@ -3,20 +3,20 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef _REMOTE_DEF
 #define _REMOTE_DEF
 #ifdef HAVE_MAPI
 
-#include <mal.h>
-#include <mal_exception.h>
-#include <mal_interpreter.h>
-#include <mal_function.h> /* for printFunction */
-#include <mal_listing.h>
-#include <mal_instruction.h> /* for getmodule/func macros */
-#include <mapi.h>
+#include "mal.h"
+#include "mal_exception.h"
+#include "mal_interpreter.h"
+#include "mal_function.h" /* for printFunction */
+#include "mal_listing.h"
+#include "mal_instruction.h" /* for getmodule/func macros */
+#include "mapi.h"
 #include "mutils.h"
 
 /* #define _DEBUG_REMOTE */

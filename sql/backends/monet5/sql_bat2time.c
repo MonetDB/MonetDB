@@ -3,23 +3,23 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "sql.h"
 #include "sql_result.h"
 #include "sql_gencode.h"
-#include <sql_storage.h>
-#include <sql_scenario.h>
-#include <store_sequence.h>
-#include <sql_optimizer.h>
-#include <sql_datetime.h>
-#include <rel_optimizer.h>
-#include <rel_distribute.h>
-#include <rel_select.h>
-#include <rel_exp.h>
-#include <rel_dump.h>
+#include "sql_storage.h"
+#include "sql_scenario.h"
+#include "store_sequence.h"
+#include "sql_optimizer.h"
+#include "sql_datetime.h"
+#include "rel_optimizer.h"
+#include "rel_distribute.h"
+#include "rel_select.h"
+#include "rel_exp.h"
+#include "rel_dump.h"
 #include "clients.h"
 #include "mal_instruction.h"
 

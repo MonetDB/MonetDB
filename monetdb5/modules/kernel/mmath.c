@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -19,13 +19,14 @@
  */
 #include "monetdb_config.h"
 #include "mmath.h"
-#ifdef HAVE_FENV_H
 #include <fenv.h>
-#else
-#define feclearexcept(x)
-#define fetestexcept(x)		0
+#ifndef FE_INVALID
 #define FE_INVALID			0
+#endif
+#ifndef FE_DIVBYZERO
 #define FE_DIVBYZERO		0
+#endif
+#ifndef FE_OVERFLOW
 #define FE_OVERFLOW			0
 #endif
 
