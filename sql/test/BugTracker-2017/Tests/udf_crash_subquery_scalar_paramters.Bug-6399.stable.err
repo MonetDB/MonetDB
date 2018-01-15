@@ -36,10 +36,10 @@ QUERY = select * from crash2((select idx from data), 2);
 ERROR = !SELECT: 'crash2' requires a single sub query
 MAPI  = (monetdb) /var/tmp/mtest-41450/.s.monetdb.30991
 QUERY = select * from crash2(1, (select idx from data));
-ERROR = !SELECT: 'crash2' requires a single sub query
-MAPI  = (monetdb) /var/tmp/mtest-41450/.s.monetdb.30991
+ERROR = !relational query without result
+MAPI  = (monetdb) /var/tmp/mtest-25976/.s.monetdb.36797
 QUERY = select * from crash3((select idx from data), 2, 3);
-ERROR = !SELECT: 'crash3' requires a single sub query
+ERROR = !relational query without result
 
 # 18:08:38 >  
 # 18:08:38 >  "Done."
