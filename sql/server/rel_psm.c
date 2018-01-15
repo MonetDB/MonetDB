@@ -984,7 +984,7 @@ rel_drop_function(sql_allocator *sa, const char *sname, const char *name, int nr
 }
 
 sql_func *
-resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, int type, char *op) 
+resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, int type, char *op, int if_exists)
 {
 	sql_func *func = NULL;
 	list *list_func = NULL, *type_list = NULL;
@@ -1018,13 +1018,13 @@ resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, int ty
 			func = (sql_func*) list_func->h->data;
 	}
 
-	if (!func) { 
+	if (!func) {
+		void *e = NULL;
 		if (typelist) {
 			char *arg_list = NULL;
 			node *n;
 			
 			if (type_list->cnt > 0) {
-				void *e;
 				for (n = type_list->h; n; n = n->next) {
 					char *tpe =  subtype2string((sql_subtype *) n->data);
 				
@@ -1039,16 +1039,21 @@ resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, int ty
 				}
 				list_destroy(list_func);
 				list_destroy(type_list);
-				e = sql_error(sql, 02, SQLSTATE(42000) "%s %s%s: no such %s%s '%s' (%s)", op, KF, F, kf, f, name, arg_list);
+				if(!if_exists)
+					e = sql_error(sql, 02, SQLSTATE(42000) "%s %s%s: no such %s%s '%s' (%s)", op, KF, F, kf, f, name, arg_list);
 				_DELETE(arg_list);
 				return e;
 			}
 			list_destroy(list_func);
 			list_destroy(type_list);
-			return sql_error(sql, 02, SQLSTATE(42000) "%s %s%s: no such %s%s '%s' ()", op, KF, F, kf, f, name);
+			if(!if_exists)
+				e = sql_error(sql, 02, SQLSTATE(42000) "%s %s%s: no such %s%s '%s' ()", op, KF, F, kf, f, name);
+			return e;
 
 		} else {
-			return sql_error(sql, 02, SQLSTATE(42000) "%s %s%s: no such %s%s '%s'", op, KF, F, kf, f, name);
+			if(!if_exists)
+				e = sql_error(sql, 02, SQLSTATE(42000) "%s %s%s: no such %s%s '%s'", op, KF, F, kf, f, name);
+			return e;
 		}
 	} else if (((is_func && type != F_FILT) && !func->res) || 
 		   (!is_func && func->res)) {
@@ -1063,7 +1068,7 @@ resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, int ty
 }
 
 static sql_rel* 
-rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type)
+rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type, int if_exists)
 {
 	const char *name = qname_table(qname);
 	const char *sname = qname_schema(qname);
@@ -1081,13 +1086,15 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, int type
 	if (s == NULL) 
 		s =  cur_schema(sql);
 	
-	func = resolve_func(sql, s, name, typelist, type, "DROP");
+	func = resolve_func(sql, s, name, typelist, type, "DROP", if_exists);
 	if (!func && !sname) {
 		s = tmp_schema(sql);
-		func = resolve_func(sql, s, name, typelist, type, "DROP");
+		func = resolve_func(sql, s, name, typelist, type, "DROP", if_exists);
 	}
 	if (func)
 		return rel_drop_function(sql->sa, s->base.name, name, func->base.id, type, drop_action);
+	else if(if_exists && !sql->session->status)
+		return rel_drop_function(sql->sa, s->base.name, name, -2, type, drop_action);
 	return NULL;
 }
 
@@ -1276,7 +1283,7 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, dlist *t
 }
 
 static sql_rel *
-rel_drop_trigger(mvc *sql, const char *sname, const char *tname)
+rel_drop_trigger(mvc *sql, const char *sname, const char *tname, int if_exists)
 {
 	sql_rel *rel = rel_create(sql->sa);
 	list *exps = new_exp_list(sql->sa);
@@ -1285,6 +1292,7 @@ rel_drop_trigger(mvc *sql, const char *sname, const char *tname)
 
 	append(exps, exp_atom_str(sql->sa, sname, sql_bind_localtype("str") ));
 	append(exps, exp_atom_str(sql->sa, tname, sql_bind_localtype("str") ));
+	append(exps, exp_atom_int(sql->sa, if_exists));
 	rel->l = NULL;
 	rel->r = NULL;
 	rel->op = op_ddl;
@@ -1296,7 +1304,7 @@ rel_drop_trigger(mvc *sql, const char *sname, const char *tname)
 }
 
 static sql_rel *
-drop_trigger(mvc *sql, dlist *qname)
+drop_trigger(mvc *sql, dlist *qname, int if_exists)
 {
 	const char *sname = qname_schema(qname);
 	const char *tname = qname_table(qname);
@@ -1310,7 +1318,7 @@ drop_trigger(mvc *sql, dlist *qname)
 
 	if (!mvc_schema_privs(sql, ss)) 
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), ss->base.name);
-	return rel_drop_trigger(sql, ss->base.name, tname);
+	return rel_drop_trigger(sql, ss->base.name, tname, if_exists);
 }
 
 static sql_rel *
@@ -1441,16 +1449,18 @@ rel_psm(mvc *sql, symbol *s)
 		dlist *qname = l->h->data.lval;
 		dlist *typelist = l->h->next->data.lval;
 		int type = l->h->next->next->data.i_val;
-		int all = l->h->next->next->next->data.i_val;
-		int drop_action = l->h->next->next->next->next->data.i_val;
+		int if_exists = l->h->next->next->next->data.i_val;
+		int all = l->h->next->next->next->next->data.i_val;
+		int drop_action = l->h->next->next->next->next->next->data.i_val;
 
 		if (STORE_READONLY) 
 			return sql_error(sql, 06, SQLSTATE(42000) "Schema statements cannot be executed on a readonly database.");
 			
 		if (all)
 			ret = rel_drop_all_func(sql, qname, drop_action, type);
-		else
-			ret = rel_drop_func(sql, qname, typelist, drop_action, type);
+		else {
+			ret = rel_drop_func(sql, qname, typelist, drop_action, type, if_exists);
+		}
 
 		sql->type = Q_SCHEMA;
 	}	break;
@@ -1488,8 +1498,10 @@ rel_psm(mvc *sql, symbol *s)
 	case SQL_DROP_TRIGGER:
 	{
 		dlist *l = s->data.lval;
+		dlist *qname = l->h->data.lval;
+		int if_exists = l->h->next->data.i_val;
 
-		ret = drop_trigger(sql, l);
+		ret = drop_trigger(sql, qname, if_exists);
 		sql->type = Q_SCHEMA;
 	}
 		break;

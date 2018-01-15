@@ -119,6 +119,8 @@ truncate-statements
 truncate-statements-extra
 create-or-replace-triggers
 create-or-replace-views
+drop-function-if-exists
+drop-trigger-if-exists
 
 constant-not-in
 

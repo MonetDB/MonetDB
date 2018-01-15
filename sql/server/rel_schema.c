@@ -1650,7 +1650,7 @@ rel_grant_func(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *typ
 		s = mvc_bind_schema(sql, sname);
 	else
 		s = cur;
-	func = resolve_func(sql, s, fname, typelist, type, "GRANT");
+	func = resolve_func(sql, s, fname, typelist, type, "GRANT", 0);
 	if (!func) 
 		return NULL;
 	if (!func->s) 
@@ -1835,7 +1835,7 @@ rel_revoke_func(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *ty
 		s = mvc_bind_schema(sql, sname);
 	else
 		s = cur;
-	func = resolve_func(sql, s, fname, typelist, type, "REVOKE");
+	func = resolve_func(sql, s, fname, typelist, type, "REVOKE", 0);
 	if (!func) 
 		return NULL;
 	if (!func->s)
@@ -2180,10 +2180,10 @@ rel_find_designated_routine(mvc *sql, symbol *sym, sql_schema **schema_out) {
 		return 0;
 
 	fname = qname_func(qname);
-	func = resolve_func(sql, s, fname, typelist, func_type, "COMMENT");
+	func = resolve_func(sql, s, fname, typelist, func_type, "COMMENT", 0);
 	if (!func && func_type == F_FUNC) {
 		// functions returning a table have a special type
-		func = resolve_func(sql, s, fname, typelist, F_UNION, "COMMENT");
+		func = resolve_func(sql, s, fname, typelist, F_UNION, "COMMENT", 0);
 	}
 	if (func) {
 		*schema_out = s;

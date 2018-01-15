@@ -119,7 +119,7 @@ pattern drop_index( sname:str, iname:str, action:int)
 address SQLdrop_index 
 comment "Catalog operation drop_index";
 
-pattern drop_function( sname:str, fname:str, fid:int, type:int, action:int) 
+pattern drop_function( sname:str, fname:str, fid:int, type:int, action:int)
 address SQLdrop_function 
 comment "Catalog operation drop_function";
 
@@ -131,7 +131,7 @@ pattern create_trigger( sname:str, tname:str, triggername:str, time:int, orienta
 address SQLcreate_trigger 
 comment "Catalog operation create_trigger";
 
-pattern drop_trigger(sname:str,nme:str ) 
+pattern drop_trigger(sname:str, nme:str, ifexists:int)
 address SQLdrop_trigger 
 comment "Catalog operation drop_trigger";
 

@@ -206,7 +206,7 @@ pattern create_trigger( sname:str, tname:str, triggername:str, time:int, orienta
 address WLCgeneric
 comment "Catalog operation create_trigger";
 
-pattern drop_trigger(sname:str,nme:str )
+pattern drop_trigger(sname:str, nme:str, ifexists:int)
 address WLCgeneric
 comment "Catalog operation drop_trigger";
 
