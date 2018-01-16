@@ -40,6 +40,7 @@ BEGIN
                 WHEN 2 THEN 'PROCEDURE'
                 WHEN 3 THEN 'AGGREGATE'
                 WHEN 4 THEN 'FILTER FUNCTION'
+		WHEN 5 THEN 'FUNCTION' -- table returning function
                 WHEN 7 THEN 'LOADER'
                 ELSE 'ROUTINE'
         END;

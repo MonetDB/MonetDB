@@ -1103,6 +1103,7 @@ sql_create_comments_table(Client c)
 		"                WHEN 2 THEN 'PROCEDURE'\n"
 		"                WHEN 3 THEN 'AGGREGATE'\n"
 		"                WHEN 4 THEN 'FILTER FUNCTION'\n"
+		"                WHEN 5 THEN 'FUNCTION' -- table returning function\n"
 		"                WHEN 7 THEN 'LOADER'\n"
 		"                ELSE 'ROUTINE'\n"
 		"        END;\n"
