@@ -385,11 +385,13 @@ CQanalysis(Client cntxt, MalBlkPtr mb, int idx)
 	return msg;
 }
 
-#define FREE_CQ_MB(X)    \
-	if(mb)               \
-		freeMalBlk(mb);  \
-	if(ralias)           \
-		GDKfree(ralias); \
+#define FREE_CQ_MB(X)      \
+	if(mb)                 \
+		freeMalBlk(mb);    \
+	if(ralias)             \
+		GDKfree(ralias);   \
+	if(raliasdup)          \
+		GDKfree(raliasdup);\
 	goto X;
 
 #define CQ_MALLOC_FAIL(X)                                                         \
@@ -498,7 +500,6 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 		CQ_MALLOC_FAIL(finish)
 	}
 	if((q = newInstruction(NULL, "cquery", raliasdup)) == NULL) {
-		GDKfree(raliasdup);
 		CQ_MALLOC_FAIL(finish)
 	}
 	q->token = FUNCTIONsymbol;
@@ -1511,6 +1512,8 @@ terminate:
 	//DROP_ALL_CQUERY_TABLES
 	pnstatus = CQINIT;
 	cq_pid = 0;
+	GDKfree(c->scenario);
+	c->scenario = NULL;
 	SQLexitClient(c);
 	MCcloseClient(c);
 	MT_lock_unset(&ttrLock);
@@ -1575,11 +1578,15 @@ CQstartScheduler(void)
 
 	cntxt->curmodule = cntxt->usermodule = userModule();
 	if( cntxt->curmodule == NULL) {
+		GDKfree(cntxt->scenario);
+		cntxt->scenario = NULL;
 		MCcloseClient(cntxt);
 		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize CQscheduler\n");
 	}
 
 	if( SQLinitClient(cntxt) != MAL_SUCCEED) {
+		GDKfree(cntxt->scenario);
+		cntxt->scenario = NULL;
 		MCcloseClient(cntxt);
 		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize SQL context in CQscheduler\n");
 	}
@@ -1588,6 +1595,8 @@ CQstartScheduler(void)
 #ifdef DEBUG_CQUERY
 		fprintf(stderr, "#Start CQscheduler failed\n");
 #endif
+		GDKfree(cntxt->scenario);
+		cntxt->scenario = NULL;
 		SQLexitClient(cntxt);
 		MCcloseClient(cntxt);
 		throw(MAL, "cquery.startScheduler",SQLSTATE(HY001) "Could not initialize client thread in CQscheduler\n");
