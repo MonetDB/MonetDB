@@ -1,33 +1,28 @@
 stdout of test 'q8_v_small` in directory 'sql/test/rdf` itself:
 
 
-# 15:59:45 >  
-# 15:59:45 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35378" "--set" "mapi_usock=/var/tmp/mtest-16175/.s.monetdb.35378" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_rdf" "--set" "embedded_r=yes"
-# 15:59:45 >  
+# 10:46:25 >  
+# 10:46:25 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36263" "--set" "mapi_usock=/var/tmp/mtest-3472/.s.monetdb.36263" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-stable/var/MonetDB/mTests_sql_test_rdf"
+# 10:46:25 >  
 
-# MonetDB 5 server v11.22.0
+# MonetDB 5 server v11.27.12 (hg id: 9a05add39d7b)
 # This is an unreleased version
-# Serving database 'mTests_sql_test_rdf', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs and 128bit integers dynamically linked
-# Found 7.332 GiB available main-memory.
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
-# Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://localhost.nes.nl:35378/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16175/.s.monetdb.35378
+# Serving database 'mTests_sql_test_rdf', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 62.695 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:36263/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-3472/.s.monetdb.36263
 # MonetDB/GIS module loaded
-# Start processing logs sql/sql_logs version 52200
-# Start reading the write-ahead log 'sql_logs/sql/log.5'
-# Finished reading the write-ahead log 'sql_logs/sql/log.5'
-# Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-# MonetDB/R   module loaded
 
 Ready.
 
-# 15:59:45 >  
-# 15:59:45 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16175" "--port=35378"
-# 15:59:45 >  
+# 10:46:25 >  
+# 10:46:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3472" "--port=36263"
+# 10:46:25 >  
 
 #with A as (
 #		(select subj, obj FROM prop14657240_pso where subj = 12854543) 
@@ -48,7 +43,7 @@ Ready.
 % int # type
 % 1 # length
 
-# 15:59:54 >  
-# 15:59:54 >  "Done."
-# 15:59:54 >  
+# 10:46:27 >  
+# 10:46:27 >  "Done."
+# 10:46:27 >  
 
