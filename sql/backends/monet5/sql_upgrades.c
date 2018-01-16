@@ -1229,9 +1229,18 @@ sql_create_comments_table(Client c)
 		return err;
 
 	q = ""
+		"INSERT INTO sys.systemfunctions\n"
+		"SELECT id FROM sys.functions\n"
+		"WHERE schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys')\n"
+		"AND name IN ('comment_on', 'function_type_keyword', 'describe_all_objects');\n";
+	err = SQLstatementIntern(c, &q, "update", 1, 0, NULL);
+	if (err)
+		return err;
+
+	q = ""
 		"UPDATE sys._tables\n"
 		"SET system = true\n"
-		"WHERE name = 'comments'\n"
+		"WHERE name IN ('comments', 'commented_function_signatures')\n"
 		"AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n";
 	return SQLstatementIntern(c, &q, "update", 1, 0, NULL);
 }
