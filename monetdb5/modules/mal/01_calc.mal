@@ -189,7 +189,42 @@ address CMDvarDECRsignal
 comment "Unary V - 1";
 
 
+pattern +(v1:bte,v2:bte) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:bte,v2:bte) :flt
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:bte,v2:bte) :lng
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:bte,v2:bte) :int
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
 pattern +(v1:bte,v2:bte) :sht
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:bte,v2:bte) :bte
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:bte,v2:bte) :bte
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:bte,v2:sht) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:bte,v2:sht) :flt
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:bte,v2:sht) :lng
 address CMDvarADDsignal
 comment "Return V1 + V2, guarantee no overflow by returning larger type";
 
@@ -197,11 +232,74 @@ pattern +(v1:bte,v2:sht) :int
 address CMDvarADDsignal
 comment "Return V1 + V2, guarantee no overflow by returning larger type";
 
+pattern +(v1:bte,v2:sht) :sht
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:bte,v2:sht) :sht
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:bte,v2:int) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:bte,v2:int) :flt
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
 pattern +(v1:bte,v2:int) :lng
 address CMDvarADDsignal
 comment "Return V1 + V2, guarantee no overflow by returning larger type";
 
+pattern +(v1:bte,v2:int) :int
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:bte,v2:int) :int
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:bte,v2:lng) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:bte,v2:lng) :flt
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:bte,v2:lng) :lng
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:bte,v2:lng) :lng
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
 pattern +(v1:bte,v2:flt) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:bte,v2:flt) :flt
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:bte,v2:flt) :flt
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:bte,v2:dbl) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:bte,v2:dbl) :dbl
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:sht,v2:bte) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:sht,v2:bte) :flt
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:sht,v2:bte) :lng
 address CMDvarADDsignal
 comment "Return V1 + V2, guarantee no overflow by returning larger type";
 
@@ -209,7 +307,41 @@ pattern +(v1:sht,v2:bte) :int
 address CMDvarADDsignal
 comment "Return V1 + V2, guarantee no overflow by returning larger type";
 
+pattern +(v1:sht,v2:bte) :sht
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:sht,v2:bte) :sht
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:sht,v2:sht) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:sht,v2:sht) :flt
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:sht,v2:sht) :lng
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
 pattern +(v1:sht,v2:sht) :int
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:sht,v2:sht) :sht
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:sht,v2:sht) :sht
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:sht,v2:int) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:sht,v2:int) :flt
 address CMDvarADDsignal
 comment "Return V1 + V2, guarantee no overflow by returning larger type";
 
@@ -217,7 +349,51 @@ pattern +(v1:sht,v2:int) :lng
 address CMDvarADDsignal
 comment "Return V1 + V2, guarantee no overflow by returning larger type";
 
+pattern +(v1:sht,v2:int) :int
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:sht,v2:int) :int
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:sht,v2:lng) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:sht,v2:lng) :flt
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:sht,v2:lng) :lng
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:sht,v2:lng) :lng
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
 pattern +(v1:sht,v2:flt) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:sht,v2:flt) :flt
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:sht,v2:flt) :flt
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:sht,v2:dbl) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:sht,v2:dbl) :dbl
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:int,v2:bte) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:int,v2:bte) :flt
 address CMDvarADDsignal
 comment "Return V1 + V2, guarantee no overflow by returning larger type";
 
@@ -225,7 +401,37 @@ pattern +(v1:int,v2:bte) :lng
 address CMDvarADDsignal
 comment "Return V1 + V2, guarantee no overflow by returning larger type";
 
+pattern +(v1:int,v2:bte) :int
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:int,v2:bte) :int
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:int,v2:sht) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:int,v2:sht) :flt
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
 pattern +(v1:int,v2:sht) :lng
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:int,v2:sht) :int
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:int,v2:sht) :int
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:int,v2:int) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:int,v2:int) :flt
 address CMDvarADDsignal
 comment "Return V1 + V2, guarantee no overflow by returning larger type";
 
@@ -233,36 +439,264 @@ pattern +(v1:int,v2:int) :lng
 address CMDvarADDsignal
 comment "Return V1 + V2, guarantee no overflow by returning larger type";
 
+pattern +(v1:int,v2:int) :int
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:int,v2:int) :int
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:int,v2:lng) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:int,v2:lng) :flt
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:int,v2:lng) :lng
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:int,v2:lng) :lng
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
 pattern +(v1:int,v2:flt) :dbl
 address CMDvarADDsignal
 comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:int,v2:flt) :flt
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:int,v2:flt) :flt
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:int,v2:dbl) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:int,v2:dbl) :dbl
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:lng,v2:bte) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:lng,v2:bte) :flt
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:lng,v2:bte) :lng
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:lng,v2:bte) :lng
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:lng,v2:sht) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:lng,v2:sht) :flt
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:lng,v2:sht) :lng
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:lng,v2:sht) :lng
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:lng,v2:int) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:lng,v2:int) :flt
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:lng,v2:int) :lng
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:lng,v2:int) :lng
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:lng,v2:lng) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:lng,v2:lng) :flt
+address CMDvarADDsignal
+comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:lng,v2:lng) :lng
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:lng,v2:lng) :lng
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
 
 pattern +(v1:lng,v2:flt) :dbl
 address CMDvarADDsignal
 comment "Return V1 + V2, guarantee no overflow by returning larger type";
 
+pattern +(v1:lng,v2:flt) :flt
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:lng,v2:flt) :flt
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:lng,v2:dbl) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:lng,v2:dbl) :dbl
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
 pattern +(v1:flt,v2:bte) :dbl
 address CMDvarADDsignal
 comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:flt,v2:bte) :flt
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:flt,v2:bte) :flt
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
 
 pattern +(v1:flt,v2:sht) :dbl
 address CMDvarADDsignal
 comment "Return V1 + V2, guarantee no overflow by returning larger type";
 
+pattern +(v1:flt,v2:sht) :flt
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:flt,v2:sht) :flt
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
 pattern +(v1:flt,v2:int) :dbl
 address CMDvarADDsignal
 comment "Return V1 + V2, guarantee no overflow by returning larger type";
+
+pattern +(v1:flt,v2:int) :flt
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:flt,v2:int) :flt
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
 
 pattern +(v1:flt,v2:lng) :dbl
 address CMDvarADDsignal
 comment "Return V1 + V2, guarantee no overflow by returning larger type";
 
+pattern +(v1:flt,v2:lng) :flt
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:flt,v2:lng) :flt
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
 pattern +(v1:flt,v2:flt) :dbl
 address CMDvarADDsignal
 comment "Return V1 + V2, guarantee no overflow by returning larger type";
 
+pattern +(v1:flt,v2:flt) :flt
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:flt,v2:flt) :flt
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:flt,v2:dbl) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:flt,v2:dbl) :dbl
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:dbl,v2:bte) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:dbl,v2:bte) :dbl
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:dbl,v2:sht) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:dbl,v2:sht) :dbl
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:dbl,v2:int) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:dbl,v2:int) :dbl
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:dbl,v2:lng) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:dbl,v2:lng) :dbl
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:dbl,v2:flt) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:dbl,v2:flt) :dbl
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern +(v1:dbl,v2:dbl) :dbl
+address CMDvarADDsignal
+comment "Return V1 + V2, signal error on overflow";
+pattern add_noerror(v1:dbl,v2:dbl) :dbl
+address CMDvarADD
+comment "Return V1 + V2, overflow results in NIL value";
+
+pattern -(v1:bte,v2:bte) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:bte,v2:bte) :flt
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:bte,v2:bte) :lng
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:bte,v2:bte) :int
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
 
 pattern -(v1:bte,v2:bte) :sht
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:bte,v2:bte) :bte
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:bte,v2:bte) :bte
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:bte,v2:sht) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:bte,v2:sht) :flt
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:bte,v2:sht) :lng
 address CMDvarSUBsignal
 comment "Return V1 - V2, guarantee no overflow by returning larger type";
 
@@ -270,11 +704,74 @@ pattern -(v1:bte,v2:sht) :int
 address CMDvarSUBsignal
 comment "Return V1 - V2, guarantee no overflow by returning larger type";
 
+pattern -(v1:bte,v2:sht) :sht
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:bte,v2:sht) :sht
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:bte,v2:int) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:bte,v2:int) :flt
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
 pattern -(v1:bte,v2:int) :lng
 address CMDvarSUBsignal
 comment "Return V1 - V2, guarantee no overflow by returning larger type";
 
+pattern -(v1:bte,v2:int) :int
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:bte,v2:int) :int
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:bte,v2:lng) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:bte,v2:lng) :flt
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:bte,v2:lng) :lng
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:bte,v2:lng) :lng
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
 pattern -(v1:bte,v2:flt) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:bte,v2:flt) :flt
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:bte,v2:flt) :flt
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:bte,v2:dbl) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:bte,v2:dbl) :dbl
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:sht,v2:bte) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:sht,v2:bte) :flt
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:sht,v2:bte) :lng
 address CMDvarSUBsignal
 comment "Return V1 - V2, guarantee no overflow by returning larger type";
 
@@ -282,7 +779,41 @@ pattern -(v1:sht,v2:bte) :int
 address CMDvarSUBsignal
 comment "Return V1 - V2, guarantee no overflow by returning larger type";
 
+pattern -(v1:sht,v2:bte) :sht
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:sht,v2:bte) :sht
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:sht,v2:sht) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:sht,v2:sht) :flt
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:sht,v2:sht) :lng
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
 pattern -(v1:sht,v2:sht) :int
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:sht,v2:sht) :sht
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:sht,v2:sht) :sht
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:sht,v2:int) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:sht,v2:int) :flt
 address CMDvarSUBsignal
 comment "Return V1 - V2, guarantee no overflow by returning larger type";
 
@@ -290,7 +821,51 @@ pattern -(v1:sht,v2:int) :lng
 address CMDvarSUBsignal
 comment "Return V1 - V2, guarantee no overflow by returning larger type";
 
+pattern -(v1:sht,v2:int) :int
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:sht,v2:int) :int
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:sht,v2:lng) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:sht,v2:lng) :flt
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:sht,v2:lng) :lng
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:sht,v2:lng) :lng
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
 pattern -(v1:sht,v2:flt) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:sht,v2:flt) :flt
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:sht,v2:flt) :flt
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:sht,v2:dbl) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:sht,v2:dbl) :dbl
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:int,v2:bte) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:int,v2:bte) :flt
 address CMDvarSUBsignal
 comment "Return V1 - V2, guarantee no overflow by returning larger type";
 
@@ -298,7 +873,37 @@ pattern -(v1:int,v2:bte) :lng
 address CMDvarSUBsignal
 comment "Return V1 - V2, guarantee no overflow by returning larger type";
 
+pattern -(v1:int,v2:bte) :int
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:int,v2:bte) :int
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:int,v2:sht) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:int,v2:sht) :flt
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
 pattern -(v1:int,v2:sht) :lng
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:int,v2:sht) :int
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:int,v2:sht) :int
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:int,v2:int) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:int,v2:int) :flt
 address CMDvarSUBsignal
 comment "Return V1 - V2, guarantee no overflow by returning larger type";
 
@@ -306,36 +911,264 @@ pattern -(v1:int,v2:int) :lng
 address CMDvarSUBsignal
 comment "Return V1 - V2, guarantee no overflow by returning larger type";
 
+pattern -(v1:int,v2:int) :int
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:int,v2:int) :int
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:int,v2:lng) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:int,v2:lng) :flt
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:int,v2:lng) :lng
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:int,v2:lng) :lng
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
 pattern -(v1:int,v2:flt) :dbl
 address CMDvarSUBsignal
 comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:int,v2:flt) :flt
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:int,v2:flt) :flt
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:int,v2:dbl) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:int,v2:dbl) :dbl
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:lng,v2:bte) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:lng,v2:bte) :flt
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:lng,v2:bte) :lng
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:lng,v2:bte) :lng
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:lng,v2:sht) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:lng,v2:sht) :flt
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:lng,v2:sht) :lng
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:lng,v2:sht) :lng
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:lng,v2:int) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:lng,v2:int) :flt
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:lng,v2:int) :lng
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:lng,v2:int) :lng
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:lng,v2:lng) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:lng,v2:lng) :flt
+address CMDvarSUBsignal
+comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:lng,v2:lng) :lng
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:lng,v2:lng) :lng
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
 
 pattern -(v1:lng,v2:flt) :dbl
 address CMDvarSUBsignal
 comment "Return V1 - V2, guarantee no overflow by returning larger type";
 
+pattern -(v1:lng,v2:flt) :flt
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:lng,v2:flt) :flt
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:lng,v2:dbl) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:lng,v2:dbl) :dbl
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
 pattern -(v1:flt,v2:bte) :dbl
 address CMDvarSUBsignal
 comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:flt,v2:bte) :flt
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:flt,v2:bte) :flt
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
 
 pattern -(v1:flt,v2:sht) :dbl
 address CMDvarSUBsignal
 comment "Return V1 - V2, guarantee no overflow by returning larger type";
 
+pattern -(v1:flt,v2:sht) :flt
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:flt,v2:sht) :flt
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
 pattern -(v1:flt,v2:int) :dbl
 address CMDvarSUBsignal
 comment "Return V1 - V2, guarantee no overflow by returning larger type";
+
+pattern -(v1:flt,v2:int) :flt
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:flt,v2:int) :flt
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
 
 pattern -(v1:flt,v2:lng) :dbl
 address CMDvarSUBsignal
 comment "Return V1 - V2, guarantee no overflow by returning larger type";
 
+pattern -(v1:flt,v2:lng) :flt
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:flt,v2:lng) :flt
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
 pattern -(v1:flt,v2:flt) :dbl
 address CMDvarSUBsignal
 comment "Return V1 - V2, guarantee no overflow by returning larger type";
 
+pattern -(v1:flt,v2:flt) :flt
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:flt,v2:flt) :flt
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:flt,v2:dbl) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:flt,v2:dbl) :dbl
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:dbl,v2:bte) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:dbl,v2:bte) :dbl
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:dbl,v2:sht) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:dbl,v2:sht) :dbl
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:dbl,v2:int) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:dbl,v2:int) :dbl
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:dbl,v2:lng) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:dbl,v2:lng) :dbl
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:dbl,v2:flt) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:dbl,v2:flt) :dbl
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern -(v1:dbl,v2:dbl) :dbl
+address CMDvarSUBsignal
+comment "Return V1 - V2, signal error on overflow";
+pattern sub_noerror(v1:dbl,v2:dbl) :dbl
+address CMDvarSUB
+comment "Return V1 - V2, overflow results in NIL value";
+
+pattern *(v1:bte,v2:bte) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:bte,v2:bte) :flt
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:bte,v2:bte) :lng
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:bte,v2:bte) :int
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
 pattern *(v1:bte,v2:bte) :sht
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:bte,v2:bte) :bte
+address CMDvarMULsignal
+comment "Return V1 * V2, signal error on overflow";
+pattern mul_noerror(v1:bte,v2:bte) :bte
+address CMDvarMUL
+comment "Return V1 * V2, overflow results in NIL value";
+
+pattern *(v1:bte,v2:sht) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:bte,v2:sht) :flt
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:bte,v2:sht) :lng
 address CMDvarMULsignal
 comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
@@ -343,11 +1176,74 @@ pattern *(v1:bte,v2:sht) :int
 address CMDvarMULsignal
 comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
+pattern *(v1:bte,v2:sht) :sht
+address CMDvarMULsignal
+comment "Return V1 * V2, signal error on overflow";
+pattern mul_noerror(v1:bte,v2:sht) :sht
+address CMDvarMUL
+comment "Return V1 * V2, overflow results in NIL value";
+
+pattern *(v1:bte,v2:int) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:bte,v2:int) :flt
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
 pattern *(v1:bte,v2:int) :lng
 address CMDvarMULsignal
 comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
+pattern *(v1:bte,v2:int) :int
+address CMDvarMULsignal
+comment "Return V1 * V2, signal error on overflow";
+pattern mul_noerror(v1:bte,v2:int) :int
+address CMDvarMUL
+comment "Return V1 * V2, overflow results in NIL value";
+
+pattern *(v1:bte,v2:lng) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:bte,v2:lng) :flt
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:bte,v2:lng) :lng
+address CMDvarMULsignal
+comment "Return V1 * V2, signal error on overflow";
+pattern mul_noerror(v1:bte,v2:lng) :lng
+address CMDvarMUL
+comment "Return V1 * V2, overflow results in NIL value";
+
 pattern *(v1:bte,v2:flt) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:bte,v2:flt) :flt
+address CMDvarMULsignal
+comment "Return V1 * V2, signal error on overflow";
+pattern mul_noerror(v1:bte,v2:flt) :flt
+address CMDvarMUL
+comment "Return V1 * V2, overflow results in NIL value";
+
+pattern *(v1:bte,v2:dbl) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, signal error on overflow";
+pattern mul_noerror(v1:bte,v2:dbl) :dbl
+address CMDvarMUL
+comment "Return V1 * V2, overflow results in NIL value";
+
+pattern *(v1:sht,v2:bte) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:sht,v2:bte) :flt
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:sht,v2:bte) :lng
 address CMDvarMULsignal
 comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
@@ -355,7 +1251,41 @@ pattern *(v1:sht,v2:bte) :int
 address CMDvarMULsignal
 comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
+pattern *(v1:sht,v2:bte) :sht
+address CMDvarMULsignal
+comment "Return V1 * V2, signal error on overflow";
+pattern mul_noerror(v1:sht,v2:bte) :sht
+address CMDvarMUL
+comment "Return V1 * V2, overflow results in NIL value";
+
+pattern *(v1:sht,v2:sht) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:sht,v2:sht) :flt
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:sht,v2:sht) :lng
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
 pattern *(v1:sht,v2:sht) :int
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:sht,v2:sht) :sht
+address CMDvarMULsignal
+comment "Return V1 * V2, signal error on overflow";
+pattern mul_noerror(v1:sht,v2:sht) :sht
+address CMDvarMUL
+comment "Return V1 * V2, overflow results in NIL value";
+
+pattern *(v1:sht,v2:int) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:sht,v2:int) :flt
 address CMDvarMULsignal
 comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
@@ -363,7 +1293,51 @@ pattern *(v1:sht,v2:int) :lng
 address CMDvarMULsignal
 comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
+pattern *(v1:sht,v2:int) :int
+address CMDvarMULsignal
+comment "Return V1 * V2, signal error on overflow";
+pattern mul_noerror(v1:sht,v2:int) :int
+address CMDvarMUL
+comment "Return V1 * V2, overflow results in NIL value";
+
+pattern *(v1:sht,v2:lng) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:sht,v2:lng) :flt
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:sht,v2:lng) :lng
+address CMDvarMULsignal
+comment "Return V1 * V2, signal error on overflow";
+pattern mul_noerror(v1:sht,v2:lng) :lng
+address CMDvarMUL
+comment "Return V1 * V2, overflow results in NIL value";
+
 pattern *(v1:sht,v2:flt) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:sht,v2:flt) :flt
+address CMDvarMULsignal
+comment "Return V1 * V2, signal error on overflow";
+pattern mul_noerror(v1:sht,v2:flt) :flt
+address CMDvarMUL
+comment "Return V1 * V2, overflow results in NIL value";
+
+pattern *(v1:sht,v2:dbl) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, signal error on overflow";
+pattern mul_noerror(v1:sht,v2:dbl) :dbl
+address CMDvarMUL
+comment "Return V1 * V2, overflow results in NIL value";
+
+pattern *(v1:int,v2:bte) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:int,v2:bte) :flt
 address CMDvarMULsignal
 comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
@@ -371,7 +1345,37 @@ pattern *(v1:int,v2:bte) :lng
 address CMDvarMULsignal
 comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
+pattern *(v1:int,v2:bte) :int
+address CMDvarMULsignal
+comment "Return V1 * V2, signal error on overflow";
+pattern mul_noerror(v1:int,v2:bte) :int
+address CMDvarMUL
+comment "Return V1 * V2, overflow results in NIL value";
+
+pattern *(v1:int,v2:sht) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:int,v2:sht) :flt
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
 pattern *(v1:int,v2:sht) :lng
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:int,v2:sht) :int
+address CMDvarMULsignal
+comment "Return V1 * V2, signal error on overflow";
+pattern mul_noerror(v1:int,v2:sht) :int
+address CMDvarMUL
+comment "Return V1 * V2, overflow results in NIL value";
+
+pattern *(v1:int,v2:int) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:int,v2:int) :flt
 address CMDvarMULsignal
 comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
@@ -379,793 +1383,227 @@ pattern *(v1:int,v2:int) :lng
 address CMDvarMULsignal
 comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
-pattern *(v1:int,v2:flt) :dbl
-address CMDvarMULsignal
-comment "Return V1 * V2, guarantee no overflow by returning larger type";
-
-pattern *(v1:lng,v2:flt) :dbl
-address CMDvarMULsignal
-comment "Return V1 * V2, guarantee no overflow by returning larger type";
-
-pattern *(v1:flt,v2:bte) :dbl
-address CMDvarMULsignal
-comment "Return V1 * V2, guarantee no overflow by returning larger type";
-
-pattern *(v1:flt,v2:sht) :dbl
-address CMDvarMULsignal
-comment "Return V1 * V2, guarantee no overflow by returning larger type";
-
-pattern *(v1:flt,v2:int) :dbl
-address CMDvarMULsignal
-comment "Return V1 * V2, guarantee no overflow by returning larger type";
-
-pattern *(v1:flt,v2:lng) :dbl
-address CMDvarMULsignal
-comment "Return V1 * V2, guarantee no overflow by returning larger type";
-
-pattern *(v1:flt,v2:flt) :dbl
-address CMDvarMULsignal
-comment "Return V1 * V2, guarantee no overflow by returning larger type";
-
-
-pattern +(v1:bte,v2:bte) :bte
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:bte,v2:bte) :bte
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:bte,v2:sht) :sht
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:bte,v2:sht) :sht
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:bte,v2:int) :int
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:bte,v2:int) :int
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:bte,v2:lng) :lng
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:bte,v2:lng) :lng
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:bte,v2:flt) :flt
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:bte,v2:flt) :flt
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:bte,v2:dbl) :dbl
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:bte,v2:dbl) :dbl
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:sht,v2:bte) :sht
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:sht,v2:bte) :sht
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:sht,v2:sht) :sht
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:sht,v2:sht) :sht
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:sht,v2:int) :int
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:sht,v2:int) :int
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:sht,v2:lng) :lng
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:sht,v2:lng) :lng
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:sht,v2:flt) :flt
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:sht,v2:flt) :flt
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:sht,v2:dbl) :dbl
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:sht,v2:dbl) :dbl
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:int,v2:bte) :int
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:int,v2:bte) :int
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:int,v2:sht) :int
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:int,v2:sht) :int
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:int,v2:int) :int
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:int,v2:int) :int
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:int,v2:lng) :lng
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:int,v2:lng) :lng
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:int,v2:flt) :flt
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:int,v2:flt) :flt
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:int,v2:dbl) :dbl
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:int,v2:dbl) :dbl
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:lng,v2:bte) :lng
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:lng,v2:bte) :lng
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:lng,v2:sht) :lng
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:lng,v2:sht) :lng
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:lng,v2:int) :lng
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:lng,v2:int) :lng
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:lng,v2:lng) :lng
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:lng,v2:lng) :lng
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:lng,v2:flt) :flt
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:lng,v2:flt) :flt
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:lng,v2:dbl) :dbl
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:lng,v2:dbl) :dbl
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:flt,v2:bte) :flt
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:flt,v2:bte) :flt
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:flt,v2:sht) :flt
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:flt,v2:sht) :flt
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:flt,v2:int) :flt
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:flt,v2:int) :flt
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:flt,v2:lng) :flt
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:flt,v2:lng) :flt
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:flt,v2:flt) :flt
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:flt,v2:flt) :flt
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:flt,v2:dbl) :dbl
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:flt,v2:dbl) :dbl
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:dbl,v2:bte) :dbl
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:dbl,v2:bte) :dbl
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:dbl,v2:sht) :dbl
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:dbl,v2:sht) :dbl
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:dbl,v2:int) :dbl
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:dbl,v2:int) :dbl
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:dbl,v2:lng) :dbl
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:dbl,v2:lng) :dbl
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:dbl,v2:flt) :dbl
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:dbl,v2:flt) :dbl
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-pattern +(v1:dbl,v2:dbl) :dbl
-address CMDvarADDsignal
-comment "Return V1 + V2, signal error on overflow";
-pattern add_noerror(v1:dbl,v2:dbl) :dbl
-address CMDvarADD
-comment "Return V1 + V2, overflow causes NIL value";
-
-
-pattern -(v1:bte,v2:bte) :bte
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:bte,v2:bte) :bte
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:bte,v2:sht) :sht
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:bte,v2:sht) :sht
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:bte,v2:int) :int
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:bte,v2:int) :int
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:bte,v2:lng) :lng
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:bte,v2:lng) :lng
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:bte,v2:flt) :flt
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:bte,v2:flt) :flt
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:bte,v2:dbl) :dbl
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:bte,v2:dbl) :dbl
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:sht,v2:bte) :sht
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:sht,v2:bte) :sht
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:sht,v2:sht) :sht
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:sht,v2:sht) :sht
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:sht,v2:int) :int
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:sht,v2:int) :int
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:sht,v2:lng) :lng
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:sht,v2:lng) :lng
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:sht,v2:flt) :flt
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:sht,v2:flt) :flt
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:sht,v2:dbl) :dbl
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:sht,v2:dbl) :dbl
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:int,v2:bte) :int
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:int,v2:bte) :int
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:int,v2:sht) :int
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:int,v2:sht) :int
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:int,v2:int) :int
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:int,v2:int) :int
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:int,v2:lng) :lng
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:int,v2:lng) :lng
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:int,v2:flt) :flt
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:int,v2:flt) :flt
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:int,v2:dbl) :dbl
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:int,v2:dbl) :dbl
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:lng,v2:bte) :lng
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:lng,v2:bte) :lng
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:lng,v2:sht) :lng
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:lng,v2:sht) :lng
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:lng,v2:int) :lng
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:lng,v2:int) :lng
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:lng,v2:lng) :lng
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:lng,v2:lng) :lng
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:lng,v2:flt) :flt
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:lng,v2:flt) :flt
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:lng,v2:dbl) :dbl
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:lng,v2:dbl) :dbl
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:flt,v2:bte) :flt
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:flt,v2:bte) :flt
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:flt,v2:sht) :flt
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:flt,v2:sht) :flt
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:flt,v2:int) :flt
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:flt,v2:int) :flt
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:flt,v2:lng) :flt
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:flt,v2:lng) :flt
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:flt,v2:flt) :flt
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:flt,v2:flt) :flt
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:flt,v2:dbl) :dbl
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:flt,v2:dbl) :dbl
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:dbl,v2:bte) :dbl
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:dbl,v2:bte) :dbl
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:dbl,v2:sht) :dbl
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:dbl,v2:sht) :dbl
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:dbl,v2:int) :dbl
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:dbl,v2:int) :dbl
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:dbl,v2:lng) :dbl
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:dbl,v2:lng) :dbl
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:dbl,v2:flt) :dbl
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:dbl,v2:flt) :dbl
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-pattern -(v1:dbl,v2:dbl) :dbl
-address CMDvarSUBsignal
-comment "Return V1 - V2, signal error on overflow";
-pattern sub_noerror(v1:dbl,v2:dbl) :dbl
-address CMDvarSUB
-comment "Return V1 - V2, overflow causes NIL value";
-
-
-pattern *(v1:bte,v2:bte) :bte
-address CMDvarMULsignal
-comment "Return V1 * V2, signal error on overflow";
-pattern mul_noerror(v1:bte,v2:bte) :bte
-address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
-
-pattern *(v1:bte,v2:sht) :sht
-address CMDvarMULsignal
-comment "Return V1 * V2, signal error on overflow";
-pattern mul_noerror(v1:bte,v2:sht) :sht
-address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
-
-pattern *(v1:bte,v2:int) :int
-address CMDvarMULsignal
-comment "Return V1 * V2, signal error on overflow";
-pattern mul_noerror(v1:bte,v2:int) :int
-address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
-
-pattern *(v1:bte,v2:lng) :lng
-address CMDvarMULsignal
-comment "Return V1 * V2, signal error on overflow";
-pattern mul_noerror(v1:bte,v2:lng) :lng
-address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
-
-pattern *(v1:bte,v2:flt) :flt
-address CMDvarMULsignal
-comment "Return V1 * V2, signal error on overflow";
-pattern mul_noerror(v1:bte,v2:flt) :flt
-address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
-
-pattern *(v1:bte,v2:dbl) :dbl
-address CMDvarMULsignal
-comment "Return V1 * V2, signal error on overflow";
-pattern mul_noerror(v1:bte,v2:dbl) :dbl
-address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
-
-pattern *(v1:sht,v2:bte) :sht
-address CMDvarMULsignal
-comment "Return V1 * V2, signal error on overflow";
-pattern mul_noerror(v1:sht,v2:bte) :sht
-address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
-
-pattern *(v1:sht,v2:sht) :sht
-address CMDvarMULsignal
-comment "Return V1 * V2, signal error on overflow";
-pattern mul_noerror(v1:sht,v2:sht) :sht
-address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
-
-pattern *(v1:sht,v2:int) :int
-address CMDvarMULsignal
-comment "Return V1 * V2, signal error on overflow";
-pattern mul_noerror(v1:sht,v2:int) :int
-address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
-
-pattern *(v1:sht,v2:lng) :lng
-address CMDvarMULsignal
-comment "Return V1 * V2, signal error on overflow";
-pattern mul_noerror(v1:sht,v2:lng) :lng
-address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
-
-pattern *(v1:sht,v2:flt) :flt
-address CMDvarMULsignal
-comment "Return V1 * V2, signal error on overflow";
-pattern mul_noerror(v1:sht,v2:flt) :flt
-address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
-
-pattern *(v1:sht,v2:dbl) :dbl
-address CMDvarMULsignal
-comment "Return V1 * V2, signal error on overflow";
-pattern mul_noerror(v1:sht,v2:dbl) :dbl
-address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
-
-pattern *(v1:int,v2:bte) :int
-address CMDvarMULsignal
-comment "Return V1 * V2, signal error on overflow";
-pattern mul_noerror(v1:int,v2:bte) :int
-address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
-
-pattern *(v1:int,v2:sht) :int
-address CMDvarMULsignal
-comment "Return V1 * V2, signal error on overflow";
-pattern mul_noerror(v1:int,v2:sht) :int
-address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
-
 pattern *(v1:int,v2:int) :int
 address CMDvarMULsignal
 comment "Return V1 * V2, signal error on overflow";
 pattern mul_noerror(v1:int,v2:int) :int
 address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
+comment "Return V1 * V2, overflow results in NIL value";
+
+pattern *(v1:int,v2:lng) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:int,v2:lng) :flt
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
 pattern *(v1:int,v2:lng) :lng
 address CMDvarMULsignal
 comment "Return V1 * V2, signal error on overflow";
 pattern mul_noerror(v1:int,v2:lng) :lng
 address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
+comment "Return V1 * V2, overflow results in NIL value";
+
+pattern *(v1:int,v2:flt) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
 pattern *(v1:int,v2:flt) :flt
 address CMDvarMULsignal
 comment "Return V1 * V2, signal error on overflow";
 pattern mul_noerror(v1:int,v2:flt) :flt
 address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
+comment "Return V1 * V2, overflow results in NIL value";
 
 pattern *(v1:int,v2:dbl) :dbl
 address CMDvarMULsignal
 comment "Return V1 * V2, signal error on overflow";
 pattern mul_noerror(v1:int,v2:dbl) :dbl
 address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
+comment "Return V1 * V2, overflow results in NIL value";
+
+pattern *(v1:lng,v2:bte) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:lng,v2:bte) :flt
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
 pattern *(v1:lng,v2:bte) :lng
 address CMDvarMULsignal
 comment "Return V1 * V2, signal error on overflow";
 pattern mul_noerror(v1:lng,v2:bte) :lng
 address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
+comment "Return V1 * V2, overflow results in NIL value";
+
+pattern *(v1:lng,v2:sht) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:lng,v2:sht) :flt
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
 pattern *(v1:lng,v2:sht) :lng
 address CMDvarMULsignal
 comment "Return V1 * V2, signal error on overflow";
 pattern mul_noerror(v1:lng,v2:sht) :lng
 address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
+comment "Return V1 * V2, overflow results in NIL value";
+
+pattern *(v1:lng,v2:int) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:lng,v2:int) :flt
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
 pattern *(v1:lng,v2:int) :lng
 address CMDvarMULsignal
 comment "Return V1 * V2, signal error on overflow";
 pattern mul_noerror(v1:lng,v2:int) :lng
 address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
+comment "Return V1 * V2, overflow results in NIL value";
+
+pattern *(v1:lng,v2:lng) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
+
+pattern *(v1:lng,v2:lng) :flt
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
 pattern *(v1:lng,v2:lng) :lng
 address CMDvarMULsignal
 comment "Return V1 * V2, signal error on overflow";
 pattern mul_noerror(v1:lng,v2:lng) :lng
 address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
+comment "Return V1 * V2, overflow results in NIL value";
+
+pattern *(v1:lng,v2:flt) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
 pattern *(v1:lng,v2:flt) :flt
 address CMDvarMULsignal
 comment "Return V1 * V2, signal error on overflow";
 pattern mul_noerror(v1:lng,v2:flt) :flt
 address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
+comment "Return V1 * V2, overflow results in NIL value";
 
 pattern *(v1:lng,v2:dbl) :dbl
 address CMDvarMULsignal
 comment "Return V1 * V2, signal error on overflow";
 pattern mul_noerror(v1:lng,v2:dbl) :dbl
 address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
+comment "Return V1 * V2, overflow results in NIL value";
+
+pattern *(v1:flt,v2:bte) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
 pattern *(v1:flt,v2:bte) :flt
 address CMDvarMULsignal
 comment "Return V1 * V2, signal error on overflow";
 pattern mul_noerror(v1:flt,v2:bte) :flt
 address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
+comment "Return V1 * V2, overflow results in NIL value";
+
+pattern *(v1:flt,v2:sht) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
 pattern *(v1:flt,v2:sht) :flt
 address CMDvarMULsignal
 comment "Return V1 * V2, signal error on overflow";
 pattern mul_noerror(v1:flt,v2:sht) :flt
 address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
+comment "Return V1 * V2, overflow results in NIL value";
+
+pattern *(v1:flt,v2:int) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
 pattern *(v1:flt,v2:int) :flt
 address CMDvarMULsignal
 comment "Return V1 * V2, signal error on overflow";
 pattern mul_noerror(v1:flt,v2:int) :flt
 address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
+comment "Return V1 * V2, overflow results in NIL value";
+
+pattern *(v1:flt,v2:lng) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
 pattern *(v1:flt,v2:lng) :flt
 address CMDvarMULsignal
 comment "Return V1 * V2, signal error on overflow";
 pattern mul_noerror(v1:flt,v2:lng) :flt
 address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
+comment "Return V1 * V2, overflow results in NIL value";
+
+pattern *(v1:flt,v2:flt) :dbl
+address CMDvarMULsignal
+comment "Return V1 * V2, guarantee no overflow by returning larger type";
 
 pattern *(v1:flt,v2:flt) :flt
 address CMDvarMULsignal
 comment "Return V1 * V2, signal error on overflow";
 pattern mul_noerror(v1:flt,v2:flt) :flt
 address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
+comment "Return V1 * V2, overflow results in NIL value";
 
 pattern *(v1:flt,v2:dbl) :dbl
 address CMDvarMULsignal
 comment "Return V1 * V2, signal error on overflow";
 pattern mul_noerror(v1:flt,v2:dbl) :dbl
 address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
+comment "Return V1 * V2, overflow results in NIL value";
 
 pattern *(v1:dbl,v2:bte) :dbl
 address CMDvarMULsignal
 comment "Return V1 * V2, signal error on overflow";
 pattern mul_noerror(v1:dbl,v2:bte) :dbl
 address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
+comment "Return V1 * V2, overflow results in NIL value";
 
 pattern *(v1:dbl,v2:sht) :dbl
 address CMDvarMULsignal
 comment "Return V1 * V2, signal error on overflow";
 pattern mul_noerror(v1:dbl,v2:sht) :dbl
 address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
+comment "Return V1 * V2, overflow results in NIL value";
 
 pattern *(v1:dbl,v2:int) :dbl
 address CMDvarMULsignal
 comment "Return V1 * V2, signal error on overflow";
 pattern mul_noerror(v1:dbl,v2:int) :dbl
 address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
+comment "Return V1 * V2, overflow results in NIL value";
 
 pattern *(v1:dbl,v2:lng) :dbl
 address CMDvarMULsignal
 comment "Return V1 * V2, signal error on overflow";
 pattern mul_noerror(v1:dbl,v2:lng) :dbl
 address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
+comment "Return V1 * V2, overflow results in NIL value";
 
 pattern *(v1:dbl,v2:flt) :dbl
 address CMDvarMULsignal
 comment "Return V1 * V2, signal error on overflow";
 pattern mul_noerror(v1:dbl,v2:flt) :dbl
 address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
+comment "Return V1 * V2, overflow results in NIL value";
 
 pattern *(v1:dbl,v2:dbl) :dbl
 address CMDvarMULsignal
 comment "Return V1 * V2, signal error on overflow";
 pattern mul_noerror(v1:dbl,v2:dbl) :dbl
 address CMDvarMUL
-comment "Return V1 * V2, overflow causes NIL value";
-
+comment "Return V1 * V2, overflow results in NIL value";
 
 command +(v1:str,v2:str) :str
 address CMDvarADDstr
@@ -1174,633 +1612,1378 @@ command +(v1:str,i:int) :str
 address CMDvarADDstrint
 comment "Concatenate LEFT and string representation of RIGHT";
 
-pattern /(v1:bte,v2:bte) :flt
-address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
 pattern /(v1:bte,v2:bte) :dbl
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:bte) :dbl
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:bte,v2:bte) :flt
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:bte) :flt
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:bte,v2:bte) :lng
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:bte) :lng
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:bte,v2:bte) :int
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:bte) :int
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:bte,v2:bte) :sht
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:bte) :sht
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
 pattern /(v1:bte,v2:bte) :bte
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:bte,v2:bte) :bte
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:bte,v2:sht) :dbl
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:sht) :dbl
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:bte,v2:sht) :flt
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-pattern /(v1:bte,v2:sht) :dbl
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:sht) :flt
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:bte,v2:sht) :lng
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:sht) :lng
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:bte,v2:sht) :int
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:sht) :int
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:bte,v2:sht) :sht
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:sht) :sht
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
 pattern /(v1:bte,v2:sht) :bte
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:bte,v2:sht) :bte
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:bte,v2:int) :dbl
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:int) :dbl
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:bte,v2:int) :flt
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-pattern /(v1:bte,v2:int) :dbl
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:int) :flt
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:bte,v2:int) :lng
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:int) :lng
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:bte,v2:int) :int
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:int) :int
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:bte,v2:int) :sht
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:int) :sht
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
 pattern /(v1:bte,v2:int) :bte
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:bte,v2:int) :bte
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:bte,v2:lng) :dbl
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:lng) :dbl
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:bte,v2:lng) :flt
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-pattern /(v1:bte,v2:lng) :dbl
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:lng) :flt
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:bte,v2:lng) :lng
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:lng) :lng
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:bte,v2:lng) :int
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:lng) :int
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:bte,v2:lng) :sht
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:lng) :sht
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
 pattern /(v1:bte,v2:lng) :bte
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:bte,v2:lng) :bte
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:bte,v2:flt) :dbl
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:flt) :dbl
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
 pattern /(v1:bte,v2:flt) :flt
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:bte,v2:flt) :flt
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:bte,v2:flt) :lng
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:flt) :lng
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:bte,v2:flt) :int
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:flt) :int
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:bte,v2:flt) :sht
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:flt) :sht
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:bte,v2:flt) :bte
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:flt) :bte
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:bte,v2:dbl) :dbl
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:bte,v2:dbl) :dbl
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:bte,v2:dbl) :flt
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:dbl) :flt
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:bte,v2:dbl) :lng
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:dbl) :lng
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:bte,v2:dbl) :int
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:dbl) :int
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:bte,v2:dbl) :sht
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:dbl) :sht
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:bte,v2:dbl) :bte
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:bte,v2:dbl) :bte
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:sht,v2:bte) :dbl
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:sht,v2:bte) :dbl
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:sht,v2:bte) :flt
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-pattern /(v1:sht,v2:bte) :dbl
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:sht,v2:bte) :flt
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:sht,v2:bte) :lng
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:sht,v2:bte) :lng
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:sht,v2:bte) :int
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:sht,v2:bte) :int
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
 pattern /(v1:sht,v2:bte) :sht
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:sht,v2:bte) :sht
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:sht,v2:sht) :dbl
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:sht,v2:sht) :dbl
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:sht,v2:sht) :flt
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-pattern /(v1:sht,v2:sht) :dbl
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:sht,v2:sht) :flt
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:sht,v2:sht) :lng
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:sht,v2:sht) :lng
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:sht,v2:sht) :int
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:sht,v2:sht) :int
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
 pattern /(v1:sht,v2:sht) :sht
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:sht,v2:sht) :sht
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:sht,v2:int) :dbl
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:sht,v2:int) :dbl
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:sht,v2:int) :flt
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-pattern /(v1:sht,v2:int) :dbl
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:sht,v2:int) :flt
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:sht,v2:int) :lng
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:sht,v2:int) :lng
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:sht,v2:int) :int
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:sht,v2:int) :int
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
 pattern /(v1:sht,v2:int) :sht
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:sht,v2:int) :sht
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:sht,v2:lng) :dbl
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:sht,v2:lng) :dbl
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:sht,v2:lng) :flt
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-pattern /(v1:sht,v2:lng) :dbl
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:sht,v2:lng) :flt
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:sht,v2:lng) :lng
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:sht,v2:lng) :lng
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:sht,v2:lng) :int
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:sht,v2:lng) :int
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
 pattern /(v1:sht,v2:lng) :sht
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:sht,v2:lng) :sht
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:sht,v2:flt) :dbl
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:sht,v2:flt) :dbl
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
 pattern /(v1:sht,v2:flt) :flt
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:sht,v2:flt) :flt
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:sht,v2:flt) :lng
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:sht,v2:flt) :lng
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:sht,v2:flt) :int
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:sht,v2:flt) :int
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:sht,v2:flt) :sht
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:sht,v2:flt) :sht
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:sht,v2:dbl) :dbl
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:sht,v2:dbl) :dbl
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:sht,v2:dbl) :flt
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:sht,v2:dbl) :flt
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:sht,v2:dbl) :lng
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:sht,v2:dbl) :lng
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:sht,v2:dbl) :int
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:sht,v2:dbl) :int
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:sht,v2:dbl) :sht
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:sht,v2:dbl) :sht
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:int,v2:bte) :dbl
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:int,v2:bte) :dbl
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:int,v2:bte) :flt
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-pattern /(v1:int,v2:bte) :dbl
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:int,v2:bte) :flt
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:int,v2:bte) :lng
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:int,v2:bte) :lng
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
 pattern /(v1:int,v2:bte) :int
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:int,v2:bte) :int
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:int,v2:sht) :dbl
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:int,v2:sht) :dbl
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:int,v2:sht) :flt
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-pattern /(v1:int,v2:sht) :dbl
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:int,v2:sht) :flt
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:int,v2:sht) :lng
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:int,v2:sht) :lng
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
 pattern /(v1:int,v2:sht) :int
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:int,v2:sht) :int
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:int,v2:int) :dbl
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:int,v2:int) :dbl
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:int,v2:int) :flt
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-pattern /(v1:int,v2:int) :dbl
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:int,v2:int) :flt
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:int,v2:int) :lng
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:int,v2:int) :lng
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
 pattern /(v1:int,v2:int) :int
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:int,v2:int) :int
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:int,v2:lng) :dbl
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:int,v2:lng) :dbl
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:int,v2:lng) :flt
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-pattern /(v1:int,v2:lng) :dbl
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:int,v2:lng) :flt
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:int,v2:lng) :lng
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:int,v2:lng) :lng
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
 pattern /(v1:int,v2:lng) :int
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:int,v2:lng) :int
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:int,v2:flt) :dbl
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:int,v2:flt) :dbl
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
 pattern /(v1:int,v2:flt) :flt
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:int,v2:flt) :flt
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:int,v2:flt) :lng
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:int,v2:flt) :lng
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:int,v2:flt) :int
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:int,v2:flt) :int
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:int,v2:dbl) :dbl
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:int,v2:dbl) :dbl
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:int,v2:dbl) :flt
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:int,v2:dbl) :flt
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:int,v2:dbl) :lng
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:int,v2:dbl) :lng
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:int,v2:dbl) :int
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:int,v2:dbl) :int
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:lng,v2:bte) :dbl
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:lng,v2:bte) :dbl
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:lng,v2:bte) :flt
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-pattern /(v1:lng,v2:bte) :dbl
-address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:lng,v2:bte) :flt
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
 pattern /(v1:lng,v2:bte) :lng
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:lng,v2:bte) :lng
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:lng,v2:sht) :dbl
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:lng,v2:sht) :dbl
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:lng,v2:sht) :flt
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-pattern /(v1:lng,v2:sht) :dbl
-address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:lng,v2:sht) :flt
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
 pattern /(v1:lng,v2:sht) :lng
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:lng,v2:sht) :lng
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:lng,v2:int) :dbl
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:lng,v2:int) :dbl
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:lng,v2:int) :flt
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-pattern /(v1:lng,v2:int) :dbl
-address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:lng,v2:int) :flt
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
 pattern /(v1:lng,v2:int) :lng
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:lng,v2:int) :lng
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:lng,v2:lng) :dbl
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:lng,v2:lng) :dbl
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:lng,v2:lng) :flt
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-pattern /(v1:lng,v2:lng) :dbl
-address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:lng,v2:lng) :flt
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
 pattern /(v1:lng,v2:lng) :lng
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:lng,v2:lng) :lng
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:lng,v2:flt) :dbl
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:lng,v2:flt) :dbl
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
 pattern /(v1:lng,v2:flt) :flt
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:lng,v2:flt) :flt
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:lng,v2:flt) :lng
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:lng,v2:flt) :lng
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:lng,v2:dbl) :dbl
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:lng,v2:dbl) :dbl
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:lng,v2:dbl) :flt
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:lng,v2:dbl) :flt
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:lng,v2:dbl) :lng
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:lng,v2:dbl) :lng
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:flt,v2:bte) :dbl
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:flt,v2:bte) :dbl
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
 pattern /(v1:flt,v2:bte) :flt
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:flt,v2:bte) :flt
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:flt,v2:sht) :dbl
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:flt,v2:sht) :dbl
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
 pattern /(v1:flt,v2:sht) :flt
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:flt,v2:sht) :flt
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:flt,v2:int) :dbl
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:flt,v2:int) :dbl
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
 pattern /(v1:flt,v2:int) :flt
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:flt,v2:int) :flt
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:flt,v2:lng) :dbl
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:flt,v2:lng) :dbl
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
 pattern /(v1:flt,v2:lng) :flt
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:flt,v2:lng) :flt
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:flt,v2:flt) :dbl
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:flt,v2:flt) :dbl
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
+
 pattern /(v1:flt,v2:flt) :flt
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:flt,v2:flt) :flt
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:flt,v2:dbl) :dbl
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:flt,v2:dbl) :dbl
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
+
+pattern /(v1:flt,v2:dbl) :flt
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:flt,v2:dbl) :flt
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:dbl,v2:bte) :dbl
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:dbl,v2:bte) :dbl
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:dbl,v2:sht) :dbl
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:dbl,v2:sht) :dbl
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:dbl,v2:int) :dbl
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:dbl,v2:int) :dbl
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:dbl,v2:lng) :dbl
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:dbl,v2:lng) :dbl
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:dbl,v2:flt) :dbl
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:dbl,v2:flt) :dbl
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 pattern /(v1:dbl,v2:dbl) :dbl
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:dbl,v2:dbl) :dbl
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
 
+
+pattern %(v1:bte,v2:bte) :lng
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:bte,v2:bte) :lng
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:bte,v2:bte) :int
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:bte,v2:bte) :int
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:bte,v2:bte) :sht
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:bte,v2:bte) :sht
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:bte,v2:bte) :bte
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:bte,v2:bte) :bte
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:bte,v2:sht) :lng
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:bte,v2:sht) :lng
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:bte,v2:sht) :int
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:bte,v2:sht) :int
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:bte,v2:sht) :sht
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:bte,v2:sht) :sht
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:bte,v2:sht) :bte
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:bte,v2:sht) :bte
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:bte,v2:int) :lng
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:bte,v2:int) :lng
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:bte,v2:int) :int
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:bte,v2:int) :int
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:bte,v2:int) :sht
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:bte,v2:int) :sht
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:bte,v2:int) :bte
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:bte,v2:int) :bte
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:bte,v2:lng) :lng
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:bte,v2:lng) :lng
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:bte,v2:lng) :int
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:bte,v2:lng) :int
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:bte,v2:lng) :sht
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:bte,v2:lng) :sht
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:bte,v2:lng) :bte
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:bte,v2:lng) :bte
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:bte,v2:flt) :flt
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:bte,v2:flt) :flt
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:bte,v2:dbl) :dbl
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:bte,v2:dbl) :dbl
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:sht,v2:bte) :lng
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:sht,v2:bte) :lng
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:sht,v2:bte) :int
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:sht,v2:bte) :int
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:sht,v2:bte) :sht
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:sht,v2:bte) :sht
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:sht,v2:bte) :bte
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:sht,v2:bte) :bte
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:sht,v2:sht) :lng
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:sht,v2:sht) :lng
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:sht,v2:sht) :int
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:sht,v2:sht) :int
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:sht,v2:sht) :sht
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:sht,v2:sht) :sht
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:sht,v2:int) :lng
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:sht,v2:int) :lng
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:sht,v2:int) :int
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:sht,v2:int) :int
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:sht,v2:int) :sht
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:sht,v2:int) :sht
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:sht,v2:lng) :lng
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:sht,v2:lng) :lng
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:sht,v2:lng) :int
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:sht,v2:lng) :int
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:sht,v2:lng) :sht
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:sht,v2:lng) :sht
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:sht,v2:flt) :flt
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:sht,v2:flt) :flt
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:sht,v2:dbl) :dbl
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:sht,v2:dbl) :dbl
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:int,v2:bte) :lng
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:int,v2:bte) :lng
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:int,v2:bte) :int
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:int,v2:bte) :int
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:int,v2:bte) :sht
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:int,v2:bte) :sht
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:int,v2:bte) :bte
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:int,v2:bte) :bte
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:int,v2:sht) :lng
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:int,v2:sht) :lng
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:int,v2:sht) :int
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:int,v2:sht) :int
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:int,v2:sht) :sht
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:int,v2:sht) :sht
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:int,v2:int) :lng
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:int,v2:int) :lng
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:int,v2:int) :int
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:int,v2:int) :int
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:int,v2:lng) :lng
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:int,v2:lng) :lng
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:int,v2:lng) :int
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:int,v2:lng) :int
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:int,v2:flt) :flt
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:int,v2:flt) :flt
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:int,v2:dbl) :dbl
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:int,v2:dbl) :dbl
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:lng,v2:bte) :lng
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:lng,v2:bte) :lng
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:lng,v2:bte) :int
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:lng,v2:bte) :int
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:lng,v2:bte) :sht
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:lng,v2:bte) :sht
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:lng,v2:bte) :bte
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:lng,v2:bte) :bte
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:lng,v2:sht) :lng
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:lng,v2:sht) :lng
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:lng,v2:sht) :int
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:lng,v2:sht) :int
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:lng,v2:sht) :sht
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:lng,v2:sht) :sht
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
+
+pattern %(v1:lng,v2:int) :lng
+address CMDvarMODsignal
+comment "Return V1 % V2, signal error on divide by zero";
+pattern mod_noerror(v1:lng,v2:int) :lng
+address CMDvarMOD
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:lng,v2:int) :int
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:lng,v2:int) :int
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:lng,v2:lng) :lng
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:lng,v2:lng) :lng
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:lng,v2:flt) :flt
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:lng,v2:flt) :flt
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:lng,v2:dbl) :dbl
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:lng,v2:dbl) :dbl
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:flt,v2:bte) :flt
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:flt,v2:bte) :flt
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:flt,v2:sht) :flt
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:flt,v2:sht) :flt
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:flt,v2:int) :flt
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:flt,v2:int) :flt
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:flt,v2:lng) :flt
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:flt,v2:lng) :flt
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:flt,v2:flt) :flt
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:flt,v2:flt) :flt
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:flt,v2:dbl) :dbl
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:flt,v2:dbl) :dbl
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:dbl,v2:bte) :dbl
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:dbl,v2:bte) :dbl
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:dbl,v2:sht) :dbl
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:dbl,v2:sht) :dbl
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:dbl,v2:int) :dbl
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:dbl,v2:int) :dbl
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:dbl,v2:lng) :dbl
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:dbl,v2:lng) :dbl
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:dbl,v2:flt) :dbl
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:dbl,v2:flt) :dbl
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 pattern %(v1:dbl,v2:dbl) :dbl
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:dbl,v2:dbl) :dbl
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 
 pattern and(v1:bit,v2:bit) :bit
@@ -1871,112 +3054,112 @@ address CMDvarLSHsignal
 comment "Return V1 << V2, raise error on out of range second operand";
 pattern lsh_noerror(v1:bte,v2:bte) :bte
 address CMDvarLSH
-comment "Return V1 << V2, out of range second operand causes NIL value";
+comment "Return V1 << V2, out of range second operand results in NIL value";
 
 pattern <<(v1:bte,v2:sht) :bte
 address CMDvarLSHsignal
 comment "Return V1 << V2, raise error on out of range second operand";
 pattern lsh_noerror(v1:bte,v2:sht) :bte
 address CMDvarLSH
-comment "Return V1 << V2, out of range second operand causes NIL value";
+comment "Return V1 << V2, out of range second operand results in NIL value";
 
 pattern <<(v1:bte,v2:int) :bte
 address CMDvarLSHsignal
 comment "Return V1 << V2, raise error on out of range second operand";
 pattern lsh_noerror(v1:bte,v2:int) :bte
 address CMDvarLSH
-comment "Return V1 << V2, out of range second operand causes NIL value";
+comment "Return V1 << V2, out of range second operand results in NIL value";
 
 pattern <<(v1:bte,v2:lng) :bte
 address CMDvarLSHsignal
 comment "Return V1 << V2, raise error on out of range second operand";
 pattern lsh_noerror(v1:bte,v2:lng) :bte
 address CMDvarLSH
-comment "Return V1 << V2, out of range second operand causes NIL value";
+comment "Return V1 << V2, out of range second operand results in NIL value";
 
 pattern <<(v1:sht,v2:bte) :sht
 address CMDvarLSHsignal
 comment "Return V1 << V2, raise error on out of range second operand";
 pattern lsh_noerror(v1:sht,v2:bte) :sht
 address CMDvarLSH
-comment "Return V1 << V2, out of range second operand causes NIL value";
+comment "Return V1 << V2, out of range second operand results in NIL value";
 
 pattern <<(v1:sht,v2:sht) :sht
 address CMDvarLSHsignal
 comment "Return V1 << V2, raise error on out of range second operand";
 pattern lsh_noerror(v1:sht,v2:sht) :sht
 address CMDvarLSH
-comment "Return V1 << V2, out of range second operand causes NIL value";
+comment "Return V1 << V2, out of range second operand results in NIL value";
 
 pattern <<(v1:sht,v2:int) :sht
 address CMDvarLSHsignal
 comment "Return V1 << V2, raise error on out of range second operand";
 pattern lsh_noerror(v1:sht,v2:int) :sht
 address CMDvarLSH
-comment "Return V1 << V2, out of range second operand causes NIL value";
+comment "Return V1 << V2, out of range second operand results in NIL value";
 
 pattern <<(v1:sht,v2:lng) :sht
 address CMDvarLSHsignal
 comment "Return V1 << V2, raise error on out of range second operand";
 pattern lsh_noerror(v1:sht,v2:lng) :sht
 address CMDvarLSH
-comment "Return V1 << V2, out of range second operand causes NIL value";
+comment "Return V1 << V2, out of range second operand results in NIL value";
 
 pattern <<(v1:int,v2:bte) :int
 address CMDvarLSHsignal
 comment "Return V1 << V2, raise error on out of range second operand";
 pattern lsh_noerror(v1:int,v2:bte) :int
 address CMDvarLSH
-comment "Return V1 << V2, out of range second operand causes NIL value";
+comment "Return V1 << V2, out of range second operand results in NIL value";
 
 pattern <<(v1:int,v2:sht) :int
 address CMDvarLSHsignal
 comment "Return V1 << V2, raise error on out of range second operand";
 pattern lsh_noerror(v1:int,v2:sht) :int
 address CMDvarLSH
-comment "Return V1 << V2, out of range second operand causes NIL value";
+comment "Return V1 << V2, out of range second operand results in NIL value";
 
 pattern <<(v1:int,v2:int) :int
 address CMDvarLSHsignal
 comment "Return V1 << V2, raise error on out of range second operand";
 pattern lsh_noerror(v1:int,v2:int) :int
 address CMDvarLSH
-comment "Return V1 << V2, out of range second operand causes NIL value";
+comment "Return V1 << V2, out of range second operand results in NIL value";
 
 pattern <<(v1:int,v2:lng) :int
 address CMDvarLSHsignal
 comment "Return V1 << V2, raise error on out of range second operand";
 pattern lsh_noerror(v1:int,v2:lng) :int
 address CMDvarLSH
-comment "Return V1 << V2, out of range second operand causes NIL value";
+comment "Return V1 << V2, out of range second operand results in NIL value";
 
 pattern <<(v1:lng,v2:bte) :lng
 address CMDvarLSHsignal
 comment "Return V1 << V2, raise error on out of range second operand";
 pattern lsh_noerror(v1:lng,v2:bte) :lng
 address CMDvarLSH
-comment "Return V1 << V2, out of range second operand causes NIL value";
+comment "Return V1 << V2, out of range second operand results in NIL value";
 
 pattern <<(v1:lng,v2:sht) :lng
 address CMDvarLSHsignal
 comment "Return V1 << V2, raise error on out of range second operand";
 pattern lsh_noerror(v1:lng,v2:sht) :lng
 address CMDvarLSH
-comment "Return V1 << V2, out of range second operand causes NIL value";
+comment "Return V1 << V2, out of range second operand results in NIL value";
 
 pattern <<(v1:lng,v2:int) :lng
 address CMDvarLSHsignal
 comment "Return V1 << V2, raise error on out of range second operand";
 pattern lsh_noerror(v1:lng,v2:int) :lng
 address CMDvarLSH
-comment "Return V1 << V2, out of range second operand causes NIL value";
+comment "Return V1 << V2, out of range second operand results in NIL value";
 
 pattern <<(v1:lng,v2:lng) :lng
 address CMDvarLSHsignal
 comment "Return V1 << V2, raise error on out of range second operand";
 pattern lsh_noerror(v1:lng,v2:lng) :lng
 address CMDvarLSH
-comment "Return V1 << V2, out of range second operand causes NIL value";
+comment "Return V1 << V2, out of range second operand results in NIL value";
 
 
 pattern >>(v1:bte,v2:bte) :bte
@@ -1984,112 +3167,112 @@ address CMDvarRSHsignal
 comment "Return V1 >> V2, raise error on out of range second operand";
 pattern rsh_noerror(v1:bte,v2:bte) :bte
 address CMDvarRSH
-comment "Return V1 >> V2, out of range second operand causes NIL value";
+comment "Return V1 >> V2, out of range second operand results in NIL value";
 
 pattern >>(v1:bte,v2:sht) :bte
 address CMDvarRSHsignal
 comment "Return V1 >> V2, raise error on out of range second operand";
 pattern rsh_noerror(v1:bte,v2:sht) :bte
 address CMDvarRSH
-comment "Return V1 >> V2, out of range second operand causes NIL value";
+comment "Return V1 >> V2, out of range second operand results in NIL value";
 
 pattern >>(v1:bte,v2:int) :bte
 address CMDvarRSHsignal
 comment "Return V1 >> V2, raise error on out of range second operand";
 pattern rsh_noerror(v1:bte,v2:int) :bte
 address CMDvarRSH
-comment "Return V1 >> V2, out of range second operand causes NIL value";
+comment "Return V1 >> V2, out of range second operand results in NIL value";
 
 pattern >>(v1:bte,v2:lng) :bte
 address CMDvarRSHsignal
 comment "Return V1 >> V2, raise error on out of range second operand";
 pattern rsh_noerror(v1:bte,v2:lng) :bte
 address CMDvarRSH
-comment "Return V1 >> V2, out of range second operand causes NIL value";
+comment "Return V1 >> V2, out of range second operand results in NIL value";
 
 pattern >>(v1:sht,v2:bte) :sht
 address CMDvarRSHsignal
 comment "Return V1 >> V2, raise error on out of range second operand";
 pattern rsh_noerror(v1:sht,v2:bte) :sht
 address CMDvarRSH
-comment "Return V1 >> V2, out of range second operand causes NIL value";
+comment "Return V1 >> V2, out of range second operand results in NIL value";
 
 pattern >>(v1:sht,v2:sht) :sht
 address CMDvarRSHsignal
 comment "Return V1 >> V2, raise error on out of range second operand";
 pattern rsh_noerror(v1:sht,v2:sht) :sht
 address CMDvarRSH
-comment "Return V1 >> V2, out of range second operand causes NIL value";
+comment "Return V1 >> V2, out of range second operand results in NIL value";
 
 pattern >>(v1:sht,v2:int) :sht
 address CMDvarRSHsignal
 comment "Return V1 >> V2, raise error on out of range second operand";
 pattern rsh_noerror(v1:sht,v2:int) :sht
 address CMDvarRSH
-comment "Return V1 >> V2, out of range second operand causes NIL value";
+comment "Return V1 >> V2, out of range second operand results in NIL value";
 
 pattern >>(v1:sht,v2:lng) :sht
 address CMDvarRSHsignal
 comment "Return V1 >> V2, raise error on out of range second operand";
 pattern rsh_noerror(v1:sht,v2:lng) :sht
 address CMDvarRSH
-comment "Return V1 >> V2, out of range second operand causes NIL value";
+comment "Return V1 >> V2, out of range second operand results in NIL value";
 
 pattern >>(v1:int,v2:bte) :int
 address CMDvarRSHsignal
 comment "Return V1 >> V2, raise error on out of range second operand";
 pattern rsh_noerror(v1:int,v2:bte) :int
 address CMDvarRSH
-comment "Return V1 >> V2, out of range second operand causes NIL value";
+comment "Return V1 >> V2, out of range second operand results in NIL value";
 
 pattern >>(v1:int,v2:sht) :int
 address CMDvarRSHsignal
 comment "Return V1 >> V2, raise error on out of range second operand";
 pattern rsh_noerror(v1:int,v2:sht) :int
 address CMDvarRSH
-comment "Return V1 >> V2, out of range second operand causes NIL value";
+comment "Return V1 >> V2, out of range second operand results in NIL value";
 
 pattern >>(v1:int,v2:int) :int
 address CMDvarRSHsignal
 comment "Return V1 >> V2, raise error on out of range second operand";
 pattern rsh_noerror(v1:int,v2:int) :int
 address CMDvarRSH
-comment "Return V1 >> V2, out of range second operand causes NIL value";
+comment "Return V1 >> V2, out of range second operand results in NIL value";
 
 pattern >>(v1:int,v2:lng) :int
 address CMDvarRSHsignal
 comment "Return V1 >> V2, raise error on out of range second operand";
 pattern rsh_noerror(v1:int,v2:lng) :int
 address CMDvarRSH
-comment "Return V1 >> V2, out of range second operand causes NIL value";
+comment "Return V1 >> V2, out of range second operand results in NIL value";
 
 pattern >>(v1:lng,v2:bte) :lng
 address CMDvarRSHsignal
 comment "Return V1 >> V2, raise error on out of range second operand";
 pattern rsh_noerror(v1:lng,v2:bte) :lng
 address CMDvarRSH
-comment "Return V1 >> V2, out of range second operand causes NIL value";
+comment "Return V1 >> V2, out of range second operand results in NIL value";
 
 pattern >>(v1:lng,v2:sht) :lng
 address CMDvarRSHsignal
 comment "Return V1 >> V2, raise error on out of range second operand";
 pattern rsh_noerror(v1:lng,v2:sht) :lng
 address CMDvarRSH
-comment "Return V1 >> V2, out of range second operand causes NIL value";
+comment "Return V1 >> V2, out of range second operand results in NIL value";
 
 pattern >>(v1:lng,v2:int) :lng
 address CMDvarRSHsignal
 comment "Return V1 >> V2, raise error on out of range second operand";
 pattern rsh_noerror(v1:lng,v2:int) :lng
 address CMDvarRSH
-comment "Return V1 >> V2, out of range second operand causes NIL value";
+comment "Return V1 >> V2, out of range second operand results in NIL value";
 
 pattern >>(v1:lng,v2:lng) :lng
 address CMDvarRSHsignal
 comment "Return V1 >> V2, raise error on out of range second operand";
 pattern rsh_noerror(v1:lng,v2:lng) :lng
 address CMDvarRSH
-comment "Return V1 >> V2, out of range second operand causes NIL value";
+comment "Return V1 >> V2, out of range second operand results in NIL value";
 
 
 pattern <(v1:bit,v2:bit) :bit

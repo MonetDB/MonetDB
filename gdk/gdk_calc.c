@@ -19,6 +19,8 @@
  * (if available) for +, -, *.  For division the output type can be
  * either input type of flt or dbl. */
 
+#define FULL_IMPLEMENTATION
+
 /* Generally, the functions return a new BAT aligned with the input
  * BAT(s).  If there are multiple input BATs, they must be aligned.
  * If there is a candidate list, the calculations are only done for

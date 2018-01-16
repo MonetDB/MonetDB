@@ -13,9 +13,9 @@ module batcalc;
 
 EOF
 
-integer="bte sht int lng hge"	# all integer types
-numeric="$integer flt dbl"	# all numeric types
-alltypes="bit $numeric oid str"
+integer=(bte sht int lng hge)	# all integer types
+numeric=(${integer[@]} flt dbl)	# all numeric types
+alltypes=(bit ${numeric[@]} oid str)
 
 for tp in hge; do
     cat <<EOF
@@ -82,60 +82,22 @@ done
 for func in +:ADD -:SUB \*:MUL; do
     name=${func#*:}
     op=${func%:*}
-    for tp1 in bte sht int lng hge flt; do
-	for tp2 in bte sht int lng hge flt; do
-	    case $tp1$tp2 in
-	    hgeflt|flthge)
-		tp3=dbl;;
-	    *flt*|*hge*)
-		continue;;
-	    *lng*)
-		tp3=hge;;
-	    *)
-		continue;;
-	    esac
-	    cat <<EOF
-pattern $op(b1:bat[:$tp1],b2:bat[:$tp2]) :bat[:$tp3]
-address CMDbat${name}enlarge
-comment "Return B1 $op B2, guarantee no overflow by returning larger type";
-pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
-address CMDbat${name}enlarge
-comment "Return B1 $op B2 with candidates list, guarantee no overflow by returning larger type";
-pattern $op(b:bat[:$tp1],v:$tp2) :bat[:$tp3]
-address CMDbat${name}enlarge
-comment "Return B $op V, guarantee no overflow by returning larger type";
-pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:oid]) :bat[:$tp3]
-address CMDbat${name}enlarge
-comment "Return B $op V with candidates list, guarantee no overflow by returning larger type";
-pattern $op(v:$tp1,b:bat[:$tp2]) :bat[:$tp3]
-address CMDbat${name}enlarge
-comment "Return V $op B, guarantee no overflow by returning larger type";
-pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
-address CMDbat${name}enlarge
-comment "Return V $op B with candidates list, guarantee no overflow by returning larger type";
-
-EOF
-	done
-    done
-    echo
-done
-
-for func in +:ADD -:SUB \*:MUL; do
-    name=${func#*:}
-    op=${func%:*}
-    for tp1 in $numeric; do
-	for tp2 in $numeric; do
-	    case $tp1$tp2 in
-	    hgedbl|dblhge)
-		tp3=dbl;;
-	    hgeflt|flthge)
-		tp3=flt;;
-	    *hge*)
-		tp3=hge;;
-	    *)
-		continue;;
-	    esac
-	    cat <<EOF
+    for ((i = 0; i < ${#numeric[@]}; i++)); do
+	tp1=${numeric[i]}
+	for ((j = 0; j < ${#numeric[@]}; j++)); do
+	    tp2=${numeric[j]}
+	    for ((k = ${#numeric[@]} - 1; k >= 0; k--)); do
+		if ((k < i || k < j)); then
+		    continue
+		fi
+		tp3=${numeric[k]}
+		if [[ $tp1$tp2$tp3 == *hge* ]]; then
+		    :		# at least one of them must be hge
+		else
+		    continue
+		fi
+		if ((k == i || k == j)); then
+		    cat <<EOF
 pattern $op(b1:bat[:$tp1],b2:bat[:$tp2]) :bat[:$tp3]
 address CMDbat${name}signal
 comment "Return B1 $op B2, signal error on overflow";
@@ -174,24 +136,42 @@ address CMDbat${name}
 comment "Return V $op B with candidates list, overflow causes NIL value";
 
 EOF
+		else
+		    cat <<EOF
+pattern $op(b1:bat[:$tp1],b2:bat[:$tp2]) :bat[:$tp3]
+address CMDbat${name}enlarge
+comment "Return B1 $op B2, guarantee no overflow by returning larger type";
+pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
+address CMDbat${name}enlarge
+comment "Return B1 $op B2 with candidates list, guarantee no overflow by returning larger type";
+pattern $op(b:bat[:$tp1],v:$tp2) :bat[:$tp3]
+address CMDbat${name}enlarge
+comment "Return B $op V, guarantee no overflow by returning larger type";
+pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:oid]) :bat[:$tp3]
+address CMDbat${name}enlarge
+comment "Return B $op V with candidates list, guarantee no overflow by returning larger type";
+pattern $op(v:$tp1,b:bat[:$tp2]) :bat[:$tp3]
+address CMDbat${name}enlarge
+comment "Return V $op B, guarantee no overflow by returning larger type";
+pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
+address CMDbat${name}enlarge
+comment "Return V $op B with candidates list, guarantee no overflow by returning larger type";
+
+EOF
+		fi
+	    done
 	done
     done
-    echo
 done
 
-for tp1 in $numeric; do
-    for tp2 in $numeric; do
-	case $tp1$tp2 in
-	hgedbl|dblhge)
-	    tp3=dbl;;
-	hgeflt|flthge)
-	    tp3=flt;;
-	*hge*)
-	    tp3=$tp1;;
-	*)
-	    continue;;
-	esac
-	cat <<EOF
+for ((i = 0; i < ${#numeric[@]}; i++)); do
+    tp1=${numeric[i]}
+    for ((j = 0; j < ${#numeric[@]}; j++)); do
+	tp2=${numeric[j]}
+	for ((k = ${#numeric[@]} - 1; k >= i; k--)); do
+	    tp3=${numeric[k]}
+	    [[ $tp1$tp2$tp3 == *hge* ]] || continue
+	    cat <<EOF
 pattern /(b1:bat[:$tp1],b2:bat[:$tp2]) :bat[:$tp3]
 address CMDbatDIVsignal
 comment "Return B1 / B2, signal error on overflow";
@@ -230,29 +210,43 @@ address CMDbatDIV
 comment "Return V / B with candidates list, overflow causes NIL value";
 
 EOF
+	done
     done
 done
-    echo
+echo
 
-for tp1 in $numeric; do
-    for tp2 in $numeric; do
-	case $tp1$tp2 in
-	*hge*)
-	    case $tp1$tp2 in
-	    *dbl*) tp3=dbl;;
-	    *flt*) tp3=flt;;
-	    *bte*) tp3=bte;;
-	    *sht*) tp3=sht;;
-	    *int*) tp3=int;;
-	    *lng*) tp3=lng;;
-	    *hge*) tp3=hge;;
+for ((i = 0; i < ${#numeric[@]}; i++)); do
+    tp1=${numeric[i]}
+    for ((j = 0; j < ${#numeric[@]}; j++)); do
+	tp2=${numeric[j]}
+	for ((k = ${#numeric[@]} - 1; k >= 0; k--)); do
+	    if ((k < i && k < j)); then
+		continue
+	    fi
+	    tp3=${numeric[k]}
+	    case $tp3 in
+	    dbl)
+		case $tp1$tp2 in
+		*dbl*) ;;
+		*) continue;;
+		esac
+		;;
+	    flt)
+		case $tp1$tp2 in
+		*dbl*) continue;;
+		*flt*) ;;
+		*) continue;;
+		esac
+		;;
+	    *)
+		case $tp1$tp2 in
+		*flt*|*dbl*) continue;;
+		*) ;;
+		esac
+		;;
 	    esac
-	    ;;
-	*)
-	    continue
-	    ;;
-	esac
-	cat <<EOF
+	    [[ $tp1$tp2$tp3 == *hge* ]] || continue
+	    cat <<EOF
 pattern %(b1:bat[:$tp1],b2:bat[:$tp2]) :bat[:$tp3]
 address CMDbatMODsignal
 comment "Return B1 % B2, signal error on divide by zero";
@@ -291,6 +285,7 @@ address CMDbatMOD
 comment "Return V % B with candidates list, divide by zero causes NIL value";
 
 EOF
+	done
     done
 done
 echo
@@ -325,8 +320,8 @@ done
 for func in '<<:lsh' '>>:rsh'; do
     op=${func%:*}
     func=${func#*:}
-    for tp1 in $integer; do
-	for tp2 in $integer; do
+    for tp1 in ${integer[@]}; do
+	for tp2 in ${integer[@]}; do
 	    case $tp1$tp2 in
 	    *hge*) ;;
 	    *) continue;;
@@ -378,8 +373,8 @@ done
 for func in '<:lt' '<=:le' '>:gt' '>=:ge' '==:eq' '!=:ne'; do
     op=${func%:*}
     func=${func#*:}
-    for tp1 in $numeric; do
-	for tp2 in $numeric; do
+    for tp1 in ${numeric[@]}; do
+	for tp2 in ${numeric[@]}; do
 	    case $tp1$tp2 in
 	    *hge*) ;;
 	    *) continue;;
@@ -412,8 +407,8 @@ done
 
 op=${func%:*}
 func=${func#*:}
-for tp1 in $numeric; do
-    for tp2 in $numeric; do
+for tp1 in ${numeric[@]}; do
+    for tp2 in ${numeric[@]}; do
 	case $tp1$tp2 in
 	*hge*) ;;
 	*) continue;;
@@ -492,11 +487,11 @@ comment "average and number of non-nil values of B with candidates list";
 EOF
 done
 
-for tp1 in $alltypes; do
+for tp1 in ${alltypes[@]}; do
     if [[ $tp1 == str ]]; then
 	continue
     fi
-    for tp2 in $alltypes; do
+    for tp2 in ${alltypes[@]}; do
 	case $tp1$tp2 in
 	*hge*) ;;
 	*) continue;;

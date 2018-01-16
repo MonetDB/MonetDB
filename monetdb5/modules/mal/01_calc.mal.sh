@@ -13,12 +13,12 @@ module calc;
 
 EOF
 
-integer="bte sht int lng"	# all integer types
-numeric="$integer flt dbl"	# all numeric types
-fixtypes="bit $numeric oid"
-alltypes="$fixtypes str"
+integer=(bte sht int lng)	# all integer types
+numeric=(${integer[@]} flt dbl)	# all numeric types
+fixtypes=(bit ${numeric[@]} oid)
+alltypes=(${fixtypes[@]} str)
 
-for tp in $numeric; do
+for tp in ${numeric[@]}; do
     cat <<EOF
 pattern iszero(v:$tp) :bit
 address CMDvarISZERO
@@ -39,7 +39,7 @@ EOF
 done
 
 com="Return the Boolean inverse"
-for tp in bit $integer; do
+for tp in bit ${integer[@]}; do
     cat <<EOF
 pattern not(v:$tp) :$tp
 address CMDvarNOT
@@ -50,7 +50,7 @@ EOF
 done
 echo
 
-for tp in $numeric; do
+for tp in ${numeric[@]}; do
     cat <<EOF
 pattern sign(v:$tp) :bte
 address CMDvarSIGN
@@ -68,7 +68,7 @@ for func in 'abs:ABS:Unary absolute value of V' \
     com=${func##*:}
     func=${func%:*}
     func=${func#*:}
-    for tp in $numeric; do
+    for tp in ${numeric[@]}; do
 	cat <<EOF
 pattern $op(v:$tp) :$tp
 address CMDvar${func}
@@ -82,52 +82,38 @@ done
 for func in +:ADD -:SUB \*:MUL; do
     name=${func#*:}
     op=${func%:*}
-    for tp1 in bte sht int lng flt; do
-	for tp2 in bte sht int lng flt; do
-	    case $tp1$tp2 in
-	    *flt*) tp3=dbl;;
-	    *lng*) continue;;	# lng only allowed in combination with flt
-	    *int*) tp3=lng;;
-	    *sht*) tp3=int;;
-	    *bte*) tp3=sht;;
-	    esac
-	    cat <<EOF
-pattern $op(v1:$tp1,v2:$tp2) :$tp3
-address CMDvar${name}signal
-comment "Return V1 $op V2, guarantee no overflow by returning larger type";
-
-EOF
-	done
-    done
-    echo
-done
-
-for func in +:ADD -:SUB \*:MUL; do
-    name=${func#*:}
-    op=${func%:*}
-    for tp1 in $numeric; do
-	for tp2 in $numeric; do
-	    case $tp1$tp2 in
-	    *dbl*) tp3=dbl;;
-	    *flt*) tp3=flt;;
-	    *lng*) tp3=lng;;
-	    *int*) tp3=int;;
-	    *sht*) tp3=sht;;
-	    *bte*) tp3=bte;;
-	    esac
-	    cat <<EOF
+    for ((i = 0; i < ${#numeric[@]}; i++)); do
+	tp1=${numeric[i]}
+	for ((j = 0; j < ${#numeric[@]}; j++)); do
+	    tp2=${numeric[j]}
+	    for ((k = ${#numeric[@]} - 1; k >= 0; k--)); do
+		if ((k < i || k < j)); then
+		    continue
+		fi
+		tp3=${numeric[k]}
+		if ((k == i || k == j)); then
+		    cat <<EOF
 pattern $op(v1:$tp1,v2:$tp2) :$tp3
 address CMDvar${name}signal
 comment "Return V1 $op V2, signal error on overflow";
 pattern ${name,,}_noerror(v1:$tp1,v2:$tp2) :$tp3
 address CMDvar${name}
-comment "Return V1 $op V2, overflow causes NIL value";
+comment "Return V1 $op V2, overflow results in NIL value";
 
 EOF
+		else
+		    cat <<EOF
+pattern $op(v1:$tp1,v2:$tp2) :$tp3
+address CMDvar${name}signal
+comment "Return V1 $op V2, guarantee no overflow by returning larger type";
+
+EOF
+		fi
+	    done
 	done
     done
-    echo
 done
+
 cat <<EOF
 command +(v1:str,v2:str) :str
 address CMDvarADDstr
@@ -138,68 +124,72 @@ comment "Concatenate LEFT and string representation of RIGHT";
 
 EOF
 
-for tp1 in $numeric; do
-    for tp2 in $numeric; do
-	case $tp1$tp2 in
-	*dbl*) tp3=dbl;;
-	*flt*) tp3=flt;;
-	lng*) tp3=lng;;
-	int*) tp3=int;;
-	sht*) tp3=sht;;
-	bte*) tp3=bte;;
-	esac
-	if [ $tp3 != dbl ]; then
-	    if [ $tp3 != flt ]; then
-		cat <<EOF
-pattern /(v1:$tp1,v2:$tp2) :flt
-address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-EOF
-	    fi
+for ((i = 0; i < ${#numeric[@]}; i++)); do
+    tp1=${numeric[i]}
+    for ((j = 0; j < ${#numeric[@]}; j++)); do
+	tp2=${numeric[j]}
+	for ((k = ${#numeric[@]} - 1; k >= i; k--)); do
+	    tp3=${numeric[k]}
 	    cat <<EOF
-pattern /(v1:$tp1,v2:$tp2) :dbl
-address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-EOF
-	fi
-	cat <<EOF
 pattern /(v1:$tp1,v2:$tp2) :$tp3
 address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
+comment "Return V1 / V2, signal error on divide by zero";
 pattern div_noerror(v1:$tp1,v2:$tp2) :$tp3
 address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 EOF
+	done
     done
 done
-    echo
+echo
 
-for tp1 in $numeric; do
-    for tp2 in $numeric; do
-	case $tp1$tp2 in
-	*dbl*) tp3=dbl;;
-	*flt*) tp3=flt;;
-	*bte*) tp3=bte;;
-	*sht*) tp3=sht;;
-	*int*) tp3=int;;
-	*lng*) tp3=lng;;
-	esac
-	cat <<EOF
+for ((i = 0; i < ${#numeric[@]}; i++)); do
+    tp1=${numeric[i]}
+    for ((j = 0; j < ${#numeric[@]}; j++)); do
+	tp2=${numeric[j]}
+	for ((k = ${#numeric[@]} - 1; k >= 0; k--)); do
+	    if ((k < i && k < j)); then
+		continue
+	    fi
+	    tp3=${numeric[k]}
+	    case $tp3 in
+	    dbl)
+		case $tp1$tp2 in
+		*dbl*) ;;
+		*) continue;;
+		esac
+		;;
+	    flt)
+		case $tp1$tp2 in
+		*dbl*) continue;;
+		*flt*) ;;
+		*) continue;;
+		esac
+		;;
+	    *)
+		case $tp1$tp2 in
+		*flt*|*dbl*) continue;;
+		*) ;;
+		esac
+		;;
+	    esac
+	    cat <<EOF
 pattern %(v1:$tp1,v2:$tp2) :$tp3
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:$tp1,v2:$tp2) :$tp3
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 EOF
+	done
     done
 done
 echo
 
 for op in and or xor; do
-    for tp in bit $integer; do
+    for tp in bit ${integer[@]}; do
 	cat <<EOF
 pattern ${op}(v1:$tp,v2:$tp) :$tp
 address CMDvar${op^^}
@@ -213,15 +203,15 @@ done
 for func in '<<:lsh' '>>:rsh'; do
     op=${func%:*}
     func=${func#*:}
-    for tp1 in $integer; do
-	for tp2 in $integer; do
+    for tp1 in ${integer[@]}; do
+	for tp2 in ${integer[@]}; do
 	    cat <<EOF
 pattern $op(v1:$tp1,v2:$tp2) :$tp1
 address CMDvar${func^^}signal
 comment "Return V1 $op V2, raise error on out of range second operand";
 pattern ${func}_noerror(v1:$tp1,v2:$tp2) :$tp1
 address CMDvar${func^^}
-comment "Return V1 $op V2, out of range second operand causes NIL value";
+comment "Return V1 $op V2, out of range second operand results in NIL value";
 
 EOF
 	done
@@ -240,8 +230,8 @@ comment "Return V1 $op V2";
 
 EOF
     done
-    for tp1 in $numeric; do
-	for tp2 in $numeric; do
+    for tp1 in ${numeric[@]}; do
+	for tp2 in ${numeric[@]}; do
 	    cat <<EOF
 pattern $op(v1:$tp1,v2:$tp2) :bit
 address CMDvar${func^^}
@@ -263,8 +253,8 @@ comment "Return -1/0/1 if V1 </==/> V2";
 
 EOF
 done
-for tp1 in $numeric; do
-    for tp2 in $numeric; do
+for tp1 in ${numeric[@]}; do
+    for tp2 in ${numeric[@]}; do
 	cat <<EOF
 pattern cmp(v1:$tp1,v2:$tp2) :bte
 address CMDvarCMP
@@ -286,7 +276,7 @@ comment "B between V1 and V2 (or vice versa) inclusive";
 
 EOF
 
-for tp1 in void $alltypes; do
+for tp1 in void ${alltypes[@]}; do
     if [[ $tp1 == str ]]; then
 	cat <<EOF
 pattern $tp1(v:any) :$tp1
@@ -295,7 +285,7 @@ comment "Cast VALUE to $tp1";
 
 EOF
     else
-	for tp2 in void $alltypes; do
+	for tp2 in void ${alltypes[@]}; do
 	    cat <<EOF
 pattern $tp1(v:$tp2) :$tp1
 address CMDvarCONVERT

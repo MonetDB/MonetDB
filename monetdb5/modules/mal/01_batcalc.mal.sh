@@ -13,11 +13,11 @@ module batcalc;
 
 EOF
 
-integer="bte sht int lng"	# all integer types
-numeric="$integer flt dbl"	# all numeric types
-alltypes="bit $numeric oid str"
+integer=(bte sht int lng)	# all integer types
+numeric=(${integer[@]} flt dbl)	# all numeric types
+alltypes=(bit ${numeric[@]} oid str)
 
-for tp in $numeric; do
+for tp in ${numeric[@]}; do
     cat <<EOF
 pattern iszero(b:bat[:$tp]) :bat[:bit]
 address CMDbatISZERO
@@ -44,7 +44,7 @@ done
 echo
 
 com="Return the Boolean inverse"
-for tp in bit $integer; do
+for tp in bit ${integer[@]}; do
     cat <<EOF
 pattern not(b:bat[:$tp]) :bat[:$tp]
 address CMDbatNOT
@@ -58,7 +58,7 @@ EOF
 done
 echo
 
-for tp in $numeric; do
+for tp in ${numeric[@]}; do
     cat <<EOF
 pattern sign(b:bat[:$tp]) :bat[:bte]
 address CMDbatSIGN
@@ -79,7 +79,7 @@ for func in 'abs:ABS:Unary abs over the tail of the bat' \
     com=${func##*:}
     func=${func%:*}
     func=${func#*:}
-    for tp in $numeric; do
+    for tp in ${numeric[@]}; do
 	cat <<EOF
 pattern $op(b:bat[:$tp]) :bat[:$tp]
 address CMDbat${func}
@@ -123,55 +123,17 @@ echo
 for func in +:ADD -:SUB \*:MUL; do
     name=${func#*:}
     op=${func%:*}
-    for tp1 in bte sht int lng flt; do
-	for tp2 in bte sht int lng flt; do
-	    case $tp1$tp2 in
-	    *flt*) tp3=dbl;;
-	    *lng*) continue;;	# lng only allowed in combination with flt
-	    *int*) tp3=lng;;
-	    *sht*) tp3=int;;
-	    *bte*) tp3=sht;;
-	    esac
-	    cat <<EOF
-pattern $op(b1:bat[:$tp1],b2:bat[:$tp2]) :bat[:$tp3]
-address CMDbat${name}enlarge
-comment "Return B1 $op B2, guarantee no overflow by returning larger type";
-pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
-address CMDbat${name}enlarge
-comment "Return B1 $op B2 with candidates list, guarantee no overflow by returning larger type";
-pattern $op(b:bat[:$tp1],v:$tp2) :bat[:$tp3]
-address CMDbat${name}enlarge
-comment "Return B $op V, guarantee no overflow by returning larger type";
-pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:oid]) :bat[:$tp3]
-address CMDbat${name}enlarge
-comment "Return B $op V with candidates list, guarantee no overflow by returning larger type";
-pattern $op(v:$tp1,b:bat[:$tp2]) :bat[:$tp3]
-address CMDbat${name}enlarge
-comment "Return V $op B, guarantee no overflow by returning larger type";
-pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
-address CMDbat${name}enlarge
-comment "Return V $op B with candidates list, guarantee no overflow by returning larger type";
-
-EOF
-	done
-    done
-    echo
-done
-
-for func in +:ADD -:SUB \*:MUL; do
-    name=${func#*:}
-    op=${func%:*}
-    for tp1 in $numeric; do
-	for tp2 in $numeric; do
-	    case $tp1$tp2 in
-	    *dbl*) tp3=dbl;;
-	    *flt*) tp3=flt;;
-	    *lng*) tp3=lng;;
-	    *int*) tp3=int;;
-	    *sht*) tp3=sht;;
-	    *bte*) tp3=bte;;
-	    esac
-	    cat <<EOF
+    for ((i = 0; i < ${#numeric[@]}; i++)); do
+	tp1=${numeric[i]}
+	for ((j = 0; j < ${#numeric[@]}; j++)); do
+	    tp2=${numeric[j]}
+	    for ((k = ${#numeric[@]} - 1; k >= 0; k--)); do
+		if ((k < i || k < j)); then
+		    continue
+		fi
+		tp3=${numeric[k]}
+		if ((k == i || k == j)); then
+		    cat <<EOF
 pattern $op(b1:bat[:$tp1],b2:bat[:$tp2]) :bat[:$tp3]
 address CMDbat${name}signal
 comment "Return B1 $op B2, signal error on overflow";
@@ -210,9 +172,32 @@ address CMDbat${name}
 comment "Return V $op B with candidates list, overflow causes NIL value";
 
 EOF
+		else
+		    cat <<EOF
+pattern $op(b1:bat[:$tp1],b2:bat[:$tp2]) :bat[:$tp3]
+address CMDbat${name}enlarge
+comment "Return B1 $op B2, guarantee no overflow by returning larger type";
+pattern $op(b1:bat[:$tp1],b2:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
+address CMDbat${name}enlarge
+comment "Return B1 $op B2 with candidates list, guarantee no overflow by returning larger type";
+pattern $op(b:bat[:$tp1],v:$tp2) :bat[:$tp3]
+address CMDbat${name}enlarge
+comment "Return B $op V, guarantee no overflow by returning larger type";
+pattern $op(b:bat[:$tp1],v:$tp2,s:bat[:oid]) :bat[:$tp3]
+address CMDbat${name}enlarge
+comment "Return B $op V with candidates list, guarantee no overflow by returning larger type";
+pattern $op(v:$tp1,b:bat[:$tp2]) :bat[:$tp3]
+address CMDbat${name}enlarge
+comment "Return V $op B, guarantee no overflow by returning larger type";
+pattern $op(v:$tp1,b:bat[:$tp2],s:bat[:oid]) :bat[:$tp3]
+address CMDbat${name}enlarge
+comment "Return V $op B with candidates list, guarantee no overflow by returning larger type";
+
+EOF
+		fi
+	    done
 	done
     done
-    echo
 done
 
 cat <<EOF
@@ -237,17 +222,13 @@ comment "Return concatenation of V and B with candidates list";
 
 EOF
 
-for tp1 in $numeric; do
-    for tp2 in $numeric; do
-	case $tp1$tp2 in
-	*dbl*) tp3=dbl;;
-	*flt*) tp3=flt;;
-	lng*) tp3=lng;;
-	int*) tp3=int;;
-	sht*) tp3=sht;;
-	bte*) tp3=bte;;
-	esac
-	cat <<EOF
+for ((i = 0; i < ${#numeric[@]}; i++)); do
+    tp1=${numeric[i]}
+    for ((j = 0; j < ${#numeric[@]}; j++)); do
+	tp2=${numeric[j]}
+	for ((k = ${#numeric[@]} - 1; k >= i; k--)); do
+	    tp3=${numeric[k]}
+	    cat <<EOF
 pattern /(b1:bat[:$tp1],b2:bat[:$tp2]) :bat[:$tp3]
 address CMDbatDIVsignal
 comment "Return B1 / B2, signal error on overflow";
@@ -286,21 +267,42 @@ address CMDbatDIV
 comment "Return V / B with candidates list, overflow causes NIL value";
 
 EOF
+	done
     done
 done
-    echo
+echo
 
-for tp1 in $numeric; do
-    for tp2 in $numeric; do
-	case $tp1$tp2 in
-	*dbl*) tp3=dbl;;
-	*flt*) tp3=flt;;
-	*bte*) tp3=bte;;
-	*sht*) tp3=sht;;
-	*int*) tp3=int;;
-	*lng*) tp3=lng;;
-	esac
-	cat <<EOF
+for ((i = 0; i < ${#numeric[@]}; i++)); do
+    tp1=${numeric[i]}
+    for ((j = 0; j < ${#numeric[@]}; j++)); do
+	tp2=${numeric[j]}
+	for ((k = ${#numeric[@]} - 1; k >= 0; k--)); do
+	    if ((k < i && k < j)); then
+		continue
+	    fi
+	    tp3=${numeric[k]}
+	    case $tp3 in
+	    dbl)
+		case $tp1$tp2 in
+		*dbl*) ;;
+		*) continue;;
+		esac
+		;;
+	    flt)
+		case $tp1$tp2 in
+		*dbl*) continue;;
+		*flt*) ;;
+		*) continue;;
+		esac
+		;;
+	    *)
+		case $tp1$tp2 in
+		*flt*|*dbl*) continue;;
+		*) ;;
+		esac
+		;;
+	    esac
+	    cat <<EOF
 pattern %(b1:bat[:$tp1],b2:bat[:$tp2]) :bat[:$tp3]
 address CMDbatMODsignal
 comment "Return B1 % B2, signal error on divide by zero";
@@ -339,12 +341,13 @@ address CMDbatMOD
 comment "Return V % B with candidates list, divide by zero causes NIL value";
 
 EOF
+	done
     done
 done
 echo
 
 for op in and or xor; do
-    for tp in bit $integer; do
+    for tp in bit ${integer[@]}; do
 	cat <<EOF
 pattern ${op}(b1:bat[:$tp],b2:bat[:$tp]) :bat[:$tp]
 address CMDbat${op^^}
@@ -373,8 +376,8 @@ done
 for func in '<<:lsh' '>>:rsh'; do
     op=${func%:*}
     func=${func#*:}
-    for tp1 in $integer; do
-	for tp2 in $integer; do
+    for tp1 in ${integer[@]}; do
+	for tp2 in ${integer[@]}; do
 	    cat <<EOF
 pattern $op(b1:bat[:$tp1],b2:bat[:$tp2]) :bat[:$tp1]
 address CMDbat${func^^}signal
@@ -445,8 +448,8 @@ comment "Return V $op B with candidates list";
 
 EOF
     done
-    for tp1 in $numeric; do
-	for tp2 in $numeric; do
+    for tp1 in ${numeric[@]}; do
+	for tp2 in ${numeric[@]}; do
 	    cat <<EOF
 pattern $op(b1:bat[:$tp1],b2:bat[:$tp2]) :bat[:bit]
 address CMDbat${func^^}
@@ -498,8 +501,8 @@ comment "Return -1/0/1 if V </==/> B with candidates list";
 
 EOF
 done
-for tp1 in $numeric; do
-    for tp2 in $numeric; do
+for tp1 in ${numeric[@]}; do
+    for tp2 in ${numeric[@]}; do
 	cat <<EOF
 pattern cmp(b1:bat[:$tp1],b2:bat[:$tp2]) :bat[:bte]
 address CMDbatCMP
@@ -579,7 +582,7 @@ comment "B between V1 and V2 (or vice versa) inclusive with candidates list";
 EOF
 echo
 
-for tp in $numeric; do
+for tp in ${numeric[@]}; do
     cat <<EOF
 pattern avg(b:bat[:$tp]) :dbl
 address CMDcalcavg
@@ -597,7 +600,7 @@ comment "average and number of non-nil values of B with candidates list";
 EOF
 done
 
-for tp1 in $alltypes; do
+for tp1 in ${alltypes[@]}; do
     if [[ $tp1 == str ]]; then
 	cat <<EOF
 pattern $tp1(b:bat[:any]) :bat[:$tp1]
@@ -615,7 +618,7 @@ comment "cast from any to $tp1 with candidates list";
 
 EOF
     else
-	for tp2 in $alltypes; do
+	for tp2 in ${alltypes[@]}; do
 	    cat <<EOF
 pattern $tp1(b:bat[:$tp2]) :bat[:$tp1]
 address CMDconvertsignal_$tp1
