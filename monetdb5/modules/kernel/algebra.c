@@ -508,7 +508,7 @@ ALGintersect(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat
 {
 	return do_join(r1, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL, 0, 0,
 				   nil_matches, estimate,
-				   BATsemijoin, NULL, NULL, NULL, NULL, "algebra.difference");
+				   BATsemijoin, NULL, NULL, NULL, NULL, "algebra.intersect");
 }
 
 /* algebra.firstn(b:bat[:any],

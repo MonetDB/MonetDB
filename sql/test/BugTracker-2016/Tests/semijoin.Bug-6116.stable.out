@@ -217,7 +217,7 @@ Ready.
 #    )
 #SELECT * FROM messages
 #ORDER BY creationDate DESC, message_id
-% sys.messages,	sys.messages,	sys.messages,	sys.messages,	sys.messages,	sys.messages # table_name
+% foo.messages,	foo.messages,	foo.messages,	foo.messages,	foo.messages,	foo.messages # table_name
 % id,	firstname,	lastname,	message_id,	content,	creationdate # name
 % bigint,	varchar,	varchar,	bigint,	varchar,	timestamptz # type
 % 1,	0,	0,	1,	0,	29 # length

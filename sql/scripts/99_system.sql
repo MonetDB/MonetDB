@@ -5,12 +5,10 @@
 -- Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
 -- only system functions until now
-create table systemfunctions (function_id)
-	as (select id from functions) with data;
-grant select on systemfunctions to public;
+insert into systemfunctions select id from functions;
 
-create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas(); 
-create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables(); 
+create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas();
+create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables();
 
 -- only system tables until now
 update _tables set system = true;

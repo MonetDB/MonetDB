@@ -1,0 +1,75 @@
+stderr of test 'comment-dump` in directory 'sql/test` itself:
+
+
+# 17:19:14 >  
+# 17:19:14 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31727" "--set" "mapi_usock=/var/tmp/mtest-32446/.s.monetdb.31727" "--set" "monet_prompt=" "--forcemito" "--dbpath=/Users/joeri/monets/default/var/MonetDB/mTests_sql_test" "--set" "embedded_r=yes"
+# 17:19:14 >  
+
+# builtin opt 	gdk_dbpath = /Users/joeri/monets/default/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 31727
+# cmdline opt 	mapi_usock = /var/tmp/mtest-32446/.s.monetdb.31727
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /Users/joeri/monets/default/var/MonetDB/mTests_sql_test
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	gdk_debug = 536870922
+#WARNING To speedup sql.password a bulk operator implementation is needed
+#    X_233:bat[:str] := mal.multiplex("sql":str, "password":str, X_208:bat[:str]);
+#WARNING To speedup sql.password a bulk operator implementation is needed
+#    X_234:bat[:str] := mal.multiplex("sql":str, "password":str, X_209:bat[:str]);
+#WARNING To speedup sql.password a bulk operator implementation is needed
+#    X_235:bat[:str] := mal.multiplex("sql":str, "password":str, X_210:bat[:str]);
+#WARNING To speedup sql.password a bulk operator implementation is needed
+#    X_236:bat[:str] := mal.multiplex("sql":str, "password":str, X_211:bat[:str]);
+#WARNING To speedup sql.password a bulk operator implementation is needed
+#    X_237:bat[:str] := mal.multiplex("sql":str, "password":str, X_212:bat[:str]);
+#WARNING To speedup sql.password a bulk operator implementation is needed
+#    X_233:bat[:str] := mal.multiplex("sql":str, "password":str, X_208:bat[:str]);
+#WARNING To speedup sql.password a bulk operator implementation is needed
+#    X_234:bat[:str] := mal.multiplex("sql":str, "password":str, X_209:bat[:str]);
+#WARNING To speedup sql.password a bulk operator implementation is needed
+#    X_235:bat[:str] := mal.multiplex("sql":str, "password":str, X_210:bat[:str]);
+#WARNING To speedup sql.password a bulk operator implementation is needed
+#    X_236:bat[:str] := mal.multiplex("sql":str, "password":str, X_211:bat[:str]);
+#WARNING To speedup sql.password a bulk operator implementation is needed
+#    X_237:bat[:str] := mal.multiplex("sql":str, "password":str, X_212:bat[:str]);
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_281:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_246:bat[:str], X_256:bat[:str]);
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_282:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_247:bat[:str], X_257:bat[:str]);
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_283:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_248:bat[:str], X_258:bat[:str]);
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_284:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_249:bat[:str], X_259:bat[:str]);
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_285:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_250:bat[:str], X_260:bat[:str]);
+
+# 17:19:14 >  
+# 17:19:14 >  "/usr/local/opt/python/bin/python2.7" "comment-dump.SQL.py" "comment-dump"
+# 17:19:14 >  
+
+
+# 17:19:14 >  
+# 17:19:14 >  Mtimeout -timeout 60 mclient -lsql -ftest -tnone -Eutf-8 -i -e --host=/var/tmp/mtest-32446 --port=31727 --database=mTests_sql_test < "/Users/joeri/extr/monet/MonetDB/sql/test/Tests/comment-dump.sql"
+# 17:19:14 >  
+
+
+# 17:19:15 >  
+# 17:19:15 >  Mtimeout -timeout 60 msqldump -q --host=/var/tmp/mtest-32446 --port=31727 --database=mTests_sql_test
+# 17:19:15 >  
+
+
+# 17:19:15 >  
+# 17:19:15 >  "Done."
+# 17:19:15 >  
+

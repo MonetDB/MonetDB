@@ -2045,14 +2045,14 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 					high = use_orderidx? ORDERfndfirst(l, vrh): SORTfndfirst(l, vrh);
 			} else {
 				assert(l->trevsorted);
-				if (li)
-					low = SORTfndlast(l, vrh);
-				else
-					low = SORTfndfirst(l, vrh);
 				if (hi)
-					high = SORTfndfirst(l, vrl);
+					low = SORTfndfirst(l, vrh);
 				else
+					low = SORTfndlast(l, vrh);
+				if (li)
 					high = SORTfndlast(l, vrl);
+				else
+					high = SORTfndfirst(l, vrl);
 			}
 			if (high <= low)
 				continue;
@@ -2643,7 +2643,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 	}
 	r2->tseqbase = 	r2->tdense ? cnt > 0 ? dst2[0] : 0 : oid_nil;
 	ALGODEBUG fprintf(stderr, "#rangejoin(l=%s,rl=%s,rh=%s)="
-			  "(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
+			  "(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s)\n",
 			  BATgetId(l), BATgetId(rl), BATgetId(rh),
 			  BATgetId(r1), BATcount(r1),
 			  r1->tsorted ? "-sorted" : "",

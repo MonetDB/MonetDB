@@ -204,7 +204,7 @@ main(int argc, char **argv)
 		dump_version(mid, out, "--");
 	}
 	if (functions)
-		c = dump_functions(mid, out, NULL, NULL);
+		c = dump_functions(mid, out, 1, NULL, NULL, NULL);
 	else if (table)
 		c = dump_table(mid, NULL, table, out, describe, 1, useinserts);
 	else

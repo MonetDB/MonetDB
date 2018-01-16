@@ -1,32 +1,253 @@
 stdout of test 'drop_tables_v` in directory 'sql/test/rdf` itself:
 
 
-# 23:39:01 >  
-# 23:39:01 >   mserver5 "--config=/ufs/goncalve/scratch/MonetDB/stable/debug/MonetDB5/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/stable/debug/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/stable/debug/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/stable/debug/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/stable/debug/MonetDB5/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=36195 --set xrpc_port=45264 --set monet_prompt= --trace  "--dbname=mTests_src_test_rdf" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
-# 23:39:01 >  
+# 10:46:27 >  
+# 10:46:27 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36263" "--set" "mapi_usock=/var/tmp/mtest-3472/.s.monetdb.36263" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-stable/var/MonetDB/mTests_sql_test_rdf"
+# 10:46:27 >  
 
-# MonetDB server v5.16.4, based on kernel v1.34.4
-# Serving database 'mTests_src_test_rdf', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Detected 7.753 GiB (8324337664 bytes) main-memory.
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://alviss.ins.cwi.nl:36195/
-# MonetDB/SQL module v2.34.4 loaded
+# MonetDB 5 server v11.27.12 (hg id: 9a05add39d7b)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_rdf', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 62.695 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:36263/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-3472/.s.monetdb.36263
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
 
 Ready.
-#function user.main():void;
-#    clients.quit();
-#end main;
 
+# 10:46:27 >  
+# 10:46:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3472" "--port=36263"
+# 10:46:27 >  
 
-# 23:39:02 >  
-# 23:39:02 >  mclient -lsql -i -umonetdb -Pmonetdb --host=alviss --port=36195 
-# 23:39:02 >  
+#DROP TABLE prop14657240_pso;
+#DROP TABLE prop14660343_pso;
+#DROP TABLE prop17582582_pso;
+#DROP TABLE prop14657202_pso;
+#DROP TABLE prop14657244_pso;
+#DROP TABLE prop14657245_pso;
+#DROP TABLE prop14660087_pso;
+#DROP TABLE prop14660290_pso;
+#DROP TABLE prop14660329_pso;
+#DROP TABLE prop14660333_pso;
+#DROP TABLE prop14659612_pso;
+#DROP TABLE prop14659802_pso;
+#DROP TABLE prop14659801_pso;
+#DROP TABLE prop14657234_pso;
+#DROP TABLE prop14659613_pso;
+#DROP TABLE prop14659939_pso;
+#DROP TABLE prop14660254_pso;
+#DROP TABLE prop14659603_pso;
+#DROP TABLE prop14659615_pso;
+#DROP TABLE prop14657207_pso;
+#DROP TABLE prop14657217_pso;
+#DROP TABLE prop14659708_pso;
+#DROP TABLE prop14660306_pso;
+#DROP TABLE prop14657206_pso;
+#DROP TABLE prop14657208_pso;
+#DROP TABLE prop14657221_pso;
+#DROP TABLE prop14657249_pso;
+#DROP TABLE prop14659533_pso;
+#DROP TABLE prop14660330_pso;
+#DROP TABLE prop17302406_pso;
+#DROP TABLE prop14660321_pso;
+#DROP TABLE prop11121625_pso;
+#DROP TABLE prop14659714_pso;
+#DROP TABLE prop14657215_pso;
+#DROP TABLE prop14660308_pso;
+#DROP TABLE prop14657214_pso;
+#DROP TABLE prop14657200_pso;
+#DROP TABLE prop14657213_pso;
+#DROP TABLE prop14657220_pso;
+#DROP TABLE prop14657016_pso;
+#DROP TABLE prop17302355_pso;
+#DROP TABLE prop17302445_pso;
+#DROP TABLE prop17302397_pso;
+#DROP TABLE prop17302372_pso;
+#DROP TABLE prop17302421_pso;
+#DROP TABLE prop17302393_pso;
+#DROP TABLE prop14657017_pso;
+#DROP TABLE prop14657219_pso;
+#DROP TABLE prop17302388_pso;
+#DROP TABLE prop17302389_pso;
+#DROP TABLE prop17302454_pso;
+#DROP TABLE prop17302479_pso;
+#DROP TABLE prop17302441_pso;
+#DROP TABLE prop17302416_pso;
+#DROP TABLE prop17302469_pso;
+#DROP TABLE prop17302376_pso;
+#DROP TABLE prop17302517_pso;
+#DROP TABLE prop17302367_pso;
+#DROP TABLE prop17302512_pso;
+#DROP TABLE prop14659709_pso;
+#DROP TABLE prop14660148_pso;
+#DROP TABLE prop17302395_pso;
+#DROP TABLE prop17302419_pso;
+#DROP TABLE prop17302424_pso;
+#DROP TABLE prop17302377_pso;
+#DROP TABLE prop17302426_pso;
+#DROP TABLE prop17302370_pso;
+#DROP TABLE prop17302493_pso;
+#DROP TABLE prop17302463_pso;
+#DROP TABLE prop14660331_pso;
+#DROP TABLE prop17302457_pso;
+#DROP TABLE prop17302481_pso;
+#DROP TABLE prop14659715_pso;
+#DROP TABLE prop14659532_pso;
+#DROP TABLE prop17302436_pso;
+#DROP TABLE prop17302468_pso;
+#DROP TABLE prop17302413_pso;
+#DROP TABLE prop17302516_pso;
+#DROP TABLE prop17302478_pso;
+#DROP TABLE prop17302361_pso;
+#DROP TABLE prop17302371_pso;
+#DROP TABLE prop17302362_pso;
+#DROP TABLE prop17302363_pso;
+#DROP TABLE prop17302386_pso;
+#DROP TABLE prop17302390_pso;
+#DROP TABLE prop17302430_pso;
+#DROP TABLE prop14657247_pso;
+#DROP TABLE prop17302507_pso;
+#DROP TABLE prop17302433_pso;
+#DROP TABLE prop17302366_pso;
+#DROP TABLE prop17302396_pso;
+#DROP TABLE prop17302477_pso;
+#DROP TABLE prop17302439_pso;
+#DROP TABLE prop17302514_pso;
+#DROP TABLE prop17302438_pso;
+#DROP TABLE prop17302467_pso;
+#DROP TABLE prop17302459_pso;
+#DROP TABLE prop17302482_pso;
+#DROP TABLE prop17302443_pso;
+#DROP TABLE prop17302435_pso;
+#DROP TABLE prop14659514_pso;
+#DROP TABLE prop17302486_pso;
+#DROP TABLE prop17302425_pso;
+#DROP TABLE prop17302392_pso;
+#DROP TABLE prop17302473_pso;
+#DROP TABLE prop17302455_pso;
+#DROP TABLE prop17302434_pso;
+#DROP TABLE prop17302492_pso;
+#DROP TABLE prop17302437_pso;
+#DROP TABLE prop17302501_pso;
+#DROP TABLE prop17302490_pso;
+#DROP TABLE prop17302460_pso;
+#DROP TABLE prop17302519_pso;
+#DROP TABLE prop17302398_pso;
+#DROP TABLE prop17302518_pso;
+#DROP TABLE prop17302495_pso;
+#DROP TABLE prop17302489_pso;
+#DROP TABLE prop17302364_pso;
+#DROP TABLE prop17302474_pso;
+#DROP TABLE prop17302431_pso;
+#DROP TABLE prop17302496_pso;
+#DROP TABLE prop17302440_pso;
+#DROP TABLE prop17302378_pso;
+#DROP TABLE prop17302358_pso;
+#DROP TABLE prop17302369_pso;
+#DROP TABLE prop17302511_pso;
+#DROP TABLE prop17302442_pso;
+#DROP TABLE prop17302497_pso;
+#DROP TABLE prop17302500_pso;
+#DROP TABLE prop17302465_pso;
+#DROP TABLE prop17302384_pso;
+#DROP TABLE prop17302427_pso;
+#DROP TABLE prop17302379_pso;
+#DROP TABLE prop17302387_pso;
+#DROP TABLE prop17302466_pso;
+#DROP TABLE prop17302503_pso;
+#DROP TABLE prop17302498_pso;
+#DROP TABLE prop17302381_pso;
+#DROP TABLE prop17302504_pso;
+#DROP TABLE prop17302383_pso;
+#DROP TABLE prop17302403_pso;
+#DROP TABLE prop17302356_pso;
+#DROP TABLE prop17302428_pso;
+#DROP TABLE prop17302357_pso;
+#DROP TABLE prop17302359_pso;
+#DROP TABLE prop17302485_pso;
+#DROP TABLE prop17302404_pso;
+#DROP TABLE prop17302429_pso;
+#DROP TABLE prop17302368_pso;
+#DROP TABLE prop17302470_pso;
+#DROP TABLE prop17302483_pso;
+#DROP TABLE prop17302391_pso;
+#DROP TABLE prop17302385_pso;
+#DROP TABLE prop17302484_pso;
+#DROP TABLE prop17302417_pso;
+#DROP TABLE prop17302374_pso;
+#DROP TABLE prop17302447_pso;
+#DROP TABLE prop17302521_pso;
+#DROP TABLE prop17302360_pso;
+#DROP TABLE prop17302456_pso;
+#DROP TABLE prop17302382_pso;
+#DROP TABLE prop17302462_pso;
+#DROP TABLE prop17302449_pso;
+#DROP TABLE prop17302451_pso;
+#DROP TABLE prop17302450_pso;
+#DROP TABLE prop17302420_pso;
+#DROP TABLE prop17302410_pso;
+#DROP TABLE prop17302380_pso;
+#DROP TABLE prop17302422_pso;
+#DROP TABLE prop17302423_pso;
+#DROP TABLE prop17302444_pso;
+#DROP TABLE prop17302448_pso;
+#DROP TABLE prop17302375_pso;
+#DROP TABLE prop17302400_pso;
+#DROP TABLE prop17302402_pso;
+#DROP TABLE prop17302418_pso;
+#DROP TABLE prop17302515_pso;
+#DROP TABLE prop17302505_pso;
+#DROP TABLE prop17302399_pso;
+#DROP TABLE prop17302491_pso;
+#DROP TABLE prop17302476_pso;
+#DROP TABLE prop17302446_pso;
+#DROP TABLE prop17302458_pso;
+#DROP TABLE prop17302412_pso;
+#DROP TABLE prop17302464_pso;
+#DROP TABLE prop17302520_pso;
+#DROP TABLE prop17302499_pso;
+#DROP TABLE prop17302401_pso;
+#DROP TABLE prop17302453_pso;
+#DROP TABLE prop17302513_pso;
+#DROP TABLE prop17302432_pso;
+#DROP TABLE prop17302409_pso;
+#DROP TABLE prop17302506_pso;
+#DROP TABLE prop17302461_pso;
+#DROP TABLE prop17302452_pso;
+#DROP TABLE prop17302411_pso;
+#DROP TABLE prop17302373_pso;
+#DROP TABLE prop17302494_pso;
+#DROP TABLE prop17302472_pso;
+#DROP TABLE prop17302475_pso;
+#DROP TABLE prop17302394_pso;
+#DROP TABLE prop17302480_pso;
+#DROP TABLE prop17302408_pso;
+#DROP TABLE prop17302487_pso;
+#DROP TABLE prop17302415_pso;
+#DROP TABLE prop17302488_pso;
+#DROP TABLE prop17302508_pso;
+#DROP TABLE prop17302509_pso;
+#DROP TABLE prop17302510_pso;
+#DROP TABLE prop17302471_pso;
+#DROP TABLE prop17302502_pso;
+#DROP TABLE prop17302414_pso;
+#DROP TABLE prop17302405_pso;
+#DROP TABLE prop17302407_pso;
+#DROP TABLE prop17302365_pso;
+#DROP TABLE prop14742688_pso;
+#DROP TABLE prop14657248_pso;
+#DROP TABLE prop14657018_pso;
+#DROP TABLE prop14657222_pso;
+#DROP TABLE prop14657019_pso;
+#DROP TABLE prop14657210_pso;
+#DROP TABLE prop14659605_pso;
 
-
-# 23:39:02 >  
-# 23:39:02 >  Done.
-# 23:39:02 >  
+# 10:46:28 >  
+# 10:46:28 >  "Done."
+# 10:46:28 >  
 

@@ -19,6 +19,8 @@
  * (if available) for +, -, *.  For division the output type can be
  * either input type of flt or dbl. */
 
+#define FULL_IMPLEMENTATION
+
 /* format strings for the seven/eight basic types we deal with */
 #define FMTbte	"%d"
 #define FMTsht	"%d"
