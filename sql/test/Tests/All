@@ -1,4 +1,10 @@
 
+# Run these first so comment-dump doesn't encounter
+# leftovers from other tests
+comment-dump
+comment-on
+comment-auth
+
 bincopycollist-prepare
 bincopycollist
 
@@ -101,9 +107,6 @@ median_stdev
 ifexists
 ifexists-views
 subqueries
-comment-on
-comment-dump
-comment-auth
 
 #HAVE_GEOM?trace
 
