@@ -3,3 +3,4 @@ sqlitelogictest-wrong-aggregation-count.Bug-6510
 sqlitelogictest-wrong-select-not-between.Bug-6511
 sqlitelogictest-wrong-mal-function-generation.Bug-6513
 sqlitelogictest-select-range-null.Bug-6514
+insert-null-second-interval-0.Bug-6515
