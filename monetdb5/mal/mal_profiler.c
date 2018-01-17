@@ -159,7 +159,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	/* make profile event tuple  */
 	lognew();
 	logadd("{%s",prettify); // fill in later with the event counter
-	logadd("\"source\": \"trace\",%s", prettify);
+	logadd("\"source\":\"trace\",%s", prettify);
 
 	logadd("\"clk\":"LLFMT",%s",usec,prettify);
 	logadd("\"ctime\":"LLFMT".%06ld,%s", sec, microseconds, prettify);
@@ -444,6 +444,7 @@ profilerHeartbeatEvent(char *alter)
 	char cpuload[BUFSIZ];
 	char logbuffer[LOGLEN], *logbase;
 	int loglen;
+	static uint64_t serial = 0;
 
 	if (ATOMIC_GET(hbdelay, mal_beatLock) == 0 || eventstream  == NULL)
 		return;
@@ -455,6 +456,10 @@ profilerHeartbeatEvent(char *alter)
 	lognew();
 	logadd("{%s",prettify); // fill in later with the event counter
 	logadd("\"source\":\"heartbeat\",%s", prettify);
+	if(mal_session_uuid)
+		logadd("\"session\":\"%s\",%s", mal_session_uuid, prettify);
+	logadd("\"serial\":%ld,%s", serial, prettify);
+	serial++;
 	logadd("\"rss\":"SZFMT ",%s", MT_getrss()/1024/1024, prettify);
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
