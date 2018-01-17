@@ -458,7 +458,7 @@ profilerHeartbeatEvent(char *alter)
 	logadd("\"source\":\"heartbeat\",%s", prettify);
 	if(mal_session_uuid)
 		logadd("\"session\":\"%s\",%s", mal_session_uuid, prettify);
-	logadd("\"serial\":%ld,%s", serial, prettify);
+	logadd("\"serial\":%" PRId64 ",%s", serial, prettify);
 	serial++;
 	logadd("\"rss\":"SZFMT ",%s", MT_getrss()/1024/1024, prettify);
 #ifdef HAVE_SYS_RESOURCE_H
