@@ -220,7 +220,6 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 	r1->tsorted = 1;
 	r1->tnosorted = 0;
 	r1->tdense = 0;
-	r1->tnodense = 0;
 	r1->tnil = 0;
 	r1->tnonil = 1;
 	if (r2) {
@@ -229,7 +228,6 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 		r2->tsorted = 1;
 		r2->tnosorted = 0;
 		r2->tdense = 0;
-		r2->tnodense = 0;
 		r2->tnil = 0;
 		r2->tnonil = 1;
 	}

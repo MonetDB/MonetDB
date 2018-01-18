@@ -786,7 +786,6 @@ typedef struct {
 	BUN nokey[2];		/* positions that prove key==FALSE */
 	BUN nosorted;		/* position that proves sorted==FALSE */
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
-	BUN nodense;		/* position that proves dense==FALSE */
 	oid seq;		/* start of dense head sequence */
 
 	Heap heap;		/* space for the column. */
@@ -860,7 +859,6 @@ typedef struct BATiter {
 #define tnokey		T.nokey
 #define tnosorted	T.nosorted
 #define tnorevsorted	T.norevsorted
-#define tnodense	T.nodense
 #define theap		T.heap
 #define tvheap		T.vheap
 #define thash		T.hash
@@ -1027,7 +1025,7 @@ gdk_export bte ATOMelmshift(int sz);
  * pointer and BUN identifier.
  * @itemize
  * @item
- * BAThtype(b) and  BATttype(b) find out the head and tail type of a BAT.
+ * BATttype(b) finds out the type of a BAT.
  * @item
  * BUNlast(b) returns the BUN pointer directly after the last BUN
  * in the BAT.
