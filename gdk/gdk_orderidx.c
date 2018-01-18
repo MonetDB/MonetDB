@@ -52,14 +52,14 @@ BATidxsync(void *arg)
 
 /* return TRUE if we have a orderidx on the tail, even if we need to read
  * one from disk */
-int
+bool
 BATcheckorderidx(BAT *b)
 {
-	int ret;
+	bool ret;
 	lng t = 0;
 
 	if (b == NULL)
-		return 0;
+		return false;
 	assert(b->batCacheid > 0);
 	ALGODEBUG t = GDKusec();
 	MT_lock_set(&GDKhashLock(b->batCacheid));
@@ -93,7 +93,7 @@ BATcheckorderidx(BAT *b)
 					b->torderidx = hp;
 					ALGODEBUG fprintf(stderr, "#BATcheckorderidx: reusing persisted orderidx %d\n", b->batCacheid);
 					MT_lock_unset(&GDKhashLock(b->batCacheid));
-					return 1;
+					return true;
 				}
 				close(fd);
 				/* unlink unusable file */

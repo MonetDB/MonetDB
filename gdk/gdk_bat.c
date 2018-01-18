@@ -53,7 +53,7 @@
 static char *BATstring_h = "h";
 static char *BATstring_t = "t";
 
-static inline int
+static inline bool
 default_ident(char *s)
 {
 	return (s == BATstring_h || s == BATstring_t);
@@ -630,7 +630,7 @@ heapmove(Heap *dst, Heap *src)
 	*dst = *src;
 }
 
-static int
+static bool
 wrongtype(int t1, int t2)
 {
 	/* check if types are compatible. be extremely forgiving */
@@ -643,10 +643,10 @@ wrongtype(int t1, int t2)
 			    ATOMsize(t1) != ATOMsize(t2) ||
 			    BATatoms[t1].atomFix ||
 			    BATatoms[t2].atomFix)
-				return TRUE;
+				return true;
 		}
 	}
-	return FALSE;
+	return false;
 }
 
 /*
@@ -888,7 +888,7 @@ COLcopy(BAT *b, int tt, int writable, int role)
 static void
 setcolprops(BAT *b, const void *x)
 {
-	int isnil = b->ttype != TYPE_void &&
+	bool isnil = b->ttype != TYPE_void &&
 		ATOMcmp(b->ttype, x, ATOMnilptr(b->ttype)) == 0;
 	BATiter bi;
 	BUN pos;
@@ -1671,7 +1671,7 @@ backup_new(Heap *hp, int lockbat)
 
 /* transition heap from readonly to writable */
 static storage_t
-HEAPchangeaccess(Heap *hp, int dstmode, int existing)
+HEAPchangeaccess(Heap *hp, int dstmode, bool existing)
 {
 	if (hp->base == NULL || hp->newstorage == STORE_MEM || !existing || dstmode == -1)
 		return hp->newstorage;	/* 0<=>2,1<=>3,a<=>b */
@@ -1690,7 +1690,7 @@ HEAPchangeaccess(Heap *hp, int dstmode, int existing)
 
 /* heap changes persistence mode (at commit point) */
 static storage_t
-HEAPcommitpersistence(Heap *hp, int writable, int existing)
+HEAPcommitpersistence(Heap *hp, bool writable, bool existing)
 {
 	if (existing) {		/* existing, ie will become transient */
 		if (hp->storage == STORE_MMAP && hp->newstorage == STORE_PRIV && writable) {	/* 6=>2 */
@@ -1713,11 +1713,11 @@ HEAPcommitpersistence(Heap *hp, int writable, int existing)
 
 /* change the heap modes at a commit */
 gdk_return
-BATcheckmodes(BAT *b, int existing)
+BATcheckmodes(BAT *b, bool existing)
 {
-	int wr = (b->batRestricted == BAT_WRITE);
+	bool wr = (b->batRestricted == BAT_WRITE);
 	storage_t m1 = STORE_MEM, m3 = STORE_MEM;
-	int dirty = 0;
+	bool dirty = false;
 
 	BATcheck(b, "BATcheckmodes", GDK_FAIL);
 
@@ -1727,7 +1727,7 @@ BATcheckmodes(BAT *b, int existing)
 	}
 
 	if (b->tvheap) {
-		int ta = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->ttype, b->tvheap);
+		bool ta = (b->batRestricted == BAT_APPEND) && ATOMappendpriv(b->ttype, b->tvheap);
 		m3 = HEAPcommitpersistence(b->tvheap, wr || ta, existing);
 		dirty |= (b->tvheap->newstorage != m3);
 	}
@@ -1755,9 +1755,9 @@ BATsetaccess(BAT *b, int newmode)
 	bakmode = b->batRestricted;
 	bakdirty = b->batDirtydesc;
 	if (bakmode != newmode || (b->batSharecnt && newmode != BAT_READ)) {
-		int existing = BBP_status(b->batCacheid) & BBPEXISTING;
-		int wr = (newmode == BAT_WRITE);
-		int rd = (bakmode == BAT_WRITE);
+		bool existing = (BBP_status(b->batCacheid) & BBPEXISTING) != 0;
+		bool wr = (newmode == BAT_WRITE);
+		bool rd = (bakmode == BAT_WRITE);
 		storage_t m1, m3 = STORE_MEM;
 		storage_t b1, b3 = STORE_MEM;
 
@@ -1771,7 +1771,7 @@ BATsetaccess(BAT *b, int newmode)
 		b1 = b->theap.newstorage;
 		m1 = HEAPchangeaccess(&b->theap, ACCESSMODE(wr, rd), existing);
 		if (b->tvheap) {
-			int ta = (newmode == BAT_APPEND && ATOMappendpriv(b->ttype, b->tvheap));
+			bool ta = (newmode == BAT_APPEND && ATOMappendpriv(b->ttype, b->tvheap));
 			b3 = b->tvheap->newstorage;
 			m3 = HEAPchangeaccess(b->tvheap, ACCESSMODE(wr && ta, rd && ta), existing);
 		}
@@ -1960,7 +1960,7 @@ BATassertProps(BAT *b)
 	int (*cmpf)(const void *, const void *);
 	int cmp;
 	const void *prev = NULL, *valp, *nilp;
-	int seennil = 0;
+	bool seennil = false;
 
 	/* general BAT sanity */
 	assert(b != NULL);
@@ -2113,7 +2113,7 @@ BATassertProps(BAT *b)
 						/* we found a nil:
 						 * we're done checking
 						 * for them */
-						seennil = 1;
+						seennil = true;
 						cmpnil = 0;
 						if (!cmpprv) {
 							/* we were
@@ -2175,7 +2175,7 @@ BATassertProps(BAT *b)
 				cmp = cmpf(valp, nilp);
 				assert(!b->tnonil || cmp != 0);
 				if (cmp == 0)
-					seennil = 1;
+					seennil = true;
 			}
 			HEAPfree(&hs->heap, 1);
 			GDKfree(hs);

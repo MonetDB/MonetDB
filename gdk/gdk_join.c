@@ -2329,15 +2329,15 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	return GDK_FAIL;
 }
 
-/* binary search in a candidate list, return 1 if found, 0 if not */
-inline int
+/* binary search in a candidate list, return true if found, false if not */
+inline bool
 binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 {
 	BUN mid;
 
 	--hi;			/* now hi is inclusive */
 	if (v < cand[lo] || v > cand[hi])
-		return 0;
+		return false;
 	while (hi > lo) {
 		mid = (lo + hi) / 2;
 		if (cand[mid] == v)
