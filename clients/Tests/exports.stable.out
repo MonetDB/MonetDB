@@ -146,7 +146,6 @@ gdk_return BATkey(BAT *b, int onoff);
 int BATkeyed(BAT *b);
 gdk_return BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate) __attribute__((__warn_unused_result__));
 void *BATmax(BAT *b, void *aggr);
-size_t BATmemsize(BAT *b, int dirty);
 BAT *BATmergecand(BAT *a, BAT *b);
 void *BATmin(BAT *b, void *aggr);
 gdk_return BATmode(BAT *b, int onoff);

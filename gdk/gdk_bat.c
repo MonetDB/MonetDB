@@ -1391,30 +1391,6 @@ BATsetcount(BAT *b, BUN cnt)
 	assert(b->batCapacity >= cnt);
 }
 
-size_t
-BATvmsize(BAT *b, int dirty)
-{
-	BATcheck(b, "BATvmsize", 0);
-	if (b->batDirty || (b->batPersistence != TRANSIENT && !b->batCopiedtodisk))
-		dirty = 0;
-	return (!dirty || b->theap.dirty ? HEAPvmsize(&b->theap) : 0) +
-		((!dirty || b->theap.dirty) && b->thash && b->thash != (Hash *) 1 ? HEAPvmsize(&b->thash->heap) : 0) +
-		(b->tvheap && (!dirty || b->tvheap->dirty) ? HEAPvmsize(b->tvheap) : 0);
-}
-
-size_t
-BATmemsize(BAT *b, int dirty)
-{
-	BATcheck(b, "BATmemsize", 0);
-	if (b->batDirty ||
-	    (b->batPersistence != TRANSIENT && !b->batCopiedtodisk))
-		dirty = 0;
-	return (!dirty || b->batDirtydesc ? sizeof(BAT) : 0) +
-		(!dirty || b->theap.dirty ? HEAPmemsize(&b->theap) : 0) +
-		((!dirty || b->theap.dirty) && b->thash && b->thash != (Hash *) 1 ? HEAPmemsize(&b->thash->heap) : 0) +
-		(b->tvheap && (!dirty || b->tvheap->dirty) ? HEAPmemsize(b->tvheap) : 0);
-}
-
 /*
  * The key and name properties can be changed at any time.  Keyed
  * dimensions are automatically supported by an auxiliary hash-based
