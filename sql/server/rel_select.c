@@ -1650,7 +1650,7 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 		}
 		if (!exp_subtype(ls) && !exp_subtype(rs)) 
 			return sql_error(sql, 01, "Cannot have a parameter (?) on both sides of an expression");
-		if (rel_convert_types(sql, &ls, &rs, 1, type_equal) < 0) 
+		if (rel_convert_types(sql, &ls, &rs, 1, type_equal_no_any) < 0) 
 			return NULL;
 		e = exp_compare(sql->sa, ls, rs, type);
 	} else {
@@ -2774,10 +2774,16 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		ek.card = card_set;
 		r = rel_subquery(sql, NULL, lo, ek, apply);
 		if (!r && rel && sql->session->status != -ERR_AMBIGUOUS) { /* correlation */
+			sql_rel *orel = rel;
+			sql_exp *ident = NULL;
+
 			/* reset error */
 			sql->session->status = 0;
 			sql->errstr[0] = '\0';
+			/* add identity early, used in the apply optimizer */
+			rel = rel_add_identity(sql, rel_dup(rel), &ident);
 			r = rel_subquery(sql, rel, lo, ek, apply);
+			rel_destroy(orel);
 			return r;
 		}
 		if (!r || !rel)
