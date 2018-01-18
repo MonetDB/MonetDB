@@ -2152,7 +2152,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 						r = NULL;
 					}
 				}
-				if (!l || !r || !(r=rel_check_type(sql, st, r, type_equal))) {
+				if (!l || !r || (z && !(r=rel_check_type(sql, st, r, type_equal)))) {
 					rel_destroy(right);
 					return NULL;
 				}
@@ -2186,6 +2186,8 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				for(n=vals->h; n; n = n->next) {
 					sql_exp *r = n->data, *ne;
 
+					if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) 
+						return NULL;
 					if (sc->token == SQL_NOT_IN)
 						ne = rel_binop_(sql, l, r, NULL, "<>", card_value);
 					else
@@ -2651,6 +2653,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 					if (z) {
 						rl = z;
 					} else {
+						if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) 
+							return NULL;
 						rl = rel_project_exp(sql->sa, exp_label(sql->sa, r, ++sql->label));
 						r = exp_column(sql->sa, exp_relname(r), exp_name(r), exp_subtype(r), r->card, has_nil(r), is_intern(r));
 						if (l_is_value && r_is_rel) {
