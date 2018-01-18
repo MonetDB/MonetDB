@@ -91,7 +91,7 @@ Ready.
 % 142 # length
 function user.s22_1():void;
     X_3:void := querylog.define("explain insert into answ\nselect * from complete where x>=1.0 and x <=2.0;":str, "default_pipe":str, 68:int);
-barrier X_157:bit := language.dataflow();
+barrier X_159:bit := language.dataflow();
     X_76:bat[:dbl] := bat.new(nil:dbl);
     X_6:int := sql.mvc();
     X_10:bat[:dbl] := sql.bind(X_6:int, "sys":str, "part1":str, "x":str, 0:int);
@@ -122,13 +122,13 @@ barrier X_157:bit := language.dataflow();
     language.pass(C_71:bat[:oid]);
     language.pass(X_48:bat[:dbl]);
     language.pass(C_38:bat[:oid]);
-exit X_157:bit;
+exit X_159:bit;
     X_88:int := sql.append(X_6:int, "sys":str, "answ":str, "x":str, X_80:bat[:dbl]);
-barrier X_164:bit := language.dataflow();
+barrier X_166:bit := language.dataflow();
     X_92:int := sql.append(X_88:int, "sys":str, "answ":str, "y":str, X_83:bat[:dbl]);
     X_95:int := sql.append(X_92:int, "sys":str, "answ":str, "z":str, X_86:bat[:dbl]);
     X_97:lng := aggr.count(X_86:bat[:dbl]);
-exit X_164:bit;
+exit X_166:bit;
     sql.affectedRows(X_95:int, X_97:lng);
 end user.s22_1;
 #inline               actions= 0 time=2 usec 
@@ -170,7 +170,7 @@ end user.s22_1;
 % 164 # length
 function user.s24_1():void;
     X_5:void := querylog.define("explain insert into answ\nselect * from complete\nwhere x between 0 and 2 and y between 0 and 2;":str, "default_pipe":str, 78:int);
-barrier X_170:bit := language.dataflow();
+barrier X_172:bit := language.dataflow();
     X_90:bat[:dbl] := bat.new(nil:dbl);
     X_8:int := sql.mvc();
     X_12:bat[:dbl] := sql.bind(X_8:int, "sys":str, "part1":str, "x":str, 0:int);
@@ -205,13 +205,13 @@ barrier X_170:bit := language.dataflow();
     language.pass(X_55:bat[:dbl]);
     language.pass(C_48:bat[:oid]);
     language.pass(X_22:bat[:dbl]);
-exit X_170:bit;
+exit X_172:bit;
     X_101:int := sql.append(X_8:int, "sys":str, "answ":str, "x":str, X_93:bat[:dbl]);
-barrier X_179:bit := language.dataflow();
+barrier X_181:bit := language.dataflow();
     X_105:int := sql.append(X_101:int, "sys":str, "answ":str, "y":str, X_96:bat[:dbl]);
     X_108:int := sql.append(X_105:int, "sys":str, "answ":str, "z":str, X_99:bat[:dbl]);
     X_110:lng := aggr.count(X_99:bat[:dbl]);
-exit X_179:bit;
+exit X_181:bit;
     sql.affectedRows(X_108:int, X_110:lng);
 end user.s24_1;
 #inline               actions= 0 time=2 usec 
