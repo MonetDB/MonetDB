@@ -1,5 +1,5 @@
 HAVE_LIBPY?pyUDF-crash.Bug-6508
-sqlitelogictest-wrong-aggregation-count.Bug-6510
+HAVE_HGE?sqlitelogictest-wrong-aggregation-count.Bug-6510
 sqlitelogictest-wrong-select-not-between.Bug-6511
 sqlitelogictest-wrong-mal-function-generation.Bug-6513
 sqlitelogictest-select-range-null.Bug-6514
@@ -7,3 +7,5 @@ insert-null-second-interval-0.Bug-6515
 case_with_orderby_limit.Bug-6512
 sqlitelogictest-bat-undefined.Bug-6516
 sqlitelogictest-overflow-in-conversion.Bug-6517
+sqlitelogictest-count-not-in.Bug-6518
+sqlitelogictest-algebra-join-not-in.Bug-6519
