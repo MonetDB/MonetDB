@@ -256,7 +256,7 @@ pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 {
 #ifdef HAVE_LIBPCRE
 	pcre *r;
-	const char err[BUFSIZ], *err_p = err;
+	const char *err_p = NULL;
 	int errpos = 0;
 	int options = PCRE_UTF8 | PCRE_MULTILINE;
 	if (insensitive)
@@ -583,7 +583,7 @@ static str
 pcre_replace(str *res, const char *origin_str, const char *pattern, const char *replacement, const char *flags)
 {
 #ifdef HAVE_LIBPCRE
-	const char err[BUFSIZ], *err_p = err, *err_p2 = err;
+	const char *err_p = NULL;
 	pcre *pcre_code = NULL;
 	pcre_extra *extra;
 	char *tmpres;
@@ -622,7 +622,7 @@ pcre_replace(str *res, const char *origin_str, const char *pattern, const char *
 	 * worth spending more time analyzing it in order to speed up the time
 	 * taken for matching.
 	 */
-	extra = pcre_study(pcre_code, 0, &err_p2);
+	extra = pcre_study(pcre_code, 0, &err_p);
 	pcre_fullinfo(pcre_code, extra, PCRE_INFO_CAPTURECOUNT, &i);
 	ovecsize = (i + 1) * 3;
 	if ((ovector = (int *) GDKmalloc(sizeof(int) * ovecsize)) == NULL) {
@@ -701,7 +701,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 {
 #ifdef HAVE_LIBPCRE
 	BATiter origin_strsi = bat_iterator(origin_strs);
-	const char err[BUFSIZ], *err_p = err, *err_p2 = err;
+	const char *err_p = NULL;
 	int i, j, k, len, errpos = 0, offset = 0;
 	int compile_options = PCRE_UTF8, exec_options = PCRE_NOTEMPTY;
 	pcre *pcre_code = NULL;
@@ -740,7 +740,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 	/* Since the compiled pattern is ging to be used several times, it is worth spending
 	 * more time analyzing it in order to speed up the time taken for matching.
 	 */
-	extra = pcre_study(pcre_code, 0, &err_p2);
+	extra = pcre_study(pcre_code, 0, &err_p);
 	pcre_fullinfo(pcre_code, extra, PCRE_INFO_CAPTURECOUNT, &i);
 	ovecsize = (i + 1) * 3;
 	if ((ovector = (int *) GDKzalloc(sizeof(int) * ovecsize)) == NULL) {
@@ -864,7 +864,7 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat, const char *fl
 	int i;
 	int pos;
 #ifdef HAVE_LIBPCRE
-	const char err[BUFSIZ], *err_p = err;
+	const char *err_p = NULL;
 	int errpos = 0;
 	int options = PCRE_UTF8;
 	pcre *re;
@@ -1312,7 +1312,7 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 		} else {
 			int pos;
 #ifdef HAVE_LIBPCRE
-			const char err[BUFSIZ], *err_p = err;
+			const char *err_p = NULL;
 			int errpos = 0;
 			int options = PCRE_UTF8 | PCRE_DOTALL;
 			pcre *re;
@@ -1594,7 +1594,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 #ifdef HAVE_LIBPCRE
 	pcre *pcrere = NULL;
 	pcre_extra *pcreex = NULL;
-	const char errbuf[BUFSIZ], *err_p = errbuf;
+	const char *err_p = NULL;
 	int errpos;
 	int pcreopt = PCRE_UTF8 | PCRE_MULTILINE;
 #else
