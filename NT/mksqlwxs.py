@@ -96,9 +96,10 @@ def main():
     print(r'            <Directory Id="include" Name="include">')
     print(r'              <Directory Id="monetdb" Name="monetdb">')
     id = comp(features, id, 16,
-              [r'include\monetdb\mapi.h',
-               r'include\monetdb\stream.h',
-               r'include\monetdb\stream_socket.h'],
+              sorted([r'include\monetdb\%s' % x for x in filter(lambda x: (x.startswith('gdk') or x.startswith('monet') or x.startswith('mal')) and x.endswith('.h'), os.listdir(os.path.join(sys.argv[3], 'include', 'monetdb')))] +
+                     [r'include\monetdb\mapi.h',
+                      r'include\monetdb\stream.h',
+                      r'include\monetdb\stream_socket.h']),
               vital = 'no')
     print(r'              </Directory>')
     print(r'            </Directory>')
@@ -118,7 +119,9 @@ def main():
               [r'lib\monetdb5\%s' % x for x in sorted(filter(lambda x: x.startswith('lib_') and x.endswith('.dll') and ('geom' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     print(r'              </Directory>')
     id = comp(features, id, 14,
-              [r'lib\libmapi.lib',
+              [r'lib\libbat.lib',
+               r'lib\libmapi.lib',
+               r'lib\libmonetdb5.lib',
                r'lib\libstream.lib',
                r'%s\lib\iconv.lib' % makedefs['LIBICONV'],
                r'%s\lib\libbz2.lib' % makedefs['LIBBZIP2'],

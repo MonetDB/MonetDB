@@ -1535,7 +1535,7 @@ exps_bind_column( list *exps, const char *cname, int *ambiguous )
 					sql_exp *ce = he->value;
 
 					if (ce->name && strcmp(ce->name, cname) == 0) {
-						if (e) {
+						if (e && e != ce && ce->rname && e->rname && strcmp(ce->rname, e->rname) != 0 ) {
 							if (ambiguous)
 								*ambiguous = 1;
 							MT_lock_unset(&exps->ht_lock);

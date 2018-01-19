@@ -1250,14 +1250,14 @@ rel_ddl_table_get(sql_rel *r)
 }
 
 static sql_exp *
-exps_find_identity(list *exps)
+exps_find_identity(list *exps, sql_rel *p)
 {
 	node *n;
 
 	for (n=exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		if (is_identity(e, NULL))
+		if (is_identity(e, p))
 			return e;
 	}
 	return NULL;
@@ -1266,17 +1266,18 @@ exps_find_identity(list *exps)
 static sql_rel *
 _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 {
-	list *exps = rel_projections(sql, rel, NULL, 1, 1);
+	list *exps = rel_projections(sql, rel, NULL, 1, 2);
 	sql_exp *e;
 
 	if (list_length(exps) == 0) {
 		*exp = NULL;
 		return rel;
 	}
-	rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 1));
+	rel = rel_project(sql->sa, rel, exps);
 	e = rel->exps->h->data;
 	e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), rel->card, has_nil(e), is_intern(e));
 	e = exp_unop(sql->sa, e, sql_bind_func(sql->sa, NULL, "identity", exp_subtype(e), NULL, F_FUNC));
+	set_intern(e);
 	e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
 	*exp = exp_label(sql->sa, e, ++sql->label);
 	rel_project_add_exp(sql, rel, e);
@@ -1286,7 +1287,7 @@ _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 sql_rel *
 rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 {
-	if (rel && is_project(rel->op) && (*exp = exps_find_identity(rel->exps)) != NULL)
+	if (rel && is_project(rel->op) && (*exp = exps_find_identity(rel->exps, rel->l)) != NULL)
 		return rel;
 	return _rel_add_identity(sql, rel, exp);
 }
