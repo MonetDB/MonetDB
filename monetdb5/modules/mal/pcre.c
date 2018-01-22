@@ -1886,29 +1886,31 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid,
 str
 LIKEjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const str *esc, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate)
 {
-	(void)nil_matches;
-	(void)estimate;
+	(void) nil_matches;
+	(void) estimate;
 	return PCREjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *esc, 0);
 }
 
 str
 LIKEjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate)
 {
-	const str esc = "";
-	return LIKEjoin(r1, r2, lid, rid, &esc, slid, srid, nil_matches, estimate);
+	(void) nil_matches;
+	(void) estimate;
+	return PCREjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, "", 0);
 }
 
 str
 ILIKEjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const str *esc, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate)
 {
-	(void)nil_matches;
-	(void)estimate;
+	(void) nil_matches;
+	(void) estimate;
 	return PCREjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *esc, 1);
 }
 
 str
 ILIKEjoin1(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate)
 {
-	const str esc = "";
-	return ILIKEjoin(r1, r2, lid, rid, &esc, slid,srid,nil_matches, estimate);
+	(void) nil_matches;
+	(void) estimate;
+	return PCREjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, "", 1);
 }
