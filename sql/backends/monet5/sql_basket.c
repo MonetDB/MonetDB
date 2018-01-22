@@ -337,7 +337,7 @@ BSKTbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = BSKTbindColumn(sch,tbl,col);
 	*ret = 0;
 	if( b){
-		if( baskets[bskt].window >0){
+		if( baskets[bskt].window >0 && cntxt->iscqscheduleruser){
 			bn = VIEWcreate(0,b);
 			if( bn){
 				VIEWbounds(b,bn, 0, baskets[bskt].window);
