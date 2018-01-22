@@ -312,7 +312,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 		throw(SQL,"sql.droptable", SQLSTATE(42000) "DROP TABLE: cannot drop system table '%s'", tname);
 	} else if (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP)) {
 		throw(SQL,"sql.droptable",SQLSTATE(42000) "DROP TABLE: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
-	} else if (isStream(t) && CQlocateBasketExternal(sname, tname)) {
+	} else if (isStream(t) && CQtryDeleteBasket(sname, tname)) {
 		throw(SQL,"sql.droptable",SQLSTATE(42000) "DROP TABLE: unable to drop stream table '%s': there are pending continuous queries on it", tname);
 	}
 	if (!drop_action && t->keys.set) {

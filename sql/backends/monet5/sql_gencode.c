@@ -949,7 +949,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	InstrPtr curInstr = NULL, p = NULL, q = NULL;
 	Client c = be->client;
 	Symbol backup = NULL, curPrg = NULL;
-	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg), no_inline = 0;
+	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg), no_inline = 0, bsktseen = 0;
 	sql_rel *r;
 
 	/* nothing to do for internal and ready (not recompiling) functions */
@@ -1041,14 +1041,26 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	sideeffects = 0;
 	for (i = 1; i < curBlk->stop; i++) {
 		p = getInstrPtr(curBlk, i);
-		if (getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef)
+		if (getFunctionId(p) == bindRef) {
+			char *sname = getVarConstant(curBlk, getArg(p, p->retc + 1)).val.sval;
+			char *tname = getVarConstant(curBlk, getArg(p, p->retc + 2)).val.sval;
+			sql_schema *s = mvc_bind_schema(m, sname);
+			if( s ) {
+				sql_table *t = mvc_bind_table(m, s, tname);
+				if (t && isStream(t))
+					bsktseen++;
+			}
 			continue;
+		}
+		if (getFunctionId(p) == bindidxRef) {
+			continue;
+		}
 		sideeffects = sideeffects || hasSideEffects(curBlk, p, FALSE); 
 		no_inline |= (getModuleId(p) == malRef && getFunctionId(p) == multiplexRef);
 		if (p->token == RETURNsymbol || p->token == YIELDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol)
 			retseen++;
 	}
-	if (i == curBlk->stop && retseen == 1 && f->type != F_UNION && !no_inline)
+	if (i == curBlk->stop && retseen == 1 && f->type != F_UNION && !no_inline && bsktseen == 0)
 		curBlk->inlineProp = 1;
 	if (sideeffects)
 		curBlk->unsafeProp = 1;

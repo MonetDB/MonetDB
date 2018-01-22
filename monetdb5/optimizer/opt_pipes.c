@@ -67,7 +67,6 @@ static struct PIPELINES {
 	{"default_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
-	 "optimizer.cquery();"
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
@@ -96,6 +95,7 @@ static struct PIPELINES {
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
 	 "optimizer.wlc();"
+	 "optimizer.cquery();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
 /*
@@ -104,7 +104,6 @@ static struct PIPELINES {
 	{"volcano_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
-	 "optimizer.cquery();"
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
@@ -134,6 +133,7 @@ static struct PIPELINES {
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
 	 "optimizer.wlc();"
+	 "optimizer.cquery();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
 /* The no_mitosis pipe line is (and should be kept!) identical to the
@@ -149,7 +149,6 @@ static struct PIPELINES {
 	{"no_mitosis_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
-	 "optimizer.cquery();"
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
@@ -177,6 +176,7 @@ static struct PIPELINES {
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
 	 "optimizer.wlc();"
+	 "optimizer.cquery();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
 /* The sequential pipe line is (and should be kept!) identical to the
@@ -192,7 +192,6 @@ static struct PIPELINES {
 	{"sequential_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
-	 "optimizer.cquery();"
 	 "optimizer.costModel();"
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
@@ -219,6 +218,7 @@ static struct PIPELINES {
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
 	 "optimizer.wlc();"
+	 "optimizer.cquery();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, NULL, 1},
 /* Experimental pipelines stressing various components under

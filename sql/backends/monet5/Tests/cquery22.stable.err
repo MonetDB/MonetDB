@@ -1,0 +1,52 @@
+stderr of test 'cquery22` in directory 'sql/backends/monet5` itself:
+
+
+# 15:42:42 >  
+# 15:42:42 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34536" "--set" "mapi_usock=/var/tmp/mtest-14134/.s.monetdb.34536" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-trails/BUILD/var/MonetDB/mTests_sql_backends_monet5" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 15:42:42 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-trails/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 34536
+# cmdline opt 	mapi_usock = /var/tmp/mtest-14134/.s.monetdb.34536
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-trails/BUILD/var/MonetDB/mTests_sql_backends_monet5
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 553648138
+
+# 15:42:42 >  
+# 15:42:42 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14134" "--port=34536"
+# 15:42:42 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-14134/.s.monetdb.34536
+QUERY = start continuous function calculateaverage() with cycles 2 as calcavg; --error
+ERROR = !The continuous function calcavg is already registered.
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-14134/.s.monetdb.34536
+QUERY = start continuous function calculateaverage(12) with cycles 4 as calcavg; --error
+ERROR = !The continuous function calcavg is already registered.
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-14134/.s.monetdb.34536
+QUERY = start continuous function calculateaverage(10) as calc; --error
+ERROR = !The continuous function calc is already registered.
+CODE  = 3F000
+MAPI  = (monetdb) /var/tmp/mtest-14134/.s.monetdb.34536
+QUERY = start continuous function calculateaverage() as othercalc; --error
+ERROR = !The continuous function othercalc is already registered.
+CODE  = 3F000
+
+# 15:42:44 >  
+# 15:42:44 >  "Done."
+# 15:42:44 >  
+

@@ -52,7 +52,7 @@
 #include "opt_prelude.h"
 #include "mal_authorize.h"
 #include "mtime.h"
-#include "../../../monetdb5/mal/mal_client.h"
+#include "mal_client.h"
 
 static const str statusname[8] = {"starting", "paused", "running", "pausing", "error", "stopping", "stopping", "stopping"};
 
@@ -291,9 +291,9 @@ CQlocateUDF(sql_func *f) //check if an UDF is being used
 }
 
 int
-CQlocateBasketExternal(str schname, str tblname) //check if a stream table is being used by a continuous query
+CQtryDeleteBasket(str schname, str tblname) //check if a stream table is being used by a continuous query
 {
-	int i, j, res = 0;
+	int i, j, res = 0, bskt;
 
 	MT_lock_set(&ttrLock);
 	for( i=0; i < pnettop && !res; i++){
@@ -302,6 +302,11 @@ CQlocateBasketExternal(str schname, str tblname) //check if a stream table is be
 				strcmp(tblname, baskets[pnet[i].baskets[j]].table->base.name) == 0 )
 				res = 1;
 		}
+	}
+	if(!res) { //clean the basket
+		bskt = BSKTlocate(schname, tblname);
+		if (bskt != 0)
+			BSKTclean(bskt);
 	}
 	MT_lock_unset(&ttrLock);
 	return res;
@@ -355,7 +360,7 @@ CQanalysis(Client cntxt, MalBlkPtr mb, int idx)
 	p = getInstrPtr(mb, 0);
 	for (i = 0; msg == MAL_SUCCEED && i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
-		if (getModuleId(p) == basketRef && (getFunctionId(p) == registerRef || getFunctionId(p) == bindRef)){
+		if (getModuleId(p) == basketRef && getFunctionId(p) == registerRef){
 			sch = getVarConstant(mb, getArg(p,2)).val.sval;
 			tbl = getVarConstant(mb, getArg(p,3)).val.sval;
 			binout = getVarConstant(mb, getArg(p,4)).val.ival;
@@ -661,7 +666,7 @@ CQregister(Client cntxt, str sname, str fname, int argc, atom **args, str alias,
 	}
 
 	idx = CQlocateAlias(ralias);
-	if(idx != pnettop && pnet[idx].status != CQDELETE) {
+	if(idx != pnettop || (idx < pnettop && pnet[idx].status != CQDELETE)) {
 		msg = createException(SQL,"cquery.register",SQLSTATE(3F000) "The continuous %s %s is already registered.\n",
 				err_message, ralias);
 		FREE_CQ_MB(unlock)
