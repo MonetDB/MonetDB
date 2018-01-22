@@ -27,10 +27,6 @@
 #ifdef HAVE_LIBPCRE
 #include <pcre.h>
 
-#if PCRE_MAJOR < 8 || (PCRE_MAJOR == 8 && PCRE_MINOR < 13)
-#define pcre_free_study my_pcre_free
-#endif
-
 #else
 
 #include <regex.h>
@@ -223,34 +219,6 @@ re_destroy( RE *p)
 	}
 }
 
-#define m2p(p) (pcre*)(((size_t*)p)+1)
-#define p2m(p) (pcre*)(((size_t*)p)-1)
-
-#ifdef HAVE_LIBPCRE
-static void *
-my_pcre_malloc(size_t s)
-{
-	size_t *sz = (size_t *) GDKmalloc(s + sizeof(size_t));
-
-	if ( sz == NULL)
-		return NULL;
-	*sz = s + sizeof(size_t);
-	return (void *) (sz + 1);
-}
-
-static void
-my_pcre_free(void *blk)
-{
-	size_t *sz;
-
-	if (blk == NULL)
-		return;
-	sz = (size_t *) blk;
-	sz -= 1;
-	GDKfree(sz);
-}
-#endif
-
 static str
 pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 {
@@ -267,7 +235,7 @@ pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 			" with\n'%s'\nat %d in\n'%s'.\n",
 				err_p, errpos, pattern);
 	}
-	*(pcre **) res = p2m(r);
+	*res = r;
 	return MAL_SUCCEED;
 #else
 	(void) res;
@@ -350,7 +318,7 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int 
 			  OPERATION_FAILED ": compilation of pattern \"%s\" failed\n", pat);
 	pe = pcre_study(re, 0, &error);
 	if (error != NULL) {
-		my_pcre_free(re);
+		pcre_free(re);
 		pcre_free_study(pe);
 		throw(MAL, "pcre.likeselect",
 			  OPERATION_FAILED ": studying pattern \"%s\" failed\n", pat);
@@ -364,7 +332,7 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int 
 	bn = COLnew(0, TYPE_oid, s ? BATcount(s) : BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 #ifdef HAVE_LIBPCRE
-		my_pcre_free(re);
+		pcre_free(re);
 		pcre_free_study(pe);
 #else
 		regfree(&re);
@@ -414,7 +382,7 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int 
 			scanloop(v && *v != '\200' && BODY);
 	}
 #ifdef HAVE_LIBPCRE
-	my_pcre_free(re);
+	pcre_free(re);
 	pcre_free_study(pe);
 #else
 	regfree(&re);
@@ -432,7 +400,7 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int 
   bunins_failed:
 	BBPreclaim(bn);
 #ifdef HAVE_LIBPCRE
-	my_pcre_free(re);
+	pcre_free(re);
 	pcre_free_study(pe);
 #else
 	regfree(&re);
@@ -626,7 +594,7 @@ pcre_replace(str *res, const char *origin_str, const char *pattern, const char *
 	pcre_fullinfo(pcre_code, extra, PCRE_INFO_CAPTURECOUNT, &i);
 	ovecsize = (i + 1) * 3;
 	if ((ovector = (int *) GDKmalloc(sizeof(int) * ovecsize)) == NULL) {
-		my_pcre_free(pcre_code);
+		pcre_free(pcre_code);
 		throw(MAL, "pcre_replace",MAL_MALLOC_FAIL);
 	}
 
@@ -648,7 +616,7 @@ pcre_replace(str *res, const char *origin_str, const char *pattern, const char *
 	if (ncaptures > 0){
 		tmpres = GDKmalloc(len_origin_str - len_del + (len_replacement * ncaptures) + 1);
 		if (!tmpres) {
-			my_pcre_free(pcre_code);
+			pcre_free(pcre_code);
 			GDKfree(ovector);
 			throw(MAL, "pcre_replace", MAL_MALLOC_FAIL);
 		}
@@ -682,7 +650,7 @@ pcre_replace(str *res, const char *origin_str, const char *pattern, const char *
 		tmpres = GDKstrdup(origin_str);
 	}
 
-	my_pcre_free(pcre_code);
+	pcre_free(pcre_code);
 	GDKfree(ovector);
 	*res = tmpres;
 	return MAL_SUCCEED;
@@ -744,13 +712,13 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 	pcre_fullinfo(pcre_code, extra, PCRE_INFO_CAPTURECOUNT, &i);
 	ovecsize = (i + 1) * 3;
 	if ((ovector = (int *) GDKzalloc(sizeof(int) * ovecsize)) == NULL) {
-		my_pcre_free(pcre_code);
+		pcre_free(pcre_code);
 		throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
 	}
 
 	tmpbat = COLnew(origin_strs->hseqbase, TYPE_str, BATcount(origin_strs), TRANSIENT);
 	if( tmpbat==NULL) {
-		my_pcre_free(pcre_code);
+		pcre_free(pcre_code);
 		GDKfree(ovector);
 		throw(MAL,"pcre.replace",MAL_MALLOC_FAIL);
 	}
@@ -774,7 +742,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 		if (ncaptures > 0){
 			replaced_str = GDKmalloc(len_origin_str - len_del + (len_replacement * ncaptures) + 1);
 			if (replaced_str == NULL) {
-				my_pcre_free(pcre_code);
+				pcre_free(pcre_code);
 				pcre_free_study(extra);
 				GDKfree(ovector);
 				BBPreclaim(tmpbat);
@@ -808,7 +776,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 			k += len;
 			replaced_str[k] = '\0';
 			if (BUNappend(tmpbat, replaced_str, FALSE) != GDK_SUCCEED) {
-				my_pcre_free(pcre_code);
+				pcre_free(pcre_code);
 				pcre_free_study(extra);
 				GDKfree(ovector);
 				GDKfree(replaced_str);
@@ -818,7 +786,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 			GDKfree(replaced_str);
 		} else { /* no captured substrings, copy the original string into new bat */
 			if (BUNappend(tmpbat, origin_str, FALSE) != GDK_SUCCEED) {
-				my_pcre_free(pcre_code);
+				pcre_free(pcre_code);
 				pcre_free_study(extra);
 				GDKfree(ovector);
 				BBPreclaim(tmpbat);
@@ -828,7 +796,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 	}
 
 	pcre_free_study(extra);
-	my_pcre_free(pcre_code);
+	pcre_free(pcre_code);
 	GDKfree(ovector);
 	*res = tmpbat;
 	return MAL_SUCCEED;
@@ -846,15 +814,6 @@ str
 pcre_init(void *ret)
 {
 	(void) ret;
-#ifdef HAVE_LIBPCRE
-#if defined(HAVE_EMBEDDED) && defined(WIN32)
-	// TODO: what should we do here?
-#else
-	pcre_malloc = my_pcre_malloc;
-	pcre_free = my_pcre_free;
-#endif
-#else
-#endif
 	return NULL;
 }
 
@@ -924,7 +883,7 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat, const char *fl
 	}
 #ifdef HAVE_LIBPCRE
 	pos = pcre_exec(re, NULL, val, (int) strlen(val), 0, 0, NULL, 0);
-	my_pcre_free(re);
+	pcre_free(re);
 #else
 	retval = regexec(&re, val, (size_t) 0, NULL, 0);
 	pos = retval == REG_NOMATCH ? -1 : (retval == REG_ENOSYS ? -2 : 0);
@@ -1105,7 +1064,7 @@ PCREindex(int *res, const pcre *pattern, const str *s)
 	int v[2];
 
 	v[0] = v[1] = *res = 0;
-	if (pcre_exec(m2p(pattern), NULL, *s, (int) strlen(*s), 0, 0, v, 2) >= 0) {
+	if (pcre_exec(pattern, NULL, *s, (int) strlen(*s), 0, 0, v, 2) >= 0) {
 		*res = v[1];
 	}
 	return MAL_SUCCEED;
@@ -1130,7 +1089,7 @@ PCREpatindex(int *ret, const str *pat, const str *val)
 		return msg;
 	GDKfree(ppat);
 	msg = PCREindex(ret, re, val);
-	GDKfree(re);
+	pcre_free(re);
 	return msg;
 }
 
@@ -1378,7 +1337,7 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 				i++;
 			}
 #ifdef HAVE_LIBPCRE
-			my_pcre_free(re);
+			pcre_free(re);
 #else
 			regfree(&re);
 #endif
@@ -1798,7 +1757,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		}
 		if (pcrere) {
 #ifdef HAVE_LIBPCRE
-			my_pcre_free(pcrere);
+			pcre_free(pcrere);
 			pcre_free_study(pcreex);
 			pcrere = NULL;
 			pcreex = NULL;
@@ -1844,7 +1803,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		GDKfree(pcrepat);
 #ifdef HAVE_LIBPCRE
 	if (pcrere)
-		my_pcre_free(pcrere);
+		pcre_free(pcrere);
 	if (pcreex)
 		pcre_free_study(pcreex);
 #else
