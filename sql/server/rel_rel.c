@@ -1,3 +1,10 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ */
 
 #include "monetdb_config.h"
 #include "rel_rel.h"
@@ -688,6 +695,10 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 		sql_column *c = cn->data;
 		sql_exp *e = exp_alias(sa, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
 
+		if (e == NULL) {
+			rel_destroy(rel);
+			return NULL;
+		}
 		if (c->t->pkey && ((sql_kc*)c->t->pkey->k.columns->h->data)->c == c) {
 			p = e->p = prop_create(sa, PROP_HASHCOL, e->p);
 			p->value = c->t->pkey;
