@@ -695,6 +695,10 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 		sql_column *c = cn->data;
 		sql_exp *e = exp_alias(sa, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
 
+		if (e == NULL) {
+			rel_destroy(rel);
+			return NULL;
+		}
 		if (c->t->pkey && ((sql_kc*)c->t->pkey->k.columns->h->data)->c == c) {
 			p = e->p = prop_create(sa, PROP_HASHCOL, e->p);
 			p->value = c->t->pkey;
