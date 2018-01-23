@@ -54,7 +54,7 @@
 #include "mtime.h"
 #include "mal_client.h"
 
-static const str statusname[8] = {"starting", "paused", "running", "pausing", "error", "stopping", "stopping", "stopping"};
+static const str statusname[8] = {"starting", "running", "running", "paused", "error", "stopping", "stopping", "stopping"};
 
 static str CQstartScheduler(void);
 static int pnstatus = CQINIT;
