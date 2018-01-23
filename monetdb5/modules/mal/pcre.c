@@ -649,7 +649,7 @@ pcre_replace(str *res, const char *origin_str, const char *pattern, const char *
 	} else { /* no captured substrings, return the original string*/
 		tmpres = GDKstrdup(origin_str);
 		if (!tmpres) {
-			my_pcre_free(pcre_code);
+			pcre_free(pcre_code);
 			GDKfree(ovector);
 			throw(MAL, "pcre_replace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
