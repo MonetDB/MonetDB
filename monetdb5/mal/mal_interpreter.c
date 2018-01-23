@@ -1137,8 +1137,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					for (j = 0; j < l->retc; j++)
 						if (getArg(l, j) == exceptionVar)
 							break;
-						else if (getArgName(mb, l, j) ||
-								 strcmp(getArgName(mb, l, j), "ANYexception") == 0)
+						else if (strcmp(getArgName(mb, l, j), "ANYexception") == 0)
 							break;
 					if (j < l->retc)
 						break;
