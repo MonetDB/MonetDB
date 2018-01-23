@@ -104,16 +104,16 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str msg = MAL_SUCCEED;
 	lng clk;
 
-    	if (cntxt->mode == FINISHCLIENT)
-        	throw(MAL, "optimizer", "prematurely stopped client");
+	if (cntxt->mode == FINISHCLIENT)
+		throw(MAL, "optimizer", SQLSTATE(42000) "prematurely stopped client");
 
 	if( p == NULL)
-		throw(MAL, "opt_wrapper", "missing optimizer statement");
+		throw(MAL, "opt_wrapper", SQLSTATE(HY002) "missing optimizer statement");
 
 	if( mb->errors)
-		throw(MAL, "opt_wrapper", "MAL block contains errors");
+		throw(MAL, "opt_wrapper", SQLSTATE(42000) "MAL block contains errors");
 	snprintf(optimizer,256,"%s", fcnnme = getFunctionId(p));
-	
+
 	OPTIMIZERDEBUG 
 		fprintf(stderr,"=APPLY OPTIMIZER %s\n",fcnnme);
 	if( p && p->argc > 1 ){
@@ -122,7 +122,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			!isVarConstant(mb,getArg(p,1)) ||
 			!isVarConstant(mb,getArg(p,2))
 			)
-			throw(MAL, optimizer, ILLARG_CONSTANTS);
+			throw(MAL, optimizer, SQLSTATE(42000) ILLARG_CONSTANTS);
 
 		if( stk != 0){
 			modnme= *getArgReference_str(stk,p,1);
@@ -135,7 +135,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		s= findSymbol(cntxt->usermodule, putName(modnme),putName(fcnnme));
 
 		if( s == NULL) 
-			throw(MAL, optimizer, RUNTIME_OBJECT_UNDEFINED ":%s.%s", modnme, fcnnme);
+			throw(MAL, optimizer, SQLSTATE(HY002) RUNTIME_OBJECT_UNDEFINED ":%s.%s", modnme, fcnnme);
 		mb = s->def;
 		stk= 0;
 	} else if( p ) 
@@ -148,18 +148,18 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			codes[i].timing += GDKusec() - clk;
 			codes[i].calls++;
 			if (msg) 
-				throw(MAL, optimizer, "Error in optimizer %s", optimizer);
+				throw(MAL, optimizer, SQLSTATE(42000) "Error in optimizer %s", optimizer);
 			break;	
 		}
 	if (codes[i].nme == 0)
-		throw(MAL, optimizer, "Optimizer implementation '%s' missing", fcnnme);
+		throw(MAL, optimizer, SQLSTATE(HY002) "Optimizer implementation '%s' missing", fcnnme);
 
 	OPTIMIZERDEBUG {
 		fprintf(stderr,"=FINISHED %s  %d\n",optimizer, actions);
 		fprintFunction(stderr,mb,0,LIST_MAL_DEBUG );
 	}
 	if ( mb->errors)
-		throw(MAL, optimizer, PROGRAM_GENERAL ":%s.%s", modnme, fcnnme);
+		throw(MAL, optimizer, SQLSTATE(42000) PROGRAM_GENERAL ":%s.%s", modnme, fcnnme);
 	return MAL_SUCCEED;
 }
 

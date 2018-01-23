@@ -262,11 +262,11 @@ addPipeDefinition(Client cntxt, const char *name, const char *pipe)
 
 	if (i == MAXOPTPIPES) {
 		MT_lock_unset(&pipeLock);
-		throw(MAL, "optimizer.addPipeDefinition", "Out of slots");
+		throw(MAL, "optimizer.addPipeDefinition", SQLSTATE(HY001) "Out of slots");
 	}
 	if (pipes[i].name && pipes[i].builtin) {
 		MT_lock_unset(&pipeLock);
-		throw(MAL, "optimizer.addPipeDefinition", "No overwrite of built in allowed");
+		throw(MAL, "optimizer.addPipeDefinition", SQLSTATE(42000) "No overwrite of built in allowed");
 	}
 
 	/* save old value */
@@ -352,7 +352,7 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 			BBPreclaim(b);
 			BBPreclaim(bn);
 			BBPreclaim(bs);
-			throw(MAL,"getPipeCatalog","#MAL.getAddress address of '%s' not found",pipes[i].name);
+			throw(MAL,"getPipeCatalog", SQLSTATE(HY002) "#MAL.getAddress address of '%s' not found",pipes[i].name);
 		}
 		if (BUNappend(b, pipes[i].name, FALSE) != GDK_SUCCEED ||
 			BUNappend(bn, pipes[i].def, FALSE) != GDK_SUCCEED ||
@@ -378,7 +378,7 @@ validatePipe(MalBlkPtr mb)
 	InstrPtr p;
 
 	if (mb == NULL )
-		throw(MAL, "optimizer.validate", "missing optimizer mal block\n");
+		throw(MAL, "optimizer.validate", SQLSTATE(42000) "missing optimizer mal block\n");
 	p = getInstrPtr(mb,1);
 	if (getFunctionId(p) == NULL || idcmp(getFunctionId(p), "inline"))
 		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'inline' should be the first\n");
@@ -501,7 +501,7 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 			break;
 
 	if (i == MAXOPTPIPES)
-		throw(MAL, "optimizer.addOptimizerPipe", "Out of slots");
+		throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(HY001) "Out of slots");
 
 	if (pipes[i].mb == NULL)
 		msg = compileOptimizer(cntxt, name);
@@ -513,7 +513,7 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 				continue;
 			p = copyInstruction(q);
 			if (!p) { // oh malloc you cruel mistress
-				throw(MAL, "optimizer.addOptimizerPipe", "Out of memory");
+				throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(HY001) "Out of memory");
 			}
 			for (k = 0; k < p->argc; k++)
 				getArg(p, k) = cloneVariable(mb, pipes[i].mb, getArg(p, k));

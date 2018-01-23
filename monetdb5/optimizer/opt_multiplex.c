@@ -48,9 +48,9 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (i = 0; i < pci->retc; i++) {
 		tt = getBatType(getArgType(mb, pci, i));
 		if (tt== TYPE_any)
-			throw(MAL, "optimizer.multiplex", "Target tail type is missing");
+			throw(MAL, "optimizer.multiplex", SQLSTATE(HY002) "Target tail type is missing");
 		if (isAnyExpression(getArgType(mb, pci, i)))
-			throw(MAL, "optimizer.multiplex", "Target type is missing");
+			throw(MAL, "optimizer.multiplex", SQLSTATE(HY002) "Target type is missing");
 	}
 
 	mod = VALget(&getVar(mb, getArg(pci, pci->retc))->value);
@@ -71,7 +71,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 		}
 	if( i == pci->argc)
-		throw(MAL, "optimizer.multiplex", "Iterator BAT type is missing");
+		throw(MAL, "optimizer.multiplex", SQLSTATE(HY002) "Iterator BAT type is missing");
 
 #ifdef DEBUG_OPT_MULTIPLEX
 	{	char *tpenme;
