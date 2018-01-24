@@ -185,10 +185,10 @@ HASHcollisions(BAT *b, Hash *h)
  * on disk; or a valid pointer to a loaded hash.  These values are
  * maintained here, in the HASHdestroy and HASHfree functions, and in
  * BBPdiskscan during initialization. */
-int
+bool
 BATcheckhash(BAT *b)
 {
-	int ret;
+	bool ret;
 	lng t = 0;
 
 	ALGODEBUG t = GDKusec();
@@ -247,7 +247,7 @@ BATcheckhash(BAT *b)
 					b->thash = h;
 					ALGODEBUG fprintf(stderr, "#BATcheckhash: reusing persisted hash %s\n", BATgetId(b));
 					MT_lock_unset(&GDKhashLock(b->batCacheid));
-					return 1;
+					return true;
 				}
 				close(fd);
 				/* unlink unusable file */
@@ -605,7 +605,7 @@ HASHfree(BAT *b)
 	}
 }
 
-int
+bool
 HASHgonebad(BAT *b, const void *v)
 {
 	Hash *h = b->thash;
@@ -613,7 +613,7 @@ HASHgonebad(BAT *b, const void *v)
 	BUN cnt, hit;
 
 	if (h == NULL)
-		return 1;	/* no hash is bad hash? */
+		return true;	/* no hash is bad hash? */
 
 	if (h->mask * 2 < BATcount(b)) {
 		int (*cmp) (const void *, const void *) = ATOMcompare(b->ttype);
@@ -622,11 +622,11 @@ HASHgonebad(BAT *b, const void *v)
 			hit += ((*cmp) (v, BUNtail(bi, (BUN) i)) == 0);
 
 		if (cnt / hit > 4)
-			return 1;	/* linked list too long */
+			return true;	/* linked list too long */
 
 		/* in this case, linked lists are long but contain the
 		 * desired values such hash tables may be useful for
 		 * locating all duplicates */
 	}
-	return 0;		/* a-ok */
+	return false;		/* a-ok */
 }

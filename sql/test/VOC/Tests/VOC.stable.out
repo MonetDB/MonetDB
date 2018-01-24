@@ -68094,8 +68094,8 @@ Ready.
 #(select 1 from voyages v
 #where c.trip = v.trip and v.boatname = 'AMSTERDAM'
 #and v.departure_harbour ='Texel');
-% voc.L10 # table_name
-% L7 # name
+% voc.L12 # table_name
+% L11 # name
 % bigint # type
 % 7 # length
 [ 1305366	]
@@ -68139,7 +68139,7 @@ Ready.
 #   SELECT 'total' AS type, total.* FROM total
 #) AS onboard_people_table;
 #SELECT type, COUNT(*) AS total FROM onboard_people GROUP BY type ORDER BY type;
-% .onboard_people,	.L56 # table_name
+% .onboard_people,	.L63 # table_name
 % type,	total # name
 % char,	bigint # type
 % 10,	4 # length

@@ -101,7 +101,7 @@ epilogue(int cnt, bat *subcommit)
 			BAT *b = BBP_cache(bid);
 			if (b) {
 				/* check mmap modes */
-				if (BATcheckmodes(b, TRUE) != GDK_SUCCEED)
+				if (BATcheckmodes(b, true) != GDK_SUCCEED)
 					fprintf(stderr, "#epilogue: BATcheckmodes failed\n");
 			}
 		}

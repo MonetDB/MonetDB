@@ -792,7 +792,7 @@ BATsave(BAT *bd)
  * TODO: move to gdk_bbp.c
  */
 BAT *
-BATload_intern(bat bid, int lock)
+BATload_intern(bat bid, bool lock)
 {
 	const char *nme;
 	BAT *b;
@@ -878,7 +878,7 @@ BATdelete(BAT *b)
 	}
 	if (b->batCopiedtodisk || (b->theap.storage != STORE_MEM)) {
 		if (b->ttype != TYPE_void &&
-		    HEAPdelete(&b->theap, o, "tail") &&
+		    HEAPdelete(&b->theap, o, "tail") != GDK_SUCCEED &&
 		    b->batCopiedtodisk)
 			IODEBUG fprintf(stderr, "#BATdelete(%s): bun heap\n", BATgetId(b));
 	} else if (b->theap.base) {
@@ -887,7 +887,8 @@ BATdelete(BAT *b)
 	if (b->tvheap) {
 		assert(b->tvheap->parentid == bid);
 		if (b->batCopiedtodisk || (b->tvheap->storage != STORE_MEM)) {
-			if (HEAPdelete(b->tvheap, o, "theap") && b->batCopiedtodisk)
+			if (HEAPdelete(b->tvheap, o, "theap") != GDK_SUCCEED &&
+			    b->batCopiedtodisk)
 				IODEBUG fprintf(stderr, "#BATdelete(%s): tail heap\n", BATgetId(b));
 		} else {
 			HEAPfree(b->tvheap, 1);

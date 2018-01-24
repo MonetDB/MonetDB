@@ -1,0 +1,41 @@
+The following packages (DEBs) are or can be used by MonetDB.
+
+These packages are required.
+
+automake
+bison
+gettext
+libssl-dev
+libtool
+libxml2-dev
+m4
+make
+mercurial
+pkg-config
+
+These packages are optional, but required when building the MonetDB
+.deb packages.
+
+libatomic-ops-dev	# optional, but recommended
+libbam-dev		# optional: read BAM and SAM files
+libbz2-dev		# optional: read and write .bz2 compressed files
+libcurl4-gnutls-dev	# optional: read remote files with sys.getcontent(url)
+libgeos-dev		# optional: required for geom module
+liblas-c-dev		# optional: read LIDAR files
+liblzma-dev		# optional: read and write .xz compressed files
+libpcre3-dev		# optional: use PCRE library, enable some functions
+libreadline-dev		# optional, enable editing in mclient
+python-dev		# optional, needed for Python 2 integration
+python-numpy		# optional, needed for Python 2 integration
+r-base			# optional, needed for R integration
+unixodbc-dev		# optional, needed for ODBC driver
+uuid-dev		# optional
+zlib1g-dev		# optional: read and write .gz compressed files
+
+These packages are optional.
+
+libcfitsio-dev		# optional: read FITS files
+liblz4-dev		# optional: compression in new (unused) MAPI protocol
+libsnappy-dev		# optional: compression in new (unused) MAPI protocol
+python3-dev		# optional, needed for Python 3 integration
+python3-numpy		# optional, needed for Python 3 integration

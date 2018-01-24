@@ -1655,9 +1655,9 @@ rel_compare_exp_(mvc *sql, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2,
 
 			type = (int)swap_compare((comp_type)type);
 		}
-		if (!exp_subtype(ls) && !exp_subtype(rs)) 
+		if (!exp_subtype(ls) && !exp_subtype(rs))
 			return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) on both sides of an expression");
-		if (rel_convert_types(sql, &ls, &rs, 1, type_equal) < 0) 
+		if (rel_convert_types(sql, &ls, &rs, 1, type_equal_no_any) < 0)
 			return NULL;
 		e = exp_compare(sql->sa, ls, rs, type);
 	} else {
@@ -2159,7 +2159,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 						r = NULL;
 					}
 				}
-				if (!l || !r || !(r=rel_check_type(sql, st, r, type_equal))) {
+				if (!l || !r || (z && !(r=rel_check_type(sql, st, r, type_equal)))) {
 					rel_destroy(right);
 					return NULL;
 				}
@@ -2193,6 +2193,8 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 				for(n=vals->h; n; n = n->next) {
 					sql_exp *r = n->data, *ne;
 
+					if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) 
+						return NULL;
 					if (sc->token == SQL_NOT_IN)
 						ne = rel_binop_(sql, l, r, NULL, "<>", card_value);
 					else
@@ -2658,6 +2660,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 					if (z) {
 						rl = z;
 					} else {
+						if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) 
+							return NULL;
 						rl = rel_project_exp(sql->sa, exp_label(sql->sa, r, ++sql->label));
 						r = exp_column(sql->sa, exp_relname(r), exp_name(r), exp_subtype(r), r->card, has_nil(r), is_intern(r));
 						if (l_is_value && r_is_rel) {
@@ -2781,10 +2785,16 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		ek.card = card_set;
 		r = rel_subquery(sql, NULL, lo, ek, apply);
 		if (!r && rel && sql->session->status != -ERR_AMBIGUOUS) { /* correlation */
+			sql_rel *orel = rel;
+			sql_exp *ident = NULL;
+
 			/* reset error */
 			sql->session->status = 0;
 			sql->errstr[0] = '\0';
+			/* add identity early, used in the apply optimizer */
+			rel = rel_add_identity(sql, rel_dup(rel), &ident);
 			r = rel_subquery(sql, rel, lo, ek, apply);
+			rel_destroy(orel);
 			return r;
 		}
 		if (!r || !rel)

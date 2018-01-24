@@ -67,7 +67,7 @@ QOToptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	s = findSymbol(cntxt->usermodule, putName(modnme), fcnnme);
 	if (s == NULL)
-		throw(MAL, "optimizer.optimize", SEMANTIC_OPERATION_MISSING);
+		throw(MAL, "optimizer.optimize", SQLSTATE(HY002) SEMANTIC_OPERATION_MISSING);
 	removeInstruction(mb, pci);
 	addtoMalBlkHistory(s->def);
 	return optimizeMALBlock(cntxt, s->def);

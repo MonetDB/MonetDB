@@ -221,7 +221,7 @@ ATOMname(int t)
 	return t >= 0 && t < GDKatomcnt && *BATatoms[t].name ? BATatoms[t].name : "null";
 }
 
-int
+bool
 ATOMisdescendant(int tpe, int parent)
 {
 	int cur = -1;
@@ -229,10 +229,10 @@ ATOMisdescendant(int tpe, int parent)
 	while (cur != tpe) {
 		cur = tpe;
 		if (cur == parent)
-			return TRUE;
+			return true;
 		tpe = ATOMstorage(tpe);
 	}
-	return FALSE;
+	return false;
 }
 
 

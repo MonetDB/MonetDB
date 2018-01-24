@@ -1,36 +1,43 @@
 stdout of test 'q7_v` in directory 'sql/test/rdf` itself:
 
 
-# 23:32:57 >  
-# 23:32:57 >   mserver5 "--config=/ufs/goncalve/scratch/MonetDB/stable/debug/MonetDB5/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/goncalve/scratch/MonetDB/stable/debug/MonetDB5/lib/MonetDB5:/ufs/goncalve/scratch/MonetDB/stable/debug/MonetDB5/lib/MonetDB5/lib:/ufs/goncalve/scratch/MonetDB/stable/debug/MonetDB5/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/goncalve/scratch/MonetDB/stable/debug/MonetDB5/var/MonetDB5/dbfarm"  --set mapi_open=true --set xrpc_open=true --set mapi_port=33231 --set xrpc_port=41045 --set monet_prompt= --trace  "--dbname=mTests_src_test_rdf" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
-# 23:32:57 >  
+# 10:46:25 >  
+# 10:46:25 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36263" "--set" "mapi_usock=/var/tmp/mtest-3472/.s.monetdb.36263" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-stable/var/MonetDB/mTests_sql_test_rdf"
+# 10:46:25 >  
 
-# MonetDB server v5.16.4, based on kernel v1.34.4
-# Serving database 'mTests_src_test_rdf', using 4 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Detected 7.753 GiB (8324337664 bytes) main-memory.
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://alviss.ins.cwi.nl:33231/
-# MonetDB/SQL module v2.34.4 loaded
+# MonetDB 5 server v11.27.12 (hg id: 9a05add39d7b)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_rdf', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 62.695 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:36263/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-3472/.s.monetdb.36263
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
 
 Ready.
-#function user.main():void;
-#    clients.quit();
-#end main;
 
+# 10:46:25 >  
+# 10:46:25 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3472" "--port=36263"
+# 10:46:25 >  
 
-# 23:32:57 >  
-# 23:32:57 >  mclient -lsql -i -umonetdb -Pmonetdb --host=alviss --port=33231 
-# 23:32:57 >  
-
+#SELECT A.subj, B.obj, C.obj
+#	FROM prop14660087_pso AS A,
+#	prop14657240_pso AS B,
+#	prop17582582_pso AS C
+#	WHERE 
+#	A.obj = 1856117
+#	AND A.subj = B.subj
+#	AND A.subj = C.subj;
 % sys.a,	sys.b,	sys.c # table_name
 % subj,	obj,	obj # name
 % int,	int,	int # type
 % 1,	1,	1 # length
 
-# 23:32:57 >  
-# 23:32:57 >  Done.
-# 23:32:57 >  
+# 10:46:25 >  
+# 10:46:25 >  "Done."
+# 10:46:25 >  
 

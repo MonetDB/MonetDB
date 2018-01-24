@@ -1130,6 +1130,7 @@ sql_create_comments_table(Client c)
 		"                WHEN 2 THEN 'PROCEDURE'\n"
 		"                WHEN 3 THEN 'AGGREGATE'\n"
 		"                WHEN 4 THEN 'FILTER FUNCTION'\n"
+		"                WHEN 5 THEN 'FUNCTION' -- table returning function\n"
 		"                WHEN 7 THEN 'LOADER'\n"
 		"                ELSE 'ROUTINE'\n"
 		"        END;\n"
@@ -1255,9 +1256,18 @@ sql_create_comments_table(Client c)
 		return err;
 
 	q = ""
+		"INSERT INTO sys.systemfunctions\n"
+		"SELECT id FROM sys.functions\n"
+		"WHERE schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys')\n"
+		"AND name IN ('comment_on', 'function_type_keyword', 'describe_all_objects');\n";
+	err = SQLstatementIntern(c, &q, "update", 1, 0, NULL);
+	if (err)
+		return err;
+
+	q = ""
 		"UPDATE sys._tables\n"
 		"SET system = true\n"
-		"WHERE name = 'comments'\n"
+		"WHERE name IN ('comments', 'commented_function_signatures')\n"
 		"AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n";
 	return SQLstatementIntern(c, &q, "update", 1, 0, NULL);
 }

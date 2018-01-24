@@ -92,7 +92,6 @@ ALIGNsetT(BAT *b1, BAT *b2)
 		b1->tnokey[0] = b1->tnokey[1];
 	}
 	b1->tnosorted = b2->tnosorted;
-	b1->tnodense = b2->tnodense;
 }
 
 /*
@@ -454,10 +453,6 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 		view->tnorevsorted -= l;
 	else
 		view->tnorevsorted = 0;
-	if (view->tnodense > l && view->tnodense < l + cnt)
-		view->tnodense -= l;
-	else
-		view->tnodense = 0;
 	if (view->tnokey[0] >= l && view->tnokey[0] < l + cnt &&
 	    view->tnokey[1] >= l && view->tnokey[1] < l + cnt &&
 	    view->tnokey[0] != view->tnokey[1]) {

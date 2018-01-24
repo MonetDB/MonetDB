@@ -52,11 +52,11 @@ Ready.
 % sys.mytable,	sys.mytable,	sys.mytable # table_name
 % a,	d,	s # name
 % double,	int,	clob # type
-% 24,	1,	7 # length
-[ 42,	1,	"'hello'"	]
+% 24,	1,	5 # length
+[ 42,	1,	NULL	]
 [ 46,	4,	"hello"	]
-[ 45,	3,	"'hello'"	]
-[ 44,	2,	"'hello'"	]
+[ 45,	3,	NULL	]
+[ 44,	2,	NULL	]
 #DROP TABLE mytable;
 #DROP ALL LOADER myfunc;
 #CREATE LOADER myfunc() LANGUAGE PYTHON {

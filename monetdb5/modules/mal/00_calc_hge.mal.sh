@@ -13,10 +13,10 @@ module calc;
 
 EOF
 
-integer="bte sht int lng hge"	# all integer types
-numeric="$integer flt dbl"	# all numeric types
-fixtypes="bit $numeric oid"
-alltypes="$fixtypes str"
+integer=(bte sht int lng hge)	# all integer types
+numeric=(${integer[@]} flt dbl)	# all numeric types
+fixtypes=(bit ${numeric[@]} oid)
+alltypes=(${fixtypes[@]} str)
 
 for tp in hge; do
     cat <<EOF
@@ -71,124 +71,101 @@ done
 for func in +:ADD -:SUB \*:MUL; do
     name=${func#*:}
     op=${func%:*}
-    for tp1 in bte sht int lng hge flt; do
-	for tp2 in bte sht int lng hge flt; do
-	    case $tp1$tp2 in
-	    hgeflt|flthge)
-		tp3=dbl;;
-	    *flt*|*hge*)
-		continue;;	# hge only allowed in combination with flt
-	    *lng*)
-		tp3=hge;;
-	    *)
-		continue;;
-	    esac
-	    cat <<EOF
-pattern $op(v1:$tp1,v2:$tp2) :$tp3
-address CMDvar${name}signal
-comment "Return V1 $op V2, guarantee no overflow by returning larger type";
-
-EOF
-	done
-    done
-    echo
-done
-
-for func in +:ADD -:SUB \*:MUL; do
-    name=${func#*:}
-    op=${func%:*}
-    for tp1 in $numeric; do
-	for tp2 in $numeric; do
-	    case $tp1$tp2 in
-	    hgedbl|dblhge)
-		tp3=dbl;;
-	    hgeflt|flthge)
-		tp3=flt;;
-	    *hge*)
-		tp3=hge;;
-	    *)
-		continue;;
-	    esac
-	    cat <<EOF
+    for ((i = 0; i < ${#numeric[@]}; i++)); do
+	tp1=${numeric[i]}
+	for ((j = 0; j < ${#numeric[@]}; j++)); do
+	    tp2=${numeric[j]}
+	    for ((k = ${#numeric[@]} - 1; k >= 0; k--)); do
+		if ((k < i || k < j)); then
+		    continue
+		fi
+		tp3=${numeric[k]}
+		[[ $tp1$tp2$tp3 == *hge* ]] || continue
+		if ((k == i || k == j)); then
+		    cat <<EOF
 pattern $op(v1:$tp1,v2:$tp2) :$tp3
 address CMDvar${name}signal
 comment "Return V1 $op V2, signal error on overflow";
 pattern ${name,,}_noerror(v1:$tp1,v2:$tp2) :$tp3
 address CMDvar${name}
-comment "Return V1 $op V2, overflow causes NIL value";
+comment "Return V1 $op V2, overflow results in NIL value";
+
+EOF
+		else
+		    cat <<EOF
+pattern $op(v1:$tp1,v2:$tp2) :$tp3
+address CMDvar${name}signal
+comment "Return V1 $op V2, guarantee no overflow by returning larger type";
+
+EOF
+		fi
+	    done
+	done
+    done
+done
+
+for ((i = 0; i < ${#numeric[@]}; i++)); do
+    tp1=${numeric[i]}
+    for ((j = 0; j < ${#numeric[@]}; j++)); do
+	tp2=${numeric[j]}
+	for ((k = ${#numeric[@]} - 1; k >= i; k--)); do
+	    tp3=${numeric[k]}
+	    [[ $tp1$tp2$tp3 == *hge* ]] || continue
+	    cat <<EOF
+pattern /(v1:$tp1,v2:$tp2) :$tp3
+address CMDvarDIVsignal
+comment "Return V1 / V2, signal error on divide by zero";
+pattern div_noerror(v1:$tp1,v2:$tp2) :$tp3
+address CMDvarDIV
+comment "Return V1 / V2, divide by zero results in NIL value";
 
 EOF
 	done
     done
-    echo
 done
+echo
 
-for tp1 in $numeric; do
-    for tp2 in $numeric; do
-	case $tp1$tp2 in
-	hgedbl|dblhge)
-	    tp3=dbl;;
-	hgeflt|flthge)
-	    tp3=flt;;
-	*hge*)
-	    tp3=$tp1;;
-	*)
-	    continue;;
-	esac
-	if [ $tp3 != dbl ]; then
-	    if [ $tp3 != flt ]; then
-		cat <<EOF
-pattern /(v1:$tp1,v2:$tp2) :flt
-address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-EOF
+for ((i = 0; i < ${#numeric[@]}; i++)); do
+    tp1=${numeric[i]}
+    for ((j = 0; j < ${#numeric[@]}; j++)); do
+	tp2=${numeric[j]}
+	for ((k = ${#numeric[@]} - 1; k >= 0; k--)); do
+	    if ((k < i && k < j)); then
+		continue
 	    fi
-	    cat <<EOF
-pattern /(v1:$tp1,v2:$tp2) :dbl
-address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-EOF
-	fi
-	cat <<EOF
-pattern /(v1:$tp1,v2:$tp2) :$tp3
-address CMDvarDIVsignal
-comment "Return V1 / V2, signal error on overflow";
-pattern div_noerror(v1:$tp1,v2:$tp2) :$tp3
-address CMDvarDIV
-comment "Return V1 / V2, overflow causes NIL value";
-
-EOF
-    done
-done
-    echo
-
-for tp1 in $numeric; do
-    for tp2 in $numeric; do
-	case $tp1$tp2 in
-	*hge*)
-	    case $tp1$tp2 in
-	    *dbl*) tp3=dbl;;
-	    *flt*) tp3=flt;;
-	    *bte*) tp3=bte;;
-	    *sht*) tp3=sht;;
-	    *int*) tp3=int;;
-	    *lng*) tp3=lng;;
-	    *hge*) tp3=hge;;
+	    tp3=${numeric[k]}
+	    case $tp3 in
+	    dbl)
+		case $tp1$tp2 in
+		*dbl*) ;;
+		*) continue;;
+		esac
+		;;
+	    flt)
+		case $tp1$tp2 in
+		*dbl*) continue;;
+		*flt*) ;;
+		*) continue;;
+		esac
+		;;
+	    *)
+		case $tp1$tp2 in
+		*flt*|*dbl*) continue;;
+		*) ;;
+		esac
+		;;
 	    esac
-	    ;;
-	*)
-	    continue
-	    ;;
-	esac
-	cat <<EOF
+	    [[ $tp1$tp2$tp3 == *hge* ]] || continue
+	    cat <<EOF
 pattern %(v1:$tp1,v2:$tp2) :$tp3
 address CMDvarMODsignal
 comment "Return V1 % V2, signal error on divide by zero";
 pattern mod_noerror(v1:$tp1,v2:$tp2) :$tp3
 address CMDvarMOD
-comment "Return V1 % V2, divide by zero causes NIL value";
+comment "Return V1 % V2, divide by zero results in NIL value";
 
 EOF
+	done
     done
 done
 echo
@@ -208,8 +185,8 @@ done
 for func in '<<:lsh' '>>:rsh'; do
     op=${func%:*}
     func=${func#*:}
-    for tp1 in $integer; do
-	for tp2 in $integer; do
+    for tp1 in ${integer[@]}; do
+	for tp2 in ${integer[@]}; do
 	    case $tp1$tp2 in
 	    *hge*) ;;
 	    *) continue;;
@@ -220,7 +197,7 @@ address CMDvar${func^^}signal
 comment "Return V1 $op V2, raise error on out of range second operand";
 pattern ${func}_noerror(v1:$tp1,v2:$tp2) :$tp1
 address CMDvar${func^^}
-comment "Return V1 $op V2, out of range second operand causes NIL value";
+comment "Return V1 $op V2, out of range second operand results in NIL value";
 
 EOF
 	done
@@ -231,8 +208,8 @@ done
 for func in '<:lt' '<=:le' '>:gt' '>=:ge' '==:eq' '!=:ne'; do
     op=${func%:*}
     func=${func#*:}
-    for tp1 in $numeric; do
-	for tp2 in $numeric; do
+    for tp1 in ${numeric[@]}; do
+	for tp2 in ${numeric[@]}; do
 	    case $tp1$tp2 in
 	    *hge*) ;;
 	    *) continue;;
@@ -250,8 +227,8 @@ done
 
 op=${func%:*}
 func=${func#*:}
-for tp1 in $numeric; do
-    for tp2 in $numeric; do
+for tp1 in ${numeric[@]}; do
+    for tp2 in ${numeric[@]}; do
 	case $tp1$tp2 in
 	*hge*) ;;
 	*) continue;;
@@ -266,7 +243,7 @@ EOF
 done
 echo
 
-# for tp in $fixtypes; do
+# for tp in ${fixtypes[@]}; do
 #     cat <<EOF
 # pattern between(b:$tp,lo:$tp,hi:$tp) :bit
 # address CMDvarBETWEEN
@@ -275,11 +252,11 @@ echo
 # EOF
 # done
 
-for tp1 in void $alltypes; do
+for tp1 in void ${alltypes[@]}; do
     if [[ $tp1 == str ]]; then
 	continue
     fi
-    for tp2 in void $alltypes; do
+    for tp2 in void ${alltypes[@]}; do
 	case $tp1$tp2 in
 	*hge*) ;;
 	*) continue;;
