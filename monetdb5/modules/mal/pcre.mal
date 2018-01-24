@@ -35,9 +35,6 @@ comment "Replace _all_ matches of \"pattern\" in \"origin_str\" with \"replaceme
 	   No other letters than 'e', 'i', 'm', 's' and 'x' are allowed in \"flags\".
 	   Returns the replaced string, or if no matches found, the original string.";
 
-command replace(orig:bat[:str],pat:str,repl:str,flag:str):bat[:str]
-address PCREreplace_bat_wrap;
-
 command pcre_quote(s:str):str
 address PCREquote
 comment "Return a PCRE pattern string that matches the argument exactly.";
@@ -63,6 +60,11 @@ command algebra.ilike(s:str, pat:str, esc:str):bit address PCREilike3;
 command algebra.ilike(s:str, pat:str):bit address PCREilike2;
 command algebra.not_ilike(s:str, pat:str, esc:str):bit address PCREnotilike3;
 command algebra.not_ilike(s:str, pat:str):bit address PCREnotilike2;
+
+module batpcre;
+
+command batpcre.replace(orig:bat[:str],pat:str,repl:str,flag:str):bat[:str]
+address PCREreplace_bat_wrap;
 
 module batalgebra;
 
