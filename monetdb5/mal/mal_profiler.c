@@ -444,7 +444,7 @@ profilerHeartbeatEvent(char *alter)
 	char cpuload[BUFSIZ];
 	char logbuffer[LOGLEN], *logbase;
 	int loglen;
-	static uint64_t serial = 0;
+	lng usec = GDKusec();
 
 	if (ATOMIC_GET(hbdelay, mal_beatLock) == 0 || eventstream  == NULL)
 		return;
@@ -458,8 +458,7 @@ profilerHeartbeatEvent(char *alter)
 	logadd("\"source\":\"heartbeat\",%s", prettify);
 	if(mal_session_uuid)
 		logadd("\"session\":\"%s\",%s", mal_session_uuid, prettify);
-	logadd("\"serial\":%" PRIu64 ",%s", serial, prettify);
-	serial++;
+	logadd("\"clk\":"LLFMT",%s",usec,prettify);
 	logadd("\"rss\":"SZFMT ",%s", MT_getrss()/1024/1024, prettify);
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
