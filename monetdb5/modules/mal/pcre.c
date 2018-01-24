@@ -563,7 +563,6 @@ pcre_replace(str *res, const char *origin_str, const char *pattern,
 	pcre *pcre_code = NULL;
 	pcre_extra *extra;
 	char *tmpres;
-	char tmpbackref[4]; /* enough for 0 to 999 */
 	int i, j, k, m, len, errpos = 0, offset = 0;
 	int compile_options = PCRE_UTF8, exec_options = PCRE_NOTEMPTY;
 	int *ovector, ovecsize;
@@ -635,7 +634,7 @@ pcre_replace(str *res, const char *origin_str, const char *pattern,
 					  offset, exec_options, ovector, ovecsize);
 		if (j > 0) {
 			ncaptures = 0;
-			for (i=0; (i < j) && (ncaptures < MAX_NR_CAPTURES); i++) {
+			for (i = 0; i < j && i < MAX_NR_MATCHES && ncaptures < MAX_NR_CAPTURES; i++) {
 				capture_offsets[nmatches][i*2] = ovector[i*2];
 				capture_offsets[nmatches][i*2+1] = ovector[i*2+1];
 				ncaptures++;
@@ -650,21 +649,18 @@ pcre_replace(str *res, const char *origin_str, const char *pattern,
 
 	if (nmatches > 0) {
 		/* identify back references in the replacement string */
-		for (i=0; i<len_replacement; i++) {
+		for (i = 0; i < len_replacement && nbackrefs < MAX_NR_CAPTURES; i++) {
 			if (replacement[i] == '$' || replacement[i] == '\\') {
-				if (i>0 && replacement[i-1] != '\\') {
-					for (k=0; i+k+1<len_replacement; k++) {
-						if (!isdigit((unsigned char)replacement[i+k+1]))
-							break;
-					}
-					if (k>0) {
-						strncpy(tmpbackref, replacement+i+1, k);
-						tmpbackref[i+1+k] = '\0';
-						backrefs[nbackrefs] = atoi(tmpbackref);
-						backref_offsets[nbackrefs*2] = i;
-						backref_offsets[nbackrefs*2+1] = i+k+1;
-						nbackrefs++;
-					}
+				char *endptr;
+				backrefs[nbackrefs] = strtol(replacement + i + 1, &endptr, 10);
+				if (endptr > replacement + i + 1) {
+					k = (int) (endptr - (replacement + i + 1));
+					backref_offsets[nbackrefs * 2] = i;
+					backref_offsets[nbackrefs * 2 + 1] = i + k + 1;
+					nbackrefs++;
+				} else if (replacement[i] == '\\') {
+					/* skip quoted character */
+					i++;
 				}
 			}
 		}
@@ -749,7 +745,6 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 	BATiter origin_strsi = bat_iterator(origin_strs);
 	const char *err_p = NULL;
 	char *tmpres, *tmps;
-	char tmpbackref[4];			/* enough for 0 to 999 */
 	int i, j, k, m, len, errpos = 0, offset = 0;
 	int compile_options = PCRE_UTF8, exec_options = PCRE_NOTEMPTY;
 	pcre *pcre_code = NULL;
@@ -817,21 +812,18 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 	}
 
 	/* identify back references in the replacement string */
-	for (i = 0; i < len_replacement; i++) {
+	for (i = 0; i < len_replacement && nbackrefs < MAX_NR_CAPTURES; i++) {
 		if (replacement[i] == '$' || replacement[i] == '\\') {
-			if (i > 0 && replacement[i - 1] != '\\') {
-				for (k = 0; i + k + 1 < len_replacement; k++) {
-					if (!isdigit((unsigned char)replacement[i + k + 1]))
-						break;
-				}
-				if (k > 0) {
-					strncpy(tmpbackref, replacement + i + 1, k);
-					tmpbackref[i + 1 + k] = '\0';
-					backrefs[nbackrefs] = atoi(tmpbackref);
-					backref_offsets[nbackrefs * 2] = i;
-					backref_offsets[nbackrefs * 2 + 1] = i + k + 1;
-					nbackrefs++;
-				}
+			char *endptr;
+			backrefs[nbackrefs] = strtol(replacement + i + 1, &endptr, 10);
+			if (endptr > replacement + i + 1) {
+				k = (int) (endptr - (replacement + i + 1));
+				backref_offsets[nbackrefs * 2] = i;
+				backref_offsets[nbackrefs * 2 + 1] = i + k + 1;
+				nbackrefs++;
+			} else if (replacement[i] == '\\') {
+				/* skip quoted character */
+				i++;
 			}
 		}
 	}
@@ -863,7 +855,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 						  offset, exec_options, ovector, ovecsize);
 			if (j > 0) {
 				ncaptures = 0;
-				for (i = 0; i < j && ncaptures < MAX_NR_CAPTURES; i++) {
+				for (i = 0; i < j && i < MAX_NR_MATCHES && ncaptures < MAX_NR_CAPTURES; i++) {
 					capture_offsets[nmatches][i * 2] = ovector[i * 2];
 					capture_offsets[nmatches][i * 2 + 1] = ovector[i * 2 + 1];
 					ncaptures++;
