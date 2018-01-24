@@ -1,0 +1,34 @@
+stderr of test 'update-with-correlated-subquery.Bug-6520` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 18:27:51 >  
+# 18:27:51 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32298" "--set" "mapi_usock=/var/tmp/mtest-6807/.s.monetdb.32298" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/manegold/_/Monet/preview/prefix/_/var/MonetDB/mTests_sql_test_BugTracker-2018"
+# 18:27:51 >  
+
+# builtin opt 	gdk_dbpath = /ufs/manegold/_/Monet/preview/prefix/_/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 32298
+# cmdline opt 	mapi_usock = /var/tmp/mtest-6807/.s.monetdb.32298
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /ufs/manegold/_/Monet/preview/prefix/_/var/MonetDB/mTests_sql_test_BugTracker-2018
+# cmdline opt 	gdk_debug = 553648138
+
+# 18:27:52 >  
+# 18:27:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6807" "--port=32298"
+# 18:27:52 >  
+
+
+# 18:27:52 >  
+# 18:27:52 >  "Done."
+# 18:27:52 >  
+
