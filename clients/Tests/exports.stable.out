@@ -1614,6 +1614,8 @@ str PCREpatindex(int *ret, const str *pat, const str *val);
 str PCREquote(str *r, const str *v);
 str PCREreplace_bat_wrap(bat *res, const bat *or, const str *pat, const str *repl, const str *flags);
 str PCREreplace_wrap(str *res, const str *or, const str *pat, const str *repl, const str *flags);
+str PCREreplacefirst_bat_wrap(bat *res, const bat *or, const str *pat, const str *repl, const str *flags);
+str PCREreplacefirst_wrap(str *res, const str *or, const str *pat, const str *repl, const str *flags);
 str PCREsql2pcre(str *ret, const str *pat, const str *esc);
 str PROFexitClient(Client c);
 str PROFinitClient(Client c);

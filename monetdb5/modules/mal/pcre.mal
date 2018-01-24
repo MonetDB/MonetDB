@@ -35,6 +35,20 @@ comment "Replace _all_ matches of \"pattern\" in \"origin_str\" with \"replaceme
 	   No other letters than 'e', 'i', 'm', 's' and 'x' are allowed in \"flags\".
 	   Returns the replaced string, or if no matches found, the original string.";
 
+command replace_first(origin:str,pat:str,repl:str,flags:str):str
+address PCREreplace_wrap
+comment "Replace _the first_ match of \"pattern\" in \"origin_str\" with \"replacement\".
+	 Parameter \"flags\" accept these flags: 'i', 'm', 's', and 'x'.
+	   'e': if present, an empty string is considered to be a valid match
+	   'i': if present, the match operates in case-insensitive mode.
+		Otherwise, in case-sensitive mode.
+	   'm': if present, the match operates in multi-line mode.
+	   's': if present, the match operates in \"dot-all\"
+	   The specifications of the flags can be found in \"man pcreapi\"
+	   The flag letters may be repeated.
+	   No other letters than 'e', 'i', 'm', 's' and 'x' are allowed in \"flags\".
+	   Returns the replaced string, or if no matches found, the original string.";
+
 command pcre_quote(s:str):str
 address PCREquote
 comment "Return a PCRE pattern string that matches the argument exactly.";
@@ -65,6 +79,8 @@ module batpcre;
 
 command batpcre.replace(orig:bat[:str],pat:str,repl:str,flag:str):bat[:str]
 address PCREreplace_bat_wrap;
+command batpcre.replace_first(orig:bat[:str],pat:str,repl:str,flag:str):bat[:str]
+address PCREreplacefirst_bat_wrap;
 
 module batalgebra;
 
