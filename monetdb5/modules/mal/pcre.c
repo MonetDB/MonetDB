@@ -336,8 +336,8 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int 
 	bn = COLnew(0, TYPE_oid, s ? BATcount(s) : BATcount(b), TRANSIENT);
 	if (bn == NULL) {
 #ifdef HAVE_LIBPCRE
-		pcre_free(re);
 		pcre_free_study(pe);
+		pcre_free(re);
 #else
 		regfree(&re);
 #endif
@@ -386,8 +386,8 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int 
 			scanloop(v && *v != '\200' && BODY);
 	}
 #ifdef HAVE_LIBPCRE
-	pcre_free(re);
 	pcre_free_study(pe);
+	pcre_free(re);
 #else
 	regfree(&re);
 #endif
@@ -404,8 +404,8 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int 
   bunins_failed:
 	BBPreclaim(bn);
 #ifdef HAVE_LIBPCRE
-	pcre_free(re);
 	pcre_free_study(pe);
+	pcre_free(re);
 #else
 	regfree(&re);
 #endif
@@ -584,13 +584,13 @@ pcre_replace(str *res, const char *origin_str, const char *pattern, const char *
 			compile_options |= PCRE_EXTENDED;
 			break;
 		default:
-			throw(MAL, "pcre_replace", ILLEGAL_ARGUMENT ": unsupported flag character '%c'\n", *flags);
+			throw(MAL, "pcre.replace", ILLEGAL_ARGUMENT ": unsupported flag character '%c'\n", *flags);
 		}
 		flags++;
 	}
 
 	if ((pcre_code = pcre_compile(pattern, compile_options, &err_p, &errpos, NULL)) == NULL) {
-		throw(MAL, "pcre_replace", OPERATION_FAILED ": pcre compile of pattern (%s) failed at %d with\n'%s'.\n", pattern, errpos, err_p);
+		throw(MAL, "pcre.replace", OPERATION_FAILED ": pcre compile of pattern (%s) failed at %d with\n'%s'.\n", pattern, errpos, err_p);
 	}
 
 	/* Since the compiled pattern is going to be used several times, it is
@@ -600,14 +600,14 @@ pcre_replace(str *res, const char *origin_str, const char *pattern, const char *
 	extra = pcre_study(pcre_code, 0, &err_p);
 	if (err_p != NULL) {
 		pcre_free(pcre_code);
-		throw(MAL, "pcre_replace", OPERATION_FAILED ": pcre study of pattern (%s) failed with '%s'.\n", pattern, err_p);
+		throw(MAL, "pcre.replace", OPERATION_FAILED ": pcre study of pattern (%s) failed with '%s'.\n", pattern, err_p);
 	}
 	pcre_fullinfo(pcre_code, extra, PCRE_INFO_CAPTURECOUNT, &i);
 	ovecsize = (i + 1) * 3;
 	if ((ovector = (int *) GDKmalloc(sizeof(int) * ovecsize)) == NULL) {
-		pcre_free(pcre_code);
 		pcre_free_study(extra);
-		throw(MAL, "pcre_replace", MAL_MALLOC_FAIL);
+		pcre_free(pcre_code);
+		throw(MAL, "pcre.replace", MAL_MALLOC_FAIL);
 	}
 
 	i = 0;
@@ -663,7 +663,7 @@ pcre_replace(str *res, const char *origin_str, const char *pattern, const char *
 	pcre_free(pcre_code);
 	GDKfree(ovector);
 	if (tmpres == NULL)
-		throw(MAL, "pcre_replace", MAL_MALLOC_FAIL);
+		throw(MAL, "pcre.replace", MAL_MALLOC_FAIL);
 	*res = tmpres;
 	return MAL_SUCCEED;
 #else
@@ -712,13 +712,13 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 			compile_options |= PCRE_EXTENDED;
 			break;
 		default:
-			throw(MAL, "pcre_replace_bat", ILLEGAL_ARGUMENT ": unsupported flag character '%c'\n", *flags);
+			throw(MAL, "batpcre.replace", ILLEGAL_ARGUMENT ": unsupported flag character '%c'\n", *flags);
 		}
 		flags++;
 	}
 
 	if ((pcre_code = pcre_compile(pattern, compile_options, &err_p, &errpos, NULL)) == NULL) {
-		throw(MAL, "pcre_replace_bat", OPERATION_FAILED
+		throw(MAL, "batpcre.replace", OPERATION_FAILED
 			  ": pcre compile of pattern (%s) failed at %d with\n'%s'.\n",
 			  pattern, errpos, err_p);
 	}
@@ -730,20 +730,22 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 	extra = pcre_study(pcre_code, 0, &err_p);
 	if (err_p != NULL) {
 		pcre_free(pcre_code);
-		throw(MAL, "pcre_replace_bat", OPERATION_FAILED);
+		throw(MAL, "batpcre.replace", OPERATION_FAILED);
 	}
 	pcre_fullinfo(pcre_code, extra, PCRE_INFO_CAPTURECOUNT, &i);
 	ovecsize = (i + 1) * 3;
 	if ((ovector = (int *) GDKzalloc(sizeof(int) * ovecsize)) == NULL) {
+		pcre_free_study(extra);
 		pcre_free(pcre_code);
-		throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
+		throw(MAL, "batpcre.replace", MAL_MALLOC_FAIL);
 	}
 
 	tmpbat = COLnew(origin_strs->hseqbase, TYPE_str, BATcount(origin_strs), TRANSIENT);
 	if (tmpbat == NULL) {
+		pcre_free_study(extra);
 		pcre_free(pcre_code);
 		GDKfree(ovector);
-		throw(MAL, "pcre.replace", MAL_MALLOC_FAIL);
+		throw(MAL, "batpcre.replace", MAL_MALLOC_FAIL);
 	}
 	BATloop(origin_strs, p, q) {
 		origin_str = BUNtail(origin_strsi, p);
@@ -765,11 +767,11 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 		if (ncaptures > 0) {
 			replaced_str = GDKmalloc(len_origin_str - len_del + (len_replacement * ncaptures) + 1);
 			if (replaced_str == NULL) {
-				pcre_free(pcre_code);
 				pcre_free_study(extra);
+				pcre_free(pcre_code);
 				GDKfree(ovector);
 				BBPreclaim(tmpbat);
-				throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
+				throw(MAL, "batpcre.replace", MAL_MALLOC_FAIL);
 			}
 
 			j = k = 0;
@@ -799,21 +801,22 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 			k += len;
 			replaced_str[k] = '\0';
 			if (BUNappend(tmpbat, replaced_str, FALSE) != GDK_SUCCEED) {
-				pcre_free(pcre_code);
 				pcre_free_study(extra);
+				pcre_free(pcre_code);
 				GDKfree(ovector);
 				GDKfree(replaced_str);
 				BBPreclaim(tmpbat);
-				throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
+				throw(MAL, "batpcre.replace", MAL_MALLOC_FAIL);
 			}
 			GDKfree(replaced_str);
-		} else { /* no captured substrings, copy the original string into new bat */
+		} else {
+			/* no captured substrings, copy the original string into new bat */
 			if (BUNappend(tmpbat, origin_str, FALSE) != GDK_SUCCEED) {
-				pcre_free(pcre_code);
 				pcre_free_study(extra);
+				pcre_free(pcre_code);
 				GDKfree(ovector);
 				BBPreclaim(tmpbat);
-				throw(MAL, "pcre_replace_bat", MAL_MALLOC_FAIL);
+				throw(MAL, "batpcre.replace", MAL_MALLOC_FAIL);
 			}
 		}
 	}
@@ -829,7 +832,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern, const char *r
 	(void) pattern;
 	(void) replacement;
 	(void) flags;
-	throw(MAL, "pcre.replace_bat", "Database was compiled without PCRE support.");
+	throw(MAL, "batpcre.replace", "Database was compiled without PCRE support.");
 #endif
 }
 
@@ -1788,8 +1791,8 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		}
 		if (pcrere) {
 #ifdef HAVE_LIBPCRE
-			pcre_free(pcrere);
 			pcre_free_study(pcreex);
+			pcre_free(pcrere);
 			pcrere = NULL;
 			pcreex = NULL;
 #else
@@ -1833,10 +1836,10 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	if (pcrepat)
 		GDKfree(pcrepat);
 #ifdef HAVE_LIBPCRE
-	if (pcrere)
-		pcre_free(pcrere);
 	if (pcreex)
 		pcre_free_study(pcreex);
+	if (pcrere)
+		pcre_free(pcrere);
 #else
 	if (pcrere)
 		regfree(&regex);
