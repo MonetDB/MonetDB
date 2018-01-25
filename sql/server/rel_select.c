@@ -2524,7 +2524,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		symbol *lo = NULL;
 		dnode *n = dl->h->next, *dn = NULL;
 		sql_rel *left = NULL, *right = NULL, *select = NULL;
-		sql_exp *l = NULL, *e, *r = NULL, *lident = NULL, *rident, *roident;
+		sql_exp *l = NULL, *e, *r = NULL, *lident = NULL, *rident, *roident = NULL;
 		list *vals = NULL, *ll = sa_list(sql->sa);
 		int correlated = 0, l_is_value = 1;
 		list *pexps = NULL;
