@@ -2154,7 +2154,7 @@ showCommands(void)
 	mnstr_printf(toConsole, "\\q      - terminate session\n");
 }
 
-/* These values must match those used in sys.describe_all_objects() */
+/* These values must match those used in view sys.describe_all_objects */
 #define MD_TABLE    1
 #define MD_VIEW     2
 #define MD_SEQ      4
@@ -2500,7 +2500,7 @@ doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
 						 * | "data.my*"      | no            | fullname LIKE 'data.my%'      |
 						 * | "*a.my*"        | no            | fullname LIKE '%a.my%'        |
 						*/
-						q += snprintf(q, endq - q, "SELECT type, fullname, remark FROM sys.describe_all_objects()\n");
+						q += snprintf(q, endq - q, "SELECT type, fullname, remark FROM sys.describe_all_objects\n");
 						q += snprintf(q, endq - q, "WHERE (ntype & %u) > 0\n", x);
 						if (!wantsSystem) {
 							q += snprintf(q, endq - q, "AND NOT system\n");

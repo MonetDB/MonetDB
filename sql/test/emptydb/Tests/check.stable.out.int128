@@ -91,6 +91,7 @@ Ready.
 \dSt tmp.triggers
 \dSv sys.columns
 \dSv sys.commented_function_signatures
+\dSv sys.describe_all_objects
 \dSv sys.environment
 \dSv sys.geometry_columns
 \dSv sys.optimizers
@@ -138,7 +139,6 @@ Ready.
 \dSf sys."dependencies_tables_on_views"
 \dSf sys."dependencies_views_on_functions"
 \dSf sys."dependencies_views_on_triggers"
-\dSf sys."describe_all_objects"
 \dSf sys."droporderindex"
 \dSf sys."env"
 \dSf sys."epoch"
@@ -347,11 +347,7 @@ Ready.
 \dSf sys."var"
 \dSf sys."var_pop"
 \dSf sys."var_samp"
-SYSTEM SCHEMA  bam
-SYSTEM SCHEMA  json
-SYSTEM SCHEMA  profiler
 SYSTEM SCHEMA  sys
-SYSTEM SCHEMA  tmp
 SYSTEM TABLE  sys._columns
 SYSTEM TABLE  sys._tables
 SYSTEM TABLE  sys.args
@@ -388,6 +384,7 @@ SYSTEM TABLE  sys.types
 SYSTEM TABLE  sys.user_role
 SYSTEM VIEW  sys.columns
 SYSTEM VIEW  sys.commented_function_signatures
+SYSTEM VIEW  sys.describe_all_objects
 SYSTEM VIEW  sys.environment
 SYSTEM VIEW  sys.geometry_columns
 SYSTEM VIEW  sys.optimizers
@@ -458,7 +455,7 @@ SYSTEM FUNCTION  sys.dayofyear
 SYSTEM FUNCTION         sys.db_users
 SYSTEM FUNCTION  sys.debug
 SYSTEM FUNCTION  sys.degrees
-SYSTEM ROUTINE          sys.dense_rank
+SYSTEM FUNCTION         sys.dense_rank
 SYSTEM FUNCTION         sys.dependencies_columns_on_functions
 SYSTEM FUNCTION         sys.dependencies_columns_on_indexes
 SYSTEM FUNCTION         sys.dependencies_columns_on_keys
@@ -476,8 +473,7 @@ SYSTEM FUNCTION         sys.dependencies_tables_on_triggers
 SYSTEM FUNCTION         sys.dependencies_tables_on_views
 SYSTEM FUNCTION         sys.dependencies_views_on_functions
 SYSTEM FUNCTION         sys.dependencies_views_on_triggers
-SYSTEM FUNCTION         sys.describe_all_objects
-SYSTEM ROUTINE          sys.diff
+SYSTEM FUNCTION         sys.diff
 SYSTEM FUNCTION  sys.difference
 SYSTEM PROCEDURE        sys.droporderindex
 SYSTEM FUNCTION  sys.editdistance
@@ -617,7 +613,7 @@ SYSTEM PROCEDURE        sys.querylog_enable
 SYSTEM FUNCTION         sys.queue
 SYSTEM FUNCTION  sys.radians
 SYSTEM FUNCTION  sys.rand
-SYSTEM ROUTINE          sys.rank
+SYSTEM FUNCTION         sys.rank
 SYSTEM FUNCTION         sys.rejects
 SYSTEM FUNCTION  sys.repeat
 SYSTEM FUNCTION  sys.replace
@@ -634,7 +630,7 @@ SYSTEM FUNCTION  sys.right_shift
 SYSTEM FUNCTION  sys.right_shift_assign
 SYSTEM FUNCTION  sys.rotate_xor_hash
 SYSTEM FUNCTION  sys.round
-SYSTEM ROUTINE          sys.row_number
+SYSTEM FUNCTION         sys.row_number
 SYSTEM FUNCTION  sys.rowid
 SYSTEM FUNCTION  sys.rpad
 SYSTEM FUNCTION  sys.rtrim
@@ -850,7 +846,8 @@ CREATE TABLE "tmp"."keys" ("id" INTEGER, "table_id" INTEGER, "type" INTEGER, "na
 CREATE TABLE "tmp"."objects" ("id" INTEGER, "name" VARCHAR(1024), "nr" INTEGER);
 CREATE TABLE "tmp"."triggers" ("id" INTEGER, "name" VARCHAR(1024), "table_id" INTEGER, "time" SMALLINT, "orientation" SMALLINT, "event" SMALLINT, "old_name" VARCHAR(1024), "new_name" VARCHAR(1024), "condition" VARCHAR(2048), "statement" VARCHAR(2048));
 SELECT * FROM (SELECT p.* FROM "sys"."_columns" AS p UNION ALL SELECT t.* FROM "tmp"."_columns" AS t) AS columns;
-create view commented_function_signatures as with params as (select * from sys.args where inout = 1), commented_function_params as (select f.id as fid, f.name as fname, s.name as schema, f.type as ftype, c.remark as remark, p.number as n, p.name as aname, p.type as type, p.type_digits as type_digits, p.type_scale as type_scale, rank() over (partition by f.id order by number asc) as asc_rank, rank() over (partition by f.id order by number desc) as desc_rank from sys.functions f join sys.schemas s on f.schema_id = s.id join sys.comments c on f.id = c.id left outer join params p on f.id = p.func_id) select fid, schema, fname, sys.function_type_keyword(ftype) as category, exists (select function_id from sys.systemfunctions where fid = function_id) as system, case when asc_rank = 1 then fname else null end as name, case when desc_rank = 1 then remark else null end as remark, type, type_digits, type_scale, row_number() over (order by fid, n) as line from commented_function_params order by line;
+create view sys.commented_function_signatures as select f.id as fid, s.name as schema, f.name as fname, sys.function_type_keyword(f.type) as category, case when sf.function_id is null then false else true end as system, case rank() over (partition by f.id order by p.number asc) when 1 then f.name else null end as name, case rank() over (partition by f.id order by p.number desc) when 1 then c.remark else null end as remark, p.type, p.type_digits, p.type_scale, row_number() over (order by f.id, p.number) as line from sys.functions f join sys.comments c on f.id = c.id join sys.schemas s on f.schema_id = s.id left outer join sys.systemfunctions sf on f.id = sf.function_id left outer join sys.args p on f.id = p.func_id and p.inout = 1 order by line;
+create view sys.describe_all_objects as select s.name as sname, t.name, s.name || '.' || t.name as fullname, cast(case t.type when 1 then 2 else 1 end as smallint) as ntype, (case when t.system then 'SYSTEM ' else '' end) || tt.table_type_name as type, t.system, c.remark as remark from sys._tables t left outer join sys.comments c on t.id = c.id left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id union all select s.name as sname, sq.name, s.name || '.' || sq.name as fullname, cast(4 as smallint) as ntype, 'SEQUENCE' as type, false as system, c.remark as remark from sys.sequences sq left outer join sys.comments c on sq.id = c.id left outer join sys.schemas s on sq.schema_id = s.id union all select distinct s.name as sname, f.name, s.name || '.' || f.name as fullname, cast(8 as smallint) as ntype, (case when sf.function_id is not null then 'SYSTEM ' else '' end) || sys.function_type_keyword(f.type) as type, case when sf.function_id is null then false else true end as system, c.remark as remark from sys.functions f left outer join sys.comments c on f.id = c.id left outer join sys.schemas s on f.schema_id = s.id left outer join sys.systemfunctions sf on f.id = sf.function_id union all select s.name as sname, s.name, s.name as fullname, cast(16 as smallint) as ntype, (case when s.system then 'SYSTEM SCHEMA' else 'SCHEMA' end) as type, s.system, c.remark as remark from sys.schemas s left outer join sys.comments c on s.id = c.id order by system, name, sname, ntype;
 create view sys.environment as select * from sys.env();
 create view sys.geometry_columns as select cast(null as varchar(1)) as f_table_catalog, s.name as f_table_schema, t.name as f_table_name, c.name as f_geometry_column, cast(has_z(c.type_digits) + has_m(c.type_digits) +2 as integer) as coord_dimension, c.type_scale as srid, get_type(c.type_digits, 0) as type from sys.columns c, sys.tables t, sys.schemas s where c.table_id = t.id and t.schema_id = s.id and c.type in (select sqlname from sys.types where systemname in ('wkb', 'wkba'));
 create view sys.optimizers as select * from sys.optimizers();
@@ -876,7 +873,7 @@ create function sys.bbp () returns table (id int, name string, ttype string, cou
 create function "broadcast" (p inet) returns inet external name inet."broadcast";
 create procedure sys.clearrejects() external name sql.copy_rejects_clear;
 create function sys.columnsize(nme string, i bigint, d bigint) returns bigint begin case when nme = 'boolean' then return i; when nme = 'char' then return 2*i; when nme = 'smallint' then return 2 * i; when nme = 'int' then return 4 * i; when nme = 'bigint' then return 8 * i; when nme = 'hugeint' then return 16 * i; when nme = 'timestamp' then return 8 * i; when nme = 'varchar' then case when cast(d as bigint) << 8 then return i; when cast(d as bigint) << 16 then return 2 * i; when cast(d as bigint) << 32 then return 4 * i; else return 8 * i; end case; else return 8 * i; end case; end;
-create procedure sys.comment_on(obj_id integer, obj_remark varchar(65000)) begin if obj_remark is null or obj_remark = '' then delete from sys.comments where id = obj_id; elseif exists (select id from sys.comments where id = obj_id) then update sys.comments set remark = obj_remark where id = obj_id; else insert into sys.comments values (obj_id, obj_remark); end if; end;
+create procedure sys.comment_on(obj_id integer, obj_remark varchar(65000)) begin if obj_id is not null and obj_id > 0 then if obj_remark is null or obj_remark = '' then delete from sys.comments where id = obj_id; elseif exists (select id from sys.comments where id = obj_id) then update sys.comments set remark = obj_remark where id = obj_id; else insert into sys.comments values (obj_id, obj_remark); end if; end if; end;
 create function contains(a geometry, x double, y double) returns boolean external name geom."Contains";
 create aggregate corr(e1 bigint, e2 bigint) returns double external name "aggr"."corr";
 create aggregate corr(e1 double, e2 double) returns double external name "aggr"."corr";
@@ -907,7 +904,6 @@ create function dependencies_tables_on_triggers() returns table (sch varchar(100
 create function dependencies_tables_on_views() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, dependencies as dep where t.id = dep.id and v.id = dep.depend_id and dep.depend_type = 5 and v.type = 1);
 create function dependencies_views_on_functions() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select v.name, f.name, 'DEP_FUNC' from functions as f, tables as v, dependencies as dep where v.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and v.type = 1);
 create function dependencies_views_on_triggers() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select v.name, tri.name, 'DEP_TRIGGER' from tables as v, triggers as tri, dependencies as dep where dep.id = v.id and dep.depend_id =tri.id and dep.depend_type = 8 and v.type = 1);
-create function sys.describe_all_objects() returns table (sname varchar(1024), name varchar(1024), fullname varchar(1024), ntype integer, type varchar(30), system boolean, remark varchar(65000)) begin return table (with table_data as (select schema_id as sid, id, name, system, (case type when 1 then 2 else 1 end) as ntype, table_type_name as type from sys._tables left outer join sys.table_types on type = table_type_id where type in (0, 1, 3, 4, 5, 6)), sequence_data as (select schema_id as sid, id, name, false as system, 4 as ntype, 'SEQUENCE' as type from sys.sequences), function_data as (select schema_id as sid, id, name, exists (select function_id from sys.systemfunctions where function_id = id) as system, 8 as ntype, sys.function_type_keyword(type) as type from sys.functions), schema_data as (select 0 as sid, id, name, system, 16 as ntype, 'SCHEMA' as type from sys.schemas), all_data as (select * from table_data union select * from sequence_data union select * from function_data union select * from schema_data) select distinct s.name as sname, a.name as name, coalesce(s.name || '.', '') || a.name as fullname, a.ntype as ntype, (case when a.system then 'SYSTEM ' else '' end) || a.type as type, a.system as system, c.remark as remark from all_data a left outer join sys.schemas s on a.sid = s.id left outer join sys.comments c on a.id = c.id order by system, name, fullname, ntype); end;
 create procedure sys.droporderindex(sys string, tab string, col string) external name sql.droporderindex;
 CREATE FUNCTION env () RETURNS TABLE(name varchar(1024), value varchar(2048)) EXTERNAL NAME sql.sql_environment;
 create function sys."epoch"(sec bigint) returns timestamp external name timestamp."epoch";
@@ -918,7 +914,7 @@ create procedure sys.evalalgebra(ra_stmt string, opt bool) external name sql."ev
 create procedure fitsattach(fname string) external name fits.attach;
 create procedure fitsload(tname string) external name fits.load;
 create procedure sys.flush_log () external name sql."flush_log";
-create function sys.function_type_keyword(ftype int) returns varchar(20) begin return case ftype when 1 then 'FUNCTION' when 2 then 'PROCEDURE' when 3 then 'AGGREGATE' when 4 then 'FILTER FUNCTION' when 5 then 'FUNCTION' when 7 then 'LOADER' else 'ROUTINE' end;
+create function sys.function_type_keyword(ftype int) returns varchar(20) begin return case ftype when 1 then 'FUNCTION' when 2 then 'PROCEDURE' when 3 then 'AGGREGATE' when 4 then 'FILTER FUNCTION' when 5 then 'FUNCTION' when 6 then 'FUNCTION' when 7 then 'LOADER' else 'ROUTINE' end;
 end;
 create function fuse(one bigint, two bigint) returns hugeint external name udf.fuse;
 create function fuse(one integer, two integer) returns bigint external name udf.fuse;
@@ -1335,7 +1331,7 @@ drop function pcre_replace(string, string, string, string);
 % .s,	.t,	.L4,	.t,	.t,	.t,	.t # table_name
 % name,	name,	query,	type,	system,	commit_action,	access # name
 % varchar,	varchar,	varchar,	smallint,	boolean,	smallint,	smallint # type
-% 3,	29,	1003,	1,	5,	1,	1 # length
+% 3,	29,	1545,	1,	5,	1,	1 # length
 [ "bam",	"export",	NULL,	0,	true,	0,	0	]
 [ "bam",	"files",	NULL,	0,	true,	0,	0	]
 [ "bam",	"pg",	NULL,	0,	true,	0,	0	]
@@ -1346,11 +1342,12 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"args",	NULL,	0,	true,	0,	0	]
 [ "sys",	"auths",	NULL,	0,	true,	0,	0	]
 [ "sys",	"columns",	"SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;",	1,	true,	0,	0	]
-[ "sys",	"commented_function_signatures",	"create view commented_function_signatures as with params as (select * from sys.args where inout = 1), commented_function_params as (select f.id as fid, f.name as fname, s.name as schema, f.type as ftype, c.remark as remark, p.number as n, p.name as aname, p.type as type, p.type_digits as type_digits, p.type_scale as type_scale, rank() over (partition by f.id order by number asc) as asc_rank, rank() over (partition by f.id order by number desc) as desc_rank from sys.functions f join sys.schemas s on f.schema_id = s.id join sys.comments c on f.id = c.id left outer join params p on f.id = p.func_id) select fid, schema, fname, sys.function_type_keyword(ftype) as category, exists (select function_id from sys.systemfunctions where fid = function_id) as system, case when asc_rank = 1 then fname else null end as name, case when desc_rank = 1 then remark else null end as remark, type, type_digits, type_scale, row_number() over (order by fid, n) as line from commented_function_params order by line;",	1,	true,	0,	0	]
+[ "sys",	"commented_function_signatures",	"create view sys.commented_function_signatures as select f.id as fid, s.name as schema, f.name as fname, sys.function_type_keyword(f.type) as category, case when sf.function_id is null then false else true end as system, case rank() over (partition by f.id order by p.number asc) when 1 then f.name else null end as name, case rank() over (partition by f.id order by p.number desc) when 1 then c.remark else null end as remark, p.type, p.type_digits, p.type_scale, row_number() over (order by f.id, p.number) as line from sys.functions f join sys.comments c on f.id = c.id join sys.schemas s on f.schema_id = s.id left outer join sys.systemfunctions sf on f.id = sf.function_id left outer join sys.args p on f.id = p.func_id and p.inout = 1 order by line;",	1,	true,	0,	0	]
 [ "sys",	"comments",	NULL,	0,	true,	0,	0	]
 [ "sys",	"db_user_info",	NULL,	0,	true,	0,	0	]
 [ "sys",	"dependencies",	NULL,	0,	true,	0,	0	]
 [ "sys",	"dependency_types",	NULL,	0,	true,	0,	1	]
+[ "sys",	"describe_all_objects",	"create view sys.describe_all_objects as select s.name as sname, t.name, s.name || '.' || t.name as fullname, cast(case t.type when 1 then 2 else 1 end as smallint) as ntype, (case when t.system then 'SYSTEM ' else '' end) || tt.table_type_name as type, t.system, c.remark as remark from sys._tables t left outer join sys.comments c on t.id = c.id left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id union all select s.name as sname, sq.name, s.name || '.' || sq.name as fullname, cast(4 as smallint) as ntype, 'SEQUENCE' as type, false as system, c.remark as remark from sys.sequences sq left outer join sys.comments c on sq.id = c.id left outer join sys.schemas s on sq.schema_id = s.id union all select distinct s.name as sname, f.name, s.name || '.' || f.name as fullname, cast(8 as smallint) as ntype, (case when sf.function_id is not null then 'SYSTEM ' else '' end) || sys.function_type_keyword(f.type) as type, case when sf.function_id is null then false else true end as system, c.remark as remark from sys.functions f left outer join sys.comments c on f.id = c.id left outer join sys.schemas s on f.schema_id = s.id left outer join sys.systemfunctions sf on f.id = sf.function_id union all select s.name as sname, s.name, s.name as fullname, cast(16 as smallint) as ntype, (case when s.system then 'SYSTEM SCHEMA' else 'SCHEMA' end) as type, s.system, c.remark as remark from sys.schemas s left outer join sys.comments c on s.id = c.id order by system, name, sname, ntype;",	1,	true,	0,	0	]
 [ "sys",	"environment",	"create view sys.environment as select * from sys.env();",	1,	true,	0,	0	]
 [ "sys",	"function_languages",	NULL,	0,	true,	0,	1	]
 [ "sys",	"function_types",	NULL,	0,	true,	0,	1	]
@@ -1481,6 +1478,13 @@ drop function pcre_replace(string, string, string, string);
 [ "dependencies",	"depend_type",	"smallint",	16,	0,	NULL,	true,	2,	NULL	]
 [ "dependency_types",	"dependency_type_id",	"smallint",	16,	0,	NULL,	false,	0,	NULL	]
 [ "dependency_types",	"dependency_type_name",	"varchar",	15,	0,	NULL,	false,	1,	NULL	]
+[ "describe_all_objects",	"sname",	"varchar",	1024,	0,	NULL,	true,	0,	NULL	]
+[ "describe_all_objects",	"name",	"varchar",	1024,	0,	NULL,	true,	1,	NULL	]
+[ "describe_all_objects",	"fullname",	"varchar",	2049,	0,	NULL,	true,	2,	NULL	]
+[ "describe_all_objects",	"ntype",	"smallint",	16,	0,	NULL,	true,	3,	NULL	]
+[ "describe_all_objects",	"type",	"varchar",	0,	0,	NULL,	true,	4,	NULL	]
+[ "describe_all_objects",	"system",	"boolean",	1,	0,	NULL,	true,	5,	NULL	]
+[ "describe_all_objects",	"remark",	"varchar",	65000,	0,	NULL,	true,	6,	NULL	]
 [ "environment",	"name",	"varchar",	1024,	0,	NULL,	true,	0,	NULL	]
 [ "environment",	"value",	"varchar",	2048,	0,	NULL,	true,	1,	NULL	]
 [ "export",	"qname",	"clob",	0,	0,	NULL,	false,	0,	NULL	]
@@ -1812,7 +1816,7 @@ drop function pcre_replace(string, string, string, string);
 % sys.s,	.funcs,	.L275,	.funcs,	.funcs,	.funcs,	.funcs,	.funcs,	.funcs,	.arg16,	.arg16,	.arg16,	.arg16,	.L311,	.arg16,	.arg16,	.arg16,	.arg16,	.L317,	.arg16,	.arg16,	.arg16,	.arg16,	.L325,	.arg16,	.arg16,	.arg16,	.arg16,	.L333,	.arg16,	.arg16,	.arg16,	.arg16,	.L341,	.arg16,	.arg16,	.arg16,	.arg16,	.L347,	.arg16,	.arg16,	.arg16,	.arg16,	.L355,	.arg16,	.arg16,	.arg16,	.arg16,	.L363,	.arg16,	.arg16,	.arg16,	.arg16,	.L371,	.arg16,	.arg16,	.arg16,	.arg16,	.L377,	.arg16,	.arg16,	.arg16,	.arg16,	.L405,	.arg16,	.arg16,	.arg16,	.arg16,	.L413,	.arg16,	.arg16,	.arg16,	.arg16,	.L421,	.arg16,	.arg16,	.arg16,	.arg16,	.L427,	.arg16,	.arg16,	.arg16,	.arg16,	.L435,	.arg16,	.arg16,	.arg16,	.arg16,	.L443 # table_name
 % name,	name,	query,	mod,	language,	type,	side_effect,	varres,	vararg,	name0,	type0,	type_digits0,	type_scale0,	inout0,	name1,	type1,	type_digits1,	type_scale1,	inout1,	name2,	type2,	type_digits2,	type_scale2,	inout2,	name3,	type3,	type_digits3,	type_scale3,	inout3,	name4,	type4,	type_digits4,	type_scale4,	inout4,	name5,	type5,	type_digits5,	type_scale5,	inout5,	name6,	type6,	type_digits6,	type_scale6,	inout6,	name7,	type7,	type_digits7,	type_scale7,	inout7,	name8,	type8,	type_digits8,	type_scale8,	inout8,	name9,	type9,	type_digits9,	type_scale9,	inout9,	name10,	type10,	type_digits10,	type_scale10,	inout10,	name11,	type11,	type_digits11,	type_scale11,	inout11,	name12,	type12,	type_digits12,	type_scale12,	inout12,	name13,	type13,	type_digits13,	type_scale13,	inout13,	name14,	type14,	type_digits14,	type_scale14,	inout14,	name15,	type15,	type_digits15,	type_scale15,	inout15 # name
 % varchar,	varchar,	varchar,	varchar,	int,	char,	boolean,	boolean,	boolean,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char,	varchar,	varchar,	int,	int,	char # type
-% 8,	35,	1408,	9,	1,	17,	5,	5,	5,	11,	14,	4,	1,	0,	16,	14,	5,	1,	0,	16,	14,	4,	1,	0,	27,	12,	3,	1,	0,	12,	7,	2,	1,	0,	10,	7,	2,	1,	0,	8,	7,	5,	1,	0,	9,	6,	2,	1,	0,	10,	6,	2,	1,	0,	8,	7,	2,	1,	0,	9,	7,	2,	1,	0,	6,	7,	2,	1,	0,	8,	6,	2,	1,	0,	6,	7,	1,	1,	0,	9,	7,	1,	1,	0,	6,	7,	1,	1,	0 # length
+% 8,	35,	831,	9,	1,	17,	5,	5,	5,	11,	14,	4,	1,	0,	16,	14,	5,	1,	0,	16,	14,	3,	1,	0,	27,	12,	3,	1,	0,	12,	7,	2,	1,	0,	10,	7,	2,	1,	0,	8,	7,	2,	1,	0,	9,	6,	2,	1,	0,	10,	6,	2,	1,	0,	8,	7,	2,	1,	0,	9,	7,	2,	1,	0,	6,	7,	2,	1,	0,	8,	6,	2,	1,	0,	6,	7,	1,	1,	0,	9,	7,	1,	1,	0,	6,	7,	1,	1,	0 # length
 [ "bam",	"bam_drop_file",	"create procedure bam.bam_drop_file(file_id bigint, dbschema smallint) external name bam.bam_drop_file;",	"bam",	1,	"procedure",	true,	false,	false,	"file_id",	"bigint",	64,	0,	"in",	"dbschema",	"smallint",	16,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "bam",	"bam_export",	"create procedure bam.bam_export(output_path string) external name bam.bam_export;",	"bam",	1,	"procedure",	true,	false,	false,	"output_path",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "bam",	"bam_flag",	"create function bam.bam_flag(flag smallint, name string) returns boolean external name bam.bam_flag;",	"bam",	1,	"function",	false,	false,	false,	"result",	"boolean",	1,	0,	"out",	"flag",	"smallint",	16,	0,	"in",	"name",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -1966,7 +1970,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"code",	"unicode",	"str",	0,	"function",	false,	false,	false,	"res_0",	"clob",	0,	0,	"out",	"arg_1",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"code",	"unicode",	"str",	0,	"function",	false,	false,	false,	"res_0",	"varchar",	0,	0,	"out",	"arg_1",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"columnsize",	"create function sys.columnsize(nme string, i bigint, d bigint) returns bigint begin case when nme = 'boolean' then return i; when nme = 'char' then return 2*i; when nme = 'smallint' then return 2 * i; when nme = 'int' then return 4 * i; when nme = 'bigint' then return 8 * i; when nme = 'hugeint' then return 16 * i; when nme = 'timestamp' then return 8 * i; when nme = 'varchar' then case when cast(d as bigint) << 8 then return i; when cast(d as bigint) << 16 then return 2 * i; when cast(d as bigint) << 32 then return 4 * i; else return 8 * i; end case; else return 8 * i; end case; end;",	"user",	2,	"function",	false,	false,	false,	"result",	"bigint",	64,	0,	"out",	"nme",	"clob",	0,	0,	"in",	"i",	"bigint",	64,	0,	"in",	"d",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"comment_on",	"create procedure sys.comment_on(obj_id integer, obj_remark varchar(65000)) begin if obj_remark is null or obj_remark = '' then delete from sys.comments where id = obj_id; elseif exists (select id from sys.comments where id = obj_id) then update sys.comments set remark = obj_remark where id = obj_id; else insert into sys.comments values (obj_id, obj_remark); end if; end;",	"user",	2,	"procedure",	true,	false,	false,	"obj_id",	"int",	32,	0,	"in",	"obj_remark",	"varchar",	65000,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"comment_on",	"create procedure sys.comment_on(obj_id integer, obj_remark varchar(65000)) begin if obj_id is not null and obj_id > 0 then if obj_remark is null or obj_remark = '' then delete from sys.comments where id = obj_id; elseif exists (select id from sys.comments where id = obj_id) then update sys.comments set remark = obj_remark where id = obj_id; else insert into sys.comments values (obj_id, obj_remark); end if; end if; end;",	"user",	2,	"procedure",	true,	false,	false,	"obj_id",	"int",	32,	0,	"in",	"obj_remark",	"varchar",	65000,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"concat",	"+",	"calc",	0,	"function",	false,	false,	false,	"res_0",	"char",	0,	0,	"out",	"arg_1",	"char",	0,	0,	"in",	"arg_2",	"char",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"concat",	"+",	"calc",	0,	"function",	false,	false,	false,	"res_0",	"clob",	0,	0,	"out",	"arg_1",	"clob",	0,	0,	"in",	"arg_2",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"concat",	"+",	"calc",	0,	"function",	false,	false,	false,	"res_0",	"varchar",	0,	0,	"out",	"arg_1",	"varchar",	0,	0,	"in",	"arg_2",	"varchar",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -2023,7 +2027,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"dependencies_tables_on_views",	"create function dependencies_tables_on_views() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select t.name, v.name, 'DEP_VIEW' from tables as t, tables as v, dependencies as dep where t.id = dep.id and v.id = dep.depend_id and dep.depend_type = 5 and v.type = 1);",	"user",	2,	"table function",	false,	false,	false,	"sch",	"varchar",	100,	0,	"out",	"usr",	"varchar",	100,	0,	"out",	"dep_type",	"varchar",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"dependencies_views_on_functions",	"create function dependencies_views_on_functions() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select v.name, f.name, 'DEP_FUNC' from functions as f, tables as v, dependencies as dep where v.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and v.type = 1);",	"user",	2,	"table function",	false,	false,	false,	"sch",	"varchar",	100,	0,	"out",	"usr",	"varchar",	100,	0,	"out",	"dep_type",	"varchar",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"dependencies_views_on_triggers",	"create function dependencies_views_on_triggers() returns table (sch varchar(100), usr varchar(100), dep_type varchar(32)) return table (select v.name, tri.name, 'DEP_TRIGGER' from tables as v, triggers as tri, dependencies as dep where dep.id = v.id and dep.depend_id =tri.id and dep.depend_type = 8 and v.type = 1);",	"user",	2,	"table function",	false,	false,	false,	"sch",	"varchar",	100,	0,	"out",	"usr",	"varchar",	100,	0,	"out",	"dep_type",	"varchar",	32,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"describe_all_objects",	"create function sys.describe_all_objects() returns table (sname varchar(1024), name varchar(1024), fullname varchar(1024), ntype integer, type varchar(30), system boolean, remark varchar(65000)) begin return table (with table_data as (select schema_id as sid, id, name, system, (case type when 1 then 2 else 1 end) as ntype, table_type_name as type from sys._tables left outer join sys.table_types on type = table_type_id where type in (0, 1, 3, 4, 5, 6)), sequence_data as (select schema_id as sid, id, name, false as system, 4 as ntype, 'SEQUENCE' as type from sys.sequences), function_data as (select schema_id as sid, id, name, exists (select function_id from sys.systemfunctions where function_id = id) as system, 8 as ntype, sys.function_type_keyword(type) as type from sys.functions), schema_data as (select 0 as sid, id, name, system, 16 as ntype, 'SCHEMA' as type from sys.schemas), all_data as (select * from table_data union select * from sequence_data union select * from function_data union select * from schema_data) select distinct s.name as sname, a.name as name, coalesce(s.name || '.', '') || a.name as fullname, a.ntype as ntype, (case when a.system then 'SYSTEM ' else '' end) || a.type as type, a.system as system, c.remark as remark from all_data a left outer join sys.schemas s on a.sid = s.id left outer join sys.comments c on a.id = c.id order by system, name, fullname, ntype); end;",	"user",	2,	"table function",	false,	false,	false,	"sname",	"varchar",	1024,	0,	"out",	"name",	"varchar",	1024,	0,	"out",	"fullname",	"varchar",	1024,	0,	"out",	"ntype",	"int",	32,	0,	"out",	"type",	"varchar",	30,	0,	"out",	"system",	"boolean",	1,	0,	"out",	"remark",	"varchar",	65000,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"diff",	"diff",	"sql",	0,	"analytic function",	false,	false,	false,	"res_0",	"boolean",	1,	0,	"out",	"arg_1",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"diff",	"diff",	"sql",	0,	"analytic function",	false,	false,	false,	"res_0",	"boolean",	1,	0,	"out",	"arg_1",	"boolean",	1,	0,	"in",	"arg_2",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"difference",	"stringdiff",	"txtsim",	0,	"function",	false,	false,	false,	"res_0",	"int",	32,	0,	"out",	"arg_1",	"char",	0,	0,	"in",	"arg_2",	"char",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -2050,7 +2053,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"floor",	"floor",	"mmath",	0,	"function",	false,	false,	false,	"res_0",	"double",	53,	0,	"out",	"arg_1",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"floor",	"floor",	"mmath",	0,	"function",	false,	false,	false,	"res_0",	"real",	24,	0,	"out",	"arg_1",	"real",	24,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"flush_log",	"create procedure sys.flush_log () external name sql.\"flush_log\";",	"sql",	1,	"procedure",	true,	false,	false,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"function_type_keyword",	"create function sys.function_type_keyword(ftype int) returns varchar(20) begin return case ftype when 1 then 'FUNCTION' when 2 then 'PROCEDURE' when 3 then 'AGGREGATE' when 4 then 'FILTER FUNCTION' when 5 then 'FUNCTION' when 7 then 'LOADER' else 'ROUTINE' end; end;",	"user",	2,	"function",	false,	false,	false,	"result",	"varchar",	20,	0,	"out",	"ftype",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"function_type_keyword",	"create function sys.function_type_keyword(ftype int) returns varchar(20) begin return case ftype when 1 then 'FUNCTION' when 2 then 'PROCEDURE' when 3 then 'AGGREGATE' when 4 then 'FILTER FUNCTION' when 5 then 'FUNCTION' when 6 then 'FUNCTION' when 7 then 'LOADER' else 'ROUTINE' end; end;",	"user",	2,	"function",	false,	false,	false,	"result",	"varchar",	20,	0,	"out",	"ftype",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"fuse",	"create function fuse(one bigint, two bigint) returns hugeint external name udf.fuse;",	"udf",	1,	"function",	false,	false,	false,	"result",	"hugeint",	128,	0,	"out",	"one",	"bigint",	64,	0,	"in",	"two",	"bigint",	64,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"fuse",	"create function fuse(one integer, two integer) returns bigint external name udf.fuse;",	"udf",	1,	"function",	false,	false,	false,	"result",	"bigint",	64,	0,	"out",	"one",	"int",	32,	0,	"in",	"two",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"fuse",	"create function fuse(one smallint, two smallint) returns integer external name udf.fuse;",	"udf",	1,	"function",	false,	false,	false,	"result",	"int",	32,	0,	"out",	"one",	"smallint",	16,	0,	"in",	"two",	"smallint",	16,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -3599,8 +3602,7 @@ drop function pcre_replace(string, string, string, string);
 % sys.s1,	sys.f1,	sys.s2,	sys.f2,	.dt # table_name
 % name,	name,	name,	name,	name # name
 % varchar,	varchar,	varchar,	varchar,	char # type
-% 3,	21,	3,	20,	20 # length
-[ "sys",	"function_type_keyword",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
+% 3,	17,	3,	13,	20 # length
 [ "sys",	"st_numgeometries",	"sys",	"st_numpatches",	"FUNC_DEPENDENCY"	]
 [ "sys",	"st_geometryn",	"sys",	"st_patchn",	"FUNC_DEPENDENCY"	]
 [ "sys",	"getproj4",	"sys",	"st_transform",	"FUNC_DEPENDENCY"	]
@@ -3661,13 +3663,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"dependencies",	"sys",	"dependencies_views_on_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"tables",	"sys",	"dependencies_views_on_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"triggers",	"sys",	"dependencies_views_on_triggers",	"FUNC_DEPENDENCY"	]
-[ "sys",	"_tables",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"comments",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"functions",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"schemas",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"sequences",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"systemfunctions",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"table_types",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
 [ "sys",	"spatial_ref_sys",	"sys",	"getproj4",	"FUNC_DEPENDENCY"	]
 [ "sys",	"storagemodelinput",	"sys",	"storagemodel",	"FUNC_DEPENDENCY"	]
 [ "sys",	"keys",	"sys",	"storagemodelinit",	"PROC_DEPENDENCY"	]
@@ -3679,7 +3674,7 @@ drop function pcre_replace(string, string, string, string);
 % sys.s1,	sys.t,	sys.c,	sys.s2,	sys.f,	.dt # table_name
 % name,	name,	name,	name,	name,	name # name
 % varchar,	varchar,	varchar,	varchar,	varchar,	char # type
-% 3,	17,	15,	3,	35,	20 # length
+% 3,	17,	13,	3,	35,	20 # length
 [ "sys",	"comments",	"id",	"sys",	"comment_on",	"PROC_DEPENDENCY"	]
 [ "sys",	"comments",	"remark",	"sys",	"comment_on",	"PROC_DEPENDENCY"	]
 [ "sys",	"dependencies",	"depend_id",	"sys",	"dependencies_columns_on_functions",	"FUNC_DEPENDENCY"	]
@@ -3859,43 +3854,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"triggers",	"statement",	"sys",	"dependencies_views_on_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"triggers",	"table_id",	"sys",	"dependencies_views_on_triggers",	"FUNC_DEPENDENCY"	]
 [ "sys",	"triggers",	"time",	"sys",	"dependencies_views_on_triggers",	"FUNC_DEPENDENCY"	]
-[ "sys",	"_tables",	"access",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"_tables",	"commit_action",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"_tables",	"id",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"_tables",	"name",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"_tables",	"query",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"_tables",	"schema_id",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"_tables",	"system",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"_tables",	"type",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"comments",	"id",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"comments",	"remark",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"functions",	"func",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"functions",	"id",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"functions",	"language",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"functions",	"mod",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"functions",	"name",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"functions",	"schema_id",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"functions",	"side_effect",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"functions",	"type",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"functions",	"vararg",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"functions",	"varres",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"schemas",	"authorization",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"schemas",	"id",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"schemas",	"name",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"schemas",	"owner",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"schemas",	"system",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"sequences",	"cacheinc",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"sequences",	"cycle",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"sequences",	"id",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"sequences",	"increment",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"sequences",	"maxvalue",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"sequences",	"minvalue",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"sequences",	"name",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"sequences",	"schema_id",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"sequences",	"start",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"systemfunctions",	"function_id",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"table_types",	"table_type_id",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
-[ "sys",	"table_types",	"table_type_name",	"sys",	"describe_all_objects",	"FUNC_DEPENDENCY"	]
 [ "sys",	"spatial_ref_sys",	"auth_name",	"sys",	"getproj4",	"FUNC_DEPENDENCY"	]
 [ "sys",	"spatial_ref_sys",	"auth_srid",	"sys",	"getproj4",	"FUNC_DEPENDENCY"	]
 [ "sys",	"spatial_ref_sys",	"proj4text",	"sys",	"getproj4",	"FUNC_DEPENDENCY"	]
@@ -3947,6 +3905,7 @@ drop function pcre_replace(string, string, string, string);
 % varchar,	varchar,	varchar,	varchar,	char # type
 % 3,	21,	3,	29,	20 # length
 [ "sys",	"function_type_keyword",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
+[ "sys",	"function_type_keyword",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
 [ "sys",	"get_type",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
 [ "sys",	"has_m",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
 [ "sys",	"has_z",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
@@ -3960,6 +3919,13 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"functions",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
 [ "sys",	"schemas",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
 [ "sys",	"systemfunctions",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
+[ "sys",	"_tables",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
+[ "sys",	"comments",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
+[ "sys",	"functions",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
+[ "sys",	"schemas",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
+[ "sys",	"sequences",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
+[ "sys",	"systemfunctions",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
+[ "sys",	"table_types",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
 [ "sys",	"columns",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
 [ "sys",	"schemas",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
 [ "sys",	"tables",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
@@ -3968,26 +3934,46 @@ drop function pcre_replace(string, string, string, string);
 % sys.s1,	sys.t1,	sys.c1,	sys.s2,	sys.t2,	.dt # table_name
 % name,	name,	name,	name,	name,	name # name
 % varchar,	varchar,	varchar,	varchar,	varchar,	char # type
-% 3,	15,	11,	3,	29,	20 # length
-[ "sys",	"args",	"type",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
-[ "sys",	"args",	"func_id",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
-[ "sys",	"args",	"type_scale",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
+% 3,	15,	15,	3,	29,	20 # length
 [ "sys",	"args",	"inout",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
-[ "sys",	"args",	"number",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
+[ "sys",	"args",	"type_scale",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
 [ "sys",	"args",	"type_digits",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
-[ "sys",	"comments",	"id",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
+[ "sys",	"args",	"number",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
+[ "sys",	"args",	"func_id",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
+[ "sys",	"args",	"type",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
 [ "sys",	"comments",	"remark",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
+[ "sys",	"comments",	"id",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
 [ "sys",	"functions",	"type",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
+[ "sys",	"functions",	"schema_id",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
 [ "sys",	"functions",	"id",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
 [ "sys",	"functions",	"name",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
-[ "sys",	"functions",	"schema_id",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
-[ "sys",	"schemas",	"id",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
 [ "sys",	"schemas",	"name",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
+[ "sys",	"schemas",	"id",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
 [ "sys",	"systemfunctions",	"function_id",	"sys",	"commented_function_signatures",	"VIEW_DEPENDENCY"	]
+[ "sys",	"_tables",	"system",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
+[ "sys",	"_tables",	"schema_id",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
+[ "sys",	"_tables",	"type",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
+[ "sys",	"_tables",	"name",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
+[ "sys",	"_tables",	"id",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
+[ "sys",	"comments",	"id",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
+[ "sys",	"comments",	"remark",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
+[ "sys",	"functions",	"id",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
+[ "sys",	"functions",	"type",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
+[ "sys",	"functions",	"schema_id",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
+[ "sys",	"functions",	"name",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
+[ "sys",	"schemas",	"id",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
+[ "sys",	"schemas",	"system",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
+[ "sys",	"schemas",	"name",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
+[ "sys",	"sequences",	"name",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
+[ "sys",	"sequences",	"id",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
+[ "sys",	"sequences",	"schema_id",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
+[ "sys",	"systemfunctions",	"function_id",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
+[ "sys",	"table_types",	"table_type_name",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
+[ "sys",	"table_types",	"table_type_id",	"sys",	"describe_all_objects",	"VIEW_DEPENDENCY"	]
 [ "sys",	"schemas",	"id",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
 [ "sys",	"schemas",	"name",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
-[ "sys",	"types",	"sqlname",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
 [ "sys",	"types",	"systemname",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
+[ "sys",	"types",	"sqlname",	"sys",	"geometry_columns",	"VIEW_DEPENDENCY"	]
 #select s1.name, t1.name, c1.name, s2.name, t2.name, k2.name, dt.name from (values (1, 'SCHEMA_DEPENDENCY'), (2, 'TABLE_DEPENDENCY'), (3, 'COLUMN_DEPENDENCY'), (4, 'KEY_DEPENDENCY'), (5, 'VIEW_DEPENDENCY'), (6, 'USER_DEPENDENCY'), (7, 'FUNC_DEPENDENCY'), (8, 'TRIGGER_DEPENDENCY'), (9, 'OWNER_DEPENDENCY'), (10, 'INDEX_DEPENDENCY'), (11, 'FKEY_DEPENDENCY'), (12, 'SEQ_DEPENDENCY'), (13, 'PROC_DEPENDENCY'), (14, 'BEDROPPED_DEPENDENCY'), (15, 'TYPE_DEPENDENCY')) as dt (id, name), dependencies d, _tables t1, _tables t2, schemas s1, schemas s2, _columns c1, keys k2 where d.depend_type = dt.id and d.id = c1.id and d.depend_id = k2.id and c1.table_id = t1.id and t1.schema_id = s1.id and k2.table_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, k2.name, s1.name, t1.name, c1.name;
 % sys.s1,	sys.t1,	sys.c1,	sys.s2,	sys.t2,	sys.k2,	.dt # table_name
 % name,	name,	name,	name,	name,	name,	name # name
@@ -4233,6 +4219,7 @@ drop function pcre_replace(string, string, string, string);
 [ "comments",	"public",	1,	"monetdb",	0	]
 [ "dependencies",	"public",	1,	NULL,	0	]
 [ "dependency_types",	"public",	1,	"monetdb",	0	]
+[ "describe_all_objects",	"public",	1,	"monetdb",	0	]
 [ "environment",	"public",	1,	"monetdb",	0	]
 [ "function_languages",	"public",	1,	"monetdb",	0	]
 [ "function_types",	"public",	1,	"monetdb",	0	]
@@ -4278,7 +4265,6 @@ drop function pcre_replace(string, string, string, string);
 [ "corr",	"public",	16,	"monetdb",	0	]
 [ "date_to_str",	"public",	16,	"monetdb",	0	]
 [ "degrees",	"public",	16,	"monetdb",	0	]
-[ "describe_all_objects",	"public",	16,	"monetdb",	0	]
 [ "env",	"public",	16,	NULL,	0	]
 [ "epoch",	"public",	16,	"monetdb",	0	]
 [ "epoch",	"public",	16,	"monetdb",	0	]
@@ -4736,7 +4722,6 @@ drop function pcre_replace(string, string, string, string);
 [ "dependencies_tables_on_views"	]
 [ "dependencies_views_on_functions"	]
 [ "dependencies_views_on_triggers"	]
-[ "describe_all_objects"	]
 [ "diff"	]
 [ "diff"	]
 [ "difference"	]

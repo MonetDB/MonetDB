@@ -42,6 +42,7 @@ INSERT INTO sys.keywords (keyword) VALUES
   ('CHECK'),
   ('CLOB'),
   ('COALESCE'),
+  ('COMMENT'),
   ('COMMIT'),
   ('COMMITTED'),
   ('CONSTRAINT'),
@@ -308,6 +309,24 @@ INSERT INTO sys.function_types (function_type_id, function_type_name) VALUES
 
 ALTER TABLE sys.function_types SET READ ONLY;
 GRANT SELECT ON sys.function_types TO PUBLIC;
+
+
+-- next function is used by views defined in 97_comments.sql and in mclient and mdump code
+CREATE FUNCTION sys.function_type_keyword(ftype INT)
+RETURNS VARCHAR(20)
+BEGIN
+	RETURN CASE ftype
+                WHEN 1 THEN 'FUNCTION'
+                WHEN 2 THEN 'PROCEDURE'
+                WHEN 3 THEN 'AGGREGATE'
+                WHEN 4 THEN 'FILTER FUNCTION'
+                WHEN 5 THEN 'FUNCTION' -- table returning function
+                WHEN 6 THEN 'FUNCTION' -- analytic function
+                WHEN 7 THEN 'LOADER'
+                ELSE 'ROUTINE'
+        END;
+END;
+GRANT EXECUTE ON FUNCTION sys.function_type_keyword(INT) TO PUBLIC;
 
 
 CREATE TABLE sys.function_languages (
