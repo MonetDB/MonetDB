@@ -7,6 +7,8 @@ insert-null-second-interval-0.Bug-6515
 case_with_orderby_limit.Bug-6512
 sqlitelogictest-bat-undefined.Bug-6516
 sqlitelogictest-overflow-in-conversion.Bug-6517
-sqlitelogictest-count-not-in.Bug-6518
+HAVE_HGE?sqlitelogictest-count-not-in.Bug-6518
 sqlitelogictest-algebra-join-not-in.Bug-6519
 update-with-correlated-subquery.Bug-6520
+sqlitelogictest-in-single-column.Bug-6522
+sqlitelogictest-case-subquery-missing.Bug-6523
