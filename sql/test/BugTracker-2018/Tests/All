@@ -12,3 +12,4 @@ sqlitelogictest-algebra-join-not-in.Bug-6519
 update-with-correlated-subquery.Bug-6520
 sqlitelogictest-in-single-column.Bug-6522
 sqlitelogictest-case-subquery-missing.Bug-6523
+sqlitelogictest-group-by-having-in-count.Bug-6524
