@@ -109,7 +109,7 @@ drop view sys.environment cascade;
 drop function sys.environment() cascade;
 create view sys.environment as select * from sys.env();
 GRANT SELECT ON sys.environment TO PUBLIC;
-update sys._tables set system = true where system = false and name = 'environment' and schema_id in (select id from schemas where name = 'sys');
+update sys._tables set system = true where system = false and name = 'environment' and schema_id in (select id from sys.schemas where name = 'sys');
 delete from sys.systemfunctions where function_id not in (select id from sys.functions);
 
 

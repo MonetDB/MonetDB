@@ -1055,7 +1055,7 @@ sql_remove_environment_func(Client c, mvc *sql)
 			"drop function sys.environment() cascade;\n"
 			"create view sys.environment as select * from sys.env();\n"
 			"GRANT SELECT ON sys.environment TO PUBLIC;\n"
-			"update sys._tables set system = true where system = false and name = 'environment' and schema_id in (select id from schemas where name = 'sys');\n");
+			"update sys._tables set system = true where system = false and name = 'environment' and schema_id in (select id from sys.schemas where name = 'sys');\n");
 
 	pos += snprintf(buf + pos, bufsize - pos,
 			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
