@@ -622,11 +622,13 @@ single_replace(pcre *pcre_code, pcre_extra *extra,
 			*max_result = len_result + addlen + 1;
 		}
 		if (ovector[0] > offset) {
-			len_result += sprintf(result + len_result, "%.*s",
-								  ovector[0] - offset, origin_str + offset);
+			strncpy(result + len_result, origin_str + offset,
+					ovector[0] - offset);
+			len_result += ovector[0] - offset;
 		}
 		if (nbackrefs == 0) {
-			len_result += sprintf(result + len_result, "%s", replacement);
+			strncpy(result + len_result, replacement, len_replacement);
+			len_result += len_replacement;
 		} else {
 			int prevend = 0;
 			for (int i = 0; i < nbackrefs; i++) {
@@ -649,11 +651,15 @@ single_replace(pcre *pcre_code, pcre_extra *extra,
 					result = tmp;
 					*max_result = len_result + addlen + 1;
 				}
-				len_result += sprintf(result + len_result, "%.*s%.*s",
-									  backrefs[i].start - prevend,
-									  replacement + prevend,
-									  len,
-									  origin_str + off);
+				if (backrefs[i].start > prevend) {
+					strncpy(result + len_result, replacement + prevend,
+							backrefs[i].start - prevend);
+					len_result += backrefs[i].start - prevend;
+				}
+				if (len > 0) {
+					strncpy(result + len_result, origin_str + off, len);
+					len_result += off;
+				}
 				prevend = backrefs[i].end;
 			}
 			/* copy rest of replacement string (after last backref) */
@@ -668,9 +674,8 @@ single_replace(pcre *pcre_code, pcre_extra *extra,
 					result = tmp;
 					*max_result = len_result + addlen + 1;
 				}
-				len_result += sprintf(result + len_result, "%.*s",
-									  len_replacement - prevend,
-									  replacement + prevend);
+				strncpy(result + len_result, replacement + prevend, addlen);
+				len_result += addlen;
 			}
 		}
 		offset = ovector[1];
@@ -686,8 +691,11 @@ single_replace(pcre *pcre_code, pcre_extra *extra,
 			result = tmp;
 			*max_result = len_result + addlen + 1;
 		}
-		sprintf(result + len_result, "%.*s", addlen, origin_str + offset);
+		strncpy(result + len_result, origin_str + offset, addlen);
+		len_result += addlen;
 	}
+	/* null terminate string */
+	result[len_result] = '\0';
 	return result;
 }
 
