@@ -239,14 +239,14 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 		if (!enc) {
 			pwd = mcrypt_BackendSum(passwd, strlen(passwd));
 			if (pwd == NULL) {
-				(void) sql_error(m, 02, "ALTER USER: crypt backend hash not found");
+				(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: crypt backend hash not found");
 				return FALSE;
 			}
 			if (oldpasswd != NULL) {
 				opwd = mcrypt_BackendSum(oldpasswd, strlen(oldpasswd));
 				if (opwd == NULL) {
 					free(pwd);
-					(void) sql_error(m, 02, "ALTER USER: crypt backend hash not found");
+					(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: crypt backend hash not found");
 					return FALSE;
 				}
 			}

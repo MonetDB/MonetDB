@@ -153,6 +153,13 @@ doChallenge(void *data)
 	/* generate the challenge string */
 	generateChallenge(challenge, 8, 12);
 	algos = mcrypt_getHashAlgorithms();
+	if(!algos) {
+		GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
+		close_stream(fdin);
+		close_stream(fdout);
+		GDKfree(buf);
+		return;
+	}
 
 	// send the challenge over the block stream
 	mnstr_printf(fdout, "%s:mserver:9:%s:%s:%s:",
@@ -187,6 +194,7 @@ doChallenge(void *data)
 			mnstr_printf(fdout, "!buffer size needs to be set and bigger than %d\n", BLOCK);
 			close_stream(fdin);
 			close_stream(fdout);
+			GDKfree(buf);
 			return;
 		}
 		buflenstr++;			/* position after ':' */
@@ -204,6 +212,7 @@ doChallenge(void *data)
 			mnstr_printf(fdout, "!buffer size needs to be set and bigger than %d\n", BLOCK);
 			close_stream(fdin);
 			close_stream(fdout);
+			GDKfree(buf);
 			return;
 		}
 
@@ -231,6 +240,7 @@ doChallenge(void *data)
 			mnstr_printf(fdout, "%s", errmsg);
 			close_stream(fdin);
 			close_stream(fdout);
+			GDKfree(buf);
 			return;
 		}
 
@@ -249,6 +259,7 @@ doChallenge(void *data)
 			GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
 			close_stream(fdin);
 			close_stream(fdout);
+			GDKfree(buf);
 			return;
 		}
 	}

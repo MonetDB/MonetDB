@@ -1,0 +1,117 @@
+stdout of test 'side-effect.Bug-6397` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 10:56:59 >  
+# 10:56:59 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34093" "--set" "mapi_usock=/var/tmp/mtest-13037/.s.monetdb.34093" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 10:56:59 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.330 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:34093/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-13037/.s.monetdb.34093
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 10:57:00 >  
+# 10:57:00 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13037" "--port=34093"
+# 10:57:00 >  
+
+#CREATE FUNCTION my_generate_series(start INT, finish INT)
+#RETURNS TABLE (value INT)
+#BEGIN
+#    DECLARE TABLE tmp_generate_series(value INT);
+#    DECLARE i INT;
+#    SET i = start;
+#    WHILE (i <= finish) DO
+#        INSERT INTO tmp_generate_series VALUES(i);
+#        SET i = i + 1;
+#    END WHILE;
+#    RETURN tmp_generate_series;
+#END;
+#explain select count(*) from my_generate_series(1,5) as t1,
+#my_generate_series(1,100) as t2;
+% .explain # table_name
+% mal # name
+% clob # type
+% 161 # length
+function user.s4_1():void;
+    X_5:void := querylog.define("explain select count(*) from my_generate_series(1,5) as t1,\nmy_generate_series(1,100) as t2;":str, "default_pipe":str, 33:int);
+    X_31:bat[:str] := bat.new(nil:str);
+    X_37:bat[:int] := bat.new(nil:int);
+    X_35:bat[:int] := bat.new(nil:int);
+    X_34:bat[:str] := bat.new(nil:str);
+    X_33:bat[:str] := bat.new(nil:str);
+    X_13:bat[:int] := user.my_generate_series(1:int, 5:int);
+    X_14:lng := aggr.count(X_13:bat[:int]);
+    X_21:bat[:lng] := sql.single(X_14:lng);
+    X_19:bat[:int] := user.my_generate_series(1:int, 100:int);
+    X_20:lng := aggr.count(X_19:bat[:int]);
+    X_22:bat[:lng] := sql.single(X_20:lng);
+    (X_23:bat[:oid], X_24:bat[:oid]) := algebra.crossproduct(X_21:bat[:lng], X_22:bat[:lng]);
+    X_25:bat[:lng] := algebra.projection(X_23:bat[:oid], X_21:bat[:lng]);
+    X_26:bat[:lng] := algebra.projection(X_24:bat[:oid], X_22:bat[:lng]);
+    X_27:bat[:lng] := batcalc.*(X_25:bat[:lng], X_26:bat[:lng]);
+    X_38:bat[:str] := bat.append(X_31:bat[:str], ".L10":str);
+    X_40:bat[:str] := bat.append(X_33:bat[:str], "L7":str);
+    X_42:bat[:str] := bat.append(X_34:bat[:str], "bigint":str);
+    X_44:bat[:int] := bat.append(X_35:bat[:int], 64:int);
+    X_46:bat[:int] := bat.append(X_37:bat[:int], 0:int);
+    sql.resultSet(X_38:bat[:str], X_40:bat[:str], X_42:bat[:str], X_44:bat[:int], X_46:bat[:int], X_27:bat[:lng]);
+end user.s4_1;
+#inline               actions= 0 time=4 usec 
+#remap                actions= 1 time=35 usec 
+#costmodel            actions= 1 time=17 usec 
+#coercion             actions= 0 time=4 usec 
+#evaluate             actions= 8 time=51 usec 
+#emptybind            actions= 0 time=1 usec 
+#pushselect           actions= 0 time=8 usec 
+#aliases              actions= 8 time=11 usec 
+#mergetable           actions= 0 time=67 usec 
+#deadcode             actions= 1 time=10 usec 
+#aliases              actions= 0 time=1 usec 
+#constants            actions= 4 time=10 usec 
+#commonTerms          actions= 0 time=7 usec 
+#projectionpath       actions= 0 time=6 usec 
+#deadcode             actions= 0 time=7 usec 
+#reorder              actions= 1 time=41 usec 
+#matpack              actions= 0 time=0 usec 
+#dataflow             actions= 1 time=27 usec 
+#multiplex            actions= 0 time=3 usec 
+#profiler             actions=1 time=2 usec 
+#candidates           actions=1 time=2 usec 
+#garbagecollector     actions= 1 time=85 usec 
+#total                actions=25 time=547 usec 
+#select count(*) from my_generate_series(1,5) as t1,
+#my_generate_series(1,100) as t2;
+% .L10 # table_name
+% L7 # name
+% bigint # type
+% 3 # length
+[ 500	]
+#select count(*) from my_generate_series(1,5) as t1,
+#my_generate_series(1,100) as t2;
+% .L10 # table_name
+% L7 # name
+% bigint # type
+% 3 # length
+[ 500	]
+#select count(*) from my_generate_series(1,5) as t1,
+#my_generate_series(1,100) as t2;
+% .L10 # table_name
+% L7 # name
+% bigint # type
+% 3 # length
+[ 500	]
+
+# 10:57:00 >  
+# 10:57:00 >  "Done."
+# 10:57:00 >  
+

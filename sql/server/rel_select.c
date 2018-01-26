@@ -136,6 +136,17 @@ _rel_lastexp(mvc *sql, sql_rel *rel )
 }
 
 static sql_exp *
+rel_firstexp(sql_rel *rel )
+{
+	sql_exp *e;
+
+	assert(list_length(rel->exps));
+	assert(is_project(rel->op));
+	e = rel->exps->h->data;
+	return e;
+}
+
+static sql_exp *
 rel_lastexp(mvc *sql, sql_rel *rel )
 {
 	sql_exp *e;
@@ -2520,7 +2531,7 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 		symbol *lo = NULL;
 		dnode *n = dl->h->next, *dn = NULL;
 		sql_rel *left = NULL, *right = NULL, *select = NULL;
-		sql_exp *l = NULL, *e, *r = NULL;
+		sql_exp *l = NULL, *e, *r = NULL, *lident = NULL, *rident = NULL, *roident = NULL;
 		list *vals = NULL, *ll = sa_list(sql->sa);
 		int correlated = 0, l_is_value = 1;
 		list *pexps = NULL;
@@ -2633,12 +2644,31 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 						sql->session->status = 0;
 						sql->errstr[0] = 0;
 
-						if (!l_is_value) 
+						if (!l_is_value) {
+							if (!correlated) { /* first add identity */
+								sql_rel *oleft = left;
+								left = rel_add_identity(sql, left, &lident);
+								if (left != oleft)
+									reset_processed(left);
+							}
 							rel = left = rel_dup(left);
+							roident = rident = exp_column(sql->sa, exp_relname(lident), exp_name(lident), exp_subtype(lident), lident->card, has_nil(lident), is_intern(lident));
+						}
 						r = rel_value_exp(sql, &rel, sval, f, ek);
 						if (r && !l_is_value) {
+							if (rident && !rel_bind_column(sql, rel, rident->name, 0) && is_project(rel->op)) {
+								sql_exp *r = rel_bind_column(sql, rel->l, rident->name, 0);
+
+								if (!r)
+									return NULL;
+								rel_project_add_exp(sql, rel, r);
+								rident = r;
+								rident = exp_column(sql->sa, exp_relname(lident), exp_name(lident), exp_subtype(lident), lident->card, has_nil(lident), is_intern(lident));
+							}
 							rel = rel_project(sql->sa, rel, NULL);
 							rel_project_add_exp(sql, rel, r);
+							if (rident)
+								rel_project_add_exp(sql, rel, rident);
 						}
 						z = rel;
 						correlated = 1;
@@ -2662,7 +2692,17 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 					} else {
 						if (rel_convert_types(sql, &l, &r, 1, type_equal) < 0) 
 							return NULL;
-						rl = rel_project_exp(sql->sa, exp_label(sql->sa, r, ++sql->label));
+						if (correlated) {
+							rl = rel_dup(left);
+							rl = rel_project(sql->sa, rl, NULL);
+							rel_project_add_exp(sql, rl, r);
+							if (roident) {
+								roident = exp_column(sql->sa, exp_relname(roident), exp_name(roident), exp_subtype(roident), roident->card, has_nil(roident), is_intern(roident));
+								rel_project_add_exp(sql, rl, roident);
+							}
+						} else {
+							rl = rel_project_exp(sql->sa, exp_label(sql->sa, r, ++sql->label));
+						}
 						r = exp_column(sql->sa, exp_relname(r), exp_name(r), exp_subtype(r), r->card, has_nil(r), is_intern(r));
 						if (l_is_value && r_is_rel) {
 							sql_exp *l = ll->h->data;
@@ -2676,7 +2716,16 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 						}
 					}
 					if (right) {
-						rl = rel_setop(sql->sa, right, rl, op_union);
+						sql_exp *r1 = rel_firstexp(right);
+						sql_exp *r2 = rel_firstexp(rl);
+
+						if (subtype_cmp(exp_subtype(r1), exp_subtype(r2))) {
+							list *ls = rel_projections(sql, right, NULL, 1, 1);
+							list *rs = rel_projections(sql, rl, NULL, 1, 1);
+							rl = rel_setop_check_types(sql, right, rl, ls, rs, op_union);
+						} else {
+							rl = rel_setop(sql->sa, right, rl, op_union);
+						}
 						rl->exps = rel_projections(sql, rl, NULL, 0, 1);
 					}
 					right = rl;
@@ -2741,10 +2790,22 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 			/* list through all left/right expressions */
 			rexps = right->exps;
-			if (!is_project(right->op) || list_length(ll) != list_length(rexps)) {
+			if (!is_project(right->op) || list_length(ll) + correlated != list_length(rexps)) {
 				if (list_length(ll) == 1)
 					return sql_error(sql, 02, SQLSTATE(42000) "IN: inner query should return a single column");
 				return NULL;
+			}
+
+			if (correlated && lident) {
+				sql_exp *r;
+			       
+				right = rel_label(sql, right, 0);
+				r = rel_bind_column(sql, right, rident->name, 0);
+
+				if (!r) /* error */
+					return NULL;
+				e = exp_compare(sql->sa, lident, r, cmp_equal );
+				append(jexps, e);
 			}
 
 			for (n=ll->h, m=rexps->h; n && m; n = n->next, m = m->next) {
@@ -3478,7 +3539,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 	exp_kind ek = {type_value, card_column, FALSE};
 	sql_subaggr *a = NULL;
 	int no_nil = 0;
-	sql_rel *groupby = *rel, *gr, *project = NULL;
+	sql_rel *groupby = *rel, *gr, *project = NULL, *iproject = NULL;
 	list *exps = NULL;
 
 	if (!groupby) {
@@ -3495,16 +3556,18 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 
 	if (groupby->l && groupby->op == op_project) {
 		sql_rel *r = groupby->l;	
+
 		if (f == sql_having)
 			project = groupby;
-		if (r->op == op_groupby) {
-			groupby = r;
-		} else if (r->op == op_select && r->l) {
-			/* a having after a groupby */
+		if (f == sql_having && r->op == op_select && r->l) 
 			r = r->l;
-			if (r->op == op_groupby)
-				groupby = r;
+		if (f == sql_having && r->op == op_project && r->l) {
+			iproject = r;
+			r = r->l;
 		}
+
+		if (r->op == op_groupby) 
+			groupby = r;
 	}
 
 	if (groupby->op != op_groupby)		/* implicit groupby */
@@ -3539,6 +3602,10 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 		if (!project)
 			return rel_groupby_add_aggr(sql, groupby, e);
 		e = rel_groupby_add_aggr(sql, groupby, e);
+		if (iproject) {
+			rel_project_add_exp(sql, iproject, e);
+			e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
+		}
 		rel_project_add_exp(sql, project, e);
 		return e;
 	} 
@@ -3662,8 +3729,15 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 
 		if (*rel != groupby || f != sql_sel) { /* selection */
 			e = rel_groupby_add_aggr(sql, groupby, e);
-			if (project)
-				rel_project_add_exp(sql, project, e);
+			if (!e || !project)
+				return e;
+			if (iproject) {
+				rel_project_add_exp(sql, iproject, e);
+				e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
+			}
+			rel_project_add_exp(sql, project, e);
+			if (iproject)
+				e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
 		}
 		return e;
 	} else {

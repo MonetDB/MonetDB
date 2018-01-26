@@ -397,6 +397,7 @@ rel_setop_check_types(mvc *sql, sql_rel *l, sql_rel *r, list *ls, list *rs, oper
 	list *nls = new_exp_list(sql->sa);
 	list *nrs = new_exp_list(sql->sa);
 	node *n, *m;
+
 	if(!nls || !nrs)
 		return NULL;
 

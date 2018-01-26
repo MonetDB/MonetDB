@@ -226,10 +226,10 @@ re_create(const char *pat, int nr)
 	return NULL;
 }
 
+#ifdef HAVE_LIBPCRE
 static str
 pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 {
-#ifdef HAVE_LIBPCRE
 	pcre *r;
 	const char *err_p = NULL;
 	int errpos = 0;
@@ -244,13 +244,8 @@ pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 	}
 	*res = r;
 	return MAL_SUCCEED;
-#else
-	(void) res;
-	(void) pattern;
-	(void) insensitive;
-	throw(MAL, "pcre.compile", "Database was compiled without PCRE support.");
-#endif
 }
+#endif
 
 /* these two defines are copies from gdk_select.c */
 
@@ -551,8 +546,155 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int an
 	throw(MAL, "pcre.likeselect", OPERATION_FAILED);
 }
 
-#define MAX_NR_MATCHES   1024 /* Maximal number of matches in one original string */
-#define MAX_NR_CAPTURES  10 /* Maximal number of captured substrings per match in one original string */
+/* maximum number of back references and quoted \ or $ in replacement string */
+#define MAX_NR_REFS		20
+
+struct backref {
+	int idx;
+	int start;
+	int end;
+};
+
+#ifdef HAVE_LIBPCRE
+/* fill in parameter backrefs (length maxrefs) with information about
+ * back references in the replacement string; a back reference is a
+ * dollar or backslash followed by a number */
+static int
+parse_replacement(const char *replacement, int len_replacement,
+				  struct backref *backrefs, int maxrefs)
+{
+	int nbackrefs = 0;
+
+	for (int i = 0; i < len_replacement && nbackrefs < maxrefs; i++) {
+		if (replacement[i] == '$' || replacement[i] == '\\') {
+			char *endptr;
+			backrefs[nbackrefs].idx = strtol(replacement + i + 1, &endptr, 10);
+			if (endptr > replacement + i + 1) {
+				int k = (int) (endptr - (replacement + i + 1));
+				backrefs[nbackrefs].start = i;
+				backrefs[nbackrefs].end = i + k + 1;
+				nbackrefs++;
+			} else if (replacement[i] == replacement[i + 1]) {
+				/* doubled $ or \, we must copy just one to the output */
+				backrefs[nbackrefs].idx = INT_MAX; /* impossible value > 0 */
+				backrefs[nbackrefs].start = i;
+				backrefs[nbackrefs].end = i + 1;
+				i++;			/* don't look at second $ or \ again */
+				nbackrefs++;
+			}
+			/* else: $ or \ followed by something we don't recognize,
+			 * so just leave it */
+		}
+	}
+	return nbackrefs;
+}
+
+static char *
+single_replace(pcre *pcre_code, pcre_extra *extra,
+			   const char *origin_str, int len_origin_str,
+			   int exec_options, int *ovector, int ovecsize,
+			   const char *replacement, int len_replacement,
+			   struct backref *backrefs, int nbackrefs,
+			   bool global, char *result, int *max_result)
+{
+	int offset = 0;
+	int len_result = 0;
+	int addlen;
+	char *tmp;
+
+	do {
+		int j = pcre_exec(pcre_code, extra, origin_str, len_origin_str, offset,
+					  exec_options, ovector, ovecsize);
+		if (j <= 0)
+			break;
+		addlen = ovector[0] - offset + (nbackrefs == 0 ? len_replacement : 0);
+		if (len_result + addlen >= *max_result) {
+			tmp = GDKrealloc(result, len_result + addlen + 1);
+			if (tmp == NULL) {
+				GDKfree(result);
+				return NULL;
+			}
+			result = tmp;
+			*max_result = len_result + addlen + 1;
+		}
+		if (ovector[0] > offset) {
+			strncpy(result + len_result, origin_str + offset,
+					ovector[0] - offset);
+			len_result += ovector[0] - offset;
+		}
+		if (nbackrefs == 0) {
+			strncpy(result + len_result, replacement, len_replacement);
+			len_result += len_replacement;
+		} else {
+			int prevend = 0;
+			for (int i = 0; i < nbackrefs; i++) {
+				int off, len;
+				if (backrefs[i].idx >= ovecsize / 3) {
+					/* out of bounds, replace with empty string */
+					off = 0;
+					len = 0;
+				} else {
+					off = ovector[backrefs[i].idx * 2];
+					len = ovector[backrefs[i].idx * 2 + 1] - ovector[backrefs[i].idx * 2];
+				}
+				addlen = backrefs[i].start - prevend + len;
+				if (len_result + addlen >= *max_result) {
+					tmp = GDKrealloc(result, len_result + addlen + 1);
+					if (tmp == NULL) {
+						GDKfree(result);
+						return NULL;
+					}
+					result = tmp;
+					*max_result = len_result + addlen + 1;
+				}
+				if (backrefs[i].start > prevend) {
+					strncpy(result + len_result, replacement + prevend,
+							backrefs[i].start - prevend);
+					len_result += backrefs[i].start - prevend;
+				}
+				if (len > 0) {
+					strncpy(result + len_result, origin_str + off, len);
+					len_result += off;
+				}
+				prevend = backrefs[i].end;
+			}
+			/* copy rest of replacement string (after last backref) */
+			addlen = len_replacement - prevend;
+			if (addlen > 0) {
+				if (len_result + addlen >= *max_result) {
+					tmp = GDKrealloc(result, len_result + addlen + 1);
+					if (tmp == NULL) {
+						GDKfree(result);
+						return NULL;
+					}
+					result = tmp;
+					*max_result = len_result + addlen + 1;
+				}
+				strncpy(result + len_result, replacement + prevend, addlen);
+				len_result += addlen;
+			}
+		}
+		offset = ovector[1];
+	} while (offset < len_origin_str && global);
+	if (offset < len_origin_str) {
+		addlen = len_origin_str - offset;
+		if (len_result + addlen >= *max_result) {
+			tmp = GDKrealloc(result, len_result + addlen + 1);
+			if (tmp == NULL) {
+				GDKfree(result);
+				return NULL;
+			}
+			result = tmp;
+			*max_result = len_result + addlen + 1;
+		}
+		strncpy(result + len_result, origin_str + offset, addlen);
+		len_result += addlen;
+	}
+	/* null terminate string */
+	result[len_result] = '\0';
+	return result;
+}
+#endif
 
 static str
 pcre_replace(str *res, const char *origin_str, const char *pattern,
@@ -563,16 +705,14 @@ pcre_replace(str *res, const char *origin_str, const char *pattern,
 	pcre *pcre_code = NULL;
 	pcre_extra *extra;
 	char *tmpres;
-	char tmpbackref[4]; /* enough for 0 to 999 */
-	int i, j, k, m, len, errpos = 0, offset = 0;
+	int max_result;
+	int i, errpos = 0;
 	int compile_options = PCRE_UTF8, exec_options = PCRE_NOTEMPTY;
 	int *ovector, ovecsize;
 	int len_origin_str = (int) strlen(origin_str);
 	int len_replacement = (int) strlen(replacement);
-	int len_replacement_with_backrefs = 0;
-	int nmatches = 0;
-	int capture_offsets[MAX_NR_MATCHES][MAX_NR_CAPTURES * 2], ncaptures = 0, len_del = 0;
-	int backrefs[MAX_NR_CAPTURES] , backref_offsets[MAX_NR_CAPTURES * 2], nbackrefs = 0;
+	struct backref backrefs[MAX_NR_REFS];
+	int nbackrefs = 0;
 
 	while (*flags) {
 		switch (*flags) {
@@ -625,108 +765,31 @@ pcre_replace(str *res, const char *origin_str, const char *pattern,
 			  SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
-	/* The pattern can match multiple substrings,
-	 * and each substring can contain multiple captures.
-	 * The first capture is always the entire matching substring.
-	 */
-	i = 0;
-	do {
-		j = pcre_exec(pcre_code, extra, origin_str, len_origin_str,
-					  offset, exec_options, ovector, ovecsize);
-		if (j > 0) {
-			ncaptures = 0;
-			for (i=0; (i < j) && (ncaptures < MAX_NR_CAPTURES); i++) {
-				capture_offsets[nmatches][i*2] = ovector[i*2];
-				capture_offsets[nmatches][i*2+1] = ovector[i*2+1];
-				ncaptures++;
-			}
-			offset = ovector[1];
-			len_del += ovector[1] - ovector[0];
-			nmatches++;
-		}
-	} while (j > 0 && global && offset < len_origin_str && ncaptures < MAX_NR_CAPTURES);
-	pcre_free_study(extra);
-	GDKfree(ovector);
+	/* identify back references in the replacement string */
+	nbackrefs = parse_replacement(replacement, len_replacement,
+								  backrefs, MAX_NR_REFS);
 
-	if (nmatches > 0) {
-		/* identify back references in the replacement string */
-		for (i=0; i<len_replacement; i++) {
-			if (replacement[i] == '$' || replacement[i] == '\\') {
-				if (i>0 && replacement[i-1] != '\\') {
-					for (k=0; i+k+1<len_replacement; k++) {
-						if (!isdigit((unsigned char)replacement[i+k+1]))
-							break;
-					}
-					if (k>0) {
-						strncpy(tmpbackref, replacement+i+1, k);
-						tmpbackref[i+1+k] = '\0';
-						backrefs[nbackrefs] = atoi(tmpbackref);
-						backref_offsets[nbackrefs*2] = i;
-						backref_offsets[nbackrefs*2+1] = i+k+1;
-						nbackrefs++;
-					}
-				}
-			}
-		}
-
-		/* length of all replacements including backreferences */
-		len_replacement_with_backrefs = len_replacement * nmatches;
-		for (m=0; m<nmatches; m++) {
-			for(i=0; i<nbackrefs; i++) {
-				len_replacement_with_backrefs -= backref_offsets[i*2+1] - backref_offsets[i*2];
-				if (backrefs[i] < ncaptures) {
-					len_replacement_with_backrefs += capture_offsets[m][backrefs[i]*2+1] - capture_offsets[m][backrefs[i]*2];
-				}
-			}
-		}
-		tmpres = GDKmalloc(len_origin_str - len_del + len_replacement_with_backrefs + 1);
-		if (tmpres) {
-			k=0;
-			for (m=0; m<nmatches; m++) {
-				/* copy the substring before the matching substring */
-				len = capture_offsets[m][0] - (m>0)*capture_offsets[m-1][1];
-				strncpy(tmpres+k, origin_str+(m>0)*capture_offsets[m-1][1], len);
-				k += len;
-
-				/* replace match */
-				if (nbackrefs > 0) {
-					for(i=0; i<nbackrefs; i++) {
-						/* copy the replacement substring before the backreference */
-						len = backref_offsets[i*2] - (i>0)*backref_offsets[(i-1)*2+1];
-						strncpy(tmpres+k, replacement+(i>0)*backref_offsets[(i-1)*2+1], len);
-						k += len;
-						/* copy backreference */
-						if (backrefs[i] < ncaptures) {
-							len = capture_offsets[m][backrefs[i]*2+1] - capture_offsets[m][backrefs[i]*2];
-							strncpy(tmpres+k, origin_str+capture_offsets[m][backrefs[i]*2], len);
-							k += len;
-						}
-					}
-					/* copy the replacement string after last backreference */
-					len = len_replacement - backref_offsets[(i-1)*2+1];
-					strncpy(tmpres+k, replacement+backref_offsets[(i-1)*2+1], len);
-					k += len;
-				} else {
-					/* no backreferences, copy the entire replacement */
-					strncpy(tmpres+k, replacement, len_replacement);
-					k += len_replacement;
-				}
-			}
-
-			/* copy the substring after the last matching substring */
-			strncpy(tmpres+k, origin_str+capture_offsets[m-1][1], len_origin_str - capture_offsets[m-1][1]);
-			k += len_origin_str - capture_offsets[m-1][1];
-			tmpres[k] = '\0';
-		}
-	} else {
-		/* no captured substrings, return the original string */
-		tmpres = GDKstrdup(origin_str);
+	max_result = len_origin_str + 1;
+	tmpres = GDKmalloc(max_result);
+	if (tmpres == NULL) {
+		GDKfree(ovector);
+		pcre_free_study(extra);
+		pcre_free(pcre_code);
+		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
+			  SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
+	tmpres = single_replace(pcre_code, extra, origin_str, len_origin_str,
+							exec_options, ovector, ovecsize, replacement,
+							len_replacement, backrefs, nbackrefs, global,
+							tmpres, &max_result);
+	GDKfree(ovector);
+	pcre_free_study(extra);
 	pcre_free(pcre_code);
 	if (tmpres == NULL)
 		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
 			  SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
 	*res = tmpres;
 	return MAL_SUCCEED;
 #else
@@ -748,20 +811,17 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 #ifdef HAVE_LIBPCRE
 	BATiter origin_strsi = bat_iterator(origin_strs);
 	const char *err_p = NULL;
-	char *tmpres, *tmps;
-	char tmpbackref[4];			/* enough for 0 to 999 */
-	int i, j, k, m, len, errpos = 0, offset = 0;
+	char *tmpres;
+	int i, errpos = 0;
 	int compile_options = PCRE_UTF8, exec_options = PCRE_NOTEMPTY;
 	pcre *pcre_code = NULL;
 	pcre_extra *extra;
 	BAT *tmpbat;
 	BUN p, q;
 	int *ovector, ovecsize;
-	int len_origin_str, len_replacement = (int) strlen(replacement);
-	int len_replacement_with_backrefs = 0;
-	int nmatches = 0;
-	int capture_offsets[MAX_NR_MATCHES][MAX_NR_CAPTURES * 2], ncaptures = 0, len_del = 0;
-	int backrefs[MAX_NR_CAPTURES] , backref_offsets[MAX_NR_CAPTURES * 2], nbackrefs = 0;
+	int len_replacement = (int) strlen(replacement);
+	struct backref backrefs[MAX_NR_REFS];
+	int nbackrefs = 0;
 	const char *origin_str;
 	int max_dest_size = 0;
 
@@ -817,144 +877,39 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 	}
 
 	/* identify back references in the replacement string */
-	for (i = 0; i < len_replacement; i++) {
-		if (replacement[i] == '$' || replacement[i] == '\\') {
-			if (i > 0 && replacement[i - 1] != '\\') {
-				for (k = 0; i + k + 1 < len_replacement; k++) {
-					if (!isdigit((unsigned char)replacement[i + k + 1]))
-						break;
-				}
-				if (k > 0) {
-					strncpy(tmpbackref, replacement + i + 1, k);
-					tmpbackref[i + 1 + k] = '\0';
-					backrefs[nbackrefs] = atoi(tmpbackref);
-					backref_offsets[nbackrefs * 2] = i;
-					backref_offsets[nbackrefs * 2 + 1] = i + k + 1;
-					nbackrefs++;
-				}
-			}
-		}
-	}
+	nbackrefs = parse_replacement(replacement, len_replacement,
+								  backrefs, MAX_NR_REFS);
 
 	tmpbat = COLnew(origin_strs->hseqbase, TYPE_str, BATcount(origin_strs), TRANSIENT);
 
 	/* the buffer for all destination strings is allocated only once,
 	 * and extended when needed */
-	tmpres = GDKmalloc(len_replacement + 1);
-	max_dest_size = len_replacement;
+	max_dest_size = len_replacement + 1;
+	tmpres = GDKmalloc(max_dest_size);
 	if (tmpbat == NULL || tmpres == NULL) {
 		pcre_free_study(extra);
 		pcre_free(pcre_code);
 		GDKfree(ovector);
+		BBPreclaim(tmpbat);
+		GDKfree(tmpres);
 		throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
 			  SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(origin_strs, p, q) {
 		origin_str = BUNtail(origin_strsi, p);
-		len_origin_str = (int) strlen(origin_str);
-
-		/* The pattern can match multiple substrings, and each
-		 * substring can contain multiple captures.  The first capture
-		 * is always the entire matching substring.
-		 */
-		i = nmatches = len_del = offset = 0;
-		do {
-			j = pcre_exec(pcre_code, extra, origin_str, len_origin_str,
-						  offset, exec_options, ovector, ovecsize);
-			if (j > 0) {
-				ncaptures = 0;
-				for (i = 0; i < j && ncaptures < MAX_NR_CAPTURES; i++) {
-					capture_offsets[nmatches][i * 2] = ovector[i * 2];
-					capture_offsets[nmatches][i * 2 + 1] = ovector[i * 2 + 1];
-					ncaptures++;
-				}
-				offset = ovector[1];
-				len_del += ovector[1] - ovector[0];
-				nmatches++;
-			}
-		} while (j > 0 && global && nmatches < MAX_NR_MATCHES && offset < len_origin_str);
-
-		if (nmatches > 0) {
-			/* length of all replacements including backreferences */
-			len_replacement_with_backrefs = len_replacement * nmatches;
-			for (m=0; m<nmatches; m++) {
-				for(i=0; i<nbackrefs; i++) {
-					len_replacement_with_backrefs -= backref_offsets[i*2+1] - backref_offsets[i*2];
-					if (backrefs[i] < ncaptures) { /* ignore out of range backrefs */
-						len_replacement_with_backrefs += capture_offsets[m][backrefs[i]*2+1] - capture_offsets[m][backrefs[i]*2];
-					}
-				}
-			}
-			/* extend destination buffer if needed */
-			if ((len = len_origin_str - len_del + len_replacement_with_backrefs) > max_dest_size) {
-				tmps = GDKrealloc(tmpres, len + 1);
-				if (tmps == NULL) {
-					pcre_free_study(extra);
-					pcre_free(pcre_code);
-					GDKfree(tmpres);
-					GDKfree(ovector);
-					throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
-						  SQLSTATE(HY001) MAL_MALLOC_FAIL);
-				}
-				tmpres = tmps;
-				max_dest_size = len;
-			}
-
-			k=0;
-			for (m=0; m<nmatches; m++) {
-				/* copy the substring before the matching substring */
-				len = capture_offsets[m][0] - (m>0)*capture_offsets[m-1][1];
-				strncpy(tmpres+k, origin_str+(m>0)*capture_offsets[m-1][1], len);
-				k += len;
-
-				/* replace match */
-				if (nbackrefs > 0) {
-					for(i=0; i<nbackrefs; i++) {
-						/* copy the replacement substring before the backreference */
-						len = backref_offsets[i*2] - (i>0)*backref_offsets[(i-1)*2+1];
-						strncpy(tmpres+k, replacement+(i>0)*backref_offsets[(i-1)*2+1], len);
-						k += len;
-						/* copy backreference */
-						if (backrefs[i] < ncaptures) { /* ignore out of range backrefs */
-							len = capture_offsets[m][backrefs[i]*2+1] - capture_offsets[m][backrefs[i]*2];
-							strncpy(tmpres+k, origin_str+capture_offsets[m][backrefs[i]*2], len);
-							k += len;
-						}
-					}
-					/* copy the replacement string after last backreference */
-					len = len_replacement - backref_offsets[(i-1)*2+1];
-					strncpy(tmpres+k, replacement+backref_offsets[(i-1)*2+1], len);
-					k += len;
-				} else {
-					/* no backreferences, copy the entire replacement */
-					strncpy(tmpres+k, replacement, len_replacement);
-					k += len_replacement;
-				}
-			}
-			/* copy the substring after the last matching substring */
-			strncpy(tmpres+k, origin_str+capture_offsets[m-1][1], len_origin_str - capture_offsets[m-1][1]);
-			k += len_origin_str - capture_offsets[m-1][1];
-			tmpres[k] = '\0';
-			if (BUNappend(tmpbat, tmpres, FALSE) != GDK_SUCCEED) {
-				pcre_free_study(extra);
-				pcre_free(pcre_code);
-				GDKfree(ovector);
-				BBPreclaim(tmpbat);
-				throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
-					  SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			}
-
-		} else {
-			/* no captured substrings, return the original string*/
-			tmps = GDKstrdup(origin_str);
-			if (BUNappend(tmpbat, tmps, FALSE) != GDK_SUCCEED) {
-				pcre_free_study(extra);
-				pcre_free(pcre_code);
-				GDKfree(ovector);
-				BBPreclaim(tmpbat);
-				throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
-					  SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			}
+		tmpres = single_replace(pcre_code, extra, origin_str,
+								(int) strlen(origin_str), exec_options,
+								ovector, ovecsize, replacement,
+								len_replacement, backrefs, nbackrefs, global,
+								tmpres, &max_dest_size);
+		if (tmpres == NULL || BUNappend(tmpbat, tmpres, FALSE) != GDK_SUCCEED) {
+			pcre_free_study(extra);
+			pcre_free(pcre_code);
+			GDKfree(ovector);
+			GDKfree(tmpres);
+			BBPreclaim(tmpbat);
+			throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
+				  SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 	pcre_free_study(extra);
@@ -1159,6 +1114,7 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 	return MAL_SUCCEED;
 }
 
+#ifdef HAVE_LIBPCRE
 /* change SQL PATINDEX pattern into PCRE pattern */
 static str
 pat2pcre(str *r, const char *pat)
@@ -1191,6 +1147,8 @@ pat2pcre(str *r, const char *pat)
 	*ppat = 0;
 	return MAL_SUCCEED;
 }
+#endif
+
 /*
  * @+ Wrapping
  */
@@ -1276,17 +1234,26 @@ PCREindex(int *res, const pcre *pattern, const str *s)
 str
 PCREpatindex(int *ret, const str *pat, const str *val)
 {
+#ifdef HAVE_LIBPCRE
 	pcre *re = NULL;
 	char *ppat = NULL, *msg;
 
 	if ((msg = pat2pcre(&ppat, *pat)) != MAL_SUCCEED)
 		return msg;
-	if ((msg = pcre_compile_wrap(&re, ppat, FALSE)) != MAL_SUCCEED)
+	if ((msg = pcre_compile_wrap(&re, ppat, FALSE)) != MAL_SUCCEED) {
+		GDKfree(ppat);
 		return msg;
+	}
 	GDKfree(ppat);
 	msg = PCREindex(ret, re, val);
 	pcre_free(re);
 	return msg;
+#else
+	(void) ret;
+	(void) pat;
+	(void) val;
+	throw(MAL, "pcre.patindex", "Database was compiled without PCRE support.");
+#endif
 }
 
 str
