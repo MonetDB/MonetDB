@@ -1251,7 +1251,7 @@ select s1.name, t1.name, c1.name, s2.name, t2.name, k2.name, dt.dependency_type_
 select s1.name, t1.name, c1.name, s2.name, t2.name, i2.name, dt.dependency_type_name from sys.dependency_types dt, dependencies d, _tables t1, _tables t2, schemas s1, schemas s2, _columns c1, idxs i2 where d.depend_type = dt.dependency_type_id and d.id = c1.id and d.depend_id = i2.id and c1.table_id = t1.id and t1.schema_id = s1.id and i2.table_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, i2.name, s1.name, t1.name, c1.name;
 select t.systemname, t.sqlname, s.name, f.name, dt.dependency_type_name from sys.dependency_types dt, types t, functions f, schemas s, dependencies d where d.depend_type = dt.dependency_type_id and d.id = t.id and d.depend_id = f.id and f.schema_id = s.id order by s.name, f.name, t.systemname, t.sqlname;
 -- idxs
-select t.name, i.name, i.type from sys.idxs i left outer join sys._tables t on t.id = i.table_id order by t.name, i.name;
+select t.name, i.name, it.name from sys.idxs i left outer join sys._tables t on t.id = i.table_id left outer join (values (0, 'hash'), (1, 'join'), (2, 'oph'), (3, 'no'), (4, 'imprints'), (5, 'ordered'), (6, 'new')) as it (id, name) on i.type = it.id order by t.name, i.name;
 -- keys
 with x as (select k.id as id, t.name as tname, k.name as kname, k.type as type, k.rkey as rkey, k.action as action from sys.keys k left outer join sys._tables t on t.id = k.table_id) select x.tname, x.kname, x.type, y.kname, x.action from x left outer join x y on x.rkey = y.id order by x.tname, x.kname;
 -- objects
@@ -3859,35 +3859,35 @@ drop function pcre_replace(string, string, string, string);
 [ "inet",	"inet",	"sys",	"setmasklen",	"TYPE"	]
 [ "inet",	"inet",	"sys",	"text",	"TYPE"	]
 [ "uuid",	"uuid",	"sys",	"uuid",	"TYPE"	]
-#select t.name, i.name, i.type from sys.idxs i left outer join sys._tables t on t.id = i.table_id order by t.name, i.name;
-% .t,	.i,	.i # table_name
-% name,	name,	type # name
-% varchar,	varchar,	int # type
-% 18,	44,	1 # length
-[ "comments",	"comments_id_pkey",	0	]
-[ "dependency_types",	"dependency_types_dependency_type_id_pkey",	0	]
-[ "dependency_types",	"dependency_types_dependency_type_name_unique",	0	]
-[ "files",	"files_pkey_file_id",	0	]
-[ "function_languages",	"function_languages_language_id_pkey",	0	]
-[ "function_languages",	"function_languages_language_name_unique",	0	]
-[ "function_types",	"function_types_function_type_id_pkey",	0	]
-[ "function_types",	"function_types_function_type_name_unique",	0	]
-[ "index_types",	"index_types_index_type_id_pkey",	0	]
-[ "index_types",	"index_types_index_type_name_unique",	0	]
-[ "key_types",	"key_types_key_type_id_pkey",	0	]
-[ "key_types",	"key_types_key_type_name_unique",	0	]
-[ "keywords",	"keywords_keyword_pkey",	0	]
-[ "pg",	"pg_fkey_file_id",	1	]
-[ "pg",	"pg_pkey_id_file_id",	0	]
-[ "privilege_codes",	"privilege_codes_privilege_code_id_pkey",	0	]
-[ "privilege_codes",	"privilege_codes_privilege_code_name_unique",	0	]
-[ "rg",	"rg_fkey_file_id",	1	]
-[ "rg",	"rg_pkey_id_file_id",	0	]
-[ "spatial_ref_sys",	"spatial_ref_sys_srid_pkey",	0	]
-[ "sq",	"sq_fkey_file_id",	1	]
-[ "sq",	"sq_pkey_sn_file_id",	0	]
-[ "table_types",	"table_types_table_type_id_pkey",	0	]
-[ "table_types",	"table_types_table_type_name_unique",	0	]
+#select t.name, i.name, it.name from sys.idxs i left outer join sys._tables t on t.id = i.table_id left outer join (values (0, 'hash'), (1, 'join'), (2, 'oph'), (3, 'no'), (4, 'imprints'), (5, 'ordered'), (6, 'new')) as it (id, name) on i.type = it.id order by t.name, i.name;
+% .t,	.i,	.it # table_name
+% name,	name,	name # name
+% varchar,	varchar,	char # type
+% 18,	44,	8 # length
+[ "comments",	"comments_id_pkey",	"hash"	]
+[ "dependency_types",	"dependency_types_dependency_type_id_pkey",	"hash"	]
+[ "dependency_types",	"dependency_types_dependency_type_name_unique",	"hash"	]
+[ "files",	"files_pkey_file_id",	"hash"	]
+[ "function_languages",	"function_languages_language_id_pkey",	"hash"	]
+[ "function_languages",	"function_languages_language_name_unique",	"hash"	]
+[ "function_types",	"function_types_function_type_id_pkey",	"hash"	]
+[ "function_types",	"function_types_function_type_name_unique",	"hash"	]
+[ "index_types",	"index_types_index_type_id_pkey",	"hash"	]
+[ "index_types",	"index_types_index_type_name_unique",	"hash"	]
+[ "key_types",	"key_types_key_type_id_pkey",	"hash"	]
+[ "key_types",	"key_types_key_type_name_unique",	"hash"	]
+[ "keywords",	"keywords_keyword_pkey",	"hash"	]
+[ "pg",	"pg_fkey_file_id",	"join"	]
+[ "pg",	"pg_pkey_id_file_id",	"hash"	]
+[ "privilege_codes",	"privilege_codes_privilege_code_id_pkey",	"hash"	]
+[ "privilege_codes",	"privilege_codes_privilege_code_name_unique",	"hash"	]
+[ "rg",	"rg_fkey_file_id",	"join"	]
+[ "rg",	"rg_pkey_id_file_id",	"hash"	]
+[ "spatial_ref_sys",	"spatial_ref_sys_srid_pkey",	"hash"	]
+[ "sq",	"sq_fkey_file_id",	"join"	]
+[ "sq",	"sq_pkey_sn_file_id",	"hash"	]
+[ "table_types",	"table_types_table_type_id_pkey",	"hash"	]
+[ "table_types",	"table_types_table_type_name_unique",	"hash"	]
 #with x as (select k.id as id, t.name as tname, k.name as kname, k.type as type, k.rkey as rkey, k.action as action from sys.keys k left outer join sys._tables t on t.id = k.table_id) select x.tname, x.kname, x.type, y.kname, x.action from x left outer join x y on x.rkey = y.id order by x.tname, x.kname;
 % .x,	.x,	.x,	.y,	.x # table_name
 % tname,	kname,	type,	kname,	action # name

@@ -115,7 +115,7 @@ select s1.name, t1.name, c1.name, s2.name, t2.name, k2.name, dt.dependency_type_
 select s1.name, t1.name, c1.name, s2.name, t2.name, i2.name, dt.dependency_type_name from sys.dependency_types dt, dependencies d, _tables t1, _tables t2, schemas s1, schemas s2, _columns c1, idxs i2 where d.depend_type = dt.dependency_type_id and d.id = c1.id and d.depend_id = i2.id and c1.table_id = t1.id and t1.schema_id = s1.id and i2.table_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, i2.name, s1.name, t1.name, c1.name;
 select t.systemname, t.sqlname, s.name, f.name, dt.dependency_type_name from sys.dependency_types dt, types t, functions f, schemas s, dependencies d where d.depend_type = dt.dependency_type_id and d.id = t.id and d.depend_id = f.id and f.schema_id = s.id order by s.name, f.name, t.systemname, t.sqlname;
 -- idxs
-select t.name, i.name, i.type from sys.idxs i left outer join sys._tables t on t.id = i.table_id order by t.name, i.name;
+select t.name, i.name, it.name from sys.idxs i left outer join sys._tables t on t.id = i.table_id left outer join (values (0, 'hash'), (1, 'join'), (2, 'oph'), (3, 'no'), (4, 'imprints'), (5, 'ordered'), (6, 'new')) as it (id, name) on i.type = it.id order by t.name, i.name;
 -- keys
 with x as (select k.id as id, t.name as tname, k.name as kname, k.type as type, k.rkey as rkey, k.action as action from sys.keys k left outer join sys._tables t on t.id = k.table_id) select x.tname, x.kname, x.type, y.kname, x.action from x left outer join x y on x.rkey = y.id order by x.tname, x.kname;
 -- objects
