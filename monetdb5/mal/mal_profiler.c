@@ -8,11 +8,11 @@
 
 /* (c) M.L. Kersten
  * Performance tracing
- * The stethoscope/tachograph and tomograph performance monitors have exclusive access 
- * to a single event stream, which avoids concurrency conflicts amongst clients. 
+ * The stethoscope/tachograph and tomograph performance monitors have exclusive access
+ * to a single event stream, which avoids concurrency conflicts amongst clients.
  * It also avoid cluthered event records on the stream. Since this event stream is owned
- * by a client, we should ensure that the profiler is automatically 
- * reset once the owner leaves. 
+ * by a client, we should ensure that the profiler is automatically
+ * reset once the owner leaves.
  */
 #include "monetdb_config.h"
 #include "mal_function.h"
@@ -116,7 +116,7 @@ truncate_string(char *inp)
 	return ret;
 }
 
-/* JSON rendering method of performance data. 
+/* JSON rendering method of performance data.
  * The eventparser may assume this layout for ease of parsing
 EXAMPLE:
 {
@@ -421,7 +421,7 @@ getCPULoad(char cpuload[BUFSIZ]){
 			corestat[cpu].system = system;
 			corestat[cpu].idle = idle;
 			corestat[cpu].iowait = iowait;
-		} 
+		}
 	  skip:
 		while (*s && *s != '\n')
 			s++;
@@ -502,7 +502,7 @@ profilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str usrname)
 
 /* The first scheme dumps the events
  * on a stream (and in the pool)
- * The mode encodes two flags: 
+ * The mode encodes two flags:
  * - showing all running instructions
  * - single line json
  */
@@ -533,13 +533,15 @@ openProfilerStream(stream *fd, int mode)
 	if( (mode & PROFSHOWRUNNING) > 0){
 		for (i = 0; i < MAL_MAXCLIENTS; i++) {
 			c = mal_clients+i;
-			if ( c->active ) 
+			if ( c->active )
 				for(j = 0; j <THREADS; j++)
 				if( c->inprogress[j].mb)
 				/* show the event */
 					profilerEvent(c->inprogress[j].mb, c->inprogress[j].stk, c->inprogress[j].pci, 1, c->username);
 		}
 	}
+	/* Syncronize at start up */
+	syncEvent();
 	return MAL_SUCCEED;
 }
 
@@ -618,7 +620,7 @@ stopTrace(str path)
 		offlinestore =0;
 	}
 	MT_lock_unset(&mal_profileLock );
-	
+
 	malProfileMode = eventstream != NULL;
 	sqlProfiling = FALSE;
 	return MAL_SUCCEED;
@@ -817,7 +819,7 @@ initTrace(void)
 		TRACE_id_minflt == NULL ||
 		TRACE_id_majflt == NULL ||
 		TRACE_id_nvcsw == NULL ||
-		TRACE_id_thread == NULL 
+		TRACE_id_thread == NULL
 	)
 		_cleanupProfiler();
 	else
@@ -1079,3 +1081,30 @@ void initHeartbeat(void)
 	}
 }
 
+str
+syncEvent(void)
+{
+	char logbuffer[LOGLEN], *logbase;
+	int loglen;
+	struct timeval curr_time;
+	lng usec = GDKusec();
+	uint64_t clock_time;
+
+	gettimeofday(&curr_time, NULL);
+	clock_time = curr_time.tv_sec*1000000 + (curr_time.tv_usec == -1 ? 0 : curr_time.tv_usec);
+
+	lognew();
+	logadd("{%s", prettify);
+	logadd("\"source\":\"sync\",%s", prettify);
+	if(mal_session_uuid)
+		logadd("\"session\":\"%s\",%s", mal_session_uuid, prettify);
+	// the state field is not really needed, but marvin 1.0 explicitly
+	// searches for it.
+	logadd("\"state\":\"callback\",%s", prettify);
+	logadd("\"clk\":"LLFMT",%s", usec, prettify);
+	logadd("\"time\":%"PRIu64",%s", clock_time, prettify);
+	logadd("}\n");
+	logjsonInternal(logbuffer);
+
+	return MAL_SUCCEED;
+}

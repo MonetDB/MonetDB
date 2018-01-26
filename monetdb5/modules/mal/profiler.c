@@ -83,7 +83,7 @@ CMDstartTrace(void *res)
 }
 
 // if you haven't started the stethoscope
-// then the output is saved in a file 
+// then the output is saved in a file
 str
 CMDstartTracePath(void *res, str *path)
 {
@@ -215,4 +215,11 @@ CMDcpuloadPercentage(int *cycles, int *io, lng *user, lng *nice, lng *sys, lng *
 		*io = (int) ( ((double) iowaitN- *iowait) / (N + idleN - *idle + iowaitN - *iowait) *100);
 	}
 	return MAL_SUCCEED;
+}
+
+str
+CMDsyncEvent(void *ret)
+{
+	(void)ret;
+	return syncEvent();
 }
