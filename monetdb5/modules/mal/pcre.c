@@ -226,10 +226,10 @@ re_create(const char *pat, int nr)
 	return NULL;
 }
 
+#ifdef HAVE_LIBPCRE
 static str
 pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 {
-#ifdef HAVE_LIBPCRE
 	pcre *r;
 	const char *err_p = NULL;
 	int errpos = 0;
@@ -244,13 +244,8 @@ pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
 	}
 	*res = r;
 	return MAL_SUCCEED;
-#else
-	(void) res;
-	(void) pattern;
-	(void) insensitive;
-	throw(MAL, "pcre.compile", "Database was compiled without PCRE support.");
-#endif
 }
+#endif
 
 /* these two defines are copies from gdk_select.c */
 
@@ -560,6 +555,7 @@ struct backref {
 	int end;
 };
 
+#ifdef HAVE_LIBPCRE
 /* fill in parameter backrefs (length maxrefs) with information about
  * back references in the replacement string; a back reference is a
  * dollar or backslash followed by a number */
@@ -698,6 +694,7 @@ single_replace(pcre *pcre_code, pcre_extra *extra,
 	result[len_result] = '\0';
 	return result;
 }
+#endif
 
 static str
 pcre_replace(str *res, const char *origin_str, const char *pattern,
@@ -1117,6 +1114,7 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 	return MAL_SUCCEED;
 }
 
+#ifdef HAVE_LIBPCRE
 /* change SQL PATINDEX pattern into PCRE pattern */
 static str
 pat2pcre(str *r, const char *pat)
@@ -1149,6 +1147,8 @@ pat2pcre(str *r, const char *pat)
 	*ppat = 0;
 	return MAL_SUCCEED;
 }
+#endif
+
 /*
  * @+ Wrapping
  */
@@ -1234,17 +1234,26 @@ PCREindex(int *res, const pcre *pattern, const str *s)
 str
 PCREpatindex(int *ret, const str *pat, const str *val)
 {
+#ifdef HAVE_LIBPCRE
 	pcre *re = NULL;
 	char *ppat = NULL, *msg;
 
 	if ((msg = pat2pcre(&ppat, *pat)) != MAL_SUCCEED)
 		return msg;
-	if ((msg = pcre_compile_wrap(&re, ppat, FALSE)) != MAL_SUCCEED)
+	if ((msg = pcre_compile_wrap(&re, ppat, FALSE)) != MAL_SUCCEED) {
+		GDKfree(ppat);
 		return msg;
+	}
 	GDKfree(ppat);
 	msg = PCREindex(ret, re, val);
 	pcre_free(re);
 	return msg;
+#else
+	(void) ret;
+	(void) pat;
+	(void) val;
+	throw(MAL, "pcre.patindex", "Database was compiled without PCRE support.");
+#endif
 }
 
 str
