@@ -238,6 +238,8 @@ AUTHinitTables(const char *passwd) {
 		if (passwd == NULL)
 			passwd = "monetdb";	/* default password */
 		pw = mcrypt_BackendSum(passwd, strlen(passwd));
+		if(!pw)
+			throw(MAL, "initTables", SQLSTATE(42000) "Crypt backend hash not found");
 		msg = AUTHaddUser(&uid, c, "monetdb", pw);
 		free(pw);
 		if (msg)
@@ -299,6 +301,8 @@ AUTHcheckCredentials(
 	/* generate the hash as the client should have done */
 	hash = mcrypt_hashPassword(algo, pwd, challenge);
 	GDKfree(pwd);
+	if(!hash)
+		throw(MAL, "checkCredentials", "hash '%s' backend not found", algo);
 	/* and now we have it, compare it to what was given to us */
 	if (strcmp(passwd, hash) != 0) {
 		/* of course we DO NOT print the password here */

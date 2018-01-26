@@ -397,9 +397,14 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 		}
 		if (dohash == 1) {
 			p = mcrypt_BackendSum(p, strlen(p));
-			snprintf(h, sizeof(h), "{%s}%s", MONETDB5_PASSWDHASH, p);
-			free(p);
-			p = h;
+			if(p) {
+				snprintf(h, sizeof(h), "{%s}%s", MONETDB5_PASSWDHASH, p);
+				free(p);
+				p = h;
+			} else {
+				fprintf(stderr, "set: passphrase hash '%s' backend not found\n", MONETDB5_PASSWDHASH);
+				return(1);
+			}
 		}
 	}
 	if ((p = setConfVal(kv, p)) != NULL) {
