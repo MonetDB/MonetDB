@@ -67,7 +67,7 @@ create function pcre_replace(origin string, pat string, repl string, flags strin
 -- schemas
 select name, authorization, owner, system from sys.schemas order by name;
 -- _tables
-select s.name, t.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(t.query, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, t.type, t.system, t.commit_action, t.access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id order by s.name, t.name;
+select s.name, t.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(t.query, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, coalesce(tt.table_type_name, cast(t.type as string)) as type, t.system, coalesce(ca.action_name, cast(t.commit_action as string)) as commit_action, coalesce(at.value, cast(t.access as string)) as access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id left outer join (values (0, 'COMMIT'), (1, 'DELETE'), (2, 'PRESERVE'), (3, 'DROP'), (4, 'ABORT')) as ca (action_id, action_name) on t.commit_action = ca.action_id left outer join (values (0, 'WRITABLE'), (1, 'READONLY'), (2, 'APPENDONLY')) as at (id, value) on t.access = at.id order by s.name, t.name;
 -- _columns
 select t.name, c.name, c.type, c.type_digits, c.type_scale, c."default", c."null", c.number, c.storage from sys._tables t, sys._columns c where t.id = c.table_id order by t.name, c.number;
 -- external functions that don't reference existing MAL function (should be empty)
