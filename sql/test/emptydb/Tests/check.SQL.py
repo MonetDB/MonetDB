@@ -84,37 +84,18 @@ MAXARGS = 16
 # columns of the args table we're interested in
 args = ['name', 'type', 'type_digits', 'type_scale', 'inout']
 
-out += "with\n"
-for i in range(0, MAXARGS + 1):
-    out += "arg%d (id" % i
-    for j in range(0, i + 1):
-        for k in ['id'] + args:
-            out += ", %s%d" % (k, j)
-    out += ") as (select "
-    if i == 0:
-        out += "f.id"
-        for k in ['id'] + args:
-            out += ", a%d.%s" % (i, k)
-        out += " from sys.functions f left outer join args a%d on a%d.func_id = f.id" % (i, i)
-    else:
-        out += "arg%d.*" % (i - 1)
-        for k in ['id'] + args:
-            out += ", a%d.%s" % (i, k)
-        out += " from arg%d left outer join args a%d on a%d.func_id = arg%d.id" % (i - 1, i, i, i - 1)
-    out += " and a%d.number = %d),\n" % (i, i)
-out += "funcs as (select f.id, f.name, f.func, f.mod, f.language, ft.type, f.side_effect, f.varres, f.vararg, f.schema_id from sys.functions f left outer join (values ('function',1),('procedure',2),('aggregate',3),('filter function',4),('table function',5),('analytic function',6),('loader function',7)) as ft (type,id) on f.type = ft.id)\n"
-out += r"select s.name, funcs.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(funcs.func, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, funcs.mod, funcs.language, funcs.type, funcs.side_effect, funcs.varres, funcs.vararg"
+out += r"select s.name, f.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, f.mod, f.language, ft.type, f.side_effect, f.varres, f.vararg"
 for i in range(0, MAXARGS):
-    for k in args:
-        if k == 'inout':
-            out += ", case arg%d.%s%d when 1 then 'in' when 0 then 'out' else null end as %s%d" % (MAXARGS, k, i, k, i)
-        else:
-            out += ", arg%d.%s%d" % (MAXARGS, k, i)
-out += " from arg%d, sys.schemas s, funcs where s.id = funcs.schema_id and funcs.id = arg%d.id order by s.name, funcs.name, query" % (MAXARGS, MAXARGS)
+    for a in args[:-1]:
+        out += ", a%d.%s as %s%d" % (i, a, a, i)
+    out += ", case a%d.inout when 0 then 'out' when 1 then 'in' end as inout%d" % (i, i)
+out += " from sys.functions f left outer join sys.schemas s on f.schema_id = s.id left outer join (values ('function', 1), ('procedure', 2), ('aggregate', 3), ('filter function', 4), ('table function', 5), ('analytic function', 6), ('loader function', 7)) as ft (type, id) on f.type = ft.id"
 for i in range(0, MAXARGS):
-    for k in args:
-        out += ", arg%d.%s%d" % (MAXARGS, k, i)
-
+    out += " left outer join sys.args a%d on a%d.func_id = f.id and a%d.number = %d" % (i, i, i, i)
+out += " order by s.name, f.name, query"
+for i in range(0, MAXARGS):
+    for a in args:
+        out += ", %s%d" % (a, i)
 out += ";"
 
 # substring used a bunch of time in the queries below
