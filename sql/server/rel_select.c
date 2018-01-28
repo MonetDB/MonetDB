@@ -2646,6 +2646,14 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 							}
 							rel = left = rel_dup(left);
 							roident = rident = exp_column(sql->sa, exp_relname(lident), exp_name(lident), exp_subtype(lident), lident->card, has_nil(lident), is_intern(lident));
+
+							if (!correlated && right) {
+								/* union of values or single value project */
+								sql_rel *in = rel_crossproduct(sql->sa, rel_dup(left), right, op_join);
+
+								right = rel_project(sql->sa, in, rel_projections(sql, right, NULL, 1, 1));
+								rel_project_add_exp(sql, right, roident);
+							}
 						}
 						r = rel_value_exp(sql, &rel, sval, f, ek);
 						if (r && !l_is_value) {
