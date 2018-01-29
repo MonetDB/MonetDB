@@ -16,7 +16,7 @@
 #include "msqldump.h"
 
 static void
-quoted_print(stream *f, const char *s, char singleq)
+quoted_print(stream *f, const char *s, bool singleq)
 {
 	mnstr_write(f, singleq ? "'" : "\"", 1, 1);
 	while (*s) {
@@ -125,23 +125,23 @@ append_comment(
         mnstr_printf(comments->append, "COMMENT ON %s ", obj_type);
         if (schema_name) {
                 mnstr_printf(comments->append, "%s", sep);
-                quoted_print(comments->append, schema_name, 0);
+                quoted_print(comments->append, schema_name, false);
                 sep = ".";
         }
         if (outer_name) {
                 mnstr_printf(comments->append, "%s", sep);
-                quoted_print(comments->append, outer_name, 0);
+                quoted_print(comments->append, outer_name, false);
                 sep = ".";
         }
         if (inner_name) {
                 mnstr_printf(comments->append, "%s", sep);
-                quoted_print(comments->append, inner_name, 0);
+                quoted_print(comments->append, inner_name, false);
                 sep = ".";
         }
         (void) parameter_types;
 
         mnstr_printf(comments->append, " IS ");
-        quoted_print(comments->append, remark, 1);
+        quoted_print(comments->append, remark, true);
         mnstr_printf(comments->append, ";\n");
 
         return 0;
@@ -1221,7 +1221,7 @@ describe_schema(Mapi mid, const char *sname, stream *toConsole)
 
 static int
 dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConsole,
-		char useInserts)
+		bool useInserts)
 {
 	int cnt, i;
 	MapiHdl hdl = NULL;
@@ -1378,7 +1378,7 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 }
 
 int
-dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole, int describe, int foreign, char useInserts)
+dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole, int describe, int foreign, bool useInserts)
 {
 	int rc;
 
@@ -1421,9 +1421,9 @@ dump_function_comment(Mapi mid, stream *toConsole, const char *id)
 
 		if (name) {
 			mnstr_printf(toConsole, "COMMENT ON %s ", category);
-			quoted_print(toConsole, sname, 0);
+			quoted_print(toConsole, sname, false);
 			mnstr_printf(toConsole, ".");
-			quoted_print(toConsole, name, 0);
+			quoted_print(toConsole, name, false);
 			mnstr_printf(toConsole, "(");
 		} else {
 			mnstr_printf(toConsole, ", ");
@@ -1435,7 +1435,7 @@ dump_function_comment(Mapi mid, stream *toConsole, const char *id)
 
 		if (remark) {
 			mnstr_printf(toConsole, ") IS ");
-			quoted_print(toConsole, remark, 1);
+			quoted_print(toConsole, remark, true);
 			mnstr_printf(toConsole, ";\n");
 		}
 	}
@@ -1521,9 +1521,9 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, int hashge)
 	}
 	ffunc = strdup(ffunc);
 	mnstr_printf(toConsole, " ");
-	quoted_print(toConsole, sname, 0);
+	quoted_print(toConsole, sname, false);
 	mnstr_printf(toConsole, ".");
-	quoted_print(toConsole, fname, 0);
+	quoted_print(toConsole, fname, false);
 	mnstr_printf(toConsole, "(");
 	snprintf(query, qlen, "select a.name, a.type, a.type_digits, a.type_scale, a.inout from sys.args a, sys.functions f where a.func_id = f.id and f.id = %s order by a.inout desc, a.number", fid);
 	mapi_close_handle(hdl);
@@ -1543,7 +1543,7 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, int hashge)
 		}
 
 		mnstr_printf(toConsole, "%s", sep);
-		quoted_print(toConsole, aname, 0);
+		quoted_print(toConsole, aname, false);
 		mnstr_printf(toConsole, " ");
 		dump_type(mid, toConsole, atype, adigs, ascal, hashge);
 		sep = ", ";
@@ -1561,7 +1561,7 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, int hashge)
 			assert(strcmp(mapi_fetch_field(hdl, 4), "0") == 0);
 			if (ftype == 5) {
 				mnstr_printf(toConsole, "%s", sep);
-				quoted_print(toConsole, aname, 0);
+				quoted_print(toConsole, aname, false);
 				mnstr_printf(toConsole, " ");
 				sep = ", ";
 			}
@@ -1676,7 +1676,7 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 		const char *remark_len = mapi_fetch_field(hdl, 3);
 		if (set_schema && sid != prev_sid) {
 			mnstr_printf(toConsole, "SET SCHEMA ");
-			quoted_print(toConsole, schema, 0);
+			quoted_print(toConsole, schema, false);
 			mnstr_printf(toConsole, ";\n");
 			prev_sid = sid;
 		}
@@ -1707,7 +1707,7 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 }
 
 int
-dump_database(Mapi mid, stream *toConsole, int describe, char useInserts)
+dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 {
 	const char *start = "START TRANSACTION";
 	const char *end = "ROLLBACK";

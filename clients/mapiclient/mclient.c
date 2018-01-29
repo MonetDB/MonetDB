@@ -2224,7 +2224,7 @@ mydestroy(void *private)
 #endif
 
 static int
-doFile(Mapi mid, stream *fp, int useinserts, int interactive, int save_history)
+doFile(Mapi mid, stream *fp, bool useinserts, int interactive, int save_history)
 {
 	char *line = NULL;
 	char *buf = NULL;
@@ -2950,7 +2950,7 @@ main(int argc, char **argv)
 	FILE *fp = NULL;
 	int trace = 0;
 	int dump = 0;
-	int useinserts = 0;
+	bool useinserts = false;
 	int c = 0;
 	Mapi mid;
 	int save_history = 0;
@@ -3121,7 +3121,7 @@ main(int argc, char **argv)
 			dump = 1;
 			break;
 		case 'N':
-			useinserts = 1;
+			useinserts = true;
 			break;
 		case 'd':
 			assert(optarg);
