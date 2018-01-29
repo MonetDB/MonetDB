@@ -105,6 +105,13 @@ out += ";"
 out += '''
 -- auths
 select name, grantor from sys.auths;
+-- comments
+select s.name, c.remark from sys.comments c, sys.schemas s where s.id = c.id order by s.name;
+select s.name, t.name, c.remark from sys.schemas s, sys._tables t, sys.comments c where s.id = t.schema_id and t.id = c.id order by s.name, t.name;
+select s.name, t.name, col.name, c.remark from sys.schemas s, sys._tables t, sys._columns col, sys.comments c where s.id = t.schema_id and t.id = col.table_id and col.id = c.id order by s.name, t.name, col.name;
+select s.name, t.name, i.name, c.remark from sys.schemas s, sys._tables t, sys.idxs i, sys.comments c where s.id = t.schema_id and t.id = i.table_id and i.id = c.id order by s.name, t.name, i.name;
+select s.name, q.name, c.remark from sys.schemas s, sys.sequences q, sys.comments c where s.id = q.schema_id and q.id = c.id order by s.name, q.name;
+select s.name, f.name, c.remark from sys.schemas s, sys.functions f, sys.comments c where s.id = f.schema_id and f.id = c.id order by s.name, f.name;
 -- db_user_info
 select u.name, u.fullname, s.name from sys.db_user_info u left outer join sys.schemas s on u.default_schema = s.id order by u.name;
 -- dependencies
