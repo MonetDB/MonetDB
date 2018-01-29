@@ -963,7 +963,8 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 				"k.name, "		/* 1 */
 				"kc.nr, "		/* 2 */
 				"c.name, "		/* 3 */
-				"rem.remark "		/* 4 */
+				"i.type, "		/* 4 */
+				"rem.remark "		/* 5 */
 			 "FROM sys.idxs AS i "
 			 	"LEFT JOIN sys.keys AS k ON i.name = k.name "
 				"LEFT OUTER JOIN sys.comments rem ON i.id = rem.id, "
@@ -978,7 +979,8 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 			       "(k.type IS NULL OR k.type = 1) AND "
 			       "t.schema_id = s.id AND "
 			       "s.name = '%s' AND "
-			       "t.name = '%s' "
+			       "t.name = '%s' AND "
+			       "i.type in (0, 4, 5) "
 			 "ORDER BY i.name, kc.nr", schema, tname);
 		if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 			goto bailout;
@@ -988,7 +990,8 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 			const char *k_name = mapi_fetch_field(hdl, 1);
 			const char *kc_nr = mapi_fetch_field(hdl, 2);
 			const char *c_name = mapi_fetch_field(hdl, 3);
-			const char *remark = mapi_fetch_field(hdl, 4);
+			const char *i_type = mapi_fetch_field(hdl, 4);
+			const char *remark = mapi_fetch_field(hdl, 5);
 
 			if (mapi_error(mid))
 				goto bailout;
@@ -1000,9 +1003,26 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 			if (strcmp(kc_nr, "0") == 0) {
 				if (cnt)
 					mnstr_printf(toConsole, ");\n");
-				mnstr_printf(toConsole,
-					     "CREATE INDEX \"%s\" ON \"%s\".\"%s\" (",
-					     i_name, schema, tname);
+				switch (atoi(i_type)) {
+				case 0: /* hash_idx */
+					mnstr_printf(toConsole,
+						     "CREATE INDEX \"%s\" ON \"%s\".\"%s\" (",
+						     i_name, schema, tname);
+					break;
+				case 5: /* ordered_idx */
+					mnstr_printf(toConsole,
+						     "CREATE ORDERED INDEX \"%s\" ON \"%s\".\"%s\" (",
+						     i_name, schema, tname);
+					break;
+				case 4: /* imprints_idx */
+					mnstr_printf(toConsole,
+						     "CREATE IMPRINTS INDEX \"%s\" ON \"%s\".\"%s\" (",
+						     i_name, schema, tname);
+					break;
+				default:
+					/* cannot happen due to WHERE clause */
+					goto bailout;
+				}
 				append_comment(comments, "INDEX", schema, i_name, NULL, NULL, remark);
 				cnt = 1;
 			} else

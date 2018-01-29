@@ -973,6 +973,10 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 				r = rel_logical_exp(sql, res, opt_where, sql_where);
 				if (!opt_from && r && is_join(r->op))
 					r->op = op_semi;
+				else if (r && res && r->nrcols != res->nrcols) {
+					list *exps = rel_projections(sql, res, NULL, 1, 1);
+					r = rel_project(sql->sa, r, exps);
+				}
 			}
 			if (!r) 
 				return NULL;

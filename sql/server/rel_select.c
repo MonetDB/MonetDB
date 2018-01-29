@@ -2165,10 +2165,16 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 							else
 								return NULL;
 						}
-						z = NULL;
-					} else {
-						r = NULL;
+					} else if (r) {
+						sql_rel *gp = z->l;
+						rel_project_add_exp(sql, z, r);
+						reset_processed(gp);
+						r = exp_column(sql->sa, exp_relname(r), exp_name(r), exp_subtype(r), r->card, has_nil(r), is_intern(r));
+						if (outer)
+							outer->l = z;
+						left = z;
 					}
+					z = NULL;
 				}
 				if (!l || !r || (z && !(r=rel_check_type(sql, st, r, type_equal)))) {
 					rel_destroy(right);
@@ -2653,6 +2659,14 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 							}
 							rel = left = rel_dup(left);
 							roident = rident = exp_column(sql->sa, exp_relname(lident), exp_name(lident), exp_subtype(lident), lident->card, has_nil(lident), is_intern(lident));
+
+							if (!correlated && right) {
+								/* union of values or single value project */
+								sql_rel *in = rel_crossproduct(sql->sa, rel_dup(left), right, op_join);
+
+								right = rel_project(sql->sa, in, rel_projections(sql, right, NULL, 1, 1));
+								rel_project_add_exp(sql, right, roident);
+							}
 						}
 						r = rel_value_exp(sql, &rel, sval, f, ek);
 						if (r && !l_is_value) {
@@ -3557,6 +3571,11 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 	if (groupby->l && groupby->op == op_project) {
 		sql_rel *r = groupby->l;	
 
+		if (!is_processed(r) && f == sql_sel && r->op == op_project) {
+			project = r;
+			r = r->l;
+		}
+
 		if (f == sql_having)
 			project = groupby;
 		if (f == sql_having && r->op == op_select && r->l) 
@@ -3570,7 +3589,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 			groupby = r;
 	}
 
-	if (groupby->op != op_groupby)		/* implicit groupby */
+	if (groupby->op != op_groupby) 		/* implicit groupby */
 		*rel = rel_project2groupby(sql, groupby);
 	if (!*rel)
 		return NULL;
