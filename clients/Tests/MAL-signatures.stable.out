@@ -10727,6 +10727,7 @@ Ready.
 [ "profiler",	"stop",	"pattern profiler.stop():void ",	"CMDstopProfiler;",	"Stop offline performance profiling"	]
 [ "profiler",	"stoptrace",	"command profiler.stoptrace():void ",	"CMDstopTrace;",	"Stop collecting trace information"	]
 [ "profiler",	"stoptrace",	"command profiler.stoptrace(path:str):void ",	"CMDstopTracePath;",	"Stop collecting trace information"	]
+[ "profiler",	"sync",	"command profiler.sync():void ",	"CMDsyncEvent;",	"Generate a syncronization event"	]
 [ "pyapi",	"eval",	"pattern pyapi.eval(fptr:ptr, expr:str):any ",	"PYAPI2PyAPIevalStd;",	"Execute a simple Python script returning a single value"	]
 [ "pyapi",	"eval",	"pattern pyapi.eval(fptr:ptr, expr:str, arg:any...):any... ",	"PYAPI2PyAPIevalStd;",	"Execute a simple Python script value"	]
 [ "pyapi",	"eval_aggr",	"pattern pyapi.eval_aggr(fptr:ptr, expr:str, arg:any...):any... ",	"PYAPI2PyAPIevalAggr;",	"grouped aggregates through Python"	]
