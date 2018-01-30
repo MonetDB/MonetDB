@@ -707,7 +707,7 @@ dosum(const void *restrict values, int nonil, oid seqb, BUN start, BUN end,
 #ifdef HAVE_HGE
 	case TYPE_hge: {
 		hge *sums = (hge *) results;
-		switch (ATOMstorage(tp1)) {
+		switch (tp1) {
 		case TYPE_bte:
 			AGGR_SUM(bte, hge);
 			break;
@@ -1210,7 +1210,7 @@ doprod(const void *restrict values, oid seqb, BUN start, BUN end, void *restrict
 #ifdef HAVE_HGE
 	case TYPE_lng: {
 		lng *prods = (lng *) results;
-		switch (ATOMstorage(tp1)) {
+		switch (tp1) {
 		case TYPE_bte:
 			AGGR_PROD(bte, lng, hge);
 			break;
@@ -1230,7 +1230,7 @@ doprod(const void *restrict values, oid seqb, BUN start, BUN end, void *restrict
 	}
 	case TYPE_hge: {
 		hge *prods = (hge *) results;
-		switch (ATOMstorage(tp1)) {
+		switch (tp1) {
 		case TYPE_bte:
 			AGGR_PROD_HGE(bte);
 			break;

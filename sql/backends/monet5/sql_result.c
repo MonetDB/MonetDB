@@ -1667,7 +1667,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 			} else {
 				int atom_size = ATOMsize(mtype);
 				if (c->type.type->eclass == EC_DEC) {
-					atom_size = ATOMsize(ATOMstorage(mtype));
+					atom_size = ATOMsize(mtype);
 				}
 				if (c->type.type->eclass == EC_TIMESTAMP) {
 					// convert timestamp values to epoch
