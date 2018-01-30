@@ -900,101 +900,6 @@ sql_update_jul2017_sp3(Client c, mvc *sql)
 }
 
 static str
-sql_update_default(Client c, mvc *sql)
-{
-	size_t bufsize = 10000, pos = 0;
-	char *buf = GDKmalloc(bufsize), *err = NULL;
-	char *schema = stack_get_string(sql, "current_schema");
-
-	if (buf== NULL)
-		throw(SQL, "sql_update_default", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
-
-	/* 39_analytics.sql, 39_analytics_hge.sql */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"drop aggregate corr(tinyint, tinyint);\n"
-			"drop aggregate corr(smallint, smallint);\n"
-			"drop aggregate corr(integer, integer);\n"
-			"drop aggregate corr(bigint, bigint);\n"
-			"drop aggregate corr(real, real);\n");
-#ifdef HAVE_HGE
-	if (have_hge)
-		pos += snprintf(buf + pos, bufsize - pos,
-				"drop aggregate corr(hugeint, hugeint);\n");
-#endif
-	pos += snprintf(buf + pos, bufsize - pos,
-			"create aggregate corr(e1 TINYINT, e2 TINYINT) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
-			"grant execute on aggregate sys.corr(tinyint, tinyint) to public;\n"
-			"create aggregate corr(e1 SMALLINT, e2 SMALLINT) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
-			"grant execute on aggregate sys.corr(smallint, smallint) to public;\n"
-			"create aggregate corr(e1 INTEGER, e2 INTEGER) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
-			"grant execute on aggregate sys.corr(integer, integer) to public;\n"
-			"create aggregate corr(e1 BIGINT, e2 BIGINT) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
-			"grant execute on aggregate sys.corr(bigint, bigint) to public;\n"
-			"create aggregate corr(e1 REAL, e2 REAL) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
-			"grant execute on aggregate sys.corr(real, real) to public;\n");
-#ifdef HAVE_HGE
-	if (have_hge)
-		pos += snprintf(buf + pos, bufsize - pos,
-				"create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
-			"grant execute on aggregate sys.corr(hugeint, hugeint) to public;\n");
-#endif
-	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.systemfunctions (select id from sys.functions where name = 'corr' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
-
-	/* 60_wlcr.sql */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"create procedure master()\n"
-			"external name wlc.master;\n"
-			"create procedure master(path string)\n"
-			"external name wlc.master;\n"
-			"create procedure stopmaster()\n"
-			"external name wlc.stopmaster;\n"
-			"create procedure masterbeat( duration int)\n"
-			"external name wlc.\"setmasterbeat\";\n"
-			"create function masterClock() returns string\n"
-			"external name wlc.\"getmasterclock\";\n"
-			"create function masterTick() returns bigint\n"
-			"external name wlc.\"getmastertick\";\n"
-			"create procedure replicate()\n"
-			"external name wlr.replicate;\n"
-			"create procedure replicate(pointintime timestamp)\n"
-			"external name wlr.replicate;\n"
-			"create procedure replicate(dbname string)\n"
-			"external name wlr.replicate;\n"
-			"create procedure replicate(dbname string, pointintime timestamp)\n"
-			"external name wlr.replicate;\n"
-			"create procedure replicate(dbname string, id tinyint)\n"
-			"external name wlr.replicate;\n"
-			"create procedure replicate(dbname string, id smallint)\n"
-			"external name wlr.replicate;\n"
-			"create procedure replicate(dbname string, id integer)\n"
-			"external name wlr.replicate;\n"
-			"create procedure replicate(dbname string, id bigint)\n"
-			"external name wlr.replicate;\n"
-			"create procedure replicabeat(duration integer)\n"
-			"external name wlr.\"setreplicabeat\";\n"
-			"create function replicaClock() returns string\n"
-			"external name wlr.\"getreplicaclock\";\n"
-			"create function replicaTick() returns bigint\n"
-			"external name wlr.\"getreplicatick\";\n"
-			"insert into sys.systemfunctions (select id from sys.functions where name in ('master', 'stopmaster', 'masterbeat', 'masterclock', 'mastertick', 'replicate', 'replicabeat', 'replicaclock', 'replicatick') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n"
-		);
-
-	pos += snprintf(buf + pos, bufsize - pos,
-			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
-
-	if (schema)
-		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-
-	assert(pos < bufsize);
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
 sql_update_default_geom(Client c, mvc *sql, sql_table *t)
 {
 	size_t bufsize = 10000, pos = 0;
@@ -1036,182 +941,255 @@ sql_update_default_geom(Client c, mvc *sql, sql_table *t)
 }
 
 static str
-sql_remove_environment_func(Client c, mvc *sql)
+sql_update_default(Client c, mvc *sql)
 {
-	sql_schema *s = NULL;
-	sql_table *t = NULL;
-	size_t bufsize = 1000, pos = 0;
-	char *buf = GDKmalloc(bufsize), *err = NULL;
-	if (buf== NULL)
-		throw(SQL, "sql_remove_environment_func", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	size_t bufsize = 10000, pos = 0;
+	char *buf, *err;
+	char *schema;
+	sql_schema *s;
+	sql_table *t;
+	res_table *output;
+	BAT *b;
 
-	/* because issueing sql: "drop view sys.environment cascade;" fails with with error: !SQLException:sql.drop_view:42000!DROP VIEW: cannot drop system view 'environment'
-	   we need to drop the system view using internal function: mvc_drop_table() */
+	buf = "select id from sys.functions where name = 'quarter' and schema_id = (select id from sys.schemas where name = 'sys');\n";
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, &output);
+	if (err)
+		return err;
+	b = BATdescriptor(output->cols[0].b);
+	if (b) {
+		if (BATcount(b) == 0) {
+			/* if there is no value "quarter" in
+			 * sys.functions.name, we need to update the
+			 * sys.functions table */
+			err = sql_fix_system_tables(c, sql);
+			if (err != NULL)
+				return err;
+		}
+		BBPunfix(b->batCacheid);
+	}
+	res_tables_destroy(output);
+
+	schema = stack_get_string(sql, "current_schema");
+	buf = GDKmalloc(bufsize);
+	if (buf== NULL)
+		throw(SQL, "sql_update_default", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	/* 25_debug.sql */
 	s = mvc_bind_schema(sql, "sys");
 	t = mvc_bind_table(sql, s, "environment");
-	mvc_drop_table(sql, s, t, 1);	// drop the system view: sys.environment cascade
-
+	t->system = 0;
 	pos += snprintf(buf + pos, bufsize - pos,
+			"drop view sys.environment cascade;\n"
 			"drop function sys.environment() cascade;\n"
 			"create view sys.environment as select * from sys.env();\n"
 			"GRANT SELECT ON sys.environment TO PUBLIC;\n"
 			"update sys._tables set system = true where system = false and name = 'environment' and schema_id in (select id from sys.schemas where name = 'sys');\n");
 
+	/* 39_analytics.sql, 39_analytics_hge.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop aggregate corr(tinyint, tinyint);\n"
+			"drop aggregate corr(smallint, smallint);\n"
+			"drop aggregate corr(integer, integer);\n"
+			"drop aggregate corr(bigint, bigint);\n"
+			"drop aggregate corr(real, real);\n");
+#ifdef HAVE_HGE
+	if (have_hge)
+		pos += snprintf(buf + pos, bufsize - pos,
+				"drop aggregate corr(hugeint, hugeint);\n");
+#endif
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create aggregate corr(e1 TINYINT, e2 TINYINT) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(tinyint, tinyint) to public;\n"
+			"create aggregate corr(e1 SMALLINT, e2 SMALLINT) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(smallint, smallint) to public;\n"
+			"create aggregate corr(e1 INTEGER, e2 INTEGER) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(integer, integer) to public;\n"
+			"create aggregate corr(e1 BIGINT, e2 BIGINT) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(bigint, bigint) to public;\n"
+			"create aggregate corr(e1 REAL, e2 REAL) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(real, real) to public;\n");
+#ifdef HAVE_HGE
+	if (have_hge)
+		pos += snprintf(buf + pos, bufsize - pos,
+				"create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE\n\texternal name \"aggr\".\"corr\";\n"
+			"grant execute on aggregate sys.corr(hugeint, hugeint) to public;\n");
+#endif
+	pos += snprintf(buf + pos, bufsize - pos,
+			"insert into sys.systemfunctions (select id from sys.functions where name = 'corr' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
+
+	/* 46_profiler.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create procedure profiler.sync() external name profiler.sync;\n"
+			"insert into sys.systemfunctions (select id from sys.functions where name = 'sync' and schema_id = (select id from sys.schemas where name = 'profiler') and id not in (select function_id from sys.systemfunctions));\n");
+
+	/* 60_wlcr.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create procedure master()\n"
+			"external name wlc.master;\n"
+			"create procedure master(path string)\n"
+			"external name wlc.master;\n"
+			"create procedure stopmaster()\n"
+			"external name wlc.stopmaster;\n"
+			"create procedure masterbeat( duration int)\n"
+			"external name wlc.\"setmasterbeat\";\n"
+			"create function masterClock() returns string\n"
+			"external name wlc.\"getmasterclock\";\n"
+			"create function masterTick() returns bigint\n"
+			"external name wlc.\"getmastertick\";\n"
+			"create procedure replicate()\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(pointintime timestamp)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(dbname string)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(dbname string, pointintime timestamp)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(dbname string, id tinyint)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(dbname string, id smallint)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(dbname string, id integer)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicate(dbname string, id bigint)\n"
+			"external name wlr.replicate;\n"
+			"create procedure replicabeat(duration integer)\n"
+			"external name wlr.\"setreplicabeat\";\n"
+			"create function replicaClock() returns string\n"
+			"external name wlr.\"getreplicaclock\";\n"
+			"create function replicaTick() returns bigint\n"
+			"external name wlr.\"getreplicatick\";\n"
+			"insert into sys.systemfunctions (select id from sys.functions where name in ('master', 'stopmaster', 'masterbeat', 'masterclock', 'mastertick', 'replicate', 'replicabeat', 'replicaclock', 'replicatick') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n"
+		);
+
+	/* 97_comments */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"CREATE TABLE sys.comments (\n"
+			"        id INTEGER NOT NULL PRIMARY KEY,\n"
+			"        remark VARCHAR(65000) NOT NULL\n"
+			");\n"
+			"GRANT SELECT ON sys.comments TO PUBLIC;\n"
+			"CREATE PROCEDURE sys.comment_on(obj_id INTEGER, obj_remark VARCHAR(65000))\n"
+			"BEGIN\n"
+			"    IF obj_id IS NOT NULL AND obj_id > 0 THEN\n"
+			"        IF obj_remark IS NULL OR obj_remark = '' THEN\n"
+			"                DELETE FROM sys.comments WHERE id = obj_id;\n"
+			"        ELSEIF EXISTS (SELECT id FROM sys.comments WHERE id = obj_id) THEN\n"
+			"                UPDATE sys.comments SET remark = obj_remark WHERE id = obj_id;\n"
+			"        ELSE\n"
+			"                INSERT INTO sys.comments VALUES (obj_id, obj_remark);\n"
+			"        END IF;\n"
+			"    END IF;\n"
+			"END;\n"
+			"CREATE FUNCTION sys.function_type_keyword(ftype INT)\n"
+			"RETURNS VARCHAR(20)\n"
+			"BEGIN\n"
+			"	RETURN CASE ftype\n"
+			"                WHEN 1 THEN 'FUNCTION'\n"
+			"                WHEN 2 THEN 'PROCEDURE'\n"
+			"                WHEN 3 THEN 'AGGREGATE'\n"
+			"                WHEN 4 THEN 'FILTER FUNCTION'\n"
+			"                WHEN 5 THEN 'FUNCTION' -- table returning function\n"
+			"                WHEN 6 THEN 'FUNCTION' -- analytic function\n"
+			"                WHEN 7 THEN 'LOADER'\n"
+			"                ELSE 'ROUTINE'\n"
+			"        END;\n"
+			"END;\n"
+			"GRANT EXECUTE ON FUNCTION sys.function_type_keyword(INT) TO PUBLIC;\n"
+			"CREATE VIEW sys.describe_all_objects AS\n"
+			"SELECT s.name AS sname,\n"
+			"	  t.name,\n"
+			"	  s.name || '.' || t.name AS fullname,\n"
+			"	  CAST(CASE t.type\n"
+			"	   WHEN 1 THEN 2 -- ntype for views\n"
+			"	   ELSE 1	  -- ntype for tables\n"
+			"	   END AS SMALLINT) AS ntype,\n"
+			"	  (CASE WHEN t.system THEN 'SYSTEM ' ELSE '' END) || tt.table_type_name AS type,\n"
+			"	  t.system,\n"
+			"	  c.remark AS remark\n"
+			"  FROM sys._tables t\n"
+			"  LEFT OUTER JOIN sys.comments c ON t.id = c.id\n"
+			"  LEFT OUTER JOIN sys.schemas s ON t.schema_id = s.id\n"
+			"  LEFT OUTER JOIN sys.table_types tt ON t.type = tt.table_type_id\n"
+			"UNION ALL\n"
+			"SELECT s.name AS sname,\n"
+			"	  sq.name,\n"
+			"	  s.name || '.' || sq.name AS fullname,\n"
+			"	  CAST(4 AS SMALLINT) AS ntype,\n"
+			"	  'SEQUENCE' AS type,\n"
+			"	  false AS system,\n"
+			"	  c.remark AS remark\n"
+			"  FROM sys.sequences sq\n"
+			"  LEFT OUTER JOIN sys.comments c ON sq.id = c.id\n"
+			"  LEFT OUTER JOIN sys.schemas s ON sq.schema_id = s.id\n"
+			"UNION ALL\n"
+			"SELECT DISTINCT s.name AS sname,  -- DISTINCT is needed to filter out duplicate overloaded function/procedure names\n"
+			"	  f.name,\n"
+			"	  s.name || '.' || f.name AS fullname,\n"
+			"	  CAST(8 AS SMALLINT) AS ntype,\n"
+			"	  (CASE WHEN sf.function_id IS NOT NULL THEN 'SYSTEM ' ELSE '' END) || sys.function_type_keyword(f.type) AS type,\n"
+			"	  CASE WHEN sf.function_id IS NULL THEN FALSE ELSE TRUE END AS system,\n"
+			"	  c.remark AS remark\n"
+			"  FROM sys.functions f\n"
+			"  LEFT OUTER JOIN sys.comments c ON f.id = c.id\n"
+			"  LEFT OUTER JOIN sys.schemas s ON f.schema_id = s.id\n"
+			"  LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id\n"
+			"UNION ALL\n"
+			"SELECT s.name AS sname,\n"
+			"	  s.name,\n"
+			"	  s.name AS fullname,\n"
+			"	  CAST(16 AS SMALLINT) AS ntype,\n"
+			"	  (CASE WHEN s.system THEN 'SYSTEM SCHEMA' ELSE 'SCHEMA' END) AS type,\n"
+			"	  s.system,\n"
+			"	  c.remark AS remark\n"
+			"  FROM sys.schemas s\n"
+			"  LEFT OUTER JOIN sys.comments c ON s.id = c.id\n"
+			" ORDER BY system, name, sname, ntype;\n"
+			"GRANT SELECT ON sys.describe_all_objects TO PUBLIC;\n"
+			"CREATE VIEW sys.commented_function_signatures AS\n"
+			"SELECT f.id AS fid,\n"
+			"       s.name AS schema,\n"
+			"       f.name AS fname,\n"
+			"       sys.function_type_keyword(f.type) AS category,\n"
+			"       CASE WHEN sf.function_id IS NULL THEN FALSE ELSE TRUE END AS system,\n"
+			"       CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number ASC) WHEN 1 THEN f.name ELSE NULL END AS name,\n"
+			"       CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number DESC) WHEN 1 THEN c.remark ELSE NULL END AS remark,\n"
+			"       p.type, p.type_digits, p.type_scale,\n"
+			"       ROW_NUMBER() OVER (ORDER BY f.id, p.number) AS line\n"
+			"  FROM sys.functions f\n"
+			"  JOIN sys.comments c ON f.id = c.id\n"
+			"  JOIN sys.schemas s ON f.schema_id = s.id\n"
+			"  LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id\n"
+			"  LEFT OUTER JOIN sys.args p ON f.id = p.func_id AND p.inout = 1\n"
+			" ORDER BY line;\n"
+			"GRANT SELECT ON sys.commented_function_signatures TO PUBLIC;\n"
+			"UPDATE sys._tables\n"
+			"SET system = true\n"
+			"WHERE name IN ('comments', 'describe_all_objects', 'commented_function_signatures')\n"
+			"AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n"
+			"DELETE FROM sys.systemfunctions WHERE function_id IS NULL;\n"
+			"ALTER TABLE sys.systemfunctions ALTER COLUMN function_id SET NOT NULL;\n"
+			"INSERT INTO sys.systemfunctions\n"
+			"SELECT id FROM sys.functions\n"
+			"WHERE schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys')\n"
+			"AND name IN ('comment_on', 'function_type_keyword');\n"
+			"ALTER TABLE sys.keywords SET READ WRITE;\n"
+			"INSERT INTO sys.keywords VALUES ('COMMENT');\n"
+			"-- ALTER TABLE sys.keywords SET READ ONLY;\n"
+/* TODO fix. Last ALTER TABLE is disabled as it produces: !SQLException:sql.alter_table_set_access:40000!ALTER TABLE: set READ or INSERT ONLY not possible with outstanding updates (wait until updates are flushed) */
+		);
+
 	pos += snprintf(buf + pos, bufsize - pos,
 			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
 
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+
 	assert(pos < bufsize);
-	printf("Running database upgrade commands:\ndrop view sys.environment cascade;\n%s\n", buf);
+	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
-sql_create_comments_table(Client c)
-{
-	char *err, *q;
-
-	q = ""
-	"CREATE TABLE sys.comments (\n"
-	"        id INTEGER NOT NULL PRIMARY KEY,\n"
-	"        remark VARCHAR(65000) NOT NULL\n"
-	");\n"
-	"GRANT SELECT ON sys.comments TO PUBLIC;\n"
-	"\n"
-	"CREATE PROCEDURE sys.comment_on(obj_id INTEGER, obj_remark VARCHAR(65000))\n"
-	"BEGIN\n"
-	"    IF obj_id IS NOT NULL AND obj_id > 0 THEN\n"
-	"        IF obj_remark IS NULL OR obj_remark = '' THEN\n"
-	"                DELETE FROM sys.comments WHERE id = obj_id;\n"
-	"        ELSEIF EXISTS (SELECT id FROM sys.comments WHERE id = obj_id) THEN\n"
-	"                UPDATE sys.comments SET remark = obj_remark WHERE id = obj_id;\n"
-	"        ELSE\n"
-	"                INSERT INTO sys.comments VALUES (obj_id, obj_remark);\n"
-	"        END IF;\n"
-	"    END IF;\n"
-	"END;\n"
-	"\n"
-	"CREATE FUNCTION sys.function_type_keyword(ftype INT)\n"
-	"RETURNS VARCHAR(20)\n"
-	"BEGIN\n"
-	"	RETURN CASE ftype\n"
-	"                WHEN 1 THEN 'FUNCTION'\n"
-	"                WHEN 2 THEN 'PROCEDURE'\n"
-	"                WHEN 3 THEN 'AGGREGATE'\n"
-	"                WHEN 4 THEN 'FILTER FUNCTION'\n"
-	"                WHEN 5 THEN 'FUNCTION' -- table returning function\n"
-	"                WHEN 6 THEN 'FUNCTION' -- analytic function\n"
-	"                WHEN 7 THEN 'LOADER'\n"
-	"                ELSE 'ROUTINE'\n"
-	"        END;\n"
-	"END;\n"
-	"GRANT EXECUTE ON FUNCTION sys.function_type_keyword(INT) TO PUBLIC;\n"
-	"\n"
-	"CREATE VIEW sys.describe_all_objects AS\n"
-	"SELECT s.name AS sname,\n"
-	"	  t.name,\n"
-	"	  s.name || '.' || t.name AS fullname,\n"
-	"	  CAST(CASE t.type\n"
-	"	   WHEN 1 THEN 2 -- ntype for views\n"
-	"	   ELSE 1	  -- ntype for tables\n"
-	"	   END AS SMALLINT) AS ntype,\n"
-	"	  (CASE WHEN t.system THEN 'SYSTEM ' ELSE '' END) || tt.table_type_name AS type,\n"
-	"	  t.system,\n"
-	"	  c.remark AS remark\n"
-	"  FROM sys._tables t\n"
-	"  LEFT OUTER JOIN sys.comments c ON t.id = c.id\n"
-	"  LEFT OUTER JOIN sys.schemas s ON t.schema_id = s.id\n"
-	"  LEFT OUTER JOIN sys.table_types tt ON t.type = tt.table_type_id\n"
-	"UNION ALL\n"
-	"SELECT s.name AS sname,\n"
-	"	  sq.name,\n"
-	"	  s.name || '.' || sq.name AS fullname,\n"
-	"	  CAST(4 AS SMALLINT) AS ntype,\n"
-	"	  'SEQUENCE' AS type,\n"
-	"	  false AS system,\n"
-	"	  c.remark AS remark\n"
-	"  FROM sys.sequences sq\n"
-	"  LEFT OUTER JOIN sys.comments c ON sq.id = c.id\n"
-	"  LEFT OUTER JOIN sys.schemas s ON sq.schema_id = s.id\n"
-	"UNION ALL\n"
-	"SELECT DISTINCT s.name AS sname,  -- DISTINCT is needed to filter out duplicate overloaded function/procedure names\n"
-	"	  f.name,\n"
-	"	  s.name || '.' || f.name AS fullname,\n"
-	"	  CAST(8 AS SMALLINT) AS ntype,\n"
-	"	  (CASE WHEN sf.function_id IS NOT NULL THEN 'SYSTEM ' ELSE '' END) || sys.function_type_keyword(f.type) AS type,\n"
-	"	  CASE WHEN sf.function_id IS NULL THEN FALSE ELSE TRUE END AS system,\n"
-	"	  c.remark AS remark\n"
-	"  FROM sys.functions f\n"
-	"  LEFT OUTER JOIN sys.comments c ON f.id = c.id\n"
-	"  LEFT OUTER JOIN sys.schemas s ON f.schema_id = s.id\n"
-	"  LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id\n"
-	"UNION ALL\n"
-	"SELECT s.name AS sname,\n"
-	"	  s.name,\n"
-	"	  s.name AS fullname,\n"
-	"	  CAST(16 AS SMALLINT) AS ntype,\n"
-	"	  (CASE WHEN s.system THEN 'SYSTEM SCHEMA' ELSE 'SCHEMA' END) AS type,\n"
-	"	  s.system,\n"
-	"	  c.remark AS remark\n"
-	"  FROM sys.schemas s\n"
-	"  LEFT OUTER JOIN sys.comments c ON s.id = c.id\n"
-	" ORDER BY system, name, sname, ntype;\n"
-	"GRANT SELECT ON sys.describe_all_objects TO PUBLIC;\n"
-	"\n"
-	"CREATE VIEW sys.commented_function_signatures AS\n"
-	"SELECT f.id AS fid,\n"
-	"       s.name AS schema,\n"
-	"       f.name AS fname,\n"
-	"       sys.function_type_keyword(f.type) AS category,\n"
-	"       CASE WHEN sf.function_id IS NULL THEN FALSE ELSE TRUE END AS system,\n"
-	"       CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number ASC) WHEN 1 THEN f.name ELSE NULL END AS name,\n"
-	"       CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number DESC) WHEN 1 THEN c.remark ELSE NULL END AS remark,\n"
-	"       p.type, p.type_digits, p.type_scale,\n"
-	"       ROW_NUMBER() OVER (ORDER BY f.id, p.number) AS line\n"
-	"  FROM sys.functions f\n"
-	"  JOIN sys.comments c ON f.id = c.id\n"
-	"  JOIN sys.schemas s ON f.schema_id = s.id\n"
-	"  LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id\n"
-	"  LEFT OUTER JOIN sys.args p ON f.id = p.func_id AND p.inout = 1\n"
-	" ORDER BY line;\n"
-	"GRANT SELECT ON sys.commented_function_signatures TO PUBLIC;\n";
-
-	err = SQLstatementIntern(c, &q, "update", 1, 0, NULL);
-	if (err)
-		return err;
-
-	q = ""
-		"UPDATE sys._tables\n"
-		"SET system = true\n"
-		"WHERE name IN ('comments', 'describe_all_objects', 'commented_function_signatures')\n"
-		"AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n";
-	err = SQLstatementIntern(c, &q, "update", 1, 0, NULL);
-	if (err)
-		return err;
-
-	/* column function_id is now created with NOT NULL */
-	q = ""
-		"DELETE FROM sys.systemfunctions WHERE function_id IS NULL;\n"
-		"ALTER TABLE sys.systemfunctions ALTER COLUMN function_id SET NOT NULL;\n"
-		"INSERT INTO sys.systemfunctions\n"
-		"SELECT id FROM sys.functions\n"
-		"WHERE schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys')\n"
-		"AND name IN ('comment_on', 'function_type_keyword');\n";
-	err = SQLstatementIntern(c, &q, "update", 1, 0, NULL);
-	if (err)
-		return err;
-
-
-	/* table keywords is extended with keyword COMMENT */
-	q = ""
-		"ALTER TABLE sys.keywords SET READ WRITE;\n"
-		"INSERT INTO sys.keywords VALUES ('COMMENT');\n"
-		"-- ALTER TABLE sys.keywords SET READ ONLY;\n";
-/* TODO fix. Last ALTER TABLE is disabled as it produces: !SQLException:sql.alter_table_set_access:40000!ALTER TABLE: set READ or INSERT ONLY not possible with outstanding updates (wait until updates are flushed) */
-
-	err = SQLstatementIntern(c, &q, "update", 1, 0, NULL);
-	return err;
 }
 
 void
@@ -1314,13 +1292,6 @@ SQLupgrades(Client c, mvc *m)
 		freeException(err);
 	}
 
-	if (!sql_bind_func(m->sa, s, "master", NULL, NULL, F_PROC)) {
-		if ((err = sql_update_default(c, m)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
-			freeException(err);
-		}
-	}
-
 	if ((t = mvc_bind_table(m, s, "geometry_columns")) != NULL &&
 	    (col = mvc_bind_column(m, t, "coord_dimension")) != NULL &&
 	    strcmp(col->type.type->sqlname, "int") != 0) {
@@ -1330,16 +1301,8 @@ SQLupgrades(Client c, mvc *m)
 		}
 	}
 
-	if (sql_bind_func_(m->sa, s, "environment", NULL, F_UNION)) {
-		if ((err = sql_remove_environment_func(c, m)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
-			freeException(err);
-		}
-	}
-
-	/* wrap into sql_update_default */
-	if (mvc_bind_table(m, s, "comments") == NULL) {
-		if ((err = sql_create_comments_table(c)) != NULL) {
+	if (!sql_bind_func(m->sa, s, "master", NULL, NULL, F_PROC)) {
+		if ((err = sql_update_default(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}
