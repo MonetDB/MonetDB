@@ -2064,11 +2064,20 @@ BATassertProps(BAT *b)
 		assert(!b->tvarsized);
 	/* shift and width have a particular relationship */
 	assert(b->tshift >= 0);
-	if (b->tdense)
+	if (ATOMstorage(b->ttype) == TYPE_str)
+		assert(b->twidth >= 1 && b->twidth <= ATOMsize(b->ttype));
+	else
+		assert(b->twidth == ATOMsize(b->ttype));
+	assert(b->tseqbase <= oid_nil);
+	/* only (v)oid columns can be dense */
+	if (b->tdense) {
 		assert(b->ttype == TYPE_oid || b->ttype == TYPE_void);
+		/* if dense, the seqbase must be set */
+		assert(b->tseqbase < oid_nil); /* i.e. != oid_nil */
+		assert(b->tseqbase + BATcount(b) < oid_nil);
+	}
 	/* a column cannot both have and not have NILs */
 	assert(!b->tnil || !b->tnonil);
-	assert(b->tseqbase <= oid_nil);
 	if (b->ttype == TYPE_void) {
 		assert(b->tshift == 0);
 		assert(b->twidth == 0);
@@ -2087,16 +2096,10 @@ BATassertProps(BAT *b)
 		}
 		return;
 	}
-	if (ATOMstorage(b->ttype) == TYPE_str)
-		assert(b->twidth >= 1 && b->twidth <= ATOMsize(b->ttype));
-	else
-		assert(b->twidth == ATOMsize(b->ttype));
 	assert(1 << b->tshift == b->twidth);
 	if (b->ttype == TYPE_oid && b->tdense) {
 		assert(b->tsorted);
-		assert(b->tseqbase != oid_nil);
 		if (b->batCount > 0) {
-			assert(b->tseqbase != oid_nil);
 			assert(* (oid *) BUNtail(bi, 0) == b->tseqbase);
 		}
 	}
