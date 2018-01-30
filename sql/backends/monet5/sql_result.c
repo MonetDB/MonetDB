@@ -1698,40 +1698,40 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 				} else {
 					if (mnstr_byteorder(s) != 1234) {
 						size_t j = 0;
-						switch(ATOMstorage(mtype)) {
-							case TYPE_sht: {
-								short *bufptr = (short*) buf;
-								short *exported_values = (short*) Tloc(iterators[i].b, srow);
-								for(j = 0; j < (row - srow); j++) {
-									bufptr[j] = short_int_SWAP(exported_values[j]);
-								}
-								break;
+						switch (ATOMstorage(mtype)) {
+						case TYPE_sht: {
+							short *bufptr = (short*) buf;
+							short *exported_values = (short*) Tloc(iterators[i].b, srow);
+							for(j = 0; j < (row - srow); j++) {
+								bufptr[j] = short_int_SWAP(exported_values[j]);
 							}
-							case TYPE_int: {
-								int *bufptr = (int*) buf;
-								int *exported_values = (int*) Tloc(iterators[i].b, srow);
-								for(j = 0; j < (row - srow); j++) {
-									bufptr[j] = normal_int_SWAP(exported_values[j]);
-								}
-								break;
+							break;
+						}
+						case TYPE_int: {
+							int *bufptr = (int*) buf;
+							int *exported_values = (int*) Tloc(iterators[i].b, srow);
+							for(j = 0; j < (row - srow); j++) {
+								bufptr[j] = normal_int_SWAP(exported_values[j]);
 							}
-							case TYPE_lng: {
-								lng *bufptr = (lng*) buf;
-								lng *exported_values = (lng*) Tloc(iterators[i].b, srow);
-								for(j = 0; j < (row - srow); j++) {
-									bufptr[j] = long_long_SWAP(exported_values[j]);
-								}
-								break;
+							break;
+						}
+						case TYPE_lng: {
+							lng *bufptr = (lng*) buf;
+							lng *exported_values = (lng*) Tloc(iterators[i].b, srow);
+							for(j = 0; j < (row - srow); j++) {
+								bufptr[j] = long_long_SWAP(exported_values[j]);
 							}
+							break;
+						}
 #ifdef HAVE_HGE
-							case TYPE_hge: {
-								hge *bufptr = (hge*) buf;
-								hge *exported_values = (hge*) Tloc(iterators[i].b, srow);
-								for(j = 0; j < (row - srow); j++) {
-									bufptr[j] = huge_int_SWAP(exported_values[j]);
-								}
-								break;
+						case TYPE_hge: {
+							hge *bufptr = (hge*) buf;
+							hge *exported_values = (hge*) Tloc(iterators[i].b, srow);
+							for(j = 0; j < (row - srow); j++) {
+								bufptr[j] = huge_int_SWAP(exported_values[j]);
 							}
+							break;
+						}
 #endif
 						}
 					} else {
