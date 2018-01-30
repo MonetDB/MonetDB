@@ -98,6 +98,10 @@ has_hugeint(Mapi mid)
 {
 	MapiHdl hdl;
 	int ret;
+	static int hashge = -1;
+
+	if (hashge >= 0)
+		return hashge;
 
 	if ((hdl = mapi_query(mid,
 			      "SELECT id "
@@ -113,6 +117,7 @@ has_hugeint(Mapi mid)
 	if (mapi_error(mid))
 		goto bailout;
 	mapi_close_handle(hdl);
+	hashge = ret;
 	return ret;
 
   bailout:
@@ -1388,7 +1393,7 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 	MapiHdl hdl;
 	char *q;
 	size_t l;
-	int hashge = has_hugeint(mid);
+	int hashge;
 	const char *fid;
 
 	if (fname != NULL) {
@@ -1442,6 +1447,7 @@ dump_functions(Mapi mid, stream *toConsole, const char *sname, const char *fname
 	free(q);
 	if (hdl == NULL || mapi_error(mid))
 		goto bailout;
+	hashge = has_hugeint(mid);
 	while (!mnstr_errnr(toConsole) && mapi_fetch_row(hdl) != 0) {
 		fid = mapi_fetch_field(hdl, 0);
 		dump_function(mid, toConsole, fid, hashge);
