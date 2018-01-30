@@ -1519,7 +1519,7 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 	MapiHdl hdl;
 	char *query, *q, *end_q;
 	size_t len;
-	int hashge = has_hugeint(mid);
+	int hashge;
 	char *to_free = NULL;
 	char wantSystem;
 	long prev_sid;
@@ -1575,6 +1575,7 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 	if (hdl == NULL || mapi_error(mid))
 		goto bailout;
 	prev_sid = 0;
+	hashge = has_hugeint(mid);
 	while (!mnstr_errnr(toConsole) && mapi_fetch_row(hdl) != 0) {
 		long sid = strtol(mapi_fetch_field(hdl, 0), NULL, 10);
 		const char *schema = mapi_fetch_field(hdl, 1);
@@ -1765,12 +1766,11 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 	/* we must dump views, functions and triggers in order of
 	 * creation since they can refer to each other */
 	const char *views_functions_triggers =
-		"WITH vft (sname, name, id, query, routine, remark) AS ("
+		"WITH vft (sname, name, id, query, remark) AS ("
 			"SELECT s.name AS sname, "
 			       "t.name AS name, "
 			       "t.id AS id, "
 			       "t.query AS query, "
-			       "NULL AS routine, "
 			       "rem.remark AS remark "
 			"FROM sys.schemas s, "
 			     "sys._tables t LEFT OUTER JOIN sys.comments rem ON t.id = rem.id "
@@ -1783,7 +1783,6 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			       "f.name AS name, "
 			       "f.id AS id, "
 			       "NULL AS query, "
-			       "f.func AS routine, "
 			       "NULL AS remark " /* emitted separately */
 			"FROM sys.schemas s, "
 			     "sys.functions f "
@@ -1794,7 +1793,6 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			       "tr.name AS name, "
 			       "tr.id AS id, "
 			       "tr.\"statement\" AS query, "
-			       "NULL AS routine, "
 			       "NULL AS remark " /* not available yet */
 			"FROM sys.triggers tr, "
 			     "sys.schemas s, "
@@ -1802,7 +1800,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			"WHERE s.id = t.schema_id AND "
 			      "t.id = tr.table_id AND t.system = FALSE"
 		") "
-		"SELECT id, sname, name, query, routine, remark FROM vft ORDER BY id";
+		"SELECT id, sname, name, query, remark FROM vft ORDER BY id";
 	char *sname = NULL;
 	char *curschema = NULL;
 	MapiHdl hdl;
@@ -2059,8 +2057,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		const char *schema = mapi_fetch_field(hdl, 1);
 		const char *name = mapi_fetch_field(hdl, 2);
 		const char *query = mapi_fetch_field(hdl, 3);
-		const char *routine = mapi_fetch_field(hdl, 4);
-		const char *remark = mapi_fetch_field(hdl, 5);
+		const char *remark = mapi_fetch_field(hdl, 4);
 
 		if (mapi_error(mid))
 			goto bailout;
@@ -2077,12 +2074,15 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			mnstr_printf(toConsole, "SET SCHEMA \"%s\";\n",
 				     curschema);
 		}
-		if (routine)
-			dump_functions(mid, toConsole, 0, schema, name, id);
-		else
+		if (query) {
+			/* view or trigger */
 			mnstr_printf(toConsole, "%s\n", query);
-		/* only views have comments due to query */
-		comment_on(toConsole, "VIEW", schema, name, NULL, remark);
+			/* only views have comments due to query */
+			comment_on(toConsole, "VIEW", schema, name, NULL, remark);
+		} else {
+			/* function */
+			dump_functions(mid, toConsole, 0, schema, name, id);
+		}
 	}
 	mapi_close_handle(hdl);
 	hdl = NULL;
