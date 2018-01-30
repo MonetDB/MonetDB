@@ -1711,6 +1711,8 @@ HEAPcommitpersistence(Heap *hp, bool writable, bool existing)
 }
 
 
+#define ATOMappendpriv(t, h) (ATOMstorage(t) != TYPE_str || GDK_ELIMDOUBLES(h))
+
 /* change the heap modes at a commit */
 gdk_return
 BATcheckmodes(BAT *b, bool existing)
@@ -2009,6 +2011,11 @@ BATassertProps(BAT *b)
 		assert(!b->tvarsized);
 	/* shift and width have a particular relationship */
 	assert(b->tshift >= 0);
+	if (ATOMstorage(b->ttype) == TYPE_str)
+		assert(b->twidth >= 1 && b->twidth <= ATOMsize(b->ttype));
+	else
+		assert(b->twidth == ATOMsize(b->ttype));
+	assert(b->tseqbase <= oid_nil);
 	/* only oid/void columns can be dense */
 	assert(!b->tdense || b->ttype == TYPE_oid || b->ttype == TYPE_void);
 	if (b->ttype == TYPE_oid && b->tdense) {
@@ -2021,7 +2028,6 @@ BATassertProps(BAT *b)
 	}
 	/* a column cannot both have and not have NILs */
 	assert(!b->tnil || !b->tnonil);
-	assert(b->tseqbase <= oid_nil);
 	if (b->ttype == TYPE_void) {
 		assert(b->tshift == 0);
 		assert(b->twidth == 0);
@@ -2039,10 +2045,6 @@ BATassertProps(BAT *b)
 		}
 		return;
 	}
-	if (ATOMstorage(b->ttype) == TYPE_str)
-		assert(b->twidth >= 1 && b->twidth <= ATOMsize(b->ttype));
-	else
-		assert(b->twidth == ATOMsize(b->ttype));
 	assert(1 << b->tshift == b->twidth);
 	/* only linear atoms can be sorted */
 	assert(!b->tsorted || ATOMlinear(b->ttype));

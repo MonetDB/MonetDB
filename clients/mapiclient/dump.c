@@ -116,10 +116,11 @@ has_hugeint(Mapi mid)
 {
 	MapiHdl hdl;
 	int ret;
-	static int answer = -1;
+	static int hashge = -1;
 
-	if (answer >= 0)
-		return answer;
+	if (hashge >= 0)
+		return hashge;
+
 	if ((hdl = mapi_query(mid,
 			      "SELECT id "
 			      "FROM sys.types "
@@ -134,7 +135,7 @@ has_hugeint(Mapi mid)
 	if (mapi_error(mid))
 		goto bailout;
 	mapi_close_handle(hdl);
-	answer = ret;
+	hashge = ret;
 	return ret;
 
   bailout:

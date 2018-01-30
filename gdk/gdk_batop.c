@@ -519,7 +519,18 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 	assert(b->theap.parentid == 0);
 
 	ALIGNapp(b, "BATappend", force, GDK_FAIL);
-	BATcompatible(b, n, GDK_FAIL, "BATappend");
+
+	if (ATOMstorage(ATOMtype(b->ttype)) != ATOMstorage(ATOMtype(n->ttype))) {
+		GDKerror("Incompatible operands.\n");
+		return GDK_FAIL;
+	}
+	CHECKDEBUG {
+		if (BATttype(b) != BATttype(n) &&
+		    ATOMtype(b->ttype) != ATOMtype(n->ttype)) {
+			fprintf(stderr,"#Interpreting %s as %s.\n",
+				ATOMname(BATttype(n)), ATOMname(BATttype(b)));
+		}
+	}
 
 	if (BATcount(b) == 0)
 		BAThseqbase(b, s ? s->hseqbase : n->hseqbase);
@@ -858,15 +869,6 @@ BATdel(BAT *b, BAT *d)
 
 	return GDK_SUCCEED;
 }
-
-#define TYPEcheck(t1,t2,func)						\
-	do {								\
-		if (TYPEerror(t1, t2)) {				\
-			GDKerror("%s: Incompatible types %s and %s.\n", \
-				 func, ATOMname(t2), ATOMname(t1));	\
-			return GDK_FAIL;				\
-		}							\
-	} while (0)
 
 /*
  * The last in this series is a BATreplace, which replaces all the
