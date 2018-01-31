@@ -15,8 +15,13 @@
 #endif
 #include <float.h>		/* for FLT_MAX */
 
+#ifdef HAVE_HGE
+#define MAXBIGNUM10	(((uhge) UINT64_C(0x1999999999999999) << 64) | ((uhge) UINT64_C(0x9999999999999999)))
+#define MAXBIGNUMLAST	'5'
+#else
 #define MAXBIGNUM10	(UINT64_MAX / 10)
 #define MAXBIGNUMLAST	('0' + (int) (UINT64_MAX % 10))
+#endif
 
 #define space(c)	((c) == ' ' || (c) == '\t')
 
@@ -27,7 +32,11 @@ typedef struct {
 				 * fraction; < 0: shift right,
 				 * i.e. multiply with power of 10) */
 	uint8_t sign;		/* 1 pos, 0 neg */
-	uint64_t val;		/* the value */
+#ifdef HAVE_HGE
+	uhge val;		/* the value (128 bits) */
+#else
+	uint64_t val;		/* the value (64 bits) */
+#endif
 } bignum_t;
 
 #ifndef HAVE_STRNCASECMP
@@ -385,6 +394,8 @@ ODBCDefaultType(ODBCDescRec *rec)
 	case SQL_INTEGER:
 		return rec->sql_desc_unsigned ? SQL_C_ULONG : SQL_C_SLONG;
 	case SQL_BIGINT:
+		return rec->sql_desc_unsigned ? SQL_C_UBIGINT : SQL_C_SBIGINT;
+	case SQL_HUGEINT:	/* for now, try to treat as BIGINT */
 		return rec->sql_desc_unsigned ? SQL_C_UBIGINT : SQL_C_SBIGINT;
 	case SQL_REAL:
 		return SQL_C_FLOAT;
@@ -1074,6 +1085,7 @@ ODBCFetch(ODBCStmt *stmt,
 	case SQL_SMALLINT:
 	case SQL_INTEGER:
 	case SQL_BIGINT:
+	case SQL_HUGEINT:
 	case SQL_INTERVAL_YEAR:
 	case SQL_INTERVAL_YEAR_TO_MONTH:
 	case SQL_INTERVAL_MONTH:
@@ -1087,12 +1099,18 @@ ODBCFetch(ODBCStmt *stmt,
 	case SQL_INTERVAL_MINUTE:
 	case SQL_INTERVAL_MINUTE_TO_SECOND:
 	case SQL_INTERVAL_SECOND:
-		if (!parseint(data, &nval)) {
+		switch (parseint(data, &nval)) {
+		case 0:
 			/* shouldn't happen: getting here means SQL
 			 * server told us a value was of a certain
 			 * type, but in reality it wasn't. */
 			/* Invalid character value for cast specification */
 			addStmtError(stmt, "22018", NULL, 0);
+			return SQL_ERROR;
+		case 2:
+			/* hugeint that doesn't fit into a bigint */
+			/* Numeric value out of range */
+			addStmtError(stmt, "22003", NULL, 0);
 			return SQL_ERROR;
 		}
 
@@ -1318,11 +1336,24 @@ ODBCFetch(ODBCStmt *stmt,
 				*lenp = j;
 			break;
 		}
-		case SQL_DECIMAL:
 		case SQL_TINYINT:
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
 		case SQL_BIGINT:
+		case SQL_HUGEINT:
+			sz = snprintf((char *) ptr, buflen, "%s", data);
+			if (sz < 0 || sz >= buflen) {
+				/* Numeric value out of range */
+				addStmtError(stmt, "22003", NULL, 0);
+
+				if (type == SQL_C_WCHAR)
+					free(ptr);
+				return SQL_ERROR;
+			}
+			if (lenp)
+				*lenp = sz;
+			break;
+		case SQL_DECIMAL:
 		case SQL_BIT: {
 			uint64_t f;
 			int n;
@@ -1331,7 +1362,23 @@ ODBCFetch(ODBCStmt *stmt,
 
 			for (n = 0, f = 1; n < nval.scale; n++)
 				f *= 10;
-			sz = snprintf(data, buflen, "%s%" PRIu64, nval.sign ? "" : "-", (uint64_t) (nval.val / f));
+#ifdef HAVE_HGE
+			uhge v = nval.val / f;
+			if (v > UINT64_MAX) {
+				/* Numeric value out of range */
+				addStmtError(stmt, "22003", NULL, 0);
+
+				if (type == SQL_C_WCHAR)
+					free(ptr);
+				return SQL_ERROR;
+			}
+			sz = snprintf(data, buflen, "%s%" PRIu64,
+				      nval.sign ? "" : "-", (uint64_t) v);
+#else
+			sz = snprintf(data, buflen, "%s%" PRIu64,
+				      nval.sign ? "" : "-",
+				      (uint64_t) (nval.val / f));
+#endif
 			if (sz < 0 || sz >= buflen) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
@@ -1863,6 +1910,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
 		case SQL_BIGINT:
+		case SQL_HUGEINT:
 		case SQL_REAL:
 		case SQL_DOUBLE:
 		case SQL_BIT:
@@ -1925,6 +1973,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
 		case SQL_BIGINT:
+		case SQL_HUGEINT:
 		case SQL_BIT: {
 			int truncated = nval.scale > 0;
 
@@ -2014,6 +2063,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
 		case SQL_BIGINT:
+		case SQL_HUGEINT:
 		case SQL_BIT: {
 			int truncated = nval.scale > 0;
 
@@ -2115,6 +2165,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
 		case SQL_BIGINT:
+		case SQL_HUGEINT:
 		case SQL_BIT: {
 			int truncated = nval.scale > 0;
 
@@ -2186,6 +2237,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
 		case SQL_BIGINT:
+		case SQL_HUGEINT:
 		case SQL_BIT:
 			while (nval.precision > precision) {
 				nval.val /= 10;
@@ -2241,6 +2293,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
 		case SQL_BIGINT:
+		case SQL_HUGEINT:
 		case SQL_BIT:
 			fval = (double) (int64_t) nval.val;
 			i = 1;
@@ -2447,6 +2500,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
 		case SQL_BIGINT:
+		case SQL_HUGEINT:
 			parsemonthinterval(&nval, &ival, type);
 			break;
 		case SQL_INTERVAL_YEAR:
@@ -2527,6 +2581,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
 		case SQL_BIGINT:
+		case SQL_HUGEINT:
 			ivalprec = parsesecondinterval(&nval, &ival, type);
 			break;
 		case SQL_INTERVAL_DAY:
@@ -3569,6 +3624,7 @@ ODBCStore(ODBCStmt *stmt,
 	case SQL_SMALLINT:
 	case SQL_INTEGER:
 	case SQL_BIGINT:
+	case SQL_HUGEINT:
 	case SQL_BIT:
 		/* first convert to nval (if not already done) */
 		switch (ctype) {
