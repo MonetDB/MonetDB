@@ -126,6 +126,7 @@ syncEvent(void)
 	return MAL_SUCCEED;
 }
 
+/*
 static void
 renderSyncEvent(void)
 {
@@ -154,6 +155,7 @@ renderSyncEvent(void)
 	logadd("}\n");
 	logjsonInternal(logbuffer);
 }
+*/
 /* JSON rendering method of performance data.
  * The eventparser may assume this layout for ease of parsing
 EXAMPLE:
@@ -183,29 +185,17 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	str stmt, c;
 	str stmtq;
 	lng usec= GDKusec();
-	lng sec = (lng)startup_time.tv_sec + usec/1000000;
-	long microseconds = (long)startup_time.tv_usec + (usec % 1000000);
-
-	assert (microseconds / 1000000 >= 0 && microseconds / 1000000 < 2);
-	sec += (microseconds / 1000000);
-	microseconds %= 1000000;
-
 	// ignore generation of events for instructions that are called too often
 	if(highwatermark && highwatermark + (start == 0) < pci->calls)
 		return;
-
-	if (send_sync) {
-		send_sync = false;
-		renderSyncEvent();
-	}
 
 	/* make profile event tuple  */
 	lognew();
 	logadd("{%s",prettify); // fill in later with the event counter
 	logadd("\"source\":\"trace\",%s", prettify);
 
-	logadd("\"clk\":"LLFMT",%s",usec,prettify);
-	logadd("\"ctime\":"LLFMT".%06ld,%s", sec, microseconds, prettify);
+	logadd("\"clk\":"LLFMT",%s", usec, prettify);
+	logadd("\"ctime\":%"PRId64",%s", microseconds, prettify);
 	logadd("\"thread\":%d,%s", THRgettid(),prettify);
 
 	logadd("\"function\":\"%s.%s\",%s", getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)), prettify);
@@ -488,6 +478,7 @@ profilerHeartbeatEvent(char *alter)
 	char logbuffer[LOGLEN], *logbase;
 	int loglen;
 	lng usec = GDKusec();
+	uint64_t microseconds = (uint64_t)startup_time.tv_sec*1000000 + (uint64_t)startup_time.tv_usec + (uint64_t)usec;
 
 	if (ATOMIC_GET(hbdelay, mal_beatLock) == 0 || eventstream  == NULL)
 		return;
@@ -496,17 +487,13 @@ profilerHeartbeatEvent(char *alter)
 	if ( getCPULoad(cpuload) )
 		return;
 
-	if (send_sync) {
-		send_sync = false;
-		renderSyncEvent();
-	}
-
 	lognew();
 	logadd("{%s",prettify); // fill in later with the event counter
 	logadd("\"source\":\"heartbeat\",%s", prettify);
 	if(mal_session_uuid)
 		logadd("\"session\":\"%s\",%s", mal_session_uuid, prettify);
 	logadd("\"clk\":"LLFMT",%s",usec,prettify);
+	logadd("\"ctime\":%"PRId64",%s", microseconds, prettify);
 	logadd("\"rss\":"SZFMT ",%s", MT_getrss()/1024/1024, prettify);
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
