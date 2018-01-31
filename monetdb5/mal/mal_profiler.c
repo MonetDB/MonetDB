@@ -157,7 +157,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	logadd("\"source\":\"trace\",%s", prettify);
 
 	logadd("\"clk\":"LLFMT",%s", usec, prettify);
-	logadd("\"ctime\":%"PRId64",%s", microseconds, prettify);
+	logadd("\"ctime\":%"PRIu64",%s", microseconds, prettify);
 	logadd("\"thread\":%d,%s", THRgettid(),prettify);
 
 	logadd("\"function\":\"%s.%s\",%s", getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)), prettify);
