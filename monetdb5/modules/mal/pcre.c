@@ -26,6 +26,10 @@
 
 #ifdef HAVE_LIBPCRE
 #include <pcre.h>
+#ifndef PCRE_STUDY_JIT_COMPILE
+/* old library version on e.g. EPEL 6 */
+#define pcre_free_study(x)		pcre_free(x)
+#endif
 
 #else
 
