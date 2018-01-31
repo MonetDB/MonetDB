@@ -27,7 +27,6 @@
 #endif
 
 #include <string.h>
-#include <stdbool.h>
 
 static void cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
@@ -46,8 +45,6 @@ int malProfileMode = 0;     /* global flag to indicate profiling mode */
 static struct timeval startup_time;
 
 static volatile ATOMIC_TYPE hbdelay = 0;
-
-static bool send_sync = true;
 
 #ifdef HAVE_SYS_RESOURCE_H
 struct rusage infoUsage;
@@ -119,43 +116,6 @@ truncate_string(char *inp)
 	return ret;
 }
 
-str
-syncEvent(void)
-{
-	send_sync = true;
-	return MAL_SUCCEED;
-}
-
-/*
-static void
-renderSyncEvent(void)
-{
-	char logbuffer[LOGLEN], *logbase;
-	int loglen;
-	struct timeval curr_time;
-	lng usec = GDKusec();
-	uint64_t clock_time;
-
-	gettimeofday(&curr_time, NULL);
-	clock_time = curr_time.tv_sec*1000000 + (curr_time.tv_usec == -1 ? 0 : curr_time.tv_usec);
-
-	if (myname == 0){
-		myname = putName("profiler");
-	}
-	lognew();
-	logadd("{%s", prettify);
-	logadd("\"source\":\"sync\",%s", prettify);
-	if(mal_session_uuid)
-		logadd("\"session\":\"%s\",%s", mal_session_uuid, prettify);
-	// the state field is not really needed, but marvin 1.0 explicitly
-	// searches for it.
-	logadd("\"state\":\"callback\",%s", prettify);
-	logadd("\"clk\":"LLFMT",%s", usec, prettify);
-	logadd("\"time\":%"PRIu64"%s", clock_time, prettify);
-	logadd("}\n");
-	logjsonInternal(logbuffer);
-}
-*/
 /* JSON rendering method of performance data.
  * The eventparser may assume this layout for ease of parsing
 EXAMPLE:
@@ -185,6 +145,8 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	str stmt, c;
 	str stmtq;
 	lng usec= GDKusec();
+	uint64_t microseconds = (uint64_t)startup_time.tv_sec*1000000 + (uint64_t)startup_time.tv_usec + (uint64_t)usec;
+
 	// ignore generation of events for instructions that are called too often
 	if(highwatermark && highwatermark + (start == 0) < pci->calls)
 		return;

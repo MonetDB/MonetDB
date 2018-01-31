@@ -48,6 +48,4 @@ mal_export str CMDgetUserTime(lng *ret);
 mal_export str CMDgetSystemTime(lng *ret);
 mal_export str CMDcpustats(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait);
 mal_export str CMDcpuloadPercentage(int *cycles, int *io, lng *user, lng *nice, lng *sys, lng *idle, lng *iowait);
-
-mal_export str CMDsyncEvent(void *ret);
 #endif  /* _PROFILER_*/

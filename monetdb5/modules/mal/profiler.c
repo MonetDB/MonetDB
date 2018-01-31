@@ -216,10 +216,3 @@ CMDcpuloadPercentage(int *cycles, int *io, lng *user, lng *nice, lng *sys, lng *
 	}
 	return MAL_SUCCEED;
 }
-
-str
-CMDsyncEvent(void *ret)
-{
-	(void)ret;
-	return syncEvent();
-}
