@@ -664,8 +664,10 @@ mvc_logfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		m->scanner.log = NULL;
 	}
 
-	if (strcmp(filename, str_nil))
-		m->scanner.log = open_wastream(filename);
+	if (strcmp(filename, str_nil)) {
+		if((m->scanner.log = open_wastream(filename)) == NULL)
+			throw(SQL, "sql.logfile", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 	return MAL_SUCCEED;
 }
 
