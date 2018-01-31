@@ -238,6 +238,13 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 		columnrefs = optname->data.lval->h->next->data.lval;
 		if (is_apply(sq->op))
 			sq = sq->r;
+		if (is_topn(sq->op) || (is_project(sq->op) && sq->r)) {
+			sq = rel_project(sql->sa, sq, rel_projections(sql, sq, NULL, 1, 1));
+			if (osq != sq->l) /* apply */
+				osq->r = sq;
+			else
+				osq = sq;
+		}
 		if (columnrefs && sq->exps) {
 			dnode *d = columnrefs->h;
 			node *ne = sq->exps->h;
@@ -257,15 +264,6 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 		if (!columnrefs && sq->exps) {
 			node *ne;
 
-			if (is_topn(sq->op)) {
-				assert(sq->l);
-				assert(is_project(((sql_rel*)sq->l)->op));
-				sq = rel_project(sql->sa, sq, rel_projections(sql, sq, NULL, 1, 1));
-				if (osq != sq->l) /* apply */
-					osq->r = sq;
-				else
-					osq = sq;
-			}
 			ne = sq->exps->h;
 			for (; ne; ne = ne->next) {
 				sql_exp *e = ne->data;
