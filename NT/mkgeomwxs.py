@@ -83,7 +83,7 @@ def main():
     id = comp(features, id, 16,
               [r'lib\monetdb5\%s' % x for x in sorted(filter(lambda x: x.endswith('.mal') and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(features, id, 16,
-              [r'lib\monetdb5\%s' % x for x in sorted(filter(lambda x: x.startswith('lib_') and x.endswith('.dll') and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
+              [r'lib\monetdb5\%s' % x for x in sorted(filter(lambda x: x.startswith('lib_') and (x.endswith('.dll') or x.endswith('.pdb')) and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     print(r'              </Directory>')
     print(r'            </Directory>')
     print(r'          </Directory>')
