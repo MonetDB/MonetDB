@@ -238,6 +238,13 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 		columnrefs = optname->data.lval->h->next->data.lval;
 		if (is_apply(sq->op))
 			sq = sq->r;
+		if (is_topn(sq->op) || (is_project(sq->op) && sq->r)) {
+			sq = rel_project(sql->sa, sq, rel_projections(sql, sq, NULL, 1, 1));
+			if (osq != sq->l) /* apply */
+				osq->r = sq;
+			else
+				osq = sq;
+		}
 		if (columnrefs && sq->exps) {
 			dnode *d = columnrefs->h;
 			node *ne = sq->exps->h;
@@ -257,15 +264,6 @@ rel_table_optname(mvc *sql, sql_rel *sq, symbol *optname)
 		if (!columnrefs && sq->exps) {
 			node *ne;
 
-			if (is_topn(sq->op)) {
-				assert(sq->l);
-				assert(is_project(((sql_rel*)sq->l)->op));
-				sq = rel_project(sql->sa, sq, rel_projections(sql, sq, NULL, 1, 1));
-				if (osq != sq->l) /* apply */
-					osq->r = sq;
-				else
-					osq = sq;
-			}
 			ne = sq->exps->h;
 			for (; ne; ne = ne->next) {
 				sql_exp *e = ne->data;
@@ -3626,6 +3624,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 			e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
 		}
 		rel_project_add_exp(sql, project, e);
+		e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
 		return e;
 	} 
 
