@@ -4,6 +4,9 @@
 --
 -- Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
+-- Note: these table producing functions are deprecated as of Febr 2018
+-- and have been replaced by views, see 21_dependency_views.sql.
+
 --Schema s has a dependency on user u
 CREATE FUNCTION dependencies_schemas_on_users()
 RETURNS TABLE (sch varchar(100), usr varchar(100), dep_type varchar(32))
@@ -94,6 +97,4 @@ RETURN TABLE (SELECT f.name, tri.name, 'DEP_TRIGGER' from functions as f, trigge
 CREATE FUNCTION dependencies_keys_on_foreignKeys()
 RETURNS TABLE (sch varchar(100), usr varchar(100), dep_type varchar(32))
 RETURN TABLE (SELECT k.name, fk.name, 'DEP_FKEY' from keys as k, keys as fk where fk.rkey = k.id);
-
-
 
