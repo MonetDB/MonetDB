@@ -287,6 +287,15 @@ ODBCLength(ODBCDescRec *rec, int lengthtype)
 			return 20;
 		}
 		break;
+	case SQL_HUGEINT:
+		switch (lengthtype) {
+		case SQL_DESC_LENGTH:
+			return 39 + (rec->sql_desc_unsigned != 0);
+		case SQL_DESC_DISPLAY_SIZE:
+		case SQL_DESC_OCTET_LENGTH:
+			return 40;
+		}
+		break;
 	case SQL_REAL:
 		switch (lengthtype) {
 		case SQL_DESC_LENGTH:

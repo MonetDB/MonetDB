@@ -88,7 +88,7 @@ command batcalc.hge(s1:int, v:bat[:int], d2:int, s2:int) :bat[:hge]
 address batint_dec2dec_hge
 comment "cast decimal(int) to decimal(hge) and check for overflow";
 
-command calc.hge( v:lng, digits:int, scale:int ) :hge
+command calc.hge(v:lng, digits:int, scale:int) :hge
 address lng_num2dec_hge
 comment "cast number to decimal(hge) and check for overflow";
 
@@ -198,7 +198,7 @@ command batcalc.int(s1:int, v:bat[:hge], d2:int, s2:int) :bat[:int]
 address bathge_dec2dec_int
 comment "cast decimal(hge) to decimal(int) and check for overflow";
 
-command calc.lng( v:hge, digits:int, scale:int ) :lng
+command calc.lng(v:hge, digits:int, scale:int) :lng
 address hge_num2dec_lng
 comment "cast number to decimal(lng) and check for overflow";
 

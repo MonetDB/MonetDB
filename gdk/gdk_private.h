@@ -29,7 +29,7 @@ enum heaptype {
 __hidden gdk_return ATOMheap(int id, Heap *hp, size_t cap)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden int ATOMisdescendant(int id, int parentid)
+__hidden bool ATOMisdescendant(int id, int parentid)
 	__attribute__((__visibility__("hidden")));
 __hidden int ATOMunknown_find(const char *nme)
 	__attribute__((__warn_unused_result__))
@@ -38,14 +38,14 @@ __hidden str ATOMunknown_name(int a)
 	__attribute__((__visibility__("hidden")));
 __hidden void ATOMunknown_clean(void)
 	__attribute__((__visibility__("hidden")));
-__hidden int BATcheckhash(BAT *b)
+__hidden bool BATcheckhash(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden int BATcheckimprints(BAT *b)
+__hidden bool BATcheckimprints(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return BATcheckmodes(BAT *b, int persistent)
+__hidden gdk_return BATcheckmodes(BAT *b, bool persistent)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden int BATcheckorderidx(BAT *b)
+__hidden bool BATcheckorderidx(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden BAT *BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 	__attribute__((__visibility__("hidden")));
@@ -60,7 +60,7 @@ __hidden gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, 
 	__attribute__((__visibility__("hidden")));
 __hidden void BATinit_idents(BAT *bn)
 	__attribute__((__visibility__("hidden")));
-__hidden BAT *BATload_intern(bat bid, int lock)
+__hidden BAT *BATload_intern(bat bid, bool lock)
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return BATmaterialize(BAT *b)
 	__attribute__((__warn_unused_result__))
@@ -70,9 +70,7 @@ __hidden gdk_return BATsave(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden void BATsetdims(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden size_t BATvmsize(BAT *b, int dirty)
-	__attribute__((__visibility__("hidden")));
-__hidden gdk_return BBPcacheit(BAT *bn, int lock)
+__hidden gdk_return BBPcacheit(BAT *bn, bool lock)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 void BBPdump(void);		/* never called: for debugging only */
@@ -153,7 +151,7 @@ __hidden gdk_return GDKunlink(int farmid, const char *dir, const char *nme, cons
 	__attribute__((__visibility__("hidden")));
 __hidden void HASHfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
-__hidden int HASHgonebad(BAT *b, const void *v)
+__hidden bool HASHgonebad(BAT *b, const void *v)
 	__attribute__((__visibility__("hidden")));
 __hidden BUN HASHmask(BUN cnt)
 	__attribute__((__visibility__("hidden")));
@@ -165,7 +163,7 @@ __hidden gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 __hidden gdk_return HEAPcopy(Heap *dst, Heap *src)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden int HEAPdelete(Heap *h, const char *o, const char *ext)
+__hidden gdk_return HEAPdelete(Heap *h, const char *o, const char *ext)
 	__attribute__((__visibility__("hidden")));
 __hidden void HEAPfree(Heap *h, int remove)
 	__attribute__((__visibility__("hidden")));
@@ -219,7 +217,7 @@ __hidden gdk_return VIEWreset(BAT *b)
 	__attribute__((__visibility__("hidden")));
 __hidden BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
-__hidden int binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
+__hidden bool binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 	__attribute__((__visibility__("hidden")));
 __hidden void gdk_bbp_reset(void)
 	__attribute__((__visibility__("hidden")));
@@ -279,8 +277,6 @@ extern MT_Lock GDKthreadLock;
 extern MT_Lock GDKtmLock;
 extern MT_Lock MT_system_lock;
 
-#define ATOMappendpriv(t, h) (ATOMstorage(t) != TYPE_str || GDK_ELIMDOUBLES(h))
-
 #define BBPdirty(x)	(BBP_dirty=(x))
 
 #define BATcheck(tst, msg, err)						\
@@ -300,21 +296,6 @@ extern MT_Lock MT_system_lock;
 			return (err);		\
 		}				\
 	} while (0)
-#define BATcompatible(P1,P2,E,F)					\
-	do {								\
-		ERRORcheck((P1) == NULL, F ": BAT required\n", E);	\
-		ERRORcheck((P2) == NULL, F ": BAT required\n", E);	\
-		if (TYPEerror(BATttype(P1),BATttype(P2))) {		\
-			GDKerror("Incompatible operands.\n");		\
-			return (E);					\
-		}							\
-		if (BATttype(P1) != BATttype(P2) &&			\
-		    ATOMtype((P1)->ttype) != ATOMtype((P2)->ttype)) {	\
-			CHECKDEBUG fprintf(stderr,"#Interpreting %s as %s.\n", \
-				ATOMname(BATttype(P2)), ATOMname(BATttype(P1))); \
-		}							\
-	} while (0)
-#define TYPEerror(t1,t2)	(ATOMstorage(ATOMtype(t1)) != ATOMstorage(ATOMtype(t2)))
 
 #define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
 #define GDKhashLock(x)  GDKbatLock[(x)&BBP_BATMASK].hash

@@ -152,6 +152,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			mnstr_printf(fout, " unique ");
 		if (need_no_nil(e))
 			mnstr_printf(fout, " no nil ");
+		if (zero_if_empty(e))
+			mnstr_printf(fout, " zero if empty ");
 		if (e->l)
 			exps_print(sql, fout, e->l, depth, refs, alias, 1);
 		else

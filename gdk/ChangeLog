@@ -1,6 +1,11 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Thu Jan 18 2018 Sjoerd Mullender <sjoerd@acm.org>
+- Removed unused functions BATmemsize and BATvmsize.
+- Removed the tnodense property: it was maintained but never actually
+  used, not even stored.
+
 * Tue Nov  7 2017 Sjoerd Mullender <sjoerd@acm.org>
 - The NIL representation of the internal flt and dbl types was changed
   from the smallest representable finite value to NaN (not-a-number).

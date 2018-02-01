@@ -96,6 +96,7 @@ MNDBDescribeCol(ODBCStmt *stmt,
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
 		case SQL_BIGINT:
+		case SQL_HUGEINT:
 			*DecimalDigitsPtr = 0;
 			break;
 		case SQL_TYPE_TIME:

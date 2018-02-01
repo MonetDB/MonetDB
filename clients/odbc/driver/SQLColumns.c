@@ -176,6 +176,7 @@ MNDBColumns(ODBCStmt *stmt,
 			    "when 'date' then %d "
 			    "when 'decimal' then %d "
 			    "when 'double' then %d "
+			    "when 'hugeint' then %d "
 			    "when 'int' then %d "
 			    "when 'month_interval' then "
 				 "case c.type_digits "
@@ -214,6 +215,7 @@ MNDBColumns(ODBCStmt *stmt,
 			    "when 'date' then 'DATE' "
 			    "when 'decimal' then 'DECIMAL' "
 			    "when 'double' then 'DOUBLE' "
+			    "when 'hugeint' then 'HUGEINT' "
 			    "when 'int' then 'INTEGER' "
 			    "when 'month_interval' then "
 				 "case c.type_digits "
@@ -276,6 +278,7 @@ MNDBColumns(ODBCStmt *stmt,
 			    "when 'clob' then 2 * c.type_digits "
 			    "when 'date' then 10 "
 			    "when 'double' then 24 "
+			    "when 'hugeint' then 40 "
 			    "when 'int' then 11 "
 			    "when 'month_interval' then "
 				 "case c.type_digits "
@@ -307,25 +310,26 @@ MNDBColumns(ODBCStmt *stmt,
 			    "else c.type_digits "
 		       "end as buffer_length, "
 		       "case c.type "
-			    "when 'bigint' then 19 "
+			    "when 'bigint' then 0 "
 			    "when 'decimal' then c.type_scale "
 			    "when 'double' then "
 				 "case when c.type_digits = 53 and c.type_scale = 0 then 15 "
 				 "else c.type_digits "
 				 "end "
-			    "when 'int' then 10 "
+			    "when 'hugeint' then 0 "
+			    "when 'int' then 0 "
 			    "when 'month_interval' then 0 "
 			    "when 'real' then "
 				 "case when c.type_digits = 24 and c.type_scale = 0 then 7 "
 				 "else c.type_digits "
 				 "end "
 			    "when 'sec_interval' then 0 "
-			    "when 'smallint' then 5 "
+			    "when 'smallint' then 0 "
 			    "when 'time' then c.type_digits - 1 "
 			    "when 'timestamp' then c.type_digits - 1 "
 			    "when 'timestamptz' then c.type_digits - 1 "
 			    "when 'timetz' then c.type_digits - 1 "
-			    "when 'tinyint' then 3 "
+			    "when 'tinyint' then 0 "
 			    "else cast(null as smallint) "
 		       "end as decimal_digits, "
 		       "case c.type "
@@ -335,6 +339,7 @@ MNDBColumns(ODBCStmt *stmt,
 				 "case when c.type_digits = 53 and c.type_scale = 0 then 2 "
 				 "else 10 "
 				 "end "
+			    "when 'hugeint' then 2 "
 			    "when 'int' then 2 "
 			    "when 'real' then "
 				 "case when c.type_digits = 24 and c.type_scale = 0 then 2 "
@@ -359,6 +364,7 @@ MNDBColumns(ODBCStmt *stmt,
 			    "when 'date' then %d "
 			    "when 'decimal' then %d "
 			    "when 'double' then %d "
+			    "when 'hugeint' then %d "
 			    "when 'int' then %d "
 			    "when 'month_interval' then %d "
 			    "when 'real' then %d "
@@ -420,7 +426,7 @@ MNDBColumns(ODBCStmt *stmt,
 		/* data_type: */
 		SQL_BIGINT, SQL_LONGVARBINARY, SQL_BIT, SQL_WCHAR,
 		SQL_WLONGVARCHAR, SQL_TYPE_DATE, SQL_DECIMAL, SQL_DOUBLE,
-		SQL_INTEGER, SQL_INTERVAL_YEAR, SQL_INTERVAL_YEAR_TO_MONTH,
+		SQL_HUGEINT, SQL_INTEGER, SQL_INTERVAL_YEAR, SQL_INTERVAL_YEAR_TO_MONTH,
 		SQL_INTERVAL_MONTH, SQL_REAL, SQL_INTERVAL_DAY,
 		SQL_INTERVAL_DAY_TO_HOUR, SQL_INTERVAL_DAY_TO_MINUTE,
 		SQL_INTERVAL_DAY_TO_SECOND, SQL_INTERVAL_HOUR,
@@ -434,7 +440,7 @@ MNDBColumns(ODBCStmt *stmt,
 		/* sql_data_type: */
 		SQL_BIGINT, SQL_LONGVARBINARY, SQL_BIT, SQL_WCHAR,
 		SQL_WLONGVARCHAR, SQL_DATETIME, SQL_DECIMAL, SQL_DOUBLE,
-		SQL_INTEGER, SQL_INTERVAL, SQL_REAL, SQL_INTERVAL,
+		SQL_HUGEINT, SQL_INTEGER, SQL_INTERVAL, SQL_REAL, SQL_INTERVAL,
 		SQL_SMALLINT, SQL_DATETIME, SQL_DATETIME, SQL_DATETIME,
 		SQL_DATETIME, SQL_TINYINT, SQL_WVARCHAR,
 		/* sql_datetime_sub: */

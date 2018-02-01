@@ -1,0 +1,335 @@
+stdout of test 'foreign_key_outer_join_dead_code_elimination-prologue` in directory 'sql/test/FeatureRequests` itself:
+
+
+# 01:44:33 >  
+# 01:44:33 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33793" "--set" "mapi_usock=/var/tmp/mtest-6225/.s.monetdb.33793" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/manegold/_/Monet/default/prefix/_/var/MonetDB/mTests_sql_test_FeatureRequests" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 01:44:33 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_FeatureRequests', using 4 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 31.309 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://earth.da.cwi.nl:33793/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6225/.s.monetdb.33793
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python2 module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 97_comments.sql
+# loading sql script: 99_system.sql
+
+# 01:44:33 >  
+# 01:44:33 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6225" "--port=33793"
+# 01:44:33 >  
+
+#create table pk1 (
+#	pk1	int generated always as identity not null primary key,
+#	v1	int
+#);
+#create table pk2 (
+#	pk2	int generated always as identity not null primary key,
+#	v2	int
+#);
+#create table fk (
+#	id	int generated always as identity not null primary key,
+#	fk1	int references pk1(pk1),
+#	fk2	int references pk2(pk2)
+#);
+#create view v0 as (
+#	select * from fk
+#);
+#create view v1 as (
+#	select * from fk
+#	left outer join pk1 on fk.fk1 = pk1.pk1
+#);
+#create view v2 as (
+#	select * from fk
+#	left outer join pk1 on fk.fk1 = pk1.pk1
+#	left outer join pk2 on fk.fk2 = pk2.pk2
+#);
+#insert into pk1 (v1) values (11),(12),(13),(14);
+[ 4	]
+#insert into pk2 (v2) values (21),(22),(23),(24);
+[ 4	]
+#insert into fk (fk1,fk2) values (1,1),(1,2),(2,1),(null,3),(4,null),(null,null);
+[ 6	]
+#select * from pk1 order by pk1;
+% sys.pk1,	sys.pk1 # table_name
+% pk1,	v1 # name
+% int,	int # type
+% 1,	2 # length
+[ 1,	11	]
+[ 2,	12	]
+[ 3,	13	]
+[ 4,	14	]
+#select * from pk2 order by pk2;
+% sys.pk2,	sys.pk2 # table_name
+% pk2,	v2 # name
+% int,	int # type
+% 1,	2 # length
+[ 1,	21	]
+[ 2,	22	]
+[ 3,	23	]
+[ 4,	24	]
+#select * from fk order by id;
+% sys.fk,	sys.fk,	sys.fk # table_name
+% id,	fk1,	fk2 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+[ 1,	1,	1	]
+[ 2,	1,	2	]
+[ 3,	2,	1	]
+[ 4,	NULL,	3	]
+[ 5,	4,	NULL	]
+[ 6,	NULL,	NULL	]
+#select * from v0 order by id;
+% sys.v0,	sys.v0,	sys.v0 # table_name
+% id,	fk1,	fk2 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+[ 1,	1,	1	]
+[ 2,	1,	2	]
+[ 3,	2,	1	]
+[ 4,	NULL,	3	]
+[ 5,	4,	NULL	]
+[ 6,	NULL,	NULL	]
+#select * from v1 order by id;
+% .v1,	.v1,	.v1,	.v1,	.v1 # table_name
+% id,	fk1,	fk2,	pk1,	v1 # name
+% int,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	2 # length
+[ 1,	1,	1,	1,	11	]
+[ 2,	1,	2,	1,	11	]
+[ 3,	2,	1,	2,	12	]
+[ 4,	NULL,	3,	NULL,	NULL	]
+[ 5,	4,	NULL,	4,	14	]
+[ 6,	NULL,	NULL,	NULL,	NULL	]
+#select * from v2 order by id;
+% .v2,	.v2,	.v2,	.v2,	.v2,	.v2,	.v2 # table_name
+% id,	fk1,	fk2,	pk1,	v1,	pk2,	v2 # name
+% int,	int,	int,	int,	int,	int,	int # type
+% 1,	1,	1,	1,	2,	1,	2 # length
+[ 1,	1,	1,	1,	11,	1,	21	]
+[ 2,	1,	2,	1,	11,	2,	22	]
+[ 3,	2,	1,	2,	12,	1,	21	]
+[ 4,	NULL,	3,	NULL,	NULL,	3,	23	]
+[ 5,	4,	NULL,	4,	14,	NULL,	NULL	]
+[ 6,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+#select count(*) from fk;
+% sys.L4 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 6	]
+#select count(*) from v0;
+% sys.L10 # table_name
+% L7 # name
+% bigint # type
+% 1 # length
+[ 6	]
+#select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1;
+% .L4 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 6	]
+#select count(*) from v1;
+% .L12 # table_name
+% L11 # name
+% bigint # type
+% 1 # length
+[ 6	]
+#select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2;
+% .L4 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 6	]
+#select count(*) from v2;
+% .L14 # table_name
+% L13 # name
+% bigint # type
+% 1 # length
+[ 6	]
+#select id       from fk order by id;
+% sys.fk # table_name
+% id # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
+[ 5	]
+[ 6	]
+#select id       from v0 order by id;
+% sys.v0 # table_name
+% id # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
+[ 5	]
+[ 6	]
+#select id       from fk left outer join pk1 on fk.fk1 = pk1.pk1 order by id;
+% .fk # table_name
+% id # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
+[ 5	]
+[ 6	]
+#select id       from v1 order by id;
+% .v1 # table_name
+% id # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
+[ 5	]
+[ 6	]
+#select id       from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id;
+% .fk # table_name
+% id # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
+[ 5	]
+[ 6	]
+#select id       from v2 order by id;
+% .v2 # table_name
+% id # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
+[ 5	]
+[ 6	]
+#select id , v1  from v1 order by id;
+% .v1,	.v1 # table_name
+% id,	v1 # name
+% int,	int # type
+% 1,	2 # length
+[ 1,	11	]
+[ 2,	11	]
+[ 3,	12	]
+[ 4,	NULL	]
+[ 5,	14	]
+[ 6,	NULL	]
+#select id , v1  from fk left outer join pk1 on fk.fk1 = pk1.pk1 order by id;
+% .fk,	.pk1 # table_name
+% id,	v1 # name
+% int,	int # type
+% 1,	2 # length
+[ 1,	11	]
+[ 2,	11	]
+[ 3,	12	]
+[ 4,	NULL	]
+[ 5,	14	]
+[ 6,	NULL	]
+#select id , v2  from fk left outer join pk2 on fk.fk2 = pk2.pk2 order by id;
+% .fk,	.pk2 # table_name
+% id,	v2 # name
+% int,	int # type
+% 1,	2 # length
+[ 1,	21	]
+[ 2,	22	]
+[ 3,	21	]
+[ 4,	23	]
+[ 5,	NULL	]
+[ 6,	NULL	]
+#select id , v1  from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id;
+% .fk,	.pk1 # table_name
+% id,	v1 # name
+% int,	int # type
+% 1,	2 # length
+[ 1,	11	]
+[ 2,	11	]
+[ 3,	12	]
+[ 4,	NULL	]
+[ 5,	14	]
+[ 6,	NULL	]
+#select id , v2  from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id;
+% .fk,	.pk2 # table_name
+% id,	v2 # name
+% int,	int # type
+% 1,	2 # length
+[ 1,	21	]
+[ 2,	22	]
+[ 3,	21	]
+[ 4,	23	]
+[ 5,	NULL	]
+[ 6,	NULL	]
+#select id , v2  from v2 order by id;
+% .v2,	.v2 # table_name
+% id,	v2 # name
+% int,	int # type
+% 1,	2 # length
+[ 1,	21	]
+[ 2,	22	]
+[ 3,	21	]
+[ 4,	23	]
+[ 5,	NULL	]
+[ 6,	NULL	]
+
+# 01:44:33 >  
+# 01:44:33 >  "Done."
+# 01:44:33 >  
+

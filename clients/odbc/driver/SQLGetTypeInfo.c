@@ -897,6 +897,28 @@ static struct types {
 		10,		       /* interval_precision */
 		NULL		       /* tuple */
 	},
+	{
+		"hugeint",	       /* type_name */
+		SQL_HUGEINT,	       /* data_type */
+		19,		       /* column_size */
+		NULL,		       /* literal_prefix */
+		NULL,		       /* literal_suffix */
+		"precision",	       /* create_params */
+		SQL_NULLABLE,	       /* nullable */
+		SQL_FALSE,	       /* case_sensitive */
+		SQL_PRED_BASIC,	       /* searchable */
+		SQL_FALSE,	       /* unsigned_attribute */
+		SQL_FALSE,	       /* fixed_prec_scale */
+		SQL_FALSE,	       /* auto_unique_value */
+		NULL,		       /* local_type_name */
+		0,		       /* minimum_scale */
+		0,		       /* maximum_scale */
+		SQL_HUGEINT,	       /* sql_data_type */
+		-1,		       /* sql_datetime_sub */
+		10,		       /* num_prec_radix */
+		-1,		       /* interval_precision */
+		NULL		       /* tuple */
+	},
 };
 
 /* find some info about a type given the concise type */
@@ -952,6 +974,7 @@ MNDBGetTypeInfo(ODBCStmt *stmt,
 	case SQL_VARBINARY:
 	case SQL_LONGVARBINARY:
 	case SQL_BIGINT:
+	case SQL_HUGEINT:
 	case SQL_TINYINT:
 	case SQL_BIT:
 	case SQL_WCHAR:
@@ -1188,6 +1211,8 @@ translateDataType(SQLSMALLINT DataType)
 		return "SQL_LONGVARBINARY";
 	case SQL_BIGINT:
 		return "SQL_BIGINT";
+	case SQL_HUGEINT:
+		return "SQL_HUGEINT";
 	case SQL_TINYINT:
 		return "SQL_TINYINT";
 	case SQL_BIT:

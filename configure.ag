@@ -1756,16 +1756,9 @@ AC_ARG_WITH([libxml2],
 	[have_libxml2=$withval])
 AS_VAR_IF([have_libxml2], [no], [], [
 	PKG_CHECK_MODULES([libxml2], [libxml-2.0], [have_libxml2="yes"], [have_libxml2="no"; why_have_libxml2="(libxml2 not found)"])
-	AS_CASE([$enable_monetdb5-$have_libxml2],
-	[yes-no], [
-		AC_MSG_ERROR([libxml2 library not found but required for MonetDB5])],
-	[auto-no], [
-		enable_monetdb5=no
-		AS_VAR_IF([disable_monetdb5], [], [
-			disable_monetdb5="(libxml2 library not found but required for MonetDB5)"])])
 	AS_VAR_IF([have_libxml2], [yes], [
 		AC_DEFINE([HAVE_LIBXML], 1, [Define if you have the xml library])])])
-AM_CONDITIONAL([HAVE_LIBXML], [test x"$have_liblxml2" != xno])
+AM_CONDITIONAL([HAVE_LIBXML], [test x"$have_libxml2" != xno])
 
 
 org_have_curl=yes

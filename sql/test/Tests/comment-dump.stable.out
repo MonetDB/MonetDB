@@ -95,12 +95,13 @@ CREATE TABLE "foo"."tab" (
 	"i" INTEGER,
 	"j" DECIMAL(4,2)
 );
+COMMENT ON TABLE "foo"."tab" IS 'table';
 CREATE INDEX "idx" ON "foo"."tab" ("j", "i");
-COMMENT ON TABLE "tab" IS 'table';
+COMMENT ON INDEX "foo"."idx" IS 'index on j';
 COMMENT ON COLUMN "foo"."tab"."i" IS 'ii';
 COMMENT ON COLUMN "foo"."tab"."j" IS 'jj';
-COMMENT ON INDEX "foo"."idx" IS 'index on j';
 create view vivi as select * from tab;
+COMMENT ON VIEW "foo"."vivi" IS 'phew';
 create function f() returns int begin return 42; end;
 COMMENT ON FUNCTION "foo"."f"() IS '0 parms';
 create function f(i int) returns int begin return 43; end;
@@ -111,7 +112,6 @@ create function f(i int, j int, k int) returns int begin return 45; end;
 create function f(i int, j int, k int, l int) returns int begin return 45; end;
 create procedure g() begin delete from tab where false; end;
 COMMENT ON PROCEDURE "foo"."g"() IS 'proc';
-COMMENT ON VIEW "vivi" IS 'foo foo';
 SET SCHEMA "sys";
 ALTER SEQUENCE "foo"."counter" RESTART WITH 1 NO CYCLE;
 COMMIT;

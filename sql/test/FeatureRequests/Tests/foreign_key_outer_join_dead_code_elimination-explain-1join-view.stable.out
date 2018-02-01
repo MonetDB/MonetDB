@@ -1,0 +1,201 @@
+stdout of test 'foreign_key_outer_join_dead_code_elimination-explain-1join-view` in directory 'sql/test/FeatureRequests` itself:
+
+
+# 01:44:33 >  
+# 01:44:33 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31552" "--set" "mapi_usock=/var/tmp/mtest-6324/.s.monetdb.31552" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/manegold/_/Monet/default/prefix/_/var/MonetDB/mTests_sql_test_FeatureRequests" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 01:44:33 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_FeatureRequests', using 4 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 31.309 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://earth.da.cwi.nl:31552/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6324/.s.monetdb.31552
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python2 module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 01:44:33 >  
+# 01:44:33 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6324" "--port=31552"
+# 01:44:33 >  
+
+#set optimizer = 'sequential_pipe';
+
+#explain select count(*) from v1;
+% .explain # table_name
+% mal # name
+% clob # type
+% 123 # length
+function user.s4_1():void;
+    X_1:void := querylog.define("explain select count(*) from v1;":str, "sequential_pipe":str, 37:int);
+    X_4:int := sql.mvc();
+    C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "fk":str);
+    X_8:bat[:int] := sql.bind(X_4:int, "sys":str, "fk":str, "id":str, 0:int);
+    X_18:lng := aggr.count(X_8:bat[:int], C_5:bat[:oid]);
+    sql.resultSet("sys.L12":str, "L11":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
+end user.s4_1;
+#inline               actions= 0 time=0 usec 
+#remap                actions= 0 time=1 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=1 usec 
+#evaluate             actions= 0 time=2 usec 
+#emptybind            actions= 1 time=4 usec 
+#pushselect           actions= 0 time=2 usec 
+#aliases              actions= 1 time=3 usec 
+#mergetable           actions= 0 time=16 usec 
+#deadcode             actions= 2 time=4 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 0 time=2 usec 
+#commonTerms          actions= 0 time=2 usec 
+#projectionpath       actions= 0 time=1 usec 
+#reorder              actions= 1 time=11 usec 
+#deadcode             actions= 0 time=3 usec 
+#matpack              actions= 0 time=0 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions=1 time=0 usec 
+#candidates           actions=1 time=0 usec 
+#postfix              actions= 1 time=2 usec 
+#deadcode             actions= 1 time=3 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=19 usec 
+#total                actions=26 time=130 usec 
+
+#explain select id       from v1 order by id;
+% .explain # table_name
+% mal # name
+% clob # type
+% 123 # length
+function user.s6_1():void;
+    X_1:void := querylog.define("explain select id from v1 order by id;":str, "sequential_pipe":str, 48:int);
+    X_25:bat[:str] := bat.new(nil:str);
+    X_31:bat[:int] := bat.new(nil:int);
+    X_29:bat[:int] := bat.new(nil:int);
+    X_28:bat[:str] := bat.new(nil:str);
+    X_27:bat[:str] := bat.new(nil:str);
+    X_4:int := sql.mvc();
+    C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "fk":str);
+    X_8:bat[:int] := sql.bind(X_4:int, "sys":str, "fk":str, "id":str, 0:int);
+    X_17:bat[:int] := algebra.projection(C_5:bat[:oid], X_8:bat[:int]);
+    (X_18:bat[:int], X_19:bat[:oid], X_20:bat[:oid]) := algebra.sort(X_17:bat[:int], false:bit, false:bit);
+    X_23:bat[:int] := algebra.projection(X_19:bat[:oid], X_17:bat[:int]);
+    X_32:bat[:str] := bat.append(X_25:bat[:str], "sys.v1":str);
+    X_34:bat[:str] := bat.append(X_27:bat[:str], "id":str);
+    X_35:bat[:str] := bat.append(X_28:bat[:str], "int":str);
+    X_37:bat[:int] := bat.append(X_29:bat[:int], 32:int);
+    X_39:bat[:int] := bat.append(X_31:bat[:int], 0:int);
+    sql.resultSet(X_32:bat[:str], X_34:bat[:str], X_35:bat[:str], X_37:bat[:int], X_39:bat[:int], X_23:bat[:int]);
+end user.s6_1;
+#inline               actions= 0 time=0 usec 
+#remap                actions= 0 time=1 usec 
+#costmodel            actions= 1 time=0 usec 
+#coercion             actions= 0 time=1 usec 
+#evaluate             actions= 0 time=3 usec 
+#emptybind            actions= 1 time=5 usec 
+#pushselect           actions= 0 time=3 usec 
+#aliases              actions= 1 time=4 usec 
+#mergetable           actions= 0 time=20 usec 
+#deadcode             actions= 2 time=6 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 1 time=4 usec 
+#commonTerms          actions= 0 time=3 usec 
+#projectionpath       actions= 0 time=2 usec 
+#reorder              actions= 1 time=16 usec 
+#deadcode             actions= 0 time=4 usec 
+#matpack              actions= 0 time=0 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions=1 time=1 usec 
+#candidates           actions=1 time=1 usec 
+#postfix              actions= 0 time=1 usec 
+#deadcode             actions= 0 time=4 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=24 usec 
+#total                actions=26 time=156 usec 
+
+#explain select id , v1  from v1 order by id;
+% .explain # table_name
+% mal # name
+% clob # type
+% 130 # length
+function user.s8_1():void;
+    X_1:void := querylog.define("explain select id , v1 from v1 order by id;":str, "sequential_pipe":str, 65:int);
+    X_43:bat[:int] := bat.new(nil:int);
+    X_4:int := sql.mvc();
+    C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "fk":str);
+    X_18:bat[:oid] := sql.bind_idxbat(X_4:int, "sys":str, "fk":str, "fk_fk1_fkey":str, 0:int);
+    (X_21:bat[:oid], X_22:bat[:oid]) := sql.bind_idxbat(X_4:int, "sys":str, "fk":str, "fk_fk1_fkey":str, 2:int);
+    X_20:bat[:oid] := sql.bind_idxbat(X_4:int, "sys":str, "fk":str, "fk_fk1_fkey":str, 1:int);
+    X_23:bat[:oid] := sql.delta(X_18:bat[:oid], X_21:bat[:oid], X_22:bat[:oid], X_20:bat[:oid]);
+    X_24:bat[:oid] := algebra.projection(C_5:bat[:oid], X_23:bat[:oid]);
+    C_25:bat[:oid] := sql.tid(X_4:int, "sys":str, "pk1":str);
+    (X_34:bat[:oid], X_35:bat[:oid]) := algebra.join(X_24:bat[:oid], C_25:bat[:oid], nil:BAT, nil:BAT, false:bit, nil:lng);
+    X_8:bat[:int] := sql.bind(X_4:int, "sys":str, "fk":str, "id":str, 0:int);
+    X_17:bat[:int] := algebra.projection(C_5:bat[:oid], X_8:bat[:int]);
+    X_42:bat[:int] := algebra.projection(X_34:bat[:oid], X_17:bat[:int]);
+    X_40:bat[:oid] := bat.mirror(X_17:bat[:int]);
+    X_41:bat[:oid] := algebra.difference(X_40:bat[:oid], X_34:bat[:oid], nil:BAT, nil:BAT, false:bit, nil:lng);
+    X_27:bat[:int] := sql.bind(X_4:int, "sys":str, "pk1":str, "v1":str, 0:int);
+    X_45:bat[:int] := bat.append(X_43:bat[:int], X_42:bat[:int], true:bit);
+    X_47:bat[:int] := algebra.projection(X_41:bat[:oid], X_17:bat[:int]);
+    X_48:bat[:int] := bat.append(X_45:bat[:int], X_47:bat[:int], true:bit);
+    X_56:bat[:int] := bat.new(nil:int);
+    X_55:bat[:int] := algebra.projectionpath(X_35:bat[:oid], C_25:bat[:oid], X_27:bat[:int]);
+    X_57:bat[:int] := bat.append(X_56:bat[:int], X_55:bat[:int], true:bit);
+    X_59:bat[:int] := algebra.project(X_41:bat[:oid], nil:int);
+    X_60:bat[:int] := bat.append(X_57:bat[:int], X_59:bat[:int], true:bit);
+    X_73:bat[:str] := bat.new(nil:str);
+    X_79:bat[:int] := bat.new(nil:int);
+    X_77:bat[:int] := bat.new(nil:int);
+    X_76:bat[:str] := bat.new(nil:str);
+    X_75:bat[:str] := bat.new(nil:str);
+    (X_67:bat[:int], X_68:bat[:oid], X_69:bat[:oid]) := algebra.sort(X_48:bat[:int], false:bit, false:bit);
+    X_71:bat[:int] := algebra.projection(X_68:bat[:oid], X_60:bat[:int]);
+    X_70:bat[:int] := algebra.projection(X_68:bat[:oid], X_48:bat[:int]);
+    X_80:bat[:str] := bat.append(X_73:bat[:str], ".v1":str);
+    X_82:bat[:str] := bat.append(X_75:bat[:str], "id":str);
+    X_84:bat[:str] := bat.append(X_76:bat[:str], "int":str);
+    X_86:bat[:int] := bat.append(X_77:bat[:int], 32:int);
+    X_88:bat[:int] := bat.append(X_79:bat[:int], 0:int);
+    X_90:bat[:str] := bat.append(X_80:bat[:str], ".v1":str);
+    X_91:bat[:str] := bat.append(X_82:bat[:str], "v1":str);
+    X_93:bat[:str] := bat.append(X_84:bat[:str], "int":str);
+    X_94:bat[:int] := bat.append(X_86:bat[:int], 32:int);
+    X_95:bat[:int] := bat.append(X_88:bat[:int], 0:int);
+    sql.resultSet(X_90:bat[:str], X_91:bat[:str], X_93:bat[:str], X_94:bat[:int], X_95:bat[:int], X_70:bat[:int], X_71:bat[:int]);
+end user.s8_1;
+#inline               actions= 0 time=1 usec 
+#remap                actions= 0 time=2 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 2 time=7 usec 
+#evaluate             actions= 0 time=5 usec 
+#emptybind            actions= 2 time=8 usec 
+#pushselect           actions= 0 time=2 usec 
+#aliases              actions= 2 time=7 usec 
+#mergetable           actions= 0 time=36 usec 
+#deadcode             actions=14 time=10 usec 
+#aliases              actions= 0 time=1 usec 
+#constants            actions= 5 time=6 usec 
+#commonTerms          actions= 0 time=5 usec 
+#projectionpath       actions= 1 time=8 usec 
+#reorder              actions= 1 time=27 usec 
+#deadcode             actions= 1 time=7 usec 
+#matpack              actions= 0 time=0 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions=1 time=2 usec 
+#candidates           actions=1 time=1 usec 
+#postfix              actions= 0 time=0 usec 
+#deadcode             actions= 0 time=6 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=24 usec 
+#total                actions=26 time=156 usec 
+
+# 01:44:33 >  
+# 01:44:33 >  "Done."
+# 01:44:33 >  
+

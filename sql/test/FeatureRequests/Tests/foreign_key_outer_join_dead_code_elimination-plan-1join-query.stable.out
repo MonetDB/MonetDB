@@ -1,0 +1,78 @@
+stdout of test 'foreign_key_outer_join_dead_code_elimination-plan-1join-query` in directory 'sql/test/FeatureRequests` itself:
+
+
+# 01:44:33 >  
+# 01:44:33 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31552" "--set" "mapi_usock=/var/tmp/mtest-6324/.s.monetdb.31552" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/manegold/_/Monet/default/prefix/_/var/MonetDB/mTests_sql_test_FeatureRequests" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 01:44:33 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_FeatureRequests', using 4 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 31.309 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://earth.da.cwi.nl:31552/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6324/.s.monetdb.31552
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python2 module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 01:44:33 >  
+# 01:44:33 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6324" "--port=31552"
+# 01:44:33 >  
+
+#set optimizer = 'sequential_pipe';
+
+#plan select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1;
+% .plan # table_name
+% rel # name
+% clob # type
+% 90 # length
+project (
+| group by (
+| | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
+| ) [  ] [ sys.count() NOT NULL as "L3"."L3" ]
+) [ "L3" NOT NULL as "L4"."L3" ]
+
+#plan select id       from fk left outer join pk1 on fk.fk1 = pk1.pk1 order by id;
+% .plan # table_name
+% rel # name
+% clob # type
+% 114 # length
+project (
+| table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
+) [ "fk"."id" NOT NULL HASHCOL  ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
+
+#plan select id , v1  from fk left outer join pk1 on fk.fk1 = pk1.pk1 order by id;
+% .plan # table_name
+% rel # name
+% clob # type
+% 114 # length
+project (
+| left outer join (
+| | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk1_fkey" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ] COUNT ,
+| | table(sys.pk1) [ "pk1"."v1", "pk1"."%TID%" NOT NULL ] COUNT 
+| ) [ "fk"."%fk_fk1_fkey" NOT NULL = "pk1"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ]
+) [ "fk"."id" NOT NULL HASHCOL , "pk1"."v1" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
+
+#plan select id , v2  from fk left outer join pk2 on fk.fk2 = pk2.pk2 order by id;
+% .plan # table_name
+% rel # name
+% clob # type
+% 114 # length
+project (
+| left outer join (
+| | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk2_fkey" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ] COUNT ,
+| | table(sys.pk2) [ "pk2"."v2", "pk2"."%TID%" NOT NULL ] COUNT 
+| ) [ "fk"."%fk_fk2_fkey" NOT NULL = "pk2"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ]
+) [ "fk"."id" NOT NULL HASHCOL , "pk2"."v2" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
+
+# 01:44:33 >  
+# 01:44:33 >  "Done."
+# 01:44:33 >  
+

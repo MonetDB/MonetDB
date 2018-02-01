@@ -5178,9 +5178,11 @@ rel_groupby_distinct2(int *changes, mvc *sql, sql_rel *rel)
 			append(aggrs, e);
 			if (!exp_name(e))
 				exp_label(sql->sa, e, ++sql->label);
+			set_has_nil(e);
 			v = exp_column(sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
-			set_has_nil(v);
 			v = exp_aggr1(sql->sa, v, a, 0, 1, e->card, 1);
+			if (cnt)
+				set_zero_if_empty(v);
 			exp_setname(sql->sa, v, exp_find_rel_name(e), exp_name(e));
 			append(naggrs, v);
 		} else { /* group by col */

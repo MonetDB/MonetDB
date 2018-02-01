@@ -82,13 +82,15 @@ mcrypt_MD5Sum(const char *string, size_t len)
 	MD5_Final(md, &c);
 
 	ret = malloc(MD5_DIGEST_LENGTH * 2 + 1);
-	snprintf(ret, MD5_DIGEST_LENGTH * 2 + 1,
-		 "%02x%02x%02x%02x%02x%02x%02x%02x"
-		 "%02x%02x%02x%02x%02x%02x%02x%02x",
-		 md[0], md[1], md[2], md[3],
-		 md[4], md[5], md[6], md[7],
-		 md[8], md[9], md[10], md[11],
-		 md[12], md[13], md[14], md[15]);
+	if(ret) {
+		snprintf(ret, MD5_DIGEST_LENGTH * 2 + 1,
+			 "%02x%02x%02x%02x%02x%02x%02x%02x"
+			 "%02x%02x%02x%02x%02x%02x%02x%02x",
+			 md[0], md[1], md[2], md[3],
+			 md[4], md[5], md[6], md[7],
+			 md[8], md[9], md[10], md[11],
+			 md[12], md[13], md[14], md[15]);
+	}
 
 	return ret;
 #else
@@ -118,13 +120,15 @@ mcrypt_SHA1Sum(const char *string, size_t len)
 	SHA1_Final(md, &c);
 
 	ret = malloc(SHA_DIGEST_LENGTH * 2 + 1);
-	snprintf(ret, SHA_DIGEST_LENGTH * 2 + 1,
-		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
-		 md[0], md[1], md[2], md[3], md[4],
-		 md[5], md[6], md[7], md[8], md[9],
-		 md[10], md[11], md[12], md[13], md[14],
-		 md[15], md[16], md[17], md[18], md[19]);
+	if(ret) {
+		snprintf(ret, SHA_DIGEST_LENGTH * 2 + 1,
+			 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+			 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+			 md[0], md[1], md[2], md[3], md[4],
+			 md[5], md[6], md[7], md[8], md[9],
+			 md[10], md[11], md[12], md[13], md[14],
+			 md[15], md[16], md[17], md[18], md[19]);
+	}
 
 	return ret;
 #else
@@ -154,16 +158,18 @@ mcrypt_SHA224Sum(const char *string, size_t len)
 	SHA224_Final(md, &c);
 
 	ret = malloc(SHA224_DIGEST_LENGTH * 2 + 1);
-	snprintf(ret, SHA224_DIGEST_LENGTH * 2 + 1,
-		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-		 "%02x%02x%02x%02x%02x%02x%02x%02x",
-		 md[0], md[1], md[2], md[3], md[4],
-		 md[5], md[6], md[7], md[8], md[9],
-		 md[10], md[11], md[12], md[13], md[14],
-		 md[15], md[16], md[17], md[18], md[19],
-		 md[20], md[21], md[22], md[23], md[24],
-		 md[25], md[26], md[27]);
+	if(ret) {
+		snprintf(ret, SHA224_DIGEST_LENGTH * 2 + 1,
+			 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+			 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+			 "%02x%02x%02x%02x%02x%02x%02x%02x",
+			 md[0], md[1], md[2], md[3], md[4],
+			 md[5], md[6], md[7], md[8], md[9],
+			 md[10], md[11], md[12], md[13], md[14],
+			 md[15], md[16], md[17], md[18], md[19],
+			 md[20], md[21], md[22], md[23], md[24],
+			 md[25], md[26], md[27]);
+	}
 
 	return ret;
 #else
@@ -193,18 +199,20 @@ mcrypt_SHA256Sum(const char *string, size_t len)
 	SHA256_Final(md, &c);
 
 	ret = malloc(SHA256_DIGEST_LENGTH * 2 + 1);
-	snprintf(ret, SHA256_DIGEST_LENGTH * 2 + 1,
-		 "%02x%02x%02x%02x%02x%02x%02x%02x"
-		 "%02x%02x%02x%02x%02x%02x%02x%02x"
-		 "%02x%02x%02x%02x%02x%02x%02x%02x"
-		 "%02x%02x%02x%02x%02x%02x%02x%02x",
-		 md[0], md[1], md[2], md[3], md[4],
-		 md[5], md[6], md[7], md[8], md[9],
-		 md[10], md[11], md[12], md[13], md[14],
-		 md[15], md[16], md[17], md[18], md[19],
-		 md[20], md[21], md[22], md[23], md[24],
-		 md[25], md[26], md[27], md[28], md[29],
-		 md[30], md[31]);
+	if(ret) {
+		snprintf(ret, SHA256_DIGEST_LENGTH * 2 + 1,
+			 "%02x%02x%02x%02x%02x%02x%02x%02x"
+			 "%02x%02x%02x%02x%02x%02x%02x%02x"
+			 "%02x%02x%02x%02x%02x%02x%02x%02x"
+			 "%02x%02x%02x%02x%02x%02x%02x%02x",
+			 md[0], md[1], md[2], md[3], md[4],
+			 md[5], md[6], md[7], md[8], md[9],
+			 md[10], md[11], md[12], md[13], md[14],
+			 md[15], md[16], md[17], md[18], md[19],
+			 md[20], md[21], md[22], md[23], md[24],
+			 md[25], md[26], md[27], md[28], md[29],
+			 md[30], md[31]);
+	}
 
 	return ret;
 #else
@@ -234,22 +242,24 @@ mcrypt_SHA384Sum(const char *string, size_t len)
 	SHA384_Final(md, &c);
 
 	ret = malloc(SHA384_DIGEST_LENGTH * 2 + 1);
-	snprintf(ret, SHA384_DIGEST_LENGTH * 2 + 1,
-		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-		 "%02x%02x%02x%02x%02x%02x%02x%02x",
-		 md[0], md[1], md[2], md[3], md[4],
-		 md[5], md[6], md[7], md[8], md[9],
-		 md[10], md[11], md[12], md[13], md[14],
-		 md[15], md[16], md[17], md[18], md[19],
-		 md[20], md[21], md[22], md[23], md[24],
-		 md[25], md[26], md[27], md[28], md[29],
-		 md[30], md[31], md[32], md[33], md[34],
-		 md[35], md[36], md[37], md[38], md[39],
-		 md[40], md[41], md[42], md[43], md[44],
-		 md[45], md[46], md[47]);
+	if(ret) {
+		snprintf(ret, SHA384_DIGEST_LENGTH * 2 + 1,
+			 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+			 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+			 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+			 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+			 "%02x%02x%02x%02x%02x%02x%02x%02x",
+			 md[0], md[1], md[2], md[3], md[4],
+			 md[5], md[6], md[7], md[8], md[9],
+			 md[10], md[11], md[12], md[13], md[14],
+			 md[15], md[16], md[17], md[18], md[19],
+			 md[20], md[21], md[22], md[23], md[24],
+			 md[25], md[26], md[27], md[28], md[29],
+			 md[30], md[31], md[32], md[33], md[34],
+			 md[35], md[36], md[37], md[38], md[39],
+			 md[40], md[41], md[42], md[43], md[44],
+			 md[45], md[46], md[47]);
+	}
 
 	return ret;
 #else
@@ -279,27 +289,29 @@ mcrypt_SHA512Sum(const char *string, size_t len)
 	SHA512_Final(md, &c);
 
 	ret = malloc(SHA512_DIGEST_LENGTH * 2 + 1);
-	snprintf(ret, SHA512_DIGEST_LENGTH * 2 + 1,
-		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-		 "%02x%02x%02x%02x",
-		 md[0], md[1], md[2], md[3], md[4],
-		 md[5], md[6], md[7], md[8], md[9],
-		 md[10], md[11], md[12], md[13], md[14],
-		 md[15], md[16], md[17], md[18], md[19],
-		 md[20], md[21], md[22], md[23], md[24],
-		 md[25], md[26], md[27], md[28], md[29],
-		 md[30], md[31], md[32], md[33], md[34],
-		 md[35], md[36], md[37], md[38], md[39],
-		 md[40], md[41], md[42], md[43], md[44],
-		 md[45], md[46], md[47], md[48], md[49],
-		 md[50], md[51], md[52], md[53], md[54],
-		 md[55], md[56], md[57], md[58], md[59],
-		 md[60], md[61], md[62], md[63]);
+	if(ret) {
+		snprintf(ret, SHA512_DIGEST_LENGTH * 2 + 1,
+			 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+			 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+			 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+			 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+			 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+			 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+			 "%02x%02x%02x%02x",
+			 md[0], md[1], md[2], md[3], md[4],
+			 md[5], md[6], md[7], md[8], md[9],
+			 md[10], md[11], md[12], md[13], md[14],
+			 md[15], md[16], md[17], md[18], md[19],
+			 md[20], md[21], md[22], md[23], md[24],
+			 md[25], md[26], md[27], md[28], md[29],
+			 md[30], md[31], md[32], md[33], md[34],
+			 md[35], md[36], md[37], md[38], md[39],
+			 md[40], md[41], md[42], md[43], md[44],
+			 md[45], md[46], md[47], md[48], md[49],
+			 md[50], md[51], md[52], md[53], md[54],
+			 md[55], md[56], md[57], md[58], md[59],
+			 md[60], md[61], md[62], md[63]);
+	}
 
 	return ret;
 #else
@@ -329,13 +341,15 @@ mcrypt_RIPEMD160Sum(const char *string, size_t len)
 	RIPEMD160_Final(md, &c);
 
 	ret = malloc(RIPEMD160_DIGEST_LENGTH * 2 + 1);
-	snprintf(ret, RIPEMD160_DIGEST_LENGTH * 2 + 1,
-		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
-		 md[0], md[1], md[2], md[3], md[4],
-		 md[5], md[6], md[7], md[8], md[9],
-		 md[10], md[11], md[12], md[13], md[14],
-		 md[15], md[16], md[17], md[18], md[19]);
+	if(ret) {
+		snprintf(ret, RIPEMD160_DIGEST_LENGTH * 2 + 1,
+			 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+			 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x",
+			 md[0], md[1], md[2], md[3], md[4],
+			 md[5], md[6], md[7], md[8], md[9],
+			 md[10], md[11], md[12], md[13], md[14],
+			 md[15], md[16], md[17], md[18], md[19]);
+	}
 
 	return ret;
 #else

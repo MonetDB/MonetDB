@@ -44,7 +44,7 @@ Ready.
 % 161 # length
 function user.s4_1():void;
     X_5:void := querylog.define("explain select count(*) from my_generate_series(1,5) as t1,\nmy_generate_series(1,100) as t2;":str, "default_pipe":str, 33:int);
-barrier X_98:bit := language.dataflow();
+barrier X_100:bit := language.dataflow();
     X_31:bat[:str] := bat.new(nil:str);
     X_37:bat[:int] := bat.new(nil:int);
     X_35:bat[:int] := bat.new(nil:int);
@@ -67,7 +67,7 @@ barrier X_98:bit := language.dataflow();
     X_46:bat[:int] := bat.append(X_37:bat[:int], 0:int);
     language.pass(X_21:bat[:lng]);
     language.pass(X_22:bat[:lng]);
-exit X_98:bit;
+exit X_100:bit;
     sql.resultSet(X_38:bat[:str], X_40:bat[:str], X_42:bat[:str], X_44:bat[:int], X_46:bat[:int], X_27:bat[:lng]);
 end user.s4_1;
 #inline               actions= 0 time=4 usec 

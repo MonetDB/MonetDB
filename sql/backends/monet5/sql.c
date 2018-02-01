@@ -664,8 +664,10 @@ mvc_logfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		m->scanner.log = NULL;
 	}
 
-	if (strcmp(filename, str_nil))
-		m->scanner.log = open_wastream(filename);
+	if (strcmp(filename, str_nil)) {
+		if((m->scanner.log = open_wastream(filename)) == NULL)
+			throw(SQL, "sql.logfile", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 	return MAL_SUCCEED;
 }
 
@@ -3300,32 +3302,40 @@ str
 second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	lng *ret = getArgReference_lng(stk, pci, 0), r;
-	int k = digits2ek(*getArgReference_int(stk, pci, 2)), scale = 0;
+	int k = digits2ek(*getArgReference_int(stk, pci, 2)), scale = 0, isnil = 0;
 
 	(void) cntxt;
 	if (pci->argc > 3)
 		scale = *getArgReference_int(stk, pci, 3);
+	*ret = lng_nil;
 	switch (getArgType(mb, pci, 1)) {
 	case TYPE_bte:
 		r = stk->stk[getArg(pci, 1)].val.btval;
+		isnil = (stk->stk[getArg(pci, 1)].val.btval == bte_nil);
 		break;
 	case TYPE_sht:
 		r = stk->stk[getArg(pci, 1)].val.shval;
+		isnil = (stk->stk[getArg(pci, 1)].val.shval == sht_nil);
 		break;
 	case TYPE_int:
 		r = stk->stk[getArg(pci, 1)].val.ival;
+		isnil = (stk->stk[getArg(pci, 1)].val.ival == int_nil);
 		break;
 	case TYPE_lng:
 		r = stk->stk[getArg(pci, 1)].val.lval;
+		isnil = (stk->stk[getArg(pci, 1)].val.lval == lng_nil);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		r = (lng) stk->stk[getArg(pci, 1)].val.hval;
+		isnil = (stk->stk[getArg(pci, 1)].val.hval == hge_nil);
 		break;
 #endif
 	default:
 		throw(ILLARG, "calc.sec_interval", SQLSTATE(42000) "Illegal argument in second interval");
 	}
+	if (isnil) 
+		return MAL_SUCCEED;
 	switch (k) {
 	case iday:
 		r *= 24;

@@ -82,7 +82,6 @@ SCHEMA  foo
 CREATE SCHEMA "foo" AUTHORIZATION "monetdb";
 #CREATE SCHEMA "space separated";
 SCHEMA  foo              'one final comment'
-SCHEMA  space separated  'space separated'
 CREATE SCHEMA "space separated" AUTHORIZATION "monetdb";
 COMMENT ON SCHEMA "space separated" IS 'space separated';
 #DROP SCHEMA "space separated";
@@ -127,11 +126,11 @@ CREATE TABLE "foo"."tab" (
 	"i" INTEGER,
 	"j" DECIMAL(4,2)
 );
-CREATE INDEX "idx" ON "foo"."tab" ("j", "i");
 COMMENT ON TABLE "foo"."tab" IS 'table';
+CREATE INDEX "idx" ON "foo"."tab" ("j", "i");
+COMMENT ON INDEX "foo"."idx" IS 'index on j';
 COMMENT ON COLUMN "foo"."tab"."i" IS 'ii';
 COMMENT ON COLUMN "foo"."tab"."j" IS 'jj';
-COMMENT ON INDEX "foo"."idx" IS 'index on j';
 #CREATE SEQUENCE counter AS INT;
 SEQUENCE  foo.counter
 SEQUENCE  foo.counter  'counting'

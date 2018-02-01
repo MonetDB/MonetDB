@@ -115,6 +115,15 @@ handleClient(void *data)
 	chal[31] = '\0';
 	generateSalt(chal, 31);
 	algos = mcrypt_getHashAlgorithms();
+	if(!algos) {
+		e = newErr("Allocation failure");
+		mnstr_printf(fout, "!monetdbd: allocation failure\n");
+		mnstr_flush(fout);
+		close_stream(fout);
+		close_stream(fdin);
+		self->dead = 1;
+		return(e);
+	}
 	mnstr_printf(fout, "%s:merovingian:9:%s:%s:%s:",
 			chal,
 			algos,

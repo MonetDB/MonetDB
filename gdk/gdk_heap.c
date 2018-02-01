@@ -736,23 +736,23 @@ HEAPsave(Heap *h, const char *nme, const char *ext)
  * Delete any saved heap file. For memory mapped files, also try to
  * remove any remaining X.new
  */
-int
+gdk_return
 HEAPdelete(Heap *h, const char *o, const char *ext)
 {
 	char ext2[64];
 
 	if (h->size <= 0) {
 		assert(h->base == 0);
-		return 0;
+		return GDK_SUCCEED;
 	}
 	if (h->base)
 		HEAPfree(h, 0);	/* we will do the unlinking */
 	if (h->copied) {
-		return 0;
+		return GDK_SUCCEED;
 	}
 	assert(strlen(ext) + strlen(".new") < sizeof(ext2));
 	snprintf(ext2, sizeof(ext2), "%s%s", ext, ".new");
-	return (GDKunlink(h->farmid, BATDIR, o, ext) == GDK_SUCCEED) | (GDKunlink(h->farmid, BATDIR, o, ext2) == GDK_SUCCEED) ? 0 : -1;
+	return (GDKunlink(h->farmid, BATDIR, o, ext) == GDK_SUCCEED) | (GDKunlink(h->farmid, BATDIR, o, ext2) == GDK_SUCCEED) ? GDK_SUCCEED : GDK_FAIL;
 }
 
 int

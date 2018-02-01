@@ -519,7 +519,18 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 	assert(b->theap.parentid == 0);
 
 	ALIGNapp(b, "BATappend", force, GDK_FAIL);
-	BATcompatible(b, n, GDK_FAIL, "BATappend");
+
+	if (ATOMstorage(ATOMtype(b->ttype)) != ATOMstorage(ATOMtype(n->ttype))) {
+		GDKerror("Incompatible operands.\n");
+		return GDK_FAIL;
+	}
+	CHECKDEBUG {
+		if (BATttype(b) != BATttype(n) &&
+		    ATOMtype(b->ttype) != ATOMtype(n->ttype)) {
+			fprintf(stderr,"#Interpreting %s as %s.\n",
+				ATOMname(BATttype(n)), ATOMname(BATttype(b)));
+		}
+	}
 
 	if (BATcount(b) == 0)
 		BAThseqbase(b, s ? s->hseqbase : n->hseqbase);
@@ -640,7 +651,6 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 		if (cand == NULL) {
 			b->tnosorted = start <= n->tnosorted && n->tnosorted < end ? n->tnosorted - start : 0;
 			b->tnorevsorted = start <= n->tnorevsorted && n->tnorevsorted < end ? n->tnorevsorted - start : 0;
-			b->tnodense = start <= n->tnodense && n->tnodense < end ? n->tnodense - start : 0;
 			if (n->tdense && n->ttype == TYPE_oid)
 				b->tseqbase = *(oid *) BUNtail(ni, start);
 			else if (n->ttype == TYPE_void &&
@@ -668,7 +678,6 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 			b->tnosorted = 0;
 			if (b->tdense) {
 				b->tdense = FALSE;
-				b->tnodense = r;
 			}
 		}
 		if (BATtrevordered(b) &&
@@ -687,7 +696,6 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 		     cand != NULL ||
 		     1 + *(oid *) BUNtloc(bi, last) != *(oid *) BUNtail(ni, start))) {
 			b->tdense = FALSE;
-			b->tnodense = cand ? 0 : r;
 		}
 		b->tnonil &= n->tnonil;
 		b->tnil |= n->tnil && cnt == BATcount(n);
@@ -862,15 +870,6 @@ BATdel(BAT *b, BAT *d)
 	return GDK_SUCCEED;
 }
 
-#define TYPEcheck(t1,t2,func)						\
-	do {								\
-		if (TYPEerror(t1, t2)) {				\
-			GDKerror("%s: Incompatible types %s and %s.\n", \
-				 func, ATOMname(t2), ATOMname(t1));	\
-			return GDK_FAIL;				\
-		}							\
-	} while (0)
-
 /*
  * The last in this series is a BATreplace, which replaces all the
  * buns mentioned.
@@ -964,10 +963,6 @@ BATslice(BAT *b, BUN l, BUN h)
 			bn->tnorevsorted = b->tnorevsorted - l;
 		else
 			bn->tnorevsorted = 0;
-		if (b->tnodense > l && b->tnodense < h)
-			bn->tnodense = b->tnodense - l;
-		else
-			bn->tnodense = 0;
 		if (b->tnokey[0] >= l && b->tnokey[0] < h &&
 		    b->tnokey[1] >= l && b->tnokey[1] < h &&
 		    b->tnokey[0] != b->tnokey[1]) {
@@ -1004,7 +999,6 @@ BATslice(BAT *b, BUN l, BUN h)
 	bn->tnonil = b->tnonil || bn->batCount == 0;
 	bn->tnil = 0;		/* we just don't know */
 	bn->tnosorted = 0;
-	bn->tnodense = 0;
 	bn->tnokey[0] = bn->tnokey[1] = 0;
 	return bn;
       bunins_failed:
@@ -1526,7 +1520,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		}
 		on->tsorted = on->trevsorted = 0; /* it won't be sorted */
 		on->tdense = 0;			  /* and hence not dense */
-		on->tnosorted = on->tnorevsorted = on->tnodense = 0;
+		on->tnosorted = on->tnorevsorted = 0;
 		*order = on;
 		ords = (oid *) Tloc(on, 0);
 	} else {

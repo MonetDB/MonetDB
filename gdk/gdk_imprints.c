@@ -192,10 +192,10 @@ do {									\
  * but they may exist on disk; or a valid pointer to loaded imprints.
  * These values are maintained here, in the IMPSdestroy and IMPSfree
  * functions, and in BBPdiskscan during initialization. */
-int
+bool
 BATcheckimprints(BAT *b)
 {
-	int ret;
+	bool ret;
 
 	if (VIEWtparent(b)) {
 		assert(b->timprints == NULL);
@@ -250,7 +250,7 @@ BATcheckimprints(BAT *b)
 					ALGODEBUG fprintf(stderr, "#BATcheckimprints: reusing persisted imprints %d\n", b->batCacheid);
 					MT_lock_unset(&GDKimprintsLock(b->batCacheid));
 
-					return 1;
+					return true;
 				}
 				close(fd);
 				/* unlink unusable file */
@@ -581,7 +581,7 @@ IMPSremove(BAT *b)
 		    * (size_t *) imprints->imprints.base & (1 << 16))
 			fprintf(stderr, "#IMPSremove: removing persisted imprints\n");
 		if (HEAPdelete(&imprints->imprints, BBP_physical(b->batCacheid),
-			       "timprints"))
+			       "timprints") != GDK_SUCCEED)
 			IODEBUG fprintf(stderr, "#IMPSremove(%s): imprints heap\n", BATgetId(b));
 
 		GDKfree(imprints);

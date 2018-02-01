@@ -2,11 +2,7 @@
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
 -- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
--- Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
-
-ALTER TABLE sys.keywords SET READ WRITE;
-INSERT INTO sys.keywords VALUES ('COMMENT');
-ALTER TABLE sys.keywords SET READ ONLY;
+-- Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
 CREATE TABLE sys.comments (
         id INTEGER NOT NULL PRIMARY KEY,
@@ -14,8 +10,10 @@ CREATE TABLE sys.comments (
 );
 GRANT SELECT ON sys.comments TO PUBLIC;
 
+
 CREATE PROCEDURE sys.comment_on(obj_id INTEGER, obj_remark VARCHAR(65000))
 BEGIN
+    IF obj_id IS NOT NULL AND obj_id > 0 THEN
         IF obj_remark IS NULL OR obj_remark = '' THEN
                 DELETE FROM sys.comments WHERE id = obj_id;
         ELSEIF EXISTS (SELECT id FROM sys.comments WHERE id = obj_id) THEN
@@ -23,140 +21,86 @@ BEGIN
         ELSE
                 INSERT INTO sys.comments VALUES (obj_id, obj_remark);
         END IF;
+    END IF;
 END;
 -- do not grant to public
 
 
--- This used to be in 99_system.sql but we need the systemfunctions table
--- in sys.describe_all_objects() defined below.
-CREATE TABLE systemfunctions (function_id INTEGER NOT NULL);
-GRANT SELECT ON systemfunctions TO PUBLIC;
+-- This table used to be in 99_system.sql but we need the systemfunctions table
+-- in sys.describe_all_objects and sys.commented_function_signatures defined below.
+CREATE TABLE sys.systemfunctions (function_id INTEGER NOT NULL);
+GRANT SELECT ON sys.systemfunctions TO PUBLIC;
 
-CREATE FUNCTION sys.function_type_keyword(ftype INT)
-RETURNS VARCHAR(20)
-BEGIN
-	RETURN CASE ftype
-                WHEN 1 THEN 'FUNCTION'
-                WHEN 2 THEN 'PROCEDURE'
-                WHEN 3 THEN 'AGGREGATE'
-                WHEN 4 THEN 'FILTER FUNCTION'
-                WHEN 7 THEN 'LOADER'
-                ELSE 'ROUTINE'
-        END;
-END;
-GRANT EXECUTE ON FUNCTION sys.function_type_keyword(INT) TO PUBLIC;
 
-CREATE FUNCTION sys.describe_all_objects()
-RETURNS TABLE (
-	sname VARCHAR(1024),
-	name VARCHAR(1024),
-	fullname VARCHAR(1024),
-	ntype INTEGER,   -- must match the MD_TABLE/VIEW/SEQ/FUNC/SCHEMA constants in mclient.c
-	type VARCHAR(30),
-	system BOOLEAN,
-	remark VARCHAR(65000)
-)
-BEGIN
-	RETURN TABLE (
-	    WITH
-	    table_data AS (
-		    SELECT  schema_id AS sid,
-			    id,
-			    name,
-			    system,
-			    (CASE type
-				WHEN 1 THEN 2 -- ntype for views
-				ELSE 1	  -- ntype for tables
-			    END) AS ntype,
-			    table_type_name AS type
-		    FROM sys._tables LEFT OUTER JOIN sys.table_types ON type = table_type_id
-		    WHERE type IN (0, 1, 3, 4, 5, 6)
-	    ),
-	    sequence_data AS (
-		    SELECT  schema_id AS sid,
-			    id,
-			    name,
-			    false AS system,
-			    4 AS ntype,
-			    'SEQUENCE' AS type
-		    FROM sys.sequences
-	    ),
-	    function_data AS (
-		    SELECT  schema_id AS sid,
-			    id,
-			    name,
-			    EXISTS (SELECT function_id FROM sys.systemfunctions WHERE function_id = id) AS system,
-			    8 AS ntype,
-			    sys.function_type_keyword(type) AS type
-		    FROM sys.functions
-	    ),
-	    schema_data AS (
-		    SELECT  0 AS sid,
-			    id,
-			    name,
-			    system,
-			    16 AS ntype,
-			    'SCHEMA' AS type
-		    FROM sys.schemas
-	    ),
-	    all_data AS (
-		    SELECT * FROM table_data
-		    UNION
-		    SELECT * FROM sequence_data
-		    UNION
-		    SELECT * FROM function_data
-		    UNION
-		    SELECT * FROM schema_data
-	    )
-	    --
-	    SELECT DISTINCT
-	            s.name AS sname,
-	            a.name AS name,
-	            COALESCE(s.name || '.', '') || a.name AS fullname,
-	            a.ntype AS ntype,
-	            (CASE WHEN a.system THEN 'SYSTEM ' ELSE '' END) || a.type AS type,
-	            a.system AS system,
-		    c.remark AS remark
-	    FROM    all_data a
-	    LEFT OUTER JOIN sys.schemas s ON a.sid = s.id
-	    LEFT OUTER JOIN sys.comments c ON a.id = c.id
-	    ORDER BY system, name, fullname, ntype
-	);
-END;
-GRANT EXECUTE ON FUNCTION sys.describe_all_objects() TO PUBLIC;
+-- utility view to list all objects (except columns) which can have a comment/remark associated
+-- it is used in mclient and mdump code
+CREATE VIEW sys.describe_all_objects AS
+SELECT s.name AS sname,
+	  t.name,
+	  s.name || '.' || t.name AS fullname,
+	  CAST(CASE t.type
+	   WHEN 1 THEN 2 -- ntype for views
+	   ELSE 1	  -- ntype for tables
+	   END AS SMALLINT) AS ntype,
+	  (CASE WHEN t.system THEN 'SYSTEM ' ELSE '' END) || tt.table_type_name AS type,
+	  t.system,
+	  c.remark AS remark
+  FROM sys._tables t
+  LEFT OUTER JOIN sys.comments c ON t.id = c.id
+  LEFT OUTER JOIN sys.schemas s ON t.schema_id = s.id
+  LEFT OUTER JOIN sys.table_types tt ON t.type = tt.table_type_id
+UNION ALL
+SELECT s.name AS sname,
+	  sq.name,
+	  s.name || '.' || sq.name AS fullname,
+	  CAST(4 AS SMALLINT) AS ntype,
+	  'SEQUENCE' AS type,
+	  false AS system,
+	  c.remark AS remark
+  FROM sys.sequences sq
+  LEFT OUTER JOIN sys.comments c ON sq.id = c.id
+  LEFT OUTER JOIN sys.schemas s ON sq.schema_id = s.id
+UNION ALL
+SELECT DISTINCT s.name AS sname,  -- DISTINCT is needed to filter out duplicate overloaded function/procedure names
+	  f.name,
+	  s.name || '.' || f.name AS fullname,
+	  CAST(8 AS SMALLINT) AS ntype,
+	  (CASE WHEN sf.function_id IS NOT NULL THEN 'SYSTEM ' ELSE '' END) || sys.function_type_keyword(f.type) AS type,
+	  CASE WHEN sf.function_id IS NULL THEN FALSE ELSE TRUE END AS system,
+	  c.remark AS remark
+  FROM sys.functions f
+  LEFT OUTER JOIN sys.comments c ON f.id = c.id
+  LEFT OUTER JOIN sys.schemas s ON f.schema_id = s.id
+  LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id
+UNION ALL
+SELECT s.name AS sname,
+	  s.name,
+	  s.name AS fullname,
+	  CAST(16 AS SMALLINT) AS ntype,
+	  (CASE WHEN s.system THEN 'SYSTEM SCHEMA' ELSE 'SCHEMA' END) AS type,
+	  s.system,
+	  c.remark AS remark
+  FROM sys.schemas s
+  LEFT OUTER JOIN sys.comments c ON s.id = c.id
+ ORDER BY system, name, sname, ntype;
+GRANT SELECT ON sys.describe_all_objects TO PUBLIC;
 
-CREATE VIEW commented_function_signatures AS
-WITH
-params AS (
-        SELECT * FROM sys.args WHERE inout = 1
-),
-commented_function_params AS (
-        SELECT  f.id AS fid,
-                f.name AS fname,
-                s.name AS schema,
-                f.type AS ftype,
-                c.remark AS remark,
-                p.number AS n,
-                p.name AS aname,
-                p.type AS type,
-                p.type_digits AS type_digits,
-                p.type_scale AS type_scale,
-                RANK() OVER (PARTITION BY f.id ORDER BY number ASC) AS asc_rank,
-                RANK() OVER (PARTITION BY f.id ORDER BY number DESC) AS desc_rank
-        FROM    sys.functions f
-                JOIN sys.schemas s ON f.schema_id = s.id
-                JOIN sys.comments c ON f.id = c.id
-                LEFT OUTER JOIN params p ON f.id = p.func_id
-)
-SELECT  fid,
-        schema,
-        fname,
-        sys.function_type_keyword(ftype) AS category,
-        EXISTS (SELECT function_id FROM sys.systemfunctions WHERE fid = function_id) AS system,
-        CASE WHEN asc_rank = 1 THEN fname ELSE NULL END AS name,
-        CASE WHEN desc_rank = 1 THEN remark ELSE NULL END AS remark,
-        type, type_digits, type_scale,
-        ROW_NUMBER() OVER (ORDER BY fid, n) AS line
-FROM commented_function_params
-ORDER BY line;
+
+CREATE VIEW sys.commented_function_signatures AS
+SELECT f.id AS fid,
+       s.name AS schema,
+       f.name AS fname,
+       sys.function_type_keyword(f.type) AS category,
+       CASE WHEN sf.function_id IS NULL THEN FALSE ELSE TRUE END AS system,
+       CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number ASC) WHEN 1 THEN f.name ELSE NULL END AS name,
+       CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number DESC) WHEN 1 THEN c.remark ELSE NULL END AS remark,
+       p.type, p.type_digits, p.type_scale,
+       ROW_NUMBER() OVER (ORDER BY f.id, p.number) AS line
+  FROM sys.functions f
+  JOIN sys.comments c ON f.id = c.id
+  JOIN sys.schemas s ON f.schema_id = s.id
+  LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id
+  LEFT OUTER JOIN sys.args p ON f.id = p.func_id AND p.inout = 1
+ ORDER BY line;
 GRANT SELECT ON sys.commented_function_signatures TO PUBLIC;
+

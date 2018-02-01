@@ -51,6 +51,7 @@ headers_h = {
 		gdk_atoms.h \
 		gdk_bbp.h \
 		gdk_calc.h \
+		gdk_cand.h \
 		gdk_delta.h \
 		gdk_posix.h \
 		gdk_hash.h \

@@ -5345,6 +5345,30 @@ set schema "testschema";
 
 Running database upgrade commands:
 set schema "sys";
+drop view sys.geometry_columns cascade;
+create view sys.geometry_columns as
+	select cast(null as varchar(1)) as f_table_catalog,
+		s.name as f_table_schema,
+		t.name as f_table_name,
+		c.name as f_geometry_column,
+		cast(has_z(c.type_digits) + has_m(c.type_digits) +2 as integer) as coord_dimension,
+		c.type_scale as srid,
+		get_type(c.type_digits, 0) as type
+	from sys.columns c, sys.tables t, sys.schemas s
+	where c.table_id = t.id and t.schema_id = s.id
+	  and c.type in (select sqlname from sys.types where systemname in ('wkb', 'wkba'));
+GRANT SELECT ON sys.geometry_columns TO PUBLIC;
+update sys._tables set system = true where name = 'geometry_columns' and schema_id in (select id from schemas where name = 'sys');
+delete from sys.systemfunctions where function_id not in (select id from sys.functions);
+set schema "testschema";
+
+Running database upgrade commands:
+set schema "sys";
+drop view sys.environment cascade;
+drop function sys.environment() cascade;
+create view sys.environment as select * from sys.env();
+GRANT SELECT ON sys.environment TO PUBLIC;
+update sys._tables set system = true where system = false and name = 'environment' and schema_id in (select id from sys.schemas where name = 'sys');
 drop aggregate corr(tinyint, tinyint);
 drop aggregate corr(smallint, smallint);
 drop aggregate corr(integer, integer);
@@ -5370,6 +5394,8 @@ create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
 	external name "aggr"."corr";
 grant execute on aggregate sys.corr(hugeint, hugeint) to public;
 insert into sys.systemfunctions (select id from sys.functions where name = 'corr' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+create procedure profiler.sync() external name profiler.sync;
+insert into sys.systemfunctions (select id from sys.functions where name = 'sync' and schema_id = (select id from sys.schemas where name = 'profiler') and id not in (select function_id from sys.systemfunctions));
 create procedure master()
 external name wlc.master;
 create procedure master(path string)
@@ -5405,35 +5431,120 @@ external name wlr."getreplicaclock";
 create function replicaTick() returns bigint
 external name wlr."getreplicatick";
 insert into sys.systemfunctions (select id from sys.functions where name in ('master', 'stopmaster', 'masterbeat', 'masterclock', 'mastertick', 'replicate', 'replicabeat', 'replicaclock', 'replicatick') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+CREATE TABLE sys.comments (
+        id INTEGER NOT NULL PRIMARY KEY,
+        remark VARCHAR(65000) NOT NULL
+);
+GRANT SELECT ON sys.comments TO PUBLIC;
+CREATE PROCEDURE sys.comment_on(obj_id INTEGER, obj_remark VARCHAR(65000))
+BEGIN
+    IF obj_id IS NOT NULL AND obj_id > 0 THEN
+        IF obj_remark IS NULL OR obj_remark = '' THEN
+                DELETE FROM sys.comments WHERE id = obj_id;
+        ELSEIF EXISTS (SELECT id FROM sys.comments WHERE id = obj_id) THEN
+                UPDATE sys.comments SET remark = obj_remark WHERE id = obj_id;
+        ELSE
+                INSERT INTO sys.comments VALUES (obj_id, obj_remark);
+        END IF;
+    END IF;
+END;
+CREATE FUNCTION sys.function_type_keyword(ftype INT)
+RETURNS VARCHAR(20)
+BEGIN
+	RETURN CASE ftype
+                WHEN 1 THEN 'FUNCTION'
+                WHEN 2 THEN 'PROCEDURE'
+                WHEN 3 THEN 'AGGREGATE'
+                WHEN 4 THEN 'FILTER FUNCTION'
+                WHEN 5 THEN 'FUNCTION' -- table returning function
+                WHEN 6 THEN 'FUNCTION' -- analytic function
+                WHEN 7 THEN 'LOADER'
+                ELSE 'ROUTINE'
+        END;
+END;
+GRANT EXECUTE ON FUNCTION sys.function_type_keyword(INT) TO PUBLIC;
+CREATE VIEW sys.describe_all_objects AS
+SELECT s.name AS sname,
+	  t.name,
+	  s.name || '.' || t.name AS fullname,
+	  CAST(CASE t.type
+	   WHEN 1 THEN 2 -- ntype for views
+	   ELSE 1	  -- ntype for tables
+	   END AS SMALLINT) AS ntype,
+	  (CASE WHEN t.system THEN 'SYSTEM ' ELSE '' END) || tt.table_type_name AS type,
+	  t.system,
+	  c.remark AS remark
+  FROM sys._tables t
+  LEFT OUTER JOIN sys.comments c ON t.id = c.id
+  LEFT OUTER JOIN sys.schemas s ON t.schema_id = s.id
+  LEFT OUTER JOIN sys.table_types tt ON t.type = tt.table_type_id
+UNION ALL
+SELECT s.name AS sname,
+	  sq.name,
+	  s.name || '.' || sq.name AS fullname,
+	  CAST(4 AS SMALLINT) AS ntype,
+	  'SEQUENCE' AS type,
+	  false AS system,
+	  c.remark AS remark
+  FROM sys.sequences sq
+  LEFT OUTER JOIN sys.comments c ON sq.id = c.id
+  LEFT OUTER JOIN sys.schemas s ON sq.schema_id = s.id
+UNION ALL
+SELECT DISTINCT s.name AS sname,  -- DISTINCT is needed to filter out duplicate overloaded function/procedure names
+	  f.name,
+	  s.name || '.' || f.name AS fullname,
+	  CAST(8 AS SMALLINT) AS ntype,
+	  (CASE WHEN sf.function_id IS NOT NULL THEN 'SYSTEM ' ELSE '' END) || sys.function_type_keyword(f.type) AS type,
+	  CASE WHEN sf.function_id IS NULL THEN FALSE ELSE TRUE END AS system,
+	  c.remark AS remark
+  FROM sys.functions f
+  LEFT OUTER JOIN sys.comments c ON f.id = c.id
+  LEFT OUTER JOIN sys.schemas s ON f.schema_id = s.id
+  LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id
+UNION ALL
+SELECT s.name AS sname,
+	  s.name,
+	  s.name AS fullname,
+	  CAST(16 AS SMALLINT) AS ntype,
+	  (CASE WHEN s.system THEN 'SYSTEM SCHEMA' ELSE 'SCHEMA' END) AS type,
+	  s.system,
+	  c.remark AS remark
+  FROM sys.schemas s
+  LEFT OUTER JOIN sys.comments c ON s.id = c.id
+ ORDER BY system, name, sname, ntype;
+GRANT SELECT ON sys.describe_all_objects TO PUBLIC;
+CREATE VIEW sys.commented_function_signatures AS
+SELECT f.id AS fid,
+       s.name AS schema,
+       f.name AS fname,
+       sys.function_type_keyword(f.type) AS category,
+       CASE WHEN sf.function_id IS NULL THEN FALSE ELSE TRUE END AS system,
+       CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number ASC) WHEN 1 THEN f.name ELSE NULL END AS name,
+       CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number DESC) WHEN 1 THEN c.remark ELSE NULL END AS remark,
+       p.type, p.type_digits, p.type_scale,
+       ROW_NUMBER() OVER (ORDER BY f.id, p.number) AS line
+  FROM sys.functions f
+  JOIN sys.comments c ON f.id = c.id
+  JOIN sys.schemas s ON f.schema_id = s.id
+  LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id
+  LEFT OUTER JOIN sys.args p ON f.id = p.func_id AND p.inout = 1
+ ORDER BY line;
+GRANT SELECT ON sys.commented_function_signatures TO PUBLIC;
+UPDATE sys._tables
+SET system = true
+WHERE name IN ('comments', 'describe_all_objects', 'commented_function_signatures')
+AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');
+DELETE FROM sys.systemfunctions WHERE function_id IS NULL;
+ALTER TABLE sys.systemfunctions ALTER COLUMN function_id SET NOT NULL;
+INSERT INTO sys.systemfunctions
+SELECT id FROM sys.functions
+WHERE schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys')
+AND name IN ('comment_on', 'function_type_keyword');
+ALTER TABLE sys.keywords SET READ WRITE;
+INSERT INTO sys.keywords VALUES ('COMMENT');
+-- ALTER TABLE sys.keywords SET READ ONLY;
 delete from sys.systemfunctions where function_id not in (select id from sys.functions);
 set schema "testschema";
-
-Running database upgrade commands:
-set schema "sys";
-drop view sys.geometry_columns cascade;
-create view sys.geometry_columns as
-	select cast(null as varchar(1)) as f_table_catalog,
-		s.name as f_table_schema,
-		t.name as f_table_name,
-		c.name as f_geometry_column,
-		cast(has_z(c.type_digits) + has_m(c.type_digits) +2 as integer) as coord_dimension,
-		c.type_scale as srid,
-		get_type(c.type_digits, 0) as type
-	from sys.columns c, sys.tables t, sys.schemas s
-	where c.table_id = t.id and t.schema_id = s.id
-	  and c.type in (select sqlname from sys.types where systemname in ('wkb', 'wkba'));
-GRANT SELECT ON sys.geometry_columns TO PUBLIC;
-update sys._tables set system = true where name = 'geometry_columns' and schema_id in (select id from schemas where name = 'sys');
-delete from sys.systemfunctions where function_id not in (select id from sys.functions);
-set schema "testschema";
-
-Running database upgrade commands:
-drop view sys.environment cascade;
-drop function sys.environment() cascade;
-create view sys.environment as select * from sys.env();
-GRANT SELECT ON sys.environment TO PUBLIC;
-update sys._tables set system = true where system = false and name = 'environment' and schema_id in (select id from schemas where name = 'sys');
-delete from sys.systemfunctions where function_id not in (select id from sys.functions);
 
 
 # 11:43:08 >  

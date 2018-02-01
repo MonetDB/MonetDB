@@ -79,6 +79,8 @@ exp_create(sql_allocator *sa, int type )
 {
 	sql_exp *e = SA_NEW(sa, sql_exp);
 
+	if (e == NULL)
+		return NULL;
 	e->name = NULL;
 	e->rname = NULL;
 	e->card = 0;
@@ -97,6 +99,8 @@ sql_exp *
 exp_compare(sql_allocator *sa, sql_exp *l, sql_exp *r, int cmptype) 
 {
 	sql_exp *e = exp_create(sa, e_cmp);
+	if (e == NULL)
+		return NULL;
 	e->card = l->card;
 	if (e->card == CARD_ATOM && !exp_is_atom(l))
 		e->card = CARD_AGGR;
@@ -110,6 +114,8 @@ sql_exp *
 exp_compare2(sql_allocator *sa, sql_exp *l, sql_exp *r, sql_exp *h, int cmptype) 
 {
 	sql_exp *e = exp_create(sa, e_cmp);
+	if (e == NULL)
+		return NULL;
 	e->card = l->card;
 	if (e->card == CARD_ATOM && !exp_is_atom(l))
 		e->card = CARD_AGGR;
@@ -126,6 +132,8 @@ exp_filter(sql_allocator *sa, list *l, list *r, sql_subfunc *f, int anti)
 {
 	sql_exp *e = exp_create(sa, e_cmp);
 
+	if (e == NULL)
+		return NULL;
 	e->card = exps_card(l);
 	e->l = l;
 	e->r = r;
@@ -141,7 +149,9 @@ exp_or(sql_allocator *sa, list *l, list *r, int anti)
 {
 	sql_exp *f = NULL;
 	sql_exp *e = exp_create(sa, e_cmp);
-	
+
+	if (e == NULL)
+		return NULL;
 	f = l->h?l->h->data:r->h?r->h->data:NULL;
 	e->card = l->h?exps_card(l):exps_card(r);
 	e->l = l;
@@ -158,7 +168,9 @@ sql_exp *
 exp_in(sql_allocator *sa, sql_exp *l, list *r, int cmptype)
 {
 	sql_exp *e = exp_create(sa, e_cmp);
-	
+
+	if (e == NULL)
+		return NULL;
 	e->card = l->card;
 	e->l = l;
 	e->r = r;
@@ -173,6 +185,8 @@ dup_subtype(sql_allocator *sa, sql_subtype *st)
 {
 	sql_subtype *res = SA_NEW(sa, sql_subtype);
 
+	if (res == NULL)
+		return NULL;
 	*res = *st;
 	return res;
 }
@@ -181,6 +195,8 @@ sql_exp *
 exp_convert(sql_allocator *sa, sql_exp *exp, sql_subtype *fromtype, sql_subtype *totype )
 {
 	sql_exp *e = exp_create(sa, e_convert);
+	if (e == NULL)
+		return NULL;
 	e->card = exp->card;
 	e->l = exp;
 	totype = dup_subtype(sa, totype);
@@ -197,6 +213,8 @@ sql_exp *
 exp_op( sql_allocator *sa, list *l, sql_subfunc *f )
 {
 	sql_exp *e = exp_create(sa, e_func);
+	if (e == NULL)
+		return NULL;
 	e->card = exps_card(l);
 	if (!l || list_length(l) == 0) 
 		e->card = CARD_ATOM; /* unop returns a single atom */
@@ -211,6 +229,8 @@ sql_exp *
 exp_aggr( sql_allocator *sa, list *l, sql_subaggr *a, int distinct, int no_nils, int card, int has_nils )
 {
 	sql_exp *e = exp_create(sa, e_aggr);
+	if (e == NULL)
+		return NULL;
 	e->card = card;
 	e->l = l;
 	e->f = a; 
@@ -227,6 +247,8 @@ sql_exp *
 exp_atom(sql_allocator *sa, atom *a) 
 {
 	sql_exp *e = exp_create(sa, e_atom);
+	if (e == NULL)
+		return NULL;
 	e->card = CARD_ATOM;
 	e->tpe = a->tpe;
 	e->l = a;
@@ -360,6 +382,8 @@ sql_exp *
 exp_atom_ref(sql_allocator *sa, int i, sql_subtype *tpe) 
 {
 	sql_exp *e = exp_create(sa, e_atom);
+	if (e == NULL)
+		return NULL;
 	e->card = CARD_ATOM;
 	e->flag = i;
 	if (tpe)
@@ -388,6 +412,8 @@ sql_exp *
 exp_param(sql_allocator *sa, const char *name, sql_subtype *tpe, int frame) 
 {
 	sql_exp *e = exp_create(sa, e_atom);
+	if (e == NULL)
+		return NULL;
 	e->r = (char*)name;
 	e->card = CARD_ATOM;
 	e->flag = frame;
@@ -400,6 +426,8 @@ sql_exp *
 exp_values(sql_allocator *sa, list *exps) 
 {
 	sql_exp *e = exp_create(sa, e_atom);
+	if (e == NULL)
+		return NULL;
 	e->card = CARD_MULTI;
 	e->f = exps;
 	return e;
@@ -434,6 +462,8 @@ exp_alias(sql_allocator *sa, const char *arname, const char *acname, const char 
 {
 	sql_exp *e = exp_create(sa, e_column);
 
+	if (e == NULL)
+		return NULL;
 	assert(acname && org_cname);
 	e->card = card;
 	e->rname = (arname)?arname:org_rname;
@@ -454,6 +484,8 @@ exp_column(sql_allocator *sa, const char *rname, const char *cname, sql_subtype 
 {
 	sql_exp *e = exp_create(sa, e_column);
 
+	if (e == NULL)
+		return NULL;
 	assert(cname);
 	e->card = card;
 	e->name = cname;
@@ -505,6 +537,8 @@ exp_set(sql_allocator *sa, const char *name, sql_exp *val, int level)
 {
 	sql_exp *e = exp_create(sa, e_psm);
 
+	if (e == NULL)
+		return NULL;
 	e->name = name;
 	e->l = val;
 	e->flag = PSM_SET + SET_PSM_LEVEL(level);
@@ -516,6 +550,8 @@ exp_var(sql_allocator *sa, const char *name, sql_subtype *type, int level)
 {
 	sql_exp *e = exp_create(sa, e_psm);
 
+	if (e == NULL)
+		return NULL;
 	e->name = name;
 	e->tpe = *type;
 	e->flag = PSM_VAR + SET_PSM_LEVEL(level);
@@ -527,6 +563,8 @@ exp_table(sql_allocator *sa, const char *name, sql_table *t, int level)
 {
 	sql_exp *e = exp_create(sa, e_psm);
 
+	if (e == NULL)
+		return NULL;
 	e->name = name;
 	e->f = t;
 	e->flag = PSM_VAR + SET_PSM_LEVEL(level);
@@ -538,6 +576,8 @@ exp_return(sql_allocator *sa, sql_exp *val, int level)
 {
 	sql_exp *e = exp_create(sa, e_psm);
 
+	if (e == NULL)
+		return NULL;
 	e->l = val;
 	e->flag = PSM_RETURN + SET_PSM_LEVEL(level);
 	return e;
@@ -548,6 +588,8 @@ exp_while(sql_allocator *sa, sql_exp *cond, list *stmts)
 {
 	sql_exp *e = exp_create(sa, e_psm);
 
+	if (e == NULL)
+		return NULL;
 	e->l = cond;
 	e->r = stmts;
 	e->flag = PSM_WHILE;
@@ -559,6 +601,8 @@ exp_if(sql_allocator *sa, sql_exp *cond, list *if_stmts, list *else_stmts)
 {
 	sql_exp *e = exp_create(sa, e_psm);
 
+	if (e == NULL)
+		return NULL;
 	e->l = cond;
 	e->r = if_stmts;
 	e->f = else_stmts;
@@ -571,6 +615,8 @@ exp_rel(mvc *sql, sql_rel *rel)
 {
 	sql_exp *e = exp_create(sql->sa, e_psm);
 
+	if (e == NULL)
+		return NULL;
 	/*
 	rel = rel_optimizer(sql, rel);
 	rel = rel_distribute(sql, rel);
@@ -1535,7 +1581,7 @@ exps_bind_column( list *exps, const char *cname, int *ambiguous )
 					sql_exp *ce = he->value;
 
 					if (ce->name && strcmp(ce->name, cname) == 0) {
-						if (e) {
+						if (e && e != ce && ce->rname && e->rname && strcmp(ce->rname, e->rname) != 0 ) {
 							if (ambiguous)
 								*ambiguous = 1;
 							MT_lock_unset(&exps->ht_lock);

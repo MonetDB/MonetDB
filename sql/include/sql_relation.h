@@ -51,6 +51,7 @@ typedef struct expression {
 #define EXP_DISTINCT	1
 #define NO_NIL		2
 #define TOPN_INCLUDING	4
+#define ZERO_IF_EMPTY	8
 
 #define LEFT_JOIN	4
 
@@ -228,6 +229,12 @@ typedef enum operator_type {
 	((e->flag&NO_NIL)==NO_NIL)
 #define set_no_nil(e) \
 	e->flag |= NO_NIL
+
+/* ZERO on empty sets, needed for sum (of counts)). */
+#define zero_if_empty(e) \
+	((e->flag&ZERO_IF_EMPTY)==ZERO_IF_EMPTY)
+#define set_zero_if_empty(e) \
+	e->flag |= ZERO_IF_EMPTY
 
 /* does the expression (possibly) have nils */
 #define has_nil(e) \

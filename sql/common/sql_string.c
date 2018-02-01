@@ -94,7 +94,7 @@ strip_extra_zeros(char *s)
 	return res;
 }
 
-const char *
+char *
 sql2str(char *s)
 {
 	int escaped = 0;
