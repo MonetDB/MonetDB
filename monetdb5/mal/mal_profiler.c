@@ -455,7 +455,7 @@ profilerHeartbeatEvent(char *alter)
 	if(mal_session_uuid)
 		logadd("\"session\":\"%s\",%s", mal_session_uuid, prettify);
 	logadd("\"clk\":"LLFMT",%s",usec,prettify);
-	logadd("\"ctime\":%"PRId64",%s", microseconds, prettify);
+	logadd("\"ctime\":%"PRIu64",%s", microseconds, prettify);
 	logadd("\"rss\":"SZFMT ",%s", MT_getrss()/1024/1024, prettify);
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
