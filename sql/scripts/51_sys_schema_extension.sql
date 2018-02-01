@@ -266,32 +266,6 @@ ALTER TABLE sys.table_types SET READ ONLY;
 GRANT SELECT ON sys.table_types TO PUBLIC;
 
 
-CREATE TABLE sys.dependency_types (
-    dependency_type_id   SMALLINT NOT NULL PRIMARY KEY,
-    dependency_type_name VARCHAR(15) NOT NULL UNIQUE);
-
--- Values taken from sql/include/sql_catalog.h  see: #define SCHEMA_DEPENDENCY 1, TABLE_DEPENDENCY 2, ..., TYPE_DEPENDENCY 15.
-INSERT INTO sys.dependency_types (dependency_type_id, dependency_type_name) VALUES
-  (1, 'SCHEMA'),
-  (2, 'TABLE'),
-  (3, 'COLUMN'),
-  (4, 'KEY'),
-  (5, 'VIEW'),
-  (6, 'USER'),
-  (7, 'FUNCTION'),
-  (8, 'TRIGGER'),
-  (9, 'OWNER'),
-  (10, 'INDEX'),
-  (11, 'FKEY'),
-  (12, 'SEQUENCE'),
-  (13, 'PROCEDURE'),
-  (14, 'BE_DROPPED'),
-  (15, 'TYPE');
-
-ALTER TABLE sys.dependency_types SET READ ONLY;
-GRANT SELECT ON sys.dependency_types TO PUBLIC;
-
-
 CREATE TABLE sys.function_types (
     function_type_id   SMALLINT NOT NULL PRIMARY KEY,
     function_type_name VARCHAR(30) NOT NULL UNIQUE);
@@ -416,4 +390,26 @@ INSERT INTO sys.privilege_codes (privilege_code_id, privilege_code_name) VALUES
 
 ALTER TABLE sys.privilege_codes SET READ ONLY;
 GRANT SELECT ON sys.privilege_codes TO PUBLIC;
+
+
+-- Utility view to list the defined roles.
+-- Note: sys.auths contains both users and roles as the names must be distinct.
+CREATE VIEW sys.roles AS SELECT id, name, grantor FROM sys.auths a WHERE a.name NOT IN (SELECT u.name FROM sys.db_users() u);
+GRANT SELECT ON sys.roles TO PUBLIC;
+
+
+-- Utility view to list the standard variables (as defined in sys.var()) and their run-time value
+CREATE VIEW sys.var_values (var_name, value) AS
+SELECT 'cache' AS var_name, convert(cache, varchar(10)) AS value UNION ALL
+SELECT 'current_role', current_role UNION ALL
+SELECT 'current_schema', current_schema UNION ALL
+SELECT 'current_timezone', current_timezone UNION ALL
+SELECT 'current_user', current_user UNION ALL
+SELECT 'debug', debug UNION ALL
+SELECT 'history', history UNION ALL
+SELECT 'last_id', last_id UNION ALL
+SELECT 'optimizer', optimizer UNION ALL
+SELECT 'pi', pi() UNION ALL
+SELECT 'rowcnt', rowcnt;
+GRANT SELECT ON sys.var_values TO PUBLIC;
 
