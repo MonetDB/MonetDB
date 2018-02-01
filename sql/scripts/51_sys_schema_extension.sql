@@ -46,6 +46,7 @@ INSERT INTO sys.keywords (keyword) VALUES
   ('COMMIT'),
   ('COMMITTED'),
   ('CONSTRAINT'),
+  ('CONTINUE'),
   ('CONVERT'),
   ('COPY'),
   ('CORRESPONDING'),
@@ -196,6 +197,7 @@ INSERT INTO sys.keywords (keyword) VALUES
   ('TO'),
   ('TRANSACTION'),
   ('TRIGGER'),
+  ('TRUNCATE'),
   ('TRUE'),
   ('UNBOUNDED'),
   ('UNCOMMITTED'),
@@ -363,11 +365,11 @@ GRANT SELECT ON sys.index_types TO PUBLIC;
 
 CREATE TABLE sys.privilege_codes (
     privilege_code_id   INT NOT NULL PRIMARY KEY,
-    privilege_code_name VARCHAR(30) NOT NULL UNIQUE);
+    privilege_code_name VARCHAR(40) NOT NULL UNIQUE);
 
 -- Values taken from sql/include/sql_catalog.h see: #define
 -- PRIV_SELECT 1, PRIV_UPDATE 2, PRIV_INSERT 4, PRIV_DELETE 8,
--- PRIV_EXECUTE 16, PRIV_GRANT 32
+-- PRIV_EXECUTE 16, PRIV_GRANT 32, PRIV_TRUNCATE 64
 INSERT INTO sys.privilege_codes (privilege_code_id, privilege_code_name) VALUES
   (1, 'SELECT'),
   (2, 'UPDATE'),
@@ -375,6 +377,7 @@ INSERT INTO sys.privilege_codes (privilege_code_id, privilege_code_name) VALUES
   (8, 'DELETE'),
   (16, 'EXECUTE'),
   (32, 'GRANT'),
+  (64, 'TRUNCATE'),
 -- next are combined privileges applicable only to tables and columns
   (3, 'SELECT,UPDATE'),
   (5, 'SELECT,INSERT'),
@@ -386,7 +389,22 @@ INSERT INTO sys.privilege_codes (privilege_code_id, privilege_code_name) VALUES
   (12, 'INSERT,DELETE'),
   (13, 'SELECT,INSERT,DELETE'),
   (14, 'INSERT,UPDATE,DELETE'),
-  (15, 'SELECT,INSERT,UPDATE,DELETE');
+  (15, 'SELECT,INSERT,UPDATE,DELETE'),
+  (65, 'SELECT,TRUNCATE'),
+  (66, 'UPDATE,TRUNCATE'),
+  (68, 'INSERT,TRUNCATE'),
+  (72, 'DELETE,TRUNCATE'),
+  (67, 'SELECT,UPDATE,TRUNCATE'),
+  (69, 'SELECT,INSERT,TRUNCATE'),
+  (73, 'SELECT,DELETE,TRUNCATE'),
+  (70, 'INSERT,UPDATE,TRUNCATE'),
+  (76, 'INSERT,DELETE,TRUNCATE'),
+  (74, 'UPDATE,DELETE,TRUNCATE'),
+  (71, 'SELECT,INSERT,UPDATE,TRUNCATE'),
+  (75, 'SELECT,UPDATE,DELETE,TRUNCATE'),
+  (77, 'SELECT,INSERT,DELETE,TRUNCATE'),
+  (78, 'INSERT,UPDATE,DELETE,TRUNCATE'),
+  (79, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE');
 
 ALTER TABLE sys.privilege_codes SET READ ONLY;
 GRANT SELECT ON sys.privilege_codes TO PUBLIC;

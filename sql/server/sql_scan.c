@@ -191,6 +191,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("INSERT", INSERT);
 	failed += keywords_insert("UPDATE", UPDATE);
 	failed += keywords_insert("DELETE", sqlDELETE);
+	failed += keywords_insert("TRUNCATE", TRUNCATE);
 
 	failed += keywords_insert("ACTION", ACTION);
 	failed += keywords_insert("CASCADE", CASCADE);
@@ -387,6 +388,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("SERIAL", SERIAL);
 	failed += keywords_insert("BIGSERIAL", BIGSERIAL);
 	failed += keywords_insert("AUTO_INCREMENT", AUTO_INCREMENT);
+	failed += keywords_insert("CONTINUE", CONTINUE);
 
 	failed += keywords_insert("TRIGGER", TRIGGER);
 	failed += keywords_insert("ATOMIC", ATOMIC);

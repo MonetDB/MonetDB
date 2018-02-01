@@ -142,6 +142,7 @@ int yydebug=1;
 	path_specification
 	schema_element
 	delete_stmt
+	truncate_stmt
 	copyfrom_stmt
 	table_def
 	view_def
@@ -430,6 +431,7 @@ int yydebug=1;
 	window_frame_extent
 	window_frame_between
 	routine_designator
+	drop_routine_designator
 
 %type <i_val>
 	any_all_some
@@ -437,6 +439,7 @@ int yydebug=1;
 	document_or_content
 	document_or_content_or_sequence
 	drop_action
+	check_identity
 	extract_datetime_field
 	grantor
 	intval
@@ -544,7 +547,7 @@ int yydebug=1;
 %token <operation> EXTRACT
 
 /* sequence operations */
-%token SEQUENCE INCREMENT RESTART
+%token SEQUENCE INCREMENT RESTART CONTINUE
 %token MAXVALUE MINVALUE CYCLE
 %token NOMAXVALUE NOMINVALUE NOCYCLE
 %token NEXT VALUE CACHE
@@ -594,7 +597,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL LANGUAGE
 %token ANALYZE MINMAX SQL_EXPLAIN SQL_PLAN SQL_DEBUG SQL_TRACE PREP PREPARE EXEC EXECUTE
-%token DEFAULT DISTINCT DROP
+%token DEFAULT DISTINCT DROP TRUNCATE
 %token FOREIGN
 %token RENAME ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
 %token IS KEY ON OPTION OPTIONS
@@ -1022,6 +1025,7 @@ operation_commalist:
 operation:
     INSERT			    { $$ = _symbol_create(SQL_INSERT,NULL); }
  |  sqlDELETE			    { $$ = _symbol_create(SQL_DELETE,NULL); }
+ |  TRUNCATE			    { $$ = _symbol_create(SQL_TRUNCATE,NULL); }
  |  UPDATE opt_column_list          { $$ = _symbol_create_list(SQL_UPDATE,$2); }
  |  SELECT opt_column_list	    { $$ = _symbol_create_list(SQL_SELECT,$2); }
  |  REFERENCES opt_column_list 	    { $$ = _symbol_create_list(SQL_SELECT,$2); }
@@ -1169,6 +1173,7 @@ drop_table_element:
 	  append_string(l, $2 );
 	  append_int(l, $3 );
 	  append_int(l, 0);
+	  append_int(l, FALSE ); /* no if exists check */
 	  $$ = _symbol_create_list( SQL_DROP_TABLE, l ); }
   ;
 
@@ -1180,7 +1185,7 @@ opt_column:
 create_statement:	
    create role_def 	{ $$ = $2; }
  | create table_def 	{ $$ = $2; }
- | create view_def 	{ $$ = $2; }
+ | view_def 	{ $$ = $1; }
  | type_def
  | func_def
  | index_def
@@ -1756,13 +1761,14 @@ like_table:
  ;
 
 view_def:
-    VIEW qname opt_column_list AS query_expression_def opt_with_check_option
+    create_or_replace VIEW qname opt_column_list AS query_expression_def opt_with_check_option
 	{  dlist *l = L();
-	  append_list(l, $2);
 	  append_list(l, $3);
-	  append_symbol(l, $5);
-	  append_int(l, $6);
+	  append_list(l, $4);
+	  append_symbol(l, $6);
+	  append_int(l, $7);
 	  append_int(l, TRUE);	/* persistent view */
+	  append_int(l, $1);
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); 
 	}
   ;
@@ -2333,7 +2339,7 @@ Define triggered SQL-statements.
 */
 
 trigger_def:
-    create TRIGGER qname trigger_action_time trigger_event
+    create_or_replace TRIGGER qname trigger_action_time trigger_event
     ON qname opt_referencing_list triggered_action
 	{ dlist *l = L();
 	  append_list(l, $3);
@@ -2342,6 +2348,7 @@ trigger_def:
 	  append_list(l, $7);
 	  append_list(l, $8);
 	  append_list(l, $9);
+	  append_int(l, $1);
 	  $$ = _symbol_create_list(SQL_CREATE_TRIGGER, l); 
 	}
  ;
@@ -2354,7 +2361,8 @@ trigger_action_time:
 
 trigger_event:
     INSERT 			{ $$ = _symbol_create_list(SQL_INSERT, NULL); }
- |  sqlDELETE 			{ $$ = _symbol_create_list(SQL_DELETE, NULL); }
+ |  sqlDELETE 		{ $$ = _symbol_create_list(SQL_DELETE, NULL); }
+ |  TRUNCATE 		{ $$ = _symbol_create_list(SQL_TRUNCATE, NULL); }
  |  UPDATE 			{ $$ = _symbol_create_list(SQL_UPDATE, NULL); }
  |  UPDATE OF ident_commalist 	{ $$ = _symbol_create_list(SQL_UPDATE, $3); }
  ;
@@ -2452,14 +2460,52 @@ routine_designator:
 	  $$ = l; }
  ;
 
+drop_routine_designator:
+	FUNCTION if_exists qname opt_typelist
+	{ dlist *l = L();
+	  append_list(l, $3 );
+	  append_list(l, $4 );
+	  append_int(l, F_FUNC );
+	  append_int(l, $2 );
+	  $$ = l; }
+ |	FILTER FUNCTION if_exists qname opt_typelist
+	{ dlist *l = L();
+	  append_list(l, $4 );
+	  append_list(l, $5 );
+	  append_int(l, F_FILT );
+	  append_int(l, $3 );
+	  $$ = l; }
+ |	AGGREGATE if_exists qname opt_typelist
+	{ dlist *l = L();
+	  append_list(l, $3 );
+	  append_list(l, $4 );
+	  append_int(l, F_AGGR );
+	  append_int(l, $2 );
+	  $$ = l; }
+ |	PROCEDURE if_exists qname opt_typelist
+	{ dlist *l = L();
+	  append_list(l, $3 );
+	  append_list(l, $4 );
+	  append_int(l, F_PROC );
+	  append_int(l, $2 );
+	  $$ = l; }
+ |	sqlLOADER if_exists qname opt_typelist
+	{ dlist *l = L();
+	  append_list(l, $3 );
+	  append_list(l, $4 );
+	  append_int(l, F_LOADER );
+	  append_int(l, $2 );
+	  $$ = l; }
+ ;
+
 drop_statement:
    drop TABLE if_exists qname drop_action
 	{ dlist *l = L();
 	  append_list(l, $4 );
 	  append_int(l, $5 );
-	  append_int(l, $3);
+	  append_int(l, $3 );
 	  $$ = _symbol_create_list( SQL_DROP_TABLE, l ); }
- | drop routine_designator drop_action
+ | drop drop_routine_designator drop_action
 	{ dlist *l = $2;
 	  append_int(l, 0 ); /* not all */
 	  append_int(l, $3 );
@@ -2469,6 +2515,7 @@ drop_statement:
 	  append_list(l, $4 );
 	  append_list(l, NULL );
 	  append_int(l, F_FUNC );
+	  append_int(l, FALSE );
 	  append_int(l, 1 );
 	  append_int(l, $5 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
@@ -2477,6 +2524,7 @@ drop_statement:
 	  append_list(l, $5 );
 	  append_list(l, NULL );
 	  append_int(l, F_FILT );
+	  append_int(l, FALSE );
 	  append_int(l, 1 );
 	  append_int(l, $6 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
@@ -2485,6 +2533,7 @@ drop_statement:
 	  append_list(l, $4 );
 	  append_list(l, NULL );
 	  append_int(l, F_AGGR );
+	  append_int(l, FALSE );
 	  append_int(l, 1 );
 	  append_int(l, $5 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
@@ -2493,6 +2542,7 @@ drop_statement:
 	  append_list(l, $4 );
 	  append_list(l, NULL );
 	  append_int(l, F_PROC );
+	  append_int(l, FALSE );
 	  append_int(l, 1 );
 	  append_int(l, $5 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
@@ -2501,6 +2551,7 @@ drop_statement:
 	  append_list(l, $4 );
 	  append_list(l, NULL );
 	  append_int(l, F_LOADER );
+	  append_int(l, FALSE );
 	  append_int(l, 1 );
 	  append_int(l, $5 );
 	  $$ = _symbol_create_list( SQL_DROP_FUNC, l ); }
@@ -2510,7 +2561,7 @@ drop_statement:
 	  append_int(l, $5 );
 	  append_int(l, $3 );
 	  $$ = _symbol_create_list( SQL_DROP_VIEW, l ); }
- |  drop TYPE qname drop_action	 
+ |  drop TYPE qname drop_action
 	{ dlist *l = L();
 	  append_list(l, $3 );
 	  append_int(l, $4 );
@@ -2518,7 +2569,12 @@ drop_statement:
  |  drop ROLE ident	  { $$ = _symbol_create( SQL_DROP_ROLE, $3 ); }
  |  drop USER ident	  { $$ = _symbol_create( SQL_DROP_USER, $3 ); }
  |  drop INDEX qname	  { $$ = _symbol_create_list( SQL_DROP_INDEX, $3 ); }
- |  drop TRIGGER qname	  { $$ = _symbol_create_list( SQL_DROP_TRIGGER, $3 ); }
+ |  drop TRIGGER if_exists qname
+	{ dlist *l = L();
+	  append_list(l, $4 );
+	  append_int(l, $3 );
+	  $$ = _symbol_create_list( SQL_DROP_TRIGGER, l );
+	}
  ;
 
 opt_typelist:
@@ -2550,6 +2606,7 @@ sql:
 update_statement: 
 /* todo merge statement */
    delete_stmt
+ | truncate_stmt
  | insert_stmt
  | update_stmt
  | copyfrom_stmt
@@ -2799,6 +2856,27 @@ delete_stmt:
 	  append_list(l, $3);
 	  append_symbol(l, $4);
 	  $$ = _symbol_create_list( SQL_DELETE, l ); }
+ ;
+
+check_identity:
+    /* empty */			{ $$ = 0; }
+ |  CONTINUE IDENTITY	{ $$ = 0; }
+ |  RESTART IDENTITY	{ $$ = 1; }
+ ;
+
+truncate_stmt:
+   TRUNCATE TABLE qname check_identity drop_action
+	{ dlist *l = L();
+	  append_list(l, $3 );
+	  append_int(l, $4 );
+	  append_int(l, $5 );
+	  $$ = _symbol_create_list( SQL_TRUNCATE, l ); }
+ | TRUNCATE qname check_identity drop_action
+	{ dlist *l = L();
+	  append_list(l, $2 );
+	  append_int(l, $3 );
+	  append_int(l, $4 );
+	  $$ = _symbol_create_list( SQL_TRUNCATE, l ); }
  ;
 
 update_stmt:
@@ -3066,6 +3144,7 @@ with_list_element:
 	  append_symbol(l, $4);
 	  append_int(l, FALSE);	/* no with check */
 	  append_int(l, FALSE);	/* inlined view  (ie not persistent) */
+	  append_int(l, FALSE); /* no replace clause */
 	  $$ = _symbol_create_list( SQL_CREATE_VIEW, l ); 
 	}
  ;

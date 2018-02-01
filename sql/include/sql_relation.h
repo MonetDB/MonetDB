@@ -100,22 +100,16 @@ typedef struct expression {
 #define DDL_TRANS	               14
 
 #define DDL_CREATE_SCHEMA          21
-#define DDL_DROP_SCHEMA_IF_EXISTS  22
-#define DDL_DROP_SCHEMA            23
-
-#define DDL_CREATE_TABLE           24
-#define DDL_DROP_TABLE_IF_EXISTS   25
-#define DDL_DROP_TABLE 	           26
-#define DDL_CREATE_VIEW            27
-#define DDL_DROP_VIEW_IF_EXISTS    28
-#define DDL_DROP_VIEW              29
-#define DDL_DROP_CONSTRAINT        30
-#define DDL_ALTER_TABLE            31
-
-#define DDL_CREATE_TYPE            32 
-#define DDL_DROP_TYPE              33 
-
-#define DDL_DROP_INDEX             34
+#define DDL_DROP_SCHEMA            22
+#define DDL_CREATE_TABLE           23
+#define DDL_DROP_TABLE 	           24
+#define DDL_CREATE_VIEW            25
+#define DDL_DROP_VIEW              26
+#define DDL_DROP_CONSTRAINT        27
+#define DDL_ALTER_TABLE            28
+#define DDL_CREATE_TYPE            29
+#define DDL_DROP_TYPE              30
+#define DDL_DROP_INDEX             31
 
 #define DDL_CREATE_FUNCTION        41 
 #define DDL_DROP_FUNCTION          42 
@@ -141,7 +135,7 @@ typedef struct expression {
 
 #define DDL_EMPTY 100
 
-#define MAXOPS 21
+#define MAXOPS 22
 
 typedef enum operator_type {
 	op_basetable = 0,
@@ -164,7 +158,8 @@ typedef enum operator_type {
 	op_sample,
 	op_insert, 	/* insert(l=table, r insert expressions) */ 
 	op_update, 	/* update(l=table, r update expressions) */
-	op_delete 	/* delete(l=table, r delete expression) */
+	op_delete, 	/* delete(l=table, r delete expression) */
+	op_truncate /* trucante(l=table) */
 } operator_type;
 
 #define is_atom(et) \
@@ -225,7 +220,7 @@ typedef enum operator_type {
 #define is_topn(op) \
 	(op == op_topn)
 #define is_modify(op) \
-	(op == op_insert || op == op_update || op == op_delete)
+	(op == op_insert || op == op_update || op == op_delete || op == op_truncate)
 #define is_sample(op) \
 	(op == op_sample)
 

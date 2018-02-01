@@ -226,7 +226,7 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 }
 
 static char *
-drop_trigger(mvc *sql, char *sname, char *tname)
+drop_trigger(mvc *sql, char *sname, char *tname, int if_exists)
 {
 	sql_trigger *tri = NULL;
 	sql_schema *s = NULL;
@@ -239,8 +239,11 @@ drop_trigger(mvc *sql, char *sname, char *tname)
 	if (!mvc_schema_privs(sql, s))
 		throw(SQL,"sql.drop_trigger",SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 
-	if ((tri = mvc_bind_trigger(sql, s, tname)) == NULL)
+	if ((tri = mvc_bind_trigger(sql, s, tname)) == NULL) {
+		if(if_exists)
+			return MAL_SUCCEED;
 		throw(SQL,"sql.drop_trigger", SQLSTATE(3F000) "DROP TRIGGER: unknown trigger %s\n", tname);
+	}
 	mvc_drop_trigger(sql, s, tri);
 	return MAL_SUCCEED;
 }
@@ -476,7 +479,9 @@ drop_func(mvc *sql, char *sname, char *name, int fid, int type, int action)
 
 			mvc_drop_func(sql, s, func, action);
 		}
-	} else {
+	} else if(fid == -2) { //if exists option
+		return MAL_SUCCEED;
+	} else { //fid == -1
 		node *n = NULL;
 		list *list_func = schema_bind_func(sql, s, name, type);
 
@@ -831,7 +836,7 @@ str
 SQLcreate_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 {	mvc *sql = NULL;
 	str msg = MAL_SUCCEED;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	str name = SaveArgReference(stk, pci, 2);
 	int auth_id;
 
@@ -856,13 +861,10 @@ SQLdrop_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg= MAL_SUCCEED;
 	str sname = *getArgReference_str(stk, pci, 1); 
-	str notused = *getArgReference_str(stk, pci, 2); 
-	int action = *getArgReference_int(stk, pci, 3);
-	int if_exists = 0;	// should become an argument
+	str notused = *getArgReference_str(stk, pci, 2);
+	int if_exists = *getArgReference_int(stk, pci, 3);
+	int action = *getArgReference_int(stk, pci, 4);
 	sql_schema *s;
-
-	if( pci->argc > 4)
-		if_exists  = *getArgReference_int(stk, pci, 4);
 
 	(void) notused;
 	initcontext();
@@ -892,7 +894,7 @@ str
 SQLcreate_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	str tname = *getArgReference_str(stk, pci, 2); 
 	sql_table *t = *(sql_table **) getArgReference(stk, pci, 3);
 	int temp = *getArgReference_int(stk, pci, 4);
@@ -906,7 +908,7 @@ str
 SQLcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	str vname = *getArgReference_str(stk, pci, 2); 
 	sql_table *t = *(sql_table **) getArgReference(stk, pci, 3);
 	int temp = *getArgReference_int(stk, pci, 4);
@@ -920,15 +922,12 @@ str
 SQLdrop_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	str name = *getArgReference_str(stk, pci, 2);
-	int action = *getArgReference_int(stk, pci, 3);
-	int if_exists = 0; // should become an argument
+	int if_exists = *getArgReference_int(stk, pci, 3);
+	int action = *getArgReference_int(stk, pci, 4);
 
 	initcontext();
-	if( pci->argc > 4)
-		if_exists  = *getArgReference_int(stk, pci, 4);
-
 	msg = drop_table(sql, sname, name, action, if_exists);
 	return msg;
 }
@@ -937,15 +936,12 @@ str
 SQLdrop_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	str name = *getArgReference_str(stk, pci, 2);
-	int action = *getArgReference_int(stk, pci, 3);
-	int if_exists = 0; // should become an argument
+	int if_exists = *getArgReference_int(stk, pci, 3);
+	int action = *getArgReference_int(stk, pci, 4);
 
 	initcontext();
-	if( pci->argc > 4)
-		if_exists  = *getArgReference_int(stk, pci, 4);
-
 	msg = drop_view(sql, sname, name, action, if_exists);
 	return msg;
 }
@@ -954,13 +950,13 @@ str
 SQLdrop_constraint(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	str name = *getArgReference_str(stk, pci, 2);
-	int action = *getArgReference_int(stk, pci, 3);
+	int action = *getArgReference_int(stk, pci, 4);
+	(void) *getArgReference_int(stk, pci, 3); //the if_exists parameter is also passed but not used
 
 	initcontext();
 	msg = drop_key(sql, sname, name, action);
-
 	return msg;
 }
 
@@ -1267,9 +1263,10 @@ SQLdrop_trigger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1); 
 	char *triggername = *getArgReference_str(stk, pci, 2);
+	int if_exists = *getArgReference_int(stk, pci, 3);
 
 	initcontext();
-	msg = drop_trigger(sql, sname, triggername);
+	msg = drop_trigger(sql, sname, triggername, if_exists);
 	return msg;
 }
 
