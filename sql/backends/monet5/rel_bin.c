@@ -2875,6 +2875,7 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 	char *n;
 	int len = _strlen(query);
 	stream *buf;
+	bstream * bst;
 
  	if (THRhighwater())
 		return sql_error(m, 10, SQLSTATE(42000) "SELECT: too many nested operators");
@@ -2907,7 +2908,11 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 		buffer_destroy(b);
 		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
-	scanner_init( &m->scanner, bstream_create(buf, b->len), NULL);
+	if((bst = bstream_create(buf, b->len)) == NULL) {
+		close_stream(buf);
+		return sql_error(m, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
+	scanner_init( &m->scanner, bst, NULL);
 	m->scanner.mode = LINE_1; 
 	bstream_next(m->scanner.rs);
 

@@ -592,9 +592,15 @@ startTrace(str path)
 		MT_lock_set(&mal_profileLock );
 		if(eventstream == NULL && offlinestore ==0){
 			snprintf(buf,FILENAME_MAX,"%s%c%s",GDKgetenv("gdk_dbname"), DIR_SEP, path);
-			(void) mkdir(buf,0755);
+			if(mkdir(buf,0755) < 0) {
+				MT_lock_unset(&mal_profileLock );
+				throw(MAL,"profiler.startTrace", SQLSTATE(42000) "Failed to create directory %s", buf);
+			}
 			snprintf(buf,FILENAME_MAX,"%s%c%s%ctrace_%d",GDKgetenv("gdk_dbname"), DIR_SEP, path,DIR_SEP,tracecounter++ % MAXTRACEFILES);
-			eventstream = open_wastream(buf);
+			if((eventstream = open_wastream(buf)) == NULL) {
+				MT_lock_unset(&mal_profileLock );
+				throw(MAL,"profiler.startTrace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
 			offlinestore++;
 		}
 		MT_lock_unset(&mal_profileLock );

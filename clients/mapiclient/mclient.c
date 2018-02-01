@@ -1355,6 +1355,8 @@ SQLheader(MapiHdl hdl, int *len, int fields, char more)
 		int *numeric = (int *) malloc(fields * sizeof(int));
 
 		if (names == NULL || numeric == NULL){
+			free(names);
+			free(numeric);
 			fprintf(stderr,"Malloc for SQLheader failed");
 			exit(2);
 		}
@@ -1436,6 +1438,14 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 	hdr = calloc(fields, sizeof(*hdr));
 	rest = calloc(fields, sizeof(*rest));
 	numeric = calloc(fields, sizeof(*numeric));
+	if(len == NULL || hdr == NULL || rest == NULL || numeric == NULL) {
+		free(len);
+		free(hdr);
+		free(rest);
+		free(numeric);
+		fprintf(stderr,"Malloc for SQLrenderer failed");
+		exit(2);
+	}
 
 	total = 0;
 	lentotal = 0;
@@ -1753,10 +1763,19 @@ start_pager(stream **saveFD)
 		else {
 			*saveFD = toConsole;
 			/* put | in name to indicate that file should be closed with pclose */
-			toConsole = file_wastream(p, "|pager");
+			if((toConsole = file_wastream(p, "|pager")) == NULL) {
+				toConsole = *saveFD;
+				*saveFD = NULL;
+				fprintf(stderr, "Starting '%s' failed\n", pager);
+			}
 #ifdef HAVE_ICONV
-			if (encoding != NULL)
-				toConsole = iconv_wstream(toConsole, encoding, "pager");
+			if (encoding != NULL) {
+				if((toConsole = iconv_wstream(toConsole, encoding, "pager")) == NULL) {
+					toConsole = *saveFD;
+					*saveFD = NULL;
+					fprintf(stderr, "Starting '%s' failed\n", pager);
+				}
+			}
 #endif
 		}
 	}
@@ -2254,12 +2273,19 @@ doFile(Mapi mid, stream *fp, bool useinserts, int interactive, int save_history)
 		init_readline(mid, language, save_history);
 		rl.s = fp;
 		rl.buf = NULL;
-		fp = callback_stream(&rl, myread, NULL, mydestroy, mnstr_name(fp));
+		if((fp = callback_stream(&rl, myread, NULL, mydestroy, mnstr_name(fp))) == NULL) {
+			fprintf(stderr,"Malloc for doFile failed");
+			exit(2);
+		}
 #endif
 	}
 #ifdef HAVE_ICONV
-	if (encoding)
-		fp = iconv_rstream(fp, encoding, mnstr_name(fp));
+	if (encoding) {
+		if((fp = iconv_rstream(fp, encoding, mnstr_name(fp))) == NULL) {
+			fprintf(stderr,"Malloc failure");
+			exit(2);
+		}
+	}
 #endif
 
 	if (!interactive && !echoquery)
@@ -2293,6 +2319,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, int interactive, int save_history)
 		length = 0;
 		for (;;) {
 			ssize_t l;
+			char *newbuf;
 			l = mnstr_readline(fp, buf + length, bufsiz - length);
 			if (l <= 0)
 				break;
@@ -2308,7 +2335,19 @@ doFile(Mapi mid, stream *fp, bool useinserts, int interactive, int save_history)
 			length += l;
 			if (buf[length - 1] == '\n')
 				break;
-			buf = realloc(buf, bufsiz += READBLOCK);
+			newbuf = realloc(buf, bufsiz += READBLOCK);
+			if(newbuf) {
+				buf = newbuf;
+			} else {
+				fprintf(stderr,"Malloc failure");
+				length = 0;
+				errseen = 1;
+				if (hdl) {
+					mapi_close_handle(hdl);
+					hdl = NULL;
+				}
+				break;
+			}
 		}
 		line = buf;
 		lineno++;

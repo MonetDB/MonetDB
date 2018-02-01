@@ -228,7 +228,11 @@ WLRprocess(void *arg)
 			mnstr_printf(GDKerr, "wlr.process File %s too large to process", path);
 			continue;
 		}
-		c->fdin = bstream_create(fd, sz == 0 ? (size_t) (2 * 128 * BLOCK) : sz);
+		if((c->fdin = bstream_create(fd, sz == 0 ? (size_t) (2 * 128 * BLOCK) : sz)) == NULL) {
+			close_stream(fd);
+			mnstr_printf(GDKerr, "wlr.process Failed to open stream for file %s", path);
+			continue;
+		}
 		if (bstream_next(c->fdin) < 0)
 			mnstr_printf(GDKerr, "!WARNING: could not read %s\n", path);
 
