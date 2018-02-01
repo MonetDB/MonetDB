@@ -106,7 +106,7 @@ MNDBTables(ODBCStmt *stmt,
 		query = strdup("select cast(null as varchar(1)) as table_cat, "
 				      "cast(null as varchar(1)) as table_schem, "
 				      "cast(null as varchar(1)) as table_name, "
-				      "replace(table_type_name, 'TEMPORARY TABLE', 'TEMPORARY') as table_type, "
+				      "table_type_name as table_type, "
 				      "cast(null as varchar(1)) as remarks "
 			       "from sys.table_types order by table_type");
 	} else {
@@ -169,7 +169,7 @@ MNDBTables(ODBCStmt *stmt,
 		       "select e.value as table_cat, "
 			      "s.name as table_schem, "
 			      "t.name as table_name, "
-		              "replace(tt.table_type_name, 'TEMPORARY TABLE', 'TEMPORARY') as table_type, "
+		              "tt.table_type_name as table_type, "
 			      "cast(null as varchar(1)) as remarks "
 		       "from sys.schemas s, "
 			    "sys.tables t, "
@@ -206,7 +206,7 @@ MNDBTables(ODBCStmt *stmt,
 
 		if (NameLength4 > 0) {
 			/* filtering requested on table type */
-			char buf[17];	/* the longest string is "GLOBAL TEMPORARY" */
+			char buf[32];	/* the longest string is "GLOBAL TEMPORARY TABLE" */
 			int i;
 			size_t j;
 
@@ -221,12 +221,7 @@ MNDBTables(ODBCStmt *stmt,
 						continue;
 					}
 					buf[j] = 0;
-					if (strcmp(buf, "GLOBAL TEMPORARY") == 0 ||
-					    strcmp(buf, "LOCAL TEMPORARY") == 0) {
-						query_end += snprintf(query_end, 38, "'%s TABLE',", buf);
-					} else {
-						query_end += snprintf(query_end, 38, "'%s',", buf);
-					}
+					query_end += snprintf(query_end, 38, "'%s',", buf);
  					j = 0;
 				} else if (j < sizeof(buf) &&
 					   TableType[i] != '\'' &&
