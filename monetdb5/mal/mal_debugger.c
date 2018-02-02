@@ -1383,7 +1383,6 @@ mdbHelp(stream *f)
 	mnstr_printf(f, "break [<var>]    -- set breakpoint on current instruction or <var>\n");
 	mnstr_printf(f, "delete [<var>]   -- remove break/trace point <var>\n");
 	mnstr_printf(f, "debug <int>      -- set kernel debugging mask\n");
-	mnstr_printf(f, "dot <obj> [<file>]  -- generate the dependency graph\n");
 	mnstr_printf(f, "step             -- advance to next MAL instruction\n");
 	mnstr_printf(f, "module           -- display a module signatures\n");
 	mnstr_printf(f, "atom             -- show atom list\n");
