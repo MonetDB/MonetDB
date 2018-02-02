@@ -1309,8 +1309,6 @@ do_sort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe,
  * parameters may be NULL.  If they're all NULL, this function does
  * nothing.
  *
- * All BATs involved must be dense-headed.
- *
  * If o is specified, it is used to first rearrange b according to the
  * order specified in o, after which b is sorted taking g into
  * account.
@@ -1332,7 +1330,7 @@ do_sort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe,
  * sorted results in (col1s, col2s, col3s):
  *	BATsort(&col1s, &ord1, &grp1, col1, NULL, NULL, 0, 0);
  *	BATsort(&col2s, &ord2, &grp2, col2, ord1, grp1, 0, 0);
- *	BATsort(&col3s, NULL, NULL, col3, ord2, grp2, 0, 0);
+ *	BATsort(&col3s,  NULL,  NULL, col3, ord2, grp2, 0, 0);
  * Note that the "reverse" parameter can be different for each call.
  */
 gdk_return
@@ -1358,7 +1356,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	     (o->ttype == TYPE_void &&	       /* no nil tail */
 	      BATcount(o) != 0 &&
 	      is_oid_nil(o->tseqbase)))) {
-		GDKerror("BATsort: o must be [dense,oid] and same size as b\n");
+		GDKerror("BATsort: o must have type oid and same size as b\n");
 		return GDK_FAIL;
 	}
 	if (g != NULL &&
@@ -1368,7 +1366,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	     (g->ttype == TYPE_void &&	       /* no nil tail */
 	      BATcount(g) != 0 &&
 	      is_oid_nil(g->tseqbase)))) {
-		GDKerror("BATsort: g must be [dense,oid], sorted on the tail, and same size as b\n");
+		GDKerror("BATsort: g must have type oid, sorted on the tail, and same size as b\n");
 		return GDK_FAIL;
 	}
 	assert(reverse == 0 || reverse == 1);
@@ -1437,7 +1435,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	    /* if we want a stable sort, the order index must be
 	     * stable, if we don't want stable, we don't care */
 	    (!stable || ((oid *) pb->torderidx->base)[2])) {
-		/* there is a order index that we can use */
+		/* there is an order index that we can use */
 		on = COLnew(pb->hseqbase, TYPE_oid, BATcount(pb), TRANSIENT);
 		if (on == NULL)
 			goto error;
@@ -1689,8 +1687,8 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	return GDK_FAIL;
 }
 
-/* return a new BAT of length n with a dense head with seqbase hseq,
- * and the constant v in the tail */
+/* return a new BAT of length n with seqbase hseq, and the constant v
+ * in the tail */
 BAT *
 BATconstant(oid hseq, int tailtype, const void *v, BUN n, int role)
 {

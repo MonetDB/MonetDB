@@ -1,0 +1,42 @@
+stdout of test 'overflow.SF-2853458` in directory 'sql/test/BugTracker-2009` itself:
+
+
+# 22:26:13 >  
+# 22:26:13 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm"    --set mapi_open=true --set xrpc_open=true --set mapi_port=35561 --set xrpc_port=42240 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker-2009" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 22:26:13 >  
+
+# MonetDB server v5.14.0, based on kernel v1.32.0
+# Serving database 'mTests_src_test_BugTracker-2009', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:35561/
+# MonetDB/SQL module v2.32.0 loaded
+
+Ready.
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+
+# 22:26:13 >  
+# 22:26:13 >  mclient -lsql -umonetdb -Pmonetdb --host=alf --port=35561 
+# 22:26:13 >  
+
+
+# 11:23:53 >  
+# 11:23:53 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-65872" "--port=34890"
+# 11:23:53 >  
+
+#select cast(power(2,63) as bigint);
+% .L2 # table_name
+% L2 # name
+% bigint # type
+% 19 # length
+[ 9223372036854775807	]
+
+# 11:23:54 >  
+# 11:23:54 >  "Done."
+# 11:23:54 >  
+
