@@ -70,8 +70,6 @@ static struct PIPELINES {
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
 	 "optimizer.emptybind();"
-	 "optimizer.candidates();"
-	 "optimizer.postfix();"
 	 "optimizer.pushselect();"
 	 "optimizer.aliases();"
 	 "optimizer.mitosis();"
@@ -91,6 +89,7 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.postfix();"
 	 "optimizer.deadcode();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
@@ -107,8 +106,6 @@ static struct PIPELINES {
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
 	 "optimizer.emptybind();"
-	 "optimizer.candidates();"
-	 "optimizer.postfix();"
 	 "optimizer.pushselect();"
 	 "optimizer.aliases();"
 	 "optimizer.mitosis();"
@@ -129,6 +126,7 @@ static struct PIPELINES {
 	 "optimizer.volcano();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.postfix();"
 	 "optimizer.deadcode();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
@@ -152,8 +150,6 @@ static struct PIPELINES {
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
 	 "optimizer.emptybind();"
-	 "optimizer.candidates();"
-	 "optimizer.postfix();"
 	 "optimizer.pushselect();"
 	 "optimizer.aliases();"
 	 "optimizer.mergetable();"
@@ -172,6 +168,7 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.postfix();"
 	 "optimizer.deadcode();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
@@ -195,8 +192,6 @@ static struct PIPELINES {
 	 "optimizer.coercions();"
 	 "optimizer.evaluate();"
 	 "optimizer.emptybind();"
-	 "optimizer.candidates();"
-	 "optimizer.postfix();"
 	 "optimizer.pushselect();"
 	 "optimizer.aliases();"
 	 "optimizer.mergetable();"
@@ -214,6 +209,7 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 "optimizer.postfix();"
 	 "optimizer.deadcode();"
 //	 "optimizer.jit();" awaiting the new batcalc api
 //	 "optimizer.oltp();"awaiting the autocommit front-end changes
