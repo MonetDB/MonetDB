@@ -3983,10 +3983,11 @@ def main(argv) :
         w = {}
         for i in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'BITS', 'ARCH', 'INT128', 'SINGLE':
             w[i] = re.escape(v[i])
-        for i in 'INT128', 'SINGLE':
+        for i in 'BITS', 'ARCH', 'INT128', 'SINGLE':
             j = 'TST_'+i
             env[j] = v[i]
             os.environ[j] = v[i]
+        for i in 'INT128', 'SINGLE':
             if v[i]:
                 v[i] = '(.%s)?' % v[i]
                 w[i] = '(\.%s)?' % w[i]
