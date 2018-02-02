@@ -1710,18 +1710,23 @@ def GetBitsAndModsAndThreads(env) :
     env['TST_INT128'] = ""
     env['TST_SINGLE'] = ""
     env['TST_THREADS'] = ""
+    env['TST_ARCH'] = ""
     if qOut:
-        tbos = re.compile("^# Compiled for .*/([63][42]bit)( with 128bit integers|)", re.MULTILINE)
+        tbos = re.compile("^# Compiled for (?P<arch>[^-]+).*/(?P<bits>[63][42]bit)(?P<int128> with 128bit integers|)", re.MULTILINE)
         tt = re.compile("^# Serving database .*, using ([0-9]+) threads?", re.MULTILINE)
         tm = re.compile("^Modules: (.+)$", re.MULTILINE)
         for l in qOut.split('\n'):
             obs = tbos.match(l)
-            if obs:
-                env['TST_BITS'] = obs.group(1)
+            if obs is not None:
+                env['TST_BITS'] = obs.group('bits')
                 os.environ['TST_BITS'] = env['TST_BITS']
-                if obs.group(2) == " with 128bit integers":
+                if obs.group('int128') == " with 128bit integers":
                     env['TST_INT128'] = "int128"
                     os.environ['TST_INT128'] = env['TST_INT128']
+                arch = obs.group('arch')
+                if arch == 'amd64':
+                    arch = 'x86_64' # normalize name
+                env['TST_ARCH'] = arch
             t = tt.match(l)
             if t:
                 if t.group(1) == "1":
@@ -1796,8 +1801,9 @@ def StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) :
     SINGLE = env['TST_SINGLE']
     if SINGLE:
         SINGLE = r"(\.single)?"
+    ARCH = env['TST_ARCH']
     dir,file = os.path.split(TST)
-    outre = re.compile(r'^%s\.stable\.(?P<tp>out|err)(\.(%s(%s)?|%s(%s)?))?(\.%s)?%s%s$' % (re.escape(file), re.escape(SYST), re.escape(RELEASE), re.escape(DIST), re.escape(VERSION), BITS, INT128, SINGLE))
+    outre = re.compile(r'^%s\.stable\.(?P<tp>out|err)(\.(%s(%s)?|%s(%s)?))?(\.(%s|%s))?%s%s$' % (re.escape(file), re.escape(SYST), re.escape(RELEASE), re.escape(DIST), re.escape(VERSION), BITS, ARCH, INT128, SINGLE))
     bestout = besterr = ''
     for f in listdir(dir or os.curdir):
         res = outre.match(f)
@@ -3341,6 +3347,7 @@ def ReadMapproveRc(f) :
     v['BITS'] = ''
     v['INT128'] = ''
     v['SINGLE'] = ''
+    v['ARCH'] = ''
     if os.path.isfile(f):
         r = re.compile('^([A-Z][A-Z0-9_]*) = "(.*)".*$')
         for l in open(f):
@@ -3648,7 +3655,7 @@ def main(argv) :
     elif THISFILE == 'Mapprove.py':
         f = _configure(os.path.join('@QXprefix@',dftTSTPREF,'.Mapprove.rc'))
         v = ReadMapproveRc(f)
-        for i in 'BITS', 'INT128', 'SINGLE':
+        for i in 'INT128', 'SINGLE':
             if v[i]:
                 v[i] = '[.%s]' % v[i]
         options = cmd_options + [
@@ -3657,9 +3664,9 @@ def main(argv) :
              "(default: <ext> = 'out' & 'err')"),
             (None, 'S', 'sys', '<sys>',
              "approve specific output *.<ext><sys>\n"
-             "(<sys> = '[.(<SYST>[<RELEASE>]|<DIST>[<VERSION>])][.(32|64)bit][.int128][.single]',\n"
-             "(default: longest match for <sys> = '[.(%s[%s]|%s[%s])]%s%s%s')"
-              % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['INT128'], v['SINGLE'])),
+             "(<sys> = '[.(<SYST>[<RELEASE>]|<DIST>[<VERSION>])][.((32|64)bit|<ARCH>)][.int128][.single]',\n"
+             "(default: longest match for <sys> = '[.(%s[%s]|%s[%s])][.(%s|%s)%s%s')"
+              % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['ARCH'], v['INT128'], v['SINGLE'])),
             (None, 'f', 'force', None,
              "force approval of error messages (i.e., lines starting with '!')"),
             ('nopatch', None, 'nopatch', None,
@@ -3974,17 +3981,17 @@ def main(argv) :
         os.environ['DISTVER'] = DISTVER
         os.environ['VERSION'] = VERSION
         w = {}
-        for i in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'BITS', 'INT128', 'SINGLE':
+        for i in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'BITS', 'ARCH', 'INT128', 'SINGLE':
             w[i] = re.escape(v[i])
-        for i in 'BITS', 'INT128', 'SINGLE':
+        for i in 'INT128', 'SINGLE':
             j = 'TST_'+i
             env[j] = v[i]
             os.environ[j] = v[i]
             if v[i]:
                 v[i] = '(.%s)?' % v[i]
                 w[i] = '(\.%s)?' % w[i]
-        sv = '^(.(%s(%s)?|%s(%s)?))?%s%s%s$' % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['INT128'], v['SINGLE'])
-        sw = '^(\.(%s(%s)?|%s(%s)?))?%s%s%s$' % (w['SYST'], w['RELEASE'], w['DIST'], w['VERSION'], w['BITS'], w['INT128'], w['SINGLE'])
+        sv = '^(.(%s(%s)?|%s(%s)?))?(.(%s|%s))?%s%s$' % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['ARCH'], v['INT128'], v['SINGLE'])
+        sw = '^(\.(%s(%s)?|%s(%s)?))?(\.(%s|%s))?%s%s$' % (w['SYST'], w['RELEASE'], w['DIST'], w['VERSION'], w['BITS'], w['ARCH'], w['INT128'], w['SINGLE'])
         r = re.compile(sw)
         if not r.match(par['SYSTEM']):
             ErrXit("System (-S) must match '"+sv+"' !")
@@ -4263,6 +4270,7 @@ def main(argv) :
             env['TST_INT128'] = ""
             env['TST_SINGLE'] = ""
             env['TST_THREADS'] = ""
+            env['TST_ARCH'] = ""
             cmd = splitcommand(env['exe']['mserver5'][1])
             cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF))
             if env.get('MULTIFARM'):
@@ -4277,6 +4285,7 @@ def main(argv) :
             STDERR.flush()
             if verbose:
                 print("Bits: " + env['TST_BITS'])
+                print("Arch: " + env['TST_ARCH'])
                 if env['TST_INT128']:
                     print("Integers: 128bit")
                 print("Modules: " + str(env['TST_MODS']))
@@ -4297,7 +4306,7 @@ def main(argv) :
             env['VERSION'] = os.environ['VERSION']
             n = os.path.join(TSTTRGBASE, TSTPREF, '.Mapprove.rc')
             f = open(n, 'w')
-            for v in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_INT128', 'TST_SINGLE':
+            for v in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_ARCH', 'TST_INT128', 'TST_SINGLE':
                 w = v.replace('TST_','')
                 f.write('%s = "%s"\n' % (w, env[v]))
             f.close()
