@@ -585,7 +585,6 @@ str
 startTrace(str path)
 {
 	char buf[FILENAME_MAX];
-	struct stat sb;
 
 	if( path && eventstream == NULL){
 		// create a file to keep the events, unless we
@@ -593,11 +592,9 @@ startTrace(str path)
 		MT_lock_set(&mal_profileLock );
 		if(eventstream == NULL && offlinestore ==0){
 			snprintf(buf,FILENAME_MAX,"%s%c%s",GDKgetenv("gdk_dbpath"), DIR_SEP, path);
-			if (stat(buf, &sb) < 0) { //create directory only when it does not exist
-				if (mkdir(buf, 0755) < 0) {
-					MT_lock_unset(&mal_profileLock);
-					throw(MAL, "profiler.startTrace", SQLSTATE(42000) "Failed to create directory %s", buf);
-				}
+			if (mkdir(buf, 0755) < 0 && errno != EEXIST) {
+				MT_lock_unset(&mal_profileLock);
+				throw(MAL, "profiler.startTrace", SQLSTATE(42000) "Failed to create directory %s", buf);
 			}
 			snprintf(buf,FILENAME_MAX,"%s%c%s%ctrace_%d",GDKgetenv("gdk_dbpath"), DIR_SEP, path,DIR_SEP,tracecounter++ % MAXTRACEFILES);
 			if((eventstream = open_wastream(buf)) == NULL) {
