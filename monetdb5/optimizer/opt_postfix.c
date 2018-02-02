@@ -28,6 +28,7 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) stk;
 	(void) cntxt;
 
+	return MAL_SUCCEED; // Don't use this right now
 	limit = mb->stop;
 	slimit = mb->ssize;
 	/* the first postfix concerns pushing projections into the count()  we check if it is needed*/
