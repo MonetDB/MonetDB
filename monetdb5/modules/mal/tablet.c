@@ -1030,7 +1030,7 @@ SQLload_parse_line(READERtask *task, int idx)
 		  endoffieldcheck:
 			;
 			/* check for user defined NULL string */
-			if (!fmt->skip && (!quote || !fmt->null_length) && fmt->nullstr && task->fields[i][idx] && strncasecmp(task->fields[i][idx], fmt->nullstr, fmt->null_length + 1) == 0)
+			if ((!quote || !fmt->null_length) && fmt->nullstr && task->fields[i][idx] && strncasecmp(task->fields[i][idx], fmt->nullstr, fmt->null_length + 1) == 0)
 				task->fields[i][idx] = 0;
 		}
 	} else {
