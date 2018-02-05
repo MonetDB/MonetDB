@@ -39,6 +39,13 @@
 #include "controlrunner.h"
 #include "multiplex-funnel.h"
 
+#ifndef SOCK_CLOEXEC
+#define SOCK_CLOEXEC	0
+#endif
+
+#ifndef HAVE_ACCEPT4
+#define accept4(sockfd, addr, addrlen, flags)	accept(sockfd, addr, addrlen)
+#endif
 
 static void
 leavedb(char *name)
@@ -979,7 +986,7 @@ controlRunner(void *d)
 			continue;
 		}
 
-		if ((msgsock = accept(usock, (SOCKPTR) 0, (socklen_t *) 0)) == -1) {
+		if ((msgsock = accept4(usock, (SOCKPTR) 0, (socklen_t *) 0, SOCK_CLOEXEC)) == -1) {
 			if (_mero_keep_listening == 0)
 				break;
 			if (errno != EINTR) {
@@ -988,7 +995,9 @@ controlRunner(void *d)
 			}
 			continue;
 		}
-		fcntl(msgsock, F_SETFD, FD_CLOEXEC);
+#if defined(HAVE_FCNTL) && (SOCK_CLOEXEC == 0 || !defined(HAVE_ACCEPT4))
+		(void) fcntl(msgsock, F_SETFD, FD_CLOEXEC);
+#endif
 
 		if (pthread_create(&tid, NULL, handle_client, &msgsock) != 0)
 			closesocket(msgsock);

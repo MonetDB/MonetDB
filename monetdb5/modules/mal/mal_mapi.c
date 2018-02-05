@@ -72,6 +72,14 @@
 #define SOCKLEN int
 #endif
 
+#ifndef SOCK_CLOEXEC
+#define SOCK_CLOEXEC	0
+#endif
+
+#ifndef HAVE_ACCEPT4
+#define accept4(sockfd, addr, addrlen, flags)	accept(sockfd, addr, addrlen)
+#endif
+
 static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
 	'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
 	'y', 'z', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
@@ -342,7 +350,7 @@ SERVERlistenThread(SOCKET *Sock)
 			continue;
 		}
 		if (sock != INVALID_SOCKET && FD_ISSET(sock, &fds)) {
-			if ((msgsock = accept(sock, (SOCKPTR)0, (socklen_t *)0)) == INVALID_SOCKET) {
+			if ((msgsock = accept4(sock, (SOCKPTR)0, (socklen_t *)0, SOCK_CLOEXEC)) == INVALID_SOCKET) {
 				if (
 #ifdef _MSC_VER
 					WSAGetLastError() != WSAEINTR
@@ -355,7 +363,7 @@ SERVERlistenThread(SOCKET *Sock)
 				}
 				continue;
 			}
-#ifdef HAVE_FCNTL
+#if defined(HAVE_FCNTL) && (SOCK_CLOEXEC == 0 || !defined(HAVE_ACCEPT4))
 			(void) fcntl(msgsock, F_SETFD, FD_CLOEXEC);
 #endif
 #ifdef HAVE_SYS_UN_H
@@ -367,7 +375,7 @@ SERVERlistenThread(SOCKET *Sock)
 			char ccmsg[CMSG_SPACE(sizeof(int))];
 			struct cmsghdr *cmsg;
 
-			if ((msgsock = accept(usock, (SOCKPTR)0, (socklen_t *)0)) == INVALID_SOCKET) {
+			if ((msgsock = accept4(usock, (SOCKPTR)0, (socklen_t *)0, SOCK_CLOEXEC)) == INVALID_SOCKET) {
 				if (
 #ifdef _MSC_VER
 					WSAGetLastError() != WSAEINTR
@@ -380,7 +388,7 @@ SERVERlistenThread(SOCKET *Sock)
 				}
 				continue;
 			}
-#ifdef HAVE_FCNTL
+#if defined(HAVE_FCNTL) && (SOCK_CLOEXEC == 0 || !defined(HAVE_ACCEPT4))
 			(void) fcntl(msgsock, F_SETFD, FD_CLOEXEC);
 #endif
 
@@ -606,7 +614,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 	}
 
 	if (port > 0) {
-		sock = socket(AF_INET, SOCK_STREAM, 0);
+		sock = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
 		if (sock == INVALID_SOCKET) {
 			GDKfree(psock);
 			if (usockfile)
@@ -620,7 +628,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 #endif
 				);
 		}
-#ifdef HAVE_FCNTL
+#if SOCK_CLOEXEC == 0 && defined(HAVE_FCNTL)
 		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
 
@@ -699,7 +707,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 	}
 #ifdef HAVE_SYS_UN_H
 	if (usockfile) {
-		usock = socket(AF_UNIX, SOCK_STREAM, 0);
+		usock = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
 		if (usock == INVALID_SOCKET ) {
 			GDKfree(psock);
 			GDKfree(usockfile);
@@ -712,7 +720,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 #endif
 				);
 		}
-#ifdef HAVE_FCNTL
+#if SOCK_CLOEXEC == 0 && defined(HAVE_FCNTL)
 		(void) fcntl(usock, F_SETFD, FD_CLOEXEC);
 #endif
 

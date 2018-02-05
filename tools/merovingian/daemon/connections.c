@@ -25,6 +25,9 @@
 #include "merovingian.h"
 #include "connections.h"
 
+#ifndef SOCK_CLOEXEC
+#define SOCK_CLOEXEC	0
+#endif
 
 err
 openConnectionTCP(int *ret, const char *bindaddr, unsigned short port, FILE *log)
@@ -38,11 +41,13 @@ openConnectionTCP(int *ret, const char *bindaddr, unsigned short port, FILE *log
 	char *host;
 	char hostip[24];
 
-	sock = socket(AF_INET, SOCK_STREAM, 0);
+	sock = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
 	if (sock == -1)
 		return(newErr("creation of stream socket failed: %s",
 					strerror(errno)));
-	fcntl(sock, F_SETFD, FD_CLOEXEC);
+#if SOCK_CLOEXEC == 0
+	(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
+#endif
 
 	if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) < 0) {
 		closesocket(sock);
@@ -124,10 +129,12 @@ openConnectionUDP(int *ret, const char *bindaddr, unsigned short port)
 		return(newErr("failed getting address info: %s", gai_strerror(sock)));
 
 	for (rp = result; rp != NULL; rp = rp->ai_next) {
-		sock = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+		sock = socket(rp->ai_family, rp->ai_socktype | SOCK_CLOEXEC, rp->ai_protocol);
 		if (sock == -1)
 			continue;
-		fcntl(sock, F_SETFD, FD_CLOEXEC);
+#if SOCK_CLOEXEC == 0
+		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
+#endif
 
 		if (bind(sock, rp->ai_addr, rp->ai_addrlen) != -1)
 			break; /* working */
@@ -165,11 +172,13 @@ openConnectionUNIX(int *ret, const char *path, int mode, FILE *log)
 	if (strlen(path) >= sizeof(server.sun_path))
 		return newErr("pathname for UNIX stream socket too long");
 
-	sock = socket(AF_UNIX, SOCK_STREAM, 0);
+	sock = socket(AF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0);
 	if (sock == -1)
 		return(newErr("creation of UNIX stream socket failed: %s",
 					strerror(errno)));
-	fcntl(sock, F_SETFD, FD_CLOEXEC);
+#if SOCK_CLOEXEC == 0
+	(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
+#endif
 
 	memset(&server, 0, sizeof(struct sockaddr_un));
 	server.sun_family = AF_UNIX;

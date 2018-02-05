@@ -154,7 +154,7 @@ void reinitialize(void)
 				"'%s': %s\n", f, strerror(errno));
 	} else {
 #if O_CLOEXEC == 0
-		fcntl(t, F_SETFD, FD_CLOEXEC);
+		(void) fcntl(t, F_SETFD, FD_CLOEXEC);
 #endif
 		Mfprintf(_mero_logfile, "%s END merovingian[" LLFMT "]: "
 				"caught SIGHUP, closing logfile\n",

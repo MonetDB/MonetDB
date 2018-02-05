@@ -774,6 +774,10 @@
 #define INVALID_SOCKET (-1)
 #endif
 
+#ifndef SOCK_CLOEXEC
+#define SOCK_CLOEXEC	0
+#endif
+
 #define MAPIBLKSIZE	256	/* minimum buffer shipped */
 
 /* information about the columns in a result set */
@@ -2365,7 +2369,7 @@ mapi_reconnect(Mapi mid)
 			return mapi_setError(mid, "path name too long", "mapi_reconnect", MERROR);
 		}
 
-		if ((s = socket(PF_UNIX, SOCK_STREAM, 0)) == INVALID_SOCKET) {
+		if ((s = socket(PF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0)) == INVALID_SOCKET) {
 			snprintf(errbuf, sizeof(errbuf),
 				 "opening socket failed: %s",
 #ifdef _MSC_VER
@@ -2376,7 +2380,7 @@ mapi_reconnect(Mapi mid)
 				);
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
-#ifdef HAVE_FCNTL
+#if SOCK_CLOEXEC == 0 && defined(HAVE_FCNTL)
 		(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
 		memset(&userver, 0, sizeof(struct sockaddr_un));
@@ -2442,10 +2446,10 @@ mapi_reconnect(Mapi mid)
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 		for (rp = res; rp; rp = rp->ai_next) {
-			s = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+			s = socket(rp->ai_family, rp->ai_socktype | SOCK_CLOEXEC, rp->ai_protocol);
 			if (s == INVALID_SOCKET)
 				continue;
-#ifdef HAVE_FCNTL
+#if SOCK_CLOEXEC == 0 && defined(HAVE_FCNTL)
 			(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
 			if (connect(s, rp->ai_addr, (socklen_t) rp->ai_addrlen) != SOCKET_ERROR)
@@ -2486,7 +2490,7 @@ mapi_reconnect(Mapi mid)
 		memcpy(&server.sin_addr, hp->h_addr_list[0], hp->h_length);
 		server.sin_family = hp->h_addrtype;
 		server.sin_port = htons((unsigned short) (mid->port & 0xFFFF));
-		s = socket(server.sin_family, SOCK_STREAM, IPPROTO_TCP);
+		s = socket(server.sin_family, SOCK_STREAM | SOCK_CLOEXEC, IPPROTO_TCP);
 
 		if (s == INVALID_SOCKET) {
 			snprintf(errbuf, sizeof(errbuf), "opening socket failed: %s",
@@ -2498,7 +2502,7 @@ mapi_reconnect(Mapi mid)
 				);
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
-#ifdef HAVE_FCNTL
+#if SOCK_CLOEXEC == 0 && defined(HAVE_FCNTL)
 		(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
 

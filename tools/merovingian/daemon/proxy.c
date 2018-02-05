@@ -27,6 +27,9 @@
 #include "merovingian.h"
 #include "proxy.h"
 
+#ifndef SOCK_CLOEXEC
+#define SOCK_CLOEXEC	0
+#endif
 
 typedef struct _merovingian_proxy {
 	stream *in;      /* the input to read from and to dispatch to out */
@@ -136,10 +139,12 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		server.sun_family = AF_UNIX;
 		strncpy(server.sun_path, conn, sizeof(server.sun_path) - 1);
 		free(conn);
-		if ((ssock = socket(PF_UNIX, SOCK_STREAM, 0)) == -1) {
+		if ((ssock = socket(PF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0)) == -1) {
 			return(newErr("cannot open socket: %s", strerror(errno)));
 		}
-		fcntl(ssock, F_SETFD, FD_CLOEXEC);
+#if SOCK_CLOEXEC == 0
+		(void) fcntl(ssock, F_SETFD, FD_CLOEXEC);
+#endif
 		if (connect(ssock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) == -1) {
 			closesocket(ssock);
 			return(newErr("cannot connect: %s", strerror(errno)));
@@ -208,11 +213,13 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		serv = (struct sockaddr *) &server;
 		servsize = sizeof(server);
 
-		ssock = socket(serv->sa_family, SOCK_STREAM, IPPROTO_TCP);
+		ssock = socket(serv->sa_family, SOCK_STREAM | SOCK_CLOEXEC, IPPROTO_TCP);
 		if (ssock == -1) {
 			return(newErr("cannot open socket: %s", strerror(errno)));
 		}
-		fcntl(ssock, F_SETFD, FD_CLOEXEC);
+#if SOCK_CLOEXEC == 0
+		(void) fcntl(ssock, F_SETFD, FD_CLOEXEC);
+#endif
 
 		if (connect(ssock, serv, servsize) == -1) {
 			closesocket(ssock);

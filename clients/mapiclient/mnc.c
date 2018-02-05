@@ -58,6 +58,13 @@
 #define SOCKLEN int
 #endif
 
+#ifndef SOCK_CLOEXEC
+#define SOCK_CLOEXEC		0
+#endif
+
+#ifndef HAVE_ACCEPT4
+#define accept4(sockfd, addr, addlen, flags)	accept(sockfd, addr, addrlen)
+#endif
 
 static void
 usage(void)
@@ -165,15 +172,15 @@ main(int argc, char **argv)
 			exit(1);
 		}
 		for (rp = res; rp; rp = rp->ai_next) {
-			s = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+			s = socket(rp->ai_family, rp->ai_socktype | SOCK_CLOEXEC, rp->ai_protocol);
 			if (s == INVALID_SOCKET)
 				continue;
 			if (connect(s, rp->ai_addr, (socklen_t) rp->ai_addrlen) != SOCKET_ERROR)
 				break;  /* success */
 			closesocket(s);
 		}
-#ifdef HAVE_FCNTL
-		fcntl(s, F_SETFD, FD_CLOEXEC);
+#if SOCK_CLOEXEC == 0 && defined(HAVE_FCNTL)
+		(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
 		freeaddrinfo(res);
 		if (rp == NULL) {
@@ -194,14 +201,14 @@ main(int argc, char **argv)
 		memcpy(&server.sin_addr, hp->h_addr_list[0], hp->h_length);
 		server.sin_family = hp->h_addrtype;
 		server.sin_port = htons((unsigned short) (port & 0xFFFF));
-		s = socket(server.sin_family, SOCK_STREAM, IPPROTO_TCP);
+		s = socket(server.sin_family, SOCK_STREAM | SOCK_CLOEXEC, IPPROTO_TCP);
 
 		if (s == INVALID_SOCKET) {
 			fprintf(stderr, "opening socket failed: %s\n", strerror(errno));
 			exit(1);
 		}
-#ifdef HAVE_FCNTL
-		fcntl(s, F_SETFD, FD_CLOEXEC);
+#if SOCK_CLOEXEC == 0 && defined(HAVE_FCNTL)
+		(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
 
 		if (connect(s, serv, sizeof(server)) == SOCKET_ERROR) {
@@ -223,12 +230,12 @@ main(int argc, char **argv)
 			exit(1);
 		}
 
-		if ((sock = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET) {
+		if ((sock = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0)) == INVALID_SOCKET) {
 			fprintf(stderr, "failed to create socket: %s\n", strerror(errno));
 			exit(1);
 		}
-#ifdef HAVE_FCNTL
-		fcntl(sock, F_SETFD, FD_CLOEXEC);
+#if SOCK_CLOEXEC == 0 && defined(HAVE_FCNTL)
+		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
 
 		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on);
@@ -247,13 +254,13 @@ main(int argc, char **argv)
 		}
 
 		listen(sock, 1);
-		if ((s = accept(sock, (SOCKPTR)0, (socklen_t *)0)) == INVALID_SOCKET) {
+		if ((s = accept4(sock, (SOCKPTR)0, (socklen_t *)0, SOCK_CLOEXEC)) == INVALID_SOCKET) {
 			fprintf(stderr, "failed to accept connection: %s\n",
 					strerror(errno));
 			exit(1);
 		}
-#ifdef HAVE_FCNTL
-		fcntl(s, F_SETFD, FD_CLOEXEC);
+#if defined(HAVE_FCNTL) && (SOCK_CLOEXEC == 0 || !defined(HAVE_ACCEPT4))
+		(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
 	}
 
