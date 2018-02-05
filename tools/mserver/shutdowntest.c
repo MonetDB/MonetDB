@@ -34,7 +34,7 @@ static char* dbdir = NULL;
 #define LOAD_SQL_FUNCTION_PTR(fcnname)                                             \
     fcnname##_ptr = (fcnname##_ptr_tpe) getAddress(NULL, "lib_sql.dll", #fcnname, 0); \
     if (fcnname##_ptr == NULL) {                                                           \
-        retval = GDKstrdup(#fcnname);  \
+        retval = #fcnname;  \
     }
 
 CREATE_SQL_FUNCTION_PTR(int,SQLautocommit);
@@ -101,6 +101,7 @@ static str monetdb_initialize(void) {
 	opt *set = NULL;
 	volatile int setlen = 0; /* use volatile for setjmp */
 	str retval = MAL_SUCCEED;
+	char *err;
 	char prmodpath[1024];
 	char *modpath = NULL;
 	char *binpath = NULL;
@@ -224,7 +225,9 @@ static str monetdb_initialize(void) {
 						"unable to open vault_key_file %s: %s",
 						GDKgetenv("monet_vault_key"), strerror(errno));
 				/* don't show this as a crash */
-				msab_registerStop();
+				err = msab_registerStop();
+				if (err)
+					free(err);
 				GDKfatal("%s", secret);
 			}
 			len = fread(secret, 1, sizeof(secret), secretf);
@@ -233,7 +236,9 @@ static str monetdb_initialize(void) {
 			if (len == 0) {
 				snprintf(secret, sizeof(secret), "vault key has zero-length!");
 				/* don't show this as a crash */
-				msab_registerStop();
+				err = msab_registerStop();
+				if (err)
+					free(err);
 				GDKfatal("%s", secret);
 			} else if (len < 5) {
 				fprintf(stderr, "#warning: your vault key is too short "
@@ -243,14 +248,18 @@ static str monetdb_initialize(void) {
 		}
 		if ((retval = AUTHunlockVault(secretp)) != MAL_SUCCEED) {
 			/* don't show this as a crash */
-			msab_registerStop();
+			err = msab_registerStop();
+			if (err)
+				free(err);
 			GDKfatal("%s", retval);
 		}
 	}
 	/* make sure the authorisation BATs are loaded */
 	if ((retval = AUTHinitTables(NULL)) != MAL_SUCCEED) {
 		/* don't show this as a crash */
-		msab_registerStop();
+		err = msab_registerStop();
+		if (err)
+			free(err);
 		GDKfatal("%s", retval);
 	}
 
@@ -268,6 +277,7 @@ static str monetdb_initialize(void) {
 
 	if (retval != MAL_SUCCEED) {
 		printf("Failed to load SQL function: %s\n", retval);
+		retval = GDKstrdup(retval);
 		goto cleanup;
 	}
 

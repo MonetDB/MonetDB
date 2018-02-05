@@ -258,12 +258,10 @@ newErr(const char *fmt, ...)
 	va_list ap;
 	char message[4096];
 	char *ret;
-	int len;
 
 	va_start(ap, fmt);
 
-	len = vsnprintf(message, 4095, fmt, ap);
-	message[len] = '\0';
+	(void) vsnprintf(message, sizeof(message), fmt, ap);
 
 	va_end(ap);
 
@@ -346,11 +344,12 @@ main(int argc, char *argv[])
 	if (_mero_mserver != NULL) {
 		/* Find where the string monetdbd actually starts */
 		char *s = strstr(_mero_mserver, "monetdbd");
-		if (s != NULL && strncmp(s, "monetdbd", 8) == 0) {
+		if (s != NULL) {
 			/* Replace the 8 following characters with the characters mserver5.
 			 * This should work even if the executables have prefixes or
 			 * suffixes */
-			strncpy(s, "mserver5", 8);
+			for (int i = 0; i < 8; i++)
+				s[i] = "mserver5"[i];
 			if (stat(_mero_mserver, &sb) == -1)
 				_mero_mserver = NULL;
 		}
