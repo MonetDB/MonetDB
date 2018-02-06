@@ -883,7 +883,7 @@ has_whitespace(const char *s)
 str
 mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, char *sep, char *rsep, char *ssep, char *ns, lng sz, lng offset, int locked, int best)
 {
-	int i = 0;
+	int i = 0, j;
 	node *n;
 	Tablet as;
 	Column *fmt;
@@ -950,6 +950,17 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			fmt[i].extra = col;
 			fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
 			fmt[i].data = GDKzalloc(fmt[i].len);
+			if(fmt[i].data == NULL || fmt[i].type == NULL) {
+				for (j = 0; j < i; j++) {
+					GDKfree(fmt[j].type);
+					GDKfree(fmt[j].data);
+					BBPunfix(fmt[j].c->batCacheid);
+				}
+				GDKfree(fmt[i].type);
+				GDKfree(fmt[i].data);
+				sql_error(m, 500, "failed to allocate space for column");
+				return NULL;
+			}
 			fmt[i].c = NULL;
 			fmt[i].ws = !has_whitespace(fmt[i].sep);
 			fmt[i].quote = ssep ? ssep[0] : 0;
@@ -968,8 +979,17 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 
 			if (locked) {
 				BAT *b = store_funcs.bind_col(m->session->tr, col, RDONLY);
-				if (b == NULL)
+				if (b == NULL) {
+					for (j = 0; j < i; j++) {
+						GDKfree(fmt[j].type);
+						GDKfree(fmt[j].data);
+						BBPunfix(fmt[j].c->batCacheid);
+					}
+					GDKfree(fmt[i].type);
+					GDKfree(fmt[i].data);
 					sql_error(m, 500, "failed to bind to table column");
+					return NULL;
+				}
 
 				HASHdestroy(b);
 
@@ -977,8 +997,11 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 				cnt = BATcount(b);
 				if (sz > 0 && BATcapacity(b) < (BUN) sz) {
 					if (BATextend(fmt[i].c, (BUN) sz) != GDK_SUCCEED) {
-						for (i--; i >= 0; i--)
-							BBPunfix(fmt[i].c->batCacheid);
+						for (j = 0; j <= i; j++) {
+							GDKfree(fmt[j].type);
+							GDKfree(fmt[j].data);
+							BBPunfix(fmt[j].c->batCacheid);
+						}
 						sql_error(m, 500, "failed to allocate space for column");
 						return NULL;
 					}
@@ -992,6 +1015,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 				(best || !as.error))) {
 				*bats = (BAT**) GDKzalloc(sizeof(BAT *) * as.nr_attrs);
 				if ( *bats == NULL){
+					sql_error(m, 500, "failed to allocate space for column");
 					TABLETdestroy_format(&as);
 					return NULL;
 				}
@@ -1807,6 +1831,12 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 	as.offset = offset;
 	fmt = as.format = (Column *) GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
 	tres = GDKzalloc(sizeof(struct time_res) * (as.nr_attrs));
+	if(fmt == NULL || tres == NULL) {
+		GDKfree(fmt);
+		GDKfree(tres);
+		sql_error(m, 500, "failed to allocate space");
+		return -1;
+	}
 
 	fmt[0].c = NULL;
 	fmt[0].sep = (csv) ? btag : "";

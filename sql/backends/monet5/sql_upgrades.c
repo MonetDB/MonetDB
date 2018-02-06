@@ -889,7 +889,7 @@ sql_update_jul2017_sp3(Client c, mvc *sql)
 		size_t bufsize = 1024, pos = 0;
 		char *buf = GDKmalloc(bufsize);
 		if (buf == NULL)
-			throw(SQL, "sql_update_jul2017_sp3", MAL_MALLOC_FAIL);
+			throw(SQL, "sql_update_jul2017_sp3", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		pos += snprintf(
 			buf + pos,
 			bufsize - pos,
