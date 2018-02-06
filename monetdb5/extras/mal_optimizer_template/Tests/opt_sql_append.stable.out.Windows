@@ -57,20 +57,17 @@ Ready.
 #set optimizer = 'sequential_pipe'; -- to get predictable errors
 #create table ttt (a int, b int, c int);
 #select optimizer;
-% . # table_name
-# .L2 # table_name
-% L # name
-# L2 # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 15 # length
 [ "sequential_pipe"     ]
 #select def from optimizers() where name = optimizer;
-% . # table_name
-# .L1 # table_name
+% .L1 # table_name
 % def # name
 % clob # type
-% 519 # length
-[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.reorder();optimizer.deadcode();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.wlc();optimizer.garbageCollector();"     ]
+% 560 # length
+[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.reorder();optimizer.deadcode();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.postfix();optimizer.deadcode();optimizer.wlc();optimizer.garbageCollector();"	]
 #explain copy into ttt from 'a:\tmp/xyz';
 % .explain # table_name
 % mal # name
@@ -115,20 +112,17 @@ end user.s10_1;
 #set opt_pipe_def  = ( select def from optimizers() where name = opt_pipe_name );
 #set optimizer = substring(opt_pipe_def,0,length(opt_pipe_def)-length('optimizer.garbageCollector();')) || 'optimizer.sql_append();optimizer.garbageCollector();';
 #select optimizer;
-% . # table_name
-# .L2 # table_name
-% L # name
-# L2 # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 6 # length
 [ "user_1"      ]
 #select def from optimizers() where name = optimizer;
-% . # table_name
-# .L1 # table_name
+% .L1 # table_name
 % def # name
 % clob # type
-% 542 # length
-[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.reorder();optimizer.deadcode();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.wlc();optimizer.sql_append();optimizer.garbageCollector();"      ]
+% 583 # length
+[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.reorder();optimizer.deadcode();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.postfix();optimizer.deadcode();optimizer.wlc();optimizer.sql_append();optimizer.garbageCollector();"	]
 #explain copy into ttt from 'Z:/tmp/xyz';
 % .explain # table_name
 % mal # name
