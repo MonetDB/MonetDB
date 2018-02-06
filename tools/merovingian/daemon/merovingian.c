@@ -77,9 +77,12 @@
 #include "multiplex-funnel.h"
 
 #ifndef O_CLOEXEC
-#define O_CLOEXEC 0
+#define O_CLOEXEC		0
 #endif
 
+#ifndef HAVE_PIPE2
+#define pipe2(pipefd, flags)	pipe(pipefd)
+#endif
 
 /* private structs */
 
@@ -248,12 +251,10 @@ newErr(const char *fmt, ...)
 	va_list ap;
 	char message[4096];
 	char *ret;
-	int len;
 
 	va_start(ap, fmt);
 
-	len = vsnprintf(message, 4095, fmt, ap);
-	message[len] = '\0';
+	(void) vsnprintf(message, sizeof(message), fmt, ap);
 
 	va_end(ap);
 
@@ -336,11 +337,13 @@ main(int argc, char *argv[])
 	if (_mero_mserver != NULL) {
 		/* Find where the string monetdbd actually starts */
 		char *s = strstr(_mero_mserver, "monetdbd");
-		if (s != NULL && strncmp(s, "monetdbd", 8) == 0) {
+		if (s != NULL) {
 			/* Replace the 8 following characters with the characters mserver5.
 			 * This should work even if the executables have prefixes or
 			 * suffixes */
-			strncpy(s, "mserver5", 8);
+			int i;
+			for (i = 0; i < 8; i++)
+				s[i] = "mserver5"[i];
 			if (stat(_mero_mserver, &sb) == -1)
 				_mero_mserver = NULL;
 		}
@@ -451,7 +454,7 @@ main(int argc, char *argv[])
 		/* Fork into the background immediately.  By doing this, our child
 		 * can simply do everything it needs to do itself.  Via a pipe it
 		 * will tell us if it is happy or not. */
-		if (pipe(pfd) == -1) {
+		if (pipe2(pfd, O_CLOEXEC) == -1) {
 			Mfprintf(stderr, "unable to create pipe: %s\n", strerror(errno));
 			return(1);
 		}
@@ -472,8 +475,10 @@ main(int argc, char *argv[])
 				close(retfd);
 				close(pfd[0]); /* close unused read end */
 				retfd = pfd[1]; /* store the write end */
-				fcntl(retfd, F_SETFD, FD_CLOEXEC);
-			break;
+#if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
+				(void) fcntl(retfd, F_SETFD, FD_CLOEXEC);
+#endif
+				break;
 			default:
 				/* the parent, we want it to die, after we know the child
 				 * is having a good time */
@@ -663,7 +668,7 @@ main(int argc, char *argv[])
 		MERO_EXIT_CLEAN(1);
 	}
 #if O_CLOEXEC == 0
-	fcntl(_mero_topdp->out, F_SETFD, FD_CLOEXEC);
+	(void) fcntl(_mero_topdp->out, F_SETFD, FD_CLOEXEC);
 #endif
 	_mero_topdp->err = _mero_topdp->out;
 
@@ -672,31 +677,46 @@ main(int argc, char *argv[])
 	d = _mero_topdp->next = &dpmero;
 
 	/* redirect stdout */
-	if (pipe(pfd) == -1) {
+	if (pipe2(pfd, O_CLOEXEC) == -1) {
 		Mfprintf(stderr, "unable to create pipe: %s\n",
 				strerror(errno));
 		MERO_EXIT(1);
 	}
+#if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
+	(void) fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
+#endif
 	d->out = pfd[0];
 	dup2(pfd[1], 1);
 	close(pfd[1]);
-	fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
 
 	/* redirect stderr */
-	if (pipe(pfd) == -1) {
+	if (pipe2(pfd, O_CLOEXEC) == -1) {
 		Mfprintf(stderr, "unable to create pipe: %s\n",
 				strerror(errno));
 		MERO_EXIT(1);
 	}
+#if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
+	(void) fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
+#endif
 	/* before it is too late, save original stderr */
-	oerr = fdopen(dup(2), "w");
+#ifdef F_DUPFD_CLOEXEC
+	if ((ret = fcntl(2, F_DUPFD_CLOEXEC, 3)) < 0) {
+		Mfprintf(stderr, "unable to dup stderr\n");
+		MERO_EXIT(1);
+	}
+#else
+	if ((ret = dup(2)) < 0) {
+		Mfprintf(stderr, "unable to dup stderr\n");
+		MERO_EXIT(1);
+	}
+	(void) fcntl(ret, F_SETFD, FD_CLOEXEC);
+#endif
+	oerr = fdopen(ret, "w");
 	if (oerr == NULL) {
 		Mfprintf(stderr, "unable to dup stderr\n");
 		MERO_EXIT(1);
 	}
-	fcntl(fileno(oerr), F_SETFD, FD_CLOEXEC);
 	d->err = pfd[0];
-	fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
 	dup2(pfd[1], 2);
 	close(pfd[1]);
 
@@ -707,22 +727,26 @@ main(int argc, char *argv[])
 
 	/* separate entry for the neighbour discovery service */
 	d = d->next = &dpdisc;
-	if (pipe(pfd) == -1) {
+	if (pipe2(pfd, O_CLOEXEC) == -1) {
 		Mfprintf(stderr, "unable to create pipe: %s\n",
 				strerror(errno));
 		MERO_EXIT(1);
 	}
-	fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
-	fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
+#if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
+	(void) fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
+	(void) fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
+#endif
 	d->out = pfd[0];
 	_mero_discout = fdopen(pfd[1], "a");
-	if (pipe(pfd) == -1) {
+	if (pipe2(pfd, O_CLOEXEC) == -1) {
 		Mfprintf(stderr, "unable to create pipe: %s\n",
 				strerror(errno));
 		MERO_EXIT(1);
 	}
-	fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
-	fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
+#if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
+	(void) fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
+	(void) fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
+#endif
 	d->err = pfd[0];
 	_mero_discerr = fdopen(pfd[1], "a");
 	d->pid = getpid();
@@ -733,22 +757,26 @@ main(int argc, char *argv[])
 
 	/* separate entry for the control runner */
 	d = d->next = &dpcont;
-	if (pipe(pfd) == -1) {
+	if (pipe2(pfd, O_CLOEXEC) == -1) {
 		Mfprintf(stderr, "unable to create pipe: %s\n",
 				strerror(errno));
 		MERO_EXIT(1);
 	}
-	fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
-	fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
+#if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
+	(void) fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
+	(void) fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
+#endif
 	d->out = pfd[0];
 	_mero_ctlout = fdopen(pfd[1], "a");
-	if (pipe(pfd) == -1) {
+	if (pipe2(pfd, O_CLOEXEC) == -1) {
 		Mfprintf(stderr, "unable to create pipe: %s\n",
 				strerror(errno));
 		MERO_EXIT(1);
 	}
-	fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
-	fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
+#if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
+	(void) fcntl(pfd[0], F_SETFD, FD_CLOEXEC);
+	(void) fcntl(pfd[1], F_SETFD, FD_CLOEXEC);
+#endif
 	d->err = pfd[0];
 	_mero_ctlerr = fdopen(pfd[1], "a");
 	d->pid = getpid();
@@ -832,7 +860,11 @@ main(int argc, char *argv[])
 		pthread_t dtid = 0;
 
 		if (discovery == 1) {
-			_mero_broadcastsock = socket(AF_INET, SOCK_DGRAM, 0);
+			_mero_broadcastsock = socket(AF_INET, SOCK_DGRAM
+#ifdef SOCK_CLOEXEC
+										 | SOCK_CLOEXEC
+#endif
+										 , 0);
 			ret = 1;
 			if (_mero_broadcastsock == -1 ||
 				setsockopt(_mero_broadcastsock,
@@ -843,7 +875,9 @@ main(int argc, char *argv[])
 				closesocket(discsock);
 				discsock = -1;
 			}
-			fcntl(_mero_broadcastsock, F_SETFD, FD_CLOEXEC);
+#ifndef SOCK_CLOEXEC
+			(void) fcntl(_mero_broadcastsock, F_SETFD, FD_CLOEXEC);
+#endif
 
 			_mero_broadcastaddr.sin_family = AF_INET;
 			_mero_broadcastaddr.sin_addr.s_addr = htonl(INADDR_BROADCAST);

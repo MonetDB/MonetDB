@@ -2606,6 +2606,7 @@ AC_FUNC_FSEEKO
 save_LIBS="$LIBS"
 LIBS="$LIBS $MATH_LIBS"
 AC_CHECK_FUNCS([\
+	accept4 \
 	asctime_r \
 	backtrace \
 	cbrt \
@@ -2627,6 +2628,7 @@ AC_CHECK_FUNCS([\
 	mremap \
 	nl_langinfo \
 	_NSGetExecutablePath \
+	pipe2 \
 	popen \
 	posix_fadvise \
 	posix_fallocate \

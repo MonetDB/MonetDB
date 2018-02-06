@@ -892,10 +892,6 @@ c99_snprintf(char *outBuf, size_t size, const char *format, ...)
 #define ssize_t int
 #endif
 
-/* normally defined in fcntl.h, but not on Windows */
-#define O_CLOEXEC 0
-
-
 typedef int64_t lng;
 typedef uint64_t ulng;
 #define SIZEOF_LNG 8
