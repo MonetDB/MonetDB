@@ -1115,8 +1115,8 @@ fcnHeader(Client cntxt, int kind)
 	cntxt->backup = cntxt->curprg;
 	cntxt->curprg = newFunction( modnme, fnme, kind);
 	if(cntxt->curprg == NULL) {
-		parseError(cntxt, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		cntxt->curprg = cntxt->backup;
+		parseError(cntxt, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return 0;
 	}
 	cntxt->curprg->def->errors = cntxt->backup->def->errors;
@@ -1559,7 +1559,7 @@ parseAssign(Client cntxt, int cntrl)
 				pushInstruction(curBlk, curInstr);
 				return;
 			}
-			GETvariable((void) 0);
+			GETvariable(freeInstruction(curInstr));
 			if (currChar(cntxt) == ':') {
 				setVarUDFtype(curBlk, varid);
 				type = typeElm(cntxt, getVarType(curBlk, varid));
@@ -1611,7 +1611,7 @@ parseAssign(Client cntxt, int cntrl)
 		}
 
 		/* Get target variable details*/
-		GETvariable((void) 0);
+		GETvariable(freeInstruction(curInstr));
 		if (!(currChar(cntxt) == ':' && CURRENT(cntxt)[1] == '=')) {
 			curInstr->argv[0] = varid;
 			if (currChar(cntxt) == ':') {

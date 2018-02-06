@@ -285,7 +285,7 @@ setProp(char *path, char *key, char *val)
 	/* ok, if we've reached this point we can write this stuff out! */
 	/* Let's check if this was a default property of an additional one.
 	 * Non-default properties will have a NULL kv */
-	if (kv == NULL) {
+	if (kv == NULL && val != NULL) {
 		confkeyval *addProperty = (struct _confkeyval *) malloc(sizeof(struct _confkeyval));
 		addProperty->key = strdup(key);
 		addProperty->val = strdup(val);

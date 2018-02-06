@@ -195,7 +195,7 @@ CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fcnName = putName(*fcn);
 		modName = putName(*mod);
 		ahelp = GDKstrdup(*help);
-		if(fcnName == NULL || modName == NULL || help == NULL) {
+		if(fcnName == NULL || modName == NULL || ahelp == NULL) {
 			freeSymbol(sym);
 			GDKfree(ahelp);
 			throw(MAL, "language.register", SQLSTATE(HY001) MAL_MALLOC_FAIL);

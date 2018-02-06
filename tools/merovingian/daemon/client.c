@@ -34,6 +34,10 @@
 #include "client.h"
 #include "handlers.h"
 
+#if !defined(HAVE_ACCEPT4) || !defined(SOCK_CLOEXEC)
+#define accept4(sockfd, addr, addrlen, flags)	accept(sockfd, addr, addrlen)
+#endif
+
 struct threads {
 	struct threads *next;
 	pthread_t tid;
@@ -487,7 +491,7 @@ acceptConnections(int sock, int usock)
 			continue;
 		}
 		if (FD_ISSET(sock, &fds)) {
-			if ((msgsock = accept(sock, (SOCKPTR)0, (socklen_t *) 0)) == -1) {
+			if ((msgsock = accept4(sock, (SOCKPTR)0, (socklen_t *) 0, SOCK_CLOEXEC)) == -1) {
 				if (_mero_keep_listening == 0)
 					break;
 				if (errno != EINTR) {
@@ -496,7 +500,9 @@ acceptConnections(int sock, int usock)
 				}
 				continue;
 			}
-			fcntl(msgsock, F_SETFD, FD_CLOEXEC);
+#if defined(HAVE_FCNTL) && (!defined(SOCK_CLOEXEC) || !defined(HAVE_ACCEPT4))
+			(void) fcntl(msgsock, F_SETFD, FD_CLOEXEC);
+#endif
 		} else if (FD_ISSET(usock, &fds)) {
 			struct msghdr msgh;
 			struct iovec iov;
@@ -504,7 +510,7 @@ acceptConnections(int sock, int usock)
 			int rv;
 			char ccmsg[CMSG_SPACE(sizeof(int))];
 
-			if ((msgsock = accept(usock, (SOCKPTR)0, (socklen_t *)0)) == -1) {
+			if ((msgsock = accept4(usock, (SOCKPTR)0, (socklen_t *)0, SOCK_CLOEXEC)) == -1) {
 				if (_mero_keep_listening == 0)
 					break;
 				if (errno != EINTR) {
@@ -513,7 +519,9 @@ acceptConnections(int sock, int usock)
 				}
 				continue;
 			}
-			fcntl(usock, F_SETFD, FD_CLOEXEC);
+#if defined(HAVE_FCNTL) && (!defined(SOCK_CLOEXEC) || !defined(HAVE_ACCEPT4))
+			(void) fcntl(usock, F_SETFD, FD_CLOEXEC);
+#endif
 
 			/* BEWARE: unix domain sockets have a slightly different
 			 * behaviour initialy than normal sockets, because we can
