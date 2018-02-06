@@ -333,6 +333,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("STRIDE", STRIDE);
 	failed += keywords_insert("HEARTBEAT", HEARTBEAT);
 	failed += keywords_insert("CYCLES", CYCLES);
+	failed += keywords_insert("CLOCK", CLOCK);
 	failed += keywords_insert("RESUME", RESUME);
 	failed += keywords_insert("TRANSACTION", TRANSACTION);
 	failed += keywords_insert("READ", READ);
@@ -1348,8 +1349,8 @@ sqllex(YYSTYPE * yylval, void *parm)
 			case HEARTBEAT:
 				token = NO_HEARTBEAT;
 			break;
-			case BEGIN:
-				token = NO_BEGIN;
+			case CLOCK:
+				token = NO_CLOCK;
 			break;
 			case CYCLES:
 				token = NO_CYCLES;
