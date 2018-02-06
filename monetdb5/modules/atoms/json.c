@@ -2206,7 +2206,7 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 					}
 				} else {
 					len = strlen(v);
-					if (len >= maxlen) {
+					if (len + 7 >= maxlen) {
 						maxlen += len + BUFSIZ;
 						buf2 = GDKrealloc(buf, maxlen);
 						if (buf2 == NULL) {
@@ -2217,10 +2217,10 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 					}
 					switch (b->ttype) {
 					case TYPE_str:
-						len = snprintf(buf, maxlen, "[ \"%s\" ]", v);
+						snprintf(buf, maxlen, "[ \"%s\" ]", v);
 						break;
 					case TYPE_dbl:
-						len = snprintf(buf, maxlen, "[ %s ]", v);
+						snprintf(buf, maxlen, "[ %s ]", v);
 						break;
 					}
 				}

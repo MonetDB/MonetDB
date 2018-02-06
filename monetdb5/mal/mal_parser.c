@@ -948,9 +948,10 @@ static str parseModule(Client cntxt)
 		return parseError(cntxt, "<module path> expected\n");
 	modnme = putNameLen(nxt, l);
 	advance(cntxt, l);
-	if( ! isModuleDefined(cntxt->nspace,modnme))
-		newModule(NULL,modnme);
-	cntxt->nspace = fixModule(cntxt->nspace, modnme);
+	if( ! isModuleDefined(cntxt->nspace,modnme) && strcmp(modnme, "user") != 0)
+		cntxt->nspace = newModule(NULL,modnme);
+	else
+		cntxt->nspace = fixModule(cntxt->nspace, modnme);
 	skipSpace(cntxt);
 	helpInfo(cntxt, &cntxt->nspace->help);
 	return "";
@@ -1110,8 +1111,8 @@ fcnHeader(Client cntxt, int kind)
 	cntxt->backup = cntxt->curprg;
 	cntxt->curprg = newFunction( modnme, fnme, kind);
 	if(cntxt->curprg == NULL) {
-		parseError(cntxt, MAL_MALLOC_FAIL);
 		cntxt->curprg = cntxt->backup;
+		parseError(cntxt, MAL_MALLOC_FAIL);
 		return 0;
 	}
 	curPrg = cntxt->curprg;
@@ -1583,7 +1584,7 @@ parseAssign(Client cntxt, int cntrl)
 				freeInstruction(curInstr);
 				return;
 			}
-			GETvariable((void) 0);
+			GETvariable(freeInstruction(curInstr));
 			if (currChar(cntxt) == ':') {
 				setVarUDFtype(curBlk, varid);
 				type = typeElm(cntxt, getVarType(curBlk, varid));
@@ -1637,7 +1638,7 @@ parseAssign(Client cntxt, int cntrl)
 		}
 
 		/* Get target variable details*/
-		GETvariable((void) 0);
+		GETvariable(freeInstruction(curInstr));
 		if (!(currChar(cntxt) == ':' && CURRENT(cntxt)[1] == '=')) {
 			curInstr->argv[0] = varid;
 			if (currChar(cntxt) == ':') {
