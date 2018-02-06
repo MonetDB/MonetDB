@@ -184,6 +184,7 @@ INSERT INTO sys.keywords (keyword) VALUES
   ('SMALLINT'),
   ('SOME'),
   ('SPLIT_PART'),
+  ('START'),
   ('STDIN'),
   ('STDOUT'),
   ('STORAGE'),
