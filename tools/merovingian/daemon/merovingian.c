@@ -83,9 +83,6 @@
 #ifndef O_CLOEXEC
 #define O_CLOEXEC		0
 #endif
-#ifndef SOCK_CLOEXEC
-#define SOCK_CLOEXEC	0
-#endif
 
 #ifndef HAVE_PIPE2
 #define pipe2(pipefd, flags)	pipe(pipefd)
@@ -348,7 +345,8 @@ main(int argc, char *argv[])
 			/* Replace the 8 following characters with the characters mserver5.
 			 * This should work even if the executables have prefixes or
 			 * suffixes */
-			for (int i = 0; i < 8; i++)
+			int i;
+			for (i = 0; i < 8; i++)
 				s[i] = "mserver5"[i];
 			if (stat(_mero_mserver, &sb) == -1)
 				_mero_mserver = NULL;
@@ -866,7 +864,11 @@ main(int argc, char *argv[])
 		pthread_t dtid = 0;
 
 		if (discovery == 1) {
-			_mero_broadcastsock = socket(AF_INET, SOCK_DGRAM | SOCK_CLOEXEC, 0);
+			_mero_broadcastsock = socket(AF_INET, SOCK_DGRAM
+#ifdef SOCK_CLOEXEC
+										 | SOCK_CLOEXEC
+#endif
+										 , 0);
 			ret = 1;
 			if (_mero_broadcastsock == -1 ||
 				setsockopt(_mero_broadcastsock,
@@ -877,7 +879,7 @@ main(int argc, char *argv[])
 				closesocket(discsock);
 				discsock = -1;
 			}
-#if SOCK_CLOEXEC == 0
+#ifndef SOCK_CLOEXEC
 			(void) fcntl(_mero_broadcastsock, F_SETFD, FD_CLOEXEC);
 #endif
 

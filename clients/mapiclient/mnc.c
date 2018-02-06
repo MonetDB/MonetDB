@@ -58,11 +58,7 @@
 #define SOCKLEN int
 #endif
 
-#ifndef SOCK_CLOEXEC
-#define SOCK_CLOEXEC		0
-#endif
-
-#ifndef HAVE_ACCEPT4
+#if !defined(HAVE_ACCEPT4) || !defined(SOCK_CLOEXEC)
 #define accept4(sockfd, addr, addlen, flags)	accept(sockfd, addr, addrlen)
 #endif
 
@@ -172,14 +168,18 @@ main(int argc, char **argv)
 			exit(1);
 		}
 		for (rp = res; rp; rp = rp->ai_next) {
-			s = socket(rp->ai_family, rp->ai_socktype | SOCK_CLOEXEC, rp->ai_protocol);
+			s = socket(rp->ai_family, rp->ai_socktype
+#ifdef SOCK_CLOEXEC
+				   | SOCK_CLOEXEC
+#endif
+				   , rp->ai_protocol);
 			if (s == INVALID_SOCKET)
 				continue;
 			if (connect(s, rp->ai_addr, (socklen_t) rp->ai_addrlen) != SOCKET_ERROR)
 				break;  /* success */
 			closesocket(s);
 		}
-#if SOCK_CLOEXEC == 0 && defined(HAVE_FCNTL)
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 		(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
 		freeaddrinfo(res);
@@ -201,13 +201,17 @@ main(int argc, char **argv)
 		memcpy(&server.sin_addr, hp->h_addr_list[0], hp->h_length);
 		server.sin_family = hp->h_addrtype;
 		server.sin_port = htons((unsigned short) (port & 0xFFFF));
-		s = socket(server.sin_family, SOCK_STREAM | SOCK_CLOEXEC, IPPROTO_TCP);
+		s = socket(server.sin_family, SOCK_STREAM
+#ifdef SOCK_CLOEXEC
+			   | SOCK_CLOEXEC
+#endif
+			   , IPPROTO_TCP);
 
 		if (s == INVALID_SOCKET) {
 			fprintf(stderr, "opening socket failed: %s\n", strerror(errno));
 			exit(1);
 		}
-#if SOCK_CLOEXEC == 0 && defined(HAVE_FCNTL)
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 		(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
 
@@ -230,11 +234,15 @@ main(int argc, char **argv)
 			exit(1);
 		}
 
-		if ((sock = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0)) == INVALID_SOCKET) {
+		if ((sock = socket(AF_INET, SOCK_STREAM
+#ifdef SOCK_CLOEXEC
+				   | SOCK_CLOEXEC
+#endif
+				   , 0)) == INVALID_SOCKET) {
 			fprintf(stderr, "failed to create socket: %s\n", strerror(errno));
 			exit(1);
 		}
-#if SOCK_CLOEXEC == 0 && defined(HAVE_FCNTL)
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
 
@@ -259,7 +267,7 @@ main(int argc, char **argv)
 					strerror(errno));
 			exit(1);
 		}
-#if defined(HAVE_FCNTL) && (SOCK_CLOEXEC == 0 || !defined(HAVE_ACCEPT4))
+#if defined(HAVE_FCNTL) && (!defined(SOCK_CLOEXEC) || !defined(HAVE_ACCEPT4))
 		(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
 	}

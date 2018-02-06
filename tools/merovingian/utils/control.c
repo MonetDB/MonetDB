@@ -27,10 +27,6 @@
 
 #define SOCKPTR struct sockaddr *
 
-#ifndef SOCK_CLOEXEC
-#define SOCK_CLOEXEC	0
-#endif
-
 /* Sends command for database to merovingian listening at host and port.
  * If host is a path, and port is -1, a UNIX socket connection for host
  * is opened.  The response of merovingian is returned as a malloced
@@ -61,12 +57,16 @@ char* control_send(
 	if (port == -1) {
 		struct sockaddr_un server;
 		/* UNIX socket connect */
-		if ((sock = socket(PF_UNIX, SOCK_STREAM | SOCK_CLOEXEC, 0)) == -1) {
+		if ((sock = socket(PF_UNIX, SOCK_STREAM
+#ifdef SOCK_CLOEXEC
+						   | SOCK_CLOEXEC
+#endif
+						   , 0)) == -1) {
 			snprintf(sbuf, sizeof(sbuf), "cannot open connection: %s",
 					strerror(errno));
 			return(strdup(sbuf));
 		}
-#if SOCK_CLOEXEC == 0
+#ifndef SOCK_CLOEXEC
 		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
 		memset(&server, 0, sizeof(struct sockaddr_un));
@@ -84,12 +84,16 @@ char* control_send(
 		char *p;
 
 		/* TCP socket connect */
-		if ((sock = socket(PF_INET, SOCK_STREAM | SOCK_CLOEXEC, IPPROTO_TCP)) == -1) {
+		if ((sock = socket(PF_INET, SOCK_STREAM
+#ifdef SOCK_CLOEXEC
+						   | SOCK_CLOEXEC
+#endif
+						   , IPPROTO_TCP)) == -1) {
 			snprintf(sbuf, sizeof(sbuf), "cannot open connection: %s",
 					strerror(errno));
 			return(strdup(sbuf));
 		}
-#if SOCK_CLOEXEC == 0
+#ifndef SOCK_CLOEXEC
 		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
 		hp = gethostbyname(host);

@@ -39,11 +39,7 @@
 #include "controlrunner.h"
 #include "multiplex-funnel.h"
 
-#ifndef SOCK_CLOEXEC
-#define SOCK_CLOEXEC	0
-#endif
-
-#ifndef HAVE_ACCEPT4
+#if !defined(HAVE_ACCEPT4) || !defined(SOCK_CLOEXEC)
 #define accept4(sockfd, addr, addrlen, flags)	accept(sockfd, addr, addrlen)
 #endif
 
@@ -995,7 +991,7 @@ controlRunner(void *d)
 			}
 			continue;
 		}
-#if defined(HAVE_FCNTL) && (SOCK_CLOEXEC == 0 || !defined(HAVE_ACCEPT4))
+#if defined(HAVE_FCNTL) && (!defined(SOCK_CLOEXEC) || !defined(HAVE_ACCEPT4))
 		(void) fcntl(msgsock, F_SETFD, FD_CLOEXEC);
 #endif
 

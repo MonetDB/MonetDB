@@ -127,10 +127,6 @@
 #define INVALID_SOCKET	(-1)
 #endif
 
-#ifndef SOCK_CLOEXEC
-#define SOCK_CLOEXEC	0
-#endif
-
 #ifdef NATIVE_WIN32
 #define pclose _pclose
 #define fileno(fd) _fileno(fd)
@@ -2687,10 +2683,14 @@ udp_socket(udp_stream *udp, const char *hostname, int port, int write)
 		return -1;
 	memset(&udp->addr, 0, sizeof(udp->addr));
 	for (rp = res; rp; rp = rp->ai_next) {
-		udp->s = socket(rp->ai_family, rp->ai_socktype | SOCK_CLOEXEC, rp->ai_protocol);
+		udp->s = socket(rp->ai_family, rp->ai_socktype
+#ifdef SOCK_CLOEXEC
+				| SOCK_CLOEXEC
+#endif
+				, rp->ai_protocol);
 		if (udp->s == INVALID_SOCKET)
 			continue;
-#if SOCK_CLOEXEC == 0 && defined(HAVE_FCNTL)
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 		(void) fcntl(udp->s, F_SETFD, FD_CLOEXEC);
 #endif
 		if (!write &&
@@ -2726,10 +2726,14 @@ udp_socket(udp_stream *udp, const char *hostname, int port, int write)
 	udp->addr.sin_port = htons((unsigned short) (port & 0xFFFF));
 	serv = (struct sockaddr *) &udp->addr;
 	servsize = (socklen_t) sizeof(udp->addr);
-	udp->s = socket(serv->sa_family, SOCK_DGRAM | SOCK_CLOEXEC, IPPROTO_UDP);
+	udp->s = socket(serv->sa_family, SOCK_DGRAM
+#ifdef SOCK_CLOEXEC
+			| SOCK_CLOEXEC
+#endif
+			, IPPROTO_UDP);
 	if (udp->s == INVALID_SOCKET)
 		return -1;
-#if SOCK_CLOEXEC == 0 && defined(HAVE_FCNTL)
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 	(void) fcntl(udp->s, F_SETFD, FD_CLOEXEC);
 #endif
 	if (!write && bind(udp->s, serv, servsize) == SOCKET_ERROR)
