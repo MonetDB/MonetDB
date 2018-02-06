@@ -907,14 +907,14 @@ sql_update_jul2017_sp3(Client c, mvc *sql)
 }
 
 static str
-sql_update_default_geom(Client c, mvc *sql, sql_table *t)
+sql_update_mar2018_geom(Client c, mvc *sql, sql_table *t)
 {
 	size_t bufsize = 10000, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *schema = stack_get_string(sql, "current_schema");
 
 	if (buf== NULL)
-		throw(SQL, "sql_update_default_geom", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_mar2018_geom", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	t->system = 0;
@@ -948,7 +948,7 @@ sql_update_default_geom(Client c, mvc *sql, sql_table *t)
 }
 
 static str
-sql_update_default(Client c, mvc *sql)
+sql_update_mar2018(Client c, mvc *sql)
 {
 	size_t bufsize = 10000, pos = 0;
 	char *buf, *err;
@@ -979,7 +979,7 @@ sql_update_default(Client c, mvc *sql)
 	schema = stack_get_string(sql, "current_schema");
 	buf = GDKmalloc(bufsize);
 	if (buf== NULL)
-		throw(SQL, "sql_update_default", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_mar2018", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	/* 25_debug.sql */
@@ -1630,14 +1630,14 @@ SQLupgrades(Client c, mvc *m)
 	if ((t = mvc_bind_table(m, s, "geometry_columns")) != NULL &&
 	    (col = mvc_bind_column(m, t, "coord_dimension")) != NULL &&
 	    strcmp(col->type.type->sqlname, "int") != 0) {
-		if ((err = sql_update_default_geom(c, m, t)) != NULL) {
+		if ((err = sql_update_mar2018_geom(c, m, t)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}
 	}
 
 	if (!sql_bind_func(m->sa, s, "master", NULL, NULL, F_PROC)) {
-		if ((err = sql_update_default(c, m)) != NULL) {
+		if ((err = sql_update_mar2018(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}

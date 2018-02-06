@@ -1,0 +1,7 @@
+# ChangeLog file for sql/src/backends/monet5/merovingian
+# This file is updated with mchangelog
+
+* Fri Aug  4 2017 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
+- Add daemon commands for starting/stopping collection of profiler
+  (stethoscope) logs.
+
