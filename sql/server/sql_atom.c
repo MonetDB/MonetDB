@@ -263,7 +263,7 @@ atom_general(sql_allocator *sa, sql_subtype *tpe, const char *val)
 		a->isnull = 0;
 		if (ATOMstorage(type) == TYPE_str) {
 			a->isnull = 0;
-			a->data.val.sval = (char*)sql2str(sa_strdup(sa, val));
+			a->data.val.sval = sql2str(sa_strdup(sa, val));
 			a->data.len = strlen(a->data.val.sval);
 		} else {
 			ssize_t res = ATOMfromstr(type, &p, &a->data.len, val);

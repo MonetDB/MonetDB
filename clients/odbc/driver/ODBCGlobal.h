@@ -81,6 +81,8 @@
 #define ULENCAST	(uint64_t)
 #endif
 
+#define SQL_HUGEINT	0x4000
+
 /* these functions are called from within the library */
 SQLRETURN MNDBAllocHandle(SQLSMALLINT nHandleType, SQLHANDLE nInputHandle, SQLHANDLE *pnOutputHandle);
 SQLRETURN MNDBEndTran(SQLSMALLINT nHandleType, SQLHANDLE nHandle, SQLSMALLINT nCompletionType);

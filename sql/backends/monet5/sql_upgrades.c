@@ -762,12 +762,19 @@ sql_update_jul2017(Client c, mvc *sql)
 
 			"CREATE TABLE sys.privilege_codes (\n"
 			"privilege_code_id   INT NOT NULL PRIMARY KEY,\n"
-			"privilege_code_name VARCHAR(30) NOT NULL UNIQUE);\n"
+			"privilege_code_name VARCHAR(40) NOT NULL UNIQUE);\n"
 			"INSERT INTO sys.privilege_codes (privilege_code_id, privilege_code_name) VALUES\n"
 			"(1, 'SELECT'), (2, 'UPDATE'), (4, 'INSERT'), (8, 'DELETE'), (16, 'EXECUTE'), (32, 'GRANT'),\n"
 			"(3, 'SELECT,UPDATE'), (5, 'SELECT,INSERT'), (6, 'INSERT,UPDATE'), (7, 'SELECT,INSERT,UPDATE'),\n"
 			"(9, 'SELECT,DELETE'), (10, 'UPDATE,DELETE'), (11, 'SELECT,UPDATE,DELETE'), (12, 'INSERT,DELETE'),\n"
-			"(13, 'SELECT,INSERT,DELETE'), (14, 'INSERT,UPDATE,DELETE'), (15, 'SELECT,INSERT,UPDATE,DELETE');\n"
+			"(13, 'SELECT,INSERT,DELETE'), (14, 'INSERT,UPDATE,DELETE'), (15, 'SELECT,INSERT,UPDATE,DELETE'),\n"
+			"(64, 'TRUNCATE'),\n"
+			"(65, 'SELECT,TRUNCATE'), (66, 'UPDATE,TRUNCATE'), (68, 'INSERT,TRUNCATE'), (72, 'DELETE,TRUNCATE'),\n"
+			"(67, 'SELECT,UPDATE,TRUNCATE'), (69, 'SELECT,INSERT,TRUNCATE'), (73, 'SELECT,DELETE,TRUNCATE'),\n"
+			"(70, 'INSERT,UPDATE,TRUNCATE'), (76, 'INSERT,DELETE,TRUNCATE'), (74, 'UPDATE,DELETE,TRUNCATE'),\n"
+			"(71, 'SELECT,INSERT,UPDATE,TRUNCATE'), (75, 'SELECT,UPDATE,DELETE,TRUNCATE'),\n"
+			"(77, 'SELECT,INSERT,DELETE,TRUNCATE'), (78, 'INSERT,UPDATE,DELETE,TRUNCATE'),\n"
+			"(79, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE');\n"
 			"ALTER TABLE sys.privilege_codes SET READ ONLY;\n"
 
 			"update sys._tables set system = true where name in ('function_languages', 'function_types', 'index_types', 'key_types', 'privilege_codes') and schema_id = (select id from sys.schemas where name = 'sys');\n");
@@ -900,15 +907,91 @@ sql_update_jul2017_sp3(Client c, mvc *sql)
 }
 
 static str
-sql_update_default(Client c, mvc *sql)
+sql_update_mar2018_geom(Client c, mvc *sql, sql_table *t)
 {
 	size_t bufsize = 10000, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
 	char *schema = stack_get_string(sql, "current_schema");
 
 	if (buf== NULL)
-		throw(SQL, "sql_update_default", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_mar2018_geom", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	t->system = 0;
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop view sys.geometry_columns cascade;\n"
+			"create view sys.geometry_columns as\n"
+			"\tselect cast(null as varchar(1)) as f_table_catalog,\n"
+			"\t\ts.name as f_table_schema,\n"
+			"\t\tt.name as f_table_name,\n"
+			"\t\tc.name as f_geometry_column,\n"
+			"\t\tcast(has_z(c.type_digits) + has_m(c.type_digits) +2 as integer) as coord_dimension,\n"
+			"\t\tc.type_scale as srid,\n"
+			"\t\tget_type(c.type_digits, 0) as type\n"
+			"\tfrom sys.columns c, sys.tables t, sys.schemas s\n"
+			"\twhere c.table_id = t.id and t.schema_id = s.id\n"
+			"\t  and c.type in (select sqlname from sys.types where systemname in ('wkb', 'wkba'));\n"
+			"GRANT SELECT ON sys.geometry_columns TO PUBLIC;\n"
+			"update sys._tables set system = true where name = 'geometry_columns' and schema_id in (select id from schemas where name = 'sys');\n");
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
+
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_update_mar2018(Client c, mvc *sql)
+{
+	size_t bufsize = 10000, pos = 0;
+	char *buf, *err;
+	char *schema;
+	sql_schema *s;
+	sql_table *t;
+	res_table *output;
+	BAT *b;
+
+	buf = "select id from sys.functions where name = 'quarter' and schema_id = (select id from sys.schemas where name = 'sys');\n";
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, &output);
+	if (err)
+		return err;
+	b = BATdescriptor(output->cols[0].b);
+	if (b) {
+		if (BATcount(b) == 0) {
+			/* if there is no value "quarter" in
+			 * sys.functions.name, we need to update the
+			 * sys.functions table */
+			err = sql_fix_system_tables(c, sql);
+			if (err != NULL)
+				return err;
+		}
+		BBPunfix(b->batCacheid);
+	}
+	res_tables_destroy(output);
+
+	schema = stack_get_string(sql, "current_schema");
+	buf = GDKmalloc(bufsize);
+	if (buf== NULL)
+		throw(SQL, "sql_update_mar2018", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
+
+	/* 25_debug.sql */
+	s = mvc_bind_schema(sql, "sys");
+	t = mvc_bind_table(sql, s, "environment");
+	t->system = 0;
+	pos += snprintf(buf + pos, bufsize - pos,
+			"drop view sys.environment cascade;\n"
+			"drop function sys.environment() cascade;\n"
+			"create view sys.environment as select * from sys.env();\n"
+			"GRANT SELECT ON sys.environment TO PUBLIC;\n"
+			"update sys._tables set system = true where system = false and name = 'environment' and schema_id in (select id from sys.schemas where name = 'sys');\n");
 
 	/* 39_analytics.sql, 39_analytics_hge.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -941,6 +1024,11 @@ sql_update_default(Client c, mvc *sql)
 #endif
 	pos += snprintf(buf + pos, bufsize - pos,
 			"insert into sys.systemfunctions (select id from sys.functions where name = 'corr' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
+
+	/* 46_profiler.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create procedure profiler.sync() external name profiler.sync;\n"
+			"insert into sys.systemfunctions (select id from sys.functions where name = 'sync' and schema_id = (select id from sys.schemas where name = 'profiler') and id not in (select function_id from sys.systemfunctions));\n");
 
 	/* 60_wlcr.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -981,6 +1069,122 @@ sql_update_default(Client c, mvc *sql)
 			"insert into sys.systemfunctions (select id from sys.functions where name in ('master', 'stopmaster', 'masterbeat', 'masterclock', 'mastertick', 'replicate', 'replicabeat', 'replicaclock', 'replicatick') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n"
 		);
 
+	/* 97_comments */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"CREATE TABLE sys.comments (\n"
+			"        id INTEGER NOT NULL PRIMARY KEY,\n"
+			"        remark VARCHAR(65000) NOT NULL\n"
+			");\n"
+			"GRANT SELECT ON sys.comments TO PUBLIC;\n"
+			"CREATE PROCEDURE sys.comment_on(obj_id INTEGER, obj_remark VARCHAR(65000))\n"
+			"BEGIN\n"
+			"    IF obj_id IS NOT NULL AND obj_id > 0 THEN\n"
+			"        IF obj_remark IS NULL OR obj_remark = '' THEN\n"
+			"                DELETE FROM sys.comments WHERE id = obj_id;\n"
+			"        ELSEIF EXISTS (SELECT id FROM sys.comments WHERE id = obj_id) THEN\n"
+			"                UPDATE sys.comments SET remark = obj_remark WHERE id = obj_id;\n"
+			"        ELSE\n"
+			"                INSERT INTO sys.comments VALUES (obj_id, obj_remark);\n"
+			"        END IF;\n"
+			"    END IF;\n"
+			"END;\n"
+			"CREATE FUNCTION sys.function_type_keyword(ftype INT)\n"
+			"RETURNS VARCHAR(20)\n"
+			"BEGIN\n"
+			"	RETURN CASE ftype\n"
+			"                WHEN 1 THEN 'FUNCTION'\n"
+			"                WHEN 2 THEN 'PROCEDURE'\n"
+			"                WHEN 3 THEN 'AGGREGATE'\n"
+			"                WHEN 4 THEN 'FILTER FUNCTION'\n"
+			"                WHEN 5 THEN 'FUNCTION' -- table returning function\n"
+			"                WHEN 6 THEN 'FUNCTION' -- analytic function\n"
+			"                WHEN 7 THEN 'LOADER'\n"
+			"                ELSE 'ROUTINE'\n"
+			"        END;\n"
+			"END;\n"
+			"GRANT EXECUTE ON FUNCTION sys.function_type_keyword(INT) TO PUBLIC;\n"
+			"CREATE VIEW sys.describe_all_objects AS\n"
+			"SELECT s.name AS sname,\n"
+			"	  t.name,\n"
+			"	  s.name || '.' || t.name AS fullname,\n"
+			"	  CAST(CASE t.type\n"
+			"	   WHEN 1 THEN 2 -- ntype for views\n"
+			"	   ELSE 1	  -- ntype for tables\n"
+			"	   END AS SMALLINT) AS ntype,\n"
+			"	  (CASE WHEN t.system THEN 'SYSTEM ' ELSE '' END) || tt.table_type_name AS type,\n"
+			"	  t.system,\n"
+			"	  c.remark AS remark\n"
+			"  FROM sys._tables t\n"
+			"  LEFT OUTER JOIN sys.comments c ON t.id = c.id\n"
+			"  LEFT OUTER JOIN sys.schemas s ON t.schema_id = s.id\n"
+			"  LEFT OUTER JOIN sys.table_types tt ON t.type = tt.table_type_id\n"
+			"UNION ALL\n"
+			"SELECT s.name AS sname,\n"
+			"	  sq.name,\n"
+			"	  s.name || '.' || sq.name AS fullname,\n"
+			"	  CAST(4 AS SMALLINT) AS ntype,\n"
+			"	  'SEQUENCE' AS type,\n"
+			"	  false AS system,\n"
+			"	  c.remark AS remark\n"
+			"  FROM sys.sequences sq\n"
+			"  LEFT OUTER JOIN sys.comments c ON sq.id = c.id\n"
+			"  LEFT OUTER JOIN sys.schemas s ON sq.schema_id = s.id\n"
+			"UNION ALL\n"
+			"SELECT DISTINCT s.name AS sname,  -- DISTINCT is needed to filter out duplicate overloaded function/procedure names\n"
+			"	  f.name,\n"
+			"	  s.name || '.' || f.name AS fullname,\n"
+			"	  CAST(8 AS SMALLINT) AS ntype,\n"
+			"	  (CASE WHEN sf.function_id IS NOT NULL THEN 'SYSTEM ' ELSE '' END) || sys.function_type_keyword(f.type) AS type,\n"
+			"	  CASE WHEN sf.function_id IS NULL THEN FALSE ELSE TRUE END AS system,\n"
+			"	  c.remark AS remark\n"
+			"  FROM sys.functions f\n"
+			"  LEFT OUTER JOIN sys.comments c ON f.id = c.id\n"
+			"  LEFT OUTER JOIN sys.schemas s ON f.schema_id = s.id\n"
+			"  LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id\n"
+			"UNION ALL\n"
+			"SELECT s.name AS sname,\n"
+			"	  s.name,\n"
+			"	  s.name AS fullname,\n"
+			"	  CAST(16 AS SMALLINT) AS ntype,\n"
+			"	  (CASE WHEN s.system THEN 'SYSTEM SCHEMA' ELSE 'SCHEMA' END) AS type,\n"
+			"	  s.system,\n"
+			"	  c.remark AS remark\n"
+			"  FROM sys.schemas s\n"
+			"  LEFT OUTER JOIN sys.comments c ON s.id = c.id\n"
+			" ORDER BY system, name, sname, ntype;\n"
+			"GRANT SELECT ON sys.describe_all_objects TO PUBLIC;\n"
+			"CREATE VIEW sys.commented_function_signatures AS\n"
+			"SELECT f.id AS fid,\n"
+			"       s.name AS schema,\n"
+			"       f.name AS fname,\n"
+			"       sys.function_type_keyword(f.type) AS category,\n"
+			"       CASE WHEN sf.function_id IS NULL THEN FALSE ELSE TRUE END AS system,\n"
+			"       CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number ASC) WHEN 1 THEN f.name ELSE NULL END AS name,\n"
+			"       CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number DESC) WHEN 1 THEN c.remark ELSE NULL END AS remark,\n"
+			"       p.type, p.type_digits, p.type_scale,\n"
+			"       ROW_NUMBER() OVER (ORDER BY f.id, p.number) AS line\n"
+			"  FROM sys.functions f\n"
+			"  JOIN sys.comments c ON f.id = c.id\n"
+			"  JOIN sys.schemas s ON f.schema_id = s.id\n"
+			"  LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id\n"
+			"  LEFT OUTER JOIN sys.args p ON f.id = p.func_id AND p.inout = 1\n"
+			" ORDER BY line;\n"
+			"GRANT SELECT ON sys.commented_function_signatures TO PUBLIC;\n"
+			"UPDATE sys._tables\n"
+			"SET system = true\n"
+			"WHERE name IN ('comments', 'describe_all_objects', 'commented_function_signatures')\n"
+			"AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n"
+			"DELETE FROM sys.systemfunctions WHERE function_id IS NULL;\n"
+			"ALTER TABLE sys.systemfunctions ALTER COLUMN function_id SET NOT NULL;\n"
+			"INSERT INTO sys.systemfunctions\n"
+			"SELECT id FROM sys.functions\n"
+			"WHERE schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys')\n"
+			"AND name IN ('comment_on', 'function_type_keyword');\n"
+			"ALTER TABLE sys.keywords SET READ WRITE;\n"
+			"INSERT INTO sys.keywords VALUES ('COMMENT');\n"
+			"-- ALTER TABLE sys.keywords SET READ ONLY;\n"
+/* TODO fix. Last ALTER TABLE is disabled as it produces: !SQLException:sql.alter_table_set_access:40000!ALTER TABLE: set READ or INSERT ONLY not possible with outstanding updates (wait until updates are flushed) */
+		);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
 
@@ -995,38 +1199,325 @@ sql_update_default(Client c, mvc *sql)
 }
 
 static str
-sql_update_default_geom(Client c, mvc *sql, sql_table *t)
+sql_add_sys_views(Client c)
 {
-	size_t bufsize = 10000, pos = 0;
+	size_t bufsize = 1000, pos = 0;
 	char *buf = GDKmalloc(bufsize), *err = NULL;
-	char *schema = stack_get_string(sql, "current_schema");
-
 	if (buf== NULL)
-		throw(SQL, "sql_update_default_geom", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
-
-	t->system = 0;
-	pos += snprintf(buf + pos, bufsize - pos,
-			"drop view sys.geometry_columns cascade;\n"
-			"create view sys.geometry_columns as\n"
-			"\tselect cast(null as varchar(1)) as f_table_catalog,\n"
-			"\t\ts.name as f_table_schema,\n"
-			"\t\tt.name as f_table_name,\n"
-			"\t\tc.name as f_geometry_column,\n"
-			"\t\tcast(has_z(c.type_digits) + has_m(c.type_digits) +2 as integer) as coord_dimension,\n"
-			"\t\tc.type_scale as srid,\n"
-			"\t\tget_type(c.type_digits, 0) as type\n"
-			"\tfrom sys.columns c, sys.tables t, sys.schemas s\n"
-			"\twhere c.table_id = t.id and t.schema_id = s.id\n"
-			"\t  and c.type in (select sqlname from sys.types where systemname in ('wkb', 'wkba'));\n"
-			"GRANT SELECT ON sys.geometry_columns TO PUBLIC;\n"
-			"update sys._tables set system = true where name = 'geometry_columns' and schema_id in (select id from schemas where name = 'sys');\n");
+		throw(SQL, "sql_add_sys_views", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	pos += snprintf(buf + pos, bufsize - pos,
-			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
+		"CREATE VIEW sys.roles AS SELECT id, name, grantor FROM sys.auths a WHERE a.name NOT IN (SELECT u.name FROM sys.db_users() u);\n"
+		"GRANT SELECT ON sys.roles TO PUBLIC;\n"
+		"\n"
+		"CREATE VIEW sys.var_values (var_name, value) AS\n"
+		"SELECT 'cache' AS var_name, convert(cache, varchar(10)) AS value UNION ALL\n"
+		"SELECT 'current_role', current_role UNION ALL\n"
+		"SELECT 'current_schema', current_schema UNION ALL\n"
+		"SELECT 'current_timezone', current_timezone UNION ALL\n"
+		"SELECT 'current_user', current_user UNION ALL\n"
+		"SELECT 'debug', debug UNION ALL\n"
+		"SELECT 'history', history UNION ALL\n"
+		"SELECT 'last_id', last_id UNION ALL\n"
+		"SELECT 'optimizer', optimizer UNION ALL\n"
+		"SELECT 'pi', pi() UNION ALL\n"
+		"SELECT 'rowcnt', rowcnt;\n"
+		"GRANT SELECT ON sys.var_values TO PUBLIC;\n"
+		"\n"
+		"UPDATE sys._tables SET system = true\n"
+		" WHERE name IN ('roles', 'var_values') AND schema_id IN (SELECT id FROM sys.schemas WHERE name = 'sys');\n"
+		);
 
-	if (schema)
-		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
+static str
+sql_add_new_sys_dependencies_views(Client c)
+{
+	size_t bufsize = 40000, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	if (buf== NULL)
+		throw(SQL, "sql_add_sys_dependencies_views", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	pos += snprintf(buf + pos, bufsize - pos,
+"CREATE VIEW sys.ids (id, name, schema_id, table_id, table_name, obj_type, sys_table) AS\n"
+"SELECT id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'author' AS obj_type, 'sys.auths' AS sys_table FROM sys.auths UNION ALL\n"
+"SELECT id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'schema', 'sys.schemas' FROM sys.schemas UNION ALL\n"
+"SELECT id, name, schema_id, id as table_id, name as table_name, case when type = 1 then 'view' else 'table' end, 'sys._tables' FROM sys._tables UNION ALL\n"
+"SELECT id, name, schema_id, id as table_id, name as table_name, case when type = 1 then 'view' else 'table' end, 'tmp._tables' FROM tmp._tables UNION ALL\n"
+"SELECT c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'sys._columns' FROM sys._columns c JOIN sys._tables t ON c.table_id = t.id UNION ALL\n"
+"SELECT c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'tmp._columns' FROM tmp._columns c JOIN tmp._tables t ON c.table_id = t.id UNION ALL\n"
+"SELECT k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'sys.keys' FROM sys.keys k JOIN sys._tables t ON k.table_id = t.id UNION ALL\n"
+"SELECT k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'tmp.keys' FROM tmp.keys k JOIN sys._tables t ON k.table_id = t.id UNION ALL\n"
+"SELECT i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index', 'sys.idxs' FROM sys.idxs i JOIN sys._tables t ON i.table_id = t.id UNION ALL\n"
+"SELECT i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index', 'tmp.idxs' FROM tmp.idxs i JOIN sys._tables t ON i.table_id = t.id UNION ALL\n"
+"SELECT g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'sys.triggers' FROM sys.triggers g JOIN sys._tables t ON g.table_id = t.id UNION ALL\n"
+"SELECT g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'tmp.triggers' FROM tmp.triggers g JOIN sys._tables t ON g.table_id = t.id UNION ALL\n"
+"SELECT id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, case when type = 2 then 'procedure' else 'function' end, 'sys.functions' FROM sys.functions UNION ALL\n"
+"SELECT a.id, a.name, f.schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, case when f.type = 2 then 'procedure arg' else 'function arg' end, 'sys.args' FROM sys.args a JOIN sys.functions f ON a.func_id = f.id UNION ALL\n"
+"SELECT id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'sequence', 'sys.sequences' FROM sys.sequences UNION ALL\n"
+"SELECT id, sqlname, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'type', 'sys.types' FROM sys.types WHERE id > 2000 /* exclude system types to prevent duplicates with auths.id */\n"
+" ORDER BY id;\n"
+"\n"
+"GRANT SELECT ON sys.ids TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependencies_vw AS\n"
+"SELECT d.id, i1.obj_type, i1.name,\n"
+"       d.depend_id as used_by_id, i2.obj_type as used_by_obj_type, i2.name as used_by_name,\n"
+"       d.depend_type, dt.dependency_type_name\n"
+"  FROM sys.dependencies d\n"
+"  JOIN sys.ids i1 ON d.id = i1.id\n"
+"  JOIN sys.ids i2 ON d.depend_id = i2.id\n"
+"  JOIN sys.dependency_types dt ON d.depend_type = dt.dependency_type_id\n"
+" ORDER BY id, depend_id;\n"
+"\n"
+"GRANT SELECT ON sys.dependencies_vw TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependency_owners_on_schemas AS\n"
+"SELECT a.name AS owner_name, s.id AS schema_id, s.name AS schema_name, CAST(1 AS smallint) AS depend_type\n"
+"  FROM sys.schemas AS s, sys.auths AS a\n"
+" WHERE s.owner = a.id\n"
+" ORDER BY a.name, s.name;\n"
+"\n"
+"GRANT SELECT ON sys.dependency_owners_on_schemas TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependency_columns_on_keys AS\n"
+"SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, c.id AS column_id, c.name AS column_name, k.id AS key_id, k.name AS key_name, CAST(kc.nr +1 AS int) AS key_col_nr, CAST(k.type AS smallint) AS key_type, CAST(4 AS smallint) AS depend_type\n"
+"  FROM sys.columns AS c, sys.objects AS kc, sys.keys AS k, sys.tables AS t\n"
+" WHERE k.table_id = c.table_id AND c.table_id = t.id AND kc.id = k.id AND kc.name = c.name\n"
+"   AND k.type IN (0, 1)\n"
+" ORDER BY t.schema_id, t.name, c.name, k.type, k.name, kc.nr;\n"
+"\n"
+"GRANT SELECT ON sys.dependency_columns_on_keys TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependency_tables_on_views AS\n"
+"SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, v.schema_id AS view_schema_id, v.id AS view_id, v.name AS view_name, dep.depend_type AS depend_type\n"
+"  FROM sys.tables AS t, sys.tables AS v, sys.dependencies AS dep\n"
+" WHERE t.id = dep.id AND v.id = dep.depend_id\n"
+"   AND dep.depend_type = 5 AND t.type NOT IN (1, 11) AND v.type IN (1, 11)\n"
+" ORDER BY t.schema_id, t.name, v.schema_id, v.name;\n"
+"\n"
+"GRANT SELECT ON sys.dependency_tables_on_views TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependency_views_on_views AS\n"
+"SELECT v1.schema_id AS view1_schema_id, v1.id AS view1_id, v1.name AS view1_name, v2.schema_id AS view2_schema_id, v2.id AS view2_id, v2.name AS view2_name, dep.depend_type AS depend_type\n"
+"  FROM sys.tables AS v1, sys.tables AS v2, sys.dependencies AS dep\n"
+" WHERE v1.id = dep.id AND v2.id = dep.depend_id\n"
+"   AND dep.depend_type = 5 AND v1.type IN (1, 11) AND v2.type IN (1, 11)\n"
+" ORDER BY v1.schema_id, v1.name, v2.schema_id, v2.name;\n"
+"\n"
+"GRANT SELECT ON sys.dependency_views_on_views TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependency_columns_on_views AS\n"
+"SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, c.id AS column_id, c.name AS column_name, v.schema_id AS view_schema_id, v.id AS view_id, v.name AS view_name, dep.depend_type AS depend_type\n"
+"  FROM sys.columns AS c, sys.tables AS v, sys.tables AS t, sys.dependencies AS dep\n"
+" WHERE c.id = dep.id AND v.id = dep.depend_id AND c.table_id = t.id\n"
+"   AND dep.depend_type = 5 AND v.type IN (1, 11)\n"
+" ORDER BY t.schema_id, t.name, c.name, v.name;\n"
+"\n"
+"GRANT SELECT ON sys.dependency_columns_on_views TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependency_functions_on_views AS\n"
+"SELECT f.schema_id AS function_schema_id, f.id AS function_id, f.name AS function_name, v.schema_id AS view_schema_id, v.id AS view_id, v.name AS view_name, dep.depend_type AS depend_type\n"
+"  FROM sys.functions AS f, sys.tables AS v, sys.dependencies AS dep\n"
+" WHERE f.id = dep.id AND v.id = dep.depend_id\n"
+"   AND dep.depend_type = 5 AND v.type IN (1, 11)\n"
+" ORDER BY f.schema_id, f.name, v.schema_id, v.name;\n"
+"\n"
+"GRANT SELECT ON sys.dependency_functions_on_views TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependency_schemas_on_users AS\n"
+"SELECT s.id AS schema_id, s.name AS schema_name, u.name AS user_name, CAST(6 AS smallint) AS depend_type\n"
+"  FROM sys.users AS u, sys.schemas AS s\n"
+" WHERE u.default_schema = s.id\n"
+" ORDER BY s.name, u.name;\n"
+"\n"
+"GRANT SELECT ON sys.dependency_schemas_on_users TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependency_tables_on_functions AS\n"
+"SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, f.name AS function_name, f.type AS function_type, dep.depend_type AS depend_type\n"
+"  FROM sys.functions AS f, sys.tables AS t, sys.dependencies AS dep\n"
+" WHERE t.id = dep.id AND f.id = dep.depend_id\n"
+"   AND dep.depend_type = 7 AND f.type <> 2 AND t.type NOT IN (1, 11)\n"
+" ORDER BY t.name, t.schema_id, f.name, f.id;\n"
+"\n"
+"GRANT SELECT ON sys.dependency_tables_on_functions TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependency_views_on_functions AS\n"
+"SELECT v.schema_id AS view_schema_id, v.id AS view_id, v.name AS view_name, f.name AS function_name, f.type AS function_type, dep.depend_type AS depend_type\n"
+"  FROM sys.functions AS f, sys.tables AS v, sys.dependencies AS dep\n"
+" WHERE v.id = dep.id AND f.id = dep.depend_id\n"
+"   AND dep.depend_type = 7 AND f.type <> 2 AND v.type IN (1, 11)\n"
+" ORDER BY v.name, v.schema_id, f.name, f.id;\n"
+"\n"
+"GRANT SELECT ON sys.dependency_views_on_functions TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependency_columns_on_functions AS\n"
+"SELECT c.table_id, c.id AS column_id, c.name, f.id AS function_id, f.name AS function_name, f.type AS function_type, dep.depend_type AS depend_type\n"
+"  FROM sys.functions AS f, sys.columns AS c, sys.dependencies AS dep\n"
+" WHERE c.id = dep.id AND f.id = dep.depend_id\n"
+"   AND dep.depend_type = 7 AND f.type <> 2\n"
+" ORDER BY c.name, c.table_id, f.name, f.id;\n"
+"\n"
+"GRANT SELECT ON sys.dependency_columns_on_functions TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependency_functions_on_functions AS\n"
+"SELECT f1.schema_id, f1.id AS function_id, f1.name AS function_name, f1.type AS function_type,\n"
+"       f2.schema_id AS used_in_function_schema_id, f2.id AS used_in_function_id, f2.name AS used_in_function_name, f2.type AS used_in_function_type, dep.depend_type AS depend_type\n"
+"  FROM sys.functions AS f1, sys.functions AS f2, sys.dependencies AS dep\n"
+" WHERE f1.id = dep.id AND f2.id = dep.depend_id\n"
+"   AND dep.depend_type = 7 AND f2.type <> 2\n"
+" ORDER BY f1.name, f1.id, f2.name, f2.id;\n"
+"\n"
+"GRANT SELECT ON sys.dependency_functions_on_functions TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependency_tables_on_triggers AS\n"
+"(SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, tri.id AS trigger_id, tri.name AS trigger_name, CAST(8 AS smallint) AS depend_type\n"
+"  FROM sys.tables AS t, sys.triggers AS tri\n"
+" WHERE tri.table_id = t.id)\n"
+"UNION\n"
+"(SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, tri.id AS trigger_id, tri.name AS trigger_name, dep.depend_type AS depend_type\n"
+"  FROM sys.tables AS t, sys.triggers AS tri, sys.dependencies AS dep\n"
+" WHERE dep.id = t.id AND dep.depend_id = tri.id\n"
+"   AND dep.depend_type = 8)\n"
+" ORDER BY table_schema_id, table_name, trigger_name;\n"
+"\n"
+"GRANT SELECT ON sys.dependency_tables_on_triggers TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependency_columns_on_triggers AS\n"
+"SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, tri.id AS trigger_id, tri.name AS trigger_name, c.id AS column_id, c.name AS column_name, dep.depend_type AS depend_type\n"
+"  FROM sys.tables AS t, sys.columns AS c, sys.triggers AS tri, sys.dependencies AS dep\n"
+" WHERE dep.id = c.id AND dep.depend_id = tri.id AND c.table_id = t.id\n"
+"   AND dep.depend_type = 8\n"
+" ORDER BY t.schema_id, t.name, tri.name, c.name;\n"
+"\n"
+"GRANT SELECT ON sys.dependency_columns_on_triggers TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependency_functions_on_triggers AS\n"
+"SELECT f.schema_id AS function_schema_id, f.id AS function_id, f.name AS function_name, f.type AS function_type,\n"
+"       tri.id AS trigger_id, tri.name AS trigger_name, tri.table_id AS trigger_table_id, dep.depend_type AS depend_type\n"
+"  FROM sys.functions AS f, sys.triggers AS tri, sys.dependencies AS dep\n"
+" WHERE dep.id = f.id AND dep.depend_id = tri.id\n"
+"   AND dep.depend_type = 8\n"
+" ORDER BY f.schema_id, f.name, tri.name;\n"
+"\n"
+"GRANT SELECT ON sys.dependency_functions_on_triggers TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependency_tables_on_indexes AS\n"
+"SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, i.id AS index_id, i.name AS index_name, i.type AS index_type, CAST(10 AS smallint) AS depend_type\n"
+"  FROM sys.tables AS t, sys.idxs AS i\n"
+" WHERE i.table_id = t.id\n"
+"    -- exclude internal system generated and managed indexes for enforcing declarative PKey and Unique constraints\n"
+"   AND (i.table_id, i.name) NOT IN (SELECT k.table_id, k.name FROM sys.keys k)\n"
+" ORDER BY t.schema_id, t.name, i.name;\n"
+"\n"
+"GRANT SELECT ON sys.dependency_tables_on_indexes TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependency_columns_on_indexes AS\n"
+"SELECT c.id AS column_id, c.name AS column_name, t.id AS table_id, t.name AS table_name, t.schema_id, i.id AS index_id, i.name AS index_name, i.type AS index_type, CAST(ic.nr +1 AS INT) AS seq_nr, CAST(10 AS smallint) AS depend_type\n"
+"  FROM sys.tables AS t, sys.columns AS c, sys.objects AS ic, sys.idxs AS i\n"
+" WHERE ic.name = c.name AND ic.id = i.id AND c.table_id = i.table_id AND c.table_id = t.id\n"
+"    -- exclude internal system generated and managed indexes for enforcing declarative PKey and Unique constraints\n"
+"   AND (i.table_id, i.name) NOT IN (SELECT k.table_id, k.name FROM sys.keys k)\n"
+" ORDER BY c.name, t.name, t.schema_id, i.name, ic.nr;\n"
+"\n"
+"GRANT SELECT ON sys.dependency_columns_on_indexes TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependency_tables_on_foreignkeys AS\n"
+"SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, fk.name AS fk_name, CAST(k.type AS smallint) AS key_type, CAST(11 AS smallint) AS depend_type\n"
+"  FROM sys.tables AS t, sys.keys AS k, sys.keys AS fk\n"
+" WHERE fk.rkey = k.id and k.table_id = t.id\n"
+" ORDER BY t.schema_id, t.name, fk.name;\n"
+"\n"
+"GRANT SELECT ON sys.dependency_tables_on_foreignkeys TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependency_keys_on_foreignkeys AS\n"
+"SELECT k.table_id AS key_table_id, k.id AS key_id, k.name AS key_name, fk.table_id AS fk_table_id, fk.id AS fk_id, fk.name AS fk_name, CAST(k.type AS smallint) AS key_type, CAST(11 AS smallint) AS depend_type\n"
+"  FROM sys.keys AS k, sys.keys AS fk\n"
+" WHERE k.id = fk.rkey\n"
+" ORDER BY k.name, fk.name;\n"
+"\n"
+"GRANT SELECT ON sys.dependency_keys_on_foreignkeys TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependency_tables_on_procdures AS\n"
+"SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, p.name, p.type AS proc_type, dep.depend_type AS depend_type\n"
+"  FROM sys.functions AS p, sys.tables AS t, sys.dependencies AS dep\n"
+" WHERE t.id = dep.id AND p.id = dep.depend_id\n"
+"   AND dep.depend_type = 13 AND p.type = 2 AND t.type NOT IN (1, 11)\n"
+" ORDER BY t.name, t.schema_id, p.name, p.id;\n"
+"\n"
+"GRANT SELECT ON sys.dependency_tables_on_procdures TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependency_views_on_procdures AS\n"
+"SELECT v.name AS view_name, p.name AS proc_name, p.type AS proc_type, dep.depend_type AS depend_type\n"
+"  FROM sys.functions AS p, sys.tables AS v, sys.dependencies AS dep\n"
+" WHERE v.id = dep.id AND p.id = dep.depend_id\n"
+"   AND dep.depend_type = 13 AND p.type = 2 AND v.type IN (1, 11)\n"
+" ORDER BY v.name, v.schema_id, p.name, p.id;\n"
+"\n"
+"GRANT SELECT ON sys.dependency_views_on_procdures TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependency_columns_on_procdures AS\n"
+"SELECT c.name AS column_name, p.name AS proc_name, p.type AS proc_type, dep.depend_type AS depend_type\n"
+"  FROM sys.functions AS p, sys.columns AS c, sys.dependencies AS dep\n"
+" WHERE c.id = dep.id AND p.id = dep.depend_id\n"
+"   AND dep.depend_type = 13 AND p.type = 2\n"
+" ORDER BY c.name, c.table_id, p.name, p.id;\n"
+"\n"
+"GRANT SELECT ON sys.dependency_columns_on_procdures TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependency_functions_on_procdures AS\n"
+"SELECT p.name AS proc_name, p.type AS proc_type, f2.name AS func_name, f2.type AS func_type, dep.depend_type AS depend_type\n"
+"  FROM sys.functions AS p, sys.functions AS f2, sys.dependencies AS dep\n"
+" WHERE f2.id = dep.id AND p.id = dep.depend_id\n"
+"   AND dep.depend_type = 13 AND p.type = 2\n"
+" ORDER BY p.name, p.id, f2.name, f2.id;\n"
+"\n"
+"GRANT SELECT ON sys.dependency_functions_on_procdures TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependency_columns_on_types AS\n"
+"SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, dt.id AS type_id, dt.sqlname AS type_name, c.id AS column_id, c.name AS column_name, dep.depend_type AS depend_type\n"
+"  FROM sys.tables AS t, sys.columns AS c, sys.types AS dt, sys.dependencies AS dep\n"
+" WHERE dep.id = dt.id AND dep.depend_id = c.id AND c.table_id = t.id\n"
+"   AND dep.depend_type = 15\n"
+" ORDER BY dt.sqlname, t.name, c.name, c.id;\n"
+"\n"
+"GRANT SELECT ON sys.dependency_columns_on_types TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependency_functions_on_types AS\n"
+"SELECT dt.id AS type_id, dt.sqlname AS type_name, f.id AS function_id, f.name AS function_name, f.type AS function_type, dep.depend_type AS depend_type\n"
+"  FROM sys.functions AS f, sys.types AS dt, sys.dependencies AS dep\n"
+" WHERE dep.id = dt.id AND dep.depend_id = f.id\n"
+"   AND dep.depend_type = 15\n"
+" ORDER BY dt.sqlname, f.name, f.id;\n"
+"\n"
+"GRANT SELECT ON sys.dependency_functions_on_types TO PUBLIC;\n"
+"\n"
+"CREATE VIEW sys.dependency_args_on_types AS\n"
+"SELECT dt.id AS type_id, dt.sqlname AS type_name, f.id AS function_id, f.name AS function_name, a.id AS arg_id, a.name AS arg_name, a.number AS arg_nr, dep.depend_type AS depend_type\n"
+"  FROM sys.args AS a, sys.functions AS f, sys.types AS dt, sys.dependencies AS dep\n"
+" WHERE dep.id = dt.id AND dep.depend_id = a.id AND a.func_id = f.id\n"
+"   AND dep.depend_type = 15\n"
+" ORDER BY dt.sqlname, f.name, a.number, a.name;\n"
+"\n"
+"GRANT SELECT ON sys.dependency_args_on_types TO PUBLIC;\n"
+"\n"
+"UPDATE sys._tables SET system = true\n"
+" WHERE name IN ('ids', 'dependencies_vw', 'dependency_owners_on_schemas', 'dependency_columns_on_keys',\n"
+" 'dependency_tables_on_views', 'dependency_views_on_views', 'dependency_columns_on_views', 'dependency_functions_on_views',\n"
+" 'dependency_schemas_on_users',\n"
+" 'dependency_tables_on_functions', 'dependency_views_on_functions', 'dependency_columns_on_functions', 'dependency_functions_on_functions',\n"
+" 'dependency_tables_on_triggers', 'dependency_columns_on_triggers', 'dependency_functions_on_triggers',\n"
+" 'dependency_tables_on_indexes', 'dependency_columns_on_indexes',\n"
+" 'dependency_tables_on_foreignkeys', 'dependency_keys_on_foreignkeys',\n"
+" 'dependency_tables_on_procdures', 'dependency_views_on_procdures', 'dependency_columns_on_procdures', 'dependency_functions_on_procdures',\n"
+" 'dependency_columns_on_types', 'dependency_functions_on_types', 'dependency_args_on_types')\n"
+" AND schema_id IN (SELECT id FROM sys.schemas WHERE name = 'sys');\n"
+	);
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
@@ -1060,185 +1551,6 @@ sql_update_timetrails(Client c, mvc *sql)
 	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
-sql_remove_environment_func(Client c, mvc *sql)
-{
-	sql_schema *s = NULL;
-	sql_table *t = NULL;
-	size_t bufsize = 1000, pos = 0;
-	char *buf = GDKmalloc(bufsize), *err = NULL;
-	if (buf== NULL)
-		throw(SQL, "sql_remove_environment_func", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-
-	/* because issueing sql: "drop view sys.environment cascade;" fails with with error: !SQLException:sql.drop_view:42000!DROP VIEW: cannot drop system view 'environment'
-	   we need to drop the system view using internal function: mvc_drop_table() */
-	s = mvc_bind_schema(sql, "sys");
-	t = mvc_bind_table(sql, s, "environment");
-	mvc_drop_table(sql, s, t, 1);	// drop the system view: sys.environment cascade
-
-	pos += snprintf(buf + pos, bufsize - pos,
-			"drop function sys.environment() cascade;\n"
-			"create view sys.environment as select * from sys.env();\n"
-			"GRANT SELECT ON sys.environment TO PUBLIC;\n"
-			"update sys._tables set system = true where system = false and name = 'environment' and schema_id in (select id from sys.schemas where name = 'sys');\n");
-
-	pos += snprintf(buf + pos, bufsize - pos,
-			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
-
-	assert(pos < bufsize);
-	printf("Running database upgrade commands:\ndrop view sys.environment cascade;\n%s\n", buf);
-	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
-sql_create_comments_table(Client c)
-{
-	char *err, *q;
-
-	q = ""
-	"CREATE TABLE sys.comments (\n"
-	"        id INTEGER NOT NULL PRIMARY KEY,\n"
-	"        remark VARCHAR(65000) NOT NULL\n"
-	");\n"
-	"GRANT SELECT ON sys.comments TO PUBLIC;\n"
-	"\n"
-	"CREATE PROCEDURE sys.comment_on(obj_id INTEGER, obj_remark VARCHAR(65000))\n"
-	"BEGIN\n"
-	"    IF obj_id IS NOT NULL AND obj_id > 0 THEN\n"
-	"        IF obj_remark IS NULL OR obj_remark = '' THEN\n"
-	"                DELETE FROM sys.comments WHERE id = obj_id;\n"
-	"        ELSEIF EXISTS (SELECT id FROM sys.comments WHERE id = obj_id) THEN\n"
-	"                UPDATE sys.comments SET remark = obj_remark WHERE id = obj_id;\n"
-	"        ELSE\n"
-	"                INSERT INTO sys.comments VALUES (obj_id, obj_remark);\n"
-	"        END IF;\n"
-	"    END IF;\n"
-	"END;\n"
-	"\n"
-	"CREATE FUNCTION sys.function_type_keyword(ftype INT)\n"
-	"RETURNS VARCHAR(20)\n"
-	"BEGIN\n"
-	"	RETURN CASE ftype\n"
-	"                WHEN 1 THEN 'FUNCTION'\n"
-	"                WHEN 2 THEN 'PROCEDURE'\n"
-	"                WHEN 3 THEN 'AGGREGATE'\n"
-	"                WHEN 4 THEN 'FILTER FUNCTION'\n"
-	"                WHEN 5 THEN 'FUNCTION' -- table returning function\n"
-	"                WHEN 6 THEN 'FUNCTION' -- analytic function\n"
-	"                WHEN 7 THEN 'LOADER'\n"
-	"                ELSE 'ROUTINE'\n"
-	"        END;\n"
-	"END;\n"
-	"GRANT EXECUTE ON FUNCTION sys.function_type_keyword(INT) TO PUBLIC;\n"
-	"\n"
-	"CREATE VIEW sys.describe_all_objects AS\n"
-	"SELECT s.name AS sname,\n"
-	"	  t.name,\n"
-	"	  s.name || '.' || t.name AS fullname,\n"
-	"	  CAST(CASE t.type\n"
-	"	   WHEN 1 THEN 2 -- ntype for views\n"
-	"	   ELSE 1	  -- ntype for tables\n"
-	"	   END AS SMALLINT) AS ntype,\n"
-	"	  (CASE WHEN t.system THEN 'SYSTEM ' ELSE '' END) || tt.table_type_name AS type,\n"
-	"	  t.system,\n"
-	"	  c.remark AS remark\n"
-	"  FROM sys._tables t\n"
-	"  LEFT OUTER JOIN sys.comments c ON t.id = c.id\n"
-	"  LEFT OUTER JOIN sys.schemas s ON t.schema_id = s.id\n"
-	"  LEFT OUTER JOIN sys.table_types tt ON t.type = tt.table_type_id\n"
-	"UNION ALL\n"
-	"SELECT s.name AS sname,\n"
-	"	  sq.name,\n"
-	"	  s.name || '.' || sq.name AS fullname,\n"
-	"	  CAST(4 AS SMALLINT) AS ntype,\n"
-	"	  'SEQUENCE' AS type,\n"
-	"	  false AS system,\n"
-	"	  c.remark AS remark\n"
-	"  FROM sys.sequences sq\n"
-	"  LEFT OUTER JOIN sys.comments c ON sq.id = c.id\n"
-	"  LEFT OUTER JOIN sys.schemas s ON sq.schema_id = s.id\n"
-	"UNION ALL\n"
-	"SELECT DISTINCT s.name AS sname,  -- DISTINCT is needed to filter out duplicate overloaded function/procedure names\n"
-	"	  f.name,\n"
-	"	  s.name || '.' || f.name AS fullname,\n"
-	"	  CAST(8 AS SMALLINT) AS ntype,\n"
-	"	  (CASE WHEN sf.function_id IS NOT NULL THEN 'SYSTEM ' ELSE '' END) || sys.function_type_keyword(f.type) AS type,\n"
-	"	  CASE WHEN sf.function_id IS NULL THEN FALSE ELSE TRUE END AS system,\n"
-	"	  c.remark AS remark\n"
-	"  FROM sys.functions f\n"
-	"  LEFT OUTER JOIN sys.comments c ON f.id = c.id\n"
-	"  LEFT OUTER JOIN sys.schemas s ON f.schema_id = s.id\n"
-	"  LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id\n"
-	"UNION ALL\n"
-	"SELECT s.name AS sname,\n"
-	"	  s.name,\n"
-	"	  s.name AS fullname,\n"
-	"	  CAST(16 AS SMALLINT) AS ntype,\n"
-	"	  (CASE WHEN s.system THEN 'SYSTEM SCHEMA' ELSE 'SCHEMA' END) AS type,\n"
-	"	  s.system,\n"
-	"	  c.remark AS remark\n"
-	"  FROM sys.schemas s\n"
-	"  LEFT OUTER JOIN sys.comments c ON s.id = c.id\n"
-	" ORDER BY system, name, sname, ntype;\n"
-	"GRANT SELECT ON sys.describe_all_objects TO PUBLIC;\n"
-	"\n"
-	"CREATE VIEW sys.commented_function_signatures AS\n"
-	"SELECT f.id AS fid,\n"
-	"       s.name AS schema,\n"
-	"       f.name AS fname,\n"
-	"       sys.function_type_keyword(f.type) AS category,\n"
-	"       CASE WHEN sf.function_id IS NULL THEN FALSE ELSE TRUE END AS system,\n"
-	"       CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number ASC) WHEN 1 THEN f.name ELSE NULL END AS name,\n"
-	"       CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number DESC) WHEN 1 THEN c.remark ELSE NULL END AS remark,\n"
-	"       p.type, p.type_digits, p.type_scale,\n"
-	"       ROW_NUMBER() OVER (ORDER BY f.id, p.number) AS line\n"
-	"  FROM sys.functions f\n"
-	"  JOIN sys.comments c ON f.id = c.id\n"
-	"  JOIN sys.schemas s ON f.schema_id = s.id\n"
-	"  LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id\n"
-	"  LEFT OUTER JOIN sys.args p ON f.id = p.func_id AND p.inout = 1\n"
-	" ORDER BY line;\n"
-	"GRANT SELECT ON sys.commented_function_signatures TO PUBLIC;\n";
-
-	err = SQLstatementIntern(c, &q, "update", 1, 0, NULL);
-	if (err)
-		return err;
-
-	q = ""
-		"UPDATE sys._tables\n"
-		"SET system = true\n"
-		"WHERE name IN ('comments', 'describe_all_objects', 'commented_function_signatures')\n"
-		"AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n";
-	err = SQLstatementIntern(c, &q, "update", 1, 0, NULL);
-	if (err)
-		return err;
-
-	/* column function_id is now created with NOT NULL */
-	q = ""
-		"DELETE FROM sys.systemfunctions WHERE function_id IS NULL;\n"
-		"ALTER TABLE sys.systemfunctions ALTER COLUMN function_id SET NOT NULL;\n"
-		"INSERT INTO sys.systemfunctions\n"
-		"SELECT id FROM sys.functions\n"
-		"WHERE schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys')\n"
-		"AND name IN ('comment_on', 'function_type_keyword');\n";
-	err = SQLstatementIntern(c, &q, "update", 1, 0, NULL);
-	if (err)
-		return err;
-
-
-	/* table keywords is extended with keyword COMMENT */
-	q = ""
-		"ALTER TABLE sys.keywords SET READ WRITE;\n"
-		"INSERT INTO sys.keywords VALUES ('COMMENT');\n"
-		"-- ALTER TABLE sys.keywords SET READ ONLY;\n";
-/* TODO fix. Last ALTER TABLE is disabled as it produces: !SQLException:sql.alter_table_set_access:40000!ALTER TABLE: set READ or INSERT ONLY not possible with outstanding updates (wait until updates are flushed) */
-
-	err = SQLstatementIntern(c, &q, "update", 1, 0, NULL);
-	return err;
 }
 
 void
@@ -1341,39 +1653,41 @@ SQLupgrades(Client c, mvc *m)
 		freeException(err);
 	}
 
-	if (!sql_bind_func(m->sa, s, "master", NULL, NULL, F_PROC)) {
-		if ((err = sql_update_default(c, m)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
-			freeException(err);
-		}
-	}
-
 	if ((t = mvc_bind_table(m, s, "geometry_columns")) != NULL &&
 	    (col = mvc_bind_column(m, t, "coord_dimension")) != NULL &&
 	    strcmp(col->type.type->sqlname, "int") != 0) {
-		if ((err = sql_update_default_geom(c, m, t)) != NULL) {
+		if ((err = sql_update_mar2018_geom(c, m, t)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}
 	}
 
+	if (!sql_bind_func(m->sa, s, "master", NULL, NULL, F_PROC)) {
+		if ((err = sql_update_mar2018(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+	}
+
+	/* 2 new views added in 51_sys_schema_extension.sql */
+	if (mvc_bind_table(m, s, "roles") == NULL) {
+		if ((err = sql_add_sys_views(c)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+	}
+
+	/* many new views added in 21_dependency_views.sql */
+	if (mvc_bind_table(m, s, "dependencies_vw") == NULL) {
+		if ((err = sql_add_new_sys_dependencies_views(c)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+	}
+
+	/* streams tables for timetrails */
 	if (mvc_bind_table(m, s, "_streams") == NULL) {
 		if ((err = sql_update_timetrails(c, m)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
-			freeException(err);
-		}
-	}
-
-	if (sql_bind_func_(m->sa, s, "environment", NULL, F_UNION)) {
-		if ((err = sql_remove_environment_func(c, m)) != NULL) {
-			fprintf(stderr, "!%s\n", err);
-			freeException(err);
-		}
-	}
-
-	/* wrap into sql_update_default */
-	if (mvc_bind_table(m, s, "comments") == NULL) {
-		if ((err = sql_create_comments_table(c)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}

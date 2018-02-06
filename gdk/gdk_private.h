@@ -277,8 +277,6 @@ extern MT_Lock GDKthreadLock;
 extern MT_Lock GDKtmLock;
 extern MT_Lock MT_system_lock;
 
-#define ATOMappendpriv(t, h) (ATOMstorage(t) != TYPE_str || GDK_ELIMDOUBLES(h))
-
 #define BBPdirty(x)	(BBP_dirty=(x))
 
 #define BATcheck(tst, msg, err)						\
@@ -298,21 +296,6 @@ extern MT_Lock MT_system_lock;
 			return (err);		\
 		}				\
 	} while (0)
-#define BATcompatible(P1,P2,E,F)					\
-	do {								\
-		ERRORcheck((P1) == NULL, F ": BAT required\n", E);	\
-		ERRORcheck((P2) == NULL, F ": BAT required\n", E);	\
-		if (TYPEerror(BATttype(P1),BATttype(P2))) {		\
-			GDKerror("Incompatible operands.\n");		\
-			return (E);					\
-		}							\
-		if (BATttype(P1) != BATttype(P2) &&			\
-		    ATOMtype((P1)->ttype) != ATOMtype((P2)->ttype)) {	\
-			CHECKDEBUG fprintf(stderr,"#Interpreting %s as %s.\n", \
-				ATOMname(BATttype(P2)), ATOMname(BATttype(P1))); \
-		}							\
-	} while (0)
-#define TYPEerror(t1,t2)	(ATOMstorage(ATOMtype(t1)) != ATOMstorage(ATOMtype(t2)))
 
 #define GDKswapLock(x)  GDKbatLock[(x)&BBP_BATMASK].swap
 #define GDKhashLock(x)  GDKbatLock[(x)&BBP_BATMASK].hash

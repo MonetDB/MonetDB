@@ -666,7 +666,7 @@
 #define PACKAGE_URL "https://www.monetdb.org/"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "11.28.0"
+#define PACKAGE_VERSION "11.30.0"
 
 /* Path separator */
 #define PATH_SEP ';'
@@ -891,10 +891,6 @@ c99_snprintf(char *outBuf, size_t size, const char *format, ...)
 #else
 #define ssize_t int
 #endif
-
-/* normally defined in fcntl.h, but not on Windows */
-#define O_CLOEXEC 0
-
 
 typedef int64_t lng;
 typedef uint64_t ulng;

@@ -41,6 +41,8 @@ typedef struct {
 	const char *comments;
 } SQLhelp;
 
+#define NUMBER_MAJOR_COMMANDS 73 // The number of major commands to show in case of no query
+
 SQLhelp sqlhelp[] = {
 	// major commands
 	{"ALTER TABLE",
@@ -206,8 +208,8 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"CREATE TRIGGER",
 	 "",
-	 "CREATE TRIGGER wname { BEFORE | AFTER } {INSERT | DELETE | UPDATE [ OF ident [',' ident]...\n"
-	 "ON qname [REFERENCING trigger_reference... triggered_action",
+	 "CREATE [ OR REPLACE ] TRIGGER wname { BEFORE | AFTER } { INSERT | DELETE | TRUNCATE ...\n"
+	 " | UPDATE [ OF ident [',' ident]] } ON qname REFERENCING trigger_reference... triggered_action",
 	 "trigger_reference",
 	 NULL},
 	{"CREATE TYPE",
@@ -217,7 +219,8 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"CREATE VIEW",
 	 "",
-	 "CREATE VIEW qname [ column_list ] AS { query_expression | '(' query_expression ') } [ WITH CHECK OPTION ]",
+	 "CREATE [ OR REPLACE ] VIEW qname [ column_list ] AS { query_expression | '(' query_expression ')' }\n"
+	 "[ WITH CHECK OPTION ]",
 	 "column_list,query_expression",
 	 NULL},
 	{"CURRENT_DATE",
@@ -263,13 +266,13 @@ SQLhelp sqlhelp[] = {
 	{"DROP AGGREGATE",
 	 "",
 	 "DROP ALL AGGREGATE qname [ RESTRICT | CASCADE ]\n"
-	 "DROP AGGREGATE qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
+	 "DROP AGGREGATE [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
 	 NULL,
 	 NULL},
 	{"DROP FUNCTION",
 	 "",
 	 "DROP ALL [FILTER] FUNCTION qname [ RESTRICT | CASCADE ]\n"
-	 "DROP [FILTER] FUNCTION qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
+	 "DROP [FILTER] FUNCTION [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
 	 NULL,
 	 NULL},
 	{"DROP INDEX",
@@ -280,13 +283,13 @@ SQLhelp sqlhelp[] = {
 	{"DROP LOADER",
 	 "",
 	 "DROP ALL LOADER qname [ RESTRICT | CASCADE ]\n"
-	 "DROP LOADER qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
+	 "DROP LOADER [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
 	 NULL,
 	 NULL},
 	{"DROP PROCEDURE",
 	 "",
 	 "DROP ALL PROCEDURE qname [ RESTRICT | CASCADE ]\n"
-	 "DROP PROCEDURE qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
+	 "DROP PROCEDURE [ IF EXISTS ] qname [ '(' [ param [',' ...]] ')' ] [ RESTRICT | CASCADE ]",
 	 NULL,
 	 NULL},
 	{"DROP ROLE",
@@ -311,7 +314,7 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"DROP TRIGGER",
 	 "",
-	 "DROP TRIGGER qname",
+	 "DROP TRIGGER [ IF EXISTS ] qname",
 	 NULL,
 	 NULL},
 	{"DROP TYPE",
@@ -395,7 +398,7 @@ SQLhelp sqlhelp[] = {
 	 "SET '=' simple_atom",
 	 "simple_atom",
 	 NULL},
-	{"SET LOCALSTART TRANSACTION",
+	{"SET LOCAL TRANSACTION",
 	 "",
 	 "START LOCAL TRANSACTION transactionmode",
 	 "transactionmode,isolevel",
@@ -449,16 +452,20 @@ SQLhelp sqlhelp[] = {
 	 "table_ref [ INNER | LEFT | RIGHT | FULL] JOIN table_ref { ON search_condition | USING column_list } |\n",
 	 NULL,
 	 "See also https://www.monetdb.org/Documentation/SQLreference/TableExpressions"},
-
 	{"TRACE",
 	 "Give execution trace",
 	 "TRACE statement",
 	 NULL,
 	 NULL},
+	{"TRUNCATE",
+	 "",
+	 "TRUNCATE [ TABLE ] qname [ CONTINUE IDENTITY | RESTART IDENTITY ] [ CASCADE | RESTRICT ]",
+	 "",
+	 NULL},
 	{"UPDATE",
 	 "",
 	 "[WITH with_list] UPDATE qname SET assignment_list [FROM from_clause] [WHERE search_condition]",
-	 "with_list,assignment_list,from_clause",
+	 "with_list,assignment_list,from_clause,search_condition",
 	 NULL},
 	{"WHILE",
 	 "",
@@ -481,7 +488,7 @@ SQLhelp sqlhelp[] = {
 // The subgrammar rules
 	{"assignment_list",
 	 NULL,
-	 "colum '=' search_condition | '(' column [','...] ')' '=' subquery",
+	 "column '=' DEFAULT | column '=' search_condition | '(' column [','...] ')' '=' subquery",
 	 "search_condition,column,subquery",
 	 NULL},
 	{"authid",
@@ -491,7 +498,7 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"column_def",
 	 NULL,
-	 "COLUMN [ SERIAL | BIGSERIAL] | COLUMN data_type [ column_option ...]",
+	 "COLUMN [ SERIAL | BIGSERIAL ] | COLUMN data_type [ column_option ...]",
 	 "column_option",
 	 NULL},
 	{"column_list",
@@ -522,7 +529,7 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"datetime_type",
 	 NULL,
-	 "DATE  | TIME [ time_precision ] tz | TIMESTAMP [ timestamp_precision ] tz",
+	 "DATE | TIME [ time_precision ] tz | TIMESTAMP [ timestamp_precision ] tz",
 	 "time_precision,timestamp_precision,tz",
 	 NULL},
 	{"data_type",
@@ -544,7 +551,7 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"end_time",
 	 NULL,
-	 "SECOND  timestamp_precision\n,timestamp_precision",
+	 "SECOND timestamp_precision\n,timestamp_precision",
 	 NULL,
 	 NULL},
 	{"function_return",
@@ -585,7 +592,7 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"interval",
 	 NULL,
-	 "INTERVAL [ '+' | '-' ] string  start_field TO end_field",
+	 "INTERVAL [ '+' | '-' ] string start_field TO end_field",
 	 "start_field,end_time",
 	 NULL},
 	{"intval",
@@ -615,14 +622,14 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"privileges",
 	 NULL,
-	 "{ ALL [PRIVILEGES ] | { INSERT | DELETE | EXECUTE | [ REFERENCES | SELECT | UPDATE } column_list ON "
-	 " { [TABLE] qname | routine_designator }  | global_privileges",
+	 "{ ALL [PRIVILEGES ] | INSERT | DELETE | EXECUTE | REFERENCES | SELECT | TRUNCATE | UPDATE } column_list ON "
+	 " { [TABLE] qname | routine_designator } | global_privileges",
 	 "global_privileges,routine_designator",
 	 NULL},
 	{"procedure_statement",
 	 NULL,
-	 "{transaction_statement | update_statement | grant |revoke | declare |set_statement | control_statement |select_single_row } ';'",
-	 "transaction_statement | update_statement | grant |revoke | declare |set_statement | control_statement |select_single_row",
+	 "{transaction_statement | update_statement | grant | revoke | declare | set_statement | control_statement | select_single_row} ';'",
+	 "transaction_statement | update_statement | grant | revoke | declare | set_statement | control_statement | select_single_row",
 	 NULL},
 	{"query_expression",
 	 NULL,
@@ -716,12 +723,12 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"update_statement",
 	 NULL,
-	 "delete_stmt | insert_stmt | update_stmt | copyfrom_stmt",
-	 "delete_stmt | insert_stmt | update_stmt | copyfrom_stmt",
+	 "delete_stmt | truncate_stmt | insert_stmt | update_stmt | copyfrom_stmt",
+	 "delete_stmt | truncate_stmt | insert_stmt | update_stmt | copyfrom_stmt",
 	 NULL},
 	{"triggered_action",
 	 NULL,
-	 "[FOR EACH { ROW | STATEMENT } ] [ WHEN '(' search_condition ')'\n"
+	 "[ FOR EACH { ROW | STATEMENT } ] [ WHEN '(' search_condition ')'\n"
 	 "BEGIN ATOMIC trigger_statement ... END ",
 	 NULL,
 	 NULL},
@@ -732,7 +739,7 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"when_statement",
 	 NULL,
-	 "WHEN salar_expression THEN procedure_statement ...",
+	 "WHEN scalar_expression THEN procedure_statement ...",
 	 NULL,
 	 NULL},
 	{"with_list",
@@ -874,10 +881,17 @@ sql_help(const char *pattern, stream *toConsole, int pagewidth)
 	if (ncolumns > 1 && ncolumns * (int) maxlen + ncolumns - 1 > pagewidth)
 		ncolumns--;
 	step = total / ncolumns;
+	if(total % ncolumns) {
+		step++;
+	}
 	for (i = 0; i < step; i++) {
 		int j;
-		for (j = 0; j < ncolumns; j++)
-			sql_word(sqlhelp[i + j * step].command, j < ncolumns - 1 ? maxlen : 0, toConsole);
+		for (j = 0; j < ncolumns; j++) {
+			int nextNum = i + j * step;
+			if(nextNum < NUMBER_MAJOR_COMMANDS) {
+				sql_word(sqlhelp[nextNum].command, j < ncolumns - 1 ? maxlen : 0, toConsole);
+			}
+		}
 		mnstr_printf(toConsole, "\n");
 	}
 	mnstr_printf(toConsole, "Using the conventional grammar constructs:\n");

@@ -42,6 +42,7 @@ static struct msql_types {
 	{"date", SQL_TYPE_DATE},
 	{"decimal", SQL_DECIMAL},
 	{"double", SQL_DOUBLE},
+	{"hugeint", SQL_HUGEINT},
 	{"int", SQL_INTEGER},
 	{"month_interval", SQL_INTERVAL_MONTH},
 	{"oid", SQL_BIGINT},

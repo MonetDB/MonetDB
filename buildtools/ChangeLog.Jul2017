@@ -1,7 +1,3 @@
 # ChangeLog file for buildtools
 # This file is updated with Maddlog
 
-* Tue Jan 16 2018 Sjoerd Mullender <sjoerd@acm.org>
-- Added the .lib and .h files needed for building extensions to the
-  Windows installer.
-

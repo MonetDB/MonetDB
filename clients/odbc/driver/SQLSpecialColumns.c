@@ -232,6 +232,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 				    "when 'date' then %d "
 				    "when 'decimal' then %d "
 				    "when 'double' then %d "
+				    "when 'hugeint' then %d "
 				    "when 'int' then %d "
 				    "when 'month_interval' then "
 					 "case c.type_digits "
@@ -270,6 +271,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 				    "when 'date' then 'DATE' "
 				    "when 'decimal' then 'DECIMAL' "
 				    "when 'double' then 'DOUBLE' "
+				    "when 'hugeint' then 'HUGEINT' "
 				    "when 'int' then 'INTEGER' "
 				    "when 'month_interval' then "
 					 "case c.type_digits "
@@ -352,6 +354,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 				    "when 'timestamp' then 23 "
 				    "when 'timestamptz' then 23 "
 				    "when 'bigint' then 20 "
+				    "when 'hugeint' then 40 "
 				    "when 'int' then 11 "
 				    "when 'smallint' then 6 "
 				    "when 'tinyint' then 4 "
@@ -378,6 +381,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 					 "end "
 				    "when 'decimal' then c.type_digits "
 				    "when 'bigint' then 19 "
+				    "when 'hugeint' then 39 "
 				    "when 'int' then 10 "
 				    "when 'smallint' then 5 "
 				    "when 'tinyint' then 3 "
@@ -401,7 +405,7 @@ MNDBSpecialColumns(ODBCStmt *stmt,
 			/* data_type: */
 			SQL_BIGINT, SQL_LONGVARBINARY, SQL_BIT, SQL_WCHAR,
 			SQL_WLONGVARCHAR, SQL_TYPE_DATE, SQL_DECIMAL,
-			SQL_DOUBLE, SQL_INTEGER, SQL_INTERVAL_YEAR,
+			SQL_DOUBLE, SQL_HUGEINT, SQL_INTEGER, SQL_INTERVAL_YEAR,
 			SQL_INTERVAL_YEAR_TO_MONTH, SQL_INTERVAL_MONTH,
 			SQL_REAL, SQL_INTERVAL_DAY, SQL_INTERVAL_DAY_TO_HOUR,
 			SQL_INTERVAL_DAY_TO_MINUTE, SQL_INTERVAL_DAY_TO_SECOND,

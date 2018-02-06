@@ -190,6 +190,7 @@ MNDBBindParameter(ODBCStmt *stmt,
 	case SQL_SMALLINT:
 	case SQL_INTEGER:
 	case SQL_BIGINT:
+	case SQL_HUGEINT:
 	case SQL_GUID:
 		break;
 	default:

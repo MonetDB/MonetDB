@@ -256,11 +256,11 @@ BATproject(BAT *l, BAT *r)
 	     lcount > (rcount >> 3) ||
 	     r->batRestricted == BAT_READ)) {
 		/* insert strings as ints, we need to copy the string
-		 * heap whole sale; we can not do this if there are
-		 * nils in the left column, and we will not do it if
-		 * the left is much smaller than the right and the
-		 * right is writable (meaning we have to actually copy
-		 * the right string heap) */
+		 * heap whole sale; we can't do this if there are nils
+		 * in the left column, and we won't do it if the left
+		 * is much smaller than the right and the right is
+		 * writable (meaning we have to actually copy the
+		 * right string heap) */
 		tpe = r->twidth == 1 ? TYPE_bte : (r->twidth == 2 ? TYPE_sht : (r->twidth == 4 ? TYPE_int : TYPE_lng));
 		/* int's nil representation is a valid offset, so
 		 * don't check for nils */

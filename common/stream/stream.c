@@ -695,6 +695,10 @@ create_stream(const char *name)
 	s->isutf8 = 0;		/* not known for sure */
 	s->type = ST_ASCII;
 	s->name = strdup(name);
+	if(s->name == NULL) {
+		free(s);
+		return NULL;
+	}
 	s->stream_data.p = NULL;
 	s->errnr = MNSTR_NO__ERROR;
 	s->read = NULL;
@@ -2718,6 +2722,10 @@ file_rastream(FILE *restrict fp, const char *restrict name)
 #ifdef _MSC_VER
 	if (fileno(fp) == 0 && isatty(0)) {
 		struct console *c = malloc(sizeof(struct console));
+		if(c == NULL) {
+			destroy(s);
+			return NULL;
+		}
 		s->stream_data.p = c;
 		c->h = GetStdHandle(STD_INPUT_HANDLE);
 		c->i = 0;
@@ -2755,6 +2763,10 @@ file_wastream(FILE *restrict fp, const char *restrict name)
 #ifdef _MSC_VER
 	if ((fileno(fp) == 1 || fileno(fp) == 2) && isatty(fileno(fp))) {
 		struct console *c = malloc(sizeof(struct console));
+		if(c == NULL) {
+			destroy(s);
+			return NULL;
+		}
 		s->stream_data.p = c;
 		c->h = GetStdHandle(STD_OUTPUT_HANDLE);
 		c->i = 0;

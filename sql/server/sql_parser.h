@@ -94,6 +94,7 @@ typedef enum tokens {
 	TR_MODE,
 	SQL_INSERT,
 	SQL_DELETE,
+	SQL_TRUNCATE,
 	SQL_UPDATE,
 	SQL_STORAGE,
 	SQL_CROSS,

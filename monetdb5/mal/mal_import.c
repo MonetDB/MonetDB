@@ -336,6 +336,11 @@ compileString(Symbol *fcn, Client cntxt, str s)
 
 	buffer_init(b, qry, len);
 	fdin = bstream_create(buffer_rastream(b, "compileString"), b->len);
+	if (fdin == NULL) {
+		GDKfree(qry);
+		GDKfree(b);
+		throw(MAL,"mal.eval",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 	strncpy(fdin->buf, qry, len+1);
 
 	// compile in context of called for
@@ -398,12 +403,12 @@ callString(Client cntxt, str s, int listing)
 
 	buffer_init(b, qry, len);
 	c= MCinitClient((oid)0, bstream_create(buffer_rastream(b, "callString"), b->len),0);
-	strncpy(c->fdin->buf, qry, len+1);
 	if( c == NULL){
 		GDKfree(b);
 		GDKfree(qry);
 		throw(MAL,"mal.call","Can not create user context");
 	}
+	strncpy(c->fdin->buf, qry, len+1);
 	c->curmodule = c->usermodule =  cntxt->usermodule;
 	c->promptlength = 0;
 	c->listing = listing;

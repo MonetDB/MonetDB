@@ -1,3 +1,11 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ */
+
 #define RSTR(somestr) mkCharCE(somestr, CE_UTF8)
 
 
@@ -62,7 +70,7 @@
 static SEXP bat_to_sexp(BAT* b) {
 	SEXP varvalue = NULL;
 	// TODO: deal with SQL types (DECIMAL/DATE)
-	switch (ATOMstorage(getBatType(b->ttype))) {
+	switch (ATOMstorage(b->ttype)) {
 		case TYPE_void: {
 			size_t i = 0;
 			varvalue = PROTECT(NEW_LOGICAL(BATcount(b)));

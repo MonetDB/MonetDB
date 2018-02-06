@@ -87,8 +87,6 @@ terminateProcess(pid_t pid, char *dbname, mtype type, int lock)
 		free(dbname);
 		return;
 	case SABdbStarting:
-		if (lock)
-			pthread_mutex_unlock(&fork_lock);
 		Mfprintf(stderr, "database '%s' appears to be starting up\n",
 				 dbname);
 		/* starting up, so we'll go to the shut down phase */
@@ -393,15 +391,14 @@ forkMserver(char *database, sabdb** stats, int force)
 		/* refresh stats, now we will have a connection registered */
 		msab_freeStatus(stats);
 		er = msab_getStatus(stats, database);
+		pthread_mutex_unlock(&fork_lock);
 		if (er != NULL) {
 			/* since the client mserver lives its own life anyway,
 			 * it's not really a problem we exit here */
 			err e = newErr("%s", er);
 			free(er);
-			pthread_mutex_unlock(&fork_lock);
 			return(e);
 		}
-		pthread_mutex_unlock(&fork_lock);
 		return(NO_ERR);
 	}
 
@@ -420,9 +417,10 @@ forkMserver(char *database, sabdb** stats, int force)
 
 	er = msab_getDBfarm(&sabdbfarm);
 	if (er != NULL) {
-		err e = newErr("%s", er);
-		free(er);
-		return(e);
+		freeConfFile(ckv);
+		free(ckv);
+		pthread_mutex_unlock(&fork_lock);
+		return(er);
 	}
 
 	mydoproxy = strcmp(getConfVal(_mero_props, "forward"), "proxy") == 0;
@@ -470,6 +468,10 @@ forkMserver(char *database, sabdb** stats, int force)
 	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
 		if (embeddedpy) {
 			// only one python version can be active at a time
+			freeConfFile(ckv);
+			free(ckv);
+			pthread_mutex_unlock(&fork_lock);
+			free(sabdbfarm);
 			return newErr("attempting to start mserver with both embedded python2 and embedded python3; only one python version can be active at a time\n");
 		}
 		embeddedpy = "embedded_py=3";
@@ -485,6 +487,7 @@ forkMserver(char *database, sabdb** stats, int force)
 	/* ok, now exec that mserver we want */
 	snprintf(dbpath, sizeof(dbpath),
 			 "--dbpath=%s/%s", sabdbfarm, database);
+	free(sabdbfarm);
 	snprintf(vaultkey, sizeof(vaultkey),
 			 "monet_vault_key=%s/.vaultkey", (*stats)->path);
 	snprintf(muri, sizeof(muri),

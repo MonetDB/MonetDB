@@ -693,6 +693,7 @@ def msc_library(fd, var, libmap, msc):
     sep = ""
     pref = 'lib'
     dll = '.dll'
+    pdb = '.pdb'
     if "NAME" in libmap:
         libname = libmap['NAME'][0]
     else:
@@ -823,9 +824,6 @@ def msc_library(fd, var, libmap, msc):
         fd.write("%s%s: $(%s_DEPS) \n" % (ln, dll, ln.replace('-','_')))
         fd.write('\tpython "$(TOPDIR)\\..\\NT\\wincompile.py" $(CC) $(CFLAGS) -LD -Fe%s%s @<< /link @<<\n$(%s_OBJS)\n<<\n$(%s_LIBS)%s\n<<\n' % (ln, dll, ln.replace('-','_'), ln.replace('-','_'), deffile))
         fd.write("\tif exist $@.manifest $(MT) -manifest $@.manifest -outputresource:$@;2\n");
-        if sep == '_':
-            fd.write('\tif not exist .libs $(MKDIR) .libs\n')
-            fd.write('\t$(INSTALL) "%s%s" ".libs\\%s%s"\n' % (ln, dll, ln, dll))
     fd.write("\n")
 
     if SCRIPTS:
@@ -1039,6 +1037,7 @@ def output(tree, cwd, topdir):
             fd.write('install_bin_%s: %s\n' % (dst, src))
             fd.write('\tif not exist "$(%sdir)" $(MKDIR) "$(%sdir)"\n' % (dst.replace('-','_'), dst.replace('-','_')))
             fd.write('\t$(INSTALL) %s "$(%sdir)"\n' % (src,dst.replace('-','_')))
+            fd.write('\t$(INSTALL) %s.pdb "$(%sdir)"\n' % (dst,dst.replace('-','_')))
             if cond:
                 fd.write('!ELSE\n')
                 fd.write('install_bin_%s:\n' % dst)
@@ -1053,6 +1052,8 @@ def output(tree, cwd, topdir):
             fd.write('\t$(INSTALL) "%s" "%s\\%s%s"\n' % (src, dir, dst, ext))
             if instlib:
                 fd.write('\t$(INSTALL) "%s" "%s\\%s%s"\n' % (instlib, dir, dst, '.lib'))
+            if src.endswith('.dll'):
+                fd.write('\t$(INSTALL) "%s" "%s\\%s%s"\n' % (src.replace('.dll', '.pdb'), dir, dst, '.pdb'))
             if cond:
                 fd.write('!ELSE\n')
                 fd.write('install_%s:\n' % dst)

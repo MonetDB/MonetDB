@@ -69,14 +69,16 @@
  * and creates a secondary result set upon termination
  * of the query. 
  */
-static void
+static str
 SQLsetTrace(Client cntxt, MalBlkPtr mb)
 {
 	InstrPtr q, resultset;
 	InstrPtr tbls, cols, types, clen, scale;
+	str msg = MAL_SUCCEED;
 	int k;
 
-	startTrace("sql_traces");
+	if((msg = startTrace("sql_traces")) != MAL_SUCCEED)
+		return msg;
 	clearTrace();
 
 	for(k= mb->stop-1; k>0; k--)
@@ -185,6 +187,8 @@ SQLsetTrace(Client cntxt, MalBlkPtr mb)
 	pushInstruction(mb,resultset);
 	pushEndInstruction(mb);
 	chkTypes(cntxt->usermodule, mb, TRUE);
+
+	return msg;
 }
 
 /*
@@ -367,7 +371,14 @@ SQLrun(Client c, backend *be, mvc *m)
 		msg = runMAL(c, mb, 0, 0);
 		stopTrace(0);
 	} else {
-		msg = runMAL(c, mb, 0, 0);
+		if( m->emod & mod_trace){
+			if((msg = SQLsetTrace(c,mb)) == MAL_SUCCEED) {
+				msg = runMAL(c, mb, 0, 0);
+				stopTrace(0);
+			}
+		} else {
+			msg = runMAL(c, mb, 0, 0);
+		}
 	}
 
 	// release the resources
