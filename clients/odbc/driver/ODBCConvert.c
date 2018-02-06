@@ -587,9 +587,6 @@ parsemonthintervalstring(char **svalp,
 			slen--;
 			sval++;
 		}
-		ival->interval_type = SQL_IS_YEAR_TO_MONTH;
-		ival->intval.year_month.year = val1;
-		ival->intval.year_month.month = val2;
 		if (val2 >= 12)
 			return SQL_ERROR;
 	}
@@ -612,10 +609,13 @@ parsemonthintervalstring(char **svalp,
 			return SQL_ERROR;
 		if (leadingprecision > p)
 			return SQL_ERROR;
+		ival->intval.year_month.year = val1;
 		if (val2 == -1) {
 			ival->interval_type = SQL_IS_YEAR;
-			ival->intval.year_month.year = val1;
 			ival->intval.year_month.month = 0;
+		} else {
+			ival->interval_type = SQL_IS_YEAR_TO_MONTH;
+			ival->intval.year_month.month = val2;
 		}
 		if (slen > 0 && isspace((unsigned char) *sval)) {
 			while (slen > 0 && isspace((unsigned char) *sval)) {
@@ -3560,6 +3560,7 @@ ODBCStore(ODBCStmt *stmt,
 			snprintf(data, sizeof(data), "INTERVAL %s'%u-%u' YEAR TO MONTH", ival.interval_sign ? "" : "- ", (unsigned int) ival.intval.year_month.year, (unsigned int) ival.intval.year_month.month);
 			break;
 		default:
+			/* cannot happen */
 			break;
 		}
 		assigns(buf, bufpos, buflen, data, stmt);

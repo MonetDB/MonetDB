@@ -389,6 +389,7 @@ getMalBlkOptimized(MalBlkPtr mb, str name)
 	if( name == 0)
 		return mb;
 	strncpy(buf,name, IDLENGTH);
+	buf[IDLENGTH - 1] = 0;
 	n = strchr(buf,']');
 	if( n) *n = 0;
 	

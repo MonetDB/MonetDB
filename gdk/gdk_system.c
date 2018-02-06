@@ -291,6 +291,7 @@ MT_exiting_thread(void)
 		w->flags |= EXITED;
 }
 
+/* coverity[+kill] */
 void
 MT_exit_thread(int s)
 {
@@ -605,6 +606,7 @@ MT_exiting_thread(void)
 	pthread_mutex_unlock(&posthread_lock);
 }
 
+/* coverity[+kill] */
 void
 MT_exit_thread(int s)
 {

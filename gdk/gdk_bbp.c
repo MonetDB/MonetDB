@@ -1380,6 +1380,10 @@ BBPreadEntries(FILE *fp, int bbpversion)
 		if (strlen(filename) >= sizeof(BBP_physical(bid)))
 			GDKfatal("BBPinit: physical name for BAT (%s) is too long (" SZFMT " bytes).", filename, sizeof(BBP_physical(bid)) - 1);
 		strncpy(BBP_physical(bid), filename, sizeof(BBP_physical(bid)));
+#ifdef STATIC_CODE_ANALYSIS
+		/* help coverity */
+		BBP_physical(bid)[sizeof(BBP_physical(bid)) - 1] = 0;
+#endif
 		BBP_options(bid) = NULL;
 		if (options)
 			BBP_options(bid) = GDKstrdup(options);

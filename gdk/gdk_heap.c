@@ -133,6 +133,10 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 				char *ext;
 				close(fd);
 				strncpy(of, h->filename, sizeof(h->filename));
+#ifdef STATIC_CODE_ANALYSIS
+				/* help coverity */
+				of[sizeof(h->filename) - 1] = 0;
+#endif
 				ext = decompose_filename(of);
 				h->newstorage = STORE_MMAP;
 				if (HEAPload(h, of, ext, FALSE) != GDK_SUCCEED)
@@ -176,6 +180,10 @@ HEAPextend(Heap *h, size_t size, int mayshare)
 	const char *failure = "None";
 
 	strncpy(nme, h->filename, sizeof(nme));
+#ifdef STATIC_CODE_ANALYSIS
+	/* help coverity */
+	nme[sizeof(nme) - 1] = 0;
+#endif
 	ext = decompose_filename(nme);
 	if (size <= h->size)
 		return GDK_SUCCEED;	/* nothing to do */

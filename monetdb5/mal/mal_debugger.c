@@ -468,13 +468,13 @@ retryRead:
 			if (strncmp("check",b,5) == 0){
 				Symbol fs;
 				int i;
+				str fcnnme;
 
 				skipWord(cntxt,b);
 				skipBlanc(cntxt, b);
-				if( strchr(b,'.') ){
+				if( (fcnnme = strchr(b,'.')) != NULL ){
 					str modnme = b;
-					str fcnnme;
-					fcnnme = strchr(b,'.');
+
 					*fcnnme++  = 0;
 
 					fs = findSymbol(cntxt->usermodule, putName(modnme),putName(fcnnme));
