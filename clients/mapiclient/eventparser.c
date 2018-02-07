@@ -365,6 +365,7 @@ lineparser(char *row, EventRecord *ev)
 	if (c == NULL)
 		return -3;
 #else
+	int pos;
 	if (sscanf(c + 1, "%d:%d:%d%n", &stm.tm_hour, &stm.tm_min, &stm.tm_sec, &pos) < 3)
 		return -3;
 	c += pos + 1;
