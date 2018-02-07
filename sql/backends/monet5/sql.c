@@ -2133,6 +2133,10 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 5), 1, NULL);
+	if(res < 0) {
+		msg = createException(SQL, "sql.resultset", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto wrapup_result_set;
+	}
 
 	tbl = BATdescriptor(tblId);
 	atr = BATdescriptor(atrId);
@@ -2470,7 +2474,8 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = *(ptr *) p;
 
 	// scalar values are single-column result sets
-	res_id = mvc_result_table(b->mvc, mb->tag, 1, 1, NULL);
+	if((res_id = mvc_result_table(b->mvc, mb->tag, 1, 1, NULL)) < 0)
+		throw(SQL, "sql.exportValue", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	if (mvc_result_value(b->mvc, tn, cn, type, digits, scale, p, mtype))
 		throw(SQL, "sql.exportValue", SQLSTATE(45000) "Result set construction failed");
 	if (b->output_format == OFMT_NONE) {
@@ -2904,11 +2909,12 @@ SQLall(ptr ret, const bat *bid)
 	_s = ATOMsize(ATOMtype(b->ttype));
 	if (ATOMextern(b->ttype)) {
 		_s = ATOMlen(ATOMtype(b->ttype), p);
-		memcpy(*(ptr *) ret = GDKmalloc(_s), p, _s);
-		if(ret == NULL){
+		*(ptr *) ret = GDKmalloc(_s);
+		if(*(ptr *) ret == NULL){
 			BBPunfix(b->batCacheid);
 			throw(SQL, "SQLall", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
+		memcpy(*(ptr *) ret, p, _s);
 	} else if (b->ttype == TYPE_bat) {
 		bat bid = *(bat *) p;
 		*(BAT **) ret = BATdescriptor(bid);
