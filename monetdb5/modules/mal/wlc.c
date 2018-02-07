@@ -324,11 +324,13 @@ WLClogger(void *arg)
  */
 str 
 WLCinit(void)
-{ str conf, msg= MAL_SUCCEED;
+{
+	str conf, msg= MAL_SUCCEED;
 
 	if( wlc_state == WLC_STARTUP){
 		// use default location for master configuration file
-		conf = GDKfilepath(0,0,"wlc.config",0);
+		if((conf = GDKfilepath(0,0,"wlc.config",0)) == NULL)
+			throw(MAL,"wlc.init","Could not access wlc.config\n");
 
 		if( access(conf,F_OK) ){
 			GDKfree(conf);
