@@ -56,7 +56,7 @@ nestedoperators.Bug-6292
 not_plus.Bug-6294
 distinct_minus_count_distinct.Bug-6296
 all_minus_count_star.Bug-6297
-lateral.Bug-6310
+HAVE_NETCDF?lateral.Bug-6310
 limit_clause.Bug-6312
 type-resolution-error.Bugs-6313
 lateral02.Bug-6314
