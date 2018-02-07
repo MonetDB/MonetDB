@@ -38,7 +38,7 @@ extern log_bid ebat2real(log_bid b, oid ibase);
 extern log_bid e_bat(int type);
 extern BAT *e_BAT(int type);
 extern log_bid ebat_copy(log_bid b, oid ibase, int temp);
-extern void bat_utils_init(void);
+extern int bat_utils_init(void);
 
 extern sql_table * tr_find_table( sql_trans *tr, sql_table *t);
 extern sql_column * tr_find_column( sql_trans *tr, sql_column *c);

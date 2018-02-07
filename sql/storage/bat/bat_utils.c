@@ -90,9 +90,9 @@ BUN
 append_inserted(BAT *b, BAT *i )
 {
 	BUN nr = 0, r;
-       	BATiter ii = bat_iterator(i);
+	BATiter ii = bat_iterator(i);
 
-       	for (r = i->batInserted; r < BUNlast(i); r++) {
+	for (r = i->batInserted; r < BUNlast(i); r++) {
 		if (BUNappend(b, BUNtail(ii,r), TRUE) != GDK_SUCCEED)
 			return BUN_NONE;
 		nr++;
@@ -106,13 +106,14 @@ log_bid
 ebat2real(log_bid b, oid ibase)
 {
 	/* make a copy of b */
+	log_bid r = BID_NIL;
 	BAT *o = temp_descriptor(b);
 	BAT *c = COLcopy(o, ATOMtype(o->ttype), TRUE, PERSISTENT);
-	log_bid r;
-
-	BAThseqbase(c, ibase );
-	r = temp_create(c);
-	bat_destroy(c);
+	if(c) {
+		BAThseqbase(c, ibase );
+		r = temp_create(c);
+		bat_destroy(c);
+	}
 	bat_destroy(o);
 	return r;
 }
@@ -145,8 +146,11 @@ ebat_copy(log_bid b, oid ibase, int temp)
 
 	if (!o)
 		return BID_NIL;
-	if (!ebats[o->ttype]) 
+	if (!ebats[o->ttype]) {
 		ebats[o->ttype] = bat_new(o->ttype, 0, TRANSIENT);
+		if (!ebats[o->ttype])
+			return BID_NIL;
+	}
 
 	if (!temp && BATcount(o)) {
 		c = COLcopy(o, o->ttype, TRUE, PERSISTENT);
@@ -167,7 +171,7 @@ ebat_copy(log_bid b, oid ibase, int temp)
 	return r;
 }
 
-void
+int
 bat_utils_init(void)
 {
 	int t;
@@ -180,6 +184,11 @@ bat_utils_init(void)
 #endif
 		) {
 			ebats[t] = bat_new(t, 0, TRANSIENT);
+			if(ebats[t] == NULL) {
+				for (t = t - 1; t >= 1; t--)
+					bat_destroy(ebats[t]);
+				return -1;
+			}
 			bat_set_access(ebats[t], BAT_READ);
 			/* give it a name for debugging purposes */
 			snprintf(name, sizeof(name), "sql_empty_%s_bat",
@@ -187,6 +196,7 @@ bat_utils_init(void)
 			BBPrename(ebats[t]->batCacheid, name);
 		}
 	}
+	return 0;
 }
 
 sql_table *

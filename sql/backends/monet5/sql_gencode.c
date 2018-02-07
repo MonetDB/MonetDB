@@ -74,7 +74,7 @@ constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 void
 initSQLreferences(void)
 {
-	if (algebraRef == NULL)
+	if (zero_or_oneRef == NULL)
 		GDKfatal("error initSQLreferences");
 }
 

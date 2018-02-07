@@ -649,12 +649,17 @@ delta_append_bat( sql_delta *bat, BAT *i )
 			temp_destroy(bat->ibid);
 			bat->ibid = ebat2real(b->batCacheid, bat->ibase);
 			bat_destroy(b);
-			b = temp_descriptor(bat->ibid);
+			if(bat->ibid != BID_NIL) {
+				b = temp_descriptor(bat->ibid);
+			} else {
+				return LOG_ERR;
+			}
 		}
 		if (isVIEW(i) && b->batCacheid == VIEWtparent(i)) {
 			BAT *ic = COLcopy(i, i->ttype, TRUE, TRANSIENT);
-			if (BATappend(b, ic, NULL, TRUE) != GDK_SUCCEED) {
-				bat_destroy(ic);
+			if (ic == NULL || BATappend(b, ic, NULL, TRUE) != GDK_SUCCEED) {
+				if(ic)
+					bat_destroy(ic);
 				bat_destroy(b);
 				return LOG_ERR;
 			}
@@ -687,7 +692,11 @@ delta_append_val( sql_delta *bat, void *i )
 		bat_destroy(b);
 		temp_destroy(bat->ibid);
 		bat->ibid = ebat2real(bat->ibid, bat->ibase);
-		b = temp_descriptor(bat->ibid);
+		if(bat->ibid != BID_NIL) {
+			b = temp_descriptor(bat->ibid);
+		} else {
+			return LOG_ERR;
+		}
 	}
 	if (BUNappend(b, i, TRUE) != GDK_SUCCEED) {
 		bat_destroy(b);
@@ -1221,6 +1230,9 @@ load_delta(sql_delta *bat, int bid, int type)
 	bat->uibid = e_bat(TYPE_oid);
 	bat->uvbid = e_bat(type);
 	bat->ibid = e_bat(type);
+	if(bat->uibid == BID_NIL || bat->uvbid == BID_NIL || bat->ibid == BID_NIL) {
+		return LOG_ERR;
+	}
 	return LOG_OK;
 }
 
@@ -1497,10 +1509,13 @@ static int
 load_dbat(sql_dbat *bat, int bid)
 {
 	BAT *b = quick_descriptor(bid);
-
-	bat->dbid = temp_create(b);
-	bat->cnt = BATcount(b); 
-	return LOG_OK;
+	if(b) {
+		bat->dbid = temp_create(b);
+		bat->cnt = BATcount(b);
+		return LOG_OK;
+	} else {
+		return LOG_ERR;
+	}
 }
 
 
@@ -1533,9 +1548,13 @@ create_del(sql_trans *tr, sql_table *t)
 		return ok;
 	} else if (!bat->dbid) {
 		b = bat_new(TYPE_oid, t->sz, PERSISTENT);
-		bat_set_access(b, BAT_READ);
-		bat->dbid = temp_create(b);
-		bat_destroy(b);
+		if(b != NULL) {
+			bat_set_access(b, BAT_READ);
+			bat->dbid = temp_create(b);
+			bat_destroy(b);
+		} else {
+			ok = LOG_ERR;
+		}
 	}
 	return ok;
 }
