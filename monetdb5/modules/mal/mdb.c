@@ -399,6 +399,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	(void) cntxt;
 	if ((msg = instruction2str(s->blk, s, p, LIST_MAL_DEBUG)) == NULL) {
 		BBPreclaim(b);
+		BBPreclaim(bn);
 		throw(MAL, "mdb.getStackTrace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	len = strlen(msg);
@@ -406,6 +407,7 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	if ( buf == NULL){
 		GDKfree(msg);
 		BBPreclaim(b);
+		BBPreclaim(bn);
 		throw(MAL,"mdb.setTrace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	snprintf(buf,len+1024,"%s at %s.%s[%d]", msg,
@@ -416,12 +418,17 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		GDKfree(msg);
 		GDKfree(buf);
 		BBPreclaim(b);
+		BBPreclaim(bn);
 		throw(MAL,"mdb.setTrace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	GDKfree(msg);
 
 	for (s = s->up, k++; s != NULL; s = s->up, k++) {
-		msg = instruction2str(s->blk, s, getInstrPtr(s->blk,s->pcup),LIST_MAL_DEBUG);
+		if ((msg = instruction2str(s->blk, s, getInstrPtr(s->blk,s->pcup),LIST_MAL_DEBUG)) == NULL){
+			BBPunfix(b->batCacheid);
+			BBPunfix(bn->batCacheid);
+			throw(MAL,"mdb.setTrace", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
 		l = strlen(msg);
 		if (l>len){
 			GDKfree(buf);
@@ -562,7 +569,10 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 		throw(MAL, "mdb.getDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < m->stop; i++) {
-		ps = instruction2str(m,0, getInstrPtr(m, i), 1);
+		if((ps = instruction2str(m,0, getInstrPtr(m, i), 1)) == NULL) {
+			BBPreclaim(b);
+			throw(MAL, "mdb.getDefinition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
 		if (BUNappend(b, ps, FALSE) != GDK_SUCCEED) {
 			GDKfree(ps);
 			BBPreclaim(b);

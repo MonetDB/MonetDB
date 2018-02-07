@@ -546,7 +546,7 @@ str
 mal2str(MalBlkPtr mb, int first, int last)
 {
 	str ps = NULL, *txt;
-	int i, *len, totlen = 0;
+	int i, *len, totlen = 0, j;
 
 	txt = GDKmalloc(sizeof(str) * mb->stop);
 	len = GDKmalloc(sizeof(int) * mb->stop);
@@ -568,11 +568,21 @@ mal2str(MalBlkPtr mb, int first, int last)
 
 		if ( txt[i])
 			totlen += len[i] = (int)strlen(txt[i]);
+		else {
+			addMalException(mb,"mal2str: " MAL_MALLOC_FAIL);
+			GDKfree(len);
+			for (j = first; j < i; j++)
+				GDKfree(txt[j]);
+			GDKfree(txt);
+			return NULL;
+		}
 	}
 	ps = GDKmalloc(totlen + mb->stop + 1);
 	if( ps == NULL){
 		addMalException(mb,"mal2str: " MAL_MALLOC_FAIL);
 		GDKfree(len);
+		for (i = first; i < last; i++)
+			GDKfree(txt[i]);
 		GDKfree(txt);
 		return NULL;
 	}
@@ -604,6 +614,8 @@ printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 	if ( ps ){
 		mnstr_printf(fd, "%s%s", (flg & LIST_MAL_MAPI ? "=" : ""), ps);
 		GDKfree(ps);
+	} else {
+		mnstr_printf(fd,"#failed instruction2str()");
 	}
 	mnstr_printf(fd, "\n");
 }
@@ -620,6 +632,8 @@ fprintInstruction(FILE *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 	if ( ps ){
 		fprintf(fd, "%s%s", (flg & LIST_MAL_MAPI ? "=" : ""), ps);
 		GDKfree(ps);
+	} else {
+		fprintf(fd,"#failed instruction2str()");
 	}
 	fprintf(fd, "\n");
 }
@@ -660,6 +674,8 @@ void showMalBlkHistory(stream *out, MalBlkPtr mb)
 				mnstr_printf(out,"%s.%s[%2d] %s\n", 
 					getModuleId(sig), getFunctionId(sig),j++,msg+3);
 				GDKfree(msg);
+			} else {
+				mnstr_printf(out,"#failed instruction2str()\n");
 			}
 		} 
 		m= m->history;

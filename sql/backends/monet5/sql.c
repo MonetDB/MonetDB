@@ -3809,9 +3809,13 @@ SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	ret = getArgReference_str(stk, pci, 0);
 	s = instruction2str(mb, stk, getInstrPtr(mb, 0), LIST_MAL_ALL);
+	if(s == NULL)
+		throw(SQL, "sql.argRecord", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	t = strchr(s, ' ');
 	*ret = GDKstrdup(t ? t + 1 : s);
 	GDKfree(s);
+	if(*ret == NULL)
+		throw(SQL, "sql.argRecord", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
