@@ -75,6 +75,7 @@ static BAT *
 delta_bind_ubat(sql_delta *bat, int access, int type)
 {
 	BAT *b;
+	log_bid bb;
 
 	(void) access;
 	assert(access == RD_UPD_ID || access == RD_UPD_VAL);
@@ -84,10 +85,17 @@ delta_bind_ubat(sql_delta *bat, int access, int type)
 		else
 			b = temp_descriptor(bat->uvbid);
 	} else {
-		if (access == RD_UPD_ID)
-			b = temp_descriptor(e_bat(TYPE_oid));
-		else
-			b = temp_descriptor(e_bat(type));
+		if (access == RD_UPD_ID) {
+			bb = e_bat(TYPE_oid);
+			if(bb == BID_NIL)
+				return NULL;
+			b = temp_descriptor(bb);
+		} else {
+			bb = e_bat(type);
+			if(bb == BID_NIL)
+				return NULL;
+			b = temp_descriptor(bb);
+		}
 	}
 	return b;
 }
@@ -1256,6 +1264,10 @@ log_create_delta(sql_delta *bat)
 		bat->uibid = e_bat(TYPE_oid);
 	if (!bat->uvbid) 
 		bat->uvbid = e_bat(b->ttype);
+	if(bat->uibid == BID_NIL || bat->uvbid == BID_NIL) {
+		bat_destroy(b);
+		return LOG_ERR;
+	}
 
 	ok = logger_add_bat(bat_logger, b, bat->name);
 	if (ok == GDK_SUCCEED)
@@ -1406,10 +1418,16 @@ create_col(sql_trans *tr, sql_column *c)
 				bat->ibid = copyBat(d->ibid, type, d->ibase);
 			bat->ibase = d->ibase;
 			bat->cnt = d->cnt;
-			if (d->uibid)
+			if (d->uibid) {
 				bat->uibid = e_bat(TYPE_oid);
-			if (d->uvbid)
+				if (bat->uibid == BID_NIL)
+					return LOG_ERR;
+			}
+			if (d->uvbid) {
 				bat->uvbid = e_bat(type);
+				if(bat->uvbid == BID_NIL)
+					return LOG_ERR;
+			}
 		} else {
 			BAT *b = bat_new(type, c->t->sz, PERSISTENT);
 			if (!b) 
@@ -1482,10 +1500,16 @@ create_idx(sql_trans *tr, sql_idx *ni)
 		bat->cnt = d->cnt;
 		bat->ucnt = 0;
 
-		if (d->uibid) 
+		if (d->uibid) {
 			bat->uibid = e_bat(TYPE_oid);
-		if (d->uvbid) 
+			if (bat->uibid == BID_NIL)
+				return LOG_ERR;
+		}
+		if (d->uvbid) {
 			bat->uvbid = e_bat(type);
+			if(bat->uvbid == BID_NIL)
+				return LOG_ERR;
+		}
 	}
 	return ok;
 }
@@ -2050,6 +2074,11 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes)
 		BATcleanProps(cur);
 		temp_destroy(cbat->ibid);
 		cbat->ibid = e_bat(cur->ttype);
+		if(cbat->ibid == BID_NIL) {
+			bat_destroy(ins);
+			bat_destroy(cur);
+			return LOG_ERR;
+		}
 	}
 	bat_destroy(ins);
 
@@ -2069,6 +2098,12 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes)
 			temp_destroy(cbat->uvbid);
 			cbat->uibid = e_bat(TYPE_oid);
 			cbat->uvbid = e_bat(cur->ttype);
+			if(cbat->uibid == BID_NIL || cbat->uvbid == BID_NIL) {
+				bat_destroy(ui);
+				bat_destroy(uv);
+				bat_destroy(cur);
+				return LOG_ERR;
+			}
 			cbat->ucnt = 0;
 		}
 		bat_destroy(ui);
@@ -2322,6 +2357,11 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 		obat->cnt = cbat->cnt = obat->ibase = cbat->ibase = BATcount(cur);
 		temp_destroy(obat->ibid);
 		obat->ibid = e_bat(cur->ttype);
+		if (obat->ibid == BID_NIL) {
+			bat_destroy(cur);
+			bat_destroy(ins);
+			return LOG_ERR;
+		}
 	}
 	if (obat->cnt != cbat->cnt) { /* locked */
 		obat->cnt = cbat->cnt;
@@ -2346,6 +2386,12 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 			temp_destroy(obat->uvbid);
 			obat->uibid = e_bat(TYPE_oid);
 			obat->uvbid = e_bat(cur->ttype);
+			if(obat->uibid == BID_NIL || obat->uvbid == BID_NIL) {
+				bat_destroy(ui);
+				bat_destroy(uv);
+				bat_destroy(cur);
+				return LOG_ERR;
+			}
 			temp_destroy(cbat->uibid);
 			temp_destroy(cbat->uvbid);
 			cbat->uibid = cbat->uvbid = 0;
@@ -2408,6 +2454,11 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat, int unique)
 		obat->cnt = obat->ibase = BATcount(cur);
 		temp_destroy(obat->ibid);
 		obat->ibid = e_bat(cur->ttype);
+		if (obat->ibid == BID_NIL) {
+			bat_destroy(cur);
+			bat_destroy(ins);
+			return LOG_ERR;
+		}
 	}
 	bat_destroy(ins);
 
@@ -2428,6 +2479,12 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat, int unique)
 			temp_destroy(obat->uvbid);
 			obat->uibid = e_bat(TYPE_oid);
 			obat->uvbid = e_bat(cur->ttype);
+			if(obat->uibid == BID_NIL || obat->uvbid == BID_NIL) {
+				bat_destroy(ui);
+				bat_destroy(uv);
+				bat_destroy(cur);
+				return LOG_ERR;
+			}
 			obat->ucnt = 0;
 		}
 		bat_destroy(ui);
