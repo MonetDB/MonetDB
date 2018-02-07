@@ -916,15 +916,18 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (access == 0) {
 				psz = cnt ? (cnt / nr_parts) : 0;
 				bn = BATslice(b, part_nr * psz, (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz));
+				if(bn == NULL)
+					throw(SQL, "sql.bind", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				BAThseqbase(bn, part_nr * psz);
 			} else {
 				/* BAT b holds the UPD_ID bat */
 				oid l, h;
 				BAT *c = mvc_bind(m, sname, tname, cname, 0);
-				if (c == NULL)
+				if (c == NULL) {
+					BBPunfix(b->batCacheid);
 					throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the update column %s.%s.%s",
 					sname,tname,cname);
-
+				}
 				cnt = BATcount(c);
 				psz = cnt ? (cnt / nr_parts) : 0;
 				l = part_nr * psz;
@@ -932,6 +935,10 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				h--;
 				bn = BATselect(b, NULL, &l, &h, 1, 1, 0);
 				BBPunfix(c->batCacheid);
+				if(bn == NULL) {
+					BBPunfix(b->batCacheid);
+					throw(SQL, "sql.bind", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				}
 			}
 			BBPunfix(b->batCacheid);
 			b = bn;
@@ -954,12 +961,12 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BAT *ui = mvc_bind(m, sname, tname, cname, RD_UPD_ID);
 				BAT *id;
 				BAT *vl;
-				if (ui == NULL)
+				if (ui == NULL || uv == NULL) {
+					bat_destroy(uv);
+					bat_destroy(ui);
 					throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the insert column %s.%s.%s",
 						sname, tname, cname);
-				if (uv == NULL)
-					throw(SQL,"sql.bind",SQLSTATE(HY005) "Cannot access the update column %s.%s.%s",
-						sname, tname, cname);
+				}
 				id = BATproject(b, ui);
 				vl = BATproject(b, uv);
 				bat_destroy(ui);
@@ -979,6 +986,8 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 				*bid = e_bat(TYPE_oid);
 				*uvl = e_bat(c->type.type->localtype);
+				if(*bid == BID_NIL || *uvl == BID_NIL)
+					throw(SQL, "sql.bind", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			BBPunfix(b->batCacheid);
 		} else {
@@ -1023,13 +1032,17 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (access == 0) {
 				psz = cnt ? (cnt / nr_parts) : 0;
 				bn = BATslice(b, part_nr * psz, (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz));
+				if(bn == NULL)
+					throw(SQL, "sql.bindidx", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				BAThseqbase(bn, part_nr * psz);
 			} else {
 				/* BAT b holds the UPD_ID bat */
 				oid l, h;
 				BAT *c = mvc_bind_idxbat(m, sname, tname, iname, 0);
-				if ( c == NULL)
+				if ( c == NULL) {
+					BBPunfix(b->batCacheid);
 					throw(SQL,"sql.bindidx",SQLSTATE(42000) "Cannot access index column %s.%s.%s",sname,tname,iname);
+				}
 				cnt = BATcount(c);
 				psz = cnt ? (cnt / nr_parts) : 0;
 				l = part_nr * psz;
@@ -1037,6 +1050,10 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				h--;
 				bn = BATselect(b, NULL, &l, &h, 1, 1, 0);
 				BBPunfix(c->batCacheid);
+				if(bn == NULL) {
+					BBPunfix(b->batCacheid);
+					throw(SQL, "sql.bindidx", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				}
 			}
 			BBPunfix(b->batCacheid);
 			b = bn;
@@ -1056,10 +1073,11 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BAT *uv = mvc_bind_idxbat(m, sname, tname, iname, RD_UPD_VAL);
 				BAT *ui = mvc_bind_idxbat(m, sname, tname, iname, RD_UPD_ID);
 				BAT *id, *vl;
-				if ( ui == NULL)
+				if ( ui == NULL || uv == NULL) {
+					bat_destroy(uv);
+					bat_destroy(ui);
 					throw(SQL,"sql.bindidx",SQLSTATE(42000) "Cannot access index column %s.%s.%s",sname,tname,iname);
-				if ( uv == NULL)
-					throw(SQL,"sql.bindidx",SQLSTATE(42000) "Cannot access index column %s.%s.%s",sname,tname,iname);
+				}
 				id = BATproject(b, ui);
 				vl = BATproject(b, uv);
 				bat_destroy(ui);
@@ -1078,6 +1096,8 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 				*bid = e_bat(TYPE_oid);
 				*uvl = e_bat((i->type==join_idx)?TYPE_oid:TYPE_lng);
+				if(*bid == BID_NIL || *uvl == BID_NIL)
+					throw(SQL, "sql.idxbind", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			BBPunfix(b->batCacheid);
 		} else {
@@ -2113,6 +2133,10 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 5), 1, NULL);
+	if(res < 0) {
+		msg = createException(SQL, "sql.resultset", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto wrapup_result_set;
+	}
 
 	tbl = BATdescriptor(tblId);
 	atr = BATdescriptor(atrId);
@@ -2450,7 +2474,8 @@ mvc_scalar_value_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = *(ptr *) p;
 
 	// scalar values are single-column result sets
-	res_id = mvc_result_table(b->mvc, mb->tag, 1, 1, NULL);
+	if((res_id = mvc_result_table(b->mvc, mb->tag, 1, 1, NULL)) < 0)
+		throw(SQL, "sql.exportValue", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	if (mvc_result_value(b->mvc, tn, cn, type, digits, scale, p, mtype))
 		throw(SQL, "sql.exportValue", SQLSTATE(45000) "Result set construction failed");
 	if (b->output_format == OFMT_NONE) {
@@ -2884,11 +2909,12 @@ SQLall(ptr ret, const bat *bid)
 	_s = ATOMsize(ATOMtype(b->ttype));
 	if (ATOMextern(b->ttype)) {
 		_s = ATOMlen(ATOMtype(b->ttype), p);
-		memcpy(*(ptr *) ret = GDKmalloc(_s), p, _s);
-		if(ret == NULL){
+		*(ptr *) ret = GDKmalloc(_s);
+		if(*(ptr *) ret == NULL){
 			BBPunfix(b->batCacheid);
 			throw(SQL, "SQLall", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
+		memcpy(*(ptr *) ret, p, _s);
 	} else if (b->ttype == TYPE_bat) {
 		bat bid = *(bat *) p;
 		*(BAT **) ret = BATdescriptor(bid);

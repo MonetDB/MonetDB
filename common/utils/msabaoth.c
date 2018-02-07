@@ -186,7 +186,7 @@ msab_init(const char *dbfarm, const char *dbname)
 			/* remove in a separate loop after reading the directory,
 			 * so as to not have any interference */
 			while (dbe != NULL) {
-				remove(dbe->path);
+				(void) remove(dbe->path);
 				db = dbe;
 				dbe = dbe->next;
 				free(db);
@@ -334,11 +334,10 @@ msab_retreatScenario(const char *lang)
 				fflush(f);
 				fclose(f);
 				return(NULL);
-			} else {
-				(void)fclose(f);
-				remove(pathbuf);
-				return(NULL);
 			}
+			(void)fclose(f);
+			(void) remove(pathbuf);
+			return(NULL);
 		} else {
 			if (ferror(f)) {
 				/* some error */
@@ -346,9 +345,9 @@ msab_retreatScenario(const char *lang)
 					 strerror(errno), pathbuf);
 				(void)fclose(f);
 				return strdup(buf);
-			} else
-				remove(pathbuf);  /* empty file? try to remove */
+			}
 			(void)fclose(f);
+			(void) remove(pathbuf);  /* empty file? try to remove */
 			return(NULL);
 		}
 	}
@@ -411,19 +410,19 @@ msab_wildRetreat(void)
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), SCENARIOFILE)) != NULL)
 		return(tmp);
-	remove(pathbuf);
+	(void) remove(pathbuf);
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), CONNECTIONFILE)) != NULL)
 		return(tmp);
-	remove(pathbuf);
+	(void) remove(pathbuf);
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), STARTEDFILE)) != NULL)
 		return(tmp);
-	remove(pathbuf);
+	(void) remove(pathbuf);
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), _sabaoth_internal_uuid)) != NULL)
 		return(tmp);
-	remove(pathbuf);
+	(void) remove(pathbuf);
 
 	return(NULL);
 }
@@ -477,7 +476,7 @@ msab_registerStarting(void)
 	/* remove any stray file that would suggest we've finished starting up */
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), STARTEDFILE)) != NULL)
 		return(tmp);
-	remove(pathbuf);
+	(void) remove(pathbuf);
 
 
 	return(NULL);
@@ -537,7 +536,7 @@ msab_registerStop(void)
 	 * but for the sake of keeping things clean ... */
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), _sabaoth_internal_uuid)) != NULL)
 		return(tmp);
-	remove(pathbuf);
+	(void) remove(pathbuf);
 	return(NULL);
 }
 

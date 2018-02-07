@@ -280,7 +280,7 @@ evalFile(str fname, int listing)
 
 	if ( (msg = defaultScenario(c)) ) {
 		MCcloseClient(c);
-		throw(MAL,"mal.eval","%s",msg);
+		return msg;
 	}
 	if((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {
 		MCcloseClient(c);
@@ -359,7 +359,7 @@ compileString(Symbol *fcn, Client cntxt, str s)
 		GDKfree(b);
 		c->usermodule= 0;
 		MCcloseClient(c);
-		throw(MAL,"mal.compile","%s",msg);
+		return msg;
 	}
 
 	msg = MSinitClientPrg(c, "user", "main");/* create new context */
@@ -418,7 +418,7 @@ callString(Client cntxt, str s, int listing)
 		GDKfree(b);
 		GDKfree(qry);
 		MCcloseClient(c);
-		throw(MAL,"mal.call","%s",msg);
+		return msg;
 	}
 
 	if((msg = MSinitClientPrg(c, "user", "main")) != MAL_SUCCEED) {/* create new context */

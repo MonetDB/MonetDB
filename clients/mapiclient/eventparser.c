@@ -333,7 +333,6 @@ eventdump(void)
 int
 lineparser(char *row, EventRecord *ev)
 {
-#ifdef HAVE_STRPTIME
 	char *c, *cc, *v =0;
 	struct tm stm;
 
@@ -342,7 +341,7 @@ lineparser(char *row, EventRecord *ev)
 	memset(malvariables, 0, sizeof(malvariables));
 	/* check basic validaty first */
 	if (row[0] =='#'){
-		return 0;
+		return 1;	/* ok, but nothing filled in */
 	}
 	if (row[0] != '[')
 		return -1;
@@ -351,34 +350,40 @@ lineparser(char *row, EventRecord *ev)
 
 	/* scan event record number */
 	c = row+1;
-	if (c == 0)
-		return -2;
 	ev->eventnr = atoi(c + 1);
 
 	/* scan event time" */
 	c = strchr(c + 1, '"');
-	if (c) {
-		/* convert time to epoch in seconds*/
-		cc =c;
-		memset(&stm, 0, sizeof(struct tm));
-		c = strptime(c + 1, "%H:%M:%S", &stm);
-		ev->clkticks = (((lng) stm.tm_hour * 60 + stm.tm_min) * 60 + stm.tm_sec) * 1000000;
-		if (c == 0)
-			return -3;
-		if (*c == '.') {
-			lng usec;
-			/* microseconds */
-			usec = strtoll(c + 1, NULL, 10);
-			assert(usec >= 0 && usec < 1000000);
-			ev->clkticks += usec;
-		}
-		c = strchr(c + 1, '"');
-		if (ev->clkticks < 0) {
-			fprintf(stderr, "parser: read negative value "LLFMT" from\n'%s'\n", ev->clkticks, cc);
-		}
-		c++;
-	} else
+	if (c == NULL)
 		return -3;
+	/* convert time to epoch in seconds*/
+	cc =c;
+	memset(&stm, 0, sizeof(struct tm));
+#ifdef HAVE_STRPTIME
+	c = strptime(c + 1, "%H:%M:%S", &stm);
+	ev->clkticks = (((lng) stm.tm_hour * 60 + stm.tm_min) * 60 + stm.tm_sec) * 1000000;
+	if (c == NULL)
+		return -3;
+#else
+	int pos;
+	if (sscanf(c + 1, "%d:%d:%d%n", &stm.tm_hour, &stm.tm_min, &stm.tm_sec, &pos) < 3)
+		return -3;
+	c += pos + 1;
+#endif
+	if (*c == '.') {
+		lng usec;
+		/* microseconds */
+		usec = strtoll(c + 1, NULL, 10);
+		assert(usec >= 0 && usec < 1000000);
+		ev->clkticks += usec;
+	}
+	c = strchr(c + 1, '"');
+	if (c == NULL)
+		return -3;
+	if (ev->clkticks < 0) {
+		fprintf(stderr, "parser: read negative value "LLFMT" from\n'%s'\n", ev->clkticks, cc);
+	}
+	c++;
 
 	/* skip pc tag */
 	{	// decode qry[pc]tag
@@ -531,9 +536,6 @@ lineparser(char *row, EventRecord *ev)
 	}
 	if (ev->stmt && (v=strstr(ev->stmt, ";\",\t")))
 		*v = 0;
-#else
-	(void) row;
-#endif
 	return 0;
 }
 

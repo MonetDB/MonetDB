@@ -702,7 +702,6 @@ GDKregister(MT_Id pid)
 	MT_lock_unset(&GDKthreadLock);
 }
 
-/* coverity[+kill] */
 void
 GDKreset(int status, int exit)
 {
@@ -838,15 +837,17 @@ GDKreset(int status, int exit)
 #endif
 }
 
+/* coverity[+kill] */
 void
 GDKexit(int status)
 {
 	if (GET_GDKLOCK(0) == NULL) {
 #ifdef HAVE_EMBEDDED
 		return;
-#endif
+#else
 		/* no database lock, so no threads, so exit now */
 		exit(status);
+#endif
 	}
 	GDKprepareExit();
 	GDKreset(status, 1);
@@ -1170,7 +1171,14 @@ GDKfatal(const char *format, ...)
 	vsnprintf(message + len, sizeof(message) - (len + 2), format, ap);
 	va_end(ap);
 
-	if (!GDKfataljumpenable) {
+#ifndef STATIC_CODE_ANALYSIS
+	if (GDKfataljumpenable) {
+		// in embedded mode, we really don't want to kill our host
+		GDKfatalmsg = GDKstrdup(message);
+		longjmp(GDKfataljump, 42);
+	} else
+#endif
+	{
 		fputs(message, stderr);
 		fputs("\n", stderr);
 		fflush(stderr);
@@ -1185,15 +1193,12 @@ GDKfatal(const char *format, ...)
 			/* exit(1); */
 		} else {
 			GDKlog(GET_GDKLOCK(0), "%s", message);
-	#ifdef COREDUMP
+#ifdef COREDUMP
 			abort();
-	#else
+#else
 			GDKexit(1);
-	#endif
+#endif
 		}
-	} else { // in embedded mode, we really don't want to kill our host
-		GDKfatalmsg = GDKstrdup(message);
-		longjmp(GDKfataljump, 42);
 	}
 }
 

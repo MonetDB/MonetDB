@@ -1647,7 +1647,10 @@ store_init(int debug, store_type store, int readonly, int singleuser, logger_set
 
 	/* initialize empty bats */
 	if (store == store_bat) {
-		bat_utils_init();
+		if(bat_utils_init() == -1) {
+			MT_lock_unset(&bs_lock);
+			return -1;
+		}
 		bat_storage_init(&store_funcs);
 		bat_table_init(&table_funcs);
 		bat_logger_init(&logger_funcs);

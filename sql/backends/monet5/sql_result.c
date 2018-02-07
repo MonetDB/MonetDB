@@ -2634,7 +2634,10 @@ mvc_result_table(mvc *m, oid query_id, int nr_cols, int type, BAT *order)
 {
 	res_table *t = res_table_create(m->session->tr, m->result_id++, query_id, nr_cols, type, m->results, order);
 	m->results = t;
-	return t->id;
+	if(t)
+		return t->id;
+	else
+		return -1;
 }
 
 int

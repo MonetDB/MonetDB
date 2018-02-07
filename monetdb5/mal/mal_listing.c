@@ -72,14 +72,18 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 
 		if ((cv = VALformat(val)) == NULL) {
 			addMalException(mb, "renderTerm:Failed to allocate");
+			GDKfree(buf);
 			return NULL;
 		}
-		if (len + strlen(cv) >= maxlen)
-			buf= GDKrealloc(buf, maxlen =len + strlen(cv) + BUFSIZ);
+		if (len + strlen(cv) >= maxlen) {
+			char *nbuf= GDKrealloc(buf, maxlen =len + strlen(cv) + BUFSIZ);
 
-		if( buf == 0){
-			addMalException(mb,"renderTerm:Failed to allocate");
-			return NULL;
+			if( nbuf == 0){
+				GDKfree(buf);
+				addMalException(mb,"renderTerm:Failed to allocate");
+				return NULL;
+			}
+			buf = nbuf;
 		}
 
 		if( strcmp(cv,"nil") == 0){
@@ -442,10 +446,7 @@ shortRenderingTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx)
 			b = BBPquickdesc(stk->stk[varid].val.bval,TRUE);
 			snprintf(s,BUFSIZ,"%s["BUNFMT"]" ,nme, b?BATcount(b):0);
 		} else
-		if( cv)
 			snprintf(s,BUFSIZ,"%s=%s ",nme,cv);
-		else
-			snprintf(s,BUFSIZ,"%s ",nme);
 	}
 	GDKfree(cv);
 	return s;
