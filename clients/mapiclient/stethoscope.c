@@ -184,7 +184,7 @@ convertOldFormat(char *inputfile)
 	fprintf(trace,"[\n{");
 	len = 0;
 	memset(&event, 0, sizeof(event));
-	while (fgets(buf + len, bufsize - len, fdin) != NULL) {
+	while (fgets(buf + len, (int) (bufsize - len), fdin) != NULL) {
 		while ((e = strchr(buf + len, '\n')) == NULL) {
 			/* rediculously long line */
 			len += strlen(buf + len); /* i.e. len = strlen(buf) */
@@ -197,7 +197,7 @@ convertOldFormat(char *inputfile)
 				return;
 			}
 			buf = e;
-			if (fgets(buf + len, bufsize - len, fdin) == NULL) {
+			if (fgets(buf + len, (int) (bufsize - len), fdin) == NULL) {
 				/* incomplete line */
 				e = NULL; /* no newline to zap */
 				break;
