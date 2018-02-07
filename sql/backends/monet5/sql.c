@@ -2133,10 +2133,8 @@ mvc_row_result_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 	res = *res_id = mvc_result_table(m, mb->tag, pci->argc - (pci->retc + 5), 1, NULL);
-	if(res < 0) {
-		msg = createException(SQL, "sql.resultset", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		goto wrapup_result_set;
-	}
+	if (res < 0)
+		throw(SQL, "sql.resultset", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	tbl = BATdescriptor(tblId);
 	atr = BATdescriptor(atrId);
