@@ -15,6 +15,27 @@
 - Added new system view: sys.var_values which shows the values for
   system variables.
 
+* Fri Jan 12 2018 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
+- Added support for COMMENT ON statements using SQL syntax:
+   COMMENT ON [ SCHEMA | TABLE | VIEW | COLUMN | INDEX | SEQUENCE |
+              FUNCTION | PROCEDURE | AGGREGATE | FILTER FUNCTION | LOADER ]
+        qname IS [ 'my description text' | NULL | '' ] ;
+  For COLUMN the qname can be "table_name"."column_name" or fully qualified
+  as in: "schema_name"."table_name"."column_name".
+  For FUNCTION, PROCEDURE, AGGREGATE, FILTER FUNCTION and LOADER the qname
+  may need to include the signature (argument types) to be able to
+  differentiate between multiple overloaded functions which have the same name
+  and schema.
+  By specifying IS NULL or IS '' you remove the comment for the database object.
+  If a database object is dropped, the associated comment is also removed.
+  Note: it is not allowed or possible to add comments for temporary tables or
+        objects in schema "tmp".
+  The sql catalog has been extended with system table: sys.comments and system
+  views: sys.describe_all_objects and sys.commented_function_signatures. These
+  system views are used by the dump functionality as provided in msqldump and
+  mclient and not intended to be used by users or user applications.
+  The keyword 'COMMENT' has now become a reserved keyword.
+
 * Thu Dec  7 2017 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Removed system function sys.environment(). It was a duplicate of system
   function sys.env().
