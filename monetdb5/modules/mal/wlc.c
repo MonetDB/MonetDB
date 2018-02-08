@@ -601,9 +601,11 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 {	BAT *b;
-	str sch,tbl,col, msg = MAL_SUCCEED;
+	str sch = NULL, tbl = NULL, col = NULL;
+	str msg = MAL_SUCCEED;
 	(void) mb;
-	b= BATdescriptor(bid);
+
+	b = BATdescriptor(bid);
 	if (b == NULL) {
 		msg = createException(MAL, "wlc.datashipping", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto finish;
@@ -655,13 +657,13 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 		cntxt->wlc_kind = WLC_CATALOG;
 	}
 finish:
-	if(b)
+	if (b != NULL)
 		BBPunfix(b->batCacheid);
-	if(sch)
+	if (sch)
 		GDKfree(sch);
-	if(tbl)
+	if (tbl)
 		GDKfree(tbl);
-	if(col)
+	if (col)
 		GDKfree(col);
 	return msg;
 }
