@@ -792,8 +792,12 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				break;
 			}
 			w= instruction2str(mb, 0, pci, FALSE);
-			ret = createException(MAL,"interpreter", "unkown operation:%s", w);
-			GDKfree(w);
+			if(w) {
+				ret = createException(MAL,"interpreter", "unkown operation:%s", w);
+				GDKfree(w);
+			} else {
+				ret = createException(MAL,"interpreter", "failed instruction2str");
+			}
 			if (cntxt->qtimeout && GDKusec()- mb->starttime > cntxt->qtimeout){
 				ret= createException(MAL, "mal.interpreter", RUNTIME_QRY_TIMEOUT);
 				break;

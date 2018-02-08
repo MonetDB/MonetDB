@@ -1430,7 +1430,11 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 		BBPunfix(res->batCacheid);
 		throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	u_id = BATdescriptor(*uid);
+	if ((u_id = BATdescriptor(*uid)) == NULL) {
+		BBPunfix(u_val->batCacheid);
+		BBPunfix(res->batCacheid);
+		throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
 	assert(BATcount(u_id) == BATcount(u_val));
 	if (BATcount(u_id) &&
 	    BATreplace(res, u_id, u_val, TRUE) != GDK_SUCCEED) {
@@ -1443,7 +1447,10 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 	BBPunfix(u_val->batCacheid);
 
 	if (i && BATcount(i)) {
-		i = BATdescriptor(*ins);
+		if ((i = BATdescriptor(*ins)) == NULL) {
+			BBPunfix(res->batCacheid);
+			throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
 		if (BATappend(res, i, NULL, TRUE) != GDK_SUCCEED) {
 			BBPunfix(res->batCacheid);
 			BBPunfix(i->batCacheid);
@@ -2855,7 +2862,10 @@ zero_or_one(ptr ret, const bat *bid)
 		memcpy(*(ptr *) ret, p, _s);
 	} else if (b->ttype == TYPE_bat) {
 		bat bid = *(bat *) p;
-		*(BAT **) ret = BATdescriptor(bid);
+		if((*(BAT **) ret = BATdescriptor(bid)) == NULL){
+			BBPunfix(b->batCacheid);
+			throw(SQL, "zero_or_one", SQLSTATE(HY005) "Cannot access column descriptor");
+		}
 	} else if (_s == 4) {
 		*(int *) ret = *(int *) p;
 	} else if (_s == 1) {
@@ -2915,7 +2925,10 @@ SQLall(ptr ret, const bat *bid)
 		memcpy(*(ptr *) ret, p, _s);
 	} else if (b->ttype == TYPE_bat) {
 		bat bid = *(bat *) p;
-		*(BAT **) ret = BATdescriptor(bid);
+		if ((*(BAT **) ret = BATdescriptor(bid)) == NULL) {
+			BBPunfix(b->batCacheid);
+			throw(SQL, "all", SQLSTATE(HY005) "Cannot access column descriptor");
+		}
 	} else if (_s == 4) {
 		*(int *) ret = *(int *) p;
 	} else if (_s == 1) {
@@ -3809,9 +3822,13 @@ SQLargRecord(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	ret = getArgReference_str(stk, pci, 0);
 	s = instruction2str(mb, stk, getInstrPtr(mb, 0), LIST_MAL_ALL);
+	if(s == NULL)
+		throw(SQL, "sql.argRecord", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	t = strchr(s, ' ');
 	*ret = GDKstrdup(t ? t + 1 : s);
 	GDKfree(s);
+	if(*ret == NULL)
+		throw(SQL, "sql.argRecord", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 

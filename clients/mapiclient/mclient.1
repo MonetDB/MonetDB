@@ -148,17 +148,23 @@ these are supported.
 Specify the portnumber of the server (default:
 .BR 50000 ).
 .TP
-\fB\-\-interactive\fP
+\fB\-\-interactive\fP (\fB\-i\fP)
 When reading from standard input, interpret lines starting with
 .B \e
 (backslash) specially.
 See the section BACKSLASH COMMANDS below.
-
-\fB\-\-timer\fP[\fB=\fP\fItimermode\fP] 
+.TP
+\fB\-\-timer\fP\fB=\fP\fItimermode\fP (\fB\-t\fP \fItimermode\fP)
 The \fItimer\fP command controls the format of the time reported for queries.
 The default mode is \fBclock\fP which reports on the wall-clock time in a human friendly way.
 The timer mode \fBnone\fP turns off timing reporting.
 The timer mode \fBperformance\fP shows the timing components in millisecond resolution.
+.br
+\fBNote\fP that Timermode \fBnone\fP (\fB--timer=none\fP) should be used with formatting options
+.B csv,
+.B tab,
+.B xml,
+in order to not have the output(-format) compromized/invalidated by the extra timing output.
 .TP
 \fB\-\-user\fP\fB=\fP\fIuser\fP (\fB\-u\fP \fIuser\fP)
 Specify the user to connect as.
@@ -197,6 +203,12 @@ In addition to plain \fBcsv\fP, two other forms are possible.
 \fBcsv=\fP\fIc\fP uses \fIc\fP as column separator; \fBcsv+\fP\fIc\fP
 uses \fIc\fP as column separator and produces a single header line in
 addition to the data.
+.br
+\fBNote\fP that Timermode \fBnone\fP (\fB--timer=none\fP) should be used with formatting options
+.B csv,
+.B tab,
+.B xml,
+in order to not have the output(-format) compromized/invalidated by the extra timing output.
 .TP
 \fB\-\-echo\fP (\fB\-e\fP)
 Echo the query.

@@ -108,13 +108,15 @@ ebat2real(log_bid b, oid ibase)
 	/* make a copy of b */
 	log_bid r = BID_NIL;
 	BAT *o = temp_descriptor(b);
-	BAT *c = COLcopy(o, ATOMtype(o->ttype), TRUE, PERSISTENT);
-	if(c) {
-		BAThseqbase(c, ibase );
-		r = temp_create(c);
-		bat_destroy(c);
+	if(o) {
+		BAT *c = COLcopy(o, ATOMtype(o->ttype), TRUE, PERSISTENT);
+		if(c) {
+			BAThseqbase(c, ibase );
+			r = temp_create(c);
+			bat_destroy(c);
+		}
+		bat_destroy(o);
 	}
-	bat_destroy(o);
 	return r;
 }
 
