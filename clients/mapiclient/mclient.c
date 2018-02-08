@@ -3013,7 +3013,7 @@ main(int argc, char **argv)
 		{"history", 0, 0, 'H'},
 		{"host", 1, 0, 'h'},
 		{"interactive", 0, 0, 'i'},
-		{"timer", 2, 0, 't'},
+		{"timer", 1, 0, 't'},
 		{"language", 1, 0, 'l'},
 		{"log", 1, 0, 'L'},
 		{"null", 1, 0, 'n'},
