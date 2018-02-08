@@ -34,12 +34,29 @@
 - A column default value can be used in a UPDATE statement: UPDATE tname
   SET cname = DEFAULT, and INSERT statements: INSERT INTO tname VALUES
   (..., DEFAULT, ...)
-- Added TRUNCATE statements into the SQL catalog, conforming to the SQL
-  standard. In a TRUNCATE statement a 'CONTINUE IDENTITY' or 'RESTART
-  IDENTITY' clause can be passed mrestart or not, being the former the
-  default one. The options 'RESTRICT' and 'CASCADE' tell if the table has
-  foreign key references, the referencing tables should be truncated as
-  well. This happens on 'CASCADE' and 'RESTRICT' is the default behavior.
+- Added support for TRUNCATE statements conforming to the SQL:2008 standard:
+   TRUNCATE [ TABLE ] qname [ CONTINUE IDENTITY | RESTART IDENTITY ]
+            [ RESTRICT | CASCADE ]
+  In a TRUNCATE statement a 'CONTINUE IDENTITY' or 'RESTART IDENTITY'
+  clause can be passed to restart or not, being the former the default one.
+  The 'CASCADE' option instructs to truncate referencing table(s) also if
+  the referencing table(s) have foreign key references to this table.
+  The default behavior is 'RESTRICT'.
+  Note: it is possible to use TRUNCATE statements in a transaction and
+  thus to rollback the effects of a truncate.
+  The keywords 'TRUNCATE' and 'CONTINUE' have now become reserved keywords.
+- Added possibility to GRANT or REVOKE a TRUNCATE privilege to a user or role.
+- Added possibility to define a TRIGGER on a TRUNCATE event.
+- Added possibility to specify 'OR REPLACE' in following CREATE commands:
+   CREATE [ OR REPLACE ] VIEW qname ...
+   CREATE [ OR REPLACE ] TRIGGER qname ...
+- Added possibility to specify 'IF EXIST' in following DROP commands:
+   DROP AGGREGATE [ IF EXISTS ] qname ...
+   DROP FUNCTION [ IF EXISTS ] qname ...
+   DROP FILTER FUNCTION [ IF EXISTS ] qname ...
+   DROP LOADER [ IF EXISTS ] qname ...
+   DROP PROCEDURE [ IF EXISTS ] qname ...
+   DROP TRIGGER [ IF EXISTS ] qname ...
 
 * Tue Aug  1 2017 Sjoerd Mullender <sjoerd@acm.org>
 - Lots of changes to streamline the internal error handling.
