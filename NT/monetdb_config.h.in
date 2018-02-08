@@ -71,6 +71,12 @@
 
 #define NATIVE_WIN32 1
 
+#ifdef __INTEL_COMPILER
+/* Definition of NAN is seriously broken on Intel compiler (at least
+ * in some versions), so we work around it. */
+#define NAN_CANNOT_BE_USED_AS_INITIALIZER
+#endif
+
 /* Define if building universal (internal helper macro) */
 /* #undef AC_APPLE_UNIVERSAL_BUILD */
 

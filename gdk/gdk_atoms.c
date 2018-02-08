@@ -239,11 +239,15 @@ ATOMisdescendant(int tpe, int parent)
 const bte bte_nil = GDK_bte_min-1;
 const sht sht_nil = GDK_sht_min-1;
 const int int_nil = GDK_int_min-1;
-#ifdef __INTEL_COMPILER
-/* stupid Intel compiler uses a value that cannot be used in an
- * initializer for NAN, so we have to initialize at run time */
-flt flt_nil;
-dbl dbl_nil;
+#ifdef NAN_CANNOT_BE_USED_AS_INITIALIZER
+/* Definition of NAN is seriously broken on Intel compiler (at least
+ * in some versions), so we work around it. */
+const union _flt_nil_t _flt_nil_ = {
+	UINT32_C(0x7fc00000)
+};
+const union _dbl_nil_t _dbl_nil_ = {
+	UINT64_C(0x7ff8000000000000)
+};
 #else
 const flt flt_nil = NAN;
 const dbl dbl_nil = NAN;
