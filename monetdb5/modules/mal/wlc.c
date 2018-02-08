@@ -601,16 +601,14 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 {	BAT *b;
-	str sch = NULL, tbl = NULL, col = NULL;
+	str sch, tbl, col;
 	str msg = MAL_SUCCEED;
 	(void) mb;
 
 	b = BATdescriptor(bid);
 	if (b == NULL) {
-		msg = createException(MAL, "wlc.datashipping", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto finish;
+		throw(MAL, "wlc.datashipping", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	assert(b);
 
 // large BATs can also be re-created using the query.
 // Copy into should always be expanded, because the source may not
@@ -657,8 +655,7 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 		cntxt->wlc_kind = WLC_CATALOG;
 	}
 finish:
-	if (b != NULL)
-		BBPunfix(b->batCacheid);
+	BBPunfix(b->batCacheid);
 	if (sch)
 		GDKfree(sch);
 	if (tbl)
