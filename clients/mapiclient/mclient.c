@@ -1696,7 +1696,7 @@ setFormatter(const char *s)
 		} else
 			separator = strdup(s + 4);
 		csvheader = 1;
-	} else if (strcmp(s, "tsv") == 0) {
+	} else if (strcmp(s, "tab") == 0) {
 		formatter = CSVformatter;
 		separator = strdup("\t");
 	} else if (strcmp(s, "raw") == 0) {
