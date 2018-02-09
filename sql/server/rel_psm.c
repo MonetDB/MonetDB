@@ -815,7 +815,8 @@ rel_create_func(mvc *sql, dlist *qname, dlist *params, symbol *res, dlist *ext_n
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s%s: not allowed to replace system %s%s %s;", KF, F, kf, fn, func->base.name);
 			}
 
-			mvc_drop_func(sql, s, func, action);
+			if(mvc_drop_func(sql, s, func, action))
+				return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			sf = NULL;
 		} else {
 			if (params) {

@@ -880,7 +880,10 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				}
 			}
 		}
-		mvc_drop_column(sql, t, col, drop_action);
+		if(mvc_drop_column(sql, t, col, drop_action)) {
+			sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: %s\n", MAL_MALLOC_FAIL);
+			return SQL_ERR;
+		}
 	} 	break;
 	case SQL_DROP_CONSTRAINT:
 		assert(0);
