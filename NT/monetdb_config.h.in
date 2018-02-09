@@ -301,9 +301,6 @@
 /* Define to 1 if you have the `lockf' function. */
 /* #undef HAVE_LOCKF */
 
-/* Define to 1 if the system has the type `long long'. */
-#define HAVE_LONG_LONG 1
-
 /* Define to 1 if you have the <mach/mach_init.h> header file. */
 /* #undef HAVE_MACH_MACH_INIT_H */
 
@@ -592,9 +589,6 @@
 /* Define to 1 if the system has the type `__int128_t'. */
 /* #undef HAVE___INT128_T */
 
-/* Define to 1 if the system has the type `__int64'. */
-#define HAVE___INT64 1
-
 /* Define to 1 if the system has the type `__uint128_t'. */
 /* #undef HAVE___UINT128_T */
 
@@ -691,11 +685,6 @@
 
 /* The size of `long', as computed by sizeof. */
 #define SIZEOF_LONG 4
-
-/* The size of `long long', as computed by sizeof. */
-#ifdef HAVE_LONG_LONG
-#define SIZEOF_LONG_LONG 8
-#endif
 
 /* The size of `ptrdiff_t', as computed by sizeof. */
 #ifdef _WIN64

@@ -2532,8 +2532,6 @@ AC_TYPE_SSIZE_T
 AC_TYPE_PID_T
 AC_TYPE_OFF_T
 
-AC_CHECK_TYPES([__int64, long long])
-
 AS_CASE([$enable_int128],
 [yes|auto], [
 	have_hge=no
@@ -2561,8 +2559,6 @@ AC_CHECK_SIZEOF([size_t])
 AC_CHECK_SIZEOF([ssize_t])
 AC_CHECK_SIZEOF([ptrdiff_t],,[@%:@include <stddef.h>])
 AC_CHECK_SIZEOF([wchar_t],,[@%:@include <stddef.h>])
-AC_CHECK_SIZEOF([long long])
-AC_CHECK_SIZEOF([__int64])
 AC_CHECK_SIZEOF([__int128])
 AC_CHECK_SIZEOF([__int128_t])
 AC_C_CHAR_UNSIGNED
