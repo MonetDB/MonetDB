@@ -109,15 +109,17 @@ gdk_export const int int_nil;
 #ifdef NAN_CANNOT_BE_USED_AS_INITIALIZER
 /* Definition of NAN is seriously broken on Intel compiler (at least
  * in some versions), so we work around it. */
-gdk_export const union _flt_nil_t {
+union _flt_nil_t {
 	uint32_t l;
 	flt f;
-} _flt_nil_;
+};
+gdk_export union _flt_nil_t _flt_nil_;
 #define flt_nil (_flt_nil_.f)
-gdk_export const union _dbl_nil_t {
+union _dbl_nil_t {
 	uint64_t l;
 	dbl d;
-} _dbl_nil_;
+};
+gdk_export const union _dbl_nil_t _dbl_nil_;
 #define dbl_nil (_dbl_nil_.d)
 #else
 gdk_export const flt flt_nil;
