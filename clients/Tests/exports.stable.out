@@ -366,7 +366,7 @@ BAT *VIEWcreate_(oid seq, BAT *b, int stable);
 size_t _MT_npages;
 size_t _MT_pagesize;
 const union _dbl_nil_t _dbl_nil_;
-union _flt_nil_t _flt_nil_;
+const union _flt_nil_t _flt_nil_;
 ssize_t batFromStr(const char *src, size_t *len, bat **dst);
 ssize_t batToStr(str *dst, size_t *len, const bat *src);
 ssize_t bitFromStr(const char *src, size_t *len, bit **dst);

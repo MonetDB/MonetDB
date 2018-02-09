@@ -113,7 +113,7 @@ union _flt_nil_t {
 	uint32_t l;
 	flt f;
 };
-gdk_export union _flt_nil_t _flt_nil_;
+gdk_export const union _flt_nil_t _flt_nil_;
 #define flt_nil (_flt_nil_.f)
 union _dbl_nil_t {
 	uint64_t l;

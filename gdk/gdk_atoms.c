@@ -243,10 +243,10 @@ const int int_nil = GDK_int_min-1;
 /* Definition of NAN is seriously broken on Intel compiler (at least
  * in some versions), so we work around it. */
 const union _flt_nil_t _flt_nil_ = {
-	UINT32_C(0x7fc00000)
+	.l = UINT32_C(0x7FC00000)
 };
 const union _dbl_nil_t _dbl_nil_ = {
-	UINT64_C(0x7ff8000000000000)
+	.l = UINT64_C(0x7FF8000000000000)
 };
 #else
 const flt flt_nil = NAN;
