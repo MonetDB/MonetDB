@@ -1152,13 +1152,13 @@ mvc_create_tc(mvc *m, sql_trigger * i, sql_column *c /*, extra options such as t
 	return i;
 }
 
-void
+int
 mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger *tri)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_drop_trigger %s %s\n", s->base.name, tri->base.name);
 
-	sql_trans_drop_trigger(m->session->tr, s, tri->base.id, DROP_RESTRICT);
+	return sql_trans_drop_trigger(m->session->tr, s, tri->base.id, DROP_RESTRICT);
 }
 
 
@@ -1215,13 +1215,13 @@ mvc_create_remote(mvc *m, sql_schema *s, const char *name, int persistence, cons
 	return t;
 }
 
-void
+int
 mvc_drop_table(mvc *m, sql_schema *s, sql_table *t, int drop_action)
 {
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_drop_table %s %s\n", s->base.name, t->base.name);
 
-	sql_trans_drop_table(m->session->tr, s, t->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
+	return sql_trans_drop_table(m->session->tr, s, t->base.id, drop_action ? DROP_CASCADE_START : DROP_RESTRICT);
 }
 
 BUN

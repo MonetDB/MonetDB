@@ -244,7 +244,8 @@ drop_trigger(mvc *sql, char *sname, char *tname, int if_exists)
 			return MAL_SUCCEED;
 		throw(SQL,"sql.drop_trigger", SQLSTATE(3F000) "DROP TRIGGER: unknown trigger %s\n", tname);
 	}
-	mvc_drop_trigger(sql, s, tri);
+	if(mvc_drop_trigger(sql, s, tri))
+		throw(SQL,"sql.drop_trigger", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -299,7 +300,8 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 	if (!drop_action && mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
 		throw (SQL,"sql.droptable",SQLSTATE(42000) "DROP TABLE: unable to drop table %s (there are database objects which depend on it)\n", t->base.name);
 
-	mvc_drop_table(sql, s, t, drop_action);
+	if(mvc_drop_table(sql, s, t, drop_action))
+		throw(SQL,"sql.droptable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -330,7 +332,8 @@ drop_view(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 	} else if (!drop_action && mvc_check_dependency(sql, t->base.id, VIEW_DEPENDENCY, NULL)) {
 		throw(SQL,"sql.drop_view", SQLSTATE(42000) "DROP VIEW: cannot drop view '%s', there are database objects which depend on it", t->base.name);
 	} else {
-		mvc_drop_table(sql, ss, t, drop_action);
+		if(mvc_drop_table(sql, ss, t, drop_action))
+			throw(SQL,"sql.drop_view", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 }
@@ -373,14 +376,18 @@ drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
 		if (i->type == ordered_idx) {
 			sql_kc *ic = i->columns->h->data;
 			BAT *b = mvc_bind(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, 0);
-			OIDXdropImplementation(cntxt, b);
-			BBPunfix(b->batCacheid);
+			if(b) {
+				OIDXdropImplementation(cntxt, b);
+				BBPunfix(b->batCacheid);
+			}
 		}
 		if (i->type == imprints_idx) {
 			sql_kc *ic = i->columns->h->data;
 			BAT *b = mvc_bind(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, 0);
-			IMPSdestroy(b);
-			BBPunfix(b->batCacheid);
+			if(b) {
+				IMPSdestroy(b);
+				BBPunfix(b->batCacheid);
+			}
 		}
 		if(mvc_drop_idx(sql, s, i))
 			throw(SQL,"sql.drop_index", SQLSTATE(HY001) MAL_MALLOC_FAIL);

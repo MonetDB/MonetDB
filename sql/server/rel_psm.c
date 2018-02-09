@@ -1211,7 +1211,8 @@ create_trigger(mvc *sql, dlist *qname, int time, symbol *trigger_event, dlist *t
 		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: cannot create trigger on view '%s'", base, tname);
 	if (create && (st = mvc_bind_trigger(sql, ss, triggername)) != NULL) {
 		if (replace) {
-			mvc_drop_trigger(sql, ss, st);
+			if(mvc_drop_trigger(sql, ss, st))
+				return sql_error(sql, 02, SQLSTATE(HY001) "%s TRIGGER: %s", base, MAL_MALLOC_FAIL);
 		} else {
 			return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: name '%s' already in use", base, triggername);
 		}
