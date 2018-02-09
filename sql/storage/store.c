@@ -5177,8 +5177,10 @@ sql_trans_drop_key(sql_trans *tr, sql_schema *s, int id, int drop_action)
 
 		if (! tr->dropped) {
 			tr->dropped = list_create((fdestroy) GDKfree);
-			_DELETE(local_id);
-			return -1;
+			if(!tr->dropped) {
+				_DELETE(local_id);
+				return -1;
+			}
 		}
 		*local_id = k->base.id;
 		list_append(tr->dropped, local_id);
