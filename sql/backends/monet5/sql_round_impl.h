@@ -109,7 +109,7 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	/* set result BAT properties */
 	BATsetcount(res, cnt);
 	/* result head is aligned with argument head */
-	ALIGNsetH(res, v);
+	BAThseqbase(res, v->hseqbase);
 	/* hard to predict correct tail properties in general */
 	res->tnonil = nonil;
 	res->tnil = !nonil;
@@ -238,7 +238,7 @@ bat_round_wrap(bat *_res, const bat *_v, const int *d, const int *s, const bte *
 	/* set result BAT properties */
 	BATsetcount(res, cnt);
 	/* result head is aligned with argument head */
-	ALIGNsetH(res, v);
+	BAThseqbase(res, v->hseqbase);
 	/* hard to predict correct tail properties in general */
 	res->tnonil = nonil;
 	res->tnil = !nonil;

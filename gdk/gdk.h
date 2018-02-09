@@ -2523,8 +2523,6 @@ gdk_export void BATundo(BAT *b);
  * @tab ALIGNsync   (BAT *b1, BAT *b2)
  * @item int
  * @tab ALIGNrelated (BAT *b1, BAT *b2)
- * @item int
- * @tab ALIGNsetT    ((BAT *dst, BAT *src)
  *
  * @item BAT*
  * @tab VIEWcreate   (oid seq, BAT *b)
@@ -2572,12 +2570,7 @@ gdk_export void BATassertProps(BAT *b);
 #define BATPROPS_CHECK  3	/* BATPROPS_ALL, but start from scratch and report illegally set properties */
 
 gdk_export BAT *VIEWcreate(oid seq, BAT *b);
-gdk_export BAT *VIEWcreate_(oid seq, BAT *b, int stable);
 gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
-
-/* low level functions */
-gdk_export void ALIGNsetH(BAT *b1, BAT *b2);
-gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
 
 #define ALIGNinp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND,e); } while (0)
 #define ALIGNapp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ,e); } while (0)

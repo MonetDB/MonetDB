@@ -1,6 +1,12 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Fri Feb  9 2018 Sjoerd Mullender <sjoerd@acm.org>
+- Removed functions ALIGNsetH, ALIGNsetT, and CREATEview_ (mind the
+  underscore).  The first can easily be replace by using BAThseqbase
+  (that's all it did), the second was only used once, and the third can
+  be replace by VIEWcreate.
+
 * Thu Jan 18 2018 Sjoerd Mullender <sjoerd@acm.org>
 - Removed unused functions BATmemsize and BATvmsize.
 - Removed the tnodense property: it was maintained but never actually

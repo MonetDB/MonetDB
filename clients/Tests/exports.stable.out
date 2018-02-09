@@ -6,8 +6,6 @@ stdout of test 'exports` in directory 'clients` itself:
 # 21:40:57 >  
 
 # gdk
-void ALIGNsetH(BAT *b1, BAT *b2);
-void ALIGNsetT(BAT *b1, BAT *b2);
 int ALIGNsynced(BAT *b1, BAT *b2);
 int ATOMallocate(const char *nme);
 ptr ATOMdup(int id, const void *val);
@@ -362,7 +360,6 @@ gdk_return VARcalcxor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt);
 gdk_return VARconvert(ValPtr ret, const ValRecord *v, int abort_on_error);
 void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 BAT *VIEWcreate(oid seq, BAT *b);
-BAT *VIEWcreate_(oid seq, BAT *b, int stable);
 size_t _MT_npages;
 size_t _MT_pagesize;
 const union _dbl_nil_t _dbl_nil_;
