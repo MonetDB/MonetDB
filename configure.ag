@@ -2589,6 +2589,19 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 	AC_DEFINE([__hidden], [/* empty */],
 		[Does your compiler support the `__hidden' specifier?])])
 
+AC_MSG_CHECKING([if your compiler can use NAN as an initializer])
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+	@%:@include <math.h>
+	extern const float f;
+	extern const double d;
+	const float f = NAN;
+	const double d = NAN;
+	]])],
+	[AC_MSG_RESULT([yes])],
+	[AC_MSG_RESULT([no])
+	 AC_DEFINE([NAN_CANNOT_BE_USED_AS_INITIALIZER], 1,
+		[Define if NAN cannot be used as static initializer])])
+
 #    checks for library functions
 AS_CASE([$host],
 	[*-darwin1[[01234567]]*], [
