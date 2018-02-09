@@ -178,7 +178,7 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 		logadd("\"state\":\"done\",%s", prettify);
 		logadd("\"usec\":"LLFMT",%s", pci->ticks, prettify);
 	}
-	logadd("\"rss\":"SZFMT ",%s", MT_getrss()/1024/1024, prettify);
+	logadd("\"rss\":%zu,%s", MT_getrss()/1024/1024, prettify);
 	logadd("\"size\":"LLFMT ",%s", pci? pci->wbytes/1024/1024:0, prettify);	// result size
 
 #ifdef NUMAprofiling
@@ -456,7 +456,7 @@ profilerHeartbeatEvent(char *alter)
 		logadd("\"session\":\"%s\",%s", mal_session_uuid, prettify);
 	logadd("\"clk\":"LLFMT",%s",usec,prettify);
 	logadd("\"ctime\":%"PRIu64",%s", microseconds, prettify);
-	logadd("\"rss\":"SZFMT ",%s", MT_getrss()/1024/1024, prettify);
+	logadd("\"rss\":%zu,%s", MT_getrss()/1024/1024, prettify);
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
 	if(infoUsage.ru_inblock - prevUsage.ru_inblock)

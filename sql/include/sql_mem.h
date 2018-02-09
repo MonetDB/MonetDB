@@ -79,31 +79,31 @@ extern size_t sa_size( sql_allocator *sa );
 #define _strlen(s) (int)strlen(s)
 
 #if !defined(NDEBUG) && !defined(STATIC_CODE_ANALYSIS) && defined(__GNUC__)
-#define sa_alloc(sa, sz)						\
-	({								\
-		sql_allocator *_sa = (sa);				\
-		size_t _sz = (sz);					\
-		void *_res = sa_alloc(_sa, _sz);			\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#sa_alloc(" PTRFMT "," SZFMT ") -> " PTRFMT \
-				" %s[%s:%d]\n",				\
-				PTRFMTCAST _sa, _sz, PTRFMTCAST _res,	\
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
+#define sa_alloc(sa, sz)					\
+	({							\
+		sql_allocator *_sa = (sa);			\
+		size_t _sz = (sz);				\
+		void *_res = sa_alloc(_sa, _sz);		\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#sa_alloc(%p,%zu) -> %p"	\
+				" %s[%s:%d]\n",			\
+				_sa, _sz, _res,			\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
 	})
-#define sa_zalloc(sa, sz)						\
-	({								\
-		sql_allocator *_sa = (sa);				\
-		size_t _sz = (sz);					\
-		void *_res = sa_zalloc(_sa, _sz);			\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#sa_zalloc(" PTRFMT "," SZFMT ") -> " PTRFMT \
-				" %s[%s:%d]\n",				\
-				PTRFMTCAST _sa, _sz, PTRFMTCAST _res,	\
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
+#define sa_zalloc(sa, sz)					\
+	({							\
+		sql_allocator *_sa = (sa);			\
+		size_t _sz = (sz);				\
+		void *_res = sa_zalloc(_sa, _sz);		\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#sa_zalloc(%p,%zu) -> %p"	\
+				" %s[%s:%d]\n",			\
+				_sa, _sz, _res,			\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
 	})
 #define sa_realloc(sa, ptr, sz, osz)					\
 	({								\
@@ -114,39 +114,39 @@ extern size_t sa_size( sql_allocator *sa );
 		void *_res = sa_realloc(_sa, _ptr, _sz, _osz);		\
 		ALLOCDEBUG						\
 			fprintf(stderr,					\
-				"#sa_realloc(" PTRFMT "," PTRFMT "," SZFMT "," SZFMT ") -> " PTRFMT \
+				"#sa_realloc(%p,%p,%zu,%zu) -> %p"	\
 				" %s[%s:%d]\n",				\
-				PTRFMTCAST _sa, PTRFMTCAST _ptr, _sz, _osz, \
-				PTRFMTCAST _res,			\
+				_sa, _ptr, _sz, _osz,			\
+				_res,					\
 				__func__, __FILE__, __LINE__);		\
 		_res;							\
 	})
-#define sa_strdup(sa, s)						\
-	({								\
-		sql_allocator *_sa = (sa);				\
-		const char *_s = (s);					\
-		char *_res = sa_strdup(_sa, _s);			\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#sa_strdup(" PTRFMT ",len=" SZFMT ") -> " PTRFMT \
-				" %s[%s:%d]\n",				\
-				PTRFMTCAST _sa, strlen(_s), PTRFMTCAST _res, \
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
+#define sa_strdup(sa, s)					\
+	({							\
+		sql_allocator *_sa = (sa);			\
+		const char *_s = (s);				\
+		char *_res = sa_strdup(_sa, _s);		\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#sa_strdup(%p,len=%zu) -> %p"	\
+				" %s[%s:%d]\n",			\
+				_sa, strlen(_s), _res,		\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
 	})
-#define sa_strndup(sa, s, l)						\
-	({								\
-		sql_allocator *_sa = (sa);				\
-		const char *_s = (s);					\
-		size_t _l = (l);					\
-		char *_res = sa_strndup(_sa, _s, _l);			\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#sa_strndup(" PTRFMT ",len=" SZFMT ") -> " PTRFMT \
-				" %s[%s:%d]\n",				\
-				PTRFMTCAST _sa, _l, PTRFMTCAST _res,	\
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
+#define sa_strndup(sa, s, l)					\
+	({							\
+		sql_allocator *_sa = (sa);			\
+		const char *_s = (s);				\
+		size_t _l = (l);				\
+		char *_res = sa_strndup(_sa, _s, _l);		\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#sa_strndup(%p,len=%zu) -> %p"	\
+				" %s[%s:%d]\n",			\
+				_sa, _l, _res,			\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
 	})
 #endif
 

@@ -369,7 +369,7 @@ GDKextendf(int fd, size_t size, const char *fn)
 			GDKsyserror("GDKextendf: could not extend file\n");
 		}
 	}
-	IODEBUG fprintf(stderr, "#GDKextend %s " SZFMT " -> " SZFMT " %dms%s\n",
+	IODEBUG fprintf(stderr, "#GDKextend %s %zu -> %zu %dms%s\n",
 			fn, (size_t) stb.st_size, size,
 			GDKms() - t0, rt != 0 ? " (failed)" : "");
 	/* posix_fallocate returns != 0 on failure, fallocate and
@@ -423,9 +423,9 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 				    "mode=%d\n", nme, ext ? ext : "",
 				    (int) mode);
 		IODEBUG fprintf(stderr,
-				"#MT_msync(buf " PTRFMT ", size " SZFMT
+				"#MT_msync(buf %p, size %zu"
 				") = %d\n",
-				PTRFMTCAST buf, size, err);
+				buf, size, err);
 	} else {
 		int fd;
 
@@ -443,7 +443,7 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 					    (unsigned) MIN(1 << 30, size));
 				if (ret < 0) {
 					err = -1;
-					GDKsyserror("GDKsave: error " SSZFMT
+					GDKsyserror("GDKsave: error %zd"
 						    " on: name=%s, ext=%s, "
 						    "mode=%d\n", ret, nme,
 						    ext ? ext : "", (int) mode);
@@ -452,9 +452,9 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 				size -= ret;
 				buf = (void *) ((char *) buf + ret);
 				IODEBUG fprintf(stderr,
-						"#write(fd %d, buf " PTRFMT
-						", size %u) = " SSZFMT "\n",
-						fd, PTRFMTCAST buf,
+						"#write(fd %d, buf %p"
+						", size %u) = %zd\n",
+						fd, buf,
 						(unsigned) MIN(1 << 30, size),
 						ret);
 			}
@@ -522,13 +522,13 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 				for (n_expected = (ssize_t) size; n_expected > 0; n_expected -= n) {
 					n = read(fd, dst, (unsigned) MIN(1 << 30, n_expected));
 					if (n < 0)
-						GDKsyserror("GDKload: cannot read: name=%s, ext=%s, " SZFMT " bytes missing.\n", nme, ext ? ext : "", (size_t) n_expected);
+						GDKsyserror("GDKload: cannot read: name=%s, ext=%s, %zu bytes missing.\n", nme, ext ? ext : "", (size_t) n_expected);
 #ifndef STATIC_CODE_ANALYSIS
 					/* Coverity doesn't seem to
 					 * recognize that we're just
 					 * printing the value of ptr,
 					 * not its contents */
-					IODEBUG fprintf(stderr, "#read(dst " PTRFMT ", n_expected " SSZFMT ", fd %d) = " SSZFMT "\n", PTRFMTCAST(void *)dst, n_expected, fd, n);
+					IODEBUG fprintf(stderr, "#read(dst %p, n_expected %zd, fd %d) = %zd\n", (void *)dst, n_expected, fd, n);
 #endif
 
 					if (n <= 0)
@@ -574,7 +574,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 				/* success: update allocated size */
 				*maxsize = size;
 			}
-			IODEBUG fprintf(stderr, "#mmap(NULL, 0, maxsize " SZFMT ", mod %d, path %s, 0) = " PTRFMT "\n", size, mod, nme, PTRFMTCAST(void *)ret);
+			IODEBUG fprintf(stderr, "#mmap(NULL, 0, maxsize %zu, mod %d, path %s, 0) = %p\n", size, mod, nme, (void *)ret);
 		}
 		GDKfree(path);
 	}

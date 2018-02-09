@@ -36,7 +36,7 @@ SQLNumParams(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLNumParams " PTRFMT "\n", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLNumParams %p\n", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

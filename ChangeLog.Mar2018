@@ -1,3 +1,14 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Fri Feb  9 2018 Sjoerd Mullender <sjoerd@acm.org>
+- Some types and constants were moved from configure (and hence
+  monetdb_config.h) to gdk.h.  In particular, the types "lng" and
+  "ulng" have been moved and can therefore no longer be used by code
+  that doesn't (ultimately) include gdk.h.  Just use int64_t instead.
+  A bunch of format defines have been removed: SZFMT, SSZFMT, PTRFMT,
+  PDFMT.  Just use the C standard codes for those (%zu, %zd, %p, %td).
+  The define for printing a lng (LLFMT) was also moved.  Use PRId64 for
+  printing int64_t in code not using gdk.h.  Removed all references to
+  __int64 and long long (use int64_t instead).
+

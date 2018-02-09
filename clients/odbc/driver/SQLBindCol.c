@@ -41,9 +41,9 @@ SQLBindCol(SQLHSTMT StatementHandle,
 	ODBCDesc *desc;		/* Application Row Descriptor */
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLBindCol " PTRFMT " %u %s " PTRFMT " " LENFMT "\n",
-		PTRFMTCAST StatementHandle, (unsigned int) ColumnNumber,
-		translateCType(TargetType), PTRFMTCAST TargetValuePtr,
+	ODBCLOG("SQLBindCol %p %u %s %p " LENFMT "\n",
+		StatementHandle, (unsigned int) ColumnNumber,
+		translateCType(TargetType), TargetValuePtr,
 		LENCAST BufferLength);
 #endif
 

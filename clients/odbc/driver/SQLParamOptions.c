@@ -34,8 +34,8 @@ SQLParamOptions(SQLHSTMT StatementHandle,
 	RETCODE rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLParamOptions " PTRFMT " " ULENFMT "\n",
-		PTRFMTCAST StatementHandle, ULENCAST RowNumber);
+	ODBCLOG("SQLParamOptions %p " ULENFMT "\n",
+		StatementHandle, ULENCAST RowNumber);
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */

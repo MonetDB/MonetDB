@@ -391,7 +391,7 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 	} 	break;
 	}
 	if (res == SQL_ERR) {
-		(void) sql_error(sql, 02, SQLSTATE(M0M03) "Unknown constraint (" PTRFMT ")->token = %s\n", PTRFMTCAST s, token2string(s->token));
+		(void) sql_error(sql, 02, SQLSTATE(M0M03) "Unknown constraint (%p)->token = %s\n", s, token2string(s->token));
 	}
 	return res;
 }
@@ -478,7 +478,7 @@ column_option(
 	} 	break;
 	}
 	if (res == SQL_ERR) {
-		(void) sql_error(sql, 02, SQLSTATE(M0M03) "Unknown column option (" PTRFMT ")->token = %s\n", PTRFMTCAST s, token2string(s->token));
+		(void) sql_error(sql, 02, SQLSTATE(M0M03) "Unknown column option (%p)->token = %s\n", s, token2string(s->token));
 	}
 	return res;
 }
@@ -615,7 +615,7 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 		break;
 	}
 	if (res != SQL_OK) {
-		sql_error(sql, 02, SQLSTATE(M0M03) "Table constraint type: wrong token (" PTRFMT ") = %s\n", PTRFMTCAST s, token2string(s->token));
+		sql_error(sql, 02, SQLSTATE(M0M03) "Table constraint type: wrong token (%p) = %s\n", s, token2string(s->token));
 		return SQL_ERR;
 	}
 	return res;
@@ -641,7 +641,7 @@ table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 	}
 
 	if (res != SQL_OK) {
-		sql_error(sql, 02, SQLSTATE(M0M03) "Table constraint: wrong token (" PTRFMT ") = %s\n", PTRFMTCAST s, token2string(s->token));
+		sql_error(sql, 02, SQLSTATE(M0M03) "Table constraint: wrong token (%p) = %s\n", s, token2string(s->token));
 		return SQL_ERR;
 	}
 	return res;
@@ -886,7 +886,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 		assert(0);
 	}
 	if (res == SQL_ERR) {
-		sql_error(sql, 02, SQLSTATE(M0M03) "Unknown table element (" PTRFMT ")->token = %s\n", PTRFMTCAST s, token2string(s->token));
+		sql_error(sql, 02, SQLSTATE(M0M03) "Unknown table element (%p)->token = %s\n", s, token2string(s->token));
 		return SQL_ERR;
 	}
 	return res;
@@ -2488,7 +2488,7 @@ rel_schemas(mvc *sql, symbol *s)
 		return rel_comment_on(sql, id, s, remark);
 	} 	break;
 	default:
-		return sql_error(sql, 01, SQLSTATE(M0M03) "Schema statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
+		return sql_error(sql, 01, SQLSTATE(M0M03) "Schema statement unknown symbol(%p)->token = %s", s, token2string(s->token));
 	}
 
 	sql->type = Q_SCHEMA;

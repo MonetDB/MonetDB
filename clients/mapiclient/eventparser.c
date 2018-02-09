@@ -76,7 +76,7 @@ stripQuotes(char *currentquery)
 		return NULL;
 	q = qry = (char *) malloc(strlen(currentquery) * 2);
 	if( q == NULL){
-		fprintf(stderr,"Could not allocate query buffer of size "SZFMT"\n", strlen(currentquery) * 2);
+		fprintf(stderr,"Could not allocate query buffer of size %zu\n", strlen(currentquery) * 2);
 		exit(-1);
 	}
 	c= currentquery;
@@ -236,14 +236,14 @@ keyvalueparser(char *txt, EventRecord *ev)
 				 c);
 		ev->clkticks = sec * 1000000;
 		if (c != NULL) {
-			lng usec;
+			int64_t usec;
 			/* microseconds */
 			usec = strtoll(c, NULL, 10);
 			assert(usec >= 0 && usec < 1000000);
 			ev->clkticks += usec;
 		}
 		if (ev->clkticks < 0) {
-			fprintf(stderr, "parser: read negative value "LLFMT" from\n'%s'\n", ev->clkticks, val);
+			fprintf(stderr, "parser: read negative value %"PRId64" from\n'%s'\n", ev->clkticks, val);
 		}
 		return 0;
 	}
@@ -361,7 +361,7 @@ lineparser(char *row, EventRecord *ev)
 	memset(&stm, 0, sizeof(struct tm));
 #ifdef HAVE_STRPTIME
 	c = strptime(c + 1, "%H:%M:%S", &stm);
-	ev->clkticks = (((lng) stm.tm_hour * 60 + stm.tm_min) * 60 + stm.tm_sec) * 1000000;
+	ev->clkticks = (((int64_t) stm.tm_hour * 60 + stm.tm_min) * 60 + stm.tm_sec) * 1000000;
 	if (c == NULL)
 		return -3;
 #else
@@ -371,7 +371,7 @@ lineparser(char *row, EventRecord *ev)
 	c += pos + 1;
 #endif
 	if (*c == '.') {
-		lng usec;
+		int64_t usec;
 		/* microseconds */
 		usec = strtoll(c + 1, NULL, 10);
 		assert(usec >= 0 && usec < 1000000);
@@ -381,7 +381,7 @@ lineparser(char *row, EventRecord *ev)
 	if (c == NULL)
 		return -3;
 	if (ev->clkticks < 0) {
-		fprintf(stderr, "parser: read negative value "LLFMT" from\n'%s'\n", ev->clkticks, cc);
+		fprintf(stderr, "parser: read negative value %"PRId64" from\n'%s'\n", ev->clkticks, cc);
 	}
 	c++;
 
@@ -547,7 +547,7 @@ renderJSONevent(FILE *fd, EventRecord *ev, int notfirst)
 	if( notfirst)
 		fprintf(fd,"},\n{");
 	fprintf(fd,"\"user\":\"%s\",\n",ev->user?ev->user:"monetdb");
-	fprintf(fd,"\"clk\":"LLFMT",\n",ev->usec);
+	fprintf(fd,"\"clk\":%"PRId64",\n",ev->usec);
 	fprintf(fd,"\"ctime\":\"%s\",\n",ev->time);
 	fprintf(fd,"\"thread\":%d,\n",ev->thread);
 	fprintf(fd,"\"function\":\"%s\",\n",ev->function);
@@ -570,9 +570,9 @@ renderJSONevent(FILE *fd, EventRecord *ev, int notfirst)
 		fprintf(fd,"\"state\":\"system\",\n");
 		break;
 	}
-	fprintf(fd,"\"usec\":"LLFMT",\n",ev->ticks);
-	fprintf(fd,"\"rss\":"LLFMT",\n",ev->rss);
-	fprintf(fd,"\"size\":"LLFMT",\n",ev->size);
+	fprintf(fd,"\"usec\":%"PRId64",\n",ev->ticks);
+	fprintf(fd,"\"rss\":%"PRId64",\n",ev->rss);
+	fprintf(fd,"\"size\":%"PRId64",\n",ev->size);
 	if( strstr(ev->stmt," ]"))
 		*strstr(ev->stmt," ]") = 0;
 	fprintf(fd,"\"stmt\":\"%s\",\n",ev->stmt);

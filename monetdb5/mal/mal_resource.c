@@ -198,10 +198,10 @@ MALresourceFairness(lng usec)
 	/* always keep one running to avoid all waiting  */
 	while (clk > DELAYUNIT && users > 1 && ATOMIC_GET(mal_running, mal_runningLock) > (ATOMIC_TYPE) GDKnr_threads && rss > MEMORY_THRESHOLD) {
 		if ( delayed++ == 0){
-				PARDEBUG fprintf(stderr, "#delay initial ["LLFMT"] memory  "SZFMT"[%f]\n", clk, rss, MEMORY_THRESHOLD );
+				PARDEBUG fprintf(stderr, "#delay initial ["LLFMT"] memory  %zu[%f]\n", clk, rss, MEMORY_THRESHOLD );
 		}
 		if ( delayed == MAX_DELAYS){
-				PARDEBUG fprintf(stderr, "#delay abort ["LLFMT"] memory  "SZFMT"[%f]\n", clk, rss, MEMORY_THRESHOLD );
+				PARDEBUG fprintf(stderr, "#delay abort ["LLFMT"] memory  %zu[%f]\n", clk, rss, MEMORY_THRESHOLD );
 				PARDEBUG fflush(stderr);
 				break;
 		}

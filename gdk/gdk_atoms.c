@@ -911,7 +911,7 @@ ptrFromStr(const char *src, size_t *len, ptr **dst)
 	return (ssize_t) (p - src);
 }
 
-atomtostr(ptr, PTRFMT, PTRFMTCAST)
+atomtostr(ptr, "%p", )
 
 #if SIZEOF_VOID_P == SIZEOF_INT
 atom_io(ptr, Int, int)
@@ -1310,10 +1310,10 @@ strPut(Heap *h, var_t *dst, const char *v)
 		assert(newsize);
 
 		if (h->free + pad + len + extralen >= (size_t) VAR_MAX) {
-			GDKerror("strPut: string heaps gets larger than " SZFMT "GiB.\n", (size_t) VAR_MAX >> 30);
+			GDKerror("strPut: string heaps gets larger than %zuGiB.\n", (size_t) VAR_MAX >> 30);
 			return 0;
 		}
-		HEAPDEBUG fprintf(stderr, "#HEAPextend in strPut %s " SZFMT " " SZFMT "\n", h->filename, h->size, newsize);
+		HEAPDEBUG fprintf(stderr, "#HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
 		if (HEAPextend(h, newsize, TRUE) != GDK_SUCCEED) {
 			return 0;
 		}

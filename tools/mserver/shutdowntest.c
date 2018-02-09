@@ -240,7 +240,7 @@ static str monetdb_initialize(void) {
 				GDKfatal("%s", secret);
 			} else if (len < 5) {
 				fprintf(stderr, "#warning: your vault key is too short "
-								"(" SZFMT "), enlarge your vault key!\n", len);
+								"(%zu), enlarge your vault key!\n", len);
 			}
 			fclose(secretf);
 		}

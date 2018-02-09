@@ -83,24 +83,23 @@ gdk_export size_t escapedStr(char *restrict dst, const char *restrict src, size_
  */
 #define GDK_bit_max ((bit) 1)
 #define GDK_bit_min ((bit) 0)
-#define GDK_bte_max ((bte) SCHAR_MAX)
-#define GDK_bte_min ((bte) SCHAR_MIN+1)
-#define GDK_sht_max ((sht) SHRT_MAX)
-#define GDK_sht_min ((sht) SHRT_MIN+1)
-#define GDK_int_max INT_MAX
-#define GDK_int_min (INT_MIN+1)
-#define GDK_flt_max ((flt) FLT_MAX)
-#define GDK_flt_min ((flt) -FLT_MAX)
-#define GDK_lng_max ((lng) LLONG_MAX)
-#define GDK_lng_min ((lng) LLONG_MIN+1)
+#define GDK_bte_max ((bte) INT8_MAX)
+#define GDK_bte_min ((bte) INT8_MIN+1)
+#define GDK_sht_max ((sht) INT16_MAX)
+#define GDK_sht_min ((sht) INT16_MIN+1)
+#define GDK_int_max ((int) INT32_MAX)
+#define GDK_int_min ((int) INT32_MIN+1)
+#define GDK_lng_max ((lng) INT64_MAX)
+#define GDK_lng_min ((lng) INT64_MIN+1)
 #ifdef HAVE_HGE
-#define GDK_hge_max ((((hge) 1) << 126) - 1 + \
-                     (((hge) 1) << 126))
+#define GDK_hge_max ((((hge) 1) << 126) - 1 + (((hge) 1) << 126))
 #define GDK_hge_min (-GDK_hge_max)
 #endif
+#define GDK_flt_max ((flt) FLT_MAX)
+#define GDK_flt_min ((flt) -FLT_MAX)
 #define GDK_dbl_max ((dbl) DBL_MAX)
 #define GDK_dbl_min ((dbl) -DBL_MAX)
-/* GDK_oid_max see below */
+#define GDK_oid_max (((oid) 1 << ((8 * SIZEOF_OID) - 1)) - 1)
 #define GDK_oid_min ((oid) 0)
 /* representation of the nil */
 gdk_export const bte bte_nil;
@@ -136,11 +135,6 @@ gdk_export const ptr ptr_nil;
 /* derived NIL values - OIDDEPEND */
 #define bit_nil	((bit) bte_nil)
 #define bat_nil	((bat) int_nil)
-#if SIZEOF_OID == SIZEOF_INT
-#define GDK_oid_max ((oid) GDK_int_max)
-#else
-#define GDK_oid_max ((oid) GDK_lng_max)
-#endif
 
 #define void_nil	oid_nil
 

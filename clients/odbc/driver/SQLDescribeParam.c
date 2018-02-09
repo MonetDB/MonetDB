@@ -40,10 +40,10 @@ SQLDescribeParam(SQLHSTMT StatementHandle,
 	ODBCDescRec *rec;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDescribeParam " PTRFMT " %u " PTRFMT " " PTRFMT " " PTRFMT " " PTRFMT "\n",
-		PTRFMTCAST StatementHandle, (unsigned int) ParameterNumber,
-		PTRFMTCAST DataTypePtr, PTRFMTCAST ParameterSizePtr,
-		PTRFMTCAST DecimalDigitsPtr, PTRFMTCAST NullablePtr);
+	ODBCLOG("SQLDescribeParam %p %u %p %p %p %p\n",
+		StatementHandle, (unsigned int) ParameterNumber,
+		DataTypePtr, ParameterSizePtr,
+		DecimalDigitsPtr, NullablePtr);
 #endif
 
 	if (!isValidStmt(stmt))

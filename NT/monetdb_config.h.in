@@ -882,14 +882,10 @@ c99_snprintf(char *outBuf, size_t size, const char *format, ...)
 
 /* Define to `int' if <sys/types.h> does not define. */
 #ifdef _WIN64
-#define ssize_t __int64
+#define ssize_t int64_t
 #else
 #define ssize_t int
 #endif
-
-typedef int64_t lng;
-typedef uint64_t ulng;
-#define SIZEOF_LNG 8
 
 #ifdef HAVE___INT128
 typedef __int128 hge;
@@ -904,23 +900,6 @@ typedef __uint128_t uhge;
 #  define SIZEOF_HGE SIZEOF___INT128_T
 # endif
 #endif
-
-/* Format to print 64 bit signed integers. */
-#define LLFMT "%" PRId64
-
-/* Format to print 64 bit unsigned integers. */
-#define ULLFMT "%" PRIu64
-
-/* define printf formats for printing size_t and ssize_t variables */
-/* In Visual Studio 2017 we can finally use %zu and %td, but %Iu/%Id
- * also works */
-#define SZFMT "%Iu"
-#define SSZFMT "%Id"
-
-#define PDFMT SSZFMT
-
-#define PTRFMT		"%p"
-#define PTRFMTCAST
 
 #ifdef HAVE_EMBEDDED_R
 #define _MSC_EXTENSIONS 1

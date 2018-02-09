@@ -34,7 +34,7 @@ SQLCloseCursor(SQLHSTMT StatementHandle)
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLCloseCursor " PTRFMT "\n", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLCloseCursor %p\n", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

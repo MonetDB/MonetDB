@@ -67,7 +67,7 @@ SQLSetCursorName(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetCursorName " PTRFMT " ", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLSetCursorName %p ", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -96,7 +96,7 @@ SQLSetCursorNameW(SQLHSTMT StatementHandle,
 	SQLCHAR *cursor;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetCursorNameW " PTRFMT " ", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLSetCursorNameW %p ", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

@@ -385,8 +385,8 @@ SQLGetFunctions(SQLHDBC ConnectionHandle,
 	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetFunctions " PTRFMT " %s\n",
-		PTRFMTCAST ConnectionHandle, translateFunctionId(FunctionId));
+	ODBCLOG("SQLGetFunctions %p %s\n",
+		ConnectionHandle, translateFunctionId(FunctionId));
 #endif
 
 	if (!isValidDbc(dbc))

@@ -230,7 +230,7 @@ BLOBtostr(str *tostr, size_t *l, const blob *p)
 		return 3;
 	}
 
-	sprintf(*tostr, "(" SZFMT ":", p->nitems);
+	sprintf(*tostr, "(%zu:", p->nitems);
 	s = *tostr + strlen(*tostr);
 
 	for (i = 0; i < p->nitems; i++) {
@@ -448,7 +448,7 @@ SQLBLOBfromstr(const char *instr, size_t *l, blob **val)
 	 */
 	i = strlen(instr);
 	if (i % 2 == 1) {
-		GDKerror("sqlblob_fromstr: Illegal blob length '" SZFMT "' (should be even)\n", i);
+		GDKerror("sqlblob_fromstr: Illegal blob length '%zu' (should be even)\n", i);
 		return -1;
 	}
 	nitems = i / 2;

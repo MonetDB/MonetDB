@@ -140,7 +140,7 @@ SQLExecDirect(SQLHSTMT StatementHandle,
 	      SQLINTEGER TextLength)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLExecDirect " PTRFMT "\n", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLExecDirect %p\n", StatementHandle);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) StatementHandle))
@@ -171,7 +171,7 @@ SQLExecDirectW(SQLHSTMT StatementHandle,
 	SQLCHAR *sql;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLExecDirectW " PTRFMT "\n", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLExecDirectW %p\n", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

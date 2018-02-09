@@ -1567,10 +1567,10 @@ SQLGetInfo(SQLHDBC ConnectionHandle,
 	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetInfo " PTRFMT " %s " PTRFMT " %d " PTRFMT "\n",
-		PTRFMTCAST ConnectionHandle, translateInfoType(InfoType),
-		PTRFMTCAST InfoValuePtr, (int) BufferLength,
-		PTRFMTCAST StringLengthPtr);
+	ODBCLOG("SQLGetInfo %p %s %p %d %p\n",
+		ConnectionHandle, translateInfoType(InfoType),
+		InfoValuePtr, (int) BufferLength,
+		StringLengthPtr);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -1612,10 +1612,10 @@ SQLGetInfoW(SQLHDBC ConnectionHandle,
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetInfoW " PTRFMT " %s " PTRFMT " %d " PTRFMT "\n",
-		PTRFMTCAST ConnectionHandle, translateInfoType(InfoType),
-		PTRFMTCAST InfoValuePtr, (int) BufferLength,
-		PTRFMTCAST StringLengthPtr);
+	ODBCLOG("SQLGetInfoW %p %s %p %d %p\n",
+		ConnectionHandle, translateInfoType(InfoType),
+		InfoValuePtr, (int) BufferLength,
+		StringLengthPtr);
 #endif
 
 	if (!isValidDbc(dbc))

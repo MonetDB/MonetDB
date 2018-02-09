@@ -67,7 +67,7 @@ local_itoa(ssize_t i)
 {
 	static char buf[32];
 
-	snprintf(buf, 32, SSZFMT, i);
+	snprintf(buf, 32, "%zd", i);
 	return buf;
 }
 static char *
@@ -75,7 +75,7 @@ local_utoa(size_t i)
 {
 	static char buf[32];
 
-	snprintf(buf, 32, SZFMT, i);
+	snprintf(buf, 32, "%zu", i);
 	return buf;
 }
 

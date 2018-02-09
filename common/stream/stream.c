@@ -132,14 +132,14 @@
 
 #ifdef _MSC_VER
 /* use intrinsic functions on Windows */
-#define short_int_SWAP(s)	((short) _byteswap_ushort((unsigned short) (s)))
+#define short_int_SWAP(s)	((int16_t) _byteswap_ushort((uint16_t) (s)))
 /* on Windows, long is the same size as int */
 #define normal_int_SWAP(s)	((int) _byteswap_ulong((unsigned long) (s)))
-#define long_long_SWAP(l)	((lng) _byteswap_uint64((unsigned __int64) (s)))
+#define long_long_SWAP(l)	((int64_t) _byteswap_uint64((unsigned __int64) (s)))
 #else
-#define short_int_SWAP(s)					\
-	((short) (((0x00ff & (unsigned short) (s)) << 8) |	\
-		  ((0xff00 & (unsigned short) (s)) >> 8)))
+#define short_int_SWAP(s)				\
+	((int16_t) (((0x00ff & (uint16_t) (s)) << 8) |	\
+		  ((0xff00 & (uint16_t) (s)) >> 8)))
 
 #define normal_int_SWAP(i)						\
 	((int) (((((unsigned) 0xff <<  0) & (unsigned) (i)) << 24) |	\
@@ -147,15 +147,15 @@
 		((((unsigned) 0xff << 16) & (unsigned) (i)) >>  8) |	\
 		((((unsigned) 0xff << 24) & (unsigned) (i)) >> 24)))
 
-#define long_long_SWAP(l)					\
-	((lng) (((((ulng) 0xff <<  0) & (ulng) (l)) << 56) |	\
-		((((ulng) 0xff <<  8) & (ulng) (l)) << 40) |	\
-		((((ulng) 0xff << 16) & (ulng) (l)) << 24) |	\
-		((((ulng) 0xff << 24) & (ulng) (l)) <<  8) |	\
-		((((ulng) 0xff << 32) & (ulng) (l)) >>  8) |	\
-		((((ulng) 0xff << 40) & (ulng) (l)) >> 24) |	\
-		((((ulng) 0xff << 48) & (ulng) (l)) >> 40) |	\
-		((((ulng) 0xff << 56) & (ulng) (l)) >> 56)))
+#define long_long_SWAP(l)						\
+	((int64_t) (((((uint64_t) 0xff <<  0) & (uint64_t) (l)) << 56) | \
+		((((uint64_t) 0xff <<  8) & (uint64_t) (l)) << 40) |	\
+		((((uint64_t) 0xff << 16) & (uint64_t) (l)) << 24) |	\
+		((((uint64_t) 0xff << 24) & (uint64_t) (l)) <<  8) |	\
+		((((uint64_t) 0xff << 32) & (uint64_t) (l)) >>  8) |	\
+		((((uint64_t) 0xff << 40) & (uint64_t) (l)) >> 24) |	\
+		((((uint64_t) 0xff << 48) & (uint64_t) (l)) >> 40) |	\
+		((((uint64_t) 0xff << 56) & (uint64_t) (l)) >> 56)))
 #endif
 
 #ifdef HAVE_HGE
@@ -361,7 +361,7 @@ mnstr_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	if (s == NULL || buf == NULL)
 		return -1;
 #ifdef STREAM_DEBUG
-	fprintf(stderr, "read %s " SZFMT " " SZFMT "\n",
+	fprintf(stderr, "read %s %zu %zu\n",
 		s->name ? s->name : "<unnamed>", elmsize, cnt);
 #endif
 	assert(s->access == ST_READ);
@@ -381,7 +381,7 @@ mnstr_readline(stream *restrict s, void *restrict buf, size_t maxcnt)
 	if (s == NULL || buf == NULL)
 		return -1;
 #ifdef STREAM_DEBUG
-	fprintf(stderr, "readline %s " SZFMT "\n",
+	fprintf(stderr, "readline %s %zu\n",
 		s->name ? s->name : "<unnamed>", maxcnt);
 #endif
 	assert(s->access == ST_READ);
@@ -439,7 +439,7 @@ mnstr_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t
 	if (s == NULL || buf == NULL)
 		return -1;
 #ifdef STREAM_DEBUG
-	fprintf(stderr, "write %s " SZFMT " " SZFMT "\n",
+	fprintf(stderr, "write %s %zu %zu\n",
 		s->name ? s->name : "<unnamed>", elmsize, cnt);
 #endif
 	assert(s->access == ST_WRITE);
@@ -716,8 +716,8 @@ create_stream(const char *name)
 	s->update_timeout = NULL;
 	s->isalive = NULL;
 #ifdef STREAM_DEBUG
-	fprintf(stderr, "create_stream %s -> " PTRFMT "\n",
-		name ? name : "<unnamed>", PTRFMTCAST s);
+	fprintf(stderr, "create_stream %s -> %p\n",
+		name ? name : "<unnamed>", s);
 #endif
 	return s;
 }
@@ -2392,7 +2392,7 @@ socket_rastream(SOCKET sock, const char *name)
 	stream *s = NULL;
 
 #ifdef STREAM_DEBUG
-	fprintf(stderr, "socket_rastream " SSZFMT " %s\n", (ssize_t) sock, name);
+	fprintf(stderr, "socket_rastream %zd %s\n", (ssize_t) sock, name);
 #endif
 	if ((s = socket_open(sock, name)) != NULL)
 		s->type = ST_ASCII;
@@ -2405,7 +2405,7 @@ socket_wastream(SOCKET sock, const char *name)
 	stream *s;
 
 #ifdef STREAM_DEBUG
-	fprintf(stderr, "socket_wastream " SSZFMT " %s\n", (ssize_t) sock, name);
+	fprintf(stderr, "socket_wastream %zd %s\n", (ssize_t) sock, name);
 #endif
 	if ((s = socket_open(sock, name)) == NULL)
 		return NULL;
@@ -3411,7 +3411,7 @@ bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t c
 {
 	bs *s;
 	size_t todo = cnt * elmsize;
-	short blksize;
+	int16_t blksize;
 
 	s = (bs *) ss->stream_data.p;
 	if (s == NULL)
@@ -3444,12 +3444,12 @@ bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t c
 #endif
 			/* since the block is at max BLOCK (8K) - 2 size we can
 			 * store it in a two byte integer */
-			blksize = (short) s->nr;
+			blksize = (int16_t) s->nr;
 			s->bytes += s->nr;
 			/* the last bit tells whether a flush is in
 			 * there, it's not at this moment, so shift it
 			 * to the left */
-			blksize = (short) (blksize << 1);
+			blksize = (int16_t) (blksize << 1);
 #ifdef WORDS_BIGENDIAN
 			blksize = short_int_SWAP(blksize);
 #endif
@@ -3473,7 +3473,7 @@ bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t c
 static int
 bs_flush(stream *ss)
 {
-	short blksize;
+	int16_t blksize;
 	bs *s;
 
 	s = (bs *) ss->stream_data.p;
@@ -3498,11 +3498,11 @@ bs_flush(stream *ss)
 			fprintf(stderr, "W %s 0\n", ss->name);
 		}
 #endif
-		blksize = (short) (s->nr << 1);
+		blksize = (int16_t) (s->nr << 1);
 		s->bytes += s->nr;
 		/* indicate that this is the last buffer of a block by
 		 * setting the low-order bit */
-		blksize |= (short) 1;
+		blksize |= (int16_t) 1;
 		/* allways flush (even empty blocks) needed for the protocol) */
 #ifdef WORDS_BIGENDIAN
 		blksize = short_int_SWAP(blksize);
@@ -3543,7 +3543,7 @@ bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 	assert(s->nr <= 1);
 
 	if (s->itotal == 0) {
-		short blksize = 0;
+		int16_t blksize = 0;
 
 		if (s->nr) {
 			/* We read the closing block but hadn't
@@ -3599,7 +3599,7 @@ bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 			{
 				ssize_t i;
 
-				fprintf(stderr, "RD %s " SSZFMT " \"", ss->name, m);
+				fprintf(stderr, "RD %s %zd \"", ss->name, m);
 				for (i = 0; i < m; i++)
 					if (' ' <= ((char *) buf)[i] &&
 					    ((char *) buf)[i] < 127)
@@ -3617,7 +3617,7 @@ bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 		}
 
 		if (s->itotal == 0) {
-			short blksize = 0;
+			int16_t blksize = 0;
 
 			/* The current block has been completely read,
 			 * so read the count for the next block, only
@@ -3927,7 +3927,7 @@ bs2_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t 
 {
 	bs2 *s;
 	size_t todo = cnt * elmsize;
-	lng blksize;
+	int64_t blksize;
 	char *writebuf;
 	size_t writelen;
 
@@ -3963,7 +3963,7 @@ bs2_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t 
 #endif
 
 			writelen = s->nr;
-			blksize = (lng) s->nr;
+			blksize = (int64_t) s->nr;
 			writebuf = s->buf;
 
 			if (s->comp != COMPRESSION_NONE) {
@@ -3972,7 +3972,7 @@ bs2_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t 
 					return -1;
 				}
 				writebuf = s->compbuf;
-				blksize = (lng) compressed_length;
+				blksize = (int64_t) compressed_length;
 				writelen = (size_t) compressed_length;
 			}
 
@@ -4002,7 +4002,7 @@ bs2_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t 
 static int
 bs2_flush(stream *ss)
 {
-	lng blksize;
+	int64_t blksize;
 	bs2 *s;
 	char *writebuf;
 	size_t writelen;
@@ -4031,7 +4031,7 @@ bs2_flush(stream *ss)
 #endif
 
 		writelen = s->nr;
-		blksize = (lng) s->nr;
+		blksize = (int64_t) s->nr;
 		writebuf = s->buf;
 
 		if (s->nr > 0 && s->comp != COMPRESSION_NONE) {
@@ -4040,7 +4040,7 @@ bs2_flush(stream *ss)
 				return -1;
 			}
 			writebuf = s->compbuf;
-			blksize = (lng) compressed_length;
+			blksize = (int64_t) compressed_length;
 			writelen = (size_t) compressed_length;
 		}
 
@@ -4088,7 +4088,7 @@ bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 	assert(s->nr <= 1);
 
 	if (s->itotal == 0) {
-		lng blksize = 0;
+		int64_t blksize = 0;
 
 		if (s->nr) {
 			/* We read the closing block but hadn't
@@ -4171,7 +4171,7 @@ bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 		s->itotal -= n;
 
 		if (s->itotal == 0) {
-			lng blksize = 0;
+			int64_t blksize = 0;
 
 			/* The current block has been completely read,
 			 * so read the count for the next block, only
@@ -4494,7 +4494,7 @@ mnstr_writeBte(stream *s, int8_t val)
 }
 
 int
-mnstr_readSht(stream *restrict s, short *restrict val)
+mnstr_readSht(stream *restrict s, int16_t *restrict val)
 {
 	if (s == NULL || val == NULL)
 		return 0;
@@ -4511,7 +4511,7 @@ mnstr_readSht(stream *restrict s, short *restrict val)
 }
 
 int
-mnstr_writeSht(stream *s, short val)
+mnstr_writeSht(stream *s, int16_t val)
 {
 	if (s == NULL || s->errnr)
 		return 0;
@@ -4568,7 +4568,7 @@ mnstr_readStr(stream *restrict s, char *restrict val)
 
 
 int
-mnstr_readLng(stream *restrict s, lng *restrict val)
+mnstr_readLng(stream *restrict s, int64_t *restrict val)
 {
 	if (s == NULL || val == NULL)
 		return 0;
@@ -4586,7 +4586,7 @@ mnstr_readLng(stream *restrict s, lng *restrict val)
 }
 
 int
-mnstr_writeLng(stream *s, lng val)
+mnstr_writeLng(stream *s, int64_t val)
 {
 	if (s == NULL || s->errnr)
 		return 0;
@@ -4662,7 +4662,7 @@ mnstr_writeBteArray(stream *restrict s, const int8_t *restrict val, size_t cnt)
 }
 
 int
-mnstr_readShtArray(stream *restrict s, short *restrict val, size_t cnt)
+mnstr_readShtArray(stream *restrict s, int16_t *restrict val, size_t cnt)
 {
 	if (s == NULL || val == NULL)
 		return 0;
@@ -4682,7 +4682,7 @@ mnstr_readShtArray(stream *restrict s, short *restrict val, size_t cnt)
 }
 
 int
-mnstr_writeShtArray(stream *restrict s, const short *restrict val, size_t cnt)
+mnstr_writeShtArray(stream *restrict s, const int16_t *restrict val, size_t cnt)
 {
 	if (s == NULL || s->errnr || val == NULL)
 		return 0;
@@ -4718,7 +4718,7 @@ mnstr_writeIntArray(stream *restrict s, const int *restrict val, size_t cnt)
 }
 
 int
-mnstr_readLngArray(stream *restrict s, lng *restrict val, size_t cnt)
+mnstr_readLngArray(stream *restrict s, int64_t *restrict val, size_t cnt)
 {
 	if (s == NULL || val == NULL)
 		return 0;
@@ -4738,7 +4738,7 @@ mnstr_readLngArray(stream *restrict s, lng *restrict val, size_t cnt)
 }
 
 int
-mnstr_writeLngArray(stream *restrict s, const lng *restrict val, size_t cnt)
+mnstr_writeLngArray(stream *restrict s, const int64_t *restrict val, size_t cnt)
 {
 	if (s == NULL || s->errnr || val == NULL)
 		return 0;

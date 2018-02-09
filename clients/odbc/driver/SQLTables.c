@@ -277,7 +277,7 @@ SQLTables(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLTables " PTRFMT " ", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLTables %p ", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -318,7 +318,7 @@ SQLTablesW(SQLHSTMT StatementHandle,
 	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL, *type = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLTablesW " PTRFMT " ", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLTablesW %p ", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

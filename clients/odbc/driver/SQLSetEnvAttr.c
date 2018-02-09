@@ -39,9 +39,9 @@ SQLSetEnvAttr(SQLHENV EnvironmentHandle,
 	ODBCEnv *env = (ODBCEnv *) EnvironmentHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetEnvAttr " PTRFMT " %s " PTRFMT " %d\n",
-		PTRFMTCAST EnvironmentHandle, translateEnvAttribute(Attribute),
-		PTRFMTCAST ValuePtr, (int) StringLength);
+	ODBCLOG("SQLSetEnvAttr %p %s %p %d\n",
+		EnvironmentHandle, translateEnvAttribute(Attribute),
+		ValuePtr, (int) StringLength);
 #endif
 
 	(void) StringLength;	/* Stefan: unused!? */
