@@ -142,11 +142,11 @@ SQLGetConnectAttr(SQLHDBC ConnectionHandle,
 		  SQLINTEGER *StringLengthPtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetConnectAttr " PTRFMT " %s " PTRFMT " %d " PTRFMT "\n",
-		PTRFMTCAST ConnectionHandle,
+	ODBCLOG("SQLGetConnectAttr %p %s %p %d %p\n",
+		ConnectionHandle,
 		translateConnectAttribute(Attribute),
-		PTRFMTCAST ValuePtr, (int) BufferLength,
-		PTRFMTCAST StringLengthPtr);
+		ValuePtr, (int) BufferLength,
+		StringLengthPtr);
 #endif
 
 	if (!isValidDbc((ODBCDbc *) ConnectionHandle))
@@ -188,11 +188,11 @@ SQLGetConnectAttrW(SQLHDBC ConnectionHandle,
 	SQLINTEGER n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetConnectAttrW " PTRFMT " %s " PTRFMT " %d " PTRFMT "\n",
-		PTRFMTCAST ConnectionHandle,
+	ODBCLOG("SQLGetConnectAttrW %p %s %p %d %p\n",
+		ConnectionHandle,
 		translateConnectAttribute(Attribute),
-		PTRFMTCAST ValuePtr, (int) BufferLength,
-		PTRFMTCAST StringLengthPtr);
+		ValuePtr, (int) BufferLength,
+		StringLengthPtr);
 #endif
 
 	if (!isValidDbc(dbc))

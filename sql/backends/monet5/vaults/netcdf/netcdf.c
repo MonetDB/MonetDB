@@ -294,6 +294,10 @@ header: %s", nc_strerror(retval));
 	/* Read dimensions from NetCDF header and insert a row for each one into netcdf_dims table */
 
 	dims = (char **)GDKzalloc(sizeof(char *) * ndims);
+	if (!dims) {
+		msg = createException(MAL, "netcdf.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto finish;
+	}
 	for (didx = 0; didx < ndims; didx++){
 		if ((retval = nc_inq_dim(ncid, didx, dname, &dlen)) != 0)
 	        return createException(MAL, "netcdf.attach", SQLSTATE(NC000) "Cannot read dimension %d : %s", didx, nc_strerror(retval));
@@ -311,6 +315,10 @@ header: %s", nc_strerror(retval));
 	        goto finish;
 
 	    dims[didx] = GDKstrdup(dname);
+		if (!dims[didx]) {
+			msg = createException(MAL, "netcdf.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			goto finish;
+		}
 	}
 
 	/* Read variables and attributes from the header and insert rows in netcdf_vars, netcdf_vardims, and netcdf_attrs tables */
@@ -373,6 +381,12 @@ header: %s", nc_strerror(retval));
 				switch ( atype ) {
 				case NC_CHAR:
 					aval = (char *) GDKzalloc(alen + 1);
+					if (!aval) {
+						GDKfree(esc_str0);
+						GDKfree(esc_str1);
+						msg = createException(MAL, "netcdf.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						goto finish;
+					}
 					if ((retval = nc_get_att_text(ncid,vidx,aname,aval)))
 						return createException(MAL, "netcdf.attach",
 											   SQLSTATE(NC000) "Cannot read attribute %s value: %s",
@@ -450,9 +464,14 @@ header: %s", nc_strerror(retval));
 			goto finish;
 		}
 
-    	switch ( atype ) {
+		switch ( atype ) {
 		case NC_CHAR:
 			aval = (char *) GDKzalloc(alen + 1);
+			if (!aval) {
+				GDKfree(esc_str0);
+				msg = createException(MAL, "netcdf.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				goto finish;
+			}
 			if ((retval = nc_get_att_text(ncid,NC_GLOBAL,aname,aval))) {
 				GDKfree(esc_str0);
 				if (dims != NULL ){
@@ -586,6 +605,8 @@ NCDFimportVarStmt(str *sciqlstmt, str *fname, int *varid)
 	nc_close(ncid);
 
 	*sciqlstmt = GDKstrdup(buf);
+	if(*sciqlstmt == NULL)
+		return createException(MAL, "netcdf.importvar", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return msg;
 }
 
@@ -607,6 +628,8 @@ NCDFloadVar(bat **dim, bat *v, int ncid, int varid, nc_type vtype, int vndims, i
 	dim_bids = *dim;
 
 	dlen = (size_t *)GDKzalloc(sizeof(size_t) * vndims);
+	if (!dlen)
+		return createException(MAL, "netcdf.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	for (i = 0; i < vndims; i++){
 		if ((retval = nc_inq_dimlen(ncid, vdims[i], &dlen[i])))
@@ -759,8 +782,15 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	dname = (char **) GDKzalloc( sizeof(char *) * vndims);
 	if (dname == NULL)
 		throw(MAL, "netcdf.importvar", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	for (i = 0; i < vndims; i++)
+	for (i = 0; i < vndims; i++) {
 		dname[i] = (char *) GDKzalloc(NC_MAX_NAME + 1);
+		if(!dname[i]) {
+			for (j = 0; j < i; j++)
+				GDKfree(dname[j]);
+			GDKfree(dname);
+			throw(MAL, "netcdf.importvar", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
+	}
 
 	snprintf(aname, 256, "%s%d", vname, fid);
 
@@ -825,6 +855,11 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	vbat = BATdescriptor(vbatid);
+	if(vbat == NULL) {
+		GDKfree(dname);
+		GDKfree(dim_bids);
+		return createException(MAL, "netcdf.importvar", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
 	store_funcs.append_col(m->session->tr, col, vbat, TYPE_bat);
 	BBPunfix(vbatid);
 	BBPrelease(vbatid);
@@ -840,6 +875,11 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		dimbat = BATdescriptor(dim_bids[i]);
+		if(dimbat == NULL) {
+			GDKfree(dname);
+			GDKfree(dim_bids);
+			return createException(MAL, "netcdf.importvar", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
 		store_funcs.append_col(m->session->tr, col, dimbat, TYPE_bat);
 		BBPunfix(dim_bids[i]); /* phys. ref from BATdescriptor */
 		BBPrelease(dim_bids[i]); /* log. ref. from loadVar */

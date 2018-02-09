@@ -38,7 +38,7 @@ SQLParamData(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLParamData " PTRFMT "\n", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLParamData %p\n", StatementHandle);
 #endif
 
 	(void) ValuePtrPtr;		/* Stefan: unused!? */

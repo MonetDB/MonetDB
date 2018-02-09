@@ -33,7 +33,7 @@ SQLAllocStmt(SQLHDBC ConnectionHandle,
 	     SQLHSTMT *OutputHandlePtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLAllocStmt " PTRFMT "\n", PTRFMTCAST ConnectionHandle);
+	ODBCLOG("SQLAllocStmt %p\n", ConnectionHandle);
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */

@@ -124,17 +124,17 @@ extern char *ODBCutf82wchar(const SQLCHAR *s, SQLINTEGER length, SQLWCHAR *buf, 
 	} while (0)
 
 #ifdef ODBCDEBUG
-#define WriteData(ptr, val, TYPE)					\
-	do {								\
-		*(TYPE *) (ptr) = (val);				\
-		ODBCLOG("Writing %d bytes of type %s to " PTRFMT "\n",	\
-			(int) sizeof(TYPE), #TYPE, PTRFMTCAST (ptr));	\
+#define WriteData(ptr, val, TYPE)				\
+	do {							\
+		*(TYPE *) (ptr) = (val);			\
+		ODBCLOG("Writing %d bytes of type %s to %p\n",	\
+			(int) sizeof(TYPE), #TYPE, (ptr));	\
 	} while (0)
-#define WriteValue(ptr, val)						\
-	do {								\
-		*(ptr) = (val);						\
-		ODBCLOG("Writing %d bytes to " PTRFMT "\n",		\
-			(int) sizeof(*(ptr)), PTRFMTCAST (ptr));	\
+#define WriteValue(ptr, val)				\
+	do {						\
+		*(ptr) = (val);				\
+		ODBCLOG("Writing %d bytes to %p\n",	\
+			(int) sizeof(*(ptr)), (ptr));	\
 	} while (0)
 #else
 #define WriteData(ptr, val, TYPE)	(*(TYPE *) (ptr) = (val))

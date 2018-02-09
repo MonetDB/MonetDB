@@ -89,8 +89,8 @@ SQLSetConnectOption(SQLHDBC ConnectionHandle,
 	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetConnectOption " PTRFMT " %s " ULENFMT "\n",
-		PTRFMTCAST ConnectionHandle, translateConnectOption(Option),
+	ODBCLOG("SQLSetConnectOption %p %s " ULENFMT "\n",
+		ConnectionHandle, translateConnectOption(Option),
 		ULENCAST ValuePtr);
 #endif
 
@@ -121,8 +121,8 @@ SQLSetConnectOptionW(SQLHDBC ConnectionHandle,
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetConnectOptionW " PTRFMT " %s " ULENFMT "\n",
-		PTRFMTCAST ConnectionHandle, translateConnectOption(Option),
+	ODBCLOG("SQLSetConnectOptionW %p %s " ULENFMT "\n",
+		ConnectionHandle, translateConnectOption(Option),
 		ULENCAST ValuePtr);
 #endif
 

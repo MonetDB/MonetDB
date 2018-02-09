@@ -452,7 +452,7 @@ msab_registerStarting(void)
 
 	if ((f = fopen(pathbuf, "a")) != NULL) {
 		/* append to the file */
-		fprintf(f, LLFMT "\t", (lng)time(NULL));
+		fprintf(f, "%" PRId64 "\t", (int64_t)time(NULL));
 		(void)fflush(f);
 		(void)fclose(f);
 	} else {
@@ -522,7 +522,7 @@ msab_registerStop(void)
 
 	if ((f = fopen(pathbuf, "a")) != NULL) {
 		/* append to the file */
-		fprintf(f, LLFMT "\n", (lng)time(NULL));
+		fprintf(f, "%" PRId64 "\n", (int64_t)time(NULL));
 		(void)fflush(f);
 		(void)fclose(f);
 	} else {
@@ -954,17 +954,18 @@ msab_serialise(char **ret, const sabdb *db)
 
 	/* sabdb + sabuplog structs in one */
 	snprintf(buf, sizeof(buf), "sabdb:" SABDBVER ":"
-			"%s,%s,%d,%d,%s,"
-			"%d,%d,%d,"
-			"" LLFMT "," LLFMT "," LLFMT ","
-			"" LLFMT "," LLFMT "," LLFMT ","
-			"%d,%f,%f",
-			db->dbname, db->uri ? db->uri : "", db->locked,
-			(int)(db->state), scens,
-			dbu.startcntr, dbu.stopcntr, dbu.crashcntr,
-			(lng)dbu.avguptime, (lng)dbu.maxuptime, (lng)dbu.minuptime,
-			(lng)dbu.lastcrash, (lng)dbu.laststart, (lng)dbu.laststop,
-			dbu.crashavg1, dbu.crashavg10, dbu.crashavg30);
+			 "%s,%s,%d,%d,%s,"
+			 "%d,%d,%d,"
+			 "%" PRId64 ",%" PRId64 ",%" PRId64 ","
+			 "%" PRId64 ",%" PRId64 ",%" PRId64 ","
+			 "%d,%f,%f",
+			 db->dbname, db->uri ? db->uri : "", db->locked,
+			 (int) db->state, scens,
+			 dbu.startcntr, dbu.stopcntr, dbu.crashcntr,
+			 (int64_t) dbu.avguptime, (int64_t) dbu.maxuptime,
+			 (int64_t) dbu.minuptime, (int64_t) dbu.lastcrash,
+			 (int64_t) dbu.laststart, (int64_t) dbu.laststop,
+			 dbu.crashavg1, dbu.crashavg10, dbu.crashavg30);
 
 	*ret = strdup(buf);
 	return(NULL);

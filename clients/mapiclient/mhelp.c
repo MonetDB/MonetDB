@@ -93,6 +93,13 @@ SQLhelp sqlhelp[] = {
 	 "CASE scalar_expression [ when_statement ...]  [ELSE procedure_statement ... ] END CASE",
 	 NULL,
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Flowofcontrol"},
+	{"COMMENT",
+	 "Add, update or remove a comment or description for a database object",
+	 "COMMENT ON [ SCHEMA | TABLE | VIEW | COLUMN | INDEX | SEQUENCE |\n"
+	 "           FUNCTION | PROCEDURE | AGGREGATE | FILTER FUNCTION | LOADER ]\n"
+	 "     qname IS [ 'my description text' | NULL | '' ]",
+	 NULL,
+	 NULL},
 	{"COMMIT",
 	 "Commit the current transaction",
 	 "COMMIT [ WORK ] [ AND CHAIN | AND NO CHAIN ]",
@@ -334,7 +341,7 @@ SQLhelp sqlhelp[] = {
 	 NULL},
 	{"IF",
 	 "",
-	 "IF  search_condition THEN procedure_statement ...\n"
+	 "IF search_condition THEN procedure_statement ...\n"
 	 "[ELSE IF search_condition THEN procedure_statement ... ]...\n"
 	 "[ ELSE procedure_statement ... ] END IF",
 	 "search_condition,procedure_statement",

@@ -103,7 +103,7 @@ SQLProcedureColumns(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLProcedureColumns " PTRFMT " ", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLProcedureColumns %p ", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -152,7 +152,7 @@ SQLProcedureColumnsW(SQLHSTMT StatementHandle,
 	SQLCHAR *catalog = NULL, *schema = NULL, *proc = NULL, *column = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLProcedureColumnsW " PTRFMT " ", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLProcedureColumnsW %p ", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

@@ -258,7 +258,7 @@ SQLColumnPrivileges(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColumnPrivileges " PTRFMT, PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLColumnPrivileges %p", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -307,7 +307,7 @@ SQLColumnPrivilegesW(SQLHSTMT StatementHandle,
 	SQLRETURN rc = SQL_ERROR;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColumnPrivilegesW " PTRFMT, PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLColumnPrivilegesW %p", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

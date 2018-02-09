@@ -1164,8 +1164,8 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 
 	/* write header, query type: Q_PREPARE */
 	if (mnstr_printf(out, "&5 %d %d 6 %d\n"	/* TODO: add type here: r(esult) or u(pdate) */
-			 "%% .prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare # table_name\n" "%% type,\tdigits,\tscale,\tschema,\ttable,\tcolumn # name\n" "%% varchar,\tint,\tint,\tstr,\tstr,\tstr # type\n" "%% " SZFMT ",\t%d,\t%d,\t"
-			 SZFMT ",\t" SZFMT ",\t" SZFMT " # length\n", q->id, nrows, nrows, len1, len2, len3, len4, len5, len6) < 0) {
+			 "%% .prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare # table_name\n" "%% type,\tdigits,\tscale,\tschema,\ttable,\tcolumn # name\n" "%% varchar,\tint,\tint,\tstr,\tstr,\tstr # type\n" "%% %zu,\t%d,\t%d,\t"
+			 "%zu,\t%zu,\t%zu # length\n", q->id, nrows, nrows, len1, len2, len3, len4, len5, len6) < 0) {
 		return -1;
 	}
 

@@ -1239,7 +1239,7 @@ SQLproducer(void *p)
 	thr = THRnew("SQLproducer");
 
 #ifdef _DEBUG_TABLET_CNTRL
-	mnstr_printf(GDKout, "#SQLproducer started size " SZFMT " len " SZFMT "\n",
+	mnstr_printf(GDKout, "#SQLproducer started size %zu len %zu\n",
 				 task->b->size, task->b->len);
 #endif
 	base = end = s = task->input[cur];
@@ -1253,7 +1253,7 @@ SQLproducer(void *p)
 		ateof[cur] = tablet_read_more(task->b, task->out, task->b->size) == EOF;
 #ifdef _DEBUG_TABLET_CNTRL
 		if (ateof[cur] == 0)
-			mnstr_printf(GDKout, "#read " SZFMT " bytes pos = " SZFMT " eof=%d offset=" LLFMT " \n",
+			mnstr_printf(GDKout, "#read %zu bytes pos = %zu eof=%d offset=" LLFMT " \n",
 						 task->b->len, task->b->pos, task->b->eof,
 						 (lng) (s - task->input[cur]));
 #endif
@@ -1526,7 +1526,7 @@ SQLproducer(void *p)
 		bufcnt[cur] = cnt;
 #ifdef _DEBUG_TABLET_CNTRL
 		if (ateof[cur] == 0)
-			mnstr_printf(GDKout, "#shuffle " SZFMT ": %.63s\n", strlen(s), s);
+			mnstr_printf(GDKout, "#shuffle %zu: %.63s\n", strlen(s), s);
 #endif
 		/* move the non-parsed correct row data to the head of the next buffer */
 		s = task->input[cur];

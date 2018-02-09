@@ -103,7 +103,7 @@ isValidDbc(ODBCDbc *dbc)
 {
 #ifdef ODBCDEBUG
 	if (!(dbc && dbc->Type == ODBC_DBC_MAGIC_NR))
-		ODBCLOG("dbc " PTRFMT ": not a valid connection handle\n", PTRFMTCAST dbc);
+		ODBCLOG("dbc %p: not a valid connection handle\n", dbc);
 #endif
 	return dbc && dbc->Type == ODBC_DBC_MAGIC_NR;
 }
@@ -124,7 +124,7 @@ addDbcError(ODBCDbc *dbc, const char *SQLState, const char *errMsg, int nativeEr
 	ODBCError *error = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("addDbcError " PTRFMT " %s %s %d\n", PTRFMTCAST dbc, SQLState, errMsg ? errMsg : getStandardSQLStateMsg(SQLState), nativeErrCode);
+	ODBCLOG("addDbcError %p %s %s %d\n", dbc, SQLState, errMsg ? errMsg : getStandardSQLStateMsg(SQLState), nativeErrCode);
 #endif
 	assert(isValidDbc(dbc));
 

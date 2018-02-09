@@ -37,8 +37,8 @@ SQLCopyDesc(SQLHDESC SourceDescHandle,
 	ODBCDesc *dst = (ODBCDesc *) TargetDescHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLCopyDesc " PTRFMT " " PTRFMT "\n",
-		PTRFMTCAST SourceDescHandle, PTRFMTCAST TargetDescHandle);
+	ODBCLOG("SQLCopyDesc %p %p\n",
+		SourceDescHandle, TargetDescHandle);
 #endif
 
 	if (!isValidDesc(src))

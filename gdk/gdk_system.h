@@ -336,13 +336,4 @@ typedef struct {
 
 gdk_export int MT_check_nr_cores(void);
 
-/*
- * @- Timers
- * The following relative timers are available for inspection.
- * Note that they may consume recognizable overhead.
- *
- */
-gdk_export lng GDKusec(void);
-gdk_export int GDKms(void);
-
 #endif /*_GDK_SYSTEM_H_*/

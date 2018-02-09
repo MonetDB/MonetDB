@@ -77,7 +77,7 @@ SQLNativeSql(SQLHDBC ConnectionHandle,
 	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLNativeSql " PTRFMT " ", PTRFMTCAST ConnectionHandle);
+	ODBCLOG("SQLNativeSql %p ", ConnectionHandle);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -124,7 +124,7 @@ SQLNativeSqlW(SQLHDBC ConnectionHandle,
 	SQLCHAR *sqlin, *sqlout;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLNativeSqlW " PTRFMT " ", PTRFMTCAST ConnectionHandle);
+	ODBCLOG("SQLNativeSqlW %p ", ConnectionHandle);
 #endif
 
 	if (!isValidDbc(dbc))

@@ -330,15 +330,6 @@
 
 #include <limits.h>		/* for *_MIN and *_MAX */
 #include <float.h>		/* for FLT_MAX and DBL_MAX */
-#ifndef LLONG_MAX
-#ifdef LONGLONG_MAX
-#define LLONG_MAX LONGLONG_MAX
-#define LLONG_MIN LONGLONG_MIN
-#else
-#define LLONG_MAX LL_CONSTANT(9223372036854775807)
-#define LLONG_MIN (-LL_CONSTANT(9223372036854775807) - LL_CONSTANT(1))
-#endif
-#endif
 
 #include "gdk_system.h"
 #include "gdk_posix.h"
@@ -502,10 +493,12 @@
 typedef int8_t bit;
 typedef int8_t bte;
 typedef int16_t sht;
+typedef int64_t lng;
+typedef uint64_t ulng;
 
 #define SIZEOF_OID	SIZEOF_SIZE_T
 typedef size_t oid;
-#define OIDFMT		SZFMT
+#define OIDFMT		"%zu"
 
 typedef int bat;		/* Index into BBP */
 typedef void *ptr;		/* Internal coding of types */
@@ -515,7 +508,10 @@ typedef float flt;
 typedef double dbl;
 typedef char *str;
 
+#define SIZEOF_LNG		8
 #define LL_CONSTANT(val)	INT64_C(val)
+#define LLFMT			"%" PRId64
+#define ULLFMT			"%" PRIu64
 
 typedef oid var_t;		/* type used for heap index of var-sized BAT */
 #define SIZEOF_VAR_T	SIZEOF_OID
@@ -524,7 +520,7 @@ typedef oid var_t;		/* type used for heap index of var-sized BAT */
 #if SIZEOF_VAR_T == SIZEOF_INT
 #define VAR_MAX		((var_t) INT_MAX)
 #else
-#define VAR_MAX		((var_t) LLONG_MAX)
+#define VAR_MAX		((var_t) INT64_MAX)
 #endif
 
 typedef oid BUN;		/* BUN position */
@@ -533,12 +529,12 @@ typedef oid BUN;		/* BUN position */
 /* alternatively:
 typedef size_t BUN;
 #define SIZEOF_BUN	SIZEOF_SIZE_T
-#define BUNFMT		SZFMT
+#define BUNFMT		"%zu"
 */
 #if SIZEOF_BUN == SIZEOF_INT
 #define BUN_NONE ((BUN) INT_MAX)
 #else
-#define BUN_NONE ((BUN) LLONG_MAX)
+#define BUN_NONE ((BUN) INT64_MAX)
 #endif
 #define BUN_MAX (BUN_NONE - 1)	/* maximum allowed size of a BAT */
 
@@ -1957,80 +1953,80 @@ gdk_export str GDKstrndup(const char *s, size_t n)
  * the calling function.
  */
 #ifdef __GNUC__
-#define GDKmalloc(s)							\
-	({								\
-		size_t _size = (s);					\
-		void *_res = GDKmalloc(_size);				\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#GDKmalloc(" SZFMT ") -> " PTRFMT	\
-				" %s[%s:%d]\n",				\
-				_size, PTRFMTCAST _res,			\
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
+#define GDKmalloc(s)						\
+	({							\
+		size_t _size = (s);				\
+		void *_res = GDKmalloc(_size);			\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#GDKmalloc(%zu) -> %p"		\
+				" %s[%s:%d]\n",			\
+				_size, _res,			\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
 	})
-#define GDKzalloc(s)							\
-	({								\
-		size_t _size = (s);					\
-		void *_res = GDKzalloc(_size);				\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#GDKzalloc(" SZFMT ") -> " PTRFMT	\
-				" %s[%s:%d]\n",				\
-				_size, PTRFMTCAST _res,			\
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
+#define GDKzalloc(s)						\
+	({							\
+		size_t _size = (s);				\
+		void *_res = GDKzalloc(_size);			\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#GDKzalloc(%zu) -> %p"		\
+				" %s[%s:%d]\n",			\
+				_size, _res,			\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
 	})
-#define GDKrealloc(p, s)						\
-	({								\
-		void *_ptr = (p);					\
-		size_t _size = (s);					\
-		void *_res = GDKrealloc(_ptr, _size);			\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#GDKrealloc(" PTRFMT "," SZFMT ") -> " PTRFMT \
-				" %s[%s:%d]\n",				\
-				PTRFMTCAST _ptr, _size, PTRFMTCAST _res, \
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
+#define GDKrealloc(p, s)					\
+	({							\
+		void *_ptr = (p);				\
+		size_t _size = (s);				\
+		void *_res = GDKrealloc(_ptr, _size);		\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#GDKrealloc(%p,%zu) -> %p"	\
+				" %s[%s:%d]\n",			\
+				_ptr, _size, _res,		\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
 	 })
-#define GDKfree(p)							\
-	({								\
-		void *_ptr = (p);					\
-		ALLOCDEBUG if (_ptr)					\
-			fprintf(stderr,					\
-				"#GDKfree(" PTRFMT ")"			\
-				" %s[%s:%d]\n",				\
-				PTRFMTCAST _ptr,			\
-				__func__, __FILE__, __LINE__);		\
-		GDKfree(_ptr);						\
+#define GDKfree(p)						\
+	({							\
+		void *_ptr = (p);				\
+		ALLOCDEBUG if (_ptr)				\
+			fprintf(stderr,				\
+				"#GDKfree(%p)"			\
+				" %s[%s:%d]\n",			\
+				_ptr,				\
+				__func__, __FILE__, __LINE__);	\
+		GDKfree(_ptr);					\
 	})
-#define GDKstrdup(s)							\
-	({								\
-		const char *_str = (s);					\
-		void *_res = GDKstrdup(_str);				\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#GDKstrdup(len=" SZFMT ") -> " PTRFMT	\
-				" %s[%s:%d]\n",				\
-				strlen(_str),				\
-				PTRFMTCAST _res,			\
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
+#define GDKstrdup(s)						\
+	({							\
+		const char *_str = (s);				\
+		void *_res = GDKstrdup(_str);			\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#GDKstrdup(len=%zu) -> %p"	\
+				" %s[%s:%d]\n",			\
+				strlen(_str),			\
+				_res,				\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
 	})
-#define GDKstrndup(s, n)						\
-	({								\
-		const char *_str = (s);					\
-		size_t _n = (n);					\
-		void *_res = GDKstrndup(_str, _n);			\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#GDKstrndup(len=" SZFMT ") -> " PTRFMT	\
-				" %s[%s:%d]\n",				\
-				_n,					\
-				PTRFMTCAST _res,			\
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
+#define GDKstrndup(s, n)					\
+	({							\
+		const char *_str = (s);				\
+		size_t _n = (n);				\
+		void *_res = GDKstrndup(_str, _n);		\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#GDKstrndup(len=%zu) -> %p"	\
+				" %s[%s:%d]\n",			\
+				_n,				\
+				_res,				\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
 	})
 #define GDKmmap(p, m, l)						\
 	({								\
@@ -2040,61 +2036,61 @@ gdk_export str GDKstrndup(const char *s, size_t n)
 		void *_res = GDKmmap(_path, _mode, _len);		\
 		ALLOCDEBUG						\
 			fprintf(stderr,					\
-				"#GDKmmap(%s,0x%x," SZFMT ") -> " PTRFMT \
+				"#GDKmmap(%s,0x%x,%zu) -> %p"		\
 				" %s[%s:%d]\n",				\
 				_path ? _path : "NULL", _mode, _len,	\
-				PTRFMTCAST _res,			\
+				_res,					\
 				__func__, __FILE__, __LINE__);		\
 		_res;							\
 	 })
-#define malloc(s)							\
-	({								\
-		size_t _size = (s);					\
-		void *_res = malloc(_size);				\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#malloc(" SZFMT ") -> " PTRFMT		\
-				" %s[%s:%d]\n",				\
-				_size, PTRFMTCAST _res,			\
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
+#define malloc(s)						\
+	({							\
+		size_t _size = (s);				\
+		void *_res = malloc(_size);			\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#malloc(%zu) -> %p"		\
+				" %s[%s:%d]\n",			\
+				_size, _res,			\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
 	})
-#define calloc(n, s)							\
-	({								\
-		size_t _nmemb = (n);					\
-		size_t _size = (s);					\
-		void *_res = calloc(_nmemb,_size);			\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#calloc(" SZFMT "," SZFMT ") -> " PTRFMT \
-				" %s[%s:%d]\n",				\
-				_nmemb, _size, PTRFMTCAST _res,		\
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
+#define calloc(n, s)						\
+	({							\
+		size_t _nmemb = (n);				\
+		size_t _size = (s);				\
+		void *_res = calloc(_nmemb,_size);		\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#calloc(%zu,%zu) -> %p"	\
+				" %s[%s:%d]\n",			\
+				_nmemb, _size, _res,		\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
 	})
-#define realloc(p, s)							\
-	({								\
-		void *_ptr = (p);					\
-		size_t _size = (s);					\
-		void *_res = realloc(_ptr, _size);			\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#realloc(" PTRFMT "," SZFMT ") -> " PTRFMT \
-				" %s[%s:%d]\n",				\
-				PTRFMTCAST _ptr, _size, PTRFMTCAST _res, \
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
+#define realloc(p, s)						\
+	({							\
+		void *_ptr = (p);				\
+		size_t _size = (s);				\
+		void *_res = realloc(_ptr, _size);		\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#realloc(%p,%zu) -> %p"	\
+				" %s[%s:%d]\n",			\
+				_ptr, _size, _res,		\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
 	 })
-#define free(p)								\
-	({								\
-		void *_ptr = (p);					\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#free(" PTRFMT ")"			\
-				" %s[%s:%d]\n",				\
-				PTRFMTCAST _ptr,			\
-				__func__, __FILE__, __LINE__);		\
-		free(_ptr);						\
+#define free(p)							\
+	({							\
+		void *_ptr = (p);				\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#free(%p)"			\
+				" %s[%s:%d]\n",			\
+				_ptr,				\
+				__func__, __FILE__, __LINE__);	\
+		free(_ptr);					\
 	})
 #else
 static inline void *
@@ -2102,8 +2098,8 @@ GDKmalloc_debug(size_t size, const char *filename, int lineno)
 {
 	void *res = GDKmalloc(size);
 	ALLOCDEBUG fprintf(stderr,
-			   "#GDKmalloc(" SZFMT ") -> " PTRFMT " [%s:%d]\n",
-			   size, PTRFMTCAST res, filename, lineno);
+			   "#GDKmalloc(%zu) -> %p [%s:%d]\n",
+			   size, res, filename, lineno);
 	return res;
 }
 #define GDKmalloc(s)	GDKmalloc_debug((s), __FILE__, __LINE__)
@@ -2112,8 +2108,8 @@ GDKzalloc_debug(size_t size, const char *filename, int lineno)
 {
 	void *res = GDKzalloc(size);
 	ALLOCDEBUG fprintf(stderr,
-			   "#GDKzalloc(" SZFMT ") -> " PTRFMT " [%s:%d]\n",
-			   size, PTRFMTCAST res, filename, lineno);
+			   "#GDKzalloc(%zu) -> %p [%s:%d]\n",
+			   size, res, filename, lineno);
 	return res;
 }
 #define GDKzalloc(s)	GDKzalloc_debug((s), __FILE__, __LINE__)
@@ -2122,9 +2118,9 @@ GDKrealloc_debug(void *ptr, size_t size, const char *filename, int lineno)
 {
 	void *res = GDKrealloc(ptr, size);
 	ALLOCDEBUG fprintf(stderr,
-			   "#GDKrealloc(" PTRFMT "," SZFMT ") -> "
-			   PTRFMT " [%s:%d]\n",
-			   PTRFMTCAST ptr, size, PTRFMTCAST res,
+			   "#GDKrealloc(%p,%zu) -> "
+			   "%p [%s:%d]\n",
+			   ptr, size, res,
 			   filename, lineno);
 	return res;
 }
@@ -2132,8 +2128,8 @@ GDKrealloc_debug(void *ptr, size_t size, const char *filename, int lineno)
 static inline void
 GDKfree_debug(void *ptr, const char *filename, int lineno)
 {
-	ALLOCDEBUG fprintf(stderr, "#GDKfree(" PTRFMT ") [%s:%d]\n",
-			   PTRFMTCAST ptr, filename, lineno);
+	ALLOCDEBUG fprintf(stderr, "#GDKfree(%p) [%s:%d]\n",
+			   ptr, filename, lineno);
 	GDKfree(ptr);
 }
 #define GDKfree(p)	GDKfree_debug((p), __FILE__, __LINE__)
@@ -2141,9 +2137,9 @@ static inline char *
 GDKstrdup_debug(const char *str, const char *filename, int lineno)
 {
 	void *res = GDKstrdup(str);
-	ALLOCDEBUG fprintf(stderr, "#GDKstrdup(len=" SZFMT ") -> "
-			   PTRFMT " [%s:%d]\n",
-			   strlen(str), PTRFMTCAST res, filename, lineno);
+	ALLOCDEBUG fprintf(stderr, "#GDKstrdup(len=%zu) -> "
+			   "%p [%s:%d]\n",
+			   strlen(str), res, filename, lineno);
 	return res;
 }
 #define GDKstrdup(s)	GDKstrdup_debug((s), __FILE__, __LINE__)
@@ -2151,9 +2147,9 @@ static inline char *
 GDKstrndup_debug(const char *str, size_t n, const char *filename, int lineno)
 {
 	void *res = GDKstrndup(str, n);
-	ALLOCDEBUG fprintf(stderr, "#GDKstrndup(len=" SZFMT ") -> "
-			   PTRFMT " [%s:%d]\n",
-			   n, PTRFMTCAST res, filename, lineno);
+	ALLOCDEBUG fprintf(stderr, "#GDKstrndup(len=%zu) -> "
+			   "%p [%s:%d]\n",
+			   n, res, filename, lineno);
 	return res;
 }
 #define GDKstrndup(s, n)	GDKstrndup_debug((s), (n), __FILE__, __LINE__)
@@ -2162,10 +2158,10 @@ GDKmmap_debug(const char *path, int mode, size_t len, const char *filename, int 
 {
 	void *res = GDKmmap(path, mode, len);
 	ALLOCDEBUG fprintf(stderr,
-			   "#GDKmmap(%s,0x%x," SZFMT ") -> "
-			   PTRFMT " [%s:%d]\n",
+			   "#GDKmmap(%s,0x%x,%zu) -> "
+			   "%p [%s:%d]\n",
 			   path ? path : "NULL", mode, len,
-			   PTRFMTCAST res, filename, lineno);
+			   res, filename, lineno);
 	return res;
 }
 #define GDKmmap(p, m, l)	GDKmmap_debug((p), (m), (l), __FILE__, __LINE__)
@@ -2174,8 +2170,8 @@ malloc_debug(size_t size, const char *filename, int lineno)
 {
 	void *res = malloc(size);
 	ALLOCDEBUG fprintf(stderr,
-			   "#malloc(" SZFMT ") -> " PTRFMT " [%s:%d]\n",
-			   size, PTRFMTCAST res, filename, lineno);
+			   "#malloc(%zu) -> %p [%s:%d]\n",
+			   size, res, filename, lineno);
 	return res;
 }
 #define malloc(s)	malloc_debug((s), __FILE__, __LINE__)
@@ -2184,9 +2180,9 @@ calloc_debug(size_t nmemb, size_t size, const char *filename, int lineno)
 {
 	void *res = calloc(nmemb, size);
 	ALLOCDEBUG fprintf(stderr,
-			   "#calloc(" SZFMT "," SZFMT ") -> "
-			   PTRFMT " [%s:%d]\n",
-			   nmemb, size, PTRFMTCAST res, filename, lineno);
+			   "#calloc(%zu,%zu) -> "
+			   "%p [%s:%d]\n",
+			   nmemb, size, res, filename, lineno);
 	return res;
 }
 #define calloc(n, s)	calloc_debug((n), (s), __FILE__, __LINE__)
@@ -2195,9 +2191,9 @@ realloc_debug(void *ptr, size_t size, const char *filename, int lineno)
 {
 	void *res = realloc(ptr, size);
 	ALLOCDEBUG fprintf(stderr,
-			   "#realloc(" PTRFMT "," SZFMT ") -> "
-			   PTRFMT " [%s:%d]\n",
-			   PTRFMTCAST ptr, size, PTRFMTCAST res,
+			   "#realloc(%p,%zu) -> "
+			   "%p [%s:%d]\n",
+			   ptr, size, res,
 			   filename, lineno);
 	return res;
 }
@@ -2205,8 +2201,8 @@ realloc_debug(void *ptr, size_t size, const char *filename, int lineno)
 static inline void
 free_debug(void *ptr, const char *filename, int lineno)
 {
-	ALLOCDEBUG fprintf(stderr, "#free(" PTRFMT ") [%s:%d]\n",
-			   PTRFMTCAST ptr, filename, lineno);
+	ALLOCDEBUG fprintf(stderr, "#free(%p) [%s:%d]\n",
+			   ptr, filename, lineno);
 	free(ptr);
 }
 #define free(p)	free_debug((p), __FILE__, __LINE__)
@@ -2527,8 +2523,6 @@ gdk_export void BATundo(BAT *b);
  * @tab ALIGNsync   (BAT *b1, BAT *b2)
  * @item int
  * @tab ALIGNrelated (BAT *b1, BAT *b2)
- * @item int
- * @tab ALIGNsetT    ((BAT *dst, BAT *src)
  *
  * @item BAT*
  * @tab VIEWcreate   (oid seq, BAT *b)
@@ -2576,12 +2570,7 @@ gdk_export void BATassertProps(BAT *b);
 #define BATPROPS_CHECK  3	/* BATPROPS_ALL, but start from scratch and report illegally set properties */
 
 gdk_export BAT *VIEWcreate(oid seq, BAT *b);
-gdk_export BAT *VIEWcreate_(oid seq, BAT *b, int stable);
 gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
-
-/* low level functions */
-gdk_export void ALIGNsetH(BAT *b1, BAT *b2);
-gdk_export void ALIGNsetT(BAT *b1, BAT *b2);
 
 #define ALIGNinp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND,e); } while (0)
 #define ALIGNapp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ,e); } while (0)

@@ -461,7 +461,7 @@ BATextend(BAT *b, BUN newcap)
 
 	theap_size *= Tsize(b);
 	if (b->theap.base && GDKdebug & HEAPMASK)
-		fprintf(stderr, "#HEAPextend in BATextend %s " SZFMT " " SZFMT "\n", b->theap.filename, b->theap.size, theap_size);
+		fprintf(stderr, "#HEAPextend in BATextend %s %zu %zu\n", b->theap.filename, b->theap.size, theap_size);
 	if (b->theap.base &&
 	    HEAPextend(&b->theap, theap_size, b->batRestricted == BAT_READ) != GDK_SUCCEED)
 		return GDK_FAIL;
@@ -796,9 +796,34 @@ COLcopy(BAT *b, int tt, int writable, int role)
 		BATsetcount(bn, cnt);
 	}
 	/* set properties (note that types may have changed in the copy) */
-	ALIGNsetH(bn, b);
+	BAThseqbase(bn, b->hseqbase);
 	if (ATOMtype(tt) == ATOMtype(b->ttype)) {
-		ALIGNsetT(bn, b);
+		if (BATtvoid(b)) {
+			/* b is either dense or has a void(nil) tail */
+			if (bn->ttype != TYPE_void)
+				bn->tdense = TRUE;
+			else if (is_oid_nil(b->tseqbase))
+				bn->tnonil = FALSE;
+			BATtseqbase(bn, b->tseqbase);
+		} else if (bn->ttype != TYPE_void) {
+			/* b is not dense, so set bn not dense */
+			bn->tdense = FALSE;
+			BATtseqbase(bn, oid_nil);
+			bn->tnonil = b->tnonil;
+		} else if (BATtkey(b))
+			BATtseqbase(bn, 0);
+		BATkey(bn, BATtkey(b));
+		bn->tsorted = BATtordered(b);
+		bn->trevsorted = BATtrevordered(b);
+		bn->batDirtydesc = TRUE;
+		bn->tnorevsorted = b->tnorevsorted;
+		if (b->tnokey[0] != b->tnokey[1]) {
+			bn->tnokey[0] = b->tnokey[0];
+			bn->tnokey[1] = b->tnokey[1];
+		} else {
+			bn->tnokey[0] = bn->tnokey[1];
+		}
+		bn->tnosorted = b->tnosorted;
 	} else if (ATOMstorage(tt) == ATOMstorage(b->ttype) &&
 		   ATOMcompare(tt) == ATOMcompare(b->ttype)) {
 		BUN h = BUNlast(b);

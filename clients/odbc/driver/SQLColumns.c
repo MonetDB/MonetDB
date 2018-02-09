@@ -527,7 +527,7 @@ SQLColumns(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColumns " PTRFMT, PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLColumns %p", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -576,7 +576,7 @@ SQLColumnsW(SQLHSTMT StatementHandle,
 	SQLRETURN rc = SQL_ERROR;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColumnsW " PTRFMT, PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLColumnsW %p", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

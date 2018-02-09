@@ -148,7 +148,7 @@ monet_hello(void)
 	printf("\n# Serving database '%s', using %d thread%s\n",
 			GDKgetenv("gdk_dbname"),
 			GDKnr_threads, (GDKnr_threads != 1) ? "s" : "");
-	printf("# Compiled for %s/" SZFMT "bit%s\n",
+	printf("# Compiled for %s/%zubit%s\n",
 			HOST, sizeof(ptr) * 8,
 #ifdef HAVE_HGE
 			" with 128bit integers"
@@ -172,7 +172,7 @@ monet_hello(void)
 	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"host\":\"%s\",\n", HOST);
 	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"threads\":\"%d\",\n", GDKnr_threads);
 	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"memory\":\"%.3f %cB\",\n", sz_mem_h, qc[qi]);
-	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"oid\":\""SZFMT"\",\n", sizeof(oid) *8);
+	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"oid\":\"%zu\",\n", sizeof(oid) *8);
 	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"packages\":[");
 	// add the compiled in package names
 #ifdef HAVE_HGE
@@ -625,7 +625,7 @@ main(int argc, char **av)
 				GDKfatal("%s", secret);
 			} else if (len < 5) {
 				fprintf(stderr, "#warning: your vault key is too short "
-								"(" SZFMT "), enlarge your vault key!\n", len);
+								"(%zu), enlarge your vault key!\n", len);
 			}
 			fclose(secretf);
 		}

@@ -34,7 +34,7 @@
 #define TME_HH 16
 #define TME_DD 32
 
-#define US_MS ((lng) 1000)
+#define US_MS ((int64_t) 1000)
 #define US_SS (US_MS * 1000)
 #define US_MM (US_SS * 60)
 #define US_HH (US_MM * 60)
@@ -68,19 +68,19 @@ typedef struct  {
 	char *user; 
 	int pc;		// instruction counter in block
 	int tag;	// unique MAL block invocation tag
-	lng eventnr;// serial event number
+	int64_t eventnr;// serial event number
 	int thread;	// worker thread involved
-	lng usec;	// usec since start of session
+	int64_t usec;	// usec since start of session
 	char *time;	// string rep of clock
-	lng clkticks;
-	lng ticks;
-	lng rss;
-	lng size;	// size of temporary produced
-	lng inblock;
-	lng oublock;
-	lng majflt;
-	lng swaps;
-	lng csw;
+	int64_t clkticks;
+	int64_t ticks;
+	int64_t rss;
+	int64_t size;	// size of temporary produced
+	int64_t inblock;
+	int64_t oublock;
+	int64_t majflt;
+	int64_t swaps;
+	int64_t csw;
 	char *stmt;	// MAL statement, cpu loads or commentary
 	char *beauty;// MAL statement compressed
 	char *fcn;	// MAL operator

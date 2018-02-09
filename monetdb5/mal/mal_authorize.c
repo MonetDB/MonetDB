@@ -183,6 +183,8 @@ AUTHinitTables(const char *passwd) {
 		/* don't check this bat since we'll fix it below */
 		GDKdebug &= ~CHECKMASK;
 		user = BATdescriptor(bid);
+		if (user == NULL)
+			throw(MAL, "initTables.user", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		GDKdebug = dbg;
 		isNew = 0;
 	}
@@ -204,6 +206,8 @@ AUTHinitTables(const char *passwd) {
 		/* don't check this bat since we'll fix it below */
 		GDKdebug &= ~CHECKMASK;
 		pass = BATdescriptor(bid);
+		if (pass == NULL)
+			throw(MAL, "initTables.passwd", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		GDKdebug = dbg;
 		isNew = 0;
 	}
@@ -224,6 +228,8 @@ AUTHinitTables(const char *passwd) {
 			AUTHcommit();
 	} else {
 		duser = BATdescriptor(bid);
+		if (duser == NULL)
+			throw(MAL, "initTables.duser", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		isNew = 0;
 	}
 	assert(duser);

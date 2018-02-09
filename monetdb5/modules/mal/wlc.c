@@ -601,10 +601,14 @@ WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 {	BAT *b;
-	str sch,tbl,col, msg = MAL_SUCCEED;
+	str sch, tbl, col;
+	str msg = MAL_SUCCEED;
 	(void) mb;
-	b= BATdescriptor(bid);
-	assert(b);
+
+	b = BATdescriptor(bid);
+	if (b == NULL) {
+		throw(MAL, "wlc.datashipping", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
 
 // large BATs can also be re-created using the query.
 // Copy into should always be expanded, because the source may not
@@ -651,11 +655,12 @@ WLCdatashipping(Client cntxt, MalBlkPtr mb, InstrPtr pci, int bid)
 		cntxt->wlc_kind = WLC_CATALOG;
 	}
 finish:
-	if(sch)
+	BBPunfix(b->batCacheid);
+	if (sch)
 		GDKfree(sch);
-	if(tbl)
+	if (tbl)
 		GDKfree(tbl);
-	if(col)
+	if (col)
 		GDKfree(col);
 	return msg;
 }
@@ -776,6 +781,13 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BAT *b, *bval;
 		b= BATdescriptor(stk->stk[getArg(pci,4)].val.bval);
 		bval= BATdescriptor(stk->stk[getArg(pci,5)].val.bval);
+		if(b == NULL || bval == NULL) {
+			if(b)
+				BBPunfix(b->batCacheid);
+			if(bval)
+				BBPunfix(bval->batCacheid);
+			throw(MAL, "wlr.update", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
 		if( b->ttype == TYPE_void)
 			o = b->tseqbase;
 		else

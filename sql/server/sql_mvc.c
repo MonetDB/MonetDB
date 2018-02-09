@@ -1053,7 +1053,7 @@ sql_fkey *
 mvc_create_fkey(mvc *m, sql_table *t, const char *name, key_type kt, sql_key *rkey, int on_delete, int on_update)
 {
 	if (mvc_debug)
-		fprintf(stderr, "#mvc_create_fkey %s %u " PTRFMT "\n", t->base.name, kt, PTRFMTCAST rkey);
+		fprintf(stderr, "#mvc_create_fkey %s %u %p\n", t->base.name, kt, rkey);
 	if (t->persistence == SQL_DECLARED_TABLE)
 		return create_sql_fkey(m->sa, t, name, kt, rkey, on_delete, on_update);	
 	else

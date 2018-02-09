@@ -107,7 +107,7 @@ renderEvent(EventRecord *ev){
 	if( ev->eventnr < 0)
 		return;
 	fprintf(s, "[ ");
-	fprintf(s, LLFMT",	", ev->eventnr);
+	fprintf(s, "%"PRId64",	", ev->eventnr);
 	printf("\"%s\",	", ev->time);
 	if( ev->function && *ev->function)
 		fprintf(s, "\"%s[%d]%d\",	", ev->function, ev->pc, ev->tag);
@@ -121,14 +121,14 @@ renderEvent(EventRecord *ev){
 	case MDB_PING: fprintf(s, "\"ping \",	"); break;
 	case MDB_SYSTEM: fprintf(s, "\"system\",	"); 
 	}
-	fprintf(s, LLFMT",	", ev->ticks);
-	fprintf(s, LLFMT",	", ev->rss);
-	fprintf(s, LLFMT",	", ev->size);
-	fprintf(s, LLFMT",	", ev->inblock);
-	fprintf(s, LLFMT",	", ev->oublock);
-	fprintf(s, LLFMT",	", ev->majflt);
-	fprintf(s, LLFMT",	", ev->swaps);
-	fprintf(s, LLFMT",	", ev->csw);
+	fprintf(s, "%"PRId64",	", ev->ticks);
+	fprintf(s, "%"PRId64",	", ev->rss);
+	fprintf(s, "%"PRId64",	", ev->size);
+	fprintf(s, "%"PRId64",	", ev->inblock);
+	fprintf(s, "%"PRId64",	", ev->oublock);
+	fprintf(s, "%"PRId64",	", ev->majflt);
+	fprintf(s, "%"PRId64",	", ev->swaps);
+	fprintf(s, "%"PRId64",	", ev->csw);
 	fprintf(s, "\"%s\"	]\n", ev->stmt);
 }
 

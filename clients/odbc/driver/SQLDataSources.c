@@ -93,8 +93,8 @@ SQLDataSources(SQLHENV EnvironmentHandle,
 	ODBCEnv *env = (ODBCEnv *) EnvironmentHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDataSources " PTRFMT " %s\n",
-		PTRFMTCAST EnvironmentHandle, translateDirection(Direction));
+	ODBCLOG("SQLDataSources %p %s\n",
+		EnvironmentHandle, translateDirection(Direction));
 #endif
 
 	if (!isValidEnv(env))
@@ -138,8 +138,8 @@ SQLDataSourcesW(SQLHENV EnvironmentHandle,
 	SQLSMALLINT length1, length2;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDataSourcesW " PTRFMT " %s\n",
-		PTRFMTCAST EnvironmentHandle, translateDirection(Direction));
+	ODBCLOG("SQLDataSourcesW %p %s\n",
+		EnvironmentHandle, translateDirection(Direction));
 #endif
 
 	if (!isValidEnv(env))

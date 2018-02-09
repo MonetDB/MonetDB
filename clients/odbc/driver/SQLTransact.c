@@ -34,8 +34,8 @@ SQLTransact(SQLHENV EnvironmentHandle,
 	    UWORD CompletionType)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLTransact " PTRFMT " " PTRFMT " %s\n",
-		PTRFMTCAST EnvironmentHandle, PTRFMTCAST ConnectionHandle,
+	ODBCLOG("SQLTransact %p %p %s\n",
+		EnvironmentHandle, ConnectionHandle,
 		translateCompletionType(CompletionType));
 #endif
 

@@ -501,7 +501,7 @@ static void ctl_handle_client(
 				} while(1);
 				if (e != NO_ERR) {
 					Mfprintf(_mero_ctlerr, "%s: invalid multiplex-funnel "
-							"specification '%s': %s at char " SZFMT "\n",
+							"specification '%s': %s at char %zu\n",
 							origin, p, getErrMsg(e), (size_t)(r - p));
 					len = snprintf(buf2, sizeof(buf2),
 							"invalid pattern: %s\n", getErrMsg(e));

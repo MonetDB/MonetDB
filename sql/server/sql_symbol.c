@@ -30,7 +30,7 @@ symbol_create(sql_allocator *sa, int token, char *data)
 		symbol_init(s, token, type_string);
 		s->data.sval = data;
 		if (symbol_debug)
-			fprintf(stderr, "" PTRFMT " = symbol_create_string(%s,%s)\n", PTRFMTCAST s, token2string(s->token), s->data.sval);
+			fprintf(stderr, "%p = symbol_create_string(%s,%s)\n", s, token2string(s->token), s->data.sval);
 	}
 	return s;
 }
@@ -44,7 +44,7 @@ symbol_create_list(sql_allocator *sa, int token, dlist *data)
 		symbol_init(s, token, type_list);
 		s->data.lval = data;
 		if (symbol_debug)
-			fprintf(stderr, "" PTRFMT " = symbol_create_list(%s," PTRFMT ")\n", PTRFMTCAST s, token2string(s->token), PTRFMTCAST s->data.lval);
+			fprintf(stderr, "%p = symbol_create_list(%s,%p)\n", s, token2string(s->token), s->data.lval);
 	}
 	return s;
 }
@@ -58,7 +58,7 @@ symbol_create_int(sql_allocator *sa, int token, int data)
 		symbol_init(s, token, type_int);
 		s->data.i_val = data;
 		if (symbol_debug)
-			fprintf(stderr, "" PTRFMT " = symbol_create_int(%s,%d)\n", PTRFMTCAST s, token2string(s->token), data);
+			fprintf(stderr, "%p = symbol_create_int(%s,%d)\n", s, token2string(s->token), data);
 	}
 	return s;
 }
@@ -72,7 +72,7 @@ symbol_create_lng(sql_allocator *sa, int token, lng data)
 		symbol_init(s, token, type_lng);
 		s->data.l_val = data;
 		if (symbol_debug)
-			fprintf(stderr, "" PTRFMT " = symbol_create_lng(%s,"LLFMT")\n", PTRFMTCAST s, token2string(s->token), data);
+			fprintf(stderr, "%p = symbol_create_lng(%s,"LLFMT")\n", s, token2string(s->token), data);
 	}
 	return s;
 }
@@ -86,7 +86,7 @@ symbol_create_symbol(sql_allocator *sa, int token, symbol *data)
 		symbol_init(s, token, type_symbol);
 		s->data.sym = data;
 		if (symbol_debug)
-			fprintf(stderr, "" PTRFMT " = symbol_create_symbol(%s,%s)\n", PTRFMTCAST s, token2string(s->token), token2string(data->token));
+			fprintf(stderr, "%p = symbol_create_symbol(%s,%s)\n", s, token2string(s->token), token2string(data->token));
 	}
 	return s;
 }

@@ -38,7 +38,7 @@ UDFreverse_(char **ret, const char *src)
 	*ret = dst = GDKmalloc(len + 1);
 	if (dst == NULL)
 		throw(MAL, "udf.reverse",
-		      "failed to allocate string of length " SZFMT, len + 1);
+		      "failed to allocate string of length %zu", len + 1);
 
 	/* copy characters from src to dst in reverse order */
 	dst[len] = 0;

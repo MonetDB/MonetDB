@@ -3477,7 +3477,7 @@ read_line(Mapi mid)
 		}
 		mid->blk.buf[mid->blk.end + len] = 0;
 		if (mid->trace == MAPI_TRACE) {
-			printf("got next block: length:" SSZFMT "\n", len);
+			printf("got next block: length:%zd\n", len);
 			printf("text:%s\n", mid->blk.buf + mid->blk.end);
 		}
 		if (len == 0) {	/* add prompt */
@@ -4081,7 +4081,7 @@ mapi_execute_internal(MapiHdl hdl)
 	size = strlen(cmd);
 
 	if (mid->trace == MAPI_TRACE) {
-		printf("mapi_query:" SZFMT ":%s\n", size, cmd);
+		printf("mapi_query:%zu:%s\n", size, cmd);
 	}
 	if (mid->languageId == LANG_SQL) {
 		if (size > MAXQUERYSIZE) {
@@ -4312,7 +4312,7 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 	}
 
 	if (mid->trace == MAPI_TRACE) {
-		printf("mapi_query_part:" SZFMT ":%.*s\n", size, (int) size, query);
+		printf("mapi_query_part:%zu:%.*s\n", size, (int) size, query);
 	}
 	hdl->needmore = 0;
 	mnstr_write(mid->to, query, 1, size);

@@ -2532,8 +2532,6 @@ AC_TYPE_SSIZE_T
 AC_TYPE_PID_T
 AC_TYPE_OFF_T
 
-AC_CHECK_TYPES([__int64, long long])
-
 AS_CASE([$enable_int128],
 [yes|auto], [
 	have_hge=no
@@ -2561,8 +2559,6 @@ AC_CHECK_SIZEOF([size_t])
 AC_CHECK_SIZEOF([ssize_t])
 AC_CHECK_SIZEOF([ptrdiff_t],,[@%:@include <stddef.h>])
 AC_CHECK_SIZEOF([wchar_t],,[@%:@include <stddef.h>])
-AC_CHECK_SIZEOF([long long])
-AC_CHECK_SIZEOF([__int64])
 AC_CHECK_SIZEOF([__int128])
 AC_CHECK_SIZEOF([__int128_t])
 AC_C_CHAR_UNSIGNED
@@ -2588,6 +2584,19 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 	[AC_MSG_RESULT([no])
 	AC_DEFINE([__hidden], [/* empty */],
 		[Does your compiler support the `__hidden' specifier?])])
+
+AC_MSG_CHECKING([if your compiler can use NAN as an initializer])
+AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
+	@%:@include <math.h>
+	extern const float f;
+	extern const double d;
+	const float f = NAN;
+	const double d = NAN;
+	]])],
+	[AC_MSG_RESULT([yes])],
+	[AC_MSG_RESULT([no])
+	 AC_DEFINE([NAN_CANNOT_BE_USED_AS_INITIALIZER], 1,
+		[Define if NAN cannot be used as static initializer])])
 
 #    checks for library functions
 AS_CASE([$host],
@@ -2887,12 +2896,6 @@ AH_BOTTOM([
 @%:@include <stdbool.h>
 @%:@include <assert.h>
 
-typedef int64_t lng;
-typedef uint64_t ulng;
-@%:@define SIZEOF_LNG 8
-@%:@define LLFMT "%" PRId64
-@%:@define ULLFMT "%" PRIu64
-
 @%:@if defined(HAVE___INT128)
 typedef __int128 hge;
 typedef unsigned __int128 uhge;
@@ -2904,17 +2907,6 @@ typedef __uint128_t uhge;
 @%:@define HAVE_HGE 1
 @%:@define SIZEOF_HGE SIZEOF___INT128_T
 @%:@endif
-
-/* define printf formats for printing size_t and ssize_t variables */
-@%:@define SZFMT "%zu"
-@%:@define SSZFMT "%zd"
-
-/* define printf formats for printing ptrdiff_t variables */
-@%:@define PDFMT "%td"
-
-/* define printf format for printing pointer values */
-@%:@define PTRFMT		"%p"
-@%:@define PTRFMTCAST		/* no cast needed */
 
 /* defines to help the compiler check printf-style format arguments */
 @%:@if !defined(__GNUC__) || __GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 5)

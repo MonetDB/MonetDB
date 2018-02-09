@@ -1875,9 +1875,9 @@ ODBCFetch(ODBCStmt *stmt,
 
 			ODBCutf82wchar((SQLCHAR *) ptr, SQL_NTS, (SQLWCHAR *) origptr, origbuflen, &n);
 #ifdef ODBCDEBUG
-			ODBCLOG("Writing %d bytes to " PTRFMT "\n",
+			ODBCLOG("Writing %d bytes to %p\n",
 				(int) (n * sizeof(SQLWCHAR)),
-				PTRFMTCAST origptr);
+				origptr);
 #endif
 
 			if (origlenp)
@@ -1886,8 +1886,8 @@ ODBCFetch(ODBCStmt *stmt,
 		}
 #ifdef ODBCDEBUG
 		else
-			ODBCLOG("Writing %d bytes to " PTRFMT "\n",
-				(int) strlen(ptr), PTRFMTCAST ptr);
+			ODBCLOG("Writing %d bytes to %p\n",
+				(int) strlen(ptr), ptr);
 #endif
 		break;
 	}
@@ -2753,7 +2753,7 @@ ODBCFetch(ODBCStmt *stmt,
 			return SQL_ERROR;
 		}
 #ifdef ODBCDEBUG
-		ODBCLOG("Writing 16 bytes to " PTRFMT "\n", PTRFMTCAST ptr);
+		ODBCLOG("Writing 16 bytes to %p\n", ptr);
 #endif
 		for (i = 0; i < 16; i++) {
 			if (i == 8 || i == 12 || i == 16 || i == 20) {

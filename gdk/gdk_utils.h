@@ -105,5 +105,13 @@ gdk_export jmp_buf GDKfataljump;
 gdk_export str GDKfatalmsg;
 gdk_export bit GDKfataljumpenable;
 
+/* Timers
+ * The following relative timers are available for inspection.
+ * Note that they may consume recognizable overhead.
+ *
+ */
+gdk_export lng GDKusec(void);
+gdk_export int GDKms(void);
+
 
 #endif /* _GDK_UTILS_H_ */

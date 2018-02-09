@@ -712,7 +712,7 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_oid: WLRcolumn(oid); break;
 	case TYPE_flt: WLRcolumn(flt); break;
 	case TYPE_dbl: WLRcolumn(dbl); break;
-#ifdef HAVE
+#ifdef HAVE_HGE
 	case TYPE_hge: WLRcolumn(hge); break;
 #endif
 	case TYPE_str:
@@ -856,7 +856,7 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	case TYPE_oid: WLRvalue(oid); break;
 	case TYPE_flt: WLRvalue(flt); break;
 	case TYPE_dbl: WLRvalue(dbl); break;
-#ifdef HAVE
+#ifdef HAVE_HGE
 	case TYPE_hge: WLRvalue(hge); break;
 #endif
 	case TYPE_str:
