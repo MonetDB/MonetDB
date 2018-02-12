@@ -226,9 +226,10 @@ BATproject(BAT *l, BAT *r)
 				  bn->tkey ? "-key" : "");
 		return bn;
 	}
+	/* if l has type void, it is either empty or not dense (i.e. nil) */
 	if (l->ttype == TYPE_void || BATcount(l) == 0 ||
 	    (r->ttype == TYPE_void && r->tseqbase == oid_nil)) {
-		/* trivial: all values are nil */
+		/* trivial: all values are nil (includes no entries at all) */
 		const void *nil = ATOMnilptr(r->ttype);
 
 		bn = BATconstant(l->hseqbase, r->ttype == TYPE_oid ? TYPE_void : r->ttype,
