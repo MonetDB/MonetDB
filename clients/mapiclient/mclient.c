@@ -1632,27 +1632,27 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 		SQLseparator(len, printfields, '-');
 	rows = mapi_get_row_count(hdl);
 	snprintf(buf, sizeof(buf), "%" PRId64 " rows", rows);
-	printf("%" PRId64 " tuple%s", rows, rows != 1 ? "s" : "");
+	mnstr_printf(toConsole, "%" PRId64 " tuple%s", rows, rows != 1 ? "s" : "");
 
 	if (fields != printfields || croppedfields > 0)
-		printf(" !");
+		mnstr_printf(toConsole, " !");
 	if (fields != printfields) {
 		rows = fields - printfields;
-		printf("%" PRId64 " column%s dropped", rows, rows != 1 ? "s" : "");
+		mnstr_printf(toConsole, "%" PRId64 " column%s dropped", rows, rows != 1 ? "s" : "");
 	}
 	if (fields != printfields && croppedfields > 0)
-		printf(", ");
+		mnstr_printf(toConsole, ", ");
 	if (croppedfields > 0)
-		printf("%d field%s truncated",
+		mnstr_printf(toConsole, "%d field%s truncated",
 		       croppedfields, croppedfields != 1 ? "s" : "");
 	if (fields != printfields || croppedfields > 0) {
-		printf("!");
+		mnstr_printf(toConsole, "!");
 		if (firstcrop == 1) {
 			firstcrop = 0;
-			printf("\nnote: to disable dropping columns and/or truncating fields use \\w-1");
+			mnstr_printf(toConsole, "\nnote: to disable dropping columns and/or truncating fields use \\w-1");
 		}
 	}
-	printf("\n");
+	mnstr_printf(toConsole, "\n");
 
 	free(len);
 	free(hdr);
@@ -1837,7 +1837,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			    formatter == TESTformatter)
 				mnstr_printf(toConsole, "[ %" PRId64 "\t]\n", mapi_rows_affected(hdl));
 			else if (formatter == TRASHformatter) {
-				printf("%s\n", timerHuman(sqloptimizer, maloptimizer, querytime));
+				mnstr_printf(toConsole, "%s\n", timerHuman(sqloptimizer, maloptimizer, querytime));
 			} else {
 				aff = mapi_rows_affected(hdl);
 				lid = mapi_get_last_id(hdl);
@@ -1866,7 +1866,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 						     timerHuman(sqloptimizer, maloptimizer, querytime));
 				mnstr_printf(toConsole, "\n");
 			} else if (formatter == TRASHformatter) {
-				printf("%s\n", timerHuman(sqloptimizer, maloptimizer, querytime));
+				mnstr_printf(toConsole, "%s\n", timerHuman(sqloptimizer, maloptimizer, querytime));
 			}
 			continue;
 		case Q_TRANS:
@@ -1956,7 +1956,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			}
 			s= timerHuman(sqloptimizer, maloptimizer, querytime);
 			if (*s)
-				printf("%s\n", s);
+				mnstr_printf(toConsole, "%s\n", s);
 		}
 	} while (!mnstr_errnr(toConsole) && (rc = mapi_next_result(hdl)) == 1);
 	if (mnstr_errnr(toConsole)) {
