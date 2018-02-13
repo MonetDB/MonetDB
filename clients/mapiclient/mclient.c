@@ -101,7 +101,6 @@ int csvheader = 0;		/* include header line in CSV format */
 
 /* use a 64 bit integer for the timer */
 typedef int64_t timertype;
-#define TTFMT "%" PRId64
 
 static timertype t0, t1;	/* used for timing */
 
@@ -268,16 +267,16 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime)
 
 	if (timermode == T_CLOCK) {
 		if (t / 1000 < 950) {
-			mnstr_printf(toConsole, "clk: " TTFMT ".%03d ms\n", t / 1000, (int) (t % 1000));
+			mnstr_printf(toConsole, "clk: %" PRId64 ".%03d ms\n", t / 1000, (int) (t % 1000));
 			return;
 		}
 		t /= 1000;
 		if (t / 1000 < 60) {
-			mnstr_printf(toConsole, "clk: " TTFMT ".%02d sec\n", t / 1000, (int) ((t % 1000) / 100));
+			mnstr_printf(toConsole, "clk: %" PRId64 ".%02d sec\n", t / 1000, (int) ((t % 1000) / 100));
 			return;
 		}
 		t /= 1000;
-		mnstr_printf(toConsole, "clk: " TTFMT ":%02d min\n", t / 60, (int) (t % 60));
+		mnstr_printf(toConsole, "clk: %" PRId64 ":%02d min\n", t / 60, (int) (t % 60));
 		return;
 	}
 	/* for performance measures we use milliseconds as the base */
