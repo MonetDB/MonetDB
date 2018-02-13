@@ -1862,7 +1862,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter) {
 				mnstr_printf(toConsole, "operation successful");
-				if (singleinstr && timermode != T_NONE)
+				if (singleinstr && showtiming)
 					mnstr_printf(toConsole, " (%s)",
 						     timerHuman(sqloptimizer, maloptimizer, querytime));
 				mnstr_printf(toConsole, "\n");
