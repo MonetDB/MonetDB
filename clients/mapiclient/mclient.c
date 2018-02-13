@@ -1414,7 +1414,7 @@ SQLpagemove(int *len, int fields, int *ps, int *silent)
 }
 
 static void
-SQLrenderer(MapiHdl hdl, char singleinstr)
+SQLrenderer(MapiHdl hdl)
 {
 	int i, total, lentotal, vartotal, minvartotal;
 	int fields, rfields, printfields = 0, max = 1, graphwaste = 0;
@@ -1423,9 +1423,6 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 	char buf[50];
 	int ps = rowsperpage, silent = 0;
 	int64_t rows = 0;
-
-	/* in case of interactive mode, we should show timing on request */
-	singleinstr = showtiming? 1 :singleinstr;
 
 	croppedfields = 0;
 	fields = mapi_get_field_count(hdl);
@@ -1852,7 +1849,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 						     "%" PRId64,
 						     lid);
 				}
-				if (singleinstr && formatter != TESTformatter)
+				if (singleinstr)
 					mnstr_printf(toConsole, " (%s)",
 						     timerHuman(sqloptimizer, maloptimizer, querytime));
 				mnstr_printf(toConsole, "\n");
@@ -1941,7 +1938,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 					SQLdebugRendering(hdl);
 					break;
 				default:
-					SQLrenderer(hdl, singleinstr);
+					SQLrenderer(hdl);
 					break;
 				}
 				break;
