@@ -72,7 +72,6 @@ static char *language = NULL;
 static char *logfile = NULL;
 static char promptbuf[16];
 static int echoquery = 0;
-static int showtiming = 0;
 #ifdef HAVE_ICONV
 static char *encoding;
 #endif
@@ -1700,7 +1699,6 @@ setFormatter(const char *s)
 #endif
 		formatter = TESTformatter;
 		timermode = T_NONE;
-		showtiming = (timermode != T_NONE);
 	} else if (strcmp(s, "trash") == 0) {
 		formatter = TRASHformatter;
 	} else if (strcmp(s, "sam") == 0) {
@@ -1855,7 +1853,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter) {
 				mnstr_printf(toConsole, "operation successful\n");
-				if (singleinstr && showtiming)
+				if (singleinstr)
 					timerHuman(sqloptimizer, maloptimizer, querytime);
 			} else if (formatter == TRASHformatter) {
 				timerHuman(sqloptimizer, maloptimizer, querytime);
@@ -2776,7 +2774,6 @@ doFile(Mapi mid, stream *fp, bool useinserts, int interactive, int save_history)
 						fprintf(stderr, "warning: invalid argument to -t: %s\n",
 							line);
 					}
-					showtiming = (timermode != T_NONE);
 					continue;
 				default:
 					showCommands();
@@ -3025,7 +3022,6 @@ main(int argc, char **argv)
 	 * window) */
 	setlocale(LC_CTYPE, "");
 #endif
-	showtiming = (timermode != T_NONE);
 	toConsole = stdout_stream = file_wastream(stdout, "stdout");
 	stderr_stream = file_wastream(stderr, "stderr");
 
@@ -3133,7 +3129,6 @@ main(int argc, char **argv)
 					fprintf(stderr, "warning: invalid argument to -t: %s\n",
 						optarg);
 				}
-				showtiming = (timermode != T_NONE);
 			}
 			break;
 		case 'h':
