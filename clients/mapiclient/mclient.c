@@ -1837,7 +1837,6 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			    formatter == TESTformatter)
 				mnstr_printf(toConsole, "[ %" PRId64 "\t]\n", mapi_rows_affected(hdl));
 			else if (formatter == TRASHformatter) {
-				mapi_next_result(hdl);
 				printf("%s\n", timerHuman(sqloptimizer, maloptimizer, querytime));
 			} else {
 				aff = mapi_rows_affected(hdl);
@@ -1867,7 +1866,6 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 						     timerHuman(sqloptimizer, maloptimizer, querytime));
 				mnstr_printf(toConsole, "\n");
 			} else if (formatter == TRASHformatter) {
-				mapi_next_result(hdl);
 				printf("%s\n", timerHuman(sqloptimizer, maloptimizer, querytime));
 			}
 			continue;
