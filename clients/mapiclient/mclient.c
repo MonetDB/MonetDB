@@ -1706,6 +1706,7 @@ setFormatter(const char *s)
 #endif
 		formatter = TESTformatter;
 		timermode = T_NONE;
+		showtiming = (timermode != T_NONE);
 	} else if (strcmp(s, "trash") == 0) {
 		formatter = TRASHformatter;
 	} else if (strcmp(s, "sam") == 0) {
@@ -2787,6 +2788,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, int interactive, int save_history)
 						fprintf(stderr, "warning: invalid argument to -t: %s\n",
 							line);
 					}
+					showtiming = (timermode != T_NONE);
 					continue;
 				default:
 					showCommands();
@@ -3035,6 +3037,7 @@ main(int argc, char **argv)
 	 * window) */
 	setlocale(LC_CTYPE, "");
 #endif
+	showtiming = (timermode != T_NONE);
 	toConsole = stdout_stream = file_wastream(stdout, "stdout");
 	stderr_stream = file_wastream(stderr, "stderr");
 
@@ -3131,7 +3134,6 @@ main(int argc, char **argv)
 			interactive = 1;
 			break;
 		case 't':
-			showtiming = 1;
 			if (optarg != NULL) {
 				if (strcmp(optarg,"none") == 0) {
 					timermode = T_NONE;
@@ -3143,6 +3145,7 @@ main(int argc, char **argv)
 					fprintf(stderr, "warning: invalid argument to -t: %s\n",
 						optarg);
 				}
+				showtiming = (timermode != T_NONE);
 			}
 			break;
 		case 'h':
