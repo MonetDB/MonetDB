@@ -1,0 +1,36 @@
+stderr of test 'copy-into-lz4` in directory 'sql/test` itself:
+
+
+# 15:41:39 >  
+# 15:41:39 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31899" "--set" "mapi_usock=/var/tmp/mtest-8247/.s.monetdb.31899" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-default/BUILD/var/MonetDB/mTests_sql_test" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 15:41:39 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-default/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 31899
+# cmdline opt 	mapi_usock = /var/tmp/mtest-8247/.s.monetdb.31899
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-default/BUILD/var/MonetDB/mTests_sql_test
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 553648138
+
+# 15:41:40 >  
+# 15:41:40 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8247" "--port=31899"
+# 15:41:40 >  
+
+
+# 15:41:43 >  
+# 15:41:43 >  "Done."
+# 15:41:43 >  
+
