@@ -1744,7 +1744,7 @@ stream_lz4read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cn
 		remaining_to_decompress = size - total_read;
 		total_decompressed = lz4->ring_buffer_size - lz4->total_processing;
 		ret = LZ4F_decompress(lz4->context.dec_context, (char*)buf + total_read, &remaining_to_decompress,
-							  (char*)lz4->ring_buffer + lz4->total_processing, &total_decompressed, NULL);
+				      (char*)lz4->ring_buffer + lz4->total_processing, &total_decompressed, NULL);
 		if(LZ4F_isError(ret)) {
 			s->errnr = MNSTR_WRITE_ERROR;
 			return -1;
@@ -1755,23 +1755,23 @@ stream_lz4read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cn
 	}
 
 #ifdef WIN32
-		/* on Windows when in text mode, convert \r\n line endings to \n */
-		if (s->type == ST_ASCII) {
-			char *p1, *p2, *pe;
+	/* on Windows when in text mode, convert \r\n line endings to \n */
+	if (s->type == ST_ASCII) {
+		char *p1, *p2, *pe;
 
-			p1 = buf;
-			pe = p1 + total_read;
-			while (p1 < pe && *p1 != '\r')
-				p1++;
-			p2 = p1;
-			while (p1 < pe) {
-				if (*p1 == '\r' && p1[1] == '\n')
-					total_read--;
-				else
-					*p2++ = *p1;
-				p1++;
-			}
+		p1 = buf;
+		pe = p1 + total_read;
+		while (p1 < pe && *p1 != '\r')
+			p1++;
+		p2 = p1;
+		while (p1 < pe) {
+			if (*p1 == '\r' && p1[1] == '\n')
+				total_read--;
+			else
+				*p2++ = *p1;
+			p1++;
 		}
+	}
 #endif
 	return (ssize_t) (total_read / elmsize);
 }
@@ -1803,7 +1803,7 @@ stream_lz4write(stream *restrict s, const void *restrict buf, size_t elmsize, si
 		assert(next_batch > 0);
 
 		ret = LZ4F_compressUpdate(lz4->context.comp_context, ((char*)lz4->ring_buffer) + lz4->total_processing,
-								  available, ((char*)buf) + total_written, next_batch, NULL);
+					  available, ((char*)buf) + total_written, next_batch, NULL);
 		if(LZ4F_isError(ret)) {
 			s->errnr = MNSTR_WRITE_ERROR;
 			return -1;
@@ -2003,7 +2003,7 @@ open_lz4stream(const char *restrict filename, const char *restrict flags)
 	} else if (flags[0] == 'r' && flags[1] != 'b') { /* check for utf-8 encoding */
 		char buf[UTF8BOMLENGTH];
 		if (stream_lz4read(s, buf, 1, UTF8BOMLENGTH) == UTF8BOMLENGTH &&
-			strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0) {
+		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0) {
 			s->isutf8 = 1;
 		} else {
 			rewind(lz4->fp);
