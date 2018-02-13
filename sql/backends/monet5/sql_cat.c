@@ -244,7 +244,8 @@ drop_trigger(mvc *sql, char *sname, char *tname, int if_exists)
 			return MAL_SUCCEED;
 		throw(SQL,"sql.drop_trigger", SQLSTATE(3F000) "DROP TRIGGER: unknown trigger %s\n", tname);
 	}
-	mvc_drop_trigger(sql, s, tri);
+	if(mvc_drop_trigger(sql, s, tri))
+		throw(SQL,"sql.drop_trigger", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -299,7 +300,8 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 	if (!drop_action && mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
 		throw (SQL,"sql.droptable",SQLSTATE(42000) "DROP TABLE: unable to drop table %s (there are database objects which depend on it)\n", t->base.name);
 
-	mvc_drop_table(sql, s, t, drop_action);
+	if(mvc_drop_table(sql, s, t, drop_action))
+		throw(SQL,"sql.droptable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -330,7 +332,8 @@ drop_view(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 	} else if (!drop_action && mvc_check_dependency(sql, t->base.id, VIEW_DEPENDENCY, NULL)) {
 		throw(SQL,"sql.drop_view", SQLSTATE(42000) "DROP VIEW: cannot drop view '%s', there are database objects which depend on it", t->base.name);
 	} else {
-		mvc_drop_table(sql, ss, t, drop_action);
+		if(mvc_drop_table(sql, ss, t, drop_action))
+			throw(SQL,"sql.drop_view", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 }
@@ -351,7 +354,8 @@ drop_key(mvc *sql, char *sname, char *kname, int drop_action)
 		throw(SQL,"sql.drop_key", SQLSTATE(42000) "ALTER TABLE: no such constraint '%s'", kname);
 	if (!drop_action && mvc_check_dependency(sql, key->base.id, KEY_DEPENDENCY, NULL))
 		throw(SQL,"sql.drop_key", SQLSTATE(42000) "ALTER TABLE: cannot drop constraint '%s': there are database objects which depend on it", key->base.name);
-	mvc_drop_key(sql, ss, key, drop_action);
+	if(mvc_drop_key(sql, ss, key, drop_action))
+		throw(SQL,"sql.drop_key", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -372,16 +376,21 @@ drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
 		if (i->type == ordered_idx) {
 			sql_kc *ic = i->columns->h->data;
 			BAT *b = mvc_bind(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, 0);
-			OIDXdropImplementation(cntxt, b);
-			BBPunfix(b->batCacheid);
+			if(b) {
+				OIDXdropImplementation(cntxt, b);
+				BBPunfix(b->batCacheid);
+			}
 		}
 		if (i->type == imprints_idx) {
 			sql_kc *ic = i->columns->h->data;
 			BAT *b = mvc_bind(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, 0);
-			IMPSdestroy(b);
-			BBPunfix(b->batCacheid);
+			if(b) {
+				IMPSdestroy(b);
+				BBPunfix(b->batCacheid);
+			}
 		}
-		mvc_drop_idx(sql, s, i);
+		if(mvc_drop_idx(sql, s, i))
+			throw(SQL,"sql.drop_index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	return NULL;
 }
@@ -477,13 +486,15 @@ drop_func(mvc *sql, char *sname, char *name, int fid, int type, int action)
 			if (!action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
 				throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
 
-			mvc_drop_func(sql, s, func, action);
+			if(mvc_drop_func(sql, s, func, action))
+				throw(SQL,"sql.drop_func", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	} else if(fid == -2) { //if exists option
 		return MAL_SUCCEED;
 	} else { //fid == -1
 		node *n = NULL;
 		list *list_func = schema_bind_func(sql, s, name, type);
+		int res;
 
 		if (!mvc_schema_privs(sql, s)) {
 			list_destroy(list_func);
@@ -497,8 +508,10 @@ drop_func(mvc *sql, char *sname, char *name, int fid, int type, int action)
 				throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
 			}
 		}
-		mvc_drop_all_func(sql, s, list_func, action);
+		res = mvc_drop_all_func(sql, s, list_func, action);
 		list_destroy(list_func);
+		if(res)
+			throw(SQL,"sql.drop_func", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	return MAL_SUCCEED;
 }
@@ -598,7 +611,8 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			/* propagate alter table .. drop column */
 			sql_column *c = n->data;
 			sql_column *nc = mvc_bind_column(sql, nt, c->base.name);
-			mvc_drop_column(sql, nt, nc, c->drop_action);
+			if(mvc_drop_column(sql, nt, nc, c->drop_action))
+				throw(SQL,"sql.alter_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	/* check for changes on current cols */
 	for (n = t->columns.set->h; n != t->columns.nelm; n = n->next) {
@@ -650,7 +664,8 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			for (n = t->idxs.dset->h; n; n = n->next) {
 				sql_idx *i = n->data;
 				sql_idx *ni = mvc_bind_idx(sql, s, i->base.name);
-				mvc_drop_idx(sql, s, ni);
+				if(mvc_drop_idx(sql, s, ni))
+					throw(SQL,"sql.alter_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 		/* alter add index */
 		for (n = t->idxs.nelm; n; n = n->next) {
@@ -668,10 +683,13 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				}
 			}
 			if (i->type == imprints_idx) {
+				gdk_return r;
 				sql_kc *ic = i->columns->h->data;
 				BAT *b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, 0);
-				BATimprints(b);
+				r = BATimprints(b);
 				BBPunfix(b->batCacheid);
+				if (r != GDK_SUCCEED)
+					throw(SQL, "sql.alter_table", GDK_EXCEPTION);
 			}
 			mvc_copy_idx(sql, nt, i);
 		}
@@ -682,8 +700,10 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			for (n = t->keys.dset->h; n; n = n->next) {
 				sql_key *k = n->data;
 				sql_key *nk = mvc_bind_key(sql, s, k->base.name);
-				if (nk)
-					mvc_drop_key(sql, s, nk, k->drop_action);
+				if (nk) {
+					if(mvc_drop_key(sql, s, nk, k->drop_action))
+						throw(SQL,"sql.alter_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				}
 			}
 		/* alter add key */
 		for (n = t->keys.nelm; n; n = n->next) {
@@ -708,8 +728,10 @@ UPGdrop_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	func = sql_trans_find_func(sql->session->tr, id);
-	if (func)
-		mvc_drop_func(sql, func->s, func, 0);
+	if (func) {
+		if(mvc_drop_func(sql, func->s, func, 0))
+			throw(SQL, "sql.drop_func", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 	return msg;
 }
 
@@ -885,7 +907,8 @@ SQLdrop_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		!list_empty(s->funcs.set) || !list_empty(s->seqs.set))) {
 		throw(SQL,"sql.drop_schema",SQLSTATE(2BM37) "DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it)", sname);
 	} else {
-		mvc_drop_schema(sql, s, action);
+		if(mvc_drop_schema(sql, s, action))
+			throw(SQL,"sql.drop_schema", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	return msg;
 }

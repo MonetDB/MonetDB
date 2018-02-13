@@ -199,8 +199,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, int force)
 	if (toff == 0 && n->twidth == b->twidth && cand == NULL) {
 		/* we don't need to do any translation of offset
 		 * values, so we can use fast memcpy */
-		memcpy(Tloc(b, BUNlast(b)), Tloc(n, start),
-		       cnt * n->twidth);
+		memcpy(Tloc(b, BUNlast(b)), Tloc(n, start), cnt << n->tshift);
 		BATsetcount(b, BATcount(b) + cnt);
 	} else if (toff != ~(size_t) 0) {
 		/* we don't need to insert any actual strings since we
@@ -444,7 +443,7 @@ append_varsized_bat(BAT *b, BAT *n, BAT *s)
 			 * chunk of memory */
 			memcpy(Tloc(b, BUNlast(b)),
 			       Tloc(n, start),
-			       cnt * b->twidth);
+			       cnt << b->tshift);
 		} else {
 			var_t *restrict dst = (var_t *) Tloc(b, BUNlast(b));
 			oid hseq = n->hseqbase;

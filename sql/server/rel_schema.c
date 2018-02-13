@@ -880,7 +880,10 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				}
 			}
 		}
-		mvc_drop_column(sql, t, col, drop_action);
+		if(mvc_drop_column(sql, t, col, drop_action)) {
+			sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: %s\n", MAL_MALLOC_FAIL);
+			return SQL_ERR;
+		}
 	} 	break;
 	case SQL_DROP_CONSTRAINT:
 		assert(0);
@@ -1046,7 +1049,8 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 			} else if (mvc_check_dependency(sql, t->base.id, VIEW_DEPENDENCY, NULL)) {
 				return sql_error(sql, 02, SQLSTATE(42000) "%s VIEW: cannot replace view '%s', there are database objects which depend on it", base, t->base.name);
 			} else {
-				mvc_drop_table(sql, s, t, 0);
+				if(mvc_drop_table(sql, s, t, 0))
+					return sql_error(sql, 02, SQLSTATE(HY001) "%s VIEW: %s", base, MAL_MALLOC_FAIL);
 		 	}
 		} else {
 			return sql_error(sql, 02, SQLSTATE(42S01) "%s VIEW: name '%s' already in use", base, name);
