@@ -1306,7 +1306,7 @@ static void
 TIMERrenderer(MapiHdl hdl)
 {
 	SQLqueryEcho(hdl);
-	printf("%s\n", timerHuman());
+	mnstr_printf(toConsole, "%s\n", timerHuman());
 }
 
 
@@ -1673,30 +1673,30 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 #if 0
 	mark2 = strdup(buf);	/* for the timer output */
 #endif
-	printf(LLFMT " tuple%s%s%s%s", rows, rows != 1 ? "s" : "",
+	mnstr_printf(toConsole, LLFMT " tuple%s%s%s%s", rows, rows != 1 ? "s" : "",
 			singleinstr ? " (" : "",
 			singleinstr && formatter != TESTformatter ? timerHuman() : "",
 			singleinstr ? ")" : "");
 
 	if (fields != printfields || croppedfields > 0)
-		printf(" !");
+		mnstr_printf(toConsole, " !");
 	if (fields != printfields) {
 		rows = fields - printfields;
-		printf(LLFMT " column%s dropped", rows, rows != 1 ? "s" : "");
+		mnstr_printf(toConsole, LLFMT " column%s dropped", rows, rows != 1 ? "s" : "");
 	}
 	if (fields != printfields && croppedfields > 0)
-		printf(", ");
+		mnstr_printf(toConsole, ", ");
 	if (croppedfields > 0)
-		printf("%d field%s truncated",
+		mnstr_printf(toConsole, "%d field%s truncated",
 				croppedfields, croppedfields != 1 ? "s" : "");
 	if (fields != printfields || croppedfields > 0) {
-		printf("!");
+		mnstr_printf(toConsole, "!");
 		if (firstcrop == 1) {
 			firstcrop = 0;
-			printf("\nnote: to disable dropping columns and/or truncating fields use \\w-1");
+			mnstr_printf(toConsole, "\nnote: to disable dropping columns and/or truncating fields use \\w-1");
 		}
 	}
-	printf("\n");
+	mnstr_printf(toConsole, "\n");
 
 	free(len);
 	free(hdr);
@@ -1864,7 +1864,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			    formatter == TESTformatter)
 				mnstr_printf(toConsole, "[ " LLFMT "\t]\n", mapi_rows_affected(hdl));
 			else if (formatter == TIMERformatter)
-				printf("%s\n", timerHuman());
+				mnstr_printf(toConsole, "%s\n", timerHuman());
 			else {
 				aff = mapi_rows_affected(hdl);
 				lid = mapi_get_last_id(hdl);
@@ -1893,7 +1893,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 						     timerHuman());
 				mnstr_printf(toConsole, "\n");
 			} else if (formatter == TIMERformatter)
-				printf("%s\n", timerHuman());
+				mnstr_printf(toConsole, "%s\n", timerHuman());
 			continue;
 		case Q_TRANS:
 			SQLqueryEcho(hdl);
