@@ -89,7 +89,7 @@ enum formatters {
 	CSVformatter,		// render as a comma separate file
 	XMLformatter,		// render as a valid XML document
 	TESTformatter,		// for testing, escape characters
-	TRASHformatter,		// remove the result set 
+	TRASHformatter,		// remove the result set
 	SAMformatter,		// render a SAM result set
 	EXPANDEDformatter	// render as multi-row single record
 };
@@ -126,8 +126,8 @@ static char *pager = 0;		/* use external pager */
 static int rowsperpage = 0;	/* for SQL pagination */
 static int pagewidth = 0;	/* -1: take whatever is necessary, >0: limit */
 static int pagewidthset = 0;	/* whether the user set the width explicitly */
-static int croppedfields = 0;  /* whatever got cropped/truncated */
-static char firstcrop = 1;     /* first time we see cropping/truncation */
+static int croppedfields = 0;	/* whatever got cropped/truncated */
+static char firstcrop = 1;	/* first time we see cropping/truncation */
 
 enum modifiers {
 	NOmodifier,
@@ -267,33 +267,31 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime)
 {
 	timertype t = th - t0;
 
-
-	(void) sqloptimizer;
-	if (timermode == T_CLOCK){
-		if( t / 1000 < 950) {
+	if (timermode == T_CLOCK) {
+		if (t / 1000 < 950) {
 			snprintf(htimbuf, sizeof(htimbuf), "clk: " TTFMT ".%03d ms" , t / 1000, (int) (t % 1000));
-			return(htimbuf);
+			return htimbuf;
 		}
 		t /= 1000;
 		if (t / 1000 < 60) {
 			snprintf(htimbuf, sizeof(htimbuf), "clk: " TTFMT ".%02d sec", t / 1000, (int) ((t % 1000) / 100));
-			return(htimbuf);
+			return htimbuf;
 		}
 		t /= 1000;
 		snprintf(htimbuf, sizeof(htimbuf), "clk: " TTFMT ":%02d min", t / 60, (int) (t % 60));
-		return(htimbuf);
+		return htimbuf;
 	}
 	/* for performance measures we use milliseconds as the base */
-	if (timermode == T_PERF){ 
-		snprintf(htimbuf, sizeof(htimbuf), "clk:%" PRId64 ".%03d sql:%" PRId64 ".%03d opt:%" PRId64 ".%03d run:%" PRId64 ".%03d ms", 
-			 t / 1000, (int)(t % 1000),
-			 sqloptimizer/1000, (int)(sqloptimizer % 1000), 
-			 maloptimizer /1000, (int)(maloptimizer % 1000), 
-			 querytime /1000, (int)(querytime % 1000));
-		return(htimbuf);
+	if (timermode == T_PERF) {
+		snprintf(htimbuf, sizeof(htimbuf), "clk:%" PRId64 ".%03d sql:%" PRId64 ".%03d opt:%" PRId64 ".%03d run:%" PRId64 ".%03d ms",
+			 t / 1000, (int) (t % 1000),
+			 sqloptimizer / 1000, (int) (sqloptimizer % 1000),
+			 maloptimizer / 1000, (int) (maloptimizer % 1000),
+			 querytime / 1000, (int) (querytime % 1000));
+		return htimbuf;
 	}
 	htimbuf[0] = 0;
-	return(htimbuf);
+	return htimbuf;
 }
 
 /* The Mapi library eats away the comment lines, which we need to
@@ -554,7 +552,7 @@ SQLrow(int *len, int *numeric, char **rest, int fields, int trim, char wm)
 	size_t ulen;
 	int *cutafter = malloc(sizeof(int) * fields);
 
-	if (cutafter == NULL){
+	if (cutafter == NULL) {
 		fprintf(stderr,"Malloc for SQLrow failed");
 		exit(2);
 	}
@@ -1353,7 +1351,7 @@ SQLheader(MapiHdl hdl, int *len, int fields, char more)
 		char **names = (char **) malloc(fields * sizeof(char *));
 		int *numeric = (int *) malloc(fields * sizeof(int));
 
-		if (names == NULL || numeric == NULL){
+		if (names == NULL || numeric == NULL) {
 			free(names);
 			free(numeric);
 			fprintf(stderr,"Malloc for SQLheader failed");
@@ -1437,7 +1435,7 @@ SQLrenderer(MapiHdl hdl, char singleinstr)
 	hdr = calloc(fields, sizeof(*hdr));
 	rest = calloc(fields, sizeof(*rest));
 	numeric = calloc(fields, sizeof(*numeric));
-	if(len == NULL || hdr == NULL || rest == NULL || numeric == NULL) {
+	if (len == NULL || hdr == NULL || rest == NULL || numeric == NULL) {
 		free(len);
 		free(hdr);
 		free(rest);
@@ -1762,14 +1760,14 @@ start_pager(stream **saveFD)
 		else {
 			*saveFD = toConsole;
 			/* put | in name to indicate that file should be closed with pclose */
-			if((toConsole = file_wastream(p, "|pager")) == NULL) {
+			if ((toConsole = file_wastream(p, "|pager")) == NULL) {
 				toConsole = *saveFD;
 				*saveFD = NULL;
 				fprintf(stderr, "Starting '%s' failed\n", pager);
 			}
 #ifdef HAVE_ICONV
 			if (encoding != NULL) {
-				if((toConsole = iconv_wstream(toConsole, encoding, "pager")) == NULL) {
+				if ((toConsole = iconv_wstream(toConsole, encoding, "pager")) == NULL) {
 					toConsole = *saveFD;
 					*saveFD = NULL;
 					fprintf(stderr, "Starting '%s' failed\n", pager);
@@ -1811,7 +1809,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 		/* handle errors first */
 		if (mapi_result_error(hdl) != NULL) {
 			mnstr_flush(toConsole);
-			if (formatter == TABLEformatter ) {
+			if (formatter == TABLEformatter) {
 				mapi_noexplain(mid, "");
 			} else {
 				mapi_noexplain(mid, NULL);
@@ -1838,7 +1836,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			if (formatter == RAWformatter ||
 			    formatter == TESTformatter)
 				mnstr_printf(toConsole, "[ %" PRId64 "\t]\n", mapi_rows_affected(hdl));
-			else if (formatter == TRASHformatter){
+			else if (formatter == TRASHformatter) {
 				mapi_next_result(hdl);
 				printf("%s\n", timerHuman(sqloptimizer, maloptimizer, querytime));
 			} else {
@@ -1864,11 +1862,11 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter) {
 				mnstr_printf(toConsole, "operation successful");
-				if (singleinstr &&  timermode != T_NONE)
+				if (singleinstr && timermode != T_NONE)
 					mnstr_printf(toConsole, " (%s)",
 						     timerHuman(sqloptimizer, maloptimizer, querytime));
 				mnstr_printf(toConsole, "\n");
-			} else if (formatter == TRASHformatter){
+			} else if (formatter == TRASHformatter) {
 				mapi_next_result(hdl);
 				printf("%s\n", timerHuman(sqloptimizer, maloptimizer, querytime));
 			}
@@ -1985,7 +1983,7 @@ doRequest(Mapi mid, const char *buf)
 
 	hdl = mapi_query(mid, buf);
 	if (hdl == NULL) {
-		if (formatter == TABLEformatter ) {
+		if (formatter == TABLEformatter) {
 			mapi_noexplain(mid, "");
 		} else {
 			mapi_noexplain(mid, NULL);
@@ -2012,7 +2010,7 @@ doRequest(Mapi mid, const char *buf)
 		break;						\
 	case MERROR:						\
 		/* some error, but try to continue */		\
-		if (formatter == TABLEformatter ) {		\
+		if (formatter == TABLEformatter) {		\
 			mapi_noexplain(mid, "");		\
 		} else {					\
 			mapi_noexplain(mid, NULL);		\
@@ -2027,7 +2025,7 @@ doRequest(Mapi mid, const char *buf)
 		break_or_continue;				\
 	case MTIMEOUT:						\
 		/* lost contact with the server */		\
-		if (formatter == TABLEformatter ) {		\
+		if (formatter == TABLEformatter) {		\
 			mapi_noexplain(mid, "");		\
 		} else {					\
 			mapi_noexplain(mid, NULL);		\
@@ -2274,7 +2272,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, int interactive, int save_history)
 		init_readline(mid, language, save_history);
 		rl.s = fp;
 		rl.buf = NULL;
-		if((fp = callback_stream(&rl, myread, NULL, mydestroy, mnstr_name(fp))) == NULL) {
+		if ((fp = callback_stream(&rl, myread, NULL, mydestroy, mnstr_name(fp))) == NULL) {
 			fprintf(stderr,"Malloc for doFile failed");
 			exit(2);
 		}
@@ -2282,7 +2280,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, int interactive, int save_history)
 	}
 #ifdef HAVE_ICONV
 	if (encoding) {
-		if((fp = iconv_rstream(fp, encoding, mnstr_name(fp))) == NULL) {
+		if ((fp = iconv_rstream(fp, encoding, mnstr_name(fp))) == NULL) {
 			fprintf(stderr,"Malloc failure");
 			exit(2);
 		}
@@ -2297,7 +2295,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, int interactive, int save_history)
 	bufsiz = READBLOCK;
 	buf = malloc(bufsiz);
 
-	if (buf == NULL ){
+	if (buf == NULL) {
 		fprintf(stderr,"Malloc for doFile failed");
 		exit(2);
 	}
@@ -2337,7 +2335,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, int interactive, int save_history)
 			if (buf[length - 1] == '\n')
 				break;
 			newbuf = realloc(buf, bufsiz += READBLOCK);
-			if(newbuf) {
+			if (newbuf) {
 				buf = newbuf;
 			} else {
 				fprintf(stderr,"Malloc failure");
@@ -2421,7 +2419,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, int interactive, int save_history)
 				case 'd': {
 					char hasWildcard = 0;
 					char hasSchema = 0;
-					char wantsSystem = 0; 
+					char wantsSystem = 0;
 					unsigned int x = 0;
 					char *p, *q;
 					char escaped = 0;
@@ -2701,7 +2699,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, int interactive, int save_history)
 					int h;
 					char *nl;
 
-					if( strcmp(line,"\\history") ==0){
+					if (strcmp(line,"\\history") == 0) {
 						for (h = 0; h < history_length; h++) {
 							nl = history_get(h) ? history_get(h)->line : 0;
 							if (nl)
@@ -2775,17 +2773,17 @@ doFile(Mapi mid, stream *fp, bool useinserts, int interactive, int save_history)
 						;
 					if (*line == 0) {
 						mnstr_printf(toConsole, "Current time formatter: ");
-						if( timermode == T_PERF)
+						if (timermode == T_PERF)
 							mnstr_printf(toConsole,"performance\n");
-						if( timermode == T_NONE)
+						if (timermode == T_NONE)
 							mnstr_printf(toConsole,"none\n");
-						if( timermode == T_CLOCK)
+						if (timermode == T_CLOCK)
 							mnstr_printf(toConsole,"clock\n");
-					} else if (strncmp(line,"perf",4) == 0 || strcmp(line,"performance") == 0  ) {
+					} else if (strncmp(line,"perf",4) == 0 || strcmp(line,"performance") == 0) {
 						timermode = T_PERF;
-					} else if (strcmp(line,"none") == 0  ) {
+					} else if (strcmp(line,"none") == 0) {
 						timermode = T_NONE;
-					} else if (strcmp(line,"clock") == 0  ) {
+					} else if (strcmp(line,"clock") == 0) {
 						timermode = T_CLOCK;
 					} else if (*line != '\0') {
 						fprintf(stderr, "warning: invalid argument to -t: %s\n",
@@ -2915,7 +2913,7 @@ set_timezone(Mapi mid)
 			 "SET TIME ZONE INTERVAL '-%02d:%02d' HOUR TO MINUTE",
 			 tzone / 3600, (tzone % 3600) / 60);
 	if ((hdl = mapi_query(mid, buf)) == NULL) {
-		if (formatter == TABLEformatter ) {
+		if (formatter == TABLEformatter) {
 			mapi_noexplain(mid, "");
 		} else {
 			mapi_noexplain(mid, NULL);
@@ -3137,16 +3135,16 @@ main(int argc, char **argv)
 		case 't':
 			showtiming = 1;
 			if (optarg != NULL) {
-				if (strncmp(optarg,"perf",4) == 0 || strcmp(optarg,"performance") == 0  ) {
+				if (strcmp(optarg, "perf") == 0 || strcmp(optarg, "performance") == 0) {
 					timermode = T_PERF;
-				} else if (strcmp(optarg,"none") == 0  ) {
+				} else if (strcmp(optarg,"none") == 0) {
 					timermode = T_NONE;
-				} else if (strcmp(optarg,"clock") == 0  ) {
+				} else if (strcmp(optarg,"clock") == 0) {
 					timermode = T_CLOCK;
 				} else if (*optarg != '\0') {
 					fprintf(stderr, "warning: invalid argument to -t: %s\n",
 						optarg);
-				} 
+				}
 			}
 			break;
 		case 'h':
@@ -3210,7 +3208,7 @@ main(int argc, char **argv)
 			mnstr_printf(toConsole,
 				     "character encoding: %s\n", encoding ? encoding : "utf-8 (default)");
 #endif
-			return(0);
+			return 0;
 		case 'z':
 			settz = 0;
 			break;
@@ -3362,7 +3360,7 @@ main(int argc, char **argv)
 			size_t tolen = factor * fromlen + 1;
 			char *to = malloc(tolen);
 
-			if( to == NULL){
+			if (to == NULL) {
 				fprintf(stderr,"Malloc in main failed");
 				exit(2);
 			}
@@ -3384,7 +3382,7 @@ main(int argc, char **argv)
 					tolen = factor * fromlen + 1;
 					free(command);
 					to = malloc(tolen);
-					if( to == NULL){
+					if (to == NULL) {
 						fprintf(stderr,"Malloc in main failed");
 						exit(2);
 					}
