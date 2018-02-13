@@ -1927,6 +1927,8 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 		else {
 			char *s;
 			switch (formatter) {
+			case TRASHformatter:
+				break;
 			case XMLformatter:
 				XMLrenderer(hdl);
 				break;
@@ -1952,9 +1954,9 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			case EXPANDEDformatter:
 				EXPANDEDrenderer(hdl);
 				break;
-			default: 
-				if ( formatter != TRASHformatter)
-					RAWrenderer(hdl);
+			default:
+				RAWrenderer(hdl);
+				break;
 			}
 			s= timerHuman(sqloptimizer, maloptimizer, querytime);
 			if (*s)
