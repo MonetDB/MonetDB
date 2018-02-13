@@ -256,9 +256,9 @@ timerHumanStop(void)
 }
 
 static enum itimers {
-	T_CLOCK = 0,	// render wallclock time in human readable format
-	T_PERF,		// return detailed performance
-	T_NONE		// don't render the timing information
+	T_NONE = 0,	// don't render the timing information
+	T_CLOCK,	// render wallclock time in human readable format
+	T_PERF		// return detailed performance
 } timermode = T_CLOCK;
 
 static char htimbuf[128];
@@ -2771,18 +2771,18 @@ doFile(Mapi mid, stream *fp, bool useinserts, int interactive, int save_history)
 						;
 					if (*line == 0) {
 						mnstr_printf(toConsole, "Current time formatter: ");
-						if (timermode == T_PERF)
-							mnstr_printf(toConsole,"performance\n");
 						if (timermode == T_NONE)
 							mnstr_printf(toConsole,"none\n");
 						if (timermode == T_CLOCK)
 							mnstr_printf(toConsole,"clock\n");
-					} else if (strncmp(line,"perf",4) == 0 || strcmp(line,"performance") == 0) {
-						timermode = T_PERF;
+						if (timermode == T_PERF)
+							mnstr_printf(toConsole,"performance\n");
 					} else if (strcmp(line,"none") == 0) {
 						timermode = T_NONE;
 					} else if (strcmp(line,"clock") == 0) {
 						timermode = T_CLOCK;
+					} else if (strncmp(line,"perf",4) == 0 || strcmp(line,"performance") == 0) {
+						timermode = T_PERF;
 					} else if (*line != '\0') {
 						fprintf(stderr, "warning: invalid argument to -t: %s\n",
 							line);
@@ -3133,12 +3133,12 @@ main(int argc, char **argv)
 		case 't':
 			showtiming = 1;
 			if (optarg != NULL) {
-				if (strcmp(optarg, "perf") == 0 || strcmp(optarg, "performance") == 0) {
-					timermode = T_PERF;
-				} else if (strcmp(optarg,"none") == 0) {
+				if (strcmp(optarg,"none") == 0) {
 					timermode = T_NONE;
 				} else if (strcmp(optarg,"clock") == 0) {
 					timermode = T_CLOCK;
+				} else if (strcmp(optarg, "perf") == 0 || strcmp(optarg, "performance") == 0) {
+					timermode = T_PERF;
 				} else if (*optarg != '\0') {
 					fprintf(stderr, "warning: invalid argument to -t: %s\n",
 						optarg);
