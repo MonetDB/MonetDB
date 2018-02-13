@@ -88,7 +88,6 @@ enum formatters {
 	TABLEformatter,		// render as a bordered table
 	CSVformatter,		// render as a comma separate file
 	XMLformatter,		// render as a valid XML document
-	JSONformatter,		// render as a valid JSON document
 	TESTformatter,		// for testing, escape characters
 	TRASHformatter,		// remove the result set 
 	SAMformatter,		// render a SAM result set
@@ -1703,8 +1702,6 @@ setFormatter(const char *s)
 		formatter = RAWformatter;
 	} else if (strcmp(s, "xml") == 0) {
 		formatter = XMLformatter;
-	} else if (strcmp(s, "json") == 0) {
-		formatter = JSONformatter;
 	} else if (strcmp(s, "test") == 0) {
 #ifdef _TWO_DIGIT_EXPONENT
 		_set_output_format(_TWO_DIGIT_EXPONENT);
