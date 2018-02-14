@@ -259,12 +259,14 @@ static enum itimers {
 	T_PERF		// return detailed performance
 } timermode = T_CLOCK;
 
+static int timerHumanCalled = 0;
 static void
-timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime)
+timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, int singleinstr, int total)
 {
 	timertype t = th - t0;
 
-	if (timermode == T_CLOCK) {
+	timerHumanCalled = 1;
+	if (timermode == T_CLOCK && (!singleinstr != !total)) { /* (singleinstr XOR total) */
 		if (t / 1000 < 950) {
 			mnstr_printf(toConsole, "clk: %" PRId64 ".%03d ms\n", t / 1000, (int) (t % 1000));
 			return;
@@ -280,11 +282,15 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime)
 	}
 	/* for performance measures we use milliseconds as the base */
 	if (timermode == T_PERF) {
-		mnstr_printf(toConsole, "clk:%" PRId64 ".%03d sql:%" PRId64 ".%03d opt:%" PRId64 ".%03d run:%" PRId64 ".%03d ms\n",
-			 t / 1000, (int) (t % 1000),
-			 sqloptimizer / 1000, (int) (sqloptimizer % 1000),
-			 maloptimizer / 1000, (int) (maloptimizer % 1000),
-			 querytime / 1000, (int) (querytime % 1000));
+		if (!singleinstr != !total) /* (singleinstr XOR total) */
+			mnstr_printf(toConsole, "clk:%" PRId64 ".%03d ", t / 1000, (int) (t % 1000));
+		if (!total)
+			mnstr_printf(toConsole, "sql:%" PRId64 ".%03d opt:%" PRId64 ".%03d run:%" PRId64 ".%03d ",
+				 sqloptimizer / 1000, (int) (sqloptimizer % 1000),
+				 maloptimizer / 1000, (int) (maloptimizer % 1000),
+				 querytime / 1000, (int) (querytime % 1000));
+		if ((!singleinstr != !total) || !total)
+			mnstr_printf(toConsole, "ms\n");
 		return;
 	}
 	return;
@@ -1782,7 +1788,7 @@ end_pager(stream *saveFD)
 #endif
 
 static int
-format_result(Mapi mid, MapiHdl hdl, char singleinstr)
+format_result(Mapi mid, MapiHdl hdl, int singleinstr)
 {
 	MapiMsg rc = MERROR;
 	int64_t aff, lid;
@@ -1797,6 +1803,8 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 #endif
 
 	setWidth();
+
+	timerHumanCalled = 0;
 
 	do {
 		/* handle errors first */
@@ -1830,7 +1838,7 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 			    formatter == TESTformatter)
 				mnstr_printf(toConsole, "[ %" PRId64 "\t]\n", mapi_rows_affected(hdl));
 			else if (formatter == TRASHformatter) {
-				timerHuman(sqloptimizer, maloptimizer, querytime);
+				timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
 			} else {
 				aff = mapi_rows_affected(hdl);
 				lid = mapi_get_last_id(hdl);
@@ -1845,18 +1853,16 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 						     lid);
 				}
 				mnstr_printf(toConsole, "\n");
-				if (singleinstr)
-					timerHuman(sqloptimizer, maloptimizer, querytime);
+				timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
 			}
 			continue;
 		case Q_SCHEMA:
 			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter) {
 				mnstr_printf(toConsole, "operation successful\n");
-				if (singleinstr)
-					timerHuman(sqloptimizer, maloptimizer, querytime);
+				timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
 			} else if (formatter == TRASHformatter) {
-				timerHuman(sqloptimizer, maloptimizer, querytime);
+				timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
 			}
 			continue;
 		case Q_TRANS:
@@ -1943,9 +1949,11 @@ format_result(Mapi mid, MapiHdl hdl, char singleinstr)
 				RAWrenderer(hdl);
 				break;
 			}
-			timerHuman(sqloptimizer, maloptimizer, querytime);
+			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
 		}
 	} while (!mnstr_errnr(toConsole) && (rc = mapi_next_result(hdl)) == 1);
+	if (timerHumanCalled)
+		timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 1);
 	if (mnstr_errnr(toConsole)) {
 		mnstr_clearerr(toConsole);
 		fprintf(stderr, "write error\n");
