@@ -157,8 +157,14 @@ See the section BACKSLASH COMMANDS below.
 \fB\-\-timer\fP\fB=\fP\fItimermode\fP (\fB\-t\fP \fItimermode\fP)
 The \fItimer\fP command controls the format of the time reported for queries.
 The default mode is \fBnone\fP which turns off timing reporting.
-The timer mode \fBclock\fP reports the wall-clock time in a human friendly way.
-The timer mode \fBperformance\fP shows the timing components in millisecond resolution.
+The timer mode \fBclock\fP reports the client-side wall-clock time
+("\fBclk\fP") in a human-friendly format.
+The timer mode \fBperformance\fP reports client-side wall-clock time
+("\fBclk\fP") as well as detailed server-side timings, all in milliseconds
+(ms): the time to parse the SQL query, optimize the logical relational plan
+and create the initial physical (MAL) plan ("\fBsql\fP"); the time to
+optimize the physical (MAL) plan ("\fBopt\fP"); the time to execute the
+physical (MAL) plan ("\fBrun\fP").
 All timings are reported on stderr.
 .br
 \fBNote\fP that the client-measured wall-clock time is reported per query
