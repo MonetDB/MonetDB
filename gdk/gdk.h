@@ -751,7 +751,7 @@ typedef struct {
 	 restricted:2,		/* access privileges */
 	 persistence:1,		/* should the BAT persist on disk? */
 	 role:8,		/* role of the bat */
-	 unused:15;		/* value=0 for now */
+	 unused:15;		/* value=0 for now (sneakily used by mat.c) */
 	int sharecnt;		/* incoming view count */
 
 	/* delta status administration */
@@ -1362,7 +1362,7 @@ gdk_export int BATgetaccess(BAT *b);
 #define PERSISTENT		0
 #define TRANSIENT		1
 #define LOG_DIR			2
-#define SHARED_LOG_DIR	3
+#define SHARED_LOG_DIR		3
 
 #define BAT_WRITE		0	/* all kinds of access allowed */
 #define BAT_READ		1	/* only read-access allowed */
@@ -2572,11 +2572,15 @@ gdk_export void BATassertProps(BAT *b);
 gdk_export BAT *VIEWcreate(oid seq, BAT *b);
 gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 
-#define ALIGNinp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ|BAT_APPEND,e); } while (0)
-#define ALIGNapp(x,y,f,e)	do {if (!(f)) VIEWchk(x,y,BAT_READ,e); } while (0)
-
-#define BAThrestricted(b) ((b)->batRestricted)
-#define BATtrestricted(b) (VIEWtparent(b) ? BBP_cache(VIEWtparent(b))->batRestricted : (b)->batRestricted)
+#define ALIGNapp(x, y, f, e)						\
+	do {								\
+		if (!(f) && ((x)->batRestricted == BAT_READ ||		\
+			     (x)->batSharecnt > 0)) {			\
+			GDKerror("%s: access denied to %s, aborting.\n", \
+				 (y), BATgetId(x));			\
+			return (e);					\
+		}							\
+	} while (0)
 
 /* The batRestricted field indicates whether a BAT is readonly.
  * we have modes: BAT_WRITE  = all permitted
@@ -2584,14 +2588,9 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  *                BAT_READ   = read-only
  * VIEW bats are always mapped read-only.
  */
-#define	VIEWchk(x,y,z,e)						\
-	do {								\
-		if ((((x)->batRestricted & (z)) != 0) | ((x)->batSharecnt > 0)) { \
-			GDKerror("%s: access denied to %s, aborting.\n", \
-				 (y), BATgetId(x));			\
-			return (e);					\
-		}							\
-	} while (0)
+
+#define BAThrestricted(b) ((b)->batRestricted)
+#define BATtrestricted(b) (VIEWtparent(b) ? BBP_cache(VIEWtparent(b))->batRestricted : (b)->batRestricted)
 
 /* the parentid in a VIEW is correct for the normal view. We must
  * correct for the reversed view.

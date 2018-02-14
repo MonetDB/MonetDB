@@ -2933,7 +2933,7 @@ bm_commit(logger *lg)
 			return GDK_FAIL;
 		}
 
-		assert(lb->batRestricted > BAT_WRITE);
+		assert(lb->batRestricted != BAT_WRITE);
 		logbat_destroy(lb);
 
 		if (lg->debug & 1)

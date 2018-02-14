@@ -1150,7 +1150,12 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 
 	/* uncommitted BUN elements */
 
-	ALIGNinp(b, "BUNinplace", force, GDK_FAIL);	/* zap alignment info */
+	/* zap alignment info */
+	if (!force && (b->batRestricted != BAT_WRITE || b->batSharecnt > 0)) {
+		GDKerror("BUNinplace: access denied to %s, aborting.\n",
+			 BATgetId(b));
+		return GDK_FAIL;
+	}
 	if (b->tnil &&
 	    ATOMcmp(b->ttype, BUNtail(bi, p), ATOMnilptr(b->ttype)) == 0 &&
 	    ATOMcmp(b->ttype, t, ATOMnilptr(b->ttype)) != 0) {
