@@ -275,7 +275,7 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, int si
 	 */
 
 	if (timermode == T_CLOCK && (!singleinstr != !total)) { /* (singleinstr XOR total) */
-		if (t / 1000 < 950) {
+		if (t / 1000 < 1000) {
 			mnstr_printf(toConsole, "clk: %" PRId64 ".%03d ms\n", t / 1000, (int) (t % 1000));
 			return;
 		}
@@ -285,7 +285,12 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, int si
 			return;
 		}
 		t /= 1000;
-		mnstr_printf(toConsole, "clk: %" PRId64 ":%02d min\n", t / 60, (int) (t % 60));
+		if (t / 1000 < 60) {
+			mnstr_printf(toConsole, "clk: %" PRId64 ":%02d min\n", t / 60, (int) (t % 60));
+			return;
+		}
+		t /= 60;
+		mnstr_printf(toConsole, "clk: %" PRId64 ":%02d h\n", t / 60, (int) (t % 60));
 		return;
 	}
 	/* for performance measures we use milliseconds as the base */
