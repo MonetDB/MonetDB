@@ -159,6 +159,7 @@ The \fItimer\fP command controls the format of the time reported for queries.
 The default mode is \fBnone\fP which turns off timing reporting.
 The timer mode \fBclock\fP reports the wall-clock time in a human friendly way.
 The timer mode \fBperformance\fP shows the timing components in millisecond resolution.
+All timings are reported on stderr.
 .br
 \fBNote\fP that the client-measured wall-clock time is reported per query
 \fBonly\fP when options \fB--interactive\fP or \fB--echo\fP are used,
@@ -167,12 +168,6 @@ script to the server. Otherwise, when mclients send the SQL script in
 large(r) batch(es), only the total wall-clock time per batch is measured and
 reported. The server-measured detailed performance timings are alsways
 measured and reported per query.
-.br
-\fBNote\fP that timermode \fBnone\fP (\fB--timer=none\fP) should be used with formatting options
-.B csv,
-.B tab,
-.B xml,
-in order to not have the output(-format) compromized/invalidated by the extra timing output.
 .TP
 \fB\-\-user\fP\fB=\fP\fIuser\fP (\fB\-u\fP \fIuser\fP)
 Specify the user to connect as.
@@ -211,12 +206,6 @@ In addition to plain \fBcsv\fP, two other forms are possible.
 \fBcsv=\fP\fIc\fP uses \fIc\fP as column separator; \fBcsv+\fP\fIc\fP
 uses \fIc\fP as column separator and produces a single header line in
 addition to the data.
-.br
-\fBNote\fP that timermode \fBnone\fP (\fB--timer=none\fP) should be used with formatting options
-.B csv,
-.B tab,
-.B xml,
-in order to not have the output(-format) compromized/invalidated by the extra timing output.
 .TP
 \fB\-\-echo\fP (\fB\-e\fP)
 Echo the query.

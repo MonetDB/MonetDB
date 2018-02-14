@@ -275,35 +275,47 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, int si
 	 */
 
 	if (timermode == T_CLOCK && (!singleinstr != !total)) { /* (singleinstr XOR total) */
+		fflush(stderr);
+		mnstr_flush(toConsole);
 		if (t / 1000 < 1000) {
-			mnstr_printf(toConsole, "clk: %" PRId64 ".%03d ms\n", t / 1000, (int) (t % 1000));
+			fprintf(stderr, "clk: %" PRId64 ".%03d ms\n", t / 1000, (int) (t % 1000));
+			fflush(stderr);
 			return;
 		}
 		t /= 1000;
 		if (t / 1000 < 60) {
-			mnstr_printf(toConsole, "clk: %" PRId64 ".%03d sec\n", t / 1000, (int) (t % 1000));
+			fprintf(stderr, "clk: %" PRId64 ".%03d sec\n", t / 1000, (int) (t % 1000));
+			fflush(stderr);
 			return;
 		}
 		t /= 1000;
 		if (t / 60 < 60) {
-			mnstr_printf(toConsole, "clk: %" PRId64 ":%02d min\n", t / 60, (int) (t % 60));
+			fprintf(stderr, "clk: %" PRId64 ":%02d min\n", t / 60, (int) (t % 60));
+			fflush(stderr);
 			return;
 		}
 		t /= 60;
-		mnstr_printf(toConsole, "clk: %" PRId64 ":%02d h\n", t / 60, (int) (t % 60));
+		fprintf(stderr, "clk: %" PRId64 ":%02d h\n", t / 60, (int) (t % 60));
+		fflush(stderr);
 		return;
 	}
 	/* for performance measures we use milliseconds as the base */
 	if (timermode == T_PERF) {
+		if ((!singleinstr != !total) || !total) {
+			fflush(stderr);
+			mnstr_flush(toConsole);
+		}
 		if (!singleinstr != !total) /* (singleinstr XOR total) */
-			mnstr_printf(toConsole, "clk:%" PRId64 ".%03d ", t / 1000, (int) (t % 1000));
+			fprintf(stderr, "clk:%" PRId64 ".%03d ", t / 1000, (int) (t % 1000));
 		if (!total)
-			mnstr_printf(toConsole, "sql:%" PRId64 ".%03d opt:%" PRId64 ".%03d run:%" PRId64 ".%03d ",
+			fprintf(stderr, "sql:%" PRId64 ".%03d opt:%" PRId64 ".%03d run:%" PRId64 ".%03d ",
 				 sqloptimizer / 1000, (int) (sqloptimizer % 1000),
 				 maloptimizer / 1000, (int) (maloptimizer % 1000),
 				 querytime / 1000, (int) (querytime % 1000));
-		if ((!singleinstr != !total) || !total)
-			mnstr_printf(toConsole, "ms\n");
+		if ((!singleinstr != !total) || !total) {
+			fprintf(stderr, "ms\n");
+			fflush(stderr);
+		}
 		return;
 	}
 	return;
