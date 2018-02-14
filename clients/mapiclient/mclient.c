@@ -1712,7 +1712,6 @@ setFormatter(const char *s)
 		_set_output_format(_TWO_DIGIT_EXPONENT);
 #endif
 		formatter = TESTformatter;
-		timermode = T_NONE;
 	} else if (strcmp(s, "trash") == 0) {
 		formatter = TRASHformatter;
 	} else if (strcmp(s, "sam") == 0) {
