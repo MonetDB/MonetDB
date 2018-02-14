@@ -1960,6 +1960,11 @@ format_result(Mapi mid, MapiHdl hdl, int singleinstr)
 			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
 		}
 	} while (!mnstr_errnr(toConsole) && (rc = mapi_next_result(hdl)) == 1);
+	/*
+	 * in case we called timerHuman() in the loop above with "total == 0",
+	 * call is again with "total == 1" to get the total wall-clock time
+	 * in case "singleinstr == 0 (false).
+	 */
 	if (timerHumanCalled)
 		timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 1);
 	if (mnstr_errnr(toConsole)) {
