@@ -1131,7 +1131,6 @@ TESTrenderer(MapiHdl hdl)
 	char *sep;
 	int i;
 
-	SQLqueryEcho(hdl);
 	while (!mnstr_errnr(toConsole) && (reply = fetch_line(hdl)) != 0) {
 		if (*reply != '[') {
 			if (*reply == '=')
@@ -1271,7 +1270,6 @@ RAWrenderer(MapiHdl hdl)
 {
 	char *line;
 
-	SQLqueryEcho(hdl);
 	while ((line = fetch_line(hdl)) != 0) {
 		if (*line == '=')
 			line++;
@@ -1359,7 +1357,6 @@ SAMrenderer(MapiHdl hdl)
 static void
 SQLheader(MapiHdl hdl, int *len, int fields, char more)
 {
-	SQLqueryEcho(hdl);
 	SQLseparator(len, fields, '-');
 	if (mapi_get_name(hdl, 0)) {
 		int i;
@@ -1864,6 +1861,7 @@ format_result(Mapi mid, MapiHdl hdl, int singleinstr)
 				}
 				mnstr_printf(toConsole, "\n");
 			}
+
 			/* select which formatters show timing info (if requested) */
 			switch (formatter) {
 			/* these formatters never produce timing output */
@@ -1887,6 +1885,7 @@ format_result(Mapi mid, MapiHdl hdl, int singleinstr)
 			if (formatter == TABLEformatter) {
 				mnstr_printf(toConsole, "operation successful\n");
 			}
+
 			/* select which formatters show timing info (if requested) */
 			switch (formatter) {
 			/* these formatters never produce timing output */
@@ -1957,6 +1956,24 @@ format_result(Mapi mid, MapiHdl hdl, int singleinstr)
 		if (debugMode())
 			RAWrenderer(hdl);
 		else {
+			/* select which formatters echo the query (if requested) */
+			switch (formatter) {
+			/* these formatters never echo the query */
+			case NOformatter:
+			case CSVformatter:
+			case XMLformatter:
+			case SAMformatter:
+			case TRASHformatter:
+			case EXPANDEDformatter:
+				break;
+			/* these formatters echo the query when requested */
+			case RAWformatter:
+			case TESTformatter:
+			case TABLEformatter:
+				SQLqueryEcho(hdl);
+				break;
+			}
+
 			switch (formatter) {
 			case TRASHformatter:
 				break;
@@ -1989,6 +2006,7 @@ format_result(Mapi mid, MapiHdl hdl, int singleinstr)
 				RAWrenderer(hdl);
 				break;
 			}
+
 			/* select which formatters show timing info (if requested) */
 			switch (formatter) {
 			/* these formatters never produce timing output */
