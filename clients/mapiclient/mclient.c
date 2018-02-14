@@ -2884,7 +2884,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, int interactive, int save_history)
 			assert(prepno < 100);
 		}
 
-		rc = format_result(mid, hdl, interactive);
+		rc = format_result(mid, hdl, interactive || echoquery);
 
 		if (rc == MMORE && (line != NULL || mapi_query_done(hdl) != MOK))
 			continue;	/* get more data */
