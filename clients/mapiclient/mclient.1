@@ -189,8 +189,9 @@ The possible values are
 .BR csv ,
 .BR tab ,
 .BR raw ,
+.BR xml ,
 and
-.BR xml .
+.BR trash .
 .B csv
 is comma-separated values,
 .B tab
@@ -205,9 +206,13 @@ are clearly shown,
 and
 .B x
 are synonyms and are another pretty format meant for human consumption
-where column values are printed in full and below each other, and
+where column values are printed in full and below each other,
 .B xml
-is a valid (in the XML sense) document.
+is a valid (in the XML sense) document,
+and
+.B trash
+does not render any output, enabling performance measurements free of any
+output rendering/serialization costs.
 In addition to plain \fBcsv\fP, two other forms are possible.
 \fBcsv=\fP\fIc\fP uses \fIc\fP as column separator; \fBcsv+\fP\fIc\fP
 uses \fIc\fP as column separator and produces a single header line in
