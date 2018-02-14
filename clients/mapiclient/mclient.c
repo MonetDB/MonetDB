@@ -257,7 +257,7 @@ static enum itimers {
 	T_NONE = 0,	// don't render the timing information
 	T_CLOCK,	// render wallclock time in human readable format
 	T_PERF		// return detailed performance
-} timermode = T_CLOCK;
+} timermode = T_NONE;
 
 static int timerHumanCalled = 0;
 static void
@@ -2213,7 +2213,7 @@ showCommands(void)
 		mnstr_printf(toConsole, "\\a      - disable auto commit\n");
 	}
 	mnstr_printf(toConsole, "\\e      - echo the query in sql formatting mode\n");
-	mnstr_printf(toConsole, "\\t      - set the timer {clock,performance,none}\n");
+	mnstr_printf(toConsole, "\\t      - set the timer {none,clock,performance} (none is default)\n");
 	mnstr_printf(toConsole, "\\f      - format using a built-in renderer {csv,tab,raw,sql,xml,trash}\n");
 	mnstr_printf(toConsole, "\\w#     - set maximal page width (-1=unlimited, 0=terminal width, >0=limit to num)\n");
 	mnstr_printf(toConsole, "\\r#     - set maximum rows per page (-1=raw)\n");
@@ -2999,7 +2999,7 @@ usage(const char *prog, int xit)
 	fprintf(stderr, " -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml,trash}\n");
 	fprintf(stderr, " -H          | --history          load/save cmdline history (default off)\n");
 	fprintf(stderr, " -i          | --interactive      interpret `\\' commands on stdin\n");
-	fprintf(stderr, " -t          | --timer=format     use time formatting {clock,performance,none}\n");
+	fprintf(stderr, " -t          | --timer=format     use time formatting {none,clock,performance} (none is default)\n");
 	fprintf(stderr, " -l language | --language=lang    {sql,mal}\n");
 	fprintf(stderr, " -L logfile  | --log=logfile      save client/server interaction\n");
 	fprintf(stderr, " -s stmt     | --statement=stmt   run single statement\n");
