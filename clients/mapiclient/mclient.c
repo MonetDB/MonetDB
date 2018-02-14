@@ -266,6 +266,14 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, int si
 	timertype t = th - t0;
 
 	timerHumanCalled = 1;
+
+	/*
+	 * report only the times we do actually measure:
+	 * - client-measured wall-clock time per query only when executing indivual queries,
+	 *   otherwise only the total wall-clock time at the end of a batch;
+	 * - server-measured detailed performance measures only per query.
+	 */
+
 	if (timermode == T_CLOCK && (!singleinstr != !total)) { /* (singleinstr XOR total) */
 		if (t / 1000 < 950) {
 			mnstr_printf(toConsole, "clk: %" PRId64 ".%03d ms\n", t / 1000, (int) (t % 1000));
