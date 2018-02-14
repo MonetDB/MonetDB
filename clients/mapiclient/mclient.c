@@ -1843,11 +1843,9 @@ format_result(Mapi mid, MapiHdl hdl, int singleinstr)
 		case Q_UPDATE:
 			SQLqueryEcho(hdl);
 			if (formatter == RAWformatter ||
-			    formatter == TESTformatter)
+			    formatter == TESTformatter) {
 				mnstr_printf(toConsole, "[ %" PRId64 "\t]\n", mapi_rows_affected(hdl));
-			else if (formatter == TRASHformatter) {
-				timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
-			} else {
+			} else if (formatter != TRASHformatter) {
 				aff = mapi_rows_affected(hdl);
 				lid = mapi_get_last_id(hdl);
 				mnstr_printf(toConsole,
@@ -1861,16 +1859,46 @@ format_result(Mapi mid, MapiHdl hdl, int singleinstr)
 						     lid);
 				}
 				mnstr_printf(toConsole, "\n");
+			}
+			/* select which formatters show timing info (if requested) */
+			switch (formatter) {
+			/* these formatters never produce timing output */
+			case RAWformatter:
+			case TESTformatter:
+				break;
+			/* these formatters produce timing output when requested */
+			case NOformatter:
+			case CSVformatter:
+			case XMLformatter:
+			case SAMformatter:
+			case TRASHformatter:
+			case TABLEformatter:
+			case EXPANDEDformatter:
 				timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
+				break;
 			}
 			continue;
 		case Q_SCHEMA:
 			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter) {
 				mnstr_printf(toConsole, "operation successful\n");
+			}
+			/* select which formatters show timing info (if requested) */
+			switch (formatter) {
+			/* these formatters never produce timing output */
+			case NOformatter:
+			case RAWformatter:
+			case CSVformatter:
+			case XMLformatter:
+			case SAMformatter:
+			case TESTformatter:
+			case EXPANDEDformatter:
+				break;
+			/* these formatters produce timing output when requested */
+			case TRASHformatter:
+			case TABLEformatter:
 				timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
-			} else if (formatter == TRASHformatter) {
-				timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
+				break;
 			}
 			continue;
 		case Q_TRANS:
@@ -1957,7 +1985,23 @@ format_result(Mapi mid, MapiHdl hdl, int singleinstr)
 				RAWrenderer(hdl);
 				break;
 			}
-			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
+			/* select which formatters show timing info (if requested) */
+			switch (formatter) {
+			/* these formatters never produce timing output */
+			case NOformatter:
+				break;
+			/* these formatters produce timing output when requested */
+			case RAWformatter:
+			case CSVformatter:
+			case XMLformatter:
+			case SAMformatter:
+			case TESTformatter:
+			case TRASHformatter:
+			case TABLEformatter:
+			case EXPANDEDformatter:
+				timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
+				break;
+			}
 		}
 	} while (!mnstr_errnr(toConsole) && (rc = mapi_next_result(hdl)) == 1);
 	/*
