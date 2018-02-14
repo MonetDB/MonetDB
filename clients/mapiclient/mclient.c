@@ -1875,48 +1875,14 @@ format_result(Mapi mid, MapiHdl hdl, int singleinstr)
 				}
 				mnstr_printf(toConsole, "\n");
 			}
-
-			/* select which formatters show timing info (if requested) */
-			switch (formatter) {
-			/* these formatters never produce timing output */
-			case RAWformatter:
-			case TESTformatter:
-				break;
-			/* these formatters produce timing output when requested */
-			case NOformatter:
-			case CSVformatter:
-			case XMLformatter:
-			case SAMformatter:
-			case TRASHformatter:
-			case TABLEformatter:
-			case EXPANDEDformatter:
-				timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
-				break;
-			}
+			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
 			continue;
 		case Q_SCHEMA:
 			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter) {
 				mnstr_printf(toConsole, "operation successful\n");
 			}
-
-			/* select which formatters show timing info (if requested) */
-			switch (formatter) {
-			/* these formatters never produce timing output */
-			case NOformatter:
-			case RAWformatter:
-			case CSVformatter:
-			case XMLformatter:
-			case SAMformatter:
-			case TESTformatter:
-			case EXPANDEDformatter:
-				break;
-			/* these formatters produce timing output when requested */
-			case TRASHformatter:
-			case TABLEformatter:
-				timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
-				break;
-			}
+			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
 			continue;
 		case Q_TRANS:
 			SQLqueryEcho(hdl);
@@ -1924,6 +1890,7 @@ format_result(Mapi mid, MapiHdl hdl, int singleinstr)
 				mnstr_printf(toConsole,
 					     "auto commit mode: %s\n",
 					     mapi_get_autocommit(mid) ? "on" : "off");
+			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
 			continue;
 		case Q_PREPARE:
 			SQLqueryEcho(hdl);
@@ -1932,6 +1899,7 @@ format_result(Mapi mid, MapiHdl hdl, int singleinstr)
 					     "execute prepared statement "
 					     "using: EXEC %d(...)\n",
 					     mapi_get_tableid(hdl));
+			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
 			break;
 		case Q_TABLE:
 			break;
@@ -1970,23 +1938,7 @@ format_result(Mapi mid, MapiHdl hdl, int singleinstr)
 		if (debugMode())
 			RAWrenderer(hdl);
 		else {
-			/* select which formatters echo the query (if requested) */
-			switch (formatter) {
-			/* these formatters never echo the query */
-			case NOformatter:
-			case CSVformatter:
-			case XMLformatter:
-			case SAMformatter:
-			case TRASHformatter:
-			case EXPANDEDformatter:
-				break;
-			/* these formatters echo the query when requested */
-			case RAWformatter:
-			case TESTformatter:
-			case TABLEformatter:
-				SQLqueryEcho(hdl);
-				break;
-			}
+			SQLqueryEcho(hdl);
 
 			switch (formatter) {
 			case TRASHformatter:
@@ -2021,23 +1973,7 @@ format_result(Mapi mid, MapiHdl hdl, int singleinstr)
 				break;
 			}
 
-			/* select which formatters show timing info (if requested) */
-			switch (formatter) {
-			/* these formatters never produce timing output */
-			case NOformatter:
-				break;
-			/* these formatters produce timing output when requested */
-			case RAWformatter:
-			case CSVformatter:
-			case XMLformatter:
-			case SAMformatter:
-			case TESTformatter:
-			case TRASHformatter:
-			case TABLEformatter:
-			case EXPANDEDformatter:
-				timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
-				break;
-			}
+			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
 		}
 	} while (!mnstr_errnr(toConsole) && (rc = mapi_next_result(hdl)) == 1);
 	/*
