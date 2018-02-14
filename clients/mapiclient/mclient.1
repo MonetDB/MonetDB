@@ -165,6 +165,14 @@ The timer mode \fBperformance\fP shows the timing components in millisecond reso
 .B tab,
 .B xml,
 in order to not have the output(-format) compromized/invalidated by the extra timing output.
+.br
+\fBNote\fP that the client-measured wall-clock time is reported per query
+\fBonly\fP when options \fB--interactive\fP or \fB--echo\fP are used,
+because only then does mclient send indivual lines (statements) of the SQL
+script to the server. Otherwise, when mclients send the SQL script in
+large(r) batch(es), only the total wall-clock time per batch is measured and
+reported. The server-measured detailed performance timings are alsways
+measured and reported per query.
 .TP
 \fB\-\-user\fP\fB=\fP\fIuser\fP (\fB\-u\fP \fIuser\fP)
 Specify the user to connect as.
