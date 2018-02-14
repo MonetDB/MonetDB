@@ -274,7 +274,9 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, int si
 	 * - server-measured detailed performance measures only per query.
 	 */
 
-	if (timermode == T_CLOCK && (!singleinstr != !total)) { /* (singleinstr XOR total) */
+	/* (!singleinstr != !total) is C for ((singleinstr != 0) XOR (total != 0)) */
+	if (timermode == T_CLOCK && (!singleinstr != !total)) {
+		/* print wall-clock in "human-friendly" format */
 		fflush(stderr);
 		mnstr_flush(toConsole);
 		if (t / 1000 < 1000) {
@@ -299,13 +301,13 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, int si
 		fflush(stderr);
 		return;
 	}
-	/* for performance measures we use milliseconds as the base */
 	if (timermode == T_PERF) {
+		/* for performance measures we use milliseconds as the base */
 		if ((!singleinstr != !total) || !total) {
 			fflush(stderr);
 			mnstr_flush(toConsole);
 		}
-		if (!singleinstr != !total) /* (singleinstr XOR total) */
+		if (!singleinstr != !total)
 			fprintf(stderr, "clk:%" PRId64 ".%03d ", t / 1000, (int) (t % 1000));
 		if (!total)
 			fprintf(stderr, "sql:%" PRId64 ".%03d opt:%" PRId64 ".%03d run:%" PRId64 ".%03d ",
