@@ -301,12 +301,10 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, int si
 		fflush(stderr);
 		return;
 	}
-	if (timermode == T_PERF) {
+	if (timermode == T_PERF && ((!singleinstr != !total) || !total)) {
 		/* for performance measures we use milliseconds as the base */
-		if ((!singleinstr != !total) || !total) {
-			fflush(stderr);
-			mnstr_flush(toConsole);
-		}
+		fflush(stderr);
+		mnstr_flush(toConsole);
 		if (!total)
 			fprintf(stderr, "sql:%" PRId64 ".%03d opt:%" PRId64 ".%03d run:%" PRId64 ".%03d ",
 				 sqloptimizer / 1000, (int) (sqloptimizer % 1000),
@@ -314,10 +312,8 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, int si
 				 querytime / 1000, (int) (querytime % 1000));
 		if (!singleinstr != !total)
 			fprintf(stderr, "clk:%" PRId64 ".%03d ", t / 1000, (int) (t % 1000));
-		if ((!singleinstr != !total) || !total) {
-			fprintf(stderr, "ms\n");
-			fflush(stderr);
-		}
+		fprintf(stderr, "ms\n");
+		fflush(stderr);
 		return;
 	}
 	return;
