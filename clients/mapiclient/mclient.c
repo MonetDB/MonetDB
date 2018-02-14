@@ -281,7 +281,7 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, int si
 		}
 		t /= 1000;
 		if (t / 1000 < 60) {
-			mnstr_printf(toConsole, "clk: %" PRId64 ".%02d sec\n", t / 1000, (int) ((t % 1000) / 100));
+			mnstr_printf(toConsole, "clk: %" PRId64 ".%03d sec\n", t / 1000, (int) (t % 1000));
 			return;
 		}
 		t /= 1000;
