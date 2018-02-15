@@ -22,4 +22,5 @@ count_from_commented_function_signatures.Bug-6542
 HAVE_NETCDF?truncate_sys_netcdf_tables.Bug-6543
 HAVE_SAMTOOLS?truncate_bam_tables.Bug-6543
 truncate_sys_tables.Bug-6543
+truncate_empty_table.Bug-6544
 
