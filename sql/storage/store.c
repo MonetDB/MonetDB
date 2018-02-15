@@ -1294,6 +1294,7 @@ create_sql_table_with_id(sql_allocator *sa, int id, const char *name, sht type, 
 	t->sz = COLSIZE;
 	t->cleared = 0;
 	t->s = NULL;
+	t->part = NULL;
 	return t;
 }
 

@@ -163,7 +163,7 @@ alter_table_set_access(mvc *sql, char *sname, char *tname, int access)
 	if (s)
 		t = mvc_bind_table(sql, s, tname);
 	if (t) {
-		if (t->type == tt_merge_table)
+		if (isMergeTable(t))
 			throw(SQL,"sql.alter_table_set_access",SQLSTATE(42S02) "ALTER TABLE: read only MERGE TABLES are not supported");
 		if (t->access != access) {
 			if (access && table_has_updates(sql->session->tr, t))

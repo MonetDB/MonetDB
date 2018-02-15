@@ -331,10 +331,12 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 	nt = sql_trans_create_table(sql->session->tr, s, t->base.name, t->query, t->type, t->system, temp, t->commit_action, t->sz);
 
 	for (n = t->columns.set->h; n; n = n->next) {
-		sql_column *c = n->data;
-		if (mvc_copy_column(sql, nt, c) == NULL)
-			throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s conflicts", s->base.name, t->base.name, c->base.name);
+		sql_column *c = n->data, *copied = mvc_copy_column(sql, nt, c);
 
+		if (copied == NULL)
+			throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s conflicts", s->base.name, t->base.name, c->base.name);
+		if(c == t->part)
+			nt->part = copied;
 	}
 	if (t->idxs.set) {
 		for (n = t->idxs.set->h; n; n = n->next) {

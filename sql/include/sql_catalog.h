@@ -103,6 +103,10 @@
 #define EXCLUDE_TIES 3
 #define EXCLUDE_NO_OTHERS 4
 
+#define PARTITION_NONE  0
+#define PARTITION_RANGE 1
+#define PARTITION_LIST  2
+
 #define cur_user 1
 #define cur_role 2
 
@@ -122,7 +126,9 @@ typedef enum temp_t {
 	SQL_MERGE_TABLE = 4,
 	SQL_STREAM = 5,
 	SQL_REMOTE = 6,
-	SQL_REPLICA_TABLE = 7
+	SQL_REPLICA_TABLE = 7,
+	SQL_MERGE_LIST_PARTITION = 8,
+	SQL_MERGE_RANGE_PARTITION = 9
 } temp_t;
 
 typedef enum comp_type {
@@ -478,12 +484,14 @@ typedef enum table_types {
 	tt_merge_table = 3,	/* multiple tables form one table */
 	tt_stream = 4,		/* stream */
 	tt_remote = 5,		/* stored on a remote server */
-	tt_replica_table = 6	/* multiple replica of the same table */
+	tt_replica_table = 6,	/* multiple replica of the same table */
+	tt_list_partition = 7,
+	tt_range_partition = 8
 } table_types;
 
 #define isTable(x) 	  (x->type==tt_table)
 #define isView(x)  	  (x->type==tt_view)
-#define isMergeTable(x)   (x->type==tt_merge_table)
+#define isMergeTable(x)   (x->type==tt_merge_table || x->type==tt_list_partition || x->type==tt_range_partition)
 #define isStream(x)  	  (x->type==tt_stream)
 #define isRemote(x)  	  (x->type==tt_remote)
 #define isReplicaTable(x) (x->type==tt_replica_table)
@@ -497,6 +505,13 @@ typedef enum table_types {
 typedef struct sql_part {
 	sql_base base;
 	struct sql_table *t; /* cached value */
+	union {
+		bat values;
+		struct sql_range {
+			ptr *minvalue;
+			ptr *maxvalue;
+		} range;
+	};
 } sql_part;
 
 typedef struct sql_table {
@@ -522,6 +537,7 @@ typedef struct sql_table {
 	struct sql_schema *s;
 	struct sql_table *p;	/* The table is part of this merge table */
 	struct sql_table *po;	/* the outer transactions table */
+	struct sql_column *part; /* if it is partitioned on a column */
 } sql_table;
 
 typedef struct res_col {

@@ -187,8 +187,10 @@ mvc_create_table_as_subquery( mvc *sql, sql_rel *sq, sql_schema *s, const char *
 {
 	int tt =(temp == SQL_REMOTE)?tt_remote:
 		(temp == SQL_STREAM)?tt_stream:
-	        (temp == SQL_MERGE_TABLE)?tt_merge_table:
-	        (temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
+		(temp == SQL_MERGE_TABLE)?tt_merge_table:
+		(temp == SQL_REPLICA_TABLE)?tt_replica_table:
+		(temp == SQL_MERGE_LIST_PARTITION)?tt_list_partition:
+		(temp == SQL_MERGE_RANGE_PARTITION)?tt_range_partition:tt_table;
 
 	sql_table *t = mvc_create_table(sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
 	if (as_subquery( sql, t, sq, column_spec, "CREATE TABLE") != 0)
@@ -895,8 +897,28 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 	return res;
 }
 
+static int
+create_partition_column(mvc *sql, int tt, dlist* partition, sql_table *t) {
+	if((tt == tt_list_partition || tt == tt_range_partition) && partition) {
+		str colname = partition->h->next->data.sval;
+		node *n;
+		for (n = t->columns.set->h; n ; n = n->next) {
+			sql_column *col = n->data;
+			if(strcmp(col->base.name, colname)) {
+				t->part = col;
+				break;
+			}
+		}
+		if(!t->part) {
+			sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: the partition column '%s' is not part of the table", colname);
+			return SQL_ERR;
+		}
+	}
+	return SQL_OK;
+}
+
 sql_rel *
-rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const char *name, symbol *table_elements_or_subquery, int commit_action, const char *loc, int if_not_exists)
+rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const char *name, symbol *table_elements_or_subquery, int commit_action, const char *loc, int if_not_exists, dlist* partition)
 {
 	sql_schema *s = NULL;
 
@@ -905,8 +927,10 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 	int create = (!instantiate && !deps);
 	int tt = (temp == SQL_REMOTE)?tt_remote:
 		 (temp == SQL_STREAM)?tt_stream:
-	         (temp == SQL_MERGE_TABLE)?tt_merge_table:
-	         (temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
+		 (temp == SQL_MERGE_TABLE)?tt_merge_table:
+		 (temp == SQL_REPLICA_TABLE)?tt_replica_table:
+		 (temp == SQL_MERGE_LIST_PARTITION)?tt_list_partition:
+		 (temp == SQL_MERGE_RANGE_PARTITION)?tt_range_partition:tt_table;
 
 	(void)create;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
@@ -961,6 +985,10 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 			if (res == SQL_ERR) 
 				return NULL;
 		}
+
+		if(create_partition_column(sql, tt, partition, t) != SQL_OK)
+			return NULL;
+
 		temp = (tt == tt_table)?temp:SQL_PERSIST;
 		return rel_table(sql, DDL_CREATE_TABLE, sname, t, temp);
 	} else { /* [col name list] as subquery with or without data */
@@ -976,14 +1004,18 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 		if (!sq)
 			return NULL;
 
-		if ((tt == tt_merge_table || tt == tt_remote || tt == tt_replica_table) && with_data)
-			return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: cannot create %s table 'with data'", tt == tt_merge_table?"MERGE TABLE":tt == tt_remote?"REMOTE TABLE":"REPLICA TABLE");
+		if ((tt == tt_merge_table || tt == tt_list_partition || tt == tt_range_partition || tt == tt_remote || tt == tt_replica_table) && with_data)
+			return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: cannot create %s table 'with data'",
+				tt == tt_merge_table?"MERGE TABLE":tt == tt_remote?"REMOTE TABLE":tt == tt_list_partition?"LIST PARTITION TABLE":tt == tt_range_partition?"RANGE PARTITION TABLE":"REPLICA TABLE");
 
 		/* create table */
 		if ((t = mvc_create_table_as_subquery( sql, sq, s, name, column_spec, temp, commit_action)) == NULL) { 
 			rel_destroy(sq);
 			return NULL;
 		}
+
+		if(create_partition_column(sql, tt, partition, t) != SQL_OK)
+			return NULL;
 
 		/* insert query result into this table */
 		temp = (tt == tt_table)?temp:SQL_PERSIST;
@@ -2314,7 +2346,8 @@ rel_schemas(mvc *sql, symbol *s)
 		ret = rel_create_table(sql, cur_schema(sql), temp, sname, name, l->h->next->next->data.sym,
 							   l->h->next->next->next->data.i_val,
 							   l->h->next->next->next->next->data.sval,
-							   l->h->next->next->next->next->next->data.i_val); /* if not exists */
+							   l->h->next->next->next->next->next->data.i_val, /* if not exists */
+							   l->h->next->next->next->next->next->next->data.lval);
 	} 	break;
 	case SQL_CREATE_VIEW:
 	{
