@@ -869,7 +869,10 @@ BKCsetColumn(void *r, const bat *bid, const char * const *tname)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.setColumn", ILLEGAL_ARGUMENT " Column name missing");
 	}
-	BATroles(b, *tname);
+	if (BATroles(b, *tname) != GDK_SUCCEED) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "bat.setColumn", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

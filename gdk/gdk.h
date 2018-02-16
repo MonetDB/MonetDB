@@ -1347,7 +1347,7 @@ gdk_export void BATsetcount(BAT *b, BUN cnt);
 gdk_export BUN BATgrows(BAT *b);
 gdk_export gdk_return BATkey(BAT *b, int onoff);
 gdk_export gdk_return BATmode(BAT *b, int onoff);
-gdk_export void BATroles(BAT *b, const char *tnme);
+gdk_export gdk_return BATroles(BAT *b, const char *tnme);
 gdk_export void BAThseqbase(BAT *b, oid o);
 gdk_export void BATtseqbase(BAT *b, oid o);
 gdk_export gdk_return BATsetaccess(BAT *b, int mode);

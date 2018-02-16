@@ -987,8 +987,9 @@ BATprint(BAT *b)
 	argv[0] = BATdense(b->hseqbase, b->hseqbase, BATcount(b));
 	argv[1] = b;
 	if (argv[0] && argv[1]) {
-		BATroles(argv[0], "h");
-		ret = BATprintcolumns(GDKstdout, 2, argv);
+		ret = BATroles(argv[0], "h");
+		if (ret == GDK_SUCCEED)
+			ret = BATprintcolumns(GDKstdout, 2, argv);
 	}
 	if (argv[0])
 		BBPunfix(argv[0]->batCacheid);

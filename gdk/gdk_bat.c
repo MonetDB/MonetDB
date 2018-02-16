@@ -1530,17 +1530,18 @@ BATtseqbase(BAT *b, oid o)
 	}
 }
 
-void
+gdk_return
 BATroles(BAT *b, const char *tnme)
 {
 	if (b == NULL)
-		return;
+		return GDK_SUCCEED;
 	if (b->tident && !default_ident(b->tident))
 		GDKfree(b->tident);
 	if (tnme)
 		b->tident = GDKstrdup(tnme);
 	else
 		b->tident = BATstring_t;
+	return b->tident ? GDK_SUCCEED : GDK_FAIL;
 }
 
 /*

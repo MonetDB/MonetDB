@@ -1,6 +1,10 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Fri Feb 16 2018 Sjoerd Mullender <sjoerd@acm.org>
+- Changed the return type of BATroles from void to gdk_return: it can
+  fail due to malloc failure.
+
 * Fri Feb  9 2018 Sjoerd Mullender <sjoerd@acm.org>
 - Removed functions ALIGNsetH, ALIGNsetT, and CREATEview_ (mind the
   underscore).  The first can easily be replace by using BAThseqbase

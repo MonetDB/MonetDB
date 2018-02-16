@@ -113,11 +113,17 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 				mnstr_printf(fp, "%s", tl);
 		} else {
 			b[0] = BATdense(b[1]->hseqbase, b[1]->hseqbase, BATcount(b[1]));
-			if( b[0]){
-				BATroles(b[0], "h");
-				BATprintcolumns(cntxt->fdout, 2, b);
-				BBPunfix(b[0]->batCacheid);
+			if (b[0] == NULL) {
+				BBPunfix(b[1]->batCacheid);
+				throw(MAL, "io.print", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
+			if (BATroles(b[0], "h") != GDK_SUCCEED) {
+				BBPunfix(b[0]->batCacheid);
+				BBPunfix(b[1]->batCacheid);
+				throw(MAL, "io.print", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
+			BATprintcolumns(cntxt->fdout, 2, b);
+			BBPunfix(b[0]->batCacheid);
 		}
 		BBPunfix(b[1]->batCacheid);
 		return MAL_SUCCEED;
