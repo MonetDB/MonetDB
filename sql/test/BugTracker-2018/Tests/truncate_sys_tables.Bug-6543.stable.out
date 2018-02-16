@@ -174,8 +174,6 @@ Ready.
 % boolean # type
 % 5 # length
 [ false	]
-#TRUNCATE TABLE sys.statistics;
-[ 0	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.statistics;
 % sys.L4 # table_name
 % has_rows # name

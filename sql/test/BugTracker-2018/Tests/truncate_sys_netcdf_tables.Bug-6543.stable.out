@@ -30,8 +30,6 @@ Ready.
 % boolean # type
 % 5 # length
 [ false	]
-#TRUNCATE TABLE sys.netcdf_vars;
-[ 0	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_vars;
 % sys.L4 # table_name
 % has_rows # name
@@ -44,8 +42,6 @@ Ready.
 % boolean # type
 % 5 # length
 [ false	]
-#TRUNCATE TABLE sys.netcdf_vardim;
-[ 0	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_vardim;
 % sys.L4 # table_name
 % has_rows # name
@@ -58,8 +54,6 @@ Ready.
 % boolean # type
 % 5 # length
 [ false	]
-#TRUNCATE TABLE sys.netcdf_files;
-[ 0	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_files;
 % sys.L4 # table_name
 % has_rows # name
@@ -72,8 +66,6 @@ Ready.
 % boolean # type
 % 5 # length
 [ false	]
-#TRUNCATE TABLE sys.netcdf_dims;
-[ 0	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_dims;
 % sys.L4 # table_name
 % has_rows # name
@@ -86,8 +78,6 @@ Ready.
 % boolean # type
 % 5 # length
 [ false	]
-#TRUNCATE TABLE sys.netcdf_attrs;
-[ 0	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_attrs;
 % sys.L4 # table_name
 % has_rows # name
