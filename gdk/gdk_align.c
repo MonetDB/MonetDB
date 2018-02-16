@@ -89,7 +89,7 @@ ALIGNsetT(BAT *b1, BAT *b2)
 		b1->tnokey[0] = b2->tnokey[0];
 		b1->tnokey[1] = b2->tnokey[1];
 	} else {
-		b1->tnokey[0] = b1->tnokey[1];
+		b1->tnokey[0] = b1->tnokey[1] = 0;
 	}
 	b1->tnosorted = b2->tnosorted;
 	b1->tnodense = b2->tnodense;
