@@ -81,7 +81,7 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	cnt = BATcount(v);
 
 	/* allocate result BAT */
-	res = COLnew(0, TPE(TYPE), cnt, TRANSIENT);
+	res = COLnew(v->hseqbase, TPE(TYPE), cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPunfix(v->batCacheid);
 		throw(MAL, "round", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -108,8 +108,6 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 
 	/* set result BAT properties */
 	BATsetcount(res, cnt);
-	/* result head is aligned with argument head */
-	BAThseqbase(res, v->hseqbase);
 	/* hard to predict correct tail properties in general */
 	res->tnonil = nonil;
 	res->tnil = !nonil;
@@ -210,7 +208,7 @@ bat_round_wrap(bat *_res, const bat *_v, const int *d, const int *s, const bte *
 	cnt = BATcount(v);
 
 	/* allocate result BAT */
-	res = COLnew(0, TPE(TYPE), cnt, TRANSIENT);
+	res = COLnew(v->hseqbase, TPE(TYPE), cnt, TRANSIENT);
 	if (res == NULL) {
 		BBPunfix(v->batCacheid);
 		throw(MAL, "round", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -237,8 +235,6 @@ bat_round_wrap(bat *_res, const bat *_v, const int *d, const int *s, const bte *
 
 	/* set result BAT properties */
 	BATsetcount(res, cnt);
-	/* result head is aligned with argument head */
-	BAThseqbase(res, v->hseqbase);
 	/* hard to predict correct tail properties in general */
 	res->tnonil = nonil;
 	res->tnil = !nonil;

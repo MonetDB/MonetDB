@@ -713,7 +713,7 @@ COLcopy(BAT *b, int tt, int writable, int role)
 				bunstocopy = cnt;
 		}
 
-		bn = COLnew(0, tt, MAX(1, bunstocopy == BUN_NONE ? 0 : bunstocopy), role);
+		bn = COLnew(b->hseqbase, tt, MAX(1, bunstocopy == BUN_NONE ? 0 : bunstocopy), role);
 		if (bn == NULL)
 			return NULL;
 
@@ -796,7 +796,6 @@ COLcopy(BAT *b, int tt, int writable, int role)
 		BATsetcount(bn, cnt);
 	}
 	/* set properties (note that types may have changed in the copy) */
-	BAThseqbase(bn, b->hseqbase);
 	if (ATOMtype(tt) == ATOMtype(b->ttype)) {
 		if (BATtvoid(b)) {
 			/* b is either dense or has a void(nil) tail */

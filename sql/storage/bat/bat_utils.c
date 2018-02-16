@@ -20,10 +20,7 @@ bat_destroy(BAT *b)
 BAT *
 bat_new(int tt, BUN size, int role)
 {
-	BAT *bn = COLnew(0, tt, size, role);
-	if (bn)
-		BAThseqbase(bn, 0);
-	return bn;
+	return COLnew(0, tt, size, role);
 }
 
 BAT *
