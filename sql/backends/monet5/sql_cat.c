@@ -100,33 +100,78 @@ rel_check_tables(sql_table *nt, sql_table *nnt)
 	return MAL_SUCCEED;
 }
 
-static char *
-alter_table_add_table(mvc *sql, char *msname, char *mtname, char *psname, char *ptname)
+static char*
+valdidate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname, char *psname, char *ptname, sql_table **mt, sql_table **pt)
 {
 	sql_schema *ms = mvc_bind_schema(sql, msname), *ps = mvc_bind_schema(sql, psname);
-	sql_table *mt = NULL, *pt = NULL;
+	sql_table *rmt = NULL, *rpt = NULL;
 
 	if (ms)
-		mt = mvc_bind_table(sql, ms, mtname);
+		rmt = mvc_bind_table(sql, ms, mtname);
 	if (ps)
-		pt = mvc_bind_table(sql, ps, ptname);
-	if (mt && (mt->type != tt_merge_table && mt->type != tt_replica_table))
-		throw(SQL,"sql.alter_table_add_table",SQLSTATE(42S02) "ALTER TABLE: cannot add table '%s.%s' to table '%s.%s'", psname, ptname, msname, mtname);
-	if (mt && pt) {
+		rpt = mvc_bind_table(sql, ps, ptname);
+	*mt = rmt;
+	*pt = rpt;
+	if (rmt && (!isMergeTable(rmt) && !isReplicaTable(rmt)))
+		throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: cannot add table '%s.%s' to table '%s.%s'", psname, ptname, msname, mtname);
+	if (rmt && rpt) {
 		char *msg;
-		node *n = cs_find_id(&mt->members, pt->base.id);
+		node *n = cs_find_id(&rmt->members, rpt->base.id);
 
 		if (n)
 			throw(SQL,"alter_table_add_table",SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' is already part of the MERGE TABLE '%s.%s'", psname, ptname, msname, mtname);
-		if ((msg = rel_check_tables(mt, pt)) != NULL)
+		if ((msg = rel_check_tables(rmt, rpt)) != NULL)
 			return msg;
-		sql_trans_add_table(sql->session->tr, mt, pt);
-	} else if (mt) {
-		throw(SQL,"sql.alter_table_add_table",SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", ptname, psname);
+		return MAL_SUCCEED;
+	} else if (rmt) {
+		throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", ptname, psname);
 	} else {
-		throw(SQL,"sql.alter_table_add_table",SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", mtname, msname);
+		throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", mtname, msname);
 	}
-	return MAL_SUCCEED;
+}
+
+static char *
+alter_table_add_table(mvc *sql, char *msname, char *mtname, char *psname, char *ptname)
+{
+	sql_table *mt = NULL, *pt = NULL;
+	str msg = valdidate_alter_table_add_table(sql, "sql.alter_table_add_table", msname, mtname, psname, ptname, &mt, &pt);
+
+	if(msg == MAL_SUCCEED)
+		sql_trans_add_table(sql->session->tr, mt, pt);
+
+	return msg;
+}
+
+static char *
+alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psname, char *ptname, MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{
+	sql_table *mt = NULL, *pt = NULL;
+	sql_column *col = NULL;
+	str msg = valdidate_alter_table_add_table(sql, "sql.alter_table_add_range_partition", msname, mtname, psname, ptname, &mt, &pt);
+	int tp1, tp2 = getArgType(m, p, 5), tp3 = getArgType(m, p, 6);
+	ptr min = *getArgReference_ptr(s, p, 5), max = *getArgReference_ptr(s, p, 6);
+
+	if(msg != MAL_SUCCEED)
+		return msg;
+	if(mt->type != tt_range_partition) {
+		throw(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: cannot add range partition into a %s table",
+			(mt->type == tt_merge_table)?"merge":"list partition");
+	}
+
+	col = mt->part;
+	tp1 = col->type.type->localtype;
+	if(tp1 != tp2) {
+		throw(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: type of range minimum value is not the same as the partition's column");
+	} else if(tp1 != tp3) {
+		throw(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: type of range maximum value is not the same as the partition's column");
+	} else if(ATOMcmp(tp1, min, max) > 0) {
+		throw(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: minimum value is higher than maximum value");
+	}
+
+	/* TODO search for a conflicting partition */
+	sql_trans_add_range_partition(sql->session->tr, mt, pt, min, max);
+
+	return msg;
 }
 
 static char *
@@ -1304,6 +1349,20 @@ SQLalter_add_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	initcontext();
 	msg = alter_table_add_table(sql, sname, mtname, psname, ptname);
+	return msg;
+}
+
+str
+SQLalter_add_range_partition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{	mvc *sql = NULL;
+	str msg;
+	str sname = *getArgReference_str(stk, pci, 1);
+	char *mtname = SaveArgReference(stk, pci, 2);
+	char *psname = SaveArgReference(stk, pci, 3);
+	char *ptname = SaveArgReference(stk, pci, 4);
+
+	initcontext();
+	msg = alter_table_add_range_partition(sql, sname, mtname, psname, ptname, mb, stk, pci);
 	return msg;
 }
 

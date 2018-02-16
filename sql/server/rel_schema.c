@@ -84,6 +84,34 @@ rel_alter_table(sql_allocator *sa, int cattype, char *sname, char *tname, char *
 	return rel;
 }
 
+static sql_rel *
+rel_alter_table_add_partition_range(sql_allocator *sa, char *sname, char *tname, char *sname2, char *tname2, int action, ptr min, ptr max)
+{
+	sql_rel *rel = rel_create(sa);
+	list *exps = new_exp_list(sa);
+	if(!rel || !exps)
+		return NULL;
+
+	append(exps, exp_atom_clob(sa, sname));
+	append(exps, exp_atom_clob(sa, tname));
+	assert((sname2 && tname2) || (!sname2 && !tname2));
+	if (sname2) {
+		append(exps, exp_atom_clob(sa, sname2));
+		append(exps, exp_atom_clob(sa, tname2));
+	}
+	append(exps, exp_atom_int(sa, action));
+	append(exps, exp_atom_ptr(sa, min));
+	append(exps, exp_atom_ptr(sa, max));
+	rel->l = NULL;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = DDL_ALTER_TABLE_ADD_RANGE_PARTITION;
+	rel->exps = exps;
+	rel->card = CARD_MULTI;
+	rel->nrcols = 0;
+	return rel;
+}
+
 sql_rel *
 rel_list(sql_allocator *sa, sql_rel *l, sql_rel *r) 
 {
@@ -1346,7 +1374,7 @@ get_schema_name( mvc *sql, char *sname, char *tname)
 }
 
 static sql_rel *
-sql_alter_table(mvc *sql, dlist *qname, symbol *te)
+sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 {
 	char *sname = qname_schema(qname);
 	char *tname = qname_table(qname);
@@ -1386,9 +1414,39 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te)
 		if (te && (te->token == SQL_TABLE || te->token == SQL_DROP_TABLE)) {
 			char *ntname = te->data.lval->h->data.sval;
 
-			/* TODO partition sname */
 			if (te->token == SQL_TABLE) {
-				return rel_alter_table(sql->sa, DDL_ALTER_TABLE_ADD_TABLE, sname, tname, sname, ntname, 0);
+				if(!extra)
+					return rel_alter_table(sql->sa, DDL_ALTER_TABLE_ADD_TABLE, sname, tname, sname, ntname, 0);
+				if(extra->token == SQL_PARTITION_RANGE) {
+					sql_column *col =  t->part;
+					dlist* ll = extra->data.lval;
+					symbol* min = ll->h->data.sym, *max = ll->h->next->data.sym;
+					ptr real_min = NULL, real_max = NULL;
+
+					if(t->type != tt_range_partition) {
+						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add range partition into a %s table",
+								(t->type == tt_merge_table)?"merge":"list partition");
+					}
+
+					if(min->token == SQL_MINVALUE) {
+						atom* amin = atom_absolute_min(sql->sa, &(col->type));
+						real_min = (ptr) VALptr(&(amin->data));
+					} else {
+						AtomNode *anm = (AtomNode *) min;
+						real_min = (ptr) VALptr(&(anm->a->data));
+					}
+					if(max->token == SQL_MAXVALUE) {
+						atom* amax = atom_absolute_max(sql->sa, &(col->type));
+						real_max = (ptr) VALptr(&(amax->data));
+					} else {
+						AtomNode *an = (AtomNode *) max;
+						real_max = (ptr) VALptr(&(an->a->data));
+					}
+					return rel_alter_table_add_partition_range(sql->sa, sname, tname, sname, ntname, 0, real_min, real_max);
+				} else if(extra->token == SQL_PARTITION_LIST) {
+
+				}
+				assert(0);
 			} else {
 				int drop_action = te->data.lval->h->next->data.i_val;
 
@@ -1409,7 +1467,7 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te)
 			return rel_alter_table(sql->sa, DDL_ALTER_TABLE_SET_ACCESS, sname, tname, NULL, NULL, state);
 		}
 
-	       	nt = dup_sql_table(sql->sa, t);
+		nt = dup_sql_table(sql->sa, t);
 		if (!nt || (te && table_element(sql, te, s, nt, 1) == SQL_ERR)) 
 			return NULL;
 
@@ -2392,7 +2450,8 @@ rel_schemas(mvc *sql, symbol *s)
 
 		ret = sql_alter_table(sql, 
 			l->h->data.lval,      /* table name */
-		  	l->h->next->data.sym);/* table element */
+			l->h->next->data.sym, /* table element */
+			l->h->next->next->data.sym);
 	} 	break;
 	case SQL_GRANT_ROLES:
 	{

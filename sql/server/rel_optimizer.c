@@ -7907,7 +7907,7 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 		sql_table *t = rel->l;
 
 		if (isMergeTable(t)) {
-			/* instantiate merge tabel */
+			/* instantiate merge table */
 			sql_rel *nrel = NULL;
 			char *tname = t->base.name;
 			list *cols = NULL, *low = NULL, *high = NULL;

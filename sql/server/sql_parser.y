@@ -1059,6 +1059,7 @@ alter_statement:
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, $6);
+	  append_symbol(l, NULL); /* used only in ADD TABLE */
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname ADD TABLE qname opt_as_partition
 	{ dlist *l = L();
@@ -1070,26 +1071,31 @@ alter_statement:
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, $5);
+	  append_symbol(l, NULL); /* used only in ADD TABLE */
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname DROP drop_table_element
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, $5);
+	  append_symbol(l, NULL); /* used only in ADD TABLE */
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname SET READ ONLY
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, _symbol_create_int(SQL_ALTER_TABLE, tr_readonly));
+	  append_symbol(l, NULL); /* used only in ADD TABLE */
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname SET INSERT ONLY
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, _symbol_create_int(SQL_ALTER_TABLE, tr_append));
+	  append_symbol(l, NULL); /* used only in ADD TABLE */
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname SET READ WRITE
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_symbol(l, _symbol_create_int(SQL_ALTER_TABLE, tr_writable));
+	  append_symbol(l, NULL); /* used only in ADD TABLE */
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER USER ident passwd_schema
 	{ dlist *l = L();
@@ -1473,13 +1479,13 @@ partition_list_value:
 
 partition_range_from:
    atom
- | null
+ /*| null */
  | MINVALUE { $$ = _symbol_create(SQL_MINVALUE, NULL ); }
  ;
 
 partition_range_to:
    atom
- | null
+ /*| null */
  | MAXVALUE { $$ = _symbol_create(SQL_MAXVALUE, NULL ); }
  ;
 

@@ -511,7 +511,7 @@ typedef struct sql_part {
 			ptr *minvalue;
 			ptr *maxvalue;
 		} range;
-	};
+	} part;
 } sql_part;
 
 typedef struct sql_table {

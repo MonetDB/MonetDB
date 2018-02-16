@@ -1345,3 +1345,167 @@ atom_is_true( atom *a )
 	}
 	return 0;
 }
+
+atom*
+atom_absolute_min(sql_allocator *sa, sql_subtype* tpe)
+{
+	void *ret = NULL;
+
+	switch (tpe->type->eclass) {
+		case EC_BIT:
+		{
+			bit bval = GDK_bit_min;
+			ret = &bval;
+			break;
+		}
+		case EC_POS:
+		case EC_NUM:
+		case EC_DEC:
+		case EC_SEC:
+		case EC_MONTH:
+			switch (tpe->type->localtype) {
+#ifdef HAVE_HGE
+				case TYPE_hge:
+				{
+					hge hval = GDK_hge_min;
+					ret = &hval;
+					break;
+				}
+#endif
+				case TYPE_lng:
+				{
+					lng lval = GDK_lng_min;
+					ret = &lval;
+					break;
+				}
+				case TYPE_int:
+				{
+					int ival = GDK_int_min;
+					ret = &ival;
+					break;
+				}
+				case TYPE_sht:
+				{
+					sht sval = GDK_sht_min;
+					ret = &sval;
+					break;
+				}
+				case TYPE_bte:
+				{
+					bte bbval = GDK_bte_min;
+					ret = &bbval;
+					break;
+				}
+				default:
+					break;
+			}
+			break;
+		case EC_FLT:
+			switch (tpe->type->localtype) {
+				case TYPE_flt:
+				{
+					flt fval = GDK_flt_min;
+					ret = &fval;
+					break;
+				}
+				case TYPE_dbl:
+				{
+					dbl dval = GDK_dbl_min;
+					ret = &dval;
+					break;
+				}
+			}
+			break;
+		case EC_DATE:
+		case EC_TIME:
+		case EC_TIMESTAMP:
+		case EC_CHAR:
+		case EC_STRING:
+		case EC_BLOB:
+		default:
+			return NULL;
+	}
+	return atom_ptr(sa, tpe, ret);
+}
+
+atom*
+atom_absolute_max(sql_allocator *sa, sql_subtype* tpe)
+{
+	void *ret = NULL;
+
+	switch (tpe->type->eclass) {
+		case EC_BIT:
+		{
+			bit bval = GDK_bit_max;
+			ret = &bval;
+			break;
+		}
+		case EC_POS:
+		case EC_NUM:
+		case EC_DEC:
+		case EC_SEC:
+		case EC_MONTH:
+			switch (tpe->type->localtype) {
+#ifdef HAVE_HGE
+				case TYPE_hge:
+				{
+					hge hval = GDK_hge_max;
+					ret = &hval;
+					break;
+				}
+#endif
+				case TYPE_lng:
+				{
+					lng lval = GDK_lng_max;
+					ret = &lval;
+					break;
+				}
+				case TYPE_int:
+				{
+					int ival = GDK_int_max;
+					ret = &ival;
+					break;
+				}
+				case TYPE_sht:
+				{
+					sht sval = GDK_sht_max;
+					ret = &sval;
+					break;
+				}
+				case TYPE_bte:
+				{
+					bte bbval = GDK_bte_max;
+					ret = &bbval;
+					break;
+				}
+				default:
+					break;
+			}
+			break;
+		case EC_FLT:
+			switch (tpe->type->localtype) {
+				case TYPE_flt:
+				{
+					flt fval = GDK_flt_max;
+					ret = &fval;
+					break;
+				}
+				case TYPE_dbl:
+				{
+					dbl dval = GDK_dbl_max;
+					ret = &dval;
+					break;
+				}
+			}
+			break;
+		case EC_DATE:
+		case EC_TIME:
+		case EC_TIMESTAMP:
+		case EC_CHAR:
+		case EC_STRING:
+		case EC_BLOB:
+		default:
+			return NULL;
+	}
+	return atom_ptr(sa, tpe, ret);
+}

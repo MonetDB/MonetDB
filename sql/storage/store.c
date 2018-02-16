@@ -4406,6 +4406,25 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 }
 
 sql_table *
+sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, ptr min, ptr max)
+{
+	sql_schema *syss = find_sql_schema(tr, isGlobal(mt)?"sys":"tmp");
+	sql_table *sysobj = find_sql_table(syss, "objects");
+	sql_part *p = SA_ZNEW(tr->sa, sql_part);
+	p->part.range.minvalue = min;
+	p->part.range.maxvalue = max;
+
+	/* merge table depends on part table */
+	sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
+	pt->p = mt;
+	base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
+	cs_add(&mt->members, p, TR_NEW);
+	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->wstime;
+	table_funcs.table_insert(tr, sysobj, &mt->base.id, p->base.name, &p->base.id);
+	return mt;
+}
+
+sql_table *
 sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action)
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobal(mt)?"sys":"tmp");
