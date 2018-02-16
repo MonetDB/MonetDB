@@ -105,7 +105,7 @@ delta_full_bat_( sql_column *c, sql_delta *bat, int temp)
 					return NULL;
 				}
 			}
-			if (void_replace_bat(b, ui, uv, TRUE) == BUN_NONE) {
+			if (void_replace_bat(b, ui, uv, TRUE) != GDK_SUCCEED) {
 				bat_destroy(ui);
 				bat_destroy(uv);
 				bat_destroy(b);

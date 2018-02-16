@@ -1268,10 +1268,9 @@ void_inplace(BAT *b, oid id, const void *val, bit force)
 	return BUNinplace(b, id - b->hseqbase, val, force);
 }
 
-BUN
+gdk_return
 void_replace_bat(BAT *b, BAT *p, BAT *u, bit force)
 {
-	BUN nr = 0;
 	BUN r, s;
 	BATiter uii = bat_iterator(p);
 	BATiter uvi = bat_iterator(u);
@@ -1281,10 +1280,9 @@ void_replace_bat(BAT *b, BAT *p, BAT *u, bit force)
 		const void *val = BUNtail(uvi, r);
 
 		if (void_inplace(b, updid, val, force) != GDK_SUCCEED)
-			return BUN_NONE;
-		nr++;
+			return GDK_FAIL;
 	}
-	return nr;
+	return GDK_SUCCEED;
 }
 
 /*

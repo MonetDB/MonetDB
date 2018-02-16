@@ -479,7 +479,7 @@ size_t strLen(const char *s);
 int strNil(const char *s);
 const char str_nil[2];
 gdk_return void_inplace(BAT *b, oid id, const void *val, bit force) __attribute__((__warn_unused_result__));
-BUN void_replace_bat(BAT *b, BAT *p, BAT *u, bit force) __attribute__((__warn_unused_result__));
+gdk_return void_replace_bat(BAT *b, BAT *p, BAT *u, bit force) __attribute__((__warn_unused_result__));
 int win_mkdir(const char *, const int mode);
 int win_rename(const char *, const char *);
 int win_rmdir(const char *);
