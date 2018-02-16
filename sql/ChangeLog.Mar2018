@@ -17,9 +17,9 @@
 
 * Fri Jan 12 2018 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
 - Added support for COMMENT ON statements using SQL syntax:
-   COMMENT ON [ SCHEMA | TABLE | VIEW | COLUMN | INDEX | SEQUENCE |
-              FUNCTION | PROCEDURE | AGGREGATE | FILTER FUNCTION | LOADER ]
-        qname IS [ 'my description text' | NULL | '' ] ;
+   COMMENT ON { SCHEMA | TABLE | VIEW | COLUMN | INDEX | SEQUENCE |
+              FUNCTION | PROCEDURE | AGGREGATE | FILTER FUNCTION | LOADER }
+        qname IS { 'my description text' | NULL | '' } ;
   For COLUMN the qname can be "table_name"."column_name" or fully qualified
   as in: "schema_name"."table_name"."column_name".
   For FUNCTION, PROCEDURE, AGGREGATE, FILTER FUNCTION and LOADER the qname

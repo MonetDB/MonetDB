@@ -95,9 +95,9 @@ SQLhelp sqlhelp[] = {
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Flowofcontrol"},
 	{"COMMENT",
 	 "Add, update or remove a comment or description for a database object",
-	 "COMMENT ON [ SCHEMA | TABLE | VIEW | COLUMN | INDEX | SEQUENCE |\n"
-	 "           FUNCTION | PROCEDURE | AGGREGATE | FILTER FUNCTION | LOADER ]\n"
-	 "     qname IS [ 'my description text' | NULL | '' ]",
+	 "COMMENT ON { SCHEMA | TABLE | VIEW | COLUMN | INDEX | SEQUENCE |\n"
+	 "           FUNCTION | PROCEDURE | AGGREGATE | FILTER FUNCTION | LOADER }\n"
+	 "     qname IS { 'my description text' | NULL | '' }",
 	 NULL,
 	 NULL},
 	{"COMMIT",

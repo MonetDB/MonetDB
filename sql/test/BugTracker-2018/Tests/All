@@ -18,3 +18,9 @@ crash-orderby-alias.Bug-6527
 sqlitelogictest-in-cast-null.Bug-6529
 sqlitelogictest-not-in-wrong-results.Bug-6530
 copy-into-ignore-column-1.Bug-6532
+count_from_commented_function_signatures.Bug-6542
+HAVE_NETCDF?truncate_sys_netcdf_tables.Bug-6543
+HAVE_SAMTOOLS?truncate_bam_tables.Bug-6543
+truncate_sys_tables.Bug-6543
+truncate_empty_table.Bug-6544
+

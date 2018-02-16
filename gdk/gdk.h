@@ -1347,7 +1347,7 @@ gdk_export void BATsetcount(BAT *b, BUN cnt);
 gdk_export BUN BATgrows(BAT *b);
 gdk_export gdk_return BATkey(BAT *b, int onoff);
 gdk_export gdk_return BATmode(BAT *b, int onoff);
-gdk_export void BATroles(BAT *b, const char *tnme);
+gdk_export gdk_return BATroles(BAT *b, const char *tnme);
 gdk_export void BAThseqbase(BAT *b, oid o);
 gdk_export void BATtseqbase(BAT *b, oid o);
 gdk_export gdk_return BATsetaccess(BAT *b, int mode);
@@ -2282,7 +2282,7 @@ gdk_export void GDKclrerr(void);
 #include "gdk_utils.h"
 
 /* functions defined in gdk_bat.c */
-gdk_export BUN void_replace_bat(BAT *b, BAT *p, BAT *u, bit force)
+gdk_export gdk_return void_replace_bat(BAT *b, BAT *p, BAT *u, bit force)
 	__attribute__ ((__warn_unused_result__));
 gdk_export gdk_return void_inplace(BAT *b, oid id, const void *val, bit force)
 	__attribute__ ((__warn_unused_result__));

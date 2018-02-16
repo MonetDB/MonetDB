@@ -1331,7 +1331,8 @@ BBPreadEntries(FILE *fp, int bbpversion)
 		if (bn == NULL)
 			GDKfatal("BBPinit: cannot allocate memory for BAT.");
 		bn->batCacheid = bid;
-		BATroles(bn, NULL);
+		if (BATroles(bn, NULL) != GDK_SUCCEED)
+			GDKfatal("BBPinit: BATroles failed.");
 		bn->batPersistence = PERSISTENT;
 		bn->batCopiedtodisk = 1;
 		bn->batRestricted = (properties & 0x06) >> 1;

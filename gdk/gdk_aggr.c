@@ -2772,7 +2772,7 @@ BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 			/* singleton groups, so calculating quantile is
 			 * easy */
 			bn = COLcopy(b, tp, 0, TRANSIENT);
-			BAThseqbase(bn, g->tseqbase);
+			BAThseqbase(bn, g->tseqbase); /* deals with NULL */
 			if (freeb)
 				BBPunfix(b->batCacheid);
 			if (freeg)
