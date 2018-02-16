@@ -74,8 +74,6 @@ Ready.
 % boolean # type
 % 5 # length
 [ false	]
-#TRUNCATE TABLE bam.sq;
-[ 0	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM bam.sq;
 % bam.L4 # table_name
 % has_rows # name
@@ -88,8 +86,6 @@ Ready.
 % boolean # type
 % 5 # length
 [ false	]
-#TRUNCATE TABLE bam.rg;
-[ 0	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM bam.rg;
 % bam.L4 # table_name
 % has_rows # name
@@ -102,8 +98,6 @@ Ready.
 % boolean # type
 % 5 # length
 [ false	]
-#TRUNCATE TABLE bam.pg;
-[ 0	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM bam.pg;
 % bam.L4 # table_name
 % has_rows # name
@@ -116,8 +110,6 @@ Ready.
 % boolean # type
 % 5 # length
 [ false	]
-#TRUNCATE TABLE bam.export;
-[ 0	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM bam.export;
 % bam.L4 # table_name
 % has_rows # name
@@ -130,8 +122,6 @@ Ready.
 % boolean # type
 % 5 # length
 [ false	]
-#TRUNCATE TABLE bam.files;
-[ 0	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM bam.files;
 % bam.L4 # table_name
 % has_rows # name
