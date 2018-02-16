@@ -821,7 +821,7 @@ COLcopy(BAT *b, int tt, int writable, int role)
 			bn->tnokey[0] = b->tnokey[0];
 			bn->tnokey[1] = b->tnokey[1];
 		} else {
-			bn->tnokey[0] = bn->tnokey[1];
+			bn->tnokey[0] = bn->tnokey[1] = 0;
 		}
 		bn->tnosorted = b->tnosorted;
 	} else if (ATOMstorage(tt) == ATOMstorage(b->ttype) &&
