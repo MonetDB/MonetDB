@@ -3835,7 +3835,7 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 					return NULL;
 				cond = rel_binop_(sql, l, r, NULL, "=", card_value);
 			} else {
-				cond = rel_logical_value_exp(sql, rel, when->h->data.sym, sql_sel);
+				cond = rel_logical_value_exp(sql, rel, when->h->data.sym, f);
 			}
 			result = rel_value_exp(sql, rel, when->h->next->data.sym, f, ek);
 		}
@@ -3874,9 +3874,9 @@ rel_case(mvc *sql, sql_rel **rel, int token, symbol *opt_cond, dlist *when_searc
 					return NULL;
 				cond = rel_binop_(sql, l, r, NULL, "=", card_value);
 			} else {
-				cond = rel_logical_value_exp(sql, rel, when->h->data.sym, sql_sel);
+				cond = rel_logical_value_exp(sql, rel, when->h->data.sym, f);
 			}
-			result = rel_value_exp(sql, rel, when->h->next->data.sym, sql_sel, ek);
+			result = rel_value_exp(sql, rel, when->h->next->data.sym, f, ek);
 		}
 		if (!cond || !result) 
 			return NULL;
