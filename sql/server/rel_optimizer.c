@@ -5811,6 +5811,18 @@ static void
 exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
 {
 	int nr = 0;
+
+	if (rel->r && (rel->op == op_project || rel->op  == op_groupby)) {
+		list *l = rel->r;
+		node *n;
+
+		for (n=l->h; n; n = n->next) {
+			sql_exp *e = n->data;
+
+			exp_mark_used(rel, e);
+		}
+	}
+
 	if (rel->exps) {
 		node *n;
 		int len = list_length(rel->exps), i;
@@ -5847,7 +5859,7 @@ exps_mark_used(sql_allocator *sa, sql_rel *rel, sql_rel *subrel)
 		for (n=l->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
-			exp_mark_used(rel, e);
+		//	exp_mark_used(rel, e);
 			/* possibly project/groupby uses columns from the inner */ 
 			exp_mark_used(subrel, e);
 		}
