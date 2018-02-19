@@ -11,17 +11,9 @@ CREATE TABLE sys.comments (
 GRANT SELECT ON sys.comments TO PUBLIC;
 
 
-CREATE PROCEDURE sys.comment_on(obj_id INTEGER, obj_remark VARCHAR(65000))
+CREATE PROCEDURE sys.no_op()
 BEGIN
-    IF obj_id IS NOT NULL AND obj_id > 0 THEN
-        IF obj_remark IS NULL OR obj_remark = '' THEN
-                DELETE FROM sys.comments WHERE id = obj_id;
-        ELSEIF EXISTS (SELECT id FROM sys.comments WHERE id = obj_id) THEN
-                UPDATE sys.comments SET remark = obj_remark WHERE id = obj_id;
-        ELSE
-                INSERT INTO sys.comments VALUES (obj_id, obj_remark);
-        END IF;
-    END IF;
+    DECLARE dummy INTEGER;
 END;
 -- do not grant to public
 

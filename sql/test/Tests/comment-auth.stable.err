@@ -44,12 +44,8 @@ MAPI  = (user_a) /var/tmp/mtest-36372/.s.monetdb.31868
 QUERY = COMMENT ON SCHEMA schema_b IS 'set by user_a';
 ERROR = !COMMENT ON: insufficient privileges for user 'user_a' in schema 'schema_b'
 CODE  = 42000
-MAPI  = (user_a) /var/tmp/mtest-89089/.s.monetdb.33054
-QUERY = COMMENT ON SCHEMA schema_a IS 'set by user_a';
 
-CODE  = 42000
-
-# 14:17:02 >  
-# 14:17:02 >  "Done."
-# 14:17:02 >  
+# 16:46:51 >  
+# 16:46:51 >  "Done."
+# 16:46:51 >  
 
