@@ -73,7 +73,7 @@ SELECT DISTINCT s.name AS sname,  -- DISTINCT is needed to filter out duplicate 
   LEFT OUTER JOIN sys.schemas s ON f.schema_id = s.id
   LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id
 UNION ALL
-SELECT s.name AS sname,
+SELECT NULL AS sname,
 	  s.name,
 	  s.name AS fullname,
 	  CAST(16 AS SMALLINT) AS ntype,
