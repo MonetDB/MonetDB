@@ -25,7 +25,7 @@
 /* calculate the footprint for optimizer pipe line choices
  * and identify empty columns upfront for just in time optimizers.
  */
-lng
+static lng
 SQLgetColumnSize(sql_trans *tr, sql_column *c, int access)
 {
 	lng size = 0;

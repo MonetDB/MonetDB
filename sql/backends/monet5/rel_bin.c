@@ -4619,7 +4619,10 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* list, struct tablel
 						if (k->t != t && !cascade) {
 							node *n = t->columns.set->h;
 							sql_column *c = n->data;
-							if(SQLgetColumnSize(sql->session->tr, c, 2) > 0) {
+							size_t n_rows = store_funcs.count_col(sql->session->tr, c, 1);
+							size_t n_deletes = store_funcs.count_del(sql->session->tr, c->t);
+							assert (n_rows >= n_deletes);
+							if(n_rows - n_deletes > 0) {
 								*error = sql_error(sql, 02, SQLSTATE(42000) "TRUNCATE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, t->base.name);
 								return;
 							}

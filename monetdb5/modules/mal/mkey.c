@@ -357,7 +357,7 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 		BATkey(bn, 0);
 		bn->tsorted = bn->trevsorted = 0;
 	}
-	bn->tnonil = 1;
+	bn->tnonil = 0;
 	bn->tnil = 0;
 
 	BBPkeepref(*res = bn->batCacheid);
@@ -439,7 +439,7 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 		BATkey(bn, 0);
 		bn->tsorted = bn->trevsorted = 0;
 	}
-	bn->tnonil = 1;
+	bn->tnonil = 0;
 	bn->tnil = 0;
 
 	BBPkeepref(*res = bn->batCacheid);
@@ -545,7 +545,7 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 		BATkey(bn, 0);
 		bn->tsorted = bn->trevsorted = 0;
 	}
-	bn->tnonil = 1;
+	bn->tnonil = 0;
 	bn->tnil = 0;
 
 	BBPkeepref(*res = bn->batCacheid);

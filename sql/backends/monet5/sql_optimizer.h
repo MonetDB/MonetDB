@@ -11,7 +11,6 @@
 #include "sql.h"
 
 //#define _SQL_OPTIMIZER_DEBUG
-sql5_export lng SQLgetColumnSize(sql_trans *tr, sql_column *c, int access);
 sql5_export str SQLoptimizeQuery(Client c, MalBlkPtr mb);
 sql5_export str SQLoptimizeFunction(Client c, MalBlkPtr mb);
 sql5_export void SQLaddQueryToCache(Client c);
