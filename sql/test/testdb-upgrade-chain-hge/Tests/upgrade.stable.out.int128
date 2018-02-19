@@ -5781,7 +5781,7 @@ SELECT DISTINCT s.name AS sname,  -- DISTINCT is needed to filter out duplicate 
 	  s.name || '.' || f.name AS fullname,
 	  CAST(8 AS SMALLINT) AS ntype,
 	  (CASE WHEN sf.function_id IS NOT NULL THEN 'SYSTEM ' ELSE '' END) || sys.function_type_keyword(f.type) AS type,
-	  CASE WHEN sf.function_id IS NULL THEN FALSE ELSE TRUE END AS system,
+	  sf.function_id IS NOT NULL AS system,
 	  c.remark AS remark
   FROM sys.functions f
   LEFT OUTER JOIN sys.comments c ON f.id = c.id
@@ -5804,7 +5804,7 @@ SELECT f.id AS fid,
        s.name AS schema,
        f.name AS fname,
        sys.function_type_keyword(f.type) AS category,
-       CASE WHEN sf.function_id IS NULL THEN FALSE ELSE TRUE END AS system,
+       sf.function_id IS NOT NULL AS system,
        CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number ASC) WHEN 1 THEN f.name ELSE NULL END AS name,
        CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number DESC) WHEN 1 THEN c.remark ELSE NULL END AS remark,
        p.type, p.type_digits, p.type_scale,
