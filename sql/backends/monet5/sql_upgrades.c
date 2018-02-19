@@ -1468,7 +1468,7 @@ sql_update_mar2018(Client c, mvc *sql)
 			"  LEFT OUTER JOIN sys.schemas s ON f.schema_id = s.id\n"
 			"  LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id\n"
 			"UNION ALL\n"
-			"SELECT s.name AS sname,\n"
+			"SELECT NULL AS sname,\n"
 			"	  s.name,\n"
 			"	  s.name AS fullname,\n"
 			"	  CAST(16 AS SMALLINT) AS ntype,\n"
