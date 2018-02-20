@@ -2334,6 +2334,8 @@ stmt_catalog(backend *be, int type, stmt *args)
 	case DDL_ALTER_TABLE_ADD_TABLE:	q = newStmt(mb, sqlcatalogRef, alter_add_tableRef); break;
 	case DDL_ALTER_TABLE_DEL_TABLE:	q = newStmt(mb, sqlcatalogRef, alter_del_tableRef); break;
 	case DDL_ALTER_TABLE_SET_ACCESS:q = newStmt(mb, sqlcatalogRef, alter_set_tableRef); break;
+	case DDL_ALTER_TABLE_ADD_RANGE_PARTITION:q = newStmt(mb, sqlcatalogRef, alter_add_range_partitionRef); break;
+	case DDL_ALTER_TABLE_ADD_LIST_PARTITION:q = newStmt(mb, sqlcatalogRef, alter_add_list_partitionRef); break;
 	default:
 		showException(GDKout, SQL, "sql", "catalog operation unknown\n");
 	}

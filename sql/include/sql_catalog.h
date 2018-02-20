@@ -492,6 +492,8 @@ typedef enum table_types {
 #define isTable(x) 	  (x->type==tt_table)
 #define isView(x)  	  (x->type==tt_view)
 #define isMergeTable(x)   (x->type==tt_merge_table || x->type==tt_list_partition || x->type==tt_range_partition)
+#define isRangePartitionTable(x) (x->type==tt_range_partition)
+#define isListPartitionTable(x)  (x->type==tt_list_partition)
 #define isStream(x)  	  (x->type==tt_stream)
 #define isRemote(x)  	  (x->type==tt_remote)
 #define isReplicaTable(x) (x->type==tt_replica_table)
@@ -537,7 +539,7 @@ typedef struct sql_table {
 	struct sql_schema *s;
 	struct sql_table *p;	/* The table is part of this merge table */
 	struct sql_table *po;	/* the outer transactions table */
-	struct sql_column *part; /* if it is partitioned on a column */
+	struct sql_column *pcol; /* if it is partitioned on a column */
 } sql_table;
 
 typedef struct res_col {

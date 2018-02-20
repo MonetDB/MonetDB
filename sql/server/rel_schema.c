@@ -926,18 +926,19 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 }
 
 static int
-create_partition_column(mvc *sql, int tt, dlist* partition, sql_table *t) {
-	if((tt == tt_list_partition || tt == tt_range_partition) && partition) {
-		str colname = partition->h->next->data.sval;
+create_partition_column(mvc *sql, sql_table *t, int tt, symbol* partition_def) {
+	if((tt == tt_list_partition || tt == tt_range_partition) && partition_def) {
+		dlist* list = partition_def->data.lval;
+		str colname = list->h->next->data.sval;
 		node *n;
 		for (n = t->columns.set->h; n ; n = n->next) {
 			sql_column *col = n->data;
-			if(strcmp(col->base.name, colname)) {
-				t->part = col;
+			if(!strcmp(col->base.name, colname)) {
+				t->pcol = col;
 				break;
 			}
 		}
-		if(!t->part) {
+		if(!t->pcol) {
 			sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: the partition column '%s' is not part of the table", colname);
 			return SQL_ERR;
 		}
@@ -946,7 +947,7 @@ create_partition_column(mvc *sql, int tt, dlist* partition, sql_table *t) {
 }
 
 sql_rel *
-rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const char *name, symbol *table_elements_or_subquery, int commit_action, const char *loc, int if_not_exists, dlist* partition)
+rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const char *name, symbol *table_elements_or_subquery, int commit_action, const char *loc, int if_not_exists, symbol* partition_def)
 {
 	sql_schema *s = NULL;
 
@@ -1014,7 +1015,9 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 				return NULL;
 		}
 
-		if(create_partition_column(sql, tt, partition, t) != SQL_OK)
+		if(create_partition_column(sql, t, tt, partition_def) != SQL_OK)
+			return NULL;
+		if(sql_trans_set_partition_table(sql->session->tr, t))
 			return NULL;
 
 		temp = (tt == tt_table)?temp:SQL_PERSIST;
@@ -1042,7 +1045,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 			return NULL;
 		}
 
-		if(create_partition_column(sql, tt, partition, t) != SQL_OK)
+		if(create_partition_column(sql, t, tt, partition_def) != SQL_OK)
 			return NULL;
 
 		/* insert query result into this table */
@@ -1418,7 +1421,7 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 				if(!extra)
 					return rel_alter_table(sql->sa, DDL_ALTER_TABLE_ADD_TABLE, sname, tname, sname, ntname, 0);
 				if(extra->token == SQL_PARTITION_RANGE) {
-					sql_column *col =  t->part;
+					sql_column *col =  t->pcol;
 					dlist* ll = extra->data.lval;
 					symbol* min = ll->h->data.sym, *max = ll->h->next->data.sym;
 					ptr real_min = NULL, real_max = NULL;
@@ -2405,7 +2408,7 @@ rel_schemas(mvc *sql, symbol *s)
 							   l->h->next->next->next->data.i_val,
 							   l->h->next->next->next->next->data.sval,
 							   l->h->next->next->next->next->next->data.i_val, /* if not exists */
-							   l->h->next->next->next->next->next->next->data.lval);
+							   l->h->next->next->next->next->next->next->data.sym);
 	} 	break;
 	case SQL_CREATE_VIEW:
 	{

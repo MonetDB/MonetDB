@@ -1394,16 +1394,9 @@ table_def:
 	  dlist *l = L();
 	  symbol* part = $6;
 
-	  append_int(l, tpe);
-	  append_list(l, $4);
-	  append_symbol(l, $5);
-	  append_int(l, commit_action);
-	  append_string(l, NULL);
-	  append_int(l, $3);
-	  append_symbol(l, $6);
-
 	  if(part != NULL) {
-	  	switch(part->data.i_val) {
+	  	dlist *prop = part->data.lval;
+	  	switch(prop->h->data.i_val) {
 	  		case PARTITION_RANGE:
 	  			tpe = SQL_MERGE_RANGE_PARTITION;
 	  			break;
@@ -1413,6 +1406,13 @@ table_def:
 	  	}
 	  }
 
+	  append_int(l, tpe);
+	  append_list(l, $4);
+	  append_symbol(l, $5);
+	  append_int(l, commit_action);
+	  append_string(l, NULL);
+	  append_int(l, $3);
+	  append_symbol(l, $6);
 	  append_symbol(l, part);
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  |  REPLICA TABLE if_not_exists qname table_content_source 

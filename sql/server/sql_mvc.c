@@ -68,7 +68,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 	if (first || catalog_version) {
 		sql_schema *s;
 		sql_table *t;
-		sqlid tid = 0, ntid, cid = 0, ncid;
+		sqlid tid = 0, ntid, cid = 0, ncid, pid, rrid, lid, dpid, drid, dlid;
 		mvc *m = mvc_create(0, stk, 0, NULL, NULL);
 		if (!m) {
 			fprintf(stderr, "!mvc_init: malloc failure\n");
@@ -100,6 +100,15 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			t = mvc_bind_table(m, s, "tables");
 			tid = t->base.id;
 			mvc_drop_table(m, s, t, 0);
+			t = mvc_bind_table(m, s, "table_partitions");
+			pid = t->base.id;
+			mvc_drop_table(m, s, t, 0);
+			t = mvc_bind_table(m, s, "range_partitions");
+			rrid = t->base.id;
+			mvc_drop_table(m, s, t, 0);
+			t = mvc_bind_table(m, s, "list_partitions");
+			lid = t->base.id;
+			mvc_drop_table(m, s, t, 0);
 			t = mvc_bind_table(m, s, "columns");
 			cid = t->base.id;
 			mvc_drop_table(m, s, t, 0);
@@ -129,6 +138,69 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
 			while ((rid = table_funcs.column_find_row(m->session->tr, depids, &tid, NULL)), !is_oid_nil(rid)) {
 				table_funcs.column_update_value(m->session->tr, depids, rid, &ntid);
+			}
+		}
+
+		t = mvc_create_view(m, s, "table_partitions", SQL_PERSIST, "SELECT \"id\", \"table_id\", \"column_id\", \"query\" FROM \"sys\".\"_table_partitions\" UNION ALL SELECT \"id\", \"table_id\", \"column_id\", \"query\" FROM \"tmp\".\"_table_partitions\";", 1);
+		dpid = t->base.id;
+		mvc_create_column_(m, t, "id", "int", 32);
+		mvc_create_column_(m, t, "table_id", "int", 32);
+		mvc_create_column_(m, t, "column_id", "int", 32);
+		mvc_create_column_(m, t, "query", "varchar", 2048);
+
+		if (!first) {
+			int pub = ROLE_PUBLIC;
+			int p = PRIV_SELECT;
+			int zero = 0;
+			sql_table *privs = find_sql_table(s, "privileges");
+			sql_table *deps = find_sql_table(s, "dependencies");
+			sql_column *depids = find_sql_column(deps, "id");
+			oid rid;
+
+			table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
+			while ((rid = table_funcs.column_find_row(m->session->tr, depids, &pid, NULL)) != oid_nil) {
+				table_funcs.column_update_value(m->session->tr, depids, rid, &dpid);
+			}
+		}
+
+		t = mvc_create_view(m, s, "range_partitions", SQL_PERSIST, "SELECT \"partition_id\", \"minimum\", \"maximum\" FROM \"sys\".\"_range_partitions\" UNION ALL SELECT \"partition_id\", \"minimum\", \"maximum\" FROM \"tmp\".\"_range_partitions\";", 1);
+		drid = t->base.id;
+		mvc_create_column_(m, t, "partition_id", "int", 32);
+		mvc_create_column_(m, t, "minimum", "varchar", 2048);
+		mvc_create_column_(m, t, "maximum", "varchar", 2048);
+
+		if (!first) {
+			int pub = ROLE_PUBLIC;
+			int p = PRIV_SELECT;
+			int zero = 0;
+			sql_table *privs = find_sql_table(s, "privileges");
+			sql_table *deps = find_sql_table(s, "dependencies");
+			sql_column *depids = find_sql_column(deps, "id");
+			oid rid;
+
+			table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
+			while ((rid = table_funcs.column_find_row(m->session->tr, depids, &rrid, NULL)) != oid_nil) {
+				table_funcs.column_update_value(m->session->tr, depids, rid, &drid);
+			}
+		}
+
+		t = mvc_create_view(m, s, "list_partitions", SQL_PERSIST, "SELECT \"partition_id\", \"value\" FROM \"sys\".\"_list_partitions\" UNION ALL SELECT \"partition_id\", \"value\" FROM \"tmp\".\"_list_partitions\";", 1);
+		dlid = t->base.id;
+		mvc_create_column_(m, t, "partition_id", "int", 32);
+		mvc_create_column_(m, t, "value", "varchar", 2048);
+
+		if (!first) {
+			int pub = ROLE_PUBLIC;
+			int p = PRIV_SELECT;
+			int zero = 0;
+			sql_table *privs = find_sql_table(s, "privileges");
+			sql_table *deps = find_sql_table(s, "dependencies");
+			sql_column *depids = find_sql_column(deps, "id");
+			oid rid;
+
+			table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
+			while ((rid = table_funcs.column_find_row(m->session->tr, depids, &lid, NULL)) != oid_nil) {
+				table_funcs.column_update_value(m->session->tr, depids, rid, &dlid);
 			}
 		}
 
@@ -1175,6 +1247,8 @@ mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, in
 		t->s = s;
 	} else {
 		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt, system, persistence, commit_action, sz);
+		if(sql_trans_set_partition_table(m->session->tr, t))
+			return NULL;
 	}
 	return t;
 }
@@ -1193,6 +1267,8 @@ mvc_create_view(mvc *m, sql_schema *s, const char *name, int persistence, const 
 		t->query = sa_strdup(m->sa, sql);
 	} else {
 		t = sql_trans_create_table(m->session->tr, s, name, sql, tt_view, system, SQL_PERSIST, 0, 0);
+		if(sql_trans_set_partition_table(m->session->tr, t))
+			return NULL;
 	}
 	return t;
 }
@@ -1211,6 +1287,8 @@ mvc_create_remote(mvc *m, sql_schema *s, const char *name, int persistence, cons
 		t->query = sa_strdup(m->sa, loc);
 	} else {
 		t = sql_trans_create_table(m->session->tr, s, name, loc, tt_remote, 0, SQL_REMOTE, 0, 0);
+		if(sql_trans_set_partition_table(m->session->tr, t))
+			return NULL;
 	}
 	return t;
 }

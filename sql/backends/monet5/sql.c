@@ -335,9 +335,12 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 
 		if (copied == NULL)
 			throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s conflicts", s->base.name, t->base.name, c->base.name);
-		if(c == t->part)
-			nt->part = copied;
+		if(c == t->pcol)
+			nt->pcol = copied;
 	}
+	if(sql_trans_set_partition_table(sql->session->tr, nt))
+		throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s: an internal error occurred", s->base.name, t->base.name);
+
 	if (t->idxs.set) {
 		for (n = t->idxs.set->h; n; n = n->next) {
 			sql_idx *i = n->data;

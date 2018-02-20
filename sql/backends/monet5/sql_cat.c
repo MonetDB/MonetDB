@@ -158,7 +158,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 			(mt->type == tt_merge_table)?"merge":"list partition");
 	}
 
-	col = mt->part;
+	col = mt->pcol;
 	tp1 = col->type.type->localtype;
 	if(tp1 != tp2) {
 		throw(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: type of range minimum value is not the same as the partition's column");
@@ -169,7 +169,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	}
 
 	/* TODO search for a conflicting partition */
-	sql_trans_add_range_partition(sql->session->tr, mt, pt, min, max);
+	sql_trans_add_range_partition(sql->session->tr, mt, pt, tp1, min, max);
 
 	return msg;
 }

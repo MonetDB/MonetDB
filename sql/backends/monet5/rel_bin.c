@@ -4975,7 +4975,7 @@ rel2bin_ddl(backend *be, sql_rel *rel, list *refs)
 	} else if (rel->flag <= DDL_ALTER_TABLE) {
 		s = rel2bin_catalog_table(be, rel, refs);
 		sql->type = Q_SCHEMA;
-	} else if (rel->flag <= DDL_ALTER_TABLE_SET_ACCESS) {
+	} else if (rel->flag <= DDL_ALTER_TABLE_ADD_LIST_PARTITION) {
 		s = rel2bin_catalog2(be, rel, refs);
 		sql->type = Q_SCHEMA;
 	}
@@ -5329,7 +5329,7 @@ rel_deps(sql_allocator *sa, sql_rel *r, list *refs, list *l)
 			exps_deps(sa, r->exps, refs, l);
 		} else if (r->flag <= DDL_ALTER_TABLE) {
 			exps_deps(sa, r->exps, refs, l);
-		} else if (r->flag <= DDL_ALTER_TABLE_SET_ACCESS) {
+		} else if (r->flag <= DDL_ALTER_TABLE_ADD_LIST_PARTITION) {
 			exps_deps(sa, r->exps, refs, l);
 		}
 		break;
