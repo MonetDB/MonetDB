@@ -15,3 +15,4 @@ sqlitelogictest-case-subquery-missing.Bug-6523
 aggr-in-case.Bug-6526
 crash-orderby-alias.Bug-6527
 copy-into-ignore-column-1.Bug-6532
+ilike.Bug-6547
