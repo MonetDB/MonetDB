@@ -630,7 +630,10 @@ load_value_partition(sql_trans *tr, sql_schema *syss, sql_part *pt, int tpe)
 		i++;
 	}
 	table_funcs.rids_destroy(rs);
-	pt->part.values = b;
+	BATsetcount(b, i);
+	BATsettrivprop(b);
+	pt->part.values = b->batCacheid;
+	BBPretain(pt->part.values);
 	return 0;
 }
 
@@ -4652,9 +4655,6 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int t
 	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->wstime;
 	table_funcs.table_insert(tr, sysobj, &mt->base.id, p->base.name, &p->base.id);
 
-	/* add list partition values */
-	p->part.values = b;
-
 	rid = table_funcs.column_find_row(tr, find_sql_column(partitions, "table_id"), &mt->base.id, NULL);
 	assert(!is_oid_nil(rid));
 
@@ -4674,6 +4674,11 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int t
 		i++;
 	}
 	_DELETE(v);
+	BATsetcount(b, i);
+	BATsettrivprop(b);
+	/* add list partition values */
+	p->part.values = b->batCacheid;
+	BBPretain(b->batCacheid);
 
 	return 0;
 }
@@ -4705,7 +4710,7 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 				table_funcs.table_delete(tr, values, rid);
 			}
 			table_funcs.rids_destroy(rs);
-			BBPreclaim(ppt->part.values);
+			BBPrelease(ppt->part.values);
 		}
 	}
 

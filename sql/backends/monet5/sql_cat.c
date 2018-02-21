@@ -263,13 +263,6 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 	}
 
 finish:
-	if(msg && b) {
-		BBPreclaim(b);
-	} else if(b) {
-		BATsetcount(b, ninserts);
-		BATsettrivprop(b);
-		BBPkeepref(b->batCacheid);
-	}
 	return msg;
 }
 

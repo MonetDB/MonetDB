@@ -510,7 +510,7 @@ typedef struct sql_part {
 	sql_base base;
 	struct sql_table *t; /* cached value */
 	union {
-		BAT* values;
+		bat values;
 		struct sql_range {
 			ptr *minvalue;
 			ptr *maxvalue;

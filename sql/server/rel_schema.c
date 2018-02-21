@@ -90,11 +90,8 @@ rel_alter_table_add_partition_range(sql_allocator *sa, char *sname, char *tname,
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
 	char *pmin = atom2string(sa, min), *pmax = atom2string(sa, max);
-	if(!rel || !exps || !pmin || !pmax) {
-		_DELETE(pmin);
-		_DELETE(pmax);
+	if(!rel || !exps || !pmin || !pmax)
 		return NULL;
-	}
 
 	append(exps, exp_atom_clob(sa, sname));
 	append(exps, exp_atom_clob(sa, tname));
@@ -109,6 +106,37 @@ rel_alter_table_add_partition_range(sql_allocator *sa, char *sname, char *tname,
 	rel->r = NULL;
 	rel->op = op_ddl;
 	rel->flag = DDL_ALTER_TABLE_ADD_RANGE_PARTITION;
+	rel->exps = exps;
+	rel->card = CARD_MULTI;
+	rel->nrcols = 0;
+	return rel;
+}
+
+static sql_rel *
+rel_alter_table_add_partition_list(sql_allocator *sa, char *sname, char *tname, char *sname2, char *tname2, dlist* ll)
+{
+	sql_rel *rel = rel_create(sa);
+	list *exps = new_exp_list(sa);
+	dnode *n;
+	if(!rel || !exps)
+		return NULL;
+
+	append(exps, exp_atom_clob(sa, sname));
+	append(exps, exp_atom_clob(sa, tname));
+	assert((sname2 && tname2) || (!sname2 && !tname2));
+	if (sname2) {
+		append(exps, exp_atom_clob(sa, sname2));
+		append(exps, exp_atom_clob(sa, tname2));
+	}
+	for (n = ll->h; n ; n = n->next) {
+		symbol* next = n->data.sym;
+		char *nvalue = atom2string(sa, ((AtomNode *) next)->a);
+		append(exps, exp_atom_clob(sa, nvalue));
+	}
+	rel->l = NULL;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = DDL_ALTER_TABLE_ADD_LIST_PARTITION;
 	rel->exps = exps;
 	rel->card = CARD_MULTI;
 	rel->nrcols = 0;
@@ -1446,7 +1474,13 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 					}
 					return rel_alter_table_add_partition_range(sql->sa, sname, tname, sname, ntname, amin, amax);
 				} else if(extra->token == SQL_PARTITION_LIST) {
+					dlist* ll = extra->data.lval, *values = ll->h->data.lval;
 
+					if(t->type != tt_list_partition) {
+						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a value partition into a %s table",
+								(t->type == tt_merge_table)?"merge":"range partition");
+					}
+					return rel_alter_table_add_partition_list(sql->sa, sname, tname, sname, ntname, values);
 				}
 				assert(0);
 			} else {
