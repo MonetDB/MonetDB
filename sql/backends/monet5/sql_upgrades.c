@@ -1505,7 +1505,7 @@ sql_update_mar2018(Client c, mvc *sql)
 			"INSERT INTO sys.systemfunctions\n"
 			"SELECT id FROM sys.functions\n"
 			"WHERE schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys')\n"
-			"AND name IN ('comment_on', 'function_type_keyword');\n"
+			"AND name IN ('comment_on', 'function_type_keyword', 'no_op');\n"
 			"ALTER TABLE sys.keywords SET READ WRITE;\n"
 			"INSERT INTO sys.keywords VALUES ('COMMENT'), ('CONTINUE'), ('START'), ('TRUNCATE');\n"
 			"-- ALTER TABLE sys.keywords SET READ ONLY;\n"
