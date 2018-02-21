@@ -107,6 +107,8 @@
 #define PARTITION_RANGE 1
 #define PARTITION_LIST  2
 
+#define STORAGE_MAX_VALUE_LENGTH 2048
+
 #define cur_user 1
 #define cur_role 2
 

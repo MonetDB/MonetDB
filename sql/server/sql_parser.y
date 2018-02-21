@@ -1473,20 +1473,20 @@ opt_partition_by:
  ;
 
 partition_list_value:
-   atom
+   literal
  | null
  ;
 
 partition_range_from:
-   atom
- /*| null */
+   literal
  | MINVALUE { $$ = _symbol_create(SQL_MINVALUE, NULL ); }
+ /*| null */
  ;
 
 partition_range_to:
-   atom
- /*| null */
+   literal
  | MAXVALUE { $$ = _symbol_create(SQL_MAXVALUE, NULL ); }
+ /*| null */
  ;
 
 partition_list:
@@ -1495,7 +1495,8 @@ partition_list:
  ;
 
 opt_partition_spec:
-   sqlIN '(' partition_list ')'							{ $$ = _symbol_create_list( SQL_PARTITION_LIST, append_list(L(), $3) ); }
+   sqlIN '(' partition_list ')'
+    { $$ = _symbol_create_list( SQL_PARTITION_LIST, append_list(L(), $3) ); }
  | BETWEEN partition_range_from AND partition_range_to
     { dlist *l = L();
       append_symbol(l, $2);

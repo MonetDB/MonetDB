@@ -163,11 +163,12 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			}
 		}
 
-		t = mvc_create_view(m, s, "range_partitions", SQL_PERSIST, "SELECT \"partition_id\", \"minimum\", \"maximum\" FROM \"sys\".\"_range_partitions\" UNION ALL SELECT \"partition_id\", \"minimum\", \"maximum\" FROM \"tmp\".\"_range_partitions\";", 1);
+		t = mvc_create_view(m, s, "range_partitions", SQL_PERSIST, "SELECT \"id\", \"partition_id\", \"minimum\", \"maximum\" FROM \"sys\".\"_range_partitions\" UNION ALL SELECT \"id\", \"partition_id\", \"minimum\", \"maximum\" FROM \"tmp\".\"_range_partitions\";", 1);
 		drid = t->base.id;
+		mvc_create_column_(m, t, "id", "int", 32);
 		mvc_create_column_(m, t, "partition_id", "int", 32);
-		mvc_create_column_(m, t, "minimum", "varchar", 2048);
-		mvc_create_column_(m, t, "maximum", "varchar", 2048);
+		mvc_create_column_(m, t, "minimum", "varchar", STORAGE_MAX_VALUE_LENGTH);
+		mvc_create_column_(m, t, "maximum", "varchar", STORAGE_MAX_VALUE_LENGTH);
 
 		if (!first) {
 			int pub = ROLE_PUBLIC;
@@ -184,10 +185,11 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			}
 		}
 
-		t = mvc_create_view(m, s, "list_partitions", SQL_PERSIST, "SELECT \"partition_id\", \"value\" FROM \"sys\".\"_list_partitions\" UNION ALL SELECT \"partition_id\", \"value\" FROM \"tmp\".\"_list_partitions\";", 1);
+		t = mvc_create_view(m, s, "list_partitions", SQL_PERSIST, "SELECT \"id\", \"partition_id\", \"value\" FROM \"sys\".\"_list_partitions\" UNION ALL SELECT \"id\", \"partition_id\", \"value\" FROM \"tmp\".\"_list_partitions\";", 1);
 		dlid = t->base.id;
+		mvc_create_column_(m, t, "id", "int", 32);
 		mvc_create_column_(m, t, "partition_id", "int", 32);
-		mvc_create_column_(m, t, "value", "varchar", 2048);
+		mvc_create_column_(m, t, "value", "varchar", STORAGE_MAX_VALUE_LENGTH);
 
 		if (!first) {
 			int pub = ROLE_PUBLIC;
@@ -212,7 +214,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		mvc_create_column_(m, t, "type_digits", "int", 32);
 		mvc_create_column_(m, t, "type_scale", "int", 32);
 		mvc_create_column_(m, t, "table_id", "int", 32);
-		mvc_create_column_(m, t, "default", "varchar", 2048);
+		mvc_create_column_(m, t, "default", "varchar", STORAGE_MAX_VALUE_LENGTH);
 		mvc_create_column_(m, t, "null", "boolean", 1);
 		mvc_create_column_(m, t, "number", "int", 32);
 		mvc_create_column_(m, t, "storage", "varchar", 2048);
@@ -357,16 +359,18 @@ sql_trans_deref( sql_trans *tr )
 				table_destroy(p);
 			}
 
-			if (t->columns.set)
-			for ( o = t->columns.set->h; o; o = o->next) {
-				sql_column *c = o->data;
+			if (t->columns.set) {
+				for ( o = t->columns.set->h; o; o = o->next) {
+					sql_column *c = o->data;
 
-				if (c->po) {
-					sql_column *p = c->po;
+					if (c->po) {
+						sql_column *p = c->po;
 
-					c->po = c->po->po;
-					column_destroy(p);
+						c->po = c->po->po;
+						column_destroy(p);
+					}
 				}
+				t->pcol = t->po->pcol;
 			}
 			if (t->idxs.set)
 			for ( o = t->idxs.set->h; o; o = o->next) {

@@ -85,12 +85,16 @@ rel_alter_table(sql_allocator *sa, int cattype, char *sname, char *tname, char *
 }
 
 static sql_rel *
-rel_alter_table_add_partition_range(sql_allocator *sa, char *sname, char *tname, char *sname2, char *tname2, int action, ptr min, ptr max)
+rel_alter_table_add_partition_range(sql_allocator *sa, char *sname, char *tname, char *sname2, char *tname2, atom* min, atom* max)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
-	if(!rel || !exps)
+	char *pmin = atom2string(sa, min), *pmax = atom2string(sa, max);
+	if(!rel || !exps || !pmin || !pmax) {
+		_DELETE(pmin);
+		_DELETE(pmax);
 		return NULL;
+	}
 
 	append(exps, exp_atom_clob(sa, sname));
 	append(exps, exp_atom_clob(sa, tname));
@@ -99,9 +103,8 @@ rel_alter_table_add_partition_range(sql_allocator *sa, char *sname, char *tname,
 		append(exps, exp_atom_clob(sa, sname2));
 		append(exps, exp_atom_clob(sa, tname2));
 	}
-	append(exps, exp_atom_int(sa, action));
-	append(exps, exp_atom_ptr(sa, min));
-	append(exps, exp_atom_ptr(sa, max));
+	append(exps, exp_atom_clob(sa, pmin));
+	append(exps, exp_atom_clob(sa, pmax));
 	rel->l = NULL;
 	rel->r = NULL;
 	rel->op = op_ddl;
@@ -1424,28 +1427,24 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 					sql_column *col =  t->pcol;
 					dlist* ll = extra->data.lval;
 					symbol* min = ll->h->data.sym, *max = ll->h->next->data.sym;
-					ptr real_min = NULL, real_max = NULL;
+					atom *amin, *amax;
 
 					if(t->type != tt_range_partition) {
-						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add range partition into a %s table",
+						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a range partition into a %s table",
 								(t->type == tt_merge_table)?"merge":"list partition");
 					}
 
 					if(min->token == SQL_MINVALUE) {
-						atom* amin = atom_absolute_min(sql->sa, &(col->type));
-						real_min = (ptr) VALptr(&(amin->data));
+						amin = atom_absolute_min(sql->sa, &(col->type));
 					} else {
-						AtomNode *anm = (AtomNode *) min;
-						real_min = (ptr) VALptr(&(anm->a->data));
+						amin = ((AtomNode *) min)->a;
 					}
 					if(max->token == SQL_MAXVALUE) {
-						atom* amax = atom_absolute_max(sql->sa, &(col->type));
-						real_max = (ptr) VALptr(&(amax->data));
+						amax = atom_absolute_max(sql->sa, &(col->type));
 					} else {
-						AtomNode *an = (AtomNode *) max;
-						real_max = (ptr) VALptr(&(an->a->data));
+						amax = ((AtomNode *) max)->a;
 					}
-					return rel_alter_table_add_partition_range(sql->sa, sname, tname, sname, ntname, 0, real_min, real_max);
+					return rel_alter_table_add_partition_range(sql->sa, sname, tname, sname, ntname, amin, amax);
 				} else if(extra->token == SQL_PARTITION_LIST) {
 
 				}

@@ -101,7 +101,7 @@ rel_check_tables(sql_table *nt, sql_table *nnt)
 }
 
 static char*
-valdidate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname, char *psname, char *ptname, sql_table **mt, sql_table **pt)
+validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname, char *psname, char *ptname, sql_table **mt, sql_table **pt)
 {
 	sql_schema *ms = mvc_bind_schema(sql, msname), *ps = mvc_bind_schema(sql, psname);
 	sql_table *rmt = NULL, *rpt = NULL;
@@ -134,7 +134,7 @@ static char *
 alter_table_add_table(mvc *sql, char *msname, char *mtname, char *psname, char *ptname)
 {
 	sql_table *mt = NULL, *pt = NULL;
-	str msg = valdidate_alter_table_add_table(sql, "sql.alter_table_add_table", msname, mtname, psname, ptname, &mt, &pt);
+	str msg = validate_alter_table_add_table(sql, "sql.alter_table_add_table", msname, mtname, psname, ptname, &mt, &pt);
 
 	if(msg == MAL_SUCCEED)
 		sql_trans_add_table(sql->session->tr, mt, pt);
@@ -143,34 +143,60 @@ alter_table_add_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 }
 
 static char *
-alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psname, char *ptname, MalBlkPtr m, MalStkPtr s, InstrPtr p)
+alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psname, char *ptname, char *min, char *max)
 {
 	sql_table *mt = NULL, *pt = NULL;
+	str msg = MAL_SUCCEED;
 	sql_column *col = NULL;
-	str msg = valdidate_alter_table_add_table(sql, "sql.alter_table_add_range_partition", msname, mtname, psname, ptname, &mt, &pt);
-	int tp1, tp2 = getArgType(m, p, 5), tp3 = getArgType(m, p, 6);
-	ptr min = *getArgReference_ptr(s, p, 5), max = *getArgReference_ptr(s, p, 6);
+	int tp1 = 0, errcode;
+	ptr pmin = NULL, pmax = NULL;
+	size_t len = 0;
 
-	if(msg != MAL_SUCCEED)
+	if((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_range_partition", msname, mtname, psname, ptname, &mt, &pt)))
 		return msg;
 	if(mt->type != tt_range_partition) {
-		throw(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: cannot add range partition into a %s table",
-			(mt->type == tt_merge_table)?"merge":"list partition");
+		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
+									"ALTER TABLE: cannot add range partition into a %s table",
+									(mt->type == tt_merge_table)?"merge":"list partition");
+		goto finish;
 	}
 
 	col = mt->pcol;
 	tp1 = col->type.type->localtype;
-	if(tp1 != tp2) {
-		throw(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: type of range minimum value is not the same as the partition's column");
-	} else if(tp1 != tp3) {
-		throw(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: type of range maximum value is not the same as the partition's column");
-	} else if(ATOMcmp(tp1, min, max) > 0) {
-		throw(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: minimum value is higher than maximum value");
+	if(ATOMfromstr(tp1, &pmin, &len, min) < 0) {
+		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: error while parsing minimum value");
+		goto finish;
+	}
+	if(ATOMfromstr(tp1, &pmax, &len, max) < 0) {
+		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: error while parsing maximum value");
+		goto finish;
+	}
+	if(ATOMcmp(tp1, pmin, pmax) > 0) {
+		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: minimum value is higher than maximum value");
+		goto finish;
 	}
 
 	/* TODO search for a conflicting partition */
-	sql_trans_add_range_partition(sql->session->tr, mt, pt, tp1, min, max);
+	errcode = sql_trans_add_range_partition(sql->session->tr, mt, pt, tp1, pmin, pmax);
+	switch(errcode) {
+		case -1:
+			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		break;
+		case -2:
+			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: minimum value length is higher than %d", STORAGE_MAX_VALUE_LENGTH);
+		break;
+		case -3:
+			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: maximum value length is higher than %d", STORAGE_MAX_VALUE_LENGTH);
+		break;
+	}
 
+finish:
+	if(msg) {
+		if(pmin)
+			GDKfree(pmin);
+		if(pmax)
+			GDKfree(pmax);
+	}
 	return msg;
 }
 
@@ -1360,9 +1386,11 @@ SQLalter_add_range_partition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	char *mtname = SaveArgReference(stk, pci, 2);
 	char *psname = SaveArgReference(stk, pci, 3);
 	char *ptname = SaveArgReference(stk, pci, 4);
+	char *min = SaveArgReference(stk, pci, 5);
+	char *max = SaveArgReference(stk, pci, 6);
 
 	initcontext();
-	msg = alter_table_add_range_partition(sql, sname, mtname, psname, ptname, mb, stk, pci);
+	msg = alter_table_add_range_partition(sql, sname, mtname, psname, ptname, min, max);
 	return msg;
 }
 
