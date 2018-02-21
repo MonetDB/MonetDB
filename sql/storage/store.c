@@ -554,38 +554,85 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 }
 
 static int
-load_range_partition(sql_trans *tr, sql_schema *syss, sql_part *pt, int tpe) {
+load_range_partition(sql_trans *tr, sql_schema *syss, sql_part *pt, int tpe)
+{
 	sql_table *ranges = find_sql_table(syss, "_range_partitions");
 	oid rid;
 	rids *rs;
 	ptr min = NULL, max = NULL;
-	size_t len = 0;
+	size_t min_length = 0, max_length = 0;
 
 	rs = table_funcs.rids_select(tr, find_sql_column(ranges, "id"), &pt->base.id, &pt->base.id, NULL);
 	if((rid = table_funcs.rids_next(rs)) != oid_nil) {
 		void *v = table_funcs.column_find_value(tr, find_sql_column(ranges, "minimum"), rid);
-		ssize_t e = ATOMfromstr(tpe, &min, &len, v);
+		ssize_t e = ATOMfromstr(tpe, &min, &min_length, v);
 		_DELETE(v);
-		if(e < 0)
+		if(e < 0) {
+			table_funcs.rids_destroy(rs);
 			return -1;
+		}
 
 		v = table_funcs.column_find_value(tr, find_sql_column(ranges, "maximum"), rid);
-		e = ATOMfromstr(tpe, &max, &len, v);
+		e = ATOMfromstr(tpe, &max, &max_length, v);
 		_DELETE(v);
-		if(e < 0)
+		if(e < 0) {
+			GDKfree(min);
+			table_funcs.rids_destroy(rs);
 			return -1;
+		}
 
 		pt->part.range.minvalue = min;
 		pt->part.range.maxvalue = max;
+		pt->part.range.minlength = min_length;
+		pt->part.range.maxlength = max_length;
 	}
 	table_funcs.rids_destroy(rs);
 	return 0;
 }
 
-/*static void
-load_list_partition(sql_trans *tr, sql_schema *syss, sql_table *t, oid rid, sql_part *pt, int pcoltype) {
+static int
+load_value_partition(sql_trans *tr, sql_schema *syss, sql_part *pt, int tpe)
+{
+	sql_table *values = find_sql_table(syss, "_value_partitions");
+	BAT* o = NULL, *b = NULL;
+	oid rid;
+	rids *rs = table_funcs.rids_select(tr, find_sql_column(values, "id"), &pt->base.id, &pt->base.id, NULL);
+	int i = 0;
 
-}*/
+	o = (BAT*) rs->data;
+	b = COLnew(0, tpe, BATcount(o), TRANSIENT);
+	if(!b) {
+		table_funcs.rids_destroy(rs);
+		return -1;
+	}
+
+	for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
+		gdk_return ret = GDK_SUCCEED;
+		ptr pnext = NULL;
+		size_t len = 0;
+
+		void *v = table_funcs.column_find_value(tr, find_sql_column(values, "value"), rid);
+		ssize_t e = ATOMfromstr(tpe, &pnext, &len, v);
+		_DELETE(v);
+		if(e < 0) {
+			BBPreclaim(b);
+			table_funcs.rids_destroy(rs);
+			return -i - 1;
+		}
+
+		ret = BUNappend(b, pnext, FALSE);
+		GDKfree(pnext);
+		if (ret != GDK_SUCCEED) {
+			BBPreclaim(b);
+			table_funcs.rids_destroy(rs);
+			return -i - 1;
+		}
+		i++;
+	}
+	table_funcs.rids_destroy(rs);
+	pt->part.values = b;
+	return 0;
+}
 
 static sql_part*
 load_part(sql_trans *tr, sql_table *t, oid rid)
@@ -743,9 +790,9 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 			sql_part *pt = load_part(tr, t, rid);
 			if(isRangePartitionTable(t)) {
 				load_range_partition(tr, syss, pt, pcoltpe);
-			} /*else if(isListPartitionTable(t)) {
-				load_list_partition(tr, syss, pt, pcoltpe);
-			}*/
+			} else if(isListPartitionTable(t)) {
+				load_value_partition(tr, syss, pt, pcoltpe);
+			}
 		}
 		table_funcs.rids_destroy(rs);
 	}
@@ -1390,12 +1437,24 @@ dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
 }
 
 static sql_part *
-dup_sql_part(sql_allocator *sa, sql_table *mt, sql_part *opt)
+dup_sql_part(sql_allocator *sa, sql_table *ot, sql_table *mt, sql_part *opt)
 {
 	sql_part *pt = SA_ZNEW(sa, sql_part);
 
 	base_init(sa, &pt->base, opt->base.id, opt->base.flag, opt->base.name);
 	cs_add(&mt->members, pt, TR_NEW);
+
+	if(isRangePartitionTable(ot)) {
+		pt->part.range.minvalue = SA_ZNEW(sa, ptr);
+		pt->part.range.maxvalue = SA_ZNEW(sa, ptr);
+		memcpy(pt->part.range.minvalue, opt->part.range.minvalue, opt->part.range.minlength);
+		memcpy(pt->part.range.maxvalue, opt->part.range.maxvalue, opt->part.range.maxlength);
+		pt->part.range.minlength = opt->part.range.minlength;
+		pt->part.range.maxlength = opt->part.range.maxlength;
+	} else if(isListPartitionTable(ot)) {
+		//TODO I have to find a function to duplicate a BAT :(
+	}
+
 	return pt;
 }
 
@@ -1418,7 +1477,7 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 
 	if (t->members.set)
 		for (n = t->members.set->h; n; n = n->next) 
-			dup_sql_part(sa, nt, n->data);
+			dup_sql_part(sa, t, nt, n->data);
 	nt->members.dset = NULL;
 	nt->members.nelm = NULL;
 	return nt;
@@ -1623,7 +1682,7 @@ store_load(void) {
 		bootstrap_create_column(tr, t, "minimum", "varchar", STORAGE_MAX_VALUE_LENGTH);
 		bootstrap_create_column(tr, t, "maximum", "varchar", STORAGE_MAX_VALUE_LENGTH);
 
-		t = bootstrap_create_table(tr, s, "_list_partitions");
+		t = bootstrap_create_table(tr, s, "_value_partitions");
 		bootstrap_create_column(tr, t, "id", "int", 32);
 		bootstrap_create_column(tr, t, "partition_id", "int", 32);
 		bootstrap_create_column(tr, t, "value", "varchar", STORAGE_MAX_VALUE_LENGTH);
@@ -2344,7 +2403,7 @@ column_dup(sql_trans *tr, int flag, sql_column *oc, sql_table *t)
 }
 
 static sql_part *
-part_dup(sql_trans *tr, int flag, sql_part *opt)
+part_dup(sql_trans *tr, int flag, sql_part *opt, sql_table *ot)
 {
 	sql_allocator *sa = (flag == TR_NEW)?tr->parent->sa:tr->sa;
 	sql_part *pt = SA_ZNEW(sa, sql_part);
@@ -2352,6 +2411,18 @@ part_dup(sql_trans *tr, int flag, sql_part *opt)
 	base_init(sa, &pt->base, opt->base.id, tr_flag(&opt->base, flag), opt->base.name);
 	if (isNew(opt) && flag == TR_NEW && tr->parent == gtrans) 
 		opt->base.flag = TR_OLD;
+
+	if(isRangePartitionTable(ot)) {
+		pt->part.range.minvalue = SA_ZNEW(sa, ptr);
+		pt->part.range.maxvalue = SA_ZNEW(sa, ptr);
+		memcpy(pt->part.range.minvalue, opt->part.range.minvalue, opt->part.range.minlength);
+		memcpy(pt->part.range.maxvalue, opt->part.range.maxvalue, opt->part.range.maxlength);
+		pt->part.range.minlength = opt->part.range.minlength;
+		pt->part.range.maxlength = opt->part.range.maxlength;
+	} else if(isListPartitionTable(ot)) {
+		//TODO I have to find a function to duplicate a BAT :(
+	}
+
 	return pt;
 }
 
@@ -2525,7 +2596,7 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 		for (n = ot->members.set->h; n; n = n->next) {
 			sql_part *pt = n->data;
 
-			cs_add(&t->members, part_dup(tr, flag, pt), tr_flag(&pt->base, flag));
+			cs_add(&t->members, part_dup(tr, flag, pt, ot), tr_flag(&pt->base, flag));
 		}
 		if (tr->parent == gtrans)
 			ot->members.nelm = NULL;
@@ -4498,7 +4569,7 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 }
 
 int
-sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int tpe, ptr min, ptr max)
+sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int tpe, ptr min, size_t smin, ptr max, size_t smax)
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobal(mt)?"sys":"tmp");
 	sql_table *sysobj = find_sql_table(syss, "objects");
@@ -4516,6 +4587,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int t
 	if(res == 0)
 		return -1;
 	if(length > STORAGE_MAX_VALUE_LENGTH) {
+		// TODO the memory areas allocated here should be handled to the sql_allocator
 		GDKfree(str_min);
 		return -2;
 	}
@@ -4542,11 +4614,65 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int t
 	/* add range partition values */
 	p->part.range.minvalue = min;
 	p->part.range.maxvalue = max;
+	p->part.range.minlength = smin;
+	p->part.range.maxlength = smax;
 
 	rid = table_funcs.column_find_row(tr, find_sql_column(partitions, "table_id"), &mt->base.id, NULL);
 	assert(!is_oid_nil(rid));
 	v = (int*) table_funcs.column_find_value(tr, find_sql_column(partitions, "id"), rid);
 	table_funcs.table_insert(tr, ranges, &pt->base.id, v, str_min, str_max);
+	_DELETE(v);
+
+	return 0;
+}
+
+int
+sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int tpe, BAT* b)
+{
+	sql_schema *syss = find_sql_schema(tr, isGlobal(mt)?"sys":"tmp");
+	sql_table *sysobj = find_sql_table(syss, "objects");
+	sql_table *partitions = find_sql_table(syss, "_table_partitions");
+	sql_table *values = find_sql_table(syss, "_value_partitions");
+	sql_part *p = SA_ZNEW(tr->sa, sql_part);
+	ssize_t (*atomtostr)(str *, size_t *, const void *) = BATatoms[tpe].atomToStr;
+	str next_value = NULL;
+	ptr next_entry = NULL;
+	size_t length = 0;
+	ssize_t res;
+	oid rid;
+	int *v, i = 0;
+	BUN bp, bq;
+	BATiter bi = bat_iterator(b);
+
+	/* add merge table dependency */
+	sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
+	pt->p = mt;
+	base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
+	cs_add(&mt->members, p, TR_NEW);
+	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->wstime;
+	table_funcs.table_insert(tr, sysobj, &mt->base.id, p->base.name, &p->base.id);
+
+	/* add list partition values */
+	p->part.values = b;
+
+	rid = table_funcs.column_find_row(tr, find_sql_column(partitions, "table_id"), &mt->base.id, NULL);
+	assert(!is_oid_nil(rid));
+
+	v = (int*) table_funcs.column_find_value(tr, find_sql_column(partitions, "id"), rid);
+	BATloop(b,bp,bq) {
+		next_value = NULL;
+		next_entry = (ptr) BUNtail(bi, bp);
+		res = atomtostr(&next_value, &length, next_entry);
+		if(res == 0)
+			return -i - 1;
+		if(length > STORAGE_MAX_VALUE_LENGTH) {
+			GDKfree(next_value);
+			return -i - 1;
+		}
+		table_funcs.table_insert(tr, values, &pt->base.id, v, next_value);
+		GDKfree(next_value);
+		i++;
+	}
 	_DELETE(v);
 
 	return 0;
@@ -4558,27 +4684,36 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 	sql_schema *syss = find_sql_schema(tr, isGlobal(mt)?"sys":"tmp");
 	sql_table *sysobj = find_sql_table(syss, "objects");
 	node *n = cs_find_name(&mt->members, pt->base.name);
-	oid rid = table_funcs.column_find_row(tr, find_sql_column(sysobj, "nr"), &pt->base.id, NULL), part_oid = pt->base.id;
+	oid obj_oid = table_funcs.column_find_row(tr, find_sql_column(sysobj, "nr"), &pt->base.id, NULL), rid;
 
-	if (is_oid_nil(rid))
+	if (is_oid_nil(obj_oid))
 		return NULL;
+
+	if(isRangePartitionTable(mt) || isListPartitionTable(mt)) {
+		sql_part *ppt = n->data;
+		assert(ppt);
+		if(isRangePartitionTable(mt)) {
+			sql_table *ranges = find_sql_table(syss, "_range_partitions");
+			rid = table_funcs.column_find_row(tr, find_sql_column(ranges, "id"), &pt->base.id, NULL);
+			table_funcs.table_delete(tr, ranges, rid);
+			GDKfree(ppt->part.range.minvalue);
+			GDKfree(ppt->part.range.maxvalue);
+		} else if(isListPartitionTable(mt)) {
+			sql_table *values = find_sql_table(syss, "_value_partitions");
+			rids *rs = table_funcs.rids_select(tr, find_sql_column(values, "id"), &pt->base.id, &pt->base.id, NULL);
+			for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
+				table_funcs.table_delete(tr, values, rid);
+			}
+			table_funcs.rids_destroy(rs);
+			BBPreclaim(ppt->part.values);
+		}
+	}
 
 	/* merge table depends on part table */
 	sql_trans_drop_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
 	cs_del(&mt->members, n, pt->base.flag);
 	pt->p = NULL;
-	table_funcs.table_delete(tr, sysobj, rid);
-
-	if(isRangePartitionTable(mt)) {
-		sql_table *ranges = find_sql_table(syss, "_range_partitions");
-		rid = table_funcs.column_find_row(tr, find_sql_column(ranges, "id"), &part_oid, NULL);
-		table_funcs.table_delete(tr, ranges, rid);
-	} else if(isListPartitionTable(mt)) {
-		sql_table *lists = find_sql_table(syss, "_list_partitions");
-		rid = table_funcs.column_find_row(tr, find_sql_column(lists, "id"), &part_oid, NULL);
-		table_funcs.table_delete(tr, lists, rid);
-	}
-
+	table_funcs.table_delete(tr, sysobj, obj_oid);
 	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->wstime;
 
 	if (drop_action == DROP_CASCADE) 

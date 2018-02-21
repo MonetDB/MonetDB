@@ -106,7 +106,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			t = mvc_bind_table(m, s, "range_partitions");
 			rrid = t->base.id;
 			mvc_drop_table(m, s, t, 0);
-			t = mvc_bind_table(m, s, "list_partitions");
+			t = mvc_bind_table(m, s, "value_partitions");
 			lid = t->base.id;
 			mvc_drop_table(m, s, t, 0);
 			t = mvc_bind_table(m, s, "columns");
@@ -185,7 +185,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			}
 		}
 
-		t = mvc_create_view(m, s, "list_partitions", SQL_PERSIST, "SELECT \"id\", \"partition_id\", \"value\" FROM \"sys\".\"_list_partitions\" UNION ALL SELECT \"id\", \"partition_id\", \"value\" FROM \"tmp\".\"_list_partitions\";", 1);
+		t = mvc_create_view(m, s, "value_partitions", SQL_PERSIST, "SELECT \"id\", \"partition_id\", \"value\" FROM \"sys\".\"_value_partitions\" UNION ALL SELECT \"id\", \"partition_id\", \"value\" FROM \"tmp\".\"_value_partitions\";", 1);
 		dlid = t->base.id;
 		mvc_create_column_(m, t, "id", "int", 32);
 		mvc_create_column_(m, t, "partition_id", "int", 32);

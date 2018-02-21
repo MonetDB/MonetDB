@@ -148,9 +148,9 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	sql_table *mt = NULL, *pt = NULL;
 	str msg = MAL_SUCCEED;
 	sql_column *col = NULL;
-	int tp1 = 0, errcode;
+	int tp1 = 0, errcode = 0;
 	ptr pmin = NULL, pmax = NULL;
-	size_t len = 0;
+	size_t smin = 0, smax = 0;
 
 	if((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_range_partition", msname, mtname, psname, ptname, &mt, &pt)))
 		return msg;
@@ -163,11 +163,11 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 
 	col = mt->pcol;
 	tp1 = col->type.type->localtype;
-	if(ATOMfromstr(tp1, &pmin, &len, min) < 0) {
+	if(ATOMfromstr(tp1, &pmin, &smin, min) < 0) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: error while parsing minimum value");
 		goto finish;
 	}
-	if(ATOMfromstr(tp1, &pmax, &len, max) < 0) {
+	if(ATOMfromstr(tp1, &pmax, &smax, max) < 0) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: error while parsing maximum value");
 		goto finish;
 	}
@@ -177,7 +177,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	}
 
 	/* TODO search for a conflicting partition */
-	errcode = sql_trans_add_range_partition(sql->session->tr, mt, pt, tp1, pmin, pmax);
+	errcode = sql_trans_add_range_partition(sql->session->tr, mt, pt, tp1, pmin, smin, pmax, smax);
 	switch(errcode) {
 		case -1:
 			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -196,6 +196,79 @@ finish:
 			GDKfree(pmin);
 		if(pmax)
 			GDKfree(pmax);
+	}
+	return msg;
+}
+
+static char *
+alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msname, char *mtname, char *psname, char *ptname)
+{
+	sql_table *mt = NULL, *pt = NULL;
+	str msg = MAL_SUCCEED;
+	sql_column *col = NULL;
+	int tp1 = 0, errcode = 0, i = 0, ninserts = 0;
+	BAT *b = NULL;
+	gdk_return ret = GDK_SUCCEED;
+
+	if((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_value_partition", msname, mtname, psname, ptname, &mt, &pt)))
+		return msg;
+	if(mt->type != tt_list_partition) {
+		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
+									"ALTER TABLE: cannot add value partition into a %s table",
+									(mt->type == tt_merge_table)?"merge":"range partition");
+		goto finish;
+	}
+
+	col = mt->pcol;
+	tp1 = col->type.type->localtype;
+	ninserts = pci->argc - pci->retc + 4;
+	if(ninserts <= 0) {
+		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000) "ALTER TABLE: no values in the list");
+		goto finish;
+	}
+	b = COLnew(0, tp1, ninserts, TRANSIENT);
+	if (!b){
+		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto finish;
+	}
+
+	for( i = pci->retc+4; i < pci->argc; i++){
+		ptr pnext = NULL;
+		size_t len = 0;
+		str next = *getArgReference_str(stk, pci, i);
+
+		if(ATOMfromstr(tp1, &pnext, &len, next) < 0) {
+			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000) "ALTER TABLE: error while parsing value %s", next);
+			goto finish;
+		}
+		ret = BUNappend(b, pnext, FALSE);
+		GDKfree(pnext);
+		if (ret != GDK_SUCCEED) {
+			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			goto finish;
+		}
+	}
+
+	/* TODO search for a conflicting partition */
+	errcode = sql_trans_add_value_partition(sql->session->tr, mt, pt, tp1, b);
+	switch(errcode) {
+		case 0:
+			break;
+		case -1:
+			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		break;
+		default:
+			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000) "ALTER TABLE: value at position %d length is higher than %d", (errcode * -1) - 1, STORAGE_MAX_VALUE_LENGTH);
+		break;
+	}
+
+finish:
+	if(msg && b) {
+		BBPreclaim(b);
+	} else if(b) {
+		BATsetcount(b, ninserts);
+		BATsettrivprop(b);
+		BBPkeepref(b->batCacheid);
 	}
 	return msg;
 }
@@ -1391,6 +1464,20 @@ SQLalter_add_range_partition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 
 	initcontext();
 	msg = alter_table_add_range_partition(sql, sname, mtname, psname, ptname, min, max);
+	return msg;
+}
+
+str
+SQLalter_add_value_partition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{	mvc *sql = NULL;
+	str msg;
+	str sname = *getArgReference_str(stk, pci, 1);
+	char *mtname = SaveArgReference(stk, pci, 2);
+	char *psname = SaveArgReference(stk, pci, 3);
+	char *ptname = SaveArgReference(stk, pci, 4);
+
+	initcontext();
+	msg = alter_table_add_value_partition(sql, stk, pci, sname, mtname, psname, ptname);
 	return msg;
 }
 
