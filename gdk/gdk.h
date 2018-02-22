@@ -1513,8 +1513,8 @@ gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int h
 				}					\
 			} else if ((b)->ttype == TYPE_oid) {		\
 				/* b->batCount == 1 */			\
-				oid sqbs;				\
-				if (is_oid_nil((sqbs = ((oid *) (b)->theap.base)[0]))) { \
+				oid sqbs = ((const oid *) (b)->theap.base)[0]; \
+				if (is_oid_nil(sqbs)) {			\
 					(b)->tdense = 0;		\
 					(b)->tnonil = 0;		\
 					(b)->tnil = 1;			\
