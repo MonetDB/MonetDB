@@ -103,7 +103,9 @@
 #define EXCLUDE_TIES 3
 #define EXCLUDE_NO_OTHERS 4
 
-#define PARTITION_NONE  0
+#define PARTITION_BY_COLUMN 1
+#define PARTITION_BY_EXPRESSION 2
+
 #define PARTITION_RANGE 1
 #define PARTITION_LIST  2
 
@@ -198,6 +200,7 @@ typedef struct changeset {
 extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy);
 extern void cs_destroy(changeset * cs);
 extern void cs_add(changeset * cs, void *elm, int flag);
+extern void *cs_add_sorted(changeset * cs, void *elm, int flag, fcmpvalidate cmp);
 extern void cs_add_before(changeset * cs, node *n, void *elm);
 extern void cs_del(changeset * cs, node *elm, int flag);
 extern int cs_size(changeset * cs);
@@ -509,9 +512,10 @@ typedef enum table_types {
 typedef struct sql_part {
 	sql_base base;
 	struct sql_table *t; /* cached value */
+	int tpe;             /* the column type */
 	union {
-		bat values;
-		struct sql_range {
+		bat values;           /* partition by values/list */
+		struct sql_range {    /* partition by range */
 			ptr *minvalue;
 			ptr *maxvalue;
 			size_t minlength;
@@ -622,6 +626,8 @@ extern list *find_all_sql_func(sql_schema * s, const char *tname, int type);
 extern sql_func *sql_trans_bind_func(sql_trans *tr, const char *name);
 extern sql_func *sql_trans_find_func(sql_trans *tr, int id);
 extern node *find_sql_func_node(sql_schema *s, int id);
+
+extern void *sql_range_part_validate_and_insert(void *v1, void *v2, int* res);
 
 typedef struct {
 	BAT *b;

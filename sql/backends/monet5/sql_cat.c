@@ -119,7 +119,7 @@ validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname,
 		node *n = cs_find_id(&rmt->members, rpt->base.id);
 
 		if (n)
-			throw(SQL,"alter_table_add_table",SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' is already part of the MERGE TABLE '%s.%s'", psname, ptname, msname, mtname);
+			throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' is already part of the MERGE TABLE '%s.%s'", psname, ptname, msname, mtname);
 		if ((msg = rel_check_tables(rmt, rpt)) != NULL)
 			return msg;
 		return MAL_SUCCEED;
@@ -146,11 +146,13 @@ static char *
 alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psname, char *ptname, char *min, char *max)
 {
 	sql_table *mt = NULL, *pt = NULL;
-	str msg = MAL_SUCCEED;
+	sql_part *err = NULL;
+	str msg = MAL_SUCCEED, err_min = NULL, err_max = NULL;
 	sql_column *col = NULL;
 	int tp1 = 0, errcode = 0;
 	ptr pmin = NULL, pmax = NULL;
-	size_t smin = 0, smax = 0;
+	size_t smin = 0, smax = 0, serr_min = 0, serr_max = 0;
+	ssize_t (*atomtostr)(str *, size_t *, const void *);
 
 	if((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_range_partition", msname, mtname, psname, ptname, &mt, &pt)))
 		return msg;
@@ -176,18 +178,32 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 		goto finish;
 	}
 
-	/* TODO search for a conflicting partition */
-	errcode = sql_trans_add_range_partition(sql->session->tr, mt, pt, tp1, pmin, smin, pmax, smax);
+	errcode = sql_trans_add_range_partition(sql->session->tr, mt, pt, tp1, pmin, smin, pmax, smax, &err);
 	switch(errcode) {
 		case -1:
 			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		break;
+			break;
 		case -2:
 			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: minimum value length is higher than %d", STORAGE_MAX_VALUE_LENGTH);
-		break;
+			break;
 		case -3:
 			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: maximum value length is higher than %d", STORAGE_MAX_VALUE_LENGTH);
-		break;
+			break;
+		case -4:
+			assert(err);
+			atomtostr = BATatoms[tp1].atomToStr;
+			if(atomtostr(&err_min, &serr_min, err->part.range.minvalue) < 0) {
+				msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			} else if(atomtostr(&err_max, &serr_max, err->part.range.maxvalue) < 0) {
+				GDKfree(err_min);
+				msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			} else {
+				msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: conflicting partitions: %s to %s and %s to %s from table %s.%s",
+								  min, max, err_min, err_max, err->t->s->base.name, err->t->base.name);
+				GDKfree(err_min);
+				GDKfree(err_max);
+			}
+			break;
 	}
 
 finish:
@@ -256,10 +272,10 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 			break;
 		case -1:
 			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		break;
+			break;
 		default:
 			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000) "ALTER TABLE: value at position %d length is higher than %d", (errcode * -1) - 1, STORAGE_MAX_VALUE_LENGTH);
-		break;
+			break;
 	}
 
 finish:

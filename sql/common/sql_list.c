@@ -160,6 +160,49 @@ list_append(list *l, void *data)
 	return l;
 }
 
+void*
+list_append_sorted(list *l, void *data, fcmpvalidate cmp)
+{
+	node *n = node_create(l->sa, data), *m;
+	int first = 1, comp = 0;
+	void* err = NULL;
+
+	if (n == NULL)
+		return NULL;
+	if (l->cnt == 0) {
+		l->h = n;
+		l->t = n;
+	} else {
+		for (m = l->h; m; m = m->next) {
+			err = cmp(m->data, data, &comp);
+			if(err)
+				return err;
+			if(comp > 0)
+				break;
+			first = 0;
+		}
+		if(first)
+			l->h = n;
+		if(!m) {
+			l->t->next = n;
+			l->t = n;
+		} else
+			m->next = n;
+	}
+	l->cnt++;
+	MT_lock_set(&l->ht_lock);
+	if (l->ht) {
+		int key = l->ht->key(data);
+
+		if (hash_add(l->ht, key, data) == NULL) {
+			MT_lock_unset(&l->ht_lock);
+			return NULL;
+		}
+	}
+	MT_lock_unset(&l->ht_lock);
+	return NULL;
+}
+
 list *
 list_append_before(list *l, node *m, void *data)
 {

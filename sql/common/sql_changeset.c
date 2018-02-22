@@ -42,6 +42,19 @@ cs_add(changeset * cs, void *elm, int flag)
 		cs->nelm = cs->set->t;
 }
 
+void*
+cs_add_sorted(changeset * cs, void *elm, int flag, fcmpvalidate cmp)
+{
+	void* res = NULL;
+	if (!cs->set)
+		cs->set = list_new(cs->sa, cs->destroy);
+	if((res = list_append_sorted(cs->set, elm, cmp)) != NULL)
+		return res;
+	if (flag == TR_NEW && !cs->nelm)
+		cs->nelm = cs->set->t;
+	return res;
+}
+
 void
 cs_add_before(changeset * cs, node *n, void *elm)
 {

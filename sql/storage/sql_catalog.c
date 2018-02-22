@@ -343,3 +343,18 @@ sql_trans_find_func(sql_trans *tr, int id)
 	}
 	return t;
 }
+
+void*
+sql_range_part_validate_and_insert(void *v1, void *v2, int* res)
+{
+	sql_part* pt = (sql_part*) v1, *newp = (sql_part*) v2;
+
+	int res1 = ATOMcmp(pt->tpe, pt->part.range.minvalue, newp->part.range.maxvalue),
+		res2 = ATOMcmp(pt->tpe, newp->part.range.minvalue, pt->part.range.maxvalue);
+	if (res1 <= 0 && res2 <= 0) { //overlap: x1 <= y2 && y1 <= x2
+		*res = 0;
+		return pt;
+	}
+	*res = res2;
+	return NULL;
+}
