@@ -2534,8 +2534,6 @@ gdk_export void BATundo(BAT *b);
  * @tab VIEWtparent   (BAT *b)
  * @item BAT*
  * @tab VIEWreset    (BAT *b)
- * @item BAT*
- * @tab BATmaterialize  (BAT *b)
  * @end multitable
  *
  * Alignments of two columns of a BAT means that the system knows
@@ -2557,9 +2555,6 @@ gdk_export void BATundo(BAT *b);
  * VIEWreset creates a normal BAT with the same contents as its view
  * parameter (it converts void columns with seqbase!=nil to
  * materialized oid columns).
- *
- * The BATmaterialize materializes a VIEW (TODO) or void bat inplace.
- * This is useful as materialization is usually needed for updates.
  */
 gdk_export int ALIGNsynced(BAT *b1, BAT *b2);
 
