@@ -606,29 +606,43 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 	}
 
 	if (b->ttype == TYPE_void) {
-		if (BATtdense(n) && cand == NULL) {
-			/* append two void,void bats */
-			oid f = n->tseqbase + start;
-
-			if (n->ttype != TYPE_void)
-				f = *(oid *) Tloc(n, start);
-
-			if (BATcount(b) == 0 && !is_oid_nil(f))
-				BATtseqbase(b, f);
-			if (BATcount(b) + b->tseqbase == f) {
-				BATsetcount(b, BATcount(b) + cnt);
-				if (b->tunique)
-					BBPunfix(s->batCacheid);
-				return GDK_SUCCEED;
-			}
-		}
-
-		/* we need to materialize the tail */
-		if (BATmaterialize(b) != GDK_SUCCEED) {
+		/* b does not have storage, keep it that way if we can */
+		HASHdestroy(b);	/* we're not maintaining the hash here */
+		if (BATtdense(n) && cand == NULL &&
+		    (BATcount(b) == 0 ||
+		     (!is_oid_nil(b->tseqbase) &&
+		      b->tseqbase + BATcount(b) == n->tseqbase + start))) {
+			/* n is also dense and consecutive with b */
+			if (BATcount(b) == 0)
+				BATtseqbase(b, n->tseqbase + start);
+			BATsetcount(b, BATcount(b) + cnt);
 			if (b->tunique)
 				BBPunfix(s->batCacheid);
-			return GDK_FAIL;
+			return GDK_SUCCEED;
 		}
+		if ((BATcount(b) == 0 || is_oid_nil(b->tseqbase)) &&
+		    n->ttype == TYPE_void && is_oid_nil(n->tseqbase)) {
+			/* both b and n are void/nil */
+			BATtseqbase(b, oid_nil);
+			BATsetcount(b, BATcount(b) + cnt);
+			if (b->tunique)
+				BBPunfix(s->batCacheid);
+			return GDK_SUCCEED;
+		}
+		/* we need to materialize b; allocate enough capacity */
+		b->batCapacity = BATcount(b) + cnt;
+		if (BATmaterialize(b) != GDK_SUCCEED)
+			goto bunins_failed;
+	} else if (cnt > BATcapacity(b) - BATcount(b)) {
+		/* if needed space exceeds a normal growth extend just
+		 * with what's needed */
+		BUN ncap = BATcount(b) + cnt;
+		BUN grows = BATgrows(b);
+
+		if (ncap > grows)
+			grows = ncap;
+		if (BATextend(b, grows) != GDK_SUCCEED)
+			goto bunins_failed;
 	}
 
 	/* if growing too much, remove the hash, else we maintain it */
