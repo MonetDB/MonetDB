@@ -433,8 +433,6 @@ Ready.
 [ "sys",	"columnsize",	1,	"clob",	""	]
 [ "sys",	"columnsize",	2,	"bigint",	""	]
 [ "sys",	"columnsize",	3,	"bigint",	""	]
-[ "sys",	"comment_on",	0,	"int",	"create procedure sys.comment_on(obj_id integer, obj_remark varchar(65000))\nbegin\n if obj_id is not null and obj_id > 0 then\n if obj_remark is null or obj_remark = '' then\n delete from sys.comments where id = obj_id;\n elseif exists (select id from sys.comments where id = obj_id) then\n update sys.comments set remark = obj_remark where id = obj_id;\n else\n insert into sys.comments values (obj_id, obj_remark);\n end if;\n end if;\nend;"	]
-[ "sys",	"comment_on",	1,	"varchar",	""	]
 [ "sys",	"concat",	0,	"char",	"+"	]
 [ "sys",	"concat",	1,	"char",	""	]
 [ "sys",	"concat",	2,	"char",	""	]
