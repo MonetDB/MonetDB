@@ -13,7 +13,7 @@ update-with-correlated-subquery.Bug-6520
 sqlitelogictest-in-single-column.Bug-6522
 sqlitelogictest-case-subquery-missing.Bug-6523
 sqlitelogictest-group-by-having-in-count.Bug-6524
-HAVE_HGE?aggr-in-case.Bug-6526
+aggr-in-case.Bug-6526
 crash-orderby-alias.Bug-6527
 sqlitelogictest-in-cast-null.Bug-6529
 sqlitelogictest-not-in-wrong-results.Bug-6530
@@ -25,3 +25,4 @@ truncate_sys_tables.Bug-6543
 truncate_empty_table.Bug-6544
 sqlitelogictest-in-query.Bug-6545
 sqlitelogictest-in-with-division.Bug-6546
+ilike.Bug-6547

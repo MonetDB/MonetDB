@@ -92,24 +92,15 @@ typedef struct RE {
 static const char *
 strcasestr(const char *haystack, const char *needle)
 {
-	const char *p, *np = 0, *startn = 0;
+	size_t nlen = strlen(needle);
 
-	for (p = haystack; *p; p++) {
-		if (np) {
-			if (toupper(*p) == toupper(*np)) {
-				if (!*++np)
-					return startn;
-			} else
-				np = 0;
-		} else if (toupper(*p) == toupper(*needle)) {
-			np = needle + 1;
-			startn = p;
-			if (!*np)
-				return startn;
-		}
+	if (nlen == 0)
+		return haystack;
+	for (size_t hlen = strlen(haystack); nlen <= hlen; haystack++, hlen--) {
+		if (strncasecmp(haystack, needle, nlen) == 0)
+			return haystack;
 	}
-
-	return 0;
+	return NULL;
 }
 #endif
 
