@@ -106,6 +106,7 @@
 #define PARTITION_BY_COLUMN 1
 #define PARTITION_BY_EXPRESSION 2
 
+#define PARTITION_NONE  0
 #define PARTITION_RANGE 1
 #define PARTITION_LIST  2
 
@@ -513,6 +514,7 @@ typedef struct sql_part {
 	sql_base base;
 	struct sql_table *t; /* cached value */
 	int tpe;             /* the column type */
+	int part_type;       /* by range, list/values or none */
 	union {
 		bat values;           /* partition by values/list */
 		struct sql_range {    /* partition by range */
