@@ -139,6 +139,17 @@ column_destroy(sql_column *c)
 		store_funcs.destroy_col(NULL, c);
 }
 
+/*static void
+member_destroy(sql_part *pt)
+{
+	if(isRangePartitionTable(pt->t)) {
+		GDKfree(pt->part.range.minvalue);
+		GDKfree(pt->part.range.maxvalue);
+	} else if(isListPartitionTable(pt->t)) {
+		BBPrelease(pt->part.values);
+	}
+}*/
+
 void
 table_destroy(sql_table *t)
 {
@@ -567,7 +578,6 @@ load_range_partition(sql_trans *tr, sql_schema *syss, sql_part *pt, int tpe)
 	if((rid = table_funcs.rids_next(rs)) != oid_nil) {
 		void *v = table_funcs.column_find_value(tr, find_sql_column(ranges, "minimum"), rid);
 		ssize_t e = ATOMfromstr(tpe, &min, &min_length, v);
-		sa_push(tr->sa, min, min_length);
 		_DELETE(v);
 		if(e < 0) {
 			table_funcs.rids_destroy(rs);
@@ -576,9 +586,9 @@ load_range_partition(sql_trans *tr, sql_schema *syss, sql_part *pt, int tpe)
 
 		v = table_funcs.column_find_value(tr, find_sql_column(ranges, "maximum"), rid);
 		e = ATOMfromstr(tpe, &max, &max_length, v);
-		sa_push(tr->sa, max, max_length);
 		_DELETE(v);
 		if(e < 0) {
+			GDKfree(min);
 			table_funcs.rids_destroy(rs);
 			return -1;
 		}
@@ -4606,26 +4616,29 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int t
 	ssize_t (*atomtostr)(str *, size_t *, const void *) = BATatoms[tpe].atomToStr;
 	str str_min = NULL, str_max = NULL;
 	size_t length = 0;
-	ssize_t res;
 	oid rid;
-	int *v;
+	int *v, res = 0;
 
-	res = atomtostr(&str_min, &length, min);
-	if(res == 0)
-		return -1;
-	sa_push(tr->sa, str_min, length);
-	if(length > STORAGE_MAX_VALUE_LENGTH)
-		return -2;
+	if(atomtostr(&str_min, &length, min) == 0) {
+		res = -1;
+		goto finish;
+	}
+	if(length > STORAGE_MAX_VALUE_LENGTH) {
+		res = -2;
+		goto finish;
+	}
 
-	res = atomtostr(&str_max, &length, max);
-	if(res == 0)
-		return -1;
-	sa_push(tr->sa, str_max, length);
-	if(length > STORAGE_MAX_VALUE_LENGTH)
-		return -3;
+	if(atomtostr(&str_max, &length, max) == 0) {
+		res = -1;
+		goto finish;
+	}
+	if(length > STORAGE_MAX_VALUE_LENGTH) {
+		res = -3;
+		goto finish;
+	}
 
-	pt->p = mt;
 	base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
+	pt->p = mt;
 	p->t = pt;
 	p->tpe = tpe;
 
@@ -4636,8 +4649,10 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int t
 	p->part.range.maxlength = smax;
 
 	*err = cs_add_sorted(&mt->members, p, TR_NEW, sql_range_part_validate_and_insert);
-	if(*err)
-		return -4;
+	if(*err) {
+		res = -4;
+		goto finish;
+	}
 
 	/* add merge table dependency */
 	sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
@@ -4650,7 +4665,12 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int t
 	table_funcs.table_insert(tr, ranges, &pt->base.id, v, str_min, str_max);
 	_DELETE(v);
 
-	return 0;
+finish:
+	if(str_min)
+		GDKfree(str_min);
+	if(str_max)
+		GDKfree(str_max);
+	return res;
 }
 
 int
@@ -4665,21 +4685,15 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int t
 	str next_value = NULL;
 	ptr next_entry = NULL;
 	size_t length = 0;
-	ssize_t res;
 	oid rid;
 	int *v, i = 0;
 	BUN bp, bq;
 	BATiter bi = bat_iterator(b);
 
-	/* add merge table dependency */
-	sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
-	pt->p = mt;
 	base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
+	pt->p = mt;
 	p->t = pt;
 	p->tpe = tpe;
-	cs_add(&mt->members, p, TR_NEW);
-	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->wstime;
-	table_funcs.table_insert(tr, sysobj, &mt->base.id, p->base.name, &p->base.id);
 
 	rid = table_funcs.column_find_row(tr, find_sql_column(partitions, "table_id"), &mt->base.id, NULL);
 	assert(!is_oid_nil(rid));
@@ -4688,10 +4702,12 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int t
 	BATloop(b,bp,bq) {
 		next_value = NULL;
 		next_entry = (ptr) BUNtail(bi, bp);
-		res = atomtostr(&next_value, &length, next_entry);
-		if(res == 0)
+		if(atomtostr(&next_value, &length, next_entry) == 0) {
+			_DELETE(v);
 			return -i - 1;
+		}
 		if(length > STORAGE_MAX_VALUE_LENGTH) {
+			_DELETE(v);
 			GDKfree(next_value);
 			return -i - 1;
 		}
@@ -4705,6 +4721,12 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int t
 	/* add list partition values */
 	p->part.values = b->batCacheid;
 	BBPretain(b->batCacheid);
+
+	cs_add(&mt->members, p, TR_NEW);
+	/* add merge table dependency */
+	sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
+	table_funcs.table_insert(tr, sysobj, &mt->base.id, p->base.name, &p->base.id);
+	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->wstime;
 
 	return 0;
 }

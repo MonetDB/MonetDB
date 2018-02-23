@@ -279,6 +279,8 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 	}
 
 finish:
+	if(msg && b)
+		BBPreclaim(b);
 	return msg;
 }
 

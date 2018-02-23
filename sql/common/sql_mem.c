@@ -117,37 +117,6 @@ void *sa_alloc( sql_allocator *sa, size_t sz )
 	return r;
 }
 
-void *sa_push( sql_allocator *sa, void *area, size_t sz )
-{
-	sz = round16(sz);
-	if (sz > (SA_BLOCK-sa->used)) {
-		if (sa->nr >= sa->size) {
-			char **tmp;
-			sa->size *=2;
-			tmp = RENEW_ARRAY(char*,sa->blks,sa->size);
-			if (tmp == NULL) {
-				sa->size /= 2; /* undo */
-				return NULL;
-			}
-			sa->blks = tmp;
-		}
-		if (sz > SA_BLOCK) {
-			sa->blks[sa->nr] = sa->blks[sa->nr-1];
-			sa->blks[sa->nr-1] = area;
-			sa->nr ++;
-			sa->usedmem += sz;
-		} else {
-			sa->blks[sa->nr] = area;
-			sa->nr ++;
-			sa->used = sz;
-			sa->usedmem += SA_BLOCK;
-		}
-	} else {
-		sa->used += sz;
-	}
-	return area;
-}
-
 #undef sa_zalloc
 void *sa_zalloc( sql_allocator *sa, size_t sz )
 {
