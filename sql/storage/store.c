@@ -4733,16 +4733,13 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int t
 		i++;
 	}
 	_DELETE(v);
-	BATsetcount(b, i);
-	BATsettrivprop(b);
+
 	p->part.values = b->batCacheid;
 
 	/* add list partition values */
 	*err = cs_add_with_validate(&mt->members, p, TR_NEW, sql_values_part_validate_and_insert);
 	if(*err)
 		return -1;
-
-	BBPretain(b->batCacheid);
 
 	/* add merge table dependency */
 	sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);

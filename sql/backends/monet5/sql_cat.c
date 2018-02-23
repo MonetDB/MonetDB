@@ -227,7 +227,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 	sql_column *col = NULL;
 	sql_part *err = NULL;
 	int tp1 = 0, errcode = 0, i = 0, ninserts = 0;
-	BAT *b = NULL;
+	BAT *b = NULL, *sorted = NULL/*, *cbind = NULL, *diff = NULL*/;
 	gdk_return ret = GDK_SUCCEED;
 
 	if((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_value_partition", msname, mtname, psname, ptname, &mt, &pt)))
@@ -270,7 +270,12 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		}
 	}
 
-	errcode = sql_trans_add_value_partition(sql->session->tr, mt, pt, tp1, b, &err);
+	if (BATsort(&sorted, NULL, NULL, b, NULL, NULL, 0, 0) != GDK_SUCCEED) {
+		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto finish;
+	}
+
+	errcode = sql_trans_add_value_partition(sql->session->tr, mt, pt, tp1, sorted, &err);
 	switch(errcode) {
 		case 0:
 			break;
@@ -280,15 +285,23 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 									err->t->s->base.name, err->t->base.name);
 			break;
 		default:
-			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000) \
+			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 									"ALTER TABLE: value at position %d length is higher than %d",
 									(errcode * -1) - 1, STORAGE_MAX_VALUE_LENGTH);
 			break;
 	}
 
 finish:
-	if(msg && b)
-		BBPreclaim(b);
+	if(b)
+		BBPunfix(b->batCacheid);
+	/*if(cbind)
+		BBPunfix(diff->batCacheid);
+	if(diff)
+		BBPunfix(diff->batCacheid);*/
+	if(sorted && msg)
+		BBPunfix(sorted->batCacheid);
+	else if(sorted)
+		BBPretain(sorted->batCacheid);
 	return msg;
 }
 
