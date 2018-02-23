@@ -867,7 +867,7 @@ sql_update_jul2017_sp3(Client c, mvc *sql)
 	tab = find_sql_table(sys, "functions");
 	col = find_sql_column(tab, "name");
 	rid = table_funcs.column_find_row(sql->session->tr, col, "sys_update_schemas", NULL);
-	if (rid == oid_nil) {
+	if (is_oid_nil(rid)) {
 		err = sql_fix_system_tables(c, sql);
 		if (err != NULL)
 			return err;
@@ -877,7 +877,7 @@ sql_update_jul2017_sp3(Client c, mvc *sql)
 	tab = find_sql_table(sys, "triggers");
 	col = find_sql_column(tab, "name");
 	rid = table_funcs.column_find_row(sql->session->tr, col, "system_update_schemas", NULL);
-	if (rid == oid_nil) {
+	if (is_oid_nil(rid)) {
 		char *schema = stack_get_string(sql, "current_schema");
 		size_t bufsize = 1024, pos = 0;
 		char *buf = GDKmalloc(bufsize);

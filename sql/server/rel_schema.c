@@ -2253,7 +2253,7 @@ rel_comment_on(mvc *sql, sqlid obj_id, sql_schema *schema, char *remark) {
 		return NULL; 
 	rid = table_funcs.column_find_row(tx, id_col, &obj_id, NULL);
 	if (remark != NULL && *remark) {
-		if (rid != oid_nil) {
+		if (!is_oid_nil(rid)) {
 			// have new remark and found old one, so update field
 			table_funcs.column_update_value(tx, remark_col, rid, remark);
 		} else {
@@ -2261,7 +2261,7 @@ rel_comment_on(mvc *sql, sqlid obj_id, sql_schema *schema, char *remark) {
 			table_funcs.table_insert(tx, comments, &obj_id, remark);
 		}
 	} else {
-		if (rid != oid_nil) {
+		if (!is_oid_nil(rid)) {
 			// have no remark but found one, so delete row
 			table_funcs.table_delete(tx, comments, rid);
 		}

@@ -1054,7 +1054,7 @@ sql_trans_update_schemas(sql_trans* tr)
 	if (bs_debug)
 		fprintf(stderr, "#update schemas\n");
 
-	for(rid = table_funcs.rids_next(schemas); rid != oid_nil; rid = table_funcs.rids_next(schemas)) {
+	for(rid = table_funcs.rids_next(schemas); !is_oid_nil(rid); rid = table_funcs.rids_next(schemas)) {
 		sql_trans_update_schema(tr, rid);
 	}
 	table_funcs.rids_destroy(schemas);
@@ -3856,7 +3856,7 @@ sys_drop_statistics(sql_trans *tr, sql_column *col)
 
 		oid rid = table_funcs.column_find_row(tr, find_sql_column(sysstats, "column_id"), &col->base.id, NULL);
 
-		if (rid == oid_nil)
+		if (is_oid_nil(rid))
 			return ;
 
 		table_funcs.table_delete(tr, sysstats, rid);
@@ -5675,7 +5675,7 @@ sql_trans_drop_any_comment(sql_trans *tr, int id) {
 	assert(id_col);
 
 	row = table_funcs.column_find_row(tr, id_col, &id, NULL);
-	if (row != oid_nil) {
+	if (!is_oid_nil(row)) {
 		table_funcs.table_delete(tr, comments, row);
 	}
 }
