@@ -59,12 +59,14 @@ extern int list_traverse(list *l, traverse_func f, void *clientdata);
  * */
 typedef int (*fcmp) (void *data, void *key);
 typedef void *(*fcmpvalidate) (void *v1, void *v2, int *cmp);
+typedef void *(*fvalidate) (void *v1, void *v2);
 typedef int (*fcmp2) (void *data, void *v1, void *v2);
 typedef void *(*fdup) (void *data);
 typedef void *(*freduce) (void *v1, void *v2);
 typedef void *(*freduce2) (sql_allocator *sa, void *v1, void *v2);
 typedef void *(*fmap) (void *data, void *clientdata);
 
+extern void *list_append_with_validate(list *l, void *data, fvalidate cmp);
 extern void *list_append_sorted(list *l, void *data, fcmpvalidate cmp);
 extern node *list_find(list *l, void *key, fcmp cmp);
 extern int  list_position(list *l, void *val);

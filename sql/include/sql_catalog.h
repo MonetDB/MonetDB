@@ -201,6 +201,7 @@ typedef struct changeset {
 extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy);
 extern void cs_destroy(changeset * cs);
 extern void cs_add(changeset * cs, void *elm, int flag);
+extern void *cs_add_with_validate(changeset * cs, void *elm, int flag, fvalidate cmp);
 extern void *cs_add_sorted(changeset * cs, void *elm, int flag, fcmpvalidate cmp);
 extern void cs_add_before(changeset * cs, node *n, void *elm);
 extern void cs_del(changeset * cs, node *elm, int flag);
@@ -630,6 +631,7 @@ extern sql_func *sql_trans_find_func(sql_trans *tr, int id);
 extern node *find_sql_func_node(sql_schema *s, int id);
 
 extern void *sql_range_part_validate_and_insert(void *v1, void *v2, int* res);
+extern void *sql_values_part_validate_and_insert(void *v1, void *v2);
 
 typedef struct {
 	BAT *b;

@@ -358,3 +358,33 @@ sql_range_part_validate_and_insert(void *v1, void *v2, int* res)
 	*res = res2;
 	return NULL;
 }
+
+void*
+sql_values_part_validate_and_insert(void *v1, void *v2)
+{
+	sql_part* pt = (sql_part*) v1, *newp = (sql_part*) v2, *res = NULL;
+	BAT* b1 = NULL, *b2 = NULL, *b3  = NULL;
+
+	if ((b1 = BATdescriptor(pt->part.values)) == NULL) {
+		res = pt;
+		goto finish;
+	}
+	if ((b2 = BATdescriptor(newp->part.values)) == NULL) {
+		res = pt;
+		goto finish;
+	}
+	if(BATsemijoin(&b3, NULL, b1, b2, NULL, NULL, 0, BUN_NONE) != GDK_SUCCEED) {
+		res = pt;
+		goto finish;
+	}
+	if(BATcount(b3) > 0)
+		res = pt;
+finish:
+	if(b1)
+		BBPunfix(b1->batCacheid);
+	if(b2)
+		BBPunfix(b2->batCacheid);
+	if(b3)
+		BBPunfix(b3->batCacheid);
+	return res;
+}

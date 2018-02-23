@@ -816,6 +816,9 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 			if(isRangePartitionTable(t)) {
 				sql_part *err = cs_add_sorted(&t->members, pt, TR_OLD, sql_range_part_validate_and_insert);
 				assert(!err);
+			} else if(isListPartitionTable(t)) {
+				sql_part *err = cs_add_with_validate(&t->members, pt, TR_OLD, sql_values_part_validate_and_insert);
+				assert(!err);
 			} else {
 				cs_add(&t->members, pt, TR_OLD);
 			}
@@ -1474,6 +1477,9 @@ dup_sql_part(sql_allocator *sa, sql_table *ot, sql_table *mt, sql_part *opt)
 
 	if(isRangePartitionTable(ot)) {
 		sql_part *err = cs_add_sorted(&mt->members, pt, TR_NEW, sql_range_part_validate_and_insert);
+		assert(!err);
+	} else if(isListPartitionTable(ot)) {
+		sql_part *err = cs_add_with_validate(&mt->members, pt, TR_NEW, sql_values_part_validate_and_insert);
 		assert(!err);
 	} else {
 		cs_add(&mt->members, pt, TR_NEW);
@@ -2635,6 +2641,9 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 			dupped->t = t;
 			if(isRangePartitionTable(ot)) {
 				sql_part *err = cs_add_sorted(&t->members, dupped, tr_flag(&pt->base, flag), sql_range_part_validate_and_insert);
+				assert(!err);
+			} else if(isListPartitionTable(ot)) {
+				sql_part *err = cs_add_with_validate(&t->members, dupped, tr_flag(&pt->base, flag), sql_values_part_validate_and_insert);
 				assert(!err);
 			} else {
 				cs_add(&t->members, dupped, tr_flag(&pt->base, flag));
@@ -4681,7 +4690,7 @@ finish:
 }
 
 int
-sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int tpe, BAT* b)
+sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int tpe, BAT* b, sql_part **err)
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobal(mt)?"sys":"tmp");
 	sql_table *sysobj = find_sql_table(syss, "objects");
@@ -4726,11 +4735,15 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int t
 	_DELETE(v);
 	BATsetcount(b, i);
 	BATsettrivprop(b);
-	/* add list partition values */
 	p->part.values = b->batCacheid;
+
+	/* add list partition values */
+	*err = cs_add_with_validate(&mt->members, p, TR_NEW, sql_values_part_validate_and_insert);
+	if(*err)
+		return -1;
+
 	BBPretain(b->batCacheid);
 
-	cs_add(&mt->members, p, TR_NEW);
 	/* add merge table dependency */
 	sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
 	table_funcs.table_insert(tr, sysobj, &mt->base.id, p->base.name, &p->base.id);

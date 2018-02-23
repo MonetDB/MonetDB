@@ -184,10 +184,12 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			break;
 		case -2:
-			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: minimum value length is higher than %d", STORAGE_MAX_VALUE_LENGTH);
+			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
+									"ALTER TABLE: minimum value length is higher than %d", STORAGE_MAX_VALUE_LENGTH);
 			break;
 		case -3:
-			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: maximum value length is higher than %d", STORAGE_MAX_VALUE_LENGTH);
+			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
+									"ALTER TABLE: maximum value length is higher than %d", STORAGE_MAX_VALUE_LENGTH);
 			break;
 		case -4:
 			assert(err);
@@ -198,7 +200,8 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 				GDKfree(err_min);
 				msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			} else {
-				msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: conflicting partitions: %s to %s and %s to %s from table %s.%s",
+				msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
+								  "ALTER TABLE: conflicting partitions: %s to %s and %s to %s from table %s.%s",
 								  min, max, err_min, err_max, err->t->s->base.name, err->t->base.name);
 				GDKfree(err_min);
 				GDKfree(err_max);
@@ -222,6 +225,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 	sql_table *mt = NULL, *pt = NULL;
 	str msg = MAL_SUCCEED;
 	sql_column *col = NULL;
+	sql_part *err = NULL;
 	int tp1 = 0, errcode = 0, i = 0, ninserts = 0;
 	BAT *b = NULL;
 	gdk_return ret = GDK_SUCCEED;
@@ -254,7 +258,8 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		str next = *getArgReference_str(stk, pci, i);
 
 		if(ATOMfromstr(tp1, &pnext, &len, next) < 0) {
-			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000) "ALTER TABLE: error while parsing value %s", next);
+			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
+									"ALTER TABLE: error while parsing value %s", next);
 			goto finish;
 		}
 		ret = BUNappend(b, pnext, FALSE);
@@ -265,16 +270,19 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		}
 	}
 
-	/* TODO search for a conflicting partition */
-	errcode = sql_trans_add_value_partition(sql->session->tr, mt, pt, tp1, b);
+	errcode = sql_trans_add_value_partition(sql->session->tr, mt, pt, tp1, b, &err);
 	switch(errcode) {
 		case 0:
 			break;
 		case -1:
-			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
+									"ALTER TABLE: the new partition is conflicting with the existing partition %s.%s",
+									err->t->s->base.name, err->t->base.name);
 			break;
 		default:
-			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000) "ALTER TABLE: value at position %d length is higher than %d", (errcode * -1) - 1, STORAGE_MAX_VALUE_LENGTH);
+			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000) \
+									"ALTER TABLE: value at position %d length is higher than %d",
+									(errcode * -1) - 1, STORAGE_MAX_VALUE_LENGTH);
 			break;
 	}
 

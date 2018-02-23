@@ -161,6 +161,39 @@ list_append(list *l, void *data)
 }
 
 void*
+list_append_with_validate(list *l, void *data, fvalidate cmp)
+{
+	node *n = node_create(l->sa, data), *m;
+	void* err = NULL;
+
+	if (n == NULL)
+		return NULL;
+	if (l->cnt) {
+		for (m = l->h; m; m = m->next) {
+			err = cmp(m->data, data);
+			if(err)
+				return err;
+		}
+		l->t->next = n;
+	} else {
+		l->h = n;
+	}
+	l->t = n;
+	l->cnt++;
+	MT_lock_set(&l->ht_lock);
+	if (l->ht) {
+		int key = l->ht->key(data);
+
+		if (hash_add(l->ht, key, data) == NULL) {
+			MT_lock_unset(&l->ht_lock);
+			return NULL;
+		}
+	}
+	MT_lock_unset(&l->ht_lock);
+	return NULL;
+}
+
+void*
 list_append_sorted(list *l, void *data, fcmpvalidate cmp)
 {
 	node *n = node_create(l->sa, data), *m;
