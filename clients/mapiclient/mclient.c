@@ -3017,6 +3017,7 @@ main(int argc, char **argv)
 	bool settz = true;
 	bool autocommit = true;	/* autocommit mode default on */
 	bool user_set_as_flag = false;
+	bool passwd_set_as_flag = false;
 	static struct option long_options[] = {
 		{"autocommit", 0, 0, 'a'},
 		{"database", 1, 0, 'd'},
@@ -3077,7 +3078,7 @@ main(int argc, char **argv)
 #ifdef HAVE_ICONV
 				"E:"
 #endif
-				"f:h:Hil:L:n:Np:r:s:t:u:vw:Xz"
+				"f:h:Hil:L:n:Np:P:r:s:t:u:vw:Xz"
 #ifdef HAVE_POPEN
 				"|:"
 #endif
@@ -3167,6 +3168,13 @@ main(int argc, char **argv)
 			assert(optarg);
 			port = atoi(optarg);
 			break;
+		case 'P':
+			assert(optarg);
+			if (passwd)
+				free(passwd);
+			passwd = strdup(optarg);
+			passwd_set_as_flag = true;
+			break;
 		case 'r':
 			assert(optarg);
 			rowsperpage = atoi(optarg);
@@ -3241,6 +3249,12 @@ main(int argc, char **argv)
 			/* not reached */
 		}
 	}
+	if (passwd_set_as_flag &&
+	    (output == NULL || strcmp(output, "test") != 0)) {
+		usage(argv[0], -1);
+		/* not reached */
+	}
+
 #ifdef HAVE_ICONV
 #ifdef HAVE_NL_LANGINFO
 	if (encoding == NULL)
@@ -3261,9 +3275,10 @@ main(int argc, char **argv)
 
 	/* when config file would provide defaults */
 	if (user_set_as_flag) {
-		if (passwd)
+		if (passwd && !passwd_set_as_flag) {
 			free(passwd);
-		passwd = NULL;
+			passwd = NULL;
+		}
 	}
 
 	if (user == NULL)
