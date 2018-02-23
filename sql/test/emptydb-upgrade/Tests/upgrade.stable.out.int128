@@ -5869,7 +5869,7 @@ ALTER TABLE sys.systemfunctions ALTER COLUMN function_id SET NOT NULL;
 INSERT INTO sys.systemfunctions
 SELECT id FROM sys.functions
 WHERE schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys')
-AND name IN ('comment_on', 'function_type_keyword', 'no_op');
+AND name IN ('function_type_keyword', 'no_op');
 ALTER TABLE sys.keywords SET READ WRITE;
 INSERT INTO sys.keywords VALUES ('COMMENT'), ('CONTINUE'), ('START'), ('TRUNCATE');
 -- ALTER TABLE sys.keywords SET READ ONLY;
