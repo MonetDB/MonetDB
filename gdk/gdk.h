@@ -1467,8 +1467,8 @@ gdk_export gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, B
 	__attribute__ ((__warn_unused_result__));
 
 
-gdk_export void GDKqsort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe);
-gdk_export void GDKqsort_rev(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe);
+gdk_export void GDKqsort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe);
+gdk_export void GDKqsort_rev(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe);
 
 #define BATtordered(b)	((b)->ttype == TYPE_void || (b)->tsorted)
 #define BATtrevordered(b) (((b)->ttype == TYPE_void && is_oid_nil((b)->tseqbase)) || (b)->trevsorted)
