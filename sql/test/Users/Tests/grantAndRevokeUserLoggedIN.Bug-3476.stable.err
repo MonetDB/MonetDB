@@ -1,4 +1,4 @@
-stderr of test 'grantAndRevokeUserLogedIN.Bug-3476` in directory 'sql/test/Users` itself:
+stderr of test 'grantAndRevokeUserLoggedIN.Bug-3476` in directory 'sql/test/Users` itself:
 
 
 # 10:42:58 >  
@@ -27,7 +27,7 @@ stderr of test 'grantAndRevokeUserLogedIN.Bug-3476` in directory 'sql/test/Users
 # cmdline opt 	gdk_debug = 536870922
 
 # 10:42:59 >  
-# 10:42:59 >  "/usr/bin/python2" "grantAndRevokeUserLogedIN.SQL.py" "grantAndRevokeUserLogedIN"
+# 10:42:59 >  "/usr/bin/python2" "grantAndRevokeUserLoggedIN.SQL.py" "grantAndRevokeUserLoggedIN"
 # 10:42:59 >  
 
 
