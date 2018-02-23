@@ -1978,7 +1978,7 @@ BATmode(BAT *b, int mode)
  * properties than you might suspect.  When setting properties on a
  * newly created and filled BAT, you may want to first make sure the
  * batCount is set correctly (e.g. by calling BATsetcount), then use
- * BAThseqbase and BATkey, and finally set the other properties.
+ * BATtseqbase and BATkey, and finally set the other properties.
  */
 
 void

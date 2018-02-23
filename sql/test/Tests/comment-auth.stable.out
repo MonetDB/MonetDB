@@ -76,16 +76,16 @@ Ready.
 #CREATE TABLE schema_a.tab_a(i INTEGER);
 #CREATE TABLE schema_b.tab_b(i INTEGER);
 
-# 14:17:02 >  
-# 14:17:02 >  Mtimeout -timeout 60 mclient -lsql -ftest -tnone -Eutf-8 -i -e --host=/var/tmp/mtest-36372 --port=31868 --database=mTests_sql_test < "/Users/joeri/extr/monet/MonetDB/sql/test/Tests/comment-auth-a.sql"
-# 14:17:02 >  
+# 16:48:25 >  
+# 16:48:25 >  Mtimeout -timeout 60 mclient -lsql -ftest -tnone -Eutf-8 -i -e --host=/var/tmp/mtest-70396 --port=35195 --database=mTests_sql_test < "/Users/joeri/extr/monet/MonetDB/sql/test/Tests/comment-auth-a.sql"
+# 16:48:25 >  
 
 SCHEMA  schema_a  'set by super user'
 SCHEMA  schema_b  'set by super user'
-SCHEMA  schema_a  'set by super user'
+SCHEMA  schema_a  'set by user_a'
 SCHEMA  schema_b  'set by super user'
 
-# 14:17:02 >  
-# 14:17:02 >  "Done."
-# 14:17:02 >  
+# 16:48:25 >  
+# 16:48:25 >  "Done."
+# 16:48:25 >  
 

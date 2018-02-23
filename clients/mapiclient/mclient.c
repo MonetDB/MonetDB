@@ -1414,7 +1414,7 @@ SQLdebugRendering(MapiHdl hdl)
 }
 
 static void
-SQLpagemove(int *len, int fields, int *ps, int *silent)
+SQLpagemove(int *len, int fields, int *ps, bool *silent)
 {
 	char buf[512];
 	ssize_t sz;
@@ -1427,11 +1427,11 @@ SQLpagemove(int *len, int fields, int *ps, int *silent)
 		if (buf[0] == 'c')
 			*ps = 0;
 		if (buf[0] == 'q')
-			*silent = 1;
+			*silent = true;
 		while (sz > 0 && buf[sz - 1] != '\n')
 			sz = mnstr_readline(fromConsole, buf, sizeof(buf));
 	}
-	if (*silent == 0)
+	if (!*silent)
 		SQLseparator(len, fields, '-');
 }
 
@@ -1443,7 +1443,8 @@ SQLrenderer(MapiHdl hdl)
 	int *len = NULL, *hdr = NULL, *numeric = NULL;
 	char **rest = NULL;
 	char buf[50];
-	int ps = rowsperpage, silent = 0;
+	int ps = rowsperpage;
+	bool silent = false;
 	int64_t rows = 0;
 
 	croppedfields = 0;
@@ -2260,7 +2261,7 @@ mydestroy(void *private)
 #endif
 
 static int
-doFile(Mapi mid, stream *fp, bool useinserts, int interactive, int save_history)
+doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history)
 {
 	char *line = NULL;
 	char *buf = NULL;
@@ -2282,7 +2283,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, int interactive, int save_history)
 	    && formatter != TESTformatter
 #endif
 		) {
-		interactive = 1;
+		interactive = true;
 		setPrompt();
 		prompt = promptbuf;
 		fromConsole = fp;
@@ -3005,17 +3006,18 @@ main(int argc, char **argv)
 	char *output = NULL;	/* output format as string */
 	FILE *fp = NULL;
 	int trace = 0;
-	int dump = 0;
+	bool dump = false;
 	bool useinserts = false;
 	int c = 0;
 	Mapi mid;
 	int save_history = 0;
-	int interactive = 0;
-	int has_fileargs = 0;
+	bool interactive = false;
+	bool has_fileargs = false;
 	int option_index = 0;
-	int settz = 1;
-	int autocommit = 1;	/* autocommit mode default on */
-	char user_set_as_flag = 0;
+	bool settz = true;
+	bool autocommit = true;	/* autocommit mode default on */
+	bool user_set_as_flag = false;
+	bool passwd_set_as_flag = false;
 	static struct option long_options[] = {
 		{"autocommit", 0, 0, 'a'},
 		{"database", 1, 0, 'd'},
@@ -3072,15 +3074,15 @@ main(int argc, char **argv)
 		mode = SQL;
 	}
 
-	while ((c = getopt_long(argc, argv, "aDNd:e"
+	while ((c = getopt_long(argc, argv, "ad:De"
 #ifdef HAVE_ICONV
 				"E:"
 #endif
-				"f:h:it:L:l:n:"
+				"f:h:Hil:L:n:Np:P:r:s:t:u:vw:Xz"
 #ifdef HAVE_POPEN
 				"|:"
 #endif
-				"w:r:p:s:Xu:vzHP?",
+				"?",
 				long_options, &option_index)) != -1) {
 		switch (c) {
 		case 0:
@@ -3092,7 +3094,16 @@ main(int argc, char **argv)
 #endif
 			break;
 		case 'a':
-			autocommit = 0;
+			autocommit = false;
+			break;
+		case 'd':
+			assert(optarg);
+			if (dbname)
+				free(dbname);
+			dbname = strdup(optarg);
+			break;
+		case 'D':
+			dump = true;
 			break;
 		case 'e':
 			echoquery = 1;
@@ -3103,9 +3114,21 @@ main(int argc, char **argv)
 			encoding = optarg;
 			break;
 #endif
-		case 'L':
+		case 'f':
 			assert(optarg);
-			logfile = strdup(optarg);
+			if (output != NULL)
+				free(output);
+			output = strdup(optarg);	/* output format */
+			break;
+		case 'h':
+			assert(optarg);
+			host = optarg;
+			break;
+		case 'H':
+			save_history = 1;
+			break;
+		case 'i':
+			interactive = true;
 			break;
 		case 'l':
 			assert(optarg);
@@ -3130,25 +3153,35 @@ main(int argc, char **argv)
 				exit(-1);
 			}
 			break;
+		case 'L':
+			assert(optarg);
+			logfile = strdup(optarg);
+			break;
 		case 'n':
 			assert(optarg);
 			nullstring = optarg;
 			break;
-		case 'u':
-			assert(optarg);
-			if (user)
-				free(user);
-			user = strdup(optarg);
-			user_set_as_flag = 1;
+		case 'N':
+			useinserts = true;
 			break;
-		case 'f':
+		case 'p':
 			assert(optarg);
-			if (output != NULL)
-				free(output);
-			output = strdup(optarg);	/* output format */
+			port = atoi(optarg);
 			break;
-		case 'i':
-			interactive = 1;
+		case 'P':
+			assert(optarg);
+			if (passwd)
+				free(passwd);
+			passwd = strdup(optarg);
+			passwd_set_as_flag = true;
+			break;
+		case 'r':
+			assert(optarg);
+			rowsperpage = atoi(optarg);
+			break;
+		case 's':
+			assert(optarg);
+			command = optarg;
 			break;
 		case 't':
 			if (optarg != NULL) {
@@ -3164,50 +3197,12 @@ main(int argc, char **argv)
 				}
 			}
 			break;
-		case 'h':
+		case 'u':
 			assert(optarg);
-			host = optarg;
-			break;
-		case 'p':
-			assert(optarg);
-			port = atoi(optarg);
-			break;
-		case 'D':
-			dump = 1;
-			break;
-		case 'N':
-			useinserts = true;
-			break;
-		case 'd':
-			assert(optarg);
-			if (dbname)
-				free(dbname);
-			dbname = strdup(optarg);
-			break;
-		case 's':
-			assert(optarg);
-			command = optarg;
-			break;
-		case 'w':
-			assert(optarg);
-			pagewidth = atoi(optarg);
-			pagewidthset = pagewidth != 0;
-			break;
-		case 'r':
-			assert(optarg);
-			rowsperpage = atoi(optarg);
-			break;
-#ifdef HAVE_POPEN
-		case '|':
-			assert(optarg);
-			pager = optarg;
-			break;
-#endif
-		case 'X':
-			trace = MAPI_TRACE;
-			break;
-		case 'H':
-			save_history = 1;
+			if (user)
+				free(user);
+			user = strdup(optarg);
+			user_set_as_flag = true;
 			break;
 		case 'v':
 			mnstr_printf(toConsole,
@@ -3226,9 +3221,23 @@ main(int argc, char **argv)
 				     "character encoding: %s\n", encoding ? encoding : "utf-8 (default)");
 #endif
 			return 0;
-		case 'z':
-			settz = 0;
+		case 'w':
+			assert(optarg);
+			pagewidth = atoi(optarg);
+			pagewidthset = pagewidth != 0;
 			break;
+		case 'X':
+			trace = MAPI_TRACE;
+			break;
+		case 'z':
+			settz = false;
+			break;
+#ifdef HAVE_POPEN
+		case '|':
+			assert(optarg);
+			pager = optarg;
+			break;
+#endif
 		case '?':
 			/* a bit of a hack: look at the option that the
 			 * current `c' is based on and see if we recognize
@@ -3240,6 +3249,12 @@ main(int argc, char **argv)
 			/* not reached */
 		}
 	}
+	if (passwd_set_as_flag &&
+	    (output == NULL || strcmp(output, "test") != 0)) {
+		usage(argv[0], -1);
+		/* not reached */
+	}
+
 #ifdef HAVE_ICONV
 #ifdef HAVE_NL_LANGINFO
 	if (encoding == NULL)
@@ -3260,9 +3275,10 @@ main(int argc, char **argv)
 
 	/* when config file would provide defaults */
 	if (user_set_as_flag) {
-		if (passwd)
+		if (passwd && !passwd_set_as_flag) {
 			free(passwd);
-		passwd = NULL;
+			passwd = NULL;
+		}
 	}
 
 	if (user == NULL)

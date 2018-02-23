@@ -1942,6 +1942,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
     MissingMods = CheckMods(env, TST, SERVER, CALL)
     MissingTests = CheckTests(env, TST, oktests)
     nomito = os.path.isfile(TST + '.nomito')
+    user = None
+    passwd = None
 
 
     os.chdir(TSTTRGDIR)
@@ -2015,6 +2017,18 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
                     reason = "as number of threads is wrong"
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
+            elif cond.startswith('USER='):
+                if negate:
+                    reason = "impossible combination of USER= and negation"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+                user = cond[5:]
+            elif cond.startswith('PASSWD='):
+                if negate:
+                    reason = "impossible combination of PASSWD= and negation"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+                passwd = cond[7:]
             elif cond not in CONDITIONALS:
                 reason = "as conditional '%s' is unknown." % cond
                 elem = SkipTest(env, TST, EXT, reason, length)
@@ -2194,7 +2208,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
         TestErr.close()
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, COND, all_tests)
+        tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests)
         if tres == 'segfault':
             # rename core file, if any -- might have to check
             # /proc/sys/kernel/core_pattern in the future but hopefully
@@ -2823,7 +2837,7 @@ def mapi_ping(port,lang) :
     return False
 ### mapi_ping() #
 
-def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, COND, all_tests) :
+def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests) :
     ATJOB2 = ""
     STDERR.flush()
     if quiet:
@@ -3053,6 +3067,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                         TSTs.append(f)
 
                 Clnt = splitcommand(exe['SQL_Client'][1])
+                if user:
+                    Clnt.append('-u%s' % user)
+                if passwd:
+                    Clnt.append('-P%s' % passwd)
                 for f in TSTs:
                     returncode = RunIt(Clnt, open(f), ClntOut, ClntErr, TIMEOUT)
                     if returncode:

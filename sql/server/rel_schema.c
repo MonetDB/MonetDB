@@ -2228,48 +2228,47 @@ rel_find_designated_object(mvc *sql, symbol *sym, sql_schema **schema_out) {
 
 static sql_rel *
 rel_comment_on(mvc *sql, sqlid obj_id, sql_schema *schema, char *remark) {
-	buffer *buf = NULL;
-	stream *s = NULL;
-	char *query = NULL;
+	sql_trans *tx;
 	sql_schema *sys;
-	sql_rel *rel = NULL;
+	sql_table *comments;
+	sql_column *id_col, *remark_col;
+	oid rid;
 
 	// Check authorization
 	if (!mvc_schema_privs(sql, schema)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "COMMENT ON: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), schema->base.name);
 	}
 
-	buf = buffer_create(4000);
-	if (!buf)
-		goto wrap_up;
-
-	s = buffer_wastream(buf, "comment_on_call");
-	if (!s)
-		goto wrap_up;
-
-	mnstr_printf(s, "CALL sys.comment_on(%d, ", obj_id);
-	if (!remark) {
-		mnstr_printf(s, "NULL");
+	// Manually insert the rows to circumvent permission checks.
+	tx = sql->session->tr;
+	sys = find_sql_schema(tx, "sys");
+	if (!sys) 
+		return NULL;
+	comments = find_sql_table(sys, "comments");
+	if (!comments)
+		return NULL;
+	id_col = find_sql_column(comments, "id");
+	remark_col = find_sql_column(comments, "remark");
+	if (!id_col || !remark_col) 
+		return NULL; 
+	rid = table_funcs.column_find_row(tx, id_col, &obj_id, NULL);
+	if (remark != NULL && *remark) {
+		if (rid != oid_nil) {
+			// have new remark and found old one, so update field
+			table_funcs.column_update_value(tx, remark_col, rid, remark);
+		} else {
+			// have new remark but found none so insert row
+			table_funcs.table_insert(tx, comments, &obj_id, remark);
+		}
 	} else {
-		char *escaped = sql_escape_str(remark);
-		if (!escaped)
-			goto wrap_up;
-		mnstr_printf(s, "'%s'", escaped);
-		GDKfree(escaped);
+		if (rid != oid_nil) {
+			// have no remark but found one, so delete row
+			table_funcs.table_delete(tx, comments, rid);
+		}
 	}
-	mnstr_printf(s, ");");
-	query = buffer_get_buf(buf);
-	sys = mvc_bind_schema(sql, "sys");
-	rel = rel_parse(sql, sys, query, m_normal); // correct mode?
 
-wrap_up:
-	if (query)
-		free(query);
-	if (s)
-		mnstr_destroy(s);
-	if (buf)
-		buffer_destroy(buf);
-	return rel;
+	// There must be a better way to return a no-op sql_rel*
+	return rel_parse(sql, sys, "CALL sys.no_op();", m_normal);
 }
 
 sql_rel *
