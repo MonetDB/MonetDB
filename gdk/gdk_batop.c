@@ -583,18 +583,6 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 
 	b->batDirty = 1;
 
-	if (cnt > BATcapacity(b) - BUNlast(b)) {
-		/* if needed space exceeds a normal growth extend just
-		 * with what's needed */
-		BUN ncap = BUNlast(b) + cnt;
-		BUN grows = BATgrows(b);
-
-		if (ncap > grows)
-			grows = ncap;
-		if (BATextend(b, grows) != GDK_SUCCEED)
-			goto bunins_failed;
-	}
-
 	IMPSdestroy(b);		/* imprints do not support updates yet */
 	OIDXdestroy(b);
 	PROPdestroy(b->tprops);
