@@ -580,13 +580,13 @@ typedef struct {
 	char *base;		/* base pointer in memory. */
 	char filename[32];	/* file containing image of the heap */
 
-	unsigned int copied:1,	/* a copy of an existing map. */
+	bool copied:1,		/* a copy of an existing map. */
 		hashash:1,	/* the string heap contains hash values */
 		forcemap:1,	/* force STORE_MMAP even if heap exists */
-		cleanhash:1;	/* string heaps must clean hash */
+		cleanhash:1,	/* string heaps must clean hash */
+		dirty:1;	/* specific heap dirty marker */
 	storage_t storage;	/* storage mode (mmap/malloc). */
 	storage_t newstorage;	/* new desired storage mode at re-allocation. */
-	bte dirty;		/* specific heap dirty marker */
 	bte farmid;		/* id of farm where heap is located */
 	bat parentid;		/* cache id of VIEW parent bat */
 } Heap;
@@ -745,7 +745,7 @@ typedef struct {
 	MT_Id tid;		/* which thread created it */
 	unsigned int
 	 copiedtodisk:1,	/* once written */
-	 dirty:2,		/* dirty wrt disk? */
+	 dirty:1,		/* dirty wrt disk? */
 	 dirtyflushed:1,	/* was dirty before commit started? */
 	 descdirty:1,		/* bat descriptor dirty marker */
 	 restricted:2,		/* access privileges */
@@ -769,16 +769,15 @@ typedef struct {
 
 	unsigned short width;	/* byte-width of the atom array */
 	bte type;		/* type id. */
-	bte shift;		/* log2 of bunwidth */
-	unsigned int
-	 varsized:1,		/* varsized (1) or fixedsized (0) */
-	 key:1,			/* no duplicate values present */
-	 unique:1,		/* no duplicate values allowed */
-	 dense:1,		/* OID only: only consecutive values */
-	 nonil:1,		/* there are no nils in the column */
-	 nil:1,			/* there is a nil in the column */
-	 sorted:1,		/* column is sorted in ascending order */
-	 revsorted:1;		/* column is sorted in descending order */
+	bte shift;		/* log2 of bun width */
+	bool varsized:1,	/* varsized (1) or fixedsized (0) */
+		key:1,		/* no duplicate values present */
+		unique:1,	/* no duplicate values allowed */
+		dense:1,	/* OID only: only consecutive values */
+		nonil:1,	/* there are no nils in the column */
+		nil:1,		/* there is a nil in the column */
+		sorted:1,	/* column is sorted in ascending order */
+		revsorted:1;	/* column is sorted in descending order */
 	BUN nokey[2];		/* positions that prove key==FALSE */
 	BUN nosorted;		/* position that proves sorted==FALSE */
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
