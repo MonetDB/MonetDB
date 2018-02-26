@@ -5876,6 +5876,48 @@ INSERT INTO sys.keywords VALUES ('COMMENT'), ('CONTINUE'), ('START'), ('TRUNCATE
 delete from sys.systemfunctions where function_id not in (select id from sys.functions);
 set schema "sys";
 
+Running database upgrade commands:
+set schema sys;
+grant select on sys.netcdf_files to public;
+grant select on sys.netcdf_dims to public;
+grant select on sys.netcdf_vars to public;
+grant select on sys.netcdf_vardim to public;
+grant select on sys.netcdf_attrs to public;
+grant execute on procedure sys.netcdf_attach(varchar(256)) to public;
+grant execute on procedure sys.netcdf_importvar(integer, varchar(256)) to public;
+set schema "sys";
+
+Running database upgrade commands:
+set schema sys;
+CREATE FUNCTION bam.seq_char(ref_pos INT, alg_seq STRING, alg_pos INT, alg_cigar STRING)
+RETURNS CHAR(1) EXTERNAL NAME bam.seq_char;
+insert into sys.systemfunctions (select id from sys.functions where name in ('seq_char') and schema_id = (select id from sys.schemas where name = 'bam') and id not in (select function_id from sys.systemfunctions));
+drop procedure bam.bam_loader_repos(string, smallint, smallint);
+drop procedure bam.bam_loader_files(string, smallint, smallint);
+delete from systemfunctions where function_id not in (select id from functions);
+CREATE PROCEDURE bam.bam_loader_repos(bam_repos STRING, dbschema SMALLINT)
+EXTERNAL NAME bam.bam_loader_repos;
+CREATE PROCEDURE bam.bam_loader_files(bam_files STRING, dbschema SMALLINT)
+EXTERNAL NAME bam.bam_loader_files;
+insert into sys.systemfunctions (select id from sys.functions where name in ('bam_loader_repos', 'bam_loader_files') and schema_id = (select id from sys.schemas where name = 'bam') and id not in (select function_id from sys.systemfunctions));
+GRANT SELECT ON bam.files TO PUBLIC;
+GRANT SELECT ON bam.sq TO PUBLIC;
+GRANT SELECT ON bam.rg TO PUBLIC;
+GRANT SELECT ON bam.pg TO PUBLIC;
+GRANT SELECT ON bam.export TO PUBLIC;
+GRANT EXECUTE ON FUNCTION bam.bam_flag(SMALLINT, STRING) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION bam.reverse_seq(STRING) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION bam.reverse_qual(STRING) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION bam.seq_length(STRING) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION bam.seq_char(INT, STRING, INT, STRING) TO PUBLIC;
+GRANT EXECUTE ON PROCEDURE bam.bam_loader_repos(STRING, SMALLINT) TO PUBLIC;
+GRANT EXECUTE ON PROCEDURE bam.bam_loader_files(STRING, SMALLINT) TO PUBLIC;
+GRANT EXECUTE ON PROCEDURE bam.bam_loader_file(STRING, SMALLINT) TO PUBLIC;
+GRANT EXECUTE ON PROCEDURE bam.bam_drop_file(BIGINT, SMALLINT) TO PUBLIC;
+GRANT EXECUTE ON PROCEDURE bam.sam_export(STRING) TO PUBLIC;
+GRANT EXECUTE ON PROCEDURE bam.bam_export(STRING) TO PUBLIC;
+set schema "sys";
+
 
 # 15:43:25 >  
 # 15:43:25 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-5725" "--port=37647"
