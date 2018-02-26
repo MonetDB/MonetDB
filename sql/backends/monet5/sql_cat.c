@@ -148,11 +148,13 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	sql_table *mt = NULL, *pt = NULL;
 	sql_part *err = NULL;
 	str msg = MAL_SUCCEED, err_min = NULL, err_max = NULL;
-	sql_column *col = NULL;
-	int tp1 = 0, errcode = 0;
+	sql_column *col = NULL, *bcol = NULL;
+	BAT *diff1 = NULL, *diff2 = NULL, *cbind = NULL;
+	int tp1 = 0, errcode = 0, i = 0;
 	ptr pmin = NULL, pmax = NULL;
 	size_t smin = 0, smax = 0, serr_min = 0, serr_max = 0;
 	ssize_t (*atomtostr)(str *, size_t *, const void *);
+	int accesses[3] = {RDONLY, RD_INS, RD_UPD_VAL};
 
 	if((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_range_partition", msname, mtname, psname, ptname, &mt, &pt)))
 		return msg;
@@ -176,6 +178,45 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	if(ATOMcmp(tp1, pmin, pmax) > 0) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: minimum value is higher than maximum value");
 		goto finish;
+	}
+
+	bcol = mvc_bind_column(sql, pt, col->base.name);
+
+	for(i = 0 ; i < 3 ; i++) {
+		if(cbind) {
+			BBPunfix(cbind->batCacheid);
+			cbind = NULL;
+		}
+		if(diff1) {
+			BBPunfix(diff1->batCacheid);
+			diff1 = NULL;
+		}
+		if(diff2) {
+			BBPunfix(diff2->batCacheid);
+			diff2 = NULL;
+		}
+		if((cbind = store_funcs.bind_col(sql->session->tr, bcol, accesses[i])) == NULL) {
+			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			goto finish;
+		}
+		if((diff1 = BATthetaselect(cbind, NULL, pmin, "<")) == NULL) {
+			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			goto finish;
+		}
+		if(BATcount(diff1) > 0) {
+			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
+									"ALTER TABLE: there are values in the column %s with values lesser than the partition minimum", col->base.name);
+			goto finish;
+		}
+		if((diff2 = BATthetaselect(cbind, NULL, pmax, ">")) == NULL) {
+			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			goto finish;
+		}
+		if(BATcount(diff2) > 0) {
+			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
+									"ALTER TABLE: there are values in the column %s with values higher than the partition maximum", col->base.name);
+			goto finish;
+		}
 	}
 
 	errcode = sql_trans_add_range_partition(sql->session->tr, mt, pt, tp1, pmin, smin, pmax, smax, &err);
@@ -210,6 +251,12 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	}
 
 finish:
+	if(cbind)
+		BBPunfix(cbind->batCacheid);
+	if(diff1)
+		BBPunfix(diff1->batCacheid);
+	if(diff2)
+		BBPunfix(diff2->batCacheid);
 	if(msg) {
 		if(pmin)
 			GDKfree(pmin);
@@ -224,11 +271,12 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 {
 	sql_table *mt = NULL, *pt = NULL;
 	str msg = MAL_SUCCEED;
-	sql_column *col = NULL;
+	sql_column *col = NULL, *bcol = NULL;
 	sql_part *err = NULL;
 	int tp1 = 0, errcode = 0, i = 0, ninserts = 0;
-	BAT *b = NULL, *sorted = NULL/*, *cbind = NULL, *diff = NULL*/;
+	BAT *b = NULL, *sorted = NULL, *cbind = NULL, *diff = NULL;
 	gdk_return ret = GDK_SUCCEED;
+	int accesses[3] = {RDONLY, RD_INS, RD_UPD_VAL};
 
 	if((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_value_partition", msname, mtname, psname, ptname, &mt, &pt)))
 		return msg;
@@ -275,6 +323,31 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		goto finish;
 	}
 
+	bcol = mvc_bind_column(sql, pt, col->base.name);
+	for(i = 0 ; i < 3 ; i++) {
+		if(cbind) {
+			BBPunfix(cbind->batCacheid);
+			cbind = NULL;
+		}
+		if(diff) {
+			BBPunfix(diff->batCacheid);
+			diff = NULL;
+		}
+		if((cbind = store_funcs.bind_col(sql->session->tr, bcol, accesses[i])) == NULL) {
+			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			goto finish;
+		}
+		if((diff = BATdiff(cbind, sorted, NULL, NULL, 0, BUN_NONE)) == NULL) {
+			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			goto finish;
+		}
+		if(BATcount(diff) > 0) {
+			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
+									"ALTER TABLE: there are values in the column %s not according to the partition values list", col->base.name);
+			goto finish;
+		}
+	}
+
 	errcode = sql_trans_add_value_partition(sql->session->tr, mt, pt, tp1, sorted, &err);
 	switch(errcode) {
 		case 0:
@@ -294,10 +367,10 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 finish:
 	if(b)
 		BBPunfix(b->batCacheid);
-	/*if(cbind)
-		BBPunfix(diff->batCacheid);
+	if(cbind)
+		BBPunfix(cbind->batCacheid);
 	if(diff)
-		BBPunfix(diff->batCacheid);*/
+		BBPunfix(diff->batCacheid);
 	if(sorted && msg)
 		BBPunfix(sorted->batCacheid);
 	else if(sorted)
