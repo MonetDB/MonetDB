@@ -89,7 +89,7 @@ rel_alter_table_add_partition_range(sql_allocator *sa, char *sname, char *tname,
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
-	char *pmin = atom2string(sa, min), *pmax = atom2string(sa, max);
+	char *pmin = atom2string(sa, min, 1), *pmax = atom2string(sa, max, 1);
 	if(!rel || !exps || !pmin || !pmax)
 		return NULL;
 
@@ -130,7 +130,7 @@ rel_alter_table_add_partition_list(sql_allocator *sa, char *sname, char *tname, 
 	}
 	for (n = ll->h; n ; n = n->next) {
 		symbol* next = n->data.sym;
-		char *nvalue = atom2string(sa, ((AtomNode *) next)->a);
+		char *nvalue = atom2string(sa, ((AtomNode *) next)->a, 1);
 		append(exps, exp_atom_clob(sa, nvalue));
 	}
 	rel->l = NULL;
@@ -523,7 +523,7 @@ column_option(
 			if (a->data.vtype == TYPE_str) {
 				mvc_default(sql, cs, a->data.val.sval);
 			} else {
-				char *r = atom2string(sql->sa, a);
+				char *r = atom2string(sql->sa, a, 0);
 
 				mvc_default(sql, cs, r);
 			}
@@ -1455,7 +1455,7 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 					sql_column *col =  t->pcol;
 					dlist* ll = extra->data.lval;
 					symbol* min = ll->h->data.sym, *max = ll->h->next->data.sym;
-					atom *amin, *amax;
+					atom *amin = NULL, *amax = NULL;
 
 					if(t->type != tt_range_partition) {
 						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a range partition into a %s table",
@@ -1464,6 +1464,12 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 
 					if(min->token == SQL_MINVALUE) {
 						amin = atom_absolute_min(sql->sa, &(col->type));
+						if(!amin) {
+							char *err = sql_subtype_string(&(col->type));
+							if(!err)
+								return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+							return sql_error(sql, 02, SQLSTATE(HY001) "ALTER TABLE: absolute minimum value not available for %s type", err);
+						}
 					} else {
 						amin = ((AtomNode *) min)->a;
 					}
@@ -1471,6 +1477,12 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 						amax = atom_absolute_max(sql->sa, &(col->type));
 					} else {
 						amax = ((AtomNode *) max)->a;
+						if(!amin) {
+							char *err = sql_subtype_string(&(col->type));
+							if(!err)
+								return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+							return sql_error(sql, 02, SQLSTATE(HY001) "ALTER TABLE: absolute maximum value not available for %s type", err);
+						}
 					}
 					return rel_alter_table_add_partition_range(sql->sa, sname, tname, sname, ntname, amin, amax);
 				} else if(extra->token == SQL_PARTITION_LIST) {

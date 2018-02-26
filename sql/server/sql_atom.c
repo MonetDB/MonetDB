@@ -303,7 +303,7 @@ atom_ptr( sql_allocator *sa, sql_subtype *tpe, void *v)
 }
 
 char *
-atom2string(sql_allocator *sa, atom *a)
+atom2string(sql_allocator *sa, atom *a, int quote)
 {
 	char buf[BUFSIZ], *p = NULL;
 	void *v;
@@ -345,9 +345,33 @@ atom2string(sql_allocator *sa, atom *a)
 		sprintf(buf, "%f", a->data.val.dval);
 		break;
 	case TYPE_str:
-		if (a->data.val.sval)
-			return sa_strdup(sa, a->data.val.sval);
-		else
+		if (a->data.val.sval) {
+			if(!quote)
+				return sa_strdup(sa, a->data.val.sval);
+			else { /* always produce a string between quotes, placing them if they do not exist */
+				int plus = 0, off = 0;
+				char *res;
+				if(a->data.val.sval[0] != '"')
+					plus++;
+				if(a->data.len == 0 || a->data.val.sval[a->data.len - 1] != '"')
+					plus++;
+				res = sa_alloc(sa, a->data.len + plus + 1);
+				if(res) {
+					if(a->data.val.sval[0] != '"') {
+						res[off] = '"';
+						off++;
+					}
+					strcpy(res + off, a->data.val.sval);
+					off += a->data.len;
+					if(a->data.len == 0 || a->data.val.sval[a->data.len - 1] != '"') {
+						res[off] = '"';
+						off++;
+					}
+					res[off] = '\0';
+				}
+				return res;
+			}
+		} else
 			sprintf(buf, "NULL");
 		break;
         default:  
@@ -1350,6 +1374,9 @@ atom*
 atom_absolute_min(sql_allocator *sa, sql_subtype* tpe)
 {
 	void *ret = NULL;
+	atom *res = atom_create(sa);
+	if(!res)
+		return NULL;
 
 	switch (tpe->type->eclass) {
 		case EC_BIT:
@@ -1419,19 +1446,25 @@ atom_absolute_min(sql_allocator *sa, sql_subtype* tpe)
 		case EC_DATE:
 		case EC_TIME:
 		case EC_TIMESTAMP:
-		case EC_CHAR:
-		case EC_STRING:
-		case EC_BLOB:
-		default:
+		default: /* EC_CHAR, EC_STRING, EC_BLOB, ... */
 			return NULL;
 	}
-	return atom_ptr(sa, tpe, ret);
+
+	res->tpe = *tpe;
+	res->isnull = 0;
+	res->data.vtype = tpe->type->localtype;
+	VALset(&res->data, res->data.vtype, ret);
+
+	return res;
 }
 
 atom*
 atom_absolute_max(sql_allocator *sa, sql_subtype* tpe)
 {
 	void *ret = NULL;
+	atom *res = atom_create(sa);
+	if(!res)
+		return NULL;
 
 	switch (tpe->type->eclass) {
 		case EC_BIT:
@@ -1501,11 +1534,14 @@ atom_absolute_max(sql_allocator *sa, sql_subtype* tpe)
 		case EC_DATE:
 		case EC_TIME:
 		case EC_TIMESTAMP:
-		case EC_CHAR:
-		case EC_STRING:
-		case EC_BLOB:
-		default:
-			return NULL;
+		default: /* EC_CHAR, EC_STRING, EC_BLOB, ... */
+		return NULL;
 	}
-	return atom_ptr(sa, tpe, ret);
+
+	res->tpe = *tpe;
+	res->isnull = 0;
+	res->data.vtype = tpe->type->localtype;
+	VALset(&res->data, res->data.vtype, ret);
+
+	return res;
 }

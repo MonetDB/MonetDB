@@ -3315,7 +3315,7 @@ _column_name(sql_allocator *sa, stmt *st)
 		return st->op4.cval->base.name;
 	case st_atom:
 		if (st->op4.aval->data.vtype == TYPE_str)
-			return atom2string(sa, st->op4.aval);
+			return atom2string(sa, st->op4.aval, 0);
 		/* fall through */
 	case st_var:
 	case st_temp:

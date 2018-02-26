@@ -118,7 +118,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 					t->base.name);
 			} else {
 				char *t = sql_subtype_string(atom_type(a));
-				char *s = atom2string(sql->sa, a);
+				char *s = atom2string(sql->sa, a, 0);
 				mnstr_printf(fout, "%s \"%s\"", t, s);
 				_DELETE(t);
 			}
