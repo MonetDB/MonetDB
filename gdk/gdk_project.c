@@ -400,14 +400,15 @@ BATproject(BAT *l, BAT *r)
 
 /* Calculate a chain of BATproject calls.
  * The argument is a NULL-terminated array of BAT pointers.
- * This function is equivalent to a sequence of calls
+ * This function is equivalent (apart from reference counting) to a
+ * sequence of calls
  * bn = BATproject(bats[0], bats[1]);
  * bn = BATproject(bn, bats[2]);
  * ...
  * bn = BATproject(bn, bats[n-1]);
  * return bn;
  * where none of the intermediates are actually produced (and bats[n]==NULL).
- * Note that all BATs except the last must be oid/void tailed.
+ * Note that all BATs except the last must have type oid/void.
  */
 BAT *
 BATprojectchain(BAT **bats)

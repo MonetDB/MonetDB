@@ -1,4 +1,4 @@
-stdout of test 'grantAndRevokeUserLogedIN.Bug-3476` in directory 'sql/test/Users` itself:
+stdout of test 'grantAndRevokeUserLoggedIN.Bug-3476` in directory 'sql/test/Users` itself:
 
 
 # 10:44:33 >  
@@ -55,7 +55,7 @@ Ready.
 # loading sql script: 99_system.sql
 
 # 10:44:34 >  
-# 10:44:34 >  "/usr/bin/python2" "grantAndRevokeUserLogedIN.SQL.py" "grantAndRevokeUserLogedIN"
+# 10:44:34 >  "/usr/bin/python2" "grantAndRevokeUserLoggedIN.SQL.py" "grantAndRevokeUserLoggedIN"
 # 10:44:34 >  
 
 CREATE SCHEMA new_schema_as_well

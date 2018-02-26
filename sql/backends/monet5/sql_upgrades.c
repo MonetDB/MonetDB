@@ -867,7 +867,7 @@ sql_update_jul2017_sp3(Client c, mvc *sql)
 	tab = find_sql_table(sys, "functions");
 	col = find_sql_column(tab, "name");
 	rid = table_funcs.column_find_row(sql->session->tr, col, "sys_update_schemas", NULL);
-	if (rid == oid_nil) {
+	if (is_oid_nil(rid)) {
 		err = sql_fix_system_tables(c, sql);
 		if (err != NULL)
 			return err;
@@ -877,7 +877,7 @@ sql_update_jul2017_sp3(Client c, mvc *sql)
 	tab = find_sql_table(sys, "triggers");
 	col = find_sql_column(tab, "name");
 	rid = table_funcs.column_find_row(sql->session->tr, col, "system_update_schemas", NULL);
-	if (rid == oid_nil) {
+	if (is_oid_nil(rid)) {
 		char *schema = stack_get_string(sql, "current_schema");
 		size_t bufsize = 1024, pos = 0;
 		char *buf = GDKmalloc(bufsize);
@@ -973,6 +973,8 @@ sql_update_mar2018(Client c, mvc *sql)
 	buf = GDKmalloc(bufsize);
 	if (buf== NULL)
 		throw(SQL, "sql_update_mar2018", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	s = mvc_bind_schema(sql, "sys");
+
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	/* 21_dependency_views.sql */
@@ -1253,7 +1255,6 @@ sql_update_mar2018(Client c, mvc *sql)
 	);
 
 	/* 25_debug.sql */
-	s = mvc_bind_schema(sql, "sys");
 	t = mvc_bind_table(sql, s, "environment");
 	t->system = 0;
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1296,7 +1297,6 @@ sql_update_mar2018(Client c, mvc *sql)
 			"insert into sys.systemfunctions (select id from sys.functions where name = 'corr' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
 
 	/* 51_sys_schema_extensions.sql */
-	s = mvc_bind_schema(sql, "sys");
 	t = mvc_bind_table(sql, s, "privilege_codes");
 	t->system = 0;
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1505,7 +1505,7 @@ sql_update_mar2018(Client c, mvc *sql)
 			"INSERT INTO sys.systemfunctions\n"
 			"SELECT id FROM sys.functions\n"
 			"WHERE schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys')\n"
-			"AND name IN ('comment_on', 'function_type_keyword', 'no_op');\n"
+			"AND name IN ('function_type_keyword', 'no_op');\n"
 			"ALTER TABLE sys.keywords SET READ WRITE;\n"
 			"INSERT INTO sys.keywords VALUES ('COMMENT'), ('CONTINUE'), ('START'), ('TRUNCATE');\n"
 			"-- ALTER TABLE sys.keywords SET READ ONLY;\n"
@@ -1523,6 +1523,121 @@ sql_update_mar2018(Client c, mvc *sql)
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
+
+#ifdef HAVE_NETCDF
+static str
+sql_update_mar2018_netcdf(Client c, mvc *sql)
+{
+	size_t bufsize = 1000, pos = 0;
+	char *buf, *err;
+	char *schema;
+
+	schema = stack_get_string(sql, "current_schema");
+	buf = GDKmalloc(bufsize);
+	if (buf== NULL)
+		throw(SQL, "sql_update_mar2018_netcdf", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
+
+	/* 74_netcdf.sql */
+	pos += snprintf(buf + pos, bufsize - pos,
+			"grant select on sys.netcdf_files to public;\n"
+			"grant select on sys.netcdf_dims to public;\n"
+			"grant select on sys.netcdf_vars to public;\n"
+			"grant select on sys.netcdf_vardim to public;\n"
+			"grant select on sys.netcdf_attrs to public;\n"
+			"grant execute on procedure sys.netcdf_attach(varchar(256)) to public;\n"
+			"grant execute on procedure sys.netcdf_importvar(integer, varchar(256)) to public;\n");
+
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+#endif	/* HAVE_NETCDF */
+
+#ifdef HAVE_SAMTOOLS
+static str
+sql_update_mar2018_samtools(Client c, mvc *sql)
+{
+	size_t bufsize = 2000, pos = 0;
+	char *buf, *err;
+	char *schema;
+	sql_schema *s = mvc_bind_schema(sql, "bam");
+
+	if (s == NULL)
+		return MAL_SUCCEED;
+
+	schema = stack_get_string(sql, "current_schema");
+	buf = GDKmalloc(bufsize);
+	if (buf== NULL)
+		throw(SQL, "sql_update_mar2018_samtools", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
+
+	/* 85_bam.sql */
+	list *l = sa_list(sql->sa);
+	sql_subtype tpi, tps;
+	sql_find_subtype(&tpi, "int", 0, 0);
+	sql_find_subtype(&tps, "clob", 0, 0);
+	list_append(l, &tpi);
+	list_append(l, &tps);
+	list_append(l, &tpi);
+	list_append(l, &tps);
+	if (sql_bind_func_(sql->sa, s, "seq_char", l, F_FUNC) == NULL) {
+		pos += snprintf(buf + pos, bufsize - pos,
+				"CREATE FUNCTION bam.seq_char(ref_pos INT, alg_seq STRING, alg_pos INT, alg_cigar STRING)\n"
+				"RETURNS CHAR(1) EXTERNAL NAME bam.seq_char;\n"
+			"insert into sys.systemfunctions (select id from sys.functions where name in ('seq_char') and schema_id = (select id from sys.schemas where name = 'bam') and id not in (select function_id from sys.systemfunctions));\n");
+	}
+	sql_find_subtype(&tpi, "smallint", 0, 0);
+	if (sql_bind_func3(sql->sa, s, "bam_loader_repos", &tps, &tpi, &tpi, F_PROC) != NULL) {
+		pos += snprintf(buf + pos, bufsize - pos,
+				"drop procedure bam.bam_loader_repos(string, smallint, smallint);\n"
+				"drop procedure bam.bam_loader_files(string, smallint, smallint);\n"
+				"delete from systemfunctions where function_id not in (select id from functions);\n");
+	}
+	if (sql_bind_func(sql->sa, s, "bam_loader_repos", &tps, &tpi, F_PROC) == NULL) {
+		pos += snprintf(buf + pos, bufsize - pos,
+				"CREATE PROCEDURE bam.bam_loader_repos(bam_repos STRING, dbschema SMALLINT)\n"
+				"EXTERNAL NAME bam.bam_loader_repos;\n"
+				"CREATE PROCEDURE bam.bam_loader_files(bam_files STRING, dbschema SMALLINT)\n"
+				"EXTERNAL NAME bam.bam_loader_files;\n"
+			"insert into sys.systemfunctions (select id from sys.functions where name in ('bam_loader_repos', 'bam_loader_files') and schema_id = (select id from sys.schemas where name = 'bam') and id not in (select function_id from sys.systemfunctions));\n");
+	}
+
+	pos += snprintf(buf + pos, bufsize - pos,
+			"GRANT SELECT ON bam.files TO PUBLIC;\n"
+			"GRANT SELECT ON bam.sq TO PUBLIC;\n"
+			"GRANT SELECT ON bam.rg TO PUBLIC;\n"
+			"GRANT SELECT ON bam.pg TO PUBLIC;\n"
+			"GRANT SELECT ON bam.export TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION bam.bam_flag(SMALLINT, STRING) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION bam.reverse_seq(STRING) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION bam.reverse_qual(STRING) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION bam.seq_length(STRING) TO PUBLIC;\n"
+			"GRANT EXECUTE ON FUNCTION bam.seq_char(INT, STRING, INT, STRING) TO PUBLIC;\n"
+			"GRANT EXECUTE ON PROCEDURE bam.bam_loader_repos(STRING, SMALLINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON PROCEDURE bam.bam_loader_files(STRING, SMALLINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON PROCEDURE bam.bam_loader_file(STRING, SMALLINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON PROCEDURE bam.bam_drop_file(BIGINT, SMALLINT) TO PUBLIC;\n"
+			"GRANT EXECUTE ON PROCEDURE bam.sam_export(STRING) TO PUBLIC;\n"
+			"GRANT EXECUTE ON PROCEDURE bam.bam_export(STRING) TO PUBLIC;\n");
+
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+#endif	/* HAVE_SAMTOOLS */
 
 void
 SQLupgrades(Client c, mvc *m)
@@ -1638,5 +1753,18 @@ SQLupgrades(Client c, mvc *m)
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}
+#ifdef HAVE_NETCDF
+		if (mvc_bind_table(m, s, "netcdf_files") != NULL &&
+		    (err = sql_update_mar2018_netcdf(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+#endif
+#ifdef HAVE_SAMTOOLS
+		if ((err = sql_update_mar2018_samtools(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
+#endif
 	}
 }

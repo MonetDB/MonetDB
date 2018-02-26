@@ -5861,11 +5861,42 @@ ALTER TABLE sys.systemfunctions ALTER COLUMN function_id SET NOT NULL;
 INSERT INTO sys.systemfunctions
 SELECT id FROM sys.functions
 WHERE schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys')
-AND name IN ('comment_on', 'function_type_keyword', 'no_op');
+AND name IN ('function_type_keyword', 'no_op');
 ALTER TABLE sys.keywords SET READ WRITE;
 INSERT INTO sys.keywords VALUES ('COMMENT'), ('CONTINUE'), ('START'), ('TRUNCATE');
 -- ALTER TABLE sys.keywords SET READ ONLY;
 delete from sys.systemfunctions where function_id not in (select id from sys.functions);
+set schema "testschema";
+
+Running database upgrade commands:
+set schema sys;
+grant select on sys.netcdf_files to public;
+grant select on sys.netcdf_dims to public;
+grant select on sys.netcdf_vars to public;
+grant select on sys.netcdf_vardim to public;
+grant select on sys.netcdf_attrs to public;
+grant execute on procedure sys.netcdf_attach(varchar(256)) to public;
+grant execute on procedure sys.netcdf_importvar(integer, varchar(256)) to public;
+set schema "testschema";
+
+Running database upgrade commands:
+set schema sys;
+GRANT SELECT ON bam.files TO PUBLIC;
+GRANT SELECT ON bam.sq TO PUBLIC;
+GRANT SELECT ON bam.rg TO PUBLIC;
+GRANT SELECT ON bam.pg TO PUBLIC;
+GRANT SELECT ON bam.export TO PUBLIC;
+GRANT EXECUTE ON FUNCTION bam.bam_flag(SMALLINT, STRING) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION bam.reverse_seq(STRING) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION bam.reverse_qual(STRING) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION bam.seq_length(STRING) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION bam.seq_char(INT, STRING, INT, STRING) TO PUBLIC;
+GRANT EXECUTE ON PROCEDURE bam.bam_loader_repos(STRING, SMALLINT) TO PUBLIC;
+GRANT EXECUTE ON PROCEDURE bam.bam_loader_files(STRING, SMALLINT) TO PUBLIC;
+GRANT EXECUTE ON PROCEDURE bam.bam_loader_file(STRING, SMALLINT) TO PUBLIC;
+GRANT EXECUTE ON PROCEDURE bam.bam_drop_file(BIGINT, SMALLINT) TO PUBLIC;
+GRANT EXECUTE ON PROCEDURE bam.sam_export(STRING) TO PUBLIC;
+GRANT EXECUTE ON PROCEDURE bam.bam_export(STRING) TO PUBLIC;
 set schema "testschema";
 
 
