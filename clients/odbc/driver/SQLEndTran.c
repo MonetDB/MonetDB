@@ -165,9 +165,9 @@ SQLEndTran(SQLSMALLINT HandleType,
 	   SQLSMALLINT CompletionType)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLEndTran %s " PTRFMT " %s\n",
+	ODBCLOG("SQLEndTran %s %p %s\n",
 		HandleType == SQL_HANDLE_ENV ? "Env" : HandleType == SQL_HANDLE_DBC ? "Dbc" : HandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
-		PTRFMTCAST Handle, translateCompletionType(CompletionType));
+		Handle, translateCompletionType(CompletionType));
 #endif
 
 	return MNDBEndTran(HandleType, Handle, CompletionType);

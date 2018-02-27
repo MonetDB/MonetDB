@@ -40,9 +40,9 @@ SQLGetStmtOption(SQLHSTMT StatementHandle,
 	SQLRETURN r;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetStmtOption " PTRFMT " %s " PTRFMT "\n",
-		PTRFMTCAST StatementHandle, translateStmtOption(Option),
-		PTRFMTCAST ValuePtr);
+	ODBCLOG("SQLGetStmtOption %p %s %p\n",
+		StatementHandle, translateStmtOption(Option),
+		ValuePtr);
 #endif
 
 	if (!isValidStmt(stmt))

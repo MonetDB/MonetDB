@@ -1550,8 +1550,11 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 
 	len = 500 + (sname ? strlen(sname) : 0) + (fname ? strlen(fname) : 0);
 	query = malloc(len);
-	if (!query)
+	if (query == NULL) {
+		if (to_free)
+			free(to_free);
 		return 1;
+	}
 	q = query;
 	end_q = q + len;
 

@@ -82,6 +82,7 @@ SCHEMA  foo
 CREATE SCHEMA "foo" AUTHORIZATION "monetdb";
 #CREATE SCHEMA "space separated";
 SCHEMA  foo              'one final comment'
+SCHEMA  space separated  'space separated'
 CREATE SCHEMA "space separated" AUTHORIZATION "monetdb";
 COMMENT ON SCHEMA "space separated" IS 'space separated';
 #DROP SCHEMA "space separated";

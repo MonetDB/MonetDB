@@ -106,7 +106,7 @@ handle_get_request(str *retval, str *url)
 		 * should free() it as a nice application.
 		 */
 
-		//printf(SZFMT " bytes retrieved\n", chunk.size);
+		//printf("%zu bytes retrieved\n", chunk.size);
 	}
 	if (chunk.size) {
 		d = GDKstrdup(chunk.memory);
@@ -174,7 +174,7 @@ handle_put_request(str *retval, str *url)
 		 * should free() it as a nice application.
 		 */
 
-		//printf(SZFMT " bytes retrieved\n", chunk.size);
+		//printf("%zu bytes retrieved\n", chunk.size);
 	}
 	if (chunk.size) {
 		d = GDKstrdup(chunk.memory);
@@ -242,7 +242,7 @@ handle_post_request(str *retval, str *url)
 		 * should free() it as a nice application.
 		 */
 
-		//printf(SZFMT " bytes retrieved\n", chunk.size);
+		//printf("%zu bytes retrieved\n", chunk.size);
 	}
 	if (chunk.size) {
 		d = GDKstrdup(chunk.memory);
@@ -311,7 +311,7 @@ handle_delete_request(str *retval, str *url)
 		 * should free() it as a nice application.
 		 */
 
-		//printf(SZFMT " bytes retrieved\n", chunk.size);
+		//printf("%zu bytes retrieved\n", chunk.size);
 	}
 	if (chunk.size) {
 		d = GDKstrdup(chunk.memory);

@@ -271,7 +271,7 @@ SQLConnect(SQLHDBC ConnectionHandle,
 	   SQLSMALLINT NameLength3)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLConnect " PTRFMT "\n", PTRFMTCAST ConnectionHandle);
+	ODBCLOG("SQLConnect %p\n", ConnectionHandle);
 #endif
 
 	if (!isValidDbc((ODBCDbc *) ConnectionHandle))
@@ -315,7 +315,7 @@ SQLConnectW(SQLHDBC ConnectionHandle,
 	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLConnectW " PTRFMT "\n", PTRFMTCAST ConnectionHandle);
+	ODBCLOG("SQLConnectW %p\n", ConnectionHandle);
 #endif
 
 	if (!isValidDbc(dbc))

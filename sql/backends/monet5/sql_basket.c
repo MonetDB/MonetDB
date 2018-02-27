@@ -545,7 +545,7 @@ BSKTdump(void *ret)
 				cnt = BATcount(b);
 
 			fprintf(stderr, "#baskets[%2d] %s.%s columns "BUNFMT
-					" window=%d stride=%d error=%s fill="SZFMT"\n",
+					" window=%d stride=%d error=%s fill=%zu\n",
 					bskt,
 					baskets[bskt].table->s->base.name,
 					baskets[bskt].table->base.name,

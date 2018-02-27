@@ -108,7 +108,19 @@ CREATE TABLE bam.export (
     qual                        STRING          NOT NULL
 );
 
-update sys._tables
-    set system = true
-    where name in ('export', 'files', 'pg', 'rg', 'sq')
-        and schema_id = (select id from sys.schemas where name = 'bam');
+GRANT SELECT ON bam.files TO PUBLIC;
+GRANT SELECT ON bam.sq TO PUBLIC;
+GRANT SELECT ON bam.rg TO PUBLIC;
+GRANT SELECT ON bam.pg TO PUBLIC;
+GRANT SELECT ON bam.export TO PUBLIC;
+GRANT EXECUTE ON FUNCTION bam.bam_flag(SMALLINT, STRING) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION bam.reverse_seq(STRING) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION bam.reverse_qual(STRING) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION bam.seq_length(STRING) TO PUBLIC;
+GRANT EXECUTE ON FUNCTION bam.seq_char(INT, STRING, INT, STRING) TO PUBLIC;
+GRANT EXECUTE ON PROCEDURE bam.bam_loader_repos(STRING, SMALLINT) TO PUBLIC;
+GRANT EXECUTE ON PROCEDURE bam.bam_loader_files(STRING, SMALLINT) TO PUBLIC;
+GRANT EXECUTE ON PROCEDURE bam.bam_loader_file(STRING, SMALLINT) TO PUBLIC;
+GRANT EXECUTE ON PROCEDURE bam.bam_drop_file(BIGINT, SMALLINT) TO PUBLIC;
+GRANT EXECUTE ON PROCEDURE bam.sam_export(STRING) TO PUBLIC;
+GRANT EXECUTE ON PROCEDURE bam.bam_export(STRING) TO PUBLIC;

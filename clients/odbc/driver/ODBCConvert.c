@@ -587,9 +587,6 @@ parsemonthintervalstring(char **svalp,
 			slen--;
 			sval++;
 		}
-		ival->interval_type = SQL_IS_YEAR_TO_MONTH;
-		ival->intval.year_month.year = val1;
-		ival->intval.year_month.month = val2;
 		if (val2 >= 12)
 			return SQL_ERROR;
 	}
@@ -612,10 +609,13 @@ parsemonthintervalstring(char **svalp,
 			return SQL_ERROR;
 		if (leadingprecision > p)
 			return SQL_ERROR;
+		ival->intval.year_month.year = val1;
 		if (val2 == -1) {
 			ival->interval_type = SQL_IS_YEAR;
-			ival->intval.year_month.year = val1;
 			ival->intval.year_month.month = 0;
+		} else {
+			ival->interval_type = SQL_IS_YEAR_TO_MONTH;
+			ival->intval.year_month.month = val2;
 		}
 		if (slen > 0 && isspace((unsigned char) *sval)) {
 			while (slen > 0 && isspace((unsigned char) *sval)) {
@@ -1875,9 +1875,9 @@ ODBCFetch(ODBCStmt *stmt,
 
 			ODBCutf82wchar((SQLCHAR *) ptr, SQL_NTS, (SQLWCHAR *) origptr, origbuflen, &n);
 #ifdef ODBCDEBUG
-			ODBCLOG("Writing %d bytes to " PTRFMT "\n",
+			ODBCLOG("Writing %d bytes to %p\n",
 				(int) (n * sizeof(SQLWCHAR)),
-				PTRFMTCAST origptr);
+				origptr);
 #endif
 
 			if (origlenp)
@@ -1886,8 +1886,8 @@ ODBCFetch(ODBCStmt *stmt,
 		}
 #ifdef ODBCDEBUG
 		else
-			ODBCLOG("Writing %d bytes to " PTRFMT "\n",
-				(int) strlen(ptr), PTRFMTCAST ptr);
+			ODBCLOG("Writing %d bytes to %p\n",
+				(int) strlen(ptr), ptr);
 #endif
 		break;
 	}
@@ -2753,7 +2753,7 @@ ODBCFetch(ODBCStmt *stmt,
 			return SQL_ERROR;
 		}
 #ifdef ODBCDEBUG
-		ODBCLOG("Writing 16 bytes to " PTRFMT "\n", PTRFMTCAST ptr);
+		ODBCLOG("Writing 16 bytes to %p\n", ptr);
 #endif
 		for (i = 0; i < 16; i++) {
 			if (i == 8 || i == 12 || i == 16 || i == 20) {
@@ -3560,6 +3560,7 @@ ODBCStore(ODBCStmt *stmt,
 			snprintf(data, sizeof(data), "INTERVAL %s'%u-%u' YEAR TO MONTH", ival.interval_sign ? "" : "- ", (unsigned int) ival.intval.year_month.year, (unsigned int) ival.intval.year_month.month);
 			break;
 		default:
+			/* cannot happen */
 			break;
 		}
 		assigns(buf, bufpos, buflen, data, stmt);

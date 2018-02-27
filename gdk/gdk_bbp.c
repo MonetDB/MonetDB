@@ -1331,7 +1331,8 @@ BBPreadEntries(FILE *fp, int bbpversion)
 		if (bn == NULL)
 			GDKfatal("BBPinit: cannot allocate memory for BAT.");
 		bn->batCacheid = bid;
-		BATroles(bn, NULL);
+		if (BATroles(bn, NULL) != GDK_SUCCEED)
+			GDKfatal("BBPinit: BATroles failed.");
 		bn->batPersistence = PERSISTENT;
 		bn->batCopiedtodisk = 1;
 		bn->batRestricted = (properties & 0x06) >> 1;
@@ -1378,8 +1379,12 @@ BBPreadEntries(FILE *fp, int bbpversion)
 		BBP_logical(bid) = GDKstrdup(s);
 		/* tailname is ignored */
 		if (strlen(filename) >= sizeof(BBP_physical(bid)))
-			GDKfatal("BBPinit: physical name for BAT (%s) is too long (" SZFMT " bytes).", filename, sizeof(BBP_physical(bid)) - 1);
+			GDKfatal("BBPinit: physical name for BAT (%s) is too long (%zu bytes).", filename, sizeof(BBP_physical(bid)) - 1);
 		strncpy(BBP_physical(bid), filename, sizeof(BBP_physical(bid)));
+#ifdef STATIC_CODE_ANALYSIS
+		/* help coverity */
+		BBP_physical(bid)[sizeof(BBP_physical(bid)) - 1] = 0;
+#endif
 		BBP_options(bid) = NULL;
 		if (options)
 			BBP_options(bid) = GDKstrdup(options);
@@ -1726,7 +1731,7 @@ static inline int
 heap_entry(FILE *fp, BAT *b)
 {
 	return fprintf(fp, " %s %d %d %d " BUNFMT " " BUNFMT " " BUNFMT " "
-		       BUNFMT " " OIDFMT " " SZFMT " " SZFMT " %d",
+		       BUNFMT " " OIDFMT " %zu %zu %d",
 		       b->ttype >= 0 ? BATatoms[b->ttype].name : ATOMunknown_name(b->ttype),
 		       b->twidth,
 		       b->tvarsized | (b->tvheap ? b->tvheap->hashash << 1 : 0),
@@ -1751,7 +1756,7 @@ vheap_entry(FILE *fp, Heap *h)
 {
 	if (h == NULL)
 		return 0;
-	return fprintf(fp, " " SZFMT " " SZFMT " %d",
+	return fprintf(fp, " %zu %zu %d",
 		       h->free, h->size, (int) h->newstorage);
 }
 
@@ -1772,7 +1777,7 @@ new_bbpentry(FILE *fp, bat i, const char *prefix)
 	}
 #endif
 
-	if (fprintf(fp, "%s" SSZFMT " %d %s %s %d " BUNFMT " "
+	if (fprintf(fp, "%s%zd %d %s %s %d " BUNFMT " "
 		    BUNFMT " " OIDFMT, prefix,
 		    /* BAT info */
 		    (ssize_t) i,
@@ -2017,7 +2022,7 @@ BBPdump(void)
 			fprintf(stderr, " Theap -> %d", b->theap.parentid);
 		} else {
 			fprintf(stderr,
-				" Theap=[" SZFMT "," SZFMT "]%s",
+				" Theap=[%zu,%zu]%s",
 				HEAPmemsize(&b->theap),
 				HEAPvmsize(&b->theap),
 				b->theap.dirty ? "(Dirty)" : "");
@@ -2038,7 +2043,7 @@ BBPdump(void)
 					b->tvheap->parentid);
 			} else {
 				fprintf(stderr,
-					" Tvheap=[" SZFMT "," SZFMT "]%s",
+					" Tvheap=[%zu,%zu]%s",
 					HEAPmemsize(b->tvheap),
 					HEAPvmsize(b->tvheap),
 				b->tvheap->dirty ? "(Dirty)" : "");
@@ -2053,7 +2058,7 @@ BBPdump(void)
 		}
 		if (b->thash && b->thash != (Hash *) -1) {
 			fprintf(stderr,
-				" Thash=[" SZFMT "," SZFMT "]",
+				" Thash=[%zu,%zu]",
 				HEAPmemsize(&b->thash->heap),
 				HEAPvmsize(&b->thash->heap));
 			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
@@ -2069,7 +2074,7 @@ BBPdump(void)
 			b->batPersistence == PERSISTENT ? "persistent" : "transient");
 	}
 	fprintf(stderr,
-		"# %d bats: mem=" SZFMT ", vm=" SZFMT " %d cached bats: mem=" SZFMT ", vm=" SZFMT "\n",
+		"# %d bats: mem=%zu, vm=%zu %d cached bats: mem=%zu, vm=%zu\n",
 		n, mem, vm, nc, cmem, cvm);
 	fflush(stderr);
 }

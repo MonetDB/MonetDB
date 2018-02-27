@@ -19,13 +19,11 @@
  * first two arguments.  The join operations differ in the way in
  * which tuples from the two inputs are matched.
  *
- * All inputs BATs must be dense headed, the output BATs will also be
- * dense headed.  The outputs consist of two aligned BATs (i.e. same
- * length and same seqbase in the head column (0@0)) that contain in
- * their tails the OIDs of the input BATs that match.  The candidate
- * lists, if given, contain in their tail the OIDs of the associated
+ * The outputs consist of two aligned BATs (i.e. same length and same
+ * hseqbase (0@0)) that contain the OIDs of the input BATs that match.
+ * The candidate lists, if given, contain the OIDs of the associated
  * input BAT which must be considered for matching.  The input BATs
- * must have the same tail type.
+ * must have the same type.
  *
  * All functions also have a parameter nil_matches which indicates
  * whether NIL must be considered an ordinary value that can match, or
@@ -86,7 +84,7 @@ joinparamcheck(BAT *l, BAT *r1, BAT *r2, BAT *sl, BAT *sr, const char *func)
 	}
 	if ((sl && ATOMtype(sl->ttype) != TYPE_oid) ||
 	    (sr && ATOMtype(sr->ttype) != TYPE_oid)) {
-		GDKerror("%s: candidate lists must have OID tail.\n", func);
+		GDKerror("%s: candidate lists must have type OID.\n", func);
 		return GDK_FAIL;
 	}
 	if ((sl && !BATtordered(sl)) ||
@@ -313,10 +311,10 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	const oid *lvals;
 	oid o, seq;
 
-	/* r has a dense tail, and if there is a candidate list, it
-	 * too is dense.  This means we don't have to do any searches,
-	 * we only need to compare ranges to know whether a value from
-	 * l has a match in r */
+	/* r is dense, and if there is a candidate list, it too is
+	 * dense.  This means we don't have to do any searches, we
+	 * only need to compare ranges to know whether a value from l
+	 * has a match in r */
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(r->tsorted || r->trevsorted);
 	assert(sl == NULL || sl->tsorted);
@@ -339,9 +337,8 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	}
 	/* at this point, the matchable values in r are [lo..hi) */
 	if (BATtdense(l)) {
-		/* if l has a dense tail, we can further restrict the
-		 * [lo..hi) range to values in l that match with
-		 * values in r */
+		/* if l is dense, we can further restrict the [lo..hi)
+		 * range to values in l that match with values in r */
 		i = hi - lo;	/* remember these for nil_on_miss case below */
 		o = lo;
 		if (l->tseqbase > lo)
@@ -349,13 +346,13 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		if (l->tseqbase + BATcount(l) < hi)
 			hi = l->tseqbase + BATcount(l);
 		if (sl == NULL || BATtdense(sl)) {
-			/* l has a dense tail, and so does the left
-			 * candidate list (if it exists); this means
-			 * we don't have to actually look at any
-			 * values in l: we can just do some
-			 * arithmetic; it also means that r1 will be
-			 * dense, and if nil_on_miss is not set, or if
-			 * all values in l match, r2 will too */
+			/* l is dense, and so is the left candidate
+			 * list (if it exists); this means we don't
+			 * have to actually look at any values in l:
+			 * we can just do some arithmetic; it also
+			 * means that r1 will be dense, and if
+			 * nil_on_miss is not set, or if all values in
+			 * l match, r2 will too */
 			seq = l->hseqbase;
 			cnt = BATcount(l);
 			if (sl) {
@@ -384,16 +381,15 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			/* at this point, the matched values in l and
 			 * r (taking candidate lists into account) are
 			 * [lo..hi) which we can translate back to the
-			 * respective head values that we can store in
-			 * r1 and r2; note that r1 will have a dense
-			 * tail since all values in l will match
-			 * something (even if nil if nil_on_miss is
-			 * set) */
+			 * respective OID values that we can store in
+			 * r1 and r2; note that r1 will be dense since
+			 * all values in l will match something (even
+			 * if nil if nil_on_miss is set) */
 			if (only_misses) {
 				/* the return values are
 				 * [seq..lo') + [hi'..seq+cnt)
 				 * where lo' and hi' are lo and hi
-				 * translated back to l's head
+				 * translated back to l's OID
 				 * values */
 				lo = lo + l->hseqbase - l->tseqbase; /* lo' */
 				hi = hi + l->hseqbase - l->tseqbase; /* hi' */
@@ -496,14 +492,13 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			}
 			goto doreturn;
 		}
-		/* l has a dense tail, but the candidate list exists
-		 * and does not have a dense tail; we can, by
-		 * manipulating the range [lo..hi), just look at the
-		 * candidate list values */
+		/* l is dense, but the candidate list exists and is
+		 * not dense; we can, by manipulating the range
+		 * [lo..hi), just look at the candidate list values */
 		assert(!BATtdense(sl));
 		lvals = (const oid *) Tloc(sl, 0);
-		/* translate lo and hi to l's head values that now
-		 * need to match */
+		/* translate lo and hi to l's OID values that now need
+		 * to match */
 		lo = lo - l->tseqbase + l->hseqbase;
 		hi = hi - l->tseqbase + l->hseqbase;
 		cnt = BATcount(sl);
@@ -569,8 +564,8 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		}
 		goto doreturn;
 	}
-	/* l does not have a dense tail, so we need to look at the
-	 * values and check whether they are in the range [lo..hi) */
+	/* l is not dense, so we need to look at the values and check
+	 * whether they are in the range [lo..hi) */
 	lvals = (const oid *) Tloc(l, 0);
 	seq = l->hseqbase;
 	cnt = BATcount(l);
@@ -637,9 +632,8 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			}
 			goto doreturn;
 		}
-		/* candidate list exists and has a dense tail,
-		 * we can try to restrict the values in l that
-		 * we need to look at */
+		/* candidate list exists and is dense, we can try to
+		 * restrict the values in l that we need to look at */
 		if (sl->tseqbase > l->hseqbase) {
 			/* we don't need to start at the
 			 * beginning of l */
@@ -2442,7 +2436,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 	int lwidth;
 	const void *nil = ATOMnilptr(l->ttype);
 	int (*cmp)(const void *, const void *) = ATOMcompare(l->ttype);
-	oid lval = oid_nil;	/* hold value if l has dense tail */
+	oid lval = oid_nil;	/* hold value if l is dense */
 	const char *v = (const char *) &lval;
 	int lskipped = 0;	/* whether we skipped values in l */
 	const Hash *restrict hsh;
@@ -2488,8 +2482,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 		assert(!r->tvarsized || !r->ttype);
 		lvars = NULL;
 	}
-	/* offset to convert BUN for value in right tail column to OID
-	 * in right head column */
+	/* offset to convert BUN to OID for value in right column */
 	rseq = r->hseqbase;
 
 	/* basic properties will be adjusted if necessary later on,
@@ -3622,10 +3615,9 @@ subleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			nil_on_miss, semi, only_misses, maxsize, t0, 0, "leftjoin");
 }
 
-/* Perform an equi-join over l and r.  Returns two new, aligned,
- * dense-headed bats with in the tail the oids (head column values) of
- * matching tuples.  The result is in the same order as l (i.e. r1 is
- * sorted). */
+/* Perform an equi-join over l and r.  Returns two new, aligned, bats
+ * with the oids of matching tuples.  The result is in the same order
+ * as l (i.e. r1 is sorted). */
 gdk_return
 BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
@@ -3635,10 +3627,10 @@ BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matc
 }
 
 /* Performs a left outer join over l and r.  Returns two new, aligned,
- * dense-headed bats with in the tail the oids (head column values) of
- * matching tuples, or the oid in the first output bat and nil in the
- * second output bat if the value in l does not occur in r.  The
- * result is in the same order as l (i.e. r1 is sorted). */
+ * bats with the oids of matching tuples, or the oid in the first
+ * output bat and nil in the second output bat if the value in l does
+ * not occur in r.  The result is in the same order as l (i.e. r1 is
+ * sorted). */
 gdk_return
 BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
@@ -3647,10 +3639,9 @@ BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_mat
 			   GDKdebug & ALGOMASK ? GDKusec() : 0);
 }
 
-/* Perform a semi-join over l and r.  Returns two new, aligned,
- * dense-headed bats with in the tail the oids (head column values) of
- * matching tuples.  The result is in the same order as l (i.e. r1 is
- * sorted). */
+/* Perform a semi-join over l and r.  Returns two new, aligned, bats
+ * with the oids of matching tuples.  The result is in the same order
+ * as l (i.e. r1 is sorted). */
 gdk_return
 BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
@@ -3659,9 +3650,9 @@ BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matc
 			   GDKdebug & ALGOMASK ? GDKusec() : 0);
 }
 
-/* Return the difference of l and r.  The result is a BAT with in the
- * tail the oids of those values in l that do not occur in r.  This is
- * what you might call an anti-semi-join.  The result can be used as a
+/* Return the difference of l and r.  The result is a BAT with the
+ * oids of those values in l that do not occur in r.  This is what you
+ * might call an anti-semi-join.  The result can be used as a
  * candidate list. */
 BAT *
 BATdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)

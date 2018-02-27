@@ -1425,7 +1425,7 @@ char *PyError_CreateException(char *error_text, char *pycall)
 								lineinformation[pos++] = ' ';
 								lineinformation[pos++] = ' ';
 							}
-							snprintf(linenr, 32, SZFMT, nrpos);
+							snprintf(linenr, 32, "%zu", nrpos);
 							for (j = 0; j < strlen(linenr); j++) {
 								lineinformation[pos++] = linenr[j];
 							}

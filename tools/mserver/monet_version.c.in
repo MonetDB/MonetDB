@@ -35,7 +35,7 @@ monet_version(void)
 	/* coverity[pointless_string_compare] */
 	if (strcmp(MONETDB_RELEASE, "unreleased") != 0)
 		printf("\"%s\" ", MONETDB_RELEASE);
-	printf("(" SZFMT "-bit%s)\n",
+	printf("(%zu-bit%s)\n",
 			(size_t) (sizeof(ptr) * 8),
 #ifdef HAVE_HGE
 			", 128-bit integers"

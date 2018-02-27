@@ -203,7 +203,7 @@ SQLPrimaryKeys(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLPrimaryKeys " PTRFMT " ", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLPrimaryKeys %p ", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -246,7 +246,7 @@ SQLPrimaryKeysW(SQLHSTMT StatementHandle,
 	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLPrimaryKeysW " PTRFMT " ", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLPrimaryKeysW %p ", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

@@ -1,0 +1,175 @@
+stderr of test 'truncate_sys_tables.Bug-6543` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 17:47:14 >  
+# 17:47:14 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31828" "--set" "mapi_usock=/var/tmp/mtest-9985/.s.monetdb.31828" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2018"
+# 17:47:14 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 31828
+# cmdline opt 	mapi_usock = /var/tmp/mtest-9985/.s.monetdb.31828
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2018
+# cmdline opt 	gdk_debug = 553648138
+
+# 17:47:14 >  
+# 17:47:14 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9985" "--port=31828"
+# 17:47:14 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE tmp.triggers;
+ERROR = !TRUNCATE: cannot truncate system table 'triggers'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE tmp.objects;
+ERROR = !TRUNCATE: cannot truncate system table 'objects'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE tmp.keys;
+ERROR = !TRUNCATE: cannot truncate system table 'keys'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE tmp.idxs;
+ERROR = !TRUNCATE: cannot truncate system table 'idxs'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE tmp._tables;
+ERROR = !TRUNCATE: cannot truncate system table '_tables'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE tmp._columns;
+ERROR = !TRUNCATE: cannot truncate system table '_columns'
+CODE  = 42000
+
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.user_role;
+ERROR = !TRUNCATE: cannot truncate system table 'user_role'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.types;
+ERROR = !TRUNCATE: cannot truncate system table 'types'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.triggers;
+ERROR = !TRUNCATE: cannot truncate system table 'triggers'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.table_types;
+ERROR = !TRUNCATE: cannot truncate system table 'table_types'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.systemfunctions;
+ERROR = !TRUNCATE: cannot truncate system table 'systemfunctions'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.storagemodelinput;
+ERROR = !TRUNCATE: cannot truncate system table 'storagemodelinput'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-20187/.s.monetdb.39345
+QUERY = TRUNCATE TABLE sys.statistics;
+ERROR = !TRUNCATE: cannot truncate system table 'statistics'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.spatial_ref_sys;
+ERROR = !TRUNCATE: cannot truncate system table 'spatial_ref_sys'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.sequences;
+ERROR = !TRUNCATE: cannot truncate system table 'sequences'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.schemas;
+ERROR = !TRUNCATE: cannot truncate system table 'schemas'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.privileges;
+ERROR = !TRUNCATE: cannot truncate system table 'privileges'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.privilege_codes;
+ERROR = !TRUNCATE: cannot truncate system table 'privilege_codes'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.objects;
+ERROR = !TRUNCATE: cannot truncate system table 'objects'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.keywords;
+ERROR = !TRUNCATE: cannot truncate system table 'keywords'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.keys;
+ERROR = !TRUNCATE: cannot truncate system table 'keys'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.key_types;
+ERROR = !TRUNCATE: cannot truncate system table 'key_types'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.index_types;
+ERROR = !TRUNCATE: cannot truncate system table 'index_types'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.idxs;
+ERROR = !TRUNCATE: cannot truncate system table 'idxs'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.functions;
+ERROR = !TRUNCATE: cannot truncate system table 'functions'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.function_types;
+ERROR = !TRUNCATE: cannot truncate system table 'function_types'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.function_languages;
+ERROR = !TRUNCATE: cannot truncate system table 'function_languages'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.dependency_types;
+ERROR = !TRUNCATE: cannot truncate system table 'dependency_types'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.dependencies;
+ERROR = !TRUNCATE: cannot truncate system table 'dependencies'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.db_user_info;
+ERROR = !TRUNCATE: cannot truncate system table 'db_user_info'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.comments;
+ERROR = !TRUNCATE: cannot truncate system table 'comments'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.auths;
+ERROR = !TRUNCATE: cannot truncate system table 'auths'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.args;
+ERROR = !TRUNCATE: cannot truncate system table 'args'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys._tables;
+ERROR = !TRUNCATE: cannot truncate system table '_tables'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys._columns;
+ERROR = !TRUNCATE: cannot truncate system table '_columns'
+CODE  = 42000
+
+# 17:47:14 >  
+# 17:47:14 >  "Done."
+# 17:47:14 >  
+

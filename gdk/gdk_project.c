@@ -226,9 +226,10 @@ BATproject(BAT *l, BAT *r)
 				  bn->tkey ? "-key" : "");
 		return bn;
 	}
+	/* if l has type void, it is either empty or not dense (i.e. nil) */
 	if (l->ttype == TYPE_void || BATcount(l) == 0 ||
 	    (r->ttype == TYPE_void && is_oid_nil(r->tseqbase))) {
-		/* trivial: all values are nil */
+		/* trivial: all values are nil (includes no entries at all) */
 		const void *nil = ATOMnilptr(r->ttype);
 
 		bn = BATconstant(l->hseqbase, r->ttype == TYPE_oid ? TYPE_void : r->ttype,
@@ -399,14 +400,15 @@ BATproject(BAT *l, BAT *r)
 
 /* Calculate a chain of BATproject calls.
  * The argument is a NULL-terminated array of BAT pointers.
- * This function is equivalent to a sequence of calls
+ * This function is equivalent (apart from reference counting) to a
+ * sequence of calls
  * bn = BATproject(bats[0], bats[1]);
  * bn = BATproject(bn, bats[2]);
  * ...
  * bn = BATproject(bn, bats[n-1]);
  * return bn;
  * where none of the intermediates are actually produced (and bats[n]==NULL).
- * Note that all BATs except the last must be oid/void tailed.
+ * Note that all BATs except the last must have type oid/void.
  */
 BAT *
 BATprojectchain(BAT **bats)

@@ -1,0 +1,56 @@
+stderr of test 'truncate_bam_tables.Bug-6543` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 17:33:22 >  
+# 17:33:22 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34912" "--set" "mapi_usock=/var/tmp/mtest-9315/.s.monetdb.34912" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2018" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 17:33:22 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 34912
+# cmdline opt 	mapi_usock = /var/tmp/mtest-9315/.s.monetdb.34912
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2018
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 553648138
+
+# 17:33:23 >  
+# 17:33:23 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9315" "--port=34912"
+# 17:33:23 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-20187/.s.monetdb.39345
+QUERY = TRUNCATE TABLE bam.sq;
+ERROR = !TRUNCATE: cannot truncate system table 'sq'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-20187/.s.monetdb.39345
+QUERY = TRUNCATE TABLE bam.rg;
+ERROR = !TRUNCATE: cannot truncate system table 'rg'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-20187/.s.monetdb.39345
+QUERY = TRUNCATE TABLE bam.pg;
+ERROR = !TRUNCATE: cannot truncate system table 'pg'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-20187/.s.monetdb.39345
+QUERY = TRUNCATE TABLE bam.export;
+ERROR = !TRUNCATE: cannot truncate system table 'export'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-20187/.s.monetdb.39345
+QUERY = TRUNCATE TABLE bam.files;
+ERROR = !TRUNCATE: cannot truncate system table 'files'
+CODE  = 42000
+
+# 17:33:23 >  
+# 17:33:23 >  "Done."
+# 17:33:23 >  
+

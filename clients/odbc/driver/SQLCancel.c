@@ -32,7 +32,7 @@ SQLCancel(SQLHSTMT StatementHandle)
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLCancel " PTRFMT "\n", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLCancel %p\n", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

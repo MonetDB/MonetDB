@@ -18,3 +18,13 @@ crash-orderby-alias.Bug-6527
 sqlitelogictest-in-cast-null.Bug-6529
 sqlitelogictest-not-in-wrong-results.Bug-6530
 copy-into-ignore-column-1.Bug-6532
+count_from_commented_function_signatures.Bug-6542
+truncate_add_user
+USER=testuser&PASSWD=testpassword&HAVE_NETCDF?truncate_sys_netcdf_tables.Bug-6543
+USER=testuser&PASSWD=testpassword&HAVE_SAMTOOLS?truncate_bam_tables.Bug-6543
+USER=testuser&PASSWD=testpassword?truncate_sys_tables.Bug-6543
+truncate_remove_user
+truncate_empty_table.Bug-6544
+sqlitelogictest-in-query.Bug-6545
+sqlitelogictest-in-with-division.Bug-6546
+ilike.Bug-6547

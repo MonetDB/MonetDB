@@ -1,0 +1,32 @@
+stdout of test 'truncate_remove_user` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 10:38:42 >  
+# 10:38:42 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36704" "--set" "mapi_usock=/var/tmp/mtest-21201/.s.monetdb.36704" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-candidate/var/MonetDB/mTests_sql_test_BugTracker-2018"
+# 10:38:42 >  
+
+# MonetDB 5 server v11.29.0 (hg id: db0ca0917991+)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 62.695 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:36704/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21201/.s.monetdb.36704
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 10:38:43 >  
+# 10:38:43 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21201" "--port=36704"
+# 10:38:43 >  
+
+#DROP USER testuser;
+
+# 10:38:43 >  
+# 10:38:43 >  "Done."
+# 10:38:43 >  
+

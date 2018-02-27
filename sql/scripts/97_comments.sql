@@ -11,17 +11,9 @@ CREATE TABLE sys.comments (
 GRANT SELECT ON sys.comments TO PUBLIC;
 
 
-CREATE PROCEDURE sys.comment_on(obj_id INTEGER, obj_remark VARCHAR(65000))
+CREATE PROCEDURE sys.no_op()
 BEGIN
-    IF obj_id IS NOT NULL AND obj_id > 0 THEN
-        IF obj_remark IS NULL OR obj_remark = '' THEN
-                DELETE FROM sys.comments WHERE id = obj_id;
-        ELSEIF EXISTS (SELECT id FROM sys.comments WHERE id = obj_id) THEN
-                UPDATE sys.comments SET remark = obj_remark WHERE id = obj_id;
-        ELSE
-                INSERT INTO sys.comments VALUES (obj_id, obj_remark);
-        END IF;
-    END IF;
+    DECLARE dummy INTEGER;
 END;
 -- do not grant to public
 
@@ -66,14 +58,14 @@ SELECT DISTINCT s.name AS sname,  -- DISTINCT is needed to filter out duplicate 
 	  s.name || '.' || f.name AS fullname,
 	  CAST(8 AS SMALLINT) AS ntype,
 	  (CASE WHEN sf.function_id IS NOT NULL THEN 'SYSTEM ' ELSE '' END) || sys.function_type_keyword(f.type) AS type,
-	  CASE WHEN sf.function_id IS NULL THEN FALSE ELSE TRUE END AS system,
+	  sf.function_id IS NOT NULL AS system,
 	  c.remark AS remark
   FROM sys.functions f
   LEFT OUTER JOIN sys.comments c ON f.id = c.id
   LEFT OUTER JOIN sys.schemas s ON f.schema_id = s.id
   LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id
 UNION ALL
-SELECT s.name AS sname,
+SELECT NULL AS sname,
 	  s.name,
 	  s.name AS fullname,
 	  CAST(16 AS SMALLINT) AS ntype,
@@ -91,7 +83,7 @@ SELECT f.id AS fid,
        s.name AS schema,
        f.name AS fname,
        sys.function_type_keyword(f.type) AS category,
-       CASE WHEN sf.function_id IS NULL THEN FALSE ELSE TRUE END AS system,
+       sf.function_id IS NOT NULL AS system,
        CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number ASC) WHEN 1 THEN f.name ELSE NULL END AS name,
        CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number DESC) WHEN 1 THEN c.remark ELSE NULL END AS remark,
        p.type, p.type_digits, p.type_scale,

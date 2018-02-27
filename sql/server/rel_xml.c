@@ -279,7 +279,7 @@ rel_xml(mvc *sql, sql_rel **rel, symbol *s, int f, exp_kind knd)
 		ret = rel_xmltext(sql, rel, s, f, knd);
 		break;
 	default:
-		return sql_error(sql, 01, SQLSTATE(42000) "XML statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
+		return sql_error(sql, 01, SQLSTATE(42000) "XML statement unknown symbol(%p)->token = %s", s, token2string(s->token));
 	}
 	return ret;
 }

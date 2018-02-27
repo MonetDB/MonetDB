@@ -70,11 +70,11 @@ Ready.
 % .L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3 # table_name
 % schema,	table,	column,	type,	mode,	typewidth,	hashes,	phash,	imprints # name
 % clob,	clob,	clob,	clob,	clob,	int,	bigint,	boolean,	bigint # type
-% 3,	7,	13,	8,	8,	3,	1,	5,	1 # length
+% 3,	7,	13,	8,	8,	2,	1,	5,	1 # length
 [ "sys",	"_tables",	"id",	"int",	"writable",	4,	0,	false,	0	]
 [ "sys",	"_tables",	"name",	"varchar",	"writable",	14,	0,	false,	0	]
 [ "sys",	"_tables",	"schema_id",	"int",	"writable",	4,	0,	false,	0	]
-[ "sys",	"_tables",	"query",	"varchar",	"writable",	209,	0,	false,	0	]
+[ "sys",	"_tables",	"query",	"varchar",	"writable",	99,	0,	false,	0	]
 [ "sys",	"_tables",	"type",	"smallint",	"writable",	2,	0,	false,	0	]
 [ "sys",	"_tables",	"system",	"boolean",	"writable",	1,	0,	false,	0	]
 [ "sys",	"_tables",	"commit_action",	"smallint",	"writable",	2,	0,	false,	0	]
@@ -95,11 +95,11 @@ Ready.
 % .L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3 # table_name
 % schema,	table,	column,	type,	mode,	typewidth,	hashes,	phash,	imprints # name
 % clob,	clob,	clob,	clob,	clob,	int,	bigint,	boolean,	bigint # type
-% 3,	7,	13,	8,	8,	3,	1,	5,	1 # length
+% 3,	7,	13,	8,	8,	2,	1,	5,	1 # length
 [ "sys",	"_tables",	"id",	"int",	"writable",	4,	0,	false,	0	]
 [ "sys",	"_tables",	"name",	"varchar",	"writable",	14,	0,	false,	0	]
 [ "sys",	"_tables",	"schema_id",	"int",	"writable",	4,	0,	false,	0	]
-[ "sys",	"_tables",	"query",	"varchar",	"writable",	207,	0,	false,	0	]
+[ "sys",	"_tables",	"query",	"varchar",	"writable",	99,	0,	false,	0	]
 [ "sys",	"_tables",	"type",	"smallint",	"writable",	2,	0,	false,	0	]
 [ "sys",	"_tables",	"system",	"boolean",	"writable",	1,	0,	false,	0	]
 [ "sys",	"_tables",	"commit_action",	"smallint",	"writable",	2,	0,	false,	0	]

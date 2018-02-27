@@ -533,8 +533,8 @@ SQLSpecialColumns(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSpecialColumns " PTRFMT " %s ",
-		PTRFMTCAST StatementHandle,
+	ODBCLOG("SQLSpecialColumns %p %s ",
+		StatementHandle,
 		translateIdentifierType(IdentifierType));
 #endif
 
@@ -590,8 +590,8 @@ SQLSpecialColumnsW(SQLHSTMT StatementHandle,
 	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSpecialColumnsW " PTRFMT " %s ",
-		PTRFMTCAST StatementHandle,
+	ODBCLOG("SQLSpecialColumnsW %p %s ",
+		StatementHandle,
 		translateIdentifierType(IdentifierType));
 #endif
 

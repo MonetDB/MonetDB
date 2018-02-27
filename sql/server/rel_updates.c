@@ -1882,7 +1882,7 @@ rel_updates(mvc *sql, symbol *s)
 		break;
 	default:
 		sql->use_views = old;
-		return sql_error(sql, 01, SQLSTATE(42000) "Updates statement unknown Symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
+		return sql_error(sql, 01, SQLSTATE(42000) "Updates statement unknown Symbol(%p)->token = %s", s, token2string(s->token));
 	}
 	sql->use_views = old;
 	return ret;

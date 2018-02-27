@@ -35,7 +35,7 @@ SQLDisconnect(SQLHDBC ConnectionHandle)
 	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDisconnect " PTRFMT "\n", PTRFMTCAST ConnectionHandle);
+	ODBCLOG("SQLDisconnect %p\n", ConnectionHandle);
 #endif
 
 	if (!isValidDbc(dbc))

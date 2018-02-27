@@ -1296,8 +1296,8 @@ SQLGetTypeInfo(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetTypeInfo " PTRFMT " %s\n",
-		PTRFMTCAST StatementHandle, translateDataType(DataType));
+	ODBCLOG("SQLGetTypeInfo %p %s\n",
+		StatementHandle, translateDataType(DataType));
 #endif
 
 	if (!isValidStmt(stmt))
@@ -1322,8 +1322,8 @@ SQLGetTypeInfoW(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetTypeInfoW " PTRFMT " %s\n",
-		PTRFMTCAST StatementHandle, translateDataType(DataType));
+	ODBCLOG("SQLGetTypeInfoW %p %s\n",
+		StatementHandle, translateDataType(DataType));
 #endif
 
 	if (!isValidStmt(stmt))

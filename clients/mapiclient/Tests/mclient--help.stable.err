@@ -22,7 +22,7 @@ Options are:
  -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml,trash}
  -H          | --history          load/save cmdline history (default off)
  -i          | --interactive      interpret `\' commands on stdin
- -t          | --timer=format     use time formatting {clock,minutes,seconds,milliseconds,microseconds,none}
+ -t          | --timer=format     use time formatting {none,clock,performance} (none is default)
  -l language | --language=lang    {sql,mal}
  -L logfile  | --log=logfile      save client/server interaction
  -s stmt     | --statement=stmt   run single statement

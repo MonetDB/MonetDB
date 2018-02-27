@@ -36,7 +36,7 @@ These packages are optional.
 cfitsio-devel		# optional: read FITS files
 libasan			# optional: --enable-sanitizer configuration (debug)
 liblas-devel		# optional: read LIDAR files
-lz4-devel		# optional: compression in new (unused) MAPI protocol
+lz4-devel		# optional: compression in new (unused) MAPI protocol, also used to read and write .lz4 compressed files
 netcdf-devel		# optional: read NetCDF files
 proj-devel		# optional, only optionally used in geom module
 python3-devel		# optional, needed for Python 3 integration

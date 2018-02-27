@@ -75,9 +75,9 @@ static int pccount;
 #define FINISHED 2
 typedef struct{
 	int state;
-	lng etc;
-	lng actual;
-	lng clkticks;
+	int64_t etc;
+	int64_t actual;
+	int64_t clkticks;
 	char *stmt;
 } Event;
 
@@ -125,9 +125,9 @@ stop_disconnect:
 
 char *currentfunction= 0;
 int currenttag;		// to distinguish query invocations
-lng starttime = 0;
-lng finishtime = 0;
-lng duration =0;
+int64_t starttime = 0;
+int64_t finishtime = 0;
+int64_t duration =0;
 char *prevquery= 0;
 int prevprogress =0;// pc of previous progress display
 int prevlevel =0; 
@@ -171,7 +171,7 @@ static void resetTachograph(void){
 
 static char stamp[BUFSIZ]={0};
 static void
-rendertime(lng ticks, int flg)
+rendertime(int64_t ticks, int flg)
 {
 	int t, hr,min,sec;
 
@@ -193,9 +193,9 @@ rendertime(lng ticks, int flg)
 
 
 static void
-showBar(int level, lng clk, char *stmt)
+showBar(int level, int64_t clk, char *stmt)
 {
-	lng i =0, nl;
+	int64_t i =0, nl;
 	size_t stamplen=0;
 
 	nl = level/2-prevlevel/2;
@@ -254,7 +254,7 @@ update(EventRecord *ev)
 	}
 
 	if (debug)
-		fprintf(stderr, "Update %s input %s stmt %s time " LLFMT"\n",(ev->state>=0?statenames[ev->state]:"unknown"),(ev->fcn?ev->fcn:"(null)"),(currentfunction?currentfunction:""),ev->clkticks -starttime);
+		fprintf(stderr, "Update %s input %s stmt %s time %" PRId64"\n",(ev->state>=0?statenames[ev->state]:"unknown"),(ev->fcn?ev->fcn:"(null)"),(currentfunction?currentfunction:""),ev->clkticks -starttime);
 
 	if (starttime == 0) {
 		if (ev->fcn == 0 ) {

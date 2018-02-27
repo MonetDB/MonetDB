@@ -28,7 +28,7 @@ SQLRETURN SQL_API
 SQLFreeConnect(SQLHDBC ConnectionHandle)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLFreeConnect " PTRFMT "\n", PTRFMTCAST ConnectionHandle);
+	ODBCLOG("SQLFreeConnect %p\n", ConnectionHandle);
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */

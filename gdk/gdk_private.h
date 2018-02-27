@@ -141,10 +141,10 @@ __hidden gdk_return GDKremovedir(int farmid, const char *nme)
 __hidden gdk_return GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode, int dosync)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return GDKssort_rev(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
+__hidden gdk_return GDKssort_rev(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return GDKssort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
+__hidden gdk_return GDKssort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
@@ -317,17 +317,17 @@ extern MT_Lock MT_system_lock;
 #if !defined(NDEBUG) && !defined(STATIC_CODE_ANALYSIS)
 /* see comment in gdk.h */
 #ifdef __GNUC__
-#define GDKmunmap(p, l)							\
-	({	void *_ptr = (p);					\
-		size_t _len = (l);					\
-		gdk_return _res = GDKmunmap(_ptr, _len);		\
-		ALLOCDEBUG						\
-			fprintf(stderr,					\
-				"#GDKmunmap(" PTRFMT "," SZFMT ") -> %d" \
-				" %s[%s:%d]\n",				\
-				PTRFMTCAST _ptr, _len, _res,		\
-				__func__, __FILE__, __LINE__);		\
-		_res;							\
+#define GDKmunmap(p, l)						\
+	({	void *_ptr = (p);				\
+		size_t _len = (l);				\
+		gdk_return _res = GDKmunmap(_ptr, _len);	\
+		ALLOCDEBUG					\
+			fprintf(stderr,				\
+				"#GDKmunmap(%p,%zu) -> %d"	\
+				" %s[%s:%d]\n",			\
+				_ptr, _len, _res,		\
+				__func__, __FILE__, __LINE__);	\
+		_res;						\
 	})
 #define GDKmremap(p, m, oa, os, ns)					\
 	({								\
@@ -340,11 +340,11 @@ extern MT_Lock MT_system_lock;
 		void *_res = GDKmremap(_path, _mode, _oa, _os, _ns);	\
 		ALLOCDEBUG						\
 			fprintf(stderr,					\
-				"#GDKmremap(%s,0x%x," PTRFMT "," SZFMT "," SZFMT " > " SZFMT ") -> " PTRFMT \
+				"#GDKmremap(%s,0x%x,%p,%zu,%zu > %zu) -> %p" \
 				" %s[%s:%d]\n",				\
 				_path ? _path : "NULL", _mode,		\
-				PTRFMTCAST _oa, _os, _ons, *_ns,	\
-				PTRFMTCAST _res,			\
+				_oa, _os, _ons, *_ns,			\
+				_res,					\
 				__func__, __FILE__, __LINE__);		\
 		_res;							\
 	 })
@@ -354,8 +354,8 @@ GDKmunmap_debug(void *ptr, size_t len, const char *filename, int lineno)
 {
 	gdk_return res = GDKmunmap(ptr, len);
 	ALLOCDEBUG fprintf(stderr,
-			   "#GDKmunmap(" PTRFMT "," SZFMT ") -> %d [%s:%d]\n",
-			   PTRFMTCAST ptr, len, (int) res, filename, lineno);
+			   "#GDKmunmap(%p,%zu) -> %d [%s:%d]\n",
+			   ptr, len, (int) res, filename, lineno);
 	return res;
 }
 #define GDKmunmap(p, l)		GDKmunmap_debug((p), (l), __FILE__, __LINE__)
@@ -366,11 +366,11 @@ GDKmremap_debug(const char *path, int mode, void *old_address, size_t old_size, 
 	void *res = GDKmremap(path, mode, old_address, old_size, new_size);
 	ALLOCDEBUG
 		fprintf(stderr,
-			"#GDKmremap(%s,0x%x," PTRFMT "," SZFMT "," SZFMT " > " SZFMT ") -> " PTRFMT
+			"#GDKmremap(%s,0x%x,%p,%zu,%zu > %zu) -> %p"
 			" [%s:%d]\n",
 			path ? path : "NULL", mode,
-			PTRFMTCAST old_address, old_size, orig_new_size, *new_size,
-			PTRFMTCAST res,
+			old_address, old_size, orig_new_size, *new_size,
+			res,
 			filename, lineno);
 	return res;
 }

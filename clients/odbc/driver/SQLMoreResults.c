@@ -35,7 +35,7 @@ SQLMoreResults(SQLHSTMT StatementHandle)
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLMoreResults " PTRFMT "\n", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLMoreResults %p\n", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

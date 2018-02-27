@@ -221,7 +221,7 @@ SQLTablePrivileges(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLTablePrivileges " PTRFMT " ", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLTablePrivileges %p ", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -264,7 +264,7 @@ SQLTablePrivilegesW(SQLHSTMT StatementHandle,
 	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLTablePrivilegesW " PTRFMT " ", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLTablePrivilegesW %p ", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

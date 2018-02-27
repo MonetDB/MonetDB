@@ -57,8 +57,8 @@ SQLBulkOperations(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLBulkOperations " PTRFMT " %s\n",
-		PTRFMTCAST StatementHandle, translateOperation(Operation));
+	ODBCLOG("SQLBulkOperations %p %s\n",
+		StatementHandle, translateOperation(Operation));
 #endif
 
 	if (!isValidStmt(stmt))

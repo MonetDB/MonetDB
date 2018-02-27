@@ -473,7 +473,7 @@ MNDBExecute(ODBCStmt *stmt)
 	query[querypos] = 0;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLExecute " PTRFMT " %s\n", PTRFMTCAST stmt, query);
+	ODBCLOG("SQLExecute %p %s\n", stmt, query);
 #endif
 
 	/* Have the server execute the query */
@@ -523,7 +523,7 @@ SQLRETURN SQL_API
 SQLExecute(SQLHSTMT StatementHandle)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLExecute " PTRFMT "\n", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLExecute %p\n", StatementHandle);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) StatementHandle))

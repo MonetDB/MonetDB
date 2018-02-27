@@ -36,7 +36,7 @@ SQLNumResultCols(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLNumResultCols " PTRFMT "\n", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLNumResultCols %p\n", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

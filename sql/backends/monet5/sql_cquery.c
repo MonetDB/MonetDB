@@ -1162,23 +1162,25 @@ CQdump(void *ret)
 	return MAL_SUCCEED;
 }
 
-static void
+static int
 CQdropAllTables(Client cntxt)
 {
 	backend* be = (backend*) cntxt->sqlcontext;
 	mvc *m = be->mvc;
 	sql_schema *cquery_schema = NULL;
 	list *list_tables;
+	int res = 0;
 
 	if((cquery_schema = mvc_bind_schema(m, "cquery")) == NULL) {
 		fprintf(stderr, "CQscheduler internal error: Could not bind cquery schema\n");
-		return;
+		return 0;
 	}
 	list_tables = schema_bind_tables(m, cquery_schema);
 	if(list_tables) {
-		mvc_drop_all_tables(m, cquery_schema, list_tables, DROP_RESTRICT);
+		res = mvc_drop_all_tables(m, cquery_schema, list_tables, DROP_RESTRICT);
 		list_destroy(list_tables);
 	}
+	return res;
 }
 
 static int
@@ -1328,7 +1330,8 @@ CQexecute( Client cntxt, int idx)
 #define DROP_ALL_CQUERY_TABLES                                                                          \
 	do {                                                                                                \
 		if(!CQinitTransaction(m)) {                                                                     \
-			CQdropAllTables(c);                                                                         \
+			if(CQdropAllTables(c))                                                                      \
+				fprintf(stderr, "CQscheduler internal error: Could not drop temporary tables\n");       \
 			if(CQcommitTransaction(m))                                                                  \
 				fprintf(stderr, "CQscheduler internal error: Could not commit internal transaction\n"); \
 		} else {                                                                                        \

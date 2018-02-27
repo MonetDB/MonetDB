@@ -72,14 +72,18 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 
 		if ((cv = VALformat(val)) == NULL) {
 			addMalException(mb, "renderTerm:Failed to allocate");
+			GDKfree(buf);
 			return NULL;
 		}
-		if (len + strlen(cv) >= maxlen)
-			buf= GDKrealloc(buf, maxlen =len + strlen(cv) + BUFSIZ);
+		if (len + strlen(cv) >= maxlen) {
+			char *nbuf= GDKrealloc(buf, maxlen =len + strlen(cv) + BUFSIZ);
 
-		if( buf == 0){
-			addMalException(mb,"renderTerm:Failed to allocate");
-			return NULL;
+			if( nbuf == 0){
+				GDKfree(buf);
+				addMalException(mb,"renderTerm:Failed to allocate");
+				return NULL;
+			}
+			buf = nbuf;
 		}
 
 		if( strcmp(cv,"nil") == 0){
@@ -442,10 +446,7 @@ shortRenderingTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx)
 			b = BBPquickdesc(stk->stk[varid].val.bval,TRUE);
 			snprintf(s,BUFSIZ,"%s["BUNFMT"]" ,nme, b?BATcount(b):0);
 		} else
-		if( cv)
 			snprintf(s,BUFSIZ,"%s=%s ",nme,cv);
-		else
-			snprintf(s,BUFSIZ,"%s ",nme);
 	}
 	GDKfree(cv);
 	return s;
@@ -545,7 +546,7 @@ str
 mal2str(MalBlkPtr mb, int first, int last)
 {
 	str ps = NULL, *txt;
-	int i, *len, totlen = 0;
+	int i, *len, totlen = 0, j;
 
 	txt = GDKmalloc(sizeof(str) * mb->stop);
 	len = GDKmalloc(sizeof(int) * mb->stop);
@@ -567,11 +568,21 @@ mal2str(MalBlkPtr mb, int first, int last)
 
 		if ( txt[i])
 			totlen += len[i] = (int)strlen(txt[i]);
+		else {
+			addMalException(mb,"mal2str: " MAL_MALLOC_FAIL);
+			GDKfree(len);
+			for (j = first; j < i; j++)
+				GDKfree(txt[j]);
+			GDKfree(txt);
+			return NULL;
+		}
 	}
 	ps = GDKmalloc(totlen + mb->stop + 1);
 	if( ps == NULL){
 		addMalException(mb,"mal2str: " MAL_MALLOC_FAIL);
 		GDKfree(len);
+		for (i = first; i < last; i++)
+			GDKfree(txt[i]);
 		GDKfree(txt);
 		return NULL;
 	}
@@ -603,6 +614,8 @@ printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 	if ( ps ){
 		mnstr_printf(fd, "%s%s", (flg & LIST_MAL_MAPI ? "=" : ""), ps);
 		GDKfree(ps);
+	} else {
+		mnstr_printf(fd,"#failed instruction2str()");
 	}
 	mnstr_printf(fd, "\n");
 }
@@ -619,6 +632,8 @@ fprintInstruction(FILE *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 	if ( ps ){
 		fprintf(fd, "%s%s", (flg & LIST_MAL_MAPI ? "=" : ""), ps);
 		GDKfree(ps);
+	} else {
+		fprintf(fd,"#failed instruction2str()");
 	}
 	fprintf(fd, "\n");
 }
@@ -659,6 +674,8 @@ void showMalBlkHistory(stream *out, MalBlkPtr mb)
 				mnstr_printf(out,"%s.%s[%2d] %s\n", 
 					getModuleId(sig), getFunctionId(sig),j++,msg+3);
 				GDKfree(msg);
+			} else {
+				mnstr_printf(out,"#failed instruction2str()\n");
 			}
 		} 
 		m= m->history;

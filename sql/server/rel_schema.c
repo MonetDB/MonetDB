@@ -398,7 +398,7 @@ column_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_tabl
 	} 	break;
 	}
 	if (res == SQL_ERR) {
-		(void) sql_error(sql, 02, SQLSTATE(M0M03) "Unknown constraint (" PTRFMT ")->token = %s\n", PTRFMTCAST s, token2string(s->token));
+		(void) sql_error(sql, 02, SQLSTATE(M0M03) "Unknown constraint (%p)->token = %s\n", s, token2string(s->token));
 	}
 	return res;
 }
@@ -485,7 +485,7 @@ column_option(
 	} 	break;
 	}
 	if (res == SQL_ERR) {
-		(void) sql_error(sql, 02, SQLSTATE(M0M03) "Unknown column option (" PTRFMT ")->token = %s\n", PTRFMTCAST s, token2string(s->token));
+		(void) sql_error(sql, 02, SQLSTATE(M0M03) "Unknown column option (%p)->token = %s\n", s, token2string(s->token));
 	}
 	return res;
 }
@@ -622,7 +622,7 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 		break;
 	}
 	if (res != SQL_OK) {
-		sql_error(sql, 02, SQLSTATE(M0M03) "Table constraint type: wrong token (" PTRFMT ") = %s\n", PTRFMTCAST s, token2string(s->token));
+		sql_error(sql, 02, SQLSTATE(M0M03) "Table constraint type: wrong token (%p) = %s\n", s, token2string(s->token));
 		return SQL_ERR;
 	}
 	return res;
@@ -648,7 +648,7 @@ table_constraint(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 	}
 
 	if (res != SQL_OK) {
-		sql_error(sql, 02, SQLSTATE(M0M03) "Table constraint: wrong token (" PTRFMT ") = %s\n", PTRFMTCAST s, token2string(s->token));
+		sql_error(sql, 02, SQLSTATE(M0M03) "Table constraint: wrong token (%p) = %s\n", s, token2string(s->token));
 		return SQL_ERR;
 	}
 	return res;
@@ -894,13 +894,16 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 				}
 			}
 		}
-		mvc_drop_column(sql, t, col, drop_action);
+		if(mvc_drop_column(sql, t, col, drop_action)) {
+			sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: %s\n", MAL_MALLOC_FAIL);
+			return SQL_ERR;
+		}
 	} 	break;
 	case SQL_DROP_CONSTRAINT:
 		assert(0);
 	}
 	if (res == SQL_ERR) {
-		sql_error(sql, 02, SQLSTATE(M0M03) "Unknown table element (" PTRFMT ")->token = %s\n", PTRFMTCAST s, token2string(s->token));
+		sql_error(sql, 02, SQLSTATE(M0M03) "Unknown table element (%p)->token = %s\n", s, token2string(s->token));
 		return SQL_ERR;
 	}
 	return res;
@@ -1077,7 +1080,8 @@ rel_create_view(mvc *sql, sql_schema *ss, dlist *qname, dlist *column_spec, symb
 			} else if (mvc_check_dependency(sql, t->base.id, VIEW_DEPENDENCY, NULL)) {
 				return sql_error(sql, 02, SQLSTATE(42000) "%s VIEW: cannot replace view '%s', there are database objects which depend on it", base, t->base.name);
 			} else {
-				mvc_drop_table(sql, s, t, 0);
+				if(mvc_drop_table(sql, s, t, 0))
+					return sql_error(sql, 02, SQLSTATE(HY001) "%s VIEW: %s", base, MAL_MALLOC_FAIL);
 		 	}
 		} else {
 			return sql_error(sql, 02, SQLSTATE(42S01) "%s VIEW: name '%s' already in use", base, name);
@@ -2304,48 +2308,47 @@ rel_find_designated_object(mvc *sql, symbol *sym, sql_schema **schema_out) {
 
 static sql_rel *
 rel_comment_on(mvc *sql, sqlid obj_id, sql_schema *schema, char *remark) {
-	buffer *buf = NULL;
-	stream *s = NULL;
-	char *query = NULL;
+	sql_trans *tx;
 	sql_schema *sys;
-	sql_rel *rel = NULL;
+	sql_table *comments;
+	sql_column *id_col, *remark_col;
+	oid rid;
 
 	// Check authorization
 	if (!mvc_schema_privs(sql, schema)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "COMMENT ON: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), schema->base.name);
 	}
 
-	buf = buffer_create(4000);
-	if (!buf)
-		goto wrap_up;
-
-	s = buffer_wastream(buf, "comment_on_call");
-	if (!s)
-		goto wrap_up;
-
-	mnstr_printf(s, "CALL sys.comment_on(%d, ", obj_id);
-	if (!remark) {
-		mnstr_printf(s, "NULL");
+	// Manually insert the rows to circumvent permission checks.
+	tx = sql->session->tr;
+	sys = find_sql_schema(tx, "sys");
+	if (!sys) 
+		return NULL;
+	comments = find_sql_table(sys, "comments");
+	if (!comments)
+		return NULL;
+	id_col = find_sql_column(comments, "id");
+	remark_col = find_sql_column(comments, "remark");
+	if (!id_col || !remark_col) 
+		return NULL; 
+	rid = table_funcs.column_find_row(tx, id_col, &obj_id, NULL);
+	if (remark != NULL && *remark) {
+		if (!is_oid_nil(rid)) {
+			// have new remark and found old one, so update field
+			table_funcs.column_update_value(tx, remark_col, rid, remark);
+		} else {
+			// have new remark but found none so insert row
+			table_funcs.table_insert(tx, comments, &obj_id, remark);
+		}
 	} else {
-		char *escaped = sql_escape_str(remark);
-		if (!escaped)
-			goto wrap_up;
-		mnstr_printf(s, "'%s'", escaped);
-		GDKfree(escaped);
+		if (!is_oid_nil(rid)) {
+			// have no remark but found one, so delete row
+			table_funcs.table_delete(tx, comments, rid);
+		}
 	}
-	mnstr_printf(s, ");");
-	query = buffer_get_buf(buf);
-	sys = mvc_bind_schema(sql, "sys");
-	rel = rel_parse(sql, sys, query, m_normal); // correct mode?
 
-wrap_up:
-	if (query)
-		free(query);
-	if (s)
-		mnstr_destroy(s);
-	if (buf)
-		buffer_destroy(buf);
-	return rel;
+	// There must be a better way to return a no-op sql_rel*
+	return rel_parse(sql, sys, "CALL sys.no_op();", m_normal);
 }
 
 sql_rel *
@@ -2568,7 +2571,7 @@ rel_schemas(mvc *sql, symbol *s)
 		return rel_comment_on(sql, id, s, remark);
 	} 	break;
 	default:
-		return sql_error(sql, 01, SQLSTATE(M0M03) "Schema statement unknown symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
+		return sql_error(sql, 01, SQLSTATE(M0M03) "Schema statement unknown symbol(%p)->token = %s", s, token2string(s->token));
 	}
 
 	sql->type = Q_SCHEMA;

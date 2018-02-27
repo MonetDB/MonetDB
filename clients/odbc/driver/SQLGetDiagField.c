@@ -249,12 +249,12 @@ SQLGetDiagField(SQLSMALLINT HandleType,
 		SQLSMALLINT *StringLengthPtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDiagField %s " PTRFMT " %d %s " PTRFMT " %d " PTRFMT "\n",
+	ODBCLOG("SQLGetDiagField %s %p %d %s %p %d %p\n",
 		HandleType == SQL_HANDLE_ENV ? "Env" : HandleType == SQL_HANDLE_DBC ? "Dbc" : HandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
-		PTRFMTCAST Handle, (int) RecNumber,
+		Handle, (int) RecNumber,
 		translateDiagIdentifier(DiagIdentifier),
-		PTRFMTCAST DiagInfoPtr,
-		(int) BufferLength, PTRFMTCAST StringLengthPtr);
+		DiagInfoPtr,
+		(int) BufferLength, StringLengthPtr);
 #endif
 
 	return MNDBGetDiagField(HandleType,
@@ -298,12 +298,12 @@ SQLGetDiagFieldW(SQLSMALLINT HandleType,
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDiagFieldW %s " PTRFMT " %d %s " PTRFMT " %d " PTRFMT "\n",
+	ODBCLOG("SQLGetDiagFieldW %s %p %d %s %p %d %p\n",
 		HandleType == SQL_HANDLE_ENV ? "Env" : HandleType == SQL_HANDLE_DBC ? "Dbc" : HandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
-		PTRFMTCAST Handle, (int) RecNumber,
+		Handle, (int) RecNumber,
 		translateDiagIdentifier(DiagIdentifier),
-		PTRFMTCAST DiagInfoPtr,
-		(int) BufferLength, PTRFMTCAST StringLengthPtr);
+		DiagInfoPtr,
+		(int) BufferLength, StringLengthPtr);
 #endif
 
 	switch (DiagIdentifier) {

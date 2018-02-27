@@ -265,7 +265,7 @@ SQLBrowseConnect(SQLHDBC ConnectionHandle,
 	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLBrowseConnect " PTRFMT, PTRFMTCAST ConnectionHandle);
+	ODBCLOG("SQLBrowseConnect %p", ConnectionHandle);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -301,7 +301,7 @@ SQLBrowseConnectW(SQLHDBC ConnectionHandle,
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLBrowseConnectW " PTRFMT, PTRFMTCAST ConnectionHandle);
+	ODBCLOG("SQLBrowseConnectW %p", ConnectionHandle);
 #endif
 
 	if (!isValidDbc(dbc))

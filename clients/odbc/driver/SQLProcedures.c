@@ -207,7 +207,7 @@ SQLProcedures(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLProcedures " PTRFMT " ", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLProcedures %p ", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -247,7 +247,7 @@ SQLProceduresW(SQLHSTMT StatementHandle,
 	SQLCHAR *catalog = NULL, *schema = NULL, *proc = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLProceduresW " PTRFMT " ", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLProceduresW %p ", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
