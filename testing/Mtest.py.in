@@ -1224,13 +1224,13 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
     else: # THISFILE == "Mapprove.py"
         TSTDB = ""
 
-    if testlist:
-        tl = []
-        for tst in testlist:
-            tl.append((tst,None))
-        testlist = tl
+    alltests = []
+    try:
+        allf = open(os.path.join(TSTSRCDIR, "All"))
+    except IOError:
+        pass
     else:
-        for tc in open(os.path.join(TSTSRCDIR,"All")):
+        for tc in allf:
             if '#' in tc:
                 # get rid of comment anywhere on line
                 tc = tc.split('#', 1)[0]
@@ -1240,7 +1240,21 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                     cond,tst = tc.split('?')
                 else:
                     cond,tst = None,tc
-                testlist.append((tst,cond))
+                alltests.append((tst,cond))
+        allf.close()
+
+    if testlist:
+        tl = []
+        for tst in testlist:
+            for t, c in alltests:
+                if t == tst:
+                    tl.append((t, c))
+                    break
+            else:
+                tl.append((tst,None))
+        testlist = tl
+    else:
+        testlist = alltests
     if not testlist:
         Warn("No tests found in '%s`; skipping directory!" % TSTSRCDIR)
         return td, elem, max(FdOut, FdErr), interrupted
