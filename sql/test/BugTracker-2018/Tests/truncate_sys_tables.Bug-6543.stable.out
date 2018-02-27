@@ -156,30 +156,6 @@ Ready.
 % boolean # type
 % 5 # length
 [ true	]
-#SELECT (COUNT(*) > 0) AS has_rows FROM sys.storagemodelinput;
-% sys.L4 # table_name
-% has_rows # name
-% boolean # type
-% 5 # length
-[ false	]
-#SELECT (COUNT(*) > 0) AS has_rows FROM sys.storagemodelinput;
-% sys.L4 # table_name
-% has_rows # name
-% boolean # type
-% 5 # length
-[ false	]
-#SELECT (COUNT(*) > 0) AS has_rows FROM sys.statistics;
-% sys.L4 # table_name
-% has_rows # name
-% boolean # type
-% 5 # length
-[ false	]
-#SELECT (COUNT(*) > 0) AS has_rows FROM sys.statistics;
-% sys.L4 # table_name
-% has_rows # name
-% boolean # type
-% 5 # length
-[ false	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.spatial_ref_sys;
 % sys.L4 # table_name
 % has_rows # name
@@ -367,18 +343,6 @@ Ready.
 % 5 # length
 [ true	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM sys.dependencies;
-% sys.L4 # table_name
-% has_rows # name
-% boolean # type
-% 5 # length
-[ true	]
-#SELECT (COUNT(*) > 0) AS has_rows FROM sys.db_user_info;
-% sys.L4 # table_name
-% has_rows # name
-% boolean # type
-% 5 # length
-[ true	]
-#SELECT (COUNT(*) > 0) AS has_rows FROM sys.db_user_info;
 % sys.L4 # table_name
 % has_rows # name
 % boolean # type
