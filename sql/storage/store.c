@@ -611,9 +611,9 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	sql_table *idxs = find_sql_table(syss, "idxs");
 	sql_table *keys = find_sql_table(syss, "keys");
 	sql_table *triggers = find_sql_table(syss, "triggers");
-	sql_table *streams = find_sql_table(syss, "_streams");
+
 	char *query;
-	sql_column *idx_table_id, *key_table_id, *trigger_table_id, *streams_table_id;
+	sql_column *idx_table_id, *key_table_id, *trigger_table_id;
 	oid rid;
 	rids *rs;
 
@@ -704,7 +704,8 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	table_funcs.rids_destroy(rs);
 
 	if (isStream(t)) {
-		streams_table_id = find_sql_column(streams, "table_id");
+		sql_table *streams = find_sql_table(syss, "_streams");
+		sql_column *streams_table_id = find_sql_column(streams, "table_id");
 		rs = table_funcs.rids_select(tr, streams_table_id, &t->base.id, &t->base.id, NULL);
 		if((rid = table_funcs.rids_next(rs)) != oid_nil) {
 			sql_stream *st = load_sql_stream(tr, t, rid); //there will be always only one stream entry per table

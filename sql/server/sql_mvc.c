@@ -332,6 +332,7 @@ sql_trans_deref( sql_trans *tr )
 					idx_destroy(p);
 				}
 			}
+			t->stream = t->po->stream;
 		}
 	}
 	return tr->parent;
