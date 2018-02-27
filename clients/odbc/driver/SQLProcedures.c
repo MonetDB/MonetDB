@@ -136,16 +136,18 @@ MNDBProcedures(ODBCStmt *stmt,
 			"0 as num_input_params, "
 			"0 as num_output_params, "
 			"0 as num_result_sets, "
-			"cast('' as varchar(1)) as remarks, "
+			"%s as remarks, "
 			"cast(case when p.type = %d then %d else %d end as smallint) as procedure_type "
 		 "from sys.schemas as s, "
 		      "sys.env() as e, "
-		      "sys.functions as p "
+		      "sys.functions as p%s "
 		 "where p.schema_id = s.id and "
 		       "p.language >= %d and "
 		       "p.type in (%d, %d, %d) and "
 		       "e.name = 'gdk_dbname'",
+		 stmt->Dbc->has_comment ? "c.remark" : "cast(null as varchar(1))",
 		 F_PROC, SQL_PT_PROCEDURE, SQL_PT_FUNCTION,
+		 stmt->Dbc->has_comment ? " left outer join sys.comments c on p.id = c.id" : "",
 		 FUNC_LANG_SQL, F_FUNC, F_PROC, F_UNION);
 	assert(strlen(query) < 800);
 	query_end += strlen(query_end);

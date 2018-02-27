@@ -61,7 +61,8 @@ SQLDisconnect(SQLHDBC ConnectionHandle)
 	dbc->mid = NULL;
 	dbc->cachelimit = 0;
 	dbc->Mdebug = 0;
-	dbc->Connected = 0;
+	dbc->Connected = false;
+	dbc->has_comment = false;
 
 	return SQL_SUCCESS;
 }

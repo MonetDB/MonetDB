@@ -95,6 +95,9 @@ MNDBTables(ODBCStmt *stmt,
 				      "name as table_schem, "
 				      "cast(null as varchar(1)) as table_name, "
 				      "cast(null as varchar(1)) as table_type, "
+			       /* ODBC says remarks column contains
+				* NULL even though MonetDB supports
+				* schema remarks */
 				      "cast(null as varchar(1)) as remarks "
 			       "from sys.schemas order by table_schem");
 	} else if (NameLength1 == 0 &&
@@ -165,19 +168,21 @@ MNDBTables(ODBCStmt *stmt,
 			goto nomem;
 		query_end = query;
 
-		strcpy(query_end,
+		sprintf(query_end,
 		       "select e.value as table_cat, "
 			      "s.name as table_schem, "
 			      "t.name as table_name, "
 		              "tt.table_type_name as table_type, "
-			      "cast(null as varchar(1)) as remarks "
+			      "%s as remarks "
 		       "from sys.schemas s, "
-			    "sys.tables t, "
+			    "sys.tables t%s, "
 		            "sys.table_types tt, "
 			    "sys.env() e "
 		       "where s.id = t.schema_id and "
 		             "t.type = tt.table_type_id and "
-			     "e.name = 'gdk_dbname'");
+			     "e.name = 'gdk_dbname'",
+			stmt->Dbc->has_comment ? "c.remark" : "cast(null as varchar(1))",
+			stmt->Dbc->has_comment ? " left outer join sys.comments c on c.id = t.id" : "");
 		assert(strlen(query) < 1900);
 		query_end += strlen(query_end);
 

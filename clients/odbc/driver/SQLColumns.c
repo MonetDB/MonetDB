@@ -353,7 +353,7 @@ MNDBColumns(ODBCStmt *stmt,
 			    "when true then cast(%d as smallint) "
 			    "when false then cast(%d as smallint) "
 		       "end as nullable, "
-		       "cast('' as varchar(1)) as remarks, "
+		       "%s as remarks, "
 		       "c.\"default\" as column_def, "
 		       "case c.type "
 			    "when 'bigint' then %d "
@@ -418,7 +418,7 @@ MNDBColumns(ODBCStmt *stmt,
 		       "end as is_nullable "
 		 "from sys.schemas s, "
 		      "sys.tables t, "
-		      "sys.columns c, "
+		      "sys.columns c%s, "
 		      "sys.env() e "
 		 "where s.id = t.schema_id and "
 		       "t.id = c.table_id and "
@@ -437,6 +437,8 @@ MNDBColumns(ODBCStmt *stmt,
 		SQL_TINYINT, SQL_WVARCHAR,
 		/* nullable: */
 		SQL_NULLABLE, SQL_NO_NULLS,
+		/* remarks: */
+		stmt->Dbc->has_comment ? "com.remark" : "cast(null as varchar(1))",
 		/* sql_data_type: */
 		SQL_BIGINT, SQL_LONGVARBINARY, SQL_BIT, SQL_WCHAR,
 		SQL_WLONGVARCHAR, SQL_DATETIME, SQL_DECIMAL, SQL_DOUBLE,
@@ -451,7 +453,9 @@ MNDBColumns(ODBCStmt *stmt,
 		SQL_CODE_HOUR_TO_SECOND, SQL_CODE_MINUTE,
 		SQL_CODE_MINUTE_TO_SECOND, SQL_CODE_SECOND,
 		SQL_CODE_TIME, SQL_CODE_TIMESTAMP, SQL_CODE_TIMESTAMP,
-		SQL_CODE_TIME);
+		SQL_CODE_TIME,
+		/* from clause: */
+		stmt->Dbc->has_comment ? " left outer join sys.comments com on com.id = c.id" : "");
 	assert(strlen(query) < 6300);
 	query_end += strlen(query_end);
 
