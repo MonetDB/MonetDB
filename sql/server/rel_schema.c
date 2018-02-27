@@ -89,7 +89,7 @@ rel_alter_table_add_partition_range(sql_allocator *sa, char *sname, char *tname,
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
-	char *pmin = atom2string(sa, min, 1), *pmax = atom2string(sa, max, 1);
+	char *pmin = atom2string(sa, min), *pmax = atom2string(sa, max);
 	if(!rel || !exps || !pmin || !pmax)
 		return NULL;
 
@@ -130,7 +130,7 @@ rel_alter_table_add_partition_list(sql_allocator *sa, char *sname, char *tname, 
 	}
 	for (n = ll->h; n ; n = n->next) {
 		symbol* next = n->data.sym;
-		char *nvalue = atom2string(sa, ((AtomNode *) next)->a, 1);
+		char *nvalue = atom2string(sa, ((AtomNode *) next)->a);
 		append(exps, exp_atom_clob(sa, nvalue));
 	}
 	rel->l = NULL;
@@ -523,7 +523,7 @@ column_option(
 			if (a->data.vtype == TYPE_str) {
 				mvc_default(sql, cs, a->data.val.sval);
 			} else {
-				char *r = atom2string(sql->sa, a, 0);
+				char *r = atom2string(sql->sa, a);
 
 				mvc_default(sql, cs, r);
 			}

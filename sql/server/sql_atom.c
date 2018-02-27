@@ -303,7 +303,7 @@ atom_ptr( sql_allocator *sa, sql_subtype *tpe, void *v)
 }
 
 char *
-atom2string(sql_allocator *sa, atom *a, int quote)
+atom2string(sql_allocator *sa, atom *a)
 {
 	char buf[BUFSIZ], *p = NULL;
 	void *v;
@@ -345,33 +345,9 @@ atom2string(sql_allocator *sa, atom *a, int quote)
 		sprintf(buf, "%f", a->data.val.dval);
 		break;
 	case TYPE_str:
-		if (a->data.val.sval) {
-			if(!quote)
-				return sa_strdup(sa, a->data.val.sval);
-			else { /* always produce a string between quotes, placing them if they do not exist */
-				int plus = 0, off = 0;
-				char *res;
-				if(a->data.val.sval[0] != '"')
-					plus++;
-				if(a->data.len == 0 || a->data.val.sval[a->data.len - 1] != '"')
-					plus++;
-				res = sa_alloc(sa, a->data.len + plus + 1);
-				if(res) {
-					if(a->data.val.sval[0] != '"') {
-						res[off] = '"';
-						off++;
-					}
-					strcpy(res + off, a->data.val.sval);
-					off += a->data.len;
-					if(a->data.len == 0 || a->data.val.sval[a->data.len - 1] != '"') {
-						res[off] = '"';
-						off++;
-					}
-					res[off] = '\0';
-				}
-				return res;
-			}
-		} else
+		if (a->data.val.sval)
+			return sa_strdup(sa, a->data.val.sval);
+		else
 			sprintf(buf, "NULL");
 		break;
         default:  

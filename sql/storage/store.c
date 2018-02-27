@@ -1009,6 +1009,7 @@ set_members(changeset *ts)
 				sql_table *pt = find_sql_table(t->s, p->base.name);
 
 				pt->p = t;
+				pt->pt = p;
 			}
 		}
 	}
@@ -1510,6 +1511,7 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 	nt->access = t->access;
 	nt->query = (t->query) ? sa_strdup(sa, t->query) : NULL;
 	nt->p = t->p;
+	nt->pt = t->pt;
 
 	for (n = t->columns.set->h; n; n = n->next) 
 		dup_sql_column(sa, nt, n->data);
@@ -4612,6 +4614,7 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 	/* merge table depends on part table */
 	sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
 	pt->p = mt;
+	pt->pt = p;
 	p->t = pt;
 	base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
 	cs_add(&mt->members, p, TR_NEW);
@@ -4654,6 +4657,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int t
 
 	base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
 	pt->p = mt;
+	pt->pt = p;
 	p->t = pt;
 	p->tpe = tpe;
 	p->part_type = PARTITION_RANGE;
@@ -4708,6 +4712,7 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int t
 
 	base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
 	pt->p = mt;
+	pt->pt = p;
 	p->t = pt;
 	p->tpe = tpe;
 	p->part_type = PARTITION_LIST;
@@ -4787,6 +4792,7 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 	sql_trans_drop_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
 	cs_del(&mt->members, n, pt->base.flag);
 	pt->p = NULL;
+	pt->pt = NULL;
 	table_funcs.table_delete(tr, sysobj, obj_oid);
 	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->wstime;
 

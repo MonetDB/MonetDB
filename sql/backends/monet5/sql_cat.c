@@ -143,11 +143,44 @@ alter_table_add_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 }
 
 static char *
+add_quotes(char *atom_str) /* always produce a string between quotes, placing them if they do not exist */
+{
+	size_t len;
+	int plus = 0, off = 0;
+	char *res;
+
+	if(!atom_str)
+		return atom_str;
+
+	len = strlen(atom_str);
+
+	if(atom_str[0] != '"')
+		plus++;
+	if(len == 0 || atom_str[len - 1] != '"')
+		plus++;
+	res = GDKmalloc(len + plus + 1);
+	if(res) {
+		if(atom_str[0] != '"') {
+			res[off] = '"';
+			off++;
+		}
+		strcpy(res + off, atom_str);
+		off += len;
+		if(len == 0 || atom_str[len - 1] != '"') {
+			res[off] = '"';
+			off++;
+		}
+		res[off] = '\0';
+	}
+	return res;
+}
+
+static char *
 alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psname, char *ptname, char *min, char *max)
 {
 	sql_table *mt = NULL, *pt = NULL;
 	sql_part *err = NULL;
-	str msg = MAL_SUCCEED, err_min = NULL, err_max = NULL;
+	str msg = MAL_SUCCEED, err_min = NULL, err_max = NULL, escaped_min = NULL, escaped_max = NULL;
 	sql_column *col = NULL, *bcol = NULL;
 	BAT *diff1 = NULL, *diff2 = NULL, *cbind = NULL;
 	int tp1 = 0, errcode = 0, i = 0;
@@ -167,13 +200,32 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 
 	col = mt->pcol;
 	tp1 = col->type.type->localtype;
-	if(ATOMfromstr(tp1, &pmin, &smin, min) < 0) {
-		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: error while parsing minimum value");
-		goto finish;
-	}
-	if(ATOMfromstr(tp1, &pmax, &smax, max) < 0) {
-		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: error while parsing maximum value");
-		goto finish;
+	if(tp1 == TYPE_str) {
+		if((escaped_min = add_quotes(min)) == NULL) {
+			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			goto finish;
+		}
+		if((escaped_max = add_quotes(max)) == NULL) {
+			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			goto finish;
+		}
+		if(ATOMfromstr(tp1, &pmin, &smin, escaped_min) < 0) {
+			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: error while parsing minimum value");
+			goto finish;
+		}
+		if(ATOMfromstr(tp1, &pmax, &smax, escaped_max) < 0) {
+			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: error while parsing maximum value");
+			goto finish;
+		}
+	} else {
+		if(ATOMfromstr(tp1, &pmin, &smin, min) < 0) {
+			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: error while parsing minimum value");
+			goto finish;
+		}
+		if(ATOMfromstr(tp1, &pmax, &smax, max) < 0) {
+			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: error while parsing maximum value");
+			goto finish;
+		}
 	}
 	if(ATOMcmp(tp1, pmin, pmax) > 0) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000) "ALTER TABLE: minimum value is higher than maximum value");
@@ -251,6 +303,10 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	}
 
 finish:
+	if(escaped_min)
+		GDKfree(escaped_min);
+	if(escaped_max)
+		GDKfree(escaped_max);
 	if(cbind)
 		BBPunfix(cbind->batCacheid);
 	if(diff1)
@@ -270,7 +326,7 @@ static char *
 alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msname, char *mtname, char *psname, char *ptname)
 {
 	sql_table *mt = NULL, *pt = NULL;
-	str msg = MAL_SUCCEED;
+	str msg = MAL_SUCCEED, escaped = NULL;
 	sql_column *col = NULL, *bcol = NULL;
 	sql_part *err = NULL;
 	int tp1 = 0, errcode = 0, i = 0, ninserts = 0;
@@ -304,11 +360,27 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		ptr pnext = NULL;
 		size_t len = 0;
 		str next = *getArgReference_str(stk, pci, i);
+		if(escaped) {
+			GDKfree(escaped);
+			escaped = NULL;
+		}
 
-		if(ATOMfromstr(tp1, &pnext, &len, next) < 0) {
-			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
-									"ALTER TABLE: error while parsing value %s", next);
-			goto finish;
+		if(tp1 == TYPE_str) {
+			if ((escaped = add_quotes(next)) == NULL) {
+				msg = createException(SQL, "sql.alter_table_add_value_partition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				goto finish;
+			}
+			if(ATOMfromstr(tp1, &pnext, &len, escaped) < 0) {
+				msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
+										"ALTER TABLE: error while parsing value %s", next);
+				goto finish;
+			}
+		} else {
+			if(ATOMfromstr(tp1, &pnext, &len, next) < 0) {
+				msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
+										"ALTER TABLE: error while parsing value %s", next);
+				goto finish;
+			}
 		}
 		ret = BUNappend(b, pnext, FALSE);
 		GDKfree(pnext);
@@ -365,6 +437,8 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 	}
 
 finish:
+	if(escaped)
+		GDKfree(escaped);
 	if(b)
 		BBPunfix(b->batCacheid);
 	if(cbind)

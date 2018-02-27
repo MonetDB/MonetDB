@@ -514,8 +514,8 @@ typedef enum table_types {
 typedef struct sql_part {
 	sql_base base;
 	struct sql_table *t; /* cached value */
-	int tpe;             /* the column type */
-	int part_type;       /* by range, list/values or none */
+	sht tpe;             /* the column type */
+	sht part_type;       /* by range, list/values or none */
 	union {
 		bat values;           /* partition by values/list */
 		struct sql_range {    /* partition by range */
@@ -548,9 +548,11 @@ typedef struct sql_table {
 	int cleared;		/* cleared in the current transaction */
 	void *data;
 	struct sql_schema *s;
-	struct sql_table *p;	/* The table is part of this merge table */
 	struct sql_table *po;	/* the outer transactions table */
-	struct sql_column *pcol; /* if it is partitioned on a column */
+
+	struct sql_table *p;	 /* The table is part of this merge table */
+	struct sql_column *pcol; /* If it is partitioned on a column */
+	struct sql_part *pt;	 /* This table belongs to this part */
 } sql_table;
 
 typedef struct res_col {
