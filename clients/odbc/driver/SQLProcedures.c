@@ -128,6 +128,7 @@ MNDBProcedures(ODBCStmt *stmt,
 #define F_FUNC 1
 #define F_PROC 2
 #define F_UNION 5
+#define FUNC_LANG_SQL 2
 	snprintf(query_end, 1000,
 		 "select e.value as procedure_cat, "
 			"s.name as procedure_schem, "
@@ -141,11 +142,11 @@ MNDBProcedures(ODBCStmt *stmt,
 		      "sys.env() as e, "
 		      "sys.functions as p "
 		 "where p.schema_id = s.id and "
-		       "p.sql = true and "
+		       "p.language >= %d and "
 		       "p.type in (%d, %d, %d) and "
 		       "e.name = 'gdk_dbname'",
 		 F_PROC, SQL_PT_PROCEDURE, SQL_PT_FUNCTION,
-		 F_FUNC, F_PROC, F_UNION);
+		 FUNC_LANG_SQL, F_FUNC, F_PROC, F_UNION);
 	assert(strlen(query) < 800);
 	query_end += strlen(query_end);
 
