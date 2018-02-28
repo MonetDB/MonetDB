@@ -1047,7 +1047,7 @@ alter_statement:
  | ALTER TABLE qname ADD TABLE qname
 	{ dlist *l = L();
 	  append_list(l, $3);
-	  append_symbol(l, _symbol_create_list( SQL_TABLE, $6));
+	  append_symbol(l, _symbol_create_list( SQL_TABLE, append_list(L(),$6)));
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname ALTER alter_table_element
 	{ dlist *l = L();
@@ -1160,9 +1160,9 @@ drop_table_element:
 	  append_string(l, $2 );
 	  append_int(l, $3 );
 	  $$ = _symbol_create_list( SQL_DROP_CONSTRAINT, l ); }
-  |  TABLE ident drop_action
+  |  TABLE qname drop_action
 	{ dlist *l = L();
-	  append_string(l, $2 );
+	  append_list(l, $2 );
 	  append_int(l, $3 );
 	  append_int(l, 0);
 	  $$ = _symbol_create_list( SQL_DROP_TABLE, l ); }

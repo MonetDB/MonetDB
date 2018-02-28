@@ -1312,15 +1312,19 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te)
 			sname = s->base.name;
 
 		if (te && (te->token == SQL_TABLE || te->token == SQL_DROP_TABLE)) {
-			char *ntname = te->data.lval->h->data.sval;
+			dlist *nqname = te->data.lval->h->data.lval;
+			char *nsname = qname_schema(nqname);
+			char *ntname = qname_table(nqname);
 
-			/* TODO partition sname */
+			/* partition sname */
+			if (!nsname)
+				nsname = sname;
 			if (te->token == SQL_TABLE) {
-				return rel_alter_table(sql->sa, DDL_ALTER_TABLE_ADD_TABLE, sname, tname, sname, ntname, 0);
+				return rel_alter_table(sql->sa, DDL_ALTER_TABLE_ADD_TABLE, sname, tname, nsname, ntname, 0);
 			} else {
 				int drop_action = te->data.lval->h->next->data.i_val;
 
-				return rel_alter_table(sql->sa, DDL_ALTER_TABLE_DEL_TABLE, sname, tname, sname, ntname, drop_action);
+				return rel_alter_table(sql->sa, DDL_ALTER_TABLE_DEL_TABLE, sname, tname, nsname, ntname, drop_action);
 			}
 		}
 
