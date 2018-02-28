@@ -114,6 +114,7 @@ typedef struct mvc {
 	int sizeheader;		/* print size header in result set */
 	int debug;
 
+	lng Topt;		/* timer for optimizer phase */
 	char emode;		/* execution mode */
 	char emod;		/* execution modifier */
 

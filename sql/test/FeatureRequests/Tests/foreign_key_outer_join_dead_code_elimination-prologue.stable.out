@@ -173,25 +173,25 @@ Ready.
 % 1 # length
 [ 6	]
 #select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1;
-% .L4 # table_name
+% sys.L4 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 6	]
 #select count(*) from v1;
-% .L12 # table_name
+% sys.L12 # table_name
 % L11 # name
 % bigint # type
 % 1 # length
 [ 6	]
 #select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2;
-% .L4 # table_name
+% sys.L4 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 6	]
 #select count(*) from v2;
-% .L14 # table_name
+% sys.L14 # table_name
 % L13 # name
 % bigint # type
 % 1 # length
@@ -219,7 +219,7 @@ Ready.
 [ 5	]
 [ 6	]
 #select id       from fk left outer join pk1 on fk.fk1 = pk1.pk1 order by id;
-% .fk # table_name
+% sys.fk # table_name
 % id # name
 % int # type
 % 1 # length
@@ -230,7 +230,7 @@ Ready.
 [ 5	]
 [ 6	]
 #select id       from v1 order by id;
-% .v1 # table_name
+% sys.v1 # table_name
 % id # name
 % int # type
 % 1 # length
@@ -241,7 +241,7 @@ Ready.
 [ 5	]
 [ 6	]
 #select id       from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id;
-% .fk # table_name
+% sys.fk # table_name
 % id # name
 % int # type
 % 1 # length
@@ -252,7 +252,7 @@ Ready.
 [ 5	]
 [ 6	]
 #select id       from v2 order by id;
-% .v2 # table_name
+% sys.v2 # table_name
 % id # name
 % int # type
 % 1 # length

@@ -1844,7 +1844,7 @@ format_result(Mapi mid, MapiHdl hdl, int singleinstr)
 		}
 
 		// get the timings as reported by the backend
-		sqloptimizer = 0;
+		sqloptimizer = mapi_get_sqloptimizertime(hdl);
 		maloptimizer = mapi_get_maloptimizertime(hdl);
 		querytime = mapi_get_querytime(hdl);
 		timerHumanStop();

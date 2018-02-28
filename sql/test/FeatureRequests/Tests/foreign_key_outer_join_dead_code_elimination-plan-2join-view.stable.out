@@ -32,12 +32,10 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 87 # length
+% 56 # length
 project (
 | group by (
-| | project (
-| | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
-| | ) [ "fk"."id" NOT NULL HASHCOL  as "v2"."id" ]
+| | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
 | ) [  ] [ sys.count() NOT NULL as "L13"."L13" ]
 ) [ "L13" NOT NULL as "L14"."L13" ]
 
@@ -45,10 +43,10 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 85 # length
+% 170 # length
 project (
 | project (
-| | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
+| | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk1_fkey" NOT NULL JOINIDX sys.fk.fk_fk1_fkey, "fk"."%fk_fk2_fkey" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ] COUNT 
 | ) [ "fk"."id" NOT NULL HASHCOL  as "v2"."id" ]
 ) [ "v2"."id" NOT NULL HASHCOL  ] [ "v2"."id" ASC NOT NULL HASHCOL  ]
 
@@ -56,14 +54,14 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 85 # length
+% 173 # length
 project (
 | project (
 | | left outer join (
-| | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk1_fkey" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ] COUNT ,
-| | | table(sys.pk1) [ "pk1"."v2", "pk1"."%TID%" NOT NULL ] COUNT 
-| | ) [ "fk"."%fk_fk1_fkey" NOT NULL = "pk1"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ]
-| ) [ "fk"."id" NOT NULL HASHCOL  as "v2"."id", "pk1"."v2" as "v2"."v2" ]
+| | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk1_fkey" NOT NULL JOINIDX sys.fk.fk_fk1_fkey, "fk"."%fk_fk2_fkey" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ] COUNT ,
+| | | table(sys.pk2) [ "pk2"."v2", "pk2"."%TID%" NOT NULL ] COUNT 
+| | ) [ "fk"."%fk_fk2_fkey" NOT NULL = "pk2"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ]
+| ) [ "fk"."id" NOT NULL HASHCOL  as "v2"."id", "pk2"."v2" as "v2"."v2" ]
 ) [ "v2"."id" NOT NULL HASHCOL , "v2"."v2" ] [ "v2"."id" ASC NOT NULL HASHCOL  ]
 
 # 01:44:33 >  

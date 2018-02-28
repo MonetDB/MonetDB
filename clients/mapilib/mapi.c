@@ -876,6 +876,7 @@ struct MapiResultSet {
 	int64_t last_id;
 	int64_t querytime;
 	int64_t maloptimizertime;
+	int64_t sqloptimizertime;
 	int fieldcnt;
 	int maxfields;
 	char *errorstr;		/* error from server */
@@ -1442,6 +1443,7 @@ new_result(MapiHdl hdl)
 	result->errorstr = NULL;
 	result->querytime = 0;
 	result->maloptimizertime = 0;
+	result->sqloptimizertime = 0;
 	memset(result->sqlstate, 0, sizeof(result->sqlstate));
 
 	result->tuple_count = 0;
@@ -3764,12 +3766,14 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 		result->commentonly = 0;
 		result->querytime = 0;
 		result->maloptimizertime = 0;
+		result->sqloptimizertime = 0;
 
 		nline++;	/* skip space */
 		switch (qt) {
 		case Q_SCHEMA:
 			result->querytime = strtoll(nline, &nline, 10);
 			result->maloptimizertime = strtoll(nline, &nline, 10);
+			result->sqloptimizertime = strtoll(nline, &nline, 10);
 			break;
 		case Q_TRANS:
 			if (*nline == 'f')
@@ -3783,14 +3787,16 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 			queryid = strtoll(nline, &nline, 10);
 			result->querytime = strtoll(nline, &nline, 10);
 			result->maloptimizertime = strtoll(nline, &nline, 10);
+			result->sqloptimizertime = strtoll(nline, &nline, 10);
 			break;
 		case Q_TABLE:
-			if (sscanf(nline, "%d %" SCNd64 " %d %" SCNd64 " %" SCNu64 " %" SCNd64 " %" SCNd64,
+			if (sscanf(nline, "%d %" SCNd64 " %d %" SCNd64 " %" SCNu64 " %" SCNd64 " %" SCNd64 " %" SCNd64, 
 				   &result->tableid, &result->row_count,
 				   &result->fieldcnt, &result->tuple_count,
-				   &queryid, &result->querytime, &result->maloptimizertime) < 7){
+				   &queryid, &result->querytime, &result->maloptimizertime, &result->sqloptimizertime) < 8){
 					result->querytime = 0;
 					result->maloptimizertime = 0;
+					result->sqloptimizertime = 0;
 				}
 			(void) queryid; /* ignored for now */
 			break;
@@ -5321,6 +5327,17 @@ mapi_get_maloptimizertime(MapiHdl hdl)
 	if ((result = hdl->result) == NULL)
 		return 0;
 	return result->maloptimizertime;
+}
+
+int64_t
+mapi_get_sqloptimizertime(MapiHdl hdl)
+{
+	struct MapiResultSet *result;
+
+	mapi_hdl_check(hdl, "mapi_get_sqloptimizertime");
+	if ((result = hdl->result) == NULL)
+		return 0;
+	return result->sqloptimizertime;
 }
 
 char *

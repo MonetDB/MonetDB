@@ -1,0 +1,33 @@
+stdout of test 'remote13` in directory 'monetdb5/modules/mal` itself:
+
+
+# 12:00:52 >  
+# 12:00:52 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36666" "--set" "mapi_usock=/var/tmp/mtest-15635/.s.monetdb.36666" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_monetdb5_modules_mal"
+# 12:00:52 >  
+
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_mal', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.324 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:36666/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-15635/.s.monetdb.36666
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 12:00:52 >  
+# 12:00:52 >  "mclient" "-lmal" "-ftest" "-tnone" "-Eutf-8" "--host=/var/tmp/mtest-15635" "--port=36666"
+# 12:00:52 >  
+
+[ "mTests_monetdb5_modules_mal_monetdb_0"	]
+[ nil	]
+
+# 12:00:52 >  
+# 12:00:52 >  "Done."
+# 12:00:52 >  
+

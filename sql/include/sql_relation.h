@@ -173,6 +173,8 @@ typedef enum operator_type {
 	(et == e_func || et == e_convert)
 #define is_column(et) \
 	(et != e_cmp)
+#define is_alias(et) \
+	(et == e_column)
 #define is_analytic(e) \
 	(e->type == e_func && ((sql_subfunc*)e->f)->func->type == F_ANALYTIC)
 #define is_base(op) \

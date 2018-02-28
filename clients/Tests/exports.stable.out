@@ -533,6 +533,7 @@ int64_t mapi_get_querytime(MapiHdl hdl);
 int mapi_get_querytype(MapiHdl hdl);
 int64_t mapi_get_row_count(MapiHdl hdl);
 int mapi_get_scale(MapiHdl hdl, int fnr);
+int64_t mapi_get_sqloptimizertime(MapiHdl hdl);
 char *mapi_get_table(MapiHdl hdl, int fnr);
 int mapi_get_tableid(MapiHdl hdl);
 stream *mapi_get_to(Mapi mid);

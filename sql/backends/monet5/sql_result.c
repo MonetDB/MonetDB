@@ -2159,6 +2159,8 @@ mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng star
 	    !mvc_send_lng(s, starttime > 0 ? GDKusec() - starttime : 0) ||
 	    mnstr_write(s, " ", 1, 1) != 1 ||
 	    !mvc_send_lng(s, maloptimizer) ||
+	    mnstr_write(s, " ", 1, 1) != 1 ||
+	    !mvc_send_lng(s, m->Topt) ||
 	    mnstr_write(s, "\n", 1, 1) != 1)
 		return -1;
 	if (mvc_export_warning(s, w) != 1)
@@ -2396,6 +2398,9 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 
 	// export MAL optimizer time
 	if (mnstr_write(s, " ", 1, 1) != 1 || !mvc_send_lng(s, maloptimizer))
+		return -1;
+
+	if (mnstr_write(s, " ", 1, 1) != 1 || !mvc_send_lng(s, m->Topt))
 		return -1;
 
 	if (mnstr_write(s, "\n% ", 3, 1) != 1)

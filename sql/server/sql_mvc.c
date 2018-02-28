@@ -589,6 +589,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->argc = 0;
 	m->sym = NULL;
 
+	m->Topt = 0;
 	m->rowcnt = m->last_id = m->role_id = m->user_id = -1;
 	m->timezone = 0;
 	m->clientid = clientid;
@@ -662,6 +663,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 	m->argc = 0;
 	m->sym = NULL;
 
+	m->Topt = 0;
 	m->rowcnt = m->last_id = m->role_id = m->user_id = -1;
 	m->emode = m_normal;
 	m->emod = mod_none;
