@@ -1493,7 +1493,21 @@ dup_sql_part(sql_allocator *sa, sql_table *ot, sql_table *mt, sql_part *opt)
 		pt->part.range.minlength = opt->part.range.minlength;
 		pt->part.range.maxlength = opt->part.range.maxlength;
 	} else if(isListPartitionTable(ot)) {
-		//TODO I have to find a function to duplicate a BAT :(
+		BAT *b = NULL, *o = NULL;
+		if((o = BATdescriptor(opt->part.values)) == NULL) /* TODO the bat operations might fail :( */
+			return NULL;
+		if ((b = COLnew(0, opt->tpe, BATcount(o), TRANSIENT)) == NULL) {
+			BBPunfix(o->batCacheid);
+			return NULL;
+		}
+		if(BATappend(b, o, NULL, FALSE) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(o->batCacheid);
+			return NULL;
+		}
+		BBPunfix(o->batCacheid);
+		BBPretain(b->batCacheid);
+		pt->part.values = b->batCacheid;
 	}
 
 	return pt;
@@ -2466,7 +2480,21 @@ part_dup(sql_trans *tr, int flag, sql_part *opt, sql_table *ot)
 		pt->part.range.minlength = opt->part.range.minlength;
 		pt->part.range.maxlength = opt->part.range.maxlength;
 	} else if(isListPartitionTable(ot)) {
-		//TODO I have to find a function to duplicate a BAT :(
+		BAT *b = NULL, *o = NULL;
+		if((o = BATdescriptor(opt->part.values)) == NULL) /* TODO the bat operations might fail :( */
+			return NULL;
+		if ((b = COLnew(0, opt->tpe, BATcount(o), TRANSIENT)) == NULL) {
+			BBPunfix(o->batCacheid);
+			return NULL;
+		}
+		if(BATappend(b, o, NULL, FALSE) != GDK_SUCCEED) {
+			BBPunfix(b->batCacheid);
+			BBPunfix(o->batCacheid);
+			return NULL;
+		}
+		BBPunfix(o->batCacheid);
+		BBPretain(b->batCacheid);
+		pt->part.values = b->batCacheid;
 	}
 
 	return pt;
