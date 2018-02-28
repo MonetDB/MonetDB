@@ -163,12 +163,13 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			}
 		}
 
-		t = mvc_create_view(m, s, "range_partitions", SQL_PERSIST, "SELECT \"id\", \"partition_id\", \"minimum\", \"maximum\" FROM \"sys\".\"_range_partitions\" UNION ALL SELECT \"id\", \"partition_id\", \"minimum\", \"maximum\" FROM \"tmp\".\"_range_partitions\";", 1);
+		t = mvc_create_view(m, s, "range_partitions", SQL_PERSIST, "SELECT \"id\", \"partition_id\", \"minimum\", \"maximum\", \"with_nulls\" FROM \"sys\".\"_range_partitions\" UNION ALL SELECT \"id\", \"partition_id\", \"minimum\", \"maximum\", \"with_nulls\" FROM \"tmp\".\"_range_partitions\";", 1);
 		drid = t->base.id;
 		mvc_create_column_(m, t, "id", "int", 32);
 		mvc_create_column_(m, t, "partition_id", "int", 32);
 		mvc_create_column_(m, t, "minimum", "varchar", STORAGE_MAX_VALUE_LENGTH);
 		mvc_create_column_(m, t, "maximum", "varchar", STORAGE_MAX_VALUE_LENGTH);
+		mvc_create_column_(m, t, "with_nulls", "boolean", 1);
 
 		if (!first) {
 			int pub = ROLE_PUBLIC;

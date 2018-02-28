@@ -519,8 +519,9 @@ typedef struct sql_part {
 	union {
 		bat values;           /* partition by values/list */
 		struct sql_range {    /* partition by range */
-			ptr *minvalue;
-			ptr *maxvalue;
+			int with_nills;
+			ptr minvalue;
+			ptr maxvalue;
 			size_t minlength;
 			size_t maxlength;
 		} range;

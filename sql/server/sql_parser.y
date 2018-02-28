@@ -508,6 +508,7 @@ int yydebug=1;
 	opt_constraint
 	set_distinct
 	opt_with_check_option
+	opt_with_nulls
 	create
 	create_or_replace
 	if_exists
@@ -1494,13 +1495,19 @@ partition_list:
  | partition_list ',' partition_list_value  { $$ = append_symbol($1, $3 ); }
  ;
 
+opt_with_nulls:
+    /* empty */		{ $$ = FALSE; }
+ |  WITH sqlNULL	{ $$ = TRUE; }
+ ;
+
 opt_partition_spec:
    sqlIN '(' partition_list ')'
     { $$ = _symbol_create_list( SQL_PARTITION_LIST, append_list(L(), $3) ); }
- | BETWEEN partition_range_from AND partition_range_to
+ | BETWEEN partition_range_from AND partition_range_to opt_with_nulls
     { dlist *l = L();
       append_symbol(l, $2);
       append_symbol(l, $4);
+      append_int(l, $5);
       $$ = _symbol_create_list( SQL_PARTITION_RANGE, l ); }
  ;
 

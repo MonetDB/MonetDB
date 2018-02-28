@@ -85,7 +85,8 @@ rel_alter_table(sql_allocator *sa, int cattype, char *sname, char *tname, char *
 }
 
 static sql_rel *
-rel_alter_table_add_partition_range(sql_allocator *sa, char *sname, char *tname, char *sname2, char *tname2, atom* min, atom* max)
+rel_alter_table_add_partition_range(sql_allocator *sa, char *sname, char *tname, char *sname2, char *tname2, atom* min,
+									atom* max, int with_nills)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -102,6 +103,7 @@ rel_alter_table_add_partition_range(sql_allocator *sa, char *sname, char *tname,
 	}
 	append(exps, exp_atom_clob(sa, pmin));
 	append(exps, exp_atom_clob(sa, pmax));
+	append(exps, exp_atom_int(sa, with_nills));
 	rel->l = NULL;
 	rel->r = NULL;
 	rel->op = op_ddl;
@@ -1455,6 +1457,7 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 					sql_column *col =  t->pcol;
 					dlist* ll = extra->data.lval;
 					symbol* min = ll->h->data.sym, *max = ll->h->next->data.sym;
+					int nills = ll->h->next->next->data.i_val;
 					atom *amin = NULL, *amax = NULL;
 
 					if(t->type != tt_range_partition) {
@@ -1465,10 +1468,13 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 					if(min->token == SQL_MINVALUE) {
 						amin = atom_absolute_min(sql->sa, &(col->type));
 						if(!amin) {
+							sql_rel *res = NULL;
 							char *err = sql_subtype_string(&(col->type));
 							if(!err)
 								return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
-							return sql_error(sql, 02, SQLSTATE(HY001) "ALTER TABLE: absolute minimum value not available for %s type", err);
+							res = sql_error(sql, 02, SQLSTATE(HY001) "ALTER TABLE: absolute minimum value not available for %s type", err);
+							GDKfree(err);
+							return res;
 						}
 					} else {
 						amin = ((AtomNode *) min)->a;
@@ -1478,13 +1484,16 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 					} else {
 						amax = ((AtomNode *) max)->a;
 						if(!amin) {
+							sql_rel *res = NULL;
 							char *err = sql_subtype_string(&(col->type));
 							if(!err)
 								return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
-							return sql_error(sql, 02, SQLSTATE(HY001) "ALTER TABLE: absolute maximum value not available for %s type", err);
+							res = sql_error(sql, 02, SQLSTATE(HY001) "ALTER TABLE: absolute maximum value not available for %s type", err);
+							GDKfree(err);
+							return res;
 						}
 					}
-					return rel_alter_table_add_partition_range(sql->sa, sname, tname, sname, ntname, amin, amax);
+					return rel_alter_table_add_partition_range(sql->sa, sname, tname, sname, ntname, amin, amax, nills);
 				} else if(extra->token == SQL_PARTITION_LIST) {
 					dlist* ll = extra->data.lval, *values = ll->h->data.lval;
 

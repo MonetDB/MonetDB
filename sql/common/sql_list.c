@@ -210,12 +210,14 @@ list_append_sorted(list *l, void *data, fcmpvalidate cmp)
 			err = cmp(m->data, data, &comp);
 			if(err)
 				return err;
-			if(comp > 0)
+			if(comp < 0)
 				break;
 			first = 0;
 		}
-		if(first)
+		if(first) {
+			n->next = l->h;
 			l->h = n;
+		}
 		if(!m) {
 			l->t->next = n;
 			l->t = n;

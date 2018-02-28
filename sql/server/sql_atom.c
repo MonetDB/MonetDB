@@ -1351,13 +1351,23 @@ atom_absolute_min(sql_allocator *sa, sql_subtype* tpe)
 {
 	void *ret = NULL;
 	atom *res = atom_create(sa);
+#ifdef HAVE_HGE
+	hge hval = GDK_hge_min;
+#endif
+	lng lval = GDK_lng_min;
+	int ival = GDK_int_min;
+	sht sval = GDK_sht_min;
+	bte bbval = GDK_bte_min;
+	bit bval = GDK_bit_min;
+	flt fval = GDK_flt_min;
+	dbl dval = GDK_dbl_min;
+
 	if(!res)
 		return NULL;
 
 	switch (tpe->type->eclass) {
 		case EC_BIT:
 		{
-			bit bval = GDK_bit_min;
 			ret = &bval;
 			break;
 		}
@@ -1370,32 +1380,27 @@ atom_absolute_min(sql_allocator *sa, sql_subtype* tpe)
 #ifdef HAVE_HGE
 				case TYPE_hge:
 				{
-					hge hval = GDK_hge_min;
 					ret = &hval;
 					break;
 				}
 #endif
 				case TYPE_lng:
 				{
-					lng lval = GDK_lng_min;
 					ret = &lval;
 					break;
 				}
 				case TYPE_int:
 				{
-					int ival = GDK_int_min;
 					ret = &ival;
 					break;
 				}
 				case TYPE_sht:
 				{
-					sht sval = GDK_sht_min;
 					ret = &sval;
 					break;
 				}
 				case TYPE_bte:
 				{
-					bte bbval = GDK_bte_min;
 					ret = &bbval;
 					break;
 				}
@@ -1407,13 +1412,11 @@ atom_absolute_min(sql_allocator *sa, sql_subtype* tpe)
 			switch (tpe->type->localtype) {
 				case TYPE_flt:
 				{
-					flt fval = GDK_flt_min;
 					ret = &fval;
 					break;
 				}
 				case TYPE_dbl:
 				{
-					dbl dval = GDK_dbl_min;
 					ret = &dval;
 					break;
 				}
@@ -1439,13 +1442,23 @@ atom_absolute_max(sql_allocator *sa, sql_subtype* tpe)
 {
 	void *ret = NULL;
 	atom *res = atom_create(sa);
+#ifdef HAVE_HGE
+	hge hval = GDK_hge_max;
+#endif
+	lng lval = GDK_lng_max;
+	int ival = GDK_int_max;
+	sht sval = GDK_sht_max;
+	bte bbval = GDK_bte_max;
+	bit bval = GDK_bit_max;
+	flt fval = GDK_flt_max;
+	dbl dval = GDK_dbl_max;
+
 	if(!res)
 		return NULL;
 
 	switch (tpe->type->eclass) {
 		case EC_BIT:
 		{
-			bit bval = GDK_bit_max;
 			ret = &bval;
 			break;
 		}
@@ -1458,32 +1471,27 @@ atom_absolute_max(sql_allocator *sa, sql_subtype* tpe)
 #ifdef HAVE_HGE
 				case TYPE_hge:
 				{
-					hge hval = GDK_hge_max;
 					ret = &hval;
 					break;
 				}
 #endif
 				case TYPE_lng:
 				{
-					lng lval = GDK_lng_max;
 					ret = &lval;
 					break;
 				}
 				case TYPE_int:
 				{
-					int ival = GDK_int_max;
 					ret = &ival;
 					break;
 				}
 				case TYPE_sht:
 				{
-					sht sval = GDK_sht_max;
 					ret = &sval;
 					break;
 				}
 				case TYPE_bte:
 				{
-					bte bbval = GDK_bte_max;
 					ret = &bbval;
 					break;
 				}
@@ -1495,13 +1503,11 @@ atom_absolute_max(sql_allocator *sa, sql_subtype* tpe)
 			switch (tpe->type->localtype) {
 				case TYPE_flt:
 				{
-					flt fval = GDK_flt_max;
 					ret = &fval;
 					break;
 				}
 				case TYPE_dbl:
 				{
-					dbl dval = GDK_dbl_max;
 					ret = &dval;
 					break;
 				}
@@ -1511,7 +1517,7 @@ atom_absolute_max(sql_allocator *sa, sql_subtype* tpe)
 		case EC_TIME:
 		case EC_TIMESTAMP:
 		default: /* EC_CHAR, EC_STRING, EC_BLOB, ... */
-		return NULL;
+			return NULL;
 	}
 
 	res->tpe = *tpe;

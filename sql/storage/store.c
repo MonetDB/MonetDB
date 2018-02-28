@@ -139,19 +139,6 @@ column_destroy(sql_column *c)
 		store_funcs.destroy_col(NULL, c);
 }
 
-static void
-member_destroy(sql_part *pt)
-{
-	if(pt->part_type == PARTITION_RANGE) {
-		if(pt->part.range.minvalue)
-			GDKfree(pt->part.range.minvalue);
-		if(pt->part.range.maxvalue)
-			GDKfree(pt->part.range.maxvalue);
-	} else if(pt->part_type == PARTITION_LIST && pt->part.values) {
-		BBPrelease(pt->part.values);
-	}
-}
-
 void
 table_destroy(sql_table *t)
 {
@@ -596,10 +583,21 @@ load_range_partition(sql_trans *tr, sql_schema *syss, sql_part *pt, int tpe)
 			return -1;
 		}
 
+		v = table_funcs.column_find_value(tr, find_sql_column(ranges, "with_nulls"), rid);
+		pt->part.range.with_nills = (int)*((bit*)v);
+		_DELETE(v);
+
+		pt->part.range.minvalue = sa_alloc(tr->sa, min_length);
+		pt->part.range.maxvalue = sa_alloc(tr->sa, max_length);
+		memcpy(pt->part.range.minvalue, min, min_length);
+		memcpy(pt->part.range.maxvalue, max, max_length);
 		pt->part.range.minvalue = min;
 		pt->part.range.maxvalue = max;
 		pt->part.range.minlength = min_length;
 		pt->part.range.maxlength = max_length;
+
+		GDKfree(min);
+		GDKfree(max);
 	}
 	table_funcs.rids_destroy(rs);
 	return 0;
@@ -730,7 +728,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	cs_new(&t->idxs, tr->sa, (fdestroy) &idx_destroy);
 	cs_new(&t->keys, tr->sa, (fdestroy) &key_destroy);
 	cs_new(&t->triggers, tr->sa, (fdestroy) &trigger_destroy);
-	cs_new(&t->members, tr->sa, (fdestroy) &member_destroy);
+	cs_new(&t->members, tr->sa, (fdestroy) NULL);
 
 	if (isTable(t)) {
 		if (store_funcs.create_del(tr, t) != LOG_OK) {
@@ -1428,7 +1426,7 @@ create_sql_table_with_id(sql_allocator *sa, int id, const char *name, sht type, 
 	cs_new(&t->idxs, sa, (fdestroy) &idx_destroy);
 	cs_new(&t->keys, sa, (fdestroy) &key_destroy);
 	cs_new(&t->triggers, sa, (fdestroy) &trigger_destroy);
-	cs_new(&t->members, sa, (fdestroy) &member_destroy);
+	cs_new(&t->members, sa, (fdestroy) NULL);
 	t->pkey = NULL;
 	t->sz = COLSIZE;
 	t->cleared = 0;
@@ -1487,10 +1485,11 @@ dup_sql_part(sql_allocator *sa, sql_table *ot, sql_table *mt, sql_part *opt)
 	}
 
 	if(isRangePartitionTable(ot)) {
-		pt->part.range.minvalue = SA_ZNEW(sa, ptr);
-		pt->part.range.maxvalue = SA_ZNEW(sa, ptr);
+		pt->part.range.minvalue = sa_alloc(sa, opt->part.range.minlength);
+		pt->part.range.maxvalue = sa_alloc(sa, opt->part.range.maxlength);
 		memcpy(pt->part.range.minvalue, opt->part.range.minvalue, opt->part.range.minlength);
 		memcpy(pt->part.range.maxvalue, opt->part.range.maxvalue, opt->part.range.maxlength);
+		pt->part.range.with_nills = opt->part.range.with_nills;
 		pt->part.range.minlength = opt->part.range.minlength;
 		pt->part.range.maxlength = opt->part.range.maxlength;
 	} else if(isListPartitionTable(ot)) {
@@ -1724,6 +1723,7 @@ store_load(void) {
 		bootstrap_create_column(tr, t, "partition_id", "int", 32);
 		bootstrap_create_column(tr, t, "minimum", "varchar", STORAGE_MAX_VALUE_LENGTH);
 		bootstrap_create_column(tr, t, "maximum", "varchar", STORAGE_MAX_VALUE_LENGTH);
+		bootstrap_create_column(tr, t, "with_nulls", "boolean", 1);
 
 		t = bootstrap_create_table(tr, s, "_value_partitions");
 		bootstrap_create_column(tr, t, "id", "int", 32);
@@ -2458,10 +2458,11 @@ part_dup(sql_trans *tr, int flag, sql_part *opt, sql_table *ot)
 		opt->base.flag = TR_OLD;
 
 	if(isRangePartitionTable(ot)) {
-		pt->part.range.minvalue = SA_ZNEW(sa, ptr);
-		pt->part.range.maxvalue = SA_ZNEW(sa, ptr);
+		pt->part.range.minvalue = sa_alloc(sa, opt->part.range.minlength);
+		pt->part.range.maxvalue = sa_alloc(sa, opt->part.range.maxlength);
 		memcpy(pt->part.range.minvalue, opt->part.range.minvalue, opt->part.range.minlength);
 		memcpy(pt->part.range.maxvalue, opt->part.range.maxvalue, opt->part.range.maxlength);
+		pt->part.range.with_nills = opt->part.range.with_nills;
 		pt->part.range.minlength = opt->part.range.minlength;
 		pt->part.range.maxlength = opt->part.range.maxlength;
 	} else if(isListPartitionTable(ot)) {
@@ -2611,7 +2612,7 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 	cs_new(&t->keys, sa, (fdestroy) &key_destroy);
 	cs_new(&t->idxs, sa, (fdestroy) &idx_destroy);
 	cs_new(&t->triggers, sa, (fdestroy) &trigger_destroy);
-	cs_new(&t->members, sa, (fdestroy) &member_destroy);
+	cs_new(&t->members, sa, (fdestroy) NULL);
 
 	t->pkey = NULL;
 
@@ -4624,7 +4625,8 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 }
 
 int
-sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int tpe, ptr min, size_t smin, ptr max, size_t smax, sql_part **err)
+sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int tpe, ptr min, size_t smin, ptr max,
+							  size_t smax, int with_nills, sql_part **err)
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobal(mt)?"sys":"tmp");
 	sql_table *sysobj = find_sql_table(syss, "objects");
@@ -4634,6 +4636,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int t
 	ssize_t (*atomtostr)(str *, size_t *, const void *) = BATatoms[tpe].atomToStr;
 	str str_min = NULL, str_max = NULL;
 	size_t length = 0;
+	bit to_insert = (bit) with_nills;
 	oid rid;
 	int *v, res = 0;
 
@@ -4663,8 +4666,11 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int t
 	p->part_type = PARTITION_RANGE;
 
 	/* add range partition values */
-	p->part.range.minvalue = min;
-	p->part.range.maxvalue = max;
+	p->part.range.with_nills = with_nills;
+	p->part.range.minvalue = sa_alloc(tr->sa, smin);
+	p->part.range.maxvalue = sa_alloc(tr->sa, smax);
+	memcpy(p->part.range.minvalue, min, smin);
+	memcpy(p->part.range.maxvalue, max, smax);
 	p->part.range.minlength = smin;
 	p->part.range.maxlength = smax;
 
@@ -4682,7 +4688,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int t
 	rid = table_funcs.column_find_row(tr, find_sql_column(partitions, "table_id"), &mt->base.id, NULL);
 	assert(!is_oid_nil(rid));
 	v = (int*) table_funcs.column_find_value(tr, find_sql_column(partitions, "id"), rid);
-	table_funcs.table_insert(tr, ranges, &pt->base.id, v, str_min, str_max);
+	table_funcs.table_insert(tr, ranges, &pt->base.id, v, str_min, str_max, &to_insert);
 	_DELETE(v);
 
 finish:
@@ -4772,10 +4778,6 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 			sql_table *ranges = find_sql_table(syss, "_range_partitions");
 			rid = table_funcs.column_find_row(tr, find_sql_column(ranges, "id"), &pt->base.id, NULL);
 			table_funcs.table_delete(tr, ranges, rid);
-			GDKfree(ppt->part.range.minvalue);
-			ppt->part.range.minvalue = NULL;
-			GDKfree(ppt->part.range.maxvalue);
-			ppt->part.range.maxvalue = NULL;
 		} else if(isListPartitionTable(mt)) {
 			sql_table *values = find_sql_table(syss, "_value_partitions");
 			rids *rs = table_funcs.rids_select(tr, find_sql_column(values, "id"), &pt->base.id, &pt->base.id, NULL);
@@ -4783,8 +4785,6 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 				table_funcs.table_delete(tr, values, rid);
 			}
 			table_funcs.rids_destroy(rs);
-			BBPrelease(ppt->part.values);
-			ppt->part.values = 0;
 		}
 	}
 
