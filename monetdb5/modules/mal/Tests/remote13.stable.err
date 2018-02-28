@@ -1,11 +1,11 @@
 stderr of test 'remote13` in directory 'monetdb5/modules/mal` itself:
 
 
-# 12:00:52 >  
-# 12:00:52 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36666" "--set" "mapi_usock=/var/tmp/mtest-15635/.s.monetdb.36666" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_monetdb5_modules_mal"
-# 12:00:52 >  
+# 10:29:41 >  
+# 10:29:41 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31716" "--set" "mapi_usock=/var/tmp/mtest-17829/.s.monetdb.31716" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-candidate/var/MonetDB/mTests_monetdb5_modules_mal" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 10:29:41 >  
 
-# builtin opt 	gdk_dbpath = /home/niels/scratch/rc-clean/Linux-x86_64/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_dbpath = /ufs/sjoerd/@Monet-candidate/var/monetdb5/dbfarm/demo
 # builtin opt 	gdk_debug = 0
 # builtin opt 	gdk_vmtrim = no
 # builtin opt 	monet_prompt = >
@@ -17,18 +17,20 @@ stderr of test 'remote13` in directory 'monetdb5/modules/mal` itself:
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 36666
-# cmdline opt 	mapi_usock = /var/tmp/mtest-15635/.s.monetdb.36666
+# cmdline opt 	mapi_port = 31716
+# cmdline opt 	mapi_usock = /var/tmp/mtest-17829/.s.monetdb.31716
 # cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbpath = /home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_monetdb5_modules_mal
+# cmdline opt 	gdk_dbpath = /ufs/sjoerd/@Monet-candidate/var/MonetDB/mTests_monetdb5_modules_mal
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_py = true
 # cmdline opt 	gdk_debug = 553648138
 
-# 12:00:52 >  
-# 12:00:52 >  "mclient" "-lmal" "-ftest" "-tnone" "-Eutf-8" "--host=/var/tmp/mtest-15635" "--port=36666"
-# 12:00:52 >  
+# 10:29:41 >  
+# 10:29:41 >  "mclient" "-lmal" "-ftest" "-tnone" "-Eutf-8" "--host=/var/tmp/mtest-17829" "--port=31716"
+# 10:29:41 >  
 
 
-# 12:00:52 >  
-# 12:00:52 >  "Done."
-# 12:00:52 >  
+# 10:29:41 >  
+# 10:29:41 >  "Done."
+# 10:29:41 >  
 

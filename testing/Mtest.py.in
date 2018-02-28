@@ -1225,13 +1225,13 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
     else: # THISFILE == "Mapprove.py"
         TSTDB = ""
 
-    if testlist:
-        tl = []
-        for tst in testlist:
-            tl.append((tst,None))
-        testlist = tl
+    alltests = []
+    try:
+        allf = open(os.path.join(TSTSRCDIR, "All"))
+    except IOError:
+        pass
     else:
-        for tc in open(os.path.join(TSTSRCDIR,"All")):
+        for tc in allf:
             if '#' in tc:
                 # get rid of comment anywhere on line
                 tc = tc.split('#', 1)[0]
@@ -1241,7 +1241,21 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                     cond,tst = tc.split('?')
                 else:
                     cond,tst = None,tc
-                testlist.append((tst,cond))
+                alltests.append((tst,cond))
+        allf.close()
+
+    if testlist:
+        tl = []
+        for tst in testlist:
+            for t, c in alltests:
+                if t == tst:
+                    tl.append((t, c))
+                    break
+            else:
+                tl.append((tst,None))
+        testlist = tl
+    else:
+        testlist = alltests
     if not testlist:
         Warn("No tests found in '%s`; skipping directory!" % TSTSRCDIR)
         return td, elem, max(FdOut, FdErr), interrupted
@@ -3708,32 +3722,6 @@ def main(argv) :
     except monet_options.Error:
         sys.exit(1)
 
-    if len(args) == 1 and not os.path.isdir(args[0]):
-        head, tail = os.path.split(args[0])
-        if os.path.isfile(args[0]):
-            head, tst = os.path.split(head)
-            if tst != 'Tests':
-                ErrXit("%s: not a valid test name" % args[0])
-            args = [head]
-            if tail != 'All':
-                for ext in ('_s00.malC', '_p00.malC', '_s00.mal', '_s00.sql',
-                            '_p00.sql', '.MAL.py', '.SQL.py', '.malC', '.mal',
-                            '.sql', '.py', '.R', ''):
-                    # extentions .in and .src are never combined
-                    if tail.endswith(ext + '.in'):
-                        args.append(tail[:-len(ext + '.in')])
-                        break
-                    if tail.endswith(ext + '.src'):
-                        args.append(tail[:-len(ext + '.src')])
-                        break
-                    if tail.endswith(ext):
-                        args.append(tail[:-len(ext)])
-                        break
-                else:
-                    ErrXit("%s: not a valid test name" % args[0])
-        elif head and tail and os.path.isdir(head) and tail != 'Tests' and os.path.isdir(os.path.join(head, 'Tests')):
-            args = [head, tail]
-
     config = opts.get('config', '')
     if config:
         config = ' "--config=%s"' % config
@@ -4168,6 +4156,32 @@ def main(argv) :
         testdirs = []
         testlist = []
         dirlist = []
+        if len(args) == 1 and not os.path.isdir(args[0]):
+            head, tail = os.path.split(args[0])
+            if os.path.isfile(args[0]):
+                head, tst = os.path.split(head)
+                if tst != 'Tests':
+                    ErrXit("%s: not a valid test name" % args[0])
+                args = [head]
+                if tail != 'All':
+                    for ext in ('_s00.malC', '_p00.malC', '_s00.mal', '_s00.sql',
+                                '_p00.sql', '.MAL.py', '.SQL.py', '.malC', '.mal',
+                                '.sql', '.py', '.R', ''):
+                        # extentions .in and .src are never combined
+                        if tail.endswith(ext + '.in'):
+                            args.append(tail[:-len(ext + '.in')])
+                            break
+                        if tail.endswith(ext + '.src'):
+                            args.append(tail[:-len(ext + '.src')])
+                            break
+                        if tail.endswith(ext):
+                            args.append(tail[:-len(ext)])
+                            break
+                    else:
+                        ErrXit("%s: not a valid test name" % args[0])
+            elif head and tail and os.path.isdir(head) and tail != 'Tests' and os.path.isdir(os.path.join(head, 'Tests')):
+                args = [head, tail]
+
         if   len(args) == 1:
             if   os.path.isdir(args[0]):
                 d = os.path.realpath(args[0])

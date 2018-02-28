@@ -401,7 +401,7 @@ main(int argc, char **av)
 				break;
 			}
 			usage(prog, -1);
-		/* not reached */
+			/* not reached */
 		case 'c':
 			/* coverity[var_deref_model] */
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "config", optarg);

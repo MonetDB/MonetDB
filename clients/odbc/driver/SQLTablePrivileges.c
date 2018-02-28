@@ -136,14 +136,7 @@ MNDBTablePrivileges(ODBCStmt *stmt,
 			     "when 'public' then 'PUBLIC' "
 			     "else a.name "
 			     "end as grantee, "
-			"case p.privileges "
-			     "when 1 then 'SELECT' "
-			     "when 2 then 'UPDATE' "
-			     "when 4 then 'INSERT' "
-			     "when 8 then 'DELETE' "
-			     "when 16 then 'EXECUTE' "
-			     "when 32 then 'GRANT' "
-			     "end as privilege, "
+			"pc.privilege_code_name as privilege, "
 			"case p.grantable "
 			     "when 1 then 'YES' "
 			     "when 0 then 'NO' "
@@ -153,13 +146,24 @@ MNDBTablePrivileges(ODBCStmt *stmt,
 		      "sys.auths a, "
 		      "sys.privileges p, "
 		      "sys.auths g, "
-		      "sys.env() e "
-		"where p.obj_id = t.id "
-		  "and p.auth_id = a.id "
-		  "and t.schema_id = s.id "
-		  "and t.system = false "
-		  "and p.grantor = g.id "
-		  "and e.name = 'gdk_dbname'");
+		      "sys.env() e, "
+		      "%s "
+		"where p.obj_id = t.id and "
+		      "p.auth_id = a.id and "
+		      "t.schema_id = s.id and "
+		      "not t.system and "
+		      "p.grantor = g.id and "
+		      "e.name = 'gdk_dbname' and "
+		      "p.privileges = pc.privilege_code_id",
+		/* a server that supports sys.columns also supports
+		 * sys.privilege_codes */
+		stmt->Dbc->has_comment ? "sys.privilege_codes as pc" :
+		     "(values (1, 'SELECT'), "
+			     "(2, 'UPDATE'), "
+			     "(4, 'INSERT'), "
+			     "(8, 'DELETE'), "
+			     "(16, 'EXECUTE'), "
+			     "(32, 'GRANT')) as pc(privilege_code_id, privilege_code_name)");
 	assert(strlen(query) < 1000);
 	query_end += strlen(query_end);
 
