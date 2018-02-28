@@ -1,6 +1,9 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Wed Feb 28 2018 Sjoerd Mullender <sjoerd@acm.org>
+- ODBC: The driver function SQLProcedureColumns was implemented.
+
 * Thu Feb  1 2018 Sjoerd Mullender <sjoerd@acm.org>
 - ODBC: Changed table types as used by SQLTables from "LOCAL TEMPORARY"
   and "GLOBAL TEMPORARY" to "LOCAL TEMPORARY TABLE" and "GLOBAL TEMPORARY
