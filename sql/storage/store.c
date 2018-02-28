@@ -1496,12 +1496,7 @@ dup_sql_part(sql_allocator *sa, sql_table *ot, sql_table *mt, sql_part *opt)
 		BAT *b = NULL, *o = NULL;
 		if((o = BATdescriptor(opt->part.values)) == NULL) /* TODO the bat operations might fail :( */
 			return NULL;
-		if ((b = COLnew(0, opt->tpe, BATcount(o), TRANSIENT)) == NULL) {
-			BBPunfix(o->batCacheid);
-			return NULL;
-		}
-		if(BATappend(b, o, NULL, FALSE) != GDK_SUCCEED) {
-			BBPunfix(b->batCacheid);
+		if ((b = COLcopy(o, opt->tpe, 0, TRANSIENT)) == NULL) {
 			BBPunfix(o->batCacheid);
 			return NULL;
 		}
@@ -2483,12 +2478,7 @@ part_dup(sql_trans *tr, int flag, sql_part *opt, sql_table *ot)
 		BAT *b = NULL, *o = NULL;
 		if((o = BATdescriptor(opt->part.values)) == NULL) /* TODO the bat operations might fail :( */
 			return NULL;
-		if ((b = COLnew(0, opt->tpe, BATcount(o), TRANSIENT)) == NULL) {
-			BBPunfix(o->batCacheid);
-			return NULL;
-		}
-		if(BATappend(b, o, NULL, FALSE) != GDK_SUCCEED) {
-			BBPunfix(b->batCacheid);
+		if ((b = COLcopy(o, opt->tpe, 0, TRANSIENT)) == NULL) {
 			BBPunfix(o->batCacheid);
 			return NULL;
 		}
