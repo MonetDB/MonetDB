@@ -2664,6 +2664,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 
 								right = rel_project(sql->sa, in, rel_projections(sql, right, NULL, 1, 1));
 								rel_project_add_exp(sql, right, roident);
+								rident = exp_column(sql->sa, exp_relname(rident), exp_name(rident), exp_subtype(rident), rident->card, has_nil(rident), is_intern(rident));
+								roident = exp_column(sql->sa, exp_relname(roident), exp_name(roident), exp_subtype(roident), roident->card, has_nil(roident), is_intern(roident));
 							}
 						}
 						r = rel_value_exp(sql, &rel, sval, f, ek);
@@ -2679,8 +2681,12 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 							}
 							rel = rel_project(sql->sa, rel, NULL);
 							rel_project_add_exp(sql, rel, r);
-							if (rident)
+							if (rident) {
 								rel_project_add_exp(sql, rel, rident);
+								if (rident == roident)
+									roident = exp_column(sql->sa, exp_relname(roident), exp_name(roident), exp_subtype(roident), roident->card, has_nil(roident), is_intern(roident));
+								rident = exp_column(sql->sa, exp_relname(rident), exp_name(rident), exp_subtype(rident), rident->card, has_nil(rident), is_intern(rident));
+							}
 						}
 						z = rel;
 						correlated = 1;
@@ -2709,8 +2715,8 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 							rl = rel_project(sql->sa, rl, NULL);
 							rel_project_add_exp(sql, rl, r);
 							if (roident) {
-								roident = exp_column(sql->sa, exp_relname(roident), exp_name(roident), exp_subtype(roident), roident->card, has_nil(roident), is_intern(roident));
 								rel_project_add_exp(sql, rl, roident);
+								roident = exp_column(sql->sa, exp_relname(roident), exp_name(roident), exp_subtype(roident), roident->card, has_nil(roident), is_intern(roident));
 							}
 						} else {
 							rl = rel_project_exp(sql->sa, exp_label(sql->sa, r, ++sql->label));
