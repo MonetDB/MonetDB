@@ -591,8 +591,6 @@ load_range_partition(sql_trans *tr, sql_schema *syss, sql_part *pt, int tpe)
 		pt->part.range.maxvalue = sa_alloc(tr->sa, max_length);
 		memcpy(pt->part.range.minvalue, min, min_length);
 		memcpy(pt->part.range.maxvalue, max, max_length);
-		pt->part.range.minvalue = min;
-		pt->part.range.maxvalue = max;
 		pt->part.range.minlength = min_length;
 		pt->part.range.maxlength = max_length;
 
