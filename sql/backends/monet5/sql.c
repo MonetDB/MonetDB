@@ -1107,7 +1107,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (sname)
 		throw(SQL, "sql.idxbind", SQLSTATE(HY005) "Cannot access column descriptor %s for %s.%s", iname, sname, tname);
-	throw(SQL, "sql.idxbind", SQLSTATE(HY005) "Connot access column descriptor %s for %s", iname, tname);
+	throw(SQL, "sql.idxbind", SQLSTATE(HY005) "Cannot access column descriptor %s for %s", iname, tname);
 }
 
 str mvc_append_column(sql_trans *t, sql_column *c, BAT *ins) {

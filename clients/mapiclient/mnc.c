@@ -213,6 +213,7 @@ main(int argc, char **argv)
 #endif
 
 		if (connect(s, serv, sizeof(server)) == SOCKET_ERROR) {
+			closesocket(s);
 			fprintf(stderr,
 				 "initiating connection on socket failed: %s\n",
 				 strerror(errno));
@@ -253,13 +254,20 @@ main(int argc, char **argv)
 
 		server.sin_port = htons((unsigned short) ((port) & 0xFFFF));
 		if (bind(sock, (SOCKPTR) &server, length) == SOCKET_ERROR) {
+			closesocket(sock);
 			fprintf(stderr, "bind to port %d failed: %s\n",
 					port, strerror(errno));
 			exit(1);
 		}
 
-		listen(sock, 1);
+		if(listen(sock, 1) == -1) {
+			closesocket(sock);
+			fprintf(stderr, "failed to set socket to listen: %s\n",
+					strerror(errno));
+			exit(1);
+		}
 		if ((s = accept4(sock, (SOCKPTR)0, (socklen_t *)0, SOCK_CLOEXEC)) == INVALID_SOCKET) {
+			closesocket(sock);
 			fprintf(stderr, "failed to accept connection: %s\n",
 					strerror(errno));
 			exit(1);
@@ -288,8 +296,11 @@ main(int argc, char **argv)
 				/* on Windows: unsigned int,
 				 * elsewhere: size_t, but then
 				 * unsigned int shouldn't harm */
-				if (!write(1, buf, (unsigned int) len))
+				if (!write(1, buf, (unsigned int) len)) {
+					mnstr_destroy(in);
+					mnstr_destroy(out);
 					exit(2);
+				}
 				seenflush = 0;
 			} else {
 				/* flush or error */
