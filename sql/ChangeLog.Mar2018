@@ -6,11 +6,11 @@
   ids which can be used in sys.dependencies table.
 - Added new system view: sys.dependencies_vw which shows all data of
   sys.dependencies including names on objects, object types and dependency types.
-- Added new system views for finding out dependencies between database objects.
-  These new dependency views improve, extend and replace the
+- Added 25 new system views for finding out dependencies between database objects.
+  These new dependency views improve, extend and replace the 17
   sys.dependencies_X_on_Y() functions as previously defined in
-  21_dependency_functions.sql.
-  The sys.dependencies_X_on_Y() functions are now marked as deprecated.
+  21_dependency_functions.sql. Those sys.dependencies_X_on_Y() functions
+  are now marked as deprecated.
 - Added new system view: sys.roles which contains all defined roles.
 - Added new system view: sys.var_values which shows the values for
   system variables.
