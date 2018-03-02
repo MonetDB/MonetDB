@@ -4642,7 +4642,7 @@ drop function pcre_replace(string, string, string, string);
 [ "auths",	"public",	"SELECT",	NULL,	0	]
 [ "columns",	"public",	"SELECT",	NULL,	0	]
 [ "commented_function_signatures",	"public",	"SELECT",	"monetdb",	0	]
-[ "comments",	"public",	"SELECT",	"monetdb",	0	]
+[ "comments",	"public",	"SELECT",	NULL,	0	]
 [ "dependencies",	"public",	"SELECT",	NULL,	0	]
 [ "dependencies_vw",	"public",	"SELECT",	"monetdb",	0	]
 [ "dependency_args_on_types",	"public",	"SELECT",	"monetdb",	0	]

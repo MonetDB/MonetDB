@@ -158,8 +158,18 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			while ((rid = table_funcs.column_find_row(m->session->tr, depids, &cid, NULL)), !is_oid_nil(rid)) {
 				table_funcs.column_update_value(m->session->tr, depids, rid, &ncid);
 			}
-		} else { 
+		} else {
+			sql_column *col;
+			sql_key *k;
 			sql_create_env(m, s);
+			t = mvc_create_table(m, s, "comments", tt_table, 1, SQL_PERSIST, 0, -1);
+			col = mvc_create_column_(m, t, "id", "int", 32);
+			k = sql_trans_create_ukey(m->session->tr, t, "comments_id_pkey", pkey);
+			k = sql_trans_create_kc(m->session->tr, k, col);
+			k = sql_trans_key_done(m->session->tr, k);
+			sql_trans_create_dependency(m->session->tr, col->base.id, k->idx->base.id, INDEX_DEPENDENCY);
+			col = mvc_create_column_(m, t, "remark", "varchar", 65000);
+			sql_trans_alter_null(m->session->tr, col, 0);
 			sql_create_privileges(m, s);
 		}
 

@@ -5718,11 +5718,6 @@ external name wlr."getreplicaclock";
 create function replicaTick() returns bigint
 external name wlr."getreplicatick";
 insert into sys.systemfunctions (select id from sys.functions where name in ('master', 'stopmaster', 'masterbeat', 'masterclock', 'mastertick', 'replicate', 'replicabeat', 'replicaclock', 'replicatick') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
-CREATE TABLE sys.comments (
-        id INTEGER NOT NULL PRIMARY KEY,
-        remark VARCHAR(65000) NOT NULL
-);
-GRANT SELECT ON sys.comments TO PUBLIC;
 CREATE FUNCTION sys.function_type_keyword(ftype INT)
 RETURNS VARCHAR(20)
 BEGIN
