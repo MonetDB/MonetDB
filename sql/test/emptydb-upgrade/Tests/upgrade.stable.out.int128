@@ -5775,10 +5775,6 @@ CREATE TABLE sys.comments (
         remark VARCHAR(65000) NOT NULL
 );
 GRANT SELECT ON sys.comments TO PUBLIC;
-CREATE PROCEDURE sys.no_op()
-BEGIN
-    DECLARE dummy INTEGER;
-END;
 CREATE FUNCTION sys.function_type_keyword(ftype INT)
 RETURNS VARCHAR(20)
 BEGIN
@@ -5870,7 +5866,7 @@ ALTER TABLE sys.systemfunctions ALTER COLUMN function_id SET NOT NULL;
 INSERT INTO sys.systemfunctions
 SELECT id FROM sys.functions
 WHERE schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys')
-AND name IN ('function_type_keyword', 'no_op');
+AND name = 'function_type_keyword';
 ALTER TABLE sys.keywords SET READ WRITE;
 INSERT INTO sys.keywords VALUES ('COMMENT'), ('CONTINUE'), ('START'), ('TRUNCATE');
 -- ALTER TABLE sys.keywords SET READ ONLY;

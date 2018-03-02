@@ -230,7 +230,6 @@ Ready.
 \dSf sys."netmask"
 \dSf sys."network"
 \dSf sys."newurl"
-\dSf sys."no_op"
 \dSf sys."optimizer_stats"
 \dSf sys."optimizers"
 \dSf sys."password_hash"
@@ -645,7 +644,6 @@ SYSTEM FUNCTION  sys.netmask
 SYSTEM FUNCTION  sys.network
 SYSTEM FUNCTION  sys.newurl
 SYSTEM FUNCTION  sys.next_value_for
-SYSTEM PROCEDURE        sys.no_op
 SYSTEM FUNCTION  sys.not
 SYSTEM AGGREGATE        sys.not_exist
 SYSTEM FUNCTION  sys.not_ilike
@@ -1086,7 +1084,6 @@ create function "netmask" (p inet) returns inet external name inet."netmask";
 create function "network" (p inet) returns inet external name inet."network";
 create function newurl(protocol string, hostname string, "port" int, file string) returns url external name url."new";
 create function newurl(protocol string, hostname string, file string) returns url external name url."new";
-create procedure sys.no_op() begin declare dummy integer; end;
 create function sys.optimizer_stats() returns table (optname string, count int, timing bigint) external name inspect.optimizer_stats;
 create function sys.optimizers () returns table (name string, def string, status string) external name sql.optimizers;
 create function sys.password_hash (username string) returns string external name sql.password;
@@ -2544,7 +2541,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"newurl",	"create function newurl(protocol string, hostname string, \"port\" int, file string) returns url external name url.\"new\";",	"url",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"url",	0,	0,	"out",	"protocol",	"clob",	0,	0,	"in",	"hostname",	"clob",	0,	0,	"in",	"port",	"int",	32,	0,	"in",	"file",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"newurl",	"create function newurl(protocol string, hostname string, file string) returns url external name url.\"new\";",	"url",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"url",	0,	0,	"out",	"protocol",	"clob",	0,	0,	"in",	"hostname",	"clob",	0,	0,	"in",	"file",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"next_value_for",	"next_value",	"sql",	"Internal C",	"Scalar function",	true,	false,	false,	"res_0",	"bigint",	64,	0,	"out",	"arg_1",	"varchar",	0,	0,	"in",	"arg_2",	"varchar",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"no_op",	"create procedure sys.no_op() begin declare dummy integer; end;",	"user",	"SQL",	"Procedure",	true,	false,	false,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"not",	"not",	"calc",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"boolean",	1,	0,	"out",	"arg_1",	"boolean",	1,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"not_exist",	"not_exist",	"aggr",	"Internal C",	"Aggregate function",	false,	false,	false,	"res",	"boolean",	1,	0,	"out",	"arg",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"not_ilike",	"not_ilike",	"algebra",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"boolean",	1,	0,	"out",	"arg_1",	"char",	0,	0,	"in",	"arg_2",	"char",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -5431,7 +5427,6 @@ drop function pcre_replace(string, string, string, string);
 [ "newurl"	]
 [ "newurl"	]
 [ "next_value_for"	]
-[ "no_op"	]
 [ "not"	]
 [ "not_exist"	]
 [ "not_ilike"	]

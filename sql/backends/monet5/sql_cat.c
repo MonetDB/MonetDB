@@ -1335,3 +1335,51 @@ SQLalter_set_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	return msg;
 }
+
+str
+SQLcomment_on(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *sql = NULL;
+	str msg;
+	int objid = *getArgReference_int(stk, pci, 1);
+	char *remark = *getArgReference_str(stk, pci, 2);
+	sql_trans *tx;
+	sql_schema *sys;
+	sql_table *comments;
+	sql_column *id_col, *remark_col;
+	oid rid;
+
+	initcontext();
+
+	// Manually insert the rows to circumvent permission checks.
+	tx = sql->session->tr;
+	sys = mvc_bind_schema(sql, "sys");
+	if (!sys)
+		throw(SQL, "sql.comment_on", SQLSTATE(3F000) "Internal error");
+	comments = mvc_bind_table(sql, sys, "comments");
+	if (!comments)
+		throw(SQL, "sql.comment_on", SQLSTATE(3F000) "no table sys.comments");
+	id_col = mvc_bind_column(sql, comments, "id");
+	remark_col = find_sql_column(comments, "remark");
+	if (!id_col || !remark_col)
+		throw(SQL, "sql.comment_on", SQLSTATE(3F000) "no table sys.comments");
+	rid = table_funcs.column_find_row(tx, id_col, &objid, NULL);
+	if (remark != NULL && *remark) {
+		if (!is_oid_nil(rid)) {
+			// have new remark and found old one, so update field
+			/* UPDATE sys.comments SET remark = %s WHERE id = %d */
+			table_funcs.column_update_value(tx, remark_col, rid, remark);
+		} else {
+			// have new remark but found none so insert row
+			/* INSERT INTO sys.comments (id, remark) VALUES (%d, %s) */
+			table_funcs.table_insert(tx, comments, &objid, remark);
+		}
+	} else {
+		if (!is_oid_nil(rid)) {
+			// have no remark but found one, so delete row
+			/* DELETE FROM sys.comments WHERE id = %d */
+			table_funcs.table_delete(tx, comments, rid);
+		}
+	}
+	return MAL_SUCCEED;
+}
