@@ -38,7 +38,7 @@ Ready.
 % .view_stats,	.view_stats,	.view_stats,	.view_stats,	.view_stats # table_name
 % schema_nm,	schema_id,	table_nm,	is_system_view,	"# columns" # name
 % varchar,	int,	varchar,	boolean,	int # type
-% 3,	4,	33,	5,	2 # length
+% 3,	4,	34,	5,	2 # length
 [ "sys",	2000,	"tables",	true,	9	]
 [ "sys",	2000,	"columns",	true,	10	]
 [ "sys",	2000,	"users",	true,	3	]
@@ -66,10 +66,10 @@ Ready.
 [ "sys",	2000,	"dependency_columns_on_indexes",	true,	10	]
 [ "sys",	2000,	"dependency_tables_on_foreignkeys",	true,	6	]
 [ "sys",	2000,	"dependency_keys_on_foreignkeys",	true,	8	]
-[ "sys",	2000,	"dependency_tables_on_procdures",	true,	6	]
-[ "sys",	2000,	"dependency_views_on_procdures",	true,	4	]
-[ "sys",	2000,	"dependency_columns_on_procdures",	true,	4	]
-[ "sys",	2000,	"dependency_functions_on_procdures",	true,	5	]
+[ "sys",	2000,	"dependency_tables_on_procedures",	true,	7	]
+[ "sys",	2000,	"dependency_views_on_procedures",	true,	7	]
+[ "sys",	2000,	"dependency_columns_on_procedures",	true,	7	]
+[ "sys",	2000,	"dependency_functions_on_procedures",	true,	9	]
 [ "sys",	2000,	"dependency_columns_on_types",	true,	8	]
 [ "sys",	2000,	"dependency_functions_on_types",	true,	6	]
 [ "sys",	2000,	"dependency_args_on_types",	true,	8	]
@@ -90,7 +90,7 @@ Ready.
 % .view_stats,	.view_stats,	.view_stats,	.view_stats,	.view_stats # table_name
 % schema_nm,	schema_id,	table_nm,	is_system_view,	"# columns" # name
 % varchar,	int,	varchar,	boolean,	int # type
-% 3,	4,	33,	5,	2 # length
+% 3,	4,	34,	5,	2 # length
 [ "sys",	2000,	"tables",	true,	9	]
 [ "sys",	2000,	"columns",	true,	10	]
 [ "sys",	2000,	"users",	true,	3	]
@@ -118,10 +118,10 @@ Ready.
 [ "sys",	2000,	"dependency_columns_on_indexes",	true,	10	]
 [ "sys",	2000,	"dependency_tables_on_foreignkeys",	true,	6	]
 [ "sys",	2000,	"dependency_keys_on_foreignkeys",	true,	8	]
-[ "sys",	2000,	"dependency_tables_on_procdures",	true,	6	]
-[ "sys",	2000,	"dependency_views_on_procdures",	true,	4	]
-[ "sys",	2000,	"dependency_columns_on_procdures",	true,	4	]
-[ "sys",	2000,	"dependency_functions_on_procdures",	true,	5	]
+[ "sys",	2000,	"dependency_tables_on_procedures",	true,	7	]
+[ "sys",	2000,	"dependency_views_on_procedures",	true,	7	]
+[ "sys",	2000,	"dependency_columns_on_procedures",	true,	7	]
+[ "sys",	2000,	"dependency_functions_on_procedures",	true,	9	]
 [ "sys",	2000,	"dependency_columns_on_types",	true,	8	]
 [ "sys",	2000,	"dependency_functions_on_types",	true,	6	]
 [ "sys",	2000,	"dependency_args_on_types",	true,	8	]
