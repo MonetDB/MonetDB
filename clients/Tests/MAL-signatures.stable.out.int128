@@ -15161,6 +15161,7 @@ Ready.
 [ "sqlcatalog",	"alter_set_table",	"pattern sqlcatalog.alter_set_table(sname:str, tnme:str, access:int):void ",	"SQLalter_set_table;",	"Catalog operation alter_set_table"	]
 [ "sqlcatalog",	"alter_table",	"pattern sqlcatalog.alter_table(sname:str, tname:str, tbl:ptr, action:int):void ",	"SQLalter_table;",	"Catalog operation alter_table"	]
 [ "sqlcatalog",	"alter_user",	"pattern sqlcatalog.alter_user(sname:str, passwrd:str, enc:int, schema:str, oldpasswrd:str):void ",	"SQLalter_user;",	"Catalog operation alter_user"	]
+[ "sqlcatalog",	"comment_on",	"pattern sqlcatalog.comment_on(objid:int, remark:str):void ",	"SQLcomment_on;",	"Catalog operation comment_on"	]
 [ "sqlcatalog",	"create_function",	"pattern sqlcatalog.create_function(sname:str, fname:str, fcn:ptr):void ",	"SQLcreate_function;",	"Catalog operation create_function"	]
 [ "sqlcatalog",	"create_role",	"pattern sqlcatalog.create_role(sname:str, role:str, grator:int):void ",	"SQLcreate_role;",	"Catalog operation create_role"	]
 [ "sqlcatalog",	"create_schema",	"pattern sqlcatalog.create_schema(sname:str, auth:str, ifnotexists:int, action:int):void ",	"SQLcreate_schema;",	"Catalog operation create_schema"	]

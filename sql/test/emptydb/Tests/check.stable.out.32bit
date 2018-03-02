@@ -96,12 +96,12 @@ Ready.
 \dSv sys.dependency_columns_on_functions
 \dSv sys.dependency_columns_on_indexes
 \dSv sys.dependency_columns_on_keys
-\dSv sys.dependency_columns_on_procdures
+\dSv sys.dependency_columns_on_procedures
 \dSv sys.dependency_columns_on_triggers
 \dSv sys.dependency_columns_on_types
 \dSv sys.dependency_columns_on_views
 \dSv sys.dependency_functions_on_functions
-\dSv sys.dependency_functions_on_procdures
+\dSv sys.dependency_functions_on_procedures
 \dSv sys.dependency_functions_on_triggers
 \dSv sys.dependency_functions_on_types
 \dSv sys.dependency_functions_on_views
@@ -111,11 +111,11 @@ Ready.
 \dSv sys.dependency_tables_on_foreignkeys
 \dSv sys.dependency_tables_on_functions
 \dSv sys.dependency_tables_on_indexes
-\dSv sys.dependency_tables_on_procdures
+\dSv sys.dependency_tables_on_procedures
 \dSv sys.dependency_tables_on_triggers
 \dSv sys.dependency_tables_on_views
 \dSv sys.dependency_views_on_functions
-\dSv sys.dependency_views_on_procdures
+\dSv sys.dependency_views_on_procedures
 \dSv sys.dependency_views_on_views
 \dSv sys.describe_all_objects
 \dSv sys.environment
@@ -230,7 +230,6 @@ Ready.
 \dSf sys."netmask"
 \dSf sys."network"
 \dSf sys."newurl"
-\dSf sys."no_op"
 \dSf sys."optimizer_stats"
 \dSf sys."optimizers"
 \dSf sys."password_hash"
@@ -422,12 +421,12 @@ SYSTEM VIEW  sys.dependency_args_on_types
 SYSTEM VIEW  sys.dependency_columns_on_functions
 SYSTEM VIEW  sys.dependency_columns_on_indexes
 SYSTEM VIEW  sys.dependency_columns_on_keys
-SYSTEM VIEW  sys.dependency_columns_on_procdures
+SYSTEM VIEW  sys.dependency_columns_on_procedures
 SYSTEM VIEW  sys.dependency_columns_on_triggers
 SYSTEM VIEW  sys.dependency_columns_on_types
 SYSTEM VIEW  sys.dependency_columns_on_views
 SYSTEM VIEW  sys.dependency_functions_on_functions
-SYSTEM VIEW  sys.dependency_functions_on_procdures
+SYSTEM VIEW  sys.dependency_functions_on_procedures
 SYSTEM VIEW  sys.dependency_functions_on_triggers
 SYSTEM VIEW  sys.dependency_functions_on_types
 SYSTEM VIEW  sys.dependency_functions_on_views
@@ -437,11 +436,11 @@ SYSTEM VIEW  sys.dependency_schemas_on_users
 SYSTEM VIEW  sys.dependency_tables_on_foreignkeys
 SYSTEM VIEW  sys.dependency_tables_on_functions
 SYSTEM VIEW  sys.dependency_tables_on_indexes
-SYSTEM VIEW  sys.dependency_tables_on_procdures
+SYSTEM VIEW  sys.dependency_tables_on_procedures
 SYSTEM VIEW  sys.dependency_tables_on_triggers
 SYSTEM VIEW  sys.dependency_tables_on_views
 SYSTEM VIEW  sys.dependency_views_on_functions
-SYSTEM VIEW  sys.dependency_views_on_procdures
+SYSTEM VIEW  sys.dependency_views_on_procedures
 SYSTEM VIEW  sys.dependency_views_on_views
 SYSTEM VIEW  sys.describe_all_objects
 SYSTEM VIEW  sys.environment
@@ -645,7 +644,6 @@ SYSTEM FUNCTION  sys.netmask
 SYSTEM FUNCTION  sys.network
 SYSTEM FUNCTION  sys.newurl
 SYSTEM FUNCTION  sys.next_value_for
-SYSTEM PROCEDURE        sys.no_op
 SYSTEM FUNCTION  sys.not
 SYSTEM AGGREGATE        sys.not_exist
 SYSTEM FUNCTION  sys.not_ilike
@@ -914,12 +912,12 @@ create view sys.dependency_args_on_types as select dt.id as type_id, dt.sqlname 
 create view sys.dependency_columns_on_functions as select c.table_id, c.id as column_id, c.name, f.id as function_id, f.name as function_name, f.type as function_type, dep.depend_type as depend_type from sys.functions as f, sys.columns as c, sys.dependencies as dep where c.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and f.type <> 2 order by c.name, c.table_id, f.name, f.id;
 create view sys.dependency_columns_on_indexes as select c.id as column_id, c.name as column_name, t.id as table_id, t.name as table_name, t.schema_id, i.id as index_id, i.name as index_name, i.type as index_type, cast(ic.nr +1 as int) as seq_nr, cast(10 as smallint) as depend_type from sys.tables as t, sys.columns as c, sys.objects as ic, sys.idxs as i where ic.name = c.name and ic.id = i.id and c.table_id = i.table_id and c.table_id = t.id and (i.table_id, i.name) not in (select k.table_id, k.name from sys.keys k) order by c.name, t.name, t.schema_id, i.name, ic.nr;
 create view sys.dependency_columns_on_keys as select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, c.id as column_id, c.name as column_name, k.id as key_id, k.name as key_name, cast(kc.nr +1 as int) as key_col_nr, cast(k.type as smallint) as key_type, cast(4 as smallint) as depend_type from sys.columns as c, sys.objects as kc, sys.keys as k, sys.tables as t where k.table_id = c.table_id and c.table_id = t.id and kc.id = k.id and kc.name = c.name and k.type in (0, 1) order by t.schema_id, t.name, c.name, k.type, k.name, kc.nr;
-create view sys.dependency_columns_on_procdures as select c.name as column_name, p.name as proc_name, p.type as proc_type, dep.depend_type as depend_type from sys.functions as p, sys.columns as c, sys.dependencies as dep where c.id = dep.id and p.id = dep.depend_id and dep.depend_type = 13 and p.type = 2 order by c.name, c.table_id, p.name, p.id;
+create view sys.dependency_columns_on_procedures as select c.table_id, c.id as column_id, c.name as column_name, p.id as procedure_id, p.name as procedure_name, p.type as procedure_type, dep.depend_type as depend_type from sys.functions as p, sys.columns as c, sys.dependencies as dep where c.id = dep.id and p.id = dep.depend_id and dep.depend_type = 13 and p.type = 2 order by c.name, c.table_id, p.name, p.id;
 create view sys.dependency_columns_on_triggers as select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, tri.id as trigger_id, tri.name as trigger_name, c.id as column_id, c.name as column_name, dep.depend_type as depend_type from sys.tables as t, sys.columns as c, sys.triggers as tri, sys.dependencies as dep where dep.id = c.id and dep.depend_id = tri.id and c.table_id = t.id and dep.depend_type = 8 order by t.schema_id, t.name, tri.name, c.name;
 create view sys.dependency_columns_on_types as select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, dt.id as type_id, dt.sqlname as type_name, c.id as column_id, c.name as column_name, dep.depend_type as depend_type from sys.tables as t, sys.columns as c, sys.types as dt, sys.dependencies as dep where dep.id = dt.id and dep.depend_id = c.id and c.table_id = t.id and dep.depend_type = 15 order by dt.sqlname, t.name, c.name, c.id;
 create view sys.dependency_columns_on_views as select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, c.id as column_id, c.name as column_name, v.schema_id as view_schema_id, v.id as view_id, v.name as view_name, dep.depend_type as depend_type from sys.columns as c, sys.tables as v, sys.tables as t, sys.dependencies as dep where c.id = dep.id and v.id = dep.depend_id and c.table_id = t.id and dep.depend_type = 5 and v.type in (1, 11) order by t.schema_id, t.name, c.name, v.name;
 create view sys.dependency_functions_on_functions as select f1.schema_id, f1.id as function_id, f1.name as function_name, f1.type as function_type, f2.schema_id as used_in_function_schema_id, f2.id as used_in_function_id, f2.name as used_in_function_name, f2.type as used_in_function_type, dep.depend_type as depend_type from sys.functions as f1, sys.functions as f2, sys.dependencies as dep where f1.id = dep.id and f2.id = dep.depend_id and dep.depend_type = 7 and f2.type <> 2 order by f1.name, f1.id, f2.name, f2.id;
-create view sys.dependency_functions_on_procdures as select p.name as proc_name, p.type as proc_type, f2.name as func_name, f2.type as func_type, dep.depend_type as depend_type from sys.functions as p, sys.functions as f2, sys.dependencies as dep where f2.id = dep.id and p.id = dep.depend_id and dep.depend_type = 13 and p.type = 2 order by p.name, p.id, f2.name, f2.id;
+create view sys.dependency_functions_on_procedures as select f.schema_id as function_schema_id, f.id as function_id, f.name as function_name, f.type as function_type, p.schema_id as procedure_schema_id, p.id as procedure_id, p.name as procedure_name, p.type as procedure_type, dep.depend_type as depend_type from sys.functions as p, sys.functions as f, sys.dependencies as dep where f.id = dep.id and p.id = dep.depend_id and dep.depend_type = 13 and p.type = 2 order by p.name, p.id, f.name, f.id;
 create view sys.dependency_functions_on_triggers as select f.schema_id as function_schema_id, f.id as function_id, f.name as function_name, f.type as function_type, tri.id as trigger_id, tri.name as trigger_name, tri.table_id as trigger_table_id, dep.depend_type as depend_type from sys.functions as f, sys.triggers as tri, sys.dependencies as dep where dep.id = f.id and dep.depend_id = tri.id and dep.depend_type = 8 order by f.schema_id, f.name, tri.name;
 create view sys.dependency_functions_on_types as select dt.id as type_id, dt.sqlname as type_name, f.id as function_id, f.name as function_name, f.type as function_type, dep.depend_type as depend_type from sys.functions as f, sys.types as dt, sys.dependencies as dep where dep.id = dt.id and dep.depend_id = f.id and dep.depend_type = 15 order by dt.sqlname, f.name, f.id;
 create view sys.dependency_functions_on_views as select f.schema_id as function_schema_id, f.id as function_id, f.name as function_name, v.schema_id as view_schema_id, v.id as view_id, v.name as view_name, dep.depend_type as depend_type from sys.functions as f, sys.tables as v, sys.dependencies as dep where f.id = dep.id and v.id = dep.depend_id and dep.depend_type = 5 and v.type in (1, 11) order by f.schema_id, f.name, v.schema_id, v.name;
@@ -929,11 +927,11 @@ create view sys.dependency_schemas_on_users as select s.id as schema_id, s.name 
 create view sys.dependency_tables_on_foreignkeys as select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, fk.name as fk_name, cast(k.type as smallint) as key_type, cast(11 as smallint) as depend_type from sys.tables as t, sys.keys as k, sys.keys as fk where fk.rkey = k.id and k.table_id = t.id order by t.schema_id, t.name, fk.name;
 create view sys.dependency_tables_on_functions as select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, f.name as function_name, f.type as function_type, dep.depend_type as depend_type from sys.functions as f, sys.tables as t, sys.dependencies as dep where t.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and f.type <> 2 and t.type not in (1, 11) order by t.name, t.schema_id, f.name, f.id;
 create view sys.dependency_tables_on_indexes as select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, i.id as index_id, i.name as index_name, i.type as index_type, cast(10 as smallint) as depend_type from sys.tables as t, sys.idxs as i where i.table_id = t.id and (i.table_id, i.name) not in (select k.table_id, k.name from sys.keys k) order by t.schema_id, t.name, i.name;
-create view sys.dependency_tables_on_procdures as select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, p.name, p.type as proc_type, dep.depend_type as depend_type from sys.functions as p, sys.tables as t, sys.dependencies as dep where t.id = dep.id and p.id = dep.depend_id and dep.depend_type = 13 and p.type = 2 and t.type not in (1, 11) order by t.name, t.schema_id, p.name, p.id;
+create view sys.dependency_tables_on_procedures as select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, p.id as procedure_id, p.name as procedure_name, p.type as procedure_type, dep.depend_type as depend_type from sys.functions as p, sys.tables as t, sys.dependencies as dep where t.id = dep.id and p.id = dep.depend_id and dep.depend_type = 13 and p.type = 2 and t.type not in (1, 11) order by t.name, t.schema_id, p.name, p.id;
 create view sys.dependency_tables_on_triggers as (select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, tri.id as trigger_id, tri.name as trigger_name, cast(8 as smallint) as depend_type from sys.tables as t, sys.triggers as tri where tri.table_id = t.id) union (select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, tri.id as trigger_id, tri.name as trigger_name, dep.depend_type as depend_type from sys.tables as t, sys.triggers as tri, sys.dependencies as dep where dep.id = t.id and dep.depend_id = tri.id and dep.depend_type = 8) order by table_schema_id, table_name, trigger_name;
 create view sys.dependency_tables_on_views as select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, v.schema_id as view_schema_id, v.id as view_id, v.name as view_name, dep.depend_type as depend_type from sys.tables as t, sys.tables as v, sys.dependencies as dep where t.id = dep.id and v.id = dep.depend_id and dep.depend_type = 5 and t.type not in (1, 11) and v.type in (1, 11) order by t.schema_id, t.name, v.schema_id, v.name;
 create view sys.dependency_views_on_functions as select v.schema_id as view_schema_id, v.id as view_id, v.name as view_name, f.name as function_name, f.type as function_type, dep.depend_type as depend_type from sys.functions as f, sys.tables as v, sys.dependencies as dep where v.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and f.type <> 2 and v.type in (1, 11) order by v.name, v.schema_id, f.name, f.id;
-create view sys.dependency_views_on_procdures as select v.name as view_name, p.name as proc_name, p.type as proc_type, dep.depend_type as depend_type from sys.functions as p, sys.tables as v, sys.dependencies as dep where v.id = dep.id and p.id = dep.depend_id and dep.depend_type = 13 and p.type = 2 and v.type in (1, 11) order by v.name, v.schema_id, p.name, p.id;
+create view sys.dependency_views_on_procedures as select v.schema_id as view_schema_id, v.id as view_id, v.name as view_name, p.id as procedure_id, p.name as procedure_name, p.type as procedure_type, dep.depend_type as depend_type from sys.functions as p, sys.tables as v, sys.dependencies as dep where v.id = dep.id and p.id = dep.depend_id and dep.depend_type = 13 and p.type = 2 and v.type in (1, 11) order by v.name, v.schema_id, p.name, p.id;
 create view sys.dependency_views_on_views as select v1.schema_id as view1_schema_id, v1.id as view1_id, v1.name as view1_name, v2.schema_id as view2_schema_id, v2.id as view2_id, v2.name as view2_name, dep.depend_type as depend_type from sys.tables as v1, sys.tables as v2, sys.dependencies as dep where v1.id = dep.id and v2.id = dep.depend_id and dep.depend_type = 5 and v1.type in (1, 11) and v2.type in (1, 11) order by v1.schema_id, v1.name, v2.schema_id, v2.name;
 create view sys.describe_all_objects as select s.name as sname, t.name, s.name || '.' || t.name as fullname, cast(case t.type when 1 then 2 else 1 end as smallint) as ntype, (case when t.system then 'SYSTEM ' else '' end) || tt.table_type_name as type, t.system, c.remark as remark from sys._tables t left outer join sys.comments c on t.id = c.id left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id union all select s.name as sname, sq.name, s.name || '.' || sq.name as fullname, cast(4 as smallint) as ntype, 'SEQUENCE' as type, false as system, c.remark as remark from sys.sequences sq left outer join sys.comments c on sq.id = c.id left outer join sys.schemas s on sq.schema_id = s.id union all select distinct s.name as sname, f.name, s.name || '.' || f.name as fullname, cast(8 as smallint) as ntype, (case when sf.function_id is not null then 'SYSTEM ' else '' end) || sys.function_type_keyword(f.type) as type, sf.function_id is not null as system, c.remark as remark from sys.functions f left outer join sys.comments c on f.id = c.id left outer join sys.schemas s on f.schema_id = s.id left outer join sys.systemfunctions sf on f.id = sf.function_id union all select null as sname, s.name, s.name as fullname, cast(16 as smallint) as ntype, (case when s.system then 'SYSTEM SCHEMA' else 'SCHEMA' end) as type, s.system, c.remark as remark from sys.schemas s left outer join sys.comments c on s.id = c.id order by system, name, sname, ntype;
 create view sys.environment as select * from sys.env();
@@ -1086,7 +1084,6 @@ create function "netmask" (p inet) returns inet external name inet."netmask";
 create function "network" (p inet) returns inet external name inet."network";
 create function newurl(protocol string, hostname string, "port" int, file string) returns url external name url."new";
 create function newurl(protocol string, hostname string, file string) returns url external name url."new";
-create procedure sys.no_op() begin declare dummy integer; end;
 create function sys.optimizer_stats() returns table (optname string, count int, timing bigint) external name inspect.optimizer_stats;
 create function sys.optimizers () returns table (name string, def string, status string) external name sql.optimizers;
 create function sys.password_hash (username string) returns string external name sql.password;
@@ -1400,7 +1397,7 @@ drop function pcre_replace(string, string, string, string);
 % .s,	.t,	.L10,	.L12,	.t,	.L15,	.L17 # table_name
 % name,	name,	query,	type,	system,	commit_action,	access # name
 % varchar,	varchar,	varchar,	varchar,	boolean,	char,	char # type
-% 3,	33,	2809,	5,	5,	8,	10 # length
+% 3,	34,	2809,	5,	5,	8,	10 # length
 [ "bam",	"export",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "bam",	"files",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "bam",	"pg",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
@@ -1420,12 +1417,12 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"dependency_columns_on_functions",	"create view sys.dependency_columns_on_functions as select c.table_id, c.id as column_id, c.name, f.id as function_id, f.name as function_name, f.type as function_type, dep.depend_type as depend_type from sys.functions as f, sys.columns as c, sys.dependencies as dep where c.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and f.type <> 2 order by c.name, c.table_id, f.name, f.id;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"dependency_columns_on_indexes",	"create view sys.dependency_columns_on_indexes as select c.id as column_id, c.name as column_name, t.id as table_id, t.name as table_name, t.schema_id, i.id as index_id, i.name as index_name, i.type as index_type, cast(ic.nr +1 as int) as seq_nr, cast(10 as smallint) as depend_type from sys.tables as t, sys.columns as c, sys.objects as ic, sys.idxs as i where ic.name = c.name and ic.id = i.id and c.table_id = i.table_id and c.table_id = t.id and (i.table_id, i.name) not in (select k.table_id, k.name from sys.keys k) order by c.name, t.name, t.schema_id, i.name, ic.nr;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"dependency_columns_on_keys",	"create view sys.dependency_columns_on_keys as select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, c.id as column_id, c.name as column_name, k.id as key_id, k.name as key_name, cast(kc.nr +1 as int) as key_col_nr, cast(k.type as smallint) as key_type, cast(4 as smallint) as depend_type from sys.columns as c, sys.objects as kc, sys.keys as k, sys.tables as t where k.table_id = c.table_id and c.table_id = t.id and kc.id = k.id and kc.name = c.name and k.type in (0, 1) order by t.schema_id, t.name, c.name, k.type, k.name, kc.nr;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
-[ "sys",	"dependency_columns_on_procdures",	"create view sys.dependency_columns_on_procdures as select c.name as column_name, p.name as proc_name, p.type as proc_type, dep.depend_type as depend_type from sys.functions as p, sys.columns as c, sys.dependencies as dep where c.id = dep.id and p.id = dep.depend_id and dep.depend_type = 13 and p.type = 2 order by c.name, c.table_id, p.name, p.id;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
+[ "sys",	"dependency_columns_on_procedures",	"create view sys.dependency_columns_on_procedures as select c.table_id, c.id as column_id, c.name as column_name, p.id as procedure_id, p.name as procedure_name, p.type as procedure_type, dep.depend_type as depend_type from sys.functions as p, sys.columns as c, sys.dependencies as dep where c.id = dep.id and p.id = dep.depend_id and dep.depend_type = 13 and p.type = 2 order by c.name, c.table_id, p.name, p.id;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"dependency_columns_on_triggers",	"create view sys.dependency_columns_on_triggers as select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, tri.id as trigger_id, tri.name as trigger_name, c.id as column_id, c.name as column_name, dep.depend_type as depend_type from sys.tables as t, sys.columns as c, sys.triggers as tri, sys.dependencies as dep where dep.id = c.id and dep.depend_id = tri.id and c.table_id = t.id and dep.depend_type = 8 order by t.schema_id, t.name, tri.name, c.name;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"dependency_columns_on_types",	"create view sys.dependency_columns_on_types as select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, dt.id as type_id, dt.sqlname as type_name, c.id as column_id, c.name as column_name, dep.depend_type as depend_type from sys.tables as t, sys.columns as c, sys.types as dt, sys.dependencies as dep where dep.id = dt.id and dep.depend_id = c.id and c.table_id = t.id and dep.depend_type = 15 order by dt.sqlname, t.name, c.name, c.id;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"dependency_columns_on_views",	"create view sys.dependency_columns_on_views as select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, c.id as column_id, c.name as column_name, v.schema_id as view_schema_id, v.id as view_id, v.name as view_name, dep.depend_type as depend_type from sys.columns as c, sys.tables as v, sys.tables as t, sys.dependencies as dep where c.id = dep.id and v.id = dep.depend_id and c.table_id = t.id and dep.depend_type = 5 and v.type in (1, 11) order by t.schema_id, t.name, c.name, v.name;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"dependency_functions_on_functions",	"create view sys.dependency_functions_on_functions as select f1.schema_id, f1.id as function_id, f1.name as function_name, f1.type as function_type, f2.schema_id as used_in_function_schema_id, f2.id as used_in_function_id, f2.name as used_in_function_name, f2.type as used_in_function_type, dep.depend_type as depend_type from sys.functions as f1, sys.functions as f2, sys.dependencies as dep where f1.id = dep.id and f2.id = dep.depend_id and dep.depend_type = 7 and f2.type <> 2 order by f1.name, f1.id, f2.name, f2.id;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
-[ "sys",	"dependency_functions_on_procdures",	"create view sys.dependency_functions_on_procdures as select p.name as proc_name, p.type as proc_type, f2.name as func_name, f2.type as func_type, dep.depend_type as depend_type from sys.functions as p, sys.functions as f2, sys.dependencies as dep where f2.id = dep.id and p.id = dep.depend_id and dep.depend_type = 13 and p.type = 2 order by p.name, p.id, f2.name, f2.id;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
+[ "sys",	"dependency_functions_on_procedures",	"create view sys.dependency_functions_on_procedures as select f.schema_id as function_schema_id, f.id as function_id, f.name as function_name, f.type as function_type, p.schema_id as procedure_schema_id, p.id as procedure_id, p.name as procedure_name, p.type as procedure_type, dep.depend_type as depend_type from sys.functions as p, sys.functions as f, sys.dependencies as dep where f.id = dep.id and p.id = dep.depend_id and dep.depend_type = 13 and p.type = 2 order by p.name, p.id, f.name, f.id;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"dependency_functions_on_triggers",	"create view sys.dependency_functions_on_triggers as select f.schema_id as function_schema_id, f.id as function_id, f.name as function_name, f.type as function_type, tri.id as trigger_id, tri.name as trigger_name, tri.table_id as trigger_table_id, dep.depend_type as depend_type from sys.functions as f, sys.triggers as tri, sys.dependencies as dep where dep.id = f.id and dep.depend_id = tri.id and dep.depend_type = 8 order by f.schema_id, f.name, tri.name;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"dependency_functions_on_types",	"create view sys.dependency_functions_on_types as select dt.id as type_id, dt.sqlname as type_name, f.id as function_id, f.name as function_name, f.type as function_type, dep.depend_type as depend_type from sys.functions as f, sys.types as dt, sys.dependencies as dep where dep.id = dt.id and dep.depend_id = f.id and dep.depend_type = 15 order by dt.sqlname, f.name, f.id;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"dependency_functions_on_views",	"create view sys.dependency_functions_on_views as select f.schema_id as function_schema_id, f.id as function_id, f.name as function_name, v.schema_id as view_schema_id, v.id as view_id, v.name as view_name, dep.depend_type as depend_type from sys.functions as f, sys.tables as v, sys.dependencies as dep where f.id = dep.id and v.id = dep.depend_id and dep.depend_type = 5 and v.type in (1, 11) order by f.schema_id, f.name, v.schema_id, v.name;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
@@ -1435,12 +1432,12 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"dependency_tables_on_foreignkeys",	"create view sys.dependency_tables_on_foreignkeys as select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, fk.name as fk_name, cast(k.type as smallint) as key_type, cast(11 as smallint) as depend_type from sys.tables as t, sys.keys as k, sys.keys as fk where fk.rkey = k.id and k.table_id = t.id order by t.schema_id, t.name, fk.name;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"dependency_tables_on_functions",	"create view sys.dependency_tables_on_functions as select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, f.name as function_name, f.type as function_type, dep.depend_type as depend_type from sys.functions as f, sys.tables as t, sys.dependencies as dep where t.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and f.type <> 2 and t.type not in (1, 11) order by t.name, t.schema_id, f.name, f.id;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"dependency_tables_on_indexes",	"create view sys.dependency_tables_on_indexes as select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, i.id as index_id, i.name as index_name, i.type as index_type, cast(10 as smallint) as depend_type from sys.tables as t, sys.idxs as i where i.table_id = t.id and (i.table_id, i.name) not in (select k.table_id, k.name from sys.keys k) order by t.schema_id, t.name, i.name;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
-[ "sys",	"dependency_tables_on_procdures",	"create view sys.dependency_tables_on_procdures as select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, p.name, p.type as proc_type, dep.depend_type as depend_type from sys.functions as p, sys.tables as t, sys.dependencies as dep where t.id = dep.id and p.id = dep.depend_id and dep.depend_type = 13 and p.type = 2 and t.type not in (1, 11) order by t.name, t.schema_id, p.name, p.id;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
+[ "sys",	"dependency_tables_on_procedures",	"create view sys.dependency_tables_on_procedures as select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, p.id as procedure_id, p.name as procedure_name, p.type as procedure_type, dep.depend_type as depend_type from sys.functions as p, sys.tables as t, sys.dependencies as dep where t.id = dep.id and p.id = dep.depend_id and dep.depend_type = 13 and p.type = 2 and t.type not in (1, 11) order by t.name, t.schema_id, p.name, p.id;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"dependency_tables_on_triggers",	"create view sys.dependency_tables_on_triggers as (select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, tri.id as trigger_id, tri.name as trigger_name, cast(8 as smallint) as depend_type from sys.tables as t, sys.triggers as tri where tri.table_id = t.id) union (select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, tri.id as trigger_id, tri.name as trigger_name, dep.depend_type as depend_type from sys.tables as t, sys.triggers as tri, sys.dependencies as dep where dep.id = t.id and dep.depend_id = tri.id and dep.depend_type = 8) order by table_schema_id, table_name, trigger_name;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"dependency_tables_on_views",	"create view sys.dependency_tables_on_views as select t.schema_id as table_schema_id, t.id as table_id, t.name as table_name, v.schema_id as view_schema_id, v.id as view_id, v.name as view_name, dep.depend_type as depend_type from sys.tables as t, sys.tables as v, sys.dependencies as dep where t.id = dep.id and v.id = dep.depend_id and dep.depend_type = 5 and t.type not in (1, 11) and v.type in (1, 11) order by t.schema_id, t.name, v.schema_id, v.name;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"dependency_types",	NULL,	"TABLE",	true,	"COMMIT",	"READONLY"	]
 [ "sys",	"dependency_views_on_functions",	"create view sys.dependency_views_on_functions as select v.schema_id as view_schema_id, v.id as view_id, v.name as view_name, f.name as function_name, f.type as function_type, dep.depend_type as depend_type from sys.functions as f, sys.tables as v, sys.dependencies as dep where v.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and f.type <> 2 and v.type in (1, 11) order by v.name, v.schema_id, f.name, f.id;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
-[ "sys",	"dependency_views_on_procdures",	"create view sys.dependency_views_on_procdures as select v.name as view_name, p.name as proc_name, p.type as proc_type, dep.depend_type as depend_type from sys.functions as p, sys.tables as v, sys.dependencies as dep where v.id = dep.id and p.id = dep.depend_id and dep.depend_type = 13 and p.type = 2 and v.type in (1, 11) order by v.name, v.schema_id, p.name, p.id;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
+[ "sys",	"dependency_views_on_procedures",	"create view sys.dependency_views_on_procedures as select v.schema_id as view_schema_id, v.id as view_id, v.name as view_name, p.id as procedure_id, p.name as procedure_name, p.type as procedure_type, dep.depend_type as depend_type from sys.functions as p, sys.tables as v, sys.dependencies as dep where v.id = dep.id and p.id = dep.depend_id and dep.depend_type = 13 and p.type = 2 and v.type in (1, 11) order by v.name, v.schema_id, p.name, p.id;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"dependency_views_on_views",	"create view sys.dependency_views_on_views as select v1.schema_id as view1_schema_id, v1.id as view1_id, v1.name as view1_name, v2.schema_id as view2_schema_id, v2.id as view2_id, v2.name as view2_name, dep.depend_type as depend_type from sys.tables as v1, sys.tables as v2, sys.dependencies as dep where v1.id = dep.id and v2.id = dep.depend_id and dep.depend_type = 5 and v1.type in (1, 11) and v2.type in (1, 11) order by v1.schema_id, v1.name, v2.schema_id, v2.name;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"describe_all_objects",	"create view sys.describe_all_objects as select s.name as sname, t.name, s.name || '.' || t.name as fullname, cast(case t.type when 1 then 2 else 1 end as smallint) as ntype, (case when t.system then 'SYSTEM ' else '' end) || tt.table_type_name as type, t.system, c.remark as remark from sys._tables t left outer join sys.comments c on t.id = c.id left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id union all select s.name as sname, sq.name, s.name || '.' || sq.name as fullname, cast(4 as smallint) as ntype, 'SEQUENCE' as type, false as system, c.remark as remark from sys.sequences sq left outer join sys.comments c on sq.id = c.id left outer join sys.schemas s on sq.schema_id = s.id union all select distinct s.name as sname, f.name, s.name || '.' || f.name as fullname, cast(8 as smallint) as ntype, (case when sf.function_id is not null then 'SYSTEM ' else '' end) || sys.function_type_keyword(f.type) as type, sf.function_id is not null as system, c.remark as remark from sys.functions f left outer join sys.comments c on f.id = c.id left outer join sys.schemas s on f.schema_id = s.id left outer join sys.systemfunctions sf on f.id = sf.function_id union all select null as sname, s.name, s.name as fullname, cast(16 as smallint) as ntype, (case when s.system then 'SYSTEM SCHEMA' else 'SCHEMA' end) as type, s.system, c.remark as remark from sys.schemas s left outer join sys.comments c on s.id = c.id order by system, name, sname, ntype;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"environment",	"create view sys.environment as select * from sys.env();",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
@@ -1497,7 +1494,7 @@ drop function pcre_replace(string, string, string, string);
 % sys.t,	sys.c,	sys.c,	sys.c,	sys.c,	sys.c,	sys.c,	sys.c,	sys.c # table_name
 % name,	name,	type,	type_digits,	type_scale,	default,	null,	number,	storage # name
 % varchar,	varchar,	varchar,	int,	int,	varchar,	boolean,	int,	varchar # type
-% 33,	26,	9,	5,	1,	0,	5,	2,	0 # length
+% 34,	26,	9,	5,	1,	0,	5,	2,	0 # length
 [ "_columns",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "_columns",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "_columns",	"name",	"varchar",	1024,	0,	NULL,	true,	1,	NULL	]
@@ -1617,10 +1614,13 @@ drop function pcre_replace(string, string, string, string);
 [ "dependency_columns_on_keys",	"key_col_nr",	"int",	32,	0,	NULL,	true,	7,	NULL	]
 [ "dependency_columns_on_keys",	"key_type",	"smallint",	16,	0,	NULL,	true,	8,	NULL	]
 [ "dependency_columns_on_keys",	"depend_type",	"smallint",	16,	0,	NULL,	true,	9,	NULL	]
-[ "dependency_columns_on_procdures",	"column_name",	"varchar",	1024,	0,	NULL,	true,	0,	NULL	]
-[ "dependency_columns_on_procdures",	"proc_name",	"varchar",	256,	0,	NULL,	true,	1,	NULL	]
-[ "dependency_columns_on_procdures",	"proc_type",	"int",	32,	0,	NULL,	true,	2,	NULL	]
-[ "dependency_columns_on_procdures",	"depend_type",	"smallint",	16,	0,	NULL,	true,	3,	NULL	]
+[ "dependency_columns_on_procedures",	"table_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
+[ "dependency_columns_on_procedures",	"column_id",	"int",	32,	0,	NULL,	true,	1,	NULL	]
+[ "dependency_columns_on_procedures",	"column_name",	"varchar",	1024,	0,	NULL,	true,	2,	NULL	]
+[ "dependency_columns_on_procedures",	"procedure_id",	"int",	32,	0,	NULL,	true,	3,	NULL	]
+[ "dependency_columns_on_procedures",	"procedure_name",	"varchar",	256,	0,	NULL,	true,	4,	NULL	]
+[ "dependency_columns_on_procedures",	"procedure_type",	"int",	32,	0,	NULL,	true,	5,	NULL	]
+[ "dependency_columns_on_procedures",	"depend_type",	"smallint",	16,	0,	NULL,	true,	6,	NULL	]
 [ "dependency_columns_on_triggers",	"table_schema_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "dependency_columns_on_triggers",	"table_id",	"int",	32,	0,	NULL,	true,	1,	NULL	]
 [ "dependency_columns_on_triggers",	"table_name",	"varchar",	1024,	0,	NULL,	true,	2,	NULL	]
@@ -1655,11 +1655,15 @@ drop function pcre_replace(string, string, string, string);
 [ "dependency_functions_on_functions",	"used_in_function_name",	"varchar",	256,	0,	NULL,	true,	6,	NULL	]
 [ "dependency_functions_on_functions",	"used_in_function_type",	"int",	32,	0,	NULL,	true,	7,	NULL	]
 [ "dependency_functions_on_functions",	"depend_type",	"smallint",	16,	0,	NULL,	true,	8,	NULL	]
-[ "dependency_functions_on_procdures",	"proc_name",	"varchar",	256,	0,	NULL,	true,	0,	NULL	]
-[ "dependency_functions_on_procdures",	"proc_type",	"int",	32,	0,	NULL,	true,	1,	NULL	]
-[ "dependency_functions_on_procdures",	"func_name",	"varchar",	256,	0,	NULL,	true,	2,	NULL	]
-[ "dependency_functions_on_procdures",	"func_type",	"int",	32,	0,	NULL,	true,	3,	NULL	]
-[ "dependency_functions_on_procdures",	"depend_type",	"smallint",	16,	0,	NULL,	true,	4,	NULL	]
+[ "dependency_functions_on_procedures",	"function_schema_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
+[ "dependency_functions_on_procedures",	"function_id",	"int",	32,	0,	NULL,	true,	1,	NULL	]
+[ "dependency_functions_on_procedures",	"function_name",	"varchar",	256,	0,	NULL,	true,	2,	NULL	]
+[ "dependency_functions_on_procedures",	"function_type",	"int",	32,	0,	NULL,	true,	3,	NULL	]
+[ "dependency_functions_on_procedures",	"procedure_schema_id",	"int",	32,	0,	NULL,	true,	4,	NULL	]
+[ "dependency_functions_on_procedures",	"procedure_id",	"int",	32,	0,	NULL,	true,	5,	NULL	]
+[ "dependency_functions_on_procedures",	"procedure_name",	"varchar",	256,	0,	NULL,	true,	6,	NULL	]
+[ "dependency_functions_on_procedures",	"procedure_type",	"int",	32,	0,	NULL,	true,	7,	NULL	]
+[ "dependency_functions_on_procedures",	"depend_type",	"smallint",	16,	0,	NULL,	true,	8,	NULL	]
 [ "dependency_functions_on_triggers",	"function_schema_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "dependency_functions_on_triggers",	"function_id",	"int",	32,	0,	NULL,	true,	1,	NULL	]
 [ "dependency_functions_on_triggers",	"function_name",	"varchar",	256,	0,	NULL,	true,	2,	NULL	]
@@ -1716,12 +1720,13 @@ drop function pcre_replace(string, string, string, string);
 [ "dependency_tables_on_indexes",	"index_name",	"varchar",	1024,	0,	NULL,	true,	4,	NULL	]
 [ "dependency_tables_on_indexes",	"index_type",	"int",	32,	0,	NULL,	true,	5,	NULL	]
 [ "dependency_tables_on_indexes",	"depend_type",	"smallint",	16,	0,	NULL,	true,	6,	NULL	]
-[ "dependency_tables_on_procdures",	"table_schema_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
-[ "dependency_tables_on_procdures",	"table_id",	"int",	32,	0,	NULL,	true,	1,	NULL	]
-[ "dependency_tables_on_procdures",	"table_name",	"varchar",	1024,	0,	NULL,	true,	2,	NULL	]
-[ "dependency_tables_on_procdures",	"name",	"varchar",	256,	0,	NULL,	true,	3,	NULL	]
-[ "dependency_tables_on_procdures",	"proc_type",	"int",	32,	0,	NULL,	true,	4,	NULL	]
-[ "dependency_tables_on_procdures",	"depend_type",	"smallint",	16,	0,	NULL,	true,	5,	NULL	]
+[ "dependency_tables_on_procedures",	"table_schema_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
+[ "dependency_tables_on_procedures",	"table_id",	"int",	32,	0,	NULL,	true,	1,	NULL	]
+[ "dependency_tables_on_procedures",	"table_name",	"varchar",	1024,	0,	NULL,	true,	2,	NULL	]
+[ "dependency_tables_on_procedures",	"procedure_id",	"int",	32,	0,	NULL,	true,	3,	NULL	]
+[ "dependency_tables_on_procedures",	"procedure_name",	"varchar",	256,	0,	NULL,	true,	4,	NULL	]
+[ "dependency_tables_on_procedures",	"procedure_type",	"int",	32,	0,	NULL,	true,	5,	NULL	]
+[ "dependency_tables_on_procedures",	"depend_type",	"smallint",	16,	0,	NULL,	true,	6,	NULL	]
 [ "dependency_tables_on_triggers",	"table_schema_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "dependency_tables_on_triggers",	"table_id",	"int",	32,	0,	NULL,	true,	1,	NULL	]
 [ "dependency_tables_on_triggers",	"table_name",	"varchar",	1024,	0,	NULL,	true,	2,	NULL	]
@@ -1743,10 +1748,13 @@ drop function pcre_replace(string, string, string, string);
 [ "dependency_views_on_functions",	"function_name",	"varchar",	256,	0,	NULL,	true,	3,	NULL	]
 [ "dependency_views_on_functions",	"function_type",	"int",	32,	0,	NULL,	true,	4,	NULL	]
 [ "dependency_views_on_functions",	"depend_type",	"smallint",	16,	0,	NULL,	true,	5,	NULL	]
-[ "dependency_views_on_procdures",	"view_name",	"varchar",	1024,	0,	NULL,	true,	0,	NULL	]
-[ "dependency_views_on_procdures",	"proc_name",	"varchar",	256,	0,	NULL,	true,	1,	NULL	]
-[ "dependency_views_on_procdures",	"proc_type",	"int",	32,	0,	NULL,	true,	2,	NULL	]
-[ "dependency_views_on_procdures",	"depend_type",	"smallint",	16,	0,	NULL,	true,	3,	NULL	]
+[ "dependency_views_on_procedures",	"view_schema_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
+[ "dependency_views_on_procedures",	"view_id",	"int",	32,	0,	NULL,	true,	1,	NULL	]
+[ "dependency_views_on_procedures",	"view_name",	"varchar",	1024,	0,	NULL,	true,	2,	NULL	]
+[ "dependency_views_on_procedures",	"procedure_id",	"int",	32,	0,	NULL,	true,	3,	NULL	]
+[ "dependency_views_on_procedures",	"procedure_name",	"varchar",	256,	0,	NULL,	true,	4,	NULL	]
+[ "dependency_views_on_procedures",	"procedure_type",	"int",	32,	0,	NULL,	true,	5,	NULL	]
+[ "dependency_views_on_procedures",	"depend_type",	"smallint",	16,	0,	NULL,	true,	6,	NULL	]
 [ "dependency_views_on_views",	"view1_schema_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "dependency_views_on_views",	"view1_id",	"int",	32,	0,	NULL,	true,	1,	NULL	]
 [ "dependency_views_on_views",	"view1_name",	"varchar",	1024,	0,	NULL,	true,	2,	NULL	]
@@ -2533,7 +2541,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"newurl",	"create function newurl(protocol string, hostname string, \"port\" int, file string) returns url external name url.\"new\";",	"url",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"url",	0,	0,	"out",	"protocol",	"clob",	0,	0,	"in",	"hostname",	"clob",	0,	0,	"in",	"port",	"int",	32,	0,	"in",	"file",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"newurl",	"create function newurl(protocol string, hostname string, file string) returns url external name url.\"new\";",	"url",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"url",	0,	0,	"out",	"protocol",	"clob",	0,	0,	"in",	"hostname",	"clob",	0,	0,	"in",	"file",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"next_value_for",	"next_value",	"sql",	"Internal C",	"Scalar function",	true,	false,	false,	"res_0",	"bigint",	64,	0,	"out",	"arg_1",	"varchar",	0,	0,	"in",	"arg_2",	"varchar",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"no_op",	"create procedure sys.no_op() begin declare dummy integer; end;",	"user",	"SQL",	"Procedure",	true,	false,	false,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"not",	"not",	"calc",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"boolean",	1,	0,	"out",	"arg_1",	"boolean",	1,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"not_exist",	"not_exist",	"aggr",	"Internal C",	"Aggregate function",	false,	false,	false,	"res",	"boolean",	1,	0,	"out",	"arg",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"not_ilike",	"not_ilike",	"algebra",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"boolean",	1,	0,	"out",	"arg_1",	"char",	0,	0,	"in",	"arg_2",	"char",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -4035,7 +4042,7 @@ drop function pcre_replace(string, string, string, string);
 % sys.s1,	sys.t1,	sys.s2,	sys.t2,	.dt # table_name
 % name,	name,	name,	name,	dependency_type_name # name
 % varchar,	varchar,	varchar,	varchar,	varchar # type
-% 3,	16,	3,	33,	4 # length
+% 3,	16,	3,	34,	4 # length
 [ "sys",	"args",	"sys",	"commented_function_signatures",	"VIEW"	]
 [ "sys",	"comments",	"sys",	"commented_function_signatures",	"VIEW"	]
 [ "sys",	"functions",	"sys",	"commented_function_signatures",	"VIEW"	]
@@ -4060,9 +4067,9 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"keys",	"sys",	"dependency_columns_on_keys",	"VIEW"	]
 [ "sys",	"objects",	"sys",	"dependency_columns_on_keys",	"VIEW"	]
 [ "sys",	"tables",	"sys",	"dependency_columns_on_keys",	"VIEW"	]
-[ "sys",	"columns",	"sys",	"dependency_columns_on_procdures",	"VIEW"	]
-[ "sys",	"dependencies",	"sys",	"dependency_columns_on_procdures",	"VIEW"	]
-[ "sys",	"functions",	"sys",	"dependency_columns_on_procdures",	"VIEW"	]
+[ "sys",	"columns",	"sys",	"dependency_columns_on_procedures",	"VIEW"	]
+[ "sys",	"dependencies",	"sys",	"dependency_columns_on_procedures",	"VIEW"	]
+[ "sys",	"functions",	"sys",	"dependency_columns_on_procedures",	"VIEW"	]
 [ "sys",	"columns",	"sys",	"dependency_columns_on_triggers",	"VIEW"	]
 [ "sys",	"dependencies",	"sys",	"dependency_columns_on_triggers",	"VIEW"	]
 [ "sys",	"tables",	"sys",	"dependency_columns_on_triggers",	"VIEW"	]
@@ -4076,8 +4083,8 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"tables",	"sys",	"dependency_columns_on_views",	"VIEW"	]
 [ "sys",	"dependencies",	"sys",	"dependency_functions_on_functions",	"VIEW"	]
 [ "sys",	"functions",	"sys",	"dependency_functions_on_functions",	"VIEW"	]
-[ "sys",	"dependencies",	"sys",	"dependency_functions_on_procdures",	"VIEW"	]
-[ "sys",	"functions",	"sys",	"dependency_functions_on_procdures",	"VIEW"	]
+[ "sys",	"dependencies",	"sys",	"dependency_functions_on_procedures",	"VIEW"	]
+[ "sys",	"functions",	"sys",	"dependency_functions_on_procedures",	"VIEW"	]
 [ "sys",	"dependencies",	"sys",	"dependency_functions_on_triggers",	"VIEW"	]
 [ "sys",	"functions",	"sys",	"dependency_functions_on_triggers",	"VIEW"	]
 [ "sys",	"triggers",	"sys",	"dependency_functions_on_triggers",	"VIEW"	]
@@ -4100,9 +4107,9 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"idxs",	"sys",	"dependency_tables_on_indexes",	"VIEW"	]
 [ "sys",	"keys",	"sys",	"dependency_tables_on_indexes",	"VIEW"	]
 [ "sys",	"tables",	"sys",	"dependency_tables_on_indexes",	"VIEW"	]
-[ "sys",	"dependencies",	"sys",	"dependency_tables_on_procdures",	"VIEW"	]
-[ "sys",	"functions",	"sys",	"dependency_tables_on_procdures",	"VIEW"	]
-[ "sys",	"tables",	"sys",	"dependency_tables_on_procdures",	"VIEW"	]
+[ "sys",	"dependencies",	"sys",	"dependency_tables_on_procedures",	"VIEW"	]
+[ "sys",	"functions",	"sys",	"dependency_tables_on_procedures",	"VIEW"	]
+[ "sys",	"tables",	"sys",	"dependency_tables_on_procedures",	"VIEW"	]
 [ "sys",	"dependencies",	"sys",	"dependency_tables_on_triggers",	"VIEW"	]
 [ "sys",	"tables",	"sys",	"dependency_tables_on_triggers",	"VIEW"	]
 [ "sys",	"triggers",	"sys",	"dependency_tables_on_triggers",	"VIEW"	]
@@ -4111,9 +4118,9 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"dependencies",	"sys",	"dependency_views_on_functions",	"VIEW"	]
 [ "sys",	"functions",	"sys",	"dependency_views_on_functions",	"VIEW"	]
 [ "sys",	"tables",	"sys",	"dependency_views_on_functions",	"VIEW"	]
-[ "sys",	"dependencies",	"sys",	"dependency_views_on_procdures",	"VIEW"	]
-[ "sys",	"functions",	"sys",	"dependency_views_on_procdures",	"VIEW"	]
-[ "sys",	"tables",	"sys",	"dependency_views_on_procdures",	"VIEW"	]
+[ "sys",	"dependencies",	"sys",	"dependency_views_on_procedures",	"VIEW"	]
+[ "sys",	"functions",	"sys",	"dependency_views_on_procedures",	"VIEW"	]
+[ "sys",	"tables",	"sys",	"dependency_views_on_procedures",	"VIEW"	]
 [ "sys",	"dependencies",	"sys",	"dependency_views_on_views",	"VIEW"	]
 [ "sys",	"tables",	"sys",	"dependency_views_on_views",	"VIEW"	]
 [ "sys",	"_tables",	"sys",	"describe_all_objects",	"VIEW"	]
@@ -4148,7 +4155,7 @@ drop function pcre_replace(string, string, string, string);
 % sys.s1,	sys.t1,	sys.c1,	sys.s2,	sys.t2,	.dt # table_name
 % name,	name,	name,	name,	name,	dependency_type_name # name
 % varchar,	varchar,	varchar,	varchar,	varchar,	varchar # type
-% 3,	16,	20,	3,	33,	4 # length
+% 3,	16,	20,	3,	34,	4 # length
 [ "sys",	"args",	"func_id",	"sys",	"commented_function_signatures",	"VIEW"	]
 [ "sys",	"args",	"inout",	"sys",	"commented_function_signatures",	"VIEW"	]
 [ "sys",	"args",	"number",	"sys",	"commented_function_signatures",	"VIEW"	]
@@ -4202,12 +4209,12 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"objects",	"id",	"sys",	"dependency_columns_on_keys",	"VIEW"	]
 [ "sys",	"objects",	"name",	"sys",	"dependency_columns_on_keys",	"VIEW"	]
 [ "sys",	"objects",	"nr",	"sys",	"dependency_columns_on_keys",	"VIEW"	]
-[ "sys",	"dependencies",	"depend_id",	"sys",	"dependency_columns_on_procdures",	"VIEW"	]
-[ "sys",	"dependencies",	"depend_type",	"sys",	"dependency_columns_on_procdures",	"VIEW"	]
-[ "sys",	"dependencies",	"id",	"sys",	"dependency_columns_on_procdures",	"VIEW"	]
-[ "sys",	"functions",	"id",	"sys",	"dependency_columns_on_procdures",	"VIEW"	]
-[ "sys",	"functions",	"name",	"sys",	"dependency_columns_on_procdures",	"VIEW"	]
-[ "sys",	"functions",	"type",	"sys",	"dependency_columns_on_procdures",	"VIEW"	]
+[ "sys",	"dependencies",	"depend_id",	"sys",	"dependency_columns_on_procedures",	"VIEW"	]
+[ "sys",	"dependencies",	"depend_type",	"sys",	"dependency_columns_on_procedures",	"VIEW"	]
+[ "sys",	"dependencies",	"id",	"sys",	"dependency_columns_on_procedures",	"VIEW"	]
+[ "sys",	"functions",	"id",	"sys",	"dependency_columns_on_procedures",	"VIEW"	]
+[ "sys",	"functions",	"name",	"sys",	"dependency_columns_on_procedures",	"VIEW"	]
+[ "sys",	"functions",	"type",	"sys",	"dependency_columns_on_procedures",	"VIEW"	]
 [ "sys",	"dependencies",	"depend_id",	"sys",	"dependency_columns_on_triggers",	"VIEW"	]
 [ "sys",	"dependencies",	"depend_type",	"sys",	"dependency_columns_on_triggers",	"VIEW"	]
 [ "sys",	"dependencies",	"id",	"sys",	"dependency_columns_on_triggers",	"VIEW"	]
@@ -4228,12 +4235,13 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"functions",	"name",	"sys",	"dependency_functions_on_functions",	"VIEW"	]
 [ "sys",	"functions",	"schema_id",	"sys",	"dependency_functions_on_functions",	"VIEW"	]
 [ "sys",	"functions",	"type",	"sys",	"dependency_functions_on_functions",	"VIEW"	]
-[ "sys",	"dependencies",	"depend_id",	"sys",	"dependency_functions_on_procdures",	"VIEW"	]
-[ "sys",	"dependencies",	"depend_type",	"sys",	"dependency_functions_on_procdures",	"VIEW"	]
-[ "sys",	"dependencies",	"id",	"sys",	"dependency_functions_on_procdures",	"VIEW"	]
-[ "sys",	"functions",	"id",	"sys",	"dependency_functions_on_procdures",	"VIEW"	]
-[ "sys",	"functions",	"name",	"sys",	"dependency_functions_on_procdures",	"VIEW"	]
-[ "sys",	"functions",	"type",	"sys",	"dependency_functions_on_procdures",	"VIEW"	]
+[ "sys",	"dependencies",	"depend_id",	"sys",	"dependency_functions_on_procedures",	"VIEW"	]
+[ "sys",	"dependencies",	"depend_type",	"sys",	"dependency_functions_on_procedures",	"VIEW"	]
+[ "sys",	"dependencies",	"id",	"sys",	"dependency_functions_on_procedures",	"VIEW"	]
+[ "sys",	"functions",	"id",	"sys",	"dependency_functions_on_procedures",	"VIEW"	]
+[ "sys",	"functions",	"name",	"sys",	"dependency_functions_on_procedures",	"VIEW"	]
+[ "sys",	"functions",	"schema_id",	"sys",	"dependency_functions_on_procedures",	"VIEW"	]
+[ "sys",	"functions",	"type",	"sys",	"dependency_functions_on_procedures",	"VIEW"	]
 [ "sys",	"dependencies",	"depend_id",	"sys",	"dependency_functions_on_triggers",	"VIEW"	]
 [ "sys",	"dependencies",	"depend_type",	"sys",	"dependency_functions_on_triggers",	"VIEW"	]
 [ "sys",	"dependencies",	"id",	"sys",	"dependency_functions_on_triggers",	"VIEW"	]
@@ -4287,12 +4295,12 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"idxs",	"type",	"sys",	"dependency_tables_on_indexes",	"VIEW"	]
 [ "sys",	"keys",	"name",	"sys",	"dependency_tables_on_indexes",	"VIEW"	]
 [ "sys",	"keys",	"table_id",	"sys",	"dependency_tables_on_indexes",	"VIEW"	]
-[ "sys",	"dependencies",	"depend_id",	"sys",	"dependency_tables_on_procdures",	"VIEW"	]
-[ "sys",	"dependencies",	"depend_type",	"sys",	"dependency_tables_on_procdures",	"VIEW"	]
-[ "sys",	"dependencies",	"id",	"sys",	"dependency_tables_on_procdures",	"VIEW"	]
-[ "sys",	"functions",	"id",	"sys",	"dependency_tables_on_procdures",	"VIEW"	]
-[ "sys",	"functions",	"name",	"sys",	"dependency_tables_on_procdures",	"VIEW"	]
-[ "sys",	"functions",	"type",	"sys",	"dependency_tables_on_procdures",	"VIEW"	]
+[ "sys",	"dependencies",	"depend_id",	"sys",	"dependency_tables_on_procedures",	"VIEW"	]
+[ "sys",	"dependencies",	"depend_type",	"sys",	"dependency_tables_on_procedures",	"VIEW"	]
+[ "sys",	"dependencies",	"id",	"sys",	"dependency_tables_on_procedures",	"VIEW"	]
+[ "sys",	"functions",	"id",	"sys",	"dependency_tables_on_procedures",	"VIEW"	]
+[ "sys",	"functions",	"name",	"sys",	"dependency_tables_on_procedures",	"VIEW"	]
+[ "sys",	"functions",	"type",	"sys",	"dependency_tables_on_procedures",	"VIEW"	]
 [ "sys",	"dependencies",	"depend_id",	"sys",	"dependency_tables_on_triggers",	"VIEW"	]
 [ "sys",	"dependencies",	"depend_type",	"sys",	"dependency_tables_on_triggers",	"VIEW"	]
 [ "sys",	"dependencies",	"id",	"sys",	"dependency_tables_on_triggers",	"VIEW"	]
@@ -4308,12 +4316,12 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"functions",	"id",	"sys",	"dependency_views_on_functions",	"VIEW"	]
 [ "sys",	"functions",	"name",	"sys",	"dependency_views_on_functions",	"VIEW"	]
 [ "sys",	"functions",	"type",	"sys",	"dependency_views_on_functions",	"VIEW"	]
-[ "sys",	"dependencies",	"depend_id",	"sys",	"dependency_views_on_procdures",	"VIEW"	]
-[ "sys",	"dependencies",	"depend_type",	"sys",	"dependency_views_on_procdures",	"VIEW"	]
-[ "sys",	"dependencies",	"id",	"sys",	"dependency_views_on_procdures",	"VIEW"	]
-[ "sys",	"functions",	"id",	"sys",	"dependency_views_on_procdures",	"VIEW"	]
-[ "sys",	"functions",	"name",	"sys",	"dependency_views_on_procdures",	"VIEW"	]
-[ "sys",	"functions",	"type",	"sys",	"dependency_views_on_procdures",	"VIEW"	]
+[ "sys",	"dependencies",	"depend_id",	"sys",	"dependency_views_on_procedures",	"VIEW"	]
+[ "sys",	"dependencies",	"depend_type",	"sys",	"dependency_views_on_procedures",	"VIEW"	]
+[ "sys",	"dependencies",	"id",	"sys",	"dependency_views_on_procedures",	"VIEW"	]
+[ "sys",	"functions",	"id",	"sys",	"dependency_views_on_procedures",	"VIEW"	]
+[ "sys",	"functions",	"name",	"sys",	"dependency_views_on_procedures",	"VIEW"	]
+[ "sys",	"functions",	"type",	"sys",	"dependency_views_on_procedures",	"VIEW"	]
 [ "sys",	"dependencies",	"depend_id",	"sys",	"dependency_views_on_views",	"VIEW"	]
 [ "sys",	"dependencies",	"depend_type",	"sys",	"dependency_views_on_views",	"VIEW"	]
 [ "sys",	"dependencies",	"id",	"sys",	"dependency_views_on_views",	"VIEW"	]
@@ -4627,7 +4635,7 @@ drop function pcre_replace(string, string, string, string);
 % sys.t,	sys.a,	.pc,	.g,	.p # table_name
 % name,	name,	privilege_code_name,	name,	grantable # name
 % varchar,	varchar,	varchar,	varchar,	int # type
-% 33,	6,	6,	7,	1 # length
+% 34,	6,	6,	7,	1 # length
 [ "_columns",	"public",	"SELECT",	NULL,	0	]
 [ "_tables",	"public",	"SELECT",	NULL,	0	]
 [ "args",	"public",	"SELECT",	NULL,	0	]
@@ -4641,12 +4649,12 @@ drop function pcre_replace(string, string, string, string);
 [ "dependency_columns_on_functions",	"public",	"SELECT",	"monetdb",	0	]
 [ "dependency_columns_on_indexes",	"public",	"SELECT",	"monetdb",	0	]
 [ "dependency_columns_on_keys",	"public",	"SELECT",	"monetdb",	0	]
-[ "dependency_columns_on_procdures",	"public",	"SELECT",	"monetdb",	0	]
+[ "dependency_columns_on_procedures",	"public",	"SELECT",	"monetdb",	0	]
 [ "dependency_columns_on_triggers",	"public",	"SELECT",	"monetdb",	0	]
 [ "dependency_columns_on_types",	"public",	"SELECT",	"monetdb",	0	]
 [ "dependency_columns_on_views",	"public",	"SELECT",	"monetdb",	0	]
 [ "dependency_functions_on_functions",	"public",	"SELECT",	"monetdb",	0	]
-[ "dependency_functions_on_procdures",	"public",	"SELECT",	"monetdb",	0	]
+[ "dependency_functions_on_procedures",	"public",	"SELECT",	"monetdb",	0	]
 [ "dependency_functions_on_triggers",	"public",	"SELECT",	"monetdb",	0	]
 [ "dependency_functions_on_types",	"public",	"SELECT",	"monetdb",	0	]
 [ "dependency_functions_on_views",	"public",	"SELECT",	"monetdb",	0	]
@@ -4656,12 +4664,12 @@ drop function pcre_replace(string, string, string, string);
 [ "dependency_tables_on_foreignkeys",	"public",	"SELECT",	"monetdb",	0	]
 [ "dependency_tables_on_functions",	"public",	"SELECT",	"monetdb",	0	]
 [ "dependency_tables_on_indexes",	"public",	"SELECT",	"monetdb",	0	]
-[ "dependency_tables_on_procdures",	"public",	"SELECT",	"monetdb",	0	]
+[ "dependency_tables_on_procedures",	"public",	"SELECT",	"monetdb",	0	]
 [ "dependency_tables_on_triggers",	"public",	"SELECT",	"monetdb",	0	]
 [ "dependency_tables_on_views",	"public",	"SELECT",	"monetdb",	0	]
 [ "dependency_types",	"public",	"SELECT",	"monetdb",	0	]
 [ "dependency_views_on_functions",	"public",	"SELECT",	"monetdb",	0	]
-[ "dependency_views_on_procdures",	"public",	"SELECT",	"monetdb",	0	]
+[ "dependency_views_on_procedures",	"public",	"SELECT",	"monetdb",	0	]
 [ "dependency_views_on_views",	"public",	"SELECT",	"monetdb",	0	]
 [ "describe_all_objects",	"public",	"SELECT",	"monetdb",	0	]
 [ "environment",	"public",	"SELECT",	"monetdb",	0	]
@@ -5419,7 +5427,6 @@ drop function pcre_replace(string, string, string, string);
 [ "newurl"	]
 [ "newurl"	]
 [ "next_value_for"	]
-[ "no_op"	]
 [ "not"	]
 [ "not_exist"	]
 [ "not_ilike"	]

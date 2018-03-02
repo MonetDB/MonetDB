@@ -147,3 +147,6 @@ pattern alter_set_table( sname:str, tnme:str, access:int)
 address SQLalter_set_table 
 comment "Catalog operation alter_set_table";
 
+pattern comment_on(objid:int, remark:str)
+address SQLcomment_on
+comment "Catalog operation comment_on";

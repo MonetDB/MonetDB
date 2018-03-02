@@ -2334,6 +2334,7 @@ stmt_catalog(backend *be, int type, stmt *args)
 	case DDL_ALTER_TABLE_ADD_TABLE:	q = newStmt(mb, sqlcatalogRef, alter_add_tableRef); break;
 	case DDL_ALTER_TABLE_DEL_TABLE:	q = newStmt(mb, sqlcatalogRef, alter_del_tableRef); break;
 	case DDL_ALTER_TABLE_SET_ACCESS:q = newStmt(mb, sqlcatalogRef, alter_set_tableRef); break;
+	case DDL_COMMENT_ON:	q = newStmt(mb, sqlcatalogRef, comment_onRef); break;
 	default:
 		showException(GDKout, SQL, "sql", "catalog operation unknown\n");
 	}

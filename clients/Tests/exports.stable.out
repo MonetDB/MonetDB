@@ -2025,6 +2025,7 @@ ssize_t color_fromstr(const char *colorStr, size_t *len, color **c);
 ssize_t color_tostr(char **colorStr, size_t *len, const color *c);
 str columnBindRef;
 str columnRef;
+str comment_onRef;
 str commitRef;
 str compileAllOptimizers(Client cntxt);
 str compileOptimizer(Client cntxt, const char *name);

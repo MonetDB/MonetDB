@@ -11,13 +11,6 @@ CREATE TABLE sys.comments (
 GRANT SELECT ON sys.comments TO PUBLIC;
 
 
-CREATE PROCEDURE sys.no_op()
-BEGIN
-    DECLARE dummy INTEGER;
-END;
--- do not grant to public
-
-
 -- This table used to be in 99_system.sql but we need the systemfunctions table
 -- in sys.describe_all_objects and sys.commented_function_signatures defined below.
 CREATE TABLE sys.systemfunctions (function_id INTEGER NOT NULL);

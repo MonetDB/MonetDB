@@ -86,6 +86,7 @@ typedef struct expression {
 #define GET_PSM_LEVEL(level)	(level>>8)
 
 /* todo make enum */
+/* ordering is important! see rel2bin_ddl() */
 #define DDL_OUTPUT	               1
 #define DDL_LIST	               2	
 #define DDL_PSM		               3	
@@ -132,6 +133,8 @@ typedef struct expression {
 #define DDL_ALTER_TABLE_ADD_TABLE  63
 #define DDL_ALTER_TABLE_DEL_TABLE  64
 #define DDL_ALTER_TABLE_SET_ACCESS 65
+
+#define DDL_COMMENT_ON             66
 
 #define DDL_EMPTY 100
 
