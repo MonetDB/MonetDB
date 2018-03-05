@@ -48,7 +48,7 @@ static PyObject *_connection_execute(Py_ConnectionObject *self, PyObject *args)
 		PyErr_Format(PyExc_Exception, "%s", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return NULL;
 	}
-	if (!self->mapped) {
+	if (!self->mapped || option_disable_fork) {
 		// This is not a mapped process, so we can just directly execute the
 		// query here
 		PyObject *result;

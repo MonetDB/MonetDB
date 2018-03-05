@@ -25,7 +25,7 @@
 #endif
 
 const char *fork_disableflag = "disable_fork";
-static bool option_disable_fork = false;
+bool option_disable_fork = false;
 
 static PyObject *marshal_module = NULL;
 PyObject *marshal_loads = NULL;
