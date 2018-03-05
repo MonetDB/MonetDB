@@ -28,3 +28,5 @@ truncate_empty_table.Bug-6544
 sqlitelogictest-in-query.Bug-6545
 sqlitelogictest-in-with-division.Bug-6546
 ilike.Bug-6547
+sqlitelogictest-case-coalesce.Bug-6550
+sqlitelogictest-wrong-cast-null.Bug-6551
