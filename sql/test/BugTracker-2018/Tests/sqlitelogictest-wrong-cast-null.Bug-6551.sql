@@ -1,0 +1,1 @@
+SELECT 0 * + 77 * CAST ( NULL AS INTEGER ) AS col2;

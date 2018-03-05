@@ -4,13 +4,6 @@
 --
 -- Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
-CREATE TABLE sys.comments (
-        id INTEGER NOT NULL PRIMARY KEY,
-        remark VARCHAR(65000) NOT NULL
-);
-GRANT SELECT ON sys.comments TO PUBLIC;
-
-
 -- This table used to be in 99_system.sql but we need the systemfunctions table
 -- in sys.describe_all_objects and sys.commented_function_signatures defined below.
 CREATE TABLE sys.systemfunctions (function_id INTEGER NOT NULL);

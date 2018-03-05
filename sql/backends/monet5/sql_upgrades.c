@@ -975,6 +975,21 @@ sql_update_mar2018(Client c, mvc *sql)
 		throw(SQL, "sql_update_mar2018", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	s = mvc_bind_schema(sql, "sys");
 
+	t = mvc_create_table(sql, s, "comments", tt_table, 1, SQL_PERSIST, 0, -1);
+	sql_column *col = mvc_create_column_(sql, t, "id", "int", 32);
+	sql_key *k = sql_trans_create_ukey(sql->session->tr, t, "comments_id_pkey", pkey);
+	k = sql_trans_create_kc(sql->session->tr, k, col);
+	k = sql_trans_key_done(sql->session->tr, k);
+	sql_trans_create_dependency(sql->session->tr, col->base.id, k->idx->base.id, INDEX_DEPENDENCY);
+	col = mvc_create_column_(sql, t, "remark", "varchar", 65000);
+	sql_trans_alter_null(sql->session->tr, col, 0);
+
+	sql_table *privs = mvc_bind_table(sql, s, "privileges");
+	int pub = ROLE_PUBLIC;
+	int p = PRIV_SELECT;
+	int zero = 0;
+	table_funcs.table_insert(sql->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
+
 	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
 
 	/* 21_dependency_views.sql */
@@ -1406,11 +1421,6 @@ sql_update_mar2018(Client c, mvc *sql)
 
 	/* 97_comments */
 	pos += snprintf(buf + pos, bufsize - pos,
-			"CREATE TABLE sys.comments (\n"
-			"        id INTEGER NOT NULL PRIMARY KEY,\n"
-			"        remark VARCHAR(65000) NOT NULL\n"
-			");\n"
-			"GRANT SELECT ON sys.comments TO PUBLIC;\n"
 			"CREATE FUNCTION sys.function_type_keyword(ftype INT)\n"
 			"RETURNS VARCHAR(20)\n"
 			"BEGIN\n"
