@@ -883,7 +883,7 @@ has_whitespace(const char *s)
 str
 mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, char *sep, char *rsep, char *ssep, char *ns, lng sz, lng offset, int locked, int best)
 {
-	int i = 0;
+	int i = 0, j;
 	node *n;
 	Tablet as;
 	Column *fmt;
@@ -950,6 +950,17 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			fmt[i].extra = col;
 			fmt[i].len = ATOMlen(fmt[i].adt, ATOMnilptr(fmt[i].adt));
 			fmt[i].data = GDKzalloc(fmt[i].len);
+			if(fmt[i].data == NULL || fmt[i].type == NULL) {
+				for (j = 0; j < i; j++) {
+					GDKfree(fmt[j].type);
+					GDKfree(fmt[j].data);
+					BBPunfix(fmt[j].c->batCacheid);
+				}
+				GDKfree(fmt[i].type);
+				GDKfree(fmt[i].data);
+				sql_error(m, 500, "failed to allocate space for column");
+				return NULL;
+			}
 			fmt[i].c = NULL;
 			fmt[i].ws = !has_whitespace(fmt[i].sep);
 			fmt[i].quote = ssep ? ssep[0] : 0;
@@ -968,8 +979,17 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 
 			if (locked) {
 				BAT *b = store_funcs.bind_col(m->session->tr, col, RDONLY);
-				if (b == NULL)
+				if (b == NULL) {
+					for (j = 0; j < i; j++) {
+						GDKfree(fmt[j].type);
+						GDKfree(fmt[j].data);
+						BBPunfix(fmt[j].c->batCacheid);
+					}
+					GDKfree(fmt[i].type);
+					GDKfree(fmt[i].data);
 					sql_error(m, 500, "failed to bind to table column");
+					return NULL;
+				}
 
 				HASHdestroy(b);
 
@@ -977,8 +997,11 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 				cnt = BATcount(b);
 				if (sz > 0 && BATcapacity(b) < (BUN) sz) {
 					if (BATextend(fmt[i].c, (BUN) sz) != GDK_SUCCEED) {
-						for (i--; i >= 0; i--)
-							BBPunfix(fmt[i].c->batCacheid);
+						for (j = 0; j <= i; j++) {
+							GDKfree(fmt[j].type);
+							GDKfree(fmt[j].data);
+							BBPunfix(fmt[j].c->batCacheid);
+						}
 						sql_error(m, 500, "failed to allocate space for column");
 						return NULL;
 					}
@@ -992,6 +1015,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 				(best || !as.error))) {
 				*bats = (BAT**) GDKzalloc(sizeof(BAT *) * as.nr_attrs);
 				if ( *bats == NULL){
+					sql_error(m, 500, "failed to allocate space for column");
 					TABLETdestroy_format(&as);
 					return NULL;
 				}
@@ -1140,8 +1164,8 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 
 	/* write header, query type: Q_PREPARE */
 	if (mnstr_printf(out, "&5 %d %d 6 %d\n"	/* TODO: add type here: r(esult) or u(pdate) */
-			 "%% .prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare # table_name\n" "%% type,\tdigits,\tscale,\tschema,\ttable,\tcolumn # name\n" "%% varchar,\tint,\tint,\tstr,\tstr,\tstr # type\n" "%% " SZFMT ",\t%d,\t%d,\t"
-			 SZFMT ",\t" SZFMT ",\t" SZFMT " # length\n", q->id, nrows, nrows, len1, len2, len3, len4, len5, len6) < 0) {
+			 "%% .prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare,\t.prepare # table_name\n" "%% type,\tdigits,\tscale,\tschema,\ttable,\tcolumn # name\n" "%% varchar,\tint,\tint,\tstr,\tstr,\tstr # type\n" "%% %zu,\t%d,\t%d,\t"
+			 "%zu,\t%zu,\t%zu # length\n", q->id, nrows, nrows, len1, len2, len3, len4, len5, len6) < 0) {
 		return -1;
 	}
 
@@ -1677,7 +1701,7 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 			} else {
 				size_t atom_size = ATOMsize(mtype);
 				if (c->type.type->eclass == EC_DEC) {
-					atom_size = ATOMsize(ATOMstorage(mtype));
+					atom_size = ATOMsize(mtype);
 				}
 				if (c->type.type->eclass == EC_TIMESTAMP) {
 					// convert timestamp values to epoch
@@ -1708,40 +1732,40 @@ mvc_export_table_prot10(backend *b, stream *s, res_table *t, BAT *order, BUN off
 				} else {
 					if (mnstr_byteorder(s) != 1234) {
 						size_t j = 0;
-						switch(ATOMstorage(mtype)) {
-							case TYPE_sht: {
-								short *bufptr = (short*) buf;
-								short *exported_values = (short*) Tloc(iterators[i].b, srow);
-								for(j = 0; j < (row - srow); j++) {
-									bufptr[j] = short_int_SWAP(exported_values[j]);
-								}
-								break;
+						switch (ATOMstorage(mtype)) {
+						case TYPE_sht: {
+							short *bufptr = (short*) buf;
+							short *exported_values = (short*) Tloc(iterators[i].b, srow);
+							for(j = 0; j < (row - srow); j++) {
+								bufptr[j] = short_int_SWAP(exported_values[j]);
 							}
-							case TYPE_int: {
-								int *bufptr = (int*) buf;
-								int *exported_values = (int*) Tloc(iterators[i].b, srow);
-								for(j = 0; j < (row - srow); j++) {
-									bufptr[j] = normal_int_SWAP(exported_values[j]);
-								}
-								break;
+							break;
+						}
+						case TYPE_int: {
+							int *bufptr = (int*) buf;
+							int *exported_values = (int*) Tloc(iterators[i].b, srow);
+							for(j = 0; j < (row - srow); j++) {
+								bufptr[j] = normal_int_SWAP(exported_values[j]);
 							}
-							case TYPE_lng: {
-								lng *bufptr = (lng*) buf;
-								lng *exported_values = (lng*) Tloc(iterators[i].b, srow);
-								for(j = 0; j < (row - srow); j++) {
-									bufptr[j] = long_long_SWAP(exported_values[j]);
-								}
-								break;
+							break;
+						}
+						case TYPE_lng: {
+							lng *bufptr = (lng*) buf;
+							lng *exported_values = (lng*) Tloc(iterators[i].b, srow);
+							for(j = 0; j < (row - srow); j++) {
+								bufptr[j] = long_long_SWAP(exported_values[j]);
 							}
+							break;
+						}
 #ifdef HAVE_HGE
-							case TYPE_hge: {
-								hge *bufptr = (hge*) buf;
-								hge *exported_values = (hge*) Tloc(iterators[i].b, srow);
-								for(j = 0; j < (row - srow); j++) {
-									bufptr[j] = huge_int_SWAP(exported_values[j]);
-								}
-								break;
+						case TYPE_hge: {
+							hge *bufptr = (hge*) buf;
+							hge *exported_values = (hge*) Tloc(iterators[i].b, srow);
+							for(j = 0; j < (row - srow); j++) {
+								bufptr[j] = huge_int_SWAP(exported_values[j]);
 							}
+							break;
+						}
 #endif
 						}
 					} else {
@@ -1807,6 +1831,12 @@ mvc_export_table(backend *b, stream *s, res_table *t, BAT *order, BUN offset, BU
 	as.offset = offset;
 	fmt = as.format = (Column *) GDKzalloc(sizeof(Column) * (as.nr_attrs + 1));
 	tres = GDKzalloc(sizeof(struct time_res) * (as.nr_attrs));
+	if(fmt == NULL || tres == NULL) {
+		GDKfree(fmt);
+		GDKfree(tres);
+		sql_error(m, 500, "failed to allocate space");
+		return -1;
+	}
 
 	fmt[0].c = NULL;
 	fmt[0].sep = (csv) ? btag : "";
@@ -2129,6 +2159,8 @@ mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng star
 	    !mvc_send_lng(s, starttime > 0 ? GDKusec() - starttime : 0) ||
 	    mnstr_write(s, " ", 1, 1) != 1 ||
 	    !mvc_send_lng(s, maloptimizer) ||
+	    mnstr_write(s, " ", 1, 1) != 1 ||
+	    !mvc_send_lng(s, m->Topt) ||
 	    mnstr_write(s, "\n", 1, 1) != 1)
 		return -1;
 	if (mvc_export_warning(s, w) != 1)
@@ -2368,6 +2400,9 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 	if (mnstr_write(s, " ", 1, 1) != 1 || !mvc_send_lng(s, maloptimizer))
 		return -1;
 
+	if (mnstr_write(s, " ", 1, 1) != 1 || !mvc_send_lng(s, m->Topt))
+		return -1;
+
 	if (mnstr_write(s, "\n% ", 3, 1) != 1)
 		return -1;
 	for (i = 0; i < t->nr_cols; i++) {
@@ -2604,7 +2639,10 @@ mvc_result_table(mvc *m, oid query_id, int nr_cols, int type, BAT *order)
 {
 	res_table *t = res_table_create(m->session->tr, m->result_id++, query_id, nr_cols, type, m->results, order);
 	m->results = t;
-	return t->id;
+	if(t)
+		return t->id;
+	else
+		return -1;
 }
 
 int

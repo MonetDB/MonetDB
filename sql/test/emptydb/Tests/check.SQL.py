@@ -67,7 +67,7 @@ create function pcre_replace(origin string, pat string, repl string, flags strin
 -- schemas
 select name, authorization, owner, system from sys.schemas order by name;
 -- _tables
-select s.name, t.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(t.query, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, t.type, t.system, t.commit_action, t.access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id order by s.name, t.name;
+select s.name, t.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(t.query, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, tt.table_type_name as type, t.system, ca.action_name as commit_action, at.value as access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id left outer join (values (0, 'COMMIT'), (1, 'DELETE'), (2, 'PRESERVE'), (3, 'DROP'), (4, 'ABORT')) as ca (action_id, action_name) on t.commit_action = ca.action_id left outer join (values (0, 'WRITABLE'), (1, 'READONLY'), (2, 'APPENDONLY')) as at (id, value) on t.access = at.id order by s.name, t.name;
 -- _columns
 select t.name, c.name, c.type, c.type_digits, c.type_scale, c."default", c."null", c.number, c.storage from sys._tables t, sys._columns c where t.id = c.table_id order by t.name, c.number;
 -- external functions that don't reference existing MAL function (should be empty)
@@ -84,71 +84,61 @@ MAXARGS = 16
 # columns of the args table we're interested in
 args = ['name', 'type', 'type_digits', 'type_scale', 'inout']
 
-out += "with\n"
-for i in range(0, MAXARGS + 1):
-    out += "arg%d (id" % i
-    for j in range(0, i + 1):
-        for k in ['id'] + args:
-            out += ", %s%d" % (k, j)
-    out += ") as (select "
-    if i == 0:
-        out += "f.id"
-        for k in ['id'] + args:
-            out += ", a%d.%s" % (i, k)
-        out += " from sys.functions f left outer join args a%d on a%d.func_id = f.id" % (i, i)
-    else:
-        out += "arg%d.*" % (i - 1)
-        for k in ['id'] + args:
-            out += ", a%d.%s" % (i, k)
-        out += " from arg%d left outer join args a%d on a%d.func_id = arg%d.id" % (i - 1, i, i, i - 1)
-    out += " and a%d.number = %d),\n" % (i, i)
-out += "funcs as (select f.id, f.name, f.func, f.mod, f.language, ft.type, f.side_effect, f.varres, f.vararg, f.schema_id from sys.functions f left outer join (values ('function',1),('procedure',2),('aggregate',3),('filter function',4),('table function',5),('analytic function',6),('loader function',7)) as ft (type,id) on f.type = ft.id)\n"
-out += r"select s.name, funcs.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(funcs.func, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, funcs.mod, funcs.language, funcs.type, funcs.side_effect, funcs.varres, funcs.vararg"
+out += r"select s.name, f.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, f.mod, fl.language_name, ft.function_type_name, f.side_effect, f.varres, f.vararg"
 for i in range(0, MAXARGS):
-    for k in args:
-        if k == 'inout':
-            out += ", case arg%d.%s%d when 1 then 'in' when 0 then 'out' else null end as %s%d" % (MAXARGS, k, i, k, i)
-        else:
-            out += ", arg%d.%s%d" % (MAXARGS, k, i)
-out += " from arg%d, sys.schemas s, funcs where s.id = funcs.schema_id and funcs.id = arg%d.id order by s.name, funcs.name, query" % (MAXARGS, MAXARGS)
+    for a in args[:-1]:
+        out += ", a%d.%s as %s%d" % (i, a, a, i)
+    out += ", case a%d.inout when 0 then 'out' when 1 then 'in' end as inout%d" % (i, i)
+out += " from sys.functions f"
+out += " left outer join sys.schemas s on f.schema_id = s.id"
+out += " left outer join sys.function_types as ft on f.type = ft.function_type_id"
+out += " left outer join sys.function_languages fl on f.language = fl.language_id"
 for i in range(0, MAXARGS):
-    for k in args:
-        out += ", arg%d.%s%d" % (MAXARGS, k, i)
-
+    out += " left outer join sys.args a%d on a%d.func_id = f.id and a%d.number = %d" % (i, i, i, i)
+out += " order by s.name, f.name, query"
+for i in range(0, MAXARGS):
+    for a in args:
+        out += ", %s%d" % (a, i)
 out += ";"
 
 # substring used a bunch of time in the queries below
-depvals = "(values (1, 'SCHEMA_DEPENDENCY'), (2, 'TABLE_DEPENDENCY'), (3, 'COLUMN_DEPENDENCY'), (4, 'KEY_DEPENDENCY'), (5, 'VIEW_DEPENDENCY'), (6, 'USER_DEPENDENCY'), (7, 'FUNC_DEPENDENCY'), (8, 'TRIGGER_DEPENDENCY'), (9, 'OWNER_DEPENDENCY'), (10, 'INDEX_DEPENDENCY'), (11, 'FKEY_DEPENDENCY'), (12, 'SEQ_DEPENDENCY'), (13, 'PROC_DEPENDENCY'), (14, 'BEDROPPED_DEPENDENCY'), (15, 'TYPE_DEPENDENCY')) as dt (id, name)"
 out += '''
 -- auths
 select name, grantor from sys.auths;
+-- comments
+select s.name, c.remark from sys.comments c, sys.schemas s where s.id = c.id order by s.name;
+select s.name, t.name, c.remark from sys.schemas s, sys._tables t, sys.comments c where s.id = t.schema_id and t.id = c.id order by s.name, t.name;
+select s.name, t.name, col.name, c.remark from sys.schemas s, sys._tables t, sys._columns col, sys.comments c where s.id = t.schema_id and t.id = col.table_id and col.id = c.id order by s.name, t.name, col.name;
+select s.name, t.name, i.name, c.remark from sys.schemas s, sys._tables t, sys.idxs i, sys.comments c where s.id = t.schema_id and t.id = i.table_id and i.id = c.id order by s.name, t.name, i.name;
+select s.name, q.name, c.remark from sys.schemas s, sys.sequences q, sys.comments c where s.id = q.schema_id and q.id = c.id order by s.name, q.name;
+select s.name, f.name, c.remark from sys.schemas s, sys.functions f, sys.comments c where s.id = f.schema_id and f.id = c.id order by s.name, f.name;
 -- db_user_info
 select u.name, u.fullname, s.name from sys.db_user_info u left outer join sys.schemas s on u.default_schema = s.id order by u.name;
 -- dependencies
-select s1.name, f1.name, s2.name, f2.name, dt.name from %s, sys.dependencies d, sys.functions f1, sys.functions f2, sys.schemas s1, sys.schemas s2 where d.depend_type = dt.id and d.id = f1.id and d.depend_id = f2.id and f1.schema_id = s1.id and f2.schema_id = s2.id order by s2.name, f2.name, s1.name, f1.name;
-select s1.name, t.name, s2.name, f.name, dt.name from %s, sys.dependencies d, sys._tables t, sys.schemas s1, sys.functions f, sys.schemas s2 where d.depend_type = dt.id and d.id = t.id and d.depend_id = f.id and t.schema_id = s1.id and f.schema_id = s2.id order by s2.name, f.name, s1.name, t.name;
-select s1.name, t.name, c.name, s2.name, f.name, dt.name from %s, sys.dependencies d, sys._columns c, sys._tables t, sys.schemas s1, sys.functions f, sys.schemas s2 where d.depend_type = dt.id and d.id = c.id and d.depend_id = f.id and c.table_id = t.id and t.schema_id = s1.id and f.schema_id = s2.id order by s2.name, f.name, s1.name, t.name, c.name;
-select s1.name, f1.name, s2.name, t2.name, dt.name from %s, schemas s1, functions f1, schemas s2, _tables t2, dependencies d where d.depend_type = dt.id and d.id = f1.id and f1.schema_id = s1.id and d.depend_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, s1.name, f1.name;
-select s1.name, t1.name, s2.name, t2.name, dt.name from %s, schemas s1, _tables t1, schemas s2, _tables t2, dependencies d where d.depend_type = dt.id and d.id = t1.id and t1.schema_id = s1.id and d.depend_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, s1.name, t1.name;
-select s1.name, t1.name, c1.name, s2.name, t2.name, dt.name from %s, schemas s1, _tables t1, _columns c1, schemas s2, _tables t2, dependencies d where d.depend_type = dt.id and d.id = c1.id and c1.table_id = t1.id and t1.schema_id = s1.id and d.depend_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, s1.name, t1.name;
-select s1.name, t1.name, c1.name, s2.name, t2.name, k2.name, dt.name from %s, dependencies d, _tables t1, _tables t2, schemas s1, schemas s2, _columns c1, keys k2 where d.depend_type = dt.id and d.id = c1.id and d.depend_id = k2.id and c1.table_id = t1.id and t1.schema_id = s1.id and k2.table_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, k2.name, s1.name, t1.name, c1.name;
-select s1.name, t1.name, c1.name, s2.name, t2.name, i2.name, dt.name from %s, dependencies d, _tables t1, _tables t2, schemas s1, schemas s2, _columns c1, idxs i2 where d.depend_type = dt.id and d.id = c1.id and d.depend_id = i2.id and c1.table_id = t1.id and t1.schema_id = s1.id and i2.table_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, i2.name, s1.name, t1.name, c1.name;
-select t.systemname, t.sqlname, s.name, f.name, dt.name from %s, types t, functions f, schemas s, dependencies d where d.depend_type = dt.id and d.id = t.id and d.depend_id = f.id and f.schema_id = s.id order by s.name, f.name, t.systemname, t.sqlname;
+select s1.name, f1.name, s2.name, f2.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, sys.functions f1, sys.functions f2, sys.schemas s1, sys.schemas s2 where d.id = f1.id and d.depend_id = f2.id and f1.schema_id = s1.id and f2.schema_id = s2.id order by s2.name, f2.name, s1.name, f1.name;
+select s1.name, t.name, s2.name, f.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, sys._tables t, sys.schemas s1, sys.functions f, sys.schemas s2 where d.id = t.id and d.depend_id = f.id and t.schema_id = s1.id and f.schema_id = s2.id order by s2.name, f.name, s1.name, t.name;
+select s1.name, t.name, c.name, s2.name, f.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, sys._columns c, sys._tables t, sys.schemas s1, sys.functions f, sys.schemas s2 where d.id = c.id and d.depend_id = f.id and c.table_id = t.id and t.schema_id = s1.id and f.schema_id = s2.id order by s2.name, f.name, s1.name, t.name, c.name;
+select s1.name, f1.name, s2.name, t2.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, schemas s1, functions f1, schemas s2, _tables t2 where d.id = f1.id and f1.schema_id = s1.id and d.depend_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, s1.name, f1.name;
+select s1.name, t1.name, s2.name, t2.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, schemas s1, _tables t1, schemas s2, _tables t2 where d.id = t1.id and t1.schema_id = s1.id and d.depend_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, s1.name, t1.name;
+select s1.name, t1.name, c1.name, s2.name, t2.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, schemas s1, _tables t1, _columns c1, schemas s2, _tables t2 where d.id = c1.id and c1.table_id = t1.id and t1.schema_id = s1.id and d.depend_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, s1.name, t1.name, c1.name;
+select s1.name, t1.name, c1.name, s2.name, t2.name, k2.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, _tables t1, _tables t2, schemas s1, schemas s2, _columns c1, keys k2 where d.id = c1.id and d.depend_id = k2.id and c1.table_id = t1.id and t1.schema_id = s1.id and k2.table_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, k2.name, s1.name, t1.name, c1.name;
+select s1.name, t1.name, c1.name, s2.name, t2.name, i2.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, _tables t1, _tables t2, schemas s1, schemas s2, _columns c1, idxs i2 where d.id = c1.id and d.depend_id = i2.id and c1.table_id = t1.id and t1.schema_id = s1.id and i2.table_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, i2.name, s1.name, t1.name, c1.name;
+select t.systemname, t.sqlname, s.name, f.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, types t, functions f, schemas s where d.id = t.id and d.depend_id = f.id and f.schema_id = s.id order by s.name, f.name, t.systemname, t.sqlname;
 -- idxs
-select t.name, i.name, i.type from sys.idxs i left outer join sys._tables t on t.id = i.table_id order by t.name, i.name;
+select t.name, i.name, it.index_type_name from sys.idxs i left outer join sys._tables t on t.id = i.table_id left outer join sys.index_types as it on i.type = it.index_type_id order by t.name, i.name;
 -- keys
-with x as (select k.id as id, t.name as tname, k.name as kname, k.type as type, k.rkey as rkey, k.action as action from sys.keys k left outer join sys._tables t on t.id = k.table_id) select x.tname, x.kname, x.type, y.kname, x.action from x left outer join x y on x.rkey = y.id order by x.tname, x.kname;
+select t.name, k.name, kt.key_type_name, k2.name, k.action from sys.keys k left outer join sys.keys k2 on k.rkey = k2.id left outer join sys._tables t on k.table_id = t.id left outer join sys.key_types kt on k.type = kt.key_type_id order by t.name, k.name;
 -- objects
 select name, nr from sys.objects order by name, nr;
 -- privileges
 --  schemas
 select s.name, u.name from sys.schemas s, sys.users u where s.id = u.default_schema order by s.name, u.name;
 --  tables
-select t.name, a.name, p.privileges, g.name, p.grantable from sys._tables t, sys.privileges p left outer join sys.auths g on p.grantor = g.id, sys.auths a where t.id = p.obj_id and p.auth_id = a.id order by t.name, a.name;
+select t.name, a.name, pc.privilege_code_name, g.name, p.grantable from sys._tables t, sys.privileges p left outer join sys.auths g on p.grantor = g.id left outer join sys.privilege_codes pc on p.privileges = pc.privilege_code_id, sys.auths a where t.id = p.obj_id and p.auth_id = a.id order by t.name, a.name;
 --  columns
-select t.name, c.name, a.name, p.privileges, g.name, p.grantable from sys._tables t, sys._columns c, sys.privileges p left outer join sys.auths g on p.grantor = g.id, sys.auths a where c.id = p.obj_id and c.table_id = t.id and p.auth_id = a.id order by t.name, c.name, a.name;
+select t.name, c.name, a.name, pc.privilege_code_name, g.name, p.grantable from sys._tables t, sys._columns c, sys.privileges p left outer join sys.auths g on p.grantor = g.id left outer join sys.privilege_codes pc on p.privileges = pc.privilege_code_id, sys.auths a where c.id = p.obj_id and c.table_id = t.id and p.auth_id = a.id order by t.name, c.name, a.name;
 --  functions
-select f.name, a.name, p.privileges, g.name, p.grantable from sys.functions f, sys.privileges p left outer join sys.auths g on p.grantor = g.id, sys.auths a where f.id = p.obj_id and p.auth_id = a.id order by f.name, a.name;
+select f.name, a.name, pc.privilege_code_name, g.name, p.grantable from sys.functions f, sys.privileges p left outer join sys.auths g on p.grantor = g.id left outer join sys.privilege_codes pc on p.privileges = pc.privilege_code_id, sys.auths a where f.id = p.obj_id and p.auth_id = a.id order by f.name, a.name;
 -- sequences
 select s.name, q.name, q.start, q.minvalue, q.maxvalue, q.increment, q.cacheinc, q.cycle from sys.sequences q left outer join sys.schemas s on q.schema_id = s.id order by s.name, q.name;
 -- statistics (expect empty)
@@ -158,9 +148,9 @@ select count(*) from sys.storagemodelinput;
 -- systemfunctions
 select f.name from sys.systemfunctions s left outer join sys.functions f on s.function_id = f.id order by f.name;
 -- triggers
-select t.name, g.name, g.time, g.orientation, g.event, g.old_name, g.new_name, g.condition, g.statement from sys.triggers g left outer join sys._tables t on g.table_id = t.id order by t.name, g.name;
+select t.name, g.name, case g.time when 0 then 'BEFORE' when 1 then 'AFTER' when 2 then 'INSTEAD OF' end as time, case g.orientation when 0 then 'ROW' when 1 then 'STATEMENT' end as orientation, case g.event when 0 then 'insert' when 1 then 'DELETE' when 2 then 'UPDATE' end as event, g.old_name, g.new_name, g.condition, g.statement from sys.triggers g left outer join sys._tables t on g.table_id = t.id order by t.name, g.name;
 -- types
-select s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, t.eclass from sys.types t left outer join sys.schemas s on s.id = t.schema_id order by s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, t.eclass;
+select s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, et.value as eclass from sys.types t left outer join sys.schemas s on s.id = t.schema_id left outer join (values (0, 'ANY'), (1, 'TABLE'), (2, 'BIT'), (3, 'CHAR'), (4, 'STRING'), (5, 'BLOB'), (6, 'POS'), (7, 'NUM'), (8, 'MONTH'), (9, 'SEC'), (10, 'DEC'), (11, 'FLT'), (12, 'TIME'), (13, 'DATE'), (14, 'TIMESTAMP'), (15, 'GEOM'), (16, 'EXTERNAL')) as et (id, value) on t.eclass = et.id order by s.name, t.systemname, t.sqlname, t.digits, t.scale, t.radix, t.eclass;
 -- user_role
 select a1.name, a2.name from sys.auths a1, sys.auths a2, sys.user_role ur where a1.id = ur.login_id and a2.id = ur.role_id order by a1.name, a2.name;
 -- keywords
@@ -171,7 +161,7 @@ select table_type_id, table_type_name from sys.table_types order by table_type_i
 select dependency_type_id, dependency_type_name from sys.dependency_types order by dependency_type_id, dependency_type_name;
 -- drop helper function
 drop function pcre_replace(string, string, string, string);
-''' % ((depvals,)*9)
+'''
 
 sys.stdout.write(out)
 

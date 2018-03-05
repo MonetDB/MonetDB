@@ -17,10 +17,11 @@
 #include "monetdb_config.h"
 #include "xml.h"
 #include "mal_interpreter.h"
+
 #ifdef HAVE_LIBXML
 #include <libxml/parser.h>
 #include <libxml/xmlmemory.h>
-#endif
+
 /* The xml atom is used to represent XML data.  It is implemented as a
    subtype of str.  The first character of the string representation
    indicates the type of XML data.  There are three possibilities:
@@ -29,7 +30,6 @@
    * A - XML name/attribute pair.
 */
 
-#ifdef HAVE_LIBXML
 size_t
 XMLquotestring(const char *s, char *buf, size_t len)
 {
@@ -707,7 +707,7 @@ str XMLxml2str(str *s, xml *x) {
 	(void) x;
 	return GDKstrdup(NO_LIBXML_FATAL);
 }
-str XMLstr2xml(xml *x, str *s) {
+str XMLstr2xml(xml *x, const char **s) {
 	(void) s;
 	(void) x;
 	return GDKstrdup(NO_LIBXML_FATAL);

@@ -36,6 +36,9 @@
 #include "controlrunner.h"
 #include "multiplex-funnel.h"
 
+#if !defined(HAVE_ACCEPT4) || !defined(SOCK_CLOEXEC)
+#define accept4(sockfd, addr, addrlen, flags)	accept(sockfd, addr, addrlen)
+#endif
 
 static void
 leavedb(char *name)
@@ -498,7 +501,7 @@ static void ctl_handle_client(
 				} while(1);
 				if (e != NO_ERR) {
 					Mfprintf(_mero_ctlerr, "%s: invalid multiplex-funnel "
-							"specification '%s': %s at char " SZFMT "\n",
+							"specification '%s': %s at char %zu\n",
 							origin, p, getErrMsg(e), (size_t)(r - p));
 					len = snprintf(buf2, sizeof(buf2),
 							"invalid pattern: %s\n", getErrMsg(e));
@@ -1011,7 +1014,7 @@ controlRunner(void *d)
 			continue;
 		}
 
-		if ((msgsock = accept(usock, (SOCKPTR) 0, (socklen_t *) 0)) == -1) {
+		if ((msgsock = accept4(usock, (SOCKPTR) 0, (socklen_t *) 0, SOCK_CLOEXEC)) == -1) {
 			if (_mero_keep_listening == 0)
 				break;
 			if (errno != EINTR) {
@@ -1020,7 +1023,9 @@ controlRunner(void *d)
 			}
 			continue;
 		}
-		fcntl(msgsock, F_SETFD, FD_CLOEXEC);
+#if defined(HAVE_FCNTL) && (!defined(SOCK_CLOEXEC) || !defined(HAVE_ACCEPT4))
+		(void) fcntl(msgsock, F_SETFD, FD_CLOEXEC);
+#endif
 
 		if (pthread_create(&tid, NULL, handle_client, &msgsock) != 0)
 			closesocket(msgsock);

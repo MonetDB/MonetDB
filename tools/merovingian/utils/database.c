@@ -36,7 +36,7 @@ char* db_validname(char *dbname) {
 		   )
 		{
 			snprintf(buf, sizeof(buf), "invalid character "
-					"'%c' at " SZFMT " in database name '%s'",
+					"'%c' at %zu in database name '%s'",
 					dbname[c], c, dbname);
 			return(strdup(buf));
 		}

@@ -24,6 +24,7 @@ lib_MonetODBC = {
 	ODBCError.c \
 	ODBCError.h \
 	ODBCGlobal.h \
+	ODBCQueries.h \
 	ODBCStmt.c \
 	ODBCStmt.h \
 	ODBCUtil.c \

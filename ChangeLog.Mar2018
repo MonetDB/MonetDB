@@ -1,0 +1,40 @@
+# ChangeLog file for devel
+# This file is updated with Maddlog
+
+* Wed Feb 14 2018 Stefan Manegold <Stefan.Manegold@cwi.nl>
+- mclient's executing time profiling options and output format have
+  been changed. Instead of implicitly via the "--interactive"/"-i"
+  option (or when using and interactive mclient console), execution time
+  profiling is now controlled via an explicit "--timer=timermode"/"-t
+  timermode" command-line option, or a "\t timermode" command in the
+  interactive mclient console. The default (also in the interactive
+  mclient console) is now timermode "none", i.e., no timing information
+  is given. Timermode "clock" activates client-side wall-clock timing
+  ("clk") in "human-friendly" format much like the interactive mode did
+  before. Timermode "performance" also provides detailed server-side
+  timings: "sql" is the time to parse the SQL query, optimize the
+  logical relational plan and create the initial physical (MAL) plan;
+  "opt" is the time to optimize the physical (MAL) plan; "run" is the
+  time to execute the physical (MAL) plan. With timermode "performance"
+  all server-side timings and the client-side wall-clock time are given
+  in milliseconds (ms). Note that the client-measured wall-clock time
+  "clk" is reported per query only when options "--interactive" or
+  "--echo" are used, because only then does mclient send individual
+  lines (statements) of the SQL script to the server. Otherwise, mclient
+  sends the SQL script in large(r) batch(es) to the server, and, thus,
+  only the total wall-clock time per batch is measured and reported. The
+  server-measured detailed performance timings "sql", "opt", "run" are
+  always measured and reported per query. Also, all timing information
+  is now given on a separate line and set to stderr rather than stdout.
+
+* Fri Feb  9 2018 Sjoerd Mullender <sjoerd@acm.org>
+- Some types and constants were moved from configure (and hence
+  monetdb_config.h) to gdk.h.  In particular, the types "lng" and
+  "ulng" have been moved and can therefore no longer be used by code
+  that doesn't (ultimately) include gdk.h.  Just use int64_t instead.
+  A bunch of format defines have been removed: SZFMT, SSZFMT, PTRFMT,
+  PDFMT.  Just use the C standard codes for those (%zu, %zd, %p, %td).
+  The define for printing a lng (LLFMT) was also moved.  Use PRId64 for
+  printing int64_t in code not using gdk.h.  Removed all references to
+  __int64 and long long (use int64_t instead).
+

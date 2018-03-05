@@ -42,9 +42,11 @@ INSERT INTO sys.keywords (keyword) VALUES
   ('CHECK'),
   ('CLOB'),
   ('COALESCE'),
+  ('COMMENT'),
   ('COMMIT'),
   ('COMMITTED'),
   ('CONSTRAINT'),
+  ('CONTINUE'),
   ('CONVERT'),
   ('COPY'),
   ('CORRESPONDING'),
@@ -182,6 +184,7 @@ INSERT INTO sys.keywords (keyword) VALUES
   ('SMALLINT'),
   ('SOME'),
   ('SPLIT_PART'),
+  ('START'),
   ('STDIN'),
   ('STDOUT'),
   ('STORAGE'),
@@ -195,6 +198,7 @@ INSERT INTO sys.keywords (keyword) VALUES
   ('TO'),
   ('TRANSACTION'),
   ('TRIGGER'),
+  ('TRUNCATE'),
   ('TRUE'),
   ('UNBOUNDED'),
   ('UNCOMMITTED'),
@@ -265,32 +269,6 @@ ALTER TABLE sys.table_types SET READ ONLY;
 GRANT SELECT ON sys.table_types TO PUBLIC;
 
 
-CREATE TABLE sys.dependency_types (
-    dependency_type_id   SMALLINT NOT NULL PRIMARY KEY,
-    dependency_type_name VARCHAR(15) NOT NULL UNIQUE);
-
--- Values taken from sql/include/sql_catalog.h  see: #define SCHEMA_DEPENDENCY 1, TABLE_DEPENDENCY 2, ..., TYPE_DEPENDENCY 15.
-INSERT INTO sys.dependency_types (dependency_type_id, dependency_type_name) VALUES
-  (1, 'SCHEMA'),
-  (2, 'TABLE'),
-  (3, 'COLUMN'),
-  (4, 'KEY'),
-  (5, 'VIEW'),
-  (6, 'USER'),
-  (7, 'FUNCTION'),
-  (8, 'TRIGGER'),
-  (9, 'OWNER'),
-  (10, 'INDEX'),
-  (11, 'FKEY'),
-  (12, 'SEQUENCE'),
-  (13, 'PROCEDURE'),
-  (14, 'BE_DROPPED'),
-  (15, 'TYPE');
-
-ALTER TABLE sys.dependency_types SET READ ONLY;
-GRANT SELECT ON sys.dependency_types TO PUBLIC;
-
-
 CREATE TABLE sys.function_types (
     function_type_id   SMALLINT NOT NULL PRIMARY KEY,
     function_type_name VARCHAR(30) NOT NULL UNIQUE);
@@ -308,6 +286,24 @@ INSERT INTO sys.function_types (function_type_id, function_type_name) VALUES
 
 ALTER TABLE sys.function_types SET READ ONLY;
 GRANT SELECT ON sys.function_types TO PUBLIC;
+
+
+-- next function is used by views defined in 97_comments.sql and in mclient and mdump code
+CREATE FUNCTION sys.function_type_keyword(ftype INT)
+RETURNS VARCHAR(20)
+BEGIN
+	RETURN CASE ftype
+                WHEN 1 THEN 'FUNCTION'
+                WHEN 2 THEN 'PROCEDURE'
+                WHEN 3 THEN 'AGGREGATE'
+                WHEN 4 THEN 'FILTER FUNCTION'
+                WHEN 5 THEN 'FUNCTION' -- table returning function
+                WHEN 6 THEN 'FUNCTION' -- analytic function
+                WHEN 7 THEN 'LOADER'
+                ELSE 'ROUTINE'
+        END;
+END;
+GRANT EXECUTE ON FUNCTION sys.function_type_keyword(INT) TO PUBLIC;
 
 
 CREATE TABLE sys.function_languages (
@@ -370,11 +366,11 @@ GRANT SELECT ON sys.index_types TO PUBLIC;
 
 CREATE TABLE sys.privilege_codes (
     privilege_code_id   INT NOT NULL PRIMARY KEY,
-    privilege_code_name VARCHAR(30) NOT NULL UNIQUE);
+    privilege_code_name VARCHAR(40) NOT NULL UNIQUE);
 
 -- Values taken from sql/include/sql_catalog.h see: #define
 -- PRIV_SELECT 1, PRIV_UPDATE 2, PRIV_INSERT 4, PRIV_DELETE 8,
--- PRIV_EXECUTE 16, PRIV_GRANT 32
+-- PRIV_EXECUTE 16, PRIV_GRANT 32, PRIV_TRUNCATE 64
 INSERT INTO sys.privilege_codes (privilege_code_id, privilege_code_name) VALUES
   (1, 'SELECT'),
   (2, 'UPDATE'),
@@ -382,6 +378,7 @@ INSERT INTO sys.privilege_codes (privilege_code_id, privilege_code_name) VALUES
   (8, 'DELETE'),
   (16, 'EXECUTE'),
   (32, 'GRANT'),
+  (64, 'TRUNCATE'),
 -- next are combined privileges applicable only to tables and columns
   (3, 'SELECT,UPDATE'),
   (5, 'SELECT,INSERT'),
@@ -393,8 +390,45 @@ INSERT INTO sys.privilege_codes (privilege_code_id, privilege_code_name) VALUES
   (12, 'INSERT,DELETE'),
   (13, 'SELECT,INSERT,DELETE'),
   (14, 'INSERT,UPDATE,DELETE'),
-  (15, 'SELECT,INSERT,UPDATE,DELETE');
+  (15, 'SELECT,INSERT,UPDATE,DELETE'),
+  (65, 'SELECT,TRUNCATE'),
+  (66, 'UPDATE,TRUNCATE'),
+  (68, 'INSERT,TRUNCATE'),
+  (72, 'DELETE,TRUNCATE'),
+  (67, 'SELECT,UPDATE,TRUNCATE'),
+  (69, 'SELECT,INSERT,TRUNCATE'),
+  (73, 'SELECT,DELETE,TRUNCATE'),
+  (70, 'INSERT,UPDATE,TRUNCATE'),
+  (76, 'INSERT,DELETE,TRUNCATE'),
+  (74, 'UPDATE,DELETE,TRUNCATE'),
+  (71, 'SELECT,INSERT,UPDATE,TRUNCATE'),
+  (75, 'SELECT,UPDATE,DELETE,TRUNCATE'),
+  (77, 'SELECT,INSERT,DELETE,TRUNCATE'),
+  (78, 'INSERT,UPDATE,DELETE,TRUNCATE'),
+  (79, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE');
 
 ALTER TABLE sys.privilege_codes SET READ ONLY;
 GRANT SELECT ON sys.privilege_codes TO PUBLIC;
+
+
+-- Utility view to list the defined roles.
+-- Note: sys.auths contains both users and roles as the names must be distinct.
+CREATE VIEW sys.roles AS SELECT id, name, grantor FROM sys.auths a WHERE a.name NOT IN (SELECT u.name FROM sys.db_users() u);
+GRANT SELECT ON sys.roles TO PUBLIC;
+
+
+-- Utility view to list the standard variables (as defined in sys.var()) and their run-time value
+CREATE VIEW sys.var_values (var_name, value) AS
+SELECT 'cache' AS var_name, convert(cache, varchar(10)) AS value UNION ALL
+SELECT 'current_role', current_role UNION ALL
+SELECT 'current_schema', current_schema UNION ALL
+SELECT 'current_timezone', current_timezone UNION ALL
+SELECT 'current_user', current_user UNION ALL
+SELECT 'debug', debug UNION ALL
+SELECT 'history', history UNION ALL
+SELECT 'last_id', last_id UNION ALL
+SELECT 'optimizer', optimizer UNION ALL
+SELECT 'pi', pi() UNION ALL
+SELECT 'rowcnt', rowcnt;
+GRANT SELECT ON sys.var_values TO PUBLIC;
 

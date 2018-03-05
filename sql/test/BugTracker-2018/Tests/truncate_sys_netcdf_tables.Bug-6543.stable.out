@@ -1,0 +1,91 @@
+stdout of test 'truncate_sys_netcdf_tables.Bug-6543` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 17:32:24 >  
+# 17:32:24 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36366" "--set" "mapi_usock=/var/tmp/mtest-8577/.s.monetdb.36366" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2018"
+# 17:32:24 >  
+
+# MonetDB 5 server v11.29.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 31.307 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://catskill.da.cwi.nl:36366/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-8577/.s.monetdb.36366
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 17:32:24 >  
+# 17:32:24 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8577" "--port=36366"
+# 17:32:24 >  
+
+#SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_vars;
+% sys.L4 # table_name
+% has_rows # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_vars;
+% sys.L4 # table_name
+% has_rows # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_vardim;
+% sys.L4 # table_name
+% has_rows # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_vardim;
+% sys.L4 # table_name
+% has_rows # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_files;
+% sys.L4 # table_name
+% has_rows # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_files;
+% sys.L4 # table_name
+% has_rows # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_dims;
+% sys.L4 # table_name
+% has_rows # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_dims;
+% sys.L4 # table_name
+% has_rows # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_attrs;
+% sys.L4 # table_name
+% has_rows # name
+% boolean # type
+% 5 # length
+[ false	]
+#SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_attrs;
+% sys.L4 # table_name
+% has_rows # name
+% boolean # type
+% 5 # length
+[ false	]
+
+# 17:32:24 >  
+# 17:32:24 >  "Done."
+# 17:32:24 >  
+

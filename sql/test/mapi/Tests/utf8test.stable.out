@@ -87,12 +87,8 @@ select * from utf8test
 | s                                |
 +==================================+
 | value without special characters |
-|2 tuples
-
-# 10:26:28 >  
-# 10:26:28 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=ottar --port=32641  -s 'drop table utf8test'
-# 10:26:28 >  
-
+|
+#drop table utf8test
 
 # 10:26:28 >  
 # 10:26:28 >  Done.

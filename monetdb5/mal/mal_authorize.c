@@ -183,6 +183,8 @@ AUTHinitTables(const char *passwd) {
 		/* don't check this bat since we'll fix it below */
 		GDKdebug &= ~CHECKMASK;
 		user = BATdescriptor(bid);
+		if (user == NULL)
+			throw(MAL, "initTables.user", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		GDKdebug = dbg;
 		isNew = 0;
 	}
@@ -204,6 +206,8 @@ AUTHinitTables(const char *passwd) {
 		/* don't check this bat since we'll fix it below */
 		GDKdebug &= ~CHECKMASK;
 		pass = BATdescriptor(bid);
+		if (pass == NULL)
+			throw(MAL, "initTables.passwd", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		GDKdebug = dbg;
 		isNew = 0;
 	}
@@ -224,6 +228,8 @@ AUTHinitTables(const char *passwd) {
 			AUTHcommit();
 	} else {
 		duser = BATdescriptor(bid);
+		if (duser == NULL)
+			throw(MAL, "initTables.duser", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		isNew = 0;
 	}
 	assert(duser);
@@ -238,6 +244,8 @@ AUTHinitTables(const char *passwd) {
 		if (passwd == NULL)
 			passwd = "monetdb";	/* default password */
 		pw = mcrypt_BackendSum(passwd, strlen(passwd));
+		if(!pw)
+			throw(MAL, "initTables", SQLSTATE(42000) "Crypt backend hash not found");
 		msg = AUTHaddUser(&uid, c, "monetdb", pw);
 		free(pw);
 		if (msg)
@@ -299,6 +307,8 @@ AUTHcheckCredentials(
 	/* generate the hash as the client should have done */
 	hash = mcrypt_hashPassword(algo, pwd, challenge);
 	GDKfree(pwd);
+	if(!hash)
+		throw(MAL, "checkCredentials", "hash '%s' backend not found", algo);
 	/* and now we have it, compare it to what was given to us */
 	if (strcmp(passwd, hash) != 0) {
 		/* of course we DO NOT print the password here */

@@ -23,7 +23,6 @@
 #include "merovingian.h"
 #include "connections.h"
 
-
 err
 openConnectionTCP(int *ret, const char *bindaddr, unsigned short port, FILE *log)
 {
@@ -36,11 +35,17 @@ openConnectionTCP(int *ret, const char *bindaddr, unsigned short port, FILE *log
 	char *host;
 	char hostip[24];
 
-	sock = socket(AF_INET, SOCK_STREAM, 0);
+	sock = socket(AF_INET, SOCK_STREAM
+#ifdef SOCK_CLOEXEC
+				  | SOCK_CLOEXEC
+#endif
+				  , 0);
 	if (sock == -1)
 		return(newErr("creation of stream socket failed: %s",
 					strerror(errno)));
-	fcntl(sock, F_SETFD, FD_CLOEXEC);
+#ifndef SOCK_CLOEXEC
+	(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
+#endif
 
 	if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof on) < 0) {
 		closesocket(sock);
@@ -89,7 +94,10 @@ openConnectionTCP(int *ret, const char *bindaddr, unsigned short port, FILE *log
 	}
 
 	/* keep queue of 5 */
-	listen(sock, 5);
+	if(listen(sock, 5) == -1) {
+		closesocket(sock);
+		return(newErr("failed setting socket to listen: %s", strerror(errno)));
+	}
 
 	Mfprintf(log, "accepting connections on TCP socket %s:%hu\n", host, port);
 
@@ -122,10 +130,16 @@ openConnectionUDP(int *ret, const char *bindaddr, unsigned short port)
 		return(newErr("failed getting address info: %s", gai_strerror(sock)));
 
 	for (rp = result; rp != NULL; rp = rp->ai_next) {
-		sock = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+		sock = socket(rp->ai_family, rp->ai_socktype
+#ifdef SOCK_CLOEXEC
+					  | SOCK_CLOEXEC
+#endif
+					  , rp->ai_protocol);
 		if (sock == -1)
 			continue;
-		fcntl(sock, F_SETFD, FD_CLOEXEC);
+#ifndef SOCK_CLOEXEC
+		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
+#endif
 
 		if (bind(sock, rp->ai_addr, rp->ai_addrlen) != -1)
 			break; /* working */
@@ -140,14 +154,16 @@ openConnectionUDP(int *ret, const char *bindaddr, unsigned short port)
 	}
 
 	/* retrieve information from the socket */
-	getnameinfo(rp->ai_addr, rp->ai_addrlen,
+	if(getnameinfo(rp->ai_addr, rp->ai_addrlen,
 			host, sizeof(host),
 			sport, sizeof(sport),
-			NI_NUMERICSERV | NI_DGRAM);
+			NI_NUMERICSERV | NI_DGRAM) == 0) {
+		Mfprintf(_mero_discout, "listening for UDP messages on %s:%s\n", host, sport);
+	} else {
+		Mfprintf(_mero_discout, "listening for UDP messages\n");
+	}
 
 	freeaddrinfo(result);
-
-	Mfprintf(_mero_discout, "listening for UDP messages on %s:%s\n", host, sport);
 
 	*ret = sock;
 	return(NO_ERR);
@@ -163,11 +179,17 @@ openConnectionUNIX(int *ret, const char *path, int mode, FILE *log)
 	if (strlen(path) >= sizeof(server.sun_path))
 		return newErr("pathname for UNIX stream socket too long");
 
-	sock = socket(AF_UNIX, SOCK_STREAM, 0);
+	sock = socket(AF_UNIX, SOCK_STREAM
+#ifdef SOCK_CLOEXEC
+				  | SOCK_CLOEXEC
+#endif
+				  , 0);
 	if (sock == -1)
 		return(newErr("creation of UNIX stream socket failed: %s",
 					strerror(errno)));
-	fcntl(sock, F_SETFD, FD_CLOEXEC);
+#ifndef SOCK_CLOEXEC
+	(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
+#endif
 
 	memset(&server, 0, sizeof(struct sockaddr_un));
 	server.sun_family = AF_UNIX;
@@ -185,7 +207,11 @@ openConnectionUNIX(int *ret, const char *path, int mode, FILE *log)
 	umask(omask);
 
 	/* keep queue of 5 */
-	listen(sock, 5);
+	if(listen(sock, 5) == -1) {
+		closesocket(sock);
+		return(newErr("setting UNIX stream socket at %s to listen failed: %s",
+					  path, strerror(errno)));
+	}
 
 	Mfprintf(log, "accepting connections on UNIX domain socket %s\n", path);
 

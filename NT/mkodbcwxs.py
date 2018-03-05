@@ -67,10 +67,10 @@ def main():
     id = 1
     print(r'            <Directory Id="lib" Name="lib">')
     id = comp(features, id, 14,
-              [r'lib\libmapi.dll',
-               r'lib\libMonetODBC.dll',
-               r'lib\libMonetODBCs.dll',
-               r'lib\libstream.dll',
+              [r'lib\libmapi.dll', r'lib\libmapi.pdb',
+               r'lib\libMonetODBC.dll', r'lib\libMonetODBC.pdb',
+               r'lib\libMonetODBCs.dll', r'lib\libMonetODBCs.pdb',
+               r'lib\libstream.dll', r'lib\libstream.pdb',
                r'%s\bin\iconv.dll' % makedefs['LIBICONV'],
                r'%s\bin\libbz2.dll' % makedefs['LIBBZIP2'],
                r'%s\bin\libeay32.dll' % makedefs['LIBOPENSSL'],

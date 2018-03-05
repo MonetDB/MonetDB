@@ -2295,7 +2295,6 @@ stmt_catalog(backend *be, int type, stmt *args)
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	node *n;
-	int if_exists =0;
 
 	if (args->nr < 0)
 		return NULL;
@@ -2306,16 +2305,10 @@ stmt_catalog(backend *be, int type, stmt *args)
 	case DDL_ALTER_SEQ:	q = newStmt(mb, sqlcatalogRef, alter_seqRef); break;
 	case DDL_DROP_SEQ:	q = newStmt(mb, sqlcatalogRef, drop_seqRef); break;
 	case DDL_CREATE_SCHEMA:	q = newStmt(mb, sqlcatalogRef, create_schemaRef); break;
-	case DDL_DROP_SCHEMA_IF_EXISTS: if_exists =1;
-		/* fall through */
 	case DDL_DROP_SCHEMA:	q = newStmt(mb, sqlcatalogRef, drop_schemaRef); break;
 	case DDL_CREATE_TABLE:	q = newStmt(mb, sqlcatalogRef, create_tableRef); break;
 	case DDL_CREATE_VIEW:	q = newStmt(mb, sqlcatalogRef, create_viewRef); break;
-	case DDL_DROP_TABLE_IF_EXISTS: if_exists =1;
-		/* fall through */
 	case DDL_DROP_TABLE:	q = newStmt(mb, sqlcatalogRef, drop_tableRef); break;
-	case DDL_DROP_VIEW_IF_EXISTS: if_exists = 1;
-		/* fall through */
 	case DDL_DROP_VIEW:	q = newStmt(mb, sqlcatalogRef, drop_viewRef); break;
 	case DDL_DROP_CONSTRAINT:	q = newStmt(mb, sqlcatalogRef, drop_constraintRef); break;
 	case DDL_ALTER_TABLE:	q = newStmt(mb, sqlcatalogRef, alter_tableRef); break;
@@ -2341,6 +2334,7 @@ stmt_catalog(backend *be, int type, stmt *args)
 	case DDL_ALTER_TABLE_ADD_TABLE:	q = newStmt(mb, sqlcatalogRef, alter_add_tableRef); break;
 	case DDL_ALTER_TABLE_DEL_TABLE:	q = newStmt(mb, sqlcatalogRef, alter_del_tableRef); break;
 	case DDL_ALTER_TABLE_SET_ACCESS:q = newStmt(mb, sqlcatalogRef, alter_set_tableRef); break;
+	case DDL_COMMENT_ON:	q = newStmt(mb, sqlcatalogRef, comment_onRef); break;
 	default:
 		showException(GDKout, SQL, "sql", "catalog operation unknown\n");
 	}
@@ -2356,8 +2350,6 @@ stmt_catalog(backend *be, int type, stmt *args)
 			freeInstruction(q);
 			return NULL;
 		}
-		if( if_exists)
-			pushInt(mb,q,1);
 		s->op1 = args;
 		s->flag = type;
 		s->q = q;
@@ -2980,7 +2972,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 }
 
 stmt *
-stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int reduce, int no_nil)
+stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int reduce, int no_nil, int nil_if_empty)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -3067,6 +3059,8 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int red
 			q = pushBit(mb, q, TRUE);
 	} else if (no_nil && strncmp(aggrfunc, "count", 5) == 0) {
 		q = pushBit(mb, q, no_nil);
+	} else if (!nil_if_empty && strncmp(aggrfunc, "sum", 3) == 0) {
+		q = pushBit(mb, q, FALSE);
 	}
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_aggr);

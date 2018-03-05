@@ -739,7 +739,7 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 
 		if (split < 0) {
 			GDKfree(mats);
-			mb->errors= createException(MAL,"mergetable.join"," incorrect split level");
+			mb->errors= createException(MAL,"mergetable.join", SQLSTATE(42000) " incorrect split level");
 			return 0;
 		}
 		/* now detect split point */

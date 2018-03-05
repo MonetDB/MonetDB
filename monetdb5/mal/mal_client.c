@@ -587,7 +587,7 @@ MCreadClient(Client c)
 				in->len++;
 		}
 #ifdef MAL_CLIENT_DEBUG
-		fprintf(stderr, "# simple stream received %d sum " SZFMT "\n", c->idx, sum);
+		fprintf(stderr, "# simple stream received %d sum %zu\n", c->idx, sum);
 #endif
 	}
 	if (in->pos >= in->len) {

@@ -468,13 +468,13 @@ retryRead:
 			if (strncmp("check",b,5) == 0){
 				Symbol fs;
 				int i;
+				str fcnnme;
 
 				skipWord(cntxt,b);
 				skipBlanc(cntxt, b);
-				if( strchr(b,'.') ){
+				if( (fcnnme = strchr(b,'.')) != NULL ){
 					str modnme = b;
-					str fcnnme;
-					fcnnme = strchr(b,'.');
+
 					*fcnnme++  = 0;
 
 					fs = findSymbol(cntxt->usermodule, putName(modnme),putName(fcnnme));
@@ -1383,7 +1383,6 @@ mdbHelp(stream *f)
 	mnstr_printf(f, "break [<var>]    -- set breakpoint on current instruction or <var>\n");
 	mnstr_printf(f, "delete [<var>]   -- remove break/trace point <var>\n");
 	mnstr_printf(f, "debug <int>      -- set kernel debugging mask\n");
-	mnstr_printf(f, "dot <obj> [<file>]  -- generate the dependency graph\n");
 	mnstr_printf(f, "step             -- advance to next MAL instruction\n");
 	mnstr_printf(f, "module           -- display a module signatures\n");
 	mnstr_printf(f, "atom             -- show atom list\n");

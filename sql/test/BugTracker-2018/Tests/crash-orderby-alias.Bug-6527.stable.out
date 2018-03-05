@@ -1,0 +1,82 @@
+stdout of test 'crash-orderby-alias.Bug-6527` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 21:50:49 >  
+# 21:50:49 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31483" "--set" "mapi_usock=/var/tmp/mtest-31627/.s.monetdb.31483" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2018"
+# 21:50:49 >  
+
+# MonetDB 5 server v11.27.12
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.324 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:31483/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-31627/.s.monetdb.31483
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 21:50:49 >  
+# 21:50:49 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-31627" "--port=31483"
+# 21:50:49 >  
+
+#create table "t1" ("d1" int);
+#insert into "t1" values (1), (2), (3), (4), (5);
+[ 5	]
+#select
+#    "d1" as "value"
+#from "t1"
+#order by "value";
+% sys.L2 # table_name
+% value # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
+[ 5	]
+#select
+#    a."value"
+#from (
+#    select
+#        "d1" as "value"
+#    from "t1"
+#    order by "d1"
+#) as a;
+% sys.a # table_name
+% value # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
+[ 5	]
+#select
+#    a."value"
+#from (
+#    select
+#        "d1" as "value"
+#    from "t1"
+#    order by "value"
+#) as a;
+% sys.a # table_name
+% value # name
+% int # type
+% 1 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
+[ 5	]
+#drop table t1;
+
+# 21:50:49 >  
+# 21:50:49 >  "Done."
+# 21:50:49 >  
+

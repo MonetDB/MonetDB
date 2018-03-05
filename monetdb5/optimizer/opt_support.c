@@ -101,7 +101,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 
 	mb->optimize = 0;
 	if (mb->errors)
-		throw(MAL, "optimizer.MALoptimizer", "Start with inconsistent MAL plan");
+		throw(MAL, "optimizer.MALoptimizer", SQLSTATE(42000) "Start with inconsistent MAL plan");
 
 	// strong defense line, assure that MAL plan is initially correct
 	if( mb->errors == 0 && mb->stop > 1){
@@ -145,7 +145,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 				}
 				if (cntxt->mode == FINISHCLIENT){
 					mb->optimize = GDKusec() - clk;
-					throw(MAL, "optimizeMALBlock", "prematurely stopped client");
+					throw(MAL, "optimizeMALBlock", SQLSTATE(42000) "prematurely stopped client");
 				}
 				pc= -1;
 			}
@@ -160,7 +160,7 @@ wrapup:
 		newComment(mb, buf);
 	}
 	if (cnt >= mb->stop)
-		throw(MAL, "optimizer.MALoptimizer", OPTIMIZER_CYCLE);
+		throw(MAL, "optimizer.MALoptimizer", SQLSTATE(42000) OPTIMIZER_CYCLE);
 	return msg;
 }
 
@@ -519,14 +519,14 @@ isBlocking(InstrPtr p)
 static int 
 isOrderDepenent(InstrPtr p)
 {
-    if( getModuleId(p) != batsqlRef)
-        return 0;
-    if ( getFunctionId(p) == differenceRef ||
-        getFunctionId(p) == row_numberRef ||
-        getFunctionId(p) == rankRef ||
-        getFunctionId(p) == dense_rankRef)
-        return 1;
-    return 0;
+	if( getModuleId(p) != batsqlRef)
+		return 0;
+	if ( getFunctionId(p) == differenceRef ||
+		getFunctionId(p) == row_numberRef ||
+		getFunctionId(p) == rankRef ||
+		getFunctionId(p) == dense_rankRef)
+		return 1;
+	return 0;
 }
 
 int isMapOp(InstrPtr p){
@@ -582,12 +582,12 @@ int
 isMatJoinOp(InstrPtr p)
 {
 	return (isSubJoin(p) || (getModuleId(p) == algebraRef &&
-                (getFunctionId(p) == crossRef ||
-                 getFunctionId(p) == joinRef ||
-                 getFunctionId(p) == antijoinRef || /* is not mat save */
-                 getFunctionId(p) == thetajoinRef ||
-                 getFunctionId(p) == bandjoinRef ||
-                 getFunctionId(p) == rangejoinRef)
+				(getFunctionId(p) == crossRef ||
+				 getFunctionId(p) == joinRef ||
+				 getFunctionId(p) == antijoinRef || /* is not mat save */
+				 getFunctionId(p) == thetajoinRef ||
+				 getFunctionId(p) == bandjoinRef ||
+				 getFunctionId(p) == rangejoinRef)
 		));
 }
 

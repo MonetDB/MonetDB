@@ -72,6 +72,7 @@ str clear_tableRef;
 str closeRef;
 str columnBindRef;
 str columnRef;
+str comment_onRef;
 str commitRef;
 str connectRef;
 str copy_fromRef;
@@ -362,6 +363,7 @@ void optimizerInit(void)
 	closeRef = putName("close");
 	columnRef = putName("column");
 	columnBindRef = putName("columnBind");
+	comment_onRef = putName("comment_on");
 	commitRef = putName("commit");
 	connectRef = putName("connect");
 	countRef = putName("count");

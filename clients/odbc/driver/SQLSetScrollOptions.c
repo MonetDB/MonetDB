@@ -36,8 +36,8 @@ SQLSetScrollOptions(SQLHSTMT StatementHandle,
 		    SQLUSMALLINT crowRowset)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetScrollOptions " PTRFMT " %u " LENFMT " %u\n",
-		PTRFMTCAST StatementHandle, (unsigned int) fConcurrency,
+	ODBCLOG("SQLSetScrollOptions %p %u " LENFMT " %u\n",
+		StatementHandle, (unsigned int) fConcurrency,
 		LENCAST crowKeyset, (unsigned int) crowRowset);
 #endif
 

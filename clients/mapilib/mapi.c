@@ -876,6 +876,7 @@ struct MapiResultSet {
 	int64_t last_id;
 	int64_t querytime;
 	int64_t maloptimizertime;
+	int64_t sqloptimizertime;
 	int fieldcnt;
 	int maxfields;
 	char *errorstr;		/* error from server */
@@ -1442,6 +1443,7 @@ new_result(MapiHdl hdl)
 	result->errorstr = NULL;
 	result->querytime = 0;
 	result->maloptimizertime = 0;
+	result->sqloptimizertime = 0;
 	memset(result->sqlstate, 0, sizeof(result->sqlstate));
 
 	result->tuple_count = 0;
@@ -2364,7 +2366,11 @@ mapi_reconnect(Mapi mid)
 			return mapi_setError(mid, "path name too long", "mapi_reconnect", MERROR);
 		}
 
-		if ((s = socket(PF_UNIX, SOCK_STREAM, 0)) == INVALID_SOCKET) {
+		if ((s = socket(PF_UNIX, SOCK_STREAM
+#ifdef SOCK_CLOEXEC
+				| SOCK_CLOEXEC
+#endif
+				, 0)) == INVALID_SOCKET) {
 			snprintf(errbuf, sizeof(errbuf),
 				 "opening socket failed: %s",
 #ifdef _MSC_VER
@@ -2375,7 +2381,7 @@ mapi_reconnect(Mapi mid)
 				);
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
-#ifdef HAVE_FCNTL
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 		(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
 		memset(&userver, 0, sizeof(struct sockaddr_un));
@@ -2441,10 +2447,14 @@ mapi_reconnect(Mapi mid)
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
 		for (rp = res; rp; rp = rp->ai_next) {
-			s = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+			s = socket(rp->ai_family, rp->ai_socktype
+#ifdef SOCK_CLOEXEC
+				   | SOCK_CLOEXEC
+#endif
+				   , rp->ai_protocol);
 			if (s == INVALID_SOCKET)
 				continue;
-#ifdef HAVE_FCNTL
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 			(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
 			if (connect(s, rp->ai_addr, (socklen_t) rp->ai_addrlen) != SOCKET_ERROR)
@@ -2485,7 +2495,11 @@ mapi_reconnect(Mapi mid)
 		memcpy(&server.sin_addr, hp->h_addr_list[0], hp->h_length);
 		server.sin_family = hp->h_addrtype;
 		server.sin_port = htons((unsigned short) (mid->port & 0xFFFF));
-		s = socket(server.sin_family, SOCK_STREAM, IPPROTO_TCP);
+		s = socket(server.sin_family, SOCK_STREAM
+#ifdef SOCK_CLOEXEC
+			   | SOCK_CLOEXEC
+#endif
+			   , IPPROTO_TCP);
 
 		if (s == INVALID_SOCKET) {
 			snprintf(errbuf, sizeof(errbuf), "opening socket failed: %s",
@@ -2497,7 +2511,7 @@ mapi_reconnect(Mapi mid)
 				);
 			return mapi_setError(mid, errbuf, "mapi_reconnect", MERROR);
 		}
-#ifdef HAVE_FCNTL
+#if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 		(void) fcntl(s, F_SETFD, FD_CLOEXEC);
 #endif
 
@@ -3465,7 +3479,7 @@ read_line(Mapi mid)
 		}
 		mid->blk.buf[mid->blk.end + len] = 0;
 		if (mid->trace == MAPI_TRACE) {
-			printf("got next block: length:" SSZFMT "\n", len);
+			printf("got next block: length:%zd\n", len);
 			printf("text:%s\n", mid->blk.buf + mid->blk.end);
 		}
 		if (len == 0) {	/* add prompt */
@@ -3752,12 +3766,14 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 		result->commentonly = 0;
 		result->querytime = 0;
 		result->maloptimizertime = 0;
+		result->sqloptimizertime = 0;
 
 		nline++;	/* skip space */
 		switch (qt) {
 		case Q_SCHEMA:
 			result->querytime = strtoll(nline, &nline, 10);
 			result->maloptimizertime = strtoll(nline, &nline, 10);
+			result->sqloptimizertime = strtoll(nline, &nline, 10);
 			break;
 		case Q_TRANS:
 			if (*nline == 'f')
@@ -3771,14 +3787,16 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 			queryid = strtoll(nline, &nline, 10);
 			result->querytime = strtoll(nline, &nline, 10);
 			result->maloptimizertime = strtoll(nline, &nline, 10);
+			result->sqloptimizertime = strtoll(nline, &nline, 10);
 			break;
 		case Q_TABLE:
-			if (sscanf(nline, "%d %" SCNd64 " %d %" SCNd64 " %" SCNu64 " %" SCNd64 " %" SCNd64,
+			if (sscanf(nline, "%d %" SCNd64 " %d %" SCNd64 " %" SCNu64 " %" SCNd64 " %" SCNd64 " %" SCNd64, 
 				   &result->tableid, &result->row_count,
 				   &result->fieldcnt, &result->tuple_count,
-				   &queryid, &result->querytime, &result->maloptimizertime) < 7){
+				   &queryid, &result->querytime, &result->maloptimizertime, &result->sqloptimizertime) < 8){
 					result->querytime = 0;
 					result->maloptimizertime = 0;
+					result->sqloptimizertime = 0;
 				}
 			(void) queryid; /* ignored for now */
 			break;
@@ -4069,7 +4087,7 @@ mapi_execute_internal(MapiHdl hdl)
 	size = strlen(cmd);
 
 	if (mid->trace == MAPI_TRACE) {
-		printf("mapi_query:" SZFMT ":%s\n", size, cmd);
+		printf("mapi_query:%zu:%s\n", size, cmd);
 	}
 	if (mid->languageId == LANG_SQL) {
 		if (size > MAXQUERYSIZE) {
@@ -4300,7 +4318,7 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 	}
 
 	if (mid->trace == MAPI_TRACE) {
-		printf("mapi_query_part:" SZFMT ":%.*s\n", size, (int) size, query);
+		printf("mapi_query_part:%zu:%.*s\n", size, (int) size, query);
 	}
 	hdl->needmore = 0;
 	mnstr_write(mid->to, query, 1, size);
@@ -5309,6 +5327,17 @@ mapi_get_maloptimizertime(MapiHdl hdl)
 	if ((result = hdl->result) == NULL)
 		return 0;
 	return result->maloptimizertime;
+}
+
+int64_t
+mapi_get_sqloptimizertime(MapiHdl hdl)
+{
+	struct MapiResultSet *result;
+
+	mapi_hdl_check(hdl, "mapi_get_sqloptimizertime");
+	if ((result = hdl->result) == NULL)
+		return 0;
+	return result->sqloptimizertime;
 }
 
 char *

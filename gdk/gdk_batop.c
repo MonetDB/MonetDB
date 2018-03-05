@@ -199,8 +199,7 @@ insert_string_bat(BAT *b, BAT *n, BAT *s, int force)
 	if (toff == 0 && n->twidth == b->twidth && cand == NULL) {
 		/* we don't need to do any translation of offset
 		 * values, so we can use fast memcpy */
-		memcpy(Tloc(b, BUNlast(b)), Tloc(n, start),
-		       cnt * n->twidth);
+		memcpy(Tloc(b, BUNlast(b)), Tloc(n, start), cnt << n->tshift);
 		BATsetcount(b, BATcount(b) + cnt);
 	} else if (toff != ~(size_t) 0) {
 		/* we don't need to insert any actual strings since we
@@ -444,7 +443,7 @@ append_varsized_bat(BAT *b, BAT *n, BAT *s)
 			 * chunk of memory */
 			memcpy(Tloc(b, BUNlast(b)),
 			       Tloc(n, start),
-			       cnt * b->twidth);
+			       cnt << b->tshift);
 		} else {
 			var_t *restrict dst = (var_t *) Tloc(b, BUNlast(b));
 			oid hseq = n->hseqbase;
@@ -519,7 +518,18 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 	assert(b->theap.parentid == 0);
 
 	ALIGNapp(b, "BATappend", force, GDK_FAIL);
-	BATcompatible(b, n, GDK_FAIL, "BATappend");
+
+	if (ATOMstorage(ATOMtype(b->ttype)) != ATOMstorage(ATOMtype(n->ttype))) {
+		GDKerror("Incompatible operands.\n");
+		return GDK_FAIL;
+	}
+	CHECKDEBUG {
+		if (BATttype(b) != BATttype(n) &&
+		    ATOMtype(b->ttype) != ATOMtype(n->ttype)) {
+			fprintf(stderr,"#Interpreting %s as %s.\n",
+				ATOMname(BATttype(n)), ATOMname(BATttype(b)));
+		}
+	}
 
 	if (BATcount(b) == 0)
 		BAThseqbase(b, s ? s->hseqbase : n->hseqbase);
@@ -573,18 +583,6 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 
 	b->batDirty = 1;
 
-	if (cnt > BATcapacity(b) - BUNlast(b)) {
-		/* if needed space exceeds a normal growth extend just
-		 * with what's needed */
-		BUN ncap = BUNlast(b) + cnt;
-		BUN grows = BATgrows(b);
-
-		if (ncap > grows)
-			grows = ncap;
-		if (BATextend(b, grows) != GDK_SUCCEED)
-			goto bunins_failed;
-	}
-
 	IMPSdestroy(b);		/* imprints do not support updates yet */
 	OIDXdestroy(b);
 	PROPdestroy(b->tprops);
@@ -596,29 +594,43 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 	}
 
 	if (b->ttype == TYPE_void) {
-		if (BATtdense(n) && cand == NULL) {
-			/* append two void,void bats */
-			oid f = n->tseqbase + start;
-
-			if (n->ttype != TYPE_void)
-				f = *(oid *) Tloc(n, start);
-
-			if (BATcount(b) == 0 && !is_oid_nil(f))
-				BATtseqbase(b, f);
-			if (BATcount(b) + b->tseqbase == f) {
-				BATsetcount(b, BATcount(b) + cnt);
-				if (b->tunique)
-					BBPunfix(s->batCacheid);
-				return GDK_SUCCEED;
-			}
-		}
-
-		/* we need to materialize the tail */
-		if (BATmaterialize(b) != GDK_SUCCEED) {
+		/* b does not have storage, keep it that way if we can */
+		HASHdestroy(b);	/* we're not maintaining the hash here */
+		if (BATtdense(n) && cand == NULL &&
+		    (BATcount(b) == 0 ||
+		     (!is_oid_nil(b->tseqbase) &&
+		      b->tseqbase + BATcount(b) == n->tseqbase + start))) {
+			/* n is also dense and consecutive with b */
+			if (BATcount(b) == 0)
+				BATtseqbase(b, n->tseqbase + start);
+			BATsetcount(b, BATcount(b) + cnt);
 			if (b->tunique)
 				BBPunfix(s->batCacheid);
-			return GDK_FAIL;
+			return GDK_SUCCEED;
 		}
+		if ((BATcount(b) == 0 || is_oid_nil(b->tseqbase)) &&
+		    n->ttype == TYPE_void && is_oid_nil(n->tseqbase)) {
+			/* both b and n are void/nil */
+			BATtseqbase(b, oid_nil);
+			BATsetcount(b, BATcount(b) + cnt);
+			if (b->tunique)
+				BBPunfix(s->batCacheid);
+			return GDK_SUCCEED;
+		}
+		/* we need to materialize b; allocate enough capacity */
+		b->batCapacity = BATcount(b) + cnt;
+		if (BATmaterialize(b) != GDK_SUCCEED)
+			goto bunins_failed;
+	} else if (cnt > BATcapacity(b) - BATcount(b)) {
+		/* if needed space exceeds a normal growth extend just
+		 * with what's needed */
+		BUN ncap = BATcount(b) + cnt;
+		BUN grows = BATgrows(b);
+
+		if (ncap > grows)
+			grows = ncap;
+		if (BATextend(b, grows) != GDK_SUCCEED)
+			goto bunins_failed;
 	}
 
 	/* if growing too much, remove the hash, else we maintain it */
@@ -640,7 +652,6 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 		if (cand == NULL) {
 			b->tnosorted = start <= n->tnosorted && n->tnosorted < end ? n->tnosorted - start : 0;
 			b->tnorevsorted = start <= n->tnorevsorted && n->tnorevsorted < end ? n->tnorevsorted - start : 0;
-			b->tnodense = start <= n->tnodense && n->tnodense < end ? n->tnodense - start : 0;
 			if (n->tdense && n->ttype == TYPE_oid)
 				b->tseqbase = *(oid *) BUNtail(ni, start);
 			else if (n->ttype == TYPE_void &&
@@ -668,7 +679,6 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 			b->tnosorted = 0;
 			if (b->tdense) {
 				b->tdense = FALSE;
-				b->tnodense = r;
 			}
 		}
 		if (BATtrevordered(b) &&
@@ -687,7 +697,6 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 		     cand != NULL ||
 		     1 + *(oid *) BUNtloc(bi, last) != *(oid *) BUNtail(ni, start))) {
 			b->tdense = FALSE;
-			b->tnodense = cand ? 0 : r;
 		}
 		b->tnonil &= n->tnonil;
 		b->tnil |= n->tnil && cnt == BATcount(n);
@@ -862,15 +871,6 @@ BATdel(BAT *b, BAT *d)
 	return GDK_SUCCEED;
 }
 
-#define TYPEcheck(t1,t2,func)						\
-	do {								\
-		if (TYPEerror(t1, t2)) {				\
-			GDKerror("%s: Incompatible types %s and %s.\n", \
-				 func, ATOMname(t2), ATOMname(t1));	\
-			return GDK_FAIL;				\
-		}							\
-	} while (0)
-
 /*
  * The last in this series is a BATreplace, which replaces all the
  * buns mentioned.
@@ -881,7 +881,7 @@ BATreplace(BAT *b, BAT *p, BAT *n, bit force)
 	if (b == NULL || p == NULL || n == NULL || BATcount(n) == 0) {
 		return GDK_SUCCEED;
 	}
-	if (void_replace_bat(b, p, n, force) == BUN_NONE)
+	if (void_replace_bat(b, p, n, force) != GDK_SUCCEED)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -926,7 +926,7 @@ BATslice(BAT *b, BUN l, BUN h)
 	/* If the source BAT is readonly, then we can obtain a VIEW
 	 * that just reuses the memory of the source. */
 	if (BAThrestricted(b) == BAT_READ && BATtrestricted(b) == BAT_READ) {
-		bn = VIEWcreate_(b->hseqbase + low, b, TRUE);
+		bn = VIEWcreate(b->hseqbase + low, b);
 		if (bn == NULL)
 			return NULL;
 		VIEWbounds(b, bn, l, h);
@@ -964,10 +964,6 @@ BATslice(BAT *b, BUN l, BUN h)
 			bn->tnorevsorted = b->tnorevsorted - l;
 		else
 			bn->tnorevsorted = 0;
-		if (b->tnodense > l && b->tnodense < h)
-			bn->tnodense = b->tnodense - l;
-		else
-			bn->tnodense = 0;
 		if (b->tnokey[0] >= l && b->tnokey[0] < h &&
 		    b->tnokey[1] >= l && b->tnokey[1] < h &&
 		    b->tnokey[0] != b->tnokey[1]) {
@@ -1004,7 +1000,6 @@ BATslice(BAT *b, BUN l, BUN h)
 	bn->tnonil = b->tnonil || bn->batCount == 0;
 	bn->tnil = 0;		/* we just don't know */
 	bn->tnosorted = 0;
-	bn->tnodense = 0;
 	bn->tnokey[0] = bn->tnokey[1] = 0;
 	return bn;
       bunins_failed:
@@ -1283,7 +1278,7 @@ BATordered_rev(BAT *b)
  * stable sort can produce an error (not enough memory available),
  * "quick" sort does not produce errors */
 static gdk_return
-do_sort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe,
+do_sort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe,
 	int reverse, int stable)
 {
 	if (n <= 1)		/* trivially sorted */
@@ -1315,8 +1310,6 @@ do_sort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe,
  * parameters may be NULL.  If they're all NULL, this function does
  * nothing.
  *
- * All BATs involved must be dense-headed.
- *
  * If o is specified, it is used to first rearrange b according to the
  * order specified in o, after which b is sorted taking g into
  * account.
@@ -1338,7 +1331,7 @@ do_sort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe,
  * sorted results in (col1s, col2s, col3s):
  *	BATsort(&col1s, &ord1, &grp1, col1, NULL, NULL, 0, 0);
  *	BATsort(&col2s, &ord2, &grp2, col2, ord1, grp1, 0, 0);
- *	BATsort(&col3s, NULL, NULL, col3, ord2, grp2, 0, 0);
+ *	BATsort(&col3s,  NULL,  NULL, col3, ord2, grp2, 0, 0);
  * Note that the "reverse" parameter can be different for each call.
  */
 gdk_return
@@ -1364,7 +1357,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	     (o->ttype == TYPE_void &&	       /* no nil tail */
 	      BATcount(o) != 0 &&
 	      is_oid_nil(o->tseqbase)))) {
-		GDKerror("BATsort: o must be [dense,oid] and same size as b\n");
+		GDKerror("BATsort: o must have type oid and same size as b\n");
 		return GDK_FAIL;
 	}
 	if (g != NULL &&
@@ -1374,7 +1367,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	     (g->ttype == TYPE_void &&	       /* no nil tail */
 	      BATcount(g) != 0 &&
 	      is_oid_nil(g->tseqbase)))) {
-		GDKerror("BATsort: g must be [dense,oid], sorted on the tail, and same size as b\n");
+		GDKerror("BATsort: g must have type oid, sorted on the tail, and same size as b\n");
 		return GDK_FAIL;
 	}
 	assert(reverse == 0 || reverse == 1);
@@ -1443,7 +1436,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	    /* if we want a stable sort, the order index must be
 	     * stable, if we don't want stable, we don't care */
 	    (!stable || ((oid *) pb->torderidx->base)[2])) {
-		/* there is a order index that we can use */
+		/* there is an order index that we can use */
 		on = COLnew(pb->hseqbase, TYPE_oid, BATcount(pb), TRANSIENT);
 		if (on == NULL)
 			goto error;
@@ -1526,7 +1519,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		}
 		on->tsorted = on->trevsorted = 0; /* it won't be sorted */
 		on->tdense = 0;			  /* and hence not dense */
-		on->tnosorted = on->tnorevsorted = on->tnodense = 0;
+		on->tnosorted = on->tnorevsorted = 0;
 		*order = on;
 		ords = (oid *) Tloc(on, 0);
 	} else {
@@ -1695,8 +1688,8 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	return GDK_FAIL;
 }
 
-/* return a new BAT of length n with a dense head with seqbase hseq,
- * and the constant v in the tail */
+/* return a new BAT of length n with seqbase hseq, and the constant v
+ * in the tail */
 BAT *
 BATconstant(oid hseq, int tailtype, const void *v, BUN n, int role)
 {

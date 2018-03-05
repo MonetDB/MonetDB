@@ -186,7 +186,7 @@ msab_init(const char *dbfarm, const char *dbname)
 			/* remove in a separate loop after reading the directory,
 			 * so as to not have any interference */
 			while (dbe != NULL) {
-				remove(dbe->path);
+				(void) remove(dbe->path);
 				db = dbe;
 				dbe = dbe->next;
 				free(db);
@@ -334,11 +334,10 @@ msab_retreatScenario(const char *lang)
 				fflush(f);
 				fclose(f);
 				return(NULL);
-			} else {
-				(void)fclose(f);
-				remove(pathbuf);
-				return(NULL);
 			}
+			(void)fclose(f);
+			(void) remove(pathbuf);
+			return(NULL);
 		} else {
 			if (ferror(f)) {
 				/* some error */
@@ -346,9 +345,9 @@ msab_retreatScenario(const char *lang)
 					 strerror(errno), pathbuf);
 				(void)fclose(f);
 				return strdup(buf);
-			} else
-				remove(pathbuf);  /* empty file? try to remove */
+			}
 			(void)fclose(f);
+			(void) remove(pathbuf);  /* empty file? try to remove */
 			return(NULL);
 		}
 	}
@@ -411,19 +410,19 @@ msab_wildRetreat(void)
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), SCENARIOFILE)) != NULL)
 		return(tmp);
-	remove(pathbuf);
+	(void) remove(pathbuf);
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), CONNECTIONFILE)) != NULL)
 		return(tmp);
-	remove(pathbuf);
+	(void) remove(pathbuf);
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), STARTEDFILE)) != NULL)
 		return(tmp);
-	remove(pathbuf);
+	(void) remove(pathbuf);
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), _sabaoth_internal_uuid)) != NULL)
 		return(tmp);
-	remove(pathbuf);
+	(void) remove(pathbuf);
 
 	return(NULL);
 }
@@ -453,7 +452,7 @@ msab_registerStarting(void)
 
 	if ((f = fopen(pathbuf, "a")) != NULL) {
 		/* append to the file */
-		fprintf(f, LLFMT "\t", (lng)time(NULL));
+		fprintf(f, "%" PRId64 "\t", (int64_t)time(NULL));
 		(void)fflush(f);
 		(void)fclose(f);
 	} else {
@@ -477,7 +476,7 @@ msab_registerStarting(void)
 	/* remove any stray file that would suggest we've finished starting up */
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), STARTEDFILE)) != NULL)
 		return(tmp);
-	remove(pathbuf);
+	(void) remove(pathbuf);
 
 
 	return(NULL);
@@ -523,7 +522,7 @@ msab_registerStop(void)
 
 	if ((f = fopen(pathbuf, "a")) != NULL) {
 		/* append to the file */
-		fprintf(f, LLFMT "\n", (lng)time(NULL));
+		fprintf(f, "%" PRId64 "\n", (int64_t)time(NULL));
 		(void)fflush(f);
 		(void)fclose(f);
 	} else {
@@ -537,7 +536,7 @@ msab_registerStop(void)
 	 * but for the sake of keeping things clean ... */
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), _sabaoth_internal_uuid)) != NULL)
 		return(tmp);
-	remove(pathbuf);
+	(void) remove(pathbuf);
 	return(NULL);
 }
 
@@ -955,17 +954,18 @@ msab_serialise(char **ret, const sabdb *db)
 
 	/* sabdb + sabuplog structs in one */
 	snprintf(buf, sizeof(buf), "sabdb:" SABDBVER ":"
-			"%s,%s,%d,%d,%s,"
-			"%d,%d,%d,"
-			"" LLFMT "," LLFMT "," LLFMT ","
-			"" LLFMT "," LLFMT "," LLFMT ","
-			"%d,%f,%f",
-			db->dbname, db->uri ? db->uri : "", db->locked,
-			(int)(db->state), scens,
-			dbu.startcntr, dbu.stopcntr, dbu.crashcntr,
-			(lng)dbu.avguptime, (lng)dbu.maxuptime, (lng)dbu.minuptime,
-			(lng)dbu.lastcrash, (lng)dbu.laststart, (lng)dbu.laststop,
-			dbu.crashavg1, dbu.crashavg10, dbu.crashavg30);
+			 "%s,%s,%d,%d,%s,"
+			 "%d,%d,%d,"
+			 "%" PRId64 ",%" PRId64 ",%" PRId64 ","
+			 "%" PRId64 ",%" PRId64 ",%" PRId64 ","
+			 "%d,%f,%f",
+			 db->dbname, db->uri ? db->uri : "", db->locked,
+			 (int) db->state, scens,
+			 dbu.startcntr, dbu.stopcntr, dbu.crashcntr,
+			 (int64_t) dbu.avguptime, (int64_t) dbu.maxuptime,
+			 (int64_t) dbu.minuptime, (int64_t) dbu.lastcrash,
+			 (int64_t) dbu.laststart, (int64_t) dbu.laststop,
+			 dbu.crashavg1, dbu.crashavg10, dbu.crashavg30);
 
 	*ret = strdup(buf);
 	return(NULL);

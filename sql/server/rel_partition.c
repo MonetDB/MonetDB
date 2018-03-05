@@ -85,6 +85,7 @@ find_basetables( sql_rel *rel, list *tables )
 	case op_insert:
 	case op_update:
 	case op_delete:
+	case op_truncate:
 		if (rel->r)
 			find_basetables(rel->r, tables); 
 		break;

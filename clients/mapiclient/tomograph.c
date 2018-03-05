@@ -71,7 +71,7 @@ static char *dirpath= "cache/";
 static char *prefix = "tomograph";
 static char basefile[BUFSIZ];
 static FILE *tracefd;
-static lng startrange = 0, endrange = 0;
+static int64_t startrange = 0, endrange = 0;
 static char *inputfile = NULL;
 static char *title = 0;
 static int beat = 5000;
@@ -99,7 +99,7 @@ static int source[MAXTHREADS];
 /* The initial dictionary is geared towars TPCH-use */
 typedef struct COLOR {
 	int freq;
-	lng timeused;
+	int64_t timeused;
 	char *mod, *fcn, *col;
 } Color;
 
@@ -511,12 +511,12 @@ typedef struct BOX {
 	int row;
 	int color;
 	int thread;
-	lng clkstart, clkend;
-	lng ticks;
-	lng memstart, memend;
-	lng footstart, tmpspace;
-	lng inblock, oublock;
-	lng majflt, nswap, csw;
+	int64_t clkstart, clkend;
+	int64_t ticks;
+	int64_t memstart, memend;
+	int64_t footstart, tmpspace;
+	int64_t inblock, oublock;
+	int64_t majflt, nswap, csw;
 	char *stmt;
 	char *fcn;
 	char *numa;
@@ -524,17 +524,17 @@ typedef struct BOX {
 } Box;
 
 int threads[MAXTHREADS];
-lng lastclk[MAXTHREADS];
+int64_t lastclk[MAXTHREADS];
 Box *box= 0;
 int topbox = 0;
 int maxbox = 0;
 int events = 0;
 
-lng totalclkticks = 0; /* number of clock ticks reported */
-lng totalexecticks = 0; /* number of ticks reported for processing */
-lng lastclktick = 0;
-lng totalticks = 0;
-lng starttime = 0;
+int64_t totalclkticks = 0; /* number of clock ticks reported */
+int64_t totalexecticks = 0; /* number of ticks reported for processing */
+int64_t lastclktick = 0;
+int64_t totalticks = 0;
+int64_t starttime = 0;
 int figures = 0;
 char *currentfunction= 0;
 int object = 1;
@@ -586,12 +586,12 @@ static void resetTomograph(void){
 	object = 1;
 }
 
-static lng
+static int64_t
 gnuXtics(int withlabels)
 {
 	const char * scalename = "MB";
 	int digits;
-	lng scale =1, tw, w = lastclktick - starttime;
+	int64_t scale =1, tw, w = lastclktick - starttime;
 	int i;
 
 	if (w >= 10 * US_DD) {
@@ -634,14 +634,14 @@ gnuXtics(int withlabels)
 		fprintf(gnudata, "set xtics ( \"\" 0.0,");
 	for (i = 1; i * tw < w - 2 * tw / 3; i++){
 		if( withlabels)
-		fprintf(gnudata, "\"%g\" "LLFMT".0,", ((double) i) * tw / scale, i * tw);
+		fprintf(gnudata, "\"%g\" %"PRId64".0,", ((double) i) * tw / scale, i * tw);
 		else
-		fprintf(gnudata, "\"\" "LLFMT".0,", i * tw);
+		fprintf(gnudata, "\"\" %"PRId64".0,", i * tw);
 	}
 	if( withlabels)
-		fprintf(gnudata, "\"%.*f %s\" "LLFMT".0", digits, ((double) w) / scale, scalename, w);
+		fprintf(gnudata, "\"%.*f %s\" %"PRId64".0", digits, ((double) w) / scale, scalename, w);
 	else
-		fprintf(gnudata, "\"\" "LLFMT".0",   w);
+		fprintf(gnudata, "\"\" %"PRId64".0",   w);
 	fprintf(gnudata, ")\n");
 	w /= 10;
 	fprintf(gnudata, "set grid xtics\n");
@@ -653,10 +653,10 @@ static void dumpbox(int i)
 	fprintf(stderr,"object %d thread %d[%4d] row %d color %d ", object, box[i].thread,i, box[i].row, box[i].color);
 	if (box[i].fcn)
 		fprintf(stderr,"%s ", box[i].fcn);
-	fprintf(stderr,"clk "LLFMT" - "LLFMT" ", box[i].clkstart, box[i].clkend);
-	fprintf(stderr,"mem "LLFMT" - "LLFMT" ", box[i].memstart, box[i].memend);
-	fprintf(stderr,"foot "LLFMT" - "LLFMT" ", box[i].footstart, box[i].tmpspace);
-	fprintf(stderr,"ticks "LLFMT" ", box[i].ticks);
+	fprintf(stderr,"clk %"PRId64" - %"PRId64" ", box[i].clkstart, box[i].clkend);
+	fprintf(stderr,"mem %"PRId64" - %"PRId64" ", box[i].memstart, box[i].memend);
+	fprintf(stderr,"foot %"PRId64" - %"PRId64" ", box[i].footstart, box[i].tmpspace);
+	fprintf(stderr,"ticks %"PRId64" ", box[i].ticks);
 	if (box[i].stmt)
 		fprintf(stderr,"\"%s\"", box[i].stmt);
 	else
@@ -725,7 +725,7 @@ dumpboxes(void)
 
 	for (i = 0; i < topbox; i++)
 	if (box[i].clkend && box[i].fcn) {
-			fprintf(f, ""LLFMT" %f %f "LLFMT" "LLFMT " " LLFMT " " LLFMT " " LLFMT"\n", box[i].clkstart, (box[i].memend / 1024.0), box[i].tmpspace/1024.0, box[i].inblock, box[i].oublock, box[i].majflt, box[i].nswap,box[i].csw);
+			fprintf(f, "%"PRId64" %f %f %"PRId64" %"PRId64 " %" PRId64 " %" PRId64 " %" PRId64"\n", box[i].clkstart, (box[i].memend / 1024.0), box[i].tmpspace/1024.0, box[i].inblock, box[i].oublock, box[i].majflt, box[i].nswap,box[i].csw);
 			written++;
 		}
 	if( written == 0){
@@ -742,7 +742,7 @@ static void
 showmemory(void)
 {
 	int i;
-	lng max = 0, min = LLONG_MAX;
+	int64_t max = 0, min = INT64_MAX;
 	double mx, mn, mm;
 	double scale = 1.0;
 	const char * scalename = "MB";
@@ -782,7 +782,7 @@ showmemory(void)
 	fprintf(gnudata, "set size 1,%s\n", "0.1");
 	fprintf(gnudata, "set origin 0.0,0.87\n");
 
-	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, lastclktick - starttime);
+	fprintf(gnudata, "set xrange [%"PRId64".0:%"PRId64".0]\n", startrange, lastclktick - starttime);
 	fprintf(gnudata, "set ylabel \"memory in %s\"\n", scalename);
 	fprintf(gnudata, "unset xtics\n");
 	fprintf(gnudata, "set border\n");
@@ -832,7 +832,7 @@ showcpu(void)
 	fprintf(gnudata, "set border\n");
 	gnuXtics(0);
 
-	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, (endrange? endrange:lastclktick - starttime));
+	fprintf(gnudata, "set xrange [%"PRId64".0:%"PRId64".0]\n", startrange, (endrange? endrange:lastclktick - starttime));
 	fprintf(gnudata, "set yrange [0:%d]\n", cpus);
 	for (i = 0; i < topbox; i++)
 		j+=(box[i].state == MDB_PING);
@@ -854,7 +854,7 @@ showcpu(void)
 			// paint the heatmap, the load refers the previous time slot
 			if( prev >= 0)
 				for(j=0; j < cpus; j++)
-					fprintf(gnudata,"set object %d rectangle from "LLFMT".0, %d.0 to "LLFMT".0, %d fillcolor rgb \"%s\" fillstyle solid 1.0 noborder\n",
+					fprintf(gnudata,"set object %d rectangle from %"PRId64".0, %d.0 to %"PRId64".0, %d fillcolor rgb \"%s\" fillstyle solid 1.0 noborder\n",
 						object++, box[prev].clkend, j , box[i].clkstart, (j+1) , getHeatColor(cpuload[j]) );
 			prev = i;
 		}
@@ -872,7 +872,7 @@ static void
 showio(void)
 {
 	int i,b = (beat? beat:1);
-	lng max = 0;
+	int64_t max = 0;
 	char *c, ch;
 
 	for (i = 0; i < topbox; i++)
@@ -895,12 +895,12 @@ showio(void)
 	fprintf(gnudata, "set rmarg 10\n");
 	fprintf(gnudata, "set size 1,%s\n", "0.1");
 	fprintf(gnudata, "set origin 0.0,0.87\n");
-	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, lastclktick - starttime);
-	fprintf(gnudata, "set yrange [0:"LLFMT".0]\n", max / b);
+	fprintf(gnudata, "set xrange [%"PRId64".0:%"PRId64".0]\n", startrange, lastclktick - starttime);
+	fprintf(gnudata, "set yrange [0:%"PRId64".0]\n", max / b);
 	fprintf(gnudata, "unset xtics\n");
 	fprintf(gnudata, "unset ytics\n");
 	fprintf(gnudata, "unset ylabel\n");
-	fprintf(gnudata, "set y2tics in (0, "LLFMT".0) nomirror\n", max / b);
+	fprintf(gnudata, "set y2tics in (0, %"PRId64".0) nomirror\n", max / b);
 	fprintf(gnudata, "set y2label \"in/oublock\"\n");
 	fprintf(gnudata, "set key font \",8\"\n");
 	fprintf(gnudata, "set key bottom right horizontal\n");
@@ -940,10 +940,10 @@ showio(void)
 /* print time (given in microseconds) in human-readable form
  * showing the highest two relevant units */
 static void
-fprintf_time(FILE *f, lng time)
+fprintf_time(FILE *f, int64_t time)
 {
 	if (time >= US_DD)
-		fprintf(f, LLFMT " d %02d h ", time / US_DD,
+		fprintf(f, "%"PRId64 " d %02d h ", time / US_DD,
 			(int) ((time % US_DD) / US_HH));
 	else if (time >= US_HH)
 		fprintf(f, "%d h %02d m ", (int) (time / US_HH),
@@ -972,12 +972,12 @@ showcolormap(char *filename, int all)
 	int i, k = 0,nl;
 	int w = 380; // 600 for 3 columns
 	int h = 590, h1=h;
-	lng totfreq = 0, tottime = 0;
+	int64_t totfreq = 0, tottime = 0;
 	Color *clrs = colors, *_clrs_ = NULL;
 	char *c;
 	time_t tm;
 	char *date;
-	lng longest = lastclktick > starttime? lastclktick - starttime: 0;
+	int64_t longest = lastclktick > starttime? lastclktick - starttime: 0;
 	double perc;
 
 	tm = time(0);
@@ -1066,7 +1066,7 @@ showcolormap(char *filename, int all)
 	}
 
 	h -= 30;
-	fprintf(f, "set label %d \"MAL instructions executed: "LLFMT, object++, totfreq);
+	fprintf(f, "set label %d \"MAL instructions executed: %"PRId64, object++, totfreq);
 	fprintf(f, "\" at 0.0,120\n");
 
 	fprintf(f, "set label %d \"Total CPU core time: ", object++);
@@ -1203,7 +1203,7 @@ createTomogram(void)
 	int top = 0, rowoffset = 0;
 	int i, j;
 	int h, prevobject = 1;
-	lng w = lastclktick - starttime;
+	int64_t w = lastclktick - starttime;
 
 	if( debug)
 		fprintf(stderr,"create tomogram\n");
@@ -1233,7 +1233,7 @@ createTomogram(void)
 	fprintf(gnudata, "set rmarg 10\n");
 	fprintf(gnudata, "set size 1,0.48\n");
 	fprintf(gnudata, "set origin 0.0,%s\n", "0.33");
-	fprintf(gnudata, "set xrange ["LLFMT".0:"LLFMT".0]\n", startrange, lastclktick - starttime);
+	fprintf(gnudata, "set xrange [%"PRId64".0:%"PRId64".0]\n", startrange, lastclktick - starttime);
 
 	/* detect all different threads and assign them a row */
 	for (i = 0; i < topbox; i++){
@@ -1285,7 +1285,7 @@ createTomogram(void)
 
 	/* mark duration of each thread */
 	for (i = 0; i < top; i++)
-		fprintf(gnudata, "set object %d rectangle from %d, %d to "LLFMT".0, %d\n",
+		fprintf(gnudata, "set object %d rectangle from %d, %d to %"PRId64".0, %d\n",
 			object++, 0, (rowoffset +i) * 2 * h + h/3, lastclk[rows[i]], (rowoffset +i) * 2 * h + h - h/3);
 
 	/* fill the duration of each instruction encountered that fit our range constraint */
@@ -1297,16 +1297,16 @@ createTomogram(void)
 					dumpbox(i);
 				// always show a start line
 				if ( box[i].clkend - box[i].clkstart < w/200.0)
-					fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to "LLFMT".0, %d.0 fillcolor rgb \"%s\" fillstyle solid 1.0\n",
+					fprintf(gnudata, "set object %d rectangle from %"PRId64".0, %d.0 to %"PRId64".0, %d.0 fillcolor rgb \"%s\" fillstyle solid 1.0\n",
 						object++, box[i].clkstart, (rowoffset + box[i].row)  * 2 * h, box[i].clkstart+2, (rowoffset + box[i].row) * 2 * h + h, colors[box[i].color].col);
 				else
-					fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to "LLFMT".0, %d.0 fillcolor rgb \"%s\" fillstyle solid 1.0\n",
+					fprintf(gnudata, "set object %d rectangle from %"PRId64".0, %d.0 to %"PRId64".0, %d.0 fillcolor rgb \"%s\" fillstyle solid 1.0\n",
 						object++, box[i].clkstart, (rowoffset + box[i].row)  * 2 * h, box[i].clkend, (rowoffset + box[i].row)  * 2 * h + h, colors[box[i].color].col);
 				break;
 			case MDB_PING:
 				break;
 			case MDB_WAIT:
-				fprintf(gnudata, "set object %d rectangle from "LLFMT".0, %d.0 to %.2f,%.2f front fillcolor rgb \"red\" fillstyle solid 1.0\n",
+				fprintf(gnudata, "set object %d rectangle from %"PRId64".0, %d.0 to %.2f,%.2f front fillcolor rgb \"red\" fillstyle solid 1.0\n",
 					object++, box[i].clkstart, (rowoffset + box[i].row) * 2 * h+h/3, box[i].clkstart+ w /25.0, (rowoffset + box[i].row) *2 *h + h - 0.3 * h);
 				break;
 			}
@@ -1433,7 +1433,7 @@ update(char *line, EventRecord *ev)
 	}
 
 	if (debug)
-		fprintf(stderr, "Update %s input %s stmt %s time " LLFMT" %s\n",(ev->state>=0?statenames[ev->state]:"unknown"),(ev->fcn?ev->fcn:"(null)"),(currentfunction?currentfunction:""),ev->clkticks -starttime,(ev->numa?ev->numa:""));
+		fprintf(stderr, "Update %s input %s stmt %s time %" PRId64" %s\n",(ev->state>=0?statenames[ev->state]:"unknown"),(ev->fcn?ev->fcn:"(null)"),(currentfunction?currentfunction:""),ev->clkticks -starttime,(ev->numa?ev->numa:""));
 
 	if (starttime == 0) {
 		if (ev->fcn == 0 ) {
@@ -1490,7 +1490,7 @@ update(char *line, EventRecord *ev)
 	/* start of instruction box */
 	if (ev->state == MDB_START ) {
 		if(debug)
-			fprintf(stderr, "Start box %s clicks "LLFMT" stmt %s thread %d idx %d box %d\n", (ev->fcn?ev->fcn:""), ev->clkticks,currentfunction, ev->thread,idx,topbox);
+			fprintf(stderr, "Start box %s clicks %"PRId64" stmt %s thread %d idx %d box %d\n", (ev->fcn?ev->fcn:""), ev->clkticks,currentfunction, ev->thread,idx,topbox);
 		box[idx].state = ev->state;
 		box[idx].thread = ev->thread;
 		box[idx].clkstart = ev->clkticks? ev->clkticks:1;
@@ -1536,7 +1536,7 @@ update(char *line, EventRecord *ev)
 			return;
 		}
 		if( debug)
-			fprintf(stderr, "End box [%d] %s clicks "LLFMT" : %s thread %d idx %d box %d\n", idx, (ev->fcn?ev->fcn:""), ev->clkticks, (currentfunction?currentfunction:""), ev->thread,idx,topbox);
+			fprintf(stderr, "End box [%d] %s clicks %"PRId64" : %s thread %d idx %d box %d\n", idx, (ev->fcn?ev->fcn:""), ev->clkticks, (currentfunction?currentfunction:""), ev->thread,idx,topbox);
 		events++;
 		box[idx].clkend = ev->clkticks;
 		box[idx].memend = ev->rss;
@@ -1551,11 +1551,11 @@ update(char *line, EventRecord *ev)
 		/* focus on part of the time frame */
 		if (endrange) {
 			if( debug){
-				fprintf(stderr,"range filter "LLFMT" " LLFMT"\n",startrange,endrange);
-				fprintf(stderr,"expression  "LLFMT" " LLFMT"\n", box[idx].clkstart,  box[idx].clkend);
+				fprintf(stderr,"range filter %"PRId64" %" PRId64"\n",startrange,endrange);
+				fprintf(stderr,"expression  %"PRId64" %" PRId64"\n", box[idx].clkstart,  box[idx].clkend);
 			}
 			if (box[idx].clkend < startrange || box[idx].clkstart >endrange){
-				fprintf(stderr,"reject "LLFMT":"LLFMT" out "LLFMT":"LLFMT"\n",box[idx].clkstart , box[idx].clkend, startrange, endrange);
+				fprintf(stderr,"reject %"PRId64":%"PRId64" out %"PRId64":%"PRId64"\n",box[idx].clkstart , box[idx].clkend, startrange, endrange);
 				return;
 			}
 			if (box[idx].clkstart < startrange)
@@ -1687,7 +1687,7 @@ main(int argc, char **argv)
 				break;
 			if( *optarg == '=')
 				optarg++;
-			cnt = sscanf(optarg,""LLFMT"-"LLFMT, &startrange,&endrange); 
+			cnt = sscanf(optarg,"%"PRId64"-%"PRId64, &startrange,&endrange); 
 			if( cnt != 2)
 				usageTomograph();
 				
@@ -1700,7 +1700,7 @@ main(int argc, char **argv)
 			} else 
 				usageTomograph();
 			if( debug )
-				fprintf(stderr,"Cut out slice "LLFMT" -"LLFMT"\n",startrange,endrange);
+				fprintf(stderr,"Cut out slice %"PRId64" -%"PRId64"\n",startrange,endrange);
 			break;
 		}
 		case '?':

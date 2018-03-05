@@ -1,17 +1,3 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
-* Thu Nov 16 2017 Sjoerd Mullender <sjoerd@acm.org>
-- The functions in the mapi library that require 64 bit integers now
-  use the standard type int64_t instead of the non-standard mapi_int64.
-  This requires a compilation environment that has the stdint.h include
-  file (standardized in C99).  Compilation of the library also requires
-  the inttypes.h include file (also standardized in C99).
-
-* Mon Jul 17 2017 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
-- Add a new pretty printing option to stethoscope
-  Running stethoscope with the flag -j will produce not pretty printed
-  output (one json object per line). Running with the -y flag will produce
-  pretty printed output. Running with neither, wiil produce the legacy,
-  line oriented format
-

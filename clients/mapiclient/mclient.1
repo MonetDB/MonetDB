@@ -128,7 +128,7 @@ is assumed.
 .TP
 \fB\-\-database=\fP\fIdatabase\fP (\fB\-d\fP \fIdatabase\fP)
 Specify the name or URI of the database to connect to.
-The \fB-d\fP can be omitted if an equally named file does not exist in
+The \fB\-d\fP can be omitted if an equally named file does not exist in
 the current directory.
 As such, the first non-option argument will be interpreted as database
 to connect to if the argument does not exist as file.
@@ -148,17 +148,32 @@ these are supported.
 Specify the portnumber of the server (default:
 .BR 50000 ).
 .TP
-\fB\-\-interactive\fP
+\fB\-\-interactive\fP (\fB\-i\fP)
 When reading from standard input, interpret lines starting with
 .B \e
 (backslash) specially.
 See the section BACKSLASH COMMANDS below.
-
-\fB\-\-timer\fP[\fB=\fP\fItimermode\fP] 
+.TP
+\fB\-\-timer\fP\fB=\fP\fItimermode\fP (\fB\-t\fP \fItimermode\fP)
 The \fItimer\fP command controls the format of the time reported for queries.
-The default mode is \fBclock\fP which reports on the wall-clock time in a human friendly way.
-The timer mode \fBnone\fP turns off timing reporting.
-The timer mode \fBperformance\fP shows the timing components in millisecond resolution.
+The default mode is \fBnone\fP which turns off timing reporting.
+The timer mode \fBclock\fP reports the client-side wall-clock time
+("\fBclk\fP") in a human-friendly format.
+The timer mode \fBperformance\fP reports client-side wall-clock time
+("\fBclk\fP") as well as detailed server-side timings, all in milliseconds
+(ms): the time to parse the SQL query, optimize the logical relational plan
+and create the initial physical (MAL) plan ("\fBsql\fP"); the time to
+optimize the physical (MAL) plan ("\fBopt\fP"); the time to execute the
+physical (MAL) plan ("\fBrun\fP").
+All timings are reported on stderr.
+.br
+\fBNote\fP that the client-measured wall-clock time is reported per query
+\fBonly\fP when options \fB\-\-interactive\fP or \fB\-\-echo\fP are used,
+because only then does mclient send individual lines (statements) of the SQL
+script to the server. Otherwise, when mclient sends the SQL script in
+large(r) batch(es), only the total wall-clock time per batch is measured and
+reported. The server-measured detailed performance timings are always
+measured and reported per query.
 .TP
 \fB\-\-user\fP\fB=\fP\fIuser\fP (\fB\-u\fP \fIuser\fP)
 Specify the user to connect as.
@@ -174,8 +189,9 @@ The possible values are
 .BR csv ,
 .BR tab ,
 .BR raw ,
+.BR xml ,
 and
-.BR xml .
+.BR trash .
 .B csv
 is comma-separated values,
 .B tab
@@ -190,9 +206,13 @@ are clearly shown,
 and
 .B x
 are synonyms and are another pretty format meant for human consumption
-where column values are printed in full and below each other, and
+where column values are printed in full and below each other,
 .B xml
-is a valid (in the XML sense) document.
+is a valid (in the XML sense) document,
+and
+.B trash
+does not render any output, enabling performance measurements free of any
+output rendering/serialization costs.
 In addition to plain \fBcsv\fP, two other forms are possible.
 \fBcsv=\fP\fIc\fP uses \fIc\fP as column separator; \fBcsv+\fP\fIc\fP
 uses \fIc\fP as column separator and produces a single header line in
@@ -420,7 +440,7 @@ is the name of the table,
 .I $db
 is the name of the database.
 .PP
-mclient -d $db -s \(dqCOPY INTO $table FROM '$file' USING DELIMITERS ',','\e\en','\e\(dq'\(dq
+mclient \-d $db \-s \(dqCOPY INTO $table FROM '$file' USING DELIMITERS ',','\e\en','\e\(dq'\(dq
 .PP
 Efficiently import data from a CSV file into a table when the file is
 to be read by mclient (e.g. the server has no access to the file).
@@ -431,7 +451,7 @@ is the name of the table,
 .I $db
 is the name of the database.
 .PP
-mclient -d $db -s \(dqCOPY INTO $table FROM STDIN USING DELIMITERS ',','\e\en','\e\(dq'\(dq - < $file
+mclient \-d $db \-s \(dqCOPY INTO $table FROM STDIN USING DELIMITERS ',','\e\en','\e\(dq'\(dq \- < $file
 .PP
 Note that in this latter case, if a count of records is supplied, it
 should be at least as large as the number of records actually present

@@ -112,7 +112,7 @@ CODE  = 22018
 MAPI  = (monetdb) /var/tmp/mtest-3604/.s.monetdb.35433
 QUERY = SELECT '' AS five, f.f1, truncate(f1) AS trunc_f1
            FROM FLOAT8_TBL f;
-ERROR = !SELECT: no such unary operator 'truncate(double)'
+ERROR = !syntax error, unexpected TRUNCATE in: "select '' as five, f.f1, truncate"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-3604/.s.monetdb.35433
 QUERY = SELECT |/ cast('64' as double) AS eight;

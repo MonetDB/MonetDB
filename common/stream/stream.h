@@ -36,14 +36,8 @@
 # else
 #  define stream_export extern __declspec(dllexport)
 # endif
-# ifndef SIZEOF_LNG
-typedef __int64 lng;
-# endif
 #else
 # define stream_export extern
-# ifndef SIZEOF_LNG
-typedef long long lng;
-# endif
 #endif
 #ifndef HAVE_HGE
 # ifdef HAVE___INT128
@@ -56,7 +50,6 @@ typedef __int128_t hge;
 #  endif
 # endif
 #endif
-
 
 /* Defines to help the compiler check printf-style format arguments.
  * These defines are also in our config.h, but we repeat them here so
@@ -107,12 +100,12 @@ stream_export int mnstr_readChr(stream *restrict s, char *restrict val);
 stream_export int mnstr_writeChr(stream *s, char val);
 
 stream_export int mnstr_writeBte(stream *s, int8_t val);
-stream_export int mnstr_readSht(stream *restrict s, short *restrict val);
-stream_export int mnstr_writeSht(stream *s, short val);
+stream_export int mnstr_readSht(stream *restrict s, int16_t *restrict val);
+stream_export int mnstr_writeSht(stream *s, int16_t val);
 stream_export int mnstr_readInt(stream *restrict s, int *restrict val);
 stream_export int mnstr_writeInt(stream *s, int val);
-stream_export int mnstr_readLng(stream *restrict s, lng *restrict val);
-stream_export int mnstr_writeLng(stream *s, lng val);
+stream_export int mnstr_readLng(stream *restrict s, int64_t *restrict val);
+stream_export int mnstr_writeLng(stream *s, int64_t val);
 
 
 stream_export int mnstr_writeFlt(stream *s, float val);
@@ -128,12 +121,12 @@ stream_export int mnstr_writeBteArray(stream *restrict s, const int8_t *restrict
 stream_export int mnstr_writeStr(stream *restrict s, const char *restrict val);
 stream_export int mnstr_readStr(stream *restrict s, char *restrict val);
 
-stream_export int mnstr_readShtArray(stream *restrict s, short *restrict val, size_t cnt);
-stream_export int mnstr_writeShtArray(stream *restrict s, const short *restrict val, size_t cnt);
+stream_export int mnstr_readShtArray(stream *restrict s, int16_t *restrict val, size_t cnt);
+stream_export int mnstr_writeShtArray(stream *restrict s, const int16_t *restrict val, size_t cnt);
 stream_export int mnstr_readIntArray(stream *restrict s, int *restrict val, size_t cnt);
 stream_export int mnstr_writeIntArray(stream *restrict s, const int *restrict val, size_t cnt);
-stream_export int mnstr_readLngArray(stream *restrict s, lng *restrict val, size_t cnt);
-stream_export int mnstr_writeLngArray(stream *restrict s, const lng *restrict val, size_t cnt);
+stream_export int mnstr_readLngArray(stream *restrict s, int64_t *restrict val, size_t cnt);
+stream_export int mnstr_writeLngArray(stream *restrict s, const int64_t *restrict val, size_t cnt);
 #ifdef HAVE_HGE
 stream_export int mnstr_readHgeArray(stream *restrict s, hge *restrict val, size_t cnt);
 stream_export int mnstr_writeHgeArray(stream *restrict s, const hge *restrict val, size_t cnt);

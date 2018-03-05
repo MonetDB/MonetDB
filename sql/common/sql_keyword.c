@@ -41,6 +41,12 @@ keywords_insert(char *k, int token)
 	if(kw) {
 		int len = 0;
 		int bucket = keyword_key(k = toLower(k), &len) & HASH_MASK;
+#ifndef NDEBUG
+		/* no duplicate keywords */
+		keyword *kw2;
+		for (kw2 = keywords[bucket]; kw2; kw2 = kw2->next)
+			assert(strcmp(kw2->keyword, k) != 0);
+#endif
 
 		kw->keyword = k;
 		kw->len = len;

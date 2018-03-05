@@ -55,7 +55,11 @@ ITRnewChunk(lng *res, bat *vid, bat *bid, lng *granule)
 		throw(MAL, "chop.newChunk", INTERNAL_BAT_ACCESS);
 	}
 	cnt = BATcount(b);
-	view = VIEWcreate_(b->hseqbase, b, TRUE);
+	view = VIEWcreate(b->hseqbase, b);
+	if (view == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "chop.newChunk", GDK_EXCEPTION);
+	}
 
 	/*  printf("set bat chunk bound to " LLFMT " 0 - " BUNFMT "\n",
 	 *granule, MIN(cnt,(BUN) *granule)); */

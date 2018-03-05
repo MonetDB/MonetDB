@@ -1,0 +1,66 @@
+stdout of test 'sqlitelogictest-in-single-column.Bug-6522` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 18:32:37 >  
+# 18:32:37 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32244" "--set" "mapi_usock=/var/tmp/mtest-26304/.s.monetdb.32244" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2018"
+# 18:32:37 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.324 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:32244/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-26304/.s.monetdb.32244
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 18:32:37 >  
+# 18:32:37 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-26304" "--port=32244"
+# 18:32:37 >  
+
+#CREATE TABLE tab2(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab2 VALUES (64,77,40), (75,67,58), (46,51,23);
+[ 3	]
+#SELECT ALL * FROM tab2 WHERE + col0 IN ( - 12, col0, - col1, col1 / + col0, col1 );
+% sys.tab2,	sys.tab2,	sys.tab2 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 2,	2,	2 # length
+[ 64,	77,	40	]
+[ 75,	67,	58	]
+[ 46,	51,	23	]
+#SELECT ALL * FROM tab2 WHERE + col0 IN ( col0, - col1, col1 / + col0, col1 );
+% sys.tab2,	sys.tab2,	sys.tab2 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 2,	2,	2 # length
+[ 64,	77,	40	]
+[ 75,	67,	58	]
+[ 46,	51,	23	]
+#SELECT ALL * FROM tab2 WHERE + col0 IN ( - col1, col1 / + col0, col1 );
+% sys.tab2,	sys.tab2,	sys.tab2 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+#SELECT ALL * FROM tab2 WHERE + col0 IN ( col1 / + col0, col1 );
+% sys.tab2,	sys.tab2,	sys.tab2 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+#SELECT ALL * FROM tab2 WHERE + col0 IN ( col1 );
+% sys.tab2,	sys.tab2,	sys.tab2 # table_name
+% col0,	col1,	col2 # name
+% int,	int,	int # type
+% 1,	1,	1 # length
+#DROP TABLE tab2;
+
+# 18:32:37 >  
+# 18:32:37 >  "Done."
+# 18:32:37 >  
+

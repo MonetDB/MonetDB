@@ -67,7 +67,7 @@ local_itoa(ssize_t i)
 {
 	static char buf[32];
 
-	snprintf(buf, 32, SSZFMT, i);
+	snprintf(buf, 32, "%zd", i);
 	return buf;
 }
 static char *
@@ -75,7 +75,7 @@ local_utoa(size_t i)
 {
 	static char buf[32];
 
-	snprintf(buf, 32, SZFMT, i);
+	snprintf(buf, 32, "%zu", i);
 	return buf;
 }
 
@@ -413,7 +413,7 @@ BKCbat_inplace_force(bat *r, const bat *bid, const bat *rid, const bat *uid, con
 		BBPunfix(p->batCacheid);
 		throw(MAL, "bat.inplace", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	if (void_replace_bat(b, p, u, *force) == BUN_NONE) {
+	if (void_replace_bat(b, p, u, *force) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(p->batCacheid);
 		BBPunfix(u->batCacheid);
@@ -762,8 +762,6 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 	    BUNappend(bv, local_utoa(b->tnosorted), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnorevsorted", FALSE) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa(b->tnorevsorted), FALSE) != GDK_SUCCEED ||
-	    BUNappend(bk, "tnodense", FALSE) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->tnodense), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnokey[0]", FALSE) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa(b->tnokey[0]), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tnokey[1]", FALSE) != GDK_SUCCEED ||
@@ -871,7 +869,10 @@ BKCsetColumn(void *r, const bat *bid, const char * const *tname)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.setColumn", ILLEGAL_ARGUMENT " Column name missing");
 	}
-	BATroles(b, *tname);
+	if (BATroles(b, *tname) != GDK_SUCCEED) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "bat.setColumn", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

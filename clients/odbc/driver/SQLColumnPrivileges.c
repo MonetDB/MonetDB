@@ -141,52 +141,50 @@ MNDBColumnPrivileges(ODBCStmt *stmt,
 	   is_grantable VARCHAR
 	 */
 
-	strcpy(query_end,
-	       "select e.value as table_cat, "
-		      "s.name as table_schem, "
-		      "t.name as table_name, "
-		      "c.name as column_name, "
-		      "case a.id "
-			   "when s.owner "
-			   "then '_SYSTEM' "
-			   "else g.name "
-			   "end as grantor, "
-		      "case a.name "
-			   "when 'public' "
-			   "then 'PUBLIC' "
-			   "else a.name "
-			   "end as grantee, "
-		      "pc.privilege_code_name as privilege, "
-		      "case p.grantable "
-			   "when 1 "
-			   "then 'YES' "
-			   "when 0 "
-			   "then 'NO' "
-			   "end as is_grantable "
-	       "from sys.schemas as s, "
-		    "sys._tables as t, "
-		    "sys._columns as c, "
-		    "sys.auths as a, "
-		    "sys.privileges as p, "
-		    "sys.auths as g, "
-		    "sys.env() as e, "
-	       /* this can eventually be replaced by
-		* sys.privilege_codes as pc
-		* see 51_sys_schema_extensionl.sql */
-		    "(values (1, 'SELECT'), "
-			    "(2, 'UPDATE'), "
-			    "(4, 'INSERT'), "
-			    "(8, 'DELETE'), "
-			    "(16, 'EXECUTE'), "
-			    "(32, 'GRANT')) as pc(privilege_code_id, privilege_code_name) "
-	       "where p.obj_id = c.id and "
-		     "c.table_id = t.id and "
-		     "p.auth_id = a.id and "
-		     "t.schema_id = s.id and "
-		     "t.system = false and "
-		     "p.grantor = g.id and "
-		     "e.name = 'gdk_dbname' and "
-		     "p.privileges = pc.privilege_code_id");
+	sprintf(query_end,
+		"select e.value as table_cat, "
+		       "s.name as table_schem, "
+		       "t.name as table_name, "
+		       "c.name as column_name, "
+		       "case a.id "
+			    "when s.owner "
+			    "then '_SYSTEM' "
+			    "else g.name "
+			    "end as grantor, "
+		       "case a.name "
+			    "when 'public' then 'PUBLIC' "
+			    "else a.name "
+			    "end as grantee, "
+		       "pc.privilege_code_name as privilege, "
+		       "case p.grantable "
+			    "when 1 then 'YES' "
+			    "when 0 then 'NO' "
+			    "end as is_grantable "
+		"from sys.schemas as s, "
+		     "sys._tables as t, "
+		     "sys._columns as c, "
+		     "sys.auths as a, "
+		     "sys.privileges as p, "
+		     "sys.auths as g, "
+		     "sys.env() as e, "
+		     "%s "
+		"where p.obj_id = c.id and "
+		      "c.table_id = t.id and "
+		      "p.auth_id = a.id and "
+		      "t.schema_id = s.id and "
+		      "not t.system and "
+		      "p.grantor = g.id and "
+		      "e.name = 'gdk_dbname' and "
+		      "p.privileges = pc.privilege_code_id",
+		/* a server that supports sys.columns also supports
+		 * sys.privilege_codes */
+		stmt->Dbc->has_comment ? "sys.privilege_codes as pc" :
+		     "(values (1, 'SELECT'), "
+			     "(2, 'UPDATE'), "
+			     "(4, 'INSERT'), "
+			     "(8, 'DELETE'), "
+			     "(16, 'EXECUTE'), "
+			     "(32, 'GRANT')) as pc(privilege_code_id, privilege_code_name)");
 	assert(strlen(query) < 1100);
 	query_end += strlen(query_end);
 
@@ -218,7 +216,8 @@ MNDBColumnPrivileges(ODBCStmt *stmt,
 
 	/* add the ordering */
 	strcpy(query_end,
-	       " order by table_cat, table_schem, table_name, column_name, privilege");
+	       " order by table_cat, table_schem, table_name, "
+	       "column_name, privilege");
 	query_end += strlen(query_end);
 
 	/* query the MonetDB data dictionary tables */
@@ -258,7 +257,7 @@ SQLColumnPrivileges(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColumnPrivileges " PTRFMT, PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLColumnPrivileges %p", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -307,7 +306,7 @@ SQLColumnPrivilegesW(SQLHSTMT StatementHandle,
 	SQLRETURN rc = SQL_ERROR;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLColumnPrivilegesW " PTRFMT, PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLColumnPrivilegesW %p", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

@@ -320,7 +320,7 @@ SQLForeignKeys(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLForeignKeys " PTRFMT " ", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLForeignKeys %p ", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -380,7 +380,7 @@ SQLForeignKeysW(SQLHSTMT StatementHandle,
 	SQLRETURN rc = SQL_ERROR;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLForeignKeysW " PTRFMT " ", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLForeignKeysW %p ", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

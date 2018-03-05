@@ -211,7 +211,7 @@ log_read_string(logger *l)
 
 	if ((nr = mnstr_read(l->log, buf, 1, len)) != (ssize_t) len) {
 		buf[len - 1] = 0;
-		fprintf(stderr, "!ERROR: log_read_string: couldn't read name (%s) " SSZFMT "\n", buf, nr);
+		fprintf(stderr, "!ERROR: log_read_string: couldn't read name (%s) %zd\n", buf, nr);
 		GDKfree(buf);
 		return NULL;
 	}
@@ -2933,7 +2933,7 @@ bm_commit(logger *lg)
 			return GDK_FAIL;
 		}
 
-		assert(lb->batRestricted > BAT_WRITE);
+		assert(lb->batRestricted != BAT_WRITE);
 		logbat_destroy(lb);
 
 		if (lg->debug & 1)

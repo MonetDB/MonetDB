@@ -107,7 +107,7 @@ renderEvent(EventRecord *ev){
 	if( ev->eventnr < 0)
 		return;
 	fprintf(s, "[ ");
-	fprintf(s, LLFMT",	", ev->eventnr);
+	fprintf(s, "%"PRId64",	", ev->eventnr);
 	printf("\"%s\",	", ev->time);
 	if( ev->function && *ev->function)
 		fprintf(s, "\"%s[%d]%d\",	", ev->function, ev->pc, ev->tag);
@@ -121,14 +121,14 @@ renderEvent(EventRecord *ev){
 	case MDB_PING: fprintf(s, "\"ping \",	"); break;
 	case MDB_SYSTEM: fprintf(s, "\"system\",	"); 
 	}
-	fprintf(s, LLFMT",	", ev->ticks);
-	fprintf(s, LLFMT",	", ev->rss);
-	fprintf(s, LLFMT",	", ev->size);
-	fprintf(s, LLFMT",	", ev->inblock);
-	fprintf(s, LLFMT",	", ev->oublock);
-	fprintf(s, LLFMT",	", ev->majflt);
-	fprintf(s, LLFMT",	", ev->swaps);
-	fprintf(s, LLFMT",	", ev->csw);
+	fprintf(s, "%"PRId64",	", ev->ticks);
+	fprintf(s, "%"PRId64",	", ev->rss);
+	fprintf(s, "%"PRId64",	", ev->size);
+	fprintf(s, "%"PRId64",	", ev->inblock);
+	fprintf(s, "%"PRId64",	", ev->oublock);
+	fprintf(s, "%"PRId64",	", ev->majflt);
+	fprintf(s, "%"PRId64",	", ev->swaps);
+	fprintf(s, "%"PRId64",	", ev->csw);
 	fprintf(s, "\"%s\"	]\n", ev->stmt);
 }
 
@@ -136,55 +136,86 @@ static void
 convertOldFormat(char *inputfile)
 {	FILE *fdin;
 	char basefile[BUFSIZ];
-	char buf[BUFSIZ]={0}, *response = buf, *e;
-	int first = 0, i = 0;
-	size_t n;
+	char *buf, *e;
+	int notfirst = 0, i;
+	size_t bufsize;
 	size_t len;
 	EventRecord event;
 
+	buf = malloc(BUFSIZ);
+	if (buf == NULL) {
+		fprintf(stderr, "Could not allocate memory\n");
+		return;
+	}
+	bufsize = BUFSIZ;
 	fprintf(stderr, "Converting a file to JSON\n");
 
 	fdin = fopen(inputfile,"r");
 	if( fdin == NULL){
 		fprintf(stderr,"Could not open the input file %s\n", inputfile);
+		free(buf);
 		return;
 	}
-	if( strstr(inputfile,".trace"))
-		*strstr(inputfile,".trace") = 0;
-	snprintf(basefile,BUFSIZ,"%s.json",inputfile);
-	trace = fopen(basefile,"w");
+	/* find file name extension */
+	e = strrchr(inputfile, '.');
+	if (e != NULL) {
+		char *s;
+		/* if last dot before last /, ignore the dot */
+		if ((s = strrchr(inputfile, '/')) != NULL && s > e)
+			e = NULL;
+#if DIR_SEP != '/'
+		/* on Windows, look at both directory separators */
+		else if ((s = strrchr(inputfile, DIR_SEP)) != NULL && s > e)
+			e = NULL;
+#endif
+	}
+	if (e == NULL)
+		i = (int) strlen(inputfile);
+	else
+		i = (int) (e - inputfile);
+	snprintf(basefile, BUFSIZ, "%.*s.json", i, inputfile);
+	trace = fopen(basefile, "w");
 	if( trace == NULL){
 		fprintf(stderr,"Could not create the output file %s\n", basefile);
+		free(buf);
+		fclose(fdin);
 		return;
 	}
-	fprintf(trace?trace:stdout,"[\n{");
+	fprintf(trace,"[\n{");
 	len = 0;
-	while ((n = fread(buf + len, 1, BUFSIZ - len, fdin)) > 0) {
-		buf[len + n] = 0;
-		response = buf;
-		while ((e = strchr(response, '\n')) != NULL) {
-			*e = 0;
-			i = lineparser(response, &event);
-			if (debug  )
-				fprintf(stderr, "PARSE %d:%s\n", i, response);
-			renderJSONevent((trace?trace:stdout), &event, first);
-			first++;
-			response = e + 1;
+	memset(&event, 0, sizeof(event));
+	while (fgets(buf + len, (int) (bufsize - len), fdin) != NULL) {
+		while ((e = strchr(buf + len, '\n')) == NULL) {
+			/* rediculously long line */
+			len += strlen(buf + len); /* i.e. len = strlen(buf) */
+			bufsize += BUFSIZ;
+			if ((e = realloc(buf, bufsize)) == NULL) {
+				free(buf);
+				fclose(fdin);
+				fclose(trace);
+				fprintf(stderr, "Could not allocate memory\n");
+				return;
+			}
+			buf = e;
+			if (fgets(buf + len, (int) (bufsize - len), fdin) == NULL) {
+				/* incomplete line */
+				e = NULL; /* no newline to zap */
+				break;
+			}
 		}
-		if( i){
-			renderJSONevent((trace?trace:stdout),&event,first);
+		if (e)
+			*e = 0;	/* zap newline */
+		i = lineparser(buf, &event);
+		if (i == 0) {
+			renderJSONevent(trace, &event, notfirst);
 			resetEventRecord(&event);
+			notfirst = 1;
 		}
-		/* handle last line in buffer */
-		if (*response) {
-			if (debug)
-				fprintf(stderr,"LASTLINE:%s", response);
-			len = strlen(response);
-			strncpy(buf, response, len + 1);
-		} else
-			len = 0;
 	}
-	fprintf(trace?trace:stdout,"}]\n");
+	fprintf(trace,"}]\n");
+	free(buf);
+	fclose(fdin);
+	fclose(trace);
 	return;
 }
 
@@ -239,7 +270,7 @@ main(int argc, char **argv)
 	char *password = NULL;
 	char buf[BUFSIZ], *buffer, *e, *response;
 	int done = 0;
-	EventRecord *ev = malloc(sizeof(EventRecord));
+	EventRecord *ev = calloc(1, sizeof(EventRecord));
 
 	static struct option long_options[13] = {
 		{ "dbname", 1, 0, 'd' },
@@ -257,8 +288,7 @@ main(int argc, char **argv)
 		{ 0, 0, 0, 0 }
 	};
 
-	if( ev) memset((char*)ev,0, sizeof(EventRecord));
-	else {
+	if( ev == NULL) {
 		fprintf(stderr,"could not allocate space\n");
 		exit(-1);
 	}

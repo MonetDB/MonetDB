@@ -70,6 +70,7 @@ mal_export  str clear_tableRef;
 mal_export  str closeRef;
 mal_export  str columnBindRef;
 mal_export  str columnRef;
+mal_export  str comment_onRef;
 mal_export  str commitRef;
 mal_export  str connectRef;
 mal_export  str copy_fromRef;

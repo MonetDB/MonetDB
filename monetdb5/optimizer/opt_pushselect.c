@@ -181,7 +181,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		if (getModuleId(p) == sqlRef && getFunctionId(p) == deltaRef)
 			push_down_delta++;
 
-		if (0 && getModuleId(p) == sqlRef && getFunctionId(p) == tidRef) { /* rewrite equal table ids */
+		if (/* DISABLES CODE */ (0) && getModuleId(p) == sqlRef && getFunctionId(p) == tidRef) { /* rewrite equal table ids */
 			int sname = getArg(p, 2), tname = getArg(p, 3), s;
 
 			for (s = 0; s < subselects.nr; s++) {

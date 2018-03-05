@@ -49,62 +49,13 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-void
-ALIGNsetH(BAT *b1, BAT *b2)
-{
-	if (b1 == NULL || b2 == NULL)
-		return;
-
-	/* b2 is either dense or has a void(nil) tail */
-	BAThseqbase(b1, b2->hseqbase);
-	b1->batDirtydesc = TRUE;
-}
-
-void
-ALIGNsetT(BAT *b1, BAT *b2)
-{
-	if (b1 == NULL || b2 == NULL)
-		return;
-
-	if (BATtvoid(b2)) {
-		/* b2 is either dense or has a void(nil) tail */
-		if (b1->ttype != TYPE_void)
-			b1->tdense = TRUE;
-		else if (is_oid_nil(b2->tseqbase))
-			b1->tnonil = FALSE;
-		BATtseqbase(b1, b2->tseqbase);
-	} else if (b1->ttype != TYPE_void) {
-		/* b2 is not dense, so set b1 not dense */
-		b1->tdense = FALSE;
-		BATtseqbase(b1, oid_nil);
-		b1->tnonil = b2->tnonil;
-	} else if (BATtkey(b2))
-		BATtseqbase(b1, 0);
-	BATkey(b1, BATtkey(b2));
-	b1->tsorted = BATtordered(b2);
-	b1->trevsorted = BATtrevordered(b2);
-	b1->batDirtydesc = TRUE;
-	b1->tnorevsorted = b2->tnorevsorted;
-	if (b2->tnokey[0] != b2->tnokey[1]) {
-		b1->tnokey[0] = b2->tnokey[0];
-		b1->tnokey[1] = b2->tnokey[1];
-	} else {
-		b1->tnokey[0] = b1->tnokey[1];
-	}
-	b1->tnosorted = b2->tnosorted;
-	b1->tnodense = b2->tnodense;
-}
-
-/*
- * The routines @emph{ALIGN_synced} and @emph{ALIGN_ordered} allow to
- * simply query the alignment status of the two head columns of two
- * BATs.
- */
+/* Return TRUE if the two BATs are aligned (same size, same
+ * hseqbase). */
 int
 ALIGNsynced(BAT *b1, BAT *b2)
 {
-	BATcheck(b1, "ALIGNsynced: bat 1 required", 0);
-	BATcheck(b2, "ALIGNsynced: bat 2 required", 0);
+	if (b1 == NULL || b2 == NULL)
+		return 0;
 
 	assert(!is_oid_nil(b1->hseqbase));
 	assert(!is_oid_nil(b2->hseqbase));
@@ -128,12 +79,12 @@ ALIGNsynced(BAT *b1, BAT *b2)
  * need a modified version.
  */
 BAT *
-VIEWcreate_(oid seq, BAT *b, int slice_view)
+VIEWcreate(oid seq, BAT *b)
 {
 	BAT *bn;
 	bat tp = 0;
 
-	BATcheck(b, "VIEWcreate_", NULL);
+	BATcheck(b, "VIEWcreate", NULL);
 
 	bn = BATcreatedesc(seq, b->ttype, FALSE, TRANSIENT);
 	if (bn == NULL)
@@ -174,8 +125,7 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 	/* Some bits must be copied individually. */
 	bn->batDirty = BATdirty(b);
 	bn->batRestricted = BAT_READ;
-	/* slices are unequal to their parents; cannot use accs */
-	if (slice_view || !tp || isVIEW(b))
+	if (!tp || isVIEW(b))
 		bn->thash = NULL;
 	else
 		bn->thash = b->thash;
@@ -192,12 +142,6 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 		return NULL;
 	}
 	return bn;
-}
-
-BAT *
-VIEWcreate(oid seq, BAT *b)
-{
-	return VIEWcreate_(seq, b, FALSE);
 }
 
 /*
@@ -454,10 +398,6 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 		view->tnorevsorted -= l;
 	else
 		view->tnorevsorted = 0;
-	if (view->tnodense > l && view->tnodense < l + cnt)
-		view->tnodense -= l;
-	else
-		view->tnodense = 0;
 	if (view->tnokey[0] >= l && view->tnokey[0] < l + cnt &&
 	    view->tnokey[1] >= l && view->tnokey[1] < l + cnt &&
 	    view->tnokey[0] != view->tnokey[1]) {
@@ -466,6 +406,9 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 	} else {
 		view->tnokey[0] = view->tnokey[1] = 0;
 	}
+	/* slices are unequal to their parents; cannot use accs */
+	if (b->thash == view->thash)
+		view->thash = NULL;
 }
 
 /*

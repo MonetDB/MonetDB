@@ -231,7 +231,7 @@ MACROvalidate(MalBlkPtr mb)
 		retseen = p->token == RETURNsymbol || p->token == YIELDsymbol || p->barrier == RETURNsymbol || p->barrier == YIELDsymbol;
 	}
 	if (retseen && i != mb->stop - 1)
-		throw(MAL, "optimizer.MACROvalidate", MACRO_SYNTAX_ERROR);
+		throw(MAL, "optimizer.MACROvalidate", SQLSTATE(HY002) MACRO_SYNTAX_ERROR);
 	return MAL_SUCCEED;
 }
 
@@ -253,7 +253,7 @@ MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 		if (getFunctionId(q) && idcmp(getFunctionId(q), t->name) == 0 && 
 			getSignature(t)->token == FUNCTIONsymbol) {
 			if (i == last)
-				throw(MAL, "optimizer.MACROoptimizer", MACRO_DUPLICATE);
+				throw(MAL, "optimizer.MACROoptimizer", SQLSTATE(HY002) MACRO_DUPLICATE);
 
 			last = i;
 			i = inlineMALblock(mb, i, t->def);
@@ -262,7 +262,7 @@ MACROprocessor(Client cntxt, MalBlkPtr mb, Symbol t)
 				
 			cnt++;
 			if (cnt > MAXEXPANSION)
-				throw(MAL, "optimizer.MACROoptimizer", MACRO_TOO_DEEP);
+				throw(MAL, "optimizer.MACROoptimizer", SQLSTATE(HY002) MACRO_TOO_DEEP);
 		}
 	}
 	return msg;
@@ -514,7 +514,7 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	newComment(mb,buf);
 	addtoMalBlkHistory(mb);
 	if (mb->errors)
-		throw(MAL, "optimizer.macro", PROGRAM_GENERAL);
+		throw(MAL, "optimizer.macro", SQLSTATE(42000) PROGRAM_GENERAL);
 	return msg;
 }
 
@@ -557,6 +557,6 @@ str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	newComment(mb,buf);
 	addtoMalBlkHistory(mb);
 	if (mb->errors)
-		throw(MAL, "optimizer.orcam", PROGRAM_GENERAL);
+		throw(MAL, "optimizer.orcam", SQLSTATE(42000) PROGRAM_GENERAL);
 	return msg;
 }

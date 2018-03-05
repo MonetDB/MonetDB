@@ -1,0 +1,48 @@
+stderr of test 'drop-function-if-exists` in directory 'sql/test` itself:
+
+
+# 17:57:56 >  
+# 17:57:56 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34272" "--set" "mapi_usock=/var/tmp/mtest-7281/.s.monetdb.34272" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-sqlextra/BUILD/var/MonetDB/mTests_sql_test" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 17:57:56 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-sqlextra/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 34272
+# cmdline opt 	mapi_usock = /var/tmp/mtest-7281/.s.monetdb.34272
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-sqlextra/BUILD/var/MonetDB/mTests_sql_test
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 553648138
+
+# 17:57:56 >  
+# 17:57:56 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7281" "--port=34272"
+# 17:57:56 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-7281/.s.monetdb.34272
+QUERY = SELECT * FROM demof1(1); -- should fail
+ERROR = !SELECT: no such operator 'demof1'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-7281/.s.monetdb.34272
+QUERY = DROP FUNCTION demof(clob); -- should fail
+ERROR = !DROP FUNCTION: no such function 'demof' (clob)
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-7281/.s.monetdb.34272
+QUERY = SELECT * FROM demof('test'); -- should fail
+ERROR = !SELECT: no such operator 'demof'
+CODE  = 42000
+
+# 17:57:56 >  
+# 17:57:56 >  "Done."
+# 17:57:56 >  
+

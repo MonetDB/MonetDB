@@ -52,14 +52,14 @@ BATidxsync(void *arg)
 
 /* return TRUE if we have a orderidx on the tail, even if we need to read
  * one from disk */
-int
+bool
 BATcheckorderidx(BAT *b)
 {
-	int ret;
+	bool ret;
 	lng t = 0;
 
 	if (b == NULL)
-		return 0;
+		return false;
 	assert(b->batCacheid > 0);
 	ALGODEBUG t = GDKusec();
 	MT_lock_set(&GDKhashLock(b->batCacheid));
@@ -93,7 +93,7 @@ BATcheckorderidx(BAT *b)
 					b->torderidx = hp;
 					ALGODEBUG fprintf(stderr, "#BATcheckorderidx: reusing persisted orderidx %d\n", b->batCacheid);
 					MT_lock_unset(&GDKhashLock(b->batCacheid));
-					return 1;
+					return true;
 				}
 				close(fd);
 				/* unlink unusable file */
@@ -312,7 +312,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 
 	if (BATcheckorderidx(b))
 		return GDK_SUCCEED;
-	switch (ATOMstorage(b->ttype)) {
+	switch (ATOMbasetype(b->ttype)) {
 	case TYPE_bte:
 	case TYPE_sht:
 	case TYPE_int:
@@ -378,7 +378,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		q0 = p0 + BATcount(a[0]);
 		q1 = p1 + BATcount(a[1]);
 
-		switch (ATOMstorage(b->ttype)) {
+		switch (ATOMbasetype(b->ttype)) {
 		case TYPE_bte: BINARY_MERGE(bte); break;
 		case TYPE_sht: BINARY_MERGE(sht); break;
 		case TYPE_int: BINARY_MERGE(int); break;
@@ -420,7 +420,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 			q[i] = p[i] + BATcount(a[i]);
 		}
 
-		switch (ATOMstorage(b->ttype)) {
+		switch (ATOMbasetype(b->ttype)) {
 		case TYPE_bte: NWAY_MERGE(bte); break;
 		case TYPE_sht: NWAY_MERGE(sht); break;
 		case TYPE_int: NWAY_MERGE(int); break;

@@ -26,3 +26,12 @@ d2 = process.client('sqldump', args=['-f'],
 out, err = d2.communicate()
 sys.stdout.write(out)
 sys.stderr.write(err)
+
+p = process.client('sql',
+                   stdin = open(os.path.join(os.getenv('TSTSRCDIR'),
+                                             'comment-dump-cleanup.sql')),
+                   stdout = process.PIPE, stderr = process.PIPE,
+                   log = True)
+out, err = p.communicate()
+sys.stdout.write(out)
+sys.stderr.write(err)

@@ -216,7 +216,7 @@ extern stmt *stmt_unop(backend *be, stmt *op1, sql_subfunc *op);
 extern stmt *stmt_binop(backend *be, stmt *op1, stmt *op2, sql_subfunc *op);
 extern stmt *stmt_Nop(backend *be, stmt *ops, sql_subfunc *op);
 extern stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *imp, int f_union);
-extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int reduce, int no_nil);
+extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int reduce, int no_nil, int nil_if_empty);
 
 extern stmt *stmt_alias(backend *be, stmt *op1, const char *tname, const char *name);
 

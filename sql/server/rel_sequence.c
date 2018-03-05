@@ -367,7 +367,7 @@ rel_sequences(mvc *sql, symbol *s)
 		}
 		break;
 		default:
-			return sql_error(sql, 01, SQLSTATE(42000) "sql_stmt Symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
+			return sql_error(sql, 01, SQLSTATE(42000) "sql_stmt Symbol(%p)->token = %s", s, token2string(s->token));
 	}
 	sql->type = Q_SCHEMA; 
 	return res;

@@ -71,8 +71,8 @@ SQLSetPos(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetPos " PTRFMT " " ULENFMT " %s %s\n",
-		PTRFMTCAST StatementHandle, ULENCAST RowNumber,
+	ODBCLOG("SQLSetPos %p " ULENFMT " %s %s\n",
+		StatementHandle, ULENCAST RowNumber,
 		translateOperation(Operation), translateLockType(LockType));
 #endif
 

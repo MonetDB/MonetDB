@@ -38,10 +38,6 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				setVarCList(mb,getArg(p,0));
 			else if(getFunctionId(p) == subdeltaRef) 
 				setVarCList(mb,getArg(p,0));
-			else if(getFunctionId(p) == emptybindRef && p->retc == 2) 
-				setVarCList(mb,getArg(p,0));
-			else if(getFunctionId(p) == bindRef && p->retc == 2) 
-				setVarCList(mb,getArg(p,0));
 		}
 		else if( getModuleId(p) == algebraRef ){
 			if(getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef)

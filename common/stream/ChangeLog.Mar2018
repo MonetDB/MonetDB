@@ -1,0 +1,17 @@
+# ChangeLog file for stream
+# This file is updated with Maddlog
+
+* Tue Nov 21 2017 Sjoerd Mullender <sjoerd@acm.org>
+- The interface of mnstr_fgetpos and mnstr_fsetpos was changed to look
+  more like the standard C functions fsetpos and fgetpos: they both have
+  a second argument "pointer to fpos_t".
+
+* Tue Aug  8 2017 Sjoerd Mullender <sjoerd@acm.org>
+- Removed function wbstream.
+
+* Mon Aug  7 2017 Sjoerd Mullender <sjoerd@acm.org>
+- Removed functions udp_rastream and udp_wastream.
+- Removed functions socket_rstream and socket_wstream.
+- Removed functions append_wstream and append_wastream.
+- Removed functions mnstr_rstream and mnstr_wstream.
+

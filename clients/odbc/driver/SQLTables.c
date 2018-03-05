@@ -29,73 +29,6 @@
 #include "ODBCStmt.h"
 #include "ODBCUtil.h"
 
-
-#define NCOLUMNS	5
-#define NROWS		10
-static const char *columnnames[NCOLUMNS] = {
-	"table_cat",
-	"table_schem",
-	"table_name",
-	"table_type",
-	"remarks"
-};
-static const char *columntypes[NCOLUMNS] = {
-	"varchar",
-	"varchar",
-	"varchar",
-	"varchar",
-	"varchar"
-};
-static const int columnlengths[NCOLUMNS] = {
-	1,
-	1,
-	1,
-	20,
-	1
-};
-static const char *tuples0[NCOLUMNS] = {
-	NULL, NULL, NULL, "GLOBAL TEMPORARY", NULL
-};
-static const char *tuples1[NCOLUMNS] = {
-	NULL, NULL, NULL, "LOCAL TEMPORARY", NULL
-};
-static const char *tuples2[NCOLUMNS] = {
-	NULL, NULL, NULL, "MERGE TABLE", NULL
-};
-static const char *tuples3[NCOLUMNS] = {
-	NULL, NULL, NULL, "REMOTE TABLE", NULL
-};
-static const char *tuples4[NCOLUMNS] = {
-	NULL, NULL, NULL, "REPLICA TABLE", NULL
-};
-static const char *tuples5[NCOLUMNS] = {
-	NULL, NULL, NULL, "STREAM TABLE", NULL
-};
-static const char *tuples6[NCOLUMNS] = {
-	NULL, NULL, NULL, "SYSTEM TABLE", NULL
-};
-static const char *tuples7[NCOLUMNS] = {
-	NULL, NULL, NULL, "SYSTEM VIEW", NULL
-};
-static const char *tuples8[NCOLUMNS] = {
-	NULL, NULL, NULL, "TABLE", NULL
-};
-static const char *tuples9[NCOLUMNS] = {
-	NULL, NULL, NULL, "VIEW", NULL
-};
-static const char **tuples[NROWS] = {
-	tuples0,
-	tuples1,
-	tuples2,
-	tuples3,
-	tuples4,
-	tuples5,
-	tuples6,
-	tuples7,
-	tuples8,
-	tuples9
-};
-
 static SQLRETURN
 MNDBTables(ODBCStmt *stmt,
 	   SQLCHAR *CatalogName, SQLSMALLINT NameLength1,
@@ -162,6 +95,9 @@ MNDBTables(ODBCStmt *stmt,
 				      "name as table_schem, "
 				      "cast(null as varchar(1)) as table_name, "
 				      "cast(null as varchar(1)) as table_type, "
+			       /* ODBC says remarks column contains
+				* NULL even though MonetDB supports
+				* schema remarks */
 				      "cast(null as varchar(1)) as remarks "
 			       "from sys.schemas order by table_schem");
 	} else if (NameLength1 == 0 &&
@@ -170,9 +106,12 @@ MNDBTables(ODBCStmt *stmt,
 		   TableType &&
 		   strcmp((char *) TableType, SQL_ALL_TABLE_TYPES) == 0) {
 		/* Special case query to fetch all Table type names. */
-		mapi_virtual_result(stmt->hdl, NCOLUMNS, columnnames,
-				    columntypes, columnlengths, NROWS, tuples);
-		return ODBCInitResult(stmt);
+		query = strdup("select cast(null as varchar(1)) as table_cat, "
+				      "cast(null as varchar(1)) as table_schem, "
+				      "cast(null as varchar(1)) as table_name, "
+				      "table_type_name as table_type, "
+				      "cast(null as varchar(1)) as remarks "
+			       "from sys.table_types order by table_type");
 	} else {
 		/* no special case argument values */
 		char *query_end;
@@ -229,72 +168,21 @@ MNDBTables(ODBCStmt *stmt,
 			goto nomem;
 		query_end = query;
 
-		strcpy(query_end, "with ot as (");
-		query_end += strlen(query_end);
-
-		strcpy(query_end,
+		sprintf(query_end,
 		       "select e.value as table_cat, "
 			      "s.name as table_schem, "
 			      "t.name as table_name, "
-			      "case when t.type = 0 and "
-					"t.system = false and "
-					"t.temporary = 0 and "
-					"s.name <> 'tmp' "
-				   "then cast('TABLE' as varchar(20)) "
-/* start <= 11.21.X (at some point this code can be removed) */
-				   "when t.type = 0 and "
-					"t.system = false and "
-					"t.temporary = 0 and "
-					"s.name = 'tmp' "
-				   "then cast('GLOBAL TEMPORARY' as varchar(20)) "
-				   "when t.type = 0 and "
-					"t.system = true and "
-					"t.temporary = 0 "
-				   "then cast('SYSTEM TABLE' as varchar(20)) "
-				   "when t.type = 0 and "
-					"t.system = false and "
-					"t.temporary = 1 "
-				   "then cast('LOCAL TEMPORARY' as varchar(20)) "
-				   "when t.type = 1 and "
-					"t.system = true and "
-					"t.temporary = 0 "
-				   "then cast('SYSTEM VIEW' as varchar(20)) "
-/* end <= 11.21.X */
-				   "when t.type = 1 "
-				   "then cast('VIEW' as varchar(20)) "
-				   "when t.type = 3 "
-				   "then cast('MERGE TABLE' as varchar(20)) "
-				   "when t.type = 4 "
-				   "then cast('STREAM TABLE' as varchar(20)) "
-				   "when t.type = 5 "
-				   "then cast('REMOTE TABLE' as varchar(20)) "
-				   "when t.type = 6 "
-				   "then cast('REPLICA TABLE' as varchar(20)) "
-				   "when t.type = 10 and "
-					"t.system = true and "
-					"t.temporary = 0 "
-				   "then cast('SYSTEM TABLE' as varchar(20)) "
-				   "when t.type = 11 and "
-					"t.system = true and "
-					"t.temporary = 0 "
-				   "then cast('SYSTEM VIEW' as varchar(20)) "
-				   "when t.type = 20 and "
-					"t.system = false and "
-					"t.temporary = 1 and "
-					"s.name = 'tmp' "
-				   "then cast('GLOBAL TEMPORARY' as varchar(20)) "
-				   "when t.type = 30 and "
-					"t.system = false and "
-					"t.temporary = 1 "
-				   "then cast('LOCAL TEMPORARY' as varchar(20)) "
-				   "else cast('INTERNAL TABLE TYPE' as varchar(20)) "
-			      "end as table_type, "
-			      "cast(null as varchar(1)) as remarks "
+		              "tt.table_type_name as table_type, "
+			      "%s as remarks "
 		       "from sys.schemas s, "
-			    "sys.tables t, "
+			    "sys.tables t%s, "
+		            "sys.table_types tt, "
 			    "sys.env() e "
 		       "where s.id = t.schema_id and "
-			     "e.name = 'gdk_dbname'");
+		             "t.type = tt.table_type_id and "
+			     "e.name = 'gdk_dbname'",
+			stmt->Dbc->has_comment ? "c.remark" : "cast(null as varchar(1))",
+			stmt->Dbc->has_comment ? " left outer join sys.comments c on c.id = t.id" : "");
 		assert(strlen(query) < 1900);
 		query_end += strlen(query_end);
 
@@ -321,50 +209,37 @@ MNDBTables(ODBCStmt *stmt,
 			free(tab);
 		}
 
-		strcpy(query_end, ") select * from ot");
-		query_end += strlen(query_end);
-
 		if (NameLength4 > 0) {
 			/* filtering requested on table type */
-			char buf[17];	/* the longest string is "GLOBAL TEMPORARY" */
-			int i, j;
+			char buf[32];	/* the longest string is "GLOBAL TEMPORARY TABLE" */
+			int i;
+			size_t j;
 
-			strcpy(query_end, " where ");
+			strcpy(query_end, " and tt.table_type_name in (");
 			query_end += strlen(query_end);
-			for (i = j = 0; i < NameLength4 + 1; i++) {
+			for (j = 0, i = 0; i < NameLength4 + 1; i++) {
 				if (i == NameLength4 || TableType[i] == ',') {
 					if (j > 0 && buf[j - 1] == ' ')
 						j--;
-					if (j >= (int) sizeof(buf) || j == 0) {
+					if (j >= sizeof(buf) || j == 0) {
 						j = 0;
 						continue;
 					}
 					buf[j] = 0;
-					if (strcmp(buf, "VIEW") == 0 ||
-					    strcmp(buf, "TABLE") == 0 ||
-					    strcmp(buf, "MERGE TABLE") == 0 ||
-					    strcmp(buf, "STREAM TABLE") == 0 ||
-					    strcmp(buf, "REMOTE TABLE") == 0 ||
-					    strcmp(buf, "REPLICA TABLE") == 0 ||
-					    strcmp(buf, "SYSTEM TABLE") == 0 ||
-					    strcmp(buf, "SYSTEM VIEW") == 0 ||
-					    strcmp(buf, "GLOBAL TEMPORARY") == 0 ||
-					    strcmp(buf, "LOCAL TEMPORARY") == 0) {
-						query_end += snprintf(query_end, 38, "table_type = '%s' or ", buf);
-					}
-					j = 0;
-				} else if (j < (int) sizeof(buf) &&
+					query_end += snprintf(query_end, 38, "'%s',", buf);
+ 					j = 0;
+				} else if (j < sizeof(buf) &&
 					   TableType[i] != '\'' &&
 					   (TableType[i] != ' ' ||
 					    (j > 0 && buf[j - 1] != ' ')))
 					buf[j++] = TableType[i];
 			}
-			if (strcmp(query_end - 7, " where ") == 0) {
-				/* no extra tests added, so remove " where " */
-				query_end -= 7;
+			if (query_end[-1] == ',') {
+				query_end[-1] = ')';
 			} else {
-				/* remove extra " or " at end */
-				query_end -= 4;
+				/* no extra tests added, so remove
+				 * clause completely */
+				query_end -= 28;
 			}
 			*query_end = 0;
 		}
@@ -407,7 +282,7 @@ SQLTables(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLTables " PTRFMT " ", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLTables %p ", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -448,7 +323,7 @@ SQLTablesW(SQLHSTMT StatementHandle,
 	SQLCHAR *catalog = NULL, *schema = NULL, *table = NULL, *type = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLTablesW " PTRFMT " ", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLTablesW %p ", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

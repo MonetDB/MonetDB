@@ -1,5 +1,5 @@
 %define name MonetDB
-%define version 11.28.0
+%define version 11.30.0
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # groups of related archs
@@ -132,7 +132,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Jul2017-SP3/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Jul2017-SP4/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 # we need checkpolicy and selinux-policy-devel for the SELinux policy
@@ -1046,6 +1046,54 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Fri Feb 02 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.27.13-20180202
+- Rebuilt.
+- BZ#3470: Support setClob without length restrictions
+- BZ#6468: JDBC 2.27 fails with year < 1000
+- BZ#6482: Query failures on order by on union
+- BZ#6483: Monetdb crashes, on query
+- BZ#6487: UNION of NULLs with several tables fails
+- BZ#6488: Semijoin returns duplicate values from a column with unique
+  values
+- BZ#6489: Sqlitelogictest - Wrong result set of complex conditional query
+- BZ#6490: Sqlitelogictest - Select query with an IN clause parse error
+- BZ#6491: SELECT IN returns NULL instead of false when not found
+- BZ#6492: Persistent hashes stored and then ignored. Storage info not
+  in sync with actual indices.
+- BZ#6493: Sqlitelogictest - Aggregation query on empty table with
+  DISTINCT clause
+- BZ#6494: Sqlitelogictest - Algebra operators priority in select query
+- BZ#6495: Sqlitelogictest - Omitting AS in a result set column alias name
+- BZ#6496: Sqlitelogictest - Select interval comparisons between
+  floating-points and NULL
+- BZ#6497: Sqlitelogictest - Select not between query producing wrong
+  results
+- BZ#6498: large virtual memory spike on BLOB column COUNT
+- BZ#6499: Crash when trying to replace a function defined in sys from
+  a different schema
+- BZ#6502: Query with multiple limit clauses does not return anything
+- BZ#6508: Segmentation fault in mserver5 on Python2 UDF with TIMESTAMP
+  column input that has NULL values (conversion.c:438, PyNullMask_FromBAT)
+- BZ#6510: Sqlitelogictest: Wrong output in aggregation query
+- BZ#6512: Monetdb crashes on query with limit after sort with case
+- BZ#6514: Sqlitelogictest: Range query between NULL values not possible
+- BZ#6515: Insert null second interval value results in 0
+- BZ#6516: Sqlitelogictest unknown bat append operation
+- BZ#6517: Sqlitelogictest overflow in conversion during MAL plan
+  execution
+- BZ#6518: Sqlitelogictest: count aggregation with not in operator
+- BZ#6519: Sqlitelogictest: algebra join between lng and int BATs
+  undefined
+- BZ#6520: UPDATE with correlated subquery causes assertion (or segfault)
+- BZ#6522: Sqlitelogictest: IN operator return a single column
+- BZ#6523: Sqlitelogictest: Case statement subquery missing
+- BZ#6524: Sqlitelogictest: Crash in aggregation query with IN operator
+- BZ#6527: Crash using order by alias in subquery
+
+* Tue Jan 16 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.27.13-20180202
+- buildtools: Added the .lib and .h files needed for building extensions to the
+  Windows installer.
+
 * Mon Dec 04 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.11-20171204
 - Rebuilt.
 - BZ#3898: Deadlock on insertion

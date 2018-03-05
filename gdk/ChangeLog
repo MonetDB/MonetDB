@@ -1,22 +1,3 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
-* Tue Nov  7 2017 Sjoerd Mullender <sjoerd@acm.org>
-- The NIL representation of the internal flt and dbl types was changed
-  from the smallest representable finite value to NaN (not-a-number).
-
-* Mon Sep 18 2017 Sjoerd Mullender <sjoerd@acm.org>
-- Changed the interface of ATOMformat and VALformat: they now return a
-  pointer to the allocated string.
-
-* Thu Sep 14 2017 Sjoerd Mullender <sjoerd@acm.org>
-- The length "method" for atoms now returns a size_t, the "len" field of
-  a ValRecord is now a size_t, the "size" field of the atomDesc structure
-  is now unsigned short.
-- Removed the "align" field from the ATOM descriptor (atomDesc) structure.
-- The atomtostr and atomfromstr "methods" for atoms now return ssize_t
-  and require a pointer to size_t for the size of the buffer.
-- The atom tostr and fromstr "methods" now always return -1 on error.
-  A return value greater than 0 is normal, a return value of 0 is not
-  normal, but technically not an error.
-
