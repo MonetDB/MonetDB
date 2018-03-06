@@ -2228,6 +2228,93 @@ AS_CASE([$enable_geom],
 AC_SUBST([GEOS_INCS])
 AC_SUBST([GEOS_LIBS])
 
+# gdal
+org_have_gdal="auto"
+have_gdal=$org_have_gdal
+AC_ARG_WITH([gdal],
+	[AS_HELP_STRING([--with-gdal=DIR],
+		[gdal library is installed in DIR])],
+		[have_gdal="$withval"], [have_gdal="auto"])
+
+AS_VAR_IF([enable_geom], [no],
+	[AS_CASE([$have_gdal],
+		[no|auto],
+			[have_gdal=no
+			 AS_VAR_IF([why_not_gdal], [],
+				[why_not_gdal="(ESRI Shapefile vault requires the geom module)"])],
+		[AC_MSG_ERROR([geom module required for gdal])])
+	 AS_CASE([$have_shp],
+		[no|auto],
+			[have_shp=no
+			 AS_VAR_IF([why_not_shp], [],
+				[why_not_shp="(ESRI Shapefile vault requires the geom module)"])],
+		[AC_MSG_ERROR([geom module required for shp])])],
+	[# first autoconf for distributions that added a .pc file themselves (Fedora)
+	 AS_VAR_IF([have_gdal], [no], [], [
+		AS_CASE([$have_gdal],
+		[auto|yes], [
+			PKG_CHECK_MODULES([GDAL], [gdal], [have_gdal="pkgconf"], [have_gdal="$have_gdal"])],
+		[
+			GDAL_CFLAGS="-I$have_gdal/include"
+			GDAL_LIBS="-L$have_gdal/lib"])])
+	 # try to detect it manually like upstream provides it
+	 AS_VAR_IF([have_gdal], [no],
+		[],
+		[AS_VAR_IF([have_gdal], [pkgconf],
+			[have_gdal=yes],
+			[save_CPPFLAGS="$CPPFLAGS"
+			 save_LDFLAGS="$LDFLAGS"
+			 save_LIBS="$LIBS"
+			 CPPFLAGS="$CPPFLAGS $GDAL_CFLAGS"
+			 LDFLAGS="$LDFLAGS $GDAL_LIBS"
+			 LIBS=""
+			 found_gdal_h=yes
+			 AC_CHECK_HEADER([gdal.h], [],
+				[AC_CHECK_HEADER([gdal/gdal.h],
+					[AS_VAR_IF([GDAL_CFLAGS], [],
+						[GDAL_CFLAGS="-I/usr/include/gdal"],
+						[GDAL_CFLAGS="$GDAL_CFLAGS/gdal"])
+					 CPPFLAGS="$save_CPPFLAGS $GDAL_CFLAGS"],
+					[found_gdal_h=no])])
+			 AS_VAR_IF([found_gdal_h], [yes],
+				[AC_CHECK_LIB([gdal], [GDALAllRegister],
+					[AC_DEFINE([HAVE_GDAL], 1, [Define if you have the gdal library])
+						have_gdal=yes
+						LIBS="$LIBS -lgdal"],
+					[AS_VAR_IF([have_gdal], [auto],
+						[],
+						[AC_MSG_ERROR([-lgdal library not found])])
+					 have_gdal=no
+					 why_not_gdal="(gdal library not found)"],
+					[$MATH_LIBS])],
+				[AS_VAR_IF([have_gdal], [auto],
+					[],
+					[AC_MSG_ERROR([gdal.h header not found])])
+				 have_gdal=no
+				 why_not_gdal="(gdal.h header not found)"])
+			 GDAL_LIBS="$GDAL_LIBS $LIBS"
+			 LDFLAGS="$save_LDFLAGS"
+			 CPPFLAGS="$save_CPPFLAGS"
+			 LIBS="$save_LIBS"
+			 AS_VAR_IF([have_gdal], [yes],
+				[],
+				[GDAL_CFLAGS=""
+				 GDAL_LIBS=""])])])
+
+	 AC_SUBST([gdal_CFLAGS], [$GDAL_CFLAGS])
+	 AC_SUBST([gdal_LIBS], [$GDAL_LIBS])
+
+	 # if shp is enabled and gdal was not found abort
+	 AS_VAR_IF([have_gdal], [no], [
+		AS_VAR_IF([have_shp], [yes], [
+			AC_MSG_ERROR([gdal library required for ESRI Shapefile vault])])
+		# no gdal, so don't compile shp
+		have_shp=no
+		AS_VAR_IF([why_not_shp], [], [
+			why_not_shp="(gdal library required for ESRI Shapefile vault)"])])])
+AM_CONDITIONAL([HAVE_SHP], [test x"$have_shp" != xno])
+AM_CONDITIONAL([HAVE_GDAL], [test x"$have_gdal" != xno])
+
 # fits, only used by sql
 org_have_fits=no
 have_fits=$org_have_fits
@@ -2329,79 +2416,6 @@ AC_SUBST([LIBLAS_INCS])
 AC_SUBST([LIBLAS_LIBS])
 
 AM_CONDITIONAL([HAVE_LIDAR], [test "x$have_lidar" = xyes -o "x$have_lidar" = xauto])
-
-# gdal
-org_have_gdal="auto"
-have_gdal=$org_have_gdal
-AC_ARG_WITH([gdal],
-	[AS_HELP_STRING([--with-gdal=DIR],
-		[gdal library is installed in DIR])],
-		[have_gdal="$withval"], [have_gdal="auto"])
-# first autoconf for distributions that added a .pc file themselves (Fedora)
-AS_VAR_IF([have_gdal], [no], [], [
-	AS_CASE([$have_gdal],
-	[auto|yes], [
-		PKG_CHECK_MODULES([GDAL], [gdal], [have_gdal="pkgconf"], [have_gdal="$have_gdal"])],
-	[
-		GDAL_CFLAGS="-I$have_gdal/include"
-		GDAL_LIBS="-L$have_gdal/lib"])])
-# try to detect it manually like upstream provides it
-AS_VAR_IF([have_gdal], [no],
-	[],
-	[AS_VAR_IF([have_gdal], [pkgconf],
-		[have_gdal=yes],
-		[save_CPPFLAGS="$CPPFLAGS"
-		 save_LDFLAGS="$LDFLAGS"
-		 save_LIBS="$LIBS"
-		 CPPFLAGS="$CPPFLAGS $GDAL_CFLAGS"
-		 LDFLAGS="$LDFLAGS $GDAL_LIBS"
-		 LIBS=""
-		 found_gdal_h=yes
-		 AC_CHECK_HEADER([gdal.h], [],
-			[AC_CHECK_HEADER([gdal/gdal.h],
-				[AS_VAR_IF([GDAL_CFLAGS], [],
-					[GDAL_CFLAGS="-I/usr/include/gdal"],
-					[GDAL_CFLAGS="$GDAL_CFLAGS/gdal"])
-				 CPPFLAGS="$save_CPPFLAGS $GDAL_CFLAGS"],
-				[found_gdal_h=no])])
-		 AS_VAR_IF([found_gdal_h], [yes],
-		 	[AC_CHECK_LIB([gdal], [GDALAllRegister],
-				[AC_DEFINE([HAVE_GDAL], 1, [Define if you have the gdal library])
-					have_gdal=yes
-					LIBS="$LIBS -lgdal"],
-				[AS_VAR_IF([have_gdal], [auto],
-					[],
-					[AC_MSG_ERROR([-lgdal library not found])])
-				 have_gdal=no
-				 why_not_gdal="(gdal library not found)"],
-				[$MATH_LIBS])],
-			[AS_VAR_IF([have_gdal], [auto],
-				[],
-				[AC_MSG_ERROR([gdal.h header not found])])
-			 have_gdal=no
-			 why_not_gdal="(gdal.h header not found)"])
-		 GDAL_LIBS="$GDAL_LIBS $LIBS"
-		 LDFLAGS="$save_LDFLAGS"
-		 CPPFLAGS="$save_CPPFLAGS"
-		 LIBS="$save_LIBS"
-		 AS_VAR_IF([have_gdal], [yes],
-		 	[],
-			[GDAL_CFLAGS=""
-			 GDAL_LIBS=""])])])
-
-AC_SUBST([gdal_CFLAGS], [$GDAL_CFLAGS])
-AC_SUBST([gdal_LIBS], [$GDAL_LIBS])
-AM_CONDITIONAL([HAVE_GDAL], [test x"$have_gdal" != xno])
-
-# if shp is enabled and gdal was not found abort
-AS_VAR_IF([have_gdal], [no], [
-	AS_VAR_IF([have_shp], [yes], [
-		AC_MSG_ERROR([gdal library required for ESRI Shapefile vault])])
-	# no gdal, so don't compile shp
-	have_shp=no
-	AS_VAR_IF([why_not_shp], [], [
-		why_not_shp=${why_not_shp:-"(gdal library required for ESRI Shapefile vault)"}])])
-AM_CONDITIONAL([HAVE_SHP], [test x"$have_shp" != xno])
 
 PKG_CHECK_MODULES([atomic_ops], [atomic_ops], [have_atomic_ops="yes"],
 	[have_atomic_ops="no"; why_not_atomic_ops="(atomic_ops library not found)"])
