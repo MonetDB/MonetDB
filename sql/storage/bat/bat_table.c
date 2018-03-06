@@ -215,15 +215,14 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 	}
 	if (q != BUN_NONE) {
 		BATiter bi = bat_iterator(b);
-		void *r;
+		const void *r;
 		size_t sz;
 
-		res = BUNtail(bi, q);
-		sz = ATOMlen(b->ttype, res);
-		r = GDKmalloc(sz);
-		if(r)
-			memcpy(r,res,sz);
-		res = r;
+		r = BUNtail(bi, q);
+		sz = ATOMlen(b->ttype, r);
+		res = GDKmalloc(sz);
+		if (res)
+			memcpy(res, r, sz);
 	}
 	full_destroy(c, b);
 	return res;
@@ -234,8 +233,7 @@ column_update_value(sql_trans *tr, sql_column *c, oid rid, void *value)
 {
 	assert(!is_oid_nil(rid));
 
-	store_funcs.update_col(tr, c, &rid, value, c->type.type->localtype);
-	return LOG_OK;
+	return store_funcs.update_col(tr, c, &rid, value, c->type.type->localtype);
 }
 
 static int
@@ -245,14 +243,17 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 	node *n = cs_first_node(&t->columns);
 	void *val = NULL;
 	int cnt = 0;
+	int ok = LOG_OK;
 
 	va_start(va, t);
-	for (; n; n = n->next)
-	{
+	for (; n; n = n->next) {
 		sql_column *c = n->data;
 		val = va_arg(va, void *);
-		if (!val) break;
-		store_funcs.append_col(tr, c, val, c->type.type->localtype);
+		if (!val)
+			break;
+		ok = store_funcs.append_col(tr, c, val, c->type.type->localtype);
+		if (ok != LOG_OK)
+			return ok;
 		cnt++;
 	}
 	va_end(va);
@@ -269,8 +270,7 @@ table_delete(sql_trans *tr, sql_table *t, oid rid)
 {
 	assert(!is_oid_nil(rid));
 
-	store_funcs.delete_tab(tr, t, &rid, TYPE_oid);
-	return LOG_OK;
+	return store_funcs.delete_tab(tr, t, &rid, TYPE_oid);
 }
 
 
@@ -551,27 +551,46 @@ rids_diff(sql_trans *tr, rids *l, sql_column *lc, subrids *r, sql_column *rc )
 	BAT *rcb = full_column(tr, rc);
 	gdk_return ret;
 
+	if (lcb == NULL || rcb == NULL) {
+		if (lcb)
+			full_destroy(rc, lcb);
+		if (rcb)
+			full_destroy(rc, rcb);
+		return NULL;
+	}
 	s = BATproject(r->rids, rcb);
 	full_destroy(rc, rcb);
+	if (s == NULL) {
+		full_destroy(rc, lcb);
+		return NULL;
+	}
 	rcb = s;
 
 	s = BATproject(l->data, lcb);
+	if (s == NULL) {
+		full_destroy(rc, lcb);
+		bat_destroy(rcb);
+		return NULL;
+	}
 
 	diff = BATdiff(s, rcb, NULL, NULL, 0, BUN_NONE);
+	bat_destroy(rcb);
+	if (diff == NULL) {
+		full_destroy(rc, lcb);
+		bat_destroy(s);
+		return NULL;
+	}
 
 	ret = BATjoin(&rids, &d, lcb, s, NULL, diff, FALSE, BATcount(s));
 	bat_destroy(diff);
-	bat_destroy(d);
 	full_destroy(lc, lcb);
 	bat_destroy(s);
+	if (ret != GDK_SUCCEED)
+		return NULL;
 
+	bat_destroy(d);
 	bat_destroy(l->data);
-	if (ret != GDK_SUCCEED) {
-		l->data = NULL;
-	}
-	else {
-		l->data = rids;
-	}
+	l->data = rids;
 	return l;
 }
 

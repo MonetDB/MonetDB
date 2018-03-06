@@ -2192,7 +2192,6 @@ showCommands(void)
 	mnstr_printf(toConsole, "\\q      - terminate session\n");
 }
 
-/* These values must match those used in view sys.describe_all_objects */
 #define MD_TABLE    1
 #define MD_VIEW     2
 #define MD_SEQ      4
@@ -2540,7 +2539,59 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 #endif
 					} else {
 						/* get all object names in current schema */
-						size_t len = 500 + strlen(line);
+						char *with_clause = 
+							"WITH describe_all_objects AS (\n"
+							"  SELECT s.name AS sname,\n"
+							"      t.name,\n"
+							"      s.name || \'.\' || t.name AS fullname,\n"
+							"      CAST(CASE t.type\n"
+							"      WHEN 1 THEN 2 -- ntype for views\n"
+							"      ELSE 1\t  -- ntype for tables\n"
+							"      END AS SMALLINT) AS ntype,\n"
+							"      (CASE WHEN t.system THEN \'SYSTEM \' ELSE \'\' END) || tt.table_type_name AS type,\n"
+							"      t.system,\n"
+							"      c.remark AS remark\n"
+							"    FROM sys._tables t\n"
+							"    LEFT OUTER JOIN sys.comments c ON t.id = c.id\n"
+							"    LEFT OUTER JOIN sys.schemas s ON t.schema_id = s.id\n"
+							"    LEFT OUTER JOIN sys.table_types tt ON t.type = tt.table_type_id\n"
+							"  UNION ALL\n"
+							"  SELECT s.name AS sname,\n"
+							"      sq.name,\n"
+							"      s.name || \'.\' || sq.name AS fullname,\n"
+							"      CAST(4 AS SMALLINT) AS ntype,\n"
+							"      \'SEQUENCE\' AS type,\n"
+							"      false AS system,\n"
+							"      c.remark AS remark\n"
+							"    FROM sys.sequences sq\n"
+							"    LEFT OUTER JOIN sys.comments c ON sq.id = c.id\n"
+							"    LEFT OUTER JOIN sys.schemas s ON sq.schema_id = s.id\n"
+							"  UNION ALL\n"
+							"  SELECT DISTINCT s.name AS sname,  -- DISTINCT is needed to filter out duplicate overloaded function/procedure names\n"
+							"      f.name,\n"
+							"      s.name || \'.\' || f.name AS fullname,\n"
+							"      CAST(8 AS SMALLINT) AS ntype,\n"
+							"      (CASE WHEN sf.function_id IS NOT NULL THEN \'SYSTEM \' ELSE \'\' END) || function_type_keyword AS type,\n"
+							"      sf.function_id IS NOT NULL AS system,\n"
+							"      c.remark AS remark\n"
+							"    FROM sys.functions f\n"
+							"    LEFT OUTER JOIN sys.comments c ON f.id = c.id\n"
+							"    LEFT OUTER JOIN sys.function_types ft ON f.type = ft.function_type_id\n"
+							"    LEFT OUTER JOIN sys.schemas s ON f.schema_id = s.id\n"
+							"    LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id\n"
+							"  UNION ALL\n"
+							"  SELECT NULL AS sname,\n"
+							"      s.name,\n"
+							"      s.name AS fullname,\n"
+							"      CAST(16 AS SMALLINT) AS ntype,\n"
+							"      (CASE WHEN s.system THEN \'SYSTEM SCHEMA\' ELSE \'SCHEMA\' END) AS type,\n"
+							"      s.system,\n"
+							"      c.remark AS remark\n"
+							"    FROM sys.schemas s\n"
+							"    LEFT OUTER JOIN sys.comments c ON s.id = c.id\n"
+							"  ORDER BY system, name, sname, ntype)\n"
+							;
+						size_t len = strlen(with_clause) + 500 + strlen(line);
 						char *query = malloc(len);
 						char *q = query, *endq = query + len;
 						char *name_column = hasSchema ? "fullname" : "name";
@@ -2558,7 +2609,8 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 						 * | "data.my*"      | no            | fullname LIKE 'data.my%'      |
 						 * | "*a.my*"        | no            | fullname LIKE '%a.my%'        |
 						 */
-						q += snprintf(q, endq - q, "SELECT type, fullname, remark FROM sys.describe_all_objects\n");
+						q += snprintf(q, endq - q, "%s", with_clause);
+						q += snprintf(q, endq - q, "SELECT type, fullname, remark FROM describe_all_objects\n");
 						q += snprintf(q, endq - q, "WHERE (ntype & %u) > 0\n", x);
 						if (!wantsSystem) {
 							q += snprintf(q, endq - q, "AND NOT system\n");

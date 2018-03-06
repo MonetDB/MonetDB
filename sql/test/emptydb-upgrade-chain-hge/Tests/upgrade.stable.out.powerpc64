@@ -5335,9 +5335,7 @@ SELECT a.id, a.name, f.schema_id, cast(null as int) as table_id, cast(null as va
 SELECT id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'sequence', 'sys.sequences' FROM sys.sequences UNION ALL
 SELECT id, sqlname, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'type', 'sys.types' FROM sys.types WHERE id > 2000 /* exclude system types to prevent duplicates with auths.id */
  ORDER BY id;
-
 GRANT SELECT ON sys.ids TO PUBLIC;
-
 CREATE VIEW sys.dependencies_vw AS
 SELECT d.id, i1.obj_type, i1.name,
        d.depend_id as used_by_id, i2.obj_type as used_by_obj_type, i2.name as used_by_name,
@@ -5347,97 +5345,75 @@ SELECT d.id, i1.obj_type, i1.name,
   JOIN sys.ids i2 ON d.depend_id = i2.id
   JOIN sys.dependency_types dt ON d.depend_type = dt.dependency_type_id
  ORDER BY id, depend_id;
-
 GRANT SELECT ON sys.dependencies_vw TO PUBLIC;
-
 CREATE VIEW sys.dependency_owners_on_schemas AS
 SELECT a.name AS owner_name, s.id AS schema_id, s.name AS schema_name, CAST(1 AS smallint) AS depend_type
   FROM sys.schemas AS s, sys.auths AS a
  WHERE s.owner = a.id
  ORDER BY a.name, s.name;
-
 GRANT SELECT ON sys.dependency_owners_on_schemas TO PUBLIC;
-
 CREATE VIEW sys.dependency_columns_on_keys AS
 SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, c.id AS column_id, c.name AS column_name, k.id AS key_id, k.name AS key_name, CAST(kc.nr +1 AS int) AS key_col_nr, CAST(k.type AS smallint) AS key_type, CAST(4 AS smallint) AS depend_type
   FROM sys.columns AS c, sys.objects AS kc, sys.keys AS k, sys.tables AS t
  WHERE k.table_id = c.table_id AND c.table_id = t.id AND kc.id = k.id AND kc.name = c.name
    AND k.type IN (0, 1)
  ORDER BY t.schema_id, t.name, c.name, k.type, k.name, kc.nr;
-
 GRANT SELECT ON sys.dependency_columns_on_keys TO PUBLIC;
-
 CREATE VIEW sys.dependency_tables_on_views AS
 SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, v.schema_id AS view_schema_id, v.id AS view_id, v.name AS view_name, dep.depend_type AS depend_type
   FROM sys.tables AS t, sys.tables AS v, sys.dependencies AS dep
  WHERE t.id = dep.id AND v.id = dep.depend_id
    AND dep.depend_type = 5 AND t.type NOT IN (1, 11) AND v.type IN (1, 11)
  ORDER BY t.schema_id, t.name, v.schema_id, v.name;
-
 GRANT SELECT ON sys.dependency_tables_on_views TO PUBLIC;
-
 CREATE VIEW sys.dependency_views_on_views AS
 SELECT v1.schema_id AS view1_schema_id, v1.id AS view1_id, v1.name AS view1_name, v2.schema_id AS view2_schema_id, v2.id AS view2_id, v2.name AS view2_name, dep.depend_type AS depend_type
   FROM sys.tables AS v1, sys.tables AS v2, sys.dependencies AS dep
  WHERE v1.id = dep.id AND v2.id = dep.depend_id
    AND dep.depend_type = 5 AND v1.type IN (1, 11) AND v2.type IN (1, 11)
  ORDER BY v1.schema_id, v1.name, v2.schema_id, v2.name;
-
 GRANT SELECT ON sys.dependency_views_on_views TO PUBLIC;
-
 CREATE VIEW sys.dependency_columns_on_views AS
 SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, c.id AS column_id, c.name AS column_name, v.schema_id AS view_schema_id, v.id AS view_id, v.name AS view_name, dep.depend_type AS depend_type
   FROM sys.columns AS c, sys.tables AS v, sys.tables AS t, sys.dependencies AS dep
  WHERE c.id = dep.id AND v.id = dep.depend_id AND c.table_id = t.id
    AND dep.depend_type = 5 AND v.type IN (1, 11)
  ORDER BY t.schema_id, t.name, c.name, v.name;
-
 GRANT SELECT ON sys.dependency_columns_on_views TO PUBLIC;
-
 CREATE VIEW sys.dependency_functions_on_views AS
 SELECT f.schema_id AS function_schema_id, f.id AS function_id, f.name AS function_name, v.schema_id AS view_schema_id, v.id AS view_id, v.name AS view_name, dep.depend_type AS depend_type
   FROM sys.functions AS f, sys.tables AS v, sys.dependencies AS dep
  WHERE f.id = dep.id AND v.id = dep.depend_id
    AND dep.depend_type = 5 AND v.type IN (1, 11)
  ORDER BY f.schema_id, f.name, v.schema_id, v.name;
-
 GRANT SELECT ON sys.dependency_functions_on_views TO PUBLIC;
-
 CREATE VIEW sys.dependency_schemas_on_users AS
 SELECT s.id AS schema_id, s.name AS schema_name, u.name AS user_name, CAST(6 AS smallint) AS depend_type
   FROM sys.users AS u, sys.schemas AS s
  WHERE u.default_schema = s.id
  ORDER BY s.name, u.name;
-
 GRANT SELECT ON sys.dependency_schemas_on_users TO PUBLIC;
-
 CREATE VIEW sys.dependency_tables_on_functions AS
 SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, f.name AS function_name, f.type AS function_type, dep.depend_type AS depend_type
   FROM sys.functions AS f, sys.tables AS t, sys.dependencies AS dep
  WHERE t.id = dep.id AND f.id = dep.depend_id
    AND dep.depend_type = 7 AND f.type <> 2 AND t.type NOT IN (1, 11)
  ORDER BY t.name, t.schema_id, f.name, f.id;
-
 GRANT SELECT ON sys.dependency_tables_on_functions TO PUBLIC;
-
 CREATE VIEW sys.dependency_views_on_functions AS
 SELECT v.schema_id AS view_schema_id, v.id AS view_id, v.name AS view_name, f.name AS function_name, f.type AS function_type, dep.depend_type AS depend_type
   FROM sys.functions AS f, sys.tables AS v, sys.dependencies AS dep
  WHERE v.id = dep.id AND f.id = dep.depend_id
    AND dep.depend_type = 7 AND f.type <> 2 AND v.type IN (1, 11)
  ORDER BY v.name, v.schema_id, f.name, f.id;
-
 GRANT SELECT ON sys.dependency_views_on_functions TO PUBLIC;
-
 CREATE VIEW sys.dependency_columns_on_functions AS
 SELECT c.table_id, c.id AS column_id, c.name, f.id AS function_id, f.name AS function_name, f.type AS function_type, dep.depend_type AS depend_type
   FROM sys.functions AS f, sys.columns AS c, sys.dependencies AS dep
  WHERE c.id = dep.id AND f.id = dep.depend_id
    AND dep.depend_type = 7 AND f.type <> 2
  ORDER BY c.name, c.table_id, f.name, f.id;
-
 GRANT SELECT ON sys.dependency_columns_on_functions TO PUBLIC;
-
 CREATE VIEW sys.dependency_functions_on_functions AS
 SELECT f1.schema_id, f1.id AS function_id, f1.name AS function_name, f1.type AS function_type,
        f2.schema_id AS used_in_function_schema_id, f2.id AS used_in_function_id, f2.name AS used_in_function_name, f2.type AS used_in_function_type, dep.depend_type AS depend_type
@@ -5445,9 +5421,7 @@ SELECT f1.schema_id, f1.id AS function_id, f1.name AS function_name, f1.type AS 
  WHERE f1.id = dep.id AND f2.id = dep.depend_id
    AND dep.depend_type = 7 AND f2.type <> 2
  ORDER BY f1.name, f1.id, f2.name, f2.id;
-
 GRANT SELECT ON sys.dependency_functions_on_functions TO PUBLIC;
-
 CREATE VIEW sys.dependency_tables_on_triggers AS
 (SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, tri.id AS trigger_id, tri.name AS trigger_name, CAST(8 AS smallint) AS depend_type
   FROM sys.tables AS t, sys.triggers AS tri
@@ -5458,18 +5432,14 @@ UNION
  WHERE dep.id = t.id AND dep.depend_id = tri.id
    AND dep.depend_type = 8)
  ORDER BY table_schema_id, table_name, trigger_name;
-
 GRANT SELECT ON sys.dependency_tables_on_triggers TO PUBLIC;
-
 CREATE VIEW sys.dependency_columns_on_triggers AS
 SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, tri.id AS trigger_id, tri.name AS trigger_name, c.id AS column_id, c.name AS column_name, dep.depend_type AS depend_type
   FROM sys.tables AS t, sys.columns AS c, sys.triggers AS tri, sys.dependencies AS dep
  WHERE dep.id = c.id AND dep.depend_id = tri.id AND c.table_id = t.id
    AND dep.depend_type = 8
  ORDER BY t.schema_id, t.name, tri.name, c.name;
-
 GRANT SELECT ON sys.dependency_columns_on_triggers TO PUBLIC;
-
 CREATE VIEW sys.dependency_functions_on_triggers AS
 SELECT f.schema_id AS function_schema_id, f.id AS function_id, f.name AS function_name, f.type AS function_type,
        tri.id AS trigger_id, tri.name AS trigger_name, tri.table_id AS trigger_table_id, dep.depend_type AS depend_type
@@ -5477,9 +5447,7 @@ SELECT f.schema_id AS function_schema_id, f.id AS function_id, f.name AS functio
  WHERE dep.id = f.id AND dep.depend_id = tri.id
    AND dep.depend_type = 8
  ORDER BY f.schema_id, f.name, tri.name;
-
 GRANT SELECT ON sys.dependency_functions_on_triggers TO PUBLIC;
-
 CREATE VIEW sys.dependency_tables_on_indexes AS
 SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, i.id AS index_id, i.name AS index_name, i.type AS index_type, CAST(10 AS smallint) AS depend_type
   FROM sys.tables AS t, sys.idxs AS i
@@ -5487,9 +5455,7 @@ SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, i
     -- exclude internal system generated and managed indexes for enforcing declarative PKey and Unique constraints
    AND (i.table_id, i.name) NOT IN (SELECT k.table_id, k.name FROM sys.keys k)
  ORDER BY t.schema_id, t.name, i.name;
-
 GRANT SELECT ON sys.dependency_tables_on_indexes TO PUBLIC;
-
 CREATE VIEW sys.dependency_columns_on_indexes AS
 SELECT c.id AS column_id, c.name AS column_name, t.id AS table_id, t.name AS table_name, t.schema_id, i.id AS index_id, i.name AS index_name, i.type AS index_type, CAST(ic.nr +1 AS INT) AS seq_nr, CAST(10 AS smallint) AS depend_type
   FROM sys.tables AS t, sys.columns AS c, sys.objects AS ic, sys.idxs AS i
@@ -5497,52 +5463,40 @@ SELECT c.id AS column_id, c.name AS column_name, t.id AS table_id, t.name AS tab
     -- exclude internal system generated and managed indexes for enforcing declarative PKey and Unique constraints
    AND (i.table_id, i.name) NOT IN (SELECT k.table_id, k.name FROM sys.keys k)
  ORDER BY c.name, t.name, t.schema_id, i.name, ic.nr;
-
 GRANT SELECT ON sys.dependency_columns_on_indexes TO PUBLIC;
-
 CREATE VIEW sys.dependency_tables_on_foreignkeys AS
 SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, fk.name AS fk_name, CAST(k.type AS smallint) AS key_type, CAST(11 AS smallint) AS depend_type
   FROM sys.tables AS t, sys.keys AS k, sys.keys AS fk
  WHERE fk.rkey = k.id and k.table_id = t.id
  ORDER BY t.schema_id, t.name, fk.name;
-
 GRANT SELECT ON sys.dependency_tables_on_foreignkeys TO PUBLIC;
-
 CREATE VIEW sys.dependency_keys_on_foreignkeys AS
 SELECT k.table_id AS key_table_id, k.id AS key_id, k.name AS key_name, fk.table_id AS fk_table_id, fk.id AS fk_id, fk.name AS fk_name, CAST(k.type AS smallint) AS key_type, CAST(11 AS smallint) AS depend_type
   FROM sys.keys AS k, sys.keys AS fk
  WHERE k.id = fk.rkey
  ORDER BY k.name, fk.name;
-
 GRANT SELECT ON sys.dependency_keys_on_foreignkeys TO PUBLIC;
-
 CREATE VIEW sys.dependency_tables_on_procedures AS
 SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, p.id AS procedure_id, p.name AS procedure_name, p.type AS procedure_type, dep.depend_type AS depend_type
   FROM sys.functions AS p, sys.tables AS t, sys.dependencies AS dep
  WHERE t.id = dep.id AND p.id = dep.depend_id
    AND dep.depend_type = 13 AND p.type = 2 AND t.type NOT IN (1, 11)
  ORDER BY t.name, t.schema_id, p.name, p.id;
-
 GRANT SELECT ON sys.dependency_tables_on_procedures TO PUBLIC;
-
 CREATE VIEW sys.dependency_views_on_procedures AS
 SELECT v.schema_id AS view_schema_id, v.id AS view_id, v.name AS view_name, p.id AS procedure_id, p.name AS procedure_name, p.type AS procedure_type, dep.depend_type AS depend_type
   FROM sys.functions AS p, sys.tables AS v, sys.dependencies AS dep
  WHERE v.id = dep.id AND p.id = dep.depend_id
    AND dep.depend_type = 13 AND p.type = 2 AND v.type IN (1, 11)
  ORDER BY v.name, v.schema_id, p.name, p.id;
-
 GRANT SELECT ON sys.dependency_views_on_procedures TO PUBLIC;
-
 CREATE VIEW sys.dependency_columns_on_procedures AS
 SELECT c.table_id, c.id AS column_id, c.name AS column_name, p.id AS procedure_id, p.name AS procedure_name, p.type AS procedure_type, dep.depend_type AS depend_type
   FROM sys.functions AS p, sys.columns AS c, sys.dependencies AS dep
  WHERE c.id = dep.id AND p.id = dep.depend_id
    AND dep.depend_type = 13 AND p.type = 2
  ORDER BY c.name, c.table_id, p.name, p.id;
-
 GRANT SELECT ON sys.dependency_columns_on_procedures TO PUBLIC;
-
 CREATE VIEW sys.dependency_functions_on_procedures AS
 SELECT f.schema_id AS function_schema_id, f.id AS function_id, f.name AS function_name, f.type AS function_type,
        p.schema_id AS procedure_schema_id, p.id AS procedure_id, p.name AS procedure_name, p.type AS procedure_type, dep.depend_type AS depend_type
@@ -5550,36 +5504,28 @@ SELECT f.schema_id AS function_schema_id, f.id AS function_id, f.name AS functio
  WHERE f.id = dep.id AND p.id = dep.depend_id
    AND dep.depend_type = 13 AND p.type = 2
  ORDER BY p.name, p.id, f.name, f.id;
-
 GRANT SELECT ON sys.dependency_functions_on_procedures TO PUBLIC;
-
 CREATE VIEW sys.dependency_columns_on_types AS
 SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, dt.id AS type_id, dt.sqlname AS type_name, c.id AS column_id, c.name AS column_name, dep.depend_type AS depend_type
   FROM sys.tables AS t, sys.columns AS c, sys.types AS dt, sys.dependencies AS dep
  WHERE dep.id = dt.id AND dep.depend_id = c.id AND c.table_id = t.id
    AND dep.depend_type = 15
  ORDER BY dt.sqlname, t.name, c.name, c.id;
-
 GRANT SELECT ON sys.dependency_columns_on_types TO PUBLIC;
-
 CREATE VIEW sys.dependency_functions_on_types AS
 SELECT dt.id AS type_id, dt.sqlname AS type_name, f.id AS function_id, f.name AS function_name, f.type AS function_type, dep.depend_type AS depend_type
   FROM sys.functions AS f, sys.types AS dt, sys.dependencies AS dep
  WHERE dep.id = dt.id AND dep.depend_id = f.id
    AND dep.depend_type = 15
  ORDER BY dt.sqlname, f.name, f.id;
-
 GRANT SELECT ON sys.dependency_functions_on_types TO PUBLIC;
-
 CREATE VIEW sys.dependency_args_on_types AS
 SELECT dt.id AS type_id, dt.sqlname AS type_name, f.id AS function_id, f.name AS function_name, a.id AS arg_id, a.name AS arg_name, a.number AS arg_nr, dep.depend_type AS depend_type
   FROM sys.args AS a, sys.functions AS f, sys.types AS dt, sys.dependencies AS dep
  WHERE dep.id = dt.id AND dep.depend_id = a.id AND a.func_id = f.id
    AND dep.depend_type = 15
  ORDER BY dt.sqlname, f.name, a.number, a.name;
-
 GRANT SELECT ON sys.dependency_args_on_types TO PUBLIC;
-
 UPDATE sys._tables SET system = true
  WHERE name IN ('ids', 'dependencies_vw', 'dependency_owners_on_schemas', 'dependency_columns_on_keys',
  'dependency_tables_on_views', 'dependency_views_on_views', 'dependency_columns_on_views', 'dependency_functions_on_views',
@@ -5715,102 +5661,35 @@ external name wlr."getreplicaclock";
 create function replicaTick() returns bigint
 external name wlr."getreplicatick";
 insert into sys.systemfunctions (select id from sys.functions where name in ('master', 'stopmaster', 'masterbeat', 'masterclock', 'mastertick', 'replicate', 'replicabeat', 'replicaclock', 'replicatick') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
-CREATE FUNCTION sys.function_type_keyword(ftype INT)
-RETURNS VARCHAR(20)
-BEGIN
-	RETURN CASE ftype
-                WHEN 1 THEN 'FUNCTION'
-                WHEN 2 THEN 'PROCEDURE'
-                WHEN 3 THEN 'AGGREGATE'
-                WHEN 4 THEN 'FILTER FUNCTION'
-                WHEN 5 THEN 'FUNCTION' -- table returning function
-                WHEN 6 THEN 'FUNCTION' -- analytic function
-                WHEN 7 THEN 'LOADER'
-                ELSE 'ROUTINE'
-        END;
-END;
-GRANT EXECUTE ON FUNCTION sys.function_type_keyword(INT) TO PUBLIC;
-CREATE VIEW sys.describe_all_objects AS
-SELECT s.name AS sname,
-	  t.name,
-	  s.name || '.' || t.name AS fullname,
-	  CAST(CASE t.type
-	   WHEN 1 THEN 2 -- ntype for views
-	   ELSE 1	  -- ntype for tables
-	   END AS SMALLINT) AS ntype,
-	  (CASE WHEN t.system THEN 'SYSTEM ' ELSE '' END) || tt.table_type_name AS type,
-	  t.system,
-	  c.remark AS remark
-  FROM sys._tables t
-  LEFT OUTER JOIN sys.comments c ON t.id = c.id
-  LEFT OUTER JOIN sys.schemas s ON t.schema_id = s.id
-  LEFT OUTER JOIN sys.table_types tt ON t.type = tt.table_type_id
-UNION ALL
-SELECT s.name AS sname,
-	  sq.name,
-	  s.name || '.' || sq.name AS fullname,
-	  CAST(4 AS SMALLINT) AS ntype,
-	  'SEQUENCE' AS type,
-	  false AS system,
-	  c.remark AS remark
-  FROM sys.sequences sq
-  LEFT OUTER JOIN sys.comments c ON sq.id = c.id
-  LEFT OUTER JOIN sys.schemas s ON sq.schema_id = s.id
-UNION ALL
-SELECT DISTINCT s.name AS sname,  -- DISTINCT is needed to filter out duplicate overloaded function/procedure names
-	  f.name,
-	  s.name || '.' || f.name AS fullname,
-	  CAST(8 AS SMALLINT) AS ntype,
-	  (CASE WHEN sf.function_id IS NOT NULL THEN 'SYSTEM ' ELSE '' END) || sys.function_type_keyword(f.type) AS type,
-	  sf.function_id IS NOT NULL AS system,
-	  c.remark AS remark
-  FROM sys.functions f
-  LEFT OUTER JOIN sys.comments c ON f.id = c.id
-  LEFT OUTER JOIN sys.schemas s ON f.schema_id = s.id
-  LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id
-UNION ALL
-SELECT NULL AS sname,
-	  s.name,
-	  s.name AS fullname,
-	  CAST(16 AS SMALLINT) AS ntype,
-	  (CASE WHEN s.system THEN 'SYSTEM SCHEMA' ELSE 'SCHEMA' END) AS type,
-	  s.system,
-	  c.remark AS remark
-  FROM sys.schemas s
-  LEFT OUTER JOIN sys.comments c ON s.id = c.id
- ORDER BY system, name, sname, ntype;
-GRANT SELECT ON sys.describe_all_objects TO PUBLIC;
-CREATE VIEW sys.commented_function_signatures AS
-SELECT f.id AS fid,
-       s.name AS schema,
-       f.name AS fname,
-       sys.function_type_keyword(f.type) AS category,
-       sf.function_id IS NOT NULL AS system,
-       CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number ASC) WHEN 1 THEN f.name ELSE NULL END AS name,
-       CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number DESC) WHEN 1 THEN c.remark ELSE NULL END AS remark,
-       p.type, p.type_digits, p.type_scale,
-       ROW_NUMBER() OVER (ORDER BY f.id, p.number) AS line
-  FROM sys.functions f
-  JOIN sys.comments c ON f.id = c.id
-  JOIN sys.schemas s ON f.schema_id = s.id
-  LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id
-  LEFT OUTER JOIN sys.args p ON f.id = p.func_id AND p.inout = 1
- ORDER BY line;
-GRANT SELECT ON sys.commented_function_signatures TO PUBLIC;
 UPDATE sys._tables
 SET system = true
-WHERE name IN ('comments', 'describe_all_objects', 'commented_function_signatures')
+WHERE name = 'comments'
 AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');
 DELETE FROM sys.systemfunctions WHERE function_id IS NULL;
 ALTER TABLE sys.systemfunctions ALTER COLUMN function_id SET NOT NULL;
-INSERT INTO sys.systemfunctions
-SELECT id FROM sys.functions
-WHERE schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys')
-AND name = 'function_type_keyword';
 ALTER TABLE sys.keywords SET READ WRITE;
 INSERT INTO sys.keywords VALUES ('COMMENT'), ('CONTINUE'), ('START'), ('TRUNCATE');
--- ALTER TABLE sys.keywords SET READ ONLY;
+ALTER TABLE sys.function_types SET READ WRITE;
+ALTER TABLE function_types ADD COLUMN function_type_keyword VARCHAR(30);
+UPDATE sys.function_types SET function_type_keyword =
+    (SELECT kw FROM (VALUES
+        (1, 'FUNCTION'),
+        (2, 'PROCEDURE'),
+        (3, 'AGGREGATE'),
+        (4, 'FILTER FUNCTION'),
+        (5, 'FUNCTION'),
+        (6, 'FUNCTION'),
+        (7, 'LOADER'))
+    AS ft (id, kw) WHERE function_type_id = id);
+ALTER TABLE sys.function_types ALTER COLUMN function_type_keyword SET NOT NULL;
 delete from sys.systemfunctions where function_id not in (select id from sys.functions);
+set schema "sys";
+commit;
+
+Running database upgrade commands:
+set schema "sys";
+ALTER TABLE sys.keywords SET READ ONLY;
+ALTER TABLE sys.function_types SET READ ONLY;
 set schema "sys";
 
 Running database upgrade commands:
