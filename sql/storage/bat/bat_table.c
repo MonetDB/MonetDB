@@ -215,15 +215,14 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 	}
 	if (q != BUN_NONE) {
 		BATiter bi = bat_iterator(b);
-		void *r;
+		const void *r;
 		size_t sz;
 
-		res = BUNtail(bi, q);
-		sz = ATOMlen(b->ttype, res);
-		r = GDKmalloc(sz);
-		if(r)
-			memcpy(r,res,sz);
-		res = r;
+		r = BUNtail(bi, q);
+		sz = ATOMlen(b->ttype, r);
+		res = GDKmalloc(sz);
+		if (res)
+			memcpy(res, r, sz);
 	}
 	full_destroy(c, b);
 	return res;
