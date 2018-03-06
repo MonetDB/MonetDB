@@ -1308,7 +1308,7 @@ dump_function_comment(Mapi mid, stream *toConsole, const char *id)
 
 	snprintf(query, len,
 		"SELECT \n"
-		"        sys.function_type_keyword(f.type) AS category,\n"
+		"        coalesce(function_type_keyword, '') AS category,\n"
 		"        s.name AS schema,\n"
 		"        CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number ASC) WHEN 1 THEN f.name ELSE NULL END AS name,\n"
 		"        p.type, \n"
@@ -1319,6 +1319,7 @@ dump_function_comment(Mapi mid, stream *toConsole, const char *id)
 		"FROM sys.functions f\n"
 		"JOIN sys.comments c ON f.id = c.id\n"
 		"JOIN sys.schemas s ON f.schema_id = s.id\n"
+		"LEFT OUTER JOIN sys.function_types ft ON f.type = ft.function_type_id\n"
 		"LEFT OUTER JOIN sys.args p ON f.id = p.func_id AND p.inout = 1\n"
 		"WHERE f.id = %s\n"
 		"ORDER BY line;", id);

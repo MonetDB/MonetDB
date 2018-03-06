@@ -271,39 +271,22 @@ GRANT SELECT ON sys.table_types TO PUBLIC;
 
 CREATE TABLE sys.function_types (
     function_type_id   SMALLINT NOT NULL PRIMARY KEY,
-    function_type_name VARCHAR(30) NOT NULL UNIQUE);
+    function_type_name VARCHAR(30) NOT NULL UNIQUE,
+    function_type_keyword VARCHAR(30) NOT NULL);
 
 -- Values taken from sql/include/sql_catalog.h see: #define F_FUNC 1,
 -- F_PROC 2, F_AGGR 3, F_FILT 4, F_UNION 5, F_ANALYTIC 6, F_LOADER 7.
-INSERT INTO sys.function_types (function_type_id, function_type_name) VALUES
-  (1, 'Scalar function'),
-  (2, 'Procedure'),
-  (3, 'Aggregate function'),
-  (4, 'Filter function'),
-  (5, 'Function returning a table'),
-  (6, 'Analytic function'),
-  (7, 'Loader function');
+INSERT INTO sys.function_types (function_type_id, function_type_name, function_type_keyword) VALUES
+  (1, 'Scalar function', 'FUNCTION'),
+  (2, 'Procedure', 'PROCEDURE'),
+  (3, 'Aggregate function', 'AGGREGATE'),
+  (4, 'Filter function', 'FILTER FUNCTION'),
+  (5, 'Function returning a table', 'FUNCTION'),
+  (6, 'Analytic function', 'FUNCTION'),
+  (7, 'Loader function', 'LOADER');
 
 ALTER TABLE sys.function_types SET READ ONLY;
 GRANT SELECT ON sys.function_types TO PUBLIC;
-
-
--- next function is used by views defined in 97_comments.sql and in mclient and mdump code
-CREATE FUNCTION sys.function_type_keyword(ftype INT)
-RETURNS VARCHAR(20)
-BEGIN
-	RETURN CASE ftype
-                WHEN 1 THEN 'FUNCTION'
-                WHEN 2 THEN 'PROCEDURE'
-                WHEN 3 THEN 'AGGREGATE'
-                WHEN 4 THEN 'FILTER FUNCTION'
-                WHEN 5 THEN 'FUNCTION' -- table returning function
-                WHEN 6 THEN 'FUNCTION' -- analytic function
-                WHEN 7 THEN 'LOADER'
-                ELSE 'ROUTINE'
-        END;
-END;
-GRANT EXECUTE ON FUNCTION sys.function_type_keyword(INT) TO PUBLIC;
 
 
 CREATE TABLE sys.function_languages (
