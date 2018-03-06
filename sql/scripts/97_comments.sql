@@ -10,60 +10,6 @@ CREATE TABLE sys.systemfunctions (function_id INTEGER NOT NULL);
 GRANT SELECT ON sys.systemfunctions TO PUBLIC;
 
 
--- utility view to list all objects (except columns) which can have a comment/remark associated
--- it is used in mclient and mdump code
-CREATE VIEW sys.describe_all_objects AS
-SELECT s.name AS sname,
-	  t.name,
-	  s.name || '.' || t.name AS fullname,
-	  CAST(CASE t.type
-	   WHEN 1 THEN 2 -- ntype for views
-	   ELSE 1	  -- ntype for tables
-	   END AS SMALLINT) AS ntype,
-	  (CASE WHEN t.system THEN 'SYSTEM ' ELSE '' END) || tt.table_type_name AS type,
-	  t.system,
-	  c.remark AS remark
-  FROM sys._tables t
-  LEFT OUTER JOIN sys.comments c ON t.id = c.id
-  LEFT OUTER JOIN sys.schemas s ON t.schema_id = s.id
-  LEFT OUTER JOIN sys.table_types tt ON t.type = tt.table_type_id
-UNION ALL
-SELECT s.name AS sname,
-	  sq.name,
-	  s.name || '.' || sq.name AS fullname,
-	  CAST(4 AS SMALLINT) AS ntype,
-	  'SEQUENCE' AS type,
-	  false AS system,
-	  c.remark AS remark
-  FROM sys.sequences sq
-  LEFT OUTER JOIN sys.comments c ON sq.id = c.id
-  LEFT OUTER JOIN sys.schemas s ON sq.schema_id = s.id
-UNION ALL
-SELECT DISTINCT s.name AS sname,  -- DISTINCT is needed to filter out duplicate overloaded function/procedure names
-	  f.name,
-	  s.name || '.' || f.name AS fullname,
-	  CAST(8 AS SMALLINT) AS ntype,
-	  (CASE WHEN sf.function_id IS NOT NULL THEN 'SYSTEM ' ELSE '' END) || sys.function_type_keyword(f.type) AS type,
-	  sf.function_id IS NOT NULL AS system,
-	  c.remark AS remark
-  FROM sys.functions f
-  LEFT OUTER JOIN sys.comments c ON f.id = c.id
-  LEFT OUTER JOIN sys.schemas s ON f.schema_id = s.id
-  LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id
-UNION ALL
-SELECT NULL AS sname,
-	  s.name,
-	  s.name AS fullname,
-	  CAST(16 AS SMALLINT) AS ntype,
-	  (CASE WHEN s.system THEN 'SYSTEM SCHEMA' ELSE 'SCHEMA' END) AS type,
-	  s.system,
-	  c.remark AS remark
-  FROM sys.schemas s
-  LEFT OUTER JOIN sys.comments c ON s.id = c.id
- ORDER BY system, name, sname, ntype;
-GRANT SELECT ON sys.describe_all_objects TO PUBLIC;
-
-
 CREATE VIEW sys.commented_function_signatures AS
 SELECT f.id AS fid,
        s.name AS schema,
