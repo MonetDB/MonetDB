@@ -287,59 +287,6 @@ sql_update_hugeint(Client c, mvc *sql)
 #endif
 
 static str
-sql_update_epoch(Client c, mvc *m)
-{
-	size_t bufsize = 1000, pos = 0;
-	char *buf = GDKmalloc(bufsize), *err = NULL;
-	char *schema = stack_get_string(m, "current_schema");
-	sql_subtype tp;
-	int n = 0;
-	sql_schema *s = mvc_bind_schema(m, "sys");
-
-	if (buf == NULL)
-		throw(SQL, "sql_update_epoch", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
-
-	sql_find_subtype(&tp, "bigint", 0, 0);
-	if (!sql_bind_func(m->sa, s, "epoch", &tp, NULL, F_FUNC)) {
-		n++;
-		pos += snprintf(buf + pos, bufsize - pos, "\
-create function sys.\"epoch\"(sec BIGINT) returns TIMESTAMP external name timestamp.\"epoch\";\n");
-	}
-	sql_find_subtype(&tp, "int", 0, 0);
-	if (!sql_bind_func(m->sa, s, "epoch", &tp, NULL, F_FUNC)) {
-		n++;
-		pos += snprintf(buf + pos, bufsize - pos, "\
-create function sys.\"epoch\"(sec INT) returns TIMESTAMP external name timestamp.\"epoch\";\n");
-	}
-	sql_find_subtype(&tp, "timestamp", 0, 0);
-	if (!sql_bind_func(m->sa, s, "epoch", &tp, NULL, F_FUNC)) {
-		n++;
-		pos += snprintf(buf + pos, bufsize - pos, "\
-create function sys.\"epoch\"(ts TIMESTAMP) returns INT external name timestamp.\"epoch\";\n");
-	}
-	sql_find_subtype(&tp, "timestamptz", 0, 0);
-	if (!sql_bind_func(m->sa, s, "epoch", &tp, NULL, F_FUNC)) {
-		n++;
-		pos += snprintf(buf + pos, bufsize - pos, "\
-create function sys.\"epoch\"(ts TIMESTAMP WITH TIME ZONE) returns INT external name timestamp.\"epoch\";\n");
-	}
-	pos += snprintf(buf + pos, bufsize - pos,
-			"insert into sys.systemfunctions (select id from sys.functions where name = 'epoch' and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
-
-	if (schema)
-		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
-
-	assert(pos < bufsize);
-	if (n) {
-		printf("Running database upgrade commands:\n%s\n", buf);
-		err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
-	}
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
 sql_update_geom(Client c, mvc *sql, int olddb)
 {
 	size_t bufsize, pos = 0;
@@ -1667,12 +1614,6 @@ SQLupgrades(Client c, mvc *m)
 		}
 	}
 #endif
-
-	/* add missing epoch functions */
-	if ((err = sql_update_epoch(c, m)) != NULL) {
-		fprintf(stderr, "!%s\n", err);
-		freeException(err);
-	}
 
 	f = sql_bind_func_(m->sa, s, "env", NULL, F_UNION);
 	if (f && sql_privilege(m, ROLE_PUBLIC, f->func->base.id, PRIV_EXECUTE, 0) != PRIV_EXECUTE) {
