@@ -36,7 +36,6 @@ headers_sql = {
 		60_wlcr.sql \
 		75_storagemodel.sql \
 		80_statistics.sql \
-		97_comments.sql \
 		99_system.sql
 }
 

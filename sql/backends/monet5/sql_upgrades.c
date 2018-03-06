@@ -1312,7 +1312,7 @@ sql_update_mar2018(Client c, mvc *sql)
 			"insert into sys.systemfunctions (select id from sys.functions where name in ('master', 'stopmaster', 'masterbeat', 'masterclock', 'mastertick', 'replicate', 'replicabeat', 'replicaclock', 'replicatick') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n"
 		);
 
-	/* 97_comments */
+	/* comments */
 	pos += snprintf(buf + pos, bufsize - pos,
 			"UPDATE sys._tables\n"
 			"SET system = true\n"
