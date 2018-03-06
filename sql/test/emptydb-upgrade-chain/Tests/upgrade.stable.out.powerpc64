@@ -4962,7 +4962,7 @@ ALTER TABLE sys.systemfunctions ALTER COLUMN function_id SET NOT NULL;
 ALTER TABLE sys.keywords SET READ WRITE;
 INSERT INTO sys.keywords VALUES ('COMMENT'), ('CONTINUE'), ('START'), ('TRUNCATE');
 ALTER TABLE sys.function_types SET READ WRITE;
-ALTER TABLE function_types ADD COLUMN function_type_keyword VARCHAR(30) NOT NULL DEFAULT '';
+ALTER TABLE function_types ADD COLUMN function_type_keyword VARCHAR(30);
 UPDATE sys.function_types SET function_type_keyword =
     (SELECT kw FROM (VALUES
         (1, 'FUNCTION'),
@@ -4973,6 +4973,7 @@ UPDATE sys.function_types SET function_type_keyword =
         (6, 'FUNCTION'),
         (7, 'LOADER'))
     AS ft (id, kw) WHERE function_type_id = id);
+ALTER TABLE sys.function_types ALTER COLUMN function_type_keyword SET NOT NULL;
 delete from sys.systemfunctions where function_id not in (select id from sys.functions);
 set schema "sys";
 commit;
