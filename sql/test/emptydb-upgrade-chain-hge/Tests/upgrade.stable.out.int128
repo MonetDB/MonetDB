@@ -5666,101 +5666,28 @@ external name wlr."getreplicaclock";
 create function replicaTick() returns bigint
 external name wlr."getreplicatick";
 insert into sys.systemfunctions (select id from sys.functions where name in ('master', 'stopmaster', 'masterbeat', 'masterclock', 'mastertick', 'replicate', 'replicabeat', 'replicaclock', 'replicatick') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
-CREATE FUNCTION sys.function_type_keyword(ftype INT)
-RETURNS VARCHAR(20)
-BEGIN
-	RETURN CASE ftype
-                WHEN 1 THEN 'FUNCTION'
-                WHEN 2 THEN 'PROCEDURE'
-                WHEN 3 THEN 'AGGREGATE'
-                WHEN 4 THEN 'FILTER FUNCTION'
-                WHEN 5 THEN 'FUNCTION' -- table returning function
-                WHEN 6 THEN 'FUNCTION' -- analytic function
-                WHEN 7 THEN 'LOADER'
-                ELSE 'ROUTINE'
-        END;
-END;
-GRANT EXECUTE ON FUNCTION sys.function_type_keyword(INT) TO PUBLIC;
-CREATE VIEW sys.describe_all_objects AS
-SELECT s.name AS sname,
-	  t.name,
-	  s.name || '.' || t.name AS fullname,
-	  CAST(CASE t.type
-	   WHEN 1 THEN 2 -- ntype for views
-	   ELSE 1	  -- ntype for tables
-	   END AS SMALLINT) AS ntype,
-	  (CASE WHEN t.system THEN 'SYSTEM ' ELSE '' END) || tt.table_type_name AS type,
-	  t.system,
-	  c.remark AS remark
-  FROM sys._tables t
-  LEFT OUTER JOIN sys.comments c ON t.id = c.id
-  LEFT OUTER JOIN sys.schemas s ON t.schema_id = s.id
-  LEFT OUTER JOIN sys.table_types tt ON t.type = tt.table_type_id
-UNION ALL
-SELECT s.name AS sname,
-	  sq.name,
-	  s.name || '.' || sq.name AS fullname,
-	  CAST(4 AS SMALLINT) AS ntype,
-	  'SEQUENCE' AS type,
-	  false AS system,
-	  c.remark AS remark
-  FROM sys.sequences sq
-  LEFT OUTER JOIN sys.comments c ON sq.id = c.id
-  LEFT OUTER JOIN sys.schemas s ON sq.schema_id = s.id
-UNION ALL
-SELECT DISTINCT s.name AS sname,  -- DISTINCT is needed to filter out duplicate overloaded function/procedure names
-	  f.name,
-	  s.name || '.' || f.name AS fullname,
-	  CAST(8 AS SMALLINT) AS ntype,
-	  (CASE WHEN sf.function_id IS NOT NULL THEN 'SYSTEM ' ELSE '' END) || sys.function_type_keyword(f.type) AS type,
-	  sf.function_id IS NOT NULL AS system,
-	  c.remark AS remark
-  FROM sys.functions f
-  LEFT OUTER JOIN sys.comments c ON f.id = c.id
-  LEFT OUTER JOIN sys.schemas s ON f.schema_id = s.id
-  LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id
-UNION ALL
-SELECT NULL AS sname,
-	  s.name,
-	  s.name AS fullname,
-	  CAST(16 AS SMALLINT) AS ntype,
-	  (CASE WHEN s.system THEN 'SYSTEM SCHEMA' ELSE 'SCHEMA' END) AS type,
-	  s.system,
-	  c.remark AS remark
-  FROM sys.schemas s
-  LEFT OUTER JOIN sys.comments c ON s.id = c.id
- ORDER BY system, name, sname, ntype;
-GRANT SELECT ON sys.describe_all_objects TO PUBLIC;
-CREATE VIEW sys.commented_function_signatures AS
-SELECT f.id AS fid,
-       s.name AS schema,
-       f.name AS fname,
-       sys.function_type_keyword(f.type) AS category,
-       sf.function_id IS NOT NULL AS system,
-       CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number ASC) WHEN 1 THEN f.name ELSE NULL END AS name,
-       CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number DESC) WHEN 1 THEN c.remark ELSE NULL END AS remark,
-       p.type, p.type_digits, p.type_scale,
-       ROW_NUMBER() OVER (ORDER BY f.id, p.number) AS line
-  FROM sys.functions f
-  JOIN sys.comments c ON f.id = c.id
-  JOIN sys.schemas s ON f.schema_id = s.id
-  LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id
-  LEFT OUTER JOIN sys.args p ON f.id = p.func_id AND p.inout = 1
- ORDER BY line;
-GRANT SELECT ON sys.commented_function_signatures TO PUBLIC;
 UPDATE sys._tables
 SET system = true
-WHERE name IN ('comments', 'describe_all_objects', 'commented_function_signatures')
+WHERE name = 'comments'
 AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');
 DELETE FROM sys.systemfunctions WHERE function_id IS NULL;
 ALTER TABLE sys.systemfunctions ALTER COLUMN function_id SET NOT NULL;
-INSERT INTO sys.systemfunctions
-SELECT id FROM sys.functions
-WHERE schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys')
-AND name = 'function_type_keyword';
 ALTER TABLE sys.keywords SET READ WRITE;
 INSERT INTO sys.keywords VALUES ('COMMENT'), ('CONTINUE'), ('START'), ('TRUNCATE');
+ALTER TABLE sys.function_types SET READ WRITE;
+ALTER TABLE function_types ADD COLUMN function_type_keyword VARCHAR(30) NOT NULL DEFAULT '';
+UPDATE sys.function_types SET function_type_keyword =
+    (SELECT kw FROM (VALUES
+        (1, 'FUNCTION'),
+        (2, 'PROCEDURE'),
+        (3, 'AGGREGATE'),
+        (4, 'FILTER FUNCTION'),
+        (5, 'FUNCTION'),
+        (6, 'FUNCTION'),
+        (7, 'LOADER'))
+    AS ft (id, kw) WHERE function_type_id = id);
 -- ALTER TABLE sys.keywords SET READ ONLY;
+-- ALTER TABLE sys.function_types SET READ ONLY;
 delete from sys.systemfunctions where function_id not in (select id from sys.functions);
 set schema "sys";
 
