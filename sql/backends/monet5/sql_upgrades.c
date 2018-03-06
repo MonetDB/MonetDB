@@ -277,6 +277,7 @@ sql_update_hugeint(Client c, mvc *sql)
 
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
@@ -326,6 +327,7 @@ sql_update_geom(Client c, mvc *sql, int olddb)
 
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
@@ -543,6 +545,7 @@ sql_update_dec2016(Client c, mvc *sql)
 
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
@@ -591,6 +594,7 @@ sql_update_dec2016_sp2(Client c, mvc *sql)
 
 			if (schema)
 				pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+			pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
@@ -624,6 +628,7 @@ sql_update_dec2016_sp3(Client c, mvc *sql)
 			"delete from systemfunctions where function_id not in (select id from functions);\n");
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 	assert(pos < bufsize);
 
 	printf("Running database upgrade commands:\n%s\n", buf);
@@ -742,6 +747,7 @@ sql_update_jul2017(Client c, mvc *sql)
 
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
@@ -786,6 +792,7 @@ sql_update_jul2017_sp2(Client c)
 				"GRANT EXECUTE ON FUNCTION sys.environment() TO PUBLIC;\n"
 				"GRANT SELECT ON sys.environment TO PUBLIC;\n"
 				);
+			pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
 			err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
@@ -838,6 +845,7 @@ sql_update_jul2017_sp3(Client c, mvc *sql)
 			"create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables();\n");
 		if (schema)
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+		pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 		assert(pos < bufsize);
 		printf("Running database upgrade commands:\n%s\n", buf);
 		err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
@@ -879,6 +887,7 @@ sql_update_mar2018_geom(Client c, mvc *sql, sql_table *t)
 
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
@@ -1353,6 +1362,7 @@ sql_update_mar2018(Client c, mvc *sql)
 			       "ALTER TABLE sys.function_types SET READ ONLY;\n");
 		if (schema)
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+		pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 		printf("Running database upgrade commands:\n%s\n", buf);
 		err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
 	}
@@ -1387,6 +1397,7 @@ sql_update_mar2018_netcdf(Client c, mvc *sql)
 
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
@@ -1466,6 +1477,7 @@ sql_update_mar2018_samtools(Client c, mvc *sql)
 
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);

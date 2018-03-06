@@ -5350,6 +5350,7 @@ grant execute on aggregate sys.quantile(hugeint, double) to public;
 grant execute on aggregate sys.corr(hugeint, hugeint) to public;
 grant execute on function json.filter(json, hugeint) to public;
 set schema "sys";
+commit;
 
 Running database upgrade commands:
 set schema "sys";
@@ -5369,6 +5370,7 @@ GRANT SELECT ON sys.geometry_columns TO PUBLIC;
 update sys._tables set system = true where name = 'geometry_columns' and schema_id in (select id from schemas where name = 'sys');
 delete from sys.systemfunctions where function_id not in (select id from sys.functions);
 set schema "sys";
+commit;
 
 Running database upgrade commands:
 set schema "sys";
@@ -5746,6 +5748,7 @@ set schema "sys";
 ALTER TABLE sys.keywords SET READ ONLY;
 ALTER TABLE sys.function_types SET READ ONLY;
 set schema "sys";
+commit;
 
 Running database upgrade commands:
 set schema sys;
@@ -5757,6 +5760,7 @@ grant select on sys.netcdf_attrs to public;
 grant execute on procedure sys.netcdf_attach(varchar(256)) to public;
 grant execute on procedure sys.netcdf_importvar(integer, varchar(256)) to public;
 set schema "sys";
+commit;
 
 Running database upgrade commands:
 set schema sys;
@@ -5788,6 +5792,7 @@ GRANT EXECUTE ON PROCEDURE bam.bam_drop_file(BIGINT, SMALLINT) TO PUBLIC;
 GRANT EXECUTE ON PROCEDURE bam.sam_export(STRING) TO PUBLIC;
 GRANT EXECUTE ON PROCEDURE bam.bam_export(STRING) TO PUBLIC;
 set schema "sys";
+commit;
 
 
 # 16:53:35 >  
