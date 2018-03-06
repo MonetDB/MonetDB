@@ -1253,6 +1253,7 @@ SQLcomment_on(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *comments;
 	sql_column *id_col, *remark_col;
 	oid rid;
+	int ok = LOG_OK;
 
 	initcontext();
 
@@ -1273,18 +1274,20 @@ SQLcomment_on(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!is_oid_nil(rid)) {
 			// have new remark and found old one, so update field
 			/* UPDATE sys.comments SET remark = %s WHERE id = %d */
-			table_funcs.column_update_value(tx, remark_col, rid, remark);
+			ok = table_funcs.column_update_value(tx, remark_col, rid, remark);
 		} else {
 			// have new remark but found none so insert row
 			/* INSERT INTO sys.comments (id, remark) VALUES (%d, %s) */
-			table_funcs.table_insert(tx, comments, &objid, remark);
+			ok = table_funcs.table_insert(tx, comments, &objid, remark);
 		}
 	} else {
 		if (!is_oid_nil(rid)) {
 			// have no remark but found one, so delete row
 			/* DELETE FROM sys.comments WHERE id = %d */
-			table_funcs.table_delete(tx, comments, rid);
+			ok = table_funcs.table_delete(tx, comments, rid);
 		}
 	}
+	if (ok != LOG_OK)
+		throw(SQL, "sql.comment_on", SQLSTATE(3F000) "operation failed");
 	return MAL_SUCCEED;
 }
