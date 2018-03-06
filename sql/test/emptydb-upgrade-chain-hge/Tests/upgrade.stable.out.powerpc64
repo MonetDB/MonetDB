@@ -5681,9 +5681,14 @@ UPDATE sys.function_types SET function_type_keyword =
         (6, 'FUNCTION'),
         (7, 'LOADER'))
     AS ft (id, kw) WHERE function_type_id = id);
--- ALTER TABLE sys.keywords SET READ ONLY;
--- ALTER TABLE sys.function_types SET READ ONLY;
 delete from sys.systemfunctions where function_id not in (select id from sys.functions);
+set schema "sys";
+commit;
+
+Running database upgrade commands:
+set schema "sys";
+ALTER TABLE sys.keywords SET READ ONLY;
+ALTER TABLE sys.function_types SET READ ONLY;
 set schema "sys";
 
 Running database upgrade commands:

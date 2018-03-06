@@ -1334,19 +1334,27 @@ sql_update_mar2018(Client c, mvc *sql)
 			"        (6, \'FUNCTION\'),\n"
 			"        (7, \'LOADER\'))\n"
 			"    AS ft (id, kw) WHERE function_type_id = id);\n"
-			"-- ALTER TABLE sys.keywords SET READ ONLY;\n"
-			"-- ALTER TABLE sys.function_types SET READ ONLY;\n"
-/* TODO fix. Last ALTER TABLE is disabled as it produces: !SQLException:sql.alter_table_set_access:40000!ALTER TABLE: set READ or INSERT ONLY not possible with outstanding updates (wait until updates are flushed) */
 		);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
 
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	if (err == MAL_SUCCEED) {
+		schema = stack_get_string(sql, "current_schema");
+		pos = snprintf(buf, bufsize, "set schema \"sys\";\n"
+			       "ALTER TABLE sys.keywords SET READ ONLY;\n"
+			       "ALTER TABLE sys.function_types SET READ ONLY;\n");
+		if (schema)
+			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+		printf("Running database upgrade commands:\n%s\n", buf);
+		err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	}
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
