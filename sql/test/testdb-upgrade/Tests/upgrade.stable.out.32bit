@@ -37,6 +37,7 @@ GRANT SELECT ON sys.geometry_columns TO PUBLIC;
 update sys._tables set system = true where name = 'geometry_columns' and schema_id in (select id from schemas where name = 'sys');
 delete from sys.systemfunctions where function_id not in (select id from sys.functions);
 set schema "testschema";
+commit;
 
 Running database upgrade commands:
 set schema "sys";
@@ -4913,6 +4914,34 @@ INSERT INTO sys.privilege_codes (privilege_code_id, privilege_code_name) VALUES
 ALTER TABLE sys.privilege_codes SET READ ONLY;
 GRANT SELECT ON sys.privilege_codes TO PUBLIC;
 UPDATE sys._tables SET system = TRUE WHERE name = 'privilege_codes' AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');
+ALTER TABLE sys.keywords SET READ WRITE;
+INSERT INTO sys.keywords VALUES ('COMMENT'), ('CONTINUE'), ('START'), ('TRUNCATE');
+ALTER TABLE sys.function_types SET READ WRITE;
+ALTER TABLE function_types ADD COLUMN function_type_keyword VARCHAR(30);
+UPDATE sys.function_types SET function_type_keyword =
+    (SELECT kw FROM (VALUES
+        (1, 'FUNCTION'),
+        (2, 'PROCEDURE'),
+        (3, 'AGGREGATE'),
+        (4, 'FILTER FUNCTION'),
+        (5, 'FUNCTION'),
+        (6, 'FUNCTION'),
+        (7, 'LOADER'))
+    AS ft (id, kw) WHERE function_type_id = id);
+ALTER TABLE sys.function_types ALTER COLUMN function_type_keyword SET NOT NULL;
+ALTER TABLE sys.function_languages SET READ WRITE;
+ALTER TABLE sys.function_languages ADD COLUMN language_keyword VARCHAR(20);
+UPDATE sys.function_languages SET language_keyword =
+    (SELECT kw FROM (VALUES
+        (3, 'R'),
+        (6, 'PYTHON'),
+        (7, 'PYTHON_MAP'),
+        (8, 'PYTHON2'),
+        (9, 'PYTHON2_MAP'),
+        (10, 'PYTHON3'),
+        (11, 'PYTHON3_MAP'))
+    AS ft (id, kw) WHERE language_id = id);
+INSERT INTO sys.function_languages VALUES (4, 'C', 'C'), (12, 'C++', 'CPP');
 create procedure master()
 external name wlc.master;
 create procedure master(path string)
@@ -4954,21 +4983,6 @@ WHERE name = 'comments'
 AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');
 DELETE FROM sys.systemfunctions WHERE function_id IS NULL;
 ALTER TABLE sys.systemfunctions ALTER COLUMN function_id SET NOT NULL;
-ALTER TABLE sys.keywords SET READ WRITE;
-INSERT INTO sys.keywords VALUES ('COMMENT'), ('CONTINUE'), ('START'), ('TRUNCATE');
-ALTER TABLE sys.function_types SET READ WRITE;
-ALTER TABLE function_types ADD COLUMN function_type_keyword VARCHAR(30);
-UPDATE sys.function_types SET function_type_keyword =
-    (SELECT kw FROM (VALUES
-        (1, 'FUNCTION'),
-        (2, 'PROCEDURE'),
-        (3, 'AGGREGATE'),
-        (4, 'FILTER FUNCTION'),
-        (5, 'FUNCTION'),
-        (6, 'FUNCTION'),
-        (7, 'LOADER'))
-    AS ft (id, kw) WHERE function_type_id = id);
-ALTER TABLE sys.function_types ALTER COLUMN function_type_keyword SET NOT NULL;
 delete from sys.systemfunctions where function_id not in (select id from sys.functions);
 set schema "testschema";
 commit;
@@ -4977,7 +4991,9 @@ Running database upgrade commands:
 set schema "sys";
 ALTER TABLE sys.keywords SET READ ONLY;
 ALTER TABLE sys.function_types SET READ ONLY;
+ALTER TABLE sys.function_languages SET READ ONLY;
 set schema "testschema";
+commit;
 
 Running database upgrade commands:
 set schema sys;
@@ -4989,6 +5005,7 @@ grant select on sys.netcdf_attrs to public;
 grant execute on procedure sys.netcdf_attach(varchar(256)) to public;
 grant execute on procedure sys.netcdf_importvar(integer, varchar(256)) to public;
 set schema "testschema";
+commit;
 
 Running database upgrade commands:
 set schema sys;
@@ -5009,6 +5026,7 @@ GRANT EXECUTE ON PROCEDURE bam.bam_drop_file(BIGINT, SMALLINT) TO PUBLIC;
 GRANT EXECUTE ON PROCEDURE bam.sam_export(STRING) TO PUBLIC;
 GRANT EXECUTE ON PROCEDURE bam.bam_export(STRING) TO PUBLIC;
 set schema "testschema";
+commit;
 
 
 # 15:42:24 >  
