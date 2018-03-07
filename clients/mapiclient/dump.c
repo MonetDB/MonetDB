@@ -817,8 +817,17 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 		remark = NULL;
 		goto bailout;
 	}
-	if (view)
+	if (view) {
+		/* skip initial comments and empty lines */
+		while ((view[0] == '-' && view[1] == '-') || view[0] == '\n') {
+			view = strchr(view, '\n');
+			if (view == NULL)
+				view = "";
+			else
+				view++;
+		}
 		view = strdup(view);
+	}
 	if (remark)
 		remark = strdup(remark);
 	mapi_close_handle(hdl);
@@ -1409,7 +1418,15 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, int hashge)
 	ftkey = mapi_fetch_field(hdl, 6);
 	flkey = mapi_fetch_field(hdl, 7);
 	if (flang == 1 || flang == 2) {
-		/* all information is stored in the func column */
+		/* all information is stored in the func column
+		 * first skip initial comments and empty lines */
+		while ((ffunc[0] == '-' && ffunc[1] == '-') || ffunc[0] == '\n') {
+			ffunc = strchr(ffunc, '\n');
+			if (ffunc == NULL)
+				ffunc = "";
+			else
+				ffunc++;
+		}
 		mnstr_printf(toConsole, "%s\n", ffunc);
 		mapi_close_handle(hdl);
 		free(query);
