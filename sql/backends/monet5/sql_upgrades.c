@@ -1280,6 +1280,34 @@ sql_update_mar2018(Client c, mvc *sql)
 			"SET system = TRUE "
 			"WHERE name = 'privilege_codes' "
 			"AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n"
+			"ALTER TABLE sys.keywords SET READ WRITE;\n"
+			"INSERT INTO sys.keywords VALUES ('COMMENT'), ('CONTINUE'), ('START'), ('TRUNCATE');\n"
+			"ALTER TABLE sys.function_types SET READ WRITE;\n"
+			"ALTER TABLE function_types ADD COLUMN function_type_keyword VARCHAR(30);\n"
+			"UPDATE sys.function_types SET function_type_keyword =\n"
+			"    (SELECT kw FROM (VALUES\n"
+			"        (1, 'FUNCTION'),\n"
+			"        (2, 'PROCEDURE'),\n"
+			"        (3, 'AGGREGATE'),\n"
+			"        (4, 'FILTER FUNCTION'),\n"
+			"        (5, 'FUNCTION'),\n"
+			"        (6, 'FUNCTION'),\n"
+			"        (7, 'LOADER'))\n"
+			"    AS ft (id, kw) WHERE function_type_id = id);\n"
+			"ALTER TABLE sys.function_types ALTER COLUMN function_type_keyword SET NOT NULL;\n"
+			"ALTER TABLE sys.function_languages SET READ WRITE;\n"
+			"ALTER TABLE sys.function_languages ADD COLUMN language_keyword VARCHAR(20);\n"
+			"UPDATE sys.function_languages SET language_keyword =\n"
+			"    (SELECT kw FROM (VALUES\n"
+			"        (3, 'R'),\n"
+			"        (6, 'PYTHON'),\n"
+			"        (7, 'PYTHON_MAP'),\n"
+			"        (8, 'PYTHON2'),\n"
+			"        (9, 'PYTHON2_MAP'),\n"
+			"        (10, 'PYTHON3'),\n"
+			"        (11, 'PYTHON3_MAP'))\n"
+			"    AS ft (id, kw) WHERE language_id = id);\n"
+			"INSERT INTO sys.function_languages VALUES (4, 'C', 'C'), (12, 'C++', 'CPP');\n"
 		);
 
 	/* 60_wlcr.sql */
@@ -1329,21 +1357,6 @@ sql_update_mar2018(Client c, mvc *sql)
 			"AND schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys');\n"
 			"DELETE FROM sys.systemfunctions WHERE function_id IS NULL;\n"
 			"ALTER TABLE sys.systemfunctions ALTER COLUMN function_id SET NOT NULL;\n"
-			"ALTER TABLE sys.keywords SET READ WRITE;\n"
-			"INSERT INTO sys.keywords VALUES ('COMMENT'), ('CONTINUE'), ('START'), ('TRUNCATE');\n"
-			"ALTER TABLE sys.function_types SET READ WRITE;\n"
-			"ALTER TABLE function_types ADD COLUMN function_type_keyword VARCHAR(30);\n"
-			"UPDATE sys.function_types SET function_type_keyword =\n"
-			"    (SELECT kw FROM (VALUES\n"
-			"        (1, 'FUNCTION'),\n"
-			"        (2, 'PROCEDURE'),\n"
-			"        (3, 'AGGREGATE'),\n"
-			"        (4, 'FILTER FUNCTION'),\n"
-			"        (5, 'FUNCTION'),\n"
-			"        (6, 'FUNCTION'),\n"
-			"        (7, 'LOADER'))\n"
-			"    AS ft (id, kw) WHERE function_type_id = id);\n"
-			"ALTER TABLE sys.function_types ALTER COLUMN function_type_keyword SET NOT NULL;\n"
 		);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"delete from sys.systemfunctions where function_id not in (select id from sys.functions);\n");
@@ -1359,7 +1372,8 @@ sql_update_mar2018(Client c, mvc *sql)
 		schema = stack_get_string(sql, "current_schema");
 		pos = snprintf(buf, bufsize, "set schema \"sys\";\n"
 			       "ALTER TABLE sys.keywords SET READ ONLY;\n"
-			       "ALTER TABLE sys.function_types SET READ ONLY;\n");
+			       "ALTER TABLE sys.function_types SET READ ONLY;\n"
+			       "ALTER TABLE sys.function_languages SET READ ONLY;\n");
 		if (schema)
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 		pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
