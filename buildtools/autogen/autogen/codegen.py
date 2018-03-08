@@ -138,13 +138,29 @@ def find_org(deps,f):
 buildincsfiles = {}
 installincsfiles = {}
 
+# replacement for os.path.join which also normalizes the resultant
+# path, keeping Make variables in place
+def normpathjoin(a, *p):
+    f = os.path.join(a, *p)
+    parts = re.split(r'(\$(?:[^()]|\([^()]*\)))', f)
+    for i in range(len(parts)):
+        prt = parts[i]
+        if prt and prt != os.sep and not prt.startswith('$'):
+            s, e = 0, len(prt)
+            if prt.startswith(os.sep):
+                s += len(os.sep)
+            if prt.endswith(os.sep):
+                e -= len(os.sep)
+            parts[i] = prt[:s] + os.path.normpath(prt[s:e]) + prt[e:]
+    return ''.join(parts)
+
 def do_deps(targets,deps,includes,incmap,cwd,incdirsmap):
     basename = os.path.basename(cwd)
     incs = {}
     do_scan(targets,deps,incmap,cwd,incs)
     do_dep_combine(deps,includes,cwd,incs)
 
-    normcwd = os.path.normpath(cwd)
+    normcwd = normpathjoin(cwd)
     buildincs = buildincsfiles[normcwd] = {}
     for k,vals in incs.items():
         buildincs[k] = vals
@@ -156,7 +172,7 @@ def do_deps(targets,deps,includes,incmap,cwd,incdirsmap):
             if os.path.isabs(i):
                 nvals.append(i)
             else:
-                inc = os.path.normpath(os.path.join(cwd,i))
+                inc = normpathjoin(cwd,i)
                 mlen = 0
                 subsrc = ''
                 subins = ''
@@ -203,7 +219,7 @@ def do_scan_target(target,targets,deps,incmap,cwd,incs):
     if target not in incs:
         inc_files = []
         if ext in scan_map:
-            org = os.path.join(cwd,find_org(deps,target))
+            org = normpathjoin(cwd,find_org(deps,target))
             if os.path.exists(org):
                 b = readfilepart(org,ext)
                 pat,sep,incext = scan_map[ext]
@@ -274,7 +290,7 @@ def expand_incdir(i,topdir):
     if i.find(os.sep) >= 0:
         d,rest = i.split(os.sep, 1)
         if d == "top_srcdir" or d == "top_builddir":
-            dir = os.path.join(topdir, rest)
+            dir = normpathjoin(topdir, rest)
         elif d == "srcdir" or d == "builddir":
             dir = rest
     return dir
@@ -314,7 +330,7 @@ def collect_includes(incdirs, cwd, topdir):
     for dir,org in dirs:
         if dir.startswith('$'):
             continue
-        dir = os.path.normpath(os.path.join(cwd, dir))
+        dir = normpathjoin(cwd, dir)
         if dir in buildincsfiles:
             incs = buildincsfiles[dir]
         elif dir in installincsfiles:
@@ -327,14 +343,14 @@ def collect_includes(incdirs, cwd, topdir):
                 incfiles = []
                 for inc in incs[file]:
                     if not os.path.isabs(inc) and inc[0] != '$':
-                        inc = os.path.join(org,inc)
+                        inc = normpathjoin(org,inc)
                     incfiles.append(inc)
-                includes[os.path.join(org,file)] = incfiles
+                includes[normpathjoin(org,file)] = incfiles
                 incmap[file] = org
         else:
             if os.path.exists(dir):
                 for inc in os.listdir(dir):
-                    includes[os.path.join(org,inc)] = [ os.path.join(org,inc) ]
+                    includes[normpathjoin(org,inc)] = [ normpathjoin(org,inc) ]
                     incmap[inc] = org
 
     return includes,incmap
