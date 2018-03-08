@@ -214,29 +214,29 @@ def do_scan_target(target,targets,deps,incmap,cwd,incs):
                         ressep = sep.search(b, p, e)
                         while ressep is not None:
                             n = ressep.start(0)
-                            fnd1 = b[p:n]
+                            fnd1 = b[p:n] + incext
                             p = ressep.end(0) # start of next file
-                            if fnd1+incext in deps or fnd1+incext in targets:
-                                if fnd1+incext not in inc_files:
-                                    inc_files.append(fnd1+incext)
-                            elif fnd1+incext in incmap:
-                                if fnd1+incext not in inc_files:
-                                    inc_files.append(os.path.join(incmap[fnd1+incext],fnd1+incext))
+                            if fnd1 in deps or fnd1 in targets:
+                                if fnd1 not in inc_files:
+                                    inc_files.append(fnd1)
+                            elif fnd1 in incmap:
+                                if fnd1 not in inc_files:
+                                    inc_files.append(normpathjoin(incmap[fnd1],fnd1))
                             ressep = sep.search(b,p,e)
-                    fnd = b[p:e]
-                    if fnd+incext in deps or fnd+incext in targets:
-                        if fnd+incext not in inc_files:
-                            inc_files.append(fnd+incext)
-                    elif fnd+incext in incmap:
-                        if fnd+incext not in inc_files:
-                            inc_files.append(os.path.join(incmap[fnd+incext],fnd+incext))
-                    elif os.path.exists(os.path.join(cwd, fnd+incext)):
-                        if fnd+incext not in inc_files:
-                            inc_files.append(fnd+incext)
-                        if fnd+incext not in incs:
-                            incs[fnd+incext] = []
+                    fnd = b[p:e] + incext
+                    if fnd in deps or fnd in targets:
+                        if fnd not in inc_files:
+                            inc_files.append(fnd)
+                    elif fnd in incmap:
+                        if fnd not in inc_files:
+                            inc_files.append(normpathjoin(incmap[fnd],fnd))
+                    elif os.path.exists(os.path.join(cwd, fnd)):
+                        if fnd not in inc_files:
+                            inc_files.append(fnd)
+                        if fnd not in incs:
+                            incs[fnd] = []
 ##                     else:
-##                         print fnd + incext + " not in deps or incmap"
+##                         print fnd + " not in deps or incmap"
                     res = pat.search(b,res.end(0))
         incs[target] = inc_files
 
