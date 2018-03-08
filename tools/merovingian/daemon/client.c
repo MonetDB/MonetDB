@@ -69,7 +69,6 @@ handleClient(void *data)
 	char mydoproxy;
 	sabdb redirs[24];  /* do we need more? */
 	int r = 0;
-	char *algos;
 	int sock;
 	char isusock;
 	struct threads *self;
@@ -118,19 +117,9 @@ handleClient(void *data)
 	/* note: since Jan2012 we speak proto 9 for control connections */
 	chal[31] = '\0';
 	generateSalt(chal, 31);
-	algos = mcrypt_getHashAlgorithms();
-	if(!algos) {
-		e = newErr("Allocation failure");
-		mnstr_printf(fout, "!monetdbd: allocation failure\n");
-		mnstr_flush(fout);
-		close_stream(fout);
-		close_stream(fdin);
-		self->dead = 1;
-		return(e);
-	}
 	mnstr_printf(fout, "%s:merovingian:9:%s:%s:%s:",
 			chal,
-			algos,
+			mcrypt_getHashAlgorithms(),
 #ifdef WORDS_BIGENDIAN
 			"BIG",
 #else
@@ -151,7 +140,6 @@ handleClient(void *data)
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
-		free(algos);
 		self->dead = 1;
 		return(e);
 	}
@@ -173,7 +161,6 @@ handleClient(void *data)
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
-		free(algos);
 		self->dead = 1;
 		return(e);
 	}
@@ -190,7 +177,6 @@ handleClient(void *data)
 			mnstr_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);
-			free(algos);
 			self->dead = 1;
 			return(e);
 		}
@@ -202,7 +188,6 @@ handleClient(void *data)
 			mnstr_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);
-			free(algos);
 			self->dead = 1;
 			return(e);
 		}
@@ -214,7 +199,6 @@ handleClient(void *data)
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
-		free(algos);
 		self->dead = 1;
 		return(e);
 	}
@@ -230,7 +214,6 @@ handleClient(void *data)
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
-		free(algos);
 		self->dead = 1;
 		return(e);
 	}
@@ -249,7 +232,6 @@ handleClient(void *data)
 			mnstr_flush(fout);
 			close_stream(fout);
 			close_stream(fdin);
-			free(algos);
 			self->dead = 1;
 			return(e);
 		} else {
@@ -264,7 +246,6 @@ handleClient(void *data)
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
-		free(algos);
 		self->dead = 1;
 		return(newErr("client %s specified no database", host));
 	}
@@ -275,7 +256,6 @@ handleClient(void *data)
 			control_handleclient(host, sock, fdin, fout);
 		close_stream(fout);
 		close_stream(fdin);
-		free(algos);
 		self->dead = 1;
 		return(NO_ERR);
 	}
@@ -306,7 +286,6 @@ handleClient(void *data)
 		mnstr_flush(fout);
 		close_stream(fout);
 		close_stream(fdin);
-		free(algos);
 		self->dead = 1;
 		return(e);
 	}
@@ -319,7 +298,6 @@ handleClient(void *data)
 	{
 		multiplexAddClient(top->dbname, sock, fout, fdin, host);
 		msab_freeStatus(&top);
-		free(algos);
 		self->dead = 1;
 		return(NO_ERR);
 	}
@@ -349,7 +327,6 @@ handleClient(void *data)
 		close_stream(fout);
 		close_stream(fdin);
 		msab_freeStatus(&top);
-		free(algos);
 		self->dead = 1;
 		return(e);
 	}
@@ -411,7 +388,7 @@ handleClient(void *data)
 			/* we need to let the client login in order not to violate
 			 * the protocol */
 			mnstr_printf(fout, "void:merovingian:9:%s:BIG:%s:",
-					algos, MONETDB5_PASSWDHASH);
+					mcrypt_getHashAlgorithms(), MONETDB5_PASSWDHASH);
 			mnstr_flush(fout);
 			mnstr_read_block(fdin, buf, 8095, 1); /* eat away client response */
 			mnstr_printf(fout, "!monetdbd: an internal error has occurred '%s', refer to the logs for details, please try again later\n",e);
@@ -421,14 +398,12 @@ handleClient(void *data)
 			close_stream(fdin);
 			Mfprintf(stdout, "starting a proxy failed: %s\n", e);
 			msab_freeStatus(&top);
-			free(algos);
 			self->dead = 1;
 			return(e);
 		}
 	}
 
 	msab_freeStatus(&top);
-	free(algos);
 	self->dead = 1;
 	return(NO_ERR);
 }
