@@ -562,15 +562,15 @@
  *
  * Return a pointer to the last error message from the server.
  *
- * @item MapiMsg mapi_explain(Mapi mid, FILE *fd)
+ * @item void mapi_explain(Mapi mid, FILE *fd)
  *
  * Write the error message obtained from @code{mserver} to a file.
  *
- * @item MapiMsg mapi_explain_query(MapiHdl hdl, FILE *fd)
+ * @item void mapi_explain_query(MapiHdl hdl, FILE *fd)
  *
  * Write the error message obtained from @code{mserver} to a file.
  *
- * @item MapiMsg mapi_explain_result(MapiHdl hdl, FILE *fd)
+ * @item void mapi_explain_result(MapiHdl hdl, FILE *fd)
  *
  * Write the error message obtained from @code{mserver} to a file.
  * @end itemize
@@ -1219,7 +1219,7 @@ mapi_noexplain(Mapi mid, char *errorprefix)
 	mid->noexplain = errorprefix;
 }
 
-MapiMsg
+void
 mapi_explain(Mapi mid, FILE *fd)
 {
 	assert(mid);
@@ -1238,10 +1238,9 @@ mapi_explain(Mapi mid, FILE *fd)
 	}
 	fflush(fd);
 	mapi_clrError(mid);
-	return MOK;
 }
 
-MapiMsg
+void
 mapi_explain_query(MapiHdl hdl, FILE *fd)
 {
 	Mapi mid;
@@ -1266,10 +1265,9 @@ mapi_explain_query(MapiHdl hdl, FILE *fd)
 	}
 	fflush(fd);
 	mapi_clrError(mid);
-	return MOK;
 }
 
-MapiMsg
+void
 mapi_explain_result(MapiHdl hdl, FILE *fd)
 {
 	Mapi mid;
@@ -1277,7 +1275,7 @@ mapi_explain_result(MapiHdl hdl, FILE *fd)
 	if (hdl == NULL ||
 	    hdl->result == NULL ||
 	    hdl->result->errorstr == NULL)
-		return MOK;
+		return;
 	assert(hdl);
 	assert(hdl->result);
 	assert(hdl->result->errorstr);
@@ -1300,7 +1298,6 @@ mapi_explain_result(MapiHdl hdl, FILE *fd)
 		clean_print(hdl->result->errorstr, mid->noexplain, fd);
 	}
 	fflush(fd);
-	return MOK;
 }
 
 stream *
@@ -3554,12 +3551,11 @@ mapi_release_id(Mapi mid, int id)
 	return mapi_Xcommand(mid, "release", buf);
 }
 
-MapiMsg
+void
 mapi_trace(Mapi mid, int flag)
 {
 	mapi_clrError(mid);
 	mid->trace = flag;
-	return MOK;
 }
 
 
