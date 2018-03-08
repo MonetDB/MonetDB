@@ -1432,7 +1432,7 @@ add_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 			dst[i] = TYPE3##_nil;				\
 			nils++;						\
 		} else {						\
-			dst[i] = v1 + v2;				\
+			dst[i] = (TYPE3) v1 + v2;			\
 			if (dst[i] < -max || dst[i] > max) {		\
 				if (abort_on_error)			\
 					ON_OVERFLOW(TYPE1, TYPE2, "+");	\
@@ -2716,7 +2716,7 @@ sub_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *src1, const TYPE1 *v1p,	\
 			dst[i] = TYPE3##_nil;				\
 			nils++;						\
 		} else {						\
-			dst[i] = v1 - v2;				\
+			dst[i] = (TYPE3) v1 - v2;			\
 			if (dst[i] < -max || dst[i] > max) {		\
 				if (abort_on_error)			\
 					ON_OVERFLOW(TYPE1, TYPE2, "-");	\
