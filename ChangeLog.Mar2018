@@ -2,9 +2,9 @@
 # This file is updated with Maddlog
 
 * Wed Feb 14 2018 Stefan Manegold <Stefan.Manegold@cwi.nl>
-- mclient's executing time profiling options and output format have
+- mclient's execution time profiling options and output format have
   been changed. Instead of implicitly via the "--interactive"/"-i"
-  option (or when using and interactive mclient console), execution time
+  option (or when using an interactive mclient console), execution time
   profiling is now controlled via an explicit "--timer=timermode"/"-t
   timermode" command-line option, or a "\t timermode" command in the
   interactive mclient console. The default (also in the interactive
@@ -25,7 +25,7 @@
   only the total wall-clock time per batch is measured and reported. The
   server-measured detailed performance timings "sql", "opt", "run" are
   always measured and reported per query. Also, all timing information
-  is now given on a separate line and set to stderr rather than stdout.
+  is now given on a separate line and sent to stderr rather than stdout.
 
 * Fri Feb  9 2018 Sjoerd Mullender <sjoerd@acm.org>
 - Some types and constants were moved from configure (and hence
