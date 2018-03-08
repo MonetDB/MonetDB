@@ -178,6 +178,7 @@ Dependencies between database objects
 % name,	name,	L17 # name
 % varchar,	varchar,	char # type
 % 20,	44,	7 # length
+[ "id",	"comments_id_pkey",	"DEP_KEY"	]
 [ "dependency_type_id",	"dependency_types_dependency_type_id_pkey",	"DEP_KEY"	]
 [ "dependency_type_name",	"dependency_types_dependency_type_name_unique",	"DEP_KEY"	]
 [ "srid",	"spatial_ref_sys_srid_pkey",	"DEP_KEY"	]
@@ -201,7 +202,6 @@ Dependencies between database objects
 [ "file_id",	"rg_pkey_id_file_id",	"DEP_KEY"	]
 [ "id",	"pg_pkey_id_file_id",	"DEP_KEY"	]
 [ "file_id",	"pg_pkey_id_file_id",	"DEP_KEY"	]
-[ "id",	"comments_id_pkey",	"DEP_KEY"	]
 [ "id",	"t1_id_pkey",	"DEP_KEY"	]
 #SELECT c.name, i.name, 'DEP_INDEX' from columns as c, objects as kc, idxs as i where kc."name" = c.name AND kc.id = i.id AND c.table_id = i.table_id AND i.name not in (select name from keys);
 % .c,	.i,	.L21 # table_name
@@ -691,18 +691,6 @@ Cleanup
 [ "schemas",	"geometry_columns",	"DEP_VIEW"	]
 [ "types",	"geometry_columns",	"DEP_VIEW"	]
 [ "auths",	"roles",	"DEP_VIEW"	]
-[ "_tables",	"describe_all_objects",	"DEP_VIEW"	]
-[ "comments",	"describe_all_objects",	"DEP_VIEW"	]
-[ "schemas",	"describe_all_objects",	"DEP_VIEW"	]
-[ "table_types",	"describe_all_objects",	"DEP_VIEW"	]
-[ "sequences",	"describe_all_objects",	"DEP_VIEW"	]
-[ "functions",	"describe_all_objects",	"DEP_VIEW"	]
-[ "systemfunctions",	"describe_all_objects",	"DEP_VIEW"	]
-[ "functions",	"commented_function_signatures",	"DEP_VIEW"	]
-[ "comments",	"commented_function_signatures",	"DEP_VIEW"	]
-[ "schemas",	"commented_function_signatures",	"DEP_VIEW"	]
-[ "systemfunctions",	"commented_function_signatures",	"DEP_VIEW"	]
-[ "args",	"commented_function_signatures",	"DEP_VIEW"	]
 #SELECT t.name, i.name, 'DEP_INDEX' from tables as t, idxs as i where i.table_id = t.id and i.name not in (select name from keys) and t.type in (0, 10, 20, 30);
 % .t,	.i,	.L44 # table_name
 % name,	name,	L44 # name
@@ -976,46 +964,12 @@ Cleanup
 [ "id",	"roles",	"DEP_VIEW"	]
 [ "name",	"roles",	"DEP_VIEW"	]
 [ "grantor",	"roles",	"DEP_VIEW"	]
-[ "id",	"describe_all_objects",	"DEP_VIEW"	]
-[ "name",	"describe_all_objects",	"DEP_VIEW"	]
-[ "schema_id",	"describe_all_objects",	"DEP_VIEW"	]
-[ "type",	"describe_all_objects",	"DEP_VIEW"	]
-[ "system",	"describe_all_objects",	"DEP_VIEW"	]
-[ "id",	"describe_all_objects",	"DEP_VIEW"	]
-[ "remark",	"describe_all_objects",	"DEP_VIEW"	]
-[ "id",	"describe_all_objects",	"DEP_VIEW"	]
-[ "name",	"describe_all_objects",	"DEP_VIEW"	]
-[ "table_type_id",	"describe_all_objects",	"DEP_VIEW"	]
-[ "table_type_name",	"describe_all_objects",	"DEP_VIEW"	]
-[ "id",	"describe_all_objects",	"DEP_VIEW"	]
-[ "schema_id",	"describe_all_objects",	"DEP_VIEW"	]
-[ "name",	"describe_all_objects",	"DEP_VIEW"	]
-[ "id",	"describe_all_objects",	"DEP_VIEW"	]
-[ "name",	"describe_all_objects",	"DEP_VIEW"	]
-[ "type",	"describe_all_objects",	"DEP_VIEW"	]
-[ "schema_id",	"describe_all_objects",	"DEP_VIEW"	]
-[ "function_id",	"describe_all_objects",	"DEP_VIEW"	]
-[ "system",	"describe_all_objects",	"DEP_VIEW"	]
-[ "id",	"commented_function_signatures",	"DEP_VIEW"	]
-[ "name",	"commented_function_signatures",	"DEP_VIEW"	]
-[ "type",	"commented_function_signatures",	"DEP_VIEW"	]
-[ "schema_id",	"commented_function_signatures",	"DEP_VIEW"	]
-[ "id",	"commented_function_signatures",	"DEP_VIEW"	]
-[ "remark",	"commented_function_signatures",	"DEP_VIEW"	]
-[ "id",	"commented_function_signatures",	"DEP_VIEW"	]
-[ "name",	"commented_function_signatures",	"DEP_VIEW"	]
-[ "function_id",	"commented_function_signatures",	"DEP_VIEW"	]
-[ "func_id",	"commented_function_signatures",	"DEP_VIEW"	]
-[ "type",	"commented_function_signatures",	"DEP_VIEW"	]
-[ "type_digits",	"commented_function_signatures",	"DEP_VIEW"	]
-[ "type_scale",	"commented_function_signatures",	"DEP_VIEW"	]
-[ "inout",	"commented_function_signatures",	"DEP_VIEW"	]
-[ "number",	"commented_function_signatures",	"DEP_VIEW"	]
 #SELECT c.name, k.name, 'DEP_KEY' from columns as c, objects as kc, keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1;
 % .c,	.k,	.L17 # table_name
 % name,	name,	L17 # name
 % varchar,	varchar,	char # type
 % 20,	44,	7 # length
+[ "id",	"comments_id_pkey",	"DEP_KEY"	]
 [ "dependency_type_id",	"dependency_types_dependency_type_id_pkey",	"DEP_KEY"	]
 [ "dependency_type_name",	"dependency_types_dependency_type_name_unique",	"DEP_KEY"	]
 [ "srid",	"spatial_ref_sys_srid_pkey",	"DEP_KEY"	]
@@ -1039,7 +993,6 @@ Cleanup
 [ "file_id",	"rg_pkey_id_file_id",	"DEP_KEY"	]
 [ "id",	"pg_pkey_id_file_id",	"DEP_KEY"	]
 [ "file_id",	"pg_pkey_id_file_id",	"DEP_KEY"	]
-[ "id",	"comments_id_pkey",	"DEP_KEY"	]
 #SELECT c.name, i.name, 'DEP_INDEX' from columns as c, objects as kc, idxs as i where kc."name" = c.name AND kc.id = i.id AND c.table_id = i.table_id AND i.name not in (select name from keys);
 % .c,	.i,	.L21 # table_name
 % name,	name,	L21 # name
