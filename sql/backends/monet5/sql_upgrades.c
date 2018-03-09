@@ -1501,6 +1501,33 @@ sql_update_mar2018_samtools(Client c, mvc *sql)
 }
 #endif	/* HAVE_SAMTOOLS */
 
+static str
+sql_group_concat_upgrade(Client c, mvc *sql)
+{
+	size_t bufsize = 1000, pos = 0;
+	char *buf, *err;
+	char *schema;
+
+	schema = stack_get_string(sql, "current_schema");
+	if ((buf = GDKmalloc(bufsize)) == NULL)
+		throw(SQL, "sql_group_concat_upgrade", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create aggregate group_concat(a clob) returns clob external name \"aggr\".\"str_group_concat\";\n"
+			"create aggregate group_concat(a char) returns clob external name \"aggr\".\"str_group_concat\";\n"
+			"create aggregate group_concat(a varchar) returns clob external name \"aggr\".\"str_group_concat\";\n");
+
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+
+	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 void
 SQLupgrades(Client c, mvc *m)
 {
@@ -1622,5 +1649,13 @@ SQLupgrades(Client c, mvc *m)
 			freeException(err);
 		}
 #endif
+	}
+
+	sql_find_subtype(&tp, "clob", 0, 0);
+	if (sql_bind_aggr(m->sa, s, "group_concat", &tp) == NULL) {
+		if ((err = sql_group_concat_upgrade(c, m)) != NULL) {
+			fprintf(stderr, "!%s\n", err);
+			freeException(err);
+		}
 	}
 }

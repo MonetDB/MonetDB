@@ -370,6 +370,7 @@ base_colors[NUM_COLORS] = {
 /*     1 */	{ 0, 0, "algebra", "fetch", 0 },
 /*     1 */	{ 0, 0, "aggr", "max", 0 },
 /*     ? */	{ 0, 0, "aggr", "avg", 0 },
+/*     ? */	{ 0, 0, "aggr", "group_concat", 0 },
 /*     ? */	{ 0, 0, "aggr", "subavg", 0 },
 /*     ? */	{ 0, 0, "aggr", "submedian", 0 },
 /*     ? */	{ 0, 0, "aggr", "subquantile", 0 },

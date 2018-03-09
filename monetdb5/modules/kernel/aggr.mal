@@ -798,6 +798,18 @@ command subvariancep(b:bat[:dbl],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils
 address AGGRsubvariancepcand_dbl
 comment "Grouped variance (population/biased) aggregate with candidates list";
 
+command str_group_concat(b:bat[:str],g:bat[:oid],e:bat[:any_1]) :bat[:str]
+address AGGRstr_group_concat
+comment "Grouped string tail concat";
+
+command substr_group_concat(b:bat[:str],g:bat[:oid],e:bat[:any_1],skip_nils:bit) :bat[:str]
+address AGGRsubstr_group_concat
+comment "Grouped string concat";
+
+command substr_group_concat(b:bat[:str],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit) :bat[:str]
+address AGGRsubstr_group_concatcand
+comment "Grouped string concat with candidates list";
+
 command min(b:bat[:any_1],g:bat[:oid],e:bat[:any_2]):bat[:any_1]
 address AGGRmin3;
 

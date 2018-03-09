@@ -134,6 +134,7 @@ str grant_rolesRef;
 str groupbyRef;
 str groupdoneRef;
 str groupRef;
+str group_concatRef;
 str hashRef;
 str hgeRef;
 str identityRef;
@@ -425,6 +426,7 @@ void optimizerInit(void)
 	grant_functionRef = putName("grant_function");
 	groupRef = putName("group");
 	groupdoneRef = putName("groupdone");
+	group_concatRef = putName("group_concat");
 	subgroupRef = putName("subgroup");
 	subgroupdoneRef= putName("subgroupdone");
 	groupbyRef = putName("groupby");

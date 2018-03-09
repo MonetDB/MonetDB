@@ -106,6 +106,7 @@ scanner_init_keywords(void)
 	failed += keywords_insert("SUM", AGGR);
 	failed += keywords_insert("PROD", AGGR);
 	failed += keywords_insert("COUNT", AGGR);
+	failed += keywords_insert("GROUP_CONCAT", AGGR);
 
 	failed += keywords_insert("LAG", AGGR2);
 	failed += keywords_insert("LEAD", AGGR2);

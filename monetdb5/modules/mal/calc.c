@@ -812,3 +812,44 @@ CMDBATprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	return CMDBATsumprod(mb, stk, pci, BATprod, "aggr.prod");
 }
+
+mal_export str CMDBATstr_group_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
+str
+CMDBATstr_group_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	ValPtr ret = &stk->stk[getArg(pci, 0)];
+	bat bid = * getArgReference_bat(stk, pci, 1);
+	BAT *b, *s = NULL;
+	int nil_if_empty = 1;
+	gdk_return r;
+
+	(void) cntxt;
+
+	if ((b = BATdescriptor(bid)) == NULL)
+		throw(MAL, "aggr.str_group_concat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	if (pci->argc >= 3) {
+		if (getArgType(mb, pci, 2) == TYPE_bit) {
+			assert(pci->argc == 3);
+			nil_if_empty = * getArgReference_bit(stk, pci, 2);
+		} else {
+			bat sid = * getArgReference_bat(stk, pci, 2);
+			if ((s = BATdescriptor(sid)) == NULL) {
+				BBPunfix(b->batCacheid);
+				throw(MAL, "aggr.str_group_concat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			}
+			if (pci->argc >= 4) {
+				assert(pci->argc == 4);
+				assert(getArgType(mb, pci, 3) == TYPE_bit);
+				nil_if_empty = * getArgReference_bit(stk, pci, 3);
+			}
+		}
+	}
+	r = BATstr_group_concat(ret, b, s, 1, 1, nil_if_empty);
+	BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	if (r != GDK_SUCCEED)
+		return mythrow(MAL, "aggr.str_group_concat", OPERATION_FAILED);
+	return MAL_SUCCEED;
+}

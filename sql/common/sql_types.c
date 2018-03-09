@@ -1339,6 +1339,7 @@ sqltypeinit( sql_allocator *sa)
 #ifdef HAVE_HGE
 	sql_type *HGE = NULL;
 #endif
+	sql_type *CHAR, *VARCHAR, *CLOB;
 	sql_type *SECINT, *MONINT, *DTE; 
 	sql_type *TME, *TMETZ, *TMESTAMP, *TMESTAMPTZ;
 	sql_type *ANY, *TABLE;
@@ -1357,9 +1358,9 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_alias(sa, BIT->sqlname, "BOOL");
 
 	strings = t;
-	*t++ = sql_create_type(sa, "CHAR",    0, 0, 0, EC_CHAR,   "str");
-	STR = *t++ = sql_create_type(sa, "VARCHAR", 0, 0, 0, EC_STRING, "str");
-	*t++ = sql_create_type(sa, "CLOB",    0, 0, 0, EC_STRING, "str");
+	CHAR = *t++ = sql_create_type(sa, "CHAR",    0, 0, 0, EC_CHAR,   "str");
+	VARCHAR = STR = *t++ = sql_create_type(sa, "VARCHAR", 0, 0, 0, EC_STRING, "str");
+	CLOB = *t++ = sql_create_type(sa, "CLOB",    0, 0, 0, EC_STRING, "str");
 
 	numerical = t;
 #if SIZEOF_OID == SIZEOF_INT
@@ -1574,6 +1575,10 @@ sqltypeinit( sql_allocator *sa)
 
 	sql_create_aggr(sa, "count_no_nil", "aggr", "count_no_nil", NULL, LNG);
 	sql_create_aggr(sa, "count", "aggr", "count", NULL, LNG);
+
+	sql_create_aggr(sa, "group_concat", "aggr", "str_group_concat", CHAR, CLOB);
+	sql_create_aggr(sa, "group_concat", "aggr", "str_group_concat", VARCHAR, CLOB);
+	sql_create_aggr(sa, "group_concat", "aggr", "str_group_concat", CLOB, CLOB);
 
 	/* order based operators */
 	sql_create_analytic(sa, "diff", "sql", "diff", ANY, NULL, NULL, BIT, SCALE_NONE);

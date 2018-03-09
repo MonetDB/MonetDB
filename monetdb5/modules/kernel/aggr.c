@@ -871,3 +871,27 @@ AGGRsubquantilecand(bat *retval, const bat *bid, const bat *quantile, const bat 
 					   0, TYPE_any, NULL, NULL, BATgroupquantile,
 					   quantile, "aggr.subquantile");
 }
+
+mal_export str AGGRstr_group_concat(bat *retval, const bat *bid, const bat *gid, const bat *eid);
+str
+AGGRstr_group_concat(bat *retval, const bat *bid, const bat *gid, const bat *eid)
+{
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, 1, 1, TYPE_str, BATgroupstr_group_concat, NULL, NULL, NULL,
+					   "aggr.str_group_concat");
+}
+
+mal_export str AGGRsubstr_group_concat(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
+str
+AGGRsubstr_group_concat(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils)
+{
+	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, *skip_nils, 1, TYPE_str, BATgroupstr_group_concat,
+					   NULL, NULL, NULL, "aggr.substr_group_concat");
+}
+
+mal_export str AGGRsubstr_group_concatcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils);
+str
+AGGRsubstr_group_concatcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
+{
+	return AGGRgrouped(retval, NULL, bid, gid, eid, sid, *skip_nils, 1, TYPE_str, BATgroupstr_group_concat,
+					   NULL, NULL, NULL, "aggr.substr_group_concat");
+}

@@ -154,6 +154,21 @@ EOF
 done
 
 cat <<EOF
+command str_group_concat(b:bat[:str],g:bat[:oid],e:bat[:any_1]) :bat[:str]
+address AGGRstr_group_concat
+comment "Grouped tail concat on string";
+
+command substr_group_concat(b:bat[:str],g:bat[:oid],e:bat[:any_1],skip_nils:bit) :bat[:str]
+address AGGRsubstr_group_concat
+comment "Grouped string concat aggregate";
+
+command substr_group_concat(b:bat[:str],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit) :bat[:str]
+address AGGRsubstr_group_concatcand
+comment "Grouped sum aggregate with candidates list";
+
+EOF
+
+cat <<EOF
 command min(b:bat[:any_1],g:bat[:oid],e:bat[:any_2]):bat[:any_1]
 address AGGRmin3;
 
