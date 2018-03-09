@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 ###
 # Assess that the user can use a granted privilege without having to logout.
 # Assess that a user can no longer use the privilege as soon as it was revoked.
@@ -19,7 +21,7 @@ def query(conn, sql):
     try:
         cur.execute(sql)
     except pymonetdb.OperationalError, e:
-        print "!", e
+        print("!", e)
         return
     r = cur.fetchall()
     cur.close()
@@ -30,9 +32,9 @@ def run(conn, sql):
     try:
         r = conn.execute(sql)
     except pymonetdb.OperationalError, e:
-        print "!", e
+        print("!", e)
         return
-    print '# OK'
+    print('# OK')
 
 
 c1 = connect('monetdb', 'monetdb')

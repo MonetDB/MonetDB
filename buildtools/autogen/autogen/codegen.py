@@ -4,6 +4,8 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
+from __future__ import print_function
+
 import string
 import re
 import fileinput
@@ -252,7 +254,7 @@ def do_scan_target(target,targets,deps,incmap,cwd,incs):
                         if fnd not in incs:
                             incs[fnd] = []
 ##                     else:
-##                         print fnd + " not in deps or incmap"
+##                         print(fnd + " not in deps or incmap")
                     res = pat.search(b,res.end(0))
         incs[target] = inc_files
 

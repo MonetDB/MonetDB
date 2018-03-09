@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 # python mkgeomwxs.py VERSION makedefs.txt PREFIX > PREFIX/MonetDB5-Geom-Installer.wxs
 # "c:\Program Files (x86)\WiX Toolset v3.10\bin\candle.exe" -nologo -arch x64/x86 PREFIX/MonetDB5-Geom-Installer.wxs
 # "c:\Program Files (x86)\WiX Toolset v3.10\bin\light.exe" -nologo -sice:ICE03 -sice:ICE60 -sice:ICE82 -ext WixUIExtension PREFIX/MonetDB5-Geom-Installer.wixobj
