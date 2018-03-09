@@ -3266,13 +3266,13 @@ BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 static gdk_return
 concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN end, BUN ngrp, const oid *restrict cand,
 			   const oid *candend, const oid *restrict gids, oid min, oid max, int skip_nils, const char *func,
-			   int *has_nils)
+			   BUN *has_nils)
 {
 	oid gid;
 	BUN i, p, q, nils = 0;
 	const oid *aux;
 	const char *separator = ",";
-	int* lengths = NULL, separator_length = strlen(separator), next_length, to_allocate;
+	size_t *lengths = NULL, separator_length = strlen(separator), next_length, to_allocate;
 	oid *lastoid = NULL;
 	str* astrings = NULL, s;
 	BATiter bi;
@@ -3289,7 +3289,7 @@ concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN 
 	bi = bat_iterator(b);
 
 	if (ngrp == 1) {
-		int offset = 0, single_length = 0;
+		size_t offset = 0, single_length = 0;
 		oid single_oid = 0;
 		str single_str = NULL;
 		if (cand == NULL) {
@@ -3437,7 +3437,7 @@ concat_strings(void *res, int what, BAT* b, int nonil, oid seqb, BUN start, BUN 
 			}
 		}
 	} else {
-		if((lengths = (int*) GDKzalloc(ngrp * sizeof(int))) == NULL) { /* first used to calculated the total length of*/
+		if((lengths = GDKzalloc(ngrp * sizeof(*lengths))) == NULL) { /* first used to calculated the total length of*/
 			rres = GDK_FAIL;                                           /* each group, then the the total offset */
 			goto finish;
 		}
@@ -3669,7 +3669,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, 
 	BUN ngrp, start, end;
 	const oid *cand = NULL, *candend = NULL;
 	const char *err;
-	int nils = 0;
+	BUN nils = 0;
 	gdk_return res;
 
 	assert(tp == TYPE_str);
