@@ -1514,12 +1514,12 @@ sql_group_concat_upgrade(Client c, mvc *sql)
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
 	pos += snprintf(buf + pos, bufsize - pos,
-			"create aggregate group_concat(a clob) returns clob external name \"aggr\".\"str_group_concat\";\n"
-			"create aggregate group_concat(a char) returns clob external name \"aggr\".\"str_group_concat\";\n"
-			"create aggregate group_concat(a varchar) returns clob external name \"aggr\".\"str_group_concat\";\n");
+			"create aggregate group_concat(str string) returns string external name \"aggr\".\"str_group_concat\";\n"
+			"grant execute on aggregate group_concat(string) to public;\n");
 
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);

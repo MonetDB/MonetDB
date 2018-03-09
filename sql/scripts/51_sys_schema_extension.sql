@@ -420,3 +420,5 @@ SELECT 'pi', pi() UNION ALL
 SELECT 'rowcnt', rowcnt;
 GRANT SELECT ON sys.var_values TO PUBLIC;
 
+CREATE AGGREGATE sys.group_concat(str string) RETURNS string EXTERNAL NAME "aggr"."str_group_concat";
+GRANT EXECUTE ON AGGREGATE sys.group_concat(string) TO PUBLIC;
