@@ -43,8 +43,8 @@ Ready.
 #SELECT (1 = NULL);
 % .L2 # table_name
 % L2 # name
-% boolean # type
-% 5 # length
+% tinyint # type
+% 1 # length
 [ NULL	]
 #SELECT (TRUE OR NULL);
 % .L2 # table_name
