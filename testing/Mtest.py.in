@@ -2690,9 +2690,11 @@ def Prompt(cmd) :
 ### Prompt(cmd) #
 
 def killProc(proc, outfile = None, cmd = None):
+    if type(cmd) is type([]):
+        cmd = ' '.join(cmd)
+    if procdebug:
+        print('timeout for process %d (%s)' % (proc.pid, cmd))
     if outfile is not None and cmd is not None:
-        if type(cmd) is type([]):
-            cmd = ' '.join(cmd)
         try:
             outfile.write('\n!Mtimeout: Timeout: %s\n' % cmd)
         except (ValueError, IOError):
@@ -2731,18 +2733,27 @@ def killProc(proc, outfile = None, cmd = None):
             print(out)
     proc.killed = True
     try:
-        os.kill(-proc.pid, signal.SIGKILL)
+        os.killpg(proc.pid, signal.SIGKILL)
     except AttributeError:
-        if procdebug:
-            print('killProc: starting process "taskkill" "/F" "/T" "/PID" "%s"\n' % str(proc.pid))
-        p = process.Popen(['taskkill','/F','/T','/PID',str(proc.pid)],
-                          stdout = process.PIPE, stderr = process.PIPE,
-                          universal_newlines = True)
-        out, err = p.communicate()
-        if procdebug:
-            print('killProc: process exited "taskkill" "/F" "/T" "/PID" "%s" (%s)\n' % (str(proc.pid), proc.returncode))
+        try:
+            os.kill(-proc.pid, signal.SIGKILL)
+        except AttributeError:
+            if procdebug:
+                print('killProc: starting process "taskkill" "/F" "/T" "/PID" "%s"\n' % str(proc.pid))
+            p = process.Popen(['taskkill','/F','/T','/PID',str(proc.pid)],
+                              stdout = process.PIPE, stderr = process.PIPE,
+                              universal_newlines = True)
+            out, err = p.communicate()
+            if procdebug:
+                print('killProc: process exited "taskkill" "/F" "/T" "/PID" "%s" (%s)\n' % (str(proc.pid), proc.returncode))
     except OSError:
-        pass
+        if procdebug:
+            print('killProc: OSError killing process group %d' % proc.pid)
+        try:
+            os.kill(proc.pid, signal.SIGKILL)
+        except OSError:
+            if procdebug:
+                print('killProc: OSError killing process %d' % proc.pid)
 
 def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut, SrvrOut = None) :
     global setpgrp
