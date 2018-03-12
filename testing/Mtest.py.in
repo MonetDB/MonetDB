@@ -2689,6 +2689,65 @@ def Prompt(cmd) :
     return '%s%s"%s"%s\n\n' % (prmpt, prmpt, cmd, prmpt)
 ### Prompt(cmd) #
 
+def getkids():
+    # return a dictionary with process IDs as key and a list of child
+    # processes as value
+    p = process.Popen(['ps', '-lu', os.getenv('USER')],
+                      stdout = process.PIPE, stderr = process.PIPE,
+                      universal_newlines = True)
+    out, err = p.communicate()
+    if err:
+        return {}
+    lines = out.split('\n')
+    line0 = lines[0].split()
+    del lines[0]
+    del lines[-1]
+    pidcol = ppidcol = None
+    for i in range(len(line0)):
+        if line0[i] == 'PID':
+            pidcol = i
+        elif line0[i] == 'PPID':
+            ppidcol = i
+    if pidcol is None or ppidcol is None:
+        return {}
+    procs = {}
+    for line in lines:
+        line = line.split()
+        try:
+            pid = int(line[pidcol])
+            ppid = int(line[ppidcol])
+        except (ValueError, IndexError):
+            continue
+        if ppid not in procs:
+            procs[ppid] = []
+        procs[ppid].append(pid)
+    return procs
+
+def killchildren(pid, procs = None):
+    # kill the specified process ID and all its children
+    if procs is None:
+        try:
+            os.killpg(pid, signal.SIGKILL)
+            return
+        except AttributeError:
+            try:
+                os.kill(-pid, signal.SIGKILL)
+                return
+            except OSError:
+                pass
+        except OSError:
+            pass
+        procs = getkids()
+    for kid in procs.get(pid, []):
+        killchildren(kid, procs)
+    if procdebug:
+        print('killing process %d' % pid)
+    try:
+        os.kill(pid, signal.SIGKILL)
+    except OSError:
+        if procdebug:
+            print('killing process %d failed' % pid)
+
 def killProc(proc, outfile = None, cmd = None):
     if type(cmd) is type([]):
         cmd = ' '.join(cmd)
@@ -2733,27 +2792,19 @@ def killProc(proc, outfile = None, cmd = None):
             print(out)
     proc.killed = True
     try:
-        os.killpg(proc.pid, signal.SIGKILL)
+        signal.SIGKILL          # Windows doesn't have this
+        os.kill
     except AttributeError:
-        try:
-            os.kill(-proc.pid, signal.SIGKILL)
-        except AttributeError:
-            if procdebug:
-                print('killProc: starting process "taskkill" "/F" "/T" "/PID" "%s"\n' % str(proc.pid))
-            p = process.Popen(['taskkill','/F','/T','/PID',str(proc.pid)],
-                              stdout = process.PIPE, stderr = process.PIPE,
-                              universal_newlines = True)
-            out, err = p.communicate()
-            if procdebug:
-                print('killProc: process exited "taskkill" "/F" "/T" "/PID" "%s" (%s)\n' % (str(proc.pid), proc.returncode))
-    except OSError:
         if procdebug:
-            print('killProc: OSError killing process group %d' % proc.pid)
-        try:
-            os.kill(proc.pid, signal.SIGKILL)
-        except OSError:
-            if procdebug:
-                print('killProc: OSError killing process %d' % proc.pid)
+            print('killProc: starting process "taskkill" "/F" "/T" "/PID" "%s"\n' % str(proc.pid))
+        p = process.Popen(['taskkill','/F','/T','/PID',str(proc.pid)],
+                          stdout = process.PIPE, stderr = process.PIPE,
+                          universal_newlines = True)
+        out, err = p.communicate()
+        if procdebug:
+            print('killProc: process exited "taskkill" "/F" "/T" "/PID" "%s" (%s)\n' % (str(proc.pid), proc.returncode))
+    else:
+        killchildren(proc.pid)
 
 def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut, SrvrOut = None) :
     global setpgrp
