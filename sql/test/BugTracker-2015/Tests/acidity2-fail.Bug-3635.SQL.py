@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -21,7 +23,7 @@ def query(conn, sql):
     return r
 
 def run(conn, sql):
-    print sql
+    print(sql)
     r = conn.execute(sql)
 
 # boring setup and schema creation stuff:
@@ -38,9 +40,9 @@ run(c1, 'create view bar as select * from foo_2017')
 run(c2, 'create table baz (a int);drop table baz')
 try:
     run(c1, 'commit')
-    print "shouldn't get here"
+    print("shouldn't get here")
 except pymonetdb.IntegrityError:
-    print "commit failed"
+    print("commit failed")
     pass
 
 run(c1, 'insert into foo_2017 values (4),(5),(6)') # SIGABRT here

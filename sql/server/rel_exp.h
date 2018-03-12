@@ -122,6 +122,7 @@ extern int exp_is_atom(sql_exp *e);
 extern int exp_is_true(mvc *sql, sql_exp *e);
 extern int exp_is_zero(mvc *sql, sql_exp *e);
 extern int exp_is_not_null(mvc *sql, sql_exp *e);
+extern int exp_is_null(mvc *sql, sql_exp *e);
 extern int exps_are_atoms(list *exps);
 extern int exp_has_func(sql_exp *e);
 extern int exp_unsafe(sql_exp *e);

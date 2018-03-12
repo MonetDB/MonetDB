@@ -11838,6 +11838,7 @@ Ready.
 [ "batsql",	"diff",	"pattern batsql.diff(b:bat[:any_1]):bat[:bit] ",	"SQLdiff;",	"return true if cur != prev row"	]
 [ "batsql",	"diff",	"pattern batsql.diff(p:bat[:bit], b:bat[:any_1]):bat[:bit] ",	"SQLdiff;",	"return true if cur != prev row"	]
 [ "batsql",	"next_value",	"pattern batsql.next_value(sname:bat[:str], sequence:str):bat[:lng] ",	"mvc_bat_next_value;",	"return the next value of the sequence"	]
+[ "batsql",	"password",	"pattern batsql.password(user:bat[:str]):bat[:str] ",	"db_password_wrap;",	"Return password hash of user"	]
 [ "batsql",	"rank",	"pattern batsql.rank(b:bat[:any_1], p:any_2, o:any_3):bat[:int] ",	"SQLrank;",	"return the ranked groups"	]
 [ "batsql",	"round",	"command batsql.round(v:bat[:bte], d:int, s:int, r:bte):bat[:bte] ",	"bte_bat_round_wrap;",	"round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)"	]
 [ "batsql",	"round",	"command batsql.round(v:bat[:dbl], r:bte):bat[:dbl] ",	"dbl_bat_round_wrap;",	"round off the floating point v to r digits behind the dot (if r < 0, before the dot)"	]

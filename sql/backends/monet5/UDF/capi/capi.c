@@ -1605,7 +1605,7 @@ static const char *GetTypeName(int type)
 	if (type == TYPE_bit || type == TYPE_bte) {
 		tpe = "bte";
 	} else if (type == TYPE_sht) {
-		tpe = "short";
+		tpe = "sht";
 	} else if (type == TYPE_int) {
 		tpe = "int";
 	} else if (type == TYPE_oid) {

@@ -2163,7 +2163,8 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 							else
 								return NULL;
 						}
-					} else if (r) {
+					}
+					if (r && z && is_project(z->op)) {
 						sql_rel *gp = z->l;
 						rel_project_add_exp(sql, z, r);
 						reset_processed(gp);

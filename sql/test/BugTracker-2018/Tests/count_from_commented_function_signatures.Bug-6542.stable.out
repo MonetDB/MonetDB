@@ -1,9 +1,9 @@
 stdout of test 'count_from_commented_function_signatures.Bug-6542` in directory 'sql/test/BugTracker-2018` itself:
 
 
-# 18:36:35 >  
-# 18:36:35 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31049" "--set" "mapi_usock=/var/tmp/mtest-14549/.s.monetdb.31049" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2018" "--set" "embedded_r=yes" "--set" "embedded_py=true"
-# 18:36:35 >  
+# 18:30:11 >  
+# 18:30:11 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=33898" "--set" "mapi_usock=/var/tmp/mtest-30685/.s.monetdb.33898" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2018" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 18:30:11 >  
 
 # MonetDB 5 server v11.29.0
 # This is an unreleased version
@@ -13,8 +13,8 @@ stdout of test 'count_from_commented_function_signatures.Bug-6542` in directory 
 # Copyright (c) 1993 - July 2008 CWI.
 # Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://catskill.da.cwi.nl:31049/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-14549/.s.monetdb.31049
+# Listening for connection requests on mapi:monetdb://catskill.da.cwi.nl:33898/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-30685/.s.monetdb.33898
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 # MonetDB/Python2 module loaded
@@ -61,19 +61,28 @@ Ready.
 # loading sql script: 85_bam.sql
 # loading sql script: 90_generator.sql
 # loading sql script: 90_generator_hge.sql
-# loading sql script: 97_comments.sql
 # loading sql script: 99_system.sql
 
-# 18:36:35 >  
-# 18:36:35 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14549" "--port=31049"
-# 18:36:35 >  
+# 18:30:12 >  
+# 18:30:12 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30685" "--port=33898"
+# 18:30:12 >  
 
-#select * from sys.commented_function_signatures;
-% .commented_function_signatures,	.commented_function_signatures,	.commented_function_signatures,	.commented_function_signatures,	.commented_function_signatures,	.commented_function_signatures,	.commented_function_signatures,	.commented_function_signatures,	.commented_function_signatures,	.commented_function_signatures,	.commented_function_signatures # table_name
+#CREATE VIEW sys.commented_function_signatures_6542 AS
+#SELECT f.id AS fid,
+#       s.name AS schema,
+#       f.name AS fname,
+#       f.type AS category,
+#       sf.function_id IS NOT NULL AS system,
+#       CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number ASC) WHEN 1 THEN f.name ELSE NULL END AS name,
+#       CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number DESC) WHEN 1 THEN c.remark ELSE NULL END AS remark,
+#       p.type, p.type_digits, p.type_scale,
+#       ROW_NUMBER() OVER (ORDER BY f.id, p.number) AS line
+#select * from sys.commented_function_signatures_6542;
+% .commented_function_signatures_6542,	.commented_function_signatures_6542,	.commented_function_signatures_6542,	.commented_function_signatures_6542,	.commented_function_signatures_6542,	.commented_function_signatures_6542,	.commented_function_signatures_6542,	.commented_function_signatures_6542,	.commented_function_signatures_6542,	.commented_function_signatures_6542,	.commented_function_signatures_6542 # table_name
 % fid,	schema,	fname,	category,	system,	name,	remark,	type,	type_digits,	type_scale,	line # name
-% int,	varchar,	varchar,	varchar,	boolean,	varchar,	varchar,	varchar,	int,	int,	int # type
-% 1,	0,	0,	0,	5,	0,	0,	0,	1,	1,	1 # length
-#plan select count (*) from sys.commented_function_signatures;
+% int,	varchar,	varchar,	int,	boolean,	varchar,	varchar,	varchar,	int,	int,	int # type
+% 1,	0,	0,	1,	5,	0,	0,	0,	1,	1,	1 # length
+#plan select count (*) from sys.commented_function_signatures_6542;
 % .plan # table_name
 % rel # name
 % clob # type
@@ -112,17 +121,18 @@ project (
 | | | | | ) [ "f"."id", "p"."number", sys.row_number("f"."id", boolean "false", sys.diff(sys.diff("f"."id" ASC), "p"."number" ASC)) as "L37"."L37" ]
 | | | | ) [ "f"."id", "L37"."L37" ]
 | | | ) [ "f"."id" as "L2"."fid", "L37"."L37" as "L40"."line" ] [ "L40"."line" ASC ]
-| | ) [ "L2"."fid" as "commented_function_signatures"."fid" ]
+| | ) [ "L2"."fid" as "commented_function_signatures_6542"."fid" ]
 | ) [  ] [ sys.count() NOT NULL as "L46"."L46" ]
 ) [ "L46" NOT NULL as "L47"."L46" ]
-#select count (*) from sys.commented_function_signatures;
+#select count (*) from sys.commented_function_signatures_6542;
 % .L47 # table_name
 % L46 # name
 % bigint # type
 % 1 # length
 [ 0	]
+#DROP VIEW sys.commented_function_signatures_6542;
 
-# 18:36:36 >  
-# 18:36:36 >  "Done."
-# 18:36:36 >  
+# 18:30:12 >  
+# 18:30:12 >  "Done."
+# 18:30:12 >  
 

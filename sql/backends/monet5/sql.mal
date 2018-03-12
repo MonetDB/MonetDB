@@ -369,6 +369,10 @@ pattern password(user:str) :str
 address db_password_wrap
 comment "Return password hash of user";
 
+pattern batsql.password(user:bat[:str]) :bat[:str]
+address db_password_wrap
+comment "Return password hash of user";
+
 pattern dump_cache()(query:bat[:str],count:bat[:int])
 address dump_cache
 comment "dump the content of the query cache";

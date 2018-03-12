@@ -606,8 +606,6 @@ Ready.
 [ "sys",	"floor",	1,	"real",	""	]
 [ "sys",	"floor",	0,	"double",	"floor"	]
 [ "sys",	"floor",	1,	"double",	""	]
-[ "sys",	"function_type_keyword",	0,	"varchar",	"create function sys.function_type_keyword(ftype int)\nreturns varchar(20)\nbegin\n return case ftype\n when 1 then 'FUNCTION'\n when 2 then 'PROCEDURE'\n when 3 then 'AGGREGATE'\n when 4 then 'FILTER FUNCTION'\n when 5 then 'FUNCTION' \n when 6 then 'FUNCTION' \n when 7 then 'LOADER'\n else 'ROUTINE'\n end;\nend;"	]
-[ "sys",	"function_type_keyword",	1,	"int",	""	]
 [ "sys",	"fuse",	0,	"smallint",	"create function fuse(one tinyint, two tinyint)\nreturns smallint external name udf.fuse;"	]
 [ "sys",	"fuse",	1,	"tinyint",	""	]
 [ "sys",	"fuse",	2,	"tinyint",	""	]

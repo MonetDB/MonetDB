@@ -1048,8 +1048,7 @@ AC_ARG_WITH([python2],
 
 AS_CASE([$have_python2],
 	[yes|no|auto], [],
-	[
-		PYTHON2="$have_python2"])
+	[PYTHON2="$have_python2"])
 
 AC_ARG_WITH([python3],
 	[AS_HELP_STRING([--with-python3=FILE], [python3 is installed as FILE])],
@@ -1057,8 +1056,7 @@ AC_ARG_WITH([python3],
 
 AS_CASE([$have_python3],
 	[yes|no|auto], [],
-	[
-		PYTHON3="$have_python3"])
+	[PYTHON3="$have_python3"])
 
 AC_ARG_WITH([py2config],
 	[AS_HELP_STRING([--with-py2config=FILE], [python2-config is installed as FILE])],
@@ -1089,7 +1087,7 @@ AS_VAR_IF([have_python2], [no],
 			[AS_IF([( test "x$have_python2" = xyes || test "x$have_python2" = xauto ) && test "x$PYTHON_MAJ" = x2],
 				[PYTHON2="$PYTHON"
 				 have_python2=yes],
-				[AS_VAR_IF([have_python], [auto],
+				[AS_VAR_IF([have_python2], [auto],
 					[have_python2=no
 				 	 why_not_python2="(Python 2 executable not found)"],
 					[AC_MSG_ERROR([Python 2 executable not found])])])],
@@ -1200,17 +1198,27 @@ AC_SUBST([QXPYTHON3_LIBDIR])
 AM_CONDITIONAL([HAVE_PYTHON], [test x"$have_python2" != xno -o x"$have_python3" != xno])
 
 AS_VAR_IF([PYTHON], [no],
-	[AS_VAR_IF([PYTHON2], [no],
-		[AS_VAR_IF([PYTHON3], [no],
-			[]
-			[PYTHON="$PYTHON3"])],
-		[PYTHON="$PYTHON2"])])
+	[AS_VAR_IF([PYTHON2], [false],
+		[AS_VAR_IF([PYTHON3], [false],
+			[PYTHON=false]
+			[PYTHON="$PYTHON3"
+			 PYTHON_LIBDIR="$PYTHON3_LIBDIR"])],
+		[PYTHON="$PYTHON2"
+		 PYTHON_LIBDIR="$PYTHON2_LIBDIR"])],
+	[AS_VAR_IF([PYTHON_MAJ],
+		[2], [PYTHON_LIBDIR="$PYTHON2_LIBDIR"],
+		[PYTHON_LIBDIR="$PYTHON3_LIBDIR"])])
 AC_SUBST([PYTHON])
+AC_SUBST([PYTHON_LIBDIR])
+QPYTHON_LIBDIR="$PYTHON_LIBDIR"
+XPYTHON_LIBDIR=`$translatepath "$QPYTHON_LIBDIR"`
+QXPYTHON_LIBDIR=`echo "$XPYTHON_LIBDIR" | sed 's/\\\\/\\\\\\\\/g'`
+AC_SUBST([QXPYTHON_LIBDIR])
 
 # Mtest/Mfilter currently require Python 2
 AS_VAR_IF([enable_testing], [no],
 	[],
-	[AS_VAR_IF([PYTHON2], [false],
+	[AS_VAR_IF([PYTHON], [false],
 		[enable_testing=no])])
 
 AC_PROG_YACC

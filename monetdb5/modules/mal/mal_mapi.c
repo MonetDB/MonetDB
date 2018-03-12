@@ -133,7 +133,6 @@ doChallenge(void *data)
 #endif
 	char *buf = (char *) GDKmalloc(BLOCK + 1);
 	char challenge[13];
-	char *algos;
 
 	stream *fdin = ((struct challengedata *) data)->in;
 	stream *fdout = ((struct challengedata *) data)->out;
@@ -156,20 +155,11 @@ doChallenge(void *data)
 
 	/* generate the challenge string */
 	generateChallenge(challenge, 8, 12);
-	algos = mcrypt_getHashAlgorithms();
-	if(!algos) {
-		mnstr_printf(fdout, "!allocation failure in the server\n");
-		GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
-		close_stream(fdin);
-		close_stream(fdout);
-		GDKfree(buf);
-		return;
-	}
 
 	// send the challenge over the block stream
 	mnstr_printf(fdout, "%s:mserver:9:%s:%s:%s:",
 			challenge,
-			algos,
+			mcrypt_getHashAlgorithms(),
 #ifdef WORDS_BIGENDIAN
 			"BIG",
 #else
@@ -177,7 +167,6 @@ doChallenge(void *data)
 #endif
 			MONETDB5_PASSWDHASH
 			);
-	free(algos);
 	mnstr_flush(fdout);
 	/* get response */
 	if ((len = mnstr_read_block(fdin, buf, 1, BLOCK)) < 0) {
@@ -1240,7 +1229,7 @@ SERVERlookup(int *ret, str *dbalias)
 str
 SERVERtrace(void *ret, int *key, int *flag){
 	(void )ret;
-	(void) mapi_trace(SERVERsessions[*key].mid,*flag);
+	mapi_trace(SERVERsessions[*key].mid,*flag);
 	return MAL_SUCCEED;
 }
 

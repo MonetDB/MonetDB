@@ -261,7 +261,7 @@ static enum itimers {
 
 static bool timerHumanCalled = false;
 static void
-timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, int singleinstr, int total)
+timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, bool singleinstr, bool total)
 {
 	timertype t = th - t0;
 
@@ -274,8 +274,8 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, int si
 	 * - server-measured detailed performance measures only per query.
 	 */
 
-	/* (!singleinstr != !total) is C for ((singleinstr != 0) XOR (total != 0)) */
-	if (timermode == T_CLOCK && (!singleinstr != !total)) {
+	/* "(singleinstr != total)" is C for (logical) "(singleinstr XOR total)" */
+	if (timermode == T_CLOCK && (singleinstr != total)) {
 		/* print wall-clock in "human-friendly" format */
 		fflush(stderr);
 		mnstr_flush(toConsole);
@@ -301,7 +301,7 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, int si
 		fflush(stderr);
 		return;
 	}
-	if (timermode == T_PERF && ((!singleinstr != !total) || !total)) {
+	if (timermode == T_PERF && (!total || (singleinstr != total))) {
 		/* for performance measures we use milliseconds as the base */
 		fflush(stderr);
 		mnstr_flush(toConsole);
@@ -310,7 +310,7 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, int si
 				 sqloptimizer / 1000, (int) (sqloptimizer % 1000),
 				 maloptimizer / 1000, (int) (maloptimizer % 1000),
 				 querytime / 1000, (int) (querytime % 1000));
-		if (!singleinstr != !total)
+		if (singleinstr != total)
 			fprintf(stderr, "clk:%" PRId64 ".%03d ", t / 1000, (int) (t % 1000));
 		fprintf(stderr, "ms\n");
 		fflush(stderr);
@@ -1809,7 +1809,7 @@ end_pager(stream *saveFD)
 #endif
 
 static int
-format_result(Mapi mid, MapiHdl hdl, int singleinstr)
+format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 {
 	MapiMsg rc = MERROR;
 	int64_t aff, lid;
@@ -1873,14 +1873,14 @@ format_result(Mapi mid, MapiHdl hdl, int singleinstr)
 				}
 				mnstr_printf(toConsole, "\n");
 			}
-			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
+			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 			continue;
 		case Q_SCHEMA:
 			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter) {
 				mnstr_printf(toConsole, "operation successful\n");
 			}
-			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
+			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 			continue;
 		case Q_TRANS:
 			SQLqueryEcho(hdl);
@@ -1888,7 +1888,7 @@ format_result(Mapi mid, MapiHdl hdl, int singleinstr)
 				mnstr_printf(toConsole,
 					     "auto commit mode: %s\n",
 					     mapi_get_autocommit(mid) ? "on" : "off");
-			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
+			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 			continue;
 		case Q_PREPARE:
 			SQLqueryEcho(hdl);
@@ -1897,7 +1897,7 @@ format_result(Mapi mid, MapiHdl hdl, int singleinstr)
 					     "execute prepared statement "
 					     "using: EXEC %d(...)\n",
 					     mapi_get_tableid(hdl));
-			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
+			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 			break;
 		case Q_TABLE:
 			break;
@@ -1971,16 +1971,16 @@ format_result(Mapi mid, MapiHdl hdl, int singleinstr)
 				break;
 			}
 
-			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
+			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 		}
 	} while (!mnstr_errnr(toConsole) && (rc = mapi_next_result(hdl)) == 1);
 	/*
-	 * in case we called timerHuman() in the loop above with "total == 0",
-	 * call is again with "total == 1" to get the total wall-clock time
-	 * in case "singleinstr == 0 (false).
+	 * in case we called timerHuman() in the loop above with "total == false",
+	 * call is again with "total == true" to get the total wall-clock time
+	 * in case "singleinstr == false".
 	 */
 	if (timerHumanCalled)
-		timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 1);
+		timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, true);
 	if (mnstr_errnr(toConsole)) {
 		mnstr_clearerr(toConsole);
 		fprintf(stderr, "write error\n");
@@ -2016,7 +2016,7 @@ doRequest(Mapi mid, const char *buf)
 	if (mapi_needmore(hdl) == MMORE)
 		return 0;
 
-	format_result(mid, hdl, 0);
+	format_result(mid, hdl, false);
 
 	if (mapi_get_active(mid) == NULL)
 		mapi_close_handle(hdl);
@@ -2134,7 +2134,7 @@ doFileBulk(Mapi mid, stream *fp)
 
 		CHECK_RESULT(mid, hdl, continue, buf, fp);
 
-		rc = format_result(mid, hdl, 0);
+		rc = format_result(mid, hdl, false);
 
 		if (rc == MMORE && (length > 0 || mapi_query_done(hdl) != MOK))
 			continue;	/* get more data */

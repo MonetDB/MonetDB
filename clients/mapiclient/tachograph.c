@@ -48,17 +48,20 @@
 
 #define die(dbh, hdl)						\
 	do {							\
-		(hdl ? mapi_explain_query(hdl, stderr) :	\
-		 dbh ? mapi_explain(dbh, stderr) :		\
-		 fprintf(stderr, "!! command failed\n"));	\
+		if (hdl)					\
+			mapi_explain_query(hdl, stderr);	\
+		else if (dbh)					\
+			mapi_explain(dbh, stderr);		\
+		else						\
+			fprintf(stderr, "!! command failed\n");	\
 		goto stop_disconnect;				\
 	} while (0)
 
-#define doQ(X)								\
-	do {								\
+#define doQ(X)							\
+	do {							\
 		if ((hdl = mapi_query(dbh, X)) == NULL ||	\
 		    mapi_error(dbh) != MOK)			\
-			die(dbh, hdl);			\
+			die(dbh, hdl);				\
 	} while (0)
 
 static stream *conn = NULL;
