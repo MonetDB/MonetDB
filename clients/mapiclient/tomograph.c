@@ -8,7 +8,7 @@
 
 /* (c) M Kersten, S Manegold
  * The easiest calling method is something like:
- * tomograph -d demo --atlast=10
+ * tomograph -d demo --atlas=10
  * which connects to the demo database server and
  * will collect the tomograph pages for at most 10 SQL queries
  * For each page a gnuplot file, a data file, and the event trace
