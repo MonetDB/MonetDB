@@ -594,6 +594,7 @@ dnl		MCHECK_ADD_FLAG([-Wdeclaration-after-statement])
 		MCHECK_ADD_FLAG([-Wundef])
 		MCHECK_ADD_FLAG([-Wformat=2])
 		MCHECK_ADD_FLAG([-Wno-format-nonliteral])
+dnl		MCHECK_ADD_FLAG([-Wformat-signedness]) -- numpy messes this up
 		MCHECK_ADD_FLAG([-Winit-self])
 		MCHECK_ADD_FLAG([-Winvalid-pch])
 		MCHECK_ADD_FLAG([-Wmissing-declarations])

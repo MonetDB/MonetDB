@@ -1322,7 +1322,7 @@ rel_check_type(mvc *sql, sql_subtype *t, sql_exp *exp, int tpe)
 		}
 	}
 	if (err) {
-		sql_exp *res = sql_error( sql, 03, SQLSTATE(42000) "types %s(%d,%d) and %s(%d,%d) are not equal%s%s%s",
+		sql_exp *res = sql_error( sql, 03, SQLSTATE(42000) "types %s(%u,%u) and %s(%u,%u) are not equal%s%s%s",
 			fromtype->type->sqlname,
 			fromtype->digits,
 			fromtype->scale,

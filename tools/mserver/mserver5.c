@@ -444,7 +444,7 @@ main(int argc, char **av)
 			usage(prog, strcmp(av[optind - 1], "-?") == 0 || strcmp(av[optind - 1], "--help") == 0 ? 0 : -1);
 		default:
 			fprintf(stderr, "ERROR: getopt returned character "
-							"code '%c' 0%o\n", c, c);
+				"code '%c' 0%o\n", c, (uint8_t) c);
 			usage(prog, -1);
 		}
 	}
