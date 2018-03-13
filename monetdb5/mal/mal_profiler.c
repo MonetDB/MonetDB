@@ -108,10 +108,9 @@ truncate_string(char *inp)
 		return NULL;
 	}
 
-	*ret = 0;
-	ret = strncat(ret, inp, ret_len/2);
-	ret = strncat(ret, " ...<truncated>... ", strlen(" ...<truncated>... "));
-	ret = strncat(ret, inp + (len - ret_len/2 + padding), ret_len/2 - padding);
+	snprintf(ret, ret_len + 1, "%.*s...<truncated>...%.*s",
+			 (int) (ret_len/2), inp, (int) (ret_len/2 - padding),
+			 inp + (len - ret_len/2 + padding));
 
 	return ret;
 }

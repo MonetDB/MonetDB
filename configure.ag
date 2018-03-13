@@ -592,8 +592,11 @@ AS_VAR_IF([enable_strict], [yes], [
 		MCHECK_ADD_FLAG([-Wpointer-arith])
 		MCHECK_ADD_FLAG([-Wundef])
 		MCHECK_ADD_FLAG([-Wformat=2])
+		MCHECK_ADD_FLAG([-Wformat-overflow=1])
+		MCHECK_ADD_FLAG([-Wno-format-truncation])
 		MCHECK_ADD_FLAG([-Wno-format-nonliteral])
 dnl		MCHECK_ADD_FLAG([-Wformat-signedness]) -- numpy messes this up
+		MCHECK_ADD_FLAG([-Wno-cast-function-type])
 		MCHECK_ADD_FLAG([-Winit-self])
 		MCHECK_ADD_FLAG([-Winvalid-pch])
 		MCHECK_ADD_FLAG([-Wmissing-declarations])
