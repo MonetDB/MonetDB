@@ -819,34 +819,59 @@ str
 CMDBATstr_group_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	ValPtr ret = &stk->stk[getArg(pci, 0)];
-	bat bid = * getArgReference_bat(stk, pci, 1);
-	BAT *b, *s = NULL;
-	int nil_if_empty = 1;
+	bat bid = * getArgReference_bat(stk, pci, 1), ssid = 0;
+	BAT *b, *s = NULL, *sep = NULL;
+	BATiter bi;
+	int nil_if_empty = 1, next_argument = 2;
+	str separator = ",";
 	gdk_return r;
 
 	(void) cntxt;
 
 	if ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL, "aggr.str_group_concat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if (pci->argc >= 3) {
-		if (getArgType(mb, pci, 2) == TYPE_bit) {
-			assert(pci->argc == 3);
-			nil_if_empty = * getArgReference_bit(stk, pci, 2);
+
+	if (isaBatType(getArgType(mb, pci, 2))) {
+		ssid = * getArgReference_bat(stk, pci, 2);
+		if ((sep = BATdescriptor(ssid)) == NULL) {
+			BBPunfix(b->batCacheid);
+			throw(MAL, "aggr.str_group_concat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		if(sep->ttype == TYPE_str) { /* the separator bat */
+			next_argument = 3;
+			bi = bat_iterator(sep);
+			separator = BUNtail(bi, 0);
+		}
+	}
+
+	if (pci->argc >= (next_argument + 1)) {
+		if (getArgType(mb, pci, next_argument) == TYPE_bit) {
+			assert(pci->argc == (next_argument + 1));
+			nil_if_empty = * getArgReference_bit(stk, pci, next_argument);
 		} else {
-			bat sid = * getArgReference_bat(stk, pci, 2);
-			if ((s = BATdescriptor(sid)) == NULL) {
-				BBPunfix(b->batCacheid);
-				throw(MAL, "aggr.str_group_concat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			if(next_argument == 3) {
+				bat sid = * getArgReference_bat(stk, pci, next_argument);
+				if ((s = BATdescriptor(sid)) == NULL) {
+					BBPunfix(b->batCacheid);
+					BBPunfix(sep->batCacheid);
+					throw(MAL, "aggr.str_group_concat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+				}
+			} else {
+				s = sep;
+				sep = NULL;
 			}
-			if (pci->argc >= 4) {
-				assert(pci->argc == 4);
-				assert(getArgType(mb, pci, 3) == TYPE_bit);
-				nil_if_empty = * getArgReference_bit(stk, pci, 3);
+			if (pci->argc >= (next_argument + 2)) {
+				assert(pci->argc == (next_argument + 2));
+				assert(getArgType(mb, pci, (next_argument + 1)) == TYPE_bit);
+				nil_if_empty = * getArgReference_bit(stk, pci, (next_argument + 1));
 			}
 		}
 	}
-	r = BATstr_group_concat(ret, b, s, 1, 1, nil_if_empty);
+
+	r = BATstr_group_concat(ret, b, s, 1, 1, nil_if_empty, separator);
 	BBPunfix(b->batCacheid);
+	if (sep)
+		BBPunfix(sep->batCacheid);
 	if (s)
 		BBPunfix(s->batCacheid);
 	if (r != GDK_SUCCEED)

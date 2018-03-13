@@ -18,7 +18,7 @@ select a, group_concat(b) from othertest group by a;
 insert into othertest values (2, 'other'), (2, 'test'), (2, '');
 select a, group_concat(b) from othertest group by a;
 
-insert into othertest values (3, ''), (2, 'no hole'), (3, ''), (4, '');
+insert into othertest values (3, ''), (2, 'i want to see the commas'), (3, ''), (4, '');
 select a, group_concat(b) from othertest group by a;
 
 select a, group_concat(b) as compacted from othertest group by a having count(*) > 2;

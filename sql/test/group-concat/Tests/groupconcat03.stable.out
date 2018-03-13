@@ -40,16 +40,16 @@ Ready.
 % sys.L4 # table_name
 % L3 # name
 % clob # type
-% 13 # length
-[ "one,two,three"	]
+% 14 # length
+[ ",one,two,three"	]
 #insert into testme values ('');
 [ 1	]
 #select group_concat(b) from testme;
 % sys.L4 # table_name
 % L3 # name
 % clob # type
-% 13 # length
-[ "one,two,three"	]
+% 15 # length
+[ ",one,two,three,"	]
 #create table othertest (a int, b clob);
 #insert into othertest values (1, 'test'), (1, ''), (1, 'me');
 [ 3	]
@@ -57,35 +57,35 @@ Ready.
 % sys.othertest,	sys.L4 # table_name
 % a,	L3 # name
 % int,	clob # type
-% 1,	7 # length
-[ 1,	"test,me"	]
+% 1,	8 # length
+[ 1,	"test,,me"	]
 #insert into othertest values (2, 'other'), (2, 'test'), (2, '');
 [ 3	]
 #select a, group_concat(b) from othertest group by a;
 % sys.othertest,	sys.L4 # table_name
 % a,	L3 # name
 % int,	clob # type
-% 1,	10 # length
-[ 1,	"test,me"	]
-[ 2,	"other,test"	]
-#insert into othertest values (3, ''), (2, 'no hole'), (3, ''), (4, '');
+% 1,	11 # length
+[ 1,	"test,,me"	]
+[ 2,	"other,test,"	]
+#insert into othertest values (3, ''), (2, 'i want to see the commas'), (3, ''), (4, '');
 [ 4	]
 #select a, group_concat(b) from othertest group by a;
 % sys.othertest,	sys.L4 # table_name
 % a,	L3 # name
 % int,	clob # type
-% 1,	18 # length
-[ 1,	"test,me"	]
-[ 2,	"other,test,no hole"	]
-[ 3,	""	]
+% 1,	36 # length
+[ 1,	"test,,me"	]
+[ 2,	"other,test,,i want to see the commas"	]
+[ 3,	","	]
 [ 4,	""	]
 #select a, group_concat(b) as compacted from othertest group by a having count(*) > 2;
 % sys.othertest,	sys.L4 # table_name
 % a,	compacted # name
 % int,	clob # type
-% 1,	18 # length
-[ 1,	"test,me"	]
-[ 2,	"other,test,no hole"	]
+% 1,	36 # length
+[ 1,	"test,,me"	]
+[ 2,	"other,test,,i want to see the commas"	]
 #rollback;
 
 # 14:11:34 >  

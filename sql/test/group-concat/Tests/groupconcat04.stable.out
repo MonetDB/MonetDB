@@ -33,7 +33,7 @@ Ready.
 % a,	L3 # name
 % int,	clob # type
 % 1,	11 # length
-[ 5,	"if,else"	]
+[ 5,	",if,else"	]
 [ 4,	"a singleton"	]
 #select group_concat(a) from testme;
 % sys.L4 # table_name
@@ -60,7 +60,7 @@ Ready.
 % a,	L3 # name
 % int,	clob # type
 % 1,	35 # length
-[ 5,	"if,else"	]
+[ 5,	",if,else"	]
 [ 4,	"a singleton,not a singleton anymore"	]
 [ 6,	""	]
 [ 7,	NULL	]
@@ -103,15 +103,15 @@ Ready.
 % sys.othertest,	sys.L4 # table_name
 % a,	L3 # name
 % int,	clob # type
-% 1,	14 # length
-[ 1,	"\\t a\t,\n\\n,,,,,"	]
+% 1,	15 # length
+[ 1,	"\\t a\t,\n\\n,,,,,,"	]
 [ 2,	"\n,\n"	]
 #select group_concat(b) from othertest;
 % sys.L4 # table_name
 % L3 # name
 % clob # type
-% 18 # length
-[ "\\t a\t,\n\\n,,,,,,\n,\n"	]
+% 19 # length
+[ "\\t a\t,\n\\n,,,,,,\n,\n,"	]
 #rollback;
 
 # 15:13:03 >  

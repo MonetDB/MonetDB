@@ -72,8 +72,8 @@ Ready.
 % sys.L4 # table_name
 % L3 # name
 % clob # type
-% 60 # length
-[ "another,testing,all,lets,get,harder,even,more,serious,stress"	]
+% 62 # length
+[ "another,testing,all,lets,get,harder,even,more,serious,,stress,"	]
 #rollback;
 
 # 14:11:34 >  

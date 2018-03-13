@@ -154,21 +154,6 @@ EOF
 done
 
 cat <<EOF
-command str_group_concat(b:bat[:str],g:bat[:oid],e:bat[:any_1]) :bat[:str]
-address AGGRstr_group_concat
-comment "Grouped tail concat on string";
-
-command substr_group_concat(b:bat[:str],g:bat[:oid],e:bat[:any_1],skip_nils:bit) :bat[:str]
-address AGGRsubstr_group_concat
-comment "Grouped string concat aggregate";
-
-command substr_group_concat(b:bat[:str],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit) :bat[:str]
-address AGGRsubstr_group_concatcand
-comment "Grouped sum aggregate with candidates list";
-
-EOF
-
-cat <<EOF
 command min(b:bat[:any_1],g:bat[:oid],e:bat[:any_2]):bat[:any_1]
 address AGGRmin3;
 
@@ -273,4 +258,30 @@ command subquantile(b:bat[:any_1],q:bat[:dbl],g:bat[:oid],e:bat[:any_2],s:bat[:o
 address AGGRsubquantilecand
 comment "Grouped median quantile with candidate list";
 
+EOF
+
+cat <<EOF
+command str_group_concat(b:bat[:str],g:bat[:oid],e:bat[:any_1]) :bat[:str]
+address AGGRstr_group_concat
+comment "Grouped string tail concat";
+
+command substr_group_concat(b:bat[:str],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:str]
+address AGGRsubstr_group_concat
+comment "Grouped string concat";
+
+command substr_group_concat(b:bat[:str],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:str]
+address AGGRsubstr_group_concatcand
+comment "Grouped string concat with candidates list";
+
+command str_group_concat(b:bat[:str],sep:bat[:str],g:bat[:oid],e:bat[:any_1]) :bat[:str]
+address AGGRstr_group_concat_sep
+comment "Grouped string tail concat with custom separator";
+
+command substr_group_concat(b:bat[:str],sep:bat[:str],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:str]
+address AGGRsubstr_group_concat_sep
+comment "Grouped string concat with custom separator";
+
+command substr_group_concat(b:bat[:str],sep:bat[:str],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:str]
+address AGGRsubstr_group_concatcand_sep
+comment "Grouped string concat with candidates list with custom separator";
 EOF

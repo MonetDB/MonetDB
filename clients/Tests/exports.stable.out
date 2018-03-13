@@ -131,7 +131,7 @@ BAT *BATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile, i
 BAT *BATgroupsize(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
 BAT *BATgroupstdev_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
 BAT *BATgroupstdev_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
-BAT *BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
+BAT *BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils, int abort_on_error, const str separator);
 BAT *BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
 BAT *BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
 BAT *BATgroupvariance_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
@@ -170,7 +170,7 @@ void BATsetcount(BAT *b, BUN cnt);
 void BATsetprop(BAT *b, int idx, int type, void *v);
 BAT *BATslice(BAT *b, BUN low, BUN high);
 gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, int reverse, int stable) __attribute__((__warn_unused_result__));
-gdk_return BATstr_group_concat(ValPtr res, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty);
+gdk_return BATstr_group_concat(ValPtr res, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty, const str separator);
 gdk_return BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr) __attribute__((__warn_unused_result__));
 gdk_return BATsum(void *res, int tp, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty);
 gdk_return BATthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, int nil_matches, BUN estimate) __attribute__((__warn_unused_result__));
@@ -608,6 +608,7 @@ str AGGRquantile3(bat *retval, const bat *bid, const bat *gid, const bat *eid, c
 str AGGRstdev3_dbl(bat *retval, const bat *bid, const bat *gid, const bat *eid);
 str AGGRstdevp3_dbl(bat *retval, const bat *bid, const bat *gid, const bat *eid);
 str AGGRstr_group_concat(bat *retval, const bat *bid, const bat *gid, const bat *eid);
+str AGGRstr_group_concat_sep(bat *retval, const bat *bid, const bat *sepp, const bat *gid, const bat *eid);
 str AGGRsubavg1_dbl(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error);
 str AGGRsubavg1cand_dbl(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils, const bit *abort_on_error);
 str AGGRsubavg2_dbl(bat *retval1, bat *retval2, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error);
@@ -645,7 +646,9 @@ str AGGRsubstdevcand_dbl(bat *retval, const bat *bid, const bat *gid, const bat 
 str AGGRsubstdevp_dbl(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error);
 str AGGRsubstdevpcand_dbl(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils, const bit *abort_on_error);
 str AGGRsubstr_group_concat(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error);
+str AGGRsubstr_group_concat_sep(bat *retval, const bat *bid, const bat *sepp, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error);
 str AGGRsubstr_group_concatcand(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils, const bit *abort_on_error);
+str AGGRsubstr_group_concatcand_sep(bat *retval, const bat *bid, const bat *sepp, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils, const bit *abort_on_error);
 str AGGRsubsum_bte(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error);
 str AGGRsubsum_dbl(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error);
 str AGGRsubsum_flt(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error);
