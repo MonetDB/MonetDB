@@ -590,7 +590,6 @@ AS_VAR_IF([enable_strict], [yes], [
 		MCHECK_ADD_FLAG([-Werror-implicit-function-declaration])
 
 		MCHECK_ADD_FLAG([-Wpointer-arith])
-dnl		MCHECK_ADD_FLAG([-Wdeclaration-after-statement])
 		MCHECK_ADD_FLAG([-Wundef])
 		MCHECK_ADD_FLAG([-Wformat=2])
 		MCHECK_ADD_FLAG([-Wno-format-nonliteral])
