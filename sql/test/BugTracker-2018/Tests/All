@@ -32,3 +32,6 @@ HAVE_HGE?sqlitelogictest-case-coalesce.Bug-6550
 sqlitelogictest-wrong-cast-null.Bug-6551
 sqlitelogictest-complex-case.Bug-6552
 sqlitelogictest-groupby-having-not-in.Bug-6553
+sqlitelogictest-nested-case.Bug-6554
+sqlitelogictest-complex-case-extra-columns.Bug-6555
+sqlitelogictest-coalesce-division-by-zero.Bug-6556
