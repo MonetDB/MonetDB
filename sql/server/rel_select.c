@@ -2164,12 +2164,12 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 								return NULL;
 						}
 					}
-					if (r && z && is_project(z->op)) {
+					if (r && z && is_project(z->op) && z->l) {
 						sql_rel *gp = z->l;
 						rel_project_add_exp(sql, z, r);
 						reset_processed(gp);
 						r = exp_column(sql->sa, exp_relname(r), exp_name(r), exp_subtype(r), r->card, has_nil(r), is_intern(r));
-						if (outer)
+						if (outer && outer != z)
 							outer->l = z;
 						left = z;
 					}
