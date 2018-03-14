@@ -485,6 +485,16 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	for (i = 0; i < curInstr->retc; i++)
 		p = pushArgument(curBlk, p, lret[i]);
 	pushInstruction(curBlk, p);
+
+	/* catch exceptions */
+	p = newCatchStmt(curBlk,"MALexception");
+        p = newExitStmt(curBlk,"MALexception");
+        p = newCatchStmt(curBlk,"SQLexception");
+        p = newExitStmt(curBlk,"SQLexception");
+	/* remote.disconnect(q); */
+	p = newStmt(curBlk, remoteRef, disconnectRef);
+	p = pushArgument(curBlk, p, q);
+
 	pushEndInstruction(curBlk);
 
 	/* SQL function definitions meant for inlineing should not be optimized before */
