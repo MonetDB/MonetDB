@@ -513,7 +513,7 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 				continue;
 			p = copyInstruction(q);
 			if (!p) { // oh malloc you cruel mistress
-				throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(HY001) "Out of memory");
+				throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			for (k = 0; k < p->argc; k++)
 				getArg(p, k) = cloneVariable(mb, pipes[i].mb, getArg(p, k));
