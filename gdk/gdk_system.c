@@ -467,7 +467,7 @@ rm_posthread_locked(struct posthread *p)
 		*pp = p->next;
 }
 
-static void
+static void *
 thread_starter(void *arg)
 {
 	struct posthread *p = (struct posthread *) arg;
@@ -480,6 +480,19 @@ thread_starter(void *arg)
 	if ((p = find_posthread_locked(tid)) != NULL)
 		p->exited = 1;
 	pthread_mutex_unlock(&posthread_lock);
+	return NULL;
+}
+
+static void *
+thread_starter_simple(void *arg)
+{
+	struct posthread *p = (struct posthread *) arg;
+	void (*pfunc)(void *) = p->func;
+	void *parg = p->arg;
+
+	free(p);
+	(*pfunc)(parg);
+	return NULL;
 }
 
 static void
@@ -537,6 +550,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 	pthread_t newt, *newtp;
 	int ret;
 	struct posthread *p = NULL;
+	void *(*pf) (void *);
 
 	join_threads();
 #ifdef HAVE_PTHREAD_SIGMASK
@@ -553,39 +567,39 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d)
 		pthread_attr_destroy(&attr);
 		return -1;
 	}
-	if (d == MT_THR_DETACHED) {
-		p = malloc(sizeof(struct posthread));
-		if (p == NULL) {
+	p = malloc(sizeof(struct posthread));
+	if (p == NULL) {
 #ifdef HAVE_PTHREAD_SIGMASK
-			MT_thread_sigmask(&orig_mask, NULL);
+		MT_thread_sigmask(&orig_mask, NULL);
 #endif
-			pthread_attr_destroy(&attr);
-			return -1;
-		}
-		p->func = f;
-		p->arg = arg;
-		p->exited = 0;
-		f = thread_starter;
-		arg = p;
+		pthread_attr_destroy(&attr);
+		return -1;
+	}
+	p->func = f;
+	p->arg = arg;
+	p->exited = 0;
+	if (d == MT_THR_DETACHED) {
+		pf = thread_starter;
 		newtp = &p->tid;
 	} else {
+		pf = thread_starter_simple;
 		newtp = &newt;
 		assert(d == MT_THR_JOINABLE);
 	}
-	ret = pthread_create(newtp, &attr, (void *(*)(void *)) f, arg);
+	ret = pthread_create(newtp, &attr, pf, p);
 	if (ret == 0) {
 #ifdef PTW32
 		*t = (MT_Id) (((size_t) newtp->p) + 1);	/* use pthread-id + 1 */
 #else
 		*t = (MT_Id) (((size_t) *newtp) + 1);	/* use pthread-id + 1 */
 #endif
-		if (p) {
+		if (d == MT_THR_DETACHED) {
 			pthread_mutex_lock(&posthread_lock);
 			p->next = posthreads;
 			posthreads = p;
 			pthread_mutex_unlock(&posthread_lock);
 		}
-	} else if (p) {
+	} else {
 		free(p);
 	}
 #ifdef HAVE_PTHREAD_SIGMASK

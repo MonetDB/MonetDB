@@ -797,15 +797,15 @@ typedef struct {
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
 
-#define GDKLIBRARY_SORTEDPOS	061030	/* version where we can't trust no(rev)sorted */
-#define GDKLIBRARY_OLDWKB	061031	/* old geom WKB format */
-#define GDKLIBRARY_INSERTED	061032	/* inserted and deleted in BBP.dir */
-#define GDKLIBRARY_HEADED	061033	/* head properties are stored */
-#define GDKLIBRARY_NOKEY	061034	/* nokey values can't be trusted */
-#define GDKLIBRARY_BADEMPTY	061035	/* possibility of duplicate empty str */
-#define GDKLIBRARY_TALIGN	061036	/* talign field in BBP.dir */
-#define GDKLIBRARY_NIL_NAN	061037	/* flt/dbl NIL not represented by NaN */
-#define GDKLIBRARY		061040
+#define GDKLIBRARY_SORTEDPOS	061030U	/* version where we can't trust no(rev)sorted */
+#define GDKLIBRARY_OLDWKB	061031U	/* old geom WKB format */
+#define GDKLIBRARY_INSERTED	061032U	/* inserted and deleted in BBP.dir */
+#define GDKLIBRARY_HEADED	061033U	/* head properties are stored */
+#define GDKLIBRARY_NOKEY	061034U	/* nokey values can't be trusted */
+#define GDKLIBRARY_BADEMPTY	061035U	/* possibility of duplicate empty str */
+#define GDKLIBRARY_TALIGN	061036U	/* talign field in BBP.dir */
+#define GDKLIBRARY_NIL_NAN	061037U	/* flt/dbl NIL not represented by NaN */
+#define GDKLIBRARY		061040U
 
 typedef struct BAT {
 	/* static bat properties */
@@ -2037,7 +2037,8 @@ gdk_export str GDKstrndup(const char *s, size_t n)
 			fprintf(stderr,					\
 				"#GDKmmap(%s,0x%x,%zu) -> %p"		\
 				" %s[%s:%d]\n",				\
-				_path ? _path : "NULL", _mode, _len,	\
+				_path ? _path : "NULL",			\
+				(unsigned) _mode, _len,			\
 				_res,					\
 				__func__, __FILE__, __LINE__);		\
 		_res;							\

@@ -1347,7 +1347,7 @@ THRnew(const char *name)
 		s->data[0] = THRdata[0];
 		s->sp = THRsp();
 
-		PARDEBUG fprintf(stderr, "#%x %zu sp = %zu\n", s->tid, (size_t) pid, (size_t) s->sp);
+		PARDEBUG fprintf(stderr, "#%x %zu sp = %zu\n", (unsigned) s->tid, (size_t) pid, (size_t) s->sp);
 		PARDEBUG fprintf(stderr, "#nrofthreads %d\n", GDKnrofthreads);
 
 		GDKnrofthreads++;

@@ -1114,7 +1114,7 @@ headheapinit(oid *hseq, const char *buf, bat bid)
 }
 
 static int
-heapinit(BAT *b, const char *buf, int *hashash, const char *HT, int bbpversion, bat bid, const char *filename)
+heapinit(BAT *b, const char *buf, int *hashash, const char *HT, unsigned bbpversion, bat bid, const char *filename)
 {
 	int t;
 	char type[11];
@@ -1241,7 +1241,7 @@ vheapinit(BAT *b, const char *buf, int hashash, bat bid, const char *filename)
 }
 
 static void
-BBPreadEntries(FILE *fp, int bbpversion)
+BBPreadEntries(FILE *fp, unsigned bbpversion)
 {
 	bat bid = 0;
 	char buf[4096];
@@ -1369,7 +1369,7 @@ BBPreadEntries(FILE *fp, int bbpversion)
 		BBP_desc(bid) = bn;
 		BBP_status(bid) = BBPEXISTING;	/* do we need other status bits? */
 		if ((s = strchr(headname, '~')) != NULL && s == headname) {
-			snprintf(logical, sizeof(logical), "tmp_%o", (int) bid);
+			snprintf(logical, sizeof(logical), "tmp_%o", (unsigned) bid);
 		} else {
 			if (s)
 				*s = 0;
@@ -1399,17 +1399,18 @@ BBPreadEntries(FILE *fp, int bbpversion)
 #define SIZEOF_MAX_INT SIZEOF_LNG
 #endif
 
-static int
+static unsigned
 BBPheader(FILE *fp)
 {
 	char buf[BUFSIZ];
-	int sz, bbpversion, ptrsize, oidsize, intsize;
+	int sz, ptrsize, oidsize, intsize;
+	unsigned bbpversion;
 	char *s;
 
 	if (fgets(buf, sizeof(buf), fp) == NULL) {
 		GDKfatal("BBPinit: BBP.dir is empty");
 	}
-	if (sscanf(buf, "BBP.dir, GDKversion %d\n", &bbpversion) != 1) {
+	if (sscanf(buf, "BBP.dir, GDKversion %u\n", &bbpversion) != 1) {
 		GDKerror("BBPinit: old BBP without version number");
 		GDKerror("dump the database using a compatible version,");
 		GDKerror("then restore into new database using this version.\n");
@@ -1535,7 +1536,7 @@ BBPinit(void)
 {
 	FILE *fp = NULL;
 	struct stat st;
-	int bbpversion;
+	unsigned bbpversion;
 	str bbpdirstr = GDKfilepath(0, BATDIR, "BBP", "dir");
 	str backupbbpdirstr = GDKfilepath(0, BAKDIR, "BBP", "dir");
 	int i;
@@ -1803,7 +1804,7 @@ new_bbpentry(FILE *fp, bat i, const char *prefix)
 static gdk_return
 BBPdir_header(FILE *f, int n)
 {
-	if (fprintf(f, "BBP.dir, GDKversion %d\n%d %d %d\nBBPsize=%d\n",
+	if (fprintf(f, "BBP.dir, GDKversion %u\n%d %d %d\nBBPsize=%d\n",
 		    GDKLIBRARY, SIZEOF_SIZE_T, SIZEOF_OID,
 #ifdef HAVE_HGE
 		    havehge ? SIZEOF_HGE :
@@ -2303,7 +2304,7 @@ BBPinsert(BAT *bn)
 #endif
 
 	if (*BBP_bak(i) == 0)
-		snprintf(BBP_bak(i), sizeof(BBP_bak(i)), "tmp_%o", (int) i);
+		snprintf(BBP_bak(i), sizeof(BBP_bak(i)), "tmp_%o", (unsigned) i);
 	BBP_logical(i) = BBP_bak(i);
 
 	/* Keep the physical location around forever */
@@ -2312,10 +2313,10 @@ BBPinsert(BAT *bn)
 
 		if (*dirname)	/* i.e., i >= 0100 */
 			snprintf(BBP_physical(i), sizeof(BBP_physical(i)),
-				 "%s%c%o", dirname, DIR_SEP, i);
+				 "%s%c%o", dirname, DIR_SEP, (unsigned) i);
 		else
 			snprintf(BBP_physical(i), sizeof(BBP_physical(i)),
-				 "%o", i);
+				 "%o", (unsigned) i);
 
 		BATDEBUG fprintf(stderr, "#%d = new %s(%s)\n", (int) i, BBPname(i), ATOMname(bn->ttype));
 	}
@@ -3431,7 +3432,7 @@ BBPsync(int cnt, bat *subcommit)
 			} else if (subcommit && (b = BBP_desc(i)) && BBP_status(i) & BBPDELETED) {
 				char o[10];
 				char *f;
-				snprintf(o, sizeof(o), "%o", b->batCacheid);
+				snprintf(o, sizeof(o), "%o", (unsigned) b->batCacheid);
 				f = GDKfilepath(b->theap.farmid, BAKDIR, o, "tail");
 				if (access(f, F_OK) == 0)
 					file_move(b->theap.farmid, BAKDIR, SUBDIR, o, "tail");

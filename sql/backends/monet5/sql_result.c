@@ -1182,7 +1182,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 			if (!rname && e->type == e_column && e->l)
 				rname = e->l;
 
-			if (mnstr_printf(out, "[ \"%s\",\t%d,\t%d,\t\"%s\",\t\"%s\",\t\"%s\"\t]\n", t->type->sqlname, t->digits, t->scale, schema ? schema : "", rname ? rname : "", name ? name : "") < 0) {
+			if (mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\t\"%s\",\t\"%s\",\t\"%s\"\t]\n", t->type->sqlname, t->digits, t->scale, schema ? schema : "", rname ? rname : "", name ? name : "") < 0) {
 				return -1;
 			}
 		}
@@ -1197,7 +1197,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 			t = &a->type;
 
 			if (t) {
-				if (mnstr_printf(out, "[ \"%s\",\t%d,\t%d,\tNULL,\tNULL,\tNULL\t]\n", t->type->sqlname, t->digits, t->scale) < 0) {
+				if (mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\tNULL,\tNULL,\tNULL\t]\n", t->type->sqlname, t->digits, t->scale) < 0) {
 					return -1;
 				}
 				/* add to the query cache parameters */

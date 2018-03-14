@@ -1019,7 +1019,7 @@ check_types(backend *be, sql_subtype *ct, stmt *s, check_type tpe)
 	if (!s) {
 		stmt *res = sql_error(
 			sql, 03,
-			SQLSTATE(42000) "types %s(%d,%d) (%s) and %s(%d,%d) (%s) are not equal",
+			SQLSTATE(42000) "types %s(%u,%u) (%s) and %s(%u,%u) (%s) are not equal",
 			st->type->sqlname,
 			st->digits,
 			st->scale,
