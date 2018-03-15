@@ -217,7 +217,10 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			/*
 			 * Try to expand its argument list with what we have found so far.
 			 */
-			q = copyInstruction(p);
+			if((q = copyInstruction(p)) == NULL) {
+				msg = createException(MAL,"optimizer.projectionpath", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				goto wrapupall;
+			}
 #ifdef DEBUG_OPT_PROJECTIONPATH
 			fprintf(stderr,"#before ");
 			fprintInstruction(stderr,mb, 0, p, LIST_MAL_ALL);

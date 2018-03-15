@@ -34,6 +34,10 @@
 
 #define MAXMODULES 128
 
+#ifndef RTLD_DEEPBIND
+#define RTLD_DEEPBIND 0
+#endif
+
 typedef struct{
 	str modname;
 	str fullname;
@@ -103,7 +107,7 @@ getAddress(str fcnname)
 	 *
 	 * the first argument must be the same as the base name of the
 	 * library that is created in src/tools */
-	dl = mdlopen("libmonetdb5", RTLD_NOW | RTLD_GLOBAL);
+	dl = mdlopen("libmonetdb5", RTLD_NOW | RTLD_GLOBAL | RTLD_DEEPBIND);
 	if (dl == NULL) 
 		return NULL;
 
@@ -143,7 +147,7 @@ getAddress(str fcnname)
 str
 loadLibrary(str filename, int flag)
 {
-	int mode = RTLD_NOW | RTLD_GLOBAL;
+	int mode = RTLD_NOW | RTLD_GLOBAL | RTLD_DEEPBIND;
 	char nme[FILENAME_MAX];
 	void *handle = NULL;
 	str s;

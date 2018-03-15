@@ -32,9 +32,9 @@ lib__bam = {
 		  bam_lib.c bam_lib.h \
 		  bam_export.c bam_export.h \
 		  mykstring.h
-	LIBS = ../../../../../monetdb5/tools/libmonetdb5 \
-		   ../../../../../gdk/libbat \
-		   $(SAMTOOLS_LIBS)
+	LIBS = NATIVE_WIN32?../../../../../monetdb5/tools/libmonetdb5 \
+	       NATIVE_WIN32?../../../../../gdk/libbat \
+	       $(SAMTOOLS_LIBS)
 }
 
 headers_mal = {

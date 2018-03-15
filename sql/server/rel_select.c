@@ -2112,18 +2112,26 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		int needproj = 0, vals_only = 1;
 		list *vals = NULL, *pexps = NULL;
 
-		if (outer && f == sql_sel && is_project(outer->op) && !is_processed(outer) && outer->l && !list_empty(outer->exps)) {
+		if (outer && f == sql_sel && is_project(outer->op) && !is_processed(outer) && !list_empty(outer->exps)) {
 			needproj = 1;
 			pexps = outer->exps;
-			*rel = outer->l;
+			if (!outer->l) { /* list of constants */
+				*rel = rel_project(sql->sa, NULL, exps_copy(sql->sa, outer->exps));
+			} else
+				*rel = outer->l;
 		}
 
 		l = rel_value_exp(sql, rel, lo, f, ek);
 		if (!l)
 			return NULL;
 		ek.card = card_set;
-		if (!left)
+		if (!left) {
 			left = *rel;
+			if (outer && !outer->l && !list_empty(outer->exps) && needproj) {
+				rel_project_add_exp(sql, left, l);
+				l = exp_column(sql->sa, exp_relname(l), exp_name(l), exp_subtype(l), l->card, has_nil(l), is_intern(l));
+			}
+		}
 
 		if (!left || (!left->l && f == sql_sel)) {
 			needproj = (left != NULL);
@@ -2169,8 +2177,6 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 						rel_project_add_exp(sql, z, r);
 						reset_processed(gp);
 						r = exp_column(sql->sa, exp_relname(r), exp_name(r), exp_subtype(r), r->card, has_nil(r), is_intern(r));
-						if (outer && outer != z)
-							outer->l = z;
 						left = z;
 					}
 					z = NULL;
@@ -2223,7 +2229,10 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 						e = rel_binop_(sql, e, ne, NULL, "or", card_value);
 					}
 				}
-				*rel = outer;
+				if (needproj) {
+					left = *rel = rel_project(sql->sa, left, pexps);
+					reset_processed(left);
+				}
 				return e;
 			}
 			r = rel_lastexp(sql, right);

@@ -30,6 +30,8 @@ Ready.
 % boolean # type
 % 5 # length
 [ false	]
+#TRUNCATE TABLE tmp.triggers;
+[ 0	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp.triggers;
 % tmp.L4 # table_name
 % has_rows # name
@@ -42,6 +44,8 @@ Ready.
 % boolean # type
 % 5 # length
 [ false	]
+#TRUNCATE TABLE tmp.objects;
+[ 0	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp.objects;
 % tmp.L4 # table_name
 % has_rows # name
@@ -54,6 +58,8 @@ Ready.
 % boolean # type
 % 5 # length
 [ false	]
+#TRUNCATE TABLE tmp.keys;
+[ 0	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp.keys;
 % tmp.L4 # table_name
 % has_rows # name
@@ -66,6 +72,8 @@ Ready.
 % boolean # type
 % 5 # length
 [ false	]
+#TRUNCATE TABLE tmp.idxs;
+[ 0	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp.idxs;
 % tmp.L4 # table_name
 % has_rows # name
@@ -78,6 +86,8 @@ Ready.
 % boolean # type
 % 5 # length
 [ false	]
+#TRUNCATE TABLE tmp._tables;
+[ 0	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp._tables;
 % tmp.L4 # table_name
 % has_rows # name
@@ -90,6 +100,8 @@ Ready.
 % boolean # type
 % 5 # length
 [ false	]
+#TRUNCATE TABLE tmp._columns;
+[ 0	]
 #SELECT (COUNT(*) > 0) AS has_rows FROM tmp._columns;
 % tmp.L4 # table_name
 % has_rows # name

@@ -26,9 +26,9 @@ lib__pyapi = {
 	DIR = libdir/monetdb5
 	SOURCES = pyapi.c pyapi.h unicode.c unicode.h pytypes.c pytypes.h type_conversion.c type_conversion.h  formatinput.c formatinput.h connection.c connection.h undef.h pyloader.c emit.h emit.c conversion.c conversion.h convert_loops.h pyheader.h
 	XDEPS = $(libpy_LIBDEP)
-	LIBS = ../../../../../monetdb5/tools/libmonetdb5 \
-	       ../../../../../gdk/libbat \
-	$(MALLOC_LIBS) $(libpy_LIBS)
+	LIBS = NATIVE_WIN32?../../../../../monetdb5/tools/libmonetdb5 \
+	       NATIVE_WIN32?../../../../../gdk/libbat \
+	       $(MALLOC_LIBS) $(libpy_LIBS)
 }
 
 headers_pyapi_mal = {

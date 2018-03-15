@@ -274,17 +274,17 @@ typedef enum operator_type {
 	e->flag |= EXP_INTERN
 
 #define is_processed(rel) \
-	(rel->processed)
+	((rel)->processed)
 #define set_processed(rel) \
-	rel->processed = 1
+	(rel)->processed = 1
 #define reset_processed(rel) \
-	rel->processed = 0
+	(rel)->processed = 0
 #define is_subquery(rel) \
-	(rel->subquery)
+	((rel)->subquery)
 #define set_subquery(rel) \
-	rel->subquery = 1
+	(rel)->subquery = 1
 #define reset_subquery(rel) \
-	rel->subquery = 0
+	(rel)->subquery = 0
 
 #define rel_is_ref(rel)		(((sql_rel*)rel)->ref.refcnt > 1)
 
