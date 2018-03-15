@@ -29,9 +29,9 @@ lib__rapi = {
 	DIR = libdir/monetdb5
 	SOURCES = rapi.c rapi.h converters.c.h
 	XDEPS = $(libr_LIBDEP)
-	LIBS = ../../tools/libmonetdb5 \
-	../../../gdk/libbat \
-	$(MALLOC_LIBS) $(libr_LIBS)
+	LIBS = NATIVE_WIN32?../../tools/libmonetdb5 \
+	       NATIVE_WIN32?../../../gdk/libbat \
+	       $(MALLOC_LIBS) $(libr_LIBS)
 }
 
 headers_rapi_mal = {

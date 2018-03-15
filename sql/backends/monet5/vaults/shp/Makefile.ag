@@ -28,7 +28,7 @@ lib__shp = {
 	MODULE
 	DIR = libdir/monetdb5
 	SOURCES = shp.c shp.h
-	LIBS = ../../../../../monetdb5/tools/libmonetdb5 \
+	LIBS = NATIVE_WIN32?../../../../../monetdb5/tools/libmonetdb5 \
 	       $(GDAL_LIBS)
 }
 
