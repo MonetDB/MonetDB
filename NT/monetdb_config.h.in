@@ -642,7 +642,7 @@
 #define MONETDB5_PASSWDHASH_TOKEN SHA512
 
 /* Release name or "unreleased" */
-#define MONETDB_RELEASE "unreleased"
+#define MONETDB_RELEASE "Mar2018"
 
 /* Define if you do not want assertions */
 /* #undef NDEBUG */
@@ -666,7 +666,7 @@
 #define PACKAGE_URL "https://www.monetdb.org/"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "11.29.0"
+#define PACKAGE_VERSION "11.29.1"
 
 /* Path separator */
 #define PATH_SEP ';'
