@@ -743,6 +743,30 @@ AS_VAR_IF([enable_sanitizer], [no], [], [
 AC_SUBST([CFLAGS])
 AC_SUBST([X_CFLAGS])
 
+AC_MSG_CHECKING([for ld -Bsymbolic option])
+save_LDFLAGS="$LDFLAGS"
+LDFLAGS="$LDFLAGS -Wl,-Bsymbolic"
+AC_LINK_IFELSE([
+	AC_LANG_SOURCE([[
+		@%:@include <stdio.h>
+		@%:@include <stdlib.h>
+		@%:@include <string.h>
+
+		@%:@if -_LARGEFILE64_SOURCE - -1 == 1
+		@%:@include <stdio.h>
+		@%:@endif
+		int main(int argc, char **av) {
+			char buf[24];
+			double d = atof("4.2");
+			if (argc == 0 || strchr(av[0], av[0][0]) != NULL)
+				snprintf(buf, sizeof(buf), "%f", d);
+			return 0;
+		}
+		]])],
+	[result=yes],
+	[LDFLAGS="$save_LDFLAGS"; result=no])
+AC_MSG_RESULT([$result])
+
 # icc needs -fPIC (but the current autoconf still uses -KPIC)
 AS_CASE([$GCC-$CC-$host_os],
 	[-*icc*-linux*|-*ecc*-linux*], [

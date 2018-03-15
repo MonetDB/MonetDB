@@ -30,10 +30,7 @@
   If a database object is dropped, the associated comment is also removed.
   Note: it is not allowed or possible to add comments for temporary tables or
         objects in schema "tmp".
-  The sql catalog has been extended with system table: sys.comments and system
-  views: sys.describe_all_objects and sys.commented_function_signatures. These
-  system views are used by the dump functionality as provided in msqldump and
-  mclient and not intended to be used by users or user applications.
+  The sql catalog has been extended with system table: sys.comments.
   The keyword 'COMMENT' has now become a reserved keyword.
 
 * Thu Dec  7 2017 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
