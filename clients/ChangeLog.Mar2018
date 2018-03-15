@@ -1,32 +1,3 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
-* Wed Feb 28 2018 Sjoerd Mullender <sjoerd@acm.org>
-- ODBC: The driver function SQLProcedureColumns was implemented.
-
-* Thu Feb  1 2018 Sjoerd Mullender <sjoerd@acm.org>
-- ODBC: Changed table types as used by SQLTables from "LOCAL TEMPORARY"
-  and "GLOBAL TEMPORARY" to "LOCAL TEMPORARY TABLE" and "GLOBAL TEMPORARY
-  TABLE" respectively.
-
-* Wed Jan 31 2018 Sjoerd Mullender <sjoerd@acm.org>
-- ODBC: Initial support for the HUGEINT type in SQL was added.  Any value
-  with type HUGEINT can be retrieved in a C variable with type SQL_C_CHAR
-  or SQL_C_WCHAR.  A value of type HUGEINT can be retrieved in other C
-  types as long as they fit, the largest C type supported being a 64 bit
-  integer (equivalent to BIGINT).
-
-* Thu Nov 16 2017 Sjoerd Mullender <sjoerd@acm.org>
-- The functions in the mapi library that require 64 bit integers now
-  use the standard type int64_t instead of the non-standard mapi_int64.
-  This requires a compilation environment that has the stdint.h include
-  file (standardized in C99).  Compilation of the library also requires
-  the inttypes.h include file (also standardized in C99).
-
-* Mon Jul 17 2017 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
-- Add a new pretty printing option to stethoscope
-  Running stethoscope with the flag -j will produce not pretty printed
-  output (one json object per line). Running with the -y flag will produce
-  pretty printed output. Running with neither will produce the legacy,
-  line oriented format
-
