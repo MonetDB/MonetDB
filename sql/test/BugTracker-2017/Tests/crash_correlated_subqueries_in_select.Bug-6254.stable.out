@@ -40,6 +40,9 @@ Ready.
 % varchar,	int,	varchar,	boolean,	int # type
 % 3,	4,	34,	5,	2 # length
 [ "sys",	2000,	"tables",	true,	9	]
+[ "sys",	2000,	"table_partitions",	true,	4	]
+[ "sys",	2000,	"range_partitions",	true,	5	]
+[ "sys",	2000,	"value_partitions",	true,	3	]
 [ "sys",	2000,	"columns",	true,	10	]
 [ "sys",	2000,	"users",	true,	3	]
 [ "sys",	2000,	"querylog_catalog",	true,	8	]
@@ -90,6 +93,9 @@ Ready.
 % varchar,	int,	varchar,	boolean,	int # type
 % 3,	4,	34,	5,	2 # length
 [ "sys",	2000,	"tables",	true,	9	]
+[ "sys",	2000,	"table_partitions",	true,	4	]
+[ "sys",	2000,	"range_partitions",	true,	5	]
+[ "sys",	2000,	"value_partitions",	true,	3	]
 [ "sys",	2000,	"columns",	true,	10	]
 [ "sys",	2000,	"users",	true,	3	]
 [ "sys",	2000,	"querylog_catalog",	true,	8	]
