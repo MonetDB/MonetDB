@@ -4,6 +4,8 @@ Test if server doesn't crash when remote and local table definitions do not matc
 Current result is an mal error (compilation failed)
 """
 
+from __future__ import print_function
+
 import os, sys, socket, glob, pymonetdb, threading, time, codecs, shutil, tempfile
 try:
     from MonetDBtesting import process

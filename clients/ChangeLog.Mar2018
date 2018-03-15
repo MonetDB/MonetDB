@@ -1,6 +1,9 @@
 # ChangeLog file for clients
 # This file is updated with Maddlog
 
+* Wed Feb 28 2018 Sjoerd Mullender <sjoerd@acm.org>
+- ODBC: The driver function SQLProcedureColumns was implemented.
+
 * Thu Feb  1 2018 Sjoerd Mullender <sjoerd@acm.org>
 - ODBC: Changed table types as used by SQLTables from "LOCAL TEMPORARY"
   and "GLOBAL TEMPORARY" to "LOCAL TEMPORARY TABLE" and "GLOBAL TEMPORARY
@@ -24,6 +27,6 @@
 - Add a new pretty printing option to stethoscope
   Running stethoscope with the flag -j will produce not pretty printed
   output (one json object per line). Running with the -y flag will produce
-  pretty printed output. Running with neither, wiil produce the legacy,
+  pretty printed output. Running with neither will produce the legacy,
   line oriented format
 

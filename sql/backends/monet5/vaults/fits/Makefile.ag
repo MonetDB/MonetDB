@@ -26,7 +26,7 @@ lib__fits = {
 	MODULE
 	DIR = libdir/monetdb5
 	SOURCES = fits.c fits.h
-	LIBS = ../../../../../monetdb5/tools/libmonetdb5 \
+	LIBS = NATIVE_WIN32?../../../../../monetdb5/tools/libmonetdb5 \
 	       $(cfitsio_LIBS)
 }
 

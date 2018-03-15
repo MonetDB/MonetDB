@@ -1,6 +1,10 @@
 # ChangeLog file for mapilib
 # This file is updated with Maddlog
 
+* Thu Mar  8 2018 Sjoerd Mullender <sjoerd@acm.org>
+- The three mapi_explain* functions and mapi_trace don't return any
+  useful information, so they now return void.
+
 * Tue Aug  1 2017 Sjoerd Mullender <sjoerd@acm.org>
 - The functions mapi_error_str and mapi_result_error now return const char
   * instead of plain char * to indicate that the returned data belongs

@@ -33,29 +33,37 @@ MAPI  = (monetdb) /var/tmp/mtest-17575/.s.monetdb.32655
 QUERY = copy 1 records into t (e) from stdin (e);
         NULL
 ERROR = !INSERT INTO: NOT NULL constraint violated for column t.e
+CODE  = M0M29
 MAPI  = (monetdb) /var/tmp/mtest-17575/.s.monetdb.32655
 QUERY = insert into t (e) values (NULL);
 ERROR = !INSERT INTO: NOT NULL constraint violated for column t.e
+CODE  = M0M29
 MAPI  = (monetdb) /var/tmp/mtest-17575/.s.monetdb.32655
 QUERY = copy 1 records into t (c) from stdin (c);
         NULL
 ERROR = !INSERT INTO: NOT NULL constraint violated for column t.c
+CODE  = M0M29
 MAPI  = (monetdb) /var/tmp/mtest-17575/.s.monetdb.32655
 QUERY = insert into t (c) values (NULL);
 ERROR = !INSERT INTO: NOT NULL constraint violated for column t.c
+CODE  = M0M29
 MAPI  = (monetdb) /var/tmp/mtest-17575/.s.monetdb.32655
 QUERY = insert into t (b) values (-2);
 ERROR = !INSERT INTO: UNIQUE constraint 't.t_b_unique' violated
+CODE  = M0M29
 MAPI  = (monetdb) /var/tmp/mtest-17575/.s.monetdb.32655
 QUERY = copy 1 records into t (a) from stdin (a);
         NULL
 ERROR = !INSERT INTO: NOT NULL constraint violated for column t.a
+CODE  = M0M29
 MAPI  = (monetdb) /var/tmp/mtest-17575/.s.monetdb.32655
 QUERY = insert into t (a) values (NULL);
 ERROR = !INSERT INTO: NOT NULL constraint violated for column t.a
+CODE  = M0M29
 MAPI  = (monetdb) /var/tmp/mtest-17575/.s.monetdb.32655
 QUERY = insert into t (a) values (-1);
 ERROR = !INSERT INTO: PRIMARY KEY constraint 't.t_a_pkey' violated
+CODE  = M0M29
 
 # 17:58:15 >  
 # 17:58:15 >  "Done."

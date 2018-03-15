@@ -259,3 +259,29 @@ address AGGRsubquantilecand
 comment "Grouped median quantile with candidate list";
 
 EOF
+
+cat <<EOF
+command str_group_concat(b:bat[:str],g:bat[:oid],e:bat[:any_1]) :bat[:str]
+address AGGRstr_group_concat
+comment "Grouped string tail concat";
+
+command substr_group_concat(b:bat[:str],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:str]
+address AGGRsubstr_group_concat
+comment "Grouped string concat";
+
+command substr_group_concat(b:bat[:str],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:str]
+address AGGRsubstr_group_concatcand
+comment "Grouped string concat with candidates list";
+
+command str_group_concat(b:bat[:str],sep:bat[:str],g:bat[:oid],e:bat[:any_1]) :bat[:str]
+address AGGRstr_group_concat_sep
+comment "Grouped string tail concat with custom separator";
+
+command substr_group_concat(b:bat[:str],sep:bat[:str],g:bat[:oid],e:bat[:any_1],skip_nils:bit,abort_on_error:bit) :bat[:str]
+address AGGRsubstr_group_concat_sep
+comment "Grouped string concat with custom separator";
+
+command substr_group_concat(b:bat[:str],sep:bat[:str],g:bat[:oid],e:bat[:any_1],s:bat[:oid],skip_nils:bit,abort_on_error:bit) :bat[:str]
+address AGGRsubstr_group_concatcand_sep
+comment "Grouped string concat with candidates list with custom separator";
+EOF

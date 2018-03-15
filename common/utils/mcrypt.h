@@ -9,7 +9,7 @@
 #ifndef _SEEN_MCRYPT_H
 #define _SEEN_MCRYPT_H 1
 
-char *mcrypt_getHashAlgorithms(void);
+const char *mcrypt_getHashAlgorithms(void);
 char *mcrypt_MD5Sum(const char *string, size_t len);
 char *mcrypt_SHA1Sum(const char *string, size_t len);
 char *mcrypt_SHA224Sum(const char *string, size_t len);

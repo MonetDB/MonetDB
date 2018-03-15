@@ -271,60 +271,48 @@ GRANT SELECT ON sys.table_types TO PUBLIC;
 
 CREATE TABLE sys.function_types (
     function_type_id   SMALLINT NOT NULL PRIMARY KEY,
-    function_type_name VARCHAR(30) NOT NULL UNIQUE);
+    function_type_name VARCHAR(30) NOT NULL UNIQUE,
+    function_type_keyword VARCHAR(30) NOT NULL);
 
 -- Values taken from sql/include/sql_catalog.h see: #define F_FUNC 1,
 -- F_PROC 2, F_AGGR 3, F_FILT 4, F_UNION 5, F_ANALYTIC 6, F_LOADER 7.
-INSERT INTO sys.function_types (function_type_id, function_type_name) VALUES
-  (1, 'Scalar function'),
-  (2, 'Procedure'),
-  (3, 'Aggregate function'),
-  (4, 'Filter function'),
-  (5, 'Function returning a table'),
-  (6, 'Analytic function'),
-  (7, 'Loader function');
+INSERT INTO sys.function_types (function_type_id, function_type_name, function_type_keyword) VALUES
+  (1, 'Scalar function', 'FUNCTION'),
+  (2, 'Procedure', 'PROCEDURE'),
+  (3, 'Aggregate function', 'AGGREGATE'),
+  (4, 'Filter function', 'FILTER FUNCTION'),
+  (5, 'Function returning a table', 'FUNCTION'),
+  (6, 'Analytic function', 'FUNCTION'),
+  (7, 'Loader function', 'LOADER');
 
 ALTER TABLE sys.function_types SET READ ONLY;
 GRANT SELECT ON sys.function_types TO PUBLIC;
 
 
--- next function is used by views defined in 97_comments.sql and in mclient and mdump code
-CREATE FUNCTION sys.function_type_keyword(ftype INT)
-RETURNS VARCHAR(20)
-BEGIN
-	RETURN CASE ftype
-                WHEN 1 THEN 'FUNCTION'
-                WHEN 2 THEN 'PROCEDURE'
-                WHEN 3 THEN 'AGGREGATE'
-                WHEN 4 THEN 'FILTER FUNCTION'
-                WHEN 5 THEN 'FUNCTION' -- table returning function
-                WHEN 6 THEN 'FUNCTION' -- analytic function
-                WHEN 7 THEN 'LOADER'
-                ELSE 'ROUTINE'
-        END;
-END;
-GRANT EXECUTE ON FUNCTION sys.function_type_keyword(INT) TO PUBLIC;
-
-
 CREATE TABLE sys.function_languages (
-    language_id   SMALLINT NOT NULL PRIMARY KEY,
-    language_name VARCHAR(20) NOT NULL UNIQUE);
+    language_id      SMALLINT    NOT NULL PRIMARY KEY,
+    language_name    VARCHAR(20) NOT NULL UNIQUE,
+    language_keyword VARCHAR(20));
 
 -- Values taken from sql/include/sql_catalog.h see: #define
 -- FUNC_LANG_INT 0, FUNC_LANG_MAL 1, FUNC_LANG_SQL 2, FUNC_LANG_R 3,
--- FUNC_LANG_PY 6, FUNC_LANG_MAP_PY 7, FUNC_LANG_PY2 8,
--- FUNC_LANG_MAP_PY2 9, FUNC_LANG_PY3 10, FUNC_LANG_MAP_PY3 11.
-INSERT INTO sys.function_languages (language_id, language_name) VALUES
-  (0, 'Internal C'),
-  (1, 'MAL'),
-  (2, 'SQL'),
-  (3, 'R'),
-  (6, 'Python'),
-  (7, 'Python Mapped'),
-  (8, 'Python2'),
-  (9, 'Python2 Mapped'),
-  (10, 'Python3'),
-  (11, 'Python3 Mapped');
+-- FUNC_LANG_C 4, FUNC_LANG_PY 6, FUNC_LANG_MAP_PY 7, FUNC_LANG_PY2 8,
+-- FUNC_LANG_MAP_PY2 9, FUNC_LANG_PY3 10, FUNC_LANG_MAP_PY3 11,
+-- FUNC_LANG_CPP 12.
+INSERT INTO sys.function_languages (language_id, language_name, language_keyword) VALUES
+  (0, 'Internal C', NULL),
+  (1, 'MAL', NULL),
+  (2, 'SQL', NULL),
+  (3, 'R', 'R'),
+  (4, 'C', 'C'),
+--  (5, 'J', 'J'), -- Javascript? not yet available for use
+  (6, 'Python', 'PYTHON'),
+  (7, 'Python Mapped', 'PYTHON_MAP'),
+  (8, 'Python2', 'PYTHON2'),
+  (9, 'Python2 Mapped', 'PYTHON2_MAP'),
+  (10, 'Python3', 'PYTHON3'),
+  (11, 'Python3 Mapped', 'PYTHON3_MAP'),
+  (12, 'C++', 'CPP');
 
 ALTER TABLE sys.function_languages SET READ ONLY;
 GRANT SELECT ON sys.function_languages TO PUBLIC;
@@ -432,3 +420,8 @@ SELECT 'pi', pi() UNION ALL
 SELECT 'rowcnt', rowcnt;
 GRANT SELECT ON sys.var_values TO PUBLIC;
 
+CREATE AGGREGATE sys.group_concat(str string) RETURNS string EXTERNAL NAME "aggr"."str_group_concat";
+GRANT EXECUTE ON AGGREGATE sys.group_concat(string) TO PUBLIC;
+
+CREATE AGGREGATE sys.group_concat(str string, sep string) RETURNS string EXTERNAL NAME "aggr"."str_group_concat";
+GRANT EXECUTE ON AGGREGATE sys.group_concat(string, string) TO PUBLIC;

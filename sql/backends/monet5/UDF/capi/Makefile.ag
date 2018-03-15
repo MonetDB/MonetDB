@@ -24,9 +24,9 @@ lib__capi = {
 	MODULE
 	DIR = libdir/monetdb5
 	SOURCES = capi.c capi.h cheader.h cheader.text.h
-	LIBS = ../../../../../monetdb5/tools/libmonetdb5 \
-	       ../../../../../gdk/libbat \
-	$(MALLOC_LIBS)
+	LIBS = NATIVE_WIN32?../../../../../monetdb5/tools/libmonetdb5 \
+	       NATIVE_WIN32?../../../../../gdk/libbat \
+	       $(MALLOC_LIBS)
 }
 
 headers_cudf_mal = {

@@ -172,7 +172,6 @@ newExitStmt(MalBlkPtr mb, str nme)
 		}
 	} else
 		getArg(q,0) = i;
-    pushInstruction(mb, q);
 	return q;
 }
 

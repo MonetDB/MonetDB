@@ -1391,6 +1391,41 @@ exp_is_not_null(mvc *sql, sql_exp *e)
 }
 
 int
+exp_is_null(mvc *sql, sql_exp *e )
+{
+	switch (e->type) {
+	case e_atom:
+		if (e->f) /* values list */
+			return 0;
+		if (e->l) {
+			return (atom_null(e->l));
+		} else if (sql->emode == m_normal && sql->argc > e->flag) {
+			return atom_null(sql->args[e->flag]);
+		}
+		return 0;
+	case e_convert:
+		return exp_is_null(sql, e->l);
+	case e_func:
+	case e_aggr:
+	{	
+		int r = 0;
+		node *n;
+		list *l = e->l;
+
+		if (!r && l)
+			for (n = l->h; n && r; n = n->next) 
+				r |= exp_is_null(sql, n->data);
+		return r;
+	}
+	case e_column:
+	case e_cmp:
+	case e_psm:
+		return 0;
+	}
+	return 0;
+}
+
+int
 exp_is_atom( sql_exp *e )
 {
 	switch (e->type) {

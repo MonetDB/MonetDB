@@ -1621,7 +1621,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				bn->tsorted = 1;
 				bn->trevsorted = bn->batCount <= 1;
 				bn->tkey = 1;
-				bn->tseqbase = (bn->tdense = bn->batCount <= 1) != 0 ? 0 : oid_nil;
+				bn->tdense = bn->batCount <= 1;
+				bn->tseqbase = bn->tdense ? bn->batCount == 0 ? 0 : * (oid *) Tloc(bn, 0) : oid_nil;
 				bn->tnil = 0;
 				bn->tnonil = 1;
 				if (s) {

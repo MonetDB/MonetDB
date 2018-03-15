@@ -1448,8 +1448,13 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 			sname = s->base.name;
 
 		if (te && (te->token == SQL_TABLE || te->token == SQL_DROP_TABLE)) {
-			char *ntname = te->data.lval->h->data.sval;
+			dlist *nqname = te->data.lval->h->data.lval;
+			char *nsname = qname_schema(nqname);
+			char *ntname = qname_table(nqname);
 
+			/* partition sname */
+			if (!nsname)
+				nsname = sname;
 			if (te->token == SQL_TABLE) {
 				if(!extra)
 					return rel_alter_table(sql->sa, DDL_ALTER_TABLE_ADD_TABLE, sname, tname, sname, ntname, 0);
@@ -1507,7 +1512,7 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 			} else {
 				int drop_action = te->data.lval->h->next->data.i_val;
 
-				return rel_alter_table(sql->sa, DDL_ALTER_TABLE_DEL_TABLE, sname, tname, sname, ntname, drop_action);
+				return rel_alter_table(sql->sa, DDL_ALTER_TABLE_DEL_TABLE, sname, tname, nsname, ntname, drop_action);
 			}
 		}
 
@@ -2347,75 +2352,51 @@ rel_find_designated_routine(mvc *sql, symbol *sym, sql_schema **schema_out) {
 }
 
 static sqlid
-rel_find_designated_object(mvc *sql, symbol *sym, sql_schema **schema_out) {
+rel_find_designated_object(mvc *sql, symbol *sym, sql_schema **schema_out)
+{
 	sql_schema *dummy;
 
 	if (schema_out == NULL)
 		schema_out = &dummy;
 	switch (sym->token) {
-		case SQL_SCHEMA:
-			return rel_find_designated_schema(sql, sym, schema_out);
-		case SQL_TABLE:
-			return rel_find_designated_table(sql, sym, schema_out);
-		case SQL_VIEW:
-			return rel_find_designated_table(sql, sym, schema_out);
-		case SQL_COLUMN:
-			return rel_find_designated_column(sql, sym, schema_out);
-		case SQL_INDEX:
-			return rel_find_designated_index(sql, sym, schema_out);
-		case SQL_SEQUENCE:
-			return rel_find_designated_sequence(sql, sym, schema_out);
-		case SQL_ROUTINE:
-			return rel_find_designated_routine(sql, sym, schema_out);
-		default:
-			sql_error(sql, 2, "42000!COMMENT ON %s is not supported", token2string(sym->token));
-			return 0;
+	case SQL_SCHEMA:
+		return rel_find_designated_schema(sql, sym, schema_out);
+	case SQL_TABLE:
+		return rel_find_designated_table(sql, sym, schema_out);
+	case SQL_VIEW:
+		return rel_find_designated_table(sql, sym, schema_out);
+	case SQL_COLUMN:
+		return rel_find_designated_column(sql, sym, schema_out);
+	case SQL_INDEX:
+		return rel_find_designated_index(sql, sym, schema_out);
+	case SQL_SEQUENCE:
+		return rel_find_designated_sequence(sql, sym, schema_out);
+	case SQL_ROUTINE:
+		return rel_find_designated_routine(sql, sym, schema_out);
+	default:
+		sql_error(sql, 2, "42000!COMMENT ON %s is not supported", token2string(sym->token));
+		return 0;
 	}
 }
 
 static sql_rel *
-rel_comment_on(mvc *sql, sqlid obj_id, sql_schema *schema, char *remark) {
-	buffer *buf = NULL;
-	stream *s = NULL;
-	char *query = NULL;
-	sql_schema *sys;
-	sql_rel *rel = NULL;
+rel_comment_on(sql_allocator *sa, sqlid obj_id, const char *remark)
+{
+	sql_rel *rel = rel_create(sa);
+	list *exps = new_exp_list(sa);
 
-	// Check authorization
-	if (!mvc_schema_privs(sql, schema)) {
-		return sql_error(sql, 02, SQLSTATE(42000) "COMMENT ON: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), schema->base.name);
-	}
+	if (rel == NULL || exps == NULL)
+		return NULL;
 
-	buf = buffer_create(4000);
-	if (!buf)
-		goto wrap_up;
-
-	s = buffer_wastream(buf, "comment_on_call");
-	if (!s)
-		goto wrap_up;
-
-	mnstr_printf(s, "CALL sys.comment_on(%d, ", obj_id);
-	if (!remark) {
-		mnstr_printf(s, "NULL");
-	} else {
-		char *escaped = sql_escape_str(remark);
-		if (!escaped)
-			goto wrap_up;
-		mnstr_printf(s, "'%s'", escaped);
-		GDKfree(escaped);
-	}
-	mnstr_printf(s, ");");
-	query = buffer_get_buf(buf);
-	sys = mvc_bind_schema(sql, "sys");
-	rel = rel_parse(sql, sys, query, m_normal); // correct mode?
-
-wrap_up:
-	if (query)
-		free(query);
-	if (s)
-		mnstr_destroy(s);
-	if (buf)
-		buffer_destroy(buf);
+	append(exps, exp_atom_int(sa, obj_id));
+	append(exps, exp_atom_clob(sa, remark));
+	rel->l = NULL;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = DDL_COMMENT_ON;
+	rel->exps = exps;
+	rel->card = 0;
+	rel->nrcols = 0;
 	return rel;
 }
 
@@ -2638,8 +2619,13 @@ rel_schemas(mvc *sql, symbol *s)
 			return NULL;
 		}
 
-		return rel_comment_on(sql, id, s, remark);
-	} 	break;
+		// Check authorization
+		if (!mvc_schema_privs(sql, s)) {
+			return sql_error(sql, 02, SQLSTATE(42000) "COMMENT ON: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		}
+
+		return rel_comment_on(sql->sa, id, remark);
+	}
 	default:
 		return sql_error(sql, 01, SQLSTATE(M0M03) "Schema statement unknown symbol(%p)->token = %s", s, token2string(s->token));
 	}

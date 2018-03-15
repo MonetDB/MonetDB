@@ -141,10 +141,10 @@ __hidden gdk_return GDKremovedir(int farmid, const char *nme)
 __hidden gdk_return GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode, int dosync)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return GDKssort_rev(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
+__hidden gdk_return GDKssort_rev(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-__hidden gdk_return GDKssort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
+__hidden gdk_return GDKssort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 __hidden gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
@@ -323,7 +323,7 @@ extern MT_Lock MT_system_lock;
 		gdk_return _res = GDKmunmap(_ptr, _len);	\
 		ALLOCDEBUG					\
 			fprintf(stderr,				\
-				"#GDKmunmap(%p,%zu) -> %d"	\
+				"#GDKmunmap(%p,%zu) -> %u"	\
 				" %s[%s:%d]\n",			\
 				_ptr, _len, _res,		\
 				__func__, __FILE__, __LINE__);	\
@@ -342,7 +342,7 @@ extern MT_Lock MT_system_lock;
 			fprintf(stderr,					\
 				"#GDKmremap(%s,0x%x,%p,%zu,%zu > %zu) -> %p" \
 				" %s[%s:%d]\n",				\
-				_path ? _path : "NULL", _mode,		\
+				_path ? _path : "NULL", (unsigned) _mode, \
 				_oa, _os, _ons, *_ns,			\
 				_res,					\
 				__func__, __FILE__, __LINE__);		\

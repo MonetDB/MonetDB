@@ -1,0 +1,35 @@
+stdout of test 'remote13` in directory 'monetdb5/modules/mal` itself:
+
+
+# 10:29:41 >  
+# 10:29:41 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31716" "--set" "mapi_usock=/var/tmp/mtest-17829/.s.monetdb.31716" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/@Monet-candidate/var/MonetDB/mTests_monetdb5_modules_mal" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 10:29:41 >  
+
+# MonetDB 5 server v11.29.0 (hg id: df64b0ee287d+)
+# This is an unreleased version
+# Serving database 'mTests_monetdb5_modules_mal', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 62.695 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:31716/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-17829/.s.monetdb.31716
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python2 module loaded
+# MonetDB/R   module loaded
+
+Ready.
+
+# 10:29:41 >  
+# 10:29:41 >  "mclient" "-lmal" "-ftest" "-tnone" "-Eutf-8" "--host=/var/tmp/mtest-17829" "--port=31716"
+# 10:29:41 >  
+
+[ "mTests_monetdb5_modules_mal_monetdb_0"	]
+[ nil	]
+
+# 10:29:41 >  
+# 10:29:41 >  "Done."
+# 10:29:41 >  
+

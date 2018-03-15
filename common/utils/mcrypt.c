@@ -30,7 +30,7 @@
  * (in char size) hashes.
  * The returned string is malloced and should be freed.
  */
-char *
+const char *
 mcrypt_getHashAlgorithms(void)
 {
 	/* Currently, four "hashes" are available, RIPEMD160, SHA-2, SHA-1
@@ -40,7 +40,7 @@ mcrypt_getHashAlgorithms(void)
 	 * Better/stronger/faster algorithms can be added in the future upon
 	 * desire.
 	 */
-	const char *algorithms =
+	static const char *algorithms =
 		"PROT10"
 #ifdef HAVE_RIPEMD160_UPDATE
 		",RIPEMD160"
@@ -61,7 +61,7 @@ mcrypt_getHashAlgorithms(void)
 		",COMPRESSION_LZ4"
 #endif
 		;
-	return strdup(algorithms);
+	return algorithms;
 }
 
 /**

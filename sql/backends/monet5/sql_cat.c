@@ -1057,101 +1057,6 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 	return MAL_SUCCEED;
 }
 
-str
-UPGdrop_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *sql = NULL;
-	str msg = MAL_SUCCEED;
-	int id = *getArgReference_int(stk, pci, 1);
-	sql_func *func;
-
-	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-
-	func = sql_trans_find_func(sql->session->tr, id);
-	if (func) {
-		if(mvc_drop_func(sql, func->s, func, 0))
-			throw(SQL, "sql.drop_func", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	}
-	return msg;
-}
-
-str
-UPGcreate_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *sql = NULL;
-	str msg = MAL_SUCCEED;
-	str sname = *getArgReference_str(stk, pci, 1), osname;
-	str fname = *getArgReference_str(stk, pci, 2);
-	str func = *getArgReference_str(stk, pci, 3);
-	stmt *s;
-	backend *be;
-	sql_allocator *sa;
-
-	if ((msg = getSQLContext(cntxt, mb, &sql, &be)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	osname = cur_schema(sql)->base.name;
-	if (!mvc_set_schema(sql, sname))
-		throw(SQL,"sql.catalog", SQLSTATE(3F000) "Schema (%s) missing\n", sname);
-	sa = sa_create();
-	if(!sa)
-		throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	s = sql_parse(be, sa, func, 0);
-	if (s && s->type == st_catalog) {
-		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
-		sql_func *func = (sql_func*)((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.pval;
-
-		msg = create_func(sql, schema, fname, func);
-		if (!mvc_set_schema(sql, osname))
-			throw(SQL,"sql.catalog", SQLSTATE(3F000) "Schema (%s) missing\n", osname);
-	} else {
-		(void) mvc_set_schema(sql, osname);
-		throw(SQL, "sql.catalog", SQLSTATE(42000) "function creation failed '%s'", func);
-	}
-	return msg;
-}
-
-str
-UPGcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *sql = NULL;
-	str msg = MAL_SUCCEED;
-	str sname = *getArgReference_str(stk, pci, 1), osname;
-	str view = *getArgReference_str(stk, pci, 2);
-	stmt *s;
-	backend *be;
-	sql_allocator *sa;
-
-	if ((msg = getSQLContext(cntxt, mb, &sql, &be)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	osname = cur_schema(sql)->base.name;
-	if (!mvc_set_schema(sql, sname))
-		throw(SQL,"sql.catalog", SQLSTATE(3F000) "Schema (%s) missing\n", sname);
-	sa = sa_create();
-	if(!sa)
-		throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	s = sql_parse(be, sa, view, 0);
-	if (s && s->type == st_catalog) {
-		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
-		sql_table *v = (sql_table*)((stmt*)s->op1->op4.lval->h->next->data)->op4.aval->data.val.pval;
-		int temp = ((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.ival;
-
-		msg = create_table_or_view(sql, schema, v->base.name, v, temp);
-		if (!mvc_set_schema(sql, osname))
-			throw(SQL,"sql.catalog", SQLSTATE(3F000) "Schema (%s) missing\n", osname);
-	} else {
-		(void) mvc_set_schema(sql, osname);
-		throw(SQL, "sql.catalog", SQLSTATE(42000) "view creation failed '%s'", view);
-	}
-	return msg;
-}
-
 /* the MAL wrappers */
 str
 SQLcreate_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -1708,4 +1613,55 @@ SQLalter_set_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = alter_table_set_access(sql, sname, tname, access);
 
 	return msg;
+}
+
+str
+SQLcomment_on(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *sql = NULL;
+	str msg;
+	int objid = *getArgReference_int(stk, pci, 1);
+	char *remark = *getArgReference_str(stk, pci, 2);
+	sql_trans *tx;
+	sql_schema *sys;
+	sql_table *comments;
+	sql_column *id_col, *remark_col;
+	oid rid;
+	int ok = LOG_OK;
+
+	initcontext();
+
+	// Manually insert the rows to circumvent permission checks.
+	tx = sql->session->tr;
+	sys = mvc_bind_schema(sql, "sys");
+	if (!sys)
+		throw(SQL, "sql.comment_on", SQLSTATE(3F000) "Internal error");
+	comments = mvc_bind_table(sql, sys, "comments");
+	if (!comments)
+		throw(SQL, "sql.comment_on", SQLSTATE(3F000) "no table sys.comments");
+	id_col = mvc_bind_column(sql, comments, "id");
+	remark_col = find_sql_column(comments, "remark");
+	if (!id_col || !remark_col)
+		throw(SQL, "sql.comment_on", SQLSTATE(3F000) "no table sys.comments");
+	rid = table_funcs.column_find_row(tx, id_col, &objid, NULL);
+	if (remark != NULL && *remark) {
+		if (!is_oid_nil(rid)) {
+			// have new remark and found old one, so update field
+			/* UPDATE sys.comments SET remark = %s WHERE id = %d */
+			ok = table_funcs.column_update_value(tx, remark_col, rid, remark);
+		} else {
+			// have new remark but found none so insert row
+			/* INSERT INTO sys.comments (id, remark) VALUES (%d, %s) */
+			ok = table_funcs.table_insert(tx, comments, &objid, remark);
+		}
+	} else {
+		if (!is_oid_nil(rid)) {
+			// have no remark but found one, so delete row
+			/* DELETE FROM sys.comments WHERE id = %d */
+			ok = table_funcs.table_delete(tx, comments, rid);
+		}
+	}
+	if (ok != LOG_OK)
+		throw(SQL, "sql.comment_on", SQLSTATE(3F000) "operation failed");
+	return MAL_SUCCEED;
 }

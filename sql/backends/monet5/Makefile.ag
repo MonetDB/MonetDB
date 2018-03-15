@@ -51,10 +51,10 @@ lib__sql = {
 		   ../../storage/libstore \
 		   ../../storage/bat/libbatstore \
 		   ../../common/libsqlcommon \
- 		   ../../../monetdb5/tools/libmonetdb5 \
-		   ../../../gdk/libbat \
-		   ../../../common/stream/libstream \
-		   ../../../common/utils/libmcrypt \
+ 		   NATIVE_WIN32?../../../monetdb5/tools/libmonetdb5 \
+		   NATIVE_WIN32?../../../gdk/libbat \
+		   NATIVE_WIN32?../../../common/stream/libstream \
+		   NATIVE_WIN32?../../../common/utils/libmcrypt \
 		   $(PTHREAD_LIBS) \
 		   $(openssl_LIBS) $(MATH_LIBS)
 }

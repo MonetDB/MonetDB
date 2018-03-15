@@ -377,3 +377,30 @@ EOF
     done
 done
 
+cat <<EOF
+pattern str_group_concat(b:bat[:str]) :str
+address CMDBATstr_group_concat
+comment "Calculate aggregate string concatenate of B.";
+pattern str_group_concat(b:bat[:str],nil_if_empty:bit) :str
+address CMDBATstr_group_concat
+comment "Calculate aggregate string concatenate of B.";
+pattern str_group_concat(b:bat[:str],s:bat[:oid]) :str
+address CMDBATstr_group_concat
+comment "Calculate aggregate string concatenate of B with candidate list.";
+pattern str_group_concat(b:bat[:str],s:bat[:oid],nil_if_empty:bit) :str
+address CMDBATstr_group_concat
+comment "Calculate aggregate string concatenate of B with candidate list.";
+
+pattern str_group_concat(b:bat[:str],sep:bat[:str]) :str
+address CMDBATstr_group_concat
+comment "Calculate aggregate string concatenate of B with separator SEP.";
+pattern str_group_concat(b:bat[:str],sep:bat[:str],nil_if_empty:bit) :str
+address CMDBATstr_group_concat
+comment "Calculate aggregate string concatenate of B with separator SEP.";
+pattern str_group_concat(b:bat[:str],sep:bat[:str],s:bat[:oid]) :str
+address CMDBATstr_group_concat
+comment "Calculate aggregate string concatenate of B with candidate list and separator SEP.";
+pattern str_group_concat(b:bat[:str],sep:bat[:str],s:bat[:oid],nil_if_empty:bit) :str
+address CMDBATstr_group_concat
+comment "Calculate aggregate string concatenate of B with candidate list and separator SEP.";
+EOF

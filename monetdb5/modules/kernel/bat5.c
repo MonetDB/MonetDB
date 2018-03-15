@@ -413,7 +413,7 @@ BKCbat_inplace_force(bat *r, const bat *bid, const bat *rid, const bat *uid, con
 		BBPunfix(p->batCacheid);
 		throw(MAL, "bat.inplace", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	if (void_replace_bat(b, p, u, *force) == BUN_NONE) {
+	if (void_replace_bat(b, p, u, *force) != GDK_SUCCEED) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(p->batCacheid);
 		BBPunfix(u->batCacheid);
@@ -869,7 +869,10 @@ BKCsetColumn(void *r, const bat *bid, const char * const *tname)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bat.setColumn", ILLEGAL_ARGUMENT " Column name missing");
 	}
-	BATroles(b, *tname);
+	if (BATroles(b, *tname) != GDK_SUCCEED) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "bat.setColumn", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

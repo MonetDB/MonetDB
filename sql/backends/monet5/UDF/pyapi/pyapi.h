@@ -42,4 +42,6 @@ str _loader_init(void);
 
 pyapi_export char *PyError_CreateException(char *error_text, char *pycall);
 
+pyapi_export bool option_disable_fork;
+
 #endif /* _PYPI_LIB_ */

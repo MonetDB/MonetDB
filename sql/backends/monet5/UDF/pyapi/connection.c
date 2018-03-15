@@ -48,15 +48,15 @@ static PyObject *_connection_execute(Py_ConnectionObject *self, PyObject *args)
 		PyErr_Format(PyExc_Exception, "%s", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return NULL;
 	}
-	if (!self->mapped) {
+	if (!self->mapped || option_disable_fork) {
 		// This is not a mapped process, so we can just directly execute the
 		// query here
 		PyObject *result;
 		res_table *output = NULL;
 		char *res = NULL;
-Py_BEGIN_ALLOW_THREADS;
+//Py_BEGIN_ALLOW_THREADS;
 		res = _connection_query(self->cntxt, query, &output);
-Py_END_ALLOW_THREADS;
+//Py_END_ALLOW_THREADS;
 		GDKfree(query);
 		if (res != MAL_SUCCEED) {
 			PyErr_Format(PyExc_Exception, "SQL Query Failed: %s",

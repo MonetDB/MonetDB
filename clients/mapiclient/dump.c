@@ -38,7 +38,7 @@ quoted_print(stream *f, const char *s, bool singleq)
 			break;
 		default:
 			if ((0 < *s && *s < 32) || *s == '\177')
-				mnstr_printf(f, "\\%03o", *s & 0377);
+				mnstr_printf(f, "\\%03o", (uint8_t) *s);
 			else
 				mnstr_write(f, s, 1, 1);
 			break;
@@ -817,8 +817,17 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 		remark = NULL;
 		goto bailout;
 	}
-	if (view)
+	if (view) {
+		/* skip initial comments and empty lines */
+		while ((view[0] == '-' && view[1] == '-') || view[0] == '\n') {
+			view = strchr(view, '\n');
+			if (view == NULL)
+				view = "";
+			else
+				view++;
+		}
 		view = strdup(view);
+	}
 	if (remark)
 		remark = strdup(remark);
 	mapi_close_handle(hdl);
@@ -1307,9 +1316,21 @@ dump_function_comment(Mapi mid, stream *toConsole, const char *id)
 		return 1;
 
 	snprintf(query, len,
-		"SELECT category, schema, name, type, type_digits, type_scale, remark "
-		"FROM sys.commented_function_signatures "
-		"WHERE fid = %s "
+		"SELECT \n"
+		"        coalesce(function_type_keyword, '') AS category,\n"
+		"        s.name AS schema,\n"
+		"        CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number ASC) WHEN 1 THEN f.name ELSE NULL END AS name,\n"
+		"        p.type, \n"
+		"        p.type_digits, \n"
+		"        p.type_scale,\n"
+		"        CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number DESC) WHEN 1 THEN c.remark ELSE NULL END AS remark,\n"
+		"        ROW_NUMBER() OVER (ORDER BY f.id, p.number) AS line\n"
+		"FROM sys.functions f\n"
+		"JOIN sys.comments c ON f.id = c.id\n"
+		"JOIN sys.schemas s ON f.schema_id = s.id\n"
+		"LEFT OUTER JOIN sys.function_types ft ON f.type = ft.function_type_id\n"
+		"LEFT OUTER JOIN sys.args p ON f.id = p.func_id AND p.inout = 1\n"
+		"WHERE f.id = %s\n"
 		"ORDER BY line;", id);
 
 	hashge = has_hugeint(mid);
@@ -1372,17 +1393,17 @@ static int
 dump_function(Mapi mid, stream *toConsole, const char *fid, int hashge)
 {
 	MapiHdl hdl;
-	size_t qlen = 200 + strlen(fid);
+	size_t qlen = 400 + strlen(fid);
 	char *query = malloc(qlen);
 	const char *sep;
-	char *ffunc;
-	const char *sname, *fname;
+	char *ffunc, *flkey;
+	const char *sname, *fname, *ftkey;
 	int flang, ftype;
 
 	if (!query)
 		return 1;
 
-	snprintf(query, qlen, "SELECT f.id, f.func, f.language, f.type, s.name, f.name FROM sys.functions f, sys.schemas s WHERE f.schema_id = s.id AND f.id = %s", fid);
+	snprintf(query, qlen, "SELECT f.id, f.func, f.language, f.type, s.name, f.name, ft.function_type_keyword, fl.language_keyword FROM sys.functions f JOIN sys.schemas s ON f.schema_id = s.id JOIN sys.function_types ft ON f.type = ft.function_type_id LEFT OUTER JOIN sys.function_languages fl ON f.language = fl.language_id WHERE f.id = %s", fid);
 	hdl = mapi_query(mid, query);
 	if (mapi_fetch_row(hdl) == 0) {
 		free(query);
@@ -1394,40 +1415,28 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, int hashge)
 	ftype = atoi(mapi_fetch_field(hdl, 3));
 	sname = mapi_fetch_field(hdl, 4);
 	fname = mapi_fetch_field(hdl, 5);
+	ftkey = mapi_fetch_field(hdl, 6);
+	flkey = mapi_fetch_field(hdl, 7);
 	if (flang == 1 || flang == 2) {
-		/* all information is stored in the func column */
+		/* all information is stored in the func column
+		 * first skip initial comments and empty lines */
+		while ((ffunc[0] == '-' && ffunc[1] == '-') || ffunc[0] == '\n') {
+			ffunc = strchr(ffunc, '\n');
+			if (ffunc == NULL)
+				ffunc = "";
+			else
+				ffunc++;
+		}
 		mnstr_printf(toConsole, "%s\n", ffunc);
 		mapi_close_handle(hdl);
 		free(query);
 		return 0;
 	}
-	mnstr_printf(toConsole, "CREATE ");
-	switch (ftype) {
-	case 1:			/* scalar function */
-	case 5:			/* table returning function */
-		mnstr_printf(toConsole, "FUNCTION");
-		break;
-	case 2:
-		mnstr_printf(toConsole, "PROCEDURE");
-		break;
-	case 3:
-		mnstr_printf(toConsole, "AGGREGATE");
-		break;
-	case 4:
-		mnstr_printf(toConsole, "FILTER FUNCTION");
-		break;
-	case 7:
-		mnstr_printf(toConsole, "LOADER");
-		break;
-	default:
-		/* shouldn't happen (6 is F_ANALYTIC, but no syntax to
-		 * create, or values are not defined) */
-		free(query);
-		mapi_close_handle(hdl);
-		return -1;
-	}
+	/* strdup these two because they are needed after another query */
 	ffunc = strdup(ffunc);
-	mnstr_printf(toConsole, " ");
+	if (flkey)
+		flkey = strdup(flkey);
+	mnstr_printf(toConsole, "CREATE %s ", ftkey);
 	quoted_print(toConsole, sname, false);
 	mnstr_printf(toConsole, ".");
 	quoted_print(toConsole, fname, false);
@@ -1476,38 +1485,9 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, int hashge)
 		} while (mapi_fetch_row(hdl) != 0);
 	}
 	mapi_close_handle(hdl);
-	mnstr_printf(toConsole, " LANGUAGE ");
-	switch (flang) {
-	case 3:
-		mnstr_printf(toConsole, "R");
-		break;
-	case 4:
-		mnstr_printf(toConsole, "C");
-		break;
-	case 5:
-		mnstr_printf(toConsole, "J");
-		break;
-	case 6:
-		mnstr_printf(toConsole, "PYTHON");
-		break;
-	case 7:
-		mnstr_printf(toConsole, "PYTHON_MAP");
-		break;
-	case 8:
-		mnstr_printf(toConsole, "PYTHON2");
-		break;
-	case 9:
-		mnstr_printf(toConsole, "PYTHON2_MAP");
-		break;
-	case 10:
-		mnstr_printf(toConsole, "PYTHON3");
-		break;
-	case 11:
-		mnstr_printf(toConsole, "PYTHON3_MAP");
-		break;
-	default:		/* unknown language */
-		free(ffunc);
-		return -1;
+	if (flkey) {
+		mnstr_printf(toConsole, " LANGUAGE %s", flkey);
+		free(flkey);
 	}
 	mnstr_printf(toConsole, "\n%s\n", ffunc);
 	free(ffunc);

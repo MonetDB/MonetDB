@@ -8,7 +8,7 @@
 
 /* (c) M Kersten, S Manegold
  * The easiest calling method is something like:
- * tomograph -d demo --atlast=10
+ * tomograph -d demo --atlas=10
  * which connects to the demo database server and
  * will collect the tomograph pages for at most 10 SQL queries
  * For each page a gnuplot file, a data file, and the event trace
@@ -47,17 +47,20 @@
 
 #define die(dbh, hdl)						\
 	do {							\
-		(hdl ? mapi_explain_query(hdl, stderr) :	\
-		 dbh ? mapi_explain(dbh, stderr) :		\
-		 fprintf(stderr, "!! command failed\n"));	\
+		if (hdl)					\
+			mapi_explain_query(hdl, stderr);	\
+		else if (dbh)					\
+			mapi_explain(dbh, stderr);		\
+		else						\
+			fprintf(stderr, "!! command failed\n");	\
 		goto stop_disconnect;				\
 	} while (0)
 
-#define doQ(X)								\
-	do {								\
+#define doQ(X)							\
+	do {							\
 		if ((hdl = mapi_query(dbh, X)) == NULL ||	\
 		    mapi_error(dbh) != MOK)			\
-			die(dbh, hdl);			\
+			die(dbh, hdl);				\
 	} while (0)
 
 static stream *conn = NULL;
@@ -370,6 +373,7 @@ base_colors[NUM_COLORS] = {
 /*     1 */	{ 0, 0, "algebra", "fetch", 0 },
 /*     1 */	{ 0, 0, "aggr", "max", 0 },
 /*     ? */	{ 0, 0, "aggr", "avg", 0 },
+/*     ? */	{ 0, 0, "aggr", "group_concat", 0 },
 /*     ? */	{ 0, 0, "aggr", "subavg", 0 },
 /*     ? */	{ 0, 0, "aggr", "submedian", 0 },
 /*     ? */	{ 0, 0, "aggr", "subquantile", 0 },

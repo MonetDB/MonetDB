@@ -107,8 +107,6 @@ scanner_init_keywords(void)
 	failed += keywords_insert("PROD", AGGR);
 	failed += keywords_insert("COUNT", AGGR);
 
-	failed += keywords_insert("LAG", AGGR);
-	failed += keywords_insert("LEAD", AGGR);
 	failed += keywords_insert("LAG", AGGR2);
 	failed += keywords_insert("LEAD", AGGR2);
 
@@ -546,7 +544,7 @@ scanner_error(mvc *lc, int cur)
 		/* on Windows at least, iswcntrl returns TRUE for
 		 * U+FEFF, but we just want consistent error
 		 * messages */
-		(void) sql_error(lc, 1, SQLSTATE(42000) "Unexpected%s character (U+%04X)", iswcntrl(cur) && cur != 0xFEFF ? " control" : "", cur);
+		(void) sql_error(lc, 1, SQLSTATE(42000) "Unexpected%s character (U+%04X)", iswcntrl(cur) && cur != 0xFEFF ? " control" : "", (unsigned) cur);
 	}
 	return LEX_ERROR;
 }
