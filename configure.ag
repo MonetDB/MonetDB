@@ -743,9 +743,9 @@ AS_VAR_IF([enable_sanitizer], [no], [], [
 AC_SUBST([CFLAGS])
 AC_SUBST([X_CFLAGS])
 
-AC_MSG_CHECKING([for ld -Bsymbolic option])
+AC_MSG_CHECKING([for ld -Bsymbolic-functions option])
 save_LDFLAGS="$LDFLAGS"
-LDFLAGS="$LDFLAGS -Wl,-Bsymbolic"
+LDFLAGS="$LDFLAGS -Wl,-Bsymbolic-functions"
 AC_LINK_IFELSE([
 	AC_LANG_SOURCE([[
 		@%:@include <stdio.h>
