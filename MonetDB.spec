@@ -132,7 +132,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Jul2017-SP4/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Mar2018/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 # we need checkpolicy and selinux-policy-devel for the SELinux policy
@@ -1046,6 +1046,304 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Thu Mar 15 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- Rebuilt.
+- BZ#3574: Add support for: create OR REPLACE view ...
+- BZ#3831: Extend date part extraction and date formating functions to
+  support more formats like "quarter", "iso year/week"
+- BZ#6244: Add support for: TRUNCATE TABLE
+- BZ#6249: DEFAULT in row-values missing (sqlsmith)
+- BZ#6346: BATsort returns GDK_SUCCEED when **sorted bat is null
+- BZ#6507: Column Header coming with trailing spaces in compiled version
+  of MonetDB 11.27.9/11
+- BZ#6513: Sqlitelogictest: Wrong MAL plan generation for column product
+- BZ#6526: Crash using aggregate function inside a case statement in
+  having clause
+- BZ#6529: Sqlitelogictest crash in select query with IN operator and cast
+- BZ#6530: Sqlitelogictest: select query with NOT IN giving wrong results
+- BZ#6532: copy into ignore null as directive if first column doesn't
+  come from file
+- BZ#6534: [Mar2018]: mclient -f tab / --format=tab complains about
+  "unsupported formatter"
+- BZ#6535: [Mar2018]: mclient -t / --timer does not work as documented
+- BZ#6536: [Mar2018]: timing output of mclient -t / --timer= should go
+  to stderr rather than stdout
+- BZ#6537: [Mar2018]: mclient's default timing mode should (again) be
+  "none" rather than "clock"
+- BZ#6541: [Mar2018]: mclient reports incorrect wall-clock time
+- BZ#6542: assertion failure when querying: select count(*) from
+  sys.commented_function_signatures;
+- BZ#6543: Mar2018: truncate on SQL system tables should NOT be allowed
+- BZ#6545: Sqlitelogictest crash in IN query
+- BZ#6546: Sqlitelogictest crash in IN query with division
+- BZ#6547: OS-dependent behaviour for ilike
+- BZ#6548: Select from remote table leaves session open
+- BZ#6549: Add log messages when listen fails
+- BZ#6550: Sqlitelogictest crash on complex CASE statement
+- BZ#6551: Sqlitelogictest wrong NULL value cast
+- BZ#6552: Sqlitelogictest crash on complex case statement
+- BZ#6553: Sqlitelogictest crash on aggregation with having statement
+- BZ#6554: Sqlitelogictest crash on complex case statement
+- BZ#6555: Sqlitelogictest wrong result set generated from complex
+  case statement
+
+* Thu Mar  8 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- mapilib: The three mapi_explain* functions and mapi_trace don't return any
+  useful information, so they now return void.
+
+* Thu Mar  8 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- utils: The function mcrypt_getHashAlgorithms now returns a static, constant
+  string, so the result should not be modified or freed.
+
+* Wed Feb 28 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- clients: ODBC: The driver function SQLProcedureColumns was implemented.
+
+* Fri Feb 16 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- gdk: Changed return type of function void_replace_bat from BUN to gdk_return:
+  it now only returns whether the operation succeeded or not.
+- gdk: Changed the return type of BATroles from void to gdk_return: it can
+  fail due to malloc failure.
+
+* Wed Feb 14 2018 Stefan Manegold <Stefan.Manegold@cwi.nl> - 11.29.1-20180315
+- MonetDB: mclient's execution time profiling options and output format have
+  been changed. Instead of implicitly via the "--interactive"/"-i"
+  option (or when using an interactive mclient console), execution time
+  profiling is now controlled via an explicit "--timer=timermode"/"-t
+  timermode" command-line option, or a "\t timermode" command in the
+  interactive mclient console. The default (also in the interactive
+  mclient console) is now timermode "none", i.e., no timing information
+  is given. Timermode "clock" activates client-side wall-clock timing
+  ("clk") in "human-friendly" format much like the interactive mode did
+  before. Timermode "performance" also provides detailed server-side
+  timings: "sql" is the time to parse the SQL query, optimize the
+  logical relational plan and create the initial physical (MAL) plan;
+  "opt" is the time to optimize the physical (MAL) plan; "run" is the
+  time to execute the physical (MAL) plan. With timermode "performance"
+  all server-side timings and the client-side wall-clock time are given
+  in milliseconds (ms). Note that the client-measured wall-clock time
+  "clk" is reported per query only when options "--interactive" or
+  "--echo" are used, because only then does mclient send individual
+  lines (statements) of the SQL script to the server. Otherwise, mclient
+  sends the SQL script in large(r) batch(es) to the server, and, thus,
+  only the total wall-clock time per batch is measured and reported. The
+  server-measured detailed performance timings "sql", "opt", "run" are
+  always measured and reported per query. Also, all timing information
+  is now given on a separate line and sent to stderr rather than stdout.
+
+* Mon Feb 12 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- buildtools: Added the .pdb files needed for debug symbols to the Windows installer
+  for MonetDB/SQL.
+
+* Fri Feb  9 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- gdk: Removed functions ALIGNsetH, ALIGNsetT, and CREATEview_ (mind the
+  underscore).  The first can easily be replace by using BAThseqbase
+  (that's all it did), the second was only used once, and the third can
+  be replace by VIEWcreate.
+
+* Fri Feb  9 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- MonetDB: Some types and constants were moved from configure (and hence
+  monetdb_config.h) to gdk.h.  In particular, the types "lng" and
+  "ulng" have been moved and can therefore no longer be used by code
+  that doesn't (ultimately) include gdk.h.  Just use int64_t instead.
+  A bunch of format defines have been removed: SZFMT, SSZFMT, PTRFMT,
+  PDFMT.  Just use the C standard codes for those (%zu, %zd, %p, %td).
+  The define for printing a lng (LLFMT) was also moved.  Use PRId64 for
+  printing int64_t in code not using gdk.h.  Removed all references to
+  __int64 and long long (use int64_t instead).
+
+* Fri Feb  2 2018 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.29.1-20180315
+- sql: Added new system view: sys.ids which contains all database objects
+  ids which can be used in sys.dependencies table.
+- sql: Added new system view: sys.dependencies_vw which shows all data of
+  sys.dependencies including names on objects, object types and dependency types.
+- sql: Added 25 new system views for finding out dependencies between database objects.
+  These new dependency views improve, extend and replace the 17
+  sys.dependencies_X_on_Y() functions as previously defined in
+  21_dependency_functions.sql. Those sys.dependencies_X_on_Y() functions
+  are now marked as deprecated.
+- sql: Added new system view: sys.roles which contains all defined roles.
+- sql: Added new system view: sys.var_values which shows the values for
+  system variables.
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- clients: ODBC: Changed table types as used by SQLTables from "LOCAL TEMPORARY"
+  and "GLOBAL TEMPORARY" to "LOCAL TEMPORARY TABLE" and "GLOBAL TEMPORARY
+  TABLE" respectively.
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- clients: ODBC: Initial support for the HUGEINT type in SQL was added.  Any value
+  with type HUGEINT can be retrieved in a C variable with type SQL_C_CHAR
+  or SQL_C_WCHAR.  A value of type HUGEINT can be retrieved in other C
+  types as long as they fit, the largest C type supported being a 64 bit
+  integer (equivalent to BIGINT).
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- monetdb5: Implemented function pcre.replace_first which is like pcre.replace,
+  except it only replaces the first match.
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- gdk: Removed unused functions BATmemsize and BATvmsize.
+- gdk: Removed the tnodense property: it was maintained but never actually
+  used, not even stored.
+
+* Fri Feb  2 2018 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com> - 11.29.1-20180315
+- sql: Added support for COMMENT ON statements using SQL syntax:
+   COMMENT ON { SCHEMA | TABLE | VIEW | COLUMN | INDEX | SEQUENCE |
+              FUNCTION | PROCEDURE | AGGREGATE | FILTER FUNCTION | LOADER }
+        qname IS { 'my description text' | NULL | '' } ;
+  For COLUMN the qname can be "table_name"."column_name" or fully qualified
+  as in: "schema_name"."table_name"."column_name".
+  For FUNCTION, PROCEDURE, AGGREGATE, FILTER FUNCTION and LOADER the qname
+  may need to include the signature (argument types) to be able to
+  differentiate between multiple overloaded functions which have the same name
+  and schema.
+  By specifying IS NULL or IS '' you remove the comment for the database object.
+  If a database object is dropped, the associated comment is also removed.
+  Note: it is not allowed or possible to add comments for temporary tables or
+        objects in schema "tmp".
+  The sql catalog has been extended with system table: sys.comments.
+  The keyword 'COMMENT' has now become a reserved keyword.
+
+* Fri Feb  2 2018 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.29.1-20180315
+- sql: Removed system function sys.environment(). It was a duplicate of system
+  function sys.env().
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- stream: The interface of mnstr_fgetpos and mnstr_fsetpos was changed to look
+  more like the standard C functions fsetpos and fgetpos: they both have
+  a second argument "pointer to fpos_t".
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- clients: The functions in the mapi library that require 64 bit integers now
+  use the standard type int64_t instead of the non-standard mapi_int64.
+  This requires a compilation environment that has the stdint.h include
+  file (standardized in C99).  Compilation of the library also requires
+  the inttypes.h include file (also standardized in C99).
+
+* Fri Feb  2 2018 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.29.1-20180315
+- sql: Implemented behavior for DROP SCHEMA my_schema RESTRICT command.
+  Previously the RESTRICT keyword was accepted but not obeyed. It would
+  always do a CASCADE operation.  Also the default behavior of DROP SCHEMA
+  my_schema command is now changed into RESTRICT behavior (was CASCADE).
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- gdk: The NIL representation of the internal flt and dbl types was changed
+  from the smallest representable finite value to NaN (not-a-number).
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- sql: The internal NULL representation of the REAL (FLOAT) and DOUBLE
+  types was changed from the smallest representable finite value to NaN
+  (not-a-number).
+
+* Fri Feb  2 2018 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.29.1-20180315
+- testing: Added a --data_path option to Mtest.py that defines an external data
+  repository. See the commit message of c484932c7fd8 for more info.
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- gdk: Changed the interface of ATOMformat and VALformat: they now return a
+  pointer to the allocated string.
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- gdk: The length "method" for atoms now returns a size_t, the "len" field of
+  a ValRecord is now a size_t, the "size" field of the atomDesc structure
+  is now unsigned short.
+- gdk: Removed the "align" field from the ATOM descriptor (atomDesc) structure.
+- gdk: The atomtostr and atomfromstr "methods" for atoms now return ssize_t
+  and require a pointer to size_t for the size of the buffer.
+- gdk: The atom tostr and fromstr "methods" now always return -1 on error.
+  A return value greater than 0 is normal, a return value of 0 is not
+  normal, but technically not an error.
+
+* Fri Feb  2 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.29.1-20180315
+- sql: A column default value can be used in a UPDATE statement: UPDATE tname
+  SET cname = DEFAULT, and INSERT statements: INSERT INTO tname VALUES
+  (..., DEFAULT, ...)
+- sql: Added support for TRUNCATE statements conforming to the SQL:2008 standard:
+   TRUNCATE [ TABLE ] qname [ CONTINUE IDENTITY | RESTART IDENTITY ]
+            [ RESTRICT | CASCADE ]
+  In a TRUNCATE statement a 'CONTINUE IDENTITY' or 'RESTART IDENTITY'
+  clause can be passed to restart or not, being the former the default one.
+  The 'CASCADE' option instructs to truncate referencing table(s) also if
+  the referencing table(s) have foreign key references to this table.
+  The default behavior is 'RESTRICT'.
+  Note: it is possible to use TRUNCATE statements in a transaction and
+  thus to rollback the effects of a truncate.
+  The keywords 'TRUNCATE' and 'CONTINUE' have now become reserved keywords.
+- sql: Added possibility to GRANT or REVOKE a TRUNCATE privilege to a user or role.
+- sql: Added possibility to define a TRIGGER on a TRUNCATE event.
+- sql: Added possibility to specify 'OR REPLACE' in following CREATE commands:
+   CREATE [ OR REPLACE ] VIEW qname ...
+   CREATE [ OR REPLACE ] TRIGGER qname ...
+- sql: Added possibility to specify 'IF EXIST' in following DROP commands:
+   DROP AGGREGATE [ IF EXISTS ] qname ...
+   DROP FUNCTION [ IF EXISTS ] qname ...
+   DROP FILTER FUNCTION [ IF EXISTS ] qname ...
+   DROP LOADER [ IF EXISTS ] qname ...
+   DROP PROCEDURE [ IF EXISTS ] qname ...
+   DROP TRIGGER [ IF EXISTS ] qname ...
+
+* Fri Feb  2 2018 Martin Kersten <mk@cwi.nl> - 11.29.1-20180315
+- monetdb5: The EXPLAIN command now shows all the MAL type resolutions, because in
+  general users may not be aware of their signatures.  It also simplifies
+  programs to analyze such plans.
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- monetdb5: Implemented versions of group.(sub)group(done) that don't return
+  a histogram.
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- stream: Removed function wbstream.
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- monetdb5: Removed MAL functions streams.socketRead, streams.socketReadBytes,
+  streams.socketWrite, and streams.socketWriteBytes.
+- monetdb5: Removed MAL functions streams.openRead(s:streams):streams and
+  streams.openWrite(s:streams):streams.
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- stream: Removed functions udp_rastream and udp_wastream.
+- stream: Removed functions socket_rstream and socket_wstream.
+- stream: Removed functions append_wstream and append_wastream.
+- stream: Removed functions mnstr_rstream and mnstr_wstream.
+
+* Fri Feb  2 2018 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.29.1-20180315
+- merovingian: Add daemon commands for starting/stopping collection of profiler
+  (stethoscope) logs.
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- mapilib: The functions mapi_error_str and mapi_result_error now return const char
+  * instead of plain char * to indicate that the returned data belongs
+  to the library and should not be changed or freed by the application.
+- mapilib: New function const char *mapi_result_errorcode(MapiHdl) which returns
+  the SQLSTATE code if available when an error has occurred.
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- monetdb5: Lots of changes to streamline the internal error handling.
+  In principle, all errors should now include a SQLSTATE error code
+  (see the SQL standard).
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- sql: Lots of changes to streamline the internal error handling.
+  In principle, all errors should now include a SQLSTATE error code
+  (see the SQL standard).
+
+* Fri Feb  2 2018 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.29.1-20180315
+- sql: Added support for extracting the quarter (number between 1 and 4)
+  of a date or a timestamp or a timestamp with timezone in SQL:
+   EXTRACT ( QUARTER FROM my_date_expr ).
+  Added support for extracting the week (number between 1 and 53)
+  of a date or a timestamp or a timestamp with timezone in SQL:
+   EXTRACT ( WEEK FROM my_date_expr ).
+  Added support for scalar functions: quarter(date_expr),
+  quarter(timestamp_expr) and quarter(timestamptz_expr).
+
+* Fri Feb  2 2018 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.29.1-20180315
+- clients: Add a new pretty printing option to stethoscope
+  Running stethoscope with the flag -j will produce not pretty printed
+  output (one json object per line). Running with the -y flag will produce
+  pretty printed output. Running with neither will produce the legacy,
+  line oriented format
+
 * Fri Feb 02 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.27.13-20180202
 - Rebuilt.
 - BZ#3470: Support setClob without length restrictions

@@ -1,7 +1,3 @@
 # ChangeLog file for utils
 # This file is updated with Maddlog
 
-* Thu Mar  8 2018 Sjoerd Mullender <sjoerd@acm.org>
-- The function mcrypt_getHashAlgorithms now returns a static, constant
-  string, so the result should not be modified or freed.
-
