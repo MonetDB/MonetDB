@@ -395,133 +395,6 @@ static gdk_return BBPrecover(int farmid);
 static gdk_return BBPrecover_subdir(void);
 static bool BBPdiskscan(const char *, size_t);
 
-#ifdef GDKLIBRARY_OLDWKB
-/* "Danger, Will Robinson".
- *
- * Upgrade the Well-known Binary (WKB) from older geom versions to the
- * one in current use.  This function must be called before the SQL
- * Write-ahead Log (WAL) is processed, and in order to be able to
- * recover safely, we call it here.  The WAL may create new BATs with
- * the WKB type, or append values to an existing BAT.  In the first
- * case it is hard, and in the second impossible, to upgrade the BAT
- * later.
- *
- * This function is located here, since it needs to be called early
- * (as discussed), and because it calls functions that are GDK only.
- * There is a little knowledge about the MonetDB WKB type, but nothing
- * about the internals of the type.  The only knowledge is the layout
- * of the old and new structures.
- *
- * All errors are fatal.
- */
-static void
-fixwkbheap(void)
-{
-	bat bid, bbpsize = getBBPsize();
-	BAT *b;
-	int utypewkb = ATOMunknown_find("wkb");
-	const char *nme, *bnme;
-	char filename[64];
-	Heap h1, h2;
-	const var_t *restrict old;
-	var_t *restrict new;
-	BUN i;
-	struct old_wkb {
-		int len;
-		char data[FLEXIBLE_ARRAY_MEMBER];
-	} *owkb;
-	struct new_wkb {
-		int len;
-		int srid;
-		char data[FLEXIBLE_ARRAY_MEMBER];
-	} *nwkb;
-	char *oldname, *newname;
-
-	if (utypewkb == 0)
-		GDKfatal("fixwkbheap: no space for wkb atom");
-
-	for (bid = 1; bid < bbpsize; bid++) {
-		if ((b = BBP_desc(bid)) == NULL)
-			continue; /* not a valid BAT */
-
-		if (b->ttype != utypewkb || b->batCount == 0)
-			continue; /* nothing to do for this BAT */
-		assert(b->tvheap);
-		assert(b->twidth == SIZEOF_VAR_T);
-
-		nme = BBP_physical(bid);
-		if ((bnme = strrchr(nme, DIR_SEP)) == NULL)
-			bnme = nme;
-		else
-			bnme++;
-		snprintf(filename, sizeof(filename),
-			 "BACKUP%c%s", DIR_SEP, bnme);
-		if ((oldname = GDKfilepath(b->theap.farmid, BATDIR, nme, "tail")) == NULL ||
-		    (newname = GDKfilepath(b->theap.farmid, BAKDIR, bnme, "tail")) == NULL ||
-		    GDKcreatedir(newname) != GDK_SUCCEED ||
-		    rename(oldname, newname) < 0)
-			GDKfatal("fixwkbheap: cannot make backup of %s.tail\n", nme);
-		GDKfree(oldname);
-		GDKfree(newname);
-		if ((oldname = GDKfilepath(b->tvheap->farmid, BATDIR, nme, "theap")) == NULL ||
-		    (newname = GDKfilepath(b->tvheap->farmid, BAKDIR, bnme, "theap")) == NULL ||
-		    rename(oldname, newname) < 0)
-			GDKfatal("fixwkbheap: cannot make backup of %s.theap\n", nme);
-		GDKfree(oldname);
-		GDKfree(newname);
-
-		h1 = b->theap;
-		h1.base = NULL;
-		h1.dirty = 0;
-		snprintf(h1.filename, sizeof(h1.filename), "%s.tail", filename);
-		h2 = *b->tvheap;
-		h2.base = NULL;
-		h2.dirty = 0;
-		snprintf(h2.filename, sizeof(h2.filename), "%s.theap", filename);
-
-		/* load old heaps */
-		if (HEAPload(&h1, filename, "tail", 0) != GDK_SUCCEED ||
-		    HEAPload(&h2, filename, "theap", 0) != GDK_SUCCEED)
-			GDKfatal("fixwkbheap: cannot load old heaps for BAT %d\n", bid);
-		/* create new heaps */
-		if (HEAPalloc(&b->theap, b->batCapacity, SIZEOF_VAR_T) != GDK_SUCCEED)
-			GDKfatal("fixwkbheap: cannot allocate heap\n");
-		b->theap.dirty = TRUE;
-		b->theap.free = h1.free;
-		HEAP_initialize(b->tvheap, b->batCapacity, 0, (int) sizeof(var_t));
-		if (b->tvheap->base == NULL)
-			GDKfatal("fixwkbheap: cannot allocate heap\n");
-		b->tvheap->parentid = bid;
-
-		/* do the conversion */
-		b->theap.dirty = TRUE;
-		b->tvheap->dirty = TRUE;
-		old = (const var_t *) h1.base;
-		new = (var_t *) Tloc(b, 0);
-		for (i = 0; i < b->batCount; i++) {
-			int len;
-			owkb = (struct old_wkb *) (h2.base + old[i]);
-			if ((len = owkb->len) == ~0)
-				len = 0;
-			if ((new[i] = HEAP_malloc(b->tvheap, offsetof(struct new_wkb, data) + len)) == 0)
-				GDKfatal("fixwkbheap: cannot allocate heap space\n");
-			nwkb = (struct new_wkb *) (b->tvheap->base + new[i]);
-			nwkb->len = owkb->len;
-			nwkb->srid = 0;
-			if (len > 0)
-				memcpy(nwkb->data, owkb->data, len);
-		}
-		HEAPfree(&h1, 0);
-		HEAPfree(&h2, 0);
-		if (HEAPsave(&b->theap, nme, "tail") != GDK_SUCCEED ||
-		    HEAPsave(b->tvheap, nme, "theap") != GDK_SUCCEED)
-			GDKfatal("fixwkbheap: saving heap failed\n");
-		HEAPfree(&b->theap, 0);
-		HEAPfree(b->tvheap, 0);
-	}
-}
-#endif
-
 #ifdef GDKLIBRARY_BADEMPTY
 /* There was a bug (fixed in changeset 1f5498568a24) which could
  * result in empty strings not being double-eliminated.  This code
@@ -1325,8 +1198,7 @@ BBPheader(FILE *fp)
 	    bbpversion != GDKLIBRARY_BADEMPTY &&
 	    bbpversion != GDKLIBRARY_NOKEY &&
 	    bbpversion != GDKLIBRARY_HEADED &&
-	    bbpversion != GDKLIBRARY_INSERTED &&
-	    bbpversion != GDKLIBRARY_OLDWKB) {
+	    bbpversion != GDKLIBRARY_INSERTED) {
 		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.\n"
 			 "This database was probably created by %s version of MonetDB.",
 			 GDKLIBRARY, bbpversion,
@@ -1527,10 +1399,6 @@ BBPinit(void)
 		}
 	}
 
-#ifdef GDKLIBRARY_OLDWKB
-	if (bbpversion <= GDKLIBRARY_OLDWKB)
-		fixwkbheap();
-#endif
 #ifdef GDKLIBRARY_BADEMPTY
 	if (bbpversion <= GDKLIBRARY_BADEMPTY)
 		fixstrbats();
