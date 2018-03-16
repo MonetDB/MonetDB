@@ -1034,7 +1034,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 		int nread;
 		char *s, *options = NULL;
 		char logical[1024];
-		lng inserted = 0, deleted = 0, first = 0, count, capacity, base = 0;
+		lng first = 0, count, capacity, base = 0;
 #ifdef GDKLIBRARY_HEADED
 		/* these variables are not used in later versions */
 		char tailname[129];
@@ -1050,16 +1050,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 			*s = 0;
 		}
 
-		if (bbpversion <= GDKLIBRARY_INSERTED ?
-		    sscanf(buf,
-			   LLFMT" %hu %128s %128s %23s %d %u "LLFMT" "LLFMT" "LLFMT" "LLFMT" "LLFMT" %hu %hu %hu %hu"
-			   "%n",
-			   &batid, &status, headname, tailname, filename,
-			   &lastused, &properties, &inserted, &deleted, &first,
-			   &count, &capacity, &map_head, &map_tail, &map_hheap,
-			   &map_theap,
-			   &nread) < 16 :
-		    bbpversion <= GDKLIBRARY_HEADED ?
+		if (bbpversion <= GDKLIBRARY_HEADED ?
 		    sscanf(buf,
 			   LLFMT" %hu %128s %128s %23s %d %u "LLFMT" "LLFMT" "LLFMT" %hu %hu %hu %hu"
 			   "%n",
@@ -1197,8 +1188,7 @@ BBPheader(FILE *fp)
 	    bbpversion != GDKLIBRARY_TALIGN &&
 	    bbpversion != GDKLIBRARY_BADEMPTY &&
 	    bbpversion != GDKLIBRARY_NOKEY &&
-	    bbpversion != GDKLIBRARY_HEADED &&
-	    bbpversion != GDKLIBRARY_INSERTED) {
+	    bbpversion != GDKLIBRARY_HEADED) {
 		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.\n"
 			 "This database was probably created by %s version of MonetDB.",
 			 GDKLIBRARY, bbpversion,
