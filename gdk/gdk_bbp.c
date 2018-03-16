@@ -1417,14 +1417,14 @@ BBPheader(FILE *fp)
 		exit(1);
 	}
 	if (bbpversion != GDKLIBRARY &&
+	    bbpversion != GDKLIBRARY_NIL_NAN &&
+	    bbpversion != GDKLIBRARY_TALIGN &&
 	    bbpversion != GDKLIBRARY_BADEMPTY &&
 	    bbpversion != GDKLIBRARY_NOKEY &&
-	    bbpversion != GDKLIBRARY_SORTEDPOS &&
-	    bbpversion != GDKLIBRARY_OLDWKB &&
-	    bbpversion != GDKLIBRARY_INSERTED &&
 	    bbpversion != GDKLIBRARY_HEADED &&
-	    bbpversion != GDKLIBRARY_TALIGN &&
-	    bbpversion != GDKLIBRARY_NIL_NAN) {
+	    bbpversion != GDKLIBRARY_INSERTED &&
+	    bbpversion != GDKLIBRARY_OLDWKB &&
+	    bbpversion != GDKLIBRARY_SORTEDPOS) {
 		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.\n"
 			 "This database was probably created by %s version of MonetDB.",
 			 GDKLIBRARY, bbpversion,
