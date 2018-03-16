@@ -395,103 +395,6 @@ static gdk_return BBPrecover(int farmid);
 static gdk_return BBPrecover_subdir(void);
 static bool BBPdiskscan(const char *, size_t);
 
-#ifdef GDKLIBRARY_SORTEDPOS
-static void
-fixsorted(void)
-{
-	bat bid;
-	BAT *b;
-	BATiter bi;
-	int dbg = GDKdebug;
-	bool loaded;
-
-	GDKdebug &= ~(CHECKMASK | PROPMASK);
-	for (bid = 1; bid < (bat) ATOMIC_GET(BBPsize, BBPsizeLock); bid++) {
-		if ((b = BBP_desc(bid)) == NULL)
-			continue; /* not a valid BAT */
-		loaded = false;
-		if (b->tnosorted != 0) {
-			if (b->tsorted) {
-				/* position should not be set */
-				b->batDirtydesc = 1;
-				b->tnosorted = 0;
-			} else if (b->tnosorted == 0 ||
-				   b->tnosorted >= b->batCount ||
-				   b->ttype < 0) {
-				/* out of range */
-				b->batDirtydesc = 1;
-				b->tnosorted = 0;
-			} else if (b->ttype == TYPE_void) {
-				/* void is always sorted */
-				b->batDirtydesc = 1;
-				b->tnosorted = 0;
-				b->tsorted = 1;
-			} else {
-				if (!loaded) {
-					b = BATdescriptor(bid);
-					bi = bat_iterator(b);
-					if (b == NULL)
-						b = BBP_desc(bid);
-					else
-						loaded = true;
-				}
-				if (!loaded ||
-				    ATOMcmp(b->ttype,
-					    BUNtail(bi, b->tnosorted - 1),
-					    BUNtail(bi, b->tnosorted)) <= 0) {
-					/* incorrect hint */
-					b->batDirtydesc = 1;
-					b->tnosorted = 0;
-				}
-			}
-		}
-		if (b->tnorevsorted != 0) {
-			if (b->trevsorted) {
-				/* position should not be set */
-				b->batDirtydesc = 1;
-				b->tnorevsorted = 0;
-			} else if (b->tnorevsorted == 0 ||
-				   b->tnorevsorted >= b->batCount ||
-				   b->ttype < 0) {
-				/* out of range */
-				b->batDirtydesc = 1;
-				b->tnorevsorted = 0;
-			} else if (b->ttype == TYPE_void) {
-				/* void is only revsorted if nil */
-				b->batDirtydesc = 1;
-				if (is_oid_nil(b->tseqbase) ||
-				    b->batCount <= 1) {
-					b->tnorevsorted = 0;
-					b->trevsorted = 1;
-				} else {
-					b->tnorevsorted = 1;
-				}
-			} else {
-				if (!loaded) {
-					b = BATdescriptor(bid);
-					bi = bat_iterator(b);
-					if (b == NULL)
-						b = BBP_desc(bid);
-					else
-						loaded = true;
-				}
-				if (!loaded ||
-				    ATOMcmp(b->ttype,
-					    BUNtail(bi, b->tnorevsorted - 1),
-					    BUNtail(bi, b->tnorevsorted)) >= 0) {
-					/* incorrect hint */
-					b->batDirtydesc = 1;
-					b->tnorevsorted = 0;
-				}
-			}
-		}
-		if (loaded)
-			BBPunfix(bid);
-	}
-	GDKdebug = dbg;
-}
-#endif
-
 #ifdef GDKLIBRARY_OLDWKB
 /* "Danger, Will Robinson".
  *
@@ -1423,8 +1326,7 @@ BBPheader(FILE *fp)
 	    bbpversion != GDKLIBRARY_NOKEY &&
 	    bbpversion != GDKLIBRARY_HEADED &&
 	    bbpversion != GDKLIBRARY_INSERTED &&
-	    bbpversion != GDKLIBRARY_OLDWKB &&
-	    bbpversion != GDKLIBRARY_SORTEDPOS) {
+	    bbpversion != GDKLIBRARY_OLDWKB) {
 		GDKfatal("BBPinit: incompatible BBP version: expected 0%o, got 0%o.\n"
 			 "This database was probably created by %s version of MonetDB.",
 			 GDKLIBRARY, bbpversion,
@@ -1625,10 +1527,6 @@ BBPinit(void)
 		}
 	}
 
-#ifdef GDKLIBRARY_SORTEDPOS
-	if (bbpversion <= GDKLIBRARY_SORTEDPOS)
-		fixsorted();
-#endif
 #ifdef GDKLIBRARY_OLDWKB
 	if (bbpversion <= GDKLIBRARY_OLDWKB)
 		fixwkbheap();
