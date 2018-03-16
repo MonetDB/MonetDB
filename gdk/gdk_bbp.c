@@ -845,6 +845,7 @@ fixfloatbats(void)
 }
 #endif
 
+#ifdef GDKLIBRARY_HEADED
 static int
 headheapinit(oid *hseq, const char *buf, bat bid)
 {
@@ -883,6 +884,7 @@ headheapinit(oid *hseq, const char *buf, bat bid)
 	*hseq = (oid) base;
 	return n;
 }
+#endif
 
 static int
 heapinit(BAT *b, const char *buf, int *hashash, const char *HT, unsigned bbpversion, bat bid, const char *filename)
