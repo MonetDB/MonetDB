@@ -845,11 +845,6 @@ fixfloatbats(void)
 }
 #endif
 
-/*
- * A read only BAT can be shared in a file system by reading its
- * descriptor separately.  The default src=0 is to read the full
- * BBPdir file.
- */
 static int
 headheapinit(oid *hseq, const char *buf, bat bid)
 {
