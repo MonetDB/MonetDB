@@ -1502,7 +1502,7 @@ sql_update_mar2018_samtools(Client c, mvc *sql)
 #endif	/* HAVE_SAMTOOLS */
 
 static str
-sql_group_concat_upgrade(Client c, mvc *sql)
+sql_update_default(Client c, mvc *sql)
 {
 	size_t bufsize = 1000, pos = 0;
 	char *buf, *err;
@@ -1510,7 +1510,7 @@ sql_group_concat_upgrade(Client c, mvc *sql)
 
 	schema = stack_get_string(sql, "current_schema");
 	if ((buf = GDKmalloc(bufsize)) == NULL)
-		throw(SQL, "sql_group_concat_upgrade", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_default", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1656,7 +1656,7 @@ SQLupgrades(Client c, mvc *m)
 
 	sql_find_subtype(&tp, "clob", 0, 0);
 	if (sql_bind_aggr(m->sa, s, "group_concat", &tp) == NULL) {
-		if ((err = sql_group_concat_upgrade(c, m)) != NULL) {
+		if ((err = sql_update_default(c, m)) != NULL) {
 			fprintf(stderr, "!%s\n", err);
 			freeException(err);
 		}
