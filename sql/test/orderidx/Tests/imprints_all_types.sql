@@ -100,60 +100,60 @@ select * from all_types;
 
 select name, schema_id, type, system, commit_action, access, query from _tables where name = 'all_types';
 
--- now add ordered indexes for each column (to check all types).
--- synthese the create ordered index commands:
-select 'create ordered index "oidx_'||name||'" on all_types ("'||name||'");' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
+-- now add imprints indexes for each column (to check all types).
+-- synthese the create imprints index commands:
+-- select 'create imprints index "impidx_'||name||'" on all_types ("'||name||'");' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
 
-create ordered index "oidx_boolean" on all_types ("boolean");
-create ordered index "oidx_tinyint" on all_types ("tinyint");
-create ordered index "oidx_smallint" on all_types ("smallint");
-create ordered index "oidx_int" on all_types ("int");
-create ordered index "oidx_bigint" on all_types ("bigint");
-create ordered index "oidx_double" on all_types ("double");
-create ordered index "oidx_real" on all_types ("real");
-create ordered index "oidx_decimal" on all_types ("decimal");
-create ordered index "oidx_decimal9" on all_types ("decimal9");
-create ordered index "oidx_decimal83" on all_types ("decimal83");
-create ordered index "oidx_float" on all_types ("float");
-create ordered index "oidx_float9" on all_types ("float9");
-create ordered index "oidx_float83" on all_types ("float83");
-create ordered index "oidx_date" on all_types ("date");
-create ordered index "oidx_iY" on all_types ("iY");
-create ordered index "oidx_iYM" on all_types ("iYM");
-create ordered index "oidx_iM" on all_types ("iM");
-create ordered index "oidx_id" on all_types ("id");
-create ordered index "oidx_idh" on all_types ("idh");
-create ordered index "oidx_idm" on all_types ("idm");
-create ordered index "oidx_ids" on all_types ("ids");
-create ordered index "oidx_ih" on all_types ("ih");
-create ordered index "oidx_ihm" on all_types ("ihm");
-create ordered index "oidx_ihs" on all_types ("ihs");
-create ordered index "oidx_im" on all_types ("im");
-create ordered index "oidx_ims" on all_types ("ims");
-create ordered index "oidx_is" on all_types ("is");
-create ordered index "oidx_timestamp" on all_types ("timestamp");
-create ordered index "oidx_timestamp5" on all_types ("timestamp5");
-create ordered index "oidx_timestampzone" on all_types ("timestampzone");
-create ordered index "oidx_timestamp5zone" on all_types ("timestamp5zone");
-create ordered index "oidx_time" on all_types ("time");
-create ordered index "oidx_time5" on all_types ("time5");
-create ordered index "oidx_timezone" on all_types ("timezone");
-create ordered index "oidx_time5zone" on all_types ("time5zone");
--- next data types were not supported in ordered index, but are now after https://dev.monetdb.org/hg/MonetDB?cmd=changeset;node=222c6823450f
-create ordered index "oidx_blob" on all_types ("blob");
-create ordered index "oidx_blob100" on all_types ("blob100");
-create ordered index "oidx_clob" on all_types ("clob");
-create ordered index "oidx_clob100" on all_types ("clob100");
-create ordered index "oidx_character" on all_types ("character");
-create ordered index "oidx_varchar100" on all_types ("varchar100");
-create ordered index "oidx_character10" on all_types ("character10");
-create ordered index "oidx_inet" on all_types ("inet");
-create ordered index "oidx_inet9" on all_types ("inet9");
-create ordered index "oidx_json" on all_types ("json");
-create ordered index "oidx_json10" on all_types ("json10");
-create ordered index "oidx_url" on all_types ("url");
-create ordered index "oidx_url55" on all_types ("url55");
-create ordered index "oidx_uuid" on all_types ("uuid");
+create imprints index "impidx_boolean" on all_types ("boolean");
+create imprints index "impidx_tinyint" on all_types ("tinyint");
+create imprints index "impidx_smallint" on all_types ("smallint");
+create imprints index "impidx_int" on all_types ("int");
+create imprints index "impidx_bigint" on all_types ("bigint");
+create imprints index "impidx_double" on all_types ("double");
+create imprints index "impidx_real" on all_types ("real");
+create imprints index "impidx_decimal" on all_types ("decimal");
+create imprints index "impidx_decimal9" on all_types ("decimal9");
+create imprints index "impidx_decimal83" on all_types ("decimal83");
+create imprints index "impidx_float" on all_types ("float");
+create imprints index "impidx_float9" on all_types ("float9");
+create imprints index "impidx_float83" on all_types ("float83");
+create imprints index "impidx_date" on all_types ("date");
+create imprints index "impidx_iY" on all_types ("iY");
+create imprints index "impidx_iYM" on all_types ("iYM");
+create imprints index "impidx_iM" on all_types ("iM");
+create imprints index "impidx_id" on all_types ("id");
+create imprints index "impidx_idh" on all_types ("idh");
+create imprints index "impidx_idm" on all_types ("idm");
+create imprints index "impidx_ids" on all_types ("ids");
+create imprints index "impidx_ih" on all_types ("ih");
+create imprints index "impidx_ihm" on all_types ("ihm");
+create imprints index "impidx_ihs" on all_types ("ihs");
+create imprints index "impidx_im" on all_types ("im");
+create imprints index "impidx_ims" on all_types ("ims");
+create imprints index "impidx_is" on all_types ("is");
+create imprints index "impidx_timestamp" on all_types ("timestamp");
+create imprints index "impidx_timestamp5" on all_types ("timestamp5");
+create imprints index "impidx_timestampzone" on all_types ("timestampzone");
+create imprints index "impidx_timestamp5zone" on all_types ("timestamp5zone");
+create imprints index "impidx_time" on all_types ("time");
+create imprints index "impidx_time5" on all_types ("time5");
+create imprints index "impidx_timezone" on all_types ("timezone");
+create imprints index "impidx_time5zone" on all_types ("time5zone");
+-- next data types are not supported (yet) in imprints index
+create imprints index "impidx_blob" on all_types ("blob");
+create imprints index "impidx_blob100" on all_types ("blob100");
+create imprints index "impidx_clob" on all_types ("clob");
+create imprints index "impidx_clob100" on all_types ("clob100");
+create imprints index "impidx_character" on all_types ("character");
+create imprints index "impidx_varchar100" on all_types ("varchar100");
+create imprints index "impidx_character10" on all_types ("character10");
+create imprints index "impidx_inet" on all_types ("inet");
+create imprints index "impidx_inet9" on all_types ("inet9");
+create imprints index "impidx_json" on all_types ("json");
+create imprints index "impidx_json10" on all_types ("json10");
+create imprints index "impidx_url" on all_types ("url");
+create imprints index "impidx_url55" on all_types ("url55");
+create imprints index "impidx_uuid" on all_types ("uuid");
 
 -- dump the table including all indexes defined on it
 \D all_types
@@ -162,7 +162,7 @@ select type, name from sys.idxs where table_id in (select id from sys._tables wh
 
 
 -- synthese the select commands with order by ASC:
-select 'select "'||name||'" from all_types order by "'||name||'" ASC;' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
+-- select 'select "'||name||'" from all_types order by "'||name||'" ASC;' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
 
 select "boolean" from all_types order by "boolean" ASC;
 select "tinyint" from all_types order by "tinyint" ASC;
@@ -215,7 +215,7 @@ select "url55" from all_types order by "url55" ASC;
 select "uuid" from all_types order by "uuid" ASC;
 
 -- synthese the select commands with order by DESC:
-select 'select "'||name||'" from all_types order by "'||name||'" DESC;' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
+-- select 'select "'||name||'" from all_types order by "'||name||'" DESC;' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
 
 select "boolean" from all_types order by "boolean" DESC;
 select "tinyint" from all_types order by "tinyint" DESC;
@@ -277,57 +277,57 @@ select type, name from sys.idxs where table_id in (select id from sys._tables wh
 
 --cleanup
 -- synthese the drop index commands:
-select 'drop index "oidx_'||name||'";' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
+-- select 'drop index "impidx_'||name||'";' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
 
-drop index "oidx_boolean";
-drop index "oidx_tinyint";
-drop index "oidx_smallint";
-drop index "oidx_int";
-drop index "oidx_bigint";
-drop index "oidx_double";
-drop index "oidx_real";
-drop index "oidx_decimal";
-drop index "oidx_decimal9";
-drop index "oidx_decimal83";
-drop index "oidx_float";
-drop index "oidx_float9";
-drop index "oidx_float83";
-drop index "oidx_date";
-drop index "oidx_iY";
-drop index "oidx_iYM";
-drop index "oidx_iM";
-drop index "oidx_id";
-drop index "oidx_idh";
-drop index "oidx_idm";
-drop index "oidx_ids";
-drop index "oidx_ih";
-drop index "oidx_ihm";
-drop index "oidx_ihs";
-drop index "oidx_im";
-drop index "oidx_ims";
-drop index "oidx_is";
-drop index "oidx_timestamp";
-drop index "oidx_timestamp5";
-drop index "oidx_timestampzone";
-drop index "oidx_timestamp5zone";
-drop index "oidx_time";
-drop index "oidx_time5";
-drop index "oidx_timezone";
-drop index "oidx_time5zone";
-drop index "oidx_blob";
-drop index "oidx_blob100";
-drop index "oidx_clob";
-drop index "oidx_clob100";
-drop index "oidx_character";
-drop index "oidx_varchar100";
-drop index "oidx_character10";
-drop index "oidx_inet";
-drop index "oidx_inet9";
-drop index "oidx_json";
-drop index "oidx_json10";
-drop index "oidx_url";
-drop index "oidx_url55";
-drop index "oidx_uuid";
+drop index "impidx_boolean";
+drop index "impidx_tinyint";
+drop index "impidx_smallint";
+drop index "impidx_int";
+drop index "impidx_bigint";
+drop index "impidx_double";
+drop index "impidx_real";
+drop index "impidx_decimal";
+drop index "impidx_decimal9";
+drop index "impidx_decimal83";
+drop index "impidx_float";
+drop index "impidx_float9";
+drop index "impidx_float83";
+drop index "impidx_date";
+drop index "impidx_iY";
+drop index "impidx_iYM";
+drop index "impidx_iM";
+drop index "impidx_id";
+drop index "impidx_idh";
+drop index "impidx_idm";
+drop index "impidx_ids";
+drop index "impidx_ih";
+drop index "impidx_ihm";
+drop index "impidx_ihs";
+drop index "impidx_im";
+drop index "impidx_ims";
+drop index "impidx_is";
+drop index "impidx_timestamp";
+drop index "impidx_timestamp5";
+drop index "impidx_timestampzone";
+drop index "impidx_timestamp5zone";
+drop index "impidx_time";
+drop index "impidx_time5";
+drop index "impidx_timezone";
+drop index "impidx_time5zone";
+drop index "impidx_blob";
+drop index "impidx_blob100";
+drop index "impidx_clob";
+drop index "impidx_clob100";
+drop index "impidx_character";
+drop index "impidx_varchar100";
+drop index "impidx_character10";
+drop index "impidx_inet";
+drop index "impidx_inet9";
+drop index "impidx_json";
+drop index "impidx_json10";
+drop index "impidx_url";
+drop index "impidx_url55";
+drop index "impidx_uuid";
 
 -- dump the table again, now it should not list any indexes anymore
 \D all_types

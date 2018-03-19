@@ -71,11 +71,11 @@ SQLhelp sqlhelp[] = {
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/SerialTypes"},
 	{"ALTER USER",
 	 "",
-	 "ALTER USER ident  WITH [ ENCRYPTED | UNENCRYPTED] PASSWORD string\n"
-	 "ALTER USER ident  SET SCHEMA ident\n"
-	 "ALTER USER ident  WITH [ENCRYPTED | UNENCRYPTED] PASSWORD SET SCHEMA ident\n"
+	 "ALTER USER ident WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string\n"
+	 "ALTER USER ident SET SCHEMA schemaname\n"
+	 "ALTER USER ident WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string SET SCHEMA schemaname\n"
 	 "ALTER USER RENAME TO ident\n"
-	 "ALTER USER SET [ ENCRYPTED | UNENCRYPTED] PASSWORD string USING OLD PASSWORD string",
+	 "ALTER USER SET [ENCRYPTED | UNENCRYPTED] PASSWORD string USING OLD PASSWORD string",
 	 NULL,
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Users"},
 	{"ANALYZE",
