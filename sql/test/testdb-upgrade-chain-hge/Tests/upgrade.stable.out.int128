@@ -5711,6 +5711,16 @@ ALTER TABLE sys.function_languages SET READ ONLY;
 set schema "testschema";
 commit;
 
+Running database upgrade commands:
+set schema sys;
+create aggregate group_concat(str string) returns string external name "aggr"."str_group_concat";
+grant execute on aggregate group_concat(string) to public;
+create aggregate group_concat(str string, sep string) returns string external name "aggr"."str_group_concat";
+grant execute on aggregate group_concat(string, string) to public;
+insert into sys.systemfunctions (select id from sys.functions where name in ('group_concat') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+set schema "testschema";
+commit;
+
 
 # 13:50:54 >  
 # 13:50:54 >  "/usr/bin/python2" "upgrade.SQL.py" "upgrade"

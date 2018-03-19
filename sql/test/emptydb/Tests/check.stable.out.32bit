@@ -190,6 +190,7 @@ Ready.
 \dSf sys."getquery"
 \dSf sys."getroboturl"
 \dSf sys."getuser"
+\dSf sys."group_concat"
 \dSf sys."has_m"
 \dSf sys."has_z"
 \dSf sys."hashsize"
@@ -1024,6 +1025,8 @@ create function getprotocol(theurl url) returns string external name url."getPro
 create function getquery(theurl url) returns string external name url."getQuery";
 create function getroboturl(theurl url) returns string external name url."getRobotURL";
 create function getuser(theurl url) returns string external name url."getUser";
+create aggregate sys.group_concat(str string) returns string external name "aggr"."str_group_concat";
+create aggregate sys.group_concat(str string, sep string) returns string external name "aggr"."str_group_concat";
 create function has_m(info integer) returns integer external name geom."hasM";
 create function has_z(info integer) returns integer external name geom."hasZ";
 create function sys.hashsize(b boolean, i bigint) returns bigint begin if b = true then return 8 * i; end if; return 0; end;
@@ -2337,6 +2340,8 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"getquery",	"create function getquery(theurl url) returns string external name url.\"getQuery\";",	"url",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"clob",	0,	0,	"out",	"theurl",	"url",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"getroboturl",	"create function getroboturl(theurl url) returns string external name url.\"getRobotURL\";",	"url",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"clob",	0,	0,	"out",	"theurl",	"url",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"getuser",	"create function getuser(theurl url) returns string external name url.\"getUser\";",	"url",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"clob",	0,	0,	"out",	"theurl",	"url",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"group_concat",	"create aggregate sys.group_concat(str string) returns string external name \"aggr\".\"str_group_concat\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"clob",	0,	0,	"out",	"str",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"group_concat",	"create aggregate sys.group_concat(str string, sep string) returns string external name \"aggr\".\"str_group_concat\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"clob",	0,	0,	"out",	"str",	"clob",	0,	0,	"in",	"sep",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"has_m",	"create function has_m(info integer) returns integer external name geom.\"hasM\";",	"geom",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"int",	32,	0,	"out",	"info",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"has_z",	"create function has_z(info integer) returns integer external name geom.\"hasZ\";",	"geom",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"int",	32,	0,	"out",	"info",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"hash",	"hash",	"mkey",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"bigint",	64,	0,	"out",	"arg_1",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -4680,6 +4685,8 @@ drop function pcre_replace(string, string, string, string);
 [ "getquery",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "getroboturl",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "getuser",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "group_concat",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "group_concat",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "has_m",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "has_z",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "host",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -5161,6 +5168,8 @@ drop function pcre_replace(string, string, string, string);
 [ "getquery"	]
 [ "getroboturl"	]
 [ "getuser"	]
+[ "group_concat"	]
+[ "group_concat"	]
 [ "has_m"	]
 [ "has_z"	]
 [ "hash"	]
