@@ -690,7 +690,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 		    b->tkey &&
 		    (!(BATtordered(b) || BATtrevordered(b)) ||
 		     !n->tkey || xx == 0)) {
-			BATkey(b, FALSE);
+			BATkey(b, false);
 		}
 		if (b->ttype != TYPE_void && b->tsorted && b->tdense &&
 		    (BATtdense(n) == 0 ||
@@ -991,7 +991,7 @@ BATslice(BAT *b, BUN l, BUN h)
 	if (bn->batCount <= 1) {
 		bn->tsorted = ATOMlinear(b->ttype);
 		bn->trevsorted = ATOMlinear(b->ttype);
-		BATkey(bn, 1);
+		BATkey(bn, true);
 	} else {
 		bn->tsorted = b->tsorted;
 		bn->trevsorted = b->trevsorted;

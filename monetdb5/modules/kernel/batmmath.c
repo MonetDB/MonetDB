@@ -87,7 +87,7 @@ str CMDscience_bat_##TYPE##_##FUNC(bat *ret, const bat *bid)		\
 	bn->trevsorted = 0;												\
 	bn->tnil = b->tnil;												\
 	bn->tnonil = b->tnonil;											\
-	BATkey(bn, 0);													\
+	BATkey(bn, false);												\
 	BBPkeepref(*ret = bn->batCacheid);								\
 	BBPunfix(b->batCacheid);										\
 	return MAL_SUCCEED;												\
@@ -139,7 +139,7 @@ str CMDscience_bat_cst_##FUNC##_##TYPE(bat *ret, const bat *bid,		\
 	bn->trevsorted = 0;													\
 	bn->tnil = b->tnil;													\
 	bn->tnonil = b->tnonil;												\
-	BATkey(bn,0);														\
+	BATkey(bn, false);													\
 	BBPkeepref(*ret = bn->batCacheid);									\
 	BBPunfix(b->batCacheid);											\
 	return MAL_SUCCEED;													\
@@ -190,7 +190,7 @@ str CMDscience_cst_bat_##FUNC##_##TYPE(bat *ret, const TYPE *d,			\
 	bn->trevsorted = 0;													\
 	bn->tnil = b->tnil;													\
 	bn->tnonil = b->tnonil;												\
-	BATkey(bn,0);														\
+	BATkey(bn, false);													\
 	BBPkeepref(*ret = bn->batCacheid);									\
 	BBPunfix(b->batCacheid);											\
 	return MAL_SUCCEED;													\

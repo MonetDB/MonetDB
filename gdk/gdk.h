@@ -1299,7 +1299,7 @@ bat_iterator(BAT *b)
  * @item void
  * @tab BATsetcount (BAT *b, BUN cnt)
  * @item BAT *
- * @tab BATkey (BAT *b, int onoff)
+ * @tab BATkey (BAT *b, bool onoff)
  * @item BAT *
  * @tab BATmode (BAT *b, int mode)
  * @item BAT *
@@ -1341,7 +1341,7 @@ gdk_export BUN BATcount_no_nil(BAT *b);
 gdk_export void BATsetcapacity(BAT *b, BUN cnt);
 gdk_export void BATsetcount(BAT *b, BUN cnt);
 gdk_export BUN BATgrows(BAT *b);
-gdk_export gdk_return BATkey(BAT *b, int onoff);
+gdk_export gdk_return BATkey(BAT *b, bool onoff);
 gdk_export gdk_return BATmode(BAT *b, int onoff);
 gdk_export gdk_return BATroles(BAT *b, const char *tnme);
 gdk_export void BAThseqbase(BAT *b, oid o);

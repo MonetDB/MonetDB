@@ -496,7 +496,7 @@ BKCsetkey(bat *res, const bat *bid, const bit *param)
 			BBPunfix(b->batCacheid);
 			throw(MAL, "bat.setKey", "values of bat not unique, cannot set key property");
 		}
-		BATkey(b, 1);
+		BATkey(b, true);
 		b->tunique = 1;
 	} else {
 		b->tunique = 0;

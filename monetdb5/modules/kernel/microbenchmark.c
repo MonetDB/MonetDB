@@ -50,7 +50,7 @@ BATrandom(BAT **bn, oid *base, lng *size, int *domain, int seed)
 		b->tsorted = 1;
 		b->trevsorted = 0;
 		b->tdense = FALSE;
-		BATkey(b, TRUE);
+		BATkey(b, true);
 		*bn = b;
 		return GDK_SUCCEED;
 	}
@@ -79,7 +79,7 @@ BATrandom(BAT **bn, oid *base, lng *size, int *domain, int seed)
 	b->tsorted = FALSE;
 	b->trevsorted = FALSE;
 	b->tdense = FALSE;
-	BATkey(b, FALSE);
+	BATkey(b, false);
 	*bn = b;
 	return GDK_SUCCEED;
 }
@@ -110,7 +110,7 @@ BATuniform(BAT **bn, oid *base, lng *size, int *domain)
 		b->tsorted = 1;
 		b->trevsorted = 0;
 		b->tdense = FALSE;
-		BATkey(b, TRUE);
+		BATkey(b, true);
 		*bn = b;
 		return GDK_SUCCEED;
 	}
@@ -173,7 +173,7 @@ BATskewed(BAT **bn, oid *base, lng *size, int *domain, int *skew)
 		b->tsorted = 1;
 		b->trevsorted = 0;
 		b->tdense = FALSE;
-		BATkey(b, TRUE);
+		BATkey(b, true);
 		*bn = b;
 		return GDK_SUCCEED;
 	}
@@ -254,7 +254,7 @@ BATnormal(BAT **bn, oid *base, lng *size, int *domain, int *stddev, int *mean)
 		b->tsorted = 1;
 		b->trevsorted = 0;
 		b->tdense = FALSE;
-		BATkey(b, TRUE);
+		BATkey(b, true);
 		*bn = b;
 		return GDK_SUCCEED;
 	}

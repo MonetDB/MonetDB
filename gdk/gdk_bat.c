@@ -830,7 +830,7 @@ COLcopy(BAT *b, int tt, int writable, int role)
 		bn->trevsorted = b->trevsorted;
 		bn->tdense = b->tdense && ATOMtype(bn->ttype) == TYPE_oid;
 		if (b->tkey)
-			BATkey(bn, TRUE);
+			BATkey(bn, true);
 		bn->tnonil = b->tnonil;
 		if (b->tnosorted > 0 && b->tnosorted < h)
 			bn->tnosorted = b->tnosorted;
@@ -1210,7 +1210,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 	} else if (b->tnorevsorted >= p)
 		b->tnorevsorted = 0;
 	if (((b->ttype != TYPE_void) & b->tkey & !b->tunique) && b->batCount > 1) {
-		BATkey(b, FALSE);
+		BATkey(b, false);
 	} else if (!b->tkey && (b->tnokey[0] == p || b->tnokey[1] == p))
 		b->tnokey[0] = b->tnokey[1] = 0;
 	if (b->tnonil)
@@ -1427,25 +1427,24 @@ BATsetcount(BAT *b, BUN cnt)
  * key property of the association head.
  */
 gdk_return
-BATkey(BAT *b, int flag)
+BATkey(BAT *b, bool flag)
 {
 	BATcheck(b, "BATkey", GDK_FAIL);
 	assert(b->batCacheid > 0);
-	assert(flag == 0 || flag == 1);
 	assert(!b->tunique || flag);
 	if (b->ttype == TYPE_void) {
-		if (!is_oid_nil(b->tseqbase) && flag == FALSE) {
+		if (!is_oid_nil(b->tseqbase) && !flag) {
 			GDKerror("BATkey: dense column must be unique.\n");
 			return GDK_FAIL;
 		}
-		if (is_oid_nil(b->tseqbase) && flag == TRUE && b->batCount > 1) {
+		if (is_oid_nil(b->tseqbase) && flag && b->batCount > 1) {
 			GDKerror("BATkey: void column cannot be unique.\n");
 			return GDK_FAIL;
 		}
 	}
-	if (b->tkey != (flag != 0))
+	if (b->tkey != flag)
 		b->batDirtydesc = TRUE;
-	b->tkey = flag != 0;
+	b->tkey = flag;
 	if (!flag)
 		b->tdense = 0;
 	else
@@ -1459,7 +1458,7 @@ BATkey(BAT *b, int flag)
 		    !BATtkey(bp) &&
 		    ((BATtvoid(b) && BATtvoid(bp) && b->tseqbase == bp->tseqbase) ||
 		     BATcount(b) == 0))
-			return BATkey(bp, TRUE);
+			return BATkey(bp, true);
 	}
 	return GDK_SUCCEED;
 }
@@ -1513,7 +1512,7 @@ BATtseqbase(BAT *b, oid o)
 				}
 			} else {
 				if (!b->tkey) {
-					b->tkey = TRUE;
+					b->tkey = true;
 					b->tnokey[0] = b->tnokey[1] = 0;
 				}
 				b->tnonil = 1;

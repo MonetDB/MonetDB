@@ -1613,7 +1613,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		res = u;
 	}
-	BATkey(res, TRUE);
+	BATkey(res, true);
 	BBPkeepref(*result = res->batCacheid);
 	return MAL_SUCCEED;
 }

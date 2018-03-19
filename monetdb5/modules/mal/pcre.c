@@ -1505,7 +1505,7 @@ BATPCRElike3(bat *ret, const bat *bid, const str *pat, const str *esc, const bit
 		BATsetcount(r, i);
 		r->tsorted = 0;
 		r->trevsorted = 0;
-		BATkey(r, FALSE);
+		BATkey(r, false);
 
 		BBPkeepref(*ret = r->batCacheid);
 		BBPunfix(strs->batCacheid);

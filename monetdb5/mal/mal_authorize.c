@@ -173,7 +173,7 @@ AUTHinitTables(const char *passwd) {
 		if (user == NULL)
 			throw(MAL, "initTables.user", SQLSTATE(HY001) MAL_MALLOC_FAIL " user table");
 
-		if (BATkey(user, TRUE) != GDK_SUCCEED ||
+		if (BATkey(user, true) != GDK_SUCCEED ||
 			BBPrename(BBPcacheid(user), "M5system_auth_user") != 0 ||
 			BATmode(user, PERSISTENT) != GDK_SUCCEED) {
 			throw(MAL, "initTables.user", GDK_EXCEPTION);
