@@ -30,6 +30,7 @@ stderr of test 'addtable` in directory 'sql/test/mergetables` itself:
 MAPI  = (monetdb) /var/tmp/mtest-19670/.s.monetdb.38251
 QUERY = alter table tmp1 add table tmp2;
 ERROR = !ALTER TABLE: cannot add table 'sys.tmp2' to table 'sys.tmp1'
+CODE  = 42S02
 
 # 13:47:16 >  
 # 13:47:16 >  "Done."

@@ -75,14 +75,6 @@ Ready.
 #   result['n'] = str(res)
 #   return result
 #};
-#SELECT * FROM myfunc();
-% .L1 # table_name
-% n # name
-% clob # type
-% 20 # length
-[ "{'L6': array([ 5.])}"	]
-#DROP TABLE mytable;
-#DROP FUNCTION myfunc;
 #ROLLBACK;
 
 # 14:25:20 >  

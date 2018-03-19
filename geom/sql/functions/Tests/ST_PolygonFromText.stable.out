@@ -71,8 +71,8 @@ Ready.
 [ "POLYGON Z ((20 20 20, 30 30 30, 40 40 40, 20 20 20))"	]
 #drop table polygons_tbl;
 #select st_polygonfromtext(geom) from geometriesTxt WHERE id=3;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % geometry # type
 % 0 # length
 [ "POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10))"	]

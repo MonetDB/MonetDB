@@ -20,7 +20,7 @@ treg = re.compile(r':\s*(bat\[[^]]*\]|[a-zA-Z_][a-zA-Z_0-9]*)')
 expre = re.compile(r'\b[a-zA-Z_0-9]+export\s+(?P<decl>[^;]*;)', re.MULTILINE)
 nmere = re.compile(r'\b(?P<name>[a-zA-Z_][a-zA-Z_0-9]*)\s*[[(;]')
 
-freg = re.compile(r'(?P<rtype>\w+(?:\s*\*)*)\s*\b(?P<name>\w+)\((?P<args>[^()]*)\)')
+freg = re.compile(r'(?P<rtype>(?:const\s+)?\w+(?:\s*\*)*)\s*\b(?P<name>\w+)\((?P<args>[^()]*)\)')
 creg = re.compile(r'\bconst\b')
 sreg = re.compile(r'\bchar\s*\*')
 areg = re.compile(r'\w+')
@@ -46,16 +46,16 @@ atomfunctypes = {
     'cmp': ('int', (('void *', True), ('void *', True))),
     'del': ('void', (('Heap *', False), ('var_t *', False))),
     'fix': ('int', (('void *', True),)),
-    'fromstr': ('int', (('char *', True), ('int *', False), ('ptr *', False))),
+    'fromstr': ('ssize_t', (('char *', True), ('size_t *', False), ('void **', False))),
     'hash': ('BUN', (('void *', True),)),
     'heap': ('void', (('Heap *', False), ('size_t', False))),
-    'length': ('int', (('void *', False),)),
+    'length': ('size_t', (('void *', True),)),
     'nequal': ('int', (('void *', True), ('void *', True))),
-    'null': ('void *', (('void', False),)),
+    'null': ('const void *', (('void', False),)),
     'put': ('var_t', (('Heap *', False), ('var_t *', False), ('void *', True))),
     'read': ('void *', (('void *', False), ('stream *', False), ('size_t', False))),
     'storage': ('long', (('void', False),)),
-    'tostr': ('int', (('str *', False), ('int *', False), ('void *', True))),
+    'tostr': ('ssize_t', (('char **', False), ('size_t *', False), ('void *', True))),
     'unfix': ('int', (('void *', True),)),
     'write': ('gdk_return', (('void *', True), ('stream *', False), ('size_t', False))),
     }
@@ -255,7 +255,7 @@ else:
             crtype, cargs, funcf = odecls[func]
             if len(args) != len(cargs):
                 print '%s in %s: argument count mismatch for command %s for atom %s in %s' % (func, funcf, malf, atom, f)
-            elif rtype != crtype and rtype == 'void *' and crtype != atm + ' *' and (base != 'str' or (crtype != atm and crtype != 'char *')):
+            elif rtype != crtype and (rtype != 'void *' or crtype != atm + ' *') and (rtype != 'const void *' or crtype != 'const ' + atm + ' *'):
                 print '%s in %s: return type mismatch for command %s for atom %s in %s (%s vs %s)' % (func, funcf, malf, atom, f, rtype, crtype)
             else:
                 for i in range(len(args)):
@@ -263,6 +263,14 @@ else:
                     a2, r2 = cargs[i]
                     if r2 and not r1:
                         print 'argument %d of %s in %s incorrectly declared const for atom command %s in %s' % (i+1, func, funcf, malf, f)
-                    if a1 != a2 and a1 == 'void *' and a2 != atm + ' *' and (base != 'str' or (a2 != atm and a2 != 'char *')):
+                    if a1 != a2 and \
+                       (a1 != 'void *' or a2 != atm + ' *') and \
+                       (a1 != 'char **' or a2 != 'str *') and \
+                       (a1 != 'void **' or a2 != atm + ' **') and \
+                       (base != 'str' or a1 != 'void *' or a2 != atm) and \
+                       (base != 'str' or a1 != 'void *' or a2 != 'char *') and \
+                       (base != 'str' or a1 != 'void **' or a2 != atm + ' *') and \
+                       (base != 'str' or a1 != 'void **' or a2 != 'str *') and \
+                       (base != 'str' or a1 != 'char **' or a2 != atm + ' *'):
                         print (a1,a2,atom,base)
                         print '%s in %s: argument %d mismatch for command %s for atom %s in %s (%s vs %s)' % (func, funcf, i+1, malf, atom, f, a1, a2)

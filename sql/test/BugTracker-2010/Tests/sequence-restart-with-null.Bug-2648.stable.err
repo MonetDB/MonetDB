@@ -75,9 +75,11 @@ stderr of test 'sequence-restart-with-null.Bug-2648` in directory 'sql/test/BugT
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = alter sequence testseq_2648 restart with null no cycle;
 ERROR = !syntax error, unexpected sqlNULL, expecting sqlINT or '(' in: "alter sequence testseq_2648 restart with null"
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = alter sequence testseq_2648 restart with (select max(id) from testtbl_2648);
 ERROR = !ALTER SEQUENCE: cannot (re)start with NULL
+CODE  = 42M36
 
 # 20:16:54 >  
 # 20:16:54 >  Done.

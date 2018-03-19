@@ -13,15 +13,19 @@ stderr of test 'autocommit_illegal_statements-bug-sf-953545` in directory 'sql/t
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = ROLLBACK;
 ERROR = !ROLLBACK: not allowed in auto commit mode
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 2DM30
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = COMMIT;
 ERROR = !COMMIT: not allowed in auto commit mode
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 2DM30
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SAVEPOINT failingsavepoint;
 ERROR = !SAVEPOINT: not allowed in auto commit mode
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 3BM30
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = RELEASE SAVEPOINT failingsavepoint;
 ERROR = !RELEASE SAVEPOINT: not allowed in auto commit mode
+CODE  = 3BM30
 
 # 15:22:34 >  
 # 15:22:34 >  Done.

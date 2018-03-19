@@ -12,18 +12,22 @@ stderr of test 'limits_of_decimal.SF-1685357` in directory 'sql/test/BugTracker`
 
 MAPI  = (monetdb) /var/tmp/mtest-9513/.s.monetdb.37125
 QUERY = create table tab1 ( col1 decimal(20,0) not null );
-ERROR = !decimal(20,0) isn't supported because P=20 > 18 in: "create table tab1 ( col1 decimal(20,0)"
+ERROR = !Decimal(20,0) isn't supported because P=20 > 18 in: "create table tab1 ( col1 decimal(20,0)"
         !syntax error, unexpected NOT in: "not"
+CODE  = 22003
 MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = drop table tab1;
 ERROR = !DROP TABLE: no such table 'tab1'
+CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = create table tab2 ( col1 decimal(40,0) not null );
-ERROR = !decimal(40,0) isn't supported because P=40 > 18 in: "create table tab2 ( col1 decimal(40,0)"
+ERROR = !Decimal(40,0) isn't supported because P=40 > 18 in: "create table tab2 ( col1 decimal(40,0)"
         !syntax error, unexpected NOT in: "not"
+CODE  = 22003
 MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = drop table tab2;
 ERROR = !DROP TABLE: no such table 'tab2'
+CODE  = 42S02
 
 # 10:32:42 >  
 # 10:32:42 >  Done.

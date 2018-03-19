@@ -30,106 +30,136 @@ stderr of test 'convert-function-test-hge.Bug-3460` in directory 'sql/test/BugTr
 
 MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
 QUERY = SELECT v, convert(v, bit) from T_hugeint; -- BIT not valid data type
-ERROR = !type (bit) unknown in: "select v, convert(v, bit)"
+ERROR = !Type (bit) unknown in: "select v, convert(v, bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 22000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varchar) from T_hugeint; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarchar) from T_hugeint; -- LONGVARCHAR not valid data type
-ERROR = !type (longvarchar) unknown in: "select v, convert(v, longvarchar)"
+ERROR = !Type (longvarchar) unknown in: "select v, convert(v, longvarchar)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 22000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, long varchar) from T_hugeint; -- LONG VARCHAR not valid data type
-ERROR = !type (long) unknown in: "select v, convert(v, long varchar"
+ERROR = !Type (long) unknown in: "select v, convert(v, long varchar"
         !syntax error, unexpected ')' in: ")"
-MAPI  = (monetdb) /var/tmp/mtest-10564/.s.monetdb.32160
+CODE  = 22000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Binary) from T_hugeint; -- BINARY not valid data type
 ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, convert(v, binary)"
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varBinary) from T_hugeint; -- VARBINARY not valid data type
-ERROR = !type (varbinary) unknown in: "select v, convert(v, varbinary)"
+ERROR = !Type (varbinary) unknown in: "select v, convert(v, varbinary)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 22000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarBinary) from T_hugeint; -- LONGVARBINARY not valid data type
-ERROR = !type (longvarbinary) unknown in: "select v, convert(v, longvarbinary)"
+ERROR = !Type (longvarbinary) unknown in: "select v, convert(v, longvarbinary)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 22000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Blob) from T_hugeint; -- conversion not supported
 ERROR = !types hugeint(128,0) and blob(0,0) are not equal for column 'v'
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, date) from T_hugeint; -- conversion not supported
 ERROR = !types hugeint(128,0) and date(0,0) are not equal for column 'v'
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, time) from T_hugeint; -- conversion not supported
 ERROR = !types hugeint(128,0) and time(1,0) are not equal for column 'v'
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, timestamp) from T_hugeint; -- conversion not supported
 ERROR = !types hugeint(128,0) and timestamp(7,0) are not equal for column 'v'
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, time with timezone) from T_hugeint; -- data type not supported (parse error)
 ERROR = !syntax error, unexpected IDENT, expecting TIME in: "select v, convert(v, time with timezone"
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, timestamp with timezone) from T_hugeint; -- data type not supported (parse error)
 ERROR = !syntax error, unexpected IDENT, expecting TIME in: "select v, convert(v, timestamp with timezone"
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, timetz) from T_hugeint; -- conversion not supported
 ERROR = !types hugeint(128,0) and timetz(7,0) are not equal for column 'v'
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, timestamptz) from T_hugeint; -- conversion not supported
 ERROR = !types hugeint(128,0) and timestamptz(7,0) are not equal for column 'v'
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as bit) from T_hugeint; -- BIT not valid data type
-ERROR = !type (bit) unknown in: "select v, cast(v as bit)"
+ERROR = !Type (bit) unknown in: "select v, cast(v as bit)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 22000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varchar) from T_hugeint; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarchar) from T_hugeint; -- LONGVARCHAR not valid data type
-ERROR = !type (longvarchar) unknown in: "select v, cast(v as longvarchar)"
+ERROR = !Type (longvarchar) unknown in: "select v, cast(v as longvarchar)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 22000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as long varchar) from T_hugeint; -- LONG VARCHAR not valid data type
-ERROR = !type (long) unknown in: "select v, cast(v as long varchar"
+ERROR = !Type (long) unknown in: "select v, cast(v as long varchar"
         !syntax error, unexpected ')' in: ")"
-MAPI  = (monetdb) /var/tmp/mtest-10564/.s.monetdb.32160
+CODE  = 22000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Binary) from T_hugeint; -- BINARY not valid data type
 ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, cast(v as binary)"
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varBinary) from T_hugeint; -- VARBINARY not valid data type
-ERROR = !type (varbinary) unknown in: "select v, cast(v as varbinary)"
+ERROR = !Type (varbinary) unknown in: "select v, cast(v as varbinary)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 22000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarBinary) from T_hugeint; -- LONGVARBINARY not valid data type
-ERROR = !type (longvarbinary) unknown in: "select v, cast(v as longvarbinary)"
+ERROR = !Type (longvarbinary) unknown in: "select v, cast(v as longvarbinary)"
         !syntax error, unexpected FROM in: "from"
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 22000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Blob) from T_hugeint; -- conversion not supported
 ERROR = !types hugeint(128,0) and blob(0,0) are not equal for column 'v'
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as date) from T_hugeint; -- conversion not supported
 ERROR = !types hugeint(128,0) and date(0,0) are not equal for column 'v'
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as time) from T_hugeint; -- conversion not supported
 ERROR = !types hugeint(128,0) and time(1,0) are not equal for column 'v'
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as timestamp) from T_hugeint; -- conversion not supported
 ERROR = !types hugeint(128,0) and timestamp(7,0) are not equal for column 'v'
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as time with timezone) from T_hugeint; -- data type not supported (parse error)
 ERROR = !syntax error, unexpected IDENT, expecting TIME in: "select v, cast(v as time with timezone"
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as timestamp with timezone) from T_hugeint; -- data type not supported (parse error)
 ERROR = !syntax error, unexpected IDENT, expecting TIME in: "select v, cast(v as timestamp with timezone"
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as timetz) from T_hugeint; -- conversion not supported
 ERROR = !types hugeint(128,0) and timetz(7,0) are not equal for column 'v'
-MAPI  = (monetdb) /var/tmp/mtest-11655/.s.monetdb.36439
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as timestamptz) from T_hugeint; -- conversion not supported
 ERROR = !types hugeint(128,0) and timestamptz(7,0) are not equal for column 'v'
+CODE  = 42000
 
 # 19:15:22 >  
 # 19:15:22 >  "Done."

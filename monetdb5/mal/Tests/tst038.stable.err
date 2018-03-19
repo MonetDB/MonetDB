@@ -41,7 +41,7 @@ QUERY = #test the capability to deal with unspecified bats.
         #The call to tst2 fails at runtime
         user.tst2(b);
 ERROR = !TypeException:user.tst2[1]:'bat.append' undefined in:     bat.append(b:bat[:int], "hello":str);
-        !MALException:user.tst2[0]:Error in cloned function
+        !TypeException:user.main[0]:Error in cloned function
         !TypeException:user.main[4]:'user.tst2' undefined in:     user.tst2(b:bat[:int]);
 
 # 11:43:41 >  

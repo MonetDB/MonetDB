@@ -69,8 +69,8 @@ Ready.
 #COPY INTO bug3813 FROM '/home/sjoerd/src/MonetDB/stable/sql/test/BugTracker-2015/Tests/batting.csv.gz' USING DELIMITERS ',','\n','"' NULL AS '';
 [ 99846	]
 #SELECT COUNT(*) FROM bug3813;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 5 # length
 [ 99846	]

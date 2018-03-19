@@ -2,7 +2,7 @@
 .. License, v. 2.0.  If a copy of the MPL was not distributed with this
 .. file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ..
-.. Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+.. Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
 Dumping the SQL database
 ------------------------
@@ -33,7 +33,9 @@ It is also possible to dump from the command line.  Start a SQL
 Server, and then issue the command
 
 ::
-	msqldump -umonetdb -Pmonetdb > dump.sql
+	msqldump -umonetdb > dump.sql
+
+You will need to provide the password (monetdb).
 
 This command will connect to the SQL Server and dump the database into
 the file dump.sql in the current directory.
@@ -52,10 +54,16 @@ In the SQL Client, type the following command.
 	<.../dump.sql
 
 That is, a less than symbol followed by the absolute (!) path name of
-the dump file that was produced using the dump instructions.
+the dump file that was produced using the dump instructions.   Again,
+unless you use an absolute path name, the file name is relative to
+where the SQL client was started, which on Windows may not be where
+you expect.
 
 It is also possible to restore from the command line.  Start a SQL
 Server, and then issue the command
 
 ::
-	mclient -lsql -umonetdb -Pmonetdb < dump.sql
+	mclient -lsql -umonetdb < dump.sql
+
+You will need to provide the password (monetdb).
+

@@ -31,8 +31,8 @@ Ready.
 #FROM A
 #WHERE a BETWEEN 11.999 AND 12 OR
 #a BETWEEN 19.999 AND 2.001E1;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 3	]

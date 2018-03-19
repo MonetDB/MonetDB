@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -61,7 +61,7 @@ get_ordering(str ord)
 }
 
 
-#define ERR_INIT_BAM_WRAPPER "Could not initialize wrapper for BAM file '%s': "
+#define ERR_INIT_BAM_WRAPPER SQLSTATE(BA000) "Could not initialize wrapper for BAM file '%s': "
 /**
  * Takes a bam_wrapper and initializes it. Note that in order for the
  * accompanying clear function to work, the bam_wrapper should be
@@ -156,10 +156,14 @@ init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
 				  file_location);
 		}
 		if ((bw->sam.header = (str)GDKmalloc(bufsize * sizeof(char))) == NULL) {
-			throw(MAL, "init_bam_wrapper", MAL_MALLOC_FAIL);
+			throw(MAL, "init_bam_wrapper", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		while (TRUE) {
-			int read = mnstr_readline(bw->sam.input, bw->sam.header + header_len, bufsize - header_len);
+			ssize_t read;
+			fpos_t header_pos;
+
+			mnstr_fgetpos(bw->sam.input, &header_pos);
+			read = mnstr_readline(bw->sam.input, bw->sam.header + header_len, bufsize - header_len);
 
 			if (read <= 0) {
 				throw(MAL, "init_bam_wrapper",
@@ -170,7 +174,7 @@ init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
 			if (bw->sam.header[header_len] != '@') {
 				/* This is not a header line, we assume that the header is finished.
 				 * Rewind stream to start of line and stop reading */
-				if (mnstr_fsetpos(bw->sam.input, header_len) < 0) {
+				if (mnstr_fsetpos(bw->sam.input, &header_pos) < 0) {
 					throw(MAL, "init_bam_wrapper",
 					  ERR_INIT_BAM_WRAPPER "Could not read last line of SAM header",
 					  file_location);
@@ -185,10 +189,10 @@ init_bam_wrapper(bam_wrapper * bw, filetype type, str file_location,
 				str tmp;
 				bufsize *= 2;
 				if ((tmp = GDKrealloc(bw->sam.header, bufsize * sizeof(char))) == NULL) {
-					throw(MAL, "init_bam_wrapper", MAL_MALLOC_FAIL);
+					throw(MAL, "init_bam_wrapper", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				}
 				bw->sam.header = tmp;
-				if (mnstr_fsetpos(bw->sam.input, header_len) < 0) {
+				if (mnstr_fsetpos(bw->sam.input, &header_pos) < 0) {
 					throw(MAL, "init_bam_wrapper",
 					  ERR_INIT_BAM_WRAPPER "Could not read last line of SAM header",
 					  file_location);
@@ -407,27 +411,27 @@ clear_bam_wrapper(bam_wrapper * bw)
 
 	/* And remove the write stream files that still exist */
 	for (i = 0; i < 6; ++i) {
-		unlink(bw->fp_files[i]);
+		remove(bw->fp_files[i]);
 	}
 	for (i = 0; i < 7; ++i) {
-		unlink(bw->fp_sq[i]);
+		remove(bw->fp_sq[i]);
 	}
 	for (i = 0; i < 13; ++i) {
-		unlink(bw->fp_rg[i]);
+		remove(bw->fp_rg[i]);
 	}
 	for (i = 0; i < 6; ++i) {
-		unlink(bw->fp_pg[i]);
+		remove(bw->fp_pg[i]);
 	}
 	for (i = 0; i < 12; ++i) {
-		unlink(bw->fp_alignments[i]);
+		remove(bw->fp_alignments[i]);
 	}
 	for (i = 0; i < 4; ++i) {
-		unlink(bw->fp_alignments_extra[i]);
+		remove(bw->fp_alignments_extra[i]);
 	}
 	if (bw->dbschema == 1) {
 		for (i = 0; i < 23; ++i) {
-			unlink(bw->fp_alignments_paired_primary[i]);
-			unlink(bw->fp_alignments_paired_primary[i]);
+			remove(bw->fp_alignments_paired_primary[i]);
+			remove(bw->fp_alignments_paired_primary[i]);
 		}
 	}
 
@@ -510,7 +514,7 @@ typedef struct bam_header_line {
 } bam_header_line;
 
 
-#define ERR_PROCESS_HEADER_LINE "Could not parse a header line in BAM file '%s': "
+#define ERR_PROCESS_HEADER_LINE SQLSTATE(BA000) "Could not parse a header line in BAM file '%s': "
 
 /**
  * Parses the next BAM header line from the given header.
@@ -573,7 +577,7 @@ process_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 			 (bam_header_option *)
 			 GDKmalloc(sizeof(bam_header_option))) == NULL) {
 			throw(MAL, "process_header_line",
-				  MAL_MALLOC_FAIL);
+				  SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 
 		/* indicate that no tag exists for this option */
@@ -582,7 +586,7 @@ process_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 			-1) {
 			GDKfree(opt);
 			throw(MAL, "process_header_line",
-				  MAL_MALLOC_FAIL);
+				  SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		/* option only has to point to a single
 		 * bam_header_option in this case */
@@ -594,7 +598,7 @@ process_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 	/* reserve enough space for the options (max 12 for RG) */
 	if ((ret_hl->options =
 		 GDKmalloc(12 * sizeof(bam_header_option))) == NULL) {
-		throw(MAL, "process_header_line", MAL_MALLOC_FAIL);
+		throw(MAL, "process_header_line", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	/* Enables clear function to check individual options */
@@ -646,7 +650,7 @@ process_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 		if (read_string_until_delim(header, &opt->value, "\t\n\0", 3)
 			== -1) {
 			throw(MAL, "process_header_line",
-				  MAL_MALLOC_FAIL);
+				  SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 
@@ -655,7 +659,7 @@ process_header_line(str * header, bam_header_line * ret_hl, bit * eof,
 	opt = GDKrealloc(ret_hl->options,
 					 ret_hl->nr_options * sizeof(bam_header_option));
 	if (opt == NULL)
-		throw(MAL, "process_header_line", MAL_MALLOC_FAIL);
+		throw(MAL, "process_header_line", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	ret_hl->options = opt;
 
 	return MAL_SUCCEED;
@@ -683,7 +687,7 @@ clear_bam_header_line(bam_header_line * hl)
 /**
  * Macros for appending data to the streams, evaluate to 0 on failure
  */
-#define APPEND_STR(strm, s) (mnstr_writeBteArray(strm, (signed char*)s, strlen(s)) && mnstr_writeBte(strm, '\n'))
+#define APPEND_STR(strm, s) (mnstr_writeBteArray(strm, (int8_t*)s, strlen(s)) && mnstr_writeBte(strm, '\n'))
 #define APPEND_SHT(strm, i) mnstr_writeSht(strm, i)
 #define APPEND_INT(strm, i) mnstr_writeInt(strm, i)
 #define APPEND_LNG(strm, i) mnstr_writeLng(strm, i)
@@ -1457,14 +1461,14 @@ typedef bit (*buffer_check)(alignment *, int);
 /**
  * Macro's for building alignment processing errors
  */
-#define ERR_PROCESS_ALIGNMENT "Could not process alignment for BAM file '%s': "
+#define ERR_PROCESS_ALIGNMENT SQLSTATE(BA000) "Could not process alignment for BAM file '%s': "
 #define WRITE_ERR_PROCESS_ALIGNMENT(field) \
 	throw(MAL, "process_alignments", ERR_PROCESS_ALIGNMENT "Could not write field '%s' to binary file", bw->file_location, field)
 
 static inline int
 next_alignment_field(stream * input, alignment * a,
 	str buffer, buffer_check bc, bit delim_tab, bit * eol, bit * eof) {
-	signed char c;
+	int8_t c;
 	int index = 0;
 	if (mnstr_readBte(input, &c) == 0) {
 		*eof = TRUE;
@@ -1505,67 +1509,67 @@ next_sam_alignment(stream * input, lng virtual_offset,
 			 * the file just ended */
 			return MAL_SUCCEED;
 		}
-		throw(MAL, "next_sam_alignment", "Unexpected end of line (after qname)");
+		throw(MAL, "next_sam_alignment", SQLSTATE(BA000) "Unexpected end of line (after qname)");
 	}
 
 	/* flag */
 	if (next_alignment_field(input, a, lngbuf, NULL, TRUE, &eol, eof) < 0 || eol || *eof) {
-		throw(MAL, "next_sam_alignment", "Unexpected end of line (after flag)");
+		throw(MAL, "next_sam_alignment", SQLSTATE(BA000) "Unexpected end of line (after flag)");
 	}
 	a->flag = strtol(lngbuf, NULL, 10);
 
 	/* rname */
 	if (next_alignment_field(input, a, a->rname,
 			check_rname_rnext_buffers, TRUE, &eol, eof) < 0 || eol || *eof) {
-		throw(MAL, "next_sam_alignment", "Unexpected end of line (after rname)");
+		throw(MAL, "next_sam_alignment", SQLSTATE(BA000) "Unexpected end of line (after rname)");
 	}
 
 	/* pos */
 	if (next_alignment_field(input, a, lngbuf, NULL, TRUE, &eol, eof) < 0 || eol || *eof) {
-		throw(MAL, "next_sam_alignment", "Unexpected end of line (after pos)");
+		throw(MAL, "next_sam_alignment", SQLSTATE(BA000) "Unexpected end of line (after pos)");
 	}
 	a->pos = strtol(lngbuf, NULL, 10);
 
 	/* mapq */
 	if (next_alignment_field(input, a, lngbuf, NULL, TRUE, &eol, eof) < 0 || eol || *eof) {
-		throw(MAL, "next_sam_alignment", "Unexpected end of line (after mapq)");
+		throw(MAL, "next_sam_alignment", SQLSTATE(BA000) "Unexpected end of line (after mapq)");
 	}
 	a->mapq = strtol(lngbuf, NULL, 10);
 
 	/* cigar */
 	if (next_alignment_field(input, a, a->cigar,
 			check_cigar_buffer, TRUE, &eol, eof) < 0 || eol || *eof) {
-		throw(MAL, "next_sam_alignment", "Unexpected end of line (after cigar)");
+		throw(MAL, "next_sam_alignment", SQLSTATE(BA000) "Unexpected end of line (after cigar)");
 	}
 
 	/* rnext */
 	if (next_alignment_field(input, a, a->rnext,
 			check_rname_rnext_buffers, TRUE, &eol, eof) < 0 || eol || *eof) {
-		throw(MAL, "next_sam_alignment", "Unexpected end of line (after rnext)");
+		throw(MAL, "next_sam_alignment", SQLSTATE(BA000) "Unexpected end of line (after rnext)");
 	}
 
 	/* pnext */
 	if (next_alignment_field(input, a, lngbuf, NULL, TRUE, &eol, eof) < 0 || eol || *eof) {
-		throw(MAL, "next_sam_alignment", "Unexpected end of line (after pnext)");
+		throw(MAL, "next_sam_alignment", SQLSTATE(BA000) "Unexpected end of line (after pnext)");
 	}
 	a->pnext = strtol(lngbuf, NULL, 10);
 
 	/* tlen */
 	if (next_alignment_field(input, a, lngbuf, NULL, TRUE, &eol, eof) < 0 || eol || *eof) {
-		throw(MAL, "next_sam_alignment", "Unexpected end of line (after tlen)");
+		throw(MAL, "next_sam_alignment", SQLSTATE(BA000) "Unexpected end of line (after tlen)");
 	}
 	a->tlen = strtol(lngbuf, NULL, 10);
 
 	/* seq */
 	if (next_alignment_field(input, a, a->seq,
 			check_seq_qual_buffers, TRUE, &eol, eof) < 0 || eol || *eof) {
-		throw(MAL, "next_sam_alignment", "Unexpected end of line (after seq)");
+		throw(MAL, "next_sam_alignment", SQLSTATE(BA000) "Unexpected end of line (after seq)");
 	}
 
 	/* qual */
 	if (next_alignment_field(input, a, a->qual,
 			check_seq_qual_buffers, TRUE, &eol, eof) < 0) {
-		throw(MAL, "next_sam_alignment", "Could not read quality string (after qual)");
+		throw(MAL, "next_sam_alignment", SQLSTATE(BA000) "Could not read quality string (after qual)");
 	}
 
 	/* aux */
@@ -1600,7 +1604,7 @@ bam1_t2alignment(bam_wrapper * bw, lng virtual_offset, bam1_t * a_in,
 	/* Start by making sure that the buffers in a_out are large enough */
 	if (!check_alignment_buffers
 		(bw, a_out, a_in->core.l_qname, a_in->core.n_cigar * 4, a_in->core.l_qseq)) {
-		throw(MAL, "process_alignment", MAL_MALLOC_FAIL);
+		throw(MAL, "process_alignment", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	/* virtual_offset */
@@ -1735,7 +1739,7 @@ write_aux_str(bam_wrapper * bw, str aux, int aux_len, lng virtual_offset) {
 		type[0] = *(s+3);
 		s += 5;
 		if(read_string_until_delim(&s, &val, "\t\n\0", 3) < 0) {
-			throw(MAL, "write_aux_str", MAL_MALLOC_FAIL);
+			throw(MAL, "write_aux_str", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		if((msg = write_aux(bw, tag, virtual_offset, type, val)) != MAL_SUCCEED) {
 			GDKfree(val);
@@ -1892,7 +1896,7 @@ write_aux_bam1_t(bam_wrapper * bw, bam1_t *alig, lng virtual_offset) {
 #define ERR_APPEND_ALIGNMENT(msg, fnc, field)		\
 	do {											\
 		msg = createException(MAL, fnc,									\
-							  "Could not append alignment from file '%s' to binary files: Could not write field '%s' to binary file", \
+							  SQLSTATE(BA000) "Could not append alignment from file '%s' to binary files: Could not write field '%s' to binary file", \
 							  bw->file_location, field);				\
 		goto cleanup;													\
 	} while (0)
@@ -2142,7 +2146,7 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 	if ((aligs =
 		 (alignment **) GDKmalloc(nr_aligs * sizeof(alignment *))) == NULL) {
 		msg = createException(MAL, "process_alignments",
-			MAL_MALLOC_FAIL);
+			SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
@@ -2153,7 +2157,7 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 		if ((aligs[i] = (alignment *)GDKmalloc(sizeof(alignment)))
 			== NULL) {
 			msg = createException(MAL, "process_alignments",
-				MAL_MALLOC_FAIL);
+				SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
 	}
@@ -2161,14 +2165,14 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 	for (i = 0; i < nr_aligs; ++i) {
 		if (!init_alignment(bw, aligs[i])) {
 			msg = createException(MAL, "process_alignments",
-				MAL_MALLOC_FAIL);
+				SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
 	}
 
 	if((alig = bam_init1()) == NULL) {
 		msg = createException(MAL, "process_alignments",
-			MAL_MALLOC_FAIL);
+			SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
@@ -2290,7 +2294,7 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 						GDKfree(aligs);
 						msg = createException(MAL,
 									  "process_alignments",
-									  MAL_MALLOC_FAIL);
+									  SQLSTATE(HY001) MAL_MALLOC_FAIL);
 						goto cleanup;
 					}
 					aligs = tmp;
@@ -2310,7 +2314,7 @@ process_alignments(bam_wrapper * bw, bit * some_thread_failed)
 							msg = createException
 								(MAL,
 								 "process_alignments",
-								 MAL_MALLOC_FAIL);
+								 SQLSTATE(HY001) MAL_MALLOC_FAIL);
 							goto cleanup;
 						}
 					}

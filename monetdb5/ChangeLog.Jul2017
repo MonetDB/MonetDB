@@ -1,21 +1,3 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
-* Thu Apr 20 2017 Sjoerd Mullender <sjoerd@acm.org>
-- The "sub" prefix of many functions, both at the MAL and the C level,
-  has been removed.
-
-* Thu Jan  5 2017 Sjoerd Mullender <sjoerd@acm.org>
-- Changed the interfaces of the AUTH* functions: pass values, not pointers
-  to values.
-
-* Tue Dec 13 2016 Sjoerd Mullender <sjoerd@acm.org>
-- Removed calc.setoid().
-- group.subgroup is now called group.group if it is not refining a group.
-  Both group.group and group.subgroup now also have variants with a
-  candidate list.
-
-* Tue Nov  8 2016 Martin Kersten <mk@cwi.nl>
-- The allocation schemes for MAL blocks and Variables has been turned
-  into block-based.  This reduces the number of malloc()/free() calls.
-

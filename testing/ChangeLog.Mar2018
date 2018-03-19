@@ -1,0 +1,7 @@
+# ChangeLog file for testing
+# This file is updated with Maddlog
+
+* Thu Oct 26 2017 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>
+- Added a --data_path option to Mtest.py that defines an external data
+  repository. See the commit message of c484932c7fd8 for more info.
+

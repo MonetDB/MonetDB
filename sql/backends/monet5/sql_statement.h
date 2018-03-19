@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef _SQL_STATEMENT_H_
@@ -216,7 +216,7 @@ extern stmt *stmt_unop(backend *be, stmt *op1, sql_subfunc *op);
 extern stmt *stmt_binop(backend *be, stmt *op1, stmt *op2, sql_subfunc *op);
 extern stmt *stmt_Nop(backend *be, stmt *ops, sql_subfunc *op);
 extern stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *imp, int f_union);
-extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int reduce, int no_nil);
+extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int reduce, int no_nil, int nil_if_empty);
 
 extern stmt *stmt_alias(backend *be, stmt *op1, const char *tname, const char *name);
 

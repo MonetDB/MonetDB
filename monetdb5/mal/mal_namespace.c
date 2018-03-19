@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -49,6 +49,7 @@ static struct namespace {
 } *namespace;
 
 void initNamespace(void) {
+	namespace = NULL;
 }
 
 void mal_namespace_reset(void) {
@@ -118,7 +119,7 @@ static str findName(const char *nme, size_t len, int allocate)
 		struct namespace *ns = GDKmalloc(sizeof(struct namespace));
 		if (ns == NULL) {
 			/* error we cannot recover from */
-			showException(GDKout, MAL, "findName", MAL_MALLOC_FAIL);
+			showException(GDKout, MAL, "findName", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			mal_exit();
 		}
 		ns->next = namespace;

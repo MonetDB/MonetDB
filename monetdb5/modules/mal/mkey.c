@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -92,13 +92,13 @@ MKEYbathash(bat *res, const bat *bid)
 	BUN n;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(SQL, "mkey.bathash", RUNTIME_OBJECT_MISSING);
+		throw(SQL, "mkey.bathash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	n = BATcount(b);
 	dst = COLnew(b->hseqbase, TYPE_lng, n, TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "mkey.bathash", MAL_MALLOC_FAIL);
+		throw(SQL, "mkey.bathash", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATsetcount(dst, n);
 
@@ -107,7 +107,7 @@ MKEYbathash(bat *res, const bat *bid)
 	switch (ATOMstorage(b->ttype)) {
 	case TYPE_void: {
 		oid o = b->tseqbase;
-		if (o == oid_nil)
+		if (is_oid_nil(o))
 			while (n-- > 0)
 				*r++ = lng_nil;
 		else
@@ -249,12 +249,12 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 	BUN n;
 
 	if ((hb = BATdescriptor(*hid)) == NULL)
-        throw(MAL, "mkey.rotate_xor_hash", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		BBPunfix(hb->batCacheid);
-        throw(MAL, "mkey.rotate_xor_hash",  RUNTIME_OBJECT_MISSING);
-    }
+		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
 
 	if (!ALIGNsynced(hb, b) && (BATcount(b) || BATcount(hb))) {
 		BBPunfix(hb->batCacheid);
@@ -269,7 +269,7 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 	if (bn == NULL) {
 		BBPunfix(hb->batCacheid);
 		BBPunfix(b->batCacheid);
-		throw(MAL, "mkey.rotate_xor_hash", MAL_MALLOC_FAIL);
+		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATsetcount(bn, n);
 
@@ -357,7 +357,7 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 		BATkey(bn, 0);
 		bn->tsorted = bn->trevsorted = 0;
 	}
-	bn->tnonil = 1;
+	bn->tnonil = 0;
 	bn->tnil = 0;
 
 	BBPkeepref(*res = bn->batCacheid);
@@ -385,14 +385,14 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	(void) cntxt;
 
 	if ((hb = BATdescriptor(*hid)) == NULL)
-        throw(MAL, "mkey.rotate_xor_hash", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	n = BATcount(hb);
 
 	bn = COLnew(hb->hseqbase, TYPE_lng, n, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(hb->batCacheid);
-		throw(MAL, "mkey.rotate_xor_hash", MAL_MALLOC_FAIL);
+		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATsetcount(bn, n);
 
@@ -439,7 +439,7 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 		BATkey(bn, 0);
 		bn->tsorted = bn->trevsorted = 0;
 	}
-	bn->tnonil = 1;
+	bn->tnonil = 0;
 	bn->tnil = 0;
 
 	BBPkeepref(*res = bn->batCacheid);
@@ -458,14 +458,14 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 	BUN n;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-        throw(MAL, "mkey.rotate_xor_hash",  RUNTIME_OBJECT_MISSING);
+		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	n = BATcount(b);
 
 	bn = COLnew(b->hseqbase, TYPE_lng, n, TRANSIENT);
 	if (bn == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "mkey.rotate_xor_hash", MAL_MALLOC_FAIL);
+		throw(MAL, "mkey.rotate_xor_hash", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATsetcount(bn, n);
 
@@ -545,7 +545,7 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 		BATkey(bn, 0);
 		bn->tsorted = bn->trevsorted = 0;
 	}
-	bn->tnonil = 1;
+	bn->tnonil = 0;
 	bn->tnil = 0;
 
 	BBPkeepref(*res = bn->batCacheid);

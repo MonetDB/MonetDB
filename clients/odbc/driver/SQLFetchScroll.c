@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -178,8 +178,8 @@ SQLFetchScroll(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLFetchScroll " PTRFMT " %s " LENFMT "\n",
-		PTRFMTCAST StatementHandle,
+	ODBCLOG("SQLFetchScroll %p %s " LENFMT "\n",
+		StatementHandle,
 		translateFetchOrientation(FetchOrientation),
 		LENCAST FetchOffset);
 #endif

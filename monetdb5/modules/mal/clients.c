@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -33,10 +33,8 @@ pseudo(bat *ret, BAT *b, str X1,str X2) {
 	snprintf(buf,BUFSIZ,"%s_%s", X1,X2);
 	if (BBPindex(buf) <= 0 && BBPrename(b->batCacheid, buf) != 0)
 		return -1;
-	BATroles(b,X2);
-	if (BATmode(b,TRANSIENT) != GDK_SUCCEED)
+	if (BATroles(b,X2) != GDK_SUCCEED)
 		return -1;
-	BATfakeCommit(b);
 	*ret = b->batCacheid;
 	BBPkeepref(*ret);
 	return 0;
@@ -68,6 +66,8 @@ CLTgetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*getArgReference_str(stk,pci,0) = GDKstrdup(cntxt->scenario);
 	else
 		*getArgReference_str(stk,pci,0) = GDKstrdup("nil");
+	if(*getArgReference_str(stk,pci,0) == NULL)
+		throw(MAL, "clients.getScenario", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -79,8 +79,11 @@ CLTsetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) mb;
 	msg = setScenario(cntxt, *getArgReference_str(stk,pci,1));
 	*getArgReference_str(stk,pci,0) = 0;
-	if (msg == NULL)
+	if (msg == NULL) {
 		*getArgReference_str(stk,pci,0) = GDKstrdup(cntxt->scenario);
+		if(*getArgReference_str(stk,pci,0) == NULL)
+			throw(MAL, "clients.setScenario", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
 	return msg;
 }
 
@@ -135,7 +138,7 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (b == 0 || bn == 0){
 		if ( b != 0) BBPunfix(b->batCacheid);
 		if ( bn != 0) BBPunfix(bn->batCacheid);
-		throw(MAL, "clients.info", MAL_MALLOC_FAIL);
+		throw(MAL, "clients.info", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	if (BUNappend(b, "user", FALSE) != GDK_SUCCEED ||
@@ -169,7 +172,7 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   bailout:
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	throw(MAL, "clients.info", MAL_MALLOC_FAIL);
+	throw(MAL, "clients.info", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 str
@@ -185,7 +188,7 @@ CLTLogin(bat *nme, bat *ret)
 
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
-		if (c->mode >= RUNCLIENT && c->user != oid_nil) {
+		if (c->mode >= RUNCLIENT && !is_oid_nil(c->user)) {
 			CLTtimeConvert((time_t) c->login,s);
 			if (BUNappend(b, s, FALSE) != GDK_SUCCEED ||
 				BUNappend(u, &c->user, FALSE) != GDK_SUCCEED)
@@ -200,7 +203,7 @@ CLTLogin(bat *nme, bat *ret)
   bailout:
 	BBPreclaim(b);
 	BBPreclaim(u);
-	throw(MAL, "clients.getLogins", MAL_MALLOC_FAIL);
+	throw(MAL, "clients.getLogins", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 str
@@ -211,10 +214,10 @@ CLTLastCommand(bat *ret)
 	char s[26];
 
 	if (b == 0)
-		throw(MAL, "clients.getLastCommand", MAL_MALLOC_FAIL);
+		throw(MAL, "clients.getLastCommand", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
-		if (c->mode >= RUNCLIENT && c->user != oid_nil) {
+		if (c->mode >= RUNCLIENT && !is_oid_nil(c->user)) {
 			CLTtimeConvert((time_t) c->lastcmd,s);
 			if (BUNappend(b, s, FALSE) != GDK_SUCCEED)
 				goto bailout;
@@ -226,7 +229,7 @@ CLTLastCommand(bat *ret)
 
   bailout:
 	BBPreclaim(b);
-	throw(MAL, "clients.getLastCommand", MAL_MALLOC_FAIL);
+	throw(MAL, "clients.getLastCommand", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 str
@@ -236,10 +239,10 @@ CLTActions(bat *ret)
 	int i;
 
 	if (b == 0)
-		throw(MAL, "clients.getActions", MAL_MALLOC_FAIL);
+		throw(MAL, "clients.getActions", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
-		if (c->mode >= RUNCLIENT && c->user != oid_nil) {
+		if (c->mode >= RUNCLIENT && !is_oid_nil(c->user)) {
 			if (BUNappend(b, &c->actions, FALSE) != GDK_SUCCEED)
 				goto bailout;
 		}
@@ -249,29 +252,7 @@ CLTActions(bat *ret)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	throw(MAL, "clients.getActions", MAL_MALLOC_FAIL);
-}
-str
-CLTTime(bat *ret)
-{
-	BAT *b = COLnew(0, TYPE_lng, 12, TRANSIENT);
-	int i;
-
-	if (b == 0)
-		throw(MAL, "clients.getTime", MAL_MALLOC_FAIL);
-	for (i = 0; i < MAL_MAXCLIENTS; i++) {
-		Client c = mal_clients+i;
-		if (c->mode >= RUNCLIENT && c->user != oid_nil) {
-			if (BUNappend(b, &c->totaltime, FALSE) != GDK_SUCCEED)
-				goto bailout;
-		}
-	}
-	if (pseudo(ret,b,"client","usec"))
-		goto bailout;
-	return MAL_SUCCEED;
-  bailout:
-	BBPreclaim(b);
-	throw(MAL, "clients.getTime", MAL_MALLOC_FAIL);
+	throw(MAL, "clients.getActions", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 /*
@@ -284,10 +265,10 @@ CLTusers(bat *ret)
 	int i;
 
 	if (b == 0)
-		throw(MAL, "clients.users", MAL_MALLOC_FAIL);
+		throw(MAL, "clients.users", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	for (i = 0; i < MAL_MAXCLIENTS; i++) {
 		Client c = mal_clients+i;
-		if (c->mode >= RUNCLIENT && c->user != oid_nil &&
+		if (c->mode >= RUNCLIENT && !is_oid_nil(c->user) &&
 			BUNappend(b, &i, FALSE) != GDK_SUCCEED)
 			goto bailout;
 	}
@@ -296,7 +277,7 @@ CLTusers(bat *ret)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(b);
-	throw(MAL, "clients.users", MAL_MALLOC_FAIL);
+	throw(MAL, "clients.users", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 str
@@ -397,6 +378,8 @@ str CLTmd5sum(str *ret, str *pw) {
 	char *mret = mcrypt_MD5Sum(*pw, strlen(*pw));
 	*ret = GDKstrdup(mret);
 	free(mret);
+	if(*ret == NULL)
+		throw(MAL, "clients.md5sum", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 #else
 	(void) ret;
@@ -410,6 +393,8 @@ str CLTsha1sum(str *ret, str *pw) {
 	char *mret = mcrypt_SHA1Sum(*pw, strlen(*pw));
 	*ret = GDKstrdup(mret);
 	free(mret);
+	if(*ret == NULL)
+		throw(MAL, "clients.sha1sum", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 #else
 	(void) ret;
@@ -423,6 +408,8 @@ str CLTripemd160sum(str *ret, str *pw) {
 	char *mret = mcrypt_RIPEMD160Sum(*pw, strlen(*pw));
 	*ret = GDKstrdup(mret);
 	free(mret);
+	if(*ret == NULL)
+		throw(MAL, "clients.ripemd160sum", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 #else
 	(void) ret;
@@ -460,6 +447,8 @@ str CLTsha2sum(str *ret, str *pw, int *bits) {
 	}
 	*ret = GDKstrdup(mret);
 	free(mret);
+	if(*ret == NULL)
+		throw(MAL, "clients.sha2sum", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -467,6 +456,8 @@ str CLTbackendsum(str *ret, str *pw) {
 	char *mret = mcrypt_BackendSum(*pw, strlen(*pw));
 	*ret = GDKstrdup(mret);
 	free(mret);
+	if(*ret == NULL)
+		throw(MAL, "clients.backendsum", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -609,6 +600,8 @@ CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	*ret = GDKstrdup(buf);
 	if ( force)
 		mal_exit();
+	if(*ret == NULL)
+		throw(MAL, "mal.shutdown", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -643,7 +636,7 @@ CLTsessions(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if ( qtimeout) BBPunfix(qtimeout->batCacheid);
 		if ( last) BBPunfix(last->batCacheid);
 		if ( active) BBPunfix(active->batCacheid);
-		throw(SQL,"sql.sessions",MAL_MALLOC_FAIL);
+		throw(SQL,"sql.sessions", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	
     MT_lock_set(&mal_contextLock);

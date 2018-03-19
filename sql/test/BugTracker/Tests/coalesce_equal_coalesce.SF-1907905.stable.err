@@ -25,9 +25,11 @@ QUERY = CREATE FUNCTION fDocColumnsWithRank(TableName varchar(400))
         			coalesce(ColumnProperty (c.id, c.nme,'IsIdentity'),0) );
         END;
 ERROR = !SELECT: no such operator 'columnproperty'
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop function fDocColumnsWithRank;
 ERROR = !DROP FUNCTION: no such function 'fdoccolumnswithrank'
+CODE  = 42000
 
 # 00:33:51 >  
 # 00:33:51 >  Done.

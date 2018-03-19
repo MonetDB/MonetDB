@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
 module profiler;
 
@@ -44,7 +44,7 @@ comment "Change the profiler event limit counter";
 
 pattern openstream(mode:int):void
 address CMDopenProfilerStream
-comment "Start profiling the events, sent to output stream";
+comment "Start profiling the events, send to output stream";
 
 command closestream():void
 address CMDcloseProfilerStream

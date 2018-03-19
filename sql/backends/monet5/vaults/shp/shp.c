@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -12,16 +12,15 @@
  * stored in ESRI Shapefile documents.
  */
 
-#include <monetdb_config.h>
+#include "monetdb_config.h"
 #include <string.h>
 #include "sql_mvc.h"
 #include "sql.h"
-#include <stdlib.h>
 #include "shp.h"
-#include "sql_scenario.h"
+#include "sql_execute.h"
 #include "mal_exception.h"
 
-#include <geom.h>
+#include "geom.h"
 
 /* FIXME: the use of the 'rs' schema should be reconsidered so that the geotiff
  * catalog can be integrated into the SQL catalog.
@@ -207,25 +206,25 @@ SHPattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	if(!(sch = mvc_bind_schema(m, "sys")))
-		return createException(MAL, "shp.attach", "Schema sys missing\n");
+		return createException(MAL, "shp.attach", SQLSTATE(38000) "Schema sys missing\n");
 
 	fls = mvc_bind_table(m, sch, "files");
 	shps = mvc_bind_table(m, sch, "shapefiles");
 	shps_dbf = mvc_bind_table(m, sch, "shapefiles_dbf");
 	if (fls == NULL || shps == NULL || shps_dbf == NULL )
-		return createException(MAL, "shp.attach", "Catalog table missing\n");
+		return createException(MAL, "shp.attach", SQLSTATE(38000) "Catalog table missing\n");
 
 	if ((shp_conn_ptr = GDALWConnect((char *) fname)) == NULL) {
-		return createException(MAL, "shp.attach", "Missing shp file %s\n", fname);
+		return createException(MAL, "shp.attach", SQLSTATE(38000) "Missing shape file %s\n", fname);
 	}
 	shp_conn = *shp_conn_ptr;
 
 	/* check if the file is already attached */
 	col = mvc_bind_column(m, fls, "path");
 	rid = table_funcs.column_find_row(m->session->tr, col, fname, NULL);
-	if (rid != oid_nil) {
+	if (!is_oid_nil(rid)) {
 		GDALWClose(shp_conn_ptr);
-		return createException(MAL, "shp.attach", "File %s already attached\n", fname);
+		return createException(MAL, "shp.attach", SQLSTATE(38000) "File %s already attached\n", fname);
 	}
 
 	/* add row in the files(id, path) catalog table */
@@ -237,7 +236,7 @@ SHPattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 	/*if (shp_conn.layer == NULL || shp_conn.source == NULL || shp_conn.handler == NULL || shp_conn.driver == NULL) {
-		msg = createException(MAL, "shp.attach", "lol-1\n");
+		msg = createException(MAL, "shp.attach", SQLSTATE(38000) "lol-1\n");
 									return msg;
 	}*/
 
@@ -256,7 +255,7 @@ SHPattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	field_definitions = GDALWGetSimpleFieldDefinitions(shp_conn);
 	if (field_definitions == NULL) {
 		GDALWClose(&shp_conn);
-		return createException(MAL, "shp.attach", MAL_MALLOC_FAIL);
+		return createException(MAL, "shp.attach", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	for (i=0 ; i<shp_conn.numFieldDefinitions ; i++) {
 		snprintf(buf, BUFSIZ, INSSHPDBF, shpid, field_definitions[i].fieldName, field_definitions[i].fieldType);
@@ -272,8 +271,10 @@ SHPattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			sprintf(temp_buf + strlen(temp_buf), "\"%s\" INT, ", nameToLowerCase);
 		} else if (strcmp(field_definitions[i].fieldType, "Real") == 0) {
 			sprintf(temp_buf + strlen(temp_buf), "\"%s\" FLOAT, ", nameToLowerCase);
+#if 0
 		} else if (strcmp(field_definitions[i].fieldType, "Date") == 0) {
 			sprintf(temp_buf + strlen(temp_buf), "\"%s\" STRING, ", nameToLowerCase);
+#endif
         	} else 
 			sprintf(temp_buf + strlen(temp_buf), "\"%s\" STRING, ", nameToLowerCase);
 		GDKfree(nameToLowerCase);
@@ -344,36 +345,36 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 		return msg;
 
 	if(!(sch = mvc_bind_schema(m, sch_name)))
-		return createException(MAL, "shp.import", "Schema '%s' missing", sch_name);
+		return createException(MAL, "shp.import", SQLSTATE(38000) "Schema '%s' missing", sch_name);
 
 	/* find the name of the shape file corresponding to the given id */
 	if(!(fls_table = mvc_bind_table(m, sch, fls_table_name)))
-		return createException(MAL, "shp.import", "Table '%s.%s' missing", sch_name, fls_table_name);
+		return createException(MAL, "shp.import", SQLSTATE(38000) "Table '%s.%s' missing", sch_name, fls_table_name);
 	if(!(col = mvc_bind_column(m, fls_table, "id")))
-		return createException(MAL, "shp.import", "Column '%s.%s(id)' missing", sch_name, fls_table_name);
+		return createException(MAL, "shp.import", SQLSTATE(38000) "Column '%s.%s(id)' missing", sch_name, fls_table_name);
 	irid = table_funcs.column_find_row(m->session->tr, col, (void *)&vid, NULL);
-	if (irid == oid_nil)
-		return createException(MAL, "shp.import", "Shapefile with id %d not in the %s.%s table\n", vid, sch_name, fls_table_name);
+	if (is_oid_nil(irid))
+		return createException(MAL, "shp.import", SQLSTATE(38000) "Shapefile with id %d not in the %s.%s table\n", vid, sch_name, fls_table_name);
 	if(!(col = mvc_bind_column(m, fls_table, "path")))
-		return createException(MAL, "shp.import", "Column '%s.%s(path)' missing", sch_name, fls_table_name);
+		return createException(MAL, "shp.import", SQLSTATE(38000) "Column '%s.%s(path)' missing", sch_name, fls_table_name);
 	fname = (str)table_funcs.column_find_value(m->session->tr, col, irid); 
 
 	/* find the name of the table that has been reserved for this shape file */
 	if(!(shps_table = mvc_bind_table(m, sch, shps_table_name)))
-		return createException(MAL, "shp.import", "Table '%s.%s' missing", sch_name, shps_table_name);
+		return createException(MAL, "shp.import", SQLSTATE(38000) "Table '%s.%s' missing", sch_name, shps_table_name);
 	if(!(col = mvc_bind_column(m, shps_table, "fileid")))
-		return createException(MAL, "shp.import", "Column '%s.%s(fileid)' missing", sch_name, shps_table_name);
+		return createException(MAL, "shp.import", SQLSTATE(38000) "Column '%s.%s(fileid)' missing", sch_name, shps_table_name);
 	irid = table_funcs.column_find_row(m->session->tr, col, (void *)&vid, NULL);
-	if (irid == oid_nil)
-		return createException(MAL, "shp.import", "Shapefile with id %d not in the Shapefile catalog\n", vid);
+	if (is_oid_nil(irid))
+		return createException(MAL, "shp.import", SQLSTATE(38000) "Shapefile with id %d not in the Shapefile catalog\n", vid);
 	if(!(col = mvc_bind_column(m, shps_table, "datatable")))
-		return createException(MAL, "shp.import", "Column '%s.%s(datatable)' missing", sch_name, shps_table_name);
+		return createException(MAL, "shp.import", SQLSTATE(38000) "Column '%s.%s(datatable)' missing", sch_name, shps_table_name);
 	data_table_name = (str)table_funcs.column_find_value(m->session->tr, col, irid);
 
 
 	/* add the data on the file to the table */
 	if(!(shp_conn_ptr = GDALWConnect((char *) fname))) 
-		return createException(MAL, "shp.import", "Missing shp file %s\n", fname);
+		return createException(MAL, "shp.import", SQLSTATE(38000) "Missing shape file %s\n", fname);
 	shp_conn = *shp_conn_ptr;
 
 	/*count the number of lines in the shape file */
@@ -394,12 +395,12 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 		g = (wkb*)*p;
 		geom = OGR_G_CreateGeometry(wkbPolygon);
 		if (OGR_G_ImportFromWkb(geom, (unsigned char*)g->data, g->len) != OGRERR_NONE) {
-			msg = createException(MAL, "shp.import", "Could not intantiate the query polygon.");
+			msg = createException(MAL, "shp.import", SQLSTATE(38000) "Could not intantiate the query polygon.");
 			OGR_F_Destroy(geom);
 			goto final;
 		}
 		if (!(mbb = (OGREnvelope*)GDKmalloc(sizeof(OGREnvelope)))) {
-			msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+			msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			OGR_F_Destroy(geom);
 			goto final;
 		}
@@ -417,16 +418,16 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 	/* bind the columns of the data file that was just created 
 	* and create a BAT for each of the columns */
 	if(!(data_table = mvc_bind_table(m, sch, data_table_name))) {
-		msg = createException(MAL, "shp.import", "Table '%s.%s' missing", sch_name, data_table_name);
+		msg = createException(MAL, "shp.import", SQLSTATE(42SO2) "Table '%s.%s' missing", sch_name, data_table_name);
 		goto final;
 	}
 	colsNum += shp_conn.numFieldDefinitions;
 	if(!(cols = (sql_column**)GDKmalloc(sizeof(sql_column*)*colsNum))) {
-		msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+		msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto final;
 	}
 	if(!(colsBAT = (BAT**)GDKzalloc(sizeof(BAT*)*colsNum))) {
-		msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+		msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto unfree2;
 	}
 	field_definitions = GDALWGetSimpleFieldDefinitions(shp_conn);
@@ -437,46 +438,48 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 		cols[i] = mvc_bind_column(m, data_table, nameToLowerCase);
 		GDKfree(nameToLowerCase);
 		if(cols[i] == NULL) {
-			msg = createException(MAL, "shp.import", "Column '%s.%s(%s)' missing", sch_name, data_table_name, field_definitions[i].fieldName);
+			msg = createException(MAL, "shp.import", SQLSTATE(42SO2) "Column '%s.%s(%s)' missing", sch_name, data_table_name, field_definitions[i].fieldName);
 			goto unfree4;
 		}
 		/*create the BAT */
 		if (strcmp(field_definitions[i].fieldType, "Integer") == 0) {
 			if(!(colsBAT[i] = COLnew(0, TYPE_int, rowsNum, PERSISTENT))) {
-				msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+				msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto unfree4;
 			}
 		} else if (strcmp(field_definitions[i].fieldType, "Real") == 0) {
 			if(!(colsBAT[i] = COLnew(0, TYPE_dbl, rowsNum, PERSISTENT))) {
-				msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+				msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto unfree4;
 			}
+#if 0
 		} else if (strcmp(field_definitions[i].fieldType, "Date") == 0) {
-        	if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT))) {
-				msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+			if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT))) {
+				msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto unfree4;
 			}
+#endif
 		} else {
 			if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT))) {
-				msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+				msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto unfree4;
 			}
 		}
 	}
 	if(!(cols[colsNum - 2] = mvc_bind_column(m, data_table, "gid"))) {
-		msg = createException(MAL, "shp.import", "Column '%s.%s(gid)' missing", sch_name, data_table_name);
+		msg = createException(MAL, "shp.import", SQLSTATE(42SO2) "Column '%s.%s(gid)' missing", sch_name, data_table_name);
 		goto unfree4;
 	}
 	if(!(colsBAT[colsNum - 2] = COLnew(0, TYPE_int, rowsNum, PERSISTENT))) {
-		msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+		msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto unfree4;
 	}
 	if(!(cols[colsNum - 1] = mvc_bind_column(m, data_table, "geom"))) {
-		msg = createException(MAL, "shp.import", "Column '%s.%s(geom)' missing", sch_name, data_table_name);
+		msg = createException(MAL, "shp.import", SQLSTATE(42SO2) "Column '%s.%s(geom)' missing", sch_name, data_table_name);
 		goto unfree4;
 	}
 	if(!(colsBAT[colsNum - 1] = COLnew(0, ATOMindex("wkb"), rowsNum, PERSISTENT))) {
-		msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+		msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto unfree4;
 	}
 
@@ -503,18 +506,18 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 				rc = BUNappend(colsBAT[i], OGR_F_GetFieldAsString(feature, i), TRUE);
 			}
 			if (rc != GDK_SUCCEED) {
-				msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+				msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto unfree4;
 			}
 		}
 		if (BUNappend(colsBAT[colsNum - 2], &gidTemp, TRUE) != GDK_SUCCEED) {
-			msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+			msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			goto unfree4;
 		}
 
 		len = OGR_G_WkbSize(geometry);
 		if (!(geomWKB = GDKmalloc(sizeof(wkb) - 1 + len))) {
-			msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+			msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			OGR_F_Destroy(feature);
 			goto unfree4;
 		}
@@ -531,7 +534,7 @@ SHPimportFile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool part
 	/* finalise the BATs */
 	for(i = 0; i < colsNum; i++) {
 		if (store_funcs.append_col(m->session->tr, cols[i], colsBAT[i], TYPE_bat) != LOG_OK) {
-			msg = createException(MAL, "shp.import", "append_col failed");
+			msg = createException(MAL, "shp.import", SQLSTATE(38000) "Geos append column failed");
 			goto unfree4;
 		}
 	}
@@ -594,9 +597,9 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* calculate the mbb of the query geometry */
 	geom = OGR_G_CreateGeometry(wkbPolygon);
 	if (OGR_G_ImportFromWkb(geom, (unsigned char*)g->data, g->len) != OGRERR_NONE)
-		return createException(MAL, "shp.import", "Could not intantiate the query polygon.");
+		return createException(MAL, "shp.import", SQLSTATE(38000) "Could not intantiate the query polygon.");
 	if (!(mbb = (OGREnvelope*)GDKmalloc(sizeof(OGREnvelope)))) 
-		return createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+		return createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	OGR_G_GetEnvelope(geom, mbb);
 	//FIXME: Take into account the coordinate reference system
 
@@ -608,37 +611,37 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		return msg;
 
 	if(!(sch = mvc_bind_schema(m, sch_name)))
-		return createException(MAL, "shp.import", "Schema '%s' missing", sch_name);
+		return createException(MAL, "shp.import", SQLSTATE(38000) "Schema '%s' missing", sch_name);
 
 	/* find the name of the shape file corresponding to the given id */
 	if(!(fls_table = mvc_bind_table(m, sch, fls_table_name)))
-		return createException(MAL, "shp.import", "Table '%s.%s' missing", sch_name, fls_table_name);
+		return createException(MAL, "shp.import", SQLSTATE(38000) "Table '%s.%s' missing", sch_name, fls_table_name);
 	if(!(col = mvc_bind_column(m, fls_table, "id")))
-		return createException(MAL, "shp.import", "Column '%s.%s(id)' missing", sch_name, fls_table_name);
+		return createException(MAL, "shp.import", SQLSTATE(38000) "Column '%s.%s(id)' missing", sch_name, fls_table_name);
 	irid = table_funcs.column_find_row(m->session->tr, col, (void *)&vid, NULL);
-	if (irid == oid_nil)
-		return createException(MAL, "shp.import", "Shapefile with id %d not in the %s.%s table\n", vid, sch_name, fls_table_name);
+	if (is_oid_nil(irid))
+		return createException(MAL, "shp.import", SQLSTATE(38000) "Shapefile with id %d not in the %s.%s table\n", vid, sch_name, fls_table_name);
 	if(!(col = mvc_bind_column(m, fls_table, "path")))
-		return createException(MAL, "shp.import", "Column '%s.%s(path)' missing", sch_name, fls_table_name);
+		return createException(MAL, "shp.import", SQLSTATE(38000) "Column '%s.%s(path)' missing", sch_name, fls_table_name);
 	fname = (str)table_funcs.column_find_value(m->session->tr, col, irid); 
 
 	/* find the name of the table that has been reserved for this shape file */
 	if(!(shps_table = mvc_bind_table(m, sch, shps_table_name)))
-		return createException(MAL, "shp.import", "Table '%s.%s' missing", sch_name, shps_table_name);
+		return createException(MAL, "shp.import", SQLSTATE(38000) "Table '%s.%s' missing", sch_name, shps_table_name);
 	if(!(col = mvc_bind_column(m, shps_table, "fileid")))
-		return createException(MAL, "shp.import", "Column '%s.%s(fileid)' missing", sch_name, shps_table_name);
+		return createException(MAL, "shp.import", SQLSTATE(38000) "Column '%s.%s(fileid)' missing", sch_name, shps_table_name);
 	irid = table_funcs.column_find_row(m->session->tr, col, (void *)&vid, NULL);
-	if (irid == oid_nil)
-		return createException(MAL, "shp.import", "Shapefile with id %d not in the Shapefile catalog\n", vid);
+	if (is_oid_nil(irid))
+		return createException(MAL, "shp.import", SQLSTATE(38000) "Shapefile with id %d not in the Shapefile catalog\n", vid);
 	if(!(col = mvc_bind_column(m, shps_table, "datatable")))
-		return createException(MAL, "shp.import", "Column '%s.%s(datatable)' missing", sch_name, shps_table_name);
+		return createException(MAL, "shp.import", SQLSTATE(38000) "Column '%s.%s(datatable)' missing", sch_name, shps_table_name);
 	data_table_name = (str)table_funcs.column_find_value(m->session->tr, col, irid);
 
 
 	/* add the data on the file to the table */
 
 	if(!(shp_conn_ptr = GDALWConnect((char *) fname)))
-		return createException(MAL, "shp.import", "Missing shp file %s\n", fname);
+		return createException(MAL, "shp.import", SQLSTATE(38000) "Missing shape file %s\n", fname);
 	shp_conn = *shp_conn_ptr;
 
 	/*count the number of lines in the shape file */
@@ -650,57 +653,59 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* bind the columns of the data file that was just created 
  	* and create a BAT for each of the columns */
 	if(!(data_table = mvc_bind_table(m, sch, data_table_name)))
-		return createException(MAL, "shp.import", "Table '%s.%s' missing", sch_name, data_table_name);
+		return createException(MAL, "shp.import", SQLSTATE(38000) "Table '%s.%s' missing", sch_name, data_table_name);
 	colsNum += shp_conn.numFieldDefinitions;
 	if(!(cols = (sql_column**)GDKmalloc(sizeof(sql_column*)*colsNum)))
-			return createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+			return createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	if(!(colsBAT = (BAT**)GDKzalloc(sizeof(BAT*)*colsNum)))
-			return createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+			return createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	field_definitions = GDALWGetSimpleFieldDefinitions(shp_conn);
 	for(i = 0; i < colsNum - 2; i++) {
 		cols[i] = NULL;
 		/* bind the column */
 		nameToLowerCase = toLower(field_definitions[i].fieldName);
 		if(!(cols[i] = mvc_bind_column(m, data_table, nameToLowerCase)))
-			return createException(MAL, "shp.import", "Column '%s.%s(%s)' missing", sch_name, data_table_name, field_definitions[i].fieldName);
+			return createException(MAL, "shp.import", SQLSTATE(38000) "Column '%s.%s(%s)' missing", sch_name, data_table_name, field_definitions[i].fieldName);
 		GDKfree(nameToLowerCase);
 		/*create the BAT */
 		if (strcmp(field_definitions[i].fieldType, "Integer") == 0) {
 			if(!(colsBAT[i] = COLnew(0, TYPE_int, rowsNum, PERSISTENT))) {
-				msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+				msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
 		} else if (strcmp(field_definitions[i].fieldType, "Real") == 0) {
 			if(!(colsBAT[i] = COLnew(0, TYPE_dbl, rowsNum, PERSISTENT))) {
-				msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+				msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
+#if 0
 		} else if (strcmp(field_definitions[i].fieldType, "Date") == 0) {
 			if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT))) {
-				msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+				msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
+#endif
 		} else {
 			if(!(colsBAT[i] = COLnew(0, TYPE_str, rowsNum, PERSISTENT))) {
-				msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+				msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
 		}
 	}
 	if(!(cols[colsNum - 2] = mvc_bind_column(m, data_table, "gid"))) {
-		msg = createException(MAL, "shp.import", "Column '%s.%s(gid)' missing", sch_name, data_table_name);
+		msg = createException(MAL, "shp.import", SQLSTATE(38000) "Column '%s.%s(gid)' missing", sch_name, data_table_name);
 		goto bailout;
 	}
 	if(!(colsBAT[colsNum - 2] = COLnew(0, TYPE_int, rowsNum, PERSISTENT))) {
-		msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+		msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	if(!(cols[colsNum - 1] = mvc_bind_column(m, data_table, "geom"))) {
-		msg = createException(MAL, "shp.import", "Column '%s.%s(geom)' missing", sch_name, data_table_name);
+		msg = createException(MAL, "shp.import", SQLSTATE(38000) "Column '%s.%s(geom)' missing", sch_name, data_table_name);
 		goto bailout;
 	}
 	if(!(colsBAT[colsNum - 1] = COLnew(0, ATOMindex("wkb"), rowsNum, PERSISTENT))) {
-		msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+		msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
@@ -730,24 +735,24 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 				rc = BUNappend(colsBAT[i], OGR_F_GetFieldAsString(feature, i), TRUE);
 			}
 			if (rc != GDK_SUCCEED) {
-				msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+				msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
 		}
 	
 		if (BUNappend(colsBAT[colsNum - 2], &gidTemp, TRUE) != GDK_SUCCEED) {
-			msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+			msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
 
 		len = OGR_G_WkbSize(geometry);
 		if (!(geomWKB = GDKmalloc(sizeof(wkb) - 1 + len)))
-			return createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+			return createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		geomWKB->len = len;
 		geomWKB->srid = 0; //TODO: Add the real srid
 		OGR_G_ExportToWkb(geometry, wkbNDR, (unsigned char *)geomWKB->data);
 		if (BUNappend(colsBAT[colsNum - 1], geomWKB, TRUE) != GDK_SUCCEED) {
-			msg = createException(MAL, "shp.import", MAL_MALLOC_FAIL);
+			msg = createException(MAL, "shp.import", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
 	}
@@ -755,7 +760,7 @@ SHPpartialimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* finalise the BATs */
 	for(i = 0; i < colsNum; i++) {
 		if (store_funcs.append_col(m->session->tr, cols[i], colsBAT[i], TYPE_bat) != LOG_OK) {
-			msg = createException(MAL, "shp.import", "append_col failed");
+			msg = createException(MAL, "shp.import", SQLSTATE(38000) "append_col failed");
 			goto bailout;
 		}
 	}

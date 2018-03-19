@@ -44,7 +44,7 @@ Ready.
 #			      from 
 #			        sys.sequences as ref_139
 #				      where ref_139.cycle is NULL))
-% .L27,	.L31,	.L33 # table_name
+% .L30,	.L32,	.L34 # table_name
 % c0,	c1,	c2 # name
 % bigint,	tinyint,	tinyint # type
 % 1,	1,	1 # length

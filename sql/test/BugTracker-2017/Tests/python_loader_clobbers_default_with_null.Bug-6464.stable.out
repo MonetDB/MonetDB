@@ -1,0 +1,366 @@
+stdout of test 'python_loader_clobbers_default_with_null.Bug-6464` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 17:58:11 >  
+# 17:58:11 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37503" "--set" "mapi_usock=/var/tmp/mtest-17258/.s.monetdb.37503" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/home/manegold/_/Monet/HG/Jul2017/prefix/_/var/MonetDB/mTests_sql_test_BugTracker-2017" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 17:58:11 >  
+
+# MonetDB 5 server v11.27.10
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 32 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 251.886 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://bricks01.scilens.private:37503/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-17258/.s.monetdb.37503
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python2 module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 17:58:12 >  
+# 17:58:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17258" "--port=37503"
+# 17:58:12 >  
+
+#create table t (
+#	a integer auto_increment primary key,
+#	b integer generated always as identity (start with 2) unique,
+#	c integer generated always as identity (start with 3) not null,
+#	d integer generated always as identity (start with 4),
+#	e integer default 5 not null,
+#	f integer default 6,
+#	g integer
+#);
+#copy 1 records into t (g) from stdin (g);
+#-7
+[ 1	]
+#copy 1 records into t (g) from stdin (g);
+#NULL
+[ 1	]
+#insert into t (g) values (NULL);
+[ 1	]
+#insert into t (g) values (-7);
+[ 1	]
+#copy 1 records into t (f) from stdin (f);
+#-6
+[ 1	]
+#copy 1 records into t (f) from stdin (f);
+#NULL
+[ 1	]
+#insert into t (f) values (NULL);
+[ 1	]
+#insert into t (f) values (-6);
+[ 1	]
+#copy 1 records into t (e) from stdin (e);
+#-5
+[ 1	]
+#insert into t (e) values (-5);
+[ 1	]
+#copy 1 records into t (d) from stdin (d);
+#-4
+[ 1	]
+#copy 1 records into t (d) from stdin (d);
+#NULL
+[ 1	]
+#insert into t (d) values (NULL);
+[ 1	]
+#insert into t (d) values (-4);
+[ 1	]
+#copy 1 records into t (c) from stdin (c);
+#-3
+[ 1	]
+#insert into t (c) values (-3);
+[ 1	]
+#copy 1 records into t (b) from stdin (b);
+#-2
+[ 1	]
+#copy 1 records into t (b) from stdin (b);
+#NULL
+[ 1	]
+#insert into t (b) values (NULL);
+[ 1	]
+#copy 1 records into t (a) from stdin (a);
+#-1
+[ 1	]
+#select * from t;
+% sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t # table_name
+% a,	b,	c,	d,	e,	f,	g # name
+% int,	int,	int,	int,	int,	int,	int # type
+% 2,	2,	2,	2,	2,	2,	2 # length
+[ 1,	2,	3,	4,	5,	6,	-7	]
+[ 2,	3,	4,	5,	5,	6,	NULL	]
+[ 3,	4,	5,	6,	5,	6,	NULL	]
+[ 4,	5,	6,	7,	5,	6,	-7	]
+[ 5,	6,	7,	8,	5,	-6,	NULL	]
+[ 6,	7,	8,	9,	5,	NULL,	NULL	]
+[ 7,	8,	9,	10,	5,	NULL,	NULL	]
+[ 8,	9,	10,	11,	5,	-6,	NULL	]
+[ 9,	10,	11,	12,	-5,	6,	NULL	]
+[ 12,	13,	14,	15,	-5,	6,	NULL	]
+[ 13,	14,	15,	-4,	5,	6,	NULL	]
+[ 14,	15,	16,	NULL,	5,	6,	NULL	]
+[ 15,	16,	17,	NULL,	5,	6,	NULL	]
+[ 16,	17,	18,	-4,	5,	6,	NULL	]
+[ 17,	18,	-3,	16,	5,	6,	NULL	]
+[ 20,	21,	-3,	19,	5,	6,	NULL	]
+[ 21,	-2,	19,	20,	5,	6,	NULL	]
+[ 22,	NULL,	20,	21,	5,	6,	NULL	]
+[ 23,	NULL,	21,	22,	5,	6,	NULL	]
+[ -1,	22,	23,	24,	5,	6,	NULL	]
+#drop table t;
+#create table t (
+#	a integer auto_increment primary key,
+#	b integer generated always as identity (start with 2) unique,
+#	c integer generated always as identity (start with 3) not null,
+#	d integer generated always as identity (start with 4),
+#	e integer default 5 not null,
+#	f integer default 6,
+#	g integer
+#);
+#insert into t (a,b,c,d,e,f,g) values (-11,-12,-13,-14,-15,-16,-17);
+[ 1	]
+#insert into t (a,b,c,d,e,f)   values (-21,-22,-23,-24,-25,-26);
+[ 1	]
+#insert into t (a,b,c,d,e,g)   values (-31,-32,-33,-34,-35,-37);
+[ 1	]
+#insert into t (a,b,c,d,f,g)   values (-41,-42,-43,-44,-46,-47);
+[ 1	]
+#insert into t (a,b,c,e,f,g)   values (-51,-52,-53,-55,-56,-57);
+[ 1	]
+#insert into t (a,b,d,e,f,g)   values (-61,-62,-64,-65,-66,-67);
+[ 1	]
+#insert into t (a,c,d,e,f,g)   values (-71,-73,-74,-75,-76,-77);
+[ 1	]
+#insert into t (b,c,d,e,f,g)   values (-82,-83,-84,-85,-86,-87);
+[ 1	]
+#select * from t;
+% sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t # table_name
+% a,	b,	c,	d,	e,	f,	g # name
+% int,	int,	int,	int,	int,	int,	int # type
+% 3,	3,	3,	3,	3,	3,	3 # length
+[ -11,	-12,	-13,	-14,	-15,	-16,	-17	]
+[ -21,	-22,	-23,	-24,	-25,	-26,	NULL	]
+[ -31,	-32,	-33,	-34,	-35,	6,	-37	]
+[ -41,	-42,	-43,	-44,	5,	-46,	-47	]
+[ -51,	-52,	-53,	4,	-55,	-56,	-57	]
+[ -61,	-62,	3,	-64,	-65,	-66,	-67	]
+[ -71,	2,	-73,	-74,	-75,	-76,	-77	]
+[ 1,	-82,	-83,	-84,	-85,	-86,	-87	]
+#drop table t;
+#create table t (
+#	a integer auto_increment primary key,
+#	b integer generated always as identity (start with 2) unique,
+#	c integer generated always as identity (start with 3) not null,
+#	d integer generated always as identity (start with 4),
+#	e integer default 5 not null,
+#	f integer default 6,
+#	g integer
+#);
+#copy 2 records into t (a,b,c,d,e,f,g) from stdin (a,b,c,d,e,f,g);
+#-111|-112|-113|-114|-115|-116|-117
+#-121|-122|-123|-124|-125|-126|-127
+[ 2	]
+#copy 2 records into t (a,b,c,d,e,f) from stdin (a,b,c,d,e,f);
+#-211|-212|-213|-214|-215|-216
+#-221|-222|-223|-224|-225|-226
+[ 2	]
+#copy 2 records into t (a,b,c,d,e,g) from stdin (a,b,c,d,e,g);
+#-311|-312|-313|-314|-315|-317
+#-321|-322|-323|-324|-325|-327
+[ 2	]
+#copy 2 records into t (a,b,c,d,f,g) from stdin (a,b,c,d,f,g);
+#-411|-412|-413|-414|-416|-417
+#-421|-422|-423|-424|-426|-427
+[ 2	]
+#copy 2 records into t (a,b,c,e,f,g) from stdin (a,b,c,e,f,g);
+#-511|-512|-513|-515|-516|-517
+#-521|-522|-523|-525|-526|-527
+[ 2	]
+#copy 2 records into t (a,b,d,e,f,g) from stdin (a,b,d,e,f,g);
+#-611|-612|-614|-615|-616|-617
+#-621|-622|-624|-625|-626|-627
+[ 2	]
+#copy 2 records into t (a,c,d,e,f,g) from stdin (a,c,d,e,f,g);
+#-711|-713|-714|-715|-716|-717
+#-721|-723|-724|-725|-726|-727
+[ 2	]
+#copy 2 records into t (b,c,d,e,f,g) from stdin (b,c,d,e,f,g);
+#-812|-813|-814|-815|-816|-817
+#-822|-823|-824|-825|-826|-827
+[ 2	]
+#select * from t;
+% sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t # table_name
+% a,	b,	c,	d,	e,	f,	g # name
+% int,	int,	int,	int,	int,	int,	int # type
+% 4,	4,	4,	4,	4,	4,	4 # length
+[ -111,	-112,	-113,	-114,	-115,	-116,	-117	]
+[ -121,	-122,	-123,	-124,	-125,	-126,	-127	]
+[ -211,	-212,	-213,	-214,	-215,	-216,	NULL	]
+[ -221,	-222,	-223,	-224,	-225,	-226,	NULL	]
+[ -311,	-312,	-313,	-314,	-315,	6,	-317	]
+[ -321,	-322,	-323,	-324,	-325,	6,	-327	]
+[ -411,	-412,	-413,	-414,	5,	-416,	-417	]
+[ -421,	-422,	-423,	-424,	5,	-426,	-427	]
+[ -511,	-512,	-513,	4,	-515,	-516,	-517	]
+[ -521,	-522,	-523,	5,	-525,	-526,	-527	]
+[ -611,	-612,	3,	-614,	-615,	-616,	-617	]
+[ -621,	-622,	4,	-624,	-625,	-626,	-627	]
+[ -711,	2,	-713,	-714,	-715,	-716,	-717	]
+[ -721,	3,	-723,	-724,	-725,	-726,	-727	]
+[ 1,	-812,	-813,	-814,	-815,	-816,	-817	]
+[ 2,	-822,	-823,	-824,	-825,	-826,	-827	]
+#drop table t;
+#CREATE LOADER myloader(x integer, y string) LANGUAGE PYTHON {
+#	z={}
+#	i=0
+#	for j in ('a','b','c','d','e','f','g'):
+#		i += 1	
+#		if j in y:
+#			z[j] = x - i
+#	_emit.emit(z)
+#};
+#create table t (
+#	a integer auto_increment primary key,
+#	b integer generated always as identity (start with 2) unique,
+#	c integer generated always as identity (start with 3) not null,
+#	d integer generated always as identity (start with 4),
+#	e integer default 5 not null,
+#	f integer default 6,
+#	g integer
+#);
+#COPY LOADER INTO t FROM myloader(-10,'abcdefg');
+[ 1	]
+#COPY LOADER INTO t FROM myloader(-20,'abcdef');
+[ 1	]
+#COPY LOADER INTO t FROM myloader(-30,'abcdeg');
+[ 1	]
+#COPY LOADER INTO t FROM myloader(-40,'abcdfg');
+[ 1	]
+#COPY LOADER INTO t FROM myloader(-50,'abcefg');
+[ 1	]
+#COPY LOADER INTO t FROM myloader(-60,'abdefg');
+[ 1	]
+#COPY LOADER INTO t FROM myloader(-70,'acdefg');
+[ 1	]
+#COPY LOADER INTO t FROM myloader(-80,'bcdefg');
+[ 1	]
+#select * from t;
+% sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t # table_name
+% a,	b,	c,	d,	e,	f,	g # name
+% int,	int,	int,	int,	int,	int,	int # type
+% 3,	3,	3,	3,	3,	3,	3 # length
+[ -11,	-12,	-13,	-14,	-15,	-16,	-17	]
+[ -21,	-22,	-23,	-24,	-25,	-26,	NULL	]
+[ -31,	-32,	-33,	-34,	-35,	6,	-37	]
+[ -41,	-42,	-43,	-44,	5,	-46,	-47	]
+[ -51,	-52,	-53,	4,	-55,	-56,	-57	]
+[ -61,	-62,	3,	-64,	-65,	-66,	-67	]
+[ -71,	2,	-73,	-74,	-75,	-76,	-77	]
+[ 1,	-82,	-83,	-84,	-85,	-86,	-87	]
+#drop table t;
+#drop loader myloader;
+#CREATE LOADER myloader(x integer, y string) LANGUAGE PYTHON {
+#	z={}
+#	i=0
+#	for j in ('a','b','c','d','e','f','g'):
+#		i += 1	
+#		if j in y:
+#			z[j] = numpy.array([ x - 10 - i , x - 20 - i ])
+#	_emit.emit(z)
+#};
+#create table t (
+#	a integer auto_increment primary key,
+#	b integer generated always as identity (start with 2) unique,
+#	c integer generated always as identity (start with 3) not null,
+#	d integer generated always as identity (start with 4),
+#	e integer default 5 not null,
+#	f integer default 6,
+#	g integer
+#);
+#COPY LOADER INTO t FROM myloader(-100,'abcdefg');
+[ 2	]
+#COPY LOADER INTO t FROM myloader(-200,'abcdef');
+[ 2	]
+#COPY LOADER INTO t FROM myloader(-300,'abcdeg');
+[ 2	]
+#COPY LOADER INTO t FROM myloader(-400,'abcdfg');
+[ 2	]
+#COPY LOADER INTO t FROM myloader(-500,'abcefg');
+[ 2	]
+#COPY LOADER INTO t FROM myloader(-600,'abdefg');
+[ 2	]
+#COPY LOADER INTO t FROM myloader(-700,'acdefg');
+[ 2	]
+#COPY LOADER INTO t FROM myloader(-800,'bcdefg');
+[ 2	]
+#select * from t;
+% sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t,	sys.t # table_name
+% a,	b,	c,	d,	e,	f,	g # name
+% int,	int,	int,	int,	int,	int,	int # type
+% 4,	4,	4,	4,	4,	4,	4 # length
+[ -111,	-112,	-113,	-114,	-115,	-116,	-117	]
+[ -121,	-122,	-123,	-124,	-125,	-126,	-127	]
+[ -211,	-212,	-213,	-214,	-215,	-216,	NULL	]
+[ -221,	-222,	-223,	-224,	-225,	-226,	NULL	]
+[ -311,	-312,	-313,	-314,	-315,	6,	-317	]
+[ -321,	-322,	-323,	-324,	-325,	6,	-327	]
+[ -411,	-412,	-413,	-414,	5,	-416,	-417	]
+[ -421,	-422,	-423,	-424,	5,	-426,	-427	]
+[ -511,	-512,	-513,	4,	-515,	-516,	-517	]
+[ -521,	-522,	-523,	5,	-525,	-526,	-527	]
+[ -611,	-612,	3,	-614,	-615,	-616,	-617	]
+[ -621,	-622,	4,	-624,	-625,	-626,	-627	]
+[ -711,	2,	-713,	-714,	-715,	-716,	-717	]
+[ -721,	3,	-723,	-724,	-725,	-726,	-727	]
+[ 1,	-812,	-813,	-814,	-815,	-816,	-817	]
+[ 2,	-822,	-823,	-824,	-825,	-826,	-827	]
+#drop table t;
+#drop loader myloader;
+
+# 17:58:15 >  
+# 17:58:15 >  "Done."
+# 17:58:15 >  
+

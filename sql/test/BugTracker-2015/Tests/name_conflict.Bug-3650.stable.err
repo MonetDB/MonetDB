@@ -33,6 +33,7 @@ stderr of test 'name_conflict.Bug-3650` in directory 'sql/test/BugTracker-2015` 
 MAPI  = (monetdb) /var/tmp/mtest-32037/.s.monetdb.32270
 QUERY = create table foo_bar (id integer);
 ERROR = !CREATE TABLE: sys_foo_bar_id conflicts
+CODE  = 42000
 
 # 18:58:39 >  
 # 18:58:39 >  "Done."

@@ -15,14 +15,14 @@ Ready.
 
 
 #select cast( 1 as interval year );
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % month_interval # type
 % 2 # length
 [ 12	]
 #select cast( 1 as interval day );
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % sec_interval # type
 % 9 # length
 [ 86400.000	]

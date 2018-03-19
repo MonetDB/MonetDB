@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /* (author) M.L. Kersten 
@@ -198,10 +198,10 @@ MALresourceFairness(lng usec)
 	/* always keep one running to avoid all waiting  */
 	while (clk > DELAYUNIT && users > 1 && ATOMIC_GET(mal_running, mal_runningLock) > (ATOMIC_TYPE) GDKnr_threads && rss > MEMORY_THRESHOLD) {
 		if ( delayed++ == 0){
-				PARDEBUG fprintf(stderr, "#delay initial ["LLFMT"] memory  "SZFMT"[%f]\n", clk, rss, MEMORY_THRESHOLD );
+				PARDEBUG fprintf(stderr, "#delay initial ["LLFMT"] memory  %zu[%f]\n", clk, rss, MEMORY_THRESHOLD );
 		}
 		if ( delayed == MAX_DELAYS){
-				PARDEBUG fprintf(stderr, "#delay abort ["LLFMT"] memory  "SZFMT"[%f]\n", clk, rss, MEMORY_THRESHOLD );
+				PARDEBUG fprintf(stderr, "#delay abort ["LLFMT"] memory  %zu[%f]\n", clk, rss, MEMORY_THRESHOLD );
 				PARDEBUG fflush(stderr);
 				break;
 		}

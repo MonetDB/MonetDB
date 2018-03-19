@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -16,10 +16,6 @@
 #include "mal.h"
 #include <string.h>
 #include "gdk.h"
-#ifdef HAVE_MALLOC_H
-#endif
-#include <stdio.h>
-#include <stdlib.h>
 #include <limits.h>
 
 mal_export str levenshtein_impl(int *result, str *s, str *t, int *insdel_cost, int *replace_cost, int *transpose_cost);

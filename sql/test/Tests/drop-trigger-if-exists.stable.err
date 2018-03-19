@@ -1,0 +1,40 @@
+stderr of test 'drop-trigger-if-exists` in directory 'sql/test` itself:
+
+
+# 17:57:26 >  
+# 17:57:26 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30983" "--set" "mapi_usock=/var/tmp/mtest-7172/.s.monetdb.30983" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-sqlextra/BUILD/var/MonetDB/mTests_sql_test" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 17:57:26 >  
+
+# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-sqlextra/BUILD/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 30983
+# cmdline opt 	mapi_usock = /var/tmp/mtest-7172/.s.monetdb.30983
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-sqlextra/BUILD/var/MonetDB/mTests_sql_test
+# cmdline opt 	embedded_r = yes
+# cmdline opt 	embedded_py = true
+# cmdline opt 	gdk_debug = 553648138
+
+# 17:57:26 >  
+# 17:57:26 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7172" "--port=30983"
+# 17:57:26 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-7172/.s.monetdb.30983
+QUERY = DROP TRIGGER test9; --should fail
+ERROR = !DROP TRIGGER: unknown trigger test9
+CODE  = 3F000
+
+# 17:57:27 >  
+# 17:57:27 >  "Done."
+# 17:57:27 >  
+

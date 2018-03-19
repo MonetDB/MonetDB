@@ -1,0 +1,128 @@
+stdout of test 'count_from_commented_function_signatures.Bug-6542` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 18:36:35 >  
+# 18:36:35 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31049" "--set" "mapi_usock=/var/tmp/mtest-14549/.s.monetdb.31049" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2018" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 18:36:35 >  
+
+# MonetDB 5 server v11.29.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 31.307 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://catskill.da.cwi.nl:31049/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-14549/.s.monetdb.31049
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python2 module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 21_dependency_views.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 97_comments.sql
+# loading sql script: 99_system.sql
+
+# 18:36:35 >  
+# 18:36:35 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-14549" "--port=31049"
+# 18:36:35 >  
+
+#select * from sys.commented_function_signatures;
+% .commented_function_signatures,	.commented_function_signatures,	.commented_function_signatures,	.commented_function_signatures,	.commented_function_signatures,	.commented_function_signatures,	.commented_function_signatures,	.commented_function_signatures,	.commented_function_signatures,	.commented_function_signatures,	.commented_function_signatures # table_name
+% fid,	schema,	fname,	category,	system,	name,	remark,	type,	type_digits,	type_scale,	line # name
+% int,	varchar,	varchar,	varchar,	boolean,	varchar,	varchar,	varchar,	int,	int,	int # type
+% 1,	0,	0,	0,	5,	0,	0,	0,	1,	1,	1 # length
+#plan select count (*) from sys.commented_function_signatures;
+% .plan # table_name
+% rel # name
+% clob # type
+% 150 # length
+project (
+| group by (
+| | project (
+| | | project (
+| | | | project (
+| | | | | project (
+| | | | | | project (
+| | | | | | | project (
+| | | | | | | | project (
+| | | | | | | | | project (
+| | | | | | | | | | project (
+| | | | | | | | | | | left outer join (
+| | | | | | | | | | | | left outer join (
+| | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | join (
+| | | | | | | | | | | | | | | table(sys.functions) [ "functions"."id" as "f"."id", "functions"."schema_id" as "f"."schema_id" ] COUNT ,
+| | | | | | | | | | | | | | | table(sys.comments) [ "comments"."id" NOT NULL HASHCOL  as "c"."id" ] COUNT 
+| | | | | | | | | | | | | | ) [ "f"."id" = "c"."id" NOT NULL HASHCOL  ],
+| | | | | | | | | | | | | | table(sys.schemas) [ "schemas"."id" as "s"."id" ] COUNT 
+| | | | | | | | | | | | | ) [ "f"."schema_id" = "s"."id" ],
+| | | | | | | | | | | | | table(sys.systemfunctions) [ "systemfunctions"."function_id" NOT NULL as "sf"."function_id" ] COUNT 
+| | | | | | | | | | | | ) [ "f"."id" = "sf"."function_id" NOT NULL ],
+| | | | | | | | | | | | select (
+| | | | | | | | | | | | | table(sys.args) [ "args"."func_id" as "p"."func_id", "args"."inout" as "p"."inout", "args"."number" as "p"."number" ] COUNT 
+| | | | | | | | | | | | ) [ "p"."inout" = tinyint "1" ]
+| | | | | | | | | | | ) [ "f"."id" = "p"."func_id" ]
+| | | | | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id", "p"."number" ASC ]
+| | | | | | | | | ) [ "f"."id", "p"."number" ]
+| | | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id", "p"."number" ]
+| | | | | | | ) [ "f"."id", "p"."number" ]
+| | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" ASC ]
+| | | | | ) [ "f"."id", "p"."number", sys.row_number("f"."id", boolean "false", sys.diff(sys.diff("f"."id" ASC), "p"."number" ASC)) as "L37"."L37" ]
+| | | | ) [ "f"."id", "L37"."L37" ]
+| | | ) [ "f"."id" as "L2"."fid", "L37"."L37" as "L40"."line" ] [ "L40"."line" ASC ]
+| | ) [ "L2"."fid" as "commented_function_signatures"."fid" ]
+| ) [  ] [ sys.count() NOT NULL as "L46"."L46" ]
+) [ "L46" NOT NULL as "L47"."L46" ]
+#select count (*) from sys.commented_function_signatures;
+% .L47 # table_name
+% L46 # name
+% bigint # type
+% 1 # length
+[ 0	]
+
+# 18:36:36 >  
+# 18:36:36 >  "Done."
+# 18:36:36 >  
+

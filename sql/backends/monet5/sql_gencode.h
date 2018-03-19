@@ -3,19 +3,19 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef _SQL2MAL_H
 #define _SQL2MAL_H
 
-#include <sql.h>
-#include <mal_backend.h>
-#include <sql_atom.h>
-#include <sql_statement.h>
-#include <sql_env.h>
-#include <sql_mvc.h>
-#include <mal_function.h>
+#include "sql.h"
+#include "mal_backend.h"
+#include "sql_atom.h"
+#include "sql_statement.h"
+#include "sql_env.h"
+#include "sql_mvc.h"
+#include "mal_function.h"
 
 sql5_export Symbol backend_dumpproc(backend *be, Client c, cq *q, sql_rel *r);
 sql5_export int backend_callinline(backend *be, Client c);

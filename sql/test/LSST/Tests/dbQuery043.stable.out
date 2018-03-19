@@ -34,7 +34,7 @@ Ready.
 #  AND E1.diaSourceId = S1.movingObjectId
 #  AND E2.diaSourceId = S2.movingObjectId
 #--   AND  spDist(S1.ra, S1.decl, S2.ra, S2.decl) < .05 -- the 5 arcsecond test
-% sys.L,	sys.L # table_name
+% sys.L2,	sys.L4 # table_name
 % s1,	s2 # name
 % bigint,	bigint # type
 % 1,	1 # length

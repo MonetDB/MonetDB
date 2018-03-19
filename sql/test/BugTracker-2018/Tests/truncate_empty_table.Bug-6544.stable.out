@@ -1,0 +1,157 @@
+stdout of test 'truncate_empty_table.Bug-6544` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 18:57:59 >  
+# 18:57:59 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38466" "--set" "mapi_usock=/var/tmp/mtest-16092/.s.monetdb.38466" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2018" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 18:57:59 >  
+
+# MonetDB 5 server v11.29.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 31.307 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://catskill.da.cwi.nl:38466/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-16092/.s.monetdb.38466
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python2 module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 21_dependency_views.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 97_comments.sql
+# loading sql script: 99_system.sql
+
+# 18:57:59 >  
+# 18:57:59 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-16092" "--port=38466"
+# 18:57:59 >  
+
+#CREATE TABLE bam_files (
+#	"file_id"        BIGINT        NOT NULL,
+#	"file_location"  CLOB          NOT NULL,
+#	"dbschema"       SMALLINT      NOT NULL,
+#	"format_version" VARCHAR(7),
+#	"sorting_order"  VARCHAR(10),
+#	"comments"       CLOB,
+#	CONSTRAINT "files_pkey_file_id" PRIMARY KEY ("file_id")
+#);
+#CREATE TABLE bam_sq (
+#	"sn"      CLOB          NOT NULL,
+#	"file_id" BIGINT        NOT NULL,
+#	"ln"      INTEGER,
+#	"as"      INTEGER,
+#	"m5"      CLOB,
+#	"sp"      CLOB,
+#	"ur"      CLOB,
+#	CONSTRAINT "sq_pkey_sn_file_id" PRIMARY KEY ("sn", "file_id"),
+#	CONSTRAINT "sq_fkey_file_id" FOREIGN KEY ("file_id") REFERENCES bam_files ("file_id")
+#);
+#CREATE TABLE bam_rg (
+#	"id"      CLOB          NOT NULL,
+#	"file_id" BIGINT        NOT NULL,
+#	"cn"      CLOB,
+#	"ds"      CLOB,
+#	"dt"      TIMESTAMP(6),
+#	"fo"      CLOB,
+#	"ks"      CLOB,
+#	"lb"      CLOB,
+#	"pg"      CLOB,
+#	"pi"      INTEGER,
+#	"pl"      CLOB,
+#	"pu"      CLOB,
+#	"sm"      CLOB,
+#	CONSTRAINT "rg_pkey_id_file_id" PRIMARY KEY ("id", "file_id"),
+#	CONSTRAINT "rg_fkey_file_id" FOREIGN KEY ("file_id") REFERENCES bam_files ("file_id")
+#);
+#SELECT COUNT(*) FROM bam_files;
+% sys.L4 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT COUNT(*) FROM bam_sq;
+% sys.L4 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT COUNT(*) FROM bam_rg;
+% sys.L4 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#TRUNCATE TABLE bam_sq;
+[ 0	]
+#TRUNCATE TABLE bam_rg;
+[ 0	]
+#TRUNCATE TABLE bam_files;
+[ 0	]
+#SELECT COUNT(*) FROM bam_files;
+% sys.L4 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT COUNT(*) FROM bam_sq;
+% sys.L4 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#SELECT COUNT(*) FROM bam_rg;
+% sys.L4 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#DROP TABLE bam_sq;
+#DROP TABLE bam_rg;
+#DROP TABLE bam_files;
+
+# 18:58:00 >  
+# 18:58:00 >  "Done."
+# 18:58:00 >  
+

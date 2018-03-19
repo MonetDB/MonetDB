@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef _SQL_PARSER_H_
@@ -49,9 +49,11 @@ typedef enum tokens {
 	SQL_DROP_DEFAULT,
 	SQL_ANALYZE,
 	SQL_DECLARE,
+	SQL_COMMENT,
 	SQL_SET,
 	SQL_CALL,
 	SQL_PREP,
+	SQL_PREPARE,
 	SQL_NAME,
 	SQL_USER,
 	SQL_PATH,
@@ -59,7 +61,10 @@ typedef enum tokens {
 	SQL_SCHEMA,
 	SQL_TABLE,
 	SQL_TABLE_OPERATOR,
+	SQL_VIEW,
+	SQL_INDEX,
 	SQL_TYPE,
+	SQL_SEQUENCE,
 	SQL_CASE,
 	SQL_CAST,
 	SQL_RETURN,
@@ -89,6 +94,7 @@ typedef enum tokens {
 	TR_MODE,
 	SQL_INSERT,
 	SQL_DELETE,
+	SQL_TRUNCATE,
 	SQL_UPDATE,
 	SQL_STORAGE,
 	SQL_CROSS,
@@ -128,6 +134,7 @@ typedef enum tokens {
 	SQL_GRANT_ROLES,
 	SQL_REVOKE,
 	SQL_REVOKE_ROLES,
+	SQL_EXEC,
 	SQL_EXECUTE,
 	SQL_PRIVILEGES,
 	SQL_ROLE,
@@ -140,6 +147,7 @@ typedef enum tokens {
 	SQL_FRAME,
 	SQL_COMPARE,
 	SQL_FILTER,
+	SQL_ROUTINE,
 	SQL_TEMP_LOCAL,
 	SQL_TEMP_GLOBAL,
 	SQL_INT_VALUE,
@@ -187,6 +195,8 @@ extern int find_subgeometry_type(char*);
 extern char *token2string(int token);
 extern int sqlparse(mvc *m);
 extern int sqlerror(mvc *sql, const char *s);
+
+#include "mal_errors.h"		/* for SQLSTATE() */
 
 #endif /*_SQL_PARSER_H_*/
 

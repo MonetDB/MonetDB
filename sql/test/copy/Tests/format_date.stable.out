@@ -46,14 +46,14 @@ Ready.
 % int,	int,	varchar,	double,	date,	varchar,	varchar,	int,	varchar,	int,	int,	varchar,	double,	date,	varchar,	varchar,	int,	varchar # type
 % 1,	1,	0,	24,	10,	0,	0,	1,	0,	1,	1,	0,	24,	10,	0,	0,	1,	0 # length
 #select count(*) from orders_1;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 3 # length
 [ 150	]
 #select count(*) from orders_2;
-% sys.L1 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 3 # length
 [ 150	]

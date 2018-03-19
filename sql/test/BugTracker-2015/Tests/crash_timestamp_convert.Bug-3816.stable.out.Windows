@@ -1,0 +1,29 @@
+stdout of test 'crash_timestamp_convert.Bug-3816` in directory 'sql/test/BugTracker-2015` itself:
+
+
+# 19:04:38 >  
+# 19:04:38 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39900" "--set" "monet_prompt=" "--forcemito" "--dbpath=C:\monettesting\Mic-Windows7-x86_64-installer-b4f5f29a002f-Dec2016\tests\sql\dbfarm\mTests_sql_test_BugTracker-2015" "--dbextra=C:\monettesting\Mic-Windows7-x86_64-installer-b4f5f29a002f-Dec2016\tests\sql\dbfarm\mTests_sql_test_BugTracker-2015_transient"
+# 19:04:38 >  
+
+# MonetDB 5 server v11.25.24 "Dec2016-b4f5f29a002f"
+# Serving database 'mTests_sql_test_BugTracker-2015', using 4 threads
+# Compiled for x86_64-pc-winnt/64bit
+# Found 11.991 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://lab03:39900/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 19:04:38 >  
+# 19:04:38 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=LAB03" "--port=39900"
+# 19:04:38 >  
+
+
+# 19:04:38 >  
+# 19:04:38 >  "Done."
+# 19:04:38 >  
+

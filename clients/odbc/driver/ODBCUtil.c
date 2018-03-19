@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -331,13 +331,13 @@ static struct scalars {
 	{"dayofmonth", 1, "\"dayofmonth\"(\1)", },
 	{"dayofweek", 1, "\"dayofweek\"(\1)", },
 	{"dayofyear", 1, "\"dayofyear\"(\1)", },
-	{"extract", 1, "\"extract\"(\1)", }, /* include "FROM" in argument */
+	{"extract", 1, "\"extract\"(\1)", }, /* include "X FROM " in argument */
 	{"hour", 1, "\"hour\"(\1)", },
 	{"minute", 1, "\"minute\"(\1)", },
 	{"month", 1, "\"month\"(\1)", },
 	{"monthname", 1, NULL, },
 	{"now", 0, "\"now\"()", },
-	{"quarter", 1, "((\"month\"(\1) - 1) / 3 + 1)", },
+	{"quarter", 1, "\"quarter\"(\1)", },
 	{"second", 1, "\"second\"(\1)", },
 	{"timestampadd", 3, NULL, },
 	{"timestampdiff", 3, NULL, },
@@ -357,12 +357,13 @@ static struct convert {
 	{ "SQL_BIGINT", "bigint", },
 	{ "SQL_BINARY", "binary large object", },
 	{ "SQL_BIT", "boolean", },
-	{ "SQL_CHAR", "character large object", },
+	{ "SQL_CHAR", "character", },
 	{ "SQL_DATE", "date", },
 	{ "SQL_DECIMAL", "decimal(18,7)", },
 	{ "SQL_DOUBLE", "double", },
 	{ "SQL_FLOAT", "float", },
 	{ "SQL_GUID", "uuid", },
+	{ "SQL_HUGEINT", "hugeint", },
 	{ "SQL_INTEGER", "integer", },
 	{ "SQL_INTERVAL_DAY", "interval day", },
 	{ "SQL_INTERVAL_DAY_TO_HOUR", "interval day to hour", },
@@ -389,7 +390,7 @@ static struct convert {
 	{ "SQL_VARCHAR", "character varying", },
 	{ "SQL_WCHAR", "character", },
 	{ "SQL_WLONGVARCHAR", "character large object", },
-	{ "SQL_WVARCHAR", "character large object", },
+	{ "SQL_WVARCHAR", "character varying", },
 	{ NULL, NULL, },	/* sentinel */
 };
 
@@ -456,7 +457,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(nquery);
 				return NULL;
 			}
-			sprintf(q, "%.*s%s%s", n, nquery, buf, p);
+			length = (size_t) sprintf(q, "%.*s%s%s", n, nquery, buf, p);
 			free(nquery);
 			nquery = q;
 			q += n;
@@ -496,7 +497,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(nquery);
 				return NULL;
 			}
-			sprintf(q, "%.*s%s%s", n, nquery, buf, p);
+			length = (size_t) sprintf(q, "%.*s%s%s", n, nquery, buf, p);
 			free(nquery);
 			nquery = q;
 			q += n;
@@ -516,7 +517,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(nquery);
 				return NULL;
 			}
-			sprintf(q, "%.*s%s%s", n, nquery, buf, p);
+			length = (size_t) sprintf(q, "%.*s%s%s", n, nquery, buf, p);
 			free(nquery);
 			nquery = q;
 			q += n;
@@ -538,7 +539,54 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(nquery);
 				return NULL;
 			}
-			sprintf(q, "%.*s%.*s%s", n, nquery, (int) intvl, intv, p);
+			length = (size_t) sprintf(q, "%.*s%.*s%s", n, nquery, (int) intvl, intv, p);
+			free(nquery);
+			nquery = q;
+			q += n;
+		} else if (strncasecmp(p, "escape ", 7) == 0) {
+			/* note that in ODBC the syntax is
+			 * {escape '\'}
+			 * whereas MonetDB expects
+			 * ESCAPE '\\'
+			 */
+			char esc;
+			p += 7;
+			while (*p == ' ')
+				p++;
+			if (*p++ != '\'')
+				continue;
+			if (*p == '\'' && p[1] == '\'' && p[2] == '\'') {
+				esc = '\'';
+				p += 3;
+			} else if (*p != '\'' && p[1] == '\'') {
+				esc = *p;
+				if (esc & 0200)
+					continue;
+				p += 2;
+			} else
+				continue;
+			while (*p == ' ')
+				p++;
+			if (*p++ != '}')
+				continue;
+			n = (int) (q - nquery);
+			pr = (int) (p - q);
+			q = malloc(length - pr + 13 + 1);
+			if (q == NULL) {
+				free(nquery);
+				return NULL;
+			}
+			switch (esc) {
+			case '\'':
+				length = (size_t) sprintf(q, "%.*s ESCAPE '''' %s", n, nquery, p);
+				break;
+			case '\\':
+				length = (size_t) sprintf(q, "%.*s ESCAPE '\\\\' %s", n, nquery, p);
+				break;
+			default:
+				length = (size_t) sprintf(q, "%.*s ESCAPE '%c' %s", n, nquery, esc, p);
+				break;
+			}
 			free(nquery);
 			nquery = q;
 			q += n;
@@ -549,10 +597,12 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 			while (*p == ' ')
 				p++;
 			proc = p;
-			while (*p && isascii(*p) && (*p == '_' || isalnum(*p)))
+			while (*p && isascii((unsigned char) *p) &&
+			       (*p == '_' || isalnum((unsigned char) *p)))
 				p++;
 			if (p == proc ||
-			    (isascii(*proc) && !isalpha(*proc)))
+			    (isascii((unsigned char) *proc) &&
+			     !isalpha((unsigned char) *proc)))
 				continue;
 			procend = p;
 			while (*p == ' ')
@@ -585,7 +635,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 				free(nquery);
 				return NULL;
 			}
-			sprintf(q, "%.*scall %.*s%s", n, nquery, (int) (procend - proc), proc, p);
+			length = (size_t) sprintf(q, "%.*scall %.*s%s", n, nquery, (int) (procend - proc), proc, p);
 			free(nquery);
 			nquery = q;
 			q += n;
@@ -603,10 +653,12 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 			while (*p == ' ')
 				p++;
 			scalarfunc = p;
-			while (*p && isascii(*p) && (*p == '_' || isalnum(*p)))
+			while (*p && isascii((unsigned char) *p) &&
+			       (*p == '_' || isalnum((unsigned char) *p)))
 				p++;
 			if (p == scalarfunc ||
-			    (isascii(*scalarfunc) && !isalpha(*scalarfunc)))
+			    (isascii((unsigned char) *scalarfunc) &&
+			     !isalpha((unsigned char) *scalarfunc)))
 				continue;
 			scalarfunclen = p - scalarfunc;
 			while (*p == ' ')
@@ -695,7 +747,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 							free(nquery);
 							return NULL;
 						}
-						sprintf(q, "%.*s'%s'%s", n, nquery, dbc->Connected && dbc->uid ? dbc->uid : "", p);
+						length = (size_t) sprintf(q, "%.*s'%s'%s", n, nquery, dbc->Connected && dbc->uid ? dbc->uid : "", p);
 						free(nquery);
 						nquery = q;
 						q += n;
@@ -705,7 +757,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 							free(nquery);
 							return NULL;
 						}
-						sprintf(q, "%.*s'%s'%s", n, nquery, dbc->Connected && dbc->dbname ? dbc->dbname : "", p);
+						length = (size_t) sprintf(q, "%.*s'%s'%s", n, nquery, dbc->Connected && dbc->dbname ? dbc->dbname : "", p);
 						free(nquery);
 						nquery = q;
 						q += n;
@@ -719,7 +771,7 @@ ODBCTranslateSQL(ODBCDbc *dbc, const SQLCHAR *query, size_t length, SQLULEN nosc
 									free(nquery);
 									return NULL;
 								}
-								sprintf(q, "%.*scast(%.*s as %s)%s", n, nquery, (int) args[0].arglen, args[0].argstart, c->server, p);
+								length = (size_t) sprintf(q, "%.*scast(%.*s as %s)%s", n, nquery, (int) args[0].arglen, args[0].argstart, c->server, p);
 								free(nquery);
 								nquery = q;
 								break;
@@ -846,6 +898,7 @@ struct sql_types ODBC_sql_types[] = {
 	{SQL_SMALLINT, SQL_SMALLINT, 0, UNAFFECTED, UNAFFECTED, UNAFFECTED, UNAFFECTED, 10, SQL_TRUE},
 	{SQL_INTEGER, SQL_INTEGER, 0, UNAFFECTED, UNAFFECTED, UNAFFECTED, UNAFFECTED, 10, SQL_TRUE},
 	{SQL_BIGINT, SQL_BIGINT, 0, UNAFFECTED, UNAFFECTED, UNAFFECTED, UNAFFECTED, 10, SQL_TRUE},
+	{SQL_HUGEINT, SQL_HUGEINT, 0, UNAFFECTED, UNAFFECTED, UNAFFECTED, UNAFFECTED, 10, SQL_TRUE},
 	{SQL_REAL, SQL_REAL, 0, FLT_MANT_DIG, UNAFFECTED, UNAFFECTED, UNAFFECTED, 2, SQL_FALSE},
 	{SQL_FLOAT, SQL_FLOAT, 0, DBL_MANT_DIG, UNAFFECTED, UNAFFECTED, UNAFFECTED, 2, SQL_FALSE},
 	{SQL_DOUBLE, SQL_DOUBLE, 0, DBL_MANT_DIG, UNAFFECTED, UNAFFECTED, UNAFFECTED, 2, SQL_FALSE},
@@ -1080,6 +1133,8 @@ translateSQLType(SQLSMALLINT ParameterType)
 		return "SQL_INTEGER";
 	case SQL_BIGINT:
 		return "SQL_BIGINT";
+	case SQL_HUGEINT:
+		return "SQL_HUGEINT";
 	case SQL_GUID:
 		return "SQL_GUID";
 	case SQL_DATETIME:
@@ -1476,8 +1531,6 @@ translateCompletionType(SQLSMALLINT CompletionType)
 }
 
 #if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 199901
-#include <stdarg.h>
-
 void
 ODBCLOG(const char *fmt, ...)
 {

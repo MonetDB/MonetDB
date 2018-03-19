@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /* author M.Kersten
@@ -59,7 +59,7 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	// Now optimize the code
 	if (newMalBlkStmt(mb,mb->ssize + updates) < 0)
-		return createException(MAL, "wlcr.optimizer", MAL_MALLOC_FAIL);
+		return createException(MAL, "wlcr.optimizer", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		pushInstruction(mb,p);
@@ -114,9 +114,9 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(old);
 
     /* Defense line against incorrect plans */
-	chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-	chkFlow(cntxt->fdout, mb);
-	//chkDeclarations(cntxt->fdout, mb);
+	chkTypes(cntxt->usermodule, mb, FALSE);
+	chkFlow(mb);
+	//chkDeclarations(mb);
     /* keep all actions taken as a post block comment */
 #ifdef _WLCR_DEBUG_
 	printFunction(cntxt->fdout,mb, 0, LIST_MAL_ALL);

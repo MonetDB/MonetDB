@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -38,10 +38,6 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				setVarCList(mb,getArg(p,0));
 			else if(getFunctionId(p) == subdeltaRef) 
 				setVarCList(mb,getArg(p,0));
-			else if(getFunctionId(p) == emptybindRef && p->retc == 2) 
-				setVarCList(mb,getArg(p,0));
-			else if(getFunctionId(p) == bindRef && p->retc == 2) 
-				setVarCList(mb,getArg(p,0));
 		}
 		else if( getModuleId(p) == algebraRef ){
 			if(getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef)
@@ -54,9 +50,7 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				setVarCList(mb,getArg(p,0));
 			else if(getFunctionId(p) == firstnRef )
 				setVarCList(mb,getArg(p,0));
-			else if(getFunctionId(p) == mergecandRef )
-				setVarCList(mb,getArg(p,0));
-			else if(getFunctionId(p) == intersectcandRef )
+			else if(getFunctionId(p) == subsliceRef )
 				setVarCList(mb,getArg(p,0));
 		}
 		else if( getModuleId(p) == generatorRef){
@@ -71,14 +65,17 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			if (getFunctionId(p) == subgroupRef || getFunctionId(p) == subgroupdoneRef ||
 			    getFunctionId(p) == groupRef || getFunctionId(p) == groupdoneRef)
 				setVarCList(mb, getArg(p, 1));
+		} else if (getModuleId(p) == batRef) {
+			if (getFunctionId(p) == mergecandRef || getFunctionId(p) == intersectcandRef)
+				setVarCList(mb,getArg(p,0));
 		}
 	}
 
     /* Defense line against incorrect plans */
 	/* plan remains unaffected */
-	//chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-	//chkFlow(cntxt->fdout, mb);
-	//chkDeclarations(cntxt->fdout, mb);
+	//chkTypes(cntxt->usermodule, mb, FALSE);
+	//chkFlow(mb);
+	//chkDeclarations(mb);
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=1 time=" LLFMT " usec","candidates",usec);

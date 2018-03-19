@@ -75,6 +75,7 @@ stderr of test 'drop-sequence-crash.SF-2854195` in directory 'sql/test/BugTracke
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = DROP SEQUENCE "seq_2184";
 ERROR = !DROP SEQUENCE: no such sequence 'seq_2184'
+CODE  = 42M35
 
 # 14:55:13 >  
 # 14:55:13 >  Done.

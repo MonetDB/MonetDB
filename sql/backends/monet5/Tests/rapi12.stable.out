@@ -48,7 +48,7 @@ Ready.
 #				value=c(split$age, split$height, split$weight))))
 #};
 #SELECT * FROM widetolong( (SELECT * FROM observations AS o) );
-% .,	.,	. # table_name
+% .L3,	.L3,	.L3 # table_name
 % subject,	key,	value # name
 % int,	clob,	int # type
 % 1,	6,	3 # length

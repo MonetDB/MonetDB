@@ -33,12 +33,15 @@ stderr of test 'columnRights` in directory 'sql/test/Users` itself:
 MAPI  = (alice) /var/tmp/mtest-9087/.s.monetdb.35899
 QUERY = SELECT price FROM orders;
 ERROR = !SELECT: access denied for alice to table 'library.orders'
-MAPI  = (alice) /var/tmp/mtest-9087/.s.monetdb.35899
+CODE  = 42000
+MAPI  = (alice) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT name FROM orders; --insufficient rights
 ERROR = !SELECT: access denied for alice to table 'library.orders'
-MAPI  = (alice) /var/tmp/mtest-9087/.s.monetdb.35899
+CODE  = 42000
+MAPI  = (alice) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = UPDATE orders SET price = 0; --insufficient rights
 ERROR = !UPDATE: insufficient privileges for user 'alice' to update table 'orders' on column 'price'
+CODE  = 42000
 
 # 11:31:52 >  
 # 11:31:52 >  "Done."

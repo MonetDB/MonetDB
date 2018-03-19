@@ -61,12 +61,12 @@ Ready.
 % name,	type,	name,	type # name
 % varchar,	int,	varchar,	int # type
 % 44,	1,	44,	1 # length
+[ "dependency_types_dependency_type_id_pkey",	0,	"dependency_types_dependency_type_id_pkey",	0	]
+[ "dependency_types_dependency_type_name_unique",	0,	"dependency_types_dependency_type_name_unique",	1	]
 [ "spatial_ref_sys_srid_pkey",	0,	"spatial_ref_sys_srid_pkey",	0	]
 [ "keywords_keyword_pkey",	0,	"keywords_keyword_pkey",	0	]
 [ "table_types_table_type_id_pkey",	0,	"table_types_table_type_id_pkey",	0	]
 [ "table_types_table_type_name_unique",	0,	"table_types_table_type_name_unique",	1	]
-[ "dependency_types_dependency_type_id_pkey",	0,	"dependency_types_dependency_type_id_pkey",	0	]
-[ "dependency_types_dependency_type_name_unique",	0,	"dependency_types_dependency_type_name_unique",	1	]
 [ "function_types_function_type_id_pkey",	0,	"function_types_function_type_id_pkey",	0	]
 [ "function_types_function_type_name_unique",	0,	"function_types_function_type_name_unique",	1	]
 [ "function_languages_language_id_pkey",	0,	"function_languages_language_id_pkey",	0	]
@@ -84,6 +84,7 @@ Ready.
 [ "rg_fkey_file_id",	1,	"rg_fkey_file_id",	2	]
 [ "pg_pkey_id_file_id",	0,	"pg_pkey_id_file_id",	0	]
 [ "pg_fkey_file_id",	1,	"pg_fkey_file_id",	2	]
+[ "comments_id_pkey",	0,	"comments_id_pkey",	0	]
 [ "unique_key",	0,	"unique_key",	1	]
 [ "allnewtriples_subject_idx",	0,	NULL,	NULL	]
 [ "allnewtriples_predicate_idx",	0,	NULL,	NULL	]
@@ -94,12 +95,12 @@ Ready.
 % name,	type,	name,	type # name
 % varchar,	int,	varchar,	int # type
 % 44,	1,	44,	1 # length
+[ "dependency_types_dependency_type_id_pkey",	0,	"dependency_types_dependency_type_id_pkey",	0	]
+[ "dependency_types_dependency_type_name_unique",	0,	"dependency_types_dependency_type_name_unique",	1	]
 [ "spatial_ref_sys_srid_pkey",	0,	"spatial_ref_sys_srid_pkey",	0	]
 [ "keywords_keyword_pkey",	0,	"keywords_keyword_pkey",	0	]
 [ "table_types_table_type_id_pkey",	0,	"table_types_table_type_id_pkey",	0	]
 [ "table_types_table_type_name_unique",	0,	"table_types_table_type_name_unique",	1	]
-[ "dependency_types_dependency_type_id_pkey",	0,	"dependency_types_dependency_type_id_pkey",	0	]
-[ "dependency_types_dependency_type_name_unique",	0,	"dependency_types_dependency_type_name_unique",	1	]
 [ "function_types_function_type_id_pkey",	0,	"function_types_function_type_id_pkey",	0	]
 [ "function_types_function_type_name_unique",	0,	"function_types_function_type_name_unique",	1	]
 [ "function_languages_language_id_pkey",	0,	"function_languages_language_id_pkey",	0	]
@@ -117,6 +118,7 @@ Ready.
 [ "rg_fkey_file_id",	1,	"rg_fkey_file_id",	2	]
 [ "pg_pkey_id_file_id",	0,	"pg_pkey_id_file_id",	0	]
 [ "pg_fkey_file_id",	1,	"pg_fkey_file_id",	2	]
+[ "comments_id_pkey",	0,	"comments_id_pkey",	0	]
 [ "unique_key",	0,	"unique_key",	1	]
 
 # 16:23:54 >  

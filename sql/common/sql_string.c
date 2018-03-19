@@ -3,13 +3,14 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
-#include <sql_mem.h>
-#include <gdk.h>
+#include "sql_mem.h"
+#include "gdk.h"
 #include "sql_string.h"
+#include "mal_exception.h"
 
 /* 
  * some string functions.
@@ -80,7 +81,7 @@ strip_extra_zeros(char *s)
 {
 	char *res = s;
 
-	for (; *s && isspace((int) (unsigned char) *s); s++)
+	for (; *s && isspace((unsigned char) *s); s++)
 		;
 	res = s;
 	/* find end, and strip extra 0's */
@@ -93,7 +94,7 @@ strip_extra_zeros(char *s)
 	return res;
 }
 
-const char *
+char *
 sql2str(char *s)
 {
 	int escaped = 0;
@@ -160,7 +161,6 @@ char *
 sql_escape_str(char *s)
 {
 	size_t l = strlen(s);
-	// FIXME unchecked_malloc NEW_ARRAY can return NULL
 	char *res, *r = NEW_ARRAY(char, (l * 2) + 1);
 
 	res = r;
@@ -180,7 +180,6 @@ const char *
 sql_escape_ident(const char *s)
 {
 	size_t l = strlen(s);
-	// FIXME unchecked_malloc NEW_ARRAY can return NULL
 	char *res, *r = NEW_ARRAY(char, (l * 2) + 1);
 
 	res = r;
@@ -204,7 +203,7 @@ char *sql_message( const char *format, ... )
 	va_start (ap,format);
 	(void) vsnprintf( buf, BUFSIZ, format, ap); 
 	va_end (ap);
-	return _STRDUP(buf);
+	return GDKstrdup(buf);
 }
 
 char *sa_message( sql_allocator *sa, const char *format, ... )

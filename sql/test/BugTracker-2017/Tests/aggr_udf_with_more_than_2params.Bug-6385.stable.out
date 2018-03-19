@@ -1,0 +1,115 @@
+stdout of test 'aggr_udf_with_more_than_2params.Bug-6385` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 16:36:12 >  
+# 16:36:12 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35710" "--set" "mapi_usock=/var/tmp/mtest-31488/.s.monetdb.35710" "--set" "monet_prompt=" "--forcemito" "--dbpath=/Users/jennie/scratch/monet-install/Jul2017/debug/var/MonetDB/mTests_sql_test_BugTracker-2017" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 16:36:12 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2017', using 4 threads
+# Compiled for x86_64-apple-darwin16.7.0/64bit with 128bit integers
+# Found 16.000 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-240.eduroam.cwi.nl:35710/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-31488/.s.monetdb.35710
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python2 module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 16:36:12 >  
+# 16:36:12 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-31488" "--port=35710"
+# 16:36:12 >  
+
+#CREATE AGGREGATE aggr2(val INTEGER, val2 INTEGER)
+#RETURNS INTEGER
+#LANGUAGE PYTHON {
+#    unique = numpy.unique(aggr_group)
+#    x = numpy.zeros(shape=(unique.size))
+#    for i in range(0, unique.size):
+#        x[i] = numpy.sum(val[aggr_group==unique[i]])
+#    return(x)
+#};
+#CREATE AGGREGATE aggr3(val INTEGER, val2 INTEGER, val3 INTEGER)
+#RETURNS DOUBLE
+#LANGUAGE PYTHON {
+#    unique = numpy.unique(aggr_group)
+#    x = numpy.zeros(shape=(unique.size))
+#    for i in range(0, unique.size):
+#        x[i] = numpy.sum(val[aggr_group==unique[i]])
+#    return(x)
+#};
+#CREATE AGGREGATE aggr4(val INTEGER, val2 INTEGER, val3 INTEGER, val4 INTEGER)
+#RETURNS DOUBLE
+#LANGUAGE PYTHON {
+#    unique = numpy.unique(aggr_group)
+#    x = numpy.zeros(shape=(unique.size))
+#    for i in range(0, unique.size):
+#        x[i] = numpy.sum(val[aggr_group==unique[i]])
+#    return(x)
+#};
+#CREATE TABLE grouped_ints (value INTEGER, groupnr INTEGER, dbvalue double);
+#INSERT INTO  grouped_ints VALUES (1, 0, 0.11), (2, 1, 0.22), (3, 0, 0.33), (4,1, 0.44), (5,0, 0.55);
+[ 5	]
+#SELECT groupnr, aggr3(value, value, value) FROM grouped_ints GROUP BY groupnr;
+% sys.grouped_ints,	sys.L4 # table_name
+% groupnr,	L3 # name
+% int,	double # type
+% 1,	24 # length
+[ 0,	9	]
+[ 1,	6	]
+#SELECT groupnr, aggr4(value, value, value, value) FROM grouped_ints GROUP BY groupnr;
+% sys.grouped_ints,	sys.L4 # table_name
+% groupnr,	L3 # name
+% int,	double # type
+% 1,	24 # length
+[ 0,	9	]
+[ 1,	6	]
+#DROP TABLE grouped_ints;
+#DROP AGGREGATE aggr2;
+#DROP AGGREGATE aggr3;
+
+# 16:36:13 >  
+# 16:36:13 >  "Done."
+# 16:36:13 >  
+

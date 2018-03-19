@@ -210,8 +210,8 @@ strptime (const char *buf, const char *fmt, struct tm *timeptr)
 	char *s;
 	int ret;
 
-	if (isspace (c)) {
-	    while (isspace (*buf))
+	if (isspace ((unsigned char) c)) {
+	    while (isspace ((unsigned char) *buf))
 		++buf;
 	} else if (c == '%' && fmt[1] != '\0') {
 	    c = *++fmt;

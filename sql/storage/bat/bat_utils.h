@@ -3,14 +3,14 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef BAT_UTILS_H
 #define BAT_UTILS_H
 
 #include "sql_storage.h"
-#include <gdk_logger.h>
+#include "gdk_logger.h"
 
 /* when returning a log_bid, errors are reported using BID_NIL */
 #define BID_NIL 0
@@ -38,7 +38,7 @@ extern log_bid ebat2real(log_bid b, oid ibase);
 extern log_bid e_bat(int type);
 extern BAT *e_BAT(int type);
 extern log_bid ebat_copy(log_bid b, oid ibase, int temp);
-extern void bat_utils_init(void);
+extern int bat_utils_init(void);
 
 extern sql_table * tr_find_table( sql_trans *tr, sql_table *t);
 extern sql_column * tr_find_column( sql_trans *tr, sql_column *c);

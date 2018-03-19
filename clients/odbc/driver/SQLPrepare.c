@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -108,15 +108,15 @@ MNDBPrepare(ODBCStmt *stmt,
 
 		/* XXX more fine-grained control required */
 		/* Syntax error or access violation */
-		if ((s = mapi_result_error(hdl)) == NULL)
-			s = mapi_error_str(stmt->Dbc->mid);
-		if (s && (e = ODBCErrorType(s, &m)) != NULL)
+		if ((m = mapi_result_error(hdl)) == NULL)
+			m = mapi_error_str(stmt->Dbc->mid);
+		if (m && (e = mapi_result_errorcode(hdl)) != NULL)
 			addStmtError(stmt, e, m, 0);
 		else
-			addStmtError(stmt, "42000", s, 0);
+			addStmtError(stmt, "42000", m, 0);
 		return SQL_ERROR;
 	}
-	if (mapi_rows_affected(hdl) > (1 << 16)) {
+	if (mapi_rows_affected(hdl) > ((int64_t) 1 << 16)) {
 		/* arbitrarily limit the number of parameters */
 		/* Memory allocation error */
 		addStmtError(stmt, "HY001", 0, 0);
@@ -321,7 +321,7 @@ SQLPrepare(SQLHSTMT StatementHandle,
 	   SQLINTEGER TextLength)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLPrepare " PTRFMT "\n", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLPrepare %p\n", StatementHandle);
 #endif
 
 	if (!isValidStmt((ODBCStmt *) StatementHandle))
@@ -352,7 +352,7 @@ SQLPrepareW(SQLHSTMT StatementHandle,
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLPrepareW " PTRFMT "\n", PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLPrepareW %p\n", StatementHandle);
 #endif
 
 	if (!isValidStmt(stmt))

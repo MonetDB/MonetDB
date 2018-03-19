@@ -10,4 +10,4 @@ rem ignore PYTHONPATH from Mtest, it is hardcoded to the dirs for the
 rem Python that runs Mtest (currently always Python 2)
 set PYTHONPATH=%PYTHON3PATH%
 
-%PYTHON3% "%testpath%/sqlsample.py" %MAPIPORT% %TSTDB% %MAPIHOST%
+"%PYTHON3%" "%testpath%/sqlsample.py" %MAPIPORT% %TSTDB% %MAPIHOST%

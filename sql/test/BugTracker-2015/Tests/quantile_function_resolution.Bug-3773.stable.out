@@ -35,22 +35,22 @@ Ready.
 % .plan # table_name
 % rel # name
 % clob # type
-% 88 # length
+% 100 # length
 project (
 | group by (
-| | table(sys.x) [ x.y ] COUNT 
-| ) [  ] [ sys.quantile no nil (decimal(18,3)[x.y] as x.y, double "0.000000") as L3.L3 ]
-) [ L3 as L4.L3 ]
+| | table(sys.x) [ "x"."y" ] COUNT 
+| ) [  ] [ sys.quantile no nil (decimal(18,3)["x"."y"] as "x"."y", double "0.000000") as "L3"."L3" ]
+) [ "L3" as "L4"."L3" ]
 #plan select quantile(y, 0) from x;
 % .plan # table_name
 % rel # name
 % clob # type
-% 88 # length
+% 100 # length
 project (
 | group by (
-| | table(sys.x) [ x.y ] COUNT 
-| ) [  ] [ sys.quantile no nil (decimal(18,3)[x.y] as x.y, double "0.000000") as L3.L3 ]
-) [ L3 as L4.L3 ]
+| | table(sys.x) [ "x"."y" ] COUNT 
+| ) [  ] [ sys.quantile no nil (decimal(18,3)["x"."y"] as "x"."y", double "0.000000") as "L3"."L3" ]
+) [ "L3" as "L4"."L3" ]
 #rollback;
 
 # 10:18:57 >  

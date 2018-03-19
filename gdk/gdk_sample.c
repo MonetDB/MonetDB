@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -123,20 +123,16 @@ BATsample(BAT *b, BUN n)
 	cnt = BATcount(b);
 	/* empty sample size */
 	if (n == 0) {
-		bn = COLnew(0, TYPE_void, 0, TRANSIENT);
+		bn = BATdense(0, 0, 0);
 		if (bn == NULL) {
 			return NULL;
 		}
-		BATsetcount(bn, 0);
-		BATtseqbase(bn, 0);
 	/* sample size is larger than the input BAT, return all oids */
 	} else if (cnt <= n) {
-		bn = COLnew(0, TYPE_void, cnt, TRANSIENT);
+		bn = BATdense(0, b->hseqbase, cnt);
 		if (bn == NULL) {
 			return NULL;
 		}
-		BATsetcount(bn, cnt);
-		BATtseqbase(bn, b->hseqbase);
 	} else {
 		oid minoid = b->hseqbase;
 		oid maxoid = b->hseqbase + cnt;

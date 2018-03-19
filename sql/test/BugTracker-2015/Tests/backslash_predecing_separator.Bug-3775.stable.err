@@ -34,9 +34,11 @@ MAPI  = (monetdb) /var/tmp/mtest-24322/.s.monetdb.30257
 QUERY = COPY 1 RECORDS INTO whatgoodisadatabaseifyoucannotimport FROM STDIN USING DELIMITERS ' ', '\n', '';
         asdf\ 42
 ERROR = !Failed to import table 'whatgoodisadatabaseifyoucannotimport', Column value 1 missing
-MAPI  = (monetdb) /var/tmp/mtest-19807/.s.monetdb.36283
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT * FROM whatgoodisadatabaseifyoucannotimport;
-ERROR = !current transaction is aborted (please ROLLBACK)
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
 
 # 10:18:58 >  
 # 10:18:58 >  "Done."

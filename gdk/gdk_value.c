@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -142,9 +142,10 @@ VALcopy(ValPtr d, const ValRecord *s)
 {
 	if (!ATOMextern(s->vtype)) {
 		*d = *s;
-	} else if (s->val.pval == 0) {
-		// FIXME unchecked_malloc ATOMnil can return NULL
+	} else if (s->val.pval == NULL) {
 		d->val.pval = ATOMnil(s->vtype);
+		if (d->val.pval == NULL)
+			return NULL;
 		d->vtype = s->vtype;
 	} else if (s->vtype == TYPE_str) {
 		d->vtype = TYPE_str;
@@ -225,11 +226,10 @@ VALinit(ValPtr d, int tpe, const void *s)
 
 /* Format the value in RES in the standard way for the type of RES
  * into a newly allocated buffer which is returned through BUF. */
-int
-VALformat(char **buf, const ValRecord *res)
+char *
+VALformat(const ValRecord *res)
 {
-	*buf = 0;
-	return ATOMformat(res->vtype, VALptr(res), buf);
+	return ATOMformat(res->vtype, VALptr(res));
 }
 
 /* Convert (cast) the value in T to the type TYP, do this in place.
@@ -306,25 +306,25 @@ VALisnil(const ValRecord *v)
 	case TYPE_void:
 		return 1;
 	case TYPE_bte:
-		return v->val.btval == bte_nil;
+		return is_bte_nil(v->val.btval);
 	case TYPE_sht:
-		return v->val.shval == sht_nil;
+		return is_sht_nil(v->val.shval);
 	case TYPE_int:
-		return v->val.ival == int_nil;
+		return is_int_nil(v->val.ival);
 	case TYPE_lng:
-		return v->val.lval == lng_nil;
+		return is_lng_nil(v->val.lval);
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		return v->val.hval == hge_nil;
+		return is_hge_nil(v->val.hval);
 #endif
 	case TYPE_flt:
-		return v->val.fval == flt_nil;
+		return is_flt_nil(v->val.fval);
 	case TYPE_dbl:
-		return v->val.dval == dbl_nil;
+		return is_dbl_nil(v->val.dval);
 	case TYPE_oid:
-		return v->val.oval == oid_nil;
+		return is_oid_nil(v->val.oval);
 	case TYPE_bat:
-		return v->val.bval == bat_nil || v->val.bval == 0;
+		return is_bat_nil(v->val.bval);
 	default:
 		break;
 	}

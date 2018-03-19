@@ -1,0 +1,54 @@
+stdout of test 'sqlsmith.Bug-6455` in directory 'sql/test/mergetables` itself:
+
+
+# 13:19:13 >  
+# 13:19:13 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31757" "--set" "mapi_usock=/var/tmp/mtest-3545/.s.monetdb.31757" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_mergetables"
+# 13:19:13 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mergetables', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.330 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:31757/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-3545/.s.monetdb.31757
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 13:19:14 >  
+# 13:19:14 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-3545" "--port=31757"
+# 13:19:14 >  
+
+#select  
+#  ref_6.length as c0, 
+#  case when EXISTS (
+#      select  
+#          97 as c0, 
+#          ref_3.y as c1, 
+#          ref_16.z as c2, 
+#          ref_9.x as c3, 
+#          ref_1.dependency_type_name as c4, 
+#          ref_16.z as c5, 
+#          ref_6.name as c6, 
+#          ref_7.y as c7, 
+#          ref_18.grantor as c8, 
+#          subq_0.c4 as c9, 
+#          5 as c10, 
+#          ref_3.x as c11, 
+#          ref_4.index_type_id as c12, 
+#          ref_27.z as c13, 
+#          ref_1.dependency_type_name as c14, 
+% .L16,	.L230,	.L232,	.L234,	.L236,	.L240,	.L242,	.L244,	.L246 # table_name
+% c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7,	c8 # name
+% int,	int,	int,	int,	int,	varchar,	int,	varchar,	smallint # type
+% 1,	1,	1,	1,	1,	0,	1,	0,	1 # length
+
+# 13:19:14 >  
+# 13:19:14 >  "Done."
+# 13:19:14 >  
+

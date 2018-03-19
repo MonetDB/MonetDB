@@ -33,6 +33,7 @@ MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT *
         FROM bam.alignments_3;
 ERROR = !SELECT: no such table 'alignments_3'
+CODE  = 42S02
 
 # 10:22:39 >  
 # 10:22:39 >  "Done."

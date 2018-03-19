@@ -1,8 +1,8 @@
 HAVE_LIBR?deps-install
 HAVE_LIBR?install
 HAVE_LIBR?deps-test
-HAVE_LIBR&HAVE_PERL?dbi
-HAVE_LIBR?dplyr
+HAVE_LIBR?dbi
+#HAVE_LIBR?dplyr too slow
 HAVE_LIBR?dplyr-flights
 HAVE_LIBR?copy_into_fwf
 HAVE_LIBR&NOT_WIN32?dbapply

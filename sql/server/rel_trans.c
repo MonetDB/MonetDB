@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -18,6 +18,8 @@ rel_trans(mvc *sql, int trans_type, int nr, char *name)
 {
 	sql_rel *rel = rel_create(sql->sa);
 	list *exps = new_exp_list(sql->sa);
+	if(!rel || !exps)
+		return NULL;
 
 	append(exps, exp_atom_int(sql->sa, nr));
 	if (name)
@@ -59,7 +61,7 @@ rel_transactions(mvc *sql, symbol *s)
 		ret = rel_trans(sql, DDL_TRANS, s->data.i_val, NULL);
 		break;
 	default:
-		return sql_error(sql, 01, "transaction unknown Symbol(" PTRFMT ")->token = %s", PTRFMTCAST s, token2string(s->token));
+		return sql_error(sql, 01, SQLSTATE(42000) "Transaction unknown Symbol(%p)->token = %s", s, token2string(s->token));
 	}
 	return ret;
 }

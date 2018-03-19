@@ -71,8 +71,8 @@ Ready.
 #    rep(T,4)
 #};
 #SELECT rapi14() FROM dval;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]

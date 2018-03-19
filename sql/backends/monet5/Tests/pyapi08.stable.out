@@ -92,8 +92,8 @@ Ready.
 #    lat1 = lat[it.index]
 #    lon1 = lon[it.index]
 #create temporary table planes as SELECT station, (ts-CAST('1970-01-01' AS timestamp)), lat, lon, alt*0.3048 FROM streams WHERE type = 2 and alt > 0 with data;
-#select * from numpy_distance( (SELECT * FROM planes AS p) );
-% .,	.,	.,	. # table_name
+#select * from numpy_distance_encoded( (SELECT * FROM planes AS p) );
+% .L3,	.L3,	.L3,	.L3 # table_name
 % s1,	s2,	timestamp,	mindist # name
 % clob,	clob,	int,	int # type
 % 8,	8,	10,	5 # length

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -114,9 +114,9 @@ skip_authority(const char *uri, const char **userp, const char **passp, const ch
 			if (passp)
 				*passp = NULL;
 		} else {
-			if (*userp)
+			if (userp)
 				*userp = user;
-			if (*passp)
+			if (passp)
 				*passp = pass;
 		}
 		if (portp)
@@ -176,7 +176,7 @@ skip_search(const char *uri)
 }
 
 static int needEscape(char c){
-	if( isalnum((int)c) )
+	if( isalnum((unsigned char)c) )
 		return 0;
 	if( c == '#' || c == '-' || c == '_' || c == '.' || c == '!' ||
 		c == '~' || c == '*' || c == '\'' || c == '(' || c == ')' )
@@ -208,7 +208,7 @@ escape_str(str *retval, str s)
 		throw(ILLARG, "url.escape", "url missing");
 
 	if (!( res = (str) GDKmalloc( strlen(s) * 3 ) ))
-		throw(MAL, "url.escape", MAL_MALLOC_FAIL);
+		throw(MAL, "url.escape", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	for (x = 0, y = 0; s[x]; ++x, ++y) {
 		if (needEscape(s[x])) {
 			if (s[x] == ' ') {
@@ -225,7 +225,7 @@ escape_str(str *retval, str s)
 
 	if ((*retval = GDKrealloc(res, strlen(res)+1)) == NULL) {
 		GDKfree(res);
-		throw(MAL, "url.escape", MAL_MALLOC_FAIL);
+		throw(MAL, "url.escape", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	return MAL_SUCCEED;
 }
@@ -244,7 +244,7 @@ unescape_str(str *retval, str s)
 
 	res = (str) GDKmalloc(strlen(s));
 	if (!res)
-		throw(MAL, "url.unescape", MAL_MALLOC_FAIL);
+		throw(MAL, "url.unescape", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	for (x = 0, y = 0; s[x]; ++x, ++y) {
 		if (s[x] == '%') {
@@ -258,7 +258,7 @@ unescape_str(str *retval, str s)
 
 	if ((*retval = GDKrealloc(res, strlen(res)+1)) == NULL) {
 		GDKfree(res);
-		throw(MAL, "url.unescape", MAL_MALLOC_FAIL);
+		throw(MAL, "url.unescape", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	return MAL_SUCCEED;
 }
@@ -286,40 +286,49 @@ x2c(char *what)
  * Here you find the wrappers around the V4 url library included above.
  */
 
-int
-URLfromString(str src, int *len, str *u)
+ssize_t
+URLfromString(const char *src, size_t *len, str *u)
 {
-	/* actually parse the message for valid url */
-	if (*u !=0)
+	size_t l = strlen(src) + 1;
+
+	if (*len < l || *u == NULL) {
 		GDKfree(*u);
+		*u = GDKmalloc(l);
+		if (*u == NULL)
+			return -1;
+		*len = l;
+	}
 
-	*len = (int) strlen(src);
-	*u = GDKstrdup(src);
+	/* actually parse the message for valid url */
 
-	return *len;
+	if (strcmp(src, "nil") == 0)
+		strcpy(*u, str_nil);
+	else
+		memcpy(*u, src, l);
+	return (ssize_t) l - 1;
 }
 
-int
-URLtoString(str *s, int *len, str src)
+ssize_t
+URLtoString(str *s, size_t *len, const char *src)
 {
-	int l;
+	size_t l;
 
 	if (GDK_STRNIL(src)) {
 		*s = GDKstrdup("nil");
-		return 0;
+		return *s ? 1 : -1;
 	}
-	l = (int) strlen(src) + 3;
+	l = strlen(src) + 3;
 	/* if( !*s) *s= (str)GDKmalloc(*len = l); */
 
 	if (l >= *len || *s == NULL) {
 		GDKfree(*s);
 		*s = (str) GDKmalloc(l);
 		if (*s == NULL)
-			return 0;
+			return -1;
 	}
 	snprintf(*s, l, "\"%s\"", src);
 	*len = l - 1;
-	return *len;
+	return (ssize_t) *len;
 }
 
 /* COMMAND "getAnchor": Extract an anchor (reference) from the URL
@@ -341,7 +350,7 @@ URLgetAnchor(str *retval, url *val)
 	else
 		s = str_nil;
 	if ((*retval = GDKstrdup(s)) == NULL)
-		throw(MAL, "url.getAnchor", MAL_MALLOC_FAIL);
+		throw(MAL, "url.getAnchor", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -377,7 +386,7 @@ URLgetBasename(str *retval, url *val)
 		}
 	}
 	if (*retval == NULL)
-		throw(MAL, "url.getBasename", MAL_MALLOC_FAIL);
+		throw(MAL, "url.getBasename", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -416,7 +425,7 @@ URLgetContent(str *retval, url *Str1)
 			if (oldbuf != NULL)
 				GDKfree(oldbuf);
 			mnstr_destroy(f);
-			throw(MAL, "url.getContent", MAL_MALLOC_FAIL);
+			throw(MAL, "url.getContent", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 		oldbuf = NULL;
 		(void)memcpy(retbuf + rlen, buf, len);
@@ -454,7 +463,7 @@ URLgetContext(str *retval, url *val)
 		(*retval)[s - p] = 0;
 	}
 	if (*retval == NULL)
-		throw(MAL, "url.getContext", MAL_MALLOC_FAIL);
+		throw(MAL, "url.getContext", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -484,7 +493,7 @@ URLgetExtension(str *retval, url *val)
 		}
 	}
 	if (*retval == NULL)
-		throw(MAL, "url.getExtension", MAL_MALLOC_FAIL);
+		throw(MAL, "url.getExtension", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -514,7 +523,7 @@ URLgetFile(str *retval, url *val)
 		}
 	}
 	if (*retval == NULL)
-		throw(MAL, "url.getFile", MAL_MALLOC_FAIL);
+		throw(MAL, "url.getFile", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -548,7 +557,7 @@ URLgetHost(str *retval, url *val)
 		}
 	}
 	if (*retval == NULL)
-		throw(MAL, "url.getHost", MAL_MALLOC_FAIL);
+		throw(MAL, "url.getHost", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -586,7 +595,7 @@ URLgetDomain(str *retval, url *val)
 		}
 	}
 	if (*retval == NULL)
-		throw(MAL, "url.getDomain", MAL_MALLOC_FAIL);
+		throw(MAL, "url.getDomain", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -614,7 +623,7 @@ URLgetPort(str *retval, url *val)
 		}
 	}
 	if (*retval == NULL)
-		throw(MAL, "url.getPort", MAL_MALLOC_FAIL);
+		throw(MAL, "url.getPort", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -632,7 +641,7 @@ URLgetProtocol(str *retval, url *val)
 		throw(ILLARG, "url.getProtocol", "bad url");
 	l = s - *val;
 	if ((*retval = GDKmalloc(l)) == NULL)
-		throw(MAL, "url.getProtocol", MAL_MALLOC_FAIL);
+		throw(MAL, "url.getProtocol", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	strncpy(*retval, *val, l - 1);
 	(*retval)[l - 1] = 0;
 	return MAL_SUCCEED;
@@ -666,7 +675,7 @@ URLgetQuery(str *retval, url *val)
 		*retval = GDKstrdup(str_nil);
 	}
 	if (*retval == NULL)
-		throw(MAL, "url.getQuery", MAL_MALLOC_FAIL);
+		throw(MAL, "url.getQuery", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -685,7 +694,7 @@ URLgetRobotURL(str *retval, url *val)
 		throw(ILLARG, "url.getQuery", "bad url");
 	l = s - *val;
 	if ((*retval = GDKmalloc(l + sizeof("/robots.txt"))) == NULL)
-		throw(MAL, "url.getQuery", MAL_MALLOC_FAIL);
+		throw(MAL, "url.getQuery", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	sprintf(*retval, "%.*s/robots.txt", (int) l, *val);
 	return MAL_SUCCEED;
 }
@@ -721,7 +730,7 @@ URLgetUser(str *retval, url *val)
 		}
 	}
 	if (*retval == NULL)
-		throw(MAL, "url.getUser", MAL_MALLOC_FAIL);
+		throw(MAL, "url.getUser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -740,6 +749,8 @@ str
 URLnew(url *u, str *val)
 {
 	*u = GDKstrdup(*val);
+	if (*u == NULL)
+		throw(MAL, "url.new", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -751,7 +762,7 @@ URLnew3(url *u, str *protocol, str *server, str *file)
 	l = GDK_STRLEN(*file) + GDK_STRLEN(*server) + GDK_STRLEN(*protocol) + 10;
 	*u = GDKmalloc(l);
 	if (*u == NULL)
-		throw(MAL, "url.newurl", MAL_MALLOC_FAIL);
+		throw(MAL, "url.newurl", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	snprintf(*u, l, "%s://%s/%s", *protocol, *server, *file);
 	return MAL_SUCCEED;
 }
@@ -775,7 +786,7 @@ URLnew4(url *u, str *protocol, str *server, int *port, str *file)
 	l = strlen(File) + strlen(Server) + strlen(Protocol) + 20;
 	*u = GDKmalloc(l);
 	if (*u == NULL)
-		throw(MAL, "url.newurl", MAL_MALLOC_FAIL);
+		throw(MAL, "url.newurl", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	snprintf(*u, l, "%s://%s:%d/%s", Protocol, Server, *port, File);
 	return MAL_SUCCEED;
 }
@@ -783,5 +794,7 @@ URLnew4(url *u, str *protocol, str *server, int *port, str *file)
 str URLnoop(url *u, url *val)
 {
 	*u = GDKstrdup(*val);
+	if (*u == NULL)
+		throw(MAL, "url.noop", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }

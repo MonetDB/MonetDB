@@ -12,8 +12,8 @@ stderr of test 'limit_in_create_view.SF-924448` in directory 'sql/test/BugDay_20
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = create view top as select * from tables limit 10;
-ERROR = !42000!CREATE VIEW: LIMIT not supported
-
+ERROR = !CREATE VIEW: LIMIT not supported
+CODE  = 42000
 
 # 17:24:16 >  
 # 17:24:16 >  Done.

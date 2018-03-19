@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -19,7 +19,6 @@
 #include "rel_exp.h"
 
 #include <unistd.h>
-#include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -30,6 +29,8 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	mvc o = *m;
 	sql_rel *rel = NULL;
 	buffer *b;
+	bstream *bs;
+	stream *buf;
 	char *n;
 	int len = _strlen(query);
 	sql_schema *c = cur_schema(m);
@@ -42,8 +43,12 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 		m->session->schema = s;
 
 	b = (buffer*)GDKmalloc(sizeof(buffer));
+	if (!b) {
+		return NULL;
+	}
 	n = GDKmalloc(len + 1 + 1);
-	if (!b || !n) {
+	if (!n) {
+		GDKfree(b);
 		return NULL;
 	}
 	strncpy(n, query, len);
@@ -52,9 +57,17 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	query[len+1] = 0;
 	len++;
 	buffer_init(b, query, len);
-	scanner_init( &m->scanner, 
-		bstream_create(buffer_rastream(b, "sqlstatement"), b->len),
-		NULL);
+	buf = buffer_rastream(b, "sqlstatement");
+	if(buf == NULL) {
+		buffer_destroy(b);
+		return NULL;
+	}
+	bs = bstream_create(buf, b->len);
+	if(bs == NULL) {
+		buffer_destroy(b);
+		return NULL;
+	}
+	scanner_init( &m->scanner, bs, NULL);
 	m->scanner.mode = LINE_1; 
 	bstream_next(m->scanner.rs);
 
@@ -85,11 +98,14 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 		strcpy(m->errstr, errstr);
 	} else {
 		int label = m->label;
+		list *sqs = m->sqs;
+
 		while (m->topvars > o.topvars) {
 			if (m->vars[--m->topvars].name)
 				c_delete(m->vars[m->topvars].name);
 		}
 		*m = o;
+		m->sqs = sqs;
 		m->label = label;
 	}
 	m->session->schema = c;
@@ -120,6 +136,8 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_DROP_TABLE:
 	case SQL_DROP_VIEW:
 	case SQL_ALTER_TABLE:
+
+	case SQL_COMMENT:
 
 	case SQL_GRANT:
 	case SQL_REVOKE:
@@ -163,6 +181,7 @@ rel_semantic(mvc *sql, symbol *s)
 	case SQL_INSERT:
 	case SQL_UPDATE:
 	case SQL_DELETE:
+	case SQL_TRUNCATE:
 	case SQL_COPYFROM:
 	case SQL_BINCOPYFROM:
 	case SQL_COPYLOADER:
@@ -176,7 +195,8 @@ rel_semantic(mvc *sql, symbol *s)
 		dnode *d;
 		sql_rel *r = NULL;
 
-		stack_push_frame(sql, "MUL");
+		if(!stack_push_frame(sql, "MUL"))
+			return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		for (d = s->data.lval->h; d; d = d->next) {
 			symbol *sym = d->data.sym;
 			sql_rel *nr = rel_semantic(sql, sym);
@@ -211,6 +231,6 @@ rel_semantic(mvc *sql, symbol *s)
 		return rel_selects(sql, s);
 
 	default:
-		return sql_error(sql, 02, "symbol type not found");
+		return sql_error(sql, 02, SQLSTATE(42000) "Symbol type not found");
 	}
 }

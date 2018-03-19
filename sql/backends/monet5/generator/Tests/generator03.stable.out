@@ -25,14 +25,14 @@ Ready.
 # 09:47:33 >  
 
 #select timestamp '2008-03-01 00:00';
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % timestamp # type
 % 26 # length
 [ 2008-03-01 00:00:00.000000	]
 #select cast( '10' as interval hour);
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % sec_interval # type
 % 9 # length
 [ 36000.000	]
@@ -40,7 +40,7 @@ Ready.
 #	timestamp '2008-03-01 00:00',
 #	timestamp '2008-03-04 12:00',
 #							  cast( '10' as interval hour));
-% . # table_name
+% .L4 # table_name
 % value # name
 % timestamp # type
 % 26 # length
@@ -56,7 +56,7 @@ Ready.
 #	cast( '2008-03-01 00:00' as timestamp),
 #                              cast( '2008-03-04 12:00' as timestamp), 
 #							  cast( '1' as interval day));
-% . # table_name
+% .L4 # table_name
 % value # name
 % timestamp # type
 % 26 # length
@@ -67,7 +67,7 @@ Ready.
 #	timestamp '2008-03-04 12:00',
 #	timestamp '2008-03-01 00:00',
 #	cast( '-1' as interval day));
-% . # table_name
+% .L4 # table_name
 % value # name
 % timestamp # type
 % 26 # length
@@ -79,7 +79,7 @@ Ready.
 #	timestamp '2008-03-04 12:00',
 #	cast( '10' as interval hour))
 #where value < timestamp '2008-03-03 00:00';
-% . # table_name
+% .L4 # table_name
 % value # name
 % timestamp # type
 % 26 # length
@@ -93,7 +93,7 @@ Ready.
 #	timestamp '2008-03-01 00:00',
 #	cast( '-10' as interval hour))
 #where value < timestamp '2008-03-02 00:00';
-% . # table_name
+% .L4 # table_name
 % value # name
 % timestamp # type
 % 26 # length
@@ -104,7 +104,7 @@ Ready.
 #	cast( '10' as interval hour))
 #where value > timestamp '2008-03-01 00:00'
 #and value < timestamp '2008-03-03 00:00';
-% . # table_name
+% .L4 # table_name
 % value # name
 % timestamp # type
 % 26 # length
@@ -116,7 +116,7 @@ Ready.
 #	timestamp '2008-03-04 18:00',
 #	timestamp '2008-03-01 00:00',
 #	cast( '-10' as interval hour));
-% . # table_name
+% .L4 # table_name
 % value # name
 % timestamp # type
 % 26 # length
@@ -134,7 +134,7 @@ Ready.
 #	timestamp '2008-03-01 00:00',
 #	cast( '-10' as interval hour)) 
 #where value > timestamp '2008-03-01 11:00' ;
-% . # table_name
+% .L4 # table_name
 % value # name
 % timestamp # type
 % 26 # length
@@ -150,7 +150,7 @@ Ready.
 #	timestamp '2008-03-01 00:00',
 #	cast( '-10' as interval hour)) 
 #where value = timestamp '2008-03-01 10:00' ;
-% . # table_name
+% .L4 # table_name
 % value # name
 % timestamp # type
 % 26 # length
@@ -160,7 +160,7 @@ Ready.
 #	timestamp '2008-03-01 00:00',
 #	cast( '-10' as interval hour)) 
 #where value < timestamp '2008-03-01 11:00' ;
-% . # table_name
+% .L4 # table_name
 % value # name
 % timestamp # type
 % 26 # length
@@ -171,7 +171,7 @@ Ready.
 #	cast( '-10' as interval hour)) 
 #where value > timestamp '2008-03-01 11:00' 
 #and value < timestamp '2008-03-01 21:00';
-% . # table_name
+% .L4 # table_name
 % value # name
 % timestamp # type
 % 26 # length
@@ -183,7 +183,7 @@ Ready.
 #where value > timestamp '2008-03-01 00:00'
 #and value < timestamp '2008-03-03 00:00' 
 #and value > timestamp '2008-03-01 11:00';
-% . # table_name
+% .L4 # table_name
 % value # name
 % timestamp # type
 % 26 # length

@@ -1,0 +1,33 @@
+stderr of test 'insert_into_multiple_subqueries.Bug-6448` in directory 'sql/test/BugTracker-2017` itself:
+
+
+# 15:36:01 >  
+# 15:36:01 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39208" "--set" "mapi_usock=/var/tmp/mtest-83731/.s.monetdb.39208" "--set" "monet_prompt=" "--forcemito" "--dbpath=/Users/rkoopmanschap/projects/MonetDB/monetdb/install/var/MonetDB/mTests_sql_test_BugTracker-2017"
+# 15:36:01 >  
+
+# builtin opt 	gdk_dbpath = /Users/rkoopmanschap/projects/MonetDB/monetdb/install/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 39208
+# cmdline opt 	mapi_usock = /var/tmp/mtest-83731/.s.monetdb.39208
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /Users/rkoopmanschap/projects/MonetDB/monetdb/install/var/MonetDB/mTests_sql_test_BugTracker-2017
+# cmdline opt 	gdk_debug = 536870922
+
+# 15:36:01 >  
+# 15:36:01 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-83731" "--port=39208"
+# 15:36:01 >  
+
+
+# 15:36:01 >  
+# 15:36:01 >  "Done."
+# 15:36:01 >  

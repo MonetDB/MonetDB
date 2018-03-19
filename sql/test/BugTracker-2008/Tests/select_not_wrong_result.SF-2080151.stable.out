@@ -40,8 +40,8 @@ Ready.
 #(SELECT B.a
 #FROM B
 #WHERE a > 'a4' ));
-% sys.L3 # table_name
-% L2 # name
+% sys.L6 # table_name
+% L5 # name
 % bigint # type
 % 1 # length
 [ 0	]

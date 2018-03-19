@@ -33,11 +33,11 @@ function user.foo():void;
     bat.append(r, 2:int);
     bat.append(r, 3:int);
     bat.append(r, 4:int);
-    s := algebra.select(r, 0:int, 5:int, true, true, false);
+    s := algebra.select(r, nil:bat[:oid], 0:int, 5:int, true, true, false);
 # equal to a copy 
     r1 := algebra.projection(s, r);
     io.print(r1);
-    t := algebra.select(r, 0:int, 3:int, true, true, false);
+    t := algebra.select(r, nil:bat[:oid], 0:int, 3:int, true, true, false);
 #print(t); 
 # reuse t 
     r1 := algebra.projection(t, r);

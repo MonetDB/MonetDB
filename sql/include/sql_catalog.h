@@ -3,15 +3,15 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef SQL_CATALOG_H
 #define SQL_CATALOG_H
 
-#include <sql_mem.h>
-#include <sql_list.h>
-#include <stream.h>
+#include "sql_mem.h"
+#include "sql_list.h"
+#include "stream.h"
 
 #define tr_none		0
 #define tr_readonly	1
@@ -35,6 +35,7 @@
 #define PRIV_DELETE 8
 #define PRIV_EXECUTE 16
 #define PRIV_GRANT 32
+#define PRIV_TRUNCATE 64
 /* global privs */
 #define PRIV_COPYFROMFILE 1
 #define PRIV_COPYINTOFILE 2
@@ -58,6 +59,8 @@
 #define NO_DEPENDENCY 0
 #define HAS_DEPENDENCY 1
 #define CICLE_DEPENDENCY 2
+#define DEPENDENCY_CHECK_ERROR 3
+#define DEPENDENCY_CHECK_OK 0
 
 #define NO_TRIGGER 0
 #define IS_TRIGGER 1
@@ -150,7 +153,7 @@ typedef enum comp_type {
 #define is_theta_exp(e) ((e) == cmp_gt || (e) == cmp_gte || (e) == cmp_lte ||\
 		         (e) == cmp_lt || (e) == cmp_equal || (e) == cmp_notequal)
 
-#define is_complex_exp(e) ((e) == cmp_or || (e) == cmp_in || (e) == cmp_notin || (e&CMPMASK) == cmp_filter)
+#define is_complex_exp(e) ((e&CMPMASK) == cmp_or || (e) == cmp_in || (e) == cmp_notin || (e&CMPMASK) == cmp_filter)
 
 typedef enum commit_action_t { 
 	CA_COMMIT, 	/* commit rows, only for persistent tables */
@@ -295,15 +298,16 @@ typedef struct sql_arg {
 #define FUNC_LANG_MAL 1 /* create sql external mod.func */
 #define FUNC_LANG_SQL 2 /* create ... sql function/procedure */
 #define FUNC_LANG_R   3 /* create .. language R */
-#define FUNC_LANG_C   4
+#define FUNC_LANG_C   4 /* create .. language C */
 #define FUNC_LANG_J   5
 // this should probably be done in a better way
 #define FUNC_LANG_PY  6 /* create .. language PYTHON */
 #define FUNC_LANG_MAP_PY  7 /* create .. language PYTHON_MAP */
-#define FUNC_LANG_PY2  8 /* create .. language PYTHON */
-#define FUNC_LANG_MAP_PY2  9 /* create .. language PYTHON_MAP */
+#define FUNC_LANG_PY2  8 /* create .. language PYTHON2 */
+#define FUNC_LANG_MAP_PY2  9 /* create .. language PYTHON2_MAP */
 #define FUNC_LANG_PY3  10 /* create .. language PYTHON3 */
 #define FUNC_LANG_MAP_PY3  11 /* create .. language PYTHON3_MAP */
+#define FUNC_LANG_CPP   12 /* create .. language CPP */
 
 #define LANG_EXT(l)  (l>FUNC_LANG_SQL)
 
@@ -345,6 +349,7 @@ typedef struct sql_func {
 typedef struct sql_subfunc {
 	sql_func *func;
 	list *res;
+	list *coltypes; /* we need this for copy into from loader */
 	list *colnames; /* we need this for copy into from loader */
 	char *sname, *tname; /* we need this for create table from loader */
 } sql_subfunc;
@@ -417,7 +422,7 @@ typedef struct sql_trigger {
 	sql_base base;
 	sht time;		/* before or after */
 	sht orientation; 	/* row or statement */
-	sht event;		/* insert, delete, update */
+	sht event;		/* insert, delete, update, truncate */
 	/* int action_order;	 TODO, order within the set of triggers */
 	struct list *columns;	/* update trigger on list of (sql_kc) columns */
 
@@ -489,6 +494,11 @@ typedef enum table_types {
 #define TABLE_READONLY	1
 #define TABLE_APPENDONLY	2
 
+typedef struct sql_part {
+	sql_base base;
+	struct sql_table *t; /* cached value */
+} sql_part;
+
 typedef struct sql_table {
 	sql_base base;
 	sht type;		/* table, view, etc */
@@ -504,7 +514,7 @@ typedef struct sql_table {
 	changeset idxs;
 	changeset keys;
 	changeset triggers;
-	changeset tables;
+	changeset members;
 	int drop_action;	/* only needed for alter drop table */
 
 	int cleared;		/* cleared in the current transaction */
@@ -594,6 +604,7 @@ extern node *find_sql_func_node(sql_schema *s, int id);
 typedef struct {
 	BAT *b;
 	char* name;
+	void* def;
 } sql_emit_col;
 
 #endif /* SQL_CATALOG_H */

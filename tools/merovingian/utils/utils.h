@@ -3,14 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef _SEEN_UTILS_H
 #define _SEEN_UTILS_H 1
 
-#include <stdio.h>  /* FILE* */
-#include <sys/types.h>   /* time_t */
+#include <time.h>   /* time_t */
 
 #define PROPLENGTH 64 /* Max number of properties */
 

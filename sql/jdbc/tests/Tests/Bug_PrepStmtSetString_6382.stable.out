@@ -1,0 +1,142 @@
+stdout of test 'Bug_PrepStmtSetString_6382` in directory 'sql/jdbc/tests` itself:
+
+
+# 15:57:20 >  
+# 15:57:20 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34756" "--set" "mapi_usock=/var/tmp/mtest-15742/.s.monetdb.34756" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_jdbc_tests" "--set" "embedded_r=yes" "--set" "embedded_py=true"
+# 15:57:20 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_jdbc_tests', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 31.313 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://catskill.da.cwi.nl:34756/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-15742/.s.monetdb.34756
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python2 module loaded
+# MonetDB/R   module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_lidar.sql
+# loading sql script: 75_shp.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 85_bam.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 15:57:20 >  
+# 15:57:20 >  "./Bug_PrepStmtSetString_6382.SQL.sh" "Bug_PrepStmtSetString_6382"
+# 15:57:20 >  
+
+
+# 15:57:20 >  
+# 15:57:20 >  java Bug_PrepStmtSetString_6382 "jdbc:monetdb://catskill:34756/mTests_sql_jdbc_tests?user=monetdb&password=monetdb"
+# 15:57:20 >  
+
+0. true	true
+Creating table PrepStmtSetString_6382
+Inserting row 1
+Inserting row 2
+Creating a prepared statement with 6 parameters and inserting rows using setInt(), setString(), setNull(), setNString(), setURL(), setObject().
+Prepared Statement has 6 parameters:
+ Parameter 1 type is: int. JDBC SQL type: 4
+ Parameter 2 type is: varchar. JDBC SQL type: 12
+ Parameter 3 type is: json. JDBC SQL type: 12
+ Parameter 4 type is: uuid. JDBC SQL type: 12
+ Parameter 5 type is: url. JDBC SQL type: 12
+ Parameter 6 type is: inet. JDBC SQL type: 12
+Inserting row 3
+Inserted 1 row
+Inserting row 4
+Inserted 1 row
+Inserting row 5
+Inserted 1 row
+Inserting row 6
+Inserted 1 row
+Inserting row 7
+Inserted 1 row
+Inserting row 8
+Inserted 1 row
+List contents of TABLE PrepStmtSetString_6382 after 8 rows inserted
+Query has 6 output columns.
+row 1	1	row 1	{}	34c8deb5-e608-406b-beda-6a951f73d455	https://www.monetdb.org/	128.0.0.1
+row 2	2	row 2	[]	null	null	null
+row 3	3	row 3	{"menu": {
+  "id": "file",
+  "value": "File",
+  "popup": {
+    "menuitem": [
+      {"value": "New", "onclick": "CreateNewDoc()"},
+      {"value": "Open", "onclick": "OpenDoc()"},
+      {"value": "Close", "onclick": "CloseDoc()"}
+    ]
+  }
+}}	null	null	null
+row 4	4	row 4	null	4a148b7d-8d47-4e1e-a21e-09a71abf2215	null	null
+row 5	5	row 5	null	null	https://www.cwi.nl/	null
+row 6	6	row 6	null	null	null	127.255.255.255
+row 7	7	row 7	{"menu": {
+    "header": "SVG Viewer",
+    "items": [
+        {"id": "Open"},
+        {"id": "OpenNew", "label": "Open New"},
+        null,
+        {"id": "ZoomIn", "label": "Zoom In"},
+        {"id": "ZoomOut", "label": "Zoom Out"},
+        {"id": "OriginalView", "label": "Original View"},
+        null,
+        {"id": "Quality"},
+        {"id": "Pause"},
+        {"id": "Mute"},
+        null,
+        {"id": "Help"},
+        {"id": "About", "label": "About Adobe CVG Viewer..."}
+    ]
+}}	b39dc76e-4faf-4fd9-bc1e-17df48acf764	https://en.wikipedia.org/wiki/IP_address	223.255.255.255
+row 8	8	row 8	null	ff125769-b63c-4c3c-859f-5b84a9349e24	https://en.wikipedia.org/wiki/IP_address	223.234.245.255
+
+Cleanup TABLE PrepStmtSetString_6382
+Test completed successfully
+
+# 15:57:21 >  
+# 15:57:21 >  "Done."
+# 15:57:21 >  
+

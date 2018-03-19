@@ -3,15 +3,15 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef _SQL_PRIV_H_
 #define _SQL_PRIV_H_
 
 /* privileges */
-#include <sql_mvc.h>
-#include <sql_catalog.h>
+#include "sql_mvc.h"
+#include "sql_catalog.h"
 
 extern char * sql_grant_global_privs( mvc *sql, char *grantee, int privs, int grant, int grantor);
 extern char * sql_revoke_global_privs( mvc *sql, char *grantee, int privs, int grant, int grantor);

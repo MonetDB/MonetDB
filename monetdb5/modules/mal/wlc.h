@@ -3,14 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef _WLC_H
 #define _WLC_H
 
 #include "gdk.h"
-#include <stdarg.h>
 #include <time.h>
 #include "mal_exception.h"
 #include "mal_interpreter.h"
@@ -39,7 +38,7 @@
 #endif
 
 mal_export MT_Lock wlc_lock;
-mal_export char wlc_dir[PATHLENGTH];
+mal_export char wlc_dir[FILENAME_MAX];
 mal_export lng wlc_id;
 mal_export int wlc_batches;
 mal_export int wlc_state;

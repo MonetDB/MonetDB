@@ -31,7 +31,7 @@ Ready.
 #insert into foo_nil_2dec values (now(),43);
 [ 1	]
 #select (t-(select timestamp '1970-1-1')),v from foo_nil_2dec union all select (t-(select timestamp '1970-1-1')),null from foo_nil_2dec;
-% .L17,	.L17 # table_name
+% .L20,	.L20 # table_name
 % L4,	v # name
 % sec_interval,	decimal # type
 % 14,	20 # length

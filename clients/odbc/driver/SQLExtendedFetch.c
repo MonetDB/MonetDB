@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -45,11 +45,11 @@ SQLExtendedFetch(SQLHSTMT StatementHandle,
 	SQLRETURN rc;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLExtendedFetch " PTRFMT " %s " LENFMT " " PTRFMT " " PTRFMT "\n",
-		PTRFMTCAST StatementHandle,
+	ODBCLOG("SQLExtendedFetch %p %s " LENFMT " %p %p\n",
+		StatementHandle,
 		translateFetchOrientation(FetchOrientation),
-		LENCAST FetchOffset, PTRFMTCAST RowCountPtr,
-		PTRFMTCAST RowStatusArray);
+		LENCAST FetchOffset, RowCountPtr,
+		RowStatusArray);
 #endif
 
 	if (!isValidStmt(stmt))

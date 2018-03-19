@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /* Author(s) Martin Kersten
@@ -22,6 +22,7 @@
 #include "optimizer.h"
 #include "mal_debugger.h"
 #include "optimizer_private.h"
+#include "opt_pipes.h"
 
 /*
  * Upon loading the module it should inspect the scenario table
@@ -38,6 +39,7 @@ optimizer_prelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	updateScenario("mal", "MALoptimizer", (MALfcn) MALoptimizer);
 	optPipeInit();
 	optimizerInit();
+	//return compileAllOptimizers(cntxt); causes problems
 	return MAL_SUCCEED;
 }
 
@@ -63,9 +65,9 @@ QOToptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		modnme = getArgDefault(mb, pci, 1);
 		fcnnme = getArgDefault(mb, pci, 2);
 	}
-	s = findSymbol(cntxt->nspace, putName(modnme), fcnnme);
+	s = findSymbol(cntxt->usermodule, putName(modnme), fcnnme);
 	if (s == NULL)
-		throw(MAL, "optimizer.optimize", SEMANTIC_OPERATION_MISSING);
+		throw(MAL, "optimizer.optimize", SQLSTATE(HY002) SEMANTIC_OPERATION_MISSING);
 	removeInstruction(mb, pci);
 	addtoMalBlkHistory(s->def);
 	return optimizeMALBlock(cntxt, s->def);

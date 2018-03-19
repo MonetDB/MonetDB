@@ -3,14 +3,12 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 
-#include <stdio.h>
 #include <string.h>  /* strerror, strchr, strcmp */
-#include <errno.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -19,13 +17,14 @@
 #ifdef HAVE_SYS_UIO_H
 # include <sys/uio.h>
 #endif
+#include <fcntl.h>
 
-#include <msabaoth.h>
-#include <mcrypt.h>
-#include <stream.h>
-#include <stream_socket.h>
-#include <utils/utils.h> /* freeConfFile */
-#include <utils/properties.h> /* readProps */
+#include "msabaoth.h"
+#include "mcrypt.h"
+#include "stream.h"
+#include "stream_socket.h"
+#include "utils/utils.h" /* freeConfFile */
+#include "utils/properties.h" /* readProps */
 
 #include "merovingian.h"
 #include "forkmserver.h"
@@ -34,6 +33,10 @@
 #include "controlrunner.h"
 #include "client.h"
 #include "handlers.h"
+
+#if !defined(HAVE_ACCEPT4) || !defined(SOCK_CLOEXEC)
+#define accept4(sockfd, addr, addrlen, flags)	accept(sockfd, addr, addrlen)
+#endif
 
 struct threads {
 	struct threads *next;
@@ -116,6 +119,15 @@ handleClient(void *data)
 	chal[31] = '\0';
 	generateSalt(chal, 31);
 	algos = mcrypt_getHashAlgorithms();
+	if(!algos) {
+		e = newErr("Allocation failure");
+		mnstr_printf(fout, "!monetdbd: allocation failure\n");
+		mnstr_flush(fout);
+		close_stream(fout);
+		close_stream(fdin);
+		self->dead = 1;
+		return(e);
+	}
 	mnstr_printf(fout, "%s:merovingian:9:%s:%s:%s:",
 			chal,
 			algos,
@@ -479,7 +491,7 @@ acceptConnections(int sock, int usock)
 			continue;
 		}
 		if (FD_ISSET(sock, &fds)) {
-			if ((msgsock = accept(sock, (SOCKPTR)0, (socklen_t *) 0)) == -1) {
+			if ((msgsock = accept4(sock, (SOCKPTR)0, (socklen_t *) 0, SOCK_CLOEXEC)) == -1) {
 				if (_mero_keep_listening == 0)
 					break;
 				if (errno != EINTR) {
@@ -488,6 +500,9 @@ acceptConnections(int sock, int usock)
 				}
 				continue;
 			}
+#if defined(HAVE_FCNTL) && (!defined(SOCK_CLOEXEC) || !defined(HAVE_ACCEPT4))
+			(void) fcntl(msgsock, F_SETFD, FD_CLOEXEC);
+#endif
 		} else if (FD_ISSET(usock, &fds)) {
 			struct msghdr msgh;
 			struct iovec iov;
@@ -495,7 +510,7 @@ acceptConnections(int sock, int usock)
 			int rv;
 			char ccmsg[CMSG_SPACE(sizeof(int))];
 
-			if ((msgsock = accept(usock, (SOCKPTR)0, (socklen_t *)0)) == -1) {
+			if ((msgsock = accept4(usock, (SOCKPTR)0, (socklen_t *)0, SOCK_CLOEXEC)) == -1) {
 				if (_mero_keep_listening == 0)
 					break;
 				if (errno != EINTR) {
@@ -504,6 +519,9 @@ acceptConnections(int sock, int usock)
 				}
 				continue;
 			}
+#if defined(HAVE_FCNTL) && (!defined(SOCK_CLOEXEC) || !defined(HAVE_ACCEPT4))
+			(void) fcntl(usock, F_SETFD, FD_CLOEXEC);
+#endif
 
 			/* BEWARE: unix domain sockets have a slightly different
 			 * behaviour initialy than normal sockets, because we can

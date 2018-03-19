@@ -184,8 +184,8 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 	----		-------					-----------
 	TSTSRCBASE	`<PACKAGE>-config --source`		base of test source tree
 	TSTTRGBASE	`<PACKAGE>-config --prefix`		base for test output
-	MALCLIENT	mclient -lmal				mal-client program	`)
-	SQLCLIENT	mclient -lsql				sql-client program	`)
+	MALCLIENT	mclient -lmal -ftest -tnone		mal-client program	`)
+	SQLCLIENT	mclient -lsql -ftest -tnone		sql-client program	`)
 	SQLDUMP	        msqldump				sql-dump program	`)
 
     `) Alternative MAL & SQL client programs need to accept (or ignore)

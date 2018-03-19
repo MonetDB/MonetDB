@@ -3,11 +3,10 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
-#include <stdio.h> /* fprintf */
 #include <sys/types.h>
 #include <sys/stat.h> /* stat */
 #include <sys/wait.h> /* wait */
@@ -21,12 +20,11 @@
 # include <sys/uio.h>
 #endif
 
-#include <stream.h>
-#include <stream_socket.h>
+#include "stream.h"
+#include "stream_socket.h"
 
 #include "merovingian.h"
 #include "proxy.h"
-
 
 typedef struct _merovingian_proxy {
 	stream *in;      /* the input to read from and to dispatch to out */
@@ -136,9 +134,16 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		server.sun_family = AF_UNIX;
 		strncpy(server.sun_path, conn, sizeof(server.sun_path) - 1);
 		free(conn);
-		if ((ssock = socket(PF_UNIX, SOCK_STREAM, 0)) == -1) {
+		if ((ssock = socket(PF_UNIX, SOCK_STREAM
+#ifdef SOCK_CLOEXEC
+							| SOCK_CLOEXEC
+#endif
+							, 0)) == -1) {
 			return(newErr("cannot open socket: %s", strerror(errno)));
 		}
+#ifndef SOCK_CLOEXEC
+		(void) fcntl(ssock, F_SETFD, FD_CLOEXEC);
+#endif
 		if (connect(ssock, (SOCKPTR) &server, sizeof(struct sockaddr_un)) == -1) {
 			closesocket(ssock);
 			return(newErr("cannot connect: %s", strerror(errno)));
@@ -207,10 +212,17 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		serv = (struct sockaddr *) &server;
 		servsize = sizeof(server);
 
-		ssock = socket(serv->sa_family, SOCK_STREAM, IPPROTO_TCP);
+		ssock = socket(serv->sa_family, SOCK_STREAM
+#ifdef SOCK_CLOEXEC
+					   | SOCK_CLOEXEC
+#endif
+					   , IPPROTO_TCP);
 		if (ssock == -1) {
 			return(newErr("cannot open socket: %s", strerror(errno)));
 		}
+#ifndef SOCK_CLOEXEC
+		(void) fcntl(ssock, F_SETFD, FD_CLOEXEC);
+#endif
 
 		if (connect(ssock, serv, servsize) == -1) {
 			closesocket(ssock);

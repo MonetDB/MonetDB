@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -87,7 +87,7 @@ RUNadder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	mb->stmt = (InstrPtr *) GDKzalloc(size * sizeof(InstrPtr));
 	if (mb->stmt == NULL) {
 		mb->stmt = old;
-		throw(MAL, "adder.generate", MAL_MALLOC_FAIL);
+		throw(MAL, "adder.generate", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	mb->ssize = size;
 	memcpy( mb->stmt, old, sizeof(InstrPtr)*(pc+1));
@@ -113,9 +113,9 @@ RUNadder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	mb->stop += (oldtop-pc)-1;
 
 	/* check new statments for sanity */
-	chkTypes(cntxt->fdout, cntxt->nspace, mb, FALSE);
-	chkFlow(cntxt->fdout, mb);
-	chkDeclarations(cntxt->fdout, mb);
+	chkTypes(cntxt->usermodule, mb, FALSE);
+	chkFlow(mb);
+	chkDeclarations(mb);
 
 	GDKfree(old);
 	return MAL_SUCCEED;

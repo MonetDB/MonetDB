@@ -31,8 +31,8 @@ Ready.
 
 #create table sf1207887 (field decimal(3,1));
 #select avg(field) from sf1207887;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % double # type
 % 24 # length
 [ NULL	]

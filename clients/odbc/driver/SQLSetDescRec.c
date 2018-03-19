@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -90,12 +90,12 @@ SQLSetDescRec(SQLHDESC DescriptorHandle,
 	ODBCDesc *desc = (ODBCDesc *) DescriptorHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetDescRec " PTRFMT " %d %s %s " LENFMT " %d %d " PTRFMT " " PTRFMT " " PTRFMT "\n",
-		PTRFMTCAST DescriptorHandle, (int) RecNumber,
+	ODBCLOG("SQLSetDescRec %p %d %s %s " LENFMT " %d %d %p %p %p\n",
+		DescriptorHandle, (int) RecNumber,
 		isAD(desc) ? translateCType(Type) : translateSQLType(Type),
 		translateSubType(Type, SubType), LENCAST Length,
-		(int) Precision, (int) Scale, PTRFMTCAST DataPtr,
-		PTRFMTCAST StringLengthPtr, PTRFMTCAST IndicatorPtr);
+		(int) Precision, (int) Scale, DataPtr,
+		StringLengthPtr, IndicatorPtr);
 #endif
 
 	if (!isValidDesc(desc))

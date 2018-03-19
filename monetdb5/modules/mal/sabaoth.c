@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -33,9 +33,9 @@
  * components that do facilitate the cloud, such as Merovingian.
  */
 #include "monetdb_config.h"
-#include <mal.h>
-#include <mal_exception.h>
-#include <mal_sabaoth.h>	/* for the implementation of the functions */
+#include "mal.h"
+#include "mal_exception.h"
+#include "mal_sabaoth.h"	/* for the implementation of the functions */
 #include "sabaoth.h"
 
 str SABprelude(void *ret) {
@@ -112,6 +112,10 @@ str SABgetLocalConnectionHost(str *ret) {
 
 	*ret = GDKstrdup(con + 3);
 	GDKfree(tmp);
+	if( *ret == NULL) {
+		p = createException(MAL, "sabaoth.getLocalConnectionHost", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		return(p);
+	}
 	return(MAL_SUCCEED);
 }
 

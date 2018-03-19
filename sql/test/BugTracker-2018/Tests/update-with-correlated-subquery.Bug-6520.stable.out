@@ -1,0 +1,57 @@
+stdout of test 'update-with-correlated-subquery.Bug-6520` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 18:27:51 >  
+# 18:27:51 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32298" "--set" "mapi_usock=/var/tmp/mtest-6807/.s.monetdb.32298" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/manegold/_/Monet/preview/prefix/_/var/MonetDB/mTests_sql_test_BugTracker-2018"
+# 18:27:51 >  
+
+# MonetDB 5 server v11.27.12
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 4 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 31.309 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://earth.da.cwi.nl:32298/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-6807/.s.monetdb.32298
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 18:27:52 >  
+# 18:27:52 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-6807" "--port=32298"
+# 18:27:52 >  
+
+#start transaction;
+#CREATE TABLE "PRIMARY" (
+#  "ID" integer NOT NULL,
+#  "LEN" real NOT NULL,
+#  CONSTRAINT "PK_PRIMARY" PRIMARY KEY ("ID")
+#);
+#CREATE TABLE "FOREIGN" (
+#  "ID" integer NOT NULL,
+#  "POS" real NOT NULL,
+#  CONSTRAINT "FK_FOREIGN" FOREIGN KEY ("ID") REFERENCES "PRIMARY" ("ID")
+#);
+#alter table "FOREIGN" add column "RelPos" real default NULL;
+#update "FOREIGN"
+#	set "RelPos" = "POS" / (
+#		select "LEN"
+#		from "PRIMARY"
+#		where "PRIMARY"."ID" = "FOREIGN"."ID"
+#	)
+#	where "POS" between 0 and (
+#		select "LEN"
+#		from "PRIMARY"
+#		where "PRIMARY"."ID" = "FOREIGN"."ID"
+#	)
+#;
+[ 0	]
+#rollback;
+
+# 18:27:52 >  
+# 18:27:52 >  "Done."
+# 18:27:52 >  
+

@@ -77,8 +77,8 @@ Ready.
 #    return True  
 #};
 #SELECT test_duplicates(s) FROM duplicate_strings();
-% .L1 # table_name
-% L1 # name
+% .L3 # table_name
+% L3 # name
 % boolean # type
 % 5 # length
 [ true	]

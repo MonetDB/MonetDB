@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -94,9 +94,8 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 	str ret;
 
 	if (GDKerrbuf &&
-		/* prevent recursion
-		 * note, sizeof("string") includes terminating NULL byte */
-		strncmp(format, MAL_MALLOC_FAIL ":", sizeof(MAL_MALLOC_FAIL)) != 0 &&
+		(ret = strstr(format, MAL_MALLOC_FAIL)) != NULL &&
+		ret[strlen(MAL_MALLOC_FAIL)] != ':' &&
 		(strncmp(GDKerrbuf, "GDKmalloc", 9) == 0 ||
 		 strncmp(GDKerrbuf, "GDKrealloc", 10) == 0 ||
 		 strncmp(GDKerrbuf, "GDKzalloc", 9) == 0 ||
@@ -105,7 +104,7 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 		/* override errors when the underlying error is memory
 		 * exhaustion, but include whatever it is that the GDK level
 		 * reported */
-		ret = createException(type, fcn, MAL_MALLOC_FAIL ": %s", GDKerrbuf);
+		ret = createException(type, fcn, SQLSTATE(HY001) MAL_MALLOC_FAIL ": %s", GDKerrbuf);
 		GDKclrerr();
 		return ret;
 	}
@@ -114,15 +113,19 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 		char *p = GDKerrbuf;
 		if (strncmp(p, GDKERROR, strlen(GDKERROR)) == 0)
 			p += strlen(GDKERROR);
-		ret = createException(type, fcn, "GDK reported error: %s", p);
+		if (strlen(p) > 6 && p[5] == '!')
+			ret = createException(type, fcn, "%s", p);
+		else
+			ret = createException(type, fcn, "GDK reported error: %s", p);
 		GDKclrerr();
 		return ret;
 	}
 	va_start(ap, format);
 	ret = createExceptionInternal(type, fcn, format, ap);
 	va_end(ap);
+	GDKclrerr();
 
-	return(ret);
+	return ret;
 }
 
 void
@@ -180,15 +183,15 @@ showException(stream *out, enum malexception type, const char *fcn, const char *
 }
 
 /**
- * Internal helper function for createScriptException and
+ * Internal helper function for createMalException and
  * showScriptException such that they share the same code, because reuse
  * is good.
  */
 static str
-createScriptExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, const char *prev, const char *format, va_list ap)
+createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, char *prev, const char *format, va_list ap)
 	__attribute__((__format__(__printf__, 5, 0)));
 static str
-createScriptExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, const char *prev, const char *format, va_list ap)
+createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, char *prev, const char *format, va_list ap)
 {
 	char buf[GDKMAXERRLEN];
 	size_t i;
@@ -198,11 +201,24 @@ createScriptExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, cons
 	fcn = mb ? getFcnName(mb) : "unknown";
 	i = 0;
 
-	if (prev)
-		i += snprintf(buf + i, GDKMAXERRLEN - 1 - i, "%s\n", prev);
-	i += snprintf(buf + i, GDKMAXERRLEN - 1 - i, "%s:%s.%s[%d]:",
-			exceptionNames[type], s, fcn, pc);
+	if (prev){
+		if( *prev){
+			i += snprintf(buf + i, GDKMAXERRLEN - 1 - i, "%s", prev);
+			if( buf[i-1] != '\n')
+				buf[i++]= '\n';
+		}
+		i += snprintf(buf + i, GDKMAXERRLEN - 1 - i, "!%s:%s.%s[%d]:",
+				exceptionNames[type], s, fcn, pc);
+		freeException(prev);
+	} else if( type == SYNTAX)
+		i += snprintf(buf + i, GDKMAXERRLEN - 1 - i, "%s:",
+				exceptionNames[type]);
+	else
+		i += snprintf(buf + i, GDKMAXERRLEN - 1 - i, "%s:%s.%s[%d]:",
+				exceptionNames[type], s, fcn, pc);
 	i += vsnprintf(buf + i, GDKMAXERRLEN - 1 - i, format, ap);
+	if( buf[i-1] != '\n')
+		buf[i++]= '\n';
 	buf[i] = '\0';
 
 	s = GDKstrdup(buf);
@@ -212,7 +228,7 @@ createScriptExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, cons
 }
 
 /**
- * Returns an exception string for the use of MAL scripts.  These
+ * Returns an exception string for the MAL instructions.  These
  * exceptions are newline terminated, and determine module and function
  * from the given MalBlkPtr.  An old exception can be given, such that
  * this exception is chained to the previous one.  Conceptually this
@@ -221,13 +237,13 @@ createScriptExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, cons
  * malexception enum is not aligned with the exceptionNames array.
  */
 str
-createScriptException(MalBlkPtr mb, int pc, enum malexception type, const char *prev, const char *format, ...)
+createMalException(MalBlkPtr mb, int pc, enum malexception type, const char *format, ...)
 {
 	va_list ap;
 	str ret;
 
 	va_start(ap, format);
-	ret = createScriptExceptionInternal(mb, pc, type, prev, format, ap);
+	ret = createMalExceptionInternal(mb, pc, type, mb->errors, format, ap);
 	va_end(ap);
 
 	return(ret);
@@ -235,7 +251,7 @@ createScriptException(MalBlkPtr mb, int pc, enum malexception type, const char *
 
 /**
  * Sends the exception as generated by a call to
- * createScriptException(mb, pc, type, NULL, format, ...) to a stream
+ * createMalException(mb, pc, type, NULL, format, ...) to a stream
  */
 void
 showScriptException(stream *out, MalBlkPtr mb, int pc, enum malexception type, const char *format, ...)
@@ -244,7 +260,7 @@ showScriptException(stream *out, MalBlkPtr mb, int pc, enum malexception type, c
 	str msg;
 
 	va_start(ap, format);
-	msg = createScriptExceptionInternal(mb, pc, type, NULL, format, ap);
+	msg = createMalExceptionInternal(mb, pc, type, NULL, format, ap);
 	va_end(ap);
 
 	dumpExceptionsToStream(out,msg);
@@ -257,25 +273,25 @@ showScriptException(stream *out, MalBlkPtr mb, int pc, enum malexception type, c
  * generic MALException.
  */
 enum malexception
-getExceptionType(str exception)
+getExceptionType(const char *exception)
 {
 	enum malexception ret = MAL;
-	str s;
+	const char *s;
+	size_t len;
 	enum malexception i;
 
 	if ((s = strchr(exception, ':')) != NULL)
-		*s = '\0';
+		len = s - exception;
+	else
+		len = strlen(exception);
 
 	for (i = MAL; exceptionNames[i] != NULL; i++) {
-		if (strcmp(exceptionNames[i], exception) == 0) {
+		if (strncmp(exceptionNames[i], exception, len) == 0 &&
+			exceptionNames[i][len] == '\0') {
 			ret = i;
 			break;
 		}
 	}
-
-	/* restore original string */
-	if (s != NULL)
-		*s = ':';
 
 	return(ret);
 }
@@ -287,9 +303,10 @@ getExceptionType(str exception)
  * needs to be GDKfreed.
  */
 str
-getExceptionPlace(str exception)
+getExceptionPlace(const char *exception)
 {
-	str ret, s, t;
+	str ret;
+	const char *s, *t;
 	enum malexception i;
 	size_t l;
 
@@ -315,9 +332,9 @@ getExceptionPlace(str exception)
  * Returns the informational message of the exception given.
  */
 str
-getExceptionMessage(str exception)
+getExceptionMessageAndState(const char *exception)
 {
-	str s, t;
+	const char *s, *t;
 	enum malexception i;
 	size_t l;
 
@@ -327,11 +344,31 @@ getExceptionMessage(str exception)
 			exception[l] == ':') {
 			s = exception + l + 1;
 			if ((t = strchr(s, ':')) != NULL)
-				return t + 1;
-			return s;
+				return (str) (t + 1);
+			return (str) s;
 		}
 	}
 	if (strncmp(exception, "!ERROR: ", 8) == 0)
-		return exception + 8;
-	return exception;
+		return (str) (exception + 8);
+	return (str) exception;
+}
+
+str
+getExceptionMessage(const char *exception)
+{
+	char *msg = getExceptionMessageAndState(exception);
+
+	if (strlen(msg) > 6 && msg[5] == '!' &&
+		((msg[0] >= '0' && msg[0] <= '9') ||
+	     (msg[0] >= 'A' && msg[0] <= 'Z')) &&
+	    ((msg[1] >= '0' && msg[1] <= '9') ||
+	     (msg[1] >= 'A' && msg[1] <= 'Z')) &&
+	    ((msg[2] >= '0' && msg[2] <= '9') ||
+	     (msg[2] >= 'A' && msg[2] <= 'Z')) &&
+	    ((msg[3] >= '0' && msg[3] <= '9') ||
+	     (msg[3] >= 'A' && msg[3] <= 'Z')) &&
+	    ((msg[4] >= '0' && msg[4] <= '9') ||
+	     (msg[4] >= 'A' && msg[4] <= 'Z')))
+		msg += 6;
+	return msg;
 }

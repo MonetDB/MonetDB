@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /* This file is included multiple times (from sql_cast.c).
@@ -22,6 +22,7 @@
 #define CONCAT_4(a,b,c,d) a##b##c##d
 
 #define NIL(t)       CONCAT_2(t,_nil)
+#define ISNIL(t)     CONCAT_3(is_,t,_nil)
 #define TPE(t)       CONCAT_2(TYPE_,t)
 #define GDKmin(t)    CONCAT_3(GDK_,t,_min)
 #define GDKmax(t)    CONCAT_3(GDK_,t,_max)
@@ -39,7 +40,7 @@ FUN(,TP1,_num2dec_,TP2)(TP2 *res, const TP1 *v, const int *d2, const int *s2)
 	int precision = *d2;
 	int inlen;
 
-	if (val == NIL(TP1)) {
+	if (ISNIL(TP1)(val)) {
 		*res = NIL(TP2);
 		return MAL_SUCCEED;
 	}
@@ -55,7 +56,7 @@ FUN(,TP1,_num2dec_,TP2)(TP2 *res, const TP1 *v, const int *d2, const int *s2)
 		inlen = (int) floor(log10(val)) + 1;
 	}
 	if (inlen + scale > precision)
-		throw(SQL, "convert", "22003!too many digits (%d > %d)",
+		throw(SQL, "convert", SQLSTATE(22003) "too many digits (%d > %d)",
 		      inlen + scale, precision);
 
 #ifndef TRUNCATE_NUMBERS
@@ -79,13 +80,13 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 	char *msg = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_num2dec_,TP2)), "Cannot access descriptor");
+		throw(SQL, "batcalc."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY005) "Cannot access column descriptor");
 	}
 	bi = bat_iterator(b);
 	dst = COLnew(b->hseqbase, TPE(TP2), BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), MAL_MALLOC_FAIL);
+		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BATloop(b, p, q) {
 		TP1 *v = (TP1 *) BUNtail(bi, p);
@@ -99,7 +100,7 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 		if (BUNappend(dst, &r, FALSE) != GDK_SUCCEED) {
 			BBPunfix(dst->batCacheid);
 			BBPunfix(b->batCacheid);
-			throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), MAL_MALLOC_FAIL);
+			throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 	BBPkeepref(*res = dst->batCacheid);
@@ -111,6 +112,7 @@ FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *
 /* undo local defines */
 #undef FUN
 #undef NIL
+#undef ISNIL
 #undef TPE
 #undef GDKmin
 #undef GDKmax

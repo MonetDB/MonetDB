@@ -37,7 +37,8 @@ ERROR = !Python exception
         !> 2.   _emit.emit({'a1': 3, 'a2': 4, 'a3': 5})
         !  3. 
         !Unmatched element "a3" in dict
-MAPI  = (monetdb) /var/tmp/mtest-6147/.s.monetdb.38930
+CODE  = PY000
+MAPI  = (monetdb) /var/tmp/mtest-29559/.s.monetdb.38002
 QUERY = COPY LOADER INTO pyloader04table FROM pyloader04();
 ERROR = !Python exception
         !
@@ -45,7 +46,8 @@ ERROR = !Python exception
         !> 2.   _emit.emit({'a1': 3, 'a2': 4, 3: 5})
         !  3. 
         !Unmatched element "3" in dict
-MAPI  = (monetdb) /var/tmp/mtest-79373/.s.monetdb.33370
+CODE  = PY000
+MAPI  = (monetdb) /var/tmp/mtest-29559/.s.monetdb.38002
 QUERY = COPY LOADER INTO pyloader04table FROM pyloader04();
 ERROR = !Python exception
         !
@@ -53,7 +55,8 @@ ERROR = !Python exception
         !> 2.   _emit.emit({'a1': [], 'a2': numpy.array([])})
         !  3. 
         !Empty input values supplied
-MAPI  = (monetdb) /var/tmp/mtest-6147/.s.monetdb.38930
+CODE  = PY000
+MAPI  = (monetdb) /var/tmp/mtest-29559/.s.monetdb.38002
 QUERY = COPY LOADER INTO pyloader04table FROM pyloader04();
 ERROR = !Python exception
         !
@@ -61,7 +64,8 @@ ERROR = !Python exception
         !> 2.   _emit.emit({})
         !  3. 
         !dict must contain at least one element
-MAPI  = (monetdb) /var/tmp/mtest-6147/.s.monetdb.38930
+CODE  = PY000
+MAPI  = (monetdb) /var/tmp/mtest-29559/.s.monetdb.38002
 QUERY = COPY LOADER INTO pyloader04table FROM pyloader04();
 ERROR = !Python exception
         !  2.   class MyClass:
@@ -69,7 +73,8 @@ ERROR = !Python exception
         !> 4.   _emit.emit({'a1': MyClass()})
         !  5. 
         !Unsupported Python Object <type 'instance'>
-MAPI  = (monetdb) /var/tmp/mtest-6147/.s.monetdb.38930
+CODE  = PY000
+MAPI  = (monetdb) /var/tmp/mtest-29559/.s.monetdb.38002
 QUERY = COPY LOADER INTO pyloader04table FROM pyloader04();
 ERROR = !Python exception
         !
@@ -77,6 +82,7 @@ ERROR = !Python exception
         !> 2.   _emit.emit({'a1': 'hello'})
         !  3. 
         !Failed conversion: Error converting string.
+CODE  = PY000
 
 # 12:30:44 >  
 # 12:30:44 >  "Done."

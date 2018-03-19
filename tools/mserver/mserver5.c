@@ -3,12 +3,10 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
-#include <stdio.h>
-#include <errno.h>
 #include <string.h> /* strerror */
 #include <locale.h>
 #include "monet_options.h"
@@ -51,7 +49,6 @@
 #define getcwd _getcwd
 #endif
 
-static int malloc_init = 1;
 #ifdef HAVE_CONSOLE
 static int monet_daemon;
 #endif
@@ -151,7 +148,7 @@ monet_hello(void)
 	printf("\n# Serving database '%s', using %d thread%s\n",
 			GDKgetenv("gdk_dbname"),
 			GDKnr_threads, (GDKnr_threads != 1) ? "s" : "");
-	printf("# Compiled for %s/" SZFMT "bit%s\n",
+	printf("# Compiled for %s/%zubit%s\n",
 			HOST, sizeof(ptr) * 8,
 #ifdef HAVE_HGE
 			" with 128bit integers"
@@ -165,8 +162,8 @@ monet_hello(void)
 	printf("# Database path:%s\n", GDKgetenv("gdk_dbpath"));
 	printf("# Module path:%s\n", GDKgetenv("monet_mod_path"));
 #endif
-	printf("# Copyright (c) 1993-July 2008 CWI.\n");
-	printf("# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved\n");
+	printf("# Copyright (c) 1993 - July 2008 CWI.\n");
+	printf("# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved\n");
 	printf("# Visit https://www.monetdb.org/ for further information\n");
 
 	// The properties shipped through the performance profiler
@@ -175,7 +172,7 @@ monet_hello(void)
 	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"host\":\"%s\",\n", HOST);
 	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"threads\":\"%d\",\n", GDKnr_threads);
 	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"memory\":\"%.3f %cB\",\n", sz_mem_h, qc[qi]);
-	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"oid\":\""SZFMT"\",\n", sizeof(oid) *8);
+	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"oid\":\"%zu\",\n", sizeof(oid) *8);
 	len += snprintf(monet_characteristics + len, sizeof(monet_characteristics)-1-len, "\"packages\":[");
 	// add the compiled in package names
 #ifdef HAVE_HGE
@@ -236,7 +233,7 @@ main(int argc, char **av)
 {
 	char *prog = *av;
 	opt *set = NULL;
-	int idx = 0, grpdebug = 0, debug = 0, setlen = 0, listing = 0, i = 0;
+	int i, grpdebug = 0, debug = 0, setlen = 0, listing = 0;
 	str dbinit = NULL;
 	str err = MAL_SUCCEED;
 	char prmodpath[1024];
@@ -287,27 +284,7 @@ main(int argc, char **av)
 		GDKfatal("cannot set locale\n");
 	}
 
-#ifdef HAVE_MALLOPT
-	if (malloc_init) {
-/* for (Red Hat) Linux (6.2) unused and ignored at least as of glibc-2.1.3-15 */
-/* for (Red Hat) Linux (8) used at least as of glibc-2.2.93-5 */
-		if (mallopt(M_MXFAST, 192)) {
-			fprintf(stderr, "!monet: mallopt(M_MXFAST,192) fails.\n");
-			exit(-1);
-		}
-#ifdef M_BLKSZ
-		if (mallopt(M_BLKSZ, 8 * 1024)) {
-			fprintf(stderr, "!monet: mallopt(M_BLKSZ,8*1024) fails.\n");
-			exit(-1);
-		}
-#endif
-	}
-	malloc_init = 0;
-#else
-	(void) malloc_init; /* still unused */
-#endif
-
-	if (getcwd(monet_cwd, PATHLENGTH - 1) == NULL) {
+	if (getcwd(monet_cwd, FILENAME_MAX - 1) == NULL) {
 		perror("pwd");
 		fprintf(stderr,"monet_init: could not determine current directory\n");
 		exit(-1);
@@ -424,7 +401,7 @@ main(int argc, char **av)
 				break;
 			}
 			usage(prog, -1);
-		/* not reached */
+			/* not reached */
 		case 'c':
 			/* coverity[var_deref_model] */
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "config", optarg);
@@ -487,20 +464,21 @@ main(int argc, char **av)
 	}
 
 	monet_script = (str *) malloc(sizeof(str) * (argc + 1));
-	if (monet_script) {
-		monet_script[idx] = NULL;
-		while (optind < argc) {
-			monet_script[idx] = absolute_path(av[optind]);
-			if ( monet_script[idx] == NULL){
-				fprintf(stderr, "!ERROR: cannot allocate memory for script \n");
-				exit(1);
-			} else {
-				monet_script[idx + 1] = NULL;
-				idx++;
-			}
-			optind++;
-		}
+	if (monet_script == NULL) {
+		fprintf(stderr, "!ERROR: cannot allocate memory for script \n");
+		exit(1);
 	}
+	i = 0;
+	while (optind < argc) {
+		monet_script[i] = absolute_path(av[optind]);
+		if (monet_script[i] == NULL) {
+			fprintf(stderr, "!ERROR: cannot allocate memory for script \n");
+			exit(1);
+		}
+		i++;
+		optind++;
+	}
+	monet_script[i] = NULL;
 	if (!dbpath) {
 		dbpath = absolute_path(mo_find_option(set, setlen, "gdk_dbpath"));
 		if (dbpath == NULL || GDKcreatedir(dbpath) != GDK_SUCCEED) {
@@ -534,7 +512,6 @@ main(int argc, char **av)
 		 * libX/monetdb5/lib/
 		 * probe libX = lib, lib32, lib64, lib/64 */
 		char *libdirs[] = { "lib", "lib64", "lib/64", "lib32", NULL };
-		size_t i;
 		struct stat sb;
 		if (binpath != NULL) {
 			char *p = strrchr(binpath, DIR_SEP);
@@ -648,7 +625,7 @@ main(int argc, char **av)
 				GDKfatal("%s", secret);
 			} else if (len < 5) {
 				fprintf(stderr, "#warning: your vault key is too short "
-								"(" SZFMT "), enlarge your vault key!\n", len);
+								"(%zu), enlarge your vault key!\n", len);
 			}
 			fclose(secretf);
 		}
@@ -670,26 +647,32 @@ main(int argc, char **av)
 		return 0;
 	}
 
-	MSinitClientPrg(mal_clients, "user", "main");
+	if((err = MSinitClientPrg(mal_clients, "user", "main")) != MAL_SUCCEED) {
+		msab_registerStop();
+		GDKfatal("%s", err);
+	}
 	if (dbinit == NULL)
 		dbinit = GDKgetenv("dbinit");
-	if (dbinit)
-		callString(mal_clients, dbinit, listing);
+	if (dbinit) {
+		if((err = callString(mal_clients, dbinit, listing)) != MAL_SUCCEED) {
+			msab_registerStop();
+			GDKfatal("%s", err);
+		}
+	}
 
 	emergencyBreakpoint();
-	if (monet_script)
-		for (i = 0; monet_script[i]; i++) {
-			str msg = evalFile(mal_clients, monet_script[i], listing);
-			/* check for internal exception message to terminate */
-			if (msg) {
-				if (strcmp(msg, "MALException:client.quit:Server stopped.") == 0)
-					mal_exit();
-				fprintf(stderr, "#%s: %s\n", monet_script[i], msg);
-				freeException(msg);
-			}
-			GDKfree(monet_script[i]);
-			monet_script[i] = 0;
+	for (i = 0; monet_script[i]; i++) {
+		str msg = evalFile(monet_script[i], listing);
+		/* check for internal exception message to terminate */
+		if (msg) {
+			if (strcmp(msg, "MALException:client.quit:Server stopped.") == 0)
+				mal_exit();
+			fprintf(stderr, "#%s: %s\n", monet_script[i], msg);
+			freeException(msg);
 		}
+		GDKfree(monet_script[i]);
+		monet_script[i] = 0;
+	}
 
 	if ((err = msab_registerStarted()) != NULL) {
 		/* throw the error at the user, but don't die */
@@ -697,8 +680,7 @@ main(int argc, char **av)
 		free(err);
 	}
 
-	if (monet_script)
-		free(monet_script);
+	free(monet_script);
 #ifdef HAVE_CONSOLE
 	if (!monet_daemon) {
 		MSserveClient(mal_clients);

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /* (c) M.L. Kersten
@@ -19,32 +19,32 @@ analysis by optimizers.
 */
 #include "monetdb_config.h"
 #include "sql_statistics.h"
-#include "sql_scenario.h"
+#include "sql_execute.h"
 
-#define atommem(TYPE, size)					\
-	do {							\
-		if (*dst == NULL || *len < (int) (size)) {	\
-			GDKfree(*dst);				\
-			*len = (size);				\
-			*dst = (TYPE *) GDKmalloc(*len);	\
-			if (*dst == NULL)			\
-				return -1;			\
-		}						\
+#define atommem(size)					\
+	do {						\
+		if (*dst == NULL || *len < (size)) {	\
+			GDKfree(*dst);			\
+			*len = (size);			\
+			*dst = GDKmalloc(*len);		\
+			if (*dst == NULL)		\
+				return -1;		\
+		}					\
 	} while (0)
 
-static int
-strToStrSQuote(char **dst, int *len, const void *src)
+static ssize_t
+strToStrSQuote(char **dst, size_t *len, const void *src)
 {
-	int l = 0;
+	ssize_t l = 0;
 
 	if (GDK_STRNIL((str) src)) {
-		atommem(char, 4);
+		atommem(4);
 
 		return snprintf(*dst, *len, "nil");
 	} else {
-		int sz = escapedStrlen(src, NULL, NULL, '\'');
-		atommem(char, sz + 3);
-		l = escapedStr((*dst) + 1, src, *len - 1, NULL, NULL, '\'');
+		size_t sz = escapedStrlen(src, NULL, NULL, '\'');
+		atommem(sz + 3);
+		l = (ssize_t) escapedStr((*dst) + 1, src, *len - 1, NULL, NULL, '\'');
 		l++;
 		(*dst)[0] = (*dst)[l++] = '"';
 		(*dst)[l] = 0;
@@ -62,7 +62,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *query, *dquery;
 	size_t querylen;
 	char *maxval = NULL, *minval = NULL;
-	int minlen = 0, maxlen = 0;
+	size_t minlen = 0, maxlen = 0;
 	str sch = 0, tbl = 0, col = 0;
 	int sorted, revsorted;
 	lng nils = 0;
@@ -80,7 +80,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	query = NULL;
 	dquery = (char *) GDKzalloc(8192);
 	if (dquery == NULL) {
-		throw(SQL, "analyze", MAL_MALLOC_FAIL);
+		throw(SQL, "analyze", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	switch (argc) {
@@ -99,7 +99,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (nsch = tr->schemas.set->h; nsch; nsch = nsch->next) {
 		sql_base *b = nsch->data;
 		sql_schema *s = (sql_schema *) nsch->data;
-		if (!isalpha((int) b->name[0]))
+		if (!isalpha((unsigned char) b->name[0]))
 			continue;
 
 		if (sch && strcmp(sch, b->name))
@@ -120,11 +120,17 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						BAT *bn, *br;
 						BAT *bsample;
 						lng sz;
-						int (*tostr)(str*,int*,const void*);
+						ssize_t (*tostr)(str*,size_t*,const void*);
 						void *val=0;
 
 						if (col && strcmp(bc->name, col))
 							continue;
+
+						/* remove cached value */
+						if (c->min)
+							c->min = NULL;
+						if (c->max)
+							c->max = NULL;
 
 						if ((bn = store_funcs.bind_col(tr, c, RDONLY)) == NULL) {
 							/* XXX throw error instead? */
@@ -142,7 +148,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							bsample = BATsample(bn, (BUN) samplesize);
 						} else
 							bsample = NULL;
-						br = BATselect(bn, bsample, ATOMnilptr(bn->ttype), NULL, 0, 0, 0);
+						br = BATselect(bn, bsample, ATOMnilptr(bn->ttype), NULL, 1, 0, 0);
 						if (br == NULL) {
 							BBPunfix(bn->batCacheid);
 							/* XXX throw error instead? */
@@ -184,7 +190,9 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							maxval = GDKmalloc(4);
 							if( maxval== NULL) {
 								GDKfree(dquery);
-								throw(SQL, "analyze", MAL_MALLOC_FAIL);
+								GDKfree(minval);
+								GDKfree(maxval);
+								throw(SQL, "analyze", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 							}
 							maxlen = 4;
 						}
@@ -193,8 +201,9 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							minval = GDKmalloc(4);
 							if( minval== NULL){
 								GDKfree(dquery);
+								GDKfree(minval);
 								GDKfree(maxval);
-								throw(SQL, "analyze", MAL_MALLOC_FAIL);
+								throw(SQL, "analyze", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 							}
 							minlen = 4;
 						}
@@ -202,13 +211,25 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							if ((val = BATmax(bn,0)) == NULL)
 								strcpy(maxval, "nil");
 							else {
-								tostr(&maxval, &maxlen, val);
+								if (tostr(&maxval, &maxlen, val) < 0) {
+									GDKfree(val);
+									GDKfree(dquery);
+									GDKfree(minval);
+									GDKfree(maxval);
+									throw(SQL, "analyze", GDK_EXCEPTION);
+								}
 								GDKfree(val);
 							}
 							if ((val = BATmin(bn,0)) == NULL)
 								strcpy(minval, "nil");
 							else {
-								tostr(&minval, &minlen, val);
+								if (tostr(&minval, &minlen, val) < 0) {
+									GDKfree(val);
+									GDKfree(dquery);
+									GDKfree(minval);
+									GDKfree(maxval);
+									throw(SQL, "analyze", GDK_EXCEPTION);
+								}
 								GDKfree(val);
 							}
 						} else {
@@ -223,7 +244,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								GDKfree(dquery);
 								GDKfree(maxval);
 								GDKfree(minval);
-								throw(SQL, "analyze", MAL_MALLOC_FAIL);
+								throw(SQL, "analyze", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 							}
 						}
 						snprintf(query, querylen, "insert into sys.statistics (column_id,type,width,stamp,\"sample\",count,\"unique\",nils,minval,maxval,sorted,revsorted) values(%d,'%s',%d,now()," LLFMT "," LLFMT "," LLFMT "," LLFMT ",'%s','%s',%s,%s);", c->base.id, c->type.type->sqlname, width, (samplesize ? samplesize : sz), sz, uniq, nils, minval, maxval, sorted ? "true" : "false", revsorted ? "true" : "false");
@@ -256,10 +277,10 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(maxval);
 	GDKfree(minval);
 	if (sch && !sfnd)
-		throw(SQL, "analyze", "Schema '%s' does not exist", sch);
+		throw(SQL, "analyze", SQLSTATE(3F000) "Schema '%s' does not exist", sch);
 	if (tbl && !tfnd)
-		throw(SQL, "analyze", "Table '%s' does not exist", tbl);
+		throw(SQL, "analyze", SQLSTATE(42S02) "Table '%s' does not exist", tbl);
 	if (col && !cfnd)
-		throw(SQL, "analyze", "Column '%s' does not exist", col);
+		throw(SQL, "analyze", SQLSTATE(38000) "Column '%s' does not exist", col);
 	return MAL_SUCCEED;
 }

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -108,6 +108,7 @@ static UWORD FuncImplemented[] = {
 	SQL_API_SQLPARAMOPTIONS,
 	SQL_API_SQLPREPARE,
 	SQL_API_SQLPRIMARYKEYS,
+	SQL_API_SQLPROCEDURECOLUMNS,
 	SQL_API_SQLPROCEDURES,
 	SQL_API_SQLROWCOUNT,
 #ifdef SQL_API_SQLSETCONNECTATTR
@@ -152,7 +153,6 @@ static UWORD FuncImplemented[] = {
 	SQL_API_SQLGETDIAGFIELD,
 #endif
 	SQL_API_SQLPARAMDATA,
-	SQL_API_SQLPROCEDURECOLUMNS,
 	SQL_API_SQLPUTDATA,
 	SQL_API_SQLSETCURSORNAME,
 	SQL_API_SQLSETSCROLLOPTIONS,
@@ -385,8 +385,8 @@ SQLGetFunctions(SQLHDBC ConnectionHandle,
 	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetFunctions " PTRFMT " %s\n",
-		PTRFMTCAST ConnectionHandle, translateFunctionId(FunctionId));
+	ODBCLOG("SQLGetFunctions %p %s\n",
+		ConnectionHandle, translateFunctionId(FunctionId));
 #endif
 
 	if (!isValidDbc(dbc))

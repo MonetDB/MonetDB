@@ -33,9 +33,11 @@ stderr of test 'mergedropcrash` in directory 'sql/test/mergetables` itself:
 MAPI  = (monetdb) /var/tmp/mtest-30244/.s.monetdb.33503
 QUERY = alter table m drop table t1;
 ERROR = !ALTER TABLE: table 'sys.t1' isn't part of the MERGE TABLE 'sys.m'
-MAPI  = (monetdb) /var/tmp/mtest-30244/.s.monetdb.33503
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = alter table m drop table t1;
 ERROR = !ALTER TABLE: no such table 't1' in schema 'sys'
+CODE  = 42S02
 
 # 12:42:18 >  
 # 12:42:18 >  "Done."

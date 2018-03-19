@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -28,7 +28,7 @@ SQLRETURN SQL_API
 SQLFreeConnect(SQLHDBC ConnectionHandle)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLFreeConnect " PTRFMT "\n", PTRFMTCAST ConnectionHandle);
+	ODBCLOG("SQLFreeConnect %p\n", ConnectionHandle);
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */

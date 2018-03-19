@@ -1,0 +1,3 @@
+CREATE TABLE tab0(pk INTEGER PRIMARY KEY, col0 INTEGER, col1 FLOAT, col2 TEXT, col3 INTEGER, col4 FLOAT, col5 TEXT);
+SELECT ALL * FROM tab0 cor0 WHERE - 62 NOT IN ( 9, - ( + + 67 ) ) AND - col0 * + 51 BETWEEN + 8 AND - - 95;
+DROP TABLE tab0;

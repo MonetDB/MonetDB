@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef _SQL_STRING_H_
@@ -19,7 +19,7 @@ extern char *toLower(const char *v);
 extern char *toUpper(const char *v);
 extern char *strconcat(const char *s1, const char *s2);
 extern char *strip_extra_zeros(char *v);
-extern const char *sql2str(char *s);
+extern char *sql2str(char *s);
 extern char *sql_strdup(char *s);
 extern char *sql_escape_str(char *s);
 extern const char *sql_escape_ident(const char *s);

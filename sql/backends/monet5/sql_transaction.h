@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -22,13 +22,13 @@
 #define sql5_export extern
 #endif
 
-#include <sql.h>
-#include <mal_backend.h>
-#include <sql_atom.h>
-#include <sql_statement.h>
-#include <sql_env.h>
-#include <sql_mvc.h>
-#include <mal_function.h>
+#include "sql.h"
+#include "mal_backend.h"
+#include "sql_atom.h"
+#include "sql_statement.h"
+#include "sql_env.h"
+#include "sql_mvc.h"
+#include "mal_function.h"
 
 sql5_export str SQLtransaction_begin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;
 sql5_export str SQLtransaction_release(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) ;

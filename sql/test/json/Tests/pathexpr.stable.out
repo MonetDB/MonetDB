@@ -35,93 +35,93 @@ Ready.
 % 505 # length
 [ "{\"book\": [{ \"category\": \"reference\", \"author\": \"Nigel Rees\", \"title\": \"Sayings of the Century\", \"price\": 8.95 }, { \"category\": \"fiction\", \"author\": \"Evelyn Waugh\", \"title\": \"Sword of Honour\", \"price\": 12.99 }, { \"category\": \"fiction\", \"author\": \"Herman Melville\", \"title\": \"Moby Dick\", \"isbn\": \"0-553-21311-3\", \"price\": 8.99 }, { \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 }], \"pencil\":{ \"color\": \"red\", \"price\": 19.95 }}"	]
 #select json.filter(js,'.book') from jspath;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % json # type
 % 452 # length
 [ "[[{ \"category\": \"reference\", \"author\": \"Nigel Rees\", \"title\": \"Sayings of the Century\", \"price\": 8.95 }, { \"category\": \"fiction\", \"author\": \"Evelyn Waugh\", \"title\": \"Sword of Honour\", \"price\": 12.99 }, { \"category\": \"fiction\", \"author\": \"Herman Melville\", \"title\": \"Moby Dick\", \"isbn\": \"0-553-21311-3\", \"price\": 8.99 }, { \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 }]]"	]
 #select json.filter(js,'.pencil') from jspath;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % json # type
 % 36 # length
 [ "[{ \"color\": \"red\", \"price\": 19.95 }]"	]
 #select json.filter(js,'pencil') from jspath;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % json # type
 % 36 # length
 [ "[{ \"color\": \"red\", \"price\": 19.95 }]"	]
 #select json.filter(js,'..author') from jspath;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % json # type
 % 66 # length
 [ "[\"Nigel Rees\",\"Evelyn Waugh\",\"Herman Melville\",\"J. R. R. Tolkien\"]"	]
 #select json.filter(js,'..category') from jspath;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % json # type
 % 43 # length
 [ "[\"reference\",\"fiction\",\"fiction\",\"fiction\"]"	]
 #select json.filter(js,'.book.[0]') from jspath;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % json # type
 % 103 # length
 [ "[{ \"category\": \"reference\", \"author\": \"Nigel Rees\", \"title\": \"Sayings of the Century\", \"price\": 8.95 }]"	]
 #select json.filter(js,'.book.[1]') from jspath;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % json # type
 % 97 # length
 [ "[{ \"category\": \"fiction\", \"author\": \"Evelyn Waugh\", \"title\": \"Sword of Honour\", \"price\": 12.99 }]"	]
 #select json.filter(js,'.book.[2]') from jspath;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % json # type
 % 118 # length
 [ "[{ \"category\": \"fiction\", \"author\": \"Herman Melville\", \"title\": \"Moby Dick\", \"isbn\": \"0-553-21311-3\", \"price\": 8.99 }]"	]
 #select json.filter(js,'.book.[3]') from jspath;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % json # type
 % 132 # length
 [ "[{ \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 }]"	]
 #select json.filter(js,'.book.[*].category') from jspath;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % json # type
 % 43 # length
 [ "[\"reference\",\"fiction\",\"fiction\",\"fiction\"]"	]
 #declare s json;
 #select json.filter(s,'..name');
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % json # type
 % 15 # length
 [ "[\"john\",\"mary\"]"	]
 #select  json.filter(s,'$.[*].name');
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % json # type
 % 8 # length
 [ "[\"mary\"]"	]
 #select  json.filter(s,'..name[0]');
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % json # type
 % 8 # length
 [ "[\"john\"]"	]
 #select  json.filter(s,'..name[1]');
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % json # type
 % 2 # length
 [ "[]"	]
 #select json.filter(js,'.book[4]') from jspath;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % json # type
 % 2 # length
 [ "[]"	]

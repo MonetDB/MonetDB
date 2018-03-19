@@ -33,9 +33,11 @@ QUERY = create function places3()
         returns table( "schema" string,  "table" string, "schema" string)
         external name iot.places;
 ERROR = !CREATE FUNC: identifier 'schema' ambiguous
-MAPI  = (monetdb) /var/tmp/mtest-7864/.s.monetdb.36671
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = select * from places3();
 ERROR = !SELECT: no such operator 'places3'
+CODE  = 42000
 
 # 12:37:42 >  
 # 12:37:42 >  "Done."

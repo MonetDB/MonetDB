@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef _LOGGER_H_
@@ -43,6 +43,10 @@ typedef struct logger {
 	int version;
 	lng id;
 	int tid;
+#ifdef GDKLIBRARY_NIL_NAN
+	/* convert old style floating point NIL values to NaN */
+	int convert_nil_nan;
+#endif
 	char *fn;
 	char *dir;
 	char *local_dir; /* the directory in which the non-shared log is written */

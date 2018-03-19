@@ -12,11 +12,11 @@ mapi.rpc(mid,"bat.append(rb,3);");
 mapi.rpc(mid,"bat.append(rb,5);");
 mapi.rpc(mid,"bat.append(rb,6);");
 mapi.rpc(mid,"bat.append(rb,7);");
-mapi.rpc(mid,"c:=algebra.select(rb,0,12,true,true,false);");
+mapi.rpc(mid,"c:=algebra.select(rb,nil:bat[:oid],0,12,true,true,false);");
 
 low:= 5+1;
 mapi.put(mid,"low",low);
-i:lng:= mapi.rpc(mid,"e:=algebra.select(rb,low,7,true,true,false); i:=aggr.count(e); io.print(i);");
+i:lng:= mapi.rpc(mid,"e:=algebra.select(rb,nil:bat[:oid],low,7,true,true,false); i:=aggr.count(e); io.print(i);");
 io.printf(" count %d\n",i);
 d:bat[:int]:= mapi.rpc(mid,"io.print(i);");
 io.print(d);

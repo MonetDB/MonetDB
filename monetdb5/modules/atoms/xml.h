@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -14,7 +14,7 @@
 #ifndef XML_H
 #define XML_H
 
-#include <gdk.h>
+#include "gdk.h"
 #include "mal.h"
 #include "mal_client.h"
 #include "mal_instruction.h"
@@ -24,11 +24,11 @@ typedef str xml;
 
 mal_export int TYPE_xml;
 
-mal_export int XMLfromString(str src, int *len, xml *x);
-mal_export int XMLtoString(str *s, int *len, xml src);
+mal_export ssize_t XMLfromString(const char *src, size_t *len, xml *x);
+mal_export ssize_t XMLtoString(str *s, size_t *len, const char *src);
 
 mal_export str XMLxml2str(str *s, xml *x);
-mal_export str XMLstr2xml(xml *x, str *s);
+mal_export str XMLstr2xml(xml *x, const char **s);
 mal_export str XMLxmltext(str *s, xml *x);
 mal_export str XMLxml2xml(xml *x, xml *s);
 mal_export str XMLdocument(xml *x, str *s);

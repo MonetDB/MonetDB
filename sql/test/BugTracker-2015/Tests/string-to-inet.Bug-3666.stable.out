@@ -64,8 +64,8 @@ Ready.
 #insert into iptable values ('192.168.10.2');
 [ 1	]
 #select cast(textip as inet) from iptable;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % inet # type
 % 0 # length
 [ 192.168.0.1	]

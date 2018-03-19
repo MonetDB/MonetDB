@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -39,9 +39,9 @@ SQLSetEnvAttr(SQLHENV EnvironmentHandle,
 	ODBCEnv *env = (ODBCEnv *) EnvironmentHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetEnvAttr " PTRFMT " %s " PTRFMT " %d\n",
-		PTRFMTCAST EnvironmentHandle, translateEnvAttribute(Attribute),
-		PTRFMTCAST ValuePtr, (int) StringLength);
+	ODBCLOG("SQLSetEnvAttr %p %s %p %d\n",
+		EnvironmentHandle, translateEnvAttribute(Attribute),
+		ValuePtr, (int) StringLength);
 #endif
 
 	(void) StringLength;	/* Stefan: unused!? */

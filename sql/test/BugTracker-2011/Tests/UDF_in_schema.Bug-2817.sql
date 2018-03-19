@@ -13,7 +13,7 @@ select * from datacell.basket_X;
 select * from datacell.basket_X();
 drop function datacell.basket_X;
 drop table datacell.basket_X;
-drop schema datacell;
+drop schema datacell cascade;
 
 create schema schema_2817;
 create table schema_2817.table_2817(
@@ -30,4 +30,4 @@ select * from schema_2817.table_2817;
 select * from schema_2817.function_2817();
 drop function schema_2817.function_2817;
 drop table schema_2817.table_2817;
-drop schema schema_2817;
+drop schema schema_2817 cascade;

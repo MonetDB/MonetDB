@@ -38,13 +38,13 @@ Ready.
 [ 1	]
 #insert into x values (2,2,2);
 [ 1	]
-#select corr(i,j) from x group by id;
-% sys.L3 # table_name
-% L2 # name
-% int # type
-% 1 # length
-[ 0	]
-[ 0	]
+#select id,corr(i,j) from x group by id order by id;
+% sys.x,	sys.L4 # table_name
+% id,	L3 # name
+% int,	double # type
+% 1,	24 # length
+[ 1,	1	]
+[ 2,	NULL	]
 #drop table x;
 
 # 13:04:45 >  

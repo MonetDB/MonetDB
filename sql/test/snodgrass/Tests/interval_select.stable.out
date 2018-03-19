@@ -45,116 +45,116 @@ Ready.
 # 17:37:29 >  
 
 #SELECT INTERVAL '0-0' YEAR TO MONTH = INTERVAL  +'0-0' YEAR TO MONTH;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT INTERVAL '0-0' YEAR TO MONTH = INTERVAL  -'0-0' YEAR TO MONTH;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT INTERVAL '3-4' YEAR TO MONTH = INTERVAL  +'3-4' YEAR TO MONTH;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT INTERVAL '3-4' YEAR TO MONTH = INTERVAL  '+3-4' YEAR TO MONTH;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT INTERVAL '3-4' YEAR TO MONTH = INTERVAL +'+3-4' YEAR TO MONTH;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT INTERVAL '3-4' YEAR TO MONTH = INTERVAL -'-3-4' YEAR TO MONTH;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT INTERVAL '3-4' YEAR TO MONTH = INTERVAL   '3-4' YEAR TO MONTH;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT INTERVAL '3-7' YEAR TO MONTH = INTERVAL '43' MONTH;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT INTERVAL '3' DAY + INTERVAL '4' DAY = INTERVAL '7' DAY;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT INTERVAL '3' DAY + INTERVAL '4' HOUR = INTERVAL '3 4' DAY TO HOUR;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT INTERVAL '3' DAY + INTERVAL '8 4' DAY TO HOUR = INTERVAL '11 4' DAY TO HOUR;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT INTERVAL '3' DAY - INTERVAL '4' DAY = INTERVAL -'1' DAY;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT INTERVAL '3' DAY - INTERVAL -'8 4' DAY TO HOUR = INTERVAL '11 4' DAY TO HOUR;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT INTERVAL '4' DAY * 3 = INTERVAL '12' DAY;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT 3 * INTERVAL '4' DAY = INTERVAL '12' DAY;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT INTERVAL '12:30' HOUR TO MINUTE * 3 = INTERVAL '37:30' HOUR TO MINUTE;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT INTERVAL '4' DAY / 2 = INTERVAL '2' DAY;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT - INTERVAL '4' DAY = INTERVAL -'4' DAY;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT + INTERVAL '4' DAY = INTERVAL '4' DAY;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % boolean # type
 % 5 # length
 [ true	]

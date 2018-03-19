@@ -32,7 +32,8 @@ stderr of test 'create_misc` in directory 'sql/test/pg_regress` itself:
 MAPI  = (monetdb) /var/tmp/mtest-29638/.s.monetdb.30099
 QUERY = INSERT INTO tenk2 SELECT * FROM tenk1;
 ERROR = !INSERT INTO: UNIQUE constraint 'tenk2.tenk2_unique1_unique' violated
-MAPI  = (monetdb) /var/tmp/mtest-29638/.s.monetdb.30099
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = CREATE TABLE Bprime AS
         SELECT *
         --   INTO TABLE Bprime
@@ -40,6 +41,7 @@ QUERY = CREATE TABLE Bprime AS
            WHERE unique2 < 1000
         WITH DATA;
 ERROR = !CREATE TABLE: name 'bprime' already in use
+CODE  = 42S01
 
 
 

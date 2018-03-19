@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef _MAL_CLIENT_H_
@@ -14,6 +14,8 @@
 
 #include "mal_resolve.h"
 #include "mal_profiler.h"
+
+#define SCENARIO_PROPERTIES 8
 
 #define CONSOLE     0
 #define isAdministrator(X) (X==mal_clients)
@@ -35,7 +37,7 @@ enum clientmode {
  * simplifies recognition.  The information between the prompt brackets
  * can be used to pass the mode to the front-end. Moreover, the prompt
  * can be dropped if a single stream of information is expected from the
- * server (see mal_profiler.mx).
+ * server (see mal_profiler.c).
  *
  * The user can request server-side compilation as part of the
  * initialization string. See the documentation on Scenarios.
@@ -68,9 +70,8 @@ typedef struct CLIENT {
 	 */
 	str     scenario;  /* scenario management references */
 	str     oldscenario;
-	void    *state[7], *oldstate[7];
-	MALfcn  phase[7], oldphase[7];
-	sht	stage;	   /* keep track of the phase being ran */
+	void    *state[SCENARIO_PROPERTIES], *oldstate[SCENARIO_PROPERTIES];
+	MALfcn  phase[SCENARIO_PROPERTIES], oldphase[SCENARIO_PROPERTIES];
 	char    itrace;    /* trace execution using interactive mdb */
 						/* if set to 'S' it will put the process to sleep */
 	/*
@@ -142,9 +143,10 @@ typedef struct CLIENT {
 	 * object space (the global variables).  Moreover, the parser needs
 	 * some administration variables to keep track of critical elements.
 	 */
-	Module      nspace;     /* private scope resolution list */
-	Symbol      curprg;     /* focus of parser */
-	Symbol      backup;     /* save parsing context */
+	Module      usermodule;     /* private user scope */
+	Module		curmodule;		/* where to deliver the symbol, used by parser , only freed globally */
+	Symbol      curprg;     /* container for the malparser */
+	Symbol      backup;     /* saving the parser context for functions,commands/patterns */
 	MalStkPtr   glb;        /* global variable stack */
 	/*
 	 * Some statistics on client behavior becomes relevant for server
@@ -153,7 +155,6 @@ typedef struct CLIENT {
 	 * we have to wait for the next one.
 	 */
 	int		actions;
-	lng		totaltime;	/* sum of elapsed processing times */
 
 	jmp_buf	exception_buf;
 	int exception_buf_initialized;

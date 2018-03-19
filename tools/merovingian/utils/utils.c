@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /**
@@ -17,22 +17,15 @@
 
 #include "monetdb_config.h"
 #include "utils.h"
-#include <stdio.h> /* fprintf, fgets */
 #include <unistd.h> /* unlink */
 #include <string.h> /* memcpy */
 #include <strings.h> /* strcasecmp */
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#ifdef TIME_WITH_SYS_TIME
-# include <sys/time.h>
-# include <time.h>
-#else
-# ifdef HAVE_SYS_TIME_H
-#  include <sys/time.h>
-# else
-#  include <time.h>
-# endif
+#include <time.h>
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
 #endif
 #ifdef HAVE_OPENSSL
 #include <openssl/rand.h>		/* RAND_bytes */
@@ -41,6 +34,10 @@
 #include <CommonCrypto/CommonCrypto.h>
 #include <CommonCrypto/CommonRandom.h>
 #endif
+#endif
+
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
 #endif
 
 /**
@@ -81,7 +78,13 @@ readConfFileFull(confkeyval *list, FILE *cnf) {
 
 	/* iterate until the end of the array */
 	while (list->key != NULL) {
-		/* If we already have PROPLENGTH entries, */
+		/* If we already have PROPLENGTH entries, we cannot add any more. Do
+		 * read the file because it might specify a different value for an
+		 * existing property.
+		 *
+		 * TODO: This is an arbitrary limitation and should either be justified
+		 * sufficiently or removed.
+		 */
 		if (cnt >= PROPLENGTH - 1) {
 			break;
 		}
@@ -96,24 +99,26 @@ readConfFileFull(confkeyval *list, FILE *cnf) {
 			val = strtok(NULL, separator);
 			/* strip trailing newline */
 			val = strtok(val, "\n");
-			/* check if it is default property or not. those are set in a special way */
-			if (defaultProperty(key)) {
-				if ((err = setConfValForKey(t, key, val)) != NULL) {
-					free(err); /* ignore, just fall back to default */
+			if ((err = setConfValForKey(t, key, val)) != NULL) {
+				if (strstr(err, "is not recognized") != NULL) {
+					/* If we already have PROPLENGTH entries in the list, ignore
+					 * every ad hoc property, but continue reading the file
+					 * because a different value might be specified later in the
+					 * file for one of the properties we have already in the list.
+					 */
+					if (cnt >= PROPLENGTH - 1) {
+						free(err);
+						continue;
+					}
+					list->key = strdup(key);
+					list->val = strdup(val);
+					list->ival = 0;
+					list->type = STR;
+					list++;
+					cnt++;
 				}
-			} else {
-				/* If we already have more than PROPLENGTH entries, ignore every
-				 * ad hoc property
-				 */
-				if (cnt >= PROPLENGTH - 1) {
-					continue;
-				}
-				list->key = strdup(key);
-				list->val = strdup(val);
-				list->ival = 0;
-				list->type = STR;
-				list++;
-				cnt++;
+				/* else: ignore the property */
+				free(err);
 			}
 		}
 	}
@@ -124,6 +129,8 @@ readConfFileFull(confkeyval *list, FILE *cnf) {
  */
 inline void
 freeConfFile(confkeyval *list) {
+	if (list == NULL)
+		return;
 	while (list->key != NULL) {
 		if (list->val != NULL) {
 			free(list->val);
@@ -131,25 +138,6 @@ freeConfFile(confkeyval *list) {
 		}
 		list++;
 	}
-}
-
-/**
- * Returns true if the key is a default property.
- */
-int
-defaultProperty(const char *property) {
-	if (property == NULL)
-		return 0;
-	return strcmp(property, "type") == 0 ||
-		strcmp(property, "shared") == 0 ||
-		strcmp(property, "nthreads") == 0 ||
-		strcmp(property, "readonly") == 0 ||
-		strcmp(property, "nclients") == 0 ||
-		strcmp(property, "mfunnel") == 0 ||
-		strcmp(property, "embedr") == 0 ||
-		strcmp(property, "embedpy") == 0 ||
-		strcmp(property, "embedpy3") == 0 ||
-		strcmp(property, "optpipe") == 0;
 }
 
 /**
@@ -295,6 +283,9 @@ setConfValForKey(confkeyval *list, const char *key, const char *val) {
 		}
 		list++;
 	}
+	/* XXX: Do NOT change this error message or readConfFileFull will stop
+	 * working as expected.
+	 */
 	snprintf(buf, sizeof(buf), "key '%s' is not recognized, internal error", key);
 	return(strdup(buf));
 }
@@ -453,8 +444,8 @@ generatePassphraseFile(const char *path)
 
 	/* delete such that we are sure we recreate the file with restricted
 	 * permissions */
-	unlink(path);
-	if ((fd = open(path, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR)) == -1) {
+	remove(path);
+	if ((fd = open(path, O_CREAT | O_WRONLY | O_CLOEXEC, S_IRUSR | S_IWUSR)) == -1) {
 		char err[512];
 		snprintf(err, sizeof(err), "unable to open '%s': %s",
 				path, strerror(errno));

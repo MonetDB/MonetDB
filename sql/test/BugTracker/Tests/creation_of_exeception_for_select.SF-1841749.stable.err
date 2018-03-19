@@ -16,6 +16,7 @@ MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT '' AS one, i.* FROM INT2_TBL i WHERE (i.f1 % smallint '2') =
         smallint '1';
 ERROR = !syntax error, unexpected SMALLINT in: "select '' as one, i.* from int2_tbl i where (i.f1 % smallint"
+CODE  = 42000
 
 # 15:34:04 >  
 # 15:34:04 >  Done.

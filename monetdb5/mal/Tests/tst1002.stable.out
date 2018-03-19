@@ -19,7 +19,7 @@ catch MALException:str;                 	#[3] (0)  4
     io.printf("%s\n":str, MALException:str);	#[4] (0) IOprintf 5 <- 6 4 
 exit MALException:str;                  	#[5] (0)  4 
 end user.foo;                           	#[6] (0)  
-MALException:bbp.bind:Object not found
+MALException:bbp.bind:HY002!Object not found
 
 # 15:35:45 >  
 # 15:35:45 >  "Done."

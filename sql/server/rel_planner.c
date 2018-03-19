@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -863,7 +863,7 @@ memojoins_print( list *joins )
 static void
 memoitem_print( memoitem *mi )
 {
-	printf("# %s(count=%lld,width=%lld,cost=%f): ", mi->name, mi->count, mi->width, mi->cost);
+	printf("# %s(count="LLFMT",width="LLFMT",cost=%f): ", mi->name, mi->count, mi->width, mi->cost);
 	memojoins_print(mi->joins);
 }
 

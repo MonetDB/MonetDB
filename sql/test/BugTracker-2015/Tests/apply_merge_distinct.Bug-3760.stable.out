@@ -39,20 +39,20 @@ Ready.
 % 1,	1 # length
 [ 1,	2	]
 #SELECT b, (SELECT count(*) FROM t2 AS x WHERE x.a < t2.a), CASE a WHEN b THEN 444 END FROM t2;
-% .t2,	.L2,	.L3 # table_name
-% b,	L1,	L3 # name
+% .t2,	.L7,	.L12 # table_name
+% b,	L6,	L12 # name
 % int,	bigint,	smallint # type
 % 1,	1,	1 # length
 [ 2,	0,	NULL	]
 #SELECT b, CASE a WHEN b THEN 444 END, (SELECT count(*) FROM t2 AS x WHERE x.a < t2.a) FROM t2;
-% .t2,	.L1,	.L3 # table_name
-% b,	L1,	L2 # name
+% .t2,	.L3,	.L11 # table_name
+% b,	L3,	L10 # name
 % int,	smallint,	bigint # type
 % 1,	1,	1 # length
 [ 2,	NULL,	0	]
 #SELECT b as "b1", (SELECT count(*) FROM t2 AS x WHERE x.a < t2.a), CASE a WHEN b THEN 444 END FROM t2;
-% .L1,	.L3,	.L4 # table_name
-% b1,	L2,	L4 # name
+% .L2,	.L10,	.L13 # table_name
+% b1,	L7,	L13 # name
 % int,	bigint,	smallint # type
 % 1,	1,	1 # length
 [ 2,	0,	NULL	]

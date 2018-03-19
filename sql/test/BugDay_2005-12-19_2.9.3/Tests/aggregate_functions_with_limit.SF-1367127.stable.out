@@ -74,14 +74,14 @@ Ready.
 [ 1	]
 [ 1	]
 #select count(*) from test_aggre_limit limit 1;
-% .L2 # table_name
-% L1 # name
+% .L4 # table_name
+% L3 # name
 % bigint # type
 % 2 # length
 [ 50	]
 #select type, count(*) from test_aggre_limit group by type limit 1;
-% sys.test_aggre_limit,	sys.L2 # table_name
-% type,	L1 # name
+% sys.test_aggre_limit,	sys.L4 # table_name
+% type,	L3 # name
 % varchar,	bigint # type
 % 3,	2 # length
 [ "int",	29	]

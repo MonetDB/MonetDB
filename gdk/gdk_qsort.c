@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -195,17 +195,17 @@ struct qsort_t {
 			SWAP1((i) * buf->ts, (j) * buf->ts, t, buf->ts); \
 	} while (0)
 #define GDKqsort_impl GDKqsort_impl_flt
-#define EQ(i, j)	(((flt *) h)[i] == ((flt *) h)[j])
-#define LE(i, j)	(((flt *) h)[i] <= ((flt *) h)[j])
-#define LT(i, j)	(((flt *) h)[i] < ((flt *) h)[j])
+#define EQ(i, j)	(is_flt_nil(((flt *)h)[i]) ? is_flt_nil(((flt *)h)[j]) : !is_flt_nil(((flt *)h)[j]) && ((flt *)h)[i] == ((flt *)h)[j])
+#define LE(i, j)	(is_flt_nil(((flt *)h)[i]) || (!is_flt_nil(((flt *)h)[j]) && ((flt *)h)[i] <= ((flt *)h)[j]))
+#define LT(i, j)	(!is_flt_nil(((flt *)h)[j]) && (is_flt_nil(((flt *)h)[i]) || ((flt *)h)[i] < ((flt *)h)[j]))
 #include "gdk_qsort_impl.h"
 #undef GDKqsort_impl
 #undef LE
 #undef LT
 
 #define GDKqsort_impl GDKqsort_impl_flt_rev
-#define LE(i, j)	(((flt *) h)[i] >= ((flt *) h)[j])
-#define LT(i, j)	(((flt *) h)[i] > ((flt *) h)[j])
+#define LE(i, j)	(is_flt_nil(((flt *)h)[j]) || (!is_flt_nil(((flt *)h)[i]) && ((flt *)h)[i] >= ((flt *)h)[j]))
+#define LT(i, j)	(!is_flt_nil(((flt *)h)[i]) && (is_flt_nil(((flt *)h)[j]) || ((flt *)h)[i] > ((flt *)h)[j]))
 #include "gdk_qsort_impl.h"
 #undef GDKqsort_impl
 #undef LE
@@ -222,17 +222,17 @@ struct qsort_t {
 			SWAP1((i) * buf->ts, (j) * buf->ts, t, buf->ts); \
 	} while (0)
 #define GDKqsort_impl GDKqsort_impl_dbl
-#define EQ(i, j)	(((dbl *) h)[i] == ((dbl *) h)[j])
-#define LE(i, j)	(((dbl *) h)[i] <= ((dbl *) h)[j])
-#define LT(i, j)	(((dbl *) h)[i] < ((dbl *) h)[j])
+#define EQ(i, j)	(is_dbl_nil(((dbl *)h)[i]) ? is_dbl_nil(((dbl *)h)[j]) : !is_dbl_nil(((dbl *)h)[j]) && ((dbl *)h)[i] == ((dbl *)h)[j])
+#define LE(i, j)	(is_dbl_nil(((dbl *)h)[i]) || (!is_dbl_nil(((dbl *)h)[j]) && ((dbl *)h)[i] <= ((dbl *)h)[j]))
+#define LT(i, j)	(!is_dbl_nil(((dbl *)h)[j]) && (is_dbl_nil(((dbl *)h)[i]) || ((dbl *)h)[i] < ((dbl *)h)[j]))
 #include "gdk_qsort_impl.h"
 #undef GDKqsort_impl
 #undef LE
 #undef LT
 
 #define GDKqsort_impl GDKqsort_impl_dbl_rev
-#define LE(i, j)	(((dbl *) h)[i] >= ((dbl *) h)[j])
-#define LT(i, j)	(((dbl *) h)[i] > ((dbl *) h)[j])
+#define LE(i, j)	(is_dbl_nil(((dbl *)h)[j]) || (!is_dbl_nil(((dbl *)h)[i]) && ((dbl *)h)[i] >= ((dbl *)h)[j]))
+#define LT(i, j)	(!is_dbl_nil(((dbl *)h)[i]) && (is_dbl_nil(((dbl *)h)[j]) || ((dbl *)h)[i] > ((dbl *)h)[j]))
 #include "gdk_qsort_impl.h"
 #undef GDKqsort_impl
 #undef LE
@@ -311,7 +311,7 @@ struct qsort_t {
 
 /* the interface functions */
 void
-GDKqsort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
+GDKqsort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe)
 {
 	struct qsort_t buf;
 
@@ -365,7 +365,7 @@ GDKqsort(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
 }
 
 void
-GDKqsort_rev(void *h, void *t, const void *base, size_t n, int hs, int ts, int tpe)
+GDKqsort_rev(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe)
 {
 	struct qsort_t buf;
 

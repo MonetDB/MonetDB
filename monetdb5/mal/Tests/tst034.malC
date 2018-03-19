@@ -7,13 +7,13 @@ bat.append(b,3);
 
 i:= bbp.getLRefCount(b);
 io.printf("start of selections %d [1]\n",i);
-s:= algebra.select(b,0,2,true,true,false); z:=algebra.projection(s,b); io.print(z);
+s:= algebra.select(b,nil:bat[:oid],0,2,true,true,false); z:=algebra.projection(s,b); io.print(z);
 i:= bbp.getLRefCount(z);
 io.printf("z select %d [1]\n",i);
 i:= bbp.getLRefCount(b);
 io.printf("select %d [1]\n",i);
-s:= algebra.select(b,0,2,true,false,false); z:=algebra.projection(s,b); io.print(z);
+s:= algebra.select(b,nil:bat[:oid],0,2,true,false,false); z:=algebra.projection(s,b); io.print(z);
 i:= bbp.getLRefCount(b);
 io.printf("select %d [1]\n",i);
-s:= algebra.select(b,0,2,false,true,false); z:=algebra.projection(s,b); io.print(z);
-s:= algebra.select(b,0,2,false,false,false); z:=algebra.projection(s,b); io.print(z);
+s:= algebra.select(b,nil:bat[:oid],0,2,false,true,false); z:=algebra.projection(s,b); io.print(z);
+s:= algebra.select(b,nil:bat[:oid],0,2,false,false,false); z:=algebra.projection(s,b); io.print(z);

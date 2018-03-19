@@ -72,6 +72,7 @@ stderr of test 'ambiguous_order_by.SF-2827916` in directory 'sql/test/BugTracker
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = select args.id, types.id from args, types order by id limit 10;
 ERROR = !SELECT: identifier 'id' ambiguous
+CODE  = 42000
 
 # 16:29:59 >  
 # 16:29:59 >  Done.

@@ -32,14 +32,14 @@ Ready.
 [ 1	]
 [ 6	]
 #SELECT * FROM aap1119186 UNION SELECT * FROM aap1119186;
-% .L # table_name
+% .L11 # table_name
 % id # name
 % int # type
 % 1 # length
 [ 1	]
 [ 6	]
 #SELECT * FROM aap1119186 UNION ALL SELECT * FROM aap1119186;
-% .L # table_name
+% .L11 # table_name
 % id # name
 % int # type
 % 1 # length
@@ -48,7 +48,7 @@ Ready.
 [ 1	]
 [ 6	]
 #SELECT 'a' AS test FROM aap1119186;
-% .L1 # table_name
+% .L2 # table_name
 % test # name
 % char # type
 % 1 # length
@@ -56,7 +56,7 @@ Ready.
 [ "a"	]
 #SELECT 'a' AS test FROM aap1119186 UNION SELECT 'b' AS
 #test FROM aap1119186;
-% .L2 # table_name
+% .L11 # table_name
 % test # name
 % char # type
 % 1 # length
@@ -64,7 +64,7 @@ Ready.
 [ "b"	]
 #SELECT 'a' AS test FROM aap1119186 UNION ALL SELECT 'b' AS
 #test FROM aap1119186;
-% .L2 # table_name
+% .L11 # table_name
 % test # name
 % char # type
 % 1 # length

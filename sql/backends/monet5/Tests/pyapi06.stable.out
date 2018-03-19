@@ -40,14 +40,14 @@ Ready.
 #		return(numpy.median(val))
 #};
 #SELECT aggrmedian(datacol) FROM rval;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % int # type
 % 2 # length
 [ 42	]
 #SELECT groupcol,aggrmedian(datacol) FROM rval GROUP BY groupcol;
-% sys.rval,	sys.L2 # table_name
-% groupcol,	L1 # name
+% sys.rval,	sys.L4 # table_name
+% groupcol,	L3 # name
 % int,	int # type
 % 1,	2 # length
 [ 1,	63	]
@@ -67,8 +67,8 @@ Ready.
 #	return x
 #};
 #SELECT groupcol,secondgroupcol,aggrsum(datacol) FROM rval GROUP BY groupcol,secondgroupcol;
-% sys.rval,	sys.rval,	sys.L2 # table_name
-% groupcol,	secondgroupcol,	L1 # name
+% sys.rval,	sys.rval,	sys.L5 # table_name
+% groupcol,	secondgroupcol,	L4 # name
 % int,	int,	int # type
 % 1,	1,	2 # length
 [ 0,	0,	3	]
