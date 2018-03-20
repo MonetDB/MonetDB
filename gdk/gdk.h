@@ -751,7 +751,7 @@ typedef struct {
 	 restricted:2,		/* access privileges */
 	 persistence:1,		/* should the BAT persist on disk? */
 	 role:8,		/* role of the bat */
-	 unused:15;		/* value=0 for now (sneakily used by mat.c) */
+	 unused:17;		/* value=0 for now (sneakily used by mat.c) */
 	int sharecnt;		/* incoming view count */
 
 	/* delta status administration */
