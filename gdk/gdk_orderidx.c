@@ -162,7 +162,7 @@ BATorderidx(BAT *b, int stable)
 		if (BATsort(NULL, &on, NULL, b, NULL, NULL, 0, stable) != GDK_SUCCEED)
 			return GDK_FAIL;
 		assert(BATcount(b) == BATcount(on));
-		if (on->tdense) {
+		if (BATtdense(on)) {
 			/* if the order bat is dense, the input was
 			 * sorted and we don't need an order index */
 			assert(b->tnosorted == 0);

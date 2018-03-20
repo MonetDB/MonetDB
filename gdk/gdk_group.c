@@ -631,7 +631,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				en->tkey = 1;
 				en->tnil = 0;
 				en->tnonil = 1;
-				en->tdense = 0;
 				en->tseqbase = oid_nil;
 			} else {
 				en = BATdense(0, b->hseqbase, cnt);

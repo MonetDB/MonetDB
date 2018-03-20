@@ -197,11 +197,9 @@ BATmaterialize(BAT *b)
 	t = b->tseqbase;
 	x = (oid *) b->theap.base;
 	if (is_oid_nil(t)) {
-		assert(!b->tdense);
 		while (p < q)
 			x[p++] = oid_nil;
 	} else {
-		assert(b->tdense);
 		while (p < q)
 			x[p++] = t++;
 	}

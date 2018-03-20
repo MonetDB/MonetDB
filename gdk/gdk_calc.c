@@ -1011,14 +1011,11 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s)
 		bn->tsorted = 1;
 		bn->trevsorted = 1;
 		bn->tkey = 1;
-		bn->tdense = ATOMtype(b1->ttype) == TYPE_oid;
-		if (bn->tdense)
-			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,0) : 0;
+		bn->tseqbase = ATOMtype(b1->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
 		bn->tsorted = 0;
 		bn->trevsorted = 0;
 		bn->tkey = 0;
-		bn->tdense = 0;
 		bn->tseqbase = oid_nil;
 	}
 	return bn;
@@ -1097,14 +1094,11 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s)
 		bn->tsorted = 1;
 		bn->trevsorted = 1;
 		bn->tkey = 1;
-		bn->tdense = ATOMtype(b1->ttype) == TYPE_oid;
-		if (bn->tdense)
-			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,0) : 0;
+		bn->tseqbase = ATOMtype(b1->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
 		bn->tsorted = 0;
 		bn->trevsorted = 0;
 		bn->tkey = 0;
-		bn->tdense = 0;
 		bn->tseqbase = oid_nil;
 	}
 	return bn;
@@ -1178,14 +1172,11 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 		bn->tsorted = 1;
 		bn->trevsorted = 1;
 		bn->tkey = 1;
-		bn->tdense = ATOMtype(b->ttype) == TYPE_oid;
-		if (bn->tdense)
-			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,0) : 0;
+		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
 		bn->tsorted = 0;
 		bn->trevsorted = 0;
 		bn->tkey = 0;
-		bn->tdense = 0;
 		bn->tseqbase = oid_nil;
 	}
 	return bn;
@@ -1269,14 +1260,11 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 		bn->tsorted = 1;
 		bn->trevsorted = 1;
 		bn->tkey = 1;
-		bn->tdense = ATOMtype(b->ttype) == TYPE_oid;
-		if (bn->tdense)
-			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,0) : 0;
+		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
 		bn->tsorted = 0;
 		bn->trevsorted = 0;
 		bn->tkey = 0;
-		bn->tdense = 0;
 		bn->tseqbase = oid_nil;
 	}
 	return bn;
@@ -1357,14 +1345,11 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s)
 		bn->tsorted = 1;
 		bn->trevsorted = 1;
 		bn->tkey = 1;
-		bn->tdense = ATOMtype(b1->ttype) == TYPE_oid;
-		if (bn->tdense)
-			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,0) : 0;
+		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
 		bn->tsorted = 0;
 		bn->trevsorted = 0;
 		bn->tkey = 0;
-		bn->tdense = 0;
 		bn->tseqbase = oid_nil;
 	}
 	return bn;
@@ -1443,14 +1428,11 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s)
 		bn->tsorted = 1;
 		bn->trevsorted = 1;
 		bn->tkey = 1;
-		bn->tdense = ATOMtype(b1->ttype) == TYPE_oid;
-		if (bn->tdense)
-			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,0) : 0;
+		bn->tseqbase = ATOMtype(b1->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
 		bn->tsorted = 0;
 		bn->trevsorted = 0;
 		bn->tkey = 0;
-		bn->tdense = 0;
 		bn->tseqbase = oid_nil;
 	}
 	return bn;
@@ -1524,14 +1506,11 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 		bn->tsorted = 1;
 		bn->trevsorted = 1;
 		bn->tkey = 1;
-		bn->tdense = ATOMtype(b->ttype) == TYPE_oid;
-		if (bn->tdense)
-			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,0) : 0;
+		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
 		bn->tsorted = 0;
 		bn->trevsorted = 0;
 		bn->tkey = 0;
-		bn->tdense = 0;
 		bn->tseqbase = oid_nil;
 	}
 	return bn;
@@ -1615,14 +1594,11 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 		bn->tsorted = 1;
 		bn->trevsorted = 1;
 		bn->tkey = 1;
-		bn->tdense = ATOMtype(b->ttype) == TYPE_oid;
-		if (bn->tdense)
-			bn->tseqbase = cnt == 1 ? *(oid*)Tloc(bn,0) : 0;
+		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
 	} else {
 		bn->tsorted = 0;
 		bn->trevsorted = 0;
 		bn->tkey = 0;
-		bn->tdense = 0;
 		bn->tseqbase = oid_nil;
 	}
 	return bn;

@@ -773,7 +773,6 @@ typedef struct {
 	bool varsized:1,	/* varsized (1) or fixedsized (0) */
 		key:1,		/* no duplicate values present */
 		unique:1,	/* no duplicate values allowed */
-		dense:1,	/* OID only: only consecutive values */
 		nonil:1,	/* there are no nils in the column */
 		nil:1,		/* there is a nil in the column */
 		sorted:1,	/* column is sorted in ascending order */
@@ -841,7 +840,6 @@ typedef struct BATiter {
 #define tseqbase	T.seq
 #define tsorted		T.sorted
 #define trevsorted	T.revsorted
-#define tdense		T.dense
 #define tident		T.id
 #define torderidx	T.orderidx
 #define twidth		T.width
@@ -1469,9 +1467,11 @@ gdk_export void GDKqsort_rev(void *restrict h, void *restrict t, const void *res
 
 #define BATtordered(b)	((b)->ttype == TYPE_void || (b)->tsorted)
 #define BATtrevordered(b) (((b)->ttype == TYPE_void && is_oid_nil((b)->tseqbase)) || (b)->trevsorted)
-#define BATtdense(b)	(BATtvoid(b) && !is_oid_nil((b)->tseqbase))
-#define BATtvoid(b)	(((b)->tdense && (b)->tsorted) || (b)->ttype==TYPE_void)
-#define BATtkey(b)	(b->tkey != FALSE || BATtdense(b))
+/* BAT is dense (i.e., BATtvoid() is true and tseqbase is not NIL) */
+#define BATtdense(b)	(!is_oid_nil((b)->tseqbase))
+/* BATtvoid: BAT can be (or actually is) represented by TYPE_void */
+#define BATtvoid(b)	(BATtdense(b) || (b)->ttype==TYPE_void)
+#define BATtkey(b)	((b)->tkey || BATtdense(b))
 
 /* set some properties that are trivial to deduce */
 #define BATsettrivprop(b)						\
@@ -1482,13 +1482,11 @@ gdk_export void GDKqsort_rev(void *restrict h, void *restrict t, const void *res
 		       ATOMtype((b)->ttype) == TYPE_oid);		\
 		if ((b)->ttype == TYPE_void) {				\
 			if (is_oid_nil((b)->tseqbase)) {		\
-				(b)->tdense = false;			\
 				(b)->tnonil = (b)->batCount == 0;	\
 				(b)->tnil = !(b)->tnonil;		\
 				(b)->trevsorted = 1;			\
 				(b)->tkey = (b)->batCount <= 1;		\
 			} else {					\
-				(b)->tdense = 1;			\
 				(b)->tnonil = 1;			\
 				(b)->tnil = 0;				\
 				(b)->tkey = 1;				\
@@ -1505,25 +1503,20 @@ gdk_export void GDKqsort_rev(void *restrict h, void *restrict t, const void *res
 				(b)->tnonil = 1;			\
 				(b)->tnil = 0;				\
 				if ((b)->ttype == TYPE_oid) {		\
-					(b)->tdense = 1;		\
 					(b)->tseqbase = 0;		\
 				}					\
 			} else if ((b)->ttype == TYPE_oid) {		\
 				/* b->batCount == 1 */			\
 				oid sqbs = ((const oid *) (b)->theap.base)[0]; \
 				if (is_oid_nil(sqbs)) {			\
-					(b)->tdense = 0;		\
 					(b)->tnonil = 0;		\
 					(b)->tnil = 1;			\
 				} else {				\
-					(b)->tdense = 1;		\
 					(b)->tnonil = 1;		\
 					(b)->tnil = 0;			\
 				}					\
 				(b)->tseqbase = sqbs;			\
 			}						\
-		} else if ((b)->ttype == TYPE_oid) {			\
-			(b)->tdense = !is_oid_nil((b)->tseqbase);	\
 		}							\
 		if (!ATOMlinear((b)->ttype)) {				\
 			(b)->tsorted = 0;				\

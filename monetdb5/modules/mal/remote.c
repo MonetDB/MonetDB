@@ -1115,7 +1115,7 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			b->tsorted, b->trevsorted,
 			b->tkey,
 			b->tnonil,
-			b->tdense,
+			BATtdense(b),
 			b->batCount,
 			(size_t)b->batCount * Tsize(b),
 			sendtheap && b->batCount > 0 ? b->tvheap->free : 0
@@ -1299,12 +1299,11 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	}
 
 	/* set properties */
-	b->tseqbase = bb.Tseqbase;
+	b->tseqbase = bb.Tdense ? bb.Tseqbase : oid_nil;
 	b->tsorted = bb.Tsorted;
 	b->trevsorted = bb.Trevsorted;
 	b->tkey = bb.Tkey;
 	b->tnonil = bb.Tnonil;
-	b->tdense = bb.Tdense;
 	if (bb.Ttype == TYPE_str && bb.size)
 		BATsetcapacity(b, (BUN) (bb.tailsize >> b->tshift));
 	BATsetcount(b, bb.size);

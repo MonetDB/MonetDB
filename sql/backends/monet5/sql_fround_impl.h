@@ -98,7 +98,6 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	/* hard to predict correct tail properties in general */
 	res->tnonil = nonil;
 	res->tnil = !nonil;
-	res->tdense = FALSE;
 	res->tseqbase = oid_nil;
 	res->tsorted = v->tsorted;
 	res->trevsorted = v->trevsorted;
@@ -209,7 +208,6 @@ bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 	/* hard to predict correct tail properties in general */
 	res->tnonil = nonil;
 	res->tnil = !nonil;
-	res->tdense = FALSE;
 	res->tseqbase = oid_nil;
 	res->tsorted = v->tsorted;
 	res->trevsorted = v->trevsorted;

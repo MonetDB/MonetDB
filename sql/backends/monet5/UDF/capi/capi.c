@@ -280,7 +280,7 @@ static void blob_initialize(struct cudf_data_struct_blob *self,
 		GENERATE_BAT_INPUT_BASE(tpe);                                          \
 		bat_data->count = BATcount(b);                                         \
 		bat_data->null_value = tpe##_nil;                                      \
-		if (b->tdense) {                                                       \
+		if (BATtdense(b)) {					\
 			size_t it = 0;                                                     \
 			tpe val = b->T.seq;                                                \
 			/* bat is dense, materialize it */                                 \

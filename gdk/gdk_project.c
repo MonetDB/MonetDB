@@ -738,7 +738,6 @@ BATprojectchain(BAT **bats)
 		bn->tshift = b->tshift;
 	}
 	bn->tsorted = bn->trevsorted = cnt <= 1;
-	bn->tdense = 0;
 	bn->tseqbase = oid_nil;
 	GDKfree(ba);
 	return bn;
