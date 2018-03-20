@@ -30,6 +30,7 @@
 		A[(I)] = (V);						\
 	} while (0)
 
+#if 0
 BAT *
 virtualize(BAT *bn)
 {
@@ -138,6 +139,7 @@ doubleslice(BAT *b, BUN l1, BUN h1, BUN l2, BUN h2)
 	bn->tnonil = 1;
 	return virtualize(bn);
 }
+#endif
 
 #define HASHloop_bound(bi, h, hb, v, lo, hi)		\
 	for (hb = HASHget(h, HASHprobe((h), v));	\
