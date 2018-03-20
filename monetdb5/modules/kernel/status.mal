@@ -29,6 +29,10 @@ command getThreads()(:bat[:int],:bat[:str] )
 address SYSgdkThread
 comment "Produce overview of active threads";
 
+command rss_cursize():lng 
+address SYSgetrss_cursize
+comment "The resident set size in KB";
+
 command mem_cursize():lng 
 address SYSgetmem_cursize
 comment "The amount of physical swapspace in KB that is currently in use";

@@ -1,0 +1,2 @@
+NATIVE_WIN32?cap_rss
+NATIVE_WIN32?no_cap_rss

@@ -1,0 +1,82 @@
+stdout of test 'cap_rss` in directory 'sql/test/configurable_rss` itself:
+
+
+# 20:34:03 >  
+# 20:34:03 >  "C:\Python27\python.exe" "cap_rss.py" "cap_rss"
+# 20:34:03 >  
+
+#create function getrss() 
+#returns bigint external name status.rss_cursize;
+#create function getvm() 
+#returns bigint external name status.mem_cursize;
+#create table test(a int, b int, c double);
+#insert into test values (1, 0, 1);
+[ 1	]
+#create procedure loop_insert(maximum_size bigint)
+#begin
+#    declare size bigint;
+#    set size = (select count(*) from test);
+#
+#    while size < maximum_size do
+#        insert into test (select a+1, b+2, rand()*c from test);
+#
+#        set size = (select count(*) from test);
+#    end while;
+#end;
+#select getrss() < 20000 as resident_set_size_is_less_then_20kbytes, quantile(c/a, 0.8)  from test;
+% .L2,	sys.L6 # table_name
+% resident_set_size_is_less_then_20kbytes,	L6 # name
+% boolean,	double # type
+% 5,	24 # length
+[ true,	0	]
+#drop table test cascade;
+#drop function getrss;
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_configurable_rss', using 2 threads
+# Compiled for x86_64-pc-winnt/64bit
+# Found 8.000 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://DESKTOP-J5OE0E3:32637/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 21_dependency_views.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 40_geom.sql
+# loading sql script: 40_json.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 97_comments.sql
+# loading sql script: 99_system.sql
+
+# 20:34:21 >  
+# 20:34:21 >  "Done."
+# 20:34:21 >  
+

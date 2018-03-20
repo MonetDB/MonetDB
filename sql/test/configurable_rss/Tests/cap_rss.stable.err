@@ -1,0 +1,31 @@
+stderr of test 'cap_rss` in directory 'sql/test/configurable_rss` itself:
+
+
+# 20:34:03 >  
+# 20:34:03 >  "C:\Python27\python.exe" "cap_rss.py" "cap_rss"
+# 20:34:03 >  
+
+#mserver: "--set gdk_mem_maxsize=70000000"
+#client: "..\..\..\..\..\Sources\monetdb\sql\test\configurable_rss\Tests\push_and_check_rss.sql"
+# builtin opt 	gdk_dbpath = C:\Users\aris\monetdb-installation\var\monetdb5\dbfarm\demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 32637
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = C:\Users\aris\monetdb-installation\var\MonetDB\mTests_sql_test_configurable_rss
+# cmdline opt 	gdk_mem_maxsize = 70000000
+# cmdline opt 	gdk_debug = 553648138
+
+# 20:34:21 >  
+# 20:34:21 >  "Done."
+# 20:34:21 >  
+

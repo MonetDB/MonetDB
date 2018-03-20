@@ -47,6 +47,10 @@ static char THRprintbuf[BUFSIZ];
 #define chdir _chdir
 #endif
 
+#ifdef WIN32
+# include <Windows.h>
+#endif
+
 static volatile ATOMIC_FLAG GDKstopped = ATOMIC_FLAG_INIT;
 static void GDKunlockHome(int farmid);
 
@@ -549,6 +553,16 @@ GDKinit(opt *set, int setlen)
 		if (strcmp("gdk_mem_maxsize", n[i].name) == 0) {
 			GDK_mem_maxsize = (size_t) strtoll(n[i].value, NULL, 10);
 			GDK_mem_maxsize = MAX(1 << 26, GDK_mem_maxsize);
+#ifdef WIN32 // On windows we can use a system call to limit the maximum working set size.
+			const HANDLE process = GetCurrentProcess();
+
+			if (!SetProcessWorkingSetSizeEx(process, 1, GDK_mem_maxsize, QUOTA_LIMITS_HARDWS_MAX_ENABLE))
+			{
+				printf("Something went wrong while setting the limits on the working set: %d\n", GetLastError());
+
+				return 1;
+			}
+#endif
 		} else if (strcmp("gdk_vm_maxsize", n[i].name) == 0) {
 			GDK_vm_maxsize = (size_t) strtoll(n[i].value, NULL, 10);
 			GDK_vm_maxsize = MAX(1 << 30, GDK_vm_maxsize);

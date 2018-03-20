@@ -1,0 +1,57 @@
+stdout of test 'no_cap_rss` in directory 'sql/test/configurable_rss` itself:
+
+
+# 20:52:50 >  
+# 20:52:50 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31687" "--set" "monet_prompt=" "--forcemito" "--dbpath=C:\Users\aris\monetdb-installation\var\MonetDB\mTests_sql_test_configurable_rss"
+# 20:52:50 >  
+
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_configurable_rss', using 2 threads
+# Compiled for x86_64-pc-winnt/64bit
+# Found 8.000 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://DESKTOP-J5OE0E3:31687/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 20:52:51 >  
+# 20:52:51 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=DESKTOP-J5OE0E3" "--port=31687"
+# 20:52:51 >  
+
+#create function getrss() 
+#returns bigint external name status.rss_cursize;
+#create function getvm() 
+#returns bigint external name status.mem_cursize;
+#create table test(a int, b int, c double);
+#insert into test values (1, 0, 1);
+[ 1	]
+#create procedure loop_insert(maximum_size bigint)
+#begin
+#    declare size bigint;
+#    set size = (select count(*) from test);
+#
+#    while size < maximum_size do
+#        insert into test (select a+1, b+2, rand()*c from test);
+#
+#        set size = (select count(*) from test);
+#    end while;
+#end;
+#select getrss() > 20000 as resident_set_size_is_bigger_then_20kbytes, quantile(c/a, 0.8)  from test;
+% .L2,	sys.L6 # table_name
+% resident_set_size_is_bigger_then_20kbytes,	L6 # name
+% boolean,	double # type
+% 5,	24 # length
+[ true,	0	]
+#drop table test cascade;
+#drop function getrss;
+#drop function getvm;
+
+# 20:53:00 >  
+# 20:53:00 >  "Done."
+# 20:53:00 >  
+

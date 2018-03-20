@@ -46,6 +46,13 @@ pseudo(bat *ret, bat *ret2, BAT *bn, BAT *b) {
 }
 
 str
+SYSgetrss_cursize(lng *num)
+{
+	*num = (lng) (MT_getrss() >> 10);
+	return MAL_SUCCEED;
+}
+
+str
 SYSgetmem_cursize(lng *num)
 {
 	*num = GDKmem_cursize();

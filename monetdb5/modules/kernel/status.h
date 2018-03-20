@@ -9,6 +9,7 @@
 #ifndef _SYS_H_
 #define _SYS_H_
 
+mal_export str SYSgetrss_cursize(lng *num);
 mal_export str SYSgetmem_cursize(lng *num);
 mal_export str SYSgetmem_maxsize(lng *num);
 mal_export str SYSsetmem_maxsize(void *ret, const lng *num);
