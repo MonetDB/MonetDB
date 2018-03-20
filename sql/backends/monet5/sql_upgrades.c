@@ -1514,10 +1514,10 @@ sql_update_default(Client c, mvc *sql)
 
 	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
 	pos += snprintf(buf + pos, bufsize - pos,
-			"create aggregate group_concat(str string) returns string external name \"aggr\".\"str_group_concat\";\n"
-			"grant execute on aggregate group_concat(string) to public;\n"
-			"create aggregate group_concat(str string, sep string) returns string external name \"aggr\".\"str_group_concat\";\n"
-			"grant execute on aggregate group_concat(string, string) to public;\n"
+			"create aggregate sys.group_concat(str string) returns string external name \"aggr\".\"str_group_concat\";\n"
+			"grant execute on aggregate sys.group_concat(string) to public;\n"
+			"create aggregate sys.group_concat(str string, sep string) returns string external name \"aggr\".\"str_group_concat\";\n"
+			"grant execute on aggregate sys.group_concat(string, string) to public;\n"
 			"insert into sys.systemfunctions (select id from sys.functions where name in ('group_concat') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));\n");
 
 	if (schema)
