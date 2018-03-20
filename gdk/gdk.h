@@ -765,12 +765,12 @@ typedef struct PROPrec PROPrec;
 /* see also comment near BATassertProps() for more information about
  * the properties */
 typedef struct {
-	str id;			/* label for head/tail column */
+	str id;			/* label for column */
 
 	unsigned short width;	/* byte-width of the atom array */
 	bte type;		/* type id. */
 	bte shift;		/* log2 of bun width */
-	bool varsized:1,	/* varsized (1) or fixedsized (0) */
+	bool varsized:1,	/* varsized/void (1) or fixedsized (0) */
 		key:1,		/* no duplicate values present */
 		unique:1,	/* no duplicate values allowed */
 		nonil:1,	/* there are no nils in the column */
@@ -780,7 +780,7 @@ typedef struct {
 	BUN nokey[2];		/* positions that prove key==FALSE */
 	BUN nosorted;		/* position that proves sorted==FALSE */
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
-	oid seq;		/* start of dense head sequence */
+	oid seq;		/* start of dense sequence */
 
 	Heap heap;		/* space for the column. */
 	Heap *vheap;		/* space for the varsized data. */
