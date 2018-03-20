@@ -843,14 +843,15 @@ BATcalcisnil_implementation(BAT *b, BAT *s, int notnil)
 	CANDINIT(b, s, start, end, cnt, cand, candend);
 
 	if (start == 0 && end == cnt && cand == NULL) {
-		if (b->tnonil ||
-		    (b->ttype == TYPE_void && !is_oid_nil(b->tseqbase))) {
+		if (b->tnonil || BATtdense(b)) {
 			bit zero = 0;
 
 			return BATconstant(b->hseqbase, TYPE_bit, &zero, cnt, TRANSIENT);
-		} else if (b->ttype == TYPE_void && is_oid_nil(b->tseqbase)) {
+		} else if (b->ttype == TYPE_void) {
 			bit one = 1;
 
+			/* non-nil handled above */
+			assert(is_oid_nil(b->tseqbase));
 			return BATconstant(b->hseqbase, TYPE_bit, &one, cnt, TRANSIENT);
 		}
 	}

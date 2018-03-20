@@ -371,7 +371,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name)
 	if (b) {
 		ht = TYPE_void;
 		tt = b->ttype;
-		if (tt == TYPE_void && !is_oid_nil(b->tseqbase))
+		if (tt == TYPE_void && BATtdense(b))
 			tseq = 1;
 	} else {		/* search trans action for create statement */
 		int i;

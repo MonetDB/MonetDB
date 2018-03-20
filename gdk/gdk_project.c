@@ -105,7 +105,7 @@ project_void(BAT *bn, BAT *l, BAT *r)
 	const oid *o;
 	oid rseq, rend;
 
-	assert(!is_oid_nil(r->tseqbase));
+	assert(BATtdense(r));
 	o = (const oid *) Tloc(l, 0);
 	bt = (oid *) Tloc(bn, 0);
 	bn->tsorted = l->tsorted;
