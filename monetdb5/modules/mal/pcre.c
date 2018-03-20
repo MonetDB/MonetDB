@@ -388,8 +388,7 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int 
 	bn->trevsorted = bn->batCount <= 1;
 	bn->tkey = 1;
 	bn->tdense = bn->batCount <= 1;
-	if (bn->batCount == 1)
-		bn->tseqbase =  * (oid *) Tloc(bn, 0);
+	bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? * (oid *) Tloc(bn, 0) : oid_nil;
 	*bnp = bn;
 	return MAL_SUCCEED;
 
@@ -528,8 +527,7 @@ re_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, int caseignore, int an
 	bn->trevsorted = bn->batCount <= 1;
 	bn->tkey = 1;
 	bn->tdense = bn->batCount <= 1;
-	if (bn->batCount == 1)
-		bn->tseqbase =  * (oid *) Tloc(bn, 0);
+	bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? * (oid *) Tloc(bn, 0) : oid_nil;
 	*bnp = bn;
 	re_destroy(re);
 	return MAL_SUCCEED;
@@ -1941,10 +1939,11 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	BATsetcount(r1, BATcount(r1));
 	BATsetcount(r2, BATcount(r2));
 	if (BATcount(r1) > 0) {
-		if (r1->tdense)
-			r1->tseqbase = ((oid *) r1->theap.base)[0];
-		if (r2->tdense)
-			r2->tseqbase = ((oid *) r2->theap.base)[0];
+		r1->tseqbase = r1->tdense ? ((oid *) r1->theap.base)[0] : oid_nil;
+		r2->tseqbase = r2->tdense ? ((oid *) r2->theap.base)[0] : oid_nil;
+	} else {
+		r1->tseqbase = r2->tseqbase = 0;
+		r1->tdense = r2->tdense = true;
 	}
 	ALGODEBUG fprintf(stderr, "#pcrejoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s\n",
 					  BATgetId(l), BATgetId(r),
@@ -2003,12 +2002,14 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid,
 	result1->tsorted = 1;
 	result1->trevsorted = 1;
 	result1->tdense = 1;
+	result1->tseqbase = 0;
 	result2->tnil = 0;
 	result2->tnonil = 1;
 	result2->tkey = 1;
 	result2->tsorted = 1;
 	result2->trevsorted = 1;
 	result2->tdense = 1;
+	result2->tseqbase = 0;
 	msg = pcrejoin(result1, result2, left, right, candleft, candright,
 				   esc, caseignore);
 	if (msg)

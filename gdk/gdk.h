@@ -1478,14 +1478,15 @@ gdk_export void GDKqsort_rev(void *restrict h, void *restrict t, const void *res
 	do {								\
 		assert(!is_oid_nil((b)->hseqbase));			\
 		(b)->batDirtydesc = 1;	/* likely already set */	\
-		/* the other head properties should already be correct */ \
+		assert(is_oid_nil((b)->tseqbase) ||			\
+		       ATOMtype((b)->ttype) == TYPE_oid);		\
 		if ((b)->ttype == TYPE_void) {				\
 			if (is_oid_nil((b)->tseqbase)) {		\
+				(b)->tdense = false;			\
 				(b)->tnonil = (b)->batCount == 0;	\
 				(b)->tnil = !(b)->tnonil;		\
 				(b)->trevsorted = 1;			\
 				(b)->tkey = (b)->batCount <= 1;		\
-				(b)->tdense = 0;			\
 			} else {					\
 				(b)->tdense = 1;			\
 				(b)->tnonil = 1;			\
@@ -1521,6 +1522,8 @@ gdk_export void GDKqsort_rev(void *restrict h, void *restrict t, const void *res
 				}					\
 				(b)->tseqbase = sqbs;			\
 			}						\
+		} else if ((b)->ttype == TYPE_oid) {			\
+			(b)->tdense = !is_oid_nil((b)->tseqbase);	\
 		}							\
 		if (!ATOMlinear((b)->ttype)) {				\
 			(b)->tsorted = 0;				\

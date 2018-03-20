@@ -645,18 +645,22 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 
 		b->tsorted = n->tsorted;
 		b->trevsorted = n->trevsorted;
-		b->tdense = n->tdense && cand == NULL;
+		b->tdense = false;
+		b->tseqbase = oid_nil;
 		b->tnonil = n->tnonil;
 		b->tnil = n->tnil && cnt == BATcount(n);
 		b->tseqbase = oid_nil;
 		if (cand == NULL) {
 			b->tnosorted = start <= n->tnosorted && n->tnosorted < end ? n->tnosorted - start : 0;
 			b->tnorevsorted = start <= n->tnorevsorted && n->tnorevsorted < end ? n->tnorevsorted - start : 0;
-			if (n->tdense && n->ttype == TYPE_oid)
+			if (n->tdense && n->ttype == TYPE_oid) {
 				b->tseqbase = *(oid *) BUNtail(ni, start);
-			else if (n->ttype == TYPE_void &&
-				 !is_oid_nil(n->tseqbase))
+				b->tdense = true;
+			} else if (n->ttype == TYPE_void &&
+				   !is_oid_nil(n->tseqbase)) {
 				b->tseqbase = n->tseqbase + start;
+				b->tdense = true;
+			}
 		} else {
 			b->tnosorted = 0;
 			b->tnorevsorted = 0;
@@ -679,6 +683,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 			b->tnosorted = 0;
 			if (b->tdense) {
 				b->tdense = FALSE;
+				b->tseqbase = oid_nil;
 			}
 		}
 		if (BATtrevordered(b) &&
@@ -697,6 +702,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 		     cand != NULL ||
 		     1 + *(oid *) BUNtloc(bi, last) != *(oid *) BUNtail(ni, start))) {
 			b->tdense = FALSE;
+			b->tseqbase = oid_nil;
 		}
 		b->tnonil &= n->tnonil;
 		b->tnil |= n->tnil && cnt == BATcount(n);
@@ -975,16 +981,13 @@ BATslice(BAT *b, BUN l, BUN h)
 	}
 	bni = bat_iterator(bn);
 	if (BATtdense(b)) {
-		bn->tdense = TRUE;
 		BATtseqbase(bn, (oid) (b->tseqbase + low));
 	} else if (bn->tkey && bn->ttype == TYPE_oid) {
 		if (BATcount(bn) == 0) {
-			bn->tdense = TRUE;
 			BATtseqbase(bn, 0);
 		} else if (bn->tsorted &&
 			   !is_oid_nil((foid = *(oid *) BUNtloc(bni, 0))) &&
 			   foid + BATcount(bn) - 1 == *(oid *) BUNtloc(bni, BUNlast(bn) - 1)) {
-			bn->tdense = TRUE;
 			BATtseqbase(bn, *(oid *) BUNtloc(bni, 0));
 		}
 	}
@@ -1447,6 +1450,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		on->tnonil = 1;
 		on->tsorted = on->trevsorted = 0;
 		on->tdense = 0;
+		on->tseqbase = oid_nil;
 		if (sorted || groups) {
 			bn = BATproject(on, b);
 			if (bn == NULL)
@@ -1517,9 +1521,13 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			on->tnil = 0;
 			on->tnonil = 1;
 		}
-		on->tsorted = on->trevsorted = 0; /* it won't be sorted */
-		on->tdense = 0;			  /* and hence not dense */
-		on->tnosorted = on->tnorevsorted = 0;
+		/* COLcopy above can create TYPE_void */
+		if (on->ttype != TYPE_void) {
+			on->tsorted = on->trevsorted = 0; /* it won't be sorted */
+			on->tdense = false;	/* and hence not dense */
+			on->tseqbase = oid_nil;
+			on->tnosorted = on->tnorevsorted = 0;
+		}
 		*order = on;
 		ords = (oid *) Tloc(on, 0);
 	} else {

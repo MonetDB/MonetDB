@@ -1019,6 +1019,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s)
 		bn->trevsorted = 0;
 		bn->tkey = 0;
 		bn->tdense = 0;
+		bn->tseqbase = oid_nil;
 	}
 	return bn;
   bunins_failed:
@@ -1104,6 +1105,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s)
 		bn->trevsorted = 0;
 		bn->tkey = 0;
 		bn->tdense = 0;
+		bn->tseqbase = oid_nil;
 	}
 	return bn;
   bunins_failed:
@@ -1184,6 +1186,7 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 		bn->trevsorted = 0;
 		bn->tkey = 0;
 		bn->tdense = 0;
+		bn->tseqbase = oid_nil;
 	}
 	return bn;
   bunins_failed:
@@ -1274,6 +1277,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 		bn->trevsorted = 0;
 		bn->tkey = 0;
 		bn->tdense = 0;
+		bn->tseqbase = oid_nil;
 	}
 	return bn;
   bunins_failed:
@@ -1361,6 +1365,7 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s)
 		bn->trevsorted = 0;
 		bn->tkey = 0;
 		bn->tdense = 0;
+		bn->tseqbase = oid_nil;
 	}
 	return bn;
   bunins_failed:
@@ -1446,6 +1451,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s)
 		bn->trevsorted = 0;
 		bn->tkey = 0;
 		bn->tdense = 0;
+		bn->tseqbase = oid_nil;
 	}
 	return bn;
   bunins_failed:
@@ -1526,6 +1532,7 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 		bn->trevsorted = 0;
 		bn->tkey = 0;
 		bn->tdense = 0;
+		bn->tseqbase = oid_nil;
 	}
 	return bn;
   bunins_failed:
@@ -1616,6 +1623,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 		bn->trevsorted = 0;
 		bn->tkey = 0;
 		bn->tdense = 0;
+		bn->tseqbase = oid_nil;
 	}
 	return bn;
   bunins_failed:

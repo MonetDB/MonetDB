@@ -966,7 +966,7 @@ heapinit(BAT *b, const char *buf, int *hashash, const char *HT, unsigned bbpvers
 	b->tnil = (properties & 0x0800) != 0;
 	b->tnosorted = (BUN) nosorted;
 	b->tnorevsorted = (BUN) norevsorted;
-	b->tseqbase = base >= (uint64_t) oid_nil ? oid_nil : (oid) base;
+	b->tseqbase = !b->tdense || base >= (uint64_t) oid_nil ? oid_nil : (oid) base;
 	b->theap.free = (size_t) free;
 	b->theap.size = (size_t) size;
 	b->theap.base = NULL;

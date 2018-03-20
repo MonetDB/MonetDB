@@ -93,7 +93,7 @@ BATcreatedesc(oid hseq, int tt, int heapnames, int role)
 	bn->tnil = FALSE;
 	bn->tsorted = bn->trevsorted = ATOMlinear(tt) != 0;
 	bn->tident = BATstring_t;
-	bn->tseqbase = (tt == TYPE_void) ? oid_nil : 0;
+	bn->tseqbase = oid_nil;
 	bn->tprops = NULL;
 
 	bn->batRole = role;
@@ -377,6 +377,7 @@ BATattach(int tt, const char *heapfile, int role)
 		bn->tnonil = cap == 0;
 		bn->tnil = 0;
 		bn->tdense = 0;
+		bn->tseqbase = oid_nil;
 		if (cap > 1) {
 			bn->tsorted = 0;
 			bn->trevsorted = 0;
@@ -540,7 +541,7 @@ BATclear(BAT *b, int force)
 		b->batInserted = 0;
 	BATsetcount(b,0);
 	BAThseqbase(b, 0);
-	BATtseqbase(b, 0);
+	BATtseqbase(b, ATOMtype(b->ttype) == TYPE_oid ? 0 : oid_nil);
 	b->batDirty = TRUE;
 	BATsettrivprop(b);
 	b->tnosorted = b->tnorevsorted = 0;
@@ -797,20 +798,11 @@ COLcopy(BAT *b, int tt, int writable, int role)
 	}
 	/* set properties (note that types may have changed in the copy) */
 	if (ATOMtype(tt) == ATOMtype(b->ttype)) {
-		if (BATtvoid(b)) {
-			/* b is either dense or has a void(nil) tail */
-			if (bn->ttype != TYPE_void)
-				bn->tdense = TRUE;
-			else if (is_oid_nil(b->tseqbase))
-				bn->tnonil = FALSE;
+		if (ATOMtype(tt) == TYPE_oid) {
 			BATtseqbase(bn, b->tseqbase);
-		} else if (bn->ttype != TYPE_void) {
-			/* b is not dense, so set bn not dense */
-			bn->tdense = FALSE;
+		} else {
 			BATtseqbase(bn, oid_nil);
-			bn->tnonil = b->tnonil;
-		} else if (BATtkey(b))
-			BATtseqbase(bn, 0);
+		}
 		BATkey(bn, BATtkey(b));
 		bn->tsorted = BATtordered(b);
 		bn->trevsorted = BATtrevordered(b);
@@ -823,15 +815,18 @@ COLcopy(BAT *b, int tt, int writable, int role)
 			bn->tnokey[0] = bn->tnokey[1] = 0;
 		}
 		bn->tnosorted = b->tnosorted;
+		bn->tnonil = b->tnonil;
+		bn->tnil = b->tnil;
 	} else if (ATOMstorage(tt) == ATOMstorage(b->ttype) &&
 		   ATOMcompare(tt) == ATOMcompare(b->ttype)) {
 		BUN h = BUNlast(b);
 		bn->tsorted = b->tsorted;
 		bn->trevsorted = b->trevsorted;
-		bn->tdense = b->tdense && ATOMtype(bn->ttype) == TYPE_oid;
+		bn->tdense = false;
 		if (b->tkey)
 			BATkey(bn, true);
 		bn->tnonil = b->tnonil;
+		bn->tnil = b->tnil;
 		if (b->tnosorted > 0 && b->tnosorted < h)
 			bn->tnosorted = b->tnosorted;
 		else
@@ -850,7 +845,7 @@ COLcopy(BAT *b, int tt, int writable, int role)
 		}
 	} else {
 		bn->tsorted = bn->trevsorted = 0; /* set based on count later */
-		bn->tdense = bn->tnonil = 0;
+		bn->tdense = bn->tnonil = bn->tnil = false;
 		bn->tnosorted = bn->tnorevsorted = 0;
 		bn->tnokey[0] = bn->tnokey[1] = 0;
 	}
@@ -931,6 +926,7 @@ setcolprops(BAT *b, const void *x)
 			if (x) {
 				b->tseqbase = * (const oid *) x;
 			}
+			b->tdense = !is_oid_nil(b->tseqbase);
 			b->tnil = is_oid_nil(b->tseqbase);
 			b->tnonil = !b->tnil;
 		} else {
@@ -991,7 +987,9 @@ setcolprops(BAT *b, const void *x)
 			b->tnorevsorted = pos;
 		}
 		if (b->tdense && (cmp >= 0 || * (const oid *) prv + 1 != * (const oid *) x)) {
+			assert(b->ttype == TYPE_oid);
 			b->tdense = 0;
+			b->tseqbase = oid_nil;
 		}
 		if (isnil) {
 			b->tnonil = 0;
@@ -1187,12 +1185,15 @@ BUNinplace(BAT *b, BUN p, const void *t, bit force)
 			if (prv != BUN_NONE &&
 			    1 + * (oid *) BUNtloc(bi, prv) != * (oid *) t) {
 				b->tdense = FALSE;
+				b->tseqbase = oid_nil;
 			} else if (nxt != BUN_NONE &&
 				   * (oid *) BUNtloc(bi, nxt) != 1 + * (oid *) t) {
 				b->tdense = FALSE;
+				b->tseqbase = oid_nil;
 			} else if (prv == BUN_NONE &&
 				   nxt == BUN_NONE) {
 				b->tseqbase = * (oid *) t;
+				b->tdense = !is_oid_nil(b->tseqbase);
 			}
 		}
 	} else if (b->tnosorted >= p)
@@ -1445,9 +1446,10 @@ BATkey(BAT *b, bool flag)
 	if (b->tkey != flag)
 		b->batDirtydesc = TRUE;
 	b->tkey = flag;
-	if (!flag)
+	if (!flag) {
 		b->tdense = 0;
-	else
+		b->tseqbase = oid_nil;
+	} else
 		b->tnokey[0] = b->tnokey[1] = 0;
 	if (flag && VIEWtparent(b)) {
 		/* if a view is key, then so is the parent if the two
@@ -1480,29 +1482,26 @@ BAThseqbase(BAT *b, oid o)
 void
 BATtseqbase(BAT *b, oid o)
 {
+	assert(o <= oid_nil);
 	if (b == NULL)
 		return;
-	assert(o <= oid_nil);
 	assert(is_oid_nil(o) || o + BATcount(b) <= GDK_oid_max);
 	assert(b->batCacheid > 0);
+	if (b->tseqbase != o) {
+		b->batDirtydesc = true;
+	}
 	if (ATOMtype(b->ttype) == TYPE_oid) {
-		if (b->tseqbase != o) {
-			b->batDirtydesc = TRUE;
-		}
 		b->tseqbase = o;
-		if (is_oid_nil(o)) {
-			b->tdense = 0;
-		} else if (b->ttype == TYPE_void) {
-			b->tdense = 1;
-		}
+		b->tdense = !is_oid_nil(o);
 
 		/* adapt keyness */
 		if (BATtvoid(b)) {
+			b->tsorted = true;
 			if (is_oid_nil(o)) {
 				b->tkey = b->batCount <= 1;
 				b->tnonil = b->batCount == 0;
 				b->tnil = b->batCount > 0;
-				b->tsorted = b->trevsorted = 1;
+				b->trevsorted = true;
 				b->tnosorted = b->tnorevsorted = 0;
 				if (!b->tkey) {
 					b->tnokey[0] = 0;
@@ -1517,12 +1516,15 @@ BATtseqbase(BAT *b, oid o)
 				}
 				b->tnonil = 1;
 				b->tnil = 0;
-				b->tsorted = 1;
 				b->trevsorted = b->batCount <= 1;
 				if (!b->trevsorted)
 					b->tnorevsorted = 1;
 			}
 		}
+	} else {
+		assert(o == oid_nil);
+		b->tseqbase = oid_nil;
+		b->tdense = false;
 	}
 }
 
@@ -2053,6 +2055,10 @@ BATassertProps(BAT *b)
 			assert(* (oid *) BUNtail(bi, 0) == b->tseqbase);
 		}
 	}
+	/* dense checks */
+	assert(!b->tdense || ATOMtype(b->ttype) == TYPE_oid);
+	assert(b->tdense == !is_oid_nil(b->tseqbase));
+	assert(!b->tdense || b->tsorted);
 	/* a column cannot both have and not have NILs */
 	assert(!b->tnil || !b->tnonil);
 	if (b->ttype == TYPE_void) {

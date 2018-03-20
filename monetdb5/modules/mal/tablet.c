@@ -72,6 +72,7 @@ void_bat_create(int adt, BUN nr)
 	b->tnosorted = 0;
 	b->tnorevsorted = 0;
 	b->tdense = FALSE;
+	b->tseqbase = oid_nil;
 	b->tkey = FALSE;
 	b->tnokey[0] = 0;
 	b->tnokey[1] = 0;

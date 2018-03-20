@@ -89,6 +89,7 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 	}
 	r -> tkey = FALSE;
 	r -> tdense = FALSE;
+	r -> tseqbase = oid_nil;
 	r -> tsorted = BATtordered(gids);
 	r -> trevsorted = BATtrevordered(gids);
 	r -> tnonil = gids->tnonil;

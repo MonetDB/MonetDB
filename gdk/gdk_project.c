@@ -238,7 +238,6 @@ BATproject(BAT *l, BAT *r)
 			return NULL;
 		if (ATOMtype(bn->ttype) == TYPE_oid &&
 		    BATcount(bn) == 0) {
-			bn->tdense = 1;
 			BATtseqbase(bn, 0);
 		}
 		ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=%s#"BUNFMT"%s%s%s\n",
@@ -740,6 +739,7 @@ BATprojectchain(BAT **bats)
 	}
 	bn->tsorted = bn->trevsorted = cnt <= 1;
 	bn->tdense = 0;
+	bn->tseqbase = oid_nil;
 	GDKfree(ba);
 	return bn;
 

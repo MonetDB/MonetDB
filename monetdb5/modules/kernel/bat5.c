@@ -1112,6 +1112,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 	bn->tsorted = 0;
 	bn->trevsorted = 0;
 	bn->tdense = 0;
+	bn->tseqbase = oid_nil;
 	bn->tkey = b->tkey;
 	bn->tnonil = b->tnonil;
 	bn->tnil = b->tnil;
@@ -1172,6 +1173,7 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
     bn->tsorted = 0;
     bn->trevsorted = 0;
     bn->tdense = 0;
+	bn->tseqbase = oid_nil;
 
 
 	BBPunfix(b->batCacheid);
@@ -1298,6 +1300,7 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
     bn->tsorted = 0;
     bn->trevsorted = 0;
     bn->tdense = 0;
+	bn->tseqbase = oid_nil;
 	bn->tkey = b->tkey;
 
 
@@ -1360,6 +1363,7 @@ BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
     bn->tsorted = 0;
     bn->trevsorted = 0;
     bn->tdense = 0;
+	bn->tseqbase = oid_nil;
 
 
 	BBPunfix(b->batCacheid);

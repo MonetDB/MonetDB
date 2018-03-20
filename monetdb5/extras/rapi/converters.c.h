@@ -49,6 +49,7 @@
 		if (!b) break;                                                  \
 		b->tnil = 0; b->tnonil = 1; b->tkey = 0;						\
 		b->tsorted = 1; b->trevsorted = 1;b->tdense = 0;				\
+		b->tseqbase = oid_nil;											\
 		p = (tpe*) Tloc(b, 0);								\
 		for( j = 0; j < cnt; j++, p++){								    \
 			*p = (tpe) access_fun(s)[j];							    \

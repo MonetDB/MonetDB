@@ -234,8 +234,7 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 	}
 	bn->tsorted = 1;
 	bn->tdense = bn->trevsorted = bn->batCount <= 1;
-	if (bn->batCount == 1)
-		bn->tseqbase = *dst;
+	bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? *dst : oid_nil;
 	return bn;
 }
 
@@ -992,8 +991,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	bn->trevsorted = bn->batCount <= 1;
 	bn->tkey = 1;
 	bn->tdense = (bn->batCount <= 1 || bn->batCount == b->batCount);
-	if (bn->batCount == 1 || bn->batCount == b->batCount)
-		bn->tseqbase = b->hseqbase;
+	bn->tseqbase = cnt == 0 ? 0 : cnt == 1 || cnt == b->batCount ? b->hseqbase : oid_nil;
 
 	return bn;
 }

@@ -181,6 +181,7 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, int lkey, int rkey,
 	r1->tsorted = 1;
 	r1->trevsorted = 1;
 	r1->tdense = 1;
+	r1->tseqbase = 0;
 	*r1p = r1;
 	if (r2p) {
 		r2 = COLnew(0, TYPE_oid, size, TRANSIENT);
@@ -194,6 +195,7 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, int lkey, int rkey,
 		r2->tsorted = 1;
 		r2->trevsorted = 1;
 		r2->tdense = 1;
+		r2->tseqbase = 0;
 		*r2p = r2;
 	}
 	return maxsize;
@@ -218,6 +220,7 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 	r1->tsorted = 1;
 	r1->tnosorted = 0;
 	r1->tdense = 0;
+	r1->tseqbase = oid_nil;
 	r1->tnil = 0;
 	r1->tnonil = 1;
 	if (r2) {
@@ -226,6 +229,7 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 		r2->tsorted = 1;
 		r2->tnosorted = 0;
 		r2->tdense = 0;
+		r2->tseqbase = oid_nil;
 		r2->tnil = 0;
 		r2->tnonil = 1;
 	}
@@ -408,7 +412,6 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					r1->tvarsized = 1;
 					r1->twidth = 0;
 					r1->tshift = 0;
-					r1->tdense = 0;
 					if (BATextend(r1, cnt - (hi - lo)) != GDK_SUCCEED)
 						goto bailout;
 					BATsetcount(r1, cnt - (hi - lo));
@@ -425,13 +428,13 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					r1->tsorted = 1;
 					r1->trevsorted = 0;
 					r1->tdense = 0;
+					r1->tseqbase = oid_nil;
 					r1->tkey = 1;
 					r1->tnil = 0;
 					r1->tnonil = 1;
 				}
 				goto doreturn;
 			}
-			r1->tdense = 1;
 			HEAPfree(&r1->theap, 1);
 			r1->theap.storage = STORE_MEM;
 			r1->theap.newstorage = STORE_MEM;
@@ -459,7 +462,6 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				if (BATcount(r2) <= 1) {
 					r2->tsorted = 1;
 					r2->trevsorted = 1;
-					r2->tdense = 1;
 					if (BATcount(r2) == 0)
 						BATtseqbase(r2, 0);
 					else
@@ -478,7 +480,6 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			BATsetcount(r1, hi - lo);
 			BATtseqbase(r1, l->hseqbase + lo - l->tseqbase);
 			if (r2) {
-				r2->tdense = 1;
 				HEAPfree(&r2->theap, 1);
 				r2->theap.storage = STORE_MEM;
 				r2->theap.newstorage = STORE_MEM;
@@ -552,6 +553,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		}
 		BATsetcount(r1, BATcount(r1));
 		r1->tdense = BATcount(r1) <= 1;
+		r1->tseqbase = BATcount(r1) == 0 ? 0 : BATcount(r1) == 1 ? *(oid*)Tloc(r1, 0) : oid_nil;
 		r1->tsorted = 1;
 		r1->trevsorted = BATcount(r1) <= 1;
 		r1->tnil = 0;
@@ -559,7 +561,8 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		r1->tkey = 1;
 		if (r2) {
 			BATsetcount(r2, BATcount(r2));
-			r2->tdense = BATcount(r2) <= 1;
+			r2->tseqbase = r2->tnil || BATcount(r2) > 1 ? oid_nil : BATcount(r2) == 1 ? *(oid*)Tloc(r2, 0) : 0;
+			r2->tdense = !is_oid_nil(r2->tseqbase);
 			r2->trevsorted = BATcount(r2) <= 1;
 		}
 		goto doreturn;
@@ -621,6 +624,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			r1->trevsorted = BATcount(r1) <= 1;
 			r1->tkey = 1;
 			r1->tdense = 0;
+			r1->tseqbase = oid_nil;
 			r1->tnil = 0;
 			r1->tnonil = 1;
 			if (r2) {
@@ -629,6 +633,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				r2->trevsorted = l->trevsorted || BATcount(r2) <= 1;
 				r2->tkey = l->tkey || BATcount(r2) <= 1;
 				r2->tdense = 0;
+				r2->tseqbase = oid_nil;
 			}
 			goto doreturn;
 		}
@@ -707,12 +712,12 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			if (BATcount(r2) == 0) {
 				r2->tseqbase = 0;
 			} else {
+				/* can be oid_nil */
 				r2->tseqbase = *(oid *) Tloc(r2, 0);
 			}
 			r2->tkey = 1;
 			r2->tsorted = 1;
 			r2->trevsorted = 1;
-			r2->tdense = 1;
 		} else {
 			if (r2->tnil) {
 				r2->tkey = 0;
@@ -964,6 +969,7 @@ mergejoin_int(BAT *r1, BAT *r2, BAT *l, BAT *r,
 			 * r2 is not key and not dense */
 			r2->tkey = 0;
 			r2->tdense = 0;
+			r2->tseqbase = oid_nil;
 			/* multiple different values will be inserted
 			 * in r1 (always in order), so not reverse
 			 * ordered anymore */
@@ -975,6 +981,7 @@ mergejoin_int(BAT *r1, BAT *r2, BAT *l, BAT *r,
 			 * r1 is not key and not dense */
 			r1->tkey = 0;
 			r1->tdense = 0;
+			r1->tseqbase = oid_nil;
 			/* multiple different values will be inserted
 			 * in r2 (in order), so not reverse ordered
 			 * anymore */
@@ -994,14 +1001,18 @@ mergejoin_int(BAT *r1, BAT *r2, BAT *l, BAT *r,
 			/* a new higher value will be added to r2 */
 			r2->trevsorted = 0;
 			if (r1->tdense &&
-			    ((oid *) r1->theap.base)[r1->batCount - 1] + 1 != l->hseqbase + lstart - nl)
+			    ((oid *) r1->theap.base)[r1->batCount - 1] + 1 != l->hseqbase + lstart - nl) {
 				r1->tdense = 0;
+				r1->tseqbase = oid_nil;
+			}
 		}
 
 		if (BATcount(r2) > 0 &&
 		    r2->tdense &&
-		    ((oid *) r2->theap.base)[r2->batCount - 1] + 1 != r->hseqbase + rstart - nr)
+		    ((oid *) r2->theap.base)[r2->batCount - 1] + 1 != r->hseqbase + rstart - nr) {
 			r2->tdense = 0;
+			r2->tseqbase = oid_nil;
+		}
 
 		/* insert values */
 		lv = l->hseqbase + lstart - nl;
@@ -1023,10 +1034,11 @@ mergejoin_int(BAT *r1, BAT *r2, BAT *l, BAT *r,
 	BATsetcount(r2, BATcount(r2));
 	assert(BATcount(r1) == BATcount(r2));
 	if (BATcount(r1) > 0) {
-		if (r1->tdense)
-			r1->tseqbase = ((oid *) r1->theap.base)[0];
-		if (r2->tdense)
-			r2->tseqbase = ((oid *) r2->theap.base)[0];
+		r1->tseqbase = r1->tdense ? ((oid *) r1->theap.base)[0] : oid_nil;
+		r2->tseqbase = r2->tdense ? ((oid *) r2->theap.base)[0] : oid_nil;
+	} else {
+		r1->tseqbase = r2->tseqbase = 0;
+		r1->tdense = r2->tdense = true;
 	}
 	ALGODEBUG fprintf(stderr, "#mergejoin_int(l=%s,r=%s)=(%s#"BUNFMT"%s%s%s%s,%s#"BUNFMT"%s%s%s%s) " LLFMT "us\n",
 			  BATgetId(l), BATgetId(r),
@@ -1261,6 +1273,7 @@ mergejoin_lng(BAT *r1, BAT *r2, BAT *l, BAT *r,
 			 * r2 is not key and not dense */
 			r2->tkey = 0;
 			r2->tdense = 0;
+			r2->tseqbase = oid_nil;
 			/* multiple different values will be inserted
 			 * in r1 (always in order), so not reverse
 			 * ordered anymore */
@@ -1272,6 +1285,7 @@ mergejoin_lng(BAT *r1, BAT *r2, BAT *l, BAT *r,
 			 * r1 is not key and not dense */
 			r1->tkey = 0;
 			r1->tdense = 0;
+			r1->tseqbase = oid_nil;
 			/* multiple different values will be inserted
 			 * in r2 (in order), so not reverse ordered
 			 * anymore */
@@ -1291,14 +1305,18 @@ mergejoin_lng(BAT *r1, BAT *r2, BAT *l, BAT *r,
 			/* a new higher value will be added to r2 */
 			r2->trevsorted = 0;
 			if (r1->tdense &&
-			    ((oid *) r1->theap.base)[r1->batCount - 1] + 1 != l->hseqbase + lstart - nl)
+			    ((oid *) r1->theap.base)[r1->batCount - 1] + 1 != l->hseqbase + lstart - nl) {
 				r1->tdense = 0;
+				r1->tseqbase = oid_nil;
+			}
 		}
 
 		if (BATcount(r2) > 0 &&
 		    r2->tdense &&
-		    ((oid *) r2->theap.base)[r2->batCount - 1] + 1 != r->hseqbase + rstart - nr)
+		    ((oid *) r2->theap.base)[r2->batCount - 1] + 1 != r->hseqbase + rstart - nr) {
 			r2->tdense = 0;
+			r2->tseqbase = oid_nil;
+		}
 
 		/* insert values */
 		lv = l->hseqbase + lstart - nl;
@@ -1320,10 +1338,11 @@ mergejoin_lng(BAT *r1, BAT *r2, BAT *l, BAT *r,
 	BATsetcount(r2, BATcount(r2));
 	assert(BATcount(r1) == BATcount(r2));
 	if (BATcount(r1) > 0) {
-		if (r1->tdense)
-			r1->tseqbase = ((oid *) r1->theap.base)[0];
-		if (r2->tdense)
-			r2->tseqbase = ((oid *) r2->theap.base)[0];
+		r1->tseqbase = r1->tdense ? ((oid *) r1->theap.base)[0] : oid_nil;
+		r2->tseqbase = r2->tdense ? ((oid *) r2->theap.base)[0] : oid_nil;
+	} else {
+		r1->tseqbase = r2->tseqbase = 0;
+		r1->tdense = r2->tdense = true;
 	}
 	ALGODEBUG fprintf(stderr, "#mergejoin_lng(l=%s,r=%s)=(%s#"BUNFMT"%s%s%s%s,%s#"BUNFMT"%s%s%s%s) " LLFMT "us\n",
 			  BATgetId(l), BATgetId(r),
@@ -2292,15 +2311,23 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	}
 	/* also set other bits of heap to correct value to indicate size */
 	BATsetcount(r1, BATcount(r1));
+	r1->tseqbase = oid_nil;
 	if (r2) {
 		BATsetcount(r2, BATcount(r2));
 		assert(BATcount(r1) == BATcount(r2));
+		r2->tseqbase = oid_nil;
 	}
 	if (BATcount(r1) > 0) {
-		if (r1->tdense)
-			r1->tseqbase = ((oid *) r1->theap.base)[0];
-		if (r2 && r2->tdense)
-			r2->tseqbase = ((oid *) r2->theap.base)[0];
+		r1->tseqbase = r1->tdense ? ((oid *) r1->theap.base)[0] : oid_nil;
+		if (r2)
+			r2->tseqbase = r2->tdense ? ((oid *) r2->theap.base)[0] : oid_nil;
+	} else {
+		r1->tseqbase = 0;
+		r1->tdense = true;
+		if (r2) {
+			r2->tseqbase = 0;
+			r2->tdense = true;
+		}
 	}
 	ALGODEBUG fprintf(stderr, "#mergejoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s%s%s,%s#"BUNFMT"%s%s%s%s) " LLFMT "us\n",
 			  BATgetId(l), BATgetId(r),
@@ -2831,10 +2858,16 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 		}
 	}
 	if (BATcount(r1) > 0) {
-		if (r1->tdense)
-			r1->tseqbase = ((oid *) r1->theap.base)[0];
-		if (r2 && r2->tdense)
-			r2->tseqbase = ((oid *) r2->theap.base)[0];
+		r1->tseqbase = r1->tdense ? ((oid *) r1->theap.base)[0] : oid_nil;
+		if (r2)
+			r2->tseqbase = r2->tdense ? ((oid *) r2->theap.base)[0] : oid_nil;
+	} else {
+		r1->tseqbase = 0;
+		r1->tdense = true;
+		if (r2) {
+			r2->tseqbase = 0;
+			r2->tdense = true;
+		}
 	}
 	ALGODEBUG fprintf(stderr, "#hashjoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s%s%s,%s#"BUNFMT"%s%s%s%s) " LLFMT "us\n",
 			  BATgetId(l), BATgetId(r),
@@ -3070,10 +3103,11 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BUN ma
 	BATsetcount(r1, BATcount(r1));
 	BATsetcount(r2, BATcount(r2));
 	if (BATcount(r1) > 0) {
-		if (r1->tdense)
-			r1->tseqbase = ((oid *) r1->theap.base)[0];
-		if (r2->tdense)
-			r2->tseqbase = ((oid *) r2->theap.base)[0];
+		r1->tseqbase = r1->tdense ? ((oid *) r1->theap.base)[0] : oid_nil;
+		r2->tseqbase = r2->tdense ? ((oid *) r2->theap.base)[0] : oid_nil;
+	} else {
+		r1->tseqbase = r2->tseqbase = 0;
+		r1->tdense = r2->tdense = true;
 	}
 	ALGODEBUG fprintf(stderr, "#thetajoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s%s,%s#"BUNFMT"%s%s%s) " LLFMT "us\n",
 			  BATgetId(l), BATgetId(r),
@@ -3485,10 +3519,11 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	BATsetcount(r1, BATcount(r1));
 	BATsetcount(r2, BATcount(r2));
 	if (BATcount(r1) > 0) {
-		if (r1->tdense)
-			r1->tseqbase = ((oid *) r1->theap.base)[0];
-		if (r2->tdense)
-			r2->tseqbase = ((oid *) r2->theap.base)[0];
+		r1->tseqbase = r1->tdense ? ((oid *) r1->theap.base)[0] : oid_nil;
+		r2->tseqbase = r2->tdense ? ((oid *) r2->theap.base)[0] : oid_nil;
+	} else {
+		r1->tseqbase = r2->tseqbase = 0;
+		r1->tdense = r2->tdense = true;
 	}
 	ALGODEBUG fprintf(stderr, "#bandjoin(l=%s,r=%s)=(%s#"BUNFMT"%s%s%s,%s#"BUNFMT"%s%s%s) " LLFMT "us\n",
 			  BATgetId(l), BATgetId(r),
