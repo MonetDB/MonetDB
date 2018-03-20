@@ -146,7 +146,7 @@ typedef struct SYMDEF {
 typedef struct VARRECORD {
 	char id[IDLENGTH];			/* use the space for the full name */
 	malType type;				/* internal type signature */
-    unsigned short constant:1,
+    bool constant:1,
             typevar:1,
             fixedtype:1,
             udftype:1,
@@ -208,7 +208,7 @@ typedef struct MALBLK {
 	int ssize;				/* byte size of arena */
 	InstrPtr *stmt;				/* Instruction location */
 
-	unsigned int inlineProp:1,		/* inline property */
+	bool inlineProp:1,		/* inline property */
 		     unsafeProp:1,		/* unsafe property */
 		     sealedProp:1;		/* sealed property (opertions for sealed object should be on the full object once) */
 
