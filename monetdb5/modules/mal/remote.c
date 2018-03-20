@@ -1136,18 +1136,13 @@ str RMTbincopyto(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 typedef struct _binbat_v1 {
-	int Htype;
 	int Ttype;
 	oid Hseqbase;
 	oid Tseqbase;
-	bit Hsorted;
-	bit Hrevsorted;
-	bit Tsorted;
-	bit Trevsorted;
-	unsigned int
-		Hkey:2,
-		Tkey:2,
-		Hnonil:1,
+	bool
+		Tsorted:1,
+		Trevsorted:1,
+		Tkey:1,
 		Tnonil:1,
 		Tdense:1;
 	BUN size;
@@ -1159,7 +1154,7 @@ typedef struct _binbat_v1 {
 static inline str
 RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 {
-	binbat bb = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+	binbat bb = { 0, 0, 0, false, false, false, false, false, 0, 0, 0, 0 };
 	char *nme = NULL;
 	char *val = NULL;
 	char tmp;
@@ -1245,8 +1240,6 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 						bb.Tsorted = lv != 0;
 					} else if (strcmp(nme, "trevsorted") == 0) {
 						bb.Trevsorted = lv != 0;
-					} else if (strcmp(nme, "hkey") == 0) {
-						bb.Hkey = lv != 0;
 					} else if (strcmp(nme, "tkey") == 0) {
 						bb.Tkey = lv != 0;
 					} else if (strcmp(nme, "tnonil") == 0) {
