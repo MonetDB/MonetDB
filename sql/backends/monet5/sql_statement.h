@@ -124,6 +124,10 @@ typedef struct stmt {
 	InstrPtr q;
 } stmt;
 
+extern void create_append_bat(backend *be, int tt);
+extern void append_bat_value(backend *be, int tt, int nr);
+extern void finish_append_bat(backend *be, int tt);
+
 extern int stmt_key(stmt *s);
 
 extern stmt *stmt_none(backend *be);

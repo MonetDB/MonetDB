@@ -9256,8 +9256,10 @@ rewrite_topdown(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes)
 	case op_update:
 	case op_delete:
 	case op_truncate:
-		rel->l = rewrite_topdown(sql, rel->l, rewriter, has_changes);
-		rel->r = rewrite_topdown(sql, rel->r, rewriter, has_changes);
+		if(!(rel->flag & MULTI_TABLE)) { /*when is issued one these statements (in rel_updates) avoid the propagation*/
+			rel->l = rewrite_topdown(sql, rel->l, rewriter, has_changes);
+			rel->r = rewrite_topdown(sql, rel->r, rewriter, has_changes);
+		}
 		break;
 	}
 	return rel;
@@ -9483,7 +9485,7 @@ optimize(mvc *sql, sql_rel *rel)
 	int level = 0, changes = 1;
 
 	rel_reset_subquery(rel);
-	for( ;rel && level < 20 && changes; level++) 
+	for( ;rel && level < 20 && changes; level++)
 		rel = optimize_rel(sql, rel, &changes, level);
 	return rel;
 }

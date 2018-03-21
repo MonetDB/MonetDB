@@ -67,6 +67,7 @@ typedef struct expression {
 #define ANTISEL	32
 #define HAS_NO_NIL	64
 #define EXP_INTERN	128
+#define MULTI_TABLE	255
 
 #define UPD_COMP		1
 #define UPD_LOCKED		2
@@ -230,6 +231,14 @@ typedef enum operator_type {
 	(op == op_insert || op == op_update || op == op_delete || op == op_truncate)
 #define is_sample(op) \
 	(op == op_sample)
+#define is_insert(op) \
+	(op == op_insert)
+#define is_update(op) \
+	(op == op_update)
+#define is_delete(op) \
+	(op == op_delete)
+#define is_truncate(op) \
+	(op == op_truncate)
 
 /* NO NIL semantics of aggr operations */
 #define need_no_nil(e) \

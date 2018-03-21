@@ -39,7 +39,8 @@ typedef struct backend {
 	ofmt	output_format;	/* csv, json */
 	Client 	client;
 	MalBlkPtr mb;		/* needed during mal generation */
-	int 	mvc_var;	
+	int 	mvc_var;
+	int		cur_append;
 	int	vtop;		/* top of the variable stack before the current function */
 	cq 	*q;		/* pointer to the cached query */
 } backend;

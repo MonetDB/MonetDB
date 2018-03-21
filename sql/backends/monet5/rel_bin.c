@@ -2159,11 +2159,11 @@ rel2bin_union(backend *be, sql_rel *rel, list *refs)
 	if (rel->r) /* first construct the right sub relation */
 		right = subrel_bin(be, rel->r, refs);
 	if (!left || !right) 
-		return NULL;	
+		return NULL;
 
 	/* construct relation */
 	l = sa_list(sql->sa);
-	for( n = left->op4.lval->h, m = right->op4.lval->h; n && m; 
+	for( n = left->op4.lval->h, m = right->op4.lval->h; n && m;
 		n = n->next, m = m->next ) {
 		stmt *c1 = n->data;
 		stmt *c2 = m->data;
@@ -4521,7 +4521,46 @@ sql_delete_keys(backend *be, sql_table *t, stmt *rows, list *l, char* which, int
 	return res;
 }
 
-static stmt * 
+static sql_rel *
+rel_change_basetable(sql_rel *rel, sql_table* oldt, sql_table* newt)
+{
+	if (!rel)
+		return rel;
+
+	switch (rel->op) {
+		case op_basetable:
+			if(rel->l == oldt)
+				rel->l = newt;
+			break;
+		case op_table:
+		case op_join:
+		case op_left:
+		case op_right:
+		case op_full:
+		case op_apply:
+		case op_semi:
+		case op_anti:
+		case op_union:
+		case op_inter:
+		case op_except:
+		case op_project:
+		case op_select:
+		case op_groupby:
+		case op_topn:
+		case op_sample:
+		case op_ddl:
+		case op_insert:
+		case op_update:
+		case op_delete:
+		case op_truncate:
+			rel->l = rel_change_basetable(rel->l, oldt, newt);
+			rel->r = rel_change_basetable(rel->r, oldt, newt);
+			break;
+	}
+	return rel;
+}
+
+static stmt *
 sql_delete(backend *be, sql_table *t, stmt *rows)
 {
 	mvc *sql = be->mvc;
@@ -4555,8 +4594,10 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 /* after */
 	if (!sql_delete_triggers(be, t, v, 1, 1, 3))
 		return sql_error(sql, 02, SQLSTATE(42000) "DELETE: triggers failed for table '%s'", t->base.name);
-	if (rows) 
+	if (rows)
 		s = stmt_aggr(be, rows, NULL, NULL, sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL), 1, 0, 1);
+	if(be->cur_append) //building the total number of rows affected across all tables
+		append_bat_value(be, TYPE_lng, s->nr);
 	return s;
 }
 
@@ -4573,17 +4614,46 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 	else
 		assert(0/*ddl statement*/);
 
-	if (rel->r) { /* first construct the deletes relation */
-		rows = subrel_bin(be, rel->r, refs);
-		if (!rows) 
-			return NULL;	
+	if(isRangePartitionTable(t) || isListPartitionTable(t)) {
+		list *l = sa_list(sql->sa);
+		create_append_bat(be, TYPE_lng);
+
+		for (node *n = t->members.set->h; n; n = n->next) {
+			sql_part *pt = (sql_part *) n->data;
+			sql_table *sub = find_sql_table(t->s, pt->base.name);
+			sql_rel* dup = NULL;
+
+			if (rel->r) { /* first construct the deletes relation, but copy the relation first */
+				dup = rel_copy(sql->sa, rel->r);
+				dup = rel_change_basetable(dup, t, sub);
+				rows = subrel_bin(be, dup, refs);
+			} else {
+				rows = NULL;
+			}
+			if (rows && rows->type == st_list) {
+				stmt *s = rows;
+				rows = s->op4.lval->h->data;
+			}
+			list_append(l, sql_delete(be, sub, rows));
+		}
+
+		finish_append_bat(be, TYPE_lng);
+		stdelete = stmt_list(be, l);
+		stdelete->nr = be->cur_append; /* needed for affectedRows */
+	} else {
+		if (rel->r) { /* first construct the deletes relation */
+			rows = subrel_bin(be, rel->r, refs);
+			if (!rows)
+				return NULL;
+		}
+		if (rows && rows->type == st_list) {
+			stmt *s = rows;
+			rows = s->op4.lval->h->data;
+		}
+		stdelete = sql_delete(be, t, rows);
 	}
-	if (rows && rows->type == st_list) {
-		stmt *s = rows;
-		rows = s->op4.lval->h->data;
-	}
-	stdelete = sql_delete(be, t, rows);
-	if (sql->cascade_action) 
+
+	if (sql->cascade_action)
 		sql->cascade_action = NULL;
 	return stdelete;
 }
@@ -4594,14 +4664,13 @@ struct tablelist {
 };
 
 static void //inspect the other tables recursively for foreign key dependencies
-check_for_foreign_key_references(mvc *sql, struct tablelist* list, struct tablelist* next_append, sql_table *t, int cascade, stmt **error) {
+check_for_foreign_key_references(mvc *sql, struct tablelist* list, struct tablelist* next_append, sql_table *t, int cascade, int *error) {
 	node *n;
 	int found;
 	struct tablelist* new_node, *node_check;
 
-	if(*error) {
+	if(*error)
 		return;
-	}
 
 	if (t->keys.set) { /* Check for foreign key references */
 		for (n = t->keys.set->h; n; n = n->next) {
@@ -4623,19 +4692,20 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* list, struct tablel
 							size_t n_deletes = store_funcs.count_del(sql->session->tr, c->t);
 							assert (n_rows >= n_deletes);
 							if(n_rows - n_deletes > 0) {
-								*error = sql_error(sql, 02, SQLSTATE(42000) "TRUNCATE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, t->base.name);
+								sql_error(sql, 02, SQLSTATE(42000) "TRUNCATE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, t->base.name);
+								*error = 1;
 								return;
 							}
 						} else if(k->t != t) {
 							found = 0;
 							for (node_check = list; node_check; node_check = node_check->next) {
-								if(node_check->table == k->t) {
+								if(node_check->table == k->t)
 									found = 1;
-								}
 							}
 							if(!found) {
 								if((new_node = MNEW(struct tablelist)) == NULL) {
-									*error = sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+									sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+									*error = 1;
 									return;
 								}
 								new_node->table = k->t;
@@ -4656,7 +4726,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 {
 	mvc *sql = be->mvc;
 	list *l = sa_list(sql->sa);
-	stmt *v, *error = NULL, *ret = NULL, *other = NULL;
+	stmt *v, *ret = NULL, *other = NULL;
 	const char *next_value_for = "next value for \"sys\".\"seq_";
 	char *seq_name = NULL;
 	str seq_pos = NULL;
@@ -4666,10 +4736,12 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 	sql_table *next = NULL;
 	sql_trans *tr = sql->session->tr;
 	node *n = NULL;
-
+	int error = 0;
 	struct tablelist* new_list = MNEW(struct tablelist), *list_node, *aux;
+
 	if(!new_list) {
-		error = sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		error = 1;
 		goto finalize;
 	}
 
@@ -4689,7 +4761,8 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 				if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
 					seq_name = _STRDUP(seq_pos + (strlen(next_value_for) - strlen("seq_")));
 					if(!seq_name) {
-						error = sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						error = 1;
 						goto finalize;
 					}
 					seq_name[strlen(seq_name)-1] = '\0';
@@ -4707,21 +4780,29 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 		v = stmt_tid(be, next, 0);
 
 		/* before */
-		if (!sql_delete_triggers(be, next, v, 0, 3, 4))
-			return sql_error(sql, 02, SQLSTATE(42000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
+		if (!sql_delete_triggers(be, next, v, 0, 3, 4)) {
+			sql_error(sql, 02, SQLSTATE(42000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
+			error = 1;
+			goto finalize;
+		}
 
-		if (!sql_delete_keys(be, next, v, l, "TRUNCATE", cascade))
-			return sql_error(sql, 02, SQLSTATE(42000) "TRUNCATE: failed to delete indexes for table '%s'", next->base.name);
+		if (!sql_delete_keys(be, next, v, l, "TRUNCATE", cascade)) {
+			sql_error(sql, 02, SQLSTATE(42000) "TRUNCATE: failed to delete indexes for table '%s'", next->base.name);
+			error = 1;
+			goto finalize;
+		}
 
 		other = stmt_table_clear(be, next);
 		list_append(l, other);
-		if(next == t) {
+		if (next == t)
 			ret = other;
-		}
 
 		/* after */
-		if (!sql_delete_triggers(be, next, v, 1, 3, 4))
-			return sql_error(sql, 02, SQLSTATE(42000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
+		if (!sql_delete_triggers(be, next, v, 1, 3, 4)) {
+			sql_error(sql, 02, SQLSTATE(42000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
+			error = 1;
+			goto finalize;
+		}
 	}
 
 finalize:
@@ -4730,9 +4811,9 @@ finalize:
 		_DELETE(list_node);
 		list_node = aux;
 	}
-	if(error)
-		return error;
 
+	if(error)
+		return NULL;
 	return ret;
 }
 
@@ -4758,7 +4839,26 @@ rel2bin_truncate(backend *be, sql_rel *rel)
 	restart_sequences = E_ATOM_INT(n->data);
 	cascade = E_ATOM_INT(n->next->data);
 
-	truncate = sql_truncate(be, t, restart_sequences, cascade);
+	if(isRangePartitionTable(t) || isListPartitionTable(t)) {
+		list *l = sa_list(sql->sa);
+		create_append_bat(be, TYPE_lng);
+
+		for (node *n = t->members.set->h; n; n = n->next) {
+			sql_part *pt = (sql_part *) n->data;
+			sql_table *sub = find_sql_table(t->s, pt->base.name);
+			stmt* nex_sub_st = stmt_table_clear(be, sub);
+
+			append_bat_value(be, TYPE_lng, nex_sub_st->nr);
+			list_append(l, nex_sub_st);
+		}
+
+		finish_append_bat(be, TYPE_lng);
+		truncate = stmt_list(be, l);
+		truncate->nr = be->cur_append; /* needed for affectedRows */
+	} else {
+		truncate = sql_truncate(be, t, restart_sequences, cascade);
+	}
+
 	if (sql->cascade_action)
 		sql->cascade_action = NULL;
 	return truncate;
@@ -5145,7 +5245,7 @@ output_rel_bin(backend *be, sql_rel *rel )
 
 	if (!is_ddl(rel->op) && s && s->type != st_none && sql->type == Q_TABLE)
 		s = stmt_output(be, s);
-	if (sqltype == Q_UPDATE && s && s->type != st_list) 
+	if (sqltype == Q_UPDATE && s && (s->type != st_list || is_delete(rel->op) || is_truncate(rel->op)))
 		s = stmt_affected_rows(be, s);
 	return s;
 }

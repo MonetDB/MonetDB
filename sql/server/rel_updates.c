@@ -426,7 +426,7 @@ update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int 
 		return sql_error(sql, 02, SQLSTATE(42S02) "%s: no such table '%s'", op, tname);
 	} else if (isView(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s view '%s'", op, opname, tname);
-	} else if (isMergeTable(t)) {
+	} else if (isNonPartitionedTable(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s merge table '%s'", op, opname, tname);
 	} else if (isStream(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s stream '%s'", op, opname, tname);
@@ -1107,7 +1107,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 }
 
 sql_rel *
-rel_delete(sql_allocator *sa, sql_rel *t, sql_rel *deletes)
+rel_delete(sql_allocator *sa, sql_rel *t, sql_rel *deletes, int multi)
 {
 	sql_rel *r = rel_create(sa);
 	if(!r)
@@ -1116,11 +1116,12 @@ rel_delete(sql_allocator *sa, sql_rel *t, sql_rel *deletes)
 	r->op = op_delete;
 	r->l = t;
 	r->r = deletes;
+	r->flag |= multi;
 	return r;
 }
 
 sql_rel *
-rel_truncate(sql_allocator *sa, sql_rel *t, int restart_sequences, int drop_action)
+rel_truncate(sql_allocator *sa, sql_rel *t, int restart_sequences, int drop_action, int multi)
 {
 	sql_rel *r = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1131,6 +1132,7 @@ rel_truncate(sql_allocator *sa, sql_rel *t, int restart_sequences, int drop_acti
 	r->op = op_truncate;
 	r->l = t;
 	r->r = NULL;
+	r->flag |= multi;
 	return r;
 }
 
@@ -1159,6 +1161,7 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 	}
 	if (update_allowed(sql, t, tname, "DELETE FROM", "delete from", 1) != NULL) {
 		sql_rel *r = NULL;
+		int multi = (isRangePartitionTable(t) || isListPartitionTable(t)) ? MULTI_TABLE : 0;
 
 		if (opt_where) {
 			int status = sql->session->status;
@@ -1185,9 +1188,9 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 				r = rel_project(sql->sa, r, append(new_exp_list(sql->sa), e));
 
 			}
-			r = rel_delete(sql->sa, rel_basetable(sql, t, tname), r);
+			r = rel_delete(sql->sa, rel_basetable(sql, t, tname), r, multi);
 		} else {	/* delete all */
-			r = rel_delete(sql->sa, rel_basetable(sql, t, tname), NULL);
+			r = rel_delete(sql->sa, rel_basetable(sql, t, tname), NULL, multi);
 		}
 		return r;
 	}
@@ -1218,7 +1221,8 @@ truncate_table(mvc *sql, dlist *qname, int restart_sequences, int drop_action)
 			t = stack_find_table(sql, tname);
 	}
 	if (update_allowed(sql, t, tname, "TRUNCATE", "truncate", 2) != NULL) {
-		return rel_truncate(sql->sa, rel_basetable(sql, t, tname), restart_sequences, drop_action);
+		int multi = (isRangePartitionTable(t) || isListPartitionTable(t)) ? MULTI_TABLE : 0;
+		return rel_truncate(sql->sa, rel_basetable(sql, t, tname), restart_sequences, drop_action, multi);
 	}
 	return NULL;
 }

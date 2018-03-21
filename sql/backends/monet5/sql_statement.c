@@ -117,6 +117,40 @@ pushSchema(MalBlkPtr mb, InstrPtr q, sql_table *t)
 		return pushNil(mb, q, TYPE_str);
 }
 
+void
+create_append_bat(backend *be, int tt)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = newStmt(mb, batRef, newRef);
+	getArg(q, 0) = be->cur_append = newTmpVariable(mb, newBatType(tt));
+	q = pushLng(mb, q, tt);
+}
+
+void
+append_bat_value(backend *be, int tt, int nr)
+{
+	MalBlkPtr mb = be->mb;
+	int help = be->cur_append;
+	InstrPtr q = newStmt(mb, batRef, appendRef);
+
+	getArg(q, 0) = be->cur_append = newTmpVariable(mb, newBatType(tt));
+	q = pushArgument(mb, q, help);
+	q = pushArgument(mb, q, nr);
+	q = pushBit(mb, q, TRUE);
+}
+
+void
+finish_append_bat(backend *be, int tt)
+{
+	MalBlkPtr mb = be->mb;
+	int help = be->cur_append;
+	InstrPtr q = newStmt(mb, aggrRef, sumRef);
+
+	getArg(q, 0) = be->cur_append = newTmpVariable(mb, TYPE_int);
+	q = pushArgument(mb, q, help);
+	setVarType(mb, getArg(q,0), tt);
+}
+
 int
 stmt_key(stmt *s)
 {
@@ -2596,7 +2630,7 @@ stmt_table_clear(backend *be, sql_table *t)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
-       
+
 	if (!t->s && t->data) { /* declared table */
 		int *l = t->data; 
 		int cnt = list_length(t->columns.set)+1, i;

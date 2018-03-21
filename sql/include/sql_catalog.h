@@ -499,6 +499,7 @@ typedef enum table_types {
 #define isTable(x) 	  (x->type==tt_table)
 #define isView(x)  	  (x->type==tt_view)
 #define isMergeTable(x)   (x->type==tt_merge_table || x->type==tt_list_partition || x->type==tt_range_partition)
+#define isNonPartitionedTable(x) (x->type==tt_merge_table)
 #define isRangePartitionTable(x) (x->type==tt_range_partition)
 #define isListPartitionTable(x)  (x->type==tt_list_partition)
 #define isStream(x)  	  (x->type==tt_stream)
@@ -513,7 +514,7 @@ typedef enum table_types {
 
 typedef struct sql_part {
 	sql_base base;
-	struct sql_table *t; /* cached value */
+	struct sql_table *t; /* cached value of the merge table */
 	sht tpe;             /* the column type */
 	sht part_type;       /* by range, list/values or none */
 	union {
