@@ -1,3 +1,5 @@
+drop table if exists table1 cascade;
+
 create table table1 (id int);
 
 create procedure fill_table1(maximum_size bigint)
@@ -13,5 +15,3 @@ begin
 end;
 
 call fill_table1(1000000);
-
-drop table table1 cascade;
