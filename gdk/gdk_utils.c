@@ -553,7 +553,7 @@ GDKinit(opt *set, int setlen)
 		if (strcmp("gdk_mem_maxsize", n[i].name) == 0) {
 			GDK_mem_maxsize = (size_t) strtoll(n[i].value, NULL, 10);
 			GDK_mem_maxsize = MAX(1 << 26, GDK_mem_maxsize);
-#ifdef WIN32 // On windows we can use a system call to limit the maximum working set size.
+#ifdef NATIVE_WIN32 // On windows we can use a system call to limit the maximum working set size.
 			const HANDLE process = GetCurrentProcess();
 
 			if (!SetProcessWorkingSetSizeEx(process, 1, GDK_mem_maxsize, QUOTA_LIMITS_HARDWS_MAX_ENABLE))
