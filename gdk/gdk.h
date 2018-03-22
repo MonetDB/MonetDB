@@ -761,7 +761,7 @@ typedef struct {
 	unsigned short width;	/* byte-width of the atom array */
 	bte type;		/* type id. */
 	bte shift;		/* log2 of bun width */
-	bool varsized:1,	/* varsized (1) or fixedsized (0) */
+	bool varsized:1,	/* varsized (true) or fixedsized (false) */
 		key:1,		/* no duplicate values present */
 		unique:1,	/* no duplicate values allowed */
 		dense:1,	/* OID only: only consecutive values */
@@ -1049,7 +1049,7 @@ gdk_export bte ATOMelmshift(int sz);
 		} else {						\
 			ATOMputFIX((b)->ttype, (p), v);			\
 		}							\
-	} while (0)
+	} while (false)
 #define Treplacevalue(b, p, v)						\
 	do {								\
 		if ((b)->tvarsized && (b)->ttype) {			\
@@ -1074,7 +1074,7 @@ gdk_export bte ATOMelmshift(int sz);
 			if ((b)->twidth < SIZEOF_VAR_T &&		\
 			    ((b)->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->twidth))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b), _d, 0, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
+				if (GDKupgradevarheap((b), _d, false, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
 					goto bunins_failed;		\
 			}						\
 			_ptr = (p);					\
@@ -1095,7 +1095,7 @@ gdk_export bte ATOMelmshift(int sz);
 		} else {						\
 			ATOMreplaceFIX((b)->ttype, (p), v);		\
 		}							\
-	} while (0)
+	} while (false)
 #else
 #define Tputvalue(b, p, v, copyall)					\
 	do {								\
@@ -1124,7 +1124,7 @@ gdk_export bte ATOMelmshift(int sz);
 		} else {						\
 			ATOMputFIX((b)->ttype, (p), v);			\
 		}							\
-	} while (0)
+	} while (false)
 #define Treplacevalue(b, p, v)						\
 	do {								\
 		if ((b)->tvarsized && (b)->ttype) {			\
@@ -1146,7 +1146,7 @@ gdk_export bte ATOMelmshift(int sz);
 			if ((b)->twidth < SIZEOF_VAR_T &&		\
 			    ((b)->twidth <= 2 ? _d - GDK_VAROFFSET : _d) >= ((size_t) 1 << (8 * (b)->twidth))) { \
 				/* doesn't fit in current heap, upgrade it */ \
-				if (GDKupgradevarheap((b), _d, 0, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
+				if (GDKupgradevarheap((b), _d, false, (b)->batRestricted == BAT_READ) != GDK_SUCCEED) \
 					goto bunins_failed;		\
 			}						\
 			_ptr = (p);					\
@@ -1164,26 +1164,26 @@ gdk_export bte ATOMelmshift(int sz);
 		} else {						\
 			ATOMreplaceFIX((b)->ttype, (p), v);		\
 		}							\
-	} while (0)
+	} while (false)
 #endif
 #define tfastins_nocheck(b, p, v, s)			\
 	do {						\
 		(b)->theap.free += (s);			\
 		(b)->theap.dirty |= (s) != 0;		\
 		Tputvalue((b), Tloc((b), (p)), (v), 0);	\
-	} while (0)
+	} while (false)
 
 #define bunfastapp_nocheck(b, p, t, ts)		\
 	do {					\
 		tfastins_nocheck(b, p, t, ts);	\
 		(b)->batCount++;		\
-	} while (0)
+	} while (false)
 
 #define bunfastapp_nocheck_inc(b, p, t)			\
 	do {						\
 		bunfastapp_nocheck(b, p, t, Tsize(b));	\
 		p++;					\
-	} while (0)
+	} while (false)
 
 #define bunfastapp(b, t)						\
 	do {								\
@@ -1197,7 +1197,7 @@ gdk_export bte ATOMelmshift(int sz);
 				goto bunins_failed;			\
 		}							\
 		bunfastapp_nocheck(b, _p, t, Tsize(b));			\
-	} while (0)
+	} while (false)
 
 gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, int copyall, int mayshare)
 	__attribute__ ((__warn_unused_result__));
@@ -1344,10 +1344,10 @@ gdk_export gdk_return BATsetaccess(BAT *b, int mode);
 gdk_export int BATgetaccess(BAT *b);
 
 
-#define BATdirty(b)	((b)->batCopiedtodisk == 0 || (b)->batDirty ||	\
+#define BATdirty(b)	(!(b)->batCopiedtodisk || (b)->batDirty ||	\
 			 (b)->batDirtydesc ||				\
 			 (b)->theap.dirty ||				\
-			 ((b)->tvheap?(b)->tvheap->dirty:0))
+			 ((b)->tvheap?(b)->tvheap->dirty:false))
 
 #define PERSISTENT		0
 #define TRANSIENT		1
@@ -1465,62 +1465,62 @@ gdk_export void GDKqsort_rev(void *restrict h, void *restrict t, const void *res
 #define BATtrevordered(b) (((b)->ttype == TYPE_void && is_oid_nil((b)->tseqbase)) || (b)->trevsorted)
 #define BATtdense(b)	(BATtvoid(b) && !is_oid_nil((b)->tseqbase))
 #define BATtvoid(b)	(((b)->tdense && (b)->tsorted) || (b)->ttype==TYPE_void)
-#define BATtkey(b)	(b->tkey != FALSE || BATtdense(b))
+#define BATtkey(b)	(b->tkey || BATtdense(b))
 
 /* set some properties that are trivial to deduce */
 #define BATsettrivprop(b)						\
 	do {								\
 		assert(!is_oid_nil((b)->hseqbase));			\
-		(b)->batDirtydesc = 1;	/* likely already set */	\
+		(b)->batDirtydesc = true;	/* likely already set */ \
 		/* the other head properties should already be correct */ \
 		if ((b)->ttype == TYPE_void) {				\
 			if (is_oid_nil((b)->tseqbase)) {		\
 				(b)->tnonil = (b)->batCount == 0;	\
 				(b)->tnil = !(b)->tnonil;		\
-				(b)->trevsorted = 1;			\
+				(b)->trevsorted = true;			\
 				(b)->tkey = (b)->batCount <= 1;		\
-				(b)->tdense = 0;			\
+				(b)->tdense = false;			\
 			} else {					\
-				(b)->tdense = 1;			\
-				(b)->tnonil = 1;			\
-				(b)->tnil = 0;				\
-				(b)->tkey = 1;				\
+				(b)->tdense = true;			\
+				(b)->tnonil = true;			\
+				(b)->tnil = false;			\
+				(b)->tkey = true;			\
 				(b)->trevsorted = (b)->batCount <= 1;	\
 			}						\
-			(b)->tsorted = 1;				\
+			(b)->tsorted = true;				\
 		} else if ((b)->batCount <= 1) {			\
 			if (ATOMlinear((b)->ttype)) {			\
-				(b)->tsorted = 1;			\
-				(b)->trevsorted = 1;			\
+				(b)->tsorted = true;			\
+				(b)->trevsorted = true;			\
 			}						\
-			(b)->tkey = 1;					\
+			(b)->tkey = true;				\
 			if ((b)->batCount == 0) {			\
-				(b)->tnonil = 1;			\
-				(b)->tnil = 0;				\
+				(b)->tnonil = true;			\
+				(b)->tnil = false;			\
 				if ((b)->ttype == TYPE_oid) {		\
-					(b)->tdense = 1;		\
+					(b)->tdense = true;		\
 					(b)->tseqbase = 0;		\
 				}					\
 			} else if ((b)->ttype == TYPE_oid) {		\
 				/* b->batCount == 1 */			\
 				oid sqbs = ((const oid *) (b)->theap.base)[0]; \
 				if (is_oid_nil(sqbs)) {			\
-					(b)->tdense = 0;		\
-					(b)->tnonil = 0;		\
-					(b)->tnil = 1;			\
+					(b)->tdense = false;		\
+					(b)->tnonil = false;		\
+					(b)->tnil = true;		\
 				} else {				\
-					(b)->tdense = 1;		\
-					(b)->tnonil = 1;		\
-					(b)->tnil = 0;			\
+					(b)->tdense = true;		\
+					(b)->tnonil = true;		\
+					(b)->tnil = false;		\
 				}					\
 				(b)->tseqbase = sqbs;			\
 			}						\
 		}							\
 		if (!ATOMlinear((b)->ttype)) {				\
-			(b)->tsorted = 0;				\
-			(b)->trevsorted = 0;				\
+			(b)->tsorted = false;				\
+			(b)->trevsorted = false;			\
 		}							\
-	} while (0)
+	} while (false)
 
 /*
  * @+ BAT Buffer Pool
@@ -2566,7 +2566,7 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 				 (y), BATgetId(x));			\
 			return (e);					\
 		}							\
-	} while (0)
+	} while (false)
 
 /* The batRestricted field indicates whether a BAT is readonly.
  * we have modes: BAT_WRITE  = all permitted
