@@ -345,23 +345,14 @@
 #define GDKisalnum(c)	isalnum((unsigned char) (c))
 #define GDKisdigit(c)	isdigit((unsigned char) (c))
 
-#define TEMPDIR_NAME "TEMP_DATA"
+#define BATDIR		"bat"
+#define TEMPDIR_NAME	"TEMP_DATA"
 
-#ifndef NATIVE_WIN32
-#define BATDIR		"bat"
-#define DELDIR		"bat/DELETE_ME"
-#define BAKDIR		"bat/BACKUP"
-#define SUBDIR		"bat/BACKUP/SUBCOMMIT"
-#define LEFTDIR		"bat/LEFTOVERS"
-#define TEMPDIR     "bat/"TEMPDIR_NAME
-#else
-#define BATDIR		"bat"
-#define DELDIR		"bat\\DELETE_ME"
-#define BAKDIR		"bat\\BACKUP"
-#define SUBDIR		"bat\\BACKUP\\SUBCOMMIT"
-#define LEFTDIR		"bat\\LEFTOVERS"
-#define TEMPDIR     "bat\\"TEMPDIR_NAME
-#endif
+#define DELDIR		BATDIR DIR_SEP_STR "DELETE_ME"
+#define BAKDIR		BATDIR DIR_SEP_STR "BACKUP"
+#define SUBDIR		BAKDIR DIR_SEP_STR "SUBCOMMIT" /* note K, not T */
+#define LEFTDIR		BATDIR DIR_SEP_STR "LEFTOVERS"
+#define TEMPDIR		BATDIR DIR_SEP_STR TEMPDIR_NAME
 
 /*
    See `man mserver5` or tools/mserver/mserver5.1
