@@ -2046,11 +2046,11 @@ BATassertProps(BAT *b)
 	assert(b->tseqbase <= oid_nil);
 	/* only oid/void columns can be dense */
 	assert(!b->tdense || b->ttype == TYPE_oid || b->ttype == TYPE_void);
-	if (b->ttype == TYPE_oid && b->tdense) {
+	if (b->tdense) {
 		assert(b->tsorted);
+		assert(b->tkey);
 		assert(!is_oid_nil(b->tseqbase));
-		if (b->batCount > 0) {
-			assert(!is_oid_nil(b->tseqbase));
+		if (b->ttype == TYPE_oid && b->batCount > 0) {
 			assert(* (oid *) BUNtail(bi, 0) == b->tseqbase);
 		}
 	}

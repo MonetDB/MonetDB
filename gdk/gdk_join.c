@@ -1500,13 +1500,6 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		equal_order = true;
 		lordering = 1;
 		rordering = r->tsorted ? 1 : -1;
-		/* if l not sorted, we only know for sure that r2 is
-		 * key if l is, and that r1 is key if r is; r1 is also
-		 * key in the case of a semi-join or anti-semi-join
-		 * (only_misses) */
-		if (r2)
-			r2->tkey = l->tkey != 0;
-		r1->tkey = (r->tkey != 0) | semi | only_misses;
 	}
 	/* determine opportunistic scan window for r; if l is not
 	 * sorted this is only used to find range of equal values */
@@ -1562,10 +1555,16 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	rcandorig = rcand;
 	rstartorig = rstart;
 
-	if (sl)
-		r1->tdense = sl->tdense;
-	if (r2 && sr)
-		r2->tdense = sr->tdense;
+	/* Before we start adding values to r1 and r2, the properties
+	 * are as follows:
+	 * tdense - true
+	 * tkey - true
+	 * tsorted - true
+	 * trevsorted - true
+	 * tnil - false
+	 * tnonil - true
+	 * We will modify these as we go along.
+	 */
 	while (lcand ? lcand < lcandend : lstart < lend) {
 		if (lscan == 0) {
 			/* always search r completely */
@@ -1683,6 +1682,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			if (nlx > 0) {
 				if (only_misses) {
 					if (lcand) {
+						lskipped |= nlx > 1;
 						while (nlx > 0) {
 							APPEND(r1, lcand[-(ssize_t)nlx]);
 							nlx--;
@@ -1704,8 +1704,10 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 						r2->tdense = false;
 						r2->tsorted = false;
 						r2->trevsorted = false;
+						r2->tkey = false;
 					}
 					if (lcand) {
+						lskipped |= nlx > 1;
 						while (nlx > 0) {
 							APPEND(r1, lcand[-(ssize_t)nlx]);
 							APPEND(r2, oid_nil);
@@ -1718,6 +1720,10 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 							nlx--;
 						}
 					}
+					if (lskipped)
+						r1->tdense &= false;
+					if (r1->trevsorted && BATcount(r1) > 1)
+						r1->trevsorted = false;
 				} else {
 					lskipped = BATcount(r1) > 0;
 				}
@@ -2107,6 +2113,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				r2->tsorted = false;
 				r2->trevsorted = false;
 				r2->tdense = false;
+				r2->tkey = false;
 			}
 		} else if (only_misses) {
 			/* we had a match, so we're not interested */
@@ -2194,12 +2201,31 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			/* deduce relative positions of r matches for
 			 * this and previous value in v */
 			if (prev && r2) {
-				if (rordering * cmp(prev, v) < 0) {
+				/* keyness or r2 can only be assured
+				 * as long as matched values are
+				 * ordered */
+				int ord = rordering * cmp(prev, v);
+				if (ord < 0) {
 					/* previous value in l was
 					 * less than current */
 					r2->trevsorted = false;
-				} else {
+					r2->tkey &= r2->tsorted;
+				} else if (ord > 0) {
+					/* previous value was
+					 * greater */
 					r2->tsorted = false;
+					r2->tkey &= r2->trevsorted;
+				} else {
+					/* value can be equal if
+					 * intervening values in l
+					 * didn't match anything; if
+					 * multiple values match in r,
+					 * r2 won't be sorted */
+					r2->tkey = false;
+					if (nr > 1) {
+						r2->tsorted = false;
+						r2->trevsorted = false;
+					}
 				}
 			}
 			prev = v;
@@ -2488,10 +2514,6 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches,
 	/* basic properties will be adjusted if necessary later on,
 	 * they were initially set by joininitresults() */
 
-	/* if an input columns is key, the opposite output column will
-	 * be key, and if semi or only_misses is set, the left output
-	 * will also be key */
-	r1->tkey = (r->tkey != 0) | semi | only_misses;
 	if (r2) {
 		r2->tkey = l->tkey;
 		/* r2 is not likely to be sorted (although it is
