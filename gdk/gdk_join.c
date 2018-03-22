@@ -103,8 +103,8 @@ joinparamcheck(BAT *l, BAT *r1, BAT *r2, BAT *sl, BAT *sr, const char *func)
 /* Create the result bats for a join, returns the absolute maximum
  * number of outputs that could possibly be generated. */
 static BUN
-joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, int lkey, int rkey,
-		int semi, int nil_on_miss, int only_misses, BUN estimate)
+joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, bool lkey, bool rkey,
+		bool semi, bool nil_on_miss, bool only_misses, BUN estimate)
 {
 	BAT *r1, *r2;
 	BUN maxsize, size;
@@ -175,12 +175,12 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, int lkey, int rkey,
 	if (r1 == NULL) {
 		return BUN_NONE;
 	}
-	r1->tnil = 0;
-	r1->tnonil = 1;
-	r1->tkey = 1;
-	r1->tsorted = 1;
-	r1->trevsorted = 1;
-	r1->tdense = 1;
+	r1->tnil = false;
+	r1->tnonil = true;
+	r1->tkey = true;
+	r1->tsorted = true;
+	r1->trevsorted = true;
+	r1->tdense = true;
 	*r1p = r1;
 	if (r2p) {
 		r2 = COLnew(0, TYPE_oid, size, TRANSIENT);
@@ -188,12 +188,12 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, int lkey, int rkey,
 			BBPreclaim(r1);
 			return BUN_NONE;
 		}
-		r2->tnil = 0;
-		r2->tnonil = 1;
-		r2->tkey = 1;
-		r2->tsorted = 1;
-		r2->trevsorted = 1;
-		r2->tdense = 1;
+		r2->tnil = false;
+		r2->tnonil = true;
+		r2->tkey = true;
+		r2->tsorted = true;
+		r2->trevsorted = true;
+		r2->tdense = true;
 		*r2p = r2;
 	}
 	return maxsize;
@@ -209,33 +209,33 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, int lkey, int rkey,
 static gdk_return
 nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 	const oid *lcand, const oid *lcandend,
-	int nil_on_miss, int only_misses, const char *func, lng t0)
+	bool nil_on_miss, bool only_misses, const char *func, lng t0)
 {
 	BUN cnt;
 
-	r1->tkey = 1;
+	r1->tkey = true;
 	r1->tnokey[0] = r1->tnokey[1] = 0;
-	r1->tsorted = 1;
+	r1->tsorted = true;
 	r1->tnosorted = 0;
-	r1->tdense = 0;
-	r1->tnil = 0;
-	r1->tnonil = 1;
+	r1->tdense = false;
+	r1->tnil = false;
+	r1->tnonil = true;
 	if (r2) {
-		r2->tkey = 1;
+		r2->tkey = true;
 		r2->tnokey[0] = r2->tnokey[1] = 0;
-		r2->tsorted = 1;
+		r2->tsorted = true;
 		r2->tnosorted = 0;
-		r2->tdense = 0;
-		r2->tnil = 0;
-		r2->tnonil = 1;
+		r2->tdense = false;
+		r2->tnil = false;
+		r2->tnonil = true;
 	}
 	if (lstart == lend || !(nil_on_miss | only_misses)) {
 		virtualize(r1);
-		r1->trevsorted = 1;
+		r1->trevsorted = true;
 		r1->tnorevsorted = 0;
 		if (r2) {
 			virtualize(r2);
-			r2->trevsorted = 1;
+			r2->trevsorted = true;
 			r2->tnorevsorted = 0;
 		}
 		return GDK_SUCCEED;
@@ -252,7 +252,7 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 		r1->theap.storage = r1->theap.newstorage = STORE_MEM;
 		r1->theap.size = 0;
 		r1->ttype = TYPE_void;
-		r1->tvarsized = 1;
+		r1->tvarsized = true;
 		r1->twidth = 0;
 		r1->tshift = 0;
 		if (BATextend(r1, cnt) != GDK_SUCCEED)
@@ -266,7 +266,7 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 		r2->theap.storage = r2->theap.newstorage = STORE_MEM;
 		r2->theap.size = 0;
 		r2->ttype = TYPE_void;
-		r2->tvarsized = 1;
+		r2->tvarsized = true;
 		r2->twidth = 0;
 		r2->tshift = 0;
 		if (BATextend(r2, cnt) != GDK_SUCCEED)
@@ -304,7 +304,7 @@ nomatch(BAT *r1, BAT *r2, BAT *l, BAT *r, BUN lstart, BUN lend,
 
 static gdk_return
 mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
-	       int nil_on_miss, int only_misses, lng t0)
+	       bool nil_on_miss, bool only_misses, lng t0)
 {
 	oid lo, hi;
 	BUN cnt, i;
@@ -405,10 +405,10 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					r1->theap.newstorage = STORE_MEM;
 					r1->theap.size = 0;
 					r1->ttype = TYPE_void;
-					r1->tvarsized = 1;
+					r1->tvarsized = true;
 					r1->twidth = 0;
 					r1->tshift = 0;
-					r1->tdense = 0;
+					r1->tdense = false;
 					if (BATextend(r1, cnt - (hi - lo)) != GDK_SUCCEED)
 						goto bailout;
 					BATsetcount(r1, cnt - (hi - lo));
@@ -422,22 +422,22 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					for (o = hi; o < seq; o++)
 						APPEND(r1, o);
 					BATsetcount(r1, cnt - (hi - lo));
-					r1->tsorted = 1;
-					r1->trevsorted = 0;
-					r1->tdense = 0;
-					r1->tkey = 1;
-					r1->tnil = 0;
-					r1->tnonil = 1;
+					r1->tsorted = true;
+					r1->trevsorted = false;
+					r1->tdense = false;
+					r1->tkey = true;
+					r1->tnil = false;
+					r1->tnonil = true;
 				}
 				goto doreturn;
 			}
-			r1->tdense = 1;
+			r1->tdense = true;
 			HEAPfree(&r1->theap, 1);
 			r1->theap.storage = STORE_MEM;
 			r1->theap.newstorage = STORE_MEM;
 			r1->theap.size = 0;
 			r1->ttype = TYPE_void;
-			r1->tvarsized = 1;
+			r1->tvarsized = true;
 			r1->twidth = 0;
 			r1->tshift = 0;
 			if (nil_on_miss && hi - lo < cnt) {
@@ -454,20 +454,20 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				for (o = BATcount(r2); o < cnt; o++)
 					APPEND(r2, oid_nil);
 				BATsetcount(r2, BATcount(r2));
-				r2->tnonil = 0;
-				r2->tnil = 1;
+				r2->tnonil = false;
+				r2->tnil = true;
 				if (BATcount(r2) <= 1) {
-					r2->tsorted = 1;
-					r2->trevsorted = 1;
-					r2->tdense = 1;
+					r2->tsorted = true;
+					r2->trevsorted = true;
+					r2->tdense = true;
 					if (BATcount(r2) == 0)
 						BATtseqbase(r2, 0);
 					else
 						BATtseqbase(r2, *(oid*)Tloc(r2, 0));
 				} else {
-					r2->tsorted = 0;
-					r2->trevsorted = 0;
-					r2->tdense = 0;
+					r2->tsorted = false;
+					r2->trevsorted = false;
+					r2->tdense = false;
 					r2->tseqbase = oid_nil;
 				}
 				/* (hi - lo) different OIDs in r2,
@@ -478,13 +478,13 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			BATsetcount(r1, hi - lo);
 			BATtseqbase(r1, l->hseqbase + lo - l->tseqbase);
 			if (r2) {
-				r2->tdense = 1;
+				r2->tdense = true;
 				HEAPfree(&r2->theap, 1);
 				r2->theap.storage = STORE_MEM;
 				r2->theap.newstorage = STORE_MEM;
 				r2->theap.size = 0;
 				r2->ttype = TYPE_void;
-				r2->tvarsized = 1;
+				r2->tvarsized = true;
 				r2->twidth = 0;
 				r2->tshift = 0;
 				BATsetcount(r2, hi - lo);
@@ -505,10 +505,10 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		if (BATextend(r1, cnt) != GDK_SUCCEED)
 			goto bailout;
 		if (r2) {
-			r2->tnil = 0;
-			r2->tnonil = 1;
-			r2->tkey = 1;
-			r2->tsorted = 1;
+			r2->tnil = false;
+			r2->tnonil = true;
+			r2->tkey = true;
+			r2->tsorted = true;
 			if (BATextend(r2, cnt) != GDK_SUCCEED)
 				goto bailout;
 		}
@@ -525,8 +525,8 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					APPEND(r2, oid_nil);
 				}
 				if (i > 0) {
-					r2->tnil = 1;
-					r2->tnonil = 0;
+					r2->tnil = true;
+					r2->tnonil = false;
 					r2->tkey = i > 1;
 				}
 			} else {
@@ -540,9 +540,9 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			if (nil_on_miss) {
 				if (i < cnt) {
 					r2->tkey = r2->tnil || (cnt - i > 1);
-					r2->tnil = 1;
-					r2->tnonil = 0;
-					r2->tsorted = 0;
+					r2->tnil = true;
+					r2->tnonil = false;
+					r2->tsorted = false;
 				}
 				for (; i < cnt; i++) {
 					APPEND(r1, lvals[i]);
@@ -552,11 +552,11 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		}
 		BATsetcount(r1, BATcount(r1));
 		r1->tdense = BATcount(r1) <= 1;
-		r1->tsorted = 1;
+		r1->tsorted = true;
 		r1->trevsorted = BATcount(r1) <= 1;
-		r1->tnil = 0;
-		r1->tnonil = 1;
-		r1->tkey = 1;
+		r1->tnil = false;
+		r1->tnonil = true;
+		r1->tkey = true;
 		if (r2) {
 			BATsetcount(r2, BATcount(r2));
 			r2->tdense = BATcount(r2) <= 1;
@@ -592,8 +592,8 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			if (r2) {
 				if (BATextend(r2, cnt) != GDK_SUCCEED)
 					goto bailout;
-				r2->tnil = 0;
-				r2->tnonil = 1;
+				r2->tnil = false;
+				r2->tnonil = true;
 			}
 			for (i = 0; i < cnt; i++) {
 				oid c = lcand[i];
@@ -611,24 +611,24 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					} else if (nil_on_miss) {
 						APPEND(r1, c);
 						APPEND(r2, oid_nil);
-						r2->tnil = 1;
-						r2->tnonil = 0;
+						r2->tnil = true;
+						r2->tnonil = false;
 					}
 				}
 			}
 			BATsetcount(r1, BATcount(r1));
-			r1->tsorted = 1;
+			r1->tsorted = true;
 			r1->trevsorted = BATcount(r1) <= 1;
-			r1->tkey = 1;
-			r1->tdense = 0;
-			r1->tnil = 0;
-			r1->tnonil = 1;
+			r1->tkey = true;
+			r1->tdense = false;
+			r1->tnil = false;
+			r1->tnonil = true;
 			if (r2) {
 				BATsetcount(r2, BATcount(r2));
 				r2->tsorted = l->tsorted || BATcount(r2) <= 1;
 				r2->trevsorted = l->trevsorted || BATcount(r2) <= 1;
 				r2->tkey = l->tkey || BATcount(r2) <= 1;
-				r2->tdense = 0;
+				r2->tdense = false;
 			}
 			goto doreturn;
 		}
@@ -652,17 +652,17 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	}
 	if (BATextend(r1, cnt) != GDK_SUCCEED)
 		goto bailout;
-	r1->tdense = 1;
+	r1->tdense = true;
 	r1->tseqbase = seq;
-	r1->tkey = 1;
-	r1->tsorted = 1;
-	r1->tnil = 0;
-	r1->tnonil = 1;
+	r1->tkey = true;
+	r1->tsorted = true;
+	r1->tnil = false;
+	r1->tnonil = true;
 	if (r2) {
 		if (BATextend(r2, cnt) != GDK_SUCCEED)
 			goto bailout;
-		r2->tnil = 0;
-		r2->tnonil = 1;
+		r2->tnil = false;
+		r2->tnonil = true;
 	}
 	for (i = 0; i < cnt; i++) {
 		o = lvals[i];
@@ -672,7 +672,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				if (r2)
 					APPEND(r2, o - r->tseqbase + r->hseqbase);
 			} else if (r1->tdense) {
-				r1->tdense = 0;
+				r1->tdense = false;
 				r1->tseqbase = oid_nil;
 			}
 		} else if (only_misses) {
@@ -681,24 +681,24 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			APPEND(r1, i + seq);
 			assert(r2 != NULL); /* help Coverity */
 			APPEND(r2, oid_nil);
-			r2->tnil = 1;
-			r2->tnonil = 0;
+			r2->tnil = true;
+			r2->tnonil = false;
 		} else if (r1->tdense) {
-			r1->tdense = 0;
+			r1->tdense = false;
 			r1->tseqbase = oid_nil;
 		}
 	}
 	BATsetcount(r1, BATcount(r1));
 	r1->trevsorted = BATcount(r1) <= 1;
 	if (BATcount(r1) <= 1) {
-		r1->trevsorted = 1;
+		r1->trevsorted = true;
 		if (BATcount(r1) == 0) {
 			r1->tseqbase = 0;
 		} else {
 			r1->tseqbase = *(oid *) Tloc(r1, 0);
 		}
 	} else {
-		r1->trevsorted = 0;
+		r1->trevsorted = false;
 	}
 	if (r2) {
 		BATsetcount(r2, BATcount(r2));
@@ -709,21 +709,21 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			} else {
 				r2->tseqbase = *(oid *) Tloc(r2, 0);
 			}
-			r2->tkey = 1;
-			r2->tsorted = 1;
-			r2->trevsorted = 1;
-			r2->tdense = 1;
+			r2->tkey = true;
+			r2->tsorted = true;
+			r2->trevsorted = true;
+			r2->tdense = true;
 		} else {
 			if (r2->tnil) {
-				r2->tkey = 0;
-				r2->tsorted = 0;
-				r2->trevsorted = 0;
+				r2->tkey = false;
+				r2->tsorted = false;
+				r2->trevsorted = false;
 			} else {
 				r2->tkey = l->tkey;
 				r2->tsorted = l->tsorted;
 				r2->trevsorted = l->trevsorted;
 			}
-			r2->tdense = 0;
+			r2->tdense = false;
 			r2->tseqbase = oid_nil;
 		}
 	}
@@ -754,7 +754,7 @@ mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 static gdk_return
 mergejoin_int(BAT *r1, BAT *r2, BAT *l, BAT *r,
-	      int nil_matches, BUN maxsize, lng t0, int swapped)
+	      bool nil_matches, BUN maxsize, lng t0, bool swapped)
 {
 	BUN lstart, lend;
 	BUN rstart, rend;
@@ -793,7 +793,7 @@ mergejoin_int(BAT *r1, BAT *r2, BAT *l, BAT *r,
 	if (lend == 0 || rend == 0) {
 		/* there are no matches */
 		return nomatch(r1, r2, l, r, lstart, lend, NULL, NULL,
-			       0, 0, "mergejoin_int", t0);
+			       false, false, "mergejoin_int", t0);
 	}
 
 	/* determine opportunistic scan window for l and r */
@@ -962,46 +962,46 @@ mergejoin_int(BAT *r1, BAT *r2, BAT *l, BAT *r,
 			/* value occurs multiple times in l, so entry
 			 * in r will be repeated multiple times: hence
 			 * r2 is not key and not dense */
-			r2->tkey = 0;
-			r2->tdense = 0;
+			r2->tkey = false;
+			r2->tdense = false;
 			/* multiple different values will be inserted
 			 * in r1 (always in order), so not reverse
 			 * ordered anymore */
-			r1->trevsorted = 0;
+			r1->trevsorted = false;
 		}
 		if (nr > 1) {
 			/* value occurs multiple times in r, so entry
 			 * in l will be repeated multiple times: hence
 			 * r1 is not key and not dense */
-			r1->tkey = 0;
-			r1->tdense = 0;
+			r1->tkey = false;
+			r1->tdense = false;
 			/* multiple different values will be inserted
 			 * in r2 (in order), so not reverse ordered
 			 * anymore */
-			r2->trevsorted = 0;
+			r2->trevsorted = false;
 			if (nl > 1) {
 				/* multiple values in l match multiple
 				 * values in r, so an ordered sequence
 				 * will be inserted multiple times in
 				 * r2, so r2 is not ordered anymore */
-				r2->tsorted = 0;
+				r2->tsorted = false;
 			}
 		}
 		if (BATcount(r1) > 0) {
 			/* a new, higher value will be inserted into
 			 * r1, so r1 is not reverse ordered anymore */
-			r1->trevsorted = 0;
+			r1->trevsorted = false;
 			/* a new higher value will be added to r2 */
-			r2->trevsorted = 0;
+			r2->trevsorted = false;
 			if (r1->tdense &&
 			    ((oid *) r1->theap.base)[r1->batCount - 1] + 1 != l->hseqbase + lstart - nl)
-				r1->tdense = 0;
+				r1->tdense = false;
 		}
 
 		if (BATcount(r2) > 0 &&
 		    r2->tdense &&
 		    ((oid *) r2->theap.base)[r2->batCount - 1] + 1 != r->hseqbase + rstart - nr)
-			r2->tdense = 0;
+			r2->tdense = false;
 
 		/* insert values */
 		lv = l->hseqbase + lstart - nl;
@@ -1051,7 +1051,7 @@ mergejoin_int(BAT *r1, BAT *r2, BAT *l, BAT *r,
 
 static gdk_return
 mergejoin_lng(BAT *r1, BAT *r2, BAT *l, BAT *r,
-	      int nil_matches, BUN maxsize, lng t0, int swapped)
+	      bool nil_matches, BUN maxsize, lng t0, bool swapped)
 {
 	BUN lstart, lend;
 	BUN rstart, rend;
@@ -1090,7 +1090,7 @@ mergejoin_lng(BAT *r1, BAT *r2, BAT *l, BAT *r,
 	if (lend == 0 || rend == 0) {
 		/* there are no matches */
 		return nomatch(r1, r2, l, r, lstart, lend, NULL, NULL,
-			       0, 0, "mergejoin_lng", t0);
+			       false, false, "mergejoin_lng", t0);
 	}
 
 	/* determine opportunistic scan window for l and r */
@@ -1259,46 +1259,46 @@ mergejoin_lng(BAT *r1, BAT *r2, BAT *l, BAT *r,
 			/* value occurs multiple times in l, so entry
 			 * in r will be repeated multiple times: hence
 			 * r2 is not key and not dense */
-			r2->tkey = 0;
-			r2->tdense = 0;
+			r2->tkey = false;
+			r2->tdense = false;
 			/* multiple different values will be inserted
 			 * in r1 (always in order), so not reverse
 			 * ordered anymore */
-			r1->trevsorted = 0;
+			r1->trevsorted = false;
 		}
 		if (nr > 1) {
 			/* value occurs multiple times in r, so entry
 			 * in l will be repeated multiple times: hence
 			 * r1 is not key and not dense */
-			r1->tkey = 0;
-			r1->tdense = 0;
+			r1->tkey = false;
+			r1->tdense = false;
 			/* multiple different values will be inserted
 			 * in r2 (in order), so not reverse ordered
 			 * anymore */
-			r2->trevsorted = 0;
+			r2->trevsorted = false;
 			if (nl > 1) {
 				/* multiple values in l match multiple
 				 * values in r, so an ordered sequence
 				 * will be inserted multiple times in
 				 * r2, so r2 is not ordered anymore */
-				r2->tsorted = 0;
+				r2->tsorted = false;
 			}
 		}
 		if (BATcount(r1) > 0) {
 			/* a new, higher value will be inserted into
 			 * r1, so r1 is not reverse ordered anymore */
-			r1->trevsorted = 0;
+			r1->trevsorted = false;
 			/* a new higher value will be added to r2 */
-			r2->trevsorted = 0;
+			r2->trevsorted = false;
 			if (r1->tdense &&
 			    ((oid *) r1->theap.base)[r1->batCount - 1] + 1 != l->hseqbase + lstart - nl)
-				r1->tdense = 0;
+				r1->tdense = false;
 		}
 
 		if (BATcount(r2) > 0 &&
 		    r2->tdense &&
 		    ((oid *) r2->theap.base)[r2->batCount - 1] + 1 != r->hseqbase + rstart - nr)
-			r2->tdense = 0;
+			r2->tdense = false;
 
 		/* insert values */
 		lv = l->hseqbase + lstart - nl;
@@ -1368,8 +1368,8 @@ mergejoin_lng(BAT *r1, BAT *r2, BAT *l, BAT *r,
  */
 static gdk_return
 mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
-	  int nil_matches, int nil_on_miss, int semi, int only_misses,
-	  BUN maxsize, lng t0, int swapped)
+	  bool nil_matches, bool nil_on_miss, bool semi, bool only_misses,
+	  BUN maxsize, lng t0, bool swapped)
 {
 	BUN lstart, lend;
 	const oid *lcand, *lcandend;
@@ -1388,19 +1388,19 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	const void *prev = NULL;
 	BUN nl, nr;
 	BUN total;		/* number of rows in l we scan */
-	int insert_nil;
+	bool insert_nil;
 	/* equal_order is set if we can scan both BATs in the same
 	 * order, so when both are sorted or both are reverse sorted
 	 * -- important to know in order to skip over values; if l is
-	 * not sorted, this must be set to 1 and we will always do a
+	 * not sorted, this must be set to true and we will always do a
 	 * binary search on all of r */
-	int equal_order;
+	bool equal_order;
 	/* [lr]ordering is either 1 or -1 depending on the order of
 	 * l/r: it determines the comparison function used */
 	int lordering, rordering;
 	oid lv;
 	BUN i, j;		/* counters */
-	int lskipped = 0;	/* whether we skipped values in l */
+	bool lskipped = false;	/* whether we skipped values in l */
 	lng loff = 0, roff = 0;	/* set if l/r is dense */
 	oid lval = oid_nil, rval = oid_nil; /* temporary space to point v to */
 
@@ -1497,7 +1497,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		 * on r */
 		assert(!BATtvoid(l)); /* void is always sorted */
 		lscan = 0;
-		equal_order = 1;
+		equal_order = true;
 		lordering = 1;
 		rordering = r->tsorted ? 1 : -1;
 		/* if l not sorted, we only know for sure that r2 is
@@ -1694,16 +1694,16 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 						}
 					}
 					if (lskipped)
-						r1->tdense = 0;
+						r1->tdense = false;
 					if (r1->trevsorted && BATcount(r1) > 1)
-						r1->trevsorted = 0;
+						r1->trevsorted = false;
 				} else if (nil_on_miss) {
 					if (r2->tnonil) {
-						r2->tnil = 1;
-						r2->tnonil = 0;
-						r2->tdense = 0;
-						r2->tsorted = 0;
-						r2->trevsorted = 0;
+						r2->tnil = true;
+						r2->tnonil = false;
+						r2->tdense = false;
+						r2->tsorted = false;
+						r2->trevsorted = false;
 					}
 					if (lcand) {
 						while (nlx > 0) {
@@ -2099,21 +2099,21 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				continue;
 			}
 			/* insert a nil to indicate a non-match */
-			insert_nil = 1;
+			insert_nil = true;
 			nr = 1;
 			if (r2) {
-				r2->tnil = 1;
-				r2->tnonil = 0;
-				r2->tsorted = 0;
-				r2->trevsorted = 0;
-				r2->tdense = 0;
+				r2->tnil = true;
+				r2->tnonil = false;
+				r2->tsorted = false;
+				r2->trevsorted = false;
+				r2->tdense = false;
 			}
 		} else if (only_misses) {
 			/* we had a match, so we're not interested */
 			lskipped = BATcount(r1) > 0;
 			continue;
 		} else {
-			insert_nil = 0;
+			insert_nil = false;
 			if (semi) {
 				/* for semi-join, only insert single
 				 * value */
@@ -2124,7 +2124,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			    lcand[-1] != lcand[-1 - (ssize_t) nl] + nl) {
 				/* not all values in the range are
 				 * candidates */
-				lskipped = 1;
+				lskipped = true;
 			}
 		}
 		/* make space: nl values in l match nr values in r, so
@@ -2160,25 +2160,25 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				 * so entry in r will be repeated
 				 * multiple times: hence r2 is not key
 				 * and not dense */
-				r2->tkey = 0;
-				r2->tdense = 0;
+				r2->tkey = false;
+				r2->tdense = false;
 			}
 			/* multiple different values will be inserted
 			 * in r1 (always in order), so not reverse
 			 * ordered anymore */
-			r1->trevsorted = 0;
+			r1->trevsorted = false;
 		}
 		if (nr > 1) {
 			/* value occurs multiple times in r, so entry
 			 * in l will be repeated multiple times: hence
 			 * r1 is not key and not dense */
-			r1->tkey = 0;
-			r1->tdense = 0;
+			r1->tkey = false;
+			r1->tdense = false;
 			if (r2) {
 				/* multiple different values will be
 				 * inserted in r2 (in order), so not
 				 * reverse ordered anymore */
-				r2->trevsorted = 0;
+				r2->trevsorted = false;
 				if (nl > 1) {
 					/* multiple values in l match
 					 * multiple values in r, so an
@@ -2186,7 +2186,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					 * inserted multiple times in
 					 * r2, so r2 is not ordered
 					 * anymore */
-					r2->tsorted = 0;
+					r2->tsorted = false;
 				}
 			}
 		}
@@ -2197,9 +2197,9 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				if (rordering * cmp(prev, v) < 0) {
 					/* previous value in l was
 					 * less than current */
-					r2->trevsorted = 0;
+					r2->trevsorted = false;
 				} else {
-					r2->tsorted = 0;
+					r2->tsorted = false;
 				}
 			}
 			prev = v;
@@ -2207,21 +2207,21 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		if (BATcount(r1) > 0) {
 			/* a new, higher value will be inserted into
 			 * r1, so r1 is not reverse ordered anymore */
-			r1->trevsorted = 0;
+			r1->trevsorted = false;
 			if (r2) {
 				/* depending on whether l and r are
 				 * ordered the same or not, a new
 				 * higher or lower value will be added
 				 * to r2 */
 				if (equal_order)
-					r2->trevsorted = 0;
+					r2->trevsorted = false;
 				else {
-					r2->tsorted = 0;
-					r2->tdense = 0;
+					r2->tsorted = false;
+					r2->tdense = false;
 				}
 			}
-			if (r1->tdense && lskipped)
-				r1->tdense = 0;
+			if (lskipped)
+				r1->tdense = false;
 		}
 
 		/* insert values: first the left output */
@@ -2252,7 +2252,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			if (r2->batCount > 0 &&
 			    r2->tdense &&
 			    ((oid *) r2->theap.base)[r2->batCount - 1] + 1 != rcand[-(ssize_t)nr])
-				r2->tdense = 0;
+				r2->tdense = false;
 			do {
 				for (i = nr; i > 0; i--) {
 					APPEND(r2, rcand[-(ssize_t)i]);
@@ -2262,7 +2262,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			if (r2->batCount > 0 &&
 			    r2->tdense &&
 			    ((oid *) r2->theap.base)[r2->batCount - 1] + 1 != rcandend[0])
-				r2->tdense = 0;
+				r2->tdense = false;
 			do {
 				for (i = 0; i < nr; i++) {
 					APPEND(r2, rcandend[i]);
@@ -2272,7 +2272,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			if (r2->batCount > 0 &&
 			    r2->tdense &&
 			    ((oid *) r2->theap.base)[r2->batCount - 1] + 1 != r->hseqbase + rstart - nr)
-				r2->tdense = 0;
+				r2->tdense = false;
 			do {
 				for (i = nr; i > 0; i--) {
 					APPEND(r2, r->hseqbase + rstart - i);
@@ -2282,7 +2282,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			if (r2->batCount > 0 &&
 			    r2->tdense &&
 			    ((oid *) r2->theap.base)[r2->batCount - 1] + 1 != rend + r->hseqbase)
-				r2->tdense = 0;
+				r2->tdense = false;
 			do {
 				for (i = 0; i < nr; i++) {
 					APPEND(r2, rend + r->hseqbase + i);
@@ -2335,7 +2335,7 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 	while (hi > lo) {
 		mid = (lo + hi) / 2;
 		if (cand[mid] == v)
-			return 1;
+			return true;
 		if (cand[mid] < v)
 			lo = mid + 1;
 		else
@@ -2364,7 +2364,7 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 		if (r2)							\
 			APPEND(r2, ro);					\
 		nr++;							\
-	} while (0)
+	} while (false)
 
 #define HASHloop_bound(bi, h, hb, v, lo, hi)		\
 	for (hb = HASHget(h, HASHprobe((h), v));	\
@@ -2404,22 +2404,22 @@ binsearchcand(const oid *cand, BUN lo, BUN hi, oid v)
 				lskipped = BATcount(r1) > 0;		\
 			} else {					\
 				if (lskipped) {				\
-					r1->tdense = 0;			\
+					r1->tdense = false;		\
 				}					\
 				if (nr > 1) {				\
-					r1->tkey = 0;			\
-					r1->tdense = 0;			\
+					r1->tkey = false;		\
+					r1->tdense = false;		\
 				}					\
 				if (BATcount(r1) > nr)			\
-					r1->trevsorted = 0;		\
+					r1->trevsorted = false;		\
 			}						\
 		}							\
-	} while (0)
+	} while (false)
 
 static gdk_return
-hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
-	 int nil_on_miss, int semi, int only_misses, BUN maxsize, lng t0,
-	 int swapped, const char *reason)
+hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches,
+	 bool nil_on_miss, bool semi, bool only_misses, BUN maxsize, lng t0,
+	 bool swapped, const char *reason)
 {
 	BUN lstart, lend, lcnt;
 	const oid *lcand = NULL, *lcandend = NULL;
@@ -2438,7 +2438,7 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 	int (*cmp)(const void *, const void *) = ATOMcompare(l->ttype);
 	oid lval = oid_nil;	/* hold value if l is dense */
 	const char *v = (const char *) &lval;
-	int lskipped = 0;	/* whether we skipped values in l */
+	bool lskipped = false;	/* whether we skipped values in l */
 	const Hash *restrict hsh;
 	int t;
 
@@ -2493,12 +2493,12 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 	 * will also be key */
 	r1->tkey = (r->tkey != 0) | semi | only_misses;
 	if (r2) {
-		r2->tkey = l->tkey != 0;
+		r2->tkey = l->tkey;
 		/* r2 is not likely to be sorted (although it is
 		 * certainly possible) */
-		r2->tsorted = 0;
-		r2->trevsorted = 0;
-		r2->tdense = 0;
+		r2->tsorted = false;
+		r2->trevsorted = false;
+		r2->tdense = false;
 	}
 
 	if (sl)
@@ -2629,12 +2629,12 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 					}
 					APPEND(r1, lo);
 					if (lskipped)
-						r1->tdense = 0;
+						r1->tdense = false;
 				} else if (nil_on_miss) {
 					nr = 1;
-					r2->tnil = 1;
-					r2->tnonil = 0;
-					r2->tkey = 0;
+					r2->tnil = true;
+					r2->tnonil = false;
+					r2->tkey = false;
 					if (BUNlast(r1) == BATcapacity(r1)) {
 						newcap = BATgrows(r1);
 						if (newcap > maxsize)
@@ -2658,17 +2658,17 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 					/* note, we only get here in
 					 * an iteration *after*
 					 * lskipped was first set to
-					 * 1, i.e. we did indeed skip
+					 * true, i.e. we did indeed skip
 					 * values in l */
-					r1->tdense = 0;
+					r1->tdense = false;
 				}
 				if (nr > 1) {
-					r1->tkey = 0;
-					r1->tdense = 0;
+					r1->tkey = false;
+					r1->tdense = false;
 				}
 			}
 			if (nr > 0 && BATcount(r1) > nr)
-				r1->trevsorted = 0;
+				r1->trevsorted = false;
 		}
 	} else {
 		for (lo = lstart + l->hseqbase; lstart < lend; lo++) {
@@ -2770,12 +2770,12 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 					}
 					APPEND(r1, lo);
 					if (lskipped)
-						r1->tdense = 0;
+						r1->tdense = false;
 				} else if (nil_on_miss) {
 					nr = 1;
-					r2->tnil = 1;
-					r2->tnonil = 0;
-					r2->tkey = 0;
+					r2->tnil = true;
+					r2->tnonil = false;
+					r2->tkey = false;
 					if (BUNlast(r1) == BATcapacity(r1)) {
 						newcap = BATgrows(r1);
 						if (newcap > maxsize)
@@ -2801,33 +2801,33 @@ hashjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 					 * lskipped was first set to
 					 * 1, i.e. we did indeed skip
 					 * values in l */
-					r1->tdense = 0;
+					r1->tdense = false;
 				}
 				if (nr > 1) {
-					r1->tkey = 0;
-					r1->tdense = 0;
+					r1->tkey = false;
+					r1->tdense = false;
 				}
 			}
 			if (nr > 0 && BATcount(r1) > nr)
-				r1->trevsorted = 0;
+				r1->trevsorted = false;
 		}
 	}
 	/* also set other bits of heap to correct value to indicate size */
 	BATsetcount(r1, BATcount(r1));
 	if (BATcount(r1) <= 1) {
-		r1->tsorted = 1;
-		r1->trevsorted = 1;
-		r1->tkey = 1;
-		r1->tdense = 1;
+		r1->tsorted = true;
+		r1->trevsorted = true;
+		r1->tkey = true;
+		r1->tdense = true;
 	}
 	if (r2) {
 		BATsetcount(r2, BATcount(r2));
 		assert(BATcount(r1) == BATcount(r2));
 		if (BATcount(r2) <= 1) {
-			r2->tsorted = 1;
-			r2->trevsorted = 1;
-			r2->tkey = 1;
-			r2->tdense = 1;
+			r2->tsorted = true;
+			r2->trevsorted = true;
+			r2->tkey = true;
+			r2->tdense = true;
 		}
 	}
 	if (BATcount(r1) > 0) {
@@ -2883,7 +2883,7 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BUN ma
 	BUN newcap;
 	oid lo, ro;
 	int c;
-	int lskipped = 0;	/* whether we skipped values in l */
+	bool lskipped = false;	/* whether we skipped values in l */
 	lng loff = 0, roff = 0;
 	oid lval = oid_nil, rval = oid_nil;
 
@@ -2962,12 +2962,12 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BUN ma
 	assert(lvals != NULL || lcand == NULL);
 	assert(rvals != NULL || rcand == NULL);
 
-	r1->tkey = 1;
-	r1->tsorted = 1;
-	r1->trevsorted = 1;
-	r2->tkey = 1;
-	r2->tsorted = 1;
-	r2->trevsorted = 1;
+	r1->tkey = true;
+	r1->tsorted = true;
+	r1->trevsorted = true;
+	r2->tkey = true;
+	r2->tsorted = true;
+	r2->trevsorted = true;
 
 	/* nested loop implementation for theta join */
 	for (;;) {
@@ -3036,16 +3036,16 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BUN ma
 				}
 				if (BATcount(r2) > 0) {
 					if (lastr + 1 != ro)
-						r2->tdense = 0;
+						r2->tdense = false;
 					if (nr == 0) {
-						r1->trevsorted = 0;
+						r1->trevsorted = false;
 						if (lastr > ro) {
-							r2->tsorted = 0;
-							r2->tkey = 0;
+							r2->tsorted = false;
+							r2->tkey = false;
 						} else if (lastr < ro) {
-							r2->trevsorted = 0;
+							r2->trevsorted = false;
 						} else {
-							r2->tkey = 0;
+							r2->tkey = false;
 						}
 					}
 				}
@@ -3056,13 +3056,13 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BUN ma
 			}
 		}
 		if (nr > 1) {
-			r1->tkey = 0;
-			r1->tdense = 0;
-			r2->trevsorted = 0;
+			r1->tkey = false;
+			r1->tdense = false;
+			r2->trevsorted = false;
 		} else if (nr == 0) {
 			lskipped = BATcount(r1) > 0;
 		} else if (lskipped) {
-			r1->tdense = 0;
+			r1->tdense = false;
 		}
 	}
 	assert(BATcount(r1) == BATcount(r2));
@@ -3096,7 +3096,7 @@ thetajoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BUN ma
 
 static gdk_return
 bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
-	 const void *c1, const void *c2, int li, int hi, BUN maxsize, lng t0)
+	 const void *c1, const void *c2, bool li, bool hi, BUN maxsize, lng t0)
 {
 	BUN lstart, lend, lcnt;
 	const oid *lcand = NULL, *lcandend = NULL;
@@ -3113,7 +3113,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	BUN n, nr;
 	BUN newcap;
 	oid lo, ro;
-	int lskipped = 0;	/* whether we skipped values in l */
+	bool lskipped = false;	/* whether we skipped values in l */
 	BUN nils = 0;		/* needed for XXX_WITH_CHECK macros */
 
 	ALGODEBUG fprintf(stderr, "#bandjoin(l=%s#" BUNFMT "[%s]%s%s%s,"
@@ -3212,12 +3212,12 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	assert(lvals != NULL);
 	assert(rvals != NULL);
 
-	r1->tkey = 1;
-	r1->tsorted = 1;
-	r1->trevsorted = 1;
-	r2->tkey = 1;
-	r2->tsorted = 1;
-	r2->trevsorted = 1;
+	r1->tkey = true;
+	r1->tsorted = true;
+	r1->trevsorted = true;
+	r2->tkey = true;
+	r2->tsorted = true;
+	r2->trevsorted = true;
 
 	/* nested loop implementation for band join */
 	for (;;) {
@@ -3336,7 +3336,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 #else
 			case TYPE_lng: {
 				lng v1, v2;
-				int abort_on_error = 1;
+				bool abort_on_error = true;
 
 				if (is_lng_nil(*(const lng *)vr))
 					continue;
@@ -3344,7 +3344,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					       lng, *(const lng *)c1,
 					       lng, v1,
 					       GDK_lng_max,
-					       do{if(*(const lng*)c1<0)goto nolmatch;else goto lmatch1;}while(0));
+					       do{if(*(const lng*)c1<0)goto nolmatch;else goto lmatch1;}while(false));
 				if (*(const lng *)vl <= v1 &&
 				    (!li || *(const lng *)vl != v1))
 					continue;
@@ -3353,7 +3353,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					       lng, *(const lng *)c2,
 					       lng, v2,
 					       GDK_lng_max,
-					       do{if(*(const lng*)c2>0)goto nolmatch;else goto lmatch2;}while(0));
+					       do{if(*(const lng*)c2>0)goto nolmatch;else goto lmatch2;}while(false));
 				if (*(const lng *)vl >= v2 &&
 				    (!hi || *(const lng *)vl != v2))
 					continue;
@@ -3367,7 +3367,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 #ifdef HAVE_HGE
 			case TYPE_hge: {
 				hge v1, v2;
-				int abort_on_error = 1;
+				bool abort_on_error = true;
 
 				if (is_hge_nil(*(const hge *)vr))
 					continue;
@@ -3375,7 +3375,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					       hge, *(const hge *)c1,
 					       hge, v1,
 					       GDK_hge_max,
-					       do{if(*(const hge*)c1<0)goto nohmatch;else goto hmatch1;}while(0));
+					       do{if(*(const hge*)c1<0)goto nohmatch;else goto hmatch1;}while(false));
 				if (*(const hge *)vl <= v1 &&
 				    (!li || *(const hge *)vl != v1))
 					continue;
@@ -3384,7 +3384,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					       hge, *(const hge *)c2,
 					       hge, v2,
 					       GDK_hge_max,
-					       do{if(*(const hge*)c2>0)goto nohmatch;else goto hmatch2;}while(0));
+					       do{if(*(const hge*)c2>0)goto nohmatch;else goto hmatch2;}while(false));
 				if (*(const hge *)vl >= v2 &&
 				    (!hi || *(const hge *)vl != v2))
 					continue;
@@ -3412,7 +3412,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			}
 			case TYPE_dbl: {
 				dbl v1, v2;
-				int abort_on_error = 1;
+				bool abort_on_error = true;
 
 				if (is_dbl_nil(*(const dbl *)vr))
 					continue;
@@ -3420,7 +3420,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					       dbl, *(const dbl *)c1,
 					       dbl, v1,
 					       GDK_dbl_max,
-					       do{if(*(const dbl*)c1<0)goto nodmatch;else goto dmatch1;}while(0));
+					       do{if(*(const dbl*)c1<0)goto nodmatch;else goto dmatch1;}while(false));
 				if (*(const dbl *)vl <= v1 &&
 				    (!li || *(const dbl *)vl != v1))
 					continue;
@@ -3429,7 +3429,7 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					       dbl, *(const dbl *)c2,
 					       dbl, v2,
 					       GDK_dbl_max,
-					       do{if(*(const dbl*)c2>0)goto nodmatch;else goto dmatch2;}while(0));
+					       do{if(*(const dbl*)c2>0)goto nodmatch;else goto dmatch2;}while(false));
 				if (*(const dbl *)vl >= v2 &&
 				    (!hi || *(const dbl *)vl != v2))
 					continue;
@@ -3452,16 +3452,16 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			}
 			if (BATcount(r2) > 0) {
 				if (lastr + 1 != ro)
-					r2->tdense = 0;
+					r2->tdense = false;
 				if (nr == 0) {
-					r1->trevsorted = 0;
+					r1->trevsorted = false;
 					if (lastr > ro) {
-						r2->tsorted = 0;
-						r2->tkey = 0;
+						r2->tsorted = false;
+						r2->tkey = false;
 					} else if (lastr < ro) {
-						r2->trevsorted = 0;
+						r2->trevsorted = false;
 					} else {
-						r2->tkey = 0;
+						r2->tkey = false;
 					}
 				}
 			}
@@ -3471,13 +3471,13 @@ bandjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			nr++;
 		}
 		if (nr > 1) {
-			r1->tkey = 0;
-			r1->tdense = 0;
-			r2->trevsorted = 0;
+			r1->tkey = false;
+			r1->tdense = false;
+			r2->trevsorted = false;
 		} else if (nr == 0) {
 			lskipped = BATcount(r1) > 0;
 		} else if (lskipped) {
-			r1->tdense = 0;
+			r1->tdense = false;
 		}
 	}
 	assert(BATcount(r1) == BATcount(r2));
@@ -3535,9 +3535,9 @@ fetchjoin(BAT *r1, BAT *r2, BAT *l, BAT *r)
 			APPEND(r2, v);
 		}
 		BATsetcount(r2, e - b);
-		r2->tkey = 1;
-		r2->tdense = 1;
-		r2->tsorted = 1;
+		r2->tkey = true;
+		r2->tdense = true;
+		r2->tsorted = true;
 		r2->trevsorted = e - b <= 1;
 		r2->tseqbase = e == b ? 0 : r->hseqbase + b;
 		virtualize(r2);
@@ -3565,7 +3565,7 @@ fetchjoin(BAT *r1, BAT *r2, BAT *l, BAT *r)
 /* Make the implementation choices for various left joins. */
 static gdk_return
 subleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
-	    int nil_matches, int nil_on_miss, int semi, int only_misses,
+	    bool nil_matches, bool nil_on_miss, bool semi, bool only_misses,
 	    BUN estimate, const char *name, lng t0)
 {
 	BAT *r1, *r2 = NULL;
@@ -3608,11 +3608,12 @@ subleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		    lcount < 1024 ||
 		    BATcount(r) * (Tsize(r) + (r->tvheap ? r->tvheap->size : 0) + 2 * sizeof(BUN)) > GDK_mem_maxsize / (GDKnr_threads ? GDKnr_threads : 1)))
 		return mergejoin(r1, r2, l, r, sl, sr, nil_matches,
-				 nil_on_miss, semi, only_misses, maxsize, t0, 0);
+				 nil_on_miss, semi, only_misses, maxsize, t0,
+				 false);
 	if (BATtdense(l) && ATOMtype(l->ttype) == TYPE_oid && sl == NULL && sr == NULL && !semi && !nil_matches && !only_misses && (rcount * 1024) < lcount && BATordered(r))
 		return fetchjoin(r1, r2, l, r);
 	return hashjoin(r1, r2, l, r, sl, sr, nil_matches,
-			nil_on_miss, semi, only_misses, maxsize, t0, 0, "leftjoin");
+			nil_on_miss, semi, only_misses, maxsize, t0, false, "leftjoin");
 }
 
 /* Perform an equi-join over l and r.  Returns two new, aligned, bats
@@ -3622,7 +3623,7 @@ gdk_return
 BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
 	return subleftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
-			   0, 0, 0, estimate, "BATleftjoin",
+			   false, false, false, estimate, "BATleftjoin",
 			   GDKdebug & ALGOMASK ? GDKusec() : 0);
 }
 
@@ -3635,7 +3636,7 @@ gdk_return
 BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
 	return subleftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
-			   1, 0, 0, estimate, "BATouterjoin",
+			   true, false, false, estimate, "BATouterjoin",
 			   GDKdebug & ALGOMASK ? GDKusec() : 0);
 }
 
@@ -3646,7 +3647,7 @@ gdk_return
 BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
 	return subleftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
-			   0, 1, 0, estimate, "BATsemijoin",
+			   false, true, false, estimate, "BATsemijoin",
 			   GDKdebug & ALGOMASK ? GDKusec() : 0);
 }
 
@@ -3660,7 +3661,7 @@ BATdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 	BAT *bn;
 
 	if (subleftjoin(&bn, NULL, l, r, sl, sr, nil_matches,
-			0, 0, 1, estimate, "BATdiff",
+			false, false, true, estimate, "BATdiff",
 			GDKdebug & ALGOMASK ? GDKusec() : 0) == GDK_SUCCEED)
 		return bn;
 	return NULL;
@@ -3703,7 +3704,7 @@ BATthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, int
 	*r2p = NULL;
 	if (joinparamcheck(l, r, NULL, sl, sr, "BATthetajoin") != GDK_SUCCEED)
 		return GDK_FAIL;
-	if ((maxsize = joininitresults(&r1, &r2, sl ? BATcount(sl) : BATcount(l), sr ? BATcount(sr) : BATcount(r), 0, 0, 0, 0, 0, estimate)) == BUN_NONE)
+	if ((maxsize = joininitresults(&r1, &r2, sl ? BATcount(sl) : BATcount(l), sr ? BATcount(sr) : BATcount(r), false, false, false, false, false, estimate)) == BUN_NONE)
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
@@ -3724,7 +3725,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 #ifndef DISABLE_PARENT_HASH
 	bat lparent, rparent;
 #endif
-	int swap;
+	bool swap;
 	size_t mem_size;
 	lng t0 = 0;
 	const char *reason = "";
@@ -3753,13 +3754,13 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 		*r2p = r2;
 		return GDK_SUCCEED;
 	}
-	if ((maxsize = joininitresults(&r1, &r2, lcount, rcount, l->tkey, r->tkey, 0, 0, 0, estimate)) == BUN_NONE)
+	if ((maxsize = joininitresults(&r1, &r2, lcount, rcount, l->tkey, r->tkey, false, false, false, estimate)) == BUN_NONE)
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
 	if (maxsize == 0)
 		return GDK_SUCCEED;
-	swap = 0;
+	swap = false;
 
 	/* some statistics to help us decide */
 	lsize = (BUN) (BATcount(l) * (Tsize(l)) + (l->tvheap ? l->tvheap->size : 0) + 2 * sizeof(BUN));
@@ -3790,25 +3791,25 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 	}
 	if (BATtdense(r) && (sr == NULL || BATtdense(sr))) {
 		/* use special implementation for dense right-hand side */
-		return mergejoin_void(r1, r2, l, r, sl, sr, 0, 0, t0);
+		return mergejoin_void(r1, r2, l, r, sl, sr, false, false, t0);
 	} else if (BATtdense(l) && (sl == NULL || BATtdense(sl))) {
 		/* use special implementation for dense right-hand side */
-		return mergejoin_void(r2, r1, r, l, sr, sl, 0, 0, t0);
+		return mergejoin_void(r2, r1, r, l, sr, sl, false, false, t0);
 	} else if ((BATordered(l) || BATordered_rev(l)) &&
 		   (BATordered(r) || BATordered_rev(r))) {
 		/* both sorted */
-		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 0, maxsize, t0, 0);
+		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, false, false, false, maxsize, t0, false);
 	} else if (lhash && rhash) {
 		/* both have hash, smallest on right */
 		swap = lcount < rcount;
 		reason = "both have hash";
 	} else if (lhash) {
 		/* only left has hash, swap */
-		swap = 1;
+		swap = true;
 		reason = "left has hash";
 	} else if (rhash) {
 		/* only right has hash, don't swap */
-		swap = 0;
+		swap = false;
 		reason = "right has hash";
 	} else if ((BATordered(l) || BATordered_rev(l)) &&
 		   (BATtvoid(l) || rcount < 1024 || MIN(lsize, rsize) > mem_size)) {
@@ -3816,14 +3817,14 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 		 * "large" and the smaller of the two isn't too large
 		 * (i.e. prefer hash over binary search, but only if
 		 * the hash table doesn't cause thrashing) */
-		return mergejoin(r2, r1, r, l, sr, sl, nil_matches, 0, 0, 0, maxsize, t0, 1);
+		return mergejoin(r2, r1, r, l, sr, sl, nil_matches, false, false, false, maxsize, t0, true);
 	} else if ((BATordered(r) || BATordered_rev(r)) &&
 		   (BATtvoid(r) || lcount < 1024 || MIN(lsize, rsize) > mem_size)) {
 		/* only right is sorted, don't swap; but only if left
 		 * is "large" and the smaller of the two isn't too
 		 * large (i.e. prefer hash over binary search, but
 		 * only if the hash table doesn't cause thrashing) */
-		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 0, maxsize, t0, 0);
+		return mergejoin(r1, r2, l, r, sl, sr, nil_matches, false, false, false, maxsize, t0, false);
 	} else if ((l->batPersistence == PERSISTENT
 #ifndef DISABLE_PARENT_HASH
 		     || (lparent != 0 &&
@@ -3838,7 +3839,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 			   )) {
 		/* l (or its parent) is persistent and r is not,
 		 * create hash on l since it may be reused */
-		swap = 1;
+		swap = true;
 		reason = "left is persistent";
 	} else if (!(l->batPersistence == PERSISTENT
 #ifndef DISABLE_PARENT_HASH
@@ -3859,13 +3860,13 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 		reason = "right is persistent";
 	} else if (lpcount < rpcount) {
 		/* no hashes, not sorted, create hash on smallest BAT */
-		swap = 1;
+		swap = true;
 		reason = "left is smaller";
 	}
 	if (swap) {
-		return hashjoin(r2, r1, r, l, sr, sl, nil_matches, 0, 0, 0, maxsize, t0, 1, reason);
+		return hashjoin(r2, r1, r, l, sr, sl, nil_matches, false, false, false, maxsize, t0, true, reason);
 	} else {
-		return hashjoin(r1, r2, l, r, sl, sr, nil_matches, 0, 0, 0, maxsize, t0, 0, reason);
+		return hashjoin(r1, r2, l, r, sl, sr, nil_matches, false, false, false, maxsize, t0, false, reason);
 	}
 }
 
@@ -3883,7 +3884,7 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	*r2p = NULL;
 	if (joinparamcheck(l, r, NULL, sl, sr, "BATbandjoin") != GDK_SUCCEED)
 		return GDK_FAIL;
-	if ((maxsize = joininitresults(&r1, &r2, sl ? BATcount(sl) : BATcount(l), sr ? BATcount(sr) : BATcount(r), 0, 0, 0, 0, 0, estimate)) == BUN_NONE)
+	if ((maxsize = joininitresults(&r1, &r2, sl ? BATcount(sl) : BATcount(l), sr ? BATcount(sr) : BATcount(r), false, false, false, false, false, estimate)) == BUN_NONE)
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
@@ -3904,7 +3905,7 @@ BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
 	*r2p = NULL;
 	if (joinparamcheck(l, rl, rh, sl, sr, "BATrangejoin") != GDK_SUCCEED)
 		return GDK_FAIL;
-	if ((maxsize = joininitresults(&r1, &r2, sl ? BATcount(sl) : BATcount(l), sr ? BATcount(sr) : BATcount(rl), 0, 0, 0, 0, 0, estimate)) == BUN_NONE)
+	if ((maxsize = joininitresults(&r1, &r2, sl ? BATcount(sl) : BATcount(l), sr ? BATcount(sr) : BATcount(rl), false, false, false, false, false, estimate)) == BUN_NONE)
 		return GDK_FAIL;
 	*r1p = r1;
 	*r2p = r2;
