@@ -88,7 +88,7 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 		}
 	}
 	r -> tkey = FALSE;
-	r -> tdense = FALSE;
+	r -> tseqbase = oid_nil;
 	r -> tsorted = BATtordered(gids);
 	r -> trevsorted = BATtrevordered(gids);
 	r -> tnonil = gids->tnonil;
@@ -1104,7 +1104,7 @@ str ALGreuse(bat *ret, const bat *bid)
 			BATsetcount(bn,BATcount(b));
 			bn->tsorted = FALSE;
 			bn->trevsorted = FALSE;
-			BATkey(bn,FALSE);
+			BATkey(bn, false);
 		}
 		BBPkeepref(*ret= bn->batCacheid);
 		BBPunfix(b->batCacheid);

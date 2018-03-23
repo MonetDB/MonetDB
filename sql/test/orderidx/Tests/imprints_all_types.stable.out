@@ -1,70 +1,28 @@
-stdout of test 'oidx_all_types` in directory 'sql/test/orderidx` itself:
+stdout of test 'imprints_all_types` in directory 'sql/test/orderidx` itself:
 
 
-# 15:05:53 >  
-# 15:05:53 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31953" "--set" "mapi_usock=/var/tmp/mtest-13546/.s.monetdb.31953" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_orderidx" "--set" "embedded_r=yes" "--set" "embedded_py=true"
-# 15:05:53 >  
+# 16:58:46 >  
+# 16:58:46 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35267" "--set" "mapi_usock=/var/tmp/mtest-18158/.s.monetdb.35267" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_orderidx"
+# 16:58:46 >  
 
-# MonetDB 5 server v11.25.12
+# MonetDB 5 server v11.29.0
 # This is an unreleased version
-# Serving database 'mTests_sql_test_orderidx', using 8 threads
+# Serving database 'mTests_sql_test_orderidx', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
-# Found 15.589 GiB available main-memory.
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
-# Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:31953/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-13546/.s.monetdb.31953
+# Found 31.307 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://catskill.da.cwi.nl:35267/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-18158/.s.monetdb.35267
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-# MonetDB/Python module loaded
-# MonetDB/R   module loaded
 
 Ready.
-# SQL catalog created, loading sql scripts once
-# loading sql script: 09_like.sql
-# loading sql script: 10_math.sql
-# loading sql script: 11_times.sql
-# loading sql script: 12_url.sql
-# loading sql script: 13_date.sql
-# loading sql script: 14_inet.sql
-# loading sql script: 15_querylog.sql
-# loading sql script: 16_tracelog.sql
-# loading sql script: 17_temporal.sql
-# loading sql script: 18_index.sql
-# loading sql script: 20_vacuum.sql
-# loading sql script: 21_dependency_functions.sql
-# loading sql script: 22_clients.sql
-# loading sql script: 23_skyserver.sql
-# loading sql script: 25_debug.sql
-# loading sql script: 26_sysmon.sql
-# loading sql script: 27_rejects.sql
-# loading sql script: 39_analytics.sql
-# loading sql script: 39_analytics_hge.sql
-# loading sql script: 40_geom.sql
-# loading sql script: 40_json.sql
-# loading sql script: 40_json_hge.sql
-# loading sql script: 41_md5sum.sql
-# loading sql script: 45_uuid.sql
-# loading sql script: 46_gsl.sql
-# loading sql script: 46_profiler.sql
-# loading sql script: 51_sys_schema_extension.sql
-# loading sql script: 72_fits.sql
-# loading sql script: 74_netcdf.sql
-# loading sql script: 75_lidar.sql
-# loading sql script: 75_shp.sql
-# loading sql script: 75_storagemodel.sql
-# loading sql script: 80_statistics.sql
-# loading sql script: 80_udf.sql
-# loading sql script: 80_udf_hge.sql
-# loading sql script: 85_bam.sql
-# loading sql script: 90_generator.sql
-# loading sql script: 90_generator_hge.sql
-# loading sql script: 99_system.sql
 
-# 15:05:54 >  
-# 15:05:54 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13546" "--port=31953"
-# 15:05:54 >  
+# 16:58:46 >  
+# 16:58:46 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18158" "--port=35267"
+# 16:58:46 >  
 
 #SET TIME ZONE INTERVAL '+01:00' HOUR TO MINUTE;
 #create table all_types (
@@ -134,109 +92,41 @@ Ready.
 % varchar,	int,	smallint,	boolean,	smallint,	smallint,	varchar # type
 % 9,	4,	1,	5,	1,	1,	0 # length
 [ "all_types",	2000,	0,	false,	0,	0,	NULL	]
-#select 'create ordered index "oidx_'||name||'" on all_types ("'||name||'");' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
-% .L4 # table_name
-% stmt # name
-% varchar # type
-% 75 # length
-[ "create ordered index \"oidx_boolean\" on all_types (\"boolean\");"	]
-[ "create ordered index \"oidx_tinyint\" on all_types (\"tinyint\");"	]
-[ "create ordered index \"oidx_smallint\" on all_types (\"smallint\");"	]
-[ "create ordered index \"oidx_int\" on all_types (\"int\");"	]
-[ "create ordered index \"oidx_bigint\" on all_types (\"bigint\");"	]
-[ "create ordered index \"oidx_double\" on all_types (\"double\");"	]
-[ "create ordered index \"oidx_real\" on all_types (\"real\");"	]
-[ "create ordered index \"oidx_decimal\" on all_types (\"decimal\");"	]
-[ "create ordered index \"oidx_decimal9\" on all_types (\"decimal9\");"	]
-[ "create ordered index \"oidx_decimal83\" on all_types (\"decimal83\");"	]
-[ "create ordered index \"oidx_float\" on all_types (\"float\");"	]
-[ "create ordered index \"oidx_float9\" on all_types (\"float9\");"	]
-[ "create ordered index \"oidx_float83\" on all_types (\"float83\");"	]
-[ "create ordered index \"oidx_date\" on all_types (\"date\");"	]
-[ "create ordered index \"oidx_iY\" on all_types (\"iY\");"	]
-[ "create ordered index \"oidx_iYM\" on all_types (\"iYM\");"	]
-[ "create ordered index \"oidx_iM\" on all_types (\"iM\");"	]
-[ "create ordered index \"oidx_id\" on all_types (\"id\");"	]
-[ "create ordered index \"oidx_idh\" on all_types (\"idh\");"	]
-[ "create ordered index \"oidx_idm\" on all_types (\"idm\");"	]
-[ "create ordered index \"oidx_ids\" on all_types (\"ids\");"	]
-[ "create ordered index \"oidx_ih\" on all_types (\"ih\");"	]
-[ "create ordered index \"oidx_ihm\" on all_types (\"ihm\");"	]
-[ "create ordered index \"oidx_ihs\" on all_types (\"ihs\");"	]
-[ "create ordered index \"oidx_im\" on all_types (\"im\");"	]
-[ "create ordered index \"oidx_ims\" on all_types (\"ims\");"	]
-[ "create ordered index \"oidx_is\" on all_types (\"is\");"	]
-[ "create ordered index \"oidx_timestamp\" on all_types (\"timestamp\");"	]
-[ "create ordered index \"oidx_timestamp5\" on all_types (\"timestamp5\");"	]
-[ "create ordered index \"oidx_timestampzone\" on all_types (\"timestampzone\");"	]
-[ "create ordered index \"oidx_timestamp5zone\" on all_types (\"timestamp5zone\");"	]
-[ "create ordered index \"oidx_time\" on all_types (\"time\");"	]
-[ "create ordered index \"oidx_time5\" on all_types (\"time5\");"	]
-[ "create ordered index \"oidx_timezone\" on all_types (\"timezone\");"	]
-[ "create ordered index \"oidx_time5zone\" on all_types (\"time5zone\");"	]
-[ "create ordered index \"oidx_blob\" on all_types (\"blob\");"	]
-[ "create ordered index \"oidx_blob100\" on all_types (\"blob100\");"	]
-[ "create ordered index \"oidx_clob\" on all_types (\"clob\");"	]
-[ "create ordered index \"oidx_clob100\" on all_types (\"clob100\");"	]
-[ "create ordered index \"oidx_character\" on all_types (\"character\");"	]
-[ "create ordered index \"oidx_varchar100\" on all_types (\"varchar100\");"	]
-[ "create ordered index \"oidx_character10\" on all_types (\"character10\");"	]
-[ "create ordered index \"oidx_inet\" on all_types (\"inet\");"	]
-[ "create ordered index \"oidx_inet9\" on all_types (\"inet9\");"	]
-[ "create ordered index \"oidx_json\" on all_types (\"json\");"	]
-[ "create ordered index \"oidx_json10\" on all_types (\"json10\");"	]
-[ "create ordered index \"oidx_url\" on all_types (\"url\");"	]
-[ "create ordered index \"oidx_url55\" on all_types (\"url55\");"	]
-[ "create ordered index \"oidx_uuid\" on all_types (\"uuid\");"	]
-#create ordered index "oidx_boolean" on all_types ("boolean");
-#create ordered index "oidx_tinyint" on all_types ("tinyint");
-#create ordered index "oidx_smallint" on all_types ("smallint");
-#create ordered index "oidx_int" on all_types ("int");
-#create ordered index "oidx_bigint" on all_types ("bigint");
-#create ordered index "oidx_double" on all_types ("double");
-#create ordered index "oidx_real" on all_types ("real");
-#create ordered index "oidx_decimal" on all_types ("decimal");
-#create ordered index "oidx_decimal9" on all_types ("decimal9");
-#create ordered index "oidx_decimal83" on all_types ("decimal83");
-#create ordered index "oidx_float" on all_types ("float");
-#create ordered index "oidx_float9" on all_types ("float9");
-#create ordered index "oidx_float83" on all_types ("float83");
-#create ordered index "oidx_date" on all_types ("date");
-#create ordered index "oidx_iY" on all_types ("iY");
-#create ordered index "oidx_iYM" on all_types ("iYM");
-#create ordered index "oidx_iM" on all_types ("iM");
-#create ordered index "oidx_id" on all_types ("id");
-#create ordered index "oidx_idh" on all_types ("idh");
-#create ordered index "oidx_idm" on all_types ("idm");
-#create ordered index "oidx_ids" on all_types ("ids");
-#create ordered index "oidx_ih" on all_types ("ih");
-#create ordered index "oidx_ihm" on all_types ("ihm");
-#create ordered index "oidx_ihs" on all_types ("ihs");
-#create ordered index "oidx_im" on all_types ("im");
-#create ordered index "oidx_ims" on all_types ("ims");
-#create ordered index "oidx_is" on all_types ("is");
-#create ordered index "oidx_timestamp" on all_types ("timestamp");
-#create ordered index "oidx_timestamp5" on all_types ("timestamp5");
-#create ordered index "oidx_timestampzone" on all_types ("timestampzone");
-#create ordered index "oidx_timestamp5zone" on all_types ("timestamp5zone");
-#create ordered index "oidx_time" on all_types ("time");
-#create ordered index "oidx_time5" on all_types ("time5");
-#create ordered index "oidx_timezone" on all_types ("timezone");
-#create ordered index "oidx_time5zone" on all_types ("time5zone");
-#create ordered index "oidx_blob" on all_types ("blob");
-#create ordered index "oidx_blob100" on all_types ("blob100");
-#create ordered index "oidx_clob" on all_types ("clob");
-#create ordered index "oidx_clob100" on all_types ("clob100");
-#create ordered index "oidx_character" on all_types ("character");
-#create ordered index "oidx_varchar100" on all_types ("varchar100");
-#create ordered index "oidx_character10" on all_types ("character10");
-#create ordered index "oidx_inet" on all_types ("inet");
-#create ordered index "oidx_inet9" on all_types ("inet9");
-#create ordered index "oidx_json" on all_types ("json");
-#create ordered index "oidx_json10" on all_types ("json10");
-#create ordered index "oidx_url" on all_types ("url");
-#create ordered index "oidx_url55" on all_types ("url55");
-#create ordered index "oidx_uuid" on all_types ("uuid");
+#create imprints index "impidx_boolean" on all_types ("boolean");
+#create imprints index "impidx_tinyint" on all_types ("tinyint");
+#create imprints index "impidx_smallint" on all_types ("smallint");
+#create imprints index "impidx_int" on all_types ("int");
+#create imprints index "impidx_bigint" on all_types ("bigint");
+#create imprints index "impidx_double" on all_types ("double");
+#create imprints index "impidx_real" on all_types ("real");
+#create imprints index "impidx_decimal" on all_types ("decimal");
+#create imprints index "impidx_decimal9" on all_types ("decimal9");
+#create imprints index "impidx_decimal83" on all_types ("decimal83");
+#create imprints index "impidx_float" on all_types ("float");
+#create imprints index "impidx_float9" on all_types ("float9");
+#create imprints index "impidx_float83" on all_types ("float83");
+#create imprints index "impidx_date" on all_types ("date");
+#create imprints index "impidx_iY" on all_types ("iY");
+#create imprints index "impidx_iYM" on all_types ("iYM");
+#create imprints index "impidx_iM" on all_types ("iM");
+#create imprints index "impidx_id" on all_types ("id");
+#create imprints index "impidx_idh" on all_types ("idh");
+#create imprints index "impidx_idm" on all_types ("idm");
+#create imprints index "impidx_ids" on all_types ("ids");
+#create imprints index "impidx_ih" on all_types ("ih");
+#create imprints index "impidx_ihm" on all_types ("ihm");
+#create imprints index "impidx_ihs" on all_types ("ihs");
+#create imprints index "impidx_im" on all_types ("im");
+#create imprints index "impidx_ims" on all_types ("ims");
+#create imprints index "impidx_is" on all_types ("is");
+#create imprints index "impidx_timestamp" on all_types ("timestamp");
+#create imprints index "impidx_timestamp5" on all_types ("timestamp5");
+#create imprints index "impidx_timestampzone" on all_types ("timestampzone");
+#create imprints index "impidx_timestamp5zone" on all_types ("timestamp5zone");
+#create imprints index "impidx_time" on all_types ("time");
+#create imprints index "impidx_time5" on all_types ("time5");
+#create imprints index "impidx_timezone" on all_types ("timezone");
+#create imprints index "impidx_time5zone" on all_types ("time5zone");
 START TRANSACTION;
 CREATE TABLE "sys"."all_types" (
 	"boolean"        BOOLEAN,
@@ -289,55 +179,41 @@ CREATE TABLE "sys"."all_types" (
 	"url55"          URL(55),
 	"uuid"           UUID
 );
-CREATE ORDERED INDEX "oidx_bigint" ON "sys"."all_types" ("bigint");
-CREATE ORDERED INDEX "oidx_blob" ON "sys"."all_types" ("blob");
-CREATE ORDERED INDEX "oidx_blob100" ON "sys"."all_types" ("blob100");
-CREATE ORDERED INDEX "oidx_boolean" ON "sys"."all_types" ("boolean");
-CREATE ORDERED INDEX "oidx_character" ON "sys"."all_types" ("character");
-CREATE ORDERED INDEX "oidx_character10" ON "sys"."all_types" ("character10");
-CREATE ORDERED INDEX "oidx_clob" ON "sys"."all_types" ("clob");
-CREATE ORDERED INDEX "oidx_clob100" ON "sys"."all_types" ("clob100");
-CREATE ORDERED INDEX "oidx_date" ON "sys"."all_types" ("date");
-CREATE ORDERED INDEX "oidx_decimal" ON "sys"."all_types" ("decimal");
-CREATE ORDERED INDEX "oidx_decimal83" ON "sys"."all_types" ("decimal83");
-CREATE ORDERED INDEX "oidx_decimal9" ON "sys"."all_types" ("decimal9");
-CREATE ORDERED INDEX "oidx_double" ON "sys"."all_types" ("double");
-CREATE ORDERED INDEX "oidx_float" ON "sys"."all_types" ("float");
-CREATE ORDERED INDEX "oidx_float83" ON "sys"."all_types" ("float83");
-CREATE ORDERED INDEX "oidx_float9" ON "sys"."all_types" ("float9");
-CREATE ORDERED INDEX "oidx_iM" ON "sys"."all_types" ("iM");
-CREATE ORDERED INDEX "oidx_iY" ON "sys"."all_types" ("iY");
-CREATE ORDERED INDEX "oidx_iYM" ON "sys"."all_types" ("iYM");
-CREATE ORDERED INDEX "oidx_id" ON "sys"."all_types" ("id");
-CREATE ORDERED INDEX "oidx_idh" ON "sys"."all_types" ("idh");
-CREATE ORDERED INDEX "oidx_idm" ON "sys"."all_types" ("idm");
-CREATE ORDERED INDEX "oidx_ids" ON "sys"."all_types" ("ids");
-CREATE ORDERED INDEX "oidx_ih" ON "sys"."all_types" ("ih");
-CREATE ORDERED INDEX "oidx_ihm" ON "sys"."all_types" ("ihm");
-CREATE ORDERED INDEX "oidx_ihs" ON "sys"."all_types" ("ihs");
-CREATE ORDERED INDEX "oidx_im" ON "sys"."all_types" ("im");
-CREATE ORDERED INDEX "oidx_ims" ON "sys"."all_types" ("ims");
-CREATE ORDERED INDEX "oidx_inet" ON "sys"."all_types" ("inet");
-CREATE ORDERED INDEX "oidx_inet9" ON "sys"."all_types" ("inet9");
-CREATE ORDERED INDEX "oidx_int" ON "sys"."all_types" ("int");
-CREATE ORDERED INDEX "oidx_is" ON "sys"."all_types" ("is");
-CREATE ORDERED INDEX "oidx_json" ON "sys"."all_types" ("json");
-CREATE ORDERED INDEX "oidx_json10" ON "sys"."all_types" ("json10");
-CREATE ORDERED INDEX "oidx_real" ON "sys"."all_types" ("real");
-CREATE ORDERED INDEX "oidx_smallint" ON "sys"."all_types" ("smallint");
-CREATE ORDERED INDEX "oidx_time" ON "sys"."all_types" ("time");
-CREATE ORDERED INDEX "oidx_time5" ON "sys"."all_types" ("time5");
-CREATE ORDERED INDEX "oidx_time5zone" ON "sys"."all_types" ("time5zone");
-CREATE ORDERED INDEX "oidx_timestamp" ON "sys"."all_types" ("timestamp");
-CREATE ORDERED INDEX "oidx_timestamp5" ON "sys"."all_types" ("timestamp5");
-CREATE ORDERED INDEX "oidx_timestamp5zone" ON "sys"."all_types" ("timestamp5zone");
-CREATE ORDERED INDEX "oidx_timestampzone" ON "sys"."all_types" ("timestampzone");
-CREATE ORDERED INDEX "oidx_timezone" ON "sys"."all_types" ("timezone");
-CREATE ORDERED INDEX "oidx_tinyint" ON "sys"."all_types" ("tinyint");
-CREATE ORDERED INDEX "oidx_url" ON "sys"."all_types" ("url");
-CREATE ORDERED INDEX "oidx_url55" ON "sys"."all_types" ("url55");
-CREATE ORDERED INDEX "oidx_uuid" ON "sys"."all_types" ("uuid");
-CREATE ORDERED INDEX "oidx_varchar100" ON "sys"."all_types" ("varchar100");
+CREATE IMPRINTS INDEX "impidx_bigint" ON "sys"."all_types" ("bigint");
+CREATE IMPRINTS INDEX "impidx_boolean" ON "sys"."all_types" ("boolean");
+CREATE IMPRINTS INDEX "impidx_date" ON "sys"."all_types" ("date");
+CREATE IMPRINTS INDEX "impidx_decimal" ON "sys"."all_types" ("decimal");
+CREATE IMPRINTS INDEX "impidx_decimal83" ON "sys"."all_types" ("decimal83");
+CREATE IMPRINTS INDEX "impidx_decimal9" ON "sys"."all_types" ("decimal9");
+CREATE IMPRINTS INDEX "impidx_double" ON "sys"."all_types" ("double");
+CREATE IMPRINTS INDEX "impidx_float" ON "sys"."all_types" ("float");
+CREATE IMPRINTS INDEX "impidx_float83" ON "sys"."all_types" ("float83");
+CREATE IMPRINTS INDEX "impidx_float9" ON "sys"."all_types" ("float9");
+CREATE IMPRINTS INDEX "impidx_iM" ON "sys"."all_types" ("iM");
+CREATE IMPRINTS INDEX "impidx_iY" ON "sys"."all_types" ("iY");
+CREATE IMPRINTS INDEX "impidx_iYM" ON "sys"."all_types" ("iYM");
+CREATE IMPRINTS INDEX "impidx_id" ON "sys"."all_types" ("id");
+CREATE IMPRINTS INDEX "impidx_idh" ON "sys"."all_types" ("idh");
+CREATE IMPRINTS INDEX "impidx_idm" ON "sys"."all_types" ("idm");
+CREATE IMPRINTS INDEX "impidx_ids" ON "sys"."all_types" ("ids");
+CREATE IMPRINTS INDEX "impidx_ih" ON "sys"."all_types" ("ih");
+CREATE IMPRINTS INDEX "impidx_ihm" ON "sys"."all_types" ("ihm");
+CREATE IMPRINTS INDEX "impidx_ihs" ON "sys"."all_types" ("ihs");
+CREATE IMPRINTS INDEX "impidx_im" ON "sys"."all_types" ("im");
+CREATE IMPRINTS INDEX "impidx_ims" ON "sys"."all_types" ("ims");
+CREATE IMPRINTS INDEX "impidx_int" ON "sys"."all_types" ("int");
+CREATE IMPRINTS INDEX "impidx_is" ON "sys"."all_types" ("is");
+CREATE IMPRINTS INDEX "impidx_real" ON "sys"."all_types" ("real");
+CREATE IMPRINTS INDEX "impidx_smallint" ON "sys"."all_types" ("smallint");
+CREATE IMPRINTS INDEX "impidx_time" ON "sys"."all_types" ("time");
+CREATE IMPRINTS INDEX "impidx_time5" ON "sys"."all_types" ("time5");
+CREATE IMPRINTS INDEX "impidx_time5zone" ON "sys"."all_types" ("time5zone");
+CREATE IMPRINTS INDEX "impidx_timestamp" ON "sys"."all_types" ("timestamp");
+CREATE IMPRINTS INDEX "impidx_timestamp5" ON "sys"."all_types" ("timestamp5");
+CREATE IMPRINTS INDEX "impidx_timestamp5zone" ON "sys"."all_types" ("timestamp5zone");
+CREATE IMPRINTS INDEX "impidx_timestampzone" ON "sys"."all_types" ("timestampzone");
+CREATE IMPRINTS INDEX "impidx_timezone" ON "sys"."all_types" ("timezone");
+CREATE IMPRINTS INDEX "impidx_tinyint" ON "sys"."all_types" ("tinyint");
 COPY 4 RECORDS INTO "sys"."all_types" FROM stdin USING DELIMITERS '\t','\n','"';
 true	10	10000	1000000	10000000000	1e+30	1e+20	1.000	123456789	12345.678	3.1415	3.1415	3.1415	2009-04-15	24	18	3	1728000.000	108000.000	120000.000	100000.000	36000.000	6000.000	2000.000	600.000	100.000	10.000	"1995-07-15 07:30:00.000000"	"1995-07-15 07:30:00.00000"	"1995-07-15 08:30:00.000000+01:00"	"1995-07-15 08:30:00.00000+01:00"	07:30:00	07:30:00.00000	08:30:00+01:00	08:30:00.00000+01:00	123456	123456	"123456"	"123456"	"x"	"varchar"	"0123456789"	127.0.0.0	127.127.127.255	{"a": 123}	{"b": 456}	www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes	www.monetdb.org/Documentation/Manuals/SQLreference/URLtype	ae106ad4-81fd-4f1a-85e8-5efface60da4
 false	-10	-10000	-1000000	-10000000000	-1e+30	-1e+20	-1.000	-123456789	-12345.678	-3.1415	-3.1415	-3.1415	2005-04-15	-24	-18	-3	-1728000.000	-108000.000	-120000.000	-100000.000	-36000.000	-6000.000	-2000.000	-600.000	-100.000	-10.000	"1988-07-15 07:30:00.000000"	"1988-07-15 07:30:00.00000"	"1988-07-15 08:30:00.000000+01:00"	"1988-07-15 08:30:00.00000+01:00"	06:30:00	06:30:00.00000	07:30:00+01:00	07:30:00.00000+01:00	01234567	01234567	"0123456"	"0123456"	"A"	"Avarchar"	"A012345678"	120.0.0.0	120.120.120.129	{"A": -123}	{"B": -456}	https://www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes	https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype	76236890-f4e2-4d4f-a02b-ec7a02c3cb50
@@ -348,110 +224,42 @@ COMMIT;
 % sys.idxs,	sys.idxs # table_name
 % type,	name # name
 % int,	varchar # type
-% 1,	19 # length
-[ 5,	"oidx_bigint"	]
-[ 5,	"oidx_blob"	]
-[ 5,	"oidx_blob100"	]
-[ 5,	"oidx_boolean"	]
-[ 5,	"oidx_character"	]
-[ 5,	"oidx_character10"	]
-[ 5,	"oidx_clob"	]
-[ 5,	"oidx_clob100"	]
-[ 5,	"oidx_date"	]
-[ 5,	"oidx_decimal"	]
-[ 5,	"oidx_decimal83"	]
-[ 5,	"oidx_decimal9"	]
-[ 5,	"oidx_double"	]
-[ 5,	"oidx_float"	]
-[ 5,	"oidx_float83"	]
-[ 5,	"oidx_float9"	]
-[ 5,	"oidx_iM"	]
-[ 5,	"oidx_iY"	]
-[ 5,	"oidx_iYM"	]
-[ 5,	"oidx_id"	]
-[ 5,	"oidx_idh"	]
-[ 5,	"oidx_idm"	]
-[ 5,	"oidx_ids"	]
-[ 5,	"oidx_ih"	]
-[ 5,	"oidx_ihm"	]
-[ 5,	"oidx_ihs"	]
-[ 5,	"oidx_im"	]
-[ 5,	"oidx_ims"	]
-[ 5,	"oidx_inet"	]
-[ 5,	"oidx_inet9"	]
-[ 5,	"oidx_int"	]
-[ 5,	"oidx_is"	]
-[ 5,	"oidx_json"	]
-[ 5,	"oidx_json10"	]
-[ 5,	"oidx_real"	]
-[ 5,	"oidx_smallint"	]
-[ 5,	"oidx_time"	]
-[ 5,	"oidx_time5"	]
-[ 5,	"oidx_time5zone"	]
-[ 5,	"oidx_timestamp"	]
-[ 5,	"oidx_timestamp5"	]
-[ 5,	"oidx_timestamp5zone"	]
-[ 5,	"oidx_timestampzone"	]
-[ 5,	"oidx_timezone"	]
-[ 5,	"oidx_tinyint"	]
-[ 5,	"oidx_url"	]
-[ 5,	"oidx_url55"	]
-[ 5,	"oidx_uuid"	]
-[ 5,	"oidx_varchar100"	]
-#select 'select "'||name||'" from all_types order by "'||name||'" ASC;' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
-% .L4 # table_name
-% stmt # name
-% varchar # type
-% 69 # length
-[ "select \"boolean\" from all_types order by \"boolean\" ASC;"	]
-[ "select \"tinyint\" from all_types order by \"tinyint\" ASC;"	]
-[ "select \"smallint\" from all_types order by \"smallint\" ASC;"	]
-[ "select \"int\" from all_types order by \"int\" ASC;"	]
-[ "select \"bigint\" from all_types order by \"bigint\" ASC;"	]
-[ "select \"double\" from all_types order by \"double\" ASC;"	]
-[ "select \"real\" from all_types order by \"real\" ASC;"	]
-[ "select \"decimal\" from all_types order by \"decimal\" ASC;"	]
-[ "select \"decimal9\" from all_types order by \"decimal9\" ASC;"	]
-[ "select \"decimal83\" from all_types order by \"decimal83\" ASC;"	]
-[ "select \"float\" from all_types order by \"float\" ASC;"	]
-[ "select \"float9\" from all_types order by \"float9\" ASC;"	]
-[ "select \"float83\" from all_types order by \"float83\" ASC;"	]
-[ "select \"date\" from all_types order by \"date\" ASC;"	]
-[ "select \"iY\" from all_types order by \"iY\" ASC;"	]
-[ "select \"iYM\" from all_types order by \"iYM\" ASC;"	]
-[ "select \"iM\" from all_types order by \"iM\" ASC;"	]
-[ "select \"id\" from all_types order by \"id\" ASC;"	]
-[ "select \"idh\" from all_types order by \"idh\" ASC;"	]
-[ "select \"idm\" from all_types order by \"idm\" ASC;"	]
-[ "select \"ids\" from all_types order by \"ids\" ASC;"	]
-[ "select \"ih\" from all_types order by \"ih\" ASC;"	]
-[ "select \"ihm\" from all_types order by \"ihm\" ASC;"	]
-[ "select \"ihs\" from all_types order by \"ihs\" ASC;"	]
-[ "select \"im\" from all_types order by \"im\" ASC;"	]
-[ "select \"ims\" from all_types order by \"ims\" ASC;"	]
-[ "select \"is\" from all_types order by \"is\" ASC;"	]
-[ "select \"timestamp\" from all_types order by \"timestamp\" ASC;"	]
-[ "select \"timestamp5\" from all_types order by \"timestamp5\" ASC;"	]
-[ "select \"timestampzone\" from all_types order by \"timestampzone\" ASC;"	]
-[ "select \"timestamp5zone\" from all_types order by \"timestamp5zone\" ASC;"	]
-[ "select \"time\" from all_types order by \"time\" ASC;"	]
-[ "select \"time5\" from all_types order by \"time5\" ASC;"	]
-[ "select \"timezone\" from all_types order by \"timezone\" ASC;"	]
-[ "select \"time5zone\" from all_types order by \"time5zone\" ASC;"	]
-[ "select \"blob\" from all_types order by \"blob\" ASC;"	]
-[ "select \"blob100\" from all_types order by \"blob100\" ASC;"	]
-[ "select \"clob\" from all_types order by \"clob\" ASC;"	]
-[ "select \"clob100\" from all_types order by \"clob100\" ASC;"	]
-[ "select \"character\" from all_types order by \"character\" ASC;"	]
-[ "select \"varchar100\" from all_types order by \"varchar100\" ASC;"	]
-[ "select \"character10\" from all_types order by \"character10\" ASC;"	]
-[ "select \"inet\" from all_types order by \"inet\" ASC;"	]
-[ "select \"inet9\" from all_types order by \"inet9\" ASC;"	]
-[ "select \"json\" from all_types order by \"json\" ASC;"	]
-[ "select \"json10\" from all_types order by \"json10\" ASC;"	]
-[ "select \"url\" from all_types order by \"url\" ASC;"	]
-[ "select \"url55\" from all_types order by \"url55\" ASC;"	]
-[ "select \"uuid\" from all_types order by \"uuid\" ASC;"	]
+% 1,	21 # length
+[ 4,	"impidx_bigint"	]
+[ 4,	"impidx_boolean"	]
+[ 4,	"impidx_date"	]
+[ 4,	"impidx_decimal"	]
+[ 4,	"impidx_decimal83"	]
+[ 4,	"impidx_decimal9"	]
+[ 4,	"impidx_double"	]
+[ 4,	"impidx_float"	]
+[ 4,	"impidx_float83"	]
+[ 4,	"impidx_float9"	]
+[ 4,	"impidx_iM"	]
+[ 4,	"impidx_iY"	]
+[ 4,	"impidx_iYM"	]
+[ 4,	"impidx_id"	]
+[ 4,	"impidx_idh"	]
+[ 4,	"impidx_idm"	]
+[ 4,	"impidx_ids"	]
+[ 4,	"impidx_ih"	]
+[ 4,	"impidx_ihm"	]
+[ 4,	"impidx_ihs"	]
+[ 4,	"impidx_im"	]
+[ 4,	"impidx_ims"	]
+[ 4,	"impidx_int"	]
+[ 4,	"impidx_is"	]
+[ 4,	"impidx_real"	]
+[ 4,	"impidx_smallint"	]
+[ 4,	"impidx_time"	]
+[ 4,	"impidx_time5"	]
+[ 4,	"impidx_time5zone"	]
+[ 4,	"impidx_timestamp"	]
+[ 4,	"impidx_timestamp5"	]
+[ 4,	"impidx_timestamp5zone"	]
+[ 4,	"impidx_timestampzone"	]
+[ 4,	"impidx_timezone"	]
+[ 4,	"impidx_tinyint"	]
 #select "boolean" from all_types order by "boolean" ASC;
 % sys.all_types # table_name
 % boolean # name
@@ -893,60 +701,6 @@ COMMIT;
 [ 76236890-f4e2-4d4f-a02b-ec7a02c3cb50	]
 [ ae106ad4-81fd-4f1a-85e8-5efface60da4	]
 [ ae106ad4-81fd-4f1a-85e8-5efface60da4	]
-#select 'select "'||name||'" from all_types order by "'||name||'" DESC;' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
-% .L4 # table_name
-% stmt # name
-% varchar # type
-% 70 # length
-[ "select \"boolean\" from all_types order by \"boolean\" DESC;"	]
-[ "select \"tinyint\" from all_types order by \"tinyint\" DESC;"	]
-[ "select \"smallint\" from all_types order by \"smallint\" DESC;"	]
-[ "select \"int\" from all_types order by \"int\" DESC;"	]
-[ "select \"bigint\" from all_types order by \"bigint\" DESC;"	]
-[ "select \"double\" from all_types order by \"double\" DESC;"	]
-[ "select \"real\" from all_types order by \"real\" DESC;"	]
-[ "select \"decimal\" from all_types order by \"decimal\" DESC;"	]
-[ "select \"decimal9\" from all_types order by \"decimal9\" DESC;"	]
-[ "select \"decimal83\" from all_types order by \"decimal83\" DESC;"	]
-[ "select \"float\" from all_types order by \"float\" DESC;"	]
-[ "select \"float9\" from all_types order by \"float9\" DESC;"	]
-[ "select \"float83\" from all_types order by \"float83\" DESC;"	]
-[ "select \"date\" from all_types order by \"date\" DESC;"	]
-[ "select \"iY\" from all_types order by \"iY\" DESC;"	]
-[ "select \"iYM\" from all_types order by \"iYM\" DESC;"	]
-[ "select \"iM\" from all_types order by \"iM\" DESC;"	]
-[ "select \"id\" from all_types order by \"id\" DESC;"	]
-[ "select \"idh\" from all_types order by \"idh\" DESC;"	]
-[ "select \"idm\" from all_types order by \"idm\" DESC;"	]
-[ "select \"ids\" from all_types order by \"ids\" DESC;"	]
-[ "select \"ih\" from all_types order by \"ih\" DESC;"	]
-[ "select \"ihm\" from all_types order by \"ihm\" DESC;"	]
-[ "select \"ihs\" from all_types order by \"ihs\" DESC;"	]
-[ "select \"im\" from all_types order by \"im\" DESC;"	]
-[ "select \"ims\" from all_types order by \"ims\" DESC;"	]
-[ "select \"is\" from all_types order by \"is\" DESC;"	]
-[ "select \"timestamp\" from all_types order by \"timestamp\" DESC;"	]
-[ "select \"timestamp5\" from all_types order by \"timestamp5\" DESC;"	]
-[ "select \"timestampzone\" from all_types order by \"timestampzone\" DESC;"	]
-[ "select \"timestamp5zone\" from all_types order by \"timestamp5zone\" DESC;"	]
-[ "select \"time\" from all_types order by \"time\" DESC;"	]
-[ "select \"time5\" from all_types order by \"time5\" DESC;"	]
-[ "select \"timezone\" from all_types order by \"timezone\" DESC;"	]
-[ "select \"time5zone\" from all_types order by \"time5zone\" DESC;"	]
-[ "select \"blob\" from all_types order by \"blob\" DESC;"	]
-[ "select \"blob100\" from all_types order by \"blob100\" DESC;"	]
-[ "select \"clob\" from all_types order by \"clob\" DESC;"	]
-[ "select \"clob100\" from all_types order by \"clob100\" DESC;"	]
-[ "select \"character\" from all_types order by \"character\" DESC;"	]
-[ "select \"varchar100\" from all_types order by \"varchar100\" DESC;"	]
-[ "select \"character10\" from all_types order by \"character10\" DESC;"	]
-[ "select \"inet\" from all_types order by \"inet\" DESC;"	]
-[ "select \"inet9\" from all_types order by \"inet9\" DESC;"	]
-[ "select \"json\" from all_types order by \"json\" DESC;"	]
-[ "select \"json10\" from all_types order by \"json10\" DESC;"	]
-[ "select \"url\" from all_types order by \"url\" DESC;"	]
-[ "select \"url55\" from all_types order by \"url55\" DESC;"	]
-[ "select \"uuid\" from all_types order by \"uuid\" DESC;"	]
 #select "boolean" from all_types order by "boolean" DESC;
 % sys.all_types # table_name
 % boolean # name
@@ -1407,159 +1161,77 @@ COMMIT;
 % sys.idxs,	sys.idxs # table_name
 % type,	name # name
 % int,	varchar # type
-% 1,	19 # length
-[ 5,	"oidx_bigint"	]
-[ 5,	"oidx_blob"	]
-[ 5,	"oidx_blob100"	]
-[ 5,	"oidx_boolean"	]
-[ 5,	"oidx_character"	]
-[ 5,	"oidx_character10"	]
-[ 5,	"oidx_clob"	]
-[ 5,	"oidx_clob100"	]
-[ 5,	"oidx_date"	]
-[ 5,	"oidx_decimal"	]
-[ 5,	"oidx_decimal83"	]
-[ 5,	"oidx_decimal9"	]
-[ 5,	"oidx_double"	]
-[ 5,	"oidx_float"	]
-[ 5,	"oidx_float83"	]
-[ 5,	"oidx_float9"	]
-[ 5,	"oidx_iM"	]
-[ 5,	"oidx_iY"	]
-[ 5,	"oidx_iYM"	]
-[ 5,	"oidx_id"	]
-[ 5,	"oidx_idh"	]
-[ 5,	"oidx_idm"	]
-[ 5,	"oidx_ids"	]
-[ 5,	"oidx_ih"	]
-[ 5,	"oidx_ihm"	]
-[ 5,	"oidx_ihs"	]
-[ 5,	"oidx_im"	]
-[ 5,	"oidx_ims"	]
-[ 5,	"oidx_inet"	]
-[ 5,	"oidx_inet9"	]
-[ 5,	"oidx_int"	]
-[ 5,	"oidx_is"	]
-[ 5,	"oidx_json"	]
-[ 5,	"oidx_json10"	]
-[ 5,	"oidx_real"	]
-[ 5,	"oidx_smallint"	]
-[ 5,	"oidx_time"	]
-[ 5,	"oidx_time5"	]
-[ 5,	"oidx_time5zone"	]
-[ 5,	"oidx_timestamp"	]
-[ 5,	"oidx_timestamp5"	]
-[ 5,	"oidx_timestamp5zone"	]
-[ 5,	"oidx_timestampzone"	]
-[ 5,	"oidx_timezone"	]
-[ 5,	"oidx_tinyint"	]
-[ 5,	"oidx_url"	]
-[ 5,	"oidx_url55"	]
-[ 5,	"oidx_uuid"	]
-[ 5,	"oidx_varchar100"	]
-#select 'drop index "oidx_'||name||'";' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
-% .L4 # table_name
-% stmt # name
-% varchar # type
-% 33 # length
-[ "drop index \"oidx_boolean\";"	]
-[ "drop index \"oidx_tinyint\";"	]
-[ "drop index \"oidx_smallint\";"	]
-[ "drop index \"oidx_int\";"	]
-[ "drop index \"oidx_bigint\";"	]
-[ "drop index \"oidx_double\";"	]
-[ "drop index \"oidx_real\";"	]
-[ "drop index \"oidx_decimal\";"	]
-[ "drop index \"oidx_decimal9\";"	]
-[ "drop index \"oidx_decimal83\";"	]
-[ "drop index \"oidx_float\";"	]
-[ "drop index \"oidx_float9\";"	]
-[ "drop index \"oidx_float83\";"	]
-[ "drop index \"oidx_date\";"	]
-[ "drop index \"oidx_iY\";"	]
-[ "drop index \"oidx_iYM\";"	]
-[ "drop index \"oidx_iM\";"	]
-[ "drop index \"oidx_id\";"	]
-[ "drop index \"oidx_idh\";"	]
-[ "drop index \"oidx_idm\";"	]
-[ "drop index \"oidx_ids\";"	]
-[ "drop index \"oidx_ih\";"	]
-[ "drop index \"oidx_ihm\";"	]
-[ "drop index \"oidx_ihs\";"	]
-[ "drop index \"oidx_im\";"	]
-[ "drop index \"oidx_ims\";"	]
-[ "drop index \"oidx_is\";"	]
-[ "drop index \"oidx_timestamp\";"	]
-[ "drop index \"oidx_timestamp5\";"	]
-[ "drop index \"oidx_timestampzone\";"	]
-[ "drop index \"oidx_timestamp5zone\";"	]
-[ "drop index \"oidx_time\";"	]
-[ "drop index \"oidx_time5\";"	]
-[ "drop index \"oidx_timezone\";"	]
-[ "drop index \"oidx_time5zone\";"	]
-[ "drop index \"oidx_blob\";"	]
-[ "drop index \"oidx_blob100\";"	]
-[ "drop index \"oidx_clob\";"	]
-[ "drop index \"oidx_clob100\";"	]
-[ "drop index \"oidx_character\";"	]
-[ "drop index \"oidx_varchar100\";"	]
-[ "drop index \"oidx_character10\";"	]
-[ "drop index \"oidx_inet\";"	]
-[ "drop index \"oidx_inet9\";"	]
-[ "drop index \"oidx_json\";"	]
-[ "drop index \"oidx_json10\";"	]
-[ "drop index \"oidx_url\";"	]
-[ "drop index \"oidx_url55\";"	]
-[ "drop index \"oidx_uuid\";"	]
-#drop index "oidx_boolean";
-#drop index "oidx_tinyint";
-#drop index "oidx_smallint";
-#drop index "oidx_int";
-#drop index "oidx_bigint";
-#drop index "oidx_double";
-#drop index "oidx_real";
-#drop index "oidx_decimal";
-#drop index "oidx_decimal9";
-#drop index "oidx_decimal83";
-#drop index "oidx_float";
-#drop index "oidx_float9";
-#drop index "oidx_float83";
-#drop index "oidx_date";
-#drop index "oidx_iY";
-#drop index "oidx_iYM";
-#drop index "oidx_iM";
-#drop index "oidx_id";
-#drop index "oidx_idh";
-#drop index "oidx_idm";
-#drop index "oidx_ids";
-#drop index "oidx_ih";
-#drop index "oidx_ihm";
-#drop index "oidx_ihs";
-#drop index "oidx_im";
-#drop index "oidx_ims";
-#drop index "oidx_is";
-#drop index "oidx_timestamp";
-#drop index "oidx_timestamp5";
-#drop index "oidx_timestampzone";
-#drop index "oidx_timestamp5zone";
-#drop index "oidx_time";
-#drop index "oidx_time5";
-#drop index "oidx_timezone";
-#drop index "oidx_time5zone";
-#drop index "oidx_blob";
-#drop index "oidx_blob100";
-#drop index "oidx_clob";
-#drop index "oidx_clob100";
-#drop index "oidx_character";
-#drop index "oidx_varchar100";
-#drop index "oidx_character10";
-#drop index "oidx_inet";
-#drop index "oidx_inet9";
-#drop index "oidx_json";
-#drop index "oidx_json10";
-#drop index "oidx_url";
-#drop index "oidx_url55";
-#drop index "oidx_uuid";
+% 1,	21 # length
+[ 4,	"impidx_bigint"	]
+[ 4,	"impidx_boolean"	]
+[ 4,	"impidx_date"	]
+[ 4,	"impidx_decimal"	]
+[ 4,	"impidx_decimal83"	]
+[ 4,	"impidx_decimal9"	]
+[ 4,	"impidx_double"	]
+[ 4,	"impidx_float"	]
+[ 4,	"impidx_float83"	]
+[ 4,	"impidx_float9"	]
+[ 4,	"impidx_iM"	]
+[ 4,	"impidx_iY"	]
+[ 4,	"impidx_iYM"	]
+[ 4,	"impidx_id"	]
+[ 4,	"impidx_idh"	]
+[ 4,	"impidx_idm"	]
+[ 4,	"impidx_ids"	]
+[ 4,	"impidx_ih"	]
+[ 4,	"impidx_ihm"	]
+[ 4,	"impidx_ihs"	]
+[ 4,	"impidx_im"	]
+[ 4,	"impidx_ims"	]
+[ 4,	"impidx_int"	]
+[ 4,	"impidx_is"	]
+[ 4,	"impidx_real"	]
+[ 4,	"impidx_smallint"	]
+[ 4,	"impidx_time"	]
+[ 4,	"impidx_time5"	]
+[ 4,	"impidx_time5zone"	]
+[ 4,	"impidx_timestamp"	]
+[ 4,	"impidx_timestamp5"	]
+[ 4,	"impidx_timestamp5zone"	]
+[ 4,	"impidx_timestampzone"	]
+[ 4,	"impidx_timezone"	]
+[ 4,	"impidx_tinyint"	]
+#drop index "impidx_boolean";
+#drop index "impidx_tinyint";
+#drop index "impidx_smallint";
+#drop index "impidx_int";
+#drop index "impidx_bigint";
+#drop index "impidx_double";
+#drop index "impidx_real";
+#drop index "impidx_decimal";
+#drop index "impidx_decimal9";
+#drop index "impidx_decimal83";
+#drop index "impidx_float";
+#drop index "impidx_float9";
+#drop index "impidx_float83";
+#drop index "impidx_date";
+#drop index "impidx_iY";
+#drop index "impidx_iYM";
+#drop index "impidx_iM";
+#drop index "impidx_id";
+#drop index "impidx_idh";
+#drop index "impidx_idm";
+#drop index "impidx_ids";
+#drop index "impidx_ih";
+#drop index "impidx_ihm";
+#drop index "impidx_ihs";
+#drop index "impidx_im";
+#drop index "impidx_ims";
+#drop index "impidx_is";
+#drop index "impidx_timestamp";
+#drop index "impidx_timestamp5";
+#drop index "impidx_timestampzone";
+#drop index "impidx_timestamp5zone";
+#drop index "impidx_time";
+#drop index "impidx_time5";
+#drop index "impidx_timezone";
+#drop index "impidx_time5zone";
 START TRANSACTION;
 CREATE TABLE "sys"."all_types" (
 	"boolean"        BOOLEAN,
@@ -1630,7 +1302,7 @@ COMMIT;
 % int,	varchar # type
 % 1,	0 # length
 
-# 15:05:55 >  
-# 15:05:55 >  "Done."
-# 15:05:55 >  
+# 16:58:46 >  
+# 16:58:46 >  "Done."
+# 16:58:46 >  
 

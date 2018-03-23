@@ -1,7 +1,0 @@
-# ChangeLog file for buildtools
-# This file is updated with Maddlog
-
-* Mon Feb 12 2018 Sjoerd Mullender <sjoerd@acm.org>
-- Added the .pdb files needed for debug symbols to the Windows installer
-  for MonetDB/SQL.
-

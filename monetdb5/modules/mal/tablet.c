@@ -71,7 +71,7 @@ void_bat_create(int adt, BUN nr)
 	b->trevsorted = FALSE;
 	b->tnosorted = 0;
 	b->tnorevsorted = 0;
-	b->tdense = FALSE;
+	b->tseqbase = oid_nil;
 	b->tkey = FALSE;
 	b->tnokey[0] = 0;
 	b->tnokey[1] = 0;
@@ -206,12 +206,11 @@ TABLETcollect_parts(BAT **bats, Tablet *as, BUN offset)
 
 		b->tkey = (offset > 0) ? FALSE : bv->tkey;
 		b->tnonil &= bv->tnonil;
-		b->tdense &= bv->tdense;
 		if (b->tsorted != bv->tsorted)
 			b->tsorted = 0;
 		if (b->trevsorted != bv->trevsorted)
 			b->trevsorted = 0;
-		if (b->tdense)
+		if (BATtdense(b))
 			b->tkey = TRUE;
 		b->batDirty = TRUE;
 

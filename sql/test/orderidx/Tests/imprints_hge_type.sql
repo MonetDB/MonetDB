@@ -26,14 +26,14 @@ insert into hge_types select -"hugeint", -"decimal", -"decimal38", -"decimal37_2
 select * from hge_types order by 1,2,3,4,5,6,7;
 
 
--- select 'create ordered index "hge_oidx_'||name||'" on hge_types ("'||name||'");' as stmt from sys._columns where table_id in (select id from sys._tables where name = 'hge_types') order by number;
-create ordered index "hge_oidx_hugeint" on hge_types ("hugeint");
-create ordered index "hge_oidx_decimal" on hge_types ("decimal");
-create ordered index "hge_oidx_decimal38" on hge_types ("decimal38");
-create ordered index "hge_oidx_decimal37_22" on hge_types ("decimal37_22");
-create ordered index "hge_oidx_numeric" on hge_types ("numeric");
-create ordered index "hge_oidx_numeric38" on hge_types ("numeric38");
-create ordered index "hge_oidx_numeric37_9" on hge_types ("numeric37_9");
+-- select 'create imprints index "hge_impidx_'||name||'" on hge_types ("'||name||'");' as stmt from sys._columns where table_id in (select id from sys._tables where name = 'hge_types') order by number;
+create imprints index "hge_impidx_hugeint" on hge_types ("hugeint");
+create imprints index "hge_impidx_decimal" on hge_types ("decimal");
+create imprints index "hge_impidx_decimal38" on hge_types ("decimal38");
+create imprints index "hge_impidx_decimal37_22" on hge_types ("decimal37_22");
+create imprints index "hge_impidx_numeric" on hge_types ("numeric");
+create imprints index "hge_impidx_numeric38" on hge_types ("numeric38");
+create imprints index "hge_impidx_numeric37_9" on hge_types ("numeric37_9");
 
 -- dump the table including all indexes defined on it
 \D hge_types
@@ -73,16 +73,15 @@ select * from hge_types
     or "numeric37_9"  >= -1234567890123456789012345.123456790
  order by 7 desc, 6 desc, 5 desc, 4 desc, 3 desc, 2 desc, 1 desc;
 
-
 select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'hge_types') order by name;
 
-drop index "hge_oidx_hugeint";
-drop index "hge_oidx_decimal";
-drop index "hge_oidx_decimal38";
-drop index "hge_oidx_decimal37_22";
-drop index "hge_oidx_numeric";
-drop index "hge_oidx_numeric38";
-drop index "hge_oidx_numeric37_9";
+drop index "hge_impidx_hugeint";
+drop index "hge_impidx_decimal";
+drop index "hge_impidx_decimal38";
+drop index "hge_impidx_decimal37_22";
+drop index "hge_impidx_numeric";
+drop index "hge_impidx_numeric38";
+drop index "hge_impidx_numeric37_9";
 
 -- dump the table again, now it should not list the indexes anymore
 \D hge_types

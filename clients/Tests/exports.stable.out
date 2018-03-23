@@ -141,7 +141,7 @@ void BAThseqbase(BAT *b, oid o);
 gdk_return BATimprints(BAT *b);
 BAT *BATintersectcand(BAT *a, BAT *b);
 gdk_return BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate) __attribute__((__warn_unused_result__));
-gdk_return BATkey(BAT *b, int onoff);
+gdk_return BATkey(BAT *b, bool onoff);
 int BATkeyed(BAT *b);
 gdk_return BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate) __attribute__((__warn_unused_result__));
 void *BATmax(BAT *b, void *aggr);

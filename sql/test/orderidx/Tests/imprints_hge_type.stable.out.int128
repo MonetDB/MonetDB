@@ -1,70 +1,28 @@
-stdout of test 'oidx_hge_type` in directory 'sql/test/orderidx` itself:
+stdout of test 'imprints_hge_type` in directory 'sql/test/orderidx` itself:
 
 
-# 16:56:56 >  
-# 16:56:56 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36531" "--set" "mapi_usock=/var/tmp/mtest-28625/.s.monetdb.36531" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_orderidx" "--set" "embedded_r=yes" "--set" "embedded_py=true"
-# 16:56:56 >  
+# 17:02:31 >  
+# 17:02:31 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37467" "--set" "mapi_usock=/var/tmp/mtest-19069/.s.monetdb.37467" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_orderidx"
+# 17:02:31 >  
 
-# MonetDB 5 server v11.25.12
+# MonetDB 5 server v11.29.0
 # This is an unreleased version
-# Serving database 'mTests_sql_test_orderidx', using 8 threads
+# Serving database 'mTests_sql_test_orderidx', using 4 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
-# Found 15.589 GiB available main-memory.
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
-# Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://toulouse.da.cwi.nl:36531/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-28625/.s.monetdb.36531
+# Found 31.307 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://catskill.da.cwi.nl:37467/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-19069/.s.monetdb.37467
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-# MonetDB/Python module loaded
-# MonetDB/R   module loaded
 
 Ready.
-# SQL catalog created, loading sql scripts once
-# loading sql script: 09_like.sql
-# loading sql script: 10_math.sql
-# loading sql script: 11_times.sql
-# loading sql script: 12_url.sql
-# loading sql script: 13_date.sql
-# loading sql script: 14_inet.sql
-# loading sql script: 15_querylog.sql
-# loading sql script: 16_tracelog.sql
-# loading sql script: 17_temporal.sql
-# loading sql script: 18_index.sql
-# loading sql script: 20_vacuum.sql
-# loading sql script: 21_dependency_functions.sql
-# loading sql script: 22_clients.sql
-# loading sql script: 23_skyserver.sql
-# loading sql script: 25_debug.sql
-# loading sql script: 26_sysmon.sql
-# loading sql script: 27_rejects.sql
-# loading sql script: 39_analytics.sql
-# loading sql script: 39_analytics_hge.sql
-# loading sql script: 40_geom.sql
-# loading sql script: 40_json.sql
-# loading sql script: 40_json_hge.sql
-# loading sql script: 41_md5sum.sql
-# loading sql script: 45_uuid.sql
-# loading sql script: 46_gsl.sql
-# loading sql script: 46_profiler.sql
-# loading sql script: 51_sys_schema_extension.sql
-# loading sql script: 72_fits.sql
-# loading sql script: 74_netcdf.sql
-# loading sql script: 75_lidar.sql
-# loading sql script: 75_shp.sql
-# loading sql script: 75_storagemodel.sql
-# loading sql script: 80_statistics.sql
-# loading sql script: 80_udf.sql
-# loading sql script: 80_udf_hge.sql
-# loading sql script: 85_bam.sql
-# loading sql script: 90_generator.sql
-# loading sql script: 90_generator_hge.sql
-# loading sql script: 99_system.sql
 
-# 16:56:57 >  
-# 16:56:57 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-28625" "--port=36531"
-# 16:56:57 >  
+# 17:02:31 >  
+# 17:02:31 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19069" "--port=37467"
+# 17:02:31 >  
 
 #create table hge_types (
 #	"hugeint" hugeint,
@@ -130,13 +88,13 @@ Ready.
 [ 123456789012345,	123456789012345.000,	123456789012345,	123456789012345.0000000000000000000000,	123456789012345.000,	123456789012345,	123456789012345.000000000	]
 [ 123456789012345,	123456789012345.000,	123456789012345,	123456789012345.0000000000000000000000,	123456789012345.000,	123456789012345,	123456789012345.000000000	]
 [ 12345678900987654321,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-#create ordered index "hge_oidx_hugeint" on hge_types ("hugeint");
-#create ordered index "hge_oidx_decimal" on hge_types ("decimal");
-#create ordered index "hge_oidx_decimal38" on hge_types ("decimal38");
-#create ordered index "hge_oidx_decimal37_22" on hge_types ("decimal37_22");
-#create ordered index "hge_oidx_numeric" on hge_types ("numeric");
-#create ordered index "hge_oidx_numeric38" on hge_types ("numeric38");
-#create ordered index "hge_oidx_numeric37_9" on hge_types ("numeric37_9");
+#create imprints index "hge_impidx_hugeint" on hge_types ("hugeint");
+#create imprints index "hge_impidx_decimal" on hge_types ("decimal");
+#create imprints index "hge_impidx_decimal38" on hge_types ("decimal38");
+#create imprints index "hge_impidx_decimal37_22" on hge_types ("decimal37_22");
+#create imprints index "hge_impidx_numeric" on hge_types ("numeric");
+#create imprints index "hge_impidx_numeric38" on hge_types ("numeric38");
+#create imprints index "hge_impidx_numeric37_9" on hge_types ("numeric37_9");
 START TRANSACTION;
 CREATE TABLE "sys"."hge_types" (
 	"hugeint"      HUGEINT,
@@ -147,13 +105,13 @@ CREATE TABLE "sys"."hge_types" (
 	"numeric38"    DECIMAL(38),
 	"numeric37_9"  DECIMAL(37,9)
 );
-CREATE ORDERED INDEX "hge_oidx_decimal" ON "sys"."hge_types" ("decimal");
-CREATE ORDERED INDEX "hge_oidx_decimal37_22" ON "sys"."hge_types" ("decimal37_22");
-CREATE ORDERED INDEX "hge_oidx_decimal38" ON "sys"."hge_types" ("decimal38");
-CREATE ORDERED INDEX "hge_oidx_hugeint" ON "sys"."hge_types" ("hugeint");
-CREATE ORDERED INDEX "hge_oidx_numeric" ON "sys"."hge_types" ("numeric");
-CREATE ORDERED INDEX "hge_oidx_numeric37_9" ON "sys"."hge_types" ("numeric37_9");
-CREATE ORDERED INDEX "hge_oidx_numeric38" ON "sys"."hge_types" ("numeric38");
+CREATE IMPRINTS INDEX "hge_impidx_decimal" ON "sys"."hge_types" ("decimal");
+CREATE IMPRINTS INDEX "hge_impidx_decimal37_22" ON "sys"."hge_types" ("decimal37_22");
+CREATE IMPRINTS INDEX "hge_impidx_decimal38" ON "sys"."hge_types" ("decimal38");
+CREATE IMPRINTS INDEX "hge_impidx_hugeint" ON "sys"."hge_types" ("hugeint");
+CREATE IMPRINTS INDEX "hge_impidx_numeric" ON "sys"."hge_types" ("numeric");
+CREATE IMPRINTS INDEX "hge_impidx_numeric37_9" ON "sys"."hge_types" ("numeric37_9");
+CREATE IMPRINTS INDEX "hge_impidx_numeric38" ON "sys"."hge_types" ("numeric38");
 COPY 18 RECORDS INTO "sys"."hge_types" FROM stdin USING DELIMITERS '\t','\n','"';
 12345678900987654321	NULL	NULL	NULL	NULL	NULL	NULL
 NULL	123456789012345.678	NULL	NULL	NULL	NULL	NULL
@@ -178,14 +136,14 @@ COMMIT;
 % sys.idxs,	sys.idxs # table_name
 % type,	name # name
 % int,	varchar # type
-% 1,	21 # length
-[ 5,	"hge_oidx_decimal"	]
-[ 5,	"hge_oidx_decimal37_22"	]
-[ 5,	"hge_oidx_decimal38"	]
-[ 5,	"hge_oidx_hugeint"	]
-[ 5,	"hge_oidx_numeric"	]
-[ 5,	"hge_oidx_numeric37_9"	]
-[ 5,	"hge_oidx_numeric38"	]
+% 1,	23 # length
+[ 4,	"hge_impidx_decimal"	]
+[ 4,	"hge_impidx_decimal37_22"	]
+[ 4,	"hge_impidx_decimal38"	]
+[ 4,	"hge_impidx_hugeint"	]
+[ 4,	"hge_impidx_numeric"	]
+[ 4,	"hge_impidx_numeric37_9"	]
+[ 4,	"hge_impidx_numeric38"	]
 #select * from hge_types
 # where "hugeint" between 1 and 12345678900987654322
 #    or "decimal" between 2 and 123456789012345.679
@@ -294,21 +252,21 @@ COMMIT;
 % sys.idxs,	sys.idxs # table_name
 % type,	name # name
 % int,	varchar # type
-% 1,	21 # length
-[ 5,	"hge_oidx_decimal"	]
-[ 5,	"hge_oidx_decimal37_22"	]
-[ 5,	"hge_oidx_decimal38"	]
-[ 5,	"hge_oidx_hugeint"	]
-[ 5,	"hge_oidx_numeric"	]
-[ 5,	"hge_oidx_numeric37_9"	]
-[ 5,	"hge_oidx_numeric38"	]
-#drop index "hge_oidx_hugeint";
-#drop index "hge_oidx_decimal";
-#drop index "hge_oidx_decimal38";
-#drop index "hge_oidx_decimal37_22";
-#drop index "hge_oidx_numeric";
-#drop index "hge_oidx_numeric38";
-#drop index "hge_oidx_numeric37_9";
+% 1,	23 # length
+[ 4,	"hge_impidx_decimal"	]
+[ 4,	"hge_impidx_decimal37_22"	]
+[ 4,	"hge_impidx_decimal38"	]
+[ 4,	"hge_impidx_hugeint"	]
+[ 4,	"hge_impidx_numeric"	]
+[ 4,	"hge_impidx_numeric37_9"	]
+[ 4,	"hge_impidx_numeric38"	]
+#drop index "hge_impidx_hugeint";
+#drop index "hge_impidx_decimal";
+#drop index "hge_impidx_decimal38";
+#drop index "hge_impidx_decimal37_22";
+#drop index "hge_impidx_numeric";
+#drop index "hge_impidx_numeric38";
+#drop index "hge_impidx_numeric37_9";
 START TRANSACTION;
 CREATE TABLE "sys"."hge_types" (
 	"hugeint"      HUGEINT,
@@ -358,13 +316,14 @@ NULL	NULL	NULL	NULL	NULL	NULL	1234567890123456789012468.123456789
 123456789012468	123456789012468.000	123456789012468	123456789012468.0000000000000000000000	123456789012468.000	123456789012468	123456789012468.000000000
 COMMIT;
 #drop table hge_types;
+#drop table if exists hge_types cascade;
 #select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'hge_types') order by name;
 % sys.idxs,	sys.idxs # table_name
 % type,	name # name
 % int,	varchar # type
 % 1,	0 # length
 
-# 16:56:57 >  
-# 16:56:57 >  "Done."
-# 16:56:57 >  
+# 17:02:31 >  
+# 17:02:31 >  "Done."
+# 17:02:31 >  
 

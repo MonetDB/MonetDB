@@ -751,7 +751,7 @@ typedef struct {
 	 restricted:2,		/* access privileges */
 	 persistence:1,		/* should the BAT persist on disk? */
 	 role:8,		/* role of the bat */
-	 unused:15;		/* value=0 for now (sneakily used by mat.c) */
+	 unused:17;		/* value=0 for now (sneakily used by mat.c) */
 	int sharecnt;		/* incoming view count */
 
 	/* delta status administration */
@@ -765,15 +765,14 @@ typedef struct PROPrec PROPrec;
 /* see also comment near BATassertProps() for more information about
  * the properties */
 typedef struct {
-	str id;			/* label for head/tail column */
+	str id;			/* label for column */
 
 	unsigned short width;	/* byte-width of the atom array */
 	bte type;		/* type id. */
 	bte shift;		/* log2 of bun width */
-	bool varsized:1,	/* varsized (1) or fixedsized (0) */
+	bool varsized:1,	/* varsized/void (1) or fixedsized (0) */
 		key:1,		/* no duplicate values present */
 		unique:1,	/* no duplicate values allowed */
-		dense:1,	/* OID only: only consecutive values */
 		nonil:1,	/* there are no nils in the column */
 		nil:1,		/* there is a nil in the column */
 		sorted:1,	/* column is sorted in ascending order */
@@ -781,7 +780,7 @@ typedef struct {
 	BUN nokey[2];		/* positions that prove key==FALSE */
 	BUN nosorted;		/* position that proves sorted==FALSE */
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
-	oid seq;		/* start of dense head sequence */
+	oid seq;		/* start of dense sequence */
 
 	Heap heap;		/* space for the column. */
 	Heap *vheap;		/* space for the varsized data. */
@@ -797,9 +796,6 @@ typedef struct {
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
 
-#define GDKLIBRARY_SORTEDPOS	061030U	/* version where we can't trust no(rev)sorted */
-#define GDKLIBRARY_OLDWKB	061031U	/* old geom WKB format */
-#define GDKLIBRARY_INSERTED	061032U	/* inserted and deleted in BBP.dir */
 #define GDKLIBRARY_HEADED	061033U	/* head properties are stored */
 #define GDKLIBRARY_NOKEY	061034U	/* nokey values can't be trusted */
 #define GDKLIBRARY_BADEMPTY	061035U	/* possibility of duplicate empty str */
@@ -844,7 +840,6 @@ typedef struct BATiter {
 #define tseqbase	T.seq
 #define tsorted		T.sorted
 #define trevsorted	T.revsorted
-#define tdense		T.dense
 #define tident		T.id
 #define torderidx	T.orderidx
 #define twidth		T.width
@@ -1244,8 +1239,7 @@ gdk_export BUN BUNfnd(BAT *b, const void *right);
 	 BUN_NONE :							\
 	 (BUN) (*(const oid*)(v) - (b)->tseqbase))
 
-#define BATttype(b)	((b)->ttype == TYPE_void && !is_oid_nil((b)->tseqbase) ? \
-			 TYPE_oid : (b)->ttype)
+#define BATttype(b)	(BATtdense(b) ? TYPE_oid : (b)->ttype)
 #define Tbase(b)	((b)->tvheap->base)
 
 #define Tsize(b)	((b)->twidth)
@@ -1302,7 +1296,7 @@ bat_iterator(BAT *b)
  * @item void
  * @tab BATsetcount (BAT *b, BUN cnt)
  * @item BAT *
- * @tab BATkey (BAT *b, int onoff)
+ * @tab BATkey (BAT *b, bool onoff)
  * @item BAT *
  * @tab BATmode (BAT *b, int mode)
  * @item BAT *
@@ -1344,7 +1338,7 @@ gdk_export BUN BATcount_no_nil(BAT *b);
 gdk_export void BATsetcapacity(BAT *b, BUN cnt);
 gdk_export void BATsetcount(BAT *b, BUN cnt);
 gdk_export BUN BATgrows(BAT *b);
-gdk_export gdk_return BATkey(BAT *b, int onoff);
+gdk_export gdk_return BATkey(BAT *b, bool onoff);
 gdk_export gdk_return BATmode(BAT *b, int onoff);
 gdk_export gdk_return BATroles(BAT *b, const char *tnme);
 gdk_export void BAThseqbase(BAT *b, oid o);
@@ -1470,27 +1464,28 @@ gdk_export gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, B
 gdk_export void GDKqsort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe);
 gdk_export void GDKqsort_rev(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe);
 
-#define BATtordered(b)	((b)->ttype == TYPE_void || (b)->tsorted)
-#define BATtrevordered(b) (((b)->ttype == TYPE_void && is_oid_nil((b)->tseqbase)) || (b)->trevsorted)
-#define BATtdense(b)	(BATtvoid(b) && !is_oid_nil((b)->tseqbase))
-#define BATtvoid(b)	(((b)->tdense && (b)->tsorted) || (b)->ttype==TYPE_void)
-#define BATtkey(b)	(b->tkey != FALSE || BATtdense(b))
+#define BATtordered(b)	((b)->tsorted)
+#define BATtrevordered(b) ((b)->trevsorted)
+/* BAT is dense (i.e., BATtvoid() is true and tseqbase is not NIL) */
+#define BATtdense(b)	(!is_oid_nil((b)->tseqbase))
+/* BATtvoid: BAT can be (or actually is) represented by TYPE_void */
+#define BATtvoid(b)	(BATtdense(b) || (b)->ttype==TYPE_void)
+#define BATtkey(b)	((b)->tkey || BATtdense(b))
 
 /* set some properties that are trivial to deduce */
 #define BATsettrivprop(b)						\
 	do {								\
 		assert(!is_oid_nil((b)->hseqbase));			\
 		(b)->batDirtydesc = 1;	/* likely already set */	\
-		/* the other head properties should already be correct */ \
+		assert(is_oid_nil((b)->tseqbase) ||			\
+		       ATOMtype((b)->ttype) == TYPE_oid);		\
 		if ((b)->ttype == TYPE_void) {				\
 			if (is_oid_nil((b)->tseqbase)) {		\
 				(b)->tnonil = (b)->batCount == 0;	\
 				(b)->tnil = !(b)->tnonil;		\
 				(b)->trevsorted = 1;			\
 				(b)->tkey = (b)->batCount <= 1;		\
-				(b)->tdense = 0;			\
 			} else {					\
-				(b)->tdense = 1;			\
 				(b)->tnonil = 1;			\
 				(b)->tnil = 0;				\
 				(b)->tkey = 1;				\
@@ -1507,18 +1502,15 @@ gdk_export void GDKqsort_rev(void *restrict h, void *restrict t, const void *res
 				(b)->tnonil = 1;			\
 				(b)->tnil = 0;				\
 				if ((b)->ttype == TYPE_oid) {		\
-					(b)->tdense = 1;		\
 					(b)->tseqbase = 0;		\
 				}					\
 			} else if ((b)->ttype == TYPE_oid) {		\
 				/* b->batCount == 1 */			\
 				oid sqbs = ((const oid *) (b)->theap.base)[0]; \
 				if (is_oid_nil(sqbs)) {			\
-					(b)->tdense = 0;		\
 					(b)->tnonil = 0;		\
 					(b)->tnil = 1;			\
 				} else {				\
-					(b)->tdense = 1;		\
 					(b)->tnonil = 1;		\
 					(b)->tnil = 0;			\
 				}					\

@@ -324,7 +324,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc, oid *lastp)
 	bn->tsorted = 1;
 	bn->trevsorted = n <= 1;
 	bn->tkey = 1;
-	bn->tseqbase = (bn->tdense = n <= 1) != 0 ? oids[0] : oid_nil;
+	bn->tseqbase = n <= 1 ? oids[0] : oid_nil;
 	bn->tnil = 0;
 	bn->tnonil = 1;
 	return bn;
@@ -454,7 +454,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc, oid *lastp,
 			bn->tsorted = 1;
 			bn->trevsorted = n <= 1;
 			bn->tkey = 1;
-			bn->tseqbase = (bn->tdense = n <= 1) != 0 ? cand[0] : oid_nil;
+			bn->tseqbase = n <= 1 ? cand[0] : oid_nil;
 			bn->tnil = 0;
 			bn->tnonil = 1;
 			return bn;
@@ -613,7 +613,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc, oid *lastp,
 	bn->tsorted = 1;
 	bn->trevsorted = n <= 1;
 	bn->tkey = 1;
-	bn->tseqbase = (bn->tdense = n <= 1) != 0 ? oids[0] : oid_nil;
+	bn->tseqbase = n <= 1 ? oids[0] : oid_nil;
 	bn->tnil = 0;
 	bn->tnonil = 1;
 	return bn;

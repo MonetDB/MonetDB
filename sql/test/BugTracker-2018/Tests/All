@@ -35,3 +35,4 @@ sqlitelogictest-groupby-having-not-in.Bug-6553
 sqlitelogictest-nested-case.Bug-6554
 sqlitelogictest-complex-case-extra-columns.Bug-6555
 sqlitelogictest-coalesce-division-by-zero.Bug-6556
+sqlitelogictest-having-not-null-not-in.Bug-6557
