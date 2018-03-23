@@ -3586,9 +3586,9 @@ fetchjoin(BAT *r1, BAT *r2, BAT *l, BAT *r)
 
 /* Make the implementation choices for various left joins. */
 static gdk_return
-subleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
-	    bool nil_matches, bool nil_on_miss, bool semi, bool only_misses,
-	    BUN estimate, const char *name, lng t0)
+leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
+	 bool nil_matches, bool nil_on_miss, bool semi, bool only_misses,
+	 BUN estimate, const char *name, lng t0)
 {
 	BAT *r1, *r2 = NULL;
 	BUN lcount, rcount, maxsize;
@@ -3644,9 +3644,9 @@ subleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 gdk_return
 BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
-	return subleftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
-			   false, false, false, estimate, "BATleftjoin",
-			   GDKdebug & ALGOMASK ? GDKusec() : 0);
+	return leftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
+			false, false, false, estimate, "BATleftjoin",
+			GDKdebug & ALGOMASK ? GDKusec() : 0);
 }
 
 /* Performs a left outer join over l and r.  Returns two new, aligned,
@@ -3657,9 +3657,9 @@ BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matc
 gdk_return
 BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
-	return subleftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
-			   true, false, false, estimate, "BATouterjoin",
-			   GDKdebug & ALGOMASK ? GDKusec() : 0);
+	return leftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
+			true, false, false, estimate, "BATouterjoin",
+			GDKdebug & ALGOMASK ? GDKusec() : 0);
 }
 
 /* Perform a semi-join over l and r.  Returns two new, aligned, bats
@@ -3668,9 +3668,9 @@ BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_mat
 gdk_return
 BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
-	return subleftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
-			   false, true, false, estimate, "BATsemijoin",
-			   GDKdebug & ALGOMASK ? GDKusec() : 0);
+	return leftjoin(r1p, r2p, l, r, sl, sr, nil_matches,
+			false, true, false, estimate, "BATsemijoin",
+			GDKdebug & ALGOMASK ? GDKusec() : 0);
 }
 
 /* Return the difference of l and r.  The result is a BAT with the
@@ -3682,9 +3682,9 @@ BATdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
 	BAT *bn;
 
-	if (subleftjoin(&bn, NULL, l, r, sl, sr, nil_matches,
-			false, false, true, estimate, "BATdiff",
-			GDKdebug & ALGOMASK ? GDKusec() : 0) == GDK_SUCCEED)
+	if (leftjoin(&bn, NULL, l, r, sl, sr, nil_matches,
+		     false, false, true, estimate, "BATdiff",
+		     GDKdebug & ALGOMASK ? GDKusec() : 0) == GDK_SUCCEED)
 		return bn;
 	return NULL;
 }
