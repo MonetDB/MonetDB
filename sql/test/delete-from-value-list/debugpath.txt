@@ -1,0 +1,103 @@
+mal_scenario.c:runScenarioBody(cleint c, int once)
+	In this functions where going to loop multiple times over a couple of phases:
+	initclient, reader, parser, optimize, scheduler, engine, repeat...
+
+sql_scenario.c:SQLparser (first run)
+	We start with a Client c
+	we instantiate local references to the client's in- and outputstream (in = c->fdin, out = c->fdout)
+
+	c has sqlcontext of type backend (be = c->sqlcontext)
+	c has a malblock (c->curprg->def)
+	
+	we define a local reference m to the mvc(whatever that is) of the backend (sqlcontext) of the client
+	and later on we intialize it with a sqlallocator(whatever that is) (m->sa = sa_create())
+	be-> language is set to 'X'
+	and it seems that the first string in the inputstream in contains "Xreply_size 100\n"
+	mvc->reply_size is initialized with this value.
+	then we	exit and return to the loop in mal_scenario.
+	
+
+
+sql_scenario.c:SQLparser (second run)
+	In the second run the input stream is "Xreply_size -1\n"
+	
+	
+sql_scenario.c:SQLparser (third run)
+	In the third run the input stream the language is 'S'
+	we start a sqltransaction (SQLtrans(m);)
+	we assign a sql_allocator (m->sa = sa_create();)
+	we finally are going to parse the actual query (if( (err = sqlparse(m)) || )
+
+
+sqlparse:
+	This part is done by the yacc created parser based on sql_parser.y grammar.
+	specificallt for keyword 'IN' (in_predicate : pred_exp sqlIN '(' value_commalist ')')
+		we initialize a list l;
+		we associate symbol pred_expr(which seems to be the name of the column)  with the list value_commalist to l
+		we create and return a symbol representing a tuple of the form ("SQL_IN", l);
+	delete seems to be done in the delete_stmt: sqlDELETE FROM qname opt_where_clause(pred_exp)
+		we initialize a dlist l;
+		we append the name of the relation and the where_clause (pred_exp with in) to l;
+		and we create and return a symbol from tuple (SQL_DELETE, l), i.e. we get something like
+		SQL_DELETE(symbol)
+			- qname(a list because it can concern multiple relations)
+			- pred_exp()
+
+	in symbol_create_list (sql_symbol.c)
+		we allocate a symbol s
+		initialize s with the token(id)
+		we add the list field (data)  of type dlist to s (s->data.lval = data)
+
+	dlist_append_list
+		creates a dnode of type list where dnode has a union type member and sets a pointer to the data(of type dlist) to be appended
+		that dnode is then added to dlist in a linked list way.
+	Samething for dlist_append_symbol Only the type is now symbol.
+	
+
+	
+
+rel_updates(mvc* sql, symbol* s):
+	This is where the function seems to start understanding the semantics of a delete statement (switch s->token: ... case SQL_DELETE:)
+	it takes out the pred_exp associated with s (l = s->data.lval;)
+	and finally performs (or prepares?) a delete statement (ret = delete_table(sql, l->h->data.lval, l->h->next->data.sym);)
+	
+		
+	
+		
+		
+	
+
+
+sql_execute.c:SQLrun
+	we have two malblkptr's mc, mb
+	and one Instrptr p
+	mb is set to Client c->curprg->def and later it is replaced with
+	mb = copyMalBlk(c->curprg->def) // locate and inline the query template instruction
+	in mb the the stop is 3
+	
+	mb should have an instructionptr
+
+	this instruction pointer's malblockptr is copied to mc (mc = copyMalBlk(p->blk))
+	the original mb is freed (freeMalBlk(mb))
+
+	so mb seems to consist of 3 instructions (mb->stop is 3)
+	
+	
+	One by one each instruction is copied to p (p = GetInstrPtr(mb, i));
+	the first instruction pointer has name function name "s0 1"
+	
+	it sho
+
+
+	so it seems you start with a malblock mb consisting of a (couple of) instruction(s)
+	you pick the first instruction
+	you take out the inner blk which is also a MALBLOCK and store a pointer to this inner malblock in mb
+	
+	we then optimize the query (msg = SQLoptimizeQuery(c, mb);)
+	
+		At some point we get a sql optimizer in the form of string called a 'pipe' from  getSQLoptimizer.
+		This is based on the sql mvc (whatever that is, seems to deal with the sql query and user session)
+		we can then finally start to optimize the query (parse the query?) (msg = optimizeMalBlock(c, mb))
+			
+				
+	
