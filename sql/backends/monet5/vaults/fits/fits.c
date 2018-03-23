@@ -993,8 +993,6 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			long i;
 			unsigned long nbytes = rep[j - 1] * wid[j - 1];
 			sqlblob **v = (sqlblob **)GDKzalloc(sizeof(sqlblob *) * rows);
-			char *buff = (char *)GDKzalloc(nbytes);
-			size_t k = 0;
 
 			mtype = fits2mtype(tpcode[j - 1], 1);
 			nilptr = ATOMnilptr(mtype);
@@ -1019,14 +1017,10 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						GDKfree(v[k]);
 					}
 					GDKfree(v);
-					GDKfree(buff);
 					throw(MAL,"fits.load", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				}
 				fits_read_col(fptr, tpcode[j - 1], j, i + 1, 1, rep[j - 1], (void *)nilptr,
-					      (void *)buff, &anynull, &status);
-				for (k = 0; k < nbytes; k++) {
-					v[i]->data[k] = *(buff + k);
-				}
+					      (void *)v[i]->data, &anynull, &status);
 				v[i]->nitems = nbytes;
 				if (BUNappend(tmp, v[i], TRUE) != GDK_SUCCEED) {
 					BBPreclaim(tmp);
@@ -1039,7 +1033,6 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						GDKfree(v[i]);
 					}
 					GDKfree(v);
-					GDKfree(buff);
 					return msg;
 				}
 			}
@@ -1048,7 +1041,6 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				GDKfree(v[i]);
 			}
 			GDKfree(v);
-			GDKfree(buff);
 		}
 		else if (mtype == TYPE_str) {
 /*			char *v = GDKzalloc(wid[j-1]);*/
