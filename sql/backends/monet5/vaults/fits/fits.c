@@ -1026,7 +1026,6 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					      (void *)buff, &anynull, &status);
 				for (k = 0; k < nbytes; k++) {
 					v[i]->data[k] = *(buff + k);
-					k++;
 				}
 				v[i]->nitems = nbytes;
 				if (BUNappend(tmp, v[i], TRUE) != GDK_SUCCEED) {
