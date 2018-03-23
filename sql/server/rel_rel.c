@@ -614,7 +614,6 @@ rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	sql_exp *m = NULL, *ne;
 	char name[16], *nme = NULL;
-	char *tname = NULL;
 
 	if ((m=exps_find_match_exp(rel->exps, e)) == NULL) {
 		if (!e->name) {
@@ -624,11 +623,8 @@ rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e)
 		append(rel->exps, e);
 		m = e;
 	}
-	if (e->type == e_column)
-		tname = e->l;
-	ne = exp_column(sql->sa, tname, m->name, exp_subtype(m),
+	ne = exp_column(sql->sa, exp_relname(m), exp_name(m), exp_subtype(m),
 			rel->card, has_nil(m), is_intern(m));
-	exp_setname(sql->sa, ne, NULL, e->name);
 	return ne;
 }
 

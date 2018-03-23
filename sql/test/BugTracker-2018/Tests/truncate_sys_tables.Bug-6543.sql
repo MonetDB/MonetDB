@@ -1,27 +1,3 @@
-SELECT (COUNT(*) > 0) AS has_rows FROM tmp.triggers;
-TRUNCATE TABLE tmp.triggers;
-SELECT (COUNT(*) > 0) AS has_rows FROM tmp.triggers;
-
-SELECT (COUNT(*) > 0) AS has_rows FROM tmp.objects;
-TRUNCATE TABLE tmp.objects;
-SELECT (COUNT(*) > 0) AS has_rows FROM tmp.objects;
-
-SELECT (COUNT(*) > 0) AS has_rows FROM tmp.keys;
-TRUNCATE TABLE tmp.keys;
-SELECT (COUNT(*) > 0) AS has_rows FROM tmp.keys;
-
-SELECT (COUNT(*) > 0) AS has_rows FROM tmp.idxs;
-TRUNCATE TABLE tmp.idxs;
-SELECT (COUNT(*) > 0) AS has_rows FROM tmp.idxs;
-
-SELECT (COUNT(*) > 0) AS has_rows FROM tmp._tables;
-TRUNCATE TABLE tmp._tables;
-SELECT (COUNT(*) > 0) AS has_rows FROM tmp._tables;
-
-SELECT (COUNT(*) > 0) AS has_rows FROM tmp._columns;
-TRUNCATE TABLE tmp._columns;
-SELECT (COUNT(*) > 0) AS has_rows FROM tmp._columns;
-
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.user_role;
 TRUNCATE TABLE sys.user_role;
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.user_role;
