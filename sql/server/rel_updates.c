@@ -1107,7 +1107,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 }
 
 sql_rel *
-rel_delete(sql_allocator *sa, sql_rel *t, sql_rel *deletes, int multi)
+rel_delete(sql_allocator *sa, sql_rel *t, sql_rel *deletes)
 {
 	sql_rel *r = rel_create(sa);
 	if(!r)
@@ -1116,12 +1116,11 @@ rel_delete(sql_allocator *sa, sql_rel *t, sql_rel *deletes, int multi)
 	r->op = op_delete;
 	r->l = t;
 	r->r = deletes;
-	r->flag |= multi;
 	return r;
 }
 
 sql_rel *
-rel_truncate(sql_allocator *sa, sql_rel *t, int restart_sequences, int drop_action, int multi)
+rel_truncate(sql_allocator *sa, sql_rel *t, int restart_sequences, int drop_action)
 {
 	sql_rel *r = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1132,7 +1131,6 @@ rel_truncate(sql_allocator *sa, sql_rel *t, int restart_sequences, int drop_acti
 	r->op = op_truncate;
 	r->l = t;
 	r->r = NULL;
-	r->flag |= multi;
 	return r;
 }
 
@@ -1161,7 +1159,6 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 	}
 	if (update_allowed(sql, t, tname, "DELETE FROM", "delete from", 1) != NULL) {
 		sql_rel *r = NULL;
-		int multi = (isRangePartitionTable(t) || isListPartitionTable(t)) ? MULTI_TABLE : 0;
 
 		if (opt_where) {
 			int status = sql->session->status;
@@ -1188,9 +1185,9 @@ delete_table(mvc *sql, dlist *qname, symbol *opt_where)
 				r = rel_project(sql->sa, r, append(new_exp_list(sql->sa), e));
 
 			}
-			r = rel_delete(sql->sa, rel_basetable(sql, t, tname), r, multi);
+			r = rel_delete(sql->sa, rel_basetable(sql, t, tname), r);
 		} else {	/* delete all */
-			r = rel_delete(sql->sa, rel_basetable(sql, t, tname), NULL, multi);
+			r = rel_delete(sql->sa, rel_basetable(sql, t, tname), NULL);
 		}
 		return r;
 	}
@@ -1220,10 +1217,8 @@ truncate_table(mvc *sql, dlist *qname, int restart_sequences, int drop_action)
 		if (!t)
 			t = stack_find_table(sql, tname);
 	}
-	if (update_allowed(sql, t, tname, "TRUNCATE", "truncate", 2) != NULL) {
-		int multi = (isRangePartitionTable(t) || isListPartitionTable(t)) ? MULTI_TABLE : 0;
-		return rel_truncate(sql->sa, rel_basetable(sql, t, tname), restart_sequences, drop_action, multi);
-	}
+	if (update_allowed(sql, t, tname, "TRUNCATE", "truncate", 2) != NULL)
+		return rel_truncate(sql->sa, rel_basetable(sql, t, tname), restart_sequences, drop_action);
 	return NULL;
 }
 

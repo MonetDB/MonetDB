@@ -126,7 +126,7 @@ create_append_bat(backend *be, int tt)
 	q = pushLng(mb, q, tt);
 }
 
-void
+int
 append_bat_value(backend *be, int tt, int nr)
 {
 	MalBlkPtr mb = be->mb;
@@ -137,6 +137,7 @@ append_bat_value(backend *be, int tt, int nr)
 	q = pushArgument(mb, q, help);
 	q = pushArgument(mb, q, nr);
 	q = pushBit(mb, q, TRUE);
+	return getDestVar(q);
 }
 
 void

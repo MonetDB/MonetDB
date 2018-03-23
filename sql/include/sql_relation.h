@@ -67,7 +67,6 @@ typedef struct expression {
 #define ANTISEL	32
 #define HAS_NO_NIL	64
 #define EXP_INTERN	128
-#define MULTI_TABLE	255
 
 #define UPD_COMP		1
 #define UPD_LOCKED		2

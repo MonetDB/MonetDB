@@ -2147,7 +2147,7 @@ rel_rename(backend *be, sql_rel *rel, stmt *sub)
 }
 
 static stmt *
-rel2bin_union(backend *be, sql_rel *rel, list *refs)
+rel2bin_union(backend *be, sql_rel *rel, list *refs, int* type)
 {
 	mvc *sql = be->mvc;
 	list *l; 
@@ -2163,21 +2163,32 @@ rel2bin_union(backend *be, sql_rel *rel, list *refs)
 
 	/* construct relation */
 	l = sa_list(sql->sa);
-	for( n = left->op4.lval->h, m = right->op4.lval->h; n && m;
-		n = n->next, m = m->next ) {
-		stmt *c1 = n->data;
-		stmt *c2 = m->data;
-		const char *rnme = table_name(sql->sa, c1);
-		const char *nme = column_name(sql->sa, c1);
-		stmt *s;
 
-		s = stmt_append(be, create_const_column(be, c1), c2);
-		s = stmt_alias(be, s, rnme, nme);
-		list_append(l, s);
+	if(find_prop(rel->p, PROP_DISTRIBUTE)) {
+		if(left) //when distribution a delete/update/insert/truncate just append both sub-relations
+			list_append(l, left);
+		if(right)
+			list_append(l, right);
+		*type = Q_UPDATE;
+	} else {
+		for( n = left->op4.lval->h, m = right->op4.lval->h; n && m;
+			 n = n->next, m = m->next ) {
+			stmt *c1 = n->data;
+			stmt *c2 = m->data;
+			const char *rnme = table_name(sql->sa, c1);
+			const char *nme = column_name(sql->sa, c1);
+			stmt *s;
+
+			s = stmt_append(be, create_const_column(be, c1), c2);
+			s = stmt_alias(be, s, rnme, nme);
+			list_append(l, s);
+		}
+		*type = Q_TABLE;
 	}
 	sub = stmt_list(be, l);
 
-	sub = rel_rename(be, rel, sub);
+	if(*type == Q_TABLE)
+		sub = rel_rename(be, rel, sub);
 	if (need_distinct(rel)) 
 		sub = rel2bin_distinct(be, sub, NULL);
 	return sub;
@@ -4521,45 +4532,6 @@ sql_delete_keys(backend *be, sql_table *t, stmt *rows, list *l, char* which, int
 	return res;
 }
 
-static sql_rel *
-rel_change_basetable(sql_rel *rel, sql_table* oldt, sql_table* newt)
-{
-	if (!rel)
-		return rel;
-
-	switch (rel->op) {
-		case op_basetable:
-			if(rel->l == oldt)
-				rel->l = newt;
-			break;
-		case op_table:
-		case op_join:
-		case op_left:
-		case op_right:
-		case op_full:
-		case op_apply:
-		case op_semi:
-		case op_anti:
-		case op_union:
-		case op_inter:
-		case op_except:
-		case op_project:
-		case op_select:
-		case op_groupby:
-		case op_topn:
-		case op_sample:
-		case op_ddl:
-		case op_insert:
-		case op_update:
-		case op_delete:
-		case op_truncate:
-			rel->l = rel_change_basetable(rel->l, oldt, newt);
-			rel->r = rel_change_basetable(rel->r, oldt, newt);
-			break;
-	}
-	return rel;
-}
-
 static stmt *
 sql_delete(backend *be, sql_table *t, stmt *rows)
 {
@@ -4597,7 +4569,7 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 	if (rows)
 		s = stmt_aggr(be, rows, NULL, NULL, sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL), 1, 0, 1);
 	if(be->cur_append) //building the total number of rows affected across all tables
-		append_bat_value(be, TYPE_lng, s->nr);
+		s->nr = append_bat_value(be, TYPE_lng, s->nr);
 	return s;
 }
 
@@ -4614,45 +4586,19 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 	else
 		assert(0/*ddl statement*/);
 
-	if(isRangePartitionTable(t) || isListPartitionTable(t)) {
-		list *l = sa_list(sql->sa);
+	if(find_prop(rel->p, PROP_DISTRIBUTE) && be->cur_append == 0)
 		create_append_bat(be, TYPE_lng);
 
-		for (node *n = t->members.set->h; n; n = n->next) {
-			sql_part *pt = (sql_part *) n->data;
-			sql_table *sub = find_sql_table(t->s, pt->base.name);
-			sql_rel* dup = NULL;
-
-			if (rel->r) { /* first construct the deletes relation, but copy the relation first */
-				dup = rel_copy(sql->sa, rel->r);
-				dup = rel_change_basetable(dup, t, sub);
-				rows = subrel_bin(be, dup, refs);
-			} else {
-				rows = NULL;
-			}
-			if (rows && rows->type == st_list) {
-				stmt *s = rows;
-				rows = s->op4.lval->h->data;
-			}
-			list_append(l, sql_delete(be, sub, rows));
-		}
-
-		finish_append_bat(be, TYPE_lng);
-		stdelete = stmt_list(be, l);
-		stdelete->nr = be->cur_append; /* needed for affectedRows */
-	} else {
-		if (rel->r) { /* first construct the deletes relation */
-			rows = subrel_bin(be, rel->r, refs);
-			if (!rows)
-				return NULL;
-		}
-		if (rows && rows->type == st_list) {
-			stmt *s = rows;
-			rows = s->op4.lval->h->data;
-		}
-		stdelete = sql_delete(be, t, rows);
+	if (rel->r) { /* first construct the deletes relation */
+		rows = subrel_bin(be, rel->r, refs);
+		if (!rows)
+			return NULL;
 	}
-
+	if (rows && rows->type == st_list) {
+		stmt *s = rows;
+		rows = s->op4.lval->h->data;
+	}
+	stdelete = sql_delete(be, t, rows);
 	if (sql->cascade_action)
 		sql->cascade_action = NULL;
 	return stdelete;
@@ -4797,6 +4743,9 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 		if (next == t)
 			ret = other;
 
+		if(be->cur_append) //building the total number of rows affected across all tables
+			other->nr = append_bat_value(be, TYPE_lng, other->nr);
+
 		/* after */
 		if (!sql_delete_triggers(be, next, v, 1, 3, 4)) {
 			sql_error(sql, 02, SQLSTATE(42000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
@@ -4835,30 +4784,14 @@ rel2bin_truncate(backend *be, sql_rel *rel)
 	else
 		assert(0/*ddl statement*/);
 
+	if(find_prop(rel->p, PROP_DISTRIBUTE) && be->cur_append == 0)
+		create_append_bat(be, TYPE_lng);
+
 	n = rel->exps->h;
 	restart_sequences = E_ATOM_INT(n->data);
 	cascade = E_ATOM_INT(n->next->data);
 
-	if(isRangePartitionTable(t) || isListPartitionTable(t)) {
-		list *l = sa_list(sql->sa);
-		create_append_bat(be, TYPE_lng);
-
-		for (node *n = t->members.set->h; n; n = n->next) {
-			sql_part *pt = (sql_part *) n->data;
-			sql_table *sub = find_sql_table(t->s, pt->base.name);
-			stmt* nex_sub_st = stmt_table_clear(be, sub);
-
-			append_bat_value(be, TYPE_lng, nex_sub_st->nr);
-			list_append(l, nex_sub_st);
-		}
-
-		finish_append_bat(be, TYPE_lng);
-		truncate = stmt_list(be, l);
-		truncate->nr = be->cur_append; /* needed for affectedRows */
-	} else {
-		truncate = sql_truncate(be, t, restart_sequences, cascade);
-	}
-
+	truncate = sql_truncate(be, t, restart_sequences, cascade);
 	if (sql->cascade_action)
 		sql->cascade_action = NULL;
 	return truncate;
@@ -5105,6 +5038,7 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
 	stmt *s = NULL;
+	int type = Q_TABLE;
 
 	if (THRhighwater())
 		return NULL;
@@ -5141,8 +5075,8 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		sql->type = Q_TABLE;
 		break;
 	case op_union: 
-		s = rel2bin_union(be, rel, refs);
-		sql->type = Q_TABLE;
+		s = rel2bin_union(be, rel, refs, &type);
+		sql->type = type;
 		break;
 	case op_except: 
 		s = rel2bin_except(be, rel, refs);
@@ -5245,8 +5179,14 @@ output_rel_bin(backend *be, sql_rel *rel )
 
 	if (!is_ddl(rel->op) && s && s->type != st_none && sql->type == Q_TABLE)
 		s = stmt_output(be, s);
-	if (sqltype == Q_UPDATE && s && (s->type != st_list || is_delete(rel->op) || is_truncate(rel->op)))
+	if (sqltype == Q_UPDATE && s && (s->type != st_list || be->cur_append)) {
+		if(be->cur_append) { /* finish the output bat */
+			finish_append_bat(be, TYPE_lng);
+			s->nr = be->cur_append;
+			be->cur_append = 0;
+		}
 		s = stmt_affected_rows(be, s);
+	}
 	return s;
 }
 
