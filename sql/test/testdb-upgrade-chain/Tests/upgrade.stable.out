@@ -5011,7 +5011,7 @@ commit;
 # 14:06:27 >  
 
 #select count(*) from testschema.smallstring;
-% testschema.L4 # table_name
+% testschema.L3 # table_name
 % L3 # name
 % bigint # type
 % 2 # length
