@@ -1721,7 +1721,7 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 						}
 					}
 					if (lskipped)
-						r1->tdense &= false;
+						r1->tdense = false;
 					if (r1->trevsorted && BATcount(r1) > 1)
 						r1->trevsorted = false;
 				} else {
