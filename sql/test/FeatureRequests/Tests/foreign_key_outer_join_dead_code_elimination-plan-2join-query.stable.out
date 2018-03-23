@@ -37,8 +37,7 @@ project (
 | group by (
 | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
 | ) [  ] [ sys.count() NOT NULL as "L3"."L3" ]
-) [ "L3" NOT NULL as "L4"."L3" ]
-
+) [ "L3"."L3" NOT NULL ]
 #plan select id       from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id;
 % .plan # table_name
 % rel # name
@@ -80,7 +79,7 @@ project (
 | group by (
 | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
 | ) [  ] [ sys.count() NOT NULL as "L3"."L3" ]
-) [ "L3" NOT NULL as "L4"."L3" ]
+) [ "L3"."L3" NOT NULL ]
 #plan select id       from pk2 right outer join (pk1 right outer join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id;
 % .plan # table_name
 % rel # name
@@ -120,7 +119,7 @@ project (
 | group by (
 | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
 | ) [  ] [ sys.count() NOT NULL as "L3"."L3" ]
-) [ "L3" NOT NULL as "L4"."L3" ]
+) [ "L3"."L3" NOT NULL ]
 #plan select id       from pk2 full outer join (pk1 full outer join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id;
 % .plan # table_name
 % rel # name
@@ -160,7 +159,7 @@ project (
 | group by (
 | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
 | ) [  ] [ sys.count() NOT NULL as "L3"."L3" ]
-) [ "L3" NOT NULL as "L4"."L3" ]
+) [ "L3"."L3" NOT NULL ]
 #plan select id       from pk2 join (pk1 join fk on fk.fk1 = pk1.pk1) on fk.fk2 = pk2.pk2 order by id;
 % .plan # table_name
 % rel # name

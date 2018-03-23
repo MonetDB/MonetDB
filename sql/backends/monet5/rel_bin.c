@@ -457,7 +457,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		node *en;
 		list *l = sa_list(sql->sa), *exps = e->l;
 		sql_subfunc *f = e->f;
-		stmt *rows = NULL;
+		stmt *rows = NULL, *cond_execution = NULL;
+		char name[16], *nme;
 
 		if (f->func->side_effect && left) {
 			if (!exps || list_empty(exps))
@@ -485,7 +486,15 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					es = stmt_const(be, rows, es);
 				if (es->nrcols > nrcols)
 					nrcols = es->nrcols;
-				list_append(l,es);
+				/* last argument is condition, change into candidate list */
+				if (!en->next && !f->func->varres && !f->func->vararg && list_length(exps) > list_length(f->func->ops)) {
+					if (es->nrcols)
+						es = stmt_uselect(be, es, stmt_bool(be,1), cmp_equal, NULL, 0);
+					else /* need a condition */
+						cond_execution = es;
+				}
+				if (!cond_execution)
+					list_append(l,es);
 			}
 			if (sel && strcmp(sql_func_mod(f->func), "calc") == 0 && nrcols && strcmp(sql_func_imp(f->func), "ifthenelse") != 0)
 				list_append(l,sel);
@@ -495,10 +504,24 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			s = stmt_mirror(be, l->h->data);
 		else
 		*/
+		if (cond_execution) {
+			/* var_x = nil; */
+			nme = number2name(name, 16, ++sql->label);
+			(void)stmt_var(be, nme, exp_subtype(e), 1, 2);
+			/* if_barrier ... */
+			cond_execution = stmt_cond(be, cond_execution, NULL, 0, 0);
+		}
 		if (f->func->rel) 
 			s = stmt_func(be, stmt_list(be, l), sa_strdup(sql->sa, f->func->base.name), f->func->rel, (f->func->type == F_UNION));
 		else
 			s = stmt_Nop(be, stmt_list(be, l), e->f); 
+		if (cond_execution) {
+			/* var_x = s */
+			(void)stmt_assign(be, nme, s, 2);
+			/* endif_barrier */
+			(void)stmt_control_end(be, cond_execution);
+			s = stmt_var(be, nme, exp_subtype(e), 0, 2);
+		}
 	} 	break;
 	case e_aggr: {
 		list *attr = e->l; 
