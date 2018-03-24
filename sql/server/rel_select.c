@@ -3770,7 +3770,7 @@ _rel_aggr(mvc *sql, sql_rel **rel, int distinct, sql_schema *s, char *aname, dno
 				e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
 			}
 			rel_project_add_exp(sql, project, e);
-			if (iproject)
+			if (iproject || f != sql_sel)
 				e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), exp_card(e), has_nil(e), is_intern(e));
 		}
 		return e;
