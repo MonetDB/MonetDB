@@ -29,6 +29,10 @@ stderr of test 'statistics_nils_not_eq_zero.Bug-6331` in directory 'sql/test/Bug
 # 13:40:16 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25363" "--port=30826"
 # 13:40:16 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-4063/.s.monetdb.31696
+QUERY = ANALYZE tmp;
+ERROR = !Table '_tables' is not persistent
+CODE  = 42S02
 
 # 13:40:17 >  
 # 13:40:17 >  "Done."

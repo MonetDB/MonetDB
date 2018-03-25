@@ -506,7 +506,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 	return r;
 }
 
-void
+sql_exp *
 rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	assert(is_project(rel->op));
@@ -523,8 +523,9 @@ rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 		if (e->card > rel->card)
 			rel->card = e->card;
 	} else if (rel->op == op_groupby) {
-		(void) rel_groupby_add_aggr(sql, rel, e);
+		return rel_groupby_add_aggr(sql, rel, e);
 	}
+	return e;
 }
 
 void
@@ -1282,7 +1283,7 @@ _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 	set_intern(e);
 	e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
 	*exp = exp_label(sql->sa, e, ++sql->label);
-	rel_project_add_exp(sql, rel, e);
+	(void) rel_project_add_exp(sql, rel, e);
 	return rel;
 }
 
