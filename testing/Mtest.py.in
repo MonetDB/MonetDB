@@ -3029,6 +3029,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                 # enable Python integration in server
                 Srvr.extend(['--set', 'embedded_py=true'])
 
+            # enable C integration in server
+            Srvr.extend(['--set', 'embedded_c=true'])
+
 
             pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
             ln="dummy"

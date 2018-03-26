@@ -448,6 +448,10 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 	allocated_regions[tid] = NULL;
 
+	if (!GDKgetenv_istrue("embedded_c") && !GDKgetenv_isyes("embedded_c"))
+		throw(MAL, "cudf.eval", "Embedded C has not been enabled. "
+		      "Start server with --set embedded_c=true");
+
 	// we need to be able to catch segfaults and bus errors
 	// so we can work with mprotect to prevent UDFs from changing
 	// the input data

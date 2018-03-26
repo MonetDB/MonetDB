@@ -32,6 +32,7 @@ static const confkeyval _internal_prop_keys[PROPLENGTH] = {
 	{"embedr",   NULL, 0, BOOLEAN},
 	{"embedpy",  NULL, 0, BOOLEAN},
 	{"embedpy3", NULL, 0, BOOLEAN},
+	{"embedc",   NULL, 0, BOOLEAN},
 	{"nclients", NULL, 0, INT},
 	{"mfunnel",  NULL, 0, STR},
 	{"dbextra",  NULL, 0, STR},
