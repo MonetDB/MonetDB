@@ -2308,13 +2308,13 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				 * value */
 				nr = 1;
 			}
-			if (lcand &&
-			    nl > 1 &&
-			    lcand[-1] != lcand[-1 - (ssize_t) nl] + nl) {
-				/* not all values in the range are
-				 * candidates */
-				lskipped = true;
-			}
+		}
+		if (lcand &&
+		    nl > 1 &&
+		    lcand[-1] != lcand[-1 - (ssize_t) nl] + nl) {
+			/* not all values in the range are
+			 * candidates */
+			lskipped = true;
 		}
 		/* make space: nl values in l match nr values in r, so
 		 * we need to add nl * nr values in the results */
@@ -2428,7 +2428,11 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					r2->tdense = false;
 				}
 			}
-			if (lskipped)
+			/* if there is a left candidate list, it may
+			 * be that the next value added isn't
+			 * consecutive with the last one */
+			if (lskipped /*||
+				       (lcand && ((oid *) r1->T.heap.base)[r1->batCount - 1] + 1 != lcand[-(ssize_t)nl])*/)
 				r1->tdense = false;
 		}
 
