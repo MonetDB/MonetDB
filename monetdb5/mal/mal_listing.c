@@ -80,6 +80,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 
 			if( nbuf == 0){
 				GDKfree(buf);
+				GDKfree(cv);
 				addMalException(mb,"renderTerm:Failed to allocate");
 				return NULL;
 			}
