@@ -2431,8 +2431,8 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			/* if there is a left candidate list, it may
 			 * be that the next value added isn't
 			 * consecutive with the last one */
-			if (lskipped /*||
-				       (lcand && ((oid *) r1->T.heap.base)[r1->batCount - 1] + 1 != lcand[-(ssize_t)nl])*/)
+			if (lskipped ||
+			    (lcand && ((oid *) r1->T.heap.base)[r1->batCount - 1] + 1 != lcand[-(ssize_t)nl]))
 				r1->tdense = false;
 		}
 
