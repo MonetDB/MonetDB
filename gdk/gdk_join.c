@@ -461,12 +461,35 @@ selectjoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 static gdk_return
 mergejoin_void(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
-	       bool nil_on_miss, bool only_misses, lng t0)
+	       bool nil_on_miss, bool only_misses, lng t0, bool swapped)
 {
 	oid lo, hi;
 	BUN cnt, i;
 	const oid *lvals;
 	oid o, seq;
+
+	ALGODEBUG fprintf(stderr, "#mergejoin_void(l=%s#" BUNFMT "[%s]%s%s%s,"
+			  "r=%s#" BUNFMT "[%s]%s%s%s,sl=%s#" BUNFMT "%s%s%s,"
+			  "sr=%s#" BUNFMT "%s%s%s,"
+			  "nil_on_miss=%d,only_misses=%d)%s\n",
+			  BATgetId(l), BATcount(l), ATOMname(l->ttype),
+			  l->tsorted ? "-sorted" : "",
+			  l->trevsorted ? "-revsorted" : "",
+			  l->tkey ? "-key" : "",
+			  BATgetId(r), BATcount(r), ATOMname(r->ttype),
+			  r->tsorted ? "-sorted" : "",
+			  r->trevsorted ? "-revsorted" : "",
+			  r->tkey ? "-key" : "",
+			  sl ? BATgetId(sl) : "NULL", sl ? BATcount(sl) : 0,
+			  sl && sl->tsorted ? "-sorted" : "",
+			  sl && sl->trevsorted ? "-revsorted" : "",
+			  sl && sl->tkey ? "-key" : "",
+			  sr ? BATgetId(sr) : "NULL", sr ? BATcount(sr) : 0,
+			  sr && sr->tsorted ? "-sorted" : "",
+			  sr && sr->trevsorted ? "-revsorted" : "",
+			  sr && sr->tkey ? "-key" : "",
+			  nil_on_miss, only_misses,
+			  swapped ? " swapped" : "");
 
 	/* r is dense, and if there is a candidate list, it too is
 	 * dense.  This means we don't have to do any searches, we
@@ -2281,13 +2304,13 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				 * value */
 				nr = 1;
 			}
-			if (lcand &&
-			    nl > 1 &&
-			    lcand[-1] != lcand[-1 - (ssize_t) nl] + nl) {
-				/* not all values in the range are
-				 * candidates */
-				lskipped = true;
-			}
+		}
+		if (lcand &&
+		    nl > 1 &&
+		    lcand[-1] != lcand[-1 - (ssize_t) nl] + nl) {
+			/* not all values in the range are
+			 * candidates */
+			lskipped = true;
 		}
 		/* make space: nl values in l match nr values in r, so
 		 * we need to add nl * nr values in the results */
@@ -2401,7 +2424,11 @@ mergejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 					r2->tseqbase = oid_nil;
 				}
 			}
-			if (lskipped)
+			/* if there is a left candidate list, it may
+			 * be that the next value added isn't
+			 * consecutive with the last one */
+			if (lskipped ||
+			    (lcand && ((oid *) r1->T.heap.base)[r1->batCount - 1] + 1 != lcand[-(ssize_t)nl]))
 				r1->tseqbase = oid_nil;
 		}
 
@@ -3799,7 +3826,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		   lcount > 0 && rcount > 0) {
 		/* use special implementation for dense right-hand side */
 		return mergejoin_void(r1, r2, l, r, sl, sr,
-				      nil_on_miss, only_misses, t0);
+				      nil_on_miss, only_misses, t0, false);
 	} else if ((BATordered(r) || BATordered_rev(r)) &&
 		   (BATtdense(r) ||
 		    lcount < 1024 ||
@@ -3994,10 +4021,10 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches,
 		return selectjoin(r2, r1, r, l, sr, sl, nil_matches, t0, true);
 	} else if (BATtdense(r) && (sr == NULL || BATtdense(sr))) {
 		/* use special implementation for dense right-hand side */
-		return mergejoin_void(r1, r2, l, r, sl, sr, false, false, t0);
+		return mergejoin_void(r1, r2, l, r, sl, sr, false, false, t0, false);
 	} else if (BATtdense(l) && (sl == NULL || BATtdense(sl))) {
 		/* use special implementation for dense right-hand side */
-		return mergejoin_void(r2, r1, r, l, sr, sl, false, false, t0);
+		return mergejoin_void(r2, r1, r, l, sr, sl, false, false, t0, true);
 	} else if ((BATordered(l) || BATordered_rev(l)) &&
 		   (BATordered(r) || BATordered_rev(r))) {
 		/* both sorted */

@@ -2048,6 +2048,7 @@ BATassertProps(BAT *b)
 			/* tseqbase must correspond to actual value */
 			assert(* (oid *) BUNtail(bi, 0) == b->tseqbase);
 		}
+		assert(b->tseqbase + b->batCount <= GDK_oid_max);
 	}
 	/* a column cannot both have and not have NILs */
 	assert(!b->tnil || !b->tnonil);
