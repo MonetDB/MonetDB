@@ -1106,7 +1106,7 @@ headheapinit(oid *hseq, const char *buf, bat bid)
 	if (strcmp(type, "void") != 0)
 		GDKfatal("BBPinit: head column must be VOID (ID = %d).", (int) bid);
 	if (base > (uint64_t) GDK_oid_max)
-		GDKfatal("BBPinit: head seqbase out of range (ID = %d, seq = "LLFMT").", (int) bid, base);
+		GDKfatal("BBPinit: head seqbase out of range (ID = %d, seq = %" PRIu64 ").", (int) bid, base);
 	*hseq = (oid) base;
 	return n;
 }
@@ -1310,7 +1310,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 			GDKfatal("BBPinit: invalid format for BBP.dir\n%s", buf);
 
 		if (batid >= N_BBPINIT * BBPINIT)
-			GDKfatal("BBPinit: bat ID (" LLFMT ") too large to accomodate (max %d).", batid, N_BBPINIT * BBPINIT - 1);
+			GDKfatal("BBPinit: bat ID (%" PRIu64 ") too large to accomodate (max %d).", batid, N_BBPINIT * BBPINIT - 1);
 
 		/* convert both / and \ path separators to our own DIR_SEP */
 #if DIR_SEP != '/'
@@ -1325,7 +1325,8 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 #endif
 
 		if (first != 0)
-			GDKfatal("BBPinit: first != 0 (ID = "LLFMT").", batid);
+			GDKfatal("BBPinit: first != 0 (ID = %" PRIu64 ").",
+				 batid);
 
 		bid = (bat) batid;
 		if (batid >= (uint64_t) ATOMIC_GET(BBPsize, BBPsizeLock)) {
@@ -1334,7 +1335,8 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 				BBPextend(0, false);
 		}
 		if (BBP_desc(bid) != NULL)
-			GDKfatal("BBPinit: duplicate entry in BBP.dir (ID = "LLFMT").", batid);
+			GDKfatal("BBPinit: duplicate entry in BBP.dir (ID = "
+				 "%" PRIu64 ").", batid);
 		bn = GDKzalloc(sizeof(BAT));
 		if (bn == NULL)
 			GDKfatal("BBPinit: cannot allocate memory for BAT.");
@@ -1352,7 +1354,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 			nread += headheapinit(&bn->hseqbase, buf + nread, bid);
 		} else {
 			if (base > (uint64_t) GDK_oid_max)
-				GDKfatal("BBPinit: head seqbase out of range (ID = "LLFMT", seq = "LLFMT").", batid, base);
+				GDKfatal("BBPinit: head seqbase out of range (ID = %" PRIu64 ", seq = %" PRIu64 ").", batid, base);
 			bn->hseqbase = (oid) base;
 		}
 		nread += heapinit(bn, buf + nread, &Thashash, "T", bbpversion, bid, filename);
