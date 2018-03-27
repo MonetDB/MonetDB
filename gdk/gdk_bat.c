@@ -2053,6 +2053,7 @@ BATassertProps(BAT *b)
 		if (b->ttype == TYPE_oid && b->batCount > 0) {
 			assert(* (oid *) BUNtail(bi, 0) == b->tseqbase);
 		}
+		assert(b->tseqbase + b->batCount <= GDK_oid_max);
 	}
 	/* a column cannot both have and not have NILs */
 	assert(!b->tnil || !b->tnonil);
