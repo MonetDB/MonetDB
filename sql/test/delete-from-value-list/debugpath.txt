@@ -26,9 +26,7 @@ sql_scenario.c:SQLparser (third run)
 	In the third run the input stream the language is 'S'
 	we start a sqltransaction (SQLtrans(m);)
 	we assign a sql_allocator (m->sa = sa_create();)
-	we finally are going to parse the actual query (if( (err = sqlparse(m)) || )
-
-
+	we finally are going to parse the actual query (if( (err = sqlparse(m)) || ) this is the yacc generated c code
 sqlparse:
 	This part is done by the yacc created parser based on sql_parser.y grammar.
 	specificallt for keyword 'IN' (in_predicate : pred_exp sqlIN '(' value_commalist ')')
@@ -52,6 +50,29 @@ sqlparse:
 		creates a dnode of type list where dnode has a union type member and sets a pointer to the data(of type dlist) to be appended
 		that dnode is then added to dlist in a linked list way.
 	Samething for dlist_append_symbol Only the type is now symbol.
+sql_symbol2relation:
+	rel_semantic:
+		We desent through rel_updates -> delete_table
+			we bind a table (t = mvc_bind_table(sql, schema, tname);)
+			here is where we determin that opt_where is a value list (r = rel_logical_exp(sql, r, opt_where, sql_where);)
+			It then basically transforms a rel_logical_exp to an exp_in expression with more semantics (e = exp_in(sql->sa, l, nvals, sc->token==SQL_NOT_IN?cmp_notin:cmp_in);)
+			we then going to take the TID column (internal table (primary) key column or something like that) (exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);)
+			we make a projection on the relation using only the above column (internally that means that to relation r, we just add an expression (the TID column))
+			we return this prepared relation r all the way bacj to super caller sql_symbol2relation (r = rel_semantic(c, sym);)
+	rel_optimizer:
+		This is where the sql statement is being fixed up if necessary. But it is not where we want to perform our optimization.
+backend_dumpproc:
+	Here is where we are going to build the MAL. we desent through backend_dumpstmt -> sql_relation2stmt ->_rel_bin ->output_rel_bin->_subrel_bin->subrel_bin->rel2bin_delete
+	rel2bin_delete(backend *be, sql_rel *rel, list *refs):
+		First the delete relation is prepared: (rows = subrel_bin(be, rel->r, refs))
+	stmt_delete:
+		this is where a mal delete instruction is actually initialized
+		
+		
+	
+		
+
+
 	
 
 	
@@ -60,6 +81,8 @@ rel_updates(mvc* sql, symbol* s):
 	This is where the function seems to start understanding the semantics of a delete statement (switch s->token: ... case SQL_DELETE:)
 	it takes out the pred_exp associated with s (l = s->data.lval;)
 	and finally performs (or prepares?) a delete statement (ret = delete_table(sql, l->h->data.lval, l->h->next->data.sym);)
+	finally we add to our relation of interest(select = rel) the value list expression (rel_select_add_exp(sql->sa, select, e);)
+	
 	
 		
 	

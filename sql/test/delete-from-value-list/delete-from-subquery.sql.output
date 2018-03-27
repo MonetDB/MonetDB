@@ -1,0 +1,51 @@
++--------------------------------------------------------------------------------------------------------------------------------------------+
+| mal                                                                                                                                        |
++============================================================================================================================================+
+| function user.s2_1():void;                                                                                                                 |
+|     X_1:void := querylog.define("explain delete from table1 where id in (select table2.id from table2);":str, "default_pipe":str, 24:int); |
+| barrier X_87:bit := language.dataflow();                                                                                                   |
+|     X_4:int := sql.mvc();                                                                                                                  |
+|     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "table1":str);                                                                            |
+|     X_8:bat[:int] := sql.bind(X_4:int, "sys":str, "table1":str, "id":str, 0:int);                                                          |
+|     X_17:bat[:int] := algebra.projection(C_5:bat[:oid], X_8:bat[:int]);                                                                    |
+|     X_32:bat[:oid] := bat.mirror(X_17:bat[:int]);                                                                                          |
+|     C_18:bat[:oid] := sql.tid(X_4:int, "sys":str, "table2":str);                                                                           |
+|     X_20:bat[:int] := sql.bind(X_4:int, "sys":str, "table2":str, "id":str, 0:int);                                                         |
+|     X_25:bat[:int] := algebra.projection(C_18:bat[:oid], X_20:bat[:int]);                                                                  |
+|     (X_26:bat[:oid], X_27:bat[:oid]) := algebra.join(X_17:bat[:int], X_25:bat[:int], nil:BAT, nil:BAT, false:bit, nil:lng);                |
+|     C_33:bat[:oid] := algebra.intersect(X_32:bat[:oid], X_26:bat[:oid], nil:BAT, nil:BAT, false:bit, nil:lng);                             |
+|     X_35:bat[:oid] := algebra.projection(C_33:bat[:oid], C_5:bat[:oid]);                                                                   |
+|     language.pass(X_17:bat[:int]);                                                                                                         |
+|     language.pass(C_5:bat[:oid]);                                                                                                          |
+| exit X_87:bit;                                                                                                                             |
+|     X_37:int := sql.delete(X_4:int, "sys":str, "table1":str, X_35:bat[:oid]);                                                              |
+|     X_38:lng := aggr.count(X_35:bat[:oid]);                                                                                                |
+|     sql.affectedRows(X_37:int, X_38:lng);                                                                                                  |
+| end user.s2_1;                                                                                                                             |
+| #inline               actions= 0 time=2 usec                                                                                               |
+| #remap                actions= 0 time=2 usec                                                                                               |
+| #costmodel            actions= 1 time=2 usec                                                                                               |
+| #coercion             actions= 0 time=2 usec                                                                                               |
+| #evaluate             actions= 0 time=6 usec                                                                                               |
+| #emptybind            actions= 2 time=9 usec                                                                                               |
+| #pushselect           actions= 0 time=3 usec                                                                                               |
+| #aliases              actions= 2 time=8 usec                                                                                               |
+| #mergetable           actions= 0 time=42 usec                                                                                              |
+| #deadcode             actions= 5 time=10 usec                                                                                              |
+| #aliases              actions= 0 time=0 usec                                                                                               |
+| #constants            actions= 1 time=5 usec                                                                                               |
+| #commonTerms          actions= 0 time=5 usec                                                                                               |
+| #projectionpath       actions= 0 time=5 usec                                                                                               |
+| #deadcode             actions= 0 time=6 usec                                                                                               |
+| #reorder              actions= 1 time=21 usec                                                                                              |
+| #matpack              actions= 0 time=0 usec                                                                                               |
+| #dataflow             actions= 1 time=21 usec                                                                                              |
+| #multiplex            actions= 0 time=2 usec                                                                                               |
+| #profiler             actions=1 time=1 usec                                                                                                |
+| #candidates           actions=1 time=1 usec                                                                                                |
+| #deadcode             actions= 0 time=8 usec                                                                                               |
+| #wlc                  actions= 0 time=1 usec                                                                                               |
+| #garbagecollector     actions= 1 time=42 usec                                                                                              |
+| #total                actions=28 time=320 usec                                                                                             |
++--------------------------------------------------------------------------------------------------------------------------------------------+
+46 tuples

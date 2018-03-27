@@ -15,3 +15,7 @@ begin
 end;
 
 call fill_table1(1000000);
+
+drop table if exists table2 cascade;
+create table table2 (id int);
+insert into table2 (id) values (0),(100),(200),(300),(400),(500),(600),(700),(800),(900);
