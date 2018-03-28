@@ -206,9 +206,9 @@ AUTHinitTables(const char *passwd) {
 		/* don't check this bat since we'll fix it below */
 		GDKdebug &= ~CHECKMASK;
 		pass = BATdescriptor(bid);
+		GDKdebug = dbg;
 		if (pass == NULL)
 			throw(MAL, "initTables.passwd", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		GDKdebug = dbg;
 		isNew = 0;
 	}
 	assert(pass);
