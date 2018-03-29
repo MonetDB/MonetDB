@@ -1396,6 +1396,7 @@ str
 MTIMEprelude(void *ret)
 {
 	const char *msg = NULL;
+	char *err;
 	ValRecord vr;
 	int ticks;
 	union lng_tzone ltz;
@@ -1463,8 +1464,9 @@ MTIMEprelude(void *ret)
 	TIMEZONES("Azore Islands", -1 * 60);
 	TIMEZONES("Hawaii/USA", -10 * 60);
 	TIMEZONES("American Samoa", -11 * 60);
-	MTIMErule_fromstr(&RULE_MAR, &s1);
-	MTIMErule_fromstr(&RULE_OCT, &s2);
+	if ((err = MTIMErule_fromstr(&RULE_MAR, &s1)) != MAL_SUCCEED ||
+		(err = MTIMErule_fromstr(&RULE_OCT, &s2)) != MAL_SUCCEED)
+		return err;
 	TIMEZONES2("Kazakhstan", 6 * 60, RULE_MAR, RULE_OCT);
 	TIMEZONES2("Moscow/Russia", 3 * 60, RULE_MAR, RULE_OCT);
 	TIMEZONES2("East/Europe", 2 * 60, RULE_MAR, RULE_OCT);

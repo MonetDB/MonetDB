@@ -590,6 +590,10 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 	} else {
 #ifdef HAVE_SYS_UN_H
 		usockfile = GDKstrdup(*Usockfile);
+		if (usockfile == NULL) {
+			GDKfree(psock);
+			throw(MAL,"mal_mapi.listen", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
 #else
 		usockfile = NULL;
 		GDKfree(psock);
@@ -606,8 +610,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 
 	if (port > 65535) {
 		GDKfree(psock);
-		if (usockfile)
-			GDKfree(usockfile);
+		GDKfree(usockfile);
 		throw(ILLARG, "mal_mapi.listen", OPERATION_FAILED ": port number should be between 1 and 65535");
 	}
 
@@ -619,8 +622,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 					  , 0);
 		if (sock == INVALID_SOCKET) {
 			GDKfree(psock);
-			if (usockfile)
-				GDKfree(usockfile);
+			GDKfree(usockfile);
 			throw(IO, "mal_mapi.listen",
 				  OPERATION_FAILED ": creation of stream socket failed: %s",
 #ifdef _MSC_VER
@@ -641,8 +643,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 			const char *err = strerror(errno);
 #endif
 			GDKfree(psock);
-			if (usockfile)
-				GDKfree(usockfile);
+			GDKfree(usockfile);
 			closesocket(sock);
 			throw(IO, "mal_mapi.listen", OPERATION_FAILED ": setsockptr failed %s", err);
 		}
@@ -675,8 +676,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 				}
 				closesocket(sock);
 				GDKfree(psock);
-				if (usockfile)
-					GDKfree(usockfile);
+				GDKfree(usockfile);
 				throw(IO, "mal_mapi.listen",
 					  OPERATION_FAILED ": bind to stream socket port %d "
 					  "failed: %s", port,
@@ -694,8 +694,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 		if (getsockname(sock, (SOCKPTR) &server, &length) == SOCKET_ERROR) {
 			closesocket(sock);
 			GDKfree(psock);
-			if (usockfile)
-				GDKfree(usockfile);
+			GDKfree(usockfile);
 			throw(IO, "mal_mapi.listen",
 				  OPERATION_FAILED ": failed getting socket name: %s",
 #ifdef _MSC_VER
@@ -708,8 +707,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 		if(listen(sock, maxusers) == SOCKET_ERROR) {
 			closesocket(sock);
 			GDKfree(psock);
-			if (usockfile)
-				GDKfree(usockfile);
+			GDKfree(usockfile);
 			throw(IO, "mal_mapi.listen",
 				  OPERATION_FAILED ": failed to set socket to listen %s",
 #ifdef _MSC_VER
@@ -764,6 +762,7 @@ SERVERlisten(int *Port, str *Usockfile, int *Maxusers)
 		if(remove(usockfile) == -1 && errno != ENOENT) {
 			char *e = createException(IO, "mal_mapi.listen", OPERATION_FAILED ": remove UNIX socket file");
 			closesocket(usock);
+			GDKfree(usockfile);
 			GDKfree(psock);
 			return e;
 		}
