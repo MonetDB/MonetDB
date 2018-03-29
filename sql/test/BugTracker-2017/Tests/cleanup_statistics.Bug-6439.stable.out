@@ -37,7 +37,7 @@ Ready.
 [ 1,	"one"	]
 [ 2,	"two"	]
 #DELETE FROM sys.statistics;
-[ 225	]
+[ 184	]
 #SELECT /* column_id, */ type, width, /* stamp, */ "sample", "count", "unique", nils, minval, maxval, sorted, revsorted FROM sys.statistics;
 % sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics,	sys.statistics # table_name
 % type,	width,	sample,	count,	unique,	nils,	minval,	maxval,	sorted,	revsorted # name
