@@ -76,7 +76,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (msg != MAL_SUCCEED || (msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 
-	dquery = (char *) GDKzalloc(8192);
+	dquery = (char *) GDKzalloc(96);
 	if (dquery == NULL) {
 		throw(SQL, "analyze", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
@@ -147,7 +147,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						if (tostr == BATatoms[TYPE_str].atomToStr)
 							tostr = strToStrSQuote;
 
-						snprintf(dquery, 8192, "delete from sys.statistics where \"column_id\" = %d;", c->base.id);
+						snprintf(dquery, 96, "delete from sys.statistics where \"column_id\" = %d;", c->base.id);
 						cfnd = 1;
 						if (samplesize > 0) {
 							bsample = BATsample(bn, (BUN) samplesize);
