@@ -1,5 +1,5 @@
 HAVE_LIBPY?pyUDF-crash.Bug-6508
-HAVE_HGE?sqlitelogictest-wrong-aggregation-count.Bug-6510
+sqlitelogictest-wrong-aggregation-count.Bug-6510
 sqlitelogictest-wrong-select-not-between.Bug-6511
 case_with_orderby_limit.Bug-6512
 sqlitelogictest-wrong-mal-function-generation.Bug-6513
