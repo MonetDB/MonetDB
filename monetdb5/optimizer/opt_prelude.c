@@ -282,6 +282,7 @@ str subsliceRef;
 str subsumRef;
 str subuniformRef;
 str sumRef;
+str supervisor_registerRef;
 str takeRef;
 str thetajoinRef;
 str thetaselectRef;
@@ -568,6 +569,7 @@ void optimizerInit(void)
 	sumRef = putName("sum");
 	subsumRef = putName("subsum");
 	subavgRef = putName("subavg");
+	supervisor_registerRef = putName("supervisor_register");
 	sortRef = putName("sort");
 	takeRef= putName("take");
 	transactionRef= putName("transaction");

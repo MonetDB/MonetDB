@@ -290,6 +290,7 @@ mal_export  str subsliceRef;
 mal_export  str subsumRef;
 mal_export  str subuniformRef;
 mal_export  str sumRef;
+mal_export  str supervisor_registerRef;
 mal_export  str takeRef;
 mal_export  str thetajoinRef;
 mal_export  str thetaselectRef;

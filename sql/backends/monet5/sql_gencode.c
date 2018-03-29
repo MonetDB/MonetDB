@@ -354,7 +354,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		lret[i] = getArg(p, 0);
 	}
 
-	/* q := remote.connect("uri", "user", "pass"); */
+	/* q := remote.connect("uri", "user", "pass", "language"); */
 	p = newStmt(curBlk, remoteRef, connectRef);
 	p = pushStr(curBlk, p, uri);
 	p = pushStr(curBlk, p, "monetdb");
@@ -434,6 +434,33 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	}
 	}
 	pushInstruction(curBlk, p);
+
+	if (mal_session_uuid) {
+		str session_uuid = GDKstrdup(mal_session_uuid);
+		/*
+		p = newStmt(curBlk, remoteRef, execRef);
+		p = newStmt(curBlk, remoteRef, supervisor_registerRef);
+		p = pushStr(curBlk, p, mal_session_uuid);
+		*/
+
+		p = newInstruction(curBlk, remoteRef, execRef);
+		p = pushArgument(curBlk, p, q);
+		p = pushStr(curBlk, p, remoteRef);
+		p = pushStr(curBlk, p, supervisor_registerRef);
+		getArg(p, 0) = -1;
+		o = newFcnCall(curBlk, remoteRef, putRef);
+		o = pushArgument(curBlk, o, q);
+		o = pushInt(curBlk, o, TYPE_int);
+		p = pushReturn(curBlk, p, getArg(o, 0));
+
+		o = newFcnCall(curBlk, remoteRef, putRef);
+		o = pushArgument(curBlk, o, q);
+		o = pushStr(curBlk, o, session_uuid);
+		p = pushArgument(curBlk, p, getArg(o, 0));
+
+		pushInstruction(curBlk, p);
+		GDKfree(session_uuid);
+	}
 
 	/* (x1, x2, ..., xn) := remote.exec(q, "mod", "fcn"); */
 	p = newInstruction(curBlk, remoteRef, execRef);
