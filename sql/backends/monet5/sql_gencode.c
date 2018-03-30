@@ -467,7 +467,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		p = newInstruction(curBlk, remoteRef, execRef);
 		p = pushArgument(curBlk, p, q);
 		p = pushStr(curBlk, p, remoteRef);
-		p = pushStr(curBlk, p, supervisor_registerRef);
+		p = pushStr(curBlk, p, register_supervisorRef);
 		getArg(p, 0) = -1;
 
 		/* We don't really care about the return value of supervisor_register,
@@ -491,7 +491,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		pushInstruction(curBlk, p);
 
 		/* Execute the same instruction locally */
-		p = newStmt(curBlk, remoteRef, supervisor_registerRef);
+		p = newStmt(curBlk, remoteRef, register_supervisorRef);
 		p = pushStr(curBlk, p, lsupervisor_session);
 		p = pushStr(curBlk, p, lworker_plan_uuid);
 

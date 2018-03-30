@@ -1407,7 +1407,7 @@ RMTisalive(int *ret, str *conn)
 
 // This is basically a no op
 str
-RMTsupervisorRegister(int *ret, str *sup_uuid, str *query_uuid) {
+RMTregisterSupervisor(int *ret, str *sup_uuid, str *query_uuid) {
 	(void)sup_uuid;
 	(void)query_uuid;
 
