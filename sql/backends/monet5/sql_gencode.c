@@ -52,6 +52,8 @@
 #include "rel_dump.h"
 #include "rel_remote.h"
 
+#include "muuid.h"
+
 int
 constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 {
@@ -436,18 +438,19 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	pushInstruction(curBlk, p);
 
 	if (mal_session_uuid) {
-		str session_uuid = GDKstrdup(mal_session_uuid);
-		/*
-		p = newStmt(curBlk, remoteRef, execRef);
-		p = newStmt(curBlk, remoteRef, supervisor_registerRef);
-		p = pushStr(curBlk, p, mal_session_uuid);
-		*/
+		str remote_session_uuid = GDKstrdup(mal_session_uuid);
+		str query_uuid = generateUUID();
+		str local_query_uuid = GDKstrdup(query_uuid);
+		if (remote_session_uuid == NULL) {
+			return -1;
+		}
 
 		p = newInstruction(curBlk, remoteRef, execRef);
 		p = pushArgument(curBlk, p, q);
 		p = pushStr(curBlk, p, remoteRef);
 		p = pushStr(curBlk, p, supervisor_registerRef);
 		getArg(p, 0) = -1;
+
 		o = newFcnCall(curBlk, remoteRef, putRef);
 		o = pushArgument(curBlk, o, q);
 		o = pushInt(curBlk, o, TYPE_int);
@@ -455,11 +458,19 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 
 		o = newFcnCall(curBlk, remoteRef, putRef);
 		o = pushArgument(curBlk, o, q);
-		o = pushStr(curBlk, o, session_uuid);
+		o = pushStr(curBlk, o, remote_session_uuid);
+		p = pushArgument(curBlk, p, getArg(o, 0));
+
+		o = newFcnCall(curBlk, remoteRef, putRef);
+		o = pushArgument(curBlk, o, q);
+		o = pushStr(curBlk, o, query_uuid);
 		p = pushArgument(curBlk, p, getArg(o, 0));
 
 		pushInstruction(curBlk, p);
-		GDKfree(session_uuid);
+
+		free(query_uuid);
+		GDKfree(local_query_uuid);
+		GDKfree(remote_session_uuid);
 	}
 
 	/* (x1, x2, ..., xn) := remote.exec(q, "mod", "fcn"); */
