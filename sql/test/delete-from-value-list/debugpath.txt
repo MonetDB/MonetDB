@@ -64,12 +64,114 @@ sql_symbol2relation:
 backend_dumpproc:
 	Here is where we are going to build the MAL. we desent through backend_dumpstmt -> sql_relation2stmt ->_rel_bin ->output_rel_bin->_subrel_bin->subrel_bin->rel2bin_delete
 	rel2bin_delete(backend *be, sql_rel *rel, list *refs):
-		First the delete relation is prepared: (rows = subrel_bin(be, rel->r, refs))
-	stmt_delete:
-		this is where a mal delete instruction is actually initialized
-		
-		
-	
+		rows = subrel_bin(be, rel->r, refs): First create deletes relation:
+			rel2bin_project(be, rel->r, refs, NULL):
+				sub = subrel_bin(be, rel->r->l, refs):
+					rel2bin_select(be, rel->r->l, refs):
+						sub = subrel_bin(be, rel->r->l->l, refs):
+							rel2bin_basetable(be, rel->r->l->l) (This is the spot where no sub relations can be brought to the table)
+								dels = stmt_tid(rel->r->l<table>) (Adds a sql.tid mal instruction to mb) (dels is a unfortunate name, tids would be better)
+								s = stmt_col(be, find_sql_column(t, rel->exps->h->data->r<apparently given column name>), dels);
+								(happens in a for loop since there can be multiple columns in a table;)
+								list_append(l, s); (add s to a previously initialized list l;)
+								return stmt_list(be, l);
+						s = exp_bin(be, rel->r->l->exps->h->data, sub, NULL...)
+							return handle_in_exps(be, rel->r->l->exps->h->data->l, list *nl = rel->r->l->exps->h->data->r, sub, NULL..., in = 1, 0)
+								c = exp_bin(be, rel->r->l->exps->h->data, sub, NULL...);
+										s = bin_find_column(be, sub, rel->r->l->exps->h->data->l->l("table1"), rel->r->l->exps->h->data->l->r"id");
+										(the above function seems to return the one col_stmt that matches the one used in the "in" statement)
+								start for(node n = nl->h; n; n = n->next):
+									stmt i = exp_bin(be, n->data, sub, NULL...)
+										l = exp_bin(be, n->data->l, sub, NUL...)
+											s = stmt_varnr(be, n->data->l->flag, n->data->l->tpe);
+												InstrPtr q = newAssignment(be->mb); (just pushes an instruction)
+												q = pushArgument(be->mb, q, be->mvc->args[n->data->l->flag]->varid);
+												stmt s = stmt_create(be->mvc->sa, st_var);
+												s->op1 = NULL, s->op4.typeval = n->data->l->tpe, s->flag = nr, s->q = q, s->nr = q->argv[0];
+												return s;
+											return s;
+										s = stmt_convert(be, l, n->data->r->h->data, n->data->r->h->next->data);
+											q = newStmt(be->mb, calcRef, convert = n->data->r->h->next->data(sql_subtype)->type->base.name = "int")
+											q = pushArgument(be->mb, q, l->nr)
+											stmt *s = stmt_create(be->mvc->sa, st_convert)
+											s->op1 = l, s->nrcols = l->nrcols, s->key = l->key, s->aggr = l aggr, s->nr = getDestVar(q), s->q = q
+											return s;
+										return s;
+									i = stmt_uselect(be, c, i, cmp, NULL, 0)
+										q = newStmt(be->mb, AlgebraRef, ThetaselectRef)
+										q = pushArgument(mb, q, c->nr); // column "id"
+										q = pushArgument(mb, q, i->nr); // element from value list
+										q = pushStr(mb, q, "==");
+										stmt s = stmt_create(be->mvc->sa, st_uselect);
+										s->op1 = c->nr, s->op2 = i->nr, s>op3 = NULL, s->flag == cmp, s->nrcols = 2, s->nr = q->argv[0], s->q = q;
+										return s;
+									if (s) // basically you creating unions out of the results from the theta_select
+										s = stmt_tunion(be, s, i);
+											q = newStmt(be->mb, batRef, mergecandRef); //via dump_2
+											q = pushArgument(be->mb, q, s->nr); //via dump_2
+											q = pushArgument(be->mb, q, i->nr); //via dump_2
+											stmt *r = stmt_create(be->mvc->sa, st_tunion);
+											r->op1 = s, r->op2 = i, r->nrcols = s->nrcols, r->key = s->key, r->aggr = s->aggr, r->nr=q->argv[0], s->q= q
+											return s;
+									else
+										s = i;
+								return s; // basically the result of the last union of previous theta-selects and unions.
+						l = sa_list(be->mvc->sa);
+						col1 = stmt_project(be, s, sub->op4.lval->h->data<="id">); // This actually happens in a for loop
+							q = stmt_project_join(be, s, sub->op4.lval->h->data, NULL):
+								q = newStmt(mb, algebraRef, projectionRef);
+								q = pushArgument(mb, q, s->nr);
+								q = pushArgument(mb, q, sub->op4.lval->h->nr);
+							stmt *s = stmt_create(be->mvc->sa, st_join);
+
+							s->op1 = s;
+							s->op2 = sub->op4.lval->h->data;
+							s->flag = cmp_project;
+							s->key = 0;
+							s->nrcols = 2;
+							s->nr = getDestVar(q);
+							s->q = q;
+							return s;
+								
+						col2 = stmt_project(be, s, sub->op4.lval->h->next->data<="%TID%">); // This actually happens in a for loop
+							// like previous stmt_project
+						list_append(l, col1<="id">); // This actually happens in a for loop
+						list_append(l, col2<="%TID%">); // This actually happens in a for loop
+						return stmt_list(be, l);
+				pl = sa_list(be->mvc->sa)
+				psub = stmt_list(be, pl);
+				stmt s = exp_bin(be, rel->exps->h->data, sub, psub, NULL...); 
+					s = bin_find_column(be, sub, rel->exps->h->data->l, rel->exps->h->data->r); // returns a join_statement with cname %TID%
+					return s;
+				list_append(pl, s);
+				stmt_set_nrcols(psub) // only works for list_statement sets it to the largest nrcols of its element.
+				return psub;
+		(back to rel2bin_delete repeat for clarity rows = psub)
+		rows = rows->op4.lval->h->data; // because rows is a list (psub)
+		t = rel->l->r; // because rel->l is of type op_basetable
+		stdelete = sql_delete(be, t, rows);
+			list *l = sa_list(be->mvc->sa);
+			v = rows;
+			s = stmt_delete(be, t, rows);
+				q = newStmt(be->mb, sqlRef, deleteRef);
+				q = pushArgument(mb, q, be->mvc_var);
+				getArg(q, 0) = be->mvc_var = newTmpVariable(be->mb, TYPE_int); // I JUST DO NOT UNDERSTAMD THIS SHIT
+				q = pushSchema(be->mb, q, t);
+				q = pushStr(be->mb, q, t->base.name);
+				q = pushArgument(be->mb, q, rows->nr);
+				be->mvc_var = getDestVar(q);
+				stmt *s = stmt_create(be->mvc->sa, st_delete);
+				s->op1 = rows;
+				s->op4.tval = t;
+				s->q = q;
+				s->nr = getDestVar(q);
+			s = stmt_aggr(be, rows, NULL, NULL, sql_bind_aggr(be->mvc->sa, be->mvc->session->schema, "count", NULL), 1, 0, 1);
+			//so mb already contains all instruction pointers, hence would like to return a count of the number of deleted rows. This is why s can be reinitialized.
+		return stdelete;
+
+			list_append(l, s);
+				
+			
 		
 
 
