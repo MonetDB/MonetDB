@@ -60,12 +60,14 @@
  *	right values; two extra Boolean parameters, li and hi,
  *	indicate whether equal values match
  *
- * In addition to these functions, there is one more functions that is
- * closely related:
+ * In addition to these functions, there are two more functions that
+ * are closely related:
+ * BATintersect
+ *	intersection: return a candidate list with OIDs of tuples in
+ *	the left input whose value occurs in the right input
  * BATdiff
- *	difference: return a candidate list compatible list of OIDs of
- *	tuples in the left input whose value does not occur in the
- *	right input
+ *	difference: return a candidate list with OIDs of tuples in the
+ *	left input whose value does not occur in the right input
  */
 
 /* Perform a bunch of sanity checks on the inputs to a join. */
@@ -3864,9 +3866,10 @@ BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_mat
 			GDKdebug & ALGOMASK ? GDKusec() : 0);
 }
 
-/* Perform a semi-join over l and r.  Returns two new, aligned, bats
+/* Perform a semi-join over l and r.  Returns one or two new, bats
  * with the oids of matching tuples.  The result is in the same order
- * as l (i.e. r1 is sorted). */
+ * as l (i.e. r1 is sorted).  If a single bat is returned, it is a
+ * candidate list. */
 gdk_return
 BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
@@ -3875,10 +3878,23 @@ BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matc
 			GDKdebug & ALGOMASK ? GDKusec() : 0);
 }
 
+/* Return a candidate list with the list of rows in l whose value also
+ * occurs in r.  This is just the left output of a semi-join. */
+BAT *
+BATintersect(BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
+{
+	BAT *bn;
+
+	if (leftjoin(&bn, NULL, l, r, sl, sr, nil_matches,
+		     false, true, false, estimate, "BATintersect",
+		     GDKdebug & ALGOMASK ? GDKusec() : 0) == GDK_SUCCEED)
+		return virtualize(bn);
+	return NULL;
+}
+
 /* Return the difference of l and r.  The result is a BAT with the
  * oids of those values in l that do not occur in r.  This is what you
- * might call an anti-semi-join.  The result can be used as a
- * candidate list. */
+ * might call an anti-semi-join.  The result is a candidate list. */
 BAT *
 BATdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 {
@@ -3887,7 +3903,7 @@ BATdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
 	if (leftjoin(&bn, NULL, l, r, sl, sr, nil_matches,
 		     false, false, true, estimate, "BATdiff",
 		     GDKdebug & ALGOMASK ? GDKusec() : 0) == GDK_SUCCEED)
-		return bn;
+		return virtualize(bn);
 	return NULL;
 }
 
