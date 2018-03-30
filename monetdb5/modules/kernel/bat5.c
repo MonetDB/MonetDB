@@ -747,7 +747,7 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 	    BUNappend(bk, "tident", FALSE) != GDK_SUCCEED ||
 	    BUNappend(bv, b->tident, FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tdense", FALSE) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t)(BATtdense(b))), FALSE) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t)BATtdense(b)), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tseqbase", FALSE) != GDK_SUCCEED ||
 	    BUNappend(bv, oidtostr(b->tseqbase, bf, sizeof(bf)), FALSE) != GDK_SUCCEED ||
 	    BUNappend(bk, "tsorted", FALSE) != GDK_SUCCEED ||
@@ -1111,7 +1111,7 @@ BKCshrinkBAT(bat *ret, const bat *bid, const bat *did)
 	BATsetcount(bn, cnt);
 	bn->tsorted = 0;
 	bn->trevsorted = 0;
-	bn->tdense = 0;
+	bn->tseqbase = oid_nil;
 	bn->tkey = b->tkey;
 	bn->tnonil = b->tnonil;
 	bn->tnil = b->tnil;
@@ -1171,7 +1171,7 @@ BKCshrinkBATmap(bat *ret, const bat *bid, const bat *did)
     BATsetcount(bn, BATcount(b)-BATcount(bs));
     bn->tsorted = 0;
     bn->trevsorted = 0;
-    bn->tdense = 0;
+	bn->tseqbase = oid_nil;
 
 
 	BBPunfix(b->batCacheid);
@@ -1297,7 +1297,7 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
     BATsetcount(bn, BATcount(b) - BATcount(bs));
     bn->tsorted = 0;
     bn->trevsorted = 0;
-    bn->tdense = 0;
+	bn->tseqbase = oid_nil;
 	bn->tkey = b->tkey;
 
 
@@ -1359,7 +1359,7 @@ BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
     BATsetcount(bn, BATcount(b)-BATcount(bs));
     bn->tsorted = 0;
     bn->trevsorted = 0;
-    bn->tdense = 0;
+	bn->tseqbase = oid_nil;
 
 
 	BBPunfix(b->batCacheid);

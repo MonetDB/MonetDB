@@ -112,6 +112,8 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 				if (tbl && strcmp(bt->name, tbl))
 					continue;
+				if (t->persistence != SQL_PERSIST)
+					throw(SQL, "analyze", SQLSTATE(42S02) "Table '%s' is not persistent", bt->name);
 				tfnd = 1;
 				if (isTable(t) && t->columns.set)
 					for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {

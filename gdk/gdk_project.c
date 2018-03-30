@@ -105,7 +105,7 @@ project_void(BAT *bn, BAT *l, BAT *r)
 	const oid *o;
 	oid rseq, rend;
 
-	assert(!is_oid_nil(r->tseqbase));
+	assert(BATtdense(r));
 	o = (const oid *) Tloc(l, 0);
 	bt = (oid *) Tloc(bn, 0);
 	bn->tsorted = l->tsorted;
@@ -238,7 +238,6 @@ BATproject(BAT *l, BAT *r)
 			return NULL;
 		if (ATOMtype(bn->ttype) == TYPE_oid &&
 		    BATcount(bn) == 0) {
-			bn->tdense = 1;
 			BATtseqbase(bn, 0);
 		}
 		ALGODEBUG fprintf(stderr, "#BATproject(l=%s,r=%s)=%s#"BUNFMT"%s%s%s\n",
@@ -739,7 +738,7 @@ BATprojectchain(BAT **bats)
 		bn->tshift = b->tshift;
 	}
 	bn->tsorted = bn->trevsorted = cnt <= 1;
-	bn->tdense = 0;
+	bn->tseqbase = oid_nil;
 	GDKfree(ba);
 	return bn;
 

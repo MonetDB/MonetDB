@@ -52,7 +52,6 @@ virtualize(BAT *bn)
 			bn->tseqbase = 0;
 		else
 			bn->tseqbase = * (const oid *) Tloc(bn, 0);
-		bn->tdense = 1;
 		HEAPfree(&bn->theap, 1);
 		bn->theap.storage = bn->theap.newstorage = STORE_MEM;
 		bn->theap.size = 0;
@@ -233,9 +232,8 @@ BAT_hashselect(BAT *b, BAT *s, BAT *bn, const void *tl, BUN maximum)
 		}
 	}
 	bn->tsorted = 1;
-	bn->tdense = bn->trevsorted = bn->batCount <= 1;
-	if (bn->batCount == 1)
-		bn->tseqbase = *dst;
+	bn->trevsorted = bn->batCount <= 1;
+	bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? *dst : oid_nil;
 	return bn;
 }
 
@@ -991,9 +989,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 	bn->tsorted = 1;
 	bn->trevsorted = bn->batCount <= 1;
 	bn->tkey = 1;
-	bn->tdense = (bn->batCount <= 1 || bn->batCount == b->batCount);
-	if (bn->batCount == 1 || bn->batCount == b->batCount)
-		bn->tseqbase = b->hseqbase;
+	bn->tseqbase = cnt == 0 ? 0 : cnt == 1 || cnt == b->batCount ? b->hseqbase : oid_nil;
 
 	return bn;
 }
@@ -1035,7 +1031,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
  * v != nil, v1 != nil, v2 != nil, v1 < v2.
  *	tl	th	li	hi	anti	result list of OIDs for values
  *	-----------------------------------------------------------------
- *	nil	NULL	true	ignored	false	x = nil (only way to get nil)
+ *	nil	NULL	true	ignored	false	x == nil (only way to get nil)
  *	nil	NULL	false	ignored	false	NOTHING
  *	nil	NULL	ignored	ignored	true	x != nil
  *	nil	nil	ignored	ignored	false	x != nil
@@ -1621,8 +1617,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				bn->tsorted = 1;
 				bn->trevsorted = bn->batCount <= 1;
 				bn->tkey = 1;
-				bn->tdense = bn->batCount <= 1;
-				bn->tseqbase = bn->tdense ? bn->batCount == 0 ? 0 : * (oid *) Tloc(bn, 0) : oid_nil;
+				bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? * (oid *) Tloc(bn, 0) : oid_nil;
 				bn->tnil = 0;
 				bn->tnonil = 1;
 				if (s) {
@@ -2598,51 +2593,53 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 	r1->tkey = 1;
 	r1->tsorted = 1;
 	r1->trevsorted = 1;
-	r1->tdense = 1;
+	r1->tseqbase = 0;
 	r1->tnil = 0;
 	r1->tnonil = 1;
 	for (ncnt = 1; ncnt < cnt; ncnt++) {
 		if (dst1[ncnt - 1] == dst1[ncnt]) {
-			r1->tdense = 0;
+			r1->tseqbase = oid_nil;
 			r1->tkey = 0;
 		} else if (dst1[ncnt - 1] < dst1[ncnt]) {
 			r1->trevsorted = 0;
 			if (dst1[ncnt - 1] + 1 != dst1[ncnt])
-				r1->tdense = 0;
+				r1->tseqbase = oid_nil;
 		} else {
 			assert(sorted != 1);
 			r1->tsorted = 0;
-			r1->tdense = 0;
+			r1->tseqbase = oid_nil;
 			r1->tkey = 0;
 		}
-		if (!(r1->trevsorted | r1->tdense | r1->tkey | ((sorted != 1) & r1->tsorted)))
+		if (!(r1->trevsorted | BATtdense(r1) | r1->tkey | ((sorted != 1) & r1->tsorted)))
 			break;
 	}
-	r1->tseqbase = 	r1->tdense ? cnt > 0 ? dst1[0] : 0 : oid_nil;
+	if (BATtdense(r1))
+		r1->tseqbase = cnt > 0 ? dst1[0] : 0;
 	r2->tkey = 1;
 	r2->tsorted = 1;
 	r2->trevsorted = 1;
-	r2->tdense = 1;
+	r2->tseqbase = 0;
 	r2->tnil = 0;
 	r2->tnonil = 1;
 	for (ncnt = 1; ncnt < cnt; ncnt++) {
 		if (dst2[ncnt - 1] == dst2[ncnt]) {
-			r2->tdense = 0;
+			r2->tseqbase = oid_nil;
 			r2->tkey = 0;
 		} else if (dst2[ncnt - 1] < dst2[ncnt]) {
 			r2->trevsorted = 0;
 			if (dst2[ncnt - 1] + 1 != dst2[ncnt])
-				r2->tdense = 0;
+				r2->tseqbase = oid_nil;
 		} else {
 			assert(sorted != 2);
 			r2->tsorted = 0;
-			r2->tdense = 0;
+			r2->tseqbase = oid_nil;
 			r2->tkey = 0;
 		}
-		if (!(r2->trevsorted | r2->tdense | r2->tkey | ((sorted != 2) & r2->tsorted)))
+		if (!(r2->trevsorted | BATtdense(r2) | r2->tkey | ((sorted != 2) & r2->tsorted)))
 			break;
 	}
-	r2->tseqbase = 	r2->tdense ? cnt > 0 ? dst2[0] : 0 : oid_nil;
+	if (BATtdense(r2))
+		r2->tseqbase = cnt > 0 ? dst2[0] : 0;
 	ALGODEBUG fprintf(stderr, "#rangejoin(l=%s,rl=%s,rh=%s)="
 			  "(%s#"BUNFMT"%s%s,%s#"BUNFMT"%s%s)\n",
 			  BATgetId(l), BATgetId(rl), BATgetId(rh),

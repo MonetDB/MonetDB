@@ -2749,6 +2749,9 @@ def killchildren(pid, procs = None):
         if procdebug:
             print('killing process %d failed' % pid)
 
+def reallyKill(proc):
+    killchildren(proc.pid, getkids())
+
 def killProc(proc, outfile = None, cmd = None):
     if type(cmd) is type([]):
         cmd = ' '.join(cmd)
@@ -2782,7 +2785,16 @@ def killProc(proc, outfile = None, cmd = None):
         try:
             p = process.Popen(['pstack', str(proc.pid)], stdout = process.PIPE,
                               universal_newlines = True)
+            try:
+                # pstack (gdb) sometimes hangs when trying to get the
+                # stack trace: kill it mercilessly if it does
+                t = Timer(60, reallyKill, args = [p])
+                t.start()
+            except AttributeError:
+                t = None
             out, err = p.communicate()
+            if t is not None:
+                t.cancel()
         except:
             out = ''
     if outfile is not None and out:
@@ -3017,6 +3029,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             elif (not all_tests or (COND != None and "HAVE_LIBPY" in COND)) and CONDITIONALS['HAVE_LIBPY']:
                 # enable Python integration in server
                 Srvr.extend(['--set', 'embedded_py=true'])
+
+            # enable C integration in server
+            Srvr.extend(['--set', 'embedded_c=true'])
 
 
             pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)

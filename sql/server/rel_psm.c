@@ -1347,6 +1347,7 @@ psm_analyze(mvc *sql, char *analyzeType, dlist *qname, dlist *columns, symbol *s
 	append(exps, sample_exp);
 	append(tl, exp_subtype(sample_exp));
 
+	assert(qname);
 	if (qname) {
 		if (qname->h->next)
 			sname = qname_schema(qname);
@@ -1382,6 +1383,8 @@ psm_analyze(mvc *sql, char *analyzeType, dlist *qname, dlist *columns, symbol *s
 	} else {
 		dnode *n;
 
+		if (!sname || !tname)
+			return sql_error(sql, 01, SQLSTATE(42000) "Analyze schema or table name missing");
 		f = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), analyzeType, tl, F_PROC);
 		if (!f)
 			return sql_error(sql, 01, SQLSTATE(42000) "Analyze procedure missing");

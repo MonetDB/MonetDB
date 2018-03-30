@@ -307,6 +307,10 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 				data = (char *)ret->array_data;
 				assert((size_t)el_count == (size_t)ret->count);
 
+				/* we're not maintaining properties */
+				self->cols[i].b->tsorted = false;
+				self->cols[i].b->trevsorted = false;
+
 				switch (self->cols[i].b->ttype) {
 					case TYPE_bit:
 						NP_INSERT_BAT(self->cols[i].b, bit, self->nvals);

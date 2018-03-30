@@ -280,7 +280,7 @@ static void blob_initialize(struct cudf_data_struct_blob *self,
 		GENERATE_BAT_INPUT_BASE(tpe);                                          \
 		bat_data->count = BATcount(b);                                         \
 		bat_data->null_value = tpe##_nil;                                      \
-		if (b->tdense) {                                                       \
+		if (BATtdense(b)) {					\
 			size_t it = 0;                                                     \
 			tpe val = b->T.seq;                                                \
 			/* bat is dense, materialize it */                                 \
@@ -447,6 +447,10 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	(void)cntxt;
 
 	allocated_regions[tid] = NULL;
+
+	if (!GDKgetenv_istrue("embedded_c") && !GDKgetenv_isyes("embedded_c"))
+		throw(MAL, "cudf.eval", "Embedded C has not been enabled. "
+		      "Start server with --set embedded_c=true");
 
 	// we need to be able to catch segfaults and bus errors
 	// so we can work with mprotect to prevent UDFs from changing

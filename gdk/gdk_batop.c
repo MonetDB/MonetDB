@@ -598,7 +598,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 		HASHdestroy(b);	/* we're not maintaining the hash here */
 		if (BATtdense(n) && cand == NULL &&
 		    (BATcount(b) == 0 ||
-		     (!is_oid_nil(b->tseqbase) &&
+		     (BATtdense(b) &&
 		      b->tseqbase + BATcount(b) == n->tseqbase + start))) {
 			/* n is also dense and consecutive with b */
 			if (BATcount(b) == 0)
@@ -641,22 +641,18 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 	r = BUNlast(b);
 
 	if (BATcount(b) == 0) {
-		BATiter ni = bat_iterator(n);
-
 		b->tsorted = n->tsorted;
 		b->trevsorted = n->trevsorted;
-		b->tdense = n->tdense && cand == NULL;
+		b->tseqbase = oid_nil;
 		b->tnonil = n->tnonil;
 		b->tnil = n->tnil && cnt == BATcount(n);
 		b->tseqbase = oid_nil;
 		if (cand == NULL) {
 			b->tnosorted = start <= n->tnosorted && n->tnosorted < end ? n->tnosorted - start : 0;
 			b->tnorevsorted = start <= n->tnorevsorted && n->tnorevsorted < end ? n->tnorevsorted - start : 0;
-			if (n->tdense && n->ttype == TYPE_oid)
-				b->tseqbase = *(oid *) BUNtail(ni, start);
-			else if (n->ttype == TYPE_void &&
-				 !is_oid_nil(n->tseqbase))
+			if (BATtdense(n)) {
 				b->tseqbase = n->tseqbase + start;
+			}
 		} else {
 			b->tnosorted = 0;
 			b->tnorevsorted = 0;
@@ -677,9 +673,7 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 		if (BATtordered(b) && (!BATtordered(n) || xx < 0)) {
 			b->tsorted = FALSE;
 			b->tnosorted = 0;
-			if (b->tdense) {
-				b->tdense = FALSE;
-			}
+			b->tseqbase = oid_nil;
 		}
 		if (BATtrevordered(b) &&
 		    (!BATtrevordered(n) || xx > 0)) {
@@ -692,11 +686,11 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 		     !n->tkey || xx == 0)) {
 			BATkey(b, false);
 		}
-		if (b->ttype != TYPE_void && b->tsorted && b->tdense &&
+		if (b->ttype != TYPE_void && b->tsorted && BATtdense(b) &&
 		    (BATtdense(n) == 0 ||
 		     cand != NULL ||
 		     1 + *(oid *) BUNtloc(bi, last) != *(oid *) BUNtail(ni, start))) {
-			b->tdense = FALSE;
+			b->tseqbase = oid_nil;
 		}
 		b->tnonil &= n->tnonil;
 		b->tnil |= n->tnil && cnt == BATcount(n);
@@ -975,17 +969,16 @@ BATslice(BAT *b, BUN l, BUN h)
 	}
 	bni = bat_iterator(bn);
 	if (BATtdense(b)) {
-		bn->tdense = TRUE;
 		BATtseqbase(bn, (oid) (b->tseqbase + low));
-	} else if (bn->tkey && bn->ttype == TYPE_oid) {
+	} else if (bn->ttype == TYPE_oid) {
 		if (BATcount(bn) == 0) {
-			bn->tdense = TRUE;
 			BATtseqbase(bn, 0);
-		} else if (bn->tsorted &&
-			   !is_oid_nil((foid = *(oid *) BUNtloc(bni, 0))) &&
-			   foid + BATcount(bn) - 1 == *(oid *) BUNtloc(bni, BUNlast(bn) - 1)) {
-			bn->tdense = TRUE;
-			BATtseqbase(bn, *(oid *) BUNtloc(bni, 0));
+		} else if (!is_oid_nil((foid = *(oid *) BUNtloc(bni, 0))) &&
+			   (BATcount(bn) == 1 ||
+			    (bn->tkey &&
+			     bn->tsorted &&
+			     foid + BATcount(bn) - 1 == *(oid *) BUNtloc(bni, BUNlast(bn) - 1)))) {
+			BATtseqbase(bn, foid);
 		}
 	}
 	if (bn->batCount <= 1) {
@@ -1020,7 +1013,7 @@ BATkeyed(BAT *b)
 	Hash *hs = NULL;
 
 	if (b->ttype == TYPE_void)
-		return !is_oid_nil(b->tseqbase) || BATcount(b) <= 1;
+		return BATtdense(b) || BATcount(b) <= 1;
 	if (BATcount(b) <= 1)
 		return 1;
 	if (b->twidth < SIZEOF_BUN &&
@@ -1446,7 +1439,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		on->tnil = 0;
 		on->tnonil = 1;
 		on->tsorted = on->trevsorted = 0;
-		on->tdense = 0;
+		on->tseqbase = oid_nil;
 		if (sorted || groups) {
 			bn = BATproject(on, b);
 			if (bn == NULL)
@@ -1517,9 +1510,12 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			on->tnil = 0;
 			on->tnonil = 1;
 		}
-		on->tsorted = on->trevsorted = 0; /* it won't be sorted */
-		on->tdense = 0;			  /* and hence not dense */
-		on->tnosorted = on->tnorevsorted = 0;
+		/* COLcopy above can create TYPE_void */
+		if (on->ttype != TYPE_void) {
+			on->tsorted = on->trevsorted = 0; /* it won't be sorted */
+			on->tseqbase = oid_nil;	/* and hence not dense */
+			on->tnosorted = on->tnorevsorted = 0;
+		}
 		*order = on;
 		ords = (oid *) Tloc(on, 0);
 	} else {
@@ -1616,7 +1612,7 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		if (b->ttype == TYPE_void) {
 			b->tsorted = 1;
 			b->trevsorted = is_oid_nil(b->tseqbase) || b->batCount <= 1;
-			b->tkey = !is_oid_nil(b->tseqbase);
+			b->tkey = BATtdense(b);
 		} else if (b->batCount <= 1) {
 			b->tsorted = b->trevsorted = 1;
 		}
@@ -1849,7 +1845,7 @@ BATcount_no_nil(BAT *b)
 	t = ATOMbasetype(b->ttype);
 	switch (t) {
 	case TYPE_void:
-		cnt = n * !is_oid_nil(b->tseqbase);
+		cnt = n * BATtdense(b);
 		break;
 	case TYPE_bte:
 		for (i = 0; i < n; i++)

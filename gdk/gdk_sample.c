@@ -173,9 +173,7 @@ BATsample(BAT *b, BUN n)
 		bn->trevsorted = bn->batCount <= 1;
 		bn->tsorted = 1;
 		bn->tkey = 1;
-		bn->tdense = bn->batCount <= 1;
-		if (bn->batCount == 1)
-			bn->tseqbase = *(oid *) Tloc(bn, 0);
+		bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? *(oid *) Tloc(bn, 0) : oid_nil;
 	}
 	return bn;
 }

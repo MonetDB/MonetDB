@@ -877,10 +877,8 @@ headheapinit(oid *hseq, const char *buf, bat bid)
 
 	if (strcmp(type, "void") != 0)
 		GDKfatal("BBPinit: head column must be VOID (ID = %d).", (int) bid);
-#if SIZEOF_OID < SIZEOF_LNG
 	if (base > (uint64_t) GDK_oid_max)
 		GDKfatal("BBPinit: head seqbase out of range (ID = %d, seq = %" PRIu64 ").", (int) bid, base);
-#endif
 	*hseq = (oid) base;
 	return n;
 }
@@ -961,12 +959,12 @@ heapinit(BAT *b, const char *buf, int *hashash, const char *HT, unsigned bbpvers
 	b->tsorted = (bit) ((properties & 0x0001) != 0);
 	b->trevsorted = (bit) ((properties & 0x0080) != 0);
 	b->tkey = (properties & 0x0100) != 0;
-	b->tdense = (properties & 0x0200) != 0;
 	b->tnonil = (properties & 0x0400) != 0;
 	b->tnil = (properties & 0x0800) != 0;
 	b->tnosorted = (BUN) nosorted;
 	b->tnorevsorted = (BUN) norevsorted;
-	b->tseqbase = base >= (uint64_t) oid_nil ? oid_nil : (oid) base;
+	/* (properties & 0x0200) is the old tdense flag */
+	b->tseqbase = (properties & 0x0200) == 0 || base >= (uint64_t) oid_nil ? oid_nil : (oid) base;
 	b->theap.free = (size_t) free;
 	b->theap.size = (size_t) size;
 	b->theap.base = NULL;
@@ -1088,7 +1086,8 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 #endif
 
 		if (first != 0)
-			GDKfatal("BBPinit: first != 0 (ID = %" PRIu64 ").", batid);
+			GDKfatal("BBPinit: first != 0 (ID = %" PRIu64 ").",
+				 batid);
 
 		bid = (bat) batid;
 		if (batid >= (uint64_t) ATOMIC_GET(BBPsize, BBPsizeLock)) {
@@ -1097,7 +1096,8 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 				BBPextend(0, false);
 		}
 		if (BBP_desc(bid) != NULL)
-			GDKfatal("BBPinit: duplicate entry in BBP.dir (ID = %" PRIu64 ").", batid);
+			GDKfatal("BBPinit: duplicate entry in BBP.dir (ID = "
+				 "%" PRIu64 ").", batid);
 		bn = GDKzalloc(sizeof(BAT));
 		if (bn == NULL)
 			GDKfatal("BBPinit: cannot allocate memory for BAT.");
@@ -1114,10 +1114,8 @@ BBPreadEntries(FILE *fp, unsigned bbpversion)
 		if (bbpversion <= GDKLIBRARY_HEADED) {
 			nread += headheapinit(&bn->hseqbase, buf + nread, bid);
 		} else {
-#if SIZEOF_OID < SIZEOF_LNG
 			if (base > (uint64_t) GDK_oid_max)
 				GDKfatal("BBPinit: head seqbase out of range (ID = %" PRIu64 ", seq = %" PRIu64 ").", batid, base);
-#endif
 			bn->hseqbase = (oid) base;
 		}
 		nread += heapinit(bn, buf + nread, &Thashash, "T", bbpversion, bid, filename);
@@ -1497,7 +1495,7 @@ heap_entry(FILE *fp, BAT *b)
 		       (unsigned short) b->tsorted |
 			   ((unsigned short) b->trevsorted << 7) |
 			   (((unsigned short) b->tkey & 0x01) << 8) |
-			   ((unsigned short) b->tdense << 9) |
+		           ((unsigned short) BATtdense(b) << 9) |
 			   ((unsigned short) b->tnonil << 10) |
 			   ((unsigned short) b->tnil << 11),
 		       b->tnokey[0],
