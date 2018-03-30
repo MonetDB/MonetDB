@@ -438,39 +438,67 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	pushInstruction(curBlk, p);
 
 	if (mal_session_uuid) {
-		str remote_session_uuid = GDKstrdup(mal_session_uuid);
-		str query_uuid = generateUUID();
-		str local_query_uuid = GDKstrdup(query_uuid);
-		if (remote_session_uuid == NULL) {
+		str rsupervisor_session = GDKstrdup(mal_session_uuid);
+		if (rsupervisor_session == NULL) {
 			return -1;
 		}
 
+		str lsupervisor_session = GDKstrdup(mal_session_uuid);
+		if (lsupervisor_session == NULL) {
+			GDKfree(rsupervisor_session);
+			return -1;
+		}
+
+		str rworker_plan_uuid = generateUUID();
+		if (rworker_plan_uuid == NULL) {
+			GDKfree(rsupervisor_session);
+			GDKfree(lsupervisor_session);
+			return -1;
+		}
+		str lworker_plan_uuid = GDKstrdup(rworker_plan_uuid);
+		if (lworker_plan_uuid == NULL) {
+			free(rworker_plan_uuid);
+			GDKfree(lsupervisor_session);
+			GDKfree(rsupervisor_session);
+			return -1;
+		}
+
+		/* remote.supervisor_register(connection, supervisor_uuid, plan_uuid) */
 		p = newInstruction(curBlk, remoteRef, execRef);
 		p = pushArgument(curBlk, p, q);
 		p = pushStr(curBlk, p, remoteRef);
 		p = pushStr(curBlk, p, supervisor_registerRef);
 		getArg(p, 0) = -1;
 
+		/* We don't really care about the return value of supervisor_register,
+		 * but I have not found a good way to remotely execute a void mal function
+		 */
 		o = newFcnCall(curBlk, remoteRef, putRef);
 		o = pushArgument(curBlk, o, q);
-		o = pushInt(curBlk, o, TYPE_int);
+		o = pushInt(curBlk, o, TYPE_int);  
 		p = pushReturn(curBlk, p, getArg(o, 0));
 
 		o = newFcnCall(curBlk, remoteRef, putRef);
 		o = pushArgument(curBlk, o, q);
-		o = pushStr(curBlk, o, remote_session_uuid);
+		o = pushStr(curBlk, o, rsupervisor_session);
 		p = pushArgument(curBlk, p, getArg(o, 0));
 
 		o = newFcnCall(curBlk, remoteRef, putRef);
 		o = pushArgument(curBlk, o, q);
-		o = pushStr(curBlk, o, query_uuid);
+		o = pushStr(curBlk, o, rworker_plan_uuid);
 		p = pushArgument(curBlk, p, getArg(o, 0));
 
 		pushInstruction(curBlk, p);
 
-		free(query_uuid);
-		GDKfree(local_query_uuid);
-		GDKfree(remote_session_uuid);
+		/* Execute the same instruction locally */
+		p = newStmt(curBlk, remoteRef, supervisor_registerRef);
+		p = pushStr(curBlk, p, lsupervisor_session);
+		p = pushStr(curBlk, p, lworker_plan_uuid);
+
+		GDKfree(lworker_plan_uuid);
+		free(rworker_plan_uuid);   /* This was created with strdup */
+		GDKfree(lsupervisor_session);
+		GDKfree(rsupervisor_session);
 	}
 
 	/* (x1, x2, ..., xn) := remote.exec(q, "mod", "fcn"); */
