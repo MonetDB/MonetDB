@@ -247,6 +247,29 @@ row2cols(backend *be, stmt *sub)
 }
 
 static stmt *
+value_list(backend *be, list *vals, stmt *left) 
+{
+	node *n;
+	stmt *s;
+
+	/* create bat append values */
+	s = stmt_temp(be, exp_subtype(vals->h->data));
+	for( n = vals->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		stmt *i = exp_bin(be, e, left, NULL, NULL, NULL, NULL, NULL);
+
+		if (!i)
+			return NULL;
+
+		if (list_length(vals) == 1)
+			return i;
+		
+		s = stmt_append(be, s, i);
+	}
+	return s;
+}
+
+static stmt *
 handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int in, int use_r) 
 {
 	mvc *sql = be->mvc;
@@ -280,45 +303,26 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 		comp_type cmp = (in)?cmp_equal:cmp_notequal;
 
 		if (!in)
+		{
+			cmp = cmp_notequal;
+
 			s = sel;
-		for( n = nl->h; n; n = n->next) {
-			sql_exp *e = n->data;
-			stmt *i = exp_bin(be, use_r?e->r:e, left, right, grp, ext, cnt, NULL);
+
+			for( n = nl->h; n; n = n->next) {
+				sql_exp *e = n->data;
+				stmt *i = exp_bin(be, use_r?e->r:e, left, right, grp, ext, cnt, NULL);
 			
-			if (in) { 
-				i = stmt_uselect(be, c, i, cmp, sel, 0); 
-				if (s)
-					s = stmt_tunion(be, s, i); 
-				else
-					s = i;
-			} else {
 				s = stmt_uselect(be, c, i, cmp, s, 0); 
 			}
 		}
+		else
+		{
+			cmp = cmp_equal;
+			s = value_list(be, nl, left);
+			s = stmt_join(be, c, s, in, cmp);
+		}
 	}
-	return s;
-}
 
-static stmt *
-value_list(backend *be, list *vals, stmt *left) 
-{
-	node *n;
-	stmt *s;
-
-	/* create bat append values */
-	s = stmt_temp(be, exp_subtype(vals->h->data));
-	for( n = vals->h; n; n = n->next) {
-		sql_exp *e = n->data;
-		stmt *i = exp_bin(be, e, left, NULL, NULL, NULL, NULL, NULL);
-
-		if (!i)
-			return NULL;
-
-		if (list_length(vals) == 1)
-			return i;
-		
-		s = stmt_append(be, s, i);
-	}
 	return s;
 }
 
