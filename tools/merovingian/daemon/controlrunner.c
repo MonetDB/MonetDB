@@ -344,6 +344,13 @@ static void ctl_handle_client(
 							char *dbname = strdup(dp->dbname);
 							mtype type = dp->type;
 							pthread_mutex_unlock(&_mero_topdp_lock);
+							/* Try to shutdown the profiler before the DB.
+							 * If we are unable to shutdown the profiler, we
+							 * should still try to shutdown the server. In
+							 * other words: ignore any errors that shutdown_profiler
+							 * may have encountered.
+							 */
+							shutdown_profiler(dbname, &stats);
 							terminateProcess(pid, dbname, type, 1);
 							Mfprintf(_mero_ctlout, "%s: stopped "
 									"database '%s'\n", origin, q);
