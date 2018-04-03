@@ -52,10 +52,12 @@ lib__sql = {
 		../../storage/bat/libbatstore \
 		../../common/libsqlcommon \
 		WIN32?../../../common/utils/libmcrypt \
+		WIN32?../../../common/utils/libmuuid \
  		WIN32?../../../monetdb5/tools/libmonetdb5 \
 		WIN32?../../../gdk/libbat \
 		WIN32?../../../common/stream/libstream \
-		WIN32?$(openssl_LIBS)
+		WIN32?$(openssl_LIBS) \
+		WIN32?$(UUID_LIBS)
 }
 
 headers_mal = {
