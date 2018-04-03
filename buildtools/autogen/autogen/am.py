@@ -208,12 +208,19 @@ def am_additional_libs(name, sep, type, list, am, pref = 'lib'):
         if l[0] not in ("-", "$", "@"):
             l = am_translate_dir(l, am) + ".la"
         if c:
-            if c in ('NATIVE_WIN32', 'WIN32'):
+            c = c.split('&')
+            if 'NATIVE_WIN32' in c:
                 continue
             global libno
             v = 'LIB%d' % libno
             libno = libno + 1
-            add = 'if %s\n%s = %s\nelse\n%s =\nendif\n%s' % (c, v, l, v, add)
+            s = ''
+            for x in c:
+                s += 'if %s\n' % x
+            s += '%s = %s\n' % (v, l)
+            for x in c:
+                s += 'else\n%s =\nendif\n' % v
+            add = s + add
             l = '$(%s)' % v
         add = add + " " + l
     return add + "\n"

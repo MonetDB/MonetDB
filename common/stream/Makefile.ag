@@ -13,21 +13,19 @@ INCLUDES = $(zlib_CFLAGS) \
 		   $(snappy_CFLAGS) \
    		   $(lz4_CFLAGS) \
 		   $(liblzma_CFLAGS) \
-		   $(openssl_CFLAGS) \
 		   $(curl_CFLAGS)
 
 lib_stream  =  {
 	SOURCES = stream.c stream.h stream_socket.h
 	VERSION = $(STREAM_VERSION)
-	LIBS = $(SOCKET_LIBS) \
-		   $(zlib_LIBS) \
-		   $(BZ_LIBS) \
-		   $(snappy_LIBS) \
-   		   $(lz4_LIBS) \
-		   $(liblzma_LIBS) \
-		   $(openssl_LIBS) \
-		   $(curl_LIBS) \
-		   $(LTLIBICONV)
+	LIBS = WIN32?$(SOCKET_LIBS) \
+	       WIN32?$(zlib_LIBS) \
+	       WIN32?$(BZ_LIBS) \
+	       WIN32?$(snappy_LIBS) \
+   	       WIN32?$(lz4_LIBS) \
+	       WIN32?$(liblzma_LIBS) \
+	       WIN32?$(curl_LIBS) \
+	       WIN32?$(LTLIBICONV)
 }
 
 headers_common = {
