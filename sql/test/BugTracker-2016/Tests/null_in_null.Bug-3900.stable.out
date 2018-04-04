@@ -38,8 +38,8 @@ Ready.
 #select null in (1);
 % .L3 # table_name
 % L3 # name
-% tinyint # type
-% 1 # length
+% boolean # type
+% 5 # length
 [ NULL	]
 #select null between null and null;
 % .L2 # table_name
