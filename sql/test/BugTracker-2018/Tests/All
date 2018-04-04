@@ -40,3 +40,5 @@ sqlitelogictest-having-not-null-not-in.Bug-6557
 sqlitelogictest-groupby-having-in.Bug-6560
 sqlitelogictest-groupby-having-in-cast.Bug-6561
 sqlitelogictest-groupby-having-not-null-not-in.Bug-6562
+sqlitelogictest-complex-case-nullif-coalesce.Bug-6565
+sqlitelogictest-mal-calc-undefined.Bug-6566
