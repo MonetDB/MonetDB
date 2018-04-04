@@ -5,7 +5,7 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
 INCLUDES = .. \
-    ../.. \
+	../.. \
 	../../../../include \
 	../../../../common \
 	../../../../storage \
@@ -32,8 +32,8 @@ lib__bam = {
 		  bam_lib.c bam_lib.h \
 		  bam_export.c bam_export.h \
 		  mykstring.h
-	LIBS = NATIVE_WIN32?../../../../../monetdb5/tools/libmonetdb5 \
-	       NATIVE_WIN32?../../../../../gdk/libbat \
+	LIBS = WIN32?../../../../../monetdb5/tools/libmonetdb5 \
+	       WIN32?../../../../../gdk/libbat \
 	       $(SAMTOOLS_LIBS)
 }
 

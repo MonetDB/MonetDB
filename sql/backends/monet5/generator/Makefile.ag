@@ -23,8 +23,8 @@ lib__generator = {
 	MODULE
 	DIR = libdir/monetdb5
 	SOURCES = generator.c  generator.h
-	LIBS = NATIVE_WIN32?../../../../monetdb5/tools/libmonetdb5 \
-	       NATIVE_WIN32?../../../../gdk/libbat
+	LIBS = WIN32?../../../../monetdb5/tools/libmonetdb5 \
+	       WIN32?../../../../gdk/libbat
 }
 
 headers_mal = {

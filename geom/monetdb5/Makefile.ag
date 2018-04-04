@@ -17,9 +17,9 @@ lib__geom = {
 	DIR = libdir/monetdb5
 	SOURCES = geom.h geom.c geomBulk.c geom_upgrade.c
 	LIBS = ../lib/libgeom \
-	       NATIVE_WIN32?../../gdk/libbat \
-	       NATIVE_WIN32?../../common/stream/libstream \
-	       NATIVE_WIN32?../../monetdb5/tools/libmonetdb5 \
+	       WIN32?../../gdk/libbat \
+	       WIN32?../../common/stream/libstream \
+	       WIN32?../../monetdb5/tools/libmonetdb5 \
 	       $(GEOS_LIBS) $(PROJ_LIBS)
 }
 

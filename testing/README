@@ -12,11 +12,6 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 		(see below)
   + Mdiff	a C program to show the differences of two files as HTML document
   + Mapprove.py	a python script to approve recent test output (see below)
-  + Mtimeout	a C program to limit the resources of a program
-		(thanks to Tim Ruhl, tim@ddi.nl)
-  + MkillUsers	a bash script to kill test processes that are orphaned
-		(used "fuser" to detect such processes)
-  (Mtimeout and MkillUsers are currently available on Unix, only)
 
   When called with command-line option "--help", each of these tools
   provides the respective usage information.
@@ -115,15 +110,6 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
      or  TST.SQL.(sh|exe|com|bat|cmd) TST
      or  python TST..SQL.py
 
-  (On Unix, all M<tool>'s are started with "Mtimeout -timeout TIMEOUT
-   M<tool> ..." to kill (probably) hanging M<tool>'s after a certain
-   timeout. The default TIMEOUT value is 60 seconds, i.e. 1 minute.
-   The TIMEOUT can be changed globally using Mtest.py's "-t" option.
-   The TIMEOUT for a single test can be extended be a factor provided
-   in a file TST.timeout (see above).
-   Additionally, MkillUsers is scheduled as at-job to kill orphaned
-   processes that Mtimeout cannot reach any more.)
-
   (mserver5 is called with "--debug=$GDK_DEBUG $setMONETDB_MOD_PATH --set monet_prompt=".
    See below and "mserver5 --help" for details.)
 
@@ -208,12 +194,11 @@ http://monetdb.cwi.nl/Development/TestWeb/index.html
 	HOST		hostname
 	SYST		`uname`
 	SYSTVER		`uname``uname -r`
-	MTIMEOUT	"Mtimeout -timeout $TIMEOUT"
-	MDIFF		"$MTIMEOUT Mdiff"
-	MSERVER		"$MTIMEOUT mserver5 --config=$MONETDB_CONF --debug=$GDK_DEBUG $setMONETDB_MOD_PATH $setGDK_DBFARM --set mapi_port=$MAPIPORT --set monet_prompt="
-	MAL_CLIENT	"$MTIMEOUT $MALCLIENT --config=$MONETDB_CONF --host=$HOST --port=$MAPIPORT"
-	SQL_CLIENT	"$MTIMEOUT $SQLCLIENT -u monetdb -P monetdb --host=$HOST --port=$MAPIPORT"
-	SQL_DUMP	"$MTIMEOUT $SQLDUMP -u monetdb -P monetdb --host=$HOST --port=$MAPIPORT"
+	MDIFF		"Mdiff"
+	MSERVER		"mserver5 --config=$MONETDB_CONF --debug=$GDK_DEBUG $setMONETDB_MOD_PATH $setGDK_DBFARM --set mapi_port=$MAPIPORT --set monet_prompt="
+	MAL_CLIENT	"$MALCLIENT --config=$MONETDB_CONF --host=$HOST --port=$MAPIPORT"
+	SQL_CLIENT	"$SQLCLIENT -u monetdb -P monetdb --host=$HOST --port=$MAPIPORT"
+	SQL_DUMP	"$SQLDUMP -u monetdb -P monetdb --host=$HOST --port=$MAPIPORT"
 	MAPIPORT	the MAPI   port (random number between 30000 and 39999)
 	TST		name of the current test
   	TSTDB		name of default test database, unique for each directory

@@ -66,6 +66,7 @@ AC_DEFINE([MONETDB_RELEASE], ["unreleased"], [Release name or "unreleased"])
 AS_VAR_IF([target_os], [cygwin],
 	[AC_DEFINE([WIN32], 1, [Define on Microsoft Windows (also under Cygwin)])])
 AM_CONDITIONAL([NOT_WIN32], [test x"$target_os" != xcygwin])
+AM_CONDITIONAL([WIN32], [test x"$target_os" = xcygwin])
 AM_CONDITIONAL([NATIVE_WIN32], [false])
 
 m4_ifndef([PKG_PROG_PKG_CONFIG],

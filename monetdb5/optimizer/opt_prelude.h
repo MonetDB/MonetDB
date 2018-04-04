@@ -236,6 +236,7 @@ mal_export  str rapiRef;
 mal_export  str reconnectRef;
 mal_export  str refineRef;
 mal_export  str registerRef;
+mal_export  str register_supervisorRef;
 mal_export  str releaseRef;
 mal_export  str remapRef;
 mal_export  str remoteRef;

@@ -1405,4 +1405,14 @@ RMTisalive(int *ret, str *conn)
 	return MAL_SUCCEED;
 }
 
+// This is basically a no op
+str
+RMTregisterSupervisor(int *ret, str *sup_uuid, str *query_uuid) {
+	(void)sup_uuid;
+	(void)query_uuid;
+
+	*ret = 0;
+	return MAL_SUCCEED;
+}
+
 #endif // HAVE_MAPI

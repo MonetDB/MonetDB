@@ -48,15 +48,14 @@ lib__sql = {
 		wlr.c wlr.h \
 		sql_rank.c sql_rank.h
 	LIBS = ../../server/libsqlserver \
-		   ../../storage/libstore \
-		   ../../storage/bat/libbatstore \
-		   ../../common/libsqlcommon \
- 		   NATIVE_WIN32?../../../monetdb5/tools/libmonetdb5 \
-		   NATIVE_WIN32?../../../gdk/libbat \
-		   NATIVE_WIN32?../../../common/stream/libstream \
-		   NATIVE_WIN32?../../../common/utils/libmcrypt \
-		   $(PTHREAD_LIBS) \
-		   $(openssl_LIBS) $(MATH_LIBS)
+		../../storage/libstore \
+		../../storage/bat/libbatstore \
+		../../common/libsqlcommon \
+		WIN32?../../../common/utils/libmcrypt \
+ 		WIN32?../../../monetdb5/tools/libmonetdb5 \
+		WIN32?../../../gdk/libbat \
+		WIN32?../../../common/stream/libstream \
+		WIN32?$(openssl_LIBS)
 }
 
 headers_mal = {

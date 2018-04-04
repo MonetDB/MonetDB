@@ -854,9 +854,7 @@ developer.  If you do want to test, install %{name}-testing-python.
 %license COPYING
 %defattr(-,root,root)
 %{_bindir}/Mdiff
-%{_bindir}/MkillUsers
 %{_bindir}/Mlog
-%{_bindir}/Mtimeout
 
 %package testing-python
 Summary: MonetDB - Monet Database Management System

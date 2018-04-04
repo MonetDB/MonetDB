@@ -10783,6 +10783,7 @@ Ready.
 [ "remote",	"prelude",	"command remote.prelude():void ",	"RMTprelude;",	"initialise the remote module"	]
 [ "remote",	"put",	"pattern remote.put(conn:str, object:any):str ",	"RMTput;",	"copies object to the remote site and returns its identifier"	]
 [ "remote",	"register",	"pattern remote.register(conn:str, mod:str, fcn:str):void ",	"RMTregister;",	"register <mod>.<fcn> at the remote site"	]
+[ "remote",	"register_supervisor",	"command remote.register_supervisor(sup_uuid:str, query_uuid:str):int ",	"RMTregisterSupervisor;",	"Register the supervisor uuid at a remote site"	]
 [ "remote",	"resolve",	"command remote.resolve(pattern:str):bat[:str] ",	"RMTresolve;",	"resolve a pattern against Merovingian and return the URIs"	]
 [ "sabaoth",	"epilogue",	"command sabaoth.epilogue():void ",	"SABepilogue;",	"Release the resources held by the sabaoth module"	]
 [ "sabaoth",	"getLocalConnectionHost",	"command sabaoth.getLocalConnectionHost():str ",	"SABgetLocalConnectionHost;",	"Returns the hostname this server can be connected to, or nil if none"	]

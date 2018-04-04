@@ -15,14 +15,12 @@ EXTRA_DIST = $(man_MANS)
 bin_monetdb = {
 	SOURCES = monetdb.c
 	LIBS = ../utils/libmeroutil \
-		   ../../../common/stream/libstream \
 		   ../../../common/utils/libmcrypt \
 		   ../../../common/utils/libmsabaoth \
 		   ../../../common/utils/libmuuid \
 		   ../../../common/utils/libmutils \
+		   ../../../common/stream/libstream \
 		   $(UUID_LIBS) \
 		   $(openssl_LIBS) \
-		   $(curl_LIBS) \
-		   $(SOCKET_LIBS) \
-		   $(MALLOC_LIBS)
+		   $(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV)
 }

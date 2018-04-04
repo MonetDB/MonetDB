@@ -59,8 +59,8 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg = getSQLContext(cntxt, mb, &m, NULL);
 	sql_trans *tr = m->session->tr;
 	node *nsch, *ntab, *ncol;
-	char *query, *dquery;
-	size_t querylen;
+	char *query = NULL, *dquery;
+	size_t querylen = 0;
 	char *maxval = NULL, *minval = NULL;
 	size_t minlen = 0, maxlen = 0;
 	str sch = 0, tbl = 0, col = 0;
@@ -76,9 +76,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (msg != MAL_SUCCEED || (msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
 
-	querylen = 0;
-	query = NULL;
-	dquery = (char *) GDKzalloc(8192);
+	dquery = (char *) GDKzalloc(96);
 	if (dquery == NULL) {
 		throw(SQL, "analyze", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
@@ -112,8 +110,13 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 				if (tbl && strcmp(bt->name, tbl))
 					continue;
-				if (t->persistence != SQL_PERSIST)
+				if (t->persistence != SQL_PERSIST) {
+					GDKfree(dquery);
+					GDKfree(query);
+					GDKfree(maxval);
+					GDKfree(minval);
 					throw(SQL, "analyze", SQLSTATE(42S02) "Table '%s' is not persistent", bt->name);
+				}
 				tfnd = 1;
 				if (isTable(t) && t->columns.set)
 					for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
@@ -144,7 +147,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						if (tostr == BATatoms[TYPE_str].atomToStr)
 							tostr = strToStrSQuote;
 
-						snprintf(dquery, 8192, "delete from sys.statistics where \"column_id\" = %d;", c->base.id);
+						snprintf(dquery, 96, "delete from sys.statistics where \"column_id\" = %d;", c->base.id);
 						cfnd = 1;
 						if (samplesize > 0) {
 							bsample = BATsample(bn, (BUN) samplesize);
@@ -174,7 +177,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							if (bsample && br)
 								BBPunfix(br->batCacheid);
 						}
-						if( bsample)
+						if (bsample)
 							BBPunfix(bsample->batCacheid);
 						/* use BATordered(_rev)
 						 * and not
@@ -190,10 +193,9 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						if (maxlen < 4) {
 							GDKfree(maxval);
 							maxval = GDKmalloc(4);
-							if( maxval== NULL) {
+							if (maxval == NULL) {
 								GDKfree(dquery);
 								GDKfree(minval);
-								GDKfree(maxval);
 								throw(SQL, "analyze", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 							}
 							maxlen = 4;
@@ -201,9 +203,8 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						if (minlen < 4) {
 							GDKfree(minval);
 							minval = GDKmalloc(4);
-							if( minval== NULL){
+							if (minval == NULL){
 								GDKfree(dquery);
-								GDKfree(minval);
 								GDKfree(maxval);
 								throw(SQL, "analyze", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 							}
