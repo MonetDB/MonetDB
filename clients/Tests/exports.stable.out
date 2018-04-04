@@ -428,6 +428,16 @@ lng logger_read_last_transaction_id(logger *lg, char *dir, char *logger_file, in
 gdk_return logger_reload(logger *lg);
 gdk_return logger_restart(logger *lg);
 int logger_sequence(logger *lg, int seq, lng *id);
+char *mcrypt_BackendSum(const char *string, size_t len);
+char *mcrypt_MD5Sum(const char *string, size_t len);
+char *mcrypt_RIPEMD160Sum(const char *string, size_t len);
+char *mcrypt_SHA1Sum(const char *string, size_t len);
+char *mcrypt_SHA224Sum(const char *string, size_t len);
+char *mcrypt_SHA256Sum(const char *string, size_t len);
+char *mcrypt_SHA384Sum(const char *string, size_t len);
+char *mcrypt_SHA512Sum(const char *string, size_t len);
+const char *mcrypt_getHashAlgorithms(void);
+char *mcrypt_hashPassword(const char *algo, const char *password, const char *challenge);
 void *mdlopen(const char *library, int mode);
 int mo_add_option(opt **Set, int setlen, opt_kind kind, const char *name, const char *value);
 int mo_builtin_settings(opt **Set);
