@@ -945,7 +945,7 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 			goto startup;
 		}
 		char buf2[BUFLEN];
-		fread(buf2, 1, BUFLEN, comm);
+		size_t len = fread(buf2, 1, BUFLEN, comm);
 
 		if(ferror(comm)) {
 			error = newErr("cannot read from file %s\n", filename);
@@ -955,6 +955,9 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 			*log_path = NULL;
 			goto cleanup;
 		}
+		if (len == BUFLEN)
+			len--;
+		buf2[len] = 0;
 
 		char expected_command[] = "stethoscope";
 		size_t command_len = strlen(expected_command);
