@@ -633,7 +633,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				en->tnonil = 1;
 				en->tseqbase = oid_nil;
 			} else {
-				en = BATdense(0, b->hseqbase, cnt);
+				en = BATdense(0, b->hseqbase + start, cnt);
 				if (en == NULL)
 					goto error;
 			}

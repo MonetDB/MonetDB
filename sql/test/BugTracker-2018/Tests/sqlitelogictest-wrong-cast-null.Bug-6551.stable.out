@@ -26,7 +26,7 @@ Ready.
 #SELECT 0 * + 77 * CAST ( NULL AS INTEGER ) AS col2;
 % .L3 # table_name
 % col2 # name
-% int # type
+% bigint # type
 % 1 # length
 [ NULL	]
 

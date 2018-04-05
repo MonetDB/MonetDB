@@ -1,0 +1,39 @@
+stdout of test 'sqlitelogictest-complex-case-nullif-coalesce.Bug-6565` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 11:19:51 >  
+# 11:19:51 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32042" "--set" "mapi_usock=/var/tmp/mtest-29502/.s.monetdb.32042" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-old/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2018" "--set" "embedded_c=true"
+# 11:19:51 >  
+
+# MonetDB 5 server v11.29.2
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit
+# Found 15.387 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:32042/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29502/.s.monetdb.32042
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 11:19:51 >  
+# 11:19:51 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-29502" "--port=32042"
+# 11:19:51 >  
+
+#SELECT + NULLIF ( + 67, + + NULLIF ( + + 46, 66 - CASE WHEN 51 IN ( + 91 ) THEN + SUM ( CAST ( NULL AS INTEGER ) )
+#+ - 92 ELSE - ( - 47 ) END ) ) / - CAST ( NULL AS INTEGER ) + + NULLIF ( - COALESCE ( CAST ( - 35 AS INTEGER ), + 6,
+#COUNT ( ALL 28 ) ), 75 + 14 );
+% .L12 # table_name
+% L12 # name
+% bigint # type
+% 1 # length
+[ NULL	]
+
+# 11:19:51 >  
+# 11:19:51 >  "Done."
+# 11:19:51 >  
+
