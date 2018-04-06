@@ -3326,7 +3326,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
 	list *l;
-	stmt *inserts = NULL, *insert = NULL, *s, *ddl = NULL, *pin = NULL, **updates;
+	stmt *inserts = NULL, *insert = NULL, *s, *ddl = NULL, *pin = NULL, **updates, *ret = NULL;
 	int idx_ins = 0, constraint = 1, len = 0;
 	node *n, *m;
 	sql_rel *tr = rel->l, *prel = rel->r;
@@ -3340,6 +3340,10 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		rel = rel->r;
 		tr = rel->l;
 	}
+
+	if(find_prop(rel->p, PROP_DISTRIBUTE) && be->cur_append == 0) /* create BAT to hold the sum of affected rows */
+		create_append_bat(be, TYPE_lng);
+
 	if (tr->op == op_basetable) {
 		t = tr->l;
 	} else {
@@ -3408,6 +3412,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (!sql_insert_triggers(be, t, updates, 1)) 
 		return sql_error(sql, 02, SQLSTATE(42000) "INSERT INTO: triggers failed for table '%s'", t->base.name);
 	if (ddl) {
+		ret = ddl;
 		list_prepend(l, ddl);
 	} else {
 		if (insert->op1->nrcols == 0) {
@@ -3415,9 +3420,16 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		} else {
 			s = stmt_aggr(be, insert->op1, NULL, NULL, sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL), 1, 0, 1);
 		}
-		return s;
+		ret = s;
 	}
-	return stmt_list(be, l);
+
+	if(be->cur_append) //building the total number of rows affected across all tables
+		ret->nr = append_bat_value(be, TYPE_lng, ret->nr);
+
+	if (ddl)
+		return stmt_list(be, l);
+	else
+		return ret;
 }
 
 static int
@@ -4586,7 +4598,7 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 	else
 		assert(0/*ddl statement*/);
 
-	if(find_prop(rel->p, PROP_DISTRIBUTE) && be->cur_append == 0)
+	if(find_prop(rel->p, PROP_DISTRIBUTE) && be->cur_append == 0) /* create BAT to hold the sum of affected rows */
 		create_append_bat(be, TYPE_lng);
 
 	if (rel->r) { /* first construct the deletes relation */
@@ -4784,7 +4796,7 @@ rel2bin_truncate(backend *be, sql_rel *rel)
 	else
 		assert(0/*ddl statement*/);
 
-	if(find_prop(rel->p, PROP_DISTRIBUTE) && be->cur_append == 0)
+	if(find_prop(rel->p, PROP_DISTRIBUTE) && be->cur_append == 0) /* create BAT to hold the sum of affected rows */
 		create_append_bat(be, TYPE_lng);
 
 	n = rel->exps->h;

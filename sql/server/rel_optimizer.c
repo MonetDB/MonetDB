@@ -15,6 +15,7 @@
 #include "rel_prop.h"
 #include "rel_dump.h"
 #include "rel_planner.h"
+#include "rel_select.h"
 #include "rel_updates.h"
 #include "sql_mvc.h"
 #ifdef HAVE_HGE
@@ -8147,41 +8148,134 @@ rel_truncate_duplicate(sql_allocator *sa, sql_rel *table, sql_rel *ori)
 	return r;
 }
 
+static sql_exp *
+create_table_part_atom_exp(mvc *sql, sht tpe, ptr value)
+{
+	switch (tpe) {
+		case TYPE_bit: {
+			bit bval = *((bit*) value);
+			return exp_atom_bool(sql->sa, bval ? 1 : 0);
+		}
+		case TYPE_bte: {
+			bte bbval = *((bte *) value);
+			return exp_atom_bte(sql->sa, bbval);
+		}
+		case TYPE_sht: {
+			sht sval = *((sht*) value);
+			return exp_atom_sht(sql->sa, sval);
+		}
+		case TYPE_int: {
+			int ival = *((int*) value);
+			return exp_atom_int(sql->sa, ival);
+		}
+		case TYPE_lng: {
+			lng lval = *((lng*) value);
+			return exp_atom_lng(sql->sa, lval);
+		}
+		case TYPE_flt: {
+			flt fval = *((flt*) value);
+			return exp_atom_flt(sql->sa, fval);
+		}
+		case TYPE_dbl: {
+			dbl dval = *((dbl*) value);
+			return exp_atom_dbl(sql->sa, dval);
+		}
+		case TYPE_str:
+			return exp_atom_clob(sql->sa, sa_strdup(sql->sa, value));
+#ifdef HAVE_HGE
+		case TYPE_hge: {
+			hge hval = *((hge*) value);
+			return exp_atom_hge(sql->sa, hval);
+		}
+#endif
+		default:
+			assert(0);
+	}
+}
+
 /* rewrite merge tables into union of base tables and call optimizer again */
 static sql_rel *
 rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 {
 	sql_rel *sel = NULL;
 
-	if(is_delete(rel->op) || is_truncate(rel->op)) {
+	if(is_delete(rel->op) || is_truncate(rel->op) || is_insert(rel->op)) {
 		sql_rel *left = rel->l;
-		sql_table *t = left->l;
+		if(left->op == op_basetable) {
+			sql_table *t = left->l;
 
-		if(isRangePartitionTable(t) || isListPartitionTable(t)) {  //propagate deletions to the partitions
-			int just_one = 1;
+			if(isRangePartitionTable(t) || isListPartitionTable(t)) {
+				int just_one = 1;
 
-			for (node *n = t->members.set->h; n; n = n->next) {
-				sql_part *pt = (sql_part *) n->data;
-				sql_table *sub = find_sql_table(t->s, pt->base.name);
-				sql_rel *s1, *dup = NULL;
+				if(is_delete(rel->op) || is_truncate(rel->op)) {  //propagate deletions to the partitions
+					for (node *n = t->members.set->h; n; n = n->next) {
+						sql_part *pt = (sql_part *) n->data;
+						sql_table *sub = find_sql_table(t->s, pt->base.name);
+						sql_rel *s1, *dup = NULL;
 
-				if(rel->r) {
-					dup = rel_copy(sql->sa, rel->r);
-					dup = rel_change_base_table(dup, t, sub);
+						if(rel->r) {
+							dup = rel_copy(sql->sa, rel->r);
+							dup = rel_change_base_table(dup, t, sub);
+						}
+						if(is_delete(rel->op))
+							s1 = rel_delete(sql->sa, rel_basetable(sql, sub, sub->base.name), dup);
+						else
+							s1 = rel_truncate_duplicate(sql->sa, rel_basetable(sql, sub, sub->base.name), rel);
+						s1->p = prop_create(sql->sa, PROP_DISTRIBUTE, s1->p);
+						if (just_one == 0) {
+							sel = rel_setop(sql->sa, sel, s1, op_union);
+							sel->p = prop_create(sql->sa, PROP_DISTRIBUTE, sel->p);
+						} else {
+							sel = s1;
+							just_one = 0;
+						}
+						(*changes)++;
+					}
+				} else { //on inserts create a selection for each partition
+					int colr = t->pcol->colnr;
+
+					for (node *n = t->members.set->h; n; n = n->next) {
+						sql_part *pt = (sql_part *) n->data;
+						sql_table *sub = find_sql_table(t->s, pt->base.name);
+						sql_rel *s1, *dup = rel_dup(rel->r);
+						sql_exp *le = list_fetch(dup->exps, colr);
+						le = exp_column(sql->sa, exp_relname(le), exp_name(le), exp_subtype(le), le->card, has_nil(le), is_intern(le));
+
+						if(isRangePartitionTable(t)) {
+							sql_exp *e1, *e2;
+
+							e1 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.minvalue);
+							e2 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.maxvalue);
+							dup = rel_compare_exp_(sql, dup, le, e1, e2, 3, 0);
+
+							if(pt->part.range.with_nills) { /* handle the nulls case */
+								sql_rel* extra;
+								sql_exp *nils = rel_unop_(sql, le, NULL, "isnull", card_value);
+								nils = exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_equal);
+
+								extra = rel_select(sql->sa, rel->r, nils);
+								dup = rel_or(sql, NULL, dup, extra, NULL, NULL, NULL);
+							}
+						} else if(isListPartitionTable(t)) {
+							list *exps = new_exp_list(sql->sa); /* TODO the list should come from the partition itself */
+							sql_exp *ein = exp_in(sql->sa, le, exps, cmp_in);
+							dup = rel_select(sql->sa, dup, ein);
+						} else {
+							assert(0);
+						}
+
+						s1 = rel_insert(sql, rel_basetable(sql, sub, sub->base.name), dup);
+						s1->p = prop_create(sql->sa, PROP_DISTRIBUTE, s1->p);
+						if (just_one == 0) {
+							sel = rel_setop(sql->sa, sel, s1, op_union);
+							sel->p = prop_create(sql->sa, PROP_DISTRIBUTE, sel->p);
+						} else {
+							sel = s1;
+							just_one = 0;
+						}
+						(*changes)++;
+					}
 				}
-				if(is_delete(rel->op))
-					s1 = rel_delete(sql->sa, rel_basetable(sql, sub, sub->base.name), dup);
-				else
-					s1 = rel_truncate_duplicate(sql->sa, rel_basetable(sql, sub, sub->base.name), rel);
-				s1->p = prop_create(sql->sa, PROP_DISTRIBUTE, s1->p);
-				if (just_one == 0) {
-					sel = rel_setop(sql->sa, sel, s1, op_union);
-					sel->p = prop_create(sql->sa, PROP_DISTRIBUTE, sel->p);
-				} else {
-					sel = s1;
-					just_one = 0;
-				}
-				(*changes)++;
 			}
 		}
 	} else {
