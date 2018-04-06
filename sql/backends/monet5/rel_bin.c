@@ -326,6 +326,12 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 			cmp = cmp_equal;
 			s = value_list(be, nl, left);
 
+			stmt* groupby = stmt_group(be, s, NULL, NULL, NULL, 1);
+
+			ext = stmt_result(be, groupby, 1);
+
+			s = stmt_project(be, ext, s);
+
 			if (sel)
 			{
 				s = stmt_join_foo(be, c, s, sel, in, cmp);
