@@ -14,10 +14,12 @@
  * exported so that the call in sql can be satisfied by the version
  * that is included in monetdb5 */
 extern
-#if defined(WIN32) && !defined(LIBMSABAOTH) && !defined(LIBMUUID)
+#ifdef WIN32
+#if !defined(LIBMSABAOTH) && !defined(LIBMUUID)
 __declspec(dllimport)
 #else
 __declspec(dllexport)
+#endif
 #endif
 char *generateUUID(void);
 

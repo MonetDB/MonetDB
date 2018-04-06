@@ -18,10 +18,8 @@ lib_opt_sql_append = {
 	DIR = libdir/monetdb5
 	SEP = _
 	SOURCES = opt_sql_append.c opt_sql_append.h
-	LIBS = NATIVE_WIN32?../../tools/libmonetdb5 \
-		NATIVE_WIN32?../../../gdk/libbat \
-		NATIVE_WIN32?../../../common/stream/libstream \
-		$(MALLOC_LIBS)
+	LIBS = WIN32?../../tools/libmonetdb5 \
+		WIN32?../../../gdk/libbat
 }
 
 headers_mal = {

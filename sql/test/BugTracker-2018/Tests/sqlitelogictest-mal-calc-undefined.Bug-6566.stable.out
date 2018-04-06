@@ -1,0 +1,51 @@
+stdout of test 'sqlitelogictest-mal-calc-undefined.Bug-6566` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 13:05:56 >  
+# 13:05:56 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37783" "--set" "mapi_usock=/var/tmp/mtest-17337/.s.monetdb.37783" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-old/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2018" "--set" "embedded_c=true"
+# 13:05:56 >  
+
+# MonetDB 5 server v11.29.2
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit
+# Found 15.387 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:37783/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-17337/.s.monetdb.37783
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 13:05:57 >  
+# 13:05:57 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17337" "--port=37783"
+# 13:05:57 >  
+
+#CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab0 VALUES(97,1,99), (15,81,47), (87,21,10);
+[ 3	]
+#SELECT - col0 - - - col0 * + CAST ( NULL AS INTEGER ) FROM tab0;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#SELECT ALL - col1 * - 16 * + CAST ( NULL AS INTEGER ) FROM tab0 cor0;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 1 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+#DROP TABLE tab0;
+
+# 13:05:57 >  
+# 13:05:57 >  "Done."
+# 13:05:57 >  
+

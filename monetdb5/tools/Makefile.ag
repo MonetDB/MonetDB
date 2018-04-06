@@ -17,9 +17,8 @@ lib_monetdb5 = {
 	LIBS = ../mal/libmal ../modules/atoms/libatoms \
 		../modules/kernel/libkernel ../modules/mal/libmal \
 		../optimizer/liboptimizer ../scheduler/libscheduler \
-		../../common/utils/libmcrypt \
-		../../common/utils/libmuuid \
 		../../common/utils/libmsabaoth \
+		../../common/utils/libmuuid \
 		WIN32?../../gdk/libbat \
 		WIN32&HAVE_MAPI?../../clients/mapilib/libmapi \
 		WIN32?../../common/stream/libstream \

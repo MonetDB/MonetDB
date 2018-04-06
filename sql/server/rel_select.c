@@ -184,6 +184,8 @@ rel_project2groupby(mvc *sql, sql_rel *g)
 		g->op = op_groupby;
 		g->r = new_exp_list(sql->sa); /* add empty groupby column list */
 		
+		if (!g->exps)
+			g->exps = new_exp_list(sql->sa);
 		for (en = g->exps->h; en; en = en->next) {
 			sql_exp *e = en->data;
 

@@ -1,0 +1,3 @@
+SELECT + NULLIF ( + 67, + + NULLIF ( + + 46, 66 - CASE WHEN 51 IN ( + 91 ) THEN + SUM ( CAST ( NULL AS INTEGER ) )
++ - 92 ELSE - ( - 47 ) END ) ) / - CAST ( NULL AS INTEGER ) + + NULLIF ( - COALESCE ( CAST ( - 35 AS INTEGER ), + 6,
+COUNT ( ALL 28 ) ), 75 + 14 );
