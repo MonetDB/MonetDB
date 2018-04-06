@@ -261,13 +261,19 @@ value_list(backend *be, list *vals, stmt *left)
 		if (!i)
 			return NULL;
 
-		if (list_length(vals) == 1)
-			return i;
+		//if (list_length(vals) == 1)
+		//	return i;
 		
 		s = stmt_append(be, s, i);
 	}
 	return s;
 }
+
+static stmt *
+rel2bin_distinct(backend *be, stmt *s, stmt **distinct);
+
+stmt *
+stmt_join_foo(backend *be, stmt *op1, stmt *op2, stmt *op3, int anti, comp_type cmptype);
 
 static stmt *
 handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int in, int use_r) 
@@ -319,7 +325,15 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 		{
 			cmp = cmp_equal;
 			s = value_list(be, nl, left);
-			s = stmt_join(be, c, s, in, cmp);
+
+			if (sel)
+			{
+				s = stmt_join_foo(be, c, s, sel, in, cmp);
+			}
+			else
+			{
+				s = stmt_join(be, c, s, in, cmp);
+			}
 		}
 	}
 
