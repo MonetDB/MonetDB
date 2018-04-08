@@ -2135,7 +2135,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 			}
 		}
 
-		if (!left || (!left->l && f == sql_sel)) {
+		if (!left || (!left->l && f == sql_sel && list_empty(left->exps))) {
 			needproj = (left != NULL);
 			left = rel_project_exp(sql->sa, l);
 		}
