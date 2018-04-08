@@ -1341,63 +1341,6 @@ rel_check_type(mvc *sql, sql_subtype *t, sql_exp *exp, int tpe)
 }
 
 static sql_exp *
-exp_sum_scales(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
-{
-	sql_arg *ares = f->func->res->h->data;
-
-	if (strcmp(f->func->imp, "*") == 0 && ares->type.type->scale == SCALE_FIX) {
-		sql_subtype t;
-		sql_subtype *lt = exp_subtype(l);
-		sql_subtype *rt = exp_subtype(r);
-		sql_subtype *res = f->res->h->data;
-
-		res->scale = lt->scale + rt->scale;
-		res->digits = lt->digits + rt->digits;
-
-		/* HACK alert: digits should be less than max */
-#ifdef HAVE_HGE
-		if (have_hge) {
-			if (ares->type.type->radix == 10 && res->digits > 39)
-				res->digits = 39;
-			if (ares->type.type->radix == 2 && res->digits > 128)
-				res->digits = 128;
-		} else
-#endif
-		{
-
-			if (ares->type.type->radix == 10 && res->digits > 19)
-				res->digits = 19;
-			if (ares->type.type->radix == 2 && res->digits > 64)
-				res->digits = 64;
-		}
-
-		/* sum of digits may mean we need a bigger result type
-		 * as the function don't support this we need to
-		 * make bigger input types!
-		 */
-
-		/* numeric types are fixed length */
-		if (ares->type.type->eclass == EC_NUM) {
-			sql_find_numeric(&t, ares->type.type->localtype, res->digits);
-		} else {
-			sql_find_subtype(&t, ares->type.type->sqlname, res->digits, res->scale);
-		}
-		if (type_cmp(t.type, ares->type.type) != 0) {
-			/* do we need to convert to the a larger localtype
-			   int * int may not fit in an int, so we need to
-			   convert to lng * int.
-			 */
-			sql_subtype nlt;
-
-			sql_init_subtype(&nlt, t.type, res->digits, lt->scale);
-			l = rel_check_type( sql, &nlt, l, type_equal );
-		}
-		*res = t;
-	}
-	return l;
-}
-
-static sql_exp *
 exp_scale_algebra(mvc *sql, sql_subfunc *f, sql_exp *l, sql_exp *r)
 {
 	sql_subtype *lt = exp_subtype(l);
@@ -3276,7 +3219,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 		} else if (f->func->fix_scale == SCALE_DIV) {
 			l = exp_scale_algebra(sql, f, l, r);
 		} else if (f->func->fix_scale == SCALE_MUL) {
-			l = exp_sum_scales(sql, f, l, r);
+			exp_sum_scales(f, l, r);
 		} else if (f->func->fix_scale == DIGITS_ADD) {
 			sql_subtype *res = f->res->h->data;
 			res->digits = (t1->digits && t2->digits)?t1->digits + t2->digits:0;
@@ -3370,7 +3313,7 @@ rel_binop_(mvc *sql, sql_exp *l, sql_exp *r, sql_schema *s,
 				} else if (f->func->fix_scale == SCALE_DIV) {
 					l = exp_scale_algebra(sql, f, l, r);
 				} else if (f->func->fix_scale == SCALE_MUL) {
-					l = exp_sum_scales(sql, f, l, r);
+					exp_sum_scales(f, l, r);
 				} else if (f->func->fix_scale == DIGITS_ADD) {
 					sql_subtype *res = f->res->h->data;
 					res->digits = (t1->digits && t2->digits)?t1->digits + t2->digits:0;
