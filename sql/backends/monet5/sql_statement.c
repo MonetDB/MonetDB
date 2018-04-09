@@ -1789,7 +1789,7 @@ stmt_tinter(backend *be, stmt *op1, stmt *op2)
 }
 
 stmt *
-stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
+stmt_join(backend *be, stmt *op1, stmt *op2, stmt *op3, int anti, comp_type cmptype)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -1811,7 +1811,7 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
-		q = pushNil(mb, q, TYPE_bat);
+		q = op3 ? pushArgument(mb, q, op3->nr) : pushNil(mb, q, TYPE_bat);
 		q = pushNil(mb, q, TYPE_bat);
 		q = pushBit(mb, q, FALSE);
 		q = pushNil(mb, q, TYPE_lng);
@@ -1823,7 +1823,7 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
-		q = pushNil(mb, q, TYPE_bat);
+		q = op3 ? pushArgument(mb, q, op3->nr) : pushNil(mb, q, TYPE_bat);
 		q = pushNil(mb, q, TYPE_bat);
 		q = pushBit(mb, q, TRUE);
 		q = pushNil(mb, q, TYPE_lng);
@@ -1835,7 +1835,7 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
-		q = pushNil(mb, q, TYPE_bat);
+		q = op3 ? pushArgument(mb, q, op3->nr) : pushNil(mb, q, TYPE_bat);
 		q = pushNil(mb, q, TYPE_bat);
 		q = pushBit(mb, q, FALSE);
 		q = pushNil(mb, q, TYPE_lng);
@@ -1850,116 +1850,7 @@ stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype)
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
-		q = pushNil(mb, q, TYPE_bat);
-		q = pushNil(mb, q, TYPE_bat);
-		if (cmptype == cmp_lt)
-			q = pushInt(mb, q, -1);
-		else if (cmptype == cmp_lte)
-			q = pushInt(mb, q, -2);
-		else if (cmptype == cmp_gt)
-			q = pushInt(mb, q, 1);
-		else if (cmptype == cmp_gte)
-			q = pushInt(mb, q, 2);
-		q = pushBit(mb, q, TRUE);
-		q = pushNil(mb, q, TYPE_lng);
-		if (q == NULL)
-			return NULL;
-		break;
-	case cmp_all:	/* aka cross table */
-		q = newStmt(mb, algebraRef, crossRef);
-		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, op1->nr);
-		q = pushArgument(mb, q, op2->nr);
-		if (q == NULL)
-			return NULL;
-		break;
-	case cmp_joined:
-		q = op1->q;
-		break;
-	default:
-		showException(GDKout, SQL, "sql", "SQL2MAL: error impossible\n");
-	}
-	if (q) {
-		stmt *s = stmt_create(be->mvc->sa, st_join);
-
-		s->op1 = op1;
-		s->op2 = op2;
-		s->flag = cmptype;
-		s->key = 0;
-		s->nrcols = 2;
-		s->nr = getDestVar(q);
-		s->q = q;
-		return s;
-	}
-	return NULL;
-}
-
-stmt *
-stmt_join_foo(backend *be, stmt *op1, stmt *op2, stmt *op3, int anti, comp_type cmptype);
-
-stmt *
-stmt_join_foo(backend *be, stmt *op1, stmt *op2, stmt *op3, int anti, comp_type cmptype)
-{
-	MalBlkPtr mb = be->mb;
-	InstrPtr q = NULL;
-	int left = (cmptype == cmp_left);
-	const char *sjt = "join";
-
-	(void)anti;
-
-	if (left) {
-		cmptype = cmp_equal;
-		sjt = "leftjoin";
-	}
-	if (op1->nr < 0 || op2->nr < 0)
-		return NULL;
-
-	switch (cmptype) {
-	case cmp_equal:
-		q = newStmt(mb, algebraRef, sjt);
-		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, op1->nr);
-		q = pushArgument(mb, q, op2->nr);
-		q = pushArgument(mb, q, op3->nr);
-		q = pushNil(mb, q, TYPE_bat);
-		q = pushBit(mb, q, FALSE);
-		q = pushNil(mb, q, TYPE_lng);
-		if (q == NULL)
-			return NULL;
-		break;
-	case cmp_equal_nil: /* nil == nil */
-		q = newStmt(mb, algebraRef, sjt);
-		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, op1->nr);
-		q = pushArgument(mb, q, op2->nr);
-		q = pushArgument(mb, q, op3->nr);
-		q = pushNil(mb, q, TYPE_bat);
-		q = pushBit(mb, q, TRUE);
-		q = pushNil(mb, q, TYPE_lng);
-		if (q == NULL)
-			return NULL;
-		break;
-	case cmp_notequal:
-		q = newStmt(mb, algebraRef, antijoinRef);
-		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, op1->nr);
-		q = pushArgument(mb, q, op2->nr);
-		q = pushArgument(mb, q, op3->nr);
-		q = pushNil(mb, q, TYPE_bat);
-		q = pushBit(mb, q, FALSE);
-		q = pushNil(mb, q, TYPE_lng);
-		if (q == NULL)
-			return NULL;
-		break;
-	case cmp_lt:
-	case cmp_lte:
-	case cmp_gt:
-	case cmp_gte:
-		q = newStmt(mb, algebraRef, thetajoinRef);
-		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, op1->nr);
-		q = pushArgument(mb, q, op2->nr);
-		q = pushArgument(mb, q, op3->nr);
+		q = op3 ? pushArgument(mb, q, op3->nr) : pushNil(mb, q, TYPE_bat);
 		q = pushNil(mb, q, TYPE_bat);
 		if (cmptype == cmp_lt)
 			q = pushInt(mb, q, -1);
