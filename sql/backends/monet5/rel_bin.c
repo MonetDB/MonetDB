@@ -270,9 +270,6 @@ value_list(backend *be, list *vals, stmt *left)
 }
 
 static stmt *
-rel2bin_distinct(backend *be, stmt *s, stmt **distinct);
-
-static stmt *
 handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int in, int use_r) 
 {
 	mvc *sql = be->mvc;
