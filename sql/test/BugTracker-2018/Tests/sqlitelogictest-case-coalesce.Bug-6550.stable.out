@@ -23,10 +23,10 @@ Ready.
 # 18:11:41 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10996" "--port=38838"
 # 18:11:41 >  
 
-#SELECT ALL CASE WHEN NOT NULL NOT IN ( - COALESCE ( + - CAST ( + 45 AS INTEGER ), - 66, - 9 * COALESCE ( 80, NULLIF ( - 12, + + ( + 26 ) + - - MAX ( 18 ) + 66 + 98 ) + + + AVG ( ALL 35 ), - - 55 - - - 67, + 42 ) ), + COUNT ( * ) * - + 23, + 66 * + 93 + - ( - 61 ) + + 10 * + 92 * + - 40 * - 47 / 29, COUNT ( * ) * 30 / 28 + 73 ) THEN COUNT ( * ) / - - 86 ELSE NULL END - - 66;
+#SELECT ALL CASE WHEN NOT NULL NOT IN ( - COALESCE ( + - CAST ( + 45 AS INTEGER ), - 66, - 9 * COALESCE ( 80, NULLIF ( - 12, + + ( + 26 ) + - - MAX ( 18 ) + 66 + 98 ) + + + AVG ( ALL 35 ), - - 55 - - - 67, + 42 ) ), + COUNT ( * ) * - + 23, + 66 * + 93 + - ( - 61 ) + + 10 * + 92 * + - 40 * - 47 / 29, COUNT ( * ) * 30 / 28 + 73 ) THEN CAST ( COUNT ( * ) / - - 86 AS INT) ELSE NULL END - - 66;
 % .L32 # table_name
 % L32 # name
-% hugeint # type
+% bigint # type
 % 1 # length
 [ NULL	]
 

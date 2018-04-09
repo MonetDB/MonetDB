@@ -4594,14 +4594,13 @@ struct tablelist {
 };
 
 static void //inspect the other tables recursively for foreign key dependencies
-check_for_foreign_key_references(mvc *sql, struct tablelist* list, struct tablelist* next_append, sql_table *t, int cascade, stmt **error) {
+check_for_foreign_key_references(mvc *sql, struct tablelist* list, struct tablelist* next_append, sql_table *t, int cascade, int *error) {
 	node *n;
 	int found;
 	struct tablelist* new_node, *node_check;
 
-	if(*error) {
+	if(*error)
 		return;
-	}
 
 	if (t->keys.set) { /* Check for foreign key references */
 		for (n = t->keys.set->h; n; n = n->next) {
@@ -4623,7 +4622,8 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* list, struct tablel
 							size_t n_deletes = store_funcs.count_del(sql->session->tr, c->t);
 							assert (n_rows >= n_deletes);
 							if(n_rows - n_deletes > 0) {
-								*error = sql_error(sql, 02, SQLSTATE(42000) "TRUNCATE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, t->base.name);
+								sql_error(sql, 02, SQLSTATE(42000) "TRUNCATE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, t->base.name);
+								*error = 1;
 								return;
 							}
 						} else if(k->t != t) {
@@ -4635,7 +4635,8 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* list, struct tablel
 							}
 							if(!found) {
 								if((new_node = MNEW(struct tablelist)) == NULL) {
-									*error = sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+									sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+									*error = 1;
 									return;
 								}
 								new_node->table = k->t;
@@ -4656,7 +4657,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 {
 	mvc *sql = be->mvc;
 	list *l = sa_list(sql->sa);
-	stmt *v, *error = NULL, *ret = NULL, *other = NULL;
+	stmt *v, *ret = NULL, *other = NULL;
 	const char *next_value_for = "next value for \"sys\".\"seq_";
 	char *seq_name = NULL;
 	str seq_pos = NULL;
@@ -4666,10 +4667,12 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 	sql_table *next = NULL;
 	sql_trans *tr = sql->session->tr;
 	node *n = NULL;
+	int error = 0;
 
 	struct tablelist* new_list = MNEW(struct tablelist), *list_node, *aux;
 	if(!new_list) {
-		error = sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		error = 1;
 		goto finalize;
 	}
 
@@ -4689,7 +4692,8 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 				if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
 					seq_name = _STRDUP(seq_pos + (strlen(next_value_for) - strlen("seq_")));
 					if(!seq_name) {
-						error = sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+						error = 1;
 						goto finalize;
 					}
 					seq_name[strlen(seq_name)-1] = '\0';
@@ -4707,21 +4711,29 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 		v = stmt_tid(be, next, 0);
 
 		/* before */
-		if (!sql_delete_triggers(be, next, v, 0, 3, 4))
-			return sql_error(sql, 02, SQLSTATE(42000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
+		if (!sql_delete_triggers(be, next, v, 0, 3, 4)) {
+			sql_error(sql, 02, SQLSTATE(42000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
+			error = 1;
+			goto finalize;
+		}
 
-		if (!sql_delete_keys(be, next, v, l, "TRUNCATE", cascade))
-			return sql_error(sql, 02, SQLSTATE(42000) "TRUNCATE: failed to delete indexes for table '%s'", next->base.name);
+		if (!sql_delete_keys(be, next, v, l, "TRUNCATE", cascade)) {
+			sql_error(sql, 02, SQLSTATE(42000) "TRUNCATE: failed to delete indexes for table '%s'", next->base.name);
+			error = 1;
+			goto finalize;
+		}
 
 		other = stmt_table_clear(be, next);
 		list_append(l, other);
-		if(next == t) {
+		if(next == t)
 			ret = other;
-		}
 
 		/* after */
-		if (!sql_delete_triggers(be, next, v, 1, 3, 4))
-			return sql_error(sql, 02, SQLSTATE(42000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
+		if (!sql_delete_triggers(be, next, v, 1, 3, 4)) {
+			sql_error(sql, 02, SQLSTATE(42000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
+			error = 1;
+			goto finalize;
+		}
 	}
 
 finalize:
@@ -4730,9 +4742,9 @@ finalize:
 		_DELETE(list_node);
 		list_node = aux;
 	}
-	if(error)
-		return error;
 
+	if(error)
+		return NULL;
 	return ret;
 }
 

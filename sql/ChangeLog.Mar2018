@@ -1,7 +1,3 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
-* Tue Nov 28 2017 Sjoerd Mullender <sjoerd@acm.org>
-- Extended support to use CREATE ORDERED INDEX on columns of type: char,
-  varchar, clob, blob, url, json, inet and uuid.
-

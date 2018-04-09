@@ -187,7 +187,7 @@ CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg, fcnName, modName, ahelp;
 
 	msg= compileString(&sym, cntxt,*code);
-	if( sym) {
+	if( msg == MAL_SUCCEED) {
 		assert(cntxt->usermodule);
 		//mnstr_printf(cntxt->fdout,"#register FUNCTION %s.%s\n",
 			//getModuleId(sym->def->stmt[0]), getFunctionId(sym->def->stmt[0]));
@@ -200,8 +200,7 @@ CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(ahelp);
 			throw(MAL, "language.register", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
-		if( help)
-			mb->help= ahelp;
+		mb->help= ahelp;
 		sig= getSignature(sym);
 		sym->name= fcnName;
 		setModuleId(sig, modName);

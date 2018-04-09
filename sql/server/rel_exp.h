@@ -150,4 +150,6 @@ extern int is_identity( sql_exp *e, sql_rel *r);
 
 extern atom *exp_flatten(mvc *sql, sql_exp *e);
 
+extern void exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r);
+
 #endif /* _REL_EXP_H_ */

@@ -342,7 +342,7 @@ This information can be used to determine memory footprint and variable life tim
 					tname = getTypeName(tpe);
 					logadd("\"type\":\"%s\",%s", tname,pret);
 					cv = VALformat(&stk->stk[getArg(pci,j)]);
-					stmtq = mal_quote(cv, strlen(cv));
+					stmtq = cv ? mal_quote(cv, strlen(cv)) : NULL;
 					if (stmtq != NULL && strlen(stmtq) > LOGLEN/2) {
 						truncated = truncate_string(stmtq);
 						GDKfree(stmtq);

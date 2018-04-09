@@ -208,6 +208,7 @@ forkMserver(char *database, sabdb** stats, int force)
 	char *readonly = NULL;
 	char *embeddedr = NULL;
 	char *embeddedpy = NULL;
+	char *embeddedc = NULL;
 	char *dbextra = NULL;
 	char *argv[512];	/* for the exec arguments */
 	char property_other[1024];
@@ -476,6 +477,9 @@ forkMserver(char *database, sabdb** stats, int force)
 		}
 		embeddedpy = "embedded_py=3";
 	}
+	kv = findConfKey(ckv, "embedc");
+	if (kv->val != NULL && strcmp(kv->val, "no") != 0)
+		embeddedc = "embedded_c=true";
 	kv = findConfKey(ckv, "dbextra");
 	if (kv != NULL && kv->val != NULL) {
 		dbextra = kv->val;
@@ -544,6 +548,9 @@ forkMserver(char *database, sabdb** stats, int force)
 	}
 	if (embeddedpy != NULL) {
 		argv[c++] = "--set"; argv[c++] = embeddedpy;
+	}
+	if (embeddedc != NULL) {
+		argv[c++] = "--set"; argv[c++] = embeddedc;
 	}
 	if (readonly != NULL) {
 		argv[c++] = readonly;
