@@ -177,7 +177,8 @@ Ready.
 % .L4 # table_name
 % value # name
 % tinyint # type
-% 1 # length
+% 2 # length
+[ 10	]
 [ 8	]
 [ 4	]
 [ 2	]
