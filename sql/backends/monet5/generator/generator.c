@@ -730,7 +730,7 @@ wrapup:
 	v = (TPE*) Tloc(bn,0);\
 	for(; cnt-- > 0; ol ? *ol++ : o++){\
 		val = f + ((TPE) ( b->ttype == TYPE_void?o:*ol)) * s;\
-		if ( (s > 0 &&  (val < f || val >= l)) || (s < 0 && (val<l || val >=f))) \
+		if ( (s > 0 &&  (val < f || val >= l)) || (s < 0 && (val <= l || val > f))) \
 			continue;\
 		*v++ = val;\
 		c++;\
@@ -822,7 +822,7 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					continue;
 				if (s > 0 && ((val.days < f.days || (val.days == f.days && val.msecs < f.msecs)) || ((val.days>l.days || (val.days== l.days && val.msecs >= l.msecs)))  ) )
 					continue;
-				if (s < 0 && ((val.days < l.days || (val.days == l.days && val.msecs < l.msecs)) || ((val.days>f.days || (val.days== f.days && val.msecs >= f.msecs)))  ) )
+				if (s < 0 && ((val.days < l.days || (val.days == l.days && val.msecs <= l.msecs)) || ((val.days > f.days || (val.days == f.days && val.msecs > f.msecs)))  ) )
 					continue;
 				*v++ = val;
 				c++;

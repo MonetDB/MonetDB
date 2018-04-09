@@ -95,6 +95,7 @@ Ready.
 [ 2008-03-03 12:00:00.000000	]
 [ 2008-03-03 22:00:00.000000	]
 [ 2008-03-04 08:00:00.000000	]
+[ 2008-03-04 18:00:00.000000	]
 #select * from generate_series(timestamp '2008-03-04 18:00',timestamp '2008-03-01 00:00',cast( '-10' as interval hour)) X, tmp Y where X.value = Y.i order by X.value, Y.i;
 % .x,	sys.y # table_name
 % value,	i # name
