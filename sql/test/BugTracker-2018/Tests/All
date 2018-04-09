@@ -45,3 +45,5 @@ sqlitelogictest-mal-calc-undefined.Bug-6566
 sqlitelogictest-complex-case.Bug-6568
 sqlitelogictest-not-between-wrong.Bug-6569
 sqlitelogictest-undefined-calc.Bug-6570
+ordered-index-error.Bug-6572
+sqlitelogictest-complex-case.Bug-6573

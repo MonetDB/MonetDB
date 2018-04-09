@@ -2942,10 +2942,11 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				}
 			}
 			/* move constants to the right, ie c*A = A*c */
-			/* TODO beware of overflow,  */
 			else if (exp_is_atom(le)) {
 				l->h->data = re;
 				l->h->next->data = le;
+				e->f = sql_bind_func(sql->sa, NULL, "sql_mul", exp_subtype(re), exp_subtype(le), F_FUNC);
+				exp_sum_scales(e->f, re, le);
 				(*changes)++;
 				return e;
 			}
@@ -2993,9 +2994,13 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 						append(l, lre);
 						append(l, re);
 						le->l = l;
+						le->f = sql_bind_func(sql->sa, NULL, "sql_mul", exp_subtype(lre), exp_subtype(re), F_FUNC);
+						exp_sum_scales(le->f, lre, re);
 						l = e->l;
 						l->h->data = lle;
 						l->h->next->data = le;
+						e->f = sql_bind_func(sql->sa, NULL, "sql_mul", exp_subtype(lle), exp_subtype(le), F_FUNC);
+						exp_sum_scales(e->f, lle, le);
 						(*changes)++;
 						return e;
 					}

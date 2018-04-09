@@ -1977,3 +1977,43 @@ exp_flatten(mvc *sql, sql_exp *e)
 	return NULL;
 }
 
+void
+exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r)
+{
+	sql_arg *ares = f->func->res->h->data;
+
+	if (strcmp(f->func->imp, "*") == 0 && ares->type.type->scale == SCALE_FIX) {
+		sql_subtype t;
+		sql_subtype *lt = exp_subtype(l);
+		sql_subtype *rt = exp_subtype(r);
+		sql_subtype *res = f->res->h->data;
+
+		res->scale = lt->scale + rt->scale;
+		res->digits = lt->digits + rt->digits;
+
+		/* HACK alert: digits should be less than max */
+#ifdef HAVE_HGE
+		if (have_hge) {
+			if (ares->type.type->radix == 10 && res->digits > 39)
+				res->digits = 39;
+			if (ares->type.type->radix == 2 && res->digits > 128)
+				res->digits = 128;
+		} else
+#endif
+		{
+
+			if (ares->type.type->radix == 10 && res->digits > 19)
+				res->digits = 19;
+			if (ares->type.type->radix == 2 && res->digits > 64)
+				res->digits = 64;
+		}
+
+		/* numeric types are fixed length */
+		if (ares->type.type->eclass == EC_NUM) {
+			sql_find_numeric(&t, ares->type.type->localtype, res->digits);
+		} else {
+			sql_find_subtype(&t, ares->type.type->sqlname, res->digits, res->scale);
+		}
+		*res = t;
+	}
+}
