@@ -137,12 +137,12 @@ union (
 | project (
 | | select (
 | | | table(sys.mt1) [ "mt1"."id" as "test"."id", "mt1"."posx" as "test"."posx" ] COUNT 
-| | ) [ bigint "1" <= "test"."id" <= bigint[sys.sql_mul(smallint "100", tinyint "10")] ]
+| | ) [ bigint "1" <= "test"."id" <= bigint[sys.sql_mul(tinyint "100", tinyint "10")] ]
 | ) [ "test"."id", "test"."posx" ],
 | project (
 | | select (
 | | | table(sys.mt2) [ "mt2"."id" as "test"."id", "mt2"."posx" as "test"."posx" ] COUNT 
-| | ) [ bigint "1" <= "test"."id" <= bigint[sys.sql_mul(smallint "100", tinyint "10")] ]
+| | ) [ bigint "1" <= "test"."id" <= bigint[sys.sql_mul(tinyint "100", tinyint "10")] ]
 | ) [ "test"."id", "test"."posx" ]
 ) [ "test"."id", "test"."posx" ]
 #plan select * from test where id in (1, 1022);
