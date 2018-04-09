@@ -1,9 +1,9 @@
-stderr of test 'no_cap_rss` in directory 'sql/test/configurable_rss` itself:
+stderr of test 'no_cap_rss_64` in directory 'sql/test/configurable_rss` itself:
 
 
-# 20:52:50 >  
-# 20:52:50 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31687" "--set" "monet_prompt=" "--forcemito" "--dbpath=C:\Users\aris\monetdb-installation\var\MonetDB\mTests_sql_test_configurable_rss"
-# 20:52:50 >  
+# 16:57:25 >  
+# 16:57:25 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32503" "--set" "monet_prompt=" "--forcemito" "--dbpath=C:\Users\aris\monetdb-installation\var\MonetDB\mTests_sql_test_configurable_rss" "--set" "embedded_c=true"
+# 16:57:25 >  
 
 # builtin opt 	gdk_dbpath = C:\Users\aris\monetdb-installation\var\monetdb5\dbfarm\demo
 # builtin opt 	gdk_debug = 0
@@ -17,17 +17,18 @@ stderr of test 'no_cap_rss` in directory 'sql/test/configurable_rss` itself:
 # builtin opt 	sql_debug = 0
 # cmdline opt 	gdk_nr_threads = 0
 # cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 31687
+# cmdline opt 	mapi_port = 32503
 # cmdline opt 	monet_prompt = 
 # cmdline opt 	gdk_dbpath = C:\Users\aris\monetdb-installation\var\MonetDB\mTests_sql_test_configurable_rss
+# cmdline opt 	embedded_c = true
 # cmdline opt 	gdk_debug = 553648138
 
-# 20:52:51 >  
-# 20:52:51 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=DESKTOP-J5OE0E3" "--port=31687"
-# 20:52:51 >  
+# 16:57:25 >  
+# 16:57:25 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=DESKTOP-J5OE0E3" "--port=32503"
+# 16:57:25 >  
 
 
-# 20:53:00 >  
-# 20:53:00 >  "Done."
-# 20:53:00 >  
+# 16:57:29 >  
+# 16:57:29 >  "Done."
+# 16:57:29 >  
 

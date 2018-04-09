@@ -29,3 +29,5 @@ def main():
     out, err = srv.communicate()
     sys.stdout.write(out)
     sys.stderr.write(err)
+
+main()

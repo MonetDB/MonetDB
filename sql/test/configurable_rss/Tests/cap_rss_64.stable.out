@@ -1,14 +1,12 @@
-stdout of test 'cap_rss` in directory 'sql/test/configurable_rss` itself:
+stdout of test 'cap_rss_64` in directory 'sql/test/configurable_rss` itself:
 
 
-# 20:34:03 >  
-# 20:34:03 >  "C:\Python27\python.exe" "cap_rss.py" "cap_rss"
-# 20:34:03 >  
+# 16:57:17 >  
+# 16:57:17 >  "C:\Python27\python.exe" "cap_rss_64.py" "cap_rss_64"
+# 16:57:17 >  
 
 #create function getrss() 
 #returns bigint external name status.rss_cursize;
-#create function getvm() 
-#returns bigint external name status.mem_cursize;
 #create table test(a int, b int, c double);
 #insert into test values (1, 0, 1);
 [ 1	]
@@ -23,7 +21,7 @@ stdout of test 'cap_rss` in directory 'sql/test/configurable_rss` itself:
 #        set size = (select count(*) from test);
 #    end while;
 #end;
-#select getrss() < 20000 as resident_set_size_is_less_then_20kbytes, quantile(c/a, 0.8)  from test;
+#select getrss() < 20000 as resident_set_size_is_less_then_20kbytes, quantile(c/a, 0.8) * 0  from test;
 % .L2,	sys.L6 # table_name
 % resident_set_size_is_less_then_20kbytes,	L6 # name
 % boolean,	double # type
@@ -31,7 +29,7 @@ stdout of test 'cap_rss` in directory 'sql/test/configurable_rss` itself:
 [ true,	0	]
 #drop table test cascade;
 #drop function getrss;
-# MonetDB 5 server v11.30.0
+# MonetDB 5 server v11.29.4
 # This is an unreleased version
 # Serving database 'mTests_sql_test_configurable_rss', using 2 threads
 # Compiled for x86_64-pc-winnt/64bit
@@ -39,7 +37,7 @@ stdout of test 'cap_rss` in directory 'sql/test/configurable_rss` itself:
 # Copyright (c) 1993 - July 2008 CWI.
 # Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://DESKTOP-J5OE0E3:32637/
+# Listening for connection requests on mapi:monetdb://DESKTOP-J5OE0E3:32503/
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 # SQL catalog created, loading sql scripts once
@@ -73,10 +71,9 @@ stdout of test 'cap_rss` in directory 'sql/test/configurable_rss` itself:
 # loading sql script: 80_statistics.sql
 # loading sql script: 80_udf.sql
 # loading sql script: 90_generator.sql
-# loading sql script: 97_comments.sql
 # loading sql script: 99_system.sql
 
-# 20:34:21 >  
-# 20:34:21 >  "Done."
-# 20:34:21 >  
+# 16:57:24 >  
+# 16:57:24 >  "Done."
+# 16:57:24 >  
 
