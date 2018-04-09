@@ -314,27 +314,8 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 	} else {
 		comp_type cmp = (in)?cmp_equal:cmp_notequal;
 
-		if (!in)
-		{
-			cmp = cmp_notequal;
-
-			s = sel;
-
-			for( n = nl->h; n; n = n->next) {
-				sql_exp *e = n->data;
-				stmt *i = exp_bin(be, use_r?e->r:e, left, right, grp, ext, cnt, NULL);
-			
-				s = stmt_uselect(be, c, i, cmp, s, 0); 
-			}
-		}
-		else
-		{
-			cmp = cmp_equal;
-
-			s = distinct_value_list(be, value_list(be, nl, left));
-
-			s = stmt_join(be, c, s, sel, in, cmp);
-		}
+		s = distinct_value_list(be, value_list(be, nl, left));
+		s = stmt_join(be, c, s, sel, in, cmp);
 	}
 
 	return s;
