@@ -269,6 +269,18 @@ value_list(backend *be, list *vals, stmt *left)
 	return s;
 }
 
+static stmt*
+distinct_value_list(backend *be, stmt *list)
+{
+	// Probably faster to filter out the values directly in the underlying list of atoms.
+	// But for now use groupby to filter out duplicate values.
+
+	stmt* groupby = stmt_group(be, list, NULL, NULL, NULL, 1);
+	stmt* ext = stmt_result(be, groupby, 1);
+	
+	return stmt_project(be, ext, list);
+}
+
 static stmt *
 handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int in, int use_r) 
 {
@@ -318,13 +330,8 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 		else
 		{
 			cmp = cmp_equal;
-			s = value_list(be, nl, left);
 
-			stmt* groupby = stmt_group(be, s, NULL, NULL, NULL, 1);
-
-			ext = stmt_result(be, groupby, 1);
-
-			s = stmt_project(be, ext, s);
+			s = distinct_value_list(be, value_list(be, nl, left));
 
 			s = stmt_join(be, c, s, sel, in, cmp);
 		}
