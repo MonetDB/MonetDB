@@ -23,7 +23,7 @@ def main():
 
     out, err = client('SQL',
                       os.path.join(os.getenv('RELSRCDIR'),
-                                   'push_and_check_rss.sql'))
+                                   'push_and_check_rss_32.sql'))
     sys.stdout.write(out)
     sys.stderr.write(err)
     out, err = srv.communicate()
