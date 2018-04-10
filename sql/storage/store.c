@@ -584,7 +584,7 @@ load_range_partition(sql_trans *tr, sql_schema *syss, sql_part *pt, int tpe)
 		}
 
 		v = table_funcs.column_find_value(tr, find_sql_column(ranges, "with_nulls"), rid);
-		pt->part.range.with_nills = (int)*((bit*)v);
+		pt->with_nills = (int)*((bit*)v);
 		_DELETE(v);
 
 		pt->part.range.minvalue = sa_alloc(tr->sa, min_length);
@@ -605,22 +605,25 @@ static int
 load_value_partition(sql_trans *tr, sql_schema *syss, sql_part *pt, int tpe)
 {
 	sql_table *values = find_sql_table(syss, "_value_partitions");
-	BAT* o = NULL, *b = NULL;
+	list *vals = NULL;
 	oid rid;
 	rids *rs = table_funcs.rids_select(tr, find_sql_column(values, "id"), &pt->base.id, &pt->base.id, NULL);
 	int i = 0;
+	int (*atom_cmp) (const void *v1, const void *v2) = BATatoms[tpe].atomCmp;
+	const void *nil_val = BATatoms[tpe].atomNull;
+	void* prev;
 
-	o = (BAT*) rs->data;
-	b = COLnew(0, tpe, BATcount(o), TRANSIENT);
-	if(!b) {
+	vals = list_new(tr->sa, (fdestroy) NULL);
+	if(!vals) {
 		table_funcs.rids_destroy(rs);
 		return -1;
 	}
 
 	pt->tpe = tpe;
 	pt->part_type = PARTITION_LIST;
+
 	for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
-		gdk_return ret = GDK_SUCCEED;
+		sql_part_value* nextv;
 		ptr pnext = NULL;
 		size_t len = 0;
 
@@ -628,25 +631,31 @@ load_value_partition(sql_trans *tr, sql_schema *syss, sql_part *pt, int tpe)
 		ssize_t e = ATOMfromstr(tpe, &pnext, &len, v);
 		_DELETE(v);
 		if(e < 0) {
-			BBPreclaim(b);
 			table_funcs.rids_destroy(rs);
+			list_destroy(vals);
 			return -i - 1;
 		}
 
-		ret = BUNappend(b, pnext, FALSE);
-		GDKfree(pnext);
-		if (ret != GDK_SUCCEED) {
-			BBPreclaim(b);
-			table_funcs.rids_destroy(rs);
-			return -i - 1;
+		if(!atom_cmp(nil_val, pnext)) { /* check for null value */
+			pt->with_nills = 1;
+		} else {
+			nextv = SA_ZNEW(tr->sa, sql_part_value);
+			nextv->tpe = tpe;
+			nextv->value = sa_alloc(tr->sa, len);
+			memcpy(nextv->value, pnext, len);
+			nextv->length = len;
+			if((prev = list_append_sorted(vals, nextv, sql_values_list_element_validate_and_insert)) != NULL) {
+				GDKfree(pnext);
+				table_funcs.rids_destroy(rs);
+				list_destroy(vals);
+				return -i - 1;
+			}
 		}
+		GDKfree(pnext);
 		i++;
 	}
 	table_funcs.rids_destroy(rs);
-	BATsetcount(b, i);
-	BATsettrivprop(b);
-	pt->part.values = b->batCacheid;
-	BBPretain(pt->part.values);
+	pt->part.values = vals;
 	return 0;
 }
 
@@ -1476,6 +1485,7 @@ dup_sql_part(sql_allocator *sa, sql_table *ot, sql_table *mt, sql_part *opt)
 	pt->tpe = opt->tpe;
 	pt->t = mt;
 	pt->part_type = opt->tpe;
+	pt->with_nills = opt->with_nills;
 
 	if(isRangePartitionTable(ot)) {
 		sql_part *err = cs_add_sorted(&mt->members, pt, TR_NEW, sql_range_part_validate_and_insert);
@@ -1492,20 +1502,18 @@ dup_sql_part(sql_allocator *sa, sql_table *ot, sql_table *mt, sql_part *opt)
 		pt->part.range.maxvalue = sa_alloc(sa, opt->part.range.maxlength);
 		memcpy(pt->part.range.minvalue, opt->part.range.minvalue, opt->part.range.minlength);
 		memcpy(pt->part.range.maxvalue, opt->part.range.maxvalue, opt->part.range.maxlength);
-		pt->part.range.with_nills = opt->part.range.with_nills;
 		pt->part.range.minlength = opt->part.range.minlength;
 		pt->part.range.maxlength = opt->part.range.maxlength;
 	} else if(isListPartitionTable(ot)) {
-		BAT *b = NULL, *o = NULL;
-		if((o = BATdescriptor(opt->part.values)) == NULL) /* TODO the bat operations might fail :( */
-			return NULL;
-		if ((b = COLcopy(o, opt->tpe, 0, TRANSIENT)) == NULL) {
-			BBPunfix(o->batCacheid);
-			return NULL;
+		pt->part.values = list_new(sa, (fdestroy) NULL);
+		for(node *n = opt->part.values->h ; n ; n = n->next) {
+			sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(sa, sql_part_value);
+			nextv->tpe = prev->tpe;
+			nextv->value = sa_alloc(sa, prev->length);
+			memcpy(nextv->value, prev->value, prev->length);
+			nextv->length = prev->length;
+			list_append(pt->part.values, nextv);
 		}
-		BBPunfix(o->batCacheid);
-		BBPretain(b->batCacheid);
-		pt->part.values = b->batCacheid;
 	}
 
 	return pt;
@@ -2466,7 +2474,8 @@ part_dup(sql_trans *tr, int flag, sql_part *opt, sql_table *ot)
 	base_init(sa, &pt->base, opt->base.id, tr_flag(&opt->base, flag), opt->base.name);
 	pt->tpe = opt->tpe;
 	pt->part_type = opt->tpe;
-	if (isNew(opt) && flag == TR_NEW && tr->parent == gtrans) 
+	pt->with_nills = opt->with_nills;
+	if (isNew(opt) && flag == TR_NEW && tr->parent == gtrans)
 		opt->base.flag = TR_OLD;
 
 	if(isRangePartitionTable(ot)) {
@@ -2474,20 +2483,18 @@ part_dup(sql_trans *tr, int flag, sql_part *opt, sql_table *ot)
 		pt->part.range.maxvalue = sa_alloc(sa, opt->part.range.maxlength);
 		memcpy(pt->part.range.minvalue, opt->part.range.minvalue, opt->part.range.minlength);
 		memcpy(pt->part.range.maxvalue, opt->part.range.maxvalue, opt->part.range.maxlength);
-		pt->part.range.with_nills = opt->part.range.with_nills;
 		pt->part.range.minlength = opt->part.range.minlength;
 		pt->part.range.maxlength = opt->part.range.maxlength;
 	} else if(isListPartitionTable(ot)) {
-		BAT *b = NULL, *o = NULL;
-		if((o = BATdescriptor(opt->part.values)) == NULL) /* TODO the bat operations might fail :( */
-			return NULL;
-		if ((b = COLcopy(o, opt->tpe, 0, TRANSIENT)) == NULL) {
-			BBPunfix(o->batCacheid);
-			return NULL;
+		pt->part.values = list_new(sa, (fdestroy) NULL);
+		for(node *n = opt->part.values->h ; n ; n = n->next) {
+			sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(sa, sql_part_value);
+			nextv->tpe = prev->tpe;
+			nextv->value = sa_alloc(sa, prev->length);
+			memcpy(nextv->value, prev->value, prev->length);
+			nextv->length = prev->length;
+			list_append(pt->part.values, nextv);
 		}
-		BBPunfix(o->batCacheid);
-		BBPretain(b->batCacheid);
-		pt->part.values = b->batCacheid;
 	}
 
 	return pt;
@@ -4685,9 +4692,9 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int t
 	p->t = pt;
 	p->tpe = tpe;
 	p->part_type = PARTITION_RANGE;
+	p->with_nills = with_nills;
 
 	/* add range partition values */
-	p->part.range.with_nills = with_nills;
 	p->part.range.minvalue = sa_alloc(tr->sa, smin);
 	p->part.range.maxvalue = sa_alloc(tr->sa, smax);
 	memcpy(p->part.range.minvalue, min, smin);
@@ -4721,7 +4728,8 @@ finish:
 }
 
 int
-sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int tpe, BAT* b, sql_part **err)
+sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int tpe, list* vals, int with_nills,
+							  sql_part **err)
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobal(mt)?"sys":"tmp");
 	sql_table *sysobj = find_sql_table(syss, "objects");
@@ -4730,12 +4738,9 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int t
 	sql_part *p = SA_ZNEW(tr->sa, sql_part);
 	ssize_t (*atomtostr)(str *, size_t *, const void *) = BATatoms[tpe].atomToStr;
 	str next_value = NULL;
-	ptr next_entry = NULL;
 	size_t length = 0;
 	oid rid;
 	int *v, i = 0;
-	BUN bp, bq;
-	BATiter bi = bat_iterator(b);
 
 	base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
 	pt->p = mt;
@@ -4743,15 +4748,26 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int t
 	p->t = pt;
 	p->tpe = tpe;
 	p->part_type = PARTITION_LIST;
+	p->with_nills = with_nills;
 
 	rid = table_funcs.column_find_row(tr, find_sql_column(partitions, "table_id"), &mt->base.id, NULL);
 	assert(!is_oid_nil(rid));
 
 	v = (int*) table_funcs.column_find_value(tr, find_sql_column(partitions, "id"), rid);
-	BATloop(b,bp,bq) {
+
+	if(with_nills) { /* store the null value first */
+		const void *nil = BATatoms[tpe].atomNull;
+		if(atomtostr(&next_value, &length, nil) == 0) {
+			_DELETE(v);
+			return -1;
+		}
+		table_funcs.table_insert(tr, values, &pt->base.id, v, next_value);
+	}
+
+	for(node *n = vals->h ; n ; n = n->next) {
+		sql_part_value *next = (sql_part_value*) n->data;
 		next_value = NULL;
-		next_entry = (ptr) BUNtail(bi, bp);
-		if(atomtostr(&next_value, &length, next_entry) == 0) {
+		if(atomtostr(&next_value, &length, next->value) == 0) {
 			_DELETE(v);
 			return -i - 1;
 		}
@@ -4766,7 +4782,7 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int t
 	}
 	_DELETE(v);
 
-	p->part.values = b->batCacheid;
+	p->part.values = vals;
 
 	/* add list partition values */
 	*err = cs_add_with_validate(&mt->members, p, TR_NEW, sql_values_part_validate_and_insert);

@@ -115,11 +115,11 @@ rel_alter_table_add_partition_range(sql_allocator *sa, char *sname, char *tname,
 }
 
 static sql_rel *
-rel_alter_table_add_partition_list(sql_allocator *sa, char *sname, char *tname, char *sname2, char *tname2, dlist* ll)
+rel_alter_table_add_partition_list(sql_allocator *sa, char *sname, char *tname, char *sname2, char *tname2,
+									int with_nils, list* ll)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
-	dnode *n;
 	if(!rel || !exps)
 		return NULL;
 
@@ -130,16 +130,12 @@ rel_alter_table_add_partition_list(sql_allocator *sa, char *sname, char *tname, 
 		append(exps, exp_atom_clob(sa, sname2));
 		append(exps, exp_atom_clob(sa, tname2));
 	}
-	for (n = ll->h; n ; n = n->next) {
-		symbol* next = n->data.sym;
-		char *nvalue = atom2string(sa, ((AtomNode *) next)->a);
-		append(exps, exp_atom_clob(sa, nvalue));
-	}
+	append(exps, exp_atom_int(sa, with_nils));
 	rel->l = NULL;
 	rel->r = NULL;
 	rel->op = op_ddl;
 	rel->flag = DDL_ALTER_TABLE_ADD_LIST_PARTITION;
-	rel->exps = exps;
+	rel->exps = list_merge(exps, ll, (fdup)NULL);
 	rel->card = CARD_MULTI;
 	rel->nrcols = 0;
 	return rel;
@@ -1501,12 +1497,24 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 					return rel_alter_table_add_partition_range(sql->sa, sname, tname, sname, ntname, amin, amax, nills);
 				} else if(extra->token == SQL_PARTITION_LIST) {
 					dlist* ll = extra->data.lval, *values = ll->h->data.lval;
+					list *lvals = new_exp_list(sql->sa);
+					int with_nils = 0;
 
 					if(t->type != tt_list_partition) {
 						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a value partition into a %s table",
 								(t->type == tt_merge_table)?"merge":"range partition");
 					}
-					return rel_alter_table_add_partition_list(sql->sa, sname, tname, sname, ntname, values);
+
+					for (dnode *dn = values->h; dn ; dn = dn->next) {
+						symbol* next = dn->data.sym;
+						if(next->token == SQL_NULL || next->token == SQL_COLUMN) {
+							with_nils = 1;
+						} else {
+							char *nvalue = atom2string(sql->sa, ((AtomNode *) next)->a);
+							append(lvals, exp_atom_clob(sql->sa, nvalue));
+						}
+					}
+					return rel_alter_table_add_partition_list(sql->sa, sname, tname, sname, ntname, with_nils, lvals);
 				}
 				assert(0);
 			} else {

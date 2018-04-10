@@ -302,7 +302,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 			break;
 		case -4:
 			assert(err);
-			if(with_nills && err->part.range.with_nills) {
+			if(with_nills && err->with_nills) {
 				msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
 										"ALTER TABLE: conflicting partitions: table %s.%s stores null values and only "
 										"one partition can store null values at the time", err->t->s->base.name, err->t->base.name);
@@ -343,15 +343,15 @@ finish:
 }
 
 static char *
-alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msname, char *mtname, char *psname, char *ptname)
+alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msname, char *mtname, char *psname, char *ptname, int with_nills)
 {
 	sql_table *mt = NULL, *pt = NULL;
 	str msg = MAL_SUCCEED, escaped = NULL;
 	sql_column *col = NULL, *bcol = NULL;
 	sql_part *err = NULL;
 	int tp1 = 0, errcode = 0, i = 0, ninserts = 0;
-	BAT *b = NULL, *sorted = NULL, *cbind = NULL, *diff = NULL;
-	gdk_return ret = GDK_SUCCEED;
+	BAT *b = NULL, *cbind = NULL, *diff = NULL;
+	list *values = list_new(sql->sa, (fdestroy) NULL);
 	int accesses[3] = {RDONLY, RD_INS, RD_UPD_VAL};
 
 	if((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_value_partition", msname, mtname, psname, ptname, &mt, &pt)))
@@ -365,8 +365,8 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 
 	col = mt->pcol;
 	tp1 = col->type.type->localtype;
-	ninserts = pci->argc - pci->retc + 4;
-	if(ninserts <= 0) {
+	ninserts = pci->argc - pci->retc - 5;
+	if(ninserts <= 0 && !with_nills) {
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000) "ALTER TABLE: no values in the list");
 		goto finish;
 	}
@@ -376,17 +376,24 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		goto finish;
 	}
 
-	for( i = pci->retc+4; i < pci->argc; i++){
+	if (with_nills && BUNappend(b, ATOMnilptr(tp1), FALSE) != GDK_SUCCEED) {
+		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto finish;
+	}
+	for( i = pci->retc+5; i < pci->argc; i++){
 		ptr pnext = NULL;
 		size_t len = 0;
 		str next = *getArgReference_str(stk, pci, i);
+		sql_part_value *nextv = NULL;
+		void *prev;
+
 		if(escaped) {
 			GDKfree(escaped);
 			escaped = NULL;
 		}
 
-		if(tp1 == TYPE_str && ATOMcmp(tp1, next, ATOMnilptr(tp1))) {
-			if ((escaped = add_quotes(next)) == NULL) {
+		if(tp1 == TYPE_str && ATOMcmp(tp1, next, ATOMnilptr(tp1)) == 0) {
+			if ((escaped = add_quotes(next)) == NULL) { /* escape string atoms properly */
 				msg = createException(SQL, "sql.alter_table_add_value_partition", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				goto finish;
 			}
@@ -402,20 +409,34 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 				goto finish;
 			}
 		}
-		ret = BUNappend(b, pnext, FALSE);
-		GDKfree(pnext);
-		if (ret != GDK_SUCCEED) {
+
+		if(ATOMcmp(tp1, pnext, ATOMnilptr(tp1)) == 0) { /* check for an eventual null value which cannot be */
+			GDKfree(pnext);
+			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
+																			"ALTER TABLE: list value cannot be null");
+			goto finish;
+		} else if (BUNappend(b, pnext, FALSE) != GDK_SUCCEED) {
+			GDKfree(pnext);
 			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			goto finish;
 		}
+
+		nextv = SA_ZNEW(sql->session->tr->sa, sql_part_value); /* instantiate the part value */
+		nextv->tpe = tp1;
+		nextv->value = sa_alloc(sql->session->tr->sa, len);
+		memcpy(nextv->value, pnext, len);
+		nextv->length = len;
+
+		if((prev = list_append_sorted(values, nextv, sql_values_list_element_validate_and_insert)) != NULL) {
+			GDKfree(pnext);
+			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
+									"ALTER TABLE: there are duplicated values in the list");
+			goto finish;
+		}
+		GDKfree(pnext);
 	}
 
-	if (BATsort(&sorted, NULL, NULL, b, NULL, NULL, 0, 0) != GDK_SUCCEED) {
-		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		goto finish;
-	}
-
-	bcol = mvc_bind_column(sql, pt, col->base.name);
+	bcol = mvc_bind_column(sql, pt, col->base.name); /* check if the values in the column are proper to the partition */
 	for(i = 0 ; i < 3 ; i++) {
 		if(cbind) {
 			BBPunfix(cbind->batCacheid);
@@ -429,18 +450,19 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			goto finish;
 		}
-		if((diff = BATdiff(cbind, sorted, NULL, NULL, 0, BUN_NONE)) == NULL) {
+		if((diff = BATdiff(cbind, b, NULL, NULL, 0, BUN_NONE)) == NULL) {
 			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			goto finish;
 		}
 		if(BATcount(diff) > 0) {
 			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
-									"ALTER TABLE: there are values in the column %s not according to the partition values list", col->base.name);
+									"ALTER TABLE: there are values in the column %s not according to the partition values list",
+									col->base.name);
 			goto finish;
 		}
 	}
 
-	errcode = sql_trans_add_value_partition(sql->session->tr, mt, pt, tp1, sorted, &err);
+	errcode = sql_trans_add_value_partition(sql->session->tr, mt, pt, tp1, values, with_nills, &err);
 	switch(errcode) {
 		case 0:
 			break;
@@ -465,10 +487,6 @@ finish:
 		BBPunfix(cbind->batCacheid);
 	if(diff)
 		BBPunfix(diff->batCacheid);
-	if(sorted && msg)
-		BBPunfix(sorted->batCacheid);
-	else if(sorted)
-		BBPretain(sorted->batCacheid);
 	return msg;
 }
 
@@ -1580,9 +1598,10 @@ SQLalter_add_value_partition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	char *mtname = SaveArgReference(stk, pci, 2);
 	char *psname = SaveArgReference(stk, pci, 3);
 	char *ptname = SaveArgReference(stk, pci, 4);
+	int with_nills = *getArgReference_int(stk, pci, 5);
 
 	initcontext();
-	msg = alter_table_add_value_partition(sql, stk, pci, sname, mtname, psname, ptname);
+	msg = alter_table_add_value_partition(sql, stk, pci, sname, mtname, psname, ptname, with_nills);
 	return msg;
 }
 

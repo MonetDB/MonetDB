@@ -246,6 +246,10 @@ unsafe pattern transaction()
 address WLCgeneric
 comment "Start an autocommit transaction";
 
-pattern alter_add_value_partition( sname:str, mtnme:str, psnme:str, ptnme:str, arg:str...)
+pattern alter_add_value_partition( sname:str, mtnme:str, psnme:str, ptnme:str, nills:int)
+address WLCgeneric
+comment "Catalog operation alter_add_value_partition";
+
+pattern alter_add_value_partition( sname:str, mtnme:str, psnme:str, ptnme:str, nills:int, arg:str...)
 address WLCgeneric
 comment "Catalog operation alter_add_value_partition";

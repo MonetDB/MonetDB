@@ -217,8 +217,7 @@ list_append_sorted(list *l, void *data, fcmpvalidate cmp)
 		if(first) {
 			n->next = l->h;
 			l->h = n;
-		}
-		if(!m) {
+		} else if(!m) {
 			l->t->next = n;
 			l->t = n;
 		} else

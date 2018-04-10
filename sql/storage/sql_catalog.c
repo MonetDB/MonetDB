@@ -345,13 +345,23 @@ sql_trans_find_func(sql_trans *tr, int id)
 }
 
 void*
+sql_values_list_element_validate_and_insert(void *v1, void *v2, int* res)
+{
+	sql_part_value* pt = (sql_part_value*) v1, *newp = (sql_part_value*) v2;
+
+	assert(pt->tpe == newp->tpe);
+	*res = ATOMcmp(pt->tpe, newp->value, pt->value);
+	return *res == 0 ? pt : NULL;
+}
+
+void*
 sql_range_part_validate_and_insert(void *v1, void *v2, int* res)
 {
 	sql_part* pt = (sql_part*) v1, *newp = (sql_part*) v2;
 	int res1, res2;
 
-	if(newp->part.range.with_nills) {
-		if (pt->part.range.with_nills) { //only one partition at most has null values
+	if(newp->with_nills) {
+		if (pt->with_nills) { //only one partition at most has null values
 			*res = 0;
 			return pt;
 		} else { //partition with null values comes first
@@ -360,6 +370,7 @@ sql_range_part_validate_and_insert(void *v1, void *v2, int* res)
 		}
 	}
 
+	assert(pt->tpe == newp->tpe);
 	res1 = ATOMcmp(pt->tpe, pt->part.range.minvalue, newp->part.range.maxvalue);
 	res2 = ATOMcmp(pt->tpe, newp->part.range.minvalue, pt->part.range.maxvalue);
 	if (res1 <= 0 && res2 <= 0) { //overlap: x1 <= y2 && y1 <= x2
@@ -373,29 +384,25 @@ sql_range_part_validate_and_insert(void *v1, void *v2, int* res)
 void*
 sql_values_part_validate_and_insert(void *v1, void *v2)
 {
-	sql_part* pt = (sql_part*) v1, *newp = (sql_part*) v2, *res = NULL;
-	BAT* b1 = NULL, *b2 = NULL, *b3  = NULL;
+	sql_part* pt = (sql_part*) v1, *newp = (sql_part*) v2;
+	list* b1 = pt->part.values, *b2 = newp->part.values;
+	node *n1 = b1->h, *n2 = b2->h;
+	int res;
 
-	if ((b1 = BATdescriptor(pt->part.values)) == NULL) {
-		res = pt;
-		goto finish;
+	assert(pt->tpe == newp->tpe);
+	if(newp->with_nills && pt->with_nills)
+		return pt; //check for nulls first
+
+	while(n1 && n2) {
+		sql_part_value *p1 = (sql_part_value *) n1->data, *p2 = (sql_part_value *) n2->data;
+		res = ATOMcmp(pt->tpe, p1->value, p2->value);
+		if(!res) { //overlap -> same value in both partitions
+			return pt;
+		} else if(res < 0) {
+			n1 = n1->next;
+		} else {
+			n2 = n2->next;
+		}
 	}
-	if ((b2 = BATdescriptor(newp->part.values)) == NULL) {
-		res = pt;
-		goto finish;
-	}
-	if(BATsemijoin(&b3, NULL, b1, b2, NULL, NULL, 0, BUN_NONE) != GDK_SUCCEED) {
-		res = pt;
-		goto finish;
-	}
-	if(BATcount(b3) > 0)
-		res = pt;
-finish:
-	if(b1)
-		BBPunfix(b1->batCacheid);
-	if(b2)
-		BBPunfix(b2->batCacheid);
-	if(b3)
-		BBPunfix(b3->batCacheid);
-	return res;
+	return NULL;
 }

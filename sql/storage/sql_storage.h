@@ -361,7 +361,7 @@ extern sql_table *sql_trans_create_table(sql_trans *tr, sql_schema *s, const cha
 extern int sql_trans_set_partition_table(sql_trans *tr, sql_table *t);
 extern sql_table *sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt);
 extern int sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int tpe, ptr min, size_t smin, ptr max, size_t smax, int with_nills, sql_part** err);
-extern int sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int tpe, BAT* b, sql_part **err);
+extern int sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, int tpe, list* vals, int with_nills, sql_part **err);
 extern sql_table *sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action);
 
 extern int sql_trans_drop_table(sql_trans *tr, sql_schema *s, int id, int drop_action);

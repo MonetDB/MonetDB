@@ -8248,7 +8248,7 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 							e2 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.maxvalue);
 							dup = rel_compare_exp_(sql, dup, le, e1, e2, 3, 0);
 
-							if(pt->part.range.with_nills) { /* handle the nulls case */
+							if(pt->with_nills) { /* handle the nulls case */
 								sql_rel* extra;
 								sql_exp *nils = rel_unop_(sql, le, NULL, "isnull", card_value);
 								nils = exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_equal);
@@ -8257,8 +8257,20 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 								dup = rel_or(sql, NULL, dup, extra, NULL, NULL, NULL);
 							}
 						} else if(isListPartitionTable(t)) {
-							list *exps = new_exp_list(sql->sa); /* TODO the list should come from the partition itself */
-							sql_exp *ein = exp_in(sql->sa, le, exps, cmp_in);
+							sql_exp *ein;
+							list *exps = new_exp_list(sql->sa);
+
+							for(node *n = pt->part.values->h ; n ; n = n->next) {
+								sql_part_value *next = (sql_part_value*) n->data;
+								sql_exp *e1 = create_table_part_atom_exp(sql, next->tpe, next->value);
+								list_append(exps, e1);
+							}
+
+							if(pt->with_nills) { /* handle the nulls case */
+								sql_exp *e2 = exp_atom(sql->sa, atom_general(sql->sa, &(t->pcol->type), NULL));
+								list_append(exps, e2);
+							}
+							ein = exp_in(sql->sa, le, exps, cmp_in);
 							dup = rel_select(sql->sa, dup, ein);
 						} else {
 							assert(0);

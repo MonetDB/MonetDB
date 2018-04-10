@@ -512,15 +512,21 @@ typedef enum table_types {
 #define TABLE_READONLY	1
 #define TABLE_APPENDONLY	2
 
+typedef struct sql_part_value {
+	sht tpe;
+	ptr value;
+	size_t length;
+} sql_part_value;
+
 typedef struct sql_part {
 	sql_base base;
 	struct sql_table *t; /* cached value of the merge table */
 	sht tpe;             /* the column type */
 	sht part_type;       /* by range, list/values or none */
+	int with_nills;
 	union {
-		bat values;           /* partition by values/list */
+		list *values;         /* partition by values/list */
 		struct sql_range {    /* partition by range */
-			int with_nills;
 			ptr minvalue;
 			ptr maxvalue;
 			size_t minlength;
@@ -634,6 +640,7 @@ extern sql_func *sql_trans_bind_func(sql_trans *tr, const char *name);
 extern sql_func *sql_trans_find_func(sql_trans *tr, int id);
 extern node *find_sql_func_node(sql_schema *s, int id);
 
+extern void *sql_values_list_element_validate_and_insert(void *v1, void *v2, int* res);
 extern void *sql_range_part_validate_and_insert(void *v1, void *v2, int* res);
 extern void *sql_values_part_validate_and_insert(void *v1, void *v2);
 
