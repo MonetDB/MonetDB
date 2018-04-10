@@ -118,38 +118,25 @@ pushSchema(MalBlkPtr mb, InstrPtr q, sql_table *t)
 }
 
 void
-create_append_bat(backend *be, int tt)
+create_merge_partitions_accumulator(backend *be)
 {
-	MalBlkPtr mb = be->mb;
-	InstrPtr q = newStmt(mb, batRef, newRef);
-	getArg(q, 0) = be->cur_append = newTmpVariable(mb, newBatType(tt));
-	q = pushLng(mb, q, tt);
+	sql_subtype tpe;
+
+	sql_find_subtype(&tpe, "bigint", 0, 0);
+	be->cur_append = constantAtom(be, be->mb, atom_int(be->mvc->sa, &tpe, 0));
 }
 
 int
-append_bat_value(backend *be, int tt, int nr)
+add_to_merge_partitions_accumulator(backend *be, int nr)
 {
 	MalBlkPtr mb = be->mb;
 	int help = be->cur_append;
-	InstrPtr q = newStmt(mb, batRef, appendRef);
+	InstrPtr q = newStmt(mb, calcRef, "+");
 
-	getArg(q, 0) = be->cur_append = newTmpVariable(mb, newBatType(tt));
+	getArg(q, 0) = be->cur_append = newTmpVariable(mb, TYPE_lng);
 	q = pushArgument(mb, q, help);
 	q = pushArgument(mb, q, nr);
-	q = pushBit(mb, q, TRUE);
 	return getDestVar(q);
-}
-
-void
-finish_append_bat(backend *be, int tt)
-{
-	MalBlkPtr mb = be->mb;
-	int help = be->cur_append;
-	InstrPtr q = newStmt(mb, aggrRef, sumRef);
-
-	getArg(q, 0) = be->cur_append = newTmpVariable(mb, TYPE_int);
-	q = pushArgument(mb, q, help);
-	setVarType(mb, getArg(q,0), tt);
 }
 
 int

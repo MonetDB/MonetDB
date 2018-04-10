@@ -3342,7 +3342,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	}
 
 	if(find_prop(rel->p, PROP_DISTRIBUTE) && be->cur_append == 0) /* create BAT to hold the sum of affected rows */
-		create_append_bat(be, TYPE_lng);
+		create_merge_partitions_accumulator(be);
 
 	if (tr->op == op_basetable) {
 		t = tr->l;
@@ -3424,7 +3424,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	}
 
 	if(be->cur_append) //building the total number of rows affected across all tables
-		ret->nr = append_bat_value(be, TYPE_lng, ret->nr);
+		ret->nr = add_to_merge_partitions_accumulator(be, ret->nr);
 
 	if (ddl)
 		return stmt_list(be, l);
@@ -4581,7 +4581,7 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 	if (rows)
 		s = stmt_aggr(be, rows, NULL, NULL, sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL), 1, 0, 1);
 	if(be->cur_append) //building the total number of rows affected across all tables
-		s->nr = append_bat_value(be, TYPE_lng, s->nr);
+		s->nr = add_to_merge_partitions_accumulator(be, s->nr);
 	return s;
 }
 
@@ -4599,7 +4599,7 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 		assert(0/*ddl statement*/);
 
 	if(find_prop(rel->p, PROP_DISTRIBUTE) && be->cur_append == 0) /* create BAT to hold the sum of affected rows */
-		create_append_bat(be, TYPE_lng);
+		create_merge_partitions_accumulator(be);
 
 	if (rel->r) { /* first construct the deletes relation */
 		rows = subrel_bin(be, rel->r, refs);
@@ -4756,7 +4756,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 			ret = other;
 
 		if(be->cur_append) //building the total number of rows affected across all tables
-			other->nr = append_bat_value(be, TYPE_lng, other->nr);
+			other->nr = add_to_merge_partitions_accumulator(be, other->nr);
 
 		/* after */
 		if (!sql_delete_triggers(be, next, v, 1, 3, 4)) {
@@ -4797,7 +4797,7 @@ rel2bin_truncate(backend *be, sql_rel *rel)
 		assert(0/*ddl statement*/);
 
 	if(find_prop(rel->p, PROP_DISTRIBUTE) && be->cur_append == 0) /* create BAT to hold the sum of affected rows */
-		create_append_bat(be, TYPE_lng);
+		create_merge_partitions_accumulator(be);
 
 	n = rel->exps->h;
 	restart_sequences = E_ATOM_INT(n->data);
@@ -5193,7 +5193,6 @@ output_rel_bin(backend *be, sql_rel *rel )
 		s = stmt_output(be, s);
 	if (sqltype == Q_UPDATE && s && (s->type != st_list || be->cur_append)) {
 		if(be->cur_append) { /* finish the output bat */
-			finish_append_bat(be, TYPE_lng);
 			s->nr = be->cur_append;
 			be->cur_append = 0;
 		}
