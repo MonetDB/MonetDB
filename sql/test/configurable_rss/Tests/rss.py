@@ -5,11 +5,14 @@ except ImportError:
     import process
 
 class RSSTestConfig:
+    CAPPED = True
 
     # CAUTION: switch implementation without default.
     test_2_gdk_mem_maxsize = {
-        "cap_rss_64" : 20000000,
-        "cap_rss_32" : 10000000
+        "cap_rss_64" : (20000000,CAPPED),
+        "cap_rss_32" : (10000000,CAPPED),
+        "no_cap_rss_64" : (20000000,not CAPPED),
+        "no_cap_rss_32" : (10000000,not CAPPED)
     }
 
     sql_template = \
@@ -36,20 +39,29 @@ end;
 call loop_insert(1000000);
 
 -- it seems that it requires an analytical query to keep memory in ram.
-select getrss() < {0} as resident_set_size_is_less_then_{0}_kB, quantile(c/a, 0.8) * 0  from test;
+select getrss() {compare_sign} {cap_in_kB} as resident_set_size_is_{compare_string}_then_{cap_in_kB}_kB, quantile(c/a, 0.8) * 0  from test;
 
 drop table test cascade;
 drop function getrss;
 """
 
     def __init__(self, test):
-        self.rss_max_in_Bytes = RSSTestConfig.test_2_gdk_mem_maxsize[test]
+        self.rss_max_in_Bytes, self.is_capped = RSSTestConfig.test_2_gdk_mem_maxsize[test]
 
     def prepare_server_options(self):
-        return ["--set", "gdk_mem_maxsize={}".format(self.rss_max_in_Bytes)]
+        return ["--set", "gdk_mem_maxsize={}".format(self.rss_max_in_Bytes)] if self.is_capped else []
+
+    def get_template_parameters(self):
+
+        compare_sign, compare_string = ("<", "less") if self.is_capped else (">", "bigger")
+
+        return (self.rss_max_in_Bytes / 1000, compare_sign, compare_string)
+
 
     def prepare_sql_script(self):
-            return RSSTestConfig.sql_template.format(self.rss_max_in_Bytes / 1000)
+            cap_in_kB, compare_sign, compare_string = self.get_template_parameters()
+
+            return RSSTestConfig.sql_template.format(cap_in_kB=cap_in_kB, compare_sign=compare_sign, compare_string=compare_string)
 
 def build_test_config():
         test = sys.argv[1]

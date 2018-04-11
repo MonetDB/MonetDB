@@ -23,7 +23,7 @@ stdout of test 'cap_rss_64` in directory 'sql/test/configurable_rss` itself:
 #end;
 #select getrss() < 20000 as resident_set_size_is_less_then_20kbytes, quantile(c/a, 0.8) * 0  from test;
 % .L2,	sys.L6 # table_name
-% resident_set_size_is_less_then_20kbytes,	L6 # name
+% resident_set_size_is_less_then_20000_kb,	L6 # name
 % boolean,	double # type
 % 5,	24 # length
 [ true,	0	]
