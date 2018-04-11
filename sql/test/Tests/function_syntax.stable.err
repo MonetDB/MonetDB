@@ -15,12 +15,16 @@ stderr of test 'function_syntax` in directory 'sql/test` itself:
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = DROP FUNCTION f1;
 ERROR = !DROP FUNCTION: there are more than one function called 'f1', please use the full signature
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = DROP FUNCTION f2 (int, varchar(1024));
 ERROR = !DROP FUNCTION: no such function 'f2' (int(32), varchar(1024))
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = DROP ALL FUNCTION f1 CASCADE;
 ERROR = !DROP ALL FUNCTION: no such function 'f1'
+CODE  = 3F000
+
 
 # 13:04:59 >  
 # 13:04:59 >  Done.

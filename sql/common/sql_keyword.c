@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -34,19 +34,29 @@ keyword_key(char *k, int *l)
 	return (int) ((h & 0x80000000) ? ~h + 1 : h);
 }
 
-void
+int
 keywords_insert(char *k, int token)
 {
-	// FIXME unchecked_malloc MNEW can return NULL
 	keyword *kw = MNEW(keyword);
-	int len = 0;
-	int bucket = keyword_key(k = toLower(k), &len) & HASH_MASK;
+	if(kw) {
+		int len = 0;
+		int bucket = keyword_key(k = toLower(k), &len) & HASH_MASK;
+#ifndef NDEBUG
+		/* no duplicate keywords */
+		keyword *kw2;
+		for (kw2 = keywords[bucket]; kw2; kw2 = kw2->next)
+			assert(strcmp(kw2->keyword, k) != 0);
+#endif
 
-	kw->keyword = k;
-	kw->len = len;
-	kw->token = token;
-	kw->next = keywords[bucket];
-	keywords[bucket] = kw;
+		kw->keyword = k;
+		kw->len = len;
+		kw->token = token;
+		kw->next = keywords[bucket];
+		keywords[bucket] = kw;
+		return 0;
+	} else {
+		return -1;
+	}
 }
 
 keyword *

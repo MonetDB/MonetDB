@@ -37,7 +37,8 @@ QUERY = function foo();
         io.print(i);
         end foo;
 ERROR = !SyntaxException:parseError:io.printi;
-        !SyntaxException:parseError:        ^'(' expected
+        !SyntaxException:parseError:         ^'(' expected
+        !TypeException:user.foo[2]:'io.printi' undefined in:     io.printi();
 
 
 # 10:46:01 >  

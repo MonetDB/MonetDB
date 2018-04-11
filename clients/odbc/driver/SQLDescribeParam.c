@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -40,10 +40,10 @@ SQLDescribeParam(SQLHSTMT StatementHandle,
 	ODBCDescRec *rec;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDescribeParam " PTRFMT " %u " PTRFMT " " PTRFMT " " PTRFMT " " PTRFMT "\n",
-		PTRFMTCAST StatementHandle, (unsigned int) ParameterNumber,
-		PTRFMTCAST DataTypePtr, PTRFMTCAST ParameterSizePtr,
-		PTRFMTCAST DecimalDigitsPtr, PTRFMTCAST NullablePtr);
+	ODBCLOG("SQLDescribeParam %p %u %p %p %p %p\n",
+		StatementHandle, (unsigned int) ParameterNumber,
+		DataTypePtr, ParameterSizePtr,
+		DecimalDigitsPtr, NullablePtr);
 #endif
 
 	if (!isValidStmt(stmt))
@@ -89,6 +89,7 @@ SQLDescribeParam(SQLHSTMT StatementHandle,
 		case SQL_SMALLINT:
 		case SQL_INTEGER:
 		case SQL_BIGINT:
+		case SQL_HUGEINT:
 			*DecimalDigitsPtr = 0;
 			break;
 		case SQL_TYPE_TIME:

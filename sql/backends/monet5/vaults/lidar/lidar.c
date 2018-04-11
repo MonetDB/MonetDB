@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -12,8 +12,8 @@
  * This module contains primitives for accessing data in LiDAR file format.
  */
 
-#include <monetdb_config.h>
-#include <glob.h>
+#include "monetdb_config.h"
+#include "glob.h"
 
 /* clash with GDK? */
 // #undef ttype
@@ -22,13 +22,13 @@
 #include <liblas/capi/las_version.h>
 #include <liblas/capi/las_config.h>
 
-#include <lidar.h>
-#include <mutils.h>
-#include <sql_mvc.h>
-#include <sql_scenario.h>
-#include <sql.h>
-#include <clients.h>
-#include <mal_exception.h>
+#include "lidar.h"
+#include "mutils.h"
+#include "sql_mvc.h"
+#include "sql_scenario.h"
+#include "sql.h"
+#include "clients.h"
+#include "mal_exception.h"
 
 #define LIDAR_INS_COL "INSERT INTO lidar_columns(id, name, type, units, number, table_id) \
 	 VALUES(%d,'%s','%s','%s',%d,%d);"
@@ -36,7 +36,7 @@
 #define DEL_TABLE "DELETE FROM lidarfiles;"
 #define ATTACHDIR "CALL lidarattach('%s');"
 
-static MT_Lock mt_lidar_lock;
+static MT_Lock mt_lidar_lock MT_LOCK_INITIALIZER("mt_lidar_lock");
 
 #ifndef NDEBUG
 static
@@ -378,7 +378,7 @@ str LIDARexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  
 	tbl = mvc_bind_table(m, sch, tname);
 	if (tbl == NULL) {
-		msg = createException (MAL, "lidar.exporttable", "Table %s is missing.\n", tname);
+		msg = createException (MAL, "lidar.exporttable", SQLSTATE(LI000) "Table %s is missing.\n", tname);
 		return msg;
 	}
 
@@ -387,7 +387,7 @@ str LIDARexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	cols[1] = mvc_bind_column(m, tbl, "y");
 	cols[2] = mvc_bind_column(m, tbl, "z");
 	if (cols[0] == NULL || cols[1] == NULL || cols[2] == NULL) {
-		msg = createException(MAL, "lidar.exporttable", "Could not locate a column with name 'x', 'y', or 'z'.");
+		msg = createException(MAL, "lidar.exporttable", SQLSTATE(LI000) "Could not locate a column with name 'x', 'y', or 'z'.");
 		return msg;
 	} 
 	//bats_dbl[0] = mvc_bind(m, *sname, *tname, *cname, *access);
@@ -512,7 +512,7 @@ str LIDARdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		(void)closedir(dp);
 	} else
-		msg = createException(MAL, "listdir", "Couldn't open the directory");
+		msg = createException(MAL, "listdir", SQLSTATE(LI000) "Couldn't open the directory");
 
 	return msg;
 #endif
@@ -545,7 +545,7 @@ return MAL_SUCCEED;
 	/*	fprintf(stderr,"#fulldir: %s \nSize: %lu\n",fulldirectory, globbuf.gl_pathc);*/
 
 	if (globbuf.gl_pathc == 0)
-		throw(MAL, "listdir", "Couldn't open the directory or there are no files that match the pattern");
+		throw(MAL, "listdir", SQLSTATE(LI000) "Couldn't open the directory or there are no files that match the pattern");
 
 	for (j = 0; j < globbuf.gl_pathc; j++) {
 		char stmt[BUFSIZ];
@@ -582,7 +582,7 @@ LIDARtest(int *res, str *fname)
 	MT_lock_unset(&mt_lidar_lock);
 
 	if (LASError_GetErrorCount() != 0) {
-		msg = createException(MAL, "lidar.test", "Error accessing LIDAR file %s (%s)", 
+		msg = createException(MAL, "lidar.test", SQLSTATE(LI000) "Error accessing LIDAR file %s (%s)", 
 		*fname, LASError_GetLastErrorMsg());
 	} else 	{
 		header=LASReader_GetHeader(reader);
@@ -592,7 +592,7 @@ LIDARtest(int *res, str *fname)
                 if (reader != NULL) LASReader_Destroy(reader);
 		MT_lock_unset(&mt_lidar_lock);
 		if (LASError_GetErrorCount() != 0) {
-			msg = createException(MAL, "lidar.test", "Error accessing LIDAR file %s (%s)", 
+			msg = createException(MAL, "lidar.test", SQLSTATE(LI000) "Error accessing LIDAR file %s (%s)", 
 			*fname, LASError_GetLastErrorMsg());
 		}
 	}
@@ -632,7 +632,7 @@ str LIDARattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* check if file exists */
 	if (access(fname, F_OK) == -1) {
-		msg = createException(MAL, "lidar.test", "File %s not found.", fname);
+		msg = createException(MAL, "lidar.test", SQLSTATE(LI000) "File %s not found.", fname);
 		return msg;
 	}
 
@@ -642,7 +642,7 @@ str LIDARattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         reader = LASReader_Create(fname);
 	MT_lock_unset(&mt_lidar_lock);
 	if (LASError_GetErrorCount() != 0) {
-		msg = createException(MAL, "lidar.test", "Error accessing LIDAR file %s (%s)", 
+		msg = createException(MAL, "lidar.test", SQLSTATE(LI000) "Error accessing LIDAR file %s (%s)", 
 		fname, LASError_GetLastErrorMsg());
 		return msg;
 	}
@@ -650,7 +650,7 @@ str LIDARattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* get the header */
 	header = LASReader_GetHeader(reader);
 	if (!header) {
-		msg = createException(MAL, "lidar.test", "Error accessing LIDAR file %s (%s)", 
+		msg = createException(MAL, "lidar.test", SQLSTATE(LI000) "Error accessing LIDAR file %s (%s)", 
 		fname, LASError_GetLastErrorMsg());
 		return msg;
 	}
@@ -672,12 +672,12 @@ str LIDARattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* check if the file is already attached */
 	col = mvc_bind_column(m, lidar_fl, "name");
 	rid = table_funcs.column_find_row(m->session->tr, col, fname, NULL);
-	if (rid != oid_nil) {
+	if (!is_oid_nil(rid)) {
 		MT_lock_set(&mt_lidar_lock);
                 if (header != NULL) LASHeader_Destroy(header);
                 if (reader != NULL) LASReader_Destroy(reader);
 		MT_lock_unset(&mt_lidar_lock);
-		msg = createException(SQL, "lidar.attach", "File %s already attached\n", fname);
+		msg = createException(SQL, "lidar.attach", SQLSTATE(LI000) "File %s already attached\n", fname);
 		return msg;
 	}
 
@@ -707,12 +707,12 @@ str LIDARattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	rid = table_funcs.column_find_row(m->session->tr, col, tname_low, NULL);
 	/* or as regular SQL table */
 	tbl = mvc_bind_table(m, sch, tname_low);
-	if (rid != oid_nil || tbl) {
+	if (!is_oid_nil(rid) || tbl) {
 		MT_lock_set(&mt_lidar_lock);
                 if (header != NULL) LASHeader_Destroy(header);
                 if (reader != NULL) LASReader_Destroy(reader);
 		MT_lock_unset(&mt_lidar_lock);
-		msg = createException(SQL, "lidar.attach", "Table %s already exists\n", tname_low);
+		msg = createException(SQL, "lidar.attach", SQLSTATE(LI000) "Table %s already exists\n", tname_low);
 		return msg;
 	}
 	
@@ -876,27 +876,27 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	lidar_tbl = mvc_bind_table(m, sch, "lidar_tables");
 	if (lidar_tbl == NULL) {
-		msg = createException(MAL, "lidar.loadtable", "LIDAR catalog is missing.\n");
+		msg = createException(MAL, "lidar.loadtable", SQLSTATE(LI000) "LIDAR catalog is missing.\n");
 		return msg;
 	}
 
 	tbl = mvc_bind_table(m, sch, tname);
 	if (tbl == NULL) {
-		msg = createException(MAL, "lidar.loadtable", "Could not find table %s.\n", tname);
+		msg = createException(MAL, "lidar.loadtable", SQLSTATE(LI000) "Could not find table %s.\n", tname);
 		return msg;
 	}
 
 	col = mvc_bind_column(m, tbl, "x");
 	sz = store_funcs.count_col(m->session->tr, col, 1);
 	if (sz != 0) {
-		msg = createException(MAL, "lidar.loadtable", "Table %s is not empty.\n", tname);
+		msg = createException(MAL, "lidar.loadtable", SQLSTATE(LI000) "Table %s is not empty.\n", tname);
 		return msg;
 	}
 
 	col = mvc_bind_column(m, lidar_tbl, "name");
 	rid = table_funcs.column_find_row(m->session->tr, col, tname, NULL);
-	if (rid == oid_nil) {
-		msg = createException(MAL, "lidar.loadtable", "Table %s is unknown to the LIDAR catalog. Attach first the containing file\n", tname);
+	if (is_oid_nil(rid)) {
+		msg = createException(MAL, "lidar.loadtable", SQLSTATE(LI000) "Table %s is unknown to the LIDAR catalog. Attach first the containing file\n", tname);
 		return msg;
 	}
 
@@ -912,7 +912,7 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	lidar_cl = mvc_bind_table(m, sch, "lidar_columns");
 	if (lidar_cl == NULL) {
-		msg = createException(MAL, "lidar.loadtable", "Could not find table lidar_columns.\n");
+		msg = createException(MAL, "lidar.loadtable", SQLSTATE(LI000) "Could not find table lidar_columns.\n");
 		return msg;
 	}
 	col = mvc_bind_column(m, lidar_cl, "file_id");
@@ -937,7 +937,7 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	reader = LASReader_Create(fname);
 	MT_lock_unset(&mt_lidar_lock);
 	if (LASError_GetErrorCount() != 0) {
-		msg = createException(MAL, "lidar.lidarload", "Error accessing LIDAR file %s (%s)", 
+		msg = createException(MAL, "lidar.lidarload", SQLSTATE(LI000) "Error accessing LIDAR file %s (%s)", 
 		fname, LASError_GetLastErrorMsg());
 		return msg;
 	}
@@ -945,7 +945,7 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* get the header */
 	header = LASReader_GetHeader(reader);
 	if (!header) {
-		msg = createException(MAL, "lidar.lidarload", "Error accessing LIDAR file %s (%s)", 
+		msg = createException(MAL, "lidar.lidarload", SQLSTATE(LI000) "Error accessing LIDAR file %s (%s)", 
 		fname, LASError_GetLastErrorMsg());
 		return msg;
 	}
@@ -973,7 +973,7 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (header != NULL) LASHeader_Destroy(header);
 		if (reader != NULL) LASReader_Destroy(reader);
 		MT_lock_unset(&mt_lidar_lock);
-		msg = createException(MAL, "lidar.lidarload", MAL_MALLOC_FAIL);
+		msg = createException(MAL, "lidar.lidarload", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return msg;
 	}
 
@@ -1003,7 +1003,7 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			double t = LASPoint_GetTime(p);
 			char anglerank = LASPoint_GetScanAngleRank (p);
 			unsigned short sourceid = LASPoint_GetPointSourceId (p);
-				fprintf(stderr, 
+			fprintf(stderr,
 				"(point # %d)"
 				"X (raw)           : %f (%ld)\n"
 				"Z (raw)           : %f (%ld)\n"
@@ -1076,8 +1076,14 @@ str LIDARloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 LIDARprelude(void *ret) {
+#ifdef NEED_MT_LOCK_INIT
+	static int initialized = 0;
+	/* since we don't destroy the lock, only initialize it once */
+	if (!initialized)
+		MT_lock_init(&mt_lidar_lock, "lidar.lock");
+	initialized = 1;
+#endif
 	(void) ret;
-	MT_lock_init(&mt_lidar_lock, "lidar.lock");
 
 	return MAL_SUCCEED;
 }

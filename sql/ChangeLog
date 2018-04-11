@@ -1,3 +1,13 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Tue Mar 13 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Implemented group_concat(X,Y) aggregate function which also
+  concatenates a column of strings X, but using a supplied string Y as
+  the separator. This function is also a SQL extension.
+
+* Fri Mar  9 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Implemented group_concat(X) aggregate function which concatenates a
+  column of strings using a comma as a separator. This function is not
+  featured in the SQL standard.
+

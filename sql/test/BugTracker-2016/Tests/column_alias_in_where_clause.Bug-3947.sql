@@ -33,6 +33,7 @@ SELECT * FROM (SELECT cast(null as char(1)) AS "CAT", a AS "A", c AS "C" FROM t_
 SELECT cast(null as char(1)) AS "CAT", a AS "A", c AS "C" FROM t_alias WHERE "CAT" IS NULL or "CAT" = NULL;
 -- SELECT: identifier 'CAT' unknown
 SELECT * FROM (SELECT cast(null as char(1)) AS "CAT", a AS "A", c AS "C" FROM t_alias) T1 WHERE "CAT" IS NULL or "CAT" = NULL;
+SELECT * FROM (SELECT cast(null as char(1)) AS "CAT", a AS "A", c AS "C" FROM t_alias) T1 WHERE "CAT" IS NULL and "CAT" = NULL;
 
 -- column aliases can be used in ORDER BY and GROUP BY clauses
 SELECT a AS "A", b AS "B", c AS "C" FROM t_alias ORDER BY "C", "A", "B";

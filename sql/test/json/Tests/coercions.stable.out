@@ -68,8 +68,8 @@ Ready.
 [ "{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}"	]
 [ "[1,\"f2\", 2]"	]
 #select cast (j as string) from nosql;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % clob # type
 % 37 # length
 [ "\"{}\""	]
@@ -99,8 +99,8 @@ Ready.
 [ "{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}"	]
 [ "[1,\"f2\", 2]"	]
 #select cast (j as json) from nosql;
-% sys.L1 # table_name
-% L1 # name
+% sys.L2 # table_name
+% L2 # name
 % json # type
 % 29 # length
 [ "{}"	]

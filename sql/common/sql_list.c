@@ -3,11 +3,11 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
-#include <gdk.h>		/* for GDKmalloc() & GDKfree() */
+#include "gdk.h"		/* for GDKmalloc() & GDKfree() */
 #include "sql_list.h"
 
 static node *
@@ -44,6 +44,9 @@ list *
 sa_list(sql_allocator *sa)
 {
 	list *l = (sa)?SA_ZNEW(sa, list):ZNEW(list);
+	if (!l) {
+		return NULL;
+	}
 
 	l->sa = sa;
 	l->destroy = NULL;
@@ -58,6 +61,9 @@ list *
 list_new(sql_allocator *sa, fdestroy destroy)
 {
 	list *l = (sa)?SA_ZNEW(sa, list):ZNEW(list);
+	if (!l) {
+		return NULL;
+	}
 
 	l->sa = sa;
 	l->destroy = destroy;
@@ -388,11 +394,19 @@ list_match(list *l1, list *l2, fcmp cmp)
 list *
 list_keysort(list *l, int *keys, fdup dup)
 {
-	list *res = list_new_(l);
+	list *res;
 	node *n = NULL;
 	int i, j, *pos, cnt = list_length(l);
 
-	pos = (int*)malloc(cnt*sizeof(int));
+	pos = (int*)GDKmalloc(cnt*sizeof(int));
+	if (pos == NULL) {
+		return NULL;
+	}
+	res = list_new_(l);
+	if (res == NULL) {
+		GDKfree(pos);
+		return NULL;
+	}
 	for (n = l->h, i = 0; n; n = n->next, i++) {
 		pos[i] = i;
 	}
@@ -403,19 +417,32 @@ list_keysort(list *l, int *keys, fdup dup)
 			assert(n);
 		list_append(res, dup?dup(n->data):n->data);
 	}
-	free(pos);
+	GDKfree(pos);
 	return res;
 }
 
 list *
 list_sort(list *l, fkeyvalue key, fdup dup)
 {
-	list *res = list_new_(l);
+	list *res;
 	node *n = NULL;
 	int i, j, *keys, *pos, cnt = list_length(l);
 
-	keys = (int*)malloc(cnt*sizeof(int));
-	pos = (int*)malloc(cnt*sizeof(int));
+	keys = (int*)GDKmalloc(cnt*sizeof(int));
+	pos = (int*)GDKmalloc(cnt*sizeof(int));
+	if (keys == NULL || pos == NULL) {
+		if (keys)
+			GDKfree(keys);
+		if (pos)
+			GDKfree(pos);
+		return NULL;
+	}
+	res = list_new_(l);
+	if (res == NULL) {
+		GDKfree(keys);
+		GDKfree(pos);
+		return NULL;
+	}
 	for (n = l->h, i = 0; n; n = n->next, i++) {
 		keys[i] = key(n->data);
 		pos[i] = i;
@@ -427,8 +454,8 @@ list_sort(list *l, fkeyvalue key, fdup dup)
 			assert(n);
 		list_append(res, dup?dup(n->data):n->data);
 	}
-	free(keys);
-	free(pos);
+	GDKfree(keys);
+	GDKfree(pos);
 	return res;
 }
 
@@ -440,9 +467,11 @@ list_select(list *l, void *key, fcmp cmp, fdup dup)
 
 	if (key && l) {
 		res = list_new_(l);
-		for (n = l->h; n; n = n->next) 
-			if (cmp(n->data, key) == 0) 
-				list_append(res, dup?dup(n->data):n->data);
+		if(res) {
+			for (n = l->h; n; n = n->next)
+				if (cmp(n->data, key) == 0)
+					list_append(res, dup?dup(n->data):n->data);
+		}
 	}
 	return res;
 }
@@ -455,16 +484,18 @@ list_order(list *l, fcmp cmp, fdup dup)
 	node *m, *n = NULL;
 
 	/* use simple insert sort */
-	for (n = l->h; n; n = n->next) {
-		int append = 1;
-		for (m = res->h; m && append; m = m->next) {
-			if (cmp(n->data, m->data) > 0) {
-				list_append_before(res, m, dup?dup(n->data):n->data);
-				append = 0;
+	if(res) {
+		for (n = l->h; n; n = n->next) {
+			int append = 1;
+			for (m = res->h; m && append; m = m->next) {
+				if (cmp(n->data, m->data) > 0) {
+					list_append_before(res, m, dup ? dup(n->data) : n->data);
+					append = 0;
+				}
 			}
+			if (append)
+				list_append(res, dup ? dup(n->data) : n->data);
 		}
-		if (append)
-			list_append(res, dup?dup(n->data):n->data);
 	}
 	return res;
 }
@@ -475,9 +506,11 @@ list_distinct(list *l, fcmp cmp, fdup dup)
 	list *res = list_new_(l);
 	node *n = NULL;
 
-	for (n = l->h; n; n = n->next) {
-		if (!list_find(res, n->data, cmp)) {
-			list_append(res, dup?dup(n->data):n->data);
+	if(res) {
+		for (n = l->h; n; n = n->next) {
+			if (!list_find(res, n->data, cmp)) {
+				list_append(res, dup ? dup(n->data) : n->data);
+			}
 		}
 	}
 	return res;
@@ -544,12 +577,14 @@ list_map(list *l, void *data, fmap map)
 
 	node *n = l->h;
 
-	while (n) {
-		void *v = map(n->data, data);
+	if(res) {
+		while (n) {
+			void *v = map(n->data, data);
 
-		if (v)
-			list_append(res, v);
-		n = n->next;
+			if (v)
+				list_append(res, v);
+			n = n->next;
+		}
 	}
 	return res;
 }
@@ -595,12 +630,11 @@ list *
 list_dup(list *l, fdup dup)
 {
 	list *res = list_new_(l);
-	return list_merge(res, l, dup);
+	return res ? list_merge(res, l, dup) : NULL;
 }
 
 
 #ifdef TEST
-#include <stdio.h>
 #include <string.h>
 
 void

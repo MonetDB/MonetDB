@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -157,9 +157,9 @@ SQLGetDiagRec(SQLSMALLINT HandleType,
 	      SQLSMALLINT *TextLengthPtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDiagRec %s " PTRFMT " %d %d\n",
+	ODBCLOG("SQLGetDiagRec %s %p %d %d\n",
 		HandleType == SQL_HANDLE_ENV ? "Env" : HandleType == SQL_HANDLE_DBC ? "Dbc" : HandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
-		PTRFMTCAST Handle, (int) RecNumber, (int) BufferLength);
+		Handle, (int) RecNumber, (int) BufferLength);
 #endif
 
 	return MNDBGetDiagRec(HandleType,
@@ -208,9 +208,9 @@ SQLGetDiagRecW(SQLSMALLINT HandleType,
 	SQLSMALLINT n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetDiagRecW %s " PTRFMT " %d %d\n",
+	ODBCLOG("SQLGetDiagRecW %s %p %d %d\n",
 		HandleType == SQL_HANDLE_ENV ? "Env" : HandleType == SQL_HANDLE_DBC ? "Dbc" : HandleType == SQL_HANDLE_STMT ? "Stmt" : "Desc",
-		PTRFMTCAST Handle, (int) RecNumber, (int) BufferLength);
+		Handle, (int) RecNumber, (int) BufferLength);
 #endif
 
 

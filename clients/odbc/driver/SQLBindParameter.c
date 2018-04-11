@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -190,6 +190,7 @@ MNDBBindParameter(ODBCStmt *stmt,
 	case SQL_SMALLINT:
 	case SQL_INTEGER:
 	case SQL_BIGINT:
+	case SQL_HUGEINT:
 	case SQL_GUID:
 		break;
 	default:
@@ -245,13 +246,13 @@ SQLBindParameter(SQLHSTMT StatementHandle,
 		 SQLLEN *StrLen_or_IndPtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLBindParameter " PTRFMT " %u %d %s %s " ULENFMT " %d " PTRFMT " " LENFMT " " PTRFMT "\n",
-		PTRFMTCAST StatementHandle, (unsigned int) ParameterNumber,
+	ODBCLOG("SQLBindParameter %p %u %d %s %s " ULENFMT " %d %p " LENFMT " %p\n",
+		StatementHandle, (unsigned int) ParameterNumber,
 		(int) InputOutputType, translateCType(ValueType),
 		translateSQLType(ParameterType),
 		ULENCAST ColumnSize, (int) DecimalDigits,
-		PTRFMTCAST ParameterValuePtr, LENCAST BufferLength,
-		PTRFMTCAST StrLen_or_IndPtr);
+		ParameterValuePtr, LENCAST BufferLength,
+		StrLen_or_IndPtr);
 #endif
 
 	return MNDBBindParameter((ODBCStmt *) StatementHandle, ParameterNumber,

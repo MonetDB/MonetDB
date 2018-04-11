@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /* included from gdk.h */
@@ -150,3 +150,6 @@ gdk_export dbl BATcalcvariance_population(dbl *avgp, BAT *b);
 gdk_export dbl BATcalcvariance_sample(dbl *avgp, BAT *b);
 gdk_export BAT *BATgroupvariance_sample(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
 gdk_export BAT *BATgroupvariance_population(BAT *b, BAT *g, BAT *e, BAT *s, int tp, int skip_nils, int abort_on_error);
+
+gdk_export BAT *BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils, int abort_on_error, const str separator);
+gdk_export gdk_return BATstr_group_concat(ValPtr res, BAT *b, BAT *s, int skip_nils, int abort_on_error, int nil_if_empty, const str separator);

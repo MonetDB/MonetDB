@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -21,7 +21,6 @@
 
 #include "monetdb_config.h"
 #include "gdk.h"
-#include <stdarg.h>
 #include <time.h>
 #include "mal_exception.h"
 #include "status.h"
@@ -144,7 +143,7 @@ SYScpuStatistics(bat *ret, bat *ret2)
 	if (b == 0 || bn == 0){
 		if ( b) BBPunfix(b->batCacheid);
 		if ( bn) BBPunfix(bn->batCacheid);
-		throw(MAL, "status.cpuStatistics", MAL_MALLOC_FAIL);
+		throw(MAL, "status.cpuStatistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 #ifdef HAVE_TIMES
 	if (clk == 0) {
@@ -195,7 +194,7 @@ SYScpuStatistics(bat *ret, bat *ret2)
   bailout:
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	throw(MAL, "status.cpuStatistics", MAL_MALLOC_FAIL);
+	throw(MAL, "status.cpuStatistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 static size_t memincr;
@@ -210,7 +209,7 @@ SYSmemStatistics(bat *ret, bat *ret2)
 	if (b == 0 || bn == 0) {
 		if ( b) BBPunfix(b->batCacheid);
 		if ( bn) BBPunfix(bn->batCacheid);
-		throw(MAL, "status.memStatistics", MAL_MALLOC_FAIL);
+		throw(MAL, "status.memStatistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	/* store counters, ignore errors */
@@ -225,7 +224,7 @@ SYSmemStatistics(bat *ret, bat *ret2)
   bailout:
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	throw(MAL, "status.memStatistics", MAL_MALLOC_FAIL);
+	throw(MAL, "status.memStatistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 #define heap(X1,X2,X3,X4)									\
@@ -263,7 +262,7 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 	if (b == 0 || bn == 0) {
 		if ( b) BBPunfix(b->batCacheid);
 		if ( bn) BBPunfix(bn->batCacheid);
-		throw(MAL, "status.memUsage", MAL_MALLOC_FAIL);
+		throw(MAL, "status.memUsage", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BBPlock();
 	for (i = 1; i < getBBPsize(); i++) {
@@ -294,7 +293,7 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 			continue;
 		}
 		heap(1,&c->theap,tbuns,"tbuns");
-		heap(c->thash && c->thash != (Hash *) 1,c->thash->heap,thsh,"thsh");
+		heap(c->thash && c->thash != (Hash *) 1,&c->thash->heap,thsh,"thsh");
 		heap(c->tvheap,c->tvheap,tail,"tail");
 	}
 	/* totals per category */
@@ -362,7 +361,7 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 	BBPunlock();
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	throw(MAL, "status.memUsage", MAL_MALLOC_FAIL);
+	throw(MAL, "status.memUsage", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 str
@@ -377,7 +376,7 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 	if (b == 0 || bn == 0) {
 		if ( b) BBPunfix(b->batCacheid);
 		if ( bn) BBPunfix(bn->batCacheid);
-		throw(MAL, "status.vmStatistics", MAL_MALLOC_FAIL);
+		throw(MAL, "status.vmStatistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BBPlock();
 	for (i = 1; i < getBBPsize(); i++) {
@@ -393,7 +392,7 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 			continue;
 		}
 		heapvm(1,&c->theap,tbuns,"tcuns");
-		heapvm(c->thash && c->thash != (Hash *) 1,c->thash->heap,thsh,"thsh");
+		heapvm(c->thash && c->thash != (Hash *) 1,&c->thash->heap,thsh,"thsh");
 		heapvm(c->tvheap,c->tvheap,tail,"tail");
 	}
 	/* totals per category */
@@ -446,7 +445,7 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 	BBPunlock();
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	throw(MAL, "status.vmStatistics", MAL_MALLOC_FAIL);
+	throw(MAL, "status.vmStatistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 /*
@@ -499,7 +498,7 @@ SYSioStatistics(bat *ret, bat *ret2)
 	if (b == 0 || bn == 0) {
 		if ( b) BBPunfix(b->batCacheid);
 		if ( bn) BBPunfix(bn->batCacheid);
-		throw(MAL, "status.ioStatistics", MAL_MALLOC_FAIL);
+		throw(MAL, "status.ioStatistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 #ifndef NATIVE_WIN32
@@ -564,7 +563,7 @@ SYSioStatistics(bat *ret, bat *ret2)
   bailout:
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	throw(MAL, "status.ioStatistics", MAL_MALLOC_FAIL);
+	throw(MAL, "status.ioStatistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 str
@@ -581,7 +580,7 @@ SYSgdkEnv(bat *ret, bat *ret2)
 	if (b == 0 || bn == 0) {
 		if ( b) BBPunfix(b->batCacheid);
 		if ( bn) BBPunfix(bn->batCacheid);
-		throw(MAL, "status.batStatistics", MAL_MALLOC_FAIL);
+		throw(MAL, "status.batStatistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	for (i = 1; i < getBBPsize(); i++) {
@@ -612,7 +611,7 @@ SYSgdkEnv(bat *ret, bat *ret2)
 		pseudo(ret,ret2, bn,b)) {
 		BBPunfix(b->batCacheid);
 		BBPunfix(bn->batCacheid);
-		throw(MAL, "status.batStatistics", MAL_MALLOC_FAIL);
+		throw(MAL, "status.batStatistics", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	return MAL_SUCCEED;
 }
@@ -628,7 +627,7 @@ SYSgdkThread(bat *ret, bat *ret2)
 	if (b == 0 || bn == 0) {
 		if ( b) BBPunfix(b->batCacheid);
 		if ( bn) BBPunfix(bn->batCacheid);
-		throw(MAL, "status.getThreads", MAL_MALLOC_FAIL);
+		throw(MAL, "status.getThreads", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	for (i = 0; i < THREADS; i++) {
@@ -645,5 +644,5 @@ SYSgdkThread(bat *ret, bat *ret2)
   bailout:
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	throw(MAL, "status.getThreads", MAL_MALLOC_FAIL);
+	throw(MAL, "status.getThreads", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }

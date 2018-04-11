@@ -1,14 +1,21 @@
 stdout of test 'ssbm` in directory 'sql/test/remote` itself:
 
+# MonetDB 5 server v11.27.2 "Jul2017-3cf6570bbe6d"
+# Serving database 'mTests_sql_test_remote', using 4 threads
+# Compiled for x86_64-pc-winnt/64bit
+# Found 11.991 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://lab03:30836/
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
 Ready.
 
-# 14:14:37 >  
-# 14:14:37 >  "/usr/local/opt/python/bin/python2.7" "ssbm.SQL.py" "ssbm"
-# 14:14:37 >  
-
-# 11:09:02 >  
-# 11:09:02 >  "/usr/bin/python2" "ssbm.SQL.py" "ssbm"
-# 11:09:02 >  
+# 03:07:31 >  
+# 03:07:31 >  "C:\Python27\python.exe" "ssbm.SQL.py" "ssbm"
+# 03:07:31 >  
 
 12036 rows in remote table
 60175 rows in mergetable

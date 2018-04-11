@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -43,7 +43,7 @@ SQLError(SQLHENV EnvironmentHandle,
 	 SQLSMALLINT *TextLengthPtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLError " PTRFMT " " PTRFMT " " PTRFMT "\n", PTRFMTCAST EnvironmentHandle, PTRFMTCAST ConnectionHandle, PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLError %p %p %p\n", EnvironmentHandle, ConnectionHandle, StatementHandle);
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */
@@ -114,7 +114,7 @@ SQLErrorW(SQLHENV EnvironmentHandle,
 	SQLCHAR errmsg[512];
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLErrorW " PTRFMT " " PTRFMT " " PTRFMT "\n", PTRFMTCAST EnvironmentHandle, PTRFMTCAST ConnectionHandle, PTRFMTCAST StatementHandle);
+	ODBCLOG("SQLErrorW %p %p %p\n", EnvironmentHandle, ConnectionHandle, StatementHandle);
 #endif
 
 	/* use mapping as described in ODBC 3 SDK Help file */

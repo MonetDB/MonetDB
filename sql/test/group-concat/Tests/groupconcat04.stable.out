@@ -1,0 +1,120 @@
+stdout of test 'groupconcat04` in directory 'sql/test/group-concat` itself:
+
+
+# 15:13:03 >  
+# 15:13:03 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34448" "--set" "mapi_usock=/var/tmp/mtest-32553/.s.monetdb.34448" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-default/BUILD/var/MonetDB/mTests_sql_test_group-concat"
+# 15:13:03 >  
+
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_group-concat', using 8 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.492 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://gup-128-80.cwi.nl:34448/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-32553/.s.monetdb.34448
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 15:13:03 >  
+# 15:13:03 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32553" "--port=34448"
+# 15:13:03 >  
+
+#start transaction;
+#create table testme (a int, b clob, c int);
+#insert into testme values (1, 'another', 1), (5, '', 20), (5, 'if', 20), (2, 'two', 2), (4, 'a singleton', 10), (5, 'else', 20);
+[ 6	]
+#select a, group_concat(b) from testme where c > 3 group by a;
+% sys.testme,	sys.L4 # table_name
+% a,	L3 # name
+% int,	clob # type
+% 1,	11 # length
+[ 5,	",if,else"	]
+[ 4,	"a singleton"	]
+#select group_concat(a) from testme;
+% sys.L4 # table_name
+% L3 # name
+% clob # type
+% 11 # length
+[ "1,5,5,2,4,5"	]
+#select '[' || group_concat(a) || ']' from testme;
+% .L4 # table_name
+% L4 # name
+% varchar # type
+% 13 # length
+[ "[1,5,5,2,4,5]"	]
+#select group_concat(c) from testme where c < 3;
+% sys.L4 # table_name
+% L3 # name
+% clob # type
+% 3 # length
+[ "1,2"	]
+#insert into testme values (6, '', 12), (7, '', 323), (4, 'not a singleton anymore', 7), (7, NULL, 323);
+[ 4	]
+#select a, group_concat(b) from testme where c > 3 group by a;
+% sys.testme,	sys.L4 # table_name
+% a,	L3 # name
+% int,	clob # type
+% 1,	35 # length
+[ 5,	",if,else"	]
+[ 4,	"a singleton,not a singleton anymore"	]
+[ 6,	""	]
+[ 7,	NULL	]
+#select group_concat(a) from testme;
+% sys.L4 # table_name
+% L3 # name
+% clob # type
+% 19 # length
+[ "1,5,5,2,4,5,6,7,4,7"	]
+#select '[' || group_concat(a) || ']' from testme;
+% .L4 # table_name
+% L4 # name
+% varchar # type
+% 21 # length
+[ "[1,5,5,2,4,5,6,7,4,7]"	]
+#select group_concat(c) from testme where c < 3;
+% sys.L4 # table_name
+% L3 # name
+% clob # type
+% 3 # length
+[ "1,2"	]
+#create table othertest (a int, b clob);
+#insert into othertest values (1, '\\t a\t'), (1, '\n\\n,'), (1, ',,,');
+[ 3	]
+#select a, group_concat(b) from othertest group by a;
+% sys.othertest,	sys.L4 # table_name
+% a,	L3 # name
+% int,	clob # type
+% 1,	14 # length
+[ 1,	"\\t a\t,\n\\n,,,,,"	]
+#select group_concat(b) from othertest;
+% sys.L4 # table_name
+% L3 # name
+% clob # type
+% 14 # length
+[ "\\t a\t,\n\\n,,,,,"	]
+#insert into othertest values (2, '\n'), (2, '\n'), (1, '');
+[ 3	]
+#select a, group_concat(b) from othertest group by a;
+% sys.othertest,	sys.L4 # table_name
+% a,	L3 # name
+% int,	clob # type
+% 1,	15 # length
+[ 1,	"\\t a\t,\n\\n,,,,,,"	]
+[ 2,	"\n,\n"	]
+#select group_concat(b) from othertest;
+% sys.L4 # table_name
+% L3 # name
+% clob # type
+% 19 # length
+[ "\\t a\t,\n\\n,,,,,,\n,\n,"	]
+#rollback;
+
+# 15:13:03 >  
+# 15:13:03 >  "Done."
+# 15:13:03 >  
+

@@ -69,8 +69,8 @@ Ready.
 #insert into table3389 values (9,null);
 [ 1	]
 #select median(b) from table3389 group by k;
-% sys.L2 # table_name
-% L1 # name
+% sys.L3 # table_name
+% L2 # name
 % int # type
 % 2 # length
 [ 2	]

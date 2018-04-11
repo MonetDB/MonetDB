@@ -33,15 +33,19 @@ stderr of test 'history_table_escape.SF-1072089` in directory 'sql/test/BugDay_2
 MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
 QUERY = DELETE FROM history;
 ERROR = !DELETE FROM: no such table 'history'
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = record SELECT 1;
-ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+ERROR = !syntax error, unexpected IDENT in: "record"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = record SELECT 'test';
-ERROR = !current transaction is aborted (please ROLLBACK)
-MAPI  = (monetdb) /var/tmp/mtest-23209/.s.monetdb.33225
+ERROR = !syntax error, unexpected IDENT in: "record"
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT query FROM history;
-ERROR = !current transaction is aborted (please ROLLBACK)
+ERROR = !Current transaction is aborted (please ROLLBACK)
+CODE  = 25005
 
 
 # 15:49:19 >  

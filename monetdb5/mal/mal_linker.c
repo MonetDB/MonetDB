@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -44,6 +44,10 @@ static FileRecord filesLoaded[MAXMODULES];
 static int maxfiles = MAXMODULES;
 static int lastfile = 0;
 
+#ifndef O_CLOEXEC
+#define O_CLOEXEC 0
+#endif
+
 /*
  * returns 1 if the file exists
  */
@@ -61,7 +65,7 @@ fileexists(const char *path)
 
 /* Search for occurrence of the function in the library identified by the filename.  */
 MALfcn
-getAddress(stream *out, str modname, str fcnname, int silent)
+getAddress(str fcnname)
 {
 	void *dl;
 	MALfcn adr;
@@ -100,27 +104,24 @@ getAddress(stream *out, str modname, str fcnname, int silent)
 	 * the first argument must be the same as the base name of the
 	 * library that is created in src/tools */
 	dl = mdlopen("libmonetdb5", RTLD_NOW | RTLD_GLOBAL);
-	if (dl == NULL) {
-		/* shouldn't happen, really */
-		if (!silent)
-			showException(out, MAL, "MAL.getAddress",
-						  "address of '%s.%s' not found",
-						  (modname?modname:"<unknown>"), fcnname);
+	if (dl == NULL) 
 		return NULL;
-	}
 
 	adr = (MALfcn) dlsym(dl, fcnname);
 	filesLoaded[lastfile].modname = GDKstrdup("libmonetdb5");
+	if(filesLoaded[lastfile].modname == NULL) {
+		dlclose(dl);
+		return NULL;
+	}
 	filesLoaded[lastfile].fullname = GDKstrdup("libmonetdb5");
+	if(filesLoaded[lastfile].fullname == NULL) {
+		dlclose(dl);
+		GDKfree(filesLoaded[lastfile].modname);
+		return NULL;
+	}
 	filesLoaded[lastfile].handle = dl;
 	lastfile ++;
-	if(adr != NULL)
-		return adr; /* found it */
-
-	if (!silent)
-		showException(out, MAL,"MAL.getAddress", "address of '%s.%s' not found",
-			(modname?modname:"<unknown>"), fcnname);
-	return NULL;
+	return adr;
 }
 /*
  * Module file loading
@@ -143,7 +144,7 @@ str
 loadLibrary(str filename, int flag)
 {
 	int mode = RTLD_NOW | RTLD_GLOBAL;
-	char nme[PATHLENGTH];
+	char nme[FILENAME_MAX];
 	void *handle = NULL;
 	str s;
 	int idx;
@@ -185,11 +186,11 @@ loadLibrary(str filename, int flag)
 
 		/* try hardcoded SO_EXT if that is the same for modules */
 #ifdef _AIX
-		snprintf(nme, PATHLENGTH, "%.*s%c%s_%s%s(%s_%s.0)",
+		snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s%s(%s_%s.0)",
 				 (int) (p - mod_path),
 				 mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT, SO_PREFIX, s);
 #else
-		snprintf(nme, PATHLENGTH, "%.*s%c%s_%s%s",
+		snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s%s",
 				 (int) (p - mod_path),
 				 mod_path, DIR_SEP, SO_PREFIX, s, SO_EXT);
 #endif
@@ -199,7 +200,7 @@ loadLibrary(str filename, int flag)
 		}
 		if (handle == NULL && strcmp(SO_EXT, ".so") != 0) {
 			/* try .so */
-			snprintf(nme, PATHLENGTH, "%.*s%c%s_%s.so",
+			snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.so",
 					 (int) (p - mod_path),
 					 mod_path, DIR_SEP, SO_PREFIX, s);
 			handle = dlopen(nme, mode);
@@ -210,7 +211,7 @@ loadLibrary(str filename, int flag)
 #ifdef __APPLE__
 		if (handle == NULL && strcmp(SO_EXT, ".bundle") != 0) {
 			/* try .bundle */
-			snprintf(nme, PATHLENGTH, "%.*s%c%s_%s.bundle",
+			snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.bundle",
 					 (int) (p - mod_path),
 					 mod_path, DIR_SEP, SO_PREFIX, s);
 			handle = dlopen(nme, mode);
@@ -234,10 +235,23 @@ loadLibrary(str filename, int flag)
 	if (lastfile == maxfiles) {
 		if (handle)
 			dlclose(handle);
-		showException(GDKout, MAL,"loadModule", "internal error, too many modules loaded");
+		throw(MAL,"mal.linker", "loadModule internal error, too many modules loaded");
 	} else {
 		filesLoaded[lastfile].modname = GDKstrdup(filename);
+		if(filesLoaded[lastfile].modname == NULL) {
+			MT_lock_unset(&mal_contextLock);
+			if (handle)
+				dlclose(handle);
+			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " could not allocate space");
+		}
 		filesLoaded[lastfile].fullname = GDKstrdup(handle ? nme : "");
+		if(filesLoaded[lastfile].fullname == NULL) {
+			MT_lock_unset(&mal_contextLock);
+			GDKfree(filesLoaded[lastfile].modname);
+			if (handle)
+				dlclose(handle);
+			throw(LOADER, "loadLibrary", RUNTIME_LOAD_ERROR " could not allocate space");
+		}
 		filesLoaded[lastfile].handle = handle ? handle : filesLoaded[0].handle;
 		lastfile ++;
 	}
@@ -362,7 +376,7 @@ locate_file(const char *basename, const char *ext, bit recurse)
 			(void)closedir(rdir);
 		} else {
 			strcat(fullname + i + 1, ext);
-			if ((fd = open(fullname, O_RDONLY)) >= 0) {
+			if ((fd = open(fullname, O_RDONLY | O_CLOEXEC)) >= 0) {
 				char *tmp;
 				close(fd);
 				tmp = GDKrealloc(fullname, strlen(fullname) + 1);

@@ -64,7 +64,7 @@ Ready.
 #      (
 #         CASE WHEN c>=100.000000
 #         AND c<=200.000000 THEN 'IntValue1' WHEN c>=200.000000
-% sys.aaa1,	sys.L1 # table_name
+% sys.aaa1,	sys.L3 # table_name
 % a,	casesentence # name
 % varchar,	char # type
 % 0,	12 # length
@@ -82,7 +82,7 @@ Ready.
 #         CASE WHEN cast(c as double)>=100.000000
 #         AND cast(c as double)<=200.000000 THEN 'IntValue1' WHEN cast(c as double)>=200.000000
 #         AND cast(c as double)<=300.000000 THEN 'IntValue2' ELSE 'Out of range' END
-% sys.aaa1,	sys.L15 # table_name
+% sys.aaa1,	sys.L17 # table_name
 % a,	casesentence # name
 % varchar,	char # type
 % 0,	12 # length
@@ -110,7 +110,7 @@ Ready.
 #   (
 #      (
 #         CASE WHEN c >=100.000000
-% sys.aaa2,	sys.L1 # table_name
+% sys.aaa2,	sys.L3 # table_name
 % a,	casesentence # name
 % varchar,	char # type
 % 0,	12 # length
@@ -139,7 +139,7 @@ Ready.
 #      (
 #         CASE WHEN c>=100.000000
 #         AND c<=200.000000 THEN 'IntValue1' WHEN c>=200.000000
-% sys.aaa1,	sys.L1 # table_name
+% sys.aaa1,	sys.L3 # table_name
 % a,	casesentence # name
 % varchar,	char # type
 % 0,	12 # length

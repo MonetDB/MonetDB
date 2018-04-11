@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -40,10 +40,10 @@ SQLGetData(SQLHSTMT StatementHandle,
 	ODBCStmt *stmt = (ODBCStmt *) StatementHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetData " PTRFMT " %u %s " PTRFMT " " LENFMT " " PTRFMT "\n",
-		PTRFMTCAST StatementHandle, (unsigned int) Col_or_Param_Num,
-		translateCType(TargetType), PTRFMTCAST TargetValuePtr,
-		LENCAST BufferLength, PTRFMTCAST StrLen_or_IndPtr);
+	ODBCLOG("SQLGetData %p %u %s %p " LENFMT " %p\n",
+		StatementHandle, (unsigned int) Col_or_Param_Num,
+		translateCType(TargetType), TargetValuePtr,
+		LENCAST BufferLength, StrLen_or_IndPtr);
 #endif
 
 	if (!isValidStmt(stmt))

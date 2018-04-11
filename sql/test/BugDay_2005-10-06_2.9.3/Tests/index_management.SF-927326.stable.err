@@ -33,9 +33,12 @@ stderr of test 'index_management.SF-927326` in directory 'sql/test/BugDay_2005-1
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = CREATE INDEX my_index ON my_table(my_column);
 ERROR = !CREATE INDEX: name 'my_index' already in use
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42S11
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = CREATE UNIQUE INDEX my_index ON my_table(my_column);
 ERROR = !CREATE INDEX: name 'my_index' already in use
+CODE  = 42S11
+
 
 # 23:01:40 >  
 # 23:01:40 >  Done.

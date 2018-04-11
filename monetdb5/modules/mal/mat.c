@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -68,7 +68,7 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 	bn = COLnew(0, tt, cap, TRANSIENT);
 	if (bn == NULL)
-		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+		throw(MAL, "mat.pack", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	for (i = 1; i < p->argc; i++) {
 		b = BATdescriptor(stk->stk[getArg(p,i)].val.ival);
@@ -105,20 +105,25 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	(void) cntxt;
 	b = BATdescriptor( stk->stk[getArg(p,1)].val.ival);
 	if ( b == NULL)
-		throw(MAL, "mat.pack", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "mat.pack", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if ( getArgType(mb,p,2) == TYPE_int){
 		/* first step, estimate with some slack */
 		pieces = stk->stk[getArg(p,2)].val.ival;
 		bn = COLnew(b->hseqbase, ATOMtype(b->ttype), (BUN)(1.2 * BATcount(b) * pieces), TRANSIENT);
-		if (bn == NULL)
-			throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+		if (bn == NULL) {
+			BBPunfix(b->batCacheid);
+			throw(MAL, "mat.pack", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
 		/* allocate enough space for the vheap, but not for strings,
 		 * since BATappend does clever things for strings */
 		if ( b->tvheap && bn->tvheap && ATOMstorage(b->ttype) != TYPE_str){
 			newsize =  b->tvheap->size * pieces;
-			if (HEAPextend(bn->tvheap, newsize, TRUE) != GDK_SUCCEED)
-				throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+			if (HEAPextend(bn->tvheap, newsize, TRUE) != GDK_SUCCEED) {
+				BBPunfix(b->batCacheid);
+				BBPunfix(bn->batCacheid);
+				throw(MAL, "mat.pack", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
 		}
 		BATtseqbase(bn, b->tseqbase);
 		if (BATappend(bn, b, NULL, FALSE) != GDK_SUCCEED) {
@@ -143,14 +148,13 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 				BBPunfix(b->batCacheid);
 				throw(MAL, "mat.pack", GDK_EXCEPTION);
 			}
+			BBPunfix(bb->batCacheid);
 		}
 		b->S.unused--;
 		if(b->S.unused == 0)
 			BATsetaccess(b, BAT_READ);
 		assert(!b->tnil || !b->tnonil);
 		BBPkeepref(*ret = b->batCacheid);
-		if( bb) 
-			BBPunfix(bb->batCacheid);
 	}
 	return MAL_SUCCEED;
 }
@@ -172,7 +176,7 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	type = getArgType(mb,p,first);
 	bn = COLnew(0, type, p->argc, TRANSIENT);
 	if( bn == NULL)
-		throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+		throw(MAL, "mat.pack", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	if (ATOMextern(type)) {
 		for(i = first; i < p->argc; i++)
@@ -188,5 +192,5 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
   bailout:
 	BBPreclaim(bn);
-	throw(MAL, "mat.pack", MAL_MALLOC_FAIL);
+	throw(MAL, "mat.pack", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }

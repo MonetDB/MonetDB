@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -57,7 +57,7 @@ str
 qserv_angSep(dbl *sep, dbl *ra1, dbl *dec1, dbl *ra2, dbl *dec2)
 {
 	/* If any input is null, the result is null. */
-	if ( *ra1 == dbl_nil || *dec1 == dbl_nil || *ra2 == dbl_nil || *dec2 == dbl_nil){
+	if ( is_dbl_nil(*ra1) || is_dbl_nil(*dec1) || is_dbl_nil(*ra2) || is_dbl_nil(*dec2)){
 		*sep = dbl_nil;
 		return MAL_SUCCEED;
 	}
@@ -113,7 +113,7 @@ str qserv_ptInSphBox(int *ret, dbl *ra, dbl *dec, dbl *ra_min, dbl *dec_min, dbl
 {
 	dbl lra, lra_min, lra_max;
 
-	if (*ra == dbl_nil || *dec == dbl_nil || *ra_min == dbl_nil || *dec_min == dbl_nil || *ra_max == dbl_nil || *dec_max == dbl_nil){
+	if (is_dbl_nil(*ra) || is_dbl_nil(*dec) || is_dbl_nil(*ra_min) || is_dbl_nil(*dec_min) || is_dbl_nil(*ra_max) || is_dbl_nil(*dec_max)){
 		*ret = int_nil;
 		return MAL_SUCCEED;
 	}
@@ -170,7 +170,7 @@ str qserv_ptInSphBox(int *ret, dbl *ra, dbl *dec, dbl *ra_min, dbl *dec_min, dbl
 str
 qserv_ptInSphCircle(int *ret, dbl *ra, dbl *dec, dbl *ra_cen, dbl *dec_cen, dbl *radius)
 {
-	if (*ra == dbl_nil || *dec == dbl_nil || *ra_cen == dbl_nil || *dec_cen == dbl_nil || *radius == dbl_nil ){
+	if (is_dbl_nil(*ra) || is_dbl_nil(*dec) || is_dbl_nil(*ra_cen) || is_dbl_nil(*dec_cen) || is_dbl_nil(*radius) ){
 		*ret = int_nil;
 		return MAL_SUCCEED;
 	}
@@ -234,7 +234,7 @@ qserv_ptInSphEllipse(int *ret, dbl *ra, dbl *dec, dbl *ra_cen, dbl *dec_cen, dbl
 	double m, M, lra, ldec,  x, y, z, w, xne, yne;
 	double raCen, decCen, angle;
 
-	if (*ra == dbl_nil || *dec == dbl_nil || *ra_cen == dbl_nil || *dec_cen == dbl_nil || *smaa == dbl_nil || *smia == dbl_nil || *ang == dbl_nil ){
+	if (is_dbl_nil(*ra) || is_dbl_nil(*dec) || is_dbl_nil(*ra_cen) || is_dbl_nil(*dec_cen) || is_dbl_nil(*smaa) || is_dbl_nil(*smia) || is_dbl_nil(*ang) ){
 		*ret = int_nil;
 		return MAL_SUCCEED;
 	}
@@ -371,7 +371,7 @@ str qserv_ptInSphPoly(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	/* If any input is null, the result is 0. */
 	for (i = 1; i <pci->argc; ++i) {
-		if ( *getArgReference_dbl(stk,pci,i) == dbl_nil){
+		if ( is_dbl_nil(*getArgReference_dbl(stk,pci,i))){
 			*ret = int_nil;
 			return MAL_SUCCEED;
 		}
@@ -390,11 +390,11 @@ str qserv_ptInSphPoly(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* Parse polygon spec if it isn't constant */
 	edges = (dbl*) GDKmalloc( pci->argc -3 * sizeof(dbl));
 	if ( edges == NULL)
-		throw(MAL,"lsst.ptInSPhPoly",MAL_MALLOC_FAIL);
+		throw(MAL,"lsst.ptInSPhPoly", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	nv = (dbl*) GDKmalloc( pci->argc -3 * sizeof(dbl));
 	if ( nv == NULL){
 		GDKfree(edges);
-		throw(MAL,"lsst.ptInSPhPoly",MAL_MALLOC_FAIL);
+		throw(MAL,"lsst.ptInSPhPoly", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	for (i = 3; i <pci->argc; ++i) 
 		nv[i-3] =  *getArgReference_dbl(stk,pci,i);
@@ -447,7 +447,7 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 	shift = 2 * *delta; 
 
 	if( (bl= BATdescriptor(*lid)) == NULL )
-		throw(MAL, "algebra.xmatch", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.xmatch", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if( !bl->tsorted){
 		BBPunfix(*lid);
 		throw(MAL, "algebra.xmatch", "sorted input required");
@@ -455,7 +455,7 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 
 	if( (br= BATdescriptor(*rid)) == NULL ){
 		BBPunfix(*lid);
-		throw(MAL, "algebra.xmatch", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.xmatch", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if( !br->tsorted){
 		BBPunfix(*lid);
@@ -471,7 +471,7 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 	if ( xl == NULL){
 		BBPunfix(*lid);
 		BBPunfix(*rid);
-		throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.xmatch", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	xr = COLnew(0, TYPE_oid, MIN(BATcount(bl), BATcount(br)), TRANSIENT);
@@ -479,16 +479,16 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 		BBPunfix(*lid);
 		BBPunfix(*rid);
 		BBPunfix(xl->batCacheid);
-		throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.xmatch", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	for (lo = bl->hseqbase; l < lend; lo++, l++) {
-		if (*l != lng_nil) {
+		if (!is_lng_nil(*l)) {
 			lhtm = *l >> shift;
 			r= (lng*) Tloc(br, 0);
 			ro = br->hseqbase;
 			for(; r < rend; ro++, r++) {
-				if (*r != lng_nil) {
+				if (!is_lng_nil(*r)) {
 					rhtm = *r >> shift;
 					if (lhtm == rhtm){
 						/* match */
@@ -498,7 +498,7 @@ LSSTxmatch_intern(bat *lres, bat *rres, bat *lid, bat *rid, int *delta)
 							BBPunfix(*rid);
 							BBPunfix(xl->batCacheid);
 							BBPunfix(xr->batCacheid);
-							throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
+							throw(MAL, "algebra.xmatch", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 						}
 					} else if (lhtm < rhtm) {
 						lhtm = lhtm << shift;
@@ -545,7 +545,7 @@ LSSTxmatch(bit *res, lng *l, lng *r, int *delta)
          	throw(MAL, "lsst.xmatch", "delta not in 0--31");
 	shift = 2 * *delta;
 
-	*res = *l != lng_nil && *r != lng_nil && (*l >> shift) == (*r >> shift);
+	*res = !is_lng_nil(*l) && !is_lng_nil(*r) && (*l >> shift) == (*r >> shift);
 	return MAL_SUCCEED;
 }
 
@@ -562,19 +562,19 @@ LSSTxmatchselect(bat *res, bat *bid, bat *sid, lng *r, int *delta, bit *anti)
 	shift = 2 * *delta;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "algebra.xmatch", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.xmatch", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	assert(b->ttype == TYPE_lng);
 	if (sid && *sid && (s = BATdescriptor(*sid)) == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "algebra.xmatch", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "algebra.xmatch", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if ((bn = COLnew(0, TYPE_oid, 0, TRANSIENT)) == NULL) {
 		BBPunfix(b->batCacheid);
 		if (s)
 			BBPunfix(s->batCacheid);
-		throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
+		throw(MAL, "algebra.xmatch", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
-	if (*r == lng_nil) {
+	if (is_lng_nil(*r)) {
 		BBPunfix(b->batCacheid);
 		if (s)
 			BBPunfix(s->batCacheid);
@@ -595,14 +595,14 @@ LSSTxmatchselect(bat *res, bat *bid, bat *sid, lng *r, int *delta, bit *anti)
 			if (o >= b->hseqbase + BATcount(b))
 				break;
 			lhtm = l[o - b->hseqbase];
-			if (lhtm != lng_nil &&
+			if (!is_lng_nil(lhtm) &&
 			    ((lhtm >> shift) == rhtm) != *anti &&
 			    BUNappend(bn, &o, FALSE) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
 				if (s)
 					BBPunfix(s->batCacheid);
 				BBPunfix(bn->batCacheid);
-				throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
+				throw(MAL, "algebra.xmatch", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 		}
 	} else {
@@ -617,14 +617,14 @@ LSSTxmatchselect(bat *res, bat *bid, bat *sid, lng *r, int *delta, bit *anti)
 		}
 		while (o < e) {
 			lhtm = l[o - b->hseqbase];
-			if (lhtm != lng_nil &&
+			if (!is_lng_nil(lhtm) &&
 			    ((lhtm >> shift) == rhtm) != *anti &&
 			    BUNappend(bn, &o, FALSE) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
 				if (s)
 					BBPunfix(s->batCacheid);
 				BBPunfix(bn->batCacheid);
-				throw(MAL, "algebra.xmatch", MAL_MALLOC_FAIL);
+				throw(MAL, "algebra.xmatch", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			o++;
 		}

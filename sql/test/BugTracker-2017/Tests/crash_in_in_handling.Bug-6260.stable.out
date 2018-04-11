@@ -45,6 +45,11 @@ Ready.
 [ 1	]
 #INSERT INTO tab0 VALUES(9,501,776.40,'cvygg',725,75.5,'etlyv');
 [ 1	]
+#SELECT * FROM tab0 AS cor0 WHERE NOT NULL IN ( col3 );
+% sys.cor0,	sys.cor0,	sys.cor0,	sys.cor0,	sys.cor0,	sys.cor0,	sys.cor0 # table_name
+% pk,	col0,	col1,	col2,	col3,	col4,	col5 # name
+% int,	int,	double,	clob,	int,	double,	clob # type
+% 1,	1,	24,	0,	1,	24,	0 # length
 #drop table tab0;
 
 # 14:07:27 >  

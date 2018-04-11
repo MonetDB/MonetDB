@@ -3,24 +3,31 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
-#include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
 
-#include <mapi.h>
-#include <mutils.h> /* MT_lockf */
+#include "mapi.h"
+#include "mutils.h" /* MT_lockf */
+#include <fcntl.h>
 
 #include "utils/glob.h"
 
 #include "merovingian.h"
 #include "discoveryrunner.h"
 #include "multiplex-funnel.h"
+
+#ifndef HAVE_PIPE2
+#define pipe2(pipefd, flags)	pipe(pipefd)
+#endif
+
+#ifndef O_CLOEXEC
+#define O_CLOEXEC	0
+#endif
 
 typedef struct _multiplexlist {
 	multiplex *m;
@@ -372,16 +379,20 @@ multiplexInit(char *name, char *pattern, FILE *sout, FILE *serr)
 		pthread_attr_setdetachstate(&detach, PTHREAD_CREATE_DETACHED);
 
 		/* create communication channel */
-		if (pipe(mfpipe) != 0)
+		if (pipe2(mfpipe, O_CLOEXEC) != 0)
 			Mfprintf(stderr, "failed to create mfpipe: %s\n", strerror(errno));
-
-		Mfprintf(stdout, "starting multiplex-funnel connection manager\n");
-		if ((i = pthread_create(&mfmanager, &detach,
-				MFconnectionManager, NULL)) != 0)
-		{
-			Mfprintf(stderr, "failed to start MFconnectionManager: %s\n",
-					strerror(i));
-			mfmanager = 0;
+		else {
+#if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
+			(void) fcntl(mfpipe[0], F_SETFD, FD_CLOEXEC);
+			(void) fcntl(mfpipe[1], F_SETFD, FD_CLOEXEC);
+#endif
+			Mfprintf(stdout, "starting multiplex-funnel connection manager\n");
+			if ((i = pthread_create(&mfmanager, &detach,
+									MFconnectionManager, NULL)) != 0) {
+				Mfprintf(stderr, "failed to start MFconnectionManager: %s\n",
+						 strerror(i));
+				mfmanager = 0;
+			}
 		}
 	}
 
@@ -502,9 +513,9 @@ static void
 multiplexQuery(multiplex *m, char *buf, stream *fout)
 {
 	int i;
-	char *t;
+	const char *t;
 	MapiHdl h;
-	mapi_int64 rlen;
+	int64_t rlen;
 	int fcnt;
 	int qtype;
 
@@ -639,7 +650,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 			/* Compose the header.  For the table id, we just send 0,
 			 * such that we never get a close request.  Steal headers
 			 * from the first node. */
-			mnstr_printf(fout, "&%d 0 " LLFMT " %d " LLFMT "\n",
+			mnstr_printf(fout, "&%d 0 %" PRId64 " %d %" PRId64 "\n",
 					Q_TABLE, rlen, fcnt, rlen);
 			/* now read the answers, and write them directly to the client */
 			for (i = 0; i < m->dbcc; i++) {
@@ -654,7 +665,7 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 			 * complement the transparency created for Q_TABLE results,
 			 * but forget about last id data (wouldn't make sense if
 			 * we'd emit multiple update counts either) */
-			mnstr_printf(fout, "&%d %lld -1\n", Q_UPDATE, rlen);
+			mnstr_printf(fout, "&%d %" PRId64 " -1\n", Q_UPDATE, rlen);
 			break;
 		case Q_SCHEMA:
 			mnstr_printf(fout, "&%d\n", Q_SCHEMA);

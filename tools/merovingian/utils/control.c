@@ -3,13 +3,11 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 #include "control.h"
-#include <stdio.h>
-#include <stdlib.h> /* malloc, realloc */
 #include <unistd.h> /* close */
 #include <string.h> /* strerror */
 #include <sys/socket.h> /* socket */
@@ -18,7 +16,7 @@
 #endif
 #include <netdb.h>
 #include <netinet/in.h>
-#include <errno.h>
+#include <fcntl.h>
 
 #include "stream.h"
 #include "stream_socket.h"
@@ -56,11 +54,18 @@ char* control_send(
 	if (port == -1) {
 		struct sockaddr_un server;
 		/* UNIX socket connect */
-		if ((sock = socket(PF_UNIX, SOCK_STREAM, 0)) == -1) {
+		if ((sock = socket(PF_UNIX, SOCK_STREAM
+#ifdef SOCK_CLOEXEC
+						   | SOCK_CLOEXEC
+#endif
+						   , 0)) == -1) {
 			snprintf(sbuf, sizeof(sbuf), "cannot open connection: %s",
 					strerror(errno));
 			return(strdup(sbuf));
 		}
+#ifndef SOCK_CLOEXEC
+		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
+#endif
 		memset(&server, 0, sizeof(struct sockaddr_un));
 		server.sun_family = AF_UNIX;
 		strncpy(server.sun_path, host, sizeof(server.sun_path) - 1);
@@ -76,11 +81,18 @@ char* control_send(
 		char *p;
 
 		/* TCP socket connect */
-		if ((sock = socket(PF_INET, SOCK_STREAM, IPPROTO_TCP)) == -1) {
+		if ((sock = socket(PF_INET, SOCK_STREAM
+#ifdef SOCK_CLOEXEC
+						   | SOCK_CLOEXEC
+#endif
+						   , IPPROTO_TCP)) == -1) {
 			snprintf(sbuf, sizeof(sbuf), "cannot open connection: %s",
 					strerror(errno));
 			return(strdup(sbuf));
 		}
+#ifndef SOCK_CLOEXEC
+		(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
+#endif
 		hp = gethostbyname(host);
 		if (hp == NULL) {
 			snprintf(sbuf, sizeof(sbuf), "cannot lookup hostname: %s",

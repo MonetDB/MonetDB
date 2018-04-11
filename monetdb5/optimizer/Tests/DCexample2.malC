@@ -1,9 +1,9 @@
 function foo();
 b:= bat.new(:int);
-bat.append(b,2);
-bat.append(b,5);
-bat.append(b,3);
-b:= algebra.sort(b,false,false);
+b1:= bat.append(b,2);
+b2:= bat.append(b1,5);
+b3:= bat.append(b2,3);
+b5:= algebra.sort(b3,false,false);
 end;
 
 #should throw out the last statement

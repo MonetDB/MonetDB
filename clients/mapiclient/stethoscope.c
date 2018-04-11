@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /* (c) M Kersten, S Manegold
@@ -18,14 +18,11 @@
 
 #include "monetdb_config.h"
 #include "monet_options.h"
-#include <stream.h>
-#include <stream_socket.h>
-#include <mapi.h>
-#include <stdio.h>
+#include "stream.h"
+#include "stream_socket.h"
+#include "mapi.h"
 #include <string.h>
-#include <stdlib.h>
 #include <sys/stat.h>
-#include <errno.h>
 #include <signal.h>
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
@@ -54,17 +51,20 @@
 
 #define die(dbh, hdl)						\
 	do {							\
-		(hdl ? mapi_explain_query(hdl, stderr) :	\
-		 dbh ? mapi_explain(dbh, stderr) :		\
-		 fprintf(stderr, "!! command failed\n"));	\
+		if (hdl)					\
+			mapi_explain_query(hdl, stderr);	\
+		else if (dbh)					\
+			mapi_explain(dbh, stderr);		\
+		else						\
+			fprintf(stderr, "!! command failed\n");	\
 		goto stop_disconnect;				\
 	} while (0)
 
-#define doQ(X)								\
-	do {								\
+#define doQ(X)							\
+	do {							\
 		if ((hdl = mapi_query(dbh, X)) == NULL ||	\
 		    mapi_error(dbh) != MOK)			\
-			die(dbh, hdl);			\
+			die(dbh, hdl);				\
 	} while (0)
 
 static stream *conn = NULL;
@@ -72,6 +72,7 @@ static char hostname[128];
 static char *filename = NULL;
 static int beat = 0;
 static int json = 0;
+static int stream_mode = 1;
 static Mapi dbh;
 static MapiHdl hdl = NULL;
 static FILE *trace = NULL;
@@ -109,7 +110,7 @@ renderEvent(EventRecord *ev){
 	if( ev->eventnr < 0)
 		return;
 	fprintf(s, "[ ");
-	fprintf(s, LLFMT",	", ev->eventnr);
+	fprintf(s, "%"PRId64",	", ev->eventnr);
 	printf("\"%s\",	", ev->time);
 	if( ev->function && *ev->function)
 		fprintf(s, "\"%s[%d]%d\",	", ev->function, ev->pc, ev->tag);
@@ -123,15 +124,102 @@ renderEvent(EventRecord *ev){
 	case MDB_PING: fprintf(s, "\"ping \",	"); break;
 	case MDB_SYSTEM: fprintf(s, "\"system\",	"); 
 	}
-	fprintf(s, LLFMT",	", ev->ticks);
-	fprintf(s, LLFMT",	", ev->rss);
-	fprintf(s, LLFMT",	", ev->size);
-	fprintf(s, LLFMT",	", ev->inblock);
-	fprintf(s, LLFMT",	", ev->oublock);
-	fprintf(s, LLFMT",	", ev->majflt);
-	fprintf(s, LLFMT",	", ev->swaps);
-	fprintf(s, LLFMT",	", ev->csw);
+	fprintf(s, "%"PRId64",	", ev->ticks);
+	fprintf(s, "%"PRId64",	", ev->rss);
+	fprintf(s, "%"PRId64",	", ev->size);
+	fprintf(s, "%"PRId64",	", ev->inblock);
+	fprintf(s, "%"PRId64",	", ev->oublock);
+	fprintf(s, "%"PRId64",	", ev->majflt);
+	fprintf(s, "%"PRId64",	", ev->swaps);
+	fprintf(s, "%"PRId64",	", ev->csw);
 	fprintf(s, "\"%s\"	]\n", ev->stmt);
+}
+
+static void
+convertOldFormat(char *inputfile)
+{	FILE *fdin;
+	char basefile[BUFSIZ];
+	char *buf, *e;
+	int notfirst = 0, i;
+	size_t bufsize;
+	size_t len;
+	EventRecord event;
+
+	buf = malloc(BUFSIZ);
+	if (buf == NULL) {
+		fprintf(stderr, "Could not allocate memory\n");
+		return;
+	}
+	bufsize = BUFSIZ;
+	fprintf(stderr, "Converting a file to JSON\n");
+
+	fdin = fopen(inputfile,"r");
+	if( fdin == NULL){
+		fprintf(stderr,"Could not open the input file %s\n", inputfile);
+		free(buf);
+		return;
+	}
+	/* find file name extension */
+	e = strrchr(inputfile, '.');
+	if (e != NULL) {
+		char *s;
+		/* if last dot before last /, ignore the dot */
+		if ((s = strrchr(inputfile, '/')) != NULL && s > e)
+			e = NULL;
+#if DIR_SEP != '/'
+		/* on Windows, look at both directory separators */
+		else if ((s = strrchr(inputfile, DIR_SEP)) != NULL && s > e)
+			e = NULL;
+#endif
+	}
+	if (e == NULL)
+		i = (int) strlen(inputfile);
+	else
+		i = (int) (e - inputfile);
+	snprintf(basefile, BUFSIZ, "%.*s.json", i, inputfile);
+	trace = fopen(basefile, "w");
+	if( trace == NULL){
+		fprintf(stderr,"Could not create the output file %s\n", basefile);
+		free(buf);
+		fclose(fdin);
+		return;
+	}
+	fprintf(trace,"[\n{");
+	len = 0;
+	memset(&event, 0, sizeof(event));
+	while (fgets(buf + len, (int) (bufsize - len), fdin) != NULL) {
+		while ((e = strchr(buf + len, '\n')) == NULL) {
+			/* rediculously long line */
+			len += strlen(buf + len); /* i.e. len = strlen(buf) */
+			bufsize += BUFSIZ;
+			if ((e = realloc(buf, bufsize)) == NULL) {
+				free(buf);
+				fclose(fdin);
+				fclose(trace);
+				fprintf(stderr, "Could not allocate memory\n");
+				return;
+			}
+			buf = e;
+			if (fgets(buf + len, (int) (bufsize - len), fdin) == NULL) {
+				/* incomplete line */
+				e = NULL; /* no newline to zap */
+				break;
+			}
+		}
+		if (e)
+			*e = 0;	/* zap newline */
+		i = lineparser(buf, &event);
+		if (i == 0) {
+			renderJSONevent(trace, &event, notfirst);
+			resetEventRecord(&event);
+			notfirst = 1;
+		}
+	}
+	fprintf(trace,"}]\n");
+	free(buf);
+	fclose(fdin);
+	fclose(trace);
+	return;
 }
 
 static void
@@ -143,12 +231,14 @@ usageStethoscope(void)
     fprintf(stderr, "  -P | --password=<password>\n");
     fprintf(stderr, "  -p | --port=<portnr>\n");
     fprintf(stderr, "  -h | --host=<hostname>\n");
+    fprintf(stderr, "  -c | --convert=<old formated file>\n");
     fprintf(stderr, "  -j | --json\n");
+    fprintf(stderr, "  -y | --pretty (implies --json)\n");
     fprintf(stderr, "  -o | --output=<file>\n");
-	fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 50)\n");
-	fprintf(stderr, "  -D | --debug\n");
+    fprintf(stderr, "  -b | --beat=<delay> in milliseconds (default 50)\n");
+    fprintf(stderr, "  -D | --debug\n");
     fprintf(stderr, "  -? | --help\n");
-	exit(-1);
+    exit(-1);
 }
 
 /* Any signal should be captured and turned into a graceful
@@ -175,6 +265,7 @@ main(int argc, char **argv)
 	ssize_t  n;
 	size_t len, buflen;
 	char *host = NULL;
+	char *conversion = NULL;
 	int portnr = 0;
 	char *dbname = NULL;
 	char *uri = NULL;
@@ -182,24 +273,25 @@ main(int argc, char **argv)
 	char *password = NULL;
 	char buf[BUFSIZ], *buffer, *e, *response;
 	int done = 0;
-	EventRecord *ev = malloc(sizeof(EventRecord));
+	EventRecord *ev = calloc(1, sizeof(EventRecord));
 
-	static struct option long_options[11] = {
+	static struct option long_options[13] = {
 		{ "dbname", 1, 0, 'd' },
 		{ "user", 1, 0, 'u' },
 		{ "port", 1, 0, 'p' },
 		{ "password", 1, 0, 'P' },
 		{ "host", 1, 0, 'h' },
 		{ "help", 0, 0, '?' },
+		{ "convert", 1, 0, 'c'},
 		{ "json", 0, 0, 'j'},
+		{ "pretty", 0, 0, 'y'},
 		{ "output", 1, 0, 'o' },
 		{ "debug", 0, 0, 'D' },
 		{ "beat", 1, 0, 'b' },
 		{ 0, 0, 0, 0 }
 	};
 
-	if( ev) memset((char*)ev,0, sizeof(EventRecord));
-	else {
+	if( ev == NULL) {
 		fprintf(stderr,"could not allocate space\n");
 		exit(-1);
 	}
@@ -209,7 +301,7 @@ main(int argc, char **argv)
 
 	while (1) {
 		int option_index = 0;
-		int c = getopt_long(argc, argv, "d:u:p:P:h:?jo:Db:",
+		int c = getopt_long(argc, argv, "d:u:p:P:h:?jyo:Db:",
 					long_options, &option_index);
 		if (c == -1)
 			break;
@@ -246,7 +338,15 @@ main(int argc, char **argv)
 		case 'h':
 			host = optarg;
 			break;
+		case 'c':
+			conversion = optarg;
+			break;
 		case 'j':
+			json = 1;
+			stream_mode = 3;
+			break;
+		case 'y':
+			stream_mode = 1;
 			json = 1;
 			break;
 		case 'o':
@@ -263,6 +363,11 @@ main(int argc, char **argv)
 			usageStethoscope();
 			exit(-1);
 		}
+	}
+
+	if( conversion){
+		convertOldFormat(conversion);
+		return 0;
 	}
 
 	if(dbname == NULL){
@@ -318,7 +423,7 @@ main(int argc, char **argv)
 		fprintf(stderr,"-- %s\n",buf);
 	doQ(buf);
 
-	snprintf(buf, BUFSIZ, " profiler.openstream(1);");
+	snprintf(buf, BUFSIZ, " profiler.openstream(%d);", stream_mode);
 	if( debug)
 		fprintf(stderr,"--%s\n",buf);
 	doQ(buf);
@@ -350,9 +455,9 @@ main(int argc, char **argv)
 				printf("%s", response);
 		if(json) {
 			if(trace != NULL) {
-				fprintf(trace, "%s", response);
+				fprintf(trace, "%s", response + len);
 			} else {
-				printf("%s", response);
+				printf("%s", response + len);
 				fflush(stdout);
 			}
 		}

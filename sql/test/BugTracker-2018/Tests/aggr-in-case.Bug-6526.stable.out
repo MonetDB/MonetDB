@@ -1,0 +1,90 @@
+stdout of test 'aggr-in-case.Bug-6526` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 18:07:27 >  
+# 18:07:27 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35745" "--set" "mapi_usock=/var/tmp/mtest-17690/.s.monetdb.35745" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-old/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2018"
+# 18:07:27 >  
+
+# MonetDB 5 server v11.27.14
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit
+# Found 7.324 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:35745/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-17690/.s.monetdb.35745
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 18:07:27 >  
+# 18:07:27 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-17690" "--port=35745"
+# 18:07:27 >  
+
+#start transaction;
+#create table "t1" (
+#    "id" int,
+#    "c1" varchar(100),
+#    "d1" int,
+#    "d2" int
+#);
+#insert into "t1" values
+#(1, 'A', 50, 80),
+#(2, 'A', 200, 350),
+#(3, 'A', 89, 125),
+#(4, 'B', 4845, 13),
+#(5, 'B', 194, 597),
+#(6, 'C', 5636, 5802),
+#(7, 'C', 375, 3405),
+#(7, 'D', 365, 0),
+#(7, 'D', 87, 0);
+[ 9	]
+#select
+#    "c1",
+#    sum("d1") as "d1",
+#    sum("d2") as "d2"
+#from "t1"
+#group by "c1"
+#having sum("d1") < case when 5 > 10 then 500 else 400 end;
+% sys.t1,	sys.L4,	sys.L7 # table_name
+% c1,	d1,	d2 # name
+% varchar,	bigint,	bigint # type
+% 1,	3,	3 # length
+[ "A",	339,	555	]
+#select
+#    "c1",
+#    sum("d1")as "d1",
+#    sum("d2") as "d2",
+#    1.0 * sum("d1") / (1.0 * case when sum("d2") > 0 then sum("d2") else null end) as "formula"
+#from "t1"
+#group by "c1";
+% sys.t1,	sys.L4,	sys.L7,	sys.L14 # table_name
+% c1,	d1,	d2,	formula # name
+% varchar,	bigint,	bigint,	decimal # type
+% 1,	4,	4,	20 # length
+[ "A",	339,	555,	0.610	]
+[ "B",	5039,	610,	8.260	]
+[ "C",	6011,	9207,	0.652	]
+[ "D",	452,	0,	NULL	]
+#select
+#    "c1",
+#    sum("d1")as "d1",
+#    sum("d2") as "d2",
+#    1.0 * sum("d1") / (1.0 * case when sum("d2") > 0 then sum("d2") else null end) as "formula"
+#from "t1"
+#group by "c1"
+#having (1.0 * sum("d1") / (1.0 * case when sum("d2") > 0 then sum("d2") else null end)) > 1;
+% sys.t1,	sys.L4,	sys.L7,	sys.L14 # table_name
+% c1,	d1,	d2,	formula # name
+% varchar,	bigint,	bigint,	decimal # type
+% 1,	4,	3,	20 # length
+[ "B",	5039,	610,	8.260	]
+#rollback;
+
+# 18:07:27 >  
+# 18:07:27 >  "Done."
+# 18:07:27 >  
+

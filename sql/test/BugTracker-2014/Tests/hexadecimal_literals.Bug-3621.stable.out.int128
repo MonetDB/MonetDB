@@ -186,6 +186,18 @@ Ready.
 % tinyint # type
 % 2 # length
 [ 15	]
+#select 0xg;
+% .L2 # table_name
+% xg # name
+% tinyint # type
+% 1 # length
+[ 0	]
+#select 0xG;
+% .L2 # table_name
+% xg # name
+% tinyint # type
+% 1 # length
+[ 0	]
 #select 0x00;
 % .L2 # table_name
 % L2 # name
@@ -774,6 +786,18 @@ Ready.
 % tinyint # type
 % 3 # length
 [ -15	]
+#select -0xg;
+% .L2 # table_name
+% xg # name
+% tinyint # type
+% 1 # length
+[ 0	]
+#select -0xG;
+% .L2 # table_name
+% xg # name
+% tinyint # type
+% 1 # length
+[ 0	]
 #select -0x00;
 % .L2 # table_name
 % L2 # name

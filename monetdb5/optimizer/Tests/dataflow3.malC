@@ -37,14 +37,14 @@ function user.s1_0():void;
     _507 := remote.get(_84,_87);
     remote.disconnect(_84);
 
-    bat.append(_17,_54);
-    bat.append(_17,_55);
-    bat.append(_17,_56);
-    bat.append(_17,_57);
-    io.print(_17);
+    _98 := bat.append(_17,_54);
+    _97 := bat.append(_98,_55);
+    _96 := bat.append(_97,_56);
+    _95 := bat.append(_96,_57);
+    io.print(_95);
 
 #COUNT/SUM
-    _19 := aggr.sum(_17);
+    _19 := aggr.sum(_95);
 	io.print(_19);
 end s1_0;
     optimizer.mergetable("user","s1_0");

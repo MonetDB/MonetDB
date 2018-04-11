@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -35,7 +35,7 @@ SQLDisconnect(SQLHDBC ConnectionHandle)
 	ODBCDbc *dbc = (ODBCDbc *) ConnectionHandle;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLDisconnect " PTRFMT "\n", PTRFMTCAST ConnectionHandle);
+	ODBCLOG("SQLDisconnect %p\n", ConnectionHandle);
 #endif
 
 	if (!isValidDbc(dbc))
@@ -61,7 +61,8 @@ SQLDisconnect(SQLHDBC ConnectionHandle)
 	dbc->mid = NULL;
 	dbc->cachelimit = 0;
 	dbc->Mdebug = 0;
-	dbc->Connected = 0;
+	dbc->Connected = false;
+	dbc->has_comment = false;
 
 	return SQL_SUCCESS;
 }

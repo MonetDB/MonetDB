@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -14,7 +14,7 @@
 #ifndef _MAL_H
 #define _MAL_H
 
-#include <gdk.h>
+#include "gdk.h"
 
 #ifdef WIN32
 #if !defined(LIBMAL) && !defined(LIBATOMS) && !defined(LIBKERNEL) && !defined(LIBMAL) && !defined(LIBOPTIMIZER) && !defined(LIBSCHEDULER) && !defined(LIBMONETDB5)
@@ -46,9 +46,9 @@
 #define GB (((lng)1024)*1024*1024)
 #define MEMORY_THRESHOLD  (0.2 * monet_memory > 8 * GB?  monet_memory - 8 * GB: 0.8 * monet_memory)
 
-mal_export char     monet_cwd[PATHLENGTH];
+mal_export char     monet_cwd[FILENAME_MAX];
 mal_export size_t	monet_memory;
-mal_export char 	monet_characteristics[PATHLENGTH];
+mal_export char 	monet_characteristics[4096];
 mal_export lng 		memorypool;      /* memory claimed by concurrent threads */
 mal_export int 		memoryclaims;    /* number of threads active with expensive operations */
 mal_export int		mal_trace;		/* enable profile events on console */
@@ -58,7 +58,7 @@ mal_export int have_hge;
 #endif
 
 /*
-   See gdk/gdk.mx for the definition of all debug masks.
+   See gdk/gdk.h for the definition of all debug masks.
    See `man mserver5` or tools/mserver/mserver5.1
    for a documentation of all debug options.
 */
@@ -72,7 +72,7 @@ mal_export int have_hge;
 #define GRPalgorithms (ALGOMASK | ESTIMASK)
 #define GRPperformance (DEADBEEFMASK)
 #define GRPoptimizers  (OPTMASK)
-#define GRPforcemito (FORCEMITOMASK)
+#define GRPforcemito (FORCEMITOMASK | NOSYNCMASK)
 
 mal_export MT_Lock  mal_contextLock;
 mal_export MT_Lock  mal_remoteLock;
@@ -139,14 +139,14 @@ typedef struct SYMDEF {
 	struct SYMDEF *peer;		/* where to look next */
 	struct SYMDEF *skip;		/* skip to next different symbol */
 	str name;
-	int kind;
+	int kind;					/* what kind of symbol */
 	struct MALBLK *def;			/* the details of the MAL fcn */
 } *Symbol, SymRecord;
 
 typedef struct VARRECORD {
 	char id[IDLENGTH];			/* use the space for the full name */
 	malType type;				/* internal type signature */
-    unsigned short constant:1,
+    bool constant:1,
             typevar:1,
             fixedtype:1,
             udftype:1,
@@ -166,7 +166,7 @@ typedef struct VARRECORD {
 
 /* For performance analysis we keep track of the number of calls and
  * the total time spent while executing the instruction. (See
- * mal_profiler.mx) 
+ * mal_profiler.c) 
  */
 
 typedef struct {
@@ -208,13 +208,11 @@ typedef struct MALBLK {
 	int ssize;				/* byte size of arena */
 	InstrPtr *stmt;				/* Instruction location */
 
-	unsigned int inlineProp:1,		/* inline property */
+	bool inlineProp:1,		/* inline property */
 		     unsafeProp:1,		/* unsafe property */
 		     sealedProp:1;		/* sealed property (opertions for sealed object should be on the full object once) */
 
-	int errors;				/* left over errors */
-	int typefixed;			/* no undetermined instruction */
-	int flowfixed;			/* all flow instructions are fixed */
+	str errors;				/* left over errors */
 	struct MALBLK *history;	/* of optimizer actions */
 	short keephistory;		/* do we need the history at all */
 	int maxarg;				/* keep track on the maximal arguments used */

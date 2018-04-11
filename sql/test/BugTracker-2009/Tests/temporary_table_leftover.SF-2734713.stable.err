@@ -81,18 +81,23 @@ stderr of test 'temporary_table_leftover.SF-2734713` in directory 'sql/test/BugT
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = blabla;
 ERROR = !syntax error, unexpected IDENT in: "blabla"
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = COMMIT;
 ERROR = !COMMIT: failed
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 2D000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = blabla;
 ERROR = !syntax error, unexpected IDENT in: "blabla"
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = COMMIT;
 ERROR = !COMMIT: failed
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 2D000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop table persistent_temopary;
 ERROR = !DROP TABLE: no such table 'persistent_temopary'
+CODE  = 42S02
 
 # 19:21:38 >  
 # 19:21:38 >  Done.

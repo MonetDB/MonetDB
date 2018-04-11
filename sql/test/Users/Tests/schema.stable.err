@@ -12,7 +12,8 @@ stderr of test 'schema` in directory 'sql/test/Users` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-26250/.s.monetdb.37381
 QUERY = GRANT my_owner to my_user; -- error wrong non existing role
-ERROR = !GRANT: cannot grant ROLE 'my_owner' to ROLE 'my_user'
+ERROR = !Cannot grant ROLE 'my_owner' to ROLE 'my_user'
+CODE  = M1M05
 
 # 14:00:57 >  
 # 14:00:57 >  Done.

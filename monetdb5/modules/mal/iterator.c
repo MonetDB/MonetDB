@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -55,7 +55,11 @@ ITRnewChunk(lng *res, bat *vid, bat *bid, lng *granule)
 		throw(MAL, "chop.newChunk", INTERNAL_BAT_ACCESS);
 	}
 	cnt = BATcount(b);
-	view = VIEWcreate_(b->hseqbase, b, TRUE);
+	view = VIEWcreate(b->hseqbase, b);
+	if (view == NULL) {
+		BBPunfix(b->batCacheid);
+		throw(MAL, "chop.newChunk", GDK_EXCEPTION);
+	}
 
 	/*  printf("set bat chunk bound to " LLFMT " 0 - " BUNFMT "\n",
 	 *granule, MIN(cnt,(BUN) *granule)); */
@@ -96,7 +100,7 @@ ITRnextChunk(lng *res, bat *vid, bat *bid, lng *granule)
 	/* printf("set bat chunk bound to " BUNFMT " - " BUNFMT " \n",
 	   i, i+(BUN) *granule-1); */
 	VIEWbounds(b, view, i, i + (BUN) * granule);
-	BAThseqbase(view, b->hseqbase == oid_nil ? oid_nil : b->hseqbase + i);
+	BAThseqbase(view, is_oid_nil(b->hseqbase) ? oid_nil : b->hseqbase + i);
 	BBPkeepref(*vid = view->batCacheid);
 	BBPunfix(b->batCacheid);
 	*res = i;
@@ -141,7 +145,7 @@ ITRbunIterator(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  	bi = bat_iterator(b);
 	if (VALinit(tail, b->ttype, BUNtail(bi, *head)) == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "iterator.nextChunk", MAL_MALLOC_FAIL);
+		throw(MAL, "iterator.nextChunk", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -175,7 +179,7 @@ ITRbunNext(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  	bi = bat_iterator(b);
 	if (VALinit(tail, b->ttype, BUNtail(bi, *head)) == NULL) {
 		BBPunfix(b->batCacheid);
-		throw(MAL, "iterator.nextChunk", MAL_MALLOC_FAIL);
+		throw(MAL, "iterator.nextChunk", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;

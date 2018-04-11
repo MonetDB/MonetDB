@@ -61,12 +61,13 @@ Ready.
 % name,	type,	name,	type # name
 % varchar,	int,	varchar,	int # type
 % 44,	1,	44,	1 # length
+[ "comments_id_pkey",	0,	"comments_id_pkey",	0	]
+[ "dependency_types_dependency_type_id_pkey",	0,	"dependency_types_dependency_type_id_pkey",	0	]
+[ "dependency_types_dependency_type_name_unique",	0,	"dependency_types_dependency_type_name_unique",	1	]
 [ "spatial_ref_sys_srid_pkey",	0,	"spatial_ref_sys_srid_pkey",	0	]
 [ "keywords_keyword_pkey",	0,	"keywords_keyword_pkey",	0	]
 [ "table_types_table_type_id_pkey",	0,	"table_types_table_type_id_pkey",	0	]
 [ "table_types_table_type_name_unique",	0,	"table_types_table_type_name_unique",	1	]
-[ "dependency_types_dependency_type_id_pkey",	0,	"dependency_types_dependency_type_id_pkey",	0	]
-[ "dependency_types_dependency_type_name_unique",	0,	"dependency_types_dependency_type_name_unique",	1	]
 [ "function_types_function_type_id_pkey",	0,	"function_types_function_type_id_pkey",	0	]
 [ "function_types_function_type_name_unique",	0,	"function_types_function_type_name_unique",	1	]
 [ "function_languages_language_id_pkey",	0,	"function_languages_language_id_pkey",	0	]
@@ -94,12 +95,13 @@ Ready.
 % name,	type,	name,	type # name
 % varchar,	int,	varchar,	int # type
 % 44,	1,	44,	1 # length
+[ "comments_id_pkey",	0,	"comments_id_pkey",	0	]
+[ "dependency_types_dependency_type_id_pkey",	0,	"dependency_types_dependency_type_id_pkey",	0	]
+[ "dependency_types_dependency_type_name_unique",	0,	"dependency_types_dependency_type_name_unique",	1	]
 [ "spatial_ref_sys_srid_pkey",	0,	"spatial_ref_sys_srid_pkey",	0	]
 [ "keywords_keyword_pkey",	0,	"keywords_keyword_pkey",	0	]
 [ "table_types_table_type_id_pkey",	0,	"table_types_table_type_id_pkey",	0	]
 [ "table_types_table_type_name_unique",	0,	"table_types_table_type_name_unique",	1	]
-[ "dependency_types_dependency_type_id_pkey",	0,	"dependency_types_dependency_type_id_pkey",	0	]
-[ "dependency_types_dependency_type_name_unique",	0,	"dependency_types_dependency_type_name_unique",	1	]
 [ "function_types_function_type_id_pkey",	0,	"function_types_function_type_id_pkey",	0	]
 [ "function_types_function_type_name_unique",	0,	"function_types_function_type_name_unique",	1	]
 [ "function_languages_language_id_pkey",	0,	"function_languages_language_id_pkey",	0	]

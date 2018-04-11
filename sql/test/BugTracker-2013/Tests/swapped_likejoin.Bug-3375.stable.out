@@ -59,12 +59,12 @@ Ready.
 % sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.tbls,	sys.x # table_name
 % name,	schema_id,	query,	type,	system,	commit_action,	access,	s # name
 % varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint,	clob # type
-% 17,	4,	433,	1,	5,	1,	1,	6 # length
+% 17,	4,	526,	1,	5,	1,	1,	6 # length
 [ "_tables",	2000,	"",	0,	true,	0,	0,	"%able%"	]
 [ "_tables",	2106,	"",	0,	true,	2,	0,	"%able%"	]
 [ "tables",	2000,	"SELECT * FROM (SELECT p.*, 0 AS \"temporary\", CAST(CASE WHEN system THEN type + 10 /* system table/view */ ELSE (CASE WHEN commit_action = 0 THEN type /* table/view */ ELSE type + 20 /* global temp table */ END) END AS SMALLINT) AS table_type FROM \"sys\".\"_tables\" AS p UNION ALL SELECT t.*, 1 AS \"temporary\", CAST(type + 30 /* local temp table */ AS SMALLINT) AS table_type FROM \"tmp\".\"_tables\" AS t) AS tables where tables.type <> 2;",	1,	true,	0,	0,	"%able%"	]
 [ "table_types",	2000,	"",	0,	true,	0,	0,	"%able%"	]
-[ "tablestoragemodel",	2000,	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxiliary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(hashes) as hashes,\n\tsum(",	1,	true,	0,	0,	"%able%"	]
+[ "tablestoragemodel",	2000,	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxiliary column denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select \"schema\",\"table\",max(count) as \"count\",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(hashes) as hashes,\n\tsum(\"imprints\") as \"imprints\",\n\tsum(case when sorted = false then 8 * count else 0 end) as auxiliary\nfrom sys.storagemodel() group by \"schema\",\"table\";",	1,	true,	0,	0,	"%able%"	]
 #drop table x;
 
 # 10:06:32 >  

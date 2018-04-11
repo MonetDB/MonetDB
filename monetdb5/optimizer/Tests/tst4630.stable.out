@@ -29,7 +29,7 @@ Ready.
 # 21:55:32 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-1801" "--port=39930"
 # 21:55:32 >  
 
-function user.qry(a:bat[:any_2], b:bat[:any_3], c:bat[:any_4]):bat[:any_4];	#[0] (0)  0 <- 1 2 3 
+function user.qry(a:bat[:any_2], b:bat[:any_3], c:bat[:any_4]):bat[:any_4];	#[0] (0)  0 <- 1 2 3  type check needed 
     a1:bat[:any_2] := a:bat[:any_2];    	#[1] (0)  4 <- 1 
     b1:bat[:any_3] := b:bat[:any_3];    	#[2] (0)  5 <- 2 
     c1:bat[:any_4] := c:bat[:any_4];    	#[3] (0)  6 <- 3 

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -49,65 +49,16 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-void
-ALIGNsetH(BAT *b1, BAT *b2)
-{
-	if (b1 == NULL || b2 == NULL)
-		return;
-
-	/* b2 is either dense or has a void(nil) tail */
-	BAThseqbase(b1, b2->hseqbase);
-	b1->batDirtydesc = TRUE;
-}
-
-void
-ALIGNsetT(BAT *b1, BAT *b2)
-{
-	if (b1 == NULL || b2 == NULL)
-		return;
-
-	if (BATtvoid(b2)) {
-		/* b2 is either dense or has a void(nil) tail */
-		if (b1->ttype != TYPE_void)
-			b1->tdense = TRUE;
-		else if (b2->tseqbase == oid_nil)
-			b1->tnonil = FALSE;
-		BATtseqbase(b1, b2->tseqbase);
-	} else if (b1->ttype != TYPE_void) {
-		/* b2 is not dense, so set b1 not dense */
-		b1->tdense = FALSE;
-		BATtseqbase(b1, oid_nil);
-		b1->tnonil = b2->tnonil;
-	} else if (BATtkey(b2))
-		BATtseqbase(b1, 0);
-	BATkey(b1, BATtkey(b2));
-	b1->tsorted = BATtordered(b2);
-	b1->trevsorted = BATtrevordered(b2);
-	b1->batDirtydesc = TRUE;
-	b1->tnorevsorted = b2->tnorevsorted;
-	if (b2->tnokey[0] != b2->tnokey[1]) {
-		b1->tnokey[0] = b2->tnokey[0];
-		b1->tnokey[1] = b2->tnokey[1];
-	} else {
-		b1->tnokey[0] = b1->tnokey[1];
-	}
-	b1->tnosorted = b2->tnosorted;
-	b1->tnodense = b2->tnodense;
-}
-
-/*
- * The routines @emph{ALIGN_synced} and @emph{ALIGN_ordered} allow to
- * simply query the alignment status of the two head columns of two
- * BATs.
- */
+/* Return TRUE if the two BATs are aligned (same size, same
+ * hseqbase). */
 int
 ALIGNsynced(BAT *b1, BAT *b2)
 {
-	BATcheck(b1, "ALIGNsynced: bat 1 required", 0);
-	BATcheck(b2, "ALIGNsynced: bat 2 required", 0);
+	if (b1 == NULL || b2 == NULL)
+		return 0;
 
-	assert(b1->hseqbase != oid_nil);
-	assert(b2->hseqbase != oid_nil);
+	assert(!is_oid_nil(b1->hseqbase));
+	assert(!is_oid_nil(b2->hseqbase));
 
 	return BATcount(b1) == BATcount(b2) && b1->hseqbase == b2->hseqbase;
 }
@@ -128,12 +79,12 @@ ALIGNsynced(BAT *b1, BAT *b2)
  * need a modified version.
  */
 BAT *
-VIEWcreate_(oid seq, BAT *b, int slice_view)
+VIEWcreate(oid seq, BAT *b)
 {
 	BAT *bn;
 	bat tp = 0;
 
-	BATcheck(b, "VIEWcreate_", NULL);
+	BATcheck(b, "VIEWcreate", NULL);
 
 	bn = BATcreatedesc(seq, b->ttype, FALSE, TRANSIENT);
 	if (bn == NULL)
@@ -174,8 +125,7 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 	/* Some bits must be copied individually. */
 	bn->batDirty = BATdirty(b);
 	bn->batRestricted = BAT_READ;
-	/* slices are unequal to their parents; cannot use accs */
-	if (slice_view || !tp || isVIEW(b))
+	if (!tp || isVIEW(b))
 		bn->thash = NULL;
 	else
 		bn->thash = b->thash;
@@ -192,12 +142,6 @@ VIEWcreate_(oid seq, BAT *b, int slice_view)
 		return NULL;
 	}
 	return bn;
-}
-
-BAT *
-VIEWcreate(oid seq, BAT *b)
-{
-	return VIEWcreate_(seq, b, FALSE);
 }
 
 /*
@@ -225,7 +169,7 @@ BATmaterialize(BAT *b)
 	assert(cnt >= q - p);
 	ALGODEBUG fprintf(stderr, "#BATmaterialize(%d);\n", (int) b->batCacheid);
 
-	if (!BATtdense(b) || tt != TYPE_void) {
+	if (tt != TYPE_void) {
 		/* no voids */
 		return GDK_SUCCEED;
 	}
@@ -236,7 +180,7 @@ BATmaterialize(BAT *b)
 	IMPSdestroy(b);
 	OIDXdestroy(b);
 
-	b->theap.filename = NULL;
+	snprintf(b->theap.filename, sizeof(b->theap.filename), "%s.tail", BBP_physical(b->batCacheid));
 	if (HEAPalloc(&b->theap, cnt, sizeof(oid)) != GDK_SUCCEED) {
 		b->theap = tail;
 		return GDK_FAIL;
@@ -249,16 +193,17 @@ BATmaterialize(BAT *b)
 	b->batDirtydesc = TRUE;
 	b->theap.dirty = TRUE;
 
-	/* set the correct dense info */
-	b->tdense = TRUE;
-
 	/* So now generate [t..t+cnt-1] */
 	t = b->tseqbase;
 	x = (oid *) b->theap.base;
-	for (; p < q; p++)
-		*x++ = t++;
-	cnt = t - b->tseqbase;
-	BATsetcount(b, cnt);
+	if (is_oid_nil(t)) {
+		while (p < q)
+			x[p++] = oid_nil;
+	} else {
+		while (p < q)
+			x[p++] = t++;
+	}
+	BATsetcount(b, b->batCount);
 
 	/* cleanup the old heaps */
 	HEAPfree(&tail, 0);
@@ -326,37 +271,27 @@ VIEWreset(BAT *b)
 	tvp = VIEWvtparent(b);
 	if (tp || tvp) {
 		BUN cnt;
-		str nme;
-		size_t nmelen;
+		const char *nme;
 
 		/* alloc heaps */
 		memset(&tail, 0, sizeof(Heap));
 
 		cnt = BATcount(b) + 1;
 		nme = BBP_physical(b->batCacheid);
-		nmelen = nme ? strlen(nme) : 0;
 
 		assert(b->batCacheid > 0);
 		assert(tp || tvp || !b->ttype);
 
 		tail.farmid = BBPselectfarm(b->batRole, b->ttype, offheap);
-		if (b->ttype) {
-			tail.filename = (str) GDKmalloc(nmelen + 12);
-			if (tail.filename == NULL)
-				goto bailout;
-			snprintf(tail.filename, nmelen + 12, "%s.tail", nme);
-			if (b->ttype && HEAPalloc(&tail, cnt, Tsize(b)) != GDK_SUCCEED)
-				goto bailout;
-		}
+		snprintf(tail.filename, sizeof(tail.filename), "%s.tail", nme);
+		if (b->ttype && HEAPalloc(&tail, cnt, Tsize(b)) != GDK_SUCCEED)
+			goto bailout;
 		if (b->tvheap) {
 			th = GDKzalloc(sizeof(Heap));
 			if (th == NULL)
 				goto bailout;
 			th->farmid = BBPselectfarm(b->batRole, b->ttype, varheap);
-			th->filename = (str) GDKmalloc(nmelen + 12);
-			if (th->filename == NULL)
-				goto bailout;
-			snprintf(th->filename, nmelen + 12, "%s.theap", nme);
+			snprintf(th->filename, sizeof(th->filename), "%s.theap", nme);
 			if (ATOMheap(b->ttype, th, cnt) != GDK_SUCCEED)
 				goto bailout;
 		}
@@ -464,10 +399,6 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 		view->tnorevsorted -= l;
 	else
 		view->tnorevsorted = 0;
-	if (view->tnodense > l && view->tnodense < l + cnt)
-		view->tnodense -= l;
-	else
-		view->tnodense = 0;
 	if (view->tnokey[0] >= l && view->tnokey[0] < l + cnt &&
 	    view->tnokey[1] >= l && view->tnokey[1] < l + cnt &&
 	    view->tnokey[0] != view->tnokey[1]) {
@@ -476,6 +407,9 @@ VIEWbounds(BAT *b, BAT *view, BUN l, BUN h)
 	} else {
 		view->tnokey[0] = view->tnokey[1] = 0;
 	}
+	/* slices are unequal to their parents; cannot use accs */
+	if (b->thash == view->thash)
+		view->thash = NULL;
 }
 
 /*
@@ -496,7 +430,6 @@ VIEWdestroy(BAT *b)
 		HEAPfree(&b->theap, 0);
 	} else {
 		b->theap.base = NULL;
-		b->theap.filename = NULL;
 	}
 	b->tvheap = NULL;
 	BATfree(b);

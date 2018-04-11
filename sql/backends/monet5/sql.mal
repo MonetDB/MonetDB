@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
 module batsql;
 module sql;
@@ -218,6 +218,10 @@ command getVersion(clientid:int):lng
 address mvc_getVersion
 comment "Return the database version identifier for a client.";
 
+pattern grow(tid:bat[:oid], :any_1):int
+address mvc_grow_wrap
+comment "Resize the tid column of a declared table.";
+
 pattern append(mvc:int, sname:str, tname:str, cname:str, ins:any):int
 address mvc_append_wrap
 comment "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.";
@@ -259,33 +263,6 @@ comment "Prepare a table result set for the COPY INTO stream";
 unsafe pattern export_table(fname:str, fmt:str, colsep:str, recsep:str, qout:str, nullrep:str, tbl:bat[:str], attr:bat[:str], tpe:bat[:str], len:bat[:int],scale:bat[:int], cols:bat[:any]...) :int 
 address mvc_export_table_wrap
 comment "Prepare a table result set for the COPY INTO stream";
-
-unsafe pattern declaredTable( name:str ) :int 
-address mvc_declared_table_wrap
-comment "Prepare a declared table"; 
-
-unsafe pattern dtColumn(rs:int, tname:str, name:str, typename:str, digits:int, scale:int) :void
-address mvc_declared_table_column_wrap;
-
-unsafe pattern dropDeclaredTable( name:str ) :void 
-address mvc_drop_declared_table_wrap
-comment "drop a declared table"; 
-
-unsafe pattern dropDeclaredTables( nr:int ) :void 
-address mvc_drop_declared_tables_wrap
-comment "drop top n declared tables"; 
-
-pattern drop_func_upgrade_oct2014(id:int) :int
-address UPGdrop_func
-comment "Drop the function identified by id, needed for the Oct2014 upgrade";
-
-pattern create_func_upgrade_oct2014(sname:str,f:str) :int
-address UPGcreate_func
-comment "Create the function described by f, needed for the Oct2014 upgrade";
-
-pattern create_view_upgrade_oct2014(sname:str,v:str) :int
-address UPGcreate_view
-comment "Create the view described by f, needed for the Oct2014 upgrade";
 
 unsafe pattern exportHead(s:streams, res_id:int) :void
 address mvc_export_head_wrap
@@ -389,6 +366,10 @@ address db_users_wrap
 comment "return table of users with sql scenario";
 
 pattern password(user:str) :str
+address db_password_wrap
+comment "Return password hash of user";
+
+pattern batsql.password(user:bat[:str]) :bat[:str]
 address db_password_wrap
 comment "Return password hash of user";
 
@@ -1088,6 +1069,14 @@ comment "Return the strings";
 command batcalc.strings(v:bat[:str]) :bat[:str] 
 address BATSTRstrings
 comment "Return the strings";
+
+pattern update_tables():void 
+address SYSupdate_tables
+comment "Procedure triggered on update of the sys._tables table";
+
+pattern update_schemas():void 
+address SYSupdate_schemas
+comment "Procedure triggered on update of the sys.schemas table";
 
 include sql_decimal;
 include sql_rank;

@@ -2,19 +2,13 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
 EXTRA_DIST = testing_getopt.c
 
 bin_Mdiff = {
 	SOURCES = difflib.c helpers.c Mdiff.c difflib.h  helpers.h
 	LIBS = $(MALLOC_LIBS)
-}
-
-bin_Mtimeout = {
-	SOURCES = Mtimeout.c
-	COND = NOT_WIN32
-	LIBS = $(PTHREAD_LIBS)
 }
 
 bin_Mapprove.py = bin_Mtest.py
@@ -33,13 +27,13 @@ scripts_py = {
 
 headers_python = {
 	HEADERS = py
-	DIR = $(prefix)/$(PYTHON2_LIBDIR)/MonetDBtesting
-	SOURCES = Mfilter.py trace.py process.py monet_options.py.in __init__.py listexports.py.in exportutils.py malcheck.py
+	DIR = $(prefix)/$(PYTHON_LIBDIR)/MonetDBtesting
+	SOURCES = Mfilter.py process.py monet_options.py.in __init__.py listexports.py.in exportutils.py malcheck.py
 }
 
 scripts_sh = {
 	COND = NOT_WIN32
 	EXT = ""
 	DIR = bindir
-	SOURCES = Mlog.in MkillUsers.in
+	SOURCES = Mlog.in
 }

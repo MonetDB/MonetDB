@@ -67,19 +67,19 @@ Ready.
 #	_emit.emit({'a':42,'d':1})
 #};
 #SELECT * FROM pyapi32();
-% .,	. # table_name
+% .L1,	.L1 # table_name
 % i,	j # name
 % int,	double # type
 % 1,	24 # length
 [ NULL,	NULL	]
 #SELECT * FROM pyapi32() WHERE i IS NULL;
-% .,	. # table_name
+% .L1,	.L1 # table_name
 % i,	j # name
 % int,	double # type
 % 1,	24 # length
 [ NULL,	NULL	]
 #SELECT * FROM pyapi32() WHERE j IS NULL;
-% .,	. # table_name
+% .L1,	.L1 # table_name
 % i,	j # name
 % int,	double # type
 % 1,	24 # length

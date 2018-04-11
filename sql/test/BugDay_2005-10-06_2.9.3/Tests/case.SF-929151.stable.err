@@ -22,6 +22,7 @@ ERROR = !syntax error, unexpected FROM, expecting END in: "select case i
         !when 0 then 'base table'
         !when 1 then 'system table'
         !when 2 then 'v"
+CODE  = 42000
 
 # 23:52:38 >  
 # 23:52:38 >  Done.

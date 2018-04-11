@@ -41,7 +41,7 @@ Ready.
 #          on (ref_0.action = ref_13.id )
 #      where (ref_2.f_geometry_column is not NULL) 
 #        and (false)) as subq_0
-% .L122 # table_name
+% .L124 # table_name
 % c0 # name
 % tinyint # type
 % 1 # length

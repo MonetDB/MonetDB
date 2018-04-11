@@ -2,7 +2,9 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+
+from __future__ import print_function
 
 import sys
 import os
@@ -83,7 +85,7 @@ norm_in  = re.compile('(?:'+')|(?:'.join([
     r"^([Uu]sage: )(/.*/\.libs/|/.*/lt-|)([A-Za-z0-9_]+:?[ \t].*)\n",                                                                           # 4: 3
     r'^(ERROR = !.*Exception:remote\.[^:]*:\(mapi:monetdb://monetdb@)([^/]*)(/mTests_.*\).*)\n',                                                # 5: 4
     r"^(DBD::monetdb::db table_info warning: Catalog parameter c has to be an empty string, as MonetDB does not support multiple catalogs at )([\./].+/|[A-Z]:\\.+[/\\])([^/\\]+\.pl line \d+\.)\n",            # 6: 3
-    r'^(ERROR REPORTED: DBD:|SyntaxException:parseError)(:.+ at )([\./].+/|[A-Z]:\\.+[/\\])([^/\\]+\.pm line \d+\.)\n',                         # 7: 4
+    r'^(ERROR REPORTED: DBD:|SyntaxException:parseError)(:.+ at )([\./].+/|[A-Z]:[/\\].+[/\\])([^/\\]+\.pm line \d+\.)\n',                         # 7: 4
 # filter for geos 3.3 vs. geos 3.2, can be removed if we have 3.3 everywhere
     r"^(ERROR = !ParseException: Expected )('EMPTY' or '\(')( but encountered : '\)')\n",                                                       # 8: 3
 # filter for AVG_of_SQRT.SF-2757642: result not always exactly 1.1

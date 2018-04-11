@@ -31,6 +31,7 @@ stderr of test 'bind_with_cast.SF-1720934` in directory 'sql/test/BugTracker` it
 MAPI  = (monetdb) /var/tmp/mtest-6542/.s.monetdb.31466
 QUERY = exec  5('100');
 ERROR = !wrong type for argument 1 of function call: char, expected int
+CODE  = 42000
 
 # 21:37:05 >  
 # 21:37:05 >  "Done."

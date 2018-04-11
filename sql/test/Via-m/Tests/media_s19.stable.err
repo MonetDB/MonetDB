@@ -73,6 +73,7 @@ stderr of test 'media_s19` in directory 'sql/test/Via-m` itself:
 MAPI  = (monetdb) /var/tmp/mtest-29638/.s.monetdb.30099
 QUERY = set id_media1 = add_media(id_event1, id_media_description1, 'description 3', 1, 25, 125);
 ERROR = !INSERT INTO: FOREIGN KEY constraint 'media.fk_media_description_id' violated
+CODE  = M0M29
 
 # 16:40:48 >  
 # 16:40:48 >  Done.

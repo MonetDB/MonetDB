@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /* This file should not be included in any file outside of this directory */
@@ -21,8 +21,6 @@ __hidden int MCreadClient(Client c)
 __hidden void MCpopClientInput(Client c)
 	__attribute__((__visibility__("hidden")));
 __hidden str defaultScenario(Client c)	/* used in src/mal/mal_session.c */
-	__attribute__((__visibility__("hidden")));
-__hidden void exitScenario(Client c)		/* used in src/mal/mal_session.c */
 	__attribute__((__visibility__("hidden")));
 __hidden void mdbStep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, int pc)
 	__attribute__((__visibility__("hidden")));
@@ -45,14 +43,16 @@ __hidden int moreClients(int reruns)
 __hidden void stopMALdataflow(void)
 	__attribute__((__visibility__("hidden")));
 
-__hidden int malAtomDefinition(stream *out, str name,int tpe)
+__hidden str malAtomDefinition(str name,int tpe)
 	__attribute__((__visibility__("hidden")));
-__hidden int malAtomProperty(MalBlkPtr mb, InstrPtr pci)
+__hidden str malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 	__attribute__((__visibility__("hidden")));
 
 __hidden extern MT_Lock mal_namespaceLock;
 
-__hidden int mdbInit(void)
+__hidden void mdbInit(void)
+	__attribute__((__visibility__("hidden")));
+__hidden void mdbExit(void)
 	__attribute__((__visibility__("hidden")));
 
 __hidden str createScriptException(MalBlkPtr, int, enum malexception,
@@ -62,7 +62,7 @@ __hidden str createScriptException(MalBlkPtr, int, enum malexception,
 
 #ifdef MAXSCOPE
 /* MAXSCOPE is defined in the same file as Module */
-__hidden Symbol cloneFunction(stream *out, Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
+__hidden Symbol cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 	__attribute__((__visibility__("hidden")));
 #endif
 __hidden int getBarrierEnvelop(MalBlkPtr mb)

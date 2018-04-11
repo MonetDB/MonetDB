@@ -3,13 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef _BATMATH_H
 #define _BATMATH_H
 #include "gdk.h"
-#include "math.h"
+#include <math.h>
 #include "mal_exception.h"
 
 #define radians(x)       ((x) * 3.14159265358979323846 / 180.0)

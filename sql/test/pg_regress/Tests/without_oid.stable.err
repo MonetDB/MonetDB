@@ -33,9 +33,11 @@ stderr of test 'without_oid` in directory 'sql/test/pg_regress` itself:
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = SELECT count(oid) FROM wo;-- should fail
 ERROR = !SELECT: identifier 'oid' unknown
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT count(oid) FROM create_table_test3; -- should fail
 ERROR = !SELECT: identifier 'oid' unknown
+CODE  = 42000
 
 
 

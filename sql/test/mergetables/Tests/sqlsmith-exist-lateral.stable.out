@@ -1,0 +1,54 @@
+stdout of test 'sqlsmith-exist-lateral` in directory 'sql/test/mergetables` itself:
+
+
+# 21:45:47 >  
+# 21:45:47 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=36057" "--set" "mapi_usock=/var/tmp/mtest-32287/.s.monetdb.36057" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_mergetables"
+# 21:45:47 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_mergetables', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.330 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:36057/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-32287/.s.monetdb.36057
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 21:45:47 >  
+# 21:45:47 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-32287" "--port=36057"
+# 21:45:47 >  
+
+#select 
+#  ref_11.access as c0,
+#  ref_12.revsorted as c1
+#from
+#  sys._tables as ref_11
+#    inner join sys.statistics as ref_12
+#    on (((false)
+#          or (ref_11.id is NULL))
+#        or (EXISTS (
+#          select 
+#              ref_13.dim_id as c0,
+#              ref_11.query as c1
+#            from
+#              sys.netcdf_vardim as ref_13,
+#              lateral (select 
+#                    ref_11.access as c0,
+#                    ref_13.var_id as c1,
+#                    ref_11.commit_action as c2,
+#                    ref_11.system as c3
+% .L35,	.L37 # table_name
+% c0,	c1 # name
+% smallint,	boolean # type
+% 1,	5 # length
+
+# 21:45:47 >  
+# 21:45:47 >  "Done."
+# 21:45:47 >  
+

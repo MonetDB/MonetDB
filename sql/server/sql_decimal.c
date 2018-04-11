@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -26,7 +26,7 @@ decimal_from_str(char *dec, char **end)
 #endif
 	int neg = 0;
 
-	while(isspace(*dec))
+	while(isspace((unsigned char) *dec))
 		dec++;
 	if (*dec == '-') {
 		neg = 1;
@@ -42,7 +42,7 @@ decimal_from_str(char *dec, char **end)
 			res += *dec - '0';
 		}
 	}
-	while(isspace(*dec))
+	while(isspace((unsigned char) *dec))
 		dec++;
 	if (end)
 		*end = dec;

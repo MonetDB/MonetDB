@@ -1,0 +1,20 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#
+# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+
+# scalar MAL signatures
+module udf;
+
+command fuse(one:lng,two:lng):hge
+address UDFfuse_lng_hge
+comment "fuse two (8-byte) lng values into one (16-byte) hge value";
+
+
+# BAT MAL signatures
+module batudf;
+
+command fuse(one:bat[:lng],two:bat[:lng]):bat[:hge]
+address UDFBATfuse
+comment "fuse two (8-byte) lng values into one (16-byte) hge value";

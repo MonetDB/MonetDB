@@ -1,0 +1,158 @@
+stdout of test 'capi08` in directory 'sql/backends/monet5/UDF/capi` itself:
+
+
+# 16:28:17 >  
+# 16:28:17 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37555" "--set" "mapi_usock=/var/tmp/mtest-59671/.s.monetdb.37555" "--set" "monet_prompt=" "--forcemito" "--dbpath=NONE/var/MonetDB/mTests_sql_backends_monet5_UDF_capi"
+# 16:28:17 >  
+
+# MonetDB 5 server v11.28.0
+# This is an unreleased version
+# Serving database 'mTests_sql_backends_monet5_UDF_capi', using 4 threads
+# Compiled for x86_64-apple-darwin15.6.0/64bit with 128bit integers
+# Found 8.000 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-21.eduroam.cwi.nl:37555/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-59671/.s.monetdb.37555
+# MonetDB/SQL module loaded
+
+Ready.
+# SQL catalog created, loading sql scripts once
+# loading sql script: 09_like.sql
+# loading sql script: 10_math.sql
+# loading sql script: 11_times.sql
+# loading sql script: 12_url.sql
+# loading sql script: 13_date.sql
+# loading sql script: 14_inet.sql
+# loading sql script: 15_querylog.sql
+# loading sql script: 16_tracelog.sql
+# loading sql script: 17_temporal.sql
+# loading sql script: 18_index.sql
+# loading sql script: 20_vacuum.sql
+# loading sql script: 21_dependency_functions.sql
+# loading sql script: 22_clients.sql
+# loading sql script: 23_skyserver.sql
+# loading sql script: 25_debug.sql
+# loading sql script: 26_sysmon.sql
+# loading sql script: 27_rejects.sql
+# loading sql script: 39_analytics.sql
+# loading sql script: 39_analytics_hge.sql
+# loading sql script: 40_json.sql
+# loading sql script: 40_json_hge.sql
+# loading sql script: 41_md5sum.sql
+# loading sql script: 45_uuid.sql
+# loading sql script: 46_profiler.sql
+# loading sql script: 51_sys_schema_extension.sql
+# loading sql script: 60_wlcr.sql
+# loading sql script: 72_fits.sql
+# loading sql script: 74_netcdf.sql
+# loading sql script: 75_storagemodel.sql
+# loading sql script: 80_statistics.sql
+# loading sql script: 80_udf.sql
+# loading sql script: 80_udf_hge.sql
+# loading sql script: 90_generator.sql
+# loading sql script: 90_generator_hge.sql
+# loading sql script: 99_system.sql
+
+# 16:28:17 >  
+# 16:28:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-59671" "--port=37555"
+# 16:28:17 >  
+
+#START TRANSACTION;
+#CREATE FUNCTION capi08(inp INTEGER) RETURNS INTEGER LANGUAGE C {
+#    result->initialize(result, inp.count);
+#    for(size_t i = 0; i < inp.count; i++) {
+#        result->data[i] = inp.data[i] * 2;
+#    }
+#};
+#CREATE TABLE integers(i INTEGER);
+#INSERT INTO integers VALUES (1), (2), (3), (4), (5);
+[ 5	]
+#SELECT capi08(i) FROM integers;
+% sys.L2 # table_name
+% L2 # name
+% int # type
+% 2 # length
+[ 2	]
+[ 4	]
+[ 6	]
+[ 8	]
+[ 10	]
+#SELECT capi08(i) FROM integers;
+% sys.L2 # table_name
+% L2 # name
+% int # type
+% 2 # length
+[ 2	]
+[ 4	]
+[ 6	]
+[ 8	]
+[ 10	]
+#DROP FUNCTION capi08;
+#CREATE FUNCTION capi08(inp DOUBLE) RETURNS DOUBLE LANGUAGE C {
+#    result->initialize(result, inp.count);
+#    for(size_t i = 0; i < inp.count; i++) {
+#        result->data[i] = inp.data[i] * 2;
+#    }
+#};
+#SELECT capi08(i) FROM integers;
+% sys.L2 # table_name
+% L2 # name
+% double # type
+% 24 # length
+[ 2	]
+[ 4	]
+[ 6	]
+[ 8	]
+[ 10	]
+#SELECT capi08(i) FROM integers;
+% sys.L2 # table_name
+% L2 # name
+% double # type
+% 24 # length
+[ 2	]
+[ 4	]
+[ 6	]
+[ 8	]
+[ 10	]
+#DROP FUNCTION capi08;
+#CREATE FUNCTION capi08(inp1 INTEGER, inp2 INTEGER) RETURNS INTEGER LANGUAGE C {
+#    result->initialize(result, inp1.count);
+#    for(size_t i = 0; i < inp1.count; i++) {
+#        result->data[i] = inp1.data[i] / inp2.data[i];
+#    }
+#};
+#SELECT capi08(i * 2, i) FROM integers;
+% sys.L2 # table_name
+% L2 # name
+% int # type
+% 1 # length
+[ 2	]
+[ 2	]
+[ 2	]
+[ 2	]
+[ 2	]
+#DROP FUNCTION capi08;
+#CREATE FUNCTION capi08(inp2 INTEGER, inp1 INTEGER) RETURNS INTEGER LANGUAGE C {
+#    result->initialize(result, inp1.count);
+#    for(size_t i = 0; i < inp1.count; i++) {
+#        result->data[i] = inp1.data[i] / inp2.data[i];
+#    }
+#};
+#SELECT capi08(i, i * 2) FROM integers;
+% sys.L2 # table_name
+% L2 # name
+% int # type
+% 1 # length
+[ 2	]
+[ 2	]
+[ 2	]
+[ 2	]
+[ 2	]
+#ROLLBACK;
+
+# 16:28:18 >  
+# 16:28:18 >  "Done."
+# 16:28:18 >  
+

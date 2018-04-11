@@ -81,26 +81,26 @@ Ready.
 #	UNION  select name from leaf2();
 #END;
 #SELECT count(*) FROM bottom();
-% .L2 # table_name
-% L1 # name
+% .L5 # table_name
+% L4 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #SELECT count(*) FROM leaf1();
-% .L2 # table_name
-% L1 # name
+% .L5 # table_name
+% L4 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #SELECT count(*) FROM leaf2();
-% .L2 # table_name
-% L1 # name
+% .L5 # table_name
+% L4 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #SELECT count(*) FROM leaf3();
-% .L2 # table_name
-% L1 # name
+% .L5 # table_name
+% L4 # name
 % bigint # type
 % 1 # length
 [ 1	]

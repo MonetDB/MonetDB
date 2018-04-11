@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -57,7 +57,7 @@ void
 mal_client_reset(void)
 {
 	MAL_MAXCLIENTS = 0;
-	if ( mal_clients)
+	if (mal_clients)
 		GDKfree(mal_clients);
 }
 
@@ -72,7 +72,7 @@ MCinit(void)
 	if (maxclients <= 0) {
 		maxclients = 64;
 		if (GDKsetenv("max_clients", "64") != GDK_SUCCEED) {
-			showException(GDKout, MAL, "MCinit", "GDKsetenv failed");
+			fprintf(stderr,"#MCinit: GDKsetenv failed");
 			mal_exit();
 		}
 	}
@@ -82,11 +82,12 @@ MCinit(void)
 		/* client connections */ maxclients;
 	mal_clients = GDKzalloc(sizeof(ClientRec) * MAL_MAXCLIENTS);
 	if( mal_clients == NULL){
-		showException(GDKout, MAL, "MCinit",MAL_MALLOC_FAIL);
+		fprintf(stderr,"#MCinit:" MAL_MALLOC_FAIL);
 		mal_exit();
 	}
 }
 
+/* stack the files from which you read */
 int
 MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt)
 {
@@ -102,6 +103,10 @@ MCpushClientInput(Client c, bstream *new_input, int listing, char *prompt)
 	c->fdin = new_input;
 	c->listing = listing;
 	c->prompt = prompt ? GDKstrdup(prompt) : GDKstrdup("");
+	if(c->prompt == 0) {
+		GDKfree(x);
+		return -1;
+	}
 	c->promptlength = strlen(c->prompt);
 	c->yycur = 0;
 	return 0;
@@ -207,6 +212,10 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->blkmode = 0;
 
 	c->fdin = fin ? fin : bstream_create(GDKin, 0);
+	if ( c->fdin == NULL){
+		showException(GDKout, MAL, "initClientRecord", MAL_MALLOC_FAIL);
+		return NULL;
+	}
 	c->yycur = 0;
 	c->bak = NULL;
 
@@ -217,13 +226,10 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->curprg = c->backup = 0;
 	c->glb = 0;
 
-	/* remove garbage from previous connection 
-	 * be aware, a user can introduce several modules 
+	/* remove garbage from previous connection
+	 * be aware, a user can introduce several modules
 	 * that should be freed to avoid memory leaks */
-	if (c->nspace) {
-		freeModule(c->nspace);
-		c->nspace = 0;
-	}
+	c->usermodule = c->curmodule = 0;
 
 	c->father = NULL;
 	c->login = c->lastcmd = time(0);
@@ -231,17 +237,19 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->session = GDKusec();
 	c->qtimeout = 0;
 	c->stimeout = 0;
-	c->stage = 0;
 	c->itrace = 0;
 	c->flags = 0;
 	c->errbuf = 0;
 
 	prompt = !fin ? GDKgetenv("monet_prompt") : PROMPT1;
 	c->prompt = GDKstrdup(prompt);
+	if ( c->prompt == NULL){
+		showException(GDKout, MAL, "initClientRecord", MAL_MALLOC_FAIL);
+		return NULL;
+	}
 	c->promptlength = strlen(prompt);
 
 	c->actions = 0;
-	c->totaltime = 0;
 	c->exception_buf_initialized = 0;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 	c->wlc_kind = 0;
@@ -272,7 +280,7 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 
 /*
  * The administrator should be initialized to enable interpretation of
- * the command line arguments, before it starts serviceing statements
+ * the command line arguments, before it starts servicing statements
  */
 int
 MCinitClientThread(Client c)
@@ -284,7 +292,6 @@ MCinitClientThread(Client c)
 	cname[11] = '\0';
 	t = THRnew(cname);
 	if (t == 0) {
-		showException(c->fdout, MAL, "initClientThread", "Failed to initialize client");
 		MPresetProfiler(c->fdout);
 		return -1;
 	}
@@ -299,7 +306,7 @@ MCinitClientThread(Client c)
 	if (c->errbuf == NULL) {
 		char *n = GDKzalloc(GDKMAXERRLEN);
 		if ( n == NULL){
-			showException(GDKout, MAL, "initClientThread", MAL_MALLOC_FAIL);
+			MPresetProfiler(c->fdout);
 			return -1;
 		}
 		GDKsetbuf(n);
@@ -321,10 +328,14 @@ Client
 MCforkClient(Client father)
 {
 	Client son = NULL;
+	str prompt;
+
 	if (father == NULL)
 		return NULL;
 	if (father->father != NULL)
 		father = father->father;
+	if((prompt = GDKstrdup(father->prompt)) == NULL)
+		return NULL;
 	if ((son = MCinitClient(father->user, father->fdin, father->fdout))) {
 		son->fdin = NULL;
 		son->fdout = father->fdout;
@@ -334,11 +345,18 @@ MCforkClient(Client father)
 		son->scenario = father->scenario;
 		if (son->prompt)
 			GDKfree(son->prompt);
-		son->prompt = GDKstrdup(father->prompt);
-		son->promptlength = strlen(father->prompt);
+		son->prompt = prompt;
+		son->promptlength = strlen(prompt);
 		/* reuse the scopes wherever possible */
-		if (son->nspace == 0)
-			son->nspace = newModule(NULL, putName("child"));
+		if (son->usermodule == 0) {
+			son->usermodule = userModule();
+			if(son->usermodule == 0) {
+				MCcloseClient(son);
+				return NULL;
+			}
+		}
+	} else {
+		GDKfree(prompt);
 	}
 	return son;
 }
@@ -382,6 +400,9 @@ freeClient(Client c)
 			GDKfree(c->errbuf);
 		c->errbuf = 0;
 	}
+	if (c->usermodule)
+		freeModule(c->usermodule);
+	c->usermodule = c->curmodule = 0;
 	c->father = 0;
 	c->login = c->lastcmd = 0;
 	//c->active = 0;
@@ -403,11 +424,11 @@ freeClient(Client c)
 		BBPrelease(c->error_msg->batCacheid);
 		BBPrelease(c->error_input->batCacheid);
 		c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
-		if( c->wlc)
-			freeMalBlk(c->wlc);
-		c->wlc_kind = 0;
-		c->wlc = NULL;
 	}
+	if( c->wlc)
+		freeMalBlk(c->wlc);
+	c->wlc_kind = 0;
+	c->wlc = NULL;
 	if (t)
 		THRdel(t);  /* you may perform suicide */
 	MT_sema_destroy(&c->s);
@@ -535,7 +556,7 @@ MCreadClient(Client c)
 #endif
 
 	while (in->pos < in->len &&
-		   (isspace((int) (in->buf[in->pos])) ||
+		   (isspace((unsigned char) (in->buf[in->pos])) ||
 			in->buf[in->pos] == ';' || !in->buf[in->pos]))
 		in->pos++;
 
@@ -566,7 +587,7 @@ MCreadClient(Client c)
 				in->len++;
 		}
 #ifdef MAL_CLIENT_DEBUG
-		fprintf(stderr, "# simple stream received %d sum " SZFMT "\n", c->idx, sum);
+		fprintf(stderr, "# simple stream received %d sum %zu\n", c->idx, sum);
 #endif
 	}
 	if (in->pos >= in->len) {

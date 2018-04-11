@@ -3,14 +3,14 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
  * Readline specific stuff
  */
 #include "monetdb_config.h"
-#include <monet_options.h>
+#include "monet_options.h"
 
 #ifdef HAVE_LIBREADLINE
 
@@ -21,16 +21,6 @@
 #ifdef HAVE_STRINGS_H
 #include <strings.h>		/* for strncasecmp */
 #endif
-
-#ifndef NATIVE_WIN32
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
-#endif
-
-#include <errno.h>
-
-#define PATHLENGTH	256	/* maximum file pathname length. */
 
 static const char *sql_commands[] = {
 	"SELECT",
@@ -49,7 +39,7 @@ static const char *sql_commands[] = {
 };
 
 static Mapi _mid;
-static char _history_file[PATHLENGTH];
+static char _history_file[FILENAME_MAX];
 static int _save_history = 0;
 static char *language;
 
@@ -57,7 +47,8 @@ static char *
 sql_tablename_generator(const char *text, int state)
 {
 
-	static int seekpos, len, rowcount;
+	static int64_t seekpos, rowcount;
+	static size_t len;
 	static MapiHdl table_hdl;
 
 	if (!state) {
@@ -170,16 +161,16 @@ static int
 mal_help(int cnt, int key)
 {
 	char *name, *c, *buf;
-	int seekpos = 0, rowcount;
+	int64_t seekpos = 0, rowcount;
 	MapiHdl table_hdl;
 
 	(void) cnt;
 	(void) key;
 
 	c = rl_line_buffer + strlen(rl_line_buffer) - 1;
-	while (c > rl_line_buffer && isspace(*c))
+	while (c > rl_line_buffer && isspace((unsigned char) *c))
 		c--;
-	while (c > rl_line_buffer && !isspace(*c))
+	while (c > rl_line_buffer && !isspace((unsigned char) *c))
 		c--;
 	if ((buf = malloc(strlen(c) + 20)) == NULL)
 		return 0;
@@ -215,13 +206,14 @@ mal_command_generator(const char *text, int state)
 {
 
 	static int idx;
-	static int seekpos, len, rowcount;
+	static int64_t seekpos, rowcount;
+	static size_t len;
 	static MapiHdl table_hdl;
 	char *name, *buf;
 
 	/* we pick our own portion of the linebuffer */
 	text = rl_line_buffer + strlen(rl_line_buffer) - 1;
-	while (text > rl_line_buffer && !isspace((int) *text))
+	while (text > rl_line_buffer && !isspace((unsigned char) *text))
 		text--;
 	if (!state) {
 		idx = 0;
@@ -245,7 +237,7 @@ mal_command_generator(const char *text, int state)
 		c = strstr(text, ":=");
 		if (c)
 			text = c + 2;
-		while (isspace((int) *text))
+		while (isspace((unsigned char) *text))
 			text++;
 		if ((buf = malloc(strlen(text) + 32)) == NULL)
 			return NULL;
@@ -330,13 +322,13 @@ init_readline(Mapi mid, char *lang, int save_history)
 	if (save_history) {
 #ifndef NATIVE_WIN32
 		if (getenv("HOME") != NULL) {
-			snprintf(_history_file, PATHLENGTH,
+			snprintf(_history_file, FILENAME_MAX,
 				 "%s/.mapiclient_history_%s",
 				 getenv("HOME"), language);
 			_save_history = 1;
 		}
 #else
-		snprintf(_history_file, PATHLENGTH,
+		snprintf(_history_file, FILENAME_MAX,
 			 "%s%c_mapiclient_history_%s",
 			 mo_find_option(NULL, 0, "prefix"), DIR_SEP, language);
 		_save_history = 1;

@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
 module remote;
 
@@ -71,5 +71,9 @@ comment "store the binary BAT data in the BBP and return as BAT";
 pattern bintype():void
 address RMTbintype
 comment "print the binary type of this mserver5";
+
+command register_supervisor(sup_uuid:str, query_uuid:str):int
+address RMTregisterSupervisor
+comment "Register the supervisor uuid at a remote site";
 
 remote.prelude();

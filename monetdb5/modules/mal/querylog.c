@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -111,7 +111,7 @@ QLOGcatalog(BAT **r)
 	MT_lock_unset(&mal_profileLock);
 	if( r[0])
 		return MAL_SUCCEED;
-	throw(MAL,"catalog_queries",MAL_MALLOC_FAIL);
+	throw(MAL,"catalog_queries", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 str
@@ -147,7 +147,7 @@ QLOGcalls(BAT **r)
 	MT_lock_unset(&mal_profileLock);
 	if( r[0])
 		return MAL_SUCCEED;
-	throw(MAL,"catalog_calls",MAL_MALLOC_FAIL);
+	throw(MAL,"catalog_calls", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 }
 
 static bat commitlist[32];
@@ -232,7 +232,7 @@ _initQlog(void)
 		QLOG_calls_tuples == NULL || QLOG_calls_exec == NULL || QLOG_calls_result == NULL ||
 		QLOG_calls_cpuload == NULL || QLOG_calls_iowait == NULL){
 			_QLOGcleanup();
-			throw(MAL,"querylog.init",MAL_MALLOC_FAIL);
+			throw(MAL,"querylog.init", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	if (QLOG_cat_id == NULL )
@@ -360,7 +360,7 @@ QLOGappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BUNappend(QLOG_cat_user,*usr,FALSE) != GDK_SUCCEED ||
 			BUNappend(QLOG_cat_defined,tick,FALSE) != GDK_SUCCEED) {
 			MT_lock_unset(&mal_profileLock);
-			throw(MAL, "querylog.append", MAL_MALLOC_FAIL);
+			throw(MAL, "querylog.append", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	}
 	MT_lock_unset(&mal_profileLock);
@@ -410,7 +410,7 @@ QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUNappend(QLOG_calls_cpuload,cpu,FALSE) != GDK_SUCCEED ||
 		BUNappend(QLOG_calls_iowait,iowait,FALSE) != GDK_SUCCEED) {
 		MT_lock_unset(&mal_profileLock);
-		throw(MAL, "querylog.call", MAL_MALLOC_FAIL);
+		throw(MAL, "querylog.call", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	MT_lock_unset(&mal_profileLock);
 	TMsubcommit_list(commitlist, committop);

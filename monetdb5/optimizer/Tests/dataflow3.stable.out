@@ -57,12 +57,12 @@ exit X_52;
     X88 := remote.exec(X84, "user", "s1_0map");
     X507 := remote.get(X84, X87);
     remote.disconnect(X84);
-    bat.append(X17, X54);
-    bat.append(X17, X55);
-    bat.append(X17, X56);
-    bat.append(X17, X57);
-    io.print(X17);
-    X19 := aggr.sum(X17);
+    X98 := bat.append(X17, X54);
+    X97 := bat.append(X98, X55);
+    X96 := bat.append(X97, X56);
+    X95 := bat.append(X96, X57);
+    io.print(X95);
+    X19 := aggr.sum(X95);
     io.print(X19);
 end user.s1_0;
 

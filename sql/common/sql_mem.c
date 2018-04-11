@@ -3,19 +3,11 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
-
-/* Stefan: 
- * "Fake-include" to make msc.py create the proper dependencies;
- * otherwise, query.h doesn't get extracted from query.mx on Windows.
- * TODO: fix msc.py instead...
-#include "query.h"
-*/
-
-#include <sql_mem.h>
+#include "sql_mem.h"
 
 sql_ref *
 sql_ref_init(sql_ref *r)
@@ -78,16 +70,18 @@ sql_allocator *sa_reset( sql_allocator *sa )
 	return sa;
 }
 
-char *sa_realloc( sql_allocator *sa, void *p, size_t sz, size_t oldsz )
+#undef sa_realloc
+#undef sa_alloc
+void *sa_realloc( sql_allocator *sa, void *p, size_t sz, size_t oldsz )
 {
-	char *r = sa_alloc(sa, sz);
+	void *r = sa_alloc(sa, sz);
 
-	memcpy(r, (char*)p, oldsz);
+	memcpy(r, p, oldsz);
 	return r;
 }
 
 #define round16(sz) ((sz+15)&~15)
-char *sa_alloc( sql_allocator *sa, size_t sz )
+void *sa_alloc( sql_allocator *sa, size_t sz )
 {
 	char *r;
 	sz = round16(sz);
@@ -123,9 +117,10 @@ char *sa_alloc( sql_allocator *sa, size_t sz )
 	return r;
 }
 
-char *sa_zalloc( sql_allocator *sa, size_t sz )
+#undef sa_zalloc
+void *sa_zalloc( sql_allocator *sa, size_t sz )
 {
-	char *r = sa_alloc(sa, sz);
+	void *r = sa_alloc(sa, sz);
 
 	if (r)
 		memset(r, 0, sz);
@@ -143,6 +138,7 @@ void sa_destroy( sql_allocator *sa )
 	GDKfree(sa);
 }
 
+#undef sa_strndup
 char *sa_strndup( sql_allocator *sa, const char *s, size_t l) 
 { 
 	char *r = sa_alloc(sa, l+1); 
@@ -154,6 +150,7 @@ char *sa_strndup( sql_allocator *sa, const char *s, size_t l)
 	return r; 
 }
 
+#undef sa_strdup
 char *sa_strdup( sql_allocator *sa, const char *s ) 
 { 
 	return sa_strndup( sa, s, strlen(s));

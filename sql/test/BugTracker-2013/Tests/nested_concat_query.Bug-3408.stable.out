@@ -59,8 +59,8 @@ Ready.
 #declare dated integer;
 #declare stamp varchar(32);
 #select stamp;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 0 # length
 [ NULL	]
@@ -69,8 +69,8 @@ Ready.
 #set dated = '10';
 #set stamp = concat(concat(concat(concat(concat(concat('2013-11-', dated), ' '), dateh), ':'), datem), ':30.000000');
 #select stamp;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 26 # length
 [ "2013-11-10 11:12:30.000000"	]
@@ -81,8 +81,8 @@ Ready.
 #set stamp = concat(stamp, datem);
 #set stamp = concat(stamp, ':01.000000');
 #select stamp;
-% .L1 # table_name
-% L1 # name
+% .L2 # table_name
+% L2 # name
 % varchar # type
 % 26 # length
 [ "2013-11-10 11:12:01.000000"	]

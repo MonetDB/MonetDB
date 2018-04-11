@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
 module generator;
 
@@ -20,19 +20,19 @@ comment "Retain the table definition, but don't materialize";
 pattern parameters(first:hge,last:hge):bat[:hge]
 address VLTgenerator_noop;
 
-pattern thetasubselect(b:bat[:hge], low:hge, oper:str) :bat[:oid]
+pattern thetaselect(b:bat[:hge], low:hge, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect
 comment "Overloaded selection routine";
 
-pattern thetasubselect(b:bat[:hge], cnd:bat[:oid], low:hge, oper:str) :bat[:oid]
+pattern thetaselect(b:bat[:hge], cnd:bat[:oid], low:hge, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect
 comment "Overloaded selection routine";
 
-pattern subselect(b:bat[:hge], low:hge, high:hge, li:bit, hi:bit, anti:bit) :bat[:oid]
+pattern select(b:bat[:hge], low:hge, high:hge, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect
 comment "Overloaded selection routine";
 
-pattern subselect(b:bat[:hge], cand:bat[:oid], low:hge, high:hge, li:bit, hi:bit, anti:bit) :bat[:oid]
+pattern select(b:bat[:hge], cand:bat[:oid], low:hge, high:hge, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect
 comment "Overloaded selection routine";
 

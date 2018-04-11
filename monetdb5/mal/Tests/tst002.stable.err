@@ -39,9 +39,9 @@ QUERY = # reserved names may not be used as target variables
         	b:= false;
         exit barrier;
 ERROR = !SyntaxException:parseError:	true:= 23;
-        !SyntaxException:parseError:^<identifier> expected
+        !SyntaxException:parseError:	^<identifier> expected
         !SyntaxException:parseError:	false:= 24;
-        !SyntaxException:parseError:^<identifier> expected
+        !SyntaxException:parseError:	^<identifier> expected
 
 # 22:10:35 >  
 # 22:10:35 >  "Done."

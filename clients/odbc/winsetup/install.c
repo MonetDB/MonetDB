@@ -3,15 +3,13 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "ODBCGlobal.h"
 #include <winver.h>
 #include <shlwapi.h>
 #include <string.h>
-#include <stdio.h>
-#include <malloc.h>
 
 #ifdef __MINGW32__
 #define DLL "-0.dll"

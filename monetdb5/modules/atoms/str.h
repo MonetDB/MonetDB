@@ -3,15 +3,15 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #ifndef __string_H__
 #define __string_H__
-#include <gdk.h>
+#include "gdk.h"
 #include "mal.h"
 #include "mal_exception.h"
-#include "ctype.h"
+#include <ctype.h>
 
 mal_export str strPrelude(void *ret);
 mal_export str strEpilogue(void *ret);

@@ -1,4 +1,4 @@
 @echo on
 @prompt # $t $g  
 
-	%MTIMEOUT% Mbeddedsql5 --help
+	Mbeddedsql5 --help

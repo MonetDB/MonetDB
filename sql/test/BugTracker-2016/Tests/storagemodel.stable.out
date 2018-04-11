@@ -66,15 +66,15 @@ Ready.
 # 23:38:44 >  
 
 #create table bug3923(i integer);
-#select "schema", "table", "column", "type", "mode", typewidth, hashes, phash, imprints from storage('sys','_tables');
+#select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, hashes, phash, imprints from storage('sys','_tables');
 % .L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3 # table_name
 % schema,	table,	column,	type,	mode,	typewidth,	hashes,	phash,	imprints # name
 % clob,	clob,	clob,	clob,	clob,	int,	bigint,	boolean,	bigint # type
 % 3,	7,	13,	8,	8,	2,	1,	5,	1 # length
 [ "sys",	"_tables",	"id",	"int",	"writable",	4,	0,	false,	0	]
-[ "sys",	"_tables",	"name",	"varchar",	"writable",	9,	0,	false,	0	]
+[ "sys",	"_tables",	"name",	"varchar",	"writable",	99,	0,	false,	0	]
 [ "sys",	"_tables",	"schema_id",	"int",	"writable",	4,	0,	false,	0	]
-[ "sys",	"_tables",	"query",	"varchar",	"writable",	42,	0,	false,	0	]
+[ "sys",	"_tables",	"query",	"varchar",	"writable",	99,	0,	false,	0	]
 [ "sys",	"_tables",	"type",	"smallint",	"writable",	2,	0,	false,	0	]
 [ "sys",	"_tables",	"system",	"boolean",	"writable",	1,	0,	false,	0	]
 [ "sys",	"_tables",	"commit_action",	"smallint",	"writable",	2,	0,	false,	0	]
@@ -91,15 +91,15 @@ Ready.
 [ "sys",	"bug3923",	"i",	"int",	10000,	40000,	0,	0,	1200,	true,	true,	NULL,	0	]
 #drop table bug3923;
 #create table bug3923(i integer);
-#select "schema", "table", "column", "type", "mode", typewidth, hashes, phash, imprints from storage('sys','_tables');
+#select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, hashes, phash, imprints from storage('sys','_tables');
 % .L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3,	.L3 # table_name
 % schema,	table,	column,	type,	mode,	typewidth,	hashes,	phash,	imprints # name
 % clob,	clob,	clob,	clob,	clob,	int,	bigint,	boolean,	bigint # type
 % 3,	7,	13,	8,	8,	2,	1,	5,	1 # length
 [ "sys",	"_tables",	"id",	"int",	"writable",	4,	0,	false,	0	]
-[ "sys",	"_tables",	"name",	"varchar",	"writable",	9,	0,	false,	0	]
+[ "sys",	"_tables",	"name",	"varchar",	"writable",	99,	0,	false,	0	]
 [ "sys",	"_tables",	"schema_id",	"int",	"writable",	4,	0,	false,	0	]
-[ "sys",	"_tables",	"query",	"varchar",	"writable",	42,	0,	false,	0	]
+[ "sys",	"_tables",	"query",	"varchar",	"writable",	99,	0,	false,	0	]
 [ "sys",	"_tables",	"type",	"smallint",	"writable",	2,	0,	false,	0	]
 [ "sys",	"_tables",	"system",	"boolean",	"writable",	1,	0,	false,	0	]
 [ "sys",	"_tables",	"commit_action",	"smallint",	"writable",	2,	0,	false,	0	]

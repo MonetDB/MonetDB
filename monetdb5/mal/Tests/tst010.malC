@@ -1,6 +1,6 @@
 # syntax analysis test for guarded blocks, redo's and leave's
 # forcefully end the block, because the parser counts barrier/exit pairs
-# function foo();
+function foo();
 barrier	L:= 1;
 	#do it
 	leave Z;	# not known in block

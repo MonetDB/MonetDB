@@ -34,7 +34,7 @@ function choptest(b:bat[:lng], size:lng, base:lng);
     mdb.setDebug(dbgmsk_set);
 
     barrier (tst,c):= user.getChunk(b,size);
-        t:= algebra.select(c, 256000:lng,266000:lng,true,true,false);
+        t:= algebra.select(c,nil:bat[:oid], 256000:lng,266000:lng,true,true,false);
         redo (tst,c):= user.getChunk(b,size);
     exit (tst,c);
 
@@ -71,7 +71,7 @@ mdb.setDebug(dbgmsk_restore);
 
 t0:= alarm.usec();
 barrier doit:= true;
-    t:= algebra.select(b, 256000:lng,266000:lng,true,true,false);
+    t:= algebra.select(b,nil:bat[:oid], 256000:lng,266000:lng,true,true,false);
 exit doit;
 t1:= alarm.usec();
 base:= t1-t0;

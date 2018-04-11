@@ -1,0 +1,174 @@
+stderr of test 'truncate_sys_tables.Bug-6543` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 17:47:14 >  
+# 17:47:14 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31828" "--set" "mapi_usock=/var/tmp/mtest-9985/.s.monetdb.31828" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2018"
+# 17:47:14 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 31828
+# cmdline opt 	mapi_usock = /var/tmp/mtest-9985/.s.monetdb.31828
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2018
+# cmdline opt 	gdk_debug = 553648138
+
+# 17:47:14 >  
+# 17:47:14 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9985" "--port=31828"
+# 17:47:14 >  
+
+MAPI  = (testuser) /var/tmp/mtest-28627/.s.monetdb.31440
+QUERY = TRUNCATE TABLE sys.user_role;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'user_role'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.types;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'types'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.triggers;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'triggers'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.table_types;
+ERROR = !TRUNCATE: cannot truncate read or append only table 'table_types'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.systemfunctions;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'systemfunctions'
+CODE  = 42000
+MAPI  = (testuser) /var/tmp/mtest-7177/.s.monetdb.32793
+QUERY = SELECT (COUNT(*) > 0) AS has_rows FROM sys.storagemodelinput;
+ERROR = !SELECT: access denied for testuser to table 'sys.storagemodelinput'
+CODE  = 42000
+MAPI  = (testuser) /var/tmp/mtest-7177/.s.monetdb.32793
+QUERY = TRUNCATE TABLE sys.storagemodelinput;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'storagemodelinput'
+CODE  = 42000
+MAPI  = (testuser) /var/tmp/mtest-7177/.s.monetdb.32793
+QUERY = SELECT (COUNT(*) > 0) AS has_rows FROM sys.storagemodelinput;
+ERROR = !SELECT: access denied for testuser to table 'sys.storagemodelinput'
+CODE  = 42000
+MAPI  = (testuser) /var/tmp/mtest-7177/.s.monetdb.32793
+QUERY = SELECT (COUNT(*) > 0) AS has_rows FROM sys.statistics;
+ERROR = !SELECT: access denied for testuser to table 'sys.statistics'
+CODE  = 42000
+MAPI  = (testuser) /var/tmp/mtest-7177/.s.monetdb.32793
+QUERY = TRUNCATE TABLE sys.statistics;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'statistics'
+CODE  = 42000
+MAPI  = (testuser) /var/tmp/mtest-7177/.s.monetdb.32793
+QUERY = SELECT (COUNT(*) > 0) AS has_rows FROM sys.statistics;
+ERROR = !SELECT: access denied for testuser to table 'sys.statistics'
+CODE  = 42000
+MAPI  = (testuser) /var/tmp/mtest-16283/.s.monetdb.34207
+QUERY = TRUNCATE TABLE sys.spatial_ref_sys;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'spatial_ref_sys'
+CODE  = 42000
+MAPI  = (testuser) /var/tmp/mtest-16283/.s.monetdb.34207
+QUERY = TRUNCATE TABLE sys.sequences;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'sequences'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.schemas;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'schemas'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.privileges;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'privileges'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.privilege_codes;
+ERROR = !TRUNCATE: cannot truncate read or append only table 'privilege_codes'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.objects;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'objects'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.keywords;
+ERROR = !TRUNCATE: cannot truncate read or append only table 'keywords'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.keys;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'keys'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.key_types;
+ERROR = !TRUNCATE: cannot truncate read or append only table 'key_types'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.index_types;
+ERROR = !TRUNCATE: cannot truncate read or append only table 'index_types'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.idxs;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'idxs'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.functions;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'functions'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.function_types;
+ERROR = !TRUNCATE: cannot truncate read or append only table 'function_types'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.function_languages;
+ERROR = !TRUNCATE: cannot truncate read or append only table 'function_languages'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.dependency_types;
+ERROR = !TRUNCATE: cannot truncate read or append only table 'dependency_types'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.dependencies;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'dependencies'
+CODE  = 42000
+MAPI  = (testuser) /var/tmp/mtest-7177/.s.monetdb.32793
+QUERY = SELECT (COUNT(*) > 0) AS has_rows FROM sys.db_user_info;
+ERROR = !SELECT: access denied for testuser to table 'sys.db_user_info'
+CODE  = 42000
+MAPI  = (testuser) /var/tmp/mtest-7177/.s.monetdb.32793
+QUERY = TRUNCATE TABLE sys.db_user_info;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'db_user_info'
+CODE  = 42000
+MAPI  = (testuser) /var/tmp/mtest-7177/.s.monetdb.32793
+QUERY = SELECT (COUNT(*) > 0) AS has_rows FROM sys.db_user_info;
+ERROR = !SELECT: access denied for testuser to table 'sys.db_user_info'
+CODE  = 42000
+MAPI  = (testuser) /var/tmp/mtest-7177/.s.monetdb.32793
+QUERY = TRUNCATE TABLE sys.comments;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'comments'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.auths;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'auths'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys.args;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'args'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys._tables;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table '_tables'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+QUERY = TRUNCATE TABLE sys._columns;
+ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table '_columns'
+CODE  = 42000
+
+# 17:47:14 >  
+# 17:47:14 >  "Done."
+# 17:47:14 >  
+

@@ -1,0 +1,51 @@
+stdout of test 'insert-null-second-interval-0.Bug-6515` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 18:16:15 >  
+# 18:16:15 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30482" "--set" "mapi_usock=/var/tmp/mtest-31698/.s.monetdb.30482" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-monetdb/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2018"
+# 18:16:15 >  
+
+# MonetDB 5 server v11.27.6
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 7.324 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.nes.nl:30482/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-31698/.s.monetdb.30482
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 18:16:15 >  
+# 18:16:15 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-31698" "--port=30482"
+# 18:16:15 >  
+
+#CREATE TABLE testnullsa (a boolean, b text, c tinyint, d smallint, e int, f bigint, g real, h double, i blob);
+#INSERT INTO testnullsa VALUES (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+[ 1	]
+#SELECT a, b, c, d, e, f, g, h, i FROM testnullsa;
+% sys.testnullsa,	sys.testnullsa,	sys.testnullsa,	sys.testnullsa,	sys.testnullsa,	sys.testnullsa,	sys.testnullsa,	sys.testnullsa,	sys.testnullsa # table_name
+% a,	b,	c,	d,	e,	f,	g,	h,	i # name
+% boolean,	clob,	tinyint,	smallint,	int,	bigint,	real,	double,	blob # type
+% 5,	0,	1,	1,	1,	1,	15,	24,	0 # length
+[ NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+#DROP TABLE testnullsa;
+#CREATE TABLE testnullsb (a date, b time, c time with time zone, d timestamp, e timestamp with time zone, f INTERVAL year to month, g INTERVAL minute to second, h decimal);
+#INSERT INTO testnullsb VALUES (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+[ 1	]
+#SELECT a, b, c, d, e, f, g, h FROM testnullsb;
+% sys.testnullsb,	sys.testnullsb,	sys.testnullsb,	sys.testnullsb,	sys.testnullsb,	sys.testnullsb,	sys.testnullsb,	sys.testnullsb # table_name
+% a,	b,	c,	d,	e,	f,	g,	h # name
+% date,	time,	timetz,	timestamp,	timestamptz,	month_interval,	sec_interval,	decimal # type
+% 10,	8,	14,	26,	32,	1,	5,	20 # length
+[ NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+#DROP TABLE testnullsb;
+
+# 18:16:15 >  
+# 18:16:15 >  "Done."
+# 18:16:15 >  
+

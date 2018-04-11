@@ -49,7 +49,7 @@ Ready.
 #select substring(str from 2 for 8), str2 from stringtest;
 % sys.L2,	sys.stringtest # table_name
 % L2,	str2 # name
-% varchar,	varchar # type
+% clob,	varchar # type
 % 5,	4 # length
 [ "",	"test"	]
 [ "est",	""	]
@@ -58,7 +58,7 @@ Ready.
 #select substring(str, 2, 8), str2 from stringtest;
 % sys.L2,	sys.stringtest # table_name
 % L2,	str2 # name
-% varchar,	varchar # type
+% clob,	varchar # type
 % 5,	4 # length
 [ "",	"test"	]
 [ "est",	""	]
@@ -67,7 +67,7 @@ Ready.
 #select substring(str from 2 for 1), str2 from stringtest;
 % sys.L2,	sys.stringtest # table_name
 % L2,	str2 # name
-% varchar,	varchar # type
+% clob,	varchar # type
 % 1,	4 # length
 [ "",	"test"	]
 [ "e",	""	]
@@ -76,7 +76,7 @@ Ready.
 #select substring(str, 2, 1), str2 from stringtest;
 % sys.L2,	sys.stringtest # table_name
 % L2,	str2 # name
-% varchar,	varchar # type
+% clob,	varchar # type
 % 1,	4 # length
 [ "",	"test"	]
 [ "e",	""	]
@@ -220,7 +220,7 @@ Ready.
 #select insert(str,2,4,str2), str, str2 from stringtest;
 % sys.L2,	sys.stringtest,	sys.stringtest # table_name
 % L2,	str,	str2 # name
-% varchar,	varchar,	varchar # type
+% clob,	varchar,	varchar # type
 % 4,	6,	4 # length
 [ "test",	"",	"test"	]
 [ "te",	"test",	""	]

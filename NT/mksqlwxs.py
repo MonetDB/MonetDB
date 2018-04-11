@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 # python mksqlwxs.py VERSION makedefs.txt PREFIX > PREFIX/MonetDB5-SQL-Installer.wxs
 # "c:\Program Files (x86)\WiX Toolset v3.10\bin\candle.exe" -nologo -arch x64/x86 PREFIX/MonetDB5-SQL-Installer.wxs
 # "c:\Program Files (x86)\WiX Toolset v3.10\bin\light.exe" -nologo -sice:ICE03 -sice:ICE60 -sice:ICE82 -ext WixUIExtension PREFIX/MonetDB5-SQL-Installer.wixobj
@@ -52,7 +54,16 @@ def main():
     print(r'    <Property Id="ARPPRODUCTICON" Value="monetdb.ico"/>')
     print(r'    <Media Id="1" Cabinet="monetdb.cab" EmbedCab="yes"/>')
     print(r'    <Directory Id="TARGETDIR" Name="SourceDir">')
-    print(r'      <Merge Id="VCRedist" DiskId="1" Language="0" SourceFile="C:\Program Files (x86)\Common Files\Merge Modules\Microsoft_VC%s0_CRT_%s.msm"/>' % (vs, arch))
+    if vs == '17':
+        msvc = r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Redist\MSVC'
+        d = sorted(os.listdir(msvc))[-1]
+        msm = '_CRT_%s.msm' % arch
+        for f in sorted(os.listdir(os.path.join(msvc, d, 'MergeModules'))):
+            if msm in f:
+                fn = f
+        print(r'      <Merge Id="VCRedist" DiskId="1" Language="0" SourceFile="%s\%s\MergeModules\%s"/>' % (msvc, d, fn))
+    else:
+        print(r'      <Merge Id="VCRedist" DiskId="1" Language="0" SourceFile="C:\Program Files (x86)\Common Files\Merge Modules\Microsoft_VC%s0_CRT_%s.msm"/>' % (vs, arch))
     print(r'      <Directory Id="%s">' % folder)
     print(r'        <Directory Id="ProgramFilesMonetDB" Name="MonetDB">')
     print(r'          <Directory Id="INSTALLDIR" Name="MonetDB5">')
@@ -65,14 +76,14 @@ def main():
     id = 1
     print(r'            <Directory Id="bin" Name="bin">')
     id = comp(features, id, 14,
-              [r'bin\mclient.exe',
-               r'bin\mserver5.exe',
-               r'bin\msqldump.exe',
-               r'bin\stethoscope.exe',
-               r'lib\libbat.dll',
-               r'lib\libmapi.dll',
-               r'lib\libmonetdb5.dll',
-               r'lib\libstream.dll',
+              [r'bin\mclient.exe', r'bin\mclient.pdb',
+               r'bin\mserver5.exe', r'bin\mserver5.pdb',
+               r'bin\msqldump.exe', r'bin\msqldump.pdb',
+               r'bin\stethoscope.exe', r'bin\stethoscope.pdb',
+               r'lib\libbat.dll', r'lib\libbat.pdb',
+               r'lib\libmapi.dll', r'lib\libmapi.pdb',
+               r'lib\libmonetdb5.dll', r'lib\libmonetdb5.pdb',
+               r'lib\libstream.dll', r'lib\libstream.pdb',
                r'%s\bin\iconv.dll' % makedefs['LIBICONV'],
                r'%s\bin\libbz2.dll' % makedefs['LIBBZIP2'],
                r'%s\bin\libeay32.dll' % makedefs['LIBOPENSSL'],
@@ -87,9 +98,10 @@ def main():
     print(r'            <Directory Id="include" Name="include">')
     print(r'              <Directory Id="monetdb" Name="monetdb">')
     id = comp(features, id, 16,
-              [r'include\monetdb\mapi.h',
-               r'include\monetdb\stream.h',
-               r'include\monetdb\stream_socket.h'],
+              sorted([r'include\monetdb\%s' % x for x in filter(lambda x: (x.startswith('gdk') or x.startswith('monet') or x.startswith('mal')) and x.endswith('.h'), os.listdir(os.path.join(sys.argv[3], 'include', 'monetdb')))] +
+                     [r'include\monetdb\mapi.h',
+                      r'include\monetdb\stream.h',
+                      r'include\monetdb\stream_socket.h']),
               vital = 'no')
     print(r'              </Directory>')
     print(r'            </Directory>')
@@ -106,10 +118,12 @@ def main():
     id = comp(features, id, 16,
               [r'lib\monetdb5\%s' % x for x in sorted(filter(lambda x: x.endswith('.mal') and ('geom' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(features, id, 16,
-              [r'lib\monetdb5\%s' % x for x in sorted(filter(lambda x: x.startswith('lib_') and x.endswith('.dll') and ('geom' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
+              [r'lib\monetdb5\%s' % x for x in sorted(filter(lambda x: x.startswith('lib_') and (x.endswith('.dll') or x.endswith('.pdb')) and ('geom' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     print(r'              </Directory>')
     id = comp(features, id, 14,
-              [r'lib\libmapi.lib',
+              [r'lib\libbat.lib',
+               r'lib\libmapi.lib',
+               r'lib\libmonetdb5.lib',
                r'lib\libstream.lib',
                r'%s\lib\iconv.lib' % makedefs['LIBICONV'],
                r'%s\lib\libbz2.lib' % makedefs['LIBBZIP2'],

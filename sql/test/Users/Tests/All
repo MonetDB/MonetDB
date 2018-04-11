@@ -17,7 +17,7 @@ changePasswordUser
 renameUser
 changeSchemaUser
 role
-HAVE_PYMONETDB?grantAndRevokeUserLogedIN.Bug-3476
+HAVE_PYMONETDB?grantAndRevokeUserLoggedIN.Bug-3476
 grantRevokeAndGrantAgain.Bug-3765
 grantMonetdbToRegularUser.Bug-3771
 grantMonetdbToSchemaOwner.Bug-3771

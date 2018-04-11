@@ -30,27 +30,27 @@ Ready.
 #CREATE FUNCTION f3(i bigint) RETURNS TABLE (j int) BEGIN RETURN TABLE(SELECT i UNION SELECT 2 * i); END;
 #CREATE FUNCTION f4(i int) RETURNS TABLE (j int) BEGIN RETURN TABLE(SELECT i UNION SELECT i); END;
 #SELECT * FROM f1(1);
-% . # table_name
+% .L2 # table_name
 % j # name
 % int # type
 % 1 # length
 [ 1	]
 #SELECT * FROM f2(3);
-% . # table_name
+% .L2 # table_name
 % j # name
 % int # type
 % 1 # length
 [ 3	]
 [ 6	]
 #SELECT * FROM f3(5);
-% . # table_name
+% .L2 # table_name
 % j # name
 % int # type
 % 2 # length
 [ 5	]
 [ 10	]
 #SELECT * FROM f4(7);
-% . # table_name
+% .L2 # table_name
 % j # name
 % int # type
 % 1 # length

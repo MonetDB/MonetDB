@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -142,11 +142,11 @@ SQLGetConnectAttr(SQLHDBC ConnectionHandle,
 		  SQLINTEGER *StringLengthPtr)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetConnectAttr " PTRFMT " %s " PTRFMT " %d " PTRFMT "\n",
-		PTRFMTCAST ConnectionHandle,
+	ODBCLOG("SQLGetConnectAttr %p %s %p %d %p\n",
+		ConnectionHandle,
 		translateConnectAttribute(Attribute),
-		PTRFMTCAST ValuePtr, (int) BufferLength,
-		PTRFMTCAST StringLengthPtr);
+		ValuePtr, (int) BufferLength,
+		StringLengthPtr);
 #endif
 
 	if (!isValidDbc((ODBCDbc *) ConnectionHandle))
@@ -188,11 +188,11 @@ SQLGetConnectAttrW(SQLHDBC ConnectionHandle,
 	SQLINTEGER n;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLGetConnectAttrW " PTRFMT " %s " PTRFMT " %d " PTRFMT "\n",
-		PTRFMTCAST ConnectionHandle,
+	ODBCLOG("SQLGetConnectAttrW %p %s %p %d %p\n",
+		ConnectionHandle,
 		translateConnectAttribute(Attribute),
-		PTRFMTCAST ValuePtr, (int) BufferLength,
-		PTRFMTCAST StringLengthPtr);
+		ValuePtr, (int) BufferLength,
+		StringLengthPtr);
 #endif
 
 	if (!isValidDbc(dbc))

@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
 import subprocess
 import os
@@ -350,8 +350,6 @@ def server(args = [], stdin = None, stdout = None, stderr = None,
                '--set', 'mapi_open=true',
                '--set', 'gdk_nr_threads=1',
                '--set', 'monet_prompt=']
-    if notimeout and 'Mtimeout' in cmd[0]:
-        del cmd[0:3]            # Mtimeout -timeout 60
     if notrace and '--trace' in cmd:
         cmd.remove('--trace')
     if dbinit is not None:

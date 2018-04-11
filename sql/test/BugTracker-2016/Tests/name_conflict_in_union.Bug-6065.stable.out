@@ -31,7 +31,7 @@ Ready.
 #SELECT 1 AS k1, a3.so AS k2 FROM t0 AS a3
 #UNION ALL
 #SELECT 2 AS k2, a8.so AS k2 FROM t0 AS a8;
-% .L25,	.L25 # table_name
+% .L26,	.L26 # table_name
 % k1,	k2 # name
 % tinyint,	int # type
 % 1,	1 # length

@@ -42,10 +42,10 @@ QUERY = # the multiplex code blocks. Testing syntax errors
         mdb.List("user","foo");
         user.foo();
 ERROR = !SyntaxException:parseError:d:= [+](b,c) ;;# parser bug
-        !SyntaxException:parseError:   ^operator expected
+        !SyntaxException:parseError:    ^operator expected
         !SyntaxException:parseError:a:= b [+] b;
-        !SyntaxException:parseError:     ^operator expected
-        !TypeException:user.main[3]:'user.foo' undefined in:     user.foo();
+        !SyntaxException:parseError:      ^operator expected
+        !TypeException:user.foo[2]:'multiplex.+' undefined in:     x:any := multiplex.+(b:bat[:lng], b:bat[:lng]);
 
 # 12:36:20 >  
 # 12:36:20 >  "Done."

@@ -58,7 +58,7 @@ Ready.
 #	(select "store_phone_number" as "c22_store_phone_number" from "lineitem_denormalized_first1k")
 #) as "t3e"
 #where  exists (select 1 as "one" from "test_join_right_table" as "t3d" where ("t3e"."c22_store_phone_number" = "t3d"."r_c" or ("t3e"."c22_store_phone_number" is null and "t3d"."r_c" is null)));
-% .L15 # table_name
+% .L16 # table_name
 % c3c_r_c # name
 % varchar # type
 % 0 # length

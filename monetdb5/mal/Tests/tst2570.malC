@@ -1,6 +1,7 @@
 #basic interaction of factories and restart
 
-factory step1():int;
+module f;
+factory f.step1():int;
 	io.printf("start step 1\n");
 	cnt := 0;
 
@@ -11,9 +12,9 @@ barrier go:= true;
 	redo go:= true;
 exit go;
 	return step1:= 0;
-end step1;
+end f.step1;
 
-factory step2():int;
+factory f.step2():int;
 	io.printf("start step 2\n");
 	cnt := 0;
 
@@ -24,10 +25,10 @@ barrier go:= true;
 	redo go:= true;
 exit go;
 	return step2:= 0;
-end step2;
+end f.step2;
 
-i:= user.step1();
-j:= user.step2();
-k:= user.step1();
-m:= user.step2();
-factories.shutdown("user","step1");
+i:= f.step1();
+j:= f.step2();
+k:= f.step1();
+m:= f.step2();
+factories.shutdown("f","step1");

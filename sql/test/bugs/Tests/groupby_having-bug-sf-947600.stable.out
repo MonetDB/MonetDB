@@ -31,8 +31,8 @@ Ready.
 #             'objects', 'keys', 'modules', 'sequences') AND
 #         b.name IN ('args', 'columns', 'functions', 'idxs',
 #             'objects', 'keys', 'modules', 'sequences')
-% .a,	.b,	.L121 # table_name
-% name,	name,	L120 # name
+% .a,	.b,	.L125 # table_name
+% name,	name,	L124 # name
 % varchar,	varchar,	bigint # type
 % 9,	9,	2 # length
 [ "args",	"columns",	6	]

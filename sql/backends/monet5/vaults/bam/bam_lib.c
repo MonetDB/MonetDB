@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -89,7 +89,7 @@ bam_flag(bit * ret, sht * flag, str * name)
 	k = flag_str2sht(*name);
 
 	if (k < 0)
-		throw(MAL, "bam_flag", "Unknown flag name given: %s\n",
+		throw(MAL, "bam_flag", SQLSTATE(BA000) "Unknown flag name given: %s\n",
 			  *name);
 	*ret = kth_bit(*flag, k);
 	return MAL_SUCCEED;
@@ -135,7 +135,7 @@ reverse_seq(str * ret, str * seq)
 
 	result = GDKmalloc((len + 1) * sizeof(char));
 	if (result == NULL)
-		throw(MAL, "reverse_seq", MAL_MALLOC_FAIL);
+		throw(MAL, "reverse_seq", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	backward = &result[len-1];
 	for (i = 0; i < len; ++i) {
@@ -162,7 +162,7 @@ reverse_qual(str * ret, str * qual)
 
 	result = GDKmalloc((len + 1) * sizeof(char));
 	if (result == NULL)
-		throw(MAL, "reverse_qual", MAL_MALLOC_FAIL);
+		throw(MAL, "reverse_qual", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	backward = &result[len-1];
 	for (i = 0; i < len; ++i)
@@ -176,7 +176,7 @@ reverse_qual(str * ret, str * qual)
 	str tmp; \
 	cnt = strtol(s, &tmp, 10); \
 	if(cnt <= 0 || s == tmp || *s == '\0') { \
-		throw(MAL, fn, "Could not parse CIGAR string"); \
+		throw(MAL, fn, SQLSTATE(BA000) "Could not parse CIGAR string"); \
 	} \
 	s = tmp; \
 	op = *s++; \
@@ -251,7 +251,7 @@ seq_char(str * ret, int * ref_pos, str * alg_seq, int * alg_pos, str * alg_cigar
 		return MAL_SUCCEED;
 	}
 	if(((*ret) = GDKmalloc(2 * sizeof(char))) == NULL) {
-		throw(MAL, "seq_char", MAL_MALLOC_FAIL);
+		throw(MAL, "seq_char", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	(*ret)[0] = (*alg_seq)[seq_pos];
 	(*ret)[1] = '\0';
@@ -268,8 +268,8 @@ seq_char(str * ret, int * ref_pos, str * alg_seq, int * alg_pos, str * alg_cigar
 		(c == 0 || *cur_out >= prev_out); \
 	output->trevsorted = output->trevsorted && \
 		(c == 0 || *cur_out <= prev_out); \
-	output->tnil = output->tnil || *cur_out == TPE##_nil; \
-	output->tnonil = output->tnonil && *cur_out != TPE##_nil; \
+	output->tnil = output->tnil || is_##TPE##_nil(*cur_out); \
+	output->tnonil = output->tnonil && !is_##TPE##_nil(*cur_out); \
 }
 
 #define finish_props() { \
@@ -291,17 +291,17 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 
 	k = flag_str2sht(*name);
 	if (k < 0)
-		throw(MAL, "bam_flag", "Unknown flag name given: %s\n",
+		throw(MAL, "bam_flag", SQLSTATE(BA000) "Unknown flag name given: %s\n",
 			  *name);
 
 	if ((input = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "bam_flag_bat", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "bam_flag_bat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	/* allocate result BAT */
 	output = COLnew(input->hseqbase, TYPE_bit, BATcount(input), TRANSIENT);
 	if (output == NULL) {
 		BBPunfix(input->batCacheid);
-		throw(MAL, "bam_flag_bat", MAL_MALLOC_FAIL);
+		throw(MAL, "bam_flag_bat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	
 	init_props();
@@ -331,13 +331,13 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 	assert(ret != NULL && bid != NULL);									\
 																		\
 	if ((input = BATdescriptor(*bid)) == NULL)							\
-		throw(MAL, "reverse_seq_bat", RUNTIME_OBJECT_MISSING);			\
+		throw(MAL, "reverse_seq_bat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);			\
 																		\
 	/* allocate result BAT */											\
 	output = COLnew(input->hseqbase, TYPE_str, BATcount(input), TRANSIENT); \
 	if (output == NULL) {												\
 		BBPunfix(input->batCacheid);									\
-		throw(MAL, "reverse_seq_bat", MAL_MALLOC_FAIL);					\
+		throw(MAL, "reverse_seq_bat", SQLSTATE(HY001) MAL_MALLOC_FAIL);					\
 	}																	\
 																		\
 	li = bat_iterator(input);											\
@@ -354,7 +354,7 @@ bam_flag_bat(bat * ret, bat * bid, str * name)
 		if (BUNappend(output, (ptr) r, FALSE) != GDK_SUCCEED) {			\
 			BBPunfix(input->batCacheid);								\
 			BBPreclaim(output);											\
-			throw(MAL, "reverse_seq_bat", MAL_MALLOC_FAIL);				\
+			throw(MAL, "reverse_seq_bat", SQLSTATE(HY001) MAL_MALLOC_FAIL);				\
 		}																\
 		GDKfree(r);														\
 	}																	\
@@ -393,12 +393,13 @@ seq_length_bat(bat * ret, bat * bid)
 	assert(ret != NULL && bid != NULL);
 
 	if ((input = BATdescriptor(*bid)) == NULL)
-		throw(MAL, "seq_length_bat", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "seq_length_bat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	/* allocate result BAT */
 	output = COLnew(input->hseqbase, TYPE_int, BATcount(input), TRANSIENT);
 	if (output == NULL) {
-		throw(MAL, "seq_length_bat", MAL_MALLOC_FAIL);
+		BBPunfix(input->batCacheid);
+		throw(MAL, "seq_length_bat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
 	init_props();
@@ -407,6 +408,7 @@ seq_length_bat(bat * ret, bat * bid)
 	BATloop(input, p, q) {
 		cur_in = (str) BUNtail(li, p);
 		if ((msg = seq_length(cur_out, &cur_in)) != MAL_SUCCEED) {
+			BBPunfix(input->batCacheid);
 			BBPunfix(output->batCacheid);
 			return msg;
 		}
@@ -438,13 +440,13 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 	if ((seqs = BATdescriptor(*alg_seq)) == NULL ||
 	    (poss = BATdescriptor(*alg_pos)) == NULL ||
 		(cigars = BATdescriptor(*alg_cigar)) == NULL) {
-		msg = createException(MAL, "seq_char_bat", RUNTIME_OBJECT_MISSING);
+		msg = createException(MAL, "seq_char_bat", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto cleanup;
 	}
 
 	if(BATcount(seqs) != BATcount(poss) || BATcount(seqs) != BATcount(cigars)) {
 		msg = createException(MAL, "seq_char_bat", 
-			"Misalignment in input BATs: "BUNFMT"/"BUNFMT"/"BUNFMT, 
+			SQLSTATE(BA000) "Misalignment in input BATs: "BUNFMT"/"BUNFMT"/"BUNFMT, 
 			BATcount(poss), BATcount(seqs), BATcount(cigars));
 		goto cleanup;
 	}
@@ -452,7 +454,7 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 	/* allocate result BAT */
 	result = COLnew(seqs->hseqbase, TYPE_str, BATcount(cigars), TRANSIENT);
 	if (result == NULL) {
-		msg = createException(MAL, "seq_char_bat", MAL_MALLOC_FAIL);
+		msg = createException(MAL, "seq_char_bat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto cleanup;
 	}
 
@@ -476,7 +478,7 @@ seq_char_bat(bat * ret, int * ref_pos, bat * alg_seq, bat * alg_pos, bat * alg_c
 			goto cleanup;
 		}
 		if (BUNappend(result, (ptr) r, FALSE) != GDK_SUCCEED) {
-			msg = createException(MAL, "seq_char_bat", MAL_MALLOC_FAIL);
+			msg = createException(MAL, "seq_char_bat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
 		GDKfree(r);

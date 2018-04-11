@@ -1,5 +1,5 @@
 %define name MonetDB
-%define version 11.28.0
+%define version 11.30.0
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
 # groups of related archs
@@ -132,12 +132,16 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Dec2016-SP5/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Mar2018/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
+# we need checkpolicy and selinux-policy-devel for the SELinux policy
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 # RHEL >= 7, and all current Fedora
 BuildRequires: systemd
+BuildRequires: checkpolicy
+BuildRequires: selinux-policy-devel
+BuildRequires: hardlink
 %endif
 BuildRequires: bison
 BuildRequires: bzip2-devel
@@ -407,7 +411,7 @@ Recommends: perl-DBD-monetdb >= 1.0
 Recommends: php-monetdb >= 1.0
 %endif
 Requires: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
-Requires: python-pymonetdb >= 1.0
+Requires: python-pymonetdb >= 1.0.6
 
 %description client-tests
 MonetDB is a database management system that is developed from a
@@ -591,6 +595,8 @@ Recommends: MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}
 %endif
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
+# versions up to 1.0.5 don't accept the queryid field in the result set
+Conflicts: python-pymonetdb < 1.0.6
 
 %description -n MonetDB5-server
 MonetDB is a database management system that is developed from a
@@ -781,7 +787,7 @@ systemd-tmpfiles --create %{_sysconfdir}/tmpfiles.d/monetdbd.conf
 # no _unitdir macro
 %exclude %{_prefix}/lib/systemd/system/monetdbd.service
 %endif
-%config(noreplace) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
+%config(noreplace) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
 %{_libdir}/monetdb5/autoload/??_sql.mal
 %{_libdir}/monetdb5/lib_sql.so
 %{_libdir}/monetdb5/*.sql
@@ -848,9 +854,7 @@ developer.  If you do want to test, install %{name}-testing-python.
 %license COPYING
 %defattr(-,root,root)
 %{_bindir}/Mdiff
-%{_bindir}/MkillUsers
 %{_bindir}/Mlog
-%{_bindir}/Mtimeout
 
 %package testing-python
 Summary: MonetDB - Monet Database Management System
@@ -876,6 +880,62 @@ developer, but if you do want to test, this is the package you need.
 %{_bindir}/Mtest.py
 %dir %{python2_sitelib}/MonetDBtesting
 %{python2_sitelib}/MonetDBtesting/*
+
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+%package selinux
+Summary: SELinux policy files for MonetDB
+Group: Applications/Databases
+%if "%{_selinux_policy_version}" != ""
+Requires:       selinux-policy >= %{_selinux_policy_version}
+%endif
+Requires:       %{name}-SQL-server5 = %{version}-%{release}
+Requires(post):   /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles, MonetDB-SQL-server5, MonetDB5-server
+Requires(postun): /usr/sbin/semodule, /sbin/restorecon, /sbin/fixfiles, MonetDB-SQL-server5, MonetDB5-server
+BuildArch: noarch
+
+%global selinux_types %(%{__awk} '/^#[[:space:]]*SELINUXTYPE=/,/^[^#]/ { if ($3 == "-") printf "%s ", $2 }' /etc/selinux/config 2>/dev/null)
+%global selinux_variants %([ -z "%{selinux_types}" ] && echo mls targeted || echo %{selinux_types})
+
+%description selinux
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL frontend.
+
+This package contains the SELinux policy for running MonetDB under
+control of systemd.
+
+%post selinux
+for selinuxvariant in %{selinux_variants}
+do
+  /usr/sbin/semodule -s ${selinuxvariant} -i \
+    %{_datadir}/selinux/${selinuxvariant}/monetdb.pp &> /dev/null || :
+done
+/sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_localstatedir}/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
+/usr/bin/systemctl try-restart monetdbd.service
+
+%postun selinux
+if [ $1 -eq 0 ] ; then
+  active=`/usr/bin/systemctl is-active monetdbd.service`
+  if [ $active = active ]; then
+    /usr/bin/systemctl stop monetdbd.service
+  fi
+  for selinuxvariant in %{selinux_variants}
+  do
+    /usr/sbin/semodule -s ${selinuxvariant} -r monetdb &> /dev/null || :
+  done
+  /sbin/restorecon -R %{_localstatedir}/monetdb5 %{_localstatedir}/log/monetdb %{_localstatedir}/run/monetdb %{_bindir}/monetdbd %{_bindir}/mserver5 %{_unitdir}/monetdbd.service &> /dev/null || :
+  if [ $active = active ]; then
+    /usr/bin/systemctl start monetdbd.service
+  fi
+fi
+
+%files selinux
+%defattr(-,root,root,0755)
+%doc buildtools/selinux/*
+%{_datadir}/selinux/*/monetdb.pp
+
+%endif
 
 %prep
 %setup -q
@@ -908,7 +968,7 @@ fi
 	--enable-monetdb5=yes \
 	--enable-netcdf=no \
 	--enable-odbc=yes \
-	--enable-optimize=yes \
+	--enable-optimize=no \
 	--enable-profile=no \
 	--enable-pyintegration=%{?with_pyintegration:yes}%{!?with_pyintegration:no} \
 	--enable-rintegration=%{?with_rintegration:yes}%{!?with_rintegration:no} \
@@ -938,6 +998,22 @@ fi
 
 make %{?_smp_mflags}
 
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+cd buildtools/selinux
+%if 0%{?fedora} < 27
+# no `map' policy available before Fedora 27
+sed -i '/map/d' monetdb.te
+%endif
+
+for selinuxvariant in %{selinux_variants}
+do
+  make NAME=${selinuxvariant} -f /usr/share/selinux/devel/Makefile
+  mv monetdb.pp monetdb.pp.${selinuxvariant}
+  make NAME=${selinuxvariant} -f /usr/share/selinux/devel/Makefile clean
+done
+cd -
+%endif
+
 %install
 %make_install
 
@@ -953,11 +1029,694 @@ rm -f %{buildroot}%{_libdir}/monetdb5/*.la
 # internal development stuff
 rm -f %{buildroot}%{_bindir}/Maddlog
 
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+for selinuxvariant in %{selinux_variants}
+do
+  install -d %{buildroot}%{_datadir}/selinux/${selinuxvariant}
+  install -p -m 644 buildtools/selinux/monetdb.pp.${selinuxvariant} \
+    %{buildroot}%{_datadir}/selinux/${selinuxvariant}/monetdb.pp
+done
+/usr/sbin/hardlink -cv %{buildroot}%{_datadir}/selinux
+%endif
+
 %post -p /sbin/ldconfig
 
 %postun -p /sbin/ldconfig
 
 %changelog
+* Tue Mar 27 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.3-20180327
+- Rebuilt.
+- BZ#3824: Created table not visible from ODBC
+- BZ#6556: Sqlitelogictest division by zero on COALESCE call
+- BZ#6557: Sqlitelogictest crash on aggregation query with not in
+- BZ#6559: rows in sys.statistics are not removed when a temporary table
+  is dropped.
+- BZ#6560: Sqlitelogictest crash on group by query with having in
+- BZ#6561: Sqlitelogictest crash on group by query with having not
+  in clause
+
+* Thu Mar 15 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.3-20180327
+- sql: Extended support to use CREATE ORDERED INDEX on columns of type: char,
+  varchar, clob, blob, url, json, inet and uuid.
+
+* Thu Mar 15 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- Rebuilt.
+- BZ#3574: Add support for: create OR REPLACE view ...
+- BZ#3831: Extend date part extraction and date formating functions to
+  support more formats like "quarter", "iso year/week"
+- BZ#6244: Add support for: TRUNCATE TABLE
+- BZ#6249: DEFAULT in row-values missing (sqlsmith)
+- BZ#6346: BATsort returns GDK_SUCCEED when **sorted bat is null
+- BZ#6507: Column Header coming with trailing spaces in compiled version
+  of MonetDB 11.27.9/11
+- BZ#6513: Sqlitelogictest: Wrong MAL plan generation for column product
+- BZ#6526: Crash using aggregate function inside a case statement in
+  having clause
+- BZ#6529: Sqlitelogictest crash in select query with IN operator and cast
+- BZ#6530: Sqlitelogictest: select query with NOT IN giving wrong results
+- BZ#6532: copy into ignore null as directive if first column doesn't
+  come from file
+- BZ#6534: [Mar2018]: mclient -f tab / --format=tab complains about
+  "unsupported formatter"
+- BZ#6535: [Mar2018]: mclient -t / --timer does not work as documented
+- BZ#6536: [Mar2018]: timing output of mclient -t / --timer= should go
+  to stderr rather than stdout
+- BZ#6537: [Mar2018]: mclient's default timing mode should (again) be
+  "none" rather than "clock"
+- BZ#6541: [Mar2018]: mclient reports incorrect wall-clock time
+- BZ#6542: assertion failure when querying: select count(*) from
+  sys.commented_function_signatures;
+- BZ#6543: Mar2018: truncate on SQL system tables should NOT be allowed
+- BZ#6545: Sqlitelogictest crash in IN query
+- BZ#6546: Sqlitelogictest crash in IN query with division
+- BZ#6547: OS-dependent behaviour for ilike
+- BZ#6548: Select from remote table leaves session open
+- BZ#6549: Add log messages when listen fails
+- BZ#6550: Sqlitelogictest crash on complex CASE statement
+- BZ#6551: Sqlitelogictest wrong NULL value cast
+- BZ#6552: Sqlitelogictest crash on complex case statement
+- BZ#6553: Sqlitelogictest crash on aggregation with having statement
+- BZ#6554: Sqlitelogictest crash on complex case statement
+- BZ#6555: Sqlitelogictest wrong result set generated from complex
+  case statement
+
+* Thu Mar  8 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- mapilib: The three mapi_explain* functions and mapi_trace don't return any
+  useful information, so they now return void.
+
+* Thu Mar  8 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- utils: The function mcrypt_getHashAlgorithms now returns a static, constant
+  string, so the result should not be modified or freed.
+
+* Wed Feb 28 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- clients: ODBC: The driver function SQLProcedureColumns was implemented.
+
+* Fri Feb 16 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- gdk: Changed return type of function void_replace_bat from BUN to gdk_return:
+  it now only returns whether the operation succeeded or not.
+- gdk: Changed the return type of BATroles from void to gdk_return: it can
+  fail due to malloc failure.
+
+* Wed Feb 14 2018 Stefan Manegold <Stefan.Manegold@cwi.nl> - 11.29.1-20180315
+- MonetDB: mclient's execution time profiling options and output format have
+  been changed. Instead of implicitly via the "--interactive"/"-i"
+  option (or when using an interactive mclient console), execution time
+  profiling is now controlled via an explicit "--timer=timermode"/"-t
+  timermode" command-line option, or a "\t timermode" command in the
+  interactive mclient console. The default (also in the interactive
+  mclient console) is now timermode "none", i.e., no timing information
+  is given. Timermode "clock" activates client-side wall-clock timing
+  ("clk") in "human-friendly" format much like the interactive mode did
+  before. Timermode "performance" also provides detailed server-side
+  timings: "sql" is the time to parse the SQL query, optimize the
+  logical relational plan and create the initial physical (MAL) plan;
+  "opt" is the time to optimize the physical (MAL) plan; "run" is the
+  time to execute the physical (MAL) plan. With timermode "performance"
+  all server-side timings and the client-side wall-clock time are given
+  in milliseconds (ms). Note that the client-measured wall-clock time
+  "clk" is reported per query only when options "--interactive" or
+  "--echo" are used, because only then does mclient send individual
+  lines (statements) of the SQL script to the server. Otherwise, mclient
+  sends the SQL script in large(r) batch(es) to the server, and, thus,
+  only the total wall-clock time per batch is measured and reported. The
+  server-measured detailed performance timings "sql", "opt", "run" are
+  always measured and reported per query. Also, all timing information
+  is now given on a separate line and sent to stderr rather than stdout.
+
+* Mon Feb 12 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- buildtools: Added the .pdb files needed for debug symbols to the Windows installer
+  for MonetDB/SQL.
+
+* Fri Feb  9 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- gdk: Removed functions ALIGNsetH, ALIGNsetT, and CREATEview_ (mind the
+  underscore).  The first can easily be replace by using BAThseqbase
+  (that's all it did), the second was only used once, and the third can
+  be replace by VIEWcreate.
+
+* Fri Feb  9 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- MonetDB: Some types and constants were moved from configure (and hence
+  monetdb_config.h) to gdk.h.  In particular, the types "lng" and
+  "ulng" have been moved and can therefore no longer be used by code
+  that doesn't (ultimately) include gdk.h.  Just use int64_t instead.
+  A bunch of format defines have been removed: SZFMT, SSZFMT, PTRFMT,
+  PDFMT.  Just use the C standard codes for those (%zu, %zd, %p, %td).
+  The define for printing a lng (LLFMT) was also moved.  Use PRId64 for
+  printing int64_t in code not using gdk.h.  Removed all references to
+  __int64 and long long (use int64_t instead).
+
+* Fri Feb  2 2018 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.29.1-20180315
+- sql: Added new system view: sys.ids which contains all database objects
+  ids which can be used in sys.dependencies table.
+- sql: Added new system view: sys.dependencies_vw which shows all data of
+  sys.dependencies including names on objects, object types and dependency types.
+- sql: Added 25 new system views for finding out dependencies between database objects.
+  These new dependency views improve, extend and replace the 17
+  sys.dependencies_X_on_Y() functions as previously defined in
+  21_dependency_functions.sql. Those sys.dependencies_X_on_Y() functions
+  are now marked as deprecated.
+- sql: Added new system view: sys.roles which contains all defined roles.
+- sql: Added new system view: sys.var_values which shows the values for
+  system variables.
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- clients: ODBC: Changed table types as used by SQLTables from "LOCAL TEMPORARY"
+  and "GLOBAL TEMPORARY" to "LOCAL TEMPORARY TABLE" and "GLOBAL TEMPORARY
+  TABLE" respectively.
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- clients: ODBC: Initial support for the HUGEINT type in SQL was added.  Any value
+  with type HUGEINT can be retrieved in a C variable with type SQL_C_CHAR
+  or SQL_C_WCHAR.  A value of type HUGEINT can be retrieved in other C
+  types as long as they fit, the largest C type supported being a 64 bit
+  integer (equivalent to BIGINT).
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- monetdb5: Implemented function pcre.replace_first which is like pcre.replace,
+  except it only replaces the first match.
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- gdk: Removed unused functions BATmemsize and BATvmsize.
+- gdk: Removed the tnodense property: it was maintained but never actually
+  used, not even stored.
+
+* Fri Feb  2 2018 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com> - 11.29.1-20180315
+- sql: Added support for COMMENT ON statements using SQL syntax:
+   COMMENT ON { SCHEMA | TABLE | VIEW | COLUMN | INDEX | SEQUENCE |
+              FUNCTION | PROCEDURE | AGGREGATE | FILTER FUNCTION | LOADER }
+        qname IS { 'my description text' | NULL | '' } ;
+  For COLUMN the qname can be "table_name"."column_name" or fully qualified
+  as in: "schema_name"."table_name"."column_name".
+  For FUNCTION, PROCEDURE, AGGREGATE, FILTER FUNCTION and LOADER the qname
+  may need to include the signature (argument types) to be able to
+  differentiate between multiple overloaded functions which have the same name
+  and schema.
+  By specifying IS NULL or IS '' you remove the comment for the database object.
+  If a database object is dropped, the associated comment is also removed.
+  Note: it is not allowed or possible to add comments for temporary tables or
+        objects in schema "tmp".
+  The sql catalog has been extended with system table: sys.comments.
+  The keyword 'COMMENT' has now become a reserved keyword.
+
+* Fri Feb  2 2018 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.29.1-20180315
+- sql: Removed system function sys.environment(). It was a duplicate of system
+  function sys.env().
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- stream: The interface of mnstr_fgetpos and mnstr_fsetpos was changed to look
+  more like the standard C functions fsetpos and fgetpos: they both have
+  a second argument "pointer to fpos_t".
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- clients: The functions in the mapi library that require 64 bit integers now
+  use the standard type int64_t instead of the non-standard mapi_int64.
+  This requires a compilation environment that has the stdint.h include
+  file (standardized in C99).  Compilation of the library also requires
+  the inttypes.h include file (also standardized in C99).
+
+* Fri Feb  2 2018 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.29.1-20180315
+- sql: Implemented behavior for DROP SCHEMA my_schema RESTRICT command.
+  Previously the RESTRICT keyword was accepted but not obeyed. It would
+  always do a CASCADE operation.  Also the default behavior of DROP SCHEMA
+  my_schema command is now changed into RESTRICT behavior (was CASCADE).
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- gdk: The NIL representation of the internal flt and dbl types was changed
+  from the smallest representable finite value to NaN (not-a-number).
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- sql: The internal NULL representation of the REAL (FLOAT) and DOUBLE
+  types was changed from the smallest representable finite value to NaN
+  (not-a-number).
+
+* Fri Feb  2 2018 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.29.1-20180315
+- testing: Added a --data_path option to Mtest.py that defines an external data
+  repository. See the commit message of c484932c7fd8 for more info.
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- gdk: Changed the interface of ATOMformat and VALformat: they now return a
+  pointer to the allocated string.
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- gdk: The length "method" for atoms now returns a size_t, the "len" field of
+  a ValRecord is now a size_t, the "size" field of the atomDesc structure
+  is now unsigned short.
+- gdk: Removed the "align" field from the ATOM descriptor (atomDesc) structure.
+- gdk: The atomtostr and atomfromstr "methods" for atoms now return ssize_t
+  and require a pointer to size_t for the size of the buffer.
+- gdk: The atom tostr and fromstr "methods" now always return -1 on error.
+  A return value greater than 0 is normal, a return value of 0 is not
+  normal, but technically not an error.
+
+* Fri Feb  2 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.29.1-20180315
+- sql: A column default value can be used in a UPDATE statement: UPDATE tname
+  SET cname = DEFAULT, and INSERT statements: INSERT INTO tname VALUES
+  (..., DEFAULT, ...)
+- sql: Added support for TRUNCATE statements conforming to the SQL:2008 standard:
+   TRUNCATE [ TABLE ] qname [ CONTINUE IDENTITY | RESTART IDENTITY ]
+            [ RESTRICT | CASCADE ]
+  In a TRUNCATE statement a 'CONTINUE IDENTITY' or 'RESTART IDENTITY'
+  clause can be passed to restart or not, being the former the default one.
+  The 'CASCADE' option instructs to truncate referencing table(s) also if
+  the referencing table(s) have foreign key references to this table.
+  The default behavior is 'RESTRICT'.
+  Note: it is possible to use TRUNCATE statements in a transaction and
+  thus to rollback the effects of a truncate.
+  The keywords 'TRUNCATE' and 'CONTINUE' have now become reserved keywords.
+- sql: Added possibility to GRANT or REVOKE a TRUNCATE privilege to a user or role.
+- sql: Added possibility to define a TRIGGER on a TRUNCATE event.
+- sql: Added possibility to specify 'OR REPLACE' in following CREATE commands:
+   CREATE [ OR REPLACE ] VIEW qname ...
+   CREATE [ OR REPLACE ] TRIGGER qname ...
+- sql: Added possibility to specify 'IF EXIST' in following DROP commands:
+   DROP AGGREGATE [ IF EXISTS ] qname ...
+   DROP FUNCTION [ IF EXISTS ] qname ...
+   DROP FILTER FUNCTION [ IF EXISTS ] qname ...
+   DROP LOADER [ IF EXISTS ] qname ...
+   DROP PROCEDURE [ IF EXISTS ] qname ...
+   DROP TRIGGER [ IF EXISTS ] qname ...
+
+* Fri Feb  2 2018 Martin Kersten <mk@cwi.nl> - 11.29.1-20180315
+- monetdb5: The EXPLAIN command now shows all the MAL type resolutions, because in
+  general users may not be aware of their signatures.  It also simplifies
+  programs to analyze such plans.
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- monetdb5: Implemented versions of group.(sub)group(done) that don't return
+  a histogram.
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- stream: Removed function wbstream.
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- monetdb5: Removed MAL functions streams.socketRead, streams.socketReadBytes,
+  streams.socketWrite, and streams.socketWriteBytes.
+- monetdb5: Removed MAL functions streams.openRead(s:streams):streams and
+  streams.openWrite(s:streams):streams.
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- stream: Removed functions udp_rastream and udp_wastream.
+- stream: Removed functions socket_rstream and socket_wstream.
+- stream: Removed functions append_wstream and append_wastream.
+- stream: Removed functions mnstr_rstream and mnstr_wstream.
+
+* Fri Feb  2 2018 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.29.1-20180315
+- merovingian: Add daemon commands for starting/stopping collection of profiler
+  (stethoscope) logs.
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- mapilib: The functions mapi_error_str and mapi_result_error now return const char
+  * instead of plain char * to indicate that the returned data belongs
+  to the library and should not be changed or freed by the application.
+- mapilib: New function const char *mapi_result_errorcode(MapiHdl) which returns
+  the SQLSTATE code if available when an error has occurred.
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- monetdb5: Lots of changes to streamline the internal error handling.
+  In principle, all errors should now include a SQLSTATE error code
+  (see the SQL standard).
+
+* Fri Feb  2 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
+- sql: Lots of changes to streamline the internal error handling.
+  In principle, all errors should now include a SQLSTATE error code
+  (see the SQL standard).
+
+* Fri Feb  2 2018 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.29.1-20180315
+- sql: Added support for extracting the quarter (number between 1 and 4)
+  of a date or a timestamp or a timestamp with timezone in SQL:
+   EXTRACT ( QUARTER FROM my_date_expr ).
+  Added support for extracting the week (number between 1 and 53)
+  of a date or a timestamp or a timestamp with timezone in SQL:
+   EXTRACT ( WEEK FROM my_date_expr ).
+  Added support for scalar functions: quarter(date_expr),
+  quarter(timestamp_expr) and quarter(timestamptz_expr).
+
+* Fri Feb  2 2018 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.29.1-20180315
+- clients: Add a new pretty printing option to stethoscope
+  Running stethoscope with the flag -j will produce not pretty printed
+  output (one json object per line). Running with the -y flag will produce
+  pretty printed output. Running with neither will produce the legacy,
+  line oriented format
+
+* Fri Feb 02 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.27.13-20180202
+- Rebuilt.
+- BZ#3470: Support setClob without length restrictions
+- BZ#6468: JDBC 2.27 fails with year < 1000
+- BZ#6482: Query failures on order by on union
+- BZ#6483: Monetdb crashes, on query
+- BZ#6487: UNION of NULLs with several tables fails
+- BZ#6488: Semijoin returns duplicate values from a column with unique
+  values
+- BZ#6489: Sqlitelogictest - Wrong result set of complex conditional query
+- BZ#6490: Sqlitelogictest - Select query with an IN clause parse error
+- BZ#6491: SELECT IN returns NULL instead of false when not found
+- BZ#6492: Persistent hashes stored and then ignored. Storage info not
+  in sync with actual indices.
+- BZ#6493: Sqlitelogictest - Aggregation query on empty table with
+  DISTINCT clause
+- BZ#6494: Sqlitelogictest - Algebra operators priority in select query
+- BZ#6495: Sqlitelogictest - Omitting AS in a result set column alias name
+- BZ#6496: Sqlitelogictest - Select interval comparisons between
+  floating-points and NULL
+- BZ#6497: Sqlitelogictest - Select not between query producing wrong
+  results
+- BZ#6498: large virtual memory spike on BLOB column COUNT
+- BZ#6499: Crash when trying to replace a function defined in sys from
+  a different schema
+- BZ#6502: Query with multiple limit clauses does not return anything
+- BZ#6508: Segmentation fault in mserver5 on Python2 UDF with TIMESTAMP
+  column input that has NULL values (conversion.c:438, PyNullMask_FromBAT)
+- BZ#6510: Sqlitelogictest: Wrong output in aggregation query
+- BZ#6512: Monetdb crashes on query with limit after sort with case
+- BZ#6514: Sqlitelogictest: Range query between NULL values not possible
+- BZ#6515: Insert null second interval value results in 0
+- BZ#6516: Sqlitelogictest unknown bat append operation
+- BZ#6517: Sqlitelogictest overflow in conversion during MAL plan
+  execution
+- BZ#6518: Sqlitelogictest: count aggregation with not in operator
+- BZ#6519: Sqlitelogictest: algebra join between lng and int BATs
+  undefined
+- BZ#6520: UPDATE with correlated subquery causes assertion (or segfault)
+- BZ#6522: Sqlitelogictest: IN operator return a single column
+- BZ#6523: Sqlitelogictest: Case statement subquery missing
+- BZ#6524: Sqlitelogictest: Crash in aggregation query with IN operator
+- BZ#6527: Crash using order by alias in subquery
+
+* Tue Jan 16 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.27.13-20180202
+- buildtools: Added the .lib and .h files needed for building extensions to the
+  Windows installer.
+
+* Mon Dec 04 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.11-20171204
+- Rebuilt.
+- BZ#3898: Deadlock on insertion
+- BZ#6429: ROUND produces wrong data type
+- BZ#6436: Query sequence with 2x ifthenelse() and next nullif() causes
+  mserver5 Segmentation fault
+- BZ#6439: Invalid references to sys.columns.id from
+  sys.statistics.column_id
+- BZ#6442: SEGFAULT with COPY INTO BEST EFFORT and skipping input columns
+- BZ#6443: complex(?) query forgets(?) column name
+- BZ#6444: Using 'with' keyword with table returning function crashes
+  monetdb
+- BZ#6445: Sqlitelogictest crash in MySQL query
+- BZ#6446: sql_parser.y bug?
+- BZ#6448: 'insert into' with multiple rows containing subqueries crashes
+- BZ#6449: Assertion error in rel_dce_refs (sqlsmith)
+- BZ#6450: Assertion error in exp_bin (sqlsmith)
+- BZ#6451: Assertion error in sql_ref_dec (sqlsmith)
+- BZ#6453: Assertion error  in rel_rename_exps (sqlsmith)
+- BZ#6454: SQL lexical error
+- BZ#6455: Assertion error in rel_apply_rewrite (sqlsmith)
+- BZ#6456: NULL becomes 0 in outer join
+- BZ#6459: Assertion error in exp_bin (sqlsmith)
+- BZ#6462: large virtual memory spike on BLOB column select
+- BZ#6465: appending to variables sized atom bats other than str bats
+  with force flag may result in corrupted heap
+- BZ#6467: date_to_str formatter is wrong
+- BZ#6470: mitosis gets in the way of simple select
+- BZ#6471: calls to sys.generate_series should auto-convert arguments
+- BZ#6472: Assertion failure in rel_rename (Sqlsmith)
+- BZ#6477: assertion eror rel_push_project_up (sqlsmith)
+- BZ#6478: Crash with nested order by/ limit offset
+- BZ#6479: Mserver receives an assertion error on a procedure call
+- BZ#6480: Segfault in mvc_find_subexp (sqlsmith)
+
+* Sun Nov  5 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.11-20171204
+- gdk: Reimplemented summing of a column of floating point (flt and dbl)
+  values.  The old code could give wildly inaccurate results when adding
+  up lots and lots of values due to lack of precision.  Try SELECT sum(c)
+  FROM t; where t is 100,000,000 rows, c is of type REAL and all values
+  are equal to 1.1.  (The old code returned 33554432 instead of 1.1e8.)
+
+* Sun Nov  5 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.9-20171105
+- BZ#6460 - selinux doen't allow mmap
+
+* Mon Oct 23 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.9-20171023
+- Rebuilt.
+- BZ#6207: identifier ambiguous when grouping and selecting the same
+  column twice
+- BZ#6335: Sqlitelogictest crash in complex SQL query
+- BZ#6405: Compilation error if DISABLE_PARENT_HASH not defined
+- BZ#6412: Overflow in sys.epoch
+- BZ#6413: Wrong answer for TPC-H Q17
+- BZ#6414: Using RPAD returns: could not allocate space
+- BZ#6416: Sqlitelogictest crash in aggregation query with a NOT IN clause
+- BZ#6417: Segfault encountered (sqlsmith)
+- BZ#6418: Segfault in renaming (sqlsmith)
+- BZ#6419: segfault in rel_optimizer (sqlsmith)
+- BZ#6420: Assertion error in mergetable task (sqlsmith)
+- BZ#6422: Another assertion error in rel_or (sqlsmith)
+- BZ#6423: Dereference null pointer (sqlsmith)
+- BZ#6424: Assertion error in rel_rename_expr (sqlsmith)
+- BZ#6425: Assertion error in exp_bin (sqlsmith)
+- BZ#6426: Assertion error in rel_find_exp_ (sqlsmith)
+- BZ#6427: Assertion error in eq_typeswitchloop (sqlsmith)
+- BZ#6428: Sqlitelogictest crash in aggregation query
+- BZ#6430: Assertion raised in another eq_typeswitch error (sqlsmith)
+- BZ#6431: Sqlitelogictest crash in aggregation query with a long
+  having clause
+- BZ#6432: Assertion error in exp_bin (sqlsmith)
+- BZ#6433: Sqlitelogictest crash in complex SELECT query with IN operator
+- BZ#6435: Sqlitelogictest crash in simple select query
+- BZ#6437: System schemas "profiler" and "json" shouldn't be allowed to
+  be dropped.
+- BZ#6438: Implement functionality to enforce the restrict option in:
+  DROP SCHEMA xyz RESTRICT;
+- BZ#6440: Faulty plan generated. Query returns more rows than expected
+  or existing in the view sys.tables.
+
+* Mon Oct 23 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.9-20171023
+- gdk: A serious bug, possibly resulting in database corruption, having to
+  do with appending data to a string BAT was fixed.
+
+* Wed Oct 11 2017 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.27.7-20171011
+- Rebuilt.
+- BZ#4017: server crashes when executing particular loopback query in
+  embedded python
+- BZ#6239: Incorrect profiling
+- BZ#6261: New handling of delta tables hurts badly reusage of bats
+- BZ#6287: should the CORR function return some numeric type that allows
+  fractions?
+- BZ#6321: Two-column aggregation on join result extremely slow.
+- BZ#6343: MERGE TABLE issue: unable to find
+- BZ#6348: Interference of procedure/table name
+- BZ#6350: Carriage return and form feed in TEXT fields are returned as
+  'r' and 'f' in jdbcclient and ResultSets
+- BZ#6352: Scope resolution problem (sqlsmith)
+- BZ#6353: implicit NULL value not propagated in distributed/remote query
+- BZ#6374: Wrong answer from merge table after content changes
+- BZ#6379: Table UDF: SEGV raised when invoking a non existing function
+- BZ#6380: unable to create new databases from clean installation
+- BZ#6381: Parser misses error messages in conditional
+- BZ#6382: Can't set JSON fields via PreparedStatement
+- BZ#6384: crash when setting a wrong listenaddr
+- BZ#6385: AGGREGATE UDFs with more than 2 parameters incorrectly
+  processed
+- BZ#6386: Unexpected error from server for query with long floats
+- BZ#6387: Performance degradation on multi column sort
+- BZ#6388: JDBC Connection via user voc produces errors when fetching
+  certain meta data information
+- BZ#6392: SELECT EXISTS (empty table) returns 'true'
+- BZ#6395: BAT leak of scalar result sets
+- BZ#6397: Isolation of generating functions not correct
+- BZ#6398: Null Matches in outer join are not supported
+- BZ#6399: UDF crashes when subquery and scalar values are passed
+  as pameters
+- BZ#6400: getCharacterStream() currently not supported
+- BZ#6404: COPY INTO crashes if table has primary key or foreign key
+  constraint
+- BZ#6409: sqllogictest crash on aggregation query with NOT IN clause
+  in HAVING clause
+- BZ#6410: Sqlitelogictest crash on aggregation query with IN clause
+- BZ#6411: Sqlitelogictest crash in aggregation query
+
+* Thu Jul 27 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.5-20170727
+- Rebuilt.
+- BZ#6375: MAL profiler truncates JSON objects larger than 8192 characters
+
+* Tue Jul 25 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.3-20170725
+- Rebuilt.
+- BZ#6325: Merge table unusable in other connections
+- BZ#6328: Transactional/multi-connection issues with merge tables
+- BZ#6336: VALUES multiple inserts error
+- BZ#6339: Mserver5 crashes on nested SELECT
+- BZ#6340: sample operator takes effect after the execution of the query,
+  expected before
+- BZ#6341: MERGE TABLE issue: Cannot register
+- BZ#6342: MERGE TABLE issue: hang
+- BZ#6344: Spurious errors and assertions (SQLsmith)
+
+* Mon Jul 24 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.3-20170725
+- buildtools: The Debian and Ubuntu installers have been fixed: there was a file
+  missing in the Jul2017 release.
+
+* Fri Jul 14 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.3-20170725
+- buildtools: Added a new RPM called MonetDB-selinux which provides the SELinux
+  policy required to run MonetDB under systemd, especially on Fedora 26.
+
+* Fri Jul 14 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.3-20170725
+- merovingian: monetdbd was leaking open file descriptors to the mserver5 process
+  it started.  This has been fixed.
+
+* Fri Jul  7 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.3-20170725
+- buildtools: The Windows installers (*.msi files) are now created using the WiX
+  Toolset.
+- buildtools: The Windows binaries are now built using Visual Studio 2015.  Because of
+  this, you may need to install the Visual C++ Redistributable for Visual
+  Studio 2015 before being able to run MonetDB.
+
+* Fri Jul  7 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.3-20170725
+- gdk: Many functions in GDK are now annotated with the GCC attribute
+  __warn_unused_result__ meaning that the compiler will issue a warning
+  if the result of the function (usually an indication of an error)
+  is not used.
+
+* Wed Jul 05 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- Rebuilt.
+- BZ#3465: Request: add support for CREATE VIEW with ORDER BY clause
+- BZ#3545: monetdb commands don't work with -h -P -p options (locally
+  and remotely)
+- BZ#3996: select * from sys.connections always returns 0 rows. Expected
+  to see at least one row for the active connection.
+- BZ#6187: Nested WITH queries not supported
+- BZ#6225: Order of evaluation of the modulo operator
+- BZ#6289: Crashes and hangs with remote tables
+- BZ#6292: Runaway SQL optimizer in too many nested operators
+- BZ#6310: Name resolution error (sqlsmith)
+- BZ#6312: Object not found in LIMIT clause (sqlsmith)
+- BZ#6313: Null type resolution in disjunction fails (sqlsmith)
+- BZ#6319: Server crash on LATERAL (sqlsmith)
+- BZ#6322: Crash on disjunction with LIMIT (sqlsmith)
+- BZ#6323: Deadlock calling sys.bbp()
+- BZ#6324: Sqlitelogictest crash in a IN query (8th)
+- BZ#6327: The daemon does not respect the actual name of the mserver5
+  executable
+- BZ#6330: Sqlitelogictest crash on a complex SELECT query
+- BZ#6331: sys.statistics column "nils" always contains 0. Expected a
+  positive value for columns that have one or more nils/NULLs
+- BZ#6332: Sqlitelogictest crash related to an undefined MAL function
+
+* Mon May 29 2017 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.27.1-20170705
+- merovingian: Added handling of a dbextra property per database at the daemon
+  level. The user can set the dbextra property for a database using the
+  command:  $ monetdb set dbextra=<path> <database> and the daemon will
+  make sure to start the new server using the correct
+  --dbextra parameter.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- monetdb5: The "sub" prefix of many functions, both at the MAL and the C level,
+  has been removed.
+
+* Mon May 29 2017 Mark Raasveldt <m.raasveldt@cwi.nl> - 11.27.1-20170705
+- MonetDB: Added a new server-side protocol implementation. The new protocol
+  is backwards compatible with the old protocol. Clients can choose
+  whether they want to use the old or the new protocol during the initial
+  handshake with the server. The new protocol is a binary column-based
+  protocol that is significantly faster than the old protocol when
+  transferring large result sets. In addition, the new protocol supports
+  compression using Snappy or LZ4.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- gdk: Improved error checking in the logger code (dealing with the write-ahead
+  log); changed return types a several functions from int to gdk_return
+  (i.e., they now return GDK_SUCCEED or GDK_FAIL).  The logger no longer
+  calls GDKfatal on error.  Instead the caller is responsible for dealing
+  with errors.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- sql: Made the operator precedence of % equal to those of * and /.  All three
+  are evaluated from left to right.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- MonetDB: Moved the sphinx extension module to its own repository.
+  See https://dev.monetdb.org/hg/MonetDB-sphinx/.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- gdk: BATsort may now create an order index as a by product.
+- gdk: Quantile calculations now use the order index if available (and use
+  BATsort otherwise, producing an order index).
+- gdk: Quantiles calculate a position in the sorted column.  If this position
+  is not an integer, we now choose the nearest position, favoring the
+  lower if the distance to the two adjacent positions is equal (round
+  down to nearest integer).
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- MonetDB: Removed GSL module: it's now a separate (extension) package.
+  See https://dev.monetdb.org/hg/MonetDB-gsl/.
+- MonetDB: The PCRE library is now optional for systems that support POSIX regular
+  expressions.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- sql: Removed table sys.connections.  It was a remnant of an experimental
+  change that had already been removed in 2012.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- gdk: Removed function BATprintf.  Use BATprint or BATprintcolumns instead.
+- gdk: Removed BATsave from the list of exported functions.
+
+* Mon May 29 2017 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.27.1-20170705
+- MonetDB: Added 5 new sys schema tables: function_languages, function_types,
+  key_types, index_types and privilege_codes.  They are pre-loaded with
+  static content and contain descriptive names for the various integer
+  type and code values.  See also sql/scripts/51_sys_schema_extension.sql
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- monetdb5: Changed the interfaces of the AUTH* functions: pass values, not pointers
+  to values.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- gdk: Replaced BBPincref/BBPdecref with BBPfix/BBPunfix for physical reference
+  count and BBPretain/BBPrelease for logical reference count maintenance.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- gdk: Removed automatic conversion of 32-bit OIDs to 64 bits on 64-bit
+  architectures.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- gdk: Removed functions OIDbase() and OIDnew().
+- gdk: Removed talign field from BAT descriptor.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- monetdb5: Removed calc.setoid().
+- monetdb5: group.subgroup is now called group.group if it is not refining a group.
+  Both group.group and group.subgroup now also have variants with a
+  candidate list.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- clients: The mclient and msqldump programs lost compatibility with old
+  mserver5 versions (pre 2014) which didn't have a "system" column in
+  the sys.schemas table.
+- clients: The mclient and msqldump programs lost compatibility with ancient
+  mserver5 versions (pre 2011) which didn't have the sys.systemfunctions
+  table.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- gdk: BATappend now takes an optional (NULL if not used) candidate list for
+  the to-be-appended BAT.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- gdk: New function BATkeyed(BAT *b) that determines (possibly using a hash
+  table) whether all values in b are distinct.
+
+* Mon May 29 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.1-20170705
+- clients: Removed the "array" and "quick" functions from the mapi library.
+  To be precise, the removed functions are: mapi_execute_array,
+  mapi_fetch_field_array, mapi_prepare_array, mapi_query_array,
+  mapi_quick_query, mapi_quick_query_array, and mapi_quick_response.
+
+* Mon May 29 2017 Martin Kersten <mk@cwi.nl> - 11.27.1-20170705
+- monetdb5: The allocation schemes for MAL blocks and Variables has been turned
+  into block-based.  This reduces the number of malloc()/free() calls.
+
+* Mon May 29 2017 Martin Kersten <mk@cwi.nl> - 11.27.1-20170705
+- sql: Protect against runaway profiler events If you hit a barrier block
+  during profiling, the JSON event log may quickly become unwieldy. Event
+  production is protected using a high water mark, which ensures that
+  never within the single execution of MAL block the instruction causes
+  excessive event records.
+
+* Mon May 29 2017 Martin Kersten <mk@cwi.nl> - 11.27.1-20170705
+- clients: Added a more elaborate \help command for SQL expressions.
+
 * Mon May 29 2017 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.25.23-20170529
 - Rebuilt.
 - BZ#6290: Crash (and assertion failure) with a correlated subquery with

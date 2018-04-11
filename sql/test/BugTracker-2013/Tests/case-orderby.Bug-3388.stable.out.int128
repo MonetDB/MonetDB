@@ -69,8 +69,8 @@ Ready.
 #insert into table3388 values (9,null);
 [ 1	]
 #select sum(b) from table3388 group by k order by case when sum(b) is null then 1 else 0 end,sum(b);
-% sys.L2 # table_name
-% L1 # name
+% sys.L3 # table_name
+% L2 # name
 % hugeint # type
 % 2 # length
 [ 2	]

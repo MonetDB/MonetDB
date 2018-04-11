@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
 man_MANS = monetdbd.1
 
@@ -39,18 +39,17 @@ bin_monetdbd = {
 			  multiplex-funnel.c multiplex-funnel.h \
 			  proxy.c proxy.h
 	LIBS = ../utils/libmeroutil \
-		   ../../../common/stream/libstream \
-		   ../../../clients/mapilib/libmapi \
 		   ../../../common/utils/libmcrypt \
 		   ../../../common/utils/libmsabaoth \
 		   ../../../common/utils/libmuuid \
 		   ../../../common/utils/libmutils \
+		   ../../../common/stream/libstream \
+		   ../../../clients/mapilib/libmapi \
 		   ../../../monetdb5/tools/libmonetdb5 \
 		   ../../../gdk/libbat \
 		   $(UUID_LIBS) \
 		   $(openssl_LIBS) \
-		   $(curl_LIBS) \
-		   $(SOCKET_LIBS) \
-		   $(MALLOC_LIBS) \
-		   $(PTHREAD_LIBS)
+		   $(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) \
+		   $(MATH_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(PSAPILIB) $(KVM_LIBS) \
+		   $(pcre_LIBS) $(libxml2_LIBS)
 }

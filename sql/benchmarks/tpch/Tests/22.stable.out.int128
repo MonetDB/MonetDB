@@ -55,10 +55,10 @@ Ready.
 #				select
 #					*
 #				from
-% sys.custsale,	sys.L17,	sys.L22 # table_name
+% sys.custsale,	sys.L21,	sys.L24 # table_name
 % cntrycode,	numcust,	totacctbal # name
-% char,	bigint,	decimal # type
-% 15,	2,	40 # length
+% clob,	bigint,	decimal # type
+% 2,	2,	40 # length
 [ "13",	10,	75359.29	]
 [ "17",	8,	62288.98	]
 [ "18",	14,	111072.45	]

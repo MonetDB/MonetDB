@@ -74,8 +74,8 @@ Ready.
 #--    WHERE BUSINESS_END_DATE='99991231';
 #      WHERE c_cur_no_1 = (case when in_cur_1 is not null then '01' else 'xx' end)
 #select count(*) from test_fn where get_r(c1, '01', '2015-08-31 23:59:59')>1.0;
-% sys.L2 # table_name
-% L1 # name
+% sys.L4 # table_name
+% L3 # name
 % bigint # type
 % 1 # length
 [ 0	]

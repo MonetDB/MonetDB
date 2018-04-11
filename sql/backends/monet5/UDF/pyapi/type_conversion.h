@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -43,6 +43,8 @@ size_t pyobject_get_size(PyObject *obj);
 //! Converts a PyObject to a str; the output string will be a newly allocated
 //! string (if *value == NULL) or stored in *value (if *value != NULL)
 str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value);
+//! Converts a PyObject to a blob
+str pyobject_to_blob(PyObject **ptr, size_t maxsize, blob **value);
 
 //using macros, create a number of str_to_<type>, unicode_to_<type> and pyobject_to_<type> functions (we are Java now)
 #define CONVERSION_FUNCTION_HEADER_FACTORY(tpe)          \

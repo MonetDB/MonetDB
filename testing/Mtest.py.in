@@ -1,10 +1,10 @@
-#!@PYTHON2@
+#!@PYTHON@
 
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
 #TODO:
 #=====
@@ -45,15 +45,65 @@ start_time = time.time()
 # whether output goes to a tty
 isatty = os.isatty(sys.stdout.fileno())
 
-if os.name != 'nt' and isatty:
-    # color output a little
-    RED = '\033[1;31m'
-    GREEN = '\033[0;32m'
-    PURPLE = '\033[1;35m'       # actually magenta
-    BLACK = '\033[0;0m'
-else:
-    # no coloring if not to a tty
-    RED = GREEN = PURPLE = BLACK = ''
+# default is no color (these three functions may get redefined)
+def prred(str, write = sys.stdout.write):
+    write(str)
+def prgreen(str, write = sys.stdout.write):
+    write(str)
+def prpurple(str, write = sys.stdout.write):
+    write(str)
+if isatty:
+    if os.name != 'nt':
+        # color output a little
+        RED = '\033[1;31m'
+        GREEN = '\033[0;32m'
+        PURPLE = '\033[1;35m'       # actually magenta
+        BLACK = '\033[0;0m'
+        def prred(str, write = sys.stdout.write):
+            write(RED)
+            write(str)
+            write(BLACK)
+        def prgreen(str, write = sys.stdout.write):
+            write(GREEN)
+            write(str)
+            write(BLACK)
+        def prpurple(str, write = sys.stdout.write):
+            write(PURPLE)
+            write(str)
+            write(BLACK)
+    else:
+        try:
+            import ctypes
+        except ImportError:
+            pass
+        else:
+            STD_OUTPUT_HANDLE = -11
+            try:
+                handle = ctypes.windll.kernel32.GetStdHandle(STD_OUTPUT_HANDLE)
+            except AttributeError:
+                pass
+            else:
+                def get_csbi_attributes(handle):
+                    # Based on IPython's winconsole.py, written by Alexander Belchenko
+                    csbi = ctypes.create_string_buffer(22)
+                    res = ctypes.windll.kernel32.GetConsoleScreenBufferInfo(handle, csbi)
+                    assert res
+                    (bufx, bufy, curx, cury, wattr,
+                    left, top, right, bottom, maxx, maxy) = struct.unpack("hhhhHhhhhhh", csbi.raw)
+                    return wattr
+                reset = get_csbi_attributes(handle)
+                def prred(str, write = sys.stdout.write, scta = ctypes.windll.kernel32.SetConsoleTextAttribute):
+                    scta(handle, 0x4)
+                    write(str)
+                    scta(handle, reset)
+                def prgreen(str, write = sys.stdout.write, scta = ctypes.windll.kernel32.SetConsoleTextAttribute):
+                    scta(handle, 0x2)
+                    write(str)
+                    scta(handle, reset)
+                def prpurple(str, write = sys.stdout.write, scta = ctypes.windll.kernel32.SetConsoleTextAttribute):
+                    scta(handle, 0x5)
+                    write(str)
+                    scta(handle, reset)
 
 if os.path.exists('/usr/bin/coredumpctl'):
     # probably Linux if /usr/bin/coredumpctl exists
@@ -135,7 +185,7 @@ except ImportError:
     try:
         import MonetDBtesting.Mfilter as Mfilter
     except ImportError:
-        p = _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
+        p = _configure(os.path.join('@QXprefix@', '@QXPYTHON_LIBDIR@'))
         sys.path.insert(0, p)
         import MonetDBtesting.Mfilter as Mfilter
         if 'PYTHONPATH' in os.environ:
@@ -215,7 +265,6 @@ if os.name == 'nt':
     if 'PYTHONPATH' in os.environ:
         p = os.environ['PYTHONPATH'] + os.pathsep + p
     os.environ['PYTHONPATH'] = p
-    os.environ['PYTHONHOME'] = sys.prefix
 
 import string                   # for whitespace
 def splitcommand(cmd):
@@ -324,6 +373,7 @@ CONDITIONALS = {
     'HAVE_GEOM'            : "@HAVE_GEOM_FALSE@",
     'HAVE_HGE'             : "@HAVE_HGE_FALSE@",
     'HAVE_LIBBZ2'          : "@HAVE_LIBBZ2_FALSE@",
+    'HAVE_LIBLZ4'          : "@HAVE_LIBLZ4_FALSE@",
     'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
     'HAVE_LIBPY'           : "@HAVE_LIBPY_FALSE@",
     'HAVE_LIBPY3'          : "@HAVE_LIBPY3_FALSE@",
@@ -361,6 +411,7 @@ CONDITIONALS = {
     'HAVE_PHP'             : "",
     'HAVE_PYMONETDB'       : "",
     'HAVE_RUBY'            : "",
+    'HAVE_DATA_PATH'       : "",
     'MERCURIAL'            : "",
     'RELEASERUN'           : "",
     'BAD_HOSTNAME'         : "",
@@ -1113,7 +1164,7 @@ def SkipTest(env, TST, EXT, REASON, length) :
             if len(TST) <= l:
                 s = '%-*s' % (l, TST)
             else:
-                s = '%s...%s' % (TST[:l/2 - 2], TST[-(l/2 - 1):])
+                s = '%s...%s' % (TST[:l//2 - 2], TST[-(l//2 - 1):])
         else:
             s = '%-*s' % (length, TST)
         STDOUT.write('%s%s skipped (%s)\n' % (prompt(), s, REASON))
@@ -1174,13 +1225,13 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
     else: # THISFILE == "Mapprove.py"
         TSTDB = ""
 
-    if testlist:
-        tl = []
-        for tst in testlist:
-            tl.append((tst,None))
-        testlist = tl
+    alltests = []
+    try:
+        allf = open(os.path.join(TSTSRCDIR, "All"))
+    except IOError:
+        pass
     else:
-        for tc in open(os.path.join(TSTSRCDIR,"All")):
+        for tc in allf:
             if '#' in tc:
                 # get rid of comment anywhere on line
                 tc = tc.split('#', 1)[0]
@@ -1190,7 +1241,21 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                     cond,tst = tc.split('?')
                 else:
                     cond,tst = None,tc
-                testlist.append((tst,cond))
+                alltests.append((tst,cond))
+        allf.close()
+
+    if testlist:
+        tl = []
+        for tst in testlist:
+            for t, c in alltests:
+                if t == tst:
+                    tl.append((t, c))
+                    break
+            else:
+                tl.append((tst,None))
+        testlist = tl
+    else:
+        testlist = alltests
     if not testlist:
         Warn("No tests found in '%s`; skipping directory!" % TSTSRCDIR)
         return td, elem, max(FdOut, FdErr), interrupted
@@ -1224,6 +1289,10 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
     if os.name == 'nt':
         os.environ['PYTHON2PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', 'lib', 'python2'))
         os.environ['PYTHON3PATH'] += os.path.pathsep + _configure(os.path.join('@QXprefix@', 'lib', 'python3'))
+    if 'TSTDATAPATH' not in os.environ and TSTDATAPATH:
+        env['TSTDATAPATH'] = TSTDATAPATH
+        os.environ['TSTDATAPATH'] = TSTDATAPATH
+
 
     #STDERR.flush()
     #for v in 'RELSRCDIR':
@@ -1280,6 +1349,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                 if FtOut in (F_OK, F_WARN) and FtErr in (F_OK, F_WARN):
                     oktests.append(TST)
                 if global_timeout and start_time + global_timeout < time.time():
+                    print('\nGlobal testing timeout reached\n')
                     break
         except KeyboardInterrupt:
             print('\nInterrupted')
@@ -1547,8 +1617,8 @@ def returnCode(proc, f = None):
                     # wait a few seconds for the core to be dumped
                     time.sleep(10)
                     if procdebug:
-                        print('Starting: coredumpctl info %d' % proc.pid)
-                    p = process.Popen(['coredumpctl', 'info', str(proc.pid)],
+                        print('Starting: coredumpctl -q info %d' % proc.pid)
+                    p = process.Popen(['coredumpctl', '-q' ,'info', str(proc.pid)],
                                       stdout = process.PIPE,
                                       stderr = process.PIPE,
                                       universal_newlines = True)
@@ -1569,8 +1639,8 @@ def returnCode(proc, f = None):
                     # wait a few seconds for the core to be dumped
                     time.sleep(10)
                     if procdebug:
-                        print('Starting: coredumpctl info %d' % proc.pid)
-                    p = process.Popen(['coredumpctl', 'info', str(proc.pid)],
+                        print('Starting: coredumpctl -q info %d' % proc.pid)
+                    p = process.Popen(['coredumpctl', '-q' ,'info', str(proc.pid)],
                                       stdout = process.PIPE,
                                       stderr = process.PIPE,
                                       universal_newlines = True)
@@ -1660,18 +1730,23 @@ def GetBitsAndModsAndThreads(env) :
     env['TST_INT128'] = ""
     env['TST_SINGLE'] = ""
     env['TST_THREADS'] = ""
+    env['TST_ARCH'] = ""
     if qOut:
-        tbos = re.compile("^# Compiled for .*/([63][42]bit)( with 128bit integers|)", re.MULTILINE)
+        tbos = re.compile("^# Compiled for (?P<arch>[^-]+).*/(?P<bits>[63][42]bit)(?P<int128> with 128bit integers|)", re.MULTILINE)
         tt = re.compile("^# Serving database .*, using ([0-9]+) threads?", re.MULTILINE)
         tm = re.compile("^Modules: (.+)$", re.MULTILINE)
         for l in qOut.split('\n'):
             obs = tbos.match(l)
-            if obs:
-                env['TST_BITS'] = obs.group(1)
+            if obs is not None:
+                env['TST_BITS'] = obs.group('bits')
                 os.environ['TST_BITS'] = env['TST_BITS']
-                if obs.group(2) == " with 128bit integers":
+                if obs.group('int128') == " with 128bit integers":
                     env['TST_INT128'] = "int128"
                     os.environ['TST_INT128'] = env['TST_INT128']
+                arch = obs.group('arch')
+                if arch == 'amd64':
+                    arch = 'x86_64' # normalize name
+                env['TST_ARCH'] = arch
             t = tt.match(l)
             if t:
                 if t.group(1) == "1":
@@ -1746,8 +1821,9 @@ def StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) :
     SINGLE = env['TST_SINGLE']
     if SINGLE:
         SINGLE = r"(\.single)?"
+    ARCH = env['TST_ARCH']
     dir,file = os.path.split(TST)
-    outre = re.compile(r'^%s\.stable\.(?P<tp>out|err)(\.(%s(%s)?|%s(%s)?))?(\.%s)?%s%s$' % (re.escape(file), re.escape(SYST), re.escape(RELEASE), re.escape(DIST), re.escape(VERSION), BITS, INT128, SINGLE))
+    outre = re.compile(r'^%s\.stable\.(?P<tp>out|err)(\.(%s(%s)?|%s(%s)?))?(\.(%s|%s))?%s%s$' % (re.escape(file), re.escape(SYST), re.escape(RELEASE), re.escape(DIST), re.escape(VERSION), BITS, ARCH, INT128, SINGLE))
     bestout = besterr = ''
     for f in listdir(dir or os.curdir):
         res = outre.match(f)
@@ -1880,6 +1956,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
     MissingMods = CheckMods(env, TST, SERVER, CALL)
     MissingTests = CheckTests(env, TST, oktests)
     nomito = os.path.isfile(TST + '.nomito')
+    user = None
+    passwd = None
 
 
     os.chdir(TSTTRGDIR)
@@ -1932,9 +2010,14 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
             elif cond.startswith('THREADS='):
-                if env['GDK_NR_THREADS'] == '0':
+                if negate:
+                    reason = "impossible combination of THREADS= and negation"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+                elif env['GDK_NR_THREADS'] == '0' or \
+                   int(env['TST_THREADS']) >= int(cond[8:]):
                     threads = cond[8:]
-                elif (env['TST_THREADS'] == cond[8:]) == negate:
+                elif env['TST_THREADS'] != cond[8:]:
                     reason = "as number of threads is wrong"
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
@@ -1948,6 +2031,18 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
                     reason = "as number of threads is wrong"
                     elem = SkipTest(env, TST, EXT, reason, length)
                     break
+            elif cond.startswith('USER='):
+                if negate:
+                    reason = "impossible combination of USER= and negation"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+                user = cond[5:]
+            elif cond.startswith('PASSWD='):
+                if negate:
+                    reason = "impossible combination of PASSWD= and negation"
+                    elem = SkipTest(env, TST, EXT, reason, length)
+                    break
+                passwd = cond[7:]
             elif cond not in CONDITIONALS:
                 reason = "as conditional '%s' is unknown." % cond
                 elem = SkipTest(env, TST, EXT, reason, length)
@@ -2045,7 +2140,16 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
                 f.close()
                 if os.path.isfile(TSTSRC):
                     try:
-                        SymlinkOrCopy(TSTSRC, ff[:-4])
+                        if '.stable.' in ff:
+                            f1 = open(TSTSRC, "r")
+                            f2 = open(ff[:-4], "w")
+                            line = f1.readline()
+                            f2.write("%s of test '%s` in directory '%s` itself:\n" % (line[:6], TST, TSTDIR.replace('\\', '/')))
+                            f2.write(f1.read())
+                            f1.close()
+                            f2.close()
+                        else:
+                            SymlinkOrCopy(TSTSRC, ff[:-4])
                         links.append(ff[:-4])
                     except IOError as err:
                         ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
@@ -2084,10 +2188,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
                     TIMEOUT = int(TIMEOUT * TOf)
                 if TIMEOUT < 1 and par['TIMEOUT'] > 0:
                     TIMEOUT = 1
-        if env['exe']['Mtimeout'][0]:
-            # set timeout
-            env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout %s ' % str(TIMEOUT)
-            SetExecEnv(env['exe'],False)
         CTIMEOUT = 0
         if   CALL in ["other", "python", "ruby"]:
             if TIMEOUT > 0:
@@ -2118,7 +2218,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
         TestErr.close()
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, COND, all_tests)
+        tres = DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests)
         if tres == 'segfault':
             # rename core file, if any -- might have to check
             # /proc/sys/kernel/core_pattern in the future but hopefully
@@ -2231,11 +2331,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
             STDOUT.flush()
         except IOError as err:
             Warn("Flushing STDOUT in RunTest failed with #%d: '%s'." % (err.errno, err.strerror))
-
-        if env['exe']['Mtimeout'][0]:
-            # reset timeout
-            env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout %s ' % str(par['TIMEOUT'])
-            SetExecEnv(env['exe'],False)
 
         Mfilter.mFilter(TST+STABLEout,par['IGNORE'])
         Mfilter.mFilter(TST+STABLEerr,par['IGNORE'])
@@ -2429,31 +2524,31 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
 
         if not verbose and not quiet:
             if tres == 'socket':
-                STDOUT.write("%sSOCKET%s" % (PURPLE, BLACK))
+                prpurple('SOCKET')
             elif tres == 'timeout':
-                STDOUT.write("%sTIMEOUT%s" % (PURPLE, BLACK))
+                prpurple('TIMEOUT')
             elif tres == 'recursion':
-                STDOUT.write("%sRECURSION%s" % (PURPLE, BLACK))
+                prpurple('RECURSION')
             elif tres == 'segfault':
-                STDOUT.write("%sCRASHED%s" % (PURPLE, BLACK))
+                prpurple('CRASHED')
             elif tres == 'abort':
-                STDOUT.write('%sABORTED%s' % (PURPLE, BLACK))
+                prpurple('ABORTED')
             elif tres == 'signal':
-                STDOUT.write('%sSIGNALED%s' % (PURPLE, BLACK))
+                prpurple('SIGNALED')
             else:
                 if FailedOut == F_OK:
-                    STDOUT.write('%sOK%s   ' % (GREEN, BLACK))
+                    prgreen('OK   ')
                 elif FailedOut == F_WARN:
-                    STDOUT.write('%sminor%s' % (GREEN, BLACK))
+                    prgreen('minor')
                 else:
-                    STDOUT.write('%sMAJOR%s' % (RED, BLACK))
+                    prred('MAJOR')
                 STDOUT.write(' ')
                 if FailedErr == F_OK:
-                    STDOUT.write('%sOK%s' % (GREEN, BLACK))
+                    prgreen('OK')
                 elif FailedErr == F_WARN:
-                    STDOUT.write('%sminor%s' % (GREEN, BLACK))
+                    prgreen('minor')
                 else:
-                    STDOUT.write('%sMAJOR%s' % (RED, BLACK))
+                    prred('MAJOR')
             STDOUT.write('\n')
 
     return TX,FailedOut,FailedErr,elem,reason,links
@@ -2586,10 +2681,74 @@ def Prompt(cmd) :
     return '%s%s"%s"%s\n\n' % (prmpt, prmpt, cmd, prmpt)
 ### Prompt(cmd) #
 
+def getkids():
+    # return a dictionary with process IDs as key and a list of child
+    # processes as value
+    p = process.Popen(['ps', '-lu', os.getenv('USER')],
+                      stdout = process.PIPE, stderr = process.PIPE,
+                      universal_newlines = True)
+    out, err = p.communicate()
+    if err:
+        return {}
+    lines = out.split('\n')
+    line0 = lines[0].split()
+    del lines[0]
+    del lines[-1]
+    pidcol = ppidcol = None
+    for i in range(len(line0)):
+        if line0[i] == 'PID':
+            pidcol = i
+        elif line0[i] == 'PPID':
+            ppidcol = i
+    if pidcol is None or ppidcol is None:
+        return {}
+    procs = {}
+    for line in lines:
+        line = line.split()
+        try:
+            pid = int(line[pidcol])
+            ppid = int(line[ppidcol])
+        except (ValueError, IndexError):
+            continue
+        if ppid not in procs:
+            procs[ppid] = []
+        procs[ppid].append(pid)
+    return procs
+
+def killchildren(pid, procs = None):
+    # kill the specified process ID and all its children
+    if procs is None:
+        try:
+            os.killpg(pid, signal.SIGKILL)
+            return
+        except AttributeError:
+            try:
+                os.kill(-pid, signal.SIGKILL)
+                return
+            except OSError:
+                pass
+        except OSError:
+            pass
+        procs = getkids()
+    for kid in procs.get(pid, []):
+        killchildren(kid, procs)
+    if procdebug:
+        print('killing process %d' % pid)
+    try:
+        os.kill(pid, signal.SIGKILL)
+    except OSError:
+        if procdebug:
+            print('killing process %d failed' % pid)
+
+def reallyKill(proc):
+    killchildren(proc.pid, getkids())
+
 def killProc(proc, outfile = None, cmd = None):
+    if type(cmd) is type([]):
+        cmd = ' '.join(cmd)
+    if procdebug:
+        print('timeout for process %d (%s)' % (proc.pid, cmd))
     if outfile is not None and cmd is not None:
-        if type(cmd) is type([]):
-            cmd = ' '.join(cmd)
         try:
             outfile.write('\n!Mtimeout: Timeout: %s\n' % cmd)
         except (ValueError, IOError):
@@ -2617,7 +2776,16 @@ def killProc(proc, outfile = None, cmd = None):
         try:
             p = process.Popen(['pstack', str(proc.pid)], stdout = process.PIPE,
                               universal_newlines = True)
+            try:
+                # pstack (gdb) sometimes hangs when trying to get the
+                # stack trace: kill it mercilessly if it does
+                t = Timer(60, reallyKill, args = [p])
+                t.start()
+            except AttributeError:
+                t = None
             out, err = p.communicate()
+            if t is not None:
+                t.cancel()
         except:
             out = ''
     if outfile is not None and out:
@@ -2628,7 +2796,8 @@ def killProc(proc, outfile = None, cmd = None):
             print(out)
     proc.killed = True
     try:
-        os.kill(-proc.pid, signal.SIGKILL)
+        signal.SIGKILL          # Windows doesn't have this
+        os.kill
     except AttributeError:
         if procdebug:
             print('killProc: starting process "taskkill" "/F" "/T" "/PID" "%s"\n' % str(proc.pid))
@@ -2638,8 +2807,8 @@ def killProc(proc, outfile = None, cmd = None):
         out, err = p.communicate()
         if procdebug:
             print('killProc: process exited "taskkill" "/F" "/T" "/PID" "%s" (%s)\n' % (str(proc.pid), proc.returncode))
-    except OSError:
-        pass
+    else:
+        killchildren(proc.pid)
 
 def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut, SrvrOut = None) :
     global setpgrp
@@ -2747,7 +2916,7 @@ def mapi_ping(port,lang) :
     return False
 ### mapi_ping() #
 
-def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, COND, all_tests) :
+def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests) :
     ATJOB2 = ""
     STDERR.flush()
     if quiet:
@@ -2764,7 +2933,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             if len(TST) <= l:
                 s = '%-*s ' % (l, TST)
             else:
-                s = '%s...%s ' % (TST[:l/2 - 2], TST[l/2+1-l:])
+                s = '%s...%s ' % (TST[:l//2 - 2], TST[l//2+1-l:])
         else:
             s = '%-*s ' % (length, TST)
         STDOUT.write('%s%s' % (prompt(), s))
@@ -2851,6 +3020,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             elif (not all_tests or (COND != None and "HAVE_LIBPY" in COND)) and CONDITIONALS['HAVE_LIBPY']:
                 # enable Python integration in server
                 Srvr.extend(['--set', 'embedded_py=true'])
+
+            # enable C integration in server
+            Srvr.extend(['--set', 'embedded_c=true'])
 
 
             pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
@@ -2977,6 +3149,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
                         TSTs.append(f)
 
                 Clnt = splitcommand(exe['SQL_Client'][1])
+                if user:
+                    Clnt.append('-u%s' % user)
+                if passwd:
+                    Clnt.append('-P%s' % passwd)
                 for f in TSTs:
                     returncode = RunIt(Clnt, open(f), ClntOut, ClntErr, TIMEOUT)
                     if returncode:
@@ -3256,9 +3432,7 @@ def SetExecEnv(exe,verbose) :
             V = 'MSERVER'
         else:
             V = v.upper()
-        if  v != 'Mtimeout':
-            os.environ[V] = CALL+exe['Mtimeout'][1]+exe[v][1]
-        elif exe[v][0]:
+        if exe[v][0]:
             os.environ[V] = CALL+exe[v][1]
         else:
             os.environ[V] = ""
@@ -3277,6 +3451,7 @@ def ReadMapproveRc(f) :
     v['BITS'] = ''
     v['INT128'] = ''
     v['SINGLE'] = ''
+    v['ARCH'] = ''
     if os.path.isfile(f):
         r = re.compile('^([A-Z][A-Z0-9_]*) = "(.*)".*$')
         for l in open(f):
@@ -3490,8 +3665,8 @@ def main(argv) :
         dft['MONETDB_MOD_PATH'] = "''"
         dft['setMONETDB_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONETDB_MOD_PATH']+'\"'"
         dft['MAPIPORT']       = "str(randomPort(30000,39999)[0])"
-        dft['MALCLIENT']      = "'mclient -lmal -ftest -Eutf-8'"
-        dft['SQLCLIENT']      = "'mclient -lsql -ftest -Eutf-8'"
+        dft['MALCLIENT']      = "'mclient -lmal -ftest -tnone -Eutf-8'"
+        dft['SQLCLIENT']      = "'mclient -lsql -ftest -tnone -Eutf-8'"
         dft['SQLDUMP']        = "'msqldump -q'"
         dft['RCLIENT']        = "'R --vanilla --slave'"
         dft['RUBYCLIENT']        = "'ruby'"
@@ -3577,6 +3752,8 @@ def main(argv) :
              'automatically add required tests when testing individual tests'),
             ('global_timeout', 'T', 'global_timeout', '<sec>',
              'global timeout'),
+            ('data_path', 'D', 'data_path', '<path>',
+             "Path to the root directory of the data files needed for testing"),
             ]
 
     if THISFILE == 'Mtest.py':
@@ -3584,7 +3761,7 @@ def main(argv) :
     elif THISFILE == 'Mapprove.py':
         f = _configure(os.path.join('@QXprefix@',dftTSTPREF,'.Mapprove.rc'))
         v = ReadMapproveRc(f)
-        for i in 'BITS', 'INT128', 'SINGLE':
+        for i in 'INT128', 'SINGLE':
             if v[i]:
                 v[i] = '[.%s]' % v[i]
         options = cmd_options + [
@@ -3593,9 +3770,9 @@ def main(argv) :
              "(default: <ext> = 'out' & 'err')"),
             (None, 'S', 'sys', '<sys>',
              "approve specific output *.<ext><sys>\n"
-             "(<sys> = '[.(<SYST>[<RELEASE>]|<DIST>[<VERSION>])][.(32|64)bit][.int128][.single]',\n"
-             "(default: longest match for <sys> = '[.(%s[%s]|%s[%s])]%s%s%s')"
-              % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['INT128'], v['SINGLE'])),
+             "(<sys> = '[.(<SYST>[<RELEASE>]|<DIST>[<VERSION>])][.((32|64)bit|<ARCH>)][.int128][.single]',\n"
+             "(default: longest match for <sys> = '[.(%s[%s]|%s[%s])][.(%s|%s)%s%s')"
+              % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['ARCH'], v['INT128'], v['SINGLE'])),
             (None, 'f', 'force', None,
              "force approval of error messages (i.e., lines starting with '!')"),
             ('nopatch', None, 'nopatch', None,
@@ -3610,32 +3787,6 @@ def main(argv) :
         opts, args = monet_options.parse_options(argv[1:], options, Usage, False)
     except monet_options.Error:
         sys.exit(1)
-
-    if len(args) == 1 and not os.path.isdir(args[0]):
-        head, tail = os.path.split(args[0])
-        if os.path.isfile(args[0]):
-            head, tst = os.path.split(head)
-            if tst != 'Tests':
-                ErrXit("%s: not a valid test name" % args[0])
-            args = [head]
-            if tail != 'All':
-                for ext in ('_s00.malC', '_p00.malC', '_s00.mal', '_s00.sql',
-                            '_p00.sql', '.MAL.py', '.SQL.py', '.malC', '.mal',
-                            '.sql', '.py', '.R', ''):
-                    # extentions .in and .src are never combined
-                    if tail.endswith(ext + '.in'):
-                        args.append(tail[:-len(ext + '.in')])
-                        break
-                    if tail.endswith(ext + '.src'):
-                        args.append(tail[:-len(ext + '.src')])
-                        break
-                    if tail.endswith(ext):
-                        args.append(tail[:-len(ext)])
-                        break
-                else:
-                    ErrXit("%s: not a valid test name" % args[0])
-        elif head and tail and os.path.isdir(head) and tail != 'Tests' and os.path.isdir(os.path.join(head, 'Tests')):
-            args = [head, tail]
 
     config = opts.get('config', '')
     if config:
@@ -3706,6 +3857,9 @@ def main(argv) :
         a = opts.get('global_timeout')
         if a is not None:
             global_timeout = int(a)
+        a = opts.get('data_path')
+        if a is not None:
+            env['TSTDATAPATH'] = a
     if THISFILE == 'Mapprove.py':
         a = opts.get('ext')
         if a is None:
@@ -3759,15 +3913,17 @@ def main(argv) :
         pass
     else:
         CONDITIONALS['HAVE_LIBPANDAS'] = '#'
+    if env.get('TSTDATAPATH'):
+        CONDITIONALS['HAVE_DATA_PATH'] = '#'
     if CheckExec('perl'):
-        proc = process.Popen(['perl', '-e', 'use MonetDB::CLI::MapiPP'],
+        proc = process.Popen(['perl', '-e', 'use MonetDB::CLI::MapiPP; use DBI;'],
                              stdout = process.PIPE, stderr = process.PIPE,
                              universal_newlines = True)
         perl_out, perl_err = proc.communicate()
         if proc.returncode == 0:
             CONDITIONALS['HAVE_PERL'] = '#'
         else:
-            print('Perl available, but MonetDB driver not available')
+            print('Perl available, but MonetDB driver or DBI module not available')
     if CONDITIONALS['HAVE_LIBR'] and CheckExec('R'):
         proc = process.Popen(['R', '--slave', '--no-save', '--no-restore',
                               '-e', 'print(Sys.getenv("R_LIBS_USER"))'],
@@ -3780,7 +3936,11 @@ def main(argv) :
             if not os.path.exists(rdir):
                 os.makedirs(rdir)
     if CheckExec('php'):
-        proc = process.Popen(['php', '-d', 'include_path=${PHP_INCPATH}', '-r', "require 'monetdb/php_monetdb.php';"],
+        phpcmd = ['php']
+        if 'PHP_INCPATH' in os.environ:
+            phpcmd.extend(['-d', 'include_path=%s' % os.environ['PHP_INCPATH']])
+        phpcmd.extend(['-r', "require 'monetdb/php_monetdb.php';"])
+        proc = process.Popen(phpcmd,
                              stdout = process.PIPE, stderr = process.PIPE,
                              universal_newlines = True)
         php_out, php_err = proc.communicate()
@@ -3857,6 +4017,8 @@ def main(argv) :
     TSTTRGBASE = env['TSTTRGBASE']
     global TSTSRCBASE
     TSTSRCBASE = env['TSTSRCBASE']
+    global TSTDATAPATH
+    TSTDATAPATH = env.get('TSTDATAPATH')
 
     if THISFILE == "Mapprove.py" \
        and not os.path.exists(os.path.join(TSTTRGBASE, dftTSTPREF )) \
@@ -3906,17 +4068,18 @@ def main(argv) :
         os.environ['DISTVER'] = DISTVER
         os.environ['VERSION'] = VERSION
         w = {}
-        for i in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'BITS', 'INT128', 'SINGLE':
+        for i in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'BITS', 'ARCH', 'INT128', 'SINGLE':
             w[i] = re.escape(v[i])
-        for i in 'BITS', 'INT128', 'SINGLE':
+        for i in 'BITS', 'ARCH', 'INT128', 'SINGLE':
             j = 'TST_'+i
             env[j] = v[i]
             os.environ[j] = v[i]
+        for i in 'INT128', 'SINGLE':
             if v[i]:
                 v[i] = '(.%s)?' % v[i]
                 w[i] = '(\.%s)?' % w[i]
-        sv = '^(.(%s(%s)?|%s(%s)?))?%s%s%s$' % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['INT128'], v['SINGLE'])
-        sw = '^(\.(%s(%s)?|%s(%s)?))?%s%s%s$' % (w['SYST'], w['RELEASE'], w['DIST'], w['VERSION'], w['BITS'], w['INT128'], w['SINGLE'])
+        sv = '^(.(%s(%s)?|%s(%s)?))?(.(%s|%s))?%s%s$' % (v['SYST'], v['RELEASE'], v['DIST'], v['VERSION'], v['BITS'], v['ARCH'], v['INT128'], v['SINGLE'])
+        sw = '^(\.(%s(%s)?|%s(%s)?))?(\.(%s|%s))?%s%s$' % (w['SYST'], w['RELEASE'], w['DIST'], w['VERSION'], w['BITS'], w['ARCH'], w['INT128'], w['SINGLE'])
         r = re.compile(sw)
         if not r.match(par['SYSTEM']):
             ErrXit("System (-S) must match '"+sv+"' !")
@@ -3938,6 +4101,7 @@ def main(argv) :
     if THISFILE == "Mtest.py":
         vars_ = vars_ + ['GDK_DBFARM']
         vars_ = vars_ + ['setMONETDB_MOD_PATH']
+        vars_ = vars_ + ['TSTDATAPATH']
     else: # THISFILE == "Mapprove.py"
         vars_ = vars_
     for v in vars_:
@@ -4035,7 +4199,6 @@ def main(argv) :
                 SOCK = ""
 
             exe = {}
-            exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
             exe['mserver5']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s --set mapi_open=true --set mapi_port=%s %s --set monet_prompt= %s %s' % \
                                                                    (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], SOCK, not nomito and '--forcemito' or '', env['MSERVER_SET'])
             exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
@@ -4045,8 +4208,6 @@ def main(argv) :
             exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'])
             exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s --host=%s --port=%s' % (env['SQLDUMP'], HOST, env['MAPIPORT'])
             exe['R_Client']   = CheckExec(env['RCLIENT'].split(None, 1)[0])   , '%s --args %s' % (env['RCLIENT'], env['MAPIPORT'])
-            if par['TIMEOUT'] == 0 or not exe['Mtimeout'][0]:
-                exe['Mtimeout'] = '', ''
             env['exe'] = exe
             SetExecEnv(exe,verbose)
 
@@ -4058,6 +4219,32 @@ def main(argv) :
         testdirs = []
         testlist = []
         dirlist = []
+        if len(args) == 1 and not os.path.isdir(args[0]):
+            head, tail = os.path.split(args[0])
+            if os.path.isfile(args[0]):
+                head, tst = os.path.split(head)
+                if tst != 'Tests':
+                    ErrXit("%s: not a valid test name" % args[0])
+                args = [head]
+                if tail != 'All':
+                    for ext in ('_s00.malC', '_p00.malC', '_s00.mal', '_s00.sql',
+                                '_p00.sql', '.MAL.py', '.SQL.py', '.malC', '.mal',
+                                '.sql', '.py', '.R', ''):
+                        # extentions .in and .src are never combined
+                        if tail.endswith(ext + '.in'):
+                            args.append(tail[:-len(ext + '.in')])
+                            break
+                        if tail.endswith(ext + '.src'):
+                            args.append(tail[:-len(ext + '.src')])
+                            break
+                        if tail.endswith(ext):
+                            args.append(tail[:-len(ext)])
+                            break
+                    else:
+                        ErrXit("%s: not a valid test name" % args[0])
+            elif head and tail and os.path.isdir(head) and tail != 'Tests' and os.path.isdir(os.path.join(head, 'Tests')):
+                args = [head, tail]
+
         if   len(args) == 1:
             if   os.path.isdir(args[0]):
                 d = os.path.realpath(args[0])
@@ -4195,6 +4382,7 @@ def main(argv) :
             env['TST_INT128'] = ""
             env['TST_SINGLE'] = ""
             env['TST_THREADS'] = ""
+            env['TST_ARCH'] = ""
             cmd = splitcommand(env['exe']['mserver5'][1])
             cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF))
             if env.get('MULTIFARM'):
@@ -4209,6 +4397,7 @@ def main(argv) :
             STDERR.flush()
             if verbose:
                 print("Bits: " + env['TST_BITS'])
+                print("Arch: " + env['TST_ARCH'])
                 if env['TST_INT128']:
                     print("Integers: 128bit")
                 print("Modules: " + str(env['TST_MODS']))
@@ -4229,7 +4418,7 @@ def main(argv) :
             env['VERSION'] = os.environ['VERSION']
             n = os.path.join(TSTTRGBASE, TSTPREF, '.Mapprove.rc')
             f = open(n, 'w')
-            for v in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_INT128', 'TST_SINGLE':
+            for v in 'SYST', 'RELEASE', 'DIST', 'VERSION', 'TST_BITS', 'TST_ARCH', 'TST_INT128', 'TST_SINGLE':
                 w = v.replace('TST_','')
                 f.write('%s = "%s"\n' % (w, env[v]))
             f.close()
@@ -4267,6 +4456,7 @@ def main(argv) :
                     if interrupted:
                         break
                     if global_timeout and start_time + global_timeout < time.time():
+                        print('\nGlobal testing timeout reached\n')
                         break
                     if not testweb:
                         # after a directory has been tested, create
@@ -4473,15 +4663,7 @@ VALUES (%s, '%s', '%s', '%s',
 ### main(argv) #
 
 if __name__ == "__main__":
-    if '--trace' in sys.argv:
-        sys.argv.remove('--trace')
-        try:
-            import trace
-        except ImportError:
-            from MonetDBtesting import trace
-        t = trace.Trace(trace=1, count=0, ignoremods=('ntpath','monet_options','Mfilter','re', 'sre_parse', 'sre_compile'))
-        t.runfunc(main, sys.argv)
-    elif '--debug' in sys.argv:
+    if '--debug' in sys.argv:
         sys.argv.remove('--debug')
         import pdb
         pdb.run('main(sys.argv)')

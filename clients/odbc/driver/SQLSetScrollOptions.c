@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -36,8 +36,8 @@ SQLSetScrollOptions(SQLHSTMT StatementHandle,
 		    SQLUSMALLINT crowRowset)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetScrollOptions " PTRFMT " %u " LENFMT " %u\n",
-		PTRFMTCAST StatementHandle, (unsigned int) fConcurrency,
+	ODBCLOG("SQLSetScrollOptions %p %u " LENFMT " %u\n",
+		StatementHandle, (unsigned int) fConcurrency,
 		LENCAST crowKeyset, (unsigned int) crowRowset);
 #endif
 

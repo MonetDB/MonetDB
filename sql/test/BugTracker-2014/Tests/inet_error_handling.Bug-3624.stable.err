@@ -32,22 +32,22 @@ stderr of test 'inet_error_handling.Bug-3624` in directory 'sql/test/BugTracker-
 
 MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
 QUERY = INSERT INTO INET_TBL VALUES ('192.168.1');
-ERROR = !GDKerror:!ERROR: Error while parsing, unexpected string ''
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !GDK reported error: Error while parsing, unexpected string ''
+MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
 QUERY = INSERT INTO INET_TBL VALUES ('192.168.2.');
-ERROR = !GDKerror:!ERROR: Error while parsing, unexpected string ''
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !GDK reported error: Error while parsing, unexpected string ''
+MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
 QUERY = INSERT INTO INET_TBL VALUES ('193');
-ERROR = !GDKerror:!ERROR: Error while parsing, unexpected string ''
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !GDK reported error: Error while parsing, unexpected string ''
+MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
 QUERY = INSERT INTO INET_TBL VALUES ('193.169');
-ERROR = !GDKerror:!ERROR: Error while parsing, unexpected string ''
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !GDK reported error: Error while parsing, unexpected string ''
+MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
 QUERY = INSERT INTO INET_TBL VALUES ('193.169.13');
-ERROR = !GDKerror:!ERROR: Error while parsing, unexpected string ''
-MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+ERROR = !GDK reported error: Error while parsing, unexpected string ''
+MAPI  = (monetdb) /var/tmp/mtest-1493/.s.monetdb.37430
 QUERY = INSERT INTO INET_TBL VALUES ('193.169.13.4/80');
-ERROR = !GDKerror:!ERROR: Illegal mask value: 80
+ERROR = !GDK reported error: Illegal mask value: 80
 
 # 10:46:21 >  
 # 10:46:21 >  "Done."

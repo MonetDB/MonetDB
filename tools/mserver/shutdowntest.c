@@ -1,7 +1,12 @@
+/*
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0.  If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ *
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
+ */
 
 #include "monetdb_config.h"
-#include <stdio.h>
-#include <errno.h>
 #include <string.h> /* strerror */
 #include <locale.h>
 #include "monet_options.h"
@@ -25,16 +30,16 @@ static char* dbdir = NULL;
    fcnname##_ptr_tpe fcnname##_ptr = NULL;
 
 #define LOAD_SQL_FUNCTION_PTR(fcnname)                                             \
-    fcnname##_ptr = (fcnname##_ptr_tpe) getAddress(NULL, "lib_sql.dll", #fcnname, 0); \
+    fcnname##_ptr = (fcnname##_ptr_tpe) getAddress( #fcnname); \
     if (fcnname##_ptr == NULL) {                                                           \
-        retval = GDKstrdup(#fcnname);  \
+        retval = #fcnname;  \
     }
 
 CREATE_SQL_FUNCTION_PTR(int,SQLautocommit);
 CREATE_SQL_FUNCTION_PTR(str,SQLexitClient);
 CREATE_SQL_FUNCTION_PTR(str,SQLinitClient);
 CREATE_SQL_FUNCTION_PTR(str,SQLstatementIntern);
-
+CREATE_SQL_FUNCTION_PTR(void,SQLdestroyResult);
 
 static int monetdb_initialized = 0;
 
@@ -44,10 +49,10 @@ static void* monetdb_connect(void) {
 		return NULL;
 	}
 	conn = MCforkClient(&mal_clients[0]);
-	if (!MCvalid((Client) conn)) {
+	if (!MCvalid(conn)) {
 		return NULL;
 	}
-	if ((SQLinitClient_ptr)(conn) != MAL_SUCCEED) {
+	if ((*SQLinitClient_ptr)(conn) != MAL_SUCCEED) {
 		return NULL;
 	}
 	((backend *) conn->sqlcontext)->mvc->session->auto_commit = 1;
@@ -59,13 +64,14 @@ static str monetdb_query(Client c, str query) {
 	mvc* m = ((backend *) c->sqlcontext)->mvc;
 	res_table* res = NULL;
 	int i;
-	retval = (SQLstatementIntern_ptr)(c, 
+	retval = (*SQLstatementIntern_ptr)(c, 
 		&query, 
 		"name", 
 		1, 0, &res);
-	(SQLautocommit_ptr)(c, m);
+	(*SQLautocommit_ptr)(m);
 	if (retval != MAL_SUCCEED) {
 		printf("Failed to execute SQL query: %s\n", query);
+		freeException(retval);
 		exit(1);
 		return MAL_SUCCEED;
 	}
@@ -76,6 +82,7 @@ static str monetdb_query(Client c, str query) {
 			printf("%s", res->cols[i].name);
 			printf(i + 1 == res->nr_cols ? ")\n" : ",");
 		}
+		(*SQLdestroyResult_ptr)(res);
 	}
 	return MAL_SUCCEED;
 }
@@ -84,7 +91,7 @@ static void monetdb_disconnect(void* conn) {
 	if (!MCvalid((Client) conn)) {
 		return;
 	}
-	(SQLexitClient_ptr)((Client) conn);
+	(*SQLexitClient_ptr)((Client) conn);
 	MCcloseClient((Client) conn);
 }
 
@@ -92,6 +99,7 @@ static str monetdb_initialize(void) {
 	opt *set = NULL;
 	volatile int setlen = 0; /* use volatile for setjmp */
 	str retval = MAL_SUCCEED;
+	char *err;
 	char prmodpath[1024];
 	char *modpath = NULL;
 	char *binpath = NULL;
@@ -215,7 +223,9 @@ static str monetdb_initialize(void) {
 						"unable to open vault_key_file %s: %s",
 						GDKgetenv("monet_vault_key"), strerror(errno));
 				/* don't show this as a crash */
-				msab_registerStop();
+				err = msab_registerStop();
+				if (err)
+					free(err);
 				GDKfatal("%s", secret);
 			}
 			len = fread(secret, 1, sizeof(secret), secretf);
@@ -224,24 +234,30 @@ static str monetdb_initialize(void) {
 			if (len == 0) {
 				snprintf(secret, sizeof(secret), "vault key has zero-length!");
 				/* don't show this as a crash */
-				msab_registerStop();
+				err = msab_registerStop();
+				if (err)
+					free(err);
 				GDKfatal("%s", secret);
 			} else if (len < 5) {
 				fprintf(stderr, "#warning: your vault key is too short "
-								"(" SZFMT "), enlarge your vault key!\n", len);
+								"(%zu), enlarge your vault key!\n", len);
 			}
 			fclose(secretf);
 		}
 		if ((retval = AUTHunlockVault(secretp)) != MAL_SUCCEED) {
 			/* don't show this as a crash */
-			msab_registerStop();
+			err = msab_registerStop();
+			if (err)
+				free(err);
 			GDKfatal("%s", retval);
 		}
 	}
 	/* make sure the authorisation BATs are loaded */
 	if ((retval = AUTHinitTables(NULL)) != MAL_SUCCEED) {
 		/* don't show this as a crash */
-		msab_registerStop();
+		err = msab_registerStop();
+		if (err)
+			free(err);
 		GDKfatal("%s", retval);
 	}
 
@@ -255,9 +271,11 @@ static str monetdb_initialize(void) {
 	LOAD_SQL_FUNCTION_PTR(SQLexitClient);
 	LOAD_SQL_FUNCTION_PTR(SQLinitClient);
 	LOAD_SQL_FUNCTION_PTR(SQLstatementIntern);
+	LOAD_SQL_FUNCTION_PTR(SQLdestroyResult);
 
 	if (retval != MAL_SUCCEED) {
 		printf("Failed to load SQL function: %s\n", retval);
+		retval = GDKstrdup(retval);
 		goto cleanup;
 	}
 

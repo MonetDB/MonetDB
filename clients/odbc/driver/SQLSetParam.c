@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -40,12 +40,12 @@ SQLSetParam(SQLHSTMT StatementHandle,
 	    SQLLEN *StrLen_or_Ind)
 {
 #ifdef ODBCDEBUG
-	ODBCLOG("SQLSetParam " PTRFMT " %u %s %s " ULENFMT " %d " PTRFMT " " PTRFMT "\n",
-		PTRFMTCAST StatementHandle, (unsigned int) ParameterNumber,
+	ODBCLOG("SQLSetParam %p %u %s %s " ULENFMT " %d %p %p\n",
+		StatementHandle, (unsigned int) ParameterNumber,
 		translateCType(ValueType),
 		translateSQLType(ParameterType),
 		ULENCAST LengthPrecision, (int) ParameterScale,
-		PTRFMTCAST ParameterValue, PTRFMTCAST StrLen_or_Ind);
+		ParameterValue, StrLen_or_Ind);
 #endif
 
 	/* map this call to SQLBindParameter as described in ODBC 3.0 SDK help */

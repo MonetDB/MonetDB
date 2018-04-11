@@ -78,7 +78,7 @@ Ready.
 #update "Marketing_Loyalty_4700298d-9862-40b3-9028-b0f15dab9dea" set "4-Gender"=trim("4-Gender");
 [ 233	]
 #select "2-Age","ttest2samplesStatistic"("9-Score", "4-Gender") as "stat", "ttest2samples"("9-Score", "4-Gender") as "pvalue" from "Marketing_Loyalty_4700298d-9862-40b3-9028-b0f15dab9dea"  group by  "2-Age";
-% sys.Marketing_Loyalty_4700298d-9862-40b3-9028-b0f15dab9dea,	sys.L2,	sys.L4 # table_name
+% sys.Marketing_Loyalty_4700298d-9862-40b3-9028-b0f15dab9dea,	sys.L4,	sys.L7 # table_name
 % 2-Age,	stat,	pvalue # name
 % varchar,	double,	double # type
 % 7,	24,	24 # length

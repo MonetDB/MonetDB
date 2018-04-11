@@ -3,12 +3,11 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
 
-#include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/un.h>
@@ -19,15 +18,14 @@
 #include <string.h>  /* strerror */
 #include <unistd.h>  /* select */
 #include <signal.h>
+#include <fcntl.h>
 
-#include <errno.h>
-
-#include <msabaoth.h>
-#include <mcrypt.h>
-#include <utils/utils.h>
-#include <utils/properties.h>
-#include <utils/database.h>
-#include <utils/control.h>
+#include "msabaoth.h"
+#include "mcrypt.h"
+#include "utils/utils.h"
+#include "utils/properties.h"
+#include "utils/database.h"
+#include "utils/control.h"
 
 #include "gdk.h"  /* these three for creation of dbs with password */
 #include "mal_authorize.h"
@@ -38,6 +36,9 @@
 #include "controlrunner.h"
 #include "multiplex-funnel.h"
 
+#if !defined(HAVE_ACCEPT4) || !defined(SOCK_CLOEXEC)
+#define accept4(sockfd, addr, addrlen, flags)	accept(sockfd, addr, addrlen)
+#endif
 
 static void
 leavedb(char *name)
@@ -343,6 +344,13 @@ static void ctl_handle_client(
 							char *dbname = strdup(dp->dbname);
 							mtype type = dp->type;
 							pthread_mutex_unlock(&_mero_topdp_lock);
+							/* Try to shutdown the profiler before the DB.
+							 * If we are unable to shutdown the profiler, we
+							 * should still try to shutdown the server. In
+							 * other words: ignore any errors that shutdown_profiler
+							 * may have encountered.
+							 */
+							shutdown_profiler(dbname, &stats);
 							terminateProcess(pid, dbname, type, 1);
 							Mfprintf(_mero_ctlout, "%s: stopped "
 									"database '%s'\n", origin, q);
@@ -449,7 +457,7 @@ static void ctl_handle_client(
 								freeException(err);
 							} else {
 								/* don't start locked */
-								unlink(".maintenance");
+								remove(".maintenance");
 							}
 
 							exit(0); /* return to the parent */
@@ -500,7 +508,7 @@ static void ctl_handle_client(
 				} while(1);
 				if (e != NO_ERR) {
 					Mfprintf(_mero_ctlerr, "%s: invalid multiplex-funnel "
-							"specification '%s': %s at char " SZFMT "\n",
+							"specification '%s': %s at char %zu\n",
 							origin, p, getErrMsg(e), (size_t)(r - p));
 					len = snprintf(buf2, sizeof(buf2),
 							"invalid pattern: %s\n", getErrMsg(e));
@@ -618,6 +626,41 @@ static void ctl_handle_client(
 					len = snprintf(buf2, sizeof(buf2), "OK\n");
 					send_client("=");
 				}
+			} else if (strncmp(p, "profilerstart", strlen("profilerstart")) == 0) {
+				char *log_path = NULL;
+				char *e = fork_profiler(q, &stats, &log_path);
+				if (e != NULL) {
+					Mfprintf(_mero_ctlerr, "%s: failed to start the profiler "
+							 "database '%s': %s\n", origin, q, getErrMsg(e));
+					len = snprintf(buf2, sizeof(buf2),
+								   "%s\n", getErrMsg(e));
+					send_client("!");
+					freeErr(e);
+				} else {
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send_client("=");
+					Mfprintf(_mero_ctlout, "%s: started profiler for '%s'\n",
+							 origin, q);
+					Mfprintf(_mero_ctlout, "%s: logs at: %s\n",
+							 origin, log_path);
+				}
+				msab_freeStatus(&stats);
+			}  else if (strncmp(p, "profilerstop", strlen("profilerstop")) == 0) {
+				char *e = shutdown_profiler(q, &stats);
+				if (e != NULL) {
+					Mfprintf(_mero_ctlerr, "%s: failed to shutdown the profiler "
+							 "database '%s': %s\n", origin, q, getErrMsg(e));
+					len = snprintf(buf2, sizeof(buf2),
+								   "%s\n", getErrMsg(e));
+					send_client("!");
+					freeErr(e);
+				} else {
+					len = snprintf(buf2, sizeof(buf2), "OK\n");
+					send_client("=");
+					Mfprintf(_mero_ctlout, "%s: profiler shut down for '%s'\n",
+							 origin, q);
+				}
+				msab_freeStatus(&stats);
 			} else if (strncmp(p, "name=", strlen("name=")) == 0) {
 				char *e;
 
@@ -952,7 +995,6 @@ void *
 controlRunner(void *d)
 {
 	int usock = *(int *)d;
-	int sock = -1;
 	int retval;
 	fd_set fds;
 	struct timeval tv;
@@ -963,7 +1005,7 @@ controlRunner(void *d)
 		FD_ZERO(&fds);
 		FD_SET(usock, &fds);
 
-		/* Wait up to 5 seconds. */
+		/* limit waiting time in order to check whether we need to exit */
 		tv.tv_sec = 1;
 		tv.tv_usec = 0;
 		retval = select(usock + 1, &fds, NULL, NULL, &tv);
@@ -972,18 +1014,14 @@ controlRunner(void *d)
 			continue;
 		}
 		if (retval == -1) {
-			if (_mero_keep_listening == 0)
-				break;
 			continue;
 		}
 
-		if (FD_ISSET(usock, &fds)) {
-			sock = usock;
-		} else {
+		if (!FD_ISSET(usock, &fds)) {
 			continue;
 		}
 
-		if ((msgsock = accept(sock, (SOCKPTR) 0, (socklen_t *) 0)) == -1) {
+		if ((msgsock = accept4(usock, (SOCKPTR) 0, (socklen_t *) 0, SOCK_CLOEXEC)) == -1) {
 			if (_mero_keep_listening == 0)
 				break;
 			if (errno != EINTR) {
@@ -992,6 +1030,9 @@ controlRunner(void *d)
 			}
 			continue;
 		}
+#if defined(HAVE_FCNTL) && (!defined(SOCK_CLOEXEC) || !defined(HAVE_ACCEPT4))
+		(void) fcntl(msgsock, F_SETFD, FD_CLOEXEC);
+#endif
 
 		if (pthread_create(&tid, NULL, handle_client, &msgsock) != 0)
 			closesocket(msgsock);

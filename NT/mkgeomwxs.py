@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 # python mkgeomwxs.py VERSION makedefs.txt PREFIX > PREFIX/MonetDB5-Geom-Installer.wxs
 # "c:\Program Files (x86)\WiX Toolset v3.10\bin\candle.exe" -nologo -arch x64/x86 PREFIX/MonetDB5-Geom-Installer.wxs
 # "c:\Program Files (x86)\WiX Toolset v3.10\bin\light.exe" -nologo -sice:ICE03 -sice:ICE60 -sice:ICE82 -ext WixUIExtension PREFIX/MonetDB5-Geom-Installer.wixobj
@@ -52,7 +54,16 @@ def main():
     print(r'      INSTALLDIR')
     print(r'    </Condition>')
     print(r'    <Directory Id="TARGETDIR" Name="SourceDir">')
-    print(r'      <Merge Id="VCRedist" DiskId="1" Language="0" SourceFile="C:\Program Files (x86)\Common Files\Merge Modules\Microsoft_VC%s0_CRT_%s.msm"/>' % (vs, arch))
+    if vs == '17':
+        msvc = r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Redist\MSVC'
+        d = sorted(os.listdir(msvc))[-1]
+        msm = '_CRT_%s.msm' % arch
+        for f in sorted(os.listdir(os.path.join(msvc, d, 'MergeModules'))):
+            if msm in f:
+                fn = f
+        print(r'      <Merge Id="VCRedist" DiskId="1" Language="0" SourceFile="%s\%s\MergeModules\%s"/>' % (msvc, d, fn))
+    else:
+        print(r'      <Merge Id="VCRedist" DiskId="1" Language="0" SourceFile="C:\Program Files (x86)\Common Files\Merge Modules\Microsoft_VC%s0_CRT_%s.msm"/>' % (vs, arch))
     print(r'      <Directory Id="%s">' % folder)
     print(r'        <Directory Id="ProgramFilesMonetDB" Name="MonetDB">')
     print(r'          <Directory Id="INSTALLDIR" Name="MonetDB5">')
@@ -74,7 +85,7 @@ def main():
     id = comp(features, id, 16,
               [r'lib\monetdb5\%s' % x for x in sorted(filter(lambda x: x.endswith('.mal') and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     id = comp(features, id, 16,
-              [r'lib\monetdb5\%s' % x for x in sorted(filter(lambda x: x.startswith('lib_') and x.endswith('.dll') and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
+              [r'lib\monetdb5\%s' % x for x in sorted(filter(lambda x: x.startswith('lib_') and (x.endswith('.dll') or x.endswith('.pdb')) and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', 'monetdb5'))))])
     print(r'              </Directory>')
     print(r'            </Directory>')
     print(r'          </Directory>')

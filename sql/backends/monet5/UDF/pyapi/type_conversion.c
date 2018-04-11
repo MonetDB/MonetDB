@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -11,10 +11,6 @@
 #include "unicode.h"
 
 #include <longintrepr.h>
-
-#if defined(_MSC_VER) && _MSC_VER <= 1600
-#define isnan(x) _isnan(x)
-#endif
 
 #if PY_MAJOR_VERSION >= 3
 #define IS_PY3K
@@ -39,7 +35,7 @@ bool string_copy(char *source, char *dest, size_t max_size, bool allow_unicode)
 #ifdef HAVE_HGE
 int hge_to_string(char *str, hge x)
 {
-	int len = 256; /* assume str is large enough */
+	size_t len = 256; /* assume str is large enough */
 	hgeToStr(&str, &len, &x);
 	return TRUE;
 }
@@ -70,12 +66,57 @@ PyObject *PyLong_FromHge(hge h)
 size_t pyobject_get_size(PyObject *obj)
 {
 	size_t size = 256;
-	if (PyString_CheckExact(obj) || PyByteArray_CheckExact(obj)) {
-		size = Py_SIZE(obj); // Normal strings are 1 string per character
+
+	if (
+#ifndef IS_PY3K
+	    PyString_CheckExact(obj) ||
+#endif
+	    PyByteArray_CheckExact(obj)) {
+		size = Py_SIZE(obj); // Normal strings are 1 byte per character
 	} else if (PyUnicode_CheckExact(obj)) {
 		size = Py_SIZE(obj) * 4; // UTF32 is 4 bytes per character
 	}
 	return size;
+}
+
+
+str pyobject_to_blob(PyObject **ptr, size_t maxsize, blob **value) {
+	size_t size;
+	char* bytes_data;
+	PyObject *obj;
+	str msg = MAL_SUCCEED;
+	if (ptr == NULL || *ptr == NULL) {
+		msg = createException(MAL, "pyapi.eval", "Invalid PyObject.");
+		goto wrapup;
+	}
+	obj = *ptr;
+	
+	(void)maxsize;
+#ifndef IS_PY3K
+	if (PyString_CheckExact(obj)) {
+		size = PyString_Size(obj);
+		bytes_data = ((PyStringObject *)obj)->ob_sval;
+	} else
+#endif
+	if (PyByteArray_CheckExact(obj)) {
+		size = PyByteArray_Size(obj);
+		bytes_data = ((PyByteArrayObject *)obj)->ob_bytes;
+	} else {
+		msg = createException(
+			MAL, "pyapi.eval",
+			"Unrecognized Python object. Could not convert to blob.\n");
+		goto wrapup;
+	}
+
+	*value = GDKmalloc(sizeof(blob) + size + 1);
+	if (!*value) {
+		msg = createException(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto wrapup;
+	}
+	(*value)->nitems = size;
+	memcpy((*value)->data, bytes_data, size);
+wrapup:
+	return msg;
 }
 
 str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
@@ -83,32 +124,33 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 	PyObject *obj;
 	str msg = MAL_SUCCEED;
 	str utf8_string = NULL;
-
-	(void)maxsize;
+	size_t len = 0;
 
 	if (ptr == NULL || *ptr == NULL) {
-		msg = createException(MAL, "pyapi.eval", "Invalid PyObject.");
+		msg = createException(MAL, "pyapi.eval", SQLSTATE(PY000) "Invalid PyObject.");
 		goto wrapup;
 	}
 	obj = *ptr;
 
 	utf8_string = *value;
 	if (!utf8_string) {
-		utf8_string = (str)malloc(pyobject_get_size(obj) * sizeof(char));
+		utf8_string = (str)malloc(len = (pyobject_get_size(obj) + 1));
 		if (!utf8_string) {
 			msg = createException(MAL, "pyapi.eval",
-								  MAL_MALLOC_FAIL "python string");
+								  SQLSTATE(HY001) MAL_MALLOC_FAIL "python string");
 			goto wrapup;
 		}
 		*value = utf8_string;
+	} else {
+		len = maxsize;
 	}
 
 #ifndef IS_PY3K
 	if (PyString_CheckExact(obj)) {
 		char *str = ((PyStringObject *)obj)->ob_sval;
-		if (!string_copy(str, utf8_string, strlen(str) + 1, false)) {
+		if (!string_copy(str, utf8_string, len-1, false)) {
 			msg = createException(MAL, "pyapi.eval",
-								  "Invalid string encoding used. Please return "
+								  SQLSTATE(PY000) "Invalid string encoding used. Please return "
 								  "a regular ASCII string, or a Numpy_Unicode "
 								  "object.\n");
 			goto wrapup;
@@ -117,9 +159,9 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 #endif
 		if (PyByteArray_CheckExact(obj)) {
 		char *str = ((PyByteArrayObject *)obj)->ob_bytes;
-		if (!string_copy(str, utf8_string, strlen(str) + 1, false)) {
+		if (!string_copy(str, utf8_string, len-1, false)) {
 			msg = createException(MAL, "pyapi.eval",
-								  "Invalid string encoding used. Please return "
+								  SQLSTATE(PY000) "Invalid string encoding used. Please return "
 								  "a regular ASCII string, or a Numpy_Unicode "
 								  "object.\n");
 			goto wrapup;
@@ -134,9 +176,9 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 #endif
 #else
 		char *str = PyUnicode_AsUTF8(obj);
-		if (!string_copy(str, utf8_string, strlen(str) + 1, true)) {
+		if (!string_copy(str, utf8_string, len-1, true)) {
 			msg = createException(MAL, "pyapi.eval",
-								  "Invalid string encoding used. Please return "
+								  SQLSTATE(PY000) "Invalid string encoding used. Please return "
 								  "a regular ASCII string, or a Numpy_Unicode "
 								  "object.\n");
 			goto wrapup;
@@ -156,7 +198,7 @@ str pyobject_to_str(PyObject **ptr, size_t maxsize, str *value)
 	} else {
 		msg = createException(
 			MAL, "pyapi.eval",
-			"Unrecognized Python object. Could not convert to NPY_UNICODE.\n");
+			SQLSTATE(PY000) "Unrecognized Python object. Could not convert to NPY_UNICODE.\n");
 		goto wrapup;
 	}
 wrapup:
@@ -166,7 +208,7 @@ wrapup:
 #define STRING_TO_NUMBER_FACTORY(tpe)                                          \
 	str str_to_##tpe(char *ptr, size_t maxsize, tpe *value)                    \
 	{                                                                          \
-		int len = sizeof(tpe);                                                 \
+		size_t len = sizeof(tpe);                                              \
 		char buf[256];                                                         \
 		if (maxsize > 0) {                                                     \
 			if (maxsize >= sizeof(buf))                                        \
@@ -177,7 +219,7 @@ wrapup:
 				return GDKstrdup("string too long to convert.");               \
 			ptr = buf;                                                         \
 		}                                                                      \
-		if (BATatoms[TYPE_##tpe].atomFromStr(ptr, &len, (void **)&value) == 0) \
+		if (BATatoms[TYPE_##tpe].atomFromStr(ptr, &len, (void **)&value) < 0)  \
 			return GDKstrdup("Error converting string.");                      \
 		return MAL_SUCCEED;                                                    \
 	}

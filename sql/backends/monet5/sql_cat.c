@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -25,15 +25,15 @@
 #include "mal_builder.h"
 #include "mal_debugger.h"
 
-#include <rel_select.h>
-#include <rel_optimizer.h>
-#include <rel_prop.h>
-#include <rel_rel.h>
-#include <rel_exp.h>
-#include <rel_bin.h>
-#include <rel_dump.h>
-#include <rel_remote.h>
-#include <orderidx.h>
+#include "rel_select.h"
+#include "rel_optimizer.h"
+#include "rel_prop.h"
+#include "rel_rel.h"
+#include "rel_exp.h"
+#include "rel_bin.h"
+#include "rel_dump.h"
+#include "rel_remote.h"
+#include "orderidx.h"
 
 #define initcontext() \
     if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)\
@@ -41,7 +41,7 @@
     if ((msg = checkSQLContext(cntxt)) != NULL)\
         return msg;\
     if (STORE_READONLY)\
-        return sql_message("25006!schema statements cannot be executed on a readonly database.");
+        throw(SQL,"sql.cat",SQLSTATE(25006) "Schema statements cannot be executed on a readonly database.");
 
 static char *
 SaveArgReference(MalStkPtr stk, InstrPtr pci, int arg)
@@ -79,23 +79,23 @@ rel_check_tables(sql_table *nt, sql_table *nnt)
 	node *n, *m;
 
 	if (cs_size(&nt->columns) != cs_size(&nnt->columns))
-		return sql_message("3F000!ALTER MERGE TABLE: to be added table doesn't match MERGE TABLE definition");
+		throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER MERGE TABLE: to be added table doesn't match MERGE TABLE definition");
 	for (n = nt->columns.set->h, m = nnt->columns.set->h; n && m; n = n->next, m = m->next) {
 		sql_column *nc = n->data;
 		sql_column *mc = m->data;
 
 		if (subtype_cmp(&nc->type, &mc->type) != 0)
-			return sql_message("3F000!ALTER MERGE TABLE: to be added table column type doesn't match MERGE TABLE definition");
+			throw(SQL,"sql.relcheck_tables",SQLSTATE(3F000) "ALTER MERGE TABLE: to be added table column type doesn't match MERGE TABLE definition");
 	}
 	if (cs_size(&nt->idxs) != cs_size(&nnt->idxs))
-		return sql_message("3F000!ALTER MERGE TABLE: to be added table index doesn't match MERGE TABLE definition");
+		throw(SQL,"sql.relcheck_tables",SQLSTATE(3F000) "ALTER MERGE TABLE: to be added table index doesn't match MERGE TABLE definition");
 	if (cs_size(&nt->idxs))
 		for (n = nt->idxs.set->h, m = nnt->idxs.set->h; n && m; n = n->next, m = m->next) {
 			sql_idx *ni = n->data;
 			sql_idx *mi = m->data;
 
 			if (ni->type != mi->type)
-				return sql_message("3F000!ALTER MERGE TABLE: to be added table index type doesn't match MERGE TABLE definition");
+				throw(SQL,"sql.relcheck_tables",SQLSTATE(3F000) "ALTER MERGE TABLE: to be added table index type doesn't match MERGE TABLE definition");
 		}
 	return MAL_SUCCEED;
 }
@@ -111,20 +111,20 @@ alter_table_add_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 	if (ps)
 		pt = mvc_bind_table(sql, ps, ptname);
 	if (mt && (mt->type != tt_merge_table && mt->type != tt_replica_table))
-		return sql_message("42S02!ALTER TABLE: cannot add table '%s.%s' to table '%s.%s'", psname, ptname, msname, mtname);
+		throw(SQL,"sql.alter_table_add_table",SQLSTATE(42S02) "ALTER TABLE: cannot add table '%s.%s' to table '%s.%s'", psname, ptname, msname, mtname);
 	if (mt && pt) {
 		char *msg;
-		node *n = cs_find_id(&mt->tables, pt->base.id);
+		node *n = cs_find_id(&mt->members, pt->base.id);
 
 		if (n)
-			return sql_message("42S02!ALTER TABLE: table '%s.%s' is already part of the MERGE TABLE '%s.%s'", psname, ptname, msname, mtname);
+			throw(SQL,"alter_table_add_table",SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' is already part of the MERGE TABLE '%s.%s'", psname, ptname, msname, mtname);
 		if ((msg = rel_check_tables(mt, pt)) != NULL)
 			return msg;
 		sql_trans_add_table(sql->session->tr, mt, pt);
 	} else if (mt) {
-		return sql_message("42S02!ALTER TABLE: no such table '%s' in schema '%s'", ptname, psname);
+		throw(SQL,"sql.alter_table_add_table",SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", ptname, psname);
 	} else {
-		return sql_message("42S02!ALTER TABLE: no such table '%s' in schema '%s'", mtname, msname);
+		throw(SQL,"sql.alter_table_add_table",SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", mtname, msname);
 	}
 	return MAL_SUCCEED;
 }
@@ -142,14 +142,14 @@ alter_table_del_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 	if (mt && pt) {
 		node *n = NULL;
 
-		if (!pt || (n = cs_find_id(&mt->tables, pt->base.id)) == NULL)
-			return sql_message("42S02!ALTER TABLE: table '%s.%s' isn't part of the MERGE TABLE '%s.%s'", psname, ptname, msname, mtname);
+		if (!pt || (n = cs_find_id(&mt->members, pt->base.id)) == NULL)
+			throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' isn't part of the MERGE TABLE '%s.%s'", psname, ptname, msname, mtname);
 
 		sql_trans_del_table(sql->session->tr, mt, pt, drop_action);
 	} else if (mt) {
-		return sql_message("42S02!ALTER TABLE: no such table '%s' in schema '%s'", ptname, psname);
+		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", ptname, psname);
 	} else {
-		return sql_message("42S02!ALTER TABLE: no such table '%s' in schema '%s'", mtname, msname);
+		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", mtname, msname);
 	}
 	return MAL_SUCCEED;
 }
@@ -164,15 +164,15 @@ alter_table_set_access(mvc *sql, char *sname, char *tname, int access)
 		t = mvc_bind_table(sql, s, tname);
 	if (t) {
 		if (t->type == tt_merge_table)
-			return sql_message("42S02!ALTER TABLE: read only MERGE TABLES are not supported");
+			throw(SQL,"sql.alter_table_set_access",SQLSTATE(42S02) "ALTER TABLE: read only MERGE TABLES are not supported");
 		if (t->access != access) {
 			if (access && table_has_updates(sql->session->tr, t))
-				return sql_message("40000!ALTER TABLE: set READ or INSERT ONLY not possible with outstanding updates (wait until updates are flushed)\n");
+				throw(SQL,"sql.alter_table_set_access",SQLSTATE(40000) "ALTER TABLE: set READ or INSERT ONLY not possible with outstanding updates (wait until updates are flushed)\n");
 
 			mvc_access(sql, t, access);
 		}
 	} else {
-		return sql_message("42S02!ALTER TABLE: no such table '%s' in schema '%s'", tname, sname);
+		throw(SQL,"sql.alter_table_set_access",SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", tname, sname);
 	}
 	return MAL_SUCCEED;
 }
@@ -185,19 +185,19 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 	sql_table *t;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_message("3F000!CREATE TRIGGER: no such schema '%s'", sname);
+		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "CREATE TRIGGER: no such schema '%s'", sname);
 	if (!s)
 		s = cur_schema(sql);
 	if (!mvc_schema_privs(sql, s))
-		return sql_message("3F000!CREATE TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "CREATE TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	if (mvc_bind_trigger(sql, s, triggername) != NULL)
-		return sql_message("3F000!CREATE TRIGGER: name '%s' already in use", triggername);
+		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "CREATE TRIGGER: name '%s' already in use", triggername);
 
 	if (!(t = mvc_bind_table(sql, s, tname)))
-		return sql_message("3F000!CREATE TRIGGER: unknown table '%s'", tname);
+		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "CREATE TRIGGER: unknown table '%s'", tname);
 
 	if (isView(t))
-		return sql_message("3F000!CREATE TRIGGER: cannot create trigger on view '%s'", tname);
+		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "CREATE TRIGGER: cannot create trigger on view '%s'", tname);
 
 	tri = mvc_create_trigger(sql, t, triggername, time, orientation, event, old_name, new_name, condition, query);
 	if (tri) {
@@ -206,7 +206,11 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 		sql_allocator *sa = sql->sa;
 
 		sql->sa = sa_create();
+		if(!sql->sa)
+			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		buf = sa_strdup(sql->sa, query);
+		if(!buf)
+			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
 			r = rel_optimizer(sql, r);
@@ -222,22 +226,26 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 }
 
 static char *
-drop_trigger(mvc *sql, char *sname, char *tname)
+drop_trigger(mvc *sql, char *sname, char *tname, int if_exists)
 {
 	sql_trigger *tri = NULL;
 	sql_schema *s = NULL;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_message("3F000!DROP TRIGGER: no such schema '%s'", sname);
+		throw(SQL,"sql.drop_trigger",SQLSTATE(3F000) "DROP TRIGGER: no such schema '%s'", sname);
 	if (!s)
 		s = cur_schema(sql);
 	assert(s);
 	if (!mvc_schema_privs(sql, s))
-		return sql_message("3F000!DROP TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.drop_trigger",SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 
-	if ((tri = mvc_bind_trigger(sql, s, tname)) == NULL)
-		return sql_message("3F000!DROP TRIGGER: unknown trigger %s\n", tname);
-	mvc_drop_trigger(sql, s, tri);
+	if ((tri = mvc_bind_trigger(sql, s, tname)) == NULL) {
+		if(if_exists)
+			return MAL_SUCCEED;
+		throw(SQL,"sql.drop_trigger", SQLSTATE(3F000) "DROP TRIGGER: unknown trigger %s\n", tname);
+	}
+	if(mvc_drop_trigger(sql, s, tri))
+		throw(SQL,"sql.drop_trigger", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -249,7 +257,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 	node *n;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_message("3F000!DROP TABLE: no such schema '%s'", sname);
+		throw(SQL,"sql.drop_table",SQLSTATE(3F000) "DROP TABLE: no such schema '%s'", sname);
 	if (!s)
 		s = cur_schema(sql);
 	t = mvc_bind_table(sql, s, tname);
@@ -260,13 +268,13 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 	if (!t) {
 		if (if_exists)
 			return MAL_SUCCEED;
-		return sql_message("42S02!DROP TABLE: no such table '%s'", tname);
+		throw(SQL,"sql.droptable", SQLSTATE(42S02) "DROP TABLE: no such table '%s'", tname);
 	} else if (isView(t)) {
-		return sql_message("42000!DROP TABLE: cannot drop VIEW '%s'", tname);
+		throw(SQL,"sql.droptable", SQLSTATE(42000) "DROP TABLE: cannot drop VIEW '%s'", tname);
 	} else if (t->system) {
-		return sql_message("42000!DROP TABLE: cannot drop system table '%s'", tname);
+		throw(SQL,"sql.droptable", SQLSTATE(42000) "DROP TABLE: cannot drop system table '%s'", tname);
 	} else if (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP)) {
-		return sql_message("42000!DROP TABLE: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.droptable",SQLSTATE(42000) "DROP TABLE: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 	if (!drop_action && t->keys.set) {
 		for (n = t->keys.set->h; n; n = n->next) {
@@ -282,7 +290,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 						k = l->data;
 						/* make sure it is not a self referencing key */
 						if (k->t != t)
-							return sql_message("40000!DROP TABLE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, tname);
+							throw(SQL,"sql.droptable", SQLSTATE(40000) "DROP TABLE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, tname);
 					}
 				}
 			}
@@ -290,9 +298,10 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 	}
 
 	if (!drop_action && mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
-		return sql_message("42000!DROP TABLE: unable to drop table %s (there are database objects which depend on it)\n", t->base.name);
+		throw (SQL,"sql.droptable",SQLSTATE(42000) "DROP TABLE: unable to drop table %s (there are database objects which depend on it)\n", t->base.name);
 
-	mvc_drop_table(sql, s, t, drop_action);
+	if(mvc_drop_table(sql, s, t, drop_action))
+		throw(SQL,"sql.droptable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -303,27 +312,28 @@ drop_view(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 	sql_schema *ss = NULL;
 
 	if (sname != NULL && (ss = mvc_bind_schema(sql, sname)) == NULL)
-		return sql_message("3F000!DROP VIEW: no such schema '%s'", sname);
+		throw(SQL,"sql.dropview", SQLSTATE(3F000) "DROP VIEW: no such schema '%s'", sname);
 
 	if (ss == NULL)
 		ss = cur_schema(sql);
 
 	t = mvc_bind_table(sql, ss, tname);
 	if (!mvc_schema_privs(sql, ss) && !(isTempSchema(ss) && t && t->persistence == SQL_LOCAL_TEMP)) {
-		return sql_message("42000!DROP VIEW: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), ss->base.name);
+		throw(SQL,"sql.dropview", SQLSTATE(42000) "DROP VIEW: access denied for %s to schema '%s'", stack_get_string(sql, "current_user"), ss->base.name);
 	} else if (!t) {
 		if(if_exists){
 			return MAL_SUCCEED;
 		}
-		return sql_message("42S02!DROP VIEW: unknown view '%s'", tname);
+		throw(SQL,"sql.drop_view",SQLSTATE(42S02) "DROP VIEW: unknown view '%s'", tname);
 	} else if (!isView(t)) {
-		return sql_message("42000!DROP VIEW: unable to drop view '%s': is a table", tname);
+		throw(SQL,"sql.drop_view", SQLSTATE(42000) "DROP VIEW: unable to drop view '%s': is a table", tname);
 	} else if (t->system) {
-		return sql_message("42000!DROP VIEW: cannot drop system view '%s'", tname);
+		throw(SQL,"sql.drop_view", SQLSTATE(42000) "DROP VIEW: cannot drop system view '%s'", tname);
 	} else if (!drop_action && mvc_check_dependency(sql, t->base.id, VIEW_DEPENDENCY, NULL)) {
-		return sql_message("42000!DROP VIEW: cannot drop view '%s', there are database objects which depend on it", t->base.name);
+		throw(SQL,"sql.drop_view", SQLSTATE(42000) "DROP VIEW: cannot drop view '%s', there are database objects which depend on it", t->base.name);
 	} else {
-		mvc_drop_table(sql, ss, t, drop_action);
+		if(mvc_drop_table(sql, ss, t, drop_action))
+			throw(SQL,"sql.drop_view", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		return MAL_SUCCEED;
 	}
 }
@@ -335,16 +345,17 @@ drop_key(mvc *sql, char *sname, char *kname, int drop_action)
 	sql_schema *ss = NULL;
 
 	if (sname != NULL && (ss = mvc_bind_schema(sql, sname)) == NULL)
-		return sql_message("3F000!ALTER TABLE: no such schema '%s'", sname);
+		throw(SQL,"drop_key", SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", sname);
 
 	if (ss == NULL)
 		ss = cur_schema(sql);
 
 	if ((key = mvc_bind_key(sql, ss, kname)) == NULL)
-		return sql_message("42000!ALTER TABLE: no such constraint '%s'", kname);
+		throw(SQL,"sql.drop_key", SQLSTATE(42000) "ALTER TABLE: no such constraint '%s'", kname);
 	if (!drop_action && mvc_check_dependency(sql, key->base.id, KEY_DEPENDENCY, NULL))
-		return sql_message("42000!ALTER TABLE: cannot drop constraint '%s': there are database objects which depend on it", key->base.name);
-	mvc_drop_key(sql, ss, key, drop_action);
+		throw(SQL,"sql.drop_key", SQLSTATE(42000) "ALTER TABLE: cannot drop constraint '%s': there are database objects which depend on it", key->base.name);
+	if(mvc_drop_key(sql, ss, key, drop_action))
+		throw(SQL,"sql.drop_key", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
@@ -355,26 +366,31 @@ drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
 	sql_idx *i = NULL;
 
 	if (!(s = mvc_bind_schema(sql, sname)))
-		return sql_message("3F000!DROP INDEX: no such schema '%s'", sname);
+		throw(SQL,"sql.drop_index", SQLSTATE(3F000) "DROP INDEX: no such schema '%s'", sname);
 	i = mvc_bind_idx(sql, s, iname);
 	if (!i) {
-		return sql_message("42S12!DROP INDEX: no such index '%s'", iname);
+		throw(SQL,"sql.drop_index", SQLSTATE(42S12) "DROP INDEX: no such index '%s'", iname);
 	} else if (!mvc_schema_privs(sql, s)) {
-		return sql_message("42000!DROP INDEX: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.drop_index", SQLSTATE(42000) "DROP INDEX: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else {
 		if (i->type == ordered_idx) {
 			sql_kc *ic = i->columns->h->data;
 			BAT *b = mvc_bind(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, 0);
-			OIDXdropImplementation(cntxt, b);
-			BBPunfix(b->batCacheid);
+			if(b) {
+				OIDXdropImplementation(cntxt, b);
+				BBPunfix(b->batCacheid);
+			}
 		}
 		if (i->type == imprints_idx) {
 			sql_kc *ic = i->columns->h->data;
 			BAT *b = mvc_bind(sql, s->base.name, ic->c->t->base.name, ic->c->base.name, 0);
-			IMPSdestroy(b);
-			BBPunfix(b->batCacheid);
+			if(b) {
+				IMPSdestroy(b);
+				BBPunfix(b->batCacheid);
+			}
 		}
-		mvc_drop_idx(sql, s, i);
+		if(mvc_drop_idx(sql, s, i))
+			throw(SQL,"sql.drop_index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	return NULL;
 }
@@ -386,13 +402,13 @@ create_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq)
 
 	(void)seqname;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_message("3F000!CREATE SEQUENCE: no such schema '%s'", sname);
+		throw(SQL,"sql.create_seq", SQLSTATE(3F000) "CREATE SEQUENCE: no such schema '%s'", sname);
 	if (s == NULL)
 		s = cur_schema(sql);
 	if (find_sql_sequence(s, seq->base.name)) {
-		return sql_message("42000!CREATE SEQUENCE: name '%s' already in use", seq->base.name);
+		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: name '%s' already in use", seq->base.name);
 	} else if (!mvc_schema_privs(sql, s)) {
-		return sql_message("42000!CREATE SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 	sql_trans_create_sequence(sql->session->tr, s, seq->base.name, seq->start, seq->minvalue, seq->maxvalue, seq->increment, seq->cacheinc, seq->cycle, seq->bedropped);
 	return NULL;
@@ -406,13 +422,13 @@ alter_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq, lng *val)
 
 	(void)seqname;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_message("3F000!ALTER SEQUENCE: no such schema '%s'", sname);
+		throw(SQL,"sql.alter_seq", SQLSTATE(3F000) "ALTER SEQUENCE: no such schema '%s'", sname);
 	if (s == NULL)
 		s = cur_schema(sql);
 	if (!(nseq = find_sql_sequence(s, seq->base.name))) {
-		return sql_message("42000!ALTER SEQUENCE: no such sequence '%s'", seq->base.name);
+		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: no such sequence '%s'", seq->base.name);
 	} else if (!mvc_schema_privs(sql, s)) {
-		return sql_message("42000!ALTER SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 
 	/* first alter the known values */
@@ -429,16 +445,16 @@ drop_seq(mvc *sql, char *sname, char *name)
 	sql_sequence *seq = NULL;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_message("3F000!DROP SEQUENCE: no such schema '%s'", sname);
+		throw(SQL,"sql.drop_seq", SQLSTATE(3F000) "DROP SEQUENCE: no such schema '%s'", sname);
 	if (!s)
 		s = cur_schema(sql);
 	if (!(seq = find_sql_sequence(s, name))) {
-		return sql_message("42M35!DROP SEQUENCE: no such sequence '%s'", name);
+		throw(SQL,"sql.drop_seq", SQLSTATE(42M35) "DROP SEQUENCE: no such sequence '%s'", name);
 	} else if (!mvc_schema_privs(sql, s)) {
-		return sql_message("42000!DROP SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.drop_seq", SQLSTATE(42000) "DROP SEQUENCE: insufficient privileges for '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 	if (mvc_check_dependency(sql, seq->base.id, BEDROPPED_DEPENDENCY, NULL))
-		return sql_message("2B000!DROP SEQUENCE: unable to drop sequence %s (there are database objects which depend on it)\n", seq->base.name);
+		throw(SQL,"sql.drop_seq", SQLSTATE(2B000) "DROP SEQUENCE: unable to drop sequence %s (there are database objects which depend on it)\n", seq->base.name);
 
 	sql_trans_drop_sequence(sql->session->tr, s, seq, 0);
 	return NULL;
@@ -456,7 +472,7 @@ drop_func(mvc *sql, char *sname, char *name, int fid, int type, int action)
 	char *kf = type == F_FILT ? "filter " : type == F_UNION ? "union " : "";
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_message("3F000!DROP %s%s: no such schema '%s'", KF, F, sname);
+		throw(SQL,"sql.drop_func", SQLSTATE(3F000) "DROP %s%s: no such schema '%s'", KF, F, sname);
 	if (!s)
 		s = cur_schema(sql);
 	if (fid >= 0) {
@@ -465,31 +481,37 @@ drop_func(mvc *sql, char *sname, char *name, int fid, int type, int action)
 			sql_func *func = n->data;
 
 			if (!mvc_schema_privs(sql, s)) {
-				return sql_message("DROP %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
+				throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
 			}
 			if (!action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
-				return sql_message("DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
+				throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
 
-			mvc_drop_func(sql, s, func, action);
+			if(mvc_drop_func(sql, s, func, action))
+				throw(SQL,"sql.drop_func", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
-	} else {
+	} else if(fid == -2) { //if exists option
+		return MAL_SUCCEED;
+	} else { //fid == -1
 		node *n = NULL;
 		list *list_func = schema_bind_func(sql, s, name, type);
+		int res;
 
 		if (!mvc_schema_privs(sql, s)) {
 			list_destroy(list_func);
-			return sql_message("DROP %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
+			throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s%s: access denied for %s to schema ;'%s'", KF, F, stack_get_string(sql, "current_user"), s->base.name);
 		}
 		for (n = list_func->h; n; n = n->next) {
 			sql_func *func = n->data;
 
 			if (!action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, list_func)) {
 				list_destroy(list_func);
-				return sql_message("DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
+				throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s%s: there are database objects dependent on %s%s %s;", KF, F, kf, f, func->base.name);
 			}
 		}
-		mvc_drop_all_func(sql, s, list_func, action);
+		res = mvc_drop_all_func(sql, s, list_func, action);
 		list_destroy(list_func);
+		if(res)
+			throw(SQL,"sql.drop_func", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	return MAL_SUCCEED;
 }
@@ -506,7 +528,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 
 	(void)fname;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_message("3F000!CREATE %s%s: no such schema '%s'", KF, F, sname);
+		throw(SQL,"sql.create_func", SQLSTATE(3F000) "CREATE %s%s: no such schema '%s'", KF, F, sname);
 	if (!s)
 		s = cur_schema(sql);
 	nf = mvc_create_func(sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg);
@@ -516,7 +538,11 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 		sql_allocator *sa = sql->sa;
 
 		sql->sa = sa_create();
+		if(!sql->sa)
+			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		buf = sa_strdup(sql->sa, nf->query);
+		if(!buf)
+			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
 			r = rel_optimizer(sql, r);
@@ -546,7 +572,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 		sql->sa = sa;
 	} else if (nf->lang == FUNC_LANG_MAL) {
 		if (!backend_resolve_function(sql, nf))
-			return sql_message("3F000!CREATE %s%s: external name %s.%s not bound", KF, F, nf->mod, nf->base.name);
+			throw(SQL,"sql.create_func", SQLSTATE(3F000) "CREATE %s%s: external name %s.%s not bound", KF, F, nf->mod, nf->base.name);
 	}
 	return MAL_SUCCEED;
 }
@@ -559,12 +585,12 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 	node *n;
 
 	if (!s)
-		return sql_message("3F000!ALTER TABLE: no such schema '%s'", sname);
+		throw(SQL,"sql.alter_table", SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", sname);
 
 	if ((nt = mvc_bind_table(sql, s, t->base.name)) == NULL) {
-		return sql_message("42S02!ALTER TABLE: no such table '%s'", t->base.name);
+		throw(SQL,"sql.alter_table", SQLSTATE(42S02) "ALTER TABLE: no such table '%s'", t->base.name);
 	} else if (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP)) {
-		return sql_message("42000!ALTER TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.alter_table", SQLSTATE(42000) "ALTER TABLE: insufficient privileges for user '%s' in schema '%s'", stack_get_string(sql, "current_user"), s->base.name);
 	}
 
 	/* First check if all the changes are allowed */
@@ -574,7 +600,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			for (n = t->idxs.nelm; n; n = n->next) {
 				sql_idx *i = n->data;
 				if (i->key && i->key->type == pkey)
-					return sql_message("40000!CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
+					throw(SQL,"sql.alter_table", SQLSTATE(40000) "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
 			}
 		}
 	}
@@ -585,7 +611,8 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			/* propagate alter table .. drop column */
 			sql_column *c = n->data;
 			sql_column *nc = mvc_bind_column(sql, nt, c->base.name);
-			mvc_drop_column(sql, nt, nc, c->drop_action);
+			if(mvc_drop_column(sql, nt, nc, c->drop_action))
+				throw(SQL,"sql.alter_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 	/* check for changes on current cols */
 	for (n = t->columns.set->h; n != t->columns.nelm; n = n->next) {
@@ -601,7 +628,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 					sql_kc *kc = m->data;
 
 					if (kc->c->base.id == c->base.id)
-						return sql_message("40000!NOT NULL CONSTRAINT: cannot change NOT NULL CONSTRAINT for column '%s' as its part of the PRIMARY KEY\n", c->base.name);
+						throw(SQL,"sql.alter_table", SQLSTATE(40000) "NOT NULL CONSTRAINT: cannot change NOT NULL CONSTRAINT for column '%s' as its part of the PRIMARY KEY\n", c->base.name);
 				}
 			}
 			mvc_null(sql, nc, c->null);
@@ -609,11 +636,11 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			if (c->null == 0) {
 				const void *nilptr = ATOMnilptr(c->type.type->localtype);
 				rids *nils = table_funcs.rids_select(sql->session->tr, nc, nilptr, NULL, NULL);
-				int has_nils = (table_funcs.rids_next(nils) != oid_nil);
+				int has_nils = !is_oid_nil(table_funcs.rids_next(nils));
 
 				table_funcs.rids_destroy(nils);
 				if (has_nils)
-					return sql_message("40002!ALTER TABLE: NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
+					throw(SQL,"sql.alter_table", SQLSTATE(40002) "ALTER TABLE: NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
 			}
 		}
 		if (c->def != nc->def)
@@ -621,7 +648,7 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 
 		if (c->storage_type != nc->storage_type) {
 			if (c->t->access == TABLE_WRITABLE)
-				return sql_message("40002!ALTER TABLE: SET STORAGE for column %s.%s only allowed on READ or INSERT ONLY tables", c->t->base.name, c->base.name);
+				throw(SQL,"sql.alter_table", SQLSTATE(40002) "ALTER TABLE: SET STORAGE for column %s.%s only allowed on READ or INSERT ONLY tables", c->t->base.name, c->base.name);
 			nc->base.rtime = nc->base.wtime = sql->session->tr->wtime;
 			mvc_storage(sql, nc, c->storage_type);
 		}
@@ -637,7 +664,8 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			for (n = t->idxs.dset->h; n; n = n->next) {
 				sql_idx *i = n->data;
 				sql_idx *ni = mvc_bind_idx(sql, s, i->base.name);
-				mvc_drop_idx(sql, s, ni);
+				if(mvc_drop_idx(sql, s, ni))
+					throw(SQL,"sql.alter_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 		/* alter add index */
 		for (n = t->idxs.nelm; n; n = n->next) {
@@ -649,16 +677,19 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 				char *msg = OIDXcreateImplementation(cntxt, newBatType(b->ttype), b, -1);
 				BBPunfix(b->batCacheid);
 				if (msg != MAL_SUCCEED) {
-					char *smsg = sql_message("40002!CREATE ORDERED INDEX: %s", msg);
+					char *smsg = createException(SQL,"sql.alter_table", SQLSTATE(40002) "CREATE ORDERED INDEX: %s", msg);
 					freeException(msg);
 					return smsg;
 				}
 			}
 			if (i->type == imprints_idx) {
+				gdk_return r;
 				sql_kc *ic = i->columns->h->data;
 				BAT *b = mvc_bind(sql, nt->s->base.name, nt->base.name, ic->c->base.name, 0);
-				BATimprints(b);
+				r = BATimprints(b);
 				BBPunfix(b->batCacheid);
+				if (r != GDK_SUCCEED)
+					throw(SQL, "sql.alter_table", GDK_EXCEPTION);
 			}
 			mvc_copy_idx(sql, nt, i);
 		}
@@ -669,8 +700,10 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			for (n = t->keys.dset->h; n; n = n->next) {
 				sql_key *k = n->data;
 				sql_key *nk = mvc_bind_key(sql, s, k->base.name);
-				if (nk)
-					mvc_drop_key(sql, s, nk, k->drop_action);
+				if (nk) {
+					if(mvc_drop_key(sql, s, nk, k->drop_action))
+						throw(SQL,"sql.alter_table", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				}
 			}
 		/* alter add key */
 		for (n = t->keys.nelm; n; n = n->next) {
@@ -679,88 +712,6 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 		}
 	}
 	return MAL_SUCCEED;
-}
-
-str
-UPGdrop_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *sql = NULL;
-	str msg = MAL_SUCCEED;
-	int id = *getArgReference_int(stk, pci, 1);
-	sql_func *func;
-
-	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-
-	func = sql_trans_find_func(sql->session->tr, id);
-	if (func)
-		mvc_drop_func(sql, func->s, func, 0);
-	return msg;
-}
-
-str
-UPGcreate_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *sql = NULL;
-	str msg = MAL_SUCCEED;
-	str sname = *getArgReference_str(stk, pci, 1), osname;
-	str fname = *getArgReference_str(stk, pci, 2);
-	str func = *getArgReference_str(stk, pci, 3);
-	stmt *s;
-	backend *be;
-
-	if ((msg = getSQLContext(cntxt, mb, &sql, &be)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	osname = cur_schema(sql)->base.name;
-	mvc_set_schema(sql, sname);
-	s = sql_parse(be, sa_create(), func, 0);
-	if (s && s->type == st_catalog) {
-		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
-		sql_func *func = (sql_func*)((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.pval;
-
-		msg = create_func(sql, schema, fname, func);
-		mvc_set_schema(sql, osname);
-	} else {
-		mvc_set_schema(sql, osname);
-		throw(SQL, "sql.catalog", "function creation failed '%s'", func);
-	}
-	return msg;
-}
-
-str
-UPGcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *sql = NULL;
-	str msg = MAL_SUCCEED;
-	str sname = *getArgReference_str(stk, pci, 1), osname;
-	str view = *getArgReference_str(stk, pci, 2);
-	stmt *s;
-	backend *be;
-
-	if ((msg = getSQLContext(cntxt, mb, &sql, &be)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-                                                              
-	osname = cur_schema(sql)->base.name;
-	mvc_set_schema(sql, sname);
-	s = sql_parse(be, sa_create(), view, 0);
-	if (s && s->type == st_catalog) {
-		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
-		sql_table *v = (sql_table*)((stmt*)s->op1->op4.lval->h->next->data)->op4.aval->data.val.pval;
-		int temp = ((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.ival;
-
-		msg = create_table_or_view(sql, schema, v->base.name, v, temp);
-		mvc_set_schema(sql, osname);
-	} else {
-		mvc_set_schema(sql, osname);
-		throw(SQL, "sql.catalog", "view creation failed '%s'", view);
-	}
-	return msg;
 }
 
 /* the MAL wrappers */
@@ -780,7 +731,7 @@ SQLcreate_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLalter_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 {	mvc *sql = NULL;
-	str msg;
+	str msg = MAL_SUCCEED;
 	str sname = *getArgReference_str(stk, pci, 1); 
 	str seqname = *getArgReference_str(stk, pci, 2); 
 	sql_sequence *s = *(sql_sequence **) getArgReference(stk, pci, 3);
@@ -789,8 +740,8 @@ SQLalter_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	initcontext();
 	if (getArgType(mb, pci, 4) == TYPE_lng)
 		val = getArgReference_lng(stk, pci, 4);
-	if (val == NULL || *val == lng_nil)
-		msg = sql_message("42M36!ALTER SEQUENCE: cannot (re)start with NULL");
+	if (val == NULL || is_lng_nil(*val))
+		msg = createException(SQL,"sql.alter_seq", SQLSTATE(42M36) "ALTER SEQUENCE: cannot (re)start with NULL");
 	else
 		msg = alter_seq(sql, sname, seqname, s, val);
 	return msg;
@@ -799,7 +750,7 @@ SQLalter_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLdrop_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 {	mvc *sql = NULL;
-	str msg;
+	str msg = MAL_SUCCEED;
 	str sname = *getArgReference_str(stk, pci, 1); 
 	str name = *getArgReference_str(stk, pci, 2);
 
@@ -811,21 +762,21 @@ SQLdrop_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLcreate_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 {	mvc *sql = NULL;
-	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str msg = MAL_SUCCEED;
+	str sname = *getArgReference_str(stk, pci, 1);
 	str name = SaveArgReference(stk, pci, 2);
 	int auth_id;
 
 	initcontext();
 	auth_id = sql->role_id;
 	if (name && (auth_id = sql_find_auth(sql, name)) < 0) {
-		msg = sql_message("42M32!CREATE SCHEMA: no such authorization '%s'", name);
+		throw(SQL,"sql.create_schema", SQLSTATE(42M32) "CREATE SCHEMA: no such authorization '%s'", name);
 	}
 	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN) {
-		msg = sql_message("42000!CREATE SCHEMA: insufficient privileges for user '%s'", stack_get_string(sql, "current_user"));
+		throw(SQL,"sql.create_schema", SQLSTATE(42000) "CREATE SCHEMA: insufficient privileges for user '%s'", stack_get_string(sql, "current_user"));
 	}
 	if (mvc_bind_schema(sql, sname)) {
-		msg = sql_message("3F000!CREATE SCHEMA: name '%s' already in use", sname);
+		throw(SQL,"sql.create_schema", SQLSTATE(3F000) "CREATE SCHEMA: name '%s' already in use", sname);
 	} else {
 		(void) mvc_create_schema(sql, sname, auth_id, sql->user_id);
 	}
@@ -837,30 +788,32 @@ SQLdrop_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg= MAL_SUCCEED;
 	str sname = *getArgReference_str(stk, pci, 1); 
-	str notused = *getArgReference_str(stk, pci, 2); 
-	int action = *getArgReference_int(stk, pci, 3);
-	int if_exists = 0;	// should become an argument
+	str notused = *getArgReference_str(stk, pci, 2);
+	int if_exists = *getArgReference_int(stk, pci, 3);
+	int action = *getArgReference_int(stk, pci, 4);
 	sql_schema *s;
-
-	if( pci->argc > 4)
-		if_exists  = *getArgReference_int(stk, pci, 4);
 
 	(void) notused;
 	initcontext();
 	s = mvc_bind_schema(sql, sname);
 	if (!s) {
 		if(!if_exists)
-			msg = sql_message("3F000!DROP SCHEMA: name %s does not exist", sname);
+			throw(SQL,"sql.drop_schema",SQLSTATE(3F000) "DROP SCHEMA: name %s does not exist", sname);
 	} else if (!mvc_schema_privs(sql, s)) {
-		msg = sql_message("42000!DROP SCHEMA: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
+		throw(SQL,"sql.drop_schema",SQLSTATE(42000) "DROP SCHEMA: access denied for %s to schema ;'%s'", stack_get_string(sql, "current_user"), s->base.name);
 	} else if (s == cur_schema(sql)) {
-		msg = sql_message("42000!DROP SCHEMA: cannot drop current schema");
-	} else if (strcmp(sname, "sys") == 0 || strcmp(sname, "tmp") == 0) {
-		msg = sql_message("42000!DROP SCHEMA: access denied for '%s'", sname);
+		throw(SQL,"sql.drop_schema",SQLSTATE(42000) "DROP SCHEMA: cannot drop current schema");
+	} else if (s->system) {
+		throw(SQL,"sql.drop_schema",SQLSTATE(42000) "DROP SCHEMA: access denied for '%s'", sname);
 	} else if (sql_schema_has_user(sql, s)) {
-		msg = sql_message("2BM37!DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it", sname);
+		throw(SQL,"sql.drop_schema",SQLSTATE(2BM37) "DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it)", sname);
+	} else if (!action /* RESTRICT */ && (
+		!list_empty(s->tables.set) || !list_empty(s->types.set) ||
+		!list_empty(s->funcs.set) || !list_empty(s->seqs.set))) {
+		throw(SQL,"sql.drop_schema",SQLSTATE(2BM37) "DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it)", sname);
 	} else {
-		mvc_drop_schema(sql, s, action);
+		if(mvc_drop_schema(sql, s, action))
+			throw(SQL,"sql.drop_schema", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 	return msg;
 }
@@ -869,7 +822,7 @@ str
 SQLcreate_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	str tname = *getArgReference_str(stk, pci, 2); 
 	sql_table *t = *(sql_table **) getArgReference(stk, pci, 3);
 	int temp = *getArgReference_int(stk, pci, 4);
@@ -883,7 +836,7 @@ str
 SQLcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	str vname = *getArgReference_str(stk, pci, 2); 
 	sql_table *t = *(sql_table **) getArgReference(stk, pci, 3);
 	int temp = *getArgReference_int(stk, pci, 4);
@@ -897,15 +850,12 @@ str
 SQLdrop_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	str name = *getArgReference_str(stk, pci, 2);
-	int action = *getArgReference_int(stk, pci, 3);
-	int if_exists = 0; // should become an argument
+	int if_exists = *getArgReference_int(stk, pci, 3);
+	int action = *getArgReference_int(stk, pci, 4);
 
 	initcontext();
-	if( pci->argc > 4)
-		if_exists  = *getArgReference_int(stk, pci, 4);
-
 	msg = drop_table(sql, sname, name, action, if_exists);
 	return msg;
 }
@@ -914,15 +864,12 @@ str
 SQLdrop_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	str name = *getArgReference_str(stk, pci, 2);
-	int action = *getArgReference_int(stk, pci, 3);
-	int if_exists = 0; // should become an argument
+	int if_exists = *getArgReference_int(stk, pci, 3);
+	int action = *getArgReference_int(stk, pci, 4);
 
 	initcontext();
-	if( pci->argc > 4)
-		if_exists  = *getArgReference_int(stk, pci, 4);
-
 	msg = drop_view(sql, sname, name, action, if_exists);
 	return msg;
 }
@@ -931,13 +878,13 @@ str
 SQLdrop_constraint(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 {	mvc *sql = NULL;
 	str msg;
-	str sname = *getArgReference_str(stk, pci, 1); 
+	str sname = *getArgReference_str(stk, pci, 1);
 	str name = *getArgReference_str(stk, pci, 2);
-	int action = *getArgReference_int(stk, pci, 3);
+	int action = *getArgReference_int(stk, pci, 4);
+	(void) *getArgReference_int(stk, pci, 3); //the if_exists parameter is also passed but not used
 
 	initcontext();
 	msg = drop_key(sql, sname, name, action);
-
 	return msg;
 }
 
@@ -967,9 +914,9 @@ SQLcreate_type(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	initcontext();
 	s = mvc_bind_schema(sql, sname);
 	if (!mvc_schema_privs(sql, sql->session->schema))
-		msg = sql_message("0D000!CREATE TYPE: not enough privileges to create type '%s'", sname);
+		throw(SQL,"sql.create_type", SQLSTATE(0D000) "CREATE TYPE: not enough privileges to create type '%s'", sname);
 	if (!mvc_create_type(sql, s, name, 0, 0, 0, impl))
-		msg = sql_message("0D000!CREATE TYPE: unknown external type '%s'", impl);
+		throw(SQL,"sql.create_type", SQLSTATE(0D000) "CREATE TYPE: unknown external type '%s'", impl);
 	return msg;
 }
 
@@ -987,14 +934,14 @@ SQLdrop_type(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	s = mvc_bind_schema(sql, sname);
 	t = schema_bind_type( sql, s, name);
 	if (!t)
-		msg = sql_message("0D000!DROP TYPE: type '%s' does not exist", sname);
+		throw(SQL,"sql.drop_type", SQLSTATE(0D000) "DROP TYPE: type '%s' does not exist", sname);
 	else if (!mvc_schema_privs(sql, sql->session->schema))
-		msg = sql_message("0D000!DROP TYPE: not enough privileges to drop type '%s'", sname);
+		throw(SQL,"sql.drop_type", SQLSTATE(0D000) "DROP TYPE: not enough privileges to drop type '%s'", sname);
 	else if (!drop_action && mvc_check_dependency(sql, t->base.id, TYPE_DEPENDENCY, NULL))
-		return sql_message("42000!DROP TYPE: unable to drop type %s (there are database objects which depend on it)\n", sname);
+		throw(SQL,"sql.drop_type", SQLSTATE(42000) "DROP TYPE: unable to drop type %s (there are database objects which depend on it)\n", sname);
 	else if (!mvc_drop_type(sql, sql->session->schema, t, drop_action))
-		msg = sql_message("0D000!DROP TYPE: failed to drop type '%s'", sname);
-	return msg;
+		throw(SQL,"sql.drop_type", SQLSTATE(0D000) "DROP TYPE: failed to drop type '%s'", sname);
+	return MAL_SUCCEED;
 }
 
 str
@@ -1244,9 +1191,10 @@ SQLdrop_trigger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1); 
 	char *triggername = *getArgReference_str(stk, pci, 2);
+	int if_exists = *getArgReference_int(stk, pci, 3);
 
 	initcontext();
-	msg = drop_trigger(sql, sname, triggername);
+	msg = drop_trigger(sql, sname, triggername, if_exists);
 	return msg;
 }
 
@@ -1291,4 +1239,55 @@ SQLalter_set_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = alter_table_set_access(sql, sname, tname, access);
 
 	return msg;
+}
+
+str
+SQLcomment_on(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *sql = NULL;
+	str msg;
+	int objid = *getArgReference_int(stk, pci, 1);
+	char *remark = *getArgReference_str(stk, pci, 2);
+	sql_trans *tx;
+	sql_schema *sys;
+	sql_table *comments;
+	sql_column *id_col, *remark_col;
+	oid rid;
+	int ok = LOG_OK;
+
+	initcontext();
+
+	// Manually insert the rows to circumvent permission checks.
+	tx = sql->session->tr;
+	sys = mvc_bind_schema(sql, "sys");
+	if (!sys)
+		throw(SQL, "sql.comment_on", SQLSTATE(3F000) "Internal error");
+	comments = mvc_bind_table(sql, sys, "comments");
+	if (!comments)
+		throw(SQL, "sql.comment_on", SQLSTATE(3F000) "no table sys.comments");
+	id_col = mvc_bind_column(sql, comments, "id");
+	remark_col = find_sql_column(comments, "remark");
+	if (!id_col || !remark_col)
+		throw(SQL, "sql.comment_on", SQLSTATE(3F000) "no table sys.comments");
+	rid = table_funcs.column_find_row(tx, id_col, &objid, NULL);
+	if (remark != NULL && *remark) {
+		if (!is_oid_nil(rid)) {
+			// have new remark and found old one, so update field
+			/* UPDATE sys.comments SET remark = %s WHERE id = %d */
+			ok = table_funcs.column_update_value(tx, remark_col, rid, remark);
+		} else {
+			// have new remark but found none so insert row
+			/* INSERT INTO sys.comments (id, remark) VALUES (%d, %s) */
+			ok = table_funcs.table_insert(tx, comments, &objid, remark);
+		}
+	} else {
+		if (!is_oid_nil(rid)) {
+			// have no remark but found one, so delete row
+			/* DELETE FROM sys.comments WHERE id = %d */
+			ok = table_funcs.table_delete(tx, comments, rid);
+		}
+	}
+	if (ok != LOG_OK)
+		throw(SQL, "sql.comment_on", SQLSTATE(3F000) "operation failed");
+	return MAL_SUCCEED;
 }

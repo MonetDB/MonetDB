@@ -77,9 +77,8 @@ QUERY = function welcome(lim:int):void;
         (x,y):= user.welcome2(1);
 ERROR = !TypeException:user.welcome[3]:type mismatch void := str
         !TypeException:user.welcome0[3]:Multiple assignment mismatch
-        !SyntaxException:user.welcome3[2]:invalid return target!
+        !MALException:user.welcome3[2]:invalid return target!
         !TypeException:user.welcome4[2]:Multiple assignment mismatch
-        !TypeException:user.main[5]:'user.welcome2' undefined in:     (x:any, y:str) := user.welcome2(1:int);
 
 # 13:48:26 >  
 # 13:48:26 >  "Done."

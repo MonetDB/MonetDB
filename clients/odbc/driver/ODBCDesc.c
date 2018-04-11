@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 #include "ODBCGlobal.h"
@@ -64,7 +64,7 @@ isValidDesc(ODBCDesc *desc)
 {
 #ifdef ODBCDEBUG
 	if (!(desc && desc->Type == ODBC_DESC_MAGIC_NR))
-		ODBCLOG("desc " PTRFMT "not a valid descriptor handle\n", PTRFMTCAST desc);
+		ODBCLOG("desc %pnot a valid descriptor handle\n", desc);
 #endif
 	return desc && desc->Type == ODBC_DESC_MAGIC_NR;
 }
@@ -83,7 +83,7 @@ addDescError(ODBCDesc *desc, const char *SQLState, const char *errMsg, int nativ
 	ODBCError *error = NULL;
 
 #ifdef ODBCDEBUG
-	ODBCLOG("addDescError " PTRFMT " %s %s %d\n", PTRFMTCAST desc, SQLState, errMsg ? errMsg : getStandardSQLStateMsg(SQLState), nativeErrCode);
+	ODBCLOG("addDescError %p %s %s %d\n", desc, SQLState, errMsg ? errMsg : getStandardSQLStateMsg(SQLState), nativeErrCode);
 #endif
 	assert(isValidDesc(desc));
 
@@ -163,10 +163,14 @@ setODBCDescRecCount(ODBCDesc *desc, int count)
 		desc->descRec = NULL;
 	} else if (desc->descRec == NULL) {
 		assert(desc->sql_desc_count == 0);
-		desc->descRec = (ODBCDescRec *) malloc((count + 1) * sizeof(*desc->descRec));
+		desc->descRec = malloc((count + 1) * sizeof(*desc->descRec));
 	} else {
+		ODBCDescRec *p;
 		assert(desc->sql_desc_count > 0);
-		desc->descRec = (ODBCDescRec *) realloc(desc->descRec, (count + 1) * sizeof(*desc->descRec));
+		p = realloc(desc->descRec, (count + 1) * sizeof(*desc->descRec));
+		if (p == NULL)
+			return;	/* TODO: error handling */
+		desc->descRec = p;
 	}
 	if (count > desc->sql_desc_count) {
 		int i;
@@ -281,6 +285,15 @@ ODBCLength(ODBCDescRec *rec, int lengthtype)
 		case SQL_DESC_DISPLAY_SIZE:
 		case SQL_DESC_OCTET_LENGTH:
 			return 20;
+		}
+		break;
+	case SQL_HUGEINT:
+		switch (lengthtype) {
+		case SQL_DESC_LENGTH:
+			return 39 + (rec->sql_desc_unsigned != 0);
+		case SQL_DESC_DISPLAY_SIZE:
+		case SQL_DESC_OCTET_LENGTH:
+			return 40;
 		}
 		break;
 	case SQL_REAL:

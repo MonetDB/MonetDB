@@ -32,6 +32,7 @@ stderr of test 'ST_MakePoint` in directory 'geom/sql/functions` itself:
 MAPI  = (monetdb) /var/tmp/mtest-30133/.s.monetdb.37873
 QUERY = select st_makepoint(x,y,z,m) as "XYZM" from points_tbl;
 ERROR = !POINTZM is not supported
+CODE  = 38000
 
 # 17:12:18 >  
 # 17:12:18 >  "Done."

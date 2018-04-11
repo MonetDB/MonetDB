@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /* (c) M Kersten
@@ -19,22 +19,13 @@
 #ifndef _EVENT_PARSER_
 #define _EVENT_PARSER_
 
-#include <mapi.h>
-#include <stream.h>
-#include <stdio.h>
+#include "mapi.h"
+#include "stream.h"
 #include <string.h>
-#include <stdlib.h>
 #include <sys/stat.h>
-#include <errno.h>
 #include <signal.h>
 #include <unistd.h>
-
-#ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
-#endif
-#ifdef HAVE_TIME_H
 #include <time.h>
-#endif
 
 #define TME_US  1
 #define TME_MS  2
@@ -43,7 +34,7 @@
 #define TME_HH 16
 #define TME_DD 32
 
-#define US_MS ((lng) 1000)
+#define US_MS ((int64_t) 1000)
 #define US_SS (US_MS * 1000)
 #define US_MM (US_SS * 60)
 #define US_HH (US_MM * 60)
@@ -77,19 +68,19 @@ typedef struct  {
 	char *user; 
 	int pc;		// instruction counter in block
 	int tag;	// unique MAL block invocation tag
-	lng eventnr;// serial event number
+	int64_t eventnr;// serial event number
 	int thread;	// worker thread involved
-	lng clk;	// usec since start of session
+	int64_t usec;	// usec since start of session
 	char *time;	// string rep of clock
-	lng clkticks;
-	lng ticks;
-	lng rss;
-	lng size;	// size of temporary produced
-	lng inblock;
-	lng oublock;
-	lng majflt;
-	lng swaps;
-	lng csw;
+	int64_t clkticks;
+	int64_t ticks;
+	int64_t rss;
+	int64_t size;	// size of temporary produced
+	int64_t inblock;
+	int64_t oublock;
+	int64_t majflt;
+	int64_t swaps;
+	int64_t csw;
 	char *stmt;	// MAL statement, cpu loads or commentary
 	char *beauty;// MAL statement compressed
 	char *fcn;	// MAL operator
@@ -105,6 +96,9 @@ extern int debug;
 extern char *currentquery;
 
 extern void resetEventRecord(EventRecord *ev);
+extern void eventdump(void);
 extern int keyvalueparser(char *txt, EventRecord *ev);
+extern int lineparser(char *row, EventRecord *ev);
+extern void renderJSONevent(FILE *fd, EventRecord *ev, int notfirst);
 extern char *stripQuotes(char *currentquery);
 #endif /*_EVENT_PARSER_*/

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2017 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
  */
 
 /*
@@ -38,23 +38,24 @@
 #include "sql_env.h"
 #include "sql_semantic.h"
 #include "sql_privileges.h"
+#include "mal_exception.h"
 
 #define SESSION_RW 0
 #define SESSION_RO 1
 
 str
-sql_update_var(mvc *m, char *name, char *sval, lng sgn)
+sql_update_var(mvc *m, const char *name, char *sval, lng sgn)
 {
 	if (strcmp(name, "debug") == 0) {
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
 		m->debug = (int) sgn;
 	} else if (strcmp(name, "current_schema") == 0) {
 		if (!mvc_set_schema(m, sval)) {
-			return sql_message( "Schema (%s) missing\n", sval);
+			throw(SQL,"sql.update_var", SQLSTATE(3F000) "Schema (%s) missing\n", sval);
 		}
 	} else if (strcmp(name, "current_role") == 0) {
 		if (!mvc_set_role(m, sval)) {
-			return sql_message( "Role (%s) missing\n", sval);
+			throw(SQL,"sql.update_var", SQLSTATE(42000) "Role (%s) missing\n", sval);
 		}
 	} else if (strcmp(name, "current_timezone") == 0) {
 		assert((lng) GDK_int_min <= sgn && sgn <= (lng) GDK_int_max);
