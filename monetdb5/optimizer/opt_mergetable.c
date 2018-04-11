@@ -584,14 +584,12 @@ static int
 mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 {
 	int tpe = getArgType(mb,p, 0), k, j;
-	InstrPtr r = newInstruction(mb, NULL, NULL);
+	InstrPtr r = newInstruction(mb, matRef, packRef);
 	mat_t *mat = ml->v;
 
 	if(!r)
 		return -1;
 
-	setModuleId(r,matRef);
-	setFunctionId(r,packRef);
 	getArg(r,0) = getArg(p,0);
 	
 	//printf("# %s.%s(%d,%d)", getModuleId(p), getFunctionId(p), m, n);
@@ -611,7 +609,7 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 				return -1;
 			}
 
-			getArg(s,0) = newTmpVariable(mb, getArgType(mb, mat[m].mi, k));
+			getArg(s,0) = newTmpVariable(mb, getArgType(mb, mat[n].mi, k));
 	
 			for (j=1; j<mat[n].mi->argc; j++) {
 				if (overlap(ml, getArg(mat[m].mi, k), getArg(mat[n].mi, j), -1, -2, 1)){

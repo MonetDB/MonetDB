@@ -2933,7 +2933,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				if (la && ra) {
 					atom *a = atom_mul(la, ra);
 
-					if (a) {
+					if (a && atom_cast(sql->sa, a, exp_subtype(e))) {
 						sql_exp *ne = exp_atom(sql->sa, a);
 						(*changes)++;
 						exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
@@ -3027,7 +3027,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				if (la && ra) {
 					atom *a = atom_add(la, ra);
 
-					if (a) {
+					if (a) { 
 						sql_exp *ne = exp_atom(sql->sa, a);
 						(*changes)++;
 						exp_setname(sql->sa, ne, exp_relname(e), exp_name(e));
@@ -6090,12 +6090,14 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 			sql_rel *l = rel->l;
 
 			positional_exps_mark_used(rel, l);
-		//	rel_mark_used(sql, rel->l, 1);
+			exps_mark_used(sql->sa, rel, l);
+			rel_mark_used(sql, rel->l, 0);
 			/* based on child check set expression list */
 			if (is_project(l->op) && need_distinct(l))
 				positional_exps_mark_used(l, rel);
 			positional_exps_mark_used(rel, rel->r);
-		//	rel_mark_used(sql, rel->r, 1);
+			exps_mark_used(sql->sa, rel, rel->r);
+			rel_mark_used(sql, rel->r, 0);
 		}
 		break;
 
@@ -6445,10 +6447,14 @@ rel_dce_down(mvc *sql, sql_rel *rel, list *refs, int skip_proj)
 			rel_dce_sub(sql, rel, refs);
 		/* fall through */
 
-	case op_insert:
 	case op_truncate:
 	case op_ddl:
 
+		return rel;
+
+	case op_insert:
+		rel_used(rel->r);
+		rel_dce_sub(sql, rel->r, refs);
 		return rel;
 
 	case op_update:

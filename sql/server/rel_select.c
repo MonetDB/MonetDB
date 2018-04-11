@@ -2072,7 +2072,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		ek.card = card_set;
 		if (!left) {
 			left = *rel;
-			if (outer && !outer->l && !list_empty(outer->exps) && needproj) {
+			if (!exp_is_atom(l) && outer && !outer->l && !list_empty(outer->exps) && needproj) {
 				l = rel_project_add_exp(sql, left, l);
 				l = exp_column(sql->sa, exp_relname(l), exp_name(l), exp_subtype(l), l->card, has_nil(l), is_intern(l));
 			}
