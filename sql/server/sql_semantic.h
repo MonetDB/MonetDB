@@ -24,6 +24,8 @@ extern sql_schema *tmp_schema(mvc *sql);
 extern char *qname_schema(dlist *qname);
 extern char *qname_table(dlist *qname);
 extern char *qname_catalog(dlist *qname);
+extern char *credentials_username(dlist *credentials);
+extern char *credentials_password(dlist *credentials);
 #define qname_module(qname) qname_schema(qname)
 #define qname_fname(qname) qname_table(qname)
 

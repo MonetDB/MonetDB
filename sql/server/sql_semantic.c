@@ -194,6 +194,41 @@ qname_catalog(dlist *qname)
 	return NULL;
 }
 
+char *
+credentials_username(dlist *credentials)
+{
+	if (credentials == NULL) {
+		return NULL;
+	}
+	assert(credentials->h);
+
+	if (credentials->h->data.sval != NULL) {
+		return credentials->h->data.sval;
+	}
+
+	// No username specified.
+	return NULL;
+}
+
+char *
+credentials_password(dlist *credentials) {
+	if (credentials == NULL) {
+		return NULL;
+	}
+	assert(credentials->h);
+
+	if (credentials->h->next->data.i_val == SQL_PW_ENCRYPTED) {
+		return credentials->h->next->next->data.sval;
+	}
+	else if (credentials->h->next->next->data.sval != NULL) {
+		// We have an unencrypted password. Encrypt and return
+		// TODO
+		return NULL;
+	}
+
+	return NULL;
+}
+
 int
 set_type_param(mvc *sql, sql_subtype *type, int nr)
 {

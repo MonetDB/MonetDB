@@ -896,7 +896,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 }
 
 sql_rel *
-rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const char *name, symbol *table_elements_or_subquery, int commit_action, const char *loc, int if_not_exists)
+rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const char *name, symbol *table_elements_or_subquery, int commit_action, const char *loc, const char *username, const char *password, int if_not_exists)
 {
 	sql_schema *s = NULL;
 
@@ -909,6 +909,8 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 	         (temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
 
 	(void)create;
+	(void)username;
+	(void)password;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: no such schema '%s'", sname);
 
@@ -2288,13 +2290,27 @@ rel_schemas(mvc *sql, symbol *s)
 		char *sname = qname_schema(qname);
 		char *name = qname_table(qname);
 		int temp = l->h->data.i_val;
+		dlist *credentials = l->h->next->next->next->next->next->data.lval;
+		char *username = credentials_username(credentials);
+		char *password = credentials_password(credentials);
+		if (username == NULL) {
+			// No username specified, get the current username
+			username = stack_get_string(sql, "current_user");
+		}
+		if (password == NULL) {
+			// No username specified, get the current user's password from the vault.
+			// TODO
+			password = NULL;
+		}
 
 		assert(l->h->type == type_int);
 		assert(l->h->next->next->next->type == type_int);
-		ret = rel_create_table(sql, cur_schema(sql), temp, sname, name, l->h->next->next->data.sym,
-							   l->h->next->next->next->data.i_val,
-							   l->h->next->next->next->next->data.sval,
-							   l->h->next->next->next->next->next->data.i_val); /* if not exists */
+		ret = rel_create_table(sql, cur_schema(sql), temp, sname, name,
+				       l->h->next->next->data.sym,                   /* elements or subquery */
+				       l->h->next->next->next->data.i_val,           /* commit action */
+				       l->h->next->next->next->next->data.sval,      /* location */
+				       username, password,
+				       l->h->next->next->next->next->next->data.i_val); /* if not exists */
 	} 	break;
 	case SQL_CREATE_VIEW:
 	{
