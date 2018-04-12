@@ -47,4 +47,6 @@ sqlitelogictest-not-between-wrong.Bug-6569
 sqlitelogictest-undefined-calc.Bug-6570
 ordered-index-error.Bug-6572
 sqlitelogictest-complex-case.Bug-6573
+create-temp-table-ordered-index-error.Bug-6574
 sqlitelogictest-missing-bulk-implementation.Bug-6575
+sqlitelogictest-aritmetic-expressions-handling.Bug-6576
