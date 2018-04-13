@@ -560,7 +560,6 @@ typedef struct sql_table {
 
 	struct sql_table *p;	 /* The table is part of this merge table */
 	struct sql_column *pcol; /* If it is partitioned on a column */
-	struct sql_part *pt;	 /* This table belongs to this part */
 } sql_table;
 
 typedef struct res_col {
@@ -619,6 +618,8 @@ extern sql_key *find_sql_key(sql_table *t, const char *kname);
 extern sql_idx *find_sql_idx(sql_table *t, const char *kname);
 
 extern sql_column *find_sql_column(sql_table *t, const char *cname);
+
+extern sql_part *find_sql_part(sql_table *t, const char *tname);
 
 extern sql_table *find_sql_table(sql_schema *s, const char *tname);
 extern sql_table *find_sql_table_id(sql_schema *s, int id);

@@ -149,5 +149,6 @@ extern char *compare_func( comp_type t, int anti );
 extern int is_identity( sql_exp *e, sql_rel *r);
 
 extern atom *exp_flatten(mvc *sql, sql_exp *e);
+extern sql_exp *create_table_part_atom_exp(mvc *sql, sht tpe, ptr value);
 
 #endif /* _REL_EXP_H_ */

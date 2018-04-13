@@ -189,12 +189,17 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	ssize_t (*atomtostr)(str *, size_t *, const void *);
 	int accesses[3] = {RDONLY, RD_INS, RD_UPD_VAL};
 
-	if((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_range_partition", msname, mtname, psname, ptname, &mt, &pt)))
+	if((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_range_partition", msname, mtname, psname, ptname, &mt, &pt))) {
 		return msg;
-	if(mt->type != tt_range_partition) {
+	} else if(mt->type != tt_range_partition) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
 									"ALTER TABLE: cannot add range partition into a %s table",
 									(mt->type == tt_merge_table)?"merge":"list partition");
+		goto finish;
+	} else if(pt->p) {
+		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
+									"ALTER TABLE: table %s.%s is already part of another range partition table",
+									psname, ptname);
 		goto finish;
 	}
 
@@ -354,12 +359,17 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 	list *values = list_new(sql->sa, (fdestroy) NULL);
 	int accesses[3] = {RDONLY, RD_INS, RD_UPD_VAL};
 
-	if((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_value_partition", msname, mtname, psname, ptname, &mt, &pt)))
+	if((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_value_partition", msname, mtname, psname, ptname, &mt, &pt))) {
 		return msg;
-	if(mt->type != tt_list_partition) {
+	} else if(mt->type != tt_list_partition) {
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 									"ALTER TABLE: cannot add value partition into a %s table",
 									(mt->type == tt_merge_table)?"merge":"range partition");
+		goto finish;
+	} else if(pt->p) {
+		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
+									"ALTER TABLE: table %s.%s is already part of another list partition table",
+									psname, ptname);
 		goto finish;
 	}
 
