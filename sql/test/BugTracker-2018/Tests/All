@@ -51,3 +51,4 @@ create-temp-table-ordered-index-error.Bug-6574
 sqlitelogictest-missing-bulk-implementation.Bug-6575
 sqlitelogictest-aritmetic-expressions-handling.Bug-6576
 multiple-insertinto-table-Bug-6578
+sqlitelogictest-select-nullif-case.Bug-6579
