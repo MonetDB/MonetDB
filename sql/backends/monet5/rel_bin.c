@@ -484,15 +484,26 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 
 				if (rows && en == exps->h && f->func->type != F_LOADER)
 					es = stmt_const(be, rows, es);
-				if (es->nrcols > nrcols)
-					nrcols = es->nrcols;
 				/* last argument is condition, change into candidate list */
 				if (!en->next && !f->func->varres && !f->func->vararg && list_length(exps) > list_length(f->func->ops)) {
-					if (es->nrcols)
+					if (es->nrcols) {
+						if (!nrcols) {
+							node *n;
+							list *nl = sa_list(sql->sa);
+							for (n = l->h; n; n = n->next) {
+								stmt *s = n->data;
+								s = stmt_const(be, es, s);
+								list_append(nl, s);
+							}
+							l = nl;
+
+						}
 						es = stmt_uselect(be, es, stmt_bool(be,1), cmp_equal, NULL, 0);
-					else /* need a condition */
+					} else /* need a condition */
 						cond_execution = es;
 				}
+				if (es->nrcols > nrcols)
+					nrcols = es->nrcols;
 				if (!cond_execution)
 					list_append(l,es);
 			}
