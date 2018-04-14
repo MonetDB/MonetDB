@@ -39,12 +39,6 @@ BITSMCHN=X64
 !ENDIF
 
 !IFDEF DEBUG
-DEBUGLIB=d
-!ELSE
-DEBUGLIB=
-!ENDIF
-
-!IFDEF DEBUG
 # force W_CFLAGS off in debug builds: using icc, you get way more
 # warnings about casts which results in the code being uncompilable
 W_CFLAGS =
@@ -98,7 +92,7 @@ PYTHON_LIBDIR=$(PYTHON3_LIBDIR)
 !IFNDEF LIBPCRE
 LIBPCRE = C:\Program Files\PCRE
 !ENDIF
-pcre_LIBS = "$(LIBPCRE)\lib\pcre$(DEBUGLIB).lib"
+pcre_LIBS = "$(LIBPCRE)\lib\pcre.lib"
 pcre_CFLAGS = -DHAVE_LIBPCRE "-I$(LIBPCRE)\include"
 !ENDIF
 
@@ -116,7 +110,7 @@ openssl_CFLAGS = -DHAVE_OPENSSL "-I$(LIBOPENSSL)\include"
 !IFNDEF LIBICONV
 LIBICONV = C:\iconv-1.9.2.win$(bits)
 !ENDIF
-LTLIBICONV = "$(LIBICONV)\lib\iconv$(DEBUGLIB).lib"
+LTLIBICONV = "$(LIBICONV)\lib\iconv.lib"
 ICONV_CFLAGS = -DHAVE_ICONV "-I$(LIBICONV)\include"
 !ENDIF
 
@@ -135,7 +129,7 @@ LIBZLIB = C:\zlib-1.2.3.win$(bits)
 !IFNDEF LIBZLIBFILE
 LIBZLIBFILE=zlib1
 !ENDIF
-zlib_LIBS = "$(LIBZLIB)\lib\$(LIBZLIBFILE)$(DEBUGLIB).lib"
+zlib_LIBS = "$(LIBZLIB)\lib\$(LIBZLIBFILE).lib"
 zlib_CFLAGS = -DHAVE_LIBZ "-I$(LIBZLIB)\include"
 !ENDIF
 
@@ -144,7 +138,7 @@ zlib_CFLAGS = -DHAVE_LIBZ "-I$(LIBZLIB)\include"
 !IFNDEF LIBBZIP2
 LIBBZIP2 = C:\bzip2-1.0.5.win$(bits)
 !ENDIF
-BZ_LIBS = "$(LIBBZIP2)\lib\libbz2$(DEBUGLIB).lib"
+BZ_LIBS = "$(LIBBZIP2)\lib\libbz2.lib"
 BZ_CFLAGS = -DHAVE_LIBBZ2 "-I$(LIBBZIP2)\include"
 !ENDIF
 
@@ -154,17 +148,13 @@ BZ_CFLAGS = -DHAVE_LIBBZ2 "-I$(LIBBZIP2)\include"
 LIBXML2 = C:\libxml2-2.6.30.win$(bits)
 !ENDIF
 libxml2_CFLAGS = -DHAVE_LIBXML "-I$(LIBXML2)\include" $(zlib_CFLAGS) $(ICONV_CFLAGS)
-libxml2_LIBS = "$(LIBXML2)\lib\libxml2$(DEBUGLIB).lib" $(zlib_LIBS) $(ICONV_LIBS)
+libxml2_LIBS = "$(LIBXML2)\lib\libxml2.lib" $(zlib_LIBS) $(ICONV_LIBS)
 !ENDIF
 
 !IFNDEF LIBGEOS
 LIBGEOS = C:\geos-3.0.win$(bits)
 !ENDIF
-!IFDEF DEBUG
-GEOS_LIBS = $(LIBGEOS)\lib\geos_c_i$(GEOSDEBUGLIB).lib
-!ELSE
 GEOS_LIBS = $(LIBGEOS)\lib\geos_c_i.lib
-!ENDIF
 GEOS_INCS = -I$(LIBGEOS)\include
 
 !IFDEF HAVE_LIBR
