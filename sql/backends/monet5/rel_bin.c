@@ -591,10 +591,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (!s && left) 
 			s = bin_find_column(be, left, e->l, e->r);
 		if (!s) {
-			sql_rel *rel = mvc_find_subquery(be->mvc, e->l?e->l:e->r, e->r);
+			sql_subquery *sq = mvc_find_subquery(be->mvc, e->l?e->l:e->r, e->r);
 
-			if (rel) { 
-				stmt *s = rel->p;
+			if (sq) { 
+				stmt *s = sq->s;
 
 				if (s && s->type == st_list)
 					s = bin_find_column(be, s, e->l?e->l:e->r, e->r);
@@ -5156,9 +5156,10 @@ _subrel_bin(backend *be, sql_rel *rel, list *refs)
 		node *n;
 
 		for(n = be->mvc->sqs->h; n; n = n->next) {
-			sql_var *v = n->data;
+			sql_subquery *v = n->data;
 
-			v->rel->p = subrel_bin(be, v->rel, refs);
+			if (!v->s)
+				v->s = subrel_bin(be, v->rel, refs);
 		}
 	}
 	return subrel_bin(be, rel, refs);
