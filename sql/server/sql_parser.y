@@ -1434,7 +1434,7 @@ with_opt_credentials:
   /* empty */
   {
 	  $$ = append_string(L(), NULL);
-	  append_int($$, SQL_PW_UNENCRYPTED);
+	  append_int($$, SQL_PW_ENCRYPTED);
 	  append_string($$, NULL);
   }
   | WITH USER string opt_encrypted PASSWORD string
