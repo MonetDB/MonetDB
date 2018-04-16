@@ -38,13 +38,13 @@ virtualize(BAT *bn)
 	       (((bn->ttype == TYPE_void && !is_oid_nil(bn->tseqbase)) ||
 		 bn->ttype == TYPE_oid) &&
 		bn->tkey && bn->tsorted));
-	/* since bn has unique and strictly ascending tail values, we
-	 * can easily check whether the tail is dense */
+	/* since bn has unique and strictly ascending values, we can
+	 * easily check whether the column is dense */
 	if (bn && bn->ttype == TYPE_oid &&
 	    (BATcount(bn) <= 1 ||
 	     * (const oid *) Tloc(bn, 0) + BATcount(bn) - 1 ==
 	     * (const oid *) Tloc(bn, BUNlast(bn) - 1))) {
-		/* tail is dense, replace by virtual oid */
+		/* column is dense, replace by virtual oid */
 		ALGODEBUG fprintf(stderr, "#virtualize(bn=%s#"BUNFMT",seq="OIDFMT")\n",
 				  BATgetId(bn), BATcount(bn),
 				  BATcount(bn) > 0 ? * (const oid *) Tloc(bn, 0) : 0);
@@ -1000,24 +1000,24 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 
 /* generic range select
  *
- * Return a dense-headed BAT with the OID values of b in the tail for
- * qualifying tuples.  The return BAT is sorted on the tail value
- * (i.e. in the same order as the input BAT).
+ * Return a BAT with the OID values of b for qualifying tuples.  The
+ * return BAT is sorted (i.e. in the same order as the input BAT).
  *
- * If s[dense,OID] is specified, its tail column is a list of
- * candidates.  s should be sorted on the tail value.
+ * If s is non-NULL, it is a list of candidates.  s must be sorted.
  *
  * tl may not be NULL, li, hi, and anti must be either 0 or 1.
  *
  * If th is NULL, hi is ignored.
  *
- * If anti is 0, qualifying tuples are those whose tail value is
- * between tl and th.  If li or hi is 1, the respective boundary is
- * inclusive, otherwise exclusive.  If th is NULL it is taken to be
- * equal to tl, turning this into an equi- or point-select.  Note that
- * for a point select to return anything, li (and hi if th was not
- * NULL) must be 1.  There is a special case if tl is nil and th is
- * NULL.  This is the only way to select for nil values.
+ * If anti is 0, qualifying tuples are those whose value is between tl
+ * and th (as in x >[=] tl && x <[=] th, where equality depends on li
+ * and hi--so if tl > th, nothing will be returned).  If li or hi is
+ * 1, the respective boundary is inclusive, otherwise exclusive.  If
+ * th is NULL it is taken to be equal to tl, turning this into an
+ * equi- or point-select.  Note that for a point select to return
+ * anything, li (and hi if th was not NULL) must be 1.  There is a
+ * special case if tl is nil and th is NULL.  This is the only way to
+ * select for nil values.
  *
  * If anti is 1, the result is the complement of what the result would
  * be if anti were 0, except that nils are filtered out.
@@ -1562,8 +1562,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				if (s) {
 					/* restrict first, last so
 					 * that they refer to existing
-					 * head values of b whose tail
-					 * is not nil */
+					 * head values of b whose
+					 * value is not nil */
 					oid o = (oid) first + b->hseqbase;
 					BUN last;
 					first = SORTfndfirst(s, &o);
@@ -1586,8 +1586,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				if (s) {
 					/* restrict first, last so
 					 * that they refer to existing
-					 * head values of b whose tail
-					 * is not nil */
+					 * head values of b whose
+					 * value is not nil */
 					oid o = (oid) last + b->hseqbase;
 					BUN first;
 					last = SORTfndfirst(s, &o);
@@ -1825,12 +1825,10 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 /* theta select
  *
- * Returns a dense-headed BAT with the OID values of b in the tail for
- * qualifying tuples.  The return BAT is sorted on the tail value
- * (i.e. in the same order as the input BAT).
+ * Returns a BAT with the OID values of b for qualifying tuples.  The
+ * return BAT is sorted (i.e. in the same order as the input BAT).
  *
- * If s[dense,OID] is specified, its tail column is a list of
- * candidates.  s should be sorted on the tail value.
+ * If s is not NULL, it is a list of candidates.  s must be sorted.
  *
  * Theta select returns all values from b which are less/greater than
  * or (not) equal to the provided value depending on the value of op.
