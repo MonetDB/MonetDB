@@ -2254,6 +2254,39 @@ rel_comment_on(sql_allocator *sa, sqlid obj_id, const char *remark)
 	return rel;
 }
 
+static char *
+credentials_username(dlist *credentials)
+{
+	if (credentials == NULL) {
+		return NULL;
+	}
+	assert(credentials->h);
+
+	if (credentials->h->data.sval != NULL) {
+		return credentials->h->data.sval;
+	}
+
+	// No username specified.
+	return NULL;
+}
+
+static char *
+credentials_password(dlist *credentials)
+{
+	if (credentials == NULL) {
+		return NULL;
+	}
+	assert(credentials->h);
+
+	char *password = credentials->h->next->next->data.sval;;
+	if (password != NULL && credentials->h->next->data.i_val == SQL_PW_UNENCRYPTED) {
+		password = mcrypt_BackendSum(password, strlen(password));
+	}
+
+	return password;
+}
+
+
 sql_rel *
 rel_schemas(mvc *sql, symbol *s)
 {
@@ -2298,7 +2331,7 @@ rel_schemas(mvc *sql, symbol *s)
 			username = stack_get_string(sql, "current_user");
 		}
 		if (password == NULL) {
-			// No username specified, get the current user's password from the vault.
+			// No password specified, get the current user's password from the vault.
 			// TODO
 			password = NULL;
 		}
