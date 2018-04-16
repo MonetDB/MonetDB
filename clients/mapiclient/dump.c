@@ -947,20 +947,21 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 		}
 		mapi_close_handle(hdl);
 		hdl = NULL;
-		snprintf(query, maxquerylen,
-			 "SELECT col.name, com.remark FROM sys._columns col, sys.comments com WHERE col.id = com.id AND col.table_id = (SELECT id FROM sys._tables WHERE schema_id = (SELECT id FROM sys.schemas WHERE name = '%s') AND name = '%s') ORDER BY number", schema, tname);
-		if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
-			goto bailout;
-		while (mapi_fetch_row(hdl) != 0) {
-			comment_on(toConsole, "COLUMN", schema, tname,
-				   mapi_fetch_field(hdl, 0),
-				   mapi_fetch_field(hdl, 1));
-		}
-		mapi_close_handle(hdl);
-		hdl = NULL;
-		if (mapi_error(mid))
-			goto bailout;
 	}
+
+	snprintf(query, maxquerylen,
+		 "SELECT col.name, com.remark FROM sys._columns col, sys.comments com WHERE col.id = com.id AND col.table_id = (SELECT id FROM sys._tables WHERE schema_id = (SELECT id FROM sys.schemas WHERE name = '%s') AND name = '%s') ORDER BY number", schema, tname);
+	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
+		goto bailout;
+	while (mapi_fetch_row(hdl) != 0) {
+		comment_on(toConsole, "COLUMN", schema, tname,
+			   mapi_fetch_field(hdl, 0),
+			   mapi_fetch_field(hdl, 1));
+	}
+	mapi_close_handle(hdl);
+	hdl = NULL;
+	if (mapi_error(mid))
+		goto bailout;
 
 	if (view)
 		free(view);
