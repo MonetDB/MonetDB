@@ -56,6 +56,8 @@
 #include "monetdb_config.h"
 #include "remote.h"
 
+#include "mal_authorize.h"
+
 /*
  * Technically, these methods need to be serialised per connection,
  * hence a scheduler that interleaves e.g. multiple get calls, simply
@@ -159,6 +161,11 @@ str RMTconnectScen(
 
 	/* just make sure the return isn't garbage */
 	*ret = 0;
+
+	/* TODO:
+	 * 1. remote user and password from arg list
+	 * 2. use AUTHgetRemoteTableCredentials(uri, client)
+	 */
 
 	if (ouri == NULL || *ouri == NULL || strcmp(*ouri, (str)str_nil) == 0)
 		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT ": database uri "

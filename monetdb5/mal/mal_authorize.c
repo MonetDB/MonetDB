@@ -823,6 +823,8 @@ AUTHverifyPassword(const char *passwd)
 #endif
 }
 
+/* change name to remote table uri, add client to check that the user
+ * has permissions */
 str
 AUTHgetRemoteTableCredentials(const char *name, str *username, str *password)
 {
@@ -844,6 +846,7 @@ AUTHgetRemoteTableCredentials(const char *name, str *username, str *password)
 	return MAL_SUCCEED;
 }
 
+/* change name to remote table uri, add local user */
 str
 AUTHaddRemoteTableCredentials(const char *name, const char *user, const char *pass, bool pw_encrypted)
 {
