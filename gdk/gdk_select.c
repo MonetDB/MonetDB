@@ -1330,6 +1330,18 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 						  s ? BATgetId(s) : "NULL",
 						  s && BATtdense(s) ? "(dense)" : "");
 			}
+		} else if (ATOMcmp(t, tl, th) > 0) {
+			/* empty range: turn into range select for
+			 * nil-nil range (i.e. everything but nil) */
+			equi = 0;
+			anti = 0;
+			lval = 0;
+			hval = 0;
+			ALGODEBUG fprintf(stderr, "#BATselect(b=%s#" BUNFMT
+					  ",s=%s%s,anti=0): anti-nil\n",
+					  BATgetId(b), BATcount(b),
+					  s ? BATgetId(s) : "NULL",
+					  s && BATtdense(s) ? "(dense)" : "");
 		}
 	}
 
