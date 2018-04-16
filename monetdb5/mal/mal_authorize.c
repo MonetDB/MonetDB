@@ -822,3 +822,55 @@ AUTHverifyPassword(const char *passwd)
 		  MONETDB5_PASSWDHASH);
 #endif
 }
+
+str
+AUTHgetRemoteTableCredentials(const char *name, str *username, str *password)
+{
+	FILE *fp = fopen("/tmp/remote_table_auth.txt", "r");
+	char buf[BUFSIZ];
+	char *p, *q;
+
+	(void)name;
+	fread(buf, 1, BUFSIZ, fp);
+
+	p = strchr(buf, '\n');
+	*p = '\0';
+	*username = strdup(buf);
+	q = strchr(p + 1, '\n');
+	*q = '\0';
+	*password = strdup(p + 1);
+
+	fclose(fp);
+	return MAL_SUCCEED;
+}
+
+str
+AUTHaddRemoteTableCredentials(const char *name, const char *user, const char *pass, bool pw_encrypted)
+{
+	/* Work in Progress */
+	FILE *fp = fopen("/tmp/remote_table_auth.txt", "w");
+	char *password = NULL;
+	bool free_pw = false;
+
+	(void)name;
+
+	if (pass == NULL) {
+		AUTHgetPasswordHash(&password, NULL, user);
+	}
+	else {
+		free_pw = true;
+		if (pw_encrypted) {
+			password = strdup(pass);
+		}
+		else {
+			password = mcrypt_BackendSum(pass, strlen(pass));
+		}
+	}
+	fprintf(fp, "%s\n%s\n", user, password);
+	fclose(fp);
+
+	if (free_pw) {
+		free(password);
+	}
+	return MAL_SUCCEED;
+}

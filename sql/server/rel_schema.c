@@ -18,6 +18,8 @@
 #include "sql_parser.h"
 #include "sql_privileges.h"
 
+#include "mal_authorize.h"
+
 #define qname_index(qname) qname_table(qname)
 #define qname_func(qname) qname_table(qname)
 #define qname_type(qname) qname_table(qname)
@@ -896,7 +898,7 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 }
 
 sql_rel *
-rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const char *name, symbol *table_elements_or_subquery, int commit_action, const char *loc, const char *username, const char *password, int if_not_exists)
+rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const char *name, symbol *table_elements_or_subquery, int commit_action, const char *loc, const char *username, const char *password, bool pw_encrypted, int if_not_exists)
 {
 	sql_schema *s = NULL;
 
@@ -909,15 +911,13 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 	         (temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
 
 	(void)create;
-	(void)username;
-	(void)password;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: no such schema '%s'", sname);
 
-	if (temp != SQL_PERSIST && tt == tt_table && 
+	if (temp != SQL_PERSIST && tt == tt_table &&
 			commit_action == CA_COMMIT)
 		commit_action = CA_DELETE;
-	
+
 	if (temp != SQL_DECLARED_TABLE) {
 		if (temp != SQL_PERSIST && tt == tt_table) {
 			s = mvc_bind_schema(sql, "tmp");
@@ -945,10 +945,13 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 		dnode *n;
 		dlist *columns = table_elements_or_subquery->data.lval;
 		sql_table *t;
-	       
+
 		if (tt == tt_remote) {
 			if (!mapiuri_valid(loc))
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: incorrect uri '%s' for remote table '%s'", loc, name);
+			if (AUTHaddRemoteTableCredentials(name, username, password, pw_encrypted) != 0) {
+				return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: cannot register credentials for remote table '%s' in vault", name);
+			}
 			t = mvc_create_remote(sql, s, name, SQL_DECLARED_TABLE, loc);
 		} else {
 			t = mvc_create_table(sql, s, name, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
@@ -960,7 +963,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 			symbol *sym = n->data.sym;
 			int res = table_element(sql, sym, s, t, 0);
 
-			if (res == SQL_ERR) 
+			if (res == SQL_ERR)
 				return NULL;
 		}
 		temp = (tt == tt_table)?temp:SQL_PERSIST;
@@ -2279,9 +2282,6 @@ credentials_password(dlist *credentials)
 	assert(credentials->h);
 
 	char *password = credentials->h->next->next->data.sval;;
-	if (password != NULL && credentials->h->next->data.i_val == SQL_PW_UNENCRYPTED) {
-		password = mcrypt_BackendSum(password, strlen(password));
-	}
 
 	return password;
 }
@@ -2326,14 +2326,10 @@ rel_schemas(mvc *sql, symbol *s)
 		dlist *credentials = l->h->next->next->next->next->next->data.lval;
 		char *username = credentials_username(credentials);
 		char *password = credentials_password(credentials);
+		bool pw_encrypted = credentials == NULL || credentials->h->next->data.i_val == SQL_PW_ENCRYPTED;
 		if (username == NULL) {
 			// No username specified, get the current username
 			username = stack_get_string(sql, "current_user");
-		}
-		if (password == NULL) {
-			// No password specified, get the current user's password from the vault.
-			// TODO
-			password = NULL;
 		}
 
 		assert(l->h->type == type_int);
@@ -2342,7 +2338,7 @@ rel_schemas(mvc *sql, symbol *s)
 				       l->h->next->next->data.sym,                   /* elements or subquery */
 				       l->h->next->next->next->data.i_val,           /* commit action */
 				       l->h->next->next->next->next->data.sval,      /* location */
-				       username, password,
+				       username, password, pw_encrypted,
 				       l->h->next->next->next->next->next->data.i_val); /* if not exists */
 	} 	break;
 	case SQL_CREATE_VIEW:
