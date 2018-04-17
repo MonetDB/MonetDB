@@ -10,9 +10,9 @@ class RSSTestConfig:
     # CAUTION: switch implementation without default.
     test_2_gdk_mem_maxsize = {
         "cap_rss_64" : (20000000,CAPPED),
-        "cap_rss_32" : (10000000,CAPPED),
+        "cap_rss_32" : (30000000,CAPPED),
         "no_cap_rss_64" : (20000000,not CAPPED),
-        "no_cap_rss_32" : (10000000,not CAPPED)
+        "no_cap_rss_32" : (30000000,not CAPPED)
     }
 
     sql_template = \
