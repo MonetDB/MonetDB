@@ -2339,7 +2339,7 @@ rel_schemas(mvc *sql, symbol *s)
 				       l->h->next->next->next->data.i_val,           /* commit action */
 				       l->h->next->next->next->next->data.sval,      /* location */
 				       username, password, pw_encrypted,
-				       l->h->next->next->next->next->next->data.i_val); /* if not exists */
+				       l->h->next->next->next->next->next->next->data.i_val); /* if not exists */
 	} 	break;
 	case SQL_CREATE_VIEW:
 	{
