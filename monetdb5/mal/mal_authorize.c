@@ -46,6 +46,13 @@ static str AUTHverifyPassword(const char *passwd);
 static BAT *user = NULL;
 static BAT *pass = NULL;
 static BAT *duser = NULL;
+
+/* Remote table bats */
+static BAT *rt_uri = NULL;
+static BAT *rt_localuser = NULL;
+static BAT *rt_remoteuser = NULL;
+static BAT *rt_pass = NULL;
+static BAT *rt_deleted = NULL;
 /* yep, the vault key is just stored in memory */
 static str vaultKey = NULL;
 
@@ -233,6 +240,117 @@ AUTHinitTables(const char *passwd) {
 		isNew = 0;
 	}
 	assert(duser);
+
+	/* Remote table authorization columns */
+	/* load/create remote table URI BAT */
+	bid = BBPindex("M5system_auth_rt_uri");
+	if (!bid) {
+		rt_uri = COLnew(0, TYPE_str, 256, PERSISTENT);
+		if (rt_uri == NULL)
+			throw(MAL, "initTables.rt_uri", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table uri bat");
+
+		if (BBPrename(BBPcacheid(rt_uri), "M5system_auth_rt_uri") != 0 ||
+			BATmode(rt_uri, PERSISTENT) != GDK_SUCCEED)
+			throw(MAL, "initTables.rt_uri", GDK_EXCEPTION);
+		if (!isNew)
+			AUTHcommit();
+	}
+	else {
+		rt_uri = BATdescriptor(bid);
+		if (rt_uri == NULL) {
+			throw(MAL, "initTables.rt_uri", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		isNew = 0;
+	}
+	assert(rt_uri);
+
+	/* load/create remote table local user name BAT */
+	bid = BBPindex("M5system_auth_rt_localuser");
+	if (!bid) {
+		rt_localuser = COLnew(0, TYPE_str, 256, PERSISTENT);
+		if (rt_localuser == NULL)
+			throw(MAL, "initTables.rt_localuser", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table local user bat");
+
+		if (BBPrename(BBPcacheid(rt_localuser), "M5system_auth_rt_localuser") != 0 ||
+			BATmode(rt_localuser, PERSISTENT) != GDK_SUCCEED)
+			throw(MAL, "initTables.rt_localuser", GDK_EXCEPTION);
+		if (!isNew)
+			AUTHcommit();
+	}
+	else {
+		rt_localuser = BATdescriptor(bid);
+		if (rt_localuser == NULL) {
+			throw(MAL, "initTables.rt_localuser", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		isNew = 0;
+	}
+	assert(rt_localuser);
+
+	/* load/create remote table remote user name BAT */
+	bid = BBPindex("M5system_auth_rt_remoteuser");
+	if (!bid) {
+		rt_remoteuser = COLnew(0, TYPE_str, 256, PERSISTENT);
+		if (rt_remoteuser == NULL)
+			throw(MAL, "initTables.rt_remoteuser", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table local user bat");
+
+		if (BBPrename(BBPcacheid(rt_remoteuser), "M5system_auth_rt_remoteuser") != 0 ||
+			BATmode(rt_remoteuser, PERSISTENT) != GDK_SUCCEED)
+			throw(MAL, "initTables.rt_remoteuser", GDK_EXCEPTION);
+		if (!isNew)
+			AUTHcommit();
+	}
+	else {
+		rt_remoteuser = BATdescriptor(bid);
+		if (rt_remoteuser == NULL) {
+			throw(MAL, "initTables.rt_remoteuser", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		isNew = 0;
+	}
+	assert(rt_remoteuser);
+
+	/* load/create remote table password BAT */
+	bid = BBPindex("M5system_auth_rt_pass");
+	if (!bid) {
+		rt_pass = COLnew(0, TYPE_str, 256, PERSISTENT);
+		if (rt_pass == NULL)
+			throw(MAL, "initTables.rt_pass", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table local user bat");
+
+		if (BBPrename(BBPcacheid(rt_pass), "M5system_auth_rt_pass") != 0 ||
+			BATmode(rt_pass, PERSISTENT) != GDK_SUCCEED)
+			throw(MAL, "initTables.rt_pass", GDK_EXCEPTION);
+		if (!isNew)
+			AUTHcommit();
+	}
+	else {
+		rt_pass = BATdescriptor(bid);
+		if (rt_pass == NULL) {
+			throw(MAL, "initTables.rt_pass", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		isNew = 0;
+	}
+	assert(rt_pass);
+
+	/* load/create remote table deleted entries BAT */
+	bid = BBPindex("M5system_auth_rt_deleted");
+	if (!bid) {
+		rt_deleted = COLnew(0, TYPE_oid, 256, PERSISTENT);
+		if (rt_deleted == NULL)
+			throw(MAL, "initTables.rt_deleted", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table local user bat");
+
+		if (BBPrename(BBPcacheid(rt_deleted), "M5system_auth_rt_deleted") != 0 ||
+			BATmode(rt_deleted, PERSISTENT) != GDK_SUCCEED)
+			throw(MAL, "initTables.rt_deleted", GDK_EXCEPTION);
+		if (!isNew)
+			AUTHcommit();
+	}
+	else {
+		rt_deleted = BATdescriptor(bid);
+		if (rt_deleted == NULL) {
+			throw(MAL, "initTables.rt_deleted", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		isNew = 0;
+	}
+	assert(rt_deleted);
 
 	if (isNew == 1) {
 		/* insert the monetdb/monetdb administrator account on a
