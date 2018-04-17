@@ -99,9 +99,9 @@ pcre_CFLAGS = -DHAVE_LIBPCRE "-I$(LIBPCRE)\include"
 !IFDEF HAVE_OPENSSL
 # This is the location of the OpenSSL library
 !IFNDEF LIBOPENSSL
-LIBOPENSSL = C:\openssl-0.9.8k.win$(bits)
+LIBOPENSSL = C:\openssl-1.1.0g.win$(bits)
 !ENDIF
-openssl_LIBS = "$(LIBOPENSSL)\lib\ssleay32.lib" "$(LIBOPENSSL)\lib\libeay32.lib"
+openssl_LIBS = "$(LIBOPENSSL)\lib\libcrypto.lib"
 openssl_CFLAGS = -DHAVE_OPENSSL "-I$(LIBOPENSSL)\include"
 !ENDIF
 
@@ -110,7 +110,7 @@ openssl_CFLAGS = -DHAVE_OPENSSL "-I$(LIBOPENSSL)\include"
 !IFNDEF LIBICONV
 LIBICONV = C:\iconv-1.9.2.win$(bits)
 !ENDIF
-LTLIBICONV = "$(LIBICONV)\lib\iconv.lib"
+LTLIBICONV = "$(LIBICONV)\lib\iconv.dll.lib"
 ICONV_CFLAGS = -DHAVE_ICONV "-I$(LIBICONV)\include"
 !ENDIF
 
