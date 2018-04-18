@@ -20,19 +20,19 @@ comment "Retain the table definition, but don't materialize";
 pattern parameters(first:hge,last:hge):bat[:hge]
 address VLTgenerator_noop;
 
-pattern thetasubselect(b:bat[:hge], low:hge, oper:str) :bat[:oid]
+pattern thetaselect(b:bat[:hge], low:hge, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect
 comment "Overloaded selection routine";
 
-pattern thetasubselect(b:bat[:hge], cnd:bat[:oid], low:hge, oper:str) :bat[:oid]
+pattern thetaselect(b:bat[:hge], cnd:bat[:oid], low:hge, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect
 comment "Overloaded selection routine";
 
-pattern subselect(b:bat[:hge], low:hge, high:hge, li:bit, hi:bit, anti:bit) :bat[:oid]
+pattern select(b:bat[:hge], low:hge, high:hge, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect
 comment "Overloaded selection routine";
 
-pattern subselect(b:bat[:hge], cand:bat[:oid], low:hge, high:hge, li:bit, hi:bit, anti:bit) :bat[:oid]
+pattern select(b:bat[:hge], cand:bat[:oid], low:hge, high:hge, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect
 comment "Overloaded selection routine";
 

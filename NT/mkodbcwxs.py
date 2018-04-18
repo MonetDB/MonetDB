@@ -34,9 +34,11 @@ def main():
     if makedefs['bits'] == '64':
         folder = r'ProgramFiles64Folder'
         arch = 'x64'
+        libcrypto = '-x64'
     else:
         folder = r'ProgramFilesFolder'
         arch = 'x86'
+        libcrypto = ''
     vs = os.getenv('vs')        # inherited from TestTools\common.bat
     features = []
     print(r'<?xml version="1.0"?>')
@@ -75,8 +77,7 @@ def main():
                r'lib\libstream.dll', r'lib\libstream.pdb',
                r'%s\bin\iconv.dll' % makedefs['LIBICONV'],
                r'%s\bin\libbz2.dll' % makedefs['LIBBZIP2'],
-               r'%s\bin\libeay32.dll' % makedefs['LIBOPENSSL'],
-               r'%s\bin\ssleay32.dll' % makedefs['LIBOPENSSL'],
+               r'%s\bin\libcrypto-1_1%s.dll' % (makedefs['LIBOPENSSL'], libcrypto),
                r'%s\bin\zlib1.dll' % makedefs['LIBZLIB']])
     print(r'            </Directory>')
     id = comp(features, id, 12,

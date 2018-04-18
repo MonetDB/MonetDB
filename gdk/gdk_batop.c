@@ -531,9 +531,6 @@ BATappend(BAT *b, BAT *n, BAT *s, bit force)
 		}
 	}
 
-	if (BATcount(b) == 0)
-		BAThseqbase(b, s ? s->hseqbase : n->hseqbase);
-
 	if (b->tunique) {
 		/* if b has the unique bit set, only insert values
 		 * from n that don't already occur in b, and make sure
