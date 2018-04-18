@@ -126,7 +126,7 @@ def main():
                r'lib\libmapi.lib',
                r'lib\libmonetdb5.lib',
                r'lib\libstream.lib',
-               r'%s\lib\iconv.lib' % makedefs['LIBICONV'],
+               r'%s\lib\iconv.dll.lib' % makedefs['LIBICONV'],
                r'%s\lib\libbz2.lib' % makedefs['LIBBZIP2'],
                r'%s\lib\libcrypto.lib' % makedefs['LIBOPENSSL'],
                r'%s\lib\libxml2.lib' % makedefs['LIBXML2'],
