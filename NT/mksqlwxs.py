@@ -86,7 +86,7 @@ def main():
                r'lib\libmapi.dll', r'lib\libmapi.pdb',
                r'lib\libmonetdb5.dll', r'lib\libmonetdb5.pdb',
                r'lib\libstream.dll', r'lib\libstream.pdb',
-               r'%s\bin\iconv.dll' % makedefs['LIBICONV'],
+               r'%s\bin\iconv-2.dll' % makedefs['LIBICONV'],
                r'%s\bin\libbz2.dll' % makedefs['LIBBZIP2'],
                r'%s\bin\libcrypto-1_1%s.dll' % (makedefs['LIBOPENSSL'], libcrypto),
                r'%s\bin\libxml2.dll' % makedefs['LIBXML2'],
