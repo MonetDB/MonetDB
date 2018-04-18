@@ -75,7 +75,7 @@ def main():
                r'lib\libMonetODBC.dll', r'lib\libMonetODBC.pdb',
                r'lib\libMonetODBCs.dll', r'lib\libMonetODBCs.pdb',
                r'lib\libstream.dll', r'lib\libstream.pdb',
-               r'%s\bin\iconv.dll' % makedefs['LIBICONV'],
+               r'%s\bin\iconv-2.dll' % makedefs['LIBICONV'],
                r'%s\bin\libbz2.dll' % makedefs['LIBBZIP2'],
                r'%s\bin\libcrypto-1_1%s.dll' % (makedefs['LIBOPENSSL'], libcrypto),
                r'%s\bin\zlib1.dll' % makedefs['LIBZLIB']])
