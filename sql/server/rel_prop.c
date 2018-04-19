@@ -72,7 +72,6 @@ propkind2string( prop *p)
 		PT(HASHCOL);
 		PT(FETCH);
 		PT(REMOTE);
-		PT(DISTRIBUTE);
 		PT(USED);
 	}
 	return "UNKNOWN";

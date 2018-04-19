@@ -178,6 +178,12 @@ find_sql_column(sql_table *t, const char *cname)
 	return _cs_find_name(&t->columns, cname);
 }
 
+sql_part *
+find_sql_part(sql_table *t, const char *tname)
+{
+	return _cs_find_name(&t->members, tname);
+}
+
 sql_table *
 find_sql_table(sql_schema *s, const char *tname)
 {

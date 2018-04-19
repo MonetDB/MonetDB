@@ -4,6 +4,10 @@ CREATE TABLE sublimits2 (a int, b varchar(32));
 CREATE TABLE sublimits3 (a int, b varchar(32));
 
 ALTER TABLE testrangelimits ADD TABLE sublimits1 AS PARTITION BETWEEN 0 AND 100;
+
+INSERT INTO testrangelimits VALUES (1, 'first');
+INSERT INTO testrangelimits VALUES (1000, 'ups'); --error
+
 ALTER TABLE testrangelimits ADD TABLE sublimits2 AS PARTITION BETWEEN 101 AND 200;
 ALTER TABLE testrangelimits ADD TABLE sublimits3 AS PARTITION BETWEEN 401 AND 500 WITH NULL;
 

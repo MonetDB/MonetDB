@@ -626,6 +626,19 @@ exp_rel(mvc *sql, sql_rel *rel)
 	return e;
 }
 
+sql_exp *
+exp_exception(sql_allocator *sa, sql_exp *cond, char* error_message)
+{
+	sql_exp *e = exp_create(sa, e_psm);
+
+	if (e == NULL)
+		return NULL;
+	e->l = cond;
+	e->r = error_message;
+	e->flag = PSM_EXCEPTION;
+	return e;
+}
+
 /* Set a name (alias) for the expression, such that we can refer 
    to this expression by this simple name.
  */
@@ -1975,49 +1988,4 @@ exp_flatten(mvc *sql, sql_exp *e)
 		}
 	}
 	return NULL;
-}
-
-sql_exp *
-create_table_part_atom_exp(mvc *sql, sht tpe, ptr value)
-{
-	switch (tpe) {
-		case TYPE_bit: {
-			bit bval = *((bit*) value);
-			return exp_atom_bool(sql->sa, bval ? 1 : 0);
-		}
-		case TYPE_bte: {
-			bte bbval = *((bte *) value);
-			return exp_atom_bte(sql->sa, bbval);
-		}
-		case TYPE_sht: {
-			sht sval = *((sht*) value);
-			return exp_atom_sht(sql->sa, sval);
-		}
-		case TYPE_int: {
-			int ival = *((int*) value);
-			return exp_atom_int(sql->sa, ival);
-		}
-		case TYPE_lng: {
-			lng lval = *((lng*) value);
-			return exp_atom_lng(sql->sa, lval);
-		}
-		case TYPE_flt: {
-			flt fval = *((flt*) value);
-			return exp_atom_flt(sql->sa, fval);
-		}
-		case TYPE_dbl: {
-			dbl dval = *((dbl*) value);
-			return exp_atom_dbl(sql->sa, dval);
-		}
-		case TYPE_str:
-			return exp_atom_clob(sql->sa, sa_strdup(sql->sa, value));
-#ifdef HAVE_HGE
-		case TYPE_hge: {
-			hge hval = *((hge*) value);
-			return exp_atom_hge(sql->sa, hval);
-		}
-#endif
-		default:
-			assert(0);
-	}
 }

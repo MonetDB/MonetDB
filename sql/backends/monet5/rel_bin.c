@@ -423,6 +423,9 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			if (is_modify(rel->op) || is_ddl(rel->op)) 
 				return r;
 			return stmt_table(be, r, 1);
+		} else if (e->flag & PSM_EXCEPTION) {
+			stmt *cond = exp_bin(be, e->l, left, right, grp, cnt, ext, sel);
+			return stmt_exception(be, cond, (const char *) e->r, 0);
 		}
 		break;
 	case e_atom: {
@@ -2147,7 +2150,7 @@ rel_rename(backend *be, sql_rel *rel, stmt *sub)
 }
 
 static stmt *
-rel2bin_union(backend *be, sql_rel *rel, list *refs, int* type)
+rel2bin_union(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
 	list *l; 
@@ -2163,32 +2166,21 @@ rel2bin_union(backend *be, sql_rel *rel, list *refs, int* type)
 
 	/* construct relation */
 	l = sa_list(sql->sa);
+	for( n = left->op4.lval->h, m = right->op4.lval->h; n && m;
+		 n = n->next, m = m->next ) {
+		stmt *c1 = n->data;
+		stmt *c2 = m->data;
+		const char *rnme = table_name(sql->sa, c1);
+		const char *nme = column_name(sql->sa, c1);
+		stmt *s;
 
-	if(find_prop(rel->p, PROP_DISTRIBUTE)) {
-		if(left) //when distribution a delete/update/insert/truncate just append both sub-relations
-			list_append(l, left);
-		if(right)
-			list_append(l, right);
-		*type = Q_UPDATE;
-	} else {
-		for( n = left->op4.lval->h, m = right->op4.lval->h; n && m;
-			 n = n->next, m = m->next ) {
-			stmt *c1 = n->data;
-			stmt *c2 = m->data;
-			const char *rnme = table_name(sql->sa, c1);
-			const char *nme = column_name(sql->sa, c1);
-			stmt *s;
-
-			s = stmt_append(be, create_const_column(be, c1), c2);
-			s = stmt_alias(be, s, rnme, nme);
-			list_append(l, s);
-		}
-		*type = Q_TABLE;
+		s = stmt_append(be, create_const_column(be, c1), c2);
+		s = stmt_alias(be, s, rnme, nme);
+		list_append(l, s);
 	}
 	sub = stmt_list(be, l);
 
-	if(*type == Q_TABLE)
-		sub = rel_rename(be, rel, sub);
+	sub = rel_rename(be, rel, sub);
 	if (need_distinct(rel)) 
 		sub = rel2bin_distinct(be, sub, NULL);
 	return sub;
@@ -3340,9 +3332,6 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		rel = rel->r;
 		tr = rel->l;
 	}
-
-	if(find_prop(rel->p, PROP_DISTRIBUTE) && be->cur_append == 0) /* create BAT to hold the sum of affected rows */
-		create_merge_partitions_accumulator(be);
 
 	if (tr->op == op_basetable) {
 		t = tr->l;
@@ -4598,9 +4587,6 @@ rel2bin_delete(backend *be, sql_rel *rel, list *refs)
 	else
 		assert(0/*ddl statement*/);
 
-	if(find_prop(rel->p, PROP_DISTRIBUTE) && be->cur_append == 0) /* create BAT to hold the sum of affected rows */
-		create_merge_partitions_accumulator(be);
-
 	if (rel->r) { /* first construct the deletes relation */
 		rows = subrel_bin(be, rel->r, refs);
 		if (!rows)
@@ -4796,9 +4782,6 @@ rel2bin_truncate(backend *be, sql_rel *rel)
 	else
 		assert(0/*ddl statement*/);
 
-	if(find_prop(rel->p, PROP_DISTRIBUTE) && be->cur_append == 0) /* create BAT to hold the sum of affected rows */
-		create_merge_partitions_accumulator(be);
-
 	n = rel->exps->h;
 	restart_sequences = E_ATOM_INT(n->data);
 	cascade = E_ATOM_INT(n->next->data);
@@ -4882,6 +4865,28 @@ rel2bin_psm(backend *be, sql_rel *rel)
 			append(l, s);
 	}
 	return stmt_list(be, l);
+}
+
+static stmt *
+rel2bin_distribute(backend *be, sql_rel *rel, list *refs)
+{
+	stmt *l = NULL, *r = NULL;
+	node *n = NULL;
+	sql_exp *except = NULL;
+
+	if(be->cur_append == 0) /* create affected rows accumulator */
+		create_merge_partitions_accumulator(be);
+
+	if (rel->l)  /* first construct the sub relation */
+		l = subrel_bin(be, rel->l, refs);
+    if (rel->r)  /* first construct the sub relation */
+		r = subrel_bin(be, rel->r, refs);
+
+	if(rel->exps && list_length(rel->exps) == 1) {
+		n = rel->exps->h;
+		except = n->data;
+	}
+	return exp_bin(be, except, l, r, NULL, NULL, NULL, NULL);
 }
 
 static stmt *
@@ -5023,6 +5028,9 @@ rel2bin_ddl(backend *be, sql_rel *rel, list *refs)
 		s = rel2bin_list(be, rel, refs);
 	} else if (rel->flag == DDL_PSM) {
 		s = rel2bin_psm(be, rel);
+	} else if (rel->flag == DDL_DISTRIBUTE) {
+		s = rel2bin_distribute(be, rel, refs);
+		sql->type = Q_UPDATE;
 	} else if (rel->flag <= DDL_ALTER_SEQ) {
 		s = rel2bin_seq(be, rel, refs);
 		sql->type = Q_SCHEMA;
@@ -5050,7 +5058,6 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
 	stmt *s = NULL;
-	int type = Q_TABLE;
 
 	if (THRhighwater())
 		return NULL;
@@ -5087,8 +5094,8 @@ subrel_bin(backend *be, sql_rel *rel, list *refs)
 		sql->type = Q_TABLE;
 		break;
 	case op_union: 
-		s = rel2bin_union(be, rel, refs, &type);
-		sql->type = type;
+		s = rel2bin_union(be, rel, refs);
+		sql->type = Q_TABLE;
 		break;
 	case op_except: 
 		s = rel2bin_except(be, rel, refs);
@@ -5251,6 +5258,8 @@ exp_deps(sql_allocator *sa, sql_exp *e, list *refs, list *l)
 		} else if (e->flag & PSM_REL) {
 			sql_rel *rel = e->l;
 			rel_deps(sa, rel, refs, l);
+		} else if (e->flag & PSM_EXCEPTION) {
+			return exps_deps(sa, e->l, refs, l);
 		}
 	case e_atom: 
 	case e_column: 
@@ -5380,7 +5389,7 @@ rel_deps(sql_allocator *sa, sql_rel *r, list *refs, list *l)
 		if (r->flag == DDL_OUTPUT) {
 			if (r->l)
 				return rel_deps(sa, r->l, refs, l);
-		} else if (r->flag <= DDL_LIST) {
+		} else if (r->flag <= DDL_LIST || r->flag == DDL_DISTRIBUTE) {
 			if (r->l)
 				return rel_deps(sa, r->l, refs, l);
 			if (r->r)

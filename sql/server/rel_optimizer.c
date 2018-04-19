@@ -17,6 +17,7 @@
 #include "rel_planner.h"
 #include "rel_select.h"
 #include "rel_updates.h"
+#include "rel_schema.h"
 #include "sql_mvc.h"
 #ifdef HAVE_HGE
 #include "mal.h"		/* for have_hge */
@@ -244,6 +245,8 @@ psm_exp_properties(mvc *sql, global_props *gp, sql_exp *e)
 				psm_exps_properties(sql, gp, e->f);
 		} else if (e->flag & PSM_REL) {
 			rel_properties(sql, gp, e->l);
+		} else if (e->flag & PSM_EXCEPTION) {
+			psm_exp_properties(sql, gp, e->l);
 		}
 	}
 }
@@ -290,7 +293,7 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	case op_topn:
 	case op_sample:
 	case op_ddl:
-		if (rel->op == op_ddl && rel->flag == DDL_PSM && rel->exps) 
+		if (rel->op == op_ddl && rel->flag == DDL_PSM && rel->exps)
 			psm_exps_properties(sql, gp, rel->exps);
 		if (rel->l)
 			rel_properties(sql, gp, rel->l);
@@ -2854,7 +2857,7 @@ exp_case_fixup( mvc *sql, sql_rel *rel, sql_exp *e )
 			e->r = exps_case_fixup(sql, e->r, NULL, 0);
 			if (e->f)
 				e->f = exps_case_fixup(sql, e->f, NULL, 0);
-		} else if (e->flag & PSM_REL) {
+		} else if (e->flag & PSM_REL || e->flag & PSM_EXCEPTION) {
 		}
 		return e;
 	}
@@ -8193,6 +8196,20 @@ create_table_part_atom_exp(mvc *sql, sht tpe, ptr value)
 	}
 }
 
+static sql_rel *
+rel_ddl_distribute(sql_allocator *sa, sql_rel *l, sql_rel *r, list *exps)
+{
+	sql_rel *rel = rel_create(sa);
+	if(!rel)
+		return NULL;
+	rel->l = l;
+	rel->r = r;
+	rel->exps = exps;
+	rel->op = op_ddl;
+	rel->flag = DDL_DISTRIBUTE;
+	return rel;
+}
+
 /* rewrite merge tables into union of base tables and call optimizer again */
 static sql_rel *
 rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
@@ -8221,18 +8238,24 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 							s1 = rel_delete(sql->sa, rel_basetable(sql, sub, sub->base.name), dup);
 						else
 							s1 = rel_truncate_duplicate(sql->sa, rel_basetable(sql, sub, sub->base.name), rel);
-						s1->p = prop_create(sql->sa, PROP_DISTRIBUTE, s1->p);
 						if (just_one == 0) {
-							sel = rel_setop(sql->sa, sel, s1, op_union);
-							sel->p = prop_create(sql->sa, PROP_DISTRIBUTE, sel->p);
+							sel = rel_list(sql->sa, sel, s1);
 						} else {
 							sel = s1;
 							just_one = 0;
 						}
 						(*changes)++;
 					}
-				} else { //on inserts create a selection for each partition
+					sel = rel_ddl_distribute(sql->sa, sel, NULL, NULL);
+				} else if(is_insert(rel->op)) { //on inserts create a selection for each partition
 					int colr = t->pcol->colnr;
+					sql_rel *anti_dup = rel_dup(rel->r); /* the anti relation */
+					sql_exp *anti_exp = NULL, *anti_le = list_fetch(anti_dup->exps, colr), *accum = NULL, *aggr = NULL,
+							*exception = NULL;
+					list *anti_exps = new_exp_list(sql->sa);
+					sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
+					anti_le = exp_column(sql->sa, exp_relname(anti_le), exp_name(anti_le), exp_subtype(anti_le),
+										 anti_le->card, has_nil(anti_le), is_intern(anti_le));
 
 					for (node *n = t->members.set->h; n; n = n->next) {
 						sql_part *pt = (sql_part *) n->data;
@@ -8248,11 +8271,27 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 							e2 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.maxvalue);
 							dup = rel_compare_exp_(sql, dup, le, e1, e2, 3, 0);
 
+							if(accum) {
+								sql_exp *nr = exp_compare2(sql->sa, anti_le, exp_copy(sql->sa, e1), exp_copy(sql->sa, e2), 3);
+								accum = exp_or(sql->sa, list_append(new_exp_list(sql->sa), accum),
+											   list_append(new_exp_list(sql->sa), nr), 1);
+							} else {
+								accum = exp_compare2(sql->sa, anti_le, exp_copy(sql->sa, e1), exp_copy(sql->sa, e2), 3);
+							}
+
 							if(pt->with_nills) { /* handle the nulls case */
-								sql_rel* extra;
-								sql_exp *nils = rel_unop_(sql, le, NULL, "isnull", card_value);
+								sql_rel *extra;
+								sql_exp *nils = rel_unop_(sql, le, NULL, "isnull", card_value),
+										*anti_nils = rel_unop_(sql, anti_le, NULL, "isnull", card_value);
 								nils = exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_equal);
 
+								if(accum) {
+									sql_exp *nr = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
+									accum = exp_or(sql->sa, list_append(new_exp_list(sql->sa), accum),
+												   list_append(new_exp_list(sql->sa), nr), 1);
+								} else {
+									accum = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
+								}
 								extra = rel_select(sql->sa, rel->r, nils);
 								dup = rel_or(sql, NULL, dup, extra, NULL, NULL, NULL);
 							}
@@ -8264,11 +8303,13 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 								sql_part_value *next = (sql_part_value*) n->data;
 								sql_exp *e1 = create_table_part_atom_exp(sql, next->tpe, next->value);
 								list_append(exps, e1);
+								list_append(anti_exps, exp_copy(sql->sa, e1));
 							}
 
 							if(pt->with_nills) { /* handle the nulls case */
 								sql_exp *e2 = exp_atom(sql->sa, atom_general(sql->sa, &(t->pcol->type), NULL));
 								list_append(exps, e2);
+								list_append(anti_exps, exp_copy(sql->sa, e2));
 							}
 							ein = exp_in(sql->sa, le, exps, cmp_in);
 							dup = rel_select(sql->sa, dup, ein);
@@ -8277,16 +8318,38 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 						}
 
 						s1 = rel_insert(sql, rel_basetable(sql, sub, sub->base.name), dup);
-						s1->p = prop_create(sql->sa, PROP_DISTRIBUTE, s1->p);
 						if (just_one == 0) {
-							sel = rel_setop(sql->sa, sel, s1, op_union);
-							sel->p = prop_create(sql->sa, PROP_DISTRIBUTE, sel->p);
+							sel = rel_list(sql->sa, sel, s1);
 						} else {
 							sel = s1;
 							just_one = 0;
 						}
 						(*changes)++;
 					}
+
+					if(isRangePartitionTable(t)) {
+						if (list_length(t->members.set) == 1) //when there is just one partition must set the anti_exp
+							set_anti(accum);
+						anti_exp = accum;
+					} else if(isListPartitionTable(t)) {
+						anti_exp = exp_in(sql->sa, anti_le, anti_exps, cmp_notin);
+					} else {
+						assert(0);
+					}
+					//generate a count aggregation for the values not present in any of the partitions
+					anti_dup = rel_select(sql->sa, anti_dup, anti_exp);
+					anti_dup = rel_project(sql->sa, anti_dup, rel_projections(sql, anti_dup, NULL, 1, 1));
+					anti_dup = rel_groupby(sql, anti_dup, NULL);
+					aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, anti_dup->card, 0);
+					(void) rel_groupby_add_aggr(sql, anti_dup, aggr);
+					exp_label(sql->sa, aggr, ++sql->label);
+
+					//generate the exception
+					aggr = exp_column(sql->sa, exp_relname(aggr), exp_name(aggr), exp_subtype(aggr), aggr->card,
+									  has_nil(aggr), is_intern(aggr));
+					exception = exp_exception(sql->sa, aggr,
+											  "INSERT INTO: There are values in the insert not corresponding to any partition");
+					sel = rel_ddl_distribute(sql->sa, sel, anti_dup, list_append(new_exp_list(sql->sa), exception));
 				}
 			}
 		}
@@ -9324,8 +9387,10 @@ rewrite_exp(mvc *sql, sql_exp *e, rewrite_rel_fptr rewrite_rel, rewrite_fptr rew
 			e->f = rewrite_exps(sql, e->f, rewrite_rel, rewriter, has_changes);
 		return e;
 	}
-	if (e->flag & PSM_REL) 
+	if (e->flag & PSM_REL)
 		e->l = rewrite_rel(sql, e->l, rewriter, has_changes);
+	if (e->flag & PSM_EXCEPTION)
+		e->l = rewrite_exp(sql, e->l, rewrite_rel, rewriter, has_changes);
 	return e;
 }
 
@@ -9376,8 +9441,8 @@ rewrite(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes)
 	case op_sample: 
 		rel->l = rewrite(sql, rel->l, rewriter, has_changes);
 		break;
-	case op_ddl: 
-		if (rel->flag == DDL_PSM && rel->exps) 
+	case op_ddl:
+		if (rel->flag == DDL_PSM && rel->exps)
 			rel->exps = rewrite_exps(sql, rel->exps, &rewrite, rewriter, has_changes);
 		rel->l = rewrite(sql, rel->l, rewriter, has_changes);
 		if (rel->r)
@@ -9437,7 +9502,7 @@ rewrite_topdown(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes)
 		rel->l = rewrite_topdown(sql, rel->l, rewriter, has_changes);
 		break;
 	case op_ddl: 
-		if (rel->flag == DDL_PSM && rel->exps) 
+		if (rel->flag == DDL_PSM && rel->exps)
 			rewrite_exps(sql, rel->exps, &rewrite_topdown, rewriter, has_changes);
 		rel->l = rewrite_topdown(sql, rel->l, rewriter, has_changes);
 		if (rel->r)

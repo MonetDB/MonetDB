@@ -4,6 +4,10 @@ CREATE TABLE sublimits2 (a int, b varchar(32));
 CREATE TABLE sublimits3 (a int, b varchar(32));
 
 ALTER TABLE testvaluespartitions ADD TABLE sublimits1 AS PARTITION IN ('1', '2', '3');
+
+INSERT INTO testvaluespartitions VALUES (1, 'first');
+INSERT INTO testvaluespartitions VALUES (1000, 'ups'); --error
+
 ALTER TABLE testvaluespartitions ADD TABLE sublimits2 AS PARTITION IN ('4', '5', '6', NULL);
 
 ALTER TABLE testvaluespartitions ADD TABLE sublimits3 AS PARTITION IN (NULL); --error

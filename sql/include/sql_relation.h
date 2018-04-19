@@ -81,6 +81,7 @@ typedef struct expression {
 #define PSM_WHILE 8
 #define PSM_IF 16
 #define PSM_REL 32
+#define PSM_EXCEPTION 64
 
 #define SET_PSM_LEVEL(level)	(level<<8)
 #define GET_PSM_LEVEL(level)	(level>>8)
@@ -90,6 +91,7 @@ typedef struct expression {
 #define DDL_OUTPUT			1
 #define DDL_LIST			2
 #define DDL_PSM				3
+#define DDL_DISTRIBUTE		4
 
 #define DDL_CREATE_SEQ			5
 #define DDL_ALTER_SEQ			6
