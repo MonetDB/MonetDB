@@ -27,8 +27,8 @@ mal_export str AUTHgetPasswordHash(str *ret, Client c, const char *username);
 
 mal_export str AUTHinitTables(const char *passwd);
 
-mal_export str AUTHaddRemoteTableCredentials(const char *name, const char *user, const char *pass, bool pw_encrypted);
-mal_export str AUTHgetRemoteTableCredentials(const char *name, str *username, str *password);
+mal_export str AUTHaddRemoteTableCredentials(const char *uri, const char *localuser, const char *remoteuser, const char *pass, bool pw_encrypted);
+mal_export str AUTHgetRemoteTableCredentials(const char *uri, Client cntxt, str *username, str *password);
 
 
 /*

@@ -941,42 +941,77 @@ AUTHverifyPassword(const char *passwd)
 #endif
 }
 
-/* change name to remote table uri, add client to check that the user
- * has permissions */
 str
-AUTHgetRemoteTableCredentials(const char *name, str *username, str *password)
+AUTHgetRemoteTableCredentials(const char *uri, Client cntxt, str *username, str *password)
 {
 	FILE *fp = fopen("/tmp/remote_table_auth.txt", "r");
+	str localuser;
+	str luri;
+	str tmp;
 	char buf[BUFSIZ];
 	char *p, *q;
 
-	(void)name;
+	(void)uri;
 	fread(buf, 1, BUFSIZ, fp);
 
-	p = strchr(buf, '\n');
-	*p = '\0';
-	*username = strdup(buf);
-	q = strchr(p + 1, '\n');
-	*q = '\0';
-	*password = strdup(p + 1);
+	q = buf;
+	p = strchr(buf, ',');
+	*p = 0;
+	luri = GDKstrdup(q);
+
+	q = p + 1;
+	p = strchr(q, ',');
+	*p = 0;
+	localuser = GDKstrdup(q);
+
+	q = p + 1;
+	p = strchr(q, ',');
+	*p = 0;
+	*username = GDKstrdup(q);
+
+	q = p + 1;
+	p = strchr(q, '\n');
+	*p = 0;
+	*password = GDKstrdup(q);
 
 	fclose(fp);
+
+	/* mem leak */
+	rethrow("checkCredentials", tmp, AUTHrequireAdminOrUser(cntxt, localuser));
+	/* if (strcmp(uri, luri)) { */
+	/* 	GDKfree(luri); */
+	/* 	GDKfree(localuser); */
+	/* 	throw(MAL, "getRemoteTableCredentials", SQLSTATE(HY001) "URIs do not match"); */
+	/* } */
+
+	GDKfree(luri);
+	GDKfree(localuser);
+
 	return MAL_SUCCEED;
 }
 
-/* change name to remote table uri, add local user */
 str
-AUTHaddRemoteTableCredentials(const char *name, const char *user, const char *pass, bool pw_encrypted)
+AUTHaddRemoteTableCredentials(const char *uri, const char *localuser, const char *remoteuser, const char *pass, bool pw_encrypted)
 {
 	/* Work in Progress */
 	FILE *fp = fopen("/tmp/remote_table_auth.txt", "w");
 	char *password = NULL;
 	bool free_pw = false;
+	// str tmp;
+	BUN p;
 
-	(void)name;
+	(void)remoteuser;
+
+	if (uri == NULL || strNil(uri))
+		throw(ILLARG, "addRemoteTableCredentials", "URI cannot be nil");
+	if (localuser == NULL || strNil(localuser))
+		throw(ILLARG, "addRemoteTableCredentials", "local user name cannot be nil");
+
+	(void)p;
 
 	if (pass == NULL) {
-		AUTHgetPasswordHash(&password, NULL, user);
+		/* NOTE: Is having the client == NULL safe? */
+		AUTHgetPasswordHash(&password, NULL, localuser);
 	}
 	else {
 		free_pw = true;
@@ -987,7 +1022,9 @@ AUTHaddRemoteTableCredentials(const char *name, const char *user, const char *pa
 			password = mcrypt_BackendSum(pass, strlen(pass));
 		}
 	}
-	fprintf(fp, "%s\n%s\n", user, password);
+	// rethrow("addUser", tmp, AUTHverifyPassword(password));
+
+	fprintf(fp, "%s,%s,%s,%s\n",uri, localuser, remoteuser, password);
 	fclose(fp);
 
 	if (free_pw) {
