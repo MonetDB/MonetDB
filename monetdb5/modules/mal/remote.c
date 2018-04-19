@@ -262,6 +262,43 @@ str RMTconnect(
 	return RMTconnectScen(ret, uri, user, passwd, &scen);
 }
 
+str
+RMTconnectURI(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	char *remoteuser;
+	char *passwd;
+	char *uri;
+	char *tmp;
+	char *ret;
+	str msg;
+	ValPtr v;
+
+	(void)mb;
+
+	v = &stk->stk[pci->argv[0]];
+
+	uri = *getArgReference_str(stk, pci, 1);
+	if (uri == NULL || strcmp(uri, (str)str_nil) == 0) {
+		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT ": URI is NULL or nil");
+	}
+
+	rethrow("remote.connect", tmp, AUTHgetRemoteTableCredentials(uri, cntxt, &remoteuser, &passwd));
+
+	msg = RMTconnect(&ret, &uri, &remoteuser, &passwd);
+
+	GDKfree(remoteuser);
+	GDKfree(passwd);
+
+	if (msg == MAL_SUCCEED) {
+		v = &stk->stk[pci->argv[0]];
+		v->vtype = TYPE_str;
+		if((v->val.sval = GDKstrdup(ret)) == NULL)
+			throw(MAL, "remote.connect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
+
+	return msg;
+}
+
 
 /**
  * Disconnects a connection.  The connection needs not to exist in the
