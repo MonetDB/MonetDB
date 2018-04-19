@@ -39,8 +39,7 @@ project (
 | | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
 | | ) [ "fk"."id" NOT NULL HASHCOL  as "v0"."id" ]
 | ) [  ] [ sys.count() NOT NULL as "L7"."L7" ]
-) [ "L7" NOT NULL as "L10"."L7" ]
-
+) [ "L7"."L7" NOT NULL ]
 #plan select id       from v0 order by id;
 % .plan # table_name
 % rel # name

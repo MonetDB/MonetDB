@@ -330,8 +330,6 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 					goto wrapup;
 				}
 			}
-			BATsetcount(b, 1);
-			BATsettrivprop(b);
 		} else {
 			b = BATdescriptor(*getArgReference_bat(stk, pci, i));
 			if (b == NULL) {

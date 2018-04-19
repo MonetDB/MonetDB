@@ -47,16 +47,16 @@ lib__sql = {
 		sql_orderidx.c sql_orderidx.h \
 		wlr.c wlr.h \
 		sql_rank.c sql_rank.h
+	# libmapi on Windows for mcrypt_*
 	LIBS = ../../server/libsqlserver \
-		   ../../storage/libstore \
-		   ../../storage/bat/libbatstore \
-		   ../../common/libsqlcommon \
- 		   NATIVE_WIN32?../../../monetdb5/tools/libmonetdb5 \
-		   NATIVE_WIN32?../../../gdk/libbat \
-		   NATIVE_WIN32?../../../common/stream/libstream \
-		   NATIVE_WIN32?../../../common/utils/libmcrypt \
-		   $(PTHREAD_LIBS) \
-		   $(openssl_LIBS) $(MATH_LIBS)
+		../../storage/libstore \
+		../../storage/bat/libbatstore \
+		../../common/libsqlcommon \
+		WIN32?../../../clients/mapilib/libmapi \
+ 		WIN32?../../../monetdb5/tools/libmonetdb5 \
+		WIN32?../../../gdk/libbat \
+		WIN32?../../../common/stream/libstream \
+		WIN32?$(openssl_LIBS)
 }
 
 headers_mal = {

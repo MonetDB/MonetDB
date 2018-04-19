@@ -1,4 +1,4 @@
 @echo on
 @prompt # $t $g  
 
-	%MTIMEOUT% mclient --help
+	mclient --help

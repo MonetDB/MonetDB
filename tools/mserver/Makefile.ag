@@ -47,16 +47,52 @@ bin_mserver5 = {
 	# hack: include mserver5.1.in here to get it expanded
 	SOURCES = mserver5.c monet_version.h monet_version.c.in
 	LIBS = ../../monetdb5/tools/libmonetdb5 \
-		../../gdk/libbat ../../common/stream/libstream \
-		$(curl_LIBS) $(pcre_LIBS) $(openssl_LIBS) $(PSAPILIB) \
-		$(SOCKET_LIBS) $(MALLOC_LIBS) $(DL_LIBS) $(PTHREAD_LIBS)
+		../../gdk/libbat \
+		../../common/stream/libstream \
+		../../clients/mapilib/libmapi \
+		$(UUID_LIBS) \
+		$(MATH_LIBS) \
+		$(SOCKET_LIBS) \
+		$(MALLOC_LIBS) \
+		$(PTHREAD_LIBS) \
+		$(DL_LIBS) \
+		$(openssl_LIBS) \
+		$(pcre_LIBS) \
+		$(libxml2_LIBS) \
+		$(PSAPILIB) \
+		$(KVM_LIBS) \
+		$(zlib_LIBS) \
+		$(BZ_LIBS) \
+		$(snappy_LIBS) \
+		$(lz4_LIBS) \
+		$(liblzma_LIBS) \
+		$(curl_LIBS) \
+		$(LTLIBICONV)
 }
 
 bin_shutdowntest = {
 	CONDINST = HAVE_TESTING
 	SOURCES = shutdowntest.c
 	LIBS = ../../monetdb5/tools/libmonetdb5 \
-		../../gdk/libbat ../../common/stream/libstream \
-		$(curl_LIBS) $(pcre_LIBS) $(openssl_LIBS) $(PSAPILIB) \
-		$(SOCKET_LIBS) $(MALLOC_LIBS) $(DL_LIBS) $(PTHREAD_LIBS)
+		../../gdk/libbat \
+		../../common/stream/libstream \
+		../../clients/mapilib/libmapi \
+		$(UUID_LIBS) \
+		$(MATH_LIBS) \
+		$(SOCKET_LIBS) \
+		$(MALLOC_LIBS) \
+		$(PTHREAD_LIBS) \
+		$(DL_LIBS) \
+		$(openssl_LIBS) \
+		$(pcre_LIBS) \
+		$(libxml2_LIBS) \
+		$(PSAPILIB) \
+		$(KVM_LIBS) \
+		$(zlib_LIBS) \
+		$(BZ_LIBS) \
+		$(snappy_LIBS) \
+		$(lz4_LIBS) \
+		$(liblzma_LIBS) \
+		$(curl_LIBS) \
+		$(LTLIBICONV)
 }

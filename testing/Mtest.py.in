@@ -2188,10 +2188,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
                     TIMEOUT = int(TIMEOUT * TOf)
                 if TIMEOUT < 1 and par['TIMEOUT'] > 0:
                     TIMEOUT = 1
-        if env['exe']['Mtimeout'][0]:
-            # set timeout
-            env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout %s ' % str(TIMEOUT)
-            SetExecEnv(env['exe'],False)
         CTIMEOUT = 0
         if   CALL in ["other", "python", "ruby"]:
             if TIMEOUT > 0:
@@ -2335,11 +2331,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
             STDOUT.flush()
         except IOError as err:
             Warn("Flushing STDOUT in RunTest failed with #%d: '%s'." % (err.errno, err.strerror))
-
-        if env['exe']['Mtimeout'][0]:
-            # reset timeout
-            env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout %s ' % str(par['TIMEOUT'])
-            SetExecEnv(env['exe'],False)
 
         Mfilter.mFilter(TST+STABLEout,par['IGNORE'])
         Mfilter.mFilter(TST+STABLEerr,par['IGNORE'])
@@ -2749,6 +2740,9 @@ def killchildren(pid, procs = None):
         if procdebug:
             print('killing process %d failed' % pid)
 
+def reallyKill(proc):
+    killchildren(proc.pid, getkids())
+
 def killProc(proc, outfile = None, cmd = None):
     if type(cmd) is type([]):
         cmd = ' '.join(cmd)
@@ -2782,7 +2776,16 @@ def killProc(proc, outfile = None, cmd = None):
         try:
             p = process.Popen(['pstack', str(proc.pid)], stdout = process.PIPE,
                               universal_newlines = True)
+            try:
+                # pstack (gdb) sometimes hangs when trying to get the
+                # stack trace: kill it mercilessly if it does
+                t = Timer(60, reallyKill, args = [p])
+                t.start()
+            except AttributeError:
+                t = None
             out, err = p.communicate()
+            if t is not None:
+                t.cancel()
         except:
             out = ''
     if outfile is not None and out:
@@ -3017,6 +3020,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             elif (not all_tests or (COND != None and "HAVE_LIBPY" in COND)) and CONDITIONALS['HAVE_LIBPY']:
                 # enable Python integration in server
                 Srvr.extend(['--set', 'embedded_py=true'])
+
+            # enable C integration in server
+            Srvr.extend(['--set', 'embedded_c=true'])
 
 
             pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
@@ -3426,9 +3432,7 @@ def SetExecEnv(exe,verbose) :
             V = 'MSERVER'
         else:
             V = v.upper()
-        if  v != 'Mtimeout':
-            os.environ[V] = CALL+exe['Mtimeout'][1]+exe[v][1]
-        elif exe[v][0]:
+        if exe[v][0]:
             os.environ[V] = CALL+exe[v][1]
         else:
             os.environ[V] = ""
@@ -4195,7 +4199,6 @@ def main(argv) :
                 SOCK = ""
 
             exe = {}
-            exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
             exe['mserver5']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s --set mapi_open=true --set mapi_port=%s %s --set monet_prompt= %s %s' % \
                                                                    (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], SOCK, not nomito and '--forcemito' or '', env['MSERVER_SET'])
             exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
@@ -4205,8 +4208,6 @@ def main(argv) :
             exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'])
             exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s --host=%s --port=%s' % (env['SQLDUMP'], HOST, env['MAPIPORT'])
             exe['R_Client']   = CheckExec(env['RCLIENT'].split(None, 1)[0])   , '%s --args %s' % (env['RCLIENT'], env['MAPIPORT'])
-            if par['TIMEOUT'] == 0 or not exe['Mtimeout'][0]:
-                exe['Mtimeout'] = '', ''
             env['exe'] = exe
             SetExecEnv(exe,verbose)
 

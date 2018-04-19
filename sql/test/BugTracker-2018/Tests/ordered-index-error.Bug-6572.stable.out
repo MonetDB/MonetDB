@@ -1,0 +1,45 @@
+stdout of test 'ordered-index-error.Bug-6572` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 11:24:04 >  
+# 11:24:04 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39857" "--set" "mapi_usock=/var/tmp/mtest-13995/.s.monetdb.39857" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-old/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2018" "--set" "embedded_c=true"
+# 11:24:04 >  
+
+# MonetDB 5 server v11.29.2
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit
+# Found 15.387 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:39857/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-13995/.s.monetdb.39857
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 11:24:04 >  
+# 11:24:04 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-13995" "--port=39857"
+# 11:24:04 >  
+
+#create table t1(v0 int, v1 char(1));
+#insert into t1 values (1,'a'),(2,'b'),(3,'c');
+[ 3	]
+#create ordered index index_t1_v1 on t1(v1);
+#create table t2(v1 char(1));
+#insert into t2 values ('a');
+[ 1	]
+#create temp table t3 as
+#(select t1.v0 from t1,t2 where trim(t2.v1)=t1.v1)
+#on commit preserve rows;
+#drop index index_t1_v1;
+#drop table t1;
+#drop table t2;
+#drop table t3;
+
+# 11:24:04 >  
+# 11:24:04 >  "Done."
+# 11:24:04 >  
+

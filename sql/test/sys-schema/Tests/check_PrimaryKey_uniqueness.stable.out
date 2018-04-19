@@ -93,7 +93,7 @@ Ready.
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.tables GROUP BY id HAVING COUNT(*) > 1;
-% .L40,	.tables # table_name
+% .L41,	.tables # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
@@ -108,7 +108,7 @@ Ready.
 % bigint,	int # type
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.columns GROUP BY id HAVING COUNT(*) > 1;
-% .L14,	.columns # table_name
+% .L16,	.columns # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length
@@ -194,6 +194,11 @@ Ready.
 % 1,	1 # length
 #SELECT COUNT(*) AS duplicates, id FROM sys.sequences GROUP BY id HAVING COUNT(*) > 1;
 % sys.L3,	sys.sequences # table_name
+% duplicates,	id # name
+% bigint,	int # type
+% 1,	1 # length
+#SELECT COUNT(*) AS duplicates, id FROM sys.comments GROUP BY id HAVING COUNT(*) > 1;
+% sys.L3,	sys.comments # table_name
 % duplicates,	id # name
 % bigint,	int # type
 % 1,	1 # length

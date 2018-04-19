@@ -22,8 +22,8 @@ lib__lsst = {
 	MODULE
 	DIR = libdir/monetdb5
 	SOURCES = lsst.c lsst.h
-	LIBS = NATIVE_WIN32?../../../../monetdb5/tools/libmonetdb5 \
-		NATIVE_WIN32?../../../../gdk/libbat
+	LIBS = WIN32?../../../../monetdb5/tools/libmonetdb5 \
+		WIN32?../../../../gdk/libbat
 }
 
 headers_lsstmal = {

@@ -34,9 +34,11 @@ def main():
     if makedefs['bits'] == '64':
         folder = r'ProgramFiles64Folder'
         arch = 'x64'
+        libcrypto = '-x64'
     else:
         folder = r'ProgramFilesFolder'
         arch = 'x86'
+        libcrypto = ''
     vs = os.getenv('vs')        # inherited from TestTools\common.bat
     features = []
     print(r'<?xml version="1.0"?>')
@@ -84,12 +86,11 @@ def main():
                r'lib\libmapi.dll', r'lib\libmapi.pdb',
                r'lib\libmonetdb5.dll', r'lib\libmonetdb5.pdb',
                r'lib\libstream.dll', r'lib\libstream.pdb',
-               r'%s\bin\iconv.dll' % makedefs['LIBICONV'],
+               r'%s\bin\iconv-2.dll' % makedefs['LIBICONV'],
                r'%s\bin\libbz2.dll' % makedefs['LIBBZIP2'],
-               r'%s\bin\libeay32.dll' % makedefs['LIBOPENSSL'],
+               r'%s\bin\libcrypto-1_1%s.dll' % (makedefs['LIBOPENSSL'], libcrypto),
                r'%s\bin\libxml2.dll' % makedefs['LIBXML2'],
                r'%s\bin\pcre.dll' % makedefs['LIBPCRE'],
-               r'%s\bin\ssleay32.dll' % makedefs['LIBOPENSSL'],
                r'%s\bin\zlib1.dll' % makedefs['LIBZLIB']])
     print(r'            </Directory>')
     print(r'            <Directory Id="etc" Name="etc">')
@@ -125,12 +126,11 @@ def main():
                r'lib\libmapi.lib',
                r'lib\libmonetdb5.lib',
                r'lib\libstream.lib',
-               r'%s\lib\iconv.lib' % makedefs['LIBICONV'],
+               r'%s\lib\iconv.dll.lib' % makedefs['LIBICONV'],
                r'%s\lib\libbz2.lib' % makedefs['LIBBZIP2'],
-               r'%s\lib\libeay32.lib' % makedefs['LIBOPENSSL'],
+               r'%s\lib\libcrypto.lib' % makedefs['LIBOPENSSL'],
                r'%s\lib\libxml2.lib' % makedefs['LIBXML2'],
                r'%s\lib\pcre.lib' % makedefs['LIBPCRE'],
-               r'%s\lib\ssleay32.lib' % makedefs['LIBOPENSSL'],
                r'%s\lib\zdll.lib' % makedefs['LIBZLIB']])
     print(r'            </Directory>')
     print(r'            <Directory Id="share" Name="share">')

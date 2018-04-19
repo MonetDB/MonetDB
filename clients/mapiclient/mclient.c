@@ -269,7 +269,7 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, bool s
 
 	/*
 	 * report only the times we do actually measure:
-	 * - client-measured wall-clock time per query only when executing indivual queries,
+	 * - client-measured wall-clock time per query only when executing individual queries,
 	 *   otherwise only the total wall-clock time at the end of a batch;
 	 * - server-measured detailed performance measures only per query.
 	 */

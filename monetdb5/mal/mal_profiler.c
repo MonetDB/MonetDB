@@ -162,6 +162,8 @@ renderProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start, str us
 	logadd("\"function\":\"%s.%s\",%s", getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)), prettify);
 	logadd("\"pc\":%d,%s", mb?getPC(mb,pci):0, prettify);
 	logadd("\"tag\":%d,%s", stk?stk->tag:0, prettify);
+	logadd("\"module\":\"%s\",%s", pci->modname ? pci->modname : "", prettify);
+	logadd("\"instruction\":\"%s\",%s", pci->fcnname ? pci->fcnname : "", prettify);
 	if( mal_session_uuid)
 		logadd("\"session\":\"%s\",%s",mal_session_uuid,prettify);
 
@@ -342,7 +344,7 @@ This information can be used to determine memory footprint and variable life tim
 					tname = getTypeName(tpe);
 					logadd("\"type\":\"%s\",%s", tname,pret);
 					cv = VALformat(&stk->stk[getArg(pci,j)]);
-					stmtq = mal_quote(cv, strlen(cv));
+					stmtq = cv ? mal_quote(cv, strlen(cv)) : NULL;
 					if (stmtq != NULL && strlen(stmtq) > LOGLEN/2) {
 						truncated = truncate_string(stmtq);
 						GDKfree(stmtq);

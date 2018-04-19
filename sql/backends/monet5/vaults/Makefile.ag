@@ -25,9 +25,8 @@ lib__vault = {
 	MODULE
 	DIR = libdir/monetdb5
 	SOURCES = vault.c vault.h
-	LIBS = NATIVE_WIN32?../../../../monetdb5/tools/libmonetdb5 \
-	       NATIVE_WIN32?../../../../gdk/libbat \
-	       $(curl_LIBS)
+	LIBS = WIN32?../../../../monetdb5/tools/libmonetdb5 \
+	       WIN32?../../../../gdk/libbat
 }
 
 headers_mal = {

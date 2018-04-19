@@ -460,7 +460,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		node *en;
 		list *l = sa_list(sql->sa), *exps = e->l;
 		sql_subfunc *f = e->f;
-		stmt *rows = NULL;
+		stmt *rows = NULL, *cond_execution = NULL;
+		char name[16], *nme;
 
 		if (f->func->side_effect && left) {
 			if (!exps || list_empty(exps))
@@ -486,9 +487,28 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 
 				if (rows && en == exps->h && f->func->type != F_LOADER)
 					es = stmt_const(be, rows, es);
+				/* last argument is condition, change into candidate list */
+				if (!en->next && !f->func->varres && !f->func->vararg && list_length(exps) > list_length(f->func->ops)) {
+					if (es->nrcols) {
+						if (!nrcols) {
+							node *n;
+							list *nl = sa_list(sql->sa);
+							for (n = l->h; n; n = n->next) {
+								stmt *s = n->data;
+								s = stmt_const(be, es, s);
+								list_append(nl, s);
+							}
+							l = nl;
+
+						}
+						es = stmt_uselect(be, es, stmt_bool(be,1), cmp_equal, NULL, 0);
+					} else /* need a condition */
+						cond_execution = es;
+				}
 				if (es->nrcols > nrcols)
 					nrcols = es->nrcols;
-				list_append(l,es);
+				if (!cond_execution)
+					list_append(l,es);
 			}
 			if (sel && strcmp(sql_func_mod(f->func), "calc") == 0 && nrcols && strcmp(sql_func_imp(f->func), "ifthenelse") != 0)
 				list_append(l,sel);
@@ -498,10 +518,24 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			s = stmt_mirror(be, l->h->data);
 		else
 		*/
+		if (cond_execution) {
+			/* var_x = nil; */
+			nme = number2name(name, 16, ++sql->label);
+			(void)stmt_var(be, nme, exp_subtype(e), 1, 2);
+			/* if_barrier ... */
+			cond_execution = stmt_cond(be, cond_execution, NULL, 0, 0);
+		}
 		if (f->func->rel) 
 			s = stmt_func(be, stmt_list(be, l), sa_strdup(sql->sa, f->func->base.name), f->func->rel, (f->func->type == F_UNION));
 		else
 			s = stmt_Nop(be, stmt_list(be, l), e->f); 
+		if (cond_execution) {
+			/* var_x = s */
+			(void)stmt_assign(be, nme, s, 2);
+			/* endif_barrier */
+			(void)stmt_control_end(be, cond_execution);
+			s = stmt_var(be, nme, exp_subtype(e), 0, 2);
+		}
 	} 	break;
 	case e_aggr: {
 		list *attr = e->l; 
@@ -560,10 +594,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (!s && left) 
 			s = bin_find_column(be, left, e->l, e->r);
 		if (!s) {
-			sql_rel *rel = mvc_find_subquery(be->mvc, e->l?e->l:e->r, e->r);
+			sql_subquery *sq = mvc_find_subquery(be->mvc, e->l?e->l:e->r, e->r);
 
-			if (rel) { 
-				stmt *s = rel->p;
+			if (sq) { 
+				stmt *s = sq->s;
 
 				if (s && s->type == st_list)
 					s = bin_find_column(be, s, e->l?e->l:e->r, e->r);
@@ -4738,7 +4772,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 
 		other = stmt_table_clear(be, next);
 		list_append(l, other);
-		if (next == t)
+		if(next == t)
 			ret = other;
 
 		if(be->cur_append) //building the total number of rows affected across all tables
@@ -5163,9 +5197,10 @@ _subrel_bin(backend *be, sql_rel *rel, list *refs)
 		node *n;
 
 		for(n = be->mvc->sqs->h; n; n = n->next) {
-			sql_var *v = n->data;
+			sql_subquery *v = n->data;
 
-			v->rel->p = subrel_bin(be, v->rel, refs);
+			if (!v->s)
+				v->s = subrel_bin(be, v->rel, refs);
 		}
 	}
 	return subrel_bin(be, rel, refs);

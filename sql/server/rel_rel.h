@@ -52,7 +52,7 @@ extern sql_rel *rel_topn(sql_allocator *sa, sql_rel *l, list *exps );
 extern sql_rel *rel_sample(sql_allocator *sa, sql_rel *l, list *exps );
 
 extern sql_rel *rel_label( mvc *sql, sql_rel *r, int all);
-extern void rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e);
+extern sql_exp *rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e);
 extern void rel_select_add_exp(sql_allocator *sa, sql_rel *l, sql_exp *e);
 extern void rel_join_add_exp(sql_allocator *sa, sql_rel *rel, sql_exp *e);
 extern sql_exp *rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e);

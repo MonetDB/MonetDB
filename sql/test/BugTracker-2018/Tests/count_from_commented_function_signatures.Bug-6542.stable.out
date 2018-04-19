@@ -123,9 +123,9 @@ project (
 | | | ) [ "f"."id" as "L2"."fid", "L37"."L37" as "L40"."line" ] [ "L40"."line" ASC ]
 | | ) [ "L2"."fid" as "commented_function_signatures_6542"."fid" ]
 | ) [  ] [ sys.count() NOT NULL as "L46"."L46" ]
-) [ "L46" NOT NULL as "L47"."L46" ]
+) [ "L46"."L46" NOT NULL ]
 #select count (*) from sys.commented_function_signatures_6542;
-% .L47 # table_name
+% .L46 # table_name
 % L46 # name
 % bigint # type
 % 1 # length

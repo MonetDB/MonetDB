@@ -1,3 +1,24 @@
+monetdb (11.29.3) unstable; urgency=low
+
+  * Rebuilt.
+  * BZ#3824: Created table not visible from ODBC
+  * BZ#6556: Sqlitelogictest division by zero on COALESCE call
+  * BZ#6557: Sqlitelogictest crash on aggregation query with not in
+  * BZ#6559: rows in sys.statistics are not removed when a temporary table
+    is dropped.
+  * BZ#6560: Sqlitelogictest crash on group by query with having in
+  * BZ#6561: Sqlitelogictest crash on group by query with having not
+    in clause
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 27 Mar 2018 14:27:04 +0200
+
+monetdb (11.29.3) unstable; urgency=low
+
+  * sql: Extended support to use CREATE ORDERED INDEX on columns of type: char,
+    varchar, clob, blob, url, json, inet and uuid.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 15 Mar 2018 14:27:04 +0200
+
 monetdb (11.29.1) unstable; urgency=low
 
   * Rebuilt.

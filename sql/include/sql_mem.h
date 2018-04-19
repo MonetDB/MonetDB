@@ -15,7 +15,7 @@
 #define SQL_ERR 0
 
 #ifdef WIN32
-#if defined(LIBSQLSERVER) || defined(LIBSQLCOMMON) || defined(LIBBATSTORE) || defined(LIBSTORE)
+#if defined(LIBSQLSERVER) || defined(LIBSQLCOMMON) || defined(LIBBATSTORE) || defined(LIBSTORE) || defined(LIBSQL)
 #define sql_export extern __declspec(dllexport)
 #define sqlcommon_export extern __declspec(dllexport)
 #define sqlbat_export extern __declspec(dllexport)

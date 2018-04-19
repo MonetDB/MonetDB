@@ -52,6 +52,8 @@
 #include "rel_dump.h"
 #include "rel_remote.h"
 
+#include "muuid.h"
+
 int
 constantAtom(backend *sql, MalBlkPtr mb, atom *a)
 {
@@ -354,7 +356,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		lret[i] = getArg(p, 0);
 	}
 
-	/* q := remote.connect("uri", "user", "pass"); */
+	/* q := remote.connect("uri", "user", "pass", "language"); */
 	p = newStmt(curBlk, remoteRef, connectRef);
 	p = pushStr(curBlk, p, uri);
 	p = pushStr(curBlk, p, "monetdb");
@@ -434,6 +436,70 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	}
 	}
 	pushInstruction(curBlk, p);
+
+	if (mal_session_uuid) {
+		str rsupervisor_session = GDKstrdup(mal_session_uuid);
+		if (rsupervisor_session == NULL) {
+			return -1;
+		}
+
+		str lsupervisor_session = GDKstrdup(mal_session_uuid);
+		if (lsupervisor_session == NULL) {
+			GDKfree(rsupervisor_session);
+			return -1;
+		}
+
+		str rworker_plan_uuid = generateUUID();
+		if (rworker_plan_uuid == NULL) {
+			GDKfree(rsupervisor_session);
+			GDKfree(lsupervisor_session);
+			return -1;
+		}
+		str lworker_plan_uuid = GDKstrdup(rworker_plan_uuid);
+		if (lworker_plan_uuid == NULL) {
+			free(rworker_plan_uuid);
+			GDKfree(lsupervisor_session);
+			GDKfree(rsupervisor_session);
+			return -1;
+		}
+
+		/* remote.supervisor_register(connection, supervisor_uuid, plan_uuid) */
+		p = newInstruction(curBlk, remoteRef, execRef);
+		p = pushArgument(curBlk, p, q);
+		p = pushStr(curBlk, p, remoteRef);
+		p = pushStr(curBlk, p, register_supervisorRef);
+		getArg(p, 0) = -1;
+
+		/* We don't really care about the return value of supervisor_register,
+		 * but I have not found a good way to remotely execute a void mal function
+		 */
+		o = newFcnCall(curBlk, remoteRef, putRef);
+		o = pushArgument(curBlk, o, q);
+		o = pushInt(curBlk, o, TYPE_int);  
+		p = pushReturn(curBlk, p, getArg(o, 0));
+
+		o = newFcnCall(curBlk, remoteRef, putRef);
+		o = pushArgument(curBlk, o, q);
+		o = pushStr(curBlk, o, rsupervisor_session);
+		p = pushArgument(curBlk, p, getArg(o, 0));
+
+		o = newFcnCall(curBlk, remoteRef, putRef);
+		o = pushArgument(curBlk, o, q);
+		o = pushStr(curBlk, o, rworker_plan_uuid);
+		p = pushArgument(curBlk, p, getArg(o, 0));
+
+		pushInstruction(curBlk, p);
+
+		/* Execute the same instruction locally */
+		p = newStmt(curBlk, remoteRef, register_supervisorRef);
+		p = pushStr(curBlk, p, lsupervisor_session);
+		p = pushStr(curBlk, p, lworker_plan_uuid);
+
+		GDKfree(lworker_plan_uuid);
+		free(rworker_plan_uuid);   /* This was created with strdup */
+		GDKfree(lsupervisor_session);
+		GDKfree(rsupervisor_session);
+	}
 
 	/* (x1, x2, ..., xn) := remote.exec(q, "mod", "fcn"); */
 	p = newInstruction(curBlk, remoteRef, execRef);

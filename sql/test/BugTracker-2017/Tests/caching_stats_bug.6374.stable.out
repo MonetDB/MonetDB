@@ -36,7 +36,7 @@ Ready.
 #alter table sub1 set read only;
 #alter table sub2 set read only;
 #select count(*) from mt where i >= 5 and i < 100;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
@@ -52,13 +52,13 @@ project (
 | | | table(sys.sub2) [ "mt"."i" ] COUNT 
 | | ) [ int "5" <= "mt"."i" < int "100" ]
 | ) [  ] [ sys.count() NOT NULL as "L3"."L3" ]
-) [ "L3" NOT NULL as "L4"."L3" ]
+) [ "L3"."L3" NOT NULL ]
 #alter table sub1 set read write;
 #insert into sub1 values (7),(8);
 [ 2	]
 #alter table sub1 set read only;
 #select count(*) from mt where i >= 5 and i < 100;
-% .L4 # table_name
+% .L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
@@ -87,7 +87,7 @@ project (
 | | | ) [  ] [ sys.count() NOT NULL as "L3"."L3" ]
 | | ) [ "L3"."L3" ]
 | ) [  ] [ sys.sum no nil ("L3"."L3") as "L3"."L3" ]
-) [ "L3" NOT NULL as "L4"."L3" ]
+) [ "L3"."L3" NOT NULL ]
 #drop table mt;
 #drop table sub1;
 #drop table sub2;

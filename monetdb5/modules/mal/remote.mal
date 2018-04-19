@@ -72,4 +72,8 @@ pattern bintype():void
 address RMTbintype
 comment "print the binary type of this mserver5";
 
+command register_supervisor(sup_uuid:str, query_uuid:str):int
+address RMTregisterSupervisor
+comment "Register the supervisor uuid at a remote site";
+
 remote.prelude();

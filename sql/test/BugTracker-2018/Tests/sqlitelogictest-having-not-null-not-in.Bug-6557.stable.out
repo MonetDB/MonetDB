@@ -1,0 +1,40 @@
+stdout of test 'sqlitelogictest-having-not-null-not-in.Bug-6557` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 12:32:57 >  
+# 12:32:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=30615" "--set" "mapi_usock=/var/tmp/mtest-25333/.s.monetdb.30615" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-old/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2018"
+# 12:32:57 >  
+
+# MonetDB 5 server v11.29.2
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit
+# Found 15.387 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://dhcp-211.eduroam.cwi.nl:30615/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-25333/.s.monetdb.30615
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 12:32:58 >  
+# 12:32:58 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25333" "--port=30615"
+# 12:32:58 >  
+
+#CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab0 VALUES(83,0,38), (26,0,79), (43,81,24);
+[ 3	]
+#SELECT DISTINCT col2 FROM tab0 GROUP BY col2, col1 HAVING NOT NULL NOT IN ( AVG ( ALL + col1 ) );
+% sys.tab0 # table_name
+% col2 # name
+% int # type
+% 1 # length
+#DROP TABLE tab0;
+
+# 12:32:58 >  
+# 12:32:58 >  "Done."
+# 12:32:58 >  
+

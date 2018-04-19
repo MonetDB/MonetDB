@@ -854,9 +854,7 @@ developer.  If you do want to test, install %{name}-testing-python.
 %license COPYING
 %defattr(-,root,root)
 %{_bindir}/Mdiff
-%{_bindir}/MkillUsers
 %{_bindir}/Mlog
-%{_bindir}/Mtimeout
 
 %package testing-python
 Summary: MonetDB - Monet Database Management System
@@ -1046,6 +1044,21 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Tue Mar 27 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.3-20180327
+- Rebuilt.
+- BZ#3824: Created table not visible from ODBC
+- BZ#6556: Sqlitelogictest division by zero on COALESCE call
+- BZ#6557: Sqlitelogictest crash on aggregation query with not in
+- BZ#6559: rows in sys.statistics are not removed when a temporary table
+  is dropped.
+- BZ#6560: Sqlitelogictest crash on group by query with having in
+- BZ#6561: Sqlitelogictest crash on group by query with having not
+  in clause
+
+* Thu Mar 15 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.3-20180327
+- sql: Extended support to use CREATE ORDERED INDEX on columns of type: char,
+  varchar, clob, blob, url, json, inet and uuid.
+
 * Thu Mar 15 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.1-20180315
 - Rebuilt.
 - BZ#3574: Add support for: create OR REPLACE view ...
