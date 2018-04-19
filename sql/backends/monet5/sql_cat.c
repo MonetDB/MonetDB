@@ -344,6 +344,8 @@ finish:
 		BBPunfix(diff1->batCacheid);
 	if(diff2)
 		BBPunfix(diff2->batCacheid);
+	if(msg != MAL_SUCCEED)
+		pt->p = NULL;
 	return msg;
 }
 
@@ -497,6 +499,8 @@ finish:
 		BBPunfix(cbind->batCacheid);
 	if(diff)
 		BBPunfix(diff->batCacheid);
+	if(msg != MAL_SUCCEED)
+		pt->p = NULL;
 	return msg;
 }
 

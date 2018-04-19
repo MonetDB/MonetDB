@@ -4919,8 +4919,13 @@ rel2bin_distribute(backend *be, sql_rel *rel, list *refs)
 	if(rel->exps && list_length(rel->exps) == 1) {
 		n = rel->exps->h;
 		except = n->data;
+		return exp_bin(be, except, l, r, NULL, NULL, NULL, NULL);
+	} else { //if there is no exception condition, just generate a statement list
+		list *slist = sa_list(be->mvc->sa);
+		list_append(slist, l);
+		list_append(slist, r);
+		return stmt_list(be, slist);
 	}
-	return exp_bin(be, except, l, r, NULL, NULL, NULL, NULL);
 }
 
 static stmt *

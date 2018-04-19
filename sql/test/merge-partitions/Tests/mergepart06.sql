@@ -20,7 +20,7 @@ INSERT INTO testrangelimits VALUES (201, 'oh no'); --error
 INSERT INTO testrangelimits VALUES (444, 'another'), (305, 'error'), (4, 'happening'); --error
 
 INSERT INTO sublimits1 VALUES (2, 'another');
-INSERT INTO sublimits2 VALUES (202, 'successful');
+INSERT INTO sublimits2 VALUES (102, 'successful');
 INSERT INTO sublimits3 VALUES (NULL, 'attempt');
 
 INSERT INTO sublimits3 VALUES (2, 'will'); --error

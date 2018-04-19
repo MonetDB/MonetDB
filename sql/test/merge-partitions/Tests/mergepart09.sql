@@ -15,9 +15,9 @@ ALTER TABLE testvaluespartitions ADD TABLE sublimits3 AS PARTITION IN ('1'); --e
 ALTER TABLE testvaluespartitions ADD TABLE sublimits3 AS PARTITION IN ('7', '8', '9');
 
 INSERT INTO testvaluespartitions VALUES (1, 'a'), (5, 'b'), (7, 'c');
-INSERT INTO testvaluespartitions VALUES (7, 'another'), (NULL, 'test'), (9, 'to'), (9, 'pass'); --3rd partition
+INSERT INTO testvaluespartitions VALUES (7, 'another'), (9, 'to'), (9, 'pass'); --3rd partition
 INSERT INTO testvaluespartitions VALUES (3, 'mmm'); --1st partition
-INSERT INTO testvaluespartitions VALUES ('5', 'test'); --2nd partition
+INSERT INTO testvaluespartitions VALUES ('5', 'test'), (NULL, 'test'); --2nd partition
 
 INSERT INTO testvaluespartitions VALUES (100, 'I am going to no partition'); --error
 
@@ -26,6 +26,7 @@ INSERT INTO sublimits2 VALUES (NULL, 'successful');
 INSERT INTO sublimits3 VALUES (8, 'attempt');
 
 INSERT INTO sublimits3 VALUES (1, 'fail'); --error
+INSERT INTO sublimits1 VALUES (NULL, 'again'); --error
 
 SELECT a,b FROM testvaluespartitions;
 SELECT a,b FROM sublimits1;

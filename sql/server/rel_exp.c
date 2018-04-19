@@ -634,7 +634,7 @@ exp_exception(sql_allocator *sa, sql_exp *cond, char* error_message)
 	if (e == NULL)
 		return NULL;
 	e->l = cond;
-	e->r = error_message;
+	e->r = sa_strdup(sa, error_message);
 	e->flag = PSM_EXCEPTION;
 	return e;
 }

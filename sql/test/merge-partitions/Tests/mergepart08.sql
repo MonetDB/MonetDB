@@ -18,7 +18,7 @@ SELECT a, b FROM testme;
 SELECT a, b FROM subtable1;
 SELECT a, b FROM subtable2;
 
-INSERT INTO subtable1 VALUES (1, 'one'), (5, 'five'), (15, 'fifteen');
+INSERT INTO subtable1 VALUES (1, 'one'), (5, 'five'), (9, 'fifteen');
 INSERT INTO subtable2 VALUES (11, 'eleven'), (12, 'twelve'), (13, 'thirteen');
 
 DELETE FROM testme where a > 5;

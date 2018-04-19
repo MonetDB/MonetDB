@@ -8136,6 +8136,7 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 		sql_rel *left = rel->l;
 		if(left->op == op_basetable) {
 			sql_table *t = left->l;
+			char buf[BUFSIZ];
 
 			if(isRangePartitionTable(t) || isListPartitionTable(t)) {
 				int just_one = 1;
@@ -8165,13 +8166,14 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 					sel = rel_ddl_distribute(sql->sa, sel, NULL, NULL);
 				} else if(is_insert(rel->op)) { //on inserts create a selection for each partition
 					int colr = t->pcol->colnr;
-					sql_rel *anti_dup = rel_dup(rel->r); /* the anti relation */
+					sql_rel *anti_dup = rel_dup(rel->r) /* the anti relation */, *new_table = NULL;
 					sql_exp *anti_exp = NULL, *anti_le = list_fetch(anti_dup->exps, colr), *accum = NULL, *aggr = NULL,
 							*exception = NULL;
 					list *anti_exps = new_exp_list(sql->sa);
 					sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
 					anti_le = exp_column(sql->sa, exp_relname(anti_le), exp_name(anti_le), exp_subtype(anti_le),
 										 anti_le->card, has_nil(anti_le), is_intern(anti_le));
+					int found_nils = 0;
 
 					for (node *n = t->members.set->h; n; n = n->next) {
 						sql_part *pt = (sql_part *) n->data;
@@ -8202,11 +8204,11 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 								nils = exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_equal);
 
 								if(accum) {
-									sql_exp *nr = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
+									sql_exp *nr = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_notequal);
 									accum = exp_or(sql->sa, list_append(new_exp_list(sql->sa), accum),
 												   list_append(new_exp_list(sql->sa), nr), 1);
 								} else {
-									accum = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
+									accum = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_notequal);
 								}
 								extra = rel_select(sql->sa, rel->r, nils);
 								dup = rel_or(sql, NULL, dup, extra, NULL, NULL, NULL);
@@ -8222,18 +8224,24 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 								list_append(anti_exps, exp_copy(sql->sa, e1));
 							}
 
-							if(pt->with_nills) { /* handle the nulls case */
-								sql_exp *e2 = exp_atom(sql->sa, atom_general(sql->sa, &(t->pcol->type), NULL));
-								list_append(exps, e2);
-								list_append(anti_exps, exp_copy(sql->sa, e2));
-							}
 							ein = exp_in(sql->sa, le, exps, cmp_in);
+							if(pt->with_nills) { /* handle the nulls case */
+								sql_exp *nils = rel_unop_(sql, le, NULL, "isnull", card_value);
+								nils = exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_equal);
+								ein = exp_or(sql->sa, list_append(new_exp_list(sql->sa), ein),
+											   list_append(new_exp_list(sql->sa), nils), 0);
+								found_nils = 1;
+							}
 							dup = rel_select(sql->sa, dup, ein);
 						} else {
 							assert(0);
 						}
 
-						s1 = rel_insert(sql, rel_basetable(sql, sub, sub->base.name), dup);
+						new_table = rel_basetable(sql, sub, sub->base.name);
+						if(list_length(sub->members.set) == 0) //if this table has no partitions, set it as used
+							new_table->p = prop_create(sql->sa, PROP_USED, new_table->p);
+
+						s1 = rel_insert(sql, new_table, dup);
 						if (just_one == 0) {
 							sel = rel_list(sql->sa, sel, s1);
 						} else {
@@ -8249,6 +8257,12 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 						anti_exp = accum;
 					} else if(isListPartitionTable(t)) {
 						anti_exp = exp_in(sql->sa, anti_le, anti_exps, cmp_notin);
+						if(!found_nils) {
+							sql_exp *anti_nils = rel_unop_(sql, anti_le, NULL, "isnull", card_value);
+							anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
+							anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), anti_exp),
+											 list_append(new_exp_list(sql->sa), anti_nils), 0);
+						}
 					} else {
 						assert(0);
 					}
@@ -8263,10 +8277,68 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 					//generate the exception
 					aggr = exp_column(sql->sa, exp_relname(aggr), exp_name(aggr), exp_subtype(aggr), aggr->card,
 									  has_nil(aggr), is_intern(aggr));
-					exception = exp_exception(sql->sa, aggr,
-											  "INSERT INTO: There are values in the insert not corresponding to any partition");
+					snprintf(buf, BUFSIZ, "INSERT: the insert violates the partition %s of values",
+							 isRangePartitionTable(t) ? "range" : "list");
+					exception = exp_exception(sql->sa, aggr, buf);
 					sel = rel_ddl_distribute(sql->sa, sel, anti_dup, list_append(new_exp_list(sql->sa), exception));
 				}
+			} else if(t->p && (isRangePartitionTable(t->p) || isListPartitionTable(t->p))
+					  && !find_prop(left->p, PROP_USED) && is_insert(rel->op)) {
+				//is part of a partition table and not been used yet
+				sql_table *upper = t->p;
+				int colr = upper->pcol->colnr;
+				sql_part *pt = find_sql_part(upper, t->base.name);
+				sql_rel *anti_dup = rel_dup(rel->r) /* the anti relation */, *right = rel->r;
+				sql_exp *le = list_fetch(right->exps, colr), *anti_exp = NULL,
+						*anti_le = list_fetch(anti_dup->exps, colr), *aggr = NULL, *exception = NULL;
+				list *anti_exps = new_exp_list(sql->sa);
+				sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
+
+				le = exp_column(sql->sa, exp_relname(le), exp_name(le), exp_subtype(le), le->card, has_nil(le), is_intern(le));
+				anti_le = exp_column(sql->sa, exp_relname(anti_le), exp_name(anti_le), exp_subtype(anti_le),
+									 anti_le->card, has_nil(anti_le), is_intern(anti_le));
+
+				if(isRangePartitionTable(upper)) {
+					sql_exp *e1 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.minvalue),
+							*e2 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.maxvalue);
+					anti_exp = exp_compare2(sql->sa, anti_le, exp_copy(sql->sa, e1), exp_copy(sql->sa, e2), 3);
+					set_anti(anti_exp);
+				} else if(isListPartitionTable(upper)) {
+					for(node *n = pt->part.values->h ; n ; n = n->next) {
+						sql_part_value *next = (sql_part_value*) n->data;
+						sql_exp *e1 = create_table_part_atom_exp(sql, next->tpe, next->value);
+						list_append(anti_exps, exp_copy(sql->sa, e1));
+					}
+					anti_exp = exp_in(sql->sa, anti_le, anti_exps, cmp_notin);
+				} else {
+					assert(0);
+				}
+				if(!pt->with_nills) { /* handle the nulls case */
+					sql_exp *anti_nils = rel_unop_(sql, anti_le, NULL, "isnull", card_value);
+					anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
+					anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), anti_exp),
+									  list_append(new_exp_list(sql->sa), anti_nils), 0);
+				}
+
+				//generate a count aggregation for the values not present in any of the partitions
+				anti_dup = rel_select(sql->sa, anti_dup, anti_exp);
+				anti_dup = rel_project(sql->sa, anti_dup, rel_projections(sql, anti_dup, NULL, 1, 1));
+				anti_dup = rel_groupby(sql, anti_dup, NULL);
+				aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, anti_dup->card, 0);
+				(void) rel_groupby_add_aggr(sql, anti_dup, aggr);
+				exp_label(sql->sa, aggr, ++sql->label);
+
+				//generate the exception
+				aggr = exp_column(sql->sa, exp_relname(aggr), exp_name(aggr), exp_subtype(aggr), aggr->card,
+								  has_nil(aggr), is_intern(aggr));
+				snprintf(buf, BUFSIZ, "INSERT: table %s.%s is part of merge table %s.%s and the insert violates the "
+							"partition %s of values", t->s->base.name,  t->base.name, upper->s->base.name,
+							upper->base.name, isRangePartitionTable(upper) ? "range" : "list");
+				exception = exp_exception(sql->sa, aggr, buf);
+				sel = rel_ddl_distribute(sql->sa, rel, anti_dup, list_append(new_exp_list(sql->sa), exception));
+
+				left->p = prop_create(sql->sa, PROP_USED, left->p);
+				(*changes)++;
 			}
 		}
 	} else {
