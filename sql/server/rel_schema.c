@@ -947,10 +947,12 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 		sql_table *t;
 
 		if (tt == tt_remote) {
+			char *local_user = stack_get_string(sql, "current_user");
 			if (!mapiuri_valid(loc))
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: incorrect uri '%s' for remote table '%s'", loc, name);
-			if (AUTHaddRemoteTableCredentials(name, username, password, pw_encrypted) != 0) {
-				return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: cannot register credentials for remote table '%s' in vault", name);
+			char *reg_credentials = AUTHaddRemoteTableCredentials(loc, local_user, username, password, pw_encrypted);
+			if (reg_credentials != 0) {
+				return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: cannot register credentials for remote table '%s' in vault: %s", name, reg_credentials);
 			}
 			t = mvc_create_remote(sql, s, name, SQL_DECLARED_TABLE, loc);
 		} else {
