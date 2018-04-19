@@ -162,11 +162,6 @@ str RMTconnectScen(
 	/* just make sure the return isn't garbage */
 	*ret = 0;
 
-	/* TODO:
-	 * 1. remote user and password from arg list
-	 * 2. use AUTHgetRemoteTableCredentials(uri, client)
-	 */
-
 	if (ouri == NULL || *ouri == NULL || strcmp(*ouri, (str)str_nil) == 0)
 		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT ": database uri "
 				"is NULL or nil");
@@ -270,6 +265,7 @@ RMTconnectURI(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *uri;
 	char *tmp;
 	char *ret;
+	str scen;
 	str msg;
 	ValPtr v;
 
@@ -278,13 +274,14 @@ RMTconnectURI(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	v = &stk->stk[pci->argv[0]];
 
 	uri = *getArgReference_str(stk, pci, 1);
+	scen = *getArgReference_str(stk, pci, 2);
 	if (uri == NULL || strcmp(uri, (str)str_nil) == 0) {
 		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT ": URI is NULL or nil");
 	}
 
 	rethrow("remote.connect", tmp, AUTHgetRemoteTableCredentials(uri, cntxt, &remoteuser, &passwd));
 
-	msg = RMTconnect(&ret, &uri, &remoteuser, &passwd);
+	msg = RMTconnectScen(&ret, &uri, &remoteuser, &passwd, &scen);
 
 	GDKfree(remoteuser);
 	GDKfree(passwd);

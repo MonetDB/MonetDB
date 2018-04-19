@@ -356,12 +356,10 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		lret[i] = getArg(p, 0);
 	}
 
-	/* q := remote.connect("uri"); */
+	/* q := remote.connect("uri", "msql"); */
 	p = newStmt(curBlk, remoteRef, connectRef);
 	p = pushStr(curBlk, p, uri);
-	/*p = pushStr(curBlk, p, "monetdb");
-	p = pushStr(curBlk, p, "monetdb");
-	p = pushStr(curBlk, p, "msql");*/
+	p = pushStr(curBlk, p, "msql");
 	q = getArg(p, 0);
 
 	/* remote.exec(q, "sql", "register", "mod", "name", "relational_plan", "signature"); */
