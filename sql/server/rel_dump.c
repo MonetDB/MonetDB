@@ -1135,9 +1135,12 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			sql_exp *e;
 
 	        	e = exp_read(sql, lrel, rrel, pexps, r, pos, 0);
-			if (e && e->type == e_cmp) 
-				return exp_compare2(sql->sa, e->l, exp, e->r, compare2range(swap_compare((comp_type)f),e->flag));
-			else if (e)
+			if (e && e->type == e_cmp) {
+				sql_exp *ne = exp_compare2(sql->sa, e->l, exp, e->r, compare2range(swap_compare((comp_type)f), e->flag));
+				if (is_anti(exp))
+					set_anti(ne);
+				return ne;
+			} else if (e)
 				return exp_compare(sql->sa, exp, e, f);
 		}
 	}
