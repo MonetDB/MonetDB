@@ -978,11 +978,11 @@ AUTHgetRemoteTableCredentials(const char *uri, Client cntxt, str *username, str 
 
 	/* mem leak */
 	rethrow("checkCredentials", tmp, AUTHrequireAdminOrUser(cntxt, localuser));
-	/* if (strcmp(uri, luri)) { */
-	/* 	GDKfree(luri); */
-	/* 	GDKfree(localuser); */
-	/* 	throw(MAL, "getRemoteTableCredentials", SQLSTATE(HY001) "URIs do not match"); */
-	/* } */
+	if (strcmp(uri, luri)) {
+		GDKfree(luri);
+		GDKfree(localuser);
+		throw(MAL, "getRemoteTableCredentials", SQLSTATE(HY001) "URIs do not match");
+	}
 
 	GDKfree(luri);
 	GDKfree(localuser);
