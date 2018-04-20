@@ -33,7 +33,7 @@ Ready.
 [ 1	]
 #SELECT SUM(2 * COL1 * COL2)
 #FROM A2;
-% sys.L4 # table_name
+% .L3 # table_name
 % L3 # name
 % hugeint # type
 % 6 # length
