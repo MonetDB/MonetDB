@@ -8015,16 +8015,97 @@ rel_rename_part(mvc *sql, sql_rel *p, char *tname, sql_table *mt)
 	return p;
 }
 
+static sql_rel* rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt);
+
+static sql_exp*
+exp_change_column_table(mvc *sql, sql_exp *e, sql_table* oldt, sql_table* newt)
+{
+	if (!e)
+		return NULL;
+	switch(e->type) {
+		case e_psm: {
+			if (e->flag & PSM_RETURN) {
+				for(node *n = ((list*)e->r)->h ; n ; n = n->next)
+					n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
+			} else if (e->flag & PSM_WHILE) {
+				e->l = exp_change_column_table(sql, e->l, oldt, newt);
+				for(node *n = ((list*)e->r)->h ; n ; n = n->next)
+					n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
+			} else if (e->flag & PSM_IF) {
+				e->l = exp_change_column_table(sql, e->l, oldt, newt);
+				for(node *n = ((list*)e->r)->h ; n ; n = n->next)
+					n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
+				if (e->f)
+					for(node *n = ((list*)e->f)->h ; n ; n = n->next)
+						n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
+			} else if (e->flag & PSM_REL) {
+				rel_change_base_table(sql, e->l, oldt, newt);
+			} else if (e->flag & PSM_EXCEPTION) {
+				e->l = exp_change_column_table(sql, e->l, oldt, newt);
+			}
+		} break;
+		case e_convert: {
+			e->l = exp_change_column_table(sql, e->l, oldt, newt);
+		} break;
+		case e_atom:
+			break;
+		case e_func: {
+			for(node *n = ((list*)e->l)->h ; n ; n = n->next)
+				n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
+			if (e->r)
+				for(node *n = ((list*)e->r)->h ; n ; n = n->next)
+					n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
+		} 	break;
+		case e_aggr: {
+			if (e->l)
+				for(node *n = ((list*)e->l)->h ; n ; n = n->next)
+					n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
+		} 	break;
+		case e_column: {
+			if(!strcmp(e->l, oldt->base.name))
+				e->l = sa_strdup(sql->sa, newt->base.name);
+			if(!strcmp(e->rname, oldt->base.name))
+				e->rname = sa_strdup(sql->sa, newt->base.name);
+		} break;
+		case e_cmp: {
+			if (e->flag == cmp_in || e->flag == cmp_notin) {
+				e->l = exp_change_column_table(sql, e->l, oldt, newt);
+				for(node *n = ((list*)e->r)->h ; n ; n = n->next)
+					n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
+			} else if (get_cmp(e) == cmp_or || get_cmp(e) == cmp_filter) {
+				for(node *n = ((list*)e->l)->h ; n ; n = n->next)
+					n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
+				for(node *n = ((list*)e->r)->h ; n ; n = n->next)
+					n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
+			} else {
+				if(e->l)
+					e->l = exp_change_column_table(sql, e->l, oldt, newt);
+				if(e->r)
+					e->r = exp_change_column_table(sql, e->r, oldt, newt);
+				if(e->f)
+					e->f = exp_change_column_table(sql, e->f, oldt, newt);
+			}
+		} break;
+	}
+	return e;
+}
+
 static sql_rel*
-rel_change_base_table(sql_rel* rel, sql_table* oldt, sql_table* newt)
+rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt)
 {
 	if(!rel)
 		return NULL;
+
+	if(rel->exps)
+		for(node *n = rel->exps->h ; n ; n = n->next)
+			n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
 
 	switch(rel->op) {
 		case op_basetable:
 			if(rel->l == oldt)
 				rel->l = newt;
+			if(rel->r)
+				rel->r = rel_change_base_table(sql, rel->r, oldt, newt);
 			break;
 		case op_table:
 		case op_topn:
@@ -8048,9 +8129,9 @@ rel_change_base_table(sql_rel* rel, sql_table* oldt, sql_table* newt)
 		case op_anti:
 		case op_apply:
 			if(rel->l)
-				rel->l = rel_change_base_table(rel->l, oldt, newt);
+				rel->l = rel_change_base_table(sql, rel->l, oldt, newt);
 			if(rel->r)
-				rel->r = rel_change_base_table(rel->r, oldt, newt);
+				rel->r = rel_change_base_table(sql, rel->r, oldt, newt);
 	}
 	return rel;
 }
@@ -8132,7 +8213,7 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 {
 	sql_rel *sel = NULL;
 
-	if(is_delete(rel->op) || is_truncate(rel->op) || is_insert(rel->op)) {
+	if(is_modify(rel->op)) {
 		sql_rel *left = rel->l;
 		if(left->op == op_basetable) {
 			sql_table *t = left->l;
@@ -8148,8 +8229,8 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 						sql_rel *s1, *dup = NULL;
 
 						if(rel->r) {
-							dup = rel_copy(sql->sa, rel->r);
-							dup = rel_change_base_table(dup, t, sub);
+							dup = rel_copy(sql->sa, rel->r, 1);
+							dup = rel_change_base_table(sql, dup, t, sub);
 						}
 						if(is_delete(rel->op))
 							s1 = rel_delete(sql->sa, rel_basetable(sql, sub, sub->base.name), dup);
@@ -8281,6 +8362,32 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 							 isRangePartitionTable(t) ? "range" : "list");
 					exception = exp_exception(sql->sa, aggr, buf);
 					sel = rel_ddl_distribute(sql->sa, sel, anti_dup, list_append(new_exp_list(sql->sa), exception));
+				} else if(is_update(rel->op)) {
+					/*int colr = t->pcol->colnr;
+
+					for (node *n = t->members.set->h; n; n = n->next) {
+						sql_part *pt = (sql_part *) n->data;
+						sql_table *sub = find_sql_table(t->s, pt->base.name);
+						sql_rel *s1, *dup = NULL;
+
+						if(rel->r) {
+							dup = rel_copy(sql->sa, rel->r, 1);
+							dup = rel_change_base_table(sql, dup, t, sub);
+						}
+						rel_update(sql, rel_basetable(sql, sub, sub->base.name), rel, sql_exp **updates, list_dup(dup, NULL));
+
+
+						s1 = rel_truncate_duplicate(sql->sa, rel_basetable(sql, sub, sub->base.name), rel);
+						if (just_one == 0) {
+							sel = rel_list(sql->sa, sel, s1);
+						} else {
+							sel = s1;
+							just_one = 0;
+						}
+						(*changes)++;
+					}
+					sel = rel_ddl_distribute(sql->sa, sel, NULL, NULL);*/
+
 				}
 			} else if(t->p && (isRangePartitionTable(t->p) || isListPartitionTable(t->p))
 					  && !find_prop(left->p, PROP_USED) && is_insert(rel->op)) {
