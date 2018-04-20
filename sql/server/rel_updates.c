@@ -832,7 +832,7 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 	if(!r)
 		return NULL;
 
-	if (tab)
+	if (tab && updates)
 	for (m = tab->columns.set->h; m; m = m->next) {
 		sql_column *c = m->data;
 		sql_exp *v = updates[c->colnr];

@@ -4414,6 +4414,9 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		cnt = s;
 	}
 
+	if(be->cur_append) //building the total number of rows affected across all tables
+		cnt->nr = add_to_merge_partitions_accumulator(be, cnt->nr);
+
 	if (sql->cascade_action) 
 		sql->cascade_action = NULL;
 	return cnt;

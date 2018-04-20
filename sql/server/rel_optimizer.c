@@ -8064,8 +8064,6 @@ exp_change_column_table(mvc *sql, sql_exp *e, sql_table* oldt, sql_table* newt)
 		case e_column: {
 			if(!strcmp(e->l, oldt->base.name))
 				e->l = sa_strdup(sql->sa, newt->base.name);
-			if(!strcmp(e->rname, oldt->base.name))
-				e->rname = sa_strdup(sql->sa, newt->base.name);
 		} break;
 		case e_cmp: {
 			if (e->flag == cmp_in || e->flag == cmp_notin) {
@@ -8087,6 +8085,8 @@ exp_change_column_table(mvc *sql, sql_exp *e, sql_table* oldt, sql_table* newt)
 			}
 		} break;
 	}
+	if(e->rname && !strcmp(e->rname, oldt->base.name))
+		e->rname = sa_strdup(sql->sa, newt->base.name);
 	return e;
 }
 
@@ -8363,21 +8363,33 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 					exception = exp_exception(sql->sa, aggr, buf);
 					sel = rel_ddl_distribute(sql->sa, sel, anti_dup, list_append(new_exp_list(sql->sa), exception));
 				} else if(is_update(rel->op)) {
-					/*int colr = t->pcol->colnr;
+					/*int found_part_col = 0;
+
+					for (node *n = ((sql_rel*)rel->r)->exps->h; n; n = n->next) {
+						sql_exp* exp = (sql_exp*) n->data;
+						if(exp->type == e_column) {
+							sql_exp* l = (sql_exp*) exp->l;
+							if(!strcmp((char*)l->l, t->base.name) && !strcmp((char*)l->r, t->pcol->base.name))
+								found_part_col = 1;
+						}
+					}*/
 
 					for (node *n = t->members.set->h; n; n = n->next) {
 						sql_part *pt = (sql_part *) n->data;
 						sql_table *sub = find_sql_table(t->s, pt->base.name);
 						sql_rel *s1, *dup = NULL;
+						list *uexps = exps_copy(sql->sa, rel->exps);
 
 						if(rel->r) {
 							dup = rel_copy(sql->sa, rel->r, 1);
 							dup = rel_change_base_table(sql, dup, t, sub);
 						}
-						rel_update(sql, rel_basetable(sql, sub, sub->base.name), rel, sql_exp **updates, list_dup(dup, NULL));
 
+						for(node *ne = uexps->h ; ne ; ne = ne->next)
+							ne->data = exp_change_column_table(sql, (sql_exp*) ne->data, t, sub);
 
-						s1 = rel_truncate_duplicate(sql->sa, rel_basetable(sql, sub, sub->base.name), rel);
+						//easy scenario where the partitioned column is not being updated
+						s1 = rel_update(sql, rel_basetable(sql, sub, sub->base.name), dup, NULL, uexps);
 						if (just_one == 0) {
 							sel = rel_list(sql->sa, sel, s1);
 						} else {
@@ -8386,8 +8398,7 @@ rel_merge_table_rewrite(int *changes, mvc *sql, sql_rel *rel)
 						}
 						(*changes)++;
 					}
-					sel = rel_ddl_distribute(sql->sa, sel, NULL, NULL);*/
-
+					sel = rel_ddl_distribute(sql->sa, sel, NULL, NULL);
 				}
 			} else if(t->p && (isRangePartitionTable(t->p) || isListPartitionTable(t->p))
 					  && !find_prop(left->p, PROP_USED) && is_insert(rel->op)) {
