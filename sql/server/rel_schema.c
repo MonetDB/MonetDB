@@ -1940,8 +1940,8 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 	if (!t) {
 		return sql_error(sql, 02, SQLSTATE(42S02) "CREATE INDEX: no such table '%s'", tname);
 	} else if (isView(t) || isMergeTable(t) || isRemote(t)) {
-		return sql_error(sql, 02, SQLSTATE(42S02) "CREATE INDEX: cannot create index on %s '%s'", isView(t)?"VIEW":
-						isMergeTable(t)?"MERGE TABLE":"REMOTE TABLE", tname);
+		return sql_error(sql, 02, SQLSTATE(42S02) "CREATE INDEX: cannot create index on %s '%s'", isView(t)?"view":
+						isMergeTable(t)?"merge table":"remote table", tname);
 	}
 	sname = get_schema_name( sql, sname, tname);
 	nt = dup_sql_table(sql->sa, t);
