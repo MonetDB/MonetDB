@@ -52,3 +52,5 @@ sqlitelogictest-missing-bulk-implementation.Bug-6575
 sqlitelogictest-aritmetic-expressions-handling.Bug-6576
 multiple-insertinto-table-Bug-6578
 sqlitelogictest-select-nullif-case.Bug-6579
+concat-str-int.Bug-6583
+nested-merge-tables.Bug-6585

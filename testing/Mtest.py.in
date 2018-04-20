@@ -1246,6 +1246,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
 
     if testlist:
         tl = []
+        missing = False
         for tst in testlist:
             for t, c in alltests:
                 if t == tst:
@@ -1253,7 +1254,10 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                     break
             else:
                 tl.append((tst,None))
+                missing = True
         testlist = tl
+        if not missing:
+            all_tests = True
     else:
         testlist = alltests
     if not testlist:
