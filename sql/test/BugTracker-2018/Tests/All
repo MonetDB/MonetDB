@@ -55,3 +55,4 @@ sqlitelogictest-select-nullif-case.Bug-6579
 concat-str-int.Bug-6583
 nested-merge-tables.Bug-6585
 sqlitelogictest-count-coalesce-nullif.Bug-6586
+sqlitelogictest-case-not-in-count.Bug-6587
