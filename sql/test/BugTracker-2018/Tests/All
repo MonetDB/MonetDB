@@ -52,3 +52,4 @@ sqlitelogictest-aritmetic-expressions-handling.Bug-6576
 multiple-insertinto-table-Bug-6578
 concat-str-int.Bug-6583
 nested-merge-tables.Bug-6585
+sqlitelogictest-complex-expression.Bug-6589
