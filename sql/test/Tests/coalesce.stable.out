@@ -46,7 +46,7 @@ Ready.
 [ 1	]
 [ 1	]
 #select avg(coalesce(age,38)) from coalescetest;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % double # type
 % 24 # length
@@ -91,7 +91,7 @@ Ready.
 % .L2 # table_name
 % L2 # name
 % char # type
-% 0 # length
+% 1 # length
 [ "x"	]
 % sys.coalescetest,	sys.coalescetest,	sys.coalescetest # table_name
 % id,	name,	age  # name
