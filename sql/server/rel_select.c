@@ -2098,7 +2098,10 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 
 				r = rel_value_exp(sql, &z, sval, f, ek);
 				if (l && r && IS_ANY(st->type->eclass)){
-					l = rel_check_type(sql, exp_subtype(r), l, type_equal);
+					sql_exp *nl = rel_check_type(sql, exp_subtype(r), l, type_equal);
+					if (nl != l && is_new)
+						left = rel_project_exp(sql->sa, nl);
+					l = nl;
 					if (l)
 						st = exp_subtype(l);
 				}
