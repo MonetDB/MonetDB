@@ -271,8 +271,6 @@ RMTconnectURI(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void)mb;
 
-	v = &stk->stk[pci->argv[0]];
-
 	uri = *getArgReference_str(stk, pci, 1);
 	scen = *getArgReference_str(stk, pci, 2);
 	if (uri == NULL || strcmp(uri, (str)str_nil) == 0) {
