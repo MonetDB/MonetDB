@@ -5131,13 +5131,13 @@ drop function pcre_replace(string, string, string, string);
 % varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
 % 0,	0,	1,	1,	1,	1,	1,	5 # length
 #select count(*) from sys.statistics;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #select count(*) from sys.storagemodelinput;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
