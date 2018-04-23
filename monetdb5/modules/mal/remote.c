@@ -279,10 +279,22 @@ RMTconnectURI(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	rethrow("remote.connect", tmp, AUTHgetRemoteTableCredentials(uri, cntxt, &remoteuser, &passwd));
 
-	msg = RMTconnectScen(&ret, &uri, &remoteuser, &passwd, &scen);
+	/* The password we just got is hashed. Add the byte \1 in front to
+	 * signal this fact to the mapi. */
+	size_t pwlen = strlen(passwd);
+	char *pwhash = (char*)GDKmalloc(pwlen + 2);
+	if (pwhash == NULL) {
+		GDKfree(remoteuser);
+		GDKfree(passwd);
+		throw(MAL, "remote.connect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
+	snprintf(pwhash, pwlen + 2, "\1%s", passwd);
+
+	msg = RMTconnectScen(&ret, &uri, &remoteuser, &pwhash, &scen);
 
 	GDKfree(remoteuser);
 	GDKfree(passwd);
+	GDKfree(pwhash);
 
 	if (msg == MAL_SUCCEED) {
 		v = &stk->stk[pci->argv[0]];
