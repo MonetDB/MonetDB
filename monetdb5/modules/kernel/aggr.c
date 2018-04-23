@@ -328,23 +328,6 @@ AGGRmax3(bat *retval, const bat *bid, const bat *gid, const bat *eid)
 	return err;
 }
 
-mal_export str AGGRmedian3(bat *retval, const bat *bid, const bat *gid, const bat *eid);
-str
-AGGRmedian3(bat *retval, const bat *bid, const bat *gid, const bat *eid)
-{
-	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, 0, 1, TYPE_any,
-					   BATgroupmedian, NULL, NULL, NULL, "aggr.median");
-}
-
-mal_export str AGGRquantile3(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *quantile);
-str
-AGGRquantile3(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bat *quantile)
-{
-	return AGGRgrouped(retval, NULL, bid, gid, eid, NULL, 0, 1, TYPE_any,
-					   NULL, NULL, BATgroupquantile, quantile,
-					   "aggr.quantile");
-}
-
 mal_export str AGGRsubsum_bte(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error);
 str
 AGGRsubsum_bte(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils, const bit *abort_on_error)
@@ -817,13 +800,20 @@ AGGRsubmax_val(bat *retval, const bat *bid, const bat *gid, const bat *eid, cons
 	return AGGRsubmaxcand_val(retval, bid, gid, eid, NULL, skip_nils);
 }
 
-mal_export str AGGRmedian(bat *retval, const bat *bid, const bit *skip_nils);
+mal_export str AGGRmedian(void *retval, const bat *bid);
 str
-AGGRmedian(bat *retval, const bat *bid, const bit *skip_nils)
+AGGRmedian(void *retval, const bat *bid)
 {
-	return AGGRgrouped(retval, NULL, bid, NULL, NULL, NULL, *skip_nils,
-					   0, TYPE_any, BATgroupmedian, NULL,
-					   NULL, NULL, "aggr.submedian");
+	str err;
+	bat rval;
+	if ((err = AGGRgrouped(&rval, NULL, bid, NULL, NULL, NULL, 1,
+						   0, TYPE_any, BATgroupmedian, NULL,
+						   NULL, NULL, "aggr.submedian")) == MAL_SUCCEED) {
+		oid pos = 0;
+		err = ALGfetchoid(retval, &rval, &pos);
+		BBPrelease(rval);
+	}
+	return err;
 }
 
 mal_export str AGGRsubmedian(bat *retval, const bat *bid, const bat *gid, const bat *eid, const bit *skip_nils);
@@ -845,13 +835,20 @@ AGGRsubmediancand(bat *retval, const bat *bid, const bat *gid, const bat *eid, c
 }
 
 /* quantile functions, could make median functions obsolete completely */
-mal_export str AGGRquantile(bat *retval, const bat *bid, const bat *quantile, const bit *skip_nils);
+mal_export str AGGRquantile(void *retval, const bat *bid, const bat *qid);
 str
-AGGRquantile(bat *retval, const bat *bid, const bat *quantile, const bit *skip_nils)
+AGGRquantile(void *retval, const bat *bid, const bat *qid)
 {
-	return AGGRgrouped(retval, NULL, bid, NULL, NULL, NULL, *skip_nils,
-					   0, TYPE_any, NULL, NULL, BATgroupquantile,
-					   quantile, "aggr.subquantile");
+	str err;
+	bat rval;
+	if ((err = AGGRgrouped(&rval, NULL, bid, NULL, NULL, NULL, 1,
+						   0, TYPE_any, NULL, NULL, BATgroupquantile,
+						   qid, "aggr.subquantile")) == MAL_SUCCEED) {
+		oid pos = 0;
+		err = ALGfetchoid(retval, &rval, &pos);
+		BBPrelease(rval);
+	}
+	return err;
 }
 
 mal_export str AGGRsubquantile(bat *retval, const bat *bid, const bat *quantile, const bat *gid, const bat *eid, const bit *skip_nils);
