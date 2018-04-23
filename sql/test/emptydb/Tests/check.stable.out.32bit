@@ -1,33 +1,28 @@
 stdout of test 'check` in directory 'sql/test/emptydb` itself:
 
 
-# 12:41:42 >  
-# 12:41:42 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38686" "--set" "mapi_usock=/var/tmp/mtest-29963/.s.monetdb.38686" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-stable/var/MonetDB/mTests_sql_test_emptydb" "--set" "mal_listing=0" "--set" "embedded_r=yes"
-# 12:41:42 >  
+# 16:23:48 >  
+# 16:23:48 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32016" "--set" "mapi_usock=/var/tmp/mtest-13569/.s.monetdb.32016" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-stable/var/MonetDB/mTests_sql_test_emptydb" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 16:23:48 >  
 
-# MonetDB 5 server v11.21.16 (hg id: 3d106269871b+)
+# MonetDB 5 server v11.30.0
 # This is an unreleased version
 # Serving database 'mTests_sql_test_emptydb', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 15.589 GiB available main-memory.
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
-# Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:38686/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-29963/.s.monetdb.38686
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 62.695 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:31575/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-32585/.s.monetdb.31575
 # MonetDB/GIS module loaded
-# Start processing logs sql/sql_logs version 52200
-# Start reading the write-ahead log 'sql_logs/sql/log.4'
-# Finished reading the write-ahead log 'sql_logs/sql/log.4'
-# Finished processing logs sql/sql_logs
 # MonetDB/SQL module loaded
-# MonetDB/R   module loaded
 
 Ready.
 
-# 12:41:42 >  
-# 12:41:42 >  "/usr/bin/python2" "check.SQL.py" "check"
-# 12:41:42 >  
+# 10:17:18 >  
+# 10:17:18 >  "/usr/bin/python2" "check.SQL.py" "check"
+# 10:17:18 >  
 
 \dn
 \dt
@@ -457,60 +452,60 @@ SYSTEM VIEW  sys.tablestoragemodel
 SYSTEM VIEW  sys.tracelog
 SYSTEM VIEW  sys.users
 SYSTEM VIEW  sys.var_values
-SYSTEM FUNCTION  sys.<
-SYSTEM FUNCTION  sys.<=
-SYSTEM FUNCTION  sys.<>
-SYSTEM FUNCTION  sys.=
-SYSTEM FUNCTION  sys.>
-SYSTEM FUNCTION  sys.>=
-SYSTEM FUNCTION  sys.abbrev
-SYSTEM FUNCTION  sys.abs
-SYSTEM FUNCTION  sys.acos
+SYSTEM FUNCTION         sys.<
+SYSTEM FUNCTION         sys.<=
+SYSTEM FUNCTION         sys.<>
+SYSTEM FUNCTION         sys.=
+SYSTEM FUNCTION         sys.>
+SYSTEM FUNCTION         sys.>=
+SYSTEM FUNCTION         sys.abbrev
+SYSTEM FUNCTION         sys.abs
+SYSTEM FUNCTION         sys.acos
 SYSTEM AGGREGATE        sys.all
-SYSTEM FUNCTION  sys.alpha
+SYSTEM FUNCTION         sys.alpha
 SYSTEM PROCEDURE        sys.analyze
-SYSTEM FUNCTION  sys.and
-SYSTEM FUNCTION  sys.ascii
-SYSTEM FUNCTION  sys.asin
-SYSTEM FUNCTION  sys.atan
+SYSTEM FUNCTION         sys.and
+SYSTEM FUNCTION         sys.ascii
+SYSTEM FUNCTION         sys.asin
+SYSTEM FUNCTION         sys.atan
 SYSTEM AGGREGATE        sys.avg
 SYSTEM FUNCTION         sys.bbp
-SYSTEM FUNCTION  sys.bit_and
-SYSTEM FUNCTION  sys.bit_not
-SYSTEM FUNCTION  sys.bit_or
-SYSTEM FUNCTION  sys.bit_xor
-SYSTEM FUNCTION  sys.broadcast
-SYSTEM FUNCTION  sys.ceil
-SYSTEM FUNCTION  sys.ceiling
-SYSTEM FUNCTION  sys.char_length
-SYSTEM FUNCTION  sys.character_length
-SYSTEM FUNCTION  sys.charindex
+SYSTEM FUNCTION         sys.bit_and
+SYSTEM FUNCTION         sys.bit_not
+SYSTEM FUNCTION         sys.bit_or
+SYSTEM FUNCTION         sys.bit_xor
+SYSTEM FUNCTION         sys.broadcast
+SYSTEM FUNCTION         sys.ceil
+SYSTEM FUNCTION         sys.ceiling
+SYSTEM FUNCTION         sys.char_length
+SYSTEM FUNCTION         sys.character_length
+SYSTEM FUNCTION         sys.charindex
 SYSTEM PROCEDURE        sys.clearrejects
-SYSTEM FUNCTION  sys.code
-SYSTEM FUNCTION  sys.columnsize
-SYSTEM FUNCTION  sys.concat
-SYSTEM FUNCTION  sys.contains
+SYSTEM FUNCTION         sys.code
+SYSTEM FUNCTION         sys.columnsize
+SYSTEM FUNCTION         sys.concat
+SYSTEM FUNCTION         sys.contains
 SYSTEM FUNCTION         sys.copyfrom
 SYSTEM AGGREGATE        sys.corr
-SYSTEM FUNCTION  sys.cos
-SYSTEM FUNCTION  sys.cosh
-SYSTEM FUNCTION  sys.cot
+SYSTEM FUNCTION         sys.cos
+SYSTEM FUNCTION         sys.cosh
+SYSTEM FUNCTION         sys.cot
 SYSTEM AGGREGATE        sys.count
 SYSTEM AGGREGATE        sys.count_no_nil
 SYSTEM PROCEDURE        sys.createorderindex
-SYSTEM FUNCTION  sys.curdate
-SYSTEM FUNCTION  sys.current_date
-SYSTEM FUNCTION  sys.current_time
-SYSTEM FUNCTION  sys.current_timestamp
-SYSTEM FUNCTION  sys.curtime
-SYSTEM FUNCTION  sys.date_to_str
-SYSTEM FUNCTION  sys.day
-SYSTEM FUNCTION  sys.dayofmonth
-SYSTEM FUNCTION  sys.dayofweek
-SYSTEM FUNCTION  sys.dayofyear
+SYSTEM FUNCTION         sys.curdate
+SYSTEM FUNCTION         sys.current_date
+SYSTEM FUNCTION         sys.current_time
+SYSTEM FUNCTION         sys.current_timestamp
+SYSTEM FUNCTION         sys.curtime
+SYSTEM FUNCTION         sys.date_to_str
+SYSTEM FUNCTION         sys.day
+SYSTEM FUNCTION         sys.dayofmonth
+SYSTEM FUNCTION         sys.dayofweek
+SYSTEM FUNCTION         sys.dayofyear
 SYSTEM FUNCTION         sys.db_users
-SYSTEM FUNCTION  sys.debug
-SYSTEM FUNCTION  sys.degrees
+SYSTEM FUNCTION         sys.debug
+SYSTEM FUNCTION         sys.degrees
 SYSTEM FUNCTION         sys.dense_rank
 SYSTEM FUNCTION         sys.dependencies_columns_on_functions
 SYSTEM FUNCTION         sys.dependencies_columns_on_indexes
@@ -530,135 +525,135 @@ SYSTEM FUNCTION         sys.dependencies_tables_on_views
 SYSTEM FUNCTION         sys.dependencies_views_on_functions
 SYSTEM FUNCTION         sys.dependencies_views_on_triggers
 SYSTEM FUNCTION         sys.diff
-SYSTEM FUNCTION  sys.difference
+SYSTEM FUNCTION         sys.difference
 SYSTEM PROCEDURE        sys.droporderindex
-SYSTEM FUNCTION  sys.editdistance
-SYSTEM FUNCTION  sys.editdistance2
+SYSTEM FUNCTION         sys.editdistance
+SYSTEM FUNCTION         sys.editdistance2
 SYSTEM FUNCTION         sys.env
-SYSTEM FUNCTION  sys.epoch
+SYSTEM FUNCTION         sys.epoch
 SYSTEM PROCEDURE        sys.evalalgebra
 SYSTEM AGGREGATE        sys.exist
-SYSTEM FUNCTION  sys.exp
+SYSTEM FUNCTION         sys.exp
 SYSTEM PROCEDURE        sys.fitsattach
 SYSTEM PROCEDURE        sys.fitsload
-SYSTEM FUNCTION  sys.floor
+SYSTEM FUNCTION         sys.floor
 SYSTEM PROCEDURE        sys.flush_log
-SYSTEM FUNCTION  sys.fuse
+SYSTEM FUNCTION         sys.fuse
 SYSTEM FUNCTION         sys.generate_series
-SYSTEM FUNCTION  sys.geometrytype
-SYSTEM FUNCTION  sys.get_type
-SYSTEM FUNCTION  sys.get_value_for
-SYSTEM FUNCTION  sys.getanchor
-SYSTEM FUNCTION  sys.getbasename
-SYSTEM FUNCTION  sys.getcontent
-SYSTEM FUNCTION  sys.getcontext
-SYSTEM FUNCTION  sys.getdomain
-SYSTEM FUNCTION  sys.getextension
-SYSTEM FUNCTION  sys.getfile
-SYSTEM FUNCTION  sys.gethost
-SYSTEM FUNCTION  sys.getport
-SYSTEM FUNCTION  sys.getproj4
-SYSTEM FUNCTION  sys.getprotocol
-SYSTEM FUNCTION  sys.getquery
-SYSTEM FUNCTION  sys.getroboturl
-SYSTEM FUNCTION  sys.getuser
+SYSTEM FUNCTION         sys.geometrytype
+SYSTEM FUNCTION         sys.get_type
+SYSTEM FUNCTION         sys.get_value_for
+SYSTEM FUNCTION         sys.getanchor
+SYSTEM FUNCTION         sys.getbasename
+SYSTEM FUNCTION         sys.getcontent
+SYSTEM FUNCTION         sys.getcontext
+SYSTEM FUNCTION         sys.getdomain
+SYSTEM FUNCTION         sys.getextension
+SYSTEM FUNCTION         sys.getfile
+SYSTEM FUNCTION         sys.gethost
+SYSTEM FUNCTION         sys.getport
+SYSTEM FUNCTION         sys.getproj4
+SYSTEM FUNCTION         sys.getprotocol
+SYSTEM FUNCTION         sys.getquery
+SYSTEM FUNCTION         sys.getroboturl
+SYSTEM FUNCTION         sys.getuser
 SYSTEM AGGREGATE        sys.group_concat
-SYSTEM FUNCTION  sys.has_m
-SYSTEM FUNCTION  sys.has_z
-SYSTEM FUNCTION  sys.hash
-SYSTEM FUNCTION  sys.hashsize
-SYSTEM FUNCTION  sys.heapsize
-SYSTEM FUNCTION  sys.host
-SYSTEM FUNCTION  sys.hostmask
-SYSTEM FUNCTION  sys.hour
-SYSTEM FUNCTION  sys.identity
-SYSTEM FUNCTION  sys.ifthenelse
+SYSTEM FUNCTION         sys.has_m
+SYSTEM FUNCTION         sys.has_z
+SYSTEM FUNCTION         sys.hash
+SYSTEM FUNCTION         sys.hashsize
+SYSTEM FUNCTION         sys.heapsize
+SYSTEM FUNCTION         sys.host
+SYSTEM FUNCTION         sys.hostmask
+SYSTEM FUNCTION         sys.hour
+SYSTEM FUNCTION         sys.identity
+SYSTEM FUNCTION         sys.ifthenelse
 SYSTEM FILTER FUNCTION  sys.ilike
-SYSTEM FUNCTION  sys.imprintsize
-SYSTEM FUNCTION  sys.in
-SYSTEM FUNCTION  sys.index
-SYSTEM FUNCTION  sys.insert
-SYSTEM FUNCTION  sys.internaltransform
-SYSTEM FUNCTION  sys.isaurl
-SYSTEM FUNCTION  sys.isauuid
-SYSTEM FUNCTION  sys.isnull
-SYSTEM FUNCTION  sys.lcase
-SYSTEM FUNCTION  sys.left
-SYSTEM FUNCTION  sys.left_shift
-SYSTEM FUNCTION  sys.left_shift_assign
-SYSTEM FUNCTION  sys.length
-SYSTEM FUNCTION  sys.levenshtein
+SYSTEM FUNCTION         sys.imprintsize
+SYSTEM FUNCTION         sys.in
+SYSTEM FUNCTION         sys.index
+SYSTEM FUNCTION         sys.insert
+SYSTEM FUNCTION         sys.internaltransform
+SYSTEM FUNCTION         sys.isaurl
+SYSTEM FUNCTION         sys.isauuid
+SYSTEM FUNCTION         sys.isnull
+SYSTEM FUNCTION         sys.lcase
+SYSTEM FUNCTION         sys.left
+SYSTEM FUNCTION         sys.left_shift
+SYSTEM FUNCTION         sys.left_shift_assign
+SYSTEM FUNCTION         sys.length
+SYSTEM FUNCTION         sys.levenshtein
 SYSTEM PROCEDURE        sys.lidarattach
 SYSTEM PROCEDURE        sys.lidarexport
 SYSTEM PROCEDURE        sys.lidarload
 SYSTEM FILTER FUNCTION  sys.like
 SYSTEM PROCEDURE        sys.listdir
 SYSTEM PROCEDURE        sys.listdirpat
-SYSTEM FUNCTION  sys.local_timezone
-SYSTEM FUNCTION  sys.localtime
-SYSTEM FUNCTION  sys.localtimestamp
-SYSTEM FUNCTION  sys.locate
-SYSTEM FUNCTION  sys.log
-SYSTEM FUNCTION  sys.log10
-SYSTEM FUNCTION  sys.lower
-SYSTEM FUNCTION  sys.lpad
-SYSTEM FUNCTION  sys.ltrim
+SYSTEM FUNCTION         sys.local_timezone
+SYSTEM FUNCTION         sys.localtime
+SYSTEM FUNCTION         sys.localtimestamp
+SYSTEM FUNCTION         sys.locate
+SYSTEM FUNCTION         sys.log
+SYSTEM FUNCTION         sys.log10
+SYSTEM FUNCTION         sys.lower
+SYSTEM FUNCTION         sys.lpad
+SYSTEM FUNCTION         sys.ltrim
 SYSTEM FUNCTION         sys.malfunctions
-SYSTEM FUNCTION  sys.masklen
+SYSTEM FUNCTION         sys.masklen
 SYSTEM PROCEDURE        sys.master
 SYSTEM PROCEDURE        sys.masterbeat
-SYSTEM FUNCTION  sys.masterclock
-SYSTEM FUNCTION  sys.mastertick
+SYSTEM FUNCTION         sys.masterclock
+SYSTEM FUNCTION         sys.mastertick
 SYSTEM AGGREGATE        sys.max
-SYSTEM FUNCTION  sys.mbr
-SYSTEM FUNCTION  sys.mbr_above
-SYSTEM FUNCTION  sys.mbr_below
-SYSTEM FUNCTION  sys.mbr_contained
-SYSTEM FUNCTION  sys.mbr_contains
-SYSTEM FUNCTION  sys.mbr_distance
-SYSTEM FUNCTION  sys.mbr_equal
-SYSTEM FUNCTION  sys.mbr_left
-SYSTEM FUNCTION  sys.mbr_overlap
-SYSTEM FUNCTION  sys.mbr_overlap_or_above
-SYSTEM FUNCTION  sys.mbr_overlap_or_below
-SYSTEM FUNCTION  sys.mbr_overlap_or_left
-SYSTEM FUNCTION  sys.mbr_overlap_or_right
-SYSTEM FUNCTION  sys.mbr_right
-SYSTEM FUNCTION  sys.md5
+SYSTEM FUNCTION         sys.mbr
+SYSTEM FUNCTION         sys.mbr_above
+SYSTEM FUNCTION         sys.mbr_below
+SYSTEM FUNCTION         sys.mbr_contained
+SYSTEM FUNCTION         sys.mbr_contains
+SYSTEM FUNCTION         sys.mbr_distance
+SYSTEM FUNCTION         sys.mbr_equal
+SYSTEM FUNCTION         sys.mbr_left
+SYSTEM FUNCTION         sys.mbr_overlap
+SYSTEM FUNCTION         sys.mbr_overlap_or_above
+SYSTEM FUNCTION         sys.mbr_overlap_or_below
+SYSTEM FUNCTION         sys.mbr_overlap_or_left
+SYSTEM FUNCTION         sys.mbr_overlap_or_right
+SYSTEM FUNCTION         sys.mbr_right
+SYSTEM FUNCTION         sys.md5
 SYSTEM AGGREGATE        sys.median
 SYSTEM AGGREGATE        sys.min
-SYSTEM FUNCTION  sys.minute
-SYSTEM FUNCTION  sys.mod
-SYSTEM FUNCTION  sys.month
-SYSTEM FUNCTION  sys.ms_round
-SYSTEM FUNCTION  sys.ms_str
-SYSTEM FUNCTION  sys.ms_stuff
-SYSTEM FUNCTION  sys.ms_trunc
+SYSTEM FUNCTION         sys.minute
+SYSTEM FUNCTION         sys.mod
+SYSTEM FUNCTION         sys.month
+SYSTEM FUNCTION         sys.ms_round
+SYSTEM FUNCTION         sys.ms_str
+SYSTEM FUNCTION         sys.ms_stuff
+SYSTEM FUNCTION         sys.ms_trunc
 SYSTEM PROCEDURE        sys.netcdf_attach
 SYSTEM PROCEDURE        sys.netcdf_importvar
-SYSTEM FUNCTION  sys.netmask
-SYSTEM FUNCTION  sys.network
-SYSTEM FUNCTION  sys.newurl
-SYSTEM FUNCTION  sys.next_value_for
-SYSTEM FUNCTION  sys.not
+SYSTEM FUNCTION         sys.netmask
+SYSTEM FUNCTION         sys.network
+SYSTEM FUNCTION         sys.newurl
+SYSTEM FUNCTION         sys.next_value_for
+SYSTEM FUNCTION         sys.not
 SYSTEM AGGREGATE        sys.not_exist
-SYSTEM FUNCTION  sys.not_ilike
-SYSTEM FUNCTION  sys.not_like
+SYSTEM FUNCTION         sys.not_ilike
+SYSTEM FUNCTION         sys.not_like
 SYSTEM AGGREGATE        sys.not_unique
-SYSTEM FUNCTION  sys.not_uniques
-SYSTEM FUNCTION  sys.octet_length
+SYSTEM FUNCTION         sys.not_uniques
+SYSTEM FUNCTION         sys.octet_length
 SYSTEM FUNCTION         sys.optimizer_stats
 SYSTEM FUNCTION         sys.optimizers
-SYSTEM FUNCTION  sys.or
-SYSTEM FUNCTION  sys.password_hash
-SYSTEM FUNCTION  sys.patindex
+SYSTEM FUNCTION         sys.or
+SYSTEM FUNCTION         sys.password_hash
+SYSTEM FUNCTION         sys.patindex
 SYSTEM PROCEDURE        sys.pause
-SYSTEM FUNCTION  sys.pi
-SYSTEM FUNCTION  sys.power
+SYSTEM FUNCTION         sys.pi
+SYSTEM FUNCTION         sys.power
 SYSTEM AGGREGATE        sys.prod
-SYSTEM FUNCTION  sys.qgramnormalize
+SYSTEM FUNCTION         sys.qgramnormalize
 SYSTEM AGGREGATE        sys.quantile
-SYSTEM FUNCTION  sys.quarter
+SYSTEM FUNCTION         sys.quarter
 SYSTEM FUNCTION         sys.querycache
 SYSTEM PROCEDURE        sys.querylog
 SYSTEM FUNCTION         sys.querylog_calls
@@ -667,153 +662,153 @@ SYSTEM PROCEDURE        sys.querylog_disable
 SYSTEM PROCEDURE        sys.querylog_empty
 SYSTEM PROCEDURE        sys.querylog_enable
 SYSTEM FUNCTION         sys.queue
-SYSTEM FUNCTION  sys.radians
-SYSTEM FUNCTION  sys.rand
+SYSTEM FUNCTION         sys.radians
+SYSTEM FUNCTION         sys.rand
 SYSTEM FUNCTION         sys.rank
 SYSTEM FUNCTION         sys.rejects
-SYSTEM FUNCTION  sys.repeat
-SYSTEM FUNCTION  sys.replace
+SYSTEM FUNCTION         sys.repeat
+SYSTEM FUNCTION         sys.replace
 SYSTEM PROCEDURE        sys.replicabeat
-SYSTEM FUNCTION  sys.replicaclock
+SYSTEM FUNCTION         sys.replicaclock
 SYSTEM PROCEDURE        sys.replicate
-SYSTEM FUNCTION  sys.replicatick
-SYSTEM FUNCTION  sys.restart
+SYSTEM FUNCTION         sys.replicatick
+SYSTEM FUNCTION         sys.restart
 SYSTEM PROCEDURE        sys.resume
 SYSTEM PROCEDURE        sys.reuse
-SYSTEM FUNCTION  sys.reverse
-SYSTEM FUNCTION  sys.right
-SYSTEM FUNCTION  sys.right_shift
-SYSTEM FUNCTION  sys.right_shift_assign
-SYSTEM FUNCTION  sys.rotate_xor_hash
-SYSTEM FUNCTION  sys.round
+SYSTEM FUNCTION         sys.reverse
+SYSTEM FUNCTION         sys.right
+SYSTEM FUNCTION         sys.right_shift
+SYSTEM FUNCTION         sys.right_shift_assign
+SYSTEM FUNCTION         sys.rotate_xor_hash
+SYSTEM FUNCTION         sys.round
 SYSTEM FUNCTION         sys.row_number
-SYSTEM FUNCTION  sys.rowid
-SYSTEM FUNCTION  sys.rpad
-SYSTEM FUNCTION  sys.rtrim
-SYSTEM FUNCTION  sys.scale_down
-SYSTEM FUNCTION  sys.scale_up
-SYSTEM FUNCTION  sys.second
+SYSTEM FUNCTION         sys.rowid
+SYSTEM FUNCTION         sys.rpad
+SYSTEM FUNCTION         sys.rtrim
+SYSTEM FUNCTION         sys.scale_down
+SYSTEM FUNCTION         sys.scale_up
+SYSTEM FUNCTION         sys.second
 SYSTEM FUNCTION         sys.sessions
-SYSTEM FUNCTION  sys.setmasklen
+SYSTEM FUNCTION         sys.setmasklen
 SYSTEM PROCEDURE        sys.setsession
 SYSTEM PROCEDURE        sys.settimeout
 SYSTEM PROCEDURE        sys.shpattach
 SYSTEM PROCEDURE        sys.shpload
 SYSTEM PROCEDURE        sys.shrink
 SYSTEM PROCEDURE        sys.shutdown
-SYSTEM FUNCTION  sys.sign
-SYSTEM FUNCTION  sys.similarity
-SYSTEM FUNCTION  sys.sin
-SYSTEM FUNCTION  sys.sinh
-SYSTEM FUNCTION  sys.soundex
-SYSTEM FUNCTION  sys.space
-SYSTEM FUNCTION  sys.splitpart
-SYSTEM FUNCTION  sys.sql_add
-SYSTEM FUNCTION  sys.sql_div
-SYSTEM FUNCTION  sys.sql_exists
-SYSTEM FUNCTION  sys.sql_max
-SYSTEM FUNCTION  sys.sql_min
-SYSTEM FUNCTION  sys.sql_mul
-SYSTEM FUNCTION  sys.sql_neg
-SYSTEM FUNCTION  sys.sql_not_exists
-SYSTEM FUNCTION  sys.sql_sub
-SYSTEM FUNCTION  sys.sqrt
-SYSTEM FUNCTION  sys.st_area
-SYSTEM FUNCTION  sys.st_asbinary
-SYSTEM FUNCTION  sys.st_asewkt
-SYSTEM FUNCTION  sys.st_astext
-SYSTEM FUNCTION  sys.st_bdmpolyfromtext
-SYSTEM FUNCTION  sys.st_bdpolyfromtext
-SYSTEM FUNCTION  sys.st_boundary
-SYSTEM FUNCTION  sys.st_buffer
-SYSTEM FUNCTION  sys.st_centroid
+SYSTEM FUNCTION         sys.sign
+SYSTEM FUNCTION         sys.similarity
+SYSTEM FUNCTION         sys.sin
+SYSTEM FUNCTION         sys.sinh
+SYSTEM FUNCTION         sys.soundex
+SYSTEM FUNCTION         sys.space
+SYSTEM FUNCTION         sys.splitpart
+SYSTEM FUNCTION         sys.sql_add
+SYSTEM FUNCTION         sys.sql_div
+SYSTEM FUNCTION         sys.sql_exists
+SYSTEM FUNCTION         sys.sql_max
+SYSTEM FUNCTION         sys.sql_min
+SYSTEM FUNCTION         sys.sql_mul
+SYSTEM FUNCTION         sys.sql_neg
+SYSTEM FUNCTION         sys.sql_not_exists
+SYSTEM FUNCTION         sys.sql_sub
+SYSTEM FUNCTION         sys.sqrt
+SYSTEM FUNCTION         sys.st_area
+SYSTEM FUNCTION         sys.st_asbinary
+SYSTEM FUNCTION         sys.st_asewkt
+SYSTEM FUNCTION         sys.st_astext
+SYSTEM FUNCTION         sys.st_bdmpolyfromtext
+SYSTEM FUNCTION         sys.st_bdpolyfromtext
+SYSTEM FUNCTION         sys.st_boundary
+SYSTEM FUNCTION         sys.st_buffer
+SYSTEM FUNCTION         sys.st_centroid
 SYSTEM AGGREGATE        sys.st_collect
-SYSTEM FUNCTION  sys.st_collect
-SYSTEM FUNCTION  sys.st_contains
-SYSTEM FUNCTION  sys.st_convexhull
-SYSTEM FUNCTION  sys.st_coorddim
-SYSTEM FUNCTION  sys.st_coveredby
-SYSTEM FUNCTION  sys.st_covers
-SYSTEM FUNCTION  sys.st_crosses
-SYSTEM FUNCTION  sys.st_delaunaytriangles
-SYSTEM FUNCTION  sys.st_difference
-SYSTEM FUNCTION  sys.st_dimension
-SYSTEM FUNCTION  sys.st_disjoint
-SYSTEM FUNCTION  sys.st_distance
+SYSTEM FUNCTION         sys.st_collect
+SYSTEM FUNCTION         sys.st_contains
+SYSTEM FUNCTION         sys.st_convexhull
+SYSTEM FUNCTION         sys.st_coorddim
+SYSTEM FUNCTION         sys.st_coveredby
+SYSTEM FUNCTION         sys.st_covers
+SYSTEM FUNCTION         sys.st_crosses
+SYSTEM FUNCTION         sys.st_delaunaytriangles
+SYSTEM FUNCTION         sys.st_difference
+SYSTEM FUNCTION         sys.st_dimension
+SYSTEM FUNCTION         sys.st_disjoint
+SYSTEM FUNCTION         sys.st_distance
 SYSTEM FUNCTION         sys.st_dump
 SYSTEM FUNCTION         sys.st_dumppoints
-SYSTEM FUNCTION  sys.st_dwithin
-SYSTEM FUNCTION  sys.st_endpoint
-SYSTEM FUNCTION  sys.st_envelope
-SYSTEM FUNCTION  sys.st_equals
-SYSTEM FUNCTION  sys.st_exteriorring
-SYSTEM FUNCTION  sys.st_force2d
-SYSTEM FUNCTION  sys.st_force3d
-SYSTEM FUNCTION  sys.st_geomcollfromtext
-SYSTEM FUNCTION  sys.st_geometryfromtext
-SYSTEM FUNCTION  sys.st_geometryn
-SYSTEM FUNCTION  sys.st_geometrytype
-SYSTEM FUNCTION  sys.st_geomfromtext
-SYSTEM FUNCTION  sys.st_interiorringn
-SYSTEM FUNCTION  sys.st_interiorrings
-SYSTEM FUNCTION  sys.st_intersection
-SYSTEM FUNCTION  sys.st_intersects
-SYSTEM FUNCTION  sys.st_isclosed
-SYSTEM FUNCTION  sys.st_isempty
-SYSTEM FUNCTION  sys.st_isring
-SYSTEM FUNCTION  sys.st_issimple
-SYSTEM FUNCTION  sys.st_isvalid
-SYSTEM FUNCTION  sys.st_isvalidreason
-SYSTEM FUNCTION  sys.st_length
-SYSTEM FUNCTION  sys.st_length2d
-SYSTEM FUNCTION  sys.st_linefromtext
-SYSTEM FUNCTION  sys.st_makebox2d
-SYSTEM FUNCTION  sys.st_makeenvelope
+SYSTEM FUNCTION         sys.st_dwithin
+SYSTEM FUNCTION         sys.st_endpoint
+SYSTEM FUNCTION         sys.st_envelope
+SYSTEM FUNCTION         sys.st_equals
+SYSTEM FUNCTION         sys.st_exteriorring
+SYSTEM FUNCTION         sys.st_force2d
+SYSTEM FUNCTION         sys.st_force3d
+SYSTEM FUNCTION         sys.st_geomcollfromtext
+SYSTEM FUNCTION         sys.st_geometryfromtext
+SYSTEM FUNCTION         sys.st_geometryn
+SYSTEM FUNCTION         sys.st_geometrytype
+SYSTEM FUNCTION         sys.st_geomfromtext
+SYSTEM FUNCTION         sys.st_interiorringn
+SYSTEM FUNCTION         sys.st_interiorrings
+SYSTEM FUNCTION         sys.st_intersection
+SYSTEM FUNCTION         sys.st_intersects
+SYSTEM FUNCTION         sys.st_isclosed
+SYSTEM FUNCTION         sys.st_isempty
+SYSTEM FUNCTION         sys.st_isring
+SYSTEM FUNCTION         sys.st_issimple
+SYSTEM FUNCTION         sys.st_isvalid
+SYSTEM FUNCTION         sys.st_isvalidreason
+SYSTEM FUNCTION         sys.st_length
+SYSTEM FUNCTION         sys.st_length2d
+SYSTEM FUNCTION         sys.st_linefromtext
+SYSTEM FUNCTION         sys.st_makebox2d
+SYSTEM FUNCTION         sys.st_makeenvelope
 SYSTEM AGGREGATE        sys.st_makeline
-SYSTEM FUNCTION  sys.st_makeline
-SYSTEM FUNCTION  sys.st_makepoint
-SYSTEM FUNCTION  sys.st_makepointm
-SYSTEM FUNCTION  sys.st_makepolygon
-SYSTEM FUNCTION  sys.st_mlinefromtext
-SYSTEM FUNCTION  sys.st_mpointfromtext
-SYSTEM FUNCTION  sys.st_mpolyfromtext
-SYSTEM FUNCTION  sys.st_npoints
-SYSTEM FUNCTION  sys.st_nrings
-SYSTEM FUNCTION  sys.st_numgeometries
-SYSTEM FUNCTION  sys.st_numinteriorring
-SYSTEM FUNCTION  sys.st_numinteriorrings
-SYSTEM FUNCTION  sys.st_numpatches
-SYSTEM FUNCTION  sys.st_numpoints
-SYSTEM FUNCTION  sys.st_overlaps
-SYSTEM FUNCTION  sys.st_patchn
-SYSTEM FUNCTION  sys.st_point
-SYSTEM FUNCTION  sys.st_pointfromtext
-SYSTEM FUNCTION  sys.st_pointn
-SYSTEM FUNCTION  sys.st_pointonsurface
-SYSTEM FUNCTION  sys.st_polygon
-SYSTEM FUNCTION  sys.st_polygonfromtext
-SYSTEM FUNCTION  sys.st_relate
-SYSTEM FUNCTION  sys.st_segmentize
-SYSTEM FUNCTION  sys.st_setexteriorring
-SYSTEM FUNCTION  sys.st_setsrid
-SYSTEM FUNCTION  sys.st_srid
-SYSTEM FUNCTION  sys.st_startpoint
-SYSTEM FUNCTION  sys.st_symdifference
-SYSTEM FUNCTION  sys.st_touches
-SYSTEM FUNCTION  sys.st_transform
-SYSTEM FUNCTION  sys.st_translate
+SYSTEM FUNCTION         sys.st_makeline
+SYSTEM FUNCTION         sys.st_makepoint
+SYSTEM FUNCTION         sys.st_makepointm
+SYSTEM FUNCTION         sys.st_makepolygon
+SYSTEM FUNCTION         sys.st_mlinefromtext
+SYSTEM FUNCTION         sys.st_mpointfromtext
+SYSTEM FUNCTION         sys.st_mpolyfromtext
+SYSTEM FUNCTION         sys.st_npoints
+SYSTEM FUNCTION         sys.st_nrings
+SYSTEM FUNCTION         sys.st_numgeometries
+SYSTEM FUNCTION         sys.st_numinteriorring
+SYSTEM FUNCTION         sys.st_numinteriorrings
+SYSTEM FUNCTION         sys.st_numpatches
+SYSTEM FUNCTION         sys.st_numpoints
+SYSTEM FUNCTION         sys.st_overlaps
+SYSTEM FUNCTION         sys.st_patchn
+SYSTEM FUNCTION         sys.st_point
+SYSTEM FUNCTION         sys.st_pointfromtext
+SYSTEM FUNCTION         sys.st_pointn
+SYSTEM FUNCTION         sys.st_pointonsurface
+SYSTEM FUNCTION         sys.st_polygon
+SYSTEM FUNCTION         sys.st_polygonfromtext
+SYSTEM FUNCTION         sys.st_relate
+SYSTEM FUNCTION         sys.st_segmentize
+SYSTEM FUNCTION         sys.st_setexteriorring
+SYSTEM FUNCTION         sys.st_setsrid
+SYSTEM FUNCTION         sys.st_srid
+SYSTEM FUNCTION         sys.st_startpoint
+SYSTEM FUNCTION         sys.st_symdifference
+SYSTEM FUNCTION         sys.st_touches
+SYSTEM FUNCTION         sys.st_transform
+SYSTEM FUNCTION         sys.st_translate
 SYSTEM AGGREGATE        sys.st_union
-SYSTEM FUNCTION  sys.st_union
-SYSTEM FUNCTION  sys.st_within
-SYSTEM FUNCTION  sys.st_wkbtosql
-SYSTEM FUNCTION  sys.st_wkttosql
-SYSTEM FUNCTION  sys.st_x
-SYSTEM FUNCTION  sys.st_xmax
-SYSTEM FUNCTION  sys.st_xmin
-SYSTEM FUNCTION  sys.st_y
-SYSTEM FUNCTION  sys.st_ymax
-SYSTEM FUNCTION  sys.st_ymin
-SYSTEM FUNCTION  sys.st_z
+SYSTEM FUNCTION         sys.st_union
+SYSTEM FUNCTION         sys.st_within
+SYSTEM FUNCTION         sys.st_wkbtosql
+SYSTEM FUNCTION         sys.st_wkttosql
+SYSTEM FUNCTION         sys.st_x
+SYSTEM FUNCTION         sys.st_xmax
+SYSTEM FUNCTION         sys.st_xmin
+SYSTEM FUNCTION         sys.st_y
+SYSTEM FUNCTION         sys.st_ymax
+SYSTEM FUNCTION         sys.st_ymin
+SYSTEM FUNCTION         sys.st_z
 SYSTEM AGGREGATE        sys.stddev_pop
 SYSTEM AGGREGATE        sys.stddev_samp
 SYSTEM PROCEDURE        sys.stop
@@ -821,35 +816,35 @@ SYSTEM PROCEDURE        sys.stopmaster
 SYSTEM FUNCTION         sys.storage
 SYSTEM FUNCTION         sys.storagemodel
 SYSTEM PROCEDURE        sys.storagemodelinit
-SYSTEM FUNCTION  sys.str_to_date
-SYSTEM FUNCTION  sys.str_to_time
-SYSTEM FUNCTION  sys.str_to_timestamp
-SYSTEM FUNCTION  sys.strings
-SYSTEM FUNCTION  sys.substr
-SYSTEM FUNCTION  sys.substring
+SYSTEM FUNCTION         sys.str_to_date
+SYSTEM FUNCTION         sys.str_to_time
+SYSTEM FUNCTION         sys.str_to_timestamp
+SYSTEM FUNCTION         sys.strings
+SYSTEM FUNCTION         sys.substr
+SYSTEM FUNCTION         sys.substring
 SYSTEM AGGREGATE        sys.sum
 SYSTEM PROCEDURE        sys.sys_update_schemas
 SYSTEM PROCEDURE        sys.sys_update_tables
-SYSTEM FUNCTION  sys.tan
-SYSTEM FUNCTION  sys.tanh
-SYSTEM FUNCTION  sys.text
-SYSTEM FUNCTION  sys.time_to_str
+SYSTEM FUNCTION         sys.tan
+SYSTEM FUNCTION         sys.tanh
+SYSTEM FUNCTION         sys.text
+SYSTEM FUNCTION         sys.time_to_str
 SYSTEM PROCEDURE        sys.times
-SYSTEM FUNCTION  sys.timestamp_to_str
+SYSTEM FUNCTION         sys.timestamp_to_str
 SYSTEM FUNCTION         sys.tracelog
-SYSTEM FUNCTION  sys.trim
-SYSTEM FUNCTION  sys.truncate
-SYSTEM FUNCTION  sys.ucase
-SYSTEM FUNCTION  sys.upper
-SYSTEM FUNCTION  sys.uuid
+SYSTEM FUNCTION         sys.trim
+SYSTEM FUNCTION         sys.truncate
+SYSTEM FUNCTION         sys.ucase
+SYSTEM FUNCTION         sys.upper
+SYSTEM FUNCTION         sys.uuid
 SYSTEM PROCEDURE        sys.vacuum
 SYSTEM FUNCTION         sys.var
 SYSTEM AGGREGATE        sys.var_pop
 SYSTEM AGGREGATE        sys.var_samp
-SYSTEM FUNCTION  sys.week
-SYSTEM FUNCTION  sys.weekofyear
-SYSTEM FUNCTION  sys.xor
-SYSTEM FUNCTION  sys.year
+SYSTEM FUNCTION         sys.week
+SYSTEM FUNCTION         sys.weekofyear
+SYSTEM FUNCTION         sys.xor
+SYSTEM FUNCTION         sys.year
 SYSTEM AGGREGATE        sys.zero_or_one
 CREATE SCHEMA "bam" AUTHORIZATION "monetdb";
 CREATE SCHEMA "json" AUTHORIZATION "monetdb";
@@ -1387,7 +1382,7 @@ drop function pcre_replace(string, string, string, string);
 [ "profiler",	3,	3,	true	]
 [ "sys",	2,	3,	true	]
 [ "tmp",	2,	3,	true	]
-#select s.name, t.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(t.query, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, tt.table_type_name as type, t.system, ca.action_name as commit_action, at.value as access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id left outer join (values (0, 'COMMIT'), (1, 'DELETE'), (2, 'PRESERVE'), (3, 'DROP'), (4, 'ABORT')) as ca (action_id, action_name) on t.commit_action = ca.action_id left outer join (values (0, 'WRITABLE'), (1, 'READONLY'), (2, 'APPENDONLY')) as at (id, value) on t.access = at.id order by s.name, t.name;
+#select s.name, t.name, replace(replace(pcre_replace(pcre_replace(t.query, '--.*\n*', '', ''), '[ \t\n]+', ' ', ''), '( ', '('), ' )', ')') as query, tt.table_type_name as type, t.system, ca.action_name as commit_action, at.value as access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id left outer join (values (0, 'COMMIT'), (1, 'DELETE'), (2, 'PRESERVE'), (3, 'DROP'), (4, 'ABORT')) as ca (action_id, action_name) on t.commit_action = ca.action_id left outer join (values (0, 'WRITABLE'), (1, 'READONLY'), (2, 'APPENDONLY')) as at (id, value) on t.access = at.id order by s.name, t.name;
 % .s,	.t,	.L10,	.L12,	.t,	.L15,	.L17 # table_name
 % name,	name,	query,	type,	system,	commit_action,	access # name
 % varchar,	varchar,	varchar,	varchar,	boolean,	char,	char # type
@@ -2077,7 +2072,7 @@ drop function pcre_replace(string, string, string, string);
 [ "users",	"default_schema",	"int",	9,	0,	NULL,	true,	2,	NULL	]
 [ "var_values",	"var_name",	"char",	16,	0,	NULL,	true,	0,	NULL	]
 [ "var_values",	"value",	"varchar",	1024,	0,	NULL,	true,	1,	NULL	]
-#with x (sname, name, modfunc) as (select s.name, f.name, pcre_replace(pcre_replace(pcre_replace(func, '--.*', '', ''), '.*external name (.*);.*', '$1', 'ims'), '"', '', '') from sys.functions f left outer join sys.schemas s on f.schema_id = s.id where func ilike '% external name %') select * from x where x.modfunc not in (select m.module || '.' || m."function" from sys.malfunctions() m);
+#with funcs as (select name, pcre_replace(func, '--.*\n*', '', '') as func, schema_id from sys.functions), x (sname, name, modfunc) as (select s.name, f.name, replace(pcre_replace(f.func, '.*external name (.*);.*', '$1', 'ims'), '"', '') from funcs f left outer join sys.schemas s on f.schema_id = s.id where f.func ilike '% external name %') select * from x where x.modfunc not in (select m.module || '.' || m."function" from sys.malfunctions() m);
 % .x,	.x,	.x # table_name
 % sname,	name,	modfunc # name
 % varchar,	varchar,	varchar # type
@@ -4114,7 +4109,7 @@ drop function pcre_replace(string, string, string, string);
 [ "tmp",	"keys",	"sys",	"ids",	"VIEW"	]
 [ "tmp",	"triggers",	"sys",	"ids",	"VIEW"	]
 [ "sys",	"auths",	"sys",	"roles",	"VIEW"	]
-#select s1.name, t1.name, c1.name, s2.name, t2.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, schemas s1, _tables t1, _columns c1, schemas s2, _tables t2 where d.id = c1.id and c1.table_id = t1.id and t1.schema_id = s1.id and d.depend_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, s1.name, t1.name;
+#select s1.name, t1.name, c1.name, s2.name, t2.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, schemas s1, _tables t1, _columns c1, schemas s2, _tables t2 where d.id = c1.id and c1.table_id = t1.id and t1.schema_id = s1.id and d.depend_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, s1.name, t1.name, c1.name;
 % sys.s1,	sys.t1,	sys.c1,	sys.s2,	sys.t2,	.dt # table_name
 % name,	name,	name,	name,	name,	dependency_type_name # name
 % varchar,	varchar,	varchar,	varchar,	varchar,	varchar # type
@@ -4436,7 +4431,7 @@ drop function pcre_replace(string, string, string, string);
 [ "inet",	"inet",	"sys",	"setmasklen",	"TYPE"	]
 [ "inet",	"inet",	"sys",	"text",	"TYPE"	]
 [ "uuid",	"uuid",	"sys",	"uuid",	"TYPE"	]
-#select t.name, i.name, it.name from sys.idxs i left outer join sys._tables t on t.id = i.table_id left outer join (values (0, 'hash'), (1, 'join'), (2, 'oph'), (3, 'no'), (4, 'imprints'), (5, 'ordered'), (6, 'new')) as it (id, name) on i.type = it.id order by t.name, i.name;
+#select t.name, i.name, it.index_type_name from sys.idxs i left outer join sys._tables t on t.id = i.table_id left outer join sys.index_types as it on i.type = it.index_type_id order by t.name, i.name;
 % .t,	.i,	.it # table_name
 % name,	name,	index_type_name # name
 % varchar,	varchar,	varchar # type
@@ -6831,7 +6826,7 @@ drop function pcre_replace(string, string, string, string);
 [ 15,	"TYPE"	]
 #drop function pcre_replace(string, string, string, string);
 
-# 12:41:47 >  
-# 12:41:47 >  "Done."
-# 12:41:47 >  
+# 16:23:51 >  
+# 16:23:51 >  "Done."
+# 16:23:51 >  
 
