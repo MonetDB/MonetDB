@@ -997,7 +997,7 @@ AUTHaddRemoteTableCredentials(const char *uri, const char *localuser, const char
 	FILE *fp = fopen("/tmp/remote_table_auth.txt", "w");
 	char *password = NULL;
 	bool free_pw = false;
-	// str tmp;
+	str tmp;
 	BUN p;
 
 	(void)remoteuser;
@@ -1022,7 +1022,7 @@ AUTHaddRemoteTableCredentials(const char *uri, const char *localuser, const char
 			password = mcrypt_BackendSum(pass, strlen(pass));
 		}
 	}
-	// rethrow("addUser", tmp, AUTHverifyPassword(password));
+	rethrow("addUser", tmp, AUTHverifyPassword(password));
 
 	fprintf(fp, "%s,%s,%s,%s\n",uri, localuser, remoteuser, password);
 	fclose(fp);
