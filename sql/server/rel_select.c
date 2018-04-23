@@ -2054,7 +2054,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		dnode *n = dl->h->next;
 		sql_rel *left = NULL, *right = NULL, *outer = *rel;
 		sql_exp *l = NULL, *r = NULL;
-		int needproj = 0, vals_only = 1;
+		int needproj = 0, vals_only = 1, is_new = 0;
 		list *vals = NULL, *pexps = NULL;
 
 		if (outer && f == sql_sel && is_project(outer->op) && !is_processed(outer) && !list_empty(outer->exps)) {
@@ -2081,6 +2081,7 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 		if (!left || (!left->l && f == sql_sel && list_empty(left->exps))) {
 			needproj = (left != NULL);
 			left = rel_project_exp(sql->sa, l);
+			is_new = 1;
 		}
 		if (left && is_project(left->op) && list_empty(left->exps))
 			left = left->l;
@@ -2097,7 +2098,10 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 
 				r = rel_value_exp(sql, &z, sval, f, ek);
 				if (l && r && IS_ANY(st->type->eclass)){
-					l = rel_check_type(sql, exp_subtype(r), l, type_equal);
+					sql_exp *nl = rel_check_type(sql, exp_subtype(r), l, type_equal);
+					if (nl != l && is_new)
+						left = rel_project_exp(sql->sa, nl);
+					l = nl;
 					if (l)
 						st = exp_subtype(l);
 				}
@@ -2107,6 +2111,11 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 					sql->errstr[0] = 0;
 
 					z = left;
+					if (is_new) {
+						l = exp_label(sql->sa, l, ++sql->label);
+						l = exp_column(sql->sa, exp_relname(l), exp_name(l), exp_subtype(l), l->card, has_nil(l), is_intern(l));
+						is_new = 0;
+					}
 					r = rel_value_exp(sql, &z, sval, f, ek); 
 					if (z == left && r) {
 						if (l && r && IS_ANY(st->type->eclass)){

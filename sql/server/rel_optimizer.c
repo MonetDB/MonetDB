@@ -4435,7 +4435,7 @@ rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel)
 	(void)*changes;
 
 	/* first push down the expressions involving only A */
-	if (is_semi(rel->op) && rel->exps && rel->l) {
+	if (rel->op == op_semi && rel->exps && rel->l) {
 		list *exps = rel->exps, *nexps = sa_list(sql->sa);
 		node *n;
 
@@ -4454,7 +4454,7 @@ rel_push_semijoin_down(int *changes, mvc *sql, sql_rel *rel)
 		} 
 		rel->exps = nexps;
 	}
-	if (is_semi(rel->op) && rel->exps && rel->l) {
+	if (rel->op == op_semi && rel->exps && rel->l) {
 		operator_type op = rel->op, lop;
 		node *n;
 		sql_rel *l = rel->l, *ll = NULL, *lr = NULL;
@@ -7063,7 +7063,7 @@ add_exps_too_project(mvc *sql, list *exps, sql_rel *rel)
 	for(n=exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		if (!exp_is_atom(e) && e->type != e_column)
+		if (e->type != e_column)
 			n->data = add_exp_too_project(sql, e, rel);
 	}
 }
@@ -7080,8 +7080,13 @@ split_exp(mvc *sql, sql_exp *e, sql_rel *rel)
 	case e_aggr:
 	case e_func: 
 		if (!is_analytic(e) && !exp_has_sideeffect(e)) {
-			split_exps(sql, e->l, rel);
-			add_exps_too_project(sql, e->l, rel);
+			sql_subfunc *f = e->f;
+			if (e->type == e_func && !f->func->s && !strcmp(f->func->base.name, "ifthenelse")) { 
+				return e;
+			} else {
+				split_exps(sql, e->l, rel);
+				add_exps_too_project(sql, e->l, rel);
+			}
 		}
 		return e;
 	case e_cmp:	
@@ -7125,7 +7130,7 @@ split_exps(mvc *sql, list *exps, sql_rel *rel)
 static sql_rel *
 rel_split_project(int *changes, mvc *sql, sql_rel *rel, int top) 
 {
-	if (is_project(rel->op) && list_length(rel->exps) && rel->l) {
+	if (is_project(rel->op) && list_length(rel->exps) && (is_groupby(rel->op) || rel->l)) {
 		list *exps = rel->exps;
 		node *n;
 		int funcs = 0;
@@ -9199,19 +9204,21 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level)
 #endif
 
 	/* simple merging of projects */
-	if (gp.cnt[op_project] || gp.cnt[op_ddl]) {
+	if (gp.cnt[op_project] || gp.cnt[op_groupby] || gp.cnt[op_ddl]) {
 		rel = rewrite(sql, rel, &rel_merge_projects, &changes);
+
+		/* push (simple renaming) projections up */
+		if (gp.cnt[op_project])
+			rel = rewrite(sql, rel, &rel_push_project_up, &changes); 
+		if (level <= 0 && (gp.cnt[op_project] || gp.cnt[op_groupby])) 
+			rel = rel_split_project(&changes, sql, rel, 1);
+
 		if (level <= 0) {
 			rel = rewrite(sql, rel, &rel_case_fixup, &changes);
 			rel = rewrite(sql, rel, &rel_simplify_math, &changes);
 			rel = rewrite(sql, rel, &rel_distinct_project2groupby, &changes);
 		}
 	}
-	/* push (simple renaming) projections up */
-	if (gp.cnt[op_project]) 
-		rel = rewrite(sql, rel, &rel_push_project_up, &changes); 
-	if (level <= 0 && (gp.cnt[op_project] || gp.cnt[op_groupby])) 
-		rel = rel_split_project(&changes, sql, rel, 1);
 
 	if ((gp.cnt[op_select] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full]) && level <= 0)
 		rel = rewrite(sql, rel, &rel_simplify_predicates, &changes); 
