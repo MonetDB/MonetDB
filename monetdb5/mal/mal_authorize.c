@@ -1000,8 +1000,6 @@ AUTHaddRemoteTableCredentials(const char *uri, const char *localuser, const char
 	str tmp;
 	BUN p;
 
-	(void)remoteuser;
-
 	if (uri == NULL || strNil(uri))
 		throw(ILLARG, "addRemoteTableCredentials", "URI cannot be nil");
 	if (localuser == NULL || strNil(localuser))
