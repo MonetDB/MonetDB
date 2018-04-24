@@ -28,7 +28,7 @@ Ready.
 #THEN + 39 WHEN 70 * - 95 THEN 60 ELSE 15 + + 25 END * 5 ) WHEN + 36 THEN NULL WHEN 24 THEN NULL ELSE 66 END ) ) AS col2;
 % .L10 # table_name
 % col2 # name
-% bigint # type
+% hugeint # type
 % 4 # length
 [ -225	]
 

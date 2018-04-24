@@ -27,7 +27,7 @@ Ready.
 #SELECT - 59 + - 66, - 66 * + - COUNT ( ALL COALESCE ( NULLIF ( 90, + COALESCE ( - 67, 72 + - 30 ) + 17 ), 90 + 96, + 63 ) ) AS col1;
 % .L2,	.L6 # table_name
 % L2,	col1 # name
-% smallint,	bigint # type
+% smallint,	hugeint # type
 % 4,	2 # length
 [ -125,	66	]
 
