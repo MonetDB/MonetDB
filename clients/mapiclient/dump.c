@@ -1575,7 +1575,7 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 		return 1;
 	}
 	q = query;
-	end_q = q + len;
+	end_q = query + len;
 
 	q += snprintf(q, end_q - q, "%s\n", get_compat_clause(mid));
 	q += snprintf(q, end_q - q,
@@ -1818,6 +1818,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 	if (!query)
 		goto bailout;
 	q = query;
+	end_q = query + query_len;
 
 	/* start a transaction for the dump */
 	if (!describe)
@@ -1888,7 +1889,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		mapi_close_handle(hdl);
 
 		/* dump schemas */
-		q = end_q = query;
+		q = query;
 		q += snprintf(q, end_q - q, "%s\n", get_compat_clause(mid));
 		q += snprintf(q, end_q - q, "%s\n", schemas);
 		if ((hdl = mapi_query(mid, query)) == NULL ||
@@ -1969,7 +1970,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 	}
 
 	/* dump sequences, part 1 */
-	q = end_q = query;
+	q = query;
 	q += snprintf(q, end_q - q, "%s\n", get_compat_clause(mid));
 	q += snprintf(q, end_q - q, "%s\n", sequences1);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
@@ -2064,7 +2065,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 	hdl = NULL;
 
 	/* dump views, functions, and triggers */
-	q = end_q = query;
+	q = query;
 	q += snprintf(q, end_q - q, "%s\n", get_compat_clause(mid));
 	q += snprintf(q, end_q - q, "%s\n", views_functions_triggers);
 	if ((hdl = mapi_query(mid, query)) == NULL ||
