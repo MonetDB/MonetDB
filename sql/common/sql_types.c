@@ -998,6 +998,36 @@ sql_bind_func_(sql_allocator *sa, sql_schema *s, const char *sqlfname, list *ops
 	return NULL;
 }
 
+static sql_subfunc *
+sql_bind_func_result_(sql_allocator *sa, sql_schema *s, const char *sqlfname, list *ops, sql_subtype *res)
+{
+	node *n = funcs->h;
+
+	for (; n; n = n->next) {
+		sql_func *f = n->data;
+		sql_arg *firstres = NULL;
+
+		if (!f->res && !IS_FILT(f))
+			continue;
+		firstres = IS_FILT(f)?BIT:f->res->h->data;
+		if (strcmp(f->base.name, sqlfname) == 0 && (is_subtype(&firstres->type, res) || firstres->type.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) 
+			return sql_dup_subfunc(sa, f, ops, NULL);
+	}
+	if (s && s->funcs.set)
+		n = s->funcs.set->h;
+	for (; n; n = n->next) {
+		sql_func *f = n->data;
+		sql_arg *firstres = NULL;
+
+		if (!f->res && !IS_FILT(f))
+			continue;
+		firstres = IS_FILT(f)?BIT:f->res->h->data;
+		if (strcmp(f->base.name, sqlfname) == 0 && (is_subtype(&firstres->type, res) || firstres->type.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) 
+			return sql_dup_subfunc(sa, f, ops, NULL);
+	}
+	return NULL;
+}
+
 sql_subfunc *
 sql_bind_func_result(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *res)
 {
@@ -1031,36 +1061,6 @@ sql_bind_func_result3(sql_allocator *sa, sql_schema *s, const char *sqlfname, sq
 }
 
 
-sql_subfunc *
-sql_bind_func_result_(sql_allocator *sa, sql_schema *s, const char *sqlfname, list *ops, sql_subtype *res)
-{
-	node *n = funcs->h;
-
-	for (; n; n = n->next) {
-		sql_func *f = n->data;
-		sql_arg *firstres = NULL;
-
-		if (!f->res && !IS_FILT(f))
-			continue;
-		firstres = IS_FILT(f)?BIT:f->res->h->data;
-		if (strcmp(f->base.name, sqlfname) == 0 && (is_subtype(&firstres->type, res) || firstres->type.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) 
-			return sql_dup_subfunc(sa, f, ops, NULL);
-	}
-	if (s && s->funcs.set)
-		n = s->funcs.set->h;
-	for (; n; n = n->next) {
-		sql_func *f = n->data;
-		sql_arg *firstres = NULL;
-
-		if (!f->res && !IS_FILT(f))
-			continue;
-		firstres = IS_FILT(f)?BIT:f->res->h->data;
-		if (strcmp(f->base.name, sqlfname) == 0 && (is_subtype(&firstres->type, res) || firstres->type.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0) 
-			return sql_dup_subfunc(sa, f, ops, NULL);
-	}
-	return NULL;
-}
-
 static void
 sql_create_alias(sql_allocator *sa, const char *name, const char *alias)
 {
@@ -1091,7 +1091,7 @@ sql_bind_alias(const char *alias)
 }
 
 
-sql_type *
+static sql_type *
 sql_create_type(sql_allocator *sa, const char *sqlname, unsigned int digits, unsigned int scale, unsigned char radix, unsigned char eclass, const char *name)
 {
 	sql_type *t = SA_ZNEW(sa, sql_type);
@@ -1145,123 +1145,7 @@ arg_dup(sql_allocator *sa, sql_arg *oa)
 	return a;
 }
 
-sql_func *
-sql_create_aggr(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe, sql_type *res)
-{
-	list *l = sa_list(sa);
-	sql_arg *sres;
-
-	if (tpe)
-		list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe, 0, 0), ARG_IN));
-	assert(res);
-	sres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
-	return sql_create_func_(sa, name, mod, imp, l, sres, FALSE, F_AGGR, SCALE_NONE);
-}
-
-sql_func *
-sql_create_aggr2(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tp1, sql_type *tp2, sql_type *res)
-{
-	list *l = sa_list(sa);
-	sql_arg *sres;
-
-	list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tp1, 0, 0), ARG_IN));
-	list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tp2, 0, 0), ARG_IN));
-	assert(res);
-	sres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
-	return sql_create_func_(sa, name, mod, imp, l, sres, FALSE, F_AGGR, SCALE_NONE);
-}
-
-sql_func *
-sql_create_func(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *res, int fix_scale)
-{
-	list *l = sa_list(sa);
-	sql_arg *sres;
-
-	if (tpe1)
-		list_append(l,create_arg(sa, NULL, sql_create_subtype(sa, tpe1, 0, 0), ARG_IN));
-	if (tpe2)
-		list_append(l,create_arg(sa, NULL, sql_create_subtype(sa, tpe2, 0, 0), ARG_IN));
-
-	sres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
-	return sql_create_func_(sa, name, mod, imp, l, sres, FALSE, F_FUNC, fix_scale);
-}
-
 static sql_func *
-sql_create_func_res(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *res, int fix_scale, int scale)
-{
-	list *l = sa_list(sa);
-	sql_arg *sres;
-
-	if (tpe1)
-		list_append(l,create_arg(sa, NULL, sql_create_subtype(sa, tpe1, 0, 0), ARG_IN));
-	if (tpe2)
-		list_append(l,create_arg(sa, NULL, sql_create_subtype(sa, tpe2, 0, 0), ARG_IN));
-
-	sres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
-	sres->type.scale = scale;
-	return sql_create_func_(sa, name, mod, imp, l, sres, FALSE, F_FUNC, fix_scale);
-}
-
-sql_func *
-sql_create_funcSE(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *res, int fix_scale)
-{
-	list *l = sa_list(sa);
-	sql_arg *sres;
-
-	if (tpe1)
-		list_append(l,create_arg(sa, NULL, sql_create_subtype(sa, tpe1, 0, 0), ARG_IN));
-	if (tpe2)
-		list_append(l,create_arg(sa, NULL, sql_create_subtype(sa, tpe2, 0, 0), ARG_IN));
-
-	sres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
-	return sql_create_func_(sa, name, mod, imp, l, sres, TRUE, F_FUNC, fix_scale);
-}
-
-
-sql_func *
-sql_create_func3(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *res, int fix_scale)
-{
-	list *l = sa_list(sa);
-	sql_arg *sres;
-
-	list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe1, 0, 0), ARG_IN));
-	list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe2, 0, 0), ARG_IN));
-	list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe3, 0, 0), ARG_IN));
-	sres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
-	return sql_create_func_(sa, name, mod, imp, l, sres, FALSE, F_FUNC, fix_scale);
-}
-
-static sql_func *
-sql_create_analytic(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *res, int fix_scale)
-{
-	list *l = sa_list(sa);
-	sql_arg *sres;
-
-	list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe1, 0, 0), ARG_IN));
-	if (tpe2)
-		list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe2, 0, 0), ARG_IN));
-	if (tpe3)
-		list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe3, 0, 0), ARG_IN));
-	sres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
-	return sql_create_func_(sa, name, mod, imp, l, sres, FALSE, F_ANALYTIC, fix_scale);
-}
-
-sql_func *
-sql_create_func4(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *tpe4, sql_type *res, int fix_scale)
-{
-	list *l = sa_list(sa);
-	sql_arg *sres;
-
-	list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe1, 0, 0), ARG_IN));
-	list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe2, 0, 0), ARG_IN));
-	list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe3, 0, 0), ARG_IN));
-	list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe4, 0, 0), ARG_IN));
-	sres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
-	return sql_create_func_(sa, name, mod, imp, l, sres, FALSE, F_FUNC, fix_scale);
-}
-
-
-sql_func *
 sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const char *imp, list *ops, sql_arg *res, bit side_effect, int type, int fix_scale)
 {
 	sql_func *t = SA_ZNEW(sa, sql_func);
@@ -1293,31 +1177,108 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 	return t;
 }
 
-sql_func *
-sql_create_sqlfunc(sql_allocator *sa, const char *name, const char *imp, list *ops, sql_arg *res)
+static sql_func *
+sql_create_aggr(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe, sql_type *res)
 {
-	sql_func *t = SA_ZNEW(sa, sql_func);
+	list *l = sa_list(sa);
+	sql_arg *sres;
 
-	assert(res && ops);
-	base_init(sa, &t->base, store_next_oid(), TR_OLD, name);
-	t->imp = sa_strdup(sa, imp);
-	t->mod = sa_strdup(sa, "SQL");
-	t->ops = ops;
-	if (res) {	
-		t->res = sa_list(sa);
-		list_append(t->res, res);
-		t->type = F_FUNC;
-	} else {
-		t->res = NULL;
-		t->type = F_PROC;
-	}
-	t->nr = list_length(funcs);
-	t->sql = 1;
-	t->lang = FUNC_LANG_SQL;
-	t->side_effect = FALSE;
-	list_append(funcs, t);
-	return t;
+	if (tpe)
+		list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe, 0, 0), ARG_IN));
+	assert(res);
+	sres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
+	return sql_create_func_(sa, name, mod, imp, l, sres, FALSE, F_AGGR, SCALE_NONE);
 }
+
+static sql_func *
+sql_create_func(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *res, int fix_scale)
+{
+	list *l = sa_list(sa);
+	sql_arg *sres;
+
+	if (tpe1)
+		list_append(l,create_arg(sa, NULL, sql_create_subtype(sa, tpe1, 0, 0), ARG_IN));
+	if (tpe2)
+		list_append(l,create_arg(sa, NULL, sql_create_subtype(sa, tpe2, 0, 0), ARG_IN));
+
+	sres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
+	return sql_create_func_(sa, name, mod, imp, l, sres, FALSE, F_FUNC, fix_scale);
+}
+
+static sql_func *
+sql_create_func_res(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *res, int fix_scale, int scale)
+{
+	list *l = sa_list(sa);
+	sql_arg *sres;
+
+	if (tpe1)
+		list_append(l,create_arg(sa, NULL, sql_create_subtype(sa, tpe1, 0, 0), ARG_IN));
+	if (tpe2)
+		list_append(l,create_arg(sa, NULL, sql_create_subtype(sa, tpe2, 0, 0), ARG_IN));
+
+	sres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
+	sres->type.scale = scale;
+	return sql_create_func_(sa, name, mod, imp, l, sres, FALSE, F_FUNC, fix_scale);
+}
+
+static sql_func *
+sql_create_funcSE(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *res, int fix_scale)
+{
+	list *l = sa_list(sa);
+	sql_arg *sres;
+
+	if (tpe1)
+		list_append(l,create_arg(sa, NULL, sql_create_subtype(sa, tpe1, 0, 0), ARG_IN));
+	if (tpe2)
+		list_append(l,create_arg(sa, NULL, sql_create_subtype(sa, tpe2, 0, 0), ARG_IN));
+
+	sres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
+	return sql_create_func_(sa, name, mod, imp, l, sres, TRUE, F_FUNC, fix_scale);
+}
+
+
+static sql_func *
+sql_create_func3(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *res, int fix_scale)
+{
+	list *l = sa_list(sa);
+	sql_arg *sres;
+
+	list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe1, 0, 0), ARG_IN));
+	list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe2, 0, 0), ARG_IN));
+	list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe3, 0, 0), ARG_IN));
+	sres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
+	return sql_create_func_(sa, name, mod, imp, l, sres, FALSE, F_FUNC, fix_scale);
+}
+
+static sql_func *
+sql_create_analytic(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *res, int fix_scale)
+{
+	list *l = sa_list(sa);
+	sql_arg *sres;
+
+	list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe1, 0, 0), ARG_IN));
+	if (tpe2)
+		list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe2, 0, 0), ARG_IN));
+	if (tpe3)
+		list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe3, 0, 0), ARG_IN));
+	sres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
+	return sql_create_func_(sa, name, mod, imp, l, sres, FALSE, F_ANALYTIC, fix_scale);
+}
+
+static sql_func *
+sql_create_func4(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_type *tpe1, sql_type *tpe2, sql_type *tpe3, sql_type *tpe4, sql_type *res, int fix_scale)
+{
+	list *l = sa_list(sa);
+	sql_arg *sres;
+
+	list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe1, 0, 0), ARG_IN));
+	list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe2, 0, 0), ARG_IN));
+	list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe3, 0, 0), ARG_IN));
+	list_append(l, create_arg(sa, NULL, sql_create_subtype(sa, tpe4, 0, 0), ARG_IN));
+	sres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
+	return sql_create_func_(sa, name, mod, imp, l, sres, FALSE, F_FUNC, fix_scale);
+}
+
 
 /* SQL service initialization
 This C-code version initializes the
