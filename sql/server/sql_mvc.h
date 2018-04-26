@@ -74,6 +74,12 @@ typedef struct sql_var {
 	char frame;
 } sql_var;
 
+typedef struct sql_subquery {
+	const char *name;
+	sql_rel *rel;	
+	void *s;
+} sql_subquery;
+
 #define MAXSTATS 8
 
 typedef struct mvc {
@@ -263,8 +269,8 @@ extern sql_idx *mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i);
 extern void *sql_error(mvc *sql, int error_code, _In_z_ _Printf_format_string_ char *format, ...)
 	__attribute__((__format__(__printf__, 3, 4)));
 
-extern sql_rel *mvc_push_subquery(mvc *m, const char *name, sql_rel *r);
-extern sql_rel *mvc_find_subquery(mvc *m, const char *rname, const char *name);
+extern sql_subquery *mvc_push_subquery(mvc *m, const char *name, sql_rel *r);
+extern sql_subquery *mvc_find_subquery(mvc *m, const char *rname, const char *name);
 extern sql_exp *mvc_find_subexp(mvc *m, const char *rname, const char *name);
 
 #endif /*_SQL_MVC_H*/

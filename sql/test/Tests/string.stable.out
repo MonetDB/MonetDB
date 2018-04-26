@@ -131,7 +131,7 @@ Ready.
 % sys.L2,	sys.stringtest # table_name
 % L2,	str # name
 % char,	varchar # type
-% 0,	6 # length
+% 1,	6 # length
 [ NULL,	""	]
 [ "t",	"test"	]
 [ NULL,	""	]

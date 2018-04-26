@@ -1962,7 +1962,7 @@ get_print_width(int mtype, int eclass, int digits, int scale, int tz, bat bid, p
 		incr = 2;
 	mtype = ATOMbasetype(mtype);
 	if (mtype == TYPE_str) {
-		if (eclass == EC_CHAR) {
+		if (eclass == EC_CHAR && digits) {
 			return digits;
 		} else {
 			int l = 0;
