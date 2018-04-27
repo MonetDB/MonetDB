@@ -62,7 +62,7 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
 	} else {
 		seq = l->hseqbase;
 		for (i = start1; i < end1; i++)
-			for (j = start2; j < end2; j++)
+			for (j = 0; j < cnt2; j++)
 				*p++ = i + seq;
 
 		BATtseqbase(bn1, bn1->tkey ? seq+start1 : oid_nil);
@@ -82,7 +82,7 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
 		bn2->tseqbase = oid_nil;
 	} else {
 		seq = r->hseqbase;
-		for (i = start1; i < end1; i++)
+		for (i = 0; i < cnt1; i++)
 			for (j = start2; j < end2; j++)
 				*p++ = j + seq;
 
