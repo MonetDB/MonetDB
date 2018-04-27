@@ -55,6 +55,7 @@
 					end = 0;			\
 				else					\
 					end -= (b)->hseqbase;		\
+				cnt = end - start;			\
 			}						\
 		}							\
 	} while (0)
