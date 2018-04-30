@@ -23,6 +23,7 @@ typedef struct prop {
 #define PROP_HASHCOL	4	/* could use hash idx */
 #define PROP_FETCH	5	/* fetchjoin */
 #define PROP_REMOTE     6	/* uri for remote execution */
+#define PROP_REMOTE2    7	/* schema and name of local table */
 #define PROP_USED	10	/* number of times exp is used */
 
 extern prop * prop_create( sql_allocator *sa, int kind, prop *pre );
