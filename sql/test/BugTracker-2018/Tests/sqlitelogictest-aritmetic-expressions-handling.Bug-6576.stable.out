@@ -75,7 +75,7 @@ Ready.
 #SELECT ALL + - 32 * - 32 + - - 76 - - - 43 * COUNT ( * ) + - + 84 * 0 * + + 39 + + 44 * + 76; -- 4401
 % .L4 # table_name
 % L4 # name
-% hugeint # type
+% bigint # type
 % 4 # length
 [ 4401	]
 #SELECT 38 + - 63 * 0 * - 13 AS col2; -- 38
@@ -112,13 +112,13 @@ Ready.
 #SELECT - 13 * - ( + 0 ) + 39 * - COUNT ( * ) * - COUNT ( * ) col1; -- 39
 % .L5 # table_name
 % col1 # name
-% hugeint # type
+% bigint # type
 % 2 # length
 [ 39	]
 #SELECT COUNT ( - + 70 ) - - 99 * - 0 AS col2; -- 1
 % .L4 # table_name
 % col2 # name
-% hugeint # type
+% bigint # type
 % 1 # length
 [ 1	]
 #SELECT - ( - - 15 ) + - 53 * - 0; -- -15
@@ -130,7 +130,7 @@ Ready.
 #SELECT - + 22 * + COUNT ( * ) + - - 58 - + 83 * + MAX ( - 94 * 0 ); -- 36
 % .L5 # table_name
 % L5 # name
-% hugeint # type
+% bigint # type
 % 2 # length
 [ 36	]
 #SELECT DISTINCT - 16 + ( + 37 ) - - 56 * - - 11 * - 0 + + MAX ( + 29 ) AS col2; -- 50
@@ -148,13 +148,13 @@ Ready.
 #SELECT ALL - 30 + + 85, - ( - + 43 ) - 71 + - 0 * - - 78 + - 78 + - - 47 * - 93 + 32 * + SUM ( 90 ) AS col0; -- 55, -1597
 % .L2,	.L6 # table_name
 % L2,	col0 # name
-% smallint,	hugeint # type
+% smallint,	bigint # type
 % 2,	5 # length
 [ 55,	-1597	]
 #SELECT ALL + COUNT ( * ) - - + 0 * - 32; -- 1
 % .L4 # table_name
 % L4 # name
-% hugeint # type
+% bigint # type
 % 1 # length
 [ 1	]
 
