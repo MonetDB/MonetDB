@@ -260,6 +260,7 @@ str RMTconnect(
 str
 RMTconnectURI(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	char *local_table;
 	char *remoteuser;
 	char *passwd;
 	char *uri;
@@ -271,13 +272,13 @@ RMTconnectURI(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void)mb;
 
-	uri = *getArgReference_str(stk, pci, 1);
+	local_table = *getArgReference_str(stk, pci, 1);
 	scen = *getArgReference_str(stk, pci, 2);
-	if (uri == NULL || strcmp(uri, (str)str_nil) == 0) {
-		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT ": URI is NULL or nil");
+	if (local_table == NULL || strcmp(local_table, (str)str_nil) == 0) {
+		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT ": local table is NULL or nil");
 	}
 
-	rethrow("remote.connect", tmp, AUTHgetRemoteTableCredentials(uri, cntxt, &remoteuser, &passwd));
+	rethrow("remote.connect", tmp, AUTHgetRemoteTableCredentials(local_table, cntxt, &uri, &remoteuser, &passwd));
 
 	/* The password we just got is hashed. Add the byte \1 in front to
 	 * signal this fact to the mapi. */

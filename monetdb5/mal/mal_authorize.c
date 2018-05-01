@@ -942,27 +942,26 @@ AUTHverifyPassword(const char *passwd)
 }
 
 str
-AUTHgetRemoteTableCredentials(const char *uri, Client cntxt, str *username, str *password)
+AUTHgetRemoteTableCredentials(const char *local_table, Client cntxt, str *uri, str *username, str *password)
 {
 	FILE *fp = fopen("/tmp/remote_table_auth.txt", "r");
-	str localuser;
-	str luri;
-	str tmp;
+	str ltbl;
+	// str tmp;
 	char buf[BUFSIZ];
 	char *p, *q;
 
-	(void)uri;
+	(void)cntxt;
 	fread(buf, 1, BUFSIZ, fp);
 
 	q = buf;
 	p = strchr(buf, ',');
 	*p = 0;
-	luri = GDKstrdup(q);
+	ltbl = GDKstrdup(q);
 
 	q = p + 1;
 	p = strchr(q, ',');
 	*p = 0;
-	localuser = GDKstrdup(q);
+	*uri = GDKstrdup(q);
 
 	q = p + 1;
 	p = strchr(q, ',');
@@ -977,35 +976,31 @@ AUTHgetRemoteTableCredentials(const char *uri, Client cntxt, str *username, str 
 	fclose(fp);
 
 	/* mem leak */
-	rethrow("checkCredentials", tmp, AUTHrequireAdminOrUser(cntxt, localuser));
-	if (strcmp(uri, luri)) {
-		GDKfree(luri);
-		GDKfree(localuser);
+	// rethrow("checkCredentials", tmp, AUTHrequireAdminOrUser(cntxt, localuser));
+	if (strcmp(local_table, ltbl)) {
+		GDKfree(ltbl);
 		throw(MAL, "getRemoteTableCredentials", SQLSTATE(HY001) "URIs do not match");
 	}
 
-	GDKfree(luri);
-	GDKfree(localuser);
+	GDKfree(ltbl);
+	// GDKfree(localuser);
 
 	return MAL_SUCCEED;
 }
 
 str
-AUTHaddRemoteTableCredentials(const char *uri, const char *localuser, const char *remoteuser, const char *pass, bool pw_encrypted)
+AUTHaddRemoteTableCredentials(const char *local_table, const char *localuser, const char *uri, const char *remoteuser, const char *pass, bool pw_encrypted)
 {
 	/* Work in Progress */
 	FILE *fp = fopen("/tmp/remote_table_auth.txt", "w");
 	char *password = NULL;
 	bool free_pw = false;
 	str tmp;
-	BUN p;
 
 	if (uri == NULL || strNil(uri))
 		throw(ILLARG, "addRemoteTableCredentials", "URI cannot be nil");
 	if (localuser == NULL || strNil(localuser))
 		throw(ILLARG, "addRemoteTableCredentials", "local user name cannot be nil");
-
-	(void)p;
 
 	if (pass == NULL) {
 		/* NOTE: Is having the client == NULL safe? */
@@ -1022,7 +1017,7 @@ AUTHaddRemoteTableCredentials(const char *uri, const char *localuser, const char
 	}
 	rethrow("addUser", tmp, AUTHverifyPassword(password));
 
-	fprintf(fp, "%s,%s,%s,%s\n",uri, localuser, remoteuser, password);
+	fprintf(fp, "%s,%s,%s,%s\n", local_table, uri, remoteuser, password);
 	fclose(fp);
 
 	if (free_pw) {

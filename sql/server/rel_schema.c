@@ -948,9 +948,11 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 
 		if (tt == tt_remote) {
 			char *local_user = stack_get_string(sql, "current_user");
+			char *local_table = sa_strconcat(sql->sa, sa_strconcat(sql->sa, sname, "."), name);
 			if (!mapiuri_valid(loc))
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: incorrect uri '%s' for remote table '%s'", loc, name);
-			char *reg_credentials = AUTHaddRemoteTableCredentials(mapiuri_uri(loc, sql->sa), local_user, username, password, pw_encrypted);
+
+			char *reg_credentials = AUTHaddRemoteTableCredentials(local_table, local_user, mapiuri_uri(loc, sql->sa), username, password, pw_encrypted);
 			if (reg_credentials != 0) {
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: cannot register credentials for remote table '%s' in vault: %s", name, reg_credentials);
 			}
