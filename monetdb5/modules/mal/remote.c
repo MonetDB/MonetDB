@@ -293,7 +293,6 @@ RMTconnectURI(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	msg = RMTconnectScen(&ret, &uri, &remoteuser, &pwhash, &scen);
 
-	GDKfree(remoteuser);
 	GDKfree(passwd);
 	GDKfree(pwhash);
 

@@ -50,6 +50,7 @@ static BAT *duser = NULL;
 
 /* Remote table bats */
 static BAT *rt_key = NULL;
+static BAT *rt_uri = NULL;
 static BAT *rt_remoteuser = NULL;
 static BAT *rt_hashedpwd = NULL;
 static BAT *rt_deleted = NULL;
@@ -244,25 +245,14 @@ AUTHinitTables(const char *passwd) {
 	/* Remote table authorization table.
 	 *
 	 * This table holds the remote tabe authorization credentials
-	 * (username and hashed password). At the creation of a remote
-	 * table, two entries with two different keys are inserted in the
-	 * auth table.
-	 *
-	 * 1. local user name'|'URI, remote username, hashed remote password
-	 * 2. local schema'|'URI, remote username, hashed remote password
-	 *
-	 * The lookup routine will actually do two lookups: first we try
-	 * to match the user requesting access with the user that created
-	 * the table or an administrator. If that fails try to see if the
-	 * user requesting access has access to the local schema where the
-	 * remote table is defined.
+	 * (uri, username and hashed password).
 	 */
 	/* load/create remote table URI BAT */
 	bid = BBPindex("M5system_auth_rt_key");
 	if (!bid) {
 		rt_key = COLnew(0, TYPE_str, 256, PERSISTENT);
 		if (rt_key == NULL)
-			throw(MAL, "initTables.rt_key", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table uri bat");
+			throw(MAL, "initTables.rt_key", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table key bat");
 
 		if (BBPrename(BBPcacheid(rt_key), "M5system_auth_rt_key") != 0 ||
 			BATmode(rt_key, PERSISTENT) != GDK_SUCCEED)
@@ -278,6 +268,28 @@ AUTHinitTables(const char *passwd) {
 		isNew = 0;
 	}
 	assert(rt_key);
+
+	/* load/create remote table URI BAT */
+	bid = BBPindex("M5system_auth_rt_uri");
+	if (!bid) {
+		rt_uri = COLnew(0, TYPE_str, 256, PERSISTENT);
+		if (rt_uri == NULL)
+			throw(MAL, "initTables.rt_uri", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table uri bat");
+
+		if (BBPrename(BBPcacheid(rt_uri), "M5system_auth_rt_uri") != 0 ||
+			BATmode(rt_uri, PERSISTENT) != GDK_SUCCEED)
+			throw(MAL, "initTables.rt_uri", GDK_EXCEPTION);
+		if (!isNew)
+			AUTHcommit();
+	}
+	else {
+		rt_uri = BATdescriptor(bid);
+		if (rt_uri == NULL) {
+			throw(MAL, "initTables.rt_uri", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		}
+		isNew = 0;
+	}
+	assert(rt_uri);
 
 	/* load/create remote table remote user name BAT */
 	bid = BBPindex("M5system_auth_rt_remoteuser");
@@ -955,47 +967,34 @@ lookupRemoteTableKey(const char *key)
 str
 AUTHgetRemoteTableCredentials(const char *local_table, Client cntxt, str *uri, str *username, str *password)
 {
-	FILE *fp = fopen("/tmp/remote_table_auth.txt", "r");
-	str ltbl;
-	// str tmp;
-	char buf[BUFSIZ];
-	char *p, *q;
+	BUN p;
+	BATiter i;
+	str tmp;
+	str pwhash;
 
 	(void)cntxt;
-	fread(buf, 1, BUFSIZ, fp);
 
-	q = buf;
-	p = strchr(buf, ',');
-	*p = 0;
-	ltbl = GDKstrdup(q);
-
-	q = p + 1;
-	p = strchr(q, ',');
-	*p = 0;
-	*uri = GDKstrdup(q);
-
-	q = p + 1;
-	p = strchr(q, ',');
-	*p = 0;
-	*username = GDKstrdup(q);
-
-	q = p + 1;
-	p = strchr(q, '\n');
-	*p = 0;
-	*password = GDKstrdup(q);
-
-	fclose(fp);
-
-	/* mem leak */
-	// rethrow("checkCredentials", tmp, AUTHrequireAdminOrUser(cntxt, localuser));
-	if (strcmp(local_table, ltbl)) {
-		GDKfree(ltbl);
-		abort();
-		throw(MAL, "getRemoteTableCredentials", SQLSTATE(HY001) "URIs do not match");
+	if (local_table == NULL || strNil(local_table)) {
+		throw(ILLARG, "getRemoteTableCredentials", "local table should not be nil");
 	}
 
-	GDKfree(ltbl);
-	// GDKfree(localuser);
+	p = lookupRemoteTableKey(local_table);
+	if (p == BUN_NONE) {
+		throw(MAL, "getRemoteTableCredentials", "No credentials for table %s found", local_table);
+	}
+
+	assert(p != BUN_NONE);
+	i = bat_iterator(rt_uri);
+	*uri = BUNtail(i, p);
+
+	i = bat_iterator(rt_remoteuser);
+	*username = BUNtail(i, p);
+
+	i = bat_iterator(rt_hashedpwd);
+	tmp = BUNtail(i, p);
+	rethrow("getRemoteTableCredentials", tmp, AUTHdecypherValue(&pwhash, tmp));
+
+	*password = GDKstrdup(pwhash);
 
 	return MAL_SUCCEED;
 }
@@ -1038,15 +1037,14 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 	}
 	rethrow("addRemoteTableCredentials", tmp, AUTHverifyPassword(pwhash));
 
-	/* Until lookup is implemented properly we need the following 3 lines */
-	FILE *fp = fopen("/tmp/remote_table_auth.txt", "w");
-	fprintf(fp, "%s,%s,%s,%s\n", local_table, uri, remoteuser, pwhash);
-	fclose(fp);
+	str cypher;
+	rethrow("addRemoteTableCredentials", tmp, AUTHcypherValue(&cypher, pwhash));
 
 	/* Add entry */
 	bool table_entry = (BUNappend(rt_key, local_table, TRUE) == GDK_SUCCEED ||
-					   BUNappend(rt_remoteuser, remoteuser, TRUE) == GDK_SUCCEED ||
-					   BUNappend(rt_hashedpwd, pwhash, TRUE) == GDK_SUCCEED);
+						BUNappend(rt_uri, uri, TRUE) == GDK_SUCCEED ||
+						BUNappend(rt_remoteuser, remoteuser, TRUE) == GDK_SUCCEED ||
+						BUNappend(rt_hashedpwd, cypher, TRUE) == GDK_SUCCEED);
 
 	if (!table_entry) {
 		if (free_pw) {
