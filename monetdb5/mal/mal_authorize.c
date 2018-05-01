@@ -42,16 +42,16 @@
 static str AUTHdecypherValue(str *ret, const char *value);
 static str AUTHcypherValue(str *ret, const char *value);
 static str AUTHverifyPassword(const char *passwd);
+static BUN lookupRemoteTableKey(const char *key);
 
 static BAT *user = NULL;
 static BAT *pass = NULL;
 static BAT *duser = NULL;
 
 /* Remote table bats */
-static BAT *rt_uri = NULL;
-static BAT *rt_localuser = NULL;
+static BAT *rt_key = NULL;
 static BAT *rt_remoteuser = NULL;
-static BAT *rt_pass = NULL;
+static BAT *rt_hashedpwd = NULL;
 static BAT *rt_deleted = NULL;
 /* yep, the vault key is just stored in memory */
 static str vaultKey = NULL;
@@ -241,50 +241,43 @@ AUTHinitTables(const char *passwd) {
 	}
 	assert(duser);
 
-	/* Remote table authorization columns */
+	/* Remote table authorization table.
+	 *
+	 * This table holds the remote tabe authorization credentials
+	 * (username and hashed password). At the creation of a remote
+	 * table, two entries with two different keys are inserted in the
+	 * auth table.
+	 *
+	 * 1. local user name'|'URI, remote username, hashed remote password
+	 * 2. local schema'|'URI, remote username, hashed remote password
+	 *
+	 * The lookup routine will actually do two lookups: first we try
+	 * to match the user requesting access with the user that created
+	 * the table or an administrator. If that fails try to see if the
+	 * user requesting access has access to the local schema where the
+	 * remote table is defined.
+	 */
 	/* load/create remote table URI BAT */
-	bid = BBPindex("M5system_auth_rt_uri");
+	bid = BBPindex("M5system_auth_rt_key");
 	if (!bid) {
-		rt_uri = COLnew(0, TYPE_str, 256, PERSISTENT);
-		if (rt_uri == NULL)
-			throw(MAL, "initTables.rt_uri", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table uri bat");
+		rt_key = COLnew(0, TYPE_str, 256, PERSISTENT);
+		if (rt_key == NULL)
+			throw(MAL, "initTables.rt_key", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table uri bat");
 
-		if (BBPrename(BBPcacheid(rt_uri), "M5system_auth_rt_uri") != 0 ||
-			BATmode(rt_uri, PERSISTENT) != GDK_SUCCEED)
-			throw(MAL, "initTables.rt_uri", GDK_EXCEPTION);
+		if (BBPrename(BBPcacheid(rt_key), "M5system_auth_rt_key") != 0 ||
+			BATmode(rt_key, PERSISTENT) != GDK_SUCCEED)
+			throw(MAL, "initTables.rt_key", GDK_EXCEPTION);
 		if (!isNew)
 			AUTHcommit();
 	}
 	else {
-		rt_uri = BATdescriptor(bid);
-		if (rt_uri == NULL) {
-			throw(MAL, "initTables.rt_uri", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		rt_key = BATdescriptor(bid);
+		if (rt_key == NULL) {
+			throw(MAL, "initTables.rt_key", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		isNew = 0;
 	}
-	assert(rt_uri);
-
-	/* load/create remote table local user name BAT */
-	bid = BBPindex("M5system_auth_rt_localuser");
-	if (!bid) {
-		rt_localuser = COLnew(0, TYPE_str, 256, PERSISTENT);
-		if (rt_localuser == NULL)
-			throw(MAL, "initTables.rt_localuser", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table local user bat");
-
-		if (BBPrename(BBPcacheid(rt_localuser), "M5system_auth_rt_localuser") != 0 ||
-			BATmode(rt_localuser, PERSISTENT) != GDK_SUCCEED)
-			throw(MAL, "initTables.rt_localuser", GDK_EXCEPTION);
-		if (!isNew)
-			AUTHcommit();
-	}
-	else {
-		rt_localuser = BATdescriptor(bid);
-		if (rt_localuser == NULL) {
-			throw(MAL, "initTables.rt_localuser", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		}
-		isNew = 0;
-	}
-	assert(rt_localuser);
+	assert(rt_key);
 
 	/* load/create remote table remote user name BAT */
 	bid = BBPindex("M5system_auth_rt_remoteuser");
@@ -309,26 +302,26 @@ AUTHinitTables(const char *passwd) {
 	assert(rt_remoteuser);
 
 	/* load/create remote table password BAT */
-	bid = BBPindex("M5system_auth_rt_pass");
+	bid = BBPindex("M5system_auth_rt_hashedpwd");
 	if (!bid) {
-		rt_pass = COLnew(0, TYPE_str, 256, PERSISTENT);
-		if (rt_pass == NULL)
-			throw(MAL, "initTables.rt_pass", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table local user bat");
+		rt_hashedpwd = COLnew(0, TYPE_str, 256, PERSISTENT);
+		if (rt_hashedpwd == NULL)
+			throw(MAL, "initTables.rt_hashedpwd", SQLSTATE(HY001) MAL_MALLOC_FAIL " remote table local user bat");
 
-		if (BBPrename(BBPcacheid(rt_pass), "M5system_auth_rt_pass") != 0 ||
-			BATmode(rt_pass, PERSISTENT) != GDK_SUCCEED)
-			throw(MAL, "initTables.rt_pass", GDK_EXCEPTION);
+		if (BBPrename(BBPcacheid(rt_hashedpwd), "M5system_auth_rt_hashedpwd") != 0 ||
+			BATmode(rt_hashedpwd, PERSISTENT) != GDK_SUCCEED)
+			throw(MAL, "initTables.rt_hashedpwd", GDK_EXCEPTION);
 		if (!isNew)
 			AUTHcommit();
 	}
 	else {
-		rt_pass = BATdescriptor(bid);
-		if (rt_pass == NULL) {
-			throw(MAL, "initTables.rt_pass", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		rt_hashedpwd = BATdescriptor(bid);
+		if (rt_hashedpwd == NULL) {
+			throw(MAL, "initTables.rt_hashedpwd", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		isNew = 0;
 	}
-	assert(rt_pass);
+	assert(rt_hashedpwd);
 
 	/* load/create remote table deleted entries BAT */
 	bid = BBPindex("M5system_auth_rt_deleted");
@@ -941,6 +934,24 @@ AUTHverifyPassword(const char *passwd)
 #endif
 }
 
+static BUN
+lookupRemoteTableKey(const char *key)
+{
+	BATiter cni = bat_iterator(rt_key);
+	BUN p = BUN_NONE;
+
+	if (BAThash(rt_key, 0) == GDK_SUCCEED) {
+		HASHloop_str(cni, cni.b->thash, p, key) {
+			oid pos = p;
+			if (BUNfnd(rt_deleted, &pos) == BUN_NONE)
+				return p;
+		}
+	}
+
+	return BUN_NONE;
+
+}
+
 str
 AUTHgetRemoteTableCredentials(const char *local_table, Client cntxt, str *uri, str *username, str *password)
 {
@@ -979,6 +990,7 @@ AUTHgetRemoteTableCredentials(const char *local_table, Client cntxt, str *uri, s
 	// rethrow("checkCredentials", tmp, AUTHrequireAdminOrUser(cntxt, localuser));
 	if (strcmp(local_table, ltbl)) {
 		GDKfree(ltbl);
+		abort();
 		throw(MAL, "getRemoteTableCredentials", SQLSTATE(HY001) "URIs do not match");
 	}
 
@@ -989,39 +1001,64 @@ AUTHgetRemoteTableCredentials(const char *local_table, Client cntxt, str *uri, s
 }
 
 str
-AUTHaddRemoteTableCredentials(const char *local_table, const char *localuser, const char *uri, const char *remoteuser, const char *pass, bool pw_encrypted)
+AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, const char *uri, const char *remoteuser, const char *pass, bool pw_encrypted)
 {
-	/* Work in Progress */
-	FILE *fp = fopen("/tmp/remote_table_auth.txt", "w");
-	char *password = NULL;
+	char *pwhash = NULL;
 	bool free_pw = false;
 	str tmp;
+	BUN p;
 
 	if (uri == NULL || strNil(uri))
 		throw(ILLARG, "addRemoteTableCredentials", "URI cannot be nil");
-	if (localuser == NULL || strNil(localuser))
+	if (local_user == NULL || strNil(local_user))
 		throw(ILLARG, "addRemoteTableCredentials", "local user name cannot be nil");
+
+	p = lookupRemoteTableKey(local_table);
+
+	if (p != BUN_NONE) {
+		/* key already in, just return */
+		return MAL_SUCCEED;
+	}
 
 	if (pass == NULL) {
 		/* NOTE: Is having the client == NULL safe? */
-		AUTHgetPasswordHash(&password, NULL, localuser);
+		AUTHgetPasswordHash(&pwhash, NULL, local_user);
 	}
 	else {
 		free_pw = true;
 		if (pw_encrypted) {
-			password = strdup(pass);
+			pwhash = strdup(pass);
 		}
 		else {
-			password = mcrypt_BackendSum(pass, strlen(pass));
+			/* Note: the remote server might have used a different
+			 * algorithm to hash the pwhash.
+			 */
+			pwhash = mcrypt_BackendSum(pass, strlen(pass));
 		}
 	}
-	rethrow("addUser", tmp, AUTHverifyPassword(password));
+	rethrow("addRemoteTableCredentials", tmp, AUTHverifyPassword(pwhash));
 
-	fprintf(fp, "%s,%s,%s,%s\n", local_table, uri, remoteuser, password);
+	/* Until lookup is implemented properly we need the following 3 lines */
+	FILE *fp = fopen("/tmp/remote_table_auth.txt", "w");
+	fprintf(fp, "%s,%s,%s,%s\n", local_table, uri, remoteuser, pwhash);
 	fclose(fp);
 
+	/* Add entry */
+	bool table_entry = (BUNappend(rt_key, local_table, TRUE) == GDK_SUCCEED ||
+					   BUNappend(rt_remoteuser, remoteuser, TRUE) == GDK_SUCCEED ||
+					   BUNappend(rt_hashedpwd, pwhash, TRUE) == GDK_SUCCEED);
+
+	if (!table_entry) {
+		if (free_pw) {
+			free(pwhash);
+		}
+		throw(MAL, "addRemoteTableCredentials", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
+
+	AUTHcommit();
+
 	if (free_pw) {
-		free(password);
+		free(pwhash);
 	}
 	return MAL_SUCCEED;
 }

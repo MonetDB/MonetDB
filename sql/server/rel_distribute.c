@@ -285,14 +285,11 @@ distribute(mvc *sql, sql_rel *rel)
 
 		/* set_remote() */
 		if (t && isRemote(t)) {
-			//char *uri = t->query;
+			//TODO: check for allocation failure
 			char *local_name = sa_strconcat(sql->sa, sa_strconcat(sql->sa, t->s->base.name, "."), t->base.name);
+
 			p = rel->p = prop_create(sql->sa, PROP_REMOTE, rel->p);
 			p->value = local_name;
-
-			//p = rel->p = prop_create(sql->sa, PROP_REMOTE2, rel->p);
-			//p->value = local_name;
-
 		}
 		break;
 	}
