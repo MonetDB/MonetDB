@@ -2302,6 +2302,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		mnstr_printf(toConsole, "COMMIT;\n");
 	if (sname)
 		free(sname);
+	if (query)
+		free(query);
 	return rc;
 
   bailout:
