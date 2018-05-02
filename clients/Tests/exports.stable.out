@@ -694,6 +694,7 @@ str ALGcountCND_no_nil(lng *result, const bat *bid, const bat *cnd);
 str ALGcount_bat(lng *result, const bat *bid);
 str ALGcount_nil(lng *result, const bat *bid, const bit *ignore_nils);
 str ALGcount_no_nil(lng *result, const bat *bid);
+str ALGcrossproduct(bat *l, bat *r, const bat *lid, const bat *rid, const bat *slid, const bat *srid);
 str ALGcrossproduct2(bat *l, bat *r, const bat *lid, const bat *rid);
 str ALGdifference(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate);
 str ALGexist(bit *ret, const bat *bid, const void *val);

@@ -32,8 +32,12 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
 	CANDINIT(r, sr, start2, end2, cnt2, rcand, rcandend);
 	if (lcand)
 		cnt1 = lcandend - lcand;
+	else
+		cnt1 = end1 - start1;
 	if (rcand)
 		cnt2 = rcandend - rcand;
+	else
+		cnt2 = end2 - start2;
 
 	bn1 = COLnew(0, TYPE_oid, cnt1 * cnt2, TRANSIENT);
 	bn2 = COLnew(0, TYPE_oid, cnt1 * cnt2, TRANSIENT);
@@ -56,11 +60,12 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
 				*p++ = lcand[i];
 		bn1->tseqbase = oid_nil;
 	} else {
-		seq = l->hseqbase + start1;
-		for (i = 0; i < cnt1; i++)
+		seq = l->hseqbase;
+		for (i = start1; i < end1; i++)
 			for (j = 0; j < cnt2; j++)
 				*p++ = i + seq;
-		BATtseqbase(bn1, bn1->tkey ? seq : oid_nil);
+
+		BATtseqbase(bn1, bn1->tkey ? seq+start1 : oid_nil);
 	}
 
 	BATsetcount(bn2, cnt1 * cnt2);
@@ -76,11 +81,12 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
 				*p++ = rcand[j];
 		bn2->tseqbase = oid_nil;
 	} else {
-		seq = r->hseqbase + start2;
+		seq = r->hseqbase;
 		for (i = 0; i < cnt1; i++)
-			for (j = 0; j < cnt2; j++)
+			for (j = start2; j < end2; j++)
 				*p++ = j + seq;
-		BATtseqbase(bn2, bn2->tkey ? seq : oid_nil);
+
+		BATtseqbase(bn2, bn2->tkey ? seq+start2 : oid_nil);
 	}
 
 	*r1p = bn1;

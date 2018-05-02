@@ -57,6 +57,7 @@ typedef enum stmt_type {
 	st_affected_rows,
 
 	st_atom,
+	st_project,
 	st_uselect,
 	st_uselect2,
 	st_tunion,
@@ -178,6 +179,7 @@ extern stmt *stmt_tdiff(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_tinter(backend *be, stmt *op1, stmt *op2);
 
 extern stmt *stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype);
+extern stmt *stmt_subjoin(backend *be, stmt *op1, stmt *sop1, stmt *op2, stmt *sop2, int anti, comp_type cmptype);
 extern stmt *stmt_join2(backend *be, stmt *l, stmt *ra, stmt *rb, int cmp, int anti, int swapped);
 /* generic join operator, with a left and right statement list */
 extern stmt *stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapped);
@@ -186,7 +188,9 @@ extern stmt *stmt_project(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_project_delta(backend *be, stmt *col, stmt *upd, stmt *ins);
 extern stmt *stmt_left_project(backend *be, stmt *op1, stmt *op2, stmt *op3);
 
+extern stmt *stmt_post_project(backend *be, stmt *sub, list *ops);
 extern stmt *stmt_list(backend *be, list *l);
+
 extern void stmt_set_nrcols(stmt *s);
 
 extern stmt *stmt_group(backend *be, stmt *op1, stmt *grp, stmt *ext, stmt *cnt, int done);
@@ -206,7 +210,7 @@ extern stmt *stmt_result(backend *be, stmt *s, int nr);
  * last:     intermediate step or last step 
  * order:    is order important or not (firstn vs slice)
  */ 
-extern stmt *stmt_limit(backend *sa, stmt *c, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int last, int order);
+extern stmt *stmt_limit(backend *sa, stmt *c, stmt *sel, stmt *piv, stmt *gid, stmt *offset, stmt *limit, int distinct, int dir, int last, int order);
 extern stmt *stmt_sample(backend *be, stmt *s, stmt *sample);
 extern stmt *stmt_order(backend *be, stmt *s, int direction);
 extern stmt *stmt_reorder(backend *be, stmt *s, int direction, stmt *orderby_ids, stmt *orderby_grp);
