@@ -258,7 +258,7 @@ str RMTconnect(
 }
 
 str
-RMTconnectURI(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+RMTconnectTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	char *local_table;
 	char *remoteuser;
