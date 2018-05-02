@@ -991,14 +991,12 @@ lookupRemoteTableKey(const char *key)
 }
 
 str
-AUTHgetRemoteTableCredentials(const char *local_table, Client cntxt, str *uri, str *username, str *password)
+AUTHgetRemoteTableCredentials(const char *local_table, str *uri, str *username, str *password)
 {
 	BUN p;
 	BATiter i;
 	str tmp;
 	str pwhash;
-
-	(void)cntxt;
 
 	if (local_table == NULL || strNil(local_table)) {
 		throw(ILLARG, "getRemoteTableCredentials", "local table should not be nil");

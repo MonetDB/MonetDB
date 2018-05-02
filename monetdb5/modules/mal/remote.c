@@ -271,6 +271,7 @@ RMTconnectTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	ValPtr v;
 
 	(void)mb;
+	(void)cntxt;
 
 	local_table = *getArgReference_str(stk, pci, 1);
 	scen = *getArgReference_str(stk, pci, 2);
@@ -278,7 +279,7 @@ RMTconnectTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT ": local table is NULL or nil");
 	}
 
-	rethrow("remote.connect", tmp, AUTHgetRemoteTableCredentials(local_table, cntxt, &uri, &remoteuser, &passwd));
+	rethrow("remote.connect", tmp, AUTHgetRemoteTableCredentials(local_table, &uri, &remoteuser, &passwd));
 
 	/* The password we just got is hashed. Add the byte \1 in front to
 	 * signal this fact to the mapi. */
