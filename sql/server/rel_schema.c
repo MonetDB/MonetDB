@@ -949,9 +949,17 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 		if (tt == tt_remote) {
 			char *local_user = stack_get_string(sql, "current_user");
 			char *local_table = sa_strconcat(sql->sa, sa_strconcat(sql->sa, sname, "."), name);
+			if (!local_table) {
+				return sql_error(sql, 02, SQLSTATE(HY001) "CREATE TABLE: " MAL_MALLOC_FAIL);
+			}
 			if (!mapiuri_valid(loc))
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: incorrect uri '%s' for remote table '%s'", loc, name);
-			char *reg_credentials = AUTHaddRemoteTableCredentials(local_table, local_user, mapiuri_uri(loc, sql->sa), username, password, pw_encrypted);
+
+			const char *remote_uri = mapiuri_uri(loc, sql->sa);
+			if (remote_uri == NULL) {
+				return sql_error(sql, 02, SQLSTATE(HY001) "CREATE TABLE: " MAL_MALLOC_FAIL);
+			}
+			char *reg_credentials = AUTHaddRemoteTableCredentials(local_table, local_user, remote_uri, username, password, pw_encrypted);
 			if (reg_credentials != 0) {
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: cannot register credentials for remote table '%s' in vault: %s", name, reg_credentials);
 			}
