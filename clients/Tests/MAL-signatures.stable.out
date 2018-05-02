@@ -10768,6 +10768,7 @@ Ready.
 [ "remote",	"bintype",	"pattern remote.bintype():void ",	"RMTbintype;",	"print the binary type of this mserver5"	]
 [ "remote",	"connect",	"command remote.connect(uri:str, user:str, passwd:str):str ",	"RMTconnect;",	"returns a newly created connection for uri, using user name and password"	]
 [ "remote",	"connect",	"command remote.connect(uri:str, user:str, passwd:str, scen:str):str ",	"RMTconnectScen;",	"returns a newly created connection for uri, using user name, password and scenario"	]
+[ "remote",	"connect",	"pattern remote.connect(table:str, schen:str):str ",	"RMTconnectTable;",	"return a newly created connection for a table. username and password should be in the vault"	]
 [ "remote",	"disconnect",	"command remote.disconnect(conn:str):void ",	"RMTdisconnect;",	"disconnects the connection pointed to by handle (received from a call to connect()"	]
 [ "remote",	"epilogue",	"command remote.epilogue():void ",	"RMTepilogue;",	"release the resources held by the remote module"	]
 [ "remote",	"exec",	"pattern remote.exec(conn:str, mod:str, func:str):str ",	"RMTexec;",	"remotely executes <mod>.<func> and returns the handle to its result"	]
