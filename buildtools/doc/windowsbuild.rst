@@ -18,7 +18,7 @@ architecture, but there are notes throughout about building on Windows
 on a 64-bit architecture which is indicated with Windows64.  We have
 successfully built on Windows XP, Windows Server, and Windows 7.
 
-.. _MonetDB: http://dev.monetdb.org/hg/MonetDB/
+.. _MonetDB: https://dev.monetdb.org/hg/MonetDB/
 
 __ MonetDB_
 
@@ -132,7 +132,7 @@ using the command
 
 ::
 
- hg clone http://dev.monetdb.org/hg/MonetDB/
+ hg clone https://dev.monetdb.org/hg/MonetDB/
 
 This will create a folder ``MonetDB`` that contains everything.
 
@@ -154,25 +154,23 @@ Compiler
 
 The suite can be compiled using one of the following compilers:
 
-- Microsoft Visual Studio .NET 2003 (also known as Microsoft Visual Studio 7);
-- Microsoft Visual Studio 2005 (also known as Microsoft Visual Studio 8);
-- Microsoft Visual Studio 2008 (also known as Microsoft Visual Studio 9.0);
-- Microsoft Visual Studio 2010 (also known as Microsoft Visual Studio 10.0);
-- Intel(R) C++ Compiler 9.1 (which actually needs one of the above);
-- Intel(R) C++ Compiler 10.1 (which also needs one of the Microsoft compilers);
-- Intel(R) C++ Compiler 11.1 (which also needs one of the Microsoft compilers).
+- Microsoft Visual Studio 2015 or newer;
+- Intel(R) C++ Compiler 9.1;
+- Intel(R) C++ Compiler 10.1;
+- Intel(R) C++ Compiler 11.1.
 
-Not supported anymore (but probably still possible) are the GNU C
-Compiler gcc under Cygwin__.  Using that, it (probably still) is
-possible to build a version that runs using the Cygwin DLLs, but also
-a version that uses the MinGW__ (Minimalist GNU for Windows) package.
-This is not supported and not further described here (in either case,
-the build process would be much more like Unix than what is described
-here).
+Not supported anymore are the GNU C Compiler gcc under Cygwin__.
+Using that, it would be possible to build a version that runs using
+the Cygwin DLLs, but also a version that uses the MinGW__ (Minimalist
+GNU for Windows) package.  This is not supported and not further
+described here (in either case, the build process would be much more
+like Unix than what is described here).
 
-We currently use Microsoft Visual Studio 2010 and Intel(R) C++
-Compiler XE 13.1.2.190, the latter using Microsoft Visual Studio
-10.0.  Older versions haven't been tried in a long time.
+We currently use Microsoft Visual Studio Community 2015, Microsoft
+Visual Studio Community 2017, and Intel(R) C++ Compiler XE 13.1.2.190,
+the latter using Microsoft Visual Studio Community 2015.  Older
+versions of Visual Studio will not work since they do not support the
+C-99 standard.
 
 __ http://www.cygwin.com/
 __ http://www.mingw.org/
@@ -185,13 +183,12 @@ compiler uses to determine which files to compile.  Python can be
 downloaded from http://www.python.org/.  Just download and install the
 Windows binary distribution.
 
+.. Say something about pyintegration.
+
 Note that you can use either or both Python2 and Python3, and on 64
 bit architectures, either the 32 bit or 64 bit version of Python.  All
-these versions are fine for building the MonetDB suite.  However, if
-you want to create an installer for the Python component using
-``python setup.py bdist_wininst``, you need to use the version of
-Python for which you're building the installer.  It is possible to
-install all versions.  Using Chocolatey_ you can do::
+these versions are fine for building the MonetDB suite.  It is
+possible to install all versions.  Using Chocolatey_ you can do::
 
   choco install python2 python3 
   choco install python2-x86_32 python3-x86_32
@@ -248,14 +245,14 @@ of MonetDB.  The PCRE library is required for the monetdb5 component.
 
 Download the source from http://www.pcre.org/.  In order to build the
 library, you will need a program called ``cmake`` which you can
-download from http://www.cmake.org/.  Follow the Download link and get
-the Win32 Installer, install it, and run it.  It will come up with a
-window where you have to fill in the location of the source code and
-where to build the binaries.  Fill in where you extracted the PCRE
-sources, and some other folder (I used a ``build`` folder which I
-created within the PCRE source tree), then click on the Configure
-button.  This pops up a dialog to choose the compiler.  I chose Visual
-Studio 10 2010.
+download from http://www.cmake.org/ or by using Chocolatey_.  Follow
+the Download link and get the Win32 Installer, install it, and run it.
+It will come up with a window where you have to fill in the location
+of the source code and where to build the binaries.  Fill in where you
+extracted the PCRE sources, and some other folder (I used a ``build``
+folder which I created within the PCRE source tree), then click on the
+Configure button.  This pops up a dialog to choose the compiler.  I
+chose Visual Studio 14 2015.
 
 You need to configure some PCRE build options.  I chose to do build
 shared libs, to match newlines with the ``ANYCRLF`` option, and to do
@@ -267,7 +264,7 @@ Release if you want to build a releasable version of the MonetDB
 suite.  By default the library will be installed in ``C:\Program
 Files\PCRE``.
 
-For Windows64, select the correct compiler (``Visual Studio 10 2010
+For Windows64, select the correct compiler (``Visual Studio 14 2015
 Win64``) and proceed normally.  When building the 32 bit version on
 Windows64, choose ``C:/Program Files (x86)/PCRE`` for the
 ``CMAKE_INSTALL_PREFIX`` value, otherwise choose ``C:/Program
@@ -280,8 +277,8 @@ contents of the file are::
  #include <Windows.h>
  LANGUAGE		LANG_ENGLISH, SUBLANG_ENGLISH_US
  VS_VERSION_INFO	VERSIONINFO
- FILEVERSION		8,37,0,0	// change as appropriate
- PRODUCTVERSION		8,37,0,0	// change as appropriate
+ FILEVERSION		8,41,0,0	// change as appropriate
+ PRODUCTVERSION		8,41,0,0	// change as appropriate
  FILEFLAGSMASK		0x3fL
  FILEFLAGS		0
  FILEOS			VOS_NT_WINDOWS32
@@ -299,29 +296,25 @@ OpenSSL
 -------
 
 The OpenSSL__ library is used during authentication of a MonetDB
-client program with the MonetDB server.  The OpenSSL library is
-required for the MonetDB5 component, and hence implicitly required for
-the clients component when it needs to talk to a MonetDB5 server.
+client program with the MonetDB server.  The only part of the OpenSSL
+library that is used is some of the hash functions, it is not used to
+secure communication between client and server processes.  The OpenSSL
+library is required for the MonetDB5 component, and hence implicitly
+required for the clients component when it needs to talk to a MonetDB5
+server.
 
 Download the source from http://www.openssl.org/.  We used the latest
-stable version (1.0.2d).  Follow the instructions in the file
-``INSTALL.W32`` or ``INSTALL.W64``.  We used the option
-``enable-static-engine`` as described in the instructions.
+stable version (1.1.0g).  Follow the instructions in the file
+``NOTES.WIN``.
 
 .. The actual commands used were::
-   perl Configure VC-WIN32 no-asm enable-static-engine --prefix=C:\Libraries\openssl-1.0.2d.win32
-   ms\do_ms.bat
-   nmake /f ms\ntdll.mak
-   nmake /f ms\ntdll.mak install
+   perl Configure VC-WIN32 no-asm --prefix=C:\Libraries\openssl-1.1.0g.win32
+   nmake
+   nmake install
    and::
-   perl Configure VC-WIN64A enable-static-engine --prefix=C:\Libraries\openssl-1.0.2d.win64
-   ms\do_win64a.bat
-   nmake /f ms\ntdll.mak
-   nmake /f ms\ntdll.mak install
-   For the debug versions, use ``debug-VC-WIN32`` and
-   ``debug-VC-WIN64A`` and edit the file ``ms/ntdll.mak`` to add a
-   ``d`` to the definitions of ``O_SSL``, ``O_CRYPTO``, ``L_SSL``, and
-   ``L_CRYPTO`` before building.
+   perl Configure VC-WIN64A no-asm --prefix=C:\Libraries\openssl-1.1.0g.win64
+   nmake
+   nmake install
 
 Fix the ``LIBOPENSSL`` definition in ``NT\rules.msc`` so that it
 refers to the location where you installed the library and call
@@ -339,66 +332,23 @@ can be gotten from http://www.zlatkovic.com/libxml.en.html.  Click on
 Win32 Binaries on the right, and download libxml2, iconv, and zlib.
 Install these in e.g. ``C:\Libraries``.
 
-Note that we hit a bug in version 2.6.31 of libxml2.  See the
-bugreport__.  Use version 2.6.30 or 2.6.32 or later.
-
 On Windows64 you will have to compile libxml2 yourself (with its
 optional prerequisites iconv_ and zlib_, for which see below).
 
 Run the following commands in the ``win32`` subfolder, substituting
 the correct locations for the iconv and zlib libraries::
 
- cscript configure.js compiler=msvc prefix=C:\Libraries\libxml2-2.9.2.win64 ^
-  include=C:\Libraries\iconv-1.11.1.win64\include;C:\Libraries\zlib-1.2.8.win64\include ^
-  lib=C:\Libraries\iconv-1.11.1.win64\lib;C:\Libraries\zlib-1.2.8.win64\lib ^
+ cscript configure.js compiler=msvc prefix=C:\Libraries\libxml2-2.9.8.win64 ^
+  include=C:\Libraries\iconv-1.15.win64\include;C:\Libraries\zlib-1.2.11.win64\include ^
+  lib=C:\Libraries\iconv-1.15.win64\lib;C:\Libraries\zlib-1.2.11.win64\lib ^
   iconv=yes zlib=yes vcmanifest=yes
  nmake /f Makefile.msvc
  nmake /f Makefile.msvc install
 
-Note that there are a few minor problems with the 2.7.8 distribution.
-Edit the file ``win32\Makefile.msvc`` and remove the ``+`` from the
-start of the three lines that contain one.  Also, unless you use an
-older compiler, remove the line that contains ``/OPT:NOWIN98``.
-Visual Studio 2010 will give an error with this option, and Visual
-Studio 2008 a warning.
-
-In the 2.9.2 there is another problem.  In the ``win32\configure.js``
-file near the top, change ``configure.in`` to ``configure.ac``.
-
-.. For a debug version, add ``debug=yes cruntime=/MDd`` to the
-   ``cscript`` command and edit the file ``Makefile.msvc`` to add a
-   ``d`` to the definitions of ``XML_SO``, ``XML_IMP``, ``XML_A``, and
-   ``XML_A_DLL``.  Also add ``d`` to the ``zlib.lib`` and ``iconv.lib``.
-
-In order to get a version number in the DLL that is produced, we added
-a file ``version.rc`` in the ``win32`` folder.  The contents of the
-file are::
-
- #include <Windows.h>
- LANGUAGE		LANG_ENGLISH, SUBLANG_ENGLISH_US
- VS_VERSION_INFO	VERSIONINFO
- FILEVERSION		2,9,2,0		// change as appropriate
- PRODUCTVERSION		2,9,2,0		// change as appropriate
- FILEFLAGSMASK		0x3fL
- FILEFLAGS		0
- FILEOS			VOS_NT_WINDOWS32
- FILETYPE		VFT_DLL
- FILESUBTYPE		VFT2_UNKNOWN
- BEGIN
-   BLOCK "StringFileInfo"
-   BEGIN
-   END
- END
-
-To use it, we also added ``version.res`` after ``$(XML_OBJS)`` in
-``win32\Makefile.msvc`` both in the list of dependencies of
-``$(BINDIR)\$(XML_SO)`` and in the command to produce said file.
-
-After this, you may want to move the file ``libxml2.dll`` from the
-``lib`` folder to the ``bin`` folder.
+We needed to edit the file ``win32\Makefile.msvc`` and change
+``iconv.lib`` to ``iconv.dll.lib``.
 
 __ http://xmlsoft.org/
-__ http://bugs.monetdb.org/1600
 
 geos (Geometry Engine Open Souce)
 ---------------------------------
@@ -412,15 +362,11 @@ yourself.
 
 Get the source tar ball from http://trac.osgeo.org/geos/#Download and
 extract somewhere.  You can follow the instructions in e.g. `Building
-on Windows with NMake`__.  I did find one problem with this procedure:
-you will need to run the ``autogen.bat`` script despite what it says
-in the instructions.
+on Windows with NMake`__.
 
 We needed to make a few changes to the file ``nmake.opt``.  We needed
 to add a blurb for the version of ``nmake`` that we were using.  Look
-at the version number of ``nmake /P`` and adapt the closest match.  We
-also uncommented the section defining ``MSVC_VLD_DIR`` in order to
-compile a debug version.
+at the version number of ``nmake /P`` and adapt the closest match.
 
 For newer versions of Visual Studio, we also needed to add a line::
 
@@ -439,9 +385,6 @@ to the files::
 
 .. On Windows64, add ``WIN64=YES`` to the nmake command line.
 
-.. For a debug build, add ``BUILD_DEBUG=YES`` to the ``nmake`` command
-   line.
-
 In order to get a version number in the DLL that is produced, we added
 a file ``version.rc`` in the ``src`` folder.  The contents of the
 file are::
@@ -449,8 +392,8 @@ file are::
  #include <Windows.h>
  LANGUAGE		LANG_ENGLISH, SUBLANG_ENGLISH_US
  VS_VERSION_INFO	VERSIONINFO
- FILEVERSION		3,4,2,0		// change as appropriate
- PRODUCTVERSION		3,4,2,0		// change as appropriate
+ FILEVERSION		3,6,2,0		// change as appropriate
+ PRODUCTVERSION		3,6,2,0		// change as appropriate
  FILEFLAGSMASK		0x3fL
  FILEFLAGS		0
  FILEOS			VOS_NT_WINDOWS32
@@ -467,24 +410,59 @@ of the ``OBJ`` macro and to the list of dependencies of and the
 command for ``$(CDLLNAME)`` in ``src\Makefile.vc``.
 
 After this, install the library somewhere, e.g. in
-``C:\Libraries\geos-3.4.2.win32``::
+``C:\Libraries\geos-3.6.2.win32``::
 
- mkdir C:\Libraries\geos-3.4.2.win32
- mkdir C:\Libraries\geos-3.4.2.win32\lib
- mkdir C:\Libraries\geos-3.4.2.win32\bin
- mkdir C:\Libraries\geos-3.4.2.win32\include
- mkdir C:\Libraries\geos-3.4.2.win32\include\geos
- copy src\geos_c_i.lib C:\Libraries\geos-3.4.2.win32\lib
- copy src\geos_c.dll C:\Libraries\geos-3.4.2.win32\bin
- copy include C:\Libraries\geos-3.4.2.win32\include
- copy include\geos C:\Libraries\geos-3.4.2.win32\include\geos
- copy capi\geos_c.h C:\Libraries\geos-3.4.2.win32\include
+ mkdir C:\Libraries\geos-3.6.2.win32
+ mkdir C:\Libraries\geos-3.6.2.win32\lib
+ mkdir C:\Libraries\geos-3.6.2.win32\bin
+ mkdir C:\Libraries\geos-3.6.2.win32\include
+ mkdir C:\Libraries\geos-3.6.2.win32\include\geos
+ copy src\geos_c_i.lib C:\Libraries\geos-3.6.2.win32\lib
+ copy src\geos_c.dll C:\Libraries\geos-3.6.2.win32\bin
+ copy include C:\Libraries\geos-3.6.2.win32\include
+ copy include\geos C:\Libraries\geos-3.6.2.win32\include\geos
+ copy capi\geos_c.h C:\Libraries\geos-3.6.2.win32\include
 
 __ http://geos.refractions.net/
 __ http://trac.osgeo.org/geos/wiki/BuildingOnWindowsWithNMake
 
 Optional Packages
 =================
+
+.. _zlib:
+
+zlib
+----
+
+Zlib__ is a compression library which is optionally used by both
+MonetDB and the iconv library.  The home of zlib is
+http://www.zlib.net/, but Windows binaries can be gotten from the same
+site as the libxml2 library: http://www.zlatkovic.com/libxml.en.html.
+Click on Win32 Binaries on the right, and download zlib.  Install in
+e.g. ``C:\Libraries\``.  Note that the at the time of writing, the precompiled
+version lags behind: it is version 1.2.8, whereas 1.2.11 is current.
+
+On Windows64 you will have to compile zlib yourself.  Get the source
+from the `zlib website`__ and extract somewhere.  There are Visual
+Studio project files for building the library.  They produce a library
+called ``zlibwapi.dll``.  We haven't tried using this library.
+Instead we built using the following command::
+
+ nmake /f win32\Makefile.msc
+
+Create the folder where you want to install the binaries,
+e.g. ``C:\Libraries\zlib-1.2.11.win64``, and the subfolders ``bin``,
+``include``, and ``lib``.  Copy the files ``zconf.h`` and ``zlib.h``
+to the newly created ``include`` folder.  Copy the file ``zdll.lib``
+to the new ``lib`` folder, and copy the file ``zlib1.dll`` to the new
+``bin`` folder.
+
+Fix the ``LIBZ`` definitions in ``NT\rules.msc`` so that they refer to
+the location where you installed the library and call ``nmake`` with
+the extra parameter ``HAVE_LIBZ=1``.
+
+__ http://www.zlib.net/
+__ http://www.zlib.net/
 
 .. _iconv:
 
@@ -502,30 +480,52 @@ the right, and download iconv.  Install in e.g. ``C:\Libraries\``.  Note that
 these binaries are quite old (libiconv-1.9.2, last I looked).
 
 On Windows64 you will have to compile iconv yourself.  Get the source
-from the `iconv website`__ and extract somewhere.  Note that with the
-1.12 release, the libiconv developers removed support for building
-with Visual Studio but require MinGW instead, which means that there
-is no support for Windows64.  In other words, get the latest 1.11
-release.
+from the `iconv website`__ and extract somewhere.
 
-When compiling with Visual Studio 12.0, delete the file
-``windows\stdbool.h`` since this version of VS includes its own copy
-(older versions didn't).
+Follow the instructions for building native binaries using the MS
+Visual C/C++ tool chain in the file ``README.windows``.  We installed
+the following extra Cygwin packages in order to build successfully:
+``mingw64-i686-binutils``, ``mingw64-i686-gcc-core``,
+``mingw64-x86_64-binutils``, ``mingw64-x86_64-gcc-core``,
+``cygwin32-binutils``, and ``cygwin32-gcc-core``.
 
-Build using the commands::
-
- nmake /f Makefile.msvc NO_NLS=1 DLL=1 MFLAGS=-MD PREFIX=C:\Libraries\iconv-1.11.1.win64 IIPREFIX=C:\\Libraries\\iconv-1.11.1.win64
- nmake /f Makefile.msvc NO_NLS=1 DLL=1 MFLAGS=-MD PREFIX=C:\Libraries\iconv-1.11.1.win64 IIPREFIX=C:\\Libraries\\iconv-1.11.1.win64 install
-
-.. Before the install, run the commands::
-   cd lib
-   mt /nologo /manifest iconv.dll.manifest /outputresource:iconv.dll;2
-   cd ..\libcharset\lib
-   mt /nologo /manifest charset.dll.manifest /outputresource:charset.dll;2
-   cd ..\..
-
-.. For the debug version, use options ``MFLAGS=-MDd DEBUG=1`` and
-   change the ``Makefile.msvc`` files to include a ``d`` for the DLLs.
+.. The commands used (where INCLUDE and LIB are as in the Developer
+   Command Prompt and PATH contains the directory where cl.exe can be
+   found; for 64 bit use --host=x86_64-w64-mingw32 and adapt LIB, PATH
+   and prefix)::
+   INCLUDE='C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\INCLUDE;'\
+   'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\ATLMFC\INCLUDE;'\
+   'C:\Program Files (x86)\Windows Kits\10\include\10.0.14393.0\ucrt;'\
+   'C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6.1\include\um;'\
+   'C:\Program Files (x86)\Windows Kits\10\include\10.0.14393.0\shared;'\
+   'C:\Program Files (x86)\Windows Kits\10\include\10.0.14393.0\um;'\
+   'C:\Program Files (x86)\Windows Kits\10\include\10.0.14393.0\winrt;'
+   LIB='C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\LIB;'\
+   'C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\ATLMFC\LIB;'\
+   'C:\Program Files (x86)\Windows Kits\10\lib\10.0.14393.0\ucrt\x86;'\
+   'C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6.1\lib\um\x86;'\
+   'C:\Program Files (x86)\Windows Kits\10\lib\10.0.14393.0\um\x86;'
+   PATH="/cygdrive/c/Program Files (x86)/Microsoft Visual Studio 14.0/VC/bin:$PATH"
+   export INCLUDE LIB PATH
+   win32_target=_WIN32_WINNT_WIN7
+   prefix=/cygdrive/c/Libraries/iconv-1.15.win32-vs2015
+   PATH="$prefix/bin:$PATH"
+   ./configure --host=i686-w64-mingw32 --prefix=$prefix \
+	       CC="$PWD/build-aux/compile cl -nologo" \
+	       CFLAGS="-MD" \
+	       CXX="$PWD/build-aux/compile cl -nologo" \
+	       CXXFLAGS="-MD" \
+	       CPPFLAGS="-D_WIN32_WINNT=$win32_target -I$prefix/include" \
+	       LDFLAGS="-L$prefix/lib" \
+	       LD="link" \
+	       NM="dumpbin -symbols" \
+	       STRIP=":" \
+	       AR="$PWD/build-aux/ar-lib lib" \
+	       RANLIB=":" &&
+   make &&
+   # make check &&
+   make install DESTDIR=$HOME/tmp &&
+   rsync -av $HOME/tmp/c/Libraries/ /c/Libraries/
 
 Fix the ``ICONV`` definitions in ``NT\rules.msc`` so that they refer
 to the location where you installed the library and call ``nmake``
@@ -533,38 +533,6 @@ with the extra parameter ``HAVE_ICONV=1``.
 
 __ http://www.gnu.org/software/libiconv/
 __ http://www.gnu.org/software/libiconv/#downloading
-
-.. _zlib:
-
-zlib
-----
-
-Zlib__ is a compression library which is optionally used by both
-MonetDB and the iconv library.  The home of zlib is
-http://www.zlib.net/, but Windows binaries can be gotten from the same
-site as the libxml2 library: http://www.zlatkovic.com/libxml.en.html.
-Click on Win32 Binaries on the right, and download zlib.  Install in
-e.g. ``C:\Libraries\``.  Note that the at the time of writing, the precompiled
-version lags behind: it is version 1.2.3, whereas 1.2.8 is current.
-
-On Windows64 you will have to compile zlib yourself.  Get the source
-from the `zlib website`__ and extract somewhere.  Then compile using::
-
- nmake /f win32\Makefile.msc OBJA=inffast.obj
-
-Create the folder where you want to install the binaries,
-e.g. ``C:\Libraries\zlib-1.2.8.win64``, and the subfolders ``bin``,
-``include``, and ``lib``.  Copy the files ``zconf.h`` and ``zlib.h``
-to the newly created ``include`` folder.  Copy the file ``zdll.lib``
-to the new ``lib`` folder, and copy the file ``zlib1.dll`` to the new
-``bin`` folder.
-
-Fix the ``LIBZ`` definitions in ``NT\rules.msc`` so that they refer to
-the location where you installed the library and call ``nmake`` with
-the extra parameter ``HAVE_LIBZ=1``.
-
-__ http://www.zlib.net/
-__ http://www.zlib.net/
 
 bzip2
 -----
@@ -656,11 +624,6 @@ e.g. ``C:\Libraries\bzip2-1.0.6.win32``.
 
 .. Before copying the files, run the command::
    mt /nologo /manifest libbz2.dll.manifest /Outputresource:libbz2.dll;2
-
-.. For a debug build, change the definition of CFLAGS to contain
-   ``-MDd -D_DEBUG -Od`` instead of ``-MD -Ox``, and change all
-   occurences of ``libbz2.dll`` and ``libbz2.lib`` to ``libbz2d.dll``
-   and ``libbz2d.lib``.
 
 Fix the ``LIBBZ2`` definitions in ``NT\rules.msc`` so that they refer
 to the location where you installed the library and call ``nmake``

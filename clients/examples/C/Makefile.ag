@@ -5,15 +5,14 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
 MTSAFE
-INCLUDES = ../../mapilib ../../../common/options $(READLINE_INCS)
-
-MAPI_LIBS = $(SOCKET_LIBS) 
+INCLUDES = ../../mapilib
 
 BINS = {
 	CONDINST = HAVE_TESTING
 	DIR = bindir
 	SOURCES = sample0.c sample1.c sample4.c \
 		smack00.c smack01.c
-	LIBS = $(MAPI_LIBS) ../../mapilib/libmapi \
-		$(curl_LIBS)
+	LIBS = ../../mapilib/libmapi \
+		../../../common/stream/libstream \
+		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
 }

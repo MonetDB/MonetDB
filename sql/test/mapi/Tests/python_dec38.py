@@ -6,6 +6,8 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
+from __future__ import print_function
+
 import pymonetdb
 import sys
 

@@ -323,7 +323,7 @@ extern MT_Lock MT_system_lock;
 		gdk_return _res = GDKmunmap(_ptr, _len);	\
 		ALLOCDEBUG					\
 			fprintf(stderr,				\
-				"#GDKmunmap(%p,%zu) -> %d"	\
+				"#GDKmunmap(%p,%zu) -> %u"	\
 				" %s[%s:%d]\n",			\
 				_ptr, _len, _res,		\
 				__func__, __FILE__, __LINE__);	\
@@ -342,7 +342,7 @@ extern MT_Lock MT_system_lock;
 			fprintf(stderr,					\
 				"#GDKmremap(%s,0x%x,%p,%zu,%zu > %zu) -> %p" \
 				" %s[%s:%d]\n",				\
-				_path ? _path : "NULL", _mode,		\
+				_path ? _path : "NULL", (unsigned) _mode, \
 				_oa, _os, _ons, *_ns,			\
 				_res,					\
 				__func__, __FILE__, __LINE__);		\

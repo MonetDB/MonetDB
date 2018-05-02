@@ -1860,20 +1860,19 @@ func_def:
 				// code does not get cleaner than this people
 				if (strcasecmp($10, "PYTHON_MAP") == 0) {
 					lang = FUNC_LANG_MAP_PY;
-                } else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
-                	lang = FUNC_LANG_MAP_PY3;
-                } else if (strcasecmp($10, "PYTHON3") == 0) {
-                	lang = FUNC_LANG_PY3;
-                } else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
-                	lang = FUNC_LANG_MAP_PY2;
-                } else if (strcasecmp($10, "PYTHON2") == 0) {
-                	lang = FUNC_LANG_PY2;
-                } else {
-                	lang = FUNC_LANG_PY;
-                }
-            }
-			else if (l == 'C' || l == 'c') {
-                if (strcasecmp($10, "CPP") == 0) {
+				} else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
+					lang = FUNC_LANG_MAP_PY3;
+				} else if (strcasecmp($10, "PYTHON3") == 0) {
+					lang = FUNC_LANG_PY3;
+				} else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
+					lang = FUNC_LANG_MAP_PY2;
+				} else if (strcasecmp($10, "PYTHON2") == 0) {
+					lang = FUNC_LANG_PY2;
+				} else {
+					lang = FUNC_LANG_PY;
+				}
+			} else if (l == 'C' || l == 'c') {
+				if (strcasecmp($10, "CPP") == 0) {
 					lang = FUNC_LANG_CPP;
 				} else {
 					lang = FUNC_LANG_C;
@@ -1939,20 +1938,19 @@ func_def:
 			else if (l == 'P' || l == 'p') {
 				if (strcasecmp($10, "PYTHON_MAP") == 0) {
 					lang = FUNC_LANG_MAP_PY;
-                } else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
-                	lang = FUNC_LANG_MAP_PY3;
-                } else if (strcasecmp($10, "PYTHON3") == 0) {
-                	lang = FUNC_LANG_PY3;
-                } else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
-                	lang = FUNC_LANG_MAP_PY2;
-                } else if (strcasecmp($10, "PYTHON2") == 0) {
-                	lang = FUNC_LANG_PY2;
-                } else {
-                	lang = FUNC_LANG_PY;
-                }
-            }
-            else if (l == 'C' || l == 'c') {
-                if (strcasecmp($10, "CPP") == 0) {
+				} else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
+					lang = FUNC_LANG_MAP_PY3;
+				} else if (strcasecmp($10, "PYTHON3") == 0) {
+					lang = FUNC_LANG_PY3;
+				} else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
+					lang = FUNC_LANG_MAP_PY2;
+				} else if (strcasecmp($10, "PYTHON2") == 0) {
+					lang = FUNC_LANG_PY2;
+				} else {
+					lang = FUNC_LANG_PY;
+				}
+			} else if (l == 'C' || l == 'c') {
+				if (strcasecmp($10, "CPP") == 0) {
 					lang = FUNC_LANG_CPP;
 				} else {
 					lang = FUNC_LANG_C;

@@ -135,7 +135,7 @@ Ready.
 % 9,	4,	1,	5,	1,	1,	0 # length
 [ "all_types",	2000,	0,	false,	0,	0,	NULL	]
 #select 'create ordered index "oidx_'||name||'" on all_types ("'||name||'");' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
-% .L5 # table_name
+% .L4 # table_name
 % stmt # name
 % varchar # type
 % 75 # length
@@ -223,8 +223,183 @@ Ready.
 #create ordered index "oidx_time5" on all_types ("time5");
 #create ordered index "oidx_timezone" on all_types ("timezone");
 #create ordered index "oidx_time5zone" on all_types ("time5zone");
+#create ordered index "oidx_blob" on all_types ("blob");
+#create ordered index "oidx_blob100" on all_types ("blob100");
+#create ordered index "oidx_clob" on all_types ("clob");
+#create ordered index "oidx_clob100" on all_types ("clob100");
+#create ordered index "oidx_character" on all_types ("character");
+#create ordered index "oidx_varchar100" on all_types ("varchar100");
+#create ordered index "oidx_character10" on all_types ("character10");
+#create ordered index "oidx_inet" on all_types ("inet");
+#create ordered index "oidx_inet9" on all_types ("inet9");
+#create ordered index "oidx_json" on all_types ("json");
+#create ordered index "oidx_json10" on all_types ("json10");
+#create ordered index "oidx_url" on all_types ("url");
+#create ordered index "oidx_url55" on all_types ("url55");
+#create ordered index "oidx_uuid" on all_types ("uuid");
+START TRANSACTION;
+CREATE TABLE "sys"."all_types" (
+	"boolean"        BOOLEAN,
+	"tinyint"        TINYINT,
+	"smallint"       SMALLINT,
+	"int"            INTEGER,
+	"bigint"         BIGINT,
+	"double"         DOUBLE,
+	"real"           REAL,
+	"decimal"        DECIMAL(18,3),
+	"decimal9"       DECIMAL(9),
+	"decimal83"      DECIMAL(8,3),
+	"float"          DOUBLE,
+	"float9"         FLOAT(9),
+	"float83"        FLOAT(8,3),
+	"date"           DATE,
+	"iY"             INTERVAL YEAR,
+	"iYM"            INTERVAL YEAR TO MONTH,
+	"iM"             INTERVAL MONTH,
+	"id"             INTERVAL DAY,
+	"idh"            INTERVAL DAY TO HOUR,
+	"idm"            INTERVAL DAY TO MINUTE,
+	"ids"            INTERVAL DAY TO SECOND,
+	"ih"             INTERVAL HOUR,
+	"ihm"            INTERVAL HOUR TO MINUTE,
+	"ihs"            INTERVAL HOUR TO SECOND,
+	"im"             INTERVAL MINUTE,
+	"ims"            INTERVAL MINUTE TO SECOND,
+	"is"             INTERVAL SECOND,
+	"timestamp"      TIMESTAMP,
+	"timestamp5"     TIMESTAMP(5),
+	"timestampzone"  TIMESTAMP WITH TIME ZONE,
+	"timestamp5zone" TIMESTAMP(5) WITH TIME ZONE,
+	"time"           TIME,
+	"time5"          TIME(5),
+	"timezone"       TIME WITH TIME ZONE,
+	"time5zone"      TIME(5) WITH TIME ZONE,
+	"blob"           BINARY LARGE OBJECT,
+	"blob100"        BINARY LARGE OBJECT(100),
+	"clob"           CHARACTER LARGE OBJECT,
+	"clob100"        CHARACTER LARGE OBJECT(100),
+	"character"      CHAR(1),
+	"varchar100"     VARCHAR(100),
+	"character10"    CHAR(10),
+	"inet"           INET,
+	"inet9"          INET(9),
+	"json"           JSON,
+	"json10"         JSON(10),
+	"url"            URL,
+	"url55"          URL(55),
+	"uuid"           UUID
+);
+CREATE ORDERED INDEX "oidx_bigint" ON "sys"."all_types" ("bigint");
+CREATE ORDERED INDEX "oidx_blob" ON "sys"."all_types" ("blob");
+CREATE ORDERED INDEX "oidx_blob100" ON "sys"."all_types" ("blob100");
+CREATE ORDERED INDEX "oidx_boolean" ON "sys"."all_types" ("boolean");
+CREATE ORDERED INDEX "oidx_character" ON "sys"."all_types" ("character");
+CREATE ORDERED INDEX "oidx_character10" ON "sys"."all_types" ("character10");
+CREATE ORDERED INDEX "oidx_clob" ON "sys"."all_types" ("clob");
+CREATE ORDERED INDEX "oidx_clob100" ON "sys"."all_types" ("clob100");
+CREATE ORDERED INDEX "oidx_date" ON "sys"."all_types" ("date");
+CREATE ORDERED INDEX "oidx_decimal" ON "sys"."all_types" ("decimal");
+CREATE ORDERED INDEX "oidx_decimal83" ON "sys"."all_types" ("decimal83");
+CREATE ORDERED INDEX "oidx_decimal9" ON "sys"."all_types" ("decimal9");
+CREATE ORDERED INDEX "oidx_double" ON "sys"."all_types" ("double");
+CREATE ORDERED INDEX "oidx_float" ON "sys"."all_types" ("float");
+CREATE ORDERED INDEX "oidx_float83" ON "sys"."all_types" ("float83");
+CREATE ORDERED INDEX "oidx_float9" ON "sys"."all_types" ("float9");
+CREATE ORDERED INDEX "oidx_iM" ON "sys"."all_types" ("iM");
+CREATE ORDERED INDEX "oidx_iY" ON "sys"."all_types" ("iY");
+CREATE ORDERED INDEX "oidx_iYM" ON "sys"."all_types" ("iYM");
+CREATE ORDERED INDEX "oidx_id" ON "sys"."all_types" ("id");
+CREATE ORDERED INDEX "oidx_idh" ON "sys"."all_types" ("idh");
+CREATE ORDERED INDEX "oidx_idm" ON "sys"."all_types" ("idm");
+CREATE ORDERED INDEX "oidx_ids" ON "sys"."all_types" ("ids");
+CREATE ORDERED INDEX "oidx_ih" ON "sys"."all_types" ("ih");
+CREATE ORDERED INDEX "oidx_ihm" ON "sys"."all_types" ("ihm");
+CREATE ORDERED INDEX "oidx_ihs" ON "sys"."all_types" ("ihs");
+CREATE ORDERED INDEX "oidx_im" ON "sys"."all_types" ("im");
+CREATE ORDERED INDEX "oidx_ims" ON "sys"."all_types" ("ims");
+CREATE ORDERED INDEX "oidx_inet" ON "sys"."all_types" ("inet");
+CREATE ORDERED INDEX "oidx_inet9" ON "sys"."all_types" ("inet9");
+CREATE ORDERED INDEX "oidx_int" ON "sys"."all_types" ("int");
+CREATE ORDERED INDEX "oidx_is" ON "sys"."all_types" ("is");
+CREATE ORDERED INDEX "oidx_json" ON "sys"."all_types" ("json");
+CREATE ORDERED INDEX "oidx_json10" ON "sys"."all_types" ("json10");
+CREATE ORDERED INDEX "oidx_real" ON "sys"."all_types" ("real");
+CREATE ORDERED INDEX "oidx_smallint" ON "sys"."all_types" ("smallint");
+CREATE ORDERED INDEX "oidx_time" ON "sys"."all_types" ("time");
+CREATE ORDERED INDEX "oidx_time5" ON "sys"."all_types" ("time5");
+CREATE ORDERED INDEX "oidx_time5zone" ON "sys"."all_types" ("time5zone");
+CREATE ORDERED INDEX "oidx_timestamp" ON "sys"."all_types" ("timestamp");
+CREATE ORDERED INDEX "oidx_timestamp5" ON "sys"."all_types" ("timestamp5");
+CREATE ORDERED INDEX "oidx_timestamp5zone" ON "sys"."all_types" ("timestamp5zone");
+CREATE ORDERED INDEX "oidx_timestampzone" ON "sys"."all_types" ("timestampzone");
+CREATE ORDERED INDEX "oidx_timezone" ON "sys"."all_types" ("timezone");
+CREATE ORDERED INDEX "oidx_tinyint" ON "sys"."all_types" ("tinyint");
+CREATE ORDERED INDEX "oidx_url" ON "sys"."all_types" ("url");
+CREATE ORDERED INDEX "oidx_url55" ON "sys"."all_types" ("url55");
+CREATE ORDERED INDEX "oidx_uuid" ON "sys"."all_types" ("uuid");
+CREATE ORDERED INDEX "oidx_varchar100" ON "sys"."all_types" ("varchar100");
+COPY 4 RECORDS INTO "sys"."all_types" FROM stdin USING DELIMITERS '\t','\n','"';
+true	10	10000	1000000	10000000000	1e+30	1e+20	1.000	123456789	12345.678	3.1415	3.1415	3.1415	2009-04-15	24	18	3	1728000.000	108000.000	120000.000	100000.000	36000.000	6000.000	2000.000	600.000	100.000	10.000	"1995-07-15 07:30:00.000000"	"1995-07-15 07:30:00.00000"	"1995-07-15 08:30:00.000000+01:00"	"1995-07-15 08:30:00.00000+01:00"	07:30:00	07:30:00.00000	08:30:00+01:00	08:30:00.00000+01:00	123456	123456	"123456"	"123456"	"x"	"varchar"	"0123456789"	127.0.0.0	127.127.127.255	{"a": 123}	{"b": 456}	www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes	www.monetdb.org/Documentation/Manuals/SQLreference/URLtype	ae106ad4-81fd-4f1a-85e8-5efface60da4
+false	-10	-10000	-1000000	-10000000000	-1e+30	-1e+20	-1.000	-123456789	-12345.678	-3.1415	-3.1415	-3.1415	2005-04-15	-24	-18	-3	-1728000.000	-108000.000	-120000.000	-100000.000	-36000.000	-6000.000	-2000.000	-600.000	-100.000	-10.000	"1988-07-15 07:30:00.000000"	"1988-07-15 07:30:00.00000"	"1988-07-15 08:30:00.000000+01:00"	"1988-07-15 08:30:00.00000+01:00"	06:30:00	06:30:00.00000	07:30:00+01:00	07:30:00.00000+01:00	01234567	01234567	"0123456"	"0123456"	"A"	"Avarchar"	"A012345678"	120.0.0.0	120.120.120.129	{"A": -123}	{"B": -456}	https://www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes	https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype	76236890-f4e2-4d4f-a02b-ec7a02c3cb50
+true	10	10000	1000000	10000000000	1e+30	1e+20	1.000	123456789	12345.678	3.1415	3.1415	3.1415	2009-04-15	24	18	3	1728000.000	108000.000	120000.000	100000.000	36000.000	6000.000	2000.000	600.000	100.000	10.000	"1995-07-15 07:30:00.000000"	"1995-07-15 07:30:00.00000"	"1995-07-15 08:30:00.000000+01:00"	"1995-07-15 08:30:00.00000+01:00"	07:30:00	07:30:00.00000	08:30:00+01:00	08:30:00.00000+01:00	123456	123456	"123456"	"123456"	"x"	"varchar"	"0123456789"	127.0.0.0	127.127.127.255	{"a": 123}	{"b": 456}	www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes	www.monetdb.org/Documentation/Manuals/SQLreference/URLtype	ae106ad4-81fd-4f1a-85e8-5efface60da4
+false	-10	-10000	-1000000	-10000000000	-1e+30	-1e+20	-1.000	-123456789	-12345.678	-3.1415	-3.1415	-3.1415	2005-04-15	-24	-18	-3	-1728000.000	-108000.000	-120000.000	-100000.000	-36000.000	-6000.000	-2000.000	-600.000	-100.000	-10.000	"1988-07-15 07:30:00.000000"	"1988-07-15 07:30:00.00000"	"1988-07-15 08:30:00.000000+01:00"	"1988-07-15 08:30:00.00000+01:00"	06:30:00	06:30:00.00000	07:30:00+01:00	07:30:00.00000+01:00	01234567	01234567	"0123456"	"0123456"	"A"	"Avarchar"	"A012345678"	120.0.0.0	120.120.120.129	{"A": -123}	{"B": -456}	https://www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes	https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype	76236890-f4e2-4d4f-a02b-ec7a02c3cb50
+COMMIT;
+#select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'all_types') order by name;
+% sys.idxs,	sys.idxs # table_name
+% type,	name # name
+% int,	varchar # type
+% 1,	19 # length
+[ 5,	"oidx_bigint"	]
+[ 5,	"oidx_blob"	]
+[ 5,	"oidx_blob100"	]
+[ 5,	"oidx_boolean"	]
+[ 5,	"oidx_character"	]
+[ 5,	"oidx_character10"	]
+[ 5,	"oidx_clob"	]
+[ 5,	"oidx_clob100"	]
+[ 5,	"oidx_date"	]
+[ 5,	"oidx_decimal"	]
+[ 5,	"oidx_decimal83"	]
+[ 5,	"oidx_decimal9"	]
+[ 5,	"oidx_double"	]
+[ 5,	"oidx_float"	]
+[ 5,	"oidx_float83"	]
+[ 5,	"oidx_float9"	]
+[ 5,	"oidx_iM"	]
+[ 5,	"oidx_iY"	]
+[ 5,	"oidx_iYM"	]
+[ 5,	"oidx_id"	]
+[ 5,	"oidx_idh"	]
+[ 5,	"oidx_idm"	]
+[ 5,	"oidx_ids"	]
+[ 5,	"oidx_ih"	]
+[ 5,	"oidx_ihm"	]
+[ 5,	"oidx_ihs"	]
+[ 5,	"oidx_im"	]
+[ 5,	"oidx_ims"	]
+[ 5,	"oidx_inet"	]
+[ 5,	"oidx_inet9"	]
+[ 5,	"oidx_int"	]
+[ 5,	"oidx_is"	]
+[ 5,	"oidx_json"	]
+[ 5,	"oidx_json10"	]
+[ 5,	"oidx_real"	]
+[ 5,	"oidx_smallint"	]
+[ 5,	"oidx_time"	]
+[ 5,	"oidx_time5"	]
+[ 5,	"oidx_time5zone"	]
+[ 5,	"oidx_timestamp"	]
+[ 5,	"oidx_timestamp5"	]
+[ 5,	"oidx_timestamp5zone"	]
+[ 5,	"oidx_timestampzone"	]
+[ 5,	"oidx_timezone"	]
+[ 5,	"oidx_tinyint"	]
+[ 5,	"oidx_url"	]
+[ 5,	"oidx_url55"	]
+[ 5,	"oidx_uuid"	]
+[ 5,	"oidx_varchar100"	]
 #select 'select "'||name||'" from all_types order by "'||name||'" ASC;' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
-% .L5 # table_name
+% .L4 # table_name
 % stmt # name
 % varchar # type
 % 69 # length
@@ -719,7 +894,7 @@ Ready.
 [ ae106ad4-81fd-4f1a-85e8-5efface60da4	]
 [ ae106ad4-81fd-4f1a-85e8-5efface60da4	]
 #select 'select "'||name||'" from all_types order by "'||name||'" DESC;' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
-% .L5 # table_name
+% .L4 # table_name
 % stmt # name
 % varchar # type
 % 70 # length
@@ -1228,8 +1403,62 @@ Ready.
 [ true,	10,	10000,	1000000,	10000000000,	1e+30,	1e+20,	1.000,	123456789,	12345.678,	3.1415,	3.1415,	3.1415,	2009-04-15,	24,	18,	3,	1728000.000,	108000.000,	120000.000,	100000.000,	36000.000,	6000.000,	2000.000,	600.000,	100.000,	10.000,	1995-07-15 07:30:00.000000,	1995-07-15 07:30:00.00000,	1995-07-15 08:30:00.000000+01:00,	1995-07-15 08:30:00.00000+01:00,	07:30:00,	07:30:00.00000,	08:30:00+01:00,	08:30:00.00000+01:00,	123456,	123456,	"123456",	"123456",	"x",	"varchar",	"0123456789",	127.0.0.0,	127.127.127.255,	"{\"a\": 123}",	"{\"b\": 456}",	www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes,	www.monetdb.org/Documentation/Manuals/SQLreference/URLtype,	ae106ad4-81fd-4f1a-85e8-5efface60da4	]
 [ true,	10,	10000,	1000000,	10000000000,	1e+30,	1e+20,	1.000,	123456789,	12345.678,	3.1415,	3.1415,	3.1415,	2009-04-15,	24,	18,	3,	1728000.000,	108000.000,	120000.000,	100000.000,	36000.000,	6000.000,	2000.000,	600.000,	100.000,	10.000,	1995-07-15 07:30:00.000000,	1995-07-15 07:30:00.00000,	1995-07-15 08:30:00.000000+01:00,	1995-07-15 08:30:00.00000+01:00,	07:30:00,	07:30:00.00000,	08:30:00+01:00,	08:30:00.00000+01:00,	123456,	123456,	"123456",	"123456",	"x",	"varchar",	"0123456789",	127.0.0.0,	127.127.127.255,	"{\"a\": 123}",	"{\"b\": 456}",	www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes,	www.monetdb.org/Documentation/Manuals/SQLreference/URLtype,	ae106ad4-81fd-4f1a-85e8-5efface60da4	]
 [ true,	10,	10000,	1000000,	10000000000,	1e+30,	1e+20,	1.000,	123456789,	12345.678,	3.1415,	3.1415,	3.1415,	2009-04-15,	24,	18,	3,	1728000.000,	108000.000,	120000.000,	100000.000,	36000.000,	6000.000,	2000.000,	600.000,	100.000,	10.000,	1995-07-15 07:30:00.000000,	1995-07-15 07:30:00.00000,	1995-07-15 08:30:00.000000+01:00,	1995-07-15 08:30:00.00000+01:00,	07:30:00,	07:30:00.00000,	08:30:00+01:00,	08:30:00.00000+01:00,	123456,	123456,	"123456",	"123456",	"x",	"varchar",	"0123456789",	127.0.0.0,	127.127.127.255,	"{\"a\": 123}",	"{\"b\": 456}",	www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes,	www.monetdb.org/Documentation/Manuals/SQLreference/URLtype,	ae106ad4-81fd-4f1a-85e8-5efface60da4	]
+#select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'all_types') order by name;
+% sys.idxs,	sys.idxs # table_name
+% type,	name # name
+% int,	varchar # type
+% 1,	19 # length
+[ 5,	"oidx_bigint"	]
+[ 5,	"oidx_blob"	]
+[ 5,	"oidx_blob100"	]
+[ 5,	"oidx_boolean"	]
+[ 5,	"oidx_character"	]
+[ 5,	"oidx_character10"	]
+[ 5,	"oidx_clob"	]
+[ 5,	"oidx_clob100"	]
+[ 5,	"oidx_date"	]
+[ 5,	"oidx_decimal"	]
+[ 5,	"oidx_decimal83"	]
+[ 5,	"oidx_decimal9"	]
+[ 5,	"oidx_double"	]
+[ 5,	"oidx_float"	]
+[ 5,	"oidx_float83"	]
+[ 5,	"oidx_float9"	]
+[ 5,	"oidx_iM"	]
+[ 5,	"oidx_iY"	]
+[ 5,	"oidx_iYM"	]
+[ 5,	"oidx_id"	]
+[ 5,	"oidx_idh"	]
+[ 5,	"oidx_idm"	]
+[ 5,	"oidx_ids"	]
+[ 5,	"oidx_ih"	]
+[ 5,	"oidx_ihm"	]
+[ 5,	"oidx_ihs"	]
+[ 5,	"oidx_im"	]
+[ 5,	"oidx_ims"	]
+[ 5,	"oidx_inet"	]
+[ 5,	"oidx_inet9"	]
+[ 5,	"oidx_int"	]
+[ 5,	"oidx_is"	]
+[ 5,	"oidx_json"	]
+[ 5,	"oidx_json10"	]
+[ 5,	"oidx_real"	]
+[ 5,	"oidx_smallint"	]
+[ 5,	"oidx_time"	]
+[ 5,	"oidx_time5"	]
+[ 5,	"oidx_time5zone"	]
+[ 5,	"oidx_timestamp"	]
+[ 5,	"oidx_timestamp5"	]
+[ 5,	"oidx_timestamp5zone"	]
+[ 5,	"oidx_timestampzone"	]
+[ 5,	"oidx_timezone"	]
+[ 5,	"oidx_tinyint"	]
+[ 5,	"oidx_url"	]
+[ 5,	"oidx_url55"	]
+[ 5,	"oidx_uuid"	]
+[ 5,	"oidx_varchar100"	]
 #select 'drop index "oidx_'||name||'";' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
-% .L5 # table_name
+% .L4 # table_name
 % stmt # name
 % varchar # type
 % 33 # length
@@ -1317,7 +1546,89 @@ Ready.
 #drop index "oidx_time5";
 #drop index "oidx_timezone";
 #drop index "oidx_time5zone";
-#drop table all_types cascade;
+#drop index "oidx_blob";
+#drop index "oidx_blob100";
+#drop index "oidx_clob";
+#drop index "oidx_clob100";
+#drop index "oidx_character";
+#drop index "oidx_varchar100";
+#drop index "oidx_character10";
+#drop index "oidx_inet";
+#drop index "oidx_inet9";
+#drop index "oidx_json";
+#drop index "oidx_json10";
+#drop index "oidx_url";
+#drop index "oidx_url55";
+#drop index "oidx_uuid";
+START TRANSACTION;
+CREATE TABLE "sys"."all_types" (
+	"boolean"        BOOLEAN,
+	"tinyint"        TINYINT,
+	"smallint"       SMALLINT,
+	"int"            INTEGER,
+	"bigint"         BIGINT,
+	"double"         DOUBLE,
+	"real"           REAL,
+	"decimal"        DECIMAL(18,3),
+	"decimal9"       DECIMAL(9),
+	"decimal83"      DECIMAL(8,3),
+	"float"          DOUBLE,
+	"float9"         FLOAT(9),
+	"float83"        FLOAT(8,3),
+	"date"           DATE,
+	"iY"             INTERVAL YEAR,
+	"iYM"            INTERVAL YEAR TO MONTH,
+	"iM"             INTERVAL MONTH,
+	"id"             INTERVAL DAY,
+	"idh"            INTERVAL DAY TO HOUR,
+	"idm"            INTERVAL DAY TO MINUTE,
+	"ids"            INTERVAL DAY TO SECOND,
+	"ih"             INTERVAL HOUR,
+	"ihm"            INTERVAL HOUR TO MINUTE,
+	"ihs"            INTERVAL HOUR TO SECOND,
+	"im"             INTERVAL MINUTE,
+	"ims"            INTERVAL MINUTE TO SECOND,
+	"is"             INTERVAL SECOND,
+	"timestamp"      TIMESTAMP,
+	"timestamp5"     TIMESTAMP(5),
+	"timestampzone"  TIMESTAMP WITH TIME ZONE,
+	"timestamp5zone" TIMESTAMP(5) WITH TIME ZONE,
+	"time"           TIME,
+	"time5"          TIME(5),
+	"timezone"       TIME WITH TIME ZONE,
+	"time5zone"      TIME(5) WITH TIME ZONE,
+	"blob"           BINARY LARGE OBJECT,
+	"blob100"        BINARY LARGE OBJECT(100),
+	"clob"           CHARACTER LARGE OBJECT,
+	"clob100"        CHARACTER LARGE OBJECT(100),
+	"character"      CHAR(1),
+	"varchar100"     VARCHAR(100),
+	"character10"    CHAR(10),
+	"inet"           INET,
+	"inet9"          INET(9),
+	"json"           JSON,
+	"json10"         JSON(10),
+	"url"            URL,
+	"url55"          URL(55),
+	"uuid"           UUID
+);
+COPY 8 RECORDS INTO "sys"."all_types" FROM stdin USING DELIMITERS '\t','\n','"';
+true	10	10000	1000000	10000000000	1e+30	1e+20	1.000	123456789	12345.678	3.1415	3.1415	3.1415	2009-04-15	24	18	3	1728000.000	108000.000	120000.000	100000.000	36000.000	6000.000	2000.000	600.000	100.000	10.000	"1995-07-15 07:30:00.000000"	"1995-07-15 07:30:00.00000"	"1995-07-15 08:30:00.000000+01:00"	"1995-07-15 08:30:00.00000+01:00"	07:30:00	07:30:00.00000	08:30:00+01:00	08:30:00.00000+01:00	123456	123456	"123456"	"123456"	"x"	"varchar"	"0123456789"	127.0.0.0	127.127.127.255	{"a": 123}	{"b": 456}	www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes	www.monetdb.org/Documentation/Manuals/SQLreference/URLtype	ae106ad4-81fd-4f1a-85e8-5efface60da4
+false	-10	-10000	-1000000	-10000000000	-1e+30	-1e+20	-1.000	-123456789	-12345.678	-3.1415	-3.1415	-3.1415	2005-04-15	-24	-18	-3	-1728000.000	-108000.000	-120000.000	-100000.000	-36000.000	-6000.000	-2000.000	-600.000	-100.000	-10.000	"1988-07-15 07:30:00.000000"	"1988-07-15 07:30:00.00000"	"1988-07-15 08:30:00.000000+01:00"	"1988-07-15 08:30:00.00000+01:00"	06:30:00	06:30:00.00000	07:30:00+01:00	07:30:00.00000+01:00	01234567	01234567	"0123456"	"0123456"	"A"	"Avarchar"	"A012345678"	120.0.0.0	120.120.120.129	{"A": -123}	{"B": -456}	https://www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes	https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype	76236890-f4e2-4d4f-a02b-ec7a02c3cb50
+true	10	10000	1000000	10000000000	1e+30	1e+20	1.000	123456789	12345.678	3.1415	3.1415	3.1415	2009-04-15	24	18	3	1728000.000	108000.000	120000.000	100000.000	36000.000	6000.000	2000.000	600.000	100.000	10.000	"1995-07-15 07:30:00.000000"	"1995-07-15 07:30:00.00000"	"1995-07-15 08:30:00.000000+01:00"	"1995-07-15 08:30:00.00000+01:00"	07:30:00	07:30:00.00000	08:30:00+01:00	08:30:00.00000+01:00	123456	123456	"123456"	"123456"	"x"	"varchar"	"0123456789"	127.0.0.0	127.127.127.255	{"a": 123}	{"b": 456}	www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes	www.monetdb.org/Documentation/Manuals/SQLreference/URLtype	ae106ad4-81fd-4f1a-85e8-5efface60da4
+false	-10	-10000	-1000000	-10000000000	-1e+30	-1e+20	-1.000	-123456789	-12345.678	-3.1415	-3.1415	-3.1415	2005-04-15	-24	-18	-3	-1728000.000	-108000.000	-120000.000	-100000.000	-36000.000	-6000.000	-2000.000	-600.000	-100.000	-10.000	"1988-07-15 07:30:00.000000"	"1988-07-15 07:30:00.00000"	"1988-07-15 08:30:00.000000+01:00"	"1988-07-15 08:30:00.00000+01:00"	06:30:00	06:30:00.00000	07:30:00+01:00	07:30:00.00000+01:00	01234567	01234567	"0123456"	"0123456"	"A"	"Avarchar"	"A012345678"	120.0.0.0	120.120.120.129	{"A": -123}	{"B": -456}	https://www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes	https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype	76236890-f4e2-4d4f-a02b-ec7a02c3cb50
+true	10	10000	1000000	10000000000	1e+30	1e+20	1.000	123456789	12345.678	3.1415	3.1415	3.1415	2009-04-15	24	18	3	1728000.000	108000.000	120000.000	100000.000	36000.000	6000.000	2000.000	600.000	100.000	10.000	"1995-07-15 07:30:00.000000"	"1995-07-15 07:30:00.00000"	"1995-07-15 08:30:00.000000+01:00"	"1995-07-15 08:30:00.00000+01:00"	07:30:00	07:30:00.00000	08:30:00+01:00	08:30:00.00000+01:00	123456	123456	"123456"	"123456"	"x"	"varchar"	"0123456789"	127.0.0.0	127.127.127.255	{"a": 123}	{"b": 456}	www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes	www.monetdb.org/Documentation/Manuals/SQLreference/URLtype	ae106ad4-81fd-4f1a-85e8-5efface60da4
+false	-10	-10000	-1000000	-10000000000	-1e+30	-1e+20	-1.000	-123456789	-12345.678	-3.1415	-3.1415	-3.1415	2005-04-15	-24	-18	-3	-1728000.000	-108000.000	-120000.000	-100000.000	-36000.000	-6000.000	-2000.000	-600.000	-100.000	-10.000	"1988-07-15 07:30:00.000000"	"1988-07-15 07:30:00.00000"	"1988-07-15 08:30:00.000000+01:00"	"1988-07-15 08:30:00.00000+01:00"	06:30:00	06:30:00.00000	07:30:00+01:00	07:30:00.00000+01:00	01234567	01234567	"0123456"	"0123456"	"A"	"Avarchar"	"A012345678"	120.0.0.0	120.120.120.129	{"A": -123}	{"B": -456}	https://www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes	https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype	76236890-f4e2-4d4f-a02b-ec7a02c3cb50
+true	10	10000	1000000	10000000000	1e+30	1e+20	1.000	123456789	12345.678	3.1415	3.1415	3.1415	2009-04-15	24	18	3	1728000.000	108000.000	120000.000	100000.000	36000.000	6000.000	2000.000	600.000	100.000	10.000	"1995-07-15 07:30:00.000000"	"1995-07-15 07:30:00.00000"	"1995-07-15 08:30:00.000000+01:00"	"1995-07-15 08:30:00.00000+01:00"	07:30:00	07:30:00.00000	08:30:00+01:00	08:30:00.00000+01:00	123456	123456	"123456"	"123456"	"x"	"varchar"	"0123456789"	127.0.0.0	127.127.127.255	{"a": 123}	{"b": 456}	www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes	www.monetdb.org/Documentation/Manuals/SQLreference/URLtype	ae106ad4-81fd-4f1a-85e8-5efface60da4
+false	-10	-10000	-1000000	-10000000000	-1e+30	-1e+20	-1.000	-123456789	-12345.678	-3.1415	-3.1415	-3.1415	2005-04-15	-24	-18	-3	-1728000.000	-108000.000	-120000.000	-100000.000	-36000.000	-6000.000	-2000.000	-600.000	-100.000	-10.000	"1988-07-15 07:30:00.000000"	"1988-07-15 07:30:00.00000"	"1988-07-15 08:30:00.000000+01:00"	"1988-07-15 08:30:00.00000+01:00"	06:30:00	06:30:00.00000	07:30:00+01:00	07:30:00.00000+01:00	01234567	01234567	"0123456"	"0123456"	"A"	"Avarchar"	"A012345678"	120.0.0.0	120.120.120.129	{"A": -123}	{"B": -456}	https://www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes	https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype	76236890-f4e2-4d4f-a02b-ec7a02c3cb50
+COMMIT;
+#drop table all_types;
+#drop table if exists all_types cascade;
+#select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'all_types') order by name;
+% sys.idxs,	sys.idxs # table_name
+% type,	name # name
+% int,	varchar # type
+% 1,	0 # length
 
 # 15:05:55 >  
 # 15:05:55 >  "Done."

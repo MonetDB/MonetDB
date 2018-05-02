@@ -957,7 +957,7 @@ delta_delete_bat( sql_dbat *bat, BAT *i )
 		bat_destroy(b);
 		return LOG_ERR;
 	}
-	BATkey(b, TRUE);
+	BATkey(b, true);
 	bat_destroy(b);
 
 	bat->cnt += BATcount(i);
@@ -984,7 +984,7 @@ delta_delete_val( sql_dbat *bat, oid rid )
 		bat_destroy(b);
 		return LOG_ERR;
 	}
-	BATkey(b, TRUE);
+	BATkey(b, true);
 	bat_destroy(b);
 
 	bat->cnt ++;
@@ -2422,7 +2422,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 			BAT *newcur = ins;
 
 			if (unique)
-				BATkey(newcur, TRUE);
+				BATkey(newcur, true);
 			temp_destroy(cbat->bid);
 			temp_destroy(obat->bid);
 			obat->bid = cbat->ibid;
@@ -2534,7 +2534,7 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat, int unique)
 			bat id = obat->bid;
 
 			if (unique)
-				BATkey(newcur, TRUE);
+				BATkey(newcur, true);
 			obat->bid = obat->ibid;
 			obat->ibid = id;
 

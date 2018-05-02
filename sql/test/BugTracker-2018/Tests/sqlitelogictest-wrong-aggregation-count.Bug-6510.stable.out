@@ -31,10 +31,10 @@ Ready.
 [ 1	]
 #INSERT INTO tab1 VALUES(91,47,68);
 [ 1	]
-#SELECT ALL COUNT ( DISTINCT - 34 ) * - COUNT ( * ) AS col2 FROM tab1 WHERE + col1 IS NULL;
+#SELECT ALL CAST ( COUNT ( DISTINCT - 34 ) * - COUNT ( * ) AS BIGINT) AS col2 FROM tab1 WHERE + col1 IS NULL;
 % .L5 # table_name
 % col2 # name
-% hugeint # type
+% bigint # type
 % 1 # length
 [ 0	]
 #DROP TABLE tab1;

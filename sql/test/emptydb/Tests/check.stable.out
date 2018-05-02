@@ -1,29 +1,28 @@
 stdout of test 'check` in directory 'sql/test/emptydb` itself:
 
 
-# 15:32:57 >  
-# 15:32:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39456" "--set" "mapi_usock=/var/tmp/mtest-19169/.s.monetdb.39456" "--set" "monet_prompt=" "--forcemito" "--dbpath=/ufs/sjoerd/Monet-stable/var/MonetDB/mTests_sql_test_emptydb" "--set" "embedded_r=yes"
-# 15:32:57 >  
+# 16:23:48 >  
+# 16:23:48 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=32016" "--set" "mapi_usock=/var/tmp/mtest-13569/.s.monetdb.32016" "--set" "monet_prompt=" "--forcemito" "--set" "mal_listing=2" "--dbpath=/ufs/sjoerd/Monet-stable/var/MonetDB/mTests_sql_test_emptydb" "--set" "mal_listing=0" "--set" "embedded_r=yes"
+# 16:23:48 >  
 
-# MonetDB 5 server v11.23.14
+# MonetDB 5 server v11.30.0
 # This is an unreleased version
 # Serving database 'mTests_sql_test_emptydb', using 8 threads
-# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
-# Found 15.589 GiB available main-memory.
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2016 MonetDB B.V., all rights reserved
-# Visit http://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://madrid.da.cwi.nl:39456/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-19169/.s.monetdb.39456
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 62.695 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://methuselah.da.cwi.nl:31575/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-32585/.s.monetdb.31575
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
-# MonetDB/R   module loaded
 
 Ready.
 
-# 15:32:58 >  
-# 15:32:58 >  "/usr/bin/python2" "check.SQL.py" "check"
-# 15:32:58 >  
+# 10:17:18 >  
+# 10:17:18 >  "/usr/bin/python2" "check.SQL.py" "check"
+# 10:17:18 >  
 
 \dn
 \dt
@@ -86,7 +85,6 @@ Ready.
 \dSt tmp.objects
 \dSt tmp.triggers
 \dSv sys.columns
-\dSv sys.commented_function_signatures
 \dSv sys.dependencies_vw
 \dSv sys.dependency_args_on_types
 \dSv sys.dependency_columns_on_functions
@@ -113,7 +111,6 @@ Ready.
 \dSv sys.dependency_views_on_functions
 \dSv sys.dependency_views_on_procedures
 \dSv sys.dependency_views_on_views
-\dSv sys.describe_all_objects
 \dSv sys.environment
 \dSv sys.geometry_columns
 \dSv sys.ids
@@ -170,7 +167,6 @@ Ready.
 \dSf sys."fitsattach"
 \dSf sys."fitsload"
 \dSf sys."flush_log"
-\dSf sys."function_type_keyword"
 \dSf sys."fuse"
 \dSf sys."generate_series"
 \dSf sys."geometrytype"
@@ -189,6 +185,7 @@ Ready.
 \dSf sys."getquery"
 \dSf sys."getroboturl"
 \dSf sys."getuser"
+\dSf sys."group_concat"
 \dSf sys."has_m"
 \dSf sys."has_z"
 \dSf sys."hashsize"
@@ -411,7 +408,6 @@ SYSTEM TABLE  sys.triggers
 SYSTEM TABLE  sys.types
 SYSTEM TABLE  sys.user_role
 SYSTEM VIEW  sys.columns
-SYSTEM VIEW  sys.commented_function_signatures
 SYSTEM VIEW  sys.dependencies_vw
 SYSTEM VIEW  sys.dependency_args_on_types
 SYSTEM VIEW  sys.dependency_columns_on_functions
@@ -438,7 +434,6 @@ SYSTEM VIEW  sys.dependency_tables_on_views
 SYSTEM VIEW  sys.dependency_views_on_functions
 SYSTEM VIEW  sys.dependency_views_on_procedures
 SYSTEM VIEW  sys.dependency_views_on_views
-SYSTEM VIEW  sys.describe_all_objects
 SYSTEM VIEW  sys.environment
 SYSTEM VIEW  sys.geometry_columns
 SYSTEM VIEW  sys.ids
@@ -457,60 +452,60 @@ SYSTEM VIEW  sys.tablestoragemodel
 SYSTEM VIEW  sys.tracelog
 SYSTEM VIEW  sys.users
 SYSTEM VIEW  sys.var_values
-SYSTEM FUNCTION  sys.<
-SYSTEM FUNCTION  sys.<=
-SYSTEM FUNCTION  sys.<>
-SYSTEM FUNCTION  sys.=
-SYSTEM FUNCTION  sys.>
-SYSTEM FUNCTION  sys.>=
-SYSTEM FUNCTION  sys.abbrev
-SYSTEM FUNCTION  sys.abs
-SYSTEM FUNCTION  sys.acos
+SYSTEM FUNCTION         sys.<
+SYSTEM FUNCTION         sys.<=
+SYSTEM FUNCTION         sys.<>
+SYSTEM FUNCTION         sys.=
+SYSTEM FUNCTION         sys.>
+SYSTEM FUNCTION         sys.>=
+SYSTEM FUNCTION         sys.abbrev
+SYSTEM FUNCTION         sys.abs
+SYSTEM FUNCTION         sys.acos
 SYSTEM AGGREGATE        sys.all
-SYSTEM FUNCTION  sys.alpha
+SYSTEM FUNCTION         sys.alpha
 SYSTEM PROCEDURE        sys.analyze
-SYSTEM FUNCTION  sys.and
-SYSTEM FUNCTION  sys.ascii
-SYSTEM FUNCTION  sys.asin
-SYSTEM FUNCTION  sys.atan
+SYSTEM FUNCTION         sys.and
+SYSTEM FUNCTION         sys.ascii
+SYSTEM FUNCTION         sys.asin
+SYSTEM FUNCTION         sys.atan
 SYSTEM AGGREGATE        sys.avg
 SYSTEM FUNCTION         sys.bbp
-SYSTEM FUNCTION  sys.bit_and
-SYSTEM FUNCTION  sys.bit_not
-SYSTEM FUNCTION  sys.bit_or
-SYSTEM FUNCTION  sys.bit_xor
-SYSTEM FUNCTION  sys.broadcast
-SYSTEM FUNCTION  sys.ceil
-SYSTEM FUNCTION  sys.ceiling
-SYSTEM FUNCTION  sys.char_length
-SYSTEM FUNCTION  sys.character_length
-SYSTEM FUNCTION  sys.charindex
+SYSTEM FUNCTION         sys.bit_and
+SYSTEM FUNCTION         sys.bit_not
+SYSTEM FUNCTION         sys.bit_or
+SYSTEM FUNCTION         sys.bit_xor
+SYSTEM FUNCTION         sys.broadcast
+SYSTEM FUNCTION         sys.ceil
+SYSTEM FUNCTION         sys.ceiling
+SYSTEM FUNCTION         sys.char_length
+SYSTEM FUNCTION         sys.character_length
+SYSTEM FUNCTION         sys.charindex
 SYSTEM PROCEDURE        sys.clearrejects
-SYSTEM FUNCTION  sys.code
-SYSTEM FUNCTION  sys.columnsize
-SYSTEM FUNCTION  sys.concat
-SYSTEM FUNCTION  sys.contains
+SYSTEM FUNCTION         sys.code
+SYSTEM FUNCTION         sys.columnsize
+SYSTEM FUNCTION         sys.concat
+SYSTEM FUNCTION         sys.contains
 SYSTEM FUNCTION         sys.copyfrom
 SYSTEM AGGREGATE        sys.corr
-SYSTEM FUNCTION  sys.cos
-SYSTEM FUNCTION  sys.cosh
-SYSTEM FUNCTION  sys.cot
+SYSTEM FUNCTION         sys.cos
+SYSTEM FUNCTION         sys.cosh
+SYSTEM FUNCTION         sys.cot
 SYSTEM AGGREGATE        sys.count
 SYSTEM AGGREGATE        sys.count_no_nil
 SYSTEM PROCEDURE        sys.createorderindex
-SYSTEM FUNCTION  sys.curdate
-SYSTEM FUNCTION  sys.current_date
-SYSTEM FUNCTION  sys.current_time
-SYSTEM FUNCTION  sys.current_timestamp
-SYSTEM FUNCTION  sys.curtime
-SYSTEM FUNCTION  sys.date_to_str
-SYSTEM FUNCTION  sys.day
-SYSTEM FUNCTION  sys.dayofmonth
-SYSTEM FUNCTION  sys.dayofweek
-SYSTEM FUNCTION  sys.dayofyear
+SYSTEM FUNCTION         sys.curdate
+SYSTEM FUNCTION         sys.current_date
+SYSTEM FUNCTION         sys.current_time
+SYSTEM FUNCTION         sys.current_timestamp
+SYSTEM FUNCTION         sys.curtime
+SYSTEM FUNCTION         sys.date_to_str
+SYSTEM FUNCTION         sys.day
+SYSTEM FUNCTION         sys.dayofmonth
+SYSTEM FUNCTION         sys.dayofweek
+SYSTEM FUNCTION         sys.dayofyear
 SYSTEM FUNCTION         sys.db_users
-SYSTEM FUNCTION  sys.debug
-SYSTEM FUNCTION  sys.degrees
+SYSTEM FUNCTION         sys.debug
+SYSTEM FUNCTION         sys.degrees
 SYSTEM FUNCTION         sys.dense_rank
 SYSTEM FUNCTION         sys.dependencies_columns_on_functions
 SYSTEM FUNCTION         sys.dependencies_columns_on_indexes
@@ -530,135 +525,135 @@ SYSTEM FUNCTION         sys.dependencies_tables_on_views
 SYSTEM FUNCTION         sys.dependencies_views_on_functions
 SYSTEM FUNCTION         sys.dependencies_views_on_triggers
 SYSTEM FUNCTION         sys.diff
-SYSTEM FUNCTION  sys.difference
+SYSTEM FUNCTION         sys.difference
 SYSTEM PROCEDURE        sys.droporderindex
-SYSTEM FUNCTION  sys.editdistance
-SYSTEM FUNCTION  sys.editdistance2
+SYSTEM FUNCTION         sys.editdistance
+SYSTEM FUNCTION         sys.editdistance2
 SYSTEM FUNCTION         sys.env
-SYSTEM FUNCTION  sys.epoch
+SYSTEM FUNCTION         sys.epoch
 SYSTEM PROCEDURE        sys.evalalgebra
 SYSTEM AGGREGATE        sys.exist
-SYSTEM FUNCTION  sys.exp
+SYSTEM FUNCTION         sys.exp
 SYSTEM PROCEDURE        sys.fitsattach
 SYSTEM PROCEDURE        sys.fitsload
-SYSTEM FUNCTION  sys.floor
+SYSTEM FUNCTION         sys.floor
 SYSTEM PROCEDURE        sys.flush_log
-SYSTEM FUNCTION         sys.function_type_keyword
-SYSTEM FUNCTION  sys.fuse
+SYSTEM FUNCTION         sys.fuse
 SYSTEM FUNCTION         sys.generate_series
-SYSTEM FUNCTION  sys.geometrytype
-SYSTEM FUNCTION  sys.get_type
-SYSTEM FUNCTION  sys.get_value_for
-SYSTEM FUNCTION  sys.getanchor
-SYSTEM FUNCTION  sys.getbasename
-SYSTEM FUNCTION  sys.getcontent
-SYSTEM FUNCTION  sys.getcontext
-SYSTEM FUNCTION  sys.getdomain
-SYSTEM FUNCTION  sys.getextension
-SYSTEM FUNCTION  sys.getfile
-SYSTEM FUNCTION  sys.gethost
-SYSTEM FUNCTION  sys.getport
-SYSTEM FUNCTION  sys.getproj4
-SYSTEM FUNCTION  sys.getprotocol
-SYSTEM FUNCTION  sys.getquery
-SYSTEM FUNCTION  sys.getroboturl
-SYSTEM FUNCTION  sys.getuser
-SYSTEM FUNCTION  sys.has_m
-SYSTEM FUNCTION  sys.has_z
-SYSTEM FUNCTION  sys.hash
-SYSTEM FUNCTION  sys.hashsize
-SYSTEM FUNCTION  sys.heapsize
-SYSTEM FUNCTION  sys.host
-SYSTEM FUNCTION  sys.hostmask
-SYSTEM FUNCTION  sys.hour
-SYSTEM FUNCTION  sys.identity
-SYSTEM FUNCTION  sys.ifthenelse
+SYSTEM FUNCTION         sys.geometrytype
+SYSTEM FUNCTION         sys.get_type
+SYSTEM FUNCTION         sys.get_value_for
+SYSTEM FUNCTION         sys.getanchor
+SYSTEM FUNCTION         sys.getbasename
+SYSTEM FUNCTION         sys.getcontent
+SYSTEM FUNCTION         sys.getcontext
+SYSTEM FUNCTION         sys.getdomain
+SYSTEM FUNCTION         sys.getextension
+SYSTEM FUNCTION         sys.getfile
+SYSTEM FUNCTION         sys.gethost
+SYSTEM FUNCTION         sys.getport
+SYSTEM FUNCTION         sys.getproj4
+SYSTEM FUNCTION         sys.getprotocol
+SYSTEM FUNCTION         sys.getquery
+SYSTEM FUNCTION         sys.getroboturl
+SYSTEM FUNCTION         sys.getuser
+SYSTEM AGGREGATE        sys.group_concat
+SYSTEM FUNCTION         sys.has_m
+SYSTEM FUNCTION         sys.has_z
+SYSTEM FUNCTION         sys.hash
+SYSTEM FUNCTION         sys.hashsize
+SYSTEM FUNCTION         sys.heapsize
+SYSTEM FUNCTION         sys.host
+SYSTEM FUNCTION         sys.hostmask
+SYSTEM FUNCTION         sys.hour
+SYSTEM FUNCTION         sys.identity
+SYSTEM FUNCTION         sys.ifthenelse
 SYSTEM FILTER FUNCTION  sys.ilike
-SYSTEM FUNCTION  sys.imprintsize
-SYSTEM FUNCTION  sys.in
-SYSTEM FUNCTION  sys.index
-SYSTEM FUNCTION  sys.insert
-SYSTEM FUNCTION  sys.internaltransform
-SYSTEM FUNCTION  sys.isaurl
-SYSTEM FUNCTION  sys.isauuid
-SYSTEM FUNCTION  sys.isnull
-SYSTEM FUNCTION  sys.lcase
-SYSTEM FUNCTION  sys.left
-SYSTEM FUNCTION  sys.left_shift
-SYSTEM FUNCTION  sys.left_shift_assign
-SYSTEM FUNCTION  sys.length
-SYSTEM FUNCTION  sys.levenshtein
+SYSTEM FUNCTION         sys.imprintsize
+SYSTEM FUNCTION         sys.in
+SYSTEM FUNCTION         sys.index
+SYSTEM FUNCTION         sys.insert
+SYSTEM FUNCTION         sys.internaltransform
+SYSTEM FUNCTION         sys.isaurl
+SYSTEM FUNCTION         sys.isauuid
+SYSTEM FUNCTION         sys.isnull
+SYSTEM FUNCTION         sys.lcase
+SYSTEM FUNCTION         sys.left
+SYSTEM FUNCTION         sys.left_shift
+SYSTEM FUNCTION         sys.left_shift_assign
+SYSTEM FUNCTION         sys.length
+SYSTEM FUNCTION         sys.levenshtein
 SYSTEM PROCEDURE        sys.lidarattach
 SYSTEM PROCEDURE        sys.lidarexport
 SYSTEM PROCEDURE        sys.lidarload
 SYSTEM FILTER FUNCTION  sys.like
 SYSTEM PROCEDURE        sys.listdir
 SYSTEM PROCEDURE        sys.listdirpat
-SYSTEM FUNCTION  sys.local_timezone
-SYSTEM FUNCTION  sys.localtime
-SYSTEM FUNCTION  sys.localtimestamp
-SYSTEM FUNCTION  sys.locate
-SYSTEM FUNCTION  sys.log
-SYSTEM FUNCTION  sys.log10
-SYSTEM FUNCTION  sys.lower
-SYSTEM FUNCTION  sys.lpad
-SYSTEM FUNCTION  sys.ltrim
+SYSTEM FUNCTION         sys.local_timezone
+SYSTEM FUNCTION         sys.localtime
+SYSTEM FUNCTION         sys.localtimestamp
+SYSTEM FUNCTION         sys.locate
+SYSTEM FUNCTION         sys.log
+SYSTEM FUNCTION         sys.log10
+SYSTEM FUNCTION         sys.lower
+SYSTEM FUNCTION         sys.lpad
+SYSTEM FUNCTION         sys.ltrim
 SYSTEM FUNCTION         sys.malfunctions
-SYSTEM FUNCTION  sys.masklen
+SYSTEM FUNCTION         sys.masklen
 SYSTEM PROCEDURE        sys.master
 SYSTEM PROCEDURE        sys.masterbeat
-SYSTEM FUNCTION  sys.masterclock
-SYSTEM FUNCTION  sys.mastertick
+SYSTEM FUNCTION         sys.masterclock
+SYSTEM FUNCTION         sys.mastertick
 SYSTEM AGGREGATE        sys.max
-SYSTEM FUNCTION  sys.mbr
-SYSTEM FUNCTION  sys.mbr_above
-SYSTEM FUNCTION  sys.mbr_below
-SYSTEM FUNCTION  sys.mbr_contained
-SYSTEM FUNCTION  sys.mbr_contains
-SYSTEM FUNCTION  sys.mbr_distance
-SYSTEM FUNCTION  sys.mbr_equal
-SYSTEM FUNCTION  sys.mbr_left
-SYSTEM FUNCTION  sys.mbr_overlap
-SYSTEM FUNCTION  sys.mbr_overlap_or_above
-SYSTEM FUNCTION  sys.mbr_overlap_or_below
-SYSTEM FUNCTION  sys.mbr_overlap_or_left
-SYSTEM FUNCTION  sys.mbr_overlap_or_right
-SYSTEM FUNCTION  sys.mbr_right
-SYSTEM FUNCTION  sys.md5
+SYSTEM FUNCTION         sys.mbr
+SYSTEM FUNCTION         sys.mbr_above
+SYSTEM FUNCTION         sys.mbr_below
+SYSTEM FUNCTION         sys.mbr_contained
+SYSTEM FUNCTION         sys.mbr_contains
+SYSTEM FUNCTION         sys.mbr_distance
+SYSTEM FUNCTION         sys.mbr_equal
+SYSTEM FUNCTION         sys.mbr_left
+SYSTEM FUNCTION         sys.mbr_overlap
+SYSTEM FUNCTION         sys.mbr_overlap_or_above
+SYSTEM FUNCTION         sys.mbr_overlap_or_below
+SYSTEM FUNCTION         sys.mbr_overlap_or_left
+SYSTEM FUNCTION         sys.mbr_overlap_or_right
+SYSTEM FUNCTION         sys.mbr_right
+SYSTEM FUNCTION         sys.md5
 SYSTEM AGGREGATE        sys.median
 SYSTEM AGGREGATE        sys.min
-SYSTEM FUNCTION  sys.minute
-SYSTEM FUNCTION  sys.mod
-SYSTEM FUNCTION  sys.month
-SYSTEM FUNCTION  sys.ms_round
-SYSTEM FUNCTION  sys.ms_str
-SYSTEM FUNCTION  sys.ms_stuff
-SYSTEM FUNCTION  sys.ms_trunc
+SYSTEM FUNCTION         sys.minute
+SYSTEM FUNCTION         sys.mod
+SYSTEM FUNCTION         sys.month
+SYSTEM FUNCTION         sys.ms_round
+SYSTEM FUNCTION         sys.ms_str
+SYSTEM FUNCTION         sys.ms_stuff
+SYSTEM FUNCTION         sys.ms_trunc
 SYSTEM PROCEDURE        sys.netcdf_attach
 SYSTEM PROCEDURE        sys.netcdf_importvar
-SYSTEM FUNCTION  sys.netmask
-SYSTEM FUNCTION  sys.network
-SYSTEM FUNCTION  sys.newurl
-SYSTEM FUNCTION  sys.next_value_for
-SYSTEM FUNCTION  sys.not
+SYSTEM FUNCTION         sys.netmask
+SYSTEM FUNCTION         sys.network
+SYSTEM FUNCTION         sys.newurl
+SYSTEM FUNCTION         sys.next_value_for
+SYSTEM FUNCTION         sys.not
 SYSTEM AGGREGATE        sys.not_exist
-SYSTEM FUNCTION  sys.not_ilike
-SYSTEM FUNCTION  sys.not_like
+SYSTEM FUNCTION         sys.not_ilike
+SYSTEM FUNCTION         sys.not_like
 SYSTEM AGGREGATE        sys.not_unique
-SYSTEM FUNCTION  sys.not_uniques
-SYSTEM FUNCTION  sys.octet_length
+SYSTEM FUNCTION         sys.not_uniques
+SYSTEM FUNCTION         sys.octet_length
 SYSTEM FUNCTION         sys.optimizer_stats
 SYSTEM FUNCTION         sys.optimizers
-SYSTEM FUNCTION  sys.or
-SYSTEM FUNCTION  sys.password_hash
-SYSTEM FUNCTION  sys.patindex
+SYSTEM FUNCTION         sys.or
+SYSTEM FUNCTION         sys.password_hash
+SYSTEM FUNCTION         sys.patindex
 SYSTEM PROCEDURE        sys.pause
-SYSTEM FUNCTION  sys.pi
-SYSTEM FUNCTION  sys.power
+SYSTEM FUNCTION         sys.pi
+SYSTEM FUNCTION         sys.power
 SYSTEM AGGREGATE        sys.prod
-SYSTEM FUNCTION  sys.qgramnormalize
+SYSTEM FUNCTION         sys.qgramnormalize
 SYSTEM AGGREGATE        sys.quantile
-SYSTEM FUNCTION  sys.quarter
+SYSTEM FUNCTION         sys.quarter
 SYSTEM FUNCTION         sys.querycache
 SYSTEM PROCEDURE        sys.querylog
 SYSTEM FUNCTION         sys.querylog_calls
@@ -667,153 +662,153 @@ SYSTEM PROCEDURE        sys.querylog_disable
 SYSTEM PROCEDURE        sys.querylog_empty
 SYSTEM PROCEDURE        sys.querylog_enable
 SYSTEM FUNCTION         sys.queue
-SYSTEM FUNCTION  sys.radians
-SYSTEM FUNCTION  sys.rand
+SYSTEM FUNCTION         sys.radians
+SYSTEM FUNCTION         sys.rand
 SYSTEM FUNCTION         sys.rank
 SYSTEM FUNCTION         sys.rejects
-SYSTEM FUNCTION  sys.repeat
-SYSTEM FUNCTION  sys.replace
+SYSTEM FUNCTION         sys.repeat
+SYSTEM FUNCTION         sys.replace
 SYSTEM PROCEDURE        sys.replicabeat
-SYSTEM FUNCTION  sys.replicaclock
+SYSTEM FUNCTION         sys.replicaclock
 SYSTEM PROCEDURE        sys.replicate
-SYSTEM FUNCTION  sys.replicatick
-SYSTEM FUNCTION  sys.restart
+SYSTEM FUNCTION         sys.replicatick
+SYSTEM FUNCTION         sys.restart
 SYSTEM PROCEDURE        sys.resume
 SYSTEM PROCEDURE        sys.reuse
-SYSTEM FUNCTION  sys.reverse
-SYSTEM FUNCTION  sys.right
-SYSTEM FUNCTION  sys.right_shift
-SYSTEM FUNCTION  sys.right_shift_assign
-SYSTEM FUNCTION  sys.rotate_xor_hash
-SYSTEM FUNCTION  sys.round
+SYSTEM FUNCTION         sys.reverse
+SYSTEM FUNCTION         sys.right
+SYSTEM FUNCTION         sys.right_shift
+SYSTEM FUNCTION         sys.right_shift_assign
+SYSTEM FUNCTION         sys.rotate_xor_hash
+SYSTEM FUNCTION         sys.round
 SYSTEM FUNCTION         sys.row_number
-SYSTEM FUNCTION  sys.rowid
-SYSTEM FUNCTION  sys.rpad
-SYSTEM FUNCTION  sys.rtrim
-SYSTEM FUNCTION  sys.scale_down
-SYSTEM FUNCTION  sys.scale_up
-SYSTEM FUNCTION  sys.second
+SYSTEM FUNCTION         sys.rowid
+SYSTEM FUNCTION         sys.rpad
+SYSTEM FUNCTION         sys.rtrim
+SYSTEM FUNCTION         sys.scale_down
+SYSTEM FUNCTION         sys.scale_up
+SYSTEM FUNCTION         sys.second
 SYSTEM FUNCTION         sys.sessions
-SYSTEM FUNCTION  sys.setmasklen
+SYSTEM FUNCTION         sys.setmasklen
 SYSTEM PROCEDURE        sys.setsession
 SYSTEM PROCEDURE        sys.settimeout
 SYSTEM PROCEDURE        sys.shpattach
 SYSTEM PROCEDURE        sys.shpload
 SYSTEM PROCEDURE        sys.shrink
 SYSTEM PROCEDURE        sys.shutdown
-SYSTEM FUNCTION  sys.sign
-SYSTEM FUNCTION  sys.similarity
-SYSTEM FUNCTION  sys.sin
-SYSTEM FUNCTION  sys.sinh
-SYSTEM FUNCTION  sys.soundex
-SYSTEM FUNCTION  sys.space
-SYSTEM FUNCTION  sys.splitpart
-SYSTEM FUNCTION  sys.sql_add
-SYSTEM FUNCTION  sys.sql_div
-SYSTEM FUNCTION  sys.sql_exists
-SYSTEM FUNCTION  sys.sql_max
-SYSTEM FUNCTION  sys.sql_min
-SYSTEM FUNCTION  sys.sql_mul
-SYSTEM FUNCTION  sys.sql_neg
-SYSTEM FUNCTION  sys.sql_not_exists
-SYSTEM FUNCTION  sys.sql_sub
-SYSTEM FUNCTION  sys.sqrt
-SYSTEM FUNCTION  sys.st_area
-SYSTEM FUNCTION  sys.st_asbinary
-SYSTEM FUNCTION  sys.st_asewkt
-SYSTEM FUNCTION  sys.st_astext
-SYSTEM FUNCTION  sys.st_bdmpolyfromtext
-SYSTEM FUNCTION  sys.st_bdpolyfromtext
-SYSTEM FUNCTION  sys.st_boundary
-SYSTEM FUNCTION  sys.st_buffer
-SYSTEM FUNCTION  sys.st_centroid
+SYSTEM FUNCTION         sys.sign
+SYSTEM FUNCTION         sys.similarity
+SYSTEM FUNCTION         sys.sin
+SYSTEM FUNCTION         sys.sinh
+SYSTEM FUNCTION         sys.soundex
+SYSTEM FUNCTION         sys.space
+SYSTEM FUNCTION         sys.splitpart
+SYSTEM FUNCTION         sys.sql_add
+SYSTEM FUNCTION         sys.sql_div
+SYSTEM FUNCTION         sys.sql_exists
+SYSTEM FUNCTION         sys.sql_max
+SYSTEM FUNCTION         sys.sql_min
+SYSTEM FUNCTION         sys.sql_mul
+SYSTEM FUNCTION         sys.sql_neg
+SYSTEM FUNCTION         sys.sql_not_exists
+SYSTEM FUNCTION         sys.sql_sub
+SYSTEM FUNCTION         sys.sqrt
+SYSTEM FUNCTION         sys.st_area
+SYSTEM FUNCTION         sys.st_asbinary
+SYSTEM FUNCTION         sys.st_asewkt
+SYSTEM FUNCTION         sys.st_astext
+SYSTEM FUNCTION         sys.st_bdmpolyfromtext
+SYSTEM FUNCTION         sys.st_bdpolyfromtext
+SYSTEM FUNCTION         sys.st_boundary
+SYSTEM FUNCTION         sys.st_buffer
+SYSTEM FUNCTION         sys.st_centroid
 SYSTEM AGGREGATE        sys.st_collect
-SYSTEM FUNCTION  sys.st_collect
-SYSTEM FUNCTION  sys.st_contains
-SYSTEM FUNCTION  sys.st_convexhull
-SYSTEM FUNCTION  sys.st_coorddim
-SYSTEM FUNCTION  sys.st_coveredby
-SYSTEM FUNCTION  sys.st_covers
-SYSTEM FUNCTION  sys.st_crosses
-SYSTEM FUNCTION  sys.st_delaunaytriangles
-SYSTEM FUNCTION  sys.st_difference
-SYSTEM FUNCTION  sys.st_dimension
-SYSTEM FUNCTION  sys.st_disjoint
-SYSTEM FUNCTION  sys.st_distance
+SYSTEM FUNCTION         sys.st_collect
+SYSTEM FUNCTION         sys.st_contains
+SYSTEM FUNCTION         sys.st_convexhull
+SYSTEM FUNCTION         sys.st_coorddim
+SYSTEM FUNCTION         sys.st_coveredby
+SYSTEM FUNCTION         sys.st_covers
+SYSTEM FUNCTION         sys.st_crosses
+SYSTEM FUNCTION         sys.st_delaunaytriangles
+SYSTEM FUNCTION         sys.st_difference
+SYSTEM FUNCTION         sys.st_dimension
+SYSTEM FUNCTION         sys.st_disjoint
+SYSTEM FUNCTION         sys.st_distance
 SYSTEM FUNCTION         sys.st_dump
 SYSTEM FUNCTION         sys.st_dumppoints
-SYSTEM FUNCTION  sys.st_dwithin
-SYSTEM FUNCTION  sys.st_endpoint
-SYSTEM FUNCTION  sys.st_envelope
-SYSTEM FUNCTION  sys.st_equals
-SYSTEM FUNCTION  sys.st_exteriorring
-SYSTEM FUNCTION  sys.st_force2d
-SYSTEM FUNCTION  sys.st_force3d
-SYSTEM FUNCTION  sys.st_geomcollfromtext
-SYSTEM FUNCTION  sys.st_geometryfromtext
-SYSTEM FUNCTION  sys.st_geometryn
-SYSTEM FUNCTION  sys.st_geometrytype
-SYSTEM FUNCTION  sys.st_geomfromtext
-SYSTEM FUNCTION  sys.st_interiorringn
-SYSTEM FUNCTION  sys.st_interiorrings
-SYSTEM FUNCTION  sys.st_intersection
-SYSTEM FUNCTION  sys.st_intersects
-SYSTEM FUNCTION  sys.st_isclosed
-SYSTEM FUNCTION  sys.st_isempty
-SYSTEM FUNCTION  sys.st_isring
-SYSTEM FUNCTION  sys.st_issimple
-SYSTEM FUNCTION  sys.st_isvalid
-SYSTEM FUNCTION  sys.st_isvalidreason
-SYSTEM FUNCTION  sys.st_length
-SYSTEM FUNCTION  sys.st_length2d
-SYSTEM FUNCTION  sys.st_linefromtext
-SYSTEM FUNCTION  sys.st_makebox2d
-SYSTEM FUNCTION  sys.st_makeenvelope
+SYSTEM FUNCTION         sys.st_dwithin
+SYSTEM FUNCTION         sys.st_endpoint
+SYSTEM FUNCTION         sys.st_envelope
+SYSTEM FUNCTION         sys.st_equals
+SYSTEM FUNCTION         sys.st_exteriorring
+SYSTEM FUNCTION         sys.st_force2d
+SYSTEM FUNCTION         sys.st_force3d
+SYSTEM FUNCTION         sys.st_geomcollfromtext
+SYSTEM FUNCTION         sys.st_geometryfromtext
+SYSTEM FUNCTION         sys.st_geometryn
+SYSTEM FUNCTION         sys.st_geometrytype
+SYSTEM FUNCTION         sys.st_geomfromtext
+SYSTEM FUNCTION         sys.st_interiorringn
+SYSTEM FUNCTION         sys.st_interiorrings
+SYSTEM FUNCTION         sys.st_intersection
+SYSTEM FUNCTION         sys.st_intersects
+SYSTEM FUNCTION         sys.st_isclosed
+SYSTEM FUNCTION         sys.st_isempty
+SYSTEM FUNCTION         sys.st_isring
+SYSTEM FUNCTION         sys.st_issimple
+SYSTEM FUNCTION         sys.st_isvalid
+SYSTEM FUNCTION         sys.st_isvalidreason
+SYSTEM FUNCTION         sys.st_length
+SYSTEM FUNCTION         sys.st_length2d
+SYSTEM FUNCTION         sys.st_linefromtext
+SYSTEM FUNCTION         sys.st_makebox2d
+SYSTEM FUNCTION         sys.st_makeenvelope
 SYSTEM AGGREGATE        sys.st_makeline
-SYSTEM FUNCTION  sys.st_makeline
-SYSTEM FUNCTION  sys.st_makepoint
-SYSTEM FUNCTION  sys.st_makepointm
-SYSTEM FUNCTION  sys.st_makepolygon
-SYSTEM FUNCTION  sys.st_mlinefromtext
-SYSTEM FUNCTION  sys.st_mpointfromtext
-SYSTEM FUNCTION  sys.st_mpolyfromtext
-SYSTEM FUNCTION  sys.st_npoints
-SYSTEM FUNCTION  sys.st_nrings
-SYSTEM FUNCTION  sys.st_numgeometries
-SYSTEM FUNCTION  sys.st_numinteriorring
-SYSTEM FUNCTION  sys.st_numinteriorrings
-SYSTEM FUNCTION  sys.st_numpatches
-SYSTEM FUNCTION  sys.st_numpoints
-SYSTEM FUNCTION  sys.st_overlaps
-SYSTEM FUNCTION  sys.st_patchn
-SYSTEM FUNCTION  sys.st_point
-SYSTEM FUNCTION  sys.st_pointfromtext
-SYSTEM FUNCTION  sys.st_pointn
-SYSTEM FUNCTION  sys.st_pointonsurface
-SYSTEM FUNCTION  sys.st_polygon
-SYSTEM FUNCTION  sys.st_polygonfromtext
-SYSTEM FUNCTION  sys.st_relate
-SYSTEM FUNCTION  sys.st_segmentize
-SYSTEM FUNCTION  sys.st_setexteriorring
-SYSTEM FUNCTION  sys.st_setsrid
-SYSTEM FUNCTION  sys.st_srid
-SYSTEM FUNCTION  sys.st_startpoint
-SYSTEM FUNCTION  sys.st_symdifference
-SYSTEM FUNCTION  sys.st_touches
-SYSTEM FUNCTION  sys.st_transform
-SYSTEM FUNCTION  sys.st_translate
+SYSTEM FUNCTION         sys.st_makeline
+SYSTEM FUNCTION         sys.st_makepoint
+SYSTEM FUNCTION         sys.st_makepointm
+SYSTEM FUNCTION         sys.st_makepolygon
+SYSTEM FUNCTION         sys.st_mlinefromtext
+SYSTEM FUNCTION         sys.st_mpointfromtext
+SYSTEM FUNCTION         sys.st_mpolyfromtext
+SYSTEM FUNCTION         sys.st_npoints
+SYSTEM FUNCTION         sys.st_nrings
+SYSTEM FUNCTION         sys.st_numgeometries
+SYSTEM FUNCTION         sys.st_numinteriorring
+SYSTEM FUNCTION         sys.st_numinteriorrings
+SYSTEM FUNCTION         sys.st_numpatches
+SYSTEM FUNCTION         sys.st_numpoints
+SYSTEM FUNCTION         sys.st_overlaps
+SYSTEM FUNCTION         sys.st_patchn
+SYSTEM FUNCTION         sys.st_point
+SYSTEM FUNCTION         sys.st_pointfromtext
+SYSTEM FUNCTION         sys.st_pointn
+SYSTEM FUNCTION         sys.st_pointonsurface
+SYSTEM FUNCTION         sys.st_polygon
+SYSTEM FUNCTION         sys.st_polygonfromtext
+SYSTEM FUNCTION         sys.st_relate
+SYSTEM FUNCTION         sys.st_segmentize
+SYSTEM FUNCTION         sys.st_setexteriorring
+SYSTEM FUNCTION         sys.st_setsrid
+SYSTEM FUNCTION         sys.st_srid
+SYSTEM FUNCTION         sys.st_startpoint
+SYSTEM FUNCTION         sys.st_symdifference
+SYSTEM FUNCTION         sys.st_touches
+SYSTEM FUNCTION         sys.st_transform
+SYSTEM FUNCTION         sys.st_translate
 SYSTEM AGGREGATE        sys.st_union
-SYSTEM FUNCTION  sys.st_union
-SYSTEM FUNCTION  sys.st_within
-SYSTEM FUNCTION  sys.st_wkbtosql
-SYSTEM FUNCTION  sys.st_wkttosql
-SYSTEM FUNCTION  sys.st_x
-SYSTEM FUNCTION  sys.st_xmax
-SYSTEM FUNCTION  sys.st_xmin
-SYSTEM FUNCTION  sys.st_y
-SYSTEM FUNCTION  sys.st_ymax
-SYSTEM FUNCTION  sys.st_ymin
-SYSTEM FUNCTION  sys.st_z
+SYSTEM FUNCTION         sys.st_union
+SYSTEM FUNCTION         sys.st_within
+SYSTEM FUNCTION         sys.st_wkbtosql
+SYSTEM FUNCTION         sys.st_wkttosql
+SYSTEM FUNCTION         sys.st_x
+SYSTEM FUNCTION         sys.st_xmax
+SYSTEM FUNCTION         sys.st_xmin
+SYSTEM FUNCTION         sys.st_y
+SYSTEM FUNCTION         sys.st_ymax
+SYSTEM FUNCTION         sys.st_ymin
+SYSTEM FUNCTION         sys.st_z
 SYSTEM AGGREGATE        sys.stddev_pop
 SYSTEM AGGREGATE        sys.stddev_samp
 SYSTEM PROCEDURE        sys.stop
@@ -821,35 +816,35 @@ SYSTEM PROCEDURE        sys.stopmaster
 SYSTEM FUNCTION         sys.storage
 SYSTEM FUNCTION         sys.storagemodel
 SYSTEM PROCEDURE        sys.storagemodelinit
-SYSTEM FUNCTION  sys.str_to_date
-SYSTEM FUNCTION  sys.str_to_time
-SYSTEM FUNCTION  sys.str_to_timestamp
-SYSTEM FUNCTION  sys.strings
-SYSTEM FUNCTION  sys.substr
-SYSTEM FUNCTION  sys.substring
+SYSTEM FUNCTION         sys.str_to_date
+SYSTEM FUNCTION         sys.str_to_time
+SYSTEM FUNCTION         sys.str_to_timestamp
+SYSTEM FUNCTION         sys.strings
+SYSTEM FUNCTION         sys.substr
+SYSTEM FUNCTION         sys.substring
 SYSTEM AGGREGATE        sys.sum
 SYSTEM PROCEDURE        sys.sys_update_schemas
 SYSTEM PROCEDURE        sys.sys_update_tables
-SYSTEM FUNCTION  sys.tan
-SYSTEM FUNCTION  sys.tanh
-SYSTEM FUNCTION  sys.text
-SYSTEM FUNCTION  sys.time_to_str
+SYSTEM FUNCTION         sys.tan
+SYSTEM FUNCTION         sys.tanh
+SYSTEM FUNCTION         sys.text
+SYSTEM FUNCTION         sys.time_to_str
 SYSTEM PROCEDURE        sys.times
-SYSTEM FUNCTION  sys.timestamp_to_str
+SYSTEM FUNCTION         sys.timestamp_to_str
 SYSTEM FUNCTION         sys.tracelog
-SYSTEM FUNCTION  sys.trim
-SYSTEM FUNCTION  sys.truncate
-SYSTEM FUNCTION  sys.ucase
-SYSTEM FUNCTION  sys.upper
-SYSTEM FUNCTION  sys.uuid
+SYSTEM FUNCTION         sys.trim
+SYSTEM FUNCTION         sys.truncate
+SYSTEM FUNCTION         sys.ucase
+SYSTEM FUNCTION         sys.upper
+SYSTEM FUNCTION         sys.uuid
 SYSTEM PROCEDURE        sys.vacuum
 SYSTEM FUNCTION         sys.var
 SYSTEM AGGREGATE        sys.var_pop
 SYSTEM AGGREGATE        sys.var_samp
-SYSTEM FUNCTION  sys.week
-SYSTEM FUNCTION  sys.weekofyear
-SYSTEM FUNCTION  sys.xor
-SYSTEM FUNCTION  sys.year
+SYSTEM FUNCTION         sys.week
+SYSTEM FUNCTION         sys.weekofyear
+SYSTEM FUNCTION         sys.xor
+SYSTEM FUNCTION         sys.year
 SYSTEM AGGREGATE        sys.zero_or_one
 CREATE SCHEMA "bam" AUTHORIZATION "monetdb";
 CREATE SCHEMA "json" AUTHORIZATION "monetdb";
@@ -869,8 +864,8 @@ CREATE TABLE "sys"."comments" ("id" INTEGER NOT NULL, "remark" VARCHAR(65000) NO
 CREATE TABLE "sys"."db_user_info" ("name" VARCHAR(1024), "fullname" VARCHAR(2048), "default_schema" INTEGER);
 CREATE TABLE "sys"."dependencies" ("id" INTEGER, "depend_id" INTEGER, "depend_type" SMALLINT);
 CREATE TABLE "sys"."dependency_types" ("dependency_type_id" SMALLINT NOT NULL, "dependency_type_name" VARCHAR(15) NOT NULL, CONSTRAINT "dependency_types_dependency_type_id_pkey" PRIMARY KEY ("dependency_type_id"), CONSTRAINT "dependency_types_dependency_type_name_unique" UNIQUE ("dependency_type_name"));
-CREATE TABLE "sys"."function_languages" ("language_id" SMALLINT NOT NULL, "language_name" VARCHAR(20) NOT NULL, CONSTRAINT "function_languages_language_id_pkey" PRIMARY KEY ("language_id"), CONSTRAINT "function_languages_language_name_unique" UNIQUE ("language_name"));
-CREATE TABLE "sys"."function_types" ("function_type_id" SMALLINT NOT NULL, "function_type_name" VARCHAR(30) NOT NULL, CONSTRAINT "function_types_function_type_id_pkey" PRIMARY KEY ("function_type_id"), CONSTRAINT "function_types_function_type_name_unique" UNIQUE ("function_type_name"));
+CREATE TABLE "sys"."function_languages" ("language_id" SMALLINT NOT NULL, "language_name" VARCHAR(20) NOT NULL, "language_keyword" VARCHAR(20), CONSTRAINT "function_languages_language_id_pkey" PRIMARY KEY ("language_id"), CONSTRAINT "function_languages_language_name_unique" UNIQUE ("language_name"));
+CREATE TABLE "sys"."function_types" ("function_type_id" SMALLINT NOT NULL, "function_type_name" VARCHAR(30) NOT NULL, "function_type_keyword" VARCHAR(30) NOT NULL, CONSTRAINT "function_types_function_type_id_pkey" PRIMARY KEY ("function_type_id"), CONSTRAINT "function_types_function_type_name_unique" UNIQUE ("function_type_name"));
 CREATE TABLE "sys"."functions" ("id" INTEGER, "name" VARCHAR(256), "func" VARCHAR(8196), "mod" VARCHAR(8196), "language" INTEGER, "type" INTEGER, "side_effect" BOOLEAN, "varres" BOOLEAN, "vararg" BOOLEAN, "schema_id" INTEGER);
 CREATE TABLE "sys"."idxs" ("id" INTEGER, "table_id" INTEGER, "type" INTEGER, "name" VARCHAR(1024));
 CREATE TABLE "sys"."index_types" ("index_type_id" SMALLINT NOT NULL, "index_type_name" VARCHAR(25) NOT NULL, CONSTRAINT "index_types_index_type_id_pkey" PRIMARY KEY ("index_type_id"), CONSTRAINT "index_types_index_type_name_unique" UNIQUE ("index_type_name"));
@@ -902,7 +897,6 @@ CREATE TABLE "tmp"."keys" ("id" INTEGER, "table_id" INTEGER, "type" INTEGER, "na
 CREATE TABLE "tmp"."objects" ("id" INTEGER, "name" VARCHAR(1024), "nr" INTEGER);
 CREATE TABLE "tmp"."triggers" ("id" INTEGER, "name" VARCHAR(1024), "table_id" INTEGER, "time" SMALLINT, "orientation" SMALLINT, "event" SMALLINT, "old_name" VARCHAR(1024), "new_name" VARCHAR(1024), "condition" VARCHAR(2048), "statement" VARCHAR(2048));
 SELECT * FROM (SELECT p.* FROM "sys"."_columns" AS p UNION ALL SELECT t.* FROM "tmp"."_columns" AS t) AS columns;
-create view sys.commented_function_signatures as select f.id as fid, s.name as schema, f.name as fname, sys.function_type_keyword(f.type) as category, sf.function_id is not null as system, case rank() over (partition by f.id order by p.number asc) when 1 then f.name else null end as name, case rank() over (partition by f.id order by p.number desc) when 1 then c.remark else null end as remark, p.type, p.type_digits, p.type_scale, row_number() over (order by f.id, p.number) as line from sys.functions f join sys.comments c on f.id = c.id join sys.schemas s on f.schema_id = s.id left outer join sys.systemfunctions sf on f.id = sf.function_id left outer join sys.args p on f.id = p.func_id and p.inout = 1 order by line;
 create view sys.dependencies_vw as select d.id, i1.obj_type, i1.name, d.depend_id as used_by_id, i2.obj_type as used_by_obj_type, i2.name as used_by_name, d.depend_type, dt.dependency_type_name from sys.dependencies d join sys.ids i1 on d.id = i1.id join sys.ids i2 on d.depend_id = i2.id join sys.dependency_types dt on d.depend_type = dt.dependency_type_id order by id, depend_id;
 create view sys.dependency_args_on_types as select dt.id as type_id, dt.sqlname as type_name, f.id as function_id, f.name as function_name, a.id as arg_id, a.name as arg_name, a.number as arg_nr, dep.depend_type as depend_type from sys.args as a, sys.functions as f, sys.types as dt, sys.dependencies as dep where dep.id = dt.id and dep.depend_id = a.id and a.func_id = f.id and dep.depend_type = 15 order by dt.sqlname, f.name, a.number, a.name;
 create view sys.dependency_columns_on_functions as select c.table_id, c.id as column_id, c.name, f.id as function_id, f.name as function_name, f.type as function_type, dep.depend_type as depend_type from sys.functions as f, sys.columns as c, sys.dependencies as dep where c.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and f.type <> 2 order by c.name, c.table_id, f.name, f.id;
@@ -929,7 +923,6 @@ create view sys.dependency_tables_on_views as select t.schema_id as table_schema
 create view sys.dependency_views_on_functions as select v.schema_id as view_schema_id, v.id as view_id, v.name as view_name, f.name as function_name, f.type as function_type, dep.depend_type as depend_type from sys.functions as f, sys.tables as v, sys.dependencies as dep where v.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and f.type <> 2 and v.type in (1, 11) order by v.name, v.schema_id, f.name, f.id;
 create view sys.dependency_views_on_procedures as select v.schema_id as view_schema_id, v.id as view_id, v.name as view_name, p.id as procedure_id, p.name as procedure_name, p.type as procedure_type, dep.depend_type as depend_type from sys.functions as p, sys.tables as v, sys.dependencies as dep where v.id = dep.id and p.id = dep.depend_id and dep.depend_type = 13 and p.type = 2 and v.type in (1, 11) order by v.name, v.schema_id, p.name, p.id;
 create view sys.dependency_views_on_views as select v1.schema_id as view1_schema_id, v1.id as view1_id, v1.name as view1_name, v2.schema_id as view2_schema_id, v2.id as view2_id, v2.name as view2_name, dep.depend_type as depend_type from sys.tables as v1, sys.tables as v2, sys.dependencies as dep where v1.id = dep.id and v2.id = dep.depend_id and dep.depend_type = 5 and v1.type in (1, 11) and v2.type in (1, 11) order by v1.schema_id, v1.name, v2.schema_id, v2.name;
-create view sys.describe_all_objects as select s.name as sname, t.name, s.name || '.' || t.name as fullname, cast(case t.type when 1 then 2 else 1 end as smallint) as ntype, (case when t.system then 'SYSTEM ' else '' end) || tt.table_type_name as type, t.system, c.remark as remark from sys._tables t left outer join sys.comments c on t.id = c.id left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id union all select s.name as sname, sq.name, s.name || '.' || sq.name as fullname, cast(4 as smallint) as ntype, 'SEQUENCE' as type, false as system, c.remark as remark from sys.sequences sq left outer join sys.comments c on sq.id = c.id left outer join sys.schemas s on sq.schema_id = s.id union all select distinct s.name as sname, f.name, s.name || '.' || f.name as fullname, cast(8 as smallint) as ntype, (case when sf.function_id is not null then 'SYSTEM ' else '' end) || sys.function_type_keyword(f.type) as type, sf.function_id is not null as system, c.remark as remark from sys.functions f left outer join sys.comments c on f.id = c.id left outer join sys.schemas s on f.schema_id = s.id left outer join sys.systemfunctions sf on f.id = sf.function_id union all select null as sname, s.name, s.name as fullname, cast(16 as smallint) as ntype, (case when s.system then 'SYSTEM SCHEMA' else 'SCHEMA' end) as type, s.system, c.remark as remark from sys.schemas s left outer join sys.comments c on s.id = c.id order by system, name, sname, ntype;
 create view sys.environment as select * from sys.env();
 create view sys.geometry_columns as select cast(null as varchar(1)) as f_table_catalog, s.name as f_table_schema, t.name as f_table_name, c.name as f_geometry_column, cast(has_z(c.type_digits) + has_m(c.type_digits) +2 as integer) as coord_dimension, c.type_scale as srid, get_type(c.type_digits, 0) as type from sys.columns c, sys.tables t, sys.schemas s where c.table_id = t.id and t.schema_id = s.id and c.type in (select sqlname from sys.types where systemname in ('wkb', 'wkba'));
 create view sys.ids (id, name, schema_id, table_id, table_name, obj_type, sys_table) as select id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'author' as obj_type, 'sys.auths' as sys_table from sys.auths union all select id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'schema', 'sys.schemas' from sys.schemas union all select id, name, schema_id, id as table_id, name as table_name, case when type = 1 then 'view' else 'table' end, 'sys._tables' from sys._tables union all select id, name, schema_id, id as table_id, name as table_name, case when type = 1 then 'view' else 'table' end, 'tmp._tables' from tmp._tables union all select c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'sys._columns' from sys._columns c join sys._tables t on c.table_id = t.id union all select c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'tmp._columns' from tmp._columns c join tmp._tables t on c.table_id = t.id union all select k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'sys.keys' from sys.keys k join sys._tables t on k.table_id = t.id union all select k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'tmp.keys' from tmp.keys k join sys._tables t on k.table_id = t.id union all select i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index', 'sys.idxs' from sys.idxs i join sys._tables t on i.table_id = t.id union all select i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index', 'tmp.idxs' from tmp.idxs i join sys._tables t on i.table_id = t.id union all select g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'sys.triggers' from sys.triggers g join sys._tables t on g.table_id = t.id union all select g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'tmp.triggers' from tmp.triggers g join sys._tables t on g.table_id = t.id union all select id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, case when type = 2 then 'procedure' else 'function' end, 'sys.functions' from sys.functions union all select a.id, a.name, f.schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, case when f.type = 2 then 'procedure arg' else 'function arg' end, 'sys.args' from sys.args a join sys.functions f on a.func_id = f.id union all select id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'sequence', 'sys.sequences' from sys.sequences union all select id, sqlname, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'type', 'sys.types' from sys.types where id > 2000 order by id;
@@ -997,8 +990,6 @@ create procedure sys.evalalgebra(ra_stmt string, opt bool) external name sql."ev
 create procedure fitsattach(fname string) external name fits.attach;
 create procedure fitsload(tname string) external name fits.load;
 create procedure sys.flush_log () external name sql."flush_log";
-create function sys.function_type_keyword(ftype int) returns varchar(20) begin return case ftype when 1 then 'FUNCTION' when 2 then 'PROCEDURE' when 3 then 'AGGREGATE' when 4 then 'FILTER FUNCTION' when 5 then 'FUNCTION' when 6 then 'FUNCTION' when 7 then 'LOADER' else 'ROUTINE' end;
-end;
 create function fuse(one integer, two integer) returns bigint external name udf.fuse;
 create function fuse(one smallint, two smallint) returns integer external name udf.fuse;
 create function fuse(one tinyint, two tinyint) returns smallint external name udf.fuse;
@@ -1030,6 +1021,8 @@ create function getprotocol(theurl url) returns string external name url."getPro
 create function getquery(theurl url) returns string external name url."getQuery";
 create function getroboturl(theurl url) returns string external name url."getRobotURL";
 create function getuser(theurl url) returns string external name url."getUser";
+create aggregate sys.group_concat(str string) returns string external name "aggr"."str_group_concat";
+create aggregate sys.group_concat(str string, sep string) returns string external name "aggr"."str_group_concat";
 create function has_m(info integer) returns integer external name geom."hasM";
 create function has_z(info integer) returns integer external name geom."hasZ";
 create function sys.hashsize(b boolean, i bigint) returns bigint begin if b = true then return 8 * i; end if; return 0; end;
@@ -1313,11 +1306,11 @@ create function pcre_replace(origin string, pat string, repl string, flags strin
 -- schemas
 select name, authorization, owner, system from sys.schemas order by name;
 -- _tables
-select s.name, t.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(t.query, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, tt.table_type_name as type, t.system, ca.action_name as commit_action, at.value as access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id left outer join (values (0, 'COMMIT'), (1, 'DELETE'), (2, 'PRESERVE'), (3, 'DROP'), (4, 'ABORT')) as ca (action_id, action_name) on t.commit_action = ca.action_id left outer join (values (0, 'WRITABLE'), (1, 'READONLY'), (2, 'APPENDONLY')) as at (id, value) on t.access = at.id order by s.name, t.name;
+select s.name, t.name, replace(replace(pcre_replace(pcre_replace(t.query, '--.*\n*', '', ''), '[ \t\n]+', ' ', ''), '( ', '('), ' )', ')') as query, tt.table_type_name as type, t.system, ca.action_name as commit_action, at.value as access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id left outer join (values (0, 'COMMIT'), (1, 'DELETE'), (2, 'PRESERVE'), (3, 'DROP'), (4, 'ABORT')) as ca (action_id, action_name) on t.commit_action = ca.action_id left outer join (values (0, 'WRITABLE'), (1, 'READONLY'), (2, 'APPENDONLY')) as at (id, value) on t.access = at.id order by s.name, t.name;
 -- _columns
 select t.name, c.name, c.type, c.type_digits, c.type_scale, c."default", c."null", c.number, c.storage from sys._tables t, sys._columns c where t.id = c.table_id order by t.name, c.number;
 -- external functions that don't reference existing MAL function (should be empty)
-with x(name,func,schema_id) as (select name, split_part(func, ' external name ', 2), schema_id from sys.functions where func like '% external name %' union select name, split_part(func, ' EXTERNAL NAME ', 2), schema_id from sys.functions where func like '% EXTERNAL NAME %'), y(name,func,schema_id) as (select name, trim(split_part(func, ';', 1)), schema_id from x), z(name, mod, func, schema_id) as (select name, trim(split_part(func, '.', 1), '"'), trim(split_part(func, '.', 2), '"'), schema_id from y) select s.name, z.name, z.mod, z.func from z, sys.schemas s where z.mod || '.' || z.func not in (select m.module || '.' || m."function" from sys.malfunctions() m) and z.schema_id = s.id;
+with funcs as (select name, pcre_replace(func, '--.*\n*', '', '') as func, schema_id from sys.functions), x (sname, name, modfunc) as (select s.name, f.name, replace(pcre_replace(f.func, '.*external name (.*);.*', '$1', 'ims'), '"', '') from funcs f left outer join sys.schemas s on f.schema_id = s.id where f.func ilike '% external name %') select * from x where x.modfunc not in (select m.module || '.' || m."function" from sys.malfunctions() m);
 -- args
 select s.name, f.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, f.mod, fl.language_name, ft.function_type_name, f.side_effect, f.varres, f.vararg, a0.name as name0, a0.type as type0, a0.type_digits as type_digits0, a0.type_scale as type_scale0, case a0.inout when 0 then 'out' when 1 then 'in' end as inout0, a1.name as name1, a1.type as type1, a1.type_digits as type_digits1, a1.type_scale as type_scale1, case a1.inout when 0 then 'out' when 1 then 'in' end as inout1, a2.name as name2, a2.type as type2, a2.type_digits as type_digits2, a2.type_scale as type_scale2, case a2.inout when 0 then 'out' when 1 then 'in' end as inout2, a3.name as name3, a3.type as type3, a3.type_digits as type_digits3, a3.type_scale as type_scale3, case a3.inout when 0 then 'out' when 1 then 'in' end as inout3, a4.name as name4, a4.type as type4, a4.type_digits as type_digits4, a4.type_scale as type_scale4, case a4.inout when 0 then 'out' when 1 then 'in' end as inout4, a5.name as name5, a5.type as type5, a5.type_digits as type_digits5, a5.type_scale as type_scale5, case a5.inout when 0 then 'out' when 1 then 'in' end as inout5, a6.name as name6, a6.type as type6, a6.type_digits as type_digits6, a6.type_scale as type_scale6, case a6.inout when 0 then 'out' when 1 then 'in' end as inout6, a7.name as name7, a7.type as type7, a7.type_digits as type_digits7, a7.type_scale as type_scale7, case a7.inout when 0 then 'out' when 1 then 'in' end as inout7, a8.name as name8, a8.type as type8, a8.type_digits as type_digits8, a8.type_scale as type_scale8, case a8.inout when 0 then 'out' when 1 then 'in' end as inout8, a9.name as name9, a9.type as type9, a9.type_digits as type_digits9, a9.type_scale as type_scale9, case a9.inout when 0 then 'out' when 1 then 'in' end as inout9, a10.name as name10, a10.type as type10, a10.type_digits as type_digits10, a10.type_scale as type_scale10, case a10.inout when 0 then 'out' when 1 then 'in' end as inout10, a11.name as name11, a11.type as type11, a11.type_digits as type_digits11, a11.type_scale as type_scale11, case a11.inout when 0 then 'out' when 1 then 'in' end as inout11, a12.name as name12, a12.type as type12, a12.type_digits as type_digits12, a12.type_scale as type_scale12, case a12.inout when 0 then 'out' when 1 then 'in' end as inout12, a13.name as name13, a13.type as type13, a13.type_digits as type_digits13, a13.type_scale as type_scale13, case a13.inout when 0 then 'out' when 1 then 'in' end as inout13, a14.name as name14, a14.type as type14, a14.type_digits as type_digits14, a14.type_scale as type_scale14, case a14.inout when 0 then 'out' when 1 then 'in' end as inout14, a15.name as name15, a15.type as type15, a15.type_digits as type_digits15, a15.type_scale as type_scale15, case a15.inout when 0 then 'out' when 1 then 'in' end as inout15 from sys.functions f left outer join sys.schemas s on f.schema_id = s.id left outer join sys.function_types as ft on f.type = ft.function_type_id left outer join sys.function_languages fl on f.language = fl.language_id left outer join sys.args a0 on a0.func_id = f.id and a0.number = 0 left outer join sys.args a1 on a1.func_id = f.id and a1.number = 1 left outer join sys.args a2 on a2.func_id = f.id and a2.number = 2 left outer join sys.args a3 on a3.func_id = f.id and a3.number = 3 left outer join sys.args a4 on a4.func_id = f.id and a4.number = 4 left outer join sys.args a5 on a5.func_id = f.id and a5.number = 5 left outer join sys.args a6 on a6.func_id = f.id and a6.number = 6 left outer join sys.args a7 on a7.func_id = f.id and a7.number = 7 left outer join sys.args a8 on a8.func_id = f.id and a8.number = 8 left outer join sys.args a9 on a9.func_id = f.id and a9.number = 9 left outer join sys.args a10 on a10.func_id = f.id and a10.number = 10 left outer join sys.args a11 on a11.func_id = f.id and a11.number = 11 left outer join sys.args a12 on a12.func_id = f.id and a12.number = 12 left outer join sys.args a13 on a13.func_id = f.id and a13.number = 13 left outer join sys.args a14 on a14.func_id = f.id and a14.number = 14 left outer join sys.args a15 on a15.func_id = f.id and a15.number = 15 order by s.name, f.name, query, name0, type0, type_digits0, type_scale0, inout0, name1, type1, type_digits1, type_scale1, inout1, name2, type2, type_digits2, type_scale2, inout2, name3, type3, type_digits3, type_scale3, inout3, name4, type4, type_digits4, type_scale4, inout4, name5, type5, type_digits5, type_scale5, inout5, name6, type6, type_digits6, type_scale6, inout6, name7, type7, type_digits7, type_scale7, inout7, name8, type8, type_digits8, type_scale8, inout8, name9, type9, type_digits9, type_scale9, inout9, name10, type10, type_digits10, type_scale10, inout10, name11, type11, type_digits11, type_scale11, inout11, name12, type12, type_digits12, type_scale12, inout12, name13, type13, type_digits13, type_scale13, inout13, name14, type14, type_digits14, type_scale14, inout14, name15, type15, type_digits15, type_scale15, inout15;
 -- auths
@@ -1389,7 +1382,7 @@ drop function pcre_replace(string, string, string, string);
 [ "profiler",	3,	3,	true	]
 [ "sys",	2,	3,	true	]
 [ "tmp",	2,	3,	true	]
-#select s.name, t.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(t.query, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, tt.table_type_name as type, t.system, ca.action_name as commit_action, at.value as access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id left outer join (values (0, 'COMMIT'), (1, 'DELETE'), (2, 'PRESERVE'), (3, 'DROP'), (4, 'ABORT')) as ca (action_id, action_name) on t.commit_action = ca.action_id left outer join (values (0, 'WRITABLE'), (1, 'READONLY'), (2, 'APPENDONLY')) as at (id, value) on t.access = at.id order by s.name, t.name;
+#select s.name, t.name, replace(replace(pcre_replace(pcre_replace(t.query, '--.*\n*', '', ''), '[ \t\n]+', ' ', ''), '( ', '('), ' )', ')') as query, tt.table_type_name as type, t.system, ca.action_name as commit_action, at.value as access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id left outer join (values (0, 'COMMIT'), (1, 'DELETE'), (2, 'PRESERVE'), (3, 'DROP'), (4, 'ABORT')) as ca (action_id, action_name) on t.commit_action = ca.action_id left outer join (values (0, 'WRITABLE'), (1, 'READONLY'), (2, 'APPENDONLY')) as at (id, value) on t.access = at.id order by s.name, t.name;
 % .s,	.t,	.L10,	.L12,	.t,	.L15,	.L17 # table_name
 % name,	name,	query,	type,	system,	commit_action,	access # name
 % varchar,	varchar,	varchar,	varchar,	boolean,	char,	char # type
@@ -1404,7 +1397,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"args",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"auths",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"columns",	"SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
-[ "sys",	"commented_function_signatures",	"create view sys.commented_function_signatures as select f.id as fid, s.name as schema, f.name as fname, sys.function_type_keyword(f.type) as category, sf.function_id is not null as system, case rank() over (partition by f.id order by p.number asc) when 1 then f.name else null end as name, case rank() over (partition by f.id order by p.number desc) when 1 then c.remark else null end as remark, p.type, p.type_digits, p.type_scale, row_number() over (order by f.id, p.number) as line from sys.functions f join sys.comments c on f.id = c.id join sys.schemas s on f.schema_id = s.id left outer join sys.systemfunctions sf on f.id = sf.function_id left outer join sys.args p on f.id = p.func_id and p.inout = 1 order by line;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"comments",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"db_user_info",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"dependencies",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
@@ -1435,7 +1427,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"dependency_views_on_functions",	"create view sys.dependency_views_on_functions as select v.schema_id as view_schema_id, v.id as view_id, v.name as view_name, f.name as function_name, f.type as function_type, dep.depend_type as depend_type from sys.functions as f, sys.tables as v, sys.dependencies as dep where v.id = dep.id and f.id = dep.depend_id and dep.depend_type = 7 and f.type <> 2 and v.type in (1, 11) order by v.name, v.schema_id, f.name, f.id;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"dependency_views_on_procedures",	"create view sys.dependency_views_on_procedures as select v.schema_id as view_schema_id, v.id as view_id, v.name as view_name, p.id as procedure_id, p.name as procedure_name, p.type as procedure_type, dep.depend_type as depend_type from sys.functions as p, sys.tables as v, sys.dependencies as dep where v.id = dep.id and p.id = dep.depend_id and dep.depend_type = 13 and p.type = 2 and v.type in (1, 11) order by v.name, v.schema_id, p.name, p.id;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"dependency_views_on_views",	"create view sys.dependency_views_on_views as select v1.schema_id as view1_schema_id, v1.id as view1_id, v1.name as view1_name, v2.schema_id as view2_schema_id, v2.id as view2_id, v2.name as view2_name, dep.depend_type as depend_type from sys.tables as v1, sys.tables as v2, sys.dependencies as dep where v1.id = dep.id and v2.id = dep.depend_id and dep.depend_type = 5 and v1.type in (1, 11) and v2.type in (1, 11) order by v1.schema_id, v1.name, v2.schema_id, v2.name;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
-[ "sys",	"describe_all_objects",	"create view sys.describe_all_objects as select s.name as sname, t.name, s.name || '.' || t.name as fullname, cast(case t.type when 1 then 2 else 1 end as smallint) as ntype, (case when t.system then 'SYSTEM ' else '' end) || tt.table_type_name as type, t.system, c.remark as remark from sys._tables t left outer join sys.comments c on t.id = c.id left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id union all select s.name as sname, sq.name, s.name || '.' || sq.name as fullname, cast(4 as smallint) as ntype, 'SEQUENCE' as type, false as system, c.remark as remark from sys.sequences sq left outer join sys.comments c on sq.id = c.id left outer join sys.schemas s on sq.schema_id = s.id union all select distinct s.name as sname, f.name, s.name || '.' || f.name as fullname, cast(8 as smallint) as ntype, (case when sf.function_id is not null then 'SYSTEM ' else '' end) || sys.function_type_keyword(f.type) as type, sf.function_id is not null as system, c.remark as remark from sys.functions f left outer join sys.comments c on f.id = c.id left outer join sys.schemas s on f.schema_id = s.id left outer join sys.systemfunctions sf on f.id = sf.function_id union all select null as sname, s.name, s.name as fullname, cast(16 as smallint) as ntype, (case when s.system then 'SYSTEM SCHEMA' else 'SCHEMA' end) as type, s.system, c.remark as remark from sys.schemas s left outer join sys.comments c on s.id = c.id order by system, name, sname, ntype;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"environment",	"create view sys.environment as select * from sys.env();",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys",	"function_languages",	NULL,	"TABLE",	true,	"COMMIT",	"READONLY"	]
 [ "sys",	"function_types",	NULL,	"TABLE",	true,	"COMMIT",	"READONLY"	]
@@ -1548,17 +1539,6 @@ drop function pcre_replace(string, string, string, string);
 [ "columns",	"null",	"boolean",	1,	0,	NULL,	true,	7,	NULL	]
 [ "columns",	"number",	"int",	32,	0,	NULL,	true,	8,	NULL	]
 [ "columns",	"storage",	"varchar",	2048,	0,	NULL,	true,	9,	NULL	]
-[ "commented_function_signatures",	"fid",	"int",	32,	0,	NULL,	true,	0,	NULL	]
-[ "commented_function_signatures",	"schema",	"varchar",	1024,	0,	NULL,	true,	1,	NULL	]
-[ "commented_function_signatures",	"fname",	"varchar",	256,	0,	NULL,	true,	2,	NULL	]
-[ "commented_function_signatures",	"category",	"varchar",	20,	0,	NULL,	true,	3,	NULL	]
-[ "commented_function_signatures",	"system",	"boolean",	1,	0,	NULL,	true,	4,	NULL	]
-[ "commented_function_signatures",	"name",	"varchar",	0,	0,	NULL,	true,	5,	NULL	]
-[ "commented_function_signatures",	"remark",	"varchar",	0,	0,	NULL,	true,	6,	NULL	]
-[ "commented_function_signatures",	"type",	"varchar",	1024,	0,	NULL,	true,	7,	NULL	]
-[ "commented_function_signatures",	"type_digits",	"int",	32,	0,	NULL,	true,	8,	NULL	]
-[ "commented_function_signatures",	"type_scale",	"int",	32,	0,	NULL,	true,	9,	NULL	]
-[ "commented_function_signatures",	"line",	"int",	32,	0,	NULL,	true,	10,	NULL	]
 [ "comments",	"id",	"int",	32,	0,	NULL,	false,	0,	NULL	]
 [ "comments",	"remark",	"varchar",	65000,	0,	NULL,	false,	1,	NULL	]
 [ "db_user_info",	"name",	"varchar",	1024,	0,	NULL,	true,	0,	NULL	]
@@ -1758,13 +1738,6 @@ drop function pcre_replace(string, string, string, string);
 [ "dependency_views_on_views",	"view2_id",	"int",	32,	0,	NULL,	true,	4,	NULL	]
 [ "dependency_views_on_views",	"view2_name",	"varchar",	1024,	0,	NULL,	true,	5,	NULL	]
 [ "dependency_views_on_views",	"depend_type",	"smallint",	16,	0,	NULL,	true,	6,	NULL	]
-[ "describe_all_objects",	"sname",	"varchar",	0,	0,	NULL,	true,	0,	NULL	]
-[ "describe_all_objects",	"name",	"varchar",	1024,	0,	NULL,	true,	1,	NULL	]
-[ "describe_all_objects",	"fullname",	"varchar",	2049,	0,	NULL,	true,	2,	NULL	]
-[ "describe_all_objects",	"ntype",	"smallint",	16,	0,	NULL,	true,	3,	NULL	]
-[ "describe_all_objects",	"type",	"varchar",	0,	0,	NULL,	true,	4,	NULL	]
-[ "describe_all_objects",	"system",	"boolean",	1,	0,	NULL,	true,	5,	NULL	]
-[ "describe_all_objects",	"remark",	"varchar",	65000,	0,	NULL,	true,	6,	NULL	]
 [ "environment",	"name",	"varchar",	1024,	0,	NULL,	true,	0,	NULL	]
 [ "environment",	"value",	"varchar",	2048,	0,	NULL,	true,	1,	NULL	]
 [ "export",	"qname",	"clob",	0,	0,	NULL,	false,	0,	NULL	]
@@ -1786,8 +1759,10 @@ drop function pcre_replace(string, string, string, string);
 [ "files",	"comments",	"clob",	0,	0,	NULL,	true,	5,	NULL	]
 [ "function_languages",	"language_id",	"smallint",	16,	0,	NULL,	false,	0,	NULL	]
 [ "function_languages",	"language_name",	"varchar",	20,	0,	NULL,	false,	1,	NULL	]
+[ "function_languages",	"language_keyword",	"varchar",	20,	0,	NULL,	true,	2,	NULL	]
 [ "function_types",	"function_type_id",	"smallint",	16,	0,	NULL,	false,	0,	NULL	]
 [ "function_types",	"function_type_name",	"varchar",	30,	0,	NULL,	false,	1,	NULL	]
+[ "function_types",	"function_type_keyword",	"varchar",	30,	0,	NULL,	false,	2,	NULL	]
 [ "functions",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "functions",	"name",	"varchar",	256,	0,	NULL,	true,	1,	NULL	]
 [ "functions",	"func",	"varchar",	8196,	0,	NULL,	true,	2,	NULL	]
@@ -2097,11 +2072,11 @@ drop function pcre_replace(string, string, string, string);
 [ "users",	"default_schema",	"int",	9,	0,	NULL,	true,	2,	NULL	]
 [ "var_values",	"var_name",	"char",	16,	0,	NULL,	true,	0,	NULL	]
 [ "var_values",	"value",	"varchar",	1024,	0,	NULL,	true,	1,	NULL	]
-#with x(name,func,schema_id) as (select name, split_part(func, ' external name ', 2), schema_id from sys.functions where func like '% external name %' union select name, split_part(func, ' EXTERNAL NAME ', 2), schema_id from sys.functions where func like '% EXTERNAL NAME %'), y(name,func,schema_id) as (select name, trim(split_part(func, ';', 1)), schema_id from x), z(name, mod, func, schema_id) as (select name, trim(split_part(func, '.', 1), '"'), trim(split_part(func, '.', 2), '"'), schema_id from y) select s.name, z.name, z.mod, z.func from z, sys.schemas s where z.mod || '.' || z.func not in (select m.module || '.' || m."function" from sys.malfunctions() m) and z.schema_id = s.id;
-% sys.s,	.z,	.z,	.z # table_name
-% name,	name,	mod,	func # name
-% varchar,	varchar,	varchar,	varchar # type
-% 0,	0,	0,	0 # length
+#with funcs as (select name, pcre_replace(func, '--.*\n*', '', '') as func, schema_id from sys.functions), x (sname, name, modfunc) as (select s.name, f.name, replace(pcre_replace(f.func, '.*external name (.*);.*', '$1', 'ims'), '"', '') from funcs f left outer join sys.schemas s on f.schema_id = s.id where f.func ilike '% external name %') select * from x where x.modfunc not in (select m.module || '.' || m."function" from sys.malfunctions() m);
+% .x,	.x,	.x # table_name
+% sname,	name,	modfunc # name
+% varchar,	varchar,	varchar # type
+% 0,	0,	0 # length
 #select s.name, f.name, replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, '--.*\n', '', ''), '[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')') as query, f.mod, fl.language_name, ft.function_type_name, f.side_effect, f.varres, f.vararg, a0.name as name0, a0.type as type0, a0.type_digits as type_digits0, a0.type_scale as type_scale0, case a0.inout when 0 then 'out' when 1 then 'in' end as inout0, a1.name as name1, a1.type as type1, a1.type_digits as type_digits1, a1.type_scale as type_scale1, case a1.inout when 0 then 'out' when 1 then 'in' end as inout1, a2.name as name2, a2.type as type2, a2.type_digits as type_digits2, a2.type_scale as type_scale2, case a2.inout when 0 then 'out' when 1 then 'in' end as inout2, a3.name as name3, a3.type as type3, a3.type_digits as type_digits3, a3.type_scale as type_scale3, case a3.inout when 0 then 'out' when 1 then 'in' end as inout3, a4.name as name4, a4.type as type4, a4.type_digits as type_digits4, a4.type_scale as type_scale4, case a4.inout when 0 then 'out' when 1 then 'in' end as inout4, a5.name as name5, a5.type as type5, a5.type_digits as type_digits5, a5.type_scale as type_scale5, case a5.inout when 0 then 'out' when 1 then 'in' end as inout5, a6.name as name6, a6.type as type6, a6.type_digits as type_digits6, a6.type_scale as type_scale6, case a6.inout when 0 then 'out' when 1 then 'in' end as inout6, a7.name as name7, a7.type as type7, a7.type_digits as type_digits7, a7.type_scale as type_scale7, case a7.inout when 0 then 'out' when 1 then 'in' end as inout7, a8.name as name8, a8.type as type8, a8.type_digits as type_digits8, a8.type_scale as type_scale8, case a8.inout when 0 then 'out' when 1 then 'in' end as inout8, a9.name as name9, a9.type as type9, a9.type_digits as type_digits9, a9.type_scale as type_scale9, case a9.inout when 0 then 'out' when 1 then 'in' end as inout9, a10.name as name10, a10.type as type10, a10.type_digits as type_digits10, a10.type_scale as type_scale10, case a10.inout when 0 then 'out' when 1 then 'in' end as inout10, a11.name as name11, a11.type as type11, a11.type_digits as type_digits11, a11.type_scale as type_scale11, case a11.inout when 0 then 'out' when 1 then 'in' end as inout11, a12.name as name12, a12.type as type12, a12.type_digits as type_digits12, a12.type_scale as type_scale12, case a12.inout when 0 then 'out' when 1 then 'in' end as inout12, a13.name as name13, a13.type as type13, a13.type_digits as type_digits13, a13.type_scale as type_scale13, case a13.inout when 0 then 'out' when 1 then 'in' end as inout13, a14.name as name14, a14.type as type14, a14.type_digits as type_digits14, a14.type_scale as type_scale14, case a14.inout when 0 then 'out' when 1 then 'in' end as inout14, a15.name as name15, a15.type as type15, a15.type_digits as type_digits15, a15.type_scale as type_scale15, case a15.inout when 0 then 'out' when 1 then 'in' end as inout15 from sys.functions f left outer join sys.schemas s on f.schema_id = s.id left outer join sys.function_types as ft on f.type = ft.function_type_id left outer join sys.function_languages fl on f.language = fl.language_id left outer join sys.args a0 on a0.func_id = f.id and a0.number = 0 left outer join sys.args a1 on a1.func_id = f.id and a1.number = 1 left outer join sys.args a2 on a2.func_id = f.id and a2.number = 2 left outer join sys.args a3 on a3.func_id = f.id and a3.number = 3 left outer join sys.args a4 on a4.func_id = f.id and a4.number = 4 left outer join sys.args a5 on a5.func_id = f.id and a5.number = 5 left outer join sys.args a6 on a6.func_id = f.id and a6.number = 6 left outer join sys.args a7 on a7.func_id = f.id and a7.number = 7 left outer join sys.args a8 on a8.func_id = f.id and a8.number = 8 left outer join sys.args a9 on a9.func_id = f.id and a9.number = 9 left outer join sys.args a10 on a10.func_id = f.id and a10.number = 10 left outer join sys.args a11 on a11.func_id = f.id and a11.number = 11 left outer join sys.args a12 on a12.func_id = f.id and a12.number = 12 left outer join sys.args a13 on a13.func_id = f.id and a13.number = 13 left outer join sys.args a14 on a14.func_id = f.id and a14.number = 14 left outer join sys.args a15 on a15.func_id = f.id and a15.number = 15 order by s.name, f.name, query, name0, type0, type_digits0, type_scale0, inout0, name1, type1, type_digits1, type_scale1, inout1, name2, type2, type_digits2, type_scale2, inout2, name3, type3, type_digits3, type_scale3, inout3, name4, type4, type_digits4, type_scale4, inout4, name5, type5, type_digits5, type_scale5, inout5, name6, type6, type_digits6, type_scale6, inout6, name7, type7, type_digits7, type_scale7, inout7, name8, type8, type_digits8, type_scale8, inout8, name9, type9, type_digits9, type_scale9, inout9, name10, type10, type_digits10, type_scale10, inout10, name11, type11, type_digits11, type_scale11, inout11, name12, type12, type_digits12, type_scale12, inout12, name13, type13, type_digits13, type_scale13, inout13, name14, type14, type_digits14, type_scale14, inout14, name15, type15, type_digits15, type_scale15, inout15;
 % .s,	.f,	.L4,	.f,	.fl,	.ft,	.f,	.f,	.f,	.L14,	.L16,	.L20,	.L22,	.L24,	.L26,	.L30,	.L32,	.L34,	.L36,	.L40,	.L42,	.L44,	.L46,	.L50,	.L52,	.L54,	.L56,	.L60,	.L62,	.L64,	.L66,	.L70,	.L72,	.L74,	.L76,	.L100,	.L102,	.L104,	.L106,	.L110,	.L112,	.L114,	.L116,	.L120,	.L122,	.L124,	.L126,	.L130,	.L132,	.L134,	.L136,	.L140,	.L142,	.L144,	.L146,	.L150,	.L152,	.L154,	.L156,	.L160,	.L162,	.L164,	.L166,	.L170,	.L172,	.L174,	.L176,	.L200,	.L202,	.L204,	.L206,	.L210,	.L212,	.L214,	.L216,	.L220,	.L222,	.L224,	.L226,	.L230,	.L232,	.L234,	.L236,	.L240,	.L242,	.L244,	.L246,	.L250,	.L252 # table_name
 % name,	name,	query,	mod,	language_name,	function_type_name,	side_effect,	varres,	vararg,	name0,	type0,	type_digits0,	type_scale0,	inout0,	name1,	type1,	type_digits1,	type_scale1,	inout1,	name2,	type2,	type_digits2,	type_scale2,	inout2,	name3,	type3,	type_digits3,	type_scale3,	inout3,	name4,	type4,	type_digits4,	type_scale4,	inout4,	name5,	type5,	type_digits5,	type_scale5,	inout5,	name6,	type6,	type_digits6,	type_scale6,	inout6,	name7,	type7,	type_digits7,	type_scale7,	inout7,	name8,	type8,	type_digits8,	type_scale8,	inout8,	name9,	type9,	type_digits9,	type_scale9,	inout9,	name10,	type10,	type_digits10,	type_scale10,	inout10,	name11,	type11,	type_digits11,	type_scale11,	inout11,	name12,	type12,	type_digits12,	type_scale12,	inout12,	name13,	type13,	type_digits13,	type_scale13,	inout13,	name14,	type14,	type_digits14,	type_scale14,	inout14,	name15,	type15,	type_digits15,	type_scale15,	inout15 # name
@@ -2329,7 +2304,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"floor",	"floor",	"mmath",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"double",	53,	0,	"out",	"arg_1",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"floor",	"floor",	"mmath",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"real",	24,	0,	"out",	"arg_1",	"real",	24,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"flush_log",	"create procedure sys.flush_log () external name sql.\"flush_log\";",	"sql",	"MAL",	"Procedure",	true,	false,	false,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
-[ "sys",	"function_type_keyword",	"create function sys.function_type_keyword(ftype int) returns varchar(20) begin return case ftype when 1 then 'FUNCTION' when 2 then 'PROCEDURE' when 3 then 'AGGREGATE' when 4 then 'FILTER FUNCTION' when 5 then 'FUNCTION' when 6 then 'FUNCTION' when 7 then 'LOADER' else 'ROUTINE' end; end;",	"user",	"SQL",	"Scalar function",	false,	false,	false,	"result",	"varchar",	20,	0,	"out",	"ftype",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"fuse",	"create function fuse(one integer, two integer) returns bigint external name udf.fuse;",	"udf",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"bigint",	64,	0,	"out",	"one",	"int",	32,	0,	"in",	"two",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"fuse",	"create function fuse(one smallint, two smallint) returns integer external name udf.fuse;",	"udf",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"int",	32,	0,	"out",	"one",	"smallint",	16,	0,	"in",	"two",	"smallint",	16,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"fuse",	"create function fuse(one tinyint, two tinyint) returns smallint external name udf.fuse;",	"udf",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"smallint",	16,	0,	"out",	"one",	"tinyint",	8,	0,	"in",	"two",	"tinyint",	8,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -2362,6 +2336,8 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"getquery",	"create function getquery(theurl url) returns string external name url.\"getQuery\";",	"url",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"clob",	0,	0,	"out",	"theurl",	"url",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"getroboturl",	"create function getroboturl(theurl url) returns string external name url.\"getRobotURL\";",	"url",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"clob",	0,	0,	"out",	"theurl",	"url",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"getuser",	"create function getuser(theurl url) returns string external name url.\"getUser\";",	"url",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"clob",	0,	0,	"out",	"theurl",	"url",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"group_concat",	"create aggregate sys.group_concat(str string) returns string external name \"aggr\".\"str_group_concat\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"clob",	0,	0,	"out",	"str",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"group_concat",	"create aggregate sys.group_concat(str string, sep string) returns string external name \"aggr\".\"str_group_concat\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	"result",	"clob",	0,	0,	"out",	"str",	"clob",	0,	0,	"in",	"sep",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"has_m",	"create function has_m(info integer) returns integer external name geom.\"hasM\";",	"geom",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"int",	32,	0,	"out",	"info",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"has_z",	"create function has_z(info integer) returns integer external name geom.\"hasZ\";",	"geom",	"MAL",	"Scalar function",	false,	false,	false,	"result",	"int",	32,	0,	"out",	"info",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"hash",	"hash",	"mkey",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"bigint",	64,	0,	"out",	"arg_1",	"any",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -4028,9 +4004,7 @@ drop function pcre_replace(string, string, string, string);
 % sys.s1,	sys.f1,	sys.s2,	sys.t2,	.dt # table_name
 % name,	name,	name,	name,	dependency_type_name # name
 % varchar,	varchar,	varchar,	varchar,	varchar # type
-% 3,	21,	3,	29,	4 # length
-[ "sys",	"function_type_keyword",	"sys",	"commented_function_signatures",	"VIEW"	]
-[ "sys",	"function_type_keyword",	"sys",	"describe_all_objects",	"VIEW"	]
+% 3,	8,	3,	16,	4 # length
 [ "sys",	"get_type",	"sys",	"geometry_columns",	"VIEW"	]
 [ "sys",	"has_m",	"sys",	"geometry_columns",	"VIEW"	]
 [ "sys",	"has_z",	"sys",	"geometry_columns",	"VIEW"	]
@@ -4039,11 +4013,6 @@ drop function pcre_replace(string, string, string, string);
 % name,	name,	name,	name,	dependency_type_name # name
 % varchar,	varchar,	varchar,	varchar,	varchar # type
 % 3,	16,	3,	34,	4 # length
-[ "sys",	"args",	"sys",	"commented_function_signatures",	"VIEW"	]
-[ "sys",	"comments",	"sys",	"commented_function_signatures",	"VIEW"	]
-[ "sys",	"functions",	"sys",	"commented_function_signatures",	"VIEW"	]
-[ "sys",	"schemas",	"sys",	"commented_function_signatures",	"VIEW"	]
-[ "sys",	"systemfunctions",	"sys",	"commented_function_signatures",	"VIEW"	]
 [ "sys",	"dependencies",	"sys",	"dependencies_vw",	"VIEW"	]
 [ "sys",	"dependency_types",	"sys",	"dependencies_vw",	"VIEW"	]
 [ "sys",	"ids",	"sys",	"dependencies_vw",	"VIEW"	]
@@ -4119,13 +4088,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"tables",	"sys",	"dependency_views_on_procedures",	"VIEW"	]
 [ "sys",	"dependencies",	"sys",	"dependency_views_on_views",	"VIEW"	]
 [ "sys",	"tables",	"sys",	"dependency_views_on_views",	"VIEW"	]
-[ "sys",	"_tables",	"sys",	"describe_all_objects",	"VIEW"	]
-[ "sys",	"comments",	"sys",	"describe_all_objects",	"VIEW"	]
-[ "sys",	"functions",	"sys",	"describe_all_objects",	"VIEW"	]
-[ "sys",	"schemas",	"sys",	"describe_all_objects",	"VIEW"	]
-[ "sys",	"sequences",	"sys",	"describe_all_objects",	"VIEW"	]
-[ "sys",	"systemfunctions",	"sys",	"describe_all_objects",	"VIEW"	]
-[ "sys",	"table_types",	"sys",	"describe_all_objects",	"VIEW"	]
 [ "sys",	"columns",	"sys",	"geometry_columns",	"VIEW"	]
 [ "sys",	"schemas",	"sys",	"geometry_columns",	"VIEW"	]
 [ "sys",	"tables",	"sys",	"geometry_columns",	"VIEW"	]
@@ -4147,26 +4109,11 @@ drop function pcre_replace(string, string, string, string);
 [ "tmp",	"keys",	"sys",	"ids",	"VIEW"	]
 [ "tmp",	"triggers",	"sys",	"ids",	"VIEW"	]
 [ "sys",	"auths",	"sys",	"roles",	"VIEW"	]
-#select s1.name, t1.name, c1.name, s2.name, t2.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, schemas s1, _tables t1, _columns c1, schemas s2, _tables t2 where d.id = c1.id and c1.table_id = t1.id and t1.schema_id = s1.id and d.depend_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, s1.name, t1.name;
+#select s1.name, t1.name, c1.name, s2.name, t2.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, schemas s1, _tables t1, _columns c1, schemas s2, _tables t2 where d.id = c1.id and c1.table_id = t1.id and t1.schema_id = s1.id and d.depend_id = t2.id and t2.schema_id = s2.id order by s2.name, t2.name, s1.name, t1.name, c1.name;
 % sys.s1,	sys.t1,	sys.c1,	sys.s2,	sys.t2,	.dt # table_name
 % name,	name,	name,	name,	name,	dependency_type_name # name
 % varchar,	varchar,	varchar,	varchar,	varchar,	varchar # type
 % 3,	16,	20,	3,	34,	4 # length
-[ "sys",	"args",	"func_id",	"sys",	"commented_function_signatures",	"VIEW"	]
-[ "sys",	"args",	"inout",	"sys",	"commented_function_signatures",	"VIEW"	]
-[ "sys",	"args",	"number",	"sys",	"commented_function_signatures",	"VIEW"	]
-[ "sys",	"args",	"type",	"sys",	"commented_function_signatures",	"VIEW"	]
-[ "sys",	"args",	"type_digits",	"sys",	"commented_function_signatures",	"VIEW"	]
-[ "sys",	"args",	"type_scale",	"sys",	"commented_function_signatures",	"VIEW"	]
-[ "sys",	"comments",	"id",	"sys",	"commented_function_signatures",	"VIEW"	]
-[ "sys",	"comments",	"remark",	"sys",	"commented_function_signatures",	"VIEW"	]
-[ "sys",	"functions",	"id",	"sys",	"commented_function_signatures",	"VIEW"	]
-[ "sys",	"functions",	"name",	"sys",	"commented_function_signatures",	"VIEW"	]
-[ "sys",	"functions",	"schema_id",	"sys",	"commented_function_signatures",	"VIEW"	]
-[ "sys",	"functions",	"type",	"sys",	"commented_function_signatures",	"VIEW"	]
-[ "sys",	"schemas",	"id",	"sys",	"commented_function_signatures",	"VIEW"	]
-[ "sys",	"schemas",	"name",	"sys",	"commented_function_signatures",	"VIEW"	]
-[ "sys",	"systemfunctions",	"function_id",	"sys",	"commented_function_signatures",	"VIEW"	]
 [ "sys",	"dependencies",	"depend_id",	"sys",	"dependencies_vw",	"VIEW"	]
 [ "sys",	"dependencies",	"depend_type",	"sys",	"dependencies_vw",	"VIEW"	]
 [ "sys",	"dependencies",	"id",	"sys",	"dependencies_vw",	"VIEW"	]
@@ -4321,26 +4268,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"dependencies",	"depend_id",	"sys",	"dependency_views_on_views",	"VIEW"	]
 [ "sys",	"dependencies",	"depend_type",	"sys",	"dependency_views_on_views",	"VIEW"	]
 [ "sys",	"dependencies",	"id",	"sys",	"dependency_views_on_views",	"VIEW"	]
-[ "sys",	"_tables",	"id",	"sys",	"describe_all_objects",	"VIEW"	]
-[ "sys",	"_tables",	"name",	"sys",	"describe_all_objects",	"VIEW"	]
-[ "sys",	"_tables",	"schema_id",	"sys",	"describe_all_objects",	"VIEW"	]
-[ "sys",	"_tables",	"system",	"sys",	"describe_all_objects",	"VIEW"	]
-[ "sys",	"_tables",	"type",	"sys",	"describe_all_objects",	"VIEW"	]
-[ "sys",	"comments",	"id",	"sys",	"describe_all_objects",	"VIEW"	]
-[ "sys",	"comments",	"remark",	"sys",	"describe_all_objects",	"VIEW"	]
-[ "sys",	"functions",	"id",	"sys",	"describe_all_objects",	"VIEW"	]
-[ "sys",	"functions",	"name",	"sys",	"describe_all_objects",	"VIEW"	]
-[ "sys",	"functions",	"schema_id",	"sys",	"describe_all_objects",	"VIEW"	]
-[ "sys",	"functions",	"type",	"sys",	"describe_all_objects",	"VIEW"	]
-[ "sys",	"schemas",	"id",	"sys",	"describe_all_objects",	"VIEW"	]
-[ "sys",	"schemas",	"name",	"sys",	"describe_all_objects",	"VIEW"	]
-[ "sys",	"schemas",	"system",	"sys",	"describe_all_objects",	"VIEW"	]
-[ "sys",	"sequences",	"id",	"sys",	"describe_all_objects",	"VIEW"	]
-[ "sys",	"sequences",	"name",	"sys",	"describe_all_objects",	"VIEW"	]
-[ "sys",	"sequences",	"schema_id",	"sys",	"describe_all_objects",	"VIEW"	]
-[ "sys",	"systemfunctions",	"function_id",	"sys",	"describe_all_objects",	"VIEW"	]
-[ "sys",	"table_types",	"table_type_id",	"sys",	"describe_all_objects",	"VIEW"	]
-[ "sys",	"table_types",	"table_type_name",	"sys",	"describe_all_objects",	"VIEW"	]
 [ "sys",	"schemas",	"id",	"sys",	"geometry_columns",	"VIEW"	]
 [ "sys",	"schemas",	"name",	"sys",	"geometry_columns",	"VIEW"	]
 [ "sys",	"types",	"sqlname",	"sys",	"geometry_columns",	"VIEW"	]
@@ -4504,7 +4431,7 @@ drop function pcre_replace(string, string, string, string);
 [ "inet",	"inet",	"sys",	"setmasklen",	"TYPE"	]
 [ "inet",	"inet",	"sys",	"text",	"TYPE"	]
 [ "uuid",	"uuid",	"sys",	"uuid",	"TYPE"	]
-#select t.name, i.name, it.name from sys.idxs i left outer join sys._tables t on t.id = i.table_id left outer join (values (0, 'hash'), (1, 'join'), (2, 'oph'), (3, 'no'), (4, 'imprints'), (5, 'ordered'), (6, 'new')) as it (id, name) on i.type = it.id order by t.name, i.name;
+#select t.name, i.name, it.index_type_name from sys.idxs i left outer join sys._tables t on t.id = i.table_id left outer join sys.index_types as it on i.type = it.index_type_id order by t.name, i.name;
 % .t,	.i,	.it # table_name
 % name,	name,	index_type_name # name
 % varchar,	varchar,	varchar # type
@@ -4637,8 +4564,7 @@ drop function pcre_replace(string, string, string, string);
 [ "args",	"public",	"SELECT",	NULL,	0	]
 [ "auths",	"public",	"SELECT",	NULL,	0	]
 [ "columns",	"public",	"SELECT",	NULL,	0	]
-[ "commented_function_signatures",	"public",	"SELECT",	"monetdb",	0	]
-[ "comments",	"public",	"SELECT",	"monetdb",	0	]
+[ "comments",	"public",	"SELECT",	NULL,	0	]
 [ "dependencies",	"public",	"SELECT",	NULL,	0	]
 [ "dependencies_vw",	"public",	"SELECT",	"monetdb",	0	]
 [ "dependency_args_on_types",	"public",	"SELECT",	"monetdb",	0	]
@@ -4667,7 +4593,6 @@ drop function pcre_replace(string, string, string, string);
 [ "dependency_views_on_functions",	"public",	"SELECT",	"monetdb",	0	]
 [ "dependency_views_on_procedures",	"public",	"SELECT",	"monetdb",	0	]
 [ "dependency_views_on_views",	"public",	"SELECT",	"monetdb",	0	]
-[ "describe_all_objects",	"public",	"SELECT",	"monetdb",	0	]
 [ "environment",	"public",	"SELECT",	"monetdb",	0	]
 [ "export",	"public",	"SELECT",	"monetdb",	0	]
 [ "files",	"public",	"SELECT",	"monetdb",	0	]
@@ -4712,7 +4637,7 @@ drop function pcre_replace(string, string, string, string);
 % sys.f,	sys.a,	.pc,	.g,	.p # table_name
 % name,	name,	privilege_code_name,	name,	grantable # name
 % varchar,	varchar,	varchar,	varchar,	int # type
-% 21,	6,	7,	7,	1 # length
+% 20,	6,	7,	7,	1 # length
 [ "abbrev",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "alpha",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "bam_drop_file",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -4740,7 +4665,6 @@ drop function pcre_replace(string, string, string, string);
 [ "filter",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "filter",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "filter",	"public",	"EXECUTE",	"monetdb",	0	]
-[ "function_type_keyword",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "geometrytype",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "get_type",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "getanchor",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -4757,6 +4681,8 @@ drop function pcre_replace(string, string, string, string);
 [ "getquery",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "getroboturl",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "getuser",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "group_concat",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "group_concat",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "has_m",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "has_z",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "host",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -4995,13 +4921,13 @@ drop function pcre_replace(string, string, string, string);
 % varchar,	varchar,	bigint,	bigint,	bigint,	bigint,	bigint,	boolean # type
 % 0,	0,	1,	1,	1,	1,	1,	5 # length
 #select count(*) from sys.statistics;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #select count(*) from sys.storagemodelinput;
-% sys.L4 # table_name
+% sys.L3 # table_name
 % L3 # name
 % bigint # type
 % 1 # length
@@ -5205,7 +5131,6 @@ drop function pcre_replace(string, string, string, string);
 [ "floor"	]
 [ "floor"	]
 [ "flush_log"	]
-[ "function_type_keyword"	]
 [ "fuse"	]
 [ "fuse"	]
 [ "fuse"	]
@@ -5239,6 +5164,8 @@ drop function pcre_replace(string, string, string, string);
 [ "getquery"	]
 [ "getroboturl"	]
 [ "getuser"	]
+[ "group_concat"	]
+[ "group_concat"	]
 [ "has_m"	]
 [ "has_z"	]
 [ "hash"	]
@@ -6899,7 +6826,7 @@ drop function pcre_replace(string, string, string, string);
 [ 15,	"TYPE"	]
 #drop function pcre_replace(string, string, string, string);
 
-# 15:33:08 >  
-# 15:33:08 >  "Done."
-# 15:33:08 >  
+# 16:23:51 >  
+# 16:23:51 >  "Done."
+# 16:23:51 >  
 

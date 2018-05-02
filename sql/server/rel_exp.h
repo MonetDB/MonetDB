@@ -122,6 +122,7 @@ extern int exp_is_atom(sql_exp *e);
 extern int exp_is_true(mvc *sql, sql_exp *e);
 extern int exp_is_zero(mvc *sql, sql_exp *e);
 extern int exp_is_not_null(mvc *sql, sql_exp *e);
+extern int exp_is_null(mvc *sql, sql_exp *e);
 extern int exps_are_atoms(list *exps);
 extern int exp_has_func(sql_exp *e);
 extern int exp_unsafe(sql_exp *e);
@@ -148,5 +149,7 @@ extern char *compare_func( comp_type t, int anti );
 extern int is_identity( sql_exp *e, sql_rel *r);
 
 extern atom *exp_flatten(mvc *sql, sql_exp *e);
+
+extern void exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r);
 
 #endif /* _REL_EXP_H_ */

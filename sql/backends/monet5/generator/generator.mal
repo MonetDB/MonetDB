@@ -86,91 +86,91 @@ address VLTgenerator_noop;
 pattern parameters(first:dbl,last:dbl):bat[:dbl]
 address VLTgenerator_noop;
 
-pattern thetasubselect(b:bat[:bte], low:bte, oper:str) :bat[:oid]
+pattern thetaselect(b:bat[:bte], low:bte, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect;
 
-pattern thetasubselect(b:bat[:sht], low:sht, oper:str) :bat[:oid]
+pattern thetaselect(b:bat[:sht], low:sht, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect;
 
-pattern thetasubselect(b:bat[:int], low:int, oper:str) :bat[:oid]
+pattern thetaselect(b:bat[:int], low:int, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect;
 
-pattern thetasubselect(b:bat[:lng], low:lng, oper:str) :bat[:oid]
+pattern thetaselect(b:bat[:lng], low:lng, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect;
 
-pattern thetasubselect(b:bat[:flt], low:flt, oper:str) :bat[:oid]
+pattern thetaselect(b:bat[:flt], low:flt, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect;
 
-pattern thetasubselect(b:bat[:dbl], low:dbl, oper:str) :bat[:oid]
+pattern thetaselect(b:bat[:dbl], low:dbl, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect;
 
-pattern thetasubselect(b:bat[:timestamp], low:timestamp, oper:str) :bat[:oid]
+pattern thetaselect(b:bat[:timestamp], low:timestamp, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect
 comment "Overloaded selection routine";
 
-pattern thetasubselect(b:bat[:bte], cnd:bat[:oid], low:bte, oper:str) :bat[:oid]
+pattern thetaselect(b:bat[:bte], cnd:bat[:oid], low:bte, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect;
 
-pattern thetasubselect(b:bat[:sht], cnd:bat[:oid], low:sht, oper:str) :bat[:oid]
+pattern thetaselect(b:bat[:sht], cnd:bat[:oid], low:sht, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect;
 
-pattern thetasubselect(b:bat[:int], cnd:bat[:oid], low:int, oper:str) :bat[:oid]
+pattern thetaselect(b:bat[:int], cnd:bat[:oid], low:int, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect;
 
-pattern thetasubselect(b:bat[:lng], cnd:bat[:oid], low:lng, oper:str) :bat[:oid]
+pattern thetaselect(b:bat[:lng], cnd:bat[:oid], low:lng, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect;
 
-pattern thetasubselect(b:bat[:flt], cnd:bat[:oid], low:flt, oper:str) :bat[:oid]
+pattern thetaselect(b:bat[:flt], cnd:bat[:oid], low:flt, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect;
 
-pattern thetasubselect(b:bat[:dbl], cnd:bat[:oid], low:dbl, oper:str) :bat[:oid]
+pattern thetaselect(b:bat[:dbl], cnd:bat[:oid], low:dbl, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect;
 
-pattern thetasubselect(b:bat[:timestamp], cnd:bat[:oid], low:timestamp, oper:str) :bat[:oid]
+pattern thetaselect(b:bat[:timestamp], cnd:bat[:oid], low:timestamp, oper:str) :bat[:oid]
 address VLTgenerator_thetasubselect
 comment "Overloaded selection routine";
 
-pattern subselect(b:bat[:bte], low:bte, high:bte, li:bit, hi:bit, anti:bit) :bat[:oid]
+pattern select(b:bat[:bte], low:bte, high:bte, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect;
 
-pattern subselect(b:bat[:sht], low:sht, high:sht, li:bit, hi:bit, anti:bit) :bat[:oid]
+pattern select(b:bat[:sht], low:sht, high:sht, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect;
 
-pattern subselect(b:bat[:int], low:int, high:int, li:bit, hi:bit, anti:bit) :bat[:oid]
+pattern select(b:bat[:int], low:int, high:int, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect;
 
-pattern subselect(b:bat[:lng], low:lng, high:lng, li:bit, hi:bit, anti:bit) :bat[:oid]
+pattern select(b:bat[:lng], low:lng, high:lng, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect;
 
-pattern subselect(b:bat[:flt], low:flt, high:flt, li:bit, hi:bit, anti:bit) :bat[:oid]
+pattern select(b:bat[:flt], low:flt, high:flt, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect;
 
-pattern subselect(b:bat[:dbl], low:dbl, high:dbl, li:bit, hi:bit, anti:bit) :bat[:oid]
+pattern select(b:bat[:dbl], low:dbl, high:dbl, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect;
 
-pattern subselect(b:bat[:timestamp], low:timestamp, high:timestamp, li:bit, hi:bit, anti:bit) :bat[:oid]
+pattern select(b:bat[:timestamp], low:timestamp, high:timestamp, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect
 comment "Overloaded selection routine";
 
-pattern subselect(b:bat[:bte], cand:bat[:oid], low:bte, high:bte, li:bit, hi:bit, anti:bit) :bat[:oid]
+pattern select(b:bat[:bte], cand:bat[:oid], low:bte, high:bte, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect;
 
-pattern subselect(b:bat[:sht], cand:bat[:oid], low:sht, high:sht, li:bit, hi:bit, anti:bit) :bat[:oid]
+pattern select(b:bat[:sht], cand:bat[:oid], low:sht, high:sht, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect;
 
-pattern subselect(b:bat[:int], cand:bat[:oid], low:int, high:int, li:bit, hi:bit, anti:bit) :bat[:oid]
+pattern select(b:bat[:int], cand:bat[:oid], low:int, high:int, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect;
 
-pattern subselect(b:bat[:lng], cand:bat[:oid], low:lng, high:lng, li:bit, hi:bit, anti:bit) :bat[:oid]
+pattern select(b:bat[:lng], cand:bat[:oid], low:lng, high:lng, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect;
 
-pattern subselect(b:bat[:flt], cand:bat[:oid], low:flt, high:flt, li:bit, hi:bit, anti:bit) :bat[:oid]
+pattern select(b:bat[:flt], cand:bat[:oid], low:flt, high:flt, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect;
 
-pattern subselect(b:bat[:dbl], cand:bat[:oid], low:dbl, high:dbl, li:bit, hi:bit, anti:bit) :bat[:oid]
+pattern select(b:bat[:dbl], cand:bat[:oid], low:dbl, high:dbl, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect;
 
-pattern subselect(b:bat[:timestamp], cand:bat[:oid], low:timestamp, high:timestamp, li:bit, hi:bit, anti:bit) :bat[:oid]
+pattern select(b:bat[:timestamp], cand:bat[:oid], low:timestamp, high:timestamp, li:bit, hi:bit, anti:bit) :bat[:oid]
 address VLTgenerator_subselect
 comment "Overloaded selection routine";
 

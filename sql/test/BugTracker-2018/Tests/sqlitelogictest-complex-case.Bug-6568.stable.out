@@ -1,0 +1,39 @@
+stdout of test 'sqlitelogictest-complex-case.Bug-6568` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 10:35:09 >  
+# 10:35:09 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31034" "--set" "mapi_usock=/var/tmp/mtest-7017/.s.monetdb.31034" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-old/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2018" "--set" "embedded_c=true"
+# 10:35:09 >  
+
+# MonetDB 5 server v11.29.2
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit
+# Found 15.387 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:31034/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-7017/.s.monetdb.31034
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 10:35:09 >  
+# 10:35:09 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-7017" "--port=31034"
+# 10:35:09 >  
+
+#SELECT - 76 AS col2, CASE WHEN CAST ( - MAX ( DISTINCT - 75 ) AS INTEGER ) IS NOT NULL THEN + 4 * - + 48 * + 51 * - -
+#54 * - 77 * 46 WHEN NOT ( NULL ) IN ( + - ( - - 49 ) * - 1, - 41, - 14 - - CASE - - 1 WHEN - - 82 THEN - - 23 END / + 46
+#- - 87 * + 52 ) THEN 56 ELSE NULL END AS col2;
+% .L2,	.L21 # table_name
+% col2,	col2 # name
+% tinyint,	bigint # type
+% 3,	10 # length
+[ -76,	1872896256	]
+
+# 10:35:09 >  
+# 10:35:09 >  "Done."
+# 10:35:09 >  
+

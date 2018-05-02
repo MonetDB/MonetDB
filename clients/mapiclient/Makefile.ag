@@ -14,43 +14,44 @@ lib_mcutil = {
 
 bin_mclient = {
 	SOURCES = mclient.c ReadlineTools.c ReadlineTools.h mhelp.c mhelp.h
-	LIBS = libmcutil ../mapilib/libmapi \
-		../../common/stream/libstream \
+	LIBS = libmcutil \
 		../../common/utils/libmutils \
+		../mapilib/libmapi \
+		../../common/stream/libstream \
 		$(READLINE_LIBS) \
-		$(curl_LIBS) $(LTLIBICONV) $(PTHREAD_LIBS) $(MATH_LIBS) $(SOCKET_LIBS)
+		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
 }
 
 bin_msqldump = {
 	SOURCES = msqldump.c msqldump.h
-	LIBS = libmcutil ../mapilib/libmapi \
+	LIBS = libmcutil ../../common/utils/libmutils \
+		../mapilib/libmapi \
 		../../common/stream/libstream \
-		../../common/utils/libmutils \
-		$(curl_LIBS)
+		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
 }
 
 bin_stethoscope = {
 	SOURCES = stethoscope.c
-	LIBS = libmcutil ../mapilib/libmapi \
+	LIBS = libmcutil ../../common/utils/libmutils \
+		../mapilib/libmapi \
 		../../common/stream/libstream \
-		../../common/utils/libmutils \
-		$(curl_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(SOCKET_LIBS)
+		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
 }
 
 bin_tachograph = {
 	SOURCES = tachograph.c
-	LIBS = libmcutil ../mapilib/libmapi \
+	LIBS = libmcutil ../../common/utils/libmutils \
+		../mapilib/libmapi \
 		../../common/stream/libstream \
-		../../common/utils/libmutils \
-		$(curl_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(SOCKET_LIBS)
+		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
 }
 
 bin_tomograph = {
 	SOURCES = tomograph.c
-	LIBS = libmcutil ../mapilib/libmapi \
+	LIBS = libmcutil ../../common/utils/libmutils \
+		../mapilib/libmapi \
 		../../common/stream/libstream \
-		../../common/utils/libmutils \
-		$(curl_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) $(SOCKET_LIBS)
+		$(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) $(snappy_LIBS) $(lz4_LIBS) $(liblzma_LIBS) $(curl_LIBS) $(LTLIBICONV) $(openssl_LIBS)
 }
 
 # disabled: it's not really a tool for users, more to debug mapi

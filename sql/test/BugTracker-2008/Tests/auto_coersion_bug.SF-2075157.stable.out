@@ -24,8 +24,8 @@ Ready.
 # 12:25:51 >  
 
 [ 1	]
-#SELECT 2 * q1 AS q FROM A;
-% sys.L2 # table_name
+#SELECT CAST(2 * q1 AS BIGINT) AS q FROM A;
+% sys.L3 # table_name
 % q # name
 % bigint # type
 % 16 # length
@@ -33,8 +33,8 @@ Ready.
 [ 1	]
 #SELECT SUM(2 * COL1 * COL2)
 #FROM A2;
-% sys.L2 # table_name
-% L1 # name
+% .L4 # table_name
+% L4 # name
 % bigint # type
 % 6 # length
 [ 246864	]

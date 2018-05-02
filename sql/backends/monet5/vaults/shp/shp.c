@@ -16,7 +16,9 @@
 #include <string.h>
 #include "sql_mvc.h"
 #include "sql.h"
+#define HAVE_CXX11 0		/* stupid include file gdal/cpl_port.h */
 #include "shp.h"
+#include <cpl_conv.h>		/* for CPLFree */
 #include "sql_execute.h"
 #include "mal_exception.h"
 
@@ -149,7 +151,7 @@ void GDALWPrintRecords(GDALWConnection conn) {
 		OGR_G_ExportToWkt(geometry, &wkt);
 		printf("%s", wkt);
 		printf("\n");
-		OGRFree(wkt);
+		CPLFree(wkt);
 		OGR_F_Destroy(feature);
 	}
 }

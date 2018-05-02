@@ -179,10 +179,10 @@ MKEYbathash(bat *res, const bat *bid)
 	}
 
 	if (dst->batCount <= 1) {
-		BATkey(dst, 1);
+		BATkey(dst, true);
 		dst->tsorted = dst->trevsorted = 1;
 	} else {
-		BATkey(dst, 0);
+		BATkey(dst, false);
 		dst->tsorted = dst->trevsorted = 0;
 	}
 	dst->tnonil = 0;
@@ -351,10 +351,10 @@ MKEYbulk_rotate_xor_hash(bat *res, const bat *hid, const int *nbits, const bat *
 	}
 	}
 	if (bn->batCount <= 1) {
-		BATkey(bn, 1);
+		BATkey(bn, true);
 		bn->tsorted = bn->trevsorted = 1;
 	} else {
-		BATkey(bn, 0);
+		BATkey(bn, false);
 		bn->tsorted = bn->trevsorted = 0;
 	}
 	bn->tnonil = 0;
@@ -433,10 +433,10 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	}
 
 	if (bn->batCount <= 1) {
-		BATkey(bn, 1);
+		BATkey(bn, true);
 		bn->tsorted = bn->trevsorted = 1;
 	} else {
-		BATkey(bn, 0);
+		BATkey(bn, false);
 		bn->tsorted = bn->trevsorted = 0;
 	}
 	bn->tnonil = 0;
@@ -539,10 +539,10 @@ MKEYconstbulk_rotate_xor_hash(bat *res, const lng *h, const int *nbits, const ba
 	}
 	}
 	if (bn->batCount <= 1) {
-		BATkey(bn, 1);
+		BATkey(bn, true);
 		bn->tsorted = bn->trevsorted = 1;
 	} else {
-		BATkey(bn, 0);
+		BATkey(bn, false);
 		bn->tsorted = bn->trevsorted = 0;
 	}
 	bn->tnonil = 0;

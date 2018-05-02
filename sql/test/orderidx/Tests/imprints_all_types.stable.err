@@ -1,0 +1,132 @@
+stderr of test 'imprints_all_types` in directory 'sql/test/orderidx` itself:
+
+
+# 16:58:46 >  
+# 16:58:46 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35267" "--set" "mapi_usock=/var/tmp/mtest-18158/.s.monetdb.35267" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_orderidx"
+# 16:58:46 >  
+
+# builtin opt 	gdk_dbpath = /export/scratch1/dinther/INSTALL/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 35267
+# cmdline opt 	mapi_usock = /var/tmp/mtest-18158/.s.monetdb.35267
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /export/scratch1/dinther/INSTALL/var/MonetDB/mTests_sql_test_orderidx
+# cmdline opt 	gdk_debug = 553648138
+
+# 16:58:46 >  
+# 16:58:46 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-18158" "--port=35267"
+# 16:58:46 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-18158/.s.monetdb.35267
+QUERY = create imprints index "impidx_blob" on all_types ("blob");
+ERROR = !GDK reported error: BATimprints: unsupported type
+MAPI  = (monetdb) /var/tmp/mtest-18454/.s.monetdb.38373
+QUERY = create imprints index "impidx_blob100" on all_types ("blob100");
+ERROR = !GDK reported error: BATimprints: unsupported type
+MAPI  = (monetdb) /var/tmp/mtest-18454/.s.monetdb.38373
+QUERY = create imprints index "impidx_clob" on all_types ("clob");
+ERROR = !GDK reported error: BATimprints: unsupported type
+MAPI  = (monetdb) /var/tmp/mtest-18454/.s.monetdb.38373
+QUERY = create imprints index "impidx_clob100" on all_types ("clob100");
+ERROR = !GDK reported error: BATimprints: unsupported type
+MAPI  = (monetdb) /var/tmp/mtest-18454/.s.monetdb.38373
+QUERY = create imprints index "impidx_character" on all_types ("character");
+ERROR = !GDK reported error: BATimprints: unsupported type
+MAPI  = (monetdb) /var/tmp/mtest-18454/.s.monetdb.38373
+QUERY = create imprints index "impidx_varchar100" on all_types ("varchar100");
+ERROR = !GDK reported error: BATimprints: unsupported type
+MAPI  = (monetdb) /var/tmp/mtest-18454/.s.monetdb.38373
+QUERY = create imprints index "impidx_character10" on all_types ("character10");
+ERROR = !GDK reported error: BATimprints: unsupported type
+MAPI  = (monetdb) /var/tmp/mtest-18454/.s.monetdb.38373
+QUERY = create imprints index "impidx_inet" on all_types ("inet");
+ERROR = !GDK reported error: BATimprints: unsupported type
+MAPI  = (monetdb) /var/tmp/mtest-18454/.s.monetdb.38373
+QUERY = create imprints index "impidx_inet9" on all_types ("inet9");
+ERROR = !GDK reported error: BATimprints: unsupported type
+MAPI  = (monetdb) /var/tmp/mtest-18454/.s.monetdb.38373
+QUERY = create imprints index "impidx_json" on all_types ("json");
+ERROR = !GDK reported error: BATimprints: unsupported type
+MAPI  = (monetdb) /var/tmp/mtest-18454/.s.monetdb.38373
+QUERY = create imprints index "impidx_json10" on all_types ("json10");
+ERROR = !GDK reported error: BATimprints: unsupported type
+MAPI  = (monetdb) /var/tmp/mtest-18454/.s.monetdb.38373
+QUERY = create imprints index "impidx_url" on all_types ("url");
+ERROR = !GDK reported error: BATimprints: unsupported type
+MAPI  = (monetdb) /var/tmp/mtest-18454/.s.monetdb.38373
+QUERY = create imprints index "impidx_url55" on all_types ("url55");
+ERROR = !GDK reported error: BATimprints: unsupported type
+MAPI  = (monetdb) /var/tmp/mtest-18454/.s.monetdb.38373
+QUERY = create imprints index "impidx_uuid" on all_types ("uuid");
+ERROR = !GDK reported error: BATimprints: unsupported type
+MAPI  = (monetdb) /var/tmp/mtest-18454/.s.monetdb.38373
+QUERY = drop index "impidx_blob";
+ERROR = !DROP INDEX: no such index 'impidx_blob'
+CODE  = 42S12
+MAPI  = (monetdb) /var/tmp/mtest-18158/.s.monetdb.35267
+QUERY = drop index "impidx_blob100";
+ERROR = !DROP INDEX: no such index 'impidx_blob100'
+CODE  = 42S12
+MAPI  = (monetdb) /var/tmp/mtest-18158/.s.monetdb.35267
+QUERY = drop index "impidx_clob";
+ERROR = !DROP INDEX: no such index 'impidx_clob'
+CODE  = 42S12
+MAPI  = (monetdb) /var/tmp/mtest-18158/.s.monetdb.35267
+QUERY = drop index "impidx_clob100";
+ERROR = !DROP INDEX: no such index 'impidx_clob100'
+CODE  = 42S12
+MAPI  = (monetdb) /var/tmp/mtest-18158/.s.monetdb.35267
+QUERY = drop index "impidx_character";
+ERROR = !DROP INDEX: no such index 'impidx_character'
+CODE  = 42S12
+MAPI  = (monetdb) /var/tmp/mtest-18158/.s.monetdb.35267
+QUERY = drop index "impidx_varchar100";
+ERROR = !DROP INDEX: no such index 'impidx_varchar100'
+CODE  = 42S12
+MAPI  = (monetdb) /var/tmp/mtest-18158/.s.monetdb.35267
+QUERY = drop index "impidx_character10";
+ERROR = !DROP INDEX: no such index 'impidx_character10'
+CODE  = 42S12
+MAPI  = (monetdb) /var/tmp/mtest-18158/.s.monetdb.35267
+QUERY = drop index "impidx_inet";
+ERROR = !DROP INDEX: no such index 'impidx_inet'
+CODE  = 42S12
+MAPI  = (monetdb) /var/tmp/mtest-18158/.s.monetdb.35267
+QUERY = drop index "impidx_inet9";
+ERROR = !DROP INDEX: no such index 'impidx_inet9'
+CODE  = 42S12
+MAPI  = (monetdb) /var/tmp/mtest-18158/.s.monetdb.35267
+QUERY = drop index "impidx_json";
+ERROR = !DROP INDEX: no such index 'impidx_json'
+CODE  = 42S12
+MAPI  = (monetdb) /var/tmp/mtest-18158/.s.monetdb.35267
+QUERY = drop index "impidx_json10";
+ERROR = !DROP INDEX: no such index 'impidx_json10'
+CODE  = 42S12
+MAPI  = (monetdb) /var/tmp/mtest-18158/.s.monetdb.35267
+QUERY = drop index "impidx_url";
+ERROR = !DROP INDEX: no such index 'impidx_url'
+CODE  = 42S12
+MAPI  = (monetdb) /var/tmp/mtest-18158/.s.monetdb.35267
+QUERY = drop index "impidx_url55";
+ERROR = !DROP INDEX: no such index 'impidx_url55'
+CODE  = 42S12
+MAPI  = (monetdb) /var/tmp/mtest-18158/.s.monetdb.35267
+QUERY = drop index "impidx_uuid";
+ERROR = !DROP INDEX: no such index 'impidx_uuid'
+CODE  = 42S12
+
+# 16:58:46 >  
+# 16:58:46 >  "Done."
+# 16:58:46 >  
+

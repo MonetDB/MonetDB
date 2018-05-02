@@ -28,6 +28,7 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 	BUN p,q;															\
 	const TYPE1 *x;														\
 	TYPE2 y, *yp = &y;													\
+	char *msg = MAL_SUCCEED;											\
 																		\
 	if( (b= BATdescriptor(*l)) == NULL )								\
 		throw(MAL, "batcolor." #NAME, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);	\
@@ -49,8 +50,8 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 			y = (TYPE2) TYPE2##_nil;									\
 			bn->tnonil = 0;												\
 			bn->tnil = 1;												\
-		} else															\
-			FUNC(yp,x);													\
+		} else if ((msg = FUNC(yp,x)) != MAL_SUCCEED)					\
+			goto bunins_failed;											\
 		bunfastapp(bn, yp);												\
 	}																	\
 	*ret = bn->batCacheid;												\
@@ -60,6 +61,8 @@ str CLRbat##NAME(bat *ret, const bat *l)								\
 bunins_failed:															\
 	BBPunfix(b->batCacheid);											\
 	BBPunfix(bn->batCacheid);											\
+	if (msg)															\
+		return msg;														\
 	throw(MAL, "batcolor." #NAME, OPERATION_FAILED " During bulk operation"); \
 }
 
@@ -90,6 +93,7 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 	BUN p,q;															\
 	const TYPE *x, *x2, *x3;											\
 	color y, *yp = &y;													\
+	char *msg = MAL_SUCCEED;											\
 																		\
 	b= BATdescriptor(*l);												\
 	b2= BATdescriptor(*bid2);											\
@@ -129,8 +133,8 @@ str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3) \
 			y = color_nil;												\
 			bn->tnonil = 0;												\
 			bn->tnil = 1;												\
-		} else															\
-			FUNC(yp,x,x2,x3);											\
+		} else if ((msg = FUNC(yp,x,x2,x3)) != MAL_SUCCEED)				\
+			goto bunins_failed;											\
 		bunfastapp(bn, yp);												\
 	}																	\
 	*ret = bn->batCacheid;												\
@@ -144,6 +148,8 @@ bunins_failed:															\
 	BBPunfix(b2->batCacheid);											\
 	BBPunfix(b3->batCacheid);											\
 	BBPunfix(bn->batCacheid);											\
+	if (msg)															\
+		return msg;														\
 	throw(MAL, "batcolor." #NAME, OPERATION_FAILED " During bulk operation"); \
 }
 

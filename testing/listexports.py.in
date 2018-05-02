@@ -10,11 +10,11 @@ import re
 
 from . import exportutils
 
-# sets of directories that end up in the same shared object
+# sets of directories/files that end up in the same shared object
 dirlist = {
-    'gdk': ['gdk', 'common/options', 'common/utils'],
-    'mapi': ['clients/mapilib'],
-    'monetdb5': ['monetdb5'],
+    'gdk': ['gdk', 'common/options', 'common/utils/mutils.h', 'common/utils/mprompt.h'],
+    'mapi': ['clients/mapilib', 'common/options', 'common/utils/mcrypt.h'],
+    'monetdb5': ['monetdb5', 'common/utils/msabaoth.h', 'common/utils/muuid.h'],
     'stream': ['common/stream'],
     }
 libs = sorted(dirlist.keys())
@@ -27,7 +27,6 @@ skipfiles = ['monet_getopt.h']
 
 # where the files are
 srcdir = r'@SOURCE@'
-blddir = r'@BUILD@'
 
 # the export command; note the keyword we look for is a word that ends
 # in "export"
@@ -58,11 +57,17 @@ def extract(f):
         res = expre.search(data, pos)
     return decls
 
+def mywalk(d):
+    if os.path.isfile(d):
+        root, file = os.path.split(d)
+        return [(root, [], [file])]
+    return os.walk(d)
+
 def findfiles(dirlist, skipfiles = [], skipdirs = []):
     decls = []
     done = {}
     for d in dirlist:
-        for root, dirs, files in os.walk(d):
+        for root, dirs, files in mywalk(d):
             for d in skipdirs:
                 if d in dirs:
                     dirs.remove(d)
@@ -82,8 +87,6 @@ def main():
     for lib in libs:
         dirs = dirlist[lib]
         dl = [os.path.join(srcdir, d) for d in dirs]
-        if srcdir != blddir:
-            dl.extend([os.path.join(blddir, d) for d in dirs])
         decls = findfiles(dl, skipfiles = skipfiles, skipdirs = skipdirs)
         sys.stdout.write('# %s\n' % lib)
         for d in decls:

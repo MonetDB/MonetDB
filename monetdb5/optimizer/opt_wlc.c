@@ -64,7 +64,16 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = old[i];
 		pushInstruction(mb,p);
 		if( getModuleId(p) == querylogRef && getFunctionId(p) == defineRef){
-			q= copyInstruction(p);
+			if((q= copyInstruction(p)) == NULL) {
+				for(i=0; i<mb->stop; i++)
+					if( mb->stmt[i])
+						freeInstruction(mb->stmt[i]);
+				GDKfree(mb->stmt);
+				mb->stmt = old;
+				mb->stop = limit;
+				mb->ssize = slimit;
+				return createException(MAL, "wlcr.optimizer", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
 			setModuleId(q, wlcRef);
 			setFunctionId(q,queryRef);
 			getArg(q,0) = newTmpVariable(mb,TYPE_any);
@@ -84,7 +93,16 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			strcmp( getVarConstant(mb,getArg(p,1)).val.sval, "tmp") != 0 ){
 			setFunctionId(def,actionRef);
 				assert(def);
-				q= copyInstruction(p);
+				if((q= copyInstruction(p)) == NULL) {
+					for(i=0; i<mb->stop; i++)
+						if( mb->stmt[i])
+							freeInstruction(mb->stmt[i]);
+					GDKfree(mb->stmt);
+					mb->stmt = old;
+					mb->stop = limit;
+					mb->ssize = slimit;
+					return createException(MAL, "wlcr.optimizer", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				}
 				setModuleId(q, wlcRef);
 				for( j=0; j< p->retc; j++)
 					getArg(q,j) = newTmpVariable(mb,TYPE_any);
@@ -99,7 +117,16 @@ OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			  strcmp( getVarConstant(mb,getArg(p,2)).val.sval, "tmp") != 0 ){
 				assert( def);// should always be there, temporary tables are always ignored
 				setFunctionId(def,actionRef);
-				q= copyInstruction(p);
+				if((q= copyInstruction(p)) == NULL) {
+					for(i=0; i<mb->stop; i++)
+						if( mb->stmt[i])
+							freeInstruction(mb->stmt[i]);
+					GDKfree(mb->stmt);
+					mb->stmt = old;
+					mb->stop = limit;
+					mb->ssize = slimit;
+					return createException(MAL, "wlcr.optimizer", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				}
 				delArgument(q, q->retc);
 				setModuleId(q, wlcRef);
 				for( j=0; j< p->retc; j++)

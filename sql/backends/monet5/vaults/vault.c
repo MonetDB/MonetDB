@@ -193,7 +193,7 @@ VLTimport(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		curl_easy_cleanup(curl);
 
 		if(CURLE_OK != res)
-			msg = createException(MAL,"vault.import", SQLSTATE(42000) "curl [%d] %s '%s' -> '%s'\n", res, curl_easy_strerror(res), *source,path);
+			msg = createException(MAL,"vault.import", SQLSTATE(42000) "curl [%u] %s '%s' -> '%s'\n", res, curl_easy_strerror(res), *source,path);
 	}
 
 	if(ftpfile.stream)

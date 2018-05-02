@@ -854,18 +854,18 @@ segmentizeLineString(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometr
 	//store the points so that I do not have to read them multiple times using geos
 	if ((xCoords_org = GDKmalloc(pointsNum * sizeof(double))) == NULL) {
 		*outGeometry = NULL;
-		throw(MAL, "geom.Segmentize", SQLSTATE(HY001) MAL_MALLOC_FAIL " for %d double values", pointsNum);
+		throw(MAL, "geom.Segmentize", SQLSTATE(HY001) MAL_MALLOC_FAIL " for %u double values", pointsNum);
 	}
 	if ((yCoords_org = GDKmalloc(pointsNum * sizeof(double))) == NULL) {
 		GDKfree(xCoords_org);
 		*outGeometry = NULL;
-		throw(MAL, "geom.Segmentize", SQLSTATE(HY001) MAL_MALLOC_FAIL " for %d double values", pointsNum);
+		throw(MAL, "geom.Segmentize", SQLSTATE(HY001) MAL_MALLOC_FAIL " for %u double values", pointsNum);
 	}
 	if ((zCoords_org = GDKmalloc(pointsNum * sizeof(double))) == NULL) {
 		GDKfree(xCoords_org);
 		GDKfree(yCoords_org);
 		*outGeometry = NULL;
-		throw(MAL, "geom.Segmentize", SQLSTATE(HY001) MAL_MALLOC_FAIL " for %d double values", pointsNum);
+		throw(MAL, "geom.Segmentize", SQLSTATE(HY001) MAL_MALLOC_FAIL " for %u double values", pointsNum);
 	}
 
 	if (!GEOSCoordSeq_getX(gcs_old, 0, &xCoords_org[0])) {
@@ -917,7 +917,7 @@ segmentizeLineString(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometr
 		zl = zCoords_org[i];
 
 	}
-//fprintf(stderr, "Adding %d\n", additionalPoints);
+//fprintf(stderr, "Adding %u\n", additionalPoints);
 	//create the coordinates sequence for the translated geometry
 	if ((gcs_new = GEOSCoordSeq_create(pointsNum + additionalPoints, coordinatesNum)) == NULL) {
 		*outGeometry = NULL;
