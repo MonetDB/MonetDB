@@ -138,7 +138,7 @@ AUTHrequireAdminOrUser(Client cntxt, const char *username) {
 static void
 AUTHcommit(void)
 {
-	bat blist[4];
+	bat blist[9];
 
 	blist[0] = 0;
 
@@ -148,7 +148,17 @@ AUTHcommit(void)
 	blist[2] = pass->batCacheid;
 	assert(duser);
 	blist[3] = duser->batCacheid;
-	TMsubcommit_list(blist, 4);
+	assert(rt_key);
+	blist[4] = rt_key->batCacheid;
+	assert(rt_uri);
+	blist[5] = rt_uri->batCacheid;
+	assert(rt_remoteuser);
+	blist[6] = rt_remoteuser->batCacheid;
+	assert(rt_hashedpwd);
+	blist[7] = rt_hashedpwd->batCacheid;
+	assert(rt_deleted);
+	blist[8] = rt_deleted->batCacheid;
+	TMsubcommit_list(blist, 9);
 }
 
 /*
@@ -261,7 +271,11 @@ AUTHinitTables(const char *passwd) {
 			AUTHcommit();
 	}
 	else {
+		int dbg = GDKdebug;
+		/* don't check this bat since we'll fix it below */
+		GDKdebug &= ~CHECKMASK;
 		rt_key = BATdescriptor(bid);
+		GDKdebug = dbg;
 		if (rt_key == NULL) {
 			throw(MAL, "initTables.rt_key", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
@@ -283,7 +297,11 @@ AUTHinitTables(const char *passwd) {
 			AUTHcommit();
 	}
 	else {
+		int dbg = GDKdebug;
+		/* don't check this bat since we'll fix it below */
+		GDKdebug &= ~CHECKMASK;
 		rt_uri = BATdescriptor(bid);
+		GDKdebug = dbg;
 		if (rt_uri == NULL) {
 			throw(MAL, "initTables.rt_uri", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
@@ -305,7 +323,11 @@ AUTHinitTables(const char *passwd) {
 			AUTHcommit();
 	}
 	else {
+		int dbg = GDKdebug;
+		/* don't check this bat since we'll fix it below */
+		GDKdebug &= ~CHECKMASK;
 		rt_remoteuser = BATdescriptor(bid);
+		GDKdebug = dbg;
 		if (rt_remoteuser == NULL) {
 			throw(MAL, "initTables.rt_remoteuser", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
@@ -327,7 +349,11 @@ AUTHinitTables(const char *passwd) {
 			AUTHcommit();
 	}
 	else {
+		int dbg = GDKdebug;
+		/* don't check this bat since we'll fix it below */
+		GDKdebug &= ~CHECKMASK;
 		rt_hashedpwd = BATdescriptor(bid);
+		GDKdebug = dbg;
 		if (rt_hashedpwd == NULL) {
 			throw(MAL, "initTables.rt_hashedpwd", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
@@ -1041,9 +1067,9 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 	rethrow("addRemoteTableCredentials", tmp, AUTHcypherValue(&cypher, pwhash));
 
 	/* Add entry */
-	bool table_entry = (BUNappend(rt_key, local_table, TRUE) == GDK_SUCCEED ||
-						BUNappend(rt_uri, uri, TRUE) == GDK_SUCCEED ||
-						BUNappend(rt_remoteuser, remoteuser, TRUE) == GDK_SUCCEED ||
+	bool table_entry = (BUNappend(rt_key, local_table, TRUE) == GDK_SUCCEED &&
+						BUNappend(rt_uri, uri, TRUE) == GDK_SUCCEED &&
+						BUNappend(rt_remoteuser, remoteuser, TRUE) == GDK_SUCCEED &&
 						BUNappend(rt_hashedpwd, cypher, TRUE) == GDK_SUCCEED);
 
 	if (!table_entry) {
