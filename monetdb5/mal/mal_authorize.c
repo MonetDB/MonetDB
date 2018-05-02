@@ -1084,3 +1084,33 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 	}
 	return MAL_SUCCEED;
 }
+
+str
+AUTHdeleteRemoteTableCredentials(const char *local_table)
+{
+	BUN p;
+	oid id;
+
+	assert(rt_key);
+	assert(rt_uri);
+	assert(rt_remoteuser);
+	assert(rt_hashedpwd);
+
+	/* pre-condition check */
+	if (local_table == NULL || strNil(local_table))
+		throw(ILLARG, "deleteRemoteTableCredentials", "local table cannot be nil");
+
+	/* ensure that the username exists */
+	p = lookupRemoteTableKey(local_table);
+	if (p == BUN_NONE)
+		throw(MAL, "deleteRemoteTableCredentials", "no such table: '%s'", local_table);
+	id = p;
+
+	/* now, we got the oid, start removing the related tuples */
+	if (BUNappend(rt_deleted, &id, TRUE) != GDK_SUCCEED)
+		throw(MAL, "deleteRemoteTableCredentials", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	/* make the stuff persistent */
+	AUTHcommit();
+	return(MAL_SUCCEED);
+}
