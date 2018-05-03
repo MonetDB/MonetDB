@@ -13,3 +13,6 @@ extern int dump_table(Mapi mid, const char *schema, const char *tname, stream *t
 extern int dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, const char *fname, const char *id);
 extern int dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts);
 extern void dump_version(Mapi mid, stream *toConsole, const char *prefix);
+
+/* used for backward compatibility with older server versions */
+extern const char *get_with_comments_as_clause(Mapi mid);
