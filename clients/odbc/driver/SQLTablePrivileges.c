@@ -155,7 +155,7 @@ MNDBTablePrivileges(ODBCStmt *stmt,
 		      "p.grantor = g.id and "
 		      "e.name = 'gdk_dbname' and "
 		      "p.privileges = pc.privilege_code_id",
-		/* a server that supports sys.columns also supports
+		/* a server that supports sys.comments also supports
 		 * sys.privilege_codes */
 		stmt->Dbc->has_comment ? "sys.privilege_codes as pc" :
 		     "(values (1, 'SELECT'), "

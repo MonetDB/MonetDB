@@ -50,6 +50,7 @@ sqlitelogictest-complex-case.Bug-6573
 create-temp-table-ordered-index-error.Bug-6574
 sqlitelogictest-missing-bulk-implementation.Bug-6575
 sqlitelogictest-aritmetic-expressions-handling.Bug-6576
+HAVE_LIBPY?temp-table-performance.Bug-6577
 multiple-insertinto-table-Bug-6578
 sqlitelogictest-select-nullif-case.Bug-6579
 concat-str-int.Bug-6583
@@ -57,3 +58,4 @@ nested-merge-tables.Bug-6585
 sqlitelogictest-count-coalesce-nullif.Bug-6586
 sqlitelogictest-case-not-in-count.Bug-6587
 sqlitelogictest-complex-expression.Bug-6589
+sqlitelogictest-complex-case-not-in.Bug-6594
