@@ -978,6 +978,9 @@ lookupRemoteTableKey(const char *key)
 	BATiter cni = bat_iterator(rt_key);
 	BUN p = BUN_NONE;
 
+	assert(rt_key);
+	assert(rt_deleted);
+
 	if (BAThash(rt_key, 0) == GDK_SUCCEED) {
 		HASHloop_str(cni, cni.b->thash, p, key) {
 			oid pos = p;
@@ -1007,6 +1010,11 @@ AUTHgetRemoteTableCredentials(const char *local_table, str *uri, str *username, 
 		throw(MAL, "getRemoteTableCredentials", "No credentials for table %s found", local_table);
 	}
 
+	assert(rt_key);
+	assert(rt_uri);
+	assert(rt_remoteuser);
+	assert(rt_hashedpwd);
+
 	assert(p != BUN_NONE);
 	i = bat_iterator(rt_uri);
 	*uri = BUNtail(i, p);
@@ -1035,6 +1043,11 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 		throw(ILLARG, "addRemoteTableCredentials", "URI cannot be nil");
 	if (local_user == NULL || strNil(local_user))
 		throw(ILLARG, "addRemoteTableCredentials", "local user name cannot be nil");
+
+	assert(rt_key);
+	assert(rt_uri);
+	assert(rt_remoteuser);
+	assert(rt_hashedpwd);
 
 	p = lookupRemoteTableKey(local_table);
 
