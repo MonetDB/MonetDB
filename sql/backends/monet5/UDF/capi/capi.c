@@ -208,7 +208,10 @@ static void *wrapped_GDK_zalloc_nojump(size_t size)
 	return add_allocated_region(ptr);
 }
 
-#define GENERATE_NUMERIC_FUNCTIONS(type, tpename) \
+#define GENERATE_NUMERIC_IS_NULL(type, tpename) \
+	static int tpename##_is_null(type value) { return value == tpename##_nil; }
+
+#define GENERATE_NUMERIC_INITIALIZE(type, tpename) \
 	static void tpename##_initialize(struct cudf_data_struct_##tpename *self,  \
 									 size_t count)                             \
 	{                                                                          \
@@ -226,8 +229,11 @@ static void *wrapped_GDK_zalloc_nojump(size_t size)
 		self->count = count;                                                   \
 		self->data = (type*) b->theap.base;                                    \
 		BATsetcount(b, count);                                                 \
-	}                                                                          \
-	static int tpename##_is_null(type value) { return value == tpename##_nil; }
+	}
+
+#define GENERATE_NUMERIC_ALL(type, tpename) \
+	GENERATE_NUMERIC_INITIALIZE(type, tpename) \
+	GENERATE_NUMERIC_IS_NULL(type, tpename)
 
 
 #define GENERATE_BASE_HEADERS(type, tpename)                                   \
@@ -243,14 +249,22 @@ static void *wrapped_GDK_zalloc_nojump(size_t size)
 	GENERATE_BASE_HEADERS(tpe, tpename);                                       \
 	static int tpename##_is_null(tpe value) { return value == tpename##_nil; }
 
-GENERATE_NUMERIC_FUNCTIONS(bit, bit);
-GENERATE_NUMERIC_FUNCTIONS(bte, bte);
-GENERATE_NUMERIC_FUNCTIONS(sht, sht);
-GENERATE_NUMERIC_FUNCTIONS(int, int);
-GENERATE_NUMERIC_FUNCTIONS(lng, lng);
-GENERATE_NUMERIC_FUNCTIONS(flt, flt);
-GENERATE_NUMERIC_FUNCTIONS(dbl, dbl);
-GENERATE_NUMERIC_FUNCTIONS(oid, oid);
+GENERATE_NUMERIC_ALL(bit, bit);
+GENERATE_NUMERIC_ALL(bte, bte);
+GENERATE_NUMERIC_ALL(sht, sht);
+GENERATE_NUMERIC_ALL(int, int);
+GENERATE_NUMERIC_ALL(lng, lng);
+GENERATE_NUMERIC_INITIALIZE(flt, flt);
+GENERATE_NUMERIC_INITIALIZE(dbl, dbl);
+GENERATE_NUMERIC_ALL(oid, oid);
+
+static int flt_is_null(flt value) {
+	return is_flt_nil(value);
+}
+
+static int dbl_is_null(dbl value) {
+	return is_dbl_nil(value);
+}
 
 GENERATE_BASE_HEADERS(char *, str);
 GENERATE_BASE_HEADERS(cudf_data_date, date);
