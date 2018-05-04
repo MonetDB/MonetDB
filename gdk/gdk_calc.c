@@ -8924,7 +8924,7 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_
 				v2 = ((const TYPE2 *) src2)[projected == 2 ? i : cand ? cand[i] - hoff : start + i]; \
 			if (src3)					\
 				v3 = ((const TYPE2 *) src3)[projected == 2 ? i : cand ? cand[i] - hoff : start + i]; \
-			if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2) || is_##TYPE2##_nil(v3)) { \
+			if (is_##TYPE1##_nil(v1)) {			\
 				((TYPE3 *) dst)[i] = TYPE3##_nil;	\
 				nils++;					\
 			} else {					\
