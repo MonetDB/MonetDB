@@ -24,7 +24,7 @@ opswitch(BAT *b1, int tp1, const void *src1, const void *v1p,
 		goto unsupported;
 	}
 
-	switch (ATOMbasetype(tp1)) {
+	switch (tp1) {
 	default: {
 		BATiter b1i;
 		BATiter b2i;
@@ -58,7 +58,7 @@ opswitch(BAT *b1, int tp1, const void *src1, const void *v1p,
 		oid v1 = * (const oid *) src1;
 		oid v2 = 0;
 		BUN i;
-		switch (ATOMbasetype(tp2)) {
+		switch (tp2) {
 		case TYPE_void:
 			v2 = * (const oid *) src2;
 			switch (projected) {
@@ -85,7 +85,7 @@ opswitch(BAT *b1, int tp1, const void *src1, const void *v1p,
 					dst[i] = tpe_nil;
 					nils++;
 				} else {
-					dst[i] = OP(v1 + (projected == 1 ? i : cand[i] - hoff), v2);
+					dst[i] = OP(v1 + (projected == 1 ? i : cand ? cand[i] - hoff : start + i), v2);
 				}
 			}
 			break;
@@ -95,7 +95,7 @@ opswitch(BAT *b1, int tp1, const void *src1, const void *v1p,
 		break;
 	}
 	case TYPE_oid:
-		switch (ATOMbasetype(tp2)) {
+		switch (tp2) {
 		case TYPE_void: {
 			oid v1 = 0;
 			oid v2 = 0;
@@ -123,7 +123,7 @@ opswitch(BAT *b1, int tp1, const void *src1, const void *v1p,
 		}
 		break;
 	case TYPE_bte:
-		switch (ATOMbasetype(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			BINARY_3TYPE_FUNC(bte, bte, tpe, OP);
 			break;
@@ -152,7 +152,7 @@ opswitch(BAT *b1, int tp1, const void *src1, const void *v1p,
 		}
 		break;
 	case TYPE_sht:
-		switch (ATOMbasetype(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			BINARY_3TYPE_FUNC(sht, bte, tpe, OP);
 			break;
@@ -181,7 +181,7 @@ opswitch(BAT *b1, int tp1, const void *src1, const void *v1p,
 		}
 		break;
 	case TYPE_int:
-		switch (ATOMbasetype(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			BINARY_3TYPE_FUNC(int, bte, tpe, OP);
 			break;
@@ -210,7 +210,7 @@ opswitch(BAT *b1, int tp1, const void *src1, const void *v1p,
 		}
 		break;
 	case TYPE_lng:
-		switch (ATOMbasetype(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			BINARY_3TYPE_FUNC(lng, bte, tpe, OP);
 			break;
@@ -240,7 +240,7 @@ opswitch(BAT *b1, int tp1, const void *src1, const void *v1p,
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		switch (ATOMbasetype(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			BINARY_3TYPE_FUNC(hge, bte, tpe, OP);
 			break;
@@ -268,7 +268,7 @@ opswitch(BAT *b1, int tp1, const void *src1, const void *v1p,
 		break;
 #endif
 	case TYPE_flt:
-		switch (ATOMbasetype(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			BINARY_3TYPE_FUNC(flt, bte, tpe, OP);
 			break;
@@ -297,7 +297,7 @@ opswitch(BAT *b1, int tp1, const void *src1, const void *v1p,
 		}
 		break;
 	case TYPE_dbl:
-		switch (ATOMbasetype(tp2)) {
+		switch (tp2) {
 		case TYPE_bte:
 			BINARY_3TYPE_FUNC(dbl, bte, tpe, OP);
 			break;
