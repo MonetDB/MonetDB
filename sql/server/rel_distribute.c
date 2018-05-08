@@ -87,10 +87,11 @@ rewrite_replica( mvc *sql, sql_rel *rel, sql_table *t, sql_part *pd, int remote_
 
 	/* set_remote() */
 	if (remote_prop && p && isRemote(p)) {
-		char *uri = p->query;
-		prop *p = r->p = prop_create(sql->sa, PROP_REMOTE, r->p); 
+		//TODO handle allocation failure
+		char *local_name = sa_strconcat(sql->sa, sa_strconcat(sql->sa, p->s->base.name, "."), p->base.name);
+		prop *p = r->p = prop_create(sql->sa, PROP_REMOTE, r->p);
 
-		p->value = uri;
+		p->value = local_name;
 	}
 	return r;
 }
