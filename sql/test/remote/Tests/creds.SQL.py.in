@@ -1,0 +1,99 @@
+from __future__ import print_function
+
+import os
+import tempfile
+import threading
+import socket
+
+import pymonetdb
+
+try:
+    from MonetDBtesting import process
+except ImportError:
+    import process
+
+NWORKERS = 2
+TMPDIR = tempfile.mkdtemp()
+
+MOVIES_TABLE_DEF = ''' (
+    movie_id BIGINT PRIMARY KEY,
+    release_year INT,
+    title VARCHAR(200)
+)
+'''
+
+RATINGS_TABLE_DEF = ''' (
+    movie_id BIGINT,
+    customer_id BIGINT,
+    rating TINYINT,
+    rating_date DATE
+)
+'''
+
+def freeport():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind(('', 0))
+    port = sock.getsockname()[1]
+    sock.close()
+    return port
+
+def worker_load(workerrec):
+    filename="$TSTDATAPATH/netflix_data/ratings_sample_{}.csv".format(workerrec['num'])
+    c = workerrec['conn']
+    cmovies = "CREATE REMOTE TABLE movies {} ON '{}'".format(MOVIES_TABLE_DEF, supervisor_uri)
+    screateq = "CREATE TABLE ratings {}".format(RATINGS_TABLE_DEF)
+    load_data = "COPY INTO ratings FROM '{}' USING DELIMITERS ',','\n'".format(filename)
+    c.execute(cmovies)
+    c.execute(screateq)
+    c.execute(load_data)
+
+supervisorport = freeport()
+supervisorproc = process.server(mapiport=supervisorport, dbname="supervisor", dbfarm=os.path.join(TMPDIR, "supervisor"), stdin=process.PIPE, stdout=process.PIPE)
+supervisorconn = pymonetdb.connect(database='supervisor', port=supervisorport, autocommit=True)
+supervisor_uri = "mapi:monetdb://localhost:{}/supervisor".format(supervisorport)
+c = supervisorconn.cursor()
+
+movies_filename="$TSTDATAPATH/netflix_data/movies.csv"
+movies_create = "CREATE TABLE movies {}".format(MOVIES_TABLE_DEF)
+c.execute(movies_create)
+load_movies = "COPY INTO movies FROM '{}' USING DELIMITERS ',','\n','\"'".format(movies_filename)
+c.execute(load_movies)
+
+# Setup and start workers
+workers = []
+for i in range(NWORKERS):
+    workerport = freeport()
+    workerdbname = 'worker_{}'.format(i)
+    workerrec = {
+        'num': i,
+        'port': workerport,
+        'dbname': workerdbname,
+        'dbfarm': os.path.join(TMPDIR, workerdbname),
+        'mapi': 'mapi:monetdb://localhost:{}/{}/sys/ratings'.format(workerport, workerdbname),
+    }
+    workerrec['proc'] = process.server(mapiport=workerrec['port'], dbname=workerrec['dbname'], dbfarm=workerrec['dbfarm'], stdin=process.PIPE, stdout=process.PIPE)
+    workerrec['conn'] = pymonetdb.connect(database=workerrec['dbname'], port=workerport, autocommit=True)
+    t = threading.Thread(target=worker_load, args=[workerrec])
+    t.start()
+    workerrec['loadthread'] = t
+    workers.append(workerrec)
+
+for wrec in workers:
+    wrec['loadthread'].join()
+
+
+mtable = "CREATE MERGE TABLE ratings {}".format(RATINGS_TABLE_DEF)
+c.execute(mtable)
+
+for wrec in workers:
+    rtable = "CREATE REMOTE TABLE ratings{} {} on '{}' WITH USER 'monetdb' PASSWORD 'monetdb'".format(wrec['num'], RATINGS_TABLE_DEF, wrec['mapi'])
+    c.execute(rtable)
+
+    atable = "ALTER TABLE ratings add table ratings{}".format(wrec['num'])
+    c.execute(atable)
+
+c.execute("SELECT COUNT(*) FROM ratings0")
+print("{} rows in remote table".format(c.fetchall()[0][0]))
+
+c.execute("SELECT COUNT(*) FROM ratings")
+print("{} rows in merge table".format(c.fetchall()[0][0]))

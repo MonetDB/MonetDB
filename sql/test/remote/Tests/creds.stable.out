@@ -1,0 +1,33 @@
+stdout of test 'creds` in directory 'sql/test/remote` itself:
+
+
+# 16:41:16 >  
+# 16:41:16 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39959" "--set" "mapi_usock=/var/tmp/mtest-22488/.s.monetdb.39959" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/kutsurak/work/monet/sources/MonetDB/build/install/var/MonetDB/mTests_sql_test_remote" "--set" "embedded_c=true"
+# 16:41:16 >  
+
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_remote', using 4 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.513 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://zarquon.zarniwoop.org:39959/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-22488/.s.monetdb.39959
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 16:41:17 >  
+# 16:41:17 >  "/bin/python" "creds.SQL.py" "creds"
+# 16:41:17 >  
+
+1000 rows in remote table
+2000 rows in merge table
+
+# 16:41:19 >  
+# 16:41:19 >  "Done."
+# 16:41:19 >  
+

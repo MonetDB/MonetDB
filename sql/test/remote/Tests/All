@@ -1,2 +1,3 @@
 HAVE_PYMONETDB?ssbm
+HAVE_PYMONETDB&HAVE_DATA_PATH?creds
 THREADS>=2?partition_elim
