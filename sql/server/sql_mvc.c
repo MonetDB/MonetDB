@@ -142,11 +142,14 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			sql_table *deps = find_sql_table(s, "dependencies");
 			sql_column *depids = find_sql_column(deps, "id");
 			oid rid;
+			rids *rs;
 
 			table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-			while ((rid = table_funcs.column_find_row(m->session->tr, depids, &tid, NULL)), !is_oid_nil(rid)) {
+			rs = table_funcs.rids_select(m->session->tr, depids, &tid, &tid, NULL);
+			while ((rid = table_funcs.rids_next(rs)), !is_oid_nil(rid)) {
 				table_funcs.column_update_value(m->session->tr, depids, rid, &ntid);
 			}
+			table_funcs.rids_destroy(rs);
 		}
 
 		t = mvc_create_view(m, s, "columns", SQL_PERSIST, "SELECT * FROM (SELECT p.* FROM \"sys\".\"_columns\" AS p UNION ALL SELECT t.* FROM \"tmp\".\"_columns\" AS t) AS columns;", 1);
@@ -170,11 +173,14 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			sql_table *deps = find_sql_table(s, "dependencies");
 			sql_column *depids = find_sql_column(deps, "id");
 			oid rid;
+			rids *rs;
 
 			table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-			while ((rid = table_funcs.column_find_row(m->session->tr, depids, &cid, NULL)), !is_oid_nil(rid)) {
+			rs = table_funcs.rids_select(m->session->tr, depids, &cid, &cid, NULL);
+			while ((rid = table_funcs.rids_next(rs)), !is_oid_nil(rid)) {
 				table_funcs.column_update_value(m->session->tr, depids, rid, &ncid);
 			}
+			table_funcs.rids_destroy(rs);
 		} else {
 			sql_create_env(m, s);
 			sql_create_comments(m, s);
