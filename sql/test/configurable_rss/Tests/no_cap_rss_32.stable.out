@@ -1,0 +1,36 @@
+stdout of test 'no_cap_rss_64` in directory 'sql/test/configurable_rss` itself:
+
+
+# 13:48:01 >  
+# 13:48:01 >  "C:\Python27\python.exe" "no_cap_rss_64.py" "no_cap_rss_64"
+# 13:48:01 >  
+
+#create function getrss() 
+#returns bigint external name status.rss_cursize;
+#create table test(a int, b int, c double);
+#insert into test values (1, 0, 1);
+[ 1	]
+#create procedure loop_insert(maximum_size bigint)
+#begin
+#    declare size bigint;
+#    set size = (select count(*) from test);
+#
+#    while size < maximum_size do
+#        insert into test (select a+1, b+2, rand()*c from test);
+#
+#        set size = (select count(*) from test);
+#    end while;
+#end;
+#select getrss() > 25000 as resident_set_size_is_bigger_then_25kbytes, quantile(c/a, 0.8) * 0 from test;
+% .L2,	sys.L6 # table_name
+% resident_set_size_is_bigger_then_25000_kb,	L6 # name
+% boolean,	double # type
+% 5,	24 # length
+[ true,	0	]
+#drop table test cascade;
+#drop function getrss;
+
+# 16:57:29 >  
+# 16:57:29 >  "Done."
+# 16:57:29 >  
+
