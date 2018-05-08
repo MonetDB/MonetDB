@@ -88,7 +88,7 @@ RETURNS TABLE (sch varchar(100), usr varchar(100), dep_type varchar(32))
 RETURN TABLE (SELECT f1.name, f2.name, 'DEP_FUNC' from functions as f1, functions as f2, dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7);
 
 --Function f1 has a dependency on trigger tri
-CREATE FUNCTION dependencies_functions_os_triggers()
+CREATE FUNCTION dependencies_functions_on_triggers()
 RETURNS TABLE (sch varchar(100), usr varchar(100), dep_type varchar(32))
 RETURN TABLE (SELECT f.name, tri.name, 'DEP_TRIGGER' from functions as f, triggers as tri, dependencies as dep where dep.id = f.id AND dep.depend_id =tri.id AND dep.depend_type = 8);
 
