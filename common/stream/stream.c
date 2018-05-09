@@ -1629,7 +1629,18 @@ open_xzstream(const char *restrict filename, const char *restrict flags)
 		    strncmp(buf, UTF8BOM, UTF8BOMLENGTH) == 0) {
 			s->isutf8 = 1;
 		} else {
-			rewind(xz->fp);
+			FILE *fp = xz->fp;
+			lzma_ret ret;
+			lzma_end(&xz->strm);
+			ret = lzma_stream_decoder(&xz->strm, UINT64_MAX, LZMA_CONCATENATED);
+			if (ret != LZMA_OK) {
+				destroy(s);
+				free(xz);
+				fclose(fp);
+				return NULL;
+			}
+			rewind(fp);
+			xz->fp = fp;
 		}
 	}
 	return s;
