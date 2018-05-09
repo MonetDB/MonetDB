@@ -1,8 +1,8 @@
-stdout of test 'no_cap_rss_64` in directory 'sql/test/configurable_rss` itself:
+stdout of test 'no_cap_rss_32` in directory 'sql/test/configurable_rss` itself:
 
 
 # 13:48:01 >  
-# 13:48:01 >  "C:\Python27\python.exe" "no_cap_rss_64.py" "no_cap_rss_64"
+# 13:48:01 >  "C:\Python27\python.exe" "no_cap_rss_32.py" "no_cap_rss_32"
 # 13:48:01 >  
 
 #create function getrss() 
@@ -21,9 +21,9 @@ stdout of test 'no_cap_rss_64` in directory 'sql/test/configurable_rss` itself:
 #        set size = (select count(*) from test);
 #    end while;
 #end;
-#select getrss() > 25000 as resident_set_size_is_bigger_then_25kbytes, quantile(c/a, 0.8) * 0 from test;
+#select getrss() > 30000 as resident_set_size_is_bigger_then_30kbytes, quantile(c/a, 0.8) * 0 from test;
 % .L2,	sys.L6 # table_name
-% resident_set_size_is_bigger_then_25000_kb,	L6 # name
+% resident_set_size_is_bigger_then_30000_kb,	L6 # name
 % boolean,	double # type
 % 5,	24 # length
 [ true,	0	]
