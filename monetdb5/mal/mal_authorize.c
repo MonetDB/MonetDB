@@ -242,8 +242,6 @@ AUTHinitTables(const char *passwd) {
 			BATmode(duser, PERSISTENT) != GDK_SUCCEED) {
 			throw(MAL, "initTables.user", GDK_EXCEPTION);
 		}
-		if (!isNew)
-			AUTHcommit();
 	} else {
 		duser = BATdescriptor(bid);
 		if (duser == NULL)
@@ -267,8 +265,6 @@ AUTHinitTables(const char *passwd) {
 		if (BBPrename(BBPcacheid(rt_key), "M5system_auth_rt_key") != 0 ||
 			BATmode(rt_key, PERSISTENT) != GDK_SUCCEED)
 			throw(MAL, "initTables.rt_key", GDK_EXCEPTION);
-		if (!isNew)
-			AUTHcommit();
 	}
 	else {
 		int dbg = GDKdebug;
@@ -293,8 +289,6 @@ AUTHinitTables(const char *passwd) {
 		if (BBPrename(BBPcacheid(rt_uri), "M5system_auth_rt_uri") != 0 ||
 			BATmode(rt_uri, PERSISTENT) != GDK_SUCCEED)
 			throw(MAL, "initTables.rt_uri", GDK_EXCEPTION);
-		if (!isNew)
-			AUTHcommit();
 	}
 	else {
 		int dbg = GDKdebug;
@@ -319,8 +313,6 @@ AUTHinitTables(const char *passwd) {
 		if (BBPrename(BBPcacheid(rt_remoteuser), "M5system_auth_rt_remoteuser") != 0 ||
 			BATmode(rt_remoteuser, PERSISTENT) != GDK_SUCCEED)
 			throw(MAL, "initTables.rt_remoteuser", GDK_EXCEPTION);
-		if (!isNew)
-			AUTHcommit();
 	}
 	else {
 		int dbg = GDKdebug;
@@ -345,8 +337,6 @@ AUTHinitTables(const char *passwd) {
 		if (BBPrename(BBPcacheid(rt_hashedpwd), "M5system_auth_rt_hashedpwd") != 0 ||
 			BATmode(rt_hashedpwd, PERSISTENT) != GDK_SUCCEED)
 			throw(MAL, "initTables.rt_hashedpwd", GDK_EXCEPTION);
-		if (!isNew)
-			AUTHcommit();
 	}
 	else {
 		int dbg = GDKdebug;
@@ -371,6 +361,10 @@ AUTHinitTables(const char *passwd) {
 		if (BBPrename(BBPcacheid(rt_deleted), "M5system_auth_rt_deleted") != 0 ||
 			BATmode(rt_deleted, PERSISTENT) != GDK_SUCCEED)
 			throw(MAL, "initTables.rt_deleted", GDK_EXCEPTION);
+		/* If the database is not new, but we just created this BAT,
+		 * write everything to disc. This needs to happen only after
+		 * the last BAT of the vault has been created.
+		 */
 		if (!isNew)
 			AUTHcommit();
 	}
