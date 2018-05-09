@@ -87,7 +87,7 @@ AS_VAR_IF([PKG_CONFIG], [],
 # need to be escapes with an extra \.  Configure does not support \'s
 # in path names, so there is no need to do anything special here
 # except set the variables.  The command to set them in case we do
-# need to escape the \'s is Qvar=`echo "$var" | sed 's/\\\\/\\\\\\\\/g'`
+# need to escape the \'s is Qvar=`AS_ECHO(["$var"]) | sed 's/\\\\/\\\\\\\\/g'`
 BUILD=[`pwd`]
 AC_SUBST([BUILD])
 
@@ -107,12 +107,12 @@ AS_VAR_IF([prefix], [NONE],
 	[Qprefix="${ac_default_prefix}"].
 	[Qprefix="${prefix}"])
 
-Qprefix=`echo "$Qprefix" | sed 's/\\\\/\\\\\\\\/g'`
+Qprefix=`AS_ECHO(["$Qprefix"]) | sed 's/\\\\/\\\\\\\\/g'`
 AC_SUBST([Qprefix])
 # exec_prefix is created very late, so let make do the expansion
 AS_VAR_IF([exec_prefix], [NONE],
 	[Qexec_prefix='${prefix}'],
-	[Qexec_prefix=`echo "$exec_prefix" | sed 's/\\\\/\\\\\\\\/g'`])
+	[Qexec_prefix=`AS_ECHO(["$exec_prefix"]) | sed 's/\\\\/\\\\\\\\/g'`])
 AC_SUBST([Qexec_prefix])
 
 # small hack to get icc -no-gcc, done here because AC_PROG_CC shouldn't
@@ -460,7 +460,7 @@ AS_CASE([$CC_version],
 		[*'Sun Ceres C '*|*'Sun C '*], [
 			# developer/sunstudioexpress and
 			# developer/sunstudio12u1 respectively
-			CC_ver="suncc-`echo "$CC_version" | sed -n 's/.*Sun Ceres C \(.*\) SunOS.*/\1/p;s/.*Sun C \(.*\) SunOS.*/\1/p'`"
+			CC_ver="suncc-`AS_ECHO(["$CC_version"]) | sed -n 's/.*Sun Ceres C \(.*\) SunOS.*/\1/p;s/.*Sun C \(.*\) SunOS.*/\1/p'`"
 			CC_version="$CC_V"],
 		[AC_MSG_WARN([compiler not recognized:
 `$CC --version` says
@@ -499,7 +499,7 @@ AS_CASE([$host_os],
 		AS_IF([test -s /etc/os-release], [
 				# this is the new way of getting release information
 				# works for Fedora >= 17, Ubuntu >= 12.04 (Precise Pangolin)
-				LINUX_DIST=`source /etc/os-release; echo ${ID}:${VERSION_ID}`],
+				LINUX_DIST=`source /etc/os-release; AS_ECHO(["${ID}:${VERSION_ID}"])`],
 			[test -s /etc/fedora-release ], [
 				LINUX_DIST=`cat /etc/fedora-release | head -n1 \
 					| sed 's|^.*\(Fedora\).* release \([[0-9]][[^ \n]]*\)\( .*\)*$|\1:\2|'`],
@@ -529,7 +529,7 @@ AS_CASE([$host_os],
 			[test -s /etc/debian_version ], [
 				LINUX_DIST=Debian:`cat /etc/debian_version | head -n1`],
 			[LINUX_DIST=`uname -s`:`uname -r | sed 's|^\([[0-9\.]]*\)\([[^0-9\.]].*\)$|\1|'`])
-		LINUX_DIST=`echo "$LINUX_DIST" | sed 's|:||'`
+		LINUX_DIST=`AS_ECHO(["$LINUX_DIST"]) | sed 's|:||'`
 		AC_MSG_RESULT([$LINUX_DIST])])
 AC_SUBST([LINUX_DIST])
 
@@ -561,11 +561,11 @@ AC_DEFUN([MCHECK_ADD_FLAG], [
 					return 0;
 				}
 				]])],
-			[eval ${cache_var}=yes],
-			[eval ${cache_var}=no])
+			[AS_VAR_SET([$cache_var], [yes])],
+			[AS_VAR_SET([$cache_var], [no])])
 		CFLAGS="${SAVE_FLAGS}"
 		])
-	eval "test \"x\$${cache_var}\" = xyes && X_CFLAGS=\"${X_CFLAGS} $1\""
+	AS_VAR_IF([$cache_var], [yes], [X_CFLAGS="${X_CFLAGS} $1"])
 ])
 
 # Set compiler switches.
@@ -845,7 +845,7 @@ AS_CASE([x$enable_debug.$enable_optimize],
 		enable_optimize=no
 		],
 	[x*.*no], [
-		enable_debug=`echo $enable_debug | sed 's:^def_::'`
+		enable_debug=`AS_ECHO(["$enable_debug"]) | sed 's:^def_::'`
 		enable_optimize=no
 		],
 	[x*.*yes], [
@@ -858,14 +858,14 @@ AS_CASE([x$enable_debug.$enable_optimize],
 	[x*],
 		[AC_MSG_WARN([unhandled configuration $enable_debug.$enable_optimize, please file a bug on bugs.monetdb.org])])
 # make defaults real for flags which don't conflict with anything
-enable_assert=`echo $enable_assert | sed 's:^def_::'`
+enable_assert=`AS_ECHO(["$enable_assert"]) | sed 's:^def_::'`
 
 AC_MSG_CHECKING([for --enable-debug])
 AS_VAR_IF([enable_debug], [yes], [
 	origCFLAGS=$CFLAGS
 	# remove "-Ox" as some compilers don't like "-g -Ox" combinations
 	CFLAGS=" $CFLAGS "
-	CFLAGS=`echo "$CFLAGS" | sed -e 's| -O[[0-9]] | |g' -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`
+	CFLAGS=`AS_ECHO(["$CFLAGS"]) | sed -e 's| -O[[0-9]] | |g' -e 's| -g | |g' -e 's|^ ||' -e 's| $||'`
 	# add "-g"
 	CFLAGS="$CFLAGS -g"
 	AS_CASE([$GCC-$host_os],
@@ -881,7 +881,7 @@ AS_VAR_IF([enable_debug], [yes], [
 			[*" $flag "*], [],
 			[changedCFLAGS="$changedCFLAGS, added $flag"])
 	done
-	changedCFLAGS=`echo $changedCFLAGS | sed -e 's|^, ||'`
+	changedCFLAGS=`AS_ECHO(["$changedCFLAGS"]) | sed -e 's|^, ||'`
 	AC_MSG_RESULT([$enable_debug: $changedCFLAGS])],
 	[AC_MSG_RESULT([no])])
 
@@ -898,7 +898,7 @@ AS_VAR_IF([enable_optimize], [yes], [
 	# remove "-g" as some compilers don't like "-g -Ox" combinations
 	# remove "-O2" as we add "-Ox" and some compilers don't like "-Oy -Ox" combinations
 	CFLAGS=" $CFLAGS "
-	CFLAGS=`echo "$CFLAGS" | sed -e 's| -g | |g' -e 's| -O2 | |g' -e 's|^ ||' -e 's| $||'`
+	CFLAGS=`AS_ECHO(["$CFLAGS"]) | sed -e 's| -g | |g' -e 's| -O2 | |g' -e 's|^ ||' -e 's| $||'`
 	# Optimization flags
 	AS_CASE([$GCC-$CC_ver],
 		[yes-clang-*],
@@ -1026,7 +1026,7 @@ AS_VAR_IF([enable_optimize], [yes], [
 	])
 	# for stack-traces with assert, we DO want a frame-pointer
 	AS_VAR_IF([enable_assert], [yes],
-		[CFLAGS=`echo $CFLAGS | sed 's:-fomit-frame-pointer::'`])
+		[CFLAGS=`AS_ECHO(["$CFLAGS"]) | sed 's:-fomit-frame-pointer::'`])
 	changedCFLAGS=
 	for flag in $origCFLAGS ; do
 		AS_CASE([" $CFLAGS "],
@@ -1038,7 +1038,7 @@ AS_VAR_IF([enable_optimize], [yes], [
 			[*" $flag "*], [],
 			[changedCFLAGS="$changedCFLAGS, added $flag"])
 	done
-	changedCFLAGS=`echo $changedCFLAGS | sed -e 's|^, ||'`
+	changedCFLAGS=`AS_ECHO(["$changedCFLAGS"]) | sed -e 's|^, ||'`
 	AC_MSG_RESULT([yes: $changedCFLAGS])
 
 	# The default configure invocation when doing an rpmbuild also uses this.
@@ -1150,10 +1150,10 @@ AS_VAR_IF([have_python2], [no],
 				[
 					# Use prefix field for Ubuntu Python, bug #3207
 					PYTHON2_LIBDIR=`"$PYTHON2" -c 'import distutils.sysconfig; print distutils.sysconfig.get_python_lib(0,0,"'"$Qprefix"'")' 2>/dev/null`])
-			PYTHON2_LIBDIR=`echo "$PYTHON2_LIBDIR" | sed "s|^$Qprefix/||"`],
+			PYTHON2_LIBDIR=`AS_ECHO(["$PYTHON2_LIBDIR"]) | sed "s|^$Qprefix/||"`],
 		[no], [],
 		[$Qprefix/*], [ # dubious
-			PYTHON2_LIBDIR=`echo "$have_python2_libdir" | sed "s|^$Qprefix/||"`
+			PYTHON2_LIBDIR=`AS_ECHO(["$have_python2_libdir"]) | sed "s|^$Qprefix/||"`
 			have_python2_libdir=yes],
 		[	PYTHON2_LIBDIR="$have_python2_libdir"
 			have_python2_libdir=yes])])
@@ -1161,13 +1161,13 @@ AS_VAR_IF([have_python2], [no],
 AC_SUBST([PYTHON2])
 QPYTHON2="$PYTHON2"
 XPYTHON2=`$translatepath "$QPYTHON2"`
-QXPYTHON2=`echo "$XPYTHON2" | sed 's/\\\\/\\\\\\\\/g'`
+QXPYTHON2=`AS_ECHO(["$XPYTHON2"]) | sed 's/\\\\/\\\\\\\\/g'`
 AC_SUBST([QXPYTHON2])
 AM_CONDITIONAL([HAVE_PYTHON2], [test x"$have_python2" != xno])
 AC_SUBST([PYTHON2_LIBDIR])
 QPYTHON2_LIBDIR="$PYTHON2_LIBDIR"
 XPYTHON2_LIBDIR=`$translatepath "$QPYTHON2_LIBDIR"`
-QXPYTHON2_LIBDIR=`echo "$XPYTHON2_LIBDIR" | sed 's/\\\\/\\\\\\\\/g'`
+QXPYTHON2_LIBDIR=`AS_ECHO(["$XPYTHON2_LIBDIR"]) | sed 's/\\\\/\\\\\\\\/g'`
 AC_SUBST([QXPYTHON2_LIBDIR])
 
 AS_VAR_IF([have_python3], [no],
@@ -1189,7 +1189,9 @@ AS_VAR_IF([have_python3], [no],
 	 have_python3_libdir=no
 	 PYTHON3_LIBDIR=""
 	 # and no interpreter
-	 PYTHON3=false],
+	 PYTHON3=false
+	 # and no Python 3 integration
+	 enable_py3integration=no],
 	[have_python3_libdir=auto
 
 	 AC_ARG_WITH([python3-libdir],
@@ -1203,10 +1205,10 @@ AS_VAR_IF([have_python3], [no],
 				[AC_MSG_ERROR([Must specify --with-python3-libdir when cross compiling])])
 			# Use prefix field for Ubuntu Python, bug #3207
 			PYTHON3_LIBDIR=`"$PYTHON3" -c 'import distutils.sysconfig; print(distutils.sysconfig.get_python_lib(0,0,"'"$Qprefix"'"))' 2>/dev/null`
-			PYTHON3_LIBDIR=`echo "$PYTHON3_LIBDIR" | sed "s|^$Qprefix/||"`],
+			PYTHON3_LIBDIR=`AS_ECHO(["$PYTHON3_LIBDIR"]) | sed "s|^$Qprefix/||"`],
 		[no], [],
 		[$Qprefix/*], [ # dubious
-			PYTHON3_LIBDIR=`echo "$have_python3_libdir" | sed "s|^$Qprefix/||"`
+			PYTHON3_LIBDIR=`AS_ECHO(["$have_python3_libdir"]) | sed "s|^$Qprefix/||"`
 			have_python3_libdir=yes],
 		[	PYTHON3_LIBDIR="$have_python3_libdir"
 			have_python3_libdir=yes])])
@@ -1214,13 +1216,13 @@ AS_VAR_IF([have_python3], [no],
 AC_SUBST([PYTHON3])
 QPYTHON3="$PYTHON3"
 XPYTHON3=`$translatepath "$QPYTHON3"`
-QXPYTHON3=`echo "$XPYTHON3" | sed 's/\\\\/\\\\\\\\/g'`
+QXPYTHON3=`AS_ECHO(["$XPYTHON3"]) | sed 's/\\\\/\\\\\\\\/g'`
 AC_SUBST([QXPYTHON3])
 AM_CONDITIONAL([HAVE_PYTHON3], [test x"$have_python3" != xno])
 AC_SUBST([PYTHON3_LIBDIR])
 QPYTHON3_LIBDIR="$PYTHON3_LIBDIR"
 XPYTHON3_LIBDIR=`$translatepath "$QPYTHON3_LIBDIR"`
-QXPYTHON3_LIBDIR=`echo "$XPYTHON3_LIBDIR" | sed 's/\\\\/\\\\\\\\/g'`
+QXPYTHON3_LIBDIR=`AS_ECHO(["$XPYTHON3_LIBDIR"]) | sed 's/\\\\/\\\\\\\\/g'`
 AC_SUBST([QXPYTHON3_LIBDIR])
 
 AM_CONDITIONAL([HAVE_PYTHON], [test x"$have_python2" != xno -o x"$have_python3" != xno])
@@ -1240,7 +1242,7 @@ AC_SUBST([PYTHON])
 AC_SUBST([PYTHON_LIBDIR])
 QPYTHON_LIBDIR="$PYTHON_LIBDIR"
 XPYTHON_LIBDIR=`$translatepath "$QPYTHON_LIBDIR"`
-QXPYTHON_LIBDIR=`echo "$XPYTHON_LIBDIR" | sed 's/\\\\/\\\\\\\\/g'`
+QXPYTHON_LIBDIR=`AS_ECHO(["$XPYTHON_LIBDIR"]) | sed 's/\\\\/\\\\\\\\/g'`
 AC_SUBST([QXPYTHON_LIBDIR])
 
 # Mtest/Mfilter currently require Python 2
@@ -1260,7 +1262,7 @@ AS_CASE([$YACC],
 		BISON_VER=`$YACC --version | head -n1 | sed -e 's/^.* //'`
 		AS_VERSION_COMPARE([$BISON_VER],
 			[2.4.3],
-			[X_CFLAGS=`echo ${X_CFLAGS} | sed -e 's/-Wundef//g'`])
+			[X_CFLAGS=`AS_ECHO(["${X_CFLAGS}"]) | sed -e 's/-Wundef//g'`])
 	],
 	[
 		# in embedded mode, we ship the bison-generated files
@@ -1277,9 +1279,9 @@ INSTALL_BACKUP=""
 AC_MSG_CHECKING([$INSTALL --backup option])
 AS_VAR_IF([INSTALL], [],
 	[],
-	[inst=`echo $INSTALL | sed 's/ .*//'`
+	[inst=`AS_ECHO(["$INSTALL"]) | sed 's/ .*//'`
 	 AS_IF([test ! "`file $inst | grep 'shell script' 2>/dev/null`"],
-		[echo "" > c 2>/dev/null
+		[AS_ECHO([""]) > c 2>/dev/null
 		 AS_IF([$INSTALL --backup=nil c d 1>/dev/null 2>/dev/null],
 			[INSTALL_BACKUP="--backup=nil"])
 		 AS_IF([$INSTALL -C --backup=nil c e 1>/dev/null 2>/dev/null],
@@ -1705,7 +1707,7 @@ AS_CASE([$host],
 			LIBS="$LIBS $openssl_LIBS"
 			AC_CHECK_FUNCS([MD5_Update RIPEMD160_Update SHA1_Update SHA224_Update SHA256_Update SHA384_Update SHA512_Update])
 			LIBS="$save_LIBS"
-			AS_IF([eval test \"x\$ac_cv_func_${MONETDB5_PASSWDHASH}_Update\" != x"yes"], [
+			AS_VAR_IF([ac_cv_func_${MONETDB5_PASSWDHASH}_Update], [yes], [], [
 				AS_CASE([$enable_monetdb5],
 				[yes], [
 					AC_MSG_ERROR([OpenSSL library found but checksum algorithm required for MonetDB5 not found])],
@@ -1936,84 +1938,76 @@ AM_CONDITIONAL([HAVE_LIBPY], [test x"$have_libpy" != xno])
 
 # Python 3 UDFs
 have_libpy3=no
-if test "x$enable_py3integration" != xno; then
-	case "$enable_py3integration" in
-	yes|auto)
-		XPATH="$PATH"
-		;;
-	/*)
-		XPATH="$enable_py3integration"
-		enable_py3integration=yes
-		;;
-	*)
-		AC_MSG_ERROR([--enable-py3integration value must be yes|no|auto|absolute path of python-config])
-		;;
-	esac
-	if test "x$have_py3config" = x; then
-		# for some god forsaken reason autoconf thinks python2-config and python3-config are the same program, so we have to explicitly tell it not to select python2-config when we want python3-config
+AS_VAR_IF([enable_py3integration], [no], [],
+	[AS_CASE([`"$PYTHON3" -V 2>&1`],
+		["Python 3."[[1234]]"."*],
+		[AS_VAR_IF([enable_py3integration], [auto],
+			[have_libpy3=no
+			 why_not_libpy3="(Python >= 3.5 required)"
+			 enable_py3integration=no
+			 why_not_py3integration="(Python >= 3.5 required)"],
+			[AC_MSG_ERROR([Python >= 3.5 is required for Python3 integration support])])])])
+
+AS_CASE([$enable_py3integration],
+	[no], [],
+	[yes|auto], [XPATH="$PATH"],
+	[/*], [XPATH="$enable_py3integration"
+		enable_py3integration=yes],
+	[AC_MSG_ERROR([--enable-py3integration value must be yes|no|auto|absolute path of python-config])])
+
+AS_VAR_IF([enable_py3integration], [no], [],
+	[AS_VAR_IF([have_py3config], [],
+		[
+		# for some reason autoconf thinks python2-config and
+		# python3-config are the same program, so we have to
+		# explicitly tell it not to select python2-config when
+		# we want python3-config
 	   	AC_PATH_PROG(PY3CONFIG,python3-config,,$XPATH,$PY2CONFIG)
-	   	if test "x$PY3CONFIG" = x; then
-	  		if test "x$enable_py3integration" = xyes; then
-				AC_MSG_ERROR([python3-config required for Python3 integration support])
-			else
-				have_libpy3="no"
-			 	why_not_libpy3="(python3-config command not found)"
-				enable_py3integration=no
-				why_not_py3integration="(python3-config command not found)"
-			fi
-		fi
-	else
-		PY3CONFIG="$have_py3config"
-	fi
+	   	AS_VAR_IF([PY3CONFIG], [],
+			[AS_VAR_IF([enable_py3integration], [yes], [
+				AC_MSG_ERROR([python3-config required for Python3 integration support])],
+				[have_libpy3=no
+			 	 why_not_libpy3="(python3-config command not found)"
+				 enable_py3integration=no
+				 why_not_py3integration="(python3-config command not found)"])])],
+		[PY3CONFIG="$have_py3config"])
 
 	PYTHON_CMD=$PYTHON3
 
 	NUMPYVER=`$PYTHON_CMD -c "import numpy; print(int(numpy.__version__.split('.').__getitem__(1)) >= 7)" 2> /dev/null`
 	# check numpyconfig.h because autoconf tests includes by compiling a small C program, and other numpy headers do not compile without Python.h
 	AC_CHECK_HEADER(
-	    [numpy/numpyconfig.h], 
+		[numpy/numpyconfig.h], 
 		[NUMPYHEADERS=True],
-		[NUMPYHEADERS=`$PYTHON_CMD -c "import numpy, os; print(os.path.isfile(os.path.join(numpy.get_include(), 'numpy/arrayobject.h')))" 2> /dev/null`]
-		)
-	if [test "x$NUMPYVER" = x] || [test "x$NUMPYVER" = xFalse]; then
-	  	if test "x$enable_py3integration" = xyes; then
-			AC_MSG_ERROR([numpy version >= 1.7.0 required for Python3 integration support])
-		else
-			have_libpy3="no"
-		 	why_not_libpy3="(numpy version >= 1.7.0 not found)"
-			enable_py3integration=no
-			why_not_py3integration="(numpy version >= 1.7.0 not found)"
-		fi
-	elif [test "x$NUMPYHEADERS" = xFalse ]; then
-		if test "x$enable_py3integration" = xyes; then
-			AC_MSG_ERROR([numpy/arrayobject.h not found])
-		else
-			have_libpy3="no"
-		 	why_not_libpy3="(numpy/arrayobject.h not found)"
-			enable_py3integration=no
-			why_not_py3integration="(numpy/arrayobject.h not found)"
-		fi
-	else
-		libpy3_CFLAGS=`$PYTHON_CMD -c "from distutils.sysconfig import get_python_inc; import numpy; print(' -I' + get_python_inc() + ' -I' + numpy.get_include());" 2> /dev/null`
-		libpy3_LIBS=`$PY3CONFIG --ldflags`
-		HAVEPYTHONHEADER=`$PYTHON_CMD -c "import distutils.sysconfig, os; print(os.path.isfile(os.path.join(distutils.sysconfig.get_python_inc(), 'Python.h')))" 2> /dev/null`
-		if [test "x$HAVEPYTHONHEADER" = xTrue]; then
-			have_libpy3=yes
-			AC_DEFINE(HAVE_LIBPY3, 1, [Define if we can link to python])
-			AC_SUBST(libpy3_CFLAGS, $libpy3_CFLAGS)
-			AC_SUBST(libpy3_LIBS, $libpy3_LIBS)
-		else
-		  	if test "x$enable_py3integration" = xyes; then
-				AC_MSG_ERROR([Python.h not found])
-			else
-				have_libpy3="no"
-			 	why_not_libpy3="Python.h not found"
-				enable_py3integration=no
-				why_not_py3integration="Python.h not found"
-			fi
-		fi
-	fi
-fi
+		[NUMPYHEADERS=`$PYTHON_CMD -c "import numpy, os; print(os.path.isfile(os.path.join(numpy.get_include(), 'numpy/arrayobject.h')))" 2> /dev/null`])
+	AS_IF([test "x$NUMPYVER" = x || test "x$NUMPYVER" = xFalse],
+		[AS_VAR_IF([enable_py3integration], [yes],
+			[AC_MSG_ERROR([numpy version >= 1.7.0 required for Python3 integration support])],
+			[have_libpy3="no"
+			 why_not_libpy3="(numpy version >= 1.7.0 not found)"
+			 enable_py3integration=no
+			 why_not_py3integration="(numpy version >= 1.7.0 not found)"])],
+		[test "x$NUMPYHEADERS" = xFalse],
+		[AS_VAR_IF([enable_py3integration], [yes],
+			[AC_MSG_ERROR([numpy/arrayobject.h not found])],
+			[have_libpy3="no"
+			 why_not_libpy3="(numpy/arrayobject.h not found)"
+			 enable_py3integration=no
+			 why_not_py3integration="(numpy/arrayobject.h not found)"])],
+		[libpy3_CFLAGS=`$PYTHON_CMD -c "from distutils.sysconfig import get_python_inc; import numpy; print(' -I' + get_python_inc() + ' -I' + numpy.get_include());" 2> /dev/null`
+		 libpy3_LIBS=`$PY3CONFIG --ldflags`
+		 HAVEPYTHONHEADER=`$PYTHON_CMD -c "import distutils.sysconfig, os; print(os.path.isfile(os.path.join(distutils.sysconfig.get_python_inc(), 'Python.h')))" 2> /dev/null`
+		 AS_VAR_IF([HAVEPYTHONHEADER], [True],
+		 	[have_libpy3=yes
+			 AC_DEFINE(HAVE_LIBPY3, 1, [Define if we can link to python])
+			 AC_SUBST(libpy3_CFLAGS, $libpy3_CFLAGS)
+			 AC_SUBST(libpy3_LIBS, $libpy3_LIBS)],
+			[AS_VAR_IF([enable_py3integration], [yes],
+				[AC_MSG_ERROR([Python.h not found])],
+				[have_libpy3="no"
+				 why_not_libpy3="Python.h not found"
+				 enable_py3integration=no
+				 why_not_py3integration="Python.h not found"])])])])
 AM_CONDITIONAL(HAVE_LIBPY3, test x"$have_libpy3" != xno)
 
 
@@ -2793,29 +2787,29 @@ AC_SUBST([libxml2version])
 AS_VAR_IF([prefix], [NONE],
 	[prefix="${ac_default_prefix}"
 	 Xprefix=`$translatepath "$Qprefix"`
-	 QXprefix=`echo "$Xprefix" | sed 's/\\\\/\\\\\\\\/g'`],
+	 QXprefix=`AS_ECHO(["$Xprefix"]) | sed 's/\\\\/\\\\\\\\/g'`],
 	[Xprefix=`$translatepath "$prefix"`
-	 QXprefix=`echo "$Xprefix" | sed 's/\\\\/\\\\\\\\/g'`])
+	 QXprefix=`AS_ECHO(["$Xprefix"]) | sed 's/\\\\/\\\\\\\\/g'`])
 AS_VAR_IF([exec_prefix], [NONE],
 	[Xexec_prefix=`$translatepath "$Qexec_prefix"`
-	 QXexec_prefix=`echo "$Xexec_prefix" | sed 's/\\\\/\\\\\\\\/g'`],
+	 QXexec_prefix=`AS_ECHO(["$Xexec_prefix"]) | sed 's/\\\\/\\\\\\\\/g'`],
 	[Xexec_prefix=`$translatepath "$exec_prefix"`
-	 QXexec_prefix=`echo "$Xexec_prefix" | sed 's/\\\\/\\\\\\\\/g'`])
+	 QXexec_prefix=`AS_ECHO(["$Xexec_prefix"]) | sed 's/\\\\/\\\\\\\\/g'`])
 AC_SUBST([Xprefix])
 AC_SUBST([QXprefix])
 AC_SUBST([Xexec_prefix])
 AC_SUBST([QXexec_prefix])
 Qsrcdir="$srcdir"
 Xsrcdir=`$translatepath "$srcdir"`
-QXsrcdir=`echo "$Xsrcdir" | sed 's/\\\\/\\\\\\\\/g'`
+QXsrcdir=`AS_ECHO(["$Xsrcdir"]) | sed 's/\\\\/\\\\\\\\/g'`
 AC_SUBST([Qsrcdir])
 AC_SUBST([Xsrcdir])
 AC_SUBST([QXsrcdir])
 Qlocalstatedir="$localstatedir"
 Xlocalstatedir=`$translatepath "$localstatedir"`
-QXlocalstatedir=`echo "$Xlocalstatedir" | sed 's/\\\\/\\\\\\\\/g'`
+QXlocalstatedir=`AS_ECHO(["$Xlocalstatedir"]) | sed 's/\\\\/\\\\\\\\/g'`
 eval "Elocalstatedir=${Xlocalstatedir}"
-QElocalstatedir=`echo "$Elocalstatedir" | sed 's/\\\\/\\\\\\\\/g'`
+QElocalstatedir=`AS_ECHO(["$Elocalstatedir"]) | sed 's/\\\\/\\\\\\\\/g'`
 AC_SUBST([Qlocalstatedir])
 AC_SUBST([Xlocalstatedir])
 AC_SUBST([Elocalstatedir])
@@ -2834,38 +2828,38 @@ AC_SUBST([rundir])
 AC_SUBST([Erundir])
 Qlibdir="$libdir"
 Xlibdir=`$translatepath "$libdir"`
-QXlibdir=`echo "$Xlibdir" | sed 's/\\\\/\\\\\\\\/g'`
-Elibdir=`echo "$Xlibdir" | sed 's/{exec_prefix}/{prefix}/'`
+QXlibdir=`AS_ECHO(["$Xlibdir"]) | sed 's/\\\\/\\\\\\\\/g'`
+Elibdir=`AS_ECHO(["$Xlibdir"]) | sed 's/{exec_prefix}/{prefix}/'`
 eval "Elibdir=${Elibdir}"
-QElibdir=`echo "$Elibdir" | sed 's/\\\\/\\\\\\\\/g'`
+QElibdir=`AS_ECHO(["$Elibdir"]) | sed 's/\\\\/\\\\\\\\/g'`
 AC_SUBST([Qlibdir])
 AC_SUBST([Xlibdir])
 AC_SUBST([QXlibdir])
 Qsysconfdir="$sysconfdir"
 Xsysconfdir=`$translatepath "$sysconfdir"`
-QXsysconfdir=`echo "$Xsysconfdir" | sed 's/\\\\/\\\\\\\\/g'`
+QXsysconfdir=`AS_ECHO(["$Xsysconfdir"]) | sed 's/\\\\/\\\\\\\\/g'`
 AC_SUBST([Qsysconfdir])
 AC_SUBST([Xsysconfdir])
 AC_SUBST([QXsysconfdir])
 Qbindir="$bindir"
 Xbindir=`$translatepath "$bindir"`
-QXbindir=`echo "$Xbindir" | sed 's/\\\\/\\\\\\\\/g'`
-Ebindir=`echo "$Xbindir" | sed 's/{exec_prefix}/{prefix}/'`
+QXbindir=`AS_ECHO(["$Xbindir"]) | sed 's/\\\\/\\\\\\\\/g'`
+Ebindir=`AS_ECHO(["$Xbindir"]) | sed 's/{exec_prefix}/{prefix}/'`
 eval "Ebindir=${Ebindir}"
-QEbindir=`echo "$Ebindir" | sed 's/\\\\/\\\\\\\\/g'`
+QEbindir=`AS_ECHO(["$Ebindir"]) | sed 's/\\\\/\\\\\\\\/g'`
 AC_SUBST([Qbindir])
 AC_SUBST([Xbindir])
 AC_SUBST([Ebindir])
 AC_SUBST([QXbindir])
 Qlibexecdir="$libexecdir"
 Xlibexecdir=`$translatepath "$libexecdir"`
-QXlibexecdir=`echo "$Xlibexecdir" | sed 's/\\\\/\\\\\\\\/g'`
+QXlibexecdir=`AS_ECHO(["$Xlibexecdir"]) | sed 's/\\\\/\\\\\\\\/g'`
 AC_SUBST([Qlibexecdir])
 AC_SUBST([Xlibexecdir])
 AC_SUBST([QXlibexecdir])
 Qdatarootdir="$datarootdir"
 Xdatarootdir=`$translatepath "$datarootdir"`
-QXdatarootdir=`echo "$Xdatarootdir" | sed 's/\\\\/\\\\\\\\/g'`
+QXdatarootdir=`AS_ECHO(["$Xdatarootdir"]) | sed 's/\\\\/\\\\\\\\/g'`
 AC_SUBST([Qdatarootdir])
 AC_SUBST([Xdatarootdir])
 AC_SUBST([QXdatarootdir])
@@ -2873,40 +2867,40 @@ AS_VAR_IF([datadir], ['${datarootdir}'],
 	[datadir="${datarootdir}"])
 Qdatadir="$datadir"
 Xdatadir=`$translatepath "$datadir"`
-QXdatadir=`echo "$Xdatadir" | sed 's/\\\\/\\\\\\\\/g'`
+QXdatadir=`AS_ECHO(["$Xdatadir"]) | sed 's/\\\\/\\\\\\\\/g'`
 eval "Edatadir=${Xdatadir}"
-QEdatadir=`echo "$Edatadir" | sed 's/\\\\/\\\\\\\\/g'`
+QEdatadir=`AS_ECHO(["$Edatadir"]) | sed 's/\\\\/\\\\\\\\/g'`
 AC_SUBST([Qdatadir])
 AC_SUBST([Xdatadir])
 AC_SUBST([QXdatadir])
 Qmandir="$mandir"
 Xmandir=`$translatepath "$mandir"`
-QXmandir=`echo "$Xmandir" | sed 's/\\\\/\\\\\\\\/g'`
+QXmandir=`AS_ECHO(["$Xmandir"]) | sed 's/\\\\/\\\\\\\\/g'`
 AC_SUBST([Qmandir])
 AC_SUBST([Xmandir])
 AC_SUBST([QXmandir])
 Qincludedir="$includedir"
 Xincludedir=`$translatepath "$includedir"`
-QXincludedir=`echo "$Xincludedir" | sed 's/\\\\/\\\\\\\\/g'`
+QXincludedir=`AS_ECHO(["$Xincludedir"]) | sed 's/\\\\/\\\\\\\\/g'`
 AC_SUBST([Qincludedir])
 AC_SUBST([Xincludedir])
 AC_SUBST([QXincludedir])
 Qinfodir="$infodir"
 Xinfodir=`$translatepath "$infodir"`
-QXinfodir=`echo "$Xinfodir" | sed 's/\\\\/\\\\\\\\/g'`
+QXinfodir=`AS_ECHO(["$Xinfodir"]) | sed 's/\\\\/\\\\\\\\/g'`
 AC_SUBST([Qinfodir])
 AC_SUBST([Xinfodir])
 AC_SUBST([QXinfodir])
 
 QBUILD="$BUILD"
 XBUILD=`$translatepath "$BUILD"`
-QXBUILD=`echo "$XBUILD" | sed 's/\\\\/\\\\\\\\/g'`
+QXBUILD=`AS_ECHO(["$XBUILD"]) | sed 's/\\\\/\\\\\\\\/g'`
 AC_SUBST([QBUILD])
 AC_SUBST([XBUILD])
 AC_SUBST([QXBUILD])
 QSOURCE="$SOURCE"
 XSOURCE=`$translatepath "$SOURCE"`
-QXSOURCE=`echo "$XSOURCE" | sed 's/\\\\/\\\\\\\\/g'`
+QXSOURCE=`AS_ECHO(["$XSOURCE"]) | sed 's/\\\\/\\\\\\\\/g'`
 AC_SUBST([QSOURCE])
 AC_SUBST([XSOURCE])
 AC_SUBST([QXSOURCE])
@@ -2978,14 +2972,6 @@ typedef __uint128_t uhge;
 @%:@ define __declspec(x)
 @%:@endif
 
-/* work around problem compiling batxml.c with clang
- * clang 3.5.0 claims to be GnuC 4.3, but doesn't accept
- * __attribute__((alloc_size(N))), as libml2 2.9.2 expects
- */
-@%:@if defined(__GNUC__) && defined(__clang__)
-@%:@define LIBXML_ATTR_ALLOC_SIZE(x)
-@%:@endif
-
 /* These are required to make MonetDB's source tree CRAN-compliant */
 @%:@ifdef HAVE_EMBEDDED_R
 @%:@include "tools/embedded/undef.h"
@@ -3012,17 +2998,21 @@ CFLAGS="$CFLAGS \$(X_CFLAGS)"
 AC_CONFIG_FILES
 AC_OUTPUT
 
-echo
-echo
-echo "MonetDB is configured as follows:"
-echo "* Compilation specifics:"
-echo "    Host:     " ${ac_cv_host}
-echo "    Compiler: " ${CC} "("${CC_ver}"; "${CC_version}")"
-echo "    CFLAGS:   " ${CFLAGS}
-echo "    X_CFLAGS: " ${X_CFLAGS}
-echo "    LDFLAGS:  " ${LDFLAGS}
-echo
-echo "* Enabled/disabled build options:"
+AS_ECHO([''])
+AS_ECHO([''])
+AS_ECHO(["MonetDB is configured as follows:"])
+AS_ECHO(["* Compilation specifics:"])
+AS_ECHO(["    Host:      ${ac_cv_host}"])
+set x ${CC_version}; shift
+AS_ECHO(["    Compiler:  ${CC} (${CC_ver}; $*)"])
+set x ${CFLAGS}; shift
+AS_ECHO(["    CFLAGS:    $*"])
+set x ${X_CFLAGS}; shift
+AS_ECHO(["    X_CFLAGS:  $*"])
+set x ${LDFLAGS}; shift
+AS_ECHO(["    LDFLAGS:   $*"])
+AS_ECHO([''])
+AS_ECHO(["* Enabled/disabled build options:"])
 for comp in \
 	'strict    ' \
 	'assert    ' \
@@ -3031,17 +3021,17 @@ for comp in \
 	'developer ' \
 	'sanitizer ' \
 ; do
-	eval "dft=\$dft_$comp"
-	eval "enable=\$enable_$comp"
-	eval "why_not=\$why_not_$comp"
+	AS_VAR_COPY([dft], [dft_$comp])
+	AS_VAR_COPY([enable], [enable_$comp])
+	AS_VAR_COPY([why_not], [why_not_$comp])
 	AS_CASE([$why_not-$enable-$dft],
 		[-no-no], [why_not="(by default)"],
 		[-no-*], [why_not="(by command line option)"])
-	echo $ECHO_N "    $comp is $ECHO_C"
-	AS_VAR_IF([enable], [no], [echo "disabled $why_not"], [echo "enabled"])
+	AS_ECHO_N(["    $comp is "])
+	AS_VAR_IF([enable], [no], [AS_ECHO(["disabled $why_not"])], [AS_ECHO(["enabled"])])
 done
-echo
-echo "* Enabled/disabled components:"
+AS_ECHO([''])
+AS_ECHO(["* Enabled/disabled components:"])
 for comp in \
 	'gdk           ' \
 	'monetdb5      ' \
@@ -3055,17 +3045,17 @@ for comp in \
 	'testing       ' \
 	'embedded      ' \
 ; do
-	eval "dft=\$dft_$comp"
-	eval "enable=\$enable_$comp"
-	eval "why_not=\$why_not_$comp"
+	AS_VAR_COPY([dft], [dft_$comp])
+	AS_VAR_COPY([enable], [enable_$comp])
+	AS_VAR_COPY([why_not], [why_not_$comp])
 	AS_CASE([$why_not-$enable-$dft],
 		[-no-no], [why_not="(by default)"],
 		[-no-*], [why_not="(by command line option)"])
-	echo $ECHO_N "    $comp is $ECHO_C"
-	AS_VAR_IF([enable], [no], [echo "disabled $why_not"], [echo "enabled"])
+	AS_ECHO_N(["    $comp is "])
+	AS_VAR_IF([enable], [no], [AS_ECHO(["disabled $why_not"])], [AS_ECHO(["enabled"])])
 done
-echo
-echo "* Available features/extensions:"
+AS_ECHO([''])
+AS_ECHO(["* Available features/extensions:"])
 for comp in \
 	'atomic_ops ' \
 	'bz2        ' \
@@ -3093,38 +3083,38 @@ for comp in \
 	'valgrind   ' \
 	'zlib       ' \
 ; do
-	eval "org=\$org_have_$comp"
-	eval "have=\$have_$comp"
-	eval "why_not=\$why_not_$comp"
+	AS_VAR_COPY([org], [org_have_$comp])
+	AS_VAR_COPY([have], [org_have_$comp])
+	AS_VAR_COPY([why_not], [why_not_$comp])
 
 	AS_CASE([$why_not-$have-$org],
 		[-no-no], [why_not="(by default)"],
 		[-no-*], [why_not="(by command line option)"])
-	echo $ECHO_N "    $comp = $ECHO_C"
+	AS_ECHO_N(["    $comp = "])
 	AS_VAR_IF([have], [no],
-		[echo "no  $why_not"],
-		[AS_VAR_IF([have], [auto], [echo "yes"], [echo "$have"])])
+		[AS_ECHO(["no  $why_not"])],
+		[AS_VAR_IF([have], [auto], [AS_ECHO(["yes"])], [AS_ECHO(["$have"])])])
 done
 AS_VAR_IF([have_hge], [yes], [
 	hge_bits='128'
 	hge_digits=' 38'], [
 	hge_bits=' 64'
 	hge_digits=' 18'])
-echo
-echo "* Important options:"
-echo "    OID size:              ${bits} bits"
-echo "    largest integer type: ${hge_bits} bits"
-echo "    largest decimal type: ${hge_digits} digits"
-echo
+AS_ECHO([''])
+AS_ECHO(["* Important options:"])
+AS_ECHO(["    OID size:              ${bits} bits"])
+AS_ECHO(["    largest integer type: ${hge_bits} bits"])
+AS_ECHO(["    largest decimal type: ${hge_digits} digits"])
+AS_ECHO([''])
 
 # give some hints to the user
 AS_VAR_IF([enable_embedded_r], [no],
 	[AS_CASE([`make -v 2>&1`],
 		['GNU Make '*], [],
-		[echo "'make' not found in PATH or not GNU Make."
+		[AS_ECHO(["'make' not found in PATH or not GNU Make."])
 		 AS_CASE([`gmake -v 2>&1`],
 			['GNU Make '*],
-				[echo "Please use 'gmake' to build MonetDB."],
-			[echo "'gmake' not found in PATH or not GNU Make."
-			 echo "Please make sure you have GNU Make installed and use it to build MonetDB."])
-		 echo])])
+				[AS_ECHO(["Please use 'gmake' to build MonetDB."])],
+			[AS_ECHO(["'gmake' not found in PATH or not GNU Make."])
+			 AS_ECHO(["Please make sure you have GNU Make installed and use it to build MonetDB."])])
+		 AS_ECHO([''])])])
