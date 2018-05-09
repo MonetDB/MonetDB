@@ -59,3 +59,4 @@ sqlitelogictest-count-coalesce-nullif.Bug-6586
 sqlitelogictest-case-not-in-count.Bug-6587
 sqlitelogictest-complex-expression.Bug-6589
 sqlitelogictest-complex-case-not-in.Bug-6594
+multiple-count.Bug-6599

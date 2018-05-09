@@ -2972,14 +2972,6 @@ typedef __uint128_t uhge;
 @%:@ define __declspec(x)
 @%:@endif
 
-/* work around problem compiling batxml.c with clang
- * clang 3.5.0 claims to be GnuC 4.3, but doesn't accept
- * __attribute__((alloc_size(N))), as libml2 2.9.2 expects
- */
-@%:@if defined(__GNUC__) && defined(__clang__)
-@%:@define LIBXML_ATTR_ALLOC_SIZE(x)
-@%:@endif
-
 /* These are required to make MonetDB's source tree CRAN-compliant */
 @%:@ifdef HAVE_EMBEDDED_R
 @%:@include "tools/embedded/undef.h"
