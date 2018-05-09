@@ -77,6 +77,10 @@ Ready.
 #from '/Users/joeri/monets/copyfromxz/src/sql/test/Tests/copy-from-compressed.csv.bz2'
 #using delimiters ',', '\n';
 [ 1	]
+#copy into compression_schemes
+#from '/Users/joeri/monets/copyfromxz/src/sql/test/Tests/copy-from-compressed.csv.xz'
+#using delimiters ',', '\n';
+[ 1	]
 #select * from compression_schemes order by extension;
 % sys.compression_schemes,	sys.compression_schemes # table_name
 % name,	extension # name
@@ -85,6 +89,7 @@ Ready.
 [ "no compression",	"-"	]
 [ "bzip2",	"bz2"	]
 [ "gzip",	"gz"	]
+[ "lzma",	"xz"	]
 #drop table compression_schemes;
 
 # 10:04:20 >  

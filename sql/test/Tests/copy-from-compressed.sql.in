@@ -16,6 +16,10 @@ copy into compression_schemes
 from '$QTSTSRCDIR/copy-from-compressed.csv.bz2'
 using delimiters ',', '\n';
 
+copy into compression_schemes
+from '$QTSTSRCDIR/copy-from-compressed.csv.xz'
+using delimiters ',', '\n';
+
 
 select * from compression_schemes order by extension;
 
