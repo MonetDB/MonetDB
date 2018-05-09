@@ -117,6 +117,7 @@ str-trim
 alastair_udf_mergetable_bug
 
 copy-into-fwf
+copy-from-compressed
 
 truncate-statements
 truncate-statements-extra
