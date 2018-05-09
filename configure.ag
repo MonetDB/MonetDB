@@ -1189,7 +1189,9 @@ AS_VAR_IF([have_python3], [no],
 	 have_python3_libdir=no
 	 PYTHON3_LIBDIR=""
 	 # and no interpreter
-	 PYTHON3=false],
+	 PYTHON3=false
+	 # and no Python 3 integration
+	 enable_py3integration=no],
 	[have_python3_libdir=auto
 
 	 AC_ARG_WITH([python3-libdir],
@@ -1936,6 +1938,16 @@ AM_CONDITIONAL([HAVE_LIBPY], [test x"$have_libpy" != xno])
 
 # Python 3 UDFs
 have_libpy3=no
+AS_VAR_IF([enable_py3integration], [no], [],
+	[AS_CASE([`"$PYTHON3" -V 2>&1`],
+		["Python 3."[[1234]]"."*],
+		[AS_VAR_IF([enable_py3integration], [auto],
+			[have_libpy3=no
+			 why_not_libpy3="(Python >= 3.5 required)"
+			 enable_py3integration=no
+			 why_not_py3integration="(Python >= 3.5 required)"],
+			[AC_MSG_ERROR([Python >= 3.5 is required for Python3 integration support])])])])
+
 if test "x$enable_py3integration" != xno; then
 	case "$enable_py3integration" in
 	yes|auto)
@@ -1967,9 +1979,6 @@ if test "x$enable_py3integration" != xno; then
 	fi
 
 	PYTHON_CMD=$PYTHON3
-
-	AS_CASE([`"$PYTHON_CMD" -V 2>&1`],
-		["Python 3."[[1234]]"."*], [AC_MSG_ERROR([Python >= 3.5 is required for Python3 integration support])])
 
 	NUMPYVER=`$PYTHON_CMD -c "import numpy; print(int(numpy.__version__.split('.').__getitem__(1)) >= 7)" 2> /dev/null`
 	# check numpyconfig.h because autoconf tests includes by compiling a small C program, and other numpy headers do not compile without Python.h
