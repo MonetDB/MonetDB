@@ -1026,7 +1026,7 @@ AUTHgetRemoteTableCredentials(const char *local_table, str *uri, str *username, 
 	tmp = BUNtail(i, p);
 	rethrow("getRemoteTableCredentials", tmp, AUTHdecypherValue(&pwhash, tmp));
 
-	*password = GDKstrdup(pwhash);
+	*password = pwhash;
 
 	return MAL_SUCCEED;
 }
@@ -1087,6 +1087,10 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 		if (free_pw) {
 			free(pwhash);
 		}
+		else {
+			GDKfree(pwhash);
+		}
+		GDKfree(cypher);
 		throw(MAL, "addRemoteTableCredentials", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
@@ -1095,6 +1099,10 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 	if (free_pw) {
 		free(pwhash);
 	}
+	else {
+		GDKfree(pwhash);
+	}
+	GDKfree(cypher);
 	return MAL_SUCCEED;
 }
 

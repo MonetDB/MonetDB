@@ -300,10 +300,13 @@ RMTconnectTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (msg == MAL_SUCCEED) {
 		v = &stk->stk[pci->argv[0]];
 		v->vtype = TYPE_str;
-		if((v->val.sval = GDKstrdup(ret)) == NULL)
+		if((v->val.sval = GDKstrdup(ret)) == NULL) {
+			GDKfree(ret);
 			throw(MAL, "remote.connect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
 	}
 
+	GDKfree(ret);
 	return msg;
 }
 
