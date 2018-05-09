@@ -1968,6 +1968,9 @@ if test "x$enable_py3integration" != xno; then
 
 	PYTHON_CMD=$PYTHON3
 
+	AS_CASE([`"$PYTHON_CMD" -V 2>&1`],
+		["Python 3."[[1234]]"."*], [AC_MSG_ERROR([Python >= 3.5 is required for Python3 integration support])])
+
 	NUMPYVER=`$PYTHON_CMD -c "import numpy; print(int(numpy.__version__.split('.').__getitem__(1)) >= 7)" 2> /dev/null`
 	# check numpyconfig.h because autoconf tests includes by compiling a small C program, and other numpy headers do not compile without Python.h
 	AC_CHECK_HEADER(
