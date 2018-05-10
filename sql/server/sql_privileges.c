@@ -446,9 +446,9 @@ int
 table_privs(mvc *m, sql_table *t, int priv)
 {
 	/* temporary tables are owned by the session user */
-	if (t->persistence != SQL_PERSIST || t->commit_action)
+	if (t->persistence == SQL_DECLARED_TABLE || (priv == PRIV_SELECT && (t->persistence != SQL_PERSIST || t->commit_action)))
 		return 1;
-	if (admin_privs(m->user_id) || admin_privs(m->role_id) || m->user_id == t->s->auth_id || m->role_id == t->s->auth_id || sql_privilege(m, m->user_id, t->base.id, priv, 0) == priv || sql_privilege(m, m->role_id, t->base.id, priv, 0) == priv || sql_privilege(m, ROLE_PUBLIC, t->base.id, priv, 0) == priv) {
+	if (admin_privs(m->user_id) || admin_privs(m->role_id) || (t->s && (m->user_id == t->s->auth_id || m->role_id == t->s->auth_id)) || sql_privilege(m, m->user_id, t->base.id, priv, 0) == priv || sql_privilege(m, m->role_id, t->base.id, priv, 0) == priv || sql_privilege(m, ROLE_PUBLIC, t->base.id, priv, 0) == priv) {
 		return 1;
 	}
 	return 0;
@@ -876,6 +876,8 @@ sql_create_privileges(mvc *m, sql_schema *s)
 	t = find_sql_table(s, "tables");
 	table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
 	t = find_sql_table(s, "columns");
+	table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
+	t = find_sql_table(s, "comments");
 	table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
 	t = find_sql_table(s, "user_role");
 	table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);

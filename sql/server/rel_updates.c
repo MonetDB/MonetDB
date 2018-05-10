@@ -836,7 +836,7 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 		if (tab->idxs.set && !v) 
 			v = exp_column(sql->sa, tab->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0);
 		if (v)
-			rel_project_add_exp(sql, uprel, v);
+			v = rel_project_add_exp(sql, uprel, v);
 	}
 
 	r->op = op_update;
@@ -1042,7 +1042,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 						if (!exp_name(v))
 							exp_label(sql->sa, v, ++sql->label);
 						rel_val = rel_project(sql->sa, rel_val, rel_projections(sql, rel_val, NULL, 0, 1));
-						rel_project_add_exp(sql, rel_val, v);
+						v = rel_project_add_exp(sql, rel_val, v);
 						reset_processed(rel_val);
 					}
 					r = rel_crossproduct(sql->sa, r, rel_val, op_left);

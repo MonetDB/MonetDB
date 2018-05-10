@@ -69,8 +69,8 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 			} else if (el_count != this_size) {
 				/* don't use "%zu" since format given to Python */
 				PyErr_Format(
-					PyExc_TypeError, "Element %s has size %zu, but expected an "
-									 "element with size %zu",
+					PyExc_TypeError, "Element %s has size %zd, but expected an "
+									 "element with size %zd",
 					PyString_AsString(PyObject_Str(key)), this_size, el_count);
 				Py_DECREF(items);
 				return NULL;
@@ -306,6 +306,10 @@ PyObject *PyEmit_Emit(PyEmitObject *self, PyObject *args)
 				mask = (bool *)ret->mask_data;
 				data = (char *)ret->array_data;
 				assert((size_t)el_count == (size_t)ret->count);
+
+				/* we're not maintaining properties */
+				self->cols[i].b->tsorted = false;
+				self->cols[i].b->trevsorted = false;
 
 				switch (self->cols[i].b->ttype) {
 					case TYPE_bit:

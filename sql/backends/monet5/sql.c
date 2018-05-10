@@ -1540,9 +1540,9 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 				BBPunfix(u->batCacheid);
 				throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			}
-			ret = BATsemijoin(&cminu, NULL, u, c_ids, NULL, NULL, 0, BUN_NONE);
+			cminu = BATintersect(u, c_ids, NULL, NULL, 0, BUN_NONE);
 			BBPunfix(c_ids->batCacheid);
-			if (ret != GDK_SUCCEED) {
+			if (cminu == NULL) {
 				BBPunfix(c->batCacheid);
 				BBPunfix(u->batCacheid);
 				throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -1616,7 +1616,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		res = u;
 	}
-	BATkey(res, TRUE);
+	BATkey(res, true);
 	BBPkeepref(*result = res->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1707,7 +1707,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		/* create subsets of u_id and u_val where the tail
 		 * values of u_id are also in s, and where those tail
 		 * values occur as head value in res */
-		if (BATsemijoin(&o, NULL, u_id, s, NULL, NULL, 0, BUN_NONE) != GDK_SUCCEED) {
+		if ((o = BATintersect(u_id, s, NULL, NULL, 0, BUN_NONE)) == NULL) {
 			BBPunfix(s->batCacheid);
 			BBPunfix(res->batCacheid);
 			BBPunfix(u_id->batCacheid);
@@ -1723,7 +1723,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		if (nu_id == NULL ||
 		    nu_val == NULL ||
 		    tres == NULL ||
-		    BATsemijoin(&o, NULL, nu_id, tres, NULL, NULL, 0, BUN_NONE) != GDK_SUCCEED) {
+		    (o = BATintersect(nu_id, tres, NULL, NULL, 0, BUN_NONE)) == NULL) {
 			BBPunfix(s->batCacheid);
 			BBPunfix(res->batCacheid);
 			BBPreclaim(nu_id);

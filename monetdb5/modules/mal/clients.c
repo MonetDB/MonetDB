@@ -454,6 +454,8 @@ str CLTsha2sum(str *ret, str *pw, int *bits) {
 
 str CLTbackendsum(str *ret, str *pw) {
 	char *mret = mcrypt_BackendSum(*pw, strlen(*pw));
+	if (mret == NULL)
+		throw(MAL, "clients.backendsum", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	*ret = GDKstrdup(mret);
 	free(mret);
 	if(*ret == NULL)

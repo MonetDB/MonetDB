@@ -460,7 +460,8 @@ WLCsettime(Client cntxt, InstrPtr pci, InstrPtr p, str call)
 	clk = clock.tv_sec;
 	ctm = *localtime(&clk);
 	strftime(wlc_time, 26, "%Y-%m-%dT%H:%M:%S",&ctm);
-	pushStr(cntxt->wlc, p, wlc_time);
+	if (pushStr(cntxt->wlc, p, wlc_time) == NULL)
+		throw(MAL, call, MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 

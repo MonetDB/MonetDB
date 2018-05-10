@@ -40,7 +40,7 @@ function user.s4_1():void;
     X_2:void := querylog.define("explain select count(*) from tmp where i = 20160222;":str, "default_pipe":str, 13:int);
     X_18:bat[:int] := bat.new(nil:int);
     X_19:lng := aggr.count(X_18:bat[:int]);
-    sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_19:lng);
+    sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_19:lng);
 end user.s4_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
@@ -53,7 +53,7 @@ function user.s6_1():void;
     X_2:void := querylog.define("explain select count(*) from tmp where i = \\'20160222\\';":str, "default_pipe":str, 13:int);
     X_18:bat[:int] := bat.new(nil:int);
     X_19:lng := aggr.count(X_18:bat[:int]);
-    sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_19:lng);
+    sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_19:lng);
 end user.s6_1;
 # optimizer.mitosis()
 # optimizer.dataflow()
@@ -66,7 +66,7 @@ function user.s8_1():void;
     X_2:void := querylog.define("explain select count(*) from tmp where i = 201602221;":str, "default_pipe":str, 14:int);
     X_21:bat[:int] := bat.new(nil:int);
     X_22:lng := aggr.count(X_21:bat[:int]);
-    sql.resultSet("sys.L4":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_22:lng);
+    sql.resultSet("sys.L3":str, "L3":str, "bigint":str, 64:int, 0:int, 7:int, X_22:lng);
 end user.s8_1;
 # optimizer.mitosis()
 # optimizer.dataflow()

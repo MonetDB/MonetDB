@@ -261,7 +261,7 @@ static enum itimers {
 
 static bool timerHumanCalled = false;
 static void
-timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, int singleinstr, int total)
+timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, bool singleinstr, bool total)
 {
 	timertype t = th - t0;
 
@@ -269,13 +269,13 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, int si
 
 	/*
 	 * report only the times we do actually measure:
-	 * - client-measured wall-clock time per query only when executing indivual queries,
+	 * - client-measured wall-clock time per query only when executing individual queries,
 	 *   otherwise only the total wall-clock time at the end of a batch;
 	 * - server-measured detailed performance measures only per query.
 	 */
 
-	/* (!singleinstr != !total) is C for ((singleinstr != 0) XOR (total != 0)) */
-	if (timermode == T_CLOCK && (!singleinstr != !total)) {
+	/* "(singleinstr != total)" is C for (logical) "(singleinstr XOR total)" */
+	if (timermode == T_CLOCK && (singleinstr != total)) {
 		/* print wall-clock in "human-friendly" format */
 		fflush(stderr);
 		mnstr_flush(toConsole);
@@ -301,7 +301,7 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, int si
 		fflush(stderr);
 		return;
 	}
-	if (timermode == T_PERF && ((!singleinstr != !total) || !total)) {
+	if (timermode == T_PERF && (!total || (singleinstr != total))) {
 		/* for performance measures we use milliseconds as the base */
 		fflush(stderr);
 		mnstr_flush(toConsole);
@@ -310,7 +310,7 @@ timerHuman(int64_t sqloptimizer, int64_t maloptimizer, int64_t querytime, int si
 				 sqloptimizer / 1000, (int) (sqloptimizer % 1000),
 				 maloptimizer / 1000, (int) (maloptimizer % 1000),
 				 querytime / 1000, (int) (querytime % 1000));
-		if (!singleinstr != !total)
+		if (singleinstr != total)
 			fprintf(stderr, "clk:%" PRId64 ".%03d ", t / 1000, (int) (t % 1000));
 		fprintf(stderr, "ms\n");
 		fflush(stderr);
@@ -1809,7 +1809,7 @@ end_pager(stream *saveFD)
 #endif
 
 static int
-format_result(Mapi mid, MapiHdl hdl, int singleinstr)
+format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 {
 	MapiMsg rc = MERROR;
 	int64_t aff, lid;
@@ -1873,14 +1873,14 @@ format_result(Mapi mid, MapiHdl hdl, int singleinstr)
 				}
 				mnstr_printf(toConsole, "\n");
 			}
-			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
+			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 			continue;
 		case Q_SCHEMA:
 			SQLqueryEcho(hdl);
 			if (formatter == TABLEformatter) {
 				mnstr_printf(toConsole, "operation successful\n");
 			}
-			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
+			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 			continue;
 		case Q_TRANS:
 			SQLqueryEcho(hdl);
@@ -1888,7 +1888,7 @@ format_result(Mapi mid, MapiHdl hdl, int singleinstr)
 				mnstr_printf(toConsole,
 					     "auto commit mode: %s\n",
 					     mapi_get_autocommit(mid) ? "on" : "off");
-			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
+			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 			continue;
 		case Q_PREPARE:
 			SQLqueryEcho(hdl);
@@ -1897,7 +1897,7 @@ format_result(Mapi mid, MapiHdl hdl, int singleinstr)
 					     "execute prepared statement "
 					     "using: EXEC %d(...)\n",
 					     mapi_get_tableid(hdl));
-			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
+			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 			break;
 		case Q_TABLE:
 			break;
@@ -1971,16 +1971,16 @@ format_result(Mapi mid, MapiHdl hdl, int singleinstr)
 				break;
 			}
 
-			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 0);
+			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 		}
 	} while (!mnstr_errnr(toConsole) && (rc = mapi_next_result(hdl)) == 1);
 	/*
-	 * in case we called timerHuman() in the loop above with "total == 0",
-	 * call is again with "total == 1" to get the total wall-clock time
-	 * in case "singleinstr == 0 (false).
+	 * in case we called timerHuman() in the loop above with "total == false",
+	 * call is again with "total == true" to get the total wall-clock time
+	 * in case "singleinstr == false".
 	 */
 	if (timerHumanCalled)
-		timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, 1);
+		timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, true);
 	if (mnstr_errnr(toConsole)) {
 		mnstr_clearerr(toConsole);
 		fprintf(stderr, "write error\n");
@@ -2016,7 +2016,7 @@ doRequest(Mapi mid, const char *buf)
 	if (mapi_needmore(hdl) == MMORE)
 		return 0;
 
-	format_result(mid, hdl, 0);
+	format_result(mid, hdl, false);
 
 	if (mapi_get_active(mid) == NULL)
 		mapi_close_handle(hdl);
@@ -2134,7 +2134,7 @@ doFileBulk(Mapi mid, stream *fp)
 
 		CHECK_RESULT(mid, hdl, continue, buf, fp);
 
-		rc = format_result(mid, hdl, 0);
+		rc = format_result(mid, hdl, false);
 
 		if (rc == MMORE && (length > 0 || mapi_query_done(hdl) != MOK))
 			continue;	/* get more data */
@@ -2192,7 +2192,6 @@ showCommands(void)
 	mnstr_printf(toConsole, "\\q      - terminate session\n");
 }
 
-/* These values must match those used in view sys.describe_all_objects */
 #define MD_TABLE    1
 #define MD_VIEW     2
 #define MD_SEQ      4
@@ -2540,7 +2539,59 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 #endif
 					} else {
 						/* get all object names in current schema */
-						size_t len = 500 + strlen(line);
+						char *with_clause = 
+							"WITH describe_all_objects AS (\n"
+							"  SELECT s.name AS sname,\n"
+							"      t.name,\n"
+							"      s.name || '.' || t.name AS fullname,\n"
+							"      CAST(CASE t.type\n"
+							"      WHEN 1 THEN 2 -- ntype for views\n"
+							"      ELSE 1\t  -- ntype for tables\n"
+							"      END AS SMALLINT) AS ntype,\n"
+							"      (CASE WHEN t.system THEN 'SYSTEM ' ELSE '' END) || tt.table_type_name AS type,\n"
+							"      t.system,\n"
+							"      c.remark AS remark\n"
+							"    FROM sys._tables t\n"
+							"    LEFT OUTER JOIN sys.comments c ON t.id = c.id\n"
+							"    LEFT OUTER JOIN sys.schemas s ON t.schema_id = s.id\n"
+							"    LEFT OUTER JOIN sys.table_types tt ON t.type = tt.table_type_id\n"
+							"  UNION ALL\n"
+							"  SELECT s.name AS sname,\n"
+							"      sq.name,\n"
+							"      s.name || '.' || sq.name AS fullname,\n"
+							"      CAST(4 AS SMALLINT) AS ntype,\n"
+							"      'SEQUENCE' AS type,\n"
+							"      false AS system,\n"
+							"      c.remark AS remark\n"
+							"    FROM sys.sequences sq\n"
+							"    LEFT OUTER JOIN sys.comments c ON sq.id = c.id\n"
+							"    LEFT OUTER JOIN sys.schemas s ON sq.schema_id = s.id\n"
+							"  UNION ALL\n"
+							"  SELECT DISTINCT s.name AS sname,  -- DISTINCT is needed to filter out duplicate overloaded function/procedure names\n"
+							"      f.name,\n"
+							"      s.name || '.' || f.name AS fullname,\n"
+							"      CAST(8 AS SMALLINT) AS ntype,\n"
+							"      (CASE WHEN sf.function_id IS NOT NULL THEN 'SYSTEM ' ELSE '' END) || function_type_keyword AS type,\n"
+							"      sf.function_id IS NOT NULL AS system,\n"
+							"      c.remark AS remark\n"
+							"    FROM sys.functions f\n"
+							"    LEFT OUTER JOIN sys.comments c ON f.id = c.id\n"
+							"    LEFT OUTER JOIN sys.function_types ft ON f.type = ft.function_type_id\n"
+							"    LEFT OUTER JOIN sys.schemas s ON f.schema_id = s.id\n"
+							"    LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id\n"
+							"  UNION ALL\n"
+							"  SELECT NULL AS sname,\n"
+							"      s.name,\n"
+							"      s.name AS fullname,\n"
+							"      CAST(16 AS SMALLINT) AS ntype,\n"
+							"      (CASE WHEN s.system THEN 'SYSTEM SCHEMA' ELSE 'SCHEMA' END) AS type,\n"
+							"      s.system,\n"
+							"      c.remark AS remark\n"
+							"    FROM sys.schemas s\n"
+							"    LEFT OUTER JOIN sys.comments c ON s.id = c.id\n"
+							"  ORDER BY system, name, sname, ntype)\n"
+							;
+						size_t len = strlen(with_clause) + 500 + strlen(line);
 						char *query = malloc(len);
 						char *q = query, *endq = query + len;
 						char *name_column = hasSchema ? "fullname" : "name";
@@ -2558,7 +2609,8 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 						 * | "data.my*"      | no            | fullname LIKE 'data.my%'      |
 						 * | "*a.my*"        | no            | fullname LIKE '%a.my%'        |
 						 */
-						q += snprintf(q, endq - q, "SELECT type, fullname, remark FROM sys.describe_all_objects\n");
+						q += snprintf(q, endq - q, "%s", with_clause);
+						q += snprintf(q, endq - q, "SELECT type, fullname, remark FROM describe_all_objects\n");
 						q += snprintf(q, endq - q, "WHERE (ntype & %u) > 0\n", x);
 						if (!wantsSystem) {
 							q += snprintf(q, endq - q, "AND NOT system\n");

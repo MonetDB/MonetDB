@@ -12,7 +12,7 @@ includedir=@includedir@
 Name: monetdb-stream
 Description: MonetDB streams libary
 Version: @PACKAGE_VERSION@
-Requires: @PKG_CURL@ @PKG_ZLIB@
+Requires: @PKG_CURL@ @PKG_ZLIB@ @PKG_LIBLZMA@
 
-Libs: -L${libdir} -lstream @SOCKET_LIBS@
+Libs: -L${libdir} -lstream @SOCKET_LIBS@ @BZ_LIBS@ @snappy_LIBS@ @lz4_LIBS@ @LIBICONV@
 Cflags: -I${includedir}/monetdb

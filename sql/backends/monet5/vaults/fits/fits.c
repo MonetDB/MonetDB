@@ -85,8 +85,11 @@ FITSinitCatalog(mvc *m)
 }
 
 static int
-fits2mtype(int t)
+fits2mtype(int t, int rep)
 {
+	if (rep > 1) {
+		return TYPE_sqlblob;
+	}
 	switch (t) {
 	case TBIT:
 	case TLOGICAL:
@@ -121,7 +124,10 @@ fits2mtype(int t)
 static int
 fits2subtype(sql_subtype *tpe, int t, long rep, long wid) /* type long used by fits library */
 {
-	(void)rep;
+	if (rep > 1) {
+		sql_find_subtype(tpe, "blob", (unsigned int)rep*wid, 0);
+		return 1;
+	}
 	switch (t) {
 	case TBIT:
 	case TLOGICAL:
@@ -203,7 +209,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sch = mvc_bind_schema(m, "sys");
 
 	/* First step: look if the table exists in the database. If the table is not in the database, the export function cannot continue */
- 
+
 	tbl = mvc_bind_table(m, sch, tname);
 	if (tbl == NULL) {
 		msg = createException (MAL, "fits.exporttable", SQLSTATE(FI000) "Table %s is missing.\n", tname);
@@ -319,7 +325,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			tm0 = GDKms();
 			fits_write_col(fptr, TLOGICAL, cc+1, (optimal*block)+1, 1, dimension, readboolrows, &status);
 			texportboolean += GDKms() - tm0;
-			GDKfree(readboolrows);		
+			GDKfree(readboolrows);
 		}
 
 		if (strcmp(columntype,"char")==0)
@@ -409,7 +415,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					readshortrows = (short *) GDKmalloc (sizeof(short) * optimal);
 					block++;
 				}
-			} 
+			}
 			tm0 = GDKms();
 			fits_write_col(fptr, TSHORT, cc+1, (optimal*block)+1, 1, dimension, readshortrows, &status);
 			texportshort += GDKms() - tm0;
@@ -439,11 +445,11 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					readintrows = (int *) GDKmalloc (sizeof(int) * optimal);
 					block++;
 				}
-			} 
+			}
 			tm0 = GDKms();
 			fits_write_col(fptr, TINT, cc+1, (optimal*block)+1, 1, dimension, readintrows, &status);
 			texportint += GDKms() - tm0;
-			GDKfree(readintrows);	
+			GDKfree(readintrows);
 		}
 
 		if (strcmp(columntype,"bigint")==0)
@@ -469,7 +475,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					readlngrows = (lng *) GDKmalloc (sizeof(lng) * optimal);
 					block++;
 				}
-			} 
+			}
 			tm0 = GDKms();
 			fits_write_col(fptr, TLONG, cc+1, (optimal*block)+1, 1, dimension, readlngrows, &status);
 			texportlng += GDKms() - tm0;
@@ -499,7 +505,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					readfloatrows = (float *) GDKmalloc (sizeof(float) * optimal);
 					block++;
 				}
-			} 
+			}
 			tm0 = GDKms();
 			fits_write_col(fptr, TFLOAT, cc+1, (optimal*block)+1, 1, dimension, readfloatrows, &status);
 			texportfloat += GDKms() - tm0;
@@ -533,12 +539,12 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			tm0 = GDKms();
 			fits_write_col(fptr, TDOUBLE, cc+1, (optimal*block)+1, 1, optimal, readdoublerows, &status);
 			texportdouble += GDKms() - tm0;
-			GDKfree(readdoublerows); 
+			GDKfree(readdoublerows);
 		}
 	}
 
 	/* print all the times that were needed to export each one of the columns
-		
+
 	fprintf(stderr, "\n\n");
 	if (texportboolean > 0)		fprintf(stderr, "%d Boolean\tcolumn(s) exported in %d ms\n", boolcols,   texportboolean);
 	if (texportchar > 0)		fprintf(stderr, "%d Char\t\tcolumn(s) exported in %d ms\n",    charcols,   texportchar);
@@ -942,6 +948,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fits_get_num_cols(fptr, &cnum, &status);
 	tbl = mvc_create_table(m, sch, tname, tt_table, 0, SQL_PERSIST, 0, cnum);
 
+	// TODO: Check that the allocations succeeded
 	tpcode = (int *)GDKzalloc(sizeof(int) * cnum);
 	rep = (long *)GDKzalloc(sizeof(long) * cnum);
 	wid = (long *)GDKzalloc(sizeof(long) * cnum);
@@ -970,24 +977,72 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (j = 1; j <= cnum; j++) {
 		BAT *tmp = NULL;
 		int time0 = GDKms();
-		mtype = fits2mtype(tpcode[j - 1]);
+		mtype = fits2mtype(tpcode[j - 1], rep[j - 1]);
 		nilptr = ATOMnilptr(mtype);
 		col = mvc_bind_column(m, tbl, cname[j - 1]);
 
 		tmp = COLnew(0, mtype, rows, TRANSIENT);
-		if ( tmp == NULL){
+		if (tmp == NULL){
 			GDKfree(tpcode);
 			GDKfree(rep);
 			GDKfree(wid);
 			GDKfree(cname);
 			throw(MAL,"fits.load", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
-		if (mtype != TYPE_str) {
-			fits_read_col(fptr, tpcode[j - 1], j, 1, 1, rows, (void *) nilptr, (void *)BUNtloc(bat_iterator(tmp), 0), &anynull, &status);
-			BATsetcount(tmp, rows);
-			tmp->tsorted = 0;
-			tmp->trevsorted = 0;
-		} else {
+		if (mtype == TYPE_sqlblob) {
+			long i;
+			unsigned long nbytes = rep[j - 1] * wid[j - 1];
+			sqlblob **v = (sqlblob **)GDKzalloc(sizeof(sqlblob *) * rows);
+
+			mtype = fits2mtype(tpcode[j - 1], 1);
+			nilptr = ATOMnilptr(mtype);
+
+			if (v == NULL) {
+				GDKfree(tpcode);
+				GDKfree(rep);
+				GDKfree(wid);
+				GDKfree(cname);
+				throw(MAL,"fits.load", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			}
+
+			for(i = 0; i < rows; i++) {
+				v[i] = (sqlblob *)GDKmalloc(offsetof(sqlblob, data) + nbytes);
+				if (v[i] == NULL) {
+					GDKfree(tpcode);
+					GDKfree(rep);
+					GDKfree(wid);
+					GDKfree(cname);
+					long k = 0;
+					for (k = 0; k < i; k++) {
+						GDKfree(v[k]);
+					}
+					GDKfree(v);
+					throw(MAL,"fits.load", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				}
+				fits_read_col(fptr, tpcode[j - 1], j, i + 1, 1, rep[j - 1], (void *)nilptr,
+					      (void *)v[i]->data, &anynull, &status);
+				v[i]->nitems = nbytes;
+				if (BUNappend(tmp, v[i], TRUE) != GDK_SUCCEED) {
+					BBPreclaim(tmp);
+					msg = createException(MAL, "fits.loadtable", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+					GDKfree(tpcode);
+					GDKfree(rep);
+					GDKfree(wid);
+					GDKfree(cname);
+					for (i = 0; i < rows; i++) {
+						GDKfree(v[i]);
+					}
+					GDKfree(v);
+					return msg;
+				}
+			}
+
+			for(i = 0; i < rows; i++) {
+				GDKfree(v[i]);
+			}
+			GDKfree(v);
+		}
+		else if (mtype == TYPE_str) {
 /*			char *v = GDKzalloc(wid[j-1]);*/
 			/* type long demanded by "rows", i.e., by fits library */
 			long bsize = 50, batch = bsize, k, i;
@@ -1013,6 +1068,12 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				GDKfree(v[i]);
 			GDKfree(v);
 			fprintf(stderr,"#String column load %d ms, BUNappend %d ms\n", tloadtm, tattachtm);
+		}
+		else {
+			fits_read_col(fptr, tpcode[j - 1], j, 1, 1, rows, (void *) nilptr, (void *)BUNtloc(bat_iterator(tmp), 0), &anynull, &status);
+			BATsetcount(tmp, rows);
+			tmp->tsorted = 0;
+			tmp->trevsorted = 0;
 		}
 
 		if (status) {
@@ -1041,4 +1102,3 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	fits_close_file(fptr, &status);
 	return msg;
 }
-

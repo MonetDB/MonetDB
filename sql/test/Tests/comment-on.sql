@@ -87,6 +87,10 @@ COMMENT ON COLUMN tab.j IS 'jj';
 COMMENT ON COLUMN foo.tab.i IS 'ii';
 \d tab
 
+COMMENT ON COLUMN vivi.j IS 'vjj';
+COMMENT ON COLUMN foo.vivi.i IS 'vii';
+\d vivi
+
 /* comment on index works */
 CREATE INDEX idx ON tab(j,i);
 COMMENT ON INDEX idx IS 'index on j';
@@ -134,6 +138,36 @@ COMMENT ON PROCEDURE g IS 'proc!';
 -- if there is ambiguity we can't
 COMMENT ON FUNCTION f IS 'ambiguous';
 
+
+-- test all COMMENT ON <db-objecttype> variations with an object name which does not exist, so should report a "no such <db-objecttype>: abc" error
+COMMENT ON SCHEMA "abc" IS 'schema abc';
+COMMENT ON TABLE "abc" IS 'table abc';
+COMMENT ON VIEW "abc" IS 'view abc';
+COMMENT ON COLUMN "abc".abc IS 'column abc';
+COMMENT ON INDEX "abc" IS 'index abc';
+COMMENT ON SEQUENCE "abc" IS 'seq abc';
+COMMENT ON FUNCTION "abc" IS 'function abc';
+COMMENT ON PROCEDURE "abc" IS 'procedure abc';
+COMMENT ON AGGREGATE "abc" IS 'aggregate abc';
+COMMENT ON FILTER FUNCTION "abc" IS 'filter function abc';
+COMMENT ON LOADER "abc" IS 'loader abc';
+
+-- test COMMENT ON <db-objecttype> for db-objecttypes for which we do NOT support comments to be set, so should report a syntax error
+COMMENT ON TYPE "int" IS 'signed integer number 32 bits';
+COMMENT ON TRIGGER "abc" IS 'trigger abc';
+COMMENT ON PRIMARY KEY "abc" IS 'primary key abc';
+COMMENT ON FOREIGN KEY "abc" IS 'foreign key abc';
+COMMENT ON UNIQUE KEY "abc" IS 'unique key abc';
+COMMENT ON KEY "abc" IS 'key abc';
+COMMENT ON FUNCTION ARGUMENT abc.i IS 'function argument abc.i';
+COMMENT ON PROCEDURE ARGUMENT abc.i IS 'procedure argument abc.i';
+COMMENT ON DATABASE "abc" IS 'database abc';
+
+
+-- before cleanup show the created comments
+SELECT remark FROM sys.comments order by remark;
+
+-- cleanup
 DROP FUNCTION f();
 DROP FUNCTION f(INT);
 DROP FUNCTION f(INT,INT);
@@ -147,3 +181,7 @@ DROP TABLE tab;
 
 SET SCHEMA sys;
 DROP SCHEMA foo;
+
+-- after dropping all the created objects, the comments should be removed also
+SELECT remark FROM sys.comments order by remark;
+

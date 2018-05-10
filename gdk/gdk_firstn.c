@@ -324,7 +324,7 @@ BATfirstn_unique(BAT *b, BAT *s, BUN n, int asc, oid *lastp)
 	bn->tsorted = 1;
 	bn->trevsorted = n <= 1;
 	bn->tkey = 1;
-	bn->tseqbase = (bn->tdense = n <= 1) != 0 ? oids[0] : oid_nil;
+	bn->tseqbase = n <= 1 ? oids[0] : oid_nil;
 	bn->tnil = 0;
 	bn->tnonil = 1;
 	return bn;
@@ -454,7 +454,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc, oid *lastp,
 			bn->tsorted = 1;
 			bn->trevsorted = n <= 1;
 			bn->tkey = 1;
-			bn->tseqbase = (bn->tdense = n <= 1) != 0 ? cand[0] : oid_nil;
+			bn->tseqbase = n <= 1 ? cand[0] : oid_nil;
 			bn->tnil = 0;
 			bn->tnonil = 1;
 			return bn;
@@ -613,7 +613,7 @@ BATfirstn_unique_with_groups(BAT *b, BAT *s, BAT *g, BUN n, int asc, oid *lastp,
 	bn->tsorted = 1;
 	bn->trevsorted = n <= 1;
 	bn->tkey = 1;
-	bn->tseqbase = (bn->tdense = n <= 1) != 0 ? oids[0] : oid_nil;
+	bn->tseqbase = n <= 1 ? oids[0] : oid_nil;
 	bn->tnil = 0;
 	bn->tnonil = 1;
 	return bn;
@@ -653,9 +653,9 @@ BATfirstn_grouped(BAT **topn, BAT **gids, BAT *b, BAT *s, BUN n, int asc, int di
 
 			bn1 = bn;
 			BBPunfix(s->batCacheid);
-			rc = BATsemijoin(&bn, NULL, b, b, su, bn1, 1, BUN_NONE);
+			bn = BATintersect(b, b, su, bn1, 1, BUN_NONE);
 			BBPunfix(bn1->batCacheid);
-			if (rc != GDK_SUCCEED)
+			if (bn == NULL)
 				return GDK_FAIL;
 		} else {
 			BATiter bi = bat_iterator(b);
@@ -725,9 +725,9 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 			BBPunfix(bn2->batCacheid);
 			return GDK_FAIL;
 		}
-		rc = BATsemijoin(&bn4, NULL, s, bn2, NULL, NULL, 0, BUN_NONE);
+		bn4 = BATintersect(s, bn2, NULL, NULL, 0, BUN_NONE);
 		BBPunfix(bn2->batCacheid);
-		if (rc != GDK_SUCCEED) {
+		if (bn4 == NULL) {
 			BBPunfix(bn1->batCacheid);
 			return GDK_FAIL;
 		}
@@ -801,7 +801,7 @@ BATfirstn_grouped_with_groups(BAT **topn, BAT **gids, BAT *b, BAT *s, BAT *g, BU
 	if (gids) {
 		BAT *bn1, *bn2, *bn3, *bn4, *bn5, *bn6, *bn7, *bn8;
 
-		if (BATsemijoin(&bn1, NULL, s, bn, NULL, NULL, 0, BUN_NONE) != GDK_SUCCEED) {
+		if ((bn1 = BATintersect(s, bn, NULL, NULL, 0, BUN_NONE)) == NULL) {
 			BBPunfix(bn->batCacheid);
 			return  GDK_FAIL;
 		}

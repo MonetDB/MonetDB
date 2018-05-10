@@ -1,4 +1,4 @@
-#!@PYTHON2@
+#!@PYTHON@
 
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
@@ -185,7 +185,7 @@ except ImportError:
     try:
         import MonetDBtesting.Mfilter as Mfilter
     except ImportError:
-        p = _configure(os.path.join('@QXprefix@', '@QXPYTHON2_LIBDIR@'))
+        p = _configure(os.path.join('@QXprefix@', '@QXPYTHON_LIBDIR@'))
         sys.path.insert(0, p)
         import MonetDBtesting.Mfilter as Mfilter
         if 'PYTHONPATH' in os.environ:
@@ -1164,7 +1164,7 @@ def SkipTest(env, TST, EXT, REASON, length) :
             if len(TST) <= l:
                 s = '%-*s' % (l, TST)
             else:
-                s = '%s...%s' % (TST[:l/2 - 2], TST[-(l/2 - 1):])
+                s = '%s...%s' % (TST[:l//2 - 2], TST[-(l//2 - 1):])
         else:
             s = '%-*s' % (length, TST)
         STDOUT.write('%s%s skipped (%s)\n' % (prompt(), s, REASON))
@@ -1246,6 +1246,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
 
     if testlist:
         tl = []
+        missing = False
         for tst in testlist:
             for t, c in alltests:
                 if t == tst:
@@ -1253,7 +1254,10 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                     break
             else:
                 tl.append((tst,None))
+                missing = True
         testlist = tl
+        if not missing:
+            all_tests = True
     else:
         testlist = alltests
     if not testlist:
@@ -2188,10 +2192,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
                     TIMEOUT = int(TIMEOUT * TOf)
                 if TIMEOUT < 1 and par['TIMEOUT'] > 0:
                     TIMEOUT = 1
-        if env['exe']['Mtimeout'][0]:
-            # set timeout
-            env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout %s ' % str(TIMEOUT)
-            SetExecEnv(env['exe'],False)
         CTIMEOUT = 0
         if   CALL in ["other", "python", "ruby"]:
             if TIMEOUT > 0:
@@ -2335,11 +2335,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests) :
             STDOUT.flush()
         except IOError as err:
             Warn("Flushing STDOUT in RunTest failed with #%d: '%s'." % (err.errno, err.strerror))
-
-        if env['exe']['Mtimeout'][0]:
-            # reset timeout
-            env['exe']['Mtimeout'] = env['exe']['Mtimeout'][0], 'Mtimeout -timeout %s ' % str(par['TIMEOUT'])
-            SetExecEnv(env['exe'],False)
 
         Mfilter.mFilter(TST+STABLEout,par['IGNORE'])
         Mfilter.mFilter(TST+STABLEerr,par['IGNORE'])
@@ -2690,10 +2685,74 @@ def Prompt(cmd) :
     return '%s%s"%s"%s\n\n' % (prmpt, prmpt, cmd, prmpt)
 ### Prompt(cmd) #
 
+def getkids():
+    # return a dictionary with process IDs as key and a list of child
+    # processes as value
+    p = process.Popen(['ps', '-lu', os.getenv('USER')],
+                      stdout = process.PIPE, stderr = process.PIPE,
+                      universal_newlines = True)
+    out, err = p.communicate()
+    if err:
+        return {}
+    lines = out.split('\n')
+    line0 = lines[0].split()
+    del lines[0]
+    del lines[-1]
+    pidcol = ppidcol = None
+    for i in range(len(line0)):
+        if line0[i] == 'PID':
+            pidcol = i
+        elif line0[i] == 'PPID':
+            ppidcol = i
+    if pidcol is None or ppidcol is None:
+        return {}
+    procs = {}
+    for line in lines:
+        line = line.split()
+        try:
+            pid = int(line[pidcol])
+            ppid = int(line[ppidcol])
+        except (ValueError, IndexError):
+            continue
+        if ppid not in procs:
+            procs[ppid] = []
+        procs[ppid].append(pid)
+    return procs
+
+def killchildren(pid, procs = None):
+    # kill the specified process ID and all its children
+    if procs is None:
+        try:
+            os.killpg(pid, signal.SIGKILL)
+            return
+        except AttributeError:
+            try:
+                os.kill(-pid, signal.SIGKILL)
+                return
+            except OSError:
+                pass
+        except OSError:
+            pass
+        procs = getkids()
+    for kid in procs.get(pid, []):
+        killchildren(kid, procs)
+    if procdebug:
+        print('killing process %d' % pid)
+    try:
+        os.kill(pid, signal.SIGKILL)
+    except OSError:
+        if procdebug:
+            print('killing process %d failed' % pid)
+
+def reallyKill(proc):
+    killchildren(proc.pid, getkids())
+
 def killProc(proc, outfile = None, cmd = None):
+    if type(cmd) is type([]):
+        cmd = ' '.join(cmd)
+    if procdebug:
+        print('timeout for process %d (%s)' % (proc.pid, cmd))
     if outfile is not None and cmd is not None:
-        if type(cmd) is type([]):
-            cmd = ' '.join(cmd)
         try:
             outfile.write('\n!Mtimeout: Timeout: %s\n' % cmd)
         except (ValueError, IOError):
@@ -2721,7 +2780,16 @@ def killProc(proc, outfile = None, cmd = None):
         try:
             p = process.Popen(['pstack', str(proc.pid)], stdout = process.PIPE,
                               universal_newlines = True)
+            try:
+                # pstack (gdb) sometimes hangs when trying to get the
+                # stack trace: kill it mercilessly if it does
+                t = Timer(60, reallyKill, args = [p])
+                t.start()
+            except AttributeError:
+                t = None
             out, err = p.communicate()
+            if t is not None:
+                t.cancel()
         except:
             out = ''
     if outfile is not None and out:
@@ -2732,7 +2800,8 @@ def killProc(proc, outfile = None, cmd = None):
             print(out)
     proc.killed = True
     try:
-        os.kill(-proc.pid, signal.SIGKILL)
+        signal.SIGKILL          # Windows doesn't have this
+        os.kill
     except AttributeError:
         if procdebug:
             print('killProc: starting process "taskkill" "/F" "/T" "/PID" "%s"\n' % str(proc.pid))
@@ -2742,8 +2811,8 @@ def killProc(proc, outfile = None, cmd = None):
         out, err = p.communicate()
         if procdebug:
             print('killProc: process exited "taskkill" "/F" "/T" "/PID" "%s" (%s)\n' % (str(proc.pid), proc.returncode))
-    except OSError:
-        pass
+    else:
+        killchildren(proc.pid)
 
 def LaunchIt(cmd, TestInput, TestOut, TestErr, TimeOut, SrvrOut = None) :
     global setpgrp
@@ -2868,7 +2937,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             if len(TST) <= l:
                 s = '%-*s ' % (l, TST)
             else:
-                s = '%s...%s ' % (TST[:l/2 - 2], TST[l/2+1-l:])
+                s = '%s...%s ' % (TST[:l//2 - 2], TST[l//2+1-l:])
         else:
             s = '%-*s ' % (length, TST)
         STDOUT.write('%s%s' % (prompt(), s))
@@ -2955,6 +3024,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, PRELUDE, TestOutFile, TestErrFile, STIMEOU
             elif (not all_tests or (COND != None and "HAVE_LIBPY" in COND)) and CONDITIONALS['HAVE_LIBPY']:
                 # enable Python integration in server
                 Srvr.extend(['--set', 'embedded_py=true'])
+
+            # enable C integration in server
+            Srvr.extend(['--set', 'embedded_c=true'])
 
 
             pSrvr, pSrvrTimer = LaunchIt(Srvr, '\nio.printf("\\nReady.\\n");\n', SrvrOut, SrvrErr, TIMEOUT)
@@ -3364,9 +3436,7 @@ def SetExecEnv(exe,verbose) :
             V = 'MSERVER'
         else:
             V = v.upper()
-        if  v != 'Mtimeout':
-            os.environ[V] = CALL+exe['Mtimeout'][1]+exe[v][1]
-        elif exe[v][0]:
+        if exe[v][0]:
             os.environ[V] = CALL+exe[v][1]
         else:
             os.environ[V] = ""
@@ -4133,7 +4203,6 @@ def main(argv) :
                 SOCK = ""
 
             exe = {}
-            exe['Mtimeout']      = CheckExec('Mtimeout')     , 'Mtimeout -timeout %d ' % par['TIMEOUT']
             exe['mserver5']       = CheckExec('mserver5')     , '%s mserver5 %s --debug=%s --set gdk_nr_threads=%s %s --set mapi_open=true --set mapi_port=%s %s --set monet_prompt= %s %s' % \
                                                                    (env['setDBG'], config, env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], SOCK, not nomito and '--forcemito' or '', env['MSERVER_SET'])
             exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
@@ -4143,8 +4212,6 @@ def main(argv) :
             exe['SQL_Client']    = CheckExec(env['SQLCLIENT'].split(None, 1)[0])   , '%s -i -e --host=%s --port=%s' % (env['SQLCLIENT'], HOST, env['MAPIPORT'])
             exe['SQL_Dump']      = CheckExec(env['SQLDUMP'].split(None, 1)[0])     , '%s --host=%s --port=%s' % (env['SQLDUMP'], HOST, env['MAPIPORT'])
             exe['R_Client']   = CheckExec(env['RCLIENT'].split(None, 1)[0])   , '%s --args %s' % (env['RCLIENT'], env['MAPIPORT'])
-            if par['TIMEOUT'] == 0 or not exe['Mtimeout'][0]:
-                exe['Mtimeout'] = '', ''
             env['exe'] = exe
             SetExecEnv(exe,verbose)
 
@@ -4600,15 +4667,7 @@ VALUES (%s, '%s', '%s', '%s',
 ### main(argv) #
 
 if __name__ == "__main__":
-    if '--trace' in sys.argv:
-        sys.argv.remove('--trace')
-        try:
-            import trace
-        except ImportError:
-            from MonetDBtesting import trace
-        t = trace.Trace(trace=1, count=0, ignoremods=('ntpath','monet_options','Mfilter','re', 'sre_parse', 'sre_compile'))
-        t.runfunc(main, sys.argv)
-    elif '--debug' in sys.argv:
+    if '--debug' in sys.argv:
         sys.argv.remove('--debug')
         import pdb
         pdb.run('main(sys.argv)')

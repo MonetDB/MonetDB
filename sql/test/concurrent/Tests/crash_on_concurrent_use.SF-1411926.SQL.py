@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import pymonetdb, sys, threading, os
 
 query = '''
@@ -30,7 +32,7 @@ class Client(threading.Thread):
         self.result = cursor.fetchall()
 
     def output(self):
-        print "(%d, %s)" % (self.client, self.result)
+        print("(%d, %s)" % (self.client, self.result))
 
 def main():
         C = []

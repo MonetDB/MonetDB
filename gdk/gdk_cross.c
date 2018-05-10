@@ -32,12 +32,21 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
 	CANDINIT(r, sr, start2, end2, cnt2, rcand, rcandend);
 	if (lcand)
 		cnt1 = lcandend - lcand;
+	else
+		cnt1 = end1 - start1;
 	if (rcand)
 		cnt2 = rcandend - rcand;
+	else
+		cnt2 = end2 - start2;
 
 	bn1 = COLnew(0, TYPE_oid, cnt1 * cnt2, TRANSIENT);
-	if (bn1 == NULL)
+	bn2 = COLnew(0, TYPE_oid, cnt1 * cnt2, TRANSIENT);
+	if (bn1 == NULL || bn2 == NULL) {
+		BBPreclaim(bn1);
+		BBPreclaim(bn2);
 		return GDK_FAIL;
+	}
+
 	BATsetcount(bn1, cnt1 * cnt2);
 	bn1->tsorted = 1;
 	bn1->trevsorted = cnt1 <= 1;
@@ -49,24 +58,18 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
 		for (i = 0; i < cnt1; i++)
 			for (j = 0; j < cnt2; j++)
 				*p++ = lcand[i];
-		bn1->tdense = 0;
+		bn1->tseqbase = oid_nil;
 	} else {
-		seq = l->hseqbase + start1;
-		for (i = 0; i < cnt1; i++)
+		seq = l->hseqbase;
+		for (i = start1; i < end1; i++)
 			for (j = 0; j < cnt2; j++)
 				*p++ = i + seq;
-		bn1->tdense = bn1->tkey != 0;
-		if (bn1->tdense)
-			BATtseqbase(bn1, seq);
+
+		BATtseqbase(bn1, bn1->tkey ? seq+start1 : oid_nil);
 	}
 
-	bn2 = COLnew(0, TYPE_oid, cnt1 * cnt2, TRANSIENT);
-	if (bn2 == NULL) {
-		BBPreclaim(bn1);
-		return GDK_FAIL;
-	}
 	BATsetcount(bn2, cnt1 * cnt2);
-	bn2->tsorted = cnt1 <= 1;
+	bn2->tsorted = cnt1 <= 1 || cnt2 <= 1;
 	bn2->trevsorted = cnt2 <= 1;
 	bn2->tkey = cnt1 <= 1;
 	bn2->tnil = 0;
@@ -76,15 +79,14 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
 		for (i = 0; i < cnt1; i++)
 			for (j = 0; j < cnt2; j++)
 				*p++ = rcand[j];
-		bn2->tdense = 0;
+		bn2->tseqbase = oid_nil;
 	} else {
-		seq = r->hseqbase + start2;
+		seq = r->hseqbase;
 		for (i = 0; i < cnt1; i++)
-			for (j = 0; j < cnt2; j++)
+			for (j = start2; j < end2; j++)
 				*p++ = j + seq;
-		bn2->tdense = bn2->tkey != 0;
-		if (bn2->tdense)
-			BATtseqbase(bn2, seq);
+
+		BATtseqbase(bn2, bn2->tkey ? seq+start2 : oid_nil);
 	}
 
 	*r1p = bn1;

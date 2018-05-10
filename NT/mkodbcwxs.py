@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 # python mkodbcwxs.py VERSION makedefs.txt PREFIX > PREFIX/MonetDB-ODBC-Installer.wxs
 # "c:\Program Files (x86)\WiX Toolset v3.10\bin\candle.exe" -nologo -arch x64/x86 PREFIX/MonetDB-ODBC-Installer.wxs
 # "c:\Program Files (x86)\WiX Toolset v3.10\bin\light.exe" -nologo -sice:ICE03 -sice:ICE60 -sice:ICE82 -ext WixUIExtension PREFIX/MonetDB-ODBC-Installer.wixobj
@@ -32,9 +34,11 @@ def main():
     if makedefs['bits'] == '64':
         folder = r'ProgramFiles64Folder'
         arch = 'x64'
+        libcrypto = '-x64'
     else:
         folder = r'ProgramFilesFolder'
         arch = 'x86'
+        libcrypto = ''
     vs = os.getenv('vs')        # inherited from TestTools\common.bat
     features = []
     print(r'<?xml version="1.0"?>')
@@ -71,10 +75,9 @@ def main():
                r'lib\libMonetODBC.dll', r'lib\libMonetODBC.pdb',
                r'lib\libMonetODBCs.dll', r'lib\libMonetODBCs.pdb',
                r'lib\libstream.dll', r'lib\libstream.pdb',
-               r'%s\bin\iconv.dll' % makedefs['LIBICONV'],
+               r'%s\bin\iconv-2.dll' % makedefs['LIBICONV'],
                r'%s\bin\libbz2.dll' % makedefs['LIBBZIP2'],
-               r'%s\bin\libeay32.dll' % makedefs['LIBOPENSSL'],
-               r'%s\bin\ssleay32.dll' % makedefs['LIBOPENSSL'],
+               r'%s\bin\libcrypto-1_1%s.dll' % (makedefs['LIBOPENSSL'], libcrypto),
                r'%s\bin\zlib1.dll' % makedefs['LIBZLIB']])
     print(r'            </Directory>')
     id = comp(features, id, 12,

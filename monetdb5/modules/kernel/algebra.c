@@ -88,7 +88,7 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts )
 		}
 	}
 	r -> tkey = FALSE;
-	r -> tdense = FALSE;
+	r -> tseqbase = oid_nil;
 	r -> tsorted = BATtordered(gids);
 	r -> trevsorted = BATtrevordered(gids);
 	r -> tnonil = gids->tnonil;
@@ -508,7 +508,7 @@ ALGintersect(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat
 {
 	return do_join(r1, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL, 0, 0,
 				   nil_matches, estimate,
-				   BATsemijoin, NULL, NULL, NULL, NULL, "algebra.intersect");
+				   NULL, NULL, NULL, NULL, BATintersect, "algebra.intersect");
 }
 
 /* algebra.firstn(b:bat[:any],
@@ -672,6 +672,42 @@ ALGcrossproduct2( bat *l, bat *r, const bat *left, const bat *right)
 	ret = BATsubcross(&bn1, &bn2, L, R, NULL, NULL);
 	BBPunfix(L->batCacheid);
 	BBPunfix(R->batCacheid);
+	if (ret != GDK_SUCCEED)
+		throw(MAL, "algebra.crossproduct", GDK_EXCEPTION);
+	BBPkeepref(*l = bn1->batCacheid);
+	BBPkeepref(*r = bn2->batCacheid);
+	return MAL_SUCCEED;
+}
+
+str
+ALGcrossproduct( bat *l, bat *r, const bat *left, const bat *right, const bat *sl, const bat *sr)
+{
+	BAT *L, *R, *SL = NULL, *SR = NULL, *bn1, *bn2;
+	gdk_return ret;
+
+	if ((L = BATdescriptor(*left)) == NULL) {
+		throw(MAL, "algebra.crossproduct", RUNTIME_OBJECT_MISSING);
+	}
+	if ((R = BATdescriptor(*right)) == NULL) {
+		BBPunfix(L->batCacheid);
+		throw(MAL, "algebra.crossproduct", RUNTIME_OBJECT_MISSING);
+	}
+	if (sl && *sl != bat_nil && (SL = BATdescriptor(*sl)) == NULL) {
+		BBPunfix(L->batCacheid);
+		BBPunfix(R->batCacheid);
+		throw(MAL, "algebra.crossproduct", RUNTIME_OBJECT_MISSING);
+	}
+	if (sr && *sr != bat_nil && (SR = BATdescriptor(*sr)) == NULL) {
+		BBPunfix(L->batCacheid);
+		BBPunfix(R->batCacheid);
+		BBPunfix(SL->batCacheid);
+		throw(MAL, "algebra.crossproduct", RUNTIME_OBJECT_MISSING);
+	}
+	ret = BATsubcross(&bn1, &bn2, L, R, SL, SR);
+	BBPunfix(L->batCacheid);
+	BBPunfix(R->batCacheid);
+	if (SL) BBPunfix(SL->batCacheid);
+	if (SR) BBPunfix(SR->batCacheid);
 	if (ret != GDK_SUCCEED)
 		throw(MAL, "algebra.crossproduct", GDK_EXCEPTION);
 	BBPkeepref(*l = bn1->batCacheid);
@@ -1104,7 +1140,7 @@ str ALGreuse(bat *ret, const bat *bid)
 			BATsetcount(bn,BATcount(b));
 			bn->tsorted = FALSE;
 			bn->trevsorted = FALSE;
-			BATkey(bn,FALSE);
+			BATkey(bn, false);
 		}
 		BBPkeepref(*ret= bn->batCacheid);
 		BBPunfix(b->batCacheid);

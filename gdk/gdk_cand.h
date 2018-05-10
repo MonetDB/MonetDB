@@ -11,9 +11,8 @@
  * and s (the candidate list).  Start and end are the start and end
  * BUNs of b that need to be considered.  They are relative to the
  * start of the heap.  Cand and candend point into the candidate list,
- * if present.  Note that if the tail of the candidate list is dense,
- * cand and candend are set to NULL and start and end are adjusted
- * instead. */
+ * if present.  Note that if the candidate list is dense, cand and
+ * candend are set to NULL and start and end are adjusted instead. */
 #define CANDINIT(b, s, start, end, cnt, cand, candend)			\
 	do {								\
 		start = 0;						\
@@ -23,6 +22,7 @@
 			assert(BATttype(s) == TYPE_oid);		\
 			if (BATcount(s) == 0) {				\
 				start = end = 0;			\
+				cnt = 0;				\
 			} else {					\
 				if (BATtdense(s)) {			\
 					start = (s)->tseqbase;		\
@@ -55,6 +55,7 @@
 					end = 0;			\
 				else					\
 					end -= (b)->hseqbase;		\
+				cnt = end - start;			\
 			}						\
 		}							\
 	} while (0)

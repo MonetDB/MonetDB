@@ -31,5 +31,5 @@ drop index test_oidx1;
 drop table test_oidx;
 
 
--- TODO add tests for all other datatypes, including url, json, uuid, inet, blob.
+-- tests for all other datatypes, including blob, url, json, uuid, inet and hugeint are done in sql/test/orderidx/Tests/ oidx_all_types.sql and oidx_hge_type.sql.
 

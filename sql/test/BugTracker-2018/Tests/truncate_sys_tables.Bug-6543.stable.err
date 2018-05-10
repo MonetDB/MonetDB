@@ -27,32 +27,7 @@ stderr of test 'truncate_sys_tables.Bug-6543` in directory 'sql/test/BugTracker-
 # 17:47:14 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-9985" "--port=31828"
 # 17:47:14 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
-QUERY = TRUNCATE TABLE tmp.triggers;
-ERROR = !TRUNCATE: cannot truncate system table 'triggers'
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
-QUERY = TRUNCATE TABLE tmp.objects;
-ERROR = !TRUNCATE: cannot truncate system table 'objects'
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
-QUERY = TRUNCATE TABLE tmp.keys;
-ERROR = !TRUNCATE: cannot truncate system table 'keys'
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
-QUERY = TRUNCATE TABLE tmp.idxs;
-ERROR = !TRUNCATE: cannot truncate system table 'idxs'
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
-QUERY = TRUNCATE TABLE tmp._tables;
-ERROR = !TRUNCATE: cannot truncate system table '_tables'
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
-QUERY = TRUNCATE TABLE tmp._columns;
-ERROR = !TRUNCATE: cannot truncate system table '_columns'
-CODE  = 42000
-
-MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+MAPI  = (testuser) /var/tmp/mtest-28627/.s.monetdb.31440
 QUERY = TRUNCATE TABLE sys.user_role;
 ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'user_role'
 CODE  = 42000
@@ -96,11 +71,11 @@ MAPI  = (testuser) /var/tmp/mtest-7177/.s.monetdb.32793
 QUERY = SELECT (COUNT(*) > 0) AS has_rows FROM sys.statistics;
 ERROR = !SELECT: access denied for testuser to table 'sys.statistics'
 CODE  = 42000
-MAPI  = (testuser) /var/tmp/mtest-7177/.s.monetdb.32793
+MAPI  = (testuser) /var/tmp/mtest-16283/.s.monetdb.34207
 QUERY = TRUNCATE TABLE sys.spatial_ref_sys;
 ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'spatial_ref_sys'
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-9985/.s.monetdb.31828
+MAPI  = (testuser) /var/tmp/mtest-16283/.s.monetdb.34207
 QUERY = TRUNCATE TABLE sys.sequences;
 ERROR = !TRUNCATE: insufficient privileges for user 'testuser' to truncate table 'sequences'
 CODE  = 42000

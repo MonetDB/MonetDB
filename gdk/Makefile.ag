@@ -36,10 +36,15 @@ lib_gdk = {
 		gdk_firstn.c \
 		libbat.rc
 	LIBS = ../common/options/libmoptions \
-		../common/stream/libstream \
 		../common/utils/libmutils \
-		$(MATH_LIBS) $(SOCKET_LIBS) $(zlib_LIBS) $(BZ_LIBS) \
-		$(MALLOC_LIBS) $(PTHREAD_LIBS) $(DL_LIBS) $(PSAPILIB) $(KVM_LIBS)
+		WIN32?../common/stream/libstream \
+		WIN32?$(MATH_LIBS) \
+		WIN32?$(SOCKET_LIBS) \
+		WIN32?$(MALLOC_LIBS) \
+		WIN32?$(PTHREAD_LIBS) \
+		WIN32?$(DL_LIBS) \
+		WIN32?$(PSAPILIB) \
+		WIN32?$(KVM_LIBS)
 }
 
 headers_h = {

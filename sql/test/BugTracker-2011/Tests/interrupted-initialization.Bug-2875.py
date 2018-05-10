@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import os, sys
 try:
     from MonetDBtesting import process
@@ -8,7 +10,7 @@ dbfarm = os.getenv('GDK_DBFARM')
 tstdb = os.getenv('TSTDB')
 
 if not tstdb or not dbfarm:
-    print 'No TSTDB or GDK_DBFARM in environment'
+    print('No TSTDB or GDK_DBFARM in environment')
     sys.exit(1)
 
 dbname = tstdb + '-bug2875'

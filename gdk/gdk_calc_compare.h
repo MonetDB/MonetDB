@@ -75,7 +75,11 @@ opswitch(BAT *b1, int tp1, const void *src1, const void *v1p,
 				return BUN_NONE;
 			}
 			break;
-		case TYPE_oid:
+#if SIZEOF_OID == SIZEOF_INT
+		case TYPE_int:
+#else
+		case TYPE_lng:
+#endif
 			if (v2p)
 				v2 = * (const oid *) v2p;
 			for (i = 0; i < cnt; i++) {
@@ -85,7 +89,7 @@ opswitch(BAT *b1, int tp1, const void *src1, const void *v1p,
 					dst[i] = tpe_nil;
 					nils++;
 				} else {
-					dst[i] = OP(v1 + (projected == 1 ? i : cand[i] - hoff), v2);
+					dst[i] = OP(v1 + (projected == 1 ? i : cand ? cand[i] - hoff : start + i), v2);
 				}
 			}
 			break;
@@ -94,34 +98,6 @@ opswitch(BAT *b1, int tp1, const void *src1, const void *v1p,
 		}
 		break;
 	}
-	case TYPE_oid:
-		switch (ATOMbasetype(tp2)) {
-		case TYPE_void: {
-			oid v1 = 0;
-			oid v2 = 0;
-			BUN i;
-			v2 = * (const oid *) src2;
-			if (v1p)
-				v1 = * (const oid *) v1p;
-			for (i = 0; i < cnt; i++) {
-				if (src1)
-					v1 = ((const oid *) src1)[projected == 1 ? i : cand ? cand[i] - hoff : start + i];
-				if (is_oid_nil(v1)) {
-					dst[i] = tpe_nil;
-					nils++;
-				} else {
-					dst[i] = OP(v1, v2 + (projected == 2 ? i : cand[i] - hoff));
-				}
-			}
-			break;
-		}
-		case TYPE_oid:
-			BINARY_3TYPE_FUNC(oid, oid, tpe, OP);
-			break;
-		default:
-			goto unsupported;
-		}
-		break;
 	case TYPE_bte:
 		switch (ATOMbasetype(tp2)) {
 		case TYPE_bte:
@@ -205,6 +181,27 @@ opswitch(BAT *b1, int tp1, const void *src1, const void *v1p,
 		case TYPE_dbl:
 			BINARY_3TYPE_FUNC(int, dbl, tpe, OP);
 			break;
+#if SIZEOF_OID == SIZEOF_INT
+		case TYPE_void: {
+			oid v1 = 0;
+			oid v2 = 0;
+			BUN i;
+			v2 = * (const oid *) src2;
+			if (v1p)
+				v1 = * (const oid *) v1p;
+			for (i = 0; i < cnt; i++) {
+				if (src1)
+					v1 = ((const oid *) src1)[projected == 1 ? i : cand ? cand[i] - hoff : start + i];
+				if (is_oid_nil(v1)) {
+					dst[i] = tpe_nil;
+					nils++;
+				} else {
+					dst[i] = OP(v1, v2 + (projected == 2 ? i : cand[i] - hoff));
+				}
+			}
+			break;
+		}
+#endif
 		default:
 			goto unsupported;
 		}
@@ -234,6 +231,27 @@ opswitch(BAT *b1, int tp1, const void *src1, const void *v1p,
 		case TYPE_dbl:
 			BINARY_3TYPE_FUNC(lng, dbl, tpe, OP);
 			break;
+#if SIZEOF_OID == SIZEOF_LNG
+		case TYPE_void: {
+			oid v1 = 0;
+			oid v2 = 0;
+			BUN i;
+			v2 = * (const oid *) src2;
+			if (v1p)
+				v1 = * (const oid *) v1p;
+			for (i = 0; i < cnt; i++) {
+				if (src1)
+					v1 = ((const oid *) src1)[projected == 1 ? i : cand ? cand[i] - hoff : start + i];
+				if (is_oid_nil(v1)) {
+					dst[i] = tpe_nil;
+					nils++;
+				} else {
+					dst[i] = OP(v1, v2 + (projected == 2 ? i : cand[i] - hoff));
+				}
+			}
+			break;
+		}
+#endif
 		default:
 			goto unsupported;
 		}

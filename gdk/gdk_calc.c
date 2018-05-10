@@ -892,7 +892,7 @@ BATcalcmaybenil(BAT *b, BAT *s, int notnil)
 
 	CALC_INIT(b);
 
-	(void) nils;		/* not used in this function */
+	(void) nils;            /* not used in this function */
 
 	bn = COLnew(hseq, TYPE_bit, cnt, TRANSIENT);
 	if (bn == NULL)
@@ -1014,10 +1014,18 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s, int projected)
 	BATsetcount(bn, cnt);
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
-	bn->tsorted = cnt <= 1 || nils == cnt;
-	bn->trevsorted = cnt <= 1 || nils == cnt;
-	bn->tkey = cnt <= 1;
 
+	if (cnt <= 1) {
+		bn->tsorted = 1;
+		bn->trevsorted = 1;
+		bn->tkey = 1;
+		bn->tseqbase = ATOMtype(b1->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
+	} else {
+		bn->tsorted = 0;
+		bn->trevsorted = 0;
+		bn->tkey = 0;
+		bn->tseqbase = oid_nil;
+	}
 	return bn;
 
   bunins_failed:
@@ -1061,10 +1069,18 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s, int projected)
 	BATsetcount(bn, cnt);
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
-	bn->tsorted = cnt <= 1 || nils == cnt;
-	bn->trevsorted = cnt <= 1 || nils == cnt;
-	bn->tkey = cnt <= 1;
 
+	if (cnt <= 1) {
+		bn->tsorted = 1;
+		bn->trevsorted = 1;
+		bn->tkey = 1;
+		bn->tseqbase = ATOMtype(b1->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
+	} else {
+		bn->tsorted = 0;
+		bn->trevsorted = 0;
+		bn->tkey = 0;
+		bn->tseqbase = oid_nil;
+	}
 	return bn;
 
   bunins_failed:
@@ -1109,10 +1125,18 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 	BATsetcount(bn, cnt);
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
-	bn->tsorted = cnt <= 1 || nils == cnt;
-	bn->trevsorted = cnt <= 1 || nils == cnt;
-	bn->tkey = cnt <= 1;
 
+	if (cnt <= 1) {
+		bn->tsorted = 1;
+		bn->trevsorted = 1;
+		bn->tkey = 1;
+		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
+	} else {
+		bn->tsorted = 0;
+		bn->trevsorted = 0;
+		bn->tkey = 0;
+		bn->tseqbase = oid_nil;
+	}
 	return bn;
 
   bunins_failed:
@@ -1174,9 +1198,18 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	BATsetcount(bn, cnt);
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
-	bn->tsorted = cnt <= 1 || nils == cnt;
-	bn->trevsorted = cnt <= 1 || nils == cnt;
-	bn->tkey = cnt <= 1;
+
+	if (cnt <= 1) {
+		bn->tsorted = 1;
+		bn->trevsorted = 1;
+		bn->tkey = 1;
+		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
+	} else {
+		bn->tsorted = 0;
+		bn->trevsorted = 0;
+		bn->tkey = 0;
+		bn->tseqbase = oid_nil;
+	}
 
 	return bn;
 
@@ -1228,10 +1261,18 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s, int projected)
 	BATsetcount(bn, cnt);
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
-	bn->tsorted = cnt <= 1 || nils == cnt;
-	bn->trevsorted = cnt <= 1 || nils == cnt;
-	bn->tkey = cnt <= 1;
 
+	if (cnt <= 1) {
+		bn->tsorted = 1;
+		bn->trevsorted = 1;
+		bn->tkey = 1;
+		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
+	} else {
+		bn->tsorted = 0;
+		bn->trevsorted = 0;
+		bn->tkey = 0;
+		bn->tseqbase = oid_nil;
+	}
 	return bn;
 
   bunins_failed:
@@ -1275,10 +1316,18 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s, int projected)
 	BATsetcount(bn, cnt);
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
-	bn->tsorted = cnt <= 1 || nils == cnt;
-	bn->trevsorted = cnt <= 1 || nils == cnt;
-	bn->tkey = cnt <= 1;
 
+	if (cnt <= 1) {
+		bn->tsorted = 1;
+		bn->trevsorted = 1;
+		bn->tkey = 1;
+		bn->tseqbase = ATOMtype(b1->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
+	} else {
+		bn->tsorted = 0;
+		bn->trevsorted = 0;
+		bn->tkey = 0;
+		bn->tseqbase = oid_nil;
+	}
 	return bn;
 
   bunins_failed:
@@ -1323,10 +1372,18 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 	BATsetcount(bn, cnt);
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
-	bn->tsorted = cnt <= 1 || nils == cnt;
-	bn->trevsorted = cnt <= 1 || nils == cnt;
-	bn->tkey = cnt <= 1;
 
+	if (cnt <= 1) {
+		bn->tsorted = 1;
+		bn->trevsorted = 1;
+		bn->tkey = 1;
+		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
+	} else {
+		bn->tsorted = 0;
+		bn->trevsorted = 0;
+		bn->tkey = 0;
+		bn->tseqbase = oid_nil;
+	}
 	return bn;
 
   bunins_failed:
@@ -1388,10 +1445,18 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	BATsetcount(bn, cnt);
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
-	bn->tsorted = cnt <= 1 || nils == cnt;
-	bn->trevsorted = cnt <= 1 || nils == cnt;
-	bn->tkey = cnt <= 1;
 
+	if (cnt <= 1) {
+		bn->tsorted = 1;
+		bn->trevsorted = 1;
+		bn->tkey = 1;
+		bn->tseqbase = ATOMtype(bn->ttype) == TYPE_oid ? cnt == 1 ? *(oid*)Tloc(bn,0) : 0 : oid_nil;
+	} else {
+		bn->tsorted = 0;
+		bn->trevsorted = 0;
+		bn->tkey = 0;
+		bn->tseqbase = oid_nil;
+	}
 	return bn;
 
   bunins_failed:
@@ -8859,7 +8924,7 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt, int abort_on_
 				v2 = ((const TYPE2 *) src2)[projected == 2 ? i : cand ? cand[i] - hoff : start + i]; \
 			if (src3)					\
 				v3 = ((const TYPE2 *) src3)[projected == 2 ? i : cand ? cand[i] - hoff : start + i]; \
-			if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2) || is_##TYPE2##_nil(v3)) { \
+			if (is_##TYPE1##_nil(v1)) {			\
 				((TYPE3 *) dst)[i] = TYPE3##_nil;	\
 				nils++;					\
 			} else {					\

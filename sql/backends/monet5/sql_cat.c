@@ -85,18 +85,22 @@ rel_check_tables(sql_table *nt, sql_table *nnt)
 		sql_column *mc = m->data;
 
 		if (subtype_cmp(&nc->type, &mc->type) != 0)
-			throw(SQL,"sql.relcheck_tables",SQLSTATE(3F000) "ALTER MERGE TABLE: to be added table column type doesn't match MERGE TABLE definition");
+			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER MERGE TABLE: to be added table column type doesn't match MERGE TABLE definition");
 	}
 	if (cs_size(&nt->idxs) != cs_size(&nnt->idxs))
-		throw(SQL,"sql.relcheck_tables",SQLSTATE(3F000) "ALTER MERGE TABLE: to be added table index doesn't match MERGE TABLE definition");
+		throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER MERGE TABLE: to be added table index doesn't match MERGE TABLE definition");
 	if (cs_size(&nt->idxs))
 		for (n = nt->idxs.set->h, m = nnt->idxs.set->h; n && m; n = n->next, m = m->next) {
 			sql_idx *ni = n->data;
 			sql_idx *mi = m->data;
 
 			if (ni->type != mi->type)
-				throw(SQL,"sql.relcheck_tables",SQLSTATE(3F000) "ALTER MERGE TABLE: to be added table index type doesn't match MERGE TABLE definition");
+				throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER MERGE TABLE: to be added table index type doesn't match MERGE TABLE definition");
 		}
+	for(sql_table *up = nt->p ; up ; up = up->p) {
+		if(!strcmp(up->s->base.name, nnt->s->base.name) && !strcmp(up->base.name, nnt->base.name))
+			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER MERGE TABLE: to be added table is a parent of the MERGE TABLE");
+	}
 	return MAL_SUCCEED;
 }
 
@@ -714,101 +718,6 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 	return MAL_SUCCEED;
 }
 
-str
-UPGdrop_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *sql = NULL;
-	str msg = MAL_SUCCEED;
-	int id = *getArgReference_int(stk, pci, 1);
-	sql_func *func;
-
-	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-
-	func = sql_trans_find_func(sql->session->tr, id);
-	if (func) {
-		if(mvc_drop_func(sql, func->s, func, 0))
-			throw(SQL, "sql.drop_func", SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	}
-	return msg;
-}
-
-str
-UPGcreate_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *sql = NULL;
-	str msg = MAL_SUCCEED;
-	str sname = *getArgReference_str(stk, pci, 1), osname;
-	str fname = *getArgReference_str(stk, pci, 2);
-	str func = *getArgReference_str(stk, pci, 3);
-	stmt *s;
-	backend *be;
-	sql_allocator *sa;
-
-	if ((msg = getSQLContext(cntxt, mb, &sql, &be)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	osname = cur_schema(sql)->base.name;
-	if (!mvc_set_schema(sql, sname))
-		throw(SQL,"sql.catalog", SQLSTATE(3F000) "Schema (%s) missing\n", sname);
-	sa = sa_create();
-	if(!sa)
-		throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	s = sql_parse(be, sa, func, 0);
-	if (s && s->type == st_catalog) {
-		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
-		sql_func *func = (sql_func*)((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.pval;
-
-		msg = create_func(sql, schema, fname, func);
-		if (!mvc_set_schema(sql, osname))
-			throw(SQL,"sql.catalog", SQLSTATE(3F000) "Schema (%s) missing\n", osname);
-	} else {
-		(void) mvc_set_schema(sql, osname);
-		throw(SQL, "sql.catalog", SQLSTATE(42000) "function creation failed '%s'", func);
-	}
-	return msg;
-}
-
-str
-UPGcreate_view(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *sql = NULL;
-	str msg = MAL_SUCCEED;
-	str sname = *getArgReference_str(stk, pci, 1), osname;
-	str view = *getArgReference_str(stk, pci, 2);
-	stmt *s;
-	backend *be;
-	sql_allocator *sa;
-
-	if ((msg = getSQLContext(cntxt, mb, &sql, &be)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	osname = cur_schema(sql)->base.name;
-	if (!mvc_set_schema(sql, sname))
-		throw(SQL,"sql.catalog", SQLSTATE(3F000) "Schema (%s) missing\n", sname);
-	sa = sa_create();
-	if(!sa)
-		throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-	s = sql_parse(be, sa, view, 0);
-	if (s && s->type == st_catalog) {
-		char *schema = ((stmt*)s->op1->op4.lval->h->data)->op4.aval->data.val.sval;
-		sql_table *v = (sql_table*)((stmt*)s->op1->op4.lval->h->next->data)->op4.aval->data.val.pval;
-		int temp = ((stmt*)s->op1->op4.lval->t->data)->op4.aval->data.val.ival;
-
-		msg = create_table_or_view(sql, schema, v->base.name, v, temp);
-		if (!mvc_set_schema(sql, osname))
-			throw(SQL,"sql.catalog", SQLSTATE(3F000) "Schema (%s) missing\n", osname);
-	} else {
-		(void) mvc_set_schema(sql, osname);
-		throw(SQL, "sql.catalog", SQLSTATE(42000) "view creation failed '%s'", view);
-	}
-	return msg;
-}
-
 /* the MAL wrappers */
 str
 SQLcreate_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -1348,6 +1257,7 @@ SQLcomment_on(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_table *comments;
 	sql_column *id_col, *remark_col;
 	oid rid;
+	int ok = LOG_OK;
 
 	initcontext();
 
@@ -1368,18 +1278,20 @@ SQLcomment_on(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!is_oid_nil(rid)) {
 			// have new remark and found old one, so update field
 			/* UPDATE sys.comments SET remark = %s WHERE id = %d */
-			table_funcs.column_update_value(tx, remark_col, rid, remark);
+			ok = table_funcs.column_update_value(tx, remark_col, rid, remark);
 		} else {
 			// have new remark but found none so insert row
 			/* INSERT INTO sys.comments (id, remark) VALUES (%d, %s) */
-			table_funcs.table_insert(tx, comments, &objid, remark);
+			ok = table_funcs.table_insert(tx, comments, &objid, remark);
 		}
 	} else {
 		if (!is_oid_nil(rid)) {
 			// have no remark but found one, so delete row
 			/* DELETE FROM sys.comments WHERE id = %d */
-			table_funcs.table_delete(tx, comments, rid);
+			ok = table_funcs.table_delete(tx, comments, rid);
 		}
 	}
+	if (ok != LOG_OK)
+		throw(SQL, "sql.comment_on", SQLSTATE(3F000) "operation failed");
 	return MAL_SUCCEED;
 }

@@ -17,17 +17,20 @@ lib_monetdb5 = {
 	LIBS = ../mal/libmal ../modules/atoms/libatoms \
 		../modules/kernel/libkernel ../modules/mal/libmal \
 		../optimizer/liboptimizer ../scheduler/libscheduler \
-		../../gdk/libbat \
-		HAVE_MAPI?../../clients/mapilib/libmapi \
-		../../common/stream/libstream \
-		../../common/utils/libmcrypt \
-		../../common/utils/libmuuid \
 		../../common/utils/libmsabaoth \
-		$(UUID_LIBS) $(curl_LIBS) \
-		$(MATH_LIBS) $(SOCKET_LIBS) $(MALLOC_LIBS) $(PTHREAD_LIBS) \
-		$(DL_LIBS) $(openssl_LIBS) $(pcre_LIBS) \
-		$(LTLIBICONV) $(zlib_LIBS) $(libxml2_LIBS) \
-		$(libmicrohttpd_LIBS) $(liburiparser_LIBS)
+		../../common/utils/libmuuid \
+		WIN32?../../gdk/libbat \
+		WIN32&HAVE_MAPI?../../clients/mapilib/libmapi \
+		WIN32?../../common/stream/libstream \
+		WIN32?$(UUID_LIBS) \
+		WIN32?$(MATH_LIBS) \
+		WIN32?$(SOCKET_LIBS) \
+		WIN32?$(MALLOC_LIBS) \
+		WIN32?$(PTHREAD_LIBS) \
+		WIN32?$(DL_LIBS) \
+		WIN32?$(openssl_LIBS) \
+		WIN32?$(pcre_LIBS) \
+		WIN32?$(libxml2_LIBS)
 }
 
 headers_pc = {

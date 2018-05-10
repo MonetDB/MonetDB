@@ -506,7 +506,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 	return r;
 }
 
-void
+sql_exp *
 rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	assert(is_project(rel->op));
@@ -523,8 +523,9 @@ rel_project_add_exp( mvc *sql, sql_rel *rel, sql_exp *e)
 		if (e->card > rel->card)
 			rel->card = e->card;
 	} else if (rel->op == op_groupby) {
-		(void) rel_groupby_add_aggr(sql, rel, e);
+		return rel_groupby_add_aggr(sql, rel, e);
 	}
+	return e;
 }
 
 void
@@ -614,7 +615,6 @@ rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e)
 {
 	sql_exp *m = NULL, *ne;
 	char name[16], *nme = NULL;
-	char *tname = NULL;
 
 	if ((m=exps_find_match_exp(rel->exps, e)) == NULL) {
 		if (!e->name) {
@@ -624,11 +624,8 @@ rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e)
 		append(rel->exps, e);
 		m = e;
 	}
-	if (e->type == e_column)
-		tname = e->l;
-	ne = exp_column(sql->sa, tname, m->name, exp_subtype(m),
+	ne = exp_column(sql->sa, exp_relname(m), exp_name(m), exp_subtype(m),
 			rel->card, has_nil(m), is_intern(m));
-	exp_setname(sql->sa, ne, NULL, e->name);
 	return ne;
 }
 
@@ -1286,7 +1283,7 @@ _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 	set_intern(e);
 	e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
 	*exp = exp_label(sql->sa, e, ++sql->label);
-	rel_project_add_exp(sql, rel, e);
+	(void) rel_project_add_exp(sql, rel, e);
 	return rel;
 }
 

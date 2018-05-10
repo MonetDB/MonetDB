@@ -1,0 +1,43 @@
+stdout of test 'sqlitelogictest-groupby-having-in-cast.Bug-6561` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 16:15:03 >  
+# 16:15:03 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=35159" "--set" "mapi_usock=/var/tmp/mtest-30178/.s.monetdb.35159" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-old/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2018"
+# 16:15:03 >  
+
+# MonetDB 5 server v11.29.2
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit
+# Found 15.387 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://localhost.localdomain:35159/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-30178/.s.monetdb.35159
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 16:15:03 >  
+# 16:15:03 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30178" "--port=35159"
+# 16:15:03 >  
+
+#CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab0 VALUES(83,0,38), (26,0,79), (43,81,24);
+[ 3	]
+#SELECT - col0 * - + 8 + + + col0 + + + col0 + + + 42 * col0 FROM tab0 GROUP BY col0, col0, col1 HAVING NOT 18 + - col0 IN ( + CAST ( + col0 AS INTEGER ) );
+% sys.L2 # table_name
+% L2 # name
+% bigint # type
+% 4 # length
+[ 4316	]
+[ 1352	]
+[ 2236	]
+#DROP TABLE tab0;
+
+# 16:15:04 >  
+# 16:15:04 >  "Done."
+# 16:15:04 >  
+
