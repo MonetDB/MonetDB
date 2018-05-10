@@ -56,3 +56,4 @@ nested-merge-tables.Bug-6585
 sqlitelogictest-complex-expression.Bug-6589
 sqlitelogictest-complex-case-not-in.Bug-6594
 multiple-count.Bug-6599
+sqlitelogictest-select-errors.Bug-6600
