@@ -2941,7 +2941,7 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 		sql_rel *r = rel_semantic(m, m->sym);
 
 		if (r) {
-			r = rel_optimizer(m, r);
+			r = rel_optimizer(m, r, 1);
 			sq = rel_bin(be, r);
 		}
 	}

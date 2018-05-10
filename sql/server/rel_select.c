@@ -2132,6 +2132,10 @@ rel_logical_value_exp(mvc *sql, sql_rel **rel, symbol *sc, int f)
 						reset_processed(gp);
 						r = exp_column(sql->sa, exp_relname(r), exp_name(r), exp_subtype(r), r->card, has_nil(r), is_intern(r));
 						left = z;
+						if (!needproj) {
+							needproj = 1;
+							pexps = outer->exps;
+						}
 					}
 					z = NULL;
 				}

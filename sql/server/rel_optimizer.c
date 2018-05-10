@@ -1721,13 +1721,15 @@ rel_push_func_down(int *changes, mvc *sql, sql_rel *rel)
  *                                                   ) [ sql_mul(.., .. NOT NULL) ]
  *                                              )
  */
-
-
-
 static sql_rel *
 rel_push_count_down(int *changes, mvc *sql, sql_rel *rel)
 {
-	sql_rel *r = rel->l;
+	sql_rel *r;
+
+	if (!is_groupby(rel->op))
+		return rel;
+
+       	r = rel->l;
 
 	if (is_groupby(rel->op) && !rel_is_ref(rel) &&
             r && !r->exps && r->op == op_join && !(rel_is_ref(r)) && 
@@ -9112,7 +9114,7 @@ rewrite_topdown(mvc *sql, sql_rel *rel, rewrite_fptr rewriter, int *has_changes)
 }
 
 static sql_rel *
-optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level) 
+optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_opt) 
 {
 	int changes = 0, e_changes = 0;
 	global_props gp; 
@@ -9135,7 +9137,8 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level)
 		rel = rewrite(sql, rel, &rel_merge_projects, &changes);
 		if (level <= 0) {
 			rel = rewrite(sql, rel, &rel_case_fixup, &changes);
-			rel = rewrite(sql, rel, &rel_simplify_math, &changes);
+			if (value_based_opt)
+				rel = rewrite(sql, rel, &rel_simplify_math, &changes);
 			rel = rewrite(sql, rel, &rel_distinct_project2groupby, &changes);
 		}
 	}
@@ -9146,7 +9149,8 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level)
 		rel = rel_split_project(&changes, sql, rel, 1);
 
 	if ((gp.cnt[op_select] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full]) && level <= 0)
-		rel = rewrite(sql, rel, &rel_simplify_predicates, &changes); 
+		if (value_based_opt)
+			rel = rewrite(sql, rel, &rel_simplify_predicates, &changes); 
 
 	/* join's/crossproducts between a relation and a constant (row).
 	 * could be rewritten 
@@ -9162,8 +9166,10 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level)
 	    gp.cnt[op_semi] || gp.cnt[op_anti] ||
 	    gp.cnt[op_select]) {
 		rel = rewrite(sql, rel, &rel_find_range, &changes);
-		rel = rel_project_reduce_casts(&changes, sql, rel);
-		rel = rewrite(sql, rel, &rel_reduce_casts, &changes);
+		if (value_based_opt) {
+			rel = rel_project_reduce_casts(&changes, sql, rel);
+			rel = rewrite(sql, rel, &rel_reduce_casts, &changes);
+		}
 	}
 
 	if (gp.cnt[op_union])
@@ -9322,27 +9328,27 @@ rel_reset_subquery(sql_rel *rel)
 }
 
 static sql_rel *
-optimize(mvc *sql, sql_rel *rel) 
+optimize(mvc *sql, sql_rel *rel, int value_based_opt) 
 {
 	int level = 0, changes = 1;
 
 	rel_reset_subquery(rel);
 	for( ;rel && level < 20 && changes; level++) 
-		rel = optimize_rel(sql, rel, &changes, level);
+		rel = optimize_rel(sql, rel, &changes, level, value_based_opt);
 	return rel;
 }
 
 sql_rel *
-rel_optimizer(mvc *sql, sql_rel *rel) 
+rel_optimizer(mvc *sql, sql_rel *rel, int value_based_opt) 
 {
-	rel = optimize(sql, rel);
+	rel = optimize(sql, rel, value_based_opt);
 	if (sql->sqs) {
 		node *n;
 
 		for(n = sql->sqs->h; n; n = n->next) {
 			sql_subquery *v = n->data;
 
-			v->rel = optimize(sql, v->rel);
+			v->rel = optimize(sql, v->rel, value_based_opt);
 		}
 	}
 	return rel;

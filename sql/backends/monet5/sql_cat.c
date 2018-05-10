@@ -217,7 +217,7 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
-			r = rel_optimizer(sql, r);
+			r = rel_optimizer(sql, r, 0);
 		if (r) {
 			list *id_l = rel_dependencies(sql->sa, r);
 
@@ -549,7 +549,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
-			r = rel_optimizer(sql, r);
+			r = rel_optimizer(sql, r, 0);
 		if (r) {
 			node *n;
 			list *id_l = rel_dependencies(sql->sa, r);

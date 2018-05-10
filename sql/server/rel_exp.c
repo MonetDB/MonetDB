@@ -618,7 +618,7 @@ exp_rel(mvc *sql, sql_rel *rel)
 	if (e == NULL)
 		return NULL;
 	/*
-	rel = rel_optimizer(sql, rel);
+	rel = rel_optimizer(sql, rel, 0);
 	rel = rel_distribute(sql, rel);
 	*/
 	e->l = rel;
