@@ -58,3 +58,4 @@ sqlitelogictest-complex-case-not-in.Bug-6594
 multiple-count.Bug-6599
 sqlitelogictest-select-errors.Bug-6600
 remote-table-where-is-null.Bug-6601
+sqlitelogictest-select-not-in-wrong.Bug-6602
