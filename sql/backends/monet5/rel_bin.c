@@ -1506,7 +1506,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 		int i;
 		char name[16], *nme;
 
-		nme = number2name(name, 16, ++sql->label);
+		nme = number2name(name, 16, ++sql->remote);
 
 		l = rel2bin_args(be, rel->l, sa_list(sql->sa));
 		sub = stmt_list(be, l);
