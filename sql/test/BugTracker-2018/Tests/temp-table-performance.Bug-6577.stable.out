@@ -1,0 +1,54 @@
+stdout of test 'temp-table-performance.Bug-6577` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 13:29:35 >  
+# 13:29:35 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=39333" "--set" "mapi_usock=/var/tmp/mtest-22993/.s.monetdb.39333" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-old/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2018" "--set" "embedded_py=true" "--set" "embedded_c=true"
+# 13:29:35 >  
+
+# MonetDB 5 server v11.29.4
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.386 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:39333/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-22993/.s.monetdb.39333
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+# MonetDB/Python2 module loaded
+
+Ready.
+
+# 13:29:35 >  
+# 13:29:35 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22993" "--port=39333"
+# 13:29:35 >  
+
+#create or replace function test1() RETURNS TABLE (v0 INT, v1 INT)
+#LANGUAGE PYTHON {
+#	import numpy as np
+#	nrows=10000000
+#	i_var=np.random.randint(1,1000000, (10000000,))
+#	return [[i for i in range(nrows)],i_var]
+#};
+#create table t1 as (select * from test1()) with data;
+#create table t2 as (select distinct v1 from t1) with data;
+#select count(t1.v1) from t1, t2 where t1.v1=t2.v1;
+% sys.L3 # table_name
+% L3 # name
+% bigint # type
+% 8 # length
+[ 10000000	]
+#create temp table t3 as (select count(t1.v1) from t1, t2 where t1.v1=t2.v1) on commit preserve rows;
+#drop table t3;
+#create temp table t3 as (select t1.v1 from t1, t2 where t1.v1=t2.v1) on commit preserve rows;
+#drop table t3;
+#drop function test1;
+#drop table t1;
+#drop table t2;
+
+# 13:29:40 >  
+# 13:29:40 >  "Done."
+# 13:29:40 >  
+

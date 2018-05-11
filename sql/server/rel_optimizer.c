@@ -2929,6 +2929,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 					sql_exp *lle = l->h->data;
 					sql_exp *lre = l->h->next->data;
 					if (!exp_is_atom(lle) && exp_is_atom(lre) && exp_is_atom(re)) {
+						sql_subtype et = *exp_subtype(e);
 						/* (x*c1)*c2 -> x * (c1*c2) */
 						list *l = sa_list(sql->sa);
 						append(l, lre);
@@ -2941,6 +2942,8 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 						l->h->next->data = le;
 						e->f = sql_bind_func(sql->sa, NULL, "sql_mul", exp_subtype(lle), exp_subtype(le), F_FUNC);
 						exp_sum_scales(e->f, lle, le);
+						if (subtype_cmp(&et, exp_subtype(e)) != 0)
+							e = exp_convert(sql->sa, e, exp_subtype(e), &et);
 						(*changes)++;
 						return e;
 					}

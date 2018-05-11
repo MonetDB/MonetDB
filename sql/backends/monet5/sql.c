@@ -68,7 +68,6 @@ rel_no_mitosis(sql_rel *rel)
 
 	if (!rel || is_basetable(rel->op))
 		return 1;
-	//if (is_topn(rel->op) || is_project(rel->op))
 	if (is_topn(rel->op) || rel->op == op_project)
 		return rel_no_mitosis(rel->l);
 	if (is_modify(rel->op) && rel->card <= CARD_AGGR)
