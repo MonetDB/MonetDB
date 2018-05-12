@@ -33,7 +33,7 @@ Ready.
 #SELECT ALL 11 * COUNT ( * ) * + 2 * 6;
 % .L4 # table_name
 % L4 # name
-% hugeint # type
+% bigint # type
 % 3 # length
 [ 132	]
 #SELECT ALL - 9 * NULLIF ( + 30, + 64 ) * + 46 * 1;

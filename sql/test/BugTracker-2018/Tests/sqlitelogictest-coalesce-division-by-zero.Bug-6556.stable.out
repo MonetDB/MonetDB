@@ -24,10 +24,10 @@ Ready.
 # 19:24:33 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27357" "--port=31020"
 # 19:24:33 >  
 
-#SELECT COALESCE ( + 55, + 71 * - 23 + 20 + 74 / - COUNT ( ALL - 0 ) / + 75, - 85 / - 71 ) - + - 62 + - - CAST ( + 88 AS INTEGER ) * + + 83 AS col0;
-% .L5 # table_name
+#SELECT CAST(COALESCE ( + 55, + 71 * - 23 + 20 + 74 / - COUNT ( ALL - 0 ) / + 75, - 85 / - 71 ) - + - 62 + - - CAST ( + 88 AS INTEGER ) * + + 83 AS BIGINT) AS col0;
+% .L6 # table_name
 % col0 # name
-% hugeint # type
+% bigint # type
 % 4 # length
 [ 7421	]
 
