@@ -2243,6 +2243,7 @@ rel_distinct_project2groupby(int *changes, mvc *sql, sql_rel *rel)
 	    need_distinct(rel) && l->op == op_select){ 
 		sql_rel *g = l->l;
 		if (is_groupby(g->op)) {
+			list *used = sa_list(sql->sa);
 			list *gbe = g->r;
 			node *n;
 			int fnd = 1;
@@ -2256,7 +2257,10 @@ rel_distinct_project2groupby(int *changes, mvc *sql, sql_rel *rel)
 
 					if (ne) 
 						ne = list_find_exp( gbe, ne);
-					fnd++;
+					if (ne && !list_find_exp(used, ne)) {
+						fnd++;
+						list_append(used, ne);
+					}
 					if (!ne) 
 						fnd = 0;
 				}
@@ -2269,7 +2273,7 @@ rel_distinct_project2groupby(int *changes, mvc *sql, sql_rel *rel)
 	    need_distinct(rel) && exps_card(rel->exps) > CARD_ATOM) {
 		node *n;
 		list *exps = new_exp_list(sql->sa), *gbe = new_exp_list(sql->sa);
-		list *obe = rel->r; /* we need to readd the ordering later */
+		list *obe = rel->r; /* we need to read the ordering later */
 
 		if (obe) { 
 			int fnd = 0;
