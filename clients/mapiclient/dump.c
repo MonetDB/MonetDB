@@ -1251,11 +1251,15 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 	if (string == NULL)
 		goto bailout;
 	for (i = 0; i < cnt; i++) {
-		string[i] = (strcmp(mapi_get_type(hdl, i), "char") == 0 ||
-			     strcmp(mapi_get_type(hdl, i), "varchar") == 0 ||
-			     strcmp(mapi_get_type(hdl, i), "clob") == 0 ||
-			     strcmp(mapi_get_type(hdl, i), "timestamp") == 0 ||
-			     strcmp(mapi_get_type(hdl, i), "timestamptz") == 0);
+		char *coltype = mapi_get_type(hdl, i);
+		string[i] = (strcmp(coltype, "blob") == 0 ||
+				strcmp(coltype, "clob") == 0 ||
+				strcmp(coltype, "date") == 0 ||
+				strcmp(coltype, "time") == 0 ||
+				strcmp(coltype, "timestamp") == 0 ||
+				strcmp(coltype, "timestamptz") == 0 ||
+				strcmp(coltype, "timetz") == 0 ||
+				strcmp(coltype, "varchar") == 0);
 	}
 	while (mapi_fetch_row(hdl)) {
 		const char *s;
