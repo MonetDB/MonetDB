@@ -48,9 +48,6 @@ usage(const char *prog, int xit)
 	exit(xit);
 }
 
-/* hardwired defaults, only used if monet environment cannot be found */
-#define DEFAULTPORT 50000	
-
 int
 main(int argc, char **argv)
 {
