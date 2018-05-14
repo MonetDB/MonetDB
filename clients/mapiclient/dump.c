@@ -256,7 +256,7 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 			      "pkt.schema_id = ps.id AND "
 			      "fkt.schema_id = fs.id AND "
 			      "fkt.system = FALSE "
-			"ORDER BY fs.name,fkt.name, "
+			"ORDER BY fs.name, fkt.name, "
 			      "fkk.name, nr";
 	}
 	hdl = mapi_query(mid, query);
@@ -804,7 +804,7 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 
 	query = malloc(maxquerylen);
 	snprintf(query, maxquerylen,
-		 "%s\n"
+		 "%s"
 		 "SELECT t.name, t.query, t.type, c.remark "
 		 "FROM sys.schemas s, sys._tables t LEFT OUTER JOIN comments c ON t.id = c.id "
 		 "WHERE s.name = '%s' AND "
@@ -949,8 +949,12 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 		if (cnt)
 			mnstr_printf(toConsole, ");\n");
 		snprintf(query, maxquerylen,
-			"%s\n"
-			 "SELECT i.name, c.remark FROM sys.idxs i, comments c WHERE i.id = c.id AND i.table_id = (SELECT id FROM sys._tables WHERE schema_id = (select id FROM sys.schemas WHERE name = '%s') AND name = '%s') ORDER BY i.name",
+			"%s"
+			 "SELECT i.name, c.remark "
+			 "FROM sys.idxs i, comments c "
+			 "WHERE i.id = c.id "
+			   "AND i.table_id = (SELECT id FROM sys._tables WHERE schema_id = (select id FROM sys.schemas WHERE name = '%s') AND name = '%s') "
+			 "ORDER BY i.name",
 			 get_compat_clause(mid),
 			 schema, tname);
 		if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
@@ -965,10 +969,14 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 	}
 
 	snprintf(query, maxquerylen,
-		"%s\n"
-			"SELECT col.name, com.remark FROM sys._columns col, comments com WHERE col.id = com.id AND col.table_id = (SELECT id FROM sys._tables WHERE schema_id = (SELECT id FROM sys.schemas WHERE name = '%s') AND name = '%s') ORDER BY number",
-			get_compat_clause(mid),
-			schema, tname);
+		"%s"
+		 "SELECT col.name, com.remark "
+		 "FROM sys._columns col, comments com "
+		 "WHERE col.id = com.id "
+		   "AND col.table_id = (SELECT id FROM sys._tables WHERE schema_id = (SELECT id FROM sys.schemas WHERE name = '%s') AND name = '%s') "
+		 "ORDER BY number",
+		 get_compat_clause(mid),
+		 schema, tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
 	while (mapi_fetch_row(hdl) != 0) {
@@ -1037,21 +1045,21 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *toCon
 
 	query = malloc(maxquerylen);
 	snprintf(query, maxquerylen,
-		"%s\n"
+		"%s"
 		"SELECT s.name, "
-		     "seq.name, "
-		     "get_value_for(s.name,seq.name), "
-		     "seq.\"minvalue\", "
-		     "seq.\"maxvalue\", "
-		     "seq.\"increment\", "
-		     "seq.\"cycle\", "
-		     "rem.\"remark\" "
+		       "seq.name, "
+		       "get_value_for(s.name, seq.name), "
+		       "seq.\"minvalue\", "
+		       "seq.\"maxvalue\", "
+		       "seq.\"increment\", "
+		       "seq.\"cycle\", "
+		       "rem.\"remark\" "
 		"FROM sys.sequences seq LEFT OUTER JOIN comments rem ON seq.id = rem.id, "
 		     "sys.schemas s "
 		"WHERE s.id = seq.schema_id AND "
 		      "s.name = '%s' AND "
 		      "seq.name = '%s' "
-		"ORDER BY s.name,seq.name",
+		"ORDER BY s.name, seq.name",
 		get_compat_clause(mid),
 		schema, tname);
 
@@ -1118,7 +1126,7 @@ describe_schema(Mapi mid, const char *sname, stream *toConsole)
 	char schemas[5120];
 
 	snprintf(schemas, sizeof(schemas),
-		"%s\n"
+		"%s"
 		"SELECT s.name, a.name, c.remark "
 		"FROM sys.auths a, "
 		     "sys.schemas s LEFT OUTER JOIN comments c ON s.id = c.id "
@@ -1339,23 +1347,22 @@ dump_function_comment(Mapi mid, stream *toConsole, const char *id)
 		return 1;
 
 	snprintf(query, len,
-		"%s\n"
-		"SELECT \n"
-		"        coalesce(function_type_keyword, '') AS category,\n"
-		"        s.name AS schema,\n"
-		"        CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number ASC) WHEN 1 THEN f.name ELSE NULL END AS name,\n"
-		"        p.type, \n"
-		"        p.type_digits, \n"
-		"        p.type_scale,\n"
-		"        CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number DESC) WHEN 1 THEN c.remark ELSE NULL END AS remark,\n"
-		"        ROW_NUMBER() OVER (ORDER BY f.id, p.number) AS line\n"
-		"FROM sys.functions f\n"
-		"JOIN comments c ON f.id = c.id\n"
-		"JOIN sys.schemas s ON f.schema_id = s.id\n"
-		"LEFT OUTER JOIN sys.function_types ft ON f.type = ft.function_type_id\n"
-		"LEFT OUTER JOIN sys.args p ON f.id = p.func_id AND p.inout = 1\n"
-		"WHERE f.id = %s\n"
-		"ORDER BY line;",
+		"%s"
+		"SELECT coalesce(function_type_keyword, '') AS category, "
+		       "s.name AS schema, "
+		       "CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number ASC) WHEN 1 THEN f.name ELSE NULL END AS name, "
+		       "p.type, "
+		       "p.type_digits, "
+		       "p.type_scale, "
+		       "CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number DESC) WHEN 1 THEN c.remark ELSE NULL END AS remark, "
+		       "ROW_NUMBER() OVER (ORDER BY f.id, p.number) AS line "
+		"FROM sys.functions f "
+		     "JOIN comments c ON f.id = c.id "
+		     "JOIN sys.schemas s ON f.schema_id = s.id "
+		     "LEFT OUTER JOIN sys.function_types ft ON f.type = ft.function_type_id "
+		     "LEFT OUTER JOIN sys.args p ON f.id = p.func_id AND p.inout = 1 "
+		"WHERE f.id = %s "
+		"ORDER BY line",
 		get_compat_clause(mid),
 		id);
 
@@ -1433,7 +1440,7 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, int hashge)
 	q = query;
 	end_q = query + qlen;
 	q += snprintf(q, end_q - q, "%s", get_compat_clause(mid));
-	q += snprintf(q, end_q - q, "SELECT f.id, f.func, f.language, f.type, s.name, f.name, function_type_keyword, language_keyword FROM sys.functions f JOIN sys.schemas s ON f.schema_id = s.id JOIN function_types ft ON f.type = ft.function_type_id LEFT OUTER JOIN function_languages fl ON f.language = fl.language_id WHERE f.id = %s;", fid);
+	q += snprintf(q, end_q - q, "SELECT f.id, f.func, f.language, f.type, s.name, f.name, function_type_keyword, language_keyword FROM sys.functions f JOIN sys.schemas s ON f.schema_id = s.id JOIN function_types ft ON f.type = ft.function_type_id LEFT OUTER JOIN function_languages fl ON f.language = fl.language_id WHERE f.id = %s", fid);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
 		free(query);
 		return 1;
@@ -1579,22 +1586,24 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 	q = query;
 	end_q = query + len;
 
-	q += snprintf(q, end_q - q, "%s\n", get_compat_clause(mid));
+	q += snprintf(q, end_q - q, "%s", get_compat_clause(mid));
 	q += snprintf(q, end_q - q,
 		"SELECT s.id, s.name, f.id, LENGTH(rem.remark) AS remark_len "
 		"FROM sys.schemas s "
-		"JOIN sys.functions f ON s.id = f.schema_id "
-		"LEFT OUTER JOIN comments rem ON f.id = rem.id "
+			"JOIN sys.functions f ON s.id = f.schema_id "
+			"LEFT OUTER JOIN comments rem ON f.id = rem.id "
 		"WHERE f.language > 0 ");
-	if (sname)
-		q += snprintf(q, end_q - q, "AND s.name = '%s' ", sname);
-	if (fname)
-		q += snprintf(q, end_q - q, "AND f.name = '%s' ", fname);
-	if (id)
+	if (id) {
 		q += snprintf(q, end_q - q, "AND f.id = %s ", id);
-	if (!wantSystem)
-		q += snprintf(q, end_q - q, "AND f.id NOT IN (SELECT function_id FROM sys.systemfunctions) ");
-	q += snprintf(q, end_q - q, " ORDER BY f.func, f.id");
+	} else {
+		if (sname)
+			q += snprintf(q, end_q - q, "AND s.name = '%s' ", sname);
+		if (fname)
+			q += snprintf(q, end_q - q, "AND f.name = '%s' ", fname);
+		if (!wantSystem)
+			q += snprintf(q, end_q - q, "AND f.id NOT IN (SELECT function_id FROM sys.systemfunctions) ");
+	}
+	q += snprintf(q, end_q - q, "ORDER BY f.func, f.id");
 
 	hdl = mapi_query(mid, query);
 	free(query);
@@ -1740,15 +1749,15 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		      "s.system = FALSE "
 		"ORDER BY s.name";
 	const char *sequences1 =
-		"SELECT sch.name,seq.name, rem.remark "
+		"SELECT sch.name, seq.name, rem.remark "
 		"FROM sys.schemas sch, "
 		     "sys.sequences seq LEFT OUTER JOIN comments rem ON seq.id = rem.id "
 		"WHERE sch.id = seq.schema_id "
-		"ORDER BY sch.name,seq.name";
+		"ORDER BY sch.name, seq.name";
 	const char *sequences2 =
 		"SELECT s.name, "
 		     "seq.name, "
-		     "get_value_for(s.name,seq.name), "
+		     "get_value_for(s.name, seq.name), "
 		     "seq.\"minvalue\", "
 		     "seq.\"maxvalue\", "
 		     "seq.\"increment\", "
@@ -1756,7 +1765,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		"FROM sys.sequences seq, "
 		     "sys.schemas s "
 		"WHERE s.id = seq.schema_id "
-		"ORDER BY s.name,seq.name";
+		"ORDER BY s.name, seq.name";
 	const char *tables =
 		"SELECT s.name AS sname, "
 		       "t.name AS name, "
@@ -1891,8 +1900,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 
 		/* dump schemas */
 		q = query;
-		q += snprintf(q, end_q - q, "%s\n", get_compat_clause(mid));
-		q += snprintf(q, end_q - q, "%s\n", schemas);
+		q += snprintf(q, end_q - q, "%s", get_compat_clause(mid));
+		q += snprintf(q, end_q - q, "%s ", schemas);
 		if ((hdl = mapi_query(mid, query)) == NULL ||
 		    mapi_error(mid))
 			goto bailout;
@@ -1972,8 +1981,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 
 	/* dump sequences, part 1 */
 	q = query;
-	q += snprintf(q, end_q - q, "%s\n", get_compat_clause(mid));
-	q += snprintf(q, end_q - q, "%s\n", sequences1);
+	q += snprintf(q, end_q - q, "%s", get_compat_clause(mid));
+	q += snprintf(q, end_q - q, "%s ", sequences1);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
 
@@ -2067,8 +2076,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 
 	/* dump views, functions, and triggers */
 	q = query;
-	q += snprintf(q, end_q - q, "%s\n", get_compat_clause(mid));
-	q += snprintf(q, end_q - q, "%s\n", views_functions_triggers);
+	q += snprintf(q, end_q - q, "%s", get_compat_clause(mid));
+	q += snprintf(q, end_q - q, "%s ", views_functions_triggers);
 	if ((hdl = mapi_query(mid, query)) == NULL ||
 	    mapi_error(mid))
 		goto bailout;
@@ -2405,41 +2414,42 @@ get_with_comments_as_clause(Mapi mid)
 	const char *query = /* check whether sys.comments exists */
 		"SELECT t.id "
 		"FROM sys._tables t JOIN sys.schemas s ON t.schema_id = s.id "
-		"WHERE s.name = 'sys' AND t.name = 'comments';";
+		"WHERE s.name = 'sys' AND t.name = 'comments'";
 	const char *new_clause =
-		"WITH comments AS (SELECT * FROM sys.comments)\n"
-		", function_types AS (SELECT * FROM sys.function_types)\n"
-		", function_languages AS (SELECT * FROM sys.function_languages)\n";
+		"WITH comments AS (SELECT * FROM sys.comments), "
+		     "function_types AS (SELECT * FROM sys.function_types), "
+		     "function_languages AS (SELECT * FROM sys.function_languages) ";
 	const char *old_clause =
-		"WITH comments AS (\n"
-		"	SELECT 42 AS id, 'no comment' AS remark WHERE FALSE\n"
-		")\n"
-		", function_types AS (\n"
-		"	SELECT function_type_id, function_type_name, function_type_keyword\n"
-		"	FROM sys.function_types, (VALUES\n"
-		"		(1, 'FUNCTION'), \n"
-		"		(2, 'PROCEDURE'),\n"
-		"		(3, 'AGGREGATE'),\n"
-		"		(4, 'FILTER FUNCTION'),\n"
-		"		(5, 'FUNCTION'), \n"
-		"		(6, 'FUNCTION'), \n"
-		"		(7, 'LOADER')) AS (id, function_type_keyword)\n"
-		"	WHERE id = function_type_id\n"
-		")\n"
-		", function_languages AS (\n"
-		"	SELECT language_id, language_name, language_keyword\n"
-		"	FROM sys.function_languages, (VALUES\n"
-			"        (3, 'R'),\n"
-			"        (4, 'C', 'C'),\n"
-			"        (6, 'PYTHON'),\n"
-			"        (7, 'PYTHON_MAP'),\n"
-			"        (8, 'PYTHON2'),\n"
-			"        (9, 'PYTHON2_MAP'),\n"
-			"        (10, 'PYTHON3'),\n"
-			"        (11, 'PYTHON3_MAP'),\n"
-			"        (12, 'C++', 'CPP')) AS (id, language_keyword)\n"
-		"	WHERE id = language_id\n"
-		")\n";
+		"WITH comments AS ("
+			"SELECT 42 AS id, 'no comment' AS remark WHERE FALSE"
+		     "), "
+		     "function_types AS ("
+			"SELECT function_type_id, function_type_name, function_type_keyword "
+			"FROM sys.function_types, "
+			     "(VALUES "
+				"(1, 'FUNCTION'),  "
+				"(2, 'PROCEDURE'), "
+				"(3, 'AGGREGATE'), "
+				"(4, 'FILTER FUNCTION'), "
+				"(5, 'FUNCTION'),  "
+				"(6, 'FUNCTION'),  "
+				"(7, 'LOADER')) AS (id, function_type_keyword) "
+			"WHERE id = function_type_id"
+		     "), "
+		     "function_languages AS ("
+			"SELECT language_id, language_name, language_keyword "
+			"FROM sys.function_languages, (VALUES "
+				"(3, 'R'), "
+				"(4, 'C', 'C'), "
+				"(6, 'PYTHON'), "
+				"(7, 'PYTHON_MAP'), "
+				"(8, 'PYTHON2'), "
+				"(9, 'PYTHON2_MAP'), "
+				"(10, 'PYTHON3'), "
+				"(11, 'PYTHON3_MAP'), "
+				"(12, 'C++', 'CPP')) AS (id, language_keyword) "
+			"WHERE id = language_id"
+		     ") ";
 
 	MapiHdl hdl;
 	const char *compat_clause;
