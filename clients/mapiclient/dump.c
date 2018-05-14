@@ -1642,15 +1642,6 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 {
 	const char *start = "START TRANSACTION";
 	const char *end = "ROLLBACK";
-	const char *chkhash =
-		"SELECT id "
-		"FROM sys.functions "
-		"WHERE name = 'password_hash'";
-	const char *createhash =
-		"CREATE FUNCTION password_hash (username STRING) "
-		"RETURNS STRING "
-		"EXTERNAL NAME sql.password";
-	const char *drophash = "DROP FUNCTION password_hash";
 	const char *users =
 		"SELECT ui.name, "
 		       "ui.fullname, "
@@ -1809,7 +1800,6 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 	char *sname = NULL;
 	char *curschema = NULL;
 	MapiHdl hdl = NULL;
-	int create_hash_func = 0;
 	int rc = 0;
 	char *query, *q, *end_q;
 	size_t query_len = 5120;
@@ -1850,19 +1840,6 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		mapi_close_handle(hdl);
 
 		/* dump users, part 1 */
-		/* first make sure the password_hash function exists */
-		if ((hdl = mapi_query(mid, chkhash)) == NULL ||
-		    mapi_error(mid))
-			goto bailout;
-		create_hash_func = mapi_rows_affected(hdl) == 0;
-		mapi_close_handle(hdl);
-		if (create_hash_func) {
-			if ((hdl = mapi_query(mid, createhash)) == NULL ||
-			    mapi_error(mid))
-				goto bailout;
-			mapi_close_handle(hdl);
-		}
-
 		if ((hdl = mapi_query(mid, users)) == NULL || mapi_error(mid))
 			goto bailout;
 
@@ -1931,14 +1908,6 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 					     uname, sname);
 			}
 			if (mapi_error(mid))
-				goto bailout;
-			mapi_close_handle(hdl);
-		}
-
-		/* clean up -- not strictly necessary due to ROLLBACK */
-		if (create_hash_func) {
-			if ((hdl = mapi_query(mid, drophash)) == NULL ||
-			    mapi_error(mid))
 				goto bailout;
 			mapi_close_handle(hdl);
 		}
