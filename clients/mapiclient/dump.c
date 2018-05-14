@@ -121,15 +121,15 @@ get_schema(Mapi mid)
 }
 
 /* return TRUE if the HUGEINT type exists */
-static int
+static bool
 has_hugeint(Mapi mid)
 {
 	MapiHdl hdl;
-	int ret;
+	bool ret;
 	static int hashge = -1;
 
 	if (hashge >= 0)
-		return hashge;
+		return (bool) hashge;
 
 	if ((hdl = mapi_query(mid,
 			      "SELECT id "
@@ -145,7 +145,7 @@ has_hugeint(Mapi mid)
 	if (mapi_error(mid))
 		goto bailout;
 	mapi_close_handle(hdl);
-	hashge = ret;
+	hashge = (int) ret;
 	return ret;
 
   bailout:
@@ -383,8 +383,8 @@ static int dump_column_definition(
 	const char *schema,
 	const char *tname,
 	const char *tid,
-	int foreign,
-	int hashge);
+	bool foreign,
+	bool hashge);
 
 static const char *geomsubtypes[] = {
 	NULL,			/* 0 */
@@ -399,7 +399,7 @@ static const char *geomsubtypes[] = {
 };
 
 static int
-dump_type(Mapi mid, stream *toConsole, const char *c_type, const char *c_type_digits, const char *c_type_scale, int hashge)
+dump_type(Mapi mid, stream *toConsole, const char *c_type, const char *c_type_digits, const char *c_type_scale, bool hashge)
 {
 	int space = 0;
 
@@ -533,7 +533,7 @@ dump_type(Mapi mid, stream *toConsole, const char *c_type, const char *c_type_di
 }
 
 static int
-dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const char *tname, const char *tid, int foreign, int hashge)
+dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const char *tname, const char *tid, bool foreign, bool hashge)
 {
 	MapiHdl hdl = NULL;
 	char *query;
@@ -782,7 +782,7 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 	int type = 0;
 	size_t maxquerylen;
 	char *sname = NULL;
-	int hashge;
+	bool hashge;
 
 	if (schema == NULL) {
 		if ((sname = strchr(tname, '.')) != NULL) {
@@ -1343,14 +1343,14 @@ dump_function_comment(Mapi mid, stream *toConsole, const char *id)
 	int len = 5120;
 	char *query = malloc(len);
 	MapiHdl hdl = NULL;
-	int hashge;
+	bool hashge;
 
 	if (!query)
 		return 1;
 
 	snprintf(query, len,
 		"%s "
-		"SELECT coalesce(function_type_keyword, '') AS category, "
+		"SELECT coalesce(ft.function_type_keyword, '') AS category, "
 		       "s.name AS schema, "
 		       "CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number ASC) WHEN 1 THEN f.name ELSE NULL END AS name, "
 		       "p.type, "
@@ -1425,7 +1425,7 @@ dump_function_comment(Mapi mid, stream *toConsole, const char *id)
 }
 
 static int
-dump_function(Mapi mid, stream *toConsole, const char *fid, int hashge)
+dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 {
 	MapiHdl hdl;
 	size_t qlen = 5120 + strlen(fid);
@@ -1449,8 +1449,8 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, int hashge)
 			     "f.type, "
 			     "s.name, "
 			     "f.name, "
-			     "function_type_keyword, "
-			     "language_keyword "
+			     "ft.function_type_keyword, "
+			     "fl.language_keyword "
 		      "FROM sys.functions f "
 			   "JOIN sys.schemas s ON f.schema_id = s.id "
 			   "JOIN function_types ft ON f.type = ft.function_type_id "
@@ -1562,14 +1562,14 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 	MapiHdl hdl;
 	char *query, *q, *end_q;
 	size_t len;
-	int hashge;
+	bool hashge;
 	char *to_free = NULL;
-	char wantSystem;
+	bool wantSystem;
 	long prev_sid;
 
 	if (fname != NULL) {
 		/* dump a single function */
-		wantSystem = 1;
+		wantSystem = true;
 
 		if (sname == NULL) {
 			/* no schema given, so figure it out */
@@ -1587,7 +1587,7 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 			sname = to_free;
 		}
 	} else {
-		wantSystem = 0;
+		wantSystem = false;
 	}
 
 	hashge = has_hugeint(mid);
