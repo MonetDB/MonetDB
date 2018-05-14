@@ -900,6 +900,13 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 		dnode *n;
 		const char *rname = NULL;
 		sql_rel *res = NULL, *bt = rel_basetable(sql, t, t->base.name);
+		int partitioned_column = -1;
+
+		if(isRangePartitionTable(t) || isListPartitionTable(t)) {
+			partitioned_column = t->pcol->colnr;
+		} else if(t->p && (isRangePartitionTable(t->p) || isListPartitionTable(t->p))) {
+			partitioned_column = t->p->pcol->colnr;
+		}
 
 		res = bt;
 #if 0
@@ -1075,6 +1082,8 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 					sql_column *c = mvc_bind_column(sql, t, cname);
 					sql_exp *v = n->data;
 
+					if(partitioned_column == c->colnr)
+						return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: Update on the partitioned column not possible at the moment");
 					if (!exp_name(v))
 						exp_label(sql->sa, v, ++sql->label);
 					v = exp_column(sql->sa, exp_relname(v), exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
@@ -1092,6 +1101,8 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 				char *cname = assignment->h->next->data.sval;
 				sql_column *c = mvc_bind_column(sql, t, cname);
 
+				if(partitioned_column == c->colnr)
+					return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: Update on the partitioned column not possible at the moment");
 				if (!v) {
 					v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
 				} else if ((v = update_check_column(sql, t, c, v, r, cname)) == NULL) {

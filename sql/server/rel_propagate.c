@@ -211,7 +211,7 @@ rel_ddl_distribute(sql_allocator *sa, sql_rel *l, sql_rel *r, list *exps)
 }
 
 static sql_rel*
-rel_propagate_delete(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
+rel_generate_subdeletes(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 {
 	int just_one = 1;
 	sql_rel *sel = NULL;
@@ -239,21 +239,57 @@ rel_propagate_delete(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 		}
 		(*changes)++;
 	}
-	return rel_ddl_distribute(sql->sa, sel, NULL, NULL);
+	return sel;
 }
 
 static sql_rel*
-rel_propagate_insert(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
+rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
+{
+	int just_one = 1;
+	sql_rel *sel = NULL;
+
+	for (node *n = t->members.set->h; n; n = n->next) {
+		sql_part *pt = (sql_part *) n->data;
+		sql_table *sub = find_sql_table(t->s, pt->base.name);
+		sql_rel *s1, *dup = NULL;
+		list *uexps = exps_copy(sql->sa, rel->exps);
+
+		if(rel->r) {
+			dup = rel_copy(sql->sa, rel->r, 1);
+			dup = rel_change_base_table(sql, dup, t, sub);
+		}
+
+		for(node *ne = uexps->h ; ne ; ne = ne->next)
+			ne->data = exp_change_column_table(sql, (sql_exp*) ne->data, t, sub);
+
+		s1 = rel_update(sql, rel_basetable(sql, sub, sub->base.name), dup, NULL, uexps);
+		if (just_one == 0) {
+			sel = rel_list(sql->sa, sel, s1);
+		} else {
+			sel = s1;
+			just_one = 0;
+		}
+		(*changes)++;
+	}
+
+	return sel;
+}
+
+static sql_rel*
+rel_generate_subinserts(mvc *sql, sql_rel *rel, sql_rel **anti_rel, sql_exp **exception, sql_table *t, int *changes,
+						const char *operation, const char *desc)
 {
 	int colr = t->pcol->colnr, just_one = 1, found_nils = 0;
-	sql_rel *anti_dup = rel_dup(rel->r) /* the anti relation */, *new_table = NULL, *sel = NULL;
-	sql_exp *anti_exp = NULL, *anti_le = list_fetch(anti_dup->exps, colr), *accum = NULL, *aggr = NULL,
-			*exception = NULL;
+	sql_rel *new_table = NULL, *sel = NULL;
+	sql_exp *anti_exp = NULL, *anti_le = NULL, *accum = NULL, *aggr = NULL;
 	list *anti_exps = new_exp_list(sql->sa);
 	sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
+	char buf[BUFSIZ];
+
+	*anti_rel = rel_dup(rel->r);
+	anti_le = list_fetch((*anti_rel)->exps, colr);
 	anti_le = exp_column(sql->sa, exp_relname(anti_le), exp_name(anti_le), exp_subtype(anti_le),
 						 anti_le->card, has_nil(anti_le), is_intern(anti_le));
-	char buf[BUFSIZ];
 
 	for (node *n = t->members.set->h; n; n = n->next) {
 		sql_part *pt = (sql_part *) n->data;
@@ -331,6 +367,7 @@ rel_propagate_insert(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 		(*changes)++;
 	}
 
+	//generate the exception
 	if(isRangePartitionTable(t)) {
 		if (list_length(t->members.set) == 1) //when there is just one partition must set the anti_exp
 			set_anti(accum);
@@ -347,63 +384,67 @@ rel_propagate_insert(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 		assert(0);
 	}
 	//generate a count aggregation for the values not present in any of the partitions
-	anti_dup = rel_select(sql->sa, anti_dup, anti_exp);
-	anti_dup = rel_project(sql->sa, anti_dup, rel_projections(sql, anti_dup, NULL, 1, 1));
-	anti_dup = rel_groupby(sql, anti_dup, NULL);
-	aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, anti_dup->card, 0);
-	(void) rel_groupby_add_aggr(sql, anti_dup, aggr);
+	*anti_rel = rel_select(sql->sa, *anti_rel, anti_exp);
+	*anti_rel = rel_project(sql->sa, *anti_rel, rel_projections(sql, *anti_rel, NULL, 1, 1));
+	*anti_rel = rel_groupby(sql, *anti_rel, NULL);
+	aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, (*anti_rel)->card, 0);
+	(void) rel_groupby_add_aggr(sql, *anti_rel, aggr);
 	exp_label(sql->sa, aggr, ++sql->label);
 
-	//generate the exception
 	aggr = exp_column(sql->sa, exp_relname(aggr), exp_name(aggr), exp_subtype(aggr), aggr->card,
 					  has_nil(aggr), is_intern(aggr));
-	snprintf(buf, BUFSIZ, "INSERT: the insert violates the partition %s of values",
+	snprintf(buf, BUFSIZ, "%s: the %s violates the partition %s of values", operation, desc,
 			 isRangePartitionTable(t) ? "range" : "list");
-	exception = exp_exception(sql->sa, aggr, buf);
-	return rel_ddl_distribute(sql->sa, sel, anti_dup, list_append(new_exp_list(sql->sa), exception));
+	*exception = exp_exception(sql->sa, aggr, buf);
+
+	return sel;
+}
+
+static sql_rel*
+rel_propagate_insert(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
+{
+	sql_exp* exception = NULL;
+	sql_rel* anti_rel = NULL;
+	sql_rel* res = rel_generate_subinserts(sql, rel, &anti_rel, &exception, t, changes, "INSERT", "insert");
+
+	return rel_ddl_distribute(sql->sa, res, anti_rel, list_append(new_exp_list(sql->sa), exception));
+}
+
+static sql_rel*
+rel_propagate_delete(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
+{
+	rel = rel_generate_subdeletes(sql, rel, t, changes);
+	return rel_ddl_distribute(sql->sa, rel, NULL, NULL);
 }
 
 static sql_rel*
 rel_propagate_update(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 {
-	int just_one = 1;
+	int found_partition_col = 0;
 	sql_rel *sel = NULL;
-	/*int found_part_col = 0;
 
 	for (node *n = ((sql_rel*)rel->r)->exps->h; n; n = n->next) {
 		sql_exp* exp = (sql_exp*) n->data;
-		if(exp->type == e_column) {
-			sql_exp* l = (sql_exp*) exp->l;
-			if(!strcmp((char*)l->l, t->base.name) && !strcmp((char*)l->r, t->pcol->base.name))
-				found_part_col = 1;
+		if(exp->type == e_column && exp->l && exp->r && !strcmp((char*)exp->l, t->base.name) &&
+			!strcmp((char*)exp->r, t->pcol->base.name)) {
+				found_partition_col = 1;
 		}
-	}*/
-
-	for (node *n = t->members.set->h; n; n = n->next) {
-		sql_part *pt = (sql_part *) n->data;
-		sql_table *sub = find_sql_table(t->s, pt->base.name);
-		sql_rel *s1, *dup = NULL;
-		list *uexps = exps_copy(sql->sa, rel->exps);
-
-		if(rel->r) {
-			dup = rel_copy(sql->sa, rel->r, 1);
-			dup = rel_change_base_table(sql, dup, t, sub);
-		}
-
-		for(node *ne = uexps->h ; ne ; ne = ne->next)
-			ne->data = exp_change_column_table(sql, (sql_exp*) ne->data, t, sub);
-
-		//easy scenario where the partitioned column is not being updated
-		s1 = rel_update(sql, rel_basetable(sql, sub, sub->base.name), dup, NULL, uexps);
-		if (just_one == 0) {
-			sel = rel_list(sql->sa, sel, s1);
-		} else {
-			sel = s1;
-			just_one = 0;
-		}
-		(*changes)++;
 	}
-	return rel_ddl_distribute(sql->sa, sel, NULL, NULL);
+
+	if(!found_partition_col) { //easy scenario where the partitioned column is not being updated, just propagate
+		sel = rel_generate_subupdates(sql, rel, t, changes);
+		return rel_ddl_distribute(sql->sa, sel, NULL, NULL);
+	} else { //harder scenario, has to insert and delete across partitions.
+		/*sql_exp *exception = NULL;
+		sql_rel *inserts = NULL, *deletes = NULL, *anti_rel = NULL;
+
+		deletes = rel_generate_subdeletes(sql, rel, t, changes);
+		deletes = rel_ddl_distribute(sql->sa, deletes, NULL, NULL);
+		inserts = rel_generate_subinserts(sql, rel, &anti_rel, &exception, t, changes, "UPDATE", "update");
+		inserts = rel_ddl_distribute(sql->sa, inserts, anti_rel, list_append(new_exp_list(sql->sa), exception));
+		return rel_list(sql->sa, deletes, inserts);*/
+		assert(0);
+	}
 }
 
 static sql_rel*
@@ -412,14 +453,12 @@ rel_subtable_insert(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 	sql_table *upper = t->p; //is part of a partition table and not been used yet
 	int colr = upper->pcol->colnr;
 	sql_part *pt = find_sql_part(upper, t->base.name);
-	sql_rel *anti_dup = rel_dup(rel->r) /* the anti relation */, *right = rel->r, *left = rel->l;
-	sql_exp *le = list_fetch(right->exps, colr), *anti_exp = NULL,
-			*anti_le = list_fetch(anti_dup->exps, colr), *aggr = NULL, *exception = NULL;
+	sql_rel *anti_dup = rel_dup(rel->r) /* the anti relation */, *left = rel->l;
+	sql_exp *anti_exp = NULL, *anti_le = list_fetch(anti_dup->exps, colr), *aggr = NULL, *exception = NULL;
 	list *anti_exps = new_exp_list(sql->sa);
 	sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
 	char buf[BUFSIZ];
 
-	le = exp_column(sql->sa, exp_relname(le), exp_name(le), exp_subtype(le), le->card, has_nil(le), is_intern(le));
 	anti_le = exp_column(sql->sa, exp_relname(anti_le), exp_name(anti_le), exp_subtype(anti_le),
 						 anti_le->card, has_nil(anti_le), is_intern(anti_le));
 
@@ -474,7 +513,7 @@ rel_propagate(mvc *sql, sql_rel *rel, int *changes)
 	if(l->op == op_basetable) {
 		sql_table *t = l->l;
 
-		if(isRangePartitionTable(t) || isListPartitionTable(t)) {
+		if((isRangePartitionTable(t) || isListPartitionTable(t)) && !find_prop(l->p, PROP_USED)) {
 			assert(list_length(t->members.set) > 0);
 			if(is_delete(rel->op) || is_truncate(rel->op)) { //propagate deletions to the partitions
 				return rel_propagate_delete(sql, rel, t, changes);
@@ -488,10 +527,6 @@ rel_propagate(mvc *sql, sql_rel *rel, int *changes)
 		} else if(t->p && (isRangePartitionTable(t->p) || isListPartitionTable(t->p)) && !find_prop(l->p, PROP_USED)) {
 			if(is_insert(rel->op)) { //insertion directly to sub-table (must do validation)
 				return rel_subtable_insert(sql, rel, t, changes);
-			} else if(is_update(rel->op)) { //do the proper validation
-				//TODO
-			} else if(!(is_delete(rel->op) || is_truncate(rel->op))) { //no validation needed in deletes
-				assert(0);
 			}
 		}
 	}

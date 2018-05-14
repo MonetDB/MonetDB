@@ -1,11 +1,11 @@
-CREATE MERGE TABLE moveaccrosspartitions (a int, b varchar(32)) PARTITION BY VALUES (a);
+CREATE MERGE TABLE moveaccrosspartitions (a int, b varchar(32)) PARTITION BY RANGE (a);
 CREATE TABLE sublimits1 (a int, b varchar(32));
 CREATE TABLE sublimits2 (a int, b varchar(32));
 CREATE TABLE sublimits3 (a int, b varchar(32));
 
 ALTER TABLE moveaccrosspartitions ADD TABLE sublimits1 AS PARTITION BETWEEN 1 AND 100;
 ALTER TABLE moveaccrosspartitions ADD TABLE sublimits2 AS PARTITION BETWEEN 101 AND 200;
-ALTER TABLE moveaccrosspartitions ADD TABLE sublimits2 AS PARTITION BETWEEN 201 AND 300;
+ALTER TABLE moveaccrosspartitions ADD TABLE sublimits3 AS PARTITION BETWEEN 201 AND 300;
 
 INSERT INTO moveaccrosspartitions VALUES (50, 'first'), (150, 'second'), (250, 'third'), (60, 'fourth'), (120, 'fifth'), (240, 'sixth');
 
