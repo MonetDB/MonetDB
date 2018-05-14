@@ -1171,8 +1171,9 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 		bool useInserts)
 {
 	int cnt, i;
+	int64_t rows;
 	MapiHdl hdl = NULL;
-	char *query;
+	char *query = NULL;
 	size_t maxquerylen;
 	unsigned char *string = NULL;
 	char *sname = NULL;
@@ -1182,17 +1183,21 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 			size_t len = sname - tname;
 
 			sname = malloc(len + 1);
+			if (sname == NULL)
+				goto bailout;
 			strncpy(sname, tname, len);
 			sname[len] = 0;
 			tname += len + 1;
 		} else if ((sname = get_schema(mid)) == NULL) {
-			return 1;
+			goto bailout;
 		}
 		schema = sname;
 	}
 
 	maxquerylen = 5120 + strlen(tname) + strlen(schema);
 	query = malloc(maxquerylen);
+	if (query == NULL)
+		goto bailout;
 
 	snprintf(query, maxquerylen,
 		 "SELECT t.name, t.query, t.type "
@@ -1222,37 +1227,29 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 	mapi_close_handle(hdl);
 	hdl = NULL;
 
-	if (!useInserts) {
-		snprintf(query, maxquerylen, "SELECT count(*) FROM \"%s\".\"%s\"",
-			 schema, tname);
-		if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
-			goto bailout;
-		if (mapi_fetch_row(hdl)) {
-			const char *cntfld = mapi_fetch_field(hdl, 0);
-
-			if (strcmp(cntfld, "0") == 0) {
-				/* no records to dump, so return early */
-				goto doreturn;
-			}
-
-			mnstr_printf(toConsole,
-				     "COPY %s RECORDS INTO \"%s\".\"%s\" "
-				     "FROM stdin USING DELIMITERS '\\t','\\n','\"';\n",
-				     cntfld, schema, tname);
-		}
-		mapi_close_handle(hdl);
-		hdl = NULL;
-	}
-
 	snprintf(query, maxquerylen, "SELECT * FROM \"%s\".\"%s\"",
 		 schema, tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
 
+	rows = mapi_get_row_count(hdl);
+	if (rows == 0) {
+		/* nothing more to do */
+		goto doreturn;
+	}
+
 	cnt = mapi_get_field_count(hdl);
 	if (cnt < 1 || cnt >= 1 << 29)
 		goto bailout;	/* ridiculous number of columns */
+	if (!useInserts) {
+		mnstr_printf(toConsole,
+			     "COPY %" PRId64 " RECORDS INTO \"%s\".\"%s\" "
+			     "FROM stdin USING DELIMITERS '\\t','\\n','\"';\n",
+			     rows, schema, tname);
+	}
 	string = malloc(sizeof(unsigned char) * cnt);
+	if (string == NULL)
+		goto bailout;
 	for (i = 0; i < cnt; i++) {
 		string[i] = (strcmp(mapi_get_type(hdl, i), "char") == 0 ||
 			     strcmp(mapi_get_type(hdl, i), "varchar") == 0 ||
@@ -1272,8 +1269,9 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 			if (s == NULL)
 				mnstr_printf(toConsole, "NULL");
 			else if (string[i]) {
-				/* write double or single-quoted string with
-				   certain characters escaped */
+				/* write double or single-quoted
+				   string with certain characters
+				   escaped */
 				quoted_print(toConsole, s, useInserts);
 			} else
 				mnstr_printf(toConsole, "%s", s);
@@ -1312,9 +1310,13 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 			mapi_explain_result(hdl, stderr);
 		else if (mapi_error(mid))
 			mapi_explain_query(hdl, stderr);
+		else
+			fprintf(stderr, "malloc failure\n");
 		mapi_close_handle(hdl);
 	} else if (mapi_error(mid))
 		mapi_explain(mid, stderr);
+	else
+		fprintf(stderr, "malloc failure\n");
 	if (sname != NULL)
 		free(sname);
 	if (query != NULL)
