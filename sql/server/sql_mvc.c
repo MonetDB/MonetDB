@@ -627,6 +627,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->history = 0;
 
 	m->label = 0;
+	m->remote = 0;
 	m->cascade_action = NULL;
 	for(i=0;i<MAXSTATS;i++)
 		m->opt_stats[i] = 0;
@@ -709,6 +710,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 	m->history = 0;
 
 	m->label = 0;
+	m->remote = 0;
 	m->cascade_action = NULL;
 	m->type = Q_PARSE;
 	m->pushdown = 1;

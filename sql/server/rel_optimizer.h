@@ -12,7 +12,7 @@
 #include "sql_relation.h"
 #include "sql_mvc.h"
 
-extern sql_rel * rel_optimizer(mvc *sql, sql_rel *rel);
+extern sql_rel * rel_optimizer(mvc *sql, sql_rel *rel, int value_based_opt);
 
 extern int exp_joins_rels(sql_exp *e, list *rels);
 

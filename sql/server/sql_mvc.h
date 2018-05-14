@@ -129,6 +129,7 @@ typedef struct mvc {
 	int type;		/* query type */
 	int pushdown;		/* AND or OR query handling */
 	int label;		/* numbers for relational projection labels */
+	int remote;
 	list *cascade_action;  /* protection against recursive cascade actions */
 
 	int opt_stats[MAXSTATS];/* keep statistics about optimizer rewrites */

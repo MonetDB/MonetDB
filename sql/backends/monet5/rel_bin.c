@@ -1535,7 +1535,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 		int i;
 		char name[16], *nme;
 
-		nme = number2name(name, 16, ++sql->label);
+		nme = number2name(name, 16, ++sql->remote);
 
 		l = rel2bin_args(be, rel->l, sa_list(sql->sa));
 		sub = stmt_list(be, l);
@@ -2970,7 +2970,7 @@ sql_parse(backend *be, sql_allocator *sa, char *query, char mode)
 		sql_rel *r = rel_semantic(m, m->sym);
 
 		if (r) {
-			r = rel_optimizer(m, r);
+			r = rel_optimizer(m, r, 1);
 			sq = rel_bin(be, r);
 		}
 	}

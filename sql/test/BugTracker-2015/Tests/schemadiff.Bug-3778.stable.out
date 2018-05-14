@@ -27,7 +27,7 @@ Ready.
 # 11:19:25 >  "/usr/bin/python2" "schemadiff.Bug-3778.SQL.py" "schemadiff.Bug-3778"
 # 11:19:25 >  
 
-(mapi:monetdb://monetdb@localhost/worker_0) 'user.l4' undefined in:     rmt8_X_2_bat_int:bat[:int] := user.l4();
+(mapi:monetdb://monetdb@localhost/worker_0) 'user.l1' undefined in:     rmt5_X_2_bat_int:bat[:int] := user.l1();
 
 
 # 11:19:26 >  
