@@ -1,37 +1,37 @@
 stdout of test 'sqlitelogictest-coalesce-division-by-zero.Bug-6556` in directory 'sql/test/BugTracker-2018` itself:
 
 
-# 19:49:40 >  
-# 19:49:40 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34493" "--set" "mapi_usock=/var/tmp/mtest-25061/.s.monetdb.34493" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2018"
-# 19:49:40 >  
+# 19:24:33 >  
+# 19:24:33 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31020" "--set" "mapi_usock=/var/tmp/mtest-27357/.s.monetdb.31020" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-old/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2018" "--set" "embedded_c=true"
+# 19:24:33 >  
 
-# MonetDB 5 server v11.30.0
+# MonetDB 5 server v11.29.4
 # This is an unreleased version
 # Serving database 'mTests_sql_test_BugTracker-2018', using 8 threads
 # Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
-# Found 15.387 GiB available main-memory.
+# Found 15.386 GiB available main-memory.
 # Copyright (c) 1993 - July 2008 CWI.
 # Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
 # Visit https://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://localhost.localdomain:34493/
-# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-25061/.s.monetdb.34493
+# Listening for connection requests on mapi:monetdb://xps13:31020/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27357/.s.monetdb.31020
 # MonetDB/GIS module loaded
 # MonetDB/SQL module loaded
 
 Ready.
 
-# 19:49:40 >  
-# 19:49:40 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25061" "--port=34493"
-# 19:49:40 >  
+# 19:24:33 >  
+# 19:24:33 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-27357" "--port=31020"
+# 19:24:33 >  
 
-#SELECT COALESCE ( + 55, + 71 * - 23 + 20 + 74 / - COUNT ( ALL - 0 ) / + 75, - 85 / - 71 ) - + - 62 + - - CAST ( + 88 AS INTEGER ) * + + 83 AS col0;
-% .L5 # table_name
+#SELECT CAST(COALESCE ( + 55, + 71 * - 23 + 20 + 74 / - COUNT ( ALL - 0 ) / + 75, - 85 / - 71 ) - + - 62 + - - CAST ( + 88 AS INTEGER ) * + + 83 AS BIGINT) AS col0;
+% .L6 # table_name
 % col0 # name
 % bigint # type
 % 4 # length
 [ 7421	]
 
-# 19:49:40 >  
-# 19:49:40 >  "Done."
-# 19:49:40 >  
+# 19:24:33 >  
+# 19:24:33 >  "Done."
+# 19:24:33 >  
 

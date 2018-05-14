@@ -142,6 +142,9 @@ rel_partition(mvc *sql, sql_rel *rel)
 		rel->flag = REL_PARTITION;
 	} else if ((rel->op == op_topn || rel->op == op_sample || rel->op == op_select) && rel->l) {
 		rel_partition(sql, rel->l);
+	} else if (is_modify(rel->op) && rel->card <= CARD_AGGR) {
+		if (rel->r)
+			rel_partition(sql, rel->r);
 	} else if (is_project(rel->op) && rel->l) {
 		rel_partition(sql, rel->l);
 	} else if (rel->op == op_semi && rel->l && rel->r) {
