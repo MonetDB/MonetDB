@@ -1432,8 +1432,8 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, int hashge)
 
 	q = query;
 	end_q = query + qlen;
-	q += snprintf(q, q - end_q, "%s\n", get_compat_clause(mid));
-	q += snprintf(q, q - end_q, "SELECT f.id, f.func, f.language, f.type, s.name, f.name, function_type_keyword, language_keyword FROM sys.functions f JOIN sys.schemas s ON f.schema_id = s.id JOIN function_types ft ON f.type = ft.function_type_id LEFT OUTER JOIN function_languages fl ON f.language = fl.language_id WHERE f.id = %s;", fid);
+	q += snprintf(q, end_q - q, "%s", get_compat_clause(mid));
+	q += snprintf(q, end_q - q, "SELECT f.id, f.func, f.language, f.type, s.name, f.name, function_type_keyword, language_keyword FROM sys.functions f JOIN sys.schemas s ON f.schema_id = s.id JOIN function_types ft ON f.type = ft.function_type_id LEFT OUTER JOIN function_languages fl ON f.language = fl.language_id WHERE f.id = %s;", fid);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
 		free(query);
 		return 1;
