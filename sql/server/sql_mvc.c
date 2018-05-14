@@ -151,11 +151,14 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			sql_table *deps = find_sql_table(s, "dependencies");
 			sql_column *depids = find_sql_column(deps, "id");
 			oid rid;
+			rids *rs;
 
 			table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-			while ((rid = table_funcs.column_find_row(m->session->tr, depids, &tid, NULL)), !is_oid_nil(rid)) {
+			rs = table_funcs.rids_select(m->session->tr, depids, &tid, &tid, NULL);
+			while ((rid = table_funcs.rids_next(rs)), !is_oid_nil(rid)) {
 				table_funcs.column_update_value(m->session->tr, depids, rid, &ntid);
 			}
+			table_funcs.rids_destroy(rs);
 		}
 
 		t = mvc_create_view(m, s, "table_partitions", SQL_PERSIST, "SELECT \"id\", \"table_id\", \"column_id\", \"query\" FROM \"sys\".\"_table_partitions\" UNION ALL SELECT \"id\", \"table_id\", \"column_id\", \"query\" FROM \"tmp\".\"_table_partitions\";", 1);
@@ -245,11 +248,14 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			sql_table *deps = find_sql_table(s, "dependencies");
 			sql_column *depids = find_sql_column(deps, "id");
 			oid rid;
+			rids *rs;
 
 			table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-			while ((rid = table_funcs.column_find_row(m->session->tr, depids, &cid, NULL)), !is_oid_nil(rid)) {
+			rs = table_funcs.rids_select(m->session->tr, depids, &cid, &cid, NULL);
+			while ((rid = table_funcs.rids_next(rs)), !is_oid_nil(rid)) {
 				table_funcs.column_update_value(m->session->tr, depids, rid, &ncid);
 			}
+			table_funcs.rids_destroy(rs);
 		} else {
 			sql_create_env(m, s);
 			sql_create_comments(m, s);
@@ -698,6 +704,7 @@ mvc_create(int clientid, backend_stack stk, int debug, bstream *rs, stream *ws)
 	m->history = 0;
 
 	m->label = 0;
+	m->remote = 0;
 	m->cascade_action = NULL;
 	for(i=0;i<MAXSTATS;i++)
 		m->opt_stats[i] = 0;
@@ -780,6 +787,7 @@ mvc_reset(mvc *m, bstream *rs, stream *ws, int debug, int globalvars)
 	m->history = 0;
 
 	m->label = 0;
+	m->remote = 0;
 	m->cascade_action = NULL;
 	m->type = Q_PARSE;
 	m->pushdown = 1;

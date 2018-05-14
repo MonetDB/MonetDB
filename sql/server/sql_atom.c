@@ -1275,6 +1275,7 @@ atom_mul(atom *a1, atom *a2)
 	dst.vtype = TYPE_dbl;
 	if (VARconvert(&dst, &a1->data, 1) == GDK_SUCCEED)
 		a1->d = dst.val.dval;
+	a1->tpe.digits += a2->tpe.digits;
 	return a1;
 }
 

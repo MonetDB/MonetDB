@@ -23,6 +23,17 @@ stdout of test 'upgrade` in directory 'sql/test/testdb-upgrade-chain-hge` itself
 
 Ready.
 Running database upgrade commands:
+set schema "sys";
+drop function sys.dependencies_functions_os_triggers();
+CREATE FUNCTION dependencies_functions_on_triggers()
+RETURNS TABLE (sch varchar(100), usr varchar(100), dep_type varchar(32))
+RETURN TABLE (SELECT f.name, tri.name, 'DEP_TRIGGER' from functions as f, triggers as tri, dependencies as dep where dep.id = f.id AND dep.depend_id =tri.id AND dep.depend_type = 8);
+insert into sys.systemfunctions (select id from sys.functions where name in ('dependencies_functions_on_triggers') and schema_id = (select id from sys.schemas where name = 'sys') and id not in (select function_id from sys.systemfunctions));
+delete from systemfunctions where function_id not in (select id from functions);
+set schema "testschema";
+commit;
+
+Running database upgrade commands:
 set schema sys;
 create aggregate sys.group_concat(str string) returns string external name "aggr"."str_group_concat";
 grant execute on aggregate sys.group_concat(string) to public;

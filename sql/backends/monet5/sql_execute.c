@@ -846,7 +846,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int oldstop = c->curprg->def->stop;
 
 		if (*opt)
-			rel = rel_optimizer(m, rel);
+			rel = rel_optimizer(m, rel, 0);
 
 		if ((msg = MSinitClientPrg(c, "user", "test")) != MAL_SUCCEED) {
 			rel_destroy(rel);
@@ -957,7 +957,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	rel = rel_read(m, *expr, &pos, refs);
 	stack_pop_frame(m);
 	if (rel)
-		rel = rel_optimizer(m, rel);
+		rel = rel_optimizer(m, rel, 0);
 	if (!rel || monet5_create_relational_function(m, *mod, *nme, rel, NULL, ops, 0) < 0)
 		throw(SQL, "sql.register", SQLSTATE(42000) "Cannot register %s", buf);
 	rel_destroy(rel);
