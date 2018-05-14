@@ -960,6 +960,7 @@ create_partition_column(mvc *sql, sql_table *t, int tt, symbol* partition_def) {
 		dlist* list = partition_def->data.lval;
 		str colname = list->h->next->data.sval;
 		node *n;
+		int sql_ec;
 		for (n = t->columns.set->h; n ; n = n->next) {
 			sql_column *col = n->data;
 			if(!strcmp(col->base.name, colname)) {
@@ -969,6 +970,17 @@ create_partition_column(mvc *sql, sql_table *t, int tt, symbol* partition_def) {
 		}
 		if(!t->pcol) {
 			sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: the partition column '%s' is not part of the table", colname);
+			return SQL_ERR;
+		}
+		sql_ec = t->pcol->type.type->eclass;
+		if(!(sql_ec == EC_BIT || EC_VARCHAR(sql_ec) || EC_TEMP(sql_ec) || EC_NUMBER(sql_ec) || sql_ec == EC_BLOB)) {
+			char *err = sql_subtype_string(&(t->pcol->type));
+			if (!err) {
+				sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+			} else {
+				sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: column type %s not yet supported for the partition column", err);
+				GDKfree(err);
+			}
 			return SQL_ERR;
 		}
 	}
@@ -1473,7 +1485,7 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 							char *err = sql_subtype_string(&(col->type));
 							if(!err)
 								return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
-							res = sql_error(sql, 02, SQLSTATE(HY001) "ALTER TABLE: absolute minimum value not available for %s type", err);
+							res = sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: absolute minimum value not available for %s type", err);
 							GDKfree(err);
 							return res;
 						}
@@ -1487,7 +1499,7 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 							char *err = sql_subtype_string(&(col->type));
 							if(!err)
 								return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
-							res = sql_error(sql, 02, SQLSTATE(HY001) "ALTER TABLE: absolute maximum value not available for %s type", err);
+							res = sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: absolute maximum value not available for %s type", err);
 							GDKfree(err);
 							return res;
 						}

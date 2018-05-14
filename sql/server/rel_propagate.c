@@ -235,7 +235,7 @@ create_table_part_atom_exp(mvc *sql, sql_subtype tpe, ptr value)
 		case EC_CHAR:
 		case EC_STRING:
 			return exp_atom_clob(sql->sa, sa_strdup(sql->sa, value));
-		default: /* EC_CHAR, EC_STRING, EC_BLOB, ... */
+		default:
 			assert(0);
 	}
 	if(buf)
