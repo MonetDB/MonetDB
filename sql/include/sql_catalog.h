@@ -513,7 +513,7 @@ typedef enum table_types {
 #define TABLE_APPENDONLY	2
 
 typedef struct sql_part_value {
-	sht tpe;
+	sql_subtype tpe;
 	ptr value;
 	size_t length;
 } sql_part_value;
@@ -521,7 +521,7 @@ typedef struct sql_part_value {
 typedef struct sql_part {
 	sql_base base;
 	struct sql_table *t; /* cached value of the merge table */
-	sht tpe;             /* the column type */
+	sql_subtype tpe;     /* the column type */
 	sht part_type;       /* by range, list/values or none */
 	int with_nills;
 	union {

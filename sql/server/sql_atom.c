@@ -10,6 +10,7 @@
 #include "sql_atom.h"
 #include "sql_string.h"
 #include "sql_decimal.h"
+#include "mtime.h"
 
 static int atom_debug = 0;
 
@@ -1351,7 +1352,8 @@ atom*
 atom_absolute_min(sql_allocator *sa, sql_subtype* tpe)
 {
 	void *ret = NULL;
-	atom *res = atom_create(sa);
+	atom *res = NULL;
+
 #ifdef HAVE_HGE
 	hge hval = GDK_hge_min;
 #endif
@@ -1362,9 +1364,9 @@ atom_absolute_min(sql_allocator *sa, sql_subtype* tpe)
 	bit bval = GDK_bit_min;
 	flt fval = GDK_flt_min;
 	dbl dval = GDK_dbl_min;
-
-	if(!res)
-		return NULL;
+	date dt = 0;
+	daytime dyt = 0;
+	timestamp tmp;
 
 	switch (tpe->type->eclass) {
 		case EC_BIT:
@@ -1421,19 +1423,37 @@ atom_absolute_min(sql_allocator *sa, sql_subtype* tpe)
 					ret = &dval;
 					break;
 				}
+				default:
+					break;
 			}
 			break;
-		case EC_DATE:
-		case EC_TIME:
-		case EC_TIMESTAMP:
-		default: /* EC_CHAR, EC_STRING, EC_BLOB, ... */
-			return NULL;
-	}
+		case EC_DATE: {
+			ret = &dt;
+			break;
+		}
+		case EC_TIME: {
+			ret = &dyt;
+			break;
+		}
+		case EC_TIMESTAMP: {
+			memset(&tmp, 0, 1);
+			tmp.msecs = 0;
+			tmp.days = 0;
+			ret = &tmp;
+			break;
+		}
+		default:
+			break;
+	} //no support for strings and blobs min value
 
-	res->tpe = *tpe;
-	res->isnull = 0;
-	res->data.vtype = tpe->type->localtype;
-	VALset(&res->data, res->data.vtype, ret);
+	if(ret != NULL) {
+		res = atom_create(sa);
+		res->tpe = *tpe;
+		res->isnull = 0;
+		res->data.vtype = tpe->type->localtype;
+		VALset(&res->data, res->data.vtype, ret);
+		SA_VALcopy(sa, &res->data, &res->data);
+	}
 
 	return res;
 }
@@ -1442,7 +1462,8 @@ atom*
 atom_absolute_max(sql_allocator *sa, sql_subtype* tpe)
 {
 	void *ret = NULL;
-	atom *res = atom_create(sa);
+	atom *res = NULL;
+
 #ifdef HAVE_HGE
 	hge hval = GDK_hge_max;
 #endif
@@ -1453,9 +1474,9 @@ atom_absolute_max(sql_allocator *sa, sql_subtype* tpe)
 	bit bval = GDK_bit_max;
 	flt fval = GDK_flt_max;
 	dbl dval = GDK_dbl_max;
-
-	if(!res)
-		return NULL;
+	date dt = 0;
+	daytime dyt = 0;
+	timestamp tmp;
 
 	switch (tpe->type->eclass) {
 		case EC_BIT:
@@ -1512,19 +1533,38 @@ atom_absolute_max(sql_allocator *sa, sql_subtype* tpe)
 					ret = &dval;
 					break;
 				}
+				default:
+					break;
 			}
 			break;
-		case EC_DATE:
-		case EC_TIME:
-		case EC_TIMESTAMP:
-		default: /* EC_CHAR, EC_STRING, EC_BLOB, ... */
-			return NULL;
-	}
+		case EC_DATE: {
+			dt = MTIMEtodate(31, 12, YEAR_MAX);
+			ret = &dt;
+			break;
+		}
+		case EC_TIME: {
+			dyt = 86399999; //milliseconds on a day
+			ret = &dyt;
+			break;
+		}
+		case EC_TIMESTAMP: {
+			memset(&tmp, 0, 1);
+			tmp.msecs = 86399999; //milliseconds on a day
+			tmp.days = MTIMEtodate(31, 12, YEAR_MAX);
+			ret = &tmp;
+			break;
+		}
+		default:
+			break;
+	} //no support for strings and blobs max value
 
-	res->tpe = *tpe;
-	res->isnull = 0;
-	res->data.vtype = tpe->type->localtype;
-	VALset(&res->data, res->data.vtype, ret);
+	if(ret != NULL) {
+		res = atom_create(sa);
+		res->tpe = *tpe;
+		res->isnull = 0;
+		res->data.vtype = tpe->type->localtype;
+		VALset(&res->data, res->data.vtype, ret);
+	}
 
 	return res;
 }

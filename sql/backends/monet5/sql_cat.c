@@ -296,7 +296,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 		}
 	}
 
-	errcode = sql_trans_add_range_partition(sql->session->tr, mt, pt, tp1, pmin, smin, pmax, smax, with_nills, &err);
+	errcode = sql_trans_add_range_partition(sql->session->tr, mt, pt, col->type, pmin, smin, pmax, smax, with_nills, &err);
 	switch(errcode) {
 		case -1:
 			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -438,7 +438,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		}
 
 		nextv = SA_ZNEW(sql->session->tr->sa, sql_part_value); /* instantiate the part value */
-		nextv->tpe = tp1;
+		nextv->tpe = col->type;
 		nextv->value = sa_alloc(sql->session->tr->sa, len);
 		memcpy(nextv->value, pnext, len);
 		nextv->length = len;
@@ -478,7 +478,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		}
 	}
 
-	errcode = sql_trans_add_value_partition(sql->session->tr, mt, pt, tp1, values, with_nills, &err);
+	errcode = sql_trans_add_value_partition(sql->session->tr, mt, pt, col->type, values, with_nills, &err);
 	switch(errcode) {
 		case 0:
 			break;

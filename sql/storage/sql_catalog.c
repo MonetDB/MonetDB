@@ -355,8 +355,8 @@ sql_values_list_element_validate_and_insert(void *v1, void *v2, int* res)
 {
 	sql_part_value* pt = (sql_part_value*) v1, *newp = (sql_part_value*) v2;
 
-	assert(pt->tpe == newp->tpe);
-	*res = ATOMcmp(pt->tpe, newp->value, pt->value);
+	assert(pt->tpe.type->localtype == newp->tpe.type->localtype);
+	*res = ATOMcmp(pt->tpe.type->localtype, newp->value, pt->value);
 	return *res == 0 ? pt : NULL;
 }
 
@@ -376,9 +376,9 @@ sql_range_part_validate_and_insert(void *v1, void *v2, int* res)
 		}
 	}
 
-	assert(pt->tpe == newp->tpe);
-	res1 = ATOMcmp(pt->tpe, pt->part.range.minvalue, newp->part.range.maxvalue);
-	res2 = ATOMcmp(pt->tpe, newp->part.range.minvalue, pt->part.range.maxvalue);
+	assert(pt->tpe.type->localtype == newp->tpe.type->localtype);
+	res1 = ATOMcmp(pt->tpe.type->localtype, pt->part.range.minvalue, newp->part.range.maxvalue);
+	res2 = ATOMcmp(pt->tpe.type->localtype, newp->part.range.minvalue, pt->part.range.maxvalue);
 	if (res1 <= 0 && res2 <= 0) { //overlap: x1 <= y2 && y1 <= x2
 		*res = 0;
 		return pt;
@@ -395,13 +395,13 @@ sql_values_part_validate_and_insert(void *v1, void *v2)
 	node *n1 = b1->h, *n2 = b2->h;
 	int res;
 
-	assert(pt->tpe == newp->tpe);
+	assert(pt->tpe.type->localtype == newp->tpe.type->localtype);
 	if(newp->with_nills && pt->with_nills)
 		return pt; //check for nulls first
 
 	while(n1 && n2) {
 		sql_part_value *p1 = (sql_part_value *) n1->data, *p2 = (sql_part_value *) n2->data;
-		res = ATOMcmp(pt->tpe, p1->value, p2->value);
+		res = ATOMcmp(pt->tpe.type->localtype, p1->value, p2->value);
 		if(!res) { //overlap -> same value in both partitions
 			return pt;
 		} else if(res < 0) {

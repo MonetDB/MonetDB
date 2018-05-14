@@ -1482,9 +1482,7 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 					}
 					if(max->token == SQL_MAXVALUE) {
 						amax = atom_absolute_max(sql->sa, &(col->type));
-					} else {
-						amax = ((AtomNode *) max)->a;
-						if(!amin) {
+						if(!amax) {
 							sql_rel *res = NULL;
 							char *err = sql_subtype_string(&(col->type));
 							if(!err)
@@ -1493,6 +1491,8 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 							GDKfree(err);
 							return res;
 						}
+					} else {
+						amax = ((AtomNode *) max)->a;
 					}
 					return rel_alter_table_add_partition_range(sql->sa, sname, tname, sname, ntname, amin, amax, nills);
 				} else if(extra->token == SQL_PARTITION_LIST) {
