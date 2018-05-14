@@ -1567,6 +1567,8 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 		wantSystem = 0;
 	}
 
+	hashge = has_hugeint(mid);
+
 	len = 5120 + (sname ? strlen(sname) : 0) + (fname ? strlen(fname) : 0);
 	query = malloc(len);
 	if (query == NULL) {
@@ -1599,7 +1601,6 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 	if (hdl == NULL || mapi_error(mid))
 		goto bailout;
 	prev_sid = 0;
-	hashge = has_hugeint(mid);
 	while (!mnstr_errnr(toConsole) && mapi_fetch_row(hdl) != 0) {
 		long sid = strtol(mapi_fetch_field(hdl, 0), NULL, 10);
 		const char *schema = mapi_fetch_field(hdl, 1);
