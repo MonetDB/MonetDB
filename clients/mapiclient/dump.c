@@ -1268,7 +1268,36 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 			s = mapi_fetch_field(hdl, i);
 			if (s == NULL)
 				mnstr_printf(toConsole, "NULL");
-			else if (string[i]) {
+			else if (useInserts) {
+				const char *tp = mapi_get_type(hdl, i);
+				if (strcmp(tp, "sec_interval") == 0) {
+					const char *p = strchr(s, '.');
+					if (p == NULL)
+						p = s + strlen(s);
+					mnstr_printf(toConsole, "INTERVAL '%.*s' SECOND", (int) (p - s), s);
+				} else if (strcmp(tp, "month_interval") == 0)
+					mnstr_printf(toConsole, "INTERVAL '%s' MONTH", s);
+				else if (strcmp(tp, "timestamptz") == 0)
+					mnstr_printf(toConsole, "TIMESTAMP WITH TIME ZONE '%s'", s);
+				else if (strcmp(tp, "timestamp") == 0)
+					mnstr_printf(toConsole, "TIMESTAMP '%s'", s);
+				else if (strcmp(tp, "timetz") == 0)
+					mnstr_printf(toConsole, "TIME WITH TIME ZONE '%s'", s);
+				else if (strcmp(tp, "time") == 0)
+					mnstr_printf(toConsole, "TIME '%s'", s);
+				else if (strcmp(tp, "date") == 0)
+					mnstr_printf(toConsole, "DATE '%s'", s);
+				else if (strcmp(tp, "blob") == 0)
+					mnstr_printf(toConsole, "BINARY LARGE OBJECT '%s'", s);
+				else if (strcmp(tp, "inet") == 0 ||
+					 strcmp(tp, "json") == 0 ||
+					 strcmp(tp, "url") == 0 ||
+					 strcmp(tp, "uuid") == 0 ||
+					 string[i])
+					quoted_print(toConsole, s, true);
+				else
+					mnstr_printf(toConsole, "%s", s);
+			} else if (string[i]) {
 				/* write double or single-quoted
 				   string with certain characters
 				   escaped */

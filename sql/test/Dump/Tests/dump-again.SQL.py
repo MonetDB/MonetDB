@@ -7,7 +7,6 @@ except ImportError:
 p = process.client('sqldump', args = ['--inserts'], stdout = process.PIPE, stderr = process.PIPE)
 dump, err = p.communicate()
 
-print(os.path.join(os.environ['TSTTRGDIR'], 'dumpoutput2.sql'))
 f = open(os.path.join(os.environ['TSTTRGDIR'], 'dumpoutput2.sql'), 'w')
 f.write(dump)
 f.close()
