@@ -3605,16 +3605,16 @@ sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto bailout;
 	}
 
-	MT_lock_set(&mal_contextLock);
 	if ((msg = AUTHgetRemoteTableCredentials(*table, &uris, &unames, &hashs)) != MAL_SUCCEED)
 		goto bailout;
 
+	MT_lock_set(&mal_contextLock);
 	if (BUNappend(urib, uris, FALSE) != GDK_SUCCEED)
-		goto bailout;
+		goto lbailout;
 	if (BUNappend(unameb, unames, FALSE) != GDK_SUCCEED)
-		goto bailout;
+		goto lbailout;
 	if (BUNappend(hashb, hashs, FALSE) != GDK_SUCCEED)
-		goto bailout;
+		goto lbailout;
 	MT_lock_unset(&mal_contextLock);
 	BBPkeepref(*uri = urib->batCacheid);
 	BBPkeepref(*uname = unameb->batCacheid);
@@ -3622,6 +3622,9 @@ sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	return MAL_SUCCEED;
 
+  lbailout:
+	MT_lock_unset(&mal_contextLock);
+	msg = createException(SQL, "sql.remote_table_credentials", SQLSTATE(HY001) MAL_MALLOC_FAIL);
   bailout:
 	if (urib) BBPunfix(urib->batCacheid);
 	if (unameb) BBPunfix(unameb->batCacheid);
