@@ -37,6 +37,7 @@
 #include "clients.h"
 #include "mal_instruction.h"
 #include "mal_resource.h"
+#include "mal_authorize.h"
 
 static int
 rel_is_table(sql_rel *rel)
@@ -3577,6 +3578,57 @@ sql_sessions_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return CLTsessions(cntxt, mb, stk, pci);
 }
+
+str
+sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *urib = NULL;
+	BAT *unameb = NULL;
+	BAT *hashb = NULL;
+	bat *uri = getArgReference_bat(stk, pci, 0);
+	bat *uname = getArgReference_bat(stk, pci, 1);
+	bat *hash = getArgReference_bat(stk, pci, 2);
+	str *table = getArgReference_str(stk, pci, 3);
+	str uris;
+	str unames;
+	str hashs;
+	str msg = MAL_SUCCEED;
+	(void)mb;
+	(void)cntxt;
+
+	urib = COLnew(0, TYPE_str, 0, TRANSIENT);
+	unameb = COLnew(0, TYPE_str, 0, TRANSIENT);
+	hashb = COLnew(0, TYPE_str, 0, TRANSIENT);
+
+	if (urib == NULL || unameb == NULL || hashb == NULL) {
+		msg = createException(SQL, "sql.remote_table_credentials", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	MT_lock_set(&mal_contextLock);
+	if ((msg = AUTHgetRemoteTableCredentials(*table, &uris, &unames, &hashs)) != MAL_SUCCEED)
+		goto bailout;
+
+	if (BUNappend(urib, uris, FALSE) != GDK_SUCCEED)
+		goto bailout;
+	if (BUNappend(unameb, unames, FALSE) != GDK_SUCCEED)
+		goto bailout;
+	if (BUNappend(hashb, hashs, FALSE) != GDK_SUCCEED)
+		goto bailout;
+	MT_lock_unset(&mal_contextLock);
+	BBPkeepref(*uri = urib->batCacheid);
+	BBPkeepref(*uname = unameb->batCacheid);
+	BBPkeepref(*hash = hashb->batCacheid);
+
+	return MAL_SUCCEED;
+
+  bailout:
+	if (urib) BBPunfix(urib->batCacheid);
+	if (unameb) BBPunfix(unameb->batCacheid);
+	if (hashb) BBPunfix(hashb->batCacheid);
+	return msg;
+}
+
 
 str
 sql_querylog_catalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)

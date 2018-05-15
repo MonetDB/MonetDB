@@ -870,8 +870,21 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 
 		if (dump_column_definition(mid, toConsole, schema, tname, NULL, foreign, hashge))
 			goto bailout;
-		if (type == 5)
-			mnstr_printf(toConsole, " ON '%s'", view);
+		if (type == 5) { /* remote table */
+			char *rt_user = NULL;
+			char *rt_hash = NULL;
+			snprintf(query, maxquerylen,
+				 "SELECT * FROM sys.remote_table_credentials('%s.%s')",
+				 schema, tname);
+			if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
+				goto bailout;
+			cnt = 0;
+			while(mapi_fetch_row(hdl) != 0) {
+				rt_user = mapi_fetch_field(hdl, 1);
+				rt_hash = mapi_fetch_field(hdl, 2);
+			}
+			mnstr_printf(toConsole, " ON '%s' WITH USER '%s' ENCRYPTED PASSWORD '%s'", view, rt_user, rt_hash);
+		}
 		mnstr_printf(toConsole, ";\n");
 		comment_on(toConsole, "TABLE", schema, tname, NULL, remark);
 

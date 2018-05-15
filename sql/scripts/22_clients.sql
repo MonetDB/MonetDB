@@ -8,6 +8,10 @@ create function sys.password_hash (username string)
 	returns string
 	external name sql.password;
 
+create function sys.remote_table_credentials (tablename string)
+returns table ("uri" string, "username" string, "hash" string)
+external name sql.rt_credentials;
+
 create function sys.sessions()
 returns table("user" string, "login" timestamp, "sessiontimeout" bigint, "lastcommand" timestamp, "querytimeout" bigint, "active" bool)
 external name sql.sessions;
