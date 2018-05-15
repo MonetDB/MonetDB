@@ -1,0 +1,43 @@
+stderr of test 'dump-again` in directory 'sql/test/Dump` itself:
+
+
+# 22:27:57 >  
+# 22:27:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34099" "--set" "mapi_usock=/var/tmp/mtest-27453/.s.monetdb.34099" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/sjoerd/@Monet-stable/var/MonetDB/mTests_sql_test_Dump" "--set" "embedded_c=true"
+# 22:27:57 >  
+
+# builtin opt 	gdk_dbpath = /home/sjoerd/@Monet-stable/var/monetdb5/dbfarm/demo
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = no
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 34099
+# cmdline opt 	mapi_usock = /var/tmp/mtest-27453/.s.monetdb.34099
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	gdk_dbpath = /home/sjoerd/@Monet-stable/var/MonetDB/mTests_sql_test_Dump
+# cmdline opt 	embedded_c = true
+# cmdline opt 	gdk_debug = 553648138
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_258:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_230:bat[:str], X_238:bat[:str]);
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_259:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_231:bat[:str], X_239:bat[:str]);
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_260:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_232:bat[:str], X_240:bat[:str]);
+#WARNING To speedup sql.get_value a bulk operator implementation is needed
+#    X_261:bat[:lng] := mal.multiplex("sql":str, "get_value":str, X_233:bat[:str], X_241:bat[:str]);
+
+# 22:27:57 >  
+# 22:27:57 >  "/usr/bin/python" "dump-again.SQL.py" "dump-again"
+# 22:27:57 >  
+
+
+# 22:27:57 >  
+# 22:27:57 >  "Done."
+# 22:27:57 >  
+

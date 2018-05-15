@@ -43,7 +43,9 @@ static struct msql_types {
 	{"decimal", SQL_DECIMAL},
 	{"double", SQL_DOUBLE},
 	{"hugeint", SQL_HUGEINT},
+	/* {"inet", SQL_WCHAR}, */
 	{"int", SQL_INTEGER},
+	/* {"json", SQL_WCHAR}, */
 	{"month_interval", SQL_INTERVAL_MONTH},
 	{"oid", SQL_BIGINT},
 	{"real", SQL_REAL},
@@ -55,7 +57,7 @@ static struct msql_types {
 	{"timestamp", SQL_TYPE_TIMESTAMP},
 	{"timestamptz", SQL_TYPE_TIMESTAMP},
 	{"tinyint", SQL_TINYINT},
-/* 	{"ubyte", SQL_TINYINT}, */
+	/* {"url", SQL_WCHAR}, */
 	{"uuid", SQL_GUID},
 	{"varchar", SQL_WVARCHAR},
 	{0, 0},			/* sentinel */
