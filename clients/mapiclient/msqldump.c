@@ -48,9 +48,6 @@ usage(const char *prog, int xit)
 	exit(xit);
 }
 
-/* hardwired defaults, only used if monet environment cannot be found */
-#define DEFAULTPORT 50000	
-
 int
 main(int argc, char **argv)
 {
@@ -60,14 +57,14 @@ main(int argc, char **argv)
 	char *host = NULL;
 	char *dbname = NULL;
 	int trace = 0;
-	int describe = 0;
-	int functions = 0;
-	int useinserts = 0;
+	bool describe = false;
+	bool functions = false;
+	bool useinserts = false;
 	int c;
 	Mapi mid;
-	int quiet = 0;
+	bool quiet = false;
 	stream *out;
-	char user_set_as_flag = 0;
+	bool user_set_as_flag = false;
 	char *table = NULL;
 	static struct option long_options[] = {
 		{"host", 1, 0, 'h'},
@@ -92,7 +89,7 @@ main(int argc, char **argv)
 			if (user)
 				free(user);
 			user = strdup(optarg);
-			user_set_as_flag = 1;
+			user_set_as_flag = true;
 			break;
 		case 'h':
 			host = optarg;
@@ -107,15 +104,15 @@ main(int argc, char **argv)
 			dbname = strdup(optarg);
 			break;
 		case 'D':
-			describe = 1;
+			describe = true;
 			break;
 		case 'N':
-			useinserts = 1;
+			useinserts = true;
 			break;
 		case 'f':
 			if (table)
 				usage(argv[0], -1);
-			functions = 1;
+			functions = true;
 			break;
 		case 't':
 			if (table || functions)
@@ -123,7 +120,7 @@ main(int argc, char **argv)
 			table = optarg;
 			break;
 		case 'q':
-			quiet = 1;
+			quiet = true;
 			break;
 		case 'X':
 			trace = MAPI_TRACE;
@@ -204,9 +201,9 @@ main(int argc, char **argv)
 		dump_version(mid, out, "--");
 	}
 	if (functions)
-		c = dump_functions(mid, out, 1, NULL, NULL, NULL);
+		c = dump_functions(mid, out, true, NULL, NULL, NULL);
 	else if (table)
-		c = dump_table(mid, NULL, table, out, describe, 1, useinserts);
+		c = dump_table(mid, NULL, table, out, describe, true, useinserts);
 	else
 		c = dump_database(mid, out, describe, useinserts);
 	mnstr_flush(out);
