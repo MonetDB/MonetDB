@@ -90,8 +90,8 @@ rel_alter_table_add_partition_range(sql_allocator *sa, char *sname, char *tname,
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
-	char *pmin = atom2string(sa, min), *pmax = atom2string(sa, max);
-	if(!rel || !exps || !pmin || !pmax)
+	char *pmin = min ? atom2string(sa, min): NULL, *pmax = max ? atom2string(sa, max) : NULL;
+	if(!rel || !exps)
 		return NULL;
 
 	append(exps, exp_atom_clob(sa, sname));
@@ -1478,7 +1478,7 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 								(t->type == tt_merge_table)?"merge":"list partition");
 					}
 
-					if(min->token == SQL_MINVALUE) {
+					if(min && min->token == SQL_MINVALUE) {
 						amin = atom_absolute_min(sql->sa, &(col->type));
 						if(!amin) {
 							sql_rel *res = NULL;
@@ -1489,10 +1489,10 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 							GDKfree(err);
 							return res;
 						}
-					} else {
+					} else if(min) {
 						amin = ((AtomNode *) min)->a;
 					}
-					if(max->token == SQL_MAXVALUE) {
+					if(max && max->token == SQL_MAXVALUE) {
 						amax = atom_absolute_max(sql->sa, &(col->type));
 						if(!amax) {
 							sql_rel *res = NULL;
@@ -1503,7 +1503,7 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 							GDKfree(err);
 							return res;
 						}
-					} else {
+					} else if(max) {
 						amax = ((AtomNode *) max)->a;
 					}
 					return rel_alter_table_add_partition_range(sql->sa, sname, tname, sname, ntname, amin, amax, nills);

@@ -1509,6 +1509,12 @@ opt_partition_spec:
       append_symbol(l, $4);
       append_int(l, $5);
       $$ = _symbol_create_list( SQL_PARTITION_RANGE, l ); }
+ | WITH sqlNULL
+    { dlist *l = L();
+      append_symbol(l, NULL);
+      append_symbol(l, NULL);
+      append_int(l, TRUE);
+      $$ = _symbol_create_list( SQL_PARTITION_RANGE, l ); }
  ;
 
 opt_as_partition:

@@ -4658,16 +4658,21 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	sql_table *partitions = find_sql_table(syss, "_table_partitions");
 	sql_table *ranges = find_sql_table(syss, "_range_partitions");
 	sql_part *p = SA_ZNEW(tr->sa, sql_part);
-	ssize_t (*atomtostr)(str *, size_t *, const void *) = BATatoms[tpe.type->localtype].atomToStr;
+	int localtype = tpe.type->localtype, free_min = 1, free_max = 1;
+	ssize_t (*atomtostr)(str *, size_t *, const void *) = BATatoms[localtype].atomToStr;
 	str str_min = NULL, str_max = NULL;
 	size_t length = 0;
 	bit to_insert = (bit) with_nills;
 	oid rid;
 	int *v, res = 0;
 
-	if(atomtostr(&str_min, &length, min) == 0) {
+	if(min && atomtostr(&str_min, &length, min) == 0) {
 		res = -1;
 		goto finish;
+	} else if(!min) {
+		str_min = (ptr) ATOMnilptr(localtype);
+		smin = ATOMlen(localtype, str_min);
+		free_min = 0;
 	}
 	if(length > STORAGE_MAX_VALUE_LENGTH) {
 		res = -2;
@@ -4677,6 +4682,10 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	if(atomtostr(&str_max, &length, max) == 0) {
 		res = -1;
 		goto finish;
+	} else if(!max) {
+		str_max = (ptr) ATOMnilptr(localtype);
+		smax = ATOMlen(localtype, str_max);
+		free_max = 0;
 	}
 	if(length > STORAGE_MAX_VALUE_LENGTH) {
 		res = -3;
@@ -4716,9 +4725,9 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	_DELETE(v);
 
 finish:
-	if(str_min)
+	if(str_min && free_min)
 		GDKfree(str_min);
-	if(str_max)
+	if(str_max && free_max)
 		GDKfree(str_max);
 	return res;
 }
