@@ -3084,7 +3084,7 @@ for comp in \
 	'zlib       ' \
 ; do
 	AS_VAR_COPY([org], [org_have_$comp])
-	AS_VAR_COPY([have], [org_have_$comp])
+	AS_VAR_COPY([have], [have_$comp])
 	AS_VAR_COPY([why_not], [why_not_$comp])
 
 	AS_CASE([$why_not-$have-$org],
