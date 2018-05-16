@@ -1976,7 +1976,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 	} while (!mnstr_errnr(toConsole) && (rc = mapi_next_result(hdl)) == 1);
 	/*
 	 * in case we called timerHuman() in the loop above with "total == false",
-	 * call is again with "total == true" to get the total wall-clock time
+	 * call it again with "total == true" to get the total wall-clock time
 	 * in case "singleinstr == false".
 	 */
 	if (timerHumanCalled)
