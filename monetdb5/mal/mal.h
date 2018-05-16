@@ -63,8 +63,8 @@ mal_export int have_hge;
    for a documentation of all debug options.
 */
 #define GRPthreads (THRDMASK | PARMASK)
-#define GRPmemory (MEMMASK | ALLOCMASK )
-#define GRPproperties (CHECKMASK | PROPMASK | BATMASK )
+#define GRPmemory (MEMMASK | ALLOCMASK)
+#define GRPproperties (CHECKMASK | PROPMASK | BATMASK)
 #define GRPio (IOMASK | PERFMASK )
 #define GRPheaps (HEAPMASK)
 #define GRPtransactions (TMMASK | DELTAMASK | TEMMASK)
@@ -73,6 +73,7 @@ mal_export int have_hge;
 #define GRPperformance (DEADBEEFMASK)
 #define GRPoptimizers  (OPTMASK)
 #define GRPforcemito (FORCEMITOMASK | NOSYNCMASK)
+#define GRPviewless (VIEWLESSMASK | CHECKMASK | PROPMASK | BATMASK)
 
 mal_export MT_Lock  mal_contextLock;
 mal_export MT_Lock  mal_remoteLock;

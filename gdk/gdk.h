@@ -432,6 +432,9 @@
 #define FORCEMITOMASK	(1<<29)
 #define FORCEMITODEBUG	if (GDKdebug & FORCEMITOMASK)
 
+#define VIEWLESSMASK	(1<<30)
+#define VIEWLESSDEBUG	if (GDKdebug & VIEWLESSMASK)
+
 /*
  * @- GDK session handling
  * @multitable @columnfractions 0.08 0.7

@@ -1211,9 +1211,6 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 	BATcheck(b, "BATselect", NULL);
 	BATcheck(tl, "BATselect: tl value required", NULL);
-	if (!viewless(b)) {
-		fprintf(stderr, "BATselect: b=%s#(%u) is a view.\n", BATgetId(b), VIEWtparent(b));
-	}
 
 	assert(s == NULL || s->ttype == TYPE_oid || s->ttype == TYPE_void);
 	assert(hi == 0 || hi == 1);

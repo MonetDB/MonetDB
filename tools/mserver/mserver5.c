@@ -116,6 +116,7 @@ usage(char *prog, int xit)
 	fprintf(stderr, "     --optimizers\n");
 	fprintf(stderr, "     --trace\n");
 	fprintf(stderr, "     --forcemito\n");
+	fprintf(stderr, "     --viewless\n");
 	fprintf(stderr, "     --debug=<bitmask>\n");
 
 	exit(xit);
@@ -265,6 +266,7 @@ main(int argc, char **av)
 		{ "optimizers", 0, 0, 0 },
 		{ "performance", 0, 0, 0 },
 		{ "forcemito", 0, 0, 0 },
+		{ "viewless", 0, 0, 0 },
 		{ "heaps", 0, 0, 0 },
 		{ 0, 0, 0, 0 }
 	};
@@ -366,6 +368,10 @@ main(int argc, char **av)
 			}
 			if (strcmp(long_options[option_index].name, "forcemito") == 0) {
 				grpdebug |= GRPforcemito;
+				break;
+			}
+			if (strcmp(long_options[option_index].name, "viewless") == 0) {
+				grpdebug |= GRPviewless;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "performance") == 0) {

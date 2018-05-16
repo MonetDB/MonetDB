@@ -1990,6 +1990,9 @@ BATassertProps(BAT *b)
 	assert(b->batCacheid > 0);
 	assert(b->batCount >= b->batInserted);
 
+
+	VIEWLESSDEBUG assert(viewless(b));
+
 	/* headless */
 	assert(b->hseqbase <= GDK_oid_max); /* non-nil seqbase */
 	assert(b->hseqbase + BATcount(b) <= GDK_oid_max);

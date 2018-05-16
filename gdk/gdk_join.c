@@ -99,13 +99,6 @@ joinparamcheck(BAT *l, BAT *r1, BAT *r2, BAT *sl, BAT *sr, const char *func)
 		GDKerror("%s: candidate lists must be unique.\n", func);
 		return GDK_FAIL;
 	}
-	if (!viewless(l) || !viewless(r1) || (r2 && !viewless(r2))) {
-		/*
-		GDKerror("%s: inputs are views.\n", func);
-		assert(0);
-		return GDK_FAIL;
-		*/
-	}
 	return GDK_SUCCEED;
 }
 

@@ -515,9 +515,6 @@ mvc_bind(mvc *m, const char *sname, const char *tname, const char *cname, int ac
 		return NULL;
 
 	b = store_funcs.bind_col(tr, c, access);
-	if (!viewless(b)) {
-		fprintf(stderr, "mvc_bind: b=%s#(%u) is a view.\n", BATgetId(b), VIEWtparent(b));
-	}
 	return b;
 }
 

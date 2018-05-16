@@ -211,6 +211,8 @@ MDBsetDebugStr(int *ret, str *flg)
 		GDKdebug |= GRPperformance;
 	if( strcmp("forcemito",*flg)==0)
 		GDKdebug |= GRPforcemito;
+	if( strcmp("viewless",*flg)==0)
+		GDKdebug |= GRPviewless;
     return MAL_SUCCEED;
 }
 

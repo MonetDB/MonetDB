@@ -177,6 +177,8 @@ combination of):
                               overhead for unnecessarily large plans);
                               used only for development & testing;
                               set automatically by Mtest.py
+  1073741824 = VIEWLESSMASK = check if a newly created BAT is a view
+                              (requires that PROPMASK is set)
 .EE
 
 Note that
@@ -195,6 +197,7 @@ these debug flags as well:
   \-\-performance   (DEADBEEFMASK)
   \-\-optimizers    (OPTMASK)
   \-\-forcemito     (FORCEMITOMASK | NOSYNCMASK)
+  \-\-viewless      (VIEWLESSMASK | CHECKMASK | PROPMASK | BATMASK)
 .EE
 
 Default:
