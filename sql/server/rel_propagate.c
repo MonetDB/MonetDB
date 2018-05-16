@@ -16,8 +16,6 @@
 #include "rel_updates.h"
 #include "rel_schema.h"
 #include "sql_mvc.h"
-#include "mtime.h"
-#include "blob.h"
 
 static sql_rel* rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt);
 
@@ -150,111 +148,6 @@ rel_truncate_duplicate(sql_allocator *sa, sql_rel *table, sql_rel *ori)
 	r->l = table;
 	r->r = NULL;
 	return r;
-}
-
-static sql_exp *
-create_table_part_atom_exp(mvc *sql, sql_subtype tpe, ptr value)
-{
-	str buf = NULL;
-	size_t len = 0;
-	sql_exp *res = NULL;
-
-	switch (tpe.type->eclass) {
-		case EC_BIT: {
-			 bit bval = *((bit*) value);
-			 return exp_atom_bool(sql->sa, bval ? 1 : 0);
-		}
-		case EC_POS:
-		case EC_NUM:
-		case EC_DEC:
-		case EC_SEC:
-		case EC_MONTH:
-			switch (tpe.type->localtype) {
-#ifdef HAVE_HGE
-				case TYPE_hge: {
-					hge hval = *((hge*) value);
-					return exp_atom_hge(sql->sa, hval);
-				}
-#endif
-				case TYPE_lng: {
-					lng lval = *((lng*) value);
-					return exp_atom_lng(sql->sa, lval);
-				}
-				case TYPE_int: {
-					int ival = *((int*) value);
-					return exp_atom_int(sql->sa, ival);
-				}
-				case TYPE_sht: {
-					sht sval = *((sht*) value);
-					return exp_atom_sht(sql->sa, sval);
-				}
-				case TYPE_bte: {
-					bte bbval = *((bte *) value);
-					return exp_atom_bte(sql->sa, bbval);
-				}
-				default:
-					return NULL;
-			}
-		case EC_FLT:
-			switch (tpe.type->localtype) {
-				case TYPE_flt: {
-					flt fval = *((flt*) value);
-					return exp_atom_flt(sql->sa, fval);
-				}
-				case TYPE_dbl: {
-					dbl dval = *((dbl*) value);
-					return exp_atom_dbl(sql->sa, dval);
-				}
-				default:
-					return NULL;
-			}
-		case EC_DATE: {
-			if(date_tostr(&buf, &len, (const date *)value) < 0)
-				return NULL;
-			res = exp_atom(sql->sa, atom_general(sql->sa, &tpe, buf));
-			break;
-		}
-		case EC_TIME: {
-			if(daytime_tostr(&buf, &len, (const daytime *)value) < 0)
-				return NULL;
-			res = exp_atom(sql->sa, atom_general(sql->sa, &tpe, buf));
-			break;
-		}
-		case EC_TIMESTAMP: {
-			if(timestamp_tostr(&buf, &len, (const timestamp *)value) < 0)
-				return NULL;
-			res = exp_atom(sql->sa, atom_general(sql->sa, &tpe, buf));
-			break;
-		}
-		case EC_BLOB: {
-			if(SQLBLOBtostr(&buf, &len, (const blob *)value) < 0)
-				return NULL;
-			res = exp_atom(sql->sa, atom_general(sql->sa, &tpe, buf));
-			break;
-		}
-		case EC_CHAR:
-		case EC_STRING:
-			return exp_atom_clob(sql->sa, sa_strdup(sql->sa, value));
-		default:
-			assert(0);
-	}
-	if(buf)
-		GDKfree(buf);
-	return res;
-}
-
-static sql_rel *
-rel_ddl_distribute(sql_allocator *sa, sql_rel *l, sql_rel *r, list *exps)
-{
-	sql_rel *rel = rel_create(sa);
-	if(!rel)
-		return NULL;
-	rel->l = l;
-	rel->r = r;
-	rel->exps = exps;
-	rel->op = op_ddl;
-	rel->flag = DDL_DISTRIBUTE;
-	return rel;
 }
 
 static sql_rel*
@@ -432,7 +325,6 @@ rel_generate_subinserts(mvc *sql, sql_rel *rel, sql_rel **anti_rel, sql_exp **ex
 	}
 	//generate a count aggregation for the values not present in any of the partitions
 	*anti_rel = rel_select(sql->sa, *anti_rel, anti_exp);
-	*anti_rel = rel_project(sql->sa, *anti_rel, rel_projections(sql, *anti_rel, NULL, 1, 1));
 	*anti_rel = rel_groupby(sql, *anti_rel, NULL);
 	aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, (*anti_rel)->card, 0);
 	(void) rel_groupby_add_aggr(sql, *anti_rel, aggr);
@@ -454,14 +346,18 @@ rel_propagate_insert(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 	sql_rel* anti_rel = NULL;
 	sql_rel* res = rel_generate_subinserts(sql, rel, &anti_rel, &exception, t, changes, "INSERT", "insert");
 
-	return rel_ddl_distribute(sql->sa, res, anti_rel, list_append(new_exp_list(sql->sa), exception));
+	res = rel_exception(sql->sa, res, anti_rel, list_append(new_exp_list(sql->sa), exception));
+	res->p = prop_create(sql->sa, PROP_DISTRIBUTE, res->p);
+	return res;
 }
 
 static sql_rel*
 rel_propagate_delete(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 {
 	rel = rel_generate_subdeletes(sql, rel, t, changes);
-	return rel_ddl_distribute(sql->sa, rel, NULL, NULL);
+	rel = rel_exception(sql->sa, rel, NULL, NULL);
+	rel->p = prop_create(sql->sa, PROP_DISTRIBUTE, rel->p);
+	return rel;
 }
 
 static sql_rel*
@@ -480,15 +376,17 @@ rel_propagate_update(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 
 	if(!found_partition_col) { //easy scenario where the partitioned column is not being updated, just propagate
 		sel = rel_generate_subupdates(sql, rel, t, changes);
-		return rel_ddl_distribute(sql->sa, sel, NULL, NULL);
+		sel = rel_exception(sql->sa, sel, NULL, NULL);
+		sel->p = prop_create(sql->sa, PROP_DISTRIBUTE, sel->p);
+		return sel;
 	} else { //harder scenario, has to insert and delete across partitions.
 		/*sql_exp *exception = NULL;
 		sql_rel *inserts = NULL, *deletes = NULL, *anti_rel = NULL;
 
 		deletes = rel_generate_subdeletes(sql, rel, t, changes);
-		deletes = rel_ddl_distribute(sql->sa, deletes, NULL, NULL);
+		deletes = rel_exception(sql->sa, deletes, NULL, NULL);
 		inserts = rel_generate_subinserts(sql, rel, &anti_rel, &exception, t, changes, "UPDATE", "update");
-		inserts = rel_ddl_distribute(sql->sa, inserts, anti_rel, list_append(new_exp_list(sql->sa), exception));
+		inserts = rel_exception(sql->sa, inserts, anti_rel, list_append(new_exp_list(sql->sa), exception));
 		return rel_list(sql->sa, deletes, inserts);*/
 		assert(0);
 	}
@@ -533,7 +431,6 @@ rel_subtable_insert(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 
 	//generate a count aggregation for the values not present in any of the partitions
 	anti_dup = rel_select(sql->sa, anti_dup, anti_exp);
-	anti_dup = rel_project(sql->sa, anti_dup, rel_projections(sql, anti_dup, NULL, 1, 1));
 	anti_dup = rel_groupby(sql, anti_dup, NULL);
 	aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, anti_dup->card, 0);
 	(void) rel_groupby_add_aggr(sql, anti_dup, aggr);
@@ -549,7 +446,10 @@ rel_subtable_insert(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 
 	left->p = prop_create(sql->sa, PROP_USED, left->p);
 	(*changes)++;
-	return rel_ddl_distribute(sql->sa, rel, anti_dup, list_append(new_exp_list(sql->sa), exception));
+
+	rel = rel_exception(sql->sa, rel, anti_dup, list_append(new_exp_list(sql->sa), exception));
+	rel->p = prop_create(sql->sa, PROP_DISTRIBUTE, rel->p);
+	return rel;
 }
 
 sql_rel *

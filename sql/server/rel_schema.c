@@ -115,30 +115,88 @@ rel_alter_table_add_partition_range(sql_allocator *sa, char *sname, char *tname,
 }
 
 static sql_rel *
-rel_alter_table_add_partition_list(sql_allocator *sa, char *sname, char *tname, char *sname2, char *tname2,
-									int with_nils, list* ll)
+rel_alter_table_add_partition_list(mvc *sql, sql_table *mt, sql_table *pt, char *sname, char *tname, char *sname2,
+								   char *tname2, dlist* values)
 {
-	sql_rel *rel = rel_create(sa);
-	list *exps = new_exp_list(sa);
-	if(!rel || !exps)
+	sql_rel *rel_psm = rel_create(sql->sa), *anti_rel;
+	list *exps = new_exp_list(sql->sa), *anti_exps = new_exp_list(sql->sa), *lvals = new_exp_list(sql->sa);
+	sql_exp *exception, *aggr, *anti_exp, *anti_le;
+	sql_column *col = mt->pcol;
+	sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
+	int with_nills = 0, colr = mt->pcol->colnr;
+	char buf[BUFSIZ];
+
+	if(!rel_psm || !exps)
 		return NULL;
 
-	append(exps, exp_atom_clob(sa, sname));
-	append(exps, exp_atom_clob(sa, tname));
+	anti_rel = rel_basetable(sql, pt, tname2);
+	anti_le = list_fetch(anti_rel->exps, colr);
+	anti_le = exp_column(sql->sa, exp_relname(anti_le), exp_name(anti_le), exp_subtype(anti_le),
+						 anti_le->card, has_nil(anti_le), is_intern(anti_le));
+	anti_rel->exps = new_exp_list(sql->sa);
+	append(anti_rel->exps, anti_le);
+
+	for (dnode *dn = values->h; dn ; dn = dn->next) { /* parse the atoms and generate the expressions */
+		symbol* next = dn->data.sym;
+		if(next->token == SQL_NULL || next->token == SQL_COLUMN) {
+			with_nills = 1;
+		} else {
+			atom *a = ((AtomNode *) next)->a;
+			char *nvalue = atom2string(sql->sa, a);
+			sql_exp *nval = create_table_part_atom_exp(sql, a->tpe, VALget(&a->data));
+			if (subtype_cmp(&a->tpe, &col->type) != 0)
+				nval = exp_convert(sql->sa, nval, &a->tpe, &col->type);
+
+			append(lvals, exp_atom_clob(sql->sa, nvalue));
+			append(anti_exps, nval);
+		}
+	}
+
+	if(list_length(anti_exps) > 0) {
+		anti_exp = exp_in(sql->sa, anti_le, anti_exps, cmp_notin);
+		if(!with_nills) {
+			sql_exp *anti_nils = rel_unop_(sql, anti_le, NULL, "isnull", card_value);
+			anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
+			anti_exp = exp_or(sql->sa, append(new_exp_list(sql->sa), anti_exp),
+							  append(new_exp_list(sql->sa), anti_nils), 0);
+		}
+	} else {
+		assert(with_nills);
+		sql_exp *anti_nils = rel_unop_(sql, anti_le, NULL, "isnull", card_value);
+		anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_notequal);
+	}
+
+	anti_rel = rel_select(sql->sa, anti_rel, anti_exp);
+	anti_rel = rel_groupby(sql, anti_rel, NULL);
+	aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, anti_rel->card, 0);
+	(void) rel_groupby_add_aggr(sql, anti_rel, aggr);
+	exp_label(sql->sa, aggr, ++sql->label);
+
+	//generate the exception
+	aggr = exp_column(sql->sa, exp_relname(aggr), exp_name(aggr), exp_subtype(aggr), aggr->card, has_nil(aggr),
+					  is_intern(aggr));
+	snprintf(buf, BUFSIZ, "ALTER TABLE: there are values in the column %s not according to the partition values list",
+			 col->base.name);
+	exception = exp_exception(sql->sa, aggr, buf);
+
+	//generate the psm statement
+	append(exps, exp_atom_clob(sql->sa, sname));
+	append(exps, exp_atom_clob(sql->sa, tname));
 	assert((sname2 && tname2) || (!sname2 && !tname2));
 	if (sname2) {
-		append(exps, exp_atom_clob(sa, sname2));
-		append(exps, exp_atom_clob(sa, tname2));
+		append(exps, exp_atom_clob(sql->sa, sname2));
+		append(exps, exp_atom_clob(sql->sa, tname2));
 	}
-	append(exps, exp_atom_int(sa, with_nils));
-	rel->l = NULL;
-	rel->r = NULL;
-	rel->op = op_ddl;
-	rel->flag = DDL_ALTER_TABLE_ADD_LIST_PARTITION;
-	rel->exps = list_merge(exps, ll, (fdup)NULL);
-	rel->card = CARD_MULTI;
-	rel->nrcols = 0;
-	return rel;
+	append(exps, exp_atom_int(sql->sa, with_nills));
+	rel_psm->l = NULL;
+	rel_psm->r = NULL;
+	rel_psm->op = op_ddl;
+	rel_psm->flag = DDL_ALTER_TABLE_ADD_LIST_PARTITION;
+	rel_psm->exps = list_merge(exps, lvals, (fdup)NULL);
+	rel_psm->card = CARD_MULTI;
+	rel_psm->nrcols = 0;
+
+	return rel_exception(sql->sa, rel_psm, anti_rel, list_append(new_exp_list(sql->sa), exception));
 }
 
 sql_rel *
@@ -1457,12 +1515,22 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 
 		if (te && (te->token == SQL_TABLE || te->token == SQL_DROP_TABLE)) {
 			dlist *nqname = te->data.lval->h->data.lval;
+			sql_schema *spt;
+			sql_table *pt;
 			char *nsname = qname_schema(nqname);
 			char *ntname = qname_table(nqname);
 
 			/* partition sname */
 			if (!nsname)
 				nsname = sname;
+
+			if (nsname && !(spt=mvc_bind_schema(sql, nsname))) {
+				(void) sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", sname);
+				return NULL;
+			}
+			if ((pt = mvc_bind_table(sql, spt, ntname)) == NULL)
+				return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", ntname, spt->base.name);
+
 			if (te->token == SQL_TABLE) {
 				if(!extra)
 					return rel_alter_table(sql->sa, DDL_ALTER_TABLE_ADD_TABLE, sname, tname, sname, ntname, 0);
@@ -1509,24 +1577,13 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 					return rel_alter_table_add_partition_range(sql->sa, sname, tname, sname, ntname, amin, amax, nills);
 				} else if(extra->token == SQL_PARTITION_LIST) {
 					dlist* ll = extra->data.lval, *values = ll->h->data.lval;
-					list *lvals = new_exp_list(sql->sa);
-					int with_nils = 0;
 
 					if(t->type != tt_list_partition) {
 						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a value partition into a %s table",
 								(t->type == tt_merge_table)?"merge":"range partition");
 					}
 
-					for (dnode *dn = values->h; dn ; dn = dn->next) {
-						symbol* next = dn->data.sym;
-						if(next->token == SQL_NULL || next->token == SQL_COLUMN) {
-							with_nils = 1;
-						} else {
-							char *nvalue = atom2string(sql->sa, ((AtomNode *) next)->a);
-							append(lvals, exp_atom_clob(sql->sa, nvalue));
-						}
-					}
-					return rel_alter_table_add_partition_list(sql->sa, sname, tname, sname, ntname, with_nils, lvals);
+					return rel_alter_table_add_partition_list(sql, t, pt, sname, tname, sname, ntname, values);
 				}
 				assert(0);
 			} else {

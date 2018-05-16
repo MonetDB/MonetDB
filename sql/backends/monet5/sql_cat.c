@@ -394,12 +394,10 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 {
 	sql_table *mt = NULL, *pt = NULL;
 	str msg = MAL_SUCCEED, escaped = NULL;
-	sql_column *col = NULL, *bcol = NULL;
+	sql_column *col = NULL;
 	sql_part *err = NULL;
 	int tp1 = 0, errcode = 0, i = 0, ninserts = 0;
-	BAT *b = NULL, *cbind = NULL, *diff = NULL;
 	list *values = list_new(sql->sa, (fdestroy) NULL);
-	int accesses[3] = {RDONLY, RD_INS, RD_UPD_VAL};
 
 	if((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_value_partition", msname, mtname, psname, ptname, &mt, &pt))) {
 		return msg;
@@ -420,16 +418,6 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 	ninserts = pci->argc - pci->retc - 5;
 	if(ninserts <= 0 && !with_nills) {
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000) "ALTER TABLE: no values in the list");
-		goto finish;
-	}
-	b = COLnew(0, tp1, ninserts, TRANSIENT);
-	if (!b){
-		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-		goto finish;
-	}
-
-	if (with_nills && BUNappend(b, ATOMnilptr(tp1), FALSE) != GDK_SUCCEED) {
-		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		goto finish;
 	}
 	for( i = pci->retc+5; i < pci->argc; i++){
@@ -467,10 +455,6 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 																			"ALTER TABLE: list value cannot be null");
 			goto finish;
-		} else if (BUNappend(b, pnext, FALSE) != GDK_SUCCEED) {
-			GDKfree(pnext);
-			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			goto finish;
 		}
 
 		nextv = SA_ZNEW(sql->session->tr->sa, sql_part_value); /* instantiate the part value */
@@ -486,32 +470,6 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 			goto finish;
 		}
 		GDKfree(pnext);
-	}
-
-	bcol = mvc_bind_column(sql, pt, col->base.name); /* check if the values in the column are proper to the partition */
-	for(i = 0 ; i < 3 ; i++) {
-		if(cbind) {
-			BBPunfix(cbind->batCacheid);
-			cbind = NULL;
-		}
-		if(diff) {
-			BBPunfix(diff->batCacheid);
-			diff = NULL;
-		}
-		if((cbind = store_funcs.bind_col(sql->session->tr, bcol, accesses[i])) == NULL) {
-			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			goto finish;
-		}
-		if((diff = BATdiff(cbind, b, NULL, NULL, 0, BUN_NONE)) == NULL) {
-			msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			goto finish;
-		}
-		if(BATcount(diff) > 0) {
-			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
-									"ALTER TABLE: there are values in the column %s not according to the partition values list",
-									col->base.name);
-			goto finish;
-		}
 	}
 
 	errcode = sql_trans_add_value_partition(sql->session->tr, mt, pt, col->type, values, with_nills, &err);
@@ -533,12 +491,6 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 finish:
 	if(escaped)
 		GDKfree(escaped);
-	if(b)
-		BBPunfix(b->batCacheid);
-	if(cbind)
-		BBPunfix(cbind->batCacheid);
-	if(diff)
-		BBPunfix(diff->batCacheid);
 	if(msg != MAL_SUCCEED)
 		pt->p = NULL;
 	return msg;

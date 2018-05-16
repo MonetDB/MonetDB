@@ -26,8 +26,8 @@ DDL 	(card 0!, top of the tree always)
 	-> exps		For 'OUTPUT' is list of output options, for DISTRIBUTE has a single exception expression
 			For 'transactions' simple flags
 			for CREATE etc full sql string.
-	-> l		used in DDL_OUTPUT as the relation to output and DDL_DISTRIBUTE as a DDL_LIST
-	-> r		used in DDL_LIST and DDL_DISTRIBUTE
+	-> l		used in DDL_OUTPUT as the relation to output and DDL_EXCEPTION as a DDL_LIST
+	-> r		used in DDL_LIST and DDL_EXCEPTION
 
 SELECT 	(card MULTI or same ...?) 
 	-> exps		selection expressions (ie all e_cmp)

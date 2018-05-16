@@ -4900,13 +4900,13 @@ rel2bin_psm(backend *be, sql_rel *rel)
 }
 
 static stmt *
-rel2bin_distribute(backend *be, sql_rel *rel, list *refs)
+rel2bin_exception(backend *be, sql_rel *rel, list *refs)
 {
 	stmt *l = NULL, *r = NULL;
 	node *n = NULL;
 	sql_exp *except = NULL;
 
-	if(be->cur_append == 0) /* create affected rows accumulator */
+	if(find_prop(rel->p, PROP_DISTRIBUTE) && be->cur_append == 0) /* create affected rows accumulator */
 		create_merge_partitions_accumulator(be);
 
 	if (rel->l)  /* first construct the sub relation */
@@ -5065,8 +5065,8 @@ rel2bin_ddl(backend *be, sql_rel *rel, list *refs)
 		s = rel2bin_list(be, rel, refs);
 	} else if (rel->flag == DDL_PSM) {
 		s = rel2bin_psm(be, rel);
-	} else if (rel->flag == DDL_DISTRIBUTE) {
-		s = rel2bin_distribute(be, rel, refs);
+	} else if (rel->flag == DDL_EXCEPTION) {
+		s = rel2bin_exception(be, rel, refs);
 		sql->type = Q_UPDATE;
 	} else if (rel->flag <= DDL_ALTER_SEQ) {
 		s = rel2bin_seq(be, rel, refs);
@@ -5427,7 +5427,7 @@ rel_deps(sql_allocator *sa, sql_rel *r, list *refs, list *l)
 		if (r->flag == DDL_OUTPUT) {
 			if (r->l)
 				return rel_deps(sa, r->l, refs, l);
-		} else if (r->flag <= DDL_LIST || r->flag == DDL_DISTRIBUTE) {
+		} else if (r->flag <= DDL_LIST || r->flag == DDL_EXCEPTION) {
 			if (r->l)
 				return rel_deps(sa, r->l, refs, l);
 			if (r->r)

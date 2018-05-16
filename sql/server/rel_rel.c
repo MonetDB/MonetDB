@@ -820,6 +820,20 @@ rel_project(sql_allocator *sa, sql_rel *l, list *e)
 }
 
 sql_rel *
+rel_exception(sql_allocator *sa, sql_rel *l, sql_rel *r, list *exps)
+{
+	sql_rel *rel = rel_create(sa);
+	if(!rel)
+		return NULL;
+	rel->l = l;
+	rel->r = r;
+	rel->exps = exps;
+	rel->op = op_ddl;
+	rel->flag = DDL_EXCEPTION;
+	return rel;
+}
+
+sql_rel *
 rel_relational_func(sql_allocator *sa, sql_rel *l, list *exps)
 {
 	sql_rel *rel = rel_create(sa);

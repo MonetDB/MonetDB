@@ -153,4 +153,6 @@ extern atom *exp_flatten(mvc *sql, sql_exp *e);
 
 extern void exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r);
 
+extern sql_exp *create_table_part_atom_exp(mvc *sql, sql_subtype tpe, ptr value);
+
 #endif /* _REL_EXP_H_ */
