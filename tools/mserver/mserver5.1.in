@@ -197,7 +197,7 @@ these debug flags as well:
   \-\-performance   (DEADBEEFMASK)
   \-\-optimizers    (OPTMASK)
   \-\-forcemito     (FORCEMITOMASK | NOSYNCMASK)
-  \-\-viewless      (VIEWLESSMASK | CHECKMASK | PROPMASK | BATMASK)
+  \-\-viewless      (VIEWLESSMASK | PROPMASK)
 .EE
 
 Default:

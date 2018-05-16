@@ -73,7 +73,7 @@ mal_export int have_hge;
 #define GRPperformance (DEADBEEFMASK)
 #define GRPoptimizers  (OPTMASK)
 #define GRPforcemito (FORCEMITOMASK | NOSYNCMASK)
-#define GRPviewless (VIEWLESSMASK | CHECKMASK | PROPMASK | BATMASK)
+#define GRPviewless (VIEWLESSMASK | PROPMASK)
 
 mal_export MT_Lock  mal_contextLock;
 mal_export MT_Lock  mal_remoteLock;
