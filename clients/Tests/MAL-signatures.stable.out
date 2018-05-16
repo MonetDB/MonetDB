@@ -10904,6 +10904,7 @@ Ready.
 [ "sql",	"round",	"command sql.round(v:lng, d:int, s:int, r:bte):lng ",	"lng_round_wrap;",	"round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)"	]
 [ "sql",	"round",	"command sql.round(v:sht, d:int, s:int, r:bte):sht ",	"sht_round_wrap;",	"round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)"	]
 [ "sql",	"row_number",	"pattern sql.row_number(b:any_1, p:bit, o:bit):int ",	"SQLrow_number;",	"return the row_numer-ed groups"	]
+[ "sql",	"rt_credentials",	"pattern sql.rt_credentials(tablename:str) (uri:bat[:str], username:bat[:str], hash:bat[:str]) ",	"sql_rt_credentials_wrap;",	"Return the remote table credentials for the given table"	]
 [ "sql",	"sessions",	"pattern sql.sessions() (user:bat[:str], start:bat[:timestamp], stimeout:bat[:lng], lastcmd:bat[:timestamp], qtimeout:bat[:lng], idle:bat[:bit]) ",	"sql_sessions_wrap;",	"SQL export table of active sessions, their timeouts and idle status"	]
 [ "sql",	"setVariable",	"pattern sql.setVariable(mvc:int, varname:str, value:any_1):int ",	"setVariable;",	"Set the value of a session variable"	]
 [ "sql",	"shrink",	"pattern sql.shrink(sch:str, tbl:str):void ",	"SQLshrink;",	"Consolidate the deletion table over all columns using shrinking"	]
