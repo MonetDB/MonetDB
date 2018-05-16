@@ -874,14 +874,14 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 			char *rt_user = NULL;
 			char *rt_hash = NULL;
 			snprintf(query, maxquerylen,
-				 "SELECT * FROM sys.remote_table_credentials('%s.%s')",
+				 "SELECT username, hash FROM sys.remote_table_credentials('%s.%s')",
 				 schema, tname);
 			if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 				goto bailout;
 			cnt = 0;
 			while(mapi_fetch_row(hdl) != 0) {
-				rt_user = mapi_fetch_field(hdl, 1);
-				rt_hash = mapi_fetch_field(hdl, 2);
+				rt_user = mapi_fetch_field(hdl, 0);
+				rt_hash = mapi_fetch_field(hdl, 1);
 			}
 			mnstr_printf(toConsole, " ON '%s' WITH USER '%s' ENCRYPTED PASSWORD '%s'", view, rt_user, rt_hash);
 		}
