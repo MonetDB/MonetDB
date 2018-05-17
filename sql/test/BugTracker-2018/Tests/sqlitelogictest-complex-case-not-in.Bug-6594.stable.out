@@ -29,7 +29,7 @@ Ready.
 #ELSE NULL END ) AS BIGINT) AS col2;
 % .L14 # table_name
 % col2 # name
-% bigint # type
+% hugeint # type
 % 1 # length
 [ NULL	]
 
