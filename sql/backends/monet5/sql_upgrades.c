@@ -1509,7 +1509,7 @@ sql_update_mar2018_sp1(Client c, mvc *sql)
 	char *schema = stack_get_string(sql, "current_schema");
 
 	if (buf == NULL)
-		throw(SQL, "sql_update_dec2016_sp3", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		throw(SQL, "sql_update_mar2018_sp1", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	pos += snprintf(buf + pos, bufsize - pos,
 			"set schema \"sys\";\n"
 			"drop function sys.dependencies_functions_os_triggers();\n"
