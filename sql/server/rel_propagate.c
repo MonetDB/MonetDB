@@ -461,9 +461,14 @@ rel_propagate(mvc *sql, sql_rel *rel, int *changes)
 			} else {
 				assert(0);
 			}
-		} else if(t->p && (isRangePartitionTable(t->p) || isListPartitionTable(t->p)) && !find_prop(l->p, PROP_USED)) {
-			if(is_insert(rel->op)) { //insertion directly to sub-table (must do validation)
-				return rel_subtable_insert(sql, rel, t, changes);
+		} else if(t->p) {
+			sql_part *pt = find_sql_part(t->p, t->base.name);
+			if(!pt) {
+				t->p = NULL;
+			} else if((isRangePartitionTable(t->p) || isListPartitionTable(t->p)) && !find_prop(l->p, PROP_USED)) {
+				if(is_insert(rel->op)) { //insertion directly to sub-table (must do validation)
+					return rel_subtable_insert(sql, rel, t, changes);
+				}
 			}
 		}
 	}

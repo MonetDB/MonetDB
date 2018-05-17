@@ -1060,7 +1060,8 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 }
 
 static int
-create_partition_column(mvc *sql, sql_table *t, int tt, symbol* partition_def) {
+create_partition_column(mvc *sql, sql_table *t, int tt, symbol* partition_def)
+{
 	if((tt == tt_list_partition || tt == tt_range_partition) && partition_def) {
 		dlist* list = partition_def->data.lval;
 		str colname = list->h->next->data.sval;
