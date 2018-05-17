@@ -31,7 +31,7 @@ stderr of test 'mergepart04` in directory 'sql/test/merge-partitions` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-7375/.s.monetdb.31177
 QUERY = ALTER TABLE anothertest ADD TABLE subtest2 AS PARTITION IN ('12', '-1', '100'); --error
-ERROR = !ALTER TABLE: there are values in the column a not according to the partition values list
+ERROR = !ALTER TABLE: there are values in the column a which is outside the partition list of values
 CODE  = M0M29
 
 # 14:38:51 >  

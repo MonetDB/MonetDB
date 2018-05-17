@@ -49,9 +49,9 @@ ERROR = !ALTER TABLE: table 'sys.subtable1' isn't part of the MERGE TABLE 'sys.l
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-2104/.s.monetdb.37654
 QUERY = ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN 10 AND 100; --error
-ERROR = !ALTER TABLE: there are null values in the column which is not allowed for this partition
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-2104/.s.monetdb.37654
+ERROR = !ALTER TABLE: there are values in the column a, outside the partition range
+CODE  = M0M29
+MAPI  = (monetdb) /var/tmp/mtest-14313/.s.monetdb.34865
 QUERY = ALTER TABLE anothertest ADD TABLE othersub1 AS PARTITION BETWEEN NULL AND 'nono'; --error
 ERROR = !syntax error, unexpected sqlNULL in: "alter table anothertest add table othersub1 as partition between null"
 CODE  = 42000
@@ -69,8 +69,8 @@ ERROR = !ALTER TABLE: table 'sys.othersub1' is already part of the MERGE TABLE '
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-2104/.s.monetdb.37654
 QUERY = ALTER TABLE anothertest ADD TABLE othersub1 AS PARTITION BETWEEN 'a' AND 'string'; --error
-ERROR = !ALTER TABLE: there are null values in the column which is not allowed for this partition
-CODE  = 42000
+ERROR = !ALTER TABLE: there are values in the column b, outside the partition range
+CODE  = M0M29
 
 # 10:46:33 >  
 # 10:46:33 >  "Done."

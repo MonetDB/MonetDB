@@ -74,8 +74,8 @@ Ready.
 #START TRANSACTION;
 #ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN '-4' AND '12';
 #SELECT COUNT(*) from range_partitions;
-% .L22 # table_name
-% L21 # name
+% .L23 # table_name
+% L23 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -83,15 +83,15 @@ Ready.
 #INSERT INTO subtable2 VALUES (1, 'hello');
 [ 1	]
 #SELECT COUNT(*) from range_partitions;
-% .L22 # table_name
-% L21 # name
+% .L23 # table_name
+% L23 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION BETWEEN '-4' AND '12';
 #SELECT COUNT(*) from range_partitions;
-% .L22 # table_name
-% L21 # name
+% .L23 # table_name
+% L23 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -99,8 +99,8 @@ Ready.
 #INSERT INTO subtable2 VALUES (-5, 'oh no');
 [ 1	]
 #SELECT COUNT(*) from range_partitions;
-% .L22 # table_name
-% L21 # name
+% .L23 # table_name
+% L23 # name
 % bigint # type
 % 1 # length
 [ 0	]

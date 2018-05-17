@@ -4904,7 +4904,7 @@ rel2bin_exception(backend *be, sql_rel *rel, list *refs)
 {
 	stmt *l = NULL, *r = NULL;
 	node *n = NULL;
-	sql_exp *except = NULL;
+	list *slist = sa_list(be->mvc->sa);
 
 	if(find_prop(rel->p, PROP_DISTRIBUTE) && be->cur_append == 0) /* create affected rows accumulator */
 		create_merge_partitions_accumulator(be);
@@ -4914,16 +4914,17 @@ rel2bin_exception(backend *be, sql_rel *rel, list *refs)
     if (rel->r)  /* first construct the sub relation */
 		r = subrel_bin(be, rel->r, refs);
 
-	if(rel->exps && list_length(rel->exps) == 1) {
-		n = rel->exps->h;
-		except = n->data;
-		return exp_bin(be, except, l, r, NULL, NULL, NULL, NULL);
+	if(rel->exps) {
+		for(n = rel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			stmt *s = exp_bin(be, e, l, r, NULL, NULL, NULL, NULL);
+			append(slist, s);
+		}
 	} else { //if there is no exception condition, just generate a statement list
-		list *slist = sa_list(be->mvc->sa);
 		list_append(slist, l);
 		list_append(slist, r);
-		return stmt_list(be, slist);
 	}
+	return stmt_list(be, slist);
 }
 
 static stmt *

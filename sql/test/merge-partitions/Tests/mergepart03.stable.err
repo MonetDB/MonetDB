@@ -31,8 +31,8 @@ stderr of test 'mergepart03` in directory 'sql/test/merge-partitions` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-5513/.s.monetdb.32409
 QUERY = ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION BETWEEN '-1' AND 12000; --error
-ERROR = !ALTER TABLE: there are values in the column a with values lesser than the partition minimum
-CODE  = 42000
+ERROR = !ALTER TABLE: there are values in the column a, outside the partition range
+CODE  = M0M29
 
 # 14:10:55 >  
 # 14:10:55 >  "Done."

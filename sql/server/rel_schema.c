@@ -85,33 +85,81 @@ rel_alter_table(sql_allocator *sa, int cattype, char *sname, char *tname, char *
 }
 
 static sql_rel *
-rel_alter_table_add_partition_range(sql_allocator *sa, char *sname, char *tname, char *sname2, char *tname2, atom* min,
-									atom* max, int with_nills)
+rel_alter_table_add_partition_range(mvc* sql, sql_table *mt, sql_table *pt, char *sname, char *tname, char *sname2,
+									char *tname2, atom* min, atom* max, int with_nills)
 {
-	sql_rel *rel = rel_create(sa);
-	list *exps = new_exp_list(sa);
-	char *pmin = min ? atom2string(sa, min): NULL, *pmax = max ? atom2string(sa, max) : NULL;
-	if(!rel || !exps)
+	sql_rel *rel_psm = rel_create(sql->sa), *anti_rel;
+	list *exps = new_exp_list(sql->sa);
+	sql_exp *exception, *aggr, *anti_exp = NULL, *anti_le, *e1, *e2, *anti_nils;
+	sql_column *col = mt->pcol;
+	sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
+	int colr = mt->pcol->colnr;
+	char buf[BUFSIZ], *pmin = min ? atom2string(sql->sa, min): NULL, *pmax = max ? atom2string(sql->sa, max) : NULL;
+
+	if(!rel_psm || !exps)
 		return NULL;
 
-	append(exps, exp_atom_clob(sa, sname));
-	append(exps, exp_atom_clob(sa, tname));
+	anti_rel = rel_basetable(sql, pt, tname2);
+	anti_le = list_fetch(anti_rel->exps, colr);
+	anti_le = exp_column(sql->sa, exp_relname(anti_le), exp_name(anti_le), exp_subtype(anti_le),
+						 anti_le->card, has_nil(anti_le), is_intern(anti_le));
+	anti_rel->exps = new_exp_list(sql->sa);
+	append(anti_rel->exps, anti_le);
+	anti_nils = rel_unop_(sql, anti_le, NULL, "isnull", card_value);
+
+	assert((!min && !max && with_nills) || (min && max));
+	if(min && max) {
+		e1 = create_table_part_atom_exp(sql, min->tpe, VALget(&min->data));
+		if (subtype_cmp(&e1->tpe, &col->type) != 0)
+			e1 = exp_convert(sql->sa, e1, &e1->tpe, &col->type);
+
+		e2 = create_table_part_atom_exp(sql, max->tpe, VALget(&max->data));
+		if (subtype_cmp(&e2->tpe, &col->type) != 0)
+			e2 = exp_convert(sql->sa, e2, &e2->tpe, &col->type);
+
+		anti_exp = exp_compare2(sql->sa, anti_le, e1, e2, 3);
+		set_anti(anti_exp);
+		if(!with_nills) {
+			anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
+			anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), anti_exp),
+							  list_append(new_exp_list(sql->sa), anti_nils), 0);
+		}
+	} else {
+		anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_notequal);
+	}
+
+	anti_rel = rel_select(sql->sa, anti_rel, anti_exp);
+	anti_rel = rel_groupby(sql, anti_rel, NULL);
+	aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, anti_rel->card, 0);
+	(void) rel_groupby_add_aggr(sql, anti_rel, aggr);
+	exp_label(sql->sa, aggr, ++sql->label);
+
+	//generate the exception
+	aggr = exp_column(sql->sa, exp_relname(aggr), exp_name(aggr), exp_subtype(aggr), aggr->card, has_nil(aggr),
+					  is_intern(aggr));
+	snprintf(buf, BUFSIZ, "ALTER TABLE: there are values in the column %s, outside the partition range", col->base.name);
+	exception = exp_exception(sql->sa, aggr, buf);
+
+	//generate the psm statement
+	append(exps, exp_atom_clob(sql->sa, sname));
+	append(exps, exp_atom_clob(sql->sa, tname));
 	assert((sname2 && tname2) || (!sname2 && !tname2));
 	if (sname2) {
-		append(exps, exp_atom_clob(sa, sname2));
-		append(exps, exp_atom_clob(sa, tname2));
+		append(exps, exp_atom_clob(sql->sa, sname2));
+		append(exps, exp_atom_clob(sql->sa, tname2));
 	}
-	append(exps, exp_atom_clob(sa, pmin));
-	append(exps, exp_atom_clob(sa, pmax));
-	append(exps, exp_atom_int(sa, with_nills));
-	rel->l = NULL;
-	rel->r = NULL;
-	rel->op = op_ddl;
-	rel->flag = DDL_ALTER_TABLE_ADD_RANGE_PARTITION;
-	rel->exps = exps;
-	rel->card = CARD_MULTI;
-	rel->nrcols = 0;
-	return rel;
+	append(exps, exp_atom_clob(sql->sa, pmin));
+	append(exps, exp_atom_clob(sql->sa, pmax));
+	append(exps, exp_atom_int(sql->sa, with_nills));
+	rel_psm->l = NULL;
+	rel_psm->r = NULL;
+	rel_psm->op = op_ddl;
+	rel_psm->flag = DDL_ALTER_TABLE_ADD_RANGE_PARTITION;
+	rel_psm->exps = exps;
+	rel_psm->card = CARD_MULTI;
+	rel_psm->nrcols = 0;
+
+	return rel_exception(sql->sa, rel_psm, anti_rel, list_append(new_exp_list(sql->sa), exception));
 }
 
 static sql_rel *
@@ -120,7 +168,7 @@ rel_alter_table_add_partition_list(mvc *sql, sql_table *mt, sql_table *pt, char 
 {
 	sql_rel *rel_psm = rel_create(sql->sa), *anti_rel;
 	list *exps = new_exp_list(sql->sa), *anti_exps = new_exp_list(sql->sa), *lvals = new_exp_list(sql->sa);
-	sql_exp *exception, *aggr, *anti_exp, *anti_le;
+	sql_exp *exception, *aggr, *anti_exp, *anti_le, *anti_nils;
 	sql_column *col = mt->pcol;
 	sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
 	int with_nills = 0, colr = mt->pcol->colnr;
@@ -135,6 +183,7 @@ rel_alter_table_add_partition_list(mvc *sql, sql_table *mt, sql_table *pt, char 
 						 anti_le->card, has_nil(anti_le), is_intern(anti_le));
 	anti_rel->exps = new_exp_list(sql->sa);
 	append(anti_rel->exps, anti_le);
+	anti_nils = rel_unop_(sql, anti_le, NULL, "isnull", card_value);
 
 	for (dnode *dn = values->h; dn ; dn = dn->next) { /* parse the atoms and generate the expressions */
 		symbol* next = dn->data.sym;
@@ -155,14 +204,12 @@ rel_alter_table_add_partition_list(mvc *sql, sql_table *mt, sql_table *pt, char 
 	if(list_length(anti_exps) > 0) {
 		anti_exp = exp_in(sql->sa, anti_le, anti_exps, cmp_notin);
 		if(!with_nills) {
-			sql_exp *anti_nils = rel_unop_(sql, anti_le, NULL, "isnull", card_value);
 			anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
 			anti_exp = exp_or(sql->sa, append(new_exp_list(sql->sa), anti_exp),
 							  append(new_exp_list(sql->sa), anti_nils), 0);
 		}
 	} else {
 		assert(with_nills);
-		sql_exp *anti_nils = rel_unop_(sql, anti_le, NULL, "isnull", card_value);
 		anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_notequal);
 	}
 
@@ -175,8 +222,8 @@ rel_alter_table_add_partition_list(mvc *sql, sql_table *mt, sql_table *pt, char 
 	//generate the exception
 	aggr = exp_column(sql->sa, exp_relname(aggr), exp_name(aggr), exp_subtype(aggr), aggr->card, has_nil(aggr),
 					  is_intern(aggr));
-	snprintf(buf, BUFSIZ, "ALTER TABLE: there are values in the column %s not according to the partition values list",
-			 col->base.name);
+	snprintf(buf, BUFSIZ, "ALTER TABLE: there are values in the column %s which is outside the partition list of values",
+			col->base.name);
 	exception = exp_exception(sql->sa, aggr, buf);
 
 	//generate the psm statement
@@ -1574,7 +1621,7 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 					} else if(max) {
 						amax = ((AtomNode *) max)->a;
 					}
-					return rel_alter_table_add_partition_range(sql->sa, sname, tname, sname, ntname, amin, amax, nills);
+					return rel_alter_table_add_partition_range(sql, t, pt, sname, tname, sname, ntname, amin, amax, nills);
 				} else if(extra->token == SQL_PARTITION_LIST) {
 					dlist* ll = extra->data.lval, *values = ll->h->data.lval;
 
