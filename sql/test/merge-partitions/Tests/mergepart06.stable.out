@@ -104,9 +104,9 @@ Ready.
 [ 102,	"successful"	]
 [ 401,	"c"	]
 [ 401,	"another"	]
+[ NULL,	"test"	]
 [ 450,	"to"	]
 [ 500,	"pass"	]
-[ NULL,	"test"	]
 [ NULL,	"attempt"	]
 #SELECT a,b FROM sublimits1;
 % sys.sublimits1,	sys.sublimits1 # table_name
@@ -132,9 +132,9 @@ Ready.
 % 3,	7 # length
 [ 401,	"c"	]
 [ 401,	"another"	]
+[ NULL,	"test"	]
 [ 450,	"to"	]
 [ 500,	"pass"	]
-[ NULL,	"test"	]
 [ NULL,	"attempt"	]
 #ALTER TABLE testrangelimits DROP TABLE sublimits1;
 #ALTER TABLE testrangelimits DROP TABLE sublimits2;

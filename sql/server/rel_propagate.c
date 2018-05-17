@@ -239,36 +239,26 @@ rel_generate_subinserts(mvc *sql, sql_rel *rel, sql_rel **anti_rel, sql_exp **ex
 		le = exp_column(sql->sa, exp_relname(le), exp_name(le), exp_subtype(le), le->card, has_nil(le), is_intern(le));
 
 		if(isRangePartitionTable(t)) {
-			sql_exp *e1, *e2;
-
+			sql_exp *e1, *e2, *range;
 			e1 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.minvalue);
 			e2 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.maxvalue);
-			dup = rel_compare_exp_(sql, dup, le, e1, e2, 3, 0);
+			range = exp_compare2(sql->sa, le, e1, e2, 3);
 
 			if(accum) {
-				sql_exp *nr = exp_compare2(sql->sa, anti_le, exp_copy(sql->sa, e1), exp_copy(sql->sa, e2), 3);
-				accum = exp_or(sql->sa, list_append(new_exp_list(sql->sa), accum),
-							   list_append(new_exp_list(sql->sa), nr), 1);
+				accum = exp_or(sql->sa, list_append(new_exp_list(sql->sa), exp_copy(sql->sa, range)),
+							   list_append(new_exp_list(sql->sa), accum), 1);
 			} else {
-				accum = exp_compare2(sql->sa, anti_le, exp_copy(sql->sa, e1), exp_copy(sql->sa, e2), 3);
+				accum = exp_copy(sql->sa, range);
 			}
 
 			if(pt->with_nills) { /* handle the nulls case */
-				sql_rel *extra;
-				sql_exp *nils = rel_unop_(sql, le, NULL, "isnull", card_value),
-						*anti_nils = rel_unop_(sql, anti_le, NULL, "isnull", card_value);
+				sql_exp *nils = rel_unop_(sql, le, NULL, "isnull", card_value);
 				nils = exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_equal);
-
-				if(accum) {
-					sql_exp *nr = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_notequal);
-					accum = exp_or(sql->sa, list_append(new_exp_list(sql->sa), accum),
-								   list_append(new_exp_list(sql->sa), nr), 1);
-				} else {
-					accum = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_notequal);
-				}
-				extra = rel_select(sql->sa, rel->r, nils);
-				dup = rel_or(sql, NULL, dup, extra, NULL, NULL, NULL);
+				range = exp_or(sql->sa, list_append(new_exp_list(sql->sa), range),
+							   list_append(new_exp_list(sql->sa), nils), 0);
+				found_nils = 1;
 			}
+			dup = rel_select(sql->sa, dup, range);
 		} else if(isListPartitionTable(t)) {
 			sql_exp *ein;
 			list *exps = new_exp_list(sql->sa);
@@ -314,14 +304,14 @@ rel_generate_subinserts(mvc *sql, sql_rel *rel, sql_rel **anti_rel, sql_exp **ex
 		anti_exp = accum;
 	} else if(isListPartitionTable(t)) {
 		anti_exp = exp_in(sql->sa, anti_le, anti_exps, cmp_notin);
-		if(!found_nils) {
-			sql_exp *anti_nils = rel_unop_(sql, anti_le, NULL, "isnull", card_value);
-			anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
-			anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), anti_exp),
-							  list_append(new_exp_list(sql->sa), anti_nils), 0);
-		}
 	} else {
 		assert(0);
+	}
+	if(!found_nils) {
+		sql_exp *anti_nils = rel_unop_(sql, anti_le, NULL, "isnull", card_value);
+		anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
+		anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), anti_exp),
+						  list_append(new_exp_list(sql->sa), anti_nils), 0);
 	}
 	//generate a count aggregation for the values not present in any of the partitions
 	*anti_rel = rel_select(sql->sa, *anti_rel, anti_exp);
