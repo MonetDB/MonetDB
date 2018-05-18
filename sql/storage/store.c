@@ -818,7 +818,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 				load_value_partition(tr, syss, pt, pcoltpe);
 			}
 			if(isRangePartitionTable(t)) {
-				sql_part *err = cs_add_sorted(&t->members, pt, TR_OLD, sql_range_part_validate_and_insert);
+				sql_part *err = cs_add_with_validate(&t->members, pt, TR_OLD, sql_range_part_validate_and_insert);
 				assert(!err);
 			} else if(isListPartitionTable(t)) {
 				sql_part *err = cs_add_with_validate(&t->members, pt, TR_OLD, sql_values_part_validate_and_insert);
@@ -1487,7 +1487,7 @@ dup_sql_part(sql_allocator *sa, sql_table *ot, sql_table *mt, sql_part *opt)
 	pt->with_nills = opt->with_nills;
 
 	if(isRangePartitionTable(ot)) {
-		sql_part *err = cs_add_sorted(&mt->members, pt, TR_NEW, sql_range_part_validate_and_insert);
+		sql_part *err = cs_add_with_validate(&mt->members, pt, TR_NEW, sql_range_part_validate_and_insert);
 		assert(!err);
 	} else if(isListPartitionTable(ot)) {
 		sql_part *err = cs_add_with_validate(&mt->members, pt, TR_NEW, sql_values_part_validate_and_insert);
@@ -2669,7 +2669,7 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 			sql_part *pt = n->data, *dupped = part_dup(tr, flag, pt, ot);
 			dupped->t = t;
 			if(isRangePartitionTable(ot)) {
-				sql_part *err = cs_add_sorted(&t->members, dupped, tr_flag(&pt->base, flag), sql_range_part_validate_and_insert);
+				sql_part *err = cs_add_with_validate(&t->members, dupped, tr_flag(&pt->base, flag), sql_range_part_validate_and_insert);
 				assert(!err);
 			} else if(isListPartitionTable(ot)) {
 				sql_part *err = cs_add_with_validate(&t->members, dupped, tr_flag(&pt->base, flag), sql_values_part_validate_and_insert);
@@ -4651,13 +4651,13 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 
 int
 sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, ptr min, size_t smin,
-							  ptr max, size_t smax, int with_nills, sql_part **err)
+							  ptr max, size_t smax, int with_nills, int update, sql_part **err)
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobal(mt)?"sys":"tmp");
 	sql_table *sysobj = find_sql_table(syss, "objects");
 	sql_table *partitions = find_sql_table(syss, "_table_partitions");
 	sql_table *ranges = find_sql_table(syss, "_range_partitions");
-	sql_part *p = SA_ZNEW(tr->sa, sql_part);
+	sql_part *p;
 	int localtype = tpe.type->localtype, free_min = 1, free_max = 1;
 	ssize_t (*atomtostr)(str *, size_t *, const void *) = BATatoms[localtype].atomToStr;
 	str str_min = NULL, str_max = NULL;
@@ -4692,6 +4692,22 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		goto finish;
 	}
 
+	if(update) {
+		node *n;
+		oid obj_oid;
+		p = find_sql_part(mt, pt->base.name);
+		obj_oid = table_funcs.column_find_row(tr, find_sql_column(sysobj, "nr"), &pt->base.id, NULL);
+		n = cs_find_id(&mt->members, p->base.id);
+
+		rid = table_funcs.column_find_row(tr, find_sql_column(ranges, "id"), &pt->base.id, NULL);
+		table_funcs.table_delete(tr, ranges, rid);
+
+		sql_trans_drop_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
+		cs_del(&mt->members, n, p->base.flag);
+		table_funcs.table_delete(tr, sysobj, obj_oid);
+	}
+
+	p = SA_ZNEW(tr->sa, sql_part);
 	base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
 	pt->p = mt;
 	p->t = pt;
@@ -4707,7 +4723,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	p->part.range.minlength = smin;
 	p->part.range.maxlength = smax;
 
-	*err = cs_add_sorted(&mt->members, p, TR_NEW, sql_range_part_validate_and_insert);
+	*err = cs_add_with_validate(&mt->members, p, TR_NEW, sql_range_part_validate_and_insert);
 	if(*err) {
 		res = -4;
 		goto finish;
@@ -4734,19 +4750,39 @@ finish:
 
 int
 sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, list* vals, int with_nills,
-							  sql_part **err)
+							  int update, sql_part **err)
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobal(mt)?"sys":"tmp");
 	sql_table *sysobj = find_sql_table(syss, "objects");
 	sql_table *partitions = find_sql_table(syss, "_table_partitions");
 	sql_table *values = find_sql_table(syss, "_value_partitions");
-	sql_part *p = SA_ZNEW(tr->sa, sql_part);
+	sql_part *p;
 	ssize_t (*atomtostr)(str *, size_t *, const void *) = BATatoms[tpe.type->localtype].atomToStr;
 	str next_value = NULL;
 	size_t length = 0;
 	oid rid;
 	int *v, i = 0;
 
+	if(update) {
+		node *n;
+		rids *rs;
+		oid obj_oid;
+		p = find_sql_part(mt, pt->base.name);
+		obj_oid = table_funcs.column_find_row(tr, find_sql_column(sysobj, "nr"), &pt->base.id, NULL);
+		n = cs_find_id(&mt->members, p->base.id);
+
+		rs = table_funcs.rids_select(tr, find_sql_column(values, "id"), &pt->base.id, &pt->base.id, NULL);
+		for(rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
+			table_funcs.table_delete(tr, values, rid);
+		}
+		table_funcs.rids_destroy(rs);
+
+		sql_trans_drop_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
+		cs_del(&mt->members, n, pt->base.flag);
+		table_funcs.table_delete(tr, sysobj, obj_oid);
+	}
+
+	p = SA_ZNEW(tr->sa, sql_part);
 	base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
 	pt->p = mt;
 	p->t = pt;
@@ -4886,7 +4922,8 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 }
 
 int
-sql_trans_set_partition_table(sql_trans *tr, sql_table *t) {
+sql_trans_set_partition_table(sql_trans *tr, sql_table *t)
+{
 	if(t && !isDeclaredTable(t) && (isRangePartitionTable(t) || isListPartitionTable(t))) {
 		sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 		sql_table *partitions = find_sql_table(syss, "_table_partitions");

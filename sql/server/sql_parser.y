@@ -1063,9 +1063,11 @@ alter_statement:
 	  append_symbol(l, NULL); /* used only in ADD TABLE */
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname ADD TABLE qname opt_as_partition
-	{ dlist *l = L();
+	{ dlist *l = L(), *part;
 	  append_list(l, $3);
 	  append_symbol(l, _symbol_create_list( SQL_TABLE, append_list(L(),$6)));
+	  part = $7->data.lval;
+	  append_int(part, FALSE);
 	  append_symbol(l, $7);
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname ALTER alter_table_element
@@ -1118,6 +1120,14 @@ alter_statement:
 	  append_string(p, $10);
 	  append_list(l, p);
 	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
+ | ALTER TABLE qname SET TABLE qname opt_as_partition
+	{ dlist *l = L(), *part;
+	  append_list(l, $3);
+	  append_symbol(l, _symbol_create_list( SQL_TABLE, append_list(L(),$6)));
+	  part = $7->data.lval;
+	  append_int(part, TRUE);
+	  append_symbol(l, $7);
+	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
   ;
 
 passwd_schema:

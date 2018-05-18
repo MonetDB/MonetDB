@@ -105,7 +105,8 @@ rel_check_tables(sql_table *nt, sql_table *nnt)
 }
 
 static char*
-validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname, char *psname, char *ptname, sql_table **mt, sql_table **pt)
+validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname, char *psname, char *ptname,
+							   sql_table **mt, sql_table **pt, int update)
 {
 	sql_schema *ms = mvc_bind_schema(sql, msname), *ps = mvc_bind_schema(sql, psname);
 	sql_table *rmt = NULL, *rpt = NULL;
@@ -116,14 +117,16 @@ validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname,
 		rpt = mvc_bind_table(sql, ps, ptname);
 	*mt = rmt;
 	*pt = rpt;
-	if (rmt && (!isMergeTable(rmt) && !isReplicaTable(rmt)))
+	if (!update && rmt && (!isMergeTable(rmt) && !isReplicaTable(rmt)))
 		throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: cannot add table '%s.%s' to table '%s.%s'", psname, ptname, msname, mtname);
 	if (rmt && rpt) {
 		char *msg;
 		node *n = cs_find_id(&rmt->members, rpt->base.id);
 
-		if (n)
+		if (n && !update)
 			throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' is already part of the MERGE TABLE '%s.%s'", psname, ptname, msname, mtname);
+		if(!n && update)
+			throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' isn't part of the MERGE TABLE '%s.%s'", psname, ptname, msname, mtname);
 		if ((msg = rel_check_tables(rmt, rpt)) != NULL)
 			return msg;
 		return MAL_SUCCEED;
@@ -138,7 +141,7 @@ static char *
 alter_table_add_table(mvc *sql, char *msname, char *mtname, char *psname, char *ptname)
 {
 	sql_table *mt = NULL, *pt = NULL;
-	str msg = validate_alter_table_add_table(sql, "sql.alter_table_add_table", msname, mtname, psname, ptname, &mt, &pt);
+	str msg = validate_alter_table_add_table(sql, "sql.alter_table_add_table", msname, mtname, psname, ptname, &mt, &pt, 0);
 
 	if(msg == MAL_SUCCEED)
 		sql_trans_add_table(sql->session->tr, mt, pt);
@@ -180,7 +183,8 @@ add_quotes(char *atom_str) /* always produce a string between quotes, placing th
 }
 
 static char *
-alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psname, char *ptname, char *min, char *max, int with_nills)
+alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psname, char *ptname, char *min, char *max,
+								int with_nills, int update)
 {
 	sql_table *mt = NULL, *pt = NULL;
 	sql_part *err = NULL;
@@ -192,14 +196,14 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	ssize_t (*atomtostr)(str *, size_t *, const void *);
 	int free_pmin = 1, free_pmax = 1;
 
-	if((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_range_partition", msname, mtname, psname, ptname, &mt, &pt))) {
+	if((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_range_partition", msname, mtname, psname, ptname, &mt, &pt, update))) {
 		return msg;
 	} else if(mt->type != tt_range_partition) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
 									"ALTER TABLE: cannot add range partition into a %s table",
 									(mt->type == tt_merge_table)?"merge":"list partition");
 		goto finish;
-	} else if(pt->p) {
+	} else if(!update && pt->p) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
 									"ALTER TABLE: table %s.%s is already part of another range partition table",
 									psname, ptname);
@@ -271,7 +275,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 		free_pmax = 0;
 	}
 
-	errcode = sql_trans_add_range_partition(sql->session->tr, mt, pt, col->type, pmin, smin, pmax, smax, with_nills, &err);
+	errcode = sql_trans_add_range_partition(sql->session->tr, mt, pt, col->type, pmin, smin, pmax, smax, with_nills, update, &err);
 	switch(errcode) {
 		case 0:
 			break;
@@ -327,7 +331,8 @@ finish:
 }
 
 static char *
-alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msname, char *mtname, char *psname, char *ptname, int with_nills)
+alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msname, char *mtname, char *psname,
+								char *ptname, int with_nills, int update)
 {
 	sql_table *mt = NULL, *pt = NULL;
 	str msg = MAL_SUCCEED, escaped = NULL;
@@ -336,14 +341,14 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 	int tp1 = 0, errcode = 0, i = 0, ninserts = 0;
 	list *values = list_new(sql->sa, (fdestroy) NULL);
 
-	if((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_value_partition", msname, mtname, psname, ptname, &mt, &pt))) {
+	if((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_value_partition", msname, mtname, psname, ptname, &mt, &pt, update))) {
 		return msg;
 	} else if(mt->type != tt_list_partition) {
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 									"ALTER TABLE: cannot add value partition into a %s table",
 									(mt->type == tt_merge_table)?"merge":"range partition");
 		goto finish;
-	} else if(pt->p) {
+	} else if(!update && pt->p) {
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 									"ALTER TABLE: table %s.%s is already part of another list partition table",
 									psname, ptname);
@@ -352,12 +357,12 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 
 	col = mt->pcol;
 	tp1 = col->type.type->localtype;
-	ninserts = pci->argc - pci->retc - 5;
+	ninserts = pci->argc - pci->retc - 6;
 	if(ninserts <= 0 && !with_nills) {
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000) "ALTER TABLE: no values in the list");
 		goto finish;
 	}
-	for( i = pci->retc+5; i < pci->argc; i++){
+	for( i = pci->retc+6; i < pci->argc; i++){
 		ptr pnext = NULL;
 		size_t len = 0;
 		str next = *getArgReference_str(stk, pci, i);
@@ -409,7 +414,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		GDKfree(pnext);
 	}
 
-	errcode = sql_trans_add_value_partition(sql->session->tr, mt, pt, col->type, values, with_nills, &err);
+	errcode = sql_trans_add_value_partition(sql->session->tr, mt, pt, col->type, values, with_nills, update, &err);
 	switch(errcode) {
 		case 0:
 			break;
@@ -1527,9 +1532,10 @@ SQLalter_add_range_partition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	char *min = *getArgReference_str(stk, pci, 5);
 	char *max = *getArgReference_str(stk, pci, 6);
 	int with_nills = *getArgReference_int(stk, pci, 7);
+	int update = *getArgReference_int(stk, pci, 8);
 
 	initcontext();
-	msg = alter_table_add_range_partition(sql, sname, mtname, psname, ptname, min, max, with_nills);
+	msg = alter_table_add_range_partition(sql, sname, mtname, psname, ptname, min, max, with_nills, update);
 	return msg;
 }
 
@@ -1542,9 +1548,10 @@ SQLalter_add_value_partition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	char *psname = SaveArgReference(stk, pci, 3);
 	char *ptname = SaveArgReference(stk, pci, 4);
 	int with_nills = *getArgReference_int(stk, pci, 5);
+	int update = *getArgReference_int(stk, pci, 6);
 
 	initcontext();
-	msg = alter_table_add_value_partition(sql, stk, pci, sname, mtname, psname, ptname, with_nills);
+	msg = alter_table_add_value_partition(sql, stk, pci, sname, mtname, psname, ptname, with_nills, update);
 	return msg;
 }
 

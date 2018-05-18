@@ -642,7 +642,7 @@ extern sql_func *sql_trans_find_func(sql_trans *tr, int id);
 extern node *find_sql_func_node(sql_schema *s, int id);
 
 extern void *sql_values_list_element_validate_and_insert(void *v1, void *v2, int* res);
-extern void *sql_range_part_validate_and_insert(void *v1, void *v2, int* res);
+extern void *sql_range_part_validate_and_insert(void *v1, void *v2);
 extern void *sql_values_part_validate_and_insert(void *v1, void *v2);
 
 typedef struct {

@@ -86,7 +86,7 @@ rel_alter_table(sql_allocator *sa, int cattype, char *sname, char *tname, char *
 
 static sql_rel *
 rel_alter_table_add_partition_range(mvc* sql, sql_table *mt, sql_table *pt, char *sname, char *tname, char *sname2,
-									char *tname2, atom* min, atom* max, int with_nills)
+									char *tname2, atom* min, atom* max, int with_nills, int update)
 {
 	sql_rel *rel_psm = rel_create(sql->sa), *anti_rel;
 	list *exps = new_exp_list(sql->sa);
@@ -151,6 +151,7 @@ rel_alter_table_add_partition_range(mvc* sql, sql_table *mt, sql_table *pt, char
 	append(exps, exp_atom_clob(sql->sa, pmin));
 	append(exps, exp_atom_clob(sql->sa, pmax));
 	append(exps, exp_atom_int(sql->sa, with_nills));
+    append(exps, exp_atom_int(sql->sa, update));
 	rel_psm->l = NULL;
 	rel_psm->r = NULL;
 	rel_psm->op = op_ddl;
@@ -164,7 +165,7 @@ rel_alter_table_add_partition_range(mvc* sql, sql_table *mt, sql_table *pt, char
 
 static sql_rel *
 rel_alter_table_add_partition_list(mvc *sql, sql_table *mt, sql_table *pt, char *sname, char *tname, char *sname2,
-								   char *tname2, dlist* values)
+								   char *tname2, dlist* values, int update)
 {
 	sql_rel *rel_psm = rel_create(sql->sa), *anti_rel;
 	list *exps = new_exp_list(sql->sa), *anti_exps = new_exp_list(sql->sa), *lvals = new_exp_list(sql->sa);
@@ -235,6 +236,7 @@ rel_alter_table_add_partition_list(mvc *sql, sql_table *mt, sql_table *pt, char 
 		append(exps, exp_atom_clob(sql->sa, tname2));
 	}
 	append(exps, exp_atom_int(sql->sa, with_nills));
+    append(exps, exp_atom_int(sql->sa, update));
 	rel_psm->l = NULL;
 	rel_psm->r = NULL;
 	rel_psm->op = op_ddl;
@@ -1586,7 +1588,7 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 					sql_column *col =  t->pcol;
 					dlist* ll = extra->data.lval;
 					symbol* min = ll->h->data.sym, *max = ll->h->next->data.sym;
-					int nills = ll->h->next->next->data.i_val;
+					int nills = ll->h->next->next->data.i_val, update = ll->h->next->next->next->data.i_val;
 					atom *amin = NULL, *amax = NULL;
 
 					if(t->type != tt_range_partition) {
@@ -1622,16 +1624,17 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 					} else if(max) {
 						amax = ((AtomNode *) max)->a;
 					}
-					return rel_alter_table_add_partition_range(sql, t, pt, sname, tname, sname, ntname, amin, amax, nills);
+					return rel_alter_table_add_partition_range(sql, t, pt, sname, tname, sname, ntname, amin, amax, nills, update);
 				} else if(extra->token == SQL_PARTITION_LIST) {
 					dlist* ll = extra->data.lval, *values = ll->h->data.lval;
+					int update = ll->h->next->data.i_val;
 
 					if(t->type != tt_list_partition) {
 						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a value partition into a %s table",
 								(t->type == tt_merge_table)?"merge":"range partition");
 					}
 
-					return rel_alter_table_add_partition_list(sql, t, pt, sname, tname, sname, ntname, values);
+					return rel_alter_table_add_partition_list(sql, t, pt, sname, tname, sname, ntname, values, update);
 				}
 				assert(0);
 			} else {

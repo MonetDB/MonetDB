@@ -361,17 +361,15 @@ sql_values_list_element_validate_and_insert(void *v1, void *v2, int* res)
 }
 
 void*
-sql_range_part_validate_and_insert(void *v1, void *v2, int* res)
+sql_range_part_validate_and_insert(void *v1, void *v2)
 {
 	sql_part* pt = (sql_part*) v1, *newp = (sql_part*) v2;
 	int res1, res2;
 
 	if(newp->with_nills) {
 		if (pt->with_nills) { //only one partition at most has null values
-			*res = 0;
 			return pt;
 		} else { //partition with null values comes first
-			*res = 1;
 			return NULL;
 		}
 	}
@@ -380,10 +378,8 @@ sql_range_part_validate_and_insert(void *v1, void *v2, int* res)
 	res1 = ATOMcmp(pt->tpe.type->localtype, pt->part.range.minvalue, newp->part.range.maxvalue);
 	res2 = ATOMcmp(pt->tpe.type->localtype, newp->part.range.minvalue, pt->part.range.maxvalue);
 	if (res1 <= 0 && res2 <= 0) { //overlap: x1 <= y2 && y1 <= x2
-		*res = 0;
 		return pt;
 	}
-	*res = res2;
 	return NULL;
 }
 
