@@ -18,6 +18,9 @@
 #include <unistd.h>
 #include "sql_upgrades.h"
 
+#include "rel_remote.h"
+#include "mal_authorize.h"
+
 #ifdef HAVE_EMBEDDED
 #define printf(fmt,...) ((void) 0)
 #endif
@@ -1530,6 +1533,93 @@ sql_update_mar2018_sp1(Client c, mvc *sql)
 }
 
 static str
+sql_update_remote_tables(Client c, mvc *sql)
+{
+	res_table *output;
+	str err = MAL_SUCCEED;
+	size_t bufsize = 1000, pos = 0;
+	char *buf;
+	char *schema;
+	BAT *tbl = NULL;
+	BAT *uri = NULL;
+
+	schema = stack_get_string(sql, "current_schema");
+	if ((buf = GDKmalloc(bufsize)) == NULL)
+		throw(SQL, "sql_update_remote_tables", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+	/* Create the SQL function needed to dump the remote table credentials */
+	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
+	pos += snprintf(buf + pos, bufsize - pos,
+			"create function sys.remote_table_credentials(tablename string)"
+			" returns table (\"uri\" string, \"username\" string, \"hash\" string)"
+			" external name sql.rt_credentials;\n");
+
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+
+	assert(pos < bufsize);
+	err = SQLstatementIntern(c, &buf, "create function", 1, 0, NULL);
+	if (err)
+		goto bailout;
+
+	pos = 0;
+	pos += snprintf(buf + pos, bufsize - pos,
+			"SELECT concat(concat(scm.name, '.'), tbl.name), tbl.query"
+			" FROM sys._tables AS tbl JOIN sys.schemas AS scm ON"
+			" tbl.schema_id=scm.id WHERE tbl.type=5;\n");
+
+	assert(pos < bufsize);
+
+	err = SQLstatementIntern(c, &buf, "get remote table names", 1, 0, &output);
+	if (err)
+		goto bailout;
+
+	/* We executed the query, now process the results */
+	tbl = BATdescriptor(output->cols[0].b);
+	uri = BATdescriptor(output->cols[1].b);
+
+	if (tbl && uri) {
+		size_t cnt;
+		assert(BATcount(tbl) == BATcount(uri));
+		if ((cnt = BATcount(tbl)) > 0) {
+			BATiter tbl_it = bat_iterator(tbl);
+			BATiter uri_it = bat_iterator(uri);
+			const void *restrict nil = ATOMnilptr(tbl->ttype);
+			int (*cmp)(const void *, const void *) = ATOMcompare(tbl->ttype);
+			const char *v;
+			const char *u;
+			const char *remote_server_uri;
+
+			/* This is probably not correct: offsets? */
+			for (BUN i = 0; i < cnt; i++) {
+				v = BUNtail(tbl_it, i);
+				u = BUNtail(uri_it, i);
+				if (v == NULL || (*cmp)(v, nil) == 0 ||
+				    u == NULL || (*cmp)(u, nil) == 0) {
+					BBPunfix(tbl->batCacheid);
+					BBPunfix(uri->batCacheid);
+					goto bailout;
+				}
+
+				/* Since the loop might fail, it might be a good idea
+				 * to update the credentials as a second step
+				 */
+				remote_server_uri = mapiuri_uri((char *)u, sql->sa);
+				AUTHaddRemoteTableCredentials((char *)v, "monetdb", remote_server_uri, "monetdb", "monetdb", false);
+			}
+		}
+		BBPunfix(tbl->batCacheid);
+		BBPunfix(uri->batCacheid);
+	}
+	res_table_destroy(output);
+
+  bailout:
+	GDKfree(buf);
+	return err;
+}
+
+static str
 sql_update_default(Client c, mvc *sql)
 {
 	size_t bufsize = 1000, pos = 0;
@@ -1555,6 +1645,11 @@ sql_update_default(Client c, mvc *sql)
 	assert(pos < bufsize);
 	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	if (err)
+		goto bailout;
+	err = sql_update_remote_tables(c, sql);
+
+  bailout:
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
