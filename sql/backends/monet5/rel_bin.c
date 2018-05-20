@@ -28,6 +28,15 @@ static stmt * subrel_bin(backend *be, sql_rel *rel, list *refs);
 static stmt *check_types(backend *be, sql_subtype *ct, stmt *s, check_type tpe);
 
 static stmt *
+stmt_selectnil( backend *be, stmt *col)
+{
+	sql_subtype *t = tail_type(col);
+	stmt *n = stmt_atom(be, atom_general(be->mvc->sa, t, NULL));
+	stmt *nn = stmt_uselect2(be, col, n, n, 3, NULL, 0);
+	return nn;
+}
+
+static stmt *
 sql_unop_(backend *be, sql_schema *s, const char *fname, stmt *rs)
 {
 	mvc *sql = be->mvc;
@@ -1946,6 +1955,53 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
  	 * 	first cheap join(s) (equality or idx) 
  	 * 	second selects/filters 
 	 */
+	if (rel->exps && rel->op == op_anti && need_no_nil(rel)) {
+		list *l;
+		stmt *sel = NULL;
+
+		for( en = rel->exps->h; en; en = en->next ) {
+			sql_exp *e = en->data, *r, *l;
+
+			if (e->type != e_cmp || e->flag != cmp_equal)
+				break;
+			l = e->l;
+			r = e->r;
+
+			/* for each equality join add a rel_select(r is NULL) */
+			stmt *s = exp_bin(be, r, right, NULL, NULL, NULL, NULL, NULL);
+			if (!s)
+			 	s = exp_bin(be, l, right, NULL, NULL, NULL, NULL, NULL);
+			if (s && !exp_is_atom(r)) {
+				sql_subtype *lng = sql_bind_localtype("lng");
+				sql_subaggr *cnt = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
+				sql_subtype *bt = sql_bind_localtype("bit");
+				sql_subfunc *ne = sql_bind_func_result(sql->sa, sql->session->schema, "<>", lng, lng, bt);
+
+				stmt *l;
+				s = stmt_selectnil(be, s);
+				s = stmt_binop(be, stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1), stmt_atom_lng(be, 0), ne);
+
+				l = bin_first_column(be, left);
+				/* keep if no nulls are in the right side */
+				l = stmt_const(be, l, stmt_bool(be,0));
+				sel = stmt_uselect(be, l, s, cmp_equal, sel, 0);
+			}
+
+		}
+		l = sa_list(sql->sa);
+		if (left && sel) {
+			for( n = left->op4.lval->h; n; n = n->next ) {
+				stmt *col = n->data;
+	
+				if (col->nrcols == 0) /* constant */
+					col = stmt_const(be, sel, col);
+				else
+					col = stmt_project(be, sel, col);
+				list_append(l, col);
+			}
+			left = stmt_list(be, l);
+		}
+	}
 	if (rel->exps) {
 		int idx = 0;
 		list *lje = sa_list(sql->sa);
@@ -2989,15 +3045,6 @@ stmt_selectnonil( backend *be, stmt *col, stmt *s )
 	sql_subtype *t = tail_type(col);
 	stmt *n = stmt_atom(be, atom_general(be->mvc->sa, t, NULL));
 	stmt *nn = stmt_uselect2(be, col, n, n, 3, s, 1);
-	return nn;
-}
-
-static stmt *
-stmt_selectnil( backend *be, stmt *col)
-{
-	sql_subtype *t = tail_type(col);
-	stmt *n = stmt_atom(be, atom_general(be->mvc->sa, t, NULL));
-	stmt *nn = stmt_uselect2(be, col, n, n, 3, NULL, 0);
 	return nn;
 }
 
