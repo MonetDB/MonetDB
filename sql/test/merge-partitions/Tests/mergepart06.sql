@@ -1,4 +1,4 @@
-CREATE MERGE TABLE testrangelimits (a int, b varchar(32)) PARTITION BY RANGE (a);
+CREATE MERGE TABLE testrangelimits (a int, b varchar(32)) PARTITION BY RANGE ON (a);
 CREATE TABLE sublimits1 (a int, b varchar(32));
 CREATE TABLE sublimits2 (a int, b varchar(32));
 CREATE TABLE sublimits3 (a int, b varchar(32));

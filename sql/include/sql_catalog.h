@@ -132,8 +132,10 @@ typedef enum temp_t {
 	SQL_STREAM = 5,
 	SQL_REMOTE = 6,
 	SQL_REPLICA_TABLE = 7,
-	SQL_MERGE_LIST_PARTITION = 8,
-	SQL_MERGE_RANGE_PARTITION = 9
+	SQL_MERGE_LIST_PARTITION_COL = 8,
+	SQL_MERGE_RANGE_PARTITION_COL = 9,
+	SQL_MERGE_LIST_PARTITION_EXP = 10,
+	SQL_MERGE_RANGE_PARTITION_EXP = 11
 } temp_t;
 
 typedef enum comp_type {
@@ -492,16 +494,20 @@ typedef enum table_types {
 	tt_stream = 4,		/* stream */
 	tt_remote = 5,		/* stored on a remote server */
 	tt_replica_table = 6,	/* multiple replica of the same table */
-	tt_list_partition = 7,
-	tt_range_partition = 8
+	tt_list_partition_col = 7, /* partitioned by a list of values on a column */
+	tt_range_partition_col = 8, /* partitioned by a range of values on a column */
+	tt_list_partition_exp = 9, /* partitioned by a list of values on an expression */
+	tt_range_partition_exp = 10 /* partitioned by a range of values on an expression */
 } table_types;
 
 #define isTable(x) 	  (x->type==tt_table)
 #define isView(x)  	  (x->type==tt_view)
-#define isMergeTable(x)   (x->type==tt_merge_table || x->type==tt_list_partition || x->type==tt_range_partition)
 #define isNonPartitionedTable(x) (x->type==tt_merge_table)
-#define isRangePartitionTable(x) (x->type==tt_range_partition)
-#define isListPartitionTable(x)  (x->type==tt_list_partition)
+#define isRangePartitionTable(x) (x->type==tt_range_partition_col || x->type==tt_range_partition_exp)
+#define isListPartitionTable(x)  (x->type==tt_list_partition_col || x->type==tt_list_partition_exp)
+#define isPartitionedByColumnTable(x)     (x->type==tt_range_partition_col || x->type==tt_list_partition_col)
+#define isPartitionedByExpressionTable(x) (x->type==tt_list_partition_exp || x->type==tt_range_partition_exp)
+#define isMergeTable(x)   (x->type==tt_merge_table || isListPartitionTable(x) || isRangePartitionTable(x))
 #define isStream(x)  	  (x->type==tt_stream)
 #define isRemote(x)  	  (x->type==tt_remote)
 #define isReplicaTable(x) (x->type==tt_replica_table)
@@ -521,7 +527,7 @@ typedef struct sql_part_value {
 typedef struct sql_part {
 	sql_base base;
 	struct sql_table *t; /* cached value of the merge table */
-	sql_subtype tpe;     /* the column type */
+	sql_subtype tpe;     /* the column/expression type */
 	sht part_type;       /* by range, list/values or none */
 	int with_nills;
 	union {
@@ -559,7 +565,10 @@ typedef struct sql_table {
 	struct sql_table *po;	/* the outer transactions table */
 
 	struct sql_table *p;	 /* The table is part of this merge table */
-	struct sql_column *pcol; /* If it is partitioned on a column */
+	union {
+		struct sql_column *pcol;  /* If it is partitioned on a column */
+		struct sql_subfunc *pexp; /* If it is partitioned by an expression */
+	} part;
 } sql_table;
 
 typedef struct res_col {
@@ -612,6 +621,8 @@ extern int base_key(sql_base *b);
 extern node *list_find_name(list *l, const char *name);
 extern node *list_find_id(list *l, int id);
 extern node *list_find_base_id(list *l, int id);
+
+extern void find_partition_type(sql_subtype *res, sql_table *t);
 
 extern sql_key *find_sql_key(sql_table *t, const char *kname);
 

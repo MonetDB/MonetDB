@@ -697,6 +697,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	sql_column *idx_table_id, *key_table_id, *trigger_table_id;
 	oid rid;
 	sqlid pcolid = int_nil;
+	//void* exp = NULL;
 	sql_subtype pcoltpe;
 	rids *rs;
 
@@ -751,11 +752,13 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 		sql_table *partitions = find_sql_table(syss, "_table_partitions");
 		sql_column *table_id = find_sql_column(partitions, "table_id");
 		rs = table_funcs.rids_select(tr, table_id, &t->base.id, &t->base.id, NULL);
-		/* this table is partitioned on a column */
 		if((rid = table_funcs.rids_next(rs)) != oid_nil) {
 			void* v = table_funcs.column_find_value(tr, find_sql_column(partitions, "column_id"), rid);
 			pcolid = *((sqlid*)v);
 			_DELETE(v);
+			/*v = table_funcs.column_find_value(tr, find_sql_column(partitions, "query"), rid); TODO
+			exp = (v)?sa_strdup(tr->sa, v):NULL;
+			_DELETE(v);*/
 		}
 		table_funcs.rids_destroy(rs);
 	}
@@ -764,7 +767,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 		sql_column* next = load_column(tr, t, rid);
 		cs_add(&t->columns, next, TR_OLD);
 		if(pcolid == next->base.id) {
-			t->pcol = next;
+			t->part.pcol = next;
 			pcoltpe = next->type;
 		}
 	}
@@ -1442,7 +1445,7 @@ create_sql_table_with_id(sql_allocator *sa, int id, const char *name, sht type, 
 	t->sz = COLSIZE;
 	t->cleared = 0;
 	t->s = NULL;
-	t->pcol = NULL;
+	memset(&t->part, 0, sizeof(t->part));
 	return t;
 }
 
@@ -2656,8 +2659,8 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 	if (ot->columns.set) {
 		for (n = ot->columns.set->h; n; n = n->next) {
 			sql_column *c = n->data, *copy = column_dup(tr, flag, c, t);
-			if(ot->pcol == c)
-				t->pcol = copy;
+			if(isPartitionedByColumnTable(ot) && ot->part.pcol == c)
+				t->part.pcol = copy;
 
 			cs_add(&t->columns, copy, tr_flag(&c->base, flag));
 		}
@@ -4928,7 +4931,13 @@ sql_trans_set_partition_table(sql_trans *tr, sql_table *t)
 		sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 		sql_table *partitions = find_sql_table(syss, "_table_partitions");
 		oid next = next_oid();
-		table_funcs.table_insert(tr, partitions, &next, &t->base.id, &t->pcol->base.id, str_nil);
+		if(isPartitionedByColumnTable(t)) {
+			table_funcs.table_insert(tr, partitions, &next, &t->base.id, &t->part.pcol->base.id, str_nil);
+		} else if(isPartitionedByExpressionTable(t)) {
+			table_funcs.table_insert(tr, partitions, &next, &t->base.id, int_nil, str_nil); //TODO
+		} else {
+			assert(0);
+		}
 	}
 	return 0;
 }

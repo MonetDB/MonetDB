@@ -306,6 +306,8 @@ int yydebug=1;
 	partition_list_value
 	partition_range_from
 	partition_range_to
+	partition_on
+	partition_expression
 
 %type <type>
 	data_type
@@ -490,7 +492,7 @@ int yydebug=1;
 	window_frame_units
 	window_frame_exclusion
 	subgeometry_type
-	opt_partition_type
+	partition_type
 
 %type <l_val>
 	lngval
@@ -1407,13 +1409,23 @@ table_def:
 
 	  if(part != NULL) {
 	  	dlist *prop = part->data.lval;
-	  	switch(prop->h->data.i_val) {
-	  		case PARTITION_RANGE:
-	  			tpe = SQL_MERGE_RANGE_PARTITION;
-	  			break;
-	  		case PARTITION_LIST:
-	  			tpe = SQL_MERGE_LIST_PARTITION;
-	  			break;
+	  	symbol *other = prop->h->next->data.sym;
+	  	if(prop->h->data.i_val == PARTITION_RANGE) {
+	  		if(other->token == SQL_PARTITION_COLUMN) {
+	  			tpe = SQL_MERGE_RANGE_PARTITION_COL;
+	  		} else if(other->token == SQL_PARTITION_EXPRESSION) {
+	  			tpe = SQL_MERGE_RANGE_PARTITION_EXP;
+	  		} else {
+	  			assert(0);
+	  		}
+	  	} else if(prop->h->data.i_val == PARTITION_LIST) {
+	  		if(other->token == SQL_PARTITION_COLUMN) {
+	  			tpe = SQL_MERGE_LIST_PARTITION_COL;
+	  		} else if(other->token == SQL_PARTITION_EXPRESSION) {
+	  			tpe = SQL_MERGE_LIST_PARTITION_EXP;
+	  		} else {
+	  			assert(0);
+	  		}
 	  	}
 	  }
 
@@ -1469,17 +1481,25 @@ table_def:
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  ;
 
-opt_partition_type:
+partition_type:
    RANGE	{ $$ = PARTITION_RANGE; }
  | VALUES	{ $$ = PARTITION_LIST; }
  ;
 
+partition_expression:
+   func_ref
+
+partition_on:
+   ON '(' ident ')'                   { $$ = _symbol_create_list( SQL_PARTITION_COLUMN, append_string(L(), $3) ); }
+ | USING '(' partition_expression ')' { $$ = _symbol_create_list( SQL_PARTITION_EXPRESSION, append_symbol(L(), $3) ); }
+ ;
+
 opt_partition_by:
  /* empty */									 { $$ = NULL; }
- | PARTITION BY opt_partition_type '(' ident ')'
+ | PARTITION BY partition_type partition_on
    { dlist *l = L();
      append_int(l, $3);
-     append_string(l, $5);
+     append_symbol(l, $4);
      $$ = _symbol_create_list( SQL_MERGE_PARTITION, l ); }
  ;
 
@@ -1491,13 +1511,11 @@ partition_list_value:
 partition_range_from:
    literal
  | MINVALUE { $$ = _symbol_create(SQL_MINVALUE, NULL ); }
- /*| null */
  ;
 
 partition_range_to:
    literal
  | MAXVALUE { $$ = _symbol_create(SQL_MAXVALUE, NULL ); }
- /*| null */
  ;
 
 partition_list:

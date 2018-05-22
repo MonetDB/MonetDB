@@ -1,6 +1,6 @@
-CREATE MERGE TABLE testnestedpartitions (a int, b varchar(32)) PARTITION BY VALUES (a);
-CREATE MERGE TABLE subnested1 (a int, b varchar(32)) PARTITION BY RANGE (a);
-CREATE MERGE TABLE subnested2 (a int, b varchar(32)) PARTITION BY RANGE (a);
+CREATE MERGE TABLE testnestedpartitions (a int, b varchar(32)) PARTITION BY VALUES ON (a);
+CREATE MERGE TABLE subnested1 (a int, b varchar(32)) PARTITION BY RANGE ON (a);
+CREATE MERGE TABLE subnested2 (a int, b varchar(32)) PARTITION BY RANGE ON (a);
 CREATE TABLE subt1 (a int, b varchar(32));
 CREATE TABLE subt2 (a int, b varchar(32));
 CREATE TABLE subt3 (a int, b varchar(32));

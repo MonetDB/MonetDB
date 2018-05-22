@@ -1,4 +1,4 @@
-CREATE MERGE TABLE listparts (b varchar(32)) PARTITION BY RANGE (b);
+CREATE MERGE TABLE listparts (b varchar(32)) PARTITION BY RANGE ON (b);
 CREATE TABLE subtable1 (b varchar(32));
 
 ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION BETWEEN MINVALUE AND 'something'; --error
@@ -25,7 +25,7 @@ SELECT minimum, maximum FROM range_partitions;
 DROP TABLE listparts;
 DROP TABLE subtable1;
 
-CREATE MERGE TABLE testtimestamps (b timestamp) PARTITION BY RANGE (b);
+CREATE MERGE TABLE testtimestamps (b timestamp) PARTITION BY RANGE ON (b);
 CREATE TABLE subtime (b timestamp);
 
 ALTER TABLE testtimestamps ADD TABLE subtime AS PARTITION BETWEEN timestamp '2002-01-01 00:00' AND timestamp '2001-01-01 00:00'; --error
@@ -44,7 +44,7 @@ ALTER TABLE testtimestamps ADD TABLE subtime AS PARTITION BETWEEN timestamp '204
 DROP TABLE testtimestamps;
 DROP TABLE subtime;
 
-CREATE MERGE TABLE testrangelimits (a int) PARTITION BY RANGE (a);
+CREATE MERGE TABLE testrangelimits (a int) PARTITION BY RANGE ON (a);
 CREATE TABLE sublimits (a int);
 
 ALTER TABLE testrangelimits ADD TABLE sublimits AS PARTITION BETWEEN MINVALUE AND MAXVALUE;

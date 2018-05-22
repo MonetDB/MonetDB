@@ -29,8 +29,8 @@ stderr of test 'mergepart00` in directory 'sql/test/merge-partitions` itself:
 # 14:00:22 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-4925" "--port=36923"
 # 14:00:22 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-4925/.s.monetdb.36923
-QUERY = CREATE MERGE TABLE myfirstattempt (a int, b varchar(32)) PARTITION BY RANGE (d); --error
+MAPI  = (monetdb) /var/tmp/mtest-10534/.s.monetdb.36030
+QUERY = CREATE MERGE TABLE myfirstattempt (a int, b varchar(32)) PARTITION BY RANGE ON (d); --error
 ERROR = !CREATE MERGE TABLE: the partition column 'd' is not part of the table
 CODE  = 42000
 

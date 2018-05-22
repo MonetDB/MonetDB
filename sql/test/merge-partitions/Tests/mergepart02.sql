@@ -1,4 +1,4 @@
-CREATE MERGE TABLE listparts (a int, b varchar(32)) PARTITION BY VALUES (a);
+CREATE MERGE TABLE listparts (a int, b varchar(32)) PARTITION BY VALUES ON (a);
 SELECT COUNT(*) from range_partitions;
 SELECT COUNT(*) from value_partitions;
 

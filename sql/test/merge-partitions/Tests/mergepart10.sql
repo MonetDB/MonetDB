@@ -1,4 +1,4 @@
-CREATE MERGE TABLE testsmallpartitions (a int, b varchar(32)) PARTITION BY VALUES (a);
+CREATE MERGE TABLE testsmallpartitions (a int, b varchar(32)) PARTITION BY VALUES ON (a);
 CREATE TABLE testingme (a int, b varchar(32));
 
 INSERT INTO testsmallpartitions VALUES (1, 'fail'); --error

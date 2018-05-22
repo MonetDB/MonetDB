@@ -15,6 +15,7 @@
 #include "rel_schema.h"
 #include "rel_remote.h"
 #include "rel_psm.h"
+#include "rel_propagate.h"
 #include "sql_parser.h"
 #include "sql_privileges.h"
 
@@ -82,170 +83,6 @@ rel_alter_table(sql_allocator *sa, int cattype, char *sname, char *tname, char *
 	rel->card = CARD_MULTI;
 	rel->nrcols = 0;
 	return rel;
-}
-
-static sql_rel *
-rel_alter_table_add_partition_range(mvc* sql, sql_table *mt, sql_table *pt, char *sname, char *tname, char *sname2,
-									char *tname2, atom* min, atom* max, int with_nills, int update)
-{
-	sql_rel *rel_psm = rel_create(sql->sa), *anti_rel;
-	list *exps = new_exp_list(sql->sa);
-	sql_exp *exception, *aggr, *anti_exp = NULL, *anti_le, *e1, *e2, *anti_nils;
-	sql_column *col = mt->pcol;
-	sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
-	int colr = mt->pcol->colnr;
-	char buf[BUFSIZ], *pmin = min ? atom2string(sql->sa, min): NULL, *pmax = max ? atom2string(sql->sa, max) : NULL;
-
-	if(!rel_psm || !exps)
-		return NULL;
-
-	anti_rel = rel_basetable(sql, pt, tname2);
-	anti_le = list_fetch(anti_rel->exps, colr);
-	anti_le = exp_column(sql->sa, exp_relname(anti_le), exp_name(anti_le), exp_subtype(anti_le),
-						 anti_le->card, has_nil(anti_le), is_intern(anti_le));
-	anti_rel->exps = new_exp_list(sql->sa);
-	append(anti_rel->exps, anti_le);
-	anti_nils = rel_unop_(sql, anti_le, NULL, "isnull", card_value);
-
-	assert((!min && !max && with_nills) || (min && max));
-	if(min && max) {
-		e1 = create_table_part_atom_exp(sql, min->tpe, VALget(&min->data));
-		if (subtype_cmp(&e1->tpe, &col->type) != 0)
-			e1 = exp_convert(sql->sa, e1, &e1->tpe, &col->type);
-
-		e2 = create_table_part_atom_exp(sql, max->tpe, VALget(&max->data));
-		if (subtype_cmp(&e2->tpe, &col->type) != 0)
-			e2 = exp_convert(sql->sa, e2, &e2->tpe, &col->type);
-
-		anti_exp = exp_compare2(sql->sa, anti_le, e1, e2, 3);
-		set_anti(anti_exp);
-		if(!with_nills) {
-			anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
-			anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), anti_exp),
-							  list_append(new_exp_list(sql->sa), anti_nils), 0);
-		}
-	} else {
-		anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_notequal);
-	}
-
-	anti_rel = rel_select(sql->sa, anti_rel, anti_exp);
-	anti_rel = rel_groupby(sql, anti_rel, NULL);
-	aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, anti_rel->card, 0);
-	(void) rel_groupby_add_aggr(sql, anti_rel, aggr);
-	exp_label(sql->sa, aggr, ++sql->label);
-
-	//generate the exception
-	aggr = exp_column(sql->sa, exp_relname(aggr), exp_name(aggr), exp_subtype(aggr), aggr->card, has_nil(aggr),
-					  is_intern(aggr));
-	snprintf(buf, BUFSIZ, "ALTER TABLE: there are values in the column %s, outside the partition range", col->base.name);
-	exception = exp_exception(sql->sa, aggr, buf);
-
-	//generate the psm statement
-	append(exps, exp_atom_clob(sql->sa, sname));
-	append(exps, exp_atom_clob(sql->sa, tname));
-	assert((sname2 && tname2) || (!sname2 && !tname2));
-	if (sname2) {
-		append(exps, exp_atom_clob(sql->sa, sname2));
-		append(exps, exp_atom_clob(sql->sa, tname2));
-	}
-	append(exps, exp_atom_clob(sql->sa, pmin));
-	append(exps, exp_atom_clob(sql->sa, pmax));
-	append(exps, exp_atom_int(sql->sa, with_nills));
-    append(exps, exp_atom_int(sql->sa, update));
-	rel_psm->l = NULL;
-	rel_psm->r = NULL;
-	rel_psm->op = op_ddl;
-	rel_psm->flag = DDL_ALTER_TABLE_ADD_RANGE_PARTITION;
-	rel_psm->exps = exps;
-	rel_psm->card = CARD_MULTI;
-	rel_psm->nrcols = 0;
-
-	return rel_exception(sql->sa, rel_psm, anti_rel, list_append(new_exp_list(sql->sa), exception));
-}
-
-static sql_rel *
-rel_alter_table_add_partition_list(mvc *sql, sql_table *mt, sql_table *pt, char *sname, char *tname, char *sname2,
-								   char *tname2, dlist* values, int update)
-{
-	sql_rel *rel_psm = rel_create(sql->sa), *anti_rel;
-	list *exps = new_exp_list(sql->sa), *anti_exps = new_exp_list(sql->sa), *lvals = new_exp_list(sql->sa);
-	sql_exp *exception, *aggr, *anti_exp, *anti_le, *anti_nils;
-	sql_column *col = mt->pcol;
-	sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
-	int with_nills = 0, colr = mt->pcol->colnr;
-	char buf[BUFSIZ];
-
-	if(!rel_psm || !exps)
-		return NULL;
-
-	anti_rel = rel_basetable(sql, pt, tname2);
-	anti_le = list_fetch(anti_rel->exps, colr);
-	anti_le = exp_column(sql->sa, exp_relname(anti_le), exp_name(anti_le), exp_subtype(anti_le),
-						 anti_le->card, has_nil(anti_le), is_intern(anti_le));
-	anti_rel->exps = new_exp_list(sql->sa);
-	append(anti_rel->exps, anti_le);
-	anti_nils = rel_unop_(sql, anti_le, NULL, "isnull", card_value);
-
-	for (dnode *dn = values->h; dn ; dn = dn->next) { /* parse the atoms and generate the expressions */
-		symbol* next = dn->data.sym;
-		if(next->token == SQL_NULL || next->token == SQL_COLUMN) {
-			with_nills = 1;
-		} else {
-			atom *a = ((AtomNode *) next)->a;
-			char *nvalue = atom2string(sql->sa, a);
-			sql_exp *nval = create_table_part_atom_exp(sql, a->tpe, VALget(&a->data));
-			if (subtype_cmp(&a->tpe, &col->type) != 0)
-				nval = exp_convert(sql->sa, nval, &a->tpe, &col->type);
-
-			append(lvals, exp_atom_clob(sql->sa, nvalue));
-			append(anti_exps, nval);
-		}
-	}
-
-	if(list_length(anti_exps) > 0) {
-		anti_exp = exp_in(sql->sa, anti_le, anti_exps, cmp_notin);
-		if(!with_nills) {
-			anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
-			anti_exp = exp_or(sql->sa, append(new_exp_list(sql->sa), anti_exp),
-							  append(new_exp_list(sql->sa), anti_nils), 0);
-		}
-	} else {
-		assert(with_nills);
-		anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_notequal);
-	}
-
-	anti_rel = rel_select(sql->sa, anti_rel, anti_exp);
-	anti_rel = rel_groupby(sql, anti_rel, NULL);
-	aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, anti_rel->card, 0);
-	(void) rel_groupby_add_aggr(sql, anti_rel, aggr);
-	exp_label(sql->sa, aggr, ++sql->label);
-
-	//generate the exception
-	aggr = exp_column(sql->sa, exp_relname(aggr), exp_name(aggr), exp_subtype(aggr), aggr->card, has_nil(aggr),
-					  is_intern(aggr));
-	snprintf(buf, BUFSIZ, "ALTER TABLE: there are values in the column %s which is outside the partition list of values",
-			col->base.name);
-	exception = exp_exception(sql->sa, aggr, buf);
-
-	//generate the psm statement
-	append(exps, exp_atom_clob(sql->sa, sname));
-	append(exps, exp_atom_clob(sql->sa, tname));
-	assert((sname2 && tname2) || (!sname2 && !tname2));
-	if (sname2) {
-		append(exps, exp_atom_clob(sql->sa, sname2));
-		append(exps, exp_atom_clob(sql->sa, tname2));
-	}
-	append(exps, exp_atom_int(sql->sa, with_nills));
-    append(exps, exp_atom_int(sql->sa, update));
-	rel_psm->l = NULL;
-	rel_psm->r = NULL;
-	rel_psm->op = op_ddl;
-	rel_psm->flag = DDL_ALTER_TABLE_ADD_LIST_PARTITION;
-	rel_psm->exps = list_merge(exps, lvals, (fdup)NULL);
-	rel_psm->card = CARD_MULTI;
-	rel_psm->nrcols = 0;
-
-	return rel_exception(sql->sa, rel_psm, anti_rel, list_append(new_exp_list(sql->sa), exception));
 }
 
 sql_rel *
@@ -353,8 +190,10 @@ mvc_create_table_as_subquery( mvc *sql, sql_rel *sq, sql_schema *s, const char *
 		(temp == SQL_STREAM)?tt_stream:
 		(temp == SQL_MERGE_TABLE)?tt_merge_table:
 		(temp == SQL_REPLICA_TABLE)?tt_replica_table:
-		(temp == SQL_MERGE_LIST_PARTITION)?tt_list_partition:
-		(temp == SQL_MERGE_RANGE_PARTITION)?tt_range_partition:tt_table;
+		(temp == SQL_MERGE_LIST_PARTITION_COL)?tt_list_partition_col:
+		(temp == SQL_MERGE_LIST_PARTITION_EXP)?tt_list_partition_exp:
+		(temp == SQL_MERGE_RANGE_PARTITION_COL)?tt_list_partition_col:
+		(temp == SQL_MERGE_RANGE_PARTITION_EXP)?tt_range_partition_exp:tt_table;
 
 	sql_table *t = mvc_create_table(sql, s, tname, tt, 0, SQL_DECLARED_TABLE, commit_action, -1);
 	if (as_subquery( sql, t, sq, column_spec, "CREATE TABLE") != 0)
@@ -1062,33 +901,40 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 }
 
 static int
-create_partition_column(mvc *sql, sql_table *t, int tt, symbol* partition_def)
+create_partition_definition(mvc *sql, sql_table *t, int tt, symbol* partition_def)
 {
-	if((tt == tt_list_partition || tt == tt_range_partition) && partition_def) {
-		dlist* list = partition_def->data.lval;
-		str colname = list->h->next->data.sval;
-		node *n;
-		int sql_ec;
-		for (n = t->columns.set->h; n ; n = n->next) {
-			sql_column *col = n->data;
-			if(!strcmp(col->base.name, colname)) {
-				t->pcol = col;
-				break;
+	if(partition_def) {
+		if(tt == tt_list_partition_col || tt == tt_range_partition_col) {
+			dlist *list = partition_def->data.lval;
+			symbol *type = list->h->next->data.sym;
+			dlist *list2 = type->data.lval;
+			str colname = list2->h->data.sval;
+			node *n;
+			int sql_ec;
+			for (n = t->columns.set->h; n ; n = n->next) {
+				sql_column *col = n->data;
+				if(!strcmp(col->base.name, colname)) {
+					t->part.pcol = col;
+					break;
+				}
 			}
-		}
-		if(!t->pcol) {
-			sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: the partition column '%s' is not part of the table", colname);
-			return SQL_ERR;
-		}
-		sql_ec = t->pcol->type.type->eclass;
-		if(!(sql_ec == EC_BIT || EC_VARCHAR(sql_ec) || EC_TEMP(sql_ec) || EC_NUMBER(sql_ec) || sql_ec == EC_BLOB)) {
-			char *err = sql_subtype_string(&(t->pcol->type));
-			if (!err) {
-				sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
-			} else {
-				sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: column type %s not yet supported for the partition column", err);
-				GDKfree(err);
+			if(!t->part.pcol) {
+				sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: the partition column '%s' is not part of the table", colname);
+				return SQL_ERR;
 			}
+			sql_ec = t->part.pcol->type.type->eclass;
+			if(!(sql_ec == EC_BIT || EC_VARCHAR(sql_ec) || EC_TEMP(sql_ec) || EC_NUMBER(sql_ec) || sql_ec == EC_BLOB)) {
+				char *err = sql_subtype_string(&(t->part.pcol->type));
+				if (!err) {
+					sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
+				} else {
+					sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: column type %s not yet supported for the partition column", err);
+					GDKfree(err);
+				}
+				return SQL_ERR;
+			}
+		} else if(tt == tt_list_partition_exp || tt == tt_range_partition_exp) {
+			sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: partition by expression not supported at the moment");
 			return SQL_ERR;
 		}
 	}
@@ -1107,8 +953,10 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 		 (temp == SQL_STREAM)?tt_stream:
 		 (temp == SQL_MERGE_TABLE)?tt_merge_table:
 		 (temp == SQL_REPLICA_TABLE)?tt_replica_table:
-		 (temp == SQL_MERGE_LIST_PARTITION)?tt_list_partition:
-		 (temp == SQL_MERGE_RANGE_PARTITION)?tt_range_partition:tt_table;
+		 (temp == SQL_MERGE_LIST_PARTITION_COL)?tt_list_partition_col:
+		 (temp == SQL_MERGE_LIST_PARTITION_EXP)?tt_list_partition_exp:
+		 (temp == SQL_MERGE_RANGE_PARTITION_COL)?tt_range_partition_col:
+		 (temp == SQL_MERGE_RANGE_PARTITION_EXP)?tt_range_partition_exp:tt_table;
 
 	(void)create;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
@@ -1164,7 +1012,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 				return NULL;
 		}
 
-		if(create_partition_column(sql, t, tt, partition_def) != SQL_OK)
+		if(create_partition_definition(sql, t, tt, partition_def) != SQL_OK)
 			return NULL;
 		if(sql_trans_set_partition_table(sql->session->tr, t))
 			return NULL;
@@ -1184,9 +1032,12 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 		if (!sq)
 			return NULL;
 
-		if ((tt == tt_merge_table || tt == tt_list_partition || tt == tt_range_partition || tt == tt_remote || tt == tt_replica_table) && with_data)
+		if ((tt == tt_merge_table || tt == tt_list_partition_col || tt == tt_range_partition_col ||
+			 tt == tt_list_partition_exp || tt == tt_range_partition_exp || tt == tt_remote || tt == tt_replica_table) && with_data)
 			return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: cannot create %s table 'with data'",
-				tt == tt_merge_table?"MERGE TABLE":tt == tt_remote?"REMOTE TABLE":tt == tt_list_partition?"LIST PARTITION TABLE":tt == tt_range_partition?"RANGE PARTITION TABLE":"REPLICA TABLE");
+				tt == tt_merge_table?"MERGE TABLE":tt == tt_remote?"REMOTE TABLE":
+				(tt == tt_list_partition_col || tt == tt_list_partition_exp)?"LIST PARTITION TABLE":
+				(tt == tt_range_partition_col || tt == tt_range_partition_exp)?"RANGE PARTITION TABLE":"REPLICA TABLE");
 
 		/* create table */
 		if ((t = mvc_create_table_as_subquery( sql, sq, s, name, column_spec, temp, commit_action)) == NULL) { 
@@ -1194,7 +1045,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 			return NULL;
 		}
 
-		if(create_partition_column(sql, t, tt, partition_def) != SQL_OK)
+		if(create_partition_definition(sql, t, tt, partition_def) != SQL_OK)
 			return NULL;
 
 		/* insert query result into this table */
@@ -1585,22 +1436,24 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 				if(!extra)
 					return rel_alter_table(sql->sa, DDL_ALTER_TABLE_ADD_TABLE, sname, tname, sname, ntname, 0);
 				if(extra->token == SQL_PARTITION_RANGE) {
-					sql_column *col =  t->pcol;
+					sql_subtype tpe;
 					dlist* ll = extra->data.lval;
 					symbol* min = ll->h->data.sym, *max = ll->h->next->data.sym;
 					int nills = ll->h->next->next->data.i_val, update = ll->h->next->next->next->data.i_val;
 					atom *amin = NULL, *amax = NULL;
 
-					if(t->type != tt_range_partition) {
+					if(!isRangePartitionTable(t)) {
 						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a range partition into a %s table",
 								(t->type == tt_merge_table)?"merge":"list partition");
 					}
 
+					find_partition_type(&tpe, t);
+
 					if(min && min->token == SQL_MINVALUE) {
-						amin = atom_absolute_min(sql->sa, &(col->type));
+						amin = atom_absolute_min(sql->sa, &tpe);
 						if(!amin) {
 							sql_rel *res = NULL;
-							char *err = sql_subtype_string(&(col->type));
+							char *err = sql_subtype_string(&tpe);
 							if(!err)
 								return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 							res = sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: absolute minimum value not available for %s type", err);
@@ -1611,10 +1464,10 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 						amin = ((AtomNode *) min)->a;
 					}
 					if(max && max->token == SQL_MAXVALUE) {
-						amax = atom_absolute_max(sql->sa, &(col->type));
+						amax = atom_absolute_max(sql->sa, &tpe);
 						if(!amax) {
 							sql_rel *res = NULL;
-							char *err = sql_subtype_string(&(col->type));
+							char *err = sql_subtype_string(&tpe);
 							if(!err)
 								return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 							res = sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: absolute maximum value not available for %s type", err);
@@ -1629,7 +1482,7 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 					dlist* ll = extra->data.lval, *values = ll->h->data.lval;
 					int update = ll->h->next->data.i_val;
 
-					if(t->type != tt_list_partition) {
+					if(!isListPartitionTable(t)) {
 						return sql_error(sql, 02,SQLSTATE(42000) "ALTER TABLE: cannot add a value partition into a %s table",
 								(t->type == tt_merge_table)?"merge":"range partition");
 					}

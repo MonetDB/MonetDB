@@ -395,7 +395,11 @@ sql_trans_deref( sql_trans *tr )
 						column_destroy(p);
 					}
 				}
-				t->pcol = t->po->pcol;
+				if(isPartitionedByColumnTable(t)) {
+					t->part.pcol = t->po->part.pcol;
+				} else if(isPartitionedByExpressionTable(t)) {
+					t->part.pexp = t->po->part.pexp;
+				}
 			}
 			if (t->idxs.set)
 			for ( o = t->idxs.set->h; o; o = o->next) {

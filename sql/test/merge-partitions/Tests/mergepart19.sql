@@ -1,4 +1,4 @@
-CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY VALUES (a);
+CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY VALUES ON (a);
 CREATE TABLE subt1 (a int, b varchar(32));
 CREATE TABLE subt2 (a int, b varchar(32));
 

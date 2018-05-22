@@ -11,6 +11,20 @@
 
 const char *TID = "%TID%";
 
+void
+find_partition_type(sql_subtype *res, sql_table *t)
+{
+	if(isPartitionedByColumnTable(t)) {
+		*res = t->part.pcol->type;
+	} else if(isPartitionedByExpressionTable(t)) {
+		list *col = t->part.pexp->res;
+		assert(list_length(col) == 1);
+		*res = *(sql_subtype *) list_fetch(col, 0);
+	} else {
+		assert(0);
+	}
+}
+
 int
 base_key( sql_base *b )
 {

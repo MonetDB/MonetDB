@@ -189,16 +189,16 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	sql_table *mt = NULL, *pt = NULL;
 	sql_part *err = NULL;
 	str msg = MAL_SUCCEED, err_min = NULL, err_max = NULL, escaped_min = NULL, escaped_max = NULL;
-	sql_column *col = NULL;
 	int tp1 = 0, errcode = 0;
 	ptr pmin = NULL, pmax = NULL;
 	size_t smin = 0, smax = 0, serr_min = 0, serr_max = 0;
 	ssize_t (*atomtostr)(str *, size_t *, const void *);
 	int free_pmin = 1, free_pmax = 1;
+	sql_subtype tpe;
 
 	if((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_range_partition", msname, mtname, psname, ptname, &mt, &pt, update))) {
 		return msg;
-	} else if(mt->type != tt_range_partition) {
+	} else if(!isRangePartitionTable(mt)) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
 									"ALTER TABLE: cannot add range partition into a %s table",
 									(mt->type == tt_merge_table)?"merge":"list partition");
@@ -210,8 +210,8 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 		goto finish;
 	}
 
-	col = mt->pcol;
-	tp1 = col->type.type->localtype;
+	find_partition_type(&tpe, mt);
+	tp1 = tpe.type->localtype;
 	if(ATOMcmp(TYPE_str, min, ATOMnilptr(TYPE_str))) {
 		if (tp1 == TYPE_str) {
 			if ((escaped_min = add_quotes(min)) == NULL) {
@@ -275,7 +275,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 		free_pmax = 0;
 	}
 
-	errcode = sql_trans_add_range_partition(sql->session->tr, mt, pt, col->type, pmin, smin, pmax, smax, with_nills, update, &err);
+	errcode = sql_trans_add_range_partition(sql->session->tr, mt, pt, tpe, pmin, smin, pmax, smax, with_nills, update, &err);
 	switch(errcode) {
 		case 0:
 			break;
@@ -336,14 +336,14 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 {
 	sql_table *mt = NULL, *pt = NULL;
 	str msg = MAL_SUCCEED, escaped = NULL;
-	sql_column *col = NULL;
 	sql_part *err = NULL;
 	int tp1 = 0, errcode = 0, i = 0, ninserts = 0;
 	list *values = list_new(sql->sa, (fdestroy) NULL);
+	sql_subtype tpe;
 
 	if((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_value_partition", msname, mtname, psname, ptname, &mt, &pt, update))) {
 		return msg;
-	} else if(mt->type != tt_list_partition) {
+	} else if(!isListPartitionTable(mt)) {
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 									"ALTER TABLE: cannot add value partition into a %s table",
 									(mt->type == tt_merge_table)?"merge":"range partition");
@@ -355,8 +355,8 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		goto finish;
 	}
 
-	col = mt->pcol;
-	tp1 = col->type.type->localtype;
+	find_partition_type(&tpe, mt);
+	tp1 = tpe.type->localtype;
 	ninserts = pci->argc - pci->retc - 6;
 	if(ninserts <= 0 && !with_nills) {
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000) "ALTER TABLE: no values in the list");
@@ -400,7 +400,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		}
 
 		nextv = SA_ZNEW(sql->session->tr->sa, sql_part_value); /* instantiate the part value */
-		nextv->tpe = col->type;
+		nextv->tpe = tpe;
 		nextv->value = sa_alloc(sql->session->tr->sa, len);
 		memcpy(nextv->value, pnext, len);
 		nextv->length = len;
@@ -414,7 +414,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		GDKfree(pnext);
 	}
 
-	errcode = sql_trans_add_value_partition(sql->session->tr, mt, pt, col->type, values, with_nills, update, &err);
+	errcode = sql_trans_add_value_partition(sql->session->tr, mt, pt, tpe, values, with_nills, update, &err);
 	switch(errcode) {
 		case 0:
 			break;

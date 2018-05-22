@@ -902,14 +902,14 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 		sql_rel *res = NULL, *bt = rel_basetable(sql, t, t->base.name);
 		int partitioned_column = -1;
 
-		if(isRangePartitionTable(t) || isListPartitionTable(t)) {
-			partitioned_column = t->pcol->colnr;
+		if(isPartitionedByColumnTable(t)) { //TODO for expressions
+			partitioned_column = t->part.pcol->colnr;
 		} else if(t->p) {
 			sql_part *pt = find_sql_part(t->p, t->base.name);
 			if(!pt) {
 				t->p = NULL;
-			} else if(isRangePartitionTable(t->p) || isListPartitionTable(t->p)) {
-				partitioned_column = t->p->pcol->colnr;
+			} else if(isPartitionedByColumnTable(t->p)) {
+				partitioned_column = t->p->part.pcol->colnr;
 			}
 		}
 		res = bt;

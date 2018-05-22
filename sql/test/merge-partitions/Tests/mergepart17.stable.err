@@ -32,7 +32,7 @@ stderr of test 'mergepart17` in directory 'sql/test/merge-partitions` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-9208/.s.monetdb.33193
 QUERY = ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION BETWEEN 1 AND 100; --error
-ERROR = !ALTER TABLE: there are values in the column a, outside the partition range
+ERROR = !ALTER TABLE: there are values in the column a outside the partition range
 CODE  = M0M29
 MAPI  = (monetdb) /var/tmp/mtest-9208/.s.monetdb.33193
 QUERY = UPDATE sublimits1 SET a = a + 1; --error
@@ -40,11 +40,11 @@ ERROR = !UPDATE: Update on the partitioned column not possible at the moment
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-9208/.s.monetdb.33193
 QUERY = ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION BETWEEN 1 AND 100; --error
-ERROR = !ALTER TABLE: there are values in the column a, outside the partition range
+ERROR = !ALTER TABLE: there are values in the column a outside the partition range
 CODE  = M0M29
 MAPI  = (monetdb) /var/tmp/mtest-9208/.s.monetdb.33193
 QUERY = ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION BETWEEN 1 AND 100; --error
-ERROR = !ALTER TABLE: there are values in the column a, outside the partition range
+ERROR = !ALTER TABLE: there are values in the column a outside the partition range
 CODE  = M0M29
 
 # 16:54:55 >  

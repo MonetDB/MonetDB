@@ -1,4 +1,4 @@
-CREATE MERGE TABLE testupdates (a int, b varchar(32)) PARTITION BY RANGE (a);
+CREATE MERGE TABLE testupdates (a int, b varchar(32)) PARTITION BY RANGE ON (a);
 CREATE TABLE sublimits1 (a int, b varchar(32));
 
 INSERT INTO sublimits1 VALUES (1000, 'ups');

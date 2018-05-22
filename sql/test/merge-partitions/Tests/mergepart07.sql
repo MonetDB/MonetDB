@@ -1,4 +1,4 @@
-CREATE MERGE TABLE listparts (a int, b varchar(32)) PARTITION BY RANGE (a);
+CREATE MERGE TABLE listparts (a int, b varchar(32)) PARTITION BY RANGE ON (a);
 CREATE TABLE subtable1 (a int, b varchar(32));
 CREATE TABLE subtable2 (a int, b varchar(32));
 
@@ -29,7 +29,7 @@ DROP TABLE listparts;
 DROP TABLE subtable1;
 DROP TABLE subtable2;
 
-CREATE MERGE TABLE anothertest (a int, b varchar(32)) PARTITION BY RANGE (b);
+CREATE MERGE TABLE anothertest (a int, b varchar(32)) PARTITION BY RANGE ON (b);
 CREATE TABLE othersub1 (a int, b varchar(32));
 CREATE TABLE othersub2 (a int, b varchar(32));
 

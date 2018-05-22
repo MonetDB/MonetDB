@@ -28,16 +28,16 @@ stderr of test 'mergepart14` in directory 'sql/test/merge-partitions` itself:
 # 17:10:21 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-20822" "--port=38327"
 # 17:10:21 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-20822/.s.monetdb.38327
-QUERY = CREATE MERGE TABLE testme (a INT, b MULTIPOLYGON, c json) PARTITION BY RANGE (d); --error
+MAPI  = (monetdb) /var/tmp/mtest-10534/.s.monetdb.36030
+QUERY = CREATE MERGE TABLE testme (a INT, b MULTIPOLYGON, c json) PARTITION BY RANGE ON (d); --error
 ERROR = !CREATE MERGE TABLE: the partition column 'd' is not part of the table
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-20822/.s.monetdb.38327
-QUERY = CREATE MERGE TABLE testme (a INT, b MULTIPOLYGON, c json) PARTITION BY RANGE (b); --error
+MAPI  = (monetdb) /var/tmp/mtest-10534/.s.monetdb.36030
+QUERY = CREATE MERGE TABLE testme (a INT, b MULTIPOLYGON, c json) PARTITION BY RANGE ON (b); --error
 ERROR = !CREATE MERGE TABLE: column type geometry(28) not yet supported for the partition column
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-20822/.s.monetdb.38327
-QUERY = CREATE MERGE TABLE testme (a INT, b MULTIPOLYGON, c json) PARTITION BY VALUES (c); --error
+MAPI  = (monetdb) /var/tmp/mtest-10534/.s.monetdb.36030
+QUERY = CREATE MERGE TABLE testme (a INT, b MULTIPOLYGON, c json) PARTITION BY VALUES ON (c); --error
 ERROR = !CREATE MERGE TABLE: column type json not yet supported for the partition column
 CODE  = 42000
 

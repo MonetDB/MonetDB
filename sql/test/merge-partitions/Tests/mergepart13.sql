@@ -1,4 +1,4 @@
-CREATE MERGE TABLE testtime (t timestamp, b int) PARTITION BY RANGE (t);
+CREATE MERGE TABLE testtime (t timestamp, b int) PARTITION BY RANGE ON (t);
 CREATE TABLE onedecade (t timestamp, b int);
 CREATE TABLE twodecades (t timestamp, b int);
 CREATE TABLE threedecades (t timestamp, b int);

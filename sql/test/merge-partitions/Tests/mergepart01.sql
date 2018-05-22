@@ -1,4 +1,4 @@
-CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE (a);
+CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE ON (a);
 SELECT COUNT(*) from table_partitions;
 SELECT COUNT(*) from range_partitions;
 
