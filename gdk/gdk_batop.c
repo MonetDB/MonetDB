@@ -879,19 +879,13 @@ BATreplace(BAT *b, BAT *p, BAT *n, bit force)
 
 
 /*
- *  BAT Selections
- * The BAT selectors are among the most heavily used operators.
- * Their efficient implementation is therefore mandatory.
- *
  * BAT slice
  * This function returns a horizontal slice from a BAT. It optimizes
  * execution by avoiding to copy when the BAT is memory mapped (in
- * this case, an independent submap is created) or else when it is
- * read-only, then a VIEW bat is created as a result.
+ * this case, an independent submap is created).
  *
- * If a new copy has to be created, this function takes care to
- * preserve void-columns (in this case, the seqbase has to be
- * recomputed in the result).
+ * This function also takes care to preserve void-columns (in this case,
+ * the seqbase has to be recomputed in the result).
  *
  * NOTE new semantics, the selected range is excluding the high value.
  */
@@ -914,56 +908,48 @@ BATslice(BAT *b, BUN l, BUN h)
 		return NULL;
 	}
 
-	/* If the source BAT is readonly, then we can obtain a VIEW
-	 * that just reuses the memory of the source. */
-	if (BAThrestricted(b) == BAT_READ && BATtrestricted(b) == BAT_READ) {
-		bn = VIEWcreate(b->hseqbase + low, b);
-		if (bn == NULL)
-			return NULL;
-		VIEWbounds(b, bn, l, h);
-	} else {
-		/* create a new BAT and put everything into it */
-		BUN p = l;
-		BUN q = h;
+	/* create a new BAT and put everything into it */
+	BUN p = l;
+	BUN q = h;
 
-		bn = COLnew((oid) (b->hseqbase + low), BATtdense(b) ? TYPE_void : b->ttype, h - l, TRANSIENT);
-		if (bn == NULL) {
-			return bn;
-		}
-		if (bn->ttype == TYPE_void ||
-		    (!bn->tvarsized &&
-		     BATatoms[bn->ttype].atomPut == NULL &&
-		     BATatoms[bn->ttype].atomFix == NULL)) {
-			if (bn->ttype)
-				memcpy(Tloc(bn, 0), Tloc(b, p),
-				       (q - p) * Tsize(bn));
-			BATsetcount(bn, h - l);
-		} else {
-			for (; p < q; p++) {
-				bunfastapp(bn, BUNtail(bi, p));
-			}
-		}
-		bn->tsorted = b->tsorted;
-		bn->trevsorted = b->trevsorted;
-		bn->tkey = b->tkey;
-		bn->tnonil = b->tnonil;
-		if (b->tnosorted > l && b->tnosorted < h)
-			bn->tnosorted = b->tnosorted - l;
-		else
-			bn->tnosorted = 0;
-		if (b->tnorevsorted > l && b->tnorevsorted < h)
-			bn->tnorevsorted = b->tnorevsorted - l;
-		else
-			bn->tnorevsorted = 0;
-		if (b->tnokey[0] >= l && b->tnokey[0] < h &&
-		    b->tnokey[1] >= l && b->tnokey[1] < h &&
-		    b->tnokey[0] != b->tnokey[1]) {
-			bn->tnokey[0] = b->tnokey[0] - l;
-			bn->tnokey[1] = b->tnokey[1] - l;
-		} else {
-			bn->tnokey[0] = bn->tnokey[1] = 0;
+	bn = COLnew((oid) (b->hseqbase + low), BATtdense(b) ? TYPE_void : b->ttype, h - l, TRANSIENT);
+	if (bn == NULL) {
+		return bn;
+	}
+	if (bn->ttype == TYPE_void ||
+	    (!bn->tvarsized &&
+	     BATatoms[bn->ttype].atomPut == NULL &&
+	     BATatoms[bn->ttype].atomFix == NULL)) {
+		if (bn->ttype)
+			memcpy(Tloc(bn, 0), Tloc(b, p),
+			       (q - p) * Tsize(bn));
+		BATsetcount(bn, h - l);
+	} else {
+		for (; p < q; p++) {
+			bunfastapp(bn, BUNtail(bi, p));
 		}
 	}
+	bn->tsorted = b->tsorted;
+	bn->trevsorted = b->trevsorted;
+	bn->tkey = b->tkey;
+	bn->tnonil = b->tnonil;
+	if (b->tnosorted > l && b->tnosorted < h)
+		bn->tnosorted = b->tnosorted - l;
+	else
+		bn->tnosorted = 0;
+	if (b->tnorevsorted > l && b->tnorevsorted < h)
+		bn->tnorevsorted = b->tnorevsorted - l;
+	else
+		bn->tnorevsorted = 0;
+	if (b->tnokey[0] >= l && b->tnokey[0] < h &&
+	    b->tnokey[1] >= l && b->tnokey[1] < h &&
+	    b->tnokey[0] != b->tnokey[1]) {
+		bn->tnokey[0] = b->tnokey[0] - l;
+		bn->tnokey[1] = b->tnokey[1] - l;
+	} else {
+		bn->tnokey[0] = bn->tnokey[1] = 0;
+	}
+
 	bni = bat_iterator(bn);
 	if (BATtdense(b)) {
 		BATtseqbase(bn, (oid) (b->tseqbase + low));
