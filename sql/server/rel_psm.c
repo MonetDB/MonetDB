@@ -627,6 +627,7 @@ sequential_block (mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk,
 		case SQL_DECLARE:
 			reslist = rel_psm_declare(sql, s->data.lval->h);
 			break;
+		case SQL_DECLARE_TABLE:
 		case SQL_CREATE_TABLE: 
 			res = rel_psm_declare_table(sql, s->data.lval->h);
 			break;
