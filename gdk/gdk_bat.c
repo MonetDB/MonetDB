@@ -651,7 +651,7 @@ wrongtype(int t1, int t2)
 
 /*
  * There are four main implementation cases:
- * (1) we are allowed to return a view (zero effort),
+ * (1) we are allowed to return a view (zero effort) (not relevant anymore),
  * (2) the result is void,void (zero effort),
  * (3) we can copy the heaps (memcopy, or even VM page sharing)
  * (4) we must insert BUN-by-BUN into the result (fallback)
@@ -680,121 +680,98 @@ COLcopy(BAT *b, int tt, int writable, int role)
 		return NULL;
 	}
 
-	/* first try case (1); create a view, possibly with different
-	 * atom-types */
-	if (role == b->batRole &&
-	    BAThrestricted(b) == BAT_READ &&
-	    BATtrestricted(b) == BAT_READ &&
-	    !writable) {
-		bn = VIEWcreate(b->hseqbase, b);
-		if (bn == NULL)
+	/* check whether we need case (4); BUN-by-BUN copy (by
+	 * setting bunstocopy != BUN_NONE) */
+	if (ATOMsize(tt) != ATOMsize(b->ttype)) {
+		/* oops, void materialization */
+		bunstocopy = cnt;
+	} else if (BATatoms[tt].atomFix) {
+		/* oops, we need to fix/unfix atoms */
+		bunstocopy = cnt;
+	}
+
+	bn = COLnew(b->hseqbase, tt, MAX(1, bunstocopy == BUN_NONE ? 0 : bunstocopy), role);
+	if (bn == NULL)
+		return NULL;
+
+	if (bn->tvarsized && bn->ttype && bunstocopy == BUN_NONE) {
+		bn->tshift = b->tshift;
+		bn->twidth = b->twidth;
+		if (HEAPextend(&bn->theap, BATcapacity(bn) << bn->tshift, TRUE) != GDK_SUCCEED)
+			goto bunins_failed;
+	}
+
+	if (tt == TYPE_void) {
+		/* case (2): a void,void result => nothing to
+		 * copy! */
+		bn->theap.free = 0;
+	} else if (bunstocopy == BUN_NONE) {
+		/* case (3): just copy the heaps; if possible
+		 * with copy-on-write VM support */
+		Heap bthp, thp;
+
+		memset(&bthp, 0, sizeof(Heap));
+		memset(&thp, 0, sizeof(Heap));
+
+		bthp.farmid = BBPselectfarm(role, b->ttype, offheap);
+		thp.farmid = BBPselectfarm(role, b->ttype, varheap);
+		snprintf(bthp.filename, sizeof(bthp.filename),
+			 "%s.tail", BBP_physical(bn->batCacheid));
+		snprintf(thp.filename, sizeof(thp.filename), "%s.theap",
+			 BBP_physical(bn->batCacheid));
+		if ((b->ttype && HEAPcopy(&bthp, &b->theap) != GDK_SUCCEED) ||
+		    (bn->tvheap && HEAPcopy(&thp, b->tvheap) != GDK_SUCCEED)) {
+			HEAPfree(&thp, 1);
+			HEAPfree(&bthp, 1);
+			BBPreclaim(bn);
 			return NULL;
-		if (tt != bn->ttype) {
-			bn->ttype = tt;
-			bn->tvarsized = ATOMvarsized(tt);
-			bn->tseqbase = b->tseqbase;
+		}
+		/* succeeded; replace dummy small heaps by the
+		 * real ones */
+		heapmove(&bn->theap, &bthp);
+		thp.parentid = bn->batCacheid;
+		if (bn->tvheap)
+			heapmove(bn->tvheap, &thp);
+
+		/* make sure we use the correct capacity */
+		bn->batCapacity = (BUN) (bn->ttype ? bn->theap.size >> bn->tshift : 0);
+
+
+		/* first/inserted must point equally far into
+		 * the heap as in the source */
+		bn->batInserted = b->batInserted;
+	} else if (BATatoms[tt].atomFix || tt != TYPE_void || ATOMextern(tt)) {
+		/* case (4): one-by-one BUN insert (really slow) */
+		BUN p, q, r = 0;
+		BATiter bi = bat_iterator(b);
+
+		BATloop(b, p, q) {
+			const void *t = BUNtail(bi, p);
+
+			bunfastapp_nocheck(bn, r, t, Tsize(bn));
+			r++;
+		}
+	} else if (tt != TYPE_void && b->ttype == TYPE_void) {
+		/* case (4): optimized for unary void
+		 * materialization */
+		oid cur = b->tseqbase, *dst = (oid *) bn->theap.base;
+		oid inc = !is_oid_nil(cur);
+
+		bn->theap.free = bunstocopy * sizeof(oid);
+		bn->theap.dirty |= bunstocopy > 0;
+		while (bunstocopy--) {
+			*dst++ = cur;
+			cur += inc;
 		}
 	} else {
-		/* check whether we need case (4); BUN-by-BUN copy (by
-		 * setting bunstocopy != BUN_NONE) */
-		if (ATOMsize(tt) != ATOMsize(b->ttype)) {
-			/* oops, void materialization */
-			bunstocopy = cnt;
-		} else if (BATatoms[tt].atomFix) {
-			/* oops, we need to fix/unfix atoms */
-			bunstocopy = cnt;
-		} else if (isVIEW(b)) {
-			/* extra checks needed for views */
-			bat tp = VIEWtparent(b);
-
-			if (tp != 0 && BATcapacity(BBP_cache(tp)) > cnt + cnt)
-				/* reduced slice view: do not copy too
-				 * much garbage */
-				bunstocopy = cnt;
-		}
-
-		bn = COLnew(b->hseqbase, tt, MAX(1, bunstocopy == BUN_NONE ? 0 : bunstocopy), role);
-		if (bn == NULL)
-			return NULL;
-
-		if (bn->tvarsized && bn->ttype && bunstocopy == BUN_NONE) {
-			bn->tshift = b->tshift;
-			bn->twidth = b->twidth;
-			if (HEAPextend(&bn->theap, BATcapacity(bn) << bn->tshift, TRUE) != GDK_SUCCEED)
-				goto bunins_failed;
-		}
-
-		if (tt == TYPE_void) {
-			/* case (2): a void,void result => nothing to
-			 * copy! */
-			bn->theap.free = 0;
-		} else if (bunstocopy == BUN_NONE) {
-			/* case (3): just copy the heaps; if possible
-			 * with copy-on-write VM support */
-			Heap bthp, thp;
-
-			memset(&bthp, 0, sizeof(Heap));
-			memset(&thp, 0, sizeof(Heap));
-
-			bthp.farmid = BBPselectfarm(role, b->ttype, offheap);
-			thp.farmid = BBPselectfarm(role, b->ttype, varheap);
-			snprintf(bthp.filename, sizeof(bthp.filename),
-				 "%s.tail", BBP_physical(bn->batCacheid));
-			snprintf(thp.filename, sizeof(thp.filename), "%s.theap",
-				 BBP_physical(bn->batCacheid));
-			if ((b->ttype && HEAPcopy(&bthp, &b->theap) != GDK_SUCCEED) ||
-			    (bn->tvheap && HEAPcopy(&thp, b->tvheap) != GDK_SUCCEED)) {
-				HEAPfree(&thp, 1);
-				HEAPfree(&bthp, 1);
-				BBPreclaim(bn);
-				return NULL;
-			}
-			/* succeeded; replace dummy small heaps by the
-			 * real ones */
-			heapmove(&bn->theap, &bthp);
-			thp.parentid = bn->batCacheid;
-			if (bn->tvheap)
-				heapmove(bn->tvheap, &thp);
-
-			/* make sure we use the correct capacity */
-			bn->batCapacity = (BUN) (bn->ttype ? bn->theap.size >> bn->tshift : 0);
-
-
-			/* first/inserted must point equally far into
-			 * the heap as in the source */
-			bn->batInserted = b->batInserted;
-		} else if (BATatoms[tt].atomFix || tt != TYPE_void || ATOMextern(tt)) {
-			/* case (4): one-by-one BUN insert (really slow) */
-			BUN p, q, r = 0;
-			BATiter bi = bat_iterator(b);
-
-			BATloop(b, p, q) {
-				const void *t = BUNtail(bi, p);
-
-				bunfastapp_nocheck(bn, r, t, Tsize(bn));
-				r++;
-			}
-		} else if (tt != TYPE_void && b->ttype == TYPE_void) {
-			/* case (4): optimized for unary void
-			 * materialization */
-			oid cur = b->tseqbase, *dst = (oid *) bn->theap.base;
-			oid inc = !is_oid_nil(cur);
-
-			bn->theap.free = bunstocopy * sizeof(oid);
-			bn->theap.dirty |= bunstocopy > 0;
-			while (bunstocopy--) {
-				*dst++ = cur;
-				cur += inc;
-			}
-		} else {
-			/* case (4): optimized for simple array copy */
-			bn->theap.free = bunstocopy * Tsize(bn);
-			bn->theap.dirty |= bunstocopy > 0;
-			memcpy(Tloc(bn, 0), Tloc(b, 0), bn->theap.free);
-		}
-		/* copy all properties (size+other) from the source bat */
-		BATsetcount(bn, cnt);
+		/* case (4): optimized for simple array copy */
+		bn->theap.free = bunstocopy * Tsize(bn);
+		bn->theap.dirty |= bunstocopy > 0;
+		memcpy(Tloc(bn, 0), Tloc(b, 0), bn->theap.free);
 	}
+	/* copy all properties (size+other) from the source bat */
+	BATsetcount(bn, cnt);
+
 	/* set properties (note that types may have changed in the copy) */
 	if (ATOMtype(tt) == ATOMtype(b->ttype)) {
 		if (ATOMtype(tt) == TYPE_oid) {
