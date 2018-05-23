@@ -4645,6 +4645,10 @@ rel_push_join_down_union(int *changes, mvc *sql, sql_rel *rel)
 			}	
 			nl = rel_crossproduct(sql->sa, ll, rel_dup(or), rel->op);
 			nr = rel_crossproduct(sql->sa, lr, rel_dup(or), rel->op);
+			if (need_no_nil(rel)) {
+				set_no_nil(nl);
+				set_no_nil(nr);
+			}
 			nl->exps = exps_copy(sql->sa, exps);
 			nr->exps = exps_copy(sql->sa, exps);
 			nl = rel_project(sql->sa, nl, rel_projections(sql, nl, NULL, 1, 1));
@@ -4688,6 +4692,10 @@ rel_push_join_down_union(int *changes, mvc *sql, sql_rel *rel)
 			}	
 			nl = rel_crossproduct(sql->sa, ll, rl, rel->op);
 			nr = rel_crossproduct(sql->sa, lr, rr, rel->op);
+			if (need_no_nil(rel)) {
+				set_no_nil(nl);
+				set_no_nil(nr);
+			}
 			nl->exps = exps_copy(sql->sa, exps);
 			nr->exps = exps_copy(sql->sa, exps);
 			nl = rel_project(sql->sa, nl, rel_projections(sql, nl, NULL, 1, 1));
@@ -4717,6 +4725,10 @@ rel_push_join_down_union(int *changes, mvc *sql, sql_rel *rel)
 			}	
 			nl = rel_crossproduct(sql->sa, rel_dup(ol), rl, rel->op);
 			nr = rel_crossproduct(sql->sa, rel_dup(ol), rr, rel->op);
+			if (need_no_nil(rel)) {
+				set_no_nil(nl);
+				set_no_nil(nr);
+			}
 			nl->exps = exps_copy(sql->sa, exps);
 			nr->exps = exps_copy(sql->sa, exps);
 			nl = rel_project(sql->sa, nl, rel_projections(sql, nl, NULL, 1, 1));
@@ -4764,6 +4776,8 @@ rel_push_join_down_union(int *changes, mvc *sql, sql_rel *rel)
 					rl->exps = exps_copy(sql->sa, or->exps);
 				}	
 				nl = rel_crossproduct(sql->sa, rel_dup(ol), rl, rel->op);
+				if (need_no_nil(rel)) 
+					set_no_nil(nl);
 				nl->exps = exps_copy(sql->sa, exps);
 				(*changes)++;
 				return rel_inplace_project(sql->sa, rel, nl, rel_projections(sql, rel, NULL, 1, 1));
@@ -4782,6 +4796,8 @@ rel_push_join_down_union(int *changes, mvc *sql, sql_rel *rel)
 					rr->exps = exps_copy(sql->sa, or->exps);
 				}	
 				nl = rel_crossproduct(sql->sa, rel_dup(ol), rr, rel->op);
+				if (need_no_nil(rel)) 
+					set_no_nil(nl);
 				nl->exps = exps_copy(sql->sa, exps);
 				(*changes)++;
 				return rel_inplace_project(sql->sa, rel, nl, rel_projections(sql, rel, NULL, 1, 1));
@@ -7657,6 +7673,8 @@ rel_rewrite_antijoin(int *changes, mvc *sql, sql_rel *rel)
 			rel_rename_exps(sql, r->exps, rr->exps);
 
 			nl = rel_crossproduct(sql->sa, rel->l, rl, op_anti);
+			if (need_no_nil(rel))
+				set_no_nil(nl);
 			nl->exps = exps_copy(sql->sa, rel->exps);
 			rel->l = nl;
 			rel->r = rr;
@@ -8931,6 +8949,8 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			sql_rel *rr = rel_dup(r->r);
 
 			nl = rel_crossproduct(sql->sa, nl, rr, r->op);
+			if (need_no_nil(r))
+				set_no_nil(nl);
 			nl->exps = exps_copy(sql->sa, r->exps);
 			rel_destroy(rel);
 			rel = nl; 
@@ -8939,6 +8959,8 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			sql_rel *rl = rel_dup(r->l);
 
 			nr = rel_crossproduct(sql->sa, rl, nr, r->op);
+			if (need_no_nil(r))
+				set_no_nil(nr);
 			nr->exps = exps_copy(sql->sa, r->exps);
 			rel_destroy(rel);
 			rel = nr; 
@@ -8948,6 +8970,8 @@ rel_apply_rewrite(int *changes, mvc *sql, sql_rel *rel)
 			sql_rel *nr = rel_apply(sql, rel_dup(rel->l), rel_dup(r->r), rel->exps, rel->flag);
 
 			l = rel_crossproduct(sql->sa, nl, nr, r->op);
+			if (need_no_nil(r))
+				set_no_nil(l);
 			l->exps = exps_copy(sql->sa, r->exps);
 			rel_destroy(rel);
 			(*changes)++;

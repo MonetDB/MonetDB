@@ -2539,7 +2539,6 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 			ek.card = card_set;
 			select = rel_select(sql->sa, rel_dup(rel), NULL); /* dup to make sure we get a new select op */
 			rel_destroy(rel);
-
 			/* first remove the NULLs */
 			if (!l_is_value && sc->token == SQL_NOT_IN &&
 		    	    l->card != CARD_ATOM && has_nil(l)) {
@@ -2808,10 +2807,11 @@ rel_logical_exp(mvc *sql, sql_rel *rel, symbol *sc, int f)
 				rel = rel_crossproduct(sql->sa, left, right, op_join);
 				rel->exps = jexps;
 			}
-			if (sc->token == SQL_IN || correlated || l_is_value) {
-				rel->op = (sc->token == SQL_IN)?op_semi:op_anti;
-			} else if (sc->token == SQL_NOT_IN) {
+			if (sc->token == SQL_IN || correlated || l_is_value)
+				rel->op = op_semi;
+			if (sc->token == SQL_NOT_IN) {
 				rel->op = op_anti;
+				set_no_nil(rel);
 				set_processed(rel);
 			}
 			if (pexps) 
