@@ -5373,6 +5373,13 @@ insert into sys.systemfunctions (select id from sys.functions where name in ('gr
 set schema "sys";
 commit;
 
+Running database upgrade commands:
+set schema sys;
+create function sys.remote_table_credentials (tablename string) returns table ("uri" string, "username" string, "hash" string) external name sql.rt_credentials;
+insert into sys.systemfunctions (select id from sys.functions where name='remote_table_credentials' and id not in (select function_id from sys.systemfunctions));
+set schema "sys";
+commit;
+
 
 # 16:53:35 >  
 # 16:53:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30908" "--port=39660"

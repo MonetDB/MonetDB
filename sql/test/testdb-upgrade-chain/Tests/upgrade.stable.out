@@ -40,6 +40,14 @@ insert into sys.systemfunctions (select id from sys.functions where name in ('gr
 set schema "testschema";
 commit;
 
+Running database upgrade commands:
+set schema sys;
+create function sys.remote_table_credentials (tablename string) returns table ("uri" string, "username" string, "hash" string) external name sql.rt_credentials;
+insert into sys.systemfunctions (select id from sys.functions where name='remote_table_credentials' and id not in (select function_id from sys.systemfunctions));
+set schema "testschema";
+commit;
+
+
 # 15:56:11 >  
 # 15:56:11 >  "/usr/bin/python" "upgrade.SQL.py" "upgrade"
 # 15:56:11 >  
