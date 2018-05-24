@@ -49,7 +49,7 @@ static allocated_region *allocated_regions[THREADS];
 static jmp_buf jump_buffer[THREADS];
 
 typedef char *(*jitted_function)(void **inputs, void **outputs,
-								 malloc_function_ptr malloc);
+								 malloc_function_ptr malloc, free_function_ptr free);
 
 struct _cached_functions;
 typedef struct _cached_functions {
@@ -192,6 +192,11 @@ static void *wrapped_GDK_malloc(size_t size)
 		return NULL;
 	void *ptr = jump_GDK_malloc(size + sizeof(allocated_region));
 	return add_allocated_region(ptr);
+}
+
+static void wrapped_GDK_free(void* ptr) {
+	(void) ptr;
+	return;
 }
 
 static void *wrapped_GDK_malloc_nojump(size_t size)
@@ -787,7 +792,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		ATTEMPT_TO_WRITE_TO_FILE(f, "\nchar* ");
 		ATTEMPT_TO_WRITE_TO_FILE(f, funcname);
 		ATTEMPT_TO_WRITE_TO_FILE(f, "(void** __inputs, void** __outputs, "
-									"malloc_function_ptr malloc) {\n");
+									"malloc_function_ptr malloc, free_function_ptr free) {\n");
 
 		// now we convert the input arguments from void** to the proper
 		// input/output
@@ -1313,7 +1318,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		}
 	}
 	// call the actual jitted function
-	msg = func(inputs, outputs, wrapped_GDK_malloc);
+	msg = func(inputs, outputs, wrapped_GDK_malloc, wrapped_GDK_free);
 
 
 	if (option_enable_mprotect) {
