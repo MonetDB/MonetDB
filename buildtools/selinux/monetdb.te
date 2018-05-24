@@ -1,6 +1,23 @@
-policy_module(monetdb, 0.2)
+policy_module(monetdb, 0.3)
 # The above line declares that this file is a SELinux policy file. Its
 # name is monetdb, so the file should be saved as monetdb.te
+
+# Declare the system types and classes we're using.
+require {
+	type proc_net_t;
+	type tmp_t;
+	type var_t;
+	class dir { read };
+	class fd { use };
+	class fifo_file { getattr read write };
+	class file { entrypoint execute getattr manage_file_perms map open read };
+	class netlink_selinux_socket create_socket_perms;
+	class process { rlimitinh siginh signal transition };
+	class tcp_socket create_stream_socket_perms;
+	class udp_socket create_stream_socket_perms;
+	class unix_dgram_socket create_socket_perms;
+	class unix_stream_socket { connectto create_stream_socket_perms getopt read shutdown write };
+}
 
 # First, we declare the monetdbd_t domain, used for the "monetdbd"
 # process.  Because it is launched by systemd, we tell the policy that
@@ -79,6 +96,7 @@ allow monetdbd_t self:udp_socket create_stream_socket_perms;
 allow monetdbd_t self:unix_dgram_socket create_socket_perms;
 allow monetdbd_t self:unix_stream_socket { create_stream_socket_perms connectto };
 allow monetdbd_t self:netlink_selinux_socket create_socket_perms;
+allow monetdbd_t proc_net_t:file read;
 manage_dirs_pattern(monetdbd_t, tmp_t, tmp_t)
 manage_sock_files_pattern(monetdbd_t, tmp_t, tmp_t)
 manage_sock_files_pattern(monetdbd_t, mserver5_db_t, mserver5_db_t)

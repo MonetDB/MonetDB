@@ -640,7 +640,6 @@ fi
 %exclude %{_libdir}/monetdb5/fits.mal
 %exclude %{_libdir}/monetdb5/autoload/*_fits.mal
 %exclude %{_libdir}/monetdb5/createdb/*_fits.sql
-%exclude %{_libdir}/monetdb5/lib_fits.so
 %endif
 %if %{?with_geos:1}%{!?with_geos:0}
 %exclude %{_libdir}/monetdb5/geom.mal
@@ -674,25 +673,16 @@ fi
 %endif
 %exclude %{_libdir}/monetdb5/autoload/??_sql*.mal
 %{_libdir}/monetdb5/autoload/*.mal
-%if %{?with_geos:1}%{!?with_geos:0}
-%exclude %{_libdir}/monetdb5/lib_geom.so
-%endif
-%if %{?with_lidar:1}%{!?with_lidar:0}
-%exclude %{_libdir}/monetdb5/lib_lidar.so
-%endif
-%if %{?with_pyintegration:1}%{!?with_pyintegration:0}
-%exclude %{_libdir}/monetdb5/lib_pyapi.so
-%endif
-%if %{?with_rintegration:1}%{!?with_rintegration:0}
-%exclude %{_libdir}/monetdb5/lib_rapi.so
-%endif
 %if %{?with_samtools:1}%{!?with_samtools:0}
 %exclude %{_libdir}/monetdb5/bam.mal
 %exclude %{_libdir}/monetdb5/autoload/*_bam.mal
-%exclude %{_libdir}/monetdb5/lib_bam.so
 %endif
-%exclude %{_libdir}/monetdb5/lib_sql.so
-%{_libdir}/monetdb5/*.so
+%{_libdir}/monetdb5/lib_capi.so
+%{_libdir}/monetdb5/lib_generator.so
+%{_libdir}/monetdb5/lib_lsst.so
+%{_libdir}/monetdb5/lib_opt_sql_append.so
+%{_libdir}/monetdb5/lib_udf.so
+%{_libdir}/monetdb5/lib_vault.so
 %doc %{_mandir}/man1/mserver5.1.gz
 %dir %{_datadir}/doc/MonetDB
 %docdir %{_datadir}/doc/MonetDB

@@ -769,7 +769,7 @@ opt_minmax:
 declare_statement:
 	declare variable_list
 		{ $$ = _symbol_create_list( SQL_DECLARE, $2); }
-    |   declare table_def { $$ = $2; }
+    |   declare table_def { $$ = $2; if ($$) $$->token = SQL_DECLARE_TABLE; }
     ;
 
 variable_list:
@@ -6204,6 +6204,7 @@ char *token2string(int token)
 	SQL(DROP_CONSTRAINT);
 	SQL(DROP_DEFAULT);
 	SQL(DECLARE);
+	SQL(DECLARE_TABLE);
 	SQL(COMMENT);
 	SQL(SET);
 	SQL(PREP);
