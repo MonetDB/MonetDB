@@ -1550,15 +1550,17 @@ sql_update_remote_tables(Client c, mvc *sql)
 	/* Create the SQL function needed to dump the remote table credentials */
 	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
 	pos += snprintf(buf + pos, bufsize - pos,
-			"create function sys.remote_table_credentials(tablename string)"
+			"create function sys.remote_table_credentials (tablename string)"
 			" returns table (\"uri\" string, \"username\" string, \"hash\" string)"
-			" external name sql.rt_credentials;\n");
+			" external name sql.rt_credentials;\n"
+			"insert into sys.systemfunctions (select id from sys.functions where name='remote_table_credentials' and id not in (select function_id from sys.systemfunctions));\n");
 
 	if (schema)
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
 	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 
 	assert(pos < bufsize);
+	printf("Running database upgrade commands:\n%s\n", buf);
 	err = SQLstatementIntern(c, &buf, "create function", 1, 0, NULL);
 	if (err)
 		goto bailout;
