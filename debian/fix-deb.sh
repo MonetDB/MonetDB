@@ -64,6 +64,6 @@ wheezy)
     ;;
 trusty)
     # the trusty linker produces unresolved references to openSSL functions
-    sed -i '/openssl_LIBS/s/WIN32\?//' clients/mapilib/Makefile.ag
+    sed -i '/openssl_LIBS/s/WIN32?//' clients/mapilib/Makefile.ag
     ;;
 esac
