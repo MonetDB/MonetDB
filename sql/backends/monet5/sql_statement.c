@@ -2338,6 +2338,7 @@ stmt_catalog(backend *be, int type, stmt *args)
 	case DDL_ALTER_TABLE_DEL_TABLE:	q = newStmt(mb, sqlcatalogRef, alter_del_tableRef); break;
 	case DDL_ALTER_TABLE_SET_ACCESS:q = newStmt(mb, sqlcatalogRef, alter_set_tableRef); break;
 	case DDL_ALTER_STREAM_TABLE:q = newStmt(mb, sqlcatalogRef, alter_stream_tableRef); break;
+	case DDL_COMMENT_ON:	q = newStmt(mb, sqlcatalogRef, comment_onRef); break;
 	default:
 		showException(GDKout, SQL, "sql", "catalog operation unknown\n");
 	}
@@ -2912,7 +2913,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 	p = find_prop(rel->p, PROP_REMOTE);
 	if (p) 
 		rel->p = prop_remove(rel->p, p);
-	rel = rel_optimizer(be->mvc, rel);
+	rel = rel_optimizer(be->mvc, rel, 0);
 	if (p) {
 		p->p = rel->p;
 		rel->p = p;
@@ -2993,7 +2994,8 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subaggr *op, int red
 	mod = op->aggr->mod;
 	aggrfunc = op->aggr->imp;
 
-	if (strcmp(aggrfunc, "avg") == 0 || strcmp(aggrfunc, "sum") == 0 || strcmp(aggrfunc, "prod") == 0)
+	if (strcmp(aggrfunc, "avg") == 0 || strcmp(aggrfunc, "sum") == 0 || strcmp(aggrfunc, "prod") == 0
+		|| strcmp(aggrfunc, "str_group_concat") == 0)
 		complex_aggr = 1;
 	/* some "sub" aggregates have an extra argument "abort_on_error" */
 	abort_on_error = complex_aggr || strncmp(aggrfunc, "stdev", 5) == 0 || strncmp(aggrfunc, "variance", 8) == 0;

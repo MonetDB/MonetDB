@@ -49,7 +49,7 @@ Ready.
 | | | | ) [  ] [ sys.count() NOT NULL as "L41"."L41" ]                       |
 | | | ) [ "L41"."L41" ]                                                      |
 | | ) [  ] [ sys.sum no nil ("L41"."L41") as "L41"."L41" ]                   |
-| ) [ "L41" NOT NULL as "L42"."L41" ]                                        |
+| ) [ "L41"."L41" NOT NULL ]                                                 |
 +----------------------------------------------------------------------------+
 18 rows
 Operation successful
@@ -81,32 +81,32 @@ Operation successful
 |     X_40:bat[:lng] := bat.append(X_38:bat[:lng], X_37:bat[:lng], true:bit);                                            |
 |     X_42:bat[:lng] := bat.append(X_40:bat[:lng], X_36:lng, true:bit);                                                  |
 |     X_43:lng := aggr.sum(X_42:bat[:lng]);                                                                              |
-|     sql.resultSet(".L42":str, "L41":str, "bigint":str, 64:int, 0:int, 7:int, X_43:lng);                                |
+|     sql.resultSet(".L41":str, "L41":str, "bigint":str, 64:int, 0:int, 7:int, X_43:lng);                                |
 | end user.s4_1;                                                                                        |
 | #inline               actions= 0 time=1 usec                                                                           |
-| #remap                actions= 0 time=2 usec                                                                           |
-| #costmodel            actions= 1 time=3 usec                                                                           |
-| #coercion             actions= 1 time=6 usec                                                                           |
-| #evaluate             actions= 0 time=5 usec                                                                           |
-| #emptybind            actions= 0 time=0 usec                                                                           |
-| #pushselect           actions= 5 time=24 usec                                                                          |
-| #aliases              actions= 2 time=6 usec                                                                           |
-| #mergetable           actions= 0 time=33 usec                                                                          |
-| #deadcode             actions= 3 time=9 usec                                                                           |
+| #remap                actions= 0 time=1 usec                                                                           |
+| #costmodel            actions= 1 time=1 usec                                                                           |
+| #coercion             actions= 1 time=4 usec                                                                           |
+| #evaluate             actions= 0 time=4 usec                                                                           |
+| #emptybind            actions= 0 time=1 usec                                                                           |
+| #pushselect           actions= 5 time=20 usec                                                                          |
+| #aliases              actions= 2 time=5 usec                                                                           |
+| #mergetable           actions= 0 time=28 usec                                                                          |
+| #deadcode             actions= 3 time=8 usec                                                                           |
 | #aliases              actions= 0 time=0 usec                                                                           |
-| #constants            actions= 1 time=7 usec                                                                           |
-| #commonTerms          actions= 0 time=6 usec                                                                           |
-| #projectionpath       actions= 0 time=3 usec                                                                           |
-| #reorder              actions= 1 time=25 usec                                                                          |
-| #deadcode             actions= 0 time=7 usec                                                                           |
+| #constants            actions= 1 time=5 usec                                                                           |
+| #commonTerms          actions= 0 time=4 usec                                                                           |
+| #projectionpath       actions= 0 time=2 usec                                                                           |
+| #reorder              actions= 1 time=21 usec                                                                          |
+| #deadcode             actions= 0 time=6 usec                                                                           |
 | #matpack              actions= 0 time=0 usec                                                                           |
 | #multiplex            actions= 0 time=2 usec                                                                           |
-| #profiler             actions=1 time=2 usec                                                                            |
+| #profiler             actions=1 time=1 usec                                                                            |
 | #candidates           actions=1 time=1 usec                                                                            |
-| #deadcode             actions= 0 time=6 usec                                                                           |
-| #wlc                  actions= 0 time=1 usec                                                                           |
-| #garbagecollector     actions= 1 time=41 usec                                                                          |
-| #total                actions=26 time=286 usec                                                                         |
+| #deadcode             actions= 0 time=5 usec                                                                           |
+| #wlc                  actions= 0 time=0 usec                                                                           |
+| #garbagecollector     actions= 1 time=40 usec                                                                          |
+| #total                actions=26 time=228 usec                                                                         |
 +------------------------------------------------------------------------------------------------------------------------+
 51 rows
 

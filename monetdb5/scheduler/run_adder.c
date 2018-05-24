@@ -106,7 +106,14 @@ RUNadder(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	*getArgReference_int(stk,p,1) = total;
 	getVar(mb,getArg(p,1))->value.val.ival = total; /* also set in symbol table */
 	if (total > 0) {
-		q = copyInstruction(p);
+		if ((q = copyInstruction(p)) == NULL) {
+			for(i=0; i<mb->stop; i++)
+				if( mb->stmt[i])
+					freeInstruction(mb->stmt[i]);
+			GDKfree(mb->stmt);
+			mb->stmt = old;
+			throw(MAL, "adder.generate", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
 		pushInstruction(mb, q);
 	}
 	memcpy(mb->stmt+mb->stop, old+pc+1, sizeof(InstrPtr) * (oldtop-pc)-1);

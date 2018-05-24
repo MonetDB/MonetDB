@@ -139,7 +139,7 @@ create ordered index "oidx_time" on all_types ("time");
 create ordered index "oidx_time5" on all_types ("time5");
 create ordered index "oidx_timezone" on all_types ("timezone");
 create ordered index "oidx_time5zone" on all_types ("time5zone");
--- next data types are not supported in ordered index
+-- next data types were not supported in ordered index, but are now after https://dev.monetdb.org/hg/MonetDB?cmd=changeset;node=222c6823450f
 create ordered index "oidx_blob" on all_types ("blob");
 create ordered index "oidx_blob100" on all_types ("blob100");
 create ordered index "oidx_clob" on all_types ("clob");
@@ -154,6 +154,12 @@ create ordered index "oidx_json10" on all_types ("json10");
 create ordered index "oidx_url" on all_types ("url");
 create ordered index "oidx_url55" on all_types ("url55");
 create ordered index "oidx_uuid" on all_types ("uuid");
+
+-- dump the table including all indexes defined on it
+\D all_types
+
+select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'all_types') order by name;
+
 
 -- synthese the select commands with order by ASC:
 select 'select "'||name||'" from all_types order by "'||name||'" ASC;' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
@@ -266,6 +272,9 @@ insert into all_types select * from all_types;
 
 select * from all_types order by 11,12,13,14,15,16,17,18,19,20,1,2,3,4,5,6,7,8,9,10;
 
+
+select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'all_types') order by name;
+
 --cleanup
 -- synthese the drop index commands:
 select 'drop index "oidx_'||name||'";' as stmt from _columns where table_id in (select id from _tables where name = 'all_types') order by number;
@@ -305,6 +314,27 @@ drop index "oidx_time";
 drop index "oidx_time5";
 drop index "oidx_timezone";
 drop index "oidx_time5zone";
+drop index "oidx_blob";
+drop index "oidx_blob100";
+drop index "oidx_clob";
+drop index "oidx_clob100";
+drop index "oidx_character";
+drop index "oidx_varchar100";
+drop index "oidx_character10";
+drop index "oidx_inet";
+drop index "oidx_inet9";
+drop index "oidx_json";
+drop index "oidx_json10";
+drop index "oidx_url";
+drop index "oidx_url55";
+drop index "oidx_uuid";
 
-drop table all_types cascade;
+-- dump the table again, now it should not list any indexes anymore
+\D all_types
+
+drop table all_types;
+
+drop table if exists all_types cascade;
+
+select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'all_types') order by name;
 

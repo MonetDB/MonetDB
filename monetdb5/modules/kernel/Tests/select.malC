@@ -247,23 +247,23 @@ io.print("nothing");
 x := algebra.select(b, nil:bat[:oid], 7, 3, true, true, true);
 z := algebra.projection(x, b);
 z := algebra.sort(z, false, true);
-io.print(z);                    # nothing
-io.print("nothing");
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
 x := algebra.select(b, nil:bat[:oid], 7, 3, true, false, true);
 z := algebra.projection(x, b);
 z := algebra.sort(z, false, true);
-io.print(z);                    # nothing
-io.print("nothing");
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
 x := algebra.select(b, nil:bat[:oid], 7, 3, false, true, true);
 z := algebra.projection(x, b);
 z := algebra.sort(z, false, true);
-io.print(z);                    # nothing
-io.print("nothing");
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
 x := algebra.select(b, nil:bat[:oid], 7, 3, false, false, true);
 z := algebra.projection(x, b);
 z := algebra.sort(z, false, true);
-io.print(z);                    # nothing
-io.print("nothing");
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
 
 
 bat.orderidx(b,3);
@@ -497,23 +497,23 @@ io.print("nothing");
 x := algebra.select(b, nil:bat[:oid], 7, 3, true, true, true);
 z := algebra.projection(x, b);
 z := algebra.sort(z, false, true);
-io.print(z);                    # nothing
-io.print("nothing");
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
 x := algebra.select(b, nil:bat[:oid], 7, 3, true, false, true);
 z := algebra.projection(x, b);
 z := algebra.sort(z, false, true);
-io.print(z);                    # nothing
-io.print("nothing");
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
 x := algebra.select(b, nil:bat[:oid], 7, 3, false, true, true);
 z := algebra.projection(x, b);
 z := algebra.sort(z, false, true);
-io.print(z);                    # nothing
-io.print("nothing");
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
 x := algebra.select(b, nil:bat[:oid], 7, 3, false, false, true);
 z := algebra.projection(x, b);
 z := algebra.sort(z, false, true);
-io.print(z);                    # nothing
-io.print("nothing");
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
 
 
 x := algebra.select(s, nil:bat[:oid], nil:int, nil:int, true, true, false);
@@ -744,23 +744,23 @@ io.print("nothing");
 x := algebra.select(s, nil:bat[:oid], 7, 3, true, true, true);
 z := algebra.projection(x, s);
 z := algebra.sort(z, false, true);
-io.print(z);                    # nothing
-io.print("nothing");
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
 x := algebra.select(s, nil:bat[:oid], 7, 3, true, false, true);
 z := algebra.projection(x, s);
 z := algebra.sort(z, false, true);
-io.print(z);                    # nothing
-io.print("nothing");
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
 x := algebra.select(s, nil:bat[:oid], 7, 3, false, true, true);
 z := algebra.projection(x, s);
 z := algebra.sort(z, false, true);
-io.print(z);                    # nothing
-io.print("nothing");
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
 x := algebra.select(s, nil:bat[:oid], 7, 3, false, false, true);
 z := algebra.projection(x, s);
 z := algebra.sort(z, false, true);
-io.print(z);                    # nothing
-io.print("nothing");
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
 
 
 x := algebra.select(r, nil:bat[:oid], nil:int, nil:int, true, true, false);
@@ -991,20 +991,20 @@ io.print("nothing");
 x := algebra.select(r, nil:bat[:oid], 7, 3, true, true, true);
 z := algebra.projection(x, r);
 z := algebra.sort(z, false, true);
-io.print(z);                    # nothing
-io.print("nothing");
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
 x := algebra.select(r, nil:bat[:oid], 7, 3, true, false, true);
 z := algebra.projection(x, r);
 z := algebra.sort(z, false, true);
-io.print(z);                    # nothing
-io.print("nothing");
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
 x := algebra.select(r, nil:bat[:oid], 7, 3, false, true, true);
 z := algebra.projection(x, r);
 z := algebra.sort(z, false, true);
-io.print(z);                    # nothing
-io.print("nothing");
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");
 x := algebra.select(r, nil:bat[:oid], 7, 3, false, false, true);
 z := algebra.projection(x, r);
 z := algebra.sort(z, false, true);
-io.print(z);                    # nothing
-io.print("nothing");
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9");

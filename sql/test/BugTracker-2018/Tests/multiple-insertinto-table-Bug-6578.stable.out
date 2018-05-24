@@ -1,0 +1,83 @@
+stdout of test 'multiple-insertinto-table-Bug-6578` in directory 'sql/test/BugTracker-2018` itself:
+
+
+# 19:28:49 >  
+# 19:28:49 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38573" "--set" "mapi_usock=/var/tmp/mtest-21940/.s.monetdb.38573" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-old/Linux-x86_64/var/MonetDB/mTests_sql_test_BugTracker-2018" "--set" "embedded_c=true"
+# 19:28:49 >  
+
+# MonetDB 5 server v11.29.2
+# This is an unreleased version
+# Serving database 'mTests_sql_test_BugTracker-2018', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit
+# Found 15.387 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:38573/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-21940/.s.monetdb.38573
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 19:28:49 >  
+# 19:28:49 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-21940" "--port=38573"
+# 19:28:49 >  
+
+#START TRANSACTION;
+#CREATE TABLE "x" (
+#	"a1"   CHARACTER LARGE OBJECT,
+#	"a2"   CHARACTER LARGE OBJECT
+#);
+#COPY 5 RECORDS INTO "x" FROM stdin USING DELIMITERS '|','\n','"';
+#"fiets"|"damesfiets"
+#"fiets"|"herenfiets"
+#"auto"|"personenwag"
+#"auto"|"bedrijfsauto"
+#"auto"|"personenauto"
+[ 5	]
+#COMMIT;
+#START TRANSACTION;
+#CREATE TABLE "y" (
+#	"paramname" CHARACTER LARGE OBJECT,
+#	"value"     CHARACTER LARGE OBJECT
+#);
+#COPY 1 RECORDS INTO "y" FROM stdin USING DELIMITERS '|','\n','"';
+#"1"|"something"
+[ 1	]
+#COMMIT;
+#start transaction;
+#insert into y values ('0','boot');
+[ 1	]
+#insert into y values ('0','auto');
+[ 1	]
+#select count(*)
+#from x,
+#     (select value as a1 from y where paramname='0') as v
+#where x.a1 = v.a1;
+% sys.L5 # table_name
+% L5 # name
+% bigint # type
+% 1 # length
+[ 3	]
+#rollback;
+#start transaction;
+#insert into y values ('0','boot'), ('0','auto');
+[ 2	]
+#select count(*)
+#from x,
+#     (select value as a1 from y where paramname='0') as v
+#where x.a1 = v.a1;
+% sys.L5 # table_name
+% L5 # name
+% bigint # type
+% 1 # length
+[ 3	]
+#rollback;
+#drop table x;
+#drop table y;
+
+# 19:28:49 >  
+# 19:28:49 >  "Done."
+# 19:28:49 >  
+

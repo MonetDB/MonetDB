@@ -12,7 +12,7 @@ includedir=@includedir@
 Name: monetdb5
 Description: MonetDB5
 Version: @PACKAGE_VERSION@
-Requires: monetdb-gdk
+Requires: monetdb-gdk monetdb-stream
 
-Libs: -L${libdir} -lmonetdb5 -lbat
+Libs: -L${libdir} -lmonetdb5 @openssl_LIBS@ @pcre_LIBS@ @libxml2_LIBS@
 Cflags: -I${includedir}/monetdb

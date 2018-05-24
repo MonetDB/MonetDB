@@ -204,7 +204,7 @@ rel_psm_declare(mvc *sql, dnode *n)
 static sql_exp *
 rel_psm_declare_table(mvc *sql, dnode *n)
 {
-	sql_rel *rel = NULL;
+	sql_rel *rel = NULL, *baset = NULL;
 	dlist *qname = n->next->data.lval;
 	const char *name = qname_table(qname);
 	const char *sname = qname_schema(qname);
@@ -212,18 +212,26 @@ rel_psm_declare_table(mvc *sql, dnode *n)
 
 	if (sname)  /* not allowed here */
 		return sql_error(sql, 02, SQLSTATE(42000) "DECLARE TABLE: qualified name not allowed");
-	if (frame_find_var(sql, name)) 
+	if (frame_find_var(sql, name))
 		return sql_error(sql, 01, SQLSTATE(42000) "Variable '%s' already declared", name);
-	
+
 	assert(n->next->next->next->type == type_int);
-	
+
 	rel = rel_create_table(sql, cur_schema(sql), SQL_DECLARED_TABLE, NULL, name, n->next->next->data.sym, n->next->next->next->data.i_val, NULL, 0, NULL);
 
-	if (!rel || rel->op != op_ddl || rel->flag != DDL_CREATE_TABLE)
+	if (!rel)
 		return NULL;
-
-	t = (sql_table*)((atom*)((sql_exp*)rel->exps->t->data)->l)->data.val.pval;
-	if(!stack_push_table(sql, name, rel, t))
+	if(rel->op == op_ddl) {
+		baset = rel;
+	} else if(rel->op == op_insert) {
+		baset = rel->l;
+	} else {
+		return NULL;
+	}
+	if(baset->flag != DDL_CREATE_TABLE)
+		return NULL;
+	t = (sql_table*)((atom*)((sql_exp*)baset->exps->t->data)->l)->data.val.pval;
+	if(!stack_push_table(sql, name, baset, t))
 		return sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	return exp_table(sql->sa, sa_strdup(sql->sa, name), t, sql->frame);
 }
@@ -721,6 +729,7 @@ sequential_block (mvc *sql, sql_subtype *restype, list *restypelist, dlist *blk,
 		case SQL_DECLARE:
 			reslist = rel_psm_declare(sql, s->data.lval->h);
 			break;
+		case SQL_DECLARE_TABLE:
 		case SQL_CREATE_TABLE: 
 			res = rel_psm_declare_table(sql, s->data.lval->h);
 			break;
@@ -1463,6 +1472,7 @@ psm_analyze(mvc *sql, char *analyzeType, dlist *qname, dlist *columns, symbol *s
 	append(exps, sample_exp);
 	append(tl, exp_subtype(sample_exp));
 
+	assert(qname);
 	if (qname) {
 		if (qname->h->next)
 			sname = qname_schema(qname);
@@ -1498,6 +1508,8 @@ psm_analyze(mvc *sql, char *analyzeType, dlist *qname, dlist *columns, symbol *s
 	} else {
 		dnode *n;
 
+		if (!sname || !tname)
+			return sql_error(sql, 01, SQLSTATE(42000) "Analyze schema or table name missing");
 		f = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), analyzeType, tl, F_PROC);
 		if (!f)
 			return sql_error(sql, 01, SQLSTATE(42000) "Analyze procedure missing");

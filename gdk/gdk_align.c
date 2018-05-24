@@ -169,7 +169,7 @@ BATmaterialize(BAT *b)
 	assert(cnt >= q - p);
 	ALGODEBUG fprintf(stderr, "#BATmaterialize(%d);\n", (int) b->batCacheid);
 
-	if (!BATtdense(b) || tt != TYPE_void) {
+	if (tt != TYPE_void) {
 		/* no voids */
 		return GDK_SUCCEED;
 	}
@@ -193,16 +193,17 @@ BATmaterialize(BAT *b)
 	b->batDirtydesc = TRUE;
 	b->theap.dirty = TRUE;
 
-	/* set the correct dense info */
-	b->tdense = TRUE;
-
 	/* So now generate [t..t+cnt-1] */
 	t = b->tseqbase;
 	x = (oid *) b->theap.base;
-	for (; p < q; p++)
-		*x++ = t++;
-	cnt = t - b->tseqbase;
-	BATsetcount(b, cnt);
+	if (is_oid_nil(t)) {
+		while (p < q)
+			x[p++] = oid_nil;
+	} else {
+		while (p < q)
+			x[p++] = t++;
+	}
+	BATsetcount(b, b->batCount);
 
 	/* cleanup the old heaps */
 	HEAPfree(&tail, 0);

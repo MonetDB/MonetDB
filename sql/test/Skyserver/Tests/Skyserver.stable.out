@@ -95,7 +95,7 @@ tables
 [ 1	]
 [ 187	]
 #select count(*) from PhotoObjAll;
-% skyserver.L4 # table_name
+% skyserver.L3 # table_name
 % L3 # name
 % bigint # type
 % 3 # length

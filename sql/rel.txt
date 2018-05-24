@@ -133,7 +133,7 @@ e_cmp
 e_func
 e_aggr
 	-> l 	list of sub expressions (args for the func and aggr)
-	-> r	rank operators the list order by expressions (group by in l)
+		+ optional conditional execution argument
 	-> f	func / aggr
 for aggr
 	-> flag DISTINCT and NO_NIL could be set

@@ -208,6 +208,7 @@ forkMserver(char *database, sabdb** stats, int force)
 	char *readonly = NULL;
 	char *embeddedr = NULL;
 	char *embeddedpy = NULL;
+	char *embeddedc = NULL;
 	char *dbextra = NULL;
 	char *argv[512];	/* for the exec arguments */
 	char property_other[1024];
@@ -476,6 +477,9 @@ forkMserver(char *database, sabdb** stats, int force)
 		}
 		embeddedpy = "embedded_py=3";
 	}
+	kv = findConfKey(ckv, "embedc");
+	if (kv->val != NULL && strcmp(kv->val, "no") != 0)
+		embeddedc = "embedded_c=true";
 	kv = findConfKey(ckv, "dbextra");
 	if (kv != NULL && kv->val != NULL) {
 		dbextra = kv->val;
@@ -544,6 +548,9 @@ forkMserver(char *database, sabdb** stats, int force)
 	}
 	if (embeddedpy != NULL) {
 		argv[c++] = "--set"; argv[c++] = embeddedpy;
+	}
+	if (embeddedc != NULL) {
+		argv[c++] = "--set"; argv[c++] = embeddedc;
 	}
 	if (readonly != NULL) {
 		argv[c++] = readonly;
@@ -748,6 +755,8 @@ forkMserver(char *database, sabdb** stats, int force)
 	return(newErr("%s", strerror(errno)));
 }
 
+#define BUFLEN 1024
+
 /**
  * Fork stethoscope and detatch, after performing sanity checks. The assumption
  * is that each mserver5 process can have at most one stethoscope process
@@ -875,18 +884,97 @@ fork_profiler(char *dbname, sabdb **stats, char **log_path)
 	}
 	snprintf(pidfilename, pidfnlen, "%s/profiler.pid", *log_path);
 
-	/* Make sure that the pid file is does not exist */
+	/* Make sure another instance of stethoscope is not running. */
 	error_code = stat(pidfilename, &path_info);
 	if (error_code != -1) {
-		error = newErr("pid file %s already exists. Is the profiler already running?",
-					   pidfilename);
-		free(*log_path);
-		*log_path = NULL;
-		goto cleanup;
+		char buf[8];
+		long pid;
+		/* The pid file exists. See if a process with this pid exists,
+		 * and if yes, if it is stethoscope.
+		 */
+
+		/* We cannot open the pidfile, bail out */
+		if ((pidfile = fopen(pidfilename, "r")) == NULL) {
+			error = newErr("pid file %s already exists, but is not accessible. Is the profiler already running?",
+						   pidfilename);
+			free(*log_path);
+			*log_path = NULL;
+			goto cleanup;
+		}
+
+		if (fgets(buf, sizeof(buf), pidfile) == NULL) {
+			fclose(pidfile);
+			error = newErr("cannot read from pid file %s: %s\n",
+						   pidfilename, strerror(errno));
+			free(*log_path);
+			*log_path = NULL;
+			goto cleanup;
+		}
+		fclose(pidfile);
+
+		/* Verify that what we read is actually a number */
+		errno = 0;
+		pid = strtol(buf, NULL, 10);
+		if (errno != 0) {
+			error = newErr("contents of the pid file are not correct: %s\n",
+						   strerror(errno));
+			free(*log_path);
+			*log_path = NULL;
+			goto cleanup;
+		}
+
+		// Open /proc/<pid>/comm and compare the contents to "stethoscope"
+		// This of course is specific to Linux
+		size_t fn_size = strlen("/proc/comm") + 9;
+		char *filename = malloc(fn_size);
+		if (filename == NULL) {
+			error = newErr("cannot allocate %zu bytes: %s\n",
+						   fn_size, strerror(errno));
+			free(*log_path);
+			*log_path = NULL;
+			goto cleanup;
+		}
+		snprintf(filename, fn_size, "/proc/%ld/comm", pid);
+
+		FILE *comm = fopen(filename, "r");
+		if (comm == NULL) {
+			/* We cannot open the file for the process with the specified pid,
+			 * so the process is not running.
+			 */
+			free(filename);
+			goto startup;
+		}
+		char buf2[BUFLEN];
+		size_t len = fread(buf2, 1, BUFLEN, comm);
+
+		if(ferror(comm)) {
+			error = newErr("cannot read from file %s\n", filename);
+			free(filename);
+			free(*log_path);
+			fclose(comm);
+			*log_path = NULL;
+			goto cleanup;
+		}
+		if (len == BUFLEN)
+			len--;
+		buf2[len] = 0;
+
+		char expected_command[] = "stethoscope";
+		size_t command_len = strlen(expected_command);
+		if (strncmp(buf2, expected_command, command_len) == 0) {
+			error = newErr("profiler already running for %s\n", dbname);
+			free(filename);
+			free(*log_path);
+			fclose(comm);
+			*log_path = NULL;
+			goto cleanup;
+		}
+
+		fclose(comm);
+		free(filename);
 	}
 
-	/* TODO: if the pid file exists read it and check if stethoscope with the
-	 * given pid is running */
+  startup:
 	/* Open the pid file */
 	if ((pidfile = fopen(pidfilename, "w")) == NULL) {
 		error = newErr("unable to open %s for writing", pidfilename);

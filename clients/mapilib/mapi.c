@@ -562,15 +562,15 @@
  *
  * Return a pointer to the last error message from the server.
  *
- * @item MapiMsg mapi_explain(Mapi mid, FILE *fd)
+ * @item void mapi_explain(Mapi mid, FILE *fd)
  *
  * Write the error message obtained from @code{mserver} to a file.
  *
- * @item MapiMsg mapi_explain_query(MapiHdl hdl, FILE *fd)
+ * @item void mapi_explain_query(MapiHdl hdl, FILE *fd)
  *
  * Write the error message obtained from @code{mserver} to a file.
  *
- * @item MapiMsg mapi_explain_result(MapiHdl hdl, FILE *fd)
+ * @item void mapi_explain_result(MapiHdl hdl, FILE *fd)
  *
  * Write the error message obtained from @code{mserver} to a file.
  * @end itemize
@@ -876,6 +876,7 @@ struct MapiResultSet {
 	int64_t last_id;
 	int64_t querytime;
 	int64_t maloptimizertime;
+	int64_t sqloptimizertime;
 	int fieldcnt;
 	int maxfields;
 	char *errorstr;		/* error from server */
@@ -1219,7 +1220,7 @@ mapi_noexplain(Mapi mid, char *errorprefix)
 	mid->noexplain = errorprefix;
 }
 
-MapiMsg
+void
 mapi_explain(Mapi mid, FILE *fd)
 {
 	assert(mid);
@@ -1238,10 +1239,9 @@ mapi_explain(Mapi mid, FILE *fd)
 	}
 	fflush(fd);
 	mapi_clrError(mid);
-	return MOK;
 }
 
-MapiMsg
+void
 mapi_explain_query(MapiHdl hdl, FILE *fd)
 {
 	Mapi mid;
@@ -1266,10 +1266,9 @@ mapi_explain_query(MapiHdl hdl, FILE *fd)
 	}
 	fflush(fd);
 	mapi_clrError(mid);
-	return MOK;
 }
 
-MapiMsg
+void
 mapi_explain_result(MapiHdl hdl, FILE *fd)
 {
 	Mapi mid;
@@ -1277,7 +1276,7 @@ mapi_explain_result(MapiHdl hdl, FILE *fd)
 	if (hdl == NULL ||
 	    hdl->result == NULL ||
 	    hdl->result->errorstr == NULL)
-		return MOK;
+		return;
 	assert(hdl);
 	assert(hdl->result);
 	assert(hdl->result->errorstr);
@@ -1300,7 +1299,6 @@ mapi_explain_result(MapiHdl hdl, FILE *fd)
 		clean_print(hdl->result->errorstr, mid->noexplain, fd);
 	}
 	fflush(fd);
-	return MOK;
 }
 
 stream *
@@ -1442,6 +1440,7 @@ new_result(MapiHdl hdl)
 	result->errorstr = NULL;
 	result->querytime = 0;
 	result->maloptimizertime = 0;
+	result->sqloptimizertime = 0;
 	memset(result->sqlstate, 0, sizeof(result->sqlstate));
 
 	result->tuple_count = 0;
@@ -3554,12 +3553,11 @@ mapi_release_id(Mapi mid, int id)
 	return mapi_Xcommand(mid, "release", buf);
 }
 
-MapiMsg
+void
 mapi_trace(Mapi mid, int flag)
 {
 	mapi_clrError(mid);
 	mid->trace = flag;
-	return MOK;
 }
 
 
@@ -3764,12 +3762,14 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 		result->commentonly = 0;
 		result->querytime = 0;
 		result->maloptimizertime = 0;
+		result->sqloptimizertime = 0;
 
 		nline++;	/* skip space */
 		switch (qt) {
 		case Q_SCHEMA:
 			result->querytime = strtoll(nline, &nline, 10);
 			result->maloptimizertime = strtoll(nline, &nline, 10);
+			result->sqloptimizertime = strtoll(nline, &nline, 10);
 			break;
 		case Q_TRANS:
 			if (*nline == 'f')
@@ -3783,14 +3783,16 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 			queryid = strtoll(nline, &nline, 10);
 			result->querytime = strtoll(nline, &nline, 10);
 			result->maloptimizertime = strtoll(nline, &nline, 10);
+			result->sqloptimizertime = strtoll(nline, &nline, 10);
 			break;
 		case Q_TABLE:
-			if (sscanf(nline, "%d %" SCNd64 " %d %" SCNd64 " %" SCNu64 " %" SCNd64 " %" SCNd64,
+			if (sscanf(nline, "%d %" SCNd64 " %d %" SCNd64 " %" SCNu64 " %" SCNd64 " %" SCNd64 " %" SCNd64, 
 				   &result->tableid, &result->row_count,
 				   &result->fieldcnt, &result->tuple_count,
-				   &queryid, &result->querytime, &result->maloptimizertime) < 7){
+				   &queryid, &result->querytime, &result->maloptimizertime, &result->sqloptimizertime) < 8){
 					result->querytime = 0;
 					result->maloptimizertime = 0;
+					result->sqloptimizertime = 0;
 				}
 			(void) queryid; /* ignored for now */
 			break;
@@ -5321,6 +5323,17 @@ mapi_get_maloptimizertime(MapiHdl hdl)
 	if ((result = hdl->result) == NULL)
 		return 0;
 	return result->maloptimizertime;
+}
+
+int64_t
+mapi_get_sqloptimizertime(MapiHdl hdl)
+{
+	struct MapiResultSet *result;
+
+	mapi_hdl_check(hdl, "mapi_get_sqloptimizertime");
+	if ((result = hdl->result) == NULL)
+		return 0;
+	return result->sqloptimizertime;
 }
 
 char *

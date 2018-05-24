@@ -44,6 +44,19 @@ QUERY = select auxiliary
           or ((select index_type_name from sys.index_types) is not NULL);
 ERROR = !SELECT: no such table 'region'
 CODE  = 42S02
+MAPI  = (monetdb) /var/tmp/mtest-32496/.s.monetdb.36380
+QUERY = select
+                  sample_69.f_table_catalog as c2
+        from    
+          sys.storagemodel as sample_65
+        	left join sys.geometry_columns as sample_69
+        	on (sample_65.type = sample_69.f_table_catalog )
+                where 
+                ((select default_schema from sys.users) is NULL)
+                  or (cast(coalesce((select side_effect from sys.functions) ,
+                      sample_65.revsorted) as boolean) is not NULL);
+ERROR = !Cardinality violation, scalar value expected
+CODE  = 21000
 
 # 12:52:03 >  
 # 12:52:03 >  "Done."

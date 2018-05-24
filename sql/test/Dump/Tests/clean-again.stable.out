@@ -1,0 +1,36 @@
+stdout of test 'clean-again` in directory 'sql/test/Dump` itself:
+
+
+# 22:19:54 >  
+# 22:19:54 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37984" "--set" "mapi_usock=/var/tmp/mtest-25752/.s.monetdb.37984" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/sjoerd/@Monet-stable/var/MonetDB/mTests_sql_test_Dump" "--set" "embedded_c=true"
+# 22:19:54 >  
+
+# MonetDB 5 server v11.29.4 (hg id: c717aa6c1f76)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_Dump', using 4 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.513 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://meeuw.mullender.nl:37984/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-25752/.s.monetdb.37984
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 22:19:54 >  
+# 22:19:54 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25752" "--port=37984"
+# 22:19:54 >  
+
+#drop table "test";
+#drop sequence "test_seq";
+#drop table "typestest";
+#drop table keytest2;
+#drop table keytest1;
+
+# 22:19:54 >  
+# 22:19:54 >  "Done."
+# 22:19:54 >  
+

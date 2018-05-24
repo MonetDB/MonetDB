@@ -628,7 +628,7 @@ exp_rel(mvc *sql, sql_rel *rel)
 	if (e == NULL)
 		return NULL;
 	/*
-	rel = rel_optimizer(sql, rel);
+	rel = rel_optimizer(sql, rel, 0);
 	rel = rel_distribute(sql, rel);
 	*/
 	e->l = rel;
@@ -1401,6 +1401,41 @@ exp_is_not_null(mvc *sql, sql_exp *e)
 }
 
 int
+exp_is_null(mvc *sql, sql_exp *e )
+{
+	switch (e->type) {
+	case e_atom:
+		if (e->f) /* values list */
+			return 0;
+		if (e->l) {
+			return (atom_null(e->l));
+		} else if (sql->emode == m_normal && sql->argc > e->flag) {
+			return atom_null(sql->args[e->flag]);
+		}
+		return 0;
+	case e_convert:
+		return exp_is_null(sql, e->l);
+	case e_func:
+	case e_aggr:
+	{	
+		int r = 0;
+		node *n;
+		list *l = e->l;
+
+		if (!r && l)
+			for (n = l->h; n && r; n = n->next) 
+				r |= exp_is_null(sql, n->data);
+		return r;
+	}
+	case e_column:
+	case e_cmp:
+	case e_psm:
+		return 0;
+	}
+	return 0;
+}
+
+int
 exp_is_atom( sql_exp *e )
 {
 	switch (e->type) {
@@ -1952,3 +1987,43 @@ exp_flatten(mvc *sql, sql_exp *e)
 	return NULL;
 }
 
+void
+exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r)
+{
+	sql_arg *ares = f->func->res->h->data;
+
+	if (strcmp(f->func->imp, "*") == 0 && ares->type.type->scale == SCALE_FIX) {
+		sql_subtype t;
+		sql_subtype *lt = exp_subtype(l);
+		sql_subtype *rt = exp_subtype(r);
+		sql_subtype *res = f->res->h->data;
+
+		res->scale = lt->scale + rt->scale;
+		res->digits = lt->digits + rt->digits;
+
+		/* HACK alert: digits should be less than max */
+#ifdef HAVE_HGE
+		if (have_hge) {
+			if (ares->type.type->radix == 10 && res->digits > 39)
+				res->digits = 39;
+			if (ares->type.type->radix == 2 && res->digits > 128)
+				res->digits = 128;
+		} else
+#endif
+		{
+
+			if (ares->type.type->radix == 10 && res->digits > 19)
+				res->digits = 19;
+			if (ares->type.type->radix == 2 && res->digits > 64)
+				res->digits = 64;
+		}
+
+		/* numeric types are fixed length */
+		if (ares->type.type->eclass == EC_NUM) {
+			sql_find_numeric(&t, ares->type.type->localtype, res->digits);
+		} else {
+			sql_find_subtype(&t, ares->type.type->sqlname, res->digits, res->scale);
+		}
+		*res = t;
+	}
+}

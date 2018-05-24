@@ -350,8 +350,6 @@ def server(args = [], stdin = None, stdout = None, stderr = None,
                '--set', 'mapi_open=true',
                '--set', 'gdk_nr_threads=1',
                '--set', 'monet_prompt=']
-    if notimeout and 'Mtimeout' in cmd[0]:
-        del cmd[0:3]            # Mtimeout -timeout 60
     if notrace and '--trace' in cmd:
         cmd.remove('--trace')
     if dbinit is not None:

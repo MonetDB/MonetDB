@@ -6,6 +6,8 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
+from __future__ import print_function
+
 import os, sys, getopt, stat
 
 usage = '''\
@@ -41,7 +43,7 @@ def main():
         opts, args = getopt.getopt(sys.argv[1:], 'arl:sv',
                                    ['pre=', 'post=', 'start=', 'end='])
     except getopt.GetoptError:
-        print >> sys.stderr, usage % {'prog': sys.argv[0]}
+        print(usage % {'prog': sys.argv[0]}, file=sys.stderr)
         sys.exit(1)
     for o, a in opts:
         if o == '-a':
@@ -54,7 +56,7 @@ def main():
             try:
                 f = open(a)
             except IOError:
-                print >> sys.stderr, 'Cannot open file %s' % a
+                print('Cannot open file %s' % a, file=sys.stderr)
                 sys.exit(1)
             del license[:]
             while True:
@@ -135,14 +137,14 @@ suffixrules = {
 def getcomments(file, pre = None, post = None, start = None, end = None):
     ext = ''
     if pre is None and post is None and start is None and end is None:
-        if suffixrules.has_key(os.path.basename(file)):
+        if os.path.basename(file) in suffixrules:
             ext = os.path.basename(file)
         else:
             root, ext = os.path.splitext(file)
             if ext == '.in':
                 # special case: .in suffix doesn't count
                 root, ext = os.path.splitext(root)
-            if not suffixrules.has_key(ext):
+            if ext not in suffixrules:
                 # no known suffix
                 # see if file starts with #! (i.e. shell script)
                 f = open(file)      # can raise IOError
@@ -170,12 +172,12 @@ def addlicense(file, pre = None, post = None, start = None, end = None, verbose 
     try:
         f = open(file)
     except IOError:
-        print >> sys.stderr, 'Cannot open file %s' % file
+        print('Cannot open file %s' % file, file=sys.stderr)
         return
     try:
         g = open(file + '.new', 'w')
     except IOError:
-        print >> sys.stderr, 'Cannot create temp file %s.new' % file
+        print('Cannot create temp file %s.new' % file, file=sys.stderr)
         return
     data = f.read()
     if PERL_COPYRIGHT in data:
@@ -257,14 +259,14 @@ def addlicense(file, pre = None, post = None, start = None, end = None, verbose 
     try:
         os.rename(file, file + '~')     # make backup
     except OSError:
-        print >> sys.stderr, 'Cannot make backup for %s' % file
+        print('Cannot make backup for %s' % file, file=sys.stderr)
         return
     try:
         os.rename(file + '.new', file)
         if verbose:
-            print file
+            print(file)
     except OSError:
-        print >> sys.stderr, 'Cannot move file %s into position' % file
+        print('Cannot move file %s into position' % file, file=sys.stderr)
 
 def normalize(s):
     # normalize white space: remove leading and trailing white space,
@@ -275,12 +277,12 @@ def dellicense(file, pre = None, post = None, start = None, end = None, verbose 
     try:
         f = open(file)
     except IOError:
-        print >> sys.stderr, 'Cannot open file %s' % file
+        print('Cannot open file %s' % file, file=sys.stderr)
         return
     try:
         g = open(file + '.new', 'w')
     except IOError:
-        print >> sys.stderr, 'Cannot create temp file %s.new' % file
+        print('Cannot create temp file %s.new' % file, file=sys.stderr)
         return
     data = f.read()
     if PERL_COPYRIGHT in data:
@@ -296,9 +298,9 @@ def dellicense(file, pre = None, post = None, start = None, end = None, verbose 
             while data[pos] == ' ':
                 pos += 1
             if data[pos:pos+len(l)+1] != l + '\n':
-                print >> sys.stderr, 'line doesn\'t match in file %s' % file
-                print >> sys.stderr, 'file:    "%s"' % data[pos:pos+len(l)]
-                print >> sys.stderr, 'license: "%s"' % l
+                print('line doesn\'t match in file %s' % file, file=sys.stderr)
+                print('file:    "%s"' % data[pos:pos+len(l)], file=sys.stderr)
+                print('license: "%s"' % l, file=sys.stderr)
                 f.close()
                 g.close()
                 try:
@@ -348,7 +350,7 @@ def dellicense(file, pre = None, post = None, start = None, end = None, verbose 
                 nline = normalize(line)
             else:
                 # doesn't match
-                print >> sys.stderr, 'PRE doesn\'t match in file %s' % file
+                print('PRE doesn\'t match in file %s' % file, file=sys.stderr)
                 f.close()
                 g.close()
                 try:
@@ -362,9 +364,9 @@ def dellicense(file, pre = None, post = None, start = None, end = None, verbose 
                 nline = normalize(line)
             else:
                 # doesn't match
-                print >> sys.stderr, 'line doesn\'t match in file %s' % file
-                print >> sys.stderr, 'file:    "%s"' % line
-                print >> sys.stderr, 'license: "%s"' % l
+                print('line doesn\'t match in file %s' % file, file=sys.stderr)
+                print('file:    "%s"' % line, file=sys.stderr)
+                print('license: "%s"' % l, file=sys.stderr)
                 f.close()
                 g.close()
                 try:
@@ -378,7 +380,7 @@ def dellicense(file, pre = None, post = None, start = None, end = None, verbose 
                 nline = normalize(line)
             else:
                 # doesn't match
-                print >> sys.stderr, 'POST doesn\'t match in file %s' % file
+                print('POST doesn\'t match in file %s' % file, file=sys.stderr)
                 f.close()
                 g.close()
                 try:
@@ -399,20 +401,20 @@ def dellicense(file, pre = None, post = None, start = None, end = None, verbose 
     try:
         os.rename(file, file + '~')     # make backup
     except OSError:
-        print >> sys.stderr, 'Cannot make backup for %s' % file
+        print('Cannot make backup for %s' % file, file=sys.stderr)
         return
     try:
         os.rename(file + '.new', file)
         if verbose:
-            print file
+            print(file)
     except OSError:
-        print >> sys.stderr, 'Cannot move file %s into position' % file
+        print('Cannot move file %s into position' % file, file=sys.stderr)
 
 def listfile(file, pre = None, post = None, start = None, end = None, verbose = False):
     try:
         f = open(file)
     except IOError:
-        print >> sys.stderr, 'Cannot open file %s' % file
+        print('Cannot open file %s' % file, file=sys.stderr)
         return
     data = f.read()
     if PERL_COPYRIGHT in data:
@@ -427,9 +429,9 @@ def listfile(file, pre = None, post = None, start = None, end = None, verbose = 
             while data[pos] == ' ':
                 pos += 1
             if data[pos:pos+len(l)+1] != l + '\n':
-                print >> sys.stderr, 'line doesn\'t match in file %s' % file
-                print >> sys.stderr, 'file:    "%s"' % data[pos:pos+len(l)]
-                print >> sys.stderr, 'license: "%s"' % l
+                print('line doesn\'t match in file %s' % file, file=sys.stderr)
+                print('file:    "%s"' % data[pos:pos+len(l)], file=sys.stderr)
+                print('license: "%s"' % l, file=sys.stderr)
                 f.close()
                 return
             pos += len(l) + 1
@@ -469,7 +471,7 @@ def listfile(file, pre = None, post = None, start = None, end = None, verbose = 
                 nline = normalize(line)
             else:
                 # doesn't match
-                print >> sys.stderr, 'PRE doesn\'t match in file %s' % file
+                print('PRE doesn\'t match in file %s' % file, file=sys.stderr)
                 f.close()
                 return
         for l in license:
@@ -478,9 +480,9 @@ def listfile(file, pre = None, post = None, start = None, end = None, verbose = 
                 nline = normalize(line)
             else:
                 # doesn't match
-                print >> sys.stderr, 'line doesn\'t match in file %s' % file
-                print >> sys.stderr, 'file:    "%s"' % line
-                print >> sys.stderr, 'license: "%s"' % l
+                print('line doesn\'t match in file %s' % file, file=sys.stderr)
+                print('file:    "%s"' % line, file=sys.stderr)
+                print('license: "%s"' % l, file=sys.stderr)
                 f.close()
                 return
         if post:
@@ -489,11 +491,11 @@ def listfile(file, pre = None, post = None, start = None, end = None, verbose = 
                 nline = normalize(line)
             else:
                 # doesn't match
-                print >> sys.stderr, 'POST doesn\'t match in file %s' % file
+                print('POST doesn\'t match in file %s' % file, file=sys.stderr)
                 f.close()
                 return
     f.close()
-    print file
+    print(file)
 
 if __name__ == '__main__' or sys.argv[0] == __name__:
     main()

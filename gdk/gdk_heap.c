@@ -132,7 +132,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 				char of[sizeof(h->filename)];
 				char *ext;
 				close(fd);
-				strncpy(of, h->filename, sizeof(h->filename));
+				strncpy(of, h->filename, sizeof(of));
 #ifdef STATIC_CODE_ANALYSIS
 				/* help coverity */
 				of[sizeof(h->filename) - 1] = 0;

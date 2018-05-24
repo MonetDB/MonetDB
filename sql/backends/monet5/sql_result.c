@@ -1182,7 +1182,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 			if (!rname && e->type == e_column && e->l)
 				rname = e->l;
 
-			if (mnstr_printf(out, "[ \"%s\",\t%d,\t%d,\t\"%s\",\t\"%s\",\t\"%s\"\t]\n", t->type->sqlname, t->digits, t->scale, schema ? schema : "", rname ? rname : "", name ? name : "") < 0) {
+			if (mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\t\"%s\",\t\"%s\",\t\"%s\"\t]\n", t->type->sqlname, t->digits, t->scale, schema ? schema : "", rname ? rname : "", name ? name : "") < 0) {
 				return -1;
 			}
 		}
@@ -1197,7 +1197,7 @@ mvc_export_prepare(mvc *c, stream *out, cq *q, str w)
 			t = &a->type;
 
 			if (t) {
-				if (mnstr_printf(out, "[ \"%s\",\t%d,\t%d,\tNULL,\tNULL,\tNULL\t]\n", t->type->sqlname, t->digits, t->scale) < 0) {
+				if (mnstr_printf(out, "[ \"%s\",\t%u,\t%u,\tNULL,\tNULL,\tNULL\t]\n", t->type->sqlname, t->digits, t->scale) < 0) {
 					return -1;
 				}
 				/* add to the query cache parameters */
@@ -1962,7 +1962,7 @@ get_print_width(int mtype, int eclass, int digits, int scale, int tz, bat bid, p
 		incr = 2;
 	mtype = ATOMbasetype(mtype);
 	if (mtype == TYPE_str) {
-		if (eclass == EC_CHAR) {
+		if (eclass == EC_CHAR && digits) {
 			return digits;
 		} else {
 			int l = 0;
@@ -2159,6 +2159,8 @@ mvc_export_affrows(backend *b, stream *s, lng val, str w, oid query_id, lng star
 	    !mvc_send_lng(s, starttime > 0 ? GDKusec() - starttime : 0) ||
 	    mnstr_write(s, " ", 1, 1) != 1 ||
 	    !mvc_send_lng(s, maloptimizer) ||
+	    mnstr_write(s, " ", 1, 1) != 1 ||
+	    !mvc_send_lng(s, m->Topt) ||
 	    mnstr_write(s, "\n", 1, 1) != 1)
 		return -1;
 	if (mvc_export_warning(s, w) != 1)
@@ -2396,6 +2398,9 @@ mvc_export_head(backend *b, stream *s, int res_id, int only_header, int compute_
 
 	// export MAL optimizer time
 	if (mnstr_write(s, " ", 1, 1) != 1 || !mvc_send_lng(s, maloptimizer))
+		return -1;
+
+	if (mnstr_write(s, " ", 1, 1) != 1 || !mvc_send_lng(s, m->Topt))
 		return -1;
 
 	if (mnstr_write(s, "\n% ", 3, 1) != 1)

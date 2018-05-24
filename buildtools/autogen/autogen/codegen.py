@@ -4,6 +4,8 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
+from __future__ import print_function
+
 import string
 import re
 import fileinput
@@ -138,13 +140,29 @@ def find_org(deps,f):
 buildincsfiles = {}
 installincsfiles = {}
 
+# replacement for os.path.join which also normalizes the resultant
+# path, keeping Make variables in place
+def normpathjoin(a, *p):
+    f = os.path.join(a, *p)
+    parts = re.split(r'(\$(?:[^()]|\([^()]*\)))', f)
+    for i in range(len(parts)):
+        prt = parts[i]
+        if prt and prt != os.sep and not prt.startswith('$'):
+            s, e = 0, len(prt)
+            if prt.startswith(os.sep):
+                s += len(os.sep)
+            if prt.endswith(os.sep):
+                e -= len(os.sep)
+            parts[i] = prt[:s] + os.path.normpath(prt[s:e]) + prt[e:]
+    return ''.join(parts)
+
 def do_deps(targets,deps,includes,incmap,cwd,incdirsmap):
     basename = os.path.basename(cwd)
     incs = {}
     do_scan(targets,deps,incmap,cwd,incs)
     do_dep_combine(deps,includes,cwd,incs)
 
-    normcwd = os.path.normpath(cwd)
+    normcwd = normpathjoin(cwd)
     buildincs = buildincsfiles[normcwd] = {}
     for k,vals in incs.items():
         buildincs[k] = vals
@@ -156,7 +174,7 @@ def do_deps(targets,deps,includes,incmap,cwd,incdirsmap):
             if os.path.isabs(i):
                 nvals.append(i)
             else:
-                inc = os.path.normpath(os.path.join(cwd,i))
+                inc = normpathjoin(cwd,i)
                 mlen = 0
                 subsrc = ''
                 subins = ''
@@ -203,7 +221,7 @@ def do_scan_target(target,targets,deps,incmap,cwd,incs):
     if target not in incs:
         inc_files = []
         if ext in scan_map:
-            org = os.path.join(cwd,find_org(deps,target))
+            org = normpathjoin(cwd,find_org(deps,target))
             if os.path.exists(org):
                 b = readfilepart(org,ext)
                 pat,sep,incext = scan_map[ext]
@@ -214,29 +232,29 @@ def do_scan_target(target,targets,deps,incmap,cwd,incs):
                         ressep = sep.search(b, p, e)
                         while ressep is not None:
                             n = ressep.start(0)
-                            fnd1 = b[p:n]
+                            fnd1 = b[p:n] + incext
                             p = ressep.end(0) # start of next file
-                            if fnd1+incext in deps or fnd1+incext in targets:
-                                if fnd1+incext not in inc_files:
-                                    inc_files.append(fnd1+incext)
-                            elif fnd1+incext in incmap:
-                                if fnd1+incext not in inc_files:
-                                    inc_files.append(os.path.join(incmap[fnd1+incext],fnd1+incext))
+                            if fnd1 in deps or fnd1 in targets:
+                                if fnd1 not in inc_files:
+                                    inc_files.append(fnd1)
+                            elif fnd1 in incmap:
+                                if fnd1 not in inc_files:
+                                    inc_files.append(normpathjoin(incmap[fnd1],fnd1))
                             ressep = sep.search(b,p,e)
-                    fnd = b[p:e]
-                    if fnd+incext in deps or fnd+incext in targets:
-                        if fnd+incext not in inc_files:
-                            inc_files.append(fnd+incext)
-                    elif fnd+incext in incmap:
-                        if fnd+incext not in inc_files:
-                            inc_files.append(os.path.join(incmap[fnd+incext],fnd+incext))
-                    elif os.path.exists(os.path.join(cwd, fnd+incext)):
-                        if fnd+incext not in inc_files:
-                            inc_files.append(fnd+incext)
-                        if fnd+incext not in incs:
-                            incs[fnd+incext] = []
+                    fnd = b[p:e] + incext
+                    if fnd in deps or fnd in targets:
+                        if fnd not in inc_files:
+                            inc_files.append(fnd)
+                    elif fnd in incmap:
+                        if fnd not in inc_files:
+                            inc_files.append(normpathjoin(incmap[fnd],fnd))
+                    elif os.path.exists(os.path.join(cwd, fnd)):
+                        if fnd not in inc_files:
+                            inc_files.append(fnd)
+                        if fnd not in incs:
+                            incs[fnd] = []
 ##                     else:
-##                         print fnd + incext + " not in deps or incmap"
+##                         print(fnd + " not in deps or incmap")
                     res = pat.search(b,res.end(0))
         incs[target] = inc_files
 
@@ -274,7 +292,7 @@ def expand_incdir(i,topdir):
     if i.find(os.sep) >= 0:
         d,rest = i.split(os.sep, 1)
         if d == "top_srcdir" or d == "top_builddir":
-            dir = os.path.join(topdir, rest)
+            dir = normpathjoin(topdir, rest)
         elif d == "srcdir" or d == "builddir":
             dir = rest
     return dir
@@ -314,7 +332,7 @@ def collect_includes(incdirs, cwd, topdir):
     for dir,org in dirs:
         if dir.startswith('$'):
             continue
-        dir = os.path.normpath(os.path.join(cwd, dir))
+        dir = normpathjoin(cwd, dir)
         if dir in buildincsfiles:
             incs = buildincsfiles[dir]
         elif dir in installincsfiles:
@@ -327,14 +345,14 @@ def collect_includes(incdirs, cwd, topdir):
                 incfiles = []
                 for inc in incs[file]:
                     if not os.path.isabs(inc) and inc[0] != '$':
-                        inc = os.path.join(org,inc)
+                        inc = normpathjoin(org,inc)
                     incfiles.append(inc)
-                includes[os.path.join(org,file)] = incfiles
+                includes[normpathjoin(org,file)] = incfiles
                 incmap[file] = org
         else:
             if os.path.exists(dir):
                 for inc in os.listdir(dir):
-                    includes[os.path.join(org,inc)] = [ os.path.join(org,inc) ]
+                    includes[normpathjoin(org,inc)] = [ normpathjoin(org,inc) ]
                     incmap[inc] = org
 
     return includes,incmap

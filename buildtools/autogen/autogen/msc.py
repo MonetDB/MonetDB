@@ -4,6 +4,8 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2018 MonetDB B.V.
 
+from __future__ import print_function
+
 import string
 import os
 import re
@@ -207,6 +209,15 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc, pref, ext):
     for l in list:
         if '?' in l:
             c, l = l.split('?', 1)
+            c = c.split('&')
+            try:
+                c.remove('NATIVE_WIN32')
+            except ValueError:
+                pass
+            try:
+                c.remove('WIN32')
+            except ValueError:
+                pass
         else:
             c = None
         d = None
@@ -239,7 +250,7 @@ def msc_additional_libs(fd, name, sep, type, list, dlibs, msc, pref, ext):
             global libno
             v = 'LIB%d' % libno
             libno = libno + 1
-            cond += '!IF defined(%s)\n%s = %s\n!ELSE\n%s =\n!ENDIF\n' % (c, v, l, v)
+            cond += '!IF defined(%s)\n%s = %s\n!ELSE\n%s =\n!ENDIF\n' % (') && defined('.join(c), v, l, v)
             l = '$(%s)' % v
             if d:
                 deps = '%s %s' % (deps, l)

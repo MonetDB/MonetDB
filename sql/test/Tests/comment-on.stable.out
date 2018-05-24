@@ -122,6 +122,12 @@ CREATE TABLE "foo"."tab" (
 COMMENT ON TABLE "foo"."tab" IS 'table';
 COMMENT ON COLUMN "foo"."tab"."i" IS 'ii';
 COMMENT ON COLUMN "foo"."tab"."j" IS 'jj';
+#COMMENT ON COLUMN vivi.j IS 'vjj';
+#COMMENT ON COLUMN foo.vivi.i IS 'vii';
+create view vivi as select * from tab;
+COMMENT ON VIEW "foo"."vivi" IS 'phew';
+COMMENT ON COLUMN "foo"."vivi"."i" IS 'vii';
+COMMENT ON COLUMN "foo"."vivi"."j" IS 'vjj';
 #CREATE INDEX idx ON tab(j,i);
 CREATE TABLE "foo"."tab" (
 	"i" INTEGER,
@@ -163,6 +169,40 @@ create procedure g() begin delete from tab where false; end;
 COMMENT ON PROCEDURE "foo"."g"() IS 'proc';
 create procedure g() begin delete from tab where false; end;
 COMMENT ON PROCEDURE "foo"."g"() IS 'proc!';
+#SELECT remark FROM sys.comments order by remark;
+% sys.comments # table_name
+% remark # name
+% varchar # type
+% 17 # length
+[ "0 parms"	]
+[ "1 parm"	]
+[ "2 parms"	]
+[ "ii"	]
+[ "index on j"	]
+[ "jj"	]
+[ "one final comment"	]
+[ "phew"	]
+[ "proc!"	]
+[ "still counting"	]
+[ "table"	]
+[ "vii"	]
+[ "vjj"	]
+#DROP FUNCTION f();
+#DROP FUNCTION f(INT);
+#DROP FUNCTION f(INT,INT);
+#DROP FUNCTION f(INT,INT,INT);
+#DROP FUNCTION f(INT,INT,INT,INT);
+#DROP PROCEDURE g();
+#DROP SEQUENCE counter;
+#DROP VIEW vivi;
+#DROP TABLE tab;
+#SET SCHEMA sys;
+#DROP SCHEMA foo;
+#SELECT remark FROM sys.comments order by remark;
+% sys.comments # table_name
+% remark # name
+% varchar # type
+% 0 # length
 
 # 12:35:23 >  
 # 12:35:23 >  "Done."

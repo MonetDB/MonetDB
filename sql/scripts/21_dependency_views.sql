@@ -17,11 +17,11 @@ SELECT id, name, schema_id, id as table_id, name as table_name, case when type =
 SELECT c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'sys._columns' FROM sys._columns c JOIN sys._tables t ON c.table_id = t.id UNION ALL
 SELECT c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'tmp._columns' FROM tmp._columns c JOIN tmp._tables t ON c.table_id = t.id UNION ALL
 SELECT k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'sys.keys' FROM sys.keys k JOIN sys._tables t ON k.table_id = t.id UNION ALL
-SELECT k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'tmp.keys' FROM tmp.keys k JOIN sys._tables t ON k.table_id = t.id UNION ALL
+SELECT k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'tmp.keys' FROM tmp.keys k JOIN tmp._tables t ON k.table_id = t.id UNION ALL
 SELECT i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index', 'sys.idxs' FROM sys.idxs i JOIN sys._tables t ON i.table_id = t.id UNION ALL
-SELECT i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index', 'tmp.idxs' FROM tmp.idxs i JOIN sys._tables t ON i.table_id = t.id UNION ALL
+SELECT i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index', 'tmp.idxs' FROM tmp.idxs i JOIN tmp._tables t ON i.table_id = t.id UNION ALL
 SELECT g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'sys.triggers' FROM sys.triggers g JOIN sys._tables t ON g.table_id = t.id UNION ALL
-SELECT g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'tmp.triggers' FROM tmp.triggers g JOIN sys._tables t ON g.table_id = t.id UNION ALL
+SELECT g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'tmp.triggers' FROM tmp.triggers g JOIN tmp._tables t ON g.table_id = t.id UNION ALL
 SELECT id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, case when type = 2 then 'procedure' else 'function' end, 'sys.functions' FROM sys.functions UNION ALL
 SELECT a.id, a.name, f.schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, case when f.type = 2 then 'procedure arg' else 'function arg' end, 'sys.args' FROM sys.args a JOIN sys.functions f ON a.func_id = f.id UNION ALL
 SELECT id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'sequence', 'sys.sequences' FROM sys.sequences UNION ALL
@@ -302,44 +302,45 @@ GRANT SELECT ON sys.dependency_keys_on_foreignkeys TO PUBLIC;
 -- **** dependency_type 13 = PROCEDURE ***
 -- SELECT * FROM sys.dependencies_vw WHERE depend_type = 13 ORDER BY obj_type, id;
 -- Table t has a dependency on procedure p.
-CREATE VIEW sys.dependency_tables_on_procdures AS
-SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, p.name, p.type AS proc_type, dep.depend_type AS depend_type
+CREATE VIEW sys.dependency_tables_on_procedures AS
+SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, p.id AS procedure_id, p.name AS procedure_name, p.type AS procedure_type, dep.depend_type AS depend_type
   FROM sys.functions AS p, sys.tables AS t, sys.dependencies AS dep
  WHERE t.id = dep.id AND p.id = dep.depend_id
    AND dep.depend_type = 13 AND p.type = 2 AND t.type NOT IN (1, 11)
  ORDER BY t.name, t.schema_id, p.name, p.id;
 
-GRANT SELECT ON sys.dependency_tables_on_procdures TO PUBLIC;
+GRANT SELECT ON sys.dependency_tables_on_procedures TO PUBLIC;
 
 -- View v has a dependency on procedure p.
-CREATE VIEW sys.dependency_views_on_procdures AS
-SELECT v.name AS view_name, p.name AS proc_name, p.type AS proc_type, dep.depend_type AS depend_type
+CREATE VIEW sys.dependency_views_on_procedures AS
+SELECT v.schema_id AS view_schema_id, v.id AS view_id, v.name AS view_name, p.id AS procedure_id, p.name AS procedure_name, p.type AS procedure_type, dep.depend_type AS depend_type
   FROM sys.functions AS p, sys.tables AS v, sys.dependencies AS dep
  WHERE v.id = dep.id AND p.id = dep.depend_id
    AND dep.depend_type = 13 AND p.type = 2 AND v.type IN (1, 11)
  ORDER BY v.name, v.schema_id, p.name, p.id;
 
-GRANT SELECT ON sys.dependency_views_on_procdures TO PUBLIC;
+GRANT SELECT ON sys.dependency_views_on_procedures TO PUBLIC;
 
 -- Column c has a dependency on procedure p.
-CREATE VIEW sys.dependency_columns_on_procdures AS
-SELECT c.name AS column_name, p.name AS proc_name, p.type AS proc_type, dep.depend_type AS depend_type
+CREATE VIEW sys.dependency_columns_on_procedures AS
+SELECT c.table_id, c.id AS column_id, c.name AS column_name, p.id AS procedure_id, p.name AS procedure_name, p.type AS procedure_type, dep.depend_type AS depend_type
   FROM sys.functions AS p, sys.columns AS c, sys.dependencies AS dep
  WHERE c.id = dep.id AND p.id = dep.depend_id
    AND dep.depend_type = 13 AND p.type = 2
  ORDER BY c.name, c.table_id, p.name, p.id;
 
-GRANT SELECT ON sys.dependency_columns_on_procdures TO PUBLIC;
+GRANT SELECT ON sys.dependency_columns_on_procedures TO PUBLIC;
 
 -- Function f has a dependency on procedure p.
-CREATE VIEW sys.dependency_functions_on_procdures AS
-SELECT p.name AS proc_name, p.type AS proc_type, f2.name AS func_name, f2.type AS func_type, dep.depend_type AS depend_type
-  FROM sys.functions AS p, sys.functions AS f2, sys.dependencies AS dep
- WHERE f2.id = dep.id AND p.id = dep.depend_id
+CREATE VIEW sys.dependency_functions_on_procedures AS
+SELECT f.schema_id AS function_schema_id, f.id AS function_id, f.name AS function_name, f.type AS function_type,
+       p.schema_id AS procedure_schema_id, p.id AS procedure_id, p.name AS procedure_name, p.type AS procedure_type, dep.depend_type AS depend_type
+  FROM sys.functions AS p, sys.functions AS f, sys.dependencies AS dep
+ WHERE f.id = dep.id AND p.id = dep.depend_id
    AND dep.depend_type = 13 AND p.type = 2
- ORDER BY p.name, p.id, f2.name, f2.id;
+ ORDER BY p.name, p.id, f.name, f.id;
 
-GRANT SELECT ON sys.dependency_functions_on_procdures TO PUBLIC;
+GRANT SELECT ON sys.dependency_functions_on_procedures TO PUBLIC;
 
 
 -- **** dependency_type 14 = BE_DROPPED ***

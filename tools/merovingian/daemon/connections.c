@@ -94,7 +94,10 @@ openConnectionTCP(int *ret, const char *bindaddr, unsigned short port, FILE *log
 	}
 
 	/* keep queue of 5 */
-	listen(sock, 5);
+	if(listen(sock, 5) == -1) {
+		closesocket(sock);
+		return(newErr("failed setting socket to listen: %s", strerror(errno)));
+	}
 
 	Mfprintf(log, "accepting connections on TCP socket %s:%hu\n", host, port);
 
@@ -151,14 +154,16 @@ openConnectionUDP(int *ret, const char *bindaddr, unsigned short port)
 	}
 
 	/* retrieve information from the socket */
-	getnameinfo(rp->ai_addr, rp->ai_addrlen,
+	if(getnameinfo(rp->ai_addr, rp->ai_addrlen,
 			host, sizeof(host),
 			sport, sizeof(sport),
-			NI_NUMERICSERV | NI_DGRAM);
+			NI_NUMERICSERV | NI_DGRAM) == 0) {
+		Mfprintf(_mero_discout, "listening for UDP messages on %s:%s\n", host, sport);
+	} else {
+		Mfprintf(_mero_discout, "listening for UDP messages\n");
+	}
 
 	freeaddrinfo(result);
-
-	Mfprintf(_mero_discout, "listening for UDP messages on %s:%s\n", host, sport);
 
 	*ret = sock;
 	return(NO_ERR);
@@ -202,7 +207,11 @@ openConnectionUNIX(int *ret, const char *path, int mode, FILE *log)
 	umask(omask);
 
 	/* keep queue of 5 */
-	listen(sock, 5);
+	if(listen(sock, 5) == -1) {
+		closesocket(sock);
+		return(newErr("setting UNIX stream socket at %s to listen failed: %s",
+					  path, strerror(errno)));
+	}
 
 	Mfprintf(log, "accepting connections on UNIX domain socket %s\n", path);
 

@@ -24,6 +24,7 @@ lib_MonetODBC = {
 	ODBCError.c \
 	ODBCError.h \
 	ODBCGlobal.h \
+	ODBCQueries.h \
 	ODBCStmt.c \
 	ODBCStmt.h \
 	ODBCUtil.c \
@@ -106,7 +107,7 @@ lib_MonetODBC = {
 	SQLTransact.c \
 	driver.rc \
 	ODBC.syms
-	LIBS = ../../mapilib/libmapi $(LTLIBICONV) $(ODBCINST_LIBS) $(SOCKET_LIBS)
+	LIBS = ../../mapilib/libmapi ../../../common/stream/libstream $(LTLIBICONV) $(ODBCINST_LIBS) $(SOCKET_LIBS) $(openssl_LIBS)
 }
 
 EXTRA_DIST = Copyright

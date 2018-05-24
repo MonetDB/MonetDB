@@ -1741,6 +1741,7 @@ JSONrenderRowArray(BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 		snprintf(row + len, lim - len, "%s,", val ? val : "null");
 		len += l + 1;
 		GDKfree(val);
+		val = NULL;
 	}
 	if (row[1])
 		row[len - 1] = ']';
@@ -1752,6 +1753,7 @@ JSONrenderRowArray(BAT **bl, MalBlkPtr mb, InstrPtr pci, BUN idx)
 
   memfail:
 	GDKfree(row);
+	GDKfree(val);
 	return NULL;
 }
 

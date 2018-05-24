@@ -1,3 +1,7 @@
 # ChangeLog file for MonetDB
 # This file is updated with Maddlog
 
+* Tue Mar 20 2018 Sjoerd Mullender <sjoerd@acm.org>
+- Removed the tdense property: it's function is completely replaced by
+  whether or not tseqbase is equal to oid_nil.
+

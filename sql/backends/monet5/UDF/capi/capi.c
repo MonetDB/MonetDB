@@ -23,6 +23,11 @@
 #pragma GCC diagnostic ignored "-Wclobbered"
 #endif
 
+const char *mprotect_enableflag = "enable_mprotect";
+static bool option_enable_mprotect = false;
+const char *longjmp_enableflag = "enable_longjmp";
+static bool option_enable_longjmp = false;
+
 struct _allocated_region;
 typedef struct _allocated_region {
 	struct _allocated_region *next;
@@ -80,6 +85,8 @@ str CUDFprelude(void *ret)
 	if (!cudf_initialized) {
 		MT_lock_init(&cache_lock, "cache_lock");
 		cudf_initialized = true;
+		option_enable_mprotect = GDKgetenv_istrue(mprotect_enableflag) || GDKgetenv_isyes(mprotect_enableflag);
+		option_enable_longjmp = GDKgetenv_istrue(longjmp_enableflag) || GDKgetenv_isyes(longjmp_enableflag);
 	}
 	return MAL_SUCCEED;
 }
@@ -107,6 +114,7 @@ static void handler(int sig, siginfo_t *si, void *unused)
 }
 
 static bool can_mprotect_region(void* addr) {
+	if (!option_enable_mprotect) return false;
 	int pagesize = getpagesize();
 	void* page_begin = (void *)((size_t)addr - (size_t)addr % pagesize);
 	return page_begin == addr;
@@ -160,7 +168,7 @@ static char *clear_mprotect(void *addr, size_t len)
 static void *jump_GDK_malloc(size_t size)
 {
 	void *ptr = GDKmalloc(size);
-	if (!ptr) {
+	if (!ptr && option_enable_longjmp) {
 		longjmp(jump_buffer[THRgettid()], 2);
 	}
 	return ptr;
@@ -200,7 +208,10 @@ static void *wrapped_GDK_zalloc_nojump(size_t size)
 	return add_allocated_region(ptr);
 }
 
-#define GENERATE_NUMERIC_FUNCTIONS(type, tpename) \
+#define GENERATE_NUMERIC_IS_NULL(type, tpename) \
+	static int tpename##_is_null(type value) { return value == tpename##_nil; }
+
+#define GENERATE_NUMERIC_INITIALIZE(type, tpename) \
 	static void tpename##_initialize(struct cudf_data_struct_##tpename *self,  \
 									 size_t count)                             \
 	{                                                                          \
@@ -211,14 +222,18 @@ static void *wrapped_GDK_zalloc_nojump(size_t size)
 		}                                                                      \
 		b = COLnew(0, TYPE_##tpename, count, TRANSIENT);                       \
 		if (!b) {                                                              \
-			longjmp(jump_buffer[THRgettid()], 2);                              \
+			if (option_enable_longjmp) longjmp(jump_buffer[THRgettid()], 2);   \
+			else return;                                                       \
 		}                                                                      \
 		self->bat = (void*) b;                                                 \
 		self->count = count;                                                   \
 		self->data = (type*) b->theap.base;                                    \
 		BATsetcount(b, count);                                                 \
-	}                                                                          \
-	static int tpename##_is_null(type value) { return value == tpename##_nil; }
+	}
+
+#define GENERATE_NUMERIC_ALL(type, tpename) \
+	GENERATE_NUMERIC_INITIALIZE(type, tpename) \
+	GENERATE_NUMERIC_IS_NULL(type, tpename)
 
 
 #define GENERATE_BASE_HEADERS(type, tpename)                                   \
@@ -234,14 +249,22 @@ static void *wrapped_GDK_zalloc_nojump(size_t size)
 	GENERATE_BASE_HEADERS(tpe, tpename);                                       \
 	static int tpename##_is_null(tpe value) { return value == tpename##_nil; }
 
-GENERATE_NUMERIC_FUNCTIONS(bit, bit);
-GENERATE_NUMERIC_FUNCTIONS(bte, bte);
-GENERATE_NUMERIC_FUNCTIONS(sht, sht);
-GENERATE_NUMERIC_FUNCTIONS(int, int);
-GENERATE_NUMERIC_FUNCTIONS(lng, lng);
-GENERATE_NUMERIC_FUNCTIONS(flt, flt);
-GENERATE_NUMERIC_FUNCTIONS(dbl, dbl);
-GENERATE_NUMERIC_FUNCTIONS(oid, oid);
+GENERATE_NUMERIC_ALL(bit, bit);
+GENERATE_NUMERIC_ALL(bte, bte);
+GENERATE_NUMERIC_ALL(sht, sht);
+GENERATE_NUMERIC_ALL(int, int);
+GENERATE_NUMERIC_ALL(lng, lng);
+GENERATE_NUMERIC_INITIALIZE(flt, flt);
+GENERATE_NUMERIC_INITIALIZE(dbl, dbl);
+GENERATE_NUMERIC_ALL(oid, oid);
+
+static int flt_is_null(flt value) {
+	return is_flt_nil(value);
+}
+
+static int dbl_is_null(dbl value) {
+	return is_dbl_nil(value);
+}
 
 GENERATE_BASE_HEADERS(char *, str);
 GENERATE_BASE_HEADERS(cudf_data_date, date);
@@ -271,7 +294,7 @@ static void blob_initialize(struct cudf_data_struct_blob *self,
 		GENERATE_BAT_INPUT_BASE(tpe);                                          \
 		bat_data->count = BATcount(b);                                         \
 		bat_data->null_value = tpe##_nil;                                      \
-		if (b->tdense) {                                                       \
+		if (BATtdense(b)) {					\
 			size_t it = 0;                                                     \
 			tpe val = b->T.seq;                                                \
 			/* bat is dense, materialize it */                                 \
@@ -439,17 +462,23 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 	allocated_regions[tid] = NULL;
 
+	if (!GDKgetenv_istrue("embedded_c") && !GDKgetenv_isyes("embedded_c"))
+		throw(MAL, "cudf.eval", "Embedded C has not been enabled. "
+		      "Start server with --set embedded_c=true");
+
 	// we need to be able to catch segfaults and bus errors
 	// so we can work with mprotect to prevent UDFs from changing
 	// the input data
 
 	// we remove them from the pthread_sigmask
-	(void)sigemptyset(&signal_set);
-	(void)sigaddset(&signal_set, SIGSEGV);
-	(void)sigaddset(&signal_set, SIGBUS);
-	(void)pthread_sigmask(SIG_UNBLOCK, &signal_set, NULL);
+	if (option_enable_mprotect) {
+		(void)sigemptyset(&signal_set);
+		(void)sigaddset(&signal_set, SIGSEGV);
+		(void)sigaddset(&signal_set, SIGBUS);
+		(void)pthread_sigmask(SIG_UNBLOCK, &signal_set, NULL);
 
-	memset(&sa, 0, sizeof(sa));
+		memset(&sa, 0, sizeof(sa));
+	}
 
 	if (!grouped) {
 		sql_subfunc *sqlmorefun =
@@ -1216,74 +1245,78 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	// set up a longjmp point
 	// this longjmp point is used for some error handling in the C function
 	// such as failed mallocs
-	ret = setjmp(jump_buffer[tid]);
-	if (ret < 0) {
-		// error value
-		msg = createException(MAL, "cudf.eval", "Failed setjmp: %s",
-							  strerror(errno));
-		errno = 0;
-		goto wrapup;
-	} else if (ret > 0) {
-		if (ret == 1) {
-			msg = createException(MAL, "cudf.eval", "Attempting to write to "
-													"the input or triggered a "
-													"segfault/bus error");
-		} else if (ret == 2) {
-			msg = createException(MAL, "cudf.eval",
-								  "Malloc failure in internal function!");
-		} else {
-			// we jumped here
-			msg = createException(MAL, "cudf.eval", "We longjumped here "
-													"because of an error, but "
-													"we don't know which!");
+	if (option_enable_longjmp) {
+		ret = setjmp(jump_buffer[tid]);
+		if (ret < 0) {
+			// error value
+			msg = createException(MAL, "cudf.eval", "Failed setjmp: %s",
+								  strerror(errno));
+			errno = 0;
+			goto wrapup;
+		} else if (ret > 0) {
+			if (ret == 1) {
+				msg = createException(MAL, "cudf.eval", "Attempting to write to "
+														"the input or triggered a "
+														"segfault/bus error");
+			} else if (ret == 2) {
+				msg = createException(MAL, "cudf.eval",
+									  "Malloc failure in internal function!");
+			} else {
+				// we jumped here
+				msg = createException(MAL, "cudf.eval", "We longjumped here "
+														"because of an error, but "
+														"we don't know which!");
+			}
+			goto wrapup;
 		}
-		goto wrapup;
 	}
 
 	// set up the signal handler for catching segfaults
-	memset(&sa, 0, sizeof(sa));
-	sa.sa_flags = SA_SIGINFO;
-	sigfillset(&sa.sa_mask);
-	sa.sa_sigaction = handler;
-	if (sigaction(SIGSEGV, &sa, &oldsa) == -1 ||
-		sigaction(SIGBUS, &sa, &oldsb) == -1) {
-		msg = createException(MAL, "cudf.eval",
-							  "Failed to set signal handler: %s",
-							  strerror(errno));
-		errno = 0;
-		goto wrapup;
-	}
-
-	// actually mprotect the regions now that the signal handlers are set
-	region_iter = regions;
-	while (region_iter) {
-		if (mprotect(region_iter->addr, region_iter->len, PROT_READ) < 0) {
+	if (option_enable_mprotect) {
+		memset(&sa, 0, sizeof(sa));
+		sa.sa_flags = SA_SIGINFO;
+		sigfillset(&sa.sa_mask);
+		sa.sa_sigaction = handler;
+		if (sigaction(SIGSEGV, &sa, &oldsa) == -1 ||
+			sigaction(SIGBUS, &sa, &oldsb) == -1) {
+			msg = createException(MAL, "cudf.eval",
+								  "Failed to set signal handler: %s",
+								  strerror(errno));
+			errno = 0;
 			goto wrapup;
 		}
-		region_iter = region_iter->next;
+		// actually mprotect the regions now that the signal handlers are set
+		region_iter = regions;
+		while (region_iter) {
+			if (mprotect(region_iter->addr, region_iter->len, PROT_READ) < 0) {
+				goto wrapup;
+			}
+			region_iter = region_iter->next;
+		}
 	}
-
 	// call the actual jitted function
 	msg = func(inputs, outputs, wrapped_GDK_malloc);
 
-	// clear any mprotected regions
-	while (regions) {
-		mprotected_region *next = regions->next;
-		clear_mprotect(regions->addr, regions->len);
-		GDKfree(regions);
-		regions = next;
-	}
 
-	// clear the signal handlers
-	if (sigaction(SIGSEGV, &oldsa, NULL) == -1 ||
-		sigaction(SIGBUS, &oldsb, NULL) == -1) {
-		msg = createException(MAL, "cudf.eval",
-							  "Failed to unset signal handler: %s",
-							  strerror(errno));
-		errno = 0;
-		goto wrapup;
+	if (option_enable_mprotect) {
+		// clear any mprotected regions
+		while (regions) {
+			mprotected_region *next = regions->next;
+			clear_mprotect(regions->addr, regions->len);
+			GDKfree(regions);
+			regions = next;
+		}
+		// clear the signal handlers
+		if (sigaction(SIGSEGV, &oldsa, NULL) == -1 ||
+			sigaction(SIGBUS, &oldsb, NULL) == -1) {
+			msg = createException(MAL, "cudf.eval",
+								  "Failed to unset signal handler: %s",
+								  strerror(errno));
+			errno = 0;
+			goto wrapup;
+		}
+		memset(&sa, 0, sizeof(sa));
 	}
-	memset(&sa, 0, sizeof(sa));
 
 	if (msg) {
 		// failure in function
@@ -1472,26 +1505,30 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 wrapup:
 	// cleanup
 	// remove the signal handler, if any was set
-	if (sa.sa_sigaction) {
-		sigaction(SIGSEGV, &oldsa, NULL);
-		sigaction(SIGBUS, &oldsb, NULL);
+	if (option_enable_mprotect) {
+		if (sa.sa_sigaction) {
+			sigaction(SIGSEGV, &oldsa, NULL);
+			sigaction(SIGBUS, &oldsb, NULL);
 
-		memset(&sa, 0, sizeof(sa));
-	}
-	// clear any mprotected regions
-	while (regions) {
-		mprotected_region *next = regions->next;
-		clear_mprotect(regions->addr, regions->len);
-		GDKfree(regions);
-		regions = next;
+			memset(&sa, 0, sizeof(sa));
+		}
+		// clear any mprotected regions
+		while (regions) {
+			mprotected_region *next = regions->next;
+			clear_mprotect(regions->addr, regions->len);
+			GDKfree(regions);
+			regions = next;
+		}
 	}
 	while (allocated_regions[tid]) {
 		allocated_region *next = allocated_regions[tid]->next;
 		GDKfree(allocated_regions[tid]);
 		allocated_regions[tid] = next;
 	}
-	// block segfaults and bus errors again after we exit
-	(void)pthread_sigmask(SIG_BLOCK, &signal_set, NULL);
+	if (option_enable_mprotect) {
+		// block segfaults and bus errors again after we exit
+		(void)pthread_sigmask(SIG_BLOCK, &signal_set, NULL);
+	}
 	// argument names (input)
 	if (args) {
 		for (i = 0; i < (size_t)pci->argc; i++) {
@@ -1605,7 +1642,7 @@ static const char *GetTypeName(int type)
 	if (type == TYPE_bit || type == TYPE_bte) {
 		tpe = "bte";
 	} else if (type == TYPE_sht) {
-		tpe = "short";
+		tpe = "sht";
 	} else if (type == TYPE_int) {
 		tpe = "int";
 	} else if (type == TYPE_oid) {

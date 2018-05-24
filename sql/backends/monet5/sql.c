@@ -68,7 +68,6 @@ rel_no_mitosis(sql_rel *rel)
 
 	if (!rel || is_basetable(rel->op))
 		return 1;
-	//if (is_topn(rel->op) || is_project(rel->op))
 	if (is_topn(rel->op) || rel->op == op_project)
 		return rel_no_mitosis(rel->l);
 	if (is_modify(rel->op) && rel->card <= CARD_AGGR)
@@ -119,7 +118,7 @@ sql_symbol2relation(mvc *c, symbol *sym)
 	if (!r)
 		return NULL;
 	if (r) {
-		r = rel_optimizer(c, r);
+		r = rel_optimizer(c, r, 1);
 		r = rel_distribute(c, r);
 		r = rel_partition(c, r);
 		if (rel_no_mitosis(r) || rel_need_distinct_query(r))
@@ -362,7 +361,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, nt->query, m_deps);
 		if (r)
-			r = rel_optimizer(sql, r);
+			r = rel_optimizer(sql, r, 0);
 		if (r) {
 			list *id_l = rel_dependencies(sql->sa, r);
 
@@ -1111,7 +1110,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if (sname)
 		throw(SQL, "sql.idxbind", SQLSTATE(HY005) "Cannot access column descriptor %s for %s.%s", iname, sname, tname);
-	throw(SQL, "sql.idxbind", SQLSTATE(HY005) "Connot access column descriptor %s for %s", iname, tname);
+	throw(SQL, "sql.idxbind", SQLSTATE(HY005) "Cannot access column descriptor %s for %s", iname, tname);
 }
 
 str mvc_append_column(sql_trans *t, sql_column *c, BAT *ins) {
@@ -1541,9 +1540,9 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 				BBPunfix(u->batCacheid);
 				throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			}
-			ret = BATsemijoin(&cminu, NULL, u, c_ids, NULL, NULL, 0, BUN_NONE);
+			cminu = BATintersect(u, c_ids, NULL, NULL, 0, BUN_NONE);
 			BBPunfix(c_ids->batCacheid);
-			if (ret != GDK_SUCCEED) {
+			if (cminu == NULL) {
 				BBPunfix(c->batCacheid);
 				BBPunfix(u->batCacheid);
 				throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -1617,7 +1616,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		res = u;
 	}
-	BATkey(res, TRUE);
+	BATkey(res, true);
 	BBPkeepref(*result = res->batCacheid);
 	return MAL_SUCCEED;
 }
@@ -1708,7 +1707,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		/* create subsets of u_id and u_val where the tail
 		 * values of u_id are also in s, and where those tail
 		 * values occur as head value in res */
-		if (BATsemijoin(&o, NULL, u_id, s, NULL, NULL, 0, BUN_NONE) != GDK_SUCCEED) {
+		if ((o = BATintersect(u_id, s, NULL, NULL, 0, BUN_NONE)) == NULL) {
 			BBPunfix(s->batCacheid);
 			BBPunfix(res->batCacheid);
 			BBPunfix(u_id->batCacheid);
@@ -1724,7 +1723,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		if (nu_id == NULL ||
 		    nu_val == NULL ||
 		    tres == NULL ||
-		    BATsemijoin(&o, NULL, nu_id, tres, NULL, NULL, 0, BUN_NONE) != GDK_SUCCEED) {
+		    (o = BATintersect(nu_id, tres, NULL, NULL, 0, BUN_NONE)) == NULL) {
 			BBPunfix(s->batCacheid);
 			BBPunfix(res->batCacheid);
 			BBPreclaim(nu_id);

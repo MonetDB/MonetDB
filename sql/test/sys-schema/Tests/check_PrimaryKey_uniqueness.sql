@@ -32,6 +32,8 @@ SELECT COUNT(*) AS duplicates, id FROM tmp.triggers GROUP BY id HAVING COUNT(*) 
 
 SELECT COUNT(*) AS duplicates, id FROM sys.sequences GROUP BY id HAVING COUNT(*) > 1;
 
+SELECT COUNT(*) AS duplicates, id FROM sys.comments GROUP BY id HAVING COUNT(*) > 1;
+
 SELECT COUNT(*) AS duplicates, dependency_type_id FROM sys.dependency_types GROUP BY dependency_type_id HAVING COUNT(*) > 1;
 SELECT COUNT(*) AS duplicates, id, depend_id FROM sys.dependencies GROUP BY id, depend_id HAVING COUNT(*) > 1;
 

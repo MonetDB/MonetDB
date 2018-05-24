@@ -593,8 +593,8 @@ int yydebug=1;
 %left <operation> AND
 %left <sval> COMPARISON /* <> < > <= >= */
 %left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING SUBSTRING POSITION SPLIT_PART
-%right UMINUS
 %left <operation> '*' '/' '%'
+%left UMINUS
 %left <operation> '~'
 
 %left <operation> GEOM_OVERLAP GEOM_OVERLAP_OR_ABOVE GEOM_OVERLAP_OR_BELOW GEOM_OVERLAP_OR_LEFT
@@ -783,7 +783,7 @@ opt_minmax:
 declare_statement:
 	declare variable_list
 		{ $$ = _symbol_create_list( SQL_DECLARE, $2); }
-    |   declare table_def { $$ = $2; }
+    |   declare table_def { $$ = $2; if ($$) $$->token = SQL_DECLARE_TABLE; }
     ;
 
 variable_list:
@@ -1081,7 +1081,7 @@ alter_statement:
  | ALTER TABLE qname ADD TABLE qname
 	{ dlist *l = L();
 	  append_list(l, $3);
-	  append_symbol(l, _symbol_create_list( SQL_TABLE, $6));
+	  append_symbol(l, _symbol_create_list( SQL_TABLE, append_list(L(),$6)));
 	  $$ = _symbol_create_list( SQL_ALTER_TABLE, l ); }
  | ALTER TABLE qname ALTER alter_table_element
 	{ dlist *l = L();
@@ -1204,9 +1204,9 @@ drop_table_element:
 	  append_string(l, $2 );
 	  append_int(l, $3 );
 	  $$ = _symbol_create_list( SQL_DROP_CONSTRAINT, l ); }
-  |  TABLE ident drop_action
+  |  TABLE qname drop_action
 	{ dlist *l = L();
-	  append_string(l, $2 );
+	  append_list(l, $2 );
 	  append_int(l, $3 );
 	  append_int(l, 0);
 	  append_int(l, FALSE ); /* no if exists check */
@@ -1926,20 +1926,19 @@ func_def:
 				// code does not get cleaner than this people
 				if (strcasecmp($10, "PYTHON_MAP") == 0) {
 					lang = FUNC_LANG_MAP_PY;
-                } else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
-                	lang = FUNC_LANG_MAP_PY3;
-                } else if (strcasecmp($10, "PYTHON3") == 0) {
-                	lang = FUNC_LANG_PY3;
-                } else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
-                	lang = FUNC_LANG_MAP_PY2;
-                } else if (strcasecmp($10, "PYTHON2") == 0) {
-                	lang = FUNC_LANG_PY2;
-                } else {
-                	lang = FUNC_LANG_PY;
-                }
-            }
-			else if (l == 'C' || l == 'c') {
-                if (strcasecmp($10, "CPP") == 0) {
+				} else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
+					lang = FUNC_LANG_MAP_PY3;
+				} else if (strcasecmp($10, "PYTHON3") == 0) {
+					lang = FUNC_LANG_PY3;
+				} else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
+					lang = FUNC_LANG_MAP_PY2;
+				} else if (strcasecmp($10, "PYTHON2") == 0) {
+					lang = FUNC_LANG_PY2;
+				} else {
+					lang = FUNC_LANG_PY;
+				}
+			} else if (l == 'C' || l == 'c') {
+				if (strcasecmp($10, "CPP") == 0) {
 					lang = FUNC_LANG_CPP;
 				} else {
 					lang = FUNC_LANG_C;
@@ -2005,20 +2004,19 @@ func_def:
 			else if (l == 'P' || l == 'p') {
 				if (strcasecmp($10, "PYTHON_MAP") == 0) {
 					lang = FUNC_LANG_MAP_PY;
-                } else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
-                	lang = FUNC_LANG_MAP_PY3;
-                } else if (strcasecmp($10, "PYTHON3") == 0) {
-                	lang = FUNC_LANG_PY3;
-                } else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
-                	lang = FUNC_LANG_MAP_PY2;
-                } else if (strcasecmp($10, "PYTHON2") == 0) {
-                	lang = FUNC_LANG_PY2;
-                } else {
-                	lang = FUNC_LANG_PY;
-                }
-            }
-            else if (l == 'C' || l == 'c') {
-                if (strcasecmp($10, "CPP") == 0) {
+				} else if (strcasecmp($10, "PYTHON3_MAP") == 0) {
+					lang = FUNC_LANG_MAP_PY3;
+				} else if (strcasecmp($10, "PYTHON3") == 0) {
+					lang = FUNC_LANG_PY3;
+				} else if (strcasecmp($10, "PYTHON2_MAP") == 0) {
+					lang = FUNC_LANG_MAP_PY2;
+				} else if (strcasecmp($10, "PYTHON2") == 0) {
+					lang = FUNC_LANG_PY2;
+				} else {
+					lang = FUNC_LANG_PY;
+				}
+			} else if (l == 'C' || l == 'c') {
+				if (strcasecmp($10, "CPP") == 0) {
 					lang = FUNC_LANG_CPP;
 				} else {
 					lang = FUNC_LANG_C;
@@ -6330,6 +6328,7 @@ char *token2string(int token)
 	SQL(DROP_CONSTRAINT);
 	SQL(DROP_DEFAULT);
 	SQL(DECLARE);
+	SQL(DECLARE_TABLE);
 	SQL(COMMENT);
 	SQL(SET);
 	SQL(PREP);
