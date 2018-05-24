@@ -161,12 +161,12 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			table_funcs.rids_destroy(rs);
 		}
 
-		t = mvc_create_view(m, s, "table_partitions", SQL_PERSIST, "SELECT \"id\", \"table_id\", \"column_id\", \"query\" FROM \"sys\".\"_table_partitions\" UNION ALL SELECT \"id\", \"table_id\", \"column_id\", \"query\" FROM \"tmp\".\"_table_partitions\";", 1);
+		t = mvc_create_view(m, s, "table_partitions", SQL_PERSIST, "SELECT \"id\", \"table_id\", \"column_id\", \"expression\" FROM \"sys\".\"_table_partitions\" UNION ALL SELECT \"id\", \"table_id\", \"column_id\", \"expression\" FROM \"tmp\".\"_table_partitions\";", 1);
 		dpid = t->base.id;
 		mvc_create_column_(m, t, "id", "int", 32);
 		mvc_create_column_(m, t, "table_id", "int", 32);
 		mvc_create_column_(m, t, "column_id", "int", 32);
-		mvc_create_column_(m, t, "query", "varchar", 2048);
+		mvc_create_column_(m, t, "expression", "varchar", 2048);
 
 		if (!first) {
 			int pub = ROLE_PUBLIC;

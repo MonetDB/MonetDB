@@ -387,6 +387,10 @@ char *symbol2string(mvc *sql, symbol *se, char **err)
 		if (dlist_length(l) == 1 && l->h->type == type_int) {
 			atom *a = sql_bind_arg(sql, l->h->data.i_val);
 			return atom2sql(a);
+		} else if (dlist_length(l) == 1 && l->h->type == type_string) { //TODO Is this right Niels?
+			sql_subtype tpe;
+			sql_find_subtype(&tpe, "clob", 0, 0);
+			return _STRDUP(l->h->data.sval);
 		} else {
 			char *e = dlist2string(sql, l, err);
 			if (e)

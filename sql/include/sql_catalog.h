@@ -541,6 +541,12 @@ typedef struct sql_part {
 	} part;
 } sql_part;
 
+typedef struct sql_expression {
+	sql_subtype type;
+	char *exp;
+	list *cols;
+} sql_expression;
+
 typedef struct sql_table {
 	sql_base base;
 	sht type;		/* table, view, etc */
@@ -566,8 +572,8 @@ typedef struct sql_table {
 
 	struct sql_table *p;	 /* The table is part of this merge table */
 	union {
-		struct sql_column *pcol;  /* If it is partitioned on a column */
-		struct sql_subfunc *pexp; /* If it is partitioned by an expression */
+		struct sql_column *pcol; /* If it is partitioned on a column */
+		struct sql_expression *pexp; /* If it is partitioned by an expression */
 	} part;
 } sql_table;
 
@@ -621,8 +627,6 @@ extern int base_key(sql_base *b);
 extern node *list_find_name(list *l, const char *name);
 extern node *list_find_id(list *l, int id);
 extern node *list_find_base_id(list *l, int id);
-
-extern void find_partition_type(sql_subtype *res, sql_table *t);
 
 extern sql_key *find_sql_key(sql_table *t, const char *kname);
 

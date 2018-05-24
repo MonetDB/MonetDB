@@ -25,7 +25,7 @@ insert_value(mvc *sql, sql_column *c, sql_rel **r, symbol *s)
 		return exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
 	} else if (s->token == SQL_DEFAULT) {
 		if (c->def) {
-			sql_exp *e = rel_parse_val(sql, sa_message(sql->sa, "select CAST(%s AS %s);", c->def, c->type.type->sqlname), sql->emode);
+			sql_exp *e = rel_parse_val(sql, sa_message(sql->sa, "select CAST(%s AS %s);", c->def, c->type.type->sqlname), sql->emode, NULL);
 			if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
 				return NULL;
 			return e;
@@ -352,7 +352,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 
 						if (c->def) {
 							char *q = sa_message(sql->sa, "select %s;", c->def);
-							e = rel_parse_val(sql, q, sql->emode);
+							e = rel_parse_val(sql, q, sql->emode, NULL);
 							if (!e || (e = rel_check_type(sql, &c->type, e, type_equal)) == NULL)
 								return NULL;
 						} else {
@@ -1021,7 +1021,7 @@ update_table(mvc *sql, dlist *qname, dlist *assignmentlist, symbol *opt_from, sy
 					char *colname = assignment->h->next->data.sval;
 					sql_column *col = mvc_bind_column(sql, t, colname);
 					if (col->def) {
-						v = rel_parse_val(sql, sa_message(sql->sa, "select CAST(%s AS %s);", col->def, col->type.type->sqlname), sql->emode);
+						v = rel_parse_val(sql, sa_message(sql->sa, "select CAST(%s AS %s);", col->def, col->type.type->sqlname), sql->emode, NULL);
 					} else {
 						return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: column '%s' has no valid default value", col->base.name);
 					}
@@ -1727,7 +1727,7 @@ copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string)
 }
 
 sql_exp *
-rel_parse_val(mvc *m, char *query, char emode)
+rel_parse_val(mvc *m, char *query, char emode, sql_table *from)
 {
 	mvc o = *m;
 	sql_exp *e = NULL;
@@ -1785,6 +1785,8 @@ rel_parse_val(mvc *m, char *query, char emode)
 		if (sn->selection->h->data.sym->token == SQL_COLUMN) {
 			int is_last = 0;
 			sql_rel *r = NULL;
+			if(from)
+				r = rel_basetable(m, from, from->base.name);
 			symbol* sq = sn->selection->h->data.sym->data.lval->h->data.sym;
 			e = rel_value_exp2(m, &r, sq, sql_sel, ek, &is_last);
 		}

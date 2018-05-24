@@ -697,7 +697,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	sql_column *idx_table_id, *key_table_id, *trigger_table_id;
 	oid rid;
 	sqlid pcolid = int_nil;
-	//void* exp = NULL;
+	void* exp = NULL;
 	sql_subtype pcoltpe;
 	rids *rs;
 
@@ -756,13 +756,19 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 			void* v = table_funcs.column_find_value(tr, find_sql_column(partitions, "column_id"), rid);
 			pcolid = *((sqlid*)v);
 			_DELETE(v);
-			/*v = table_funcs.column_find_value(tr, find_sql_column(partitions, "query"), rid); TODO
-			exp = (v)?sa_strdup(tr->sa, v):NULL;
-			_DELETE(v);*/
+			v = table_funcs.column_find_value(tr, find_sql_column(partitions, "expression"), rid);
+			if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), v) != 0)
+				exp = sa_strdup(tr->sa, v);
+			_DELETE(v);
 		}
 		table_funcs.rids_destroy(rs);
 	}
 
+	assert((!isRangePartitionTable(t) && !isListPartitionTable(t)) || (!exp && !is_int_nil(pcolid)) || (exp && is_int_nil(pcolid)));
+	if(isPartitionedByExpressionTable(t)) {
+		t->part.pexp = SA_ZNEW(tr->sa, sql_expression);
+		t->part.pexp->exp = exp;
+	}
 	for(rid = table_funcs.subrids_next(nrs); !is_oid_nil(rid); rid = table_funcs.subrids_next(nrs)) {
 		sql_column* next = load_column(tr, t, rid);
 		cs_add(&t->columns, next, TR_OLD);
@@ -1533,6 +1539,11 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 	nt->query = (t->query) ? sa_strdup(sa, t->query) : NULL;
 	nt->p = t->p;
 
+	if(isPartitionedByExpressionTable(nt)) {
+		t->part.pexp = SA_ZNEW(sa, sql_expression);
+		t->part.pexp->cols = sa_list(sa);
+	}
+
 	for (n = t->columns.set->h; n; n = n->next) 
 		dup_sql_column(sa, nt, n->data);
 	nt->columns.dset = NULL;
@@ -1561,6 +1572,11 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name)
 	t->query = NULL;
 	t->s = s;
 	cs_add(&s->tables, t, TR_NEW);
+
+	if(isPartitionedByExpressionTable(t)) {
+		t->part.pexp = SA_ZNEW(tr->sa, sql_expression);
+		t->part.pexp->cols = sa_list(tr->sa);
+	}
 
 	if (isTable(t))
 		store_funcs.create_del(tr, t);
@@ -1737,7 +1753,7 @@ store_load(void) {
 		bootstrap_create_column(tr, t, "id", "int", 32);
 		bootstrap_create_column(tr, t, "table_id", "int", 32);
 		bootstrap_create_column(tr, t, "column_id", "int", 32);
-		bootstrap_create_column(tr, t, "query", "varchar", 2048);
+		bootstrap_create_column(tr, t, "expression", "varchar", 2048);
 
 		t = bootstrap_create_table(tr, s, "_range_partitions");
 		bootstrap_create_column(tr, t, "id", "int", 32);
@@ -2656,6 +2672,10 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 	t->sz = ot->sz;
 	t->cleared = 0;
 
+	if(isPartitionedByExpressionTable(ot)) {
+		t->part.pexp = SA_ZNEW(sa, sql_expression);
+		t->part.pexp->exp = sa_strdup(sa, ot->part.pexp->exp);
+	}
 	if (ot->columns.set) {
 		for (n = ot->columns.set->h; n; n = n->next) {
 			sql_column *c = n->data, *copy = column_dup(tr, flag, c, t);
@@ -4911,6 +4931,10 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 			t->persistence = SQL_GLOBAL_TEMP;
 		}
 	}
+	if(isPartitionedByExpressionTable(t)) {
+		t->part.pexp = SA_ZNEW(tr->sa, sql_expression);
+		t->part.pexp->cols = sa_list(tr->sa);
+	}
 
 	ca = t->commit_action;
 	if (!isDeclaredTable(t))
@@ -4932,9 +4956,9 @@ sql_trans_set_partition_table(sql_trans *tr, sql_table *t)
 		sql_table *partitions = find_sql_table(syss, "_table_partitions");
 		oid next = next_oid();
 		if(isPartitionedByColumnTable(t)) {
-			table_funcs.table_insert(tr, partitions, &next, &t->base.id, &t->part.pcol->base.id, str_nil);
+			table_funcs.table_insert(tr, partitions, &next, &t->base.id, &t->part.pcol->base.id, ATOMnilptr(TYPE_str));
 		} else if(isPartitionedByExpressionTable(t)) {
-			table_funcs.table_insert(tr, partitions, &next, &t->base.id, int_nil, str_nil); //TODO
+			table_funcs.table_insert(tr, partitions, &next, &t->base.id, ATOMnilptr(TYPE_int), t->part.pexp->exp);
 		} else {
 			assert(0);
 		}

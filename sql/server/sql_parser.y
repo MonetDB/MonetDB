@@ -1487,7 +1487,8 @@ partition_type:
  ;
 
 partition_expression:
-   func_ref
+   simple_scalar_exp 	{ $$ = $1; }
+ ;
 
 partition_on:
    ON '(' ident ')'                   { $$ = _symbol_create_list( SQL_PARTITION_COLUMN, append_string(L(), $3) ); }

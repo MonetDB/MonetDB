@@ -18,6 +18,7 @@
 #include "rel_propagate.h"
 #include "sql_parser.h"
 #include "sql_privileges.h"
+#include "sql_partition.h"
 
 #define qname_index(qname) qname_table(qname)
 #define qname_func(qname) qname_table(qname)
@@ -901,13 +902,15 @@ table_element(mvc *sql, symbol *s, sql_schema *ss, sql_table *t, int alter)
 }
 
 static int
-create_partition_definition(mvc *sql, sql_table *t, int tt, symbol* partition_def)
+create_partition_definition(mvc *sql, sql_table *t, int tt, symbol *partition_def)
 {
+	char *err = NULL;
+
 	if(partition_def) {
+		dlist *list = partition_def->data.lval;
+		symbol *type = list->h->next->data.sym;
+		dlist *list2 = type->data.lval;
 		if(tt == tt_list_partition_col || tt == tt_range_partition_col) {
-			dlist *list = partition_def->data.lval;
-			symbol *type = list->h->next->data.sym;
-			dlist *list2 = type->data.lval;
 			str colname = list2->h->data.sval;
 			node *n;
 			int sql_ec;
@@ -924,7 +927,7 @@ create_partition_definition(mvc *sql, sql_table *t, int tt, symbol* partition_de
 			}
 			sql_ec = t->part.pcol->type.type->eclass;
 			if(!(sql_ec == EC_BIT || EC_VARCHAR(sql_ec) || EC_TEMP(sql_ec) || EC_NUMBER(sql_ec) || sql_ec == EC_BLOB)) {
-				char *err = sql_subtype_string(&(t->part.pcol->type));
+				err = sql_subtype_string(&(t->part.pcol->type));
 				if (!err) {
 					sql_error(sql, 02, SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				} else {
@@ -934,8 +937,15 @@ create_partition_definition(mvc *sql, sql_table *t, int tt, symbol* partition_de
 				return SQL_ERR;
 			}
 		} else if(tt == tt_list_partition_exp || tt == tt_range_partition_exp) {
-			sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: partition by expression not supported at the moment");
-			return SQL_ERR;
+			char *query = symbol2string(sql, list2->h->data.sym, &err);
+			if (!query) {
+				(void) sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: error compiling expression '%s'", err?err:"");
+				if (err) _DELETE(err);
+				return SQL_ERR;
+			}
+			t->part.pexp = SA_ZNEW(sql->sa, sql_expression);
+			t->part.pexp->exp = sa_strdup(sql->sa, query);
+			_DELETE(query);
 		}
 	}
 	return SQL_OK;
@@ -993,7 +1003,7 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 		dnode *n;
 		dlist *columns = table_elements_or_subquery->data.lval;
 		sql_table *t;
-	       
+
 		if (tt == tt_remote) {
 			if (!mapiuri_valid(loc))
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: incorrect uri '%s' for remote table '%s'", loc, name);
@@ -1436,6 +1446,7 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 				if(!extra)
 					return rel_alter_table(sql->sa, DDL_ALTER_TABLE_ADD_TABLE, sname, tname, sname, ntname, 0);
 				if(extra->token == SQL_PARTITION_RANGE) {
+					char *err;
 					sql_subtype tpe;
 					dlist* ll = extra->data.lval;
 					symbol* min = ll->h->data.sym, *max = ll->h->next->data.sym;
@@ -1447,7 +1458,8 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 								(t->type == tt_merge_table)?"merge":"list partition");
 					}
 
-					find_partition_type(&tpe, t);
+					if((err = find_partition_type(sql, &tpe, t)))
+						return sql_error(sql, 02, "%s", err);
 
 					if(min && min->token == SQL_MINVALUE) {
 						amin = atom_absolute_min(sql->sa, &tpe);
@@ -1532,7 +1544,7 @@ sql_alter_table(mvc *sql, dlist *qname, symbol *te, symbol *extra)
 				sql_column *c = n->data;
 				if (c->def) {
 					char *d = sql_message("select %s;", c->def);
-					e = rel_parse_val(sql, d, sql->emode);
+					e = rel_parse_val(sql, d, sql->emode, NULL);
 					_DELETE(d);
 				} else {
 					e = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));

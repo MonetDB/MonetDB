@@ -18,7 +18,7 @@
 #include "sql_scenario.h"
 #include "sql_mvc.h"
 #include "sql_qc.h"
-#include "sql_optimizer.h"
+#include "sql_partition.h"
 #include "mal_namespace.h"
 #include "opt_prelude.h"
 #include "querylog.h"
@@ -210,7 +210,8 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 		goto finish;
 	}
 
-	find_partition_type(&tpe, mt);
+	if((msg = find_partition_type(sql, &tpe, mt)))
+		goto finish;
 	tp1 = tpe.type->localtype;
 	if(ATOMcmp(TYPE_str, min, ATOMnilptr(TYPE_str))) {
 		if (tp1 == TYPE_str) {
@@ -355,7 +356,8 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		goto finish;
 	}
 
-	find_partition_type(&tpe, mt);
+	if((msg = find_partition_type(sql, &tpe, mt)))
+		goto finish;
 	tp1 = tpe.type->localtype;
 	ninserts = pci->argc - pci->retc - 6;
 	if(ninserts <= 0 && !with_nills) {
@@ -367,7 +369,6 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		size_t len = 0;
 		str next = *getArgReference_str(stk, pci, i);
 		sql_part_value *nextv = NULL;
-		void *prev;
 
 		if(escaped) {
 			GDKfree(escaped);
@@ -405,7 +406,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		memcpy(nextv->value, pnext, len);
 		nextv->length = len;
 
-		if((prev = list_append_sorted(values, nextv, sql_values_list_element_validate_and_insert)) != NULL) {
+		if(list_append_sorted(values, nextv, sql_values_list_element_validate_and_insert) != NULL) {
 			GDKfree(pnext);
 			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 									"ALTER TABLE: there are duplicated values in the list");
