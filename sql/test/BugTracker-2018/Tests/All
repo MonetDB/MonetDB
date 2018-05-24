@@ -66,3 +66,4 @@ sqlitelogictest-select-not-in-wrong.Bug-6602
 sqlitelogictest-groupby-distinct-duplicate.Bug-6603
 procedure-create-table.Bug-6604
 sqlitelogictest-cast-null-not-in.Bug-6605
+sqlitelogictest-groupby-coalesce-error-message.Bug-6608
