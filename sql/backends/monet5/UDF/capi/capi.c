@@ -959,6 +959,14 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		index = i - (pci->retc + ARG_OFFSET);
 		bat_type = getArgType(mb, pci, i);
 		if (!isaBatType(bat_type)) {
+			void* input = NULL;
+			if (bat_type == TYPE_str) {
+				input = *((char**)getArgReference_str(stk, pci, i));
+			} else if (bat_type == TYPE_blob || bat_type == TYPE_sqlblob) {
+				input = *((blob**)getArgReference(stk, pci, i));
+			} else {
+				input = getArgReference(stk, pci, i);
+			}
 			// scalar input
 			// create a temporary BAT
 			input_bats[index] = COLnew(0, bat_type, 1, TRANSIENT);
@@ -966,7 +974,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 				goto wrapup;
 			}
-			if (BUNappend(input_bats[index], getArgReference(stk, pci, i),
+			if (BUNappend(input_bats[index], input,
 						  FALSE) != GDK_SUCCEED) {
 				msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 				goto wrapup;
@@ -1501,12 +1509,10 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			*getArgReference_bat(stk, pci, i) = b->batCacheid;
 			BBPkeepref(b->batCacheid);
 		} else {
-			// single value return, only for non-grouped aggregations
 			BATiter li = bat_iterator(b);
-			if (VALinit(&stk->stk[pci->argv[i]], bat_type, BUNtail(li, 0)) ==
-				NULL) {
-				msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
-				goto wrapup;
+			if (VALinit(&stk->stk[pci->argv[i]], bat_type,
+						BUNtail(li, 0)) == NULL) {
+				msg = createException(MAL, "cudf.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			BBPunfix(b->batCacheid);
 		}
