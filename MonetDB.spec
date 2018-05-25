@@ -132,7 +132,7 @@ Vendor: MonetDB BV <info@monetdb.org>
 Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Mar2018/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Mar2018-SP1/%{name}-%{version}.tar.bz2
 
 # we need systemd for the _unitdir macro to exist
 # we need checkpolicy and selinux-policy-devel for the SELinux policy
@@ -1036,6 +1036,59 @@ done
 %postun -p /sbin/ldconfig
 
 %changelog
+* Fri May 25 2018 Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com> - 11.29.5-20180525
+- Rebuilt.
+- BZ#6562: Sqlitelogictest crash on group by query with not in operator
+- BZ#6565: Sqlitelogictest crash on complex select query with coalesce
+  call
+- BZ#6566: Sqlitelogictest unavailable calc.- MAL operations
+- BZ#6568: Sqlitelogictest crash on complex case query
+- BZ#6569: Sqlitelogictest select query with not between cause with
+  wrong results
+- BZ#6570: Sqlitelogictest select coalesce undefined calc
+- BZ#6572: ordered index Error in optimizer garbageCollector
+- BZ#6573: Sqlitelogictest crash on complex select query with case
+  statement
+- BZ#6574: server crashed could not find ordered index while creating
+  a table
+- BZ#6575: Sqlitelogictest crash on groupby query with coalesce call
+- BZ#6576: Sqlitelogictest aritmetic expressions with negative numbers
+  handling
+- BZ#6577: creating temp table kills performance of the original query
+- BZ#6578: One two-tuple insert gives different results than two single
+  inserts
+- BZ#6579: Sqlitelogic test infinite loop while compiling SQL query
+- BZ#6581: Join condition errors.
+- BZ#6583: Fixed size string concatenation with integer results in fixed
+  size string of size 0
+- BZ#6584: SELECT FROM REMOTE TABLE WHERE IS NOT NULL produces wrong
+  result
+- BZ#6585: Nested Merge tables cause an infinite loop in rel_optimizer
+- BZ#6587: Sqlitelogictest crash on complex case statement
+- BZ#6589: Sqlitelogictest crash on complex on complex expression
+- BZ#6594: Sqlitelogictest crash on complex case statement
+- BZ#6595: Remote decimal division triggers assertion / returns wrong
+  answer
+- BZ#6598: Python 3.4 not supported (due to usage of Py_DecodeLocale)
+- BZ#6600: Sqlitelogictest queries fail to execute
+- BZ#6601: "where is null" clause on remote table causes problem with
+  next query
+- BZ#6602: Sqlitelogictest wrong results in IN query
+- BZ#6603: Sqlitelogictest: Aggregation query with distinct clause
+  produces duplicated rows
+- BZ#6605: Sqlitelogictest set queries with wrong results
+
+* Thu May 17 2018 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.29.5-20180525
+- sql: Corrected the definition of view: sys.ids.
+
+* Tue Apr  3 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.5-20180525
+- buildtools: On Linux and Unix, try not to link to libraries multiple times: that
+  only causes the code (and worse, the variables in those libraries) to be
+  included multiple times.  On Windows, we do need to link to libraries
+  multiple times (once for each DLL we create if the DLL references
+  anything from the library) but that doesn't cause the linked library
+  to be loaded multiple times.
+
 * Tue Mar 27 2018 Sjoerd Mullender <sjoerd@acm.org> - 11.29.3-20180327
 - Rebuilt.
 - BZ#3824: Created table not visible from ODBC
