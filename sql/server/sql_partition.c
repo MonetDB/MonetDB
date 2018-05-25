@@ -9,6 +9,7 @@
 #include "monetdb_config.h"
 
 #include "sql_partition.h"
+#include "rel_rel.h"
 #include "sql_mvc.h"
 #include "sql_catalog.h"
 #include "sql_relation.h"
@@ -154,11 +155,13 @@ bootstrap_partition_expression(mvc* sql, sql_table *mt)
 	sql_exp *exp;
 	char *query, *msg = NULL;
 	int sql_ec;
+	sql_rel* baset;
 
 	assert(isPartitionedByExpressionTable(mt));
 
+	baset = rel_basetable(sql, mt, mt->base.name);
 	query = mt->part.pexp->exp;
-	if((exp = rel_parse_val(sql, sa_message(sql->sa, "select %s;", query), sql->emode, mt)) == NULL) {
+	if((exp = rel_parse_val(sql, sa_message(sql->sa, "select %s;", query), sql->emode, baset)) == NULL) {
 		throw(SQL,"sql.partition", SQLSTATE(42000) "Incorrect expression '%s'", query);
 	}
 

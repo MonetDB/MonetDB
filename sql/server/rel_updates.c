@@ -1727,7 +1727,7 @@ copyto(mvc *sql, symbol *sq, str filename, dlist *seps, str null_string)
 }
 
 sql_exp *
-rel_parse_val(mvc *m, char *query, char emode, sql_table *from)
+rel_parse_val(mvc *m, char *query, char emode, sql_rel *from)
 {
 	mvc o = *m;
 	sql_exp *e = NULL;
@@ -1784,9 +1784,7 @@ rel_parse_val(mvc *m, char *query, char emode, sql_table *from)
 		SelectNode *sn = (SelectNode *)m->sym;
 		if (sn->selection->h->data.sym->token == SQL_COLUMN) {
 			int is_last = 0;
-			sql_rel *r = NULL;
-			if(from)
-				r = rel_basetable(m, from, from->base.name);
+			sql_rel *r = from;
 			symbol* sq = sn->selection->h->data.sym->data.lval->h->data.sym;
 			e = rel_value_exp2(m, &r, sq, sql_sel, ek, &is_last);
 		}

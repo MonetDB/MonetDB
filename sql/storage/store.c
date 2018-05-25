@@ -611,7 +611,6 @@ load_value_partition(sql_trans *tr, sql_schema *syss, sql_part *pt, sql_subtype 
 	int i = 0;
 	int (*atom_cmp) (const void *v1, const void *v2) = BATatoms[tpe.type->localtype].atomCmp;
 	const void *nil_val = BATatoms[tpe.type->localtype].atomNull;
-	void* prev;
 
 	vals = list_new(tr->sa, (fdestroy) NULL);
 	if(!vals) {
@@ -644,7 +643,7 @@ load_value_partition(sql_trans *tr, sql_schema *syss, sql_part *pt, sql_subtype 
 			nextv->value = sa_alloc(tr->sa, len);
 			memcpy(nextv->value, pnext, len);
 			nextv->length = len;
-			if((prev = list_append_sorted(vals, nextv, sql_values_list_element_validate_and_insert)) != NULL) {
+			if(list_append_sorted(vals, nextv, sql_values_list_element_validate_and_insert) != NULL) {
 				GDKfree(pnext);
 				table_funcs.rids_destroy(rs);
 				list_destroy(vals);
