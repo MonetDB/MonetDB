@@ -102,7 +102,7 @@ Ready.
 % .tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables,	.tables # table_name
 % table_cat,	table_schem,	table_name,	table_type,	remarks,	type_cat,	type_schem,	type_name,	self_referencing_col_name,	ref_generation # name
 % char,	varchar,	varchar,	char,	char,	char,	char,	char,	char,	char # type
-% 4,	3,	8,	12,	0,	4,	4,	4,	2,	6 # length
+% 4,	3,	8,	12,	222,	4,	4,	4,	2,	6 # length
 [ "null",	"sys",	"columns",	"SYSTEM TABLE",	"",	"null",	"null",	"null",	"id",	"SYSTEM"	]
 [ "null",	"sys",	"db_scens",	"SYSTEM TABLE",	"",	"null",	"null",	"null",	"id",	"SYSTEM"	]
 [ "null",	"sys",	"db_users",	"SYSTEM TABLE",	"",	"null",	"null",	"null",	"id",	"SYSTEM"	]

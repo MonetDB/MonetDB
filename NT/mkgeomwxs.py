@@ -51,7 +51,7 @@ def main():
     print(r'    <Property Id="ARPPRODUCTICON" Value="monetdb.ico"/>')
     print(r'    <Media Id="1" Cabinet="monetdb.cab" EmbedCab="yes"/>')
     print(r'    <Condition Message="MonetDB5-SQL needs to be installed first.">')
-    print(r'      INSTALLDIR')
+    print(r'      Installed OR INSTALLDIR')
     print(r'    </Condition>')
     print(r'    <Directory Id="TARGETDIR" Name="SourceDir">')
     if vs == '17':

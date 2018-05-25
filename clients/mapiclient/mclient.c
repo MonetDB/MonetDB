@@ -1976,7 +1976,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 	} while (!mnstr_errnr(toConsole) && (rc = mapi_next_result(hdl)) == 1);
 	/*
 	 * in case we called timerHuman() in the loop above with "total == false",
-	 * call is again with "total == true" to get the total wall-clock time
+	 * call it again with "total == true" to get the total wall-clock time
 	 * in case "singleinstr == false".
 	 */
 	if (timerHumanCalled)
@@ -2540,7 +2540,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 					} else {
 						/* get all object names in current schema */
 						char *with_clause = 
-							"WITH describe_all_objects AS (\n"
+							", describe_all_objects AS (\n"
 							"  SELECT s.name AS sname,\n"
 							"      t.name,\n"
 							"      s.name || '.' || t.name AS fullname,\n"
@@ -2552,7 +2552,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 							"      t.system,\n"
 							"      c.remark AS remark\n"
 							"    FROM sys._tables t\n"
-							"    LEFT OUTER JOIN sys.comments c ON t.id = c.id\n"
+							"    LEFT OUTER JOIN comments c ON t.id = c.id\n"
 							"    LEFT OUTER JOIN sys.schemas s ON t.schema_id = s.id\n"
 							"    LEFT OUTER JOIN sys.table_types tt ON t.type = tt.table_type_id\n"
 							"  UNION ALL\n"
@@ -2564,7 +2564,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 							"      false AS system,\n"
 							"      c.remark AS remark\n"
 							"    FROM sys.sequences sq\n"
-							"    LEFT OUTER JOIN sys.comments c ON sq.id = c.id\n"
+							"    LEFT OUTER JOIN comments c ON sq.id = c.id\n"
 							"    LEFT OUTER JOIN sys.schemas s ON sq.schema_id = s.id\n"
 							"  UNION ALL\n"
 							"  SELECT DISTINCT s.name AS sname,  -- DISTINCT is needed to filter out duplicate overloaded function/procedure names\n"
@@ -2575,8 +2575,8 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 							"      sf.function_id IS NOT NULL AS system,\n"
 							"      c.remark AS remark\n"
 							"    FROM sys.functions f\n"
-							"    LEFT OUTER JOIN sys.comments c ON f.id = c.id\n"
-							"    LEFT OUTER JOIN sys.function_types ft ON f.type = ft.function_type_id\n"
+							"    LEFT OUTER JOIN comments c ON f.id = c.id\n"
+							"    LEFT OUTER JOIN function_types ft ON f.type = ft.function_type_id\n"
 							"    LEFT OUTER JOIN sys.schemas s ON f.schema_id = s.id\n"
 							"    LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id\n"
 							"  UNION ALL\n"
@@ -2588,10 +2588,10 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 							"      s.system,\n"
 							"      c.remark AS remark\n"
 							"    FROM sys.schemas s\n"
-							"    LEFT OUTER JOIN sys.comments c ON s.id = c.id\n"
+							"    LEFT OUTER JOIN comments c ON s.id = c.id\n"
 							"  ORDER BY system, name, sname, ntype)\n"
 							;
-						size_t len = strlen(with_clause) + 500 + strlen(line);
+						size_t len = strlen(with_clause) + 1500 + strlen(line);
 						char *query = malloc(len);
 						char *q = query, *endq = query + len;
 						char *name_column = hasSchema ? "fullname" : "name";
@@ -2609,6 +2609,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 						 * | "data.my*"      | no            | fullname LIKE 'data.my%'      |
 						 * | "*a.my*"        | no            | fullname LIKE '%a.my%'        |
 						 */
+						q += snprintf(q, endq - q, "%s", get_with_comments_as_clause(mid));
 						q += snprintf(q, endq - q, "%s", with_clause);
 						q += snprintf(q, endq - q, "SELECT type, fullname, remark FROM describe_all_objects\n");
 						q += snprintf(q, endq - q, "WHERE (ntype & %u) > 0\n", x);

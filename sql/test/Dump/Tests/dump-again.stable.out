@@ -1,0 +1,111 @@
+stdout of test 'dump-again` in directory 'sql/test/Dump` itself:
+
+
+# 22:27:57 >  
+# 22:27:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=34099" "--set" "mapi_usock=/var/tmp/mtest-27453/.s.monetdb.34099" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/sjoerd/@Monet-stable/var/MonetDB/mTests_sql_test_Dump" "--set" "embedded_c=true"
+# 22:27:57 >  
+
+# MonetDB 5 server v11.29.4 (hg id: c717aa6c1f76)
+# This is an unreleased version
+# Serving database 'mTests_sql_test_Dump', using 4 threads
+# Compiled for x86_64-pc-linux-gnu/64bit with 128bit integers
+# Found 15.513 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://meeuw.mullender.nl:34099/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-27453/.s.monetdb.34099
+# MonetDB/GIS module loaded
+# MonetDB/SQL module loaded
+
+Ready.
+
+# 22:27:57 >  
+# 22:27:57 >  "/usr/bin/python" "dump-again.SQL.py" "dump-again"
+# 22:27:57 >  
+
+START TRANSACTION;
+CREATE SEQUENCE "sys"."test_seq" AS INTEGER;
+SET SCHEMA "sys";
+CREATE TABLE "sys"."test" (
+	"id" INTEGER,
+	"i"  SMALLINT      DEFAULT next value for "sys"."test_seq"
+);
+INSERT INTO "sys"."test" VALUES (0, 7);
+INSERT INTO "sys"."test" VALUES (1, 10);
+INSERT INTO "sys"."test" VALUES (2, 5);
+INSERT INTO "sys"."test" VALUES (3, 8);
+INSERT INTO "sys"."test" VALUES (4, 5);
+CREATE TABLE "sys"."typestest" (
+	"boolean"        BOOLEAN,
+	"tinyint"        TINYINT,
+	"smallint"       SMALLINT,
+	"int"            INTEGER,
+	"bigint"         BIGINT,
+	"double"         DOUBLE,
+	"real"           REAL,
+	"decimal"        DECIMAL(18,3),
+	"decimal9"       DECIMAL(9),
+	"decimal83"      DECIMAL(8,3),
+	"float"          DOUBLE,
+	"float9"         FLOAT(9),
+	"float83"        FLOAT(8,3),
+	"date"           DATE,
+	"iY"             INTERVAL YEAR,
+	"iYM"            INTERVAL YEAR TO MONTH,
+	"iM"             INTERVAL MONTH,
+	"id"             INTERVAL DAY,
+	"idh"            INTERVAL DAY TO HOUR,
+	"idm"            INTERVAL DAY TO MINUTE,
+	"ids"            INTERVAL DAY TO SECOND,
+	"ih"             INTERVAL HOUR,
+	"ihm"            INTERVAL HOUR TO MINUTE,
+	"ihs"            INTERVAL HOUR TO SECOND,
+	"im"             INTERVAL MINUTE,
+	"ims"            INTERVAL MINUTE TO SECOND,
+	"is"             INTERVAL SECOND,
+	"timestamp"      TIMESTAMP,
+	"timestamp5"     TIMESTAMP(5),
+	"timestampzone"  TIMESTAMP WITH TIME ZONE,
+	"timestamp5zone" TIMESTAMP(5) WITH TIME ZONE,
+	"time"           TIME,
+	"time5"          TIME(5),
+	"timezone"       TIME WITH TIME ZONE,
+	"time5zone"      TIME(5) WITH TIME ZONE,
+	"blob"           BINARY LARGE OBJECT,
+	"blob100"        BINARY LARGE OBJECT(100),
+	"clob"           CHARACTER LARGE OBJECT,
+	"clob100"        CHARACTER LARGE OBJECT(100),
+	"character"      CHAR(1),
+	"varchar100"     VARCHAR(100),
+	"character10"    CHAR(10),
+	"inet"           INET,
+	"inet9"          INET(9),
+	"json"           JSON,
+	"json10"         JSON(10),
+	"url"            URL,
+	"url55"          URL(55),
+	"uuid"           UUID
+);
+INSERT INTO "sys"."typestest" VALUES (true, 10, 10000, 1000000, 10000000000, 1e+30, 1e+20, 1.000, 123456789, 12345.678, 3.1415, 3.1415, 3.1415, DATE '2009-04-15', INTERVAL '24' MONTH, INTERVAL '18' MONTH, INTERVAL '3' MONTH, INTERVAL '1728000' SECOND, INTERVAL '108000' SECOND, INTERVAL '120000' SECOND, INTERVAL '100000' SECOND, INTERVAL '36000' SECOND, INTERVAL '6000' SECOND, INTERVAL '2000' SECOND, INTERVAL '600' SECOND, INTERVAL '100' SECOND, INTERVAL '10' SECOND, TIMESTAMP '1995-07-15 07:30:00.000000', TIMESTAMP '1995-07-15 07:30:00.00000', TIMESTAMP WITH TIME ZONE '1995-07-15 07:30:00.000000+00:00', TIMESTAMP WITH TIME ZONE '1995-07-15 07:30:00.00000+00:00', TIME '07:30:00', TIME '07:30:00.00000', TIME WITH TIME ZONE '07:30:00+00:00', TIME WITH TIME ZONE '07:30:00.00000+00:00', BINARY LARGE OBJECT '123456', BINARY LARGE OBJECT '123456', '123456', '123456', 'x', 'varchar', '0123456789', '127.0.0.0', '127.127.127.255', '{"a": 123}', '{"b": 456}', 'https://www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes', 'https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype', 'ae106ad4-81fd-4f1a-85e8-5efface60da4');
+CREATE TABLE "sys"."keytest1" (
+	"key1" INTEGER       NOT NULL,
+	"key2" INTEGER       NOT NULL,
+	CONSTRAINT "keytest1_key1_key2_pkey" PRIMARY KEY ("key1", "key2")
+);
+INSERT INTO "sys"."keytest1" VALUES (0, 0);
+INSERT INTO "sys"."keytest1" VALUES (0, 1);
+CREATE TABLE "sys"."keytest2" (
+	"key1" INTEGER,
+	"key2" INTEGER
+);
+INSERT INTO "sys"."keytest2" VALUES (0, 0);
+INSERT INTO "sys"."keytest2" VALUES (0, 1);
+ALTER TABLE "sys"."keytest2" ADD CONSTRAINT "keytest2_key1_key2_fkey" FOREIGN KEY ("key1", "key2") REFERENCES "sys"."keytest1" ("key1", "key2");
+ALTER SEQUENCE "sys"."test_seq" RESTART WITH 8 INCREMENT BY 3 MINVALUE 5 MAXVALUE 10 CYCLE;
+COMMIT;
+
+# 22:27:57 >  
+# 22:27:57 >  "Done."
+# 22:27:57 >  
+

@@ -171,7 +171,7 @@ bl_postversion( void *lg)
 		if (func) {
 			/* Either the catalog needs to be updated and
 			 * the geom module has been loaded
-			 * (geomUpgrade == 1), or the catalog new
+			 * (geomUpgrade == 1), or the catalog knew
 			 * nothing about geometries but the geom
 			 * module is loaded (geomUpgrade == 0) */
 			(*func)(lg, geomUpgrade);

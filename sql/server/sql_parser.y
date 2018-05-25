@@ -578,8 +578,8 @@ int yydebug=1;
 %left <operation> AND
 %left <sval> COMPARISON /* <> < > <= >= */
 %left <operation> '+' '-' '&' '|' '^' LEFT_SHIFT RIGHT_SHIFT LEFT_SHIFT_ASSIGN RIGHT_SHIFT_ASSIGN CONCATSTRING SUBSTRING POSITION SPLIT_PART
-%right UMINUS
 %left <operation> '*' '/' '%'
+%left UMINUS
 %left <operation> '~'
 
 %left <operation> GEOM_OVERLAP GEOM_OVERLAP_OR_ABOVE GEOM_OVERLAP_OR_BELOW GEOM_OVERLAP_OR_LEFT
@@ -768,7 +768,7 @@ opt_minmax:
 declare_statement:
 	declare variable_list
 		{ $$ = _symbol_create_list( SQL_DECLARE, $2); }
-    |   declare table_def { $$ = $2; }
+    |   declare table_def { $$ = $2; if ($$) $$->token = SQL_DECLARE_TABLE; }
     ;
 
 variable_list:
@@ -6176,6 +6176,7 @@ char *token2string(int token)
 	SQL(DROP_CONSTRAINT);
 	SQL(DROP_DEFAULT);
 	SQL(DECLARE);
+	SQL(DECLARE_TABLE);
 	SQL(COMMENT);
 	SQL(SET);
 	SQL(PREP);

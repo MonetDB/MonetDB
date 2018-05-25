@@ -2909,7 +2909,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 	p = find_prop(rel->p, PROP_REMOTE);
 	if (p) 
 		rel->p = prop_remove(rel->p, p);
-	rel = rel_optimizer(be->mvc, rel);
+	rel = rel_optimizer(be->mvc, rel, 0);
 	if (p) {
 		p->p = rel->p;
 		rel->p = p;

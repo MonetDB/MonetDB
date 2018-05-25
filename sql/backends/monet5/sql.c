@@ -68,7 +68,6 @@ rel_no_mitosis(sql_rel *rel)
 
 	if (!rel || is_basetable(rel->op))
 		return 1;
-	//if (is_topn(rel->op) || is_project(rel->op))
 	if (is_topn(rel->op) || rel->op == op_project)
 		return rel_no_mitosis(rel->l);
 	if (is_modify(rel->op) && rel->card <= CARD_AGGR)
@@ -119,7 +118,7 @@ sql_symbol2relation(mvc *c, symbol *sym)
 	if (!r)
 		return NULL;
 	if (r) {
-		r = rel_optimizer(c, r);
+		r = rel_optimizer(c, r, 1);
 		r = rel_distribute(c, r);
 		r = rel_partition(c, r);
 		if (rel_no_mitosis(r) || rel_need_distinct_query(r))
@@ -358,7 +357,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, nt->query, m_deps);
 		if (r)
-			r = rel_optimizer(sql, r);
+			r = rel_optimizer(sql, r, 0);
 		if (r) {
 			list *id_l = rel_dependencies(sql->sa, r);
 

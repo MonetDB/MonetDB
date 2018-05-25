@@ -85,18 +85,22 @@ rel_check_tables(sql_table *nt, sql_table *nnt)
 		sql_column *mc = m->data;
 
 		if (subtype_cmp(&nc->type, &mc->type) != 0)
-			throw(SQL,"sql.relcheck_tables",SQLSTATE(3F000) "ALTER MERGE TABLE: to be added table column type doesn't match MERGE TABLE definition");
+			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER MERGE TABLE: to be added table column type doesn't match MERGE TABLE definition");
 	}
 	if (cs_size(&nt->idxs) != cs_size(&nnt->idxs))
-		throw(SQL,"sql.relcheck_tables",SQLSTATE(3F000) "ALTER MERGE TABLE: to be added table index doesn't match MERGE TABLE definition");
+		throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER MERGE TABLE: to be added table index doesn't match MERGE TABLE definition");
 	if (cs_size(&nt->idxs))
 		for (n = nt->idxs.set->h, m = nnt->idxs.set->h; n && m; n = n->next, m = m->next) {
 			sql_idx *ni = n->data;
 			sql_idx *mi = m->data;
 
 			if (ni->type != mi->type)
-				throw(SQL,"sql.relcheck_tables",SQLSTATE(3F000) "ALTER MERGE TABLE: to be added table index type doesn't match MERGE TABLE definition");
+				throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER MERGE TABLE: to be added table index type doesn't match MERGE TABLE definition");
 		}
+	for(sql_table *up = nt->p ; up ; up = up->p) {
+		if(!strcmp(up->s->base.name, nnt->s->base.name) && !strcmp(up->base.name, nnt->base.name))
+			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER MERGE TABLE: to be added table is a parent of the MERGE TABLE");
+	}
 	return MAL_SUCCEED;
 }
 
@@ -213,7 +217,7 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
-			r = rel_optimizer(sql, r);
+			r = rel_optimizer(sql, r, 0);
 		if (r) {
 			list *id_l = rel_dependencies(sql->sa, r);
 
@@ -545,7 +549,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
-			r = rel_optimizer(sql, r);
+			r = rel_optimizer(sql, r, 0);
 		if (r) {
 			node *n;
 			list *id_l = rel_dependencies(sql->sa, r);
