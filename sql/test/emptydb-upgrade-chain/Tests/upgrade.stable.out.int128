@@ -5400,6 +5400,13 @@ update sys._tables set system = true where name in ('ids', 'dependencies_vw') an
 set schema "sys";
 commit;
 
+Running database upgrade commands:
+set schema "sys";
+drop function sys.chi2prob(double, double);
+delete from systemfunctions where function_id not in (select id from functions);
+set schema "sys";
+commit;
+
 
 # 16:53:35 >  
 # 16:53:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-30908" "--port=39660"

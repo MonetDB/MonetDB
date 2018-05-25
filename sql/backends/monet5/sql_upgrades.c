@@ -1599,6 +1599,30 @@ sql_replace_Mar2018_ids_view(Client c, mvc *sql)
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_gsl(Client c, mvc *sql)
+{
+	size_t bufsize = 1024, pos = 0;
+	char *buf = GDKmalloc(bufsize), *err = NULL;
+	char *schema = stack_get_string(sql, "current_schema");
+
+	if (buf == NULL)
+		throw(SQL, "sql_update_gsl", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	pos += snprintf(buf + pos, bufsize - pos,
+			"set schema \"sys\";\n"
+			"drop function sys.chi2prob(double, double);\n"
+			"delete from systemfunctions where function_id not in (select id from functions);\n");
+	if (schema)
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", schema);
+	pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+	assert(pos < bufsize);
+
+	printf("Running database upgrade commands:\n%s\n", buf);
+	err = SQLstatementIntern(c, &buf, "update", 1, 0, NULL);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 void
 SQLupgrades(Client c, mvc *m)
 {
@@ -1752,5 +1776,20 @@ SQLupgrades(Client c, mvc *m)
 		}
 		if (output != NULL)
 			res_tables_destroy(output);
+	}
+
+	/* temporarily use variable `err' to check existence of MAL
+	 * module gsl */
+	if ((err = getName("gsl")) == NULL || getModule(err) == NULL) {
+		/* no MAL module gsl, check for SQL function sys.chi2prob */
+		sql_find_subtype(&tp, "double", 0, 0);
+		if (sql_bind_func(m->sa, s, "chi2prob", &tp, &tp, F_FUNC)) {
+			/* sys.chi2prob exists, but there is no
+			 * implementation */
+			if ((err = sql_update_gsl(c, m)) != NULL) {
+				fprintf(stderr, "!%s\n", err);
+				freeException(err);
+			}
+		}
 	}
 }
