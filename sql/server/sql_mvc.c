@@ -22,6 +22,8 @@
 #include "gdk_logger.h"
 #include "wlc.h"
 
+extern str initialize_sql_parts(mvc* sql, sql_table *mt);
+
 static int mvc_debug = 0;
 
 static void
@@ -45,6 +47,10 @@ int
 mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 {
 	int first = 0;
+	sql_schema *s;
+	sql_table *t;
+	sqlid tid = 0, ntid, cid = 0, ncid, pid, rrid, lid, dpid, drid, dlid;
+	mvc *m;
 
 	logger_settings log_settings;
 	/* Set the default WAL directory. "sql_logs" by default */
@@ -82,34 +88,33 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		fprintf(stderr, "!mvc_init: unable to create system tables\n");
 		return -1;
 	}
+
+	m = mvc_create(0, stk, 0, NULL, NULL);
+	if (!m) {
+		fprintf(stderr, "!mvc_init: malloc failure\n");
+		return -1;
+	}
+
+	m->sa = sa_create();
+	if (!m->sa) {
+		mvc_destroy(m);
+		fprintf(stderr, "!mvc_init: malloc failure\n");
+		return -1;
+	}
+
+	/* disable caching */
+	m->caching = 0;
+	/* disable history */
+	m->history = 0;
+	/* disable size header */
+	m->sizeheader = 0;
+	if(mvc_trans(m) < 0) {
+		mvc_destroy(m);
+		fprintf(stderr, "!mvc_init: failed to start transaction\n");
+		return -1;
+	}
+
 	if (first || catalog_version) {
-		sql_schema *s;
-		sql_table *t;
-		sqlid tid = 0, ntid, cid = 0, ncid, pid, rrid, lid, dpid, drid, dlid;
-		mvc *m = mvc_create(0, stk, 0, NULL, NULL);
-		if (!m) {
-			fprintf(stderr, "!mvc_init: malloc failure\n");
-			return -1;
-		}
-
-		m->sa = sa_create();
-		if (!m->sa) {
-			mvc_destroy(m);
-			fprintf(stderr, "!mvc_init: malloc failure\n");
-			return -1;
-		}
-
-		/* disable caching */
-		m->caching = 0;
-		/* disable history */
-		m->history = 0;
-		/* disable size header */
-		m->sizeheader = 0;
-		if(mvc_trans(m) < 0) {
-			mvc_destroy(m);
-			fprintf(stderr, "!mvc_init: failed to start transaction\n");
-			return -1;
-		}
 		s = m->session->schema = mvc_bind_schema(m, "sys");
 		assert(m->session->schema != NULL);
 
@@ -261,17 +266,36 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			sql_create_comments(m, s);
 			sql_create_privileges(m, s);
 		}
-
-		s = m->session->schema = mvc_bind_schema(m, "tmp");
-		assert(m->session->schema != NULL);
-
-		if (mvc_commit(m, 0, NULL) < 0) {
-			fprintf(stderr, "!mvc_init: unable to commit system tables\n");
-			return -1;
-		}
-
-		mvc_destroy(m);
 	}
+
+	//as the sql_parser is not yet initialized in the storage, we determine the sql type of the sql_parts here
+	for (node *n = m->session->tr->schemas.set->h; n; n = n->next) {
+		sql_schema *ss = (sql_schema*) n->data;
+		if(ss->tables.set) {
+			for (node *nn = ss->tables.set->h; nn; nn = nn->next) {
+				sql_table *tt = (sql_table*) nn->data;
+				if(isPartitionedByColumnTable(tt) || isPartitionedByExpressionTable(tt)) {
+					char *err;
+					if((err = initialize_sql_parts(m, tt)) != NULL) {
+						fprintf(stderr, "!mvc_init: unable to start partitioned table: %s.%s: %s\n",
+								ss->base.name, tt->base.name, err);
+						return -1;
+					}
+				}
+			}
+		}
+	}
+
+	s = m->session->schema = mvc_bind_schema(m, "tmp");
+	assert(m->session->schema != NULL);
+
+	if (mvc_commit(m, 0, NULL) < 0) {
+		fprintf(stderr, "!mvc_init: unable to commit system tables\n");
+		return -1;
+	}
+
+	mvc_destroy(m);
+
 	return first;
 }
 

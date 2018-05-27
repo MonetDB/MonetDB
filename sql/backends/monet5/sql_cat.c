@@ -193,7 +193,6 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 	ptr pmin = NULL, pmax = NULL;
 	size_t smin = 0, smax = 0, serr_min = 0, serr_max = 0;
 	ssize_t (*atomtostr)(str *, size_t *, const void *);
-	int free_pmin = 1, free_pmax = 1;
 	sql_subtype tpe;
 
 	if((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_range_partition", msname, mtname, psname, ptname, &mt, &pt, update))) {
@@ -265,18 +264,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 		goto finish;
 	}
 
-	if(!pmin) {
-		pmin = (ptr) ATOMnilptr(tp1);
-		smin = ATOMsize(tp1);
-		free_pmin = 0;
-	}
-	if(!pmax) {
-		pmax = (ptr) ATOMnilptr(tp1);
-		smax = ATOMsize(tp1);
-		free_pmax = 0;
-	}
-
-	errcode = sql_trans_add_range_partition(sql->session->tr, mt, pt, tpe, pmin, smin, pmax, smax, with_nills, update, &err);
+	errcode = sql_trans_add_range_partition(sql->session->tr, mt, pt, tpe, pmin, pmax, with_nills, update, &err);
 	switch(errcode) {
 		case 0:
 			break;
@@ -322,9 +310,9 @@ finish:
 		GDKfree(escaped_min);
 	if(escaped_max)
 		GDKfree(escaped_max);
-	if(pmin && free_pmin)
+	if(pmin)
 		GDKfree(pmin);
-	if(pmax && free_pmax)
+	if(pmax)
 		GDKfree(pmax);
 	if(msg != MAL_SUCCEED)
 		pt->p = NULL;

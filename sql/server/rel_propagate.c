@@ -383,8 +383,6 @@ rel_generate_subdeletes(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 		sql_rel *s1, *dup = NULL;
 
 		if(rel->r) {
-			/* if (frame_find_var(sql, sub->base.name)) TODO ask Niels about this
-				return sql_error(sql, 01, SQLSTATE(42000) "The name '%s' is already declared", sub->base.name);*/
 			dup = rel_copy(sql->sa, rel->r, 1);
 			dup = rel_change_base_table(sql, dup, t, sub);
 		}

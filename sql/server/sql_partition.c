@@ -190,15 +190,86 @@ str
 find_partition_type(mvc* sql, sql_subtype *tpe, sql_table *mt)
 {
 	str res = NULL;
+	sql_subtype *empty = sql_bind_localtype("void");
 
 	if(isPartitionedByColumnTable(mt)) {
 		*tpe = mt->part.pcol->type;
 	} else if(isPartitionedByExpressionTable(mt)) {
-		if(!mt->part.pexp->type.type && (res = bootstrap_partition_expression(sql, mt)) != NULL)
+		if(!strcmp(mt->part.pexp->type.type->base.name, empty->type->base.name) && (res = bootstrap_partition_expression(sql, mt)) != NULL)
 			return res;
 		*tpe = mt->part.pexp->type;
 	} else {
 		assert(0);
 	}
+	return res;
+}
+
+str
+initialize_sql_parts(mvc* sql, sql_table *mt)
+{
+	str res = NULL;
+	sql_subtype found;
+	int localtype;
+
+	if((res = find_partition_type(sql, &found, mt)) != NULL)
+		return res;
+	localtype = found.type->localtype;
+	for (node *n = mt->members.set->h; n; n = n->next) {
+		sql_part* next = (sql_part*) n->data;
+		next->tpe = found;
+		if(isListPartitionTable(mt)) {
+			for (node *m = next->part.values->h; m; m = m->next) {
+				sql_part_value* v = (sql_part_value*) m->data;
+				ValRecord vvalue;
+				ptr ok;
+
+				v->tpe = found;
+				memset(&vvalue, 0, sizeof(ValRecord));
+				ok = VALinit(&vvalue, TYPE_str, v->value);
+				if(ok)
+					ok = VALconvert(localtype, &vvalue);
+				if(ok) {
+					v->value = sa_alloc(sql->sa, vvalue.len);
+					memcpy(v->value, VALget(&vvalue), vvalue.len);
+					v->length = vvalue.len;
+				}
+				VALclear(&vvalue);
+				if(!ok) {
+					res = createException(SQL, "sql.partition",
+										  SQLSTATE(42000) "Internal error while bootstrapping partitioned tables");
+					goto finish;
+				}
+			}
+		} else if(isRangePartitionTable(mt)) {
+			ValRecord vmin, vmax;
+			ptr ok;
+
+			memset(&vmin, 0, sizeof(ValRecord));
+			memset(&vmax, 0, sizeof(ValRecord));
+			ok = VALinit(&vmin, TYPE_str, next->part.range.minvalue);
+			if(ok)
+				ok = VALconvert(localtype, &vmin);
+			if(ok)
+				ok = VALinit(&vmax, TYPE_str, next->part.range.maxvalue);
+			if(ok)
+				ok = VALconvert(localtype, &vmax);
+			if(ok) {
+				next->part.range.minvalue = sa_alloc(sql->sa, vmin.len);
+				memcpy(next->part.range.minvalue, VALget(&vmin), vmin.len);
+				next->part.range.minlength = vmin.len;
+				next->part.range.maxvalue = sa_alloc(sql->sa, vmax.len);
+				memcpy(next->part.range.maxvalue, VALget(&vmax), vmax.len);
+				next->part.range.maxlength = vmax.len;
+			}
+			VALclear(&vmin);
+			VALclear(&vmax);
+			if(!ok) {
+				res = createException(SQL, "sql.partition",
+									  SQLSTATE(42000) "Internal error while bootstrapping partitioned tables");
+				goto finish;
+			}
+		}
+	}
+finish:
 	return res;
 }
