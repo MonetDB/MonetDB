@@ -1046,8 +1046,49 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 	p = lookupRemoteTableKey(local_table);
 
 	if (p != BUN_NONE) {
-		/* key already in, just return */
-		return MAL_SUCCEED;
+	/* An entry with the given key is already in the vault (note: the
+	 * key is the string "schema.table_name", which is unique in the
+	 * SQL catalog, in the sense that no two tables can have the same
+	 * name in the same schema). This can only mean that the entry is
+	 * invalid (i.e. it does not correspond to a valid SQL table). To
+	 * see this consider the following:
+	 *
+	 * 1. The function `AUTHaddRemoteTableCredentials` is only called
+	 * from `rel_create_table` (also from the upgrade code, but this
+	 * is irrelevant for our discussion since, in this case no remote
+	 * table will have any credentials), i.e. when we are creating a
+	 * (remote) table.
+	 *
+	 * 2. If a remote table with name "schema.table_name" has been
+	 * defined previously (i.e there is already a SQL catalog entry
+	 * for it) and we try to define it again,
+	 * `AUTHaddRemoteTableCredentials` will *not* be called because we
+	 * are trying to define an already existing table, and the SQL
+	 * layer will not allow us to continue.
+	 *
+	 * 3. The only way to add an entry in the vault is calling this
+	 * function.
+	 *
+	 * Accepting (1)-(3) above means that just before
+	 * `AUTHaddRemoteTableCredentials` gets called with an argument
+	 * "schema.table_name", that table does not exist in the SQL
+	 * catalog.
+	 *
+	 * This means that if we call `AUTHaddRemoteTableCredentials` with
+	 * argument "schema.table_name" and find an entry with that key
+	 * already in the vault, we can safely overwrite it, because the
+	 * table it refers to does not exist in the SQL catalog. We can
+	 * also conclude that the previous entry was added in the vault as
+	 * part of a CREATE REMOTE TABLE call (conclusion follows from (1)
+	 * and (3)), that did not create a corresponding entry in the SQL
+	 * catalog (conclusion follows from (2)). The only (valid) way for
+	 * this to happen is if the CREATE REMOTE TABLE call was inside a
+	 * transaction that did not succeed.
+	 *
+	 * Implementation note: we first delete the entry and then add a
+	 * new entry with the same key.
+	 */
+		AUTHdeleteRemoteTableCredentials(local_table);
 	}
 
 	if (pass == NULL) {

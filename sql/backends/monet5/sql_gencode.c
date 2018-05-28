@@ -277,7 +277,6 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0, p, o;
 	Symbol backup = NULL;
-	// const char *uri = mapiuri_uri(prp->value, m->sa);
 	const char *local_tbl = prp->value;
 	node *n;
 	int i, q, v;
