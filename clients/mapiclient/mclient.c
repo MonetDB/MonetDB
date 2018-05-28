@@ -89,6 +89,7 @@ enum formatters {
 	XMLformatter,		// render as a valid XML document
 	TESTformatter,		// for testing, escape characters
 	TRASHformatter,		// remove the result set
+	ROWCOUNTformatter,	// only print the number of rows returned
 	SAMformatter,		// render a SAM result set
 	EXPANDEDformatter	// render as multi-row single record
 };
@@ -1728,6 +1729,8 @@ setFormatter(const char *s)
 		formatter = TESTformatter;
 	} else if (strcmp(s, "trash") == 0) {
 		formatter = TRASHformatter;
+	} else if (strcmp(s, "rowcount") == 0) {
+		formatter = ROWCOUNTformatter;
 	} else if (strcmp(s, "sam") == 0) {
 		formatter = SAMformatter;
 	} else if (strcmp(s, "x") == 0 || strcmp(s, "expanded") == 0) {
@@ -1817,6 +1820,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 	int64_t sqloptimizer = 0;
 	int64_t maloptimizer = 0;
 	int64_t querytime = 0;
+	int64_t rows = 0;
 #ifdef HAVE_POPEN
 	stream *saveFD;
 
@@ -1877,14 +1881,16 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 			continue;
 		case Q_SCHEMA:
 			SQLqueryEcho(hdl);
-			if (formatter == TABLEformatter) {
+			if (formatter == TABLEformatter ||
+			    formatter == ROWCOUNTformatter) {
 				mnstr_printf(toConsole, "operation successful\n");
 			}
 			timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, false);
 			continue;
 		case Q_TRANS:
 			SQLqueryEcho(hdl);
-			if (formatter == TABLEformatter)
+			if (formatter == TABLEformatter ||
+			    formatter == ROWCOUNTformatter)
 				mnstr_printf(toConsole,
 					     "auto commit mode: %s\n",
 					     mapi_get_autocommit(mid) ? "on" : "off");
@@ -1892,7 +1898,8 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 			continue;
 		case Q_PREPARE:
 			SQLqueryEcho(hdl);
-			if (formatter == TABLEformatter)
+			if (formatter == TABLEformatter ||
+			    formatter == ROWCOUNTformatter)
 				mnstr_printf(toConsole,
 					     "execute prepared statement "
 					     "using: EXEC %d(...)\n",
@@ -1902,7 +1909,9 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 		case Q_TABLE:
 			break;
 		default:
-			if (formatter == TABLEformatter && specials != DEBUGmodifier) {
+			if ((formatter == TABLEformatter ||
+			     formatter == ROWCOUNTformatter) &&
+			    specials != DEBUGmodifier) {
 				int i;
 				mnstr_printf(stderr_stream,
 					     "invalid/unknown response from server, "
@@ -1959,6 +1968,11 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 					SQLrenderer(hdl);
 					break;
 				}
+				break;
+			case ROWCOUNTformatter:
+				rows = mapi_get_row_count(hdl);
+				mnstr_printf(toConsole,
+						"%" PRId64 " tuple%s\n", rows, rows != 1 ? "s" : "");
 				break;
 			case SAMformatter:
 				SAMrenderer(hdl);
@@ -2184,7 +2198,7 @@ showCommands(void)
 	}
 	mnstr_printf(toConsole, "\\e      - echo the query in sql formatting mode\n");
 	mnstr_printf(toConsole, "\\t      - set the timer {none,clock,performance} (none is default)\n");
-	mnstr_printf(toConsole, "\\f      - format using a built-in renderer {csv,tab,raw,sql,xml,trash}\n");
+	mnstr_printf(toConsole, "\\f      - format using a built-in renderer {csv,tab,raw,sql,xml,trash,rowcount}\n");
 	mnstr_printf(toConsole, "\\w#     - set maximal page width (-1=unlimited, 0=terminal width, >0=limit to num)\n");
 	mnstr_printf(toConsole, "\\r#     - set maximum rows per page (-1=raw)\n");
 	mnstr_printf(toConsole, "\\L file - save client/server interaction\n");
@@ -2826,6 +2840,9 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 						case TRASHformatter:
 							mnstr_printf(toConsole, "trash\n");
 							break;
+						case ROWCOUNTformatter:
+							mnstr_printf(toConsole, "rowcount\n");
+							break;
 						case XMLformatter:
 							mnstr_printf(toConsole, "xml\n");
 							break;
@@ -3019,7 +3036,7 @@ usage(const char *prog, int xit)
 #ifdef HAVE_ICONV
 	fprintf(stderr, " -E charset  | --encoding=charset specify encoding (character set) of the terminal\n");
 #endif
-	fprintf(stderr, " -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml,trash}\n");
+	fprintf(stderr, " -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml,trash,rowcount}\n");
 	fprintf(stderr, " -H          | --history          load/save cmdline history (default off)\n");
 	fprintf(stderr, " -i          | --interactive      interpret `\\' commands on stdin\n");
 	fprintf(stderr, " -t          | --timer=format     use time formatting {none,clock,performance} (none is default)\n");
