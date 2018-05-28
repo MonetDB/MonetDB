@@ -320,17 +320,17 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 		while ((cnt = mapi_fetch_row(hdl)) != 0 && strcmp(mapi_fetch_field(hdl, 4), "0") != 0) {
 			const char **tkeys;
 			nkeys++;
-			tkeys = realloc(pkeys, nkeys * sizeof(*pkeys));
+			tkeys = realloc((void *) pkeys, nkeys * sizeof(*pkeys));
 			if (tkeys == NULL) {
-				free(pkeys);
-				free(fkeys);
+				free((void *) pkeys);
+				free((void *) fkeys);
 				goto bailout;
 			}
 			pkeys = tkeys;
-			tkeys = realloc(fkeys, nkeys * sizeof(*fkeys));
+			tkeys = realloc((void *) fkeys, nkeys * sizeof(*fkeys));
 			if (tkeys == NULL) {
-				free(pkeys);
-				free(fkeys);
+				free((void *) pkeys);
+				free((void *) fkeys);
 				goto bailout;
 			}
 			fkeys = tkeys;
