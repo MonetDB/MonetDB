@@ -87,9 +87,14 @@ rewrite_replica( mvc *sql, sql_rel *rel, sql_table *t, sql_part *pd, int remote_
 
 	/* set_remote() */
 	if (remote_prop && p && isRemote(p)) {
-		//TODO handle allocation failure
 		char *local_name = sa_strconcat(sql->sa, sa_strconcat(sql->sa, p->s->base.name, "."), p->base.name);
+		if (!local_name) {
+			return NULL;
+		}
 		prop *p = r->p = prop_create(sql->sa, PROP_REMOTE, r->p);
+		if (!p) {
+			return NULL;
+		}
 
 		p->value = local_name;
 	}
@@ -288,8 +293,14 @@ distribute(mvc *sql, sql_rel *rel)
 		if (t && isRemote(t)) {
 			//TODO: check for allocation failure
 			char *local_name = sa_strconcat(sql->sa, sa_strconcat(sql->sa, t->s->base.name, "."), t->base.name);
+			if (!local_name) {
+				return NULL;
+			}
 
 			p = rel->p = prop_create(sql->sa, PROP_REMOTE, rel->p);
+			if (!p) {
+				return NULL;
+			}
 			p->value = local_name;
 		}
 		break;
