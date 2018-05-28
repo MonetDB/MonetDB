@@ -25,56 +25,72 @@ get_compat_clause(Mapi mid)
 	return compat_clause;
 }
 
-static void
+static int
 quoted_print(stream *f, const char *s, bool singleq)
 {
-	mnstr_write(f, singleq ? "'" : "\"", 1, 1);
+	if (mnstr_write(f, singleq ? "'" : "\"", 1, 1) < 0)
+		return -1;
 	while (*s) {
 		switch (*s) {
 		case '\\':
-			mnstr_write(f, "\\\\", 1, 2);
+			if (mnstr_write(f, "\\\\", 1, 2) < 0)
+				return -1;
 			break;
 		case '"':
-			mnstr_write(f, "\"\"", 1, singleq ? 1 : 2);
+			if (mnstr_write(f, "\"\"", 1, singleq ? 1 : 2) < 0)
+				return -1;
 			break;
 		case '\'':
-			mnstr_write(f, "''", 1, singleq ? 2 : 1);
+			if (mnstr_write(f, "''", 1, singleq ? 2 : 1) < 0)
+				return -1;
 			break;
 		case '\n':
-			mnstr_write(f, "\\n", 1, 2);
+			if (mnstr_write(f, "\\n", 1, 2) < 0)
+				return -1;
 			break;
 		case '\t':
-			mnstr_write(f, "\\t", 1, 2);
+			if (mnstr_write(f, "\\t", 1, 2) < 0)
+				return -1;
 			break;
 		default:
-			if ((0 < *s && *s < 32) || *s == '\177')
-				mnstr_printf(f, "\\%03o", (uint8_t) *s);
-			else
-				mnstr_write(f, s, 1, 1);
+			if ((0 < *s && *s < 32) || *s == '\177') {
+				if (mnstr_printf(f, "\\%03o", (uint8_t) *s) < 0)
+					return -1;
+			} else {
+				if (mnstr_write(f, s, 1, 1) < 0)
+					return -1;
+			}
 			break;
 		}
 		s++;
 	}
-	mnstr_write(f, singleq ? "'" : "\"", 1, 1);
+	if (mnstr_write(f, singleq ? "'" : "\"", 1, 1) < 0)
+		return -1;
+	return 0;
 }
 
-static void
+static int
 comment_on(stream *toConsole, const char *object,
 	   const char *ident1, const char *ident2, const char *ident3,
 	   const char *remark)
 {
 	if (remark) {
-		mnstr_printf(toConsole, "COMMENT ON %s \"%s\"", object, ident1);
+		if (mnstr_printf(toConsole, "COMMENT ON %s \"%s\"", object, ident1) < 0)
+			return -1;
 		if (ident2) {
-			mnstr_printf(toConsole, ".\"%s\"", ident2);
+			if (mnstr_printf(toConsole, ".\"%s\"", ident2) < 0)
+				return -1;
 			if (ident3) {
-				mnstr_printf(toConsole, ".\"%s\"", ident3);
+				if (mnstr_printf(toConsole, ".\"%s\"", ident3) < 0)
+					return -1;
 			}
 		}
-		mnstr_write(toConsole, " IS ", 1, 4);
-		quoted_print(toConsole, remark, true);
-		mnstr_write(toConsole, ";\n", 1, 2);
+		if (mnstr_write(toConsole, " IS ", 1, 4) < 0 ||
+		    quoted_print(toConsole, remark, true) < 0 ||
+		    mnstr_write(toConsole, ";\n", 1, 2) < 0)
+			return -1;
 	}
+	return 0;
 }
 
 static char *actions[] = {
@@ -92,7 +108,8 @@ get_schema(Mapi mid)
 	char *sname = NULL;
 	MapiHdl hdl;
 
-	if ((hdl = mapi_query(mid, "SELECT current_schema")) == NULL || mapi_error(mid))
+	if ((hdl = mapi_query(mid, "SELECT current_schema")) == NULL ||
+	    mapi_error(mid))
 		goto bailout;
 	while ((mapi_fetch_row(hdl)) != 0) {
 		sname = mapi_fetch_field(hdl, 0);
@@ -171,6 +188,8 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 	if (tname != NULL) {
 		maxquerylen = 1024 + strlen(tname) + strlen(schema);
 		query = malloc(maxquerylen);
+		if (query == NULL)
+			goto bailout;
 		snprintf(query, maxquerylen,
 			 "SELECT ps.name, "		/* 0 */
 			        "pkt.name, "		/* 1 */
@@ -203,6 +222,8 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 	} else if (tid != NULL) {
 		maxquerylen = 1024 + strlen(tid);
 		query = malloc(maxquerylen);
+		if (query == NULL)
+			goto bailout;
 		snprintf(query, maxquerylen,
 			 "SELECT ps.name, "		/* 0 */
 			        "pkt.name, "		/* 1 */
@@ -287,12 +308,32 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 		nkeys = 1;
 		fkeys = malloc(nkeys * sizeof(*fkeys));
 		pkeys = malloc(nkeys * sizeof(*pkeys));
+		if (fkeys == NULL || pkeys == NULL) {
+			if (fkeys)
+				free(fkeys);
+			if (pkeys)
+				free(pkeys);
+			goto bailout;
+		}
 		pkeys[nkeys - 1] = c_pcolumn;
 		fkeys[nkeys - 1] = c_fcolumn;
 		while ((cnt = mapi_fetch_row(hdl)) != 0 && strcmp(mapi_fetch_field(hdl, 4), "0") != 0) {
+			const char **tkeys;
 			nkeys++;
-			pkeys = realloc((void *) pkeys, nkeys * sizeof(*pkeys));
-			fkeys = realloc((void *) fkeys, nkeys * sizeof(*fkeys));
+			tkeys = realloc(pkeys, nkeys * sizeof(*pkeys));
+			if (tkeys == NULL) {
+				free(pkeys);
+				free(fkeys);
+				goto bailout;
+			}
+			pkeys = tkeys;
+			tkeys = realloc(fkeys, nkeys * sizeof(*fkeys));
+			if (tkeys == NULL) {
+				free(pkeys);
+				free(fkeys);
+				goto bailout;
+			}
+			fkeys = tkeys;
 			pkeys[nkeys - 1] = mapi_fetch_field(hdl, 2);
 			fkeys[nkeys - 1] = mapi_fetch_field(hdl, 3);
 		}
@@ -1520,12 +1561,18 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 	}
 	free(ffunc);
 	if (remark) {
-		mapi_seek_row(hdl, 0, MAPI_SEEK_SET);
-		mnstr_printf(toConsole, "COMMENT ON %s ", ftkey);
-		quoted_print(toConsole, sname, false);
-		mnstr_printf(toConsole, ".");
-		quoted_print(toConsole, fname, false);
-		mnstr_printf(toConsole, "(");
+		if (mapi_seek_row(hdl, 0, MAPI_SEEK_SET) != MOK ||
+		    mnstr_printf(toConsole, "COMMENT ON %s ", ftkey) < 0 ||
+		    quoted_print(toConsole, sname, false) < 0 ||
+		    mnstr_printf(toConsole, ".") < 0 ||
+		    quoted_print(toConsole, fname, false) < 0 ||
+		    mnstr_printf(toConsole, "(") < 0) {
+			free(sname);
+			free(fname);
+			free(ftkey);
+			mapi_close_handle(hdl);
+			return 1;
+		}
 		free(sname);
 		free(fname);
 		free(ftkey);
