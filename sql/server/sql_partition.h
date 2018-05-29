@@ -12,6 +12,7 @@
 #include "sql_mvc.h"
 #include "sql_catalog.h"
 
+extern str bootstrap_partition_expression(mvc* sql, sql_table *mt);
 extern str find_partition_type(mvc* sql, sql_subtype *tpe, sql_table *mt);
 extern str initialize_sql_parts(mvc* sql, sql_table *mt);
 

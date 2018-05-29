@@ -4957,7 +4957,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 int
 sql_trans_set_partition_table(sql_trans *tr, sql_table *t)
 {
-	if(t && !isDeclaredTable(t) && (isRangePartitionTable(t) || isListPartitionTable(t))) {
+	if(t && (isRangePartitionTable(t) || isListPartitionTable(t))) {
 		sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 		sql_table *partitions = find_sql_table(syss, "_table_partitions");
 		oid next = next_oid();

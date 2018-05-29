@@ -22,6 +22,7 @@
 #include "gdk_logger.h"
 #include "wlc.h"
 
+extern str bootstrap_partition_expression(mvc* sql, sql_table *mt);
 extern str initialize_sql_parts(mvc* sql, sql_table *mt);
 
 static int mvc_debug = 0;
@@ -1310,6 +1311,7 @@ sql_table *
 mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, int persistence, int commit_action, int sz)
 {
 	sql_table *t = NULL;
+	char *err = NULL;
 
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_table %s %s %d %d %d %d\n", s->base.name, name, tt, system, persistence, commit_action);
@@ -1319,6 +1321,10 @@ mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, in
 		t->s = s;
 	} else {
 		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt, system, persistence, commit_action, sz);
+		if(t && isPartitionedByExpressionTable(t) && (err = bootstrap_partition_expression(m, t))) {
+			(void) sql_error(m, 02, "%s", err);
+			return SQL_ERR;
+		}
 		if(sql_trans_set_partition_table(m->session->tr, t))
 			return NULL;
 	}
@@ -1339,8 +1345,6 @@ mvc_create_view(mvc *m, sql_schema *s, const char *name, int persistence, const 
 		t->query = sa_strdup(m->sa, sql);
 	} else {
 		t = sql_trans_create_table(m->session->tr, s, name, sql, tt_view, system, SQL_PERSIST, 0, 0);
-		if(sql_trans_set_partition_table(m->session->tr, t))
-			return NULL;
 	}
 	return t;
 }
@@ -1359,8 +1363,6 @@ mvc_create_remote(mvc *m, sql_schema *s, const char *name, int persistence, cons
 		t->query = sa_strdup(m->sa, loc);
 	} else {
 		t = sql_trans_create_table(m->session->tr, s, name, loc, tt_remote, 0, SQL_REMOTE, 0, 0);
-		if(sql_trans_set_partition_table(m->session->tr, t))
-			return NULL;
 	}
 	return t;
 }

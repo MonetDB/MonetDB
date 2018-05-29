@@ -937,6 +937,7 @@ create_partition_definition(mvc *sql, sql_table *t, int tt, symbol *partition_de
 				return SQL_ERR;
 			}
 		} else if(tt == tt_list_partition_exp || tt == tt_range_partition_exp) {
+			sql_subtype *empty = sql_bind_localtype("void");
 			char *query = symbol2string(sql, list2->h->data.sym, &err);
 			if (!query) {
 				(void) sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: error compiling expression '%s'", err?err:"");
@@ -945,6 +946,7 @@ create_partition_definition(mvc *sql, sql_table *t, int tt, symbol *partition_de
 			}
 			t->part.pexp = SA_ZNEW(sql->sa, sql_expression);
 			t->part.pexp->exp = sa_strdup(sql->sa, query);
+			t->part.pexp->type = *empty;
 			_DELETE(query);
 		}
 	}
@@ -1023,8 +1025,6 @@ rel_create_table(mvc *sql, sql_schema *ss, int temp, const char *sname, const ch
 		}
 
 		if(create_partition_definition(sql, t, tt, partition_def) != SQL_OK)
-			return NULL;
-		if(sql_trans_set_partition_table(sql->session->tr, t))
 			return NULL;
 
 		temp = (tt == tt_table)?temp:SQL_PERSIST;

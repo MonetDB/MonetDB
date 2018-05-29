@@ -38,6 +38,8 @@
 #include "mal_instruction.h"
 #include "mal_resource.h"
 
+extern str bootstrap_partition_expression(mvc* sql, sql_table *mt);
+
 static int
 rel_is_table(sql_rel *rel)
 {
@@ -337,8 +339,20 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 		if(isPartitionedByColumnTable(t) && c == t->part.pcol)
 			nt->part.pcol = copied;
 	}
-	if(isPartitionedByExpressionTable(t))
+	if(isPartitionedByExpressionTable(t)) {
+		char *err = NULL;
 		nt->part.pexp->exp = sa_strdup(sql->session->tr->sa, t->part.pexp->exp);
+
+		sql->sa = sa_create();
+		if(!sql->sa)
+			throw(SQL, "sql.catalog",SQLSTATE(HY001) MAL_MALLOC_FAIL);
+
+		if((err = bootstrap_partition_expression(sql, nt)))
+			return err;
+
+		sa_destroy(sql->sa);
+		sql->sa = NULL;
+	}
 	if(sql_trans_set_partition_table(sql->session->tr, nt))
 		throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s: an internal error occurred", s->base.name, t->base.name);
 

@@ -149,7 +149,7 @@ find_expression_type(sql_exp *e, sql_subtype *tpe, char *query)
 	return NULL;
 }
 
-static str
+str
 bootstrap_partition_expression(mvc* sql, sql_table *mt)
 {
 	sql_exp *exp;
@@ -162,6 +162,12 @@ bootstrap_partition_expression(mvc* sql, sql_table *mt)
 	baset = rel_basetable(sql, mt, mt->base.name);
 	query = mt->part.pexp->exp;
 	if((exp = rel_parse_val(sql, sa_message(sql->sa, "select %s;", query), sql->emode, baset)) == NULL) {
+		if(*sql->errstr) {
+			if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
+				throw(SQL, "sql.partition", "%s", sql->errstr);
+			else
+				throw(SQL, "sql.partition", SQLSTATE(42000) "%s", sql->errstr);
+		}
 		throw(SQL,"sql.partition", SQLSTATE(42000) "Incorrect expression '%s'", query);
 	}
 
