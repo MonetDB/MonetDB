@@ -494,8 +494,8 @@ AUTHaddUser(oid *uid, Client cntxt, const char *username, const char *passwd)
 	/* we assume the BATs are still aligned */
 	rethrow("addUser", tmp, AUTHcypherValue(&hash, passwd));
 	/* needs force, as SQL makes a view over user */
-	if (BUNappend(user, username, TRUE) != GDK_SUCCEED ||
-		BUNappend(pass, hash, TRUE) != GDK_SUCCEED) {
+	if (BUNappend(user, username, true) != GDK_SUCCEED ||
+		BUNappend(pass, hash, true) != GDK_SUCCEED) {
 		GDKfree(hash);
 		throw(MAL, "addUser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
@@ -539,7 +539,7 @@ AUTHremoveUser(Client cntxt, const char *username)
 		throw(MAL, "removeUser", "cannot remove yourself");
 
 	/* now, we got the oid, start removing the related tuples */
-	if (BUNappend(duser, &id, TRUE) != GDK_SUCCEED)
+	if (BUNappend(duser, &id, true) != GDK_SUCCEED)
 		throw(MAL, "removeUser", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	/* make the stuff persistent */
@@ -576,7 +576,7 @@ AUTHchangeUsername(Client cntxt, const char *olduser, const char *newuser)
 		throw(MAL, "changeUsername", "user '%s' already exists", newuser);
 
 	/* ok, just do it! (with force, because sql makes view over it) */
-	if (BUNinplace(user, p, newuser, TRUE) != GDK_SUCCEED)
+	if (BUNinplace(user, p, newuser, true) != GDK_SUCCEED)
 		throw(MAL, "changeUsername", GDK_EXCEPTION);
 	AUTHcommit();
 	return(MAL_SUCCEED);
@@ -628,7 +628,7 @@ AUTHchangePassword(Client cntxt, const char *oldpass, const char *passwd)
 
 	/* ok, just overwrite the password field for this user */
 	assert(id == p);
-	if (BUNinplace(pass, p, hash, TRUE) != GDK_SUCCEED) {
+	if (BUNinplace(pass, p, hash, true) != GDK_SUCCEED) {
 		GDKfree(hash);
 		throw(INVCRED, "changePassword", GDK_EXCEPTION);
 	}
@@ -682,7 +682,7 @@ AUTHsetPassword(Client cntxt, const char *username, const char *passwd)
 	/* ok, just overwrite the password field for this user */
 	assert (p != BUN_NONE);
 	assert(id == p);
-	if (BUNinplace(pass, p, hash, TRUE) != GDK_SUCCEED) {
+	if (BUNinplace(pass, p, hash, true) != GDK_SUCCEED) {
 		GDKfree(hash);
 		throw(MAL, "setPassword", GDK_EXCEPTION);
 	}
@@ -754,12 +754,12 @@ AUTHgetUsers(BAT **ret1, BAT **ret2, Client cntxt)
 	if (*ret1 == NULL)
 		throw(MAL, "getUsers", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	if (BATcount(duser)) {
-		bn = BATdiff(*ret1, duser, NULL, NULL, 0, BUN_NONE);
+		bn = BATdiff(*ret1, duser, NULL, NULL, false, BUN_NONE);
 		BBPunfix((*ret1)->batCacheid);
 		*ret2 = BATproject(bn, user);
 		*ret1 = bn;
 	} else {
-		*ret2 = COLcopy(user, user->ttype, FALSE, TRANSIENT);
+		*ret2 = COLcopy(user, user->ttype, false, TRANSIENT);
 	}
 	if (*ret1 == NULL || *ret2 == NULL) {
 		if (*ret1)
@@ -1113,10 +1113,10 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 	rethrow("addRemoteTableCredentials", tmp, AUTHcypherValue(&cypher, pwhash));
 
 	/* Add entry */
-	bool table_entry = (BUNappend(rt_key, local_table, TRUE) == GDK_SUCCEED &&
-						BUNappend(rt_uri, uri, TRUE) == GDK_SUCCEED &&
-						BUNappend(rt_remoteuser, remoteuser, TRUE) == GDK_SUCCEED &&
-						BUNappend(rt_hashedpwd, cypher, TRUE) == GDK_SUCCEED);
+	bool table_entry = (BUNappend(rt_key, local_table, true) == GDK_SUCCEED &&
+						BUNappend(rt_uri, uri, true) == GDK_SUCCEED &&
+						BUNappend(rt_remoteuser, remoteuser, true) == GDK_SUCCEED &&
+						BUNappend(rt_hashedpwd, cypher, true) == GDK_SUCCEED);
 
 	if (!table_entry) {
 		if (free_pw) {
@@ -1163,7 +1163,7 @@ AUTHdeleteRemoteTableCredentials(const char *local_table)
 	id = p;
 
 	/* now, we got the oid, start removing the related tuples */
-	if (BUNappend(rt_deleted, &id, TRUE) != GDK_SUCCEED)
+	if (BUNappend(rt_deleted, &id, true) != GDK_SUCCEED)
 		throw(MAL, "deleteRemoteTableCredentials", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 
 	/* make the stuff persistent */

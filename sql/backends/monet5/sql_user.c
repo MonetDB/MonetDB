@@ -180,7 +180,7 @@ db_password_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BBPreclaim(bn);
 				return msg;
 			}
-			if (BUNappend(bn, hash, FALSE) != GDK_SUCCEED) {
+			if (BUNappend(bn, hash, false) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
 				BBPreclaim(bn);
 				throw(SQL, "sql.password", SQLSTATE(HY001) MAL_MALLOC_FAIL);

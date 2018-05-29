@@ -14343,7 +14343,7 @@ BATconvert(BAT *b, BAT *s, int tp, int abort_on_error)
 	    ATOMbasetype(b->ttype) == ATOMbasetype(tp) &&
 	    (tp != TYPE_str ||
 	     BATatoms[b->ttype].atomToStr == BATatoms[TYPE_str].atomToStr)) {
-		return COLcopy(b, tp, 0, TRANSIENT);
+		return COLcopy(b, tp, false, TRANSIENT);
 	}
 
 	bn = COLnew(b->hseqbase, tp, b->batCount, TRANSIENT);

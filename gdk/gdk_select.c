@@ -52,7 +52,7 @@ virtualize(BAT *bn)
 			bn->tseqbase = 0;
 		else
 			bn->tseqbase = * (const oid *) Tloc(bn, 0);
-		HEAPfree(&bn->theap, 1);
+		HEAPfree(&bn->theap, true);
 		bn->theap.storage = bn->theap.newstorage = STORE_MEM;
 		bn->theap.size = 0;
 		bn->ttype = TYPE_void;
@@ -1178,7 +1178,7 @@ BAT_scanselect(BAT *b, BAT *s, BAT *bn, const void *tl, const void *th,
 
 BAT *
 BATselect(BAT *b, BAT *s, const void *tl, const void *th,
-	     int li, int hi, int anti)
+	     bool li, bool hi, bool anti)
 {
 	bool hval, lval, equi, lnil, hash;
 	int t;
@@ -1205,17 +1205,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	BATcheck(tl, "BATselect: tl value required", NULL);
 
 	assert(s == NULL || s->ttype == TYPE_oid || s->ttype == TYPE_void);
-	assert(hi == 0 || hi == 1);
-	assert(li == 0 || li == 1);
-	assert(anti == 0 || anti == 1);
 
-	if ((li != 0 && li != 1) ||
-	    (hi != 0 && hi != 1) ||
-	    (anti != 0 && anti != 1)) {
-		GDKerror("BATselect: invalid arguments: "
-			 "li, hi, anti must be 0 or 1\n");
-		return NULL;
-	}
 	if (s && !BATtordered(s)) {
 		GDKerror("BATselect: invalid argument: "
 			 "s must be sorted.\n");
@@ -1852,34 +1842,34 @@ BATthetaselect(BAT *b, BAT *s, const void *val, const char *op)
 		return BATdense(0, 0, 0);
 	if (op[0] == '=' && ((op[1] == '=' && op[2] == 0) || op[1] == 0)) {
 		/* "=" or "==" */
-		return BATselect(b, s, val, NULL, 1, 1, 0);
+		return BATselect(b, s, val, NULL, true, true, false);
 	}
 	if (op[0] == '!' && op[1] == '=' && op[2] == 0) {
 		/* "!=" (equivalent to "<>") */
-		return BATselect(b, s, val, NULL, 1, 1, 1);
+		return BATselect(b, s, val, NULL, true, true, true);
 	}
 	if (op[0] == '<') {
 		if (op[1] == 0) {
 			/* "<" */
-			return BATselect(b, s, nil, val, 0, 0, 0);
+			return BATselect(b, s, nil, val, false, false, false);
 		}
 		if (op[1] == '=' && op[2] == 0) {
 			/* "<=" */
-			return BATselect(b, s, nil, val, 0, 1, 0);
+			return BATselect(b, s, nil, val, false, true, false);
 		}
 		if (op[1] == '>' && op[2] == 0) {
 			/* "<>" (equivalent to "!=") */
-			return BATselect(b, s, val, NULL, 1, 1, 1);
+			return BATselect(b, s, val, NULL, true, true, true);
 		}
 	}
 	if (op[0] == '>') {
 		if (op[1] == 0) {
 			/* ">" */
-			return BATselect(b, s, val, nil, 0, 0, 0);
+			return BATselect(b, s, val, nil, false, false, false);
 		}
 		if (op[1] == '=' && op[2] == 0) {
 			/* ">=" */
-			return BATselect(b, s, val, nil, 1, 0, 0);
+			return BATselect(b, s, val, nil, true, false, false);
 		}
 	}
 	GDKerror("BATthetaselect: unknown operator.\n");
@@ -1892,7 +1882,7 @@ BATthetaselect(BAT *b, BAT *s, const void *val, const char *op)
 #define FVALUE(s, x)	(s##vals + ((x) * s##width))
 
 gdk_return
-rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN maxsize)
+rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li, bool hi, BUN maxsize)
 {
 	BUN lstart, lend, lcnt;
 	const oid *lcand, *lcandend;
@@ -1993,7 +1983,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, 
 	lh = ll + l->batCount;
 	if ((!sl || (sl && BATtdense(sl))) &&
 	    (BATcheckorderidx(l) || (VIEWtparent(l) && BATcheckorderidx(BBPquickdesc(VIEWtparent(l), 0))))) {
-		use_orderidx = 1;
+		use_orderidx = true;
 		if (VIEWtparent(l) && !BATcheckorderidx(l)) {
 			l = BBPdescriptor(VIEWtparent(l));
 		}

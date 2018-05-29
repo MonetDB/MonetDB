@@ -1567,7 +1567,7 @@ SERVERfetch_field_bat(bat *bid, int *key){
 			throw(MAL, "mapi.fetch_field_bat", "%s",
 				mapi_result_error(SERVERsessions[i].hdl));
 		}
-		if (BUNappend(b,fld, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(b,fld, false) != GDK_SUCCEED) {
 			BBPreclaim(b);
 			throw(MAL, "mapi.fetch_field_bat", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
@@ -1803,7 +1803,7 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 			BBPreclaim(b);
 			throw(MAL, "mapi.rpc", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
-		if (BUNappend(b,VALptr(&tval), FALSE) != GDK_SUCCEED) {
+		if (BUNappend(b,VALptr(&tval), false) != GDK_SUCCEED) {
 			BBPreclaim(b);
 			throw(MAL, "mapi.rpc", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}

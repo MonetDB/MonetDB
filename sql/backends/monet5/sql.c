@@ -637,7 +637,7 @@ sql_variables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (vars == NULL)
 		throw(SQL, "sql.variables", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	for (i = 0; i < m->topvars && !m->vars[i].frame; i++) {
-		if (BUNappend(vars, m->vars[i].name, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(vars, m->vars[i].name, false) != GDK_SUCCEED) {
 			BBPreclaim(vars);
 			throw(SQL, "sql.variables", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
@@ -758,7 +758,7 @@ mvc_bat_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			seqbulk_destroy(sb);
 			throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot generate next seuqnce value %s.%s", sname, seqname);
 		}
-		if (BUNappend(r, &l, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(r, &l, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPunfix(r->batCacheid);
 			seqbulk_destroy(sb);
@@ -933,7 +933,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				l = part_nr * psz;
 				h = (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz);
 				h--;
-				bn = BATselect(b, NULL, &l, &h, 1, 1, 0);
+				bn = BATselect(b, NULL, &l, &h, true, true, false);
 				BBPunfix(c->batCacheid);
 				if(bn == NULL) {
 					BBPunfix(b->batCacheid);
@@ -1048,7 +1048,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				l = part_nr * psz;
 				h = (part_nr + 1 == nr_parts) ? cnt : ((part_nr + 1) * psz);
 				h--;
-				bn = BATselect(b, NULL, &l, &h, 1, 1, 0);
+				bn = BATselect(b, NULL, &l, &h, true, true, false);
 				BBPunfix(c->batCacheid);
 				if(bn == NULL) {
 					BBPunfix(b->batCacheid);
@@ -1147,7 +1147,7 @@ mvc_grow_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		v++;
 	}
 	for(;cnt>0; cnt--, v++) {
-		if (BUNappend(tid, &v, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(tid, &v, false) != GDK_SUCCEED) {
 			BBPunfix(Tid);
 			throw(SQL, "sql", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
@@ -1363,7 +1363,7 @@ setwritable(BAT *b)
 
 	if (BATsetaccess(b, BAT_WRITE) != GDK_SUCCEED) {
 		if (b->batSharecnt) {
-			bn = COLcopy(b, b->ttype, TRUE, TRANSIENT);
+			bn = COLcopy(b, b->ttype, true, TRANSIENT);
 			if (bn != NULL)
 				BATsetaccess(bn, BAT_WRITE);
 		} else {
@@ -1420,7 +1420,7 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 	c = BATdescriptor(*col);
 	if (c == NULL)
 		throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if ((res = COLcopy(c, c->ttype, TRUE, TRANSIENT)) == NULL) {
+	if ((res = COLcopy(c, c->ttype, true, TRANSIENT)) == NULL) {
 		BBPunfix(c->batCacheid);
 		throw(MAL, "sql.delta", SQLSTATE(45002) "Cannot create copy of delta structure");
 	}
@@ -1437,7 +1437,7 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 	}
 	assert(BATcount(u_id) == BATcount(u_val));
 	if (BATcount(u_id) &&
-	    BATreplace(res, u_id, u_val, TRUE) != GDK_SUCCEED) {
+	    BATreplace(res, u_id, u_val, true) != GDK_SUCCEED) {
 		BBPunfix(u_id->batCacheid);
 		BBPunfix(u_val->batCacheid);
 		BBPunfix(res->batCacheid);
@@ -1451,7 +1451,7 @@ DELTAbat(bat *result, const bat *col, const bat *uid, const bat *uval, const bat
 			BBPunfix(res->batCacheid);
 			throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
-		if (BATappend(res, i, NULL, TRUE) != GDK_SUCCEED) {
+		if (BATappend(res, i, NULL, true) != GDK_SUCCEED) {
 			BBPunfix(res->batCacheid);
 			BBPunfix(i->batCacheid);
 			throw(MAL, "sql.delta", SQLSTATE(45002) "Cannot access delta structuren");
@@ -1499,7 +1499,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			BBPunfix(c->batCacheid);
 			throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
-		cminu = BATdiff(c, u_id, NULL, NULL, 0, BUN_NONE);
+		cminu = BATdiff(c, u_id, NULL, NULL, false, BUN_NONE);
 		if (!cminu) {
 			BBPunfix(c->batCacheid);
 			BBPunfix(u_id->batCacheid);
@@ -1537,14 +1537,14 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 				BBPunfix(u->batCacheid);
 				throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			}
-			cminu = BATintersect(u, c_ids, NULL, NULL, 0, BUN_NONE);
+			cminu = BATintersect(u, c_ids, NULL, NULL, false, BUN_NONE);
 			BBPunfix(c_ids->batCacheid);
 			if (cminu == NULL) {
 				BBPunfix(c->batCacheid);
 				BBPunfix(u->batCacheid);
 				throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
-			ret = BATappend(res, u, cminu, TRUE);
+			ret = BATappend(res, u, cminu, true);
 			BBPunfix(u->batCacheid);
 			if (cminu)
 				BBPunfix(cminu->batCacheid);
@@ -1554,7 +1554,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 				throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 
-			ret = BATsort(&u, NULL, NULL, res, NULL, NULL, 0, 0);
+			ret = BATsort(&u, NULL, NULL, res, NULL, NULL, false, false);
 			BBPunfix(res->batCacheid);
 			if (ret != GDK_SUCCEED) {
 				throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -1579,7 +1579,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 				BBPunfix(i->batCacheid);
 				throw(MAL, "sql.delta", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			}
-			cminu = BATdiff(i, u_id, NULL, NULL, 0, BUN_NONE);
+			cminu = BATdiff(i, u_id, NULL, NULL, false, BUN_NONE);
 			BBPunfix(u_id->batCacheid);
 			if (!cminu) {
 				BBPunfix(res->batCacheid);
@@ -1588,7 +1588,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			}
 		}
 		if (isVIEW(res)) {
-			BAT *n = COLcopy(res, res->ttype, TRUE, TRANSIENT);
+			BAT *n = COLcopy(res, res->ttype, true, TRANSIENT);
 			BBPunfix(res->batCacheid);
 			res = n;
 			if (res == NULL) {
@@ -1598,7 +1598,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 				throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 		}
-		ret = BATappend(res, i, cminu, TRUE);
+		ret = BATappend(res, i, cminu, true);
 		BBPunfix(i->batCacheid);
 		if (cminu)
 			BBPunfix(cminu->batCacheid);
@@ -1607,7 +1607,7 @@ DELTAsub(bat *result, const bat *col, const bat *cid, const bat *uid, const bat 
 			throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
 
-		ret = BATsort(&u, NULL, NULL, res, NULL, NULL, 0, 0);
+		ret = BATsort(&u, NULL, NULL, res, NULL, NULL, false, false);
 		BBPunfix(res->batCacheid);
 		if (ret != GDK_SUCCEED)
 			throw(MAL, "sql.delta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -1656,14 +1656,14 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 			res = i;
 			i = c;
 		} else {
-			if ((res = COLcopy(c, c->ttype, TRUE, TRANSIENT)) == NULL) {
+			if ((res = COLcopy(c, c->ttype, true, TRANSIENT)) == NULL) {
 				BBPunfix(s->batCacheid);
 				BBPunfix(i->batCacheid);
 				BBPunfix(c->batCacheid);
 				throw(MAL, "sql.projectdelta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
 			BBPunfix(c->batCacheid);
-			if (BATappend(res, i, NULL, FALSE) != GDK_SUCCEED) {
+			if (BATappend(res, i, NULL, false) != GDK_SUCCEED) {
 				BBPunfix(s->batCacheid);
 				BBPunfix(i->batCacheid);
 				throw(MAL, "sql.projectdelta", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -1704,7 +1704,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		/* create subsets of u_id and u_val where the tail
 		 * values of u_id are also in s, and where those tail
 		 * values occur as head value in res */
-		if ((o = BATintersect(u_id, s, NULL, NULL, 0, BUN_NONE)) == NULL) {
+		if ((o = BATintersect(u_id, s, NULL, NULL, false, BUN_NONE)) == NULL) {
 			BBPunfix(s->batCacheid);
 			BBPunfix(res->batCacheid);
 			BBPunfix(u_id->batCacheid);
@@ -1720,7 +1720,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		if (nu_id == NULL ||
 		    nu_val == NULL ||
 		    tres == NULL ||
-		    (o = BATintersect(nu_id, tres, NULL, NULL, 0, BUN_NONE)) == NULL) {
+		    (o = BATintersect(nu_id, tres, NULL, NULL, false, BUN_NONE)) == NULL) {
 			BBPunfix(s->batCacheid);
 			BBPunfix(res->batCacheid);
 			BBPreclaim(nu_id);
@@ -1744,7 +1744,7 @@ DELTAproject(bat *result, const bat *sub, const bat *col, const bat *uid, const 
 		/* now update res with the subset of u_id and u_val we
 		 * calculated */
 		if ((res = setwritable(res)) == NULL ||
-		    BATreplace(res, u_id, u_val, 0) != GDK_SUCCEED) {
+		    BATreplace(res, u_id, u_val, false) != GDK_SUCCEED) {
 			if (res)
 				BBPunfix(res->batCacheid);
 			BBPunfix(s->batCacheid);
@@ -1889,7 +1889,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (d == NULL)
 			throw(SQL,"sql.tid", SQLSTATE(45002) "Can not bind delete column");
 
-		diff = BATdiff(tids, d, NULL, NULL, 0, BUN_NONE);
+		diff = BATdiff(tids, d, NULL, NULL, false, BUN_NONE);
 		BBPunfix(d->batCacheid);
 		BBPunfix(tids->batCacheid);
 		if (diff == NULL)
@@ -2784,7 +2784,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				char *t = strrchr(buf, '\n');
 				if (t)
 					*t = 0;
-				if (BUNappend(c, buf, FALSE) != GDK_SUCCEED) {
+				if (BUNappend(c, buf, false) != GDK_SUCCEED) {
 					BBPreclaim(c);
 					fclose(f);
 					throw(SQL, "sql", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -2820,7 +2820,7 @@ mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				if (c == NULL)
 					throw(SQL, "sql", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				for(loop = 0; loop < cnt; loop++) {
-					if (BUNappend(c, nil, 0) != GDK_SUCCEED) {
+					if (BUNappend(c, nil, false) != GDK_SUCCEED) {
 						BBPreclaim(c);
 						throw(SQL, "sql", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 					}
@@ -3223,7 +3223,7 @@ SQLbat_alpha_cst(bat *res, const bat *decl, const dbl *theta)
 			c2 = cos(radians(d + *theta));
 			r = degrees(fabs(atan(s / sqrt(fabs(c1 * c2)))));
 		}
-		if (BUNappend(bn, &r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(bn, &r, false) != GDK_SUCCEED) {
 			BBPreclaim(bn);
 			throw(SQL, "sql.alpha", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
@@ -3266,7 +3266,7 @@ SQLcst_alpha_bat(bat *res, const dbl *decl, const bat *theta)
 			c2 = cos(radians(d + *theta));
 			r = degrees(fabs(atan(s / sqrt(fabs(c1 * c2)))));
 		}
-		if (BUNappend(bn, &r, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(bn, &r, false) != GDK_SUCCEED) {
 			BBPreclaim(bn);
 			throw(SQL, "sql.alpha", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 		}
@@ -3498,8 +3498,8 @@ dump_cache(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for (q = m->qc->q; q; q = q->next) {
 		if (q->type != Q_PREPARE) {
-			if (BUNappend(query, q->codestring, FALSE) != GDK_SUCCEED ||
-			    BUNappend(count, &q->count, FALSE) != GDK_SUCCEED) {
+			if (BUNappend(query, q->codestring, false) != GDK_SUCCEED ||
+			    BUNappend(count, &q->count, false) != GDK_SUCCEED) {
 				BBPunfix(query->batCacheid);
 				BBPunfix(count->batCacheid);
 				throw(SQL, "sql.dumpcache", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -3536,8 +3536,8 @@ dump_opt_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.optstats", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 	}
 
-	if (BUNappend(rewrite, "joinidx", FALSE) != GDK_SUCCEED ||
-	    BUNappend(count, &m->opt_stats[0], FALSE) != GDK_SUCCEED) {
+	if (BUNappend(rewrite, "joinidx", false) != GDK_SUCCEED ||
+	    BUNappend(count, &m->opt_stats[0], false) != GDK_SUCCEED) {
 		BBPreclaim(rewrite);
 		BBPreclaim(count);
 		throw(SQL, "sql.optstats", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -3609,11 +3609,11 @@ sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto bailout;
 
 	MT_lock_set(&mal_contextLock);
-	if (BUNappend(urib, uris, FALSE) != GDK_SUCCEED)
+	if (BUNappend(urib, uris, false) != GDK_SUCCEED)
 		goto lbailout;
-	if (BUNappend(unameb, unames, FALSE) != GDK_SUCCEED)
+	if (BUNappend(unameb, unames, false) != GDK_SUCCEED)
 		goto lbailout;
-	if (BUNappend(hashb, hashs, FALSE) != GDK_SUCCEED)
+	if (BUNappend(hashb, hashs, false) != GDK_SUCCEED)
 		goto lbailout;
 	MT_lock_unset(&mal_contextLock);
 	BBPkeepref(*uri = urib->batCacheid);
@@ -3780,7 +3780,7 @@ do_sql_rank_grp(bat *rid, const bat *bid, const bat *gid, int nrank, int dense, 
 			c = rank = nrank = 1;
 		oc = on;
 		gc = gn;
-		if (BUNappend(r, &rank, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(r, &rank, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			BBPunfix(g->batCacheid);
 			BBPunfix(r->batCacheid);
@@ -3822,7 +3822,7 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 	}
 	if (BATtdense(b)) {
 		BATloop(b, p, q) {
-			if (BUNappend(r, &rank, FALSE) != GDK_SUCCEED)
+			if (BUNappend(r, &rank, false) != GDK_SUCCEED)
 				goto bailout;
 			rank++;
 		}
@@ -3832,7 +3832,7 @@ do_sql_rank(bat *rid, const bat *bid, int nrank, int dense, const char *name)
 			if ((c = cmp(n, cur)) != 0)
 				rank = nrank;
 			cur = n;
-			if (BUNappend(r, &rank, FALSE) != GDK_SUCCEED)
+			if (BUNappend(r, &rank, false) != GDK_SUCCEED)
 				goto bailout;
 			nrank += !dense || c;
 		}
@@ -4235,33 +4235,33 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									throw(SQL, "sql.storage", SQLSTATE(HY005) "Cannot access column descriptor");
 
 								/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */
-								if (BUNappend(sch, b->name, FALSE) != GDK_SUCCEED ||
-								    BUNappend(tab, bt->name, FALSE) != GDK_SUCCEED ||
-								    BUNappend(col, bc->name, FALSE) != GDK_SUCCEED)
+								if (BUNappend(sch, b->name, false) != GDK_SUCCEED ||
+								    BUNappend(tab, bt->name, false) != GDK_SUCCEED ||
+								    BUNappend(col, bc->name, false) != GDK_SUCCEED)
 									goto bailout;
 								if (c->t->access == TABLE_WRITABLE) {
-									if (BUNappend(mode, "writable", FALSE) != GDK_SUCCEED)
+									if (BUNappend(mode, "writable", false) != GDK_SUCCEED)
 										goto bailout;
 								} else if (c->t->access == TABLE_APPENDONLY) {
-									if (BUNappend(mode, "appendonly", FALSE) != GDK_SUCCEED)
+									if (BUNappend(mode, "appendonly", false) != GDK_SUCCEED)
 										goto bailout;
 								} else if (c->t->access == TABLE_READONLY) {
-									if (BUNappend(mode, "readonly", FALSE) != GDK_SUCCEED)
+									if (BUNappend(mode, "readonly", false) != GDK_SUCCEED)
 										goto bailout;
 								} else {
-									if (BUNappend(mode, 0, FALSE) != GDK_SUCCEED)
+									if (BUNappend(mode, 0, false) != GDK_SUCCEED)
 										goto bailout;
 								}
-								if (BUNappend(type, c->type.type->sqlname, FALSE) != GDK_SUCCEED)
+								if (BUNappend(type, c->type.type->sqlname, false) != GDK_SUCCEED)
 									goto bailout;
 
 								/*printf(" cnt "BUNFMT, BATcount(bn)); */
 								sz = BATcount(bn);
-								if (BUNappend(cnt, &sz, FALSE) != GDK_SUCCEED)
+								if (BUNappend(cnt, &sz, false) != GDK_SUCCEED)
 									goto bailout;
 
 								/*printf(" loc %s", BBP_physical(bn->batCacheid)); */
-								if (BUNappend(loc, BBP_physical(bn->batCacheid), FALSE) != GDK_SUCCEED)
+								if (BUNappend(loc, BBP_physical(bn->batCacheid), false) != GDK_SUCCEED)
 									goto bailout;
 								/*printf(" width %d", bn->twidth); */
 								w = bn->twidth;
@@ -4284,27 +4284,27 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									if (cnt2)
 										w = (int) (sum / cnt2);
 								}
-								if (BUNappend(atom, &w, FALSE) != GDK_SUCCEED)
+								if (BUNappend(atom, &w, false) != GDK_SUCCEED)
 									goto bailout;
 
 								sz = BATcount(bn) * bn->twidth; 
-								if (BUNappend(size, &sz, FALSE) != GDK_SUCCEED)
+								if (BUNappend(size, &sz, false) != GDK_SUCCEED)
 									goto bailout;
 
 								sz = heapinfo(bn->tvheap, bn->batCacheid);
-								if (BUNappend(heap, &sz, FALSE) != GDK_SUCCEED)
+								if (BUNappend(heap, &sz, false) != GDK_SUCCEED)
 									goto bailout;
 
 								sz = hashinfo(bn->thash, bn->batCacheid);
-								if (BUNappend(indices, &sz, FALSE) != GDK_SUCCEED)
+								if (BUNappend(indices, &sz, false) != GDK_SUCCEED)
 									goto bailout;
 
 								bitval = 0; /* HASHispersistent(bn); */
-								if (BUNappend(phash, &bitval, FALSE) != GDK_SUCCEED)
+								if (BUNappend(phash, &bitval, false) != GDK_SUCCEED)
 									goto bailout;
 
 								sz = IMPSimprintsize(bn);
-								if (BUNappend(imprints, &sz, FALSE) != GDK_SUCCEED)
+								if (BUNappend(imprints, &sz, false) != GDK_SUCCEED)
 									goto bailout;
 								/*printf(" indices "BUNFMT, bn->thash?bn->thash->heap.size:0); */
 								/*printf("\n"); */
@@ -4312,23 +4312,23 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								bitval = BATtordered(bn);
 								if (!bitval && bn->tnosorted == 0)
 									bitval = bit_nil;
-								if (BUNappend(sort, &bitval, FALSE) != GDK_SUCCEED)
+								if (BUNappend(sort, &bitval, false) != GDK_SUCCEED)
 									goto bailout;
 
 								bitval = BATtrevordered(bn);
 								if (!bitval && bn->tnorevsorted == 0)
 									bitval = bit_nil;
-								if (BUNappend(revsort, &bitval, FALSE) != GDK_SUCCEED)
+								if (BUNappend(revsort, &bitval, false) != GDK_SUCCEED)
 									goto bailout;
 
 								bitval = BATtkey(bn);
 								if (!bitval && bn->tnokey[0] == 0 && bn->tnokey[1] == 0)
 									bitval = bit_nil;
-								if (BUNappend(key, &bitval, FALSE) != GDK_SUCCEED)
+								if (BUNappend(key, &bitval, false) != GDK_SUCCEED)
 									goto bailout;
 
 								sz = bn->torderidx && bn->torderidx != (Heap *) 1 ? bn->torderidx->free : 0;
-								if (BUNappend(oidx, &sz, FALSE) != GDK_SUCCEED)
+								if (BUNappend(oidx, &sz, false) != GDK_SUCCEED)
 									goto bailout;
 								BBPunfix(bn->batCacheid);
 							}
@@ -4347,33 +4347,33 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 									if( cname && strcmp(bc->name, cname) )
 										continue;
 									/*printf("schema %s.%s.%s" , b->name, bt->name, bc->name); */
-									if (BUNappend(sch, b->name, FALSE) != GDK_SUCCEED ||
-									    BUNappend(tab, bt->name, FALSE) != GDK_SUCCEED ||
-									    BUNappend(col, bc->name, FALSE) != GDK_SUCCEED)
+									if (BUNappend(sch, b->name, false) != GDK_SUCCEED ||
+									    BUNappend(tab, bt->name, false) != GDK_SUCCEED ||
+									    BUNappend(col, bc->name, false) != GDK_SUCCEED)
 										goto bailout;
 									if (c->t->access == TABLE_WRITABLE) {
-										if (BUNappend(mode, "writable", FALSE) != GDK_SUCCEED)
+										if (BUNappend(mode, "writable", false) != GDK_SUCCEED)
 											goto bailout;
 									} else if (c->t->access == TABLE_APPENDONLY) {
-										if (BUNappend(mode, "appendonly", FALSE) != GDK_SUCCEED)
+										if (BUNappend(mode, "appendonly", false) != GDK_SUCCEED)
 											goto bailout;
 									} else if (c->t->access == TABLE_READONLY) {
-										if (BUNappend(mode, "readonly", FALSE) != GDK_SUCCEED)
+										if (BUNappend(mode, "readonly", false) != GDK_SUCCEED)
 											goto bailout;
 									} else {
-										if (BUNappend(mode, 0, FALSE) != GDK_SUCCEED)
+										if (BUNappend(mode, 0, false) != GDK_SUCCEED)
 											goto bailout;
 									}
-									if (BUNappend(type, "oid", FALSE) != GDK_SUCCEED)
+									if (BUNappend(type, "oid", false) != GDK_SUCCEED)
 										goto bailout;
 
 									/*printf(" cnt "BUNFMT, BATcount(bn)); */
 									sz = BATcount(bn);
-									if (BUNappend(cnt, &sz, FALSE) != GDK_SUCCEED)
+									if (BUNappend(cnt, &sz, false) != GDK_SUCCEED)
 										goto bailout;
 
 									/*printf(" loc %s", BBP_physical(bn->batCacheid)); */
-									if (BUNappend(loc, BBP_physical(bn->batCacheid), FALSE) != GDK_SUCCEED)
+									if (BUNappend(loc, BBP_physical(bn->batCacheid), false) != GDK_SUCCEED)
 										goto bailout;
 									/*printf(" width %d", bn->twidth); */
 									w = bn->twidth;
@@ -4396,46 +4396,46 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 										if (cnt2)
 											w = (int) (sum / cnt2);
 									}
-									if (BUNappend(atom, &w, FALSE) != GDK_SUCCEED)
+									if (BUNappend(atom, &w, false) != GDK_SUCCEED)
 										goto bailout;
 									/*printf(" size "BUNFMT, tailsize(bn,BATcount(bn)) + (bn->tvheap? bn->tvheap->size:0)); */
 									sz = tailsize(bn, BATcount(bn));
-									if (BUNappend(size, &sz, FALSE) != GDK_SUCCEED)
+									if (BUNappend(size, &sz, false) != GDK_SUCCEED)
 										goto bailout;
 
 									sz = bn->tvheap ? bn->tvheap->size : 0;
-									if (BUNappend(heap, &sz, FALSE) != GDK_SUCCEED)
+									if (BUNappend(heap, &sz, false) != GDK_SUCCEED)
 										goto bailout;
 
 									sz = bn->thash && bn->thash != (Hash *) 1 ? bn->thash->heap.size : 0; /* HASHsize() */
-									if (BUNappend(indices, &sz, FALSE) != GDK_SUCCEED)
+									if (BUNappend(indices, &sz, false) != GDK_SUCCEED)
 										goto bailout;
 									bitval = 0; /* HASHispersistent(bn); */
-									if (BUNappend(phash, &bitval, FALSE) != GDK_SUCCEED)
+									if (BUNappend(phash, &bitval, false) != GDK_SUCCEED)
 										goto bailout;
 
 									sz = IMPSimprintsize(bn);
-									if (BUNappend(imprints, &sz, FALSE) != GDK_SUCCEED)
+									if (BUNappend(imprints, &sz, false) != GDK_SUCCEED)
 										goto bailout;
 									/*printf(" indices "BUNFMT, bn->thash?bn->thash->heap.size:0); */
 									/*printf("\n"); */
 									bitval = BATtordered(bn);
 									if (!bitval && bn->tnosorted == 0)
 										bitval = bit_nil;
-									if (BUNappend(sort, &bitval, FALSE) != GDK_SUCCEED)
+									if (BUNappend(sort, &bitval, false) != GDK_SUCCEED)
 										goto bailout;
 									bitval = BATtrevordered(bn);
 									if (!bitval && bn->tnorevsorted == 0)
 										bitval = bit_nil;
-									if (BUNappend(revsort, &bitval, FALSE) != GDK_SUCCEED)
+									if (BUNappend(revsort, &bitval, false) != GDK_SUCCEED)
 										goto bailout;
 									bitval = BATtkey(bn);
 									if (!bitval && bn->tnokey[0] == 0 && bn->tnokey[1] == 0)
 										bitval = bit_nil;
-									if (BUNappend(key, &bitval, FALSE) != GDK_SUCCEED)
+									if (BUNappend(key, &bitval, false) != GDK_SUCCEED)
 										goto bailout;
 									sz = bn->torderidx && bn->torderidx != (Heap *) 1 ? bn->torderidx->free : 0;
-									if (BUNappend(oidx, &sz, FALSE) != GDK_SUCCEED)
+									if (BUNappend(oidx, &sz, false) != GDK_SUCCEED)
 										goto bailout;
 									BBPunfix(bn->batCacheid);
 								}
@@ -4562,7 +4562,7 @@ BATSTRindex_int(bat *res, const bat *src, const bit *u)
 			pos += pad + extralen;
 			p = h->base + pos;
 			v = (int) (pos - GDK_STRHASHSIZE);
-			if (BUNappend(r, &v, FALSE) != GDK_SUCCEED) {
+			if (BUNappend(r, &v, false) != GDK_SUCCEED) {
 				BBPreclaim(r);
 				BBPunfix(s->batCacheid);
 				throw(SQL, "calc.index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -4621,7 +4621,7 @@ BATSTRindex_sht(bat *res, const bat *src, const bit *u)
 			pos += pad + extralen;
 			s = h->base + pos;
 			v = (sht) (pos - GDK_STRHASHSIZE);
-			if (BUNappend(r, &v, FALSE) != GDK_SUCCEED) {
+			if (BUNappend(r, &v, false) != GDK_SUCCEED) {
 				BBPreclaim(r);
 				throw(SQL, "calc.index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}
@@ -4679,7 +4679,7 @@ BATSTRindex_bte(bat *res, const bat *src, const bit *u)
 			pos += pad + extralen;
 			p = h->base + pos;
 			v = (bte) (pos - GDK_STRHASHSIZE);
-			if (BUNappend(r, &v, FALSE) != GDK_SUCCEED) {
+			if (BUNappend(r, &v, false) != GDK_SUCCEED) {
 				BBPreclaim(r);
 				BBPunfix(s->batCacheid);
 				throw(SQL, "calc.index", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -4736,7 +4736,7 @@ BATSTRstrings(bat *res, const bat *src)
 			pad += GDK_VARALIGN;
 		pos += pad + extralen;
 		p = h->base + pos;
-		if (BUNappend(r, p, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(r, p, false) != GDK_SUCCEED) {
 			BBPreclaim(r);
 			BBPunfix(s->batCacheid);
 			throw(SQL, "calc.strings", SQLSTATE(HY001) MAL_MALLOC_FAIL);

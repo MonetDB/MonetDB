@@ -980,7 +980,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				goto wrapup;
 			}
 			if (BUNappend(input_bats[index], input,
-						  FALSE) != GDK_SUCCEED) {
+						  false) != GDK_SUCCEED) {
 				msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 				goto wrapup;
 			}
@@ -1418,7 +1418,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					if (!ptr) {
 						ptr = str_nil;
 					}
-					if (BUNappend(b, ptr, FALSE) != GDK_SUCCEED) {
+					if (BUNappend(b, ptr, false) != GDK_SUCCEED) {
 						msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 						goto wrapup;
 					}
@@ -1451,7 +1451,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 						memcpy(&current_blob->data[0], blob.data, blob.size);
 					}
 
-					if (BUNappend(b, current_blob, FALSE) != GDK_SUCCEED) {
+					if (BUNappend(b, current_blob, false) != GDK_SUCCEED) {
 						if (current_blob) {
 							GDKfree(current_blob);
 						}
@@ -1483,7 +1483,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 						}
 						appended_element = element;
 					}
-					if (BUNappend(b, appended_element, FALSE) != GDK_SUCCEED) {
+					if (BUNappend(b, appended_element, false) != GDK_SUCCEED) {
 						if (element) {
 							GDKfree(element);
 						}

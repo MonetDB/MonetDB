@@ -787,7 +787,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 			throw(MAL, "io.import", "%s", msg);
 		}
 		p += n;
-		if (BUNappend(b, t, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(b, t, false) != GDK_SUCCEED) {
 			BBPunfix(b->batCacheid);
 			GDKfree(buf);
 			GDKfree(t);

@@ -691,11 +691,11 @@ gdk_export int VALisnil(const ValRecord *v);
  *           // static BAT properties
  *           bat    batCacheid;       // bat id: index in BBPcache
  *           int    batPersistence;   // persistence mode
- *           bit    batCopiedtodisk;  // BAT is saved on disk?
+ *           bool   batCopiedtodisk;  // BAT is saved on disk?
  *           // dynamic BAT properties
  *           int    batHeat;          // heat of BAT in the BBP
  *           sht    batDirty;         // BAT modified after last commit?
- *           bit    batDirtydesc;     // BAT descriptor specific dirty flag
+ *           bool   batDirtydesc;     // BAT descriptor specific dirty flag
  *           Heap*  batBuns;          // Heap where the buns are stored
  *           // DELTA status
  *           BUN    batInserted;      // first inserted BUN
@@ -703,11 +703,11 @@ gdk_export int VALisnil(const ValRecord *v);
  *           // Tail properties
  *           int    ttype;            // Tail type number
  *           str    tident;           // name for tail column
- *           bit    tkey;             // tail values are unique
- *           bit    tunique;          // tail values must be kept unique
- *           bit    tnonil;           // tail has no nils
- *           bit    tsorted;          // are tail values currently ordered?
- *           bit    tvarsized;        // for speed: tail type is varsized?
+ *           bool   tkey;             // tail values are unique
+ *           bool   tunique;          // tail values must be kept unique
+ *           bool   tnonil;           // tail has no nils
+ *           bool   tsorted;          // are tail values currently ordered?
+ *           bool   tvarsized;        // for speed: tail type is varsized?
  *           // Tail storage
  *           int    tloc;             // byte-offset in BUN for tail elements
  *           Heap   *theap;           // heap for varsized tail values
@@ -734,7 +734,7 @@ gdk_export int VALisnil(const ValRecord *v);
 typedef struct {
 	/* dynamic bat properties */
 	MT_Id tid;		/* which thread created it */
-	unsigned int
+	uint32_t
 	 copiedtodisk:1,	/* once written */
 	 dirty:1,		/* dirty wrt disk? */
 	 dirtyflushed:1,	/* was dirty before commit started? */
@@ -758,7 +758,7 @@ typedef struct PROPrec PROPrec;
 typedef struct {
 	str id;			/* label for column */
 
-	unsigned short width;	/* byte-width of the atom array */
+	uint16_t width;		/* byte-width of the atom array */
 	bte type;		/* type id. */
 	bte shift;		/* log2 of bun width */
 	bool varsized:1,	/* varsized/void (true) or fixedsized (false) */
@@ -859,13 +859,13 @@ typedef struct BATiter {
  *  HEAPalloc (Heap *h, size_t nitems, size_t itemsize);
  * @item int
  * @tab
- *  HEAPfree (Heap *h, int remove);
+ *  HEAPfree (Heap *h, bool remove);
  * @item int
  * @tab
- *  HEAPextend (Heap *h, size_t size, int mayshare);
+ *  HEAPextend (Heap *h, size_t size, bool mayshare);
  * @item int
  * @tab
- *  HEAPload (Heap *h, str nme,ext, int trunc);
+ *  HEAPload (Heap *h, str nme,ext, bool trunc);
  * @item int
  * @tab
  *  HEAPsave (Heap *h, str nme,ext);
@@ -884,7 +884,7 @@ typedef struct BATiter {
  * These routines should be used to alloc free or extend heaps; they
  * isolate you from the different ways heaps can be accessed.
  */
-gdk_export gdk_return HEAPextend(Heap *h, size_t size, int mayshare)
+gdk_export gdk_return HEAPextend(Heap *h, size_t size, bool mayshare)
 	__attribute__ ((__warn_unused_result__));
 gdk_export size_t HEAPvmsize(Heap *h);
 gdk_export size_t HEAPmemsize(Heap *h);
@@ -964,11 +964,11 @@ gdk_export bte ATOMelmshift(int sz);
  * @- BUN manipulation
  * @multitable @columnfractions 0.08 0.7
  * @item BAT*
- * @tab BATappend (BAT *b, BAT *n, BAT *s, bit force)
+ * @tab BATappend (BAT *b, BAT *n, BAT *s, bool force)
  * @item BAT*
- * @tab BUNappend (BAT *b, ptr right, bit force)
+ * @tab BUNappend (BAT *b, ptr right, bool force)
  * @item BAT*
- * @tab BUNreplace (BAT *b, oid left, ptr right, bit force)
+ * @tab BUNreplace (BAT *b, oid left, ptr right, bool force)
  * @item int
  * @tab BUNfnd (BAT *b, ptr tail)
  * @item BUN
@@ -1029,13 +1029,13 @@ gdk_export bte ATOMelmshift(int sz);
 			_ptr = (p);					\
 			switch ((b)->twidth) {				\
 			case 1:						\
-				* (unsigned char *) _ptr = (unsigned char) (_d - GDK_VAROFFSET); \
+				* (uint8_t *) _ptr = (uint8_t) (_d - GDK_VAROFFSET); \
 				break;					\
 			case 2:						\
-				* (unsigned short *) _ptr = (unsigned short) (_d - GDK_VAROFFSET); \
+				* (uint16_t *) _ptr = (uint16_t) (_d - GDK_VAROFFSET); \
 				break;					\
 			case 4:						\
-				* (unsigned int *) _ptr = (unsigned int) _d; \
+				* (uint32_t *) _ptr = (uint32_t) _d;	\
 				break;					\
 			case 8:						\
 				* (var_t *) _ptr = _d;			\
@@ -1053,13 +1053,13 @@ gdk_export bte ATOMelmshift(int sz);
 			_ptr = (p);					\
 			switch ((b)->twidth) {				\
 			case 1:						\
-				_d = (var_t) * (unsigned char *) _ptr + GDK_VAROFFSET; \
+				_d = (var_t) * (uint8_t *) _ptr + GDK_VAROFFSET; \
 				break;					\
 			case 2:						\
-				_d = (var_t) * (unsigned short *) _ptr + GDK_VAROFFSET; \
+				_d = (var_t) * (uint16_t *) _ptr + GDK_VAROFFSET; \
 				break;					\
 			case 4:						\
-				_d = (var_t) * (unsigned int *) _ptr;	\
+				_d = (var_t) * (uint32_t *) _ptr;	\
 				break;					\
 			case 8:						\
 				_d = * (var_t *) _ptr;			\
@@ -1075,13 +1075,13 @@ gdk_export bte ATOMelmshift(int sz);
 			_ptr = (p);					\
 			switch ((b)->twidth) {				\
 			case 1:						\
-				* (unsigned char *) _ptr = (unsigned char) (_d - GDK_VAROFFSET); \
+				* (uint8_t *) _ptr = (uint8_t) (_d - GDK_VAROFFSET); \
 				break;					\
 			case 2:						\
-				* (unsigned short *) _ptr = (unsigned short) (_d - GDK_VAROFFSET); \
+				* (uint16_t *) _ptr = (uint16_t) (_d - GDK_VAROFFSET); \
 				break;					\
 			case 4:						\
-				* (unsigned int *) _ptr = (unsigned int) _d; \
+				* (uint32_t *) _ptr = (uint32_t) _d;	\
 				break;					\
 			case 8:						\
 				* (var_t *) _ptr = _d;			\
@@ -1107,10 +1107,10 @@ gdk_export bte ATOMelmshift(int sz);
 			_ptr = (p);					\
 			switch ((b)->twidth) {				\
 			case 1:						\
-				* (unsigned char *) _ptr = (unsigned char) (_d - GDK_VAROFFSET); \
+				* (uint8_t *) _ptr = (uint8_t) (_d - GDK_VAROFFSET); \
 				break;					\
 			case 2:						\
-				* (unsigned short *) _ptr = (unsigned short) (_d - GDK_VAROFFSET); \
+				* (uint16_t *) _ptr = (uint16_t) (_d - GDK_VAROFFSET); \
 				break;					\
 			case 4:						\
 				* (var_t *) _ptr = _d;			\
@@ -1128,10 +1128,10 @@ gdk_export bte ATOMelmshift(int sz);
 			_ptr = (p);					\
 			switch ((b)->twidth) {				\
 			case 1:						\
-				_d = (var_t) * (unsigned char *) _ptr + GDK_VAROFFSET; \
+				_d = (var_t) * (uint8_t *) _ptr + GDK_VAROFFSET; \
 				break;					\
 			case 2:						\
-				_d = (var_t) * (unsigned short *) _ptr + GDK_VAROFFSET; \
+				_d = (var_t) * (uint16_t *) _ptr + GDK_VAROFFSET; \
 				break;					\
 			case 4:						\
 				_d = * (var_t *) _ptr;			\
@@ -1147,10 +1147,10 @@ gdk_export bte ATOMelmshift(int sz);
 			_ptr = (p);					\
 			switch ((b)->twidth) {				\
 			case 1:						\
-				* (unsigned char *) _ptr = (unsigned char) (_d - GDK_VAROFFSET); \
+				* (uint8_t *) _ptr = (uint8_t) (_d - GDK_VAROFFSET); \
 				break;					\
 			case 2:						\
-				* (unsigned short *) _ptr = (unsigned short) (_d - GDK_VAROFFSET); \
+				* (uint16_t *) _ptr = (uint16_t) (_d - GDK_VAROFFSET); \
 				break;					\
 			case 4:						\
 				* (var_t *) _ptr = _d;			\
@@ -1194,11 +1194,11 @@ gdk_export bte ATOMelmshift(int sz);
 		bunfastapp_nocheck(b, _p, t, Tsize(b));			\
 	} while (false)
 
-gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, int copyall, int mayshare)
+gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, int copyall, bool mayshare)
 	__attribute__ ((__warn_unused_result__));
-gdk_export gdk_return BUNappend(BAT *b, const void *right, bit force)
+gdk_export gdk_return BUNappend(BAT *b, const void *right, bool force)
 	__attribute__ ((__warn_unused_result__));
-gdk_export gdk_return BATappend(BAT *b, BAT *n, BAT *s, bit force)
+gdk_export gdk_return BATappend(BAT *b, BAT *n, BAT *s, bool force)
 	__attribute__ ((__warn_unused_result__));
 
 gdk_export gdk_return BUNdelete(BAT *b, oid o)
@@ -1206,9 +1206,9 @@ gdk_export gdk_return BUNdelete(BAT *b, oid o)
 gdk_export gdk_return BATdel(BAT *b, BAT *d)
 	__attribute__ ((__warn_unused_result__));
 
-gdk_export gdk_return BUNinplace(BAT *b, BUN p, const void *right, bit force)
+gdk_export gdk_return BUNinplace(BAT *b, BUN p, const void *right, bool force)
 	__attribute__ ((__warn_unused_result__));
-gdk_export gdk_return BATreplace(BAT *b, BAT *p, BAT *n, bit force)
+gdk_export gdk_return BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 	__attribute__ ((__warn_unused_result__));
 
 /* Functions to perform a binary search on a sorted BAT.
@@ -1245,14 +1245,14 @@ typedef var_t stridx_t;
 
 #if SIZEOF_VAR_T == 8
 #define VarHeapValRaw(b,p,w)						\
-	((w) == 1 ? (var_t) ((unsigned char *) (b))[p] + GDK_VAROFFSET : \
-	 (w) == 2 ? (var_t) ((unsigned short *) (b))[p] + GDK_VAROFFSET : \
-	 (w) == 4 ? (var_t) ((unsigned int *) (b))[p] :			\
+	((w) == 1 ? (var_t) ((uint8_t *) (b))[p] + GDK_VAROFFSET :	\
+	 (w) == 2 ? (var_t) ((uint16_t *) (b))[p] + GDK_VAROFFSET :	\
+	 (w) == 4 ? (var_t) ((uint32_t *) (b))[p] :			\
 	 ((var_t *) (b))[p])
 #else
 #define VarHeapValRaw(b,p,w)						\
-	((w) == 1 ? (var_t) ((unsigned char *) (b))[p] + GDK_VAROFFSET : \
-	 (w) == 2 ? (var_t) ((unsigned short *) (b))[p] + GDK_VAROFFSET : \
+	((w) == 1 ? (var_t) ((uint8_t *) (b))[p] + GDK_VAROFFSET :	\
+	 (w) == 2 ? (var_t) ((uint16_t *) (b))[p] + GDK_VAROFFSET :	\
 	 ((var_t *) (b))[p])
 #endif
 #define VarHeapVal(b,p,w) ((size_t) VarHeapValRaw(b,p,w))
@@ -1330,7 +1330,7 @@ gdk_export void BATsetcapacity(BAT *b, BUN cnt);
 gdk_export void BATsetcount(BAT *b, BUN cnt);
 gdk_export BUN BATgrows(BAT *b);
 gdk_export gdk_return BATkey(BAT *b, bool onoff);
-gdk_export gdk_return BATmode(BAT *b, int onoff);
+gdk_export gdk_return BATmode(BAT *b, int mode);
 gdk_export gdk_return BATroles(BAT *b, const char *tnme);
 gdk_export void BAThseqbase(BAT *b, oid o);
 gdk_export void BATtseqbase(BAT *b, oid o);
@@ -1357,9 +1357,9 @@ gdk_export int BATgetaccess(BAT *b);
  * @- BAT manipulation
  * @multitable @columnfractions 0.08 0.7
  * @item BAT *
- * @tab BATclear (BAT *b, int force)
+ * @tab BATclear (BAT *b, bool force)
  * @item BAT *
- * @tab COLcopy (BAT *b, int tt, int writeable, int role)
+ * @tab COLcopy (BAT *b, int tt, bool writeable, int role)
  * @end multitable
  *
  * The routine BATclear removes the binary associations, leading to an
@@ -1367,8 +1367,8 @@ gdk_export int BATgetaccess(BAT *b);
  * temporary copy is obtained with Colcopy. The new BAT has an unique
  * name.
  */
-gdk_export gdk_return BATclear(BAT *b, int force);
-gdk_export BAT *COLcopy(BAT *b, int tt, int writeable, int role);
+gdk_export gdk_return BATclear(BAT *b, bool force);
+gdk_export BAT *COLcopy(BAT *b, int tt, bool writable, int role);
 
 gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h)
 	__attribute__ ((__warn_unused_result__));
@@ -1428,7 +1428,7 @@ gdk_export gdk_return BATprint(BAT *b);
 /*
  * @- BAT clustering
  * @multitable @columnfractions 0.08 0.7
- * @item int
+ * @item bool
  * @tab BATordered (BAT *b)
  * @end multitable
  *
@@ -1445,10 +1445,10 @@ gdk_export gdk_return BATprint(BAT *b);
  * ordered. The result is returned and stored in the tsorted field of
  * the BAT.
  */
-gdk_export int BATkeyed(BAT *b);
-gdk_export int BATordered(BAT *b);
-gdk_export int BATordered_rev(BAT *b);
-gdk_export gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, int reverse, int stable)
+gdk_export bool BATkeyed(BAT *b);
+gdk_export bool BATordered(BAT *b);
+gdk_export bool BATordered_rev(BAT *b);
+gdk_export gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b, BAT *o, BAT *g, bool reverse, bool stable)
 	__attribute__ ((__warn_unused_result__));
 
 
@@ -1785,7 +1785,7 @@ typedef struct {
 	char name[IDLENGTH];
 	uint8_t storage;	/* stored as another type? */
 	bool linear;		/* atom can be ordered linearly */
-	unsigned short size;	/* fixed size of atom */
+	uint16_t size;		/* fixed size of atom */
 
 	/* automatically generated fields */
 	const void *atomNull;	/* global nil value */
@@ -1859,7 +1859,7 @@ gdk_export lng IMPSimprintsize(BAT *b);
 
 /* The ordered index structure */
 
-gdk_export gdk_return BATorderidx(BAT *b, int stable);
+gdk_export gdk_return BATorderidx(BAT *b, bool stable);
 gdk_export gdk_return GDKmergeidx(BAT *b, BAT**a, int n_ar);
 
 /*
@@ -2265,9 +2265,9 @@ gdk_export void GDKclrerr(void);
 #include "gdk_utils.h"
 
 /* functions defined in gdk_bat.c */
-gdk_export gdk_return void_replace_bat(BAT *b, BAT *p, BAT *u, bit force)
+gdk_export gdk_return void_replace_bat(BAT *b, BAT *p, BAT *u, bool force)
 	__attribute__ ((__warn_unused_result__));
-gdk_export gdk_return void_inplace(BAT *b, oid id, const void *val, bit force)
+gdk_export gdk_return void_inplace(BAT *b, oid id, const void *val, bool force)
 	__attribute__ ((__warn_unused_result__));
 gdk_export BAT *BATattach(int tt, const char *heapfile, int role);
 
@@ -2731,28 +2731,28 @@ gdk_export void BATsetprop(BAT *b, int idx, int type, void *v);
 #define JOIN_BAND	3
 #define JOIN_NE		(-3)
 
-gdk_export BAT *BATselect(BAT *b, BAT *s, const void *tl, const void *th, int li, int hi, int anti);
+gdk_export BAT *BATselect(BAT *b, BAT *s, const void *tl, const void *th, bool li, bool hi, bool anti);
 gdk_export BAT *BATthetaselect(BAT *b, BAT *s, const void *val, const char *op);
 
 gdk_export BAT *BATconstant(oid hseq, int tt, const void *val, BUN cnt, int role);
 gdk_export gdk_return BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr)
 	__attribute__ ((__warn_unused_result__));
 
-gdk_export gdk_return BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
+gdk_export gdk_return BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
 	__attribute__ ((__warn_unused_result__));
-gdk_export gdk_return BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
+gdk_export gdk_return BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
 	__attribute__ ((__warn_unused_result__));
-gdk_export gdk_return BATthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, int nil_matches, BUN estimate)
+gdk_export gdk_return BATthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, bool nil_matches, BUN estimate)
 	__attribute__ ((__warn_unused_result__));
-gdk_export gdk_return BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
+gdk_export gdk_return BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
 	__attribute__ ((__warn_unused_result__));
-gdk_export BAT *BATintersect(BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
-gdk_export BAT *BATdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate);
-gdk_export gdk_return BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int nil_matches, BUN estimate)
+gdk_export BAT *BATintersect(BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate);
+gdk_export BAT *BATdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate);
+gdk_export gdk_return BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
 	__attribute__ ((__warn_unused_result__));
-gdk_export gdk_return BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const void *c1, const void *c2, int li, int hi, BUN estimate)
+gdk_export gdk_return BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const void *c1, const void *c2, bool li, bool hi, BUN estimate)
 	__attribute__ ((__warn_unused_result__));
-gdk_export gdk_return BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, int li, int hi, BUN estimate)
+gdk_export gdk_return BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh, BAT *sl, BAT *sr, bool li, bool hi, BUN estimate)
 	__attribute__ ((__warn_unused_result__));
 gdk_export BAT *BATproject(BAT *l, BAT *r);
 gdk_export BAT *BATprojectchain(BAT **bats);
@@ -2764,7 +2764,7 @@ gdk_export BAT *BATunique(BAT *b, BAT *s);
 gdk_export BAT *BATmergecand(BAT *a, BAT *b);
 gdk_export BAT *BATintersectcand(BAT *a, BAT *b);
 
-gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT *grps, BUN n, int asc, int distinct)
+gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT *grps, BUN n, bool asc, bool distinct)
 	__attribute__ ((__warn_unused_result__));
 
 #include "gdk_calc.h"

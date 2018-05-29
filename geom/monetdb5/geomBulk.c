@@ -48,7 +48,7 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, int *columnType, int *columnSRID)
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, outWKB, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, outWKB, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			GDKfree(outWKB);
@@ -96,7 +96,7 @@ wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe)
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, outSingle, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, outSingle, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			GDKfree(outSingle);
@@ -149,7 +149,7 @@ wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, &outDbl, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, &outDbl, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			throw(MAL, "batgeom.coordinateFromMBR", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -196,7 +196,7 @@ WKBtoSTRflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (char 
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, outSingle, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, outSingle, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			GDKfree(outSingle);
@@ -263,7 +263,7 @@ WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (wkb **, wkb **), const 
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, outSingle, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, outSingle, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			GDKfree(outSingle);
@@ -324,7 +324,7 @@ WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) 
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, outSingle, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, outSingle, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			GDKfree(outSingle);
@@ -384,7 +384,7 @@ WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (bit *, wkb **), const c
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, &outSingle, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, &outSingle, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -467,7 +467,7 @@ WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (int *, wkb **), const c
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, &outSingle, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, &outSingle, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -531,7 +531,7 @@ WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (int *
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, &outSingle, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, &outSingle, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			throw(MAL, name, SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -595,7 +595,7 @@ wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, &outSingle, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, &outSingle, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			throw(MAL, "batgeom.wkbGetCoordinate", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -654,7 +654,7 @@ wkbBox2D_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 			BBPreclaim(outBAT);
 			goto clean;
 		}
-		if (BUNappend(outBAT, outSingle, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, outSingle, false) != GDK_SUCCEED) {
 			BBPreclaim(outBAT);
 			GDKfree(outSingle);
 			ret = createException(MAL, "batgeom.wkbBox2D", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -712,7 +712,7 @@ wkbContains_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 			BBPreclaim(outBAT);
 			goto clean;
 		}
-		if (BUNappend(outBAT, &outBIT, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, &outBIT, false) != GDK_SUCCEED) {
 			BBPreclaim(outBAT);
 			ret = createException(MAL, "batgeom.Contains", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			goto clean;
@@ -761,7 +761,7 @@ wkbContains_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, &outBIT, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, &outBIT, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			throw(MAL, "batgeom.Contains", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -806,7 +806,7 @@ wkbContains_bat_geom(bat *outBAT_id, bat *inBAT_id, wkb **geomWKB)
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, &outBIT, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, &outBIT, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			throw(MAL, "batgeom.Contains", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -849,7 +849,7 @@ wkbFromWKB_bat(bat *outBAT_id, bat *inBAT_id)
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, outWKB, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, outWKB, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			GDKfree(outWKB);
@@ -927,7 +927,7 @@ wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *
 			BBPreclaim(outBAT);
 			goto clean;
 		}
-		if (BUNappend(outBAT, pointWKB, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, pointWKB, false) != GDK_SUCCEED) {
 			BBPreclaim(outBAT);
 			GDKfree(pointWKB);
 			ret = createException(MAL, "batgeom.WkbMakePoint", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -984,7 +984,7 @@ wkbSetSRID_bat(bat *outBAT_id, bat *inBAT_id, int *srid)
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, outWKB, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, outWKB, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			GDKfree(outWKB);
@@ -1039,7 +1039,7 @@ wkbDistance_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 			BBPreclaim(outBAT);
 			goto clean;
 		}
-		if (BUNappend(outBAT, &distanceVal, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, &distanceVal, false) != GDK_SUCCEED) {
 			BBPreclaim(outBAT);
 			ret = createException(MAL, "batgeom.Distance", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			goto clean;
@@ -1089,7 +1089,7 @@ wkbDistance_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, &distanceVal, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, &distanceVal, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			throw(MAL, "batgeom.Distance", SQLSTATE(HY001) MAL_MALLOC_FAIL);
@@ -1167,8 +1167,8 @@ wkbFilter_bat(bat *aBATfiltered_id, bat *bBATfiltered_id, bat *aBAT_id, bat *bBA
 			return err;
 		}
 		if (outBIT) {
-			if (BUNappend(aBATfiltered, aWKB, FALSE) != GDK_SUCCEED ||
-			    BUNappend(bBATfiltered, bWKB, FALSE) != GDK_SUCCEED) {
+			if (BUNappend(aBATfiltered, aWKB, false) != GDK_SUCCEED ||
+			    BUNappend(bBATfiltered, bWKB, false) != GDK_SUCCEED) {
 				BBPunfix(aBAT->batCacheid);
 				BBPunfix(bBAT->batCacheid);
 				BBPunfix(aBATfiltered->batCacheid);
@@ -1249,7 +1249,7 @@ wkbFilter_geom_bat(bat *BATfiltered_id, wkb **geomWKB, bat *BAToriginal_id)
 		}
 
 		if (outBIT) {
-			if (BUNappend(BATfiltered, WKBoriginal, FALSE) != GDK_SUCCEED) {
+			if (BUNappend(BATfiltered, WKBoriginal, false) != GDK_SUCCEED) {
 				BBPunfix(BAToriginal->batCacheid);
 				BBPunfix(BATfiltered->batCacheid);
 				GDKfree(geomMBR);
@@ -1310,7 +1310,7 @@ wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
 			BBPunfix(outBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, outMBR, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, outMBR, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			GDKfree(outMBR);
@@ -1386,7 +1386,7 @@ wkbMakeLine_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 			BBPunfix(bBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, outWKB, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, outWKB, false) != GDK_SUCCEED) {
 			BBPunfix(outBAT->batCacheid);
 			BBPunfix(aBAT->batCacheid);
 			BBPunfix(bBAT->batCacheid);
@@ -1451,7 +1451,7 @@ wkbUnion_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 			BBPunfix(bBAT->batCacheid);
 			return err;
 		}
-		if (BUNappend(outBAT, outWKB, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(outBAT, outWKB, false) != GDK_SUCCEED) {
 			BBPunfix(outBAT->batCacheid);
 			BBPunfix(aBAT->batCacheid);
 			BBPunfix(bBAT->batCacheid);

@@ -230,12 +230,12 @@ static BAT* sexp_to_bat(SEXP s, int type) {
 			if (rse == NA_STRING) {
 				b->tnil = 1;
 				b->tnonil = 0;
-				if (BUNappend(b, str_nil, FALSE) != GDK_SUCCEED) {
+				if (BUNappend(b, str_nil, false) != GDK_SUCCEED) {
 					BBPreclaim(b);
 					b = NULL;
 				}
 			} else {
-				if (BUNappend(b, CHAR(rse), FALSE) != GDK_SUCCEED) {
+				if (BUNappend(b, CHAR(rse), false) != GDK_SUCCEED) {
 					BBPreclaim(b);
 					b = NULL;
 				}

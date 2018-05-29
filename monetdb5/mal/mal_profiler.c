@@ -689,19 +689,19 @@ TRACEtable(BAT **r)
 		MT_lock_unset(&mal_profileLock);
 		return -1;       /* not initialized */
 	}
-	r[0] = COLcopy(TRACE_id_event, TRACE_id_event->ttype, 0, TRANSIENT);
-	r[1] = COLcopy(TRACE_id_time, TRACE_id_time->ttype, 0, TRANSIENT);
-	r[2] = COLcopy(TRACE_id_pc, TRACE_id_pc->ttype, 0, TRANSIENT);
-	r[3] = COLcopy(TRACE_id_thread, TRACE_id_thread->ttype, 0, TRANSIENT);
-	r[4] = COLcopy(TRACE_id_ticks, TRACE_id_ticks->ttype, 0, TRANSIENT);
-	r[5] = COLcopy(TRACE_id_rssMB, TRACE_id_rssMB->ttype, 0, TRANSIENT);
-	r[6] = COLcopy(TRACE_id_tmpspace, TRACE_id_tmpspace->ttype, 0, TRANSIENT);
-	r[7] = COLcopy(TRACE_id_inblock, TRACE_id_inblock->ttype, 0, TRANSIENT);
-	r[8] = COLcopy(TRACE_id_oublock, TRACE_id_oublock->ttype, 0, TRANSIENT);
-	r[9] = COLcopy(TRACE_id_minflt, TRACE_id_minflt->ttype, 0, TRANSIENT);
-	r[10] = COLcopy(TRACE_id_majflt, TRACE_id_majflt->ttype, 0, TRANSIENT);
-	r[11] = COLcopy(TRACE_id_nvcsw, TRACE_id_nvcsw->ttype, 0, TRANSIENT);
-	r[12] = COLcopy(TRACE_id_stmt, TRACE_id_stmt->ttype, 0, TRANSIENT);
+	r[0] = COLcopy(TRACE_id_event, TRACE_id_event->ttype, false, TRANSIENT);
+	r[1] = COLcopy(TRACE_id_time, TRACE_id_time->ttype, false, TRANSIENT);
+	r[2] = COLcopy(TRACE_id_pc, TRACE_id_pc->ttype, false, TRANSIENT);
+	r[3] = COLcopy(TRACE_id_thread, TRACE_id_thread->ttype, false, TRANSIENT);
+	r[4] = COLcopy(TRACE_id_ticks, TRACE_id_ticks->ttype, false, TRANSIENT);
+	r[5] = COLcopy(TRACE_id_rssMB, TRACE_id_rssMB->ttype, false, TRANSIENT);
+	r[6] = COLcopy(TRACE_id_tmpspace, TRACE_id_tmpspace->ttype, false, TRANSIENT);
+	r[7] = COLcopy(TRACE_id_inblock, TRACE_id_inblock->ttype, false, TRANSIENT);
+	r[8] = COLcopy(TRACE_id_oublock, TRACE_id_oublock->ttype, false, TRANSIENT);
+	r[9] = COLcopy(TRACE_id_minflt, TRACE_id_minflt->ttype, false, TRANSIENT);
+	r[10] = COLcopy(TRACE_id_majflt, TRACE_id_majflt->ttype, false, TRANSIENT);
+	r[11] = COLcopy(TRACE_id_nvcsw, TRACE_id_nvcsw->ttype, false, TRANSIENT);
+	r[12] = COLcopy(TRACE_id_stmt, TRACE_id_stmt->ttype, false, TRANSIENT);
 	MT_lock_unset(&mal_profileLock);
 	return 13;
 }
@@ -714,31 +714,31 @@ getTrace(const char *nme)
 	MT_lock_set(&mal_profileLock);
 	if (TRACE_init) {
 		if (strcmp(nme, "event") == 0)
-			bn = COLcopy(TRACE_id_event, TRACE_id_event->ttype, 0, TRANSIENT);
+			bn = COLcopy(TRACE_id_event, TRACE_id_event->ttype, false, TRANSIENT);
 		else if (strcmp(nme, "time") == 0)
-			bn = COLcopy(TRACE_id_time, TRACE_id_time->ttype, 0, TRANSIENT);
+			bn = COLcopy(TRACE_id_time, TRACE_id_time->ttype, false, TRANSIENT);
 		else if (strcmp(nme, "pc") == 0)
-			bn = COLcopy(TRACE_id_pc, TRACE_id_pc->ttype, 0, TRANSIENT);
+			bn = COLcopy(TRACE_id_pc, TRACE_id_pc->ttype, false, TRANSIENT);
 		else if (strcmp(nme, "thread") == 0)
-			bn = COLcopy(TRACE_id_thread, TRACE_id_thread->ttype, 0, TRANSIENT);
+			bn = COLcopy(TRACE_id_thread, TRACE_id_thread->ttype, false, TRANSIENT);
 		else if (strcmp(nme, "usec") == 0)
-			bn = COLcopy(TRACE_id_ticks, TRACE_id_ticks->ttype, 0, TRANSIENT);
+			bn = COLcopy(TRACE_id_ticks, TRACE_id_ticks->ttype, false, TRANSIENT);
 		else if (strcmp(nme, "rssMB") == 0)
-			bn = COLcopy(TRACE_id_rssMB, TRACE_id_rssMB->ttype, 0, TRANSIENT);
+			bn = COLcopy(TRACE_id_rssMB, TRACE_id_rssMB->ttype, false, TRANSIENT);
 		else if (strcmp(nme, "tmpspace") == 0)
-			bn = COLcopy(TRACE_id_tmpspace, TRACE_id_tmpspace->ttype, 0, TRANSIENT);
+			bn = COLcopy(TRACE_id_tmpspace, TRACE_id_tmpspace->ttype, false, TRANSIENT);
 		else if (strcmp(nme, "reads") == 0)
-			bn = COLcopy(TRACE_id_inblock, TRACE_id_inblock->ttype, 0, TRANSIENT);
+			bn = COLcopy(TRACE_id_inblock, TRACE_id_inblock->ttype, false, TRANSIENT);
 		else if (strcmp(nme, "writes") == 0)
-			bn = COLcopy(TRACE_id_oublock, TRACE_id_oublock->ttype, 0, TRANSIENT);
+			bn = COLcopy(TRACE_id_oublock, TRACE_id_oublock->ttype, false, TRANSIENT);
 		else if (strcmp(nme, "minflt") == 0)
-			bn = COLcopy(TRACE_id_minflt, TRACE_id_minflt->ttype, 0, TRANSIENT);
+			bn = COLcopy(TRACE_id_minflt, TRACE_id_minflt->ttype, false, TRANSIENT);
 		else if (strcmp(nme, "majflt") == 0)
-			bn = COLcopy(TRACE_id_majflt, TRACE_id_majflt->ttype, 0, TRANSIENT);
+			bn = COLcopy(TRACE_id_majflt, TRACE_id_majflt->ttype, false, TRANSIENT);
 		else if (strcmp(nme, "nvcsw") == 0)
-			bn = COLcopy(TRACE_id_nvcsw, TRACE_id_nvcsw->ttype, 0, TRANSIENT);
+			bn = COLcopy(TRACE_id_nvcsw, TRACE_id_nvcsw->ttype, false, TRANSIENT);
 		else if (strcmp(nme, "stmt") == 0)
-			bn = COLcopy(TRACE_id_stmt, TRACE_id_stmt->ttype, 0, TRANSIENT);
+			bn = COLcopy(TRACE_id_stmt, TRACE_id_stmt->ttype, false, TRANSIENT);
 	}
 	MT_lock_unset(&mal_profileLock);
 	return bn;
@@ -901,20 +901,20 @@ cachedProfilerEvent(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		MT_lock_unset(&mal_profileLock);
 		return;
 	}
-	errors += BUNappend(TRACE_id_event, &TRACE_event, FALSE) != GDK_SUCCEED;
-	errors += BUNappend(TRACE_id_pc, buf, FALSE) != GDK_SUCCEED;
+	errors += BUNappend(TRACE_id_event, &TRACE_event, false) != GDK_SUCCEED;
+	errors += BUNappend(TRACE_id_pc, buf, false) != GDK_SUCCEED;
 	snprintf(buf, sizeof(buf), LLFMT ".%06ld", clock / 1000000, (long) (clock % 1000000));
-	errors += BUNappend(TRACE_id_time, buf, FALSE) != GDK_SUCCEED;
-	errors += BUNappend(TRACE_id_thread, &tid, FALSE) != GDK_SUCCEED;
-	errors += BUNappend(TRACE_id_ticks, &pci->ticks, FALSE) != GDK_SUCCEED;
-	errors += BUNappend(TRACE_id_rssMB, &rssMB, FALSE) != GDK_SUCCEED;
-	errors += BUNappend(TRACE_id_tmpspace, &tmpspace, FALSE) != GDK_SUCCEED;
-	errors += BUNappend(TRACE_id_inblock, &v1, FALSE) != GDK_SUCCEED;
-	errors += BUNappend(TRACE_id_oublock, &v2, FALSE) != GDK_SUCCEED;
-	errors += BUNappend(TRACE_id_minflt, &v3, FALSE) != GDK_SUCCEED;
-	errors += BUNappend(TRACE_id_majflt, &v4, FALSE) != GDK_SUCCEED;
-	errors += BUNappend(TRACE_id_nvcsw, &v5, FALSE) != GDK_SUCCEED;
-	errors += BUNappend(TRACE_id_stmt, c, FALSE) != GDK_SUCCEED;
+	errors += BUNappend(TRACE_id_time, buf, false) != GDK_SUCCEED;
+	errors += BUNappend(TRACE_id_thread, &tid, false) != GDK_SUCCEED;
+	errors += BUNappend(TRACE_id_ticks, &pci->ticks, false) != GDK_SUCCEED;
+	errors += BUNappend(TRACE_id_rssMB, &rssMB, false) != GDK_SUCCEED;
+	errors += BUNappend(TRACE_id_tmpspace, &tmpspace, false) != GDK_SUCCEED;
+	errors += BUNappend(TRACE_id_inblock, &v1, false) != GDK_SUCCEED;
+	errors += BUNappend(TRACE_id_oublock, &v2, false) != GDK_SUCCEED;
+	errors += BUNappend(TRACE_id_minflt, &v3, false) != GDK_SUCCEED;
+	errors += BUNappend(TRACE_id_majflt, &v4, false) != GDK_SUCCEED;
+	errors += BUNappend(TRACE_id_nvcsw, &v5, false) != GDK_SUCCEED;
+	errors += BUNappend(TRACE_id_stmt, c, false) != GDK_SUCCEED;
 	if (errors > 0) {
 		/* stop profiling if an error occurred */
 		sqlProfiling = FALSE;

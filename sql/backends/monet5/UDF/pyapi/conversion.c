@@ -864,7 +864,7 @@ BAT *PyObject_ConvertToBAT(PyReturn *ret, sql_subtype *type, int bat_type,
 				ele_blob->nitems = blob_len;
 				memcpy(ele_blob->data, data, blob_len);
 			}
-			if (BUNappend(b, ele_blob, FALSE) != GDK_SUCCEED) {
+			if (BUNappend(b, ele_blob, false) != GDK_SUCCEED) {
 				goto bunins_failed;
 			}
 			GDKfree(ele_blob);
@@ -1025,7 +1025,7 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 				return createException(MAL, "pyapi.eval",
 									   SQLSTATE(PY000) "Failed to convert element to string.");
 			}
-			if (BUNappend(*ret_bat, result, FALSE) != GDK_SUCCEED) {
+			if (BUNappend(*ret_bat, result, false) != GDK_SUCCEED) {
 				BBPunfix((*ret_bat)->batCacheid);
 				throw(MAL, "pyapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 			}

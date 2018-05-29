@@ -1332,8 +1332,8 @@ union lng_tzone {
 		if ((err = MTIMEtzone_create(&ltz.tzval, &ticks)) != MAL_SUCCEED) \
 			return err;													\
 		vr.val.lval = ltz.lval;											\
-		if (BUNappend(tzbatnme, (X1), FALSE) != GDK_SUCCEED ||			\
-			BUNappend(tzbatdef, &vr.val.lval, FALSE) != GDK_SUCCEED)	\
+		if (BUNappend(tzbatnme, (X1), false) != GDK_SUCCEED ||			\
+			BUNappend(tzbatdef, &vr.val.lval, false) != GDK_SUCCEED)	\
 			goto bailout;												\
 	} while (0)
 
@@ -1344,8 +1344,8 @@ union lng_tzone {
 		if ((err = MTIMEtzone_create_dst(&ltz.tzval, &ticks, &(X3), &(X4))) != MAL_SUCCEED) \
 			return err;													\
 		vr.val.lval = ltz.lval;											\
-		if (BUNappend(tzbatnme, (X1), FALSE) != GDK_SUCCEED ||			\
-			BUNappend(tzbatdef, &vr.val.lval, FALSE) != GDK_SUCCEED)	\
+		if (BUNappend(tzbatnme, (X1), false) != GDK_SUCCEED ||			\
+			BUNappend(tzbatdef, &vr.val.lval, false) != GDK_SUCCEED)	\
 			goto bailout;												\
 	} while (0)
 

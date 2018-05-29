@@ -136,8 +136,8 @@ GDKgetenv_int(const char *name, int def)
 gdk_return
 GDKsetenv(const char *name, const char *value)
 {
-	if (BUNappend(GDKkey, name, FALSE) != GDK_SUCCEED ||
-	    BUNappend(GDKval, value, FALSE) != GDK_SUCCEED)
+	if (BUNappend(GDKkey, name, false) != GDK_SUCCEED ||
+	    BUNappend(GDKval, value, false) != GDK_SUCCEED)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -493,7 +493,7 @@ GDKinit(opt *set, int setlen)
 #endif
 #endif
 	MT_init();
-	BBPdirty(1);
+	BBP_dirty = true;
 
 	/* now try to lock the database: go through all farms, and if
 	 * we see a new directory, lock it */

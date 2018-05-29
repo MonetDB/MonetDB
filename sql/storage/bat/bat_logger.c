@@ -70,7 +70,7 @@ bl_postversion( void *lg)
 
 			if (eclass == EC_GEOM)		/* old EC_EXTERNAL */
 				eclass++;		/* shift up */
-			if (BUNappend(tne, &eclass, TRUE) != GDK_SUCCEED) {
+			if (BUNappend(tne, &eclass, true) != GDK_SUCCEED) {
 				bat_destroy(tne);
 				bat_destroy(te);
 				return GDK_FAIL;
@@ -100,7 +100,7 @@ bl_postversion( void *lg)
 			for (p = 0, q = BUNlast(te); p < q; p++) {
 				bte inout = (bte) *(bit*)BUNtail(bi, p);
 
-				if (BUNappend(tne, &inout, TRUE) != GDK_SUCCEED) {
+				if (BUNappend(tne, &inout, true) != GDK_SUCCEED) {
 					bat_destroy(tne);
 					bat_destroy(te);
 					return GDK_FAIL;

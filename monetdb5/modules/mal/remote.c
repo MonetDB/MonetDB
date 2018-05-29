@@ -119,7 +119,7 @@ str RMTresolve(bat *ret, str *pat) {
 		throw(MAL, "remote.resolve", "unknown failure when resolving pattern");
 
 	while (*redirs != NULL) {
-		if (BUNappend(list, (ptr)*redirs, FALSE) != GDK_SUCCEED) {
+		if (BUNappend(list, (ptr)*redirs, false) != GDK_SUCCEED) {
 			BBPreclaim(list);
 			do
 				free(*redirs);
@@ -597,7 +597,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		if (ATOMvarsized(t)) {
 			while (mapi_fetch_row(mhdl)) {
 				var = mapi_fetch_field(mhdl, 1);
-				if (BUNappend(b, var == NULL ? str_nil : var, FALSE) != GDK_SUCCEED) {
+				if (BUNappend(b, var == NULL ? str_nil : var, false) != GDK_SUCCEED) {
 					BBPreclaim(b);
 					throw(MAL, "remote.get", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 				}
@@ -610,7 +610,7 @@ str RMTget(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 				s = 0;
 				r = NULL;
 				if (ATOMfromstr(t, &r, &s, var) < 0 ||
-					BUNappend(b, r, FALSE) != GDK_SUCCEED) {
+					BUNappend(b, r, false) != GDK_SUCCEED) {
 					BBPreclaim(b);
 					GDKfree(r);
 					throw(MAL, "remote.get", GDK_EXCEPTION);
@@ -1116,7 +1116,7 @@ str RMTbatload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		s = 0;
 		r = NULL;
 		if (ATOMfromstr(t, &r, &s, var) < 0 ||
-			BUNappend(b, r, FALSE) != GDK_SUCCEED) {
+			BUNappend(b, r, false) != GDK_SUCCEED) {
 			BBPreclaim(b);
 			GDKfree(r);
 			throw(MAL, "remote.get", GDK_EXCEPTION);
@@ -1333,13 +1333,13 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in)
 	}
 
 	if (bb.tailsize > 0) {
-		if (HEAPextend(&b->theap, bb.tailsize, TRUE) != GDK_SUCCEED ||
+		if (HEAPextend(&b->theap, bb.tailsize, true) != GDK_SUCCEED ||
 			mnstr_read(in, b->theap.base, bb.tailsize, 1) < 0)
 			goto bailout;
 		b->theap.dirty = TRUE;
 	}
 	if (bb.theapsize > 0) {
-		if (HEAPextend(b->tvheap, bb.theapsize, TRUE) != GDK_SUCCEED ||
+		if (HEAPextend(b->tvheap, bb.theapsize, true) != GDK_SUCCEED ||
 			mnstr_read(in, b->tvheap->base, bb.theapsize, 1) < 0)
 			goto bailout;
 		b->tvheap->free = bb.theapsize;

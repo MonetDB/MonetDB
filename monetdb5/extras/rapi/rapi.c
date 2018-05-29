@@ -316,14 +316,14 @@ str RAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bit groupe
 				goto wrapup;
 			}
 			if ( getArgType(mb,pci,i) == TYPE_str) {
-				if (BUNappend(b, *getArgReference_str(stk, pci, i), FALSE) != GDK_SUCCEED) {
+				if (BUNappend(b, *getArgReference_str(stk, pci, i), false) != GDK_SUCCEED) {
 					BBPreclaim(b);
 					b = NULL;
 					msg = createException(MAL, "rapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
 					goto wrapup;
 				}
 			} else {
-				if (BUNappend(b, getArgReference(stk, pci, i), FALSE) != GDK_SUCCEED) {
+				if (BUNappend(b, getArgReference(stk, pci, i), false) != GDK_SUCCEED) {
 					BBPreclaim(b);
 					b = NULL;
 					msg = createException(MAL, "rapi.eval", SQLSTATE(HY001) MAL_MALLOC_FAIL);
