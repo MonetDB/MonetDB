@@ -87,10 +87,16 @@ rewrite_replica( mvc *sql, sql_rel *rel, sql_table *t, sql_part *pd, int remote_
 
 	/* set_remote() */
 	if (remote_prop && p && isRemote(p)) {
-		char *uri = p->query;
-		prop *p = r->p = prop_create(sql->sa, PROP_REMOTE, r->p); 
+		char *local_name = sa_strconcat(sql->sa, sa_strconcat(sql->sa, p->s->base.name, "."), p->base.name);
+		if (!local_name) {
+			return NULL;
+		}
+		prop *p = r->p = prop_create(sql->sa, PROP_REMOTE, r->p);
+		if (!p) {
+			return NULL;
+		}
 
-		p->value = uri;
+		p->value = local_name;
 	}
 	return r;
 }
@@ -285,10 +291,17 @@ distribute(mvc *sql, sql_rel *rel)
 
 		/* set_remote() */
 		if (t && isRemote(t)) {
-			char *uri = t->query;
+			//TODO: check for allocation failure
+			char *local_name = sa_strconcat(sql->sa, sa_strconcat(sql->sa, t->s->base.name, "."), t->base.name);
+			if (!local_name) {
+				return NULL;
+			}
 
-			p = rel->p = prop_create(sql->sa, PROP_REMOTE, rel->p); 
-			p->value = uri;
+			p = rel->p = prop_create(sql->sa, PROP_REMOTE, rel->p);
+			if (!p) {
+				return NULL;
+			}
+			p->value = local_name;
 		}
 		break;
 	}

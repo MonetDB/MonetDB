@@ -24,6 +24,9 @@ comment "returns a newly created connection for uri, using user name and passwor
 command connect(uri:str, user:str, passwd:str, scen:str):str
 address RMTconnectScen
 comment "returns a newly created connection for uri, using user name, password and scenario";
+pattern connect(table:str, schen:str):str
+address RMTconnectTable
+comment "return a newly created connection for a table. username and password should be in the vault"
 
 command disconnect(conn:str):void
 address RMTdisconnect

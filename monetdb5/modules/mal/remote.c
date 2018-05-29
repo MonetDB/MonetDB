@@ -56,6 +56,8 @@
 #include "monetdb_config.h"
 #include "remote.h"
 
+#include "mal_authorize.h"
+
 /*
  * Technically, these methods need to be serialised per connection,
  * hence a scheduler that interleaves e.g. multiple get calls, simply
@@ -253,6 +255,59 @@ str RMTconnect(
 {
 	str scen = "mal";
 	return RMTconnectScen(ret, uri, user, passwd, &scen);
+}
+
+str
+RMTconnectTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	char *local_table;
+	char *remoteuser;
+	char *passwd;
+	char *uri;
+	char *tmp;
+	char *ret;
+	str scen;
+	str msg;
+	ValPtr v;
+
+	(void)mb;
+	(void)cntxt;
+
+	local_table = *getArgReference_str(stk, pci, 1);
+	scen = *getArgReference_str(stk, pci, 2);
+	if (local_table == NULL || strcmp(local_table, (str)str_nil) == 0) {
+		throw(ILLARG, "remote.connect", ILLEGAL_ARGUMENT ": local table is NULL or nil");
+	}
+
+	rethrow("remote.connect", tmp, AUTHgetRemoteTableCredentials(local_table, &uri, &remoteuser, &passwd));
+
+	/* The password we just got is hashed. Add the byte \1 in front to
+	 * signal this fact to the mapi. */
+	size_t pwlen = strlen(passwd);
+	char *pwhash = (char*)GDKmalloc(pwlen + 2);
+	if (pwhash == NULL) {
+		GDKfree(remoteuser);
+		GDKfree(passwd);
+		throw(MAL, "remote.connect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+	}
+	snprintf(pwhash, pwlen + 2, "\1%s", passwd);
+
+	msg = RMTconnectScen(&ret, &uri, &remoteuser, &pwhash, &scen);
+
+	GDKfree(passwd);
+	GDKfree(pwhash);
+
+	if (msg == MAL_SUCCEED) {
+		v = &stk->stk[pci->argv[0]];
+		v->vtype = TYPE_str;
+		if((v->val.sval = GDKstrdup(ret)) == NULL) {
+			GDKfree(ret);
+			throw(MAL, "remote.connect", SQLSTATE(HY001) MAL_MALLOC_FAIL);
+		}
+	}
+
+	GDKfree(ret);
+	return msg;
 }
 
 

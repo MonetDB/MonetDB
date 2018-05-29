@@ -213,8 +213,7 @@ rel_psm_declare_table(mvc *sql, dnode *n)
 		return sql_error(sql, 01, SQLSTATE(42000) "Variable '%s' already declared", name);
 
 	assert(n->next->next->next->type == type_int);
-
-	rel = rel_create_table(sql, cur_schema(sql), SQL_DECLARED_TABLE, NULL, name, n->next->next->data.sym, n->next->next->next->data.i_val, NULL, 0);
+	rel = rel_create_table(sql, cur_schema(sql), SQL_DECLARED_TABLE, NULL, name, n->next->next->data.sym, n->next->next->next->data.i_val, NULL, NULL, NULL, false, 0);
 
 	if (!rel)
 		return NULL;

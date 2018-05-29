@@ -238,6 +238,7 @@ Ready.
 \dSf sys."queue"
 \dSf sys."radians"
 \dSf sys."rejects"
+\dSf sys."remote_table_credentials"
 \dSf sys."replicabeat"
 \dSf sys."replicaclock"
 \dSf sys."replicate"
@@ -666,6 +667,7 @@ SYSTEM FUNCTION         sys.radians
 SYSTEM FUNCTION         sys.rand
 SYSTEM FUNCTION         sys.rank
 SYSTEM FUNCTION         sys.rejects
+SYSTEM FUNCTION         sys.remote_table_credentials
 SYSTEM FUNCTION         sys.repeat
 SYSTEM FUNCTION         sys.replace
 SYSTEM PROCEDURE        sys.replicabeat
@@ -1099,6 +1101,7 @@ create procedure sys.querylog_enable(threshold smallint) external name sql.query
 create function sys.queue() returns table(qtag bigint, "user" string, started timestamp, estimate timestamp, progress int, status string, tag oid, query string) external name sql.sysmon_queue;
 create function radians(d double) returns double return d*pi()/180;
 create function sys.rejects() returns table(rowid bigint, fldid int, "message" string, "input" string) external name sql.copy_rejects;
+create function sys.remote_table_credentials (tablename string) returns table ("uri" string, "username" string, "hash" string) external name sql.rt_credentials;
 create procedure replicabeat(duration integer) external name wlr."setreplicabeat";
 create function replicaclock() returns string external name wlr."getreplicaclock";
 create procedure replicate() external name wlr.replicate;
@@ -2586,6 +2589,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys",	"rand",	"sqlrand",	"mmath",	"Internal C",	"Scalar function",	true,	false,	false,	"res_0",	"int",	32,	0,	"out",	"arg_1",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"rank",	"rank",	"sql",	"Internal C",	"Analytic function",	false,	false,	false,	"res_0",	"int",	32,	0,	"out",	"arg_1",	"any",	0,	0,	"in",	"arg_2",	"boolean",	1,	0,	"in",	"arg_3",	"boolean",	1,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"rejects",	"create function sys.rejects() returns table(rowid bigint, fldid int, \"message\" string, \"input\" string) external name sql.copy_rejects;",	"sql",	"MAL",	"Function returning a table",	false,	false,	false,	"rowid",	"bigint",	64,	0,	"out",	"fldid",	"int",	32,	0,	"out",	"message",	"clob",	0,	0,	"out",	"input",	"clob",	0,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys",	"remote_table_credentials",	"create function sys.remote_table_credentials (tablename string) returns table (\"uri\" string, \"username\" string, \"hash\" string) external name sql.rt_credentials;",	"sql",	"MAL",	"Function returning a table",	false,	false,	false,	"uri",	"clob",	0,	0,	"out",	"username",	"clob",	0,	0,	"out",	"hash",	"clob",	0,	0,	"out",	"tablename",	"clob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"repeat",	"repeat",	"str",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"char",	0,	0,	"out",	"arg_1",	"char",	0,	0,	"in",	"arg_2",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"repeat",	"repeat",	"str",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"clob",	0,	0,	"out",	"arg_1",	"clob",	0,	0,	"in",	"arg_2",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys",	"repeat",	"repeat",	"str",	"Internal C",	"Scalar function",	false,	false,	false,	"res_0",	"varchar",	0,	0,	"out",	"arg_1",	"varchar",	0,	0,	"in",	"arg_2",	"int",	32,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -5424,6 +5428,7 @@ drop function pcre_replace(string, string, string, string);
 [ "rand"	]
 [ "rank"	]
 [ "rejects"	]
+[ "remote_table_credentials"	]
 [ "repeat"	]
 [ "repeat"	]
 [ "repeat"	]

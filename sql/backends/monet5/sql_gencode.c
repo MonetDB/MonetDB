@@ -277,14 +277,14 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	MalBlkPtr curBlk = 0;
 	InstrPtr curInstr = 0, p, o;
 	Symbol backup = NULL;
-	const char *uri = mapiuri_uri(prp->value, m->sa);
+	const char *local_tbl = prp->value;
 	node *n;
 	int i, q, v;
 	int *lret, *rret;
 	char *lname;
 	sql_rel *r = rel;
 
-	if(uri == NULL)
+	if(local_tbl == NULL)
 		return -1;
 
 	lname = GDKstrdup(name);
@@ -356,11 +356,9 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		lret[i] = getArg(p, 0);
 	}
 
-	/* q := remote.connect("uri", "user", "pass", "language"); */
+	/* q := remote.connect("schema.table", "msql"); */
 	p = newStmt(curBlk, remoteRef, connectRef);
-	p = pushStr(curBlk, p, uri);
-	p = pushStr(curBlk, p, "monetdb");
-	p = pushStr(curBlk, p, "monetdb");
+	p = pushStr(curBlk, p, local_tbl);
 	p = pushStr(curBlk, p, "msql");
 	q = getArg(p, 0);
 
