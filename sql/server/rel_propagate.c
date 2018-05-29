@@ -46,18 +46,48 @@ rel_generate_anti_expression(mvc *sql, sql_rel **anti_rel, sql_table *mt, sql_ta
 	return res;
 }
 
+static sql_rel*
+rel_create_common_relation(mvc *sql, sql_rel *rel, sql_table *t)
+{
+	if(isPartitionedByColumnTable(t)) {
+		return rel_dup(rel->r);
+	} else if(isPartitionedByExpressionTable(t)) {
+		sql_rel *inserts;
+		list *l = new_exp_list(sql->sa);
+
+		rel->r = rel_project(sql->sa, rel->r, l);
+		set_processed((sql_rel*)rel->r);
+		inserts = ((sql_rel*)(rel->r))->l;
+		for (node *n = t->columns.set->h, *m = inserts->exps->h; n && m; n = n->next, m = m->next) {
+			sql_column *col = n->data;
+			sql_exp *before = m->data;
+			sql_exp *help = exp_column(sql->sa, t->base.name, col->base.name, exp_subtype(before), before->card,
+									   has_nil(before), is_intern(before));
+			help->l = sa_strdup(sql->sa, exp_relname(before));
+			help->r = sa_strdup(sql->sa, exp_name(before));
+			list_append(l, help);
+		}
+		return rel_dup(rel->r);
+	} else {
+		assert(0);
+	}
+	return NULL;
+}
+
 static sql_exp*
-rel_generate_anti_insert_expression(mvc *sql, sql_rel *anti_rel, sql_table *t)
+rel_generate_anti_insert_expression(mvc *sql, sql_rel **anti_rel, sql_table *t)
 {
 	sql_exp* res = NULL;
 
 	if(isPartitionedByColumnTable(t)) {
 		int colr = t->part.pcol->colnr;
-		res = list_fetch(anti_rel->exps, colr);
+		res = list_fetch((*anti_rel)->exps, colr);
 	} else if(isPartitionedByExpressionTable(t)) {
-		if(!(res = rel_parse_val(sql, sa_message(sql->sa, "select %s;", t->part.pexp->exp), sql->emode, anti_rel)))
+		*anti_rel = rel_project(sql->sa, *anti_rel, rel_projections(sql, *anti_rel, NULL, 1, 1));
+		if(!(res = rel_parse_val(sql, sa_message(sql->sa, "select %s;", t->part.pexp->exp), sql->emode, (*anti_rel)->l)))
 			return NULL;
 		exp_label(sql->sa, res, ++sql->label);
+		append((*anti_rel)->exps, res);
 	} else {
 		assert(0);
 	}
@@ -445,14 +475,30 @@ rel_generate_subinserts(mvc *sql, sql_rel *rel, sql_rel **anti_rel, sql_exp **ex
 	sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
 	char buf[BUFSIZ];
 
-	*anti_rel = rel_dup(rel->r);
-	anti_le = rel_generate_anti_insert_expression(sql, *anti_rel, t);
+	if(isPartitionedByColumnTable(t)) {
+		*anti_rel = rel_dup(rel->r);
+	} else if(isPartitionedByExpressionTable(t)) {
+		*anti_rel = rel_create_common_relation(sql, rel, t);
+	} else {
+		assert(0);
+	}
+	anti_le = rel_generate_anti_insert_expression(sql, anti_rel, t);
 
 	for (node *n = t->members.set->h; n; n = n->next) {
 		sql_part *pt = (sql_part *) n->data;
 		sql_table *sub = find_sql_table(t->s, pt->base.name);
-		sql_rel *s1, *dup = rel_dup(rel->r);
-		sql_exp *le = rel_generate_anti_insert_expression(sql, dup, t);
+		sql_rel *s1, *dup;
+		sql_exp *le;
+
+		if(isPartitionedByColumnTable(t)) {
+			dup = rel_dup(rel->r);
+			le = rel_generate_anti_insert_expression(sql, &dup, t);
+		} else if(isPartitionedByExpressionTable(t)) {
+			dup = rel_dup(*anti_rel);
+			le = anti_le;
+		} else {
+			assert(0);
+		}
 
 		if(isRangePartitionTable(t)) {
 			sql_exp *e1, *e2, *range;
@@ -502,6 +548,13 @@ rel_generate_subinserts(mvc *sql, sql_rel *rel, sql_rel **anti_rel, sql_exp **ex
 		new_table = rel_basetable(sql, sub, sub->base.name);
 		if(list_length(sub->members.set) == 0) //if this table has no partitions, set it as used
 			new_table->p = prop_create(sql->sa, PROP_USED, new_table->p);
+
+		if(isPartitionedByExpressionTable(t)) {
+			sql_exp *del;
+			dup = rel_project(sql->sa, dup, rel_projections(sql, dup, NULL, 1, 1));
+			del = list_fetch(dup->exps, list_length(dup->exps) - 1);
+			list_remove_data(dup->exps, del);
+		}
 
 		s1 = rel_insert(sql, new_table, dup);
 		if (just_one == 0) {
@@ -617,19 +670,17 @@ rel_subtable_insert(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 {
 	sql_table *upper = t->p; //is part of a partition table and not been used yet
 	sql_part *pt = find_sql_part(upper, t->base.name);
-	sql_rel *anti_dup = rel_dup(rel->r) /* the anti relation */, *left = rel->l;
-	sql_exp *anti_exp = NULL, *anti_le = rel_generate_anti_insert_expression(sql, anti_dup, upper), *aggr = NULL, *exception = NULL;
+	sql_rel *anti_dup = rel_create_common_relation(sql, rel, upper), *left = rel->l;
+	sql_exp *anti_exp = NULL, *anti_le = rel_generate_anti_insert_expression(sql, &anti_dup, upper), *aggr = NULL,
+			*exception = NULL;
 	list *anti_exps = new_exp_list(sql->sa);
 	sql_subaggr *cf = sql_bind_aggr(sql->sa, sql->session->schema, "count", NULL);
 	char buf[BUFSIZ];
 
-	anti_le = exp_column(sql->sa, exp_relname(anti_le), exp_name(anti_le), exp_subtype(anti_le),
-						 anti_le->card, has_nil(anti_le), is_intern(anti_le));
-
 	if(isRangePartitionTable(upper)) {
 		sql_exp *e1 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.minvalue),
 				*e2 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.maxvalue);
-		anti_exp = exp_compare2(sql->sa, anti_le, exp_copy(sql->sa, e1), exp_copy(sql->sa, e2), 3);
+		anti_exp = exp_compare2(sql->sa, exp_copy(sql->sa, anti_le), exp_copy(sql->sa, e1), exp_copy(sql->sa, e2), 3);
 		set_anti(anti_exp);
 	} else if(isListPartitionTable(upper)) {
 		for(node *n = pt->part.values->h ; n ; n = n->next) {
@@ -637,12 +688,12 @@ rel_subtable_insert(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 			sql_exp *e1 = create_table_part_atom_exp(sql, next->tpe, next->value);
 			list_append(anti_exps, exp_copy(sql->sa, e1));
 		}
-		anti_exp = exp_in(sql->sa, anti_le, anti_exps, cmp_notin);
+		anti_exp = exp_in(sql->sa, exp_copy(sql->sa, anti_le), anti_exps, cmp_notin);
 	} else {
 		assert(0);
 	}
 	if(!pt->with_nills) { /* handle the nulls case */
-		sql_exp *anti_nils = rel_unop_(sql, anti_le, NULL, "isnull", card_value);
+		sql_exp *anti_nils = rel_unop_(sql, exp_copy(sql->sa, anti_le), NULL, "isnull", card_value);
 		anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
 		anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), anti_exp),
 						  list_append(new_exp_list(sql->sa), anti_nils), 0);

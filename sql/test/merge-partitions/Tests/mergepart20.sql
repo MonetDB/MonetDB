@@ -9,14 +9,14 @@ ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 'f000000000000000000
 INSERT INTO testme VALUES (1, 'first'), (2000, 'second'), (3, 'third'), (4000, 'fourth');
 
 SELECT a, b FROM testme;
-SELECT a, b FROM sublimits1;
-SELECT a, b FROM sublimits2;
+SELECT a, b FROM subtable1;
+SELECT a, b FROM subtable2;
 
-ALTER TABLE testme DROP TABLE sublimits1;
-ALTER TABLE testme DROP TABLE sublimits2;
+ALTER TABLE testme DROP TABLE subtable1;
+ALTER TABLE testme DROP TABLE subtable2;
 
-DROP TABLE sublimits1;
-DROP TABLE sublimits2;
+DROP TABLE subtable1;
+DROP TABLE subtable2;
 DROP TABLE testme;
 
 SELECT column_id, expression FROM table_partitions;
@@ -35,15 +35,19 @@ ALTER TABLE testme ADD TABLE subtable2 AS PARTITION BETWEEN 1 AND 10;
 ALTER TABLE testme ADD TABLE subtable3 AS PARTITION BETWEEN 'abc' AND 'cde';
 
 INSERT INTO testme VALUES (1, 'first'), (10, 'second'), (2, 'third'), (15, 'fourth');
+INSERT INTO testme VALUES (12, 'this'), (6, 'not'), (50, 'ok'); --error
+
+INSERT INTO subtable1 VALUES (12, 'sixth');
+INSERT INTO subtable1 VALUES (2, 'seventh'); --error
 
 SELECT a, b FROM testme;
-SELECT a, b FROM sublimits1;
-SELECT a, b FROM sublimits2;
+SELECT a, b FROM subtable1;
+SELECT a, b FROM subtable2;
 
-ALTER TABLE testme DROP TABLE sublimits1;
-ALTER TABLE testme DROP TABLE sublimits2;
+ALTER TABLE testme DROP TABLE subtable1;
+ALTER TABLE testme DROP TABLE subtable2;
 
-DROP TABLE sublimits1;
-DROP TABLE sublimits2;
+DROP TABLE subtable1;
+DROP TABLE subtable2;
 DROP TABLE testme;
 DROP FUNCTION iamdummy;

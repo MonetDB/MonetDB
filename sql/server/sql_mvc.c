@@ -108,13 +108,14 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 	m->history = 0;
 	/* disable size header */
 	m->sizeheader = 0;
-	if(mvc_trans(m) < 0) {
-		mvc_destroy(m);
-		fprintf(stderr, "!mvc_init: failed to start transaction\n");
-		return -1;
-	}
 
 	if (first || catalog_version) {
+		if(mvc_trans(m) < 0) {
+			mvc_destroy(m);
+			fprintf(stderr, "!mvc_init: failed to start transaction\n");
+			return -1;
+		}
+
 		s = m->session->schema = mvc_bind_schema(m, "sys");
 		assert(m->session->schema != NULL);
 
@@ -266,6 +267,20 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 			sql_create_comments(m, s);
 			sql_create_privileges(m, s);
 		}
+
+		s = m->session->schema = mvc_bind_schema(m, "tmp");
+		assert(m->session->schema != NULL);
+
+		if (mvc_commit(m, 0, NULL) < 0) {
+			fprintf(stderr, "!mvc_init: unable to commit system tables\n");
+			return -1;
+		}
+	}
+
+	if(mvc_trans(m) < 0) {
+		mvc_destroy(m);
+		fprintf(stderr, "!mvc_init: failed to start transaction\n");
+		return -1;
 	}
 
 	//as the sql_parser is not yet initialized in the storage, we determine the sql type of the sql_parts here
@@ -286,16 +301,12 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		}
 	}
 
-	s = m->session->schema = mvc_bind_schema(m, "tmp");
-	assert(m->session->schema != NULL);
-
 	if (mvc_commit(m, 0, NULL) < 0) {
 		fprintf(stderr, "!mvc_init: unable to commit system tables\n");
 		return -1;
 	}
 
 	mvc_destroy(m);
-
 	return first;
 }
 

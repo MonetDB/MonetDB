@@ -2690,15 +2690,7 @@ table_dup(sql_trans *tr, int flag, sql_table *ot, sql_schema *s)
 		for (n = ot->members.set->h; n; n = n->next) {
 			sql_part *pt = n->data, *dupped = part_dup(tr, flag, pt, ot);
 			dupped->t = t;
-			if(isRangePartitionTable(ot)) {
-				sql_part *err = cs_add_with_validate(&t->members, dupped, tr_flag(&pt->base, flag), sql_range_part_validate_and_insert);
-				assert(!err);
-			} else if(isListPartitionTable(ot)) {
-				sql_part *err = cs_add_with_validate(&t->members, dupped, tr_flag(&pt->base, flag), sql_values_part_validate_and_insert);
-				assert(!err);
-			} else {
-				cs_add(&t->members, dupped, tr_flag(&pt->base, flag));
-			}
+			cs_add(&t->members, dupped, tr_flag(&pt->base, flag));
 		}
 		if (tr->parent == gtrans)
 			ot->members.nelm = NULL;
