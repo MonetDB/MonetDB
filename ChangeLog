@@ -1,5 +1,9 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Fri May 25 2018 Ying Zhang <y.zhang@cwi.nl>
+- Added a '-f rowcount' option in mclient to repress printing the actual
+  data of a resultset, but only print the number of returned tuples
+
 * Tue Feb 13 2018 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Added support for lz4 compressed files on stream library

@@ -19,7 +19,7 @@ Options are:
  -d database | --database=database  database to connect to (may be URI)
  -e          | --echo             echo the query
  -E charset  | --encoding=charset specify encoding (character set) of the terminal
- -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml,trash}
+ -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml,trash,rowcount}
  -H          | --history          load/save cmdline history (default off)
  -i          | --interactive      interpret `\' commands on stdin
  -t          | --timer=format     use time formatting {none,clock,performance} (none is default)

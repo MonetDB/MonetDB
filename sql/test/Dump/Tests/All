@@ -1,6 +1,10 @@
 dump-empty
 load
 dump
+dump-again
 clean
 reload
 test
+clean-again
+reload-again
+test-again

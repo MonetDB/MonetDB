@@ -121,15 +121,15 @@ get_schema(Mapi mid)
 }
 
 /* return TRUE if the HUGEINT type exists */
-static int
+static bool
 has_hugeint(Mapi mid)
 {
 	MapiHdl hdl;
-	int ret;
+	bool ret;
 	static int hashge = -1;
 
 	if (hashge >= 0)
-		return hashge;
+		return (bool) hashge;
 
 	if ((hdl = mapi_query(mid,
 			      "SELECT id "
@@ -145,7 +145,7 @@ has_hugeint(Mapi mid)
 	if (mapi_error(mid))
 		goto bailout;
 	mapi_close_handle(hdl);
-	hashge = ret;
+	hashge = (int) ret;
 	return ret;
 
   bailout:
@@ -256,7 +256,7 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 			      "pkt.schema_id = ps.id AND "
 			      "fkt.schema_id = fs.id AND "
 			      "fkt.system = FALSE "
-			"ORDER BY fs.name,fkt.name, "
+			"ORDER BY fs.name, fkt.name, "
 			      "fkk.name, nr";
 	}
 	hdl = mapi_query(mid, query);
@@ -383,8 +383,8 @@ static int dump_column_definition(
 	const char *schema,
 	const char *tname,
 	const char *tid,
-	int foreign,
-	int hashge);
+	bool foreign,
+	bool hashge);
 
 static const char *geomsubtypes[] = {
 	NULL,			/* 0 */
@@ -399,7 +399,7 @@ static const char *geomsubtypes[] = {
 };
 
 static int
-dump_type(Mapi mid, stream *toConsole, const char *c_type, const char *c_type_digits, const char *c_type_scale, int hashge)
+dump_type(Mapi mid, stream *toConsole, const char *c_type, const char *c_type_digits, const char *c_type_scale, bool hashge)
 {
 	int space = 0;
 
@@ -533,7 +533,7 @@ dump_type(Mapi mid, stream *toConsole, const char *c_type, const char *c_type_di
 }
 
 static int
-dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const char *tname, const char *tid, int foreign, int hashge)
+dump_column_definition(Mapi mid, stream *toConsole, const char *schema, const char *tname, const char *tid, bool foreign, bool hashge)
 {
 	MapiHdl hdl = NULL;
 	char *query;
@@ -782,7 +782,7 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 	int type = 0;
 	size_t maxquerylen;
 	char *sname = NULL;
-	int hashge;
+	bool hashge;
 
 	if (schema == NULL) {
 		if ((sname = strchr(tname, '.')) != NULL) {
@@ -804,7 +804,7 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 
 	query = malloc(maxquerylen);
 	snprintf(query, maxquerylen,
-		 "%s\n"
+		 "%s "
 		 "SELECT t.name, t.query, t.type, c.remark "
 		 "FROM sys.schemas s, sys._tables t LEFT OUTER JOIN comments c ON t.id = c.id "
 		 "WHERE s.name = '%s' AND "
@@ -949,8 +949,12 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 		if (cnt)
 			mnstr_printf(toConsole, ");\n");
 		snprintf(query, maxquerylen,
-			"%s\n"
-			 "SELECT i.name, c.remark FROM sys.idxs i, comments c WHERE i.id = c.id AND i.table_id = (SELECT id FROM sys._tables WHERE schema_id = (select id FROM sys.schemas WHERE name = '%s') AND name = '%s') ORDER BY i.name",
+			"%s "
+			 "SELECT i.name, c.remark "
+			 "FROM sys.idxs i, comments c "
+			 "WHERE i.id = c.id "
+			   "AND i.table_id = (SELECT id FROM sys._tables WHERE schema_id = (select id FROM sys.schemas WHERE name = '%s') AND name = '%s') "
+			 "ORDER BY i.name",
 			 get_compat_clause(mid),
 			 schema, tname);
 		if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
@@ -965,10 +969,14 @@ describe_table(Mapi mid, const char *schema, const char *tname, stream *toConsol
 	}
 
 	snprintf(query, maxquerylen,
-		"%s\n"
-			"SELECT col.name, com.remark FROM sys._columns col, comments com WHERE col.id = com.id AND col.table_id = (SELECT id FROM sys._tables WHERE schema_id = (SELECT id FROM sys.schemas WHERE name = '%s') AND name = '%s') ORDER BY number",
-			get_compat_clause(mid),
-			schema, tname);
+		"%s "
+		 "SELECT col.name, com.remark "
+		 "FROM sys._columns col, comments com "
+		 "WHERE col.id = com.id "
+		   "AND col.table_id = (SELECT id FROM sys._tables WHERE schema_id = (SELECT id FROM sys.schemas WHERE name = '%s') AND name = '%s') "
+		 "ORDER BY number",
+		 get_compat_clause(mid),
+		 schema, tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
 	while (mapi_fetch_row(hdl) != 0) {
@@ -1037,21 +1045,21 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *toCon
 
 	query = malloc(maxquerylen);
 	snprintf(query, maxquerylen,
-		"%s\n"
+		"%s "
 		"SELECT s.name, "
-		     "seq.name, "
-		     "get_value_for(s.name,seq.name), "
-		     "seq.\"minvalue\", "
-		     "seq.\"maxvalue\", "
-		     "seq.\"increment\", "
-		     "seq.\"cycle\", "
-		     "rem.\"remark\" "
+		       "seq.name, "
+		       "get_value_for(s.name, seq.name), "
+		       "seq.\"minvalue\", "
+		       "seq.\"maxvalue\", "
+		       "seq.\"increment\", "
+		       "seq.\"cycle\", "
+		       "rem.\"remark\" "
 		"FROM sys.sequences seq LEFT OUTER JOIN comments rem ON seq.id = rem.id, "
 		     "sys.schemas s "
 		"WHERE s.id = seq.schema_id AND "
 		      "s.name = '%s' AND "
 		      "seq.name = '%s' "
-		"ORDER BY s.name,seq.name",
+		"ORDER BY s.name, seq.name",
 		get_compat_clause(mid),
 		schema, tname);
 
@@ -1118,7 +1126,7 @@ describe_schema(Mapi mid, const char *sname, stream *toConsole)
 	char schemas[5120];
 
 	snprintf(schemas, sizeof(schemas),
-		"%s\n"
+		"%s "
 		"SELECT s.name, a.name, c.remark "
 		"FROM sys.auths a, "
 		     "sys.schemas s LEFT OUTER JOIN comments c ON s.id = c.id "
@@ -1163,8 +1171,9 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 		bool useInserts)
 {
 	int cnt, i;
+	int64_t rows;
 	MapiHdl hdl = NULL;
-	char *query;
+	char *query = NULL;
 	size_t maxquerylen;
 	unsigned char *string = NULL;
 	char *sname = NULL;
@@ -1174,17 +1183,21 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 			size_t len = sname - tname;
 
 			sname = malloc(len + 1);
+			if (sname == NULL)
+				goto bailout;
 			strncpy(sname, tname, len);
 			sname[len] = 0;
 			tname += len + 1;
 		} else if ((sname = get_schema(mid)) == NULL) {
-			return 1;
+			goto bailout;
 		}
 		schema = sname;
 	}
 
 	maxquerylen = 5120 + strlen(tname) + strlen(schema);
 	query = malloc(maxquerylen);
+	if (query == NULL)
+		goto bailout;
 
 	snprintf(query, maxquerylen,
 		 "SELECT t.name, t.query, t.type "
@@ -1214,37 +1227,29 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 	mapi_close_handle(hdl);
 	hdl = NULL;
 
-	if (!useInserts) {
-		snprintf(query, maxquerylen, "SELECT count(*) FROM \"%s\".\"%s\"",
-			 schema, tname);
-		if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
-			goto bailout;
-		if (mapi_fetch_row(hdl)) {
-			const char *cntfld = mapi_fetch_field(hdl, 0);
-
-			if (strcmp(cntfld, "0") == 0) {
-				/* no records to dump, so return early */
-				goto doreturn;
-			}
-
-			mnstr_printf(toConsole,
-				     "COPY %s RECORDS INTO \"%s\".\"%s\" "
-				     "FROM stdin USING DELIMITERS '\\t','\\n','\"';\n",
-				     cntfld, schema, tname);
-		}
-		mapi_close_handle(hdl);
-		hdl = NULL;
-	}
-
 	snprintf(query, maxquerylen, "SELECT * FROM \"%s\".\"%s\"",
 		 schema, tname);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
 
+	rows = mapi_get_row_count(hdl);
+	if (rows == 0) {
+		/* nothing more to do */
+		goto doreturn;
+	}
+
 	cnt = mapi_get_field_count(hdl);
 	if (cnt < 1 || cnt >= 1 << 29)
 		goto bailout;	/* ridiculous number of columns */
+	if (!useInserts) {
+		mnstr_printf(toConsole,
+			     "COPY %" PRId64 " RECORDS INTO \"%s\".\"%s\" "
+			     "FROM stdin USING DELIMITERS '\\t','\\n','\"';\n",
+			     rows, schema, tname);
+	}
 	string = malloc(sizeof(unsigned char) * cnt);
+	if (string == NULL)
+		goto bailout;
 	for (i = 0; i < cnt; i++) {
 		string[i] = (strcmp(mapi_get_type(hdl, i), "char") == 0 ||
 			     strcmp(mapi_get_type(hdl, i), "varchar") == 0 ||
@@ -1263,9 +1268,39 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 			s = mapi_fetch_field(hdl, i);
 			if (s == NULL)
 				mnstr_printf(toConsole, "NULL");
-			else if (string[i]) {
-				/* write double or single-quoted string with
-				   certain characters escaped */
+			else if (useInserts) {
+				const char *tp = mapi_get_type(hdl, i);
+				if (strcmp(tp, "sec_interval") == 0) {
+					const char *p = strchr(s, '.');
+					if (p == NULL)
+						p = s + strlen(s);
+					mnstr_printf(toConsole, "INTERVAL '%.*s' SECOND", (int) (p - s), s);
+				} else if (strcmp(tp, "month_interval") == 0)
+					mnstr_printf(toConsole, "INTERVAL '%s' MONTH", s);
+				else if (strcmp(tp, "timestamptz") == 0)
+					mnstr_printf(toConsole, "TIMESTAMP WITH TIME ZONE '%s'", s);
+				else if (strcmp(tp, "timestamp") == 0)
+					mnstr_printf(toConsole, "TIMESTAMP '%s'", s);
+				else if (strcmp(tp, "timetz") == 0)
+					mnstr_printf(toConsole, "TIME WITH TIME ZONE '%s'", s);
+				else if (strcmp(tp, "time") == 0)
+					mnstr_printf(toConsole, "TIME '%s'", s);
+				else if (strcmp(tp, "date") == 0)
+					mnstr_printf(toConsole, "DATE '%s'", s);
+				else if (strcmp(tp, "blob") == 0)
+					mnstr_printf(toConsole, "BINARY LARGE OBJECT '%s'", s);
+				else if (strcmp(tp, "inet") == 0 ||
+					 strcmp(tp, "json") == 0 ||
+					 strcmp(tp, "url") == 0 ||
+					 strcmp(tp, "uuid") == 0 ||
+					 string[i])
+					quoted_print(toConsole, s, true);
+				else
+					mnstr_printf(toConsole, "%s", s);
+			} else if (string[i]) {
+				/* write double or single-quoted
+				   string with certain characters
+				   escaped */
 				quoted_print(toConsole, s, useInserts);
 			} else
 				mnstr_printf(toConsole, "%s", s);
@@ -1304,9 +1339,13 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 			mapi_explain_result(hdl, stderr);
 		else if (mapi_error(mid))
 			mapi_explain_query(hdl, stderr);
+		else
+			fprintf(stderr, "malloc failure\n");
 		mapi_close_handle(hdl);
 	} else if (mapi_error(mid))
 		mapi_explain(mid, stderr);
+	else
+		fprintf(stderr, "malloc failure\n");
 	if (sname != NULL)
 		free(sname);
 	if (query != NULL)
@@ -1328,103 +1367,15 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *toConsole, i
 }
 
 static int
-dump_function_comment(Mapi mid, stream *toConsole, const char *id)
-{
-	int len = 5120;
-	char *query = malloc(len);
-	MapiHdl hdl = NULL;
-	int hashge;
-
-	if (!query)
-		return 1;
-
-	snprintf(query, len,
-		"%s\n"
-		"SELECT \n"
-		"        coalesce(function_type_keyword, '') AS category,\n"
-		"        s.name AS schema,\n"
-		"        CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number ASC) WHEN 1 THEN f.name ELSE NULL END AS name,\n"
-		"        p.type, \n"
-		"        p.type_digits, \n"
-		"        p.type_scale,\n"
-		"        CASE RANK() OVER (PARTITION BY f.id ORDER BY p.number DESC) WHEN 1 THEN c.remark ELSE NULL END AS remark,\n"
-		"        ROW_NUMBER() OVER (ORDER BY f.id, p.number) AS line\n"
-		"FROM sys.functions f\n"
-		"JOIN comments c ON f.id = c.id\n"
-		"JOIN sys.schemas s ON f.schema_id = s.id\n"
-		"LEFT OUTER JOIN sys.function_types ft ON f.type = ft.function_type_id\n"
-		"LEFT OUTER JOIN sys.args p ON f.id = p.func_id AND p.inout = 1\n"
-		"WHERE f.id = %s\n"
-		"ORDER BY line;",
-		get_compat_clause(mid),
-		id);
-
-	hashge = has_hugeint(mid);
-	hdl = mapi_query(mid, query);
-	if (hdl == NULL || mapi_error(mid))
-		goto bailout;
-	while (!mnstr_errnr(toConsole) && mapi_fetch_row(hdl) != 0) {
-		int i = 0;
-		char *category = mapi_fetch_field(hdl, i++);
-		char *sname = mapi_fetch_field(hdl, i++);
-		char *name = mapi_fetch_field(hdl, i++);
-		char *type = mapi_fetch_field(hdl, i++);
-		char *type_digits = mapi_fetch_field(hdl, i++);
-		char *type_scale = mapi_fetch_field(hdl, i++);
-		char *remark = mapi_fetch_field(hdl, i++);
-
-		if (name) {
-			mnstr_printf(toConsole, "COMMENT ON %s ", category);
-			quoted_print(toConsole, sname, false);
-			mnstr_printf(toConsole, ".");
-			quoted_print(toConsole, name, false);
-			mnstr_printf(toConsole, "(");
-		} else {
-			mnstr_printf(toConsole, ", ");
-		}
-
-		if (type) {
-			dump_type(NULL, toConsole, type, type_digits, type_scale, hashge);
-		}
-
-		if (remark) {
-			mnstr_printf(toConsole, ") IS ");
-			quoted_print(toConsole, remark, true);
-			mnstr_printf(toConsole, ";\n");
-		}
-	}
-	if (mapi_error(mid))
-		goto bailout;
-
-	free(query);
-	mapi_close_handle(hdl);
-	return 0;
-
-	bailout:
-	if (query)
-		free(query);
-	if (hdl) {
-		if (mapi_result_error(hdl))
-			mapi_explain_result(hdl, stderr);
-		else
-			mapi_explain_query(hdl, stderr);
-		mapi_close_handle(hdl);
-	} else
-		mapi_explain(mid, stderr);
-
-	return 1;
-}
-
-static int
-dump_function(Mapi mid, stream *toConsole, const char *fid, int hashge)
+dump_function(Mapi mid, stream *toConsole, const char *fid, bool hashge)
 {
 	MapiHdl hdl;
 	size_t qlen = 5120 + strlen(fid);
 	char *query = malloc(qlen);
 	char *q, *end_q;
 	const char *sep;
-	char *ffunc = NULL, *flkey = NULL;
-	const char *sname, *fname, *ftkey;
+	char *ffunc = NULL, *flkey = NULL, *remark = NULL;
+	char *sname, *fname, *ftkey;
 	int flang, ftype;
 
 	if (!query)
@@ -1432,8 +1383,24 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, int hashge)
 
 	q = query;
 	end_q = query + qlen;
-	q += snprintf(q, q - end_q, "%s\n", get_compat_clause(mid));
-	q += snprintf(q, q - end_q, "SELECT f.id, f.func, f.language, f.type, s.name, f.name, function_type_keyword, language_keyword FROM sys.functions f JOIN sys.schemas s ON f.schema_id = s.id JOIN function_types ft ON f.type = ft.function_type_id LEFT OUTER JOIN function_languages fl ON f.language = fl.language_id WHERE f.id = %s;", fid);
+	q += snprintf(q, end_q - q,
+		      "%s "
+		      "SELECT f.id, "
+			     "f.func, "
+			     "f.language, "
+			     "f.type, "
+			     "s.name, "
+			     "f.name, "
+			     "ft.function_type_keyword, "
+			     "fl.language_keyword, "
+		             "c.remark "
+		      "FROM sys.functions f "
+			   "JOIN sys.schemas s ON f.schema_id = s.id "
+			   "JOIN function_types ft ON f.type = ft.function_type_id "
+			   "LEFT OUTER JOIN function_languages fl ON f.language = fl.language_id "
+			   "LEFT OUTER JOIN comments c ON f.id = c.id "
+		      "WHERE f.id = %s",
+		      get_compat_clause(mid), fid);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
 		free(query);
 		return 1;
@@ -1451,6 +1418,13 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, int hashge)
 	fname = mapi_fetch_field(hdl, 5);
 	ftkey = mapi_fetch_field(hdl, 6);
 	flkey = mapi_fetch_field(hdl, 7);
+	remark = mapi_fetch_field(hdl, 8);
+	if (remark) {
+		remark = strdup(remark);
+		sname = strdup(sname);
+		fname = strdup(fname);
+		ftkey = strdup(ftkey);
+	}
 	if (flang == 1 || flang == 2) {
 		/* all information is stored in the func column
 		 * first skip initial comments and empty lines */
@@ -1462,74 +1436,111 @@ dump_function(Mapi mid, stream *toConsole, const char *fid, int hashge)
 				ffunc++;
 		}
 		mnstr_printf(toConsole, "%s\n", ffunc);
-		mapi_close_handle(hdl);
-		free(query);
-		return 0;
+		if (remark == NULL) {
+			mapi_close_handle(hdl);
+			free(query);
+			return 0;
+		}
+	} else {
+		mnstr_printf(toConsole, "CREATE %s ", ftkey);
+		quoted_print(toConsole, sname, false);
+		mnstr_printf(toConsole, ".");
+		quoted_print(toConsole, fname, false);
+		mnstr_printf(toConsole, "(");
 	}
 	/* strdup these two because they are needed after another query */
 	ffunc = strdup(ffunc);
 	if (flkey)
 		flkey = strdup(flkey);
-	mnstr_printf(toConsole, "CREATE %s ", ftkey);
-	quoted_print(toConsole, sname, false);
-	mnstr_printf(toConsole, ".");
-	quoted_print(toConsole, fname, false);
-	mnstr_printf(toConsole, "(");
 	snprintf(query, qlen, "SELECT a.name, a.type, a.type_digits, a.type_scale, a.inout FROM sys.args a, sys.functions f WHERE a.func_id = f.id AND f.id = %s ORDER BY a.inout DESC, a.number", fid);
 	mapi_close_handle(hdl);
-	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid)) {
-		free(query);
+	hdl = mapi_query(mid, query);
+	free(query);
+	if (hdl == NULL || mapi_error(mid)) {
 		free(ffunc);
 		free(flkey);
+		if (remark)
+			free(remark);
 		return 1;
 	}
-	sep = "";
-	while (mapi_fetch_row(hdl) != 0) {
-		const char *aname = mapi_fetch_field(hdl, 0);
-		const char *atype = mapi_fetch_field(hdl, 1);
-		const char *adigs = mapi_fetch_field(hdl, 2);
-		const char *ascal = mapi_fetch_field(hdl, 3);
-		const char *ainou = mapi_fetch_field(hdl, 4);
-
-		if (strcmp(ainou, "0") == 0) {
-			/* end of arguments */
-			break;
-		}
-
-		mnstr_printf(toConsole, "%s", sep);
-		quoted_print(toConsole, aname, false);
-		mnstr_printf(toConsole, " ");
-		dump_type(mid, toConsole, atype, adigs, ascal, hashge);
-		sep = ", ";
-	}
-	mnstr_printf(toConsole, ")");
-	if (ftype == 1 || ftype == 3 || ftype == 5) {
-		sep = "TABLE (";
-		mnstr_printf(toConsole, " RETURNS ");
-		do {
+	if (flang != 1 && flang != 2) {
+		sep = "";
+		while (mapi_fetch_row(hdl) != 0) {
 			const char *aname = mapi_fetch_field(hdl, 0);
 			const char *atype = mapi_fetch_field(hdl, 1);
 			const char *adigs = mapi_fetch_field(hdl, 2);
 			const char *ascal = mapi_fetch_field(hdl, 3);
+			const char *ainou = mapi_fetch_field(hdl, 4);
 
-			assert(strcmp(mapi_fetch_field(hdl, 4), "0") == 0);
-			if (ftype == 5) {
-				mnstr_printf(toConsole, "%s", sep);
-				quoted_print(toConsole, aname, false);
-				mnstr_printf(toConsole, " ");
-				sep = ", ";
+			if (strcmp(ainou, "0") == 0) {
+				/* end of arguments */
+				break;
 			}
+
+			mnstr_printf(toConsole, "%s", sep);
+			quoted_print(toConsole, aname, false);
+			mnstr_printf(toConsole, " ");
 			dump_type(mid, toConsole, atype, adigs, ascal, hashge);
-		} while (mapi_fetch_row(hdl) != 0);
+			sep = ", ";
+		}
+		mnstr_printf(toConsole, ")");
+		if (ftype == 1 || ftype == 3 || ftype == 5) {
+			sep = "TABLE (";
+			mnstr_printf(toConsole, " RETURNS ");
+			do {
+				const char *aname = mapi_fetch_field(hdl, 0);
+				const char *atype = mapi_fetch_field(hdl, 1);
+				const char *adigs = mapi_fetch_field(hdl, 2);
+				const char *ascal = mapi_fetch_field(hdl, 3);
+
+				assert(strcmp(mapi_fetch_field(hdl, 4), "0") == 0);
+				if (ftype == 5) {
+					mnstr_printf(toConsole, "%s", sep);
+					quoted_print(toConsole, aname, false);
+					mnstr_printf(toConsole, " ");
+					sep = ", ";
+				}
+				dump_type(mid, toConsole, atype, adigs, ascal, hashge);
+			} while (mapi_fetch_row(hdl) != 0);
+		}
+		if (flkey) {
+			mnstr_printf(toConsole, " LANGUAGE %s", flkey);
+			free(flkey);
+		}
+		mnstr_printf(toConsole, "\n%s\n", ffunc);
+	}
+	free(ffunc);
+	if (remark) {
+		mapi_seek_row(hdl, 0, MAPI_SEEK_SET);
+		mnstr_printf(toConsole, "COMMENT ON %s ", ftkey);
+		quoted_print(toConsole, sname, false);
+		mnstr_printf(toConsole, ".");
+		quoted_print(toConsole, fname, false);
+		mnstr_printf(toConsole, "(");
+		free(sname);
+		free(fname);
+		free(ftkey);
+		sep = "";
+		while (mapi_fetch_row(hdl) != 0) {
+			const char *atype = mapi_fetch_field(hdl, 1);
+			const char *adigs = mapi_fetch_field(hdl, 2);
+			const char *ascal = mapi_fetch_field(hdl, 3);
+			const char *ainou = mapi_fetch_field(hdl, 4);
+
+			if (strcmp(ainou, "0") == 0) {
+				/* end of arguments */
+				break;
+			}
+			mnstr_printf(toConsole, "%s", sep);
+			dump_type(mid, toConsole, atype, adigs, ascal, hashge);
+			sep = ", ";
+		}
+		mnstr_printf(toConsole, ") IS ");
+		quoted_print(toConsole, remark, true);
+		mnstr_printf(toConsole, ";\n");
+		free(remark);
 	}
 	mapi_close_handle(hdl);
-	if (flkey) {
-		mnstr_printf(toConsole, " LANGUAGE %s", flkey);
-		free(flkey);
-	}
-	mnstr_printf(toConsole, "\n%s\n", ffunc);
-	free(ffunc);
-	free(query);
 	return 0;
 }
 
@@ -1539,14 +1550,14 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 	MapiHdl hdl;
 	char *query, *q, *end_q;
 	size_t len;
-	int hashge;
+	bool hashge;
 	char *to_free = NULL;
-	char wantSystem;
+	bool wantSystem;
 	long prev_sid;
 
 	if (fname != NULL) {
 		/* dump a single function */
-		wantSystem = 1;
+		wantSystem = true;
 
 		if (sname == NULL) {
 			/* no schema given, so figure it out */
@@ -1564,8 +1575,10 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 			sname = to_free;
 		}
 	} else {
-		wantSystem = 0;
+		wantSystem = false;
 	}
+
+	hashge = has_hugeint(mid);
 
 	len = 5120 + (sname ? strlen(sname) : 0) + (fname ? strlen(fname) : 0);
 	query = malloc(len);
@@ -1577,34 +1590,32 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 	q = query;
 	end_q = query + len;
 
-	q += snprintf(q, end_q - q, "%s\n", get_compat_clause(mid));
 	q += snprintf(q, end_q - q,
-		"SELECT s.id, s.name, f.id, LENGTH(rem.remark) AS remark_len "
-		"FROM sys.schemas s "
-		"JOIN sys.functions f ON s.id = f.schema_id "
-		"LEFT OUTER JOIN comments rem ON f.id = rem.id "
-		"WHERE f.language > 0 ");
-	if (sname)
-		q += snprintf(q, end_q - q, "AND s.name = '%s' ", sname);
-	if (fname)
-		q += snprintf(q, end_q - q, "AND f.name = '%s' ", fname);
-	if (id)
+		      "SELECT s.id, s.name, f.id "
+		      "FROM sys.schemas s "
+			   "JOIN sys.functions f ON s.id = f.schema_id "
+		      "WHERE f.language > 0 ");
+	if (id) {
 		q += snprintf(q, end_q - q, "AND f.id = %s ", id);
-	if (!wantSystem)
-		q += snprintf(q, end_q - q, "AND f.id NOT IN (SELECT function_id FROM sys.systemfunctions) ");
-	q += snprintf(q, end_q - q, " ORDER BY f.func, f.id");
+	} else {
+		if (sname)
+			q += snprintf(q, end_q - q, "AND s.name = '%s' ", sname);
+		if (fname)
+			q += snprintf(q, end_q - q, "AND f.name = '%s' ", fname);
+		if (!wantSystem)
+			q += snprintf(q, end_q - q, "AND f.id NOT IN (SELECT function_id FROM sys.systemfunctions) ");
+	}
+	q += snprintf(q, end_q - q, "ORDER BY f.func, f.id");
 
 	hdl = mapi_query(mid, query);
 	free(query);
 	if (hdl == NULL || mapi_error(mid))
 		goto bailout;
 	prev_sid = 0;
-	hashge = has_hugeint(mid);
 	while (!mnstr_errnr(toConsole) && mapi_fetch_row(hdl) != 0) {
 		long sid = strtol(mapi_fetch_field(hdl, 0), NULL, 10);
 		const char *schema = mapi_fetch_field(hdl, 1);
 		const char *fid = mapi_fetch_field(hdl, 2);
-		const char *remark_len = mapi_fetch_field(hdl, 3);
 		if (set_schema && sid != prev_sid) {
 			mnstr_printf(toConsole, "SET SCHEMA ");
 			quoted_print(toConsole, schema, false);
@@ -1612,8 +1623,6 @@ dump_functions(Mapi mid, stream *toConsole, char set_schema, const char *sname, 
 			prev_sid = sid;
 		}
 		dump_function(mid, toConsole, fid, hashge);
-		if (remark_len)
-			dump_function_comment(mid, toConsole, fid);
 	}
 	if (mapi_error(mid))
 		goto bailout;
@@ -1642,15 +1651,6 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 {
 	const char *start = "START TRANSACTION";
 	const char *end = "ROLLBACK";
-	const char *chkhash =
-		"SELECT id "
-		"FROM sys.functions "
-		"WHERE name = 'password_hash'";
-	const char *createhash =
-		"CREATE FUNCTION password_hash (username STRING) "
-		"RETURNS STRING "
-		"EXTERNAL NAME sql.password";
-	const char *drophash = "DROP FUNCTION password_hash";
 	const char *users =
 		"SELECT ui.name, "
 		       "ui.fullname, "
@@ -1739,15 +1739,15 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		      "s.system = FALSE "
 		"ORDER BY s.name";
 	const char *sequences1 =
-		"SELECT sch.name,seq.name, rem.remark "
+		"SELECT sch.name, seq.name, rem.remark "
 		"FROM sys.schemas sch, "
 		     "sys.sequences seq LEFT OUTER JOIN comments rem ON seq.id = rem.id "
 		"WHERE sch.id = seq.schema_id "
-		"ORDER BY sch.name,seq.name";
+		"ORDER BY sch.name, seq.name";
 	const char *sequences2 =
 		"SELECT s.name, "
 		     "seq.name, "
-		     "get_value_for(s.name,seq.name), "
+		     "get_value_for(s.name, seq.name), "
 		     "seq.\"minvalue\", "
 		     "seq.\"maxvalue\", "
 		     "seq.\"increment\", "
@@ -1755,7 +1755,7 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		"FROM sys.sequences seq, "
 		     "sys.schemas s "
 		"WHERE s.id = seq.schema_id "
-		"ORDER BY s.name,seq.name";
+		"ORDER BY s.name, seq.name";
 	const char *tables =
 		"SELECT s.name AS sname, "
 		       "t.name AS name, "
@@ -1809,7 +1809,6 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 	char *sname = NULL;
 	char *curschema = NULL;
 	MapiHdl hdl = NULL;
-	int create_hash_func = 0;
 	int rc = 0;
 	char *query, *q, *end_q;
 	size_t query_len = 5120;
@@ -1850,19 +1849,6 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 		mapi_close_handle(hdl);
 
 		/* dump users, part 1 */
-		/* first make sure the password_hash function exists */
-		if ((hdl = mapi_query(mid, chkhash)) == NULL ||
-		    mapi_error(mid))
-			goto bailout;
-		create_hash_func = mapi_rows_affected(hdl) == 0;
-		mapi_close_handle(hdl);
-		if (create_hash_func) {
-			if ((hdl = mapi_query(mid, createhash)) == NULL ||
-			    mapi_error(mid))
-				goto bailout;
-			mapi_close_handle(hdl);
-		}
-
 		if ((hdl = mapi_query(mid, users)) == NULL || mapi_error(mid))
 			goto bailout;
 
@@ -1890,8 +1876,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 
 		/* dump schemas */
 		q = query;
-		q += snprintf(q, end_q - q, "%s\n", get_compat_clause(mid));
-		q += snprintf(q, end_q - q, "%s\n", schemas);
+		q += snprintf(q, end_q - q, "%s %s",
+			      get_compat_clause(mid), schemas);
 		if ((hdl = mapi_query(mid, query)) == NULL ||
 		    mapi_error(mid))
 			goto bailout;
@@ -1935,14 +1921,6 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 			mapi_close_handle(hdl);
 		}
 
-		/* clean up -- not strictly necessary due to ROLLBACK */
-		if (create_hash_func) {
-			if ((hdl = mapi_query(mid, drophash)) == NULL ||
-			    mapi_error(mid))
-				goto bailout;
-			mapi_close_handle(hdl);
-		}
-
 		/* grant user privileges */
 		if ((hdl = mapi_query(mid, grants)) == NULL || mapi_error(mid))
 			goto bailout;
@@ -1971,8 +1949,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 
 	/* dump sequences, part 1 */
 	q = query;
-	q += snprintf(q, end_q - q, "%s\n", get_compat_clause(mid));
-	q += snprintf(q, end_q - q, "%s\n", sequences1);
+	q += snprintf(q, end_q - q, "%s %s",
+		      get_compat_clause(mid), sequences1);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
 
@@ -2066,8 +2044,8 @@ dump_database(Mapi mid, stream *toConsole, int describe, bool useInserts)
 
 	/* dump views, functions, and triggers */
 	q = query;
-	q += snprintf(q, end_q - q, "%s\n", get_compat_clause(mid));
-	q += snprintf(q, end_q - q, "%s\n", views_functions_triggers);
+	q += snprintf(q, end_q - q, "%s%s",
+		      get_compat_clause(mid), views_functions_triggers);
 	if ((hdl = mapi_query(mid, query)) == NULL ||
 	    mapi_error(mid))
 		goto bailout;
@@ -2404,41 +2382,42 @@ get_with_comments_as_clause(Mapi mid)
 	const char *query = /* check whether sys.comments exists */
 		"SELECT t.id "
 		"FROM sys._tables t JOIN sys.schemas s ON t.schema_id = s.id "
-		"WHERE s.name = 'sys' AND t.name = 'comments';";
+		"WHERE s.name = 'sys' AND t.name = 'comments'";
 	const char *new_clause =
-		"WITH comments AS (SELECT * FROM sys.comments)\n"
-		", function_types AS (SELECT * FROM sys.function_types)\n"
-		", function_languages AS (SELECT * FROM sys.function_languages)\n";
+		"WITH comments AS (SELECT * FROM sys.comments), "
+		     "function_types AS (SELECT * FROM sys.function_types), "
+		     "function_languages AS (SELECT * FROM sys.function_languages)";
 	const char *old_clause =
-		"WITH comments AS (\n"
-		"	SELECT 42 AS id, 'no comment' AS remark WHERE FALSE\n"
-		")\n"
-		", function_types AS (\n"
-		"	SELECT function_type_id, function_type_name, function_type_keyword\n"
-		"	FROM sys.function_types, (VALUES\n"
-		"		(1, 'FUNCTION'), \n"
-		"		(2, 'PROCEDURE'),\n"
-		"		(3, 'AGGREGATE'),\n"
-		"		(4, 'FILTER FUNCTION'),\n"
-		"		(5, 'FUNCTION'), \n"
-		"		(6, 'FUNCTION'), \n"
-		"		(7, 'LOADER')) AS (id, function_type_keyword)\n"
-		"	WHERE id = function_type_id\n"
-		")\n"
-		", function_languages AS (\n"
-		"	SELECT language_id, language_name, language_keyword\n"
-		"	FROM sys.function_languages, (VALUES\n"
-			"        (3, 'R'),\n"
-			"        (4, 'C', 'C'),\n"
-			"        (6, 'PYTHON'),\n"
-			"        (7, 'PYTHON_MAP'),\n"
-			"        (8, 'PYTHON2'),\n"
-			"        (9, 'PYTHON2_MAP'),\n"
-			"        (10, 'PYTHON3'),\n"
-			"        (11, 'PYTHON3_MAP'),\n"
-			"        (12, 'C++', 'CPP')) AS (id, language_keyword)\n"
-		"	WHERE id = language_id\n"
-		")\n";
+		"WITH comments AS ("
+			"SELECT 42 AS id, 'no comment' AS remark WHERE FALSE"
+		     "), "
+		     "function_types AS ("
+			"SELECT function_type_id, function_type_name, function_type_keyword "
+			"FROM sys.function_types, "
+			     "(VALUES "
+				"(1, 'FUNCTION'),  "
+				"(2, 'PROCEDURE'), "
+				"(3, 'AGGREGATE'), "
+				"(4, 'FILTER FUNCTION'), "
+				"(5, 'FUNCTION'),  "
+				"(6, 'FUNCTION'),  "
+				"(7, 'LOADER')) AS (id, function_type_keyword) "
+			"WHERE id = function_type_id"
+		     "), "
+		     "function_languages AS ("
+			"SELECT language_id, language_name, language_keyword "
+			"FROM sys.function_languages, (VALUES "
+				"(3, 'R'), "
+				"(4, 'C', 'C'), "
+				"(6, 'PYTHON'), "
+				"(7, 'PYTHON_MAP'), "
+				"(8, 'PYTHON2'), "
+				"(9, 'PYTHON2_MAP'), "
+				"(10, 'PYTHON3'), "
+				"(11, 'PYTHON3_MAP'), "
+				"(12, 'C++', 'CPP')) AS (id, language_keyword) "
+			"WHERE id = language_id"
+		     ")";
 
 	MapiHdl hdl;
 	const char *compat_clause;
