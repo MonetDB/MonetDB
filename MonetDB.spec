@@ -679,7 +679,6 @@ fi
 %endif
 %{_libdir}/monetdb5/lib_capi.so
 %{_libdir}/monetdb5/lib_generator.so
-%{_libdir}/monetdb5/lib_lsst.so
 %{_libdir}/monetdb5/lib_opt_sql_append.so
 %{_libdir}/monetdb5/lib_udf.so
 %{_libdir}/monetdb5/lib_vault.so
