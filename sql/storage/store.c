@@ -1754,7 +1754,7 @@ store_load(void) {
 		bootstrap_create_column(tr, t, "id", "int", 32);
 		bootstrap_create_column(tr, t, "table_id", "int", 32);
 		bootstrap_create_column(tr, t, "column_id", "int", 32);
-		bootstrap_create_column(tr, t, "expression", "varchar", 2048);
+		bootstrap_create_column(tr, t, "expression", "varchar", STORAGE_MAX_VALUE_LENGTH);
 
 		t = bootstrap_create_table(tr, s, "_range_partitions");
 		bootstrap_create_column(tr, t, "id", "int", 32);
@@ -4972,8 +4972,12 @@ sql_trans_set_partition_table(sql_trans *tr, sql_table *t)
 		sql_table *partitions = find_sql_table(syss, "_table_partitions");
 		oid next = next_oid();
 		if(isPartitionedByColumnTable(t)) {
+			assert(t->part.pcol);
 			table_funcs.table_insert(tr, partitions, &next, &t->base.id, &t->part.pcol->base.id, ATOMnilptr(TYPE_str));
 		} else if(isPartitionedByExpressionTable(t)) {
+			assert(t->part.pexp->exp);
+			if(strlen(t->part.pexp->exp) > STORAGE_MAX_VALUE_LENGTH)
+				return -1;
 			table_funcs.table_insert(tr, partitions, &next, &t->base.id, ATOMnilptr(TYPE_int), t->part.pexp->exp);
 		} else {
 			assert(0);

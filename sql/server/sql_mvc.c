@@ -1314,6 +1314,7 @@ mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, in
 {
 	sql_table *t = NULL;
 	char *err = NULL;
+	int check = 0;
 
 	if (mvc_debug)
 		fprintf(stderr, "#mvc_create_table %s %s %d %d %d %d\n", s->base.name, name, tt, system, persistence, commit_action);
@@ -1325,10 +1326,16 @@ mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, in
 		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt, system, persistence, commit_action, sz);
 		if(t && isPartitionedByExpressionTable(t) && (err = bootstrap_partition_expression(m, t, 1))) {
 			(void) sql_error(m, 02, "%s", err);
-			return SQL_ERR;
-		}
-		if(sql_trans_set_partition_table(m->session->tr, t))
 			return NULL;
+		}
+		check = sql_trans_set_partition_table(m->session->tr, t);
+		if(check == -1) {
+			(void) sql_error(m, 02, SQLSTATE(42000) "CREATE TABLE: %s_%s: the partition's expression is too long", s->base.name, t->base.name);
+			return NULL;
+		} else if (check) {
+			(void) sql_error(m, 02, SQLSTATE(42000) "CREATE TABLE: %s_%s: an internal error occurred", s->base.name, t->base.name);
+			return NULL;
+		}
 	}
 	return t;
 }

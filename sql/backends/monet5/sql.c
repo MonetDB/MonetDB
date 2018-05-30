@@ -286,6 +286,7 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 	sql_schema *s = mvc_bind_schema(sql, sname);
 	sql_table *nt = NULL;
 	node *n;
+	int check = 0;
 
 	(void)tname;
 	if (STORE_READONLY)
@@ -356,7 +357,10 @@ create_table_or_view(mvc *sql, char *sname, char *tname, sql_table *t, int temp)
 		if(err)
 			return err;
 	}
-	if(sql_trans_set_partition_table(sql->session->tr, nt))
+	check = sql_trans_set_partition_table(sql->session->tr, nt);
+	if(check == -1)
+		throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s: the partition's expression is too long", s->base.name, t->base.name);
+	else if(check)
 		throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s: an internal error occurred", s->base.name, t->base.name);
 
 	if (t->idxs.set) {
