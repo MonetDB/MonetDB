@@ -2559,8 +2559,8 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 							"      t.name,\n"
 							"      s.name || '.' || t.name AS fullname,\n"
 							"      CAST(CASE t.type\n"
-							"      WHEN 1 THEN 2 -- ntype for views\n"
-							"      ELSE 1\t  -- ntype for tables\n"
+							"      WHEN 1 THEN 2\n" /* ntype for views */
+							"      ELSE 1\n" /* ntype for tables */
 							"      END AS SMALLINT) AS ntype,\n"
 							"      (CASE WHEN t.system THEN 'SYSTEM ' ELSE '' END) || tt.table_type_name AS type,\n"
 							"      t.system,\n"
@@ -2581,7 +2581,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, int save_history
 							"    LEFT OUTER JOIN comments c ON sq.id = c.id\n"
 							"    LEFT OUTER JOIN sys.schemas s ON sq.schema_id = s.id\n"
 							"  UNION ALL\n"
-							"  SELECT DISTINCT s.name AS sname,  -- DISTINCT is needed to filter out duplicate overloaded function/procedure names\n"
+							"  SELECT DISTINCT s.name AS sname,\n" /* DISTINCT is needed to filter out duplicate overloaded function/procedure names */
 							"      f.name,\n"
 							"      s.name || '.' || f.name AS fullname,\n"
 							"      CAST(8 AS SMALLINT) AS ntype,\n"

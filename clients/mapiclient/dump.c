@@ -310,9 +310,9 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 		pkeys = malloc(nkeys * sizeof(*pkeys));
 		if (fkeys == NULL || pkeys == NULL) {
 			if (fkeys)
-				free(fkeys);
+				free((void *) fkeys);
 			if (pkeys)
-				free(pkeys);
+				free((void *) pkeys);
 			goto bailout;
 		}
 		pkeys[nkeys - 1] = c_pcolumn;
