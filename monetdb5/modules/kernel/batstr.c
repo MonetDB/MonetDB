@@ -773,13 +773,13 @@ str STRbatPrefix(bat *ret, const bat *l, const bat *r)
 	BUN p,q;
 	bit v, *vp= &v;
 
-	prepareOperand2(left,l,right,r,"batstr.prefix");
+	prepareOperand2(left,l,right,r,"batstr.startsWith");
 	if(BATcount(left) != BATcount(right)) {
 		BBPunfix(left->batCacheid);
 		BBPunfix(right->batCacheid);
 		throw(MAL, "batstr.startsWith", ILLEGAL_ARGUMENT " Requires bats of identical size");
 	}
-	prepareResult2(bn,left,right,TYPE_bit,"batstr.prefix");
+	prepareResult2(bn,left,right,TYPE_bit,"batstr.startsWith");
 
 	lefti = bat_iterator(left);
 	righti = bat_iterator(right);
@@ -799,7 +799,7 @@ bunins_failed:
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
 	BBPunfix(*ret);
-	throw(MAL, "batstr." "prefix", OPERATION_FAILED " During bulk operation");
+	throw(MAL, "batstr.startsWith", OPERATION_FAILED " During bulk operation");
 }
 
 str STRbatPrefixcst(bat *ret, const bat *l, const str *cst)
@@ -809,8 +809,8 @@ str STRbatPrefixcst(bat *ret, const bat *l, const str *cst)
 	BUN p,q;
 	bit v, *vp= &v;
 
-	prepareOperand(left,l,"batstr.prefix");
-	prepareResult(bn,left,TYPE_bit,"batstr.prefix");
+	prepareOperand(left,l,"batstr.startsWith");
+	prepareResult(bn,left,TYPE_bit,"batstr.startsWith");
 
 	lefti = bat_iterator(left);
 
@@ -826,7 +826,7 @@ str STRbatPrefixcst(bat *ret, const bat *l, const str *cst)
 bunins_failed:
 	BBPunfix(left->batCacheid);
 	BBPunfix(*ret);
-	throw(MAL, "batstr""prefix", OPERATION_FAILED " During bulk operation");
+	throw(MAL, "batstr.startsWith", OPERATION_FAILED " During bulk operation");
 }
 
 str STRbatSuffix(bat *ret, const bat *l, const bat *r)
@@ -836,13 +836,13 @@ str STRbatSuffix(bat *ret, const bat *l, const bat *r)
 	BUN p,q;
 	bit v, *vp= &v;
 
-	prepareOperand2(left,l,right,r,"batstr.suffix");
+	prepareOperand2(left,l,right,r,"batstr.endsWith");
 	if(BATcount(left) != BATcount(right)) {
 		BBPunfix(left->batCacheid);
 		BBPunfix(right->batCacheid);
 		throw(MAL, "batstr.endsWith", ILLEGAL_ARGUMENT " Requires bats of identical size");
 	}
-	prepareResult2(bn,left,right,TYPE_bit,"batstr.suffix");
+	prepareResult2(bn,left,right,TYPE_bit,"batstr.endsWith");
 
 	lefti = bat_iterator(left);
 	righti = bat_iterator(right);
@@ -862,7 +862,7 @@ bunins_failed:
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
 	BBPunfix(*ret);
-	throw(MAL, "batstr." "suffix", OPERATION_FAILED " During bulk operation");
+	throw(MAL, "batstr.endsWith", OPERATION_FAILED " During bulk operation");
 }
 
 str STRbatSuffixcst(bat *ret, const bat *l, const str *cst)
@@ -872,8 +872,8 @@ str STRbatSuffixcst(bat *ret, const bat *l, const str *cst)
 	BUN p,q;
 	bit v, *vp= &v;
 
-	prepareOperand(left,l,"batstr.suffix");
-	prepareResult(bn,left,TYPE_bit,"batstr.suffix");
+	prepareOperand(left,l,"batstr.endsWith");
+	prepareResult(bn,left,TYPE_bit,"batstr.endsWith");
 
 	lefti = bat_iterator(left);
 
@@ -889,7 +889,7 @@ str STRbatSuffixcst(bat *ret, const bat *l, const str *cst)
 bunins_failed:
 	BBPunfix(left->batCacheid);
 	BBPunfix(*ret);
-	throw(MAL, "batstr""suffix", OPERATION_FAILED " During bulk operation");
+	throw(MAL, "batstr.endsWith", OPERATION_FAILED " During bulk operation");
 }
 
 str STRbatstrSearch(bat *ret, const bat *l, const bat *r)
@@ -925,7 +925,7 @@ bunins_failed:
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
 	BBPunfix(*ret);
-	throw(MAL, "batstr." "search", OPERATION_FAILED " During bulk operation");
+	throw(MAL, "batstr.search", OPERATION_FAILED " During bulk operation");
 }
 
 str STRbatstrSearchcst(bat *ret, const bat *l, const str *cst)
@@ -952,7 +952,7 @@ str STRbatstrSearchcst(bat *ret, const bat *l, const str *cst)
 bunins_failed:
 	BBPunfix(left->batCacheid);
 	BBPunfix(*ret);
-	throw(MAL, "batstr""search", OPERATION_FAILED " During bulk operation");
+	throw(MAL, "batstr.search", OPERATION_FAILED " During bulk operation");
 }
 
 str STRbatRstrSearch(bat *ret, const bat *l, const bat *r)
@@ -968,7 +968,7 @@ str STRbatRstrSearch(bat *ret, const bat *l, const bat *r)
 		BBPunfix(right->batCacheid);
 		throw(MAL, "batstr.r_search", ILLEGAL_ARGUMENT " Requires bats of identical size");
 	}
-	prepareResult2(bn,left,right,TYPE_bit,"batstr.r_search");
+	prepareResult2(bn,left,right,TYPE_int,"batstr.r_search");
 
 	lefti = bat_iterator(left);
 	righti = bat_iterator(right);
@@ -988,7 +988,7 @@ bunins_failed:
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
 	BBPunfix(*ret);
-	throw(MAL, "batstr." "r_search", OPERATION_FAILED " During bulk operation");
+	throw(MAL, "batstr.r_search", OPERATION_FAILED " During bulk operation");
 }
 
 str STRbatRstrSearchcst(bat *ret, const bat *l, const str *cst)
@@ -999,7 +999,7 @@ str STRbatRstrSearchcst(bat *ret, const bat *l, const str *cst)
 	int v, *vp= &v;
 
 	prepareOperand(left,l,"batstr.r_search");
-	prepareResult(bn,left,TYPE_bit,"batstr.r_search");
+	prepareResult(bn,left,TYPE_int,"batstr.r_search");
 
 	lefti = bat_iterator(left);
 
@@ -1015,7 +1015,7 @@ str STRbatRstrSearchcst(bat *ret, const bat *l, const str *cst)
 bunins_failed:
 	BBPunfix(left->batCacheid);
 	BBPunfix(*ret);
-	throw(MAL, "batstr""r_search", OPERATION_FAILED " During bulk operation");
+	throw(MAL, "batstr.r_search", OPERATION_FAILED " During bulk operation");
 }
 
 str STRbatTail(bat *ret, const bat *l, const bat *r)
@@ -1100,13 +1100,13 @@ str STRbatWChrAt(bat *ret, const bat *l, const bat *r)
 	BUN p,q;
 	int v, *vp= &v;
 
-	prepareOperand2(left,l,right,r,"batstr.+");
+	prepareOperand2(left,l,right,r,"batstr.unicodeAt");
 	if(BATcount(left) != BATcount(right)) {
 		BBPunfix(left->batCacheid);
 		BBPunfix(right->batCacheid);
 		throw(MAL, "batstr.unicodeAt", ILLEGAL_ARGUMENT " Requires bats of identical size");
 	}
-	prepareResult2(bn,left,right,TYPE_bit,"batstr.+");
+	prepareResult2(bn,left,right,TYPE_int,"batstr.unicodeAt");
 
 	lefti = bat_iterator(left);
 	righti = bat_iterator(right);
@@ -1126,7 +1126,7 @@ bunins_failed:
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
 	BBPunfix(*ret);
-	throw(MAL, "batstr." "+", OPERATION_FAILED " During bulk operation");
+	throw(MAL, "batstr.unicodeAt", OPERATION_FAILED " During bulk operation");
 }
 
 str STRbatWChrAtcst(bat *ret, const bat *l, const int *cst)
@@ -1136,8 +1136,8 @@ str STRbatWChrAtcst(bat *ret, const bat *l, const int *cst)
 	BUN p,q;
 	int v, *vp= &v;
 
-	prepareOperand(left,l,"batstr.+");
-	prepareResult(bn,left,TYPE_bit,"batstr.+");
+	prepareOperand(left,l,"batstr.unicodeAt");
+	prepareResult(bn,left,TYPE_int,"batstr.unicodeAt");
 
 	lefti = bat_iterator(left);
 
@@ -1153,7 +1153,7 @@ str STRbatWChrAtcst(bat *ret, const bat *l, const int *cst)
 bunins_failed:
 	BBPunfix(left->batCacheid);
 	BBPunfix(*ret);
-	throw(MAL, "batstr""+", OPERATION_FAILED " During bulk operation");
+	throw(MAL, "batstr.unicodeAt", OPERATION_FAILED " During bulk operation");
 }
 
 str
