@@ -237,7 +237,7 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 	sql_subtype found;
 	int localtype;
 
-	if((res = bootstrap_partition_expression(sql, mt, 0)) != NULL)
+	if(isPartitionedByExpressionTable(mt) && (res = bootstrap_partition_expression(sql, mt, 0)) != NULL)
 		return res;
 	find_partition_type(&found, mt);
 	localtype = found.type->localtype;
@@ -340,6 +340,7 @@ initialize_sql_parts(mvc* sql, sql_table *mt)
 									  SQLSTATE(42000) "Internal error while bootstrapping partitioned tables");
 				goto finish;
 			}
+			pt->s->base.wtime = pt->base.wtime = sql->session->tr->wtime = sql->session->tr->wstime;
 			sql_trans_create_dependency(sql->session->tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
 		}
 		mt->s->base.wtime = mt->base.wtime = sql->session->tr->wtime = sql->session->tr->wstime;

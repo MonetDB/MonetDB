@@ -292,7 +292,7 @@ mvc_init(int debug, store_type store, int ro, int su, backend_stack stk)
 		if(ss->tables.set) {
 			for (node *nn = ss->tables.set->h; nn; nn = nn->next) {
 				sql_table *tt = (sql_table*) nn->data;
-				if(isPartitionedByExpressionTable(tt)) {
+				if(isRangePartitionTable(tt) || isPartitionedByExpressionTable(tt)) {
 					char *err;
 					if((err = initialize_sql_parts(m, tt)) != NULL) {
 						fprintf(stderr, "!mvc_init: unable to start partitioned table: %s.%s: %s\n",

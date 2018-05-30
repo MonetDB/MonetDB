@@ -4668,7 +4668,7 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 	p->t = pt;
 	base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
 	cs_add(&mt->members, p, TR_NEW);
-	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->wstime;
+	mt->s->base.wtime = mt->base.wtime = pt->s->base.wtime = pt->base.wtime = tr->wtime = tr->wstime;
 	table_funcs.table_insert(tr, sysobj, &mt->base.id, p->base.name, &p->base.id);
 	return mt;
 }
@@ -4768,7 +4768,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	/* add merge table dependency */
 	sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
 	table_funcs.table_insert(tr, sysobj, &mt->base.id, p->base.name, &p->base.id);
-	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->wstime;
+	mt->s->base.wtime = mt->base.wtime = pt->s->base.wtime = pt->base.wtime = tr->wtime = tr->wstime;
 
 	rid = table_funcs.column_find_row(tr, find_sql_column(partitions, "table_id"), &mt->base.id, NULL);
 	assert(!is_oid_nil(rid));
@@ -4869,7 +4869,7 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	/* add merge table dependency */
 	sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
 	table_funcs.table_insert(tr, sysobj, &mt->base.id, p->base.name, &p->base.id);
-	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->wstime;
+	mt->s->base.wtime = mt->base.wtime = pt->s->base.wtime = pt->base.wtime = tr->wtime = tr->wstime;
 
 	return 0;
 }
@@ -4907,7 +4907,7 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 	cs_del(&mt->members, n, pt->base.flag);
 	pt->p = NULL;
 	table_funcs.table_delete(tr, sysobj, obj_oid);
-	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->wstime;
+	mt->s->base.wtime = mt->base.wtime = pt->s->base.wtime = pt->base.wtime = tr->wtime = tr->wstime;
 
 	if (drop_action == DROP_CASCADE) 
 		sql_trans_drop_table(tr, mt->s, pt->base.id, drop_action);
