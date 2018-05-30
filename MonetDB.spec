@@ -1074,7 +1074,6 @@ done
 - BZ#6602: Sqlitelogictest wrong results in IN query
 - BZ#6603: Sqlitelogictest: Aggregation query with distinct clause
   produces duplicated rows
-- BZ#6605: Sqlitelogictest set queries with wrong results
 
 * Thu May 17 2018 Martin van Dinther <martin.van.dinther@monetdbsolutions.com> - 11.29.5-20180525
 - sql: Corrected the definition of view: sys.ids.

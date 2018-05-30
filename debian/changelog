@@ -37,7 +37,6 @@ monetdb (11.29.5) unstable; urgency=low
   * BZ#6602: Sqlitelogictest wrong results in IN query
   * BZ#6603: Sqlitelogictest: Aggregation query with distinct clause
     produces duplicated rows
-  * BZ#6605: Sqlitelogictest set queries with wrong results
 
  -- Panagiotis Koutsourakis <kutsurak@monetdbsolutions.com>  Fri, 25 May 2018 11:41:04 +0200
 
